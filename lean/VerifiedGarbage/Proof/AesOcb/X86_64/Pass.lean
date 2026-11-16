@@ -98,10 +98,10 @@ theorem nextOffset_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {l : Block}
     OfsOk nextOffset l i t := by
   have hM := T.lt
   obtain ⟨u, run, h1, g, m, x, rd, wr⟩ := lAddr_ok E.r15 (i := i + 1) (by omega_arith) (by omega_arith) hbp
-  have hs := slot_lt (ntz (i + 1))
-  have ea : u.gpr .rcx + BitVec.ofNat 64 2560 = W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1))) := by
+  obtain hs := slot_lt (ntz (i + 1))
+  obtain ea : u.gpr .rcx + BitVec.ofNat 64 2560 = W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1))) := by
     rw [h1]; exact slot_addr W _
-  have rT : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1)))) 16 := by
+  obtain rT : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 (2560 + 16 * slot (ntz (i + 1)))) 16 := by
     rw [rd, wr]; exact E.perm.wR (by omega_arith)
   refine ⟨_, by rw [nextOffset, runBlock_append, run, Option.bind_some]
                 orun [XOp.exec, XBinOp.eval, State.load128, ea, rT], ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -138,23 +138,23 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
     (P : XInv K W SP D m O0 l X fB ckF t₀ t i) (hofs : OfsOk ofs l i t) :
     ∃ t', runBlock isa (blockStep ofs body) t = some t' ∧ XInv K W SP D m O0 l X fB ckF t₀ t' (i + 1) ∧
       t'.gpr .r12 = t.gpr .r12 ∧ (∀ x, x ≠ .xmm0 → x ≠ .xmm1 → x ≠ .xmm2 → x ≠ .xmm3 → t'.xmm x = t.xmm x) := by
-  have hDt : DBuf K W SP t D (16 * m) := hD.of_eq P.rd P.wr
-  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega_arith)
+  obtain hDt : DBuf K W SP t D (16 * m) := hD.of_eq P.rd P.wr
+  obtain hBi := hDt.slice (a := 16 * i) (k := 16) (by omega_arith)
   generalize hB' : D + BitVec.ofNat 64 (16 * i) = B at hBi
   obtain ⟨u₁, run₁, o₁, x₁, g₁, m₁, rd₁, wr₁⟩ := hofs
-  have hbx₁ : u₁.gpr .rbx = B := by rw [g₁ _ (by decide) (by decide) (by decide), P.rbx, hB']
-  have rB : InRegions (u₁.rd ++ u₁.wr) B 16 := by
+  obtain hbx₁ : u₁.gpr .rbx = B := by rw [g₁ _ (by decide) (by decide) (by decide), P.rbx, hB']
+  obtain rB : InRegions (u₁.rd ++ u₁.wr) B 16 := by
     rw [rd₁, wr₁]
     exact hBi.rd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   -- the load
-  have run₂ : runBlock isa [.movdquLoad .xmm3 (at_ .rbx 0)] u₁ = some (u₁.setXmm .xmm3 (u₁.mem.readW B 128)) := by
+  obtain run₂ : runBlock isa [.movdquLoad .xmm3 (at_ .rbx 0)] u₁ = some (u₁.setXmm .xmm3 (u₁.mem.readW B 128)) := by
     orun [State.load128, hbx₁, rB, BitVec.add_zero]
   -- the body
   obtain ⟨u₃, run₃, b₃, c₃, x₃, g₃, m₃, rd₃, wr₃⟩ := hB (u₁.setXmm .xmm3 (u₁.mem.readW B 128))
-  have hbx₃ : u₃.gpr .rbx = B := by rw [g₃, gpr_setXmm, hbx₁]
-  have hbp₃ : u₃.gpr .rbp = BitVec.ofNat 64 (i + 1) := by
+  obtain hbx₃ : u₃.gpr .rbx = B := by rw [g₃, gpr_setXmm, hbx₁]
+  obtain hbp₃ : u₃.gpr .rbp = BitVec.ofNat 64 (i + 1) := by
     rw [g₃, gpr_setXmm, g₁ _ (by decide) (by decide) (by decide), P.rbp]
-  have wB : InRegions u₃.wr B 16 := by
+  obtain wB : InRegions u₃.wr B 16 := by
     rw [wr₃, wr_setXmm, wr₁]
     exact hBi.wr _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   -- the store and the next block
@@ -177,11 +177,11 @@ theorem blockStep_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Blo
   rotate_left
   · rw [g₄ _ (by decide) (by decide), g₃, gpr_setXmm, g₁ _ (by decide) (by decide) (by decide)]
   · rw [x₄, x₃ x h1 h3]; simp only [xmm_setXmm, h3, ite_false]; exact x₁ x h0 h2
-  have hBX : blockAtMem t.mem B = X i := by rw [← hB', P.blk i hi]; simp
-  have e3 : rv (u₃.xmm .xmm3) = fB (X i) (offAt O0 l (i + 1)) := by
+  obtain hBX : blockAtMem t.mem B = X i := by rw [← hB', P.blk i hi]; simp
+  obtain e3 : rv (u₃.xmm .xmm3) = fB (X i) (offAt O0 l (i + 1)) := by
     rw [b₃]; simp only [xmm_setXmm, ite_true, reduceCtorEq, ite_false]
     rw [← blockAtMem_eq, o₁, P.ofs, m₁, hBX]; rfl
-  have fB4 : Frame [⟨B, 16⟩] t.mem u₄.mem := by
+  obtain fB4 : Frame [⟨B, 16⟩] t.mem u₄.mem := by
     rw [m₄, m₃, mem_setXmm, ← m₁]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨?_, ?_, ?_, ?_, ?_, bp₄, ?_, ?_, fun k hk => ?_, fun r h1 h2 h3 h4 h5 h6 => ?_⟩
@@ -253,14 +253,14 @@ theorem quad_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block} {
   obtain ⟨M, T, hM⟩ := C.tbl' P₃.frame
   obtain ⟨t₄, run₄, P₄, r₄, x₄⟩ := blockStep_ok hB hckF C.data (by omega_arith) P₃
     (nextOffset_ok P₃.env T (by omega_arith) P₃.rbp)
-  have h12₄ : t₄.gpr .r12 = BitVec.ofNat 64 (m - 4 * k) := by rw [r₄, r₃, r₂, r₁, h12]
+  obtain h12₄ : t₄.gpr .r12 = BitVec.ofNat 64 (m - 4 * k) := by rw [r₄, r₃, r₂, r₁, h12]
   obtain ⟨t₅, run₅, h12₅, cf₅, g₅, m₅, x₅, rd₅, wr₅⟩ : ∃ t₅, runBlock isa
       [.alu .sub .r12 (.imm 4), .alu .cmp .r12 (.imm 4)] t₄ = some t₅ ∧
       t₅.gpr .r12 = BitVec.ofNat 64 (m - 4 * (k + 1)) ∧ t₅.cf = some (decide (m - 4 * (k + 1) < 4)) ∧
       (∀ r, r ≠ .r12 → t₅.gpr r = t₄.gpr r) ∧ t₅.mem = t₄.mem ∧ t₅.xmm = t₄.xmm ∧ t₅.rd = t₄.rd ∧
       t₅.wr = t₄.wr := by
-    have e4 : BitVec.signExtend 64 (4 : BitVec 32) = BitVec.ofNat 64 4 := by decide
-    have hs : BitVec.ofNat 64 (m - 4 * k) - BitVec.ofNat 64 4 = BitVec.ofNat 64 (m - 4 * (k + 1)) := by
+    obtain e4 : BitVec.signExtend 64 (4 : BitVec 32) = BitVec.ofNat 64 4 := by decide
+    obtain hs : BitVec.ofNat 64 (m - 4 * k) - BitVec.ofNat 64 4 = BitVec.ofNat 64 (m - 4 * (k + 1)) := by
       rw [Proof.AesCcm.X86_64.ofNat_sub (by omega_arith) (by have := C.data.lt; omega_arith),
         show m - 4 * k - 4 = m - 4 * (k + 1) by omega_arith]
     refine ⟨_, by orun [h12₄], ?_, ?_, fun r h => ?_, ?_, ?_, ?_, ?_⟩
@@ -304,7 +304,7 @@ theorem single_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {X : Nat → Block}
       t'.zf = some (decide (m - (i + 1) = 0)) := by
   obtain ⟨M, T, hM⟩ := C.tbl' P.frame
   obtain ⟨t₁, run₁, P₁, r₁, -⟩ := blockStep_ok hB hckF C.data hi P (nextOffset_ok P.env T (by omega_arith) P.rbp)
-  have h12₁ : t₁.gpr .r12 = BitVec.ofNat 64 (m - i) := by rw [r₁, h12]
+  obtain h12₁ : t₁.gpr .r12 = BitVec.ofNat 64 (m - i) := by rw [r₁, h12]
   have hm := C.data.lt
   refine ⟨_, by rw [runBlock_append, run₁, Option.bind_some]; orun [h12₁], ?_, ?_, ?_⟩
   · exact { P₁ with

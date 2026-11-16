@@ -61,7 +61,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion sboxCfg s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
-  have hout : ∀ j < 8, e'.reg (q j) = some (.v (sbox1T j)) := by
+  obtain hout : ∀ j < 8, e'.reg (q j) = some (.v (sbox1T j)) := by
     intro j hj
     have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simp only [beq_iff_eq] at this
@@ -69,13 +69,13 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     | none => rw [h] at this; cases this
     | some v => cases v <;> rw [h] at this <;> simp_all [word]
   let cs : Nat → Nat := fun p => (bsByte (fun k => s.gpr (q k)) p).toNat
-  have hcs : ∀ p < 64, cs p < 256 := fun p _ => (bsByte (fun k => s.gpr (q k)) p).isLt
-  have hrel : Rel (TabAll cs) sboxCfg (fun _ => none) sboxEnv s := by
+  obtain hcs : ∀ p < 64, cs p < 256 := fun p _ => (bsByte (fun k => s.gpr (q k)) p).isLt
+  obtain hrel : Rel (TabAll cs) sboxCfg (fun _ => none) sboxEnv s := by
     refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), (fun _ _ _ h => by cases h)⟩
     simp only [sboxEnv, Option.map_eq_some_iff] at h
     obtain ⟨k, hk, rfl⟩ := h
     obtain ⟨hqk, hkr⟩ := List.find?_some hk, List.mem_of_find?_eq_some hk
-    have hk8 := List.mem_range.mp hkr
+    obtain hk8 := List.mem_range.mp hkr
     simp only [beq_iff_eq] at hqk
     subst hqk
     intro p hp
@@ -146,9 +146,9 @@ theorem xorBits_map_rows (W : Nat → BitVec 64) (S : Nat → BitVec 64) (hS : �
   induction l with
   | nil => rfl
   | cons i l ih =>
-    have hi := hl i List.mem_cons_self
-    have hc : cpos i < 8 := Camellia.cpos_lt hi
-    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
+    obtain hi := hl i List.mem_cons_self
+    obtain hc : cpos i < 8 := Camellia.cpos_lt hi
+    obtain ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
     simp only [List.map_cons, xorBits_cons, rowBits, List.foldr_cons] at ih ⊢
     rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
 
@@ -177,9 +177,9 @@ theorem round_ok {off d : Nat}
         slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  have hcode : round off d = (keyXor off ++ inSel) ++ (Impl.Camellia.RISCV64.sboxCode ++
+  obtain hcode : round off d = (keyXor off ++ inSel) ++ (Impl.Camellia.RISCV64.sboxCode ++
       ((outSel ++ pLayer) ++ feistel d)) := by simp only [round, List.append_assoc]
-  have hsb : ∀ is : List Instr, ∀ s₁ s₂ : State,
+  obtain hsb : ∀ is : List Instr, ∀ s₁ s₂ : State,
       (∀ r, (is.all fun i => dst i != some r) = true → s₂.gpr r = s₁.gpr r) →
       (is.all fun i => dst i != some sb) = true → s₂.gpr sb = s₁.gpr sb := fun _ _ _ h h' => h _ h'
   -- The subkey XOR and input selection.
@@ -200,25 +200,25 @@ theorem round_ok {off d : Nat}
     (fun j hj => by
       simp only [layerCfg] at hj
       exact ⟨by omega_arith, by simp [W₁, show ¬ 8 + j < 8 by omega_arith, show 8 + j < 24 by omega_arith]; rfl⟩)
-  have hX : ∀ j < 8, ∀ p < 64, (Qs s₁ j).getLsbD p =
+  obtain hX : ∀ j < 8, ∀ p < 64, (Qs s₁ j).getLsbD p =
       ((Qs s (inSrc (p / 8) j)).getLsbD p ^^ (keyW s (off + inSrc (p / 8) j)).getLsbD p) := by
     intro j hj p hp
-    have hi : inSrc (p / 8) j < 8 := by simp only [inSrc]; split <;> omega_arith
+    obtain hi : inSrc (p / 8) j < 8 := by simp only [inSrc]; split <;> omega_arith
     have := x₁ (q j) (keyInG off j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp
     rw [this, keyInG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
       bitOf_word _ _ _ hp, bitOf_word _ _ _ hp]
     simp [W₁, hi, show ¬ 8 + off + inSrc (p / 8) j < 8 by omega_arith,
       show 8 + off + inSrc (p / 8) j < 24 by rcases hoff with h | h <;> subst h <;> omega_arith,
       show 8 + off + inSrc (p / 8) j - 8 = off + inSrc (p / 8) j by omega_arith]
-  have hok₁ : Ok layerCfg s₁ := hok.congr (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) rd₁ wr₁
-  have hm₁ : MasksOk s₁ := fun kv hkv => by
-    have hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
+  obtain hok₁ : Ok layerCfg s₁ := hok.congr (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) rd₁ wr₁
+  obtain hm₁ : MasksOk s₁ := fun kv hkv => by
+    obtain hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
     have := k₁ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
       have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this])
     simp only [layerCfg] at this
     rw [slotW, hb, this]; exact hm kv hkv
-  have hh₁ : ∀ j < 16, slotW s₁ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
-    have hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
+  obtain hh₁ : ∀ j < 16, slotW s₁ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+    obtain hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
     have := k₁ (d1Slot + j) (List.mem_append_right _ (by
       simp only [halvesIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
       (by simp [layerCfg, savedSlot, d1Slot]; omega_arith)
@@ -226,22 +226,22 @@ theorem round_ok {off d : Nat}
     rw [slotW, hb, this]
   -- The S-box.
   obtain ⟨s₂, h₂, sx₂, rd₂, wr₂, sp₂, o₂, f₂⟩ := sbox_ok (ok_sbox hok₁)
-  have b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
-  have kp₂ : s₂.gpr kp = s.gpr kp := (o₂ kp (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
-  have hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb (by decide)) (o₂ kp (by decide)) rd₂ wr₂
-  have above₂ : ∀ k, 48 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
+  obtain b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
+  obtain kp₂ : s₂.gpr kp = s.gpr kp := (o₂ kp (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
+  obtain hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb (by decide)) (o₂ kp (by decide)) rd₂ wr₂
+  obtain above₂ : ∀ k, 48 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
     simp only [slotW, o₂ sb (by decide)]
     exact slot_above (n := 48) f₂ h1 (by simp [keySlot] at h2; omega_arith)
-  have hm₂ : MasksOk s₂ := fun kv hkv => by
+  obtain hm₂ : MasksOk s₂ := fun kv hkv => by
     rw [above₂ _ (allMasks_slots kv hkv).1
       (by have := allMasks_slots kv hkv; simp only [keySlot, d1Slot] at this ⊢; omega_using [this])]
     exact hm₁ kv hkv
-  have hh₂ : ∀ j < 16, slotW s₂ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+  obtain hh₂ : ∀ j < 16, slotW s₂ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
     rw [above₂ _ (by simp [d1Slot]; omega_arith) (by simp [d1Slot, keySlot]; omega_arith), hh₁ j hj]
   -- The output selection and the P-function.
   let W₃ : Nat → BitVec 64 := fun i =>
     if i < 8 then Qs s₂ i else if i < 24 then slotW s₂ (d1Slot + (i - 8)) else keyW s₂ (i - 24)
-  have bothIns_ok : ∀ s' : State, (W : Nat → BitVec 64) →
+  obtain bothIns_ok : ∀ s' : State, (W : Nat → BitVec 64) →
       (∀ i, 8 ≤ i → i < 24 → W i = slotW s' (d1Slot + (i - 8))) →
       ∀ j i, (j, i) ∈ bothIns → j < layerCfg.slots ∧ 64 * i + 64 ≤ 2 ^ 12 ∧
         W i = s'.mem.readW (wordAddr (s'.gpr layerCfg.base) j) 64 := by
@@ -250,7 +250,7 @@ theorem round_ok {off d : Nat}
     obtain ⟨j, hj, rfl, rfl⟩ := hji
     refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
     rw [hW _ (by omega_arith) (by omega_arith), show 8 + j - 8 = j by omega_arith]; rfl
-  have masks_ok : ∀ s' : State, MasksOk s' → ∀ kv ∈ allMasks, kv.1 < layerCfg.slots ∧
+  obtain masks_ok : ∀ s' : State, MasksOk s' → ∀ kv ∈ allMasks, kv.1 < layerCfg.slots ∧
       s'.mem.readW (wordAddr (s'.gpr layerCfg.base) kv.1) 64 = kv.2 := fun s' hm' kv hkv =>
     ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this], hm' kv hkv⟩
   obtain ⟨s₃, h₃, y₃, -, k₃, rd₃, wr₃, sp₃, o₃, f₃, -, -⟩ := linG_ok outP_check hok₂ W₃
@@ -263,20 +263,20 @@ theorem round_ok {off d : Nat}
     (fun j hj => by
       simp only [layerCfg] at hj
       exact ⟨by omega_arith, by simp [W₃, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
-  have hY : ∀ j < 8, ∀ p < 64, (Qs s₃ j).getLsbD p = rowBits (Qs s₂) j (p % 8) (pRow (pos (p / 8))) := by
+  obtain hY : ∀ j < 8, ∀ p < 64, (Qs s₃ j).getLsbD p = rowBits (Qs s₂) j (p % 8) (pRow (pos (p / 8))) := by
     intro j hj p hp
     rw [y₃ (q j) (outPG j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
       outPG]
     exact xorBits_map_rows W₃ (Qs s₂) (fun i hi => by simp [W₃, hi]) j (p % 8) (by omega_arith) hj _
       fun i hi => Camellia.pRow_lt hi
-  have b₃ : s₃.gpr sb = s₂.gpr sb := o₃ _ (by decide +kernel)
-  have kp₃ : s₃.gpr kp = s₂.gpr kp := o₃ _ (by decide +kernel)
-  have hok₃ : Ok layerCfg s₃ := hok₂.congr b₃ kp₃ rd₃ wr₃
-  have hm₃ : MasksOk s₃ := fun kv hkv => by
+  obtain b₃ : s₃.gpr sb = s₂.gpr sb := o₃ _ (by decide +kernel)
+  obtain kp₃ : s₃.gpr kp = s₂.gpr kp := o₃ _ (by decide +kernel)
+  obtain hok₃ : Ok layerCfg s₃ := hok₂.congr b₃ kp₃ rd₃ wr₃
+  obtain hm₃ : MasksOk s₃ := fun kv hkv => by
     have := k₃ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (masks_ok s₂ hm₂ kv hkv).1
     simp only [layerCfg] at this
     rw [slotW, b₃, this]; exact hm₂ kv hkv
-  have hh₃ : ∀ j < 16, slotW s₃ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+  obtain hh₃ : ∀ j < 16, slotW s₃ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
     have := k₃ (d1Slot + j) (List.mem_append_right _ (by
       simp only [bothIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
       (by simp [layerCfg, savedSlot, d1Slot]; omega_arith)
@@ -295,28 +295,28 @@ theorem round_ok {off d : Nat}
     (fun j hj => by
       simp only [layerCfg] at hj
       exact ⟨by omega_arith, by simp [W₄, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
-  have hdj : ∀ j < 8, d + j = d1Slot + (d - d1Slot + j) := fun j _ => by
+  obtain hdj : ∀ j < 8, d + j = d1Slot + (d - d1Slot + j) := fun j _ => by
     rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot] <;> omega_arith
-  have hd8 : d - d1Slot < 16 - 7 := by rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot]
-  have hfe : ∀ j < 8, ∀ p < 64, xorBits W₄ (feistelG d j p) =
+  obtain hd8 : d - d1Slot < 16 - 7 := by rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot]
+  obtain hfe : ∀ j < 8, ∀ p < 64, xorBits W₄ (feistelG d j p) =
       ((Qs s₃ j).getLsbD p ^^ (slotW s (d + j)).getLsbD p) := by
     intro j hj p hp
     rw [feistelG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
       bitOf_word _ _ _ hp, hdj j hj, ← hh₃ _ (by omega_arith)]
     simp [W₄, hj, show ¬ 8 + (d - d1Slot) + j < 8 by omega_arith, show 8 + (d - d1Slot) + j < 24 by omega_arith,
       show 8 + (d - d1Slot) + j - 8 = d - d1Slot + j by omega_arith]
-  have b₄ : s₄.gpr sb = s₃.gpr sb := o₄ _ (by rcases hd with rfl | rfl <;> decide +kernel)
-  have hD : HalfRel (Qs s₄) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
+  obtain b₄ : s₄.gpr sb = s₃.gpr sb := o₄ _ (by rcases hd with rfl | rfl <;> decide +kernel)
+  obtain hD : HalfRel (Qs s₄) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
     round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
       rw [r₄ (q j) (feistelG d j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
         p hp, hfe j hj p hp, Bool.xor_comm]
-  have hS : HalfRel (fun j => slotW s₄ (d + j)) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
+  obtain hS : HalfRel (fun j => slotW s₄ (d + j)) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
     round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
       have := sl₄ (d + j) (feistelG d j) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
         (by rcases hd with rfl | rfl <;> simp [layerCfg, savedSlot, d1Slot, d2Slot] <;> omega_arith) p hp
       simp only [layerCfg] at this
       rw [slotW, b₄, this, hfe j hj p hp, Bool.xor_comm]
-  have keep_any : ∀ r, r ∉ sboxWrites → ∀ is : List Instr,
+  obtain keep_any : ∀ r, r ∉ sboxWrites → ∀ is : List Instr,
       (restRegs.all fun r => is.all fun i => dst i != some r) = true →
       (is.all fun i => dst i != some r) = true := fun r hr is h =>
     List.all_eq_true.mp h r (not_sboxWrites r hr)
@@ -329,8 +329,8 @@ theorem round_ok {off d : Nat}
     simp only [layerCfg] at this
     rw [slotW, b₄, this]; exact hm₃ kv hkv
   · intro j hj hjd
-    have hb : s₄.gpr sb = s.gpr sb := by rw [b₄, b₃, b₂]
-    have hmem : d1Slot + j ∈ feistelKeep d := by
+    obtain hb : s₄.gpr sb = s.gpr sb := by rw [b₄, b₃, b₂]
+    obtain hmem : d1Slot + j ∈ feistelKeep d := by
       refine List.mem_append_right _ ?_
       simp only [List.mem_map, List.mem_range]
       rcases hd with rfl | rfl
@@ -345,9 +345,9 @@ theorem round_ok {off d : Nat}
       o₁ r (keep_any r hr _ (by rcases hoff with rfl | rfl <;> decide +kernel))]
   · have e₁ : slotRegion layerCfg s₁ = slotRegion layerCfg s := by
       simp only [slotRegion, layerCfg]; rw [o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)]
-    have e₂ : slotRegion layerCfg s₂ = slotRegion layerCfg s := by
+    obtain e₂ : slotRegion layerCfg s₂ = slotRegion layerCfg s := by
       simp only [slotRegion, layerCfg]; rw [b₂]
-    have e₃ : slotRegion layerCfg s₃ = slotRegion layerCfg s := by
+    obtain e₃ : slotRegion layerCfg s₃ = slotRegion layerCfg s := by
       simp only [slotRegion, layerCfg]; rw [b₃, b₂]
     refine f₁.trans ((f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
       ((e₂ ▸ f₃).trans (e₃ ▸ f₄)))

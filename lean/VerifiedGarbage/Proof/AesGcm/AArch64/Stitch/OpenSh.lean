@@ -106,11 +106,11 @@ theorem openSelS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (htb : TbForOP tb (s.gpr .x0) W s.sp O (s.gpr .x7).toNat s) :
     WP isa (openSelS v.callees to tb cl sh) s₁ (OpenSPost to O Tg tl s) := by
-  have hdk := dataOk_of o₁.dat
-  have hnb : (s.gpr .x7).toNat + 2560 ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
-  have doD : ∀ r ∈ ([] : List Region), (⟨O, (s.gpr .x7).toNat⟩ : Region).Disjoint r := by simp
+  obtain hdk := dataOk_of o₁.dat
+  obtain hnb : (s.gpr .x7).toNat + 2560 ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
+  obtain doD : ∀ r ∈ ([] : List Region), (⟨O, (s.gpr .x7).toNat⟩ : Region).Disjoint r := by simp
   -- The branch on the tag length, and then `m`.
-  have rest : ∀ {m : Prog isa} {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
+  obtain rest : ∀ {m : Prog isa} {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
       (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat tl s s₄ → s₄.gpr .x12 = Tg →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r) →
       (∀ {t : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg (s.gpr .x1).toNat
@@ -133,14 +133,14 @@ theorem openSelS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull
   refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
     (by rw [hx₁ .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt o₁.x24 (s.gpr .x3).isLt)
     fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  have o₂ := o₁.of_regs r₂
-  have x12₂ : s₂.gpr .x12 = Tg := by rw [r₂.others _ (by decide), x12₁]
-  have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
+  obtain o₂ := o₁.of_regs r₂
+  obtain x12₂ : s₂.gpr .x12 = Tg := by rw [r₂.others _ (by decide), x12₁]
+  obtain hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₁ r hr]
   by_cases hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
     -- The three paths for TLS records, once the tag is read.
-    have fastP : ∀ {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
+    obtain fastP : ∀ {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat tl s s₄ → s₄.gpr .x12 = Tg →
         (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r) →
         WP isa (Impl.AesGcm.AArch64.Fast.openFastPG v.callees to cl) s₄ (OpenSPost to O Tg tl s) :=
@@ -148,7 +148,7 @@ theorem openSelS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull
         openRunWithG_postE cl v hMK (ex := []) o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
           (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT hok (by simp) (by simp) (by simp)
           fun s' _ _ _ _ c sY sS hr hw hsp hf _ => hgh s' c sY sS hr hw hsp (frame_wD hf)
-    have fastS : ∀ {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
+    obtain fastS : ∀ {s₄ : State}, OpenInG to (s.gpr .x0) W s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) O Tg
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat tl s s₄ → s₄.gpr .x12 = Tg →
         (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r) →
         WP isa (Impl.AesGcm.AArch64.Stitch.openFastSG v.callees to tb cl) s₄ (OpenSPost to O Tg tl s) :=
@@ -163,38 +163,38 @@ theorem openSelS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull
       simp only [↓reduceIte]
       refine WP.seq (WP.mono (shortThr_ok (n := (s.gpr .x7).toNat) s₂ (by rw [hx₂ .x7 (by simp), ofNat_toNat'])
         (by omega_using [hnb])) fun s₃ ⟨x9₃, r₃⟩ => ?_)
-      have o₃ := o₂.of_regs r₃
-      have x12₃ : s₃.gpr .x12 = Tg := by rw [r₃.others _ (by decide), x12₂]
-      have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
+      obtain o₃ := o₂.of_regs r₃
+      obtain x12₃ : s₃.gpr .x12 = Tg := by rw [r₃.others _ (by decide), x12₂]
+      obtain hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
         rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
       refine WP.ite _ (eval_zero x9₃ (by omega_using [])) (fun hz => ?_) (fun _ => ?_)
       · refine WP.seq (WP.mono (shortMin_ok (n := (s.gpr .x7).toNat) s₃ (by rw [hx₃ .x7 (by simp), ofNat_toNat'])
           (by omega_using [hnb])) fun s₄ ⟨x9₄, r₄⟩ => ?_)
-        have o₄ := o₃.of_regs r₄
-        have x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₃]
-        have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
+        obtain o₄ := o₃.of_regs r₄
+        obtain x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₃]
+        obtain hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
           rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
         refine WP.ite _ (eval_zero x9₄ (by omega_using [])) (fun _ => fastP o₄ x12₄ hx₄) (fun _ => ?_)
         unfold Impl.AesGcm.AArch64.Stitch.openShortFG
         refine rest o₄ x12₄ hx₄ fun o' hT hok hx => ?_
-        have h96 := of_decide_eq_true hz
+        obtain h96 := of_decide_eq_true hz
         rw [hc.2] at o' ⊢
         exact openShort_post gh o' (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
           (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 (by omega_using [h96]) hT hok
           fun u he hrd hwr hf => htb u he hrd hwr hf
       · refine WP.seq (WP.mono (Stitch.thr_ok s₃) fun s₄ ⟨_, r₄⟩ => ?_)
-        have o₄ := o₃.of_regs r₄
-        have x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₃]
-        have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
+        obtain o₄ := o₃.of_regs r₄
+        obtain x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₃]
+        obtain hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
           rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
         refine WP.ite _ (eval_zero (a := (s₄.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₄.gpr .x9).isLt)
           (fun _ => fastP o₄ x12₄ hx₄) (fun _ => fastS o₄ x12₄ hx₄)
     | false =>
       simp only [Bool.false_eq_true, ↓reduceIte]
       refine WP.seq (WP.mono (Stitch.thr_ok s₂) fun s₄ ⟨_, r₄⟩ => ?_)
-      have o₄ := o₂.of_regs r₄
-      have x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₂]
-      have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
+      obtain o₄ := o₂.of_regs r₄
+      obtain x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₂]
+      obtain hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
         rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
       refine WP.ite _ (eval_zero (a := (s₄.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₄.gpr .x9).isLt)
         (fun _ => fastP o₄ x12₄ hx₄) (fun _ => fastS o₄ x12₄ hx₄)

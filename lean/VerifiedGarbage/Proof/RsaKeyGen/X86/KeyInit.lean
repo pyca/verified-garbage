@@ -76,9 +76,9 @@ theorem ea3 (s : State) : (s.gpr .esp + BitVec.ofNat 32 16).setWidth 64 = argAdd
 
 theorem ABI.argIn {s : State} (A : ABI s) {i : Nat} (hi : i < 4) :
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
-  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
+  obtain a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
     VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [this])
-  have ai : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
+  obtain ai : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
     VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [hi, this])
   rw [a0, ai]
   exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
@@ -214,18 +214,18 @@ theorem octet_ok {s u : State} (A : ABI s) {n j : Nat} (hj : j < n) (hn : n = (a
   have eb := A.eBound
   have hw : u.wr = s.wr := h.keep.2.2
   have hr : u.rd = s.rd := h.keep.2.1
-  have eaE : (arg s 2 + BitVec.ofNat 32 j + BitVec.ofNat 32 0).setWidth 64 = E s + BitVec.ofNat 64 j := by
+  obtain eaE : (arg s 2 + BitVec.ofNat 32 j + BitVec.ofNat 32 0).setWidth 64 = E s + BitVec.ofNat 64 j := by
     rw [BitVec.add_zero]; exact VG.Proof.MlKem.X86.ea_off (by omega_using [hj, hn, eb])
-  have rE : InRegions (u.rd ++ u.wr) (E s + BitVec.ofNat 64 j) 1 :=
+  obtain rE : InRegions (u.rd ++ u.wr) (E s + BitVec.ofNat 64 j) 1 :=
     ⟨_, by rw [hr, A.rd]; exact List.mem_append_left _ (List.mem_cons_self ..),
       Offset.contains_base _ (by omega_using [hj, hn]) (by omega_using [hj, hn])⟩
-  have hb : u.mem (E s + BitVec.ofNat 64 j) = s.mem (E s + BitVec.ofNat 64 j) := A.eKeep h.frame (by omega_using [hj, hn])
+  obtain hb : u.mem (E s + BitVec.ofNat 64 j) = s.mem (E s + BitVec.ofNat 64 j) := A.eKeep h.frame (by omega_using [hj, hn])
   generalize hx : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (E s) j) = x at h
   generalize ho : u.mem.readW (B s + BitVec.ofNat 64 36) 32 = o
   have hv := h.val
   have hs := h.saved
-  have hv32 : x % 2 ^ 32 < 2 ^ 32 := Nat.mod_lt _ (by decide)
-  have byt := (s.mem (E s + BitVec.ofNat 64 j)).isLt
+  obtain hv32 : x % 2 ^ 32 < 2 ^ 32 := Nat.mod_lt _ (by decide)
+  obtain byt := (s.mem (E s + BitVec.ofNat 64 j)).isLt
   refine WP.mono (WP.keep [.eax, .ecx, .edx] (Q := fun t =>
       t.gpr .ecx = arg s 2 + BitVec.ofNat 32 (j + 1) ∧ t.gpr .edx = BitVec.ofNat 32 (n - (j + 1)) ∧
       t.zf = some (decide (n - (j + 1) = 0)) ∧
@@ -235,9 +235,9 @@ theorem octet_ok {s u : State} (A : ABI s) {n j : Nat} (hj : j < n) (hn : n = (a
     fun t ⟨⟨hc, hd, hz, hm⟩, k⟩ => ?_
   · unfold octet
     simp only [sb, List.cons_append, List.nil_append, List.replicate]
-    have e44 := A.eaS rfl (d := 44) (by decide)
-    have e36 := A.eaS rfl (d := 36) (by decide)
-    have e32 := A.eaS rfl (d := 32) (by decide)
+    obtain e44 := A.eaS rfl (d := 44) (by decide)
+    obtain e36 := A.eaS rfl (d := 36) (by decide)
+    obtain e32 := A.eaS rfl (d := 32) (by decide)
     xrun [State.ea, at_, h.ptr, h.cnt, h.ebx, eaE, rE, hb, e44, e36, e32, A.inW hw (d := 44) (by decide),
       A.inW hw (d := 36) (by decide), A.inW hw (d := 32) (by decide), A.inRW hw (d := 44) (by decide),
       A.inRW hw (d := 36) (by decide), A.inRW hw (d := 32) (by decide), rdS, rdN _ (B s) (d := 32) (e := 44)
@@ -254,7 +254,7 @@ theorem octet_ok {s u : State} (A : ABI s) {n j : Nat} (hj : j < n) (hn : n = (a
     omega_using []
   · have fr : Frame [⟨B s, 56⟩] s.mem t.mem := by
       rw [hm]; exact frame_w (frame_w (frame_w h.frame (by decide) _) (by decide) _) (by decide) _
-    have snoc : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (E s) (j + 1)) =
+    obtain snoc : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (E s) (j + 1)) =
         256 * x + (s.mem (E s + BitVec.ofNat 64 j)).toNat := by
       rw [SearchInit.bytesAt_succ, os2ip_snoc, hx]
     refine ⟨hc, hd, hz, (k.gpr (by decide)).trans h.ebx, ?_, ?_, ?_, fr, (h.keep.trans k).mono (by simp)⟩
@@ -275,10 +275,10 @@ theorem scan_ok {s u : State} (A : ABI s) (hb : u.gpr .ebx = arg s 0)
     WP isa scan u (ScanInv s (arg s 3).toNat (arg s 3).toNat) := by
   have hw : u.wr = s.wr := k.2.2
   have hr : u.rd = s.rd := k.2.1
-  have sp : u.gpr .esp = s.gpr .esp := k.gpr (by decide)
-  have fr : Frame [⟨B s, 56⟩] s.mem u.mem := by
+  obtain sp : u.gpr .esp = s.gpr .esp := k.gpr (by decide)
+  obtain fr : Frame [⟨B s, 56⟩] s.mem u.mem := by
     rw [hm]; exact frame_w (frame_w (frame_w (Frame.refl _ _) (by decide) _) (by decide) _) (by decide) _
-  have n32 := (arg s 3).isLt
+  obtain n32 := (arg s 3).isLt
   unfold scan
   refine WP.seq (WP.mono (WP.keep [.ecx, .edx] (Q := fun t =>
       t.gpr .ecx = arg s 2 ∧ t.gpr .edx = BitVec.ofNat 32 (arg s 3).toNat ∧
@@ -291,7 +291,7 @@ theorem scan_ok {s u : State} (A : ABI s) (hb : u.gpr .ebx = arg s 0)
     rw [show (0 : BitVec 32) = BitVec.ofNat 32 0 from rfl, BitVec.sub_zero, ← ofNat_beq n32,
       BitVec.ofNat_toNat, BitVec.setWidth_eq]
     rfl
-  have h0 : ScanInv s (arg s 3).toNat 0 t := by
+  obtain h0 : ScanInv s (arg s 3).toNat 0 t := by
     refine ⟨by rw [hc, BitVec.add_zero], by rw [hd, Nat.sub_zero], by rw [hz, Nat.sub_zero],
       (kt.gpr (by decide)).trans hb, ?_, ?_, ?_, by rw [htm]; exact fr, (k.trans kt).mono (by simp)⟩
     · rw [htm, hm, rdN _ _ (by decide) (by decide) (by decide), rdS]; rfl
@@ -306,7 +306,7 @@ theorem scan_ok {s u : State} (A : ABI s) (hb : u.gpr .ebx = arg s 0)
       (fun j t _ ht => ?_)) fun t ⟨j, hj, hl, ht⟩ => by
         obtain rfl : j = (arg s 3).toNat := by omega_using [hj, hl]
         exact ht
-    have e : isa.eval .ne t = some (!decide ((arg s 3).toNat - j = 0)) := by
+    obtain e : isa.eval .ne t = some (!decide ((arg s 3).toNat - j = 0)) := by
       change t.zf.map (!·) = _; rw [ht.z]; rfl
     rw [e]
     constructor
@@ -386,14 +386,14 @@ theorem words_ok {s w : State} (A : ABI s) (hw : w.wr = s.wr) (hr : w.rd = s.rd)
     (hsv : w.mem.readW (B s + BitVec.ofNat 64 0) 32 = s.gpr .ebx) :
     WP isa (.block words) w fun t =>
       (t.gpr .eax = st ∧ t.gpr .ebx = s.gpr .ebx ∧ Slots s K T V t.mem) ∧ Keep [.eax, .ecx, .edx, .ebx] w t := by
-  have b32 := (arg s 1).isLt
-  have hX : arg s 1 >>> 7 = BitVec.ofNat 32 ((arg s 1).toNat / 128) := by
+  obtain b32 := (arg s 1).isLt
+  obtain hX : arg s 1 >>> 7 = BitVec.ofNat 32 ((arg s 1).toNat / 128) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       Nat.mod_eq_of_lt (by omega_using [b32])]
-  have hN : (BitVec.ofNat 32 ((arg s 1).toNat / 128 * 8)).toNat = (arg s 1).toNat / 128 * 8 := by
+  obtain hN : (BitVec.ofNat 32 ((arg s 1).toNat / 128 * 8)).toNat = (arg s 1).toNat / 128 * 8 := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [b32])
-  have h8 : ∀ n : Nat, n + n + (n + n) + (n + n + (n + n)) = n * 8 := fun n => by omega_using []
+  obtain h8 : ∀ n : Nat, n + n + (n + n) + (n + n + (n + n)) = n * 8 := fun n => by omega_using []
   refine WP.keep _ ?_ (by rfl)
   simp only [words, sb, param_eq, Nat.reduceMul, Nat.reduceAdd]
   xrun [State.ea, at_, sp, ea0, ea1, hr, hw, hb, A.argRd (i := 0) (by decide), A.argRd (i := 1) (by decide),
@@ -445,19 +445,19 @@ theorem init_ok {s : State} (A : ABI s) : WP isa init s (InitPost s) := by
   rw [WP.block_append_iff]
   have hw : v.wr = s.wr := hv.keep.2.2
   have hr : v.rd = s.rd := hv.keep.2.1
-  have sp : v.gpr .esp = s.gpr .esp := hv.keep.gpr (by decide)
+  obtain sp : v.gpr .esp = s.gpr .esp := hv.keep.gpr (by decide)
   refine WP.mono (status_ok A hw hr sp hv.ebx hv.frame hv.val rfl) fun w ⟨hmw, kw⟩ => ?_
-  have hw' : w.wr = s.wr := kw.2.2.trans hw
-  have hr' : w.rd = s.rd := kw.2.1.trans hr
-  have sp' : w.gpr .esp = s.gpr .esp := (kw.gpr (by decide)).trans sp
-  have hb' : w.gpr .ebx = arg s 0 := (kw.gpr (by decide)).trans hv.ebx
-  have fr' : Frame [⟨B s, 56⟩] s.mem w.mem := by
+  obtain hw' : w.wr = s.wr := kw.2.2.trans hw
+  obtain hr' : w.rd = s.rd := kw.2.1.trans hr
+  obtain sp' : w.gpr .esp = s.gpr .esp := (kw.gpr (by decide)).trans sp
+  obtain hb' : w.gpr .ebx = arg s 0 := (kw.gpr (by decide)).trans hv.ebx
+  obtain fr' : Frame [⟨B s, 56⟩] s.mem w.mem := by
     rw [hmw]
     exact frame_w (frame_w (frame_w (frame_w hv.frame (by decide) _) (by decide) _) (by decide) _) (by decide) _
-  have hV : w.mem.readW (B s + BitVec.ofNat 64 32) 32 =
+  obtain hV : w.mem.readW (B s + BitVec.ofNat 64 32) 32 =
       BitVec.ofNat 32 (Spec.Rsa.os2ip (eB s) % 2 ^ 32) := by
     rw [hmw]; simp (disch := decide) only [rdN]; exact hv.val
-  have hsv : w.mem.readW (B s + BitVec.ofNat 64 0) 32 = s.gpr .ebx := by
+  obtain hsv : w.mem.readW (B s + BitVec.ofNat 64 0) 32 = s.gpr .ebx := by
     rw [hmw]; simp (disch := decide) only [rdN]; exact hv.saved
   let V := BitVec.ofNat 32 (Spec.Rsa.os2ip (eB s) % 2 ^ 32)
   let o := v.mem.readW (B s + BitVec.ofNat 64 36) 32
@@ -593,17 +593,17 @@ theorem result_post {s t : State} (P : InitPost s t) :
         Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first := by
   obtain ⟨-, -, o, ho, hax, S⟩ := P
   generalize hx : Spec.Rsa.os2ip (eB s) = x at ho hax S ⊢
-  have b32 := (arg s 1).isLt
+  obtain b32 := (arg s 1).isLt
   rw [a_eq ho, b_eq] at hax S
   rw [xor3_lt] at S
   unfold Spec.RsaKeyGen.keySearchInit
   rw [hx]
-  have W := words7 t.mem (B s)
+  obtain W := words7 t.mem (B s)
   rw [S.w0, S.w1, S.w2, S.w3, S.w4, S.w5, S.w6, S.w7, S.w8, S.w9, S.w10, S.w11, S.w12, S.w13] at W
   by_cases hv : Spec.RsaKeyGen.exponentValid x = true
   · rw [hv] at hax W S
     simp only [Bool.not_true, Bool.or_false, Bool.not_eq_true'] at hax W S
-    have hvE : x % 2 = 1 ∧ 3 ≤ x ∧ x < 2 ^ 32 := by
+    obtain hvE : x % 2 = 1 ∧ 3 ≤ x ∧ x < 2 ^ 32 := by
       unfold Spec.RsaKeyGen.exponentValid at hv
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
       omega_using [hv]
@@ -618,7 +618,7 @@ theorem result_post {s t : State} (P : InitPost s t) :
     | some nlen =>
       rw [hmb] at hax W S
       simp only [Option.isNone_some, Bool.not_false, ↓reduceIte] at hax W S
-      have hn : 512 ≤ (arg s 1).toNat ∧ (arg s 1).toNat ≤ 8192 ∧ nlen = (arg s 1).toNat / 128 * 128 := by
+      obtain hn : 512 ≤ (arg s 1).toNat ∧ (arg s 1).toNat ≤ 8192 ∧ nlen = (arg s 1).toNat / 128 * 128 := by
         unfold Spec.RsaKeyGen.modulusBits Spec.RsaKeyGen.maxBits Spec.RsaKeyGen.minBits at hmb
         by_cases h1 : 8192 < (arg s 1).toNat
         · simp [h1] at hmb
@@ -626,10 +626,10 @@ theorem result_post {s t : State} (P : InitPost s t) :
           · simp [h1, h2] at hmb
           · simp only [h1, h2, ↓reduceIte, Option.some.injEq] at hmb
             omega_using [h1, h2, hmb]
-      have hP : nlen / 16 = (arg s 1).toNat / 128 * 8 := by omega_using [hn]
+      obtain hP : nlen / 16 = (arg s 1).toNat / 128 * 8 := by omega_using [hn]
       refine ⟨by rw [hax]; rfl, 32 * ((arg s 1).toNat / 128 * 8), ?_, ?_, ?_⟩
       · rw [words6, W]
-        have hx3 : decide (BitVec.ofNat 32 (x % 2 ^ 32) = 3) = decide (x = 3) := by
+        obtain hx3 : decide (BitVec.ofNat 32 (x % 2 ^ 32) = 3) = decide (x = 3) := by
           apply decide_eq_decide.mpr
           rw [Nat.mod_eq_of_lt hvE.2.2]
           constructor
@@ -657,9 +657,9 @@ theorem result_post {s t : State} (P : InitPost s t) :
 
 theorem correct (s : State) (h : (Spec.RsaKeyGen.keyInitContract abi).pre s) :
     ∃ trace t, Exec isa init s trace t ∧ abiPreserved s t ∧ (Spec.RsaKeyGen.keyInitContract abi).post s t := by
-  have A := abi_of h
+  obtain A := abi_of h
   obtain ⟨tr, t, E, P⟩ := init_ok A
-  have R := (Exec.regions E (by rfl)).2.2
+  obtain R := (Exec.regions E (by rfl)).2.2
   refine ⟨tr, t, E, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases hb : r = .ebx
     · subst hb; exact P.2.1
@@ -676,11 +676,11 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 4 s := by
   obtain rfl := List.mem_singleton.mp hr
   intro a ha hb
   let j := (a - (s.gpr .esp).setWidth 64).toNat
-  have hj : j < 20 := by change j + 1 ≤ 20 at ha; omega_using [ha]
-  have he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
+  obtain hj : j < 20 := by change j + 1 ≤ 20 at ha; omega_using [ha]
+  obtain he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
     change (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (a - (s.gpr .esp).setWidth 64).toNat = a
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
+  obtain a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
     VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [this])
   by_cases h : j < 4
   · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
@@ -710,10 +710,10 @@ def satState : State where
   wr := [⟨0x1000, 56⟩]
 
 theorem satisfiable : ∃ s, (Spec.RsaKeyGen.keyInitContract abi).pre s := by
-  have a0 : arg satState 0 = 0x1000 := by decide
-  have a2 : arg satState 2 = 0x2000 := by decide
-  have a3 : arg satState 3 = 3 := by decide
-  have e : argAddr satState 0 = 0x4004 := by decide
+  obtain a0 : arg satState 0 = 0x1000 := by decide
+  obtain a2 : arg satState 2 = 0x2000 := by decide
+  obtain a3 : arg satState 3 = 3 := by decide
+  obtain e : argAddr satState 0 = 0x4004 := by decide
   have esp : satState.gpr .esp = 0x4000 := rfl
   sig_implies_sat [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal,
     argBytes, stackBelow] [a0, a2, a3, e, esp, satState] using satState

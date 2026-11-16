@@ -95,25 +95,25 @@ theorem openToWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (h
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithEG v.callees true w cl) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  have h₁ := hpre _ p₁
-  have h₂ := hpre _ p₂
+  obtain h₁ := hpre _ p₁
+  obtain h₂ := hpre _ p₂
   have hq₀ := hq.1
   obtain ⟨hq, hres⟩ := hq
-  have T₁ := openToLay h₁
-  have T₂ := openToLay h₂
+  obtain T₁ := openToLay h₁
+  obtain T₂ := openToLay h₂
   have hR₁ : rounds (σ₁.gpr .x1) := T₁.rounds
   have hR₂ : rounds (σ₂.gpr .x1) := T₂.rounds
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega_using [])
-  have qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
-  have qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega_using [hw])
-  have qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega_using [hw])
-  have ka : (Code.block (openEntryG true w) : Prog isa).allInstrs
+  obtain qw : stackArg σ₁ w = stackArg σ₂ w := qa w (by omega_using [])
+  obtain qd : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
+  obtain qg : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by omega_using [hw])
+  obtain qt : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by omega_using [hw])
+  obtain ka : (Code.block (openEntryG true w) : Prog isa).allInstrs
       (fun i => [Reg.x4, .x5, .x6, .x7].all fun r => !clobbers i r) = true := by
     rcases hw with rfl | rfl <;> decide
-  have kc : (Code.block (openEntryG true w) : Prog isa).noCalls = true := by
+  obtain kc : (Code.block (openEntryG true w) : Prog isa).noCalls = true := by
     rcases hw with rfl | rfl <;> decide
-  have kq : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], σ₂.gpr r = σ₁.gpr r := fun r hr => by
+  obtain kq : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], σ₂.gpr r = σ₁.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact q4.symm
@@ -127,11 +127,11 @@ theorem openToWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (h
     fun s₁ s₂ ⟨⟨o₁, x12₁⟩, k₁⟩ ⟨⟨o₂, x12₂⟩, k₂⟩ => ?_
   rw [← q0, ← q1, ← q2, ← q3, ← q4, ← q5, ← q6, ← q7, ← qsp, ← qw, ← qd, ← qg, ← qt] at o₂
   rw [← qg] at x12₂
-  have hb : (openToRes σ₁).isSome = (openToRes σ₂).isSome := by
+  obtain hb : (openToRes σ₁).isSome = (openToRes σ₂).isSome := by
     rw [openToLeakOf, openToLeakOf, ite_eq_right_of_eq_false _ _ (eq_false (not_not_intro hR₁)),
       ite_eq_right_of_eq_false _ _ (eq_false (not_not_intro hR₂))] at hres
     revert hres; cases (openToRes σ₁).isSome <;> cases (openToRes σ₂).isSome <;> simp
-  have hr₂ : openToRes σ₂ = Spec.Gcm.openResult (ctxCiph σ₂.mem (σ₁.gpr .x0) (σ₁.gpr .x1).toNat)
+  obtain hr₂ : openToRes σ₂ = Spec.Gcm.openResult (ctxCiph σ₂.mem (σ₁.gpr .x0) (σ₁.gpr .x1).toNat)
       (ctxH σ₂.mem (σ₁.gpr .x0)) (stackArg σ₁ 3).toNat
       (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat) (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
       (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat) (bytesAt σ₂.mem (stackArg σ₁ 2) (stackArg σ₁ 3).toNat) := by
@@ -139,29 +139,29 @@ theorem openToWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (h
   rw [hr₂] at hb
   simp only [openToRes] at hb
   -- The branch on the lengths.
-  have k5₁ : s₁.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₁ .x5 (by simp), ofNat_toNat']
-  have k5₂ : s₂.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by
+  obtain k5₁ : s₁.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₁ .x5 (by simp), ofNat_toNat']
+  obtain k5₂ : s₂.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by
     rw [k₂ .x5 (by simp), kq .x5 (by simp), ofNat_toNat']
   refine rel_seq (rel_taint [.x5, .x24] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac [k5₁, k5₂, o₁.x24, o₂.x24])
       ⟨_, by taint_decide⟩)
     (cond_ok k5₁ (σ₁.gpr .x5).isLt o₁.x24 (σ₁.gpr .x3).isLt) (cond_ok k5₂ (σ₁.gpr .x5).isLt o₂.x24 (σ₁.gpr .x3).isLt)
     fun u₁ u₂ ⟨c₁, r₁⟩ ⟨c₂, r₂⟩ => ?_
-  have v₁ := o₁.of_regs r₁
-  have v₂ := o₂.of_regs r₂
-  have y12₁ : u₁.gpr .x12 = stackArg σ₁ 2 := by rw [r₁.others _ (by decide), x12₁]
-  have y12₂ : u₂.gpr .x12 = stackArg σ₁ 2 := by rw [r₂.others _ (by decide), x12₂]
-  have kk₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
+  obtain v₁ := o₁.of_regs r₁
+  obtain v₂ := o₂.of_regs r₂
+  obtain y12₁ : u₁.gpr .x12 = stackArg σ₁ 2 := by rw [r₁.others _ (by decide), x12₁]
+  obtain y12₂ : u₂.gpr .x12 = stackArg σ₁ 2 := by rw [r₂.others _ (by decide), x12₂]
+  obtain kk₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
     rw [r₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₁ r hr]
-  have kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
+  obtain kk₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₂ r hr, kq r hr]
-  have hlt : ((if (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 then 0 else 1 : Nat)) < 2 ^ 64 := by
+  obtain hlt : ((if (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 then 0 else 1 : Nat)) < 2 ^ 64 := by
     split <;> decide
-  have hgh₂ := @hgh σ₂
+  obtain hgh₂ := @hgh σ₂
   rw [← q0, ← qw] at hgh₂
   refine rel_ite (eval_zero c₁ hlt) (eval_zero c₂ hlt) (fun ht => ?_) (fun _ => ?_)
   · have hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 := by
       by_contra hc; simp [hc] at ht
-    have regs : ∀ {u t : State}, (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u.gpr r = σ₁.gpr r) →
+    obtain regs : ∀ {u t : State}, (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u.gpr r = σ₁.gpr r) →
         (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = u.gpr r) →
         t.gpr .x4 = σ₁.gpr .x4 ∧ t.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat ∧ t.gpr .x6 = σ₁.gpr .x6 ∧
           t.gpr .x7 = BitVec.ofNat 64 (σ₁.gpr .x7).toNat := fun ku kt =>
@@ -340,14 +340,14 @@ theorem gwCallTo_of {σ s : State} {Y S : Addr} (hs : openToPwN σ)
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 32) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 4) := by
   obtain ⟨hpx, pw, rep⟩ := hs
-  have T := openToLay hpx
+  obtain T := openToLay hpx
   have hrd₀ := hpx.1
-  have hspA := T.hsp 4 (by decide)
-  have sA : Region.Sub ⟨σ.sp + BitVec.ofNat 64 32, 8⟩ (args σ 6) := by
+  obtain hspA := T.hsp 4 (by decide)
+  obtain sA : Region.Sub ⟨σ.sp + BitVec.ofNat 64 32, 8⟩ (args σ 6) := by
     show Region.Sub ⟨σ.sp + BitVec.ofNat 64 32, 8⟩ ⟨σ.sp + BitVec.ofNat 64 (8 * 0), 8 * 6⟩
     rw [show σ.sp + BitVec.ofNat 64 (8 * 0) = σ.sp by rw [Nat.mul_zero, BitVec.add_zero]]
     exact Offset.sub_base _ (by decide)
-  have kW : ∀ {X : Region}, X.Disjoint (workR (stackArg σ 5)) →
+  obtain kW : ∀ {X : Region}, X.Disjoint (workR (stackArg σ 5)) →
       ∀ r ∈ [workR (stackArg σ 5)], X.Disjoint r := fun hX r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hX
   refine ⟨?_, by rw [hrd, hwr, hsp]; exact hspA, ⟨?_, (pw.sub_right sY).symm, (pw.sub_right sS).symm, ?_⟩⟩
@@ -435,7 +435,7 @@ def openToSatPw : State :=
 /-- `pw`'s bytes in `openToSatPw` are zero. -/
 theorem openToSatPw_zero : ∀ i < 16 * 8, openToSatPw.mem (stackArg openToSatPw 4 + BitVec.ofNat 64 i) = 0 := by
   intro i hi
-  have hP : stackArg openToSatPw 4 = 0x6000 := by decide
+  obtain hP : stackArg openToSatPw 4 = 0x6000 := by decide
   rw [hP]
   show (if (0x6000 : BitVec 64) + BitVec.ofNat 64 i = 0x8029 then 0x50
     else if (0x6000 : BitVec 64) + BitVec.ofNat 64 i = 0x8021 then 0x60 else 0) = 0

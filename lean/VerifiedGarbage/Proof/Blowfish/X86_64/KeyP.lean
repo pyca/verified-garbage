@@ -64,13 +64,13 @@ theorem initSteps_run {S : Addr} {t : State} (hS : t.gpr .rdx = S) (hW : SchedW 
   | k + 1, hk => by
     obtain ⟨u, r, d, f, g, e⟩ := initSteps_run hS hW k (by omega_using [hk])
     let u₁ := u.setReg .r11 (Impl.Blowfish.initWord k)
-    have ea : u₁.ea (mem .rdx (8 * k)) = S + BitVec.ofNat 64 (8 * k) := by
+    obtain ea : u₁.ea (mem .rdx (8 * k)) = S + BitVec.ofNat 64 (8 * k) := by
       rw [ea_mem]; simp only [u₁, gpr_setReg_of_ne _ _ (show Reg.rdx ≠ Reg.r11 by decide)]
       rw [g .rdx (by decide), hS]
-    have hw : InRegions u₁.wr (u₁.ea (mem .rdx (8 * k))) 8 := by
+    obtain hw : InRegions u₁.wr (u₁.ea (mem .rdx (8 * k))) 8 := by
       rw [ea, show u₁.wr = t.wr by simp only [u₁, wr_setReg]; rw [e]]; exact hW _ _ (by omega_using [hk])
     let u₂ : State := { u₁ with mem := u₁.mem.writeW (u₁.ea (mem .rdx (8 * k))) (u₁.gpr .r11) }
-    have m₂ : u₂.mem = u.mem.writeW (S + BitVec.ofNat 64 (8 * k)) (Impl.Blowfish.initWord k) := by
+    obtain m₂ : u₂.mem = u.mem.writeW (S + BitVec.ofNat 64 (8 * k)) (Impl.Blowfish.initWord k) := by
       simp only [u₂, ea]; simp only [u₁, mem_setReg, gpr_setReg_self]
     refine ⟨u₂, ?_, fun i hi => ?_, ?_, fun g' h => ?_, ?_⟩
     · rw [flatMap_range_succ, runBlock_append_x r, initStep, runBlock_cons, exec_movImm64, runStep_some,
@@ -185,7 +185,7 @@ theorem ofNat_sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
   · subst h; simp
   · have : BitVec.ofNat 64 a - BitVec.ofNat 64 b ≠ 0 := by
       intro e
-      have e' := congrArg (· + BitVec.ofNat 64 b) e
+      obtain e' := congrArg (· + BitVec.ofNat 64 b) e
       simp only [BitVec.sub_add_cancel] at e'
       rw [show (0 : BitVec 64) + BitVec.ofNat 64 b = BitVec.ofNat 64 b from BitVec.zero_add _] at e'
       have := congrArg BitVec.toNat e'
@@ -209,9 +209,9 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
       (∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → s'.gpr g = s.gpr g) ∧ Upd s s' := by
   rw [keyByte]
   apply WP.seq
-  have ea₀ : s.ea { base := .rdi, index := some .r10 } = K + BitVec.ofNat 64 c := ea_idx0 s _ _ _ _ h0 h10
+  obtain ea₀ : s.ea { base := .rdi, index := some .r10 } = K + BitVec.ofNat 64 c := ea_idx0 s _ _ _ _ h0 h10
   let s₁ := s.setReg .rax ((s.mem (K + BitVec.ofNat 64 c)).setWidth 64)
-  have e₁ : exec (.movzx8 .rax { base := .rdi, index := some .r10 }) s = some s₁ := by
+  obtain e₁ : exec (.movzx8 .rax { base := .rdi, index := some .r10 }) s = some s₁ := by
     rw [exec_movzx8 (by rw [ea₀]; exact hK c hc), ea₀]
   obtain ⟨s₂, e₂, r₂, g₂, -, u₂⟩ := shift32_run s₁ .shl .r11 8 (by decide) (by decide)
   obtain ⟨s₃, e₃, r₃, g₃, u₃⟩ := logic32_run s₂ .or .r11 .rax (.inl rfl)
@@ -220,29 +220,29 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
   refine WP.of_runBlock ⟨s₅, by
     rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃, runStep_some,
       runBlock_cons, e₄, runStep_some, runBlock_cons, e₅, runStep_some, runBlock_nil], ?_⟩
-  have up₅ : Upd s s₅ := Upd.trans u₅ (Upd.trans u₄ (Upd.trans u₃ (Upd.trans u₂ (by
+  obtain up₅ : Upd s s₅ := Upd.trans u₅ (Upd.trans u₄ (Upd.trans u₃ (Upd.trans u₂ (by
     unfold Upd; simp only [s₁, State.setReg]))))
-  have gk : ∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → s₅.gpr g = s.gpr g := fun g h1 h2 h3 => by
+  obtain gk : ∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → s₅.gpr g = s.gpr g := fun g h1 h2 h3 => by
     rw [g₅, g₄ _ h2, g₃ _ h3, g₂ _ h3]; simp only [s₁, gpr_setReg_of_ne _ _ h1]
-  have x11 : (s₅.gpr .r11).setWidth 32 =
+  obtain x11 : (s₅.gpr .r11).setWidth 32 =
       ((s.gpr .r11).setWidth 32 <<< 8) ||| (s.mem (K + BitVec.ofNat 64 c)).zeroExtend 32 := by
     rw [g₅, g₄ _ (by decide), r₃, r₂, g₂ .rax (by decide)]
     simp only [s₁, gpr_setReg_self, gpr_setReg_of_ne _ _ (show Reg.r11 ≠ Reg.rax by decide), ↓reduceIte,
       setWidth_setWidth_32, byte_zext]
-  have x10 : s₅.gpr .r10 = BitVec.ofNat 64 (c + 1) := by
+  obtain x10 : s₅.gpr .r10 = BitVec.ofNat 64 (c + 1) := by
     rw [g₅, r₄, g₃ _ (by decide), g₂ _ (by decide)]
     simp only [s₁, gpr_setReg_of_ne _ _ (show Reg.r10 ≠ Reg.rax by decide), h10]
     apply BitVec.eq_of_toNat_eq; simp
-  have b₅' : b₅ = BitVec.ofNat 64 L := by
+  obtain b₅' : b₅ = BitVec.ofNat 64 L := by
     simp only [readSrc, Option.some.injEq] at rb₅
     rw [← rb₅, g₄ _ (by decide), g₃ _ (by decide), g₂ _ (by decide)]
     simp only [s₁, gpr_setReg_of_ne _ _ (show Reg.rsi ≠ Reg.rax by decide), h1]
-  have zf : isa.eval .e s₅ = some (c + 1 == L) := by
+  obtain zf : isa.eval .e s₅ = some (c + 1 == L) := by
     show s₅.zf = _
     rw [z₅, show s₄.gpr .r10 = s₅.gpr .r10 by rw [g₅], x10, b₅', ofNat_sub_beq (by omega_using [hc, hL]) hL]
   apply WP.ite _ zf
   · intro h
-    have hL' : c + 1 = L := by simpa using h
+    obtain hL' : c + 1 = L := by simpa using h
     refine WP.of_runBlock ⟨s₅.setReg32 .r10 0, by rw [runBlock_cons, exec_mov32_imm, runStep_some, runBlock_nil],
       ?_, ?_, fun g h1 h2 h3 => ?_, ?_⟩
     · simp only [State.setReg32, gpr_setReg_of_ne _ _ (show Reg.r11 ≠ Reg.r10 by decide)]; exact x11
@@ -250,7 +250,7 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
     · simp only [State.setReg32, gpr_setReg_of_ne _ _ h2]; exact gk g h1 h2 h3
     · exact Upd.trans (by unfold Upd; simp only [State.setReg32, State.setReg]) up₅
   · intro h
-    have hL' : c + 1 ≠ L := by simpa using h
+    obtain hL' : c + 1 ≠ L := by simpa using h
     exact WP.block_nil ⟨x11, by rw [x10, Nat.mod_eq_of_lt (by omega_using [hc, hL'])], gk, up₅⟩
 
 /-- What a P-array entry's code needs. -/
@@ -279,13 +279,13 @@ theorem keyWord_run {S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv S K L i
   apply WP.seq
   let s₀ := s.setReg32 .r11 0
   refine WP.of_runBlock ⟨s₀, by rw [runBlock_cons, exec_mov32_imm, runStep_some, runBlock_nil], ?_⟩
-  have g₀ : ∀ g, g ≠ .r11 → s₀.gpr g = s.gpr g := fun g h => by
+  obtain g₀ : ∀ g, g ≠ .r11 → s₀.gpr g = s.gpr g := fun g h => by
     simp only [s₀, State.setReg32, gpr_setReg_of_ne _ _ h]
-  have x11₀ : (s₀.gpr .r11).setWidth 32 = 0 := by
+  obtain x11₀ : (s₀.gpr .r11).setWidth 32 = 0 := by
     simp only [s₀, State.setReg32, gpr_setReg_self, setWidth_setWidth_32]
-  have u₀ : Upd s s₀ := by unfold Upd; simp only [s₀, State.setReg32, State.setReg]
+  obtain u₀ : Upd s s₀ := by unfold Upd; simp only [s₀, State.setReg32, State.setReg]
   -- the four key bytes
-  have step : ∀ (t : State) (m : Nat), Upd s t → t.gpr .rdi = K → t.gpr .rsi = BitVec.ofNat 64 L →
+  obtain step : ∀ (t : State) (m : Nat), Upd s t → t.gpr .rdi = K → t.gpr .rsi = BitVec.ofNat 64 L →
       t.gpr .r10 = BitVec.ofNat 64 ((4 * i + m) % L) →
       ∀ {Q : State → Prop}, (∀ t', (t'.gpr .r11).setWidth 32 = ((t.gpr .r11).setWidth 32 <<< 8) |||
         ((bytesAt s.mem K L).getD ((4 * i + m) % L) 0).zeroExtend 32 →
@@ -293,11 +293,11 @@ theorem keyWord_run {S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv S K L i
         (∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → t'.gpr g = t.gpr g) → Upd s t' → Q t') →
       WP isa keyByte t Q := by
     intro t m ht h0 h1 h10 Q k
-    have kt : KeyIn t K L := E.key.of_eq (by rw [ht]) (by rw [ht])
+    obtain kt : KeyIn t K L := E.key.of_eq (by rw [ht]) (by rw [ht])
     refine WP.mono (keyByte_run (Nat.mod_lt _ hL0) E.L64 kt h0 h1 h10) fun t' ⟨a, b, c, d⟩ => k t' ?_ ?_ c (d.trans ht)
     · rw [a, bytesAt_getD _ _ (Nat.mod_lt _ hL0), show t.mem = s.mem by rw [ht]]
     · rw [b, mod_succ _ _ hL0, Nat.add_assoc]
-  have hlen : (bytesAt s.mem K L).length = L := by simp [bytesAt]
+  obtain hlen : (bytesAt s.mem K L).length = L := by simp [bytesAt]
   apply WP.seq
   refine step s₀ 0 u₀ (by rw [g₀ _ (by decide), E.rdi]) (by rw [g₀ _ (by decide), E.rsi])
     (by rw [g₀ _ (by decide), E.r10]; rfl) fun t₁ a₁ b₁ c₁ d₁ => ?_
@@ -315,27 +315,27 @@ theorem keyWord_run {S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv S K L i
     (by rw [c₃ _ (by decide) (by decide) (by decide), c₂ _ (by decide) (by decide) (by decide),
       c₁ _ (by decide) (by decide) (by decide), g₀ _ (by decide), E.rsi]) b₃ fun t₄ a₄ b₄ c₄ d₄ => ?_
   -- the word
-  have kw : (t₄.gpr .r11).setWidth 32 = keyWord (bytesAt s.mem K L) i := by
+  obtain kw : (t₄.gpr .r11).setWidth 32 = keyWord (bytesAt s.mem K L) i := by
     rw [a₄, a₃, a₂, a₁, x11₀, keyWord_eq, hlen]
-  have g₄ : ∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → t₄.gpr g = s.gpr g := fun g h1 h2 h3 => by
+  obtain g₄ : ∀ g, g ≠ .rax → g ≠ .r10 → g ≠ .r11 → t₄.gpr g = s.gpr g := fun g h1 h2 h3 => by
     rw [c₄ g h1 h2 h3, c₃ g h1 h2 h3, c₂ g h1 h2 h3, c₁ g h1 h2 h3, g₀ g h3]
-  have m₄ : t₄.mem = s.mem := by rw [d₄]
-  have rw₄ : t₄.rd = s.rd ∧ t₄.wr = s.wr := ⟨by rw [d₄], by rw [d₄]⟩
-  have ea₄ : t₄.ea { base := .rdx, index := some .r8, disp := Int.ofNat pOff } = S + BitVec.ofNat 64 (4096 + 4 * i) :=
+  obtain m₄ : t₄.mem = s.mem := by rw [d₄]
+  obtain rw₄ : t₄.rd = s.rd ∧ t₄.wr = s.wr := ⟨by rw [d₄], by rw [d₄]⟩
+  obtain ea₄ : t₄.ea { base := .rdx, index := some .r8, disp := Int.ofNat pOff } = S + BitVec.ofNat 64 (4096 + 4 * i) :=
     ea_idx t₄ _ _ _ _ _ (by rw [g₄ _ (by decide) (by decide) (by decide), E.rdx])
       (by rw [g₄ _ (by decide) (by decide) (by decide), E.r8])
   let P := s.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32
   let t₅ := t₄.setReg32 .rax P
-  have e₅ : exec (.mov32 .rax (.mem { base := .rdx, index := some .r8, disp := Int.ofNat pOff })) t₄ = some t₅ := by
+  obtain e₅ : exec (.mov32 .rax (.mem { base := .rdx, index := some .r8, disp := Int.ofNat pOff })) t₄ = some t₅ := by
     rw [exec_mov32_mem (by rw [ea₄, rw₄.1, rw₄.2]; exact inRegions_append_right E.wrS), ea₄, m₄]
   obtain ⟨t₆, e₆, r₆, g₆, u₆⟩ := logic32_run t₅ .xor .rax .r11 (.inr rfl)
-  have ea₆ : t₆.ea { base := .rdx, index := some .r8, disp := Int.ofNat pOff } = S + BitVec.ofNat 64 (4096 + 4 * i) := by
+  obtain ea₆ : t₆.ea { base := .rdx, index := some .r8, disp := Int.ofNat pOff } = S + BitVec.ofNat 64 (4096 + 4 * i) := by
     rw [← ea₄]; simp only [State.ea, g₆ _ (show Reg.rdx ≠ Reg.rax by decide), g₆ _ (show Reg.r8 ≠ Reg.rax by decide),
       t₅, State.setReg32, gpr_setReg_of_ne _ _ (show Reg.rdx ≠ Reg.rax by decide),
       gpr_setReg_of_ne _ _ (show Reg.r8 ≠ Reg.rax by decide)]
-  have wr₆ : t₆.wr = s.wr := by rw [u₆]; simp only [t₅, State.setReg32, wr_setReg]; exact rw₄.2
+  obtain wr₆ : t₆.wr = s.wr := by rw [u₆]; simp only [t₅, State.setReg32, wr_setReg]; exact rw₄.2
   let t₇ : State := { t₆ with mem := t₆.mem.writeW (S + BitVec.ofNat 64 (4096 + 4 * i)) ((t₆.gpr .rax).setWidth 32) }
-  have e₇ : exec (.store32 { base := .rdx, index := some .r8, disp := Int.ofNat pOff } .rax) t₆ = some t₇ := by
+  obtain e₇ : exec (.store32 { base := .rdx, index := some .r8, disp := Int.ofNat pOff } .rax) t₆ = some t₇ := by
     rw [exec_store32 (by rw [ea₆, wr₆]; exact E.wrS), ea₆]
   obtain ⟨t₈, e₈, r₈, g₈, -, u₈⟩ := add_imm_run t₇ .r8 4
   obtain ⟨t₉, b₉, e₉, rb₉, z₉, g₉, u₉⟩ := cmp_run t₈ .r8 (.imm 72) (fun _ => by simp)
@@ -401,22 +401,22 @@ theorem keyP_step {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀)
     WP isa Impl.Blowfish.X86_64.keyWord u (fun u' => KeyPInv S K L s₀ (i + 1) u' ∧
       u'.zf = some (4 * (i + 1) == 72)) := by
   have fit := E.fitS
-  have hrd : u.rd = s₀.rd := by rw [I.eq]
-  have hwr : u.wr = s₀.wr := by rw [I.eq]
-  have W : KeyWordEnv S K L i u := by
+  obtain hrd : u.rd = s₀.rd := by rw [I.eq]
+  obtain hwr : u.wr = s₀.wr := by rw [I.eq]
+  obtain W : KeyWordEnv S K L i u := by
     refine ⟨hi, E.L0, E.L64, E.key.of_eq hrd hwr,
       (I.gpr _ (by decide) (by decide) (by decide) (by decide)).trans E.rdi,
       (I.gpr _ (by decide) (by decide) (by decide) (by decide)).trans E.rsi,
       (I.gpr _ (by decide) (by decide) (by decide) (by decide)).trans E.rdx, I.r10, I.r8, ?_⟩
     rw [hwr]; exact E.wrS _ _ (by omega_using [hi])
   refine WP.mono (keyWord_run W) fun u' ⟨m', r10', r8', z', g', e'⟩ => ⟨?_, z'⟩
-  have hT : u.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 =
+  obtain hT : u.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 =
       s₀.mem.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 :=
     I.frame.readW (r := ⟨S + BitVec.ofNat 64 (4096 + 4 * i), 4⟩) (Region.contains_self _ _)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint S (.inr (by omega_using [])) (by omega_using [hi]) (by omega_using [hi])) (by decide)
-  have hB : bytesAt u.mem K L = bytesAt s₀.mem K L :=
+  obtain hB : bytesAt u.mem K L = bytesAt s₀.mem K L :=
     bytesAt_frame I.frame fun c hc r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
       exact E.keyS c hc (Offset.sub_base S (d := 4096) (n := 4 * i) (k := 4168) (by omega_using [hi]) _ hcon)
@@ -441,7 +441,7 @@ theorem keyP_run {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀) 
   let s₁ := (s₀.setReg32 .r10 0).setReg32 .r8 0
   refine WP.of_runBlock ⟨s₁, by
     rw [runBlock_cons, exec_mov32_imm, runStep_some, runBlock_cons, exec_mov32_imm, runStep_some, runBlock_nil], ?_⟩
-  have I₀ : KeyPInv S K L s₀ 0 s₁ := by
+  obtain I₀ : KeyPInv S K L s₀ 0 s₁ := by
     refine ⟨by omega_using [], ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun g _ h2 h3 _ => ?_, ?_⟩
     · simp only [s₁, State.setReg32, gpr_setReg_of_ne _ _ (show Reg.r10 ≠ Reg.r8 by decide), gpr_setReg_self]
       rfl
@@ -452,7 +452,7 @@ theorem keyP_run {S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv S K L s₀) 
     ?_ 18 s₁ ⟨0, by omega_using [], rfl, I₀⟩
   intro m u ⟨i, hi, hm, I⟩
   refine WP.mono (keyP_step E hi I) fun u' ⟨I', z'⟩ => ?_
-  have ev : isa.eval .ne u' = some (!(4 * (i + 1) == 72)) := by
+  obtain ev : isa.eval .ne u' = some (!(4 * (i + 1) == 72)) := by
     show u'.zf.map (!·) = _; rw [z']; rfl
   by_cases h : i + 1 = 18
   · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩

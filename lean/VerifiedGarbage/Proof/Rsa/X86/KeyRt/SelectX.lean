@@ -55,33 +55,33 @@ theorem select3Loop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
     ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hebx, by simpa using hedi, by simpa using hedx,
       Outside.refl _ _ _ _, by cases k <;> rfl⟩) fun u ⟨K, _, _, _, _, O, V⟩ => ⟨O, V, K⟩
   rintro j t hj ⟨Kt, ebp, ebx, edi, edx, O, V⟩
-  have ht := hw.of_keeps Kt
-  have ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
-  have xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
+  obtain ht := hw.of_keeps Kt
+  obtain ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
+  obtain xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
     O.w32 (by omega_using [hdx, hj]) (by omega_using [hx, hj, hn])
-  have yw : w32 t.mem W (y + 4 * j) = w32 t₀.mem W (y + 4 * j) :=
+  obtain yw : w32 t.mem W (y + 4 * j) = w32 t₀.mem W (y + 4 * j) :=
     O.w32 (by omega_using [hdy, hj]) (by omega_using [hy, hj, hn])
   refine wp_movS (readSrc_ptr ht ebp (d := 0) (by omega_using [hx, hj])) fun s₁ u₁ _ => ?_
-  have ht₁ := ht.of_keeps u₁.keeps
-  have ebx₁ : PtrAt s₁ W .ebx (y + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebx
+  obtain ht₁ := ht.of_keeps u₁.keeps
+  obtain ebx₁ : PtrAt s₁ W .ebx (y + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebx
   refine wp_logicS (.inr rfl) (readSrc_ptr ht₁ ebx₁ (d := 0) (by omega_using [hy, hj])) fun s₂ u₂ => ?_
   refine wp_logicS (.inl rfl) rfl fun s₃ u₃ => ?_
-  have K₃ : Keeps [.eax] t s₃ := (u₁.keeps.trans u₂.keeps).trans u₃.keeps
-  have ht₃ := ht.of_keeps K₃
-  have ebp₃ : PtrAt s₃ W .ebp (x + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact ebp
+  obtain K₃ : Keeps [.eax] t s₃ := (u₁.keeps.trans u₂.keeps).trans u₃.keeps
+  obtain ht₃ := ht.of_keeps K₃
+  obtain ebp₃ : PtrAt s₃ W .ebp (x + 4 * j) := by rw [PtrAt, K₃.1 _ (by decide)]; exact ebp
   refine wp_logicS (.inr rfl) (readSrc_ptr ht₃ ebp₃ (d := 0) (by omega_using [hx, hj])) fun s₄ u₄ => ?_
-  have K₄ : Keeps [.eax] t s₄ := K₃.trans u₄.keeps
-  have ht₄ := ht.of_keeps K₄
-  have edi₄ : PtrAt s₄ W .edi (d + 4 * j) := by rw [PtrAt, K₄.1 _ (by decide)]; exact edi
+  obtain K₄ : Keeps [.eax] t s₄ := K₃.trans u₄.keeps
+  obtain ht₄ := ht.of_keeps K₄
+  obtain edi₄ : PtrAt s₄ W .edi (d + 4 * j) := by rw [PtrAt, K₄.1 _ (by decide)]; exact edi
   refine wp_storeS (ea_ptr ht₄ edi₄ (d := 0) (by omega_using [hd, hj]))
     (ws_write ht₄ (y := d + 4 * j + 0) (n := 4) (by omega_using [hd, hj])) fun s₅ m₅ => ?_
   refine wp_addS rfl fun s₆ u₆ _ => wp_addS rfl fun s₇ u₇ _ => wp_addS rfl fun s₈ u₈ _ =>
     wp_subZ rfl fun s₉ u₉ z₉ => WP.block_nil ?_
   obtain ⟨c₁, c₂⟩ := count_zf edx hj
-  have r₅ : ∀ r, r ≠ .eax → s₅.gpr r = t.gpr r := by
+  obtain r₅ : ∀ r, r ≠ .eax → s₅.gpr r = t.gpr r := by
     intro r hr; rw [m₅.gpr]; exact K₄.1 _ (by simp [hr])
-  have mem₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have eax₄ : s₄.gpr .eax = t.mem.readW (off W (x + 4 * j)) 32 ^^^
+  obtain mem₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain eax₄ : s₄.gpr .eax = t.mem.readW (off W (x + 4 * j)) 32 ^^^
       ((t.mem.readW (off W (y + 4 * j)) 32 ^^^ t.mem.readW (off W (x + 4 * j)) 32) &&&
         (if k then BitVec.allOnes 32 else 0)) := by
     rw [u₄.gpr, ite_eq_right (by decide), u₃.gpr, ite_eq_left rfl, u₂.other .ecx (by decide),
@@ -161,7 +161,7 @@ theorem prologue_ok {t₀ : State} {r : Reg} {N : Nat} (k : Bool)
   let s₃ := s₂.setXmm .xmm7 ((0 : BitVec 96) ++ s₂.gpr .ecx)
   let s₄ := s₃.setXmm .xmm7 (shufDwords (s₃.xmm .xmm7) 0)
   refine cons (s' := s₃) rfl (cons (s' := s₄) rfl (WP.block_nil ?_))
-  have ea : (s₂.gpr .eax).toNat = N / 4 := by
+  obtain ea : (s₂.gpr .eax).toNat = N / 4 := by
     rw [u₂.gpr, u₁.gpr, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hr4]
     omega_arith
   refine hQ s₄ (fun r' h => by show s₂.gpr r' = _; rw [u₂.other _ h, u₁.other _ h])
@@ -219,32 +219,32 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
   have hn := hw.nowrap
   unfold selectLoopX
   refine WP.seq (prologue_ok k hedi hecx fun s₄ g₄ m₄ r₄ w₄ ea₄ z₄ hv => ?_)
-  have ws₄ : Ws s₄ W L := ⟨by rw [w₄]; exact hw.wr, hn⟩
+  obtain ws₄ : Ws s₄ W L := ⟨by rw [w₄]; exact hw.wr, hn⟩
   refine WP.seq (WP.mono (guarded_ok ws₄ (k := k) hx hd hdx
     (by rw [PtrAt, g₄ _ (by decide)]; exact hebp) (by rw [PtrAt, g₄ _ (by decide)]; exact hebx) ea₄ z₄ hv)
     fun t ⟨G, R, Wr, pe, pb, O, V⟩ => ?_)
   rw [m₄] at O V
-  have gt : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → t.gpr r = t₀.gpr r := fun r h1 h2 h3 =>
+  obtain gt : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → t.gpr r = t₀.gpr r := fun r h1 h2 h3 =>
     (G r h1 h2 h3).trans (g₄ r h1)
-  have rdt : t.rd = t₀.rd := by rw [R, r₄]
-  have wrt : t.wr = t₀.wr := by rw [Wr, w₄]
+  obtain rdt : t.rd = t₀.rd := by rw [R, r₄]
+  obtain wrt : t.wr = t₀.wr := by rw [Wr, w₄]
   refine WP.seq (wp_andZ rfl fun t₂ a₂ z₂ => WP.block_nil ?_)
-  have e15 : (t.gpr .edi &&& 15).toNat = 4 * (N % 4) := by
+  obtain e15 : (t.gpr .edi &&& 15).toNat = 4 * (N % 4) := by
     rw [BitVec.toNat_and, gt _ (by decide) (by decide) (by decide), hedi,
       show (15 : BitVec 32).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     omega_arith
-  have g₂ : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → t₂.gpr r = t₀.gpr r := fun r h1 h2 h3 h4 =>
+  obtain g₂ : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → t₂.gpr r = t₀.gpr r := fun r h1 h2 h3 h4 =>
     (a₂.other _ h4).trans (gt r h1 h2 h3)
-  have K₂ : Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t₂ := ⟨fun r hr => by
+  obtain K₂ : Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t₂ := ⟨fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     exact g₂ r hr.1 hr.2.1 hr.2.2.2.1 hr.2.2.2.2, by rw [a₂.rd, rdt], by rw [a₂.wr, wrt]⟩
-  have pb₂ : PtrAt t₂ W .ebx (d + 16 * (N / 4)) := by rw [PtrAt, a₂.other _ (by decide)]; exact pb
+  obtain pb₂ : PtrAt t₂ W .ebx (d + 16 * (N / 4)) := by rw [PtrAt, a₂.other _ (by decide)]; exact pb
   by_cases r4 : N % 4 = 0
   · have z : (t.gpr .edi &&& 15 == 0) = true := by
       rw [beq_iff_eq]; exact BitVec.eq_of_toNat_eq (by rw [e15, r4]; rfl)
     refine WP.ite false (by change t₂.zf.map (!·) = _; rw [z₂, z]; rfl) (fun e => nomatch e)
       fun _ => WP.block_nil ?_
-    have e : 4 * (N / 4) = N := by omega_arith
+    obtain e : 4 * (N / 4) = N := by omega_arith
     refine ⟨by rw [a₂.mem]; exact O.mono (Nat.le_refl _) (by omega_arith), by rw [a₂.mem, ← e]; exact V,
       by rw [show d + 4 * N = d + 16 * (N / 4) by omega_arith]; exact pb₂, K₂⟩
   · have z : (t.gpr .edi &&& 15 == 0) = false := by
@@ -253,21 +253,21 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
       rw [e15] at this
       exact r4 (by simp at this; omega_arith)
     refine WP.ite true (by change t₂.zf.map (!·) = _; rw [z₂, z]; rfl) (fun _ => ?_) fun e => nomatch e
-    have ws₂ : Ws t₂ W L := ⟨by rw [a₂.wr, wrt]; exact hw.wr, hn⟩
+    obtain ws₂ : Ws t₂ W L := ⟨by rw [a₂.wr, wrt]; exact hw.wr, hn⟩
     refine WP.mono (selectLoop_ok ws₂ (x := x + 16 * (N / 4)) (d := d + 16 * (N / 4)) (N := N % 4) k
       (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       (by rw [PtrAt, a₂.other _ (by decide)]; exact pe) pb₂ (by rw [a₂.gpr]; exact e15)
       (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hecx))
       fun u ⟨O', V', P', K'⟩ => ?_
     rw [a₂.mem] at O' V'
-    have hN4 : N = 4 * (N / 4) + N % 4 := by omega_arith
+    obtain hN4 : N = 4 * (N / 4) + N % 4 := by omega_arith
     refine ⟨?_, ?_, ?_, K₂.trans K'⟩
     · exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (O'.mono (by omega_arith) (by omega_arith))
     · have Lo : val32 u.mem W d (4 * (N / 4)) = val32 t.mem W d (4 * (N / 4)) :=
         O'.val32 (.inl (by omega_arith)) (by omega_arith)
-      have Xs : val32 t.mem W (x + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (x + 16 * (N / 4)) (N % 4) :=
+      obtain Xs : val32 t.mem W (x + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (x + 16 * (N / 4)) (N % 4) :=
         O.val32 (by omega_arith) (by omega_arith)
-      have Ds : val32 t.mem W (d + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (d + 16 * (N / 4)) (N % 4) :=
+      obtain Ds : val32 t.mem W (d + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (d + 16 * (N / 4)) (N % 4) :=
         O.val32 (.inr (by omega_arith)) (by omega_arith)
       rw [hN4, val32_append, val32_append t₀.mem W x, val32_append t₀.mem W d,
         show d + 4 * (4 * (N / 4)) = d + 16 * (N / 4) by omega_arith,
@@ -294,12 +294,12 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → u.gpr r = t.gpr r) → u.rd = t.rd → u.wr = t.wr →
       u.xmm .xmm7 = t.xmm .xmm7 → WP isa (.block is) u Q) :
     WP isa (.block (chunk3 ++ is)) t Q := by
-  have eb : t.ea (at_ .ebx 0) = off W y := by simpa using ea_ptr hw pb (d := 0) (by omega_arith)
-  have ep : t.ea (at_ .ebp 0) = off W x := by simpa using ea_ptr hw pe (d := 0) (by omega_arith)
-  have ei : t.ea (at_ .edi 0) = off W d := by simpa using ea_ptr hw pi (d := 0) (by omega_arith)
-  have rb : InRegions (t.rd ++ t.wr) (off W y) 16 := ws_read hw hy
-  have rp : InRegions (t.rd ++ t.wr) (off W x) 16 := ws_read hw hx
-  have wi : InRegions t.wr (off W d) 16 := ws_write hw hd
+  obtain eb : t.ea (at_ .ebx 0) = off W y := by simpa using ea_ptr hw pb (d := 0) (by omega_arith)
+  obtain ep : t.ea (at_ .ebp 0) = off W x := by simpa using ea_ptr hw pe (d := 0) (by omega_arith)
+  obtain ei : t.ea (at_ .edi 0) = off W d := by simpa using ea_ptr hw pi (d := 0) (by omega_arith)
+  obtain rb : InRegions (t.rd ++ t.wr) (off W y) 16 := ws_read hw hy
+  obtain rp : InRegions (t.rd ++ t.wr) (off W x) 16 := ws_read hw hx
+  obtain wi : InRegions t.wr (off W d) 16 := ws_write hw hd
   let X := t.mem.readW (off W x) 128
   let Y := t.mem.readW (off W y) 128
   let s₁ := t.setXmm .xmm0 X
@@ -309,19 +309,19 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
   let s₅ := s₄.setXmm .xmm0 (sel128 t.mem W y x (t.xmm .xmm7))
   let s₆ : State := { s₅ with mem := t.mem.writeW (off W d) (sel128 t.mem W y x (t.xmm .xmm7)) }
   -- The frame of the vector writes by their lemmas: unifying the states would unfold them.
-  have g₁ : s₁.gpr = t.gpr := RegUpd.gpr_setXmm _ _ _
-  have r₁ : s₁.rd = t.rd := RegUpd.rd_setXmm _ _ _
-  have w₁ : s₁.wr = t.wr := RegUpd.wr_setXmm _ _ _
-  have g₅ : s₅.gpr = t.gpr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.gpr_setXmm]
-  have w₅ : s₅.wr = t.wr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
-  have m₅ : s₅.mem = t.mem := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.mem_setXmm]
-  have x₅ : s₅.xmm .xmm0 = sel128 t.mem W y x (t.xmm .xmm7) := RegUpd.xmm_setXmm_self _ _ _
-  have r₆ : s₆.rd = t.rd := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.rd_setXmm]
-  have w₆ : s₆.wr = t.wr := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
-  have eb₁ : s₁.ea (at_ .ebx 0) = off W y := by rw [State.ea, g₁]; exact eb
-  have rb₁ : InRegions (s₁.rd ++ s₁.wr) (off W y) 16 := by rw [r₁, w₁]; exact rb
-  have ei₅ : s₅.ea (at_ .edi 0) = off W d := by rw [State.ea, g₅]; exact ei
-  have wi₅ : InRegions s₅.wr (off W d) 16 := by rw [w₅]; exact wi
+  obtain g₁ : s₁.gpr = t.gpr := RegUpd.gpr_setXmm _ _ _
+  obtain r₁ : s₁.rd = t.rd := RegUpd.rd_setXmm _ _ _
+  obtain w₁ : s₁.wr = t.wr := RegUpd.wr_setXmm _ _ _
+  obtain g₅ : s₅.gpr = t.gpr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.gpr_setXmm]
+  obtain w₅ : s₅.wr = t.wr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  obtain m₅ : s₅.mem = t.mem := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.mem_setXmm]
+  obtain x₅ : s₅.xmm .xmm0 = sel128 t.mem W y x (t.xmm .xmm7) := RegUpd.xmm_setXmm_self _ _ _
+  obtain r₆ : s₆.rd = t.rd := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.rd_setXmm]
+  obtain w₆ : s₆.wr = t.wr := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  obtain eb₁ : s₁.ea (at_ .ebx 0) = off W y := by rw [State.ea, g₁]; exact eb
+  obtain rb₁ : InRegions (s₁.rd ++ s₁.wr) (off W y) 16 := by rw [r₁, w₁]; exact rb
+  obtain ei₅ : s₅.ea (at_ .edi 0) = off W d := by rw [State.ea, g₅]; exact ei
+  obtain wi₅ : InRegions s₅.wr (off W d) 16 := by rw [w₅]; exact wi
   simp only [List.cons_append]
   refine cons (s' := s₁) (by simp only [exec, ep, State.load128, rp, ite_true, Option.map_some]; rfl) ?_
   refine cons (s' := s₂) (by
@@ -349,7 +349,7 @@ theorem chunk3_w32 {m : Mem} {W : Addr} {x y d : Nat} {v : BitVec 128} {k : Bool
     (hv : ∀ i < 4, dword v i = cmask k) {i : Nat} (hi : i < 4) :
     w32 (m.writeW (off W d) (sel128 m W y x v)) W (d + 4 * i) =
       if k then w32 m W (y + 4 * i) else w32 m W (x + 4 * i) := by
-  have e : ∀ z, off W (z + 4 * i) = off W z + BitVec.ofNat 64 (4 * i) := fun z => by
+  obtain e : ∀ z, off W (z + 4 * i) = off W z + BitVec.ofNat 64 (4 * i) := fun z => by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   simp only [w32, e, readW_writeW128 _ _ _ hi, sel128, dword_pxor, Lanes.dword_pand, dword_readW _ _ hi, hv i hi]
   rw [select_val]
@@ -387,13 +387,13 @@ theorem chunks3_ok {t₁ : State} {W : Addr} {L x y d N : Nat} (hw : Ws t₁ W L
       by simpa using ea, rfl, Outside.refl _ _ _ _, by cases k <;> rfl⟩)
     fun u ⟨G, R, Wr, P, B, I, _, _, O, V⟩ => ⟨G, R, Wr, P, B, I, O, V⟩
   rintro j t hj ⟨G, R, Wr, pe', pb', pi', ea', x7, O, V⟩
-  have ht : Ws t W L := ⟨by rw [Wr]; exact hw.wr, hn⟩
-  have hv' : ∀ i < 4, dword (t.xmm .xmm7) i = cmask k := fun i hi => by rw [x7]; exact hv i hi
+  obtain ht : Ws t W L := ⟨by rw [Wr]; exact hw.wr, hn⟩
+  obtain hv' : ∀ i < 4, dword (t.xmm .xmm7) i = cmask k := fun i hi => by rw [x7]; exact hv i hi
   rw [← List.append_nil chunk3]
   refine chunk3_ok ht (x := x + 16 * j) (y := y + 16 * j) (d := d + 16 * j) (by omega_arith) (by omega_arith)
     (by omega_arith) pe' pb' pi' fun u mu ebp ebx edi eax zf G' rd wr x7' => WP.block_nil ?_
   obtain ⟨c1, c2⟩ := count1 ea' hj
-  have Ow := writeW128_out t.mem W (sel128 t.mem W (y + 16 * j) (x + 16 * j) (t.xmm .xmm7))
+  obtain Ow := writeW128_out t.mem W (sel128 t.mem W (y + 16 * j) (x + 16 * j) (t.xmm .xmm7))
     (d := d + 16 * j) (by omega_arith)
   refine ⟨⟨fun r h1 h2 h3 h4 => (G' r h1 h2 h3 h4).trans (G r h1 h2 h3 h4), rd.trans R, wr.trans Wr,
     ?_, ?_, ?_, by rw [eax]; exact c1, x7'.trans x7, ?_, ?_⟩, by rw [zf, c2]⟩
@@ -406,10 +406,10 @@ theorem chunks3_ok {t₁ : State} {W : Addr} {L x y d N : Nat} (hw : Ws t₁ W L
   · rw [mu]
     exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (Ow.mono (by omega_arith) (by omega_arith))
   · have Xs : val32 t.mem W (x + 16 * j) 4 = val32 t₁.mem W (x + 16 * j) 4 := O.val32 (by omega_arith) (by omega_arith)
-    have Ys : val32 t.mem W (y + 16 * j) 4 = val32 t₁.mem W (y + 16 * j) 4 := O.val32 (by omega_arith) (by omega_arith)
-    have Lo : val32 (t.mem.writeW (off W (d + 16 * j)) (sel128 t.mem W (y + 16 * j) (x + 16 * j) (t.xmm .xmm7)))
+    obtain Ys : val32 t.mem W (y + 16 * j) 4 = val32 t₁.mem W (y + 16 * j) 4 := O.val32 (by omega_arith) (by omega_arith)
+    obtain Lo : val32 (t.mem.writeW (off W (d + 16 * j)) (sel128 t.mem W (y + 16 * j) (x + 16 * j) (t.xmm .xmm7)))
         W d (4 * j) = val32 t.mem W d (4 * j) := Ow.val32 (.inl (by omega_arith)) (by omega_arith)
-    have Hi := chunk3_val32 (m := t.mem) (W := W) (x := x + 16 * j) (y := y + 16 * j) (d := d + 16 * j) hv'
+    obtain Hi := chunk3_val32 (m := t.mem) (W := W) (x := x + 16 * j) (y := y + 16 * j) (d := d + 16 * j) hv'
     rw [mu, show 4 * (j + 1) = 4 * j + 4 by omega_arith, val32_append, val32_append t₁.mem W x,
       val32_append t₁.mem W y, show d + 4 * (4 * j) = d + 16 * j by omega_arith,
       show x + 4 * (4 * j) = x + 16 * j by omega_arith, show y + 4 * (4 * j) = y + 16 * j by omega_arith, Lo, Hi, V, Xs, Ys]
@@ -427,17 +427,17 @@ theorem select3LoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {
   have hn := hw.nowrap
   unfold select3LoopX
   refine WP.seq (prologue_ok k hedx hecx fun s₄ g₄ m₄ r₄ w₄ ea₄ z₄ hv => ?_)
-  have ws₄ : Ws s₄ W L := ⟨by rw [w₄]; exact hw.wr, hn⟩
+  obtain ws₄ : Ws s₄ W L := ⟨by rw [w₄]; exact hw.wr, hn⟩
   -- The blocks, if any.
-  have mid : WP isa (.ite .ne (.loop (.block chunk3) .ne) (.block [])) s₄ fun u =>
+  obtain mid : WP isa (.ite .ne (.loop (.block chunk3) .ne) (.block [])) s₄ fun u =>
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → u.gpr r = s₄.gpr r) ∧ u.rd = s₄.rd ∧
       u.wr = s₄.wr ∧ PtrAt u W .ebp (x + 16 * (N / 4)) ∧ PtrAt u W .ebx (y + 16 * (N / 4)) ∧
       PtrAt u W .edi (d + 16 * (N / 4)) ∧ Outside W d (16 * (N / 4)) s₄.mem u.mem ∧
       val32 u.mem W d (4 * (N / 4)) =
         if k then val32 s₄.mem W y (4 * (N / 4)) else val32 s₄.mem W x (4 * (N / 4)) := by
-    have pe : PtrAt s₄ W .ebp x := by rw [PtrAt, g₄ _ (by decide)]; exact hebp
-    have pb : PtrAt s₄ W .ebx y := by rw [PtrAt, g₄ _ (by decide)]; exact hebx
-    have pi : PtrAt s₄ W .edi d := by rw [PtrAt, g₄ _ (by decide)]; exact hedi
+    obtain pe : PtrAt s₄ W .ebp x := by rw [PtrAt, g₄ _ (by decide)]; exact hebp
+    obtain pb : PtrAt s₄ W .ebx y := by rw [PtrAt, g₄ _ (by decide)]; exact hebx
+    obtain pi : PtrAt s₄ W .edi d := by rw [PtrAt, g₄ _ (by decide)]; exact hedi
     by_cases e : N / 4 = 0
     · refine WP.ite false (by change s₄.zf.map (!·) = _; rw [z₄, e]; rfl) (fun h => nomatch h)
         fun _ => WP.block_nil ?_
@@ -448,18 +448,18 @@ theorem select3LoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {
         (fun _ => chunks3_ok ws₄ (by omega_arith) hx hy hd hdx hdy pe pb pi ea₄ hv) fun h => nomatch h
   refine WP.seq (WP.mono mid fun t ⟨G, R, Wr, pe, pb, pi, O, V⟩ => ?_)
   rw [m₄] at O V
-  have gt : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → t.gpr r = t₀.gpr r := fun r h1 h2 h3 h4 =>
+  obtain gt : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → t.gpr r = t₀.gpr r := fun r h1 h2 h3 h4 =>
     (G r h1 h2 h3 h4).trans (g₄ r h1)
-  have rdt : t.rd = t₀.rd := by rw [R, r₄]
-  have wrt : t.wr = t₀.wr := by rw [Wr, w₄]
+  obtain rdt : t.rd = t₀.rd := by rw [R, r₄]
+  obtain wrt : t.wr = t₀.wr := by rw [Wr, w₄]
   refine WP.seq (wp_andZ rfl fun t₂ a₂ z₂ => WP.block_nil ?_)
-  have e15 : (t.gpr .edx &&& 15).toNat = 4 * (N % 4) := by
+  obtain e15 : (t.gpr .edx &&& 15).toNat = 4 * (N % 4) := by
     rw [BitVec.toNat_and, gt _ (by decide) (by decide) (by decide) (by decide), hedx,
       show (15 : BitVec 32).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     omega_arith
-  have g₂ : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → r ≠ .edx → t₂.gpr r = t₀.gpr r :=
+  obtain g₂ : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ebp → r ≠ .edi → r ≠ .edx → t₂.gpr r = t₀.gpr r :=
     fun r h1 h2 h3 h4 h5 => (a₂.other _ h5).trans (gt r h1 h2 h3 h4)
-  have K₂ : Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t₂ := ⟨fun r hr => by
+  obtain K₂ : Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t₂ := ⟨fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     exact g₂ r hr.1 hr.2.1 hr.2.2.2.1 hr.2.2.2.2 hr.2.2.1, by rw [a₂.rd, rdt], by rw [a₂.wr, wrt]⟩
   by_cases r4 : N % 4 = 0
@@ -467,7 +467,7 @@ theorem select3LoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {
       rw [beq_iff_eq]; exact BitVec.eq_of_toNat_eq (by rw [e15, r4]; rfl)
     refine WP.ite false (by change t₂.zf.map (!·) = _; rw [z₂, z]; rfl) (fun e => nomatch e)
       fun _ => WP.block_nil ?_
-    have e : 4 * (N / 4) = N := by omega_arith
+    obtain e : 4 * (N / 4) = N := by omega_arith
     exact ⟨by rw [a₂.mem]; exact O.mono (Nat.le_refl _) (by omega_arith), by rw [a₂.mem, ← e]; exact V, K₂⟩
   · have z : (t.gpr .edx &&& 15 == 0) = false := by
       rw [beq_eq_false_iff_ne]; intro h
@@ -475,7 +475,7 @@ theorem select3LoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {
       rw [e15] at this
       exact r4 (by simp at this; omega_arith)
     refine WP.ite true (by change t₂.zf.map (!·) = _; rw [z₂, z]; rfl) (fun _ => ?_) fun e => nomatch e
-    have ws₂ : Ws t₂ W L := ⟨by rw [a₂.wr, wrt]; exact hw.wr, hn⟩
+    obtain ws₂ : Ws t₂ W L := ⟨by rw [a₂.wr, wrt]; exact hw.wr, hn⟩
     refine WP.mono (select3Loop_ok ws₂ (x := x + 16 * (N / 4)) (y := y + 16 * (N / 4))
       (d := d + 16 * (N / 4)) (N := N % 4) k (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       (by rw [PtrAt, a₂.other _ (by decide)]; exact pe) (by rw [PtrAt, a₂.other _ (by decide)]; exact pb)
@@ -483,14 +483,14 @@ theorem select3LoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {
       (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hecx))
       fun u ⟨O', V', K'⟩ => ?_
     rw [a₂.mem] at O' V'
-    have hN4 : N = 4 * (N / 4) + N % 4 := by omega_arith
+    obtain hN4 : N = 4 * (N / 4) + N % 4 := by omega_arith
     refine ⟨?_, ?_, K₂.trans K'⟩
     · exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (O'.mono (by omega_arith) (by omega_arith))
     · have Lo : val32 u.mem W d (4 * (N / 4)) = val32 t.mem W d (4 * (N / 4)) :=
         O'.val32 (.inl (by omega_arith)) (by omega_arith)
-      have Xs : val32 t.mem W (x + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (x + 16 * (N / 4)) (N % 4) :=
+      obtain Xs : val32 t.mem W (x + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (x + 16 * (N / 4)) (N % 4) :=
         O.val32 (by omega_arith) (by omega_arith)
-      have Ys : val32 t.mem W (y + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (y + 16 * (N / 4)) (N % 4) :=
+      obtain Ys : val32 t.mem W (y + 16 * (N / 4)) (N % 4) = val32 t₀.mem W (y + 16 * (N / 4)) (N % 4) :=
         O.val32 (by omega_arith) (by omega_arith)
       rw [hN4, val32_append, val32_append t₀.mem W x, val32_append t₀.mem W y,
         show d + 4 * (4 * (N / 4)) = d + 16 * (N / 4) by omega_arith,

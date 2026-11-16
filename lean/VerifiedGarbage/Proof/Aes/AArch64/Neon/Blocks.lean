@@ -140,10 +140,10 @@ theorem keyWord_ok {s : State} {a : Addr} {j : Nat} (hj : j < 8) (ha : s.gpr .x7
   let t := s.setV .v1 (s.v .v0 &&& s.v (B j))
   let u := t.setV .v1 (VArr.b16.map2 (fun w a b => if a = b then BitVec.allOnes w else 0)
     (t.v .v1) (t.v (B j)))
-  have hu : u.v .v1 = plane (s.v .v0) j := by
+  obtain hu : u.v .v1 = plane (s.v .v0) j := by
     simp only [u, t]
     rw [v_setV_self, v_setV_self, v_setV_of_ne _ _ (B_ne j hj).2, hmask, cmeq_plane _ hj]
-  have hst : exec (.strq .v1 .x7 (16 * j)) u =
+  obtain hst : exec (.strq .v1 .x7 (16 * j)) u =
       some { u with mem := u.mem.writeW (vAddr a j) (u.v .v1) } := by
     have hin' : InRegions u.wr (vAddr a j) 16 := hin
     have ha' : u.gpr .x7 = a := ha
@@ -172,7 +172,7 @@ theorem keyWords_ok (k : Nat) (hk : k ≤ 8) {s : State} {a : Addr} (ha : s.gpr 
       rfl, rfl, rfl, rfl⟩
   | succ k ih =>
     obtain ⟨t, ht, tm, tf, tv, tg, trd, twr, tsp⟩ := ih (by omega_using [hk])
-    have hk8 : k < 8 := by omega_using [hk]
+    obtain hk8 : k < 8 := by omega_using [hk]
     obtain ⟨u, hu, um, uv, ug, urd, uwr, usp⟩ := keyWord_ok (s := t) (a := a) hk8 (by rw [tg]; exact ha)
       (by rw [tv _ (B_ne k hk8).2]; exact hmask k hk8) (by rw [twr]; exact hin k hk8)
     rw [range_flatMap_succ]
@@ -205,13 +205,13 @@ theorem keyBody_ok {s : State} {S b : Addr} {j : Nat} (hS : (⟨S, 240⟩ : Regi
       s'.wr = s.wr ∧ s'.sp = s.sp := by
   obtain ⟨L, hL, _, hb⟩ := hb
   -- The load.
-  have hin0 : InRegions (s.rd ++ s.wr) (vAddr (s.gpr .x0) 0) 16 :=
+  obtain hin0 : InRegions (s.rd ++ s.wr) (vAddr (s.gpr .x0) 0) 16 :=
     ⟨⟨S, 240⟩, List.mem_append_left _ hS, by
       rw [h0, key_addr]; exact Offset.contains_base S (by omega_using [hj]) (by omega_using [hj])⟩
   let t := s.setV .v0 (s.mem.readW (vAddr (s.gpr .x0) 0) 128)
-  have ht : exec (.ldrq .v0 .x0 (16 * 0)) s = some t := by
+  obtain ht : exec (.ldrq .v0 .x0 (16 * 0)) s = some t := by
     simp [exec, addr_slot (show 16 * 0 < 65536 by decide), State.load, hin0, read16_readW, t]
-  have tv0 : t.v .v0 = s.mem.readW (S + BitVec.ofNat 64 (16 * j)) 128 := by
+  obtain tv0 : t.v .v0 = s.mem.readW (S + BitVec.ofNat 64 (16 * j)) 128 := by
     simp only [t]
     rw [v_setV_self, h0, key_addr, Nat.mul_zero, Nat.add_zero]
   -- The words.
@@ -226,12 +226,12 @@ theorem keyBody_ok {s : State} {S b : Addr} {j : Nat} (hS : (⟨S, 240⟩ : Regi
   -- The steps.
   let w := ((u.write .x .x0 (u.read .x .x0 + BitVec.ofNat 64 16)).write .x .x7
     ((u.write .x .x0 (u.read .x .x0 + BitVec.ofNat 64 16)).read .x .x7 + BitVec.ofNat 64 128))
-  have hw : runBlock isa ([.addImm .x .x0 .x0 16, .addImm .x .x7 .x7 128, .subImm .x kp kp 1] :
+  obtain hw : runBlock isa ([.addImm .x .x0 .x0 16, .addImm .x .x7 .x7 128, .subImm .x kp kp 1] :
       List Instr) u = some (w.write .x kp (w.read .x kp - BitVec.ofNat 64 1)) := by
     rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
       exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_subImm_x (by decide),
       runStep_some, runBlock_nil]
-  have ug' : ∀ g, u.gpr g = s.gpr g := fun g => by rw [ug]; rfl
+  obtain ug' : ∀ g, u.gpr g = s.gpr g := fun g => by rw [ug]; rfl
   refine ⟨_, runBlock_cat_some (runBlock_cat_some (a := [.ldrq .v0 .x0 0]) (by
       rw [runBlock_cons, show (Instr.ldrq .v0 .x0 0) = .ldrq .v0 .x0 (16 * 0) from rfl, ht,
         runStep_some, runBlock_nil]) hu) hw, ?_, ?_, ?_, fun g g0 g7 gk => ?_, fun i hi => ?_,
@@ -290,10 +290,10 @@ theorem keyLoop_ok {s₂ : State} {S b : Addr} {R : Nat} {w : List Byte}
     keyBody_ok (S := S) (b := b) (j := j) (by rw [hk.rd]; exact hS) (by rw [hk.wr]; exact hb) hk.hx0
       hk.hx7 (by omega_using [hj, hR]) hk.mask
   refine WP.of_runBlock ⟨s', hs', ?_⟩
-  have hkp : s'.gpr kp = BitVec.ofNat 64 (R - j) := by
+  obtain hkp : s'.gpr kp = BitVec.ofNat 64 (R - j) := by
     rw [kp', hk.hkp, Offset.ofNat_sub_ofNat (by omega_using [hj]),
       show R + 1 - j - 1 = R - j by omega_using [hj]]
-  have inv' : KInv s₂ S b R w (j + 1) s' :=
+  obtain inv' : KInv s₂ S b R w (j + 1) s' :=
     { hx0 := x0'
       hx7 := x7'
       hkp := by rw [hkp, show R + 1 - (j + 1) = R - j by omega_using []]
@@ -305,9 +305,9 @@ theorem keyLoop_ok {s₂ : State} {S b : Addr} {R : Nat} {w : List Byte}
       keys := fun i hi => by
         by_cases hij : i = j
         · subst hij
-          have hkey : KeyIs (s₂.mem.readW (S + BitVec.ofNat 64 (16 * i)) 128) (roundKey w i) := by
+          obtain hkey : KeyIs (s₂.mem.readW (S + BitVec.ofNat 64 (16 * i)) 128) (roundKey w i) := by
             rw [hw]; exact keyIs_readW _ _ (by omega_using [hj])
-          have hrd : s.mem.readW (S + BitVec.ofNat 64 (16 * i)) 128 =
+          obtain hrd : s.mem.readW (S + BitVec.ofNat 64 (16 * i)) 128 =
               s₂.mem.readW (S + BitVec.ofNat 64 (16 * i)) 128 :=
             hk.frame.readW (r := ⟨S, 240⟩)
               (Offset.contains_base S (by omega_using [hj, hR]) (by omega_using [hj, hR]))
@@ -315,7 +315,7 @@ theorem keyLoop_ok {s₂ : State} {S b : Addr} {R : Nat} {w : List Byte}
           exact keyRel_congr (keyRel_plane hkey) fun k hk8 => by rw [keyj k hk8, hrd]
         · have hlt : i < j := by omega_using [hi, hij]
           refine keyRel_congr (hk.keys i hlt) fun k hk8 => ?_
-          have hc : (⟨b + BitVec.ofNat 64 (128 + 128 * i), 128⟩ : Region).Contains
+          obtain hc : (⟨b + BitVec.ofNat 64 (128 + 128 * i), 128⟩ : Region).Contains
               (vAddr (b + BitVec.ofNat 64 (128 + 128 * i)) k) (128 / 8) := by
             rw [key_addr]
             exact Offset.contains b (by omega_using []) (by omega_using [hk8]) (by omega_using [hlt, hj, hR])
@@ -326,7 +326,7 @@ theorem keyLoop_ok {s₂ : State} {S b : Addr} {R : Nat} {w : List Byte}
       frame := hk.frame.trans (fr'.sub fun r hr => ⟨⟨b, 2048⟩, by simp, by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.sub_base b (by omega_using [hj, hR])⟩) }
-  have hz := eval_nz hkp (by omega_using [hR])
+  obtain hz := eval_nz hkp (by omega_using [hR])
   by_cases hlast : j = R
   · subst hlast
     exact .inl ⟨hz.trans (by simp), inv'⟩
@@ -360,7 +360,7 @@ theorem loadFrom_wp (fuel : Nat) : ∀ (k : Nat), k + fuel = 7 → ∀ {s : Stat
   induction fuel with
   | zero =>
     intro k hk s c P h4 hkc hc hin hP
-    have hk7 : k = 7 := by omega_using [hk]
+    obtain hk7 : k = 7 := by omega_using [hk]
     subst hk7
     simp only [loadFrom]
     refine WP.of_runBlock ⟨s.setV (A 7) (s.mem.readW (vAddr (s.gpr .x3) 7) 128), by
@@ -371,18 +371,18 @@ theorem loadFrom_wp (fuel : Nat) : ∀ (k : Nat), k + fuel = 7 → ∀ {s : Stat
     · exact v_setV_of_ne _ _ (hr 7 (Nat.le_refl _) (by decide))
   | succ fuel ih =>
     intro k hk s c P h4 hkc hc hin hP
-    have hk8 : k < 8 := by omega_using [hk]
+    obtain hk8 : k < 8 := by omega_using [hk]
     simp only [loadFrom]
     let u := s.setV (A k) (s.mem.readW (vAddr (s.gpr .x3) k) 128)
     let t := u.write .x .x6 (u.read .x .x4 - BitVec.ofNat 64 (k + 1))
-    have ht : runBlock isa [.ldrq (A k) .x3 (16 * k), .subImm .x .x6 .x4 (k + 1)] s = some t := by
+    obtain ht : runBlock isa [.ldrq (A k) .x3 (16 * k), .subImm .x .x6 .x4 (k + 1)] s = some t := by
       rw [runBlock_cons, ldrq_ok (by omega_using [hk8]) (hin k hk8 hkc), runStep_some, runBlock_cons,
         exec_subImm_x (by omega_using [hk8]), runStep_some, runBlock_nil]
-    have tg : ∀ g, g ≠ .x6 → t.gpr g = s.gpr g := fun g hg => by
+    obtain tg : ∀ g, g ≠ .x6 → t.gpr g = s.gpr g := fun g hg => by
       show (if g = Reg.x6 then _ else s.gpr g) = _
       rw [ite_eq_right hg]
-    have t6 : t.gpr .x6 = BitVec.ofNat 64 (c - (k + 1)) := by
-      have e : t.gpr .x6 = s.gpr .x4 - BitVec.ofNat 64 (k + 1) := by
+    obtain t6 : t.gpr .x6 = BitVec.ofNat 64 (c - (k + 1)) := by
+      obtain e : t.gpr .x6 = s.gpr .x4 - BitVec.ofNat 64 (k + 1) := by
         simp [t, u, State.write, State.read, State.setV]
       rw [e, h4, Offset.ofNat_sub_ofNat (by omega_using [hkc])]
     refine WP.seq (WP.of_runBlock ⟨t, ht, ?_⟩)
@@ -462,10 +462,10 @@ theorem storeFrom_wp (fuel : Nat) : ∀ (k : Nat), k + fuel = 7 → ∀ {s : Sta
   induction fuel with
   | zero =>
     intro k hk s m₀ D n g F P h3 h4 hkn hn hwr hinv hv hP
-    have hk7 : k = 7 := by omega_using [hk]
+    obtain hk7 : k = 7 := by omega_using [hk]
     subst hk7
     simp only [storeFrom]
-    have hin : InRegions s.wr (vAddr (s.gpr .x3) 7) 16 := ⟨⟨D, 16 * n⟩, hwr, by
+    obtain hin : InRegions s.wr (vAddr (s.gpr .x3) 7) 16 := ⟨⟨D, 16 * n⟩, hwr, by
       rw [h3, blk_addr]
       exact Offset.contains_base D (by omega_using [hkn]) (by omega_using [hkn, hn])⟩
     obtain ⟨hi', hf'⟩ := ecbInv_stepQ (v := s.v (B 7)) (by omega_using [hn]) hkn hinv
@@ -480,29 +480,29 @@ theorem storeFrom_wp (fuel : Nat) : ∀ (k : Nat), k + fuel = 7 → ∀ {s : Sta
       rw [h3, blk_addr]; exact hf'
   | succ fuel ih =>
     intro k hk s m₀ D n g F P h3 h4 hkn hn hwr hinv hv hP
-    have hk8 : k < 8 := by omega_using [hk]
+    obtain hk8 : k < 8 := by omega_using [hk]
     simp only [storeFrom]
-    have hin : InRegions s.wr (vAddr (s.gpr .x3) k) 16 := ⟨⟨D, 16 * n⟩, hwr, by
+    obtain hin : InRegions s.wr (vAddr (s.gpr .x3) k) 16 := ⟨⟨D, 16 * n⟩, hwr, by
       rw [h3, blk_addr]
       exact Offset.contains_base D (by omega_using [hkn]) (by omega_using [hkn, hn])⟩
     obtain ⟨hi', hf'⟩ := ecbInv_stepQ (v := s.v (B k)) (by omega_using [hn]) hkn hinv
       (hv k hk8 hkn)
     let u : State := { s with mem := s.mem.writeW (vAddr (s.gpr .x3) k) (s.v (B k)) }
     let t := u.write .x .x6 (u.read .x .x4 - BitVec.ofNat 64 (k + 1))
-    have ht : runBlock isa [.strq (B k) .x3 (16 * k), .subImm .x .x6 .x4 (k + 1)] s = some t := by
+    obtain ht : runBlock isa [.strq (B k) .x3 (16 * k), .subImm .x .x6 .x4 (k + 1)] s = some t := by
       rw [runBlock_cons, strq_ok (by omega_using [hk8]) hin, runStep_some, runBlock_cons,
         exec_subImm_x (by omega_using [hk8]), runStep_some, runBlock_nil]
-    have tg : ∀ r, r ≠ .x6 → t.gpr r = s.gpr r := fun r hr => by
+    obtain tg : ∀ r, r ≠ .x6 → t.gpr r = s.gpr r := fun r hr => by
       show (if r = Reg.x6 then _ else s.gpr r) = _
       rw [ite_eq_right hr]
-    have t6 : t.gpr .x6 = BitVec.ofNat 64 (n - 8 * g - (k + 1)) := by
-      have e : t.gpr .x6 = s.gpr .x4 - BitVec.ofNat 64 (k + 1) := by
+    obtain t6 : t.gpr .x6 = BitVec.ofNat 64 (n - 8 * g - (k + 1)) := by
+      obtain e : t.gpr .x6 = s.gpr .x4 - BitVec.ofNat 64 (k + 1) := by
         simp [t, u, State.write, State.read]
       rw [e, h4, Offset.ofNat_sub_ofNat (by omega_using [hkn])]
-    have tm : EcbInv m₀ t.mem D n (8 * g + k + 1) F := by
+    obtain tm : EcbInv m₀ t.mem D n (8 * g + k + 1) F := by
       show EcbInv m₀ (s.mem.writeW (vAddr (s.gpr .x3) k) (s.v (B k))) D n _ F
       rw [h3, blk_addr]; exact hi'
-    have tf : Frame [⟨D, 16 * n⟩] s.mem t.mem := by
+    obtain tf : Frame [⟨D, 16 * n⟩] s.mem t.mem := by
       show Frame _ s.mem (s.mem.writeW (vAddr (s.gpr .x3) k) (s.v (B k)))
       rw [h3, blk_addr]; exact hf'
     refine WP.seq (WP.of_runBlock ⟨t, ht, ?_⟩)
@@ -549,16 +549,16 @@ theorem advance_wp {s : State} {c : Nat} (h4 : s.gpr .x4 = BitVec.ofNat 64 c) (h
   unfold advance
   let u := s.write .x .x6 (s.read .x .x4 - BitVec.ofNat 64 1)
   let t := u.write .x .x6 (u.read .x .x6 >>> 3)
-  have ht : runBlock isa [.subImm .x .x6 .x4 1, .lsr .x .x6 .x6 3] s = some t := by
+  obtain ht : runBlock isa [.subImm .x .x6 .x4 1, .lsr .x .x6 .x6 3] s = some t := by
     rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons,
       exec_lsr_x (by decide), runStep_some, runBlock_nil]
-  have tg : ∀ r, r ≠ .x6 → t.gpr r = s.gpr r := fun r hr => by
+  obtain tg : ∀ r, r ≠ .x6 → t.gpr r = s.gpr r := fun r hr => by
     simp [t, u, State.write, hr]
-  have t6 : t.gpr .x6 = BitVec.ofNat 64 (c - 1) >>> 3 := by
-    have e : t.gpr .x6 = (s.gpr .x4 - BitVec.ofNat 64 1) >>> 3 := by
+  obtain t6 : t.gpr .x6 = BitVec.ofNat 64 (c - 1) >>> 3 := by
+    obtain e : t.gpr .x6 = (s.gpr .x4 - BitVec.ofNat 64 1) >>> 3 := by
       simp [t, u, State.write, State.read]
     rw [e, h4, Offset.ofNat_sub_ofNat (by omega_using [hc])]
-  have hev : AArch64.eval (.nonzero .x .x6) t = some (decide (8 ≤ c - 1)) := by
+  obtain hev : AArch64.eval (.nonzero .x .x6) t = some (decide (8 ≤ c - 1)) := by
     simp only [AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq, t6,
       shr3_ne _ (show c - 1 < 2 ^ 64 by omega_using [hc64])]
   refine WP.seq (WP.of_runBlock ⟨t, ht, ?_⟩)
@@ -662,7 +662,7 @@ theorem group_ok (hcr : CryptOk crypt8 f) (hscr : (⟨b, 2048⟩ : Region) ∈ w
     WP isa (group crypt8) s fun s' =>
       (AArch64.eval (.nonzero .x .x4) s' = some false ∧ GDone f m₀ D n R w rd wr sp s') ∨
       (AArch64.eval (.nonzero .x .x4) s' = some true ∧ GInv f m₀ b D n R w rd wr sp (g + 1) s') := by
-  have hR14 : R ≤ 14 := by rcases hR with h | h | h <;> omega_using [h]
+  obtain hR14 : R ≤ 14 := by rcases hR with h | h | h <;> omega_using [h]
   have hg := hi.hg
   unfold group
   -- The loads.
@@ -672,30 +672,30 @@ theorem group_ok (hcr : CryptOk crypt8 f) (hscr : (⟨b, 2048⟩ : Region) ∈ w
       exact Offset.contains_base D (by omega_using [hic]) (by omega_using [hic, n16])⟩)
     fun s₁ hv₁ _ hg₁ hm₁ hrd₁ hwr₁ hsp₁ => ?_)
   -- The transformation.
-  have hb₁ : s₁.gpr sb = b := (hg₁ sb (by decide)).trans hi.hx5
-  have hp : EncPre s₁ R w :=
+  obtain hb₁ : s₁.gpr sb = b := (hg₁ sb (by decide)).trans hi.hx5
+  obtain hp : EncPre s₁ R w :=
     ⟨by rw [hb₁, hwr₁, hi.hwr]; exact .of_mem hscr, hR, (hg₁ .x1 (by decide)).trans hi.hx1,
       by rw [hm₁, hb₁]; exact hi.keys⟩
   refine WP.seq (WP.mono (hcr hp (inRel_st (QA s₁))) fun s₂ h₂ => ?_)
   obtain ⟨hc₂, hin₂⟩ := h₂
-  have keep₂ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → s₂.gpr r = s.gpr r :=
+  obtain keep₂ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → s₂.gpr r = s.gpr r :=
     fun r h6 h7 hk hc => (hc₂.keep r h6 h7 hk hc).trans (hg₁ r h6)
-  have hx3₂ : s₂.gpr .x3 = D + BitVec.ofNat 64 (16 * (8 * g)) :=
+  obtain hx3₂ : s₂.gpr .x3 = D + BitVec.ofNat 64 (16 * (8 * g)) :=
     (keep₂ .x3 (by decide) (by decide) (by decide) (by decide)).trans hi.hx3
-  have hx4₂ : s₂.gpr .x4 = BitVec.ofNat 64 (n - 8 * g) :=
+  obtain hx4₂ : s₂.gpr .x4 = BitVec.ofNat 64 (n - 8 * g) :=
     (keep₂ .x4 (by decide) (by decide) (by decide) (by decide)).trans hi.hx4
-  have fr₂ : Frame [⟨b, 96⟩] s.mem s₂.mem := by
+  obtain fr₂ : Frame [⟨b, 96⟩] s.mem s₂.mem := by
     have := hc₂.frame
     rwa [hb₁, hm₁] at this
-  have dis96 : ∀ r ∈ [(⟨b, 96⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
+  obtain dis96 : ∀ r ∈ [(⟨b, 96⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hdis.sub_right (Region.sub_prefix (by omega_using []))
-  have data₂ : EcbInv m₀ s₂.mem D n (8 * g) (ecbOut f m₀ D R w) :=
+  obtain data₂ : EcbInv m₀ s₂.mem D n (8 * g) (ecbOut f m₀ D R w) :=
     ecbInv_frame fr₂ dis96 n16 hi.data
-  have hv₂ : ∀ i < 8, 8 * g + i < n → ∀ t < 16,
+  obtain hv₂ : ∀ i < 8, 8 * g + i < n → ∀ t < 16,
       vbyte (s₂.v (B i)) t = (ecbOut f m₀ D R w (8 * g + i)).getD t 0 := by
     intro i hi8 hin t ht
-    have hst : st (s₁.v (A i)) = Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * (8 * g + i))) := by
+    obtain hst : st (s₁.v (A i)) = Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * (8 * g + i))) := by
       rw [hv₁ i (Nat.zero_le _) hi8 (by omega_using [hin]), hi.hx3, blk_addr, st_readW]
       exact ecbInv_orig hi.data (by omega_using []) hin
     rw [vbyte_of_inRel hin₂ hi8 ht]
@@ -708,15 +708,15 @@ theorem group_ok (hcr : CryptOk crypt8 f) (hscr : (⟨b, 2048⟩ : Region) ∈ w
   -- On to the next group.
   refine advance_wp (c := n - 8 * g) ((hg₃ .x4 (by decide)).trans hx4₂) (by omega_using [hg])
     (by omega_using [n16]) fun s₄ hmore hlast hg₄ _ hm₄ hrd₄ hwr₄ hsp₄ => ?_
-  have rd₄ : s₄.rd = rd := by rw [hrd₄, hrd₃, hc₂.rd, hrd₁, hi.hrd]
-  have wr₄ : s₄.wr = wr := by rw [hwr₄, hwr₃, hc₂.wr, hwr₁, hi.hwr]
-  have sp₄ : s₄.sp = sp := by rw [hsp₄, hsp₃, hc₂.sp, hsp₁, hi.hsp]
+  obtain rd₄ : s₄.rd = rd := by rw [hrd₄, hrd₃, hc₂.rd, hrd₁, hi.hrd]
+  obtain wr₄ : s₄.wr = wr := by rw [hwr₄, hwr₃, hc₂.wr, hwr₁, hi.hwr]
+  obtain sp₄ : s₄.sp = sp := by rw [hsp₄, hsp₃, hc₂.sp, hsp₁, hi.hsp]
   by_cases h8 : 8 < n - 8 * g
   · obtain ⟨x3₄, x4₄⟩ := hmore h8
-    have keep₄ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → r ≠ .x3 → r ≠ .x4 →
+    obtain keep₄ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → r ≠ cnt → r ≠ .x3 → r ≠ .x4 →
         s₄.gpr r = s.gpr r := fun r h6 h7 hk hc h3 h4 =>
       (hg₄ r h6 h3 h4).trans ((hg₃ r h6).trans (keep₂ r h6 h7 hk hc))
-    have keys₄ : KeysAt s₄.mem b R w := by
+    obtain keys₄ : KeysAt s₄.mem b R w := by
       rw [hm₄]
       refine keysAt_frame hR14 hf₃ (fun r hr => ?_) (keysAt_frame hR14 fr₂ (fun r hr => ?_) hi.keys)
       · simp only [List.mem_singleton] at hr; subst hr
@@ -770,16 +770,16 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     (hcr : CryptOk crypt8 f) {s₀ : State} (hp : (Proof.Aes.blocksAArch64 f).pre s₀) :
     WP isa (blocks crypt8) s₀ fun s' => (Proof.Aes.blocksAArch64 f).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, hwrap, hR⟩ := hp
-  have hwD : (⟨s₀.gpr .x2, 16 * (s₀.gpr .x3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : (⟨s₀.gpr .x4, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hrS : (⟨s₀.gpr .x0, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  obtain hwD : (⟨s₀.gpr .x2, 16 * (s₀.gpr .x3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hwS : (⟨s₀.gpr .x4, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hrS : (⟨s₀.gpr .x0, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   let n := (s₀.gpr .x3).toNat
-  have n16 : 16 * n < 2 ^ 64 := by
+  obtain n16 : 16 * n < 2 ^ 64 := by
     refine Nat.lt_of_not_le fun hc => dDS (s₀.gpr .x4) ?_ (by simp [Region.Contains])
     simp only [Region.Contains]
     have := (s₀.gpr .x4 - s₀.gpr .x2).isLt
     omega_using [hc, this]
-  have hR14 : (s₀.gpr .x1).toNat ≤ 14 := by rcases hR with h | h | h <;> omega_using [h]
+  obtain hR14 : (s₀.gpr .x1).toNat ≤ 14 := by rcases hR with h | h | h <;> omega_using [h]
   let b := s₀.gpr .x4
   let D := s₀.gpr .x2
   let S := s₀.gpr .x0
@@ -809,18 +809,18 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     refine WP.of_runBlock ⟨s₄, by
       rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
         exec_addImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
-    have g₄ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₄.gpr r = s₁.gpr r := fun r h6 h7 hk => by
+    obtain g₄ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₄.gpr r = s₁.gpr r := fun r h6 h7 hk => by
       simp [s₄, s₃, State.write, h7, hk, g₂ r h6]
-    have x7₄ : s₄.gpr .x7 = b + BitVec.ofNat 64 128 := by
-      have e : s₄.gpr .x7 = s₂.gpr sb + BitVec.ofNat 64 128 := by
+    obtain x7₄ : s₄.gpr .x7 = b + BitVec.ofNat 64 128 := by
+      obtain e : s₄.gpr .x7 = s₂.gpr sb + BitVec.ofNat 64 128 := by
         simp [s₄, s₃, State.write, State.read, kp]
       rw [e, g₂ sb (by decide)]; exact congrArg (· + _) x5₁
-    have kp₄ : s₄.gpr kp = BitVec.ofNat 64 (R + 1) := by
-      have e : s₄.gpr kp = s₂.gpr .x1 + BitVec.ofNat 64 1 := by
+    obtain kp₄ : s₄.gpr kp = BitVec.ofNat 64 (R + 1) := by
+      obtain e : s₄.gpr kp = s₂.gpr .x1 + BitVec.ofNat 64 1 := by
         simp [s₄, s₃, State.write, State.read, kp]
       rw [e, g₂ .x1 (by decide), o₁ .x1 (by decide) (by decide) (by decide), BitVec.ofNat_add,
         BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    have hi₀ : KInv s₄ S b R w 0 s₄ :=
+    obtain hi₀ : KInv s₄ S b R w 0 s₄ :=
       { hx0 := by
           rw [g₄ .x0 (by decide) (by decide) (by decide), o₁ .x0 (by decide) (by decide) (by decide)]
           simp [S]
@@ -833,16 +833,16 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
         sp := rfl
         keys := fun i hi => absurd hi (by omega_using [])
         frame := Frame.refl _ _ }
-    have m₄ : s₄.mem = s₀.mem := m₂.trans m₁
-    have rd₄ : s₄.rd = s₀.rd := rd₂.trans rd₁
-    have wr₄ : s₄.wr = s₀.wr := wr₂.trans wr₁
-    have sp₄ : s₄.sp = s₀.sp := sp₂.trans sp₁
+    obtain m₄ : s₄.mem = s₀.mem := m₂.trans m₁
+    obtain rd₄ : s₄.rd = s₀.rd := rd₂.trans rd₁
+    obtain wr₄ : s₄.wr = s₀.wr := wr₂.trans wr₁
+    obtain sp₄ : s₄.sp = s₀.sp := sp₂.trans sp₁
     refine WP.seq (WP.mono (keyLoop_ok (S := S) (b := b) (R := R) (w := w) (by rw [rd₄]; exact hrS)
       (by rw [wr₄]; exact .of_mem hwS) dSS hR14 (by rw [m₄]) hi₀) fun s₅ hk₅ => ?_)
     -- The groups.
-    have g₅ : ∀ r, r ≠ .x0 → r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₅.gpr r = s₁.gpr r :=
+    obtain g₅ : ∀ r, r ≠ .x0 → r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₅.gpr r = s₁.gpr r :=
       fun r h0 h6 h7 hk => (hk₅.keep r h0 h7 hk).trans (g₄ r h6 h7 hk)
-    have hi : GInv f s₀.mem b D n R w s₀.rd s₀.wr s₀.sp 0 s₅ :=
+    obtain hi : GInv f s₀.mem b D n R w s₀.rd s₀.wr s₀.sp 0 s₅ :=
       { hg := by omega_using [hn0]
         hx3 := by rw [g₅ .x3 (by decide) (by decide) (by decide) (by decide), x3₁]; simp [D]
         hx4 := by

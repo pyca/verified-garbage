@@ -109,7 +109,7 @@ theorem Related.keeps {s₁ s₂ t₁ t₂ : State} (h : Related s₁ s₂)
   · rw [k₁.x24, k₂.x24, h.bx]
   · rw [k₁.sp, k₂.sp, h.sp]
   · intro d hd
-    have bound : ∀ d ∈ slots, d + 8 ≤ 272 := by decide
+    obtain bound : ∀ d ∈ slots, d + 8 ≤ 272 := by decide
     rw [h.left.space.word_keeps k₁ d (bound d hd), h.right.space.word_keeps k₂ d (bound d hd)]
     exact h.words d hd
 
@@ -124,7 +124,7 @@ theorem hash_keeps_rel {P : State → State → Prop} {c : Prog isa} (rs : List 
     RelCT isa P c (RelatedRegs rs) := by
   apply (ct.wpDep wp).mono (fun _ _ h => h)
   rintro a b ⟨_, s, t, hp, ha, hb⟩
-  have h := pre s t hp
+  obtain h := pre s t hp
   refine ⟨h.1.keeps (Keeps.of_hash ha) (Keeps.of_hash hb), ?_⟩
   intro r hr
   rw [ha.regs r (saved r hr).1 (saved r hr).2, hb.regs r (saved r hr).1 (saved r hr).2]
@@ -147,8 +147,8 @@ open VG VG.AArch64
 theorem prefix_update_ready {s t : State} {lo : Nat} (h : Space s) (args : LengthArgs s lo t) :
     HPrime.UpdateReady t := by
   have k := args.keeps
-  have ht := h.keeps k
-  have len : (t.gpr .x3).toNat = 4 := by rw [args.size]; rfl
+  obtain ht := h.keeps k
+  obtain len : (t.gpr .x3).toNat = 4 := by rw [args.size]; rfl
   refine ⟨ht.stackMinimum, ht.work, ?_, ?_, ?_, ht.stackWork, ?_⟩
   · rw [args.pointer, len, ← k.x24]
     apply Covers.of_sub
@@ -166,7 +166,7 @@ theorem input_update_ready {s t : State} {po lo : Nat} (h : InputReady s po lo)
     (length : s.gpr .x22 = wordAt s lo) (args : InputArgs s t po) : HPrime.UpdateReady t := by
   have k := args.keeps
   have ptr : t.gpr .x2 = wordAt s po := args.pointer
-  have len : t.gpr .x3 = wordAt s lo := args.length.trans length
+  obtain len : t.gpr .x3 = wordAt s lo := args.length.trans length
   refine ⟨(h.space.keeps k).stackMinimum, (h.space.keeps k).work, ?_, ?_, ?_, (h.space.keeps k).stackWork, ?_⟩
   · rw [ptr, len, k.rd, k.wr]; exact h.cover
   · rw [ptr, len, k.x24]; exact h.work.sub_right (Region.sub_prefix (by decide))
@@ -182,7 +182,7 @@ theorem LengthRelated.hash_keeps {lo : Nat} {s t a b : State} (h : LengthRelated
     (bound : lo + 8 ≤ 272) (ka : HPrime.Keeps s a) (kb : HPrime.Keeps t b) : LengthRelated lo a b := by
   refine ⟨⟨h.related.1.keeps (Keeps.of_hash ka) (Keeps.of_hash kb), ?_⟩, ?_, ?_⟩
   · intro r hr
-    have saved : ∀ r ∈ ([.x20, .x22] : List Reg), r ∈ preserved ∧ r ≠ .x30 := by decide
+    obtain saved : ∀ r ∈ ([.x20, .x22] : List Reg), r ∈ preserved ∧ r ≠ .x30 := by decide
     rw [ka.regs r ((saved r hr).1) ((saved r hr).2), kb.regs r ((saved r hr).1) ((saved r hr).2)]
     exact h.related.2 r hr
   · rw [ka.regs .x22 (by decide) (by decide), h.related.1.left.space.word_keeps (Keeps.of_hash ka) lo bound]
@@ -203,7 +203,7 @@ open VG VG.AArch64 VG.Impl.Argon2.AArch64.Initial
 
 theorem digestLength_rel : RelCT isa Related (.block ([Impl.Argon2.AArch64.Instructions.imm .x1 64].flatten))
     (fun s t => Related s t ∧ s.gpr .x1 = 64 ∧ t.gpr .x1 = 64) := by
-  have ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
+  obtain ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.sp, by simp [Taint.ofRegs]⟩)
     (c := .block ([Impl.Argon2.AArch64.Instructions.imm .x1 64].flatten)) (by taint_decide)).wpDep
     (fun s t _ => ⟨digestLength_ok s, digestLength_ok t⟩)
@@ -217,40 +217,40 @@ theorem init_hash_rel (v : HPrime.Backend) :
   have ready (s : State) (h : Ready s) (len : s.gpr .x1 = 64) : HPrime.InitReady s :=
     ⟨by rw [len]; decide, h.space.work,
       (h.space.stackWork.sub_left (below_sub (by decide) (by decide))).sub_right (Region.sub_prefix (by decide))⟩
-  have ct := HPrime.init_rel v (P := fun s t => Related s t ∧ s.gpr .x1 = 64 ∧ t.gpr .x1 = 64)
+  obtain ct := HPrime.init_rel v (P := fun s t => Related s t ∧ s.gpr .x1 = 64 ∧ t.gpr .x1 = 64)
     (fun s t ⟨h, ls, lt⟩ => ⟨ready s h.left ls, ready t h.right lt,
       h.bx, ls.trans lt.symm, h.sp⟩)
-  have result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h.1, by simp⟩)
+  obtain result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h.1, by simp⟩)
     (fun s t ⟨h, ls, lt⟩ => ⟨HPrime.init_keeps v s (ready s h.left ls), HPrime.init_keeps v t (ready t h.right lt)⟩)
   exact result.mono (fun _ _ h => h) (fun _ _ h => h.1)
 
 theorem header_state_rel : RelCT isa Related headerCode Related := by
-  have ct := (header_rel.mono (P' := Related) (fun _ _ h => ⟨h.sp, h.bp, h.bx⟩)
+  obtain ct := (header_rel.mono (P' := Related) (fun _ _ h => ⟨h.sp, h.bp, h.bx⟩)
     (fun _ _ h => h)).wpDep (fun s t h =>
       ⟨headerWords_ok s 6 (by decide) h.left.space, headerWords_ok t 6 (by decide) h.right.space⟩)
   exact ct.mono (fun _ _ h => h) (fun _ _ ⟨_, _, _, hp, ⟨_, ka⟩, ⟨_, kb⟩⟩ => hp.keeps ka kb)
 
 theorem fixed_header_rel (v : HPrime.Backend) :
     RelCT isa Related (Impl.Argon2.AArch64.HPrime.absorbFixed v.hash 768 24) Related := by
-  have args := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
+  obtain args := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.sp, by simp [Taint.ofRegs]⟩)
     (c := .block (Impl.Argon2.AArch64.HPrime.fixedArgs 768 24)) (by taint_decide)).wpDep
     (fun s t _ => ⟨HPrime.fixedArgs_ok s 768 24 (by decide) (by decide),
       HPrime.fixedArgs_ok t 768 24 (by decide) (by decide)⟩)
-  have call := HPrime.update_rel v (P := fun a b => True ∧ ∃ s t, Related s t ∧
+  obtain call := HPrime.update_rel v (P := fun a b => True ∧ ∃ s t, Related s t ∧
       HPrime.FixedArgs s a 768 24 ∧ HPrime.FixedArgs t b 768 24)
     (fun a b ⟨_, s, t, hp, ha, hb⟩ => ⟨HPrime.fixed_ready (finalize_ready hp.left) ha (by decide) (by decide),
       HPrime.fixed_ready (finalize_ready hp.right) hb (by decide) (by decide),
       by rw [ha.keeps.x24, hb.keeps.x24, hp.bx], by rw [ha.count, hb.count],
       by rw [ha.data, hb.data, hp.bx], by rw [ha.size, hb.size], by rw [ha.keeps.sp, hb.keeps.sp, hp.sp]⟩)
-  have ct := args.seq call
-  have result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h, by simp⟩)
+  obtain ct := args.seq call
+  obtain result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h, by simp⟩)
     (fun s t h => ⟨HPrime.absorbFixed_keeps v s 768 24 (finalize_ready h.left) (by decide) (by decide) (by decide),
       HPrime.absorbFixed_keeps v t 768 24 (finalize_ready h.right) (by decide) (by decide) (by decide)⟩)
   exact result.mono (fun _ _ h => h) (fun _ _ h => h.1)
 
 theorem initialCount_rel : RelCT isa Related (.block ([Impl.Argon2.AArch64.Instructions.imm .x20 24].flatten)) (RelatedRegs [.x20]) := by
-  have ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
+  obtain ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.sp, by simp [Taint.ofRegs]⟩)
     (c := .block ([Impl.Argon2.AArch64.Instructions.imm .x20 24].flatten)) (by taint_decide)).wpDep
     (fun s t _ => ⟨initialCount_ok s, initialCount_ok t⟩)
@@ -279,7 +279,7 @@ open VG VG.AArch64 VG.Impl.Argon2.AArch64.Initial
 
 theorem finishCount_rel : RelCT isa (RelatedRegs [.x20]) (.block ([Impl.Argon2.AArch64.Instructions.mov .x1 .x20].flatten))
     (fun s t => RelatedRegs [.x20] s t ∧ s.gpr .x1 = t.gpr .x1) := by
-  have ct := (RelCT.taint (A := taint) (P := RelatedRegs [.x20]) (Taint.ofRegs [])
+  obtain ct := (RelCT.taint (A := taint) (P := RelatedRegs [.x20]) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.1.sp, by simp [Taint.ofRegs]⟩)
     (c := .block ([Impl.Argon2.AArch64.Instructions.mov .x1 .x20].flatten)) (by taint_decide)).wpDep
     (fun s t _ => ⟨finishCount_ok s, finishCount_ok t⟩)
@@ -295,9 +295,9 @@ theorem finishCount_rel : RelCT isa (RelatedRegs [.x20]) (.block ([Impl.Argon2.A
 theorem finalize_hash_rel (v : HPrime.Backend) :
     RelCT isa (fun s t => RelatedRegs [.x20] s t ∧ s.gpr .x1 = t.gpr .x1)
       (Impl.Argon2.AArch64.HPrime.finalize v.hash) Related := by
-  have ct := HPrime.finalize_rel v (P := fun s t => RelatedRegs [.x20] s t ∧ s.gpr .x1 = t.gpr .x1)
+  obtain ct := HPrime.finalize_rel v (P := fun s t => RelatedRegs [.x20] s t ∧ s.gpr .x1 = t.gpr .x1)
     (fun s t h => ⟨finalize_ready h.1.1.left, finalize_ready h.1.1.right, h.1.1.bx, h.2, h.1.1.sp⟩)
-  have result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h.1.1, by simp⟩)
+  obtain result := hash_keeps_rel [] (by simp) ct (fun _ _ h => ⟨h.1.1, by simp⟩)
     (fun s t h => ⟨HPrime.finalize_keeps v s (finalize_ready h.1.1.left),
       HPrime.finalize_keeps v t (finalize_ready h.1.1.right)⟩)
   exact result.mono (fun _ _ h => h) (fun _ _ h => h.1)
@@ -305,7 +305,7 @@ theorem finalize_hash_rel (v : HPrime.Backend) :
 theorem finishOutput_rel : RelCT isa Related
     (.block ([Impl.Argon2.AArch64.Instructions.mov .x22 .x19, Impl.Argon2.AArch64.Instructions.imm .x8 64].flatten))
       (HPrime.AgreeRegs [.x24, .x22, .x8]) := by
-  have ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
+  obtain ct := (RelCT.taint (A := taint) (P := Related) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.sp, by simp [Taint.ofRegs]⟩)
     (c := .block ([Impl.Argon2.AArch64.Instructions.mov .x22 .x19, Impl.Argon2.AArch64.Instructions.imm .x8 64].flatten)) (by taint_decide)).wpDep
     (fun s t _ => ⟨finishOutput_ok s, finishOutput_ok t⟩)
@@ -349,24 +349,24 @@ theorem prefix_rel (v : HPrime.Backend) (lo : Nat) (slot : lo ∈ slots)
     (check : ∃ hint, (taint.check (Taint.ofRegs [.x19, .x24]) (.block (lengthArgs lo)) hint).isSome = true) :
     RelCT isa (RelatedRegs [.x20])
       (.seq (.block (lengthArgs lo)) (Impl.Argon2.AArch64.HPrime.update v.hash)) (LengthRelated lo) := by
-  have args := ((lengthArgs_rel lo check).mono (P' := RelatedRegs [.x20])
+  obtain args := ((lengthArgs_rel lo check).mono (P' := RelatedRegs [.x20])
     (fun _ _ h => ⟨h.1.sp, h.1.bp, h.1.bx⟩) (fun _ _ h => h)).wpDep
     (fun s t h => ⟨lengthArgs_ok s lo (slots_aligned lo slot) (by omega_using [bound]) (h.1.left.space.readable lo slot)
       (by simpa using h.1.left.space.write 792 4 (by decide)),
       lengthArgs_ok t lo (slots_aligned lo slot) (by omega_using [bound]) (h.1.right.space.readable lo slot)
       (by simpa using h.1.right.space.write 792 4 (by decide))⟩)
-  have call := HPrime.update_rel v (P := PrefixRelated lo) (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
+  obtain call := HPrime.update_rel v (P := PrefixRelated lo) (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
     ⟨prefix_update_ready hp.1.left.space ha, prefix_update_ready hp.1.right.space hb,
       by rw [ha.keeps.x24, hb.keeps.x24, hp.1.bx], by rw [ha.count, hb.count]; exact hp.2 _ (by simp),
       by rw [ha.pointer, hb.pointer, hp.1.bx], by rw [ha.size, hb.size],
       by rw [ha.keeps.sp, hb.keeps.sp, hp.1.sp]⟩)
-  have called := call.wpDep (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
+  obtain called := call.wpDep (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
     ⟨HPrime.update_keeps v a (prefix_update_ready hp.1.left.space ha),
       HPrime.update_keeps v b (prefix_update_ready hp.1.right.space hb)⟩)
-  have finished := called.mono (fun _ _ h => h) (fun a b h => by
+  obtain finished := called.mono (fun _ _ h => h) (fun a b h => by
     obtain ⟨_, x, y, ⟨_, s, t, hp, ha, hb⟩, ka, kb⟩ := h
-    have rel := hp.1.keeps ha.keeps hb.keeps
-    have prepared : LengthRelated lo x y := by
+    obtain rel := hp.1.keeps ha.keeps hb.keeps
+    obtain prepared : LengthRelated lo x y := by
       refine ⟨⟨rel, ?_⟩, ?_, ?_⟩
       · intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -387,11 +387,11 @@ theorem input_rel (v : HPrime.Backend) (po lo : Nat) (input : (po, lo) ∈ input
     (check : ∃ hint, (taint.check (Taint.ofRegs [.x19]) (.block (inputArgs po)) hint).isSome = true) :
     RelCT isa (LengthRelated lo)
       (.seq (.block (inputArgs po)) (Impl.Argon2.AArch64.HPrime.update v.hash)) (LengthRelated lo) := by
-  have args := ((inputArgs_rel po check).mono (P' := LengthRelated lo)
+  obtain args := ((inputArgs_rel po check).mono (P' := LengthRelated lo)
     (fun _ _ h => ⟨h.related.1.sp, h.related.1.bp⟩) (fun _ _ h => h)).wpDep
     (fun s t h => ⟨inputArgs_ok s po (slots_aligned po (h.related.1.left.inputs _ input).pointerSlot) (by have := (h.related.1.left.inputs _ input).pointerBound; omega) (h.related.1.left.space.readable po (h.related.1.left.inputs _ input).pointerSlot),
       inputArgs_ok t po (slots_aligned po (h.related.1.right.inputs _ input).pointerSlot) (by have := (h.related.1.right.inputs _ input).pointerBound; omega) (h.related.1.right.space.readable po (h.related.1.right.inputs _ input).pointerSlot)⟩)
-  have call := HPrime.update_rel v (P := InputRelated lo po) (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
+  obtain call := HPrime.update_rel v (P := InputRelated lo po) (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
     ⟨input_update_ready (hp.related.1.left.inputs _ input) hp.leftLength ha,
       input_update_ready (hp.related.1.right.inputs _ input) hp.rightLength hb,
       by rw [ha.keeps.x24, hb.keeps.x24, hp.related.1.bx],
@@ -399,14 +399,14 @@ theorem input_rel (v : HPrime.Backend) (po lo : Nat) (input : (po, lo) ∈ input
       by rw [ha.pointer, hb.pointer]; exact hp.related.1.words po (hp.related.1.left.inputs _ input).pointerSlot,
       by rw [ha.length, hb.length]; exact hp.related.2 .x22 (by simp),
       by rw [ha.keeps.sp, hb.keeps.sp, hp.related.1.sp]⟩)
-  have called := call.wpDep (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
+  obtain called := call.wpDep (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
     ⟨HPrime.update_keeps v a (input_update_ready (hp.related.1.left.inputs _ input) hp.leftLength ha),
       HPrime.update_keeps v b (input_update_ready (hp.related.1.right.inputs _ input) hp.rightLength hb)⟩)
-  have finished := called.mono (fun _ _ h => h) (fun a b h => by
+  obtain finished := called.mono (fun _ _ h => h) (fun a b h => by
     obtain ⟨_, x, y, ⟨_, s, t, hp, ha, hb⟩, ka, kb⟩ := h
-    have left := hp.related.1.left.inputs _ input
-    have right := hp.related.1.right.inputs _ input
-    have prepared : LengthRelated lo x y := by
+    obtain left := hp.related.1.left.inputs _ input
+    obtain right := hp.related.1.right.inputs _ input
+    obtain prepared : LengthRelated lo x y := by
       refine ⟨⟨hp.related.1.keeps ha.keeps hb.keeps, ?_⟩, ?_, ?_⟩
       · intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -426,7 +426,7 @@ theorem input_rel (v : HPrime.Backend) (po lo : Nat) (input : (po, lo) ∈ input
 
 theorem addCount_rel (lo : Nat) :
     RelCT isa (LengthRelated lo) (.block (Impl.Argon2.AArch64.Instructions.add .x20 .x22)) (RelatedRegs [.x20]) := by
-  have ct := (RelCT.taint (A := taint) (P := LengthRelated lo) (Taint.ofRegs [])
+  obtain ct := (RelCT.taint (A := taint) (P := LengthRelated lo) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.related.1.sp, by simp [Taint.ofRegs]⟩)
     (c := .block (Impl.Argon2.AArch64.Instructions.add .x20 .x22)) (by taint_decide)).wpDep
     (fun s t _ => ⟨addCount_ok s, addCount_ok t⟩)
@@ -441,11 +441,11 @@ theorem absorb_rel (v : HPrime.Backend) (po lo : Nat) (input : (po, lo) ∈ inpu
     (lengthCheck : ∃ hint, (taint.check (Taint.ofRegs [.x19, .x24]) (.block (lengthArgs lo)) hint).isSome = true)
     (pointerCheck : ∃ hint, (taint.check (Taint.ofRegs [.x19]) (.block (inputArgs po)) hint).isSome = true) :
     RelCT isa (RelatedRegs [.x20]) (absorb v.hash po lo) (RelatedRegs [.x20]) := by
-  have slot : lo ∈ slots := by
-    have all : ∀ p ∈ inputs, p.2 ∈ slots := by decide
+  obtain slot : lo ∈ slots := by
+    obtain all : ∀ p ∈ inputs, p.2 ∈ slots := by decide
     exact all _ input
-  have bound : lo + 8 ≤ 272 := by
-    have all : ∀ d ∈ slots, d + 8 ≤ 272 := by decide
+  obtain bound : lo + 8 ≤ 272 := by
+    obtain all : ∀ d ∈ slots, d + 8 ≤ 272 := by decide
     exact all lo slot
   exact ((prefix_rel v lo slot bound lengthCheck).seq
     (((input_rel v po lo input pointerCheck).seq (addCount_rel lo)).assoc)).assoc
@@ -555,8 +555,8 @@ theorem args_trace : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.
 
 theorem args_rel (p : Params) : RelCT isa (Related p)
     (.block Impl.Argon2.AArch64.FinalOutput.args) (NextRelated p) := by
-  have trace := args_trace.mono (P' := Related p) (fun _ _ h => ⟨h.bases, h.stacks⟩) (fun _ _ h => h)
-  have full := trace.wpDep (fun s t h => ⟨args_ok s h.left.reads, args_ok t h.right.reads⟩)
+  obtain trace := args_trace.mono (P' := Related p) (fun _ _ h => ⟨h.bases, h.stacks⟩) (fun _ _ h => h)
+  obtain full := trace.wpDep (fun s t h => ⟨args_ok s h.left.reads, args_ok t h.right.reads⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -601,7 +601,7 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params)
   | seq reduceA outputA =>
     cases eb with
     | seq reduceB outputB =>
-      have related : ReductionInit.Related p leftMemory rightMemory s t :=
+      obtain related : ReductionInit.Related p leftMemory rightMemory s t :=
         ⟨hp.left.reduction, hp.right.reduction, hp.bases, hp.stacks, hp.matrices, hp.leftMatrix, hp.rightMatrix⟩
       obtain ⟨reduceTrace, _⟩ := FinalReduction.code_rel p hp.left.reduction.allocation.positive
         leftMemory rightMemory _ _ _ _ _ _ related reduceA reduceB
@@ -609,7 +609,7 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params)
       obtain ⟨_, sb, runB, doneB⟩ := FinalReduction.code_ok t p hp.right.reduction rightMemory hp.rightMatrix
       obtain ⟨_, rfl⟩ := Exec.det reduceA runA
       obtain ⟨_, rfl⟩ := Exec.det reduceB runB
-      have finalRelated : FinalOutput.Related p _ _ :=
+      obtain finalRelated : FinalOutput.Related p _ _ :=
         ⟨output_ready hp.left doneA, output_ready hp.right doneB,
           (doneA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).trans
             (hp.bases.trans (doneB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).symm),
@@ -670,9 +670,9 @@ theorem body_rel (p : Params) (pass lane slice : Nat) (leftState rightState : Fi
       obtain ⟨_, sb, runB, filledB⟩ := SegmentSetup.code_ok t p pass lane slice hp.ready.right rightState hp.rightMatrix
       obtain ⟨_, rfl⟩ := Exec.det segmentA runA
       obtain ⟨_, rfl⟩ := Exec.det segmentB runB
-      have bases := (filledA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).trans
+      obtain bases := (filledA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).trans
         (hp.ready.bases.trans (filledB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).symm)
-      have stacks := filledA.sp.trans (hp.ready.stacks.trans filledB.sp.symm)
+      obtain stacks := filledA.sp.trans (hp.ready.stacks.trans filledB.sp.symm)
       obtain ⟨advancedTrace, _⟩ := advance_rel _ _ _ _ _ _ ⟨bases, stacks⟩ advanceA advanceB
       obtain ⟨_, a', runA, doneA⟩ := body_ok s p pass lane slice hp.ready.left leftState hp.leftMatrix
       obtain ⟨_, b', runB, doneB⟩ := body_ok t p pass lane slice hp.ready.right rightState hp.rightMatrix
@@ -710,7 +710,7 @@ theorem loop_rel (p : Params) (pass lane slice count : Nat) (leftState rightStat
     RelCT isa (Related p pass lane slice count leftState rightState) Impl.Argon2.AArch64.FillLanes.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (lane : Nat) (leftState rightState : FillState),
     lane + n = p.lanes ∧ 0 < n ∧ Related p pass lane slice n leftState rightState s t
-  have steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillLanes.body fun s t =>
+  obtain steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillLanes.body fun s t =>
       isa.eval (.nonzero .x .x14) s = isa.eval (.nonzero .x .x14) t ∧ (isa.eval (.nonzero .x .x14) s = some false → True) ∧
         (isa.eval (.nonzero .x .x14) s = some true → ∃ m < n, I m s t) := by
     intro n s t ts tt a b hp ea eb
@@ -718,7 +718,7 @@ theorem loop_rel (p : Params) (pass lane slice count : Nat) (leftState rightStat
     cases n with
     | zero => omega
     | succ n =>
-      have segmentRelated : SegmentSetup.Related p pass j slice ls rs s t :=
+      obtain segmentRelated : SegmentSetup.Related p pass j slice ls rs s t :=
         ⟨hp.ready, hp.leftMatrix, hp.rightMatrix, Proof.Argon2.lanes_first_segment p pass slice j n ls rs
           hp.ready.left.parameters.segment_bound.1 hp.indices⟩
       obtain ⟨trace, flags, next⟩ := body_rel p pass j slice ls rs _ _ _ _ _ _ segmentRelated ea eb
@@ -727,7 +727,7 @@ theorem loop_rel (p : Params) (pass lane slice count : Nat) (leftState rightStat
       refine ⟨trace, ?_, fun _ => trivial, ?_⟩
       · exact flags
       · intro taken
-        have active : j + 1 < p.lanes := by
+        obtain active : j + 1 < p.lanes := by
           simp only [done.cf, Option.some.injEq, decide_eq_true_eq] at taken
           exact taken
         obtain ⟨ready, matrixA, matrixB⟩ := next active
@@ -767,9 +767,9 @@ theorem setup_trace : RelCT isa (fun s t : State => s.sp = t.sp) (.block Impl.Ar
 theorem setup_public_rel (p : Params) (pass slice : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass slice leftState rightState) (.block Impl.Argon2.AArch64.FillSlice.setup)
       (FillLanes.Related p pass 0 slice p.lanes leftState rightState) := by
-  have trace := setup_trace.mono (P' := Related p pass slice leftState rightState)
+  obtain trace := setup_trace.mono (P' := Related p pass slice leftState rightState)
     (fun _ _ h => h.stacks) (fun _ _ h => h)
-  have full := trace.wpDep (fun s t h => ⟨setup_ok s p pass slice h.left, setup_ok t p pass slice h.right⟩)
+  obtain full := trace.wpDep (fun s t h => ⟨setup_ok s p pass slice h.left, setup_ok t p pass slice h.right⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -836,7 +836,7 @@ theorem body_rel (p : Params) (pass slice : Nat) (leftState rightState : FillSta
       obtain ⟨_, sb, fillRunB, filledB⟩ := FillSlice.code_ok t p pass slice hp.right rightState hp.rightMatrix
       obtain ⟨_, rfl⟩ := Exec.det sliceA fillRunA
       obtain ⟨_, rfl⟩ := Exec.det sliceB fillRunB
-      have stacks := filledA.sp.trans (hp.stacks.trans filledB.sp.symm)
+      obtain stacks := filledA.sp.trans (hp.stacks.trans filledB.sp.symm)
       obtain ⟨advanceTrace, _⟩ := advance_rel _ _ _ _ _ _ stacks advanceA advanceB
       obtain ⟨_, a', runA, doneA⟩ := body_ok s p pass slice hp.left leftState hp.leftMatrix
       obtain ⟨_, b', runB, doneB⟩ := body_ok t p pass slice hp.right rightState hp.rightMatrix
@@ -871,7 +871,7 @@ theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : F
     RelCT isa (Related p pass slice count leftState rightState) Impl.Argon2.AArch64.FillSlices.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (slice : Nat) (leftState rightState : FillState),
     slice + n = 4 ∧ 0 < n ∧ Related p pass slice n leftState rightState s t
-  have steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillSlices.body fun s t =>
+  obtain steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillSlices.body fun s t =>
       isa.eval (.nonzero .x .x14) s = isa.eval (.nonzero .x .x14) t ∧ (isa.eval (.nonzero .x .x14) s = some false → True) ∧
         (isa.eval (.nonzero .x .x14) s = some true → ∃ m < n, I m s t) := by
     intro n s t ts tt a b hp ea eb
@@ -879,7 +879,7 @@ theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : F
     cases n with
     | zero => omega
     | succ n =>
-      have sliceRelated : FillSlice.Related p pass j ls rs s t :=
+      obtain sliceRelated : FillSlice.Related p pass j ls rs s t :=
         ⟨hp.states.left, hp.states.right, hp.states.bases, hp.states.stacks, hp.states.matrices, hp.states.work,
           hp.states.leftMatrix, hp.states.rightMatrix, Proof.Argon2.slices_first_lane_fold p pass j n ls rs
             hp.states.left.parameters.segment_bound.1 hp.indices⟩
@@ -889,7 +889,7 @@ theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : F
       refine ⟨trace, ?_, fun _ => trivial, ?_⟩
       · exact flags
       · intro taken
-        have active : j + 1 < 4 := by
+        obtain active : j + 1 < 4 := by
           simp only [done.cf, Option.some.injEq, decide_eq_true_eq] at taken
           exact taken
         have indices := hp.indices
@@ -944,9 +944,9 @@ theorem setup_public_rel (p : Params) (pass : Nat) (leftState rightState : FillS
     RelCT isa (Related p pass leftState rightState) (.block Impl.Argon2.AArch64.FillIteration.setup)
       (fun s t => FillSlices.NextRelated p pass 0 leftState rightState s t ∧
         (fillPass p leftState pass).indices = (fillPass p rightState pass).indices) := by
-  have trace := setup_trace.mono (P' := Related p pass leftState rightState)
+  obtain trace := setup_trace.mono (P' := Related p pass leftState rightState)
     (fun _ _ h => h.stacks) (fun _ _ h => h)
-  have full := trace.wpDep (fun s t h => ⟨setup_ok s p pass h.left, setup_ok t p pass h.right⟩)
+  obtain full := trace.wpDep (fun s t h => ⟨setup_ok s p pass h.left, setup_ok t p pass h.right⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -998,7 +998,7 @@ theorem body_rel (p : Params) (pass : Nat) (leftState rightState : FillState) :
         (fillPass p rightState pass) s t)) := by
   intro s t ts tt a b hp ea eb
   obtain ⟨hp, indices⟩ := hp
-  have related : FillIteration.Related p pass leftState rightState s t :=
+  obtain related : FillIteration.Related p pass leftState rightState s t :=
     ⟨hp.left.filling, hp.right.filling, hp.bases, hp.stacks, hp.matrices, hp.work, hp.leftMatrix, hp.rightMatrix, indices⟩
   cases ea with
   | seq segmentA advanceA =>
@@ -1010,9 +1010,9 @@ theorem body_rel (p : Params) (pass : Nat) (leftState rightState : FillState) :
       obtain ⟨_, sb, runB, filledB⟩ := FillIteration.code_ok t p pass hp.right.filling rightState hp.rightMatrix
       obtain ⟨_, rfl⟩ := Exec.det segmentA runA
       obtain ⟨_, rfl⟩ := Exec.det segmentB runB
-      have bases := (filledA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide)).trans
+      obtain bases := (filledA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide)).trans
         (hp.bases.trans (filledB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide)).symm)
-      have stacks := filledA.sp.trans (hp.stacks.trans filledB.sp.symm)
+      obtain stacks := filledA.sp.trans (hp.stacks.trans filledB.sp.symm)
       obtain ⟨advancedTrace, _⟩ := advance_rel _ _ _ _ _ _ ⟨bases, stacks⟩ advanceA advanceB
       obtain ⟨_, a', runA, doneA⟩ := body_ok s p pass hp.left leftState hp.leftMatrix
       obtain ⟨_, b', runB, doneB⟩ := body_ok t p pass hp.right rightState hp.rightMatrix
@@ -1050,7 +1050,7 @@ theorem loop_rel (p : Params) (pass count : Nat) (leftState rightState : FillSta
     RelCT isa (Related p pass count leftState rightState) Impl.Argon2.AArch64.FillIterations.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (pass : Nat) (leftState rightState : FillState),
     pass + n = p.passes ∧ 0 < n ∧ Related p pass n leftState rightState s t
-  have steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillIterations.body fun s t =>
+  obtain steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.FillIterations.body fun s t =>
       isa.eval (.nonzero .x .x14) s = isa.eval (.nonzero .x .x14) t ∧ (isa.eval (.nonzero .x .x14) s = some false → True) ∧
         (isa.eval (.nonzero .x .x14) s = some true → ∃ m < n, I m s t) := by
     intro n s t ts tt a b hp ea eb
@@ -1058,7 +1058,7 @@ theorem loop_rel (p : Params) (pass count : Nat) (leftState rightState : FillSta
     cases n with
     | zero => omega
     | succ n =>
-      have passIndices := Proof.Argon2.iterations_first_pass p j n ls rs
+      obtain passIndices := Proof.Argon2.iterations_first_pass p j n ls rs
         hp.ready.left.filling.parameters.segment_bound.1 hp.indices
       obtain ⟨trace, flags, next⟩ := body_rel p j ls rs _ _ _ _ _ _ ⟨hp.ready, passIndices⟩ ea eb
       obtain ⟨_, a', runA, done⟩ := body_ok s p j hp.ready.left ls hp.leftMatrix
@@ -1066,10 +1066,10 @@ theorem loop_rel (p : Params) (pass count : Nat) (leftState rightState : FillSta
       refine ⟨trace, ?_, fun _ => trivial, ?_⟩
       · exact flags
       · intro taken
-        have active : j + 1 < p.passes := by
+        obtain active : j + 1 < p.passes := by
           simp only [done.cf, Option.some.injEq, decide_eq_true_eq] at taken
           exact taken
-        have ready := next active
+        obtain ready := next active
         have indices := hp.indices
         rw [Proof.Argon2.iterations_succ, Proof.Argon2.iterations_succ] at indices
         exact ⟨n, by omega_using [], j + 1, fillPass p ls j,
@@ -1110,7 +1110,7 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params)
   | seq fillA finishA =>
     cases eb with
     | seq fillB finishB =>
-      have related : FillIterations.Related p 0 p.passes leftState rightState s t :=
+      obtain related : FillIterations.Related p 0 p.passes leftState rightState s t :=
         ⟨⟨hp.left.filling, hp.right.filling, hp.bases, hp.stacks, hp.matrices, hp.works, hp.leftMatrix, hp.rightMatrix⟩,
           hp.leftMatrix, hp.rightMatrix, hp.indices⟩
       obtain ⟨fillTrace, _⟩ := FillIterations.loop_rel p 0 p.passes leftState rightState hp.left.positive
@@ -1121,7 +1121,7 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params)
         hp.rightMatrix hp.right.positive (Nat.zero_add _)
       obtain ⟨_, rfl⟩ := Exec.det fillA runA
       obtain ⟨_, rfl⟩ := Exec.det fillB runB
-      have finalRelated : Finish.Related p (Proof.Argon2.iterations p 0 p.passes leftState).memory
+      obtain finalRelated : Finish.Related p (Proof.Argon2.iterations p 0 p.passes leftState).memory
           (Proof.Argon2.iterations p 0 p.passes rightState).memory _ _ :=
         ⟨finish_ready hp.left.filling hp.left.finish doneA, finish_ready hp.right.filling hp.right.finish doneB,
           (doneA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide)).trans
@@ -1164,12 +1164,12 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params) :
     RelCT isa (Related p) (Impl.Argon2.AArch64.InitFill.code name v.hash) (fun _ _ => True) := by
   intro s t ts tt a b hp ea eb
   have params := hp.left.environment.parameters
-  have q : 2 ≤ p.laneLen := by
-    have segments := Proof.Argon2.laneLen_segments p params.lanesPositive
+  obtain q : 2 ≤ p.laneLen := by
+    obtain segments := Proof.Argon2.laneLen_segments p params.lanesPositive
     have minimum := params.segment_bound.1
     omega_using [segments, minimum]
-  have lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans params.lanesBound (by decide)
-  have pub : MemoryInit.AgreeBases s t := by
+  obtain lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans params.lanesBound (by decide)
+  obtain pub : MemoryInit.AgreeBases s t := by
     refine ⟨hp.stacks, ?_⟩
     intro r hr
     simp only [MemoryInit.publicBases, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1177,13 +1177,13 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params) :
     · exact hp.bases
     · exact hp.left.scratch.trans (hp.works.trans hp.right.scratch.symm)
     · exact hp.left.initializing.laneLength.trans hp.right.initializing.laneLength.symm
-  have rightReady : MemoryInit.Ready (FillKernel.matrix s) p.lanes p.laneLen t := by
+  obtain rightReady : MemoryInit.Ready (FillKernel.matrix s) p.lanes p.laneLen t := by
     rw [hp.matrices]; exact hp.right.initializing
   cases ea with
   | seq initA restA =>
     cases eb with
     | seq initB restB =>
-      have initTrace := MemoryInit.code_ct v name (FillKernel.matrix s) p.lanes p.laneLen
+      obtain initTrace := MemoryInit.code_ct v name (FillKernel.matrix s) p.lanes p.laneLen
         params.lanesPositive lanesBound q _ _ _ _ _ _ hp.left.initializing rightReady pub initA initB
       obtain ⟨_, sa, runA, doneA⟩ := MemoryInit.complete_ok v name s (FillKernel.matrix s) p.lanes p.laneLen
         hp.left.initializing params.lanesPositive lanesBound q
@@ -1195,29 +1195,29 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params) :
       | seq setupA fillA =>
         cases restB with
         | seq setupB fillB =>
-          have bases := doneA.bp.trans (hp.bases.trans doneB.bp.symm)
+          obtain bases := doneA.bp.trans (hp.bases.trans doneB.bp.symm)
           obtain ⟨setupTrace, _⟩ := FillSetup.code_rel _ _ _ _ _ _ ⟨bases, doneA.sp.trans (hp.stacks.trans doneB.sp.symm)⟩ setupA setupB
           obtain ⟨_, ca, runA, preparedA⟩ := FillSetup.code_ok _ p (initialized_setup hp.left doneA)
           obtain ⟨_, cb, runB, preparedB⟩ := FillSetup.code_ok _ p (initialized_setup hp.right doneB)
           obtain ⟨_, rfl⟩ := Exec.det setupA runA
           obtain ⟨_, rfl⟩ := Exec.det setupB runB
-          have preparedBases := (preparedA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide) (by decide)).trans
+          obtain preparedBases := (preparedA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide) (by decide)).trans
             (bases.trans (preparedB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide) (by decide) (by decide) (by decide)).symm)
           have preparedStacks := preparedA.sp.trans
             ((doneA.sp.trans (hp.stacks.trans doneB.sp.symm)).trans
               preparedB.sp.symm)
-          have initMatrices := (doneA.frame_word hp.left.initializing.space 232 (by decide) (Or.inr (by decide))).trans
+          obtain initMatrices := (doneA.frame_word hp.left.initializing.space 232 (by decide) (Or.inr (by decide))).trans
             (hp.matrices.trans (doneB.frame_word hp.right.initializing.space 232 (by decide) (Or.inr (by decide))).symm)
-          have matrices := preparedA.matrix.trans (initMatrices.trans preparedB.matrix.symm)
-          have initOutputs := (doneA.frame_word hp.left.initializing.space 256 (by decide) (Or.inr (by decide))).trans
+          obtain matrices := preparedA.matrix.trans (initMatrices.trans preparedB.matrix.symm)
+          obtain initOutputs := (doneA.frame_word hp.left.initializing.space 256 (by decide) (Or.inr (by decide))).trans
             (hp.outputs.trans (doneB.frame_word hp.right.initializing.space 256 (by decide) (Or.inr (by decide))).symm)
-          have outputs := (preparedA.words 256 (by decide) (by decide)).trans
+          obtain outputs := (preparedA.words 256 (by decide) (by decide)).trans
             (initOutputs.trans (preparedB.words 256 (by decide) (by decide)).symm)
-          have initWorks := (doneA.frame_word hp.left.initializing.space 248 (by decide) (Or.inr (by decide))).trans
+          obtain initWorks := (doneA.frame_word hp.left.initializing.space 248 (by decide) (Or.inr (by decide))).trans
             (hp.works.trans (doneB.frame_word hp.right.initializing.space 248 (by decide) (Or.inr (by decide))).symm)
-          have works := (preparedA.words 248 (by decide) (by decide)).trans
+          obtain works := (preparedA.words 248 (by decide) (by decide)).trans
             (initWorks.trans (preparedB.words 248 (by decide) (by decide)).symm)
-          have related : FillFinish.Related p (initial p s) (initial p t) _ _ :=
+          obtain related : FillFinish.Related p (initial p s) (initial p t) _ _ :=
             ⟨preparedA.finish_ready (initialized_setup hp.left doneA) (initialized_output hp.left doneA) hp.left.positive,
               preparedB.finish_ready (initialized_setup hp.right doneB) (initialized_output hp.right doneB) hp.right.positive,
               preparedBases, preparedStacks, matrices, outputs, works,
@@ -1255,18 +1255,18 @@ structure Related (p : Params) (s t : State) : Prop where
 
 theorem code_rel (v : HPrime.Backend) (name : String) (p : Params) :
     RelCT isa (Related p) (Impl.Argon2.AArch64.InitialBody.code name v.hash) (fun _ _ => True) := by
-  have hashed := ((Initial.code_rel v).mono (P' := Related p) (fun _ _ h => h.hashing)
+  obtain hashed := ((Initial.code_rel v).mono (P' := Related p) (fun _ _ h => h.hashing)
     (fun _ _ h => h)).wpDep (fun s t h =>
       ⟨Initial.initialHash_ok v s h.left.hashSpace h.left.inputs p h.left.header,
         Initial.initialHash_ok v t h.right.hashSpace h.right.inputs p h.right.header⟩)
   refine hashed.seq ((InitFill.code_rel v name p).mono ?_ (fun _ _ h => h))
   rintro a b ⟨_, s, t, hp, ⟨da, ha⟩, ⟨db, hb⟩⟩
-  have baseA : FillKernel.matrix a = FillKernel.matrix s := ha.frame_word hp.left.hashSpace 232 (by decide) (by decide)
-  have baseB : FillKernel.matrix b = FillKernel.matrix t := hb.frame_word hp.right.hashSpace 232 (by decide) (by decide)
-  have outputA : FinalOutput.output a = FinalOutput.output s := ha.frame_word hp.left.hashSpace 256 (by decide) (by decide)
-  have outputB : FinalOutput.output b = FinalOutput.output t := hb.frame_word hp.right.hashSpace 256 (by decide) (by decide)
-  have workA : FinalOutput.work a = FinalOutput.work s := ha.frame_word hp.left.hashSpace 248 (by decide) (by decide)
-  have workB : FinalOutput.work b = FinalOutput.work t := hb.frame_word hp.right.hashSpace 248 (by decide) (by decide)
+  obtain baseA : FillKernel.matrix a = FillKernel.matrix s := ha.frame_word hp.left.hashSpace 232 (by decide) (by decide)
+  obtain baseB : FillKernel.matrix b = FillKernel.matrix t := hb.frame_word hp.right.hashSpace 232 (by decide) (by decide)
+  obtain outputA : FinalOutput.output a = FinalOutput.output s := ha.frame_word hp.left.hashSpace 256 (by decide) (by decide)
+  obtain outputB : FinalOutput.output b = FinalOutput.output t := hb.frame_word hp.right.hashSpace 256 (by decide) (by decide)
+  obtain workA : FinalOutput.work a = FinalOutput.work s := ha.frame_word hp.left.hashSpace 248 (by decide) (by decide)
+  obtain workB : FinalOutput.work b = FinalOutput.work t := hb.frame_word hp.right.hashSpace 248 (by decide) (by decide)
   refine ⟨hashed_ready hp.left.filling hp.left.hashSpace ha, hashed_ready hp.right.filling hp.right.hashSpace hb,
     ha.x19.trans (hp.hashing.bp.trans hb.x19.symm), ha.sp.trans (hp.hashing.sp.trans hb.sp.symm),
     baseA.trans (hp.matrices.trans baseB.symm), outputA.trans (hp.outputs.trans outputB.symm),
@@ -1303,11 +1303,11 @@ structure ReviewedRelated (p : Params) (s t : State) : Prop where
 theorem ReviewedRelated.related {p : Params} {s t : State} (h : ReviewedRelated p s t) : Related p s t := by
   refine ⟨h.left, h.right, h.hashing, h.matrices, h.outputs, h.works, ?_⟩
   have parameters := h.left.filling.environment.parameters
-  have positive : 0 < p.laneLen := by
-    have segments := Proof.Argon2.laneLen_segments p parameters.lanesPositive
+  obtain positive : 0 < p.laneLen := by
+    obtain segments := Proof.Argon2.laneLen_segments p parameters.lanesPositive
     have minimum := parameters.segment_bound.1
     omega_using [segments, minimum]
-  have indices := Proof.Argon2.references_injective p positive _ _ _ _ _ _ _ _ h.references
+  obtain indices := Proof.Argon2.references_injective p positive _ _ _ _ _ _ _ _ h.references
   unfold initial
   rw [Proof.Argon2.iterations_fill, Proof.Argon2.iterations_fill]
   exact indices

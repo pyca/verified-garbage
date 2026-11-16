@@ -95,7 +95,7 @@ theorem sub_mF (F : Addr) : Region.Sub ⟨mF F, 272⟩ (below F (mgfFrame + 16))
   Offset.sub_below F (a := 272) (b := 288) (by decide) (by decide)
 
 theorem sub_retR (F : Addr) : Region.Sub (Proof.RsaOaep.AArch64.retR (mF F)) (below F (mgfFrame + 16)) := by
-  have e : mF F - BitVec.ofNat 64 16 = F - BitVec.ofNat 64 288 := by
+  obtain e : mF F - BitVec.ofNat 64 16 = F - BitVec.ofNat 64 288 := by
     simp only [mF, mgfFrame_eq, BitVec.sub_sub, BitVec.ofNat_add_ofNat]
   simp only [Proof.RsaOaep.AArch64.retR, below, e]
   exact Offset.sub_below F (a := 288) (b := 288) (by decide) (by decide)
@@ -108,7 +108,7 @@ theorem Env.geo {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mg
   dFS := E.dStk.sub_left (sub_mF F)
   dRS := E.dStk.sub_left (sub_retR F)
   dRF := by
-    have h := Offset.disjoint (mF F - BitVec.ofNat 64 16) (d := 0) (n := 16) (e := 16) (k := 272) (by omega_using [])
+    obtain h := Offset.disjoint (mF F - BitVec.ofNat 64 16) (d := 0) (n := 16) (e := 16) (k := 272) (by omega_using [])
       (by omega_using []) (by omega_using [])
     rwa [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero, BitVec.sub_add_cancel] at h
 
@@ -199,8 +199,8 @@ theorem args_ok (H : Hash) (hD : H.D < 65536) {a : State} {F' : Addr} (hsp : a.s
     WP isa (.block (mgfArgs H)) a fun u => Keep [.x9, .x10] a u ∧ u.mem = argsMem a F' H.D := by
   unfold mgfArgs movi
   refine wp_addSp (by decide) fun u₁ o₁ e₁ => VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun u₂ o₂ e₂ => ?_
-  have x9 : u₂.gpr .x9 = F' := by rw [o₂.get .x9, e₁, hsp, BitVec.add_zero]
-  have w : ∀ (u : State), u.wr = a.wr → ∀ d, d + 8 ≤ 272 → InRegions u.wr (off F' d) 8 := fun u h d hd => by
+  obtain x9 : u₂.gpr .x9 = F' := by rw [o₂.get .x9, e₁, hsp, BitVec.add_zero]
+  obtain w : ∀ (u : State), u.wr = a.wr → ∀ d, d + 8 ≤ 272 → InRegions u.wr (off F' d) 8 := fun u h d hd => by
     rw [h]; exact hw d hd
   refine wp_strx (by decide) (by rw [x9]; rfl) (w _ (by rw [o₂.wr, o₁.wr]) 96 (by decide)) fun u₃ m₃ => ?_
   refine VG.Proof.MlKem.AArch64.wp_add fun u₄ o₄ e₄ => ?_
@@ -215,15 +215,15 @@ theorem args_ok (H : Hash) (hD : H.D < 65536) {a : State} {F' : Addr} (hsp : a.s
     (w _ (by rw [m₈.wr, m₇.wr, o₆.wr, m₅.wr, o₄.wr, m₃.wr, o₂.wr, o₁.wr]) 128 (by decide)) fun u₉ m₉ => wp_nil ?_
   refine ⟨(o₁.keep.trans (o₂.keep.trans (m₃.keep.trans (o₄.keep.trans (m₅.keep.trans (o₆.keep.trans
     (m₇.keep.trans (m₈.keep.trans m₉.keep)))))))).mono, ?_⟩
-  have g : ∀ r, r ≠ .x9 → r ≠ .x10 → u₈.gpr r = a.gpr r := fun r h9 h10 => by
+  obtain g : ∀ r, r ≠ .x9 → r ≠ .x10 → u₈.gpr r = a.gpr r := fun r h9 h10 => by
     rw [m₈.gpr, m₇.gpr, o₆.get r (by simpa using h10), m₅.gpr, o₄.get r (by simpa using h10), m₃.gpr,
       o₂.get r (by simpa using h10), o₁.get r (by simpa using h9)]
-  have h25 : u₈.gpr .x25 = a.gpr .x25 := g _ (by decide) (by decide)
-  have h24 : u₇.gpr .x24 = a.gpr .x24 := by rw [← m₈.gpr]; exact g _ (by decide) (by decide)
-  have ha : u₆.gpr .x10 = BitVec.ofNat 64 H.D := by rw [e₆, setWidth_ofNat16 hD]
-  have hb : u₄.gpr .x10 = a.gpr .x24 + a.gpr .x25 := by
+  obtain h25 : u₈.gpr .x25 = a.gpr .x25 := g _ (by decide) (by decide)
+  obtain h24 : u₇.gpr .x24 = a.gpr .x24 := by rw [← m₈.gpr]; exact g _ (by decide) (by decide)
+  obtain ha : u₆.gpr .x10 = BitVec.ofNat 64 H.D := by rw [e₆, setWidth_ofNat16 hD]
+  obtain hb : u₄.gpr .x10 = a.gpr .x24 + a.gpr .x25 := by
     rw [e₄, m₃.gpr, o₂.get .x24, o₂.get .x25, o₁.get .x24, o₁.get .x25]
-  have hc : u₂.gpr .x10 = a.gpr .x20 + BitVec.ofNat 64 mgfOff := by rw [e₂, o₁.get .x20]
+  obtain hc : u₂.gpr .x10 = a.gpr .x20 + BitVec.ofNat 64 mgfOff := by rw [e₂, o₁.get .x20]
   rw [m₉.mem, m₈.mem, m₇.mem, o₆.mem, m₅.mem, o₄.mem, m₃.mem, o₂.mem, o₁.mem, h25, h24, ha, hb, hc]
   rfl
 
@@ -232,7 +232,7 @@ theorem mF_off (F : Addr) (d : Nat) : off (mF F) (mgfFrame + d) = off F d := by
 
 /-- The words MGF1's slots and the arguments' block write are in its frame. -/
 theorem argsMem_frame (a : State) (F' : Addr) (D : Nat) : Frame [⟨F', 272⟩] a.mem (argsMem a F' D) := by
-  have c : ∀ d, d + 8 ≤ 272 → (⟨F', 272⟩ : Region).Contains (off F' d) (64 / 8) := fun d hd =>
+  obtain c : ∀ d, d + 8 ≤ 272 → (⟨F', 272⟩ : Region).Contains (off F' d) (64 / 8) := fun d hd =>
     Offset.contains_base F' hd (by omega_using [hd])
   exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 96 (by decide))).writeW
     (List.mem_singleton_self _) _ (c 104 (by decide))).writeW (List.mem_singleton_self _) _ (c 112 (by decide))).writeW
@@ -280,30 +280,30 @@ theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State
   have c7 : oEm = 2560 := rfl
   have hF := E.F288
   have Ge := E.geo
-  have asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
+  obtain asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
   refine WP.mono_syms (args_ok H (by omega_using [hfit, c1]) asp fun d hd' => ⟨_, List.mem_cons_self, by
     rw [L.sp, mgfFrame_eq]; exact Offset.contains_base _ hd' (by omega_using [hd'])⟩) fun u ⟨K, hm⟩ syu => ?_
-  have hsu : u.sp = mF F := by rw [K.sp, asp]
-  have hwu : u.wr = ⟨mF F, 272⟩ :: t.wr := by rw [K.wr]; simp [allocated, L.sp, mF, mgfFrame_eq]
-  have hru : u.rd = t.rd := by rw [K.rd]; rfl
+  obtain hsu : u.sp = mF F := by rw [K.sp, asp]
+  obtain hwu : u.wr = ⟨mF F, 272⟩ :: t.wr := by rw [K.wr]; simp [allocated, L.sp, mF, mgfFrame_eq]
+  obtain hru : u.rd = t.rd := by rw [K.rd]; rfl
   have hsy : u.syms = t.syms := syu
   have hum : u.mem = argsMem t (mF F) H.D := hm
-  have R5 : Proof.RsaOaep.AArch64.Rep u.mem (mF F) (off S mgfOff) (fun o => t.mem (off (off S mgfOff) o))
+  obtain R5 : Proof.RsaOaep.AArch64.Rep u.mem (mF F) (off S mgfOff) (fun o => t.mem (off (off S mgfOff) o))
       (argsW t (mF F) H.D) := by rw [hum]; exact args_rep Ge
-  have w : ∀ k, k < 12 ∨ 16 < k → argsW t (mF F) H.D k = Proof.RsaOaep.AArch64.word t.mem (mF F) (8 * k) := by
+  obtain w : ∀ k, k < 12 ∨ 16 < k → argsW t (mF F) H.D k = Proof.RsaOaep.AArch64.word t.mem (mF F) (8 * k) := by
     intro k hk
     have : k ≠ 12 ∧ k ≠ 13 ∧ k ≠ 14 ∧ k ≠ 15 ∧ k ≠ 16 := by omega_using [hk]
     simp [argsW, Proof.RsaOaep.AArch64.upd, this]
-  have hsc : Covers [⟨off S mgfOff, 8192⟩] u.wr := fun a n h => by
+  obtain hsc : Covers [⟨off S mgfOff, 8192⟩] u.wr := fun a n h => by
     obtain ⟨r, hr, hc⟩ := E.sc a n h; exact ⟨r, by rw [hwu]; exact List.mem_cons_of_mem _ hr, hc⟩
-  have L' : Proof.RsaOaep.AArch64.Lay u (mF F) (off S mgfOff) :=
+  obtain L' : Proof.RsaOaep.AArch64.Lay u (mF F) (off S mgfOff) :=
     ⟨hsu, fun a n ⟨r, hr, hc⟩ => ⟨⟨mF F, 272⟩, by rw [hwu]; exact List.mem_cons_self, by
       rw [List.mem_singleton.mp hr] at hc; exact hc⟩, hsc,
       by rw [show Impl.RsaOaep.AArch64.sScr = 8 * 12 from rfl, R5.fr 12 (by decide)]
          simp [argsW, Proof.RsaOaep.AArch64.upd, L.x20], Ge⟩
-  have fr0 : Frame [⟨mF F, 272⟩] t.mem u.mem := by rw [hum]; exact argsMem_frame t (mF F) H.D
-  have hArg : off (mF F) (mgfFrame + sMgfT) = off F sMgfT := mF_off F sMgfT
-  have T : Proof.RsaOaep.AArch64.Table.Tab G g (mF F) (off S mgfOff) p (mgfFrame + sMgfT) u := {
+  obtain fr0 : Frame [⟨mF F, 272⟩] t.mem u.mem := by rw [hum]; exact argsMem_frame t (mF F) H.D
+  obtain hArg : off (mF F) (mgfFrame + sMgfT) = off F sMgfT := mF_off F sMgfT
+  obtain T : Proof.RsaOaep.AArch64.Table.Tab G g (mF F) (off S mgfOff) p (mgfFrame + sMgfT) u := {
     ok := by rw [hsy]; exact E.ok
     rd := fun j hj => by rw [hru, hwu, InRegions_append_cons]; exact .inr (E.rd j hj)
     rdD := by rw [hru, hwu, InRegions_append_cons]; exact .inr E.rdD
@@ -312,7 +312,7 @@ theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State
         from hArg]
       exact .inr (L.fld (by decide))
     mem := fun m hf => by
-      have Fm : Frame [below F (mgfFrame + 16), ⟨off S mgfOff, 8192⟩] t.mem m :=
+      obtain Fm : Frame [below F (mgfFrame + 16), ⟨off S mgfOff, 8192⟩] t.mem m :=
         (((fr0.mono (by simp [Proof.RsaOaep.AArch64.Table.mgfRs]; left; rfl)).trans hf)).sub fun r hr => by
           simp only [Proof.RsaOaep.AArch64.Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
@@ -327,12 +327,12 @@ theorem setup_ok {H : Hash} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {t : State
       rcases hr with rfl | rfl
       · exact Offset.disjoint_below F (n := 288) (d := sMgfT) (k := 8) (by have := F.isLt; unfold sMgfT; omega_using [])
       · exact E.dFw.sub_left (Offset.sub_base F (d := sMgfT) (n := 8) (by decide)) }
-  have hMF : Proof.RsaOaep.AArch64.MFit (e + db - mgfOff) H.D (e - mgfOff) db :=
+  obtain hMF : Proof.RsaOaep.AArch64.MFit (e + db - mgfOff) H.D (e - mgfOff) db :=
     ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff; omega_using [hfit, he1, c1, c7], by unfold Impl.RsaOaep.AArch64.oSt mgfOff; omega_using [hfit, he1, c1, c7],
       .inr (by unfold mgfOff; omega_using [he1, c7]), hdb1, by omega_using [hfit, he1, c1, c7]⟩
-  have so : ∀ d, mgfOff ≤ d → off S d = off (off S mgfOff) (d - mgfOff) := fun d hd' => by
+  obtain so : ∀ d, mgfOff ≤ d → off S d = off (off S mgfOff) (d - mgfOff) := fun d hd' => by
     rw [off_off, Nat.add_sub_cancel' hd']
-  have hMA : Proof.RsaOaep.AArch64.MArgs (argsW t (mF F) H.D) (off S mgfOff) (e + db - mgfOff) H.D (e - mgfOff) db :=
+  obtain hMA : Proof.RsaOaep.AArch64.MArgs (argsW t (mF F) H.D) (off S mgfOff) (e + db - mgfOff) H.D (e - mgfOff) db :=
     ⟨by show t.gpr .x24 + t.gpr .x25 = _; rw [h24, h25, off_add, so _ (by unfold mgfOff; omega_using [he1, c7])],
       by show BitVec.ofNat 64 H.D = _; rfl,
       by show t.gpr .x24 = _; rw [h24, so _ (by unfold mgfOff; omega_using [he1, c7])],
@@ -362,30 +362,30 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
   unfold mgfXor
   refine WP.alloc (by decide) (by rw [L.sp, mgfFrame_eq]; rw [mgfFrame_eq] at hF; omega_using [hF]) ?_
   refine WP.seq ?_
-  have asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
+  obtain asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
   refine WP.mono (setup_ok L hd h24 h25 E) fun u ⟨K, hsy, hum, L', R5, T, hMF, hMA⟩ => ?_
-  have hsu : u.sp = mF F := by rw [K.sp, asp]
-  have hwu : u.wr = ⟨mF F, 272⟩ :: t.wr := by rw [K.wr]; simp [allocated, L.sp, mF, mgfFrame_eq]
-  have hru : u.rd = t.rd := by rw [K.rd]; rfl
-  have fr0 : Frame [⟨mF F, 272⟩] t.mem u.mem := by rw [hum]; exact argsMem_frame t (mF F) H.D
-  have so : ∀ d, mgfOff ≤ d → off S d = off (off S mgfOff) (d - mgfOff) := fun d hd' => by
+  obtain hsu : u.sp = mF F := by rw [K.sp, asp]
+  obtain hwu : u.wr = ⟨mF F, 272⟩ :: t.wr := by rw [K.wr]; simp [allocated, L.sp, mF, mgfFrame_eq]
+  obtain hru : u.rd = t.rd := by rw [K.rd]; rfl
+  obtain fr0 : Frame [⟨mF F, 272⟩] t.mem u.mem := by rw [hum]; exact argsMem_frame t (mF F) H.D
+  obtain so : ∀ d, mgfOff ≤ d → off S d = off (off S mgfOff) (d - mgfOff) := fun d hd' => by
     rw [off_off, Nat.add_sub_cancel' hd']
   refine WP.mono_syms (Proof.RsaOaep.AArch64.Table.mgfXorT_ok hG hGh hGl hGv (sArg := mgfFrame + sMgfT) (by decide)
     T L' R5 hMF hMA) fun u' ⟨_, st, V', W', R', _, hV'⟩ sy' => ?_
-  have hsp' : u'.sp = mF F := st.sp.trans hsu
-  have hcs : ∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = t.gpr r := fun r hr h30 => by
+  obtain hsp' : u'.sp = mF F := st.sp.trans hsu
+  obtain hcs : ∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = t.gpr r := fun r hr h30 => by
     rw [st.cs r hr h30, K.gpr r (by revert r; decide)]; rfl
-  have hfr : Frame (mgfWr F S) t.mem u'.mem := by
+  obtain hfr : Frame (mgfWr F S) t.mem u'.mem := by
     intro x hx
-    have hx1 : ¬ (⟨S, oRsa⟩ : Region).Contains x 1 := hx _ (by simp [mgfWr])
-    have hx2 : ¬ (below F (mgfFrame + 16)).Contains x 1 := hx _ (by simp [mgfWr])
+    obtain hx1 : ¬ (⟨S, oRsa⟩ : Region).Contains x 1 := hx _ (by simp [mgfWr])
+    obtain hx2 : ¬ (below F (mgfFrame + 16)).Contains x 1 := hx _ (by simp [mgfWr])
     by_cases hc : (⟨off S mgfOff, 8192⟩ : Region).Contains x 1
     · obtain ⟨o, ho, rfl⟩ := of_contains hc
-      have ho' : 7680 ≤ o := by
+      obtain ho' : 7680 ≤ o := by
         refine Nat.le_of_not_lt fun hlt => hx1 ?_
         rw [off_off]
         exact Offset.contains_base S (d := mgfOff + o) (n := 1) (by unfold mgfOff oRsa; omega_using [hlt]) (by unfold mgfOff; omega_using [ho])
-      have hmo : Proof.RsaOaep.AArch64.mOut o := (Proof.RsaOaep.AArch64.mOut_iff o).mpr
+      obtain hmo : Proof.RsaOaep.AArch64.mOut o := (Proof.RsaOaep.AArch64.mOut_iff o).mpr
         (.inr (.inr (.inr (by unfold Impl.RsaOaep.AArch64.oW; omega_using [ho']))))
       refine (R'.scr o (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho])).trans ((hV' o (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho]) hmo).trans ?_)
       simp only [Proof.RsaOaep.mixV]
@@ -404,13 +404,13 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
   · show u'.sp + BitVec.ofNat 64 mgfFrame = t.sp
     rw [hsp', L.sp, mF, BitVec.sub_add_cancel]
   · show u'.mem (off S o) = _
-    have ho : o - mgfOff < 3072 := by unfold mgfOff; omega_using [c1, ho₂]
+    obtain ho : o - mgfOff < 3072 := by unfold mgfOff; omega_using [c1, ho₂]
     rw [so o (by unfold mgfOff; omega_using [c7, ho₁])]
     refine (R'.scr (o - mgfOff) (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho])).trans
       ((hV' _ (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho]) ((Proof.RsaOaep.AArch64.mOut_iff _).mpr (.inl ho))).trans ?_)
-    have hv : ∀ q, mgfOff ≤ q → q < oRsa → t.mem (off (off S mgfOff) (q - mgfOff)) = V q := fun q h₁ h₂ => by
+    obtain hv : ∀ q, mgfOff ≤ q → q < oRsa → t.mem (off (off S mgfOff) (q - mgfOff)) = V q := fun q h₁ h₂ => by
       rw [← so q h₁]; exact R q h₂
-    have hsrc : Proof.RsaOaep.srcB (fun o => t.mem (off (off S mgfOff) o)) (e + db - mgfOff) H.D =
+    obtain hsrc : Proof.RsaOaep.srcB (fun o => t.mem (off (off S mgfOff) o)) (e + db - mgfOff) H.D =
         (List.range H.D).map fun i => V (e + db + i) := by
       simp only [Proof.RsaOaep.srcB]
       refine List.map_congr_left fun i hi => ?_
@@ -469,9 +469,9 @@ theorem TabsAt.frame {H : Hash} {dn : String} {f : MdFns} {G : Impl.Pbkdf2.Md.AA
     {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {pH pG : Addr} {s t : State} (h : TabsAt H dn f G g pH pG s)
     {rs : List Region} (hf : Frame rs s.mem t.mem) (hdH : ∀ r ∈ rs, Region.Disjoint ⟨pH, 88⟩ r)
     (hdG : ∀ r ∈ rs, Region.Disjoint ⟨pG, 88⟩ r) (hsy : t.syms = s.syms) : TabsAt H dn f G g pH pG t := by
-  have kH : ∀ d, d + 8 ≤ 88 → t.mem.readW (pH + BitVec.ofNat 64 d) 64 = s.mem.readW (pH + BitVec.ofNat 64 d) 64 :=
+  obtain kH : ∀ d, d + 8 ≤ 88 → t.mem.readW (pH + BitVec.ofNat 64 d) 64 = s.mem.readW (pH + BitVec.ofNat 64 d) 64 :=
     fun d hd => hf.readW (r := ⟨pH, 88⟩) (Offset.contains_base _ hd (by omega_using [hd])) hdH (by decide)
-  have k0 : t.mem.readW pH 64 = s.mem.readW pH 64 := by
+  obtain k0 : t.mem.readW pH 64 = s.mem.readW pH 64 := by
     have := kH 0 (by decide); rwa [BitVec.add_zero] at this
   refine ⟨by rw [k0, hsy]; exact h.h0, by rw [kH 24 (by decide), hsy]; exact h.h3,
     by rw [kH 32 (by decide), hsy]; exact h.h4, by rw [hsy]; exact h.fi, by rw [hsy]; exact h.fc,

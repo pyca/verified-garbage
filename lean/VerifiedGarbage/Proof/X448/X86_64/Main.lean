@@ -176,19 +176,19 @@ theorem tail_ok {lad inv : Prog isa}
   have hn := hp.sc_fit
   have hwo := hp.out_wr
   unfold tailOf
-  have hkr : ∀ q < 56, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
+  obtain hkr : ∀ q < 56, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
     fun q hq => ⟨scalarR s₀, by rw [rd₁]; exact List.mem_append_left _ hp.scalar_rd,
       Offset.contains_base _ (d := q) (n := 1) (k := 56) (by omega_using [hq]) (by omega_using [hq])⟩
-  have hkd : ∀ q < 56, 8192 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
+  obtain hkd : ∀ q < 56, 8192 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
     fun q hq => far hp.scalar_sc hq (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (g₁ _ (by decide)) hkr hkd)
     fun s₂ ⟨g₂, rd₂, wr₂, o₂, b₂⟩ => ?_)
   refine WP.seq (WP.mono (movRsi_ok s₂) fun s₃ ⟨rsi₃, k₃⟩ => ?_)
-  have hs₃ : Scr s₃ base :=
+  obtain hs₃ : Scr s₃ base :=
     ⟨by rw [k₃.1 _ (by decide), g₂ _ (by decide)]; exact hs₁.rdi,
       by rw [k₃.2.2.2, wr₂]; exact hs₁.wr, hn⟩
-  have hkb := bytesAt_outside o₁ hkd
-  have e₃ : ∀ i : Index, E s₃.mem base i = E s₁.mem base i :=
+  obtain hkb := bytesAt_outside o₁ hkd
+  obtain e₃ : ∀ i : Index, E s₃.mem base i = E s₁.mem base i :=
     fun i => by
       rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by have := slot_lt i; simp only [BITS, ACC] at *; omega_using [this]))
   refine WP.seq (WP.mono (hlad (s := s₃)
@@ -204,39 +204,39 @@ theorem tail_ok {lad inv : Prog isa}
           (toFe (Spec.X448.decodeUCoordinate pb))
           (n := 0) (by omega_using [])
         omega_using [this]) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e1₅, e2₅⟩ => ?_)
-  have hs₅ := K₅.scr L.scr
+  obtain hs₅ := K₅.scr L.scr
   refine WP.seq (WP.mono (hinv hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
-  have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
+  obtain hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (mulE hf hs₆ 1 1 21) fun s₇ ⟨K₇, e₇⟩ => ?_
-  have hs₇ := K₇.scr hs₆
+  obtain hs₇ := K₇.scr hs₆
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs₇ (a := X2) (by decide)) fun s₈ ⟨v₈, k₈⟩ => ?_
-  have hs₈ := hs₇.of_keeps k₈ (by decide)
-  have rsi₈ : s₈.gpr .rsi = s₀.gpr .rdi := by
+  obtain hs₈ := hs₇.of_keeps k₈ (by decide)
+  obtain rsi₈ : s₈.gpr .rsi = s₀.gpr .rdi := by
     rw [k₈.1 _ (by decide), K₇.gpr _ (by decide), g₆ _ (by decide) (by decide),
       K₅.gpr _ (by decide), L.gpr _ (by decide) (by decide), rsi₃, g₂ _ (by decide), r15₁]
-  have hwo₈ : outR s₀ ∈ s₈.wr := by
+  obtain hwo₈ : outR s₀ ∈ s₈.wr := by
     rw [k₈.2.2.2, K₇.wr, wr₆, K₅.wr, L.wr, k₃.2.2.2, wr₂, wr₁]; exact hwo
   rw [WP.block_append_iff]
   refine WP.mono (storesR_ok s₈ 0 W rsi₈ hwo₈
     (fun d _ hd => by rw [W_len] at hd; exact Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd]))
     (by decide))
     fun s₉ ⟨v₉, _, F₉, g₉, rd₉, wr₉⟩ => ?_
-  have sv₈ : Saved base s₀.gpr s₈.mem := by
-    have sv₃ : Saved base s₀.gpr s₃.mem := by rw [k₃.2.1]; exact sv₁.outside o₂ (by decide)
+  obtain sv₈ : Saved base s₀.gpr s₈.mem := by
+    obtain sv₃ : Saved base s₀.gpr s₃.mem := by rw [k₃.2.1]; exact sv₁.outside o₂ (by decide)
     rw [k₈.2.1]
     exact (((sv₃.outside L.mem (by decide)).outside K₅.mem (by decide)).outside o₆
       (by decide)).outside K₇.mem (by decide)
-  have sv₉ : Saved base s₀.gpr s₉.mem := fun rd hrd => by
+  obtain sv₉ : Saved base s₀.gpr s₉.mem := fun rd hrd => by
     have := saved_lt rd hrd
     rw [← sv₈ rd hrd]
     exact word_frame F₉ hp.out_sc (by omega_using [this])
-  have hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
+  obtain hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
   refine WP.mono (restore_ok hs₉ sv₉) fun s' ⟨r', g', m', rd', wr'⟩ => ?_
-  have O₃ : Outside base 0 8192 s₀.mem s₃.mem := by
+  obtain O₃ : Outside base 0 8192 s₀.mem s₃.mem := by
     rw [k₃.2.1]; exact o₁.trans (o₂.mono (by decide) (by decide))
-  have O : Outside base 0 8192 s₀.mem s₈.mem := by
+  obtain O : Outside base 0 8192 s₀.mem s₈.mem := by
     rw [k₈.2.1]
     exact (((O₃.trans (L.mem.mono (by decide) (by decide))).trans
       (K₅.mem.mono (by decide) (by decide))).trans (o₆.mono (by decide) (by decide))).trans
@@ -282,11 +282,11 @@ theorem correct_of {lad inv : Prog isa}
     {s₀ : State} (hp : Pre s₀) :
     WP isa (x448Of fld lad inv) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
-  have hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
-  have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
-  have hr : ∀ d, d + 8 ≤ 56 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
+  obtain hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
+  obtain hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
+  obtain hr : ∀ d, d + 8 ≤ 56 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
     ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
-  have hd : ∀ j < 56, 8192 ≤ ofs base (off (s₀.gpr .rdx) j) :=
+  obtain hd : ∀ j < 56, 8192 ≤ ofs base (off (s₀.gpr .rdx) j) :=
     fun j hj => far (hbase ▸ hp.point_sc) hj (by decide)
   rw [x448_eq']
   exact WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr hd) fun s₁ h₁ =>

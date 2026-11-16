@@ -107,9 +107,9 @@ theorem args_of_lay {s : State} (h : oneLay s)
 /-- `seal`'s arguments, and its tag, to write. -/
 theorem args_of_seal {s : State} (h : sealPre s) : Args (cxOf s) s ∧ Covers [⟨s.gpr .r10, 16⟩] s.wr := by
   obtain ⟨hrd, hwr, _, hl⟩ := h
-  have mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩, args s],
+  obtain mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩, args s],
       Covers [r] (s.rd ++ s.wr) := fun r hr => covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨s.gpr .r10, 16⟩, ⟨stackArg s 0, 3824⟩],
+  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨s.gpr .r10, 16⟩, ⟨stackArg s 0, 3824⟩],
       Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (Covers.right (mwr _ (by simp))) (mwr _ (by simp)) (mwr _ (by simp)), mwr _ (by simp)⟩
@@ -117,10 +117,10 @@ theorem args_of_seal {s : State} (h : sealPre s) : Args (cxOf s) s ∧ Covers [�
 /-- `open`'s arguments, with the received tag to read. -/
 theorem args_of_open {s : State} (h : openPre s) : Args (cxOf s) s := by
   obtain ⟨hrd, hwr, hl⟩ := h
-  have mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩,
+  obtain mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩,
       ⟨s.gpr .r10, 16⟩, args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨stackArg s 0, 3824⟩], Covers [r] s.wr :=
+  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨stackArg s 0, 3824⟩], Covers [r] s.wr :=
     fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (mwr _ (by simp)) (mwr _ (by simp))
@@ -193,44 +193,44 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
   change WP isa (.block ([.addSp .r12 0, .load .d .r11 .r12 96, .mflr .r0] ++ saveCode .r11 saved ++ _)) s _
   simp only [List.cons_append, List.nil_append]
   refine wp_addSp (by decide) fun s₁ u₁ => ?_
-  have r12₁ : s₁.gpr .r12 = s.sp := by rw [u₁.gpr, BitVec.add_zero]
+  obtain r12₁ : s₁.gpr .r12 = s.sp := by rw [u₁.gpr, BitVec.add_zero]
   refine wp_ld (a := stackArgAddr s 0) (by decide) (by decide) (by rw [r12₁]; rfl)
     (by rw [u₁.rd, u₁.wr]; simpa using in_off Ar.argsC (d := 0) (n := 8) (by decide) (by decide))
     fun s₂ u₂ => wp_mflr fun s₃ u₃ => ?_
-  have W₃ : s₃.gpr .r11 = c.W := by rw [u₃.other _ (by decide), u₂.gpr, u₁.mem, ← Ar.w]; rfl
-  have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
-  have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+  obtain W₃ : s₃.gpr .r11 = c.W := by rw [u₃.other _ (by decide), u₂.gpr, u₁.mem, ← Ar.w]; rfl
+  obtain rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
   refine save_ok (b := .r11) (by decide) (by decide) (fun p hp => by
     rw [W₃, wr₃]; exact Ar.perm.wW (by have := saved_bound p hp; omega_using [this])) ?_
   rw [W₃]
   generalize hmS : saveMem s₃.mem c.W s₃.gpr saved = mS
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have fS : Frame [⟨c.W + BitVec.ofNat 64 128, 96⟩] s.mem mS := by
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain fS : Frame [⟨c.W + BitVec.ofNat 64 128, 96⟩] s.mem mS := by
     rw [← hmS, m₃]; exact Spill.saveMem_frame saved_bound (by omega_using []) _ _ _
-  have svS : Saved c.W s₃.gpr saved mS := by rw [← hmS]; exact saveMem_saved (by decide) _ _ _
+  obtain svS : Saved c.W s₃.gpr saved mS := by rw [← hmS]; exact saveMem_saved (by decide) _ _ _
   refine wp_std (a := c.W + BitVec.ofNat 64 224) (by decide) (by decide) (by show s₃.gpr .r11 + _ = _; rw [W₃]; rfl)
     (by show InRegions s₃.wr _ 8; rw [wr₃]; exact Ar.perm.wW (by decide)) fun s₅ u₅ => ?_
   refine wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => wp_mv fun s₉ u₉ => wp_mv fun s₁₀ u₁₀ =>
     wp_mv fun s₁₁ u₁₁ => wp_mv fun s₁₂ u₁₂ => wp_mv fun s₁₃ u₁₃ => wp_mv fun s₁₄ u₁₄ => WP.block_nil ?_
-  have m₁₄ : s₁₄.mem = mS.writeW (c.W + BitVec.ofNat 64 224) s.lr := by
+  obtain m₁₄ : s₁₄.mem = mS.writeW (c.W + BitVec.ofNat 64 224) s.lr := by
     rw [u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem]
     show mS.writeW _ (s₃.gpr .r0) = _; rw [u₃.gpr, u₂.lr, u₁.lr]
-  have c224 : (entryR c.W).Contains (c.W + BitVec.ofNat 64 224) (64 / 8) :=
+  obtain c224 : (entryR c.W).Contains (c.W + BitVec.ofNat 64 224) (64 / 8) :=
     Offset.contains c.W (by decide) (by decide) (by decide)
-  have f₁₄ : Frame [entryR c.W] s.mem s₁₄.mem := by
+  obtain f₁₄ : Frame [entryR c.W] s.mem s₁₄.mem := by
     rw [m₁₄]
     exact (fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩).writeW (List.mem_singleton_self _) _ c224
-  have g₅ : ∀ r, r ≠ .r0 → r ≠ .r11 → r ≠ .r12 → s₅.gpr r = s.gpr r := fun r h0 h11 h12 => by
+  obtain g₅ : ∀ r, r ≠ .r0 → r ≠ .r11 → r ≠ .r12 → s₅.gpr r = s.gpr r := fun r h0 h11 h12 => by
     rw [u₅.gpr]; show s₃.gpr r = _; rw [u₃.other _ h0, u₂.other _ h11, u₁.other _ h12]
-  have r14₆ : s₆.gpr .r14 = c.W := by rw [u₆.gpr, u₅.gpr]; exact W₃
-  have gF : ∀ r, r ∉ [Reg.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22] → s₁₄.gpr r = s₆.gpr r := fun r hr => by
+  obtain r14₆ : s₆.gpr .r14 = c.W := by rw [u₆.gpr, u₅.gpr]; exact W₃
+  obtain gF : ∀ r, r ∉ [Reg.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22] → s₁₄.gpr r = s₆.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h15, h16, h17, h18, h19, h20, h21, h22⟩ := hr
     rw [u₁₄.other _ h22, u₁₃.other _ h21, u₁₂.other _ h20, u₁₁.other _ h19, u₁₀.other _ h18, u₉.other _ h17,
       u₈.other _ h16, u₇.other _ h15]
-  have g₆ : ∀ r, r ≠ .r0 → r ≠ .r11 → r ≠ .r12 → r ≠ .r14 → s₆.gpr r = s.gpr r := fun r h0 h11 h12 h14 => by
+  obtain g₆ : ∀ r, r ≠ .r0 → r ≠ .r11 → r ≠ .r12 → r ≠ .r14 → s₆.gpr r = s.gpr r := fun r h0 h11 h12 h14 => by
     rw [u₆.other _ h14, g₅ r h0 h11 h12]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, Ar.perm.of_eq ?_ ?_⟩, ?_, f₁₄, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gF _ (by decide), r14₆]
@@ -266,12 +266,12 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
       rw [m₁₄, Mem.readW_writeW_self64]
       simp [saveG, State.write]
     · have hv : mS.readW (c.W + BitVec.ofNat 64 p.2) 64 = s₃.gpr p.1 := svS p hp
-      have d224 : Mem.Sep (c.W + BitVec.ofNat 64 p.2) (64 / 8) (c.W + BitVec.ofNat 64 224) (64 / 8) := by
+      obtain d224 : Mem.Sep (c.W + BitVec.ofNat 64 p.2) (64 / 8) (c.W + BitVec.ofNat 64 224) (64 / 8) := by
         have := saved_bound p hp
         exact (L.w_w (n := 8) (k := 8) (.inl (by omega_using [this])) (by omega_using [this]) (by decide)).sep (Region.contains_self _ _)
           (Region.contains_self _ _)
       rw [m₁₄, Mem.readW_writeW_sep d224 (by decide), hv]
-      have h1 : p.1 ≠ .r0 ∧ p.1 ≠ .r11 ∧ p.1 ≠ .r12 :=
+      obtain h1 : p.1 ≠ .r0 ∧ p.1 ≠ .r11 ∧ p.1 ≠ .r12 :=
         (show ∀ q ∈ saved, q.1 ≠ .r0 ∧ q.1 ≠ .r11 ∧ q.1 ≠ .r12 by decide) p hp
       rw [u₃.other _ h1.1, u₂.other _ h1.2.1, u₁.other _ h1.2.2]
       simp [saveG, State.write, h1.1]
@@ -306,15 +306,15 @@ theorem exit_wp {c : Cx} {s₀ s : State} (E : Env c s) (sv : Saved c.W (saveG s
   refine wp_ld (a := c.W + BitVec.ofNat 64 lrO) (by decide) (by decide) (by rw [E.r14])
     (E.perm.wR (by decide)) fun s₁ u₁ => wp_mtlr fun s₂ u₂ => ?_
   change WP isa (.block (restoreCode .r14 saved)) s₂ _
-  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have g₂ : ∀ r, r ≠ .r0 → s₂.gpr r = s.gpr r := fun r h => by rw [u₂.gpr, u₁.other _ h]
-  have sv₂ : Saved c.W (saveG s₀) saved s₂.mem := by rw [m₂]; exact sv.sub saved_sub
+  obtain m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain g₂ : ∀ r, r ≠ .r0 → s₂.gpr r = s.gpr r := fun r h => by rw [u₂.gpr, u₁.other _ h]
+  obtain sv₂ : Saved c.W (saveG s₀) saved s₂.mem := by rw [m₂]; exact sv.sub saved_sub
   refine WP.mono (restore_wp (b := .r14) (B := c.W) (by decide) (by rw [g₂ _ (by decide), E.r14]) (by decide)
     (by decide) (fun p hp => by
       have := saved_bound p hp
       rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]
       exact E.perm.wR (by omega_using [this])) sv₂) fun s' R => ?_
-  have lr₂ : s₂.lr = s₀.lr := by
+  obtain lr₂ : s₂.lr = s₀.lr := by
     rw [u₂.lr, u₁.gpr, sv (.r0, lrO) List.mem_cons_self]
     simp [saveG, State.write]
   refine ⟨⟨fun r hr => ?_, by rw [R.sp, u₂.sp, u₁.sp, hsp], by rw [R.lr, lr₂]⟩, by rw [R.mem, m₂],

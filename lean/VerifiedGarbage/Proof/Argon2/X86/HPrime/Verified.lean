@@ -80,17 +80,17 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
   refine wp_movm (ea_of esp 20) (arg_in_rd hp (i := 4) rfl (by decide)) fun t₁ u₁ => ?_
   have a₁ : t₁.gpr .eax = scr s₀ := u₁.gpr
   refine wp_store (ea_of a₁ 840) (scr_in hp u₁.wr (by decide)) fun t₂ u₂ => ?_
-  have a₂ : t₂.gpr .eax = scr s₀ := by rw [u₂.gpr, a₁]
+  obtain a₂ : t₂.gpr .eax = scr s₀ := by rw [u₂.gpr, a₁]
   refine wp_store (ea_of a₂ 844) (scr_in hp (by rw [u₂.wr, u₁.wr]) (by decide)) fun t₃ u₃ => ?_
-  have a₃ : t₃.gpr .eax = scr s₀ := by rw [u₃.gpr, a₂]
+  obtain a₃ : t₃.gpr .eax = scr s₀ := by rw [u₃.gpr, a₂]
   refine wp_store (ea_of a₃ 848) (scr_in hp (by rw [u₃.wr, u₂.wr, u₁.wr]) (by decide)) fun t₄ u₄ => ?_
   refine wp_mov fun t₅ u₅ => ?_
-  have b₅ : t₅.gpr .ebx = scr s₀ := by rw [u₅.gpr, u₄.gpr, a₃]
-  have g₅ : ∀ r, r ≠ .ebx → r ≠ .eax → t₅.gpr r = s₀.gpr r := fun r h1 h2 => by
+  obtain b₅ : t₅.gpr .ebx = scr s₀ := by rw [u₅.gpr, u₄.gpr, a₃]
+  obtain g₅ : ∀ r, r ≠ .ebx → r ≠ .eax → t₅.gpr r = s₀.gpr r := fun r h1 h2 => by
     rw [u₅.other _ h1, u₄.gpr, u₃.gpr, u₂.gpr, u₁.other _ h2]
-  have rd₅ : t₅.rd = s₀.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have wr₅ : t₅.wr = s₀.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have F₅ : Frame [scrR s₀] s₀.mem t₅.mem := by
+  obtain rd₅ : t₅.rd = s₀.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₅ : t₅.wr = s₀.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  obtain F₅ : Frame [scrR s₀] s₀.mem t₅.mem := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
     exact scr_frame hp (scr_frame hp (scr_frame hp (by rw [u₁.mem]; exact Frame.refl _ _) (by decide) _)
       (by decide) _) (by decide) _
@@ -105,35 +105,35 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
   refine wp_store (ea_of (by rw [u₉.gpr, u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), b₅]) 832)
     (scr_in hp (by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, wr₅]) (by decide)) fun t u => WP.block_nil ?_
   -- Values.
-  have v₆ : t₆.gpr .eax = op s₀ := by rw [u₆.gpr, arg_frame hp F₅ (i := 2) (by decide)]
-  have F₇ : Frame [scrR s₀] s₀.mem t₇.mem := by
+  obtain v₆ : t₆.gpr .eax = op s₀ := by rw [u₆.gpr, arg_frame hp F₅ (i := 2) (by decide)]
+  obtain F₇ : Frame [scrR s₀] s₀.mem t₇.mem := by
     rw [u₇.mem, u₆.mem]; exact scr_frame hp F₅ (by decide) _
-  have v₈ : t₈.gpr .eax = arg s₀ 3 := by rw [u₈.gpr, arg_frame hp F₇ (i := 3) (by decide)]
-  have rds : t.rd = s₀.rd := by rw [u.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, rd₅]
-  have wrs : t.wr = s₀.wr := by rw [u.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, wr₅]
-  have gt : ∀ r, r ≠ .ebx → r ≠ .eax → t.gpr r = s₀.gpr r := fun r h1 h2 => by
+  obtain v₈ : t₈.gpr .eax = arg s₀ 3 := by rw [u₈.gpr, arg_frame hp F₇ (i := 3) (by decide)]
+  obtain rds : t.rd = s₀.rd := by rw [u.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, rd₅]
+  obtain wrs : t.wr = s₀.wr := by rw [u.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, wr₅]
+  obtain gt : ∀ r, r ≠ .ebx → r ≠ .eax → t.gpr r = s₀.gpr r := fun r h1 h2 => by
     rw [u.gpr, u₉.gpr, u₈.other _ h2, u₇.gpr, u₆.other _ h2, g₅ _ h1 h2]
-  have bt : t.gpr .ebx = scr s₀ := by
+  obtain bt : t.gpr .ebx = scr s₀ := by
     rw [u.gpr, u₉.gpr, u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), b₅]
-  have m₉ : t₉.mem = (t₇.mem.writeW (addr (scr s₀) leftOff) (arg s₀ 3)) := by
+  obtain m₉ : t₉.mem = (t₇.mem.writeW (addr (scr s₀) leftOff) (arg s₀ 3)) := by
     rw [u₉.mem, u₈.mem, v₈]
-  have mt : t.mem = (t₇.mem.writeW (addr (scr s₀) leftOff) (arg s₀ 3)).writeW (addr (scr s₀) 832)
+  obtain mt : t.mem = (t₇.mem.writeW (addr (scr s₀) leftOff) (arg s₀ 3)).writeW (addr (scr s₀) 832)
       (arg s₀ 3) := by
     rw [u.mem, m₉, u₉.gpr, v₈]
-  have m₇ : t₇.mem = t₅.mem.writeW (addr (scr s₀) outOff) (op s₀) := by
+  obtain m₇ : t₇.mem = t₅.mem.writeW (addr (scr s₀) outOff) (op s₀) := by
     rw [u₇.mem, u₆.mem, v₆]
-  have Ft : Frame [scrR s₀] s₀.mem t.mem := by
+  obtain Ft : Frame [scrR s₀] s₀.mem t.mem := by
     rw [mt]; exact scr_frame hp (scr_frame hp F₇ (by decide) _) (by decide) _
   -- Reads of `scratch` after the last writes.
-  have R : ∀ (m : Mem) (v : BitVec 32) (d e : Nat), d + 4 ≤ 16384 → e + 4 ≤ 16384 →
+  obtain R : ∀ (m : Mem) (v : BitVec 32) (d e : Nat), d + 4 ≤ 16384 → e + 4 ≤ 16384 →
       (d + 4 ≤ e ∨ e + 4 ≤ d) →
       (m.writeW (addr (scr s₀) e) v).readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 :=
     fun m v d e hd he h => readW_writeW_addr m v (by omega_using [hs, hd]) (by omega_using [hs, he]) h
-  have keep7 : ∀ d, d + 4 ≤ 16384 → (d + 4 ≤ 832 ∨ 864 ≤ d ∨ (836 ≤ d ∧ d + 4 ≤ 856)) →
+  obtain keep7 : ∀ d, d + 4 ≤ 16384 → (d + 4 ≤ 832 ∨ 864 ≤ d ∨ (836 ≤ d ∧ d + 4 ≤ 856)) →
       t.mem.readW (addr (scr s₀) d) 32 = t₅.mem.readW (addr (scr s₀) d) 32 := fun d hd h => by
     rw [mt, R _ _ d 832 hd (by decide) (by omega_using [h]), R _ _ d leftOff hd (by decide) (by simp only [leftOff]; omega_using [h]),
       m₇, R _ _ d outOff hd (by decide) (by simp only [outOff]; omega_using [h])]
-  have m₅ : t₅.mem = ((s₀.mem.writeW (addr (scr s₀) 840) (s₀.gpr .ebx)).writeW (addr (scr s₀) 844)
+  obtain m₅ : t₅.mem = ((s₀.mem.writeW (addr (scr s₀) 840) (s₀.gpr .ebx)).writeW (addr (scr s₀) 844)
       (s₀.gpr .esi)).writeW (addr (scr s₀) 848) (s₀.gpr .edi) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.other .ebx (by decide),
       u₁.other .esi (by decide), u₁.other .edi (by decide)]
@@ -166,7 +166,7 @@ theorem correct : WP isa Impl.Argon2.X86.HPrime.code s₀ fun t => abiPreserved 
   have hif := hp.in_fits
   unfold Impl.Argon2.X86.HPrime.code
   refine WP.seq ((setup_ok hp).mono fun s₁ ⟨b₁, o₁, e₁, F₁⟩ => ?_)
-  have hin : bytesAt s₁.mem ((inp s₀).setWidth 64) (inl s₀) = bytesAt s₀.mem ((inp s₀).setWidth 64) (inl s₀) :=
+  obtain hin : bytesAt s₁.mem ((inp s₀).setWidth 64) (inl s₀) = bytesAt s₀.mem ((inp s₀).setWidth 64) (inl s₀) :=
     Proof.Blake2.bytesAt_congr fun i hi => F₁.bytes (R := inR s₀) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega_using [hif]) hi
   refine WP.seq ((first_ok hp ⟨b₁, o₁, e₁, hin⟩).mono fun s₂ ⟨⟨b₂, o₂, e₂, _⟩, d₂⟩ => ?_)
@@ -177,7 +177,7 @@ theorem correct : WP isa Impl.Argon2.X86.HPrime.code s₀ fun t => abiPreserved 
     (by rw [u₄.rd, u₄.wr]; exact scr_rd hp b₃ (by decide)) fun s₅ u₅ => ?_
   refine wp_movm (ea_of (by rw [u₅.other _ (by decide), u₄.other _ (by decide), b₃.ebx]) 840)
     (by rw [u₅.rd, u₅.wr, u₄.rd, u₄.wr]; exact scr_rd hp b₃ (by decide)) fun t u => WP.block_nil ?_
-  have mt : t.mem = s₃.mem := by rw [u.mem, u₅.mem, u₄.mem]
+  obtain mt : t.mem = s₃.mem := by rw [u.mem, u₅.mem, u₄.mem]
   have sv := b₃.saved
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at sv
   obtain ⟨sb, ss, sd⟩ := sv
@@ -233,7 +233,7 @@ def τS : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [0, 16384], argLen := 24, argBases := [(20, 1)] }
 
 theorem wfS {s : State} (hp : Pre s) : VG.X86.Taint.Wf τS s := by
-  have ho := hp.out_fits; have hsc := hp.scr_fits; have hs := hp.esp_hi
+  obtain ho := hp.out_fits; have hsc := hp.scr_fits; have hs := hp.esp_hi
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τS], by simpa [hp.wr] using hp.out_scr, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hs, ?_⟩, ?_⟩
@@ -289,7 +289,7 @@ theorem choose_blk {s : State} (h : F0 s₀ s) :
     WP isa (.block [.mov .edx (.mem (VG.Impl.Sha512.X86.at_ .ebx leftOff)), .alu .cmp .edx (.imm 65)]) s
       fun t => t.cf = some (decide (ol s₀ < 65)) := by
   have hs := hp.scr_fits
-  have hol : ol s₀ < 2 ^ 32 := (arg s₀ 3).isLt
+  obtain hol : ol s₀ < 2 ^ 32 := (arg s₀ 3).isLt
   refine wp_movm (VG.Proof.Sha512.X86.ea_of h.body.ebx leftOff)
     (by rw [h.body.rd, h.body.wr]
         exact ⟨scrR s₀, by simp [hp.wr], contains_addr (by decide) (by decide) hs⟩) fun s₁ u₁ =>
@@ -317,14 +317,14 @@ theorem first_rel :
         Spec.Argon2.H (nF s₀') (Spec.Argon2.le32 (ol s₀') ++ inB s₀')) := by
   have hs := hp.scr_fits
   have hif := hp.in_fits
-  have nE : nF s₀' = nF s₀ := by simp only [nF, q.ol_eq]
+  obtain nE : nF s₀' = nF s₀ := by simp only [nF, q.ol_eq]
   unfold first
   refine RelCT.seq (rel_wp (choose_rel hp hp' q) (fun _ h => first_choose hp h)
     (fun _ h => first_choose hp' h)) ?_
   refine RelCT.seq (rel_wp ((init_rel (B := scr s₀) (E := esp₀ s₀) (n := nF s₀) (nF_pos hp)
       (Nat.min_le_right _ _)).mono (fun _ _ ⟨⟨f₁, e₁⟩, ⟨f₂, e₂⟩⟩ =>
         ⟨⟨f₁.body.ctx hp, e₁⟩, by
-          have c := f₂.body.ctx hp'
+          obtain c := f₂.body.ctx hp'
           rw [q.scr_eq, q.esp] at c
           exact ⟨c, by rw [e₂, nE]⟩⟩) fun _ _ h => h)
     (fun _ h => first_init hp h) (fun _ h => first_init hp' h)) ?_
@@ -332,8 +332,8 @@ theorem first_rel :
       (by omega_using [hs]) (by decide) (by decide) (hp.stk_scr.sub_right (Offset.sub_base _ (by decide)))
       fixed_check_832).mono (fun _ _ ⟨⟨f₁, _⟩, ⟨f₂, _⟩⟩ =>
         ⟨⟨f₁.body.ctx hp, pfx_cov hp f₁.body⟩, by
-          have c := f₂.body.ctx hp'
-          have v := pfx_cov hp' f₂.body
+          obtain c := f₂.body.ctx hp'
+          obtain v := pfx_cov hp' f₂.body
           simp only [P] at v
           rw [q.scr_eq, q.esp] at c; rw [q.scr_eq] at v
           exact ⟨c, v⟩⟩) fun _ _ h => h)
@@ -362,9 +362,9 @@ end
 theorem code_ct : ConstantTime isa hPrimeX86.pre hPrimeX86.pub Impl.Argon2.X86.HPrime.code := by
   refine RelCT.constantTime (Q := fun _ _ => True)
     fun s₀ s₀' t₁ t₂ r₁ r₂ ⟨h₀, h₀', hq⟩ e₁ e₂ => ?_
-  have hp := pre_of s₀ h₀
-  have hp' := pre_of s₀' h₀'
-  have q := Same.of_pub hq
+  obtain hp := pre_of s₀ h₀
+  obtain hp' := pre_of s₀' h₀'
+  obtain q := Same.of_pub hq
   suffices h : RelCT isa (fun t₁ t₂ => t₁ = s₀ ∧ t₂ = s₀') Impl.Argon2.X86.HPrime.code fun _ _ => True from
     h s₀ s₀' t₁ t₂ r₁ r₂ ⟨rfl, rfl⟩ e₁ e₂
   unfold Impl.Argon2.X86.HPrime.code
@@ -397,12 +397,12 @@ def hSatState : State where
   wr := [⟨0x2000, 1⟩, ⟨0x10000, 16384⟩]
 
 theorem hSat_pre : hPrimeX86.pre hSatState := by
-  have a0 : arg hSatState 0 = 0x1000 := by decide
-  have a1 : arg hSatState 1 = 1 := by decide
-  have a2 : arg hSatState 2 = 0x2000 := by decide
-  have a3 : arg hSatState 3 = 1 := by decide
-  have a4 : arg hSatState 4 = 0x10000 := by decide
-  have e : argAddr hSatState 0 = 0x5004 := by decide
+  obtain a0 : arg hSatState 0 = 0x1000 := by decide
+  obtain a1 : arg hSatState 1 = 1 := by decide
+  obtain a2 : arg hSatState 2 = 0x2000 := by decide
+  obtain a3 : arg hSatState 3 = 1 := by decide
+  obtain a4 : arg hSatState 4 = 0x10000 := by decide
+  obtain e : argAddr hSatState 0 = 0x5004 := by decide
   simp only [hPrimeX86, a0, a1, a2, a3, a4, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide,
     by decide, by decide⟩ <;>

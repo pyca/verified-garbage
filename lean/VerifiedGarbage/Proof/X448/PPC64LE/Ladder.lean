@@ -321,44 +321,44 @@ theorem head_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
   have hc := hcur.ctx
   have hB : BITS = 1064 := rfl
   have hA := ACC_eq
-  have hsw := ladderAfter_swap_le k x1 hn'
-  have hbt := bit_le k (n - 1)
-  have hx := xor_le_one hsw hbt
+  obtain hsw := ladderAfter_swap_le k x1 hn'
+  obtain hbt := bit_le k (n - 1)
+  obtain hx := xor_le_one hsw hbt
   simp only [stepHead, mask, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => ?_
-  have e12 : s1.gpr .r12 = BitVec.ofNat 64 (n - 1) := by
+  obtain e12 : s1.gpr .r12 = BitVec.ofNat 64 (n - 1) := by
     rw [u1.gpr, hcur.r12, ofNat_sub_one hn (by omega_arith)]
   refine wp_add fun s2 u2 => ?_
   refine wp_lbz (a := b + BitVec.ofNat 64 (n - 1 + BITS)) (by decide) (by decide)
     (by rw [u2.gpr, e12, u1.other _ (by decide), hc.r6, Offset.add_add])
     (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s3 u3 => ?_
-  have e4 : s3.gpr .r4 = BitVec.ofNat 64 (bit k (n - 1)) := by
+  obtain e4 : s3.gpr .r4 = BitVec.ofNat 64 (bit k (n - 1)) := by
     rw [u3.gpr, u2.mem, u1.mem, hcur.stp.frame _ fun r hr => ?_, Nat.add_comm, hbits _ (by omega_arith)]
     · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     · rw [List.mem_singleton.mp hr]
       exact fun h => Offset.disjoint_base b (d := n - 1 + BITS) (n := 1) (k := ACC + 112) (by omega_arith)
         (by omega_arith) _ (Region.contains_self _ _) h
   refine wp_xor fun s4 u4 => ?_
-  have e0 : s4.gpr .r0 = BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
+  obtain e0 : s4.gpr .r0 = BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u4.gpr, e4, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), hcur.r0,
       ofNat_xor (by omega_arith) (by omega_arith)]
   refine wp_li (by decide) fun s5 u5 => wp_sub fun s6 u6 => ?_
-  have e11 : s6.gpr .r11 = 0 - BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
+  obtain e11 : s6.gpr .r11 = 0 - BitVec.ofNat 64 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) := by
     rw [u6.gpr, u5.gpr, u5.other _ (by decide), e0]; rfl
-  have hr6 : Rest [.r0, .r4, .r11, .r12] s s6 :=
+  obtain hr6 : Rest [.r0, .r4, .r11, .r12] s s6 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
-  have hm6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have hc6 : Ctx b s6 := hc.of_rest hr6 (by decide)
-  have hS6 : SlotsOk s6.mem b LQ (ladV x1 (ladderAfter k x1 n)) := by
+  obtain hm6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain hc6 : Ctx b s6 := hc.of_rest hr6 (by decide)
+  obtain hS6 : SlotsOk s6.mem b LQ (ladV x1 (ladderAfter k x1 n)) := by
     rw [hm6]; exact hcur.slots
   refine WP.append (cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
     hc6 hx e11 hS6) fun s7 ⟨hr7, hf7, hS7⟩ => ?_
-  have hc7 : Ctx b s7 := hc6.of_rest hr7 (by decide)
+  obtain hc7 : Ctx b s7 := hc6.of_rest hr7 (by decide)
   refine WP.append (cswapS (by decide) (by decide) (by decide) (by decide) (by decide)
     hc7 hx (by rw [hr7.gpr _ (by decide), e11]) hS7) fun s8 ⟨hr8, hf8, hS8⟩ => ?_
   refine wp_addi (by decide) (by decide) fun s9 u9 => WP.block_nil ?_
-  have hr9 : Rest [.r0, .r4, .r5, .r7, .r8, .r11, .r12] s s9 :=
+  obtain hr9 : Rest [.r0, .r4, .r5, .r7, .r8, .r11, .r12] s s9 :=
     (hr6.mono (by decide)).trans ((hr7.mono (by decide)).trans ((hr8.mono (by decide)).trans
       (u9.rest (by decide))))
   exact ⟨hc.of_rest hr9 (by decide),
@@ -394,13 +394,13 @@ theorem ladder_ok {b : Addr} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s) (hbi
       SlotsOk s'.mem b LQ (ladV x1 (ladderAfter k x1 0)) := by
   unfold ladder
   refine WP.seq (wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_)
-  have hr2 : Rest [.r0, .r12] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
-  have hbits2 : Bits b k s2.mem := by rw [hm2]; exact hbits
-  have h448 : LadInv b k x1 s2 448 s2 :=
+  obtain hr2 : Rest [.r0, .r12] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  obtain hbits2 : Bits b k s2.mem := by rw [hm2]; exact hbits
+  obtain h448 : LadInv b k x1 s2 448 s2 :=
     ⟨⟨hc.of_rest hr2 (by decide), StpW.refl _ _ _, by rw [u2.gpr]; rfl,
       by rw [u2.other _ (by decide), u1.gpr], by rw [hm2]; exact hS⟩⟩
-  have hst : StpW work b s s2 := StpW.of_rest hr2 (by decide) hm2
+  obtain hst : StpW work b s s2 := StpW.of_rest hr2 (by decide) hm2
   refine WP.mono (Q := LadInv b k x1 s2 0) (WP.loop (M := isa)
     (fun m s' => 1 ≤ m ∧ m ≤ 448 ∧ LadInv b k x1 s2 m s') ?_ 448 s2 ⟨by decide, Nat.le_refl _, h448⟩)
     fun s' ⟨h'⟩ => ⟨hst.trans h'.stp, h'.ctx, h'.r0, h'.slots⟩

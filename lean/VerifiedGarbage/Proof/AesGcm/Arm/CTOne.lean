@@ -124,12 +124,12 @@ theorem j0_wpI (h : onePre na wi t₀) (ec : t₀.gpr .r0 = c) (ew : arg t₀ wi
     J0I c (w + BitVec.ofNat 32 16) w sp (t₀.gpr .r2) (t₀.gpr .r3).toNat s ∧
       WP isa j0 s (FT na t₀ c (w + BitVec.ofNat 32 16) w sp R) := by
   subst ec ew esp
-  have L := oneLay h
+  obtain L := oneLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   obtain ⟨k7, he, hk⟩ := hs
   have hp := h
   obtain ⟨hrd, -, -, -, -, dnW, -, -, -, -, -, -, bn, -, -, -, -, fn, -⟩ := hp
-  have ji : J0In (t₀.gpr .r0) (oSt t₀ wi) (arg t₀ wi) t₀.sp k7 (BitVec.ofNat 32 R)
+  obtain ji : J0In (t₀.gpr .r0) (oSt t₀ wi) (arg t₀ wi) t₀.sp k7 (BitVec.ofNat 32 R)
       (blockAt s.mem (State.addr (t₀.gpr .r0) + BitVec.ofNat 64 240)) (t₀.gpr .r2) (t₀.gpr .r3).toNat s :=
     ⟨he, rfl, h4, by rw [h5]; simp, ⟨by rw [hk.rd, hk.wr]; exact covers_of_mem (List.mem_append_left _ hrd.2.1),
       (t₀.gpr .r3).isLt, fn, oSt_disj h dnW, dnW, bn⟩⟩
@@ -209,7 +209,7 @@ theorem abs_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame
     (h4 : s.gpr .r4 = D) (h5 : s.gpr .r5 = BitVec.ofNat 32 n) (h6 : s.gpr .r6 = BitVec.ofNat 32 0) :
     AbsI c st w sp 16 D n 0 s ∧ WP isa (absorb 16) s (FT na t₀ c st w sp R) := by
   obtain ⟨k7, he, hk⟩ := hs
-  have ai : AbsIn c st w sp k7 (BitVec.ofNat 32 R) 16 (blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) []
+  obtain ai : AbsIn c st w sp k7 (BitVec.ofNat 32 R) 16 (blockAt s.mem (State.addr c + BitVec.ofNat 64 240)) []
       D n s := ⟨he, h4, h5, by rw [h6]; rfl, hd.of_eq hk.rd hk.wr, rfl⟩
   exact ⟨⟨_, _, _, _, rfl, ai⟩, WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun s' ⟨ab, rd', wr', sp'⟩ =>
     ⟨k7, ab.env, hk.frame hf ab.frame (disj_sub hJ abs16_sub) sp' rd' wr'⟩⟩
@@ -229,7 +229,7 @@ theorem cr_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {D : BitVec 32} {n : Nat
     (h6 : s.gpr .r6 = BitVec.ofNat 32 0) :
     CrI c st w sp (BitVec.ofNat 32 R) R D n 0 s ∧ WP isa crypt s (FT na t₀ c st w sp R) := by
   obtain ⟨k7, he, hk⟩ := hs
-  have ci : CrIn c st w sp k7 (BitVec.ofNat 32 R) R (blockAt s.mem (State.addr st + BitVec.ofNat 64 48)) 0 D n s :=
+  obtain ci : CrIn c st w sp k7 (BitVec.ofNat 32 R) R (blockAt s.mem (State.addr st + BitVec.ofNat 64 48)) 0 D n s :=
     ⟨he, h4, h5, by rw [h6], he.r8, hR, ⟨hd.of_eq hk.rd hk.wr, by rw [hk.wr]; exact hwD, hcD⟩⟩
   exact ⟨⟨_, _, _, rfl, ci⟩, WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s' ⟨co, rd', wr', sp'⟩ =>
     ⟨k7, co.env, hk.frame hf co.frame hA sp' rd' wr'⟩⟩
@@ -254,7 +254,7 @@ theorem one_aadOk {n wi : Nat} {t : State} (h : onePre n wi t) :
 theorem one_argsCr {n wi : Nat} {t : State} (h : onePre n wi t)
     (hw : (⟨State.addr (arg t 2), (arg t 3).toNat⟩ : Region) ∈ t.wr) :
     ∀ r ∈ crFrame (oSt t wi) (arg t wi) t.sp (arg t 2) (arg t 3).toNat, (args t n).Disjoint r := by
-  have hst := oSt_addr h
+  obtain hst := oSt_addr h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   obtain ⟨-, -, -, -, -, -, -, -, -, dDA, dWA, -⟩ := h
   intro r hr
@@ -277,20 +277,20 @@ include h0 h0' hq hn hwi
 theorem oneAad_rel :
     RelCT isa (fun a b => SO1 na wi s₀ a ∧ SO1 na wi s₀' b) oneAad fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
-  have L := oneLay h0
+  obtain L := oneLay h0
   have spf := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have spf' := h0'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hin : args s₀ na ∈ s₀.rd := h0.1.2.2.2
   have hin' : args s₀' na ∈ s₀'.rd := h0'.1.2.2.2
-  have e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
-  have est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
-  have hJ := one_argsJ0 h0
-  have hJ' : ∀ r ∈ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp, (args s₀' na).Disjoint r := by
+  obtain e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
+  obtain est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
+  obtain hJ := one_argsJ0 h0
+  obtain hJ' : ∀ r ∈ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp, (args s₀' na).Disjoint r := by
     have := one_argsJ0 h0'; rwa [est, e4, ← q₀] at this
-  have so : ∀ s, SO1 na wi s₀ s → OF na wi s₀ s₀ s := fun s h1 => so1_FT h1 rfl rfl rfl rfl
-  have so' : ∀ s, SO1 na wi s₀' s → OF na wi s₀ s₀' s := fun s h1 => so1_FT h1 q₁.symm e4 q₀.symm (by rw [q₂])
+  obtain so : ∀ s, SO1 na wi s₀ s → OF na wi s₀ s₀ s := fun s h1 => so1_FT h1 rfl rfl rfl rfl
+  obtain so' : ∀ s, SO1 na wi s₀' s → OF na wi s₀ s₀' s := fun s h1 => so1_FT h1 q₁.symm e4 q₀.symm (by rw [q₂])
   -- `J₀`
-  have x1 := rel_wp (F := SO1 na wi s₀) (F' := SO1 na wi s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x1 := rel_wp (F := SO1 na wi s₀) (F' := SO1 na wi s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (j0_ct L (Np := s₀.gpr .r2) (n := (s₀.gpr .r3).toNat) (s₀.gpr .r3).isLt)
       (fun s h1 => (j0_wpI h0 rfl rfl rfl (so s h1) h1.r4 h1.r5).1)
       (fun s h1 => by
@@ -301,17 +301,17 @@ theorem oneAad_rel :
   -- the additional data's arguments
   let B1 : State → State → Prop := fun t₀ s => OF na wi s₀ t₀ s ∧ s.gpr .r4 = arg s₀ 0 ∧
     s.gpr .r5 = arg s₀ 1 ∧ s.gpr .r6 = BitVec.ofNat 32 0
-  have x2 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B1 s₀) (G' := B1 s₀')
+  obtain x2 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B1 s₀) (G' := B1 s₀')
     (argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2))
     (fun s h => b1_wpI spf hin hn h)
     (fun s h => WP.mono (b1_wpI spf' hin' hn h) fun s' ⟨y₁, y₂, y₃, y₄⟩ =>
       ⟨y₁, by rw [y₂, qa 0 (by omega_arith)], by rw [y₃, qa 1 (by omega_arith)], y₄⟩)
   -- absorbed
-  have hda := one_aadOk h0
-  have hda' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 0) (arg s₀ 1).toNat := by
+  obtain hda := one_aadOk h0
+  obtain hda' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 0) (arg s₀ 1).toNat := by
     have := one_aadOk h0'; rwa [est, e4, ← q₀, ← qa 0 (by omega_arith), ← qa 1 (by omega_arith)] at this
-  have x3 := rel_wp (F := B1 s₀) (F' := B1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x3 := rel_wp (F := B1 s₀) (F' := B1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (absorb_ct L (yo := 16) (.inr rfl) (D := arg s₀ 0) (n := (arg s₀ 1).toNat) (q := 0) (by decide))
       (fun s h => (abs_wpI L spf hJ hda h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1)
       (fun s h => (abs_wpI L spf' hJ' hda' h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1))
@@ -320,12 +320,12 @@ theorem oneAad_rel :
   -- padded
   let B2 : State → State → Prop := fun t₀ s => OF na wi s₀ t₀ s ∧
     s.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 1).toNat % 16)
-  have x4 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B2 s₀) (G' := B2 s₀')
+  obtain x4 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B2 s₀) (G' := B2 s₀')
     (argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2))
     (fun s h => b2_wpI spf hin hn h)
     (fun s h => WP.mono (b2_wpI spf' hin' hn h) fun s' ⟨y₁, y₂⟩ => ⟨y₁, by rw [y₂, qa 1 (by omega_arith)]⟩)
-  have x5 := rel_wp (F := B2 s₀) (F' := B2 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x5 := rel_wp (F := B2 s₀) (F' := B2 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (flush_ct L (yo := 16) (.inr rfl) (q := (arg s₀ 1).toNat % 16) (Nat.mod_lt _ (by decide)))
       (fun s ⟨⟨k7, he, _⟩, h6⟩ => ⟨k7, _, he, h6⟩) (fun s ⟨⟨k7, he, _⟩, h6⟩ => ⟨k7, _, he, h6⟩))
     (fun s h => fl_wpI L spf hJ (Nat.mod_lt _ (by decide)) h.1 h.2)
@@ -336,35 +336,35 @@ theorem oneCrypt_rel (hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : 
     (hw' : (⟨State.addr (arg s₀' 2), (arg s₀' 3).toNat⟩ : Region) ∈ s₀'.wr) :
     RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) oneCrypt fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
-  have L := oneLay h0
+  obtain L := oneLay h0
   have spf := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have spf' := h0'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hR : roundsOk s₀ := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ na ∈ s₀.rd := h0.1.2.2.2
   have hin' : args s₀' na ∈ s₀'.rd := h0'.1.2.2.2
-  have e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
-  have est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
+  obtain e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
+  obtain est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
   let D1 : State → State → Prop := fun t₀ s => OF na wi s₀ t₀ s ∧ s.gpr .r4 = arg s₀ 2 ∧
     s.gpr .r5 = arg s₀ 3 ∧ s.gpr .r6 = BitVec.ofNat 32 0
-  have x1 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := D1 s₀) (G' := D1 s₀')
+  obtain x1 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := D1 s₀) (G' := D1 s₀')
     (argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2))
     (fun s h => da_wpI spf hin hn h)
     (fun s h => WP.mono (da_wpI spf' hin' hn h) fun s' ⟨y₁, y₂, y₃, y₄⟩ =>
       ⟨y₁, by rw [y₂, qa 2 (by omega_arith)], by rw [y₃, qa 3 (by omega_arith)], y₄⟩)
-  have hd := one_dataOk h0 (ArgsKeep.refl na s₀)
-  have hd' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 2) (arg s₀ 3).toNat := by
+  obtain hd := one_dataOk h0 (ArgsKeep.refl na s₀)
+  obtain hd' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 2) (arg s₀ 3).toNat := by
     have := one_dataOk h0' (ArgsKeep.refl na s₀'); rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
-  have hwD : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀.wr := by
+  obtain hwD : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀.wr := by
     exact covers_of_mem hw
-  have hwD' : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀'.wr := by
+  obtain hwD' : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀'.wr := by
     rw [qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact covers_of_mem hw'
-  have hcD' : (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint ⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ := by
+  obtain hcD' : (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint ⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ := by
     rw [q₁, qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact h0'.2.2.1 hw'
-  have hA := one_argsCr h0 hw
-  have hA' : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 2) (arg s₀ 3).toNat, (args s₀' na).Disjoint r := by
+  obtain hA := one_argsCr h0 hw
+  obtain hA' : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 2) (arg s₀ 3).toNat, (args s₀' na).Disjoint r := by
     have := one_argsCr h0' hw'; rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
-  have x2 := rel_wp (F := D1 s₀) (F' := D1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x2 := rel_wp (F := D1 s₀) (F' := D1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (crypt_ct L (k8 := BitVec.ofNat 32 (s₀.gpr .r1).toNat) (R := (s₀.gpr .r1).toNat) (D := arg s₀ 2)
         (n := (arg s₀ 3).toNat) (q := 0))
       (fun s h => (cr_wpI L spf hd hwD (h0.2.2.1 hw) hA hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1)
@@ -377,33 +377,33 @@ theorem oneTag_rel {o : Nat} (ho : o = 0 ∨ o = 112) :
     RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) (oneTag o)
       fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
-  have L := oneLay h0
+  obtain L := oneLay h0
   have spf := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have spf' := h0'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hR : roundsOk s₀ := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ na ∈ s₀.rd := h0.1.2.2.2
   have hin' : args s₀' na ∈ s₀'.rd := h0'.1.2.2.2
-  have e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
-  have est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
-  have hJ := one_argsJ0 h0
-  have hJ' : ∀ r ∈ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp, (args s₀' na).Disjoint r := by
+  obtain e4 : arg s₀' wi = arg s₀ wi := (qa wi hwi).symm
+  obtain est : oSt s₀' wi = oSt s₀ wi := by show arg s₀' wi + _ = arg s₀ wi + _; rw [e4]
+  obtain hJ := one_argsJ0 h0
+  obtain hJ' : ∀ r ∈ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp, (args s₀' na).Disjoint r := by
     have := one_argsJ0 h0'; rwa [est, e4, ← q₀] at this
-  have hT := disj_sub (one_argsOt h0 ho) tag_otSub
-  have hT' : ∀ r ∈ tagFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (args s₀' na).Disjoint r := by
+  obtain hT := disj_sub (one_argsOt h0 ho) tag_otSub
+  obtain hT' : ∀ r ∈ tagFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (args s₀' na).Disjoint r := by
     have := disj_sub (one_argsOt h0' ho) tag_otSub; rwa [est, e4, ← q₀] at this
-  have ag : RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) (.block dataArgs) fun _ _ => True :=
+  obtain ag : RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) (.block dataArgs) fun _ _ => True :=
     argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2)
   let D1 : State → State → Prop := fun t₀ s => OF na wi s₀ t₀ s ∧ s.gpr .r4 = arg s₀ 2 ∧
     s.gpr .r5 = arg s₀ 3 ∧ s.gpr .r6 = BitVec.ofNat 32 0
-  have x1 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := D1 s₀) (G' := D1 s₀') ag
+  obtain x1 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := D1 s₀) (G' := D1 s₀') ag
     (fun s h => da_wpI spf hin hn h)
     (fun s h => WP.mono (da_wpI spf' hin' hn h) fun s' ⟨y₁, y₂, y₃, y₄⟩ =>
       ⟨y₁, by rw [y₂, qa 2 (by omega_arith)], by rw [y₃, qa 3 (by omega_arith)], y₄⟩)
-  have hd := one_dataOk h0 (ArgsKeep.refl na s₀)
-  have hd' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 2) (arg s₀ 3).toNat := by
+  obtain hd := one_dataOk h0 (ArgsKeep.refl na s₀)
+  obtain hd' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 2) (arg s₀ 3).toNat := by
     have := one_dataOk h0' (ArgsKeep.refl na s₀'); rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
-  have x2 := rel_wp (F := D1 s₀) (F' := D1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x2 := rel_wp (F := D1 s₀) (F' := D1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (absorb_ct L (yo := 16) (.inr rfl) (D := arg s₀ 2) (n := (arg s₀ 3).toNat) (q := 0) (by decide))
       (fun s h => (abs_wpI L spf hJ hd h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1)
       (fun s h => (abs_wpI L spf' hJ' hd' h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1))
@@ -411,21 +411,21 @@ theorem oneTag_rel {o : Nat} (ho : o = 0 ∨ o = 112) :
     (fun s h => (abs_wpI L spf' hJ' hd' h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).2)
   let B3 : State → State → Prop := fun t₀ s => OF na wi s₀ t₀ s ∧
     s.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 3).toNat % 16)
-  have x3 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B3 s₀) (G' := B3 s₀')
+  obtain x3 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := B3 s₀) (G' := B3 s₀')
     (argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2))
     (fun s h => b3_wpI spf hin hn h)
     (fun s h => WP.mono (b3_wpI spf' hin' hn h) fun s' ⟨y₁, y₂⟩ => ⟨y₁, by rw [y₂, qa 3 (by omega_arith)]⟩)
-  have x4 := rel_wp (F := B3 s₀) (F' := B3 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x4 := rel_wp (F := B3 s₀) (F' := B3 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (flush_ct L (yo := 16) (.inr rfl) (q := (arg s₀ 3).toNat % 16) (Nat.mod_lt _ (by decide)))
       (fun s ⟨⟨k7, he, _⟩, h6⟩ => ⟨k7, _, he, h6⟩) (fun s ⟨⟨k7, he, _⟩, h6⟩ => ⟨k7, _, he, h6⟩))
     (fun s h => fl_wpI L spf hJ (Nat.mod_lt _ (by decide)) h.1 h.2)
     (fun s h => fl_wpI L spf' hJ' (Nat.mod_lt _ (by decide)) h.1 h.2)
-  have x5 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x5 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (argsR hn q₀ spf qa (one_hw h0) (one_hw h0') ⟨_, by taint_decide⟩ (fun s h => h.choose_spec.2)
       (fun s h => h.choose_spec.2))
     (fun s h => b4_wpI spf hin hn h) (fun s h => b4_wpI spf' hin' hn h)
-  have x6 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
+  obtain x6 := rel_wp (F := OF na wi s₀ s₀) (F' := OF na wi s₀ s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (tag_ct L ho hR) (fun s ⟨k7, he, _⟩ => ⟨k7, he⟩) (fun s ⟨k7, he, _⟩ => ⟨k7, he⟩))
     (fun s h => tg_wpI L spf ho hT hR h) (fun s h => tg_wpI L spf' ho hT' hR h)
   exact x1.seq (x2.seq (x3.seq (x4.seq (x5.seq x6))))

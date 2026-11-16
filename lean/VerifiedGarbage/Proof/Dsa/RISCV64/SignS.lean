@@ -44,10 +44,10 @@ theorem qmont28_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
   have e := h.inq.env
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have hn : L.Q.toNat + slot L.wq 28 ≤ 2 ^ 64 := by have := e.hs.nowrap; omega_using [hqs, this]
+  obtain hn : L.Q.toNat + slot L.wq 28 ≤ 2 ^ 64 := by have := e.hs.nowrap; omega_using [hqs, this]
   refine WP.mono (Pub.montOpN_ok e.hs (n := 28) (by decide) (by omega_using [ho]) ha hb (by omega_using [ho]) (by omega_using [ho]) ha2 hb2 e.w2
     (by omega_using [hwq]) e.hZ e.a7 e.s5 e.t0 hi hB) fun t ⟨⟨lt, eq, ar⟩, k⟩ => ?_
-  have qa : QArr L s.mem t.mem := arrays_qarr ar (by
+  obtain qa : QArr L s.mem t.mem := arrays_qarr ar (by
     intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [ho, hk])
   refine ⟨⟨h.step k (qa.body hL), ?_, lt, eq, fun j hj h2 h3 ho' => arrays_val ar hj (by
     intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [h2, h3, ho', hk]) hn, qa⟩, k⟩
@@ -72,7 +72,7 @@ theorem AKeep.trans {L : Lay} {ws ws' : List Nat} {m₁ m₂ m₃ : Mem} (h₁ :
 
 theorem AKeep.one {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.Q (slot L.wq o) n m m')
     (hn : n ≤ 8 * (L.wq + 2)) : AKeep L [o] m m' := fun j hj ho => by
-  have hjo : j ≠ o := by simpa only [List.mem_singleton] using ho
+  obtain hjo : j ≠ o := by simpa only [List.mem_singleton] using ho
   have := slot_sep' (w := L.wq) hjo
   have := slot_lt (w := L.wq) hj
   have := hL.wq_ge
@@ -81,10 +81,10 @@ theorem AKeep.one {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.
 theorem AKeep.red {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.Q (slot L.wq 1) (24 * (L.wq + 2)) m m') :
     AKeep L [1, 2, 3] m m' := fun j hj hn => by
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  have hl := slot_lt (w := L.wq) hj
+  obtain hl := slot_lt (w := L.wq) hj
   have := hL.wq_ge
-  have e0 := Lay.slot_eq L.wq 0; have e1 := Lay.slot_eq L.wq 1; have e4 := Lay.slot_eq L.wq 4
-  have e28 := Lay.slot_eq L.wq 28
+  obtain e0 := Lay.slot_eq L.wq 0; have e1 := Lay.slot_eq L.wq 1; have e4 := Lay.slot_eq L.wq 4
+  obtain e28 := Lay.slot_eq L.wq 28
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · exact h.wordsVal (Or.inl (by omega_using [e0, e1])) (by omega_using [this, e0])
   · have := slot_mono (w := L.wq) (show 4 ≤ j by omega_using [hn, hj0])
@@ -103,8 +103,8 @@ theorem AKeep.mont {L : Lay} {o : Nat} {m m' : Mem}
 theorem AddFrame.qarr {L : Lay} {o : Nat} {m m' : Mem} (h : AddFrame L.Q L.wq o m m') (ho1 : 1 ≤ o)
     (ho : o < 28) : QArr L m m' := by
   obtain ⟨m₁, h₁, h₂⟩ := h
-  have h1 := slot_mono (w := L.wq) ho1
-  have h2 := slot_lt (w := L.wq) ho
+  obtain h1 := slot_mono (w := L.wq) ho1
+  obtain h2 := slot_lt (w := L.wq) ho
   exact (QArr.of h₁ (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])).trans
     (QArr.of h₂ h1 (by omega_using [h2]))
 
@@ -142,146 +142,146 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
         arrQ t.mem L 25 = arrQ s.mem L 25 ∧ QArr L s.mem t.mem) ∧ Keep sValueRegs s t := by
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
-  have hcop : Nat.Coprime (2 ^ (64 * L.wq)) (arrQ s.mem L 0) := VG.Proof.Bignum.coprime_pow2 hqo _
-  have hRR := pow_two_mul L.wq
+  obtain hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
+  obtain hcop : Nat.Coprime (2 ^ (64 * L.wq)) (arrQ s.mem L 0) := VG.Proof.Bignum.coprime_pow2 hqo _
+  obtain hRR := pow_two_mul L.wq
   have hnw : L.Q.toNat + 1600 ≤ 2 ^ 64 := h.inq.env.hs.nowrap
-  have e : ∀ j, slot L.wq j = 256 + j * (8 * (L.wq + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
-  have e8 := e 8; have e24 := e 24; have e25 := e 25; have e28 := e 28
+  obtain e : ∀ j, slot L.wq j = 256 + j * (8 * (L.wq + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
+  obtain e8 := e 8; have e24 := e 24; have e25 := e 25; have e28 := e 28
   generalize hq : arrQ s.mem L 0 = q at hq3 hqo h24 h4 h25 hz hcop ⊢
   generalize (2 : Nat) ^ (128 * L.wq) = R2 at h24 hRR
   unfold sValue
   -- z into array 6, 0 into array 7, `z mod q` into array 6.
   refine WP.seq (WP.mono (scalar_ok hL h hdg8 hlen hqb hd hdg) fun s₁ ⟨⟨Q1, v6, o1⟩, k1⟩ => ?_)
   generalize Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d qb)) = z at v6 hz ⊢
-  have f1 : AKeep L [6] s.mem s₁.mem := AKeep.one hL o1 (by omega_using [])
-  have qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by omega_using [e1, e6]) (by omega_using [e6, e28])
+  obtain f1 : AKeep L [6] s.mem s₁.mem := AKeep.one hL o1 (by omega_using [])
+  obtain qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by omega_using [e1, e6]) (by omega_using [e6, e28])
   refine WP.seq (WP.mono (zeroArr_ok Q1.inq.env (j := 7) (by decide)) fun s₂ ⟨⟨z7, o2⟩, k2⟩ => ?_)
-  have Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega_using [hwq, e7]))
-  have f2 : AKeep L [7] s₁.mem s₂.mem := AKeep.one hL o2 (by omega_using [])
-  have qa2 : QArr L s₁.mem s₂.mem := QArr.of o2 (by omega_using [e1, e7]) (by omega_using [e7, e28])
-  have q2 : arrQ s₂.mem L 0 = q := by rw [(qa1.trans qa2).arr0 hL]; exact hq
-  have z2 : arrQ s₂.mem L 6 = z := (f2.get 6).trans v6
+  obtain Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega_using [hwq, e7]))
+  obtain f2 : AKeep L [7] s₁.mem s₂.mem := AKeep.one hL o2 (by omega_using [])
+  obtain qa2 : QArr L s₁.mem s₂.mem := QArr.of o2 (by omega_using [e1, e7]) (by omega_using [e7, e28])
+  obtain q2 : arrQ s₂.mem L 0 = q := by rw [(qa1.trans qa2).arr0 hL]; exact hq
+  obtain z2 : arrQ s₂.mem L 6 = z := (f2.get 6).trans v6
   refine WP.seq (WP.mono (addMod_ok Q2.inq.env (o := 6) (a := 6) (b := 7) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by show arrQ s₂.mem L 6 + arrQ s₂.mem L 7 < 2 * arrQ s₂.mem L 0; rw [z2, show arrQ s₂.mem L 7 = 0 from z7, q2]
         omega_using [hz])) fun s₃ ⟨⟨a6, fr3⟩, k3⟩ => ?_)
-  have a6' : arrQ s₃.mem L 6 = z % q := by
+  obtain a6' : arrQ s₃.mem L 6 = z % q := by
     show wordsVal s₃.mem L.Q (slot L.wq 6) L.wq = _
     rw [a6, show wordsVal s₂.mem L.Q (slot L.wq 6) L.wq = arrQ s₂.mem L 6 from rfl, z2,
       show wordsVal s₂.mem L.Q (slot L.wq 7) L.wq = 0 from z7,
       show wordsVal s₂.mem L.Q (slot L.wq 0) L.wq = arrQ s₂.mem L 0 from rfl, q2, Nat.add_zero]
-  have qa3' := fr3.qarr (by decide) (by decide)
-  have Q3 := Q2.step k3 (qa3'.body hL)
-  have f3 := AKeep.add hL fr3 hnw
-  have qa13 : QArr L s.mem s₃.mem := (qa1.trans qa2).trans qa3'
-  have q3 : arrQ s₃.mem L 0 = q := by rw [qa13.arr0 hL]; exact hq
-  have k13 := (k1.trans k2).trans k3
-  have I3 : QInv s₃ L := hi.keepW (qa13.word0 hL) (k13.gpr (by decide))
+  obtain qa3' := fr3.qarr (by decide) (by decide)
+  obtain Q3 := Q2.step k3 (qa3'.body hL)
+  obtain f3 := AKeep.add hL fr3 hnw
+  obtain qa13 : QArr L s.mem s₃.mem := (qa1.trans qa2).trans qa3'
+  obtain q3 : arrQ s₃.mem L 0 = q := by rw [qa13.arr0 hL]; exact hq
+  obtain k13 := (k1.trans k2).trans k3
+  obtain I3 : QInv s₃ L := hi.keepW (qa13.word0 hL) (k13.gpr (by decide))
   -- x's octets, and `x mod q` into array 1.
   refine WP.seq (WP.block_append (WP.mono (ptrX_ok Q3.scr hL Q3.regs) fun s₄ ⟨⟨b7, b8, m4⟩, k4⟩ =>
     WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off key (3 * L.pl + L.ql) ∧
       u.gpr .s10 = BitVec.ofNat 64 L.ql ∧ u.mem = s₄.mem) (by brun [b7, b8, BitVec.add_zero]) (by decide) (by rfl))
     fun s₅ ⟨⟨c9, c10, m5⟩, k5⟩ => ?_))
-  have k35 := k4.trans k5
-  have hm5 : s₅.mem = s₃.mem := by rw [m5, m4]
-  have e3 := Q3.inq.env.keep k35
-  have hx := (hk.keep (k13.trans k35).2.1 (k13.trans k35).2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])
+  obtain k35 := k4.trans k5
+  obtain hm5 : s₅.mem = s₃.mem := by rw [m5, m4]
+  obtain e3 := Q3.inq.env.keep k35
+  obtain hx := (hk.keep (k13.trans k35).2.1 (k13.trans k35).2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])
   refine WP.seq (WP.mono (ModArith.reduce64_ok (B := L.Q) (Z := 1600) (w := L.wq) (D := off key (3 * L.pl + L.ql))
     (L := L.ql) e3.hs (by omega_using [hwq]) (by omega_using [hwq]) (by omega_using [hwq, e4]) e3.a7 e3.s5 e3.t0
     (by rw [hm5]; show 0 < arrQ s₃.mem L 0; rw [q3]; omega_using [hq3])
     (by rw [c9]; exact (BitVec.add_zero _).symm) c10 (by omega_using [hql]) (by omega_using [hwq]) hx.rd (hx.sepQ hL))
     fun s₆ ⟨⟨v1, o6⟩, k6⟩ => ?_)
   rw [hm5] at v1 o6
-  have x6 : arrQ s₆.mem L 1 = xOf s.mem L key % q := by
+  obtain x6 : arrQ s₆.mem L 1 = xOf s.mem L key % q := by
     refine v1.trans ?_
     rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])).bytes (qa13.body hL) (by have := hL.z256; omega_using [this])]
     show _ % arrQ s₃.mem L 0 = _
     rw [q3]
     rfl
-  have f6 := AKeep.red hL o6
-  have qa6 : QArr L s₃.mem s₆.mem := QArr.of o6 (Nat.le_refl _) (by omega_using [e1, e28])
-  have Q6 := Q3.step (k35.trans k6) (qa6.body hL)
+  obtain f6 := AKeep.red hL o6
+  obtain qa6 : QArr L s₃.mem s₆.mem := QArr.of o6 (Nat.le_refl _) (by omega_using [e1, e28])
+  obtain Q6 := Q3.step (k35.trans k6) (qa6.body hL)
   -- `x mod q` into array 5, `R² mod q` into array 1.
   refine WP.seq (WP.mono (copy_ok Q6.inq.env (o := 5) (a := 1) (by decide) (by decide) (by decide))
     fun s₇ ⟨⟨v5, o7⟩, k7⟩ => ?_)
-  have Q7 := Q6.step k7 (Body.ofQ hL o7 (by omega_using [hwq, e5]))
-  have f7 : AKeep L [5] s₆.mem s₇.mem := AKeep.one hL o7 (Nat.le_refl _)
+  obtain Q7 := Q6.step k7 (Body.ofQ hL o7 (by omega_using [hwq, e5]))
+  obtain f7 : AKeep L [5] s₆.mem s₇.mem := AKeep.one hL o7 (Nat.le_refl _)
   refine WP.seq (WP.mono (copy_ok Q7.inq.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
     fun s₈ ⟨⟨v1', o8⟩, k8⟩ => ?_)
-  have Q8 := Q7.step k8 (Body.ofQ hL o8 (by omega_using [hwq, e1]))
-  have f8 : AKeep L [1] s₇.mem s₈.mem := AKeep.one hL o8 (Nat.le_refl _)
-  have qa8 : QArr L s.mem s₈.mem :=
+  obtain Q8 := Q7.step k8 (Body.ofQ hL o8 (by omega_using [hwq, e1]))
+  obtain f8 : AKeep L [1] s₇.mem s₈.mem := AKeep.one hL o8 (Nat.le_refl _)
+  obtain qa8 : QArr L s.mem s₈.mem :=
     ((qa13.trans qa6).trans (QArr.of o7 (by omega_using [e1, e5]) (by omega_using [e5, e28]))).trans (QArr.of o8 (by omega_using []) (by omega_using [e1, e28]))
-  have k18 := ((k13.trans k35).trans k6).trans (k7.trans k8)
-  have I8 : QInv s₈ L := hi.keepW (qa8.word0 hL) (k18.gpr (by decide))
-  have F38 := (f6.trans f7).trans f8
-  have F08 := ((f1.trans f2).trans f3).trans F38
-  have A0 : arrQ s₈.mem L 0 = q := by rw [qa8.arr0 hL]; exact hq
-  have A1 : arrQ s₈.mem L 1 = R2 % q := by
+  obtain k18 := ((k13.trans k35).trans k6).trans (k7.trans k8)
+  obtain I8 : QInv s₈ L := hi.keepW (qa8.word0 hL) (k18.gpr (by decide))
+  obtain F38 := (f6.trans f7).trans f8
+  obtain F08 := ((f1.trans f2).trans f3).trans F38
+  obtain A0 : arrQ s₈.mem L 0 = q := by rw [qa8.arr0 hL]; exact hq
+  obtain A1 : arrQ s₈.mem L 1 = R2 % q := by
     rw [arrQ, wordsVal_congr (m := s₇.mem) (d := slot L.wq 24) fun i hi => v1' i (by omega_using [hi])]
     show arrQ s₇.mem L 24 = _
     rw [f7.get 24, f6.get 24, f3.get 24, f2.get 24, f1.get 24]; exact h24
-  have A4 : arrQ s₈.mem L 4 = arrQ s.mem L 4 := F08.get 4
-  have A5 : arrQ s₈.mem L 5 = xOf s.mem L key % q := by
+  obtain A4 : arrQ s₈.mem L 4 = arrQ s.mem L 4 := F08.get 4
+  obtain A5 : arrQ s₈.mem L 5 = xOf s.mem L key % q := by
     rw [f8.get 5, arrQ, wordsVal_congr (m := s₆.mem) (d := slot L.wq 1) fun i hi => v5 i (by omega_using [hi])]
     exact x6
-  have A6 : arrQ s₈.mem L 6 = z % q := (F38.get 6).trans a6'
-  have A25 : arrQ s₈.mem L 25 = arrQ s.mem L 25 := F08.get 25
+  obtain A6 : arrQ s₈.mem L 6 = z % q := (F38.get 6).trans a6'
+  obtain A25 : arrQ s₈.mem L 25 = arrQ s.mem L 25 := F08.get 25
   -- `x r mod q` into array 5.
   refine WP.seq (WP.mono (qmont28_ok hL Q8 I8 (o := 5) (a := 5) (b := 25) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [A25, A0]; exact h25)) fun s₉ ⟨⟨Q9, I9, _, e9, k9a, qa9⟩, k9⟩ => ?_)
   rw [A0, A5, A25] at e9
-  have f9 := AKeep.mont k9a
-  have B0 : arrQ s₉.mem L 0 = q := (f9.get 0).trans A0
-  have B1 : arrQ s₉.mem L 1 = R2 % q := (f9.get 1).trans A1
+  obtain f9 := AKeep.mont k9a
+  obtain B0 : arrQ s₉.mem L 0 = q := (f9.get 0).trans A0
+  obtain B1 : arrQ s₉.mem L 1 = R2 % q := (f9.get 1).trans A1
   refine WP.seq (WP.mono (qmont28_ok hL Q9 I9 (o := 5) (a := 5) (b := 1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [B1, B0]; exact Nat.mod_lt _ (by omega_using [hq3])))
     fun s₁₀ ⟨⟨Q10, I10, l10, e10, k10a, qa10⟩, k10⟩ => ?_)
   rw [B0] at l10
   rw [B0, B1] at e10
-  have X10 : arrQ s₁₀.mem L 5 = xOf s.mem L key % q * arrQ s.mem L 25 % q :=
+  obtain X10 : arrQ s₁₀.mem L 5 = xOf s.mem L key % q * arrQ s.mem L 25 % q :=
     prod_mont_back hcop l10 e9 (by rw [e10, hRR])
-  have f10 := AKeep.mont k10a
-  have F910 := f9.trans f10
-  have C0 : arrQ s₁₀.mem L 0 = q := (F910.get 0).trans A0
-  have C6 : arrQ s₁₀.mem L 6 = z % q := (F910.get 6).trans A6
+  obtain f10 := AKeep.mont k10a
+  obtain F910 := f9.trans f10
+  obtain C0 : arrQ s₁₀.mem L 0 = q := (F910.get 0).trans A0
+  obtain C6 : arrQ s₁₀.mem L 6 = z % q := (F910.get 6).trans A6
   -- `z + x r mod q` into array 6.
-  have l1 := Nat.mod_lt z (show 0 < q by omega_using [hq3])
-  have l2 := Nat.mod_lt (xOf s.mem L key % q * arrQ s.mem L 25) (show 0 < q by omega_using [hq3])
+  obtain l1 := Nat.mod_lt z (show 0 < q by omega_using [hq3])
+  obtain l2 := Nat.mod_lt (xOf s.mem L key % q * arrQ s.mem L 25) (show 0 < q by omega_using [hq3])
   refine WP.seq (WP.mono (addMod_ok Q10.inq.env (o := 6) (a := 6) (b := 5) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by show arrQ s₁₀.mem L 6 + arrQ s₁₀.mem L 5 < 2 * arrQ s₁₀.mem L 0; rw [C6, X10, C0]; omega_using [l1, l2]))
     fun s₁₁ ⟨⟨a11, fr11⟩, k11⟩ => ?_)
-  have a11' : arrQ s₁₁.mem L 6 = (z % q + xOf s.mem L key * arrQ s.mem L 25 % q) % q := by
+  obtain a11' : arrQ s₁₁.mem L 6 = (z % q + xOf s.mem L key * arrQ s.mem L 25 % q) % q := by
     show wordsVal s₁₁.mem L.Q (slot L.wq 6) L.wq = _
     rw [a11, show wordsVal s₁₀.mem L.Q (slot L.wq 6) L.wq = arrQ s₁₀.mem L 6 from rfl, C6,
       show wordsVal s₁₀.mem L.Q (slot L.wq 5) L.wq = arrQ s₁₀.mem L 5 from rfl, X10,
       show wordsVal s₁₀.mem L.Q (slot L.wq 0) L.wq = arrQ s₁₀.mem L 0 from rfl, C0, Nat.mod_mul_mod]
-  have qa11 := fr11.qarr (by decide) (by decide)
-  have Q11 := Q10.step k11 (qa11.body hL)
-  have I11 : QInv s₁₁ L := I10.keepW (qa11.word0 hL) (k11.gpr (by decide))
-  have f11 := AKeep.add hL fr11 hnw
-  have F911 := F910.trans f11
-  have D0 : arrQ s₁₁.mem L 0 = q := (F911.get 0).trans A0
-  have D1 : arrQ s₁₁.mem L 1 = R2 % q := (F911.get 1).trans A1
-  have D4 : arrQ s₁₁.mem L 4 = arrQ s.mem L 4 := (F911.get 4).trans A4
+  obtain qa11 := fr11.qarr (by decide) (by decide)
+  obtain Q11 := Q10.step k11 (qa11.body hL)
+  obtain I11 : QInv s₁₁ L := I10.keepW (qa11.word0 hL) (k11.gpr (by decide))
+  obtain f11 := AKeep.add hL fr11 hnw
+  obtain F911 := F910.trans f11
+  obtain D0 : arrQ s₁₁.mem L 0 = q := (F911.get 0).trans A0
+  obtain D1 : arrQ s₁₁.mem L 1 = R2 % q := (F911.get 1).trans A1
+  obtain D4 : arrQ s₁₁.mem L 4 = arrQ s.mem L 4 := (F911.get 4).trans A4
   -- `w (z + x r) mod q` into array 6.
   refine WP.seq (WP.mono (qmont28_ok hL Q11 I11 (o := 6) (a := 6) (b := 4) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [D4, D0]; exact h4)) fun s₁₂ ⟨⟨Q12, I12, _, e12, k12a, qa12⟩, k12⟩ => ?_)
   rw [D0, a11', D4] at e12
-  have f12 := AKeep.mont k12a
-  have E0 : arrQ s₁₂.mem L 0 = q := (f12.get 0).trans D0
-  have E1 : arrQ s₁₂.mem L 1 = R2 % q := (f12.get 1).trans D1
+  obtain f12 := AKeep.mont k12a
+  obtain E0 : arrQ s₁₂.mem L 0 = q := (f12.get 0).trans D0
+  obtain E1 : arrQ s₁₂.mem L 1 = R2 % q := (f12.get 1).trans D1
   refine WP.mono (qmont28_ok hL Q12 I12 (o := 6) (a := 6) (b := 1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [E1, E0]; exact Nat.mod_lt _ (by omega_using [hq3])))
     fun t ⟨⟨Qt, It, lt, et, kta, qat⟩, kt⟩ => ?_
   rw [E0] at lt
   rw [E0, E1] at et
-  have ft := AKeep.mont kta
-  have Ft := (((F08.trans F910).trans f11).trans f12).trans ft
-  have kall := (((((k18.trans k9).trans k10).trans k11).trans k12).trans kt)
+  obtain ft := AKeep.mont kta
+  obtain Ft := (((F08.trans F910).trans f11).trans f12).trans ft
+  obtain kall := (((((k18.trans k9).trans k10).trans k11).trans k12).trans kt)
   refine ⟨⟨Qt, It, ?_, Ft.get 25, (((((qa8.trans qa9).trans qa10).trans qa11).trans qa12).trans qat)⟩, ?_⟩
   · exact (prod_mont_back hcop lt e12 (by rw [et, hRR])).trans (by rw [Nat.mul_comm _ (arrQ s.mem L 4)])
   · simp only [sValueRegs, List.append_assoc] at kall ⊢

@@ -112,16 +112,16 @@ theorem passMid_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hi₀ hf
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 1024 := rfl
-  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hp0 : 0 < 2 ^ p := Nat.two_pow_pos p
+  obtain hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain hp0 : 0 < 2 ^ p := Nat.two_pow_pos p
   have e1 : oEm = 0 := rfl
   refine (pass_vp hg (o := oY + 8 + h.D) (d := 2 ^ p) (n := dbN h P) (by omega_arith) hp0 (by omega_arith)
     (c := fun τ => aV h P τ / 2 ^ p % 2 = 1) (X := fun τ m => Kq h P τ m ∧ SH h P τ p m)).mono
     (fun τ s ⟨⟨hc, hk, hs⟩, r0, r1, lr, r2⟩ => ⟨hc, ⟨hk, hs⟩, r0, r1, lr, r2⟩)
     fun τ s ⟨hc, m₀, ⟨hk, hs⟩, fr, hsel⟩ => ?_
-  have away : ∀ r ∈ [sR P.scr (oY + 8 + h.D) (dbN h P)], Away2 (P.lay h.D) P.scr r := fun r hr => by
+  obtain away : ∀ r ∈ [sR P.scr (oY + 8 + h.D) (dbN h P)], Away2 (P.lay h.D) P.scr r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega_arith) (by omega_arith)
-  have ks : ∀ d, d + 4 ≤ frameBytes → s.mem.readW ((P.lay h.D).fr d) 32 = m₀.readW ((P.lay h.D).fr d) 32 :=
+  obtain ks : ∀ d, d + 4 ≤ frameBytes → s.mem.readW ((P.lay h.D).fr d) 32 = m₀.readW ((P.lay h.D).fr d) 32 :=
     fun d hd => slot_keep (v := m₀.readW ((P.lay h.D).fr d) 32) fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hg.slot ok (by omega_arith) (by rw [hg.F]; omega_arith)) rfl
@@ -129,7 +129,7 @@ theorem passMid_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
     by rw [ks _ (by decide)]; exact hs.1, by rw [ks _ (by decide)]; exact hs.2.1,
     by rw [ks _ (by decide)]; exact hs.2.2.1, fun j hj => ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)
-  have ms := mod_succ (aV h P τ) p
+  obtain ms := mod_succ (aV h P τ) p
   by_cases e : j < dbN h P
   · rw [hsel j e]
     by_cases hc' : aV h P τ / 2 ^ p % 2 = 1
@@ -152,8 +152,8 @@ theorem keep3 (P : EP) (hg : Geo (P.lay h.D) P.scr) {τ : State} {m m' : Mem}
     Kq h P τ m' ∧ ∀ j < 2040 - h.D, m' (sa P.scr (oY + 8 + h.D + j)) = f j := by
   obtain ⟨σ', ok⟩ := hg.ok
   have e3 : oY = 1024 := rfl
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
-  have aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc],
+  obtain hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  obtain aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc],
       Region.Disjoint (sR P.scr o n) r := fun o n hon r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
@@ -172,25 +172,25 @@ theorem passNext_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) 
   have hg := hi₀.geo
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hs⟩ => ?_
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hk.1.1 hk.1.2.1
-  have hpz := pzF_lt h (τ := τ) hdb
-  have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega_arith
-  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have ea : BitVec.ofNat 32 (aV h P τ / 2 ^ p) >>> 1 = BitVec.ofNat 32 (aV h P τ / 2 ^ (p + 1)) := by
+  obtain hpz := pzF_lt h (τ := τ) hdb
+  obtain haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega_arith
+  obtain hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain ea : BitVec.ofNat 32 (aV h P τ / 2 ^ p) >>> 1 = BitVec.ofNat 32 (aV h P τ / 2 ^ (p + 1)) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith)), Nat.div_div_eq_div_mul,
       Nat.pow_one, ← Nat.pow_succ]
-  have ed : BitVec.ofNat 32 (2 ^ p) + BitVec.ofNat 32 (2 ^ p) = BitVec.ofNat 32 (2 ^ (p + 1)) := by
+  obtain ed : BitVec.ofNat 32 (2 ^ p) + BitVec.ofNat 32 (2 ^ p) = BitVec.ofNat 32 (2 ^ (p + 1)) := by
     rw [BitVec.ofNat_add_ofNat, Nat.pow_succ]; congr 1; omega_arith
-  have ec : BitVec.ofNat 32 (10 - p) - 1 = BitVec.ofNat 32 (10 - (p + 1)) := by
+  obtain ec : BitVec.ofNat 32 (10 - p) - 1 = BitVec.ofNat 32 (10 - (p + 1)) := by
     rw [show 10 - p = (10 - (p + 1)) + 1 by omega_arith]; exact sub_one_ofNat (by omega_arith)
-  have hz0 : ∀ y : BitVec 32, y - 0 = y := fun y => BitVec.sub_zero y
+  obtain hz0 : ∀ y : BitVec 32, y - 0 = y := fun y => BitVec.sub_zero y
   have hi := hk.1.1
-  have w1 : ∀ v, (s.mem.writeW ((P.lay h.D).fr sA) v).readW ((P.lay h.D).fr sD) 32 = BitVec.ofNat 32 (2 ^ p) :=
+  obtain w1 : ∀ v, (s.mem.writeW ((P.lay h.D).fr sA) v).readW ((P.lay h.D).fr sD) 32 = BitVec.ofNat 32 (2 ^ p) :=
     fun v => by rw [slot_ww _ _ (by decide) (by decide) (by decide)]; exact hs.2.1
-  have w2 : ∀ v v', ((s.mem.writeW ((P.lay h.D).fr sA) v).writeW ((P.lay h.D).fr sD) v').readW
+  obtain w2 : ∀ v v', ((s.mem.writeW ((P.lay h.D).fr sA) v).writeW ((P.lay h.D).fr sD) v').readW
       ((P.lay h.D).fr sPc) 32 = BitVec.ofNat 32 (10 - p) := fun v v' => by
     rw [slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide)]
     exact hs.2.2.1
-  have hw : WP isa (.block passNext) s fun t =>
+  obtain hw : WP isa (.block passNext) s fun t =>
       t.mem = ((s.mem.writeW ((P.lay h.D).fr sA) (BitVec.ofNat 32 (aV h P τ / 2 ^ (p + 1)))).writeW
         ((P.lay h.D).fr sD) (BitVec.ofNat 32 (2 ^ (p + 1)))).writeW ((P.lay h.D).fr sPc)
           (BitVec.ofNat 32 (10 - (p + 1))) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
@@ -202,7 +202,7 @@ theorem passNext_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) 
       hc.st.inFr (d := sPc) (n := 4) (by show sPc + 4 ≤ frameBytes; decide), ea, ed, ec, hz0, w1, w2,
       VG.Proof.X25519.Arm.ofNat_beq_zero (show 10 - (p + 1) < 2 ^ 32 by omega_arith), dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp, z⟩ => ?_
-  have fr : Frame [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc] s.mem t.mem := by
+  obtain fr : Frame [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc] s.mem t.mem := by
     rw [m]
     exact ((slot_frame _ _ _ _).mono (by simp) |>.trans ((slot_frame _ _ _ _).mono (by simp))).trans
       ((slot_frame _ _ _ _).mono (by simp))
@@ -233,7 +233,7 @@ theorem shInit_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have hg := hi₀.geo
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hy⟩ => ?_
   have hi := hk.1.1
-  have hw : WP isa (.block shInit) s fun t =>
+  obtain hw : WP isa (.block shInit) s fun t =>
       t.mem = ((s.mem.writeW ((P.lay h.D).fr sA) (BitVec.ofNat 32 (aV h P τ))).writeW
         ((P.lay h.D).fr sD) (BitVec.ofNat 32 1)).writeW ((P.lay h.D).fr sPc) (BitVec.ofNat 32 10) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
@@ -245,7 +245,7 @@ theorem shInit_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       movw_val (show 1 < 2 ^ 16 by decide), movw_val (show 10 < 2 ^ 16 by decide),
       VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
-  have fr : Frame [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc] s.mem t.mem := by
+  obtain fr : Frame [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc] s.mem t.mem := by
     rw [m]
     exact ((slot_frame _ _ _ _).mono (by simp) |>.trans ((slot_frame _ _ _ _).mono (by simp))).trans
       ((slot_frame _ _ _ _).mono (by simp))
@@ -279,8 +279,8 @@ theorem shift_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     fun τ s ⟨⟨hc, hq, hs⟩, z⟩ => ⟨?_, fun h0 => ⟨hc, hq, fun j hj => ?_⟩, fun hpos => ⟨by omega_arith, hc, hq, ?_⟩⟩
   · rw [VG.Proof.X25519.Arm.eval_ne, z, show 10 - (9 - k + 1) = k by omega_arith]; cases k <;> simp
   · subst h0
-    have hb := shB h hq.1.1 hq.1.2.1
-    have hpz := pzF_lt h (τ := τ) hb.2.1
+    obtain hb := shB h hq.1.1 hq.1.2.1
+    obtain hpz := pzF_lt h (τ := τ) hb.2.1
     rw [hs.2.2.2 j hj, Nat.mod_eq_of_lt (show aV h P τ < 2 ^ (9 - 0 + 1) by
       show pzF h P τ + 1 < 1024; omega_arith)]
   · rw [show 10 - k = 9 - k + 1 by omega_arith]; exact hs
@@ -399,18 +399,18 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hy⟩ => ?_
   have hi := hk.1.1
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hi hk.1.2.1
-  have hpz := pzF_lt h (τ := τ) hdb
+  obtain hpz := pzF_lt h (τ := τ) hdb
   have hL := h.L_le
   have hB := h.B_ge
   have e3 : oY = 1024 := rfl
-  have e1 : BitVec.ofNat 32 (dbN h P + (7 + h.D + h.L)) >>> lgB h.sh =
+  obtain e1 : BitVec.ofNat 32 (dbN h P + (7 + h.D + h.L)) >>> lgB h.sh =
       BitVec.ofNat 32 ((dbN h P + (7 + h.D + h.L)) / h.B) := by
     rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega_arith), h.pow_lg]
-  have w1 : ∀ v, (s.mem.writeW ((P.lay h.D).fr sL) v).readW ((P.lay h.D).fr sDb) 32 = BitVec.ofNat 32 (dbN h P) :=
+  obtain w1 : ∀ v, (s.mem.writeW ((P.lay h.D).fr sL) v).readW ((P.lay h.D).fr sDb) 32 = BitVec.ofNat 32 (dbN h P) :=
     fun v => by rw [slot_ww _ _ (by decide) (by decide) (by decide)]; exact hk.1.2.2.1.2
-  have es : BitVec.ofNat 32 (dbN h P) - BitVec.ofNat 32 (pzF h P τ) = BitVec.ofNat 32 (dbN h P - pzF h P τ) :=
+  obtain es : BitVec.ofNat 32 (dbN h P) - BitVec.ofNat 32 (pzF h P τ) = BitVec.ofNat 32 (dbN h P - pzF h P τ) :=
     Offset.ofNat_sub_ofNat (w := 32) (by omega_arith)
-  have hw : WP isa (.block (anyLen h.sh)) s fun t =>
+  obtain hw : WP isa (.block (anyLen h.sh)) s fun t =>
       t.mem = (s.mem.writeW ((P.lay h.D).fr sL) (BitVec.ofNat 32 (dbN h P - pzF h P τ + (7 + h.D)))).writeW
         ((P.lay h.D).fr sNb) (BitVec.ofNat 32 (nbA h P)) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [anyLen, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hk.1.2.2.1.2, hk.1.2.2.2.2.2.1, w1, es,
@@ -421,17 +421,17 @@ theorem anyLen_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       movw_val (show 7 + dig h.sh + lenL h.sh < 2 ^ 16 by show 7 + h.D + h.L < 2 ^ 16; omega_arith),
       BitVec.ofNat_add_ofNat, e1, h.lg_range, VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
-  have fr : Frame [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb] s.mem t.mem := by
+  obtain fr : Frame [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb] s.mem t.mem := by
     rw [m]
     exact (slot_frame _ _ _ _).mono (by simp) |>.trans ((slot_frame _ _ _ _).mono (by simp))
   obtain ⟨σ', ok⟩ := hg.ok
-  have aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb],
+  obtain aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb],
       Region.Disjoint (sR P.scr o n) r := fun o n hon r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
   have e2 : oRsa = 8192 := rfl
-  have hy' := sbytes_keep fr (aw _ _ (by omega_arith)) (by omega_arith) hy
-  have hp' := sbytes_keep fr (aw _ _ (by omega_arith)) (by omega_arith) hk.2
+  obtain hy' := sbytes_keep fr (aw _ _ (by omega_arith)) (by omega_arith) hy
+  obtain hp' := sbytes_keep fr (aw _ _ (by omega_arith)) (by omega_arith) hk.2
   refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨K2.keep h hk.1 fr fun r hr => ?_, ?_, ?_⟩,
     fun i hi' => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -460,14 +460,14 @@ theorem any_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {
   by_cases hf : fits h P
   swap
   · exact VP.empty fun σ s h' => hf h'.1.2.1.2.1
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  obtain hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_le
-  have hB0 : 0 < h.B := by have := h.B_ge; omega_arith
+  obtain hB0 : 0 < h.B := by have := h.B_ge; omega_arith
   obtain ⟨hlo, hdb, hdD, hD', hD0⟩ := shB h hi₀ hf
-  have q1 := Nat.lt_mul_div_succ (dbN h P + (7 + h.D + h.L)) hB0
-  have q2 := Nat.mul_div_le (dbN h P + (7 + h.D + h.L)) h.B
-  have hT : nbA h P * h.B ≤ 2048 := by
+  obtain q1 := Nat.lt_mul_div_succ (dbN h P + (7 + h.D + h.L)) hB0
+  obtain q2 := Nat.mul_div_le (dbN h P + (7 + h.D + h.L)) h.B
+  obtain hT : nbA h P * h.B ≤ 2048 := by
     show ((dbN h P + (7 + h.D + h.L)) / h.B + 1) * h.B ≤ 2048
     rw [Nat.succ_mul, Nat.mul_comm]; omega_arith
   show VP _ (.seq (yDig h.sh 4) (.seq (.block (cpDb h.sh)) (.seq Impl.Bignum.Arm.copyBytes (.seq (shift h.sh)

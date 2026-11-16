@@ -93,24 +93,24 @@ theorem descentChoose_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have h0 := hc.n0
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hW := sl_le c h7 (i := W0) (by decide)
-  have hT := sl_le c h7 (i := T3) (by decide)
-  have hC := sl_le c h7 (i := T1) (by decide)
-  have hB := sl_le c h7 (i := T4) (by decide)
-  have hO := sl_le c h7 (i := ONEP) (by decide)
-  have hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega_using [ht])
+  obtain hW := sl_le c h7 (i := W0) (by decide)
+  obtain hT := sl_le c h7 (i := T3) (by decide)
+  obtain hC := sl_le c h7 (i := T1) (by decide)
+  obtain hB := sl_le c h7 (i := T4) (by decide)
+  obtain hO := sl_le c h7 (i := ONEP) (by decide)
+  obtain hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega_using [ht])
   rw [Impl.EcKey.Compressed.AArch64.descentChoose, List.append_assoc, List.append_assoc,
     WP.block_append_iff]
   refine WP.mono (subOp_ok hs hM (MP'_A c) hW hT hO (sl_mod8 c W0) (sl_mod8 c T3) (sl_mod8 c ONEP) ht hOlt)
     fun s₁ ⟨k₁, e₁⟩ => ?_
   change sv c base s₁ W0 = (sv c base s T3 + c.C.p - sv c base s ONEP) % c.C.p at e₁
-  have hs₁ := k₁.scr hs
-  have lt₁ : sv c base s₁ W0 < c.C.p := by
+  obtain hs₁ := k₁.scr hs
+  obtain lt₁ : sv c base s₁ W0 < c.C.p := by
     rw [e₁]; exact Nat.mod_lt _ (by omega_using [ht])
-  have v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ W0) =
+  obtain v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ W0) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) - 1 := by
     rw [e₁, toM_sub (by omega_using [hOlt]), hOne, toM_one (unitMod_pow_two hc.p_odd (64 * c.n))]
-  have z₁ : sv c base s₁ W0 = 0 ↔ toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1 := by
+  obtain z₁ : sv c base s₁ W0 = 0 ↔ toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1 := by
     rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) lt₁, v₁]
     constructor <;> intro h <;> grind
   rw [WP.block_append_iff]
@@ -126,16 +126,16 @@ theorem descentChoose_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_singleton] at hr
     exact RegUpd.gpr_write_of_ne _ _ _ hr) fun s₃ ⟨m₃, k₃⟩ => ?_
-  have hs₃ := (hs₁.of_keeps k₂ (by decide)).of_keeps k₃ (by decide)
+  obtain hs₃ := (hs₁.of_keeps k₂ (by decide)).of_keeps k₃ (by decide)
   refine WP.mono (sel_ok (decide (toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1)) c.n hs₃
     (by rw [m₃, mask₂]; simp only [decide_eq_true_eq]) hB hC hO (sl_mod8 c T4) (sl_mod8 c T1) (sl_mod8 c ONEP)
     (by have := sl_apart c (i := T4) (j := T1) (by decide); omega_using [this])
     (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega_using [this]))
     fun t ⟨v₄, k₄, O₄⟩ => ?_
-  have mem₃ : s₃.mem = s₁.mem := k₃.mem.trans k₂.mem
-  have C₃ : sv c base s₃ T1 = sv c base s T1 := by
+  obtain mem₃ : s₃.mem = s₁.mem := k₃.mem.trans k₂.mem
+  obtain C₃ : sv c base s₃ T1 = sv c base s T1 := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  have O₃ : sv c base s₃ ONEP = sv c base s ONEP := by
+  obtain O₃ : sv c base s₃ ONEP = sv c base s ONEP := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   change sv c base t T4 = _ at v₄
   simp only [decide_eq_true_eq] at v₄
@@ -199,10 +199,10 @@ open VG.Proof.Ed25519.AArch64 (Keeps)
   rw [WP.block_append_iff]
   refine WP.mono (umovOf_ok [(.x19, .v27, 0)] s (by decide) (by decide))
     fun t ⟨m, r, w, sp, L, G⟩ => ?_
-  have e : t.gpr .x19 = BitVec.ofNat 64 j := (L (.x19, .v27, 0) (by simp)).trans hcounter
+  obtain e : t.gpr .x19 = BitVec.ofNat 64 j := (L (.x19, .v27, 0) (by simp)).trans hcounter
   refine WP.mono (decCounter_ok t hj hj' e) fun u ⟨v, K⟩ => ?_
   refine ⟨v, ?_⟩
-  have K₁ : Keeps [.x19] s t := ⟨G, m, r, w, sp⟩
+  obtain K₁ : Keeps [.x19] s t := ⟨G, m, r, w, sp⟩
   exact K₁.trans K
 
 end VG.Proof.EcKey.Compressed.AArch64
@@ -244,18 +244,18 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
       SquareInv c base count s₀ t (j - 1) ∧ t.gpr .x19 = BitVec.ofNat 64 (j - 1) := by
   have h7 := hc.n10
   have hn := I.scr.nowrap
-  have hT := sl_le c h7 (i := T3) (by decide)
+  obtain hT := sl_le c h7 (i := T3) (by decide)
   rw [Impl.EcKey.Compressed.AArch64.squareStep, WP.block_append_iff]
   refine WP.mono (mulOp_ok I.scr I.mod (MP'_A c) hT hT hT
     (sl_mod8 c T3) (sl_mod8 c T3) (sl_mod8 c T3) I.lt)
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
-  have hs₁ := k₁.scr I.scr
-  have hm₁ := I.mod.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
-  have hb₁ : s₁.gpr .x19 = BitVec.ofNat 64 j :=
+  obtain hs₁ := k₁.scr I.scr
+  obtain hm₁ := I.mod.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  obtain hb₁ : s₁.gpr .x19 = BitVec.ofNat 64 j :=
     (k₁.gpr _ (x19_not_clob c.n)).trans I.counter
-  have U₁ : Unch base (slW c [T3, TMP]) s.mem s₁.mem :=
+  obtain U₁ : Unch base (slW c [T3, TMP]) s.mem s₁.mem :=
     unch_slots (MP'_n c) rfl k₁.unch (by simp) (by simp)
-  have v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ T3) =
+  obtain v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ T3) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) ^ 2 := by
     have e : sv c base s₁ T3 * 2 ^ (64 * c.n) % c.C.p =
         sv c base s T3 * sv c base s T3 % c.C.p := e₁
@@ -302,7 +302,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
       KeepRegs (powClob c.n) s t ∧ Unch base (slW c [T3, TMP]) s.mem t.mem ∧
       sv c base t T3 < c.C.p ∧ toM c.C.p (2 ^ (64 * c.n)) (sv c base t T3) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) ^ (2 ^ count) := by
-  have ev : isa.eval (.zero .x .x19) s = some (decide (count = 0)) := by
+  obtain ev : isa.eval (.zero .x .x19) s = some (decide (count = 0)) := by
     change some (s.read .x .x19 == 0) = _
     rw [read_x, hb]
     congr 1
@@ -316,7 +316,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
     · intro h; subst h; rfl
   apply WP.ite _ ev
   · intro hz
-    have hz : count = 0 := of_decide_eq_true hz
+    obtain hz : count = 0 := of_decide_eq_true hz
     apply WP.block_nil
     refine ⟨⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, hlt, ?_⟩
     rw [hz, Nat.pow_zero, Lean.Grind.Semiring.pow_one]
@@ -354,8 +354,8 @@ theorem descentPower_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {
   have h7 := hc.n10
   have h0 := hc.n0
   have hn := hs.nowrap
-  have h3 := sl_le c h7 (i := T3) (by decide)
-  have h2 := sl_le c h7 (i := T2) (by decide)
+  obtain h3 := sl_le c h7 (i := T3) (by decide)
+  obtain h2 := sl_le c h7 (i := T2) (by decide)
   change WP isa (.seq (.block (copy c.n (c.sl T3) (c.sl T0) ++
     [decCounter]))
     (Impl.EcKey.Compressed.AArch64.squarePower c)) s _
@@ -363,13 +363,13 @@ theorem descentPower_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok c.n hs h3 (sl_le c h7 (by decide)) (sl_mod8 c T3) (sl_mod8 c T0)
     (by have := sl_apart c (i := T3) (j := T0) (by decide); omega)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have U₁ : Unch base (slW c [T3, TMP]) s.mem s₁.mem := slot_frame (by simp) (Nat.le_refl _) O₁
-  have w₁ : s₁.gpr .x19 = BitVec.ofNat 64 j := (k₁.gpr _ (by decide)).trans hword
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain U₁ : Unch base (slW c [T3, TMP]) s.mem s₁.mem := slot_frame (by simp) (Nat.le_refl _) O₁
+  obtain w₁ : s₁.gpr .x19 = BitVec.ofNat 64 j := (k₁.gpr _ (by decide)).trans hword
   refine WP.mono (decCounter_ok s₁ hj (by omega) w₁) fun s₃ ⟨hb₃, k₃⟩ => ?_
-  have hs₃ := hs₁.of_keeps k₃ (by decide)
+  obtain hs₃ := hs₁.of_keeps k₃ (by decide)
   have m₃ : s₃.mem = s₁.mem := k₃.mem
-  have M₃ : ModOkA c.MP' size c.C.p s₃.mem base := modP_of hc (by
+  obtain M₃ : ModOkA c.MP' size c.C.p s₃.mem base := modP_of hc (by
     rw [m₃, O₁.wordsVal (sl_apart c (i := MP) (j := T3) (by decide)) (by
       have := sl_le c h7 (i := MP) (by decide); omega)]
     exact hM.val)
@@ -444,11 +444,11 @@ theorem descentUpdate_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     WP isa (Impl.Weierstrass.AArch64.fprogB c.MP'
       (Impl.EcKey.Compressed.AArch64.descentOps c)) s (DescentUpdatePost c base s) := by
   have h7 := hc.n10
-  have hL : Lay c.MP' size (· ∈ descentFields.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have hAl : Aligned c.MP' (· ∈ descentFields.map c.sl) := ⟨fun x hx => by
+  obtain hL : Lay c.MP' size (· ∈ descentFields.map c.sl) := lay_map hc rfl rfl rfl (by decide)
+  obtain hAl : Aligned c.MP' (· ∈ descentFields.map c.sl) := ⟨fun x hx => by
     obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
     exact sl_mod8 c i, MP'_A c, fun f m h => (hc.call_p f m h).2⟩
-  have I : Inv c.MP' base size c.C.p (· ∈ descentFields.map c.sl) (descentFields.map c.sl)
+  obtain I : Inv c.MP' base size c.C.p (· ∈ descentFields.map c.sl) (descentFields.map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
     refine ⟨hs, hM, fun _ h => h, ?_, fun _ _ => rfl⟩
     intro x hx
@@ -461,15 +461,15 @@ theorem descentUpdate_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       apply Low.of_call
       intro f m h x hx
       obtain ⟨op₀, hop₀, rfl⟩ := List.mem_map.mp hop
-      have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+      obtain hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
         cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-      have hi' := descentN_slots op₀ hop₀ i hi
-      have H : ∀ i ∈ descentFields, i < 45 ∧ i ≠ TMP := by decide
+      obtain hi' := descentN_slots op₀ hop₀ i hi
+      obtain H : ∀ i ∈ descentFields, i < 45 ∧ i ≠ TMP := by decide
       exact sl_own_fn c h7 (H i hi').1 (H i hi').2)
     (readsOk_rename c.sl descentN_reads)) fun t ⟨PK, IT⟩ => ?_
   · obtain ⟨op₀, h₀, rfl⟩ := List.mem_map.mp hop
-    have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+    obtain hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
       cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     exact List.mem_map_of_mem (descentN_slots _ h₀ _ hi)
@@ -477,13 +477,13 @@ theorem descentUpdate_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       c.sl i ∈ validAfter (descentN.map (FOp.rename c.sl)) (descentFields.map c.sl) := by
     apply (mem_validAfter _ _).mpr
     exact Or.inl (List.mem_map_of_mem (by
-      have sub : ∀ i ∈ [ACC, T0, T1], i ∈ descentFields := by decide
+      obtain sub : ∀ i ∈ [ACC, T0, T1], i ∈ descentFields := by decide
       exact sub i hi))
   have val {i : Nat} (hi : i ∈ [ACC, T0, T1]) := IT.val _ (hw hi)
-  have vr := val (i := ACC) (by simp)
-  have vt := val (i := T0) (by simp)
-  have vc := val (i := T1) (by simp)
-  have H : ∀ op ∈ descentN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
+  obtain vr := val (i := ACC) (by simp)
+  obtain vt := val (i := T0) (by simp)
+  obtain vc := val (i := T1) (by simp)
+  obtain H : ∀ op ∈ descentN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
   rw [congrFun (runOps_rename c.sl descentN _ fun op hop y h => sl_inj c hc.n0 h (.inr (H op hop).2) (.inl (H op hop).1)) ACC,
     (descentN_run _).1] at vr
   rw [congrFun (runOps_rename c.sl descentN _ fun op hop y h => sl_inj c hc.n0 h (.inr (H op hop).2) (.inl (H op hop).1)) T0,
@@ -544,45 +544,45 @@ theorem descentBody_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {j
       (Impl.Weierstrass.AArch64.fprogB c.MP' (Impl.EcKey.Compressed.AArch64.descentOps c)))) s _
   refine WP.seq (WP.mono (descentPower_ok hc hs hM (hlt _ (by simp)) hj hj' hword)
     fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  have hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
+  obtain hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
   have e₁ {i : Nat} (hi : i < 45) (hw : i ∉ [T3, TMP]) : sv c base s₁ i = sv c base s i :=
     sv_unch U₁ h7 hn hi (apart_slW hw)
-  have M₁ : ModOkA c.MP' size c.C.p s₁.mem base := modP_of hc (by
+  obtain M₁ : ModOkA c.MP' size c.C.p s₁.mem base := modP_of hc (by
     change sv c base s₁ MP = _
     rw [e₁ (by decide) (by decide)]; exact hM.val)
   refine WP.seq (WP.mono (descentChoose_ok hc hs₁ M₁ lt₁
     (by rw [e₁ (by decide) (by decide)]; exact hlt _ (by simp))
     (by rw [e₁ (by decide) (by decide)]; exact hOne)) fun s₂ ⟨k₂, U₂, lt₂, v₂⟩ => ?_)
-  have hs₂ := hs₁.of_keepRegs k₂ (by intro h; exact (by decide : VG.AArch64.Reg.x0 ∉ VG.Proof.Mont.AArch64.clobAll) (VG.Proof.Mont.AArch64.mem_clobAll h))
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by intro h; exact (by decide : VG.AArch64.Reg.x0 ∉ VG.Proof.Mont.AArch64.clobAll) (VG.Proof.Mont.AArch64.mem_clobAll h))
   have e₂ {i : Nat} (hi : i < 45) (hw : i ∉ [W0, T4, TMP]) : sv c base s₂ i = sv c base s₁ i :=
     sv_unch U₂ h7 hn hi (apart_slW hw)
-  have M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
+  obtain M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
     change sv c base s₂ MP = _
     rw [e₂ (by decide) (by decide)]; exact M₁.val)
-  have b₂ : fieldAt c base s₂ T4 =
+  obtain b₂ : fieldAt c base s₂ T4 =
       if fieldAt c base s T0 ^ (2 ^ (j - 1)) = 1 then 1 else fieldAt c base s T1 := by
     unfold fieldAt
     rw [v₂, v₁, e₁ (by decide) (by decide)]
   refine WP.mono (descentUpdate_ok hc hs₂ M₂ (by
     intro i hi
-    have sub : ∀ i ∈ descentFields, i ∈ [ACC, T0, T1] ∨ i = T4 := by decide
+    obtain sub : ∀ i ∈ descentFields, i ∈ [ACC, T0, T1] ∨ i = T4 := by decide
     rcases sub i hi with h | rfl
     · have hi45 : i < 45 := (by decide : ∀ i ∈ [ACC, T0, T1], i < 45) i h
-      have hn₁ : i ∉ [T3, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [T3, TMP]) i h
-      have hn₂ : i ∉ [W0, T4, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [W0, T4, TMP]) i h
+      obtain hn₁ : i ∉ [T3, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [T3, TMP]) i h
+      obtain hn₂ : i ∉ [W0, T4, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [W0, T4, TMP]) i h
       rw [e₂ hi45 hn₂, e₁ hi45 hn₁]; exact hlt i h
     · exact lt₂)) fun s₃ V => ?_
-  have U₁₂ := unch_same (slots_widen U₁ (by decide : ∀ i ∈ [T3, TMP], i ∈ roundSlots))
+  obtain U₁₂ := unch_same (slots_widen U₁ (by decide : ∀ i ∈ [T3, TMP], i ∈ roundSlots))
     (slots_widen U₂ (by decide : ∀ i ∈ [W0, T4, TMP], i ∈ roundSlots))
-  have U₁₂₃ := unch_same U₁₂ (slots_widen V.unch (by decide : ∀ i ∈ descentWritten, i ∈ roundSlots))
+  obtain U₁₂₃ := unch_same U₁₂ (slots_widen V.unch (by decide : ∀ i ∈ descentWritten, i ∈ roundSlots))
   refine ⟨V.scr, ?_, U₁₂₃, V.lt, ?_⟩
   · exact (k₁.trans (k₂.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
       (V.keep.mono (fun _ h => List.mem_cons_of_mem _ h))
   · have r₄ : fieldAt c base s₃ ACC = fieldAt c base s ACC * fieldAt c base s₂ T4 := by
       rw [fieldAt, V.r, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    have t₄ : fieldAt c base s₃ T0 = fieldAt c base s T0 * (fieldAt c base s₂ T4 * fieldAt c base s₂ T4) := by
+    obtain t₄ : fieldAt c base s₃ T0 = fieldAt c base s T0 * (fieldAt c base s₂ T4 * fieldAt c base s₂ T4) := by
       rw [fieldAt, V.t, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    have c₄ : fieldAt c base s₃ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
+    obtain c₄ : fieldAt c base s₃ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
       rw [fieldAt, V.c, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
     conv_rhs => rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
     simp only [pow_eq_npow]
@@ -606,14 +606,14 @@ theorem descentBody_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {j
     (hj : 1 ≤ j) (hj' : j < 2 ^ 31) (hcounter : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (Impl.EcKey.Compressed.AArch64.descentRound c) s (DescentRoundPost c base j s) := by
   refine WP.seq (WP.mono (saveCounter_ok s) fun u ⟨g, m, rd, wr, sp, saved⟩ => ?_)
-  have hs₁ : Scr u base size := ⟨by rw [g]; exact hs.x0, by rw [wr]; exact hs.wr, hs.nowrap, hs.enc⟩
+  obtain hs₁ : Scr u base size := ⟨by rw [g]; exact hs.x0, by rw [wr]; exact hs.wr, hs.nowrap, hs.enc⟩
   have e (i : Nat) : sv c base u i = sv c base s i := by rw [sv, m]
-  have M₁ : ModOkA c.MP' size c.C.p u.mem base := by rw [m]; exact hM
+  obtain M₁ : ModOkA c.MP' size c.C.p u.mem base := by rw [m]; exact hM
   refine WP.seq (WP.mono (VG.Proof.Ecdh.AArch64.WP.keepV hV
     (descentBody_ok hc hs₁ M₁ (by intro i hi; rw [e]; exact hlt i hi)
       (by rw [e]; exact hOne) hj hj' (by rw [g]; exact hcounter)))
     fun v ⟨R, hv⟩ => ?_)
-  have counter : laneOf v .v27 0 = BitVec.ofNat 64 j := by
+  obtain counter : laneOf v .v27 0 = BitVec.ofNat 64 j := by
     change (v.v .v27).extractLsb' (64 * 0) 64 = _
     rw [hv]
     exact saved.trans hcounter
@@ -671,22 +671,22 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
     (.seq (.block (copy c.n (c.sl T5) (c.sl ACC))) (rootPower c (rootQ c)))) s _
   refine WP.seq (WP.mono (rootPower_ok hc hR hs hM hB)
     fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  have hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
+  obtain hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
   have e₁ {i : Nat} (hi : i < 45) (hw : i ∉ rootSlots) :
       sv c base s₁ i = sv c base s i := sv_unch U₁ h7 hn hi (apart_rootWrites hc hi hw)
   refine WP.seq (WP.mono (copy_ok c.n hs₁ (sl_le c h7 (by decide)) (sl_le c h7 (by decide))
     (sl_mod8 c T5) (sl_mod8 c ACC)
     (by have := sl_apart c (i := T5) (j := ACC) (by decide); omega)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_)
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have e₂ {i : Nat} (hi : i < 45) (hw : i ≠ T5) : sv c base s₂ i = sv c base s₁ i :=
     O₂.wordsVal (sl_apart c hw) (by have := sl_le c h7 hi; omega)
-  have M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
+  obtain M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
     change sv c base s₂ MP = _
     rw [e₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hM.val)
   refine WP.mono (rootPower_ok hc hQ hs₂ M₂
     (by rw [e₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hB))
     fun t ⟨kt, Ut, ltt, vt⟩ => ?_
-  have et : sv c base t T5 = sv c base s₂ T5 :=
+  obtain et : sv c base t T5 = sv c base s₂ T5 :=
     sv_unch Ut h7 hn (by decide) (apart_rootWrites hc (by decide) (by decide))
   refine ⟨(k₁.trans (k₂.mono (by
     intro r hr; obtain rfl := List.mem_singleton.mp hr; simp [powClob, clob]))).trans kt,
@@ -733,37 +733,37 @@ theorem tonelliSetup_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have h7 := hc.n10
   have h0 := hc.n0
   have hn := hs.nowrap
-  have hT0 := sl_le c h7 (i := T0) (by decide)
-  have hACC := sl_le c h7 (i := ACC) (by decide)
-  have hT5 := sl_le c h7 (i := T5) (by decide)
-  have hT1 := sl_le c h7 (i := T1) (by decide)
+  obtain hT0 := sl_le c h7 (i := T0) (by decide)
+  obtain hACC := sl_le c h7 (i := ACC) (by decide)
+  obtain hT5 := sl_le c h7 (i := T5) (by decide)
+  obtain hT1 := sl_le c h7 (i := T1) (by decide)
   rw [Impl.EcKey.Compressed.AArch64.tonelliSetup, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (copy_ok c.n hs hT0 hACC (sl_mod8 c T0) (sl_mod8 c ACC)
     (by have := sl_apart c (i := T0) (j := ACC) (by decide); omega)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok c.n hs₁ hACC hT5 (sl_mod8 c ACC) (sl_mod8 c T5)
     (by have := sl_apart c (i := ACC) (j := T5) (by decide); omega)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have r₂ : sv c base s₂ ACC = sv c base s T5 := by
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain r₂ : sv c base s₂ ACC = sv c base s T5 := by
     rw [sv, v₂, O₁.wordsVal (sl_apart c (i := T5) (j := T0) (by decide)) (by omega)]
-  have t₂ : sv c base s₂ T0 = sv c base s ACC := by
+  obtain t₂ : sv c base s₂ T0 = sv c base s ACC := by
     rw [sv, O₂.wordsVal (sl_apart c (i := T0) (j := ACC) (by decide)) (by omega), v₁]
   let z := Spec.Weierstrass.pow (Fin.ofNat c.C.p 11) (rootQ c)
   have zR : c.mont z.val < 2 ^ (64 * c.n) := Nat.lt_trans
     (Nat.mod_lt _ (by have := hc.p_ge; omega)) hc.p_lt
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok hs₂ hT1 (sl_mod8 c T1) zR) fun s₃ ⟨v₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
   refine WP.mono (setCounter_ok s₃ (j := 95) (by decide)) fun t ⟨v₄, k₄⟩ => ?_
   have e₃ {i : Nat} (hi : i < 45) (hw : i ≠ T1) : sv c base s₃ i = sv c base s₂ i :=
     O₃.wordsVal (sl_apart c hw) (by have := sl_le c h7 hi; omega)
   have e₄ (i : Nat) : sv c base t i = sv c base s₃ i := by rw [sv, k₄.mem]
-  have r₄ : sv c base t ACC = sv c base s T5 := by
+  obtain r₄ : sv c base t ACC = sv c base s T5 := by
     rw [e₄, e₃ (by decide) (by decide), r₂]
-  have t₄ : sv c base t T0 = sv c base s ACC := by
+  obtain t₄ : sv c base t T0 = sv c base s ACC := by
     rw [e₄, e₃ (by decide) (by decide), t₂]
-  have c₄ : sv c base t T1 = c.mont z.val := by
+  obtain c₄ : sv c base t T1 = c.mont z.val := by
     rw [e₄]; exact v₃
   refine ⟨(((k₁.trans k₂).trans k₃).mono (by sub_regs)).trans
       ((Keeps.regs k₄).mono (by sub_regs)), ?_, ?_, ?_, by rw [r₄], by rw [t₄], ?_⟩
@@ -827,10 +827,10 @@ theorem descentLoop_ok {c : Cfg} (hc : BaseCfgOk c)
   · intro j t hj hjc I
     refine WP.mono (descentRound_ok hc hV I.scr I.mod I.lt I.one hj (by omega) I.counter)
       fun u R => ?_
-    have M : ModOkA c.MP' size c.C.p u.mem base := modP_of hc (by
+    obtain M : ModOkA c.MP' size c.C.p u.mem base := modP_of hc (by
       rw [sv_unch R.unch h7 hn (by decide) (apart_slW (by decide : MP ∉ roundSlots))]
       exact I.mod.val)
-    have one : sv c base u ONEP = 2 ^ (64 * c.n) % c.C.p := by
+    obtain one : sv c base u ONEP = 2 ^ (64 * c.n) % c.C.p := by
       rw [sv]
       rw [sv_unch R.unch h7 hn (by decide) (apart_slW (by decide : ONEP ∉ roundSlots))]
       exact I.one
@@ -871,11 +871,11 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
       (.loop (Impl.EcKey.Compressed.AArch64.descentRound c) (.nonzero .x .x19)))) s _
   refine WP.seq (WP.mono (tonelliPowers_ok hc hR hQ hs hM hB)
     fun s₁ ⟨k₁, U₁, lt₁, ltR₁, t₁, r₁⟩ => ?_)
-  have hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
+  obtain hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
   refine WP.seq (WP.mono (tonelliSetup_ok hc hs₁ ltR₁ lt₁)
     fun s₂ ⟨k₂, U₂, lt₂, counter₂, r₂, t₂, c₂⟩ => ?_)
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have U₁₂ : Unch base (candidateWrites c) s.mem s₂.mem := by
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain U₁₂ : Unch base (candidateWrites c) s.mem s₂.mem := by
     apply unch_same (U₁.mono ?_) (U₂.mono ?_)
     · intro w hw
       rcases List.mem_append.mp hw with hw | hw
@@ -889,10 +889,10 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact List.mem_append_right _ (List.mem_map_of_mem
         ((by decide : ∀ i ∈ [T0, ACC, T1], i ∈ candidateSlots) i hi))
-  have M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
+  obtain M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
     rw [sv_unch U₁₂ h7 hn (by decide) (candidate_apart hc (by decide) (by decide))]
     exact hM.val)
-  have one₂ : sv c base s₂ ONEP = 2 ^ (64 * c.n) % c.C.p := by
+  obtain one₂ : sv c base s₂ ONEP = 2 ^ (64 * c.n) % c.C.p := by
     rw [sv, sv_unch U₁₂ h7 hn (by decide) (candidate_apart hc (by decide) (by decide))]
     exact hO
   refine WP.mono (descentLoop_ok hc hV hs₂ M₂ one₂ lt₂ (by decide : 1 ≤ 95)
@@ -975,17 +975,17 @@ materialize_shared baseline := code
 
  theorem body_no_v27 : ∀ i ∈ instrs (Impl.EcKey.Compressed.AArch64.descentBody p224),
     vdstOf i ≠ some .v27 := by
-  have h : (Impl.EcKey.Compressed.AArch64.descentBody p224).allInstrs
+  obtain h : (Impl.EcKey.Compressed.AArch64.descentBody p224).allInstrs
       (fun i => (vdstOf i).isNone) = true := by lit_decide
   intro i hi he
-  have h' := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ h) i hi
+  obtain h' := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ h) i hi
   rw [he] at h'
   cases h'
 
  theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) := by
-  have hc := (p224_ok hI).toBaseCfgOk
+  obtain hc := (p224_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p224 hc _
     (candidateTonelli_correct hc (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
     (by lit_decide) (by lit_decide) (by lit_decide)) ct

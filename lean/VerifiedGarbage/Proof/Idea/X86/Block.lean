@@ -49,7 +49,7 @@ theorem lo16 (b0 b1 b2 b3 : BitVec 8) :
     (b0 ++ b1 ++ b2 ++ b3 : BitVec 32) &&& 65535 = (b2 ++ b3).setWidth 32 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have hm : (65535 : BitVec 32).getLsbD i = decide (i < 16) := by
+  obtain hm : (65535 : BitVec 32).getLsbD i = decide (i < 16) := by
     rw [show (65535 : BitVec 32) = BitVec.ofNat 32 (2 ^ 16 - 1) from rfl, BitVec.getLsbD_ofNat]
     simp only [Nat.testBit_two_pow_sub_one, hi, decide_true, Bool.true_and]
   rw [BitVec.getLsbD_and, hm, cat4, BitVec.getLsbD_setWidth, cat2, decide_eq_true hi, Bool.true_and]
@@ -82,8 +82,8 @@ theorem bswap_readW' (m : Mem) (A : Addr) (k : Nat) :
 /-- Byte `i` of a byte-reversed word is byte `3 - i` of the word. -/
 theorem bswap_byte (w : BitVec 32) {i : Nat} (hi : i < 4) :
     (bswap w).extractLsb' (8 * i) 8 = w.extractLsb' (24 - 8 * i) 8 := by
-  have h := byteRev32_extract w
-  have e : ∀ j, j < 4 → (byteRev32 w).extractLsb' (8 * j) 8 =
+  obtain h := byteRev32_extract w
+  obtain e : ∀ j, j < 4 → (byteRev32 w).extractLsb' (8 * j) 8 =
       [w.extractLsb' 24 8, w.extractLsb' 16 8, w.extractLsb' 8 8, w.extractLsb' 0 8][j]! := by
     intro j hj
     rw [← h]
@@ -167,20 +167,20 @@ theorem load_run {z : Spec.Idea.Schedule} {P : BitVec 32} {A : Addr} (s : State)
   have w (k : Nat) (hk : k < 4) := decodeBlock_blockAt s.mem A hk
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax _ _ s (slot_src h.key (d := dataSlot) (by decide))
   rw [h.slot] at v₁
-  have rd₀ : InRegions (s₁.rd ++ s₁.wr) (addr (s₁.gpr .eax) 0) 4 := by
+  obtain rd₀ : InRegions (s₁.rd ++ s₁.wr) (addr (s₁.gpr .eax) 0) 4 := by
     rw [e₁.rd, e₁.wr, v₁, addrP h.addr h.fit (by decide)]
     simpa using h.rd0
-  have rd₄ : InRegions (s₁.rd ++ s₁.wr) (addr (s₁.gpr .eax) 4) 4 := by
+  obtain rd₄ : InRegions (s₁.rd ++ s₁.wr) (addr (s₁.gpr .eax) 4) 4 := by
     rw [e₁.rd, e₁.wr, v₁, addrP h.addr h.fit (by decide)]; exact h.rd4
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mov_run .ebx _ _ s₁ (load_src rd₀)
   obtain ⟨s₃, h₃, v₃, e₃⟩ := bswap_run .ebx s₂
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mov_run .ecx (.reg .ebx) _ s₃ rfl
   obtain ⟨s₅, h₅, v₅, e₅⟩ := shift_run .shr .ebx 16 (by decide) s₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := alu_run .and (by simp) .ecx (.imm 0xffff) 0xffff s₅ rfl
-  have e₂₆ : Keep [.ebx, .ecx] s₂ s₆ :=
+  obtain e₂₆ : Keep [.ebx, .ecx] s₂ s₆ :=
     (((e₃.weaken (by decide)).trans (e₄.weaken (by decide))).trans (e₅.weaken (by decide))).trans
       (e₆.weaken (by decide))
-  have rd₄' : InRegions (s₆.rd ++ s₆.wr) (addr (s₆.gpr .eax) 4) 4 := by
+  obtain rd₄' : InRegions (s₆.rd ++ s₆.wr) (addr (s₆.gpr .eax) 4) 4 := by
     rw [e₂₆.rd, e₂₆.wr, e₂.rd, e₂.wr, e₂₆.reg .eax (by decide), e₂.reg .eax (by decide)]; exact rd₄
   obtain ⟨s₇, h₇, v₇, e₇⟩ := mov_run .edi _ _ s₆ (load_src rd₄')
   obtain ⟨s₈, h₈, v₈, e₈⟩ := bswap_run .edi s₇
@@ -189,12 +189,12 @@ theorem load_run {z : Spec.Idea.Schedule} {P : BitVec 32} {A : Addr} (s : State)
   obtain ⟨s₁₁, h₁₁, v₁₁, e₁₁⟩ := alu_run .and (by simp) .ebp (.imm 0xffff) 0xffff s₁₀ rfl
   simp only [aluF] at v₆ v₁₁
   simp only at v₅ v₁₀
-  have mem₆ : s₆.mem = s.mem := by rw [e₂₆.mem, e₂.mem, e₁.mem]
-  have eax₆ : s₆.gpr .eax = P := by rw [e₂₆.reg .eax (by decide), e₂.reg .eax (by decide), v₁]
-  have word0 : bswap (s₂.gpr .ebx) = (s.mem (A + BitVec.ofNat 64 0) ++ s.mem (A + BitVec.ofNat 64 1) ++
+  obtain mem₆ : s₆.mem = s.mem := by rw [e₂₆.mem, e₂.mem, e₁.mem]
+  obtain eax₆ : s₆.gpr .eax = P := by rw [e₂₆.reg .eax (by decide), e₂.reg .eax (by decide), v₁]
+  obtain word0 : bswap (s₂.gpr .ebx) = (s.mem (A + BitVec.ofNat 64 0) ++ s.mem (A + BitVec.ofNat 64 1) ++
       s.mem (A + BitVec.ofNat 64 2) ++ s.mem (A + BitVec.ofNat 64 3) : BitVec 32) := by
     rw [v₂, e₁.mem, v₁, addrP h.addr h.fit (by decide), bswap_readW']
-  have word1 : bswap (s₇.gpr .edi) = (s.mem (A + BitVec.ofNat 64 4) ++ s.mem (A + BitVec.ofNat 64 5) ++
+  obtain word1 : bswap (s₇.gpr .edi) = (s.mem (A + BitVec.ofNat 64 4) ++ s.mem (A + BitVec.ofNat 64 5) ++
       s.mem (A + BitVec.ofNat 64 6) ++ s.mem (A + BitVec.ofNat 64 7) : BitVec 32) := by
     rw [v₇, mem₆, eax₆, addrP h.addr h.fit (by decide), bswap_readW']
   refine ⟨s₁₁, ?_, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
@@ -255,12 +255,12 @@ theorem output_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) (s : State) (h
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax (.reg .ebx) _ s rfl
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mulKey_run z 48 (by decide) s₁ (hk.keep e₁ (by decide))
   obtain ⟨s₃, h₃, v₃, e₃⟩ := mov_run .ebx (.reg .edx) _ s₂ rfl
-  have e₀₃ : Keep [.eax, .ebx, .edx] s s₃ :=
+  obtain e₀₃ : Keep [.eax, .ebx, .edx] s s₃ :=
     ((e₁.weaken (by decide)).trans (e₂.weaken (by decide))).trans (e₃.weaken (by decide))
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mov_run .eax (.reg .ebp) _ s₃ rfl
   obtain ⟨s₅, h₅, v₅, e₅⟩ := mulKey_run z 51 (by decide) s₄ ((hk.keep e₀₃ (by decide)).keep e₄ (by decide))
   obtain ⟨s₆, h₆, v₆, e₆⟩ := mov_run .ebp (.reg .edx) _ s₅ rfl
-  have e₀₆ : Keep [.eax, .ebx, .edx, .ebp] s s₆ :=
+  obtain e₀₆ : Keep [.eax, .ebx, .edx, .ebp] s s₆ :=
     (((e₀₃.weaken (by decide)).trans (e₄.weaken (by decide))).trans (e₅.weaken (by decide))).trans
       (e₆.weaken (by decide))
   obtain ⟨s₇, h₇, v₇, e₇⟩ := addKey_run z .edi 49 (by decide) s₆ (hk.keep e₀₆ (by decide))
@@ -341,12 +341,12 @@ theorem cryptBlockWith_run (z : Spec.Idea.Schedule) (pre : List Instr) (R : BitV
       R (s'.gpr .edx) := by
   obtain ⟨s₁, h₁, x₁, e₁⟩ := load_run s h
   obtain ⟨s₂, h₂, x₂, e₂⟩ := rounds_run z _ 8 (by decide) s₁ x₁ (h.key.keep e₁ (by decide))
-  have e₀₂ : KeepT roundWrites s s₂ := ((e₁.weaken (by decide)).toT).trans (by decide) e₂
+  obtain e₀₂ : KeepT roundWrites s s₂ := ((e₁.weaken (by decide)).toT).trans (by decide) e₂
   obtain ⟨s₃, h₃, x₃, e₃⟩ := output_run z _ s₂ x₂ (h.key.keepT e₀₂ (by decide))
-  have e₀₃ : KeepT roundWrites s s₃ := e₀₂.trans (by decide) e₃.toT
-  have esi₃ : s₃.gpr .esi = s.gpr .esi := e₀₃.reg .esi (by decide)
-  have k₃ : KeyOk z s₃ := h.key.keepT e₀₃ (by decide)
-  have slot₃ : s₃.mem.readW (addr (s₃.gpr .esi) dataSlot) 32 = P := by
+  obtain e₀₃ : KeepT roundWrites s s₃ := e₀₂.trans (by decide) e₃.toT
+  obtain esi₃ : s₃.gpr .esi = s.gpr .esi := e₀₃.reg .esi (by decide)
+  obtain k₃ : KeyOk z s₃ := h.key.keepT e₀₃ (by decide)
+  obtain slot₃ : s₃.mem.readW (addr (s₃.gpr .esi) dataSlot) 32 = P := by
     rw [esi₃, ← h.slot]
     refine e₀₃.frame.readW (r := ⟨addr (s.gpr .esi) dataSlot, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
@@ -359,23 +359,23 @@ theorem cryptBlockWith_run (z : Spec.Idea.Schedule) (pre : List Instr) (R : BitV
   obtain ⟨s₅, h₅, e₅, r₅⟩ := hpre s₄ ((e₄.reg .esi (by decide)).trans esi₃) (e₄.rd.trans e₀₃.rd)
     (e₄.wr.trans e₀₃.wr) (by rw [e₄.mem]; exact e₀₃.frame)
   -- The stores.
-  have y₀ : s₅.gpr .ebx = _ := (e₅.reg .ebx (by decide)).trans ((e₄.reg .ebx (by decide)).trans x₃.ebx)
-  have y₁ : s₅.gpr .edi = _ := (e₅.reg .edi (by decide)).trans ((e₄.reg .edi (by decide)).trans x₃.edi)
-  have y₂ : s₅.gpr .ecx = _ := (e₅.reg .ecx (by decide)).trans ((e₄.reg .ecx (by decide)).trans x₃.ecx)
-  have y₃ : s₅.gpr .ebp = _ := (e₅.reg .ebp (by decide)).trans ((e₄.reg .ebp (by decide)).trans x₃.ebp)
-  have eax₅ : s₅.gpr .eax = P := (e₅.reg .eax (by decide)).trans v₄
+  obtain y₀ : s₅.gpr .ebx = _ := (e₅.reg .ebx (by decide)).trans ((e₄.reg .ebx (by decide)).trans x₃.ebx)
+  obtain y₁ : s₅.gpr .edi = _ := (e₅.reg .edi (by decide)).trans ((e₄.reg .edi (by decide)).trans x₃.edi)
+  obtain y₂ : s₅.gpr .ecx = _ := (e₅.reg .ecx (by decide)).trans ((e₄.reg .ecx (by decide)).trans x₃.ecx)
+  obtain y₃ : s₅.gpr .ebp = _ := (e₅.reg .ebp (by decide)).trans ((e₄.reg .ebp (by decide)).trans x₃.ebp)
+  obtain eax₅ : s₅.gpr .eax = P := (e₅.reg .eax (by decide)).trans v₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := join_run .ebx .edi (by decide) _ _ s₅ y₀ y₁
-  have wr₆ : s₆.wr = s.wr := by rw [e₆.wr, e₅.wr, e₄.wr, e₀₃.wr]
-  have eax₆ : s₆.gpr .eax = P := (e₆.reg .eax (by decide)).trans eax₅
+  obtain wr₆ : s₆.wr = s.wr := by rw [e₆.wr, e₅.wr, e₄.wr, e₀₃.wr]
+  obtain eax₆ : s₆.gpr .eax = P := (e₆.reg .eax (by decide)).trans eax₅
   obtain ⟨s₇, h₇, m₇, g₇, rd₇, wr₇⟩ := store_run .eax .ebx 0 s₆
     (by rw [eax₆, addrP h.addr h.fit (by decide), wr₆]; simpa using hw0)
   obtain ⟨s₈, h₈, v₈, e₈⟩ := join_run .ecx .ebp (by decide) _ _ s₇
     (by rw [g₇, e₆.reg .ecx (by decide), y₂]) (by rw [g₇, e₆.reg .ebp (by decide), y₃])
-  have eax₈ : s₈.gpr .eax = P := by rw [e₈.reg .eax (by decide), g₇, eax₆]
+  obtain eax₈ : s₈.gpr .eax = P := by rw [e₈.reg .eax (by decide), g₇, eax₆]
   obtain ⟨s₉, h₉, m₉, g₉, rd₉, wr₉⟩ := store_run .eax .ecx 4 s₈
     (by rw [eax₈, addrP h.addr h.fit (by decide), e₈.wr, wr₇, wr₆]; exact hw4)
-  have mem₅ : s₅.mem = s₃.mem := by rw [e₅.mem, e₄.mem]
-  have hm : s₉.mem = (s₃.mem.writeW (A + BitVec.ofNat 64 0)
+  obtain mem₅ : s₅.mem = s₃.mem := by rw [e₅.mem, e₄.mem]
+  obtain hm : s₉.mem = (s₃.mem.writeW (A + BitVec.ofNat 64 0)
       (bswap (((Spec.Idea.output (z.getD 48 0) (z.getD 49 0) (z.getD 50 0) (z.getD 51 0)
         (roundsSpec z 8 (Spec.Idea.decodeBlock (Spec.Idea.blockAt s.mem A)))).getD 0 0 ++
         (Spec.Idea.output (z.getD 48 0) (z.getD 49 0) (z.getD 50 0) (z.getD 51 0)
@@ -394,7 +394,7 @@ theorem cryptBlockWith_run (z : Spec.Idea.Schedule) (pre : List Instr) (R : BitV
     exact run_append (run_append (run_append (run_append (run_append h₁ h₂) h₃) h₄) h₅) hs
   · rw [hm, store_block, Spec.Idea.cryptBlock, crypt_eq]
   · rw [hm]
-    have hf : Frame [⟨A, 8⟩, ⟨addr (s.gpr .esi) t0Slot, 4⟩] s.mem s₃.mem :=
+    obtain hf : Frame [⟨A, 8⟩, ⟨addr (s.gpr .esi) t0Slot, 4⟩] s.mem s₃.mem :=
       e₀₃.frame.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
     refine (hf.writeW (List.mem_cons_self) _ (Offset.contains_base A (by decide) (by decide))).writeW
       (List.mem_cons_self) _ (Offset.contains_base A (by decide) (by decide))

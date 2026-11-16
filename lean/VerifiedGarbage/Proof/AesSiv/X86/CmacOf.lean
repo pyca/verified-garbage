@@ -130,11 +130,11 @@ theorem cmacA_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 32}
       s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have E := h.env
   have hk := h.buf.lt
-  have hz := zero4_fold s.mem W stOff
+  obtain hz := zero4_fold s.mem W stOff
   simp only [Nat.reduceAdd, stOff] at hz
-  have fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩] s.mem (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 144)) :=
+  obtain fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩] s.mem (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 144)) :=
     Cmac.frame_store4 _ _ _ _ _
-  have hk' : slotv (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 144)) W slenO = BitVec.ofNat 32 k := by
+  obtain hk' : slotv (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 144)) W slenO = BitVec.ofNat 32 k := by
     exact (fz.readW (w := 32) (r := ⟨w64 W + BitVec.ofNat 64 slenO, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (by decide) (by decide) (by decide))
       (by decide)).trans h.slen
@@ -167,13 +167,13 @@ theorem cmacC_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 32}
       s'.gpr .eax = C ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧ s'.gpr .edx = W + BitVec.ofNat 32 144 ∧
       s'.gpr .ebx = P ∧ s'.gpr .esi = BitVec.ofNat 32 (c / 16) ∧ s'.gpr .edi = W + BitVec.ofNat 32 256 ∧
       s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hsh := shr4 hcl
-  have rd : ∀ o, o + 4 ≤ nbO →
+  obtain hsh := shr4 hcl
+  obtain rd : ∀ o, o + 4 ≤ nbO →
       slotv (s.mem.writeW (w64 W + BitVec.ofNat 64 nbO) (BitVec.ofNat 32 c)) W o = slotv s.mem W o :=
     fun o h₁ => readW_writeW_off _ _ _ (.inl h₁) (by simp only [nbO] at h₁; omega_arith) (by decide)
-  have hc' := (rd ctxO (by decide)).trans hc
-  have hr' := (rd roundsO (by decide)).trans hr
-  have hp' := (rd strO (by decide)).trans hp
+  obtain hc' := (rd ctxO (by decide)).trans hc
+  obtain hr' := (rd roundsO (by decide)).trans hr
+  obtain hp' := (rd strO (by decide)).trans hp
   refine ⟨_, by crun [macArgs, E.ebp, L.aW, E.perm.wW, E.perm.wR, hcx, hc', hr', hp'], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_⟩
   · cmems [hcx]
@@ -208,12 +208,12 @@ theorem cmacPre_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 3
   have E := h.env
   have hk := h.buf.lt
   have hk32 := h.k32
-  have hcl := chainedLen_le k
+  obtain hcl := chainedLen_le k
   obtain ⟨s₁, run₁, m₁, cx₁, ax₁, zf₁, bp₁, sp₁, rd₁, wr₁⟩ := cmacA_ok L h
-  have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, E.perm.of_eq rd₁ wr₁⟩
-  have fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩] s.mem s₁.mem := by
+  obtain E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, E.perm.of_eq rd₁ wr₁⟩
+  obtain fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact Cmac.frame_store4 _ _ _ _ _
-  have keep : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₁.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
+  obtain keep : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₁.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
     fz.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
       (by decide)
@@ -228,7 +228,7 @@ theorem cmacPre_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 3
     exact WP.of_runBlock ⟨s₃, run₃, ⟨bp₃, sp₃, E.perm.of_eq (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂])⟩,
       by rw [rd₃, rd₂], by rw [wr₃, wr₂], by rw [m₃, m₂, m₁], ax₃, cx₃, dx₃, bx₃, si₃, di₃⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have mid : WP isa (.ite .e (.block []) (.block [.mov .ecx (.reg .eax), .alu .sub .ecx (imm 1),
+  obtain mid : WP isa (.ite .e (.block []) (.block [.mov .ecx (.reg .eax), .alu .sub .ecx (imm 1),
       .alu .and .ecx (imm 0xfffffff0)])) s₁ fun s₂ =>
       s₂.gpr .ecx = BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k) ∧ Env C W SP s₂ ∧ s₂.rd = s.rd ∧
         s₂.wr = s.wr ∧ s₂.mem = s₁.mem := by
@@ -254,7 +254,7 @@ theorem cmacMid_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 3
       s'.gpr .eax = C ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧ s'.gpr .edx = W + BitVec.ofNat 32 144 ∧
       s'.gpr .ebx = P + BitVec.ofNat 32 c ∧ s'.gpr .esi = BitVec.ofNat 32 (k - c) ∧
       s'.gpr .edi = W + BitVec.ofNat 32 256 ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hsub := ofNat_sub32 hck hk32
+  obtain hsub := ofNat_sub32 hck hk32
   refine ⟨_, by crun [cmacMid, macArgs, E.ebp, L.aW, E.perm.wR, hc, hr, hp, hk, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_⟩
   · rfl
@@ -295,28 +295,28 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
     {P : BitVec 32} {k : Nat} {s : State} (h : CmacPre C W SP R P k s) :
     WP isa (cmacOf v.callee v.suffix stOff) s (CmacPost C W SP R s (bytesAt s.mem (w64 P) k)) := by
   have hk32 := h.k32
-  have hcl := chainedLen_le k
-  have hrest := chainedLen_rest k
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
+  obtain hcl := chainedLen_le k
+  obtain hrest := chainedLen_rest k
+  obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   refine WP.seq (WP.mono (cmacPre_ok L h) fun s₁ M => ?_)
   -- The whole blocks.
-  have B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
+  obtain B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
     (h.buf.take (by rw [chainedLen_div]; exact hcl)).of_eq M.rd M.wr
   refine WP.seq (WP.mono (updCall_ok v L M.env hR (y := 144) (.inl (by decide)) (srcBuf B₁)
     (B₁.w.sub_right (Lay.wSub (by decide))) (by rw [chainedLen_div]; omega_arith) M.eax M.ecx M.edx M.ebx M.esi M.edi)
     fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, o₂⟩ => ?_)
   -- The slots after the update.
-  have fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩, ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩] s.mem s₁.mem := by
+  obtain fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩, ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩] s.mem s₁.mem := by
     rw [M.mem]
     exact ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).writeW (by simp) _
       (Region.contains_self _ _)
-  have f₁₂ : Frame (cmacR W SP) s.mem s₂.mem := by
+  obtain f₁₂ : Frame (cmacR W SP) s.mem s₂.mem := by
     refine (fz.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
-  have keep₂ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₂.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
+  obtain keep₂ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₂.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
     f₁₂.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -324,7 +324,7 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
       · exact Lay.w_w (.inl (by simp only [nbO]; omega_arith)) (by omega_arith) (by decide)
       · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
       · exact (L.stk_w' (by omega_arith)).symm) (by decide)
-  have hn₂ : slotv s₂.mem W nbO = BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k) := by
+  obtain hn₂ : slotv s₂.mem W nbO = BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k) := by
     rw [show slotv s₂.mem W nbO = slotv s₁.mem W nbO from f₂.readW (r := ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩)
       (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -339,19 +339,19 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
     (by rw [keep₂ _ (by decide) (by decide)]; exact h.str) (by rw [keep₂ _ (by decide) (by decide)]; exact h.slen)
     hn₂ hcl hk32
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have E₃ : Env C W SP s₃ := ⟨bp₃, sp₃, E₂.perm.of_eq rd₃ wr₃⟩
+  obtain E₃ : Env C W SP s₃ := ⟨bp₃, sp₃, E₂.perm.of_eq rd₃ wr₃⟩
   -- The last bytes.
-  have hwc : P.toNat + Spec.Cmac.chainedLen 16 k < 2 ^ 32 := by
+  obtain hwc : P.toNat + Spec.Cmac.chainedLen 16 k < 2 ^ 32 := by
     have := h.buf.wrap
     have := P.isLt
     by_cases h0 : k = 0
     · subst h0; simp only [Spec.Cmac.chainedLen]; omega_arith
     · have := chainedLen_lt (Nat.pos_of_ne_zero h0); omega_arith
-  have B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) :=
+  obtain B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) :=
     (h.buf.drop hcl hwc).of_eq (by rw [rd₃, rd₂, M.rd]) (by rw [wr₃, wr₂, M.wr])
   refine WP.mono (finCall_ok v L E₃ hR (y := 144) (.inl (by decide)) hrest (srcBuf B₃)
     (B₃.w.sub_right (Lay.wSub (by decide))) ax₃ cx₃ dx₃ bx₃ si₃ di₃) fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄⟩ => ?_
-  have f₁₄ : Frame (cmacR W SP) s.mem s₄.mem := f₁₂.trans (by
+  obtain f₁₄ : Frame (cmacR W SP) s.mem s₄.mem := f₁₂.trans (by
     rw [← m₃]
     exact f₄.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -365,33 +365,33 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
       bytesAt m (w64 P + BitVec.ofNat 64 d) n = bytesAt s.mem (w64 P + BitVec.ofNat 64 d) n :=
     Proof.AesGcm.X86.bytesAt_frame hm (fun r hr => (cmacR_buf h.buf r hr).sub_left (Offset.sub_base _ hd))
       (by have := h.buf.lt; omega_arith)
-  have f₁₃ : Frame (cmacR W SP) s.mem s₃.mem := by rw [m₃]; exact f₁₂
-  have f₁₁ : Frame (cmacR W SP) s.mem s₁.mem := fz.sub fun r hr => by
+  obtain f₁₃ : Frame (cmacR W SP) s.mem s₃.mem := by rw [m₃]; exact f₁₂
+  obtain f₁₁ : Frame (cmacR W SP) s.mem s₁.mem := fz.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
-  have sch₃ := hC (d := 0) (n := 16 * (R + 1)) (by omega_arith) _ f₁₃
-  have sch₁ := hC (d := 0) (n := 16 * (R + 1)) (by omega_arith) _ f₁₁
-  have k1 := hC (d := 240) (n := 16) (by decide) _ f₁₃
-  have k2 := hC (d := 256) (n := 16) (by decide) _ f₁₃
-  have pre := hP (d := 0) (n := Spec.Cmac.chainedLen 16 k) (by omega_arith) _ f₁₁
-  have rest := hP (d := Spec.Cmac.chainedLen 16 k) (n := k - Spec.Cmac.chainedLen 16 k) (by omega_arith) _ f₁₃
+  obtain sch₃ := hC (d := 0) (n := 16 * (R + 1)) (by omega_arith) _ f₁₃
+  obtain sch₁ := hC (d := 0) (n := 16 * (R + 1)) (by omega_arith) _ f₁₁
+  obtain k1 := hC (d := 240) (n := 16) (by decide) _ f₁₃
+  obtain k2 := hC (d := 256) (n := 16) (by decide) _ f₁₃
+  obtain pre := hP (d := 0) (n := Spec.Cmac.chainedLen 16 k) (by omega_arith) _ f₁₁
+  obtain rest := hP (d := Spec.Cmac.chainedLen 16 k) (n := k - Spec.Cmac.chainedLen 16 k) (by omega_arith) _ f₁₃
   rw [BitVec.add_zero] at sch₃ sch₁ pre
-  have hz : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 144) 16 = Spec.Cmac.zeros 16 := by
+  obtain hz : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 144) 16 = Spec.Cmac.zeros 16 := by
     rw [M.mem, Proof.AesGcm.X86.bytesAt_frame (rs := [⟨w64 W + BitVec.ofNat 64 nbO, 4⟩])
       ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
       (by decide), Cmac.zero4_bytes]
-  have hS : (bytesAt s.mem (w64 P) k).length = k := length_bytesAt _ _ _
-  have hsplit : k = Spec.Cmac.chainedLen 16 k + (k - Spec.Cmac.chainedLen 16 k) := by omega_arith
-  have aP : w64 (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) =
+  obtain hS : (bytesAt s.mem (w64 P) k).length = k := length_bytesAt _ _ _
+  obtain hsplit : k = Spec.Cmac.chainedLen 16 k + (k - Spec.Cmac.chainedLen 16 k) := by omega_arith
+  obtain aP : w64 (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) =
       w64 P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 k) := Buf.ptr hwc
   rw [o₄, sch₃, k1, k2, aP, rest, m₃, o₂, Proof.Cmac.Stream.blocksAt_eq, chainedLen_div, sch₁, hz, pre,
     Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.macWith_chained, hS]
-  have tk : (bytesAt s.mem (w64 P) k).take (Spec.Cmac.chainedLen 16 k) =
+  obtain tk : (bytesAt s.mem (w64 P) k).take (Spec.Cmac.chainedLen 16 k) =
       bytesAt s.mem (w64 P) (Spec.Cmac.chainedLen 16 k) := by
     have := take_bytesAt s.mem (w64 P) (a := Spec.Cmac.chainedLen 16 k) (b := k - Spec.Cmac.chainedLen 16 k)
     rwa [← hsplit] at this
-  have dr : (bytesAt s.mem (w64 P) k).drop (Spec.Cmac.chainedLen 16 k) =
+  obtain dr : (bytesAt s.mem (w64 P) k).drop (Spec.Cmac.chainedLen 16 k) =
       bytesAt s.mem (w64 P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) := by
     have := drop_bytesAt s.mem (w64 P) (a := Spec.Cmac.chainedLen 16 k) (b := k - Spec.Cmac.chainedLen 16 k)
     rwa [← hsplit] at this
@@ -422,8 +422,8 @@ structure CmacAft (C W SP : BitVec 32) (R : Nat) (P : BitVec 32) (k : Nat) (s s�
 theorem cmacUpd_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {P : BitVec 32} {k : Nat} {s s₁ : State} (h : CmacPre C W SP R P k s) (M : CmacMid C W SP R P k s s₁) :
     WP isa (updCall v.callee v.suffix) s₁ (CmacAft C W SP R P k s) := by
-  have hcl := chainedLen_le k
-  have B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
+  obtain hcl := chainedLen_le k
+  obtain B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
     (h.buf.take (by rw [chainedLen_div]; exact hcl)).of_eq M.rd M.wr
   refine WP.mono (updCall_ok v L M.env hR (y := 144) (.inl (by decide)) (srcBuf B₁)
     (B₁.w.sub_right (Lay.wSub (by decide))) (by rw [chainedLen_div]; have := h.k32; omega_arith) M.eax M.ecx M.edx M.ebx
@@ -458,15 +458,15 @@ theorem cmacPre_ct {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 3
       (fun _ => roundDown_ct))
     (fun s₁ ⟨s, hs, _, _, ax, zf, bp, _⟩ => ?_) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
   refine WP.ite (decide (k = 0)) (eval_e zf) (fun _ => WP.of_runBlock ⟨_, rfl, bp⟩) (fun hz => ?_)
-  have hk0 : 0 < k := Nat.pos_of_ne_zero (of_decide_eq_false hz)
+  obtain hk0 : 0 < k := Nat.pos_of_ne_zero (of_decide_eq_false hz)
   obtain ⟨s₂, run₂, _, bp₂, _⟩ := cmacB_ok ax hk0 hs.k32
   exact WP.of_runBlock ⟨s₂, run₂, by rw [bp₂, bp]⟩
 
 /-- `cmacOf` is constant time from what it starts from. -/
 theorem cmacOf_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {P : BitVec 32} {k : Nat} (hk : k < 2 ^ 32) : CT (CmacPre C W SP R P k) (cmacOf v.callee v.suffix stOff) := by
-  have hcl := chainedLen_le k
-  have hrest := chainedLen_rest k
+  obtain hcl := chainedLen_le k
+  obtain hrest := chainedLen_rest k
   refine CT.seq (J := fun s₁ => ∃ s, CmacPre C W SP R P k s ∧ CmacMid C W SP R P k s s₁) (cmacPre_ct L)
     (fun s hs => WP.mono (cmacPre_ok L hs) fun s₁ M => ⟨s, hs, M⟩) ?_
   refine CT.seq (J := fun s₂ => ∃ s, CmacPre C W SP R P k s ∧ CmacAft C W SP R P k s s₂)
@@ -484,13 +484,13 @@ theorem cmacOf_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
       (by rw [cmacR_slot L A.frame (by decide) (by decide)]; exact hs.slen) A.nb hcl hs.k32) ?_
   refine finCall_ct v L hR (y := 144) (.inl (by decide)) (P := P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) hrest fun s₃ ⟨s₂, ⟨s, hs, A⟩, m₃, ax, cx, dx, bx, si, di,
     bp, sp, rd₃, wr₃⟩ => ?_
-  have hwc : P.toNat + Spec.Cmac.chainedLen 16 k < 2 ^ 32 := by
+  obtain hwc : P.toNat + Spec.Cmac.chainedLen 16 k < 2 ^ 32 := by
     have := hs.buf.wrap
     have := P.isLt
     by_cases h0 : k = 0
     · subst h0; simp only [Spec.Cmac.chainedLen]; omega_arith
     · have := chainedLen_lt (Nat.pos_of_ne_zero h0); omega_arith
-  have B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) :=
+  obtain B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) :=
     (hs.buf.drop hcl hwc).of_eq (by rw [rd₃, A.rd]) (by rw [wr₃, A.wr])
   exact ⟨⟨bp, sp, A.env.perm.of_eq rd₃ wr₃⟩, srcBuf B₃, B₃.w.sub_right (Lay.wSub (by decide)), ax, cx, dx, bx, si,
     di⟩

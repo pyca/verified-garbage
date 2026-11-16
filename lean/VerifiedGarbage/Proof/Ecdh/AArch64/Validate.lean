@@ -84,19 +84,19 @@ theorem mont_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       Impl.Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P))) s (MontPost c base s) := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hr2' : sv c base s R2P = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.p := hr2
   rw [WP.block_append_iff]
   refine WP.mono (slMul_ok (MP'_n c) h7 hs hM (MP'_A c) (o := QXM) (a := E) (b := R2P) (by decide)
     (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega_using [hp3]))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
-  have hs₁ := k₁.scr hs
-  have kP₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
-  have r2₁ : sv c base s₁ R2P = sv c base s R2P := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  have y₁ : sv c base s₁ QY = sv c base s QY := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
+  obtain hs₁ := k₁.scr hs
+  obtain kP₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  obtain r2₁ : sv c base s₁ R2P = sv c base s R2P := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
+  obtain y₁ : sv c base s₁ QY = sv c base s QY := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   refine WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := QYM) (a := QY) (b := R2P) (by decide)
     (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega_using [hp3]))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
-  have x₂ : sv c base s₂ QXM = sv c base s₁ QXM := sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
+  obtain x₂ : sv c base s₂ QXM = sv c base s₁ QXM := sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
   refine ⟨k₂.scr hs₁, fun r hr => by rw [k₂.gpr r hr, k₁.gpr r hr], by rw [k₂.rd, k₁.rd],
     by rw [k₂.wr, k₁.wr], ?_, kP₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide),
     by rw [x₂]; exact lt₁, ?_, lt₂, ?_⟩
@@ -125,19 +125,19 @@ theorem curve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
-  have hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have hAl : Aligned c.MP' (· ∈ curveSl.map c.sl) := ⟨fun x hx => by
+  obtain hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
+  obtain hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
+  obtain hAl : Aligned c.MP' (· ∈ curveSl.map c.sl) := ⟨fun x hx => by
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
     fun f m' h => (hc.call_p f m' h).2⟩
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hx])
-  have I : Inv c.MP' base size c.C.p (· ∈ curveSl.map c.sl) ([QXM, QYM, AP, BP].map c.sl)
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hx])
+  obtain I : Inv c.MP' base size c.C.p (· ∈ curveSl.map c.sl) ([QXM, QYM, AP, BP].map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
     refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have sub : ∀ i ∈ [QXM, QYM, AP, BP], i ∈ curveSl := by decide
+      obtain sub : ∀ i ∈ [QXM, QYM, AP, BP], i ∈ curveSl := by decide
       exact List.mem_map_of_mem (sub i hi)
     · simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl
@@ -150,25 +150,25 @@ theorem curve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
     (by rw [curveOps_eq]; exact readsOk_rename c.sl curveN_reads)) fun s₃ ⟨PK, I₃⟩ => ?_
   · rw [curveOps_eq] at hop
     obtain ⟨op₀, h₀, rfl⟩ := List.mem_map.mp hop
-    have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+    obtain hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
       cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     exact List.mem_map_of_mem (curveN_slots op₀ h₀ i hi)
-  have hW1 : c.sl W1 ∈ validAfter (Impl.Ecdh.AArch64.Cfg.curveOps c) ([QXM, QYM, AP, BP].map c.sl) :=
+  obtain hW1 : c.sl W1 ∈ validAfter (Impl.Ecdh.AArch64.Cfg.curveOps c) ([QXM, QYM, AP, BP].map c.sl) :=
     (mem_validAfter _ _).mpr (Or.inr (by simp [Impl.Ecdh.AArch64.Cfg.curveOps, FOp.out]))
-  have v₃ : toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₃.mem base (c.sl W1) c.n) = _ := I₃.val _ hW1
-  have lt₃ : wordsVal s₃.mem base (c.sl W1) c.n < c.C.p := I₃.lt _ hW1
-  have hout : ∀ op ∈ curveN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
+  obtain v₃ : toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₃.mem base (c.sl W1) c.n) = _ := I₃.val _ hW1
+  obtain lt₃ : wordsVal s₃.mem base (c.sl W1) c.n < c.C.p := I₃.lt _ hW1
+  obtain hout : ∀ op ∈ curveN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
   rw [curveOps_eq, congrFun (runOps_rename c.sl curveN _ fun op hop y h =>
       sl_inj c h0 h (.inr (hout op hop).2) (.inl (hout op hop).1)) W1,
     curveN_run] at v₃
-  have U₃ : Unch base (slW c [W0, W1, W2, W3, TMP]) s.mem s₃.mem := PK.unch.mono fun w hw => by
+  obtain U₃ : Unch base (slW c [W0, W1, W2, W3, TMP]) s.mem s₃.mem := PK.unch.mono fun w hw => by
     rw [curveOps_eq, List.map_map] at hw
     simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
     rcases hw with ⟨op, ⟨op₀, h₀, rfl⟩, rfl⟩ | rfl
     · exact List.mem_map.mpr ⟨op₀.out, curveN_out op₀ h₀, by rw [Function.comp_apply, FOp.out_rename]; rfl⟩
     · exact List.mem_map_of_mem (by decide)
-  have hs₃ := PK.scr hs
+  obtain hs₃ := PK.scr hs
   refine WP.mono (checkZero_ok c hs₃ h0 (sl_le c h7 (i := W1) (by decide)) hF (sl_mod8 c _)
     (sl_mod8 c FLAG)) fun s₄ ⟨f₄, k₄, O₄⟩ => ?_
   refine ⟨hs₃.of_keepRegs k₄ (by decide), fun r hr => ?_, by rw [k₄.rd, PK.rd], by rw [k₄.wr, PK.wr],
@@ -203,21 +203,21 @@ theorem select_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82)) →
+  obtain hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82)) →
       c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h h₁ h₂ => by
     have := sl_apart c h h₁ h₂; omega_using [this]
   rw [select_eq, WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := c.sl FLAG) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this])
     (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have hc₁ : s₁.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [e₁, hf, mask_bool]
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hc₁ : s₁.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [e₁, hf, mask_bool]
   rw [WP.block_append_iff]
   refine WP.mono (sel_ok (decide P) c.n hs₁ hc₁ (sl_le c h7 (i := PX) (by decide))
     (sl_le c h7 (i := GX) (by decide)) (sl_le c h7 (i := QXM) (by decide)) (sl_mod8 c _) (sl_mod8 c _)
     (sl_mod8 c _) (hap (by decide) (by decide) (by decide))
     (hap (by decide) (by decide) (by decide))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have hc₂ : s₂.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [k₂.gpr _ (by decide), hc₁]
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hc₂ : s₂.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [k₂.gpr _ (by decide), hc₁]
   refine WP.mono (sel_ok (decide P) c.n hs₂ hc₂ (sl_le c h7 (i := PY) (by decide))
     (sl_le c h7 (i := GY) (by decide)) (sl_le c h7 (i := QYM) (by decide)) (sl_mod8 c _) (sl_mod8 c _)
     (sl_mod8 c _) (hap (by decide) (by decide) (by decide))
@@ -269,25 +269,25 @@ theorem onCurve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base
   have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   rw [onCurve_wp, WP.block_append_iff]
   refine WP.mono (mont_ok hc hs (modP_of hc F.mp) hr2) fun s₂ Mp => ?_
-  have F₂ := F.unch h7 hn (fixedOk_slW (l := [QXM, QYM, TMP]) (by decide)) Mp.unch
-  have e₂ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP] → sv c base s₂ i = sv c base s i := fun hi hl =>
+  obtain F₂ := F.unch h7 hn (fixedOk_slW (l := [QXM, QYM, TMP]) (by decide)) Mp.unch
+  obtain e₂ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP] → sv c base s₂ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
   rw [WP.block_append_iff]
   refine WP.mono (curve_ok hc Mp.scr Mp.mod Mp.x_lt Mp.y_lt F₂.ap (P₀ := P₀)
     (by rw [e₂ (i := BP) (by decide) (by decide)]; exact hbp)
     (by rw [flag_unch Mp.unch h7 h0 hn (by decide)]; exact hf)) fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄⟩ => ?_
   rw [Mp.x, Mp.y] at f₄
-  have F₄ := F₂.unch h7 hn ((fixedOk_slW (l := [W0, W1, W2, W3, TMP]) (by decide)).append fixedOk_flag) U₄
+  obtain F₄ := F₂.unch h7 hn ((fixedOk_slW (l := [W0, W1, W2, W3, TMP]) (by decide)).append fixedOk_flag) U₄
   refine WP.mono (select_ok hc hs₄ f₄) fun s₆ ⟨hs₆, k₆, U₆, px, py⟩ => ?_
-  have q₄ : ∀ {i}, i < 45 → i ∉ [W0, W1, W2, W3, TMP] → i ≠ FLAG → sv c base s₄ i = sv c base s₂ i :=
+  obtain q₄ : ∀ {i}, i < 45 → i ∉ [W0, W1, W2, W3, TMP] → i ≠ FLAG → sv c base s₄ i = sv c base s₂ i :=
     fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have F₆ := F₄.unch h7 hn (fixedOk_slW (l := [PX, PY]) (by decide)) U₆
-  have qx : sv c base s₄ QXM = sv c base s₂ QXM := q₄ (by decide) (by decide) (by decide)
-  have qy : sv c base s₄ QYM = sv c base s₂ QYM := q₄ (by decide) (by decide) (by decide)
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain F₆ := F₄.unch h7 hn (fixedOk_slW (l := [PX, PY]) (by decide)) U₆
+  obtain qx : sv c base s₄ QXM = sv c base s₂ QXM := q₄ (by decide) (by decide) (by decide)
+  obtain qy : sv c base s₄ QYM = sv c base s₂ QYM := q₄ (by decide) (by decide) (by decide)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine ⟨hs₆, fun r hr => ?_, by rw [k₆.rd, rd₄, Mp.rd], by rw [k₆.wr, wr₄, Mp.wr], ?_,
     by rw [flag_unch U₆ h7 h0 hn (by decide)]; exact f₄, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr r (fun h => hr (by
@@ -296,7 +296,7 @@ theorem onCurve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base
       Mp.gpr r hr]
   · have sub : ∀ i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, TMP, PX, PY], i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, PY] := by
       decide
-    have hsl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, TMP, PX, PY]) →
+    obtain hsl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [QXM, QYM, TMP, W0, W1, W2, W3, TMP, PX, PY]) →
         ∀ w ∈ slW c l, w ∈ slW c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 8)] := fun hl w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact List.mem_append_left _ (List.mem_map_of_mem (sub i (hl i hi)))
@@ -343,24 +343,24 @@ theorem checkBody_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s ba
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
-  have hY := sl_le c h7 (i := QY) (by decide)
-  have hE := sl_le c h7 (i := E) (by decide)
-  have hM := sl_le c h7 (i := MP) (by decide)
+  obtain hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
+  obtain hY := sl_le c h7 (i := QY) (by decide)
+  obtain hE := sl_le c h7 (i := E) (by decide)
+  obtain hM := sl_le c h7 (i := MP) (by decide)
   rw [Impl.Ecdh.AArch64.Cfg.checkBody]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (checkLtP_ok c hs h0 hE hM hF (sl_mod8 c E) (sl_mod8 c MP) (sl_mod8 c FLAG)) fun s₁ ⟨f₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   refine WP.mono (checkLtP_ok c hs₁ h0 hY hM hF (sl_mod8 c QY) (sl_mod8 c MP) (sl_mod8 c FLAG)) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have v₂ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₂ i = sv c base s i := fun hi hf =>
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain v₂ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₂ i = sv c base s i := fun hi hf =>
     (sv_flag O₂ h0 h7 hn hi hf).trans (sv_flag O₁ h0 h7 hn hi hf)
-  have U₂ : Unch base [(c.sl FLAG, 8)] s.mem s₂.mem := (O₁.unch.trans O₂.unch).mono fun w hw => by
+  obtain U₂ : Unch base [(c.sl FLAG, 8)] s.mem s₂.mem := (O₁.unch.trans O₂.unch).mono fun w hw => by
     simp only [List.mem_append, List.mem_singleton] at hw ⊢; rcases hw with h | h <;> exact h
-  have F₂ := F.unch h7 hn fixedOk_flag U₂
+  obtain F₂ := F.unch h7 hn fixedOk_flag U₂
   have hmp : sv c base s MP = c.C.p := F.mp
-  have hf₂ : word s₂.mem base (c.sl FLAG) = mask ((P₀ ∧ sv c base s E < c.C.p) ∧ sv c base s QY < c.C.p) := by
+  obtain hf₂ : word s₂.mem base (c.sl FLAG) = mask ((P₀ ∧ sv c base s E < c.C.p) ∧ sv c base s QY < c.C.p) := by
     rw [f₂, f₁, hf, mask_and, mask_and, sv_flag O₁ h0 h7 hn (i := QY) (by decide) (by decide),
       sv_flag O₁ h0 h7 hn (i := MP) (by decide) (by decide)]
     rw [show wordsVal s.mem base (c.sl MP) c.n = c.C.p from hmp]
@@ -450,7 +450,7 @@ theorem crestores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length 
   | [], _, s, _, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl, fun _ h => absurd h (by simp)⟩
   | r :: rs, k, s, hk, hnd => by
     simp only [List.length_cons] at hk
-    have hr := (List.nodup_cons.mp hnd).1
+    obtain hr := (List.nodup_cons.mp hnd).1
     rw [cumov, List.zipIdx_cons, List.map_cons, ← List.singleton_append, WP.block_append_iff]
     apply WP.of_runBlock
     simp only [runBlock_cons, Weierstrass.AArch64.Mont.exec_umov (checkLane_lt k), runStep_some, runBlock_nil,
@@ -485,7 +485,7 @@ theorem checkKept_len (c : Cfg) : (Impl.Ecdh.AArch64.Cfg.checkKept c).length ≤
 
 /-- Every callee-saved register is either one the operations keep or one the function keeps. -/
 theorem checkKept_pres (hc : BaseCfgOk c) : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ Impl.Ecdh.AArch64.Cfg.checkKept c := by
-  have key : ∀ n < 10, ∀ r ∈ preserved, r ∉ clob n ∨
+  obtain key : ∀ n < 10, ∀ r ∈ preserved, r ∉ clob n ∨
       r ∈ (if 7 ≤ n then [Reg.x21, .x22, .x23, .x24, .x25] else []) := by decide
   exact key c.n hc.n10
 
@@ -496,8 +496,8 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
       (∀ r, r ∉ clob c.n → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧ R t.mem t'.mem) :
     WP isa (Impl.Ecdh.AArch64.Cfg.checkFn c) s fun s' => KeepRegs (chkClob c) s s' ∧ R s.mem s'.mem := by
   obtain ⟨-, hv, -⟩ := hc.check_fn hck
-  have hlen := checkKept_len c
-  have hnv : ∀ j < 6, ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkBody c),
+  obtain hlen := checkKept_len c
+  obtain hnv : ∀ j < 6, ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkBody c),
       vdstOf i ≠ some (Impl.Ecdh.AArch64.Cfg.checkLane j).1 := by
     intro j hj i hi e
     have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
@@ -505,9 +505,9 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
   rw [Impl.Ecdh.AArch64.Cfg.checkFn]
   refine WP.seq (WP.mono (csaves_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s) (by omega_using [hlen]))
     fun s₁ ⟨K₁, L₁, _⟩ => ?_)
-  have hs₁ : Scr s₁ base size := ⟨by rw [K₁.gpr]; exact hs.x0, by rw [K₁.wr]; exact hs.wr, hs.nowrap, hs.enc⟩
-  have B := hb s₁ hs₁ K₁.mem K₁.gpr
-  have B' : WP isa (Impl.Ecdh.AArch64.Cfg.checkBody c) s₁ fun t' => ((∀ r, r ∉ clob c.n → t'.gpr r = s₁.gpr r) ∧
+  obtain hs₁ : Scr s₁ base size := ⟨by rw [K₁.gpr]; exact hs.x0, by rw [K₁.wr]; exact hs.wr, hs.nowrap, hs.enc⟩
+  obtain B := hb s₁ hs₁ K₁.mem K₁.gpr
+  obtain B' : WP isa (Impl.Ecdh.AArch64.Cfg.checkBody c) s₁ fun t' => ((∀ r, r ∉ clob c.n → t'.gpr r = s₁.gpr r) ∧
       t'.rd = s₁.rd ∧ t'.wr = s₁.wr ∧ t'.sp = s₁.sp ∧ R s₁.mem t'.mem) ∧
       ∀ j < 6, clane t'.v j = clane s₁.v j := by
     obtain ⟨t, s', he, hq⟩ := B
@@ -519,7 +519,7 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
       by rw [K₃.sp, sp₂, K₁.sp]⟩, by rw [K₃.mem, ← K₁.mem]; exact R₂⟩
   by_cases hk : r ∈ Impl.Ecdh.AArch64.Cfg.checkKept c
   · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hk
-    have l := L₁ i hi
+    obtain l := L₁ i hi
     rw [Nat.zero_add] at l
     rw [E₃ i hi, Nat.zero_add, L₂ i (by omega_using [hlen, hi]), l]
   · have hcl : r ∉ clob c.n := fun h => hr (List.mem_filter.mpr ⟨h, by simpa using hk⟩)
@@ -564,20 +564,20 @@ theorem chkCall_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
       .seq (.call name (Impl.Ecdh.AArch64.Cfg.checkFn c)) (.block [.umov .x .x30 .v28 0])) s fun s' =>
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ R s.mem s'.mem := by
   obtain ⟨hv, -, hnf⟩ := hc.check_fn hck
-  have hv28 : ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkFn c), vdstOf i ≠ some .v28 := by
+  obtain hv28 : ∀ i ∈ instrs (Impl.Ecdh.AArch64.Cfg.checkFn c), vdstOf i ≠ some .v28 := by
     intro i hi e
     have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
     rw [e] at this; simp at this
-  have hkv : (Impl.Ecdh.AArch64.Cfg.checkFn c).allInstrs keepsV = true := by
+  obtain hkv : (Impl.Ecdh.AArch64.Cfg.checkFn c).allInstrs keepsV = true := by
     rw [Code.allInstrs_eq]
     exact List.all_eq_true.mpr fun i hi => by
       have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
       simp only [Bool.and_eq_true] at this
       exact this.2
-  have hpres := checkKept_pres hc
+  obtain hpres := checkKept_pres hc
   refine WP.seq (WP.mono (keepLr28_ok s) fun s₁ ⟨k₁, m₁, l₁⟩ => ?_)
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
     have := hs.contains (d := 0) (n := size) (by omega_using []) (by decide)
     simpa [off] using this⟩
   refine WP.seq (WP.callV (k := chkK c base s.mem R)
@@ -599,7 +599,7 @@ theorem chkCall_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
   by_cases h30 : r = .x30
   · subst h30; rw [l₃, V', l₁]
   · have h16 : Reg.x16 ∈ clob c.n := by simp [clob]
-    have h17 : Reg.x17 ∈ clob c.n := by simp [clob]
+    obtain h17 : Reg.x17 ∈ clob c.n := by simp [clob]
     refine (k₃.gpr _ (by simpa using h30)).trans ((K.gpr r fun h => hr (List.mem_filter.mp h).1).trans ?_)
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by
       simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
@@ -625,9 +625,9 @@ theorem checkBody_ok' (hc : BaseCfgOk c) {base : Addr} {s t : State} (ht : Scr t
     WP isa (Impl.Ecdh.AArch64.Cfg.checkBody c) t fun t' =>
       (∀ r, r ∉ clob c.n → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
       ChkMem c base s P₀ t'.mem := by
-  have e : ∀ i, sv c base t i = sv c base s i := fun i => by
+  obtain e : ∀ i, sv c base t i = sv c base s i := fun i => by
     show wordsVal t.mem _ _ _ = wordsVal s.mem _ _ _; rw [hm]
-  have B := checkBody_ok hc ht (hm ▸ F) (by rw [e]; exact hr2) (by rw [e]; exact hbp) (P₀ := P₀) (by rw [hm]; exact hf)
+  obtain B := checkBody_ok hc ht (hm ▸ F) (by rw [e]; exact hr2) (by rw [e]; exact hbp) (P₀ := P₀) (by rw [hm]; exact hf)
   obtain ⟨tr, t', he, ⟨hs', g', rd', wr', U', f', px_lt, py_lt, px, py⟩⟩ := B
   refine ⟨tr, t', he, g', rd', wr', ?_, ?_⟩
   · exact Exec.sp he
@@ -657,7 +657,7 @@ theorem validate_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   unfold Impl.Ecdh.AArch64.Cfg.validate
   split
   · rename_i C hC
-    have hck : Impl.Ecdh.AArch64.Cfg.checkCurve c ≠ none := by rw [hC]; exact Option.some_ne_none _
+    obtain hck : Impl.Ecdh.AArch64.Cfg.checkCurve c ≠ none := by rw [hC]; exact Option.some_ne_none _
     refine WP.mono (chkCall_ok hc hck hs (R := fun _ m' => ChkMem c base s P₀ m') fun t ht hm =>
       checkFn_ok hc hck ht (R := fun _ m' => ChkMem c base s P₀ m') fun u hu hum _ =>
         WP.mono (checkBody_ok' hc hu (hum.trans hm) F hr2 hbp hf) fun u' ⟨g', rd', wr', sp', M'⟩ =>

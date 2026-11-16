@@ -81,7 +81,7 @@ theorem zero16_ok {W : Addr} {d : Nat} (hd : d % 4 = 0 ∧ d + 8 < 2 ^ 15) (h31 
     (by rw [u₁.wr]; exact w₀) fun s₂ u₂ => ?_
   refine wp_std (a := W + BitVec.ofNat 64 (d + 8)) (by decide) ⟨by omega_arith, by omega_arith⟩
     (by rw [u₂.gpr, u₁.other _ (by decide), h31]) (by rw [u₂.wr, u₁.wr]; exact w₁) fun s₃ u₃ => WP.block_nil ?_
-  have m₃ : s₃.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (0 : BitVec 64)).writeW
+  obtain m₃ : s₃.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (0 : BitVec 64)).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (0 : BitVec 64) := by
     rw [u₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.mem, addr8]; rfl
   refine ⟨by rw [m₃]; exact frame2 _ _ _ _, by rw [m₃, blockAtMem_store2]; decide, fun r hr => ?_,
@@ -106,7 +106,7 @@ theorem copy16_ok {W : Addr} {a d : Nat} (ha : a % 4 = 0 ∧ a + 8 < 2 ^ 15) (hd
   refine wp_std (a := W + BitVec.ofNat 64 (d + 8)) (by decide) ⟨by omega_arith, by omega_arith⟩
     (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h31])
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact w₁) fun s₄ u₄ => WP.block_nil ?_
-  have m₄ : s₄.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (s.mem.readW (W + BitVec.ofNat 64 a) 64)).writeW
+  obtain m₄ : s₄.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (s.mem.readW (W + BitVec.ofNat 64 a) 64)).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (s.mem.readW (W + BitVec.ofNat 64 a + BitVec.ofNat 64 8) 64) := by
     rw [u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, u₂.other _ (by decide), u₁.gpr, u₁.mem, addr8, addr8]
   refine ⟨by rw [m₄]; exact frame2 _ _ _ _, by rw [m₄, blockAtMem_store2, blockAtMem_words], fun r hr => ?_,
@@ -140,11 +140,11 @@ theorem xorB_ok {P Q C : Addr} {pb qb cb : Reg} {pd qd cd : Nat} (hpd : pd % 4 =
   refine wp_std (a := C + BitVec.ofNat 64 cd) nc.1 ⟨by omega_arith, hcd.1⟩
     (by rw [u₃.other _ nc.2.1, u₂.other _ nc.2.2, u₁.other _ nc.2.1, hc])
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact w₀) fun s₄ u₄ => ?_
-  have g₄ : ∀ r, r ≠ .r3 → r ≠ .r4 → s₄.gpr r = s.gpr r := fun r h3 h4 => by
+  obtain g₄ : ∀ r, r ≠ .r3 → r ≠ .r4 → s₄.gpr r = s.gpr r := fun r h3 h4 => by
     rw [u₄.gpr, u₃.other _ h3, u₂.other _ h4, u₁.other _ h3]
-  have rd₄ : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have wr₄ : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have m₄ : s₄.mem = s.mem.writeW (C + BitVec.ofNat 64 cd)
+  obtain rd₄ : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₄ : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  obtain m₄ : s₄.mem = s.mem.writeW (C + BitVec.ofNat 64 cd)
       (s.mem.readW (P + BitVec.ofNat 64 pd) 64 ^^^ s.mem.readW (Q + BitVec.ofNat 64 qd) 64) := by
     rw [u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, u₂.other _ (by decide), u₁.gpr, u₁.mem]
   refine wp_ld (a := P + BitVec.ofNat 64 (pd + 8)) np.1 ⟨by omega_arith, by omega_arith⟩
@@ -155,11 +155,11 @@ theorem xorB_ok {P Q C : Addr} {pb qb cb : Reg} {pd qd cd : Nat} (hpd : pd % 4 =
   refine wp_std (a := C + BitVec.ofNat 64 (cd + 8)) nc.1 ⟨by omega_arith, by omega_arith⟩
     (by rw [u₇.other _ nc.2.1, u₆.other _ nc.2.2, u₅.other _ nc.2.1, g₄ _ nc.2.1 nc.2.2, hc])
     (by rw [u₇.wr, u₆.wr, u₅.wr, wr₄]; exact w₁) fun s₈ u₈ => WP.block_nil ?_
-  have v₅ : s₆.gpr .r3 = s.mem.readW (P + BitVec.ofNat 64 (pd + 8)) 64 := by
+  obtain v₅ : s₆.gpr .r3 = s.mem.readW (P + BitVec.ofNat 64 (pd + 8)) 64 := by
     rw [u₆.other _ (by decide), u₅.gpr, m₄, Mem.readW_writeW_sep sp₁ (by decide)]
-  have v₆ : s₆.gpr .r4 = s.mem.readW (Q + BitVec.ofNat 64 (qd + 8)) 64 := by
+  obtain v₆ : s₆.gpr .r4 = s.mem.readW (Q + BitVec.ofNat 64 (qd + 8)) 64 := by
     rw [u₆.gpr, u₅.mem, m₄, Mem.readW_writeW_sep sq₁ (by decide)]
-  have m₈ : s₈.mem = (s.mem.writeW (C + BitVec.ofNat 64 cd)
+  obtain m₈ : s₈.mem = (s.mem.writeW (C + BitVec.ofNat 64 cd)
       (s.mem.readW (P + BitVec.ofNat 64 pd) 64 ^^^ s.mem.readW (Q + BitVec.ofNat 64 qd) 64)).writeW
       (C + BitVec.ofNat 64 cd + BitVec.ofNat 64 8)
       (s.mem.readW (P + BitVec.ofNat 64 pd + BitVec.ofNat 64 8) 64 ^^^
@@ -198,7 +198,7 @@ theorem dbl_mem (m : Mem) (p : Addr) :
         (byteRev64 (m.readW (p + BitVec.ofNat 64 8) 64)))) ++
       le8 (byteRev64 (Proof.Cmac.dblLo (byteRev64 (m.readW p 64))
         (byteRev64 (m.readW (p + BitVec.ofNat 64 8) 64))))) = double (blockAtMem m p) := by
-  have e := Proof.Cmac.dbl_byteRev m p
+  obtain e := Proof.Cmac.dbl_byteRev m p
   rw [BitVec.add_zero] at e
   rw [e, Proof.Cmac.dbl_eq (Proof.Cmac.bytesAt_length _ _ _), ← Proof.Ocb.toBytes_eq, Proof.Ocb.ofBytes_toBytes,
     Proof.Ocb.double_eq]
@@ -224,39 +224,39 @@ theorem dbl_ok {W B : Addr} {b : Reg} {a d : Nat} (ha : a + 8 < 2 ^ 15) (hd : d 
   refine wp_li (by decide) fun s₈ u₈ => wp_and fun s₉ u₉ => ?_
   refine wp_lsl (by decide) fun s₁₀ u₁₀ => wp_lsr (by decide) fun s₁₁ u₁₁ => wp_or fun s₁₂ u₁₂ => ?_
   refine wp_lsl (by decide) fun s₁₃ u₁₃ => wp_xor fun s₁₄ u₁₄ => ?_
-  have g₁₄ : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s₁₄.gpr r = s.gpr r := fun r h0 h3 h4 h5 h6 => by
+  obtain g₁₄ : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s₁₄.gpr r = s.gpr r := fun r h0 h3 h4 h5 h6 => by
     rw [u₁₄.other _ h4, u₁₃.other _ h4, u₁₂.other _ h3, u₁₁.other _ h6, u₁₀.other _ h3, u₉.other _ h5,
       u₈.other _ h6, u₇.other _ h5, u₆.other _ h6, u₅.other _ h5, u₄.other _ h4, u₃.other _ h0, u₂.other _ h3,
       u₁.other _ h0]
-  have m₁₄ : s₁₄.mem = s.mem := by
+  obtain m₁₄ : s₁₄.mem = s.mem := by
     rw [u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem,
       u₂.mem, u₁.mem]
-  have h3 : s₄.gpr .r3 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 a) 64) := by
+  obtain h3 : s₄.gpr .r3 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 a) 64) := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.mem]
-  have h4 : s₄.gpr .r4 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 (a + 8)) 64) := by
+  obtain h4 : s₄.gpr .r4 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 (a + 8)) 64) := by
     rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem]
-  have hi : s₁₄.gpr .r3 = Proof.Cmac.dblHi (s₄.gpr .r3) (s₄.gpr .r4) := by
+  obtain hi : s₁₄.gpr .r3 = Proof.Cmac.dblHi (s₄.gpr .r3) (s₄.gpr .r4) := by
     rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.gpr, u₁₁.other .r3 (by decide),
       u₁₀.gpr, u₁₀.other .r4 (by decide), u₉.other .r3 (by decide), u₉.other .r4 (by decide),
       u₈.other .r3 (by decide), u₈.other .r4 (by decide), u₇.other .r3 (by decide), u₇.other .r4 (by decide),
       u₆.other .r3 (by decide), u₆.other .r4 (by decide), u₅.other .r3 (by decide), u₅.other .r4 (by decide)]
     rfl
-  have lo : s₁₄.gpr .r4 = Proof.Cmac.dblLo (s₄.gpr .r3) (s₄.gpr .r4) := by
+  obtain lo : s₁₄.gpr .r4 = Proof.Cmac.dblLo (s₄.gpr .r3) (s₄.gpr .r4) := by
     rw [u₁₄.gpr, u₁₃.gpr, u₁₃.other .r5 (by decide), u₁₂.other .r4 (by decide), u₁₂.other .r5 (by decide),
       u₁₁.other .r4 (by decide), u₁₁.other .r5 (by decide), u₁₀.other .r4 (by decide), u₁₀.other .r5 (by decide),
       u₉.gpr, u₉.other .r4 (by decide), u₈.gpr, u₈.other .r5 (by decide), u₈.other .r4 (by decide), u₇.gpr,
       u₇.other .r4 (by decide), u₆.gpr, u₆.other .r5 (by decide), u₆.other .r4 (by decide), u₅.gpr,
       u₅.other .r4 (by decide)]
     rfl
-  have rd₁₄ : s₁₄.rd = s.rd := by
+  obtain rd₁₄ : s₁₄.rd = s.rd := by
     rw [u₁₄.rd, u₁₃.rd, u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have wr₁₄ : s₁₄.wr = s.wr := by
+  obtain wr₁₄ : s₁₄.wr = s.wr := by
     rw [u₁₄.wr, u₁₃.wr, u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have sp₁₄ : s₁₄.sp = s.sp := by
+  obtain sp₁₄ : s₁₄.sp = s.sp := by
     rw [u₁₄.sp, u₁₃.sp, u₁₂.sp, u₁₁.sp, u₁₀.sp, u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
-  have lr₁₄ : s₁₄.lr = s.lr := by
+  obtain lr₁₄ : s₁₄.lr = s.lr := by
     rw [u₁₄.lr, u₁₃.lr, u₁₂.lr, u₁₁.lr, u₁₀.lr, u₉.lr, u₈.lr, u₇.lr, u₆.lr, u₅.lr, u₄.lr, u₃.lr, u₂.lr, u₁.lr]
-  have w31 : s₁₄.gpr .r31 = W := by rw [g₁₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), h31]
+  obtain w31 : s₁₄.gpr .r31 = W := by rw [g₁₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), h31]
   refine wp_li (by omega_arith) fun s₁₅ u₁₅ => ?_
   refine wp_stdbrx (ea := W + BitVec.ofNat 64 d) (by decide) (by rw [u₁₅.other _ (by decide), u₁₅.gpr, w31])
     (by rw [u₁₅.wr, wr₁₄]; exact w₀) fun s₁₆ u₁₆ => ?_
@@ -264,7 +264,7 @@ theorem dbl_ok {W B : Addr} {b : Reg} {a d : Nat} (ha : a + 8 < 2 ^ 15) (hd : d 
   refine wp_stdbrx (ea := W + BitVec.ofNat 64 (d + 8)) (by decide)
     (by rw [u₁₇.other _ (by decide), u₁₇.gpr, u₁₆.gpr, u₁₅.other _ (by decide), w31])
     (by rw [u₁₇.wr, u₁₆.wr, u₁₅.wr, wr₁₄]; exact w₁) fun s₁₈ u₁₈ => WP.block_nil ?_
-  have m₁₈ : s₁₈.mem = (s.mem.writeW (W + BitVec.ofNat 64 d)
+  obtain m₁₈ : s₁₈.mem = (s.mem.writeW (W + BitVec.ofNat 64 d)
       (byteRev64 (Proof.Cmac.dblHi (byteRev64 (s.mem.readW (B + BitVec.ofNat 64 a) 64))
         (byteRev64 (s.mem.readW (B + BitVec.ofNat 64 a + BitVec.ofNat 64 8) 64))))).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 8)

@@ -160,53 +160,53 @@ theorem chunks_ok (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) {
         if i < c + 16 then byte (s.xmm .xmm0) (i - c) else 0) →
       Q s') :
     WP isa (chunks P) s Q := by
-  have hB' : P.B ≤ 128 := by omega_using [hB]
+  obtain hB' : P.B ≤ 128 := by omega_using [hB]
   unfold chunks
   refine WP.seq (wp_cmpiX fun s₁ g₁ m₁ rd₁ wr₁ x₁ cf₁ => WP.block_nil ?_)
-  have e16 : (BitVec.ofNat 32 (P.B - 16)).signExtend 64 = BitVec.ofNat 64 (P.B - 16) := sx_ofNat (by omega_using [hB'])
-  have hcf₁ : s₁.cf = some (decide (c < P.B - 16)) := by
+  obtain e16 : (BitVec.ofNat 32 (P.B - 16)).signExtend 64 = BitVec.ofNat 64 (P.B - 16) := sx_ofNat (by omega_using [hB'])
+  obtain hcf₁ : s₁.cf = some (decide (c < P.B - 16)) := by
     rw [cf₁, h13, e16, toNat_ofNat_lt (by omega_using [hc, hB']), toNat_ofNat_lt (by omega_using [hB'])]
   refine WP.ite (!decide (c < P.B - 16)) (by simp [eval, hcf₁]) (fun hb => ?_) (fun hb => ?_)
   · -- `c` is the last 16 bytes: nothing to store.
     simp only [Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt] at hb
-    have hc' : c = P.B - 16 := by omega_using [hc, hb]
+    obtain hc' : c = P.B - 16 := by omega_using [hc, hb]
     refine WP.block_nil (k s₁ (fun r _ _ => by rw [g₁]) (by rw [g₁, h13, hc']) rd₁ wr₁ (fun x _ => by rw [x₁])
       (by simp [hc', x₁]) (by rw [m₁, hc', Nat.sub_self]; exact Frame.refl _ _) fun i h1 h2 => by omega_using [hc', h1, h2])
   · simp only [Bool.not_eq_false', decide_eq_true_eq] at hb
-    have hI₀ : CInv P s c 0 s₁ := ⟨by omega_using [hb], by rw [g₁, h13]; rfl, fun r _ _ => by rw [g₁], rd₁, wr₁,
+    obtain hI₀ : CInv P s c 0 s₁ := ⟨by omega_using [hb], by rw [g₁, h13]; rfl, fun r _ _ => by rw [g₁], rd₁, wr₁,
       fun _ _ => by rw [x₁], by simp [x₁], by rw [m₁, Nat.mul_zero]; exact Frame.refl _ _, fun i h1 h2 => by omega_using [h1, h2]⟩
     refine WP.loop (M := isa) (fun m t => ∃ j, m = P.B - c - 16 * j ∧ CInv P s c j t) ?_ _ s₁ ⟨0, rfl, hI₀⟩
     rintro m t ⟨j, rfl, hI⟩
     have hlt := hI.lt
     refine wp_clamp P (w := 16) (c := c + 16 * j) (by omega_using [hlt]) (by omega_using [hB']) hI.r13
       fun t' v vx => ?_
-    have ea : t'.ea (bufByte P) = s.gpr .rbx + BitVec.ofNat 64 (P.N + (c + 16 * j)) := by
+    obtain ea : t'.ea (bufByte P) = s.gpr .rbx + BitVec.ofNat 64 (P.N + (c + 16 * j)) := by
       rw [ea_bufByte P t' v.gpr, v.other _ (by decide), hI.gpr _ (by decide) (by decide)]
     refine wp_movdquStoreX ea (by rw [v.wr, hI.wr]; exact hout _ (by omega_using [hlt])) fun t₁ g₁ m₁ rd₁ wr₁ xs₁ => ?_
     refine wp_xbin (wp_addiX fun t₂ u₂ x₂ => wp_cmpiX fun t₃ g₃ m₃ rd₃ wr₃ x₃ cf₃ => WP.block_nil ?_)
-    have s16 : (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 := by decide
-    have a16 : BitVec.ofNat 64 (c + 16 * j) + (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (c + 16 * (j + 1)) := by
+    obtain s16 : (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 := by decide
+    obtain a16 : BitVec.ofNat 64 (c + 16 * j) + (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (c + 16 * (j + 1)) := by
       rw [s16, ← BitVec.ofNat_add, show c + 16 * j + 16 = c + 16 * (j + 1) by omega_using []]
-    have h13₃ : t₃.gpr .r13 = BitVec.ofNat 64 (c + 16 * (j + 1)) := by
+    obtain h13₃ : t₃.gpr .r13 = BitVec.ofNat 64 (c + 16 * (j + 1)) := by
       rw [g₃, u₂.gpr, gpr_setXmm, g₁, v.other _ (by decide), hI.r13, a16]
-    have hcf₃ : t₃.cf = some (decide (c + 16 * (j + 1) < P.B - 16)) := by
+    obtain hcf₃ : t₃.cf = some (decide (c + 16 * (j + 1) < P.B - 16)) := by
       rw [cf₃, u₂.gpr, gpr_setXmm, g₁, v.other _ (by decide), hI.r13, a16, e16, toNat_ofNat_lt (by omega_using [hB', hlt]), toNat_ofNat_lt (by omega_using [hB'])]
-    have hm₃ : t₃.mem = t.mem.writeW (s.gpr .rbx + BitVec.ofNat 64 (P.N + (c + 16 * j))) (t.xmm .xmm0) := by
+    obtain hm₃ : t₃.mem = t.mem.writeW (s.gpr .rbx + BitVec.ofNat 64 (P.N + (c + 16 * j))) (t.xmm .xmm0) := by
       rw [m₃, u₂.mem, mem_setXmm, m₁, v.mem, vx]
-    have hg₃ : ∀ r, r ≠ .r13 → r ≠ .r10 → t₃.gpr r = s.gpr r := fun r h h' => by
+    obtain hg₃ : ∀ r, r ≠ .r13 → r ≠ .r10 → t₃.gpr r = s.gpr r := fun r h h' => by
       rw [g₃, u₂.other r h, gpr_setXmm, g₁, v.other r h', hI.gpr r h h']
-    have hx₃ : ∀ x, x ≠ .xmm0 → t₃.xmm x = s.xmm x := fun x h => by
+    obtain hx₃ : ∀ x, x ≠ .xmm0 → t₃.xmm x = s.xmm x := fun x h => by
       rw [x₃, x₂, xmm_setXmm_of_ne _ _ h, xs₁, vx, hI.xmm x h]
-    have hx0₃ : t₃.xmm .xmm0 = 0 := by
-      have px : ∀ a : BitVec 128, XBinOp.pxor.eval a a = 0 := fun a => BitVec.xor_self
+    obtain hx0₃ : t₃.xmm .xmm0 = 0 := by
+      obtain px : ∀ a : BitVec 128, XBinOp.pxor.eval a a = 0 := fun a => BitVec.xor_self
       rw [x₃, x₂, xmm_setXmm_self, px]
-    have hfr₃ : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 (P.N + c), 16 * (j + 1)⟩] s.mem t₃.mem := by
+    obtain hfr₃ : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 (P.N + c), 16 * (j + 1)⟩] s.mem t₃.mem := by
       rw [hm₃]
       refine (hI.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW (List.mem_singleton_self _) _ ?_
       · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_using [])
       · exact Offset.contains (s.gpr .rbx) (d := P.N + (c + 16 * j)) (n := 128 / 8) (e := P.N + c)
           (k := 16 * (j + 1)) (by omega_using []) (by omega_using []) (by omega_using [hN, hB', hlt])
-    have hby₃ : ∀ i, c ≤ i → i < c + 16 * (j + 1) →
+    obtain hby₃ : ∀ i, c ≤ i → i < c + 16 * (j + 1) →
         t₃.mem (s.gpr .rbx + BitVec.ofNat 64 (P.N + i)) = if i < c + 16 then byte (s.xmm .xmm0) (i - c) else 0 := by
       intro i h1 h2
       rw [hm₃, writeW128_at _ _ _ (by omega_using [hN, hB', hlt]) (by omega_using [hN, hB', hlt, h2])]
@@ -226,7 +226,7 @@ theorem chunks_ok (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) {
         ⟨hlast, h13₃, hg₃, by rw [rd₃, u₂.rd, rd_setXmm, rd₁, v.rd, hI.rd], by rw [wr₃, u₂.wr, wr_setXmm, wr₁, v.wr, hI.wr], hx₃,
           by rw [hx0₃]; simp, hfr₃, hby₃⟩⟩
     · have he : c + 16 * (j + 1) = P.B - 16 := by omega_using [hB, hc16, hlt, hlast]
-      have hfr : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 (P.N + c), P.B - 16 - c⟩] s.mem t₃.mem := by
+      obtain hfr : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 (P.N + c), P.B - 16 - c⟩] s.mem t₃.mem := by
         rw [show P.B - 16 - c = 16 * (j + 1) by omega_using [he]]; exact hfr₃
       exact .inl ⟨by simp [eval, hcf₃, hlast], k t₃ hg₃ (by rw [h13₃, he]) (by rw [rd₃, u₂.rd, rd_setXmm, rd₁, v.rd, hI.rd])
         (by rw [wr₃, u₂.wr, wr_setXmm, wr₁, v.wr, hI.wr]) hx₃ (by rw [hx0₃]; simp only [show ¬ (c = P.B - 16) by omega_using [he], ↓reduceIte]) hfr
@@ -278,20 +278,20 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
         else if P.B - 16 ≤ i then lenPart P k (lv (s.gpr .r12)) (i - (P.B - 16)) else 0) →
       Q s') :
     WP isa (vecPad P) s Q := by
-  have hB' : P.B ≤ 128 := by omega_arith
-  have hn' : n < P.B := by split at hn <;> omega_arith
-  have hc : 16 * (n / 16) + 16 ≤ P.B := by omega_arith
+  obtain hB' : P.B ≤ 128 := by omega_arith
+  obtain hn' : n < P.B := by split at hn <;> omega_arith
+  obtain hc : 16 * (n / 16) + 16 ≤ P.B := by omega_arith
   unfold vecPad
   -- The first 16 bytes.
   refine WP.seq (head0_ok hn16 hmk h13 h9 (rest := []) fun s₁ g₁ h13₁ m₁ rd₁ wr₁ x0₁ => WP.block_nil ?_)
-  have hrbx₁ : s₁.gpr .rbx = s.gpr .rbx := by rw [g₁]
+  obtain hrbx₁ : s₁.gpr .rbx = s.gpr .rbx := by rw [g₁]
   -- The 16 bytes after them, up to the last.
   refine WP.seq (chunks_ok P hB hN hc (by omega_arith) h13₁ (fun e he => by rw [wr₁, hrbx₁]; exact hout e he)
     fun s₂ g₂ h13₂ rd₂ wr₂ xo₂ x0₂ fr₂ by₂ => ?_)
-  have hrbx₂ : s₂.gpr .rbx = s.gpr .rbx := by rw [g₂ _ (by decide) (by decide), hrbx₁]
+  obtain hrbx₂ : s₂.gpr .rbx = s.gpr .rbx := by rw [g₂ _ (by decide) (by decide), hrbx₁]
   -- The length field.
   refine WP.seq (wp_testX fun s₃ g₃ m₃ rd₃ wr₃ x₃ z₃ => WP.block_nil ?_)
-  have hz₃ : s₃.zf = some (decide (k = 0)) := by
+  obtain hz₃ : s₃.zf = some (decide (k = 0)) := by
     rw [z₃, g₂ _ (by decide) (by decide), g₁, h14, BitVec.and_self,
       ofNat_beq_zero (by omega_arith)]
   refine WP.seq (WP.mono (Q := fun (s₄ : State) => (∀ r, r ≠ .rax → s₄.gpr r = s₃.gpr r) ∧ s₄.mem = s₃.mem ∧
@@ -308,9 +308,9 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
       · rw [rd_setXmm, rd]
       · rw [wr_setXmm, wr]
       · intro j hj
-        have hr12 : s₃.gpr .r12 = s.gpr .r12 := by
+        obtain hr12 : s₃.gpr .r12 = s.gpr .r12 := by
           rw [g₃, g₂ _ (by decide) (by decide), g₁]
-        have e7 : byte (s₄.xmm .xmm7) j = (List.replicate (16 - P.L) 0 ++ lv (s.gpr .r12)).getD j 0 := by
+        obtain e7 : byte (s₄.xmm .xmm7) j = (List.replicate (16 - P.L) 0 ++ lv (s.gpr .r12)).getD j 0 := by
           rw [← hr12, ← x7, ← List.getElem_eq_getD (h := by rw [vbytes_length]; exact hj) 0, vbytes_getElem]
         rw [xmm_setXmm_self, show XBinOp.por.eval (s₄.xmm .xmm0) (s₄.xmm .xmm7) =
           s₄.xmm .xmm0 ||| s₄.xmm .xmm7 from rfl, byte_or, x0, e7]
@@ -319,8 +319,8 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
       refine WP.block_nil ⟨fun r _ => rfl, rfl, rfl, rfl, fun j _ => ?_⟩
       simp only [lenPart, hb, ↓reduceIte, or_zero_byte]
   -- The last 16 bytes, and the block's address.
-  have hrbx₄ : s₄.gpr .rbx = s.gpr .rbx := by rw [g₄ _ (by decide), g₃, hrbx₂]
-  have ea : s₄.ea (at_ .rbx (P.N + P.B - 16)) = s.gpr .rbx + BitVec.ofNat 64 (P.N + (P.B - 16)) := by
+  obtain hrbx₄ : s₄.gpr .rbx = s.gpr .rbx := by rw [g₄ _ (by decide), g₃, hrbx₂]
+  obtain ea : s₄.ea (at_ .rbx (P.N + P.B - 16)) = s.gpr .rbx + BitVec.ofNat 64 (P.N + (P.B - 16)) := by
     rw [ea_at, hrbx₄, ofInt_natCast, show P.N + P.B - 16 = P.N + (P.B - 16) by omega_arith]
   refine wp_movdquStore ea (by rw [wr₄, wr₃, wr₂, wr₁]; exact hout _ (by omega_arith)) fun s₅ g₅ m₅ rd₅ wr₅ =>
     WP.block_nil ?_
@@ -329,7 +329,7 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
   · rw [rd₅, rd₄, rd₃, rd₂, rd₁]
   · rw [wr₅, wr₄, wr₃, wr₂, wr₁]
   · -- Only the buffer changes.
-    have fr₂' : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 P.N, P.B⟩] s.mem s₂.mem := by
+    obtain fr₂' : Frame [⟨s.gpr .rbx + BitVec.ofNat 64 P.N, P.B⟩] s.mem s₂.mem := by
       rw [← m₁]
       refine fr₂.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
       simp only [List.mem_singleton] at hr; subst hr
@@ -341,8 +341,8 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
       (by omega_arith) (by omega_arith) (by omega_arith)
   · intro i hi
     rw [m₅, m₄, m₃, writeW128_at _ _ _ (by omega_arith) (by omega_arith)]
-    have x0₃ : s₃.xmm .xmm0 = if 16 * (n / 16) = P.B - 16 then s₁.xmm .xmm0 else 0 := by rw [x₃, x0₂]
-    have hlow : ∀ j, j < 16 → P.B - 16 + j ≤ n → lenPart P k (lv (s.gpr .r12)) j = 0 := by
+    obtain x0₃ : s₃.xmm .xmm0 = if 16 * (n / 16) = P.B - 16 then s₁.xmm .xmm0 else 0 := by rw [x₃, x0₂]
+    obtain hlow : ∀ j, j < 16 → P.B - 16 + j ≤ n → lenPart P k (lv (s.gpr .r12)) j = 0 := by
       intro j hj hle
       by_cases hk0 : k = 0
       · exact lenPart_low P k _ (by subst hk0; simp at hn; omega_arith)
@@ -373,7 +373,7 @@ theorem vec_exec (P : Params) (hB : P.B = 64 ∨ P.B = 128) (hN : P.N ≤ 64) (h
       · have hfr := fr₂.bytes (R := ⟨s₁.gpr .rbx + BitVec.ofNat 64 (P.N + i), 1⟩) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by show 1 ≤ 2 ^ 64; decide) (i := 0) (by show 0 < 1; decide)
-        have z : ∀ x : BitVec 64, x + BitVec.ofNat 64 0 = x := fun x => by simp
+        obtain z : ∀ x : BitVec 64, x + BitVec.ofNat 64 0 = x := fun x => by simp
         simp only [z] at hfr
         rw [hrbx₁] at hfr
         rw [hfr, m₁, ite_t (by omega_arith)]
@@ -415,14 +415,14 @@ theorem lenV64_ok (be : Bool) (s : State) :
   unfold lenV64
   simp only [List.cons_append, List.nil_append]
   refine wp_movX fun s₁ u₁ x₁ => wp_addX fun s₂ u₂ x₂ => wp_addX fun s₃ u₃ x₃ => wp_addX fun s₄ u₄ x₄ => ?_
-  have g₄ : ∀ r, r ≠ .rax → s₄.gpr r = s.gpr r := fun r h => by
+  obtain g₄ : ∀ r, r ≠ .rax → s₄.gpr r = s.gpr r := fun r h => by
     rw [u₄.other r h, u₃.other r h, u₂.other r h, u₁.other r h]
-  have v₄ : s₄.gpr .rax = BitVec.ofNat 64 (8 * (s.gpr .r12).toNat) := by
+  obtain v₄ : s₄.gpr .rax = BitVec.ofNat 64 (8 * (s.gpr .r12).toNat) := by
     rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, times8]
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have rd₄ : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have wr₄ : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have xm₄ : s₄.xmm = s.xmm := by rw [x₄, x₃, x₂, x₁]
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain rd₄ : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₄ : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  obtain xm₄ : s₄.xmm = s.xmm := by rw [x₄, x₃, x₂, x₁]
   cases be
   · simp only [Bool.false_eq_true, ite_false, List.nil_append]
     refine wp_movqx (wp_xshift (WP.block_nil ⟨fun r h => ?_, by rw [rd_setXmm, rd_setXmm, rd₄],
@@ -476,7 +476,7 @@ theorem pad_list {B L n k : Nat} {g : Nat → Byte} {mk : Byte} {lb : List Byte}
       (if k = 0 then (List.replicate (16 - L) 0 ++ lb).getD (i - (B - 16)) 0 else 0) else 0) =
       (List.range n).map g ++ [mk] ++
         (if k = 1 then List.replicate (B - 1 - n) 0 else List.replicate (B - L - 1 - n) 0 ++ lb) := by
-  have hn' : n < B := by split at hn <;> omega_using [hn]
+  obtain hn' : n < B := by split at hn <;> omega_using [hn]
   apply List.ext_getElem
   · by_cases hk1 : k = 1
     · simp [hk1]; omega_using [hn']

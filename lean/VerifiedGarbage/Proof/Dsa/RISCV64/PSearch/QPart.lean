@@ -53,11 +53,11 @@ theorem loop_nz {body : Prog isa} {r : Reg} {Q : State → Prop} (Inv : Nat → 
       WP isa body s (fun s' => Inv (i + 1) s' ∧ (s'.gpr r != 0) = decide (i + 1 ≠ N)))
     (hQ : ∀ s, Inv N s → Q s) {s₀ : State} (h0 : Inv 0 s₀) : WP isa (.loop body (.nonzero r)) s₀ Q := by
   let I : Nat → State → Prop := fun n s => ∃ i, i < N ∧ n = N - i ∧ Inv i s
-  have hI : I N s₀ := ⟨0, hN, (Nat.sub_zero N).symm, h0⟩
+  obtain hI : I N s₀ := ⟨0, hN, (Nat.sub_zero N).symm, h0⟩
   refine WP.loop (M := isa) (body := body) (c := .nonzero r) (Q := Q) I ?_ N s₀ hI
   rintro n s ⟨i, hi, rfl, hs⟩
   refine WP.mono (hstep i hi s hs) fun s' ⟨hs', hz⟩ => ?_
-  have ev : isa.eval (.nonzero r) s' = some (decide (i + 1 ≠ N)) := by
+  obtain ev : isa.eval (.nonzero r) s' = some (decide (i + 1 ≠ N)) := by
     rw [eval_nonzero]; simpa using hz
   by_cases h : i + 1 = N
   · refine .inl ⟨by rw [ev]; simp [h], hQ s' (h ▸ hs')⟩
@@ -87,11 +87,11 @@ theorem addStep_ok {s : State} {a : Addr} (ha : s.gpr .a0 = a) (hw : InRegions s
       t.gpr .a2 = BitVec.ofNat 64 (((s.mem a).toNat + (s.gpr .a2).toNat) / 256) ∧
       t.gpr .a0 = s.gpr .a0 - 1 ∧ t.gpr .a3 = s.gpr .a3 - 1 ∧
       Keep [.a0, .a1, .a2, .a3] s t ∧ t.sp = s.sp := by
-  have hr : InRegions (s.rd ++ s.wr) a 1 := let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩
+  obtain hr : InRegions (s.rd ++ s.wr) a 1 := let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩
   simp only [addStep, List.cons_append, List.nil_append]
   refine wp_lbu (by decide) (by rw [ha, BitVec.add_zero]) hr fun s₁ u₁ => ?_
   refine wp_add fun s₂ u₂ => ?_
-  have v : s₂.gpr .a1 = BitVec.ofNat 64 ((s.mem a).toNat + (s.gpr .a2).toNat) := by
+  obtain v : s₂.gpr .a1 = BitVec.ofNat 64 ((s.mem a).toNat + (s.gpr .a2).toNat) := by
     rw [u₂.gpr, u₁.gpr, u₁.other .a2 (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -145,10 +145,10 @@ theorem encode_step (m : Mem) (p : Addr) {n k : Nat} (hk : k < n) (c : Nat) :
       Spec.Dsa.encodeBE k (Spec.Dsa.decodeBE ((Spec.Rsa.bytesAt m p n).take k) +
         ((m (p + BitVec.ofNat 64 k)).toNat + c) / 256) ++
         [BitVec.ofNat 8 ((m (p + BitVec.ofNat 64 k)).toNat + c)] := by
-  have e : (Spec.Rsa.bytesAt m p n).take (k + 1) = (Spec.Rsa.bytesAt m p n).take k ++ [m (p + BitVec.ofNat 64 k)] := by
+  obtain e : (Spec.Rsa.bytesAt m p n).take (k + 1) = (Spec.Rsa.bytesAt m p n).take k ++ [m (p + BitVec.ofNat 64 k)] := by
     rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Rsa.bytesAt]; exact hk)]
     simp [Spec.Rsa.bytesAt]
-  have l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by simp [Spec.Rsa.bytesAt]; omega
+  obtain l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by simp [Spec.Rsa.bytesAt]; omega
   have := VG.Proof.Dsa.Generation.seedAdd_snoc ((Spec.Rsa.bytesAt m p n).take k) (m (p + BitVec.ofNat 64 k)) c
   rw [l] at this
   rw [e, this]
@@ -170,17 +170,17 @@ theorem addBody_ok {s₀ t : State} {base : Addr} {n add i c : Nat} (hn : n < 20
     WP isa (.block (addStep ++ ([.addi .a3 .a3 (-1)] : List Instr))) t fun u =>
       AddInv s₀ base n add (i + 1) (((t.mem (base + BitVec.ofNat 64 (n - 1 - i))).toNat + c) / 256) u ∧
         (u.gpr .a3 != 0) = decide (i + 1 ≠ n) := by
-  have hj : n - 1 - i < n := by omega
-  have ea : t.gpr .a0 = base + BitVec.ofNat 64 (n - 1 - i) := by
+  obtain hj : n - 1 - i < n := by omega
+  obtain ea : t.gpr .a0 = base + BitVec.ofNat 64 (n - 1 - i) := by
     have e := h.a0
     rw [show n - 1 = (n - 1 - i) + i by omega, BitVec.ofNat_add, ← BitVec.add_assoc] at e
     have := congrArg (· - BitVec.ofNat 64 i) e
     simpa only [BitVec.add_sub_cancel] using this
-  have hw1 : InRegions t.wr (base + BitVec.ofNat 64 (n - 1 - i)) 1 := by
+  obtain hw1 : InRegions t.wr (base + BitVec.ofNat 64 (n - 1 - i)) 1 := by
     rw [h.keep.2.2]
     exact Covers.one hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
-  have bl := (t.mem (base + BitVec.ofNat 64 (n - 1 - i))).isLt
-  have c32 : c < 2 ^ 32 := by have := h.cle; omega
+  obtain bl := (t.mem (base + BitVec.ofNat 64 (n - 1 - i))).isLt
+  obtain c32 : c < 2 ^ 32 := by have := h.cle; omega
   refine WP.mono (addStep_ok ea hw1 (by rw [h.a2, BitVec.toNat_ofNat]; omega)) ?_
   rintro u ⟨mu, a2, a0, a3, Ku, spu⟩
   rw [h.a2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at mu a2
@@ -204,7 +204,7 @@ theorem addBody_ok {s₀ t : State} {base : Addr} {n add i c : Nat} (hn : n < 20
     congr 2
     · rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_left rfl]
     · refine List.map_congr_left fun k hk => ?_
-      have hk := List.mem_range.mp hk
+      obtain hk := List.mem_range.mp hk
       rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_right (fun e => by
         rw [Offset.add_add] at e
         exact Offset.add_ofNat_ne base (a := n - 1 - i + 1 + k) (b := n - 1 - i) (by omega) (by omega)
@@ -251,7 +251,7 @@ theorem seedAdd_vp {j off : Nat}
       (St G { c with cl := (sMsg, seedPlus G sd (off + j)) :: cl' } X) := by
   unfold seedAdd
   have hq := G.qLen_cases
-  have hq0 : 0 < G.qLen := by omega
+  obtain hq0 : 0 < G.qLen := by omega
   let M : State → State → Prop := fun σ s => St G c X σ s ∧ s.gpr .a0 = G.sa (sMsg + G.qLen - 1) ∧
     s.gpr .a2 = BitVec.ofNat 64 (off + j) ∧ s.gpr .a3 = BitVec.ofNat 64 G.qLen
   refine VP.seq (G := M) (VP.pub (SS.pub (c := fun _ => c) fun σ s h => h.1) []
@@ -260,11 +260,11 @@ theorem seedAdd_vp {j off : Nat}
     (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨h, x⟩ => ?_) ?_
   · simp only [scr]
     refine wp_addi (by simp only [sMsg]; omega) fun s₁ u₁ => ?_
-    have h₁ := h.of_upd u₁ (by decide)
+    obtain h₁ := h.of_upd u₁ (by decide)
     refine h₁.ldK (o := fOffset) (by decide) (by decide) ((h₁.gi.slotV hO).trans hOv) (by decide)
       fun s₂ h₂ u₂ => ?_
     refine wp_addi hj fun s₃ u₃ => ?_
-    have h₃ := h₂.of_upd u₃ (by decide)
+    obtain h₃ := h₂.of_upd u₃ (by decide)
     refine wp_li (by omega) fun t u => WP.block_nil ⟨⟨h₃.of_upd u (by decide), x⟩, ?_, ?_, ?_⟩
     · rw [u.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.gi.s6]
     · rw [u.other _ (by decide), u₃.gpr, u₂.gpr, BitVec.ofNat_add]
@@ -284,13 +284,13 @@ theorem seedAdd_vp {j off : Nat}
   have lens := gi.lens
   have hE : hEnd = 280 := rfl
   have nM : sMsg = 320 := rfl
-  have hkB : sMsg + 64 ≤ kB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
-  have hw : InRegions s.wr (G.sa sMsg) G.qLen := gi.inScr (by omega) (by omega)
+  obtain hkB : sMsg + 64 ≤ kB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain hw : InRegions s.wr (G.sa sMsg) G.qLen := gi.inScr (by omega) (by omega)
   refine (addLoop_ok (base := G.sa sMsg) hq0 (by omega) (by
       rw [GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := sMsg) (by omega),
         Nat.mod_eq_of_lt (by omega)]; omega) hoff hw (by rw [r0, GP.sa_add]; congr 2; omega) r2 r3).mono
     fun t ⟨e, f, K, sp⟩ => ⟨?_, x⟩
-  have b := h.sb (sMsg, sd) hsd
+  obtain b := h.sb (sMsg, sd) hsd
   rw [hsl] at b
   rw [b] at e
   refine h.of_scrs K sp (os := [(sMsg, G.qLen)]) (fun p hp => ?_) (f.mono fun r hr => List.mem_append_left _ (by
@@ -307,12 +307,12 @@ theorem SS.blk_bytes {STK : Nat} {σ s : State} (h : SS G STK σ c s) {N : Nat} 
     (hpad : (sMsg + G.qLen, padTail md G.qLen) ∈ c.cl) :
     Spec.Rsa.bytesAt s.mem (G.sa sMsg) 64 = blk md m := by
   have hq := G.qLen_cases
-  have b1 := h.sb _ hm
-  have b2 := h.sb _ hpad
-  have pl := padTail_length md (n := G.qLen) (by omega) rfl
+  obtain b1 := h.sb _ hm
+  obtain b2 := h.sb _ hpad
+  obtain pl := padTail_length md (n := G.qLen) (by omega) rfl
   rw [show (64 : Nat) = m.length + (padTail md G.qLen).length by omega, VG.Proof.Dsa.Generation.bytesAt_append,
     b1]
-  have a : VG.Proof.Bignum.off (G.sa sMsg) m.length = G.sa (sMsg + G.qLen) := by
+  obtain a : VG.Proof.Bignum.off (G.sa sMsg) m.length = G.sa (sMsg + G.qLen) := by
     rw [VG.Proof.Bignum.off, GP.sa_add, hml]
   rw [a]
   simp only at b2
@@ -350,7 +350,7 @@ variable {G : GP} {STK : Nat} {σ s : State} {V : Nat → BitVec 64} {LS : List 
 /-- The seed at `k`, in memory. -/
 theorem GI.seedBytes (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.randLen) (hq0 : 0 < G.qLen) :
     Spec.Rsa.bytesAt s.mem (G.rand + BitVec.ofNat 64 k) G.qLen = seedAt G k := by
-  have e := h.randBytes (u := k) (by omega)
+  obtain e := h.randBytes (u := k) (by omega)
   rw [GP.randP, ite_eq_right (by omega)] at e
   obtain ⟨d, hd⟩ : ∃ d, G.randLen - k = G.qLen + d := ⟨G.randLen - k - G.qLen, by omega⟩
   rw [hd, VG.Proof.Dsa.Generation.bytesAt_append] at e
@@ -362,8 +362,8 @@ theorem GI.seedSrc (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.ran
     InRegions (s.rd ++ s.wr) (G.rand + BitVec.ofNat 64 k) G.qLen ∧
       (⟨G.rand + BitVec.ofNat 64 k, G.qLen⟩ : Region).Disjoint G.rScr := by
   have fit := h.randFit0
-  have sub : Region.Sub ⟨G.rand + BitVec.ofNat 64 k, G.qLen⟩ G.rRand := Offset.sub_base _ hk
-  have rC := h.pre.rC; rw [h.hG] at rC
+  obtain sub : Region.Sub ⟨G.rand + BitVec.ofNat 64 k, G.qLen⟩ G.rRand := Offset.sub_base _ hk
+  obtain rC := h.pre.rC; rw [h.hG] at rC
   refine ⟨⟨G.rRand, ?_, Offset.contains_base _ hk (by omega)⟩, rC.sub_left sub⟩
   rw [h.rd, h.pre.rd, h.hG]; simp
 
@@ -509,21 +509,21 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
       (St G (testCfg c (qClaims HO.md G k) G.randLen
         (Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k)) (G.randB.drop u))) X) := by
   have hqc2 := G.qLen_cases
-  have hq0 : 0 < G.qLen := by omega
-  have hq56 : G.qLen < 56 := by omega
-  have pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md hq56 rfl
-  have hsl : (seedAt G k).length = G.qLen := by
+  obtain hq0 : 0 < G.qLen := by omega
+  obtain hq56 : G.qLen < 56 := by omega
+  obtain pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md hq56 rfl
+  obtain hsl : (seedAt G k).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, hwl]; omega
   -- The hash and q.
-  have hHl : (HO.H (seedAt G k)).length = G.qLen := by
+  obtain hHl : (HO.H (seedAt G k)).length = G.qLen := by
     rw [HO.hash _ (by omega), HO.md.digest_length, hk4]
-  have hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega
-  have qb : shapedOctets (HO.H (seedAt G k)) 7 = qBytes G k := by rw [hH]
-  have qbl : (qBytes G k).length = G.qLen := by
+  obtain hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega
+  obtain qb : shapedOctets (HO.H (seedAt G k)) 7 = qBytes G k := by rw [hH]
+  obtain qbl : (qBytes G k).length = G.qLen := by
     rw [← qb, shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
       (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHl]
-  have hqc : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
+  obtain hqc : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
     VG.Proof.Dsa.Generation.qCandidate_octets (by omega) _ (by rw [← hH, hHl])
   rw [← hqc]
   have nM : sMsg = 320 := rfl
@@ -547,7 +547,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
         have := q_bounds G h.1.gi; simp only [ClOk, List.length_replicate]; omega)
       (fun σ s h => h.1.gi.seedSrc hk hq0) fun σ s t ⟨h, x⟩ h' _ e => ⟨?_, x⟩
     rw [h.gi.seedBytes hk hq0, hsd] at e
-    have qB := q_bounds G h.gi
+    obtain qB := q_bounds G h.gi
     refine (h'.addCl (o := sMsg) (bs := sd) (by rw [hsl]; exact e)
       (by simp only [ClOk, hsl]; omega)).mono (fun o ho => ⟨ho, rfl⟩) (fun y hy => ?_) (fun j hj => ⟨hj, rfl⟩)
       (fun d hd => ⟨hd, rfl⟩)
@@ -559,7 +559,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
     refine hash_vp HO (c := fun _ => c1) (fun σ s h => h.1) (msg := fun _ => sd) (dst := sQ)
       (fun σ s ⟨h, _⟩ => ⟨by omega, ?_⟩) (by decide) (by decide) fun σ s t ⟨h, x⟩ K sp f e => ⟨?_, x⟩
     · exact h.blk_bytes (md := HO.md) (by simp [c1]) hsl (by rw [hpd]; simp [c1])
-    have qB := q_bounds G h.gi
+    obtain qB := q_bounds G h.gi
     refine h.of_scrs K sp (os := [(sState, 32), (sCS, 80), (sQ, 4 * g.G.k)]) (fun p hp => ?_)
       (f.mono fun r hr => List.mem_append_left _ hr) fun y hy => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -574,7 +574,7 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
     refine shapeQ_vp (c := fun _ => c2) (fun σ s h => h.1) (N := G.qLen) hqc2
       (bs := HO.H sd) (fun σ s ⟨h, _⟩ => by have := h.sb (sQ, HO.H sd) (by simp [c2]); rwa [hHl] at this)
       fun σ s t ⟨h, x⟩ K sp f e => ⟨?_, x⟩
-    have qB := q_bounds G h.gi
+    obtain qB := q_bounds G h.gi
     refine h.of_scrs K sp (os := [(sQ, G.qLen)]) (fun p hp => ?_)
       (f.mono fun r hr => List.mem_append_left _ hr) fun y hy => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -586,16 +586,16 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
       subst hp; simp only [Apart, pl]; omega
     · exact .inr ⟨by rw [qbl, ← qb]; exact e, by simp only [ClOk, qbl]; omega⟩
   · -- The test.
-    have hqs := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G k)
-    have hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega) (seedAt G k)
+    obtain hqs := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G k)
+    obtain hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega) (seedAt G k)
     rw [← hqc] at hqs hbl
-    have hkq : sQ + G.qLen ≤ kB G.pLen := by have := kB_ge G.pLen; omega
+    obtain hkq : sQ + G.qLen ≤ kB G.pLen := by have := kB_ge G.pLen; omega
     have := test_vp (X := X) (c := c3) (cb := qBytes G k) (src := sQ) (cl' := qClaims HO.md G k)
       (name := g.qName) ok hc0 hu hU hUv hwl hsize hL (by simp [c3]) (by rw [qbl]; exact hkq)
       (by rw [qbl, hLb]; omega) (by rw [qbl]; omega) (by rw [qbl]; omega) (by decide) hqs.1 (by rw [hbl, hLb])
       hU' hU88 fun y hy => ?_
     · rwa [qbl] at this
-    have hw2 : 2048 ≤ wB G.pLen := by have := kB_ge G.pLen; have := kB_le_wB G.pLen; omega
+    obtain hw2 : 2048 ≤ wB G.pLen := by have := kB_ge G.pLen; have := kB_le_wB G.pLen; omega
     simp only [qClaims, List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl
     · refine ⟨List.mem_cons_of_mem _ (List.mem_filter.mpr ⟨by simp [c3, hpd], ?_⟩), fun r _ => .inl ?_⟩

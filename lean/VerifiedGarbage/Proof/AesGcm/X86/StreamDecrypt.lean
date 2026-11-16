@@ -50,7 +50,7 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   swap
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzp⟩ := hex
-  have hc := crPure_of hz hzp
+  obtain hc := crPure_of hz hzp
   have L := hc.lay
   rw [streamDecrypt_eq]
   refine Pc.seq (crEntry_pc p) ?_
@@ -66,10 +66,10 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (Pc.taint [.ebp] (fun s₀ s₂ h => ?_) (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.ebp, h₂.env.ebp]) (by taint_decide)) ?_
   · obtain ⟨s₁, h₁, ta, rd₂, wr₂⟩ := h
-    have sl := h₁.ta.frame ta.frame (kept_taFrame L)
+    obtain sl := h₁.ta.frame ta.frame (kept_taFrame L)
     obtain ⟨s₃, run, d, n, b, fr, bp, si, sp, rd, wr⟩ := setText_ok L ta.env sl
     refine WP.of_runBlock ⟨s₃, run, s₂, ⟨s₁, h₁, ta, rd₂, wr₂⟩, ?_, fr, rd, wr⟩
-    have kP : ∀ r ∈ [pslotR (p.2 9)], (keptR (p.2 9)).Disjoint r := fun r hr => by
+    obtain kP : ∀ r ∈ [pslotR (p.2 9)], (keptR (p.2 9)).Disjoint r := fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
     refine ⟨ta.env.keep bp si sp rd wr (slot_frame fr fun r hr => (kP r hr).sub_left (Offset.sub _ (by decide)
       (by decide))), d, n, by rw [b, append_toNat32]; congr 1; omega_using [], (p.2 8).isLt,
@@ -81,13 +81,13 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [(h₁ default).env.ebp, (h₂ default).env.ebp])
     (by taint_decide)
-  have hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
+  obtain hf : Frame (pslotR (p.2 9) :: crFrame (p.2 2) (p.2 9) p.1 32 (p.2 7) (p.2 8).toNat ++
       taFrame (p.2 2) (p.2 9) p.1 32) s₁.mem s₄.mem :=
     ((ta.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_right _ hr)).trans
       (fr.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..)).trans
       ((co default).frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_append_left _ hr))
   refine WP.mono (cr_exit hc h₁ (co default).env hf) fun s' ⟨abi, m'⟩ => ⟨abi, fun iv a c hr hl hct => ?_⟩
-  have hA : ∀ i, i < 10 → arg s₀ i = p.2 i := fun i hi => pubOf_arg h₁.pub hi
+  obtain hA : ∀ i, i < 10 → arg s₀ i = p.2 i := fun i hi => pubOf_arg h₁.pub hi
   dsimp only
   rw [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide)] at hr
   rw [hA 3 (by decide), hA 4 (by decide)] at hl
@@ -95,61 +95,61 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   rw [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hA 7 (by decide), hA 8 (by decide), m']
   generalize hci : ctxCiph s₀.mem (w64 (p.2 0)) (p.2 1).toNat = ciph at hr ⊢
   generalize hH : ctxH s₀.mem (w64 (p.2 0)) = H at hr ⊢
-  have fE : Frame [⟨w64 (p.2 9) + BitVec.ofNat 64 96, 2464⟩] s₀.mem s₁.mem :=
+  obtain fE : Frame [⟨w64 (p.2 9) + BitVec.ofNat 64 96, 2464⟩] s₀.mem s₁.mem :=
     h₁.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
   have hd := hin.data
   have hfit := hd.ok.fit
-  have dP : ∀ r ∈ [pslotR (p.2 9)], (⟨w64 (p.2 7), (p.2 8).toNat⟩ : Region).Disjoint r := fun r hr => by
+  obtain dP : ∀ r ∈ [pslotR (p.2 9)], (⟨w64 (p.2 7), (p.2 8).toNat⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))
-  have hC1 : ciphOf s₁.mem (p.2 0) (p.2 1).toNat = ciph := by
+  obtain hC1 : ciphOf s₁.mem (p.2 0) (p.2 1).toNat = ciph := by
     rw [← hci]; exact ciph_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.cw.sub_right (Lay.wSub (by decide))) hc.rounds
-  have hC3 : ciphOf s₃.mem (p.2 0) (p.2 1).toNat = ciph := by
+  obtain hC3 : ciphOf s₃.mem (p.2 0) (p.2 1).toNat = ciph := by
     rw [← hC1, ciph_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.cw.sub_right (Lay.wSub (by decide))) hc.rounds,
       ciph_frame ta.frame (ctx_taFrame L) hc.rounds]
-  have hH1 : Hk s₁.mem (p.2 0) = H := by
+  obtain hH1 : Hk s₁.mem (p.2 0) = H := by
     rw [← hH, ctxH_eq]; exact blockAt_frame fE fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-  have hr₁ := streamRepr_frame fE (fun r hr => by
+  obtain hr₁ := streamRepr_frame fE (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.sb) hr
   rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit] at hr₁
   obtain ⟨hj, ha, hcr⟩ := hr₁
-  have hD1 : bytesAt s₁.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat :=
+  obtain hD1 : bytesAt s₁.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat :=
     bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))) (by omega_using [])
-  have hab := ta.abs a c ⟨hl, hct⟩ (by rw [hH1]; exact ha)
+  obtain hab := ta.abs a c ⟨hl, hct⟩ (by rw [hH1]; exact ha)
   rw [hD1, hH1] at hab
   -- The counter blocks, as `crypt` takes them.
-  have hct3 : CtrS s₃.mem (p.2 2) (ciphOf s₃.mem (p.2 0) (p.2 1).toNat) (inc32 (j0 H iv)) (p.2 6 ++ p.2 5).toNat := by
+  obtain hct3 : CtrS s₃.mem (p.2 2) (ciphOf s₃.mem (p.2 0) (p.2 1).toNat) (inc32 (j0 H iv)) (p.2 6 ++ p.2 5).toNat := by
     rw [hC3, hct]
-    have dP' : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [pslotR (p.2 9)],
+    obtain dP' : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [pslotR (p.2 9)],
         (⟨w64 (p.2 2) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun hk r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
     exact (hcr.congr (blockAt_frame ta.frame (st_taFrame hc (.inr ⟨by decide, by decide⟩)))
       (blockAt_frame ta.frame (st_taFrame hc (.inr ⟨by decide, by decide⟩)))).congr
       (blockAt_frame fr (dP' (by decide))) (blockAt_frame fr (dP' (by decide)))
-  have hco := co (inc32 (j0 H iv))
-  have hct₄ := hco.ctr hct3
-  have hout := hco.out hct3
+  obtain hco := co (inc32 (j0 H iv))
+  obtain hct₄ := hco.ctr hct3
+  obtain hout := hco.out hct3
   rw [hC3] at hct₄ hout
-  have hD3 : bytesAt s₃.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat := by
+  obtain hD3 : bytesAt s₃.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat := by
     rw [bytesAt_frame fr dP (by omega_using []), bytesAt_frame ta.frame (data_taFrame hd.ok) (by omega_using []), hD1]
   rw [hD3] at hout
-  have hdrop : (gctr ciph (inc32 (j0 H iv)) (c ++ bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat)).drop c.length =
+  obtain hdrop : (gctr ciph (inc32 (j0 H iv)) (c ++ bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat)).drop c.length =
       xorKs ciph (inc32 (j0 H iv)) c.length (bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat) := by
     rw [Proof.Gcm.gctr_append, List.drop_left' (Proof.Gcm.length_gctr _ _ _)]
   refine ⟨?_, by rw [hout, hdrop, hct]⟩
   rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit]
-  have dP' : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [pslotR (p.2 9)],
+  obtain dP' : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [pslotR (p.2 9)],
       (⟨w64 (p.2 2) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun hk r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
   refine ⟨?_, ?_, ?_⟩
   · have e₁ := blockAt_frame hco.frame (st_crFrame hc (d := 0) (k := 16) (by decide))
-    have e₂ := blockAt_frame fr (dP' (d := 0) (k := 16) (by decide))
-    have e₃ := blockAt_frame ta.frame (st_taFrame hc (d := 0) (k := 16) (.inl (by decide)))
+    obtain e₂ := blockAt_frame fr (dP' (d := 0) (k := 16) (by decide))
+    obtain e₃ := blockAt_frame ta.frame (st_taFrame hc (d := 0) (k := 16) (.inl (by decide)))
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at e₁ e₂ e₃
     rw [e₁, e₂, e₃, hj]
   · exact (hab.congr (blockAt_frame fr (dP' (by decide)))

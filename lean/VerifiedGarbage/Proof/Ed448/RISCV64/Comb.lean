@@ -162,7 +162,7 @@ theorem entry_step {s0 : State} (hc : Ctx (tb b) s0) {i : Nat} (hi : i < 16) {s 
     (h : TabInv b s0 i s) :
     WP isa (.block (constField (112 * i) (Impl.Ed448.Comb.entry i).1.val ++
       constField (112 * i + 56) (Impl.Ed448.Comb.entry i).2.val)) s (TabInv b s0 (i + 1)) := by
-  have hc1 : Ctx (tb b) s := hc.of_rest h.rest (by decide)
+  obtain hc1 : Ctx (tb b) s := hc.of_rest h.rest (by decide)
   refine WP.append (constField_ok hc1 (o := 112 * i) (by omega_using [hi]) (by omega_using []) (fe_lt _))
     fun t ⟨rt, ft, vt⟩ => ?_
   refine WP.mono (constField_ok (hc1.of_rest rt (by decide)) (o := 112 * i + 56) (by omega_using [hi]) (by omega_using [])
@@ -170,10 +170,10 @@ theorem entry_step {s0 : State} (hc : Ctx (tb b) s0) {i : Nat} (hi : i < 16) {s 
   · have F1 : Frame [⟨tb b, 112 * (i + 1)⟩] s0.mem s.mem :=
       h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩
-    have F2 : Frame [⟨tb b, 112 * (i + 1)⟩] s.mem t.mem :=
+    obtain F2 : Frame [⟨tb b, 112 * (i + 1)⟩] s.mem t.mem :=
       ft.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])⟩
-    have F3 : Frame [⟨tb b, 112 * (i + 1)⟩] t.mem u.mem :=
+    obtain F3 : Frame [⟨tb b, 112 * (i + 1)⟩] t.mem u.mem :=
       fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])⟩
     exact F1.trans (F2.trans F3)
@@ -191,11 +191,11 @@ theorem tabBuild_ok {s : State} (hc : Ctx b s) (hw : TabW b s) :
       Frame [⟨tb b, 1792⟩] s.mem t.mem ∧ TabOk b t.mem := by
   simp only [tabBuild, List.cons_append, List.nil_append]
   refine wp_addi (by decide) fun s1 u1 => wp_addi (by decide) fun s2 u2 => ?_
-  have e2 : s2.gpr .a3 = tb b := by
+  obtain e2 : s2.gpr .a3 = tb b := by
     rw [u2.gpr, u1.gpr, hc.a3, BitVec.add_assoc]; rfl
-  have hr2 : Rest [.a3] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : Ctx (tb b) s2 := ⟨e2, tb_al hc.al, by rw [hr2.wr]; exact hw⟩
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  obtain hr2 : Rest [.a3] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hc2 : Ctx (tb b) s2 := ⟨e2, tb_al hc.al, by rw [hr2.wr]; exact hw⟩
+  obtain hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
   refine WP.append (wp_range_flatMap (M := isa) (TabInv b s2) (fun i t hi h => entry_step hc2 hi h)
     16 (Nat.le_refl _) s2 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩) fun t ht => ?_
   refine wp_subi (by decide) fun u uu => WP.block_nil ⟨⟨?_, hc.al, ?_⟩, ?_, ?_, ?_⟩
@@ -251,9 +251,9 @@ theorem digit_ok {k t : Nat} (hc : Ctx b s) (hb : Bits b k s.mem) (ht : t < 114)
   have hB : BITS = 1064 := rfl
   simp only [combDigit]
   refine wp_add fun s1 u1 => ?_
-  have e1 : s1.gpr .a1 = b + BitVec.ofNat 64 t := by rw [u1.gpr, hc.a3, h1]
+  obtain e1 : s1.gpr .a1 = b + BitVec.ofNat 64 t := by rw [u1.gpr, hc.a3, h1]
   have hm1 : s1.mem = s.mem := u1.mem
-  have ld : ∀ (s' : State) (o : Nat), o + t < 456 → s'.gpr .a1 = b + BitVec.ofNat 64 t →
+  obtain ld : ∀ (s' : State) (o : Nat), o + t < 456 → s'.gpr .a1 = b + BitVec.ofNat 64 t →
       s'.rd = s.rd → s'.wr = s.wr →
       s'.gpr .a1 + BitVec.ofNat 64 (BITS + o) = b + BitVec.ofNat 64 (BITS + (o + t)) ∧
         InRegions (s'.rd ++ s'.wr) (b + BitVec.ofNat 64 (BITS + (o + t))) 1 := fun s' o ho ha hr hw =>
@@ -275,12 +275,12 @@ theorem digit_ok {k t : Nat} (hc : Ctx b s) (hb : Bits b k s.mem) (ht : t < 114)
   refine wp_lbz (by decide) (by rw [Nat.add_zero] at a4; exact a4) i4 fun s9 u9 => wp_add fun s10 u10 => wp_add fun s11 u11 =>
     WP.block_nil ⟨?_, ?_, ?_⟩
   · have m2 : s2.mem = s.mem := by rw [u2.mem, hm1]
-    have m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, m2]
-    have m8 : s8.mem = s.mem := by rw [u8.mem, u7.mem, u6.mem, m5]
-    have b1 := bit_byte (t := 342 + t) hb (by omega_using [ht])
-    have b2 := bit_byte (t := 228 + t) hb (by omega_using [ht])
-    have b3 := bit_byte (t := 114 + t) hb (by omega_using [ht])
-    have b4 := bit_byte (t := 0 + t) hb (by omega_using [ht])
+    obtain m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, m2]
+    obtain m8 : s8.mem = s.mem := by rw [u8.mem, u7.mem, u6.mem, m5]
+    obtain b1 := bit_byte (t := 342 + t) hb (by omega_using [ht])
+    obtain b2 := bit_byte (t := 228 + t) hb (by omega_using [ht])
+    obtain b3 := bit_byte (t := 114 + t) hb (by omega_using [ht])
+    obtain b4 := bit_byte (t := 0 + t) hb (by omega_using [ht])
     rw [u11.gpr, u10.gpr, u10.other _ (by decide), u9.gpr, u9.other _ (by decide), u8.gpr, u7.gpr,
       u7.other _ (by decide), u6.gpr, u6.other _ (by decide), u5.gpr, u4.gpr, u4.other _ (by decide),
       u3.gpr, u3.other _ (by decide), u2.gpr, m8, m5, m2, hm1, b1, b2, b3, b4]
@@ -352,18 +352,18 @@ theorem selWord_ok {s0 : State} {i j : Nat} (hi : i < 16) (hj : j < 14) {s : Sta
     (hc.inR (by simp only [SX]; omega_using [hj])) fun s1 u1 => ?_
   refine wp_ld (by omega_using [hi, hj]) (by rw [u1.other _ (by decide), h.t2]) (al8 (tb_al hc.al) (by omega_using []))
     (by rw [u1.rd, u1.wr]; exact tab_in h.tab hi hj) fun s2 u2 => wp_and fun s3 u3 => wp_or fun s4 u4 => ?_
-  have hr4 : Rest [.a2, .a4] s s4 :=
+  obtain hr4 : Rest [.a2, .a4] s s4 :=
     ((u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       (u4.rest (by decide)))))
   refine wp_sd (by simp only [SX]; omega_using [hj]) (by rw [hr4.gpr _ (by decide), hc.a3])
     (al8 hc.al (by simp only [SX]; omega_using [])) (by rw [hr4.wr]; exact hc.inW (by simp only [SX]; omega_using [hj]))
     fun s5 u5 => WP.block_nil ?_
-  have hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  have hf : Frame [SR b] s.mem s5.mem := by
+  obtain hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain hf : Frame [SR b] s.mem s5.mem := by
     rw [u5.mem, hm4]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by simp only [SX]; omega_using []) (by simp only [SX]; omega_using [hj]) (by simp only [SX]; omega_using []))
-  have g4 : s4.gpr .a2 = sw s.mem b j ||| (tw s.mem b i j &&& s.gpr .t0) := by
+  obtain g4 : s4.gpr .a2 = sw s.mem b j ||| (tw s.mem b i j &&& s.gpr .t0) := by
     rw [u4.gpr, u3.other Reg.a2 (by decide), u3.gpr, u2.other Reg.a2 (by decide), u2.gpr,
       u2.other Reg.t0 (by decide), u1.gpr, u1.other Reg.t0 (by decide), u1.mem]
   refine ⟨h.next ((hr4.mono (by decide)).trans ⟨fun r _ => by rw [u5.gpr], u5.rd, u5.wr, u5.sp⟩) hf,
@@ -392,15 +392,15 @@ theorem entry_ok {s0 : State} {d : Nat} (hd : d < 16) (h5 : s0.gpr .a5 = BitVec.
   simp only [selEntry, List.cons_append, List.nil_append]
   refine wp_xori' (by omega_using [hi]) fun s1 u1 => wp_li (by decide) fun s2 u2 => wp_sltu fun s3 u3 =>
     wp_li (by decide) fun s4 u4 => wp_sub fun s5 u5 => ?_
-  have hr5 : Rest [.a2, .a4, .a6, .t0] s s5 :=
+  obtain hr5 : Rest [.a2, .a4, .a6, .t0] s s5 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans (u5.rest (by decide)))))
-  have hm5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have e5 : s5.gpr .t0 = if d = i then BitVec.allOnes 64 else 0 := by
+  obtain hm5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain e5 : s5.gpr .t0 = if d = i then BitVec.allOnes 64 else 0 := by
     rw [u5.gpr, u4.other Reg.a2 (by decide), u4.gpr, u3.gpr, u2.gpr, u2.other Reg.a2 (by decide), u1.gpr,
       hc.a5, h5, ← mask_eq d hd i hi]
     rfl
-  have c5 : SelCtx b s0 s5 := hc.next hr5 (by rw [hm5]; exact Frame.refl _ _)
+  obtain c5 : SelCtx b s0 s5 := hc.next hr5 (by rw [hm5]; exact Frame.refl _ _)
   -- The doublewords, one at a time.
   refine WP.mono (wp_range_flatMap (M := isa) (fun k t => SelCtx b s0 t ∧ t.gpr .t0 = s5.gpr .t0 ∧
       ∀ j < 14, sw t.mem b j = if j < k then sw s5.mem b j ||| (tw s0.mem b i j &&& s5.gpr .t0)
@@ -436,14 +436,14 @@ theorem select_ok {d : Nat} (hd : d < 16) {s : State} (hc : Ctx b s) (hw : TabW 
       Frame [SR b] s.mem s'.mem ∧ ∀ j < 14, sw s'.mem b j = tw s.mem b d j := by
   simp only [combSelect, List.cons_append, List.append_assoc]
   refine wp_li (by decide) fun s1 u1 => ?_
-  have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.a2]) (by decide)) (by decide)
+  obtain hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.a2]) (by decide)) (by decide)
   -- Zero `(SX, SY)`.
   refine WP.append (wp_range_flatMap (M := isa) (fun k t => Ctx b t ∧ Rest [.a2] s t ∧
       t.gpr .a2 = 0 ∧ Frame [SR b] s.mem t.mem ∧ ∀ j < k, sw t.mem b j = 0)
     (fun k t hk ⟨ct, rt, zt, ft, vt⟩ => wp_sd (by simp only [SX]; omega_using [hk]) (by rw [ct.a3])
       (al8 ct.al (by simp only [SX]; omega_using [])) (ct.inW (by simp only [SX]; omega_using [hk])) fun u uu => by
-        have ru : Rest [.a2] t u := ⟨fun r _ => by rw [uu.gpr], uu.rd, uu.wr, uu.sp⟩
-        have fu : Frame [SR b] t.mem u.mem := by
+        obtain ru : Rest [.a2] t u := ⟨fun r _ => by rw [uu.gpr], uu.rd, uu.wr, uu.sp⟩
+        obtain fu : Frame [SR b] t.mem u.mem := by
           rw [uu.mem]
           exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
             (Offset.contains _ (by simp only [SX]; omega_using []) (by simp only [SX]; omega_using [hk])
@@ -460,15 +460,15 @@ theorem select_ok {d : Nat} (hd : d < 16) {s : State} (hc : Ctx b s) (hw : TabW 
       fun j hj => by omega⟩) fun t ⟨ct, rt, _, ft, vt⟩ => ?_
   -- The table's pointer.
   refine wp_addi (by decide) fun t1 v1 => wp_addi (by decide) fun t2 v2 => ?_
-  have e2 : t2.gpr .t2 = tb b := by
+  obtain e2 : t2.gpr .t2 = tb b := by
     rw [v2.gpr, v1.gpr, ct.a3, BitVec.add_assoc]; rfl
-  have hr2 : Rest [.a2, .t2] s t2 :=
+  obtain hr2 : Rest [.a2, .t2] s t2 :=
     (rt.mono (by decide)).trans ((v1.rest (by decide)).trans (v2.rest (by decide)))
-  have c2 : SelCtx b t2 t2 :=
+  obtain c2 : SelCtx b t2 t2 :=
     ⟨ct.of_rest ((v1.rest (ws := [.t2]) (by decide)).trans (v2.rest (by decide))) (by decide),
       fun d n hdn => by rw [hr2.wr]; exact hw d n hdn, e2, rfl, Rest.refl _ _, Frame.refl _ _⟩
-  have hm2 : t2.mem = t.mem := by rw [v2.mem, v1.mem]
-  have tab2 : ∀ i < 16, ∀ j < 14, tw t2.mem b i j = tw s.mem b i j := fun i hi j hj => by
+  obtain hm2 : t2.mem = t.mem := by rw [v2.mem, v1.mem]
+  obtain tab2 : ∀ i < 16, ∀ j < 14, tw t2.mem b i j = tw s.mem b i j := fun i hi j hj => by
     rw [hm2]; exact tw_frame ft hi hj
   rw [List.nil_append]
   refine WP.mono (wp_range_flatMap (M := isa) (SelInv b t2 d) (fun i u hi h => entry_ok hd
@@ -500,7 +500,7 @@ theorem step_rep {p : Point} {k t : Nat} (ht : t < 114)
     (hp : Rep p (accScalar k (t + 1) • baseAff)) :
     Rep (Spec.Ed448.pointAdd (Proof.Ed448.double p)
       (Proof.X448.basePt (Impl.Ed448.Comb.entry (digit k t)))) (accScalar k t • baseAff) := by
-  have h := pointAdd_rep (double_rep hp) (Proof.Ed448.Comb.entry_rep _ (Proof.Ed448.Comb.digit_lt k t))
+  obtain h := pointAdd_rep (double_rep hp) (Proof.Ed448.Comb.entry_rep _ (Proof.Ed448.Comb.digit_lt k t))
   rw [← two_nsmul, smul_smul, ← add_nsmul, ← Proof.Ed448.Comb.accScalar_step k t ht] at h
   exact h
 
@@ -511,7 +511,7 @@ variable {b : Addr}
 theorem sel_x {m : Mem} {d : Nat} (hd : d < 16) (htab : TabOk b m)
     (hs : ∀ j < 14, sw m b j = tw m b d j) :
     FS m b SX = (Impl.Ed448.Comb.entry d).1 ∧ FS m b SY = (Impl.Ed448.Comb.entry d).2 := by
-  have h7 : ∀ o e, (∀ i < 7, R64.ew m b o i = R64.ew m (tb b) e i) → V m b o = V m (tb b) e := fun o e h => by
+  obtain h7 : ∀ o e, (∀ i < 7, R64.ew m b o i = R64.ew m (tb b) e i) → V m b o = V m (tb b) e := fun o e h => by
     rw [R64.V_eq, R64.V_eq]; exact R64.val7_congr h
   obtain ⟨tx, ty⟩ := htab d hd
   refine ⟨?_, ?_⟩
@@ -542,7 +542,7 @@ structure Fixed (b : Addr) (k : Nat) (s0 : State) : Prop where
 theorem fixed_tab {k : Nat} {s0 s : State} (hf : Fixed b k s0) (hst : R64.Stp b s0 s) : TabOk b s.mem := by
   intro i hi
   obtain ⟨e1, e2⟩ := hf.tab i hi
-  have keep : ∀ o, o + 56 ≤ 2048 → V s.mem (tb b) o = V s0.mem (tb b) o := fun o ho => by
+  obtain keep : ∀ o, o + 56 ≤ 2048 → V s.mem (tb b) o = V s0.mem (tb b) o := fun o ho => by
     unfold V
     refine val32_congr (limb_frame hst.frame fun r hr k hk => ?_)
     have hA : ACC = 952 := rfl
@@ -563,31 +563,31 @@ theorem step_ok {k : Nat} {s0 : State} (hfx : Fixed b k s0) {t : Nat} (ht : t < 
   have hc := h.ctx
   unfold combStep
   refine WP.seq (wp_subi (by decide) fun s1 u1 => WP.block_nil ?_)
-  have e1 : s1.gpr .t1 = BitVec.ofNat 64 t := by
+  obtain e1 : s1.gpr .t1 = BitVec.ofNat 64 t := by
     rw [u1.gpr, h.t1, ofNat_sub_one (by omega_using []) (by omega_using [ht]), Nat.add_sub_cancel]
-  have hst1 : R64.Stp b s0 s1 :=
+  obtain hst1 : R64.Stp b s0 s1 :=
     h.stp.trans (R64.Stp.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide) u1.mem)
-  have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide)
-  have C1 : R64.Cur b s0 (s1.gpr .t2) (BitVec.ofNat 64 t) DQ (FS s1.mem b) s1 :=
+  obtain hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide)
+  obtain C1 : R64.Cur b s0 (s1.gpr .t2) (BitVec.ofNat 64 t) DQ (FS s1.mem b) s1 :=
     ⟨hc1, hst1, rfl, e1, fun _ _ => rfl⟩
   rw [opsProg_eq]
   refine WP.seq (R64.ops_ok _ _ _ _ dbl_ok C1 fun s2 C2 => WP.block_nil ?_)
   -- The row's index and its entry.
-  have bs2 := fixed_bits hfx C2.stp
+  obtain bs2 := fixed_bits hfx C2.stp
   refine WP.seq (WP.append (digit_ok C2.ctx bs2 ht C2.t1) fun s3 ⟨a3, r3, m3⟩ => ?_)
-  have hc3 : Ctx b s3 := C2.ctx.of_rest r3 (by decide)
-  have tw3 : TabW b s3 := fun d n hdn => by
+  obtain hc3 : Ctx b s3 := C2.ctx.of_rest r3 (by decide)
+  obtain tw3 : TabW b s3 := fun d n hdn => by
     rw [r3.wr, C2.stp.rest.wr]; exact hfx.tabw d n hdn
   refine WP.mono (select_ok (Proof.Ed448.Comb.digit_lt k t) hc3 tw3 a3) fun s4 ⟨hc4, r4, f4, v4⟩ => ?_
-  have hr34 : Rest R64.work s2 s4 := (r3.mono (by decide)).trans (r4.mono (by decide))
-  have hst4 : R64.Stp b s0 s4 := C2.stp.trans ⟨hr34, by
+  obtain hr34 : Rest R64.work s2 s4 := (r3.mono (by decide)).trans (r4.mono (by decide))
+  obtain hst4 : R64.Stp b s0 s4 := C2.stp.trans ⟨hr34, by
     rw [← m3]; exact f4.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by simp only [SX, ACC]; omega_using [])⟩⟩
-  have tab4 : TabOk b s4.mem := fixed_tab hfx hst4
-  have sxy := sel_x (Proof.Ed448.Comb.digit_lt k t) tab4 (fun j hj => by
+  obtain tab4 : TabOk b s4.mem := fixed_tab hfx hst4
+  obtain sxy := sel_x (Proof.Ed448.Comb.digit_lt k t) tab4 (fun j hj => by
     rw [v4 j hj, tw_frame f4 (Proof.Ed448.Comb.digit_lt k t) hj])
   -- The slots of `R` and `d` stay through the selection.
-  have keep : ∀ q ∈ DQ, FS s4.mem b q = FS s2.mem b q := fun q hq => by
+  obtain keep : ∀ q ∈ DQ, FS s4.mem b q = FS s2.mem b q := fun q hq => by
     unfold FS V
     refine congrArg _ ?_
     refine val32_congr (limb_frame (by rw [← m3]; exact f4) fun r hr k hk => ?_)
@@ -600,17 +600,17 @@ theorem step_ok {k : Nat} {s0 : State} (hfx : Fixed b k s0) {t : Nat} (ht : t < 
     simp only [DQ, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl
     all_goals exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_using [hS])
-  have C4 : R64.Cur b s0 (s4.gpr .t2) (BitVec.ofNat 64 t) AQ (FS s4.mem b) s4 :=
+  obtain C4 : R64.Cur b s0 (s4.gpr .t2) (BitVec.ofNat 64 t) AQ (FS s4.mem b) s4 :=
     ⟨hc4, hst4, rfl, by rw [r4.gpr _ (by decide), r3.gpr _ (by decide), C2.t1], fun _ _ => rfl⟩
-  have d4 : FS s4.mem b DK = Spec.Ed448.d := by
+  obtain d4 : FS s4.mem b DK = Spec.Ed448.d := by
     rw [keep DK (by decide), C2.slots DK (dbl_sub DK (by decide)), (dbl_vals _).2, u1.mem]
     exact h.d
   refine R64.ops_ok _ _ _ _ add_ok C4 fun s5 C5 => WP.block_nil ?_
-  have p5 : ptOf (FS s5.mem b) = ptOf (runOps (addOps.map toF) (FS s4.mem b)) := by
+  obtain p5 : ptOf (FS s5.mem b) = ptOf (runOps (addOps.map toF) (FS s4.mem b)) := by
     simp only [ptOf]
     rw [C5.slots RX (by decide), C5.slots RY (by decide), C5.slots RZ (by decide)]
-  have p4 : ptOf (FS s4.mem b) = Proof.Ed448.double (ptOf (FS s.mem b)) := by
-    have e : ptOf (FS s4.mem b) = ptOf (runOps (dblOps.map toF) (FS s1.mem b)) := by
+  obtain p4 : ptOf (FS s4.mem b) = Proof.Ed448.double (ptOf (FS s.mem b)) := by
+    obtain e : ptOf (FS s4.mem b) = ptOf (runOps (dblOps.map toF) (FS s1.mem b)) := by
       simp only [ptOf]
       rw [keep RX (by decide), keep RY (by decide), keep RZ (by decide),
         C2.slots RX (dbl_sub RX (by decide)), C2.slots RY (dbl_sub RY (by decide)),

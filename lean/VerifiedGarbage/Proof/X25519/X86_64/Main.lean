@@ -127,27 +127,27 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     WP isa (x25519Of fld lad).inline s₀ fun s' =>
       gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
-  have hn : base.toNat + 4096 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
-  have hw₀ : (⟨base, 4096⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
-  have hwo : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
-  have hr : ∀ d, d + 8 ≤ 32 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
+  obtain hn : base.toNat + 4096 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
+  obtain hw₀ : (⟨base, 4096⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
+  obtain hwo : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
+  obtain hr : ∀ d, d + 8 ≤ 32 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
     ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   rw [x25519_eq' hli]
   refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr)
     fun s₁ ⟨hs₁, r12₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁, zb2₁, zb3₁⟩ => ?_)
-  have hkr : ∀ q < 32, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
+  obtain hkr : ∀ q < 32, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
     fun q hq => ⟨scalarR s₀, by rw [rd₁, hp.rd]; simp,
       Offset.contains_base _ (d := q) (n := 1) (k := 32) (by omega_using [hq]) (by omega_using [hq])⟩
-  have hkd : ∀ q < 32, 4096 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
+  obtain hkd : ∀ q < 32, 4096 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
     fun q hq => far (hbase ▸ hp.scalar_sc) hq (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (g₁ _ (by decide)) hkr hkd)
     fun s₂ ⟨g₂, rd₂, wr₂, o₂, b₂⟩ => ?_)
   refine WP.seq (WP.mono (movRsi_ok s₂) fun s₃ ⟨rsi₃, k₃⟩ => ?_)
-  have hs₃ : Scr s₃ base :=
+  obtain hs₃ : Scr s₃ base :=
     ⟨by rw [k₃.1 _ (by decide), g₂ _ (by decide)]; exact hs₁.rdi,
       by rw [k₃.2.2.2, wr₂]; exact hs₁.wr, hn⟩
-  have hkb := bytesAt_outside o₁ hkd
-  have e₃ : ∀ i : Fin 128, i.val < 24 → E s₃.mem base i = E s₁.mem base i :=
+  obtain hkb := bytesAt_outside o₁ hkd
+  obtain e₃ : ∀ i : Fin 128, i.val < 24 → E s₃.mem base i = E s₁.mem base i :=
     fun i h₂ => by rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by simp only [BITS]; omega_using [h₂]))
   refine WP.seq (WP.mono (hlad (s := s₃)
     (k := Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))
@@ -167,31 +167,31 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     fun s₅ ⟨K₅, e3₅, e4₅⟩ => ?_)
   rw [hx] at e3₅
   rw [hz] at e4₅
-  have hs₅ := K₅.scr L.scr
+  obtain hs₅ := K₅.scr L.scr
   refine WP.seq (WP.mono (invertFn_pow hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
-  have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
+  obtain hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (mulE hf hs₆ 3 3 17 (by decide)) fun s₇ ⟨K₇, e₇⟩ => ?_
-  have hs₇ := K₇.scr hs₆
+  obtain hs₇ := K₇.scr hs₆
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs₇ (a := X2) (by decide)) fun s₈ ⟨v₈, k₈⟩ => ?_
-  have hs₈ := hs₇.of_keeps k₈ (by decide)
-  have sv₈ : Saved base s₀.gpr s₈.mem := by
-    have sv₃ : Saved base s₀.gpr s₃.mem := by rw [k₃.2.1]; exact sv₁.outside o₂ (by decide)
+  obtain hs₈ := hs₇.of_keeps k₈ (by decide)
+  obtain sv₈ : Saved base s₀.gpr s₈.mem := by
+    obtain sv₃ : Saved base s₀.gpr s₃.mem := by rw [k₃.2.1]; exact sv₁.outside o₂ (by decide)
     rw [k₈.2.1]
     exact (((sv₃.outside L.mem (by decide)).outside K₅.mem (by decide)).outside o₆
       (by decide)).outside K₇.mem (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (restore_ok hs₈ sv₈) fun s₉ ⟨r₉, g₉, m₉, rd₉, wr₉⟩ => ?_
-  have rsi₉ : s₉.gpr .rsi = s₀.gpr .rdi := by
+  obtain rsi₉ : s₉.gpr .rsi = s₀.gpr .rdi := by
     rw [g₉ _ (by decide), k₈.1 _ (by decide), K₇.gpr _ (by decide), g₆ _ (by decide) (by decide),
       K₅.gpr _ (by decide), L.gpr _ (by decide) (by decide), rsi₃, g₂ _ (by decide), r12₁]
-  have hwo₉ : outR s₀ ∈ s₉.wr := by
+  obtain hwo₉ : outR s₀ ∈ s₉.wr := by
     rw [wr₉, k₈.2.2.2, K₇.wr, wr₆, K₅.wr, L.wr, k₃.2.2.2, wr₂, wr₁]; exact hwo
   refine WP.mono (outStores_ok rsi₉ hwo₉) fun s' ⟨m', g', _, _⟩ => ?_
-  have O₃ : Outside base 0 4096 s₀.mem s₃.mem := by
+  obtain O₃ : Outside base 0 4096 s₀.mem s₃.mem := by
     rw [k₃.2.1]; exact o₁.trans (o₂.mono (by decide) (by decide))
-  have O : Outside base 0 4096 s₀.mem s₉.mem := by
+  obtain O : Outside base 0 4096 s₀.mem s₉.mem := by
     rw [m₉, k₈.2.1]
     exact (((O₃.trans (L.mem.mono (by decide) (by decide))).trans
       (K₅.mem.mono (by decide) (by decide))).trans (o₆.mono (by decide) (by decide))).trans
@@ -211,9 +211,9 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     · exact r₉ (.r15, 40) (by decide)
   · have F₁ : Frame [scR s₀, outR s₀] s₀.mem s'.mem := by
       rw [m']
-      have c : ∀ d, d + 8 ≤ 32 → (outR s₀).Contains (off (s₀.gpr .rdi) d) (64 / 8) :=
+      obtain c : ∀ d, d + 8 ≤ 32 → (outR s₀).Contains (off (s₀.gpr .rdi) d) (64 / 8) :=
         fun d hd => Offset.contains_base _ hd (by omega_using [hd])
-      have hmem : outR s₀ ∈ [scR s₀, outR s₀] := by simp
+      obtain hmem : outR s₀ ∈ [scR s₀, outR s₀] := by simp
       exact ((((hbase ▸ O.frame).mono (by simp)).writeW hmem _ (c 0 (by omega_using []))).writeW hmem _
         (c 8 (by omega_using []))).writeW hmem _ (c 16 (by omega_using [])) |>.writeW hmem _ (c 24 (by omega_using []))
     exact F₁.readW (r := retR s₀) (Region.contains_self _ _) (by

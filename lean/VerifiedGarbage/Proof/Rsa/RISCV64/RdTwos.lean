@@ -69,8 +69,8 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
   have := h.wle
   have hS : S w = 8 * (w + 2) := rfl
   have nw := h.nowrap
-  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have fG : arr w (2 * wG) + 8 * w + 8 * (w + 2) ≤ 2 ^ 64 := by
+  obtain fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain fG : arr w (2 * wG) + 8 * w + 8 * (w + 2) ≤ 2 ^ 64 := by
     have := fit (2 * wG + 1) (by rdidx); have := arr_succ w (2 * wG); omega
   generalize hx : num s.mem B w aX2 = x at *
   generalize hu : num s.mem B w aU = u at *
@@ -84,7 +84,7 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
     (by rdidx)) fun t2 ⟨h2, k2, e2, r2, _⟩ => ?_
   rw [k1.num (by decide) (by simp) (fit _ (by rdidx)), hu] at e2
   rw [hx] at e1
-  have e1' : num t2.mem B w Impl.Rsa.RISCV64.InvBatch.aX = x := by
+  obtain e1' : num t2.mem B w Impl.Rsa.RISCV64.InvBatch.aX = x := by
     rw [k2.num (by decide) (by simp) (fit _ (by rdidx)), e1]
   -- `n = 2 w`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -94,17 +94,17 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     omega_using []
-  have h3 := h2.of_keep k3
-  have ctx : InvBatch.Ctx t3 B Z w N (2 * w) := ⟨h3, s83, by omega_using [hw], by omega_using [], by omega_using [hN], hw⟩
+  obtain h3 := h2.of_keep k3
+  obtain ctx : InvBatch.Ctx t3 B Z w N (2 * w) := ⟨h3, s83, by omega_using [hw], by omega_using [], by omega_using [hN], hw⟩
   -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (InvLaw.gcd_ok ctx hN' (x := x) (m := u) (by rw [m3]; exact e1')
     (by rw [← e1, show 32 * (2 * w) = 64 * w by omega_using []]; exact wordsVal_lt _ _ _ _) (by rw [m3]; exact e2)
     (by rw [← hu, show 32 * (2 * w) = 64 * w by omega_using []]; exact wordsVal_lt _ _ _ _)
     hodd) fun t4 ⟨h4, K4, k4, g4⟩ => ?_
-  have u4 : num t4.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = u := by
+  obtain u4 : num t4.mem B w Impl.Rsa.RISCV64.InvBatch.aMin = u := by
     rw [K4.num (by decide) (by simp) (fit _ (by rdidx)), m3, e2]
-  have o4 : num t4.mem B w aOne = 1 := by
+  obtain o4 : num t4.mem B w aOne = 1 := by
     rw [K4.num (by decide) (by simp) (fit _ (by rdidx)), m3, k2.num (by decide) (by simp) (fit _ (by rdidx)),
       k1.num (by decide) (by simp) (fit _ (by rdidx)), h1]
   -- 1 where `u = 1`.
@@ -119,7 +119,7 @@ theorem gcd_ok [InvLaw] {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N)
   -- Into `wG`.
   refine WP.mono (copy_ok h6 (o := 2 * wG) (a := Impl.Rsa.RISCV64.InvBatch.aY) (by rdidx) (by rdidx)
     (by omega_using [hN']) (by rdidx)) fun t ⟨h7, K7, v7, k7, o7⟩ => ?_
-  have F6 : Frame B w (gcdArrs.take 12) [sU1] s.mem t6.mem :=
+  obtain F6 : Frame B w (gcdArrs.take 12) [sU1] s.mem t6.mem :=
     (k1.mono (by decide) (by simp)).trans ((k2.mono (by decide) (by simp)).trans
       ((show Frame B w (gcdArrs.take 12) [sU1] t2.mem t3.mem by rw [m3]; exact Frame.refl _ _ _ _ _).trans
         ((K4.mono (by decide) (by simp)).trans ((K5.mono (by simp) (by simp)).trans (K6.mono (by decide) (by simp))))))
@@ -186,8 +186,8 @@ theorem twosInit_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) 
       twosSt t.mem B w = (VG.Proof.Rsa.RecoverDet.wsub (64 * w) (num s.mem B w aN) 1,
         num s.mem B (W2 w) wX % 2 ^ (64 * w), num s.mem B (W2 w) wX) ∧
       Keep rdRegs s t := by
-  have hM' : M ≤ 2048 := by omega_arith
-  have fXw := h.fit64 (j := wX) (by twidx)
+  obtain hM' : M ≤ 2048 := by omega_arith
+  obtain fXw := h.fit64 (j := wX) (by twidx)
   unfold twosInit
   -- 1: `2^k x := x` (wide).
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -195,10 +195,10 @@ theorem twosInit_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) 
   -- 2: the narrow view.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ctxw_ok h1' hw hNZ) fun t2 ⟨⟨h2, m2⟩, k2⟩ => ?_
-  have fO := h2.fit64 (j := aOne) (by twidx)
-  have fN := h2.fit64 (j := aN) (by twidx)
-  have fX := h2.fit64 (j := 2 * wX) (by twidx)
-  have fU := h2.fit64 (j := aU) (by twidx)
+  obtain fO := h2.fit64 (j := aOne) (by twidx)
+  obtain fN := h2.fit64 (j := aN) (by twidx)
+  obtain fX := h2.fit64 (j := 2 * wX) (by twidx)
+  obtain fU := h2.fit64 (j := aU) (by twidx)
   have K1 := k1.toNarrow1
   -- 3: one.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -210,13 +210,13 @@ theorem twosInit_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) 
   refine WP.mono (sub3_ok h3 (by twidx) (by twidx) (by twidx) hN' (by twidx) (by twidx))
     fun t4 ⟨h4, k4, e4, b4, r4⟩ => ?_
   rw [e3, k3.num (by simp [aOne, aN]) (by simp) fN, m2, K1.num (by simp [aN, wX3]) (by simp) fN] at e4
-  have u4 : num t4.mem B w aU = VG.Proof.Rsa.RecoverDet.wsub (64 * w) (num s.mem B w aN) 1 :=
+  obtain u4 : num t4.mem B w aU = VG.Proof.Rsa.RecoverDet.wsub (64 * w) (num s.mem B w aN) 1 :=
     sub_eq_wsub e4 (wordsVal_lt _ _ _ _) (wordsVal_lt _ _ _ _) (Nat.one_lt_two_pow (by omega_arith)) b4
   -- 5: `x` (narrow).
   refine WP.mono (copy_ok h4 (by twidx) (by twidx) hN' (by twidx)) fun t5 ⟨h5, k5, e5, r5, _⟩ => ?_
   rw [k4.num (by simp [aU, wX]) (by simp) fX, k3.num (by simp [aOne, wX]) (by simp) fX, m2,
     K1.num (by simp [wX, wX3]) (by simp) fX, num_low] at e5
-  have fX3 := h1'.fit64 (j := wX3) (by twidx)
+  obtain fX3 := h1'.fit64 (j := wX3) (by twidx)
   refine ⟨h5, ?_, ?_, ?_, ?_⟩
   · have A := K1
     rw [← m2] at A
@@ -250,31 +250,31 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
         (VG.Proof.Rsa.RecoverDet.wsub (64 * w) (num s.mem B w aN) 1,
           num s.mem B (W2 w) wX % 2 ^ (64 * w), num s.mem B (W2 w) wX) ∧
       Keep twosRegs s t := by
-  have hM' : M ≤ 2048 := by omega_arith
+  obtain hM' : M ≤ 2048 := by omega_arith
   have hW2 : W2 w = 2 * w + 2 := rfl
-  have fZs := h.fit64 (j := wX) (by twidx)
+  obtain fZs := h.fit64 (j := wX) (by twidx)
   unfold twos
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (twosInit_ok h (by omega_arith) hNZ hN hN' hM hMN h1) fun t0 ⟨h0', k0, o0, e0, r0⟩ => ?_
   simp only [twosSt, Prod.mk.injEq] at e0
   obtain ⟨eU, eX2, eX3⟩ := e0
-  have fZ := h0'.fit64 (j := aZero) (by twidx)
-  have fU := h0'.fit64 (j := aU) (by twidx)
-  have fX := h0'.fit64 (j := aX2) (by twidx)
-  have fO := h0'.fit64 (j := aOne) (by twidx)
-  have z0 : num t0.mem B w aZero = 0 := by
+  obtain fZ := h0'.fit64 (j := aZero) (by twidx)
+  obtain fU := h0'.fit64 (j := aU) (by twidx)
+  obtain fX := h0'.fit64 (j := aX2) (by twidx)
+  obtain fO := h0'.fit64 (j := aOne) (by twidx)
+  obtain z0 : num t0.mem B w aZero = 0 := by
     rw [k0.num (by simp [aZero, aOne, aU, aX2, wX3]) (by simp) fZ, h0]
   -- `u = n - 1`, nonzero and below `2^K` and `2^(64 w)`.
-  have nlt : num s.mem B w aN < 2 ^ (64 * w) := wordsVal_lt _ _ _ _
+  obtain nlt : num s.mem B w aN < 2 ^ (64 * w) := wordsVal_lt _ _ _ _
   rw [VG.Proof.Rsa.RecoverDet.wsub_of_le nlt hn1] at eU ⊢
   generalize hUv : num s.mem B w aN - 1 = U at eU ⊢
-  have hU0 : 0 < U := by omega_arith
-  have hUk : U < 2 ^ (64 * w) := by omega_arith
-  have hU13 : U < 2 ^ K := by omega_arith
-  have tU : tz U < 2 ^ 13 := Nat.lt_of_lt_of_le (tz_lt hU0 hU13) hK
-  have tUw : tz U < 64 * w := tz_lt hU0 hUk
+  obtain hU0 : 0 < U := by omega_arith
+  obtain hUk : U < 2 ^ (64 * w) := by omega_arith
+  obtain hU13 : U < 2 ^ K := by omega_arith
+  obtain tU : tz U < 2 ^ 13 := Nat.lt_of_lt_of_le (tz_lt hU0 hU13) hK
+  obtain tUw : tz U < 64 * w := tz_lt hU0 hUk
   generalize hX2v : num t0.mem B w aX2 = X2 at eX2
-  have tg : tz (Nat.gcd U X2) ≤ tz U :=
+  obtain tg : tz (Nat.gcd U X2) ≤ tz U :=
     (dvd_iff (show U ≠ 0 by omega_arith) _).mp (Nat.dvd_trans
       ((dvd_iff (Nat.gcd_ne_zero_left (show U ≠ 0 by omega_arith)) _).mpr (Nat.le_refl _)) (Nat.gcd_dvd_left U X2))
   -- 2: `s7 = tz (u ∨ x) = tz (gcd u x)`.
@@ -286,7 +286,7 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
     fun t1 ⟨m1, c1, k1⟩ => ?_
   change t1.gpr .s7 = BitVec.ofNat 64 (tz (num t0.mem B w aU ||| num t0.mem B w aX2)) at c1
   rw [eU, hX2v, VG.Proof.Rsa.RISCV64.Keys.tz_or_gcd (show U ≠ 0 by omega_arith)] at c1
-  have h1' := h0'.of_keep k1
+  obtain h1' := h0'.of_keep k1
   -- 3: `s8 = tz u`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (tz_ok (dst := .s8) h1' (A := aU) (Bx := aZero) (by twidx) (by twidx) hN' (by decide)
@@ -296,8 +296,8 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
     fun t2 ⟨m2, c2, k2⟩ => ?_
   change t2.gpr .s8 = BitVec.ofNat 64 (tz (num t1.mem B w aU ||| num t1.mem B w aZero)) at c2
   rw [m1, eU, z0, Nat.or_zero] at c2
-  have h2 := h1'.of_keep k2
-  have c2' : t2.gpr .s7 = BitVec.ofNat 64 (tz (Nat.gcd U X2)) := by rw [k2.gpr (by decide)]; exact c1
+  obtain h2 := h1'.of_keep k2
+  obtain c2' : t2.gpr .s7 = BitVec.ofNat 64 (tz (Nat.gcd U X2)) := by rw [k2.gpr (by decide)]; exact c1
   -- 4: `u := u / 2^(tz u)`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (shrBy_ok h2 (X := aU) (r := tz U) (n := 7) (by twidx) hN' c2 (by decide) (by omega_arith) (by decide) hw (by omega_arith))
@@ -317,8 +317,8 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
   -- 8: the narrow view.
   refine WP.mono (ctxw_ok h6 (by omega_arith) hNZ) fun t ⟨⟨h7, m7⟩, k7⟩ => ?_
   have F6 := f6.toNarrow1
-  have fX3 := h0'.fit64 (j := 2 * wX3) (by twidx)
-  have fX3w := h5.fit64 (j := wX3) (by twidx)
+  obtain fX3 := h0'.fit64 (j := 2 * wX3) (by twidx)
+  obtain fX3w := h5.fit64 (j := wX3) (by twidx)
   rw [m2, m1] at f3
   rw [m5] at F6
   have e6' : num t6.mem B (W2 w) wX3 = num t5.mem B (W2 w) wX3 * 2 ^ tz (Nat.gcd U X2) % 2 ^ (64 * W2 w) := e6

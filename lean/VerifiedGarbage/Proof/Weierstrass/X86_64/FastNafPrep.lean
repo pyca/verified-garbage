@@ -42,12 +42,12 @@ theorem fastEvenStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn 
       Outside base bits (64*n+8) s.mem t.mem := by
   rw [WP.block_append_iff]
   refine WP.mono (fastShiftN_ok s hn (Or.inl rfl)) fun a ⟨va,ka⟩ => ?_
-  have ca : a.gpr .rbx=BitVec.ofNat 64 j := (ka.1 _ (fun h => by
+  obtain ca : a.gpr .rbx=BitVec.ofNat 64 j := (ka.1 _ (fun h => by
     rcases List.mem_cons.mp h with h|h
     · cases h
     exact notin_sregs (by decide) h)).trans hI.count
   refine WP.mono (fastAdvance_ok a (Or.inl rfl) ca) fun t ⟨ct,kt⟩ => ?_
-  have mt : t.mem=s.mem := kt.2.1.trans ka.2.1
+  obtain mt : t.mem=s.mem := kt.2.1.trans ka.2.1
   refine ⟨⟨(hI.scr.of_keeps ka (fun h => by
     rcases List.mem_cons.mp h with h|h
     · cases h
@@ -76,21 +76,21 @@ theorem fastPrepStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn 
       FastPrepState n base size bits w k (j+fastDelta w k j) t ∧
       t.cf=some (decide (j+fastDelta w k j<64*n+1)) ∧ KeepRegs (nafPrepClobN n) s t ∧
       Outside base bits (64*n+8) s.mem t.mem := by
-  have hd : fastDelta w k j=1 ∨ fastDelta w k j=5 ∨ fastDelta w k j=7 := by
+  obtain hd : fastDelta w k j=1 ∨ fastDelta w k j=5 ∨ fastDelta w k j=7 := by
     unfold fastDelta
     split
     · exact Or.inl rfl
     · exact Or.inr hw
   rw [Impl.Weierstrass.X86_64.FastNaf.stepN]
   refine WP.seq (WP.mono (nafParity_ok s) fun a ⟨_,hz,ka⟩ => ?_)
-  have ia := hI.of_keeps ka (by decide)
-  have hp : s.gpr .r8 &&& 1=0 ↔ FastNaf.residual w k j%2=0 := by
+  obtain ia := hI.of_keeps ka (by decide)
+  obtain hp : s.gpr .r8 &&& 1=0 ↔ FastNaf.residual w k j%2=0 := by
     rw [nafParity]
     have h := hI.value
     rw [nafValN_r8] at h
     omega_using [h]
   apply WP.seq
-  have branches : WP isa
+  obtain branches : WP isa
       (.ite .e (.block (Impl.Weierstrass.X86_64.FastNaf.shiftN n 1++Impl.Weierstrass.X86_64.FastNaf.advance 1))
         (.seq (Impl.Weierstrass.X86_64.FastNaf.choose w)
           (.block (Naf.subtractDigitN n++[.store8 (tbl bits) .rcx]++
@@ -99,10 +99,10 @@ theorem fastPrepStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn 
         KeepRegs (nafPrepClobN n) a t ∧ Outside base bits (64*n+8) a.mem t.mem) := by
     apply WP.ite (decide (s.gpr .r8 &&& 1=0)) hz
     · intro h
-      have he := hp.mp (of_decide_eq_true h)
+      obtain he := hp.mp (of_decide_eq_true h)
       simpa only [fastDelta,he,ite_true] using fastEvenStep_ok hn ia he
     · intro h
-      have he : FastNaf.residual w k j%2≠0 := fun he => (of_decide_eq_false h) (hp.mpr he)
+      obtain he : FastNaf.residual w k j%2≠0 := fun he => (of_decide_eq_false h) (hp.mpr he)
       simpa only [fastDelta,he,ite_false] using fastOddStep_ok hn hw ia hb hj hv he
   refine WP.mono branches fun b ⟨ib,kb,ob⟩ => ?_
   refine WP.mono (fastCompare_ok b (n:=n) (by omega_using [hn]) (by rcases hd with h|h|h <;> omega_using [hn, hj, h]) ib.count)
@@ -123,69 +123,69 @@ theorem fastPrepStepB_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
       FastPrepState n base size bits 5 k (j+fastDelta 5 k j) t ∧
       t.cf=some (decide (j+fastDelta 5 k j<64*n+1)) ∧ KeepRegs (nafPrepClobN n) s t ∧
       Outside base bits (64*n+8) s.mem t.mem := by
-  have hw : FastNaf.Width 5 := Or.inl rfl
-  have hx : (s.gpr .r8).toNat%2^5=FastNaf.residual 5 k j%2^5 := by
+  obtain hw : FastNaf.Width 5 := Or.inl rfl
+  obtain hx : (s.gpr .r8).toNat%2^5=FastNaf.residual 5 k j%2^5 := by
     have h := hI.value
     rw [nafValN_r8] at h
     omega_using [h]
-  have hp : (s.gpr .r8).toNat%2=FastNaf.residual 5 k j%2 := by omega_using [hx]
-  have hδ : (if (s.gpr .r8).toNat%2=0 then 1 else 1+2^2)=fastDelta 5 k j := by
+  obtain hp : (s.gpr .r8).toNat%2=FastNaf.residual 5 k j%2 := by omega_using [hx]
+  obtain hδ : (if (s.gpr .r8).toNat%2=0 then 1 else 1+2^2)=fastDelta 5 k j := by
     unfold fastDelta
     rw [hp]
-  have hsft : fastDelta 5 k j=1 ∨ fastDelta 5 k j=5 ∨ fastDelta 5 k j=7 ∨ fastDelta 5 k j=9 := by
+  obtain hsft : fastDelta 5 k j=1 ∨ fastDelta 5 k j=5 ∨ fastDelta 5 k j=7 ∨ fastDelta 5 k j=9 := by
     unfold fastDelta
     split
     · exact Or.inl rfl
     · exact Or.inr (Or.inl rfl)
   rw [Impl.Weierstrass.X86_64.FastNaf.stepB,WP.block_append_iff]
   refine WP.mono (digitB_ok s (Or.inl rfl)) fun a ⟨da,ka⟩ => ?_
-  have sa := hI.scr.of_keeps ka (by decide)
-  have va : nafValN n a=FastNaf.residual 5 k j :=
+  obtain sa := hI.scr.of_keeps ka (by decide)
+  obtain va : nafValN n a=FastNaf.residual 5 k j :=
     (nafValN_keep ka.1 (by decide)).trans hI.value
-  have da' := da.trans (fastSel_eq (Or.inl rfl) hx)
+  obtain da' := da.trans (fastSel_eq (Or.inl rfl) hx)
   rw [WP.block_append_iff]
   refine WP.mono (fastSubtractN_ok a hn 5 k j da' va hv) fun b ⟨vb,kb⟩ => ?_
-  have nb : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax → r≠.rdx →
+  obtain nb : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax → r≠.rdx →
       r∉Reg.rax::Reg.rdx::Naf.sregs n := fun r h1 h2 h3 h => by
     rcases List.mem_cons.mp h with h|h
     · exact h2 h
     rcases List.mem_cons.mp h with h|h
     · exact h3 h
     exact notin_sregs h1 h
-  have sb := sa.of_keeps kb (nb _ (by decide) (by decide) (by decide))
-  have cb : b.gpr .rbx=BitVec.ofNat 64 j :=
+  obtain sb := sa.of_keeps kb (nb _ (by decide) (by decide) (by decide))
+  obtain cb : b.gpr .rbx=BitVec.ofNat 64 j :=
     (kb.1 _ (nb _ (by decide) (by decide) (by decide))).trans ((ka.1 _ (by decide)).trans hI.count)
-  have db : b.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit 5 k j) :=
+  obtain db : b.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit 5 k j) :=
     (kb.1 _ (nb _ (by decide) (by decide) (by decide))).trans da'
   rw [WP.block_append_iff]
   refine WP.mono (fastStore_ok sb (by omega_using [hb, hj]) cb db) fun c ⟨mc,kc⟩ => ?_
-  have sc := sb.of_keepRegs kc (by simp)
-  have dc : c.gpr .rcx &&& 1=s.gpr .r8 &&& 1 := by
+  obtain sc := sb.of_keepRegs kc (by simp)
+  obtain dc : c.gpr .rcx &&& 1=s.gpr .r8 &&& 1 := by
     rw [kc.gpr _ (by simp),db,←fastSel_eq (Or.inl rfl) hx,fastSel_low (Or.inl rfl)]
   rw [WP.block_append_iff]
   refine WP.mono (countB_ok c (Or.inl rfl) dc) fun e ⟨ex,ec,ke⟩ => ?_
   rw [hδ] at ex ec
-  have se := sc.of_keeps ke (by decide)
+  obtain se := sc.of_keeps ke (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (fastShiftV_ok e hn hsft ex ec) fun d ⟨vd,kd⟩ => ?_
-  have nd : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax →
+  obtain nd : ∀ r,r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] → r≠.rax →
       r∉Reg.rax::Naf.sregs n := fun r h1 h2 h => by
     rcases List.mem_cons.mp h with h|h
     · exact h2 h
     exact notin_sregs h1 h
-  have sd := se.of_keeps kd (nd _ (by decide) (by decide))
-  have cd : d.gpr .rbx=BitVec.ofNat 64 j :=
+  obtain sd := se.of_keeps kd (nd _ (by decide) (by decide))
+  obtain cd : d.gpr .rbx=BitVec.ofNat 64 j :=
     (kd.1 _ (nd _ (by decide) (by decide))).trans ((ke.1 _ (by decide)).trans ((kc.gpr _ (by simp)).trans cb))
-  have dd : d.gpr .rdx=BitVec.ofNat 64 (fastDelta 5 k j) := (kd.1 _ (nd _ (by decide) (by decide))).trans ex
+  obtain dd : d.gpr .rdx=BitVec.ofNat 64 (fastDelta 5 k j) := (kd.1 _ (nd _ (by decide) (by decide))).trans ex
   show WP isa (.block (([.alu .add .rbx (.reg .rdx)] : List Instr)++
     [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*n+1)))])) d _
   rw [WP.block_append_iff]
   refine WP.mono (fastAdvanceV_ok d cd dd) fun f ⟨cf',kf⟩ => ?_
   refine WP.mono (fastCompare_ok f (n:=n) (by omega_using [hn]) (by rcases hsft with h|h|h|h <;> omega_using [hn, hj, h]) cf')
     fun t ⟨cf,kt⟩ => ?_
-  have mt : t.mem=s.mem.writeW (off base (bits+j)) (FastNaf.byte 5 k j) := by
+  obtain mt : t.mem=s.mem.writeW (off base (bits+j)) (FastNaf.byte 5 k j) := by
     rw [kt.2.1,kf.2.1,kd.2.1,ke.2.1,mc,kb.2.1,ka.2.1]
-  have O := writeW8_outside s.mem base (FastNaf.byte 5 k j) (d:=bits+j)
+  obtain O := writeW8_outside s.mem base (FastNaf.byte 5 k j) (d:=bits+j)
     (by have := hI.scr.nowrap; omega_using [hb, hj, this])
   refine ⟨⟨(sd.of_keeps kf (by decide)).of_keeps kt (by simp),?_,(kt.1 _ (by simp)).trans cf',?_⟩,cf,?_,?_⟩
   · rw [nafValN_keep kt.1 (by simp),nafValN_keep kf.1 (by decide),vd,nafValN_keep ke.1 (by decide),
@@ -206,10 +206,10 @@ theorem fastPrepStepB_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
       · simp only [hij',show i<j+fastDelta 5 k j from by omega_using [hij'],ite_true]
       · by_cases hil : i<j+fastDelta 5 k j
         · simp only [hij',hil,ite_false,ite_true]
-          have ho : FastNaf.residual 5 k j%2≠0 := fun ho => by
+          obtain ho : FastNaf.residual 5 k j%2≠0 := fun ho => by
             simp only [fastDelta,ho,ite_true] at hil
             omega_arith
-          have hil' : i<j+5 := by simpa only [fastDelta,ho,ite_false] using hil
+          obtain hil' : i<j+5 := by simpa only [fastDelta,ho,ite_false] using hil
           exact (FastNaf.byte_skip_zero hw k j (i-j) ho (by omega_using [hij, hij']) (by omega_using [hil'])).symm.trans
             (by rw [Nat.add_sub_of_le (by omega_using [hij'])])
         · simp only [hij',hil,ite_false]
@@ -268,20 +268,20 @@ theorem fastPrepOf_ok {step : Prog isa} {s : State} {base : Addr} {size n src bi
       (∃ j,64*n+1≤j ∧ j≤64*n+7 ∧ FastPrepState n base size bits w (wordsVal s.mem base src n) j t) ∧
       KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (64*n+8) s.mem t.mem := by
   let k := wordsVal s.mem base src n
-  have hk : k<2^(64*n) := wordsVal_lt ..
+  obtain hk : k<2^(64*n) := wordsVal_lt ..
   let I (m : Nat) (t : State) := FastPrepState n base size bits w k (64*n+1-m) t ∧
     KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (64*n+8) s.mem t.mem
   refine WP.seq (WP.mono (fastPrepInit_ok (w:=w) hn hs hsrc hb) fun a ⟨ia,ka,oa⟩ => ?_)
   refine WP.loop (M:=isa) (fun m t => 1≤m ∧ m≤64*n+1 ∧ I m t) (fun m t ⟨hm,hm',hi⟩ => ?_)
     (64*n+1) a ⟨by omega_using [],by omega_using [],by simpa only [Nat.sub_self] using ia,ka,oa⟩
-  have hj : 64*n+1-m<64*n+1 := by omega_using [hm]
-  have hv : FastNaf.residual w k (64*n+1-m)≤2^(64*n) := by
-    have h := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_using [hm])
+  obtain hj : 64*n+1-m<64*n+1 := by omega_using [hm]
+  obtain hv : FastNaf.residual w k (64*n+1-m)≤2^(64*n) := by
+    obtain h := FastNaf.residual_boundB w (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_using [hm])
     exact Nat.le_trans h (Nat.pow_le_pow_right (by decide) (by omega_using []))
-  have hd := fastDelta_bounds hw k (64*n+1-m)
+  obtain hd := fastDelta_bounds hw k (64*n+1-m)
   refine WP.mono (hS hi.1 hb hj hv) fun u ⟨iu,cf,ku,ou⟩ => ?_
-  have ki := hi.2.1.trans ku
-  have oi := hi.2.2.trans ou
+  obtain ki := hi.2.1.trans ku
+  obtain oi := hi.2.2.trans ou
   by_cases he : 64*n+1≤64*n+1-m+fastDelta w k (64*n+1-m)
   · refine Or.inl ⟨?_,⟨_,he,by omega_using [hm, hd],iu⟩,ki,oi⟩
     change u.cf=some false

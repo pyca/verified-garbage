@@ -56,8 +56,8 @@ theorem KArgs.rdisj {A : Nat → Addr} {ln : Nat → Nat} {nb nrd : Nat} {sp : A
     (R A b₁ o₁ l₁).Disjoint (R A b₂ o₂ l₂) := by
   by_cases hb : b₁ = b₂
   · subst hb
-    have hl := h.len b₁ hb₁
-    have hs' : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁ := hs.resolve_left (fun h => h rfl)
+    obtain hl := h.len b₁ hb₁
+    obtain hs' : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁ := hs.resolve_left (fun h => h rfl)
     intro x h₁ h₂
     simp only [Region.Contains] at h₁ h₂
     exact sep_off (A b₁) hs' (by omega_arith) (by omega_arith) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
@@ -230,8 +230,8 @@ theorem sdisj {s₀ : State} (hp : Pre P L s₀) {o₁ l₁ o₂ l₂ : Nat} (f�
 theorem hsetup {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {rate : Nat} (hr : rate ∈ Spec.Sha3.rates) :
     HSetup .x28 ST WK rate s := by
   have hw := hp.wf
-  have f : ∀ {o l : Nat}, o + l ≤ 840 → o + l ≤ SV P + 48 := fun h => by lom
-  have e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
+  obtain f : ∀ {o l : Nat}, o + l ≤ 840 → o + l ≤ SV P + 48 := fun h => by lom
+  obtain e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
     rw [h.x28]
   refine ⟨by decide, by decide, by decide, hr, ?_, by rw [h.sp]; exact hp.sp16, ?_, ?_, ?_⟩
   · rw [e, e]; exact sdisj hp (f (by decide)) (f (by decide)) (by decide)
@@ -244,12 +244,12 @@ Keccak state and working space. -/
 theorem pieceOk {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {w : Bool} {k o l : Nat} (hk : k < 4)
     (f : o + l ≤ L.len (L.slot k)) (hs : L.slot k ≠ L.sc ∨ 840 ≤ o) (hl : l < 65536)
     (hw : w = true → L.nrd ≤ L.slot k) : PieceOk .x28 ST WK s w ⟨slotReg k, o, l⟩ := by
-  have hb := hp.lt hk
-  have eb : preg s ⟨slotReg k, o, l⟩ = R (kA s₀) (L.slot k) o l := by simp only [preg, h.ptr k hk]
-  have e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
+  obtain hb := hp.lt hk
+  obtain eb : preg s ⟨slotReg k, o, l⟩ = R (kA s₀) (L.slot k) o l := by simp only [preg, h.ptr k hk]
+  obtain e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
     rw [h.x28]
-  have ho : o < 65536 := by have := hp.args.len _ hb; omega_arith
-  have fs : ∀ {o l : Nat}, o + l ≤ 840 → o + l ≤ L.len L.sc := fun h => hp.fs (by have := hp.wf; lom)
+  obtain ho : o < 65536 := by have := hp.args.len _ hb; omega_arith
+  obtain fs : ∀ {o l : Nat}, o + l ≤ 840 → o + l ≤ L.len L.sc := fun h => hp.fs (by have := hp.wf; lom)
   refine ⟨slot_pres hk, ho, hl, ?_, ?_, ?_, ?_⟩
   · rw [eb, VG.Proof.MlKem.AArch64.STr, e]
     exact hp.args.rdisj hb hp.scb f (fs (by decide)) (.inr (.inr hp.scw)) (by
@@ -279,7 +279,7 @@ theorem KB.hash {s₀ s s' : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {out
     (ho : ∀ p ∈ outs, OutOk P L p) : KB P L s₀ s' := by
   have hw := hp.wf
   refine h.call hk fun r hr => ?_
-  have e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
+  obtain e : ∀ o l, (⟨s.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) L.sc o l := fun o l => by
     rw [h.x28]
   rcases List.mem_cons.mp hr with rfl | hr
   · rw [VG.Proof.MlKem.AArch64.STr, e]; exact safe_scr hp (by lom)
@@ -317,10 +317,10 @@ theorem prologue_ok {s₀ : State} (hp : Pre P L s₀) :
     WP isa (.block (P.kemPrologue L.sc [L.slot 0, L.slot 1, L.slot 2, L.slot 3])) s₀ (AfterPro P L s₀) := by
   have hw := hp.wf
   rw [KemLay.kemPrologue, List.append_assoc, WP.block_append_iff]
-  have hin : ∀ k < kemOwn.length, InRegions s₀.wr (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 8 :=
+  obtain hin : ∀ k < kemOwn.length, InRegions s₀.wr (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 8 :=
     fun k hk => in_R (cov_w₀ hp ⟨hp.scw, hp.scb⟩ (o := SV P) (l := 48) hp.sv) (k := 8 * k)
       (n := 8) (by simp only [kemOwn, List.length_cons, List.length_nil] at hk; omega_arith) (by decide)
-  have hsv : SV P + 8 * kemOwn.length ≤ 32768 := by simp only [kemOwn, List.length_cons, List.length_nil]; lom
+  obtain hsv : SV P + 8 * kemOwn.length ≤ 32768 := by simp only [kemOwn, List.length_cons, List.length_nil]; lom
   refine WP.mono (WP.preservedV (KeyGen.saves_ok (kA s₀ L.sc) (argReg L.sc) (SV P) kemOwn hsv (by lom) 6
     (by decide) rfl hin) (hc := rfl))
     fun s₁ ⟨⟨g₁, r₁, w₁, p₁, z₁, f₁⟩, hv₁⟩ => ?_
@@ -329,16 +329,16 @@ theorem prologue_ok {s₀ : State} (hp : Pre P L s₀) :
     List.getD_cons_succ]
   refine wp_mov fun s₂ h₂ e₂ => wp_mov fun s₃ h₃ e₃ => wp_mov fun s₄ h₄ e₄ => wp_mov fun s₅ h₅ e₅ =>
     wp_movz fun s₆ h₆ e₆ => wp_nil ?_
-  have o₆ : Only [.x25, .x26, .x27, .x28, .x24] s₁ s₆ := ((((h₂.trans h₃).trans h₄).trans h₅).trans h₆).mono
-  have k₆ : Keep [.x25, .x26, .x27, .x28, .x24] s₀ s₆ :=
+  obtain o₆ : Only [.x25, .x26, .x27, .x28, .x24] s₁ s₆ := ((((h₂.trans h₃).trans h₄).trans h₅).trans h₆).mono
+  obtain k₆ : Keep [.x25, .x26, .x27, .x28, .x24] s₀ s₆ :=
     ⟨fun r hr => by rw [o₆.get r hr, g₁], by rw [o₆.rd, r₁], by rw [o₆.wr, w₁], by rw [o₆.sp, p₁], fun r hr => (o₆.vcs r hr).trans (hv₁ r hr)⟩
-  have a : ∀ (b : Nat) {w w' : State} {r : Reg}, Only [r] w w' → r ∈ [Reg.x24, .x25, .x26, .x27, .x28] →
+  obtain a : ∀ (b : Nat) {w w' : State} {r : Reg}, Only [r] w w' → r ∈ [Reg.x24, .x25, .x26, .x27, .x28] →
       w'.gpr (argReg b) = w.gpr (argReg b) := fun b _ _ r h hr => h.get _ fun h' => by
-    have e := List.mem_singleton.mp h'
+    obtain e := List.mem_singleton.mp h'
     have := argReg_not b
     rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
     exacts [this.1 e, this.2.1 e, this.2.2.1 e, this.2.2.2.1 e, this.2.2.2.2 e]
-  have v₁ : ∀ b, s₁.gpr (argReg b) = kA s₀ b := fun b => by rw [g₁]; rfl
+  obtain v₁ : ∀ b, s₁.gpr (argReg b) = kA s₀ b := fun b => by rw [g₁]; rfl
   refine ⟨⟨k₆.rd, k₆.wr, k₆.sp, fun k hk => ?_, fun r hr ho => k₆.get r (pres_pro r hr ho), fun k hk => ?_,
     fun b hb => ?_, hp.args.len, (fun hb => by have := hp.scw; have := hp.scb; omega_arith), k₆.vcs⟩, by rw [e₆]; rfl, k₆,
     .inr (by rw [o₆.mem]; exact f₁)⟩
@@ -363,15 +363,15 @@ theorem epilogue_ok {s₀ : State} (hp : Pre P L s₀) {u : State} (hk : KB P L 
     WP isa (.block P.kemEpilogue) u fun u' =>
       abiPreserved s₀ u' ∧ u'.gpr .x0 = u.gpr .x24 ∧ u'.mem = u.mem := by
   have hw := hp.wf
-  have h8 : SV P % 8 = 0 ∧ SV P + 48 ≤ 32768 := by lom
-  have cv := cov_sr hp hk (o := SV P) (l := 48) (Nat.le_refl _)
-  have ld : ∀ k < 6, ∀ {w : State}, w.rd = u.rd ∧ w.wr = u.wr ∧ w.mem = u.mem ∧ w.gpr .x28 = kA s₀ L.sc →
+  obtain h8 : SV P % 8 = 0 ∧ SV P + 48 ≤ 32768 := by lom
+  obtain cv := cov_sr hp hk (o := SV P) (l := 48) (Nat.le_refl _)
+  obtain ld : ∀ k < 6, ∀ {w : State}, w.rd = u.rd ∧ w.wr = u.wr ∧ w.mem = u.mem ∧ w.gpr .x28 = kA s₀ L.sc →
       w.gpr .x28 + BitVec.ofNat 64 (SV P + 8 * k) = kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k) ∧
       InRegions (w.rd ++ w.wr) (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 8 ∧
       w.mem.readW (kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * k)) 64 = s₀.gpr (kemOwn.getD k .x0) :=
     fun k hk' {w} ⟨hr, hw, hm, h28⟩ =>
       ⟨by rw [h28], by rw [hr, hw]; exact in_R cv (by omega_arith) (by decide), by rw [hm]; exact hk.sv k hk'⟩
-  have st : ∀ {w w' : State} {r : Reg}, Only [r] w w' → r ≠ .x28 →
+  obtain st : ∀ {w w' : State} {r : Reg}, Only [r] w w' → r ≠ .x28 →
       w.rd = u.rd ∧ w.wr = u.wr ∧ w.mem = u.mem ∧ w.gpr .x28 = kA s₀ L.sc →
       w'.rd = u.rd ∧ w'.wr = u.wr ∧ w'.mem = u.mem ∧ w'.gpr .x28 = kA s₀ L.sc :=
     fun h hr ⟨a, b, c, d⟩ => ⟨by rw [h.rd, a], by rw [h.wr, b], by rw [h.mem, c],
@@ -379,26 +379,26 @@ theorem epilogue_ok {s₀ : State} (hp : Pre P L s₀) {u : State} (hk : KB P L 
   rw [KemLay.kemEpilogue, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl]
   simp only [List.map_cons, List.map_nil]
   refine wp_mov fun s₁ h₁ e₁ => ?_
-  have g₁ := st h₁ (by decide) ⟨rfl, rfl, rfl, hk.x28⟩
-  have l₁ := ld 0 (by decide) g₁
+  obtain g₁ := st h₁ (by decide) ⟨rfl, rfl, rfl, hk.x28⟩
+  obtain l₁ := ld 0 (by decide) g₁
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 0)) (by lom) l₁.1 l₁.2.1 fun s₂ h₂ e₂ => ?_
-  have g₂ := st h₂ (by decide) g₁
-  have l₂ := ld 1 (by decide) g₂
+  obtain g₂ := st h₂ (by decide) g₁
+  obtain l₂ := ld 1 (by decide) g₂
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 1)) (by lom) l₂.1 l₂.2.1 fun s₃ h₃ e₃ => ?_
-  have g₃ := st h₃ (by decide) g₂
-  have l₃ := ld 2 (by decide) g₃
+  obtain g₃ := st h₃ (by decide) g₂
+  obtain l₃ := ld 2 (by decide) g₃
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 2)) (by lom) l₃.1 l₃.2.1 fun s₄ h₄ e₄ => ?_
-  have g₄ := st h₄ (by decide) g₃
-  have l₄ := ld 3 (by decide) g₄
+  obtain g₄ := st h₄ (by decide) g₃
+  obtain l₄ := ld 3 (by decide) g₄
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 3)) (by lom) l₄.1 l₄.2.1 fun s₅ h₅ e₅ => ?_
-  have g₅ := st h₅ (by decide) g₄
-  have l₅ := ld 4 (by decide) g₅
+  obtain g₅ := st h₅ (by decide) g₄
+  obtain l₅ := ld 4 (by decide) g₅
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 4)) (by lom) l₅.1 l₅.2.1 fun s₆ h₆ e₆ => ?_
-  have g₆ := st h₆ (by decide) g₅
-  have l₆ := ld 5 (by decide) g₆
+  obtain g₆ := st h₆ (by decide) g₅
+  obtain l₆ := ld 5 (by decide) g₆
   refine wp_ldrx (a := kA s₀ L.sc + BitVec.ofNat 64 (SV P + 8 * 5)) (by lom) l₆.1 l₆.2.1 fun s₇ h₇ e₇ =>
     wp_nil ?_
-  have o₇ : Only [.x0, .x24, .x30, .x25, .x26, .x27, .x28] u s₇ :=
+  obtain o₇ : Only [.x0, .x24, .x30, .x25, .x26, .x27, .x28] u s₇ :=
     ((((((h₁.trans h₂).trans h₃).trans h₄).trans h₅).trans h₆).trans h₇).mono
   refine ⟨⟨fun r hr => ?_, by rw [o₇.sp, hk.sp], fun r hr => (o₇.vcs r hr).trans (hk.vcs r hr)⟩, ?_, o₇.mem⟩
   · by_cases ho : r ∈ kemOwn

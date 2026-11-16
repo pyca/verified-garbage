@@ -75,7 +75,7 @@ theorem readyAt_congr {d : Dir} {R : Nat} {m m' : Mem} {B : Addr} {w : List (Bit
     (hw : ∀ o, o + 8 ≤ 8 * tailSlot → m'.readW (B + BitVec.ofNat 64 o) 64 = m.readW (B + BitVec.ofNat 64 o) 64) :
     ReadyAt d R m' B w := by
   obtain ⟨hm, he⟩ := h
-  have hg4 : R / 6 ≤ 4 := by omega_using [hR]
+  obtain hg4 : R / 6 ≤ 4 := by omega_using [hR]
   refine ⟨fun kv hkv => ?_, fun i hi => (he i hi).congr fun j hj => ?_⟩
   · have hk := mask_range hkv
     rw [← hm kv hkv]
@@ -110,8 +110,8 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
   rw [hws]
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
+  obtain hi := List.mem_range.mp hi
+  obtain hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
 /-- The cipher of the direction `d`. -/
@@ -246,7 +246,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
 
 /-- `vg_camellia_crypt_prepared` writes neither `r6` nor `r10`. -/
 theorem crypt_keeps : ∀ i ∈ instrs cryptPrepared, dstOf i ≠ some .r6 ∧ dstOf i ≠ some .r10 := by
-  have h : (instrs cryptPrepared).all (fun i => dstOf i != some .r6 && dstOf i != some .r10) = true := by
+  obtain h : (instrs cryptPrepared).all (fun i => dstOf i != some .r6 && dstOf i != some .r10) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp h i hi
@@ -260,7 +260,7 @@ theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : Addr} {w : List (BitVec 64)} 
     (hR : R = 18 ∨ R = 24) (h : Proof.Camellia.Prepared.Holds layout m B R w d)
     (hk : Proof.Camellia.Prepared.Keeps B slots layout.cryptScratch m m') :
     Proof.Camellia.Prepared.Holds layout m' B R w d := fun r hr i hi => by
-  have hg : R / 6 ≤ 4 := by omega_using [hR]
+  obtain hg : R / 6 ≤ 4 := by omega_using [hR]
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -290,39 +290,39 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hR, hrd, h28⟩ := hr
   have hfB : B.toNat + 8 * (dirCore d).total ≤ 2 ^ 64 := hS.fit
-  have hH : Proof.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
+  obtain hH : Proof.Camellia.Prepared.Holds layout s.mem B k.1 k.2 (specDir d) :=
     holds_of_words (by rw [ofSpecDir_specDir]; exact words_of_readyAt hrd)
   show WP isa cryptCall s _
   refine WP.seq (wp_mr fun s₁ u₁ => wp_mr fun s₂ u₂ => wp_mr fun s₃ u₃ => wp_mr fun s₄ u₄ =>
     wp_li slots_lt fun s₅ u₅ => wp_nil ?_)
-  have g₅ : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r10 → s₅.gpr r = s.gpr r :=
+  obtain g₅ : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r10 → s₅.gpr r = s.gpr r :=
     fun r h3 h4 h5 h6 h10 => by
       rw [u₅.other r h5, u₄.other r h4, u₃.other r h3, u₂.other r h6, u₁.other r h10]
-  have r3₅ : s₅.gpr .r3 = BitVec.ofNat 64 k.1 := by
+  obtain r3₅ : s₅.gpr .r3 = BitVec.ofNat 64 k.1 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
       u₁.other _ (by decide), h28]
-  have r4₅ : s₅.gpr .r4 = B := by
+  obtain r4₅ : s₅.gpr .r4 = B := by
     rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), hB]
   have r5₅ : s₅.gpr .r5 = BitVec.ofNat 64 slots := u₅.gpr
-  have r6₅ : s₅.gpr .r6 = B := by
+  obtain r6₅ : s₅.gpr .r6 = B := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
       u₁.other _ (by decide), hB]
-  have r10₅ : s₅.gpr .r10 = s.gpr .r3 := by
+  obtain r10₅ : s₅.gpr .r10 = s.gpr .r3 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.gpr]
-  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have rd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have wr₅ : s₅.wr = s.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have c3 : ((s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r3).toNat = k.1 := by
+  obtain m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain rd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₅ : s₅.wr = s.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  obtain c3 : ((s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r3).toNat = k.1 := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r3₅, toNat_rounds hR]
-  have c4 : (s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r4 = B := by
+  obtain c4 : (s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r4 = B := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r4₅]
-  have c5 : ((s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r5).toNat = slots := by
+  obtain c5 : ((s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .r5).toNat = slots := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r5₅, toNat_slots]
-  have hm₀ : (s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
+  obtain hm₀ : (s₅.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
     rw [State.withRegions_mem, State.callEntry_mem, m₅]
-  have cov : Covers [⟨B, 8 * slots⟩] s₅.wr := by rw [wr₅]; exact ws_covers hS
+  obtain cov : Covers [⟨B, 8 * slots⟩] s₅.wr := by rw [wr₅]; exact ws_covers hS
   refine WP.seq (WP.call (k := cryptPPC64LE) crypt_correct (rd := []) (wr := [⟨B, 8 * slots⟩]) ?_
     (Covers.append_left Covers.nil (Covers.right cov)) cov (fun s' hrd' hwr' _ hf hpres hnw hpost => ?_)
     (by lit_decide))
@@ -336,24 +336,24 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Nat ×
     have hm : (s'.withRegions [] [⟨B, 8 * slots⟩]).mem = s'.mem := rfl
     rw [hm, hm₀, c3, c4] at hE
     rw [hm, hm₀, c4, c5] at hK
-    have hE' := hE k.2 (specDir d) hH
-    have r6' : s'.gpr .r6 = B := by
+    obtain hE' := hE k.2 (specDir d) hH
+    obtain r6' : s'.gpr .r6 = B := by
       rw [hnw .r6 (by decide) fun i hi => (crypt_keeps i hi).1, r6₅]
-    have r10' : s'.gpr .r10 = s.gpr .r3 := by
+    obtain r10' : s'.gpr .r10 = s.gpr .r3 := by
       rw [hnw .r10 (by decide) fun i hi => (crypt_keeps i hi).2, r10₅]
-    have r28' : s'.gpr .r28 = s.gpr .r28 := by
+    obtain r28' : s'.gpr .r28 = s.gpr .r28 := by
       rw [hpres .r28 (by decide), g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
     refine wp_mr fun s₆ u₆ => wp_mr fun s₇ u₇ => wp_nil ⟨?_, fun r hr => ?_, ⟨hR, ?_, ?_⟩, ?_,
       fun j hj => ?_, by rw [u₇.rd, u₆.rd, hrd', rd₅], by rw [u₇.wr, u₆.wr, hwr', wr₅]⟩
     · rw [u₇.other _ (by decide), u₆.gpr, r6']
     · by_cases e3 : r = .r3
       · subst e3; rw [u₇.gpr, u₆.other _ (by decide), r10']
-      have hp : r ∈ preserved := by
+      obtain hp : r ∈ preserved := by
         simp only [kept, List.mem_cons] at hr
         rcases hr with rfl | h
         · exact absurd rfl e3
         · exact h
-      have hne : ∀ r ∈ preserved, r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r10 := by decide
+      obtain hne : ∀ r ∈ preserved, r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r10 := by decide
       obtain ⟨h4, h5, h6, h10⟩ := hne r hp
       rw [u₇.other r e3, u₆.other r h5, hpres r hp, g₅ r e3 h4 h5 h6 h10]
     · rw [u₇.mem, u₆.mem]

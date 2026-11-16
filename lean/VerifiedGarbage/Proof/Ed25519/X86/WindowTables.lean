@@ -136,11 +136,11 @@ theorem pointFromTableQ_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {o : Nat}
     WP isa (.block pointFromTableQ) s fun t =>
       IKeep x s t ∧ t.gpr .esi = s.gpr .esi ∧ point (env t.mem x) 4 5 6 7 = tablePoint s.mem x o ∧
       ∀ i : Slot, (i.val < 4 ∨ 8 ≤ i.val) → env t.mem x i = env s.mem x i := by
-  have hb : s.gpr .edi = x + BitVec.ofNat 32 0 := by
+  obtain hb : s.gpr .edi = x + BitVec.ofNat 32 0 := by
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hc.edi
   refine WP.mono (copyWorkspaceWords_ok hc .edx .edi (by decide) (by decide) o 0 0 192 32
     hp hb (by omega_arith) (by decide) (Or.inr (by omega_arith)) 32 (Nat.le_refl _)) fun t ⟨hk, hv⟩ => ?_
-  have hf : Frame [sub x 192 128] s.mem t.mem := by simpa only [Nat.zero_add] using hk.frame
+  obtain hf : Frame [sub x 192 128] s.mem t.mem := by simpa only [Nat.zero_add] using hk.frame
   refine ⟨⟨hk.gpr _ (by decide), hk.gpr _ (by decide), hk.rd, hk.wr,
     Frame.withStk (s := s) (frameWiden (n' := 960) hf hc.fit (by decide) (by decide) (by decide))⟩,
     hk.gpr _ (by decide), ?_, fun i hi => ?_⟩
@@ -183,13 +183,13 @@ theorem aTableInit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {A : Spec.Ed255
     WP isa (.block aTableInit) s (ATableInv x s A Aa 1) := by
   rw [aTableInit, List.append_assoc, WP.block_append_iff]
   refine WP.mono (pointTableRead_ok hc 7680 (by decide) (by decide)) fun a ⟨ka, pa, ha'⟩ => ?_
-  have ca := ka.ctx hc
+  obtain ca := ka.ctx hc
   rw [WP.block_append_iff]
   refine WP.mono (pointTableWrite_ok ca 1024 (by decide) (by decide)) fun b ⟨kb, fb, pb⟩ => ?_
   refine Wp.wp_movi fun t ht => WP.block_nil ?_
   have mt : t.mem = b.mem := ht.mem
-  have eb : env b.mem x = env a.mem x := table_env hc.fit fb (by decide) (by decide)
-  have fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem t.mem := by
+  obtain eb : env b.mem x = env a.mem x := table_env hc.fit fb (by decide) (by decide)
+  obtain fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem t.mem := by
     rw [mt]
     exact (Frame.two (frame1_two ka.frame hc.fit (by decide) (by decide) (by decide))).trans
       (Frame.one' fb hc.fit (by decide) (by decide) (by decide))
@@ -213,7 +213,7 @@ theorem esiNext_ok {s : State} {n m : Nat} (hn : n + 1 < 2 ^ 32) (hm : m < 2 ^ 3
       t.gpr .edi = s.gpr .edi ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.mem = s.mem := by
   refine Wp.wp_addi fun u hu => Wp.wp_cmpi fun t ht _ zt => WP.block_nil ?_
-  have e : u.gpr .esi = BitVec.ofNat 32 (n + 1) := by rw [hu.gpr, h, BitVec.ofNat_add]; rfl
+  obtain e : u.gpr .esi = BitVec.ofNat 32 (n + 1) := by rw [hu.gpr, h, BitVec.ofNat_add]; rfl
   refine ⟨by rw [ht.gpr, e], ?_, by rw [ht.gpr, hu.other .edi (by decide)],
     by rw [ht.gpr, hu.other .esp (by decide)], by rw [ht.rd, hu.rd], by rw [ht.wr, hu.wr],
     by rw [ht.mem, hu.mem]⟩
@@ -225,36 +225,36 @@ theorem aTableBody_ok {x : BitVec 32} {s₀ s : State} {A : Spec.Ed25519.Point} 
       ATableInv x s₀ A Aa (n + 1) t := by
   have hc := h.ctx
   have hfit := hc.fit
-  have hs₀ : callStk s = callStk s₀ := by rw [callStk, callStk, h.keep.esp]
+  obtain hs₀ : callStk s = callStk s₀ := by rw [callStk, callStk, h.keep.esp]
   unfold aTableBody
   refine WP.seq (WP.mono (pointTableQ_ok hc 7680 (by decide) (by decide)) fun a ⟨ka, ea, pa, ha⟩ => ?_)
-  have ca := ka.ctx hc
+  obtain ca := ka.ctx hc
   refine WP.seq (WP.mono (pointAddCall_ok ca ((ha 16 (Or.inr (by decide))).trans h.d)) fun b ⟨kb, pb, hb⟩ => ?_)
-  have cb := kb.ctx ca
-  have kab : IKeep x s b := ka.trans (IKeep.of_call kb)
+  obtain cb := kb.ctx ca
+  obtain kab : IKeep x s b := ka.trans (IKeep.of_call kb)
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (tableAddr_ok cb 1024 n (by omega_arith) (by rw [kb.keep.esi, ea, h.counter]))
     fun c ⟨kc, mc, pc⟩ => ?_
-  have cc := kc.ctx cb
+  obtain cc := kc.ctx cb
   rw [WP.block_append_iff]
   refine WP.mono (pointToTable_ok cc pc (by omega_arith) (by omega_arith)) fun d ⟨kd, pd⟩ => ?_
   refine WP.mono (esiNext_ok (m := 15) (by omega_arith) (by decide)
     (by rw [kd.gpr _ (by decide), kc.esi, kb.keep.esi, ea, h.counter])) fun t ⟨te, tz, tedi, tesp, trd, twr, tm⟩ =>
       ⟨tz, ?_⟩
-  have fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem c.mem := by
+  obtain fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem c.mem := by
     rw [mc]; exact Frame.oneS kab.frame hfit (by decide) (by decide) (by decide)
-  have fd : Frame [sub x 64 960, sub x 1024 1920, callStk s] c.mem d.mem :=
+  obtain fd : Frame [sub x 64 960, sub x 1024 1920, callStk s] c.mem d.mem :=
     Frame.one' kd.frame hfit (by omega_arith) (by omega_arith) (by omega_arith)
-  have fall : Frame [sub x 64 960, sub x 1024 1920, callStk s₀] s.mem t.mem := by
+  obtain fall : Frame [sub x 64 960, sub x 1024 1920, callStk s₀] s.mem t.mem := by
     rw [tm, ← hs₀]; exact fab.trans fd
-  have crep : Rep (point (env c.mem x) 0 1 2 3) ((n + 1) • Aa) := by
+  obtain crep : Rep (point (env c.mem x) 0 1 2 3) ((n + 1) • Aa) := by
     rw [mc, pb, pa, h.a, succ_nsmul]
     have : point (env a.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
       simp only [point, ha 0 (Or.inl (by decide)), ha 1 (Or.inl (by decide)), ha 2 (Or.inl (by decide)),
         ha 3 (Or.inl (by decide))]
     rw [this]
     exact pointAdd_rep h.value hA
-  have tpb : ∀ o, o + 128 ≤ 8192 → 1024 ≤ o → tablePoint b.mem x o = tablePoint s.mem x o := fun o h1 h2 =>
+  obtain tpb : ∀ o, o + 128 ≤ 8192 → 1024 ≤ o → tablePoint b.mem x o = tablePoint s.mem x o := fun o h1 h2 =>
     table_point_of_words fun k hk => wd_frame1s hc kab.frame (by decide) (by omega_arith) (Or.inr (by omega_arith))
   refine ⟨by omega_arith, by omega_arith, ?_, te, ?_, ?_, fun j hj => ?_, ?_, ?_, h.frame.trans fall⟩
   · exact hc.keep (by rw [tedi, kd.gpr _ (by decide), kc.edi, kb.keep.edi, ka.edi])
@@ -303,8 +303,8 @@ theorem negBase_rep (i : Nat) (hi : i < 15) : Rep (negBase i) ((i + 1) • (-bas
 theorem tablePoint_of_dwords {m : Mem} {x : BitVec 32} {i : Nat}
     (h : ∀ k < 32, wd m x (3072 + 4 * (32 * i + k)) = bDword (32 * i + k)) :
     tablePoint m x (3072 + 128 * i) = negBase i := by
-  have hc : ∀ c < 4, F m x (3072 + 128 * i + 32 * c) = pointCoord (negBase i) c := fun c hc => by
-    have he : fe m x (3072 + 128 * i + 32 * c) = (pointCoord (negBase i) c).val := by
+  obtain hc : ∀ c < 4, F m x (3072 + 128 * i + 32 * c) = pointCoord (negBase i) c := fun c hc => by
+    obtain he : fe m x (3072 + 128 * i + 32 * c) = (pointCoord (negBase i) c).val := by
       unfold fe
       rw [num_congr (g := fun k => (pointCoord (negBase i) c).val / (2 ^ 32) ^ k % 2 ^ 32) (fun k hk => by
         rw [wv, show 3072 + 128 * i + 32 * c + 4 * k = 3072 + 4 * (32 * i + (8 * c + k)) by omega_arith,
@@ -313,10 +313,10 @@ theorem tablePoint_of_dwords {m : Mem} {x : BitVec 32} {i : Nat}
         num_digits]
       exact Nat.mod_eq_of_lt (by have h := (pointCoord (negBase i) c).isLt; simp only [Spec.X25519.P] at h; omega_arith)
     rw [F, he, VG.Proof.X25519.toFe_self]
-  have h0 := hc 0 (by decide)
-  have h1 := hc 1 (by decide)
-  have h2 := hc 2 (by decide)
-  have h3 := hc 3 (by decide)
+  obtain h0 := hc 0 (by decide)
+  obtain h1 := hc 1 (by decide)
+  obtain h2 := hc 2 (by decide)
+  obtain h3 := hc 3 (by decide)
   rw [show 3072 + 128 * i + 32 * 0 = 3072 + 128 * i by omega_arith] at h0
   rw [show 3072 + 128 * i + 32 * 1 = 3072 + 128 * i + 32 by omega_arith] at h1
   rw [show 3072 + 128 * i + 32 * 2 = 3072 + 128 * i + 64 by omega_arith] at h2
@@ -343,10 +343,10 @@ theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x 
       (∀ i < 15, Rep (tablePoint t.mem x (3072 + 128 * i)) ((i + 1) • (-baseAff))) ∧
       env t.mem x 16 = env s.mem x 16 ∧ t.syms = s.syms := by
   have hfit := hc.fit
-  have hsp := (hc.stk rfl (by decide)).1
+  obtain hsp := (hc.stk rfl (by decide)).1
   have hTf := hT.fit
   -- The static, apart from what the copy writes.
-  have hTd : ∀ r ∈ [sub x 3072 1920, callStk s], (⟨T.setWidth 64, 1920⟩ : Region).Disjoint r := by
+  obtain hTd : ∀ r ∈ [sub x 3072 1920, callStk s], (⟨T.setWidth 64, 1920⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -361,13 +361,13 @@ theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x 
   refine WP.seq (WP.mono (symFrame_ok bSym s (by omega_arith)) fun s₁ h₁ => ?_)
   refine WP.seq (Wp.wp_mov fun u₁ v₁ => Wp.wp_mov fun u₂ v₂ => Wp.wp_addi fun u₃ v₃ =>
     Wp.wp_movi fun u₄ v₄ => WP.block_nil ?_)
-  have k₄ : ScalarKeep s u₄ :=
+  obtain k₄ : ScalarKeep s u₄ :=
     ⟨by rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide),
         h₁.gpr _ (by decide)],
       by rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide),
         h₁.gpr _ (by decide)],
       by rw [v₄.rd, v₃.rd, v₂.rd, v₁.rd, h₁.rd], by rw [v₄.wr, v₃.wr, v₂.wr, v₁.wr, h₁.wr]⟩
-  have i₀ : LI 0 u₄ := by
+  obtain i₀ : LI 0 u₄ := by
     refine ⟨k₄, by rw [v₄.syms, v₃.syms, v₂.syms, v₁.syms, h₁.syms], ?_, ?_, by rw [v₄.gpr]; rfl, ?_,
       fun _ h => absurd h (Nat.not_lt_zero _)⟩
     · rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, h₁.addr, hsym]
@@ -380,8 +380,8 @@ theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x 
   refine WP.mono (WP.loop (M := isa) (Q := LI 480) (fun m t => ∃ n, m = 480 - n ∧ n < 480 ∧ LI n t) ?_ 480 u₄
     ⟨0, rfl, by decide, i₀⟩) fun t ⟨kt, st, _, _, _, ft, bt⟩ => ⟨kt, ft, fun i hi => ?_, ?_, st⟩
   · rintro m t ⟨n, rfl, hn, kt, st, si, di, ci, ft, bt⟩
-    have ct : Ctx x t := hc.keep kt.edi kt.wr kt.esp
-    have Tt : BTblAt t x T := hT.of_frame ft hTd (by rw [kt.rd, kt.wr])
+    obtain ct : Ctx x t := hc.keep kt.edi kt.wr kt.esp
+    obtain Tt : BTblAt t x T := hT.of_frame ft hTd (by rw [kt.rd, kt.wr])
     refine Wp.wp_ldm (B := T + BitVec.ofNat 32 (4 * n)) (o := 0) si
       (by rw [show addr (T + BitVec.ofNat 32 (4 * n)) 0 = addr T (4 * n) by
             rw [addr_zero]; rfl]
@@ -391,15 +391,15 @@ theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x 
             rw [addr_zero]; rfl]
           rw [w₁.wr]; exact ct.inW (by omega_arith) (by decide)) fun u₂ w₂ => ?_
     refine Wp.wp_addi fun u₃ w₃ => Wp.wp_addi fun u₄ w₄ => Wp.wp_subi fun u₅ w₅ _ z₅ => WP.block_nil ?_
-    have ea : addr (x + BitVec.ofNat 32 (3072 + 4 * n)) 0 = addr x (3072 + 4 * n) := by
+    obtain ea : addr (x + BitVec.ofNat 32 (3072 + 4 * n)) 0 = addr x (3072 + 4 * n) := by
       rw [addr_zero]; rfl
-    have ev : u₁.gpr .eax = bDword n := by
+    obtain ev : u₁.gpr .eax = bDword n := by
       rw [w₁.gpr, show addr (T + BitVec.ofNat 32 (4 * n)) 0 = addr T (4 * n) by
         rw [addr_zero]; rfl]
       exact Tt.val n hn
-    have m₅ : u₅.mem = t.mem.writeW (addr x (3072 + 4 * n)) (bDword n) := by
+    obtain m₅ : u₅.mem = t.mem.writeW (addr x (3072 + 4 * n)) (bDword n) := by
       rw [w₅.mem, w₄.mem, w₃.mem, w₂.mem, ea, ev, w₁.mem]
-    have next : LI (n + 1) u₅ := by
+    obtain next : LI (n + 1) u₅ := by
       refine ⟨kt.trans ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_⟩
       · rw [w₅.other _ (by decide), w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide)]
       · rw [w₅.other _ (by decide), w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide)]
@@ -422,7 +422,7 @@ theorem bTable_ok {x T : BitVec 32} {s : State} (hc : Ctx x s) (hT : BTblAt s x 
         · subst e; exact wd_write_self _ _ _ _
         · rw [wd_write_ne _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
           exact bt k (by omega_arith)
-    have z : u₅.zf = some (decide (480 - (n + 1) = 0)) := by
+    obtain z : u₅.zf = some (decide (480 - (n + 1) = 0)) := by
       rw [z₅, w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide), ci,
         Wp.ofNat_pred (by omega_arith), Wp.ofNat_beq_zero (by omega_arith)]
       rfl

@@ -155,9 +155,9 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
       s'.gpr .r11 = (if j % 2 = 0 then s.gpr .r11 else (s.gpr .r11).rotateRight 56) ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r10 → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [arraysR s] s.mem s'.mem := by
-  have hb0 : 2 * j % 16 < 16 := Nat.mod_lt _ (by decide)
-  have hb1 : (2 * j + 1) % 16 < 16 := Nat.mod_lt _ (by decide)
-  have hd : gSlot (2 * j + 1) ≠ gSlot (2 * j) ∨ (2 * j + 1) % 16 ≠ 2 * j % 16 :=
+  obtain hb0 : 2 * j % 16 < 16 := Nat.mod_lt _ (by decide)
+  obtain hb1 : (2 * j + 1) % 16 < 16 := Nat.mod_lt _ (by decide)
+  obtain hd : gSlot (2 * j + 1) ≠ gSlot (2 * j) ∨ (2 * j + 1) % 16 ≠ 2 * j % 16 :=
     gIn_apart _ (by omega_using [hj]) _ (by omega_using [hj]) (by omega_using [])
   let c := kcs.getD j 0
   obtain ⟨s1, e1, u1⟩ := step_movR s .rax .r10
@@ -166,36 +166,36 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
   obtain ⟨s4, e4, u4⟩ := step_shrI s3 .rcx (n := 32) (by decide) (by decide)
   obtain ⟨s5, e5, u5⟩ := step_add32_reg s4 .rax .rcx
   obtain ⟨s6, e6, u6⟩ := step_sub32_imm s5 .rax c
-  have room6 : Room s6 := room_congr h (by rw [u6.other (by decide), u5.other (by decide),
+  obtain room6 : Room s6 := room_congr h (by rw [u6.other (by decide), u5.other (by decide),
     u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)])
     (by rw [u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
   obtain ⟨s7, e7, g7, rd7, wr7, m7⟩ := step_store_lane room6 (gSlot_mem (2 * j)) hb0
   obtain ⟨s8, e8, u8⟩ := step_movR s7 .rax .r10
   obtain ⟨s9, e9, u9⟩ := step_sub32_reg s8 .rax .r11
   obtain ⟨s10, e10, u10⟩ := step_add32_imm s9 .rax c
-  have room10 : Room s10 := room_congr room6 (by rw [u10.other (by decide), u9.other (by decide),
+  obtain room10 : Room s10 := room_congr room6 (by rw [u10.other (by decide), u9.other (by decide),
     u8.other (by decide), g7]) (by rw [u10.wr, u9.wr, u8.wr, wr7])
   obtain ⟨s11, e11, g11, rd11, wr11, m11⟩ := step_store_lane room10 (gSlot_mem (2 * j + 1)) hb1
-  have r9_6 : s6.gpr .r9 = s.gpr .r9 := by rw [u6.other (by decide), u5.other (by decide),
+  obtain r9_6 : s6.gpr .r9 = s.gpr .r9 := by rw [u6.other (by decide), u5.other (by decide),
     u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)]
-  have r9_10 : s10.gpr .r9 = s.gpr .r9 := by
+  obtain r9_10 : s10.gpr .r9 = s.gpr .r9 := by
     rw [u10.other (by decide), u9.other (by decide), u8.other (by decide), g7, r9_6]
-  have lA6 : ∀ k b, laneA s6 k b = laneA s k b := fun k b => by simp only [laneA, r9_6]
-  have lA10 : ∀ k b, laneA s10 k b = laneA s k b := fun k b => by simp only [laneA, r9_10]
+  obtain lA6 : ∀ k b, laneA s6 k b = laneA s k b := fun k b => by simp only [laneA, r9_6]
+  obtain lA10 : ∀ k b, laneA s10 k b = laneA s k b := fun k b => by simp only [laneA, r9_10]
   -- the values
-  have v6 : (s6.gpr .rax).setWidth 32 = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
+  obtain v6 : (s6.gpr .rax).setWidth 32 = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
     rw [u6.self, setWidth_setWidth_32, u5.self, setWidth_setWidth_32, u4.other (by decide), u4.self,
       u3.self, u3.other (by decide), u2.self, u2.other (by decide), u1.self, u1.other (by decide)]
     rfl
-  have v10 : (s10.gpr .rax).setWidth 32 = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
+  obtain v10 : (s10.gpr .rax).setWidth 32 = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
     rw [u10.self, setWidth_setWidth_32, u9.self, setWidth_setWidth_32, u8.self, u8.other (by decide), g7,
       u6.other (by decide), u5.other (by decide), u4.other (by decide), u3.other (by decide),
       u2.other (by decide), u1.other (by decide), u6.other (by decide), u5.other (by decide),
       u4.other (by decide), u3.other (by decide), u2.other (by decide), u1.other (by decide)]
     rfl
-  have mem10 : s10.mem = s7.mem := by rw [u10.mem, u9.mem, u8.mem]
-  have mem6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have hrun : runBlock isa ([movR .rax .r10, shrI .rax 32, movR .rcx .r11, shrI .rcx 32,
+  obtain mem10 : s10.mem = s7.mem := by rw [u10.mem, u9.mem, u8.mem]
+  obtain mem6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain hrun : runBlock isa ([movR .rax .r10, shrI .rax 32, movR .rcx .r11, shrI .rcx 32,
       .alu32 .add .rax (.reg .rcx), .alu32 .sub .rax (.imm c), .store32 (gIn (2 * j)) .rax,
       movR .rax .r10, .alu32 .sub .rax (.reg .r11), .alu32 .add .rax (.imm c),
       .store32 (gIn (2 * j + 1)) .rax] : List Instr) s = some s11 := by
@@ -204,7 +204,7 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
       runBlock_cons, gIn, e7, runStep_some, runBlock_cons, e8, runStep_some, runBlock_cons, e9, runStep_some,
       runBlock_cons, e10, runStep_some, runBlock_cons, gIn, e11, runStep_some, runBlock_nil]
   -- the lanes after both stores
-  have lv11 : ∀ k ∈ arrays, ∀ b < 16, lv s11 k b =
+  obtain lv11 : ∀ k ∈ arrays, ∀ b < 16, lv s11 k b =
       ((s.mem.writeW (laneA s (gSlot (2 * j)) (2 * j % 16)) (gIn0 (s.gpr .r10) (s.gpr .r11) c)).writeW
         (laneA s (gSlot (2 * j + 1)) ((2 * j + 1) % 16)) (gIn1 (s.gpr .r10) (s.gpr .r11) c)).readW
         (laneA s k b) 32 := by
@@ -213,27 +213,27 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
       u8.other (show Reg.r9 ≠ .rax by decide), g7]
     rw [m11, mem10, m7, lA10, lA6, v6, v10, mem6]
     simp only [laneA, r9_6]
-  have lane0 : lv s11 (gSlot (2 * j)) (2 * j % 16) = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
+  obtain lane0 : lv s11 (gSlot (2 * j)) (2 * j % 16) = gIn0 (s.gpr .r10) (s.gpr .r11) c := by
     rw [lv11 _ (gSlot_mem _) _ hb0, readW_writeW_lane (gSlot_mem _) hb0 (gSlot_mem _) hb1
       (by rcases hd with h | h; exact Or.inl (Ne.symm h); exact Or.inr (Ne.symm h)), Mem.readW_writeW_self32]
-  have lane1 : lv s11 (gSlot (2 * j + 1)) ((2 * j + 1) % 16) = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
+  obtain lane1 : lv s11 (gSlot (2 * j + 1)) ((2 * j + 1) % 16) = gIn1 (s.gpr .r10) (s.gpr .r11) c := by
     rw [lv11 _ (gSlot_mem _) _ hb1, Mem.readW_writeW_self32]
-  have lanes : ∀ k ∈ arrays, ∀ b < 16, (k ≠ gSlot (2 * j) ∨ b ≠ 2 * j % 16) →
+  obtain lanes : ∀ k ∈ arrays, ∀ b < 16, (k ≠ gSlot (2 * j) ∨ b ≠ 2 * j % 16) →
       (k ≠ gSlot (2 * j + 1) ∨ b ≠ (2 * j + 1) % 16) → lv s11 k b = lv s k b := by
     intro k hk b hb h0 h1
     rw [lv11 k hk b hb, readW_writeW_lane hk hb (gSlot_mem _) hb1 h1,
       readW_writeW_lane hk hb (gSlot_mem _) hb0 h0]
     rfl
-  have frame : Frame [arraysR s] s.mem s11.mem := by
+  obtain frame : Frame [arraysR s] s.mem s11.mem := by
     rw [m11, mem10, m7, lA10, lA6, mem6]
     exact ((Frame.refl _ _).writeW List.mem_cons_self _ (lane_inArrays (gSlot_mem _) hb0 s)).writeW
       List.mem_cons_self _ (lane_inArrays (gSlot_mem _) hb1 s)
-  have G11 : ∀ r, r ≠ .rax → r ≠ .rcx → s11.gpr r = s.gpr r := by
+  obtain G11 : ∀ r, r ≠ .rax → r ≠ .rcx → s11.gpr r = s.gpr r := by
     intro r ha hc
     rw [g11, u10.other ha, u9.other ha, u8.other ha, g7, u6.other ha, u5.other ha, u4.other hc, u3.other hc,
       u2.other ha, u1.other ha]
-  have rd11' : s11.rd = s.rd := by rw [rd11, u10.rd, u9.rd, u8.rd, rd7, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd]
-  have wr11' : s11.wr = s.wr := by rw [wr11, u10.wr, u9.wr, u8.wr, wr7, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]
+  obtain rd11' : s11.rd = s.rd := by rw [rd11, u10.rd, u9.rd, u8.rd, rd7, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd]
+  obtain wr11' : s11.wr = s.wr := by rw [wr11, u10.wr, u9.wr, u8.wr, wr7, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]
   -- the rotation
   by_cases hj2 : j % 2 = 0
   · obtain ⟨s12, e12, u12⟩ := step_rorI s11 .r10 (n := 8) (by decide) (by decide)

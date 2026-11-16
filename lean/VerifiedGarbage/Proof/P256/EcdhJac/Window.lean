@@ -78,37 +78,37 @@ theorem selectBlock_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
       (a=0→∀ i<5,wordsVal t.mem base (selectedSlot i) 4=0) ∧
       (∀ x∈V,wordsVal t.mem base x 4=wordsVal s.mem base x 4) := by
   refine WP.mono hc fun t ⟨hw,hkeep',ho⟩=>?_
-  have hkeep : KeepRegs [.x5,.x17] s t := hkeep'.mono hR
-  have fr : Frame base work s t := ⟨hkeep.mono (by decide),ho.cover (by decide)⟩
-  have hv : ∀ i<5,wordsVal t.mem base (selectedSlot i) 4=
+  obtain hkeep : KeepRegs [.x5,.x17] s t := hkeep'.mono hR
+  obtain fr : Frame base work s t := ⟨hkeep.mono (by decide),ho.cover (by decide)⟩
+  obtain hv : ∀ i<5,wordsVal t.mem base (selectedSlot i) 4=
       if a=0 then 0 else wordsVal s.mem base (entrySlot a i) 4 := by
     intro i hi'
     by_cases hz : a=0
     · rw [ite_eq_left hz]
       apply (wordsVal_eq_zero_iff _ _ _ _).mpr
       intro j hj
-      have hh := hw (4*i+j) (by omega_arith)
-      have hout : Select.output (4*i+j)=selectedSlot i+8*j := by
+      obtain hh := hw (4*i+j) (by omega_arith)
+      obtain hout : Select.output (4*i+j)=selectedSlot i+8*j := by
         unfold Select.output selectedSlot; split <;> split <;> omega_arith
       simpa only [hout,hz,ite_true] using hh
     · rw [ite_eq_right hz]
       apply wordsVal_of_words₂
       intro j hj
-      have hh := hw (4*i+j) (by omega_arith)
-      have hout : Select.output (4*i+j)=selectedSlot i+8*j := by
+      obtain hh := hw (4*i+j) (by omega_arith)
+      obtain hout : Select.output (4*i+j)=selectedSlot i+8*j := by
         unfold Select.output selectedSlot; split <;> split <;> omega_arith
-      have hin : 2816+160*(a-1)+8*(4*i+j)=entrySlot a i+8*j := by unfold entrySlot; omega_arith
+      obtain hin : 2816+160*(a-1)+8*(4*i+j)=entrySlot a i+8*j := by unfold entrySlot; omega_arith
       simpa only [hout,hin,ite_eq_right hz] using hh
-  have hfix := hf.keep (frame_build fr)
+  obtain hfix := hf.keep (frame_build fr)
   refine ⟨fr,hkeep.gpr _ (by decide),?_,fun hnz=>(ht a hnz ha).congr (fun i hi'=>by
     rw [hv i hi',ite_eq_right (by omega_arith)]),fun hz i hi'=>by
       simpa only [hz,ite_true] using hv i hi',?_⟩
   rotate_left
   · intro x hx
     exact ho.wordsVal (by
-      have hh : ∀ x∈live,∀ w∈Select.outputRanges,x+32≤w.1 ∨ w.1+w.2≤x := by decide
+      obtain hh : ∀ x∈live,∀ w∈Select.outputRanges,x+32≤w.1 ∨ w.1+w.2≤x := by decide
       exact hh x (hV x hx)) (by
-      have hh : ∀ x∈live,x+32≤2^64 := by decide
+      obtain hh : ∀ x∈live,x+32≤2^64 := by decide
       exact hh x (hV x hx))
   refine ⟨fr.scr regs_x0 hi.scr,hfix.field.mod,?_,?_,fun _ _=>rfl⟩
   · intro x hx
@@ -127,9 +127,9 @@ theorem selectBlock_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
       · exact (ht a (by omega_arith) ha).lt i hi'
     · have hwv : wordsVal t.mem base x 4=wordsVal s.mem base x 4 :=
         ho.wordsVal (by
-          have hsep : ∀ x∈live,∀ w∈Select.outputRanges,x+32≤w.1 ∨ w.1+w.2≤x := by decide
+          obtain hsep : ∀ x∈live,∀ w∈Select.outputRanges,x+32≤w.1 ∨ w.1+w.2≤x := by decide
           exact hsep x (hV x hx)) (by
-          have hb : ∀ x∈live,x+32≤2^64 := by decide
+          obtain hb : ∀ x∈live,x+32≤2^64 := by decide
           exact hb x (hV x hx))
       change wordsVal t.mem base x 4<C.p
       rw [hwv]; exact hi.lt x hx
@@ -191,30 +191,30 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
     WP isa (.block (c++negYW M 5 K.neg K.zero K.E.y K.bits)) s (EntryPost base P k j V s) := by
   rw [WP.block_append_iff]
   refine WP.mono hc fun s₁ ⟨fr₁,c₁,i₁,p₁,z₁,same₁⟩=>?_
-  have f₁ := hf.keep (frame_build fr₁)
-  have hz : tmv C 4 base s₁ K.zero=0 := by unfold tmv; rw [f₁.zero,toM_zero]
-  have hy : K.E.y∈selected++V := by apply List.mem_append_left; decide
-  have hzero : K.zero∈selected++V := List.mem_append_right _ (hro _ (by decide))
+  obtain f₁ := hf.keep (frame_build fr₁)
+  obtain hz : tmv C 4 base s₁ K.zero=0 := by unfold tmv; rw [f₁.zero,toM_zero]
+  obtain hy : K.E.y∈selected++V := by apply List.mem_append_left; decide
+  obtain hzero : K.zero∈selected++V := List.mem_append_right _ (hro _ (by decide))
   refine WP.mono (negFieldWindow_ok layout aligned (unitMod_pow_two (by decide) _) i₁
     (by decide : Sl K.neg) hzero hy (by decide) hz (by decide : 1≤5) (by decide)
     (by omega_arith : 5*j+5≤260) (by decide) (by decide) (c₁.trans h19) f₁.bits
     (by decide) (by decide)) fun t ⟨kp₂,i₂⟩=>?_
-  have fr₂ : Frame base work s₁ t := AllocatedFrame.of_prog kp₂ clob_regs (by decide)
-  have iv := i₂.sub (fun x (hx : x∈selected++V)=>List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))
-  have hez : tmv C 4 base t K.E.z=tmv C 4 base s₁ K.E.z := by
+  obtain fr₂ : Frame base work s₁ t := AllocatedFrame.of_prog kp₂ clob_regs (by decide)
+  obtain iv := i₂.sub (fun x (hx : x∈selected++V)=>List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))
+  obtain hez : tmv C 4 base t K.E.z=tmv C 4 base s₁ K.E.z := by
     have hh:=iv.val K.E.z (by apply List.mem_append_left; decide)
     change tmv C 4 base t K.E.z=_ at hh
     simpa only [Function.update_of_ne (by decide : K.E.z≠K.E.y),
       Function.update_of_ne (by decide : K.E.z≠K.neg)] using hh
   have he (i : Nat) (hi' : i<5) (hne : i≠1) :
       tmv C 4 base t (selectedSlot i)=tmv C 4 base s₁ (selectedSlot i) := by
-    have hv := iv.val _ (List.mem_append_left _ (selected_mem i hi'))
-    have ne : selectedSlot i≠K.E.y ∧ selectedSlot i≠K.neg := by
-      have hh : ∀ i<5,i≠1→selectedSlot i≠K.E.y ∧ selectedSlot i≠K.neg := by decide
+    obtain hv := iv.val _ (List.mem_append_left _ (selected_mem i hi'))
+    obtain ne : selectedSlot i≠K.E.y ∧ selectedSlot i≠K.neg := by
+      obtain hh : ∀ i<5,i≠1→selectedSlot i≠K.E.y ∧ selectedSlot i≠K.neg := by decide
       exact hh i hi' hne
     change tmv C 4 base t (selectedSlot i)=_ at hv
     simpa only [Function.update_of_ne ne.1,Function.update_of_ne ne.2] using hv
-  have hc2 : tmv C 4 base s₁ 5400=tmv C 4 base s₁ K.E.z*tmv C 4 base s₁ K.E.z := by
+  obtain hc2 : tmv C 4 base s₁ 5400=tmv C 4 base s₁ K.E.z*tmv C 4 base s₁ K.E.z := by
     by_cases hz : magH 16 (Window5.nib (k+offset) j)=0
     · have e2:=z₁ hz 2 (by decide)
       have e3:=z₁ hz 3 (by decide)
@@ -223,7 +223,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       change toM _ _ (wordsVal s₁.mem base 5400 4)=toM _ _ (wordsVal s₁.mem base 768 4)*toM _ _ (wordsVal s₁.mem base 768 4)
       rw [e2,e3,toM_zero]; grind
     · exact (p₁ (by omega_arith)).z2
-  have hc3 : tmv C 4 base s₁ 5432=tmv C 4 base s₁ 5400*tmv C 4 base s₁ K.E.z := by
+  obtain hc3 : tmv C 4 base s₁ 5432=tmv C 4 base s₁ 5400*tmv C 4 base s₁ K.E.z := by
     by_cases hz : magH 16 (Window5.nib (k+offset) j)=0
     · have e4:=z₁ hz 4 (by decide)
       have e3:=z₁ hz 3 (by decide)
@@ -240,16 +240,16 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
     rw [he 4 (by decide) (by decide),he 3 (by decide) (by decide),he 2 (by decide) (by decide)]; exact hc3
   · intro x hx
     rw [kp₂.unch.wordsVal (by
-      have hh : ∀ x∈live,∀ w∈([K.neg,K.E.y].map (·,8*M.n)++[(M.tmp,8*M.n)]),x+32≤w.1 ∨ w.1+w.2≤x := by decide
+      obtain hh : ∀ x∈live,∀ w∈([K.neg,K.E.y].map (·,8*M.n)++[(M.tmp,8*M.n)]),x+32≤w.1 ∨ w.1+w.2≤x := by decide
       exact hh x (hV x hx)) (by
-      have hh : ∀ x∈live,x+32≤2^64 := by decide
+      obtain hh : ∀ x∈live,x+32≤2^64 := by decide
       exact hh x (hV x hx))]
     exact same₁ x hx
-  have p := p₁ hnz
-  have hey : tmv C 4 base t (selectedSlot 1)=
+  obtain p := p₁ hnz
+  obtain hey : tmv C 4 base t (selectedSlot 1)=
       if decide (Window5.nib (k+offset) j<16) then -tmv C 4 base s₁ (selectedSlot 1)
       else tmv C 4 base s₁ (selectedSlot 1) := by
-    have hv := iv.val _ (List.mem_append_left _ (selected_mem 1 (by decide)))
+    obtain hv := iv.val _ (List.mem_append_left _ (selected_mem 1 (by decide)))
     change tmv C 4 base t (selectedSlot 1)=_ at hv
     simpa only [show selectedSlot 1=K.E.y from rfl,Function.update_self,Window5.combWin_five,
       show 2^(5-1)=16 from rfl] using hv
@@ -298,10 +298,10 @@ theorem entry_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
   refine WP.mono (digitW_ok tc hi.scr (k:=k+offset) (j:=j) (N:=260)
     (by decide) (by decide) (by change 5*j+5≤260; omega_arith) (by decide) (by decide) h19 hf.bits)
     fun u ⟨hu,hkeep⟩=>?_
-  have fr : Frame base work s u := (AllocatedFrame.of_keeps hkeep).widenRegs (by decide)
-  have iu : Inv M base 8192 C.p Sl V (tmv C 4 base u) u := by
+  obtain fr : Frame base work s u := (AllocatedFrame.of_keeps hkeep).widenRegs (by decide)
+  obtain iu : Inv M base 8192 C.p Sl V (tmv C 4 base u) u := by
     have hh:=hi.of_keeps hkeep (by decide)
-    have he : tmv C 4 base u=tmv C 4 base s := by funext x; unfold tmv; rw [hkeep.mem]
+    obtain he : tmv C 4 base u=tmv C 4 base s := by funext x; unfold tmv; rw [hkeep.mem]
     rw [he]; exact hh
   refine WP.mono (signedEntry_ok hV hro iu (hf.keep (frame_build fr)) (ht.keep fr) hj
     ((hkeep.gpr _ (by decide)).trans h19) (by
@@ -335,35 +335,35 @@ theorem first_ok (hC : Law C) {base : Addr} {P : Point C} {k : Nat} {s : State}
     WP isa (.block Impl.P256.EcdhJac.first) s fun t=>Frame base work s t ∧ LoopInv base P k 51 t := by
   rw [first_split,WP.block_append_iff,WP.block_append_iff]
   refine WP.mono (movz_ok s .x19 51) fun u ⟨hu,ku⟩=>?_
-  have fu : Frame base work s u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
-  have hfu := hf.keep (frame_build fu)
+  obtain fu : Frame base work s u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
+  obtain hfu := hf.keep (frame_build fu)
   refine WP.mono (entry_ok (V:=ro) (j:=51) (by intro x hx; exact List.mem_append_right _ hx)
     (fun _ h=>h) hfu.field hfu (ht.keep fu) (by decide) (by exact hu)) fun v hv=>?_
-  have hepoint : InvJ C (tmv C 4 base v K.E.x) (tmv C 4 base v K.E.y)
+  obtain hepoint : InvJ C (tmv C 4 base v K.E.x) (tmv C 4 base v K.E.y)
       (tmv C 4 base v K.E.z) (Window5.winPt C P (k+offset) 51) := by
     by_cases hz : magH 16 (Window5.nib (k+offset) 51)=0
     · rw [Window5.winPt_zero hz]
       exact Or.inl ⟨rfl,hv.zero hz⟩
     · exact (hv.point (by omega_arith)).jac
-  have hA : RcbApart K.S K.E K.E K.R := ⟨by decide,by decide⟩
-  have hsl : ∀ x∈rcbW K.S K.R++rcbR K.S K.E K.E,Sl x := by decide
-  have hvalid : ∀ x∈rcbR K.S K.E K.E,x∈selected++ro := by decide
+  obtain hA : RcbApart K.S K.E K.E K.R := ⟨by decide,by decide⟩
+  obtain hsl : ∀ x∈rcbW K.S K.R++rcbR K.S K.E K.E,Sl x := by decide
+  obtain hvalid : ∀ x∈rcbR K.S K.E K.E,x∈selected++ro := by decide
   refine WP.mono (copyPoint_ok layout aligned hA hsl hv.field hvalid) fun t ⟨et,kp,it,ep⟩=>?_
-  have ft : Frame base work v t := AllocatedFrame.of_prog kp clob_regs (by decide)
-  have allframe := fu.trans (hv.frame.trans ft)
-  have iout := it.sub (fun x (hx : x∈live)=>by
+  obtain ft : Frame base work v t := AllocatedFrame.of_prog kp clob_regs (by decide)
+  obtain allframe := fu.trans (hv.frame.trans ft)
+  obtain iout := it.sub (fun x (hx : x∈live)=>by
     rcases List.mem_append.mp hx with hx|hx
     · exact List.mem_append_left _ hx
     · exact List.mem_append_right _ (List.mem_append_right _ hx))
-  have exyz : et K.R.x=tmv C 4 base v K.E.x ∧ et K.R.y=tmv C 4 base v K.E.y ∧
+  obtain exyz : et K.R.x=tmv C 4 base v K.E.x ∧ et K.R.y=tmv C 4 base v K.E.y ∧
       et K.R.z=tmv C 4 base v K.E.z := by simpa only [Prod.mk.injEq] using ep
-  have ip : InvJ C (et K.R.x) (et K.R.y) (et K.R.z) (Window5.winPt C P (k+offset) 51) := by
+  obtain ip : InvJ C (et K.R.x) (et K.R.y) (et K.R.z) (Window5.winPt C P (k+offset) 51) := by
     rw [exyz.1,exyz.2.1,exyz.2.2]; exact hepoint
   refine ⟨allframe,⟨⟨Window5.winPt C P (k+offset) 51,Window5.onCurve_winPt hC hP (k+offset) 51,fun _=>?_,
     ⟨hf.keep (frame_build allframe),ht.keep allframe,iout.to_tmv,?_⟩⟩,?_⟩⟩
   · have he := Window5.win_add hC hP (k:=k+offset) (J:=52) (j:=51)
       (by rw [offset_eq]; omega_arith) (by decide)
-    have htop : Window5.winE (k+offset) 52 52=0 :=
+    obtain htop : Window5.winE (k+offset) 52 52=0 :=
       Window5.winE_top (by rw [offset_eq]; exact Window5.recode_lt hk)
     rw [show 51+1=52 from rfl,htop,Nat.mul_zero,Window5.mul_zero_pt,infinity_add'] at he
     exact he
@@ -412,7 +412,7 @@ theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C}
       (if magH 16 (Window5.nib (k + 16 * Window5.geom J) i) = 0 then Z1
         else if Z1 = 0 then Z2 else (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2)
       (mul (Window5.winE (k + 16 * Window5.geom J) J i) P) := by
-  have hadd := Window5.win_add hC hP (k := k + 16 * Window5.geom J) (J := J) (j := i) (Nat.le_add_left _ _) hi
+  obtain hadd := Window5.win_add hC hP (k := k + 16 * Window5.geom J) (J := J) (j := i) (Nat.le_add_left _ _) hi
   generalize hk' : k + 16 * Window5.geom J = k' at hadd h1 h2 ⊢
   generalize he : Window5.winE k' J (i + 1) = e at hadd h1
   rw [← hadd]
@@ -422,21 +422,21 @@ theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C}
     exact h1
   · simp only [h0, ↓reduceIte]
     obtain ⟨J2, z2⟩ := h2 (by omega_using [h0])
-    have hQ := hC.onCurve_mul hP (32 * e)
-    have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
+    obtain hQ := hC.onCurve_mul hP (32 * e)
+    obtain hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
     · simp only [hz, ↓reduceIte]
       rw [(h1.z_zero_iff hC).mp hz, infinity_add']
       exact J2
     · simp only [hz, ↓reduceIte]
-      have he1 : 1 ≤ e := by
+      obtain he1 : 1 ≤ e := by
         rcases Nat.eq_zero_or_pos e with rfl | h
         · exact absurd ((h1.z_zero_iff hC).mpr (by rw [Nat.mul_zero, Window5.mul_zero_pt])) hz
         · exact h
       rw [← he, ← hk'] at he1
       obtain ⟨ne1, ne2⟩ := Window5.loop_noexc hC hO hP hP0 hn17 hn64 hk hi he1
       rw [hk', he] at ne1 ne2
-      have hh : X2 * (Z1 * Z1) - X1 * (Z2 * Z2) ≠ 0 := by
+      obtain hh : X2 * (Z1 * Z1) - X1 * (Z2 * Z2) ≠ 0 := by
         intro hx
         by_cases hy : Y2 * Z1 * (Z1 * Z1) - Y1 * Z2 * (Z2 * Z2) = 0
         · exact ne1 (h1.same hC J2 hz z2 hx hy)
@@ -465,7 +465,7 @@ theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (h
   · refine ⟨_, hC.onCurve_mul hP _, fun _ => rfl, ?_⟩
     rw [hQ1e hk] at h1
     exact jstep_point hC hM3 hO hP hP0 hn17 hn64 hk hi h1 h2
-  have nk : ∀ Q : Point C, k < C.n → Q = mul (Window5.winE (k + 16 * Window5.geom J) J i) P :=
+  obtain nk : ∀ Q : Point C, k < C.n → Q = mul (Window5.winE (k + 16 * Window5.geom J) J i) P :=
     fun _ h' => absurd h' hk
   generalize k + 16 * Window5.geom J = k' at h2 nk ⊢
   by_cases h0 : magH 16 (Window5.nib k' i) = 0
@@ -473,7 +473,7 @@ theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (h
     exact ⟨Q1, hQ1, nk _, h1⟩
   · simp only [h0, ↓reduceIte]
     obtain ⟨J2, z2⟩ := h2 (by omega_using [h0])
-    have hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
+    obtain hW : onCurve C (Window5.winPt C P k' i) = true := Window5.onCurve_winPt hC hP k' i
     by_cases hz : Z1 = 0
     · simp only [hz, ↓reduceIte]
       exact ⟨_, hW, nk _, J2⟩
@@ -514,7 +514,7 @@ private theorem slots_joint : ∀ x,Sl x → Ecdsa.Verify.AArch64.Allocated.Sl x
     (hobs : ∀x∈Out,∀i<4,VerifyAllocated.observe k (x+8*i)) :
     WP isa (Impl.P256.VerifyAllocated.program k) s fun t =>
       AllocatedFrame allocatedRegs base work s t ∧ Inv M base 8192 C.p Sl Out (runOps (operations k) E) t := by
-  have hi' : Inv M base 8192 C.p Ecdsa.Verify.AArch64.Allocated.Sl V E s :=
+  obtain hi' : Inv M base 8192 C.p Ecdsa.Verify.AArch64.Allocated.Sl V E s :=
     ⟨hi.scr,hi.mod,fun x hx => slots_joint x (hi.sl x hx),hi.lt,hi.val⟩
   refine WP.mono (Ecdsa.Verify.AArch64.Allocated.field_ok
     Ecdsa.Verify.AArch64.Allocated.raw_correct cert hi'
@@ -541,12 +541,12 @@ theorem hotField_all_ok {k : Kind} (cert : VerifyAllocated.Case k) (hk : k≠.do
       Inv M base 8192 C.p Sl (validAfter (operations k) V) (runOps (operations k) E) t := by
   apply hotField_ok cert hi hslots hreads (fun _ h => h)
   intro x hx i hi4
-  have hs : Sl x := by
+  obtain hs : Sl x := by
     rcases (mem_validAfter _ _).mp hx with hv|hv
     · exact hi.sl x hv
     · obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hv
       exact hslots op hop op.out (by simp)
-  have hb := (show ∀ x,Sl x → x+32≤5464 from by decide +kernel) x hs
+  obtain hb := (show ∀ x,Sl x → x+32≤5464 from by decide +kernel) x hs
   exact ⟨Or.inl hk,Or.inl (by omega_using [hi4, hb])⟩
 
  theorem add_ok {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
@@ -560,7 +560,7 @@ theorem hotField_all_ok {k : Kind} (cert : VerifyAllocated.Case k) (hk : k≠.do
        runOps (CachedField.head++CachedField.tail) E K.D.y,
        runOps (CachedField.head++CachedField.tail) E K.D.z)=
         jacAddF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) (E K.E.z) := by
-  have hr := readsOk_mono CachedField.reads_full hv
+  obtain hr := readsOk_mono CachedField.reads_full hv
   rw [readsOk_append,Bool.and_eq_true] at hr
   refine WP.seq (WP.mono (hotField_all_ok VerifyAllocated.CachedHead.caseProof (by decide)
     hi (by decide +kernel) hr.1) fun a ⟨ka,ia⟩ => ?_)
@@ -600,7 +600,7 @@ def addLive : List Nat := [608,640,672]++selected++live
 
  theorem EntryPost.rstate {base : Addr} {P Q : Point C} {k j : Nat} {s t : State}
     (h : EntryPost base P k j live s t) (hs : RState base P Q k s) : RState base P Q k t := by
-  have hp : ∀x∈live,tmv C 4 base t x=tmv C 4 base s x := by
+  obtain hp : ∀x∈live,tmv C 4 base t x=tmv C 4 base s x := by
     intro x hx; unfold tmv; rw [h.same x hx]
   refine ⟨hs.fixed.keep (frame_build h.frame),hs.table.keep h.frame,
     h.field.sub (fun _ hx => List.mem_append_right _ hx),?_⟩
@@ -623,23 +623,23 @@ theorem add_state {base : Addr} {P Q : Point C} {k : Nat} {s : State}
     (h3 : tmv C 4 base s 5432=tmv C 4 base s 768*(tmv C 4 base s 768*tmv C 4 base s 768)) :
     WP isa Impl.P256.EcdhJac.add s (AddPost base P Q k s) := by
   refine WP.mono (add_ok hi (by decide) h2 h3) fun t ⟨kt,it,hp⟩ => ?_
-  have same : ∀x∈selected++live,tmv C 4 base t x=tmv C 4 base s x := by
+  obtain same : ∀x∈selected++live,tmv C 4 base t x=tmv C 4 base s x := by
     intro x hx
-    have hv := it.val x (List.mem_append_right _ hx)
+    obtain hv := it.val x (List.mem_append_right _ hx)
     change tmv C 4 base t x=_ at hv
     rw [hv]
     apply runOps_of_not_out
-    have hn : ∀op∈CachedField.head++CachedField.tail,∀x∈selected++live,op.out≠x := by decide
+    obtain hn : ∀op∈CachedField.head++CachedField.tail,∀x∈selected++live,op.out≠x := by decide
     exact fun op hop => hn op hop x hx
-  have state : RState base P Q k t := by
+  obtain state : RState base P Q k t := by
     refine ⟨hs.fixed.keep (frame_build (kt.widenRegs allocated_regs)),
       hs.table.keep (kt.widenRegs allocated_regs),it.to_tmv.sub (by decide),?_⟩
     rw [same _ (by decide),same _ (by decide),same _ (by decide)]
     exact hs.point
   refine ⟨kt,state,it.to_tmv,same,?_⟩
-  have vx := it.val K.D.x (by decide)
-  have vy := it.val K.D.y (by decide)
-  have vz := it.val K.D.z (by decide)
+  obtain vx := it.val K.D.x (by decide)
+  obtain vy := it.val K.D.y (by decide)
+  obtain vz := it.val K.D.z (by decide)
   change tmv C 4 base t K.D.x=_ at vx
   change tmv C 4 base t K.D.y=_ at vy
   change tmv C 4 base t K.D.z=_ at vz
@@ -673,8 +673,8 @@ theorem doubles_ok (hC : Law C) (ha : AM3 C) {base : Addr} {P Q : Point C} {k j 
   unfold Impl.P256.EcdhJac.dbls
   apply WP.seq
   refine WP.mono (doubleCounter_start s h19) fun a ⟨a19,ka⟩ => ?_
-  have fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
-  have ca := hs.of_keeps ka (by decide)
+  obtain fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
+  obtain ca := hs.of_keeps ka (by decide)
   let I := fun q t => Frame base work s t ∧ RState base P (mul (2^(4-q)) Q) k t ∧
     t.gpr .x19=BitVec.ofNat 64 (2048*q+j)
   apply countRegLoop_ok .x4 (Inv:=I) (n:=4) (by decide)
@@ -683,11 +683,11 @@ theorem doubles_ok (hC : Law C) (ha : AM3 C) {base : Addr} {P Q : Point C} {k j 
     unfold Impl.P256.EcdhJac.dblStep
     apply WP.seq
     refine WP.mono (double_state hC ha (hC.onCurve_mul hQ _) cb) fun d ⟨fd,cd⟩ => ?_
-    have d19 := (fd.regs.gpr .x19 allocatedRegs_x19).trans b19
+    obtain d19 := (fd.regs.gpr .x19 allocatedRegs_x19).trans b19
     refine WP.mono (doubleCounter_ok d hq (by omega_using [hq5]) hj d19) fun t ⟨t19,t4,kt⟩ => ?_
-    have ft : Frame base work d t := (AllocatedFrame.of_keeps kt).widenRegs (by decide)
-    have ct := cd.of_keeps kt (by decide)
-    have ep : add (mul (2^(4-q)) Q) (mul (2^(4-q)) Q)=mul (2^(4-(q-1))) Q := by
+    obtain ft : Frame base work d t := (AllocatedFrame.of_keeps kt).widenRegs (by decide)
+    obtain ct := cd.of_keeps kt (by decide)
+    obtain ep : add (mul (2^(4-q)) Q) (mul (2^(4-q)) Q)=mul (2^(4-(q-1))) Q := by
       rw [hC.add_mul_mul hQ,show 4-(q-1)=(4-q)+1 by omega_using [hq, hq5],Nat.pow_succ]
       congr 1
       omega_using []
@@ -733,9 +733,9 @@ theorem masked_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
       jacAddF (tmv C 4 base s K.R.x) (tmv C 4 base s K.R.y) (tmv C 4 base s K.R.z)
         (tmv C 4 base s K.E.x) (tmv C 4 base s K.E.y) (tmv C 4 base s K.E.z)) :
     WP isa (.block maskCode) s fun t => Frame base work s t ∧ LoopInv base P k j t := by
-  have hq' : k<C.n→Q=mul (32*Window5.winE (k+16*Window5.geom 52) 52 (j+1)) P := by
+  obtain hq' : k<C.n→Q=mul (32*Window5.winE (k+16*Window5.geom 52) 52 (j+1)) P := by
     simpa only [offset_eq] using hq
-  have he' : 1≤magH 16 (Window5.nib (k+16*Window5.geom 52) j)→
+  obtain he' : 1≤magH 16 (Window5.nib (k+16*Window5.geom 52) j)→
       InvJ C (tmv C 4 base s K.E.x) (tmv C 4 base s K.E.y) (tmv C 4 base s K.E.z)
         (Window5.winPt C P (k+16*Window5.geom 52) j) ∧ tmv C 4 base s K.E.z≠0 := by
     simpa only [digitMagnitude,offset_eq] using he
@@ -743,11 +743,11 @@ theorem masked_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     (by decide) (by decide) hj hQ hq' hs.point he'
   rw [←offset_eq] at hq' hj'
   refine WP.mono (masks_ok hs.fixed hj h19) fun t ⟨kt,hv⟩ => ?_
-  have fw := kt.widenRegs allocated_regs
-  have fixed := hs.fixed.keep (frame_build fw)
-  have hziff : wordsVal s.mem base 576 4=0 ↔ tmv C 4 base s 576=0 :=
+  obtain fw := kt.widenRegs allocated_regs
+  obtain fixed := hs.fixed.keep (frame_build fw)
+  obtain hziff : wordsVal s.mem base 576 4=0 ↔ tmv C 4 base s 576=0 :=
     (toM_eq_zero_iff (unitMod_pow_two (by decide) _) (hi.lt _ (by decide))).symm
-  have values : ∀ i<3,tmv C 4 base t (512+32*i)=
+  obtain values : ∀ i<3,tmv C 4 base t (512+32*i)=
       if digitMagnitude k j=0 then tmv C 4 base s (512+32*i)
       else if tmv C 4 base s 576=0 then tmv C 4 base s (704+32*i)
       else tmv C 4 base s (608+32*i) := by
@@ -758,7 +758,7 @@ theorem masked_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     · rfl
     · rw [if_congr hziff rfl rfl]
       split <;> rfl
-  have ilt : ∀ x∈live,wordsVal t.mem base x 4<C.p := by
+  obtain ilt : ∀ x∈live,wordsVal t.mem base x 4<C.p := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
     · have hh : ∀ x∈[K.R.x,K.R.y,K.R.z],∃ i<3,x=512+32*i := by decide
@@ -766,30 +766,30 @@ theorem masked_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
       rw [hv i hi']
       split
       · exact hi.lt _ (by
-          have hh : ∀ i<3,512+32*i∈addLive := by decide
+          obtain hh : ∀ i<3,512+32*i∈addLive := by decide
           exact hh i hi')
       · split
         · exact hi.lt _ (by
-            have hh : ∀ i<3,704+32*i∈addLive := by decide
+            obtain hh : ∀ i<3,704+32*i∈addLive := by decide
             exact hh i hi')
         · exact hi.lt _ (by
-            have hh : ∀ i<3,608+32*i∈addLive := by decide
+            obtain hh : ∀ i<3,608+32*i∈addLive := by decide
             exact hh i hi')
     · exact fixed.field.lt x hx
-  have it : Inv M base 8192 C.p Sl live (tmv C 4 base t) t :=
+  obtain it : Inv M base 8192 C.p Sl live (tmv C 4 base t) t :=
     ⟨fixed.field.scr,fixed.field.mod,by decide,ilt,fun _ _ => rfl⟩
   refine ⟨fw,⟨⟨Q',hQ',hq',fixed,hs.table.keep fw,it,?_⟩,
     (kt.regs.gpr _ allocatedRegs_x19).trans h19⟩⟩
-  have v0 := values 0 (by decide)
-  have v1 := values 1 (by decide)
-  have v2 := values 2 (by decide)
+  obtain v0 := values 0 (by decide)
+  obtain v1 := values 1 (by decide)
+  obtain v2 := values 2 (by decide)
   change tmv C 4 base t K.R.x=_ at v0
   change tmv C 4 base t K.R.y=_ at v1
   change tmv C 4 base t K.R.z=_ at v2
   rw [v0,v1,v2]
-  have dx := congrArg Prod.fst hd
-  have dy := congrArg (fun p => p.2.1) hd
-  have dz := congrArg (fun p => p.2.2) hd
+  obtain dx := congrArg Prod.fst hd
+  obtain dy := congrArg (fun p => p.2.1) hd
+  obtain dz := congrArg (fun p => p.2.2) hd
   dsimp only at dx dy dz
   change InvJ C (if digitMagnitude k j=0 then tmv C 4 base s K.R.x else
       if tmv C 4 base s K.R.z=0 then tmv C 4 base s K.E.x else tmv C 4 base s K.D.x)
@@ -827,7 +827,7 @@ theorem runBlock_keepsV {a : List Instr}
     | some s₁ =>
       rw [he] at h'
       obtain ⟨F,hf,hv⟩ := H i (List.mem_cons_self ..)
-      have fr := Interleave.frame hf he
+      obtain fr := Interleave.frame hf he
       rw [ih (fun x hx => H x (List.mem_cons_of_mem _ hx)) h']
       funext r
       exact fr.v r (hv _)
@@ -876,11 +876,11 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   unfold Impl.P256.EcdhJac.step
   apply WP.seq
   refine WP.mono (decCounter_ok s hj (by omega_using [hj52]) s19) fun a ⟨a19,ka⟩ => ?_
-  have fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
-  have ra := rs.of_keeps ka (by decide)
+  obtain fa : Frame base work s a := (AllocatedFrame.of_keeps ka).widenRegs (by decide)
+  obtain ra := rs.of_keeps ka (by decide)
   apply WP.seq
   refine WP.mono (doubles_ok hC ha hQ (by omega_using [hj52]) ra a19) fun b ⟨fb,rb,b19⟩ => ?_
-  have qb : k<C.n → mul 32 Q=mul (32*Window5.winE (k+offset) 52 ((j-1)+1)) P := by
+  obtain qb : k<C.n → mul 32 Q=mul (32*Window5.winE (k+offset) 52 ((j-1)+1)) P := by
     intro hk
     rw [hq hk,Window5.mul_mul hC hP,show j-1+1=j by omega_using [hj]]
   apply WP.seq
@@ -890,40 +890,40 @@ theorem step_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   refine WP.mono (digitW_ok tc rb.field.scr (k:=k+offset) (j:=j-1) (N:=260)
     (by decide) (by decide) (by change 5*(j-1)+5≤260; omega_using [hj52]) (by decide) (by decide) b19 rb.fixed.bits)
     fun u ⟨hu,ku⟩=>?_
-  have fu : Frame base work b u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
-  have ru := rb.of_keeps ku (by decide)
-  have hmag : u.gpr .x2=BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) (j-1))) := by
+  obtain fu : Frame base work b u := (AllocatedFrame.of_keeps ku).widenRegs (by decide)
+  obtain ru := rb.of_keeps ku (by decide)
+  obtain hmag : u.gpr .x2=BitVec.ofNat 64 (magH 16 (Window5.nib (k+offset) (j-1))) := by
     change u.gpr .x2=BitVec.ofNat 64 (magH 16 (combWin 5 (k+offset) (j-1))) at hu
     simpa only [Window5.combWin_five] using hu
   rw [WP.block_append_iff]
   refine WP.mono (Select.setup_ok u) fun s₁ ⟨idx₁,inc₁,mag₁,z₁,k₁⟩=>?_
-  have f₁ : Frame base work u s₁ := (AllocatedFrame.of_keeps k₁.keeps).widenRegs (by decide)
-  have r₁ := ru.of_keeps k₁.keeps (by decide)
+  obtain f₁ : Frame base work u s₁ := (AllocatedFrame.of_keeps k₁.keeps).widenRegs (by decide)
+  obtain r₁ := ru.of_keeps k₁.keeps (by decide)
   rw [WP.block_append_iff]
   refine Interleave.WP.weave doubleSel_indeps ?_
-  have h16 : onCurve C (mul 16 Q)=true := hC.onCurve_mul hQ _
+  obtain h16 : onCurve C (mul 16 Q)=true := hC.onCurve_mul hQ _
   refine WP.mono (double_stateV hC ha h16 r₁) fun s₂ ⟨fd,r₂,v₂⟩=>?_
-  have e32 : add (mul 16 Q) (mul 16 Q)=mul 32 Q := by
+  obtain e32 : add (mul 16 Q) (mul 16 Q)=mul 32 Q := by
     rw [hC.add_mul_mul hQ]
   rw [e32] at r₂
-  have f₂ : Frame base work s₁ s₂ := fd.widenRegs allocated_regs
-  have s₂19 : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := by
+  obtain f₂ : Frame base work s₁ s₂ := fd.widenRegs allocated_regs
+  obtain s₂19 : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := by
     rw [fd.regs.gpr _ allocatedRegs_x19,k₁.gpr _ (by decide),ku.gpr _ (by decide),b19]
   rw [← WP.block_append_iff,← List.append_assoc]
   refine WP.mono (signedEntryV_ok (fun _ h => h) (by decide) r₂.field r₂.fixed r₂.table (by omega_using [hj52]) s₂19
     (by rw [v₂]; exact idx₁) (by rw [v₂]; exact inc₁)
     (by rw [v₂,mag₁,hmag]) (fun i hi=>by rw [v₂]; exact z₁ i hi)) fun e he => ?_
-  have re := he.rstate r₂
-  have e19 := he.counter.trans s₂19
+  obtain re := he.rstate r₂
+  obtain e19 := he.counter.trans s₂19
   apply WP.seq
   refine WP.mono (add_state re he.field he.cache2 (by
     rw [he.cache3,he.cache2]; exact Lean.Grind.CommSemiring.mul_comm _ _)) fun d hd => ?_
-  have d19 := (hd.frame.regs.gpr _ allocatedRegs_x19).trans e19
-  have ep : 1≤digitMagnitude k (j-1) →
+  obtain d19 := (hd.frame.regs.gpr _ allocatedRegs_x19).trans e19
+  obtain ep : 1≤digitMagnitude k (j-1) →
       InvJ C (tmv C 4 base d K.E.x) (tmv C 4 base d K.E.y) (tmv C 4 base d K.E.z)
         (Window5.winPt C P (k+offset) (j-1)) ∧ tmv C 4 base d K.E.z≠0 := by
     intro hn
-    have hp := he.point hn
+    obtain hp := he.point hn
     rw [hd.same _ (by decide),hd.same _ (by decide),hd.same _ (by decide)]
     exact ⟨hp.jac,hp.z⟩
   refine WP.mono (masked_ok hC ha hO hP (hC.onCurve_mul hQ _) qb hd.state

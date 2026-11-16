@@ -84,11 +84,11 @@ theorem pair_run {s₀ : State} {sch : Reg} (hS : SchedIn s₀ sch) (hc : Consts
     (I : CipherInv s₀ sch up t u) :
     ∃ u', runBlock isa (roundPair sch up) u = some u' ∧ CipherInv s₀ sch up (t + 1) u' := by
   let K := scheduleAt s₀.mem (s₀.gpr sch)
-  have hsc : u.gpr sch = s₀.gpr sch := I.only.g _ (by simp; exact ⟨hsch.1, hsch.2.1, hsch.2.2⟩)
-  have hSu : ∀ {v : State}, Only [.x5, .x6, .x7] roundRegs s₀ v → SchedIn v sch ∧ Consts v ∧
+  obtain hsc : u.gpr sch = s₀.gpr sch := I.only.g _ (by simp; exact ⟨hsch.1, hsch.2.1, hsch.2.2⟩)
+  obtain hSu : ∀ {v : State}, Only [.x5, .x6, .x7] roundRegs s₀ v → SchedIn v sch ∧ Consts v ∧
       scheduleAt v.mem (v.gpr sch) = K := by
     intro v hv
-    have hg : v.gpr sch = s₀.gpr sch := hv.g _ (by simp; exact ⟨hsch.1, hsch.2.1, hsch.2.2⟩)
+    obtain hg : v.gpr sch = s₀.gpr sch := hv.g _ (by simp; exact ⟨hsch.1, hsch.2.1, hsch.2.2⟩)
     refine ⟨fun off n h => ?_, ⟨fun e he => ?_, fun e he => ?_⟩, by rw [hv.mem, hg]⟩
     · rw [hv.rd, hv.wr, hg]; exact hS off n h
     · rw [hv.v _ c_notin.1]; exact hc.1 e he
@@ -96,20 +96,20 @@ theorem pair_run {s₀ : State} {sch : Reg} (hS : SchedIn s₀ sch) (hc : Consts
   obtain ⟨hSu₀, hcu₀, Ku₀⟩ := hSu I.only
   obtain ⟨u₁, r₁, a₁, b₁, x5₁, o₁⟩ := round_run hSu₀ hcu₀ up halves_ab (order_lt up (by omega_using [ht] : 2 * t < 18))
     (by rw [I.x5, hsc]) ⟨hsch.1, hsch.2.1⟩
-  have p₁ : Only [.x5, .x6, .x7] roundRegs s₀ u₁ := I.only.trans (o₁.mono (by simp) (fun _ h => h))
+  obtain p₁ : Only [.x5, .x6, .x7] roundRegs s₀ u₁ := I.only.trans (o₁.mono (by simp) (fun _ h => h))
   obtain ⟨hSu₁, hcu₁, Ku₁⟩ := hSu p₁
-  have x5₁' : u₁.gpr .x5 = u₁.gpr sch + BitVec.ofNat 64 (4 * order up (2 * t + 1)) := by
+  obtain x5₁' : u₁.gpr .x5 = u₁.gpr sch + BitVec.ofNat 64 (4 * order up (2 * t + 1)) := by
     rw [x5₁, I.x5, x5_next _ _ (by omega_using [ht]), p₁.g _ (by simp; exact ⟨hsch.1, hsch.2.1, hsch.2.2⟩)]
   obtain ⟨u₂, r₂, a₂, b₂, x5₂, o₂⟩ := round_run hSu₁ hcu₁ up halves_ba (order_lt up (by omega_using [ht] : 2 * t + 1 < 18))
     x5₁' ⟨hsch.1, hsch.2.1⟩
-  have p₂ : Only [.x5, .x6, .x7] roundRegs s₀ u₂ := p₁.trans (o₂.mono (by simp) (fun _ h => h))
+  obtain p₂ : Only [.x5, .x6, .x7] roundRegs s₀ u₂ := p₁.trans (o₂.mono (by simp) (fun _ h => h))
   let u₃ := u₂.write .x .x7 (u₂.read .x .x7 - BitVec.ofNat _ 1)
-  have r₃ : runBlock isa [.subImm .x .x7 .x7 1] u₂ = some u₃ := by
+  obtain r₃ : runBlock isa [.subImm .x .x7 .x7 1] u₂ = some u₃ := by
     rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil]
-  have hx7₂ : u₂.gpr .x7 = u.gpr .x7 := by
+  obtain hx7₂ : u₂.gpr .x7 = u.gpr .x7 := by
     rw [o₂.g _ (by simp), o₁.g _ (by simp)]
   refine ⟨u₃, VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some r₁ r₂) r₃, ?_⟩
-  have st : ∀ n < 16, iter K (order up) (2 * (t + 1)) (lane s₀.v aReg n, lane s₀.v bReg n) =
+  obtain st : ∀ n < 16, iter K (order up) (2 * (t + 1)) (lane s₀.v aReg n, lane s₀.v bReg n) =
       (lane u₂.v aReg n, lane u₂.v bReg n) := by
     intro n hn
     rw [show 2 * (t + 1) = (2 * t + 1) + 1 by omega_using [], iter_succ, iter_succ]
@@ -144,16 +144,16 @@ theorem xorP_run {s : State} {sch : Reg} (hS : SchedIn s sch) {i : Nat} (hi : i 
       (∀ n < 16, lane s'.v H n = lane s.v H n ^^^ pEntry (scheduleAt s.mem (s.gpr sch)) i) ∧
       Only [.x6] [.v0, H 0, H 1, H 2, H 3] s s' := by
   let p := pEntry (scheduleAt s.mem (s.gpr sch)) i
-  have hp : InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 (pOff + 4 * i)) 4 :=
+  obtain hp : InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 (pOff + 4 * i)) 4 :=
     hS _ _ (by simp only [pOff]; omega_using [hi])
-  have hread : s.mem.readW (s.gpr sch + BitVec.ofNat 64 (pOff + 4 * i)) 32 = p :=
+  obtain hread : s.mem.readW (s.gpr sch + BitVec.ofNat 64 (pOff + 4 * i)) 32 = p :=
     (pEntry_read _ _ hi).symm
   let s₁ := s.write .w .x6 (s.mem.readW (s.gpr sch + BitVec.ofNat 64 (pOff + 4 * i)) 32)
   let s₂ := s₁.setV .v0 (let w := (s₁.gpr .x6).setWidth 32; ofVWords w w w w)
-  have r₂ : runBlock isa [.ldr .w .x6 sch (pOff + 4 * i), .vop (.dup .s4 .v0 .x6)] s = some s₂ := by
+  obtain r₂ : runBlock isa [.ldr .w .x6 sch (pOff + 4 * i), .vop (.dup .s4 .v0 .x6)] s = some s₂ := by
     rw [runBlock_cons, exec_ldr_w (by simp only [pOff]; omega_using [hi]) hp, runStep_some, runBlock_cons,
       exec_dup4, runStep_some, runBlock_nil]
-  have v0₂ : ∀ l < 4, vword (s₂.v .v0) l = p := by
+  obtain v0₂ : ∀ l < 4, vword (s₂.v .v0) l = p := by
     intro l hl
     simp only [s₂, v_setV_self]
     rw [vword_ofVWords _ _ _ _ hl]
@@ -187,14 +187,14 @@ theorem cipher_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s)
           (feistel (scheduleAt s.mem (s.gpr sch)) (order up) (lane s.v aReg n) (lane s.v bReg n)).2) ∧
       Only [.x5, .x6, .x7] roundRegs s s' := by
   let K := scheduleAt s.mem (s.gpr sch)
-  have hsch' : ∀ r ∈ [Reg.x5, .x6, .x7], sch ≠ r := by simp; exact hsch
+  obtain hsch' : ∀ r ∈ [Reg.x5, .x6, .x7], sch ≠ r := by simp; exact hsch
   -- the setup
   let s₁ := s.write .x .x5 (s.read .x sch + BitVec.ofNat _ (if up then 0 else 68))
   let s₂ := s₁.write .x .x7 ((8 : BitVec 16).setWidth 64 <<< (16 * 0))
-  have r₂ : runBlock isa [.addImm .x .x5 sch (if up then 0 else 68), .movz .x .x7 8 0] s = some s₂ := by
+  obtain r₂ : runBlock isa [.addImm .x .x5 sch (if up then 0 else 68), .movz .x .x7 8 0] s = some s₂ := by
     rw [runBlock_cons, exec_addImm_x (by cases up <;> decide), runStep_some, runBlock_cons]
     rfl
-  have I₀ : CipherInv s sch up 0 s₂ := by
+  obtain I₀ : CipherInv s sch up 0 s₂ := by
     refine ⟨by omega_using [], fun n _ => rfl, fun n _ => rfl, ?_, rfl, ⟨rfl, fun r hr => ?_, fun _ _ => rfl⟩⟩
     · simp only [s₂, s₁, gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x7), gpr_write_self, State.read,
         BitVec.setWidth_eq]
@@ -210,7 +210,7 @@ theorem cipher_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s)
   · intro m u ⟨t, ht, hm, I⟩
     obtain ⟨u', r, I'⟩ := pair_run hS hc hsch up ht I
     refine WP.of_runBlock ⟨u', r, ?_⟩
-    have flag := eval_nonzero u' .x7 I'.x7 (by omega_using [])
+    obtain flag := eval_nonzero u' .x7 I'.x7 (by omega_using [])
     by_cases h : t + 1 = 8
     · left
       refine ⟨by rw [flag]; simp; omega_using [h], ?_⟩
@@ -218,21 +218,21 @@ theorem cipher_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s)
     · right
       refine ⟨by rw [flag]; simp; omega_using [ht, h], 8 - (t + 1), by omega_using [ht, hm], t + 1, by omega_using [ht, h], rfl, I'⟩
   · intro u I
-    have hg : u.gpr sch = s.gpr sch := I.only.g _ (by simp; exact hsch)
-    have hSu : SchedIn u sch := fun off n h => by rw [I.only.rd, I.only.wr, hg]; exact hS off n h
+    obtain hg : u.gpr sch = s.gpr sch := I.only.g _ (by simp; exact hsch)
+    obtain hSu : SchedIn u sch := fun off n h => by rw [I.only.rd, I.only.wr, hg]; exact hS off n h
     obtain ⟨u₁, r₁, a₁, o₁⟩ := xorP_run hSu (order_lt up (by decide : 16 < 18)) (H := aReg)
       (by decide) (by decide)
-    have hSu₁ : SchedIn u₁ sch := fun off n h => by
+    obtain hSu₁ : SchedIn u₁ sch := fun off n h => by
       rw [o₁.rd, o₁.wr, o₁.g _ (by simp; exact hsch.2.1)]; exact hSu off n h
     obtain ⟨u₂, r₂', b₂, o₂⟩ := xorP_run hSu₁ (order_lt up (by decide : 17 < 18)) (H := bReg)
       (by decide) (by decide)
     refine WP.of_runBlock ⟨u₂, by rw [finish_eq]; exact VG.AArch64.Tbl.runBlock_cat_some r₁ r₂', ?_⟩
-    have K₁ : scheduleAt u₁.mem (u₁.gpr sch) = K := by
+    obtain K₁ : scheduleAt u₁.mem (u₁.gpr sch) = K := by
       rw [o₁.mem, o₁.g _ (by simp; exact hsch.2.1), I.only.mem, hg]
-    have K₀ : scheduleAt u.mem (u.gpr sch) = K := by rw [I.only.mem, hg]
+    obtain K₀ : scheduleAt u.mem (u.gpr sch) = K := by rw [I.only.mem, hg]
     refine ⟨fun n hn => ⟨?_, ?_⟩, ?_⟩
     · have nb : ∀ k < 4, bReg k ∉ [VReg.v0, aReg 0, aReg 1, aReg 2, aReg 3] := by decide
-      have hb₁ : lane u₁.v bReg n = lane u.v bReg n := by
+      obtain hb₁ : lane u₁.v bReg n = lane u.v bReg n := by
         simp only [lane]; rw [o₁.v _ (nb _ (by omega_using [hn]))]
       rw [b₂ n hn, K₁, feistel_eq, hb₁, I.b n hn]
     · have na : ∀ k < 4, aReg k ∉ [VReg.v0, bReg 0, bReg 1, bReg 2, bReg 3] := by decide
@@ -303,7 +303,7 @@ theorem loadPair_run {s : State} {k : Nat} (hk : k < 4)
       (∀ l < 4, vword (s'.v (bReg k)) l =
         decodeWord (blockAt s.mem (s.gpr .x4 + BitVec.ofNat 64 (8 * (4 * k + l)))) 4) ∧
       VOnly [.v20, .v21, aReg k, bReg k] s s' := by
-  have ne := ab_ne k hk
+  obtain ne := ab_ne k hk
   obtain ⟨s₁, r₁, v₁, o₁⟩ := ldrq_run (t := s) .v20 .x4 (off := 32 * k) (by omega_arith)
     (by have := hR 0 (by decide); simpa using this)
   obtain ⟨s₂, r₂, v₂, o₂⟩ := ldrq_run (t := s₁) .v21 .x4 (off := 32 * k + 16) (by omega_arith)
@@ -317,13 +317,13 @@ theorem loadPair_run {s : State} {k : Nat} (hk : k < 4)
   -- the two reversed loads
   have m₁ : s₁.mem = s.mem := o₁.mem
   have g₁ : s₁.gpr = s.gpr := o₁.gpr
-  have w20 : s₄.v .v20 = VRevOp.eval .rev32b (s.mem.read (s.gpr .x4 + BitVec.ofNat 64 (32 * k)) 16) := by
+  obtain w20 : s₄.v .v20 = VRevOp.eval .rev32b (s.mem.read (s.gpr .x4 + BitVec.ofNat 64 (32 * k)) 16) := by
     rw [o₄.2 _ (by simp), v₃, o₂.2 _ (by simp), v₁]
-  have w21 : s₄.v .v21 =
+  obtain w21 : s₄.v .v21 =
       VRevOp.eval .rev32b (s.mem.read (s.gpr .x4 + BitVec.ofNat 64 (32 * k + 16)) 16) := by
     rw [v₄, o₃.2 _ (by simp), v₂, m₁, g₁]
-  have w20' : s₅.v .v20 = s₄.v .v20 := o₅.2 _ (by simp; exact ne.1.symm)
-  have w21' : s₅.v .v21 = s₄.v .v21 := o₅.2 _ (by simp; exact ne.2.1.symm)
+  obtain w20' : s₅.v .v20 = s₄.v .v20 := o₅.2 _ (by simp; exact ne.1.symm)
+  obtain w21' : s₅.v .v21 = s₄.v .v21 := o₅.2 _ (by simp; exact ne.2.1.symm)
   refine ⟨s₆, cat_run r₁ (cat_run r₂ (cat_run r₃ (cat_run r₄ (cat_run r₅ r₆)))), ?_, ?_, ?_⟩
   · intro l hl
     rw [o₆.2 _ (by simp; exact ne.2.2.2.2), v₅, vword_uzp1 _ _ hl, w20, w21]
@@ -355,27 +355,27 @@ theorem loadBatch_run {s : State}
       (∀ n < 16, lane s'.v aReg n = decodeWord (blockAt s.mem (s.gpr .x4 + BitVec.ofNat 64 (8 * n))) 0) ∧
       (∀ n < 16, lane s'.v bReg n = decodeWord (blockAt s.mem (s.gpr .x4 + BitVec.ofNat 64 (8 * n))) 4) ∧
       VOnly (.v20 :: .v21 :: halfRegs) s s' := by
-  have hR' : ∀ {t : State}, VOnly (.v20 :: .v21 :: halfRegs) s t → ∀ k < 4, ∀ j < 2,
+  obtain hR' : ∀ {t : State}, VOnly (.v20 :: .v21 :: halfRegs) s t → ∀ k < 4, ∀ j < 2,
       InRegions (t.rd ++ t.wr) (t.gpr .x4 + BitVec.ofNat 64 (32 * k + 16 * j)) 16 := by
     intro t ht k hk j hj
     rw [ht.rd, ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega_arith]
     exact hR _ (by omega_arith)
-  have sub : ∀ k < 4, ∀ r ∈ [VReg.v20, .v21, aReg k, bReg k], r ∈ VReg.v20 :: .v21 :: halfRegs := by decide
+  obtain sub : ∀ k < 4, ∀ r ∈ [VReg.v20, .v21, aReg k, bReg k], r ∈ VReg.v20 :: .v21 :: halfRegs := by decide
   obtain ⟨s₀, r₀, a₀, b₀, o₀⟩ := loadPair_run (s := s) (by decide : 0 < 4) (hR' (VOnly.refl _ _) 0 (by decide))
-  have p₀ := VOnly.mono o₀ (sub 0 (by decide))
+  obtain p₀ := VOnly.mono o₀ (sub 0 (by decide))
   obtain ⟨s₁, r₁, a₁, b₁, o₁⟩ := loadPair_run (s := s₀) (by decide : 1 < 4) (hR' p₀ 1 (by decide))
-  have p₁ := p₀.trans (VOnly.mono o₁ (sub 1 (by decide)))
+  obtain p₁ := p₀.trans (VOnly.mono o₁ (sub 1 (by decide)))
   obtain ⟨s₂, r₂, a₂, b₂, o₂⟩ := loadPair_run (s := s₁) (by decide : 2 < 4) (hR' p₁ 2 (by decide))
-  have p₂ := p₁.trans (VOnly.mono o₂ (sub 2 (by decide)))
+  obtain p₂ := p₁.trans (VOnly.mono o₂ (sub 2 (by decide)))
   obtain ⟨s₃, r₃, a₃, b₃, o₃⟩ := loadPair_run (s := s₂) (by decide : 3 < 4) (hR' p₂ 3 (by decide))
-  have p₃ := p₂.trans (VOnly.mono o₃ (sub 3 (by decide)))
+  obtain p₃ := p₂.trans (VOnly.mono o₃ (sub 3 (by decide)))
   refine ⟨s₃, by rw [loadBatch, loadPair_eq]; exact cat_run r₀ (cat_run r₁ (cat_run r₂ (cat_run r₃ runBlock_nil))),
     ?_, ?_, p₃⟩
   all_goals
     intro n hn
-    have m₀ := o₀.mem; have m₁ := o₁.mem; have m₂ := o₂.mem
-    have g₀ := o₀.gpr; have g₁ := o₁.gpr; have g₂ := o₂.gpr
-    have pres : ∀ k < 4, ∀ k' < 4, k ≠ k' → aReg k ∉ [VReg.v20, .v21, aReg k', bReg k'] ∧
+    obtain m₀ := o₀.mem; have m₁ := o₁.mem; have m₂ := o₂.mem
+    obtain g₀ := o₀.gpr; have g₁ := o₁.gpr; have g₂ := o₂.gpr
+    obtain pres : ∀ k < 4, ∀ k' < 4, k ≠ k' → aReg k ∉ [VReg.v20, .v21, aReg k', bReg k'] ∧
         bReg k ∉ [VReg.v20, .v21, aReg k', bReg k'] := by decide
     simp only [lane]
     rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3) with h | h | h | h <;> rw [h]
@@ -421,7 +421,7 @@ theorem stored_byte (Bk Ak : BitVec 128) {o e : Nat} (ho : o < 2) (he : e < 16) 
     vbyte (VRevOp.eval .rev32b (VPermOp.eval (if o = 0 then .zip1 else .zip2) .s4 Bk Ak)) e =
       (encodeBlock (vword Bk (2 * o + e / 8)) (vword Ak (2 * o + e / 8))).getD (e % 8) 0 := by
   rw [vbyte_rev32b _ he, vbyte_word _ (by omega_arith), encodeBlock_getD _ _ (by omega_arith)]
-  have hw : (e / 4) / 2 = e / 8 := by omega_arith
+  obtain hw : (e / 4) / 2 = e / 8 := by omega_arith
   rcases (by omega_arith : o = 0 ∨ o = 1) with rfl | rfl
   · rw [ite_eq_left_of_eq_true _ _ (eq_true rfl), vword_zip1 _ _ (by omega_arith), hw]
     by_cases h : e % 8 < 4
@@ -466,28 +466,28 @@ theorem storePair_run {s : State} {k : Nat} (hk : k < 4)
       (∀ j < 128, s'.mem (s.gpr .x4 + BitVec.ofNat 64 j) =
         if 32 * k ≤ j ∧ j < 32 * k + 32 then outByte s.v j else s.mem (s.gpr .x4 + BitVec.ofNat 64 j)) ∧
       Frame [⟨s.gpr .x4, 128⟩] s.mem s'.mem ∧ MOnly [.v20, .v21] s s' := by
-  have ne := ab_ne k hk
+  obtain ne := ab_ne k hk
   obtain ⟨s₁, r₁, v₁, o₁⟩ := vop_run (t := s) (.perm .zip1 .s4 .v20 (bReg k) (aReg k)) .v20 _
     (exec_vperm _ _ _ _ _ _)
   obtain ⟨s₂, r₂, v₂, o₂⟩ := vop_run (t := s₁) (.perm .zip2 .s4 .v21 (bReg k) (aReg k)) .v21 _
     (exec_vperm _ _ _ _ _ _)
   obtain ⟨s₃, r₃, v₃, o₃⟩ := vop_run (t := s₂) (.rev .rev32b .v20 .v20) .v20 _ (exec_rev32b _ _ _)
   obtain ⟨s₄, r₄, v₄, o₄⟩ := vop_run (t := s₃) (.rev .rev32b .v21 .v21) .v21 _ (exec_rev32b _ _ _)
-  have o₁₄ : VOnly [.v20, .v21] s s₄ := (((VOnly.mono o₁ (by simp)).trans (VOnly.mono o₂ (by simp))).trans
+  obtain o₁₄ : VOnly [.v20, .v21] s s₄ := (((VOnly.mono o₁ (by simp)).trans (VOnly.mono o₂ (by simp))).trans
     (VOnly.mono o₃ (by simp))).trans (VOnly.mono o₄ (by simp))
   obtain ⟨s₅, r₅, m₅, o₅⟩ := strq_run (t := s₄) .v20 .x4 (off := 32 * k) (by omega_arith)
     (by rw [o₁₄.wr, o₁₄.gpr]; simpa using hW 0 (by decide))
   obtain ⟨s₆, r₆, m₆, o₆⟩ := strq_run (t := s₅) .v21 .x4 (off := 32 * k + 16) (by omega_arith)
     (by rw [o₅.wr, o₅.gpr, o₁₄.wr, o₁₄.gpr]; exact hW 1 (by decide))
   -- the values stored
-  have x20 : s₄.v .v20 = VRevOp.eval .rev32b (VPermOp.eval .zip1 .s4 (s.v (bReg k)) (s.v (aReg k))) := by
+  obtain x20 : s₄.v .v20 = VRevOp.eval .rev32b (VPermOp.eval .zip1 .s4 (s.v (bReg k)) (s.v (aReg k))) := by
     rw [o₄.2 _ (by simp), v₃, o₂.2 _ (by simp), v₁]
-  have x21 : s₅.v .v21 = VRevOp.eval .rev32b (VPermOp.eval .zip2 .s4 (s.v (bReg k)) (s.v (aReg k))) := by
+  obtain x21 : s₅.v .v21 = VRevOp.eval .rev32b (VPermOp.eval .zip2 .s4 (s.v (bReg k)) (s.v (aReg k))) := by
     rw [o₅.v _ (by simp), v₄, o₃.2 _ (by simp), v₂, o₁.2 _ (by simp; exact ne.2.2.1),
       o₁.2 _ (by simp; exact ne.1)]
   have g₄' : s₄.gpr = s.gpr := o₁₄.gpr
-  have g₅' : s₅.gpr = s.gpr := by rw [o₅.gpr, g₄']
-  have fr : Frame [⟨s.gpr .x4, 128⟩] s.mem s₆.mem := by
+  obtain g₅' : s₅.gpr = s.gpr := by rw [o₅.gpr, g₄']
+  obtain fr : Frame [⟨s.gpr .x4, 128⟩] s.mem s₆.mem := by
     rw [m₆, m₅, g₅', g₄', o₁₄.mem]
     exact ((Frame.refl _ _).write (List.mem_singleton.mpr rfl) _
       (Offset.contains_base _ (by omega_arith) (by omega_arith))).write (List.mem_singleton.mpr rfl) _
@@ -495,10 +495,10 @@ theorem storePair_run {s : State} {k : Nat} (hk : k < 4)
   refine ⟨s₆, cat_run r₁ (cat_run r₂ (cat_run r₃ (cat_run r₄ (cat_run r₅ r₆)))), fun j hj => ?_, fr,
     (MOnly.ofV o₁₄).trans (o₅.trans o₆ |>.trans ⟨rfl, fun _ _ => rfl⟩ |> fun h => ⟨h.eq, fun r _ => h.v r (by simp)⟩)⟩
   have g₄ : s₄.gpr = s.gpr := o₁₄.gpr
-  have g₅ : s₅.gpr = s.gpr := by rw [o₅.gpr, g₄]
+  obtain g₅ : s₅.gpr = s.gpr := by rw [o₅.gpr, g₄]
   rw [m₆, g₅, show s.gpr .x4 + BitVec.ofNat 64 (32 * k + 16) = s.gpr .x4 + BitVec.ofNat 64 (32 * k + 16) from rfl,
     write16_byte _ _ _ (by omega_arith) hj, m₅, g₄, write16_byte _ _ _ (by omega_arith) hj, o₁₄.mem, x21, x20]
-  have lane_k : ∀ (R : Nat → VReg) (e : Nat), e < 16 → ∀ o < 2,
+  obtain lane_k : ∀ (R : Nat → VReg) (e : Nat), e < 16 → ∀ o < 2,
       vword (s.v (R k)) (2 * o + e / 8) = lane s.v R (4 * k + (2 * o + e / 8)) := by
     intro R e he o ho
     simp only [lane]
@@ -523,11 +523,11 @@ theorem storePair_eq : (List.range 4).flatMap (storePair .x4) =
 
 theorem outByte_congr {v v' : VReg → BitVec 128} (h : ∀ r ∈ halfRegs, v' r = v r) (j : Nat) :
     outByte v' j = outByte v j := by
-  have ha : ∀ n, lane v' aReg n = lane v aReg n := fun n => by
+  obtain ha : ∀ n, lane v' aReg n = lane v aReg n := fun n => by
     simp only [lane]; rw [h _ (by
       rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
         simp [e, aReg, halfRegs])]
-  have hb : ∀ n, lane v' bReg n = lane v bReg n := fun n => by
+  obtain hb : ∀ n, lane v' bReg n = lane v bReg n := fun n => by
     simp only [lane]; rw [h _ (by
       rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
         simp [e, bReg, halfRegs])]
@@ -539,25 +539,25 @@ theorem storeBatch_run {s : State}
     ∃ s', runBlock isa (storeBatch .x4) s = some s' ∧
       (∀ j < 128, s'.mem (s.gpr .x4 + BitVec.ofNat 64 j) = outByte s.v j) ∧
       Frame [⟨s.gpr .x4, 128⟩] s.mem s'.mem ∧ MOnly [.v20, .v21] s s' := by
-  have hW' : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ k < 4, ∀ j < 2,
+  obtain hW' : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ k < 4, ∀ j < 2,
       InRegions t.wr (t.gpr .x4 + BitVec.ofNat 64 (32 * k + 16 * j)) 16 := by
     intro t ht k hk j hj
     rw [ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega_arith]
     exact hW _ (by omega_arith)
-  have hh : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ r ∈ halfRegs, t.v r = s.v r := fun ht r hr =>
+  obtain hh : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ r ∈ halfRegs, t.v r = s.v r := fun ht r hr =>
     ht.v r (by revert r; decide)
   obtain ⟨s₀, r₀, m₀, f₀, o₀⟩ := storePair_run (s := s) (by decide : 0 < 4) (hW' ⟨rfl, fun _ _ => rfl⟩ 0 (by decide))
   obtain ⟨s₁, r₁, m₁, f₁, o₁⟩ := storePair_run (s := s₀) (by decide : 1 < 4) (hW' o₀ 1 (by decide))
-  have p₁ := o₀.trans o₁
+  obtain p₁ := o₀.trans o₁
   obtain ⟨s₂, r₂, m₂, f₂, o₂⟩ := storePair_run (s := s₁) (by decide : 2 < 4) (hW' p₁ 2 (by decide))
-  have p₂ := p₁.trans o₂
+  obtain p₂ := p₁.trans o₂
   obtain ⟨s₃, r₃, m₃, f₃, o₃⟩ := storePair_run (s := s₂) (by decide : 3 < 4) (hW' p₂ 3 (by decide))
-  have p₃ := p₂.trans o₃
-  have g₀ := o₀.gpr; have g₁ := p₁.gpr; have g₂ := p₂.gpr
-  have b₀ := outByte_congr (hh o₀); have b₁ := outByte_congr (hh p₁); have b₂ := outByte_congr (hh p₂)
-  have mem : ∀ j < 128, s₃.mem (s.gpr .x4 + BitVec.ofNat 64 j) = outByte s.v j := by
+  obtain p₃ := p₂.trans o₃
+  obtain g₀ := o₀.gpr; have g₁ := p₁.gpr; have g₂ := p₂.gpr
+  obtain b₀ := outByte_congr (hh o₀); have b₁ := outByte_congr (hh p₁); have b₂ := outByte_congr (hh p₂)
+  obtain mem : ∀ j < 128, s₃.mem (s.gpr .x4 + BitVec.ofNat 64 j) = outByte s.v j := by
     intro j hj
-    have e₃ := m₃ j hj; have e₂ := m₂ j hj; have e₁ := m₁ j hj; have e₀ := m₀ j hj
+    obtain e₃ := m₃ j hj; have e₂ := m₂ j hj; have e₁ := m₁ j hj; have e₀ := m₀ j hj
     rw [g₂] at e₃; rw [g₁] at e₂; rw [g₀] at e₁
     rw [e₃, b₂]
     split
@@ -606,18 +606,18 @@ theorem batch_ok (up : Bool) {s : State} (hS : SchedIn s .x0) (hc : Consts s)
   rw [batch]
   apply WP.seq
   refine WP.of_runBlock ⟨s₁, r₁, ?_⟩
-  have hS₁ : SchedIn s₁ .x0 := fun off n h => by rw [o₁.rd, o₁.wr, o₁.gpr]; exact hS off n h
-  have hc₁ : Consts s₁ :=
+  obtain hS₁ : SchedIn s₁ .x0 := fun off n h => by rw [o₁.rd, o₁.wr, o₁.gpr]; exact hS off n h
+  obtain hc₁ : Consts s₁ :=
     ⟨fun e he => by rw [o₁.2 _ (by decide)]; exact hc.1 e he, fun e he => by rw [o₁.2 _ (by decide)]; exact hc.2 e he⟩
   apply WP.seq
   refine WP.mono (cipher_run hS₁ hc₁ (by decide) up) ?_
   intro s₂ ⟨hl, o₂⟩
-  have hW₂ : ∀ k < 8, InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk => by
+  obtain hW₂ : ∀ k < 8, InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk => by
     rw [o₂.wr, o₂.g _ (by simp), o₁.wr, o₁.gpr]; exact hW k hk
   obtain ⟨s₃, r₃, m₃, f₃, o₃⟩ := storeBatch_run hW₂
   refine WP.of_runBlock ⟨s₃, r₃, ?_⟩
-  have g₂ : s₂.gpr .x4 = s.gpr .x4 := by rw [o₂.g _ (by simp), o₁.gpr]
-  have K₁ : scheduleAt s₁.mem (s₁.gpr .x0) = K := by rw [o₁.mem, o₁.gpr]
+  obtain g₂ : s₂.gpr .x4 = s.gpr .x4 := by rw [o₂.g _ (by simp), o₁.gpr]
+  obtain K₁ : scheduleAt s₁.mem (s₁.gpr .x0) = K := by rw [o₁.mem, o₁.gpr]
   refine ⟨fun n hn => ?_, fun r h5 h6 h7 => ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
   · refine blockAt_eq _ _ _ fun i hi => ?_
     rw [← g₂, Offset.add_add, m₃ _ (by omega_arith), outByte, show (8 * n + i) / 8 = n by omega_arith,

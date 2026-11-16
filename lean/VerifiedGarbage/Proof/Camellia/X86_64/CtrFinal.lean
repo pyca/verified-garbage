@@ -188,11 +188,11 @@ theorem callee_pre {s : State} {W C D : Addr} {R n : Nat} (hrdi : s.gpr .rdi = W
     calleeK.pre (s.callEntry.withRegions [⟨W, 272⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
   unfold calleeK Proof.Camellia.ctrContractSk
   rw [pre_regs (by decide) (by decide), callee_args hrdi hrsi hrdx hrcx hr8, callee_bufs W C D hn]
-  have hsp8 : (s.gpr .rsp - 8).toNat = (s.gpr .rsp).toNat - 8 := by
+  obtain hsp8 : (s.gpr .rsp - 8).toNat = (s.gpr .rsp).toNat - 8 := by
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega_using [hsp])]; rfl
-  have hret : Region.Sub ⟨s.gpr .rsp - 8, 8⟩ (below (s.gpr .rsp) 3296) :=
+  obtain hret : Region.Sub ⟨s.gpr .rsp - 8, 8⟩ (below (s.gpr .rsp) 3296) :=
     Offset.sub_below _ (by decide) (by decide)
-  have hcal : Region.Sub (below (s.gpr .rsp - 8) 3288) (below (s.gpr .rsp) 3296) := below_callee _ 3288
+  obtain hcal : Region.Sub (below (s.gpr .rsp - 8) 3288) (below (s.gpr .rsp) 3296) := below_callee _ 3288
   refine ⟨.inr (by rw [State.withRegions_gpr, State.callEntry_rsp, hsp8]; omega_using [hsp]), rfl, rfl, ?_, ?_, ?_, ?_⟩
   · simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
       List.Pairwise.nil, Bool.true_or, Bool.false_or, forall_const, and_true]
@@ -227,7 +227,7 @@ theorem callee_post {s s₂ : State} {W C D : Addr} {R n : Nat} (hrdi : s.gpr .r
   change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64]
     (Proof.Camellia.ctrPostSk 64) _ _ _ _ at h
   dsimp only [Curry.apply, Proof.Camellia.ctrPostSk, ArgWord.ofRaw] at h
-  have eN : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
+  obtain eN : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   simp only [BitVec.setWidth_eq, eN, State.withRegions_mem] at h
   rcases hR with rfl | rfl
   · exact h (.inl rfl)
@@ -416,7 +416,7 @@ structure KSetup (s₀ s : State) : Prop where
 
 theorem setup_wp {s₀ : State} (hp : KPre s₀) :
     WP isa (.block ctrFinalSetup) (s₀.setReg .rax (kV s₀)) (KSetup s₀) := by
-  have hw : ∀ p ∈ finalSaved, InRegions (s₀.setReg .rax (kV s₀)).wr
+  obtain hw : ∀ p ∈ finalSaved, InRegions (s₀.setReg .rax (kV s₀)).wr
       (Spill.slot ((s₀.setReg .rax (kV s₀)).gpr .rax) p.2) 8 := by
     intro p hp'
     rw [wr_setReg, gpr_setReg_self, hp.wr]
@@ -477,9 +477,9 @@ theorem whole_regions {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s�
 
 /-- The save and a call's return address change only `save` and the stack. -/
 theorem entry_frame {s₀ s : State} (h : KSetup s₀ s) : Frame [kSv s₀, kStk s₀] s₀.mem s.callEntry.mem := by
-  have f₁ : Frame [kSv s₀, kStk s₀] s₀.mem s.mem := by
+  obtain f₁ : Frame [kSv s₀, kStk s₀] s₀.mem s.mem := by
     rw [h.mem]; exact (svMem_frame s₀).mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]
-  have f₂ : Frame [kSv s₀, kStk s₀] s.mem s.callEntry.mem :=
+  obtain f₂ : Frame [kSv s₀, kStk s₀] s.mem s.callEntry.mem :=
     (AesCbc.X86_64.callEntry_frame s).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨kStk s₀, by simp, by rw [h.rsp]; exact Offset.sub_below _ (by decide) (by decide)⟩
@@ -487,18 +487,18 @@ theorem entry_frame {s₀ s : State} (h : KSetup s₀ s) : Frame [kSv s₀, kStk
 
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
     WP isa (.call "vg_camellia_ctr_core" ctrFramed) s (KWhole s₀) := by
-  have ef := entry_frame h
-  have dS : ∀ r ∈ [kSv s₀, kStk s₀], (kSch s₀).Disjoint r := by
+  obtain ef := entry_frame h
+  obtain dS : ∀ r ∈ [kSv s₀, kStk s₀], (kSch s₀).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.sch_sv
     · exact hp.stk_sch.symm
-  have eT : bytesAt s.callEntry.mem (fIv s₀) 16 = kT s₀ := AesCbc.X86_64.bytesAt_frame ef (fun r hr => by
+  obtain eT : bytesAt s.callEntry.mem (fIv s₀) 16 = kT s₀ := AesCbc.X86_64.bytesAt_frame ef (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.iv_sv
     · exact hp.stk_iv.symm) (by decide)
-  have eB : Spec.Cbc.blocksAt s.callEntry.mem (fD s₀) (fN s₀) = kBlks s₀ :=
+  obtain eB : Spec.Cbc.blocksAt s.callEntry.mem (fD s₀) (fN s₀) = kBlks s₀ :=
     AesCfb.X86_64.blocksAt_frame' ef fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -526,7 +526,7 @@ theorem test_wp {s₀ s : State} (h : KWhole s₀ s) :
     WP isa (.block [.alu .test .r14 (.reg .r14)]) s fun s' => KWhole s₀ s' ∧ s'.zf = some (decide (fU s₀ = 0)) :=
   WP.of_runBlock ⟨_, AesCfb.X86_64.test_ok s,
     ⟨h.rbx, h.rbp, h.r12, h.r13, h.r14, h.r15, h.rsp, h.rd, h.wr, h.frame, h.blocks, h.ctr, h.mx⟩, by
-    have eU := AesCfb.X86_64.fU_eq s₀
+    obtain eU := AesCfb.X86_64.fU_eq s₀
     rw [zf_arithFlags, BitVec.and_self, h.r14,
       AesCfb.X86_64.beq_zero' (by have := Nat.mod_lt (fL s₀) (by decide : 16 > 0); omega_using [eU])]⟩
 
@@ -588,10 +588,10 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s�
   obtain ⟨s₂, r₂, z₂, k₂, m₂, rd₂, wr₂⟩ := AesCtr.X86_64.zero_ok (s.setReg .rax (kV s₀))
   show WP isa (.block ([.mov32 .r10 (.imm 0)] ++ (Spill.saveCode .rax zeroSlots ++ ctrFinalTailMoves))) _ _
   refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₂, r₂, ?_⟩)
-  have k₂' : ∀ r, r ≠ .r10 → r ≠ .rax → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
+  obtain k₂' : ∀ r, r ≠ .r10 → r ≠ .rax → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
     rw [k₂ r h₁, gpr_setReg_of_ne _ _ h₂]
-  have hrax : s₂.gpr .rax = kV s₀ := by rw [k₂ _ (by decide), gpr_setReg_self]
-  have hw : ∀ p ∈ zeroSlots, InRegions s₂.wr (Spill.slot (s₂.gpr .rax) p.2) 8 := by
+  obtain hrax : s₂.gpr .rax = kV s₀ := by rw [k₂ _ (by decide), gpr_setReg_self]
+  obtain hw : ∀ p ∈ zeroSlots, InRegions s₂.wr (Spill.slot (s₂.gpr .rax) p.2) 8 := by
     intro p hp'
     rw [wr₂, wr_setReg, h.wr, hp.wr, hrax]
     simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hp'
@@ -601,15 +601,15 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s�
   refine Spill.save_then .rax zeroSlots hw ?_
   refine WP.mono (WP.of_runBlock (tailMoves_ok _))
     fun s' ⟨rdi, rsi, rdx, rcx, r8, cs, r13, r14, mem, rd, wr⟩ => ?_
-  have e : ∀ r, ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr .rax) s₂.gpr zeroSlots } : State).gpr r =
+  obtain e : ∀ r, ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr .rax) s₂.gpr zeroSlots } : State).gpr r =
     s₂.gpr r := fun _ => rfl
   rw [e] at rdi rsi rdx rcx r13 r14
-  have hm : s'.mem = Spill.saveMem s.mem (kV s₀) s₂.gpr zeroSlots := by
+  obtain hm : s'.mem = Spill.saveMem s.mem (kV s₀) s₂.gpr zeroSlots := by
     rw [mem]; show Spill.saveMem s₂.mem _ _ _ = _; rw [m₂, mem_setReg, hrax]
-  have fz : Frame [kBlk s₀] s.mem s'.mem := by rw [hm]; exact zero_frame s₀ _ _
-  have ivZ : ∀ r ∈ [kBlk s₀], (kIv s₀).Disjoint r := by
+  obtain fz : Frame [kBlk s₀] s.mem s'.mem := by rw [hm]; exact zero_frame s₀ _ _
+  obtain ivZ : ∀ r ∈ [kBlk s₀], (kIv s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_sv.sub_right (blk_sv_sub s₀)
-  have blkZ : ∀ r ∈ [kBlk s₀], (fBlk s₀).Disjoint r := by
+  obtain blkZ : ∀ r ∈ [kBlk s₀], (fBlk s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact (hp.data_sv.sub_left (blk_sub s₀)).sub_right (blk_sv_sub s₀)
   intro hmx
@@ -647,7 +647,7 @@ theorem tail_regions {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s�
     calleeK.pre (s.callEntry.withRegions [kSch s₀] [kIv s₀, ⟨kBk s₀, 16 * 1⟩]) ∧
       Covers ([kSch s₀] ++ [kIv s₀, ⟨kBk s₀, 16 * 1⟩]) (s.rd ++ s.wr) ∧
       Covers [kIv s₀, ⟨kBk s₀, 16 * 1⟩] s.wr := by
-  have bs := blk_sv_sub s₀
+  obtain bs := blk_sv_sub s₀
   refine ⟨callee_pre h.rdi (h.rsi.trans KPre.rsi) h.rdx h.rcx h.r8 (by decide) hp.rounds
     (by rw [h.rsp]; exact hp.sp) hp.sch_iv (hp.sch_sv.sub_right bs) (hp.iv_sv.sub_right bs) (fun r hr => ?_)
     hp.sch_wrap hp.iv_wrap (by rw [hp.bk_toNat]; have := hp.sv_wrap; omega_using [this]), ?_, ?_⟩
@@ -675,10 +675,10 @@ theorem KTArgs.entry {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s�
     Spec.Camellia.subkeysAt s.callEntry.mem (fW s₀) (fR s₀) = Spec.Camellia.subkeysAt s₀.mem (fW s₀) (fR s₀) ∧
       bytesAt s.callEntry.mem (fIv s₀) 16 = Spec.Ctr.next (kT s₀) (fN s₀) ∧
       bytesAt s.callEntry.mem (kBk s₀) 16 = List.replicate 16 0 := by
-  have ef := AesCbc.X86_64.callEntry_frame s
-  have stk : Region.Sub (below (s.gpr .rsp) 8) (kStk s₀) := by
+  obtain ef := AesCbc.X86_64.callEntry_frame s
+  obtain stk : Region.Sub (below (s.gpr .rsp) 8) (kStk s₀) := by
     rw [h.rsp]; exact Offset.sub_below _ (by decide) (by decide)
-  have big := big_of (kW1_kW h.frame)
+  obtain big := big_of (kW1_kW h.frame)
   refine ⟨?_, ?_, ?_⟩
   · rw [subkeys_of hp ef fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.stk_sch.symm.sub_right stk]
@@ -701,7 +701,7 @@ theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s�
   obtain ⟨pb, pc⟩ := callee_post h.rdi (h.rsi.trans KPre.rsi) h.rdx h.rcx h.r8 (by decide) hp.rounds post₂
   rw [mem₂, eK, eT] at pb
   rw [mem₂, eT] at pc
-  have fc : Frame (kW1 s₀) s.mem s'.mem := fr'.sub fun r hr => by
+  obtain fc : Frame (kW1 s₀) s.mem s'.mem := fr'.sub fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
@@ -743,22 +743,22 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTCall s₀
       (s.setReg .rax (kV s₀)) (KDone s₀) := by
   obtain ⟨s₁, r₁, rax₁, k₁, m₁, rd₁, wr₁⟩ := AesCtr.X86_64.key_ok (s.setReg .rax (kV s₀))
   rw [gpr_setReg_self] at rax₁
-  have k₁' : ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r := fun r hr => by rw [k₁ r hr, gpr_setReg_of_ne _ _ hr]
+  obtain k₁' : ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r := fun r hr => by rw [k₁ r hr, gpr_setReg_of_ne _ _ hr]
   rw [mem_setReg] at m₁
   rw [rd_setReg] at rd₁
   rw [wr_setReg] at wr₁
   refine WP.seq (WP.of_runBlock ⟨s₁, r₁, ?_⟩)
-  have hU : fU s₀ < 16 := Nat.mod_lt _ (by decide)
-  have hL := Nat.div_add_mod (fL s₀) 16
+  obtain hU : fU s₀ < 16 := Nat.mod_lt _ (by decide)
+  obtain hL := Nat.div_add_mod (fL s₀) 16
   have hDw := hp.data_wrap
   have hVw := hp.sv_wrap
-  have eN := AesCfb.X86_64.fN_eq s₀
-  have eU := AesCfb.X86_64.fU_eq s₀
-  have hT : (fT s₀).toNat = (fD s₀).toNat + 16 * fN s₀ := by
+  obtain eN := AesCfb.X86_64.fN_eq s₀
+  obtain eU := AesCfb.X86_64.fU_eq s₀
+  obtain hT : (fT s₀).toNat = (fD s₀).toNat + 16 * fN s₀ := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * fN s₀) (by omega),
       Nat.mod_eq_of_lt (by omega)]
   have hB := hp.bk_toNat
-  have xp : Modes.X86_64.XPre s₁ (kBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
+  obtain xp : Modes.X86_64.XPre s₁ (kBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
     small := by omega_using [hU]
     disj := (((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
       (Region.sub_prefix (by omega_using [hU]))).symm
@@ -776,7 +776,7 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTCall s₀
     dRax := by decide
     dR10 := by decide
     dRcx := by decide }
-  have x0 : Modes.X86_64.XInv s₁ (kBk s₀) (fT s₀) (fU s₀) .r13 .r14 0 s₁ := {
+  obtain x0 : Modes.X86_64.XInv s₁ (kBk s₀) (fT s₀) (fU s₀) .r13 .r14 0 s₁ := {
     rax := by rw [rax₁]; exact (BitVec.add_zero _).symm
     dat := by rw [k₁' _ (by decide), h.r13]; exact (BitVec.add_zero _).symm
     left := by rw [k₁' _ (by decide), h.r14, Nat.sub_zero]
@@ -787,7 +787,7 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTCall s₀
     wr := rfl
     gpr := fun _ _ _ _ _ _ => rfl }
   refine WP.mono (Modes.X86_64.xorLoop_wp xp x0) fun s' d => ?_
-  have tailD : ∀ r ∈ kW1 s₀, (fTail s₀).Disjoint r := by
+  obtain tailD : ∀ r ∈ kW1 s₀, (fTail s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -795,12 +795,12 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTCall s₀
     · exact hp.blk_tail.symm
     · exact (hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)
     · exact (hp.stk_data.sub_right (tail_sub s₀)).symm
-  have tailS : ∀ r ∈ [kSv s₀], (fTail s₀).Disjoint r := by
+  obtain tailS : ∀ r ∈ [kSv s₀], (fTail s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_sv.sub_left (tail_sub s₀)
-  have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; omega_using [hU]
-  have ivT : ∀ r ∈ [fTail s₀], (kIv s₀).Disjoint r := by
+  obtain hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; omega_using [hU]
+  obtain ivT : ∀ r ∈ [fTail s₀], (kIv s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact hp.iv_data.sub_right (tail_sub s₀)
   refine ⟨by rw [d.gpr .r15 (by decide) (by decide) (by decide) (by decide) (by decide), k₁' _ (by decide), h.r15],
@@ -834,14 +834,14 @@ theorem mid_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s₀ s) (
 
 theorem end_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KDone s₀ s) :
     WP isa (.seq (.block ctrFinalLoad) (.block finalRestore)) s fun s' => gprPreserved s₀ s' ∧ s'.mem = s.mem := by
-  have big := big_of h.frame
+  obtain big := big_of h.frame
   refine WP.seq (WP.of_runBlock ⟨_, load_ok s, ?_⟩)
   rw [h.r15]
-  have hs : Spill.Saved (s.setReg .rax (kV s₀)).mem ((s.setReg .rax (kV s₀)).gpr .rax) (kG s₀) finalSaved := by
+  obtain hs : Spill.Saved (s.setReg .rax (kV s₀)).mem ((s.setReg .rax (kV s₀)).gpr .rax) (kG s₀) finalSaved := by
     rw [mem_setReg, gpr_setReg_self]
     refine (Spill.saveMem_saved _ _ _ _ (by decide)).frame h.frame fun p hp' r hr => ?_
     have := AesCfb.X86_64.saved_slots p hp'
-    have hsub : Region.Sub ⟨Spill.slot (kV s₀) p.2, 8⟩ (kSv s₀) := Offset.sub_base _ (by omega_using [this])
+    obtain hsub : Region.Sub ⟨Spill.slot (kV s₀) p.2, 8⟩ (kSv s₀) := Offset.sub_base _ (by omega_using [this])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.iv_sv.symm.sub_left hsub
@@ -918,14 +918,14 @@ theorem restore_taint : ∃ h, (taint.check (Taint.ofRegs [.rax]) (.block finalR
 theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctrFinalX86_64.pre s₀')
     (hq : ctrFinalX86_64.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') ctrFinal fun _ _ => True := by
-  have hp := KPre.of h0
-  have hp' := KPre.of h0'
+  obtain hp := KPre.of h0
+  obtain hp' := KPre.of h0'
   obtain ⟨qW, qR, qIv, qD, qL, qV, qSp, qMx⟩ := hq
-  have qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
-  have qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
-  have qT : fT s₀ = fT s₀' := by simp only [fT, qD, qN]
-  have qRn : fR s₀ = fR s₀' := by simp only [fR, qR]
-  have r₁ := AesCtr.X86_64.taint_rel (P := fun a b => a = s₀ ∧ b = s₀') (F₁ := (· = s₀.setReg .rax (kV s₀)))
+  obtain qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
+  obtain qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
+  obtain qT : fT s₀ = fT s₀' := by simp only [fT, qD, qN]
+  obtain qRn : fR s₀ = fR s₀' := by simp only [fR, qR]
+  obtain r₁ := AesCtr.X86_64.taint_rel (P := fun a b => a = s₀ ∧ b = s₀') (F₁ := (· = s₀.setReg .rax (kV s₀)))
     (F₂ := (· = s₀'.setReg .rax (kV s₀'))) [.r9] load0_taint
     (fun a b h r hr => by
       obtain ⟨rfl, rfl⟩ := h; simp only [List.mem_singleton] at hr; subst hr; exact qV)
@@ -940,7 +940,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp only [gpr_setReg, reduceCtorEq, ↓reduceIte, qW, qR, qIv, qD, qL, qSp, kV, qV])
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
-  have r₃ := (RelCT.callEx (k := calleeK) (n := "vg_camellia_ctr_core") ctrFramed_sk.1 ctrFramed_sk.2.1
+  obtain r₃ := (RelCT.callEx (k := calleeK) (n := "vg_camellia_ctr_core") ctrFramed_sk.1 ctrFramed_sk.2.1
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_regions hp ha
       obtain ⟨pb, cb, wb⟩ := whole_regions hp' hb
@@ -950,20 +950,20 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
         (hb.rdx.trans (by rw [fIv, fIv, qIv])) (hb.rcx.trans (by rw [fD, fD, qD])) (hb.r8.trans (by rw [qN]))
         (by rw [ha.rsp, hb.rsp, fSp, fSp, qSp]) (ha.mx.trans (qMx.trans hb.mx.symm)) _ _ _ _).wp
     (F₁ := KWhole s₀) (F₂ := KWhole s₀') fun a b h => ⟨whole_wp hp h.1, whole_wp hp' h.2⟩
-  have r₄ := AesCtr.X86_64.taint_rel (P := fun a b => KWhole s₀ a ∧ KWhole s₀' b)
+  obtain r₄ := AesCtr.X86_64.taint_rel (P := fun a b => KWhole s₀ a ∧ KWhole s₀' b)
     (F₁ := fun (s : State) => KWhole s₀ s ∧ s.zf = some (decide (fU s₀ = 0)))
     (F₂ := fun (s : State) => KWhole s₀' s ∧ s.zf = some (decide (fU s₀' = 0))) [.r14] test_taint
     (fun a b h r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.1.r14, h.2.r14, qU])
     fun a b h => ⟨test_wp h.1, test_wp h.2⟩
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => KWhole s₀ a ∧ KWhole s₀' b) ctrFinalTail
       fun a b => KDone s₀ a ∧ KDone s₀' b := by
-    have hu' : fU s₀' ≠ 0 := qU ▸ hu
-    have a₁ := AesCtr.X86_64.taint_rel (P := fun a b => KWhole s₀ a ∧ KWhole s₀' b)
+    obtain hu' : fU s₀' ≠ 0 := qU ▸ hu
+    obtain a₁ := AesCtr.X86_64.taint_rel (P := fun a b => KWhole s₀ a ∧ KWhole s₀' b)
       (F₁ := Loaded (KWhole s₀) s₀) (F₂ := Loaded (KWhole s₀') s₀') [.r15] load_taint
       (fun a b h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.r15, h.2.r15, kV, kV, qV])
       fun a b h => ⟨tail_load_wp h.1, tail_load_wp h.2⟩
-    have a₂ := AesCtr.X86_64.taint_rel (P := fun a b => Loaded (KWhole s₀) s₀ a ∧ Loaded (KWhole s₀') s₀' b)
+    obtain a₂ := AesCtr.X86_64.taint_rel (P := fun a b => Loaded (KWhole s₀) s₀ a ∧ Loaded (KWhole s₀') s₀' b)
       (F₁ := KTArgs s₀) (F₂ := KTArgs s₀') [.rax, .rbx, .rbp, .r12, .rsp] tailArgs_taint
       (fun a b h r hr => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
@@ -978,7 +978,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
       fun a b h => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_args_wp hp hw, tail_args_wp hp' hw'⟩
-    have a₃ := (RelCT.callEx (k := calleeK) (n := "vg_camellia_ctr_core") ctrFramed_sk.1 ctrFramed_sk.2.1
+    obtain a₃ := (RelCT.callEx (k := calleeK) (n := "vg_camellia_ctr_core") ctrFramed_sk.1 ctrFramed_sk.2.1
       (P := fun a b => KTArgs s₀ a ∧ KTArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_regions hp ha
         obtain ⟨pb, cb, wb⟩ := tail_regions hp' hb
@@ -988,12 +988,12 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
           (hb.rdx.trans (by rw [fIv, fIv, qIv])) (hb.rcx.trans (by rw [kBk, kBk, kV, kV, qV])) hb.r8
           (by rw [ha.rsp, hb.rsp, fSp, fSp, qSp]) (ha.mx.trans (qMx.trans hb.mx.symm)) _ _ _ _).wp
       (F₁ := KTCall s₀) (F₂ := KTCall s₀') fun a b h => ⟨tail_call_wp hp h.1, tail_call_wp hp' h.2⟩
-    have a₄ := AesCtr.X86_64.taint_rel (P := fun a b => KTCall s₀ a ∧ KTCall s₀' b)
+    obtain a₄ := AesCtr.X86_64.taint_rel (P := fun a b => KTCall s₀ a ∧ KTCall s₀' b)
       (F₁ := Loaded (KTCall s₀) s₀) (F₂ := Loaded (KTCall s₀') s₀') [.r15] load_taint
       (fun a b h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.r15, h.2.r15, kV, kV, qV])
       fun a b h => ⟨key_load_wp h.1, key_load_wp h.2⟩
-    have a₅ := AesCtr.X86_64.taint_rel (P := fun a b => Loaded (KTCall s₀) s₀ a ∧ Loaded (KTCall s₀') s₀' b)
+    obtain a₅ := AesCtr.X86_64.taint_rel (P := fun a b => Loaded (KTCall s₀) s₀ a ∧ Loaded (KTCall s₀') s₀' b)
       (F₁ := KDone s₀) (F₂ := KDone s₀') [.rax, .r13, .r14] xor_taint
       (fun a b h r hr => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
@@ -1006,19 +1006,19 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_xor_wp hp hw hu, tail_xor_wp hp' hw' hu'⟩
     exact a₁.seq (a₂.seq ((a₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq (a₄.seq a₅)))
-  have r₅ : RelCT isa (fun a b => (KWhole s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
+  obtain r₅ : RelCT isa (fun a b => (KWhole s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
       (KWhole s₀' b ∧ b.zf = some (decide (fU s₀' = 0)))) (.ite .e (.block []) ctrFinalTail)
       (fun a b => KDone s₀ a ∧ KDone s₀' b) := by
     refine RelCT.ite (fun a b h => ?_) ?_ ?_
     · show a.zf = b.zf; rw [h.1.2, h.2.2, qU]
     · refine RelCT.block_nil fun a b h => ?_
-      have h0 : fU s₀ = 0 := by
+      obtain h0 : fU s₀ = 0 := by
         have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this; simpa using this
       exact ⟨done_of_zero h.1.1.1 h0, done_of_zero h.1.2.1 (qU ▸ h0)⟩
     · refine (RelCT.exists_ fun (hu : fU s₀ ≠ 0) => tail hu).mono
         (fun a b h => ⟨?_, h.1.1.1, h.1.2.1⟩) fun _ _ h => h
       have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this; simpa using this
-  have r₆ := AesCtr.X86_64.taint_rel (P := fun a b => KDone s₀ a ∧ KDone s₀' b)
+  obtain r₆ := AesCtr.X86_64.taint_rel (P := fun a b => KDone s₀ a ∧ KDone s₀' b)
     (F₁ := fun (s : State) => s.gpr .rax = kV s₀) (F₂ := fun (s : State) => s.gpr .rax = kV s₀') [.r15]
     load_taint
     (fun a b h r hr => by
@@ -1026,7 +1026,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctr
     fun a b h => ⟨WP.of_runBlock ⟨_, load_ok _, by rw [gpr_setReg_self, h.1.r15]⟩,
       WP.of_runBlock ⟨_, load_ok _, by rw [gpr_setReg_self, h.2.r15]⟩⟩
   obtain ⟨_, t₇⟩ := restore_taint
-  have r₇ := RelCT.taint (A := taint) (P := fun a b => a.gpr .rax = kV s₀ ∧ b.gpr .rax = kV s₀') _
+  obtain r₇ := RelCT.taint (A := taint) (P := fun a b => a.gpr .rax = kV s₀ ∧ b.gpr .rax = kV s₀') _
     (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1, h.2, kV, kV, qV]) t₇
   exact r₁.seq (r₂.seq ((r₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq (r₄.seq (r₅.seq (r₆.seq r₇)))))

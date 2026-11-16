@@ -36,13 +36,13 @@ open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
 theorem red_mac (x y z w : Zq) :
     red C (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val) =
       BitVec.ofNat 32 (x * y + z * w).val := by
-  have hx := val_lt x
-  have hy := val_lt y
-  have hz := val_lt z
-  have hw := val_lt w
-  have p1 := mul_lt_q2 hx hy
-  have p2 := mul_lt_q2 hz hw
-  have hs : (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val).toNat =
+  obtain hx := val_lt x
+  obtain hy := val_lt y
+  obtain hz := val_lt z
+  obtain hw := val_lt w
+  obtain p1 := mul_lt_q2 hx hy
+  obtain p2 := mul_lt_q2 hz hw
+  obtain hs : (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val).toNat =
       x.val * y.val + z.val * w.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := x.val) (by omega_arith),
@@ -168,35 +168,35 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
   have fF := hp.fitF
   have fG := hp.fitG
   have fS := hp.fitS
-  have eF0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fF (by omega_arith) (by omega_arith)
-  have eF1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fF (by omega_arith) (by omega_arith)
-  have eG0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fG (by omega_arith) (by omega_arith)
-  have eG1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fG (by omega_arith) (by omega_arith)
-  have eH0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fH (by omega_arith) (by omega_arith)
-  have eH1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fH (by omega_arith) (by omega_arith)
-  have eS := addr_ptr (ps s₀) (4 * i) 0 (by omega_arith)
-  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 4 :=
+  obtain eF0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fF (by omega_arith) (by omega_arith)
+  obtain eF1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fF (by omega_arith) (by omega_arith)
+  obtain eG0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fG (by omega_arith) (by omega_arith)
+  obtain eG1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fG (by omega_arith) (by omega_arith)
+  obtain eH0 := addr_coeff (i := 8 * i) (o := 0) (j := 2 * i) fH (by omega_arith) (by omega_arith)
+  obtain eH1 := addr_coeff (i := 8 * i) (o := 4) (j := 2 * i + 1) fH (by omega_arith) (by omega_arith)
+  obtain eS := addr_ptr (ps s₀) (4 * i) 0 (by omega_arith)
+  obtain cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 4 :=
     contains_off (by omega_arith) (by omega_arith)
-  have iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
+  obtain iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
       InRegions (s.rd ++ s.wr) a n := fun hR hc => by rw [h.rd, h.wr]; exact inRegions_of hR hc
-  have iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
+  obtain iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
     fun hR hc => by rw [h.wr]; exact inRegions_of hR hc
   -- The values read.
-  have vF : ∀ j < 256, coeffAt s.mem (F s₀) j = BitVec.ofNat 32 ((fp s₀)[j]!).val := fun j hj => by
+  obtain vF : ∀ j < 256, coeffAt s.mem (F s₀) j = BitVec.ofNat 32 ((fp s₀)[j]!).val := fun j hj => by
     rw [frame_coeff h.frame (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hf.symm)
       (by rw [n_eq]; exact hj), hm.f j hj]
     exact ofNat_val_eq (polyAt_val hp.redF (by rw [n_eq]; exact hj)).symm
-  have vG : ∀ j < 256, coeffAt s.mem (G s₀) j = BitVec.ofNat 32 ((gp s₀)[j]!).val := fun j hj => by
+  obtain vG : ∀ j < 256, coeffAt s.mem (G s₀) j = BitVec.ofNat 32 ((gp s₀)[j]!).val := fun j hj => by
     rw [frame_coeff h.frame (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hg.symm)
       (by rw [n_eq]; exact hj), hm.g j hj]
     exact ofNat_val_eq (polyAt_val hp.redG (by rw [n_eq]; exact hj)).symm
-  have vS : s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 32 = BitVec.ofNat 32 (gamma i).val := by
+  obtain vS : s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 32 = BitVec.ofNat 32 (gamma i).val := by
     rw [h.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hs.symm)
       (by decide), Nat.add_zero, hm.tab i hi, gammaTable_eq, gammas_getD hi]
   refine WP.mono (body_ok h.r0 h.r1 h.r2 h.r3 h.r8 h.r11
@@ -227,18 +227,18 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
     WP isa (.block (saveRegs .r3 512 ++ table gammaTable .r3 ++ consts ++ ([.mov .r11 (.imm 128)] : List Instr)))
       s₀ fun s => Setup s₀ s.mem ∧ Inv s₀ s.mem 0 s := by
   have fS := hp.fitS
-  have wS : ∀ {o n : Nat}, o + n ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) n := fun h => by
+  obtain wS : ∀ {o n : Nat}, o + n ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) n := fun h => by
     rw [hp.wr]; exact inRegions_of (by simp) (contains_off h (by omega_arith))
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (saveRegs_ok .r3 (off := 512) (by decide) (fit_le (by decide) fS) fun i hi => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact wS (by omega_arith)) fun s₁ h₁ => ?_
   rw [WP.block_append_iff]
-  have g3 : (s₁.gpr .r3) = ps s₀ := by rw [h₁.gpr]
+  obtain g3 : (s₁.gpr .r3) = ps s₀ := by rw [h₁.gpr]
   refine WP.mono (table_ok gammaTable (by decide) (b := .r3) (by decide) (by rw [g3]; exact fit_le (by decide) fS)
     fun k hk => by rw [g3, h₁.wr]; exact wS (by omega_arith)) fun s₂ h₂ => ?_
   -- The memory after the setup, and its bytes outside `scratch`.
-  have hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
-  have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
+  obtain hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
+  obtain fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine (h₁.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
       (h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     · rw [List.mem_singleton] at hr; subst hr
@@ -246,7 +246,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
     · rw [List.mem_singleton] at hr; subst hr
       rw [g3, ← add_ofNat_zero (State.addr (ps s₀))]
       exact region_sub_off (by decide)
-  have hm : Setup s₀ s₂.mem := by
+  obtain hm : Setup s₀ s₂.mem := by
     refine ⟨fun i hi => ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
     · rw [h₂.frame.readW (r := ⟨S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 (4 * i), 4⟩)
         (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
@@ -259,12 +259,12 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
         (by rw [n_eq]; exact hj)
     · exact frame_coeff fr (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.gs)
         (by rw [n_eq]; exact hj)
-  have e : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r hr => (h₂.gpr r hr).trans (by rw [h₁.gpr])
-  have e0 := e .r0 (by decide)
-  have e1 := e .r1 (by decide)
-  have e2 := e .r2 (by decide)
-  have e3 := e .r3 (by decide)
-  have elr := e .lr (by decide)
+  obtain e : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r hr => (h₂.gpr r hr).trans (by rw [h₁.gpr])
+  obtain e0 := e .r0 (by decide)
+  obtain e1 := e .r1 (by decide)
+  obtain e2 := e .r2 (by decide)
+  obtain e3 := e .r3 (by decide)
+  obtain elr := e .lr (by decide)
   run_block [consts, e0, e1, e2, e3, elr, h₂.rd, h₁.rd, h₂.wr, h₁.wr, h₂.sp, h₁.sp, consts_val, hm, true_and]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, Frame.refl _ _, fun j _ => ?_⟩ <;> simp [e0, e1, e2, e3, elr]
 
@@ -273,8 +273,8 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ 
     WP isa (.block (restoreRegs .r3 0)) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
       s'.sp = s₀.sp ∧ PolyIs s'.mem (H s₀) (multiplyNTTs (fp s₀) (gp s₀)) := by
   have fS := hp.fitS
-  have hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
-  have e3 : State.addr (s.gpr .r3) + BitVec.ofNat 64 0 = S s₀ + BitVec.ofNat 64 512 := by
+  obtain hS : (S s₀).toNat + 1024 ≤ 2 ^ 64 := addr_fit _ (by decide)
+  obtain e3 : State.addr (s.gpr .r3) + BitVec.ofNat 64 0 = S s₀ + BitVec.ofNat 64 512 := by
     rw [h.r3, addr_add (by omega_arith), add_ofNat_zero]
   refine WP.mono (restoreRegs_ok .r3 (by decide) (off := 0) (by decide) (by rw [h.r3]; bv_omega)
     (g := s₀.gpr) (by

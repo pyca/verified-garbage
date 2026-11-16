@@ -112,7 +112,7 @@ theorem iter_snd (b k : Nat) (s : Nat × Nat × Nat) : ((twoStep b)^[k] s).2.1 �
 /-- What the GCD needs of the halvings' result: `u` odd and at most `n - 1`, `x` narrow. -/
 theorem twos_out {nb wb n de : Nat} (three : 3 ≤ n) (hn : n < 2 ^ nb) :
     (twosOut nb wb n de).1 % 2 = 1 ∧ (twosOut nb wb n de).1 ≤ n - 1 ∧ (twosOut nb wb n de).2.1 < 2 ^ nb := by
-  have un : wsub nb n 1 = n - 1 := wsub_of_le hn (by omega_arith)
+  obtain un : wsub nb n 1 = n - 1 := wsub_of_le hn (by omega_arith)
   have ⟨o, l, _⟩ := twos_iter (b := wb) (N := n - 1) (x := 0) (k := nb) (by omega_arith) (by omega_arith)
     (Nat.two_pow_pos wb)
   unfold twosOut
@@ -157,7 +157,7 @@ theorem mask_eq {nb wb n de q rem B0 B1 Lt Ex C1 C2 Ok : Nat}
     · have h4' := h4
       simp only [VG.Proof.Rsa.RecoverDet.ok4Of, Bool.or_eq_false_iff, not_and,
         decide_eq_false_iff_not, Classical.not_not, Bool.not_eq_eq_eq_not, Bool.not_true] at h4'
-      have e : (stage2 nb wb n q rem).1 = false := by
+      obtain e : (stage2 nb wb n q rem).1 = false := by
         simp only [stage2, Bool.and_eq_false_iff]; exact .inl (.inr (by simpa using h4))
       rw [e, Bool.and_false]
       by_cases hc : sqOf nb wb (RecoverDet.bOf nb q) < fourN wb n
@@ -197,13 +197,13 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
     WP isa (seqs [twos, gcd, divA]) s (St3 s0) := by
   have ⟨b8, _, _, _, nk⟩ := bounds h
   have ⟨f1, f2⟩ := h.fits
-  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have wpos : 0 < wOf s0 := by simp only [wOf]; omega_arith
+  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain wpos : 0 < wOf s0 := by simp only [wOf]; omega_arith
   have hk : kOf s0 ≤ 1024 := h.k2
   have hk1 : 64 ≤ kOf s0 := h.k1
-  have hw5 : 5 ≤ wOf s0 := by rw [w_eq]; omega_arith
-  have hw129 : wOf s0 ≤ 129 := by rw [w_eq]; omega_arith
-  have hnl : Nv s0 < 2 ^ (64 * (wOf s0 - 1)) :=
+  obtain hw5 : 5 ≤ wOf s0 := by rw [w_eq]; omega_arith
+  obtain hw129 : wOf s0 ≤ 129 := by rw [w_eq]; omega_arith
+  obtain hnl : Nv s0 < 2 ^ (64 * (wOf s0 - 1)) :=
     Nat.lt_of_lt_of_le nk (Nat.pow_le_pow_right (by decide) (by rw [w_eq]; omega_arith))
   -- The halvings.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -212,33 +212,33 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
     (by rw [dm.n]; omega_using [three]) (by rw [dm.n]; omega_using [three])
     (K := 8 * kOf s0) (by omega_arith) (by rw [dm.n]; exact nk))
     fun t1 ⟨w1, F1, one1, st1, k1⟩ => ?_
-  have c1 := dm.cb.step w1 F1 (by rdc) (by rdc) k1
-  have fr1 := free_step (U' := u1) F1 (by rdc) fit (by rdc) (by rdc) dm.free
-  have n1 : num t1.mem (bOf s0) (wOf s0) aN = Nv s0 := by rw [F1.num (by rdc) (by rdc) (fit _ (by rdc)), dm.n]
-  have tw : twosSt t1.mem (bOf s0) (wOf s0) = twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) := by
+  obtain c1 := dm.cb.step w1 F1 (by rdc) (by rdc) k1
+  obtain fr1 := free_step (U' := u1) F1 (by rdc) fit (by rdc) (by rdc) dm.free
+  obtain n1 : num t1.mem (bOf s0) (wOf s0) aN = Nv s0 := by rw [F1.num (by rdc) (by rdc) (fit _ (by rdc)), dm.n]
+  obtain tw : twosSt t1.mem (bOf s0) (wOf s0) = twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) := by
     rw [st1, dm.n, dm.x]; rfl
   obtain ⟨uo, ul, x2l⟩ := twos_out (wb := wbOf s0) (de := deOf s0) three (show Nv s0 < 2 ^ nbOf s0 by omega_arith)
-  have u1v : num t1.mem (bOf s0) (wOf s0) aU = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).1 := by
+  obtain u1v : num t1.mem (bOf s0) (wOf s0) aU = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).1 := by
     rw [← tw]; rfl
-  have x21 : num t1.mem (bOf s0) (wOf s0) aX2 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.1 := by
+  obtain x21 : num t1.mem (bOf s0) (wOf s0) aX2 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.1 := by
     rw [← tw]; rfl
-  have x31 : num t1.mem (bOf s0) (WOf s0) wX3 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.2 := by
+  obtain x31 : num t1.mem (bOf s0) (WOf s0) wX3 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.2 := by
     rw [← tw]; rfl
   -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hw4 : 4 ≤ wOf s0 := by omega_using [hw5]
+  obtain hw4 : 4 ≤ wOf s0 := by omega_using [hw5]
   refine WP.mono (gcd_ok w1 (by decide) (by decide) hw4 one1 (by rw [u1v]; exact uo))
     fun t2 ⟨w2, F2, hi2, g2, k2⟩ => ?_
-  have c2 := c1.step w2 F2 (by rdc) (by rdc) k2
-  have fr2 := free_step (U' := u2) F2 (by rdc) fit (by rdc) (by rdc) fr1
-  have n2 : num t2.mem (bOf s0) (wOf s0) aN = Nv s0 := by rw [F2.num (by rdc) (by rdc) (fit _ (by rdc)), n1]
-  have G : num t2.mem (bOf s0) (WOf s0) wG =
+  obtain c2 := c1.step w2 F2 (by rdc) (by rdc) k2
+  obtain fr2 := free_step (U' := u2) F2 (by rdc) fit (by rdc) (by rdc) fr1
+  obtain n2 : num t2.mem (bOf s0) (wOf s0) aN = Nv s0 := by rw [F2.num (by rdc) (by rdc) (fit _ (by rdc)), n1]
+  obtain G : num t2.mem (bOf s0) (WOf s0) wG =
       Nat.gcd (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.1 (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).1 := by
     rw [numW_low (by rw [hi2]; exact hiW_zero (fr1 _ (by rdc) (by rdc)) (fr1 _ (by rdc) (by rdc))),
       g2, x21, u1v]
-  have X3 : num t2.mem (bOf s0) (WOf s0) wX3 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.2 := by
+  obtain X3 : num t2.mem (bOf s0) (WOf s0) wX3 = (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).2.2 := by
     rw [numW_of F2 (by rdc) (by rdc) (fit _ (by rdc)), x31]
-  have aof : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
+  obtain aof : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
       num t2.mem (bOf s0) (WOf s0) wG * num t2.mem (bOf s0) (WOf s0) wX3 % 2 ^ (64 * WOf s0) := by
     rw [G, X3]
     refine aOf_eq (by rw [← x31]; exact wordsVal_lt _ _ _ _) ?_
@@ -253,8 +253,8 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
     (words_low (w := WOf s0 + 2) (v := WOf s0 + 1) (by omega_using []) (wide_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc)))
       (Nat.two_pow_pos _))
     (by rw [n2]; exact hnT) (by rw [n2]; exact hnl)) fun t3 ⟨w3, F3, k3, vN, vA, vR, vLt⟩ => ?_
-  have c3 := c2.step w2 F3 (by rdc) (by rdc) k3
-  have fr3 := free_step (U' := u3) F3 (by rdc) fit (by rdc) (by rdc) fr2
+  obtain c3 := c2.step w2 F3 (by rdc) (by rdc) k3
+  obtain fr3 := free_step (U' := u3) F3 (by rdc) fit (by rdc) (by rdc) fr2
   refine ⟨c3, w3, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fr3⟩
   · rw [F3.num (by rdc) (by rdc) (fit _ (by rdc)), n2]
   · rw [F3.num (by rdc) (by rdc) (fit _ (by rdc)), F2.num (by rdc) (by rdc) (fit _ (by rdc)), one1]
@@ -290,39 +290,39 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
     WP isa (seqs [divB, minus4n, sqrt, factors]) s fun t => ∃ q rem, Det s0 q rem t := by
   have ⟨b8, _, bw, bwe, _⟩ := bounds h
   have ⟨f1, f2⟩ := h.fits
-  have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have wpos : 0 < wOf s0 := by simp only [wOf]; omega_arith
+  obtain fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain wpos : 0 < wOf s0 := by simp only [wOf]; omega_arith
   -- `m + 1`, `n - r`, their quotient and whether it is exact.
   have hk2 : kOf s0 ≤ 1024 := h.k2
   have hk1 : 64 ≤ kOf s0 := h.k1
-  have hw5 : 5 ≤ wOf s0 := by rw [w_eq]; omega_arith
-  have hw129 : wOf s0 ≤ 129 := by rw [w_eq]; omega_arith
+  obtain hw5 : 5 ≤ wOf s0 := by rw [w_eq]; omega_arith
+  obtain hw129 : wOf s0 ≤ 129 := by rw [w_eq]; omega_arith
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (divB_ok st.ws f1 f2 hw5 hw129 (num_zero (st.free _ (by rdc) (by rdc))) st.one)
     fun t4 ⟨w4, F4, k4, neg4, ex4l, dv4⟩ => ?_
-  have c4 := st.cb.step w4 F4 (by rdc) (by rdc) k4
-  have fr4 := free_step (U' := u4) F4 (by rdc) fit (by rdc) (by rdc) st.free
+  obtain c4 := st.cb.step w4 F4 (by rdc) (by rdc) k4
+  obtain fr4 := free_step (U' := u4) F4 (by rdc) fit (by rdc) (by rdc) st.free
   have ⟨_, _, _, _, nk⟩ := bounds h
-  have hnl : Nv s0 < 2 ^ (64 * (wOf s0 - 1)) :=
+  obtain hnl : Nv s0 < 2 ^ (64 * (wOf s0 - 1)) :=
     Nat.lt_of_lt_of_le nk (Nat.pow_le_pow_right (by decide) (by rw [w_eq]; omega_arith))
-  have pn : 2 ^ (64 * (wOf s0 - 1)) ≤ 2 ^ nbOf s0 :=
+  obtain pn : 2 ^ (64 * (wOf s0 - 1)) ≤ 2 ^ nbOf s0 :=
     Nat.pow_le_pow_right (by decide) (by show 64 * (wOf s0 - 1) ≤ 64 * wOf s0; omega_using [])
-  have nlb : Nv s0 < 2 ^ nbOf s0 := Nat.lt_of_lt_of_le hnl pn
-  have n0 : 0 < Nv s0 := by omega_using [three]
+  obtain nlb : Nv s0 < 2 ^ nbOf s0 := Nat.lt_of_lt_of_le hnl pn
+  obtain n0 : 0 < Nv s0 := by omega_using [three]
   -- Where `m < n`: the model's divisor `m + 1` and dividend `n - r`.
-  have hlt : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
+  obtain hlt : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
       num t4.mem (bOf s0) (wOf s0) aD =
         dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) ∧
       slot t4.mem (bOf s0) sExact = if dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) %
         m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = 0 then 1 else 0 := by
     intro hl
-    have hm : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / Nv s0 < Nv s0 := of_decide_eq_true hl
-    have hr : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) % Nv s0 < Nv s0 := Nat.mod_lt _ n0
-    have e1 : m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
+    obtain hm : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / Nv s0 < Nv s0 := of_decide_eq_true hl
+    obtain hr : aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) % Nv s0 < Nv s0 := Nat.mod_lt _ n0
+    obtain e1 : m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
         aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / Nv s0 + 1 := by
       unfold m1Of RecoverDet.mOf
       rw [Nat.mod_eq_of_lt (Nat.lt_trans hm nlb), Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.succ_le_of_lt hm) nlb)]
-    have e2 : dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
+    obtain e2 : dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) =
         Nv s0 - aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) % Nv s0 := by
       unfold dOf RecoverDet.rOf
       rw [Nat.mod_eq_of_lt (Nat.lt_trans hr nlb), wsub_of_le nlb (Nat.le_of_lt hr)]
@@ -333,12 +333,12 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
   generalize hrem : (if ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true then
     dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) % m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)
     else 1 - slot t4.mem (bOf s0) sExact) = rem
-  have ex4 : slot t4.mem (bOf s0) sExact = if rem = 0 then 1 else 0 := by
+  obtain ex4 : slot t4.mem (bOf s0) sExact = if rem = 0 then 1 else 0 := by
     rw [← hrem]
     by_cases hl : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true
     · rw [ite_eq_left hl]; exact (hlt hl).2
     · rw [ite_eq_right hl]; split <;> omega_arith
-  have hdiv : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true → 0 < m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) →
+  obtain hdiv : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true → 0 < m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) →
       num t4.mem (bOf s0) (wOf s0) aD =
         dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) ∧
       rem = dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) % m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) :=
@@ -349,31 +349,31 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
     (num_zero (wide_zero (fr4 _ (by rdc) (by rdc)) (fr4 _ (by rdc) (by rdc))))
     (by rw [numW_of F4 (by rdc) (by rdc) (fit _ (by rdc)), st.oneW]))
     fun t5 ⟨w5, F5, k5, d5, sq5, n5, r5, c15, c25⟩ => ?_
-  have c5 := c4.step w4 F5 (by rdc) (by rdc) k5
-  have fr5 := free_step (U' := u5) F5 (by rdc) fit (by rdc) (by rdc) fr4
+  obtain c5 := c4.step w4 F5 (by rdc) (by rdc) k5
+  obtain fr5 := free_step (U' := u5) F5 (by rdc) fit (by rdc) (by rdc) fr4
   have b5 : num t5.mem (bOf s0) (wOf s0) aD =
       RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD) := d5
-  have bl : RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD) < 2 ^ nbOf s0 :=
+  obtain bl : RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD) < 2 ^ nbOf s0 :=
     Nat.mod_lt _ (Nat.two_pow_pos _)
-  have sqv : num t5.mem (bOf s0) (WOf s0) wSq =
+  obtain sqv : num t5.mem (bOf s0) (WOf s0) wSq =
       sqOf (nbOf s0) (wbOf s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) := by
     rw [sq5, b5, sqOf_eq bl (by omega_arith)]
-  have nWv : num t4.mem (bOf s0) (WOf s0) wN = Nv s0 := by
+  obtain nWv : num t4.mem (bOf s0) (WOf s0) wN = Nv s0 := by
     rw [numW_of F4 (by rdc) (by rdc) (fit _ (by rdc)), st.nW]
-  have fN : num t5.mem (bOf s0) (WOf s0) wN = fourN (wbOf s0) (Nv s0) := by rw [n5, nWv]
-  have xv : num t5.mem (bOf s0) (WOf s0) wR =
+  obtain fN : num t5.mem (bOf s0) (WOf s0) wN = fourN (wbOf s0) (Nv s0) := by rw [n5, nWv]
+  obtain xv : num t5.mem (bOf s0) (WOf s0) wR =
       xOf (nbOf s0) (wbOf s0) (Nv s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) := by
     rw [r5, sqv, fN]; rfl
   -- The square root.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sqrt_ok w5 f1 (by omega_using [wpos]) hw129 (num_zero (fr5 _ (by rdc) (by rdc))))
     fun t6 ⟨w6, F6, k6, sy6, ok6⟩ => ?_
-  have c6 := c5.step w4 F6 (by rdc) (by rdc) k6
-  have fr6 := free_step (U' := u6) F6 (by rdc) fit (by rdc) (by rdc) fr5
+  obtain c6 := c5.step w4 F6 (by rdc) (by rdc) k6
+  obtain fr6 := free_step (U' := u6) F6 (by rdc) fit (by rdc) (by rdc) fr5
   generalize hX : xOf (nbOf s0) (wbOf s0) (Nv s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) = X
     at xv
-  have syv : num t6.mem (bOf s0) (wOf s0) aSy = isqrt X % 2 ^ nbOf s0 := by rw [sy6, xv]
-  have rt : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
+  obtain syv : num t6.mem (bOf s0) (wOf s0) aSy = isqrt X % 2 ^ nbOf s0 := by rw [sy6, xv]
+  obtain rt : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
       VG.Proof.Rsa.RecoverDet.ok4Of (nbOf s0) (wbOf s0) (Nv s0)
         (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) = true →
       (rootOf (nbOf s0) (wbOf s0) (Nv s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD))).2.2 =
@@ -381,26 +381,26 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
       ((rootOf (nbOf s0) (wbOf s0) (Nv s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD))).2.1 = 0 ↔
         isqrt X * isqrt X = X) ∧ isqrt X < 2 ^ nbOf s0 := fun hl h4 => by
     rw [← hX]; exact VG.Proof.Rsa.RecoverDet.root_bridge three b8 bw bwe hl (hlt hl).1 h4
-  have d6 : num t6.mem (bOf s0) (wOf s0) aD = RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD) := by
+  obtain d6 : num t6.mem (bOf s0) (wOf s0) aD = RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD) := by
     rw [F6.num (by rdc) (by rdc) (fit _ (by rdc)), b5]
   -- The checks' slots.
-  have b0 : slot t6.mem (bOf s0) sB0 = if deOf s0 < 1 then 1 else 0 := by
+  obtain b0 : slot t6.mem (bOf s0) sB0 = if deOf s0 < 1 then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), F5.slot (by rdc) (by rdc), F4.slot (by rdc) (by rdc), st.b0]
-  have b1 : slot t6.mem (bOf s0) sB1 = if deX (wbOf s0) (deOf s0) < 1 then 1 else 0 := by
+  obtain b1 : slot t6.mem (bOf s0) sB1 = if deX (wbOf s0) (deOf s0) < 1 then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), F5.slot (by rdc) (by rdc), F4.slot (by rdc) (by rdc), st.b1]
-  have lt : slot t6.mem (bOf s0) sLt =
+  obtain lt : slot t6.mem (bOf s0) sLt =
       if aOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / Nv s0 < Nv s0 then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), F5.slot (by rdc) (by rdc), F4.slot (by rdc) (by rdc), st.lt]
-  have ex : slot t6.mem (bOf s0) sExact = if rem = 0 then 1 else 0 := by
+  obtain ex : slot t6.mem (bOf s0) sExact = if rem = 0 then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), F5.slot (by rdc) (by rdc), ex4]
-  have c1 : slot t6.mem (bOf s0) sC1 = if sqOf (nbOf s0) (wbOf s0)
+  obtain c1 : slot t6.mem (bOf s0) sC1 = if sqOf (nbOf s0) (wbOf s0)
       (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) < fourN (wbOf s0) (Nv s0) then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), c15, sqv, fN]
-  have c2 : slot t6.mem (bOf s0) sC2 = if xOf (nbOf s0) (wbOf s0) (Nv s0)
+  obtain c2 : slot t6.mem (bOf s0) sC2 = if xOf (nbOf s0) (wbOf s0) (Nv s0)
       (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) < 1 then 1 else 0 := by
     rw [F6.slot (by rdc) (by rdc), c25, xv, hX]
-  have ok : slot t6.mem (bOf s0) sOk5 = if isqrt X * isqrt X = X then 1 else 0 := by rw [ok6, xv]
-  have okm : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
+  obtain ok : slot t6.mem (bOf s0) sOk5 = if isqrt X * isqrt X = X then 1 else 0 := by rw [ok6, xv]
+  obtain okm : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
       VG.Proof.Rsa.RecoverDet.ok4Of (nbOf s0) (wbOf s0) (Nv s0)
         (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) = true →
       slot t6.mem (bOf s0) sOk5 = if (rootOf (nbOf s0) (wbOf s0) (Nv s0)
@@ -411,16 +411,16 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
     (by rw [b1]; exact bit_ite) (by rw [lt]; exact bit_ite) (by rw [ex]; exact bit_ite)
     (by rw [c1]; exact bit_ite) (by rw [c2]; exact bit_ite) (by rw [ok]; exact bit_ite))
     fun t7 ⟨w7, F7, k7, p7, q7, mk7⟩ => ?_
-  have c7 := c6.step w6 F7 (by rdc) (by rdc) k7
-  have mk := mask_eq b0 b1 lt ex c1 c2 okm
+  obtain c7 := c6.step w6 F7 (by rdc) (by rdc) k7
+  obtain mk := mask_eq b0 b1 lt ex c1 c2 okm
   -- Under the mask, `m < n` and `b² > 4 n`, so the root is the model's.
-  have ry : (okDE (wbOf s0) (deOf s0) && ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) &&
+  obtain ry : (okDE (wbOf s0) (deOf s0) && ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) &&
       (stage2 (nbOf s0) (wbOf s0) (Nv s0) (num t4.mem (bOf s0) (wOf s0) aD) rem).1) = true →
       isqrt X % 2 ^ nbOf s0 =
         (rootOf (nbOf s0) (wbOf s0) (Nv s0) (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD))).2.2 :=
     fun hb => by
       simp only [stage2, Bool.and_eq_true] at hb
-      have r := rt hb.1.2 hb.2.1.2
+      obtain r := rt hb.1.2 hb.2.1.2
       rw [r.1, Nat.mod_eq_of_lt r.2.2]
   exact ⟨_, _, c7, w7, hdiv, by rw [mk7]; exact mk, fun hb => by rw [p7, d6, syv, ry hb]; rfl,
     fun hb => by rw [q7, d6, syv, ry hb]; rfl⟩
@@ -434,7 +434,7 @@ theorem rdMask_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (bit :
   have hz := h.hdr_le
   have nw := h.nowrap
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  have hz' : sMask + 8 ≤ Z := by simp only [hdr_eq, sMask] at hz ⊢; omega_arith
+  obtain hz' : sMask + 8 ≤ Z := by simp only [hdr_eq, sMask] at hz ⊢; omega_arith
   brun [VG.Impl.Rsa.RISCV64.RecoverDet.mask, h.s11, fin64_exec_li_zero, add_ofNat_zero',
     h.scr.al8 (d := sMask) (by omega_arith) (by decide), h.scr.ld (d := sMask) (n := 8) hz',
     show sMask < 2048 by decide]
@@ -456,54 +456,54 @@ theorem stores_ok {s0 t : State} (h : PreC s0) (c : CB s0 s0.mem t) (ws : Ws t (
   have hz := h.zk
   have hk1 : 64 ≤ kOf s0 := h.k1
   have hk2 : kOf s0 ≤ 1024 := h.k2
-  have lw : kOf s0 ≤ 8 * wOf s0 := by simp only [wOf]; omega_arith
-  have bit : slot t.mem (bOf s0) sMask ≤ 1 := by rw [hm]; exact Bool.toNat_le b
-  have Z64 : zOf s0 ≤ 2 ^ 64 := by have := h.ws; simp only [zOf]; omega_arith
-  have fitZ : ∀ j < nArr, arr (wOf s0) j + 8 * wOf s0 ≤ zOf s0 := fun j hj => by
+  obtain lw : kOf s0 ≤ 8 * wOf s0 := by simp only [wOf]; omega_arith
+  obtain bit : slot t.mem (bOf s0) sMask ≤ 1 := by rw [hm]; exact Bool.toNat_le b
+  obtain Z64 : zOf s0 ≤ 2 ^ 64 := by have := h.ws; simp only [zOf]; omega_arith
+  obtain fitZ : ∀ j < nArr, arr (wOf s0) j + 8 * wOf s0 ≤ zOf s0 := fun j hj => by
     have := Nat.le_trans (arr_end hj) h.fits.1; simp only [S] at this; omega_arith
-  have wp : (s0.gpr .a0).toNat + kOf s0 ≤ 2 ^ 64 := by have := h.wp; rw [h.h1] at this; exact this
-  have wq : (s0.gpr .a2).toNat + kOf s0 ≤ 2 ^ 64 := by have := h.wq; rw [h.h3] at this; exact this
-  have pw : (⟨s0.gpr .a0, kOf s0⟩ : Region) ∈ s0.wr := by rw [← h.pR_eq, h.hwr]; simp
-  have qw : (⟨s0.gpr .a2, kOf s0⟩ : Region) ∈ s0.wr := by rw [← h.qR_eq, h.hwr]; simp
-  have ps : (⟨s0.gpr .a0, kOf s0⟩ : Region).Disjoint (sR s0) := by rw [← h.pR_eq]; exact h.ps
-  have qs : (⟨s0.gpr .a2, kOf s0⟩ : Region).Disjoint (sR s0) := by rw [← h.qR_eq]; exact h.qs
-  have p_q : (⟨s0.gpr .a0, kOf s0⟩ : Region).Disjoint ⟨s0.gpr .a2, kOf s0⟩ := by
+  obtain wp : (s0.gpr .a0).toNat + kOf s0 ≤ 2 ^ 64 := by have := h.wp; rw [h.h1] at this; exact this
+  obtain wq : (s0.gpr .a2).toNat + kOf s0 ≤ 2 ^ 64 := by have := h.wq; rw [h.h3] at this; exact this
+  obtain pw : (⟨s0.gpr .a0, kOf s0⟩ : Region) ∈ s0.wr := by rw [← h.pR_eq, h.hwr]; simp
+  obtain qw : (⟨s0.gpr .a2, kOf s0⟩ : Region) ∈ s0.wr := by rw [← h.qR_eq, h.hwr]; simp
+  obtain ps : (⟨s0.gpr .a0, kOf s0⟩ : Region).Disjoint (sR s0) := by rw [← h.pR_eq]; exact h.ps
+  obtain qs : (⟨s0.gpr .a2, kOf s0⟩ : Region).Disjoint (sR s0) := by rw [← h.qR_eq]; exact h.qs
+  obtain p_q : (⟨s0.gpr .a0, kOf s0⟩ : Region).Disjoint ⟨s0.gpr .a2, kOf s0⟩ := by
     rw [← h.pR_eq, ← h.qR_eq]; exact h.pq
-  have db : decide (slot t.mem (bOf s0) sMask ≠ 0) = b := by rw [hm]; cases b <;> rfl
+  obtain db : decide (slot t.mem (bOf s0) sMask ≠ 0) = b := by rw [hm]; cases b <;> rfl
   unfold VG.Impl.Rsa.RISCV64.RecoverDet.stores
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (rdMask_ok ws bit) fun t1 ⟨⟨m4, m1⟩, k1⟩ => ?_
-  have ws1 := ws.of_keep k1
-  have c1 := c.of_keep k1 m1
+  obtain ws1 := ws.of_keep k1
+  obtain c1 := c.of_keep k1 m1
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (storeBytes_ok ws1 (j := aP) (by decide) (by decide) c1.s3
     (by rw [c1.s2, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by decide) (by decide) (by decide) m4
     (by omega_arith) lw (fun i hi => by rw [c1.wr]; exact bytes_in pw (by omega_arith) i hi)
     (bytes_sep ps (by omega_arith)) wp) fun t2 ⟨ws2, b2, o2, k2⟩ => ?_
-  have c2 := c1.of_out k2 o2 ps (by omega_arith)
+  obtain c2 := c1.of_out k2 o2 ps (by omega_arith)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (storeBytes_ok ws2 (j := aQ) (b := decide (slot t.mem (bOf s0) sMask ≠ 0)) (by decide)
     (by decide) c2.s4 (by rw [c2.s2, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by decide) (by decide)
     (by decide) (by rw [k2.gpr (by decide)]; exact m4) (by omega_arith) lw
     (fun i hi => by rw [c2.wr]; exact bytes_in qw (by omega_arith) i hi) (bytes_sep qs (by omega_arith)) wq)
     fun t3 ⟨ws3, b3, o3, k3⟩ => ?_
-  have c3 := c2.of_out k3 o3 qs (by omega_arith)
+  obtain c3 := c2.of_out k3 o3 qs (by omega_arith)
   have hz3 := ws3.hdr_le
   have nw3 := ws3.nowrap
-  have hM : sMask + 8 ≤ zOf s0 := by simp only [hdr_eq, sMask] at hz3 ⊢; omega_arith
-  have hb : WP isa (.block [.load .d .a0 .s11 sMask]) t3 fun u =>
+  obtain hM : sMask + 8 ≤ zOf s0 := by simp only [hdr_eq, sMask] at hz3 ⊢; omega_arith
+  obtain hb : WP isa (.block [.load .d .a0 .s11 sMask]) t3 fun u =>
       (u.gpr .a0 = word t3.mem (bOf s0) sMask ∧ u.mem = t3.mem) ∧ Keep [.a0] t3 u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [ws3.s11, add_ofNat_zero', ws3.scr.al8 (d := sMask) (by omega_arith) (by decide),
       ws3.scr.ld (d := sMask) (n := 8) hM, show sMask < 2048 by decide]
   refine WP.mono hb fun u ⟨⟨ua, um⟩, ku⟩ => ?_
-  have W1 : ∀ {m : Mem} {d : Nat}, wordsVal m (bOf s0) d 1 = (word m (bOf s0) d).toNat := by
+  obtain W1 : ∀ {m : Mem} {d : Nat}, wordsVal m (bOf s0) d 1 = (word m (bOf s0) d).toNat := by
     intro m d; simp [wordsVal]
-  have qv : num t2.mem (bOf s0) (wOf s0) aQ = num t.mem (bOf s0) (wOf s0) aQ :=
+  obtain qv : num t2.mem (bOf s0) (wOf s0) aQ = num t.mem (bOf s0) (wOf s0) aQ :=
     (wordsVal_of_out (d := arr (wOf s0) aQ) (k := wOf s0) ps o2 (fitZ _ (by decide)) Z64).trans (by rw [m1])
-  have sM : slot t3.mem (bOf s0) sMask = slot t.mem (bOf s0) sMask := by
-    have e := wordsVal_of_out (d := sMask) (k := 1) qs o3 (by omega_arith) Z64
-    have e2 := wordsVal_of_out (d := sMask) (k := 1) ps o2 (by omega_arith) Z64
+  obtain sM : slot t3.mem (bOf s0) sMask = slot t.mem (bOf s0) sMask := by
+    obtain e := wordsVal_of_out (d := sMask) (k := 1) qs o3 (by omega_arith) Z64
+    obtain e2 := wordsVal_of_out (d := sMask) (k := 1) ps o2 (by omega_arith) Z64
     rw [W1, W1] at e e2
     change (word t3.mem (bOf s0) sMask).toNat = (word t.mem (bOf s0) sMask).toNat
     rw [e, e2, m1]
@@ -554,7 +554,7 @@ theorem nv_top {s0 : State} (hmv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true
 
 theorem valid_ok [InvLaw] {s0 s : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true)
     (c : CB s0 s0.mem s) : WP isa VG.Impl.Rsa.RISCV64.RecoverDet.valid s (VP s0) := by
-  have three := (nv_facts hmv).2
+  obtain three := (nv_facts hmv).2
   unfold VG.Impl.Rsa.RISCV64.RecoverDet.valid
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h c) fun t1 ⟨c1, w1, z1⟩ => ?_
@@ -592,7 +592,7 @@ theorem post_valid {s0 u v : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (
   obtain ⟨q, rem, P, Q, hdiv, hPQ, o⟩ := vp
   have ⟨b8, bde, bw, bwe, nk⟩ := bounds h
   have ⟨odd, three⟩ := nv_facts hmv
-  have mc := VG.Proof.Rsa.RecoverDet.model_correct_lt (nb := nbOf s0) (wb := wbOf s0) (e := Ev s0) (d := Dv s0)
+  obtain mc := VG.Proof.Rsa.RecoverDet.model_correct_lt (nb := nbOf s0) (wb := wbOf s0) (e := Ev s0) (d := Dv s0)
     (q := q) (rem := rem) odd three b8 bde bw bwe hdiv
   unfold VG.Proof.Rsa.RecoverDet.result at mc
   generalize (okDE (wbOf s0) (deOf s0) && ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) &&
@@ -605,7 +605,7 @@ theorem post_valid {s0 u v : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (
   rw [pkd_eq]
   simp only [hmv, ↓reduceIte]
   rw [← mc]
-  have e8 : (256 : Nat) ^ kOf s0 = 2 ^ (8 * kOf s0) := by rw [Nat.pow_mul]
+  obtain e8 : (256 : Nat) ^ kOf s0 = 2 ^ (8 * kOf s0) := by rw [Nat.pow_mul]
   cases b
   · simp only [Bool.false_eq_true, ↓reduceIte, Option.map_none, Spec.Rsa.writtenAll, hm]
     refine ⟨?_, ?_⟩
@@ -615,18 +615,18 @@ theorem post_valid {s0 u v : State} (h : PreC s0) (hmv : Spec.Rsa.modulusValid (
       rw [o.p, o.q]
       simp
   · simp only [↓reduceIte] at mc
-    have pq := VG.Proof.Rsa.RecoverDet.recoverDet_mul mc.symm
-    have P1 : 1 ≤ P := by
+    obtain pq := VG.Proof.Rsa.RecoverDet.recoverDet_mul mc.symm
+    obtain P1 : 1 ≤ P := by
       rcases Nat.eq_zero_or_pos P with h0 | h0
       · rw [h0, Nat.zero_mul] at pq; omega_arith
       · exact h0
-    have Q1 : 1 ≤ Q := by
+    obtain Q1 : 1 ≤ Q := by
       rcases Nat.eq_zero_or_pos Q with h0 | h0
       · rw [h0, Nat.mul_zero] at pq; omega_arith
       · exact h0
-    have hP : P < 256 ^ kOf s0 := by
+    obtain hP : P < 256 ^ kOf s0 := by
       rw [e8]; have := Nat.le_mul_of_pos_right P Q1; omega_arith
-    have hQ : Q < 256 ^ kOf s0 := by
+    obtain hQ : Q < 256 ^ kOf s0 := by
       rw [e8]; have := Nat.le_mul_of_pos_left Q P1; omega_arith
     simp only [↓reduceIte, Option.map_some, Spec.Rsa.writtenAll, List.map_cons, List.map_nil, hm]
     refine ⟨?_, ?_⟩
@@ -648,7 +648,7 @@ theorem post_fail {s0 u v : State} (hv : ¬ Spec.Rsa.modulusValid (Nv s0) (kOf s
 theorem rd_correct [InvLaw] (s : State) (hpre : (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pre s) :
     ∃ tr t, Exec isa VG.Impl.Rsa.RISCV64.RecoverDet.code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa VG.Impl.Rsa.RISCV64.RecoverDet.code s fun t => abiPreserved s t ∧ fnPost s t
-  have h := preC_of hpre
+  obtain h := preC_of hpre
   refine WP.mono (WP.rdwr (Q := fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra ∧
     fnPost s t) ?_) fun t ⟨⟨hp, hra, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
   unfold VG.Impl.Rsa.RISCV64.RecoverDet.code
@@ -656,16 +656,16 @@ theorem rd_correct [InvLaw] (s : State) (hpre : (Spec.Rsa.recoverPrimesDetContra
   refine WP.mono (entry_ok h) fun e c => ?_
   rw [WP.seq_iff]
   refine WP.mono (nCheck_ok h c) fun t ⟨t0, tm, kt⟩ => ?_
-  have ct := c.of_keep kt tm
+  obtain ct := c.of_keep kt tm
   rw [WP.seq_iff]
   refine WP.ite _ (Steps.eval_zero t .s0) (fun hz => ?_) (fun hz => ?_)
   · have hz' : t.gpr .s0 = 0 := by simpa using hz
-    have hv := t0.mp hz'
+    obtain hv := t0.mp hz'
     refine WP.mono (valid_ok h hv ct) fun u vp => ?_
     obtain ⟨_, _, _, _, _, _, o⟩ := id vp
     exact WP.mono (restore_ok' h o.ce) fun v ⟨vp', vra, vm, va⟩ => ⟨vp', vra, post_valid h hv vp vm va⟩
   · have hz' : t.gpr .s0 ≠ 0 := by simpa using hz
-    have hv : ¬ Spec.Rsa.modulusValid (Nv s) (kOf s) = true := fun e => hz' (t0.mpr e)
+    obtain hv : ¬ Spec.Rsa.modulusValid (Nv s) (kOf s) = true := fun e => hz' (t0.mpr e)
     refine WP.mono (fail_ok h ct) fun u ⟨ce, hw⟩ => ?_
     exact WP.mono (restore_ok' h ce) fun v ⟨vp', vra, vm, va⟩ => ⟨vp', vra, post_fail hv hw vm va⟩
 

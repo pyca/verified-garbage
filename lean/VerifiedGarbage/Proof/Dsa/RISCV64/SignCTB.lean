@@ -120,7 +120,7 @@ theorem onSBs : ∀ v u, ΦBs v u → SBs v u := fun _ _ h => ⟨onBs _ _ h, gBs
 theorem SBs.vals {v : VD} {s : State} (h : SBs v s) :
     2 ≤ v.q ∧ v.q % 2 = 1 ∧ v.q < 2 ^ (8 * v.L.ql) ∧ v.qb ≤ v.L.ql ∧ 2 ≤ v.p ∧ v.p % 2 = 1 := by
   obtain ⟨⟨⟨c, ⟨hsz, hp, hq, _⟩, _⟩, _⟩, _⟩ := h
-  have bd := VG.Proof.Dsa.supported_bounds hsz
+  obtain bd := VG.Proof.Dsa.supported_bounds hsz
   have hl := c.base.q_lt
   exact ⟨by omega_using [bd], hq, hl, q_bits (by omega_using [hq]) hl, by omega_using [bd], hp⟩
 
@@ -167,7 +167,7 @@ theorem stKP0 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : PK v
   refine WP.seq (WP.block_append (WP.block_append (WP.mono (ptrX_ok B.scr hL B.regs) fun s₁ ⟨⟨a7, _, m1⟩, k1⟩ =>
     WP.mono (WP.keep [.s9] (Q := fun u => u.gpr .s9 = off v.key (3 * v.L.pl + v.L.ql) ∧ u.mem = s₁.mem)
       (by brun [a7, BitVec.add_zero]) (by decide) (by rfl)) fun s₂ ⟨⟨a9, m2⟩, k2⟩ => ?_)))
-  have h2 := (h.keepM k1 m1).keepM k2 m2
+  obtain h2 := (h.keepM k1 m1).keepM k2 m2
   exact WP.mono (ptrG_ok h2.cb.1.scr hL h2.cb.1.regs) fun t ⟨⟨b7, b8, m3⟩, k3⟩ =>
     hc t (h2.keepM k3 m3) b7 b8 ((k3.gpr (by decide)).trans a9)
 
@@ -199,11 +199,11 @@ theorem pinsBs12 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v 
 theorem powK {v : VD} {s : State} {N E : Addr} (h : PK v s) (hN : Src s v.L N v.L.pl) (h7 : s.gpr .s7 = N)
     (hE : Src s v.L E v.L.ql) (h9 : s.gpr .s9 = E) (hp : 2 ≤ v.p) (hpo : v.p % 2 = 1) :
     WP isa Verify.powP s fun t => PK v t := by
-  have B := h.cb.1; have ip := h.cb.2.1; have I := h.cb.2.2.1; have p0 := h.cb.2.2.2.1
+  obtain B := h.cb.1; have ip := h.cb.2.1; have I := h.cb.2.2.1; have p0 := h.cb.2.2.2.1
   have p24 := h.cb.2.2.2.2
   have hL := B.ok
-  have e := Lay.slot_eq v.L.wp
-  have e0 := e 0; have e1 := e 1; have e24 := e 24; have hw := hL.wp_ge
+  obtain e := Lay.slot_eq v.L.wp
+  obtain e0 := e 0; have e1 := e 1; have e24 := e 24; have hw := hL.wp_ge
   refine WP.mono (powSrc_ok hL B.scr B.regs ip I hN h7 hE h9 p0 hp hpo p24) fun t ⟨⟨_, ip', I', o⟩, k⟩ =>
     h.frame k ip' I' (BKept.ofBody hL (p_arrays_body hL o)) (o.wordsVal (by omega_using [e0, e1]) (by omega_arith))
       (o.wordsVal (by omega_using [e1, e24]) (by omega_arith)) (keepQ_arr0 hL ((PLow.keepQ hL o)))
@@ -226,9 +226,9 @@ abbrev MWs (v : VD) (t : State) : Prop := ∃ b, word t.mem v.L.S hMask = mask b
 theorem stKP {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SBs v s)
     (hc : ∀ t, PK v t → MWs v t → WP isa c t Q) : WP isa (.seq Sign.keyPair c) s Q := by
   obtain ⟨-, -, -, -, hp, hpo⟩ := h.vals
-  have P := sbs_PK h
-  have B := P.cb.1; have ip := P.cb.2.1; have I := P.cb.2.2.1; have p0 := P.cb.2.2.2.1
-  have p24 := P.cb.2.2.2.2; have os := P.os
+  obtain P := sbs_PK h
+  obtain B := P.cb.1; have ip := P.cb.2.1; have I := P.cb.2.2.1; have p0 := P.cb.2.2.2.1
+  obtain p24 := P.cb.2.2.2.2; have os := P.os
   have hL := B.ok
   refine WP.seq (WP.mono (keyPair_ok hL B.scr B.regs ip I os.key p0 hp hpo p24)
     fun t ⟨⟨mx, ip', I', m, o, w⟩, k⟩ => hc t (P.frame k ip' I' ((BKept.ofBody hL (PLow.body hL o)).trans
@@ -240,8 +240,8 @@ theorem stKP {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SBs v
 theorem SBs.hz {v : VD} {s : State} (h : SBs v s) (m : Mem) :
     Spec.Dsa.decodeBE (Spec.Rsa.bytesAt m v.dig (min v.d v.qb)) < 2 * v.q := by
   obtain ⟨⟨⟨_, ⟨hsz, _, _, _⟩, _⟩, _⟩, _⟩ := h
-  have bd := VG.Proof.Dsa.supported_bounds hsz
-  have hq8 : Spec.Dsa.bitLength v.q = 8 * (Spec.Dsa.bitLength v.q / 8) := by
+  obtain bd := VG.Proof.Dsa.supported_bounds hsz
+  obtain hq8 : Spec.Dsa.bitLength v.q = 8 * (Spec.Dsa.bitLength v.q / 8) := by
     have : Spec.Dsa.supportedSizes (Spec.Dsa.bitLength v.p) (Spec.Dsa.bitLength v.q) := hsz
     unfold Spec.Dsa.supportedSizes at this; omega_using [this]
   refine Nat.lt_of_lt_of_le (VG.Proof.Dsa.decodeBE_lt _) ?_
@@ -277,9 +277,9 @@ theorem SBs.tv {v : VD} {s : State} (h : SBs v s) : TV v :=
 /-- `keyPair` leaves the tail's phase. -/
 theorem kp_TS {v : VD} {s : State} (h : SBs v s) : WP isa Sign.keyPair s (TS v) := by
   obtain ⟨-, -, -, -, hp, hpo⟩ := h.vals
-  have P := sbs_PK h
-  have B := P.cb.1; have ip := P.cb.2.1; have I := P.cb.2.2.1; have p0 := P.cb.2.2.2.1
-  have p24 := P.cb.2.2.2.2; have os := P.os
+  obtain P := sbs_PK h
+  obtain B := P.cb.1; have ip := P.cb.2.1; have I := P.cb.2.2.1; have p0 := P.cb.2.2.2.1
+  obtain p24 := P.cb.2.2.2.2; have os := P.os
   have hL := B.ok
   exact WP.mono (keyPair_ok hL B.scr B.regs ip I os.key p0 hp hpo p24)
     fun t ⟨⟨mx, ip', I', m, o, w⟩, k⟩ => ⟨⟨P.frame k ip' I' ((BKept.ofBody hL (PLow.body hL o)).trans
@@ -305,7 +305,7 @@ theorem stG0 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : PK v 
   have hL := B.ok
   refine WP.seq (WP.block_append (WP.mono (WP.keep [.s9] (Q := fun u => u.gpr .s9 = v.sig ∧ u.mem = s.mem)
     (by brun [B.regs.ra, BitVec.add_zero]) (by decide) (by rfl)) fun s₁ ⟨⟨a9, m1⟩, k1⟩ => ?_))
-  have h1 := h.keepM k1 m1
+  obtain h1 := h.keepM k1 m1
   exact WP.mono (ptrG_ok h1.cb.1.scr hL h1.cb.1.regs) fun t ⟨⟨b7, b8, m2⟩, k2⟩ =>
     hc t (h1.keepM k2 m2) b7 b8 ((k2.gpr (by decide)).trans a9)
 
@@ -356,8 +356,8 @@ theorem stGK {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
   have hL := B.ok
   refine WP.seq (WP.mono (gk_ok hL B.scr B.regs ip I (B.hk.take (by have := B.kn; omega_using [this])) (B.ns g) p0 hp hpo
     p24) fun u ⟨⟨_, _, _, m, o, b'⟩, k⟩ => ?_)
-  have hb : Body v.L s.mem u.mem := (PLow.body hL o).trans (Body.ofBuf hL b' (by omega_using []))
-  have K := BKept.ofBody hL hb
+  obtain hb : Body v.L s.mem u.mem := (PLow.body hL o).trans (Body.ofBuf hL b' (by omega_using []))
+  obtain K := BKept.ofBody hL hb
   exact hc u (B.step (B.regs.ofBKept k K) k.2.1 k.2.2 K.out (K.word (by decide) (by decide))
       (K.word (by decide) (by decide))) (by rw [Lens, K.word (by decide) (by decide)]; exact l)
     (by rw [keepQ_arr0 hL (bufKeepQ b' (by rcases hL.pl with e | e | e <;> rw [e] <;> decide)),
@@ -418,13 +418,13 @@ theorem stR6 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
   have hq := h.vals.1
   refine stCMP h fun s₂ K a9 a10 => ?_
   have hL := K.base.ok
-  have hql : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
-  have hpl : 128 ≤ v.L.pl ∧ v.L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega_using [e]
+  obtain hql : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
+  obtain hpl : 128 ≤ v.L.pl ∧ v.L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega_using [e]
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e7 := e 7; have e8 := e 8; have e25 := e 25
-  have e26 := e 26; have e28 := e 28
+  obtain e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4; have e7 := e 7; have e8 := e 8; have e25 := e 25
+  obtain e26 := e 26; have e28 := e 28
   have e2 := K.qs.inq.env
   refine WP.seq (WP.mono (ModArith.reduce64_ok (B := v.L.Q) (Z := 1600) (w := v.L.wq) (D := v.L.Buf) (L := v.L.pl)
     e2.hs (by omega_using [hwq]) (by omega_using [hwq]) (by omega_using [hwq, e4]) e2.a7 e2.s5 e2.t0
@@ -433,10 +433,10 @@ theorem stR6 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
     (by have := bufRd hL K.base.scr (o := 0) (k := v.L.pl) (by omega_using [])
         simpa only [off, BitVec.add_zero] using this)
     (buf_apartQ v.L (n := v.L.pl) (by omega_using [hpl]))) fun s₃ ⟨⟨_, o3⟩, k3⟩ => ?_)
-  have K3 := K.qarr k3 (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))
+  obtain K3 := K.qarr k3 (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))
   refine WP.seq (WP.mono (copy_ok K3.qs.inq.env (o := 25) (a := 1) (by decide) (by decide) (by decide))
     fun s₄ ⟨⟨_, o4⟩, k4⟩ => ?_)
-  have K4 := K3.qarr k4 (QArr.of o4 (by omega_using [e1, e25]) (by omega_using [e25, e28]))
+  obtain K4 := K3.qarr k4 (QArr.of o4 (by omega_using [e1, e25]) (by omega_using [e25, e28]))
   exact WP.seq (WP.mono (zeroArr_ok K4.qs.inq.env (j := 7) (by decide)) fun s₅ ⟨⟨_, o5⟩, k5⟩ =>
     hc s₅ (K4.qarr k5 (QArr.of o5 (by omega_using [e1, e7]) (by omega_using [e7, e28]))))
 
@@ -459,10 +459,10 @@ theorem pinsTl75 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u
         have hql : 20 ≤ _ ∧ _ ≤ 32 := K.base.ql
         have hwq := hL.wq_ge
         refine WP.seq (WP.mono (ptrR_ok K.qs.scr hL K.qs.regs) fun _ ⟨⟨b7, b8, m⟩, k⟩ => ?_)
-        have K1 := K.keepM k m
+        obtain K1 := K.keepM k m
         refine WP.seq (WP.mono (loadQ_ok (j := 6) K1.qs hL (by decide) (K1.base.ns (hsem _ _ h).2.1) b7 b8
           (by omega_using [hql]) (by omega_using [hwq])) fun _ ⟨⟨Q2, _, _, o2⟩, k2⟩ => ?_)
-        have K2 := K1.withQ Q2 k2 (QArr.of o2 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
+        obtain K2 := K1.withQ Q2 k2 (QArr.of o2 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
         exact WP.mono (ptrX_ok K2.qs.scr hL K2.qs.regs) fun _ ⟨⟨c7, c8, m'⟩, k'⟩ =>
           (fix_QK (K2.keepM k' m')).app ⟨c7, c8, trivial⟩)
 
@@ -505,7 +505,7 @@ theorem pinsTl118 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
         have hL := K.base.ok
         refine WP.seq (WP.mono (minus2_ok K.qs.inq.env (show 2 ≤ arrQ _ v.L 0 by rw [K.q0]; exact (hsem _ _ h).vals.1))
           fun _ ⟨⟨_, o⟩, k⟩ => ?_)
-        have K' := K.qarr k (QArr.of o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
+        obtain K' := K.qarr k (QArr.of o (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
         exact WP.mono (ptrBuf_ok K'.qs.scr hL K'.qs.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
           (fix_QK (K'.keepM k' m)).app ⟨b7, b8, trivial⟩)
 
@@ -542,13 +542,13 @@ theorem pinsTl131 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
         have hql : 20 ≤ _ ∧ _ ≤ 32 := K.base.ql
         have hwq := hL.wq_ge
         refine WP.seq (WP.mono (ptrR_ok K.qs.scr hL K.qs.regs) fun _ ⟨⟨b7, b8, m⟩, k⟩ => ?_)
-        have K1 := K.keepM k m
+        obtain K1 := K.keepM k m
         refine WP.seq (WP.mono (loadQ_ok (j := 4) K1.qs hL (by decide) (K1.base.ns (hsem _ _ h).2.1) b7 b8
           (by omega_using [hql]) (by omega_using [hwq])) fun _ ⟨⟨Q2, _, _, o2⟩, k2⟩ => ?_)
-        have K2 := K1.withQ Q2 k2 (QArr.of o2 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
+        obtain K2 := K1.withQ Q2 k2 (QArr.of o2 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
         refine WP.seq (WP.mono (copy_ok K2.qs.inq.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
           fun _ ⟨⟨_, o3⟩, k3⟩ => ?_)
-        have K3 := K2.qarr k3 (QArr.of o3 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
+        obtain K3 := K2.qarr k3 (QArr.of o3 (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using []))
         refine WP.block_append (WP.mono (ptrBuf_ok K3.qs.scr hL K3.qs.regs) fun t ⟨⟨c7, c8, m4⟩, k4⟩ =>
           WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off v.L.Buf 0 ∧
             u.gpr .s10 = BitVec.ofNat 64 v.L.ql ∧ u.mem = t.mem) (by brun [c7, c8, BitVec.add_zero]) (by decide)
@@ -574,15 +574,15 @@ theorem pinsTl172 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     Pins (At Φ FTl 172) [.s6, .s11, .ra, .a7, .s5, .t0, .s8, .t3, .a0] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s8, BitVec.ofNat 64 v.qb), (.t3, BitVec.ofNat 64 v.d),
       (.a0, BitVec.ofNat 64 (if v.qb < v.d then 1 else 0))]) (fun _ => rfl) fun v _ h => by
-    have hqb := (hsem _ _ h).vals.2.2.2.1
+    obtain hqb := (hsem _ _ h).vals.2.2.2.1
     refine WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
       (.seq Verify.qMinus2 (.seq Sign.inverseK (.block SLB)))))) (by kernel_rfl)
       (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
     have hL := K.base.ok
-    have hp : v.L.pl < 2 ^ 16 := by have := K.base.pl; simp only [Nat.reducePow]; omega_using [this]
-    have hq : v.L.ql < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega_using [this]
-    have h3 : v.qb < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega_using [hqb, hq]
-    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
+    obtain hp : v.L.pl < 2 ^ 16 := by have := K.base.pl; simp only [Nat.reducePow]; omega_using [this]
+    obtain hq : v.L.ql < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega_using [this]
+    obtain h3 : v.qb < 2 ^ 16 := by have := K.base.ql; simp only [Nat.reducePow]; omega_using [hqb, hq]
+    obtain h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
     refine WP.block_append (WP.block_append (WP.mono (getQb_ok K.base.scr hL K.base.regs.s6 .s8)
       fun u ⟨⟨a8, mu⟩, ku⟩ => WP.mono (getD_ok (K.base.scr.congr ku.2.2) hL
         (by rw [ku.gpr (by decide)]; exact K.base.regs.s6) .t3) fun w ⟨⟨b3, mw⟩, kw⟩ => ?_))
@@ -590,13 +590,13 @@ theorem pinsTl172 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     rw [Lens] at l
     rw [l, pack_qb hp hq h3 h4] at a8
     rw [mu, l, pack_d hp hq h3 h4] at b3
-    have a8' : w.gpr .s8 = BitVec.ofNat 64 v.qb := (kw.gpr (by decide)).trans a8
-    have hsub := sub_shr63 (a := v.qb) (b := v.d) (by simp only [Nat.reducePow] at *; omega_using [h3])
+    obtain a8' : w.gpr .s8 = BitVec.ofNat 64 v.qb := (kw.gpr (by decide)).trans a8
+    obtain hsub := sub_shr63 (a := v.qb) (b := v.d) (by simp only [Nat.reducePow] at *; omega_using [h3])
       (by simp only [Nat.reducePow] at *; omega_using [h4])
     refine WP.mono (WP.keep [.a0] (Q := fun t => t.gpr .a0 = BitVec.ofNat 64 (if v.qb < v.d then 1 else 0) ∧
       t.mem = w.mem) (by brun [a8', b3, exec_shift_d (show 63 < 64 by decide), hsub]) (by decide) (by rfl))
       fun t ⟨⟨c0, mt⟩, kt⟩ => ?_
-    have K' := ((K.keepM ku mu).keepM kw mw).keepM kt mt
+    obtain K' := ((K.keepM ku mu).keepM kw mw).keepM kt mt
     exact (fix_QK K').app ⟨(kt.gpr (r := .s8) (by decide)).trans a8', (kt.gpr (r := .t3) (by decide)).trans b3, c0,
       trivial⟩
 
@@ -608,11 +608,11 @@ theorem pinsTl174 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
       (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) (by kernel_rfl)
       (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
     have hL := K.base.ok
-    have h3 : v.qb < 2 ^ 16 := by
+    obtain h3 : v.qb < 2 ^ 16 := by
       have := K.base.ql; have := (hsem _ _ h).vals.2.2.2.1; simp only [Nat.reducePow]; omega_arith
-    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
+    obtain h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
     refine WP.seq (WP.mono (scalarLen_ok K.base.scr hL K.base.regs.s6 K.lens h3 h4) fun s₀ ⟨⟨a8, m0⟩, k0⟩ => ?_)
-    have K0 := K.keepM k0 m0
+    obtain K0 := K.keepM k0 m0
     obtain ⟨hin, hal⟩ := ScrL.hdr K0.base.scr hL (d := 8) (by decide) (by decide)
     refine WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = v.dig ∧ u.mem = s₀.mem)
       (by brun [hDigest, K0.base.regs.s6, hin, hal]; exact K0.base.dig8 (hsem _ _ h).2.1.full) (by rfl) (by rfl))
@@ -630,23 +630,23 @@ theorem pinsTl188 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     have hL := K.base.ok
     have hwq := hL.wq_ge
     have hqs := hL.qslot
-    have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
-    have e0 := e 0; have e1 := e 1; have e6 := e 6; have e7 := e 7; have e8 := e 8; have e28 := e 28
-    have hqb := (hsem _ _ h).vals.2.2.2.1
-    have h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
+    obtain e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
+    obtain e0 := e 0; have e1 := e 1; have e6 := e 6; have e7 := e 7; have e8 := e 8; have e28 := e 28
+    obtain hqb := (hsem _ _ h).vals.2.2.2.1
+    obtain h4 : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
     refine WP.seq (WP.mono (scalar_ok hL K.qs (K.base.dig8 (hsem _ _ h).2.1.full) K.lens hqb h4
       (K.base.hdg.take (Nat.min_le_left _ _))) fun s₁ ⟨⟨Q1, v6, o1⟩, k1⟩ => ?_)
-    have K1 := K.withQ Q1 k1 (QArr.of o1 (by omega_using [e1, e6]) (by omega_using [e6, e28]))
+    obtain K1 := K.withQ Q1 k1 (QArr.of o1 (by omega_using [e1, e6]) (by omega_using [e6, e28]))
     refine WP.seq (WP.mono (zeroArr_ok K1.qs.inq.env (j := 7) (by decide)) fun s₂ ⟨⟨z7, o2⟩, k2⟩ => ?_)
-    have K2 := K1.qarr k2 (QArr.of o2 (by omega_using [e1, e7]) (by omega_using [e7, e28]))
-    have z2 : arrQ s₂.mem v.L 6 = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt _ v.dig (min v.d v.qb)) :=
+    obtain K2 := K1.qarr k2 (QArr.of o2 (by omega_using [e1, e7]) (by omega_using [e7, e28]))
+    obtain z2 : arrQ s₂.mem v.L 6 = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt _ v.dig (min v.d v.qb)) :=
       (o2.wordsVal (by omega_using [e6, e7]) (by omega_using [hwq, e6])).trans v6
     refine WP.seq (WP.mono (addMod_ok K2.qs.inq.env (o := 6) (a := 6) (b := 7) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by show arrQ s₂.mem v.L 6 + arrQ s₂.mem v.L 7 < 2 * arrQ s₂.mem v.L 0
           rw [z2, show arrQ s₂.mem v.L 7 = 0 from z7, K2.q0, Nat.add_zero]; exact (hsem _ _ h).hz _))
       fun s₃ ⟨⟨_, fr3⟩, k3⟩ => ?_)
-    have K3 := K2.qarr k3 (fr3.qarr (by decide) (by decide))
+    obtain K3 := K2.qarr k3 (fr3.qarr (by decide) (by decide))
     refine WP.block_append (WP.mono (ptrX_ok K3.qs.scr hL K3.qs.regs) fun s₄ ⟨⟨b7, b8, m4⟩, k4⟩ =>
       WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off v.key (3 * v.L.pl + v.L.ql) ∧
         u.gpr .s10 = BitVec.ofNat 64 v.L.ql ∧ u.mem = s₄.mem) (by brun [b7, b8, BitVec.add_zero]) (by decide) (by rfl))
@@ -660,10 +660,10 @@ theorem stSV {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
     WP isa (.seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ (.seq Verify.qMinus2
       (.seq Sign.inverseK (.seq Sign.sValue c)))))) s Q := by
   obtain ⟨hq, hqo, -, hqb, -⟩ := h.vals
-  have bd := VG.Proof.Dsa.supported_bounds h.2.2.sz
+  obtain bd := VG.Proof.Dsa.supported_bounds h.2.2.sz
   refine stINV h fun t K I h24 h4 r25 => ?_
   have hL := K.base.ok
-  have hd : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
+  obtain hd : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
   exact WP.seq (WP.mono (sValue_ok hL K.qs I (K.base.dig8 h.2.1.full) K.lens hqb hd
       (K.base.hdg.take (Nat.min_le_left _ _)) K.os.key (by rw [K.q0]; omega_using [hq, hqo]) (by rw [K.q0]; exact hqo)
       (by rw [K.q0]; exact h24) (by rw [K.q0]; exact h4) (by rw [K.q0]; exact r25) (by rw [K.q0]; exact h.hz _))
@@ -681,31 +681,31 @@ theorem pinsTl259 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     have hL := K.base.ok
     have hwq := hL.wq_ge
     have hqs := hL.qslot
-    have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
-    have e0 := e 0; have e1 := e 1; have e2 := e 2; have e3 := e 3; have e6 := e 6; have e7 := e 7
-    have e8 := e 8; have e25 := e 25; have e26 := e 26; have e28 := e 28
+    obtain e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
+    obtain e0 := e 0; have e1 := e 1; have e2 := e 2; have e3 := e 3; have e6 := e 6; have e7 := e 7
+    obtain e8 := e 8; have e25 := e 25; have e26 := e 26; have e28 := e 28
     obtain ⟨b, hm⟩ := K.mw
     refine WP.seq (WP.mono (zeroArr_ok K.qs.inq.env (j := 7) (by decide)) fun s₁ ⟨⟨z7, o1⟩, k1⟩ => ?_)
-    have qa1 : QArr v.L _ s₁.mem := QArr.of o1 (by omega_using [e1, e7]) (by omega_using [e7, e28])
-    have K1 := K.qarr k1 qa1
+    obtain qa1 : QArr v.L _ s₁.mem := QArr.of o1 (by omega_using [e1, e7]) (by omega_using [e7, e28])
+    obtain K1 := K.qarr k1 qa1
     obtain ⟨hld, hal⟩ := ScrL.hdr K1.qs.scr hL (d := 0) (by decide) (by decide)
-    have hw1 : word s₁.mem v.L.S hMask = mask b := by rw [(qa1.body hL).word (by decide)]; exact hm
+    obtain hw1 : word s₁.mem v.L.S hMask = mask b := by rw [(qa1.body hL).word (by decide)]; exact hm
     refine WP.seq (WP.mono (WP.keep [.a4] (Q := fun u => u.gpr .a4 = mask b ∧ u.mem = s₁.mem)
       (by brun [hMask, K1.qs.regs.s6, hld, hal]; exact hw1) (by decide) (by rfl)) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_)
-    have K2 := K1.keepM k2 m2
+    obtain K2 := K1.keepM k2 m2
     refine WP.seq (WP.mono (nonZero_ok K2.qs.inq.env (a := 6) (c := 0) (by decide) (by rw [m2]; exact z7) a4)
       fun s₃ ⟨⟨b4, m3⟩, k3⟩ => ?_)
-    have K3 := K2.keepM k3 m3
+    obtain K3 := K2.keepM k3 m3
     refine WP.seq (WP.mono (WP.keep [.s4] (Q := fun u => u.gpr .s4 = mask (b && decide (wordsVal s₂.mem v.L.Q
         (slot v.L.wq 6) v.L.wq ≠ 0)) ∧ u.mem = s₃.mem)
       (by brun [b4, BitVec.add_zero]) (by decide) (by rfl)) fun s₄ ⟨⟨a20, m4⟩, k4⟩ => ?_)
-    have K4 := K3.keepM k4 m4
+    obtain K4 := K3.keepM k4 m4
     refine WP.seq (WP.mono (sel_ok K4.qs.inq.env (o := 1) (a := 25) (t := 7) (by decide) (by decide)
       (by decide) (by decide) (by decide) a20) fun s₅ ⟨⟨_, o5⟩, k5⟩ => ?_)
-    have K5 := K4.qarr k5 (QArr.of o5 (by omega_using []) (by omega_using [e1, e28]))
+    obtain K5 := K4.qarr k5 (QArr.of o5 (by omega_using []) (by omega_using [e1, e28]))
     refine WP.seq (WP.mono (sel_ok K5.qs.inq.env (o := 2) (a := 6) (t := 7) (by decide) (by decide)
       (by decide) (by decide) (by decide) ((k5.gpr (by decide)).trans a20)) fun s₆ ⟨⟨_, o6⟩, k6⟩ => ?_)
-    have K6 := K5.qarr k6 (QArr.of o6 (by omega_using [e1, e2]) (by omega_using [e2, e28]))
+    obtain K6 := K5.qarr k6 (QArr.of o6 (by omega_using [e1, e2]) (by omega_using [e2, e28]))
     obtain ⟨hld', hal'⟩ := ScrL.hdr K6.qs.scr hL (d := 24) (by decide) (by decide)
     refine WP.block_append (WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = oOf v ∧ u.mem = s₆.mem)
       (by brun [Sign.hOut, K6.qs.regs.s6, hld', hal']; exact K6.base.hout _ (hsem _ _ h).2.1.out) (by decide) (by rfl))
@@ -720,8 +720,8 @@ theorem run_drop {Φ : VD → State → Prop} {F G : List (Prog isa)} {n : Nat}
     (hrun : ∀ v s, Φ v s → WP isa (Code.seqL F) s fun _ => True) (hd : F.drop n = G) :
     ∀ v s, At Φ F n v s → WP isa (Code.seqL G) s fun _ => True := by
   intro v s h
-  have h' := at_step hrun (m := n + G.length) (Nat.le_add_right _ _) h
-  have e : (F.drop n).take (n + G.length - n) = G := by
+  obtain h' := at_step hrun (m := n + G.length) (Nat.le_add_right _ _) h
+  obtain e : (F.drop n).take (n + G.length - n) = G := by
     rw [hd, Nat.add_sub_cancel_left, List.take_length]
   obtain ⟨t, u, ex, _⟩ := h'
   exact ⟨t, u, by rw [VG.Proof.Bignum.RISCV64.seg, e] at ex; exact ex, trivial⟩

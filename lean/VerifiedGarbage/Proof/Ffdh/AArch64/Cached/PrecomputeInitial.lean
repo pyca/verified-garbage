@@ -32,19 +32,19 @@ theorem generator_basis (M : Mont) {p : Parameters} {s : State} (h : ModState p 
  (generator : wv s.mem p.B (slot p.w 1) p.w=p.G) (reduced : p.G<p.P) :
  WP isa (M.mm 5 1 4) s fun t =>
  Basis p 1 t ∧ Arrays p.B p.w [2,3,5] s.mem t.mem ∧ Keep mmRegs s t := by
- have r2Bound : wv s.mem p.B (slot p.w 4) p.w<p.P := by
+ obtain r2Bound : wv s.mem p.B (slot p.w 4) p.w<p.P := by
   rw [h.r2];exact Nat.mod_lt _ (by have := p.modulusPositive;omega_using [reduced])
  refine WP.mono (crtMmN_ok M h.good p.room p.positive p.width
   (by decide : 5<8) (by decide : 1<8) (by decide : 4<8) (by decide) (by decide)
   (by decide) (by decide) (by decide) h.modulus h.inverse r2Bound) ?_
  rintro t ⟨good,_,_,bound,product,frame,rest⟩
- have mod := h.after_arrays good frame (by decide) (by decide) (by decide)
- have r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by rw [←Nat.pow_add];congr 1;omega_using []
- have target : wv t.mem p.B (slot p.w 5) p.w*2^(64*p.w)%p.P=
+ obtain mod := h.after_arrays good frame (by decide) (by decide) (by decide)
+ obtain r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by rw [←Nat.pow_add];congr 1;omega_using []
+ obtain target : wv t.mem p.B (slot p.w 5) p.w*2^(64*p.w)%p.P=
   (p.G*2^(64*p.w))*2^(64*p.w)%p.P := by
   rw [generator,h.r2,r2Eq,Nat.mul_mod_mod,←Nat.mul_assoc] at product
   exact product
- have cancel := VG.Proof.Bignum.mont_cancel p.coprime target
+ obtain cancel := VG.Proof.Bignum.mont_cancel p.coprime target
  rw [Nat.mod_eq_of_lt bound] at cancel
  refine ⟨⟨mod,bound,?_⟩,frame,rest⟩
  simpa only [VG.Proof.Bignum.powMod_eq,Nat.pow_one,Nat.mod_eq_of_lt reduced] using cancel
@@ -78,9 +78,9 @@ theorem generatorLoad_ok {s : State} {p : Parameters} {dom : Addr} {bs : List By
  · brun [good.x0,hdr_enc (show sDom<32 by decide),hdr_enc (show sLen<32 by decide),
     header_read good p.room (show sDom<32 by decide),header_read good p.room (show sLen<32 by decide),domain,length]
  · rintro u ⟨⟨ptr,count,mem⟩,rest⟩
-   have goodU : Good u p.B p.Z p.w p.mi :=
+   obtain goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,mem ▸ good.hdr⟩
-   have src := source.after_inscr (fun x _ => by rw [mem]) rest
+   obtain src := source.after_inscr (fun x _ => by rw [mem]) rest
    refine WP.mono (loadArray_ok goodU p.room words positive size (by decide : 1<8) src.source src.length ptr count) ?_
    rintro t ⟨goodT,value,frame,keep⟩
    rw [mem] at frame
@@ -113,7 +113,7 @@ theorem storeLiteral_ok {s : State} {p : Parameters} {a d : Nat}
  refine WP.mono (WP.keep [.x3] (Q:=fun u =>u.gpr .x3=BitVec.ofNat 64 d ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
  · brun [movi_nat (show d<2^16 by omega_using [inside])]
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
-   have goodU : Good u p.B p.Z p.w p.mi :=
+   obtain goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
    refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width array
     (memU ▸ context) indexU (entry_fit p inside)
@@ -154,53 +154,53 @@ theorem precomputeInitial_ok (M : Mont) {s : State} {p : Parameters} {dom : Addr
  rw [regroup,WP.seq_iff]
  refine WP.mono (field_initial_power M field) ?_
  rintro a ⟨powerA,frameA,restA⟩
- have inA := InScr.of_arrays frameA p.room (by simp)
- have sourceA := generator.after_inscr inA restA
- have spaceA := space.after restA
- have ctxA := (arrays_header frameA (by decide)).trans context
- have domA := (arrays_header frameA (by decide)).trans domain
- have lenA := (arrays_header frameA (by decide)).trans length
- have rowsA := (arrays_header frameA (by decide)).trans rows
+ obtain inA := InScr.of_arrays frameA p.room (by simp)
+ obtain sourceA := generator.after_inscr inA restA
+ obtain spaceA := space.after restA
+ obtain ctxA := (arrays_header frameA (by decide)).trans context
+ obtain domA := (arrays_header frameA (by decide)).trans domain
+ obtain lenA := (arrays_header frameA (by decide)).trans length
+ obtain rowsA := (arrays_header frameA (by decide)).trans rows
  rw [regroup,WP.seq_iff]
  refine WP.mono (storeLiteral_ok powerA.good spaceA ctxA (by decide : 6<8) (by decide : 0<32)) ?_
  rintro b ⟨goodB,valueB,frameB,sameB,restB⟩
- have powerB := powerA.after_workspace goodB sameB
- have sourceB := sourceA.after_entry frameB (by decide) restB
- have spaceB := spaceA.after restB
- have ctxB := (workspace_header powerA.good sameB (by decide : sCtx<32)).trans ctxA
- have domB := (workspace_header powerA.good sameB (by decide : sDom<32)).trans domA
- have lenB := (workspace_header powerA.good sameB (by decide : sLen<32)).trans lenA
- have rowsB := (workspace_header powerA.good sameB (by decide : sRows<32)).trans rowsA
- have entryB : wv b.mem p.ctx (entryOffset p.w 0) p.w=entryValue p 0 := by
+ obtain powerB := powerA.after_workspace goodB sameB
+ obtain sourceB := sourceA.after_entry frameB (by decide) restB
+ obtain spaceB := spaceA.after restB
+ obtain ctxB := (workspace_header powerA.good sameB (by decide : sCtx<32)).trans ctxA
+ obtain domB := (workspace_header powerA.good sameB (by decide : sDom<32)).trans domA
+ obtain lenB := (workspace_header powerA.good sameB (by decide : sLen<32)).trans lenA
+ obtain rowsB := (workspace_header powerA.good sameB (by decide : sRows<32)).trans rowsA
+ obtain entryB : wv b.mem p.ctx (entryOffset p.w 0) p.w=entryValue p 0 := by
   unfold entryValue
   rw [valueB,powerA.value,VG.Proof.Rsa.FixedBaseComb.exponent_zero]
- have tableB : TablePrefix p 1 b :=
+ obtain tableB : TablePrefix p 1 b :=
   TablePrefix.extend (fun j hj => by omega : TablePrefix p 0 a) (by decide) frameB entryB
  rw [regroup,WP.seq_iff]
  refine WP.mono (generatorLoad_ok goodB sourceB words positive size domB lenB) ?_
  rintro c ⟨goodC,generatorC,frameC,restC⟩
- have powerC := powerB.after_arrays goodC frameC (by decide) (by decide) (by decide) (by decide)
- have spaceC := spaceB.after restC
- have tableC := tableB.after_inscr spaceB (by decide) (InScr.of_arrays frameC p.room (by simp))
- have ctxC := (arrays_header frameC (by decide)).trans ctxB
- have rowsC := (arrays_header frameC (by decide)).trans rowsB
+ obtain powerC := powerB.after_arrays goodC frameC (by decide) (by decide) (by decide) (by decide)
+ obtain spaceC := spaceB.after restC
+ obtain tableC := tableB.after_inscr spaceB (by decide) (InScr.of_arrays frameC p.room (by simp))
+ obtain ctxC := (arrays_header frameC (by decide)).trans ctxB
+ obtain rowsC := (arrays_header frameC (by decide)).trans rowsB
  rw [WP.seq_iff]
  refine WP.mono (generator_basis M powerC.toModState generatorC reduced) ?_
  rintro d ⟨basisD,frameD,restD⟩
- have spaceD := spaceC.after restD
- have tableD := tableC.after_inscr spaceC (by decide) (InScr.of_arrays frameD p.room (by simp))
- have ctxD := (arrays_header frameD (by decide)).trans ctxC
- have rowsD := (arrays_header frameD (by decide)).trans rowsC
+ obtain spaceD := spaceC.after restD
+ obtain tableD := tableC.after_inscr spaceC (by decide) (InScr.of_arrays frameD p.room (by simp))
+ obtain ctxD := (arrays_header frameD (by decide)).trans ctxC
+ obtain rowsD := (arrays_header frameD (by decide)).trans rowsC
  refine WP.mono (storeLiteral_ok basisD.good spaceD ctxD (by decide : 5<8) (by decide : 1<32)) ?_
  rintro t ⟨goodT,valueT,frameT,sameT,restT⟩
- have basisT := basisD.after_workspace goodT sameT
- have oneExponent : Spec.Rsa.FixedBaseComb.exponent p.N 1=1 := by
+ obtain basisT := basisD.after_workspace goodT sameT
+ obtain oneExponent : Spec.Rsa.FixedBaseComb.exponent p.N 1=1 := by
   simpa only [Nat.pow_zero,Nat.zero_mul] using VG.Proof.Rsa.FixedBaseComb.exponent_tooth p.N 0 (by decide)
- have entryT : wv t.mem p.ctx (entryOffset p.w 1) p.w=entryValue p 1 := by
+ obtain entryT : wv t.mem p.ctx (entryOffset p.w 1) p.w=entryValue p 1 := by
   unfold entryValue
   rw [valueT,basisD.value,oneExponent]
- have tableT := tableD.extend (by decide : 1<32) frameT entryT
- have frames : BuildFrame p s.mem t.mem :=
+ obtain tableT := tableD.extend (by decide : 1<32) frameT entryT
+ obtain frames : BuildFrame p s.mem t.mem :=
   ((((BuildFrame.of_inscr inA).trans (BuildFrame.of_entry (by decide : 0<32) frameB)).trans
     (BuildFrame.of_inscr (InScr.of_arrays frameC p.room (by simp)))).trans
     (BuildFrame.of_inscr (InScr.of_arrays frameD p.room (by simp)))).trans

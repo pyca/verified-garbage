@@ -75,9 +75,9 @@ theorem map_store' (f : Nat → Nat) (xs : List Nat) :
 /-- The limbs of `2^kb`: `2^(kb % 52)` at limb `kb / 52`, zero elsewhere. -/
 theorem limbN_pow2 (k j : Nat) : limbN (2 ^ k) j = if j = k / 52 then 2 ^ (k % 52) else 0 := by
   unfold limbN
-  have hk : 2 ^ k = 2 ^ (k % 52) * 2 ^ (52 * (k / 52)) := by
+  obtain hk : 2 ^ k = 2 ^ (k % 52) * 2 ^ (52 * (k / 52)) := by
     rw [← Nat.pow_add]; congr 1; omega_arith
-  have hlt : 2 ^ (k % 52) < 2 ^ 52 := Nat.pow_lt_pow_right (by decide) (Nat.mod_lt _ (by decide))
+  obtain hlt : 2 ^ (k % 52) < 2 ^ 52 := Nat.pow_lt_pow_right (by decide) (Nat.mod_lt _ (by decide))
   split
   · rename_i h; subst h
     rw [hk, Nat.mul_div_cancel _ (Nat.pow_pos (by decide)), Nat.mod_eq_of_lt hlt]
@@ -113,23 +113,23 @@ theorem pow2_ok (hl : PubOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B)
     rw [kt.2.2]; exact hw j (List.mem_range.mp hj)) fun u hu => ?_
   subst hu
   have hj0 : kb l / 52 < l.L := a5
-  have hlast : InRegions t.wr (B + BitVec.ofNat 64 (oB l + l.off (kb l / 52))) 8 := by
+  obtain hlast : InRegions t.wr (B + BitVec.ofNat 64 (oB l + l.off (kb l / 52))) 8 := by
     rw [kt.2.2]; exact hw _ hj0
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun u' =>
     u'.mem = (stMem t.mem B 0 ((List.range l.L).map fun j => oB l + l.off j)).writeW
       (off B (oB l + l.off (kb l / 52))) (BitVec.ofNat 64 (2 ^ (kb l % 52))) ∧ u'.mxcsr = t.mxcsr) (by
       xrun [eaG', h11, hlast]
       all_goals rfl) rfl) fun s' ⟨⟨me, mx⟩, k⟩ => ?_
-  have hF' : ∀ j < l.L, oB l + l.off j + 8 ≤ oB l + l.NB := fun j hj => by
+  obtain hF' : ∀ j < l.L, oB l + l.off j + 8 ≤ oB l + l.NB := fun j hj => by
     have := off_ltN hA hj; omega_arith
   refine ⟨fun j hj => ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, by rw [mx, hx]⟩
   · rw [me, limbN_pow2]
     by_cases e : j = kb l / 52
     · subst e; simp only [↓reduceIte]; exact VG.Proof.Bignum.word_writeW_self _ _ _ _
     · simp only [e, ↓reduceIte]
-      have hk := hF' _ hj0
-      have hjj := hF' j hj
-      have hs := off_sepN hA hj0 hj e
+      obtain hk := hF' _ hj0
+      obtain hjj := hF' j hj
+      obtain hs := off_sepN hA hj0 hj e
       rw [(writeW_outside _ B _ (by omega_arith)).word (by omega_arith) (by have := hF' j hj; omega_arith),
         word_stMem _ _ _ _ (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩) (fun d hd => by
           obtain ⟨j', hj', rfl⟩ := List.mem_map.mp hd
@@ -166,7 +166,7 @@ structure Mod (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M k : N
 theorem Mod.of_outside (hl : PubOk l) {m m' : Mem} {B : Addr} {M k n : Nat} (h : Mod l m B M k)
     (f : Outside B (oA l) n m m') (hn : oA l + n ≤ 2 ^ 63) : Mod l m' B M k := by
   obtain ⟨a1, -⟩ := hl.area
-  have hlimb : ∀ j < l.L, limb l m' B 0 j = limb l m B 0 j := fun j hj => by
+  obtain hlimb : ∀ j < l.L, limb l m' B 0 j = limb l m B 0 j := fun j hj => by
     have := off_ltN hl.amm hj
     simp only [limb, Nat.zero_add]
     rw [f.word (by omega_arith) (by omega_arith)]
@@ -200,8 +200,8 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
       s'.gpr .r12 = mask52 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨a1, a2, a3, a4, -, -, a7, -, a9, -, -, a12⟩ := hl.area
   have hn := hl.nl
-  have hp : ∀ p < l.nl, p = 0 := fun p hp => by omega_arith
-  have h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
+  obtain hp : ∀ p < l.nl, p = 0 := fun p hp => by omega_arith
+  obtain h0 : ∀ c, l.D * 0 + c = c := fun c => by rw [Nat.mul_zero, Nat.zero_add]
   have hM : val52 l s.mem B oM = M := hm.val
   refine WP.mono (ammCoreSpecN_ok hl.amm (ammMul_core hl.amm hl.z) (Z := 48 * (l.W + 2)) (k := fun _ => k) hB r8 r9 r11 hs
     (by rw [hn]; simp only [Nat.sub_self, Nat.mul_zero]; omega_arith) (by omega_arith)
@@ -212,7 +212,7 @@ theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gp
     (fun p hp' t ht => by obtain rfl := hp p hp'; rw [h0]; exact hm.k0 t ht) (fun _ _ => hm.klt)
     (fun p hp' => by obtain rfl := hp p hp'; rw [h0]; exact hm.inv))
     fun s' ⟨hv, hf, hg, h12, hrd, hwr, hx⟩ => ?_
-  have v := hv 0 (by omega_arith)
+  obtain v := hv 0 (by omega_arith)
   simp only [h0, hM] at v
   exact ⟨v.1, fun hA hB' => v.2 hA hB' hm.big, OutN.one hl hf, hg, h12, hrd, hwr, hx⟩
 
@@ -330,15 +330,15 @@ theorem sel_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (
       (1 ≤ c → ∀ j < l.L, word u.mem B (oB l + l.off j) =
         BitVec.ofNat 64 (limbN (if c = 1 then 2 ^ kb l else wv t₀.mem X 0 l.W) j)) := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := hl.area
-  have hs : Scr t B (48 * (l.W + 2)) := e.scr.congr h.keep.2.2
-  have hF : ∀ j < l.L, oB l + l.off j + 8 ≤ oB l + l.NB := fun j hj => by
+  obtain hs : Scr t B (48 * (l.W + 2)) := e.scr.congr h.keep.2.2
+  obtain hF : ∀ j < l.L, oB l + l.off j + 8 ≤ oB l + l.NB := fun j hj => by
     have := off_ltN hl.amm hj; omega_arith
-  have hNB : 0 < l.NB := by simp only [Lay.NB]; have := hl.amm.bounds.1; omega_arith
+  obtain hNB : 0 < l.NB := by simp only [Lay.NB]; have := hl.amm.bounds.1; omega_arith
   unfold sel
   refine WP.seq (WP.mono (cmp_ok (c := c) (n := 1) (by omega_arith) (by decide) h.r13) fun t₁ ⟨z₁, g₁, rd₁, wr₁, m₁, x₁⟩ => ?_)
   refine WP.ite (decide (c = 1)) (by simp [eval, z₁]) (fun hb => ?_) (fun hb => ?_)
   · -- `B := 2^kb`, then `A := A B`.
-    have hc1 : c = 1 := by simpa using hb
+    obtain hc1 : c = 1 := by simpa using hb
     subst hc1
     rw [WP.block_append_iff]
     refine WP.mono (pow2_ok hl (s := t₁) (B := B) (by rw [g₁]; exact h.rbx)
@@ -353,19 +353,19 @@ theorem sel_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [k₂.gpr (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2]),
         k₁.gpr (by simp [hr.1, hr.2.2.2.2.2.2]), g₁]
-  have hc1 : c ≠ 1 := by simpa using hb
+  obtain hc1 : c ≠ 1 := by simpa using hb
   refine WP.seq (WP.mono (cmp_ok (c := c) (n := 2) (by omega_arith) (by decide) (by rw [g₁]; exact h.r13))
     fun t₂ ⟨z₂, g₂, rd₂, wr₂, m₂, x₂⟩ => ?_)
   refine WP.ite (decide (c = 2)) (by simp [eval, z₂]) (fun hb => ?_) (fun hb => ?_)
   · -- `B := x`, then `A := B A`.
-    have hc2 : c = 2 := by simpa using hb
+    obtain hc2 : c = 2 := by simpa using hb
     subst hc2
-    have hXv : wv t₂.mem X 0 l.W = wv t₀.mem X 0 l.W := by
+    obtain hXv : wv t₂.mem X 0 l.W = wv t₀.mem X 0 l.W := by
       rw [m₂, m₁]
       exact VG.Proof.Bignum.wv_congr fun i hi => by
         rw [Nat.zero_add]; exact e.sepX _ _ (h.frame.mono (Nat.le_refl _) (by omega_arith)) i hi
     rw [WP.block_append_iff]
-    have hXv' : wv t₂.mem (off H (arr l aX)) 0 l.W = wv t₀.mem X 0 l.W := by rw [← e.hX]; exact hXv
+    obtain hXv' : wv t₂.mem (off H (arr l aX)) 0 l.W = wv t₀.mem X 0 l.W := by rw [← e.hX]; exact hXv
     refine WP.mono (ld52_ok hl.amm (s := t₂) (B := B) (H := H) (j := aX) (o := oB l)
       (by rw [g₂, g₁]; exact h.rbx) (by rw [g₂, g₁]; exact h.rdi) (by rw [g₂, g₁]; exact h.r12) e.hx
       (fun i hi => by rw [rd₂, wr₂, rd₁, wr₁, h.keep.2.1, h.keep.2.2, ← e.hX]; exact e.hrd i hi)
@@ -381,11 +381,11 @@ theorem sel_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [k₂.gpr (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2]),
         k₁.gpr (by simp [hr.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2, hr.2.1]), g₂, g₁]
-  have hc2 : c ≠ 2 := by simpa using hb
+  obtain hc2 : c ≠ 2 := by simpa using hb
   refine WP.seq (WP.mono (cmp_ok (c := c) (n := 19) (by omega_arith) (by decide) (by rw [g₂, g₁]; exact h.r13))
     fun t₃ ⟨z₃, g₃, rd₃, wr₃, m₃, x₃⟩ => ?_)
-  have hB₃ : t₃.gpr .rbx = B := by rw [g₃, g₂, g₁]; exact h.rbx
-  have fin : ∀ b, b < 2 ^ 31 → (if c = 1 ∨ c = 19 then oB l else oA l) = b →
+  obtain hB₃ : t₃.gpr .rbx = B := by rw [g₃, g₂, g₁]; exact h.rbx
+  obtain fin : ∀ b, b < 2 ^ 31 → (if c = 1 ∨ c = 19 then oB l else oA l) = b →
       WP isa (.block (setOps (oA l) (oA l) b)) t₃ fun u =>
         u.gpr .r8 = off B (if c = 2 then oB l else oA l) ∧
         u.gpr .r9 = off B (if c = 1 ∨ c = 19 then oB l else oA l) ∧
@@ -396,7 +396,7 @@ theorem sel_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (
           BitVec.ofNat 64 (limbN (if c = 1 then 2 ^ kb l else wv t₀.mem X 0 l.W) j)) := fun b hb hbe =>
     WP.mono (setOps_ok (o := oA l) (a := oA l) (b := b) hB₃ (by omega_arith) (by omega_arith) hb)
       fun u ⟨r8, r9, r11, k, m, x⟩ => by
-        have hm : u.mem = t.mem := by rw [m, m₃, m₂, m₁]
+        obtain hm : u.mem = t.mem := by rw [m, m₃, m₂, m₁]
         refine ⟨by simpa [hc2] using r8, ?_, r11, ?_, ?_, by rw [x, x₃, x₂, x₁], by rw [hm]; exact Outside.refl _ _ _ _,
           fun h1 j hj => ?_⟩
         · rw [r9, hbe]
@@ -419,8 +419,8 @@ theorem va_step (hl : PubOk l) {M R0 x A A' a b c : Nat} (hM : M % 2 = 1) (hc : 
     (hb : b = if c = 1 then 2 ^ kb l else if c = 19 then x else A)
     (h : A' * 2 ^ (52 * l.S) % M = a * b % M) : VA l M R0 x (c + 1) A' := by
   obtain ⟨-, -, -, -, -, -, a7, -, -, a10, -, -⟩ := hl.area
-  have hR := VG.Proof.Bignum.coprime_pow2 hM (52 * l.S)
-  have hR2 : Nat.Coprime (2 ^ (52 * l.S) * 2 ^ (52 * l.S)) M := by
+  obtain hR := VG.Proof.Bignum.coprime_pow2 hM (52 * l.S)
+  obtain hR2 : Nat.Coprime (2 ^ (52 * l.S) * 2 ^ (52 * l.S)) M := by
     have := VG.Proof.Bignum.coprime_pow2 hM (52 * l.S + 52 * l.S); rwa [Nat.pow_add] at this
   subst ha hb
   obtain _ | _ | _ | i := c
@@ -436,19 +436,19 @@ theorem va_step (hl : PubOk l) {M R0 x A A' a b c : Nat} (hM : M % 2 = 1) (hc : 
     rw [ite_eq_left rfl, ite_eq_right (by decide), ite_eq_right (by decide)] at h
     rw [ite_eq_right (by decide), Nat.pow_zero, Nat.pow_one]
     -- `R0² 2^kb ≡ R⁴ 2^kb = R'⁴`, so `A ≡ R'²`.
-    have e1 : 2 ^ (64 * l.W) * 2 ^ (64 * l.W) * (2 ^ (64 * l.W) * 2 ^ (64 * l.W)) * 2 ^ kb l =
+    obtain e1 : 2 ^ (64 * l.W) * 2 ^ (64 * l.W) * (2 ^ (64 * l.W) * 2 ^ (64 * l.W)) * 2 ^ kb l =
         2 ^ (52 * l.S) * 2 ^ (52 * l.S) * (2 ^ (52 * l.S) * 2 ^ (52 * l.S)) := by
       simp only [← Nat.pow_add]; congr 1; rw [a7]; omega_arith
-    have h4 : R0 * R0 * 2 ^ kb l % M =
+    obtain h4 : R0 * R0 * 2 ^ kb l % M =
         2 ^ (52 * l.S) * 2 ^ (52 * l.S) * (2 ^ (52 * l.S) * 2 ^ (52 * l.S)) % M := by
       rw [mul_congr (mul_congr hq hq) rfl, e1]
-    have hA2 : A % M = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) % M := by
+    obtain hA2 : A % M = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) % M := by
       refine VG.Proof.Bignum.mont_cancel hR2 ?_
       rw [← Nat.mul_assoc, show A * 2 ^ (52 * l.S) * 2 ^ (52 * l.S) % M = R0 * R0 * 2 ^ kb l % M from hA, h4]
     refine VG.Proof.Bignum.mont_cancel hR ?_
     rw [h, mul_congr rfl hA2, Nat.mul_assoc]
   · intro hq
-    have hA := hA hq
+    obtain hA := hA hq
     rw [ite_eq_right (by omega_arith)] at hA
     rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)] at h
     by_cases h19 : i + 3 = 19
@@ -486,41 +486,41 @@ theorem iter_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} 
         .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) t fun t' =>
       Inv l t₀ B H X M R0 (c + 1) t' ∧ t'.zf = some (decide (c + 1 = 20)) := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := hl.area
-  have hL := (conv_boundsN hl.amm).2.1
-  have hs : Scr t B (48 * (l.W + 2)) := e.scr.congr h.keep.2.2
-  have hxv : wv t₀.mem X 0 l.W < 2 ^ (52 * l.L) :=
+  obtain hL := (conv_boundsN hl.amm).2.1
+  obtain hs : Scr t B (48 * (l.W + 2)) := e.scr.congr h.keep.2.2
+  obtain hxv : wv t₀.mem X 0 l.W < 2 ^ (52 * l.L) :=
     Nat.lt_of_lt_of_le (VG.Proof.Bignum.wv_lt _ _ _ _) (AmmSym.pow2_le hL)
-  have hkb : 2 ^ kb l < 2 ^ (52 * l.L) := Nat.pow_lt_pow_right (by decide) (by omega_arith)
+  obtain hkb : 2 ^ kb l < 2 ^ (52 * l.L) := Nat.pow_lt_pow_right (by decide) (by omega_arith)
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine WP.seq (WP.mono (sel_ok hl e h hc) fun u ⟨r8, r9, r11, r12, ku, xu, ou, bu⟩ => ?_)
-  have huB : u.gpr .rbx = B := (ku.gpr (by decide)).trans h.rbx
-  have hsu : Scr u B (48 * (l.W + 2)) := hs.congr ku.2.2
-  have fu : Outside B (oA l) (2 * l.NB) t₀.mem u.mem := h.frame.trans (ou.mono (by omega_arith) (by omega_arith))
-  have mdu : Mod l u.mem B M k := e.md.of_outside hl fu (by omega_arith)
-  have hAu : ∀ j < l.L, word u.mem B (oA l + l.off j) = word t.mem B (oA l + l.off j) := fun j hj => by
+  obtain huB : u.gpr .rbx = B := (ku.gpr (by decide)).trans h.rbx
+  obtain hsu : Scr u B (48 * (l.W + 2)) := hs.congr ku.2.2
+  obtain fu : Outside B (oA l) (2 * l.NB) t₀.mem u.mem := h.frame.trans (ou.mono (by omega_arith) (by omega_arith))
+  obtain mdu : Mod l u.mem B M k := e.md.of_outside hl fu (by omega_arith)
+  obtain hAu : ∀ j < l.L, word u.mem B (oA l + l.off j) = word t.mem B (oA l + l.off j) := fun j hj => by
     have := off_ltN hl.amm hj; exact ou.word (by omega_arith) (by omega_arith)
-  have laU : ∀ j < l.L, limb l u.mem B (oA l) j < 2 ^ 52 := fun j hj => by
+  obtain laU : ∀ j < l.L, limb l u.mem B (oA l) j < 2 ^ 52 := fun j hj => by
     simp only [limb]; rw [hAu j hj]; exact h.a j hj
-  have vAu : val52 l u.mem B (oA l) = val52 l t.mem B (oA l) := lval_congr fun j hj => by
+  obtain vAu : val52 l u.mem B (oA l) = val52 l t.mem B (oA l) := lval_congr fun j hj => by
     simp only [limb]; rw [hAu j hj]
-  have lB : 1 ≤ c → ∀ j < l.L, limb l u.mem B (oB l) j < 2 ^ 52 := fun h1 j hj => by
+  obtain lB : 1 ≤ c → ∀ j < l.L, limb l u.mem B (oB l) j < 2 ^ 52 := fun h1 j hj => by
     simp only [limb]; rw [bu h1 j hj]; exact limbN_lt64 _ _
-  have vB : 1 ≤ c → val52 l u.mem B (oB l) = if c = 1 then 2 ^ kb l else wv t₀.mem X 0 l.W := fun h1 =>
+  obtain vB : 1 ≤ c → val52 l u.mem B (oB l) = if c = 1 then 2 ^ kb l else wv t₀.mem X 0 l.W := fun h1 =>
     val52_of (bu h1) (by split <;> with_reducible assumption)
-  have la : ∀ j < l.L, limb l u.mem B (if c = 2 then oB l else oA l) j < 2 ^ 52 := by
+  obtain la : ∀ j < l.L, limb l u.mem B (if c = 2 then oB l else oA l) j < 2 ^ 52 := by
     split
     · exact lB (by omega_arith)
     · exact laU
-  have lb : ∀ j < l.L, limb l u.mem B (if c = 1 ∨ c = 19 then oB l else oA l) j < 2 ^ 52 := by
+  obtain lb : ∀ j < l.L, limb l u.mem B (if c = 1 ∨ c = 19 then oB l else oA l) j < 2 ^ 52 := by
     split
     · exact lB (by omega_arith)
     · exact laU
-  have va : val52 l u.mem B (if c = 2 then oB l else oA l) =
+  obtain va : val52 l u.mem B (if c = 2 then oB l else oA l) =
       if c = 2 then wv t₀.mem X 0 l.W else val52 l t.mem B (oA l) := by
     by_cases h2 : c = 2
     · rw [ite_eq_left h2, ite_eq_left h2, vB (by omega_arith), ite_eq_right (by omega_arith)]
     · rw [ite_eq_right h2, ite_eq_right h2, vAu]
-  have vb : val52 l u.mem B (if c = 1 ∨ c = 19 then oB l else oA l) =
+  obtain vb : val52 l u.mem B (if c = 1 ∨ c = 19 then oB l else oA l) =
       if c = 1 then 2 ^ kb l else if c = 19 then wv t₀.mem X 0 l.W else val52 l t.mem B (oA l) := by
     by_cases h1 : c = 1
     · rw [ite_eq_left (.inl h1), ite_eq_left h1, vB (by omega_arith), ite_eq_left h1]
@@ -529,12 +529,12 @@ theorem iter_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} 
       · rw [ite_eq_right (by omega_arith), ite_eq_right h1, ite_eq_right h19, vAu]
   refine WP.seq (WP.mono (core_ok hl (k := k) huB r8 r9 r11 hsu mdu (by split <;> omega_arith) (by split <;> omega_arith) la lb)
     fun u' ⟨la', vv, oo, gg, r12', rd', wr', x'⟩ => ?_)
-  have g' : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rbp → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 →
+  obtain g' : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rbp → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 →
       r ≠ .r11 → r ≠ .r12 → u'.gpr r = t.gpr r := fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 => by
     rw [gg r h1 h2 h3 h4 h7 h8 h10, ku.gpr (by simp [h1, h2, h4, h5, h6, h7, h9])]
   refine WP.mono (inc_ok hc (by rw [g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide)]; exact h.r13)) fun t' ⟨r13'', z, k3, m3, x3⟩ => ⟨?_, z⟩
-  have hBo : ∀ j < l.L, word t'.mem B (oB l + l.off j) = word u.mem B (oB l + l.off j) := fun j hj => by
+  obtain hBo : ∀ j < l.L, word t'.mem B (oB l + l.off j) = word u.mem B (oB l + l.off j) := fun j hj => by
     have := off_ltN hl.amm hj; rw [m3]; exact oo.word (by omega_arith) (by omega_arith)
   refine ⟨?_, ?_, ?_, r13'', ⟨fun r hr => ?_, ?_, ?_⟩, by rw [x3, x', xu, h.mx], ?_, fun j hj => by
     rw [m3]; exact la' j hj, fun h3 j hj => by rw [hBo j hj, bu (by omega_arith) j hj, ite_eq_right (by omega_arith)], ?_⟩
@@ -552,7 +552,7 @@ theorem iter_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} 
   · rw [m3]; exact fu.trans (oo.mono (by omega_arith) (by omega_arith))
   · intro hP
     obtain ⟨hlt, hva⟩ := h.v hP
-    have hxM : wv t₀.mem X 0 l.W < 2 * M := by omega_arith
+    obtain hxM : wv t₀.mem X 0 l.W < 2 * M := by omega_arith
     obtain ⟨lt', cg⟩ := vv (by rw [va]; split <;> omega_arith)
       (by rw [vb]; split
           · exact e.big
@@ -596,20 +596,20 @@ theorem vec_ok (hl : PubOk l) {s : State} {B H X : Addr} {M k : Nat} (e : Env l 
   rw [WP.block_cons_iff]
   refine ⟨s.setReg32 .r13 (BitVec.ofNat 32 0), rfl, WP.block_nil ?_⟩
   generalize ht : s.setReg32 .r13 (BitVec.ofNat 32 0) = t₀
-  have g₀ : ∀ r, r ≠ .r13 → t₀.gpr r = s.gpr r := fun r hr => by
+  obtain g₀ : ∀ r, r ≠ .r13 → t₀.gpr r = s.gpr r := fun r hr => by
     rw [← ht, State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]
-  have r13₀ : t₀.gpr .r13 = BitVec.ofNat 64 0 := by rw [← ht, State.setReg32, RegUpd.gpr_setReg_self]; rfl
-  have mt : t₀.mem = s.mem := by rw [← ht]; rfl
-  have rdt : t₀.rd = s.rd := by rw [← ht]; rfl
-  have wrt : t₀.wr = s.wr := by rw [← ht]; rfl
-  have xt : t₀.mxcsr = s.mxcsr := by rw [← ht]; rfl
-  have Ot : Outside B (oA l) (2 * l.NB + 8) s.mem t₀.mem := by rw [mt]; exact Outside.refl _ _ _ _
-  have hval : val52 l t₀.mem B (oA l) = val52 l s.mem B (oA l) := by rw [mt]
-  have hxv : wv t₀.mem X 0 l.W = wv s.mem X 0 l.W := by rw [mt]
-  have e₀ : Env l t₀ B H X M k :=
+  obtain r13₀ : t₀.gpr .r13 = BitVec.ofNat 64 0 := by rw [← ht, State.setReg32, RegUpd.gpr_setReg_self]; rfl
+  obtain mt : t₀.mem = s.mem := by rw [← ht]; rfl
+  obtain rdt : t₀.rd = s.rd := by rw [← ht]; rfl
+  obtain wrt : t₀.wr = s.wr := by rw [← ht]; rfl
+  obtain xt : t₀.mxcsr = s.mxcsr := by rw [← ht]; rfl
+  obtain Ot : Outside B (oA l) (2 * l.NB + 8) s.mem t₀.mem := by rw [mt]; exact Outside.refl _ _ _ _
+  obtain hval : val52 l t₀.mem B (oA l) = val52 l s.mem B (oA l) := by rw [mt]
+  obtain hxv : wv t₀.mem X 0 l.W = wv s.mem X 0 l.W := by rw [mt]
+  obtain e₀ : Env l t₀ B H X M k :=
     ⟨e.scr.congr wrt, e.md.of_outside hl Ot (by omega_arith), e.odd, e.big, e.hX, e.hx,
       fun i hi => by rw [rdt, wrt]; exact e.hrd i hi, e.sepX⟩
-  have I₀ : Inv l t₀ B H X M (val52 l s.mem B (oA l)) 0 t₀ :=
+  obtain I₀ : Inv l t₀ B H X M (val52 l s.mem B (oA l)) 0 t₀ :=
     ⟨by rw [g₀ _ (by decide)]; exact hB, by rw [g₀ _ (by decide)]; exact hdi,
       by rw [g₀ _ (by decide)]; exact h12, r13₀,
       VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl, Outside.refl _ _ _ _,

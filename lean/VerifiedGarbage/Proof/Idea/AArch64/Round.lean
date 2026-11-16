@@ -79,9 +79,9 @@ theorem loads_run (s : State) (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (h
       (s'.gpr .x13).setWidth 16 = z.getD (6 * j + 4) 0 ∧
       ((s'.gpr .x13) >>> 16).setWidth 16 = z.getD (6 * j + 5) 0 ∧
       Keep [.x8, .x9, .x13] s s' := by
-  have p₀ := hk.pair (k := 3 * j) (by omega_using [hj])
-  have p₁ := hk.pair (k := 3 * j + 1) (by omega_using [hj])
-  have p₂ := hk.pair (k := 3 * j + 2) (by omega_using [hj])
+  obtain p₀ := hk.pair (k := 3 * j) (by omega_using [hj])
+  obtain p₁ := hk.pair (k := 3 * j + 1) (by omega_using [hj])
+  obtain p₂ := hk.pair (k := 3 * j + 2) (by omega_using [hj])
   rw [show 4 * (3 * j) = 12 * j by omega_using [], show 2 * (3 * j) + 1 = 6 * j + 1 by omega_using [],
     show 2 * (3 * j) = 6 * j by omega_using []] at p₀
   rw [show 4 * (3 * j + 1) = 12 * j + 4 by omega_using [], show 2 * (3 * j + 1) + 1 = 6 * j + 3 by omega_using [],
@@ -159,27 +159,27 @@ theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea
         (z.getD (6 * j + 3) 0) (z.getD (6 * j + 4) 0) (z.getD (6 * j + 5) 0) x) s' ∧
       Keep roundWrites s s' := by
   obtain ⟨s₁, h₁, k0, k1, k2, k3, k4, k5, e₁⟩ := loads_run s j hj z hk
-  have m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
+  obtain m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mul_run (d := .x3) .x3 (b := .x8) (by decide) s₁ m₁
-  have m₂ : MaskOk s₂ := (e₂.reg .x15 (by decide)).trans m₁
+  obtain m₂ : MaskOk s₂ := (e₂.reg .x15 (by decide)).trans m₁
   obtain ⟨s₃, h₃, v₃, e₃⟩ := lsr_run .x14 .x9 16 (by decide) s₂
-  have m₃ : MaskOk s₃ := (e₃.reg .x15 (by decide)).trans m₂
+  obtain m₃ : MaskOk s₃ := (e₃.reg .x15 (by decide)).trans m₂
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mul_run (d := .x6) .x6 (b := .x14) (by decide) s₃ m₃
-  have m₄ : MaskOk s₄ := (e₄.reg .x15 (by decide)).trans m₃
+  obtain m₄ : MaskOk s₄ := (e₄.reg .x15 (by decide)).trans m₃
   obtain ⟨s₅, h₅, v₅, e₅⟩ := lsr_run .x14 .x8 16 (by decide) s₄
-  have m₅ : MaskOk s₅ := (e₅.reg .x15 (by decide)).trans m₄
+  obtain m₅ : MaskOk s₅ := (e₅.reg .x15 (by decide)).trans m₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := addKey_run .x4 .x14 (by decide) s₅ m₅
-  have m₆ : MaskOk s₆ := (e₆.reg .x15 (by decide)).trans m₅
+  obtain m₆ : MaskOk s₆ := (e₆.reg .x15 (by decide)).trans m₅
   obtain ⟨s₇, h₇, v₇, e₇⟩ := addKey_run .x5 .x9 (by decide) s₆ m₆
-  have m₇ : MaskOk s₇ := (e₇.reg .x15 (by decide)).trans m₆
+  obtain m₇ : MaskOk s₇ := (e₇.reg .x15 (by decide)).trans m₆
   obtain ⟨s₈, h₈, v₈, e₈⟩ := eor_run .x7 .x3 .x5 s₇
-  have m₈ : MaskOk s₈ := (e₈.reg .x15 (by decide)).trans m₇
+  obtain m₈ : MaskOk s₈ := (e₈.reg .x15 (by decide)).trans m₇
   obtain ⟨s₉, h₉, v₉, e₉⟩ := mul_run (d := .x7) .x7 (b := .x13) (by decide) s₈ m₈
-  have m₉ : MaskOk s₉ := (e₉.reg .x15 (by decide)).trans m₈
+  obtain m₉ : MaskOk s₉ := (e₉.reg .x15 (by decide)).trans m₈
   obtain ⟨s₁₀, h₁₀, a₁₀, b₁₀, e₁₀⟩ := mid_run s₉
-  have m₁₀ : MaskOk s₁₀ := (e₁₀.reg .x15 (by decide)).trans m₉
+  obtain m₁₀ : MaskOk s₁₀ := (e₁₀.reg .x15 (by decide)).trans m₉
   obtain ⟨s₁₁, h₁₁, v₁₁, e₁₁⟩ := mul_run (d := .x14) .x14 (b := .x10) (by decide) s₁₀ m₁₀
-  have m₁₁ : MaskOk s₁₁ := (e₁₁.reg .x15 (by decide)).trans m₁₀
+  obtain m₁₁ : MaskOk s₁₁ := (e₁₁.reg .x15 (by decide)).trans m₁₀
   obtain ⟨s₁₂, h₁₂, r3, r4, r5, r6, e₁₂⟩ := tail_run s₁₁ m₁₁
   refine ⟨s₁₂, ?_, ?_, ?_⟩
   · simp only [round]
@@ -188,50 +188,50 @@ theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea
       h₁₂
   · have x8₄ : s₄.gpr .x8 = s₁.gpr .x8 := by
       rw [e₄.reg .x8 (by decide), e₃.reg .x8 (by decide), e₂.reg .x8 (by decide)]
-    have x9₆ : s₆.gpr .x9 = s₁.gpr .x9 := by
+    obtain x9₆ : s₆.gpr .x9 = s₁.gpr .x9 := by
       rw [e₆.reg .x9 (by decide), e₅.reg .x9 (by decide), e₄.reg .x9 (by decide),
         e₃.reg .x9 (by decide), e₂.reg .x9 (by decide)]
-    have a : s₇.gpr .x3 = (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0)).setWidth 64 := by
+    obtain a : s₇.gpr .x3 = (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0)).setWidth 64 := by
       rw [e₇.reg .x3 (by decide), e₆.reg .x3 (by decide), e₅.reg .x3 (by decide),
         e₄.reg .x3 (by decide), e₃.reg .x3 (by decide), v₂, e₁.reg .x3 (by decide), hx.x3,
         setWidth_setWidth16, k0]
-    have d : s₇.gpr .x6 = (Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)).setWidth 64 := by
+    obtain d : s₇.gpr .x6 = (Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)).setWidth 64 := by
       rw [e₇.reg .x6 (by decide), e₆.reg .x6 (by decide), e₅.reg .x6 (by decide), v₄, v₃,
         e₃.reg .x6 (by decide), e₂.reg .x6 (by decide), e₁.reg .x6 (by decide), hx.x6,
         setWidth_setWidth16, e₂.reg .x9 (by decide), k3]
-    have b : s₇.gpr .x4 = (x.getD 1 0 + z.getD (6 * j + 1) 0).setWidth 64 := by
+    obtain b : s₇.gpr .x4 = (x.getD 1 0 + z.getD (6 * j + 1) 0).setWidth 64 := by
       rw [e₇.reg .x4 (by decide), v₆, v₅, e₅.reg .x4 (by decide), e₄.reg .x4 (by decide),
         e₃.reg .x4 (by decide), e₂.reg .x4 (by decide), e₁.reg .x4 (by decide), hx.x4, x8₄,
         add_mask, k1]
-    have c : s₇.gpr .x5 = (x.getD 2 0 + z.getD (6 * j + 2) 0).setWidth 64 := by
+    obtain c : s₇.gpr .x5 = (x.getD 2 0 + z.getD (6 * j + 2) 0).setWidth 64 := by
       rw [v₇, x9₆, e₆.reg .x5 (by decide), e₅.reg .x5 (by decide), e₄.reg .x5 (by decide),
         e₃.reg .x5 (by decide), e₂.reg .x5 (by decide), e₁.reg .x5 (by decide), hx.x5, add_mask, k2]
-    have x13₉ : s₈.gpr .x13 = s₁.gpr .x13 := by
+    obtain x13₉ : s₈.gpr .x13 = s₁.gpr .x13 := by
       rw [e₈.reg .x13 (by decide), e₇.reg .x13 (by decide), e₆.reg .x13 (by decide),
         e₅.reg .x13 (by decide), e₄.reg .x13 (by decide), e₃.reg .x13 (by decide),
         e₂.reg .x13 (by decide)]
-    have t₀ : s₉.gpr .x7 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
+    obtain t₀ : s₉.gpr .x7 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
         (x.getD 2 0 + z.getD (6 * j + 2) 0)) (z.getD (6 * j + 4) 0)).setWidth 64 := by
       rw [v₉, v₈, a, c, xor_setWidth, setWidth_setWidth16, x13₉, k4]
-    have keep₉ : ∀ r ∈ [Reg.x3, .x4, .x5, .x6], s₉.gpr r = s₇.gpr r := by
+    obtain keep₉ : ∀ r ∈ [Reg.x3, .x4, .x5, .x6], s₉.gpr r = s₇.gpr r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
         exact (e₉.reg _ (by decide)).trans (e₈.reg _ (by decide))
-    have t₁ : s₁₁.gpr .x14 = (Spec.Idea.mul (((x.getD 1 0 + z.getD (6 * j + 1) 0) ^^^
+    obtain t₁ : s₁₁.gpr .x14 = (Spec.Idea.mul (((x.getD 1 0 + z.getD (6 * j + 1) 0) ^^^
         Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)) +
         Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
           (x.getD 2 0 + z.getD (6 * j + 2) 0)) (z.getD (6 * j + 4) 0))
         (z.getD (6 * j + 5) 0)).setWidth 64 := by
       rw [v₁₁, a₁₀, b₁₀, keep₉ .x4 (by simp), keep₉ .x6 (by simp), b, d, t₀, xor_setWidth,
         add_setWidth, e₉.reg .x13 (by decide), x13₉, k5]
-    have keep₁₁ : ∀ r ∈ [Reg.x3, .x4, .x5, .x6], s₁₁.gpr r = s₇.gpr r := by
+    obtain keep₁₁ : ∀ r ∈ [Reg.x3, .x4, .x5, .x6], s₁₁.gpr r = s₇.gpr r := by
       intro r hr
-      have h := keep₉ r hr
+      obtain h := keep₉ r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
         exact (e₁₁.reg _ (by decide)).trans ((e₁₀.reg _ (by decide)).trans h)
-    have x7₁₁ : s₁₁.gpr .x7 = s₉.gpr .x7 := by
+    obtain x7₁₁ : s₁₁.gpr .x7 = s₉.gpr .x7 := by
       rw [e₁₁.reg .x7 (by decide), e₁₀.reg .x7 (by decide)]
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [r3, keep₁₁ .x3 (by simp), a, t₁, xor_setWidth]; rfl

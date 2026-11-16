@@ -104,11 +104,11 @@ theorem adv_vp {d : Cfg} (hH : fH ∈ d.LS) (hL : fHLeft ∈ d.LS) :
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2])
       fun σ s ⟨⟨h, x⟩, r1⟩ => wp_movw fun t u => wp_dp (op2_reg _ _) fun t' u' => WP.block_nil ?_) ?_
   · have l := h.lens
-    have r2 : t.gpr .r2 = BitVec.ofNat 32 G.pLen := by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]
+    obtain r2 : t.gpr .r2 = BitVec.ofNat 32 G.pLen := by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]
     refine ⟨⟨⟨h.of_rest ((u.rest (ws := [.r1, .r2]) (by simp)).trans (u'.rest (ws := [.r1, .r2]) (by simp)))
       (by rw [u'.mem, u.mem]), x⟩, ?_⟩, by rw [u'.other _ (by decide), r2]⟩
     rw [u'.gpr, dpVal, u.other _ (by decide), r1, r2]
-  have hHL : fHLeft ∈ (d.setV fH (d.V fH + BitVec.ofNat 32 G.pLen)).LS := List.mem_cons_of_mem _ hL
+  obtain hHL : fHLeft ∈ (d.setV fH (d.V fH + BitVec.ofNat 32 G.pLen)).LS := List.mem_cons_of_mem _ hL
   refine VP.seq (G := fun σ s => St G (d.setV fH (d.V fH + BitVec.ofNat 32 G.pLen)) X σ s ∧
       s.gpr .r2 = BitVec.ofNat 32 G.pLen)
     (st_vp (c := fun _ => d) (fun σ s h => h.1.1.1) (by decide) (varOk_of (by decide))
@@ -145,7 +145,7 @@ theorem gV {c : Cfg} (hfH : fH ∉ c.LS) (hfL : fHLeft ∉ c.LS) {V : Nat → Bi
   · exact ⟨hH, by rw [hVH, upd_self]⟩
   · exact ⟨hG, by rw [hVG, upd_ne _ _ (by decide), upd_self]⟩
   · refine ⟨hLS o ho, ?_⟩
-    have e1 : o ≠ fH := fun h => hfH (h ▸ ho)
+    obtain e1 : o ≠ fH := fun h => hfH (h ▸ ho)
     by_cases e : o = fG
     · subst e; rw [hVG, upd_ne _ _ (by decide), upd_self]
     · rw [upd_ne _ _ e1, upd_ne _ _ e, hV o e1 (fun h => hfL (h ▸ ho)) e]
@@ -169,13 +169,13 @@ theorem gBody_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
       (fun σ s => isa.eval .eq s = some (decide (0 < r)) ∧ (r = 0 → St G (gFin c G w HL pv qv) X σ s) ∧
         (0 < r → gInv c G w HL pv ev qv N X r σ s)) := by
   refine VG.Proof.Dsa.Arm.Gen.VP.intro fun ⟨hr, hk, hc, hres, hnum⟩ => ?_
-  have hpL : 0 < G.pLen := by omega_arith
-  have hp16 : G.pLen < 2 ^ 16 := by omega_arith
+  obtain hpL : 0 < G.pLen := by omega_arith
+  obtain hp16 : G.pLen < 2 ^ 16 := by omega_arith
   generalize hMM : HL / G.pLen = M at hk hc
   generalize hkk : N - (r + 1) = k at hk hc hres hnum
-  have kL : ∀ j, j ≤ M → j * G.pLen ≤ HL := fun j hj =>
+  obtain kL : ∀ j, j ≤ M → j * G.pLen ≤ HL := fun j hj =>
     Nat.le_trans (Nat.mul_le_mul_right _ hj) (hMM ▸ Nat.div_mul_le_self _ _)
-  have hlen := hsW_length (G := G) hw hwl
+  obtain hlen := hsW_length (G := G) hw hwl
   rw [hp]
   -- Whether an h is left.
   refine VP.assoc (VP.seq (G := fun σ s => St G (gCfg c G w HL k) X σ s ∧
@@ -186,34 +186,34 @@ theorem gBody_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
         rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]⟩) ?_)
   rcases Nat.lt_or_ge k M with hkM | hkM
   · -- An h: `gStep`, then the next.
-    have hi : k * G.pLen + G.pLen ≤ HL := by have := kL (k + 1) hkM; rwa [Nat.succ_mul] at this
-    have e0 : decide (HL - k * G.pLen < G.pLen) = false := decide_eq_false (by omega_arith)
+    obtain hi : k * G.pLen + G.pLen ≤ HL := by have := kL (k + 1) hkM; rwa [Nat.succ_mul] at this
+    obtain e0 : decide (HL - k * G.pLen < G.pLen) = false := decide_eq_false (by omega_arith)
     obtain ⟨m, hm⟩ : ∃ m, M - k = m + 1 := ⟨M - k - 1, by omega_arith⟩
     rw [hm] at hc; simp only [gCount] at hc
-    have hbl : G.pLen ≤ ((hsW G w HL).drop (k * G.pLen)).length := by
+    obtain hbl : G.pLen ≤ ((hsW G w HL).drop (k * G.pLen)).length := by
       simp only [List.length_drop, hlen]; omega_arith
-    have hstep := VG.Proof.Dsa.Generation.generator_chunks_step (p := pv) (q := qv) hpL hbl
-    have cstep := VG.Proof.Dsa.Generation.generatorCount_chunks_step (p := pv) (q := qv) hpL hbl
+    obtain hstep := VG.Proof.Dsa.Generation.generator_chunks_step (p := pv) (q := qv) hpL hbl
+    obtain cstep := VG.Proof.Dsa.Generation.generatorCount_chunks_step (p := pv) (q := qv) hpL hbl
     rw [hsW_take hi, List.drop_drop] at hstep cstep
     simp only [VG.Proof.Dsa.powMod_eq, ← hev'] at hstep cstep
-    have stepVP := gStep_vp (c := gCfg c G w HL k) (X := X) (i := w + k * G.pLen) certs ok hp hlq hn hpm hpb hpe
+    obtain stepVP := gStep_vp (c := gCfg c G w HL k) (X := X) (i := w + k * G.pLen) certs ok hp hlq hn hpm hpb hpe
       hpr hctx he4 he0 hP hPv hE hEv hM hMv hO hOv hHl hTl hGl hkls hpodd hp1 hplt hev hcl (by simp)
       (by simp [upd, fH, fHLeft, fG]) (by omega_arith) hwl
-    have notLeft : ∀ σ s, ¬((St G (gCfg c G w HL k) X σ s ∧
+    obtain notLeft : ∀ σ s, ¬((St G (gCfg c G w HL k) X σ s ∧
         isa.eval .eq s = some (decide (HL - k * G.pLen < G.pLen))) ∧
         isa.eval .eq s = some true) := fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e, e0] at z; simp at z
-    have eH : G.wit + BitVec.ofNat 32 (w + k * G.pLen) + BitVec.ofNat 32 G.pLen =
+    obtain eH : G.wit + BitVec.ofNat 32 (w + k * G.pLen) + BitVec.ofNat 32 G.pLen =
         G.wit + BitVec.ofNat 32 (w + (k + 1) * G.pLen) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.succ_mul, Nat.add_assoc]
     by_cases hok : gOk G pv ev (w + k * G.pLen)
     · -- It gives g: done.
-      have r0 : r = 0 := by rw [ite_eq_left_of_eq_true _ _ (eq_true hok)] at hc; omega_arith
+      obtain r0 : r = 0 := by rw [ite_eq_left_of_eq_true _ _ (eq_true hok)] at hc; omega_arith
       subst r0
-      have some0 : gRes G w HL pv qv 0 = some (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen)) ^ ev % pv) := by
+      obtain some0 : gRes G w HL pv qv 0 = some (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen)) ^ ev % pv) := by
         rw [← hres, gRes, hstep]; exact ite_eq_left_of_eq_true _ _ (eq_true hok)
-      have num0 : gNum G w HL pv qv 0 = k + 1 := by
+      obtain num0 : gNum G w HL pv qv 0 = k + 1 := by
         rw [← hnum, gNum, cstep, ite_eq_left_of_eq_true _ _ (eq_true hok)]
-      have hG1 : gOut (gCfg c G w HL k) G (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen))) pv ev =
+      obtain hG1 : gOut (gCfg c G w HL k) G (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen))) pv ev =
           ({ gCfg c G w HL k with cl := (sG, Spec.Rsa.i2osp (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen)) ^ ev % pv)
             G.pLen) :: (gCfg c G w HL k).cl }).setV fG 1 := by
         simp only [gOut]; exact ite_eq_left_of_eq_true _ _ (eq_true hok)
@@ -229,15 +229,15 @@ theorem gBody_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
         (fun y hy => hy) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
     · -- It does not: the next h.
       rw [ite_eq_right_of_eq_false _ _ (eq_false hok)] at hc
-      have rpos : 0 < r := by have := gCount_gt G w pv ev m (k + 1); omega_arith
-      have hNr : N - r = k + 1 := by omega_arith
-      have hG1 : gOut (gCfg c G w HL k) G (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen))) pv ev =
+      obtain rpos : 0 < r := by have := gCount_gt G w pv ev m (k + 1); omega_arith
+      obtain hNr : N - r = k + 1 := by omega_arith
+      obtain hG1 : gOut (gCfg c G w HL k) G (Spec.Dsa.decodeBE (hAt G (w + k * G.pLen))) pv ev =
           gCfg c G w HL k := by
         simp only [gOut]; exact ite_eq_right_of_eq_false _ _ (eq_false hok)
       rw [hG1] at stepVP
       refine VP.seq (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) (VP.of_false notLeft)
         (VP.seq (stepVP.mono (fun σ s h => h.1.1) fun _ _ h => h) (adv_vp (by simp) (by simp)))) ?_
-      have eL : BitVec.ofNat 32 (HL - k * G.pLen) - BitVec.ofNat 32 G.pLen =
+      obtain eL : BitVec.ofNat 32 (HL - k * G.pLen) - BitVec.ofNat 32 G.pLen =
           BitVec.ofNat 32 (HL - (k + 1) * G.pLen) := by
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.succ_mul]; omega_arith
@@ -262,21 +262,21 @@ theorem gBody_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
             · subst b; simp [eH, fH, fHLeft, fG]
             · simp [a, b]
   · -- Fewer than `p_len` octets left: `fG` := 2.
-    have hkM' : k = M := by omega_arith
+    obtain hkM' : k = M := by omega_arith
     subst hkM'
-    have r0 : r = 0 := by simp only [Nat.sub_self, gCount] at hc; omega_arith
+    obtain r0 : r = 0 := by simp only [Nat.sub_self, gCount] at hc; omega_arith
     subst r0
-    have hz : decide (HL - k * G.pLen < G.pLen) = true := by
+    obtain hz : decide (HL - k * G.pLen < G.pLen) = true := by
       refine decide_eq_true ?_
       rw [← hMM, Nat.mul_comm, ← Nat.mod_eq_sub_mul_div]; exact Nat.mod_lt _ hpL
-    have hsh : ((hsW G w HL).drop (k * G.pLen)).length < G.pLen := by
+    obtain hsh : ((hsW G w HL).drop (k * G.pLen)).length < G.pLen := by
       simp only [List.length_drop, hlen]; exact of_decide_eq_true hz
-    have none0 : gRes G w HL pv qv 0 = none := by
+    obtain none0 : gRes G w HL pv qv 0 = none := by
       rw [← hres]
       show Spec.Dsa.generator pv qv ((Spec.Dsa.generationChunks _ _).map _) = none
       rw [VG.Proof.Dsa.Generation.generationChunks_done hsh]
       rfl
-    have num0 : gNum G w HL pv qv 0 = k := by
+    obtain num0 : gNum G w HL pv qv 0 = k := by
       rw [← hnum, gNum, VG.Proof.Dsa.Generation.generatorCount_chunks_done hsh, Nat.add_zero]
     refine VP.seq (G := St G ((gCfg c G w HL k).setV fG (BitVec.ofNat 32 2)) X) (VP.ite
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
@@ -310,7 +310,7 @@ theorem gPart_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r1 = G.wit + BitVec.ofNat 32 w)
     (ld_vp (c := fun _ => c) (fun σ s h => h.1) (by decide) (by decide) (fun σ s h => (h.1.slotV hS).trans hSv)
       fun σ s t ⟨h, x⟩ u => ⟨⟨h.of_rest (u.rest (ws := [.r1]) (by simp)) u.mem, x⟩, u.gpr⟩) ?_
-  have hHs : fHsLen ∈ (c.setV fH (G.wit + BitVec.ofNat 32 w)).LS := List.mem_cons_of_mem _ hL
+  obtain hHs : fHsLen ∈ (c.setV fH (G.wit + BitVec.ofNat 32 w)).LS := List.mem_cons_of_mem _ hL
   refine VP.seq (G := St G (c.setV fH (G.wit + BitVec.ofNat 32 w)) X)
     (st_vp (c := fun _ => c) (fun σ s h => h.1.1) (by decide) (varOk_of (by decide))
       fun σ s t ⟨⟨h, x⟩, r1⟩ h' _ => ⟨r1 ▸ h', x⟩) ?_
@@ -321,7 +321,7 @@ theorem gPart_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   refine VP.seq (G := St G ((c.setV fH (G.wit + BitVec.ofNat 32 w)).setV fHLeft (BitVec.ofNat 32 HL)) X)
     (st_vp (c := fun _ => c.setV fH (G.wit + BitVec.ofNat 32 w)) (fun σ s h => h.1.1) (by decide)
       (varOk_of (by decide)) fun σ s t ⟨⟨h, x⟩, r1⟩ h' _ => ⟨r1 ▸ h', x⟩) ?_
-  have hN := gCount_gt G w pv ev (HL / G.pLen) 0
+  obtain hN := gCount_gt G w pv ev (HL / G.pLen) 0
   generalize hNN : gCount G w pv ev (HL / G.pLen) 0 = N at hN
   refine VP.seq (G := gInv c G w HL pv ev qv N X N)
     (stImm_vp (c := fun _ => (c.setV fH (G.wit + BitVec.ofNat 32 w)).setV fHLeft (BitVec.ofNat 32 HL))

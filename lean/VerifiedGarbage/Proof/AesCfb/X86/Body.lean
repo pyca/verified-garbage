@@ -58,24 +58,24 @@ theorem head_ok {M : Mode} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k :
     (h : LInv M s₀ k s) (rest : List Instr) {Q : State → Prop}
     (hq : ∀ s₄, AfterXor s₀ k s s₄ → WP isa (.block rest) s₄ Q) :
     WP isa (body v.enc (([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ rest)) s Q := by
-  have hd := hp.d32 hk
-  have qN := hp.dataN hk
+  obtain hd := hp.d32 hk
+  obtain qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   refine WP.seq (WP.mono (ivA_wp hp h) fun s₁ a => ?_)
   refine WP.seq (WP.mono (blk_call v.encOk v.encNosp v.encStack a.pre) fun s₂ c => ?_)
-  have esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
-  have hb : below (s₁.gpr .esp) 24 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
-  have f₂ : Frame [ivR s₀, ⟨(S s₀).setWidth 64, 2048⟩, stkR s₀] s.mem s₂.mem := by
-    have fr := c.frame; rw [hb, a.mem] at fr; exact fr
-  have fs₂ : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₂.mem :=
+  obtain esp₁ : s₁.gpr .esp = E s₀ := by rw [a.esp, h.esp]
+  obtain hb : below (s₁.gpr .esp) 24 = stkR s₀ := by rw [esp₁]; exact hp.below_eq
+  obtain f₂ : Frame [ivR s₀, ⟨(S s₀).setWidth 64, 2048⟩, stkR s₀] s.mem s₂.mem := by
+    obtain fr := c.frame; rw [hb, a.mem] at fr; exact fr
+  obtain fs₂ : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₂.mem :=
     f₂.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact stepIn (.inr (.inl rfl))
       · exact stepIn (.inr (.inr (.inl (Region.sub_prefix (by decide)))))
       · exact stepIn (.inr (.inr (.inr rfl)))
-  have big₂ : Frame (Big s₀) s₀.mem s₂.mem :=
+  obtain big₂ : Frame (Big s₀) s₀.mem s₂.mem :=
     (UPre.big_of h.frame).trans ((stepFrame hk fs₂).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -83,27 +83,27 @@ theorem head_ok {M : Mode} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k :
       · exact ⟨dataR s₀, by simp, fun _ h => h⟩
       · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
-  have esi₂ : s₂.gpr .esi = D32 s₀ k := by rw [c.saved .esi (by simp [calleeSaved]), a.esi, h.esi]
-  have esp₂ : s₂.gpr .esp = E s₀ := by rw [c.saved .esp (by simp [calleeSaved]), esp₁]
-  have rw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, a.rd, a.wr, h.rd, h.wr]
-  have rwl : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+  obtain esi₂ : s₂.gpr .esi = D32 s₀ k := by rw [c.saved .esi (by simp [calleeSaved]), a.esi, h.esi]
+  obtain esp₂ : s₂.gpr .esp = E s₀ := by rw [c.saved .esp (by simp [calleeSaved]), esp₁]
+  obtain rw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, a.rd, a.wr, h.rd, h.wr]
+  obtain rwl : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rw₂, hp.rd, hp.wr]; rfl
-  have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, a.wr, h.wr, hp.wr]
+  obtain w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, a.wr, h.wr, hp.wr]
   rw [List.append_assoc, List.singleton_append]
   refine wp_arg (s₀ := s₀) esp₂ (by rw [rw₂]; exact hp.arg_in (by decide)) (hp.args_of big₂ 2 (by decide))
     fun s₃ u₃ => ?_
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
-  have i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
+  obtain i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [i₃, qN]; omega_using [hk, hdf]) (by rw [b₃]; omega_using [hiv]) (by rw [i₃, qN]; omega_using [hk, hdf])
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hk (by simp))
     (by rw [b₃, add0, u₃.rd, u₃.wr, rwl]; exact covIv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, w₂]; exact covBlk hk (by simp)) fun s₄ g₄ => hq s₄ ?_
-  have m₄ : s₄.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) ((Iv s₀).setWidth 64) := by
+  obtain m₄ : s₄.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) ((Iv s₀).setWidth 64) := by
     rw [g₄.mem, i₃, b₃, add0, add0, hd, u₃.mem]
-  have f₄ : Frame [⟨blk s₀ k, 16⟩] s₂.mem s₄.mem := by rw [m₄]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
-  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_of h.frame
-  have iv₄ : bytesAt s₄.mem ((Iv s₀).setWidth 64) 16 = bytesAt s₂.mem ((Iv s₀).setWidth 64) 16 :=
+  obtain f₄ : Frame [⟨blk s₀ k, 16⟩] s₂.mem s₄.mem := by rw [m₄]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  obtain big : Frame (Big s₀) s₀.mem s.mem := UPre.big_of h.frame
+  obtain iv₄ : bytesAt s₄.mem ((Iv s₀).setWidth 64) 16 = bytesAt s₂.mem ((Iv s₀).setWidth 64) 16 :=
     Proof.Cmac.bytesAt_frame f₄ (one (hp.blk_iv hk).symm) (by decide)
   refine ⟨by rw [g₄.gpr _ (by decide) (by decide), i₃], by rw [g₄.gpr _ (by decide) (by decide), b₃],
     by rw [g₄.gpr _ (by decide) (by decide), u₃.other _ (by decide), esp₂],
@@ -128,17 +128,17 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
     (hout : outK M s₀ (k + 1) = outK M s₀ k ++ [bytesAt s₆.mem (blk s₀ k) 16])
     (hiv : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = chainK M s₀ (k + 1)) :
     WP isa (.block advance) s₆ fun s' => LInv M s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
-  have fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₆.mem :=
+  obtain fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₆.mem :=
     x.frame.trans (f₆.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact stepIn (.inr (.inl rfl)))
-  have bigOf : Frame (Big s₀) s₀.mem s₆.mem := (UPre.big_of h.frame).trans ((stepFrame hk fStep).sub fun r hr => by
+  obtain bigOf : Frame (Big s₀) s₀.mem s₆.mem := (UPre.big_of h.frame).trans ((stepFrame hk fStep).sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨ivR s₀, by simp, fun _ h => h⟩
     · exact ⟨dataR s₀, by simp, fun _ h => h⟩
     · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
-  have hl' : (outK M s₀ k).length = k := by
+  obtain hl' : (outK M s₀ k).length = k := by
     rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   refine WP.mono (advance_wp hp hk (by rw [g₆ _ (by decide) (by decide), x.esi])
     (by rw [g₆ _ (by decide) (by decide), x.esp]) (hp.args_of bigOf)
@@ -160,33 +160,33 @@ theorem decPost_eq : decPost =
 
 theorem encBody_ok (v : BlocksImpl) : BodyOk (cfbMode true) (body v.enc encPost) := by
   intro s₀ hp k hk s h
-  have hd := hp.d32 hk
-  have qN := hp.dataN hk
+  obtain hd := hp.d32 hk
+  obtain qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   rw [encPost_eq]
   refine head_ok v hp hk h _ fun s₄ x => ?_
   refine zero4_ok (by decide) (by rw [x.ebx]; omega_using [hiv]) (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp))
     fun s₅ g₅ m₅ rd₅ wr₅ => ?_
-  have b₅ : s₅.gpr .ebx = Iv s₀ := by rw [g₅ _ (by decide), x.ebx]
-  have i₅ : s₅.gpr .esi = D32 s₀ k := by rw [g₅ _ (by decide), x.esi]
+  obtain b₅ : s₅.gpr .ebx = Iv s₀ := by rw [g₅ _ (by decide), x.ebx]
+  obtain i₅ : s₅.gpr .esi = D32 s₀ k := by rw [g₅ _ (by decide), x.esi]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [b₅]; omega_using [hiv]) (by rw [i₅, qN]; omega_using [hk, hdf]) (by rw [b₅]; omega_using [hiv])
     (by rw [b₅, add0, rd₅, wr₅, x.regs]; exact covIv (by simp))
     (by rw [i₅, add0, hd, rd₅, wr₅, x.regs]; exact covBlk hk (by simp))
     (by rw [b₅, add0, wr₅, x.wr, hp.wr]; exact covIv (by simp)) fun s₆ g₆ => ?_
-  have m₆ : s₆.mem = copy4Mem s₄.mem ((Iv s₀).setWidth 64) (blk s₀ k) := by
+  obtain m₆ : s₆.mem = copy4Mem s₄.mem ((Iv s₀).setWidth 64) (blk s₀ k) := by
     rw [g₆.mem, b₅, i₅, add0, add0, hd, m₅, x.ebx, add0]; rfl
-  have f₆ : Frame [ivR s₀] s₄.mem s₆.mem := by rw [m₆]; exact copy4Mem_frame _ _ _
-  have b₆ : bytesAt s₆.mem (blk s₀ k) 16 = bytesAt s₄.mem (blk s₀ k) 16 :=
+  obtain f₆ : Frame [ivR s₀] s₄.mem s₆.mem := by rw [m₆]; exact copy4Mem_frame _ _ _
+  obtain b₆ : bytesAt s₆.mem (blk s₀ k) 16 = bytesAt s₄.mem (blk s₀ k) 16 :=
     Proof.Cmac.bytesAt_frame f₆ (one (hp.blk_iv hk)) (by decide)
-  have i₆ : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = bytesAt s₆.mem (blk s₀ k) 16 := by
+  obtain i₆ : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = bytesAt s₆.mem (blk s₀ k) 16 := by
     rw [b₆, m₆, copy4Mem_bytes _ (hp.blk_iv hk).symm]
-  have newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
+  obtain newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
       Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
         (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode true) s₀ k)) := by
     rw [b₆, x.blk, h.block hk, x.iv, h.iv]
-  have outSucc :
+  obtain outSucc :
       outK (cfbMode true) s₀ (k + 1) = outK (cfbMode true) s₀ k ++ [bytesAt s₆.mem (blk s₀ k) 16] := by
     rw [newBlk]
     simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, ite_true, take_succ_blks s₀ hk,
@@ -198,8 +198,8 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cfbMode true) (body v.enc encPost)
 
 theorem decBody_ok (v : BlocksImpl) : BodyOk (cfbMode false) (body v.enc decPost) := by
   intro s₀ hp k hk s h
-  have hd := hp.d32 hk
-  have qN := hp.dataN hk
+  obtain hd := hp.d32 hk
+  obtain qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   rw [decPost_eq]
@@ -209,20 +209,20 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cfbMode false) (body v.enc decPost
     (by rw [x.ebx, add0, x.regs]; exact covIv (by simp))
     (by rw [x.esi, add0, hd, x.regs]; exact covBlk hk (by simp))
     (by rw [x.ebx, add0, x.wr, hp.wr]; exact covIv (by simp)) fun s₆ g₆ => ?_
-  have m₆ : s₆.mem = Proof.Cmac.xor4Mem s₄.mem ((Iv s₀).setWidth 64) ((Iv s₀).setWidth 64) (blk s₀ k) := by
+  obtain m₆ : s₆.mem = Proof.Cmac.xor4Mem s₄.mem ((Iv s₀).setWidth 64) ((Iv s₀).setWidth 64) (blk s₀ k) := by
     rw [g₆.mem, x.ebx, x.esi, add0, add0, hd]
-  have f₆ : Frame [ivR s₀] s₄.mem s₆.mem := by rw [m₆]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
-  have b₆ : bytesAt s₆.mem (blk s₀ k) 16 = bytesAt s₄.mem (blk s₀ k) 16 :=
+  obtain f₆ : Frame [ivR s₀] s₄.mem s₆.mem := by rw [m₆]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  obtain b₆ : bytesAt s₆.mem (blk s₀ k) 16 = bytesAt s₄.mem (blk s₀ k) 16 :=
     Proof.Cmac.bytesAt_frame f₆ (one (hp.blk_iv hk)) (by decide)
-  have hb := h.block hk
-  have i₆ : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
+  obtain hb := h.block hk
+  obtain i₆ : bytesAt s₆.mem ((Iv s₀).setWidth 64) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
     rw [m₆, xorIn4_bytes _ (hp.blk_iv hk).symm, x.blk, hb]
     exact xor_xor_cancel (by simp [Spec.Aes.bytesAt, ← hb])
-  have newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
+  obtain newBlk : bytesAt s₆.mem (blk s₀ k) 16 =
       Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
         (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode false) s₀ k)) := by
     rw [b₆, x.blk, hb, x.iv, h.iv]
-  have outSucc :
+  obtain outSucc :
       outK (cfbMode false) s₀ (k + 1) = outK (cfbMode false) s₀ k ++ [bytesAt s₆.mem (blk s₀ k) 16] := by
     rw [newBlk]
     simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, Bool.false_eq_true, ite_false,

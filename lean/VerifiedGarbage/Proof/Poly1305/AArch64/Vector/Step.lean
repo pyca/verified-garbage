@@ -86,8 +86,8 @@ theorem split_ok {s : State} {off : Nat} (ho : off % 16 = 0) (ho' : off + 16 < 4
     WP isa (.block (split off)) s fun t =>
       (∀ i < 5, ∀ e < 2, ln (t.v (iV i)) e =
         blk (blo s.mem (bAddr s off e)) (bhi s.mem (bAddr s off e)) i) ∧ SKeep s t := by
-  have r0 := hr 0 (by decide)
-  have r1 := hr 1 (by decide)
+  obtain r0 := hr 0 (by decide)
+  obtain r1 := hr 1 (by decide)
   simp only [bAddr, Nat.mul_zero, Nat.add_zero, Nat.mul_one] at r0 r1
   simp only [split]
   refine WP.block_cons_iff.mpr ⟨_, exec_ldrq ⟨ho, by omega_using [ho']⟩ r0, ?_⟩
@@ -122,19 +122,19 @@ theorem split_ok {s : State} {off : Nat} (ho : off % 16 = 0) (ho' : off + 16 < 4
   vstep
   refine WP.block_nil_iff.mpr ⟨fun i hi e he => ?_, ?_⟩
   · have hM := hm e he
-    have hP := hp e he
-    have hZ1 : ln (VPermOp.eval .zip1 .d2 A B) e = blo s.mem (bAddr s off e) := by
+    obtain hP := hp e he
+    obtain hZ1 : ln (VPermOp.eval .zip1 .d2 A B) e = blo s.mem (bAddr s off e) := by
       rw [ln, zip1_ln _ _ he]
       rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
       · simp only [ite_true, ← hA, bAddr, Nat.mul_zero, Nat.add_zero]
       · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, ← hB, bAddr, Nat.mul_one]
-    have hZ2 : ln (VPermOp.eval .zip2 .d2 A B) e = bhi s.mem (bAddr s off e) := by
+    obtain hZ2 : ln (VPermOp.eval .zip2 .d2 A B) e = bhi s.mem (bAddr s off e) := by
       rw [ln, zip2_ln _ _ he]
       rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
       · simp only [ite_true, ← hA, bAddr, Nat.mul_zero, Nat.add_zero]
       · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, ← hB, bAddr, Nat.mul_one]
-    have hlo : blo s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 0).isLt
-    have hhi : bhi s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 1).isLt
+    obtain hlo : blo s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 0).isLt
+    obtain hhi : bhi s.mem (bAddr s off e) < 2 ^ 64 := (vdword _ 1).isLt
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne]
     · rw [ln_and_mask _ _ hM, hZ1]; simp only [blk]
@@ -210,7 +210,7 @@ theorem mac_exec (s : State) (hi fresh : Bool) (i : Nat) (M : Nat → VReg) (k :
     · rw [vdword_ofVDwords_1]; exact umlal_lane _ _ _ _ _
   · refine ⟨_, exec_vo rfl, fun e he => ?_⟩
     simp only [ln, term, wd, ite_true, Nat.zero_add]
-    have hlt : ∀ a b : BitVec 32, a.toNat * b.toNat < 2 ^ 64 := fun a b =>
+    obtain hlt : ∀ a b : BitVec 32, a.toNat * b.toNat < 2 ^ 64 := fun a b =>
       Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' a.isLt b.isLt) (by decide)
     rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
     · rw [vdword_ofVDwords_0, umull_lane, Nat.mod_eq_of_lt (hlt _ _)]
@@ -232,16 +232,16 @@ theorem row_aux (hi fresh : Bool) (i : Nat) (hi5 : i < 5) (M : Nat → VReg)
       ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩⟩
   | cons k ks ih =>
     intro hks hnd s
-    have hk : k < 5 := hks k List.mem_cons_self
-    have hks' : ∀ j ∈ ks, j < 5 := fun j hj => hks j (List.mem_cons_of_mem _ hj)
+    obtain hk : k < 5 := hks k List.mem_cons_self
+    obtain hks' : ∀ j ∈ ks, j < 5 := fun j hj => hks j (List.mem_cons_of_mem _ hj)
     obtain ⟨hnk, hnd'⟩ := List.nodup_cons.mp hnd
     obtain ⟨x, hx, hl⟩ := mac_exec s hi fresh i M k
     refine WP.block_cons_iff.mpr ⟨_, hx, ?_⟩
     refine WP.mono (ih hks' hnd' _) fun t ⟨hr, hn, hkp⟩ => ⟨?_, ?_, ?_⟩
     · -- operands are unchanged by the write of `dV k`
-      have hopnd : (s.setV (dV k) x).v (iV i) = s.v (iV i) :=
+      obtain hopnd : (s.setV (dV k) x).v (iV i) = s.v (iV i) :=
         RegUpd.v_setV_of_ne _ _ (dV_ne_iV k hk i hi5).symm
-      have hmul : ∀ j < 5, (s.setV (dV k) x).v (M j) = s.v (M j) := fun j hj =>
+      obtain hmul : ∀ j < 5, (s.setV (dV k) x).v (M j) = s.v (M j) := fun j hj =>
         RegUpd.v_setV_of_ne _ _ (hM j hj k hk)
       intro j hj e he
       rcases List.mem_cons.mp hj with rfl | hj'
@@ -250,7 +250,7 @@ theorem row_aux (hi fresh : Bool) (i : Nat) (hi5 : i < 5) (M : Nat → VReg)
         rw [hr j hj' e he, RegUpd.v_setV_of_ne _ _ (dV_ne j (hks' j hj') k hk hjk), term, term,
           hopnd, hmul j (hks' j hj')]
     · intro j hj hjn
-      have hjk : j ≠ k := fun h => hjn (h ▸ List.mem_cons_self)
+      obtain hjk : j ≠ k := fun h => hjn (h ▸ List.mem_cons_self)
       rw [hn j hj (fun h => hjn (List.mem_cons_of_mem _ h)), RegUpd.v_setV_of_ne _ _ (dV_ne j hj k hk hjk)]
     · exact ⟨hkp.gpr, hkp.mem, hkp.rd, hkp.wr, hkp.sp, fun r hr' => by
         rw [hkp.v r hr', RegUpd.v_setV_of_ne _ _ (hr' k hk)]⟩
@@ -374,9 +374,9 @@ theorem carry_ok (s : State) (hm : ∀ e < 2, ln (s.v maskV) e = 2 ^ 26 - 1) :
     vstep
   refine WP.block_nil_iff.mpr ⟨fun hd i hi e he => ?_, ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩⟩
   · have hM := hm e he
-    have d0 := hd 0 (by decide) e he; have d1 := hd 1 (by decide) e he
-    have d2 := hd 2 (by decide) e he; have d3 := hd 3 (by decide) e he
-    have d4 := hd 4 (by decide) e he
+    obtain d0 := hd 0 (by decide) e he; have d1 := hd 1 (by decide) e he
+    obtain d2 := hd 2 (by decide) e he; have d3 := hd 3 (by decide) e he
+    obtain d4 := hd 4 (by decide) e he
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;>
       simp only [ln_and_mask _ _ hM, ln_add _ _ he, ln_ushr _ _ _ he, ln_shl _ _ _ he] <;>
@@ -388,7 +388,7 @@ theorem carry_ok (s : State) (hm : ∀ e < 2, ln (s.v maskV) e = 2 ^ 26 - 1) :
   · simp only [RegUpd.wr_setV]
   · simp only [RegUpd.sp_setV]
   · have h0 := hr 0 (by decide); have h1 := hr 1 (by decide); have h2 := hr 2 (by decide)
-    have h3 := hr 3 (by decide); have h4 := hr 4 (by decide)
+    obtain h3 := hr 3 (by decide); have h4 := hr 4 (by decide)
     obtain ⟨_, _, _⟩ := h0; obtain ⟨_, _, _⟩ := h1; obtain ⟨_, _, _⟩ := h2
     obtain ⟨_, _, _⟩ := h3; obtain ⟨_, _, _⟩ := h4
     simp (disch := assumption) only [RegUpd.v_setV_of_ne]
@@ -408,8 +408,8 @@ theorem prodLo_eq (R S : Nat → VReg) : prodLo R S = rowL false false R S 0 ++ 
 theorem term_keep {s t : State} (h : MKeep s t) {M : Nat → VReg} (hM : ∀ k < 5, ∀ j < 5, M k ≠ dV j)
     (hi : Bool) {i : Nat} (hi5 : i < 5) {k : Nat} (hk : k < 5) (e : Nat) :
     term t hi i M k e = term s hi i M k e := by
-  have h1 : t.v (iV i) = s.v (iV i) := h.v _ fun j hj => (dV_ne_iV j hj i hi5).symm
-  have h2 : t.v (M k) = s.v (M k) := h.v _ fun j hj => hM k hk j hj
+  obtain h1 : t.v (iV i) = s.v (iV i) := h.v _ fun j hj => (dV_ne_iV j hj i hi5).symm
+  obtain h2 : t.v (M k) = s.v (M k) := h.v _ fun j hj => hM k hk j hj
   simp only [term, h1, h2]
 
 /-- Multipliers in registers other than the products. -/
@@ -428,9 +428,9 @@ theorem prodHi_ok {R S : Nat → VReg} (hRS : MulOk R S) (s : State)
   refine WP.block_append (WP.mono (row_ok true false (by decide) (hRS 3 (by decide)) t2) fun t3 ⟨h3, k3⟩ => ?_)
   refine WP.mono (row_ok true false (by decide) (hRS 4 (by decide)) t3) fun t4 ⟨h4, k4⟩ =>
     ⟨fun k hk e he => ?_, k0.trans (k1.trans (k2.trans (k3.trans k4)))⟩
-  have k01 := k0.trans k1
-  have k02 := k01.trans k2
-  have k03 := k02.trans k3
+  obtain k01 := k0.trans k1
+  obtain k02 := k01.trans k2
+  obtain k03 := k02.trans k3
   rw [h4 k hk e he, h3 k hk e he, h2 k hk e he, h1 k hk e he, h0 k hk e he,
     term_keep k0 (hRS 1 (by decide)) _ (by decide) hk, term_keep k01 (hRS 2 (by decide)) _ (by decide) hk,
     term_keep k02 (hRS 3 (by decide)) _ (by decide) hk, term_keep k03 (hRS 4 (by decide)) _ (by decide) hk]
@@ -454,9 +454,9 @@ theorem prodLo_ok {R S : Nat → VReg} (hRS : MulOk R S) (s : State) :
   refine WP.block_append (WP.mono (row_ok false false (by decide) (hRS 3 (by decide)) t2) fun t3 ⟨h3, k3⟩ => ?_)
   refine WP.mono (row_ok false false (by decide) (hRS 4 (by decide)) t3) fun t4 ⟨h4, k4⟩ =>
     ⟨fun hb hd k hk e he => ?_, k0.trans (k1.trans (k2.trans (k3.trans k4)))⟩
-  have k01 := k0.trans k1
-  have k02 := k01.trans k2
-  have k03 := k02.trans k3
+  obtain k01 := k0.trans k1
+  obtain k02 := k01.trans k2
+  obtain k03 := k02.trans k3
   rw [h4 k hk e he, h3 k hk e he, h2 k hk e he, h1 k hk e he, h0 k hk e he,
     term_keep k0 (hRS 1 (by decide)) _ (by decide) hk, term_keep k01 (hRS 2 (by decide)) _ (by decide) hk,
     term_keep k02 (hRS 3 (by decide)) _ (by decide) hk, term_keep k03 (hRS 4 (by decide)) _ (by decide) hk]
@@ -538,25 +538,25 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
         ∀ e < 2, ∀ i < 5, hl t e i = Pair.carry (gprod (hl s e) y (gblk s) e) i ∧ hl t e i < 2 ^ 27) ∧
         GKeep s t := by
   have mok := hmul.mulOk
-  have hmV : ∀ j < 5, maskV ≠ iV j ∧ maskV ≠ dV j ∧ maskV ≠ hV j := by decide
-  have hpV : ∀ j < 5, padV ≠ iV j ∧ padV ≠ dV j ∧ padV ≠ hV j := by decide
-  have hI : ∀ k < 5, ∀ j < 5, hV k ≠ iV j := by decide
-  have hD : ∀ k < 5, ∀ j < 5, hV k ≠ dV j := by decide
-  have dI : ∀ k < 5, ∀ j < 5, dV k ≠ iV j := by decide
-  have aHi : ∀ e < 2, bAddr s 32 e = gAddr s (2 + e) := fun e _ => by
+  obtain hmV : ∀ j < 5, maskV ≠ iV j ∧ maskV ≠ dV j ∧ maskV ≠ hV j := by decide
+  obtain hpV : ∀ j < 5, padV ≠ iV j ∧ padV ≠ dV j ∧ padV ≠ hV j := by decide
+  obtain hI : ∀ k < 5, ∀ j < 5, hV k ≠ iV j := by decide
+  obtain hD : ∀ k < 5, ∀ j < 5, hV k ≠ dV j := by decide
+  obtain dI : ∀ k < 5, ∀ j < 5, dV k ≠ iV j := by decide
+  obtain aHi : ∀ e < 2, bAddr s 32 e = gAddr s (2 + e) := fun e _ => by
     simp only [bAddr, gAddr]; congr 2; omega_arith
-  have aLo : ∀ e, bAddr s 0 e = gAddr s e := fun e => by
+  obtain aLo : ∀ e, bAddr s 0 e = gAddr s e := fun e => by
     simp only [bAddr, gAddr, Nat.zero_add]
-  have lt32 : ∀ x : Nat, x < 2 ^ 28 → x < 2 ^ 32 := fun x h => Nat.lt_of_lt_of_le h (by decide)
+  obtain lt32 : ∀ x : Nat, x < 2 ^ 28 → x < 2 ^ 32 := fun x h => Nat.lt_of_lt_of_le h (by decide)
   simp only [group, List.append_assoc]
   -- the second pair of blocks
   refine WP.block_append (WP.mono (split_ok (by decide) (by decide) hm hpd
     (fun e he => by rw [aHi e he]; exact hr _ (by omega_arith))) fun s1 ⟨l1, k1⟩ => ?_)
   refine WP.block_append (WP.mono (narrow_ok s1) fun s2 ⟨w2, k2⟩ => ?_)
-  have v12 : ∀ r, (∀ j < 5, r ≠ iV j) → s2.v r = s.v r := fun r h =>
+  obtain v12 : ∀ r, (∀ j < 5, r ≠ iV j) → s2.v r = s.v r := fun r h =>
     (k2.v r h).trans (k1.v r h)
-  have m2 : Mults s2 R S y := hmul.of_v fun r h => v12 r fun j hj => (h j hj).1
-  have tHi : ∀ i < 5, ∀ k < 5, ∀ e < 2, term s2 true i (mulV R S i) k e =
+  obtain m2 : Mults s2 R S y := hmul.of_v fun r h => v12 r fun j hj => (h j hj).1
+  obtain tHi : ∀ i < 5, ∀ k < 5, ∀ e < 2, term s2 true i (mulV R S i) k e =
       gblk s (2 + e) i * Pair.mulL (y (2 + e)) i k := by
     intro i hi k hk e he
     simp only [term, hp, ite_true]
@@ -569,57 +569,57 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
           (hmul.mulL_lt hk (by omega_arith))
       _ ≤ 2 ^ 59 := by decide) fun s3 ⟨d3, k3⟩ => ?_)
   -- the first pair of blocks, plus the accumulator
-  have g3 : s3.gpr = s.gpr := k3.gpr.trans (k2.gpr.trans k1.gpr)
-  have mm3 : s3.mem = s.mem := k3.mem.trans (k2.mem.trans k1.mem)
-  have rd3 : s3.rd = s.rd := k3.rd.trans (k2.rd.trans k1.rd)
-  have wr3 : s3.wr = s.wr := k3.wr.trans (k2.wr.trans k1.wr)
-  have v3 : ∀ r, (∀ j < 5, r ≠ iV j ∧ r ≠ dV j) → s3.v r = s.v r := fun r h =>
+  obtain g3 : s3.gpr = s.gpr := k3.gpr.trans (k2.gpr.trans k1.gpr)
+  obtain mm3 : s3.mem = s.mem := k3.mem.trans (k2.mem.trans k1.mem)
+  obtain rd3 : s3.rd = s.rd := k3.rd.trans (k2.rd.trans k1.rd)
+  obtain wr3 : s3.wr = s.wr := k3.wr.trans (k2.wr.trans k1.wr)
+  obtain v3 : ∀ r, (∀ j < 5, r ≠ iV j ∧ r ≠ dV j) → s3.v r = s.v r := fun r h =>
     (k3.v r fun j hj => (h j hj).2).trans (v12 r fun j hj => (h j hj).1)
-  have b3 : ∀ e, bAddr s3 0 e = gAddr s e := fun e => by simp only [bAddr, gAddr, g3, Nat.zero_add]
+  obtain b3 : ∀ e, bAddr s3 0 e = gAddr s e := fun e => by simp only [bAddr, gAddr, g3, Nat.zero_add]
   refine WP.block_append (WP.mono (split_ok (by decide) (by decide)
     (fun e he => by rw [v3 _ fun j hj => ⟨(hmV j hj).1, (hmV j hj).2.1⟩]; exact hm e he)
     (fun e he => by rw [v3 _ fun j hj => ⟨(hpV j hj).1, (hpV j hj).2.1⟩]; exact hpd e he)
     (fun e he => by rw [b3, rd3, wr3]; exact hr _ (by omega_arith))) fun s4 ⟨l4, k4⟩ => ?_)
   refine WP.block_append (WP.mono (addH_ok s4) fun s5 ⟨a5, k5⟩ => ?_)
   refine WP.block_append (WP.mono (narrow_ok s5) fun s6 ⟨w6, k6⟩ => ?_)
-  have v46 : ∀ r, (∀ j < 5, r ≠ iV j) → s6.v r = s4.v r := fun r h => (k6.v r h).trans (k5.v r h)
-  have v36 : ∀ r, (∀ j < 5, r ≠ iV j) → s6.v r = s3.v r := fun r h => (v46 r h).trans (k4.v r h)
-  have v06 : ∀ r, (∀ j < 5, r ≠ iV j ∧ r ≠ dV j) → s6.v r = s.v r := fun r h =>
+  obtain v46 : ∀ r, (∀ j < 5, r ≠ iV j) → s6.v r = s4.v r := fun r h => (k6.v r h).trans (k5.v r h)
+  obtain v36 : ∀ r, (∀ j < 5, r ≠ iV j) → s6.v r = s3.v r := fun r h => (v46 r h).trans (k4.v r h)
+  obtain v06 : ∀ r, (∀ j < 5, r ≠ iV j ∧ r ≠ dV j) → s6.v r = s.v r := fun r h =>
     (v36 r fun j hj => (h j hj).1).trans (v3 r h)
-  have h4 : ∀ i < 5, ∀ e < 2, ln (s4.v (hV i)) e = hl s e i := fun i hi e he => by
+  obtain h4 : ∀ i < 5, ∀ e < 2, ln (s4.v (hV i)) e = hl s e i := fun i hi e he => by
     rw [k4.v _ fun j hj => hI i hi j hj, v3 _ fun j hj => ⟨hI i hi j hj, hD i hi j hj⟩]
-  have m6 : Mults s6 R S y := hmul.of_v fun r h => v06 r fun j hj => ⟨(h j hj).1, (h j hj).2.1⟩
-  have opLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ e < 2, wd (s6.v (iV i)) (hp false + e) = hl s e i + gblk s e i := by
+  obtain m6 : Mults s6 R S y := hmul.of_v fun r h => v06 r fun j hj => ⟨(h j hj).1, (h j hj).2.1⟩
+  obtain opLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ e < 2, wd (s6.v (iV i)) (hp false + e) = hl s e i + gblk s e i := by
     intro hH i hi e he
-    have hb : gblk s e i < 2 ^ 26 := blk_lt _ (vdword _ 1).isLt i hi
+    obtain hb : gblk s e i < 2 ^ 26 := blk_lt _ (vdword _ 1).isLt i hi
     have hb' : blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i < 2 ^ 26 := hb
-    have hh := hH e he i hi
+    obtain hh := hH e he i hi
     simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add]
     rw [w6 i hi _ (by omega_arith), Nat.mod_eq_of_lt he, a5 i hi e he, l4 i hi e he, h4 i hi e he, b3,
       mm3, show (blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i + hl s e i) % 2 ^ 64 =
         blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i + hl s e i from Nat.mod_eq_of_lt (by omega_arith),
       Nat.mod_eq_of_lt (lt32 _ (by omega_arith)), Nat.add_comm]
-  have tLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ k < 5, ∀ e < 2, term s6 false i (mulV R S i) k e =
+  obtain tLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ k < 5, ∀ e < 2, term s6 false i (mulV R S i) k e =
       (hl s e i + gblk s e i) * Pair.mulL (y e) i k := by
     intro hH i hi k hk e he
     simp only [term]
     rw [opLo hH i hi e he, m6.wd_mul hi hk (by simp only [hp, Bool.false_eq_true, ite_false]; omega_arith)]
     simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add]
-  have d6 : ∀ k < 5, ∀ e < 2, ln (s6.v (dV k)) e = Pair.prod (gblk s (2 + e)) (y (2 + e)) k := by
+  obtain d6 : ∀ k < 5, ∀ e < 2, ln (s6.v (dV k)) e = Pair.prod (gblk s (2 + e)) (y (2 + e)) k := by
     intro k hk e he
     rw [v36 _ fun j hj => dI k hk j hj, d3 k hk e he, tHi 0 (by decide) k hk e he,
       tHi 1 (by decide) k hk e he, tHi 2 (by decide) k hk e he, tHi 3 (by decide) k hk e he,
       tHi 4 (by decide) k hk e he]
     rfl
-  have bLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ k < 5, ∀ e < 2, (hl s e i + gblk s e i) * Pair.mulL (y e) i k < 2 ^ 58 := by
+  obtain bLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ k < 5, ∀ e < 2, (hl s e i + gblk s e i) * Pair.mulL (y e) i k < 2 ^ 58 := by
     intro hH i hi k hk e he
-    have hb : gblk s e i < 2 ^ 26 := blk_lt _ (vdword _ 1).isLt i hi
-    have hh := hH e he i hi
+    obtain hb : gblk s e i < 2 ^ 26 := blk_lt _ (vdword _ 1).isLt i hi
+    obtain hh := hH e he i hi
     calc _ < 2 ^ 28 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (by omega_arith) (hmul.mulL_lt hk (by omega_arith))
       _ ≤ 2 ^ 58 := by decide
-  have pHi : ∀ k < 5, ∀ e < 2, Pair.prod (gblk s (2 + e)) (y (2 + e)) k < 2 ^ 59 := by
+  obtain pHi : ∀ k < 5, ∀ e < 2, Pair.prod (gblk s (2 + e)) (y (2 + e)) k < 2 ^ 59 := by
     intro k hk e he
-    have b : ∀ i < 5, gblk s (2 + e) i * Pair.mulL (y (2 + e)) i k < 2 ^ 56 := fun i hi =>
+    obtain b : ∀ i < 5, gblk s (2 + e) i * Pair.mulL (y (2 + e)) i k < 2 ^ 56 := fun i hi =>
       calc _ < 2 ^ 26 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (blk_lt _ (vdword _ 1).isLt i hi)
             (hmul.mulL_lt hk (by omega_arith))
         _ ≤ 2 ^ 56 := by decide
@@ -627,19 +627,19 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
     have := b 3 (by decide); have := b 4 (by decide)
     simp only [Pair.prod]; omega_arith
   refine WP.block_append (WP.mono (prodLo_ok mok s6) fun s7 ⟨d7, k7⟩ => ?_)
-  have hD7 : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ k < 5, ∀ e < 2, ln (s7.v (dV k)) e = gprod (hl s e) y (gblk s) e k := by
+  obtain hD7 : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ k < 5, ∀ e < 2, ln (s7.v (dV k)) e = gprod (hl s e) y (gblk s) e k := by
     intro hH k hk e he
     rw [d7 (fun i hi k hk e he => by rw [tLo hH i hi k hk e he]; exact Nat.lt_trans (bLo hH i hi k hk e he) (by decide))
       (fun k hk e he => by rw [d6 k hk e he]; exact Nat.lt_trans (pHi k hk e he) (by decide)) k hk e he,
       d6 k hk e he, tLo hH 0 (by decide) k hk e he, tLo hH 1 (by decide) k hk e he,
       tLo hH 2 (by decide) k hk e he, tLo hH 3 (by decide) k hk e he, tLo hH 4 (by decide) k hk e he]
     rfl
-  have mask7 : ∀ e < 2, ln (s7.v maskV) e = 2 ^ 26 - 1 := fun e he => by
+  obtain mask7 : ∀ e < 2, ln (s7.v maskV) e = 2 ^ 26 - 1 := fun e he => by
     rw [k7.v _ fun j hj => (hmV j hj).2.1, v06 _ fun j hj => ⟨(hmV j hj).1, (hmV j hj).2.1⟩]
     exact hm e he
-  have gB : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ e < 2, ∀ k < 5, gprod (hl s e) y (gblk s) e k < 2 ^ 62 := fun hH e he k hk => by
+  obtain gB : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ e < 2, ∀ k < 5, gprod (hl s e) y (gblk s) e k < 2 ^ 62 := fun hH e he k hk => by
     have := pHi k hk e he
-    have b : ∀ i < 5, (hl s e i + gblk s e i) * Pair.mulL (y e) i k < 2 ^ 58 := fun i hi =>
+    obtain b : ∀ i < 5, (hl s e i + gblk s e i) * Pair.mulL (y e) i k < 2 ^ 58 := fun i hi =>
       bLo hH i hi k hk e he
     have := b 0 (by decide); have := b 1 (by decide); have := b 2 (by decide)
     have := b 3 (by decide); have := b 4 (by decide)
@@ -698,7 +698,7 @@ theorem val_congr {a b : Nat → Nat} (h : ∀ i < 5, a i = b i) : val a = val b
 
 theorem gprod_mod (H : Nat → Nat) (y : Nat → Nat → Nat) (b : Nat → Nat → Nat) (e : Nat) :
     val (gprod H y b e) ≡ val (b (2 + e)) * val (y (2 + e)) + (val H + val (b e)) * val (y e) [MOD P] := by
-  have h : val (gprod H y b e) = val (Pair.prod (b (2 + e)) (y (2 + e))) +
+  obtain h : val (gprod H y b e) = val (Pair.prod (b (2 + e)) (y (2 + e))) +
       val (Pair.prod (fun i => H i + b e i) (y e)) := by
     simp only [val, gprod]; omega_using []
   rw [h, ← val_add H (b e)]

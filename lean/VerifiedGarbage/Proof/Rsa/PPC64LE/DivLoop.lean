@@ -46,20 +46,20 @@ theorem step_arith {D R Q Q1 R1 T c c' β P1 P2 H : Nat} (hD : 0 < D) (hR : R < 
     (hc : c ≤ 1) (hβ : β ≤ 1) (e1 : Q1 + P1 * c = 2 * Q) (e2 : R1 + P2 * c' = 2 * R + c)
     (e3 : T + D = R1 + P2 * β) :
     R1 = 2 * R + Q / H ∧ Q1 = 2 * Q % P1 ∧ (β = 0 ↔ D ≤ R1) ∧ (β = 0 → T = R1 - D) := by
-  have hH : 0 < H := by omega_arith
-  have hc' : c' = 0 := by
+  obtain hH : 0 < H := by omega_arith
+  obtain hc' : c' = 0 := by
     rcases Nat.eq_zero_or_pos c' with z | z
     · exact z
     · have : P2 ≤ P2 * c' := Nat.le_mul_of_pos_right _ z
       omega_arith
   subst hc'
-  have hcQ : c = Q / H := by
+  obtain hcQ : c = Q / H := by
     have : 2 * Q / P1 = c := by
       rw [← e1, Nat.add_mul_div_left _ _ (by omega_arith), Nat.div_eq_of_lt hQ1, Nat.zero_add]
     rw [← this, hP1, Nat.mul_div_mul_left _ _ (by decide)]
-  have hmod : Q1 = 2 * Q % P1 := by
+  obtain hmod : Q1 = 2 * Q % P1 := by
     rw [← e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hQ1]
-  have hb := borrow_iff e3 hT hβ
+  obtain hb := borrow_iff e3 hT hβ
   refine ⟨by omega_arith, hmod, hb, fun h0 => ?_⟩
   rw [h0, Nat.mul_zero, Nat.add_zero] at e3
   omega_arith
@@ -76,10 +76,10 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
       u.gpr .r4 = s.gpr .r4 - BitVec.ofNat 64 1 ∧ Keep stepRegs s u ∧
       (0 < D → num u.mem B w q = (divIter D (32 * w) (k + 1) (0, N₀)).2 ∧
         num1 u.mem B w r = (divIter D (32 * w) (k + 1) (0, N₀)).1) := by
-  have fq := h.arr_fit hq
-  have fr := h.arr_fit hr
-  have fd := h.arr_fit hd
-  have ft := h.arr_fit ht
+  obtain fq := h.arr_fit hq
+  obtain fr := h.arr_fit hr
+  obtain fd := h.arr_fit hd
+  obtain ft := h.arr_fit ht
   have nw := h.nowrap
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wpos
@@ -90,17 +90,17 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     fun s2 ⟨h2, km2, eT, hβ, k2⟩ => ?_
   rw [WP.seq_iff]
   refine WP.mono (bit_ok hβ) fun s3 ⟨⟨r10, r9, m3⟩, k3⟩ => ?_
-  have h3 : Ws s3 B Z w N := h2.of_keep k3
+  obtain h3 : Ws s3 B Z w N := h2.of_keep k3
   rw [WP.seq_iff]
   refine WP.mono (keep_ok h3 hr ht hN hrt (b := decide ((s2.gpr .r9).toNat = 0))
     (by rw [r9]; by_cases z : (s2.gpr .r9).toNat = 0 <;> simp [z])) fun s4 ⟨h4, km4, eR, k4⟩ => ?_
-  have e10 : s4.gpr .r10 = s3.gpr .r10 := k4.gpr _ (by decide)
+  obtain e10 : s4.gpr .r10 = s3.gpr .r10 := k4.gpr _ (by decide)
   -- The quotient after the shift, through the subtraction and the selection.
-  have q2 : num s2.mem B w q = num s1.mem B w q :=
+  obtain q2 : num s2.mem B w q = num s1.mem B w q :=
     KeyWorkspace.Keep.num km2 (by simp; omega_arith) (by simp) (by omega_arith)
-  have q4 : num s4.mem B w q = num s1.mem B w q := by
+  obtain q4 : num s4.mem B w q = num s1.mem B w q := by
     rw [KeyWorkspace.Keep.num km4 (by simp; omega_arith) (by simp) (by omega_arith), m3, q2]
-  have even : num s4.mem B w q % 2 = 0 := by
+  obtain even : num s4.mem B w q % 2 = 0 := by
     rw [q4]
     have : 2 ∣ 2 ^ (32 * w) * c :=
       Nat.dvd_mul_right_of_dvd (Nat.dvd_of_mod_eq_zero (Nat.pow_mod 2 (32 * w) 2 ▸ by
@@ -108,9 +108,9 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     omega_arith
   refine WP.mono (setBit_ok h4 hq hN even (by rw [e10, r10]; split <;> decide))
     fun u ⟨hu, km5, eQ, u4, k5⟩ => ?_
-  have kr : Keep stepRegs s u := ((((k1.trans k2).trans k3).trans k4).trans k5).mono
-  have k12 : KeyWorkspace.Keep B w [q, r, t] [] s.mem s2.mem := KeyWorkspace.Keep.join km1 km2
-  have k45 : KeyWorkspace.Keep B w [q, r, t] [] s2.mem u.mem := by
+  obtain kr : Keep stepRegs s u := ((((k1.trans k2).trans k3).trans k4).trans k5).mono
+  obtain k12 : KeyWorkspace.Keep B w [q, r, t] [] s.mem s2.mem := KeyWorkspace.Keep.join km1 km2
+  obtain k45 : KeyWorkspace.Keep B w [q, r, t] [] s2.mem u.mem := by
     rw [← m3]; exact KeyWorkspace.Keep.join km4 km5
   refine ⟨hu, k12.trans k45, ?_, kr, fun hD0 => ?_⟩
   · rw [u4, k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide)]
@@ -118,24 +118,24 @@ theorem step_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     obtain ⟨_, hR, -, -, -⟩ := divIter_inv hD0 hN₀ k (by omega_arith)
     have es : divIter D (32 * w) (k + 1) (0, N₀) = divStep D (32 * w) (divIter D (32 * w) k (0, N₀)) := rfl
     -- The divisor and the shifted remainder, through the writes.
-    have d1 : num1 s1.mem B w d = D := by
+    obtain d1 : num1 s1.mem B w d = D := by
       rw [keep_num1 km1 (by simp; omega_arith) (by simp) (by omega_arith), hD]
-    have d2 : num1 s2.mem B w d = D := by
+    obtain d2 : num1 s2.mem B w d = D := by
       rw [keep_num1 km2 (by simp; omega_arith) (by simp) (by omega_arith), d1]
-    have r2 : num1 s2.mem B w r = num1 s1.mem B w r := keep_num1 km2 (by simp; omega_arith) (by simp) (by omega_arith)
-    have t3 : num1 s3.mem B w t = num1 s2.mem B w t := by rw [m3]
-    have ur : num1 u.mem B w r = num1 s4.mem B w r := keep_num1 km5 (by simp; omega_arith) (by simp) (by omega_arith)
-    have hP2 : 2 ^ (32 * (w + 1)) = 4294967296 * 2 ^ (32 * w) := by
+    obtain r2 : num1 s2.mem B w r = num1 s1.mem B w r := keep_num1 km2 (by simp; omega_arith) (by simp) (by omega_arith)
+    obtain t3 : num1 s3.mem B w t = num1 s2.mem B w t := by rw [m3]
+    obtain ur : num1 u.mem B w r = num1 s4.mem B w r := keep_num1 km5 (by simp; omega_arith) (by simp) (by omega_arith)
+    obtain hP2 : 2 ^ (32 * (w + 1)) = 4294967296 * 2 ^ (32 * w) := by
       rw [show 32 * (w + 1) = 32 + 32 * w by omega_arith, Nat.pow_add]
-    have hP1 : 2 ^ (32 * w) = 2 * 2 ^ (32 * w - 1) := by
+    obtain hP1 : 2 ^ (32 * w) = 2 * 2 ^ (32 * w - 1) := by
       obtain ⟨j, hj⟩ : ∃ j, 32 * w = j + 1 := ⟨32 * w - 1, by omega_arith⟩
       rw [hj, Nat.add_sub_cancel, Nat.pow_succ, Nat.mul_comm]
-    have hQ1 : num s1.mem B w q < 2 ^ (32 * w) := val32_lt _ _ _ _
-    have hT : num1 s2.mem B w t < 2 ^ (32 * (w + 1)) := val32_lt _ _ _ _
+    obtain hQ1 : num s1.mem B w q < 2 ^ (32 * w) := val32_lt _ _ _ _
+    obtain hT : num1 s2.mem B w t < 2 ^ (32 * (w + 1)) := val32_lt _ _ _ _
     rw [d1] at eT
-    have hR' : num1 s.mem B w r < D := by rw [vr]; exact hR
+    obtain hR' : num1 s.mem B w r < D := by rw [vr]; exact hR
     obtain ⟨eR1, eQ1, hb, hTv⟩ := step_arith hD0 hR' hDw hP1 hP2 hQ1 hT hc hβ eq1 er1 eT
-    have ep : divIter D (32 * w) k (0, N₀) = (num1 s.mem B w r, num s.mem B w q) :=
+    obtain ep : divIter D (32 * w) k (0, N₀) = (num1 s.mem B w r, num s.mem B w q) :=
       Prod.ext vr.symm vq.symm
     rw [es, ep]
     simp only [divStep]
@@ -153,28 +153,28 @@ theorem init_ok {s : State} {B : Addr} {Z w N r : Nat} (h : Ws s B Z w N) (hr : 
     (hN : N ≤ 256) :
     WP isa (init r) s fun u => Ws u B Z w N ∧ KeyWorkspace.Keep B w [r] [] s.mem u.mem ∧
       num1 u.mem B w r = 0 ∧ u.gpr .r4 = BitVec.ofNat 64 (32 * w) ∧ Keep [.r0, .r4, .r5, .r8] s u := by
-  have fr := h.arr_fit hr
+  obtain fr := h.arr_fit hr
   have nw := h.nowrap
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wle
   rw [init, WP.seq_iff]
   refine ptr_ok h (by decide) (by decide) (by decide) (show r < 2 ^ 15 by omega_arith) ?_
-  have hb : WP isa (.block [.addi .r8 .r29 1, .li .r0 0]) (s.write .r5 (off B (arr w r))) fun u =>
+  obtain hb : WP isa (.block [.addi .r8 .r29 1, .li .r0 0]) (s.write .r5 (off B (arr w r))) fun u =>
       (u.gpr .r5 = off B (arr w r) ∧ u.gpr .r8 = BitVec.ofNat 64 (w + 1) ∧ u.gpr .r0 = 0 ∧
         u.mem = s.mem) ∧ Keep [.r0, .r8] (s.write .r5 (off B (arr w r))) u := by
     refine WP.keep _ ?_ (by decide)
     prun [h.r29, BitVec.ofNat_add]
     rfl
   refine WP.mono hb fun u ⟨⟨u5, u8, u0, mu⟩, ku⟩ => ?_
-  have k₁ : Keep [.r0, .r4, .r5, .r8] s u := ((Keep.write _ _ _).trans ku).mono
-  have hu : Ws u B Z w N := h.of_keep k₁
+  obtain k₁ : Keep [.r0, .r4, .r5, .r8] s u := ((Keep.write _ _ _).trans ku).mono
+  obtain hu : Ws u B Z w N := h.of_keep k₁
   rw [WP.seq_iff]
   refine WP.mono (zeroLoop_ok hu.scr u5 u8 u0 (by omega_arith) (by omega_arith) (by omega_arith)) fun v ⟨z, out, kv⟩ => ?_
-  have hv : Ws v B Z w N := hu.of_keep kv
-  have hl : WP isa (.block [.lsl .r4 .r29 5]) v fun x =>
+  obtain hv : Ws v B Z w N := hu.of_keep kv
+  obtain hl : WP isa (.block [.lsl .r4 .r29 5]) v fun x =>
       (x.gpr .r4 = BitVec.ofNat 64 (32 * w) ∧ x.mem = v.mem) ∧ Keep [.r4] v x := by
     refine WP.keep _ ?_ (by decide)
-    have e : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
+    obtain e : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
       omega_arith
@@ -195,20 +195,20 @@ theorem div_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
       Keep stepRegs s u ∧
       (0 < num s.mem B w d → num u.mem B w q = num s.mem B w q / num s.mem B w d ∧
         num1 u.mem B w r = num s.mem B w q % num s.mem B w d) := by
-  have fd := h.arr_fit hd
+  obtain fd := h.arr_fit hd
   have nw := h.nowrap
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wpos
   have := h.wle
   -- The divisor's `w + 1` digits are its number.
-  have hD : num1 s.mem B w d = num s.mem B w d := by
-    have e := val32_append s.mem B (arr w d) w 1
-    have e1 : val32 s.mem B (arr w d + 4 * w) 1 = 0 := by
+  obtain hD : num1 s.mem B w d = num s.mem B w d := by
+    obtain e := val32_append s.mem B (arr w d) w 1
+    obtain e1 : val32 s.mem B (arr w d + 4 * w) 1 = 0 := by
       simp only [val32, hdz, Nat.mul_zero, Nat.add_zero]
     change val32 _ _ _ (w + 1) = val32 _ _ _ w
     rw [e, e1, Nat.mul_zero, Nat.add_zero]
-  have hDw : num s.mem B w d < 2 ^ (32 * w) := val32_lt _ _ _ _
-  have hN₀ : num s.mem B w q < 2 ^ (32 * w) := val32_lt _ _ _ _
+  obtain hDw : num s.mem B w d < 2 ^ (32 * w) := val32_lt _ _ _ _
+  obtain hN₀ : num s.mem B w q < 2 ^ (32 * w) := val32_lt _ _ _ _
   rw [div, WP.seq_iff]
   refine WP.mono (init_ok h hr hN) fun u ⟨hu, km, z, u4, ku⟩ => ?_
   let D := num s.mem B w d
@@ -217,7 +217,7 @@ theorem div_ok {s : State} {B : Addr} {Z w N q r d t : Nat} (h : Ws s B Z w N)
     Ws x B Z w N ∧ KeyWorkspace.Keep B w [q, r, t] [] s.mem x.mem ∧ Keep stepRegs s x ∧
       (0 < D → num x.mem B w q = (divIter D (32 * w) i (0, N₀)).2 ∧
         num1 x.mem B w r = (divIter D (32 * w) i (0, N₀)).1)
-  have i0 : Inv 0 u := ⟨hu, km.mono, ku.mono, fun _ => ⟨KeyWorkspace.Keep.num km (by simp; omega_arith)
+  obtain i0 : Inv 0 u := ⟨hu, km.mono, ku.mono, fun _ => ⟨KeyWorkspace.Keep.num km (by simp; omega_arith)
     (by simp) (by have := h.fit64 hq; omega_arith), z⟩⟩
   refine WP.mono (VG.Proof.Bignum.PPC64LE.wp_countdown (body := step q r d t) (cnt := .r4) (N := 32 * w)
     (by omega_arith) (by omega_arith) Inv (fun i hi x ⟨hx, kx, rx, vx⟩ _ => ?_) i0 u4) fun x ⟨hx, kx, rx, vx⟩ => ?_

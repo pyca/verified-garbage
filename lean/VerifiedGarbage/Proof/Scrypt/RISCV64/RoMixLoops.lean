@@ -94,7 +94,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
-  have hz : isa.eval (.nonzero cr) s' = some (decide (k + 1 ≠ n)) := by
+  obtain hz : isa.eval (.nonzero cr) s' = some (decide (k + 1 ≠ n)) := by
     rw [eval_nonzero, hc]
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
@@ -131,14 +131,14 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
     {t : State} (h : CopyInv wide s src dst n k t) :
     WP isa (.block (copyBody wide)) t
       fun t' => CopyInv wide s src dst n (k + 1) t' ∧ (t'.gpr .t2 != 0) = decide (k + 1 ≠ n) := by
-  have hu := unitB_pos wide
-  have hle : unitB wide * k + unitB wide ≤ unitB wide * n := by
+  obtain hu := unitB_pos wide
+  obtain hle : unitB wide * k + unitB wide ≤ unitB wide * n := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hk
-  have hn64 : n < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left n hu) hlt
-  have hsep' : Mem.Sep src (unitB wide * k + unitB wide) dst (unitB wide * k + unitB wide) :=
+  obtain hn64 : n < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left n hu) hlt
+  obtain hsep' : Mem.Sep src (unitB wide * k + unitB wide) dst (unitB wide * k + unitB wide) :=
     hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hle])
       (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hle])
-  have hlt' : unitB wide * k + unitB wide < 2 ^ 64 := by omega_using [hlt, hle]
+  obtain hlt' : unitB wide * k + unitB wide < 2 ^ 64 := by omega_using [hlt, hle]
   -- The two accesses, then the same additions.
   suffices key : WP isa (.block (copyBody wide)) t fun t' =>
       t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.sp = t.sp ∧
@@ -149,15 +149,15 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
       t'.mem = t.mem.writeW (dst + BitVec.ofNat 64 (unitB wide * k))
         (t.mem.readW (src + BitVec.ofNat 64 (unitB wide * k)) (8 * unitB wide)) by
     refine WP.mono key fun t' ⟨rd', wr', sp', o', e0, e1, e2, m'⟩ => ?_
-    have e2' : t'.gpr .t2 = BitVec.ofNat 64 (n - (k + 1)) := by rw [e2, h.t2, dec_count hk]
+    obtain e2' : t'.gpr .t2 = BitVec.ofNat 64 (n - (k + 1)) := by rw [e2, h.t2, dec_count hk]
     refine ⟨⟨by rw [rd', h.rd], by rw [wr', h.wr], by rw [sp', h.sp],
       fun r a b c d => by rw [o' r a b c d, h.other r a b c d],
       by rw [e0, h.t0, next_ptr], by rw [e1, h.t1, next_ptr], e2', ?_⟩, ?_⟩
     · rw [m', h.mem, Nat.mul_succ]
       exact Proof.Scrypt.Memory.copy_mem s.mem src dst k (unitB wide) hsep' hlt'
     · rw [e2', dec_ne hk hn64]
-  have hi := hin k hk
-  have ho := hout k hk
+  obtain hi := hin k hk
+  obtain ho := hout k hk
   have g0 := h.t0
   have g1 := h.t1
   have grd := h.rd
@@ -165,7 +165,7 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
   clear hin hout hsep hsep' hlt' hle
   cases wide with
   | true =>
-    have ha := hal rfl
+    obtain ha := hal rfl
     simp only [copyBody, unitW, unitB, ↓reduceIte] at hi ho g0 g1 ⊢
     refine wp_ld (a := src + BitVec.ofNat 64 (8 * k)) (by decide) (by rw [g0, add_zero'])
       (unit_al (wide := true) (fun _ => ha.1) rfl k) (by rw [grd, gwr]; exact hi) fun t₁ u₁ => ?_
@@ -174,7 +174,7 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
       (by rw [u₁.wr, gwr]; exact ho) fun t₂ u₂ => ?_
     refine wp_addi (by decide) fun t₃ u₃ => wp_addi (by decide) fun t₄ u₄ =>
       wp_subi (imm := 1) (by decide) fun t₅ u₅ => WP.block_nil ?_
-    have g : ∀ r, r ≠ .t3 → t₂.gpr r = t.gpr r := fun r hr => by rw [u₂.gpr, u₁.other r hr]
+    obtain g : ∀ r, r ≠ .t3 → t₂.gpr r = t.gpr r := fun r hr => by rw [u₂.gpr, u₁.other r hr]
     refine ⟨by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
       by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], fun r a b c d => ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₅.other r c, u₄.other r b, u₃.other r a, g r d]
@@ -192,7 +192,7 @@ theorem copy_step {wide : Bool} {s : State} {src dst : Addr} {n : Nat}
       (by rw [u₁.wr, gwr]; exact ho) fun t₂ u₂ => ?_
     refine wp_addi (by decide) fun t₃ u₃ => wp_addi (by decide) fun t₄ u₄ =>
       wp_subi (imm := 1) (by decide) fun t₅ u₅ => WP.block_nil ?_
-    have g : ∀ r, r ≠ .t3 → t₂.gpr r = t.gpr r := fun r hr => by rw [u₂.gpr, u₁.other r hr]
+    obtain g : ∀ r, r ≠ .t3 → t₂.gpr r = t.gpr r := fun r hr => by rw [u₂.gpr, u₁.other r hr]
     refine ⟨by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
       by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], fun r a b c d => ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₅.other r c, u₄.other r b, u₃.other r a, g r d]
@@ -252,23 +252,23 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
     {k : Nat} (hk : k < n) {t : State} (h : XorInv wide s x y d n k t) :
     WP isa (.block (xorBody wide)) t
       fun t' => XorInv wide s x y d n (k + 1) t' ∧ (t'.gpr .t3 != 0) = decide (k + 1 ≠ n) := by
-  have hu := unitB_pos wide
-  have hle : unitB wide * k + unitB wide ≤ unitB wide * n := by
+  obtain hu := unitB_pos wide
+  obtain hle : unitB wide * k + unitB wide ≤ unitB wide * n := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hk
-  have hn64 : n < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left n hu) hlt
-  have hl : (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length =
+  obtain hn64 : n < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left n hu) hlt
+  obtain hl : (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length =
       unitB wide * k := by
     rw [Proof.Scrypt.Memory.xorBytes_length _ _ (by simp [bytesAt]), Proof.Scrypt.Memory.bytesAt_length]
-  have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
+  obtain sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
       ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length⟩ := by
     rw [hl]; exact (hdx.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega_using [hle]) (by omega_using [hlt, hle]))).sub_right
       (Region.sub_prefix (by omega_using [hle]))
-  have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
+  obtain sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (unitB wide * k), unitB wide⟩
       ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))).length⟩ := by
     rw [hl]; exact (hdy.symm.sub_left (Proof.Scrypt.Memory.sub_off (by omega_using [hle]) (by omega_using [hlt, hle]))).sub_right
       (Region.sub_prefix (by omega_using [hle]))
   -- The memory after one more unit, from the unit written.
-  have mem_next : ∀ m', m' = writeBytes (writeBytes s.mem d
+  obtain mem_next : ∀ m', m' = writeBytes (writeBytes s.mem d
         (xorBytes (bytesAt s.mem x (unitB wide * k)) (bytesAt s.mem y (unitB wide * k))))
         (d + BitVec.ofNat 64 (unitB wide * k))
         (xorBytes (bytesAt (writeBytes s.mem d
@@ -282,7 +282,7 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
     intro m' hm'
     rw [hm', Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sx (by omega_using [hlt, hle]),
       Proof.Scrypt.Memory.bytesAt_writeBytes_sep _ _ sy (by omega_using [hlt, hle])]
-    have e := writeBytes_append s.mem d _ (xorBytes (bytesAt s.mem (x + BitVec.ofNat 64 (unitB wide * k))
+    obtain e := writeBytes_append s.mem d _ (xorBytes (bytesAt s.mem (x + BitVec.ofNat 64 (unitB wide * k))
       (unitB wide)) (bytesAt s.mem (y + BitVec.ofNat 64 (unitB wide * k)) (unitB wide)))
       (by rw [hl, Proof.Scrypt.Memory.xorBytes_length _ _ (by simp [bytesAt]),
         Proof.Scrypt.Memory.bytesAt_length]; omega_using [hlt, hle])
@@ -300,15 +300,15 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
         (xorBytes (bytesAt t.mem (x + BitVec.ofNat 64 (unitB wide * k)) (unitB wide))
           (bytesAt t.mem (y + BitVec.ofNat 64 (unitB wide * k)) (unitB wide))) by
     refine WP.mono key fun t' ⟨rd', wr', sp', o', e0, e1, e2, e3, m'⟩ => ?_
-    have e3' : t'.gpr .t3 = BitVec.ofNat 64 (n - (k + 1)) := by rw [e3, h.t3, dec_count hk]
+    obtain e3' : t'.gpr .t3 = BitVec.ofNat 64 (n - (k + 1)) := by rw [e3, h.t3, dec_count hk]
     refine ⟨⟨by rw [rd', h.rd], by rw [wr', h.wr], by rw [sp', h.sp],
       fun r a b c d' e f => by rw [o' r a b c d' e f, h.other r a b c d' e f],
       by rw [e0, h.t0, next_ptr], by rw [e1, h.t1, next_ptr], by rw [e2, h.t2, next_ptr], e3',
       mem_next _ (by rw [m', h.mem])⟩, ?_⟩
     rw [e3', dec_ne hk hn64]
-  have hix := hinx k hk
-  have hiy := hiny k hk
-  have ho := hout k hk
+  obtain hix := hinx k hk
+  obtain hiy := hiny k hk
+  obtain ho := hout k hk
   have g0 := h.t0
   have g1 := h.t1
   have g2 := h.t2
@@ -317,7 +317,7 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
   clear mem_next sx sy hl hinx hiny hout hdx hdy hle
   cases wide with
   | true =>
-    have ha := hal rfl
+    obtain ha := hal rfl
     simp only [xorBody, unitW, unitB, ↓reduceIte] at hix hiy ho g0 g1 g2 ⊢
     refine wp_ld (a := x + BitVec.ofNat 64 (8 * k)) (by decide) (by rw [g0, add_zero'])
       (unit_al (wide := true) (fun _ => ha.1) rfl k) (by rw [grd, gwr]; exact hix) fun t₁ u₁ => ?_
@@ -331,7 +331,7 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
       (by rw [u₃.wr, u₂.wr, u₁.wr, gwr]; exact ho) fun t₄ u₄ => ?_
     refine wp_addi (by decide) fun t₅ u₅ => wp_addi (by decide) fun t₆ u₆ =>
       wp_addi (by decide) fun t₇ u₇ => wp_subi (imm := 1) (by decide) fun t₈ u₈ => WP.block_nil ?_
-    have g : ∀ r, r ≠ .t4 → r ≠ .t5 → t₄.gpr r = t.gpr r := fun r h4 h5 => by
+    obtain g : ∀ r, r ≠ .t4 → r ≠ .t5 → t₄.gpr r = t.gpr r := fun r h4 h5 => by
       rw [u₄.gpr, u₃.other r h4, u₂.other r h5, u₁.other r h4]
     refine ⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
       by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
@@ -361,7 +361,7 @@ theorem xor_step {wide : Bool} {s : State} {x y d : Addr} {n : Nat} (hlt : unitB
       (by rw [u₃.wr, u₂.wr, u₁.wr, gwr]; exact ho) fun t₄ u₄ => ?_
     refine wp_addi (by decide) fun t₅ u₅ => wp_addi (by decide) fun t₆ u₆ =>
       wp_addi (by decide) fun t₇ u₇ => wp_subi (imm := 1) (by decide) fun t₈ u₈ => WP.block_nil ?_
-    have g : ∀ r, r ≠ .t4 → r ≠ .t5 → t₄.gpr r = t.gpr r := fun r h4 h5 => by
+    obtain g : ∀ r, r ≠ .t4 → r ≠ .t5 → t₄.gpr r = t.gpr r := fun r h4 h5 => by
       rw [u₄.gpr, u₃.other r h4, u₂.other r h5, u₁.other r h4]
     refine ⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
       by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
@@ -420,9 +420,9 @@ theorem n_step {s : State} {r e : Nat} (hr : 0 < r) (hlt : r * 2 ^ (e + 1) < 2 ^
     WP isa (.block [.add .t0 .t0 .t0, .add .t1 .t1 .t1, .sub .t3 .t0 .t2]) t
       fun t' => NInv s r (k + 1) t' ∧ (t'.gpr .t3 != 0) = decide (k + 1 ≠ e + 1) := by
   refine wp_add fun t₁ u₁ => wp_add fun t₂ u₂ => wp_sub fun t₃ u₃ => WP.block_nil ?_
-  have ax : t₂.gpr .t0 = BitVec.ofNat 64 (r * 2 ^ (k + 1)) := by
+  obtain ax : t₂.gpr .t0 = BitVec.ofNat 64 (r * 2 ^ (k + 1)) := by
     rw [u₂.other _ (by decide), u₁.gpr, h.t0, Proof.Scrypt.Memory.dbl_pow]
-  have le : r * 2 ^ (k + 1) ≤ r * 2 ^ (e + 1) :=
+  obtain le : r * 2 ^ (k + 1) ≤ r * 2 ^ (e + 1) :=
     Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega_using [hk]))
   refine ⟨⟨by rw [u₃.rd, u₂.rd, u₁.rd, h.rd], by rw [u₃.wr, u₂.wr, u₁.wr, h.wr],
     by rw [u₃.sp, u₂.sp, u₁.sp, h.sp], by rw [u₃.mem, u₂.mem, u₁.mem, h.mem],

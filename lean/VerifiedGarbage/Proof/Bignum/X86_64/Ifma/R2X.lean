@@ -58,11 +58,11 @@ theorem r2XBlk_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {k 
       t.gpr .rbx = off (off B o) (slot wx j) ∧ t.gpr .r12 = BitVec.ofNat 64 wx ∧ t.mem = s.mem ∧
       Keep [.rax, .rsi, .rbx, .r12] s t := by
   have hg := hc.good
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 := fun i hi =>
+  obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot wx 8 hi; omega_arith)
   have e104 : off (s.gpr .rsp) (8 * 13) = stackArgAddr s 12 := rfl
   have hA : s.mem.readW (stackArgAddr s 12) 64 = stackArg s 12 := rfl
-  have hoff : ∀ d : Nat, stackArg s 12 + BitVec.ofNat 64 d = off (stackArg s 12) d := fun _ => rfl
+  obtain hoff : ∀ d : Nat, stackArg s 12 + BitVec.ofNat 64 d = off (stackArg s 12) d := fun _ => rfl
   refine WP.mono (WP.keep (c := .block (r2XBlk q j)) [.rax, .rsi, .rbx, .r12] (Q := fun t =>
       t.gpr .rsi = off (stackArg s 12) (8 * r2XOff q wx) ∧ t.gpr .rbx = off (off B o) (slot wx j) ∧
       t.gpr .r12 = BitVec.ofNat 64 wx ∧ t.mem = s.mem) ?_ (by cases q <;> rfl))
@@ -93,16 +93,16 @@ theorem r2X_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {V : N
   have hGn : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := hg.scr.nowrap
   have hi := hc.hi
   have hlo := hc.lo
-  have sJ := slot_le (w := wx) hj
-  have hJ0 := hdr_lt_slot wx j (show 31 < 32 by decide)
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  obtain sJ := slot_le (w := wx) hj
+  obtain hJ0 := hdr_lt_slot wx j (show 31 < 32 by decide)
+  obtain h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   unfold r2X maskN
   simp only [List.cons_append, List.nil_append, seqs]
   -- `rsi`, `r12`, `rbx`.
   refine WP.seq (WP.mono (r2XBlk_ok hj hc hp) fun t₁ ⟨hsi, hbx, h12, hm₁, k₁⟩ => ?_)
-  have hs₁ : Scr t₁ (off B o) (slot wx 8) := hg.scr.congr k₁.2.2
+  obtain hs₁ : Scr t₁ (off B o) (slot wx 8) := hg.scr.congr k₁.2.2
   -- The copy from `pre`.
-  have hout : ∀ i < wx, ∀ b < 8, slot wx 8 ≤
+  obtain hout : ∀ i < wx, ∀ b < 8, slot wx 8 ≤
       ofs (off B o) (off (stackArg s 12) (8 * r2XOff q wx + 8 * i) + BitVec.ofNat 64 b) := fun i hi' b hb => by
     have := hp.out i hi' b hb
     rcases ofs_rebase B (off (stackArg s 12) (8 * r2XOff q wx + 8 * i) + BitVec.ofNat 64 b) (o := o)
@@ -115,26 +115,26 @@ theorem r2X_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {V : N
     (fun i hi' b hb => Or.inr (by have := hout i hi' b hb; omega_arith))) fun t₂ ⟨hv₂, _, ho₂, k₂⟩ => ?_)
   rw [hm₁, hp.val] at hv₂
   rw [hm₁] at ho₂
-  have k₁₂ := k₁.trans k₂
-  have f₂ : Frm (off B o) [(slot wx j, 8 * wx)] s.mem t₂.mem := Frm.of_outside ho₂ (by simp)
-  have hc₂ : SubCtx t₂ B Z o w wx minv := hc.of_frm f₂ (fun r hr => by
+  obtain k₁₂ := k₁.trans k₂
+  obtain f₂ : Frm (off B o) [(slot wx j, 8 * wx)] s.mem t₂.mem := Frm.of_outside ho₂ (by simp)
+  obtain hc₂ : SubCtx t₂ B Z o w wx minv := hc.of_frm f₂ (fun r hr => by
     rw [List.mem_singleton.mp hr]; simp only; omega_arith) k₁₂.2.2 (k₁₂.gpr (by decide))
-  have hM₂ : word t₂.mem B (8 * sMask) = mask c := by
+  obtain hM₂ : word t₂.mem B (8 * sMask) = mask c := by
     rw [f₂.word_below (L := slot wx 8) (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith)
       (by omega_arith) (by omega_arith) (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega_arith)]; exact hm
   -- The mask.
   have g₂ := hc₂.good
-  have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (off B o) (8 * i)) 8 := fun i hi' =>
+  obtain hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (off B o) (8 * i)) 8 := fun i hi' =>
     g₂.scr.ld (by have := hdr_lt_slot wx 8 hi'; omega_arith)
-  have hln : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi' =>
+  obtain hln : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi' =>
     hc₂.scr.ld (by have := hdr_lt_slot w 8 hi'; omega_arith)
   refine WP.seq (WP.mono (WP.keep [.rax, .r15, .r12, .rbx] (Q := fun t => t.gpr .r15 = mask c ∧
       t.gpr .r12 = BitVec.ofNat 64 wx ∧ t.gpr .rbx = off (off B o) (slot wx j) ∧ t.mem = t₂.mem)
     (by xrun [State.ea, hdr, Crt.ws, hc₂.rdi, hdrOff, hl Crt.sLink (by decide), hc₂.link, hln sMask (by decide), hM₂,
       hl (sArr j) (by unfold sArr; omega_arith), hl sW (by decide), g₂.hdr.harr j hj, g₂.hdr.hw]) rfl)
     fun t₃ ⟨⟨h15, h12', hbx', hm₃⟩, k₃⟩ => ?_)
-  have hs₃ := g₂.scr.congr k₃.2.2
-  have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = t₃.mem → Keep [.r14] t₃ t → t.cf = t₃.cf →
+  obtain hs₃ := g₂.scr.congr k₃.2.2
+  obtain h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = t₃.mem → Keep [.r14] t₃ t → t.cf = t₃.cf →
       MaskInv t₃ (off B o) (slot wx 8) (slot wx j) c 0 t := fun t h14 hm' k _ =>
     ⟨hs₃.congr k.2.2, k.mono (by decide), h14, by rw [hm']; exact Outside.refl _ _ _ _,
       fun i hi' => absurd hi' (Nat.not_lt_zero _)⟩
@@ -143,21 +143,21 @@ theorem r2X_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {V : N
     (fun i _ hi' t hI => maskStep_ok hbx' h15 h12' (by omega_arith) (by omega_arith) hi' hI)) fun t₄ hI => ?_)
   -- `1` where the mask is clear.
   have k₄ := hI.keep
-  have hbx₄ : t₄.gpr .rbx = off (off B o) (slot wx j) := (k₄.gpr (by decide)).trans hbx'
-  have h15₄ : t₄.gpr .r15 = mask c := (k₄.gpr (by decide)).trans h15
-  have hx₄ : word t₄.mem (off B o) (slot wx j) = word t₂.mem (off B o) (slot wx j) &&& mask c := by
+  obtain hbx₄ : t₄.gpr .rbx = off (off B o) (slot wx j) := (k₄.gpr (by decide)).trans hbx'
+  obtain h15₄ : t₄.gpr .r15 = mask c := (k₄.gpr (by decide)).trans h15
+  obtain hx₄ : word t₄.mem (off B o) (slot wx j) = word t₂.mem (off B o) (slot wx j) &&& mask c := by
     have := hI.done 0 (by omega_arith); rw [Nat.mul_zero, Nat.add_zero, hm₃] at this; exact this
   refine WP.mono (orOne_ok hI.scr hbx₄ h15₄ (by omega_arith) hx₄) fun t ⟨hm₅, k₅⟩ => ?_
   have o₄ := hI.out
   rw [hm₃] at o₄
-  have o₅ := writeW_outside t₄.mem (off B o) (d := slot wx j) (if c then word t₂.mem (off B o) (slot wx j) else 1)
+  obtain o₅ := writeW_outside t₄.mem (off B o) (d := slot wx j) (if c then word t₂.mem (off B o) (slot wx j) else 1)
     (by omega_arith)
   rw [← hm₅] at o₅
-  have f₂t : Frm (off B o) [(slot wx j, 8 * wx)] t₂.mem t.mem :=
+  obtain f₂t : Frm (off B o) [(slot wx j, 8 * wx)] t₂.mem t.mem :=
     (Frm.of_outside o₄ (by simp)).trans (Frm.of_outside (o₅.mono (o' := slot wx j) (n' := 8 * wx) (Nat.le_refl _)
       (by omega_arith)) (by simp))
-  have K := ((k₁₂.trans k₃).trans k₄).trans k₅
-  have hup : ∀ i < wx, i ≠ 0 → word t.mem (off B o) (slot wx j + 8 * i) =
+  obtain K := ((k₁₂.trans k₃).trans k₄).trans k₅
+  obtain hup : ∀ i < wx, i ≠ 0 → word t.mem (off B o) (slot wx j + 8 * i) =
       word t₂.mem (off B o) (slot wx j + 8 * i) &&& mask c := fun i hi' hne => by
     rw [hm₅, (writeW_outside _ _ _ (by omega_arith)).word (Or.inr (by omega_arith)) (by omega_arith), hI.done i hi', hm₃]
   refine ⟨hc₂.of_frm f₂t (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith)

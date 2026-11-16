@@ -42,10 +42,10 @@ theorem GI.hSrc (h : GI G σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witLen) (h
       (G.wit + BitVec.ofNat 32 i).toNat + G.pLen ≤ 2 ^ 32 ∧
       Spec.Rsa.bytesAt s.mem (State.addr (G.wit + BitVec.ofNat 32 i)) G.pLen = hAt G i := by
   have fit := h.witFit
-  have a : State.addr (G.wit + BitVec.ofNat 32 i) = State.addr G.wit + BitVec.ofNat 64 i := addr_add (by omega_arith)
-  have sub : Region.Sub ⟨State.addr G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rWit := Offset.sub_base _ hi
-  have hC := h.pre.wC; rw [h.hG] at hC
-  have e : G.witB = Spec.Rsa.bytesAt σ.mem (State.addr G.wit) G.witLen := by rw [← h.hG]; rfl
+  obtain a : State.addr (G.wit + BitVec.ofNat 32 i) = State.addr G.wit + BitVec.ofNat 64 i := addr_add (by omega_arith)
+  obtain sub : Region.Sub ⟨State.addr G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rWit := Offset.sub_base _ hi
+  obtain hC := h.pre.wC; rw [h.hG] at hC
+  obtain e : G.witB = Spec.Rsa.bytesAt σ.mem (State.addr G.wit) G.witLen := by rw [← h.hG]; rfl
   refine ⟨Covers.left (Covers.one ⟨G.rWit, by rw [h.rd, h.pre.rd, h.hG]; simp, a ▸ Offset.contains_base _ hi
     (by omega_arith)⟩), a ▸ (hC.sub_left sub).sub_right h.kSub, ?_, ?_⟩
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
@@ -123,17 +123,17 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   rw [hp] at cm cb ce cr cs
   rw [hpm] at cm; rw [hpb] at cb; rw [hpe] at ce; rw [hpr] at cr
   rw [hpm, hpb, hpe, hpr]
-  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
-  have hpL : 0 < G.pLen := by omega_arith
-  have sz : ∀ i, i ≤ 11 → sA + VG.Impl.Mont.Arm.Dynamic.slot n i + G.pLen ≤ sK G.pLen := fun i hi => by
+  obtain w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
+  obtain hpL : 0 < G.pLen := by omega_arith
+  obtain sz : ∀ i, i ≤ 11 → sA + VG.Impl.Mont.Arm.Dynamic.slot n i + G.pLen ≤ sK G.pLen := fun i hi => by
     have := Nat.mul_le_mul_right (8 * n + 8) (show i + 1 ≤ 12 by omega_arith)
     simp only [Nat.add_mul, Nat.one_mul] at this
     simp only [contextBytes, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride, sK, wa] at hctx ⊢; omega_arith
-  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega_arith
-  have ap : ∀ o k, sA ≤ o → ∀ x ∈ c.cl, x ∈ c.cl ∧ Apart o k x := fun o k ho x hx =>
+  obtain hsK : sA ≤ sK G.pLen := by simp only [sK]; omega_arith
+  obtain ap : ∀ o k, sA ≤ o → ∀ x ∈ c.cl, x ∈ c.cl ∧ Apart o k x := fun o k ho x hx =>
     ⟨hx, .inl (by have := hcl x hx; simp only [sG, sA] at *; omega_arith)⟩
   generalize hr : hv ^ ev % pv = r
-  have rlt : r < pv := hr ▸ Nat.mod_lt _ (by omega_arith)
+  obtain rlt : r < pv := hr ▸ Nat.mod_lt _ (by omega_arith)
   -- The modulus, the base and the exponent.
   refine VP.seq ((copyOut_vp (E := fun _ => True) cm rfl hP hpL (by omega_arith) (by simpa [modS] using sz 0 (by omega_arith))
     (ap _ _ (by simp only [modS, VG.Impl.Mont.Arm.Dynamic.slot]; omega_arith)) fun _ _ _ _ => trivial).mono (fun σ s h => ⟨h, trivial⟩) fun σ t h => h)
@@ -163,9 +163,9 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   refine VP.seq ((copyIn_vp (v := r) cr rfl (by decide) (by omega_arith) (by simpa [resS] using sz 9 (by omega_arith))).mono
     (fun σ s ⟨h, e⟩ => ⟨h, by rw [← hn, e, hr]⟩) fun σ t h => h) ?_
   -- 1 < g.
-  have b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
-  have vG : KU c.A aG r aG = r := by kv_simp
-  have vO' : KU c.A aG r aOne = 1 := by kv_simp; exact hOv
+  obtain b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
+  obtain vG : KU c.A aG r aG = r := by kv_simp
+  obtain vO' : KU c.A aG r aOne = 1 := by kv_simp; exact hOv
   refine VP.seq (ltS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
       (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aOne aG), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slG]), by kernel_rfl⟩
@@ -174,7 +174,7 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   refine VP.seq (slotCmp_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
       (.block [.ldr .r1 .r8 slG, .cmp .r1 (.imm 0)]), by kernel_rfl⟩ (by simp)
       (by kv_simp; exact b2le _)) ?_
-  have kG : ∀ j ∈ c0.live, j ∈ aG :: c.live ∧ KU c.A aG r j = c0.A j := fun j hj => by
+  obtain kG : ∀ j ∈ c0.live, j ∈ aG :: c.live ∧ KU c.A aG r j = c0.A j := fun j hj => by
     have : j ≠ aG := fun e => hGl (e ▸ hj)
     refine ⟨List.mem_cons_of_mem _ (eA j hj).1, ?_⟩
     simp only [KU, VG.Proof.Rsa.Arm.Keys.upd, this, ite_false]; exact (eA j hj).2
@@ -182,7 +182,7 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   · -- g ≤ 1: nothing stored.
     refine VP.block_nil fun σ s ⟨⟨⟨h, x⟩, e⟩, z⟩ => ⟨?_, x⟩
     rw [e] at z
-    have nr : ¬1 < r := by
+    obtain nr : ¬1 < r := by
       intro h1; simp only [Option.some.injEq, decide_eq_true_eq] at z
       kv_simp at z hOv; simp [hOv, b2n, h1] at z
     simp only [nr, ↓reduceIte]
@@ -222,18 +222,18 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
     (hH : fH ∈ c.LS) (hHv : c.V fH = G.wit + BitVec.ofNat 32 i) (hi : i + G.pLen ≤ G.witLen)
     (hwl : G.witB.length = G.witLen) :
     VP (St G c X) g.gStep (St G (gOut c G (Spec.Dsa.decodeBE (hAt G i)) pv ev) X) := by
-  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
+  obtain w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
   have hsG : sG = 1728 := rfl
   have hAv : sA = 4096 := rfl
-  have hpL : 0 < G.pLen := by omega_arith
+  obtain hpL : 0 < G.pLen := by omega_arith
   generalize hhv : Spec.Dsa.decodeBE (hAt G i) = hv
-  have hal : (hAt G i).length = G.pLen := by
+  obtain hal : (hAt G i).length = G.pLen := by
     simp only [hAt, List.length_take, List.length_drop, hwl]; omega_arith
-  have hvlt : hv < 2 ^ (8 * G.pLen) := by
+  obtain hvlt : hv < 2 ^ (8 * G.pLen) := by
     rw [← hhv]; have := VG.Proof.Dsa.decodeBE_lt (hAt G i)
     rwa [hal, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   -- Back to `c`: its arrays kept, nothing else.
-  have back : ∀ (c' : Cfg) σ s, SS G σ c' s → c'.V = c.V → c'.LS = c.LS → c'.cl = c.cl →
+  obtain back : ∀ (c' : Cfg) σ s, SS G σ c' s → c'.V = c.V → c'.LS = c.LS → c'.cl = c.cl →
       (∀ j ∈ c.live, j ∈ c'.live ∧ c'.A j = c.A j) → SS G σ c s := fun c' σ s h e1 e2 e3 e4 =>
     h.mono (fun o ho => ⟨e2 ▸ ho, by rw [e1]⟩) (fun y hy => e3 ▸ hy) e4 (fun d hd => by rw [hkls] at hd; simp at hd)
   unfold Geo.gStep
@@ -264,24 +264,24 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
     ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slHi]), by kernel_rfl⟩
     (by simp) (by simp [hM]) (by decide) (by decide) (by simp only [List.mem_cons, not_or]; exact ⟨by decide, hTl⟩)
     (by decide)) ?_
-  have b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
-  have b2one : ∀ p : Prop, [Decidable p] → (b2n (decide p) = 1 ↔ p) := fun p _ => by
+  obtain b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
+  obtain b2one : ∀ p : Prop, [Decidable p] → (b2n (decide p) = 1 ↔ p) := fun p _ => by
     by_cases hp' : p <;> simp [b2n, hp']
   refine VP.seq (andCmp_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
       (.block (VG.Impl.Rsa.Arm.Keys.andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)])), by kernel_rfl⟩
     (by decide) (by simp) (by simp) (by kv_simp; exact b2le _) (by kv_simp; exact b2le _)) ?_
-  have vO : KU c.A aH hv aOne = 1 := by kv_simp; exact hOv
-  have vH : KU c.A aH hv aH = hv := by kv_simp
-  have vM : KU c.A aH hv aPm1 = pv - 1 := by kv_simp; exact hMv
+  obtain vO : KU c.A aH hv aOne = 1 := by kv_simp; exact hOv
+  obtain vH : KU c.A aH hv aH = hv := by kv_simp
+  obtain vM : KU c.A aH hv aPm1 = pv - 1 := by kv_simp; exact hMv
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
   · -- Out of range: nothing more.
     refine VP.block_nil fun σ s ⟨⟨⟨h, x⟩, e⟩, z⟩ => ⟨?_, x⟩
     rw [e] at z
-    have nr : ¬(1 < hv ∧ hv < pv - 1) := by
+    obtain nr : ¬(1 < hv ∧ hv < pv - 1) := by
       intro hr; simp only [Option.some.injEq, decide_eq_true_eq] at z
       kv_simp at z hOv hMv; simp only [hOv, hMv] at z
       exact z ⟨(b2one _).mpr hr.1, (b2one _).mpr hr.2⟩
-    have nc : ¬(1 < hv ∧ hv < pv - 1 ∧ 1 < hv ^ ev % pv) := fun hc => nr ⟨hc.1, hc.2.1⟩
+    obtain nc : ¬(1 < hv ∧ hv < pv - 1 ∧ 1 < hv ^ ev % pv) := fun hc => nr ⟨hc.1, hc.2.1⟩
     simp only [gOut, nc, ↓reduceIte]
     refine back _ σ s h rfl rfl rfl fun j hj => ⟨by simp [hj], ?_⟩
     have : j ≠ aH := fun e => hHl (e ▸ hj)
@@ -292,11 +292,11 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
       rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, not_not] at z
       kv_simp at z hOv hMv; simp only [hOv, hMv] at z
       exact hr ⟨(b2one _).mp z.1, (b2one _).mp z.2⟩
-    have eq : gOut c G hv pv ev = if 1 < hv ^ ev % pv then
+    obtain eq : gOut c G hv pv ev = if 1 < hv ^ ev % pv then
         ({ c with cl := (sG, Spec.Rsa.i2osp (hv ^ ev % pv) G.pLen) :: c.cl }).setV fG 1 else c := by
       simp only [gOut, hr, true_and]
     rw [eq]
-    have kH : ∀ j ∈ c.live, j ∈ aH :: c.live ∧ KU c.A aH hv j = c.A j := fun j hj => by
+    obtain kH : ∀ j ∈ c.live, j ∈ aH :: c.live ∧ KU c.A aH hv j = c.A j := fun j hj => by
       have : j ≠ aH := fun e => hHl (e ▸ hj)
       exact ⟨List.mem_cons_of_mem _ hj, by simp only [KU, VG.Proof.Rsa.Arm.Keys.upd, this, ite_false]⟩
     exact (gPow_vp (c := { c with A := KU c.A aH hv, live := aH :: c.live }) certs ok hp hn hpm hpb hpe hpr

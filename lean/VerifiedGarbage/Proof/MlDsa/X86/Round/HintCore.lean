@@ -40,7 +40,7 @@ def Core2 (core : List Instr) (V : Nat → Nat → Nat) (reqA cnt : Bool) : Prop
 def mhV (g a b : Nat) : Nat := if hbV g b = hbV g ((b + a) % q) then 0 else 1
 
 theorem xor_shift {x y : Nat} (hx : x < 64) (hy : y < 64) : ((x ^^^ y) + 63) / 64 = if x = y then 0 else 1 := by
-  have hl : x ^^^ y < 2 ^ 6 := Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
+  obtain hl : x ^^^ y < 2 ^ 6 := Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
   by_cases e : x = y
   · subst e; rw [Nat.xor_self, ite_eq_left_of_eq_true _ _ (eq_true rfl)]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false e)]
@@ -64,22 +64,22 @@ theorem mhCore_eq (g : Nat) (is : List Instr) : mhCore g ++ is =
 
 theorem mhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (mhCore g) (mhV g) true true := by
   intro is s P a b ha hb hia hva hib hvb c
-  have ha := ha rfl
+  obtain ha := ha rfl
   have hq : q = 8380417 := rfl
-  have hB : ∀ {s' : State} {B : BitVec 32}, s'.gpr .esi = B → s'.ea (at_ .esi 0) = addr B 0 :=
+  obtain hB : ∀ {s' : State} {B : BitVec 32}, s'.gpr .esi = B → s'.ea (at_ .esi 0) = addr B 0 :=
     fun h => by rw [State.ea, at_, h]; rfl
   rw [mhCore_eq]
   refine wp_movm hib (hb_spec hg (a := b) (by simp [State.setReg, hvb]) hb fun s₁ o₁ v₁ => ?_)
-  have esi₁ : s₁.gpr .esi = s.gpr .esi := by rw [o₁.gpr _ (by decide)]; simp [State.setReg]
-  have edi₁ : s₁.gpr .edi = s.gpr .edi := by rw [o₁.gpr _ (by decide)]; simp [State.setReg]
+  obtain esi₁ : s₁.gpr .esi = s.gpr .esi := by rw [o₁.gpr _ (by decide)]; simp [State.setReg]
+  obtain edi₁ : s₁.gpr .edi = s.gpr .edi := by rw [o₁.gpr _ (by decide)]; simp [State.setReg]
   have m₁ : s₁.mem = s.mem := o₁.mem
-  have rw₁ : s₁.rd ++ s₁.wr = s.rd ++ s.wr := by rw [o₁.rd, o₁.wr]; rfl
+  obtain rw₁ : s₁.rd ++ s₁.wr = s.rd ++ s.wr := by rw [o₁.rd, o₁.wr]; rfl
   refine wp_mov fun s₂ u₂ => wp_ldm (B := s.gpr .edi) (o := 0) (by rw [u₂.other _ (by decide), edi₁])
     (by rw [u₂.rd, u₂.wr, rw₁]; exact hib) fun s₃ u₃ =>
     wp_addm (B := s.gpr .esi) (o := 0) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), esi₁])
       (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, rw₁]; exact hia) fun s₄ u₄ => ?_
-  have v₃ : (s₃.gpr .eax).toNat = b := by rw [u₃.gpr, u₂.mem, m₁]; exact hvb
-  have v₄ : (s₄.gpr .eax).toNat = b + a := by
+  obtain v₃ : (s₃.gpr .eax).toNat = b := by rw [u₃.gpr, u₂.mem, m₁]; exact hvb
+  obtain v₄ : (s₄.gpr .eax).toNat = b + a := by
     rw [u₄.gpr, BitVec.toNat_add, v₃, u₃.mem, u₂.mem, m₁]
     rw [show (s.mem.readW (addr (s.gpr .esi) 0) 32) = s.mem.readW (s.ea (at_ .esi 0)) 32 from rfl, hva]
     omega_arith
@@ -88,18 +88,18 @@ theorem mhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (mhCore g) (mhV g) tr
       (Nat.mod_lt _ (by decide)) fun s₆ o₆ v₆ => wp_xor fun s₇ u₇ => wp_addi fun s₈ u₈ =>
       wp_shr (by decide) fun s₉ u₉ _ => wp_add fun s₁₀ u₁₀ _ => c s₁₀ ?_ ?_ fun _ => ?_
   · have o := (VG.Proof.MlKem.X86.Only.setReg s .eax (s.mem.readW (s.ea (at_ .edi 0)) 32)).trans o₁
-    have o := (o.trans (updOnly u₂)).trans (updOnly u₃)
-    have o := ((o.trans (updOnly u₄)).trans o₅).trans o₆
-    have o := (((o.trans (updOnly u₇)).trans (updOnly u₈)).trans (updOnly u₉)).trans (updOnly u₁₀)
+    obtain o := (o.trans (updOnly u₂)).trans (updOnly u₃)
+    obtain o := ((o.trans (updOnly u₄)).trans o₅).trans o₆
+    obtain o := (((o.trans (updOnly u₇)).trans (updOnly u₈)).trans (updOnly u₉)).trans (updOnly u₁₀)
     exact o.mono (by decide)
   · have eb₆ : (s₆.gpr .ebx).toNat = hbV g b := by
       rw [o₆.gpr _ (by decide), o₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, v₁]
       rfl
     rw [u₁₀.other _ (by decide), u₉.gpr, u₈.gpr, u₇.gpr, BitVec.toNat_ushiftRight, BitVec.toNat_add,
       BitVec.toNat_xor, v₆, eb₆, Nat.shiftRight_eq_div_pow]
-    have h1 := hbV_lt64 hg ((b + a) % q)
-    have h2 := hbV_lt64 hg b
-    have hx : hbF g ((b + a) % q) % hbM g ^^^ hbV g b < 2 ^ 6 := Nat.xor_lt_two_pow (by unfold hbV at h1; omega_arith) (by omega_arith)
+    obtain h1 := hbV_lt64 hg ((b + a) % q)
+    obtain h2 := hbV_lt64 hg b
+    obtain hx : hbF g ((b + a) % q) % hbM g ^^^ hbV g b < 2 ^ 6 := Nat.xor_lt_two_pow (by unfold hbV at h1; omega_arith) (by omega_arith)
     rw [show (63 : BitVec 32).toNat = 63 from rfl, Nat.mod_eq_of_lt (by omega_arith),
       show hbF g ((b + a) % q) % hbM g = hbV g ((b + a) % q) from rfl, xor_shift h1 h2, mhV]
     by_cases e : hbV g b = hbV g ((b + a) % q)
@@ -161,23 +161,23 @@ theorem uhCore_eq (g : Nat) (is : List Instr) : uhCore g ++ is =
 theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) false false := by
   intro is s P a b _ hb hia hva hib hvb c
   have hq : q = 8380417 := rfl
-  have hf := hbF_le hg hb
-  have hm : 16 ≤ hbM g ∧ hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  have hgl : 2 * g ≤ 523776 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega_arith)
+  obtain hf := hbF_le hg hb
+  obtain hm : 16 ≤ hbM g ∧ hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
+  obtain hgl : 2 * g ≤ 523776 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
+  obtain hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega_arith)
   rw [uhCore_eq]
   refine wp_movm hib (wp_mov fun s₂ u₂ => hbRaw_spec hg (a := b) ?_ hb fun s₃ o₃ v₃ => ?_)
   · rw [u₂.other _ (by decide)]; simp [State.setReg, hvb]
-  have b₃ : (s₃.gpr .ebx).toNat = b := by
+  obtain b₃ : (s₃.gpr .ebx).toNat = b := by
     rw [o₃.gpr _ (by decide), u₂.gpr]; simp [State.setReg, hvb]
-  have esi₃ : s₃.gpr .esi = s.gpr .esi := by
+  obtain esi₃ : s₃.gpr .esi = s.gpr .esi := by
     rw [o₃.gpr _ (by decide), u₂.other _ (by decide)]; simp [State.setReg]
-  have m₃ : s₃.mem = s.mem := by rw [o₃.mem, u₂.mem]; rfl
-  have rw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [o₃.rd, o₃.wr, u₂.rd, u₂.wr]; rfl
+  obtain m₃ : s₃.mem = s.mem := by rw [o₃.mem, u₂.mem]; rfl
+  obtain rw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [o₃.rd, o₃.wr, u₂.rd, u₂.wr]; rfl
   refine wp_mov fun s₄ u₄ => wp_movi fun s₅ u₅ => ?_
-  have e₅ : (s₅.gpr .eax).toNat = hbF g b := by rw [u₅.other _ (by decide), u₄.other _ (by decide), v₃]
-  have d₅ : (s₅.gpr .edx).toNat = 2 * g := by rw [u₅.gpr]; exact ofNat_small (by omega_arith)
-  have hmul : hbF g b * (2 * g) < 2 ^ 32 :=
+  obtain e₅ : (s₅.gpr .eax).toNat = hbF g b := by rw [u₅.other _ (by decide), u₄.other _ (by decide), v₃]
+  obtain d₅ : (s₅.gpr .edx).toNat = 2 * g := by rw [u₅.gpr]; exact ofNat_small (by omega_arith)
+  obtain hmul : hbF g b * (2 * g) < 2 ^ 32 :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_trans hf hm.2) hgl) (by decide)
   refine wp_mulSmall (r := .edx) (by rw [e₅, d₅]; exact hmul) fun s₆ o₆ v₆ => ?_
   refine wp_subr fun s₇ u₇ c₇ => wp_sbb_self c₇ fun s₈ u₈ => wp_andi fun s₉ u₉ => wp_subi fun s₁₀ u₁₀ _ _ =>
@@ -188,17 +188,17 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
   · rw [u₁₁.rd, u₁₁.wr, u₁₀.rd, u₁₀.wr, u₉.rd, u₉.wr, u₈.rd, u₈.wr, u₇.rd, u₇.wr, o₆.rd, o₆.wr, u₅.rd, u₅.wr,
       u₄.rd, u₄.wr, rw₃]
     exact hia
-  have e₆ : (s₆.gpr .eax).toNat = hbF g b * (2 * g) := by rw [v₆, e₅, d₅]
-  have eb₆ : (s₆.gpr .ebx).toNat = b := by
+  obtain e₆ : (s₆.gpr .eax).toNat = hbF g b * (2 * g) := by rw [v₆, e₅, d₅]
+  obtain eb₆ : (s₆.gpr .ebx).toNat = b := by
     rw [o₆.gpr _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), b₃]
-  have eF : (s₁₂.gpr .ecx).toNat = hbF g b := by
+  obtain eF : (s₁₂.gpr .ecx).toNat = hbF g b := by
     rw [u₁₂.other .ecx (by decide), u₁₁.other .ecx (by decide), u₁₀.other .ecx (by decide),
       u₉.other .ecx (by decide), u₈.other .ecx (by decide), u₇.other .ecx (by decide), o₆.gpr .ecx (by decide),
       u₅.other .ecx (by decide), u₄.gpr, v₃]
-  have ea : (s₁₁.mem.readW (addr (s.gpr .esi) 0) 32).toNat = a := by
+  obtain ea : (s₁₁.mem.readW (addr (s.gpr .esi) 0) 32).toNat = a := by
     rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, o₆.mem, u₅.mem, u₄.mem, m₃]; exact hva
-  have e0 : (s₁₁.gpr .ebx).toNat = 0 := by rw [u₁₁.gpr]; rfl
-  have x₁₆ : (s₁₆.gpr .eax).toNat =
+  obtain e0 : (s₁₁.gpr .ebx).toNat = 0 := by rw [u₁₁.gpr]; rfl
+  obtain x₁₆ : (s₁₆.gpr .eax).toNat =
       if 0 < a then (if hbF g b * (2 * g) < b then hbF g b + hbM g + 1 else hbF g b + hbM g - 1)
       else hbF g b + hbM g := by
     rw [u₁₆.gpr, u₁₅.gpr, u₁₄.gpr, u₁₃.gpr, u₁₄.other .ecx (by decide), u₁₃.other .eax (by decide),
@@ -207,7 +207,7 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
     refine (uh_val _ _ _ _ (by rw [eF, hk]; omega_arith) (by rw [hk]; omega_arith)).trans ?_
     rw [eF, hk]
     by_cases h₁ : 0 < a <;> by_cases h₂ : hbF g b * (2 * g) < b <;> simp [h₁, h₂]
-  have hx : (s₁₆.gpr .eax).toNat < 3 * hbM g := by
+  obtain hx : (s₁₆.gpr .eax).toNat < 3 * hbM g := by
     rw [x₁₆]; split
     · split <;> omega_arith
     · omega_arith
@@ -216,10 +216,10 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
       (by rw [hk, v₁₇, hk]; unfold condAddN; split <;> omega_arith) fun s₁₈ o₁₈ v₁₈ =>
       c s₁₈ ?_ ?_ (fun h => absurd h (by decide))
   · have o := (VG.Proof.MlKem.X86.Only.setReg s .eax (s.mem.readW (s.ea (at_ .edi 0)) 32)).trans (updOnly u₂)
-    have o := ((o.trans o₃).trans (updOnly u₄)).trans (updOnly u₅)
-    have o := (((o.trans o₆).trans (updOnly u₇)).trans (updOnly u₈)).trans (updOnly u₉)
-    have o := (((o.trans (updOnly u₁₀)).trans (updOnly u₁₁)).trans (updOnly u₁₂)).trans (updOnly u₁₃)
-    have o := ((((o.trans (updOnly u₁₄)).trans (updOnly u₁₅)).trans (updOnly u₁₆)).trans o₁₇).trans o₁₈
+    obtain o := ((o.trans o₃).trans (updOnly u₄)).trans (updOnly u₅)
+    obtain o := (((o.trans o₆).trans (updOnly u₇)).trans (updOnly u₈)).trans (updOnly u₉)
+    obtain o := (((o.trans (updOnly u₁₀)).trans (updOnly u₁₁)).trans (updOnly u₁₂)).trans (updOnly u₁₃)
+    obtain o := ((((o.trans (updOnly u₁₄)).trans (updOnly u₁₅)).trans (updOnly u₁₆)).trans o₁₇).trans o₁₈
     exact o.mono (by decide)
   · rw [v₁₈, v₁₇, hk, condAdd_twice hx, x₁₆, uhV]
     by_cases h₁ : 0 < a

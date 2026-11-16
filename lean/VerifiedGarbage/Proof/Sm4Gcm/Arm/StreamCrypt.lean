@@ -47,16 +47,16 @@ theorem sc_argsW {s₀ : State} (h : streamCryptPre s₀) : ∀ r ∈ [savedR (a
 
 theorem sc1_wp {s₀ : State} (h : streamCryptPre s₀) {Q : State → Prop} (k : ∀ s₁, SC1 s₀ s₁ → Q s₁) :
     WP isa (.block cryptEntry) s₀ Q := by
-  have hA := sc_argsW h
+  obtain hA := sc_argsW h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fW, -, spf⟩ := h
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
+  obtain hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
     rw [hrd]; exact covers_of_mem (by simp)
-  have hS : Covers [⟨State.addr (s₀.gpr .r1), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have hW : Covers [⟨State.addr (arg s₀ 4), 768⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have ha : ∀ i < 5, InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 4 :=
+  obtain hS : Covers [⟨State.addr (s₀.gpr .r1), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain hW : Covers [⟨State.addr (arg s₀ 4), 768⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain ha : ∀ i < 5, InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 4 :=
     fun i hi => arg_in (n := 5) hi spf (by rw [hrd]; simp)
   refine entry_ok (off := 16) (by decide) (ha 4 (by decide)) fW hW fun s₁ g12 g rd wr sp sv fr => ?_
-  have hk : ArgsKeep 5 s₀ s₁ := (ArgsKeep.refl 5 s₀).frame spf fr hA sp rd wr
+  obtain hk : ArgsKeep 5 s₀ s₁ := (ArgsKeep.refl 5 s₀).frame spf fr hA sp rd wr
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   refine k _ ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩⟩, ?_, sv, fr⟩
   any_goals (simp [gpr_setReg, g, g12]; done)
@@ -90,7 +90,7 @@ include h
 theorem sc_dataW {k7 : BitVec 32} {s : State} (hk : ArgsKeep 5 s₀ s) :
     DataW (s₀.gpr .r0) (s₀.gpr .r1) (arg s₀ 4) s₀.sp k7 (s₀.gpr .r2) s (arg s₀ 2) (arg s₀ 3).toNat := by
   obtain ⟨hrd, hwr, -, dcD, -, dsD, -, -, dDW, -, -, -, -, bD, -, -, -, fD, -, -, -⟩ := h
-  have hD : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s.wr := by
+  obtain hD : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s.wr := by
     rw [hk.wr, hwr]; exact covers_of_mem (by simp)
   exact ⟨⟨covers_left hD, (arg s₀ 3).isLt, fD, dsD.symm, dDW, bD⟩, hD, dcD⟩
 
@@ -242,48 +242,48 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
 theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r2).toNat % 16) (hP : (arg s₀ 1 ++ arg s₀ 0).toNat = ct.length) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
-  have L := scLay h
+  obtain L := scLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have fW := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hin : args s₀ 5 ∈ s₀.rd := by rw [h.1]; simp
+  obtain hin : args s₀ 5 ∈ s₀.rd := by rw [h.1]; simp
   refine WP.seq (WP.block_append (sc1_wp h fun s₁ h1 => ?_))
   obtain ⟨s₂, run₂, h4, h5, h6, hg₂, hK₂⟩ := textArgs_run h1.args spf hin
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have he₂ := h1.env.keep (fun r hr => by
+  obtain he₂ := h1.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hK₂.sp hK₂.rd hK₂.wr
-  have hk₂ := h1.args.of_eq hK₂.mem hK₂.sp hK₂.rd hK₂.wr
-  have ci := sc_crIn h he₂ hk₂ h4 h5 h6 icb hP
+  obtain hk₂ := h1.args.of_eq hK₂.mem hK₂.sp hK₂.rd hK₂.wr
+  obtain ci := sc_crIn h he₂ hk₂ h4 h5 h6 icb hP
   have hd₂ := ci.data
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₃ hh => ?_)
   obtain ⟨co, rd₃, wr₃, sp₃⟩ := hh
-  have hk₃ := hk₂.frame spf co.frame (sc_argsCr h) sp₃ rd₃ wr₃
-  have hd₃ := (sc_dataW (k7 := s₀.gpr .r7) h hk₃).ok
-  have f₂ : Frame [savedR (arg s₀ 4)] s₀.mem s₂.mem := by rw [hK₂.mem]; exact h1.frame
-  have hH₃ : blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  obtain hk₃ := hk₂.frame spf co.frame (sc_argsCr h) sp₃ rd₃ wr₃
+  obtain hd₃ := (sc_dataW (k7 := s₀.gpr .r7) h hk₃).ok
+  obtain f₂ : Frame [savedR (arg s₀ 4)] s₀.mem s₂.mem := by rw [hK₂.mem]; exact h1.frame
+  obtain hH₃ : blockAt s₃.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame co.frame (fun r hr => (ctx_crFrame L hd₂ r hr).sub_left (Lay.ctxSub (by decide))),
       ctxH_keep f₂ (ctx_saved L)]
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L co.env hk₃ spf hin (sc_argsTa h) hH₃ hd₃ ha hP))
     fun s₄ hh => ?_)
   obtain ⟨ta, rd₄, wr₄, sp₄⟩ := hh
-  have sv₄ : SavedAt s₄.mem (arg s₀ 4) s₀ :=
+  obtain sv₄ : SavedAt s₄.mem (arg s₀ 4) s₀ :=
     (((hK₂.mem ▸ h1.saved : SavedAt s₂.mem (arg s₀ 4) s₀)).frame co.frame (saved_crFrame L hd₂)).frame ta.frame
       (saved_taFrame L)
   refine WP.mono (restore_ok ta.env.r11 fW (covers_left ta.env.perm.w) sv₄ ta.env.sp) fun s' hh => ⟨hh.1, ?_⟩
   have hm : s'.mem = s₄.mem := hh.2.1
-  have hc : ciphOf s₂.mem (State.addr (s₀.gpr .r0)) = ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) :=
+  obtain hc : ciphOf s₂.mem (State.addr (s₀.gpr .r0)) = ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) :=
     ciph_keep f₂ (ctx_saved L)
-  have ctr₂ : ∀ {P : Nat}, Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
+  obtain ctr₂ : ∀ {P : Nat}, Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 64) (ctxCiph s₀.mem (State.addr (s₀.gpr .r0))) icb P →
       Ctr s₂.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 64) (ciphOf s₂.mem (State.addr (s₀.gpr .r0))) icb P :=
     fun hc₀ => by
       rw [hc]
       exact hc₀.congr (blockAt_frame f₂ (stp_saved L (by decide))) (blockAt_frame f₂ (stp_saved L (by decide)))
-  have dat₂ : bytesAt s₂.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
+  obtain dat₂ : bytesAt s₂.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat :=
     bytesAt_frame f₂ (data_saved hd₂.ok) (by have := hd₂.ok.lt; omega_arith)
-  have out₃ : Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
+  obtain out₃ : Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 64) (ctxCiph s₀.mem (State.addr (s₀.gpr .r0))) icb ct.length →
       bytesAt s₃.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
         xorKs (ctxCiph s₀.mem (State.addr (s₀.gpr .r0))) icb ct.length
@@ -298,8 +298,8 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   · rw [hm, bytesAt_frame ta.frame (data_taFrame hd₃) (by have := hd₃.lt; omega_arith)]
     exact out₃ hc₀
   · rw [hm]
-    have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
-    have hab₃ : Absorbed s₃.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 16)
+    obtain hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
+    obtain hab₃ : Absorbed s₃.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 16)
         (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 32) (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (ghashInput a ct) :=
       (hab.congr (blockAt_frame f₂ (stp_saved L (by decide)))
         (bytesAt_frame f₂ (stp_saved L (by omega_arith)) (by omega_arith))).congr
@@ -315,35 +315,35 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
 theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r2).toNat % 16) (hP : (arg s₀ 1 ++ arg s₀ 0).toNat = ct.length) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
-  have L := scLay h
+  obtain L := scLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have fW := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hin : args s₀ 5 ∈ s₀.rd := by rw [h.1]; simp
+  obtain hin : args s₀ 5 ∈ s₀.rd := by rw [h.1]; simp
   refine WP.seq (sc1_wp h fun s₁ h1 => ?_)
-  have hd₁ := (sc_dataW (k7 := s₀.gpr .r7) h h1.args).ok
-  have hH₁ : blockAt s₁.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) :=
+  obtain hd₁ := (sc_dataW (k7 := s₀.gpr .r7) h h1.args).ok
+  obtain hH₁ : blockAt s₁.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) :=
     ctxH_keep h1.frame (ctx_saved L)
   refine WP.seq (WP.mono (WP.with_rdwr (textAbsorb_ok L h1.env h1.args spf hin (sc_argsTa h) hH₁ hd₁ ha hP))
     fun s₂ hh => ?_)
   obtain ⟨ta, rd₂, wr₂, sp₂⟩ := hh
   obtain ⟨s₃, run₃, h4, h5, h6, hg₃, hK₃⟩ := textArgs_run ta.args spf hin
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ := ta.env.keep (fun r hr => by
+  obtain he₃ := ta.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide) (by decide)) hK₃.sp hK₃.rd hK₃.wr
-  have hk₃ := ta.args.of_eq hK₃.mem hK₃.sp hK₃.rd hK₃.wr
-  have ci := sc_crIn h he₃ hk₃ h4 h5 h6 icb hP
+  obtain hk₃ := ta.args.of_eq hK₃.mem hK₃.sp hK₃.rd hK₃.wr
+  obtain ci := sc_crIn h he₃ hk₃ h4 h5 h6 icb hP
   have hd₃ := ci.data
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₄ hh => ?_)
   obtain ⟨co, rd₄, wr₄, sp₄⟩ := hh
-  have f₃ : Frame (taFrame (s₀.gpr .r1) (arg s₀ 4) s₀.sp) s₁.mem s₃.mem := by rw [hK₃.mem]; exact ta.frame
-  have sv₄ : SavedAt s₄.mem (arg s₀ 4) s₀ :=
+  obtain f₃ : Frame (taFrame (s₀.gpr .r1) (arg s₀ 4) s₀.sp) s₁.mem s₃.mem := by rw [hK₃.mem]; exact ta.frame
+  obtain sv₄ : SavedAt s₄.mem (arg s₀ 4) s₀ :=
     ((h1.saved.frame f₃ (saved_taFrame L))).frame co.frame (saved_crFrame L hd₃)
   refine WP.mono (restore_ok co.env.r11 fW (covers_left co.env.perm.w) sv₄ co.env.sp) fun s' hh => ⟨hh.1, ?_⟩
   have hm : s'.mem = s₄.mem := hh.2.1
-  have hc : ciphOf s₃.mem (State.addr (s₀.gpr .r0)) = ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) := by
+  obtain hc : ciphOf s₃.mem (State.addr (s₀.gpr .r0)) = ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [ciph_keep f₃ (ctx_taFrame L)]; exact ciph_keep h1.frame (ctx_saved L)
-  have ctr₃ : ∀ {P : Nat}, Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
+  obtain ctr₃ : ∀ {P : Nat}, Ctr s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 64) (ctxCiph s₀.mem (State.addr (s₀.gpr .r0))) icb P →
       Ctr s₃.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 48)
       (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 64) (ciphOf s₃.mem (State.addr (s₀.gpr .r0))) icb P :=
@@ -353,10 +353,10 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
         (blockAt_frame h1.frame (stp_saved L (by decide)))).congr
         (blockAt_frame f₃ (stp_taFrame L (.inr ⟨by decide, by decide⟩)))
         (blockAt_frame f₃ (stp_taFrame L (.inr ⟨by decide, by decide⟩)))
-  have dat₁ : bytesAt s₁.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
+  obtain dat₁ : bytesAt s₁.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat :=
     bytesAt_frame h1.frame (data_saved hd₁) (by have := hd₁.lt; omega_arith)
-  have dat₃ : bytesAt s₃.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
+  obtain dat₃ : bytesAt s₃.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat := by
     rw [bytesAt_frame f₃ (data_taFrame hd₁) (by have := hd₁.lt; omega_arith), dat₁]
   refine ⟨fun hc₀ => ?_, fun hc₀ => ?_, fun hc₀ hab => ?_, ?_⟩
@@ -365,12 +365,12 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
     rwa [hc] at this
   · rw [hm, co.out (ctr₃ hc₀), hc, dat₃]
   · rw [hm]
-    have hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
-    have hab₂ := ta.abs ((hab.congr (blockAt_frame h1.frame (stp_saved L (by decide)))
+    obtain hb := Nat.mod_lt (ghashInput a ct).length (show 16 > 0 by decide)
+    obtain hab₂ := ta.abs ((hab.congr (blockAt_frame h1.frame (stp_saved L (by decide)))
         (bytesAt_frame h1.frame (stp_saved L (by omega_arith)) (by omega_arith))))
     rw [dat₁] at hab₂
     rw [← hK₃.mem] at hab₂
-    have hb' := Nat.mod_lt (ghashInput a (ct ++ bytesAt s₀.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat)).length
+    obtain hb' := Nat.mod_lt (ghashInput a (ct ++ bytesAt s₀.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat)).length
       (show 16 > 0 by decide)
     exact hab₂.congr (blockAt_frame co.frame (stp_crFrame L hd₃ (by decide)))
       (bytesAt_frame co.frame (stp_crFrame L hd₃ (by omega_arith)) (by omega_arith))
@@ -381,7 +381,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
 theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptArm.pre s₀) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptArm.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
-  have h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .r2).toNat % 16) 0)
+  obtain h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .r2).toNat % 16) 0)
     (ct := List.replicate (arg s₀ 1 ++ arg s₀ 0).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -398,11 +398,11 @@ theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptArm.pre s₀) :
   rw [Proof.Gcm.streamRepr_iff] at hs
   obtain ⟨hj, hab, hct⟩ := hs
   simp only [ofNat_lit] at hab hct
-  have hl' : (gctr (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)))
+  obtain hl' : (gctr (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)))
       (inc32 (j0 (ctxH s₀.mem (State.addr (s₀.gpr .r0))) iv)) p).length = p.length := Proof.Gcm.length_gctr _ _ _
-  have eo₁ := eo.ctr hct
-  have eo₂ := eo.out hct
-  have eo₃ := eo.abs hct hab
+  obtain eo₁ := eo.ctr hct
+  obtain eo₂ := eo.out hct
+  obtain eo₃ := eo.abs hct hab
   simp only [Bool.false_eq_true, ite_false] at eo₃
   rw [hl'] at eo₁ eo₂ eo₃
   rw [← Proof.Gcm.gctr_append] at eo₃
@@ -416,7 +416,7 @@ theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptArm.pre s₀) :
 theorem streamDecrypt_wp {s₀ : State} (h : streamDecryptArm.pre s₀) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptArm.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
-  have h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .r2).toNat % 16) 0)
+  obtain h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .r2).toNat % 16) 0)
     (ct := List.replicate (arg s₀ 1 ++ arg s₀ 0).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -431,9 +431,9 @@ theorem streamDecrypt_wp {s₀ : State} (h : streamDecryptArm.pre s₀) :
   rw [Proof.Gcm.streamRepr_iff] at hs
   obtain ⟨hj, hab, hct⟩ := hs
   simp only [ofNat_lit] at hab hct
-  have eo₁ := eo.ctr hct
-  have eo₂ := eo.out hct
-  have eo₃ := eo.abs hct hab
+  obtain eo₁ := eo.ctr hct
+  obtain eo₂ := eo.out hct
+  obtain eo₃ := eo.abs hct hab
   simp only [ite_true] at eo₃
   refine ⟨?_, ?_⟩
   · rw [Proof.Gcm.streamRepr_iff]

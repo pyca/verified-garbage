@@ -86,11 +86,11 @@ theorem eqMaskB_ok (s : State) {v a : Nat} (hv : v < 2 ^ 31) (ha : a < 2 ^ 31)
   erun [eqMaskB, imm32_ofNat hv, h10]
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl⟩
   · have h1 : (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 := by decide
-    have hx : decide ((BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 a).toNat < 1) = decide (a = v) := by
+    obtain hx : decide ((BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 a).toNat < 1) = decide (a = v) := by
       refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => ?_⟩
       · have e0 : BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 a = 0 :=
           BitVec.eq_of_toNat_eq ((Nat.lt_one_iff.mp h).trans rfl)
-        have e := BitVec.xor_eq_zero_iff.mp e0
+        obtain e := BitVec.xor_eq_zero_iff.mp e0
         have := congrArg BitVec.toNat e
         simp only [BitVec.toNat_ofNat] at this
         omega_arith
@@ -138,21 +138,21 @@ theorem zmasks_ok (s : State) {a b m : Nat} (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) 
   refine WP.mono (zscal (combEqMask_scal m) (combEqMask_ok s hm ha h8)) fun s₁ ⟨⟨c₁, k₁, _, y₁⟩, z₁⟩ => ?_
   let s₂ := (ZOp.vpbroadcastq (y 15) (y 15)).exec ((VOp.vmovq (y 15) .rcx).exec s₁)
   refine WP.of_runBlock ⟨s₂, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec]; rfl, ?_⟩
-  have l₂ : ∀ r, ∀ i < 4, s₂.zlane r i = if r = y 15 then cmask (decide (a = m)) ++ cmask (decide (a = m))
+  obtain l₂ : ∀ r, ∀ i < 4, s₂.zlane r i = if r = y 15 then cmask (decide (a = m)) ++ cmask (decide (a = m))
       else s₁.zlane r i := fun r i hi => by rw [zlane_dup _ _ _ _ hi, c₁]
   refine WP.mono (zscal (eqMaskB_scal m) (eqMaskB_ok s₂ hm hb (by
     show s₁.gpr .r10 = _; rw [k₁.1 _ (by decide), h10]))) fun s₃ ⟨⟨c₃, k₃, y₃⟩, z₃⟩ => ?_
   let s₄ := (ZOp.vshufi32x4 (y 15) (y 15) (y 14) 0x44).exec
     ((ZOp.vpbroadcastq (y 14) (y 14)).exec ((VOp.vmovq (y 14) .rcx).exec s₃))
   refine WP.of_runBlock ⟨s₄, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec, zlo]; rfl, ?_⟩
-  have l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y 15 then
+  obtain l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y 15 then
       (if i < 2 then cmask (decide (a = m)) ++ cmask (decide (a = m))
         else cmask (decide (b = m)) ++ cmask (decide (b = m)))
       else if r = y 14 then cmask (decide (b = m)) ++ cmask (decide (b = m)) else s₁.zlane r i := by
     intro r i hi
     simp only [s₄, zlane_zlo _ _ _ _ _ hi, zlane_dup _ _ _ _ hi, zlane_dup _ _ _ _ (show i - 2 < 4 by omega_arith),
       z₃, l₂ _ _ hi, c₃]
-    have n1514 : y 15 ≠ y 14 := by decide
+    obtain n1514 : y 15 ≠ y 14 := by decide
     by_cases h15 : r = y 15
     · subst h15; simp only [n1514, ite_true, ite_false]
     · by_cases h14 : r = y 14
@@ -190,16 +190,16 @@ theorem zselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
   let s₂ := (ZOp.vshufi32x4 (y 10) (y 10) (y 10) 0x44).exec s₁
   let s₃ := (ZOp.zbin .vpandq (y 10) (y 10) (y 15)).exec s₂
   let s₄ := (ZOp.zbin .vporq (y (11 + c)) (y (11 + c)) (y 10)).exec s₃
-  have h1015 : y 10 ≠ y 15 := by decide
-  have hc10 : y (11 + c) ≠ y 10 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
-  have hc15 : y (11 + c) ≠ y 15 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
-  have l₃ : ∀ i < 4, s₃.zlane (y 10) i = w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i := by
+  obtain h1015 : y 10 ≠ y 15 := by decide
+  obtain hc10 : y (11 + c) ≠ y 10 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
+  obtain hc15 : y (11 + c) ≠ y 15 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
+  obtain l₃ : ∀ i < 4, s₃.zlane (y 10) i = w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i := by
     intro i hi
     simp only [s₃, s₂, s₁, zlane_zbin _ _ _ _ _ _ hi, ite_true, zlane_zlo _ _ _ _ _ hi,
       zlane_setV256 _ _ _ _ _ hi, zlane_setV256 _ _ _ _ _ (show i - 2 < 4 by omega_arith), ite_eq_right h1015.symm,
       ZBinOp.sse, XBinOp.eval]
     rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
-  have l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y (11 + c) then
+  obtain l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y (11 + c) then
       s.zlane (y (11 + c)) i ||| (w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i)
       else if r = y 10 then w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i else s.zlane r i := by
     intro r i hi
@@ -215,7 +215,7 @@ theorem zselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
       · subst e'; rw [l₃ i hi, ite_eq_left rfl]
       · simp only [s₃, s₂, s₁, zlane_zbin _ _ _ _ _ _ hi, zlane_zlo _ _ _ _ _ hi, zlane_setV256 _ _ _ _ _ hi,
           e', ite_false]
-  have hea : s.ea (combTblAt d) = X + BitVec.ofNat 64 d := by rw [ea_combTblAt, hx]
+  obtain hea : s.ea (combTblAt d) = X + BitVec.ofNat 64 d := by rw [ea_combTblAt, hx]
   refine WP.of_runBlock ⟨s₄, ?_, fun h hh k hk => ?_, ⟨fun _ _ => by zkeep, by zkeep, by zkeep, by zkeep,
     fun r hr i hi => ?_, by zkeep⟩⟩
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hea, State.load256, hr, ite_true,
@@ -249,7 +249,7 @@ theorem zselLoads_ok {m : Nat} {X : Addr} : ∀ n ≤ 3, ∀ (s : State), s.gpr 
   | n + 1, hn, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (zselLoads_ok n (by omega_arith) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
-    have h15 : ∀ h < 2, ∀ k < 4, zq s₁ (xr 15) h k = zq s (xr 15) h k := fun h hh k hk => by
+    obtain h15 : ∀ h < 2, ∀ k < 4, zq s₁ (xr 15) h k = zq s (xr 15) h k := fun h hh k hk => by
       simp only [zq]
       rw [k₁.zl _ (by
         rintro (h | ⟨c, hc, h⟩)
@@ -298,7 +298,7 @@ theorem zselEntry_ok {s : State} {X : Addr} {a b m : Nat} (hm1 : 1 ≤ m) (hm : 
       rw [k₁.rd, k₁.wr]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun h hh c hc k hk => ?_, ?_⟩
   · have hne : ∀ i < 4, s₁.zlane (xr (11 + c)) i = s.zlane (xr (11 + c)) i := k₁.zl _ (by
       rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide)
-    have hm15 : zq s₁ (xr 15) h k = cmask (decide (hmag a b h = m)) := by
+    obtain hm15 : zq s₁ (xr 15) h k = cmask (decide (hmag a b h = m)) := by
       simp only [zq]
       rw [x₁ _ (by omega_arith)]
       rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
@@ -350,7 +350,7 @@ theorem zselClear_ok (s : State) :
         reduceCtorEq, ↓reduceIte, VBinOp.sse, XBinOp.eval, BitVec.xor_self] <;>
       split <;> (try split) <;> exact Ifma.qword_zero _
   · simp only [zselRegs, not_or, not_exists, not_and] at hr
-    have h1 := hr.2.1 0 (by decide); have h2 := hr.2.1 1 (by decide); have h3 := hr.2.1 2 (by decide)
+    obtain h1 := hr.2.1 0 (by decide); have h2 := hr.2.1 1 (by decide); have h3 := hr.2.1 2 (by decide)
     simp only [Nat.reduceAdd] at h1 h2 h3
     simp only [VOp.exec, zlane_setV256 _ _ _ _ _ hi, show y 11 = xr 11 from rfl, show y 12 = xr 12 from rfl,
       show y 13 = xr 13 from rfl, h1, h2, h3, ite_false]
@@ -359,7 +359,7 @@ theorem zselClear_ok (s : State) :
 theorem isZero_ok (s : State) (g : Reg) {a : Nat} (ha : a < 2 ^ 64) (hg : s.gpr g = BitVec.ofNat 64 a) :
     WP isa (.block (isZero g)) s fun t => t.gpr .rax = (if a = 0 then 1 else 0) ∧
       Proof.X25519.X86_64.Keeps [.rax] s t ∧ t.syms = s.syms := by
-  have hM : (BitVec.ofNat 64 a - BitVec.ofNat 64 a - BitVec.setWidth 64 (BitVec.ofBool
+  obtain hM : (BitVec.ofNat 64 a - BitVec.ofNat 64 a - BitVec.setWidth 64 (BitVec.ofBool
       (decide ((BitVec.ofNat 64 a).toNat < (BitVec.signExtend 64 (1 : BitVec 32)).toNat)))) &&&
       BitVec.signExtend 64 (1 : BitVec 32) = if a = 0 then 1 else 0 := by
     by_cases h : a = 0
@@ -394,7 +394,7 @@ theorem qword_zero' (i : Nat) : qword (0#128) i = 0 := Ifma.qword_zero i
 
 theorem qword_load512 (m : Mem) (a : Addr) {i q : Nat} (hi : i < 4) (hq : q < 2) :
     qword ((m.readW a 512).extractLsb' (128 * i) 128) q = m.readW (a + BitVec.ofNat 64 (16 * i + 8 * q)) 64 := by
-  have e := readW_extract m a (w := 512) (k := 16 * i + 8 * q) (n := 8) (by omega_arith)
+  obtain e := readW_extract m a (w := 512) (k := 16 * i + 8 * q) (n := 8) (by omega_arith)
   rw [← e]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
@@ -426,7 +426,7 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (zscal rfl (combSelSetup_ok s hd ht.sym)) fun s₁ ⟨⟨x₁, k₁, _, y₁⟩, z₁⟩ => ?_
   refine WP.mono (zselClear_ok s₁) fun s₂ ⟨a₂, k₂⟩ => ?_
-  have hr : ∀ e < 16, ∀ c < 3, InRegions (s₂.rd ++ s₂.wr)
+  obtain hr : ∀ e < 16, ∀ c < 3, InRegions (s₂.rd ++ s₂.wr)
       (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 32 * c)) 32 := by
     intro e he c hc
     rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -437,7 +437,7 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), h8])
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), h10])
     (by rw [k₂.gpr _ List.not_mem_nil, x₁]) hr a₂) fun s₃ ⟨a₃, k₃⟩ => ?_
-  have g₃ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
+  obtain g₃ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [k₃.gpr r (by simpa using h2), k₂.gpr r List.not_mem_nil, k₁.1 r (by simp [h1, h2, h3])]
   refine WP.mono (zscal (isZero_scal .r8) (isZero_ok s₃ .r8 (a := a) (by omega_arith)
     (by rw [g₃ _ (by decide) (by decide) (by decide), h8]))) fun s₄ ⟨⟨r₄, k₄, y₄⟩, z₄⟩ => ?_
@@ -446,15 +446,15 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
   refine WP.mono (zscal (isZero_scal .r10) (isZero_ok s₅ .r10 (a := b) (by omega_arith)
     (by show s₄.gpr .r10 = _; rw [k₄.1 _ (by decide), g₃ _ (by decide) (by decide) (by decide), h10])))
     fun s₆ ⟨⟨r₆, k₆, y₆⟩, z₆⟩ => ?_
-  have hz2 : InRegions (s₆.rd ++ s₆.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
+  obtain hz2 : InRegions (s₆.rd ++ s₆.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
     rw [k₆.2.2.1, k₆.2.2.2]
     show InRegions (s₄.rd ++ s₄.wr) _ 64
     rw [k₄.2.2.1, k₄.2.2.2, k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]
     exact ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base (by unfold ZK2; omega_arith) (by unfold ZK2; omega_arith)⟩
-  have hrdi : s₆.gpr .rdi = base := by
+  obtain hrdi : s₆.gpr .rdi = base := by
     rw [k₆.1 _ (by decide)]; show s₄.gpr .rdi = _; rw [k₄.1 _ (by decide), g₃ _ (by decide) (by decide) (by decide),
       hs.rdi]
-  have m₆ : s₆.mem = s.mem := by
+  obtain m₆ : s₆.mem = s.mem := by
     rw [k₆.2.1]; show s₄.mem = _; rw [k₄.2.1, k₃.mem, k₂.mem, k₁.2.1]
   let w := s₆.mem.readW (base + BitVec.ofNat 64 ZK2) 512
   let u₁ := (VOp.vmovq (y 9) .rax).exec s₆
@@ -463,11 +463,11 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
   let u₄ := (ZOp.zbin .vporq (y 12) (y 12) (y 10)).exec u₃
   let u₅ := u₄.setZ (y 14) (w.extractLsb' 0 128) (w.extractLsb' 128 128) (w.extractLsb' 256 128)
     (w.extractLsb' 384 128)
-  have e5 : exec (.vmovdqu32Load (y 14) (sc ZK2)) u₄ = some u₅ := by
-    have hea : u₄.ea (sc ZK2) = base + BitVec.ofNat 64 ZK2 := by
+  obtain e5 : exec (.vmovdqu32Load (y 14) (sc ZK2)) u₄ = some u₅ := by
+    obtain hea : u₄.ea (sc ZK2) = base + BitVec.ofNat 64 ZK2 := by
       simp only [u₄, ZOp.exec_ea, u₃, u₂, u₁, VOp.exec_ea]
       exact ea_sc' hrdi ZK2
-    have hin : InRegions (u₄.rd ++ u₄.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
+    obtain hin : InRegions (u₄.rd ++ u₄.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
       simp only [u₄, ZOp.exec_rd, ZOp.exec_wr, u₃, u₂, u₁, VOp.exec_rd, VOp.exec_wr]
       exact hz2
     simp (config := { zetaDelta := true }) only [exec, hea, State.load512, hin, ite_true, Option.map_some,
@@ -477,7 +477,7 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
       show exec (zlo 10 10 9) u₁ = some u₂ from rfl, runStep_some, runBlock_cons, show exec _ u₂ = some u₃ from rfl,
       runStep_some, runBlock_cons, show exec _ u₃ = some u₄ from rfl, runStep_some, runBlock_cons, e5, runStep_some,
       runBlock_nil]
-  have l₂ : ∀ i < 4, u₂.zlane (y 10) i = if i % 2 = 0 then
+  obtain l₂ : ∀ i < 4, u₂.zlane (y 10) i = if i % 2 = 0 then
       (0 : BitVec 64) ++ (if hmag a b (i / 2) = 0 then (1 : BitVec 64) else 0) else 0 := by
     intro i hi
     have r6 : s₆.gpr .rax = if b = 0 then 1 else 0 := r₆
@@ -485,37 +485,37 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     simp only [u₂, zlane_zlo _ _ _ _ _ hi, ite_true, u₁, zlane_vmovq _ _ _ _ (show i - 2 < 4 by omega_arith),
       zlane_vmovq _ _ _ _ hi, show y 10 ≠ y 9 by decide, ite_false, z₆, s₅, r6, r4]
     rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp [hmag]
-  have l₃ : ∀ r, r ≠ y 9 → r ≠ y 10 → ∀ i < 4, u₂.zlane r i = s₃.zlane r i := fun r h9 h10 i hi => by
+  obtain l₃ : ∀ r, r ≠ y 9 → r ≠ y 10 → ∀ i < 4, u₂.zlane r i = s₃.zlane r i := fun r h9 h10 i hi => by
     simp only [u₂, zlane_zlo _ _ _ _ _ hi, h10, ite_false, u₁, zlane_vmovq _ _ _ _ hi, h9, z₆, s₅]
     exact z₄ r i
-  have hacc : ∀ h < 2, ∀ c < 3, ∀ k < 4, zq s₃ (xr (11 + c)) h k =
+  obtain hacc : ∀ h < 2, ∀ c < 3, ∀ k < 4, zq s₃ (xr (11 + c)) h k =
       if 1 ≤ hmag a b h ∧ hmag a b h ≤ 16 then feWord (combField j (hmag a b h) c) k else 0 := by
     intro h hh c hc k hk
     rw [a₃ h hh c hc k hk, accQ, k₂.mem, k₁.2.1]
-    have hm : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega_arith
+    obtain hm : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega_arith
     by_cases h1 : 1 ≤ hmag a b h
     · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, hm⟩), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, hm⟩)]
-      have hw := combTbl_word ht hj h1 hm (i := 4 * c + k) (by omega_arith)
+      obtain hw := combTbl_word ht hj h1 hm (i := 4 * c + k) (by omega_arith)
       rw [Proof.X25519.X86_64.word, Proof.X25519.X86_64.off] at hw
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat,
         show combEntryBytes * (hmag a b h - 1) + 32 * c + 8 * k =
           combEntryBytes * (hmag a b h - 1) + 8 * (4 * c + k) by omega_arith,
         hw, entryWords_getD _ c k hc hk, combField, combCached_succ j _ h1]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
-  have h3 : ∀ c < 3, ∀ i < 4, s₃.zlane (y (11 + c)) i = s₃.zlane (xr (11 + c)) i := fun c hc i _ => by
+  obtain h3 : ∀ c < 3, ∀ i < 4, s₃.zlane (y (11 + c)) i = s₃.zlane (xr (11 + c)) i := fun c hc i _ => by
     rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl
   refine ⟨fun h hh c hc k hk => ?_, fun h hh k hk => ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr i hi => ?_, ?_⟩⟩
   · have hmh : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega_arith
     rw [← selWord_or _ _ _ _ hmh, ← hacc h hh c hc k hk]
-    have hi : 2 * h + k / 2 < 4 := by omega_arith
-    have L1 : ∀ i < 4, u₅.zlane (y 11) i = s₃.zlane (y 11) i ||| u₂.zlane (y 10) i := fun i hi => by
+    obtain hi : 2 * h + k / 2 < 4 := by omega_arith
+    obtain L1 : ∀ i < 4, u₅.zlane (y 11) i = s₃.zlane (y 11) i ||| u₂.zlane (y 10) i := fun i hi => by
       simp only [u₅, zlane_load _ _ _ _ hi, show y 11 ≠ y 14 by decide, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi,
         show y 11 ≠ y 12 by decide, u₃, ite_true, ZBinOp.sse, XBinOp.eval, l₃ (y 11) (by decide) (by decide) _ hi]
-    have L2 : ∀ i < 4, u₅.zlane (y 12) i = s₃.zlane (y 12) i ||| u₂.zlane (y 10) i := fun i hi => by
+    obtain L2 : ∀ i < 4, u₅.zlane (y 12) i = s₃.zlane (y 12) i ||| u₂.zlane (y 10) i := fun i hi => by
       simp only [u₅, zlane_load _ _ _ _ hi, show y 12 ≠ y 14 by decide, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi,
         ite_true, u₃, show y 10 ≠ y 11 by decide, show y 12 ≠ y 11 by decide, ZBinOp.sse, XBinOp.eval,
         l₃ (y 12) (by decide) (by decide) _ hi]
-    have L3 : ∀ i < 4, u₅.zlane (y 13) i = s₃.zlane (y 13) i := fun i hi => by
+    obtain L3 : ∀ i < 4, u₅.zlane (y 13) i = s₃.zlane (y 13) i := fun i hi => by
       simp only [u₅, zlane_load _ _ _ _ hi, show y 13 ≠ y 14 by decide, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi,
         show y 13 ≠ y 12 by decide, u₃, show y 13 ≠ y 11 by decide, l₃ (y 13) (by decide) (by decide) _ hi]
     rw [show xr (11 + c) = y (11 + c) by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl]
@@ -549,8 +549,8 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
   · simp only [zselRegs, not_or, not_exists, not_and] at hr
     have n9 : r ≠ y 9 := hr.2
     have n10 : r ≠ y 10 := hr.1.1
-    have n11 : r ≠ y 11 := hr.1.2.1 0 (by decide)
-    have n12 : r ≠ y 12 := hr.1.2.1 1 (by decide)
+    obtain n11 : r ≠ y 11 := hr.1.2.1 0 (by decide)
+    obtain n12 : r ≠ y 12 := hr.1.2.1 1 (by decide)
     have n14 : r ≠ y 14 := hr.1.2.2.1
     simp only [u₅, zlane_load _ _ _ _ hi, n14, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi, n12, u₃, n11,
       l₃ r n9 n10 _ hi]

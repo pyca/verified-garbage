@@ -62,8 +62,8 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
     (hx : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16))
     {regs : List Reg} (k : Keep regs s t) (hr : .rdi ∉ regs) : PcM p t := by
   obtain ⟨hs, hdi, hZ, hk1, hk2, hO, hK, hN, hn, hnl, hv, hpw, hps, hsp⟩ := h
-  have hi := InScr.of_frm hf hz
-  have hfx := Fixed.of_frm hf hx
+  obtain hi := InScr.of_frm hf hz
+  obtain hfx := Fixed.of_frm hf hx
   exact ⟨hs.congr k.2.2, (k.gpr hr).trans hdi, hZ, hk1, hk2, (hfx sOut (by decide)).trans hO,
     (hfx sK (by decide)).trans hK, (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv,
     fun i hi => by rw [k.2.2]; exact hpw i hi, hps, by rw [k.2.1, k.2.2]; exact hsp⟩
@@ -190,7 +190,7 @@ abbrev PcPub.L (q : PcPub × BitVec 64) : Lay := ⟨q.1.B, q.1.Z, q.1.w, q.2⟩
 /-- `-m⁻¹` is the same in runs that agree on `m`. -/
 theorem pc3_minv {p : PcPub} {s₁ s₂ : State} {mi₁ mi₂ : BitVec 64}
     (h₁ : R2Pre ⟨⟨p.B, p.Z, p.w, mi₁⟩, p.N⟩ s₁) (h₂ : R2Pre ⟨⟨p.B, p.Z, p.w, mi₂⟩, p.N⟩ s₂) : mi₁ = mi₂ := by
-  have e : ∀ {s : State} {mi : BitVec 64}, R2Pre ⟨⟨p.B, p.Z, p.w, mi⟩, p.N⟩ s →
+  obtain e : ∀ {s : State} {mi : BitVec 64}, R2Pre ⟨⟨p.B, p.Z, p.w, mi⟩, p.N⟩ s →
       ((p.N % 2 ^ 64) * mi.toNat + 1) % 2 ^ 64 = 0 := fun h => by
     have hw := h.2.1
     have hv := h.2.2.2.1
@@ -228,9 +228,9 @@ theorem Good.of_inScr {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (h
     (hZ : slot w 8 ≤ Z) (hi : ∀ x, ofs B x < Z → t.mem x = s.mem x) (hwr : t.wr = s.wr)
     (hdi : t.gpr .rdi = B) : Good t B Z w minv := by
   have hn := hg.scr.nowrap
-  have h8 := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have h0 := slot_le (w := w) (show 0 < 8 by decide)
-  have hw : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
+  obtain h8 := hdr_lt_slot w 0 (show 31 < 32 by decide)
+  obtain h0 := slot_le (w := w) (show 0 < 8 by decide)
+  obtain hw : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
     Mem.readW_congr fun b hb => hi _ (by rw [ofs_off B (d := 8 * i) (i := b) (by omega_arith)]; omega_arith)
   exact ⟨hg.scr.congr hwr, hdi, ⟨by rw [hw sW (by decide)]; exact hg.hdr.hw,
     by rw [hw sMinv (by decide)]; exact hg.hdr.hminv,
@@ -263,14 +263,14 @@ theorem pcCopy_ok {q : PcPub × BitVec 64} {s : State} (h : PcO q s) {e d : Nat}
   have hs : Scr s q.1.B q.1.Z := hg.1.scr
   have hn := hs.nowrap
   have hZ : slot q.1.w 8 ≤ q.1.Z := hg.2
-  have hsep : ∀ x, ofs q.1.B x < q.1.Z → 16 * q.1.w ≤ ofs q.1.op x := fun x hx => le_ofs_of_sep hps hx
+  obtain hsep : ∀ x, ofs q.1.B x < q.1.Z → 16 * q.1.w ≤ ofs q.1.op x := fun x hx => le_ofs_of_sep hps hx
   refine WP.mono (copyWords_ok hsi hbx h12 (by omega_arith) (by omega_arith) (by omega_arith)
     (fun j hj => hs.ld (by omega_arith))
     (fun j hj => by rw [show 8 * d + 8 * j = 8 * (d + j) by omega_arith]; exact hpw (d + j) (by omega_arith))
     (fun j hj b hb => Or.inr (Nat.le_trans (by omega_arith)
       (hsep _ (by rw [ofs_off q.1.B (d := e + 8 * j) (i := b) (by omega_arith)]; omega_arith)))))
     fun t ⟨_, _, ho, k⟩ => ?_
-  have hi : ∀ x, ofs q.1.B x < q.1.Z → t.mem x = s.mem x := fun x hx =>
+  obtain hi : ∀ x, ofs q.1.B x < q.1.Z → t.mem x = s.mem x := fun x hx =>
     ho x (Or.inr (by have := hsep x hx; omega_arith))
   refine ⟨⟨⟨Good.of_inScr (hg.1 : Good s q.1.B q.1.Z q.1.w q.2) hZ hi k.2.2
     ((k.gpr (by decide)).trans hg.1.rdi), hZ⟩, hw, hw', ?_,
@@ -299,7 +299,7 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs pcOut) fun _ _ => True := by
     have hn := hs.nowrap
     have hZ : slot q.1.w 8 ≤ q.1.Z := h.1.2
     obtain ⟨g0, g8⟩ := slot0_ge q.1.w
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.1.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
+    obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.1.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
     refine WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 q.1.w ∧
         t.gpr .rsi = off q.1.B (slot q.1.w aN) ∧ t.gpr .rbx = off q.1.op 0 ∧ t.mem = s.mem) (by
       xrun [State.ea, hdr, h.1.1.rdi, hdrOff, hl sW (by decide), hl (sArr aN) (by decide), hl sOut (by decide),
@@ -329,10 +329,10 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs pcOut) fun _ _ => True := by
     have hn := hs.nowrap
     have hZ : slot q.1.w 8 ≤ q.1.Z := h.1.2
     obtain ⟨g0, g8⟩ := slot0_ge q.1.w
-    have hax8 : ∀ r : BitVec 64, r = BitVec.ofNat 64 q.1.w → r + r + (r + r) + (r + r + (r + r)) =
+    obtain hax8 : ∀ r : BitVec 64, r = BitVec.ofNat 64 q.1.w → r + r + (r + r) + (r + r + (r + r)) =
         BitVec.ofNat 64 (8 * q.1.w) := by
       rintro r rfl; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_arith
-    have hbx' : s.gpr .rbx = q.1.op := by rw [hbx]; simp [off]
+    obtain hbx' : s.gpr .rbx = q.1.op := by rw [hbx]; simp [off]
     refine WP.mono (WP.keep [.rax, .rbx, .rsi] (Q := fun t => t.gpr .rbx = off q.1.op (8 * q.1.w) ∧
         t.gpr .rsi = off q.1.B (slot q.1.w aR2) ∧ t.mem = s.mem) (by
       unfold eightW
@@ -386,7 +386,7 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
     · rw [d₁, d₂]
     · rw [← ofNat_toNat64 (s₁.gpr .rcx), ← ofNat_toNat64 (s₂.gpr .rcx), c₁, c₂]) (by taint_decide) ?_) ?_
   · rintro ⟨B, Z, k, op, np, nb⟩ s ⟨hs, hB, hZ, hk, hop, hnp, hnb⟩
-    have c := pcCtx_of hs
+    obtain c := pcCtx_of hs
     have hZ' := c.hZ
     have hk1 := c.hk1
     have hk2 := c.hk2
@@ -394,12 +394,12 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
     rw [WP.block_append_iff]
     refine WP.mono (pcEntry_ok rfl fun i hi => c.hs.st (by omega_arith))
       fun t₁ ⟨hdi, _, _, _, _, _, _, hO, hN, hK, ho₁, k₁⟩ => ?_
-    have i₁ : InScr (s.gpr .r8) ((s.gpr .r9).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_arith)
-    have hnb₁ := c.hnb.congrK i₁ k₁
+    obtain i₁ : InScr (s.gpr .r8) ((s.gpr .r9).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_arith)
+    obtain hnb₁ := c.hnb.congrK i₁ k₁
     refine WP.mono (invalid_ok ((k₁.gpr (by decide)).trans rfl) (by rw [k₁.gpr (by decide), ofNat_toNat64])
       hk1 hk2 (bytesAt_length _ _ _) (fun i hi => hnb₁.rd i (by rw [bytesAt_length]; exact hi))
       (fun i hi => hnb₁.val i _)) fun t₂ ⟨hz₂, hm₂, k₂⟩ => ?_
-    have kk := k₁.trans k₂
+    obtain kk := k₁.trans k₂
     subst hB hZ hk hop hnp hnb
     exact ⟨c.hs.congr kk.2.2, (k₂.gpr (by decide)).trans hdi,
       show slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (s.gpr .r9).toNat * 8 by unfold slot hdrBytes; omega_arith, hk1, hk2,
@@ -413,7 +413,7 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
     simp only [eval, z₁, z₂]) ?_ ?_
   · -- `fail`.
     unfold Precompute.fail
-    have pin : ∀ p t, (PcC3 p t ∧ isa.eval .ne t = some true) → t.gpr .rdi = p.B := fun p t h => h.1.2.1
+    obtain pin : ∀ p t, (PcC3 p t ∧ isa.eval .ne t = some true) → t.gpr .rdi = p.B := fun p t h => h.1.2.1
     refine RelCT.seq (two_piece (Ψ := fun p t => t.gpr .rsi = p.op ∧
         t.gpr .rcx = BitVec.ofNat 64 (16 * p.w) ∧ t.gpr .rdi = p.B) [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [pin p s₁ h₁, pin p s₂ h₂]) (by taint_decide) ?_)
@@ -426,7 +426,7 @@ theorem pcCode_ct (M : Mont) (r : R2Impl M) :
     rintro p t ⟨⟨hs, hdi, hZ, hk1, hk2, hO, hK, -⟩, -⟩
     have hn := hs.nowrap
     obtain ⟨g0, g8⟩ := slot0_ge p.w
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
+    obtain hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
     refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = p.op ∧
         t'.gpr .rcx = BitVec.ofNat 64 (16 * p.w)) (by
       xrun [State.ea, hdr, hdi, hdrOff, hl sOut (by decide), hl sK (by decide), hO, hK,
@@ -448,7 +448,7 @@ theorem pcCode_constantTime (M : Mont) (r : R2Impl M) :
   refine RelCT.constantTime ((pcCode_ct M r).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨pcPubOf s₁, ?_, ?_⟩) fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hr, hn⟩ := hp
-    have r : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
+    obtain r : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
     exact ⟨h₂, r .r8 (by decide), by rw [r .r9 (by decide)]; rfl, by rw [r .rcx (by decide)]; rfl,
       r .rdi (by decide), r .rdx (by decide), hn.symm⟩
 

@@ -58,18 +58,18 @@ theorem directWords_ok {s : State} {base p : Addr} {size src dst value n : Nat}
     rw [TCombCfg.directWords, List.range_succ, List.flatMap_append, List.flatMap_singleton,
       WP.block_append_iff]
     refine WP.mono (directWords_ok hs hp hd hd8 hs8 hsrc hr hout k (by omega_using [hk])) fun s₁ ⟨e₁, c₁, k₁, O₁⟩ => ?_
-    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    obtain hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [List.append_assoc, WP.block_append_iff]
     refine WP.mono (direct_load (p := p) (o := src + 8 * k) (by rw [k₁.gpr _ (by decide), hp]) (by omega_using [hs8, hsrc, hk])
       (by rw [k₁.rd, k₁.wr]; exact hr k (by omega_using [hk]))) fun s₂ ⟨e₂, k₂, c₂'⟩ => ?_
-    have hs₂ := hs₁.of_keeps k₂ (by decide)
+    obtain hs₂ := hs₁.of_keeps k₂ (by decide)
     rw [WP.block_append_iff]
     refine WP.mono (const64c_ok s₂ .x6 (wordOf value k)) fun s₃ ⟨e₃, k₃, c₃'⟩ => ?_
-    have hs₃ := hs₂.of_keeps k₃ (by decide)
-    have x4 : s₃.gpr .x4 = word s₁.mem p (src + 8 * k) := by rw [k₃.gpr _ (by decide), e₂]
-    have c₃ : s₃.c = s.c := by rw [c₃', c₂', c₁]
+    obtain hs₃ := hs₂.of_keeps k₃ (by decide)
+    obtain x4 : s₃.gpr .x4 = word s₁.mem p (src + 8 * k) := by rw [k₃.gpr _ (by decide), e₂]
+    obtain c₃ : s₃.c = s.c := by rw [c₃', c₂', c₁]
     rw [← List.singleton_append, WP.block_append_iff]
-    have hsel : WP isa (.block [.csel .x .x4 .x4 .x6]) s₃ fun t =>
+    obtain hsel : WP isa (.block [.csel .x .x4 .x4 .x6]) s₃ fun t =>
         t.gpr .x4 = (if s.c then word s₁.mem p (src + 8 * k) else wordOf value k) ∧
         Keeps [.x4] s₃ t ∧ t.c = s.c := by
       apply WP.of_runBlock
@@ -80,15 +80,15 @@ theorem directWords_ok {s : State} {base p : Addr} {size src dst value n : Nat}
       · cases s.c <;> simp
       · trivial
     refine WP.mono hsel fun s₄ ⟨e₄, k₄, c₄⟩ => ?_
-    have hs₄ := hs₃.of_keeps k₄ (by decide)
+    obtain hs₄ := hs₃.of_keeps k₄ (by decide)
     refine WP.mono (st_ok hs₄ (d := dst + 8 * k) (by omega_using [hd, hk]) (by omega_using [hd8]) .x4) fun t et => ?_
-    have mt : t.mem = s₄.mem.writeW (off base (dst + 8 * k)) (s₄.gpr .x4) := by rw [et]
-    have kt : KeepRegs [] s₄ t := by subst et; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-    have ct : t.c = s₄.c := by rw [et]
-    have O₂ : Outside base (dst + 8 * k) 8 s₄.mem t.mem := by
+    obtain mt : t.mem = s₄.mem.writeW (off base (dst + 8 * k)) (s₄.gpr .x4) := by rw [et]
+    obtain kt : KeepRegs [] s₄ t := by subst et; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+    obtain ct : t.c = s₄.c := by rw [et]
+    obtain O₂ : Outside base (dst + 8 * k) 8 s₄.mem t.mem := by
       rw [mt]; exact writeW_outside _ _ _ (by omega_using [hd, hk, hn])
-    have hm₄ : s₄.mem = s₁.mem := by rw [k₄.mem, k₃.mem, k₂.mem]
-    have old : word s₁.mem p (src + 8 * k) = word s.mem p (src + 8 * k) :=
+    obtain hm₄ : s₄.mem = s₁.mem := by rw [k₄.mem, k₃.mem, k₂.mem]
+    obtain old : word s₁.mem p (src + 8 * k) = word s.mem p (src + 8 * k) :=
       Mem.readW_congr fun b hb => O₁ _ (Or.inr (by have := hout k (by omega_using [hk]) b (by omega_using [hb]); dsimp only [off]; omega_using [hd, hk, this]))
     refine ⟨fun i hi => ?_, by rw [ct, c₄], ?_, ?_⟩
     · rcases Nat.lt_or_ge i k with h | h
@@ -115,7 +115,7 @@ theorem directAddress_ok (K : TCombCfg) {s : State} {a : Nat} {p : Addr}
     RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, BitVec.setWidth_eq, Size.bits,
     show 16 * 0 < 64 from by decide, ite_true, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
-  have hc : decide (2 ^ 64 ≤ (BitVec.ofNat 64 a).toNat + (~~~(1 : BitVec 64)).toNat +
+  obtain hc : decide (2 ^ 64 ≤ (BitVec.ofNat 64 a).toNat + (~~~(1 : BitVec 64)).toNat +
       (true).toNat) = decide (1 ≤ a) := by
     simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       show (~~~(1 : BitVec 64)).toNat = 2 ^ 64 - 2 from by decide, Bool.toNat_true]
@@ -154,7 +154,7 @@ theorem directWords_value {m m' : Mem} {base p : Addr} {dst src n value : Nat} {
     wordsVal m' base dst n = if c then wordsVal m p src n else value := by
   cases c
   · exact wordsVal_of_shifts _ _ _ _ _ hv fun i hi => by
-      have e := h i hi
+      obtain e := h i hi
       simp only [Bool.false_eq_true, ↓reduceIte] at e
       exact e
   · exact wordsVal_of_words₂ _ _ _ fun i hi => by simpa only [↓reduceIte] using h i hi
@@ -184,19 +184,19 @@ theorem tselectPublic_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
       KeepRegs (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) s t ∧
       Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem := by
   have hnw := hs.nowrap
-  have ha64 : a < 2 ^ 64 := by omega_using [ha, hHlt]
-  have he : a - 1 < K.H := by omega_using [ha, hHpos]
-  have hEx := hE K.E.x (by simp)
-  have hEy := hE K.E.y (by simp)
-  have hEz := hE K.E.z (by simp)
+  obtain ha64 : a < 2 ^ 64 := by omega_using [ha, hHlt]
+  obtain he : a - 1 < K.H := by omega_using [ha, hHpos]
+  obtain hEx := hE K.E.x (by simp)
+  obtain hEy := hE K.E.y (by simp)
+  obtain hEz := hE K.E.z (by simp)
   obtain ⟨axy, axz, ayz⟩ := hap
   let B := T + BitVec.ofNat 64 (j * K.tblBytes)
   let P := B + BitVec.ofNat 64 (16 * K.M.n * (a - 1))
   have addr (i : Nat) : P + BitVec.ofNat 64 (8 * i) = B + BitVec.ofNat 64 (16 * K.M.n * (a - 1) + 8 * i) := by
     dsimp only [P]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have out : ∀ i < 2 * K.M.n, ∀ b < 8, size ≤ ofs base (P + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
+  obtain out : ∀ i < 2 * K.M.n, ∀ b < 8, size ≤ ofs base (P + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
     intro i hi b hb; rw [addr]; exact hout (a - 1) he i hi b hb
-  have reg : ∀ i < 2 * K.M.n, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 (8 * i)) 8 := by
+  obtain reg : ∀ i < 2 * K.M.n, InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi; rw [addr]
     obtain ⟨r, hr, hc⟩ := hreg
     refine ⟨r, hr, Region.contains_off hc ?_⟩
@@ -205,20 +205,20 @@ theorem tselectPublic_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
     omega_using [hi, this]
   rw [TCombCfg.selectPublic, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono_syms (selSetup_ok K hx19 hT htb) fun s₁ ⟨p₁, z₁, one₁, _, k₁⟩ _ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (directAddress_ok K ha64 (by omega_using [hn]) p₁ (by rw [k₁.gpr _ (by decide), hx2]) one₁ z₁)
     fun s₂ ⟨p₂, c₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
-  have hm₂ : s₂.mem = s.mem := by rw [k₂.mem, k₁.mem]
+  obtain hs₂ := hs₁.of_keeps k₂ (by decide)
+  obtain hm₂ : s₂.mem = s.mem := by rw [k₂.mem, k₁.mem]
   rw [WP.block_append_iff]
   refine WP.mono (directWords_ok (p := P) (src := 0) (value := 0) (n := K.M.n) hs₂ p₂ hEx.1 hEx.2 (by omega_using [])
     (by omega_using [hn]) (fun i hi => by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; simpa only [Nat.zero_add] using reg i (by omega_using [hi]))
     (fun i hi b hb => by simpa only [Nat.zero_add] using out i (by omega_using [hi]) b hb) K.M.n (Nat.le_refl _)) fun s₃ ⟨wx, c₃, k₃, Ox⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have vx := directWords_value (Nat.two_pow_pos (64 * K.M.n)) wx
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain vx := directWords_value (Nat.two_pow_pos (64 * K.M.n)) wx
   rw [hm₂, c₂, wordsVal_addr, Nat.add_zero] at vx
-  have source : ∀ i < 2 * K.M.n, word s₃.mem P (8 * i) = word s.mem P (8 * i) := by
+  obtain source : ∀ i < 2 * K.M.n, word s₃.mem P (8 * i) = word s.mem P (8 * i) := by
     intro i hi
     rw [← hm₂]
     exact Mem.readW_congr fun b hb => Ox _ (Or.inr (by have := out i hi b (by omega_using [hb]); dsimp only [off]; omega_using [hEx, this]))
@@ -229,20 +229,20 @@ theorem tselectPublic_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
       show 8 * K.M.n + 8 * i = 8 * (K.M.n + i) by omega_using []]; exact reg _ (by omega_using [hi]))
     (fun i hi b hb => by rw [show 8 * K.M.n + 8 * i = 8 * (K.M.n + i) by omega_using []]; exact out _ (by omega_using [hi]) b hb)
     K.M.n (Nat.le_refl _)) fun s₄ ⟨wy, c₄, k₄, Oy⟩ => ?_
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have sy : wordsVal s₃.mem P (8 * K.M.n) K.M.n = wordsVal s.mem P (8 * K.M.n) K.M.n :=
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  obtain sy : wordsVal s₃.mem P (8 * K.M.n) K.M.n = wordsVal s.mem P (8 * K.M.n) K.M.n :=
     wordsVal_of_words₂ _ _ _ fun i hi => by
       rw [show 8 * K.M.n + 8 * i = 8 * (K.M.n + i) by omega_using []]; exact source _ (by omega_using [hi])
-  have vy := directWords_value hone wy
+  obtain vy := directWords_value hone wy
   rw [c₃, c₂, sy, wordsVal_addr] at vy
   rw [TCombCfg.selZ, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (selZ_carry s₄ ha64
     (by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide), hx2])
     (by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), one₁])) fun s₅ ⟨c₅, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
+  obtain hs₅ := hs₄.of_keeps k₅ (by decide)
   refine WP.mono (zWords_ok K hs₅ (by rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide),
       k₂.gpr _ (by decide), z₁]) hEz.1 hEz.2 K.M.n (Nat.le_refl _)) fun t ⟨wz, _, kt, Oz⟩ => ?_
-  have b64 : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ 2 ^ 64 := fun d hd => by
+  obtain b64 : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ 2 ^ 64 := fun d hd => by
     have := (hE d hd).1; omega_using [hnw, this]
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [Oz.wordsVal axz (b64 _ (by simp)), k₅.mem, Oy.wordsVal axy (b64 _ (by simp)), vx]

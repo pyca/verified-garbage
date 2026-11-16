@@ -121,7 +121,7 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
   rw [hxl] at hwr dXY dXD dXR dXS dXC nwX
   rw [hyl] at hwr dXY dYD dYS dYC nwY
   rw [hrl] at hrd dXR dRS nwR
-  have hcl : (stackArg s 4).toNat = 3 + 34 * (((s.gpr .r9).toNat + 7) / 8) := by
+  obtain hcl : (stackArg s 4).toNat = 3 + 34 * (((s.gpr .r9).toNat + 7) / 8) := by
     rw [hctx.1]
     simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth, Spec.Rsa.modulusWords]
@@ -133,27 +133,27 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
   have hk' := hb.k1024
   have hLk := hb.hL
   have hZ := hb.env.hZ
-  have e0 := Domain.slot_eq (gcOf s).w 0
-  have e28 := Domain.slot_eq (gcOf s).w 28
+  obtain e0 := Domain.slot_eq (gcOf s).w 0
+  obtain e28 := Domain.slot_eq (gcOf s).w 28
   refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by
       rcases hLk with h | h <;> omega_using [hi, h])) (fun i hi => hb.sepD i (by rcases hLk with h | h <;> omega_using [hi, h])))
     fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_
-  have hb2 := hb.keep k2 b2
-  have k12 := k1.trans k2
-  have hsep : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off Q i ≠ y) →
+  obtain hb2 := hb.keep k2 b2
+  obtain k12 := k1.trans k2
+  obtain hsep : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off Q i ≠ y) →
       Spec.Rsa.bytesAt s₂.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hq => by
     rw [b2.bytesAt hZ hq]; exact hby Q n hq
   have sepD : ∀ i < (s.gpr .r8).toNat, ∀ y, ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 → off (s.gpr .r7) i ≠ y :=
     hb.sepD
   have hL' : (s.gpr .r8).toNat = 2 * (s.gpr .r9).toNat ∨ (s.gpr .r8).toNat = 3 * (s.gpr .r9).toNat := hLk
-  have ep : (gcOf s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
+  obtain ep : (gcOf s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
     show Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat).take (s.gpr .r9).toNat) = _
     rw [Proof.Ffdh.take_bytesAt _ _ (by omega_using [hL'])]
-  have eD : Spec.Rsa.bytesAt s₁.mem (s.gpr .r7) (s.gpr .r9).toNat =
+  obtain eD : Spec.Rsa.bytesAt s₁.mem (s.gpr .r7) (s.gpr .r9).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat := hby _ _ fun i hi => sepD i (by omega_using [hL', hi])
   rw [show (gcOf s).D = s.gpr .r7 from rfl, show (gcOf s).k = (s.gpr .r9).toNat from rfl, eD] at p2 c2
   refine ⟨⟨by show _ ↔ Spec.Rsa.modulusValid (gcOf s).p _ = true; rw [ep]; exact c2, hb2.r23⟩, fun hz => ?_⟩
-  have hmodP := c2.mp hz
+  obtain hmodP := c2.mp hz
   show BI (stackArg s 1) (s.gpr .r7) (s.gpr .r3) (s.gpr .r5) (s.gpr .r10) (stackArg s 3)
     ((stackArg s 2).toNat * 8) (s.gpr .r9).toNat (s.gpr .r8).toNat (gcOf s).p
     (Spec.Ffdh.generationScalarBits (cgA s)) (decide (0 < cgX (s.gpr .r9).toNat
@@ -161,45 +161,45 @@ theorem cg_toBI {s : State} (h : cgContract.pre s) :
       cgX (s.gpr .r9).toNat (Spec.Ffdh.generationScalarBits (cgA s)) s.mem (s.gpr .r10) <
         Derive.bnd s.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat (gcOf s).p)) s₂
   rw [ep]
-  have hlenD : (s.gpr .r9).toNat ≤ (cgDom s).length := by
+  obtain hlenD : (s.gpr .r9).toNat ≤ (cgDom s).length := by
     rw [VG.Proof.Bignum.bytesAt_length]; rcases hL' with h | h <;> omega_using [h]
-  have hmod := VG.Proof.Ffdh.domainValid_mod hdv
-  have hpd : (cgA s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
+  obtain hmod := VG.Proof.Ffdh.domainValid_mod hdv
+  obtain hpd : (cgA s).p = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) := by
     rw [VG.Proof.Ffdh.domainOf_p _ _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, h])]
-  have hbits := genBits_facts hdv
-  have hwv : Spec.Rsa.wordsAt s.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
+  obtain hbits := genBits_facts hdv
+  obtain hwv : Spec.Rsa.wordsAt s.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
       VG.Proof.Ffdh.generationValues (s.gpr .r9).toNat (cgDom s) := by
-    have e := VG.Proof.Ffdh.generationPrecompute_eq hlenD hmod
+    obtain e := VG.Proof.Ffdh.generationPrecompute_eq hlenD hmod
     rw [hctxw] at e; exact Option.some.inj e
-  have sepCSi := sep_of_disjoint dSC.symm (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits])
-  have hcm : ∀ i < 8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)), s₂.mem (stackArg s 3 + BitVec.ofNat 64 i) =
+  obtain sepCSi := sep_of_disjoint dSC.symm (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits])
+  obtain hcm : ∀ i < 8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)), s₂.mem (stackArg s 3 + BitVec.ofNat 64 i) =
       s.mem (stackArg s 3 + BitVec.ofNat 64 i) := fun i hi =>
     byte_of_bytesAt (hsep _ (8 * (3 + 34 * (((s.gpr .r9).toNat + 7) / 8))) fun j hj => sepCSi j (by omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hL', hlenD, hbits, hi, hj])) hi
-  have hwv2 : Spec.Rsa.wordsAt s₂.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
+  obtain hwv2 : Spec.Rsa.wordsAt s₂.mem (stackArg s 3) (3 + 34 * (((s.gpr .r9).toNat + 7) / 8)) =
       VG.Proof.Ffdh.generationValues (s.gpr .r9).toNat (cgDom s) := by rw [wordsAt_congr hcm, hwv]
-  have hpk : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) < 256 ^ (s.gpr .r9).toNat := by
+  obtain hpk : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) < 256 ^ (s.gpr .r9).toNat := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
-  have hf := modulus_facts hmodP
-  have hpw : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) <
+  obtain hf := modulus_facts hmodP
+  obtain hpw : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r9).toNat) <
       2 ^ (64 * (((s.gpr .r9).toNat + 7) / 8)) := Nat.lt_of_lt_of_le hpk (by
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using []))
   obtain ⟨cb, cy, cr, -, -⟩ := ctx_facts hwv (by rw [hpd]; omega_using [hf]) (by rw [hpd]; exact hpw)
   obtain ⟨-, -, -, cr2, cent⟩ := ctx_facts hwv2 (by rw [hpd]; omega_using [hf]) (by rw [hpd]; exact hpw)
   rw [hpd] at cr2 cent
-  have hg : (cgA s).g = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off (s.gpr .r7) (s.gpr .r9).toNat)
+  obtain hg : (cgA s).g = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₂.mem (off (s.gpr .r7) (s.gpr .r9).toNat)
       (s.gpr .r9).toNat) := by
     rw [VG.Proof.Ffdh.domainOf_g _ _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, hbits, h]), hsep _ _ fun i hi => by
       rw [off_off']; exact sepD _ (by rcases hL' with h | h <;> omega_using [nwX, nwY, nwR, nwC, hk64, hk1024, hxl, hyl, hrl, hsl, hcl, hlenD, hbits, hi, h])]
   rw [hg] at cent
-  have hw2 : ∀ d, d + 8 ≤ 256 → word s₂.mem (stackArg s 1) d = word s₁.mem (stackArg s 1) d := fun d hd => by
+  obtain hw2 : ∀ d, d + 8 ≤ 256 → word s₂.mem (stackArg s 1) d = word s₁.mem (stackArg s 1) d := fun d hd => by
     have b2' : Body (stackArg s 1) (gcOf s).w s₁.mem s₂.mem := b2
     rw [Outside.word b2' (by omega_using [e0, hd]) (by omega_using [hd])]
-  have h4 : s.gpr .r4 = BitVec.ofNat 64 (s.gpr .r9).toNat := by
+  obtain h4 : s.gpr .r4 = BitVec.ofNat 64 (s.gpr .r9).toNat := by
     rw [← hxl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have eR : Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) (s.gpr .r9).toNat =
+  obtain eR : Spec.Rsa.bytesAt s₂.mem (s.gpr .r10) (s.gpr .r9).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r10) (s.gpr .r9).toNat := hsep _ _ (sep_of_disjoint dRS (by omega_using []))
-  have eb : Derive.bnd s₂.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat =
+  obtain eb : Derive.bnd s₂.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat =
       Derive.bnd s.mem (s.gpr .r7) (s.gpr .r9).toNat (s.gpr .r8).toNat := by
     funext P
     unfold Derive.bnd

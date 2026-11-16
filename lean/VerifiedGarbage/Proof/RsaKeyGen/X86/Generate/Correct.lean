@@ -46,23 +46,23 @@ theorem noSp_block {is : List Instr} (h : is.all (fun i => !Taint.clobbers i .es
   fun i hi => by simpa only [Bool.not_eq_true'] using List.all_eq_true.mp h i hi
 
 theorem body_noSp' (srch : Srch) (key : KeyImpl) : NoSp (body srch.call key.call) := by
-  have hz : NoSp zeroLoop := noSp_loop (noSp_block (by decide))
-  have hca : NoSp clearAll := noSp_seq (noSp_block (by decide)) hz
-  have hf3 : NoSp (fail 3) := noSp_seq hca (noSp_block (by decide))
-  have hf2 : NoSp (fail 2) := noSp_seq hca (noSp_block (by decide))
-  have hn0 : NoSp (.block (nextPrime 0)) := noSp_block (by decide)
-  have hn1 : NoSp (.block (nextPrime 1)) := noSp_block (by decide)
-  have hex : NoSp exhaustedGen := noSp_seq (noSp_block (by decide)) (noSp_ite hf3
+  obtain hz : NoSp zeroLoop := noSp_loop (noSp_block (by decide))
+  obtain hca : NoSp clearAll := noSp_seq (noSp_block (by decide)) hz
+  obtain hf3 : NoSp (fail 3) := noSp_seq hca (noSp_block (by decide))
+  obtain hf2 : NoSp (fail 2) := noSp_seq hca (noSp_block (by decide))
+  obtain hn0 : NoSp (.block (nextPrime 0)) := noSp_block (by decide)
+  obtain hn1 : NoSp (.block (nextPrime 1)) := noSp_block (by decide)
+  obtain hex : NoSp exhaustedGen := noSp_seq (noSp_block (by decide)) (noSp_ite hf3
     (noSp_block (by decide)))
-  have hak : NoSp afterKey := noSp_seq (noSp_block (by decide)) (noSp_ite (noSp_block (by decide))
+  obtain hak : NoSp afterKey := noSp_seq (noSp_block (by decide)) (noSp_ite (noSp_block (by decide))
     (noSp_seq (noSp_block (by decide)) (noSp_ite hn0 hf2)))
-  have hkr : NoSp (keyRun key.call) := noSp_alloc (kbody_noSp key)
-  have hacc : NoSp (accepted key.call) := noSp_seq (noSp_block (by decide)) (noSp_ite hn1 (noSp_seq hkr hak))
-  have hcl : NoSp (classify key.call) := noSp_seq (noSp_block (by decide)) (noSp_ite (noSp_block (by decide))
+  obtain hkr : NoSp (keyRun key.call) := noSp_alloc (kbody_noSp key)
+  obtain hacc : NoSp (accepted key.call) := noSp_seq (noSp_block (by decide)) (noSp_ite hn1 (noSp_seq hkr hak))
+  obtain hcl : NoSp (classify key.call) := noSp_seq (noSp_block (by decide)) (noSp_ite (noSp_block (by decide))
     (noSp_seq (noSp_block (by decide)) (noSp_ite hex (noSp_seq (noSp_block (by decide)) (noSp_ite hf3 hacc)))))
-  have hsr : NoSp (searchRun srch.call) := noSp_alloc (body_noSp srch)
-  have hit : NoSp (iteration srch.call key.call) := noSp_seq hsr (noSp_seq hcl (noSp_block (by decide)))
-  have hclr : NoSp clearAround := noSp_seq (noSp_seq (noSp_block (by decide)) hz) (noSp_seq (noSp_block (by decide)) hz)
+  obtain hsr : NoSp (searchRun srch.call) := noSp_alloc (body_noSp srch)
+  obtain hit : NoSp (iteration srch.call key.call) := noSp_seq hsr (noSp_seq hcl (noSp_block (by decide)))
+  obtain hclr : NoSp clearAround := noSp_seq (noSp_seq (noSp_block (by decide)) hz) (noSp_seq (noSp_block (by decide)) hz)
   exact noSp_seq (noSp_block (by decide)) (noSp_seq hclr (noSp_seq (noSp_loop hit) (noSp_block (by decide))))
 
 /-! ## The results and the registers restored -/
@@ -97,11 +97,11 @@ theorem restore_ok {p : GenPublic} {o s : State} (hi : GenInput p o) (hsp : s.gp
       (t.gpr .edi = o.gpr .edi ∧ t.gpr .esi = o.gpr .esi ∧ t.gpr .ebp = o.gpr .ebp ∧ t.mem = s.mem) ∧
         Keep [.edi, .esi, .ebp] s t ∧ t.syms = s.syms := by
   have A := hi.abi
-  have pe := push_eq hi
+  obtain pe := push_eq hi
   have r (d : Nat) (hd : d + 4 ≤ 16) : InRegions (s.rd ++ s.wr) ((p.S1 + BitVec.ofNat 32 d).setWidth 64) 4 := by
     refine ⟨_, List.mem_append_right _ hw, ?_⟩
     rw [pe]
-    have e := addr_sub A (k := 16) (d := d) (by decide) (by omega_using [hd])
+    obtain e := addr_sub A (k := 16) (d := d) (by decide) (by omega_using [hd])
     rw [show (p.S1 + BitVec.ofNat 32 d).setWidth 64 = addr (o.gpr .esp - BitVec.ofNat 32 16) d by
       rw [GenPublic.S1, hi.sp_eq]; rfl, e]
     exact Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])
@@ -122,7 +122,7 @@ abbrev genResult (o : State) : KeySearchResult := keySearch (genLen o) (genE o) 
 theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.pre o) :
     WP isa (code srch.call key.call) o fun t => abiPreserved o t ∧ contract.post o t := by
   let p := genOfState o
-  have hp : GenInput p o := ⟨h, rfl⟩
+  obtain hp : GenInput p o := ⟨h, rfl⟩
   have A := hp.abi
   have hv := hp.len_valid
   have h1 : 284 ≤ (o.gpr .esp).toNat := A.stackLow
@@ -140,30 +140,30 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
     · injection hph with hph'
       subst hph'
       rw [hm1]
-      have hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
+      obtain hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
         (by simp only [List.length_cons, List.length_nil]; omega_using [h1])
-      have hk : Region.Sub ⟨p.slot 4, p.L⟩ (kR o) := by
+      obtain hk : Region.Sub ⟨p.slot 4, p.L⟩ (kR o) := by
         rw [hp.kR_eq]; exact Offset.sub_base _ (by omega_using [])
       exact bytes_keep (R := ⟨p.slot 4, p.L⟩) hf (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact (A.lowK.symm.sub_left hk).sub_right (by rw [hp.low_eq]; exact below_sub (by decide) A.stackLow))
         (show p.L ≤ 2 ^ 64 by omega_using [hv])
-  have hinv : GenInv p o (tailOf p o 0 (genProgress o)) (genMeasure p 0 (genProgress o)) s2 :=
+  obtain hinv : GenInv p o (tailOf p o 0 (genProgress o)) (genMeasure p 0 (genProgress o)) s2 :=
     ⟨0, _, rfl, h2.1, [], (consume_zero _).symm⟩
   refine WP.seq (WP.mono (gen_loop srch key hinv) fun s3 hd => ?_)
   obtain ⟨g3, hbx3, hkey3, req3, hw3, hr3⟩ := hd
   unfold finish
   refine WP.block_append (WP.mono (results_ok g3) fun s4 ⟨⟨ha4, hlo, hhi, fr4⟩, k4, sy4⟩ => ?_)
-  have Ps : Region.Sub ⟨low o + BitVec.ofNat 64 268, 16⟩ (lowR o) := low_sub (by decide)
-  have hb4 : GenBase p o s4 := g3.toGenBase.keep k4 (by decide) sy4
+  obtain Ps : Region.Sub ⟨low o + BitVec.ofNat 64 268, 16⟩ (lowR o) := low_sub (by decide)
+  obtain hb4 : GenBase p o s4 := g3.toGenBase.keep k4 (by decide) sy4
     (saved_frame hp (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.lowU.sub_left Ps) fr4 g3.saved)
     (fr4.sub fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact ⟨uR o, by simp [changes], fun _ h => h⟩)
   refine WP.mono (restore_ok hp hb4.sp (by rw [hb4.wr]; exact List.mem_cons_self ..) hb4.saved)
     fun s5 ⟨⟨hdi, hsi, hbp, hm5⟩, k5, sy5⟩ => ?_
-  have sp5 : s5.gpr .esp = p.S1 := (k5.gpr (by decide)).trans hb4.sp
-  have ax5 : s5.gpr .eax = BitVec.ofNat 32 (tailOf p o 0 (genProgress o)).keyStatus :=
+  obtain sp5 : s5.gpr .esp = p.S1 := (k5.gpr (by decide)).trans hb4.sp
+  obtain ax5 : s5.gpr .eax = BitVec.ofNat 32 (tailOf p o 0 (genProgress o)).keyStatus :=
     (k5.gpr (by decide)).trans (ha4.trans hbx3)
-  have retL : (retR o).Disjoint (lowR o) := Offset.base_disjoint_below _ (by decide)
+  obtain retL : (retR o).Disjoint (lowR o) := Offset.base_disjoint_below _ (by decide)
   change abiPreserved o (popped .ebx 4 s5) ∧ contract.post o (popped .ebx 4 s5)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -182,11 +182,11 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
     exacts [A.retK, A.retU, A.retB, A.retS, by rw [← hp.low_eq]; exact retL]
   · sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
-    have eK : keySearch (genLen o) (genE o)
+    obtain eK : keySearch (genLen o) (genE o)
         (keyProgressAt o.mem ((arg o 0).setWidth 64) ((arg o 7).setWidth 64) (genLen o)) (genRand o) =
         tailOf p o 0 (genProgress o) := by simp only [tailOf, List.drop_zero]; rfl
     rw [eK]
-    have hlt := keyStatus_lt (tailOf p o 0 (genProgress o))
+    obtain hlt := keyStatus_lt (tailOf p o 0 (genProgress o))
     have hul := g3.used_le
     have hrl := hp.randLen_lt
     have m5 : s5.mem = s4.mem := hm5
@@ -207,7 +207,7 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
       rw [m5, word_halves (d := 0) hlo hhi, g3.esi, zero_app (by omega_using [hul, hrl])]
     · simp only [Spec.Rsa.wordsAt, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.map_cons, List.map_nil,
         Nat.reduceMul]
-      have hph : ∀ ph : KeyPhase, (if ph = KeyPhase.p then 0 else 1) = phaseWord ph := by
+      obtain hph : ∀ ph : KeyPhase, (if ph = KeyPhase.p then 0 else 1) = phaseWord ph := by
         intro ph; cases ph <;> rfl
       simp only [List.cons.injEq, and_true, hph]
       exact ⟨(wk 0 (by decide)).trans hst.remaining, (wk 8 (by decide)).trans hst.len,

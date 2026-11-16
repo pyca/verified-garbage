@@ -70,31 +70,31 @@ theorem signingOperation_agrees {s t : State} (A : SigningABI s) (B : SigningABI
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa (Entry.operation true) s tr sf) (F : Exec isa (Entry.operation true) t ur tf) : tr = ur := by
   let L := signLayout s A
-  have LayoutEq := signLayout_eq A B args SP P Q
-  have Size := args 10 (by decide)
-  have Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 9 (by decide))
-  have PL := args 4 (by decide)
-  have QL := args 6 (by decide)
-  have DL := args 8 (by decide)
+  obtain LayoutEq := signLayout_eq A B args SP P Q
+  obtain Size := args 10 (by decide)
+  obtain Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 9 (by decide))
+  obtain PL := args 4 (by decide)
+  obtain QL := args 6 (by decide)
+  obtain DL := args 8 (by decide)
   let R := fun u v =>
     Installed (argumentPointer s 9) ((arg s 10).toNat * 8) Entry.signArguments 2 4 6 s u ∧
     Installed (argumentPointer t 9) ((arg t 10).toNat * 8) Entry.signArguments 2 4 6 t v
-  have Invariant : CompareInvariant L.base L.size R := by
+  obtain Invariant : CompareInvariant L.base L.size R := by
     refine ⟨?_, fun _ _ _ _ H K1 K2 O1 O2 => ⟨H.1.compare K1 O1, H.2.compare K2 O2⟩⟩
     intro u v H
     refine ⟨H.1.scr, ?_⟩
     simpa only [L, signLayout, Base, Size] using H.2.scr
-  have hp : ∀ u v, R u v → (pointerValue L.base u (.input .pLen)).toNat = L.pLen ∧
+  obtain hp : ∀ u v, R u v → (pointerValue L.base u (.input .pLen)).toNat = L.pLen ∧
       (pointerValue L.base v (.input .pLen)).toNat = L.pLen := by
     intro u v H
     refine ⟨congrArg BitVec.toNat (H.1.arguments (4, .pLen) (by decide)), ?_⟩
     simpa only [L, signLayout, Base, PL] using congrArg BitVec.toNat (H.2.arguments (4, .pLen) (by decide))
-  have hq : ∀ u v, R u v → (pointerValue L.base u (.input .qLen)).toNat = L.qLen ∧
+  obtain hq : ∀ u v, R u v → (pointerValue L.base u (.input .qLen)).toNat = L.qLen ∧
       (pointerValue L.base v (.input .qLen)).toNat = L.qLen := by
     intro u v H
     refine ⟨congrArg BitVec.toNat (H.1.arguments (6, .qLen) (by decide)), ?_⟩
     simpa only [L, signLayout, Base, QL] using congrArg BitVec.toNat (H.2.arguments (6, .qLen) (by decide))
-  have Sized : RelCT isa R (Entry.sized true L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  obtain Sized : RelCT isa R (Entry.sized true L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
     apply (signSized_relCT L (arg s 8).toNat (arg s 0) (by simp [L, signLayout, signInputs])
       (by simp [L, signLayout, signInputs]) (by simp [L, signLayout, signInputs])
       (by simp [L, signLayout, signInputs]) (by simp [L, signLayout, signInputs])
@@ -104,10 +104,10 @@ theorem signingOperation_agrees {s t : State} (A : SigningABI s) (B : SigningABI
     refine ⟨⟨signingInstalled_ready A H.1, ?_⟩, signingInstalled_output A H.1, ?_⟩
     · simpa only [L, LayoutEq, DL] using signingInstalled_ready B H.2
     · simpa only [L, LayoutEq, args 0 (by decide)] using signingInstalled_output B H.2
-  have Dispatch := widthDispatch_relCT true [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
+  obtain Dispatch := widthDispatch_relCT true [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
-  have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))
+  obtain Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))
   change Exec isa (.seq (.block Entry.signEntry) (.seq _ (.seq (.block Entry.restore) (.block [])))) s tr sf at E
   change Exec isa (.seq (.block Entry.signEntry) (.seq _ (.seq (.block Entry.restore) (.block [])))) t ur tf at F
   cases E with
@@ -117,14 +117,14 @@ theorem signingOperation_agrees {s t : State} (A : SigningABI s) (B : SigningABI
       obtain ⟨T1, _⟩ := installEntry_relCT 9 Entry.signArguments _ _ _ _ _ _
         ⟨SP, args 9 (by decide), (A.stackArgument (by decide : 9 < 11)).readSrc,
           (B.stackArgument (by decide : 9 < 11)).readSrc⟩ E1 F1
-      have I := wp_result (signingEntry_ok A) E1
-      have J := wp_result (signingEntry_ok B) F1
+      obtain I := wp_result (signingEntry_ok A) E1
+      obtain J := wp_result (signingEntry_ok B) F1
       cases Erest with
       | seq E2 E3 =>
         cases Frest with
         | seq F2 F3 =>
           obtain ⟨T2, Public⟩ := Dispatch _ _ _ _ _ _ ⟨I, J⟩ E2 F2
-          have T3 := (Tail _ _ _ _ _ _ Public E3 F3).1
+          obtain T3 := (Tail _ _ _ _ _ _ Public E3 F3).1
           rw [T1, T2, T3]
 
 end VG.Proof.Dsa.X86
@@ -151,31 +151,31 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa (Entry.operation false) s tr sf) (F : Exec isa (Entry.operation false) t ur tf) : tr = ur := by
   let L := verifyLayout s A
-  have LayoutEq := verifyLayout_eq A B args SP P Q
-  have Size := args 9 (by decide)
-  have Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 8 (by decide))
-  have PL := args 2 (by decide)
-  have QL := args 3 (by decide)
-  have DL := args 7 (by decide)
+  obtain LayoutEq := verifyLayout_eq A B args SP P Q
+  obtain Size := args 9 (by decide)
+  obtain Base := congrArg (fun x : BitVec 32 => x.setWidth 64) (args 8 (by decide))
+  obtain PL := args 2 (by decide)
+  obtain QL := args 3 (by decide)
+  obtain DL := args 7 (by decide)
   let R := fun u v =>
     Installed (argumentPointer s 8) ((arg s 9).toNat * 8) Entry.verifyArguments 0 2 3 s u ∧
     Installed (argumentPointer t 8) ((arg t 9).toNat * 8) Entry.verifyArguments 0 2 3 t v
-  have Invariant : CompareInvariant L.base L.size R := by
+  obtain Invariant : CompareInvariant L.base L.size R := by
     refine ⟨?_, fun _ _ _ _ H K1 K2 O1 O2 => ⟨H.1.compare K1 O1, H.2.compare K2 O2⟩⟩
     intro u v H
     refine ⟨H.1.scr, ?_⟩
     simpa only [L, verifyLayout, Base, Size] using H.2.scr
-  have hp : ∀ u v, R u v → (pointerValue L.base u (.input .pLen)).toNat = L.pLen ∧
+  obtain hp : ∀ u v, R u v → (pointerValue L.base u (.input .pLen)).toNat = L.pLen ∧
       (pointerValue L.base v (.input .pLen)).toNat = L.pLen := by
     intro u v H
     refine ⟨congrArg BitVec.toNat (H.1.arguments (2, .pLen) (by decide)), ?_⟩
     simpa only [L, verifyLayout, Base, PL] using congrArg BitVec.toNat (H.2.arguments (2, .pLen) (by decide))
-  have hq : ∀ u v, R u v → (pointerValue L.base u (.input .qLen)).toNat = L.qLen ∧
+  obtain hq : ∀ u v, R u v → (pointerValue L.base u (.input .qLen)).toNat = L.qLen ∧
       (pointerValue L.base v (.input .qLen)).toNat = L.qLen := by
     intro u v H
     refine ⟨congrArg BitVec.toNat (H.1.arguments (3, .qLen) (by decide)), ?_⟩
     simpa only [L, verifyLayout, Base, QL] using congrArg BitVec.toNat (H.2.arguments (3, .qLen) (by decide))
-  have Sized : RelCT isa R (Entry.sized false L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  obtain Sized : RelCT isa R (Entry.sized false L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
     apply (verifySized_relCT L (arg s 7).toNat (by simp [L, verifyLayout, verifyInputs])
       (by simp [L, verifyLayout, verifyInputs]) (by simp [L, verifyLayout, verifyInputs])
       (by simp [L, verifyLayout, verifyInputs]) (by simp [L, verifyLayout, verifyInputs])
@@ -184,10 +184,10 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
     intro u v H
     refine ⟨verifyingInstalled_ready A H.1, ?_⟩
     simpa only [L, LayoutEq, DL] using verifyingInstalled_ready B H.2
-  have Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
+  obtain Dispatch := widthDispatch_relCT false [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
-  have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))
+  obtain Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))
   change Exec isa (.seq (.block Entry.verifyEntry) (.seq _ (.seq (.block Entry.restore) (.block [])))) s tr sf at E
   change Exec isa (.seq (.block Entry.verifyEntry) (.seq _ (.seq (.block Entry.restore) (.block [])))) t ur tf at F
   cases E with
@@ -197,14 +197,14 @@ theorem verifyingOperation_agrees {s t : State} (A : VerifyingABI s) (B : Verify
       obtain ⟨T1, _⟩ := installEntry_relCT 8 Entry.verifyArguments _ _ _ _ _ _
         ⟨SP, args 8 (by decide), (A.stackArgument (by decide : 8 < 10)).readSrc,
           (B.stackArgument (by decide : 8 < 10)).readSrc⟩ E1 F1
-      have I := wp_result (verifyingEntry_ok A) E1
-      have J := wp_result (verifyingEntry_ok B) F1
+      obtain I := wp_result (verifyingEntry_ok A) E1
+      obtain J := wp_result (verifyingEntry_ok B) F1
       cases Erest with
       | seq E2 E3 =>
         cases Frest with
         | seq F2 F3 =>
           obtain ⟨T2, Public⟩ := Dispatch _ _ _ _ _ _ ⟨I, J⟩ E2 F2
-          have T3 := (Tail _ _ _ _ _ _ Public E3 F3).1
+          obtain T3 := (Tail _ _ _ _ _ _ Public E3 F3).1
           rw [T1, T2, T3]
 
 end VG.Proof.Dsa.X86
@@ -223,15 +223,15 @@ open VG VG.X86 VG.Impl.Dsa.X86
 theorem verifyingConstantTime : ConstantTime isa (Spec.Dsa.verifyContract abi 108).pre
     (Spec.Dsa.verifyContract abi 108).pub (Entry.operation false) := by
   intro s t tr ur sf tf S T H E F
-  have Args := verifyingPublicArgs H
-  have Domain := verifyingPublicDomain H
+  obtain Args := verifyingPublicArgs H
+  obtain Domain := verifyingPublicDomain H
   exact verifyingOperation_agrees (verifyingABI_of S) (verifyingABI_of T) Args.2 Args.1 Domain.1 Domain.2 E F
 
 theorem signingConstantTime : ConstantTime isa (Spec.Dsa.signContract abi 108).pre
     (Spec.Dsa.signContract abi 108).pub (Entry.operation true) := by
   intro s t tr ur sf tf S T H E F
-  have Args := signingPublicArgs H
-  have Domain := signingPublicDomain H
+  obtain Args := signingPublicArgs H
+  obtain Domain := signingPublicDomain H
   exact signingOperation_agrees (signingABI_of S) (signingABI_of T) Args.2 Args.1 Domain.1 Domain.2 E F
 
 end VG.Proof.Dsa.X86
@@ -299,9 +299,9 @@ theorem signBody_ok {base : Addr} {size pLen qLen p q g y x k digestLen digest :
   unfold SignVerify.signBody
   refine WP.seq (WP.mono (signCompute_ok M G Y X K D hd hP hg hy hx hk hD)
     fun s1 ⟨M1, R1, S1, F1, E1⟩ => ?_)
-  have mask1 : flagW base (Layout.field .mask) s1 = mask32 accepted := by
+  obtain mask1 : flagW base (Layout.field .mask) s1 = mask32 accepted := by
     simpa only [hm, BitVec.allOnes_and] using F1
-  have ptr1 : pointerValue base s1 (.input .out) = out := by
+  obtain ptr1 : pointerValue base s1 (.input .out) = out := by
     rw [runFrame_pointer E1.mem E1.keeps (by decide) (by decide), hp]
   refine wp_seq_assoc (WP.seq (WP.mono (writeSignature_ok M1 (decide accepted)
     (by simpa only [mask32, decide_eq_true_eq] using mask1) R1 S1 ptr1 hf
@@ -374,10 +374,10 @@ theorem signBody_spec {base : Addr} {size pLen qLen p q g y x k digestLen n : Na
       Keeps powerClob s0 sf ∧ StackOutputFrame (s0.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s0.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s0.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have spec := signBytes_compute M.widths shape keyLen nonceLen keyValue nonceValue qBits (digest := digest)
+  obtain spec := signBytes_compute M.widths shape keyLen nonceLen keyValue nonceValue qBits (digest := digest)
   refine WP.mono (signBody_ok M G Y X K D hd hP hg hy hx hk hD hm hp hf hw ha)
     fun sf ⟨V, R, S, Keep, Frame, Saved⟩ => ?_
-  have B := signatureBytes _ R S
+  obtain B := signatureBytes _ R S
   refine ⟨?_, ?_, Keep, Frame, Saved⟩
   · rw [spec]
     split
@@ -444,18 +444,18 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
       Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes (2 * qLen) s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
-  have sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
-  have L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega_using [widths]
+  obtain bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  obtain sz : 8272 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
+  obtain L : 20 ≤ qLen ∧ qLen ≤ 32 := by unfold Spec.Dsa.lengthsValid at widths; omega_using [widths]
   apply sized_ok true scr extent widths P Q hp hq
   · intro t invalid K O
-    have rejected : Spec.Dsa.signBytes pLen qLen key nonce digest = none :=
+    obtain rejected : Spec.Dsa.signBytes pLen qLen key nonce digest = none :=
       signBytes_invalid_shape (by simpa only [keyValue] using invalid)
     refine WP.mono (signFailure_ok (scr.of_keeps K (by decide)) (by change 8256 ≤ size; omega_using [sz])
       (by omega_using [L]) L.2 ((shapeFrame_field O (by decide)).trans ho)
       ((shapeFrame_field O (by decide)).trans hc) hf
       (by intro i hi; rw [K.2.2]; exact hw i 1 (by omega_using [hi]))) fun sf ⟨B, V, Of, Kf⟩ => ?_
-    have F : OutputFrame base (out.setWidth 64) 0 (2 * qLen) t.mem sf.mem :=
+    obtain F : OutputFrame base (out.setWidth 64) 0 (2 * qLen) t.mem sf.mem :=
       fun a _ hb => Of a (.inr (by omega_using [hb]))
     refine ⟨by rw [V, rejected]; rfl, by rw [rejected]; exact B,
       (K.mono (by decide)).trans (Kf.mono (by decide)), ?_, ?_⟩
@@ -466,13 +466,13 @@ theorem signSized_spec {base : Addr} {size pLen qLen p q g y x k total : Nat}
   · intro t valid M Dp mask K O
     dsimp only [ite_true]
     rw [hd] at Dp
-    have Bw := shape_digest_width valid
-    have hP : pointerValue base t (.input .digestPrefixLen) =
+    obtain Bw := shape_digest_width valid
+    obtain hP : pointerValue base t (.input .digestPrefixLen) =
         BitVec.ofNat 32 (min total (Spec.Dsa.bitLength q / 8)) :=
       BitVec.eq_of_toNat_eq (by rw [Dp, BitVec.toNat_ofNat]; omega_using [hd])
-    have Dt := D.keep_shape O K (by decide) (by decide)
-    have Db := D.bytes_keep_shape O K (by decide) (by decide) bound
-    have digestValue : operandValue t base (.input .digest)
+    obtain Dt := D.keep_shape O K (by decide) (by decide)
+    obtain Db := D.bytes_keep_shape O K (by decide) (by decide) bound
+    obtain digestValue : operandValue t base (.input .digest)
         (min total (Spec.Dsa.bitLength q / 8)) = Spec.Dsa.decodeBE (digest.take (Spec.Dsa.bitLength q / 8)) := by
       unfold operandValue
       rw [bytesAt_prefix, Db, hD]
@@ -528,8 +528,8 @@ theorem signingInstalled_spec {s t : State} (A : SigningABI s)
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 9)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 9)) regs Entry.savedRegisters := by
   dsimp only
-  have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+  obtain L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
+    obtain H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
   obtain ⟨Key, KeyBytes⟩ := I.input (by decide : (2, .p) ∈ Entry.signArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
@@ -586,7 +586,7 @@ theorem signingOperation_spec {s : State} (A : SigningABI s) :
       StackOutputFrame (s.gpr .esp) (argumentPointer s 9) (argumentPointer s 0) ((arg s 10).toNat * 8) (arg s 1).toNat s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
   dsimp only
-  have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
+  obtain sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
   unfold Entry.operation Core.sequence
   dsimp only [List.foldr, ite_true]
   refine WP.seq (WP.mono (signingEntry_ok A) fun t I => ?_)
@@ -595,14 +595,14 @@ theorem signingOperation_spec {s : State} (A : SigningABI s) :
     (congrArg BitVec.toNat (I.arguments (4, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (6, .qLen) (by decide))) ?_)
   intro u Ku Ou
-  have J := I.compare Ku Ou
+  obtain J := I.compare Ku Ou
   refine WP.mono (signingInstalled_spec A J) fun v ⟨Value, Bytes, K, O, Saved⟩ => ?_
-  have Ov : StackOutputFrame (s.gpr .esp) (argumentPointer s 9) (argumentPointer s 0)
+  obtain Ov : StackOutputFrame (s.gpr .esp) (argumentPointer s 9) (argumentPointer s 0)
       ((arg s 10).toNat * 8) (arg s 1).toNat s.mem v.mem := by
     intro a hb ho hstack
     have H := A.used
     exact (O a (by omega) (by rw [← A.outLength]; exact ho) (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega)))
-  have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))
+  obtain Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))
   refine WP.seq (WP.mono (entryRestore_ok (J.scr.of_keeps K (by decide)) sz (Saved s.gpr J.saved))
     fun sf R => WP.block_nil ?_)
   refine ⟨?_, ?_, restored_abi R Esp (outputFrame_return Ov A.retScratch A.retOut A.stackLow), ?_, ?_, ?_⟩
@@ -670,18 +670,18 @@ def signingSatState : State where
   wr := [⟨0x1000, 40⟩, ⟨0x8000, 16384⟩, ⟨0x20004, 44⟩]
 
 theorem signingSatisfiable : ∃ s, (Spec.Dsa.signContract abi 108).pre s := by
-  have a0 : arg signingSatState 0 = 4096 := by decide
-  have a1 : arg signingSatState 1 = 40 := by decide
-  have a2 : arg signingSatState 2 = 8192 := by decide
-  have a3 : arg signingSatState 3 = 424 := by decide
-  have a4 : arg signingSatState 4 = 128 := by decide
-  have a5 : arg signingSatState 5 = 16384 := by decide
-  have a6 : arg signingSatState 6 = 20 := by decide
-  have a7 : arg signingSatState 7 = 20480 := by decide
-  have a8 : arg signingSatState 8 = 0 := by decide
-  have a9 : arg signingSatState 9 = 32768 := by decide
-  have a10 : arg signingSatState 10 = 2048 := by decide
-  have e : argAddr signingSatState 0 = 0x20004 := by decide
+  obtain a0 : arg signingSatState 0 = 4096 := by decide
+  obtain a1 : arg signingSatState 1 = 40 := by decide
+  obtain a2 : arg signingSatState 2 = 8192 := by decide
+  obtain a3 : arg signingSatState 3 = 424 := by decide
+  obtain a4 : arg signingSatState 4 = 128 := by decide
+  obtain a5 : arg signingSatState 5 = 16384 := by decide
+  obtain a6 : arg signingSatState 6 = 20 := by decide
+  obtain a7 : arg signingSatState 7 = 20480 := by decide
+  obtain a8 : arg signingSatState 8 = 0 := by decide
+  obtain a9 : arg signingSatState 9 = 32768 := by decide
+  obtain a10 : arg signingSatState 10 = 2048 := by decide
+  obtain e : argAddr signingSatState 0 = 0x20004 := by decide
   have esp : signingSatState.gpr .esp = 0x20000 := rfl
   sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp, signingSatState] using signingSatState

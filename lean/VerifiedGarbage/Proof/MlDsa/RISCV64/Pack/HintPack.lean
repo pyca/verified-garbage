@@ -117,30 +117,30 @@ theorem zero_ok {s₀ : State} (hp : PPre s₀) : WP isa hbpZero s₀ (ZPost s�
   refine WP.seq (Steps.wp_sll (by decide) fun s₁ o₁ => Steps.wp_srl (by decide) fun s₂ o₂ => Steps.wp_sub fun s₃ o₃ =>
     Steps.wp_addi (by decide) fun s₄ o₄ => Steps.wp_li (by decide) fun s₅ o₅ =>
     Steps.wp_addi (by decide) fun s₆ o₆ => WP.block_nil ?_)
-  have k₅ := (((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH
-  have k₆ := k₅.trans o₆.keepH
-  have m₆ : s₆.mem = s₀.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
-  have r5 : s₆.gpr .a2 = BitVec.ofNat 64 (pω s₀) := by
+  obtain k₅ := (((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH
+  obtain k₆ := k₅.trans o₆.keepH
+  obtain m₆ : s₆.mem = s₀.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
+  obtain r5 : s₆.gpr .a2 = BitVec.ofNat 64 (pω s₀) := by
     rw [o₆.other _ (by decide), o₅.other _ (by decide), o₄.other _ (by decide), o₃.other _ (by decide), o₂.gpr,
       o₁.gpr, zext_eq]
-  have r0 : s₆.gpr .t0 = 0 := by rw [o₆.other _ (by decide), o₅.gpr]; rfl
-  have r4 : s₆.gpr .a1 = BitVec.ofNat 64 (pk s₀) := by
+  obtain r0 : s₆.gpr .t0 = 0 := by rw [o₆.other _ (by decide), o₅.gpr]; rfl
+  obtain r4 : s₆.gpr .a1 = BitVec.ofNat 64 (pk s₀) := by
     rw [o₆.other _ (by decide), o₅.other _ (by decide), o₄.other _ (by decide), o₃.gpr,
       o₂.other _ (by decide), o₁.other _ (by decide), o₂.gpr, o₁.gpr, zext_eq]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, ofNat_lt (by omega_arith)]; exact hp.ωle), ofNat_lt (by omega_arith), ofNat_lt (by omega_arith)]
-  have hwr : s₆.wr = [yR s₀] := by rw [k₆.2.2, hp.wr]
+  obtain hwr : s₆.wr = [yR s₀] := by rw [k₆.2.2, hp.wr]
   refine WP.mono (wp_loop_nz (ZInv s₀ s₆) (N := pLen s₀) (by omega_arith) (fun t ht s h => ?_) (fun s h => h)
     ⟨by rw [o₆.gpr, k₅.gpr (r := .a3) (by decide), add0], ?_, Keep.refl _ _, by rw [m₆]; exact Frame.refl _ _,
       fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s h => ?_
   · -- A byte.
-    have hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 t) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+    obtain hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 t) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine Steps.wp_sb (by decide) (by rw [h.a7, add0])
       (by rw [h.keep.2.2, hwr]; exact ⟨_, List.mem_singleton_self _, hc⟩) fun s₁ m₁ =>
       Steps.wp_addi (by decide) fun s₂ o₂ => Steps.wp_subi (by decide) fun s₃ o₃ => WP.block_nil ?_
-    have c9 : s₃.gpr .a6 = BitVec.ofNat 64 (pLen s₀ - (t + 1)) := by
+    obtain c9 : s₃.gpr .a6 = BitVec.ofNat 64 (pLen s₀ - (t + 1)) := by
       rw [o₃.gpr, o₂.other _ (by decide), m₁.gpr, h.a6, count_sub ht]
-    have m₃ : s₃.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 t) ((s.gpr .t0).setWidth 8) := by
+    obtain m₃ : s₃.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 t) ((s.gpr .t0).setWidth 8) := by
       rw [o₃.mem, o₂.mem, m₁.mem]
     refine ⟨⟨?_, c9, (h.keep.trans ((m₁.keepH.trans o₂.keepH).trans o₃.keepH)).mono (by decide), ?_, fun u hu => ?_⟩,
       by rw [c9]; exact count_nz ht (by omega_arith)⟩
@@ -188,10 +188,10 @@ theorem coefTail_ok {s₀ : State} {i j : Nat} (hj : j < 256) {s : State}
       CInv s₀ i (j + 1) s' ∧ (s'.gpr .a5 != 0) = decide (j + 1 ≠ 256) :=
   Steps.wp_addi (by decide) fun s₁ o₁ => Steps.wp_addi (by decide) fun s₂ o₂ =>
     Steps.wp_subi (by decide) fun s₃ o₃ => WP.block_nil (by
-      have k₃ := (o₁.keepH.trans o₂.keepH).trans o₃.keepH
-      have c12' : s₂.gpr .t2 = BitVec.ofNat 64 (j + 1) := by
+      obtain k₃ := (o₁.keepH.trans o₂.keepH).trans o₃.keepH
+      obtain c12' : s₂.gpr .t2 = BitVec.ofNat 64 (j + 1) := by
         rw [o₂.gpr, o₁.other _ (by decide), r12, ofNat_succ]
-      have c12 : s₃.gpr .t2 = BitVec.ofNat 64 (j + 1) := by rw [o₃.other _ (by decide), c12']
+      obtain c12 : s₃.gpr .t2 = BitVec.ofNat 64 (j + 1) := by rw [o₃.other _ (by decide), c12']
       refine ⟨⟨?_, by rw [k₃.gpr (by decide), r6], by rw [k₃.gpr (by decide), r9], by rw [k₃.gpr (by decide), r10],
         by rw [k₃.gpr (by decide), r11], c12, by rw [k₃.2.1, rd], by rw [k₃.2.2, wr],
         by rw [o₃.mem, o₂.mem, o₁.mem]; exact frame, by rw [o₃.mem, o₂.mem, o₁.mem]; exact y⟩, ?_⟩
@@ -207,39 +207,39 @@ theorem coef_ok {s₀ : State} (hp : PPre s₀) {i j : Nat} (hi : i < pk s₀) (
   have fH := hp.fitH
   have fY := hp.fitY
   have hl := hp.hlen
-  have hpos : 256 * i + j < 256 * pk s₀ := by omega_arith
-  have hR' : (hR s₀).Contains (coeffAddr (pH s₀) (256 * i + j)) 4 := Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have hw : s.mem.readW (coeffAddr (pH s₀) (256 * i + j)) 32 = coeffAt s₀.mem (pH s₀) (256 * i + j) :=
+  obtain hpos : 256 * i + j < 256 * pk s₀ := by omega_arith
+  obtain hR' : (hR s₀).Contains (coeffAddr (pH s₀) (256 * i + j)) 4 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+  obtain hw : s.mem.readW (coeffAddr (pH s₀) (256 * i + j)) 32 = coeffAt s₀.mem (pH s₀) (256 * i + j) :=
     hI.frame.readW hR' (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.d_hy) (by decide)
-  have hbit := hintAt_get (m := s₀.mem) (p := pH s₀) hi (show j < n from hj)
-  have hT : pT s₀ i (j + 1) = hpStep ((pHint s₀).getD i noHint) (pT s₀ i j) j := hpT_succ _ _ _ i j
+  obtain hbit := hintAt_get (m := s₀.mem) (p := pH s₀) hi (show j < n from hj)
+  obtain hT : pT s₀ i (j + 1) = hpStep ((pHint s₀).getD i noHint) (pT s₀ i j) j := hpT_succ _ _ _ i j
   unfold hbpCoef
   refine WP.seq (Steps.wp_lwu (a := coeffAddr (pH s₀) (256 * i + j)) (by decide) (by rw [hI.a0, add0])
     (VG.Proof.MlKem.RISCV64.align4_add hp.al _)
     (by rw [hI.rd, hI.wr, hp.rd]; exact ⟨_, .head _, hR'⟩) fun s₁ o₁ => WP.block_nil ?_)
-  have hb : (s₁.gpr .a5 == 0) = !((pHint s₀).getD i noHint)[j]! := by
+  obtain hb : (s₁.gpr .a5 == 0) = !((pHint s₀).getD i noHint)[j]! := by
     rw [hbit, o₁.gpr, word_w_zero, hw, Bool.beq_eq_decide_eq]
     by_cases e : coeffAt s₀.mem (pH s₀) (256 * i + j) = 0 <;> simp [e]
   refine WP.seq (WP.ite _ (eval_zero_w s₁ .a5) (fun h0 => ?_) (fun h1 => ?_))
   · -- A 0.
     rw [hb, Bool.not_eq_true'] at h0
-    have hT0 : pT s₀ i (j + 1) = pT s₀ i j := by rw [hT, hpStep, h0]; rfl
+    obtain hT0 : pT s₀ i (j + 1) = pT s₀ i j := by rw [hT, hpStep, h0]; rfl
     refine WP.block_nil (coefTail_ok hj (by rw [o₁.other _ (by decide), hI.a0]) (by rw [o₁.other _ (by decide), hI.a3])
       (by rw [o₁.other _ (by decide), hI.a6]) (by rw [o₁.other _ (by decide), hI.a7])
       (by rw [o₁.other _ (by decide), hI.t1, hT0]) (by rw [o₁.other _ (by decide), hI.t2])
       (by rw [o₁.rd, hI.rd]) (by rw [o₁.wr, hI.wr]) (by rw [o₁.mem]; exact hI.frame) (by rw [o₁.mem, hI.y, hT0]))
   · -- A 1: `y[index] ← j`.
     rw [hb, Bool.not_eq_false'] at h1
-    have hlt : (pT s₀ i j).2 < pω s₀ := hpT_idx_lt (hintAt_length _ _ _) hp.ones hi (show j < n from hj) h1
-    have hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 (pT s₀ i j).2) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+    obtain hlt : (pT s₀ i j).2 < pω s₀ := hpT_idx_lt (hintAt_length _ _ _) hp.ones hi (show j < n from hj) h1
+    obtain hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 (pT s₀ i j).2) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine Steps.wp_add fun s₂ o₂ => wp_stb (a := pY s₀ + BitVec.ofNat 64 (pT s₀ i j).2) (by decide) (by decide)
       (by rw [o₂.gpr, o₁.other _ (by decide), o₁.other _ (by decide), hI.a3, hI.t1, add0])
       (by rw [o₂.wr, o₁.wr, hI.wr, hp.wr]; exact ⟨_, .head _, hc⟩) fun s₃ m₃ =>
       Steps.wp_addi (by decide) fun s₄ o₄ => WP.block_nil ?_
-    have k₄ := ((o₁.keepH.trans o₂.keepH).trans m₃.keepH).trans o₄.keepH
-    have mem₄ : s₄.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 (pT s₀ i j).2) (BitVec.ofNat 8 j) := by
+    obtain k₄ := ((o₁.keepH.trans o₂.keepH).trans m₃.keepH).trans o₄.keepH
+    obtain mem₄ : s₄.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 (pT s₀ i j).2) (BitVec.ofNat 8 j) := by
       rw [o₄.mem, m₃.mem, o₂.mem, o₁.mem, o₂.other _ (by decide), o₁.other _ (by decide), hI.t2, lowByte]
-    have hT1 : pT s₀ i (j + 1) = ((pT s₀ i j).1.set! (pT s₀ i j).2 (BitVec.ofNat 8 j), (pT s₀ i j).2 + 1) := by
+    obtain hT1 : pT s₀ i (j + 1) = ((pT s₀ i j).1.set! (pT s₀ i j).2 (BitVec.ofNat 8 j), (pT s₀ i j).2 + 1) := by
       rw [hT, hpStep, h1]; rfl
     refine coefTail_ok hj (by rw [k₄.gpr (by decide), hI.a0]) (by rw [k₄.gpr (by decide), hI.a3])
       (by rw [k₄.gpr (by decide), hI.a6]) (by rw [k₄.gpr (by decide), hI.a7])
@@ -272,14 +272,14 @@ theorem poly_ok {s₀ : State} (hp : PPre s₀) {i : Nat} (hi : i < pk s₀) {s 
       by rw [o₁.other _ (by decide), hP.a6], by rw [o₁.other _ (by decide), hP.a7],
       by rw [o₁.other _ (by decide), hP.t1, pT_zero], o₁.gpr, by rw [o₁.rd, hP.rd], by rw [o₁.wr, hP.wr],
       by rw [o₁.mem]; exact hP.frame, by rw [o₁.mem, hP.y, pT_zero]⟩)
-  have hidx : (pT s₀ i 256).2 ≤ pω s₀ := hpT_idx_le (hintAt_length _ _ _) hp.ones hi
-  have hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 (pω s₀ + i)) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+  obtain hidx : (pT s₀ i 256).2 ≤ pω s₀ := hpT_idx_le (hintAt_length _ _ _) hp.ones hi
+  obtain hc : (yR s₀).Contains (pY s₀ + BitVec.ofNat 64 (pω s₀ + i)) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine Steps.wp_sb (by decide) (by rw [h.a7, add0]) (by rw [h.wr, hp.wr]; exact ⟨_, .head _, hc⟩)
     fun s₂ m₂ => Steps.wp_addi (by decide) fun s₃ o₃ => Steps.wp_subi (by decide) fun s₄ o₄ => WP.block_nil ?_
-  have k₄ := (m₂.keepH.trans o₃.keepH).trans o₄.keepH
-  have c9 : s₄.gpr .a6 = BitVec.ofNat 64 (pk s₀ - (i + 1)) := by
+  obtain k₄ := (m₂.keepH.trans o₃.keepH).trans o₄.keepH
+  obtain c9 : s₄.gpr .a6 = BitVec.ofNat 64 (pk s₀ - (i + 1)) := by
     rw [o₄.gpr, o₃.other _ (by decide), m₂.gpr, h.a6, count_sub hi]
-  have mem₄ : s₄.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 (pω s₀ + i)) (BitVec.ofNat 8 (pT s₀ i 256).2) := by
+  obtain mem₄ : s₄.mem = s.mem.writeW (pY s₀ + BitVec.ofNat 64 (pω s₀ + i)) (BitVec.ofNat 8 (pT s₀ i 256).2) := by
     rw [o₄.mem, o₃.mem, m₂.mem, h.t1, lowByte]
   refine ⟨⟨?_, by rw [k₄.gpr (by decide), h.a3], c9, ?_, by rw [k₄.gpr (by decide), h.t1, pS_succ],
     by rw [k₄.2.1, h.rd], by rw [k₄.2.2, h.wr], ?_, ?_⟩, by rw [c9]; exact count_nz hi (by omega_arith)⟩
@@ -296,7 +296,7 @@ theorem main_ok {s₀ : State} (hp : PPre s₀) {s : State} (hz : ZPost s₀ s) 
   unfold hbpMain
   refine WP.seq (Steps.wp_addi (by decide) fun s₁ o₁ => Steps.wp_add fun s₂ o₂ => Steps.wp_li (by decide) fun s₃ o₃ =>
     WP.block_nil ?_)
-  have k₃ := (o₁.keepH.trans o₂.keepH).trans o₃.keepH
+  obtain k₃ := (o₁.keepH.trans o₂.keepH).trans o₃.keepH
   refine wp_loop_nz (HPInv s₀) (N := pk s₀) (by omega_arith) (fun i hi s hP => poly_ok hp hi hP)
     (fun s hP => ⟨hP.y.trans (hintBitPack_hpS _ _ _).symm, hP.frame⟩)
     ⟨by rw [k₃.gpr (by decide), hz.a0]; exact (add0 _).symm, by rw [k₃.gpr (by decide), hz.a3],

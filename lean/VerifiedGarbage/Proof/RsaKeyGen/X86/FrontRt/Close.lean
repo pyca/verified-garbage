@@ -81,8 +81,8 @@ theorem Framed.rebuild {W : Addr} {L w : Nat} {q : BitVec 32} {s t : State} (F :
     {rs : List Reg} (K : Keeps rs s t) (esp : .esp ∉ rs) (edi : t.gpr .edi = s.gpr .edi) {d n : Nat}
     (O : Outside W d n s.mem t.mem) (header : 8 ≤ d) (fit : d + n ≤ L) : Framed W L w q t := by
   have nowrap := F.space.scratch.nowrap
-  have Fr := VG.Proof.Bignum.outside_frame O (by omega_using [fit, nowrap])
-  have Sc : Scr t W L := ⟨by rw [edi]; exact F.space.scratch.edi, by rw [K.2.2]; exact F.space.scratch.wr,
+  obtain Fr := VG.Proof.Bignum.outside_frame O (by omega_using [fit, nowrap])
+  obtain Sc : Scr t W L := ⟨by rw [edi]; exact F.space.scratch.edi, by rw [K.2.2]; exact F.space.scratch.wr,
     nowrap, by rw [K.1 .esp esp]; exact F.space.scratch.stk⟩
   refine ⟨⟨Sc, F.space.width, F.space.widthBound, F.space.space,
     (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega_using [header])) (by omega_using []))).trans F.space.len⟩,
@@ -105,13 +105,13 @@ theorem subSetup_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Fram
   have bound := S.widthBound
   refine WP.block_append (WP.block_append (WP.block_append (WP.mono
     (lenPtr_ok S a (Ia.fit S).2.2 (by decide : Reg.edx ≠ .ebp) (by decide) (by decide)) fun s₁ ⟨Pa, M₁, K₁⟩ => ?_)))
-  have S₁ := S.keepMem K₁ (by decide) (by decide) M₁
+  obtain S₁ := S.keepMem K₁ (by decide) (by decide) M₁
   refine WP.mono (lenPtr_ok S₁ b (Ib.fit S).2.2 (by decide : Reg.edx ≠ .ebx) (by decide) (by decide))
     fun s₂ ⟨Pb, M₂, K₂⟩ => ?_
-  have S₂ := S₁.keepMem K₂ (by decide) (by decide) M₂
+  obtain S₂ := S₁.keepMem K₂ (by decide) (by decide) M₂
   refine WP.mono (lenPtr_ok S₂ out (Io.fit S).2.2 (by decide : Reg.edx ≠ .eax) (by decide) (by decide))
     fun s₃ ⟨Po, M₃, K₃⟩ => ?_
-  have S₃ := S₂.keepMem K₃ (by decide) (by decide) M₃
+  obtain S₃ := S₂.keepMem K₃ (by decide) (by decide) M₃
   refine wp_movS S₃.lenRead fun s₄ U₄ _ => wp_movS rfl fun s₅ U₅ _ => wp_movS rfl fun u U _ => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, U.gpr, by rw [U.mem, U₅.mem, U₄.mem, M₃, M₂, M₁], ?_⟩
   · rw [PtrAt, U.other .ebp (by decide), U₅.other .ebp (by decide), U₄.other .ebp (by decide),
@@ -150,12 +150,12 @@ theorem subRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s u : State} {out a b
   have ⟨fb, _, _⟩ := Ib.fit S
   have Mu := H.mem
   have Ku := H.keeps
-  have hw : Ws u W L := S.ws.of_keeps Ku
-  have hda : slot w out ≤ slot w a ∨ slot w a + 4 * (2 * w) ≤ slot w out := by
+  obtain hw : Ws u W L := S.ws.of_keeps Ku
+  obtain hda : slot w out ≤ slot w a ∨ slot w a + 4 * (2 * w) ≤ slot w out := by
     rcases Arrays.apart Io Ia oa with h | h
     · exact Or.inl (Nat.le_trans (Nat.le_add_right _ _) h)
     · exact Or.inr h
-  have hdm : slot w out ≤ slot w b ∨ slot w b + 4 * (2 * w) ≤ slot w out := by
+  obtain hdm : slot w out ≤ slot w b ∨ slot w b + 4 * (2 * w) ≤ slot w out := by
     rcases Arrays.apart Io Ib ob with h | h
     · exact Or.inl (Nat.le_trans (Nat.le_add_right _ _) h)
     · exact Or.inr h
@@ -163,23 +163,23 @@ theorem subRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s u : State} {out a b
     (d := slot w out) (N := 2 * w) (by omega_using [width]) (by omega_using [fa]) (by omega_using [fb]) (by omega_using [fo]) hda hdm H.aPtr H.bPtr H.outPtr
     H.count H.mask) fun v ⟨Ov, _, ⟨c, mask, value⟩, Kv⟩ => ?_)
   rw [Mu] at Ov value
-  have Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := Ku.trans Kv
-  have stack := F.stack.keep Kuv (by decide)
-  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [fo, this])
-  have saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
+  obtain Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := Ku.trans Kv
+  obtain stack := F.stack.keep Kuv (by decide)
+  obtain Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [fo, this])
+  obtain saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
     rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) (Offset.contains_base _ (by decide) (by decide)) (by
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
       exact (F.apart.sub_left (Offset.sub_base W (by omega_using [fo]))).symm) (by decide)]
     exact F.saved
   refine wp_movS (stack.read 0 (by decide)) fun t T _ => WP.block_nil ?_
-  have edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
-  have Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  obtain edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
+  obtain Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
     refine ⟨fun r mem => ?_, (Kuv.widen T.keeps).2⟩
     by_cases h : r = .edi
     · subst h; exact edi
     · rw [T.other r h]; exact Kuv.1 r (by simp_all)
-  have Ot : Outside W (slot w out) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
+  obtain Ot : Outside W (slot w out) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
   refine ⟨⟨c, by rw [T.other .ecx (by decide)]; exact mask, by rw [T.mem]; exact value⟩, Ot, Kt,
     F.rebuild Kt (by decide) edi Ot (by omega_using [lo]) (by omega_using [fo])⟩
 
@@ -219,10 +219,10 @@ theorem selectSetup_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : F
   have bound := S.widthBound
   refine WP.block_append (WP.block_append (WP.mono
     (lenPtr_ok S 3 (by decide) (by decide : Reg.edx ≠ .ebp) (by decide) (by decide)) fun s₁ ⟨P₃, M₁, K₁⟩ => ?_))
-  have S₁ := S.keepMem K₁ (by decide) (by decide) M₁
+  obtain S₁ := S.keepMem K₁ (by decide) (by decide) M₁
   refine WP.mono (lenPtr_ok S₁ 2 (by decide) (by decide : Reg.edx ≠ .ebx) (by decide) (by decide))
     fun s₂ ⟨P₂, M₂, K₂⟩ => ?_
-  have S₂ := S₁.keepMem K₂ (by decide) (by decide) M₂
+  obtain S₂ := S₁.keepMem K₂ (by decide) (by decide) M₂
   refine wp_movS S₂.lenRead fun s₃ U₃ _ => wp_movS rfl fun u U _ => WP.block_nil ?_
   refine ⟨F, ?_, ?_, ?_, ?_, by rw [U.mem, U₃.mem, M₂, M₁],
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).widen U₃.keeps).widen U.keeps⟩
@@ -246,29 +246,29 @@ theorem selectRest_ok {W : Addr} {L w : Nat} {q : BitVec 32} {k : Bool} {s u : S
   have ⟨f3, l3, _⟩ := arrays3.fit S
   have Ku := H.keeps
   have Mu := H.mem
-  have apart : slot w 2 + 4 * (2 * w) ≤ slot w 3 ∨ slot w 3 + 4 * (2 * w) ≤ slot w 2 :=
+  obtain apart : slot w 2 + 4 * (2 * w) ≤ slot w 3 ∨ slot w 3 + 4 * (2 * w) ≤ slot w 2 :=
     Arrays.apart arrays2 arrays3 (by decide)
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.selectLoop_ok (S.ws.of_keeps Ku) k (x := slot w 3)
     (d := slot w 2) (N := 2 * w) (by omega_using [width]) (by omega_using [f3]) (by omega_using [f2]) apart H.fromPtr H.toPtr H.count H.mask)
     fun v ⟨Ov, value, _, Kv⟩ => ?_)
   rw [Mu] at Ov value
-  have Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := (Ku.mono (by decide)).trans (Kv.mono (by decide))
-  have stack := F.stack.keep Kuv (by decide)
-  have Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [f2, this])
-  have saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
+  obtain Kuv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s v := (Ku.mono (by decide)).trans (Kv.mono (by decide))
+  obtain stack := F.stack.keep Kuv (by decide)
+  obtain Fr := VG.Proof.Bignum.outside_frame Ov (by have := S.scratch.nowrap; omega_using [f2, this])
+  obtain saved : v.mem.readW (off (q.setWidth 64) 0) 32 = BitVec.ofNat 32 W.toNat := by
     rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) (Offset.contains_base _ (by decide) (by decide)) (by
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
       exact (F.apart.sub_left (Offset.sub_base W (by omega_using [f2]))).symm) (by decide)]
     exact F.saved
   refine wp_movS (stack.read 0 (by decide)) fun t T _ => WP.block_nil ?_
-  have edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
-  have Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  obtain edi : t.gpr .edi = s.gpr .edi := by rw [T.gpr, saved, F.edi_value]
+  obtain Kt : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
     refine ⟨fun r mem => ?_, (Kuv.widen T.keeps).2⟩
     by_cases h : r = .edi
     · subst h; exact edi
     · rw [T.other r h]; exact Kuv.1 r (by simp_all)
-  have Ot : Outside W (slot w 2) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
+  obtain Ot : Outside W (slot w 2) (4 * (2 * w)) s.mem t.mem := by rw [T.mem]; exact Ov
   exact ⟨by rw [T.mem]; exact value, Ot, Kt, F.rebuild Kt (by decide) edi Ot (by omega_using [l2]) (by omega_using [f2])⟩
 
 /-- `[2] := [3]` where the mask `ecx` (saved in `esi`) is all ones, and the frame again. -/
@@ -299,36 +299,36 @@ theorem difference_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (F : Fr
   refine WP.seq (WP.mono (sub_ok F arrays2 arrays0 arrays4 (by decide) (by decide))
     fun u ⟨⟨borrow, mask, forward⟩, Ou, Ku, Fu⟩ => ?_)
   refine WP.seq (wp_movS rfl fun v V _ => WP.block_nil ?_)
-  have Fv := Fu.keepMem V.keeps (by decide) (by decide) V.mem
+  obtain Fv := Fu.keepMem V.keeps (by decide) (by decide) V.mem
   refine WP.seq (WP.mono (sub_ok Fv arrays3 arrays4 arrays0 (by decide) (by decide))
     fun z ⟨⟨reverse, _, backward⟩, Oz, Kz, Fz⟩ => ?_)
-  have maskZ : z.gpr .esi = cmask borrow := by rw [Kz.1 .esi (by decide), V.gpr, mask]
+  obtain maskZ : z.gpr .esi = cmask borrow := by rw [Kz.1 .esi (by decide), V.gpr, mask]
   refine WP.mono (select_ok Fz maskZ) fun t ⟨value, Ot, Kt, Ft⟩ => ?_
-  have a02 := Arrays.apart arrays0 arrays2 (w := w) (by decide)
-  have a42 := Arrays.apart arrays4 arrays2 (w := w) (by decide)
-  have a03 := Arrays.apart arrays0 arrays3 (w := w) (by decide)
-  have a43 := Arrays.apart arrays4 arrays3 (w := w) (by decide)
-  have a23 := Arrays.apart arrays2 arrays3 (w := w) (by decide)
-  have aSame : val32 v.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
+  obtain a02 := Arrays.apart arrays0 arrays2 (w := w) (by decide)
+  obtain a42 := Arrays.apart arrays4 arrays2 (w := w) (by decide)
+  obtain a03 := Arrays.apart arrays0 arrays3 (w := w) (by decide)
+  obtain a43 := Arrays.apart arrays4 arrays3 (w := w) (by decide)
+  obtain a23 := Arrays.apart arrays2 arrays3 (w := w) (by decide)
+  obtain aSame : val32 v.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
     rw [V.mem]; exact Ou.val32 a02 (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23])
-  have bSame : val32 v.mem W (slot w 4) (2 * w) = val32 s.mem W (slot w 4) (2 * w) := by
+  obtain bSame : val32 v.mem W (slot w 4) (2 * w) = val32 s.mem W (slot w 4) (2 * w) := by
     rw [V.mem]; exact Ou.val32 a42 (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23])
   rw [aSame, bSame] at backward
-  have dSame : val32 z.mem W (slot w 2) (2 * w) = val32 u.mem W (slot w 2) (2 * w) := by
+  obtain dSame : val32 z.mem W (slot w 2) (2 * w) = val32 u.mem W (slot w 2) (2 * w) := by
     rw [Oz.val32 (by rcases a23 with h | h; exact Or.inl h; exact Or.inr h) (by omega_using [nowrap, f0, l0, f2, l2, f3, l3, f4, l4, a02, a42, a03, a43, a23]), V.mem]
-  have values : val32 t.mem W (slot w 2) (2 * w) =
+  obtain values : val32 t.mem W (slot w 2) (2 * w) =
       if borrow then val32 z.mem W (slot w 3) (2 * w) else val32 u.mem W (slot w 2) (2 * w) := by
     rw [value]
     cases borrow
     · simp only [Bool.false_eq_true, ↓reduceIte]; exact dSame
     · rfl
-  have K₁ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (Ku.mono (by decide)).widen V.keeps
-  have K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := (K₁.trans (Kz.mono (by decide))).trans (Kt.mono (by decide))
+  obtain K₁ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (Ku.mono (by decide)).widen V.keeps
+  obtain K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := (K₁.trans (Kz.mono (by decide))).trans (Kt.mono (by decide))
   refine ⟨values.trans (VG.Proof.RsaKeyGen.absDiff_select forward backward (val32_lt ..) (val32_lt ..)), ?_,
     K₂, Ft⟩
-  have O₁ : Outs W [(slot w 2, 4 * (2 * w)), (slot w 3, 4 * (2 * w))] s.mem v.mem := by
+  obtain O₁ : Outs W [(slot w 2, 4 * (2 * w)), (slot w 3, 4 * (2 * w))] s.mem v.mem := by
     rw [V.mem]; exact Outs.of_outside Ou (by simp)
-  have O₂ : Outs W [(slot w 2, 4 * (2 * w)), (slot w 3, 4 * (2 * w))] v.mem z.mem :=
+  obtain O₂ : Outs W [(slot w 2, 4 * (2 * w)), (slot w 3, 4 * (2 * w))] v.mem z.mem :=
     Outs.of_outside Oz (by simp)
   exact (O₁.trans O₂).trans (Outs.of_outside Ot (by simp))
 

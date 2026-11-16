@@ -61,16 +61,16 @@ theorem pcArgs_ok (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv 
       t'.mem.readW (L.B + BitVec.ofNat 64 oR1) 64 = t.gpr .x0 ∧
       Frame [⟨L.B + BitVec.ofNat 64 oR1, 8⟩] t.mem t'.mem := by
   have hnB := hL.nB
-  have lK := hc.inFr hL (d := oK) (n := 8) (by decide)
-  have lN := hc.inFr hL (d := oN) (n := 8) (by decide)
-  have w := hc.inFrW hL (d := oR1) (n := 8) (by decide)
-  have l10 := hc.inArgs hL (j := 10) (by omega_arith)
-  have l11 := hc.inArgs hL (j := 11) (by omega_arith)
-  have a10 := (hc.argW hL (j := 10) (by omega_arith)).trans (ha 10 (by omega_arith))
-  have a11 := (hc.argW hL (j := 11) (by omega_arith)).trans (ha 11 (by omega_arith))
-  have hf : Frame [⟨L.B + BitVec.ofNat 64 oR1, 8⟩] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)) :=
+  obtain lK := hc.inFr hL (d := oK) (n := 8) (by decide)
+  obtain lN := hc.inFr hL (d := oN) (n := 8) (by decide)
+  obtain w := hc.inFrW hL (d := oR1) (n := 8) (by decide)
+  obtain l10 := hc.inArgs hL (j := 10) (by omega_arith)
+  obtain l11 := hc.inArgs hL (j := 11) (by omega_arith)
+  obtain a10 := (hc.argW hL (j := 10) (by omega_arith)).trans (ha 10 (by omega_arith))
+  obtain a11 := (hc.argW hL (j := 11) (by omega_arith)).trans (ha 11 (by omega_arith))
+  obtain hf : Frame [⟨L.B + BitVec.ofNat 64 oR1, 8⟩] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hsl := hs.frame hf (fun R hR => by
+  obtain hsl := hs.frame hf (fun R hR => by
     simp only [List.mem_singleton] at hR; subst hR
     exact Offset.disjoint L.B (d := oOut) (n := 48) (e := oR1) (k := 8) (by decide) (by simp only [oOut]; omega_arith)
       (by simp only [oR1]; omega_arith)) (by omega_arith)
@@ -78,9 +78,9 @@ theorem pcArgs_ok (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv 
     hsl.k
   have n' : (t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)).readW (L.B + BitVec.ofNat 64 oN) 64 = L.n :=
     hsl.n
-  have hfr : Frame [L.FR] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)) :=
+  obtain hfr : Frame [L.FR] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have ea : ∀ j < 12, ((t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)).readW
+  obtain ea : ∀ j < 12, ((t.mem.writeW (L.B + BitVec.ofNat 64 oR1) (t.gpr .x0)).readW
       (L.B + BitVec.ofNat 64 (arg j)) 64) = t.mem.readW (L.B + BitVec.ofNat 64 (arg j)) 64 := fun j hj =>
     Mem.readW_writeW_sep (Offset.sep _ (d := arg j) (n := 8) (e := oR1) (k := 8)
       (by simp only [oR1, arg, frameBytes]; omega_arith) (by simp only [arg, frameBytes]; omega_arith)
@@ -109,13 +109,13 @@ theorem pcCall_pre (hL : L.Ok) {t : State} (_hc : Ctx L g vv m₀ t) (ha : PcArg
     pcA.pre (t.callEntry.withRegions (pcRd L) (pcWr L)) := by
   have hnB := hL.nB
   have hk := hL.khi
-  have hP := hL.stk_sub hL.PRE_sub
+  obtain hP := hL.stk_sub hL.PRE_sub
   simp only [pcA, State.withRegions_rd, State.withRegions_wr,
     gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
     ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, toNat_pw hL]
-  have hPk : BitVec.toNat (L.B + BitVec.ofNat 64 oPre) + L.pw * 8 ≤ 2 ^ 64 := by
+  obtain hPk : BitVec.toNat (L.B + BitVec.ofNat 64 oPre) + L.pw * 8 ≤ 2 ^ 64 := by
     rw [Offset.toNat_add_ofNat]; have := pw_le hL; simp only [oPre]; omega_arith
   exact ⟨trivial, trivial, hP.2.1, hP.2.2.2.2.2.2.2.2.2, hL.nsc, hPk, hL.bn, hL.bsc, ⟨hL.klo, hL.khi⟩, rfl,
     hL.slk⟩
@@ -270,17 +270,17 @@ theorem pdCall_pre (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (ha : PdArgs
     pdA.pre (t.callEntry.withRegions (pdRd L) (pdWr L)) := by
   have hnB := hL.nB
   have hk := hL.khi
-  have sa0 : stackArg (t.callEntry.withRegions (pdRd L) (pdWr L)) 0 = L.scr := by
+  obtain sa0 : stackArg (t.callEntry.withRegions (pdRd L) (pdWr L)) 0 = L.scr := by
     simp only [stackArg, stackArgAddr, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp,
       State.callEntry_sp, hc.sp, Nat.mul_zero, BitVec.add_zero]
     exact ha.s0
-  have sa1 : stackArg (t.callEntry.withRegions (pdRd L) (pdWr L)) 1 = L.sl := by
+  obtain sa1 : stackArg (t.callEntry.withRegions (pdRd L) (pdWr L)) 1 = L.sl := by
     simp only [stackArg, stackArgAddr, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp,
       State.callEntry_sp, hc.sp]
     exact ha.s1
-  have hP := hL.stk_sub hL.PRE_sub
-  have hM := hL.stk_sub hL.M_sub
-  have hA := hL.stk_sub (low_sub L (n := 16) (by decide))
+  obtain hP := hL.stk_sub hL.PRE_sub
+  obtain hM := hL.stk_sub hL.M_sub
+  obtain hA := hL.stk_sub (low_sub L (n := 16) (by decide))
   simp only [pdRd, pdWr, OUT_k hL] at sa0 sa1
   simp only [pdA, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
     hc.sp, sa0, sa1, stackArgAddr, Nat.mul_zero, BitVec.add_zero,
@@ -289,9 +289,9 @@ theorem pdCall_pre (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (ha : PdArgs
     gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
     ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, toNat_pw hL, OUT_k hL, pdRd, pdWr]
-  have hPk : BitVec.toNat (L.B + BitVec.ofNat 64 oPre) + L.pw * 8 ≤ 2 ^ 64 := by
+  obtain hPk : BitVec.toNat (L.B + BitVec.ofNat 64 oPre) + L.pw * 8 ≤ 2 ^ 64 := by
     rw [Offset.toNat_add_ofNat]; have := pw_le hL; simp only [oPre]; omega_arith
-  have hMk : BitVec.toNat (L.B + BitVec.ofNat 64 oM) + L.k.toNat ≤ 2 ^ 64 := by
+  obtain hMk : BitVec.toNat (L.B + BitVec.ofNat 64 oM) + L.k.toNat ≤ 2 ^ 64 := by
     rw [Offset.toNat_add_ofNat]; simp only [oM]; omega_arith
   exact ⟨by omega_arith, trivial, trivial, hP.1.symm, hL.oe, hM.1.symm, hL.osc, hA.1.symm, hP.2.2.2.2.2.2.2.2.2,
     hL.esc, hM.2.2.2.2.2.2.2.2.2, hA.2.2.2.2.2.2.2.2.2.symm, by rw [← hL.olk]; exact hL.bo, hPk, hL.be, hMk,

@@ -67,8 +67,8 @@ theorem dword_pairV (X : BitVec 128) {k : Nat} (hk : k < 4) :
   rw [dword_paddd _ _ hk, dword_psrld _ _ (by decide) hk, dword_pslld _ _ (by decide) hk,
     dword_pslld _ _ (by decide) hk, dword_psrld _ _ (by decide) hk, BitVec.toNat_add, BitVec.toNat_ushiftRight,
     BitVec.toNat_shiftLeft, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, toNat_dword_words]
-  have h0 := (word X (2 * k)).isLt
-  have h1 := (word X (2 * k + 1)).isLt
+  obtain h0 := (word X (2 * k)).isLt
+  obtain h1 := (word X (2 * k + 1)).isLt
   simp only [show (16 : BitVec 8).toNat = 16 from rfl, show (12 : BitVec 8).toNat = 12 from rfl,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   generalize (word X (2 * k)).toNat = a at h0 ⊢
@@ -91,24 +91,24 @@ theorem toNat_byte_dword (x : BitVec 128) (k e : Nat) (he : e < 4) :
 theorem toNat_shufV (P : BitVec 128) (h : ∀ k < 4, (dword P k).toNat < 2 ^ 24) :
     (shufV P).toNat = (dword P 0).toNat + 2 ^ 24 * (dword P 1).toNat + 2 ^ 48 * (dword P 2).toNat +
       2 ^ 72 * (dword P 3).toNat := by
-  have b : ∀ k e, k < 4 → e < 3 → (byte P (4 * k + e)).toNat = (dword P k).toNat / 2 ^ (8 * e) % 256 :=
+  obtain b : ∀ k e, k < 4 → e < 3 → (byte P (4 * k + e)).toNat = (dword P k).toNat / 2 ^ (8 * e) % 256 :=
     fun k e _ he => toNat_byte_dword P k e (by omega_arith)
-  have h0 := h 0 (by decide)
-  have h1 := h 1 (by decide)
-  have h2 := h 2 (by decide)
-  have h3 := h 3 (by decide)
-  have e00 := b 0 0 (by decide) (by decide)
-  have e01 := b 0 1 (by decide) (by decide)
-  have e02 := b 0 2 (by decide) (by decide)
-  have e10 := b 1 0 (by decide) (by decide)
-  have e11 := b 1 1 (by decide) (by decide)
-  have e12 := b 1 2 (by decide) (by decide)
-  have e20 := b 2 0 (by decide) (by decide)
-  have e21 := b 2 1 (by decide) (by decide)
-  have e22 := b 2 2 (by decide) (by decide)
-  have e30 := b 3 0 (by decide) (by decide)
-  have e31 := b 3 1 (by decide) (by decide)
-  have e32 := b 3 2 (by decide) (by decide)
+  obtain h0 := h 0 (by decide)
+  obtain h1 := h 1 (by decide)
+  obtain h2 := h 2 (by decide)
+  obtain h3 := h 3 (by decide)
+  obtain e00 := b 0 0 (by decide) (by decide)
+  obtain e01 := b 0 1 (by decide) (by decide)
+  obtain e02 := b 0 2 (by decide) (by decide)
+  obtain e10 := b 1 0 (by decide) (by decide)
+  obtain e11 := b 1 1 (by decide) (by decide)
+  obtain e12 := b 1 2 (by decide) (by decide)
+  obtain e20 := b 2 0 (by decide) (by decide)
+  obtain e21 := b 2 1 (by decide) (by decide)
+  obtain e22 := b 2 2 (by decide) (by decide)
+  obtain e30 := b 3 0 (by decide) (by decide)
+  obtain e31 := b 3 1 (by decide) (by decide)
+  obtain e32 := b 3 2 (by decide) (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reducePow] at e00 e01 e02 e10 e11 e12 e20 e21 e22 e30 e31 e32
   rw [shufV, XBinOp.eval, toNat_ofBytes]
   simp only [show byte shufM 0 = 0 by decide, show byte shufM 1 = 1 by decide, show byte shufM 2 = 2 by decide,
@@ -127,21 +127,21 @@ theorem lane_val {Y : BitVec 128} (h : ∀ e < 8, (word Y e).toNat < 4096) :
     (shufV (pairV Y)).toNat = (word Y 0).toNat + 2 ^ 12 * (word Y 1).toNat + 2 ^ 24 * (word Y 2).toNat +
       2 ^ 36 * (word Y 3).toNat + 2 ^ 48 * (word Y 4).toNat + 2 ^ 60 * (word Y 5).toNat +
       2 ^ 72 * (word Y 6).toNat + 2 ^ 84 * (word Y 7).toNat := by
-  have p : ∀ k < 4, (dword (pairV Y) k).toNat = (word Y (2 * k)).toNat + 4096 * (word Y (2 * k + 1)).toNat :=
+  obtain p : ∀ k < 4, (dword (pairV Y) k).toNat = (word Y (2 * k)).toNat + 4096 * (word Y (2 * k + 1)).toNat :=
     fun k hk => dword_pairV Y hk
-  have p0 := p 0 (by decide)
-  have p1 := p 1 (by decide)
-  have p2 := p 2 (by decide)
-  have p3 := p 3 (by decide)
-  have w := fun e (he : e < 8) => h e he
-  have w0 := w 0 (by decide)
-  have w1 := w 1 (by decide)
-  have w2 := w 2 (by decide)
-  have w3 := w 3 (by decide)
-  have w4 := w 4 (by decide)
-  have w5 := w 5 (by decide)
-  have w6 := w 6 (by decide)
-  have w7 := w 7 (by decide)
+  obtain p0 := p 0 (by decide)
+  obtain p1 := p 1 (by decide)
+  obtain p2 := p 2 (by decide)
+  obtain p3 := p 3 (by decide)
+  obtain w := fun e (he : e < 8) => h e he
+  obtain w0 := w 0 (by decide)
+  obtain w1 := w 1 (by decide)
+  obtain w2 := w 2 (by decide)
+  obtain w3 := w 3 (by decide)
+  obtain w4 := w 4 (by decide)
+  obtain w5 := w 5 (by decide)
+  obtain w6 := w 6 (by decide)
+  obtain w7 := w 7 (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd] at p0 p1 p2 p3
   rw [toNat_shufV _ fun k hk => by
     rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> omega_arith, p0, p1, p2, p3]
@@ -212,10 +212,10 @@ theorem gather_val (A0 A1 B0 B1 : BitVec 128) (ha0 : A0.toNat < 2 ^ 96) (ha1 : A
   simp only [Bool.false_eq_true, ite_true, ite_false]
   simp only [CEY.toNat_app, CEY.toNat_ofDwords, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
     dword_ofDwords_3]
-  have za0 := dword3_zero ha0
-  have za1 := dword3_zero ha1
-  have zb0 := dword3_zero hb0
-  have zb1 := dword3_zero hb1
+  obtain za0 := dword3_zero ha0
+  obtain za1 := dword3_zero ha1
+  obtain zb0 := dword3_zero hb0
+  obtain zb1 := dword3_zero hb1
   rw [CEY.toNat_eq_dwords A0, CEY.toNat_eq_dwords A1, CEY.toNat_eq_dwords B0, CEY.toNat_eq_dwords B1]
   omega_arith
 
@@ -236,8 +236,8 @@ theorem div_hi {X Y : Nat} (hX : X < 2 ^ 256) {j : Nat} (hj : 32 ≤ j) :
 theorem store_bytes (m : Mem) (o : Addr) (X : BitVec 256) (Y : BitVec 128) {N : Nat}
     (hN : X.toNat + 2 ^ 256 * Y.toNat = N) :
     Written m ((m.writeW o X).writeW (o + BitVec.ofNat 64 32) Y) o 48 fun b => BitVec.ofNat 8 (N / 2 ^ (8 * b)) := by
-  have h1 : Written m (m.writeW o X) o 32 fun j => (X.setWidth (8 * (256 / 8))).extractLsb' (8 * j) 8 := fun _ => rfl
-  have h2 : Written (m.writeW o X) ((m.writeW o X).writeW (o + BitVec.ofNat 64 32) Y) (o + BitVec.ofNat 64 32) 16
+  obtain h1 : Written m (m.writeW o X) o 32 fun j => (X.setWidth (8 * (256 / 8))).extractLsb' (8 * j) 8 := fun _ => rfl
+  obtain h2 : Written (m.writeW o X) ((m.writeW o X).writeW (o + BitVec.ofNat 64 32) Y) (o + BitVec.ofNat 64 32) 16
       fun j => (Y.setWidth (8 * (128 / 8))).extractLsb' (8 * j) 8 := fun _ => rfl
   refine (Written.append h1 h2 (by decide)).congr fun j hj => ?_
   apply BitVec.eq_of_toNat_eq
@@ -290,7 +290,7 @@ theorem wp_vpermqD8 {d r : XReg}
     WP isa (.block (.vop (.vpermq d r 0xD8) :: is)) s Q :=
   WP.cons (s' := s.setV .l256 d ((permQwords (s.ymm r) 0xD8).extractLsb' 0 128)
       ((permQwords (s.ymm r) 0xD8).extractLsb' 128 128)) rfl (k _ (by
-    have h := LUpd.setV256 s d ((permQwords (s.ymm r) 0xD8).extractLsb' 0 128)
+    obtain h := LUpd.setV256 s d ((permQwords (s.ymm r) 0xD8).extractLsb' 0 128)
       ((permQwords (s.ymm r) 0xD8).extractLsb' 128 128)
     rw [State.ymm_eq, permD8_lo, permD8_hi] at h ⊢
     exact h))
@@ -337,16 +337,16 @@ theorem half_ok {d t : XReg} (hdt : t ≠ d) (hd8 : d ≠ .xmm8) (ht8 : t ≠ .x
   refine wp_vbin fun s3 u3 => wp_vpermqD8 fun s4 u4 => wp_vsh fun s5 u5 => wp_vsh fun s6 u6 => wp_vsh fun s7 u7 =>
     wp_vsh fun s8 u8 => wp_vbin fun s9 u9 => wp_vbin fun s10 u10 => k s10 ?_ ?_ ?_ ?_ ?_ ?_
   · -- the words after packing
-    have hc : ∀ k, k < 256 → (coeffAt s.mem fP k).toNat = (F[k]!).val := fun k hk =>
+    obtain hc : ∀ k, k < 256 → (coeffAt s.mem fP k).toNat = (F[k]!).val := fun k hk =>
       polyIs_toNat hF (by rw [n_eq]; exact hk)
-    have pk : ∀ l < 2, Lanes (s3.lane d l) (fun e => if e < 4 then F[j + 4 * l + e]! else F[j + 8 + 4 * l + (e - 4)]!) :=
+    obtain pk : ∀ l < 2, Lanes (s3.lane d l) (fun e => if e < 4 then F[j + 4 * l + e]! else F[j + 8 + 4 * l + (e - 4)]!) :=
       fun l hl => by
         rw [u3.val l hl]
         simp only [VBinOp.sse]
         rw [u2.other d (Ne.symm hdt) l hl, u1.val l hl, u2.val l hl, lane_ld hl, lane_ld hl, u1.mem,
           show 16 * l = 4 * (4 * l) by omega_arith, coeffAddr_off, coeffAddr_off]
         exact lanes_pack2 hF (by omega_arith) (by omega_arith)
-    have Y : ∀ l < 2, Lanes (s4.lane d l) (fun e => F[j + 8 * l + e]!) := fun l hl => by
+    obtain Y : ∀ l < 2, Lanes (s4.lane d l) (fun e => F[j + 8 * l + e]!) := fun l hl => by
       rw [u4.val l hl]
       rcases lane01 hl with rfl | rfl
       · rw [itT rfl]; intro e he; rw [word_punpcklqdq _ _ he]
@@ -364,18 +364,18 @@ theorem half_ok {d t : XReg} (hdt : t ≠ d) (hd8 : d ≠ .xmm8) (ht8 : t ≠ .x
           rw [itF ‹¬ e < 4›]
           exact congrArg _ (congrArg _ (by omega_arith))
     intro l hl
-    have x9 : s9.lane .xmm8 l = shufM := by
+    obtain x9 : s9.lane .xmm8 l = shufM := by
       rw [u9.other _ (Ne.symm hd8) l hl, u8.other _ (Ne.symm hd8) l hl, u7.other _ (Ne.symm hd8) l hl,
         u6.other _ (Ne.symm ht8) l hl, u5.other _ (Ne.symm ht8) l hl, u4.other _ (Ne.symm hd8) l hl,
         u3.other _ (Ne.symm hd8) l hl, u2.other _ (Ne.symm ht8) l hl, u1.other _ (Ne.symm hd8) l hl, h8 l hl]
-    have t8 : s8.lane t l = XShiftOp.eval .pslld (XShiftOp.eval .psrld (s4.lane d l) 16) 12 := by
+    obtain t8 : s8.lane t l = XShiftOp.eval .pslld (XShiftOp.eval .psrld (s4.lane d l) 16) 12 := by
       rw [u8.other _ hdt l hl, u7.other _ hdt l hl, u6.val l hl, u5.val l hl]
-    have d8 : s8.lane d l = XShiftOp.eval .psrld (XShiftOp.eval .pslld (s4.lane d l) 16) 16 := by
+    obtain d8 : s8.lane d l = XShiftOp.eval .psrld (XShiftOp.eval .pslld (s4.lane d l) 16) 16 := by
       rw [u8.val l hl, u7.val l hl, u6.other _ (Ne.symm hdt) l hl, u5.other _ (Ne.symm hdt) l hl]
-    have e10 : s10.lane d l = shufV (pairV (s4.lane d l)) := by
+    obtain e10 : s10.lane d l = shufV (pairV (s4.lane d l)) := by
       rw [u10.val l hl, u9.val l hl, x9, d8, t8]
       simp only [VBinOp.sse]
-    have Yv : ∀ e < 8, (word (s4.lane d l) e).toNat = (F[j + 8 * l + e]!).val := fun e he => Y l hl e he
+    obtain Yv : ∀ e < 8, (word (s4.lane d l) e).toNat = (F[j + 8 * l + e]!).val := fun e he => Y l hl e he
     rw [e10, lane_val fun e he => by rw [Yv e he]; have := val_lt F[j + 8 * l + e]!; omega_arith,
       Yv 0 (by decide), Yv 1 (by decide), Yv 2 (by decide), Yv 3 (by decide), Yv 4 (by decide), Yv 5 (by decide),
       Yv 6 (by decide), Yv 7 (by decide), Nat.add_zero]
@@ -452,10 +452,10 @@ theorem polyIs₀ : PolyIs s₀.mem (fP s₀) (FF s₀) :=
 theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block (e12Body ++ e12Step)) s fun s' => Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have hrw : s.rd ++ s.wr = [pR (fP s₀), ⟨oP s₀, 384⟩] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
-  have hF : PolyIs s.mem (fP s₀) (FF s₀) := polyIs_frame hI.frame (fun r hr => by
+  obtain hrw : s.rd ++ s.wr = [pR (fP s₀), ⟨oP s₀, 384⟩] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
+  obtain hF : PolyIs s.mem (fP s₀) (FF s₀) := polyIs_frame hI.frame (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hp.2.2.1) (polyIs₀ hp)
-  have hin : ∀ j, j + 8 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) j) 32 := fun j hj => by
+  obtain hin : ∀ j, j + 8 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) j) 32 := fun j hj => by
     rw [hrw]; exact ⟨_, by simp, Offset.contains_base _ (show 4 * j + 32 ≤ 1024 by omega_arith) (by omega_arith)⟩
   rw [e12Body, List.append_assoc, List.append_assoc]
   refine half_ok (d := .xmm0) (t := .xmm1) (by decide) (by decide) (by decide) 0 (j := 32 * i) (by omega_arith) hF
@@ -471,42 +471,42 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
       rw [r1, w1]
       exact hin _ (by omega_arith))
     (fun l hl => by rw [o1 _ (by decide) (by decide) l hl]; exact hI.ec.c8 l hl) fun s2 hB o2 g2 m2 r2 w2 => ?_
-  have ec2 : EC s2 := hI.ec.keep fun r h0 h1 h2 h3 l hl => by rw [o2 r h2 h3 l hl, o1 r h0 h1 l hl]
+  obtain ec2 : EC s2 := hI.ec.keep fun r h0 h1 h2 h3 l hl => by rw [o2 r h2 h3 l hl, o1 r h0 h1 l hl]
   -- the lanes of the two halves
-  have eA : ∀ l < 2, s2.lane .xmm0 l = s1.lane .xmm0 l := fun l hl => o2 _ (by decide) (by decide) l hl
+  obtain eA : ∀ l < 2, s2.lane .xmm0 l = s1.lane .xmm0 l := fun l hl => o2 _ (by decide) (by decide) l hl
   generalize hA0 : s1.lane .xmm0 0 = A0 at hA eA
   generalize hA1 : s1.lane .xmm0 1 = A1 at hA eA
   generalize hB0 : s2.lane .xmm2 0 = B0 at hB
   generalize hB1 : s2.lane .xmm2 1 = B1 at hB
-  have a0 := hA 0 (by decide)
-  have a1 := hA 1 (by decide)
-  have b0 := hB 0 (by decide)
-  have b1 := hB 1 (by decide)
+  obtain a0 := hA 0 (by decide)
+  obtain a1 := hA 1 (by decide)
+  obtain b0 := hB 0 (by decide)
+  obtain b1 := hB 1 (by decide)
   rw [hA0] at a0
   rw [hA1] at a1
   rw [hB0] at b0
   rw [hB1] at b1
   simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at a0 a1 b0 b1
-  have hv : ∀ b, (V8 (FF s₀) b) < 2 ^ 96 := fun b => by
+  obtain hv : ∀ b, (V8 (FF s₀) b) < 2 ^ 96 := fun b => by
     have := val_lt (FF s₀)[b]!; have := val_lt (FF s₀)[b + 1]!; have := val_lt (FF s₀)[b + 2]!
     have := val_lt (FF s₀)[b + 3]!; have := val_lt (FF s₀)[b + 4]!; have := val_lt (FF s₀)[b + 5]!
     have := val_lt (FF s₀)[b + 6]!; have := val_lt (FF s₀)[b + 7]!
     simp only [V8]; omega_arith
-  have y0 : s2.ymm .xmm0 = A1 ++ A0 := by rw [State.ymm_eq, eA 0 (by decide), eA 1 (by decide), hA0, hA1]
-  have y2 : s2.ymm .xmm2 = B1 ++ B0 := by rw [State.ymm_eq, hB0, hB1]
+  obtain y0 : s2.ymm .xmm0 = A1 ++ A0 := by rw [State.ymm_eq, eA 0 (by decide), eA 1 (by decide), hA0, hA1]
+  obtain y2 : s2.ymm .xmm2 = B1 ++ B0 := by rw [State.ymm_eq, hB0, hB1]
   simp only [List.cons_append, List.nil_append]
   refine wp_vpermd fun s3 u3 => wp_vpermd fun s4 u4 => wp_vblend fun s5 u5 => ?_
-  have hw : s5.wr = [⟨oP s₀, 384⟩] := by rw [u5.wr, u4.wr, u3.wr, w2, w1, hI.wr, hp.2.1]
-  have g5 : s5.gpr = s.gpr := by rw [u5.gpr, u4.gpr, u3.gpr, g2, g1]
-  have m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, m2, m1]
+  obtain hw : s5.wr = [⟨oP s₀, 384⟩] := by rw [u5.wr, u4.wr, u3.wr, w2, w1, hI.wr, hp.2.1]
+  obtain g5 : s5.gpr = s.gpr := by rw [u5.gpr, u4.gpr, u3.gpr, g2, g1]
+  obtain m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, m2, m1]
   -- the two values stored
-  have y3 : s3.ymm .xmm10 = I10 := by
+  obtain y3 : s3.ymm .xmm10 = I10 := by
     rw [State.ymm_eq, u3.other _ (by decide) 0 (by decide), u3.other _ (by decide) 1 (by decide), ← State.ymm_eq]
     exact ec2.c10
-  have x3 : s3.ymm .xmm2 = B1 ++ B0 := by
+  obtain x3 : s3.ymm .xmm2 = B1 ++ B0 := by
     rw [State.ymm_eq, u3.other _ (by decide) 0 (by decide), u3.other _ (by decide) 1 (by decide), ← State.ymm_eq]
     exact y2
-  have hX : s5.ymm .xmm0 =
+  obtain hX : s5.ymm .xmm0 =
       blendDwords ((permDwords I9 (A1 ++ A0)).extractLsb' 128 128) ((permDwords I10 (B1 ++ B0)).extractLsb' 128 128)
         ((0xC0 : BitVec 8).extractLsb' 4 4) ++
       blendDwords ((permDwords I9 (A1 ++ A0)).extractLsb' 0 128) ((permDwords I10 (B1 ++ B0)).extractLsb' 0 128)
@@ -514,9 +514,9 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     rw [State.ymm_eq, u5.val 0 (by decide), u5.val 1 (by decide), itT rfl, itF (by decide),
       u4.other _ (by decide) 0 (by decide), u4.other _ (by decide) 1 (by decide), u4.val 0 (by decide),
       u4.val 1 (by decide), u3.val 0 (by decide), u3.val 1 (by decide), y3, x3, ec2.c9, y0]
-  have hY : s5.lane .xmm2 0 = (permDwords I10 (B1 ++ B0)).extractLsb' 0 128 := by
+  obtain hY : s5.lane .xmm2 0 = (permDwords I10 (B1 ++ B0)).extractLsb' 0 128 := by
     rw [u5.other _ (by decide) 0 (by decide), u4.val 0 (by decide), y3, x3]
-  have hN := gather_val A0 A1 B0 B1 (by rw [a0]; exact hv _) (by rw [a1]; exact hv _) (by rw [b0]; exact hv _)
+  obtain hN := gather_val A0 A1 B0 B1 (by rw [a0]; exact hv _) (by rw [a1]; exact hv _) (by rw [b0]; exact hv _)
     (by rw [b1]; exact hv _)
   rw [← hX, ← hY] at hN
   refine wp_vst256 (a := oP s₀ + BitVec.ofNat 64 (48 * i)) (by rw [ea_at, add_ofNat_zero, g5, hI.rsi])
@@ -528,20 +528,20 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
       Offset.contains_base _ (show 48 * i + 32 + 16 ≤ 384 by omega_arith) (by omega_arith)⟩) fun s7 g7 l7 m7 r7 w7 => ?_
   simp only [e12Step]
   refine wp_addi' fun s8 u8 => wp_addi' fun s9 u9 => wp_subi' fun s10 u10 hz => WP.block_nil ?_
-  have m10 : s10.mem = (s.mem.writeW (oP s₀ + BitVec.ofNat 64 (48 * i)) (s5.ymm .xmm0)).writeW
+  obtain m10 : s10.mem = (s.mem.writeW (oP s₀ + BitVec.ofNat 64 (48 * i)) (s5.ymm .xmm0)).writeW
       (oP s₀ + BitVec.ofNat 64 (48 * i) + BitVec.ofNat 64 32) (s5.lane .xmm2 0) := by
     rw [u10.mem, u9.mem, u8.mem, m7, m6, l6, m5]
-  have g9 : ∀ r, s9.gpr r = s.gpr r ∨ r = .rdi ∨ r = .rsi := fun r => by
+  obtain g9 : ∀ r, s9.gpr r = s.gpr r ∨ r = .rdi ∨ r = .rsi := fun r => by
     by_cases h1 : r = .rdi
     · exact .inr (.inl h1)
     by_cases h2 : r = .rsi
     · exact .inr (.inr h2)
     exact .inl (by rw [u9.other r h2, u8.other r h1, g7, g6, g5])
-  have rcx9 : s9.gpr .rcx = s.gpr .rcx := by rw [u9.other _ (by decide), u8.other _ (by decide), g7, g6, g5]
+  obtain rcx9 : s9.gpr .rcx = s.gpr .rcx := by rw [u9.other _ (by decide), u8.other _ (by decide), g7, g6, g5]
   -- the 48 bytes
-  have hW := store_bytes s.mem (oP s₀ + BitVec.ofNat 64 (48 * i)) _ _ hN
+  obtain hW := store_bytes s.mem (oP s₀ + BitVec.ofNat 64 (48 * i)) _ _ hN
   rw [← m10] at hW
-  have hW' : Written s.mem s10.mem (oP s₀ + BitVec.ofNat 64 (48 * i)) 48
+  obtain hW' : Written s.mem s10.mem (oP s₀ + BitVec.ofNat 64 (48 * i)) 48
       fun j => (Spec.MlKem.encode12 (FF s₀))[48 * i + j]! := hW.congr fun j hj => by
     rw [encode12_group48 _ hi hj, a0, a1, b0, b1]
     refine congrArg (fun x => BitVec.ofNat 8 (x / 2 ^ (8 * j))) (Eq.trans ?_ (digits32 _).symm)

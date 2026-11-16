@@ -23,8 +23,8 @@ theorem ops_out (d : Bool) : ∀ op∈(if d then dbluN else zadduN),op.out<13 :=
 
 theorem ops_at (d : Bool) (e : Nat → Fe C) (i : Nat) :
     runOps (ops d) e (tblσ i)=runOps (if d then dbluN else zadduN) (fun j => e (tblσ j)) i := by
-  have nd : tblW.Nodup := by decide
-  have hp : ∀ x∈[1280,1440,224],x∉tblW := by decide
+  obtain nd : tblW.Nodup := by decide
+  obtain hp : ∀ x∈[1280,1440,224],x∉tblW := by decide
   rw [ops_eq]
   refine congrFun (runOps_rename tblσ _ e fun op hop y => ?_) i
   exact getD_append_inj nd hp (hp _ (by decide)) (by simpa [tblW] using ops_out d op hop) y
@@ -57,13 +57,13 @@ structure CoZ (Q : Point C) (k : Nat) (F : Nat → Fe C) : Prop where
   c3 : ∀ a,1≤a → a≤k+1 → F (dst a 4)=F (dst a 3)*F (dst a 2)
 
 theorem dst_tblW {a j : Nat} (ha : 1≤a) (ha9 : a≤9) (hj : j<5) : dst a j∉tblW := by
-  have h : ∀ a<9,∀ j<5,dst (a+1) j∉tblW := by decide
+  obtain h : ∀ a<9,∀ j<5,dst (a+1) j∉tblW := by decide
   have := h (a-1) (by omega_arith) j hj
   rwa [show a-1+1=a by omega_arith] at this
 
 theorem dst_ne {a m j j' : Nat} (ha : 1≤a) (ha9 : a≤9) (hm : 1≤m) (hm9 : m≤9) (hj : j<5) (hj' : j'<5)
     (h : a≠m) : dst a j≠dst m j' := by
-  have hh : ∀ a<9,∀ m<9,∀ j<5,∀ j'<5,dst (a+1) j=dst (m+1) j' → a=m := by decide
+  obtain hh : ∀ a<9,∀ m<9,∀ j<5,∀ j'<5,dst (a+1) j=dst (m+1) j' → a=m := by decide
   intro he
   have := hh (a-1) (by omega_arith) (m-1) (by omega_arith) j hj j' hj'
     (by rwa [show a-1+1=a by omega_arith,show m-1+1=m by omega_arith])
@@ -76,7 +76,7 @@ theorem not_dsts_of_ne {a m j : Nat} (ha : 1≤a) (ha9 : a≤9) (hm : 1≤m) (hm
   exact dst_ne ha ha9 hm hm9 hj hj' h he.symm
 
 theorem w_not_dsts {m : Nat} (hm : 1≤m) (hm9 : m≤9) : ∀ x∈W,x∉dsts m := by
-  have h : ∀ m<9,∀ x∈W,x∉dsts (m+1) := by decide
+  obtain h : ∀ m<9,∀ x∈W,x∉dsts (m+1) := by decide
   have := h (m-1) (by omega_arith)
   rwa [show m-1+1=m by omega_arith] at this
 
@@ -94,16 +94,16 @@ omit ha in
 theorem coz_x {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {k : Nat} (hk : k≤6)
     {X1 Y1 X2 Y2 Z : Fe C} (h1 : InvJ C X1 Y1 Z (mul 2 Q)) (h2 : InvJ C X2 Y2 Z (mul (2*k+1) Q))
     (hz : Z≠0) : X1-X2≠0 := by
-  have hn : 17≤C.n := by decide
+  obtain hn : 17≤C.n := by decide
   intro hx
-  have hx' : X1*(Z*Z)-X2*(Z*Z)=0 := by
-    have e : X1*(Z*Z)-X2*(Z*Z)=(X1-X2)*(Z*Z) := by grind
+  obtain hx' : X1*(Z*Z)-X2*(Z*Z)=0 := by
+    obtain e : X1*(Z*Z)-X2*(Z*Z)=(X1-X2)*(Z*Z) := by grind
     rw [e,hx]; grind
   by_cases hy : Y1*Z*(Z*Z)-Y2*Z*(Z*Z)=0
   · have he := h2.same hC h1 hz hz hx' hy
-    have h' : zmul ((2*k+1 : Nat) : Int) Q=zmul (2 : Nat) Q := by
+    obtain h' : zmul ((2*k+1 : Nat) : Int) Q=zmul (2 : Nat) Q := by
       rw [zmul_natCast,zmul_natCast,he]
-    have hd := zmul_dvd hC hO hQ hQ0 h'
+    obtain hd := zmul_dvd hC hO hQ hQ0 h'
     exact not_dvd_small (n:=C.n) (x:=((2*k+1 : Nat) : Int)-(2 : Nat)) (by omega_arith) (by omega_arith) (by omega_arith) hd
   · have he := h2.opposite hC (hC.onCurve_mul hQ _) (hC.onCurve_mul hQ _) h1 hz hz hx' hy
     rw [hC.add_mul_mul hQ] at he
@@ -111,32 +111,32 @@ theorem coz_x {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {k : N
 
 theorem coz_step {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {k : Nat} (hk : k≤6)
     {F : Nat → Fe C} (h : CoZ Q k F) : CoZ Q (k+1) (stepEnv (k+2) F) := by
-  have hn : 17≤C.n := by decide
+  obtain hn : 17≤C.n := by decide
   obtain ⟨ht,h11,h12⟩ := Proof.P256.EcdhJac.zadduN_run (fun j => F (tblσ j))
-  have at' := fun i => ops_at false F i
+  obtain at' := fun i => ops_at false F i
   simp only [Bool.false_eq_true,↓reduceIte] at at'
   generalize runOps zadduN (fun j => F (tblσ j))=r at ht h11 h12 at'
   change ((r 8,r 9,r 10),(r 0,r 1))=zadduF (F 608) (F 640) (F 704) (F 736) (F 768) at ht
   change (F 5400=F 768*F 768 → r 11=r 10*r 10) at h11
-  have hx := coz_x hC hO hQ hQ0 hk h.d h.e h.z
+  obtain hx := coz_x hC hO hQ hQ0 hk h.d h.e h.z
   obtain ⟨js,jd⟩ := InvJ.zaddu hC ha (hC.onCurve_mul hQ 2) (hC.onCurve_mul hQ _) h.d h.e h.z hx
   rw [hC.add_mul_mul hQ] at js
   rw [← ht] at js jd
-  have js' : InvJ C (r 8) (r 9) (r 10) (mul (2*(k+1)+1) Q) := by
+  obtain js' : InvJ C (r 8) (r 9) (r 10) (mul (2*(k+1)+1) Q) := by
     rw [show 2*(k+1)+1=2*k+1+2 by omega_arith]; exact js
-  have hz : r 10≠0 := fun hh => mul_ne_infinity hO hQ hQ0 (m:=2*(k+1)+1) (by omega_arith) (by omega_arith)
+  obtain hz : r 10≠0 := fun hh => mul_ne_infinity hO hQ hQ0 (m:=2*(k+1)+1) (by omega_arith) (by omega_arith)
     ((js'.z_zero_iff hC).mp hh)
   -- The ZADDU environment `G` at the co-Z slots.
-  have g : ∀ i<13,runOps (ops false) F (tblσ i)=r i := fun i _ => at' i
-  have g0 : runOps (ops false) F 608=r 0 := g 0 (by decide)
-  have g1 : runOps (ops false) F 640=r 1 := g 1 (by decide)
-  have g8 : runOps (ops false) F 704=r 8 := g 8 (by decide)
-  have g9 : runOps (ops false) F 736=r 9 := g 9 (by decide)
-  have g10 : runOps (ops false) F 768=r 10 := g 10 (by decide)
-  have g11 : runOps (ops false) F 5400=r 11 := g 11 (by decide)
-  have g12 : runOps (ops false) F 5432=r 12 := g 12 (by decide)
-  have hm1 : 1≤k+2 := by omega_arith
-  have hm9 : k+2≤9 := by omega_arith
+  obtain g : ∀ i<13,runOps (ops false) F (tblσ i)=r i := fun i _ => at' i
+  obtain g0 : runOps (ops false) F 608=r 0 := g 0 (by decide)
+  obtain g1 : runOps (ops false) F 640=r 1 := g 1 (by decide)
+  obtain g8 : runOps (ops false) F 704=r 8 := g 8 (by decide)
+  obtain g9 : runOps (ops false) F 736=r 9 := g 9 (by decide)
+  obtain g10 : runOps (ops false) F 768=r 10 := g 10 (by decide)
+  obtain g11 : runOps (ops false) F 5400=r 11 := g 11 (by decide)
+  obtain g12 : runOps (ops false) F 5432=r 12 := g 12 (by decide)
+  obtain hm1 : 1≤k+2 := by omega_arith
+  obtain hm9 : k+2≤9 := by omega_arith
   have so (x : Nat) (hx : x∈W) : stepEnv (k+2) F x=runOps (ops false) F x :=
     storeEnv_other _ (w_not_dsts hm1 hm9 x hx)
   have sd (j : Nat) (hj : j<5) : stepEnv (k+2) F (dst (k+2) j)=runOps (ops false) F (src j) :=
@@ -146,11 +146,11 @@ theorem coz_step {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {k 
     unfold stepEnv
     rw [storeEnv_other _ (not_dsts_of_ne ha1 (by omega_arith) hm1 hm9 hj (by omega_arith)),
       ops_keep false F (dst_tblW ha1 (by omega_arith) hj)]
-  have s0 := so 608 (by decide); have s1 := so 640 (by decide); have s8 := so 704 (by decide)
-  have s9 := so 736 (by decide); have s10 := so 768 (by decide); have s11 := so 5400 (by decide)
-  have s12 := so 5432 (by decide)
-  have e0 := sd 0 (by decide); have e1 := sd 1 (by decide); have e2 := sd 2 (by decide)
-  have e3 := sd 3 (by decide); have e4 := sd 4 (by decide)
+  obtain s0 := so 608 (by decide); have s1 := so 640 (by decide); have s8 := so 704 (by decide)
+  obtain s9 := so 736 (by decide); have s10 := so 768 (by decide); have s11 := so 5400 (by decide)
+  obtain s12 := so 5432 (by decide)
+  obtain e0 := sd 0 (by decide); have e1 := sd 1 (by decide); have e2 := sd 2 (by decide)
+  obtain e3 := sd 3 (by decide); have e4 := sd 4 (by decide)
   simp only [src,Nat.reduceLT,↓reduceIte,Nat.reduceSub,Nat.reduceMul,Nat.reduceAdd] at e0 e1 e2 e3 e4
   rw [g8] at e0; rw [g9] at e1; rw [g10] at e2; rw [g11] at e3; rw [g12] at e4
   refine ⟨?_,?_,?_,?_,?_,fun a ha1 hak => ?_,fun a ha1 hak => ?_,fun a ha1 hak => ?_⟩
@@ -182,14 +182,14 @@ theorem coz_loop {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {F 
 
 theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
     (jp : InvJ C (E 1280) (E 1440) 1 Q) (h1 : E 224=1) : CoZ Q 0 (dbluEnv E) := by
-  have hn : 17≤C.n := by decide
-  have hQ0 : Q≠.infinity := fun hh => hC.one_ne_zero ((jp.z_zero_iff hC).mpr hh)
+  obtain hn : 17≤C.n := by decide
+  obtain hQ0 : Q≠.infinity := fun hh => hC.one_ne_zero ((jp.z_zero_iff hC).mpr hh)
   -- The start's environment.
   have st (x : Nat) (hx : x∈[1280,1440,224]) : startEnv E x=E x := by
     unfold startEnv
     rw [storeEnv_other _ (by revert x; decide),copiesEnv_keep _ _ (by revert x; decide)]
   have sd (j : Nat) (hj : j<5) : startEnv E (dst 1 j)=copiesEnv l1 E (src j) := storeEnv_dst _ hj
-  have c1 : ∀ j<5,copiesEnv l1 E (src j)=[E 1280,E 1440,E 224,E 224,E 224].getD j 0 := by
+  obtain c1 : ∀ j<5,copiesEnv l1 E (src j)=[E 1280,E 1440,E 224,E 224,E 224].getD j 0 := by
     intro j hj
     have : j=0∨j=1∨j=2∨j=3∨j=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;>
@@ -197,7 +197,7 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
         Nat.reduceMul,Nat.reduceAdd,Nat.reduceSub,List.getD_cons_zero,List.getD_cons_succ]
   obtain ⟨hT,h11,h12,h5,h4⟩ := Proof.P256.EcdhJac.dbluN_run (fun j => startEnv E (tblσ j))
     (st 224 (by decide) |>.trans h1)
-  have at' := fun i => ops_at true (startEnv E) i
+  obtain at' := fun i => ops_at true (startEnv E) i
   simp only [↓reduceIte] at at'
   generalize runOps dbluN (fun j => startEnv E (tblσ j))=r at hT h11 h12 h5 h4 at'
   change (r 8,r 9,r 10)=dblJF (startEnv E 1280) (startEnv E 1440) 1 at hT
@@ -206,36 +206,36 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
   change r 4*(1*1*1)=startEnv E 1440*(r 10*r 10*r 10) at h4
   rw [st 1280 (by decide)] at h5
   rw [st 1440 (by decide)] at h4
-  have j2 := InvJ.dbl' hC ha hQ jp hT
+  obtain j2 := InvJ.dbl' hC ha hQ jp hT
   rw [show add Q Q=mul 2 Q by
     rw [show add Q Q=add (mul 1 Q) (mul 1 Q) by rw [mul_one_pt],hC.add_mul_mul hQ]] at j2
-  have hz : r 10≠0 := fun hh => mul_ne_infinity hO hQ hQ0 (m:=2) (by decide) (by omega_arith)
+  obtain hz : r 10≠0 := fun hh => mul_ne_infinity hO hQ hQ0 (m:=2) (by decide) (by omega_arith)
     ((j2.z_zero_iff hC).mp hh)
-  have jd : InvJ C (r 5) (r 4) (r 10) Q := jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind only)
+  obtain jd : InvJ C (r 5) (r 4) (r 10) Q := jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind only)
   have g (i : Nat) (hi : i<13) : runOps (ops true) (startEnv E) (tblσ i)=r i := at' i
   -- After the swap.
-  have sw : ∀ x,dbluEnv E x=copiesEnv l2 (runOps (ops true) (startEnv E)) x := fun _ => rfl
-  have w0 : dbluEnv E 608=r 8 := by
+  obtain sw : ∀ x,dbluEnv E x=copiesEnv l2 (runOps (ops true) (startEnv E)) x := fun _ => rfl
+  obtain w0 : dbluEnv E 608=r 8 := by
     rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 8 (by decide)
-  have w1 : dbluEnv E 640=r 9 := by
+  obtain w1 : dbluEnv E 640=r 9 := by
     rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 9 (by decide)
-  have w8 : dbluEnv E 704=r 5 := by
+  obtain w8 : dbluEnv E 704=r 5 := by
     rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 5 (by decide)
-  have w9 : dbluEnv E 736=r 4 := by
+  obtain w9 : dbluEnv E 736=r 4 := by
     rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 4 (by decide)
   have wk (x : Nat) (hx : x∉l2.map Prod.fst) : dbluEnv E x=runOps (ops true) (startEnv E) x :=
     copiesEnv_keep _ _ hx
-  have w10 : dbluEnv E 768=r 10 := (wk 768 (by decide)).trans (g 10 (by decide))
-  have w11 : dbluEnv E 5400=r 11 := (wk 5400 (by decide)).trans (g 11 (by decide))
-  have w12 : dbluEnv E 5432=r 12 := (wk 5432 (by decide)).trans (g 12 (by decide))
+  obtain w10 : dbluEnv E 768=r 10 := (wk 768 (by decide)).trans (g 10 (by decide))
+  obtain w11 : dbluEnv E 5400=r 11 := (wk 5400 (by decide)).trans (g 11 (by decide))
+  obtain w12 : dbluEnv E 5432=r 12 := (wk 5432 (by decide)).trans (g 12 (by decide))
   have ent (j : Nat) (hj : j<5) : dbluEnv E (dst 1 j)=copiesEnv l1 E (src j) := by
     rw [wk _ (by revert j; decide),ops_keep true _ (dst_tblW (by decide) (by decide) hj),sd j hj]
-  have n0 := ent 0 (by decide); have n1 := ent 1 (by decide); have n2 := ent 2 (by decide)
-  have n3 := ent 3 (by decide); have n4 := ent 4 (by decide)
+  obtain n0 := ent 0 (by decide); have n1 := ent 1 (by decide); have n2 := ent 2 (by decide)
+  obtain n3 := ent 3 (by decide); have n4 := ent 4 (by decide)
   rw [c1 0 (by decide)] at n0; rw [c1 1 (by decide)] at n1; rw [c1 2 (by decide)] at n2
   rw [c1 3 (by decide)] at n3; rw [c1 4 (by decide)] at n4
   simp only [List.getD_cons_zero,List.getD_cons_succ,h1] at n0 n1 n2 n3 n4
@@ -259,12 +259,12 @@ theorem build_env {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
       InvJ C (buildEnv E (dst a 0)) (buildEnv E (dst a 1)) (buildEnv E (dst a 2)) (mul (2*a-1) Q) ∧
       buildEnv E (dst a 3)=buildEnv E (dst a 2)*buildEnv E (dst a 2) ∧
       buildEnv E (dst a 4)=buildEnv E (dst a 3)*buildEnv E (dst a 2) := by
-  have hQ0 : Q≠.infinity := fun hh => hC.one_ne_zero ((jp.z_zero_iff hC).mpr hh)
-  have h := coz_loop hC ha hO hQ hQ0 (coz_dblu hC ha hO hQ jp h1) 7 (by decide)
+  obtain hQ0 : Q≠.infinity := fun hh => hC.one_ne_zero ((jp.z_zero_iff hC).mpr hh)
+  obtain h := coz_loop hC ha hO hQ hQ0 (coz_dblu hC ha hO hQ jp h1) 7 (by decide)
   intro a ha1 ha8
   have k (j : Nat) (hj : j<5) : buildEnv E (dst a j)=loopEnv 7 (dbluEnv E) (dst a j) := by
     apply copiesEnv_keep
-    have hh : ∀ a<8,∀ j<5,dst (a+1) j∉l4.map Prod.fst := by decide
+    obtain hh : ∀ a<8,∀ j<5,dst (a+1) j∉l4.map Prod.fst := by decide
     have := hh (a-1) (by omega_arith) j hj
     rwa [show a-1+1=a by omega_arith] at this
   rw [k 0 (by decide),k 1 (by decide),k 2 (by decide),k 3 (by decide),k 4 (by decide)]

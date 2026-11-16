@@ -144,18 +144,18 @@ include E
 theorem row_ok (hk : k = 3 ∨ k = 4)
     {s : State} (h : P1 k σ s) : WP isa (.seq (.block (([.mov .rcx (.reg .rbx)] : List Instr) ++ Bodies.avx2.tab))
       (rowIn k)) s (P2 k σ) := by
-  have hk4 : k ≤ 4 := by omega_arith
+  obtain hk4 : k ≤ 4 := by omega_arith
   have nC := E.nC
   have nA := E.nA
   have nS := E.nS
-  have hcw : cR (σ.gpr .r8) ∈ σ.wr := by rw [E.wr]; simp
-  have hew : pR (σ.gpr .rcx) ∈ σ.wr := by rw [E.wr]; simp
+  obtain hcw : cR (σ.gpr .r8) ∈ σ.wr := by rw [E.wr]; simp
+  obtain hew : pR (σ.gpr .rcx) ∈ σ.wr := by rw [E.wr]; simp
   -- the frame of the save
-  have hf1 : Frame [cR (σ.gpr .r8)] σ.mem s.mem := by
+  obtain hf1 : Frame [cR (σ.gpr .r8)] σ.mem s.mem := by
     rw [h.mem]
     exact Spill.saveMem_frame_base σ.mem (σ.gpr .r8) σ.gpr KpkeMul.slots (L := 4096)
       (fun p hp' => by have := DecMul.slots_bound p hp'; omega_arith) (by decide)
-  have hsv : Spill.Saved s.mem (σ.gpr .r8) σ.gpr KpkeMul.slots := by
+  obtain hsv : Spill.Saved s.mem (σ.gpr .r8) σ.gpr KpkeMul.slots := by
     rw [h.mem]; exact Spill.saveMem_saved _ _ _ _ (by decide)
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -163,32 +163,32 @@ theorem row_ok (hk : k = 3 ∨ k = 4)
     (by vrunm [h.rbx]; exact ⟨fun r hr => by
       simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl⟩)
     fun s1 ⟨h1cx, hm1, k1⟩ => ?_
-  have hin : InRegions s1.wr (s1.gpr .rcx + BitVec.ofNat 64 3328) 256 := by
+  obtain hin : InRegions s1.wr (s1.gpr .rcx + BitVec.ofNat 64 3328) 256 := by
     rw [k1.2.2, h.wr, h1cx]; exact ⟨_, hcw, in_c (by decide)⟩
   refine WP.mono (BodiesOk.avx2.tab s1 hin) fun s2 ⟨hT2, hf2, k2⟩ => ?_
   rw [h1cx] at hT2 hf2
   rw [hm1] at hf2
-  have k12 := k1.trans k2
-  have h2bx : s2.gpr .rbx = (σ.gpr .r8) := by rw [k12.gpr (by decide), h.rbx]
-  have hf12 : Frame [cR (σ.gpr .r8)] σ.mem s2.mem :=
+  obtain k12 := k1.trans k2
+  obtain h2bx : s2.gpr .rbx = (σ.gpr .r8) := by rw [k12.gpr (by decide), h.rbx]
+  obtain hf12 : Frame [cR (σ.gpr .r8)] σ.mem s2.mem :=
     hf1.trans (hf2.sub fun r hr => ⟨cR (σ.gpr .r8), by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact DecMul.sub_c (by decide)⟩)
-  have hsv2 : Spill.Saved s2.mem (σ.gpr .r8) σ.gpr KpkeMul.slots :=
+  obtain hsv2 : Spill.Saved s2.mem (σ.gpr .r8) σ.gpr KpkeMul.slots :=
     hsv.frame hf2 fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (EncMul.hi_dis_tab _).sub_left (sub_hi (DecMul.slots_bound p hp').1 (by
         have := (DecMul.slots_bound p hp').2; omega_arith))
-  have hfa : ∀ {o n : Nat}, o + n ≤ 512 * k → Region.Disjoint ⟨σ.gpr .rsi + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
+  obtain hfa : ∀ {o n : Nat}, o + n ≤ 512 * k → Region.Disjoint ⟨σ.gpr .rsi + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
     fun h => E.aC.sub_left (Offset.sub_base _ h)
-  have hfs : ∀ {o n : Nat}, o + n ≤ 1024 * k → Region.Disjoint ⟨σ.gpr .rdx + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
+  obtain hfs : ∀ {o n : Nat}, o + n ≤ 1024 * k → Region.Disjoint ⟨σ.gpr .rdx + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
     fun h => E.sC.sub_left (Offset.sub_base _ h)
   refine WP.mono (noMx_ok (sP := σ.gpr .r8) (Q := P2 k σ) (fun s3 k3 f3 => ?_)) fun s5 ⟨s4, hq4, hf5, k5⟩ => ?_
   · -- the row
-    have hmx : Region.Sub (mxR (σ.gpr .r8)) (cR (σ.gpr .r8)) := DecMul.sub_c (by decide)
-    have hf3 : Frame [cR (σ.gpr .r8)] σ.mem s3.mem :=
+    obtain hmx : Region.Sub (mxR (σ.gpr .r8)) (cR (σ.gpr .r8)) := DecMul.sub_c (by decide)
+    obtain hf3 : Frame [cR (σ.gpr .r8)] σ.mem s3.mem :=
       hf12.trans (f3.sub fun r hr => ⟨cR (σ.gpr .r8), by simp, by
         simp only [List.mem_singleton] at hr; subst hr; exact hmx⟩)
-    have k23 := k12.trans k3
+    obtain k23 := k12.trans k3
     refine WP.seq (WP.mono (Q := fun (s4 : State) => s4.gpr .rdi = σ.gpr .rcx ∧ s4.gpr .rsi = σ.gpr .rsi ∧
         s4.gpr .rdx = σ.gpr .rdx ∧ s4.gpr .rcx = σ.gpr .r8 ∧ s4.mem = s3.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx] s3 s4)
       (by
@@ -197,12 +197,12 @@ theorem row_ok (hk : k = 3 ∨ k = 4)
         refine ⟨fun r hr => ?_, rfl, rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s4 ⟨h4di, h4si, h4dx, h4cx, hm4, k4⟩ => ?_)
-    have hsr4 : s4.rd = [⟨σ.gpr .rsi, 512 * k⟩, ⟨σ.gpr .rdx, 1024 * k⟩] := by
+    obtain hsr4 : s4.rd = [⟨σ.gpr .rsi, 512 * k⟩, ⟨σ.gpr .rdx, 1024 * k⟩] := by
       rw [k4.2.1, k3.2.1, k12.2.1, h.rd, E.rd]
-    have hsw4 : s4.wr = [⟨σ.gpr .rdi, 384⟩, pR (σ.gpr .rcx), cR (σ.gpr .r8)] := by
+    obtain hsw4 : s4.wr = [⟨σ.gpr .rdi, 384⟩, pR (σ.gpr .rcx), cR (σ.gpr .r8)] := by
       rw [k4.2.2, k3.2.2, k12.2.2, h.wr, E.wr]
-    have hf4 : Frame [cR (σ.gpr .r8)] σ.mem s4.mem := by rw [hm4]; exact hf3
-    have hx : RowY.CtxG (FRep.u16 512) k (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8)
+    obtain hf4 : Frame [cR (σ.gpr .r8)] σ.mem s4.mem := by rw [hm4]; exact hf3
+    obtain hx : RowY.CtxG (FRep.u16 512) k (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8)
         (vecAtW 16 σ.mem (σ.gpr .rsi) k) (vecAt σ.mem (σ.gpr .rdx) k) s4.mem s4.rd s4.wr :=
       { k1 := by omega_arith
         k4 := hk4
@@ -239,11 +239,11 @@ theorem row_ok (hk : k = 3 ∨ k = 4)
           ⟨E.redE, rfl⟩).1 }
     refine WP.mono (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8]
       (RowY.rowYg_ok (FRep.u16 512) hx h4si h4dx h4di h4cx) (rowY16_wo hk)) fun s5 ⟨⟨hP5, hf5, hrd5, hwr5⟩, k5⟩ => ?_
-    have k35 := k4.trans k5
-    have g : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp], s5.gpr r = s.gpr r := fun r hr => by
+    obtain k35 := k4.trans k5
+    obtain g : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp], s5.gpr r = s.gpr r := fun r hr => by
       rw [k35.gpr (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
         k23.gpr (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)]
-    have hfe : Frame [pR (σ.gpr .rcx)] s3.mem s5.mem := by rw [← hm4]; exact hf5
+    obtain hfe : Frame [pR (σ.gpr .rcx)] s3.mem s5.mem := by rw [← hm4]; exact hf5
     refine ⟨by rw [g .rbx (by simp), h.rbx], by rw [g .r12 (by simp), h.r12], by rw [g .r13 (by simp), h.r13],
       by rw [g .rsp (by simp), h.rsp], by rw [hrd5, hsr4, E.rd], by rw [hwr5, hsw4, E.wr], ?_, ?_, ?_⟩
     · refine (hsv2.frame f3 fun p hp' r hr => ?_).frame hfe fun p hp' r hr => ?_
@@ -254,7 +254,7 @@ theorem row_ok (hk : k = 3 ∨ k = 4)
         exact (E.eC.symm.sub_left (DecMul.sub_c (by have := DecMul.slots_bound p hp'; omega_arith)))
     · exact (hf3.mono (by simp)).trans (hfe.mono (by simp))
     · rw [hm4] at hP5
-      have he : polyAt s3.mem (σ.gpr .rcx) = polyAt σ.mem (σ.gpr .rcx) :=
+      obtain he : polyAt s3.mem (σ.gpr .rcx) = polyAt σ.mem (σ.gpr .rcx) :=
         (polyIs_frame hf3 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact E.eC)
           ⟨E.redE, rfl⟩).2
       rw [he] at hP5
@@ -275,15 +275,15 @@ end
 theorem kgRow_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L : Kem} (hk : L.k = 3 ∨ L.k = 4)
     {σ : State} (hp : (kgRowK L.k).pre σ) :
     WP isa (KpkeKgRows.kgRow L A) σ fun s' => gprPreserved σ s' ∧ (kgRowK L.k).post σ s' := by
-  have E := ep hp
+  obtain E := ep hp
   have nE := E.nE
   have nK := E.nK
   unfold KpkeKgRows.kgRow
   refine pro_ok E fun s1 h1 => ?_
   refine WP.seq (WP.mono (row_ok E hk h1) fun s2 h2 => ?_)
-  have e13 : pa s2 ((.r13, 0) : Ptr) = σ.gpr .rcx := by simp only [pa, h2.r13, add_ofNat_zero]
-  have e12 : pa s2 ((.r12, 0) : Ptr) = σ.gpr .rdi := by simp only [pa, h2.r12, add_ofNat_zero]
-  have hT : TwoHi (.r13, 0) (.r12, 0) 1024 384 s2 :=
+  obtain e13 : pa s2 ((.r13, 0) : Ptr) = σ.gpr .rcx := by simp only [pa, h2.r13, add_ofNat_zero]
+  obtain e12 : pa s2 ((.r12, 0) : Ptr) = σ.gpr .rdi := by simp only [pa, h2.r12, add_ofNat_zero]
+  obtain hT : TwoHi (.r13, 0) (.r12, 0) 1024 384 s2 :=
     { off := ⟨by decide, by decide⟩
       d := by rw [e13, e12]; exact E.kE.symm
       rP := by rw [e13, show retR s2 = retR σ by simp only [retR, h2.rsp]]; exact E.xE
@@ -299,8 +299,8 @@ theorem kgRow_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L :
     fun s3 ⟨hP3, hb3⟩ => ?_)
   rw [e13, e12, h2.sum.2] at hb3
   rw [e12] at hP3
-  have h3bx : s3.gpr .rbx = σ.gpr .r8 := by rw [hP3.cs .rbx (by decide), h2.rbx]
-  have hsv3 : Spill.Saved s3.mem (s3.gpr .rbx) σ.gpr KpkeMul.slots := by
+  obtain h3bx : s3.gpr .rbx = σ.gpr .r8 := by rw [hP3.cs .rbx (by decide), h2.rbx]
+  obtain hsv3 : Spill.Saved s3.mem (s3.gpr .rbx) σ.gpr KpkeMul.slots := by
     rw [h3bx]
     exact h2.saved.frame hP3.frame fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -312,7 +312,7 @@ theorem kgRow_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L :
   · rw [h3bx, hP3.rd, hP3.wr, h2.rd, h2.wr, E.rd, E.wr]
     exact ⟨cR (σ.gpr .r8), by simp, in_c (by have := DecMul.slots_bound p hp'; omega_arith)⟩
   · rw [hm']
-    have hf : Frame [cR (σ.gpr .r8), pR (σ.gpr .rcx), ⟨σ.gpr .rdi, 384⟩] σ.mem s3.mem :=
+    obtain hf : Frame [cR (σ.gpr .r8), pR (σ.gpr .rcx), ⟨σ.gpr .rdi, 384⟩] σ.mem s3.mem :=
       (h2.frame.mono (by simp)).trans (hP3.frame.mono (by simp))
     refine hf.readW (r := retR σ) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -63,15 +63,15 @@ theorem recP2aFrom_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {a0 : List I
       PublicChecked.base .r10 bj)) (.seq subMod (.seq (.block (a0 ++
       PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0)) (.seq addMask c)))) s Q := by
   have hnw := hs.nowrap
-  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e bj; have e1' : slot w bj + 8 * (w + 2) ≤ slot w 8 := by
+  obtain e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e bj; have e1' : slot w bj + 8 * (w + 2) ≤ slot w 8 := by
     simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show bj + 1 ≤ 8 by omega_arith); rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
-  have e1'' : bj < 3 ∨ 4 < bj := by omega_arith
-  have e1s : slot w bj + 8 * (w + 2) ≤ slot w 3 ∨ slot w 4 + 8 * (w + 2) ≤ slot w bj := by
+  obtain e1'' : bj < 3 ∨ 4 < bj := by omega_arith
+  obtain e1s : slot w bj + 8 * (w + 2) ≤ slot w 3 ∨ slot w 4 + 8 * (w + 2) ≤ slot w bj := by
     rcases e1'' with h | h
     · left; simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show bj + 1 ≤ 3 by omega_arith); rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
     · right; simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show 5 ≤ bj by omega_arith); omega_arith
-  have e3 := e 3; have e4 := e 4; have e8 := e 8
+  obtain e3 := e 3; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   refine WP.seq ?_
   simp only [List.append_assoc]
@@ -85,66 +85,66 @@ theorem recP2aFrom_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {a0 : List I
     prun [a14, (k1.gpr .r29 (by decide)).trans h29, off_add, e16,
       (hs.congr k1.wr).st (show slot w 4 + 8 * w + 8 ≤ Z by omega_arith)]
     rfl
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [m1'] at m2'
-  have ow := writeW_outside s.mem B (d := slot w 4 + 8 * w) (0 : BitVec 64) (by omega_arith)
-  have ow' : Mont.Outside B (slot w 4 + 8 * w) 8 s.mem s₂.mem := by rw [m2']; exact fun x hx => ow x hx
+  obtain ow := writeW_outside s.mem B (d := slot w 4 + 8 * w) (0 : BitVec 64) (by omega_arith)
+  obtain ow' : Mont.Outside B (slot w 4 + 8 * w) 8 s.mem s₂.mem := by rw [m2']; exact fun x hx => ow x hx
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r8) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h29) 4) fun s₃ ⟨⟨a8, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r9) (by decide) (by decide) ((k13.gpr _ (by decide)).trans h10)
     ((k13.gpr _ (by decide)).trans h29) 3) fun s₄ ⟨⟨a9, m4⟩, k4⟩ => ?_
-  have k14 := k13.trans k4
+  obtain k14 := k13.trans k4
   refine WP.mono (Pub.base_ok (rd := .r10) (by decide) (by decide) ((k14.gpr _ (by decide)).trans h10)
     ((k14.gpr _ (by decide)).trans h29) bj) fun s₅ ⟨⟨a10, m5⟩, k5⟩ => ?_
-  have k15 := k14.trans k5
-  have hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
+  obtain k15 := k14.trans k5
+  obtain hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
   refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 4) (dT := slot w 3) (dM := slot w bj)
     (hs.congr k15.wr) ((k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans a8))
     ((k5.gpr _ (by decide)).trans a9) a10
     ((k15.gpr _ (by decide)).trans h11) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith)) fun s₆ ⟨⟨cc, hcc, hD, h20⟩, out6, k6⟩ => ?_)
-  have k16 := k15.trans k6
+  obtain k16 := k15.trans k6
   rw [hm5] at hD h20 out6
-  have v1 : val32 s₂.mem B (slot w bj) (2 * w) = b := by rw [ow'.val32 (by omega_arith) (by omega_arith), hb]
-  have v4 : val32 s₂.mem B (slot w 4) (2 * w) = m1 := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hm1]
-  have v0 : val32 s₂.mem B (slot w 0) (2 * w) = Pv := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
-  have h0 : w32 s₂.mem B (slot w 4 + 4 * (2 * w)) = 0 := by
+  obtain v1 : val32 s₂.mem B (slot w bj) (2 * w) = b := by rw [ow'.val32 (by omega_arith) (by omega_arith), hb]
+  obtain v4 : val32 s₂.mem B (slot w 4) (2 * w) = m1 := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hm1]
+  obtain v0 : val32 s₂.mem B (slot w 0) (2 * w) = Pv := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
+  obtain h0 : w32 s₂.mem B (slot w 4 + 4 * (2 * w)) = 0 := by
     have := word_eq_w32 s₂.mem B (slot w 4 + 8 * w)
     rw [show Mont.word s₂.mem B (slot w 4 + 8 * w) = 0 by rw [m2']; exact word_writeW_self _ _ _ _,
       show (0 : BitVec 64).toNat = 0 from rfl, show slot w 4 + 8 * w = slot w 4 + 4 * (2 * w) by omega_arith] at this
     omega_arith
   rw [v1, v4] at hD
   rw [h0] at h20
-  have out6' : Mont.Outside B (slot w 3) (4 * (2 * w)) s₂.mem s₆.mem := fun x hx => out6 x hx
-  have v0' : val32 s₆.mem B (slot w 0) (2 * w) = Pv := by rw [out6'.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
+  obtain out6' : Mont.Outside B (slot w 3) (4 * (2 * w)) s₂.mem s₆.mem := fun x hx => out6 x hx
+  obtain v0' : val32 s₆.mem B (slot w 0) (2 * w) = Pv := by rw [out6'.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (ha0 s₆ (k16.mono (by decide))) fun s₇ ⟨⟨a10', m7⟩, k7⟩ => ?_
-  have k17 := k16.trans k7
+  obtain k17 := k16.trans k7
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r15) (by decide) (by decide) a10' ((k17.gpr _ (by decide)).trans h29) 3)
     fun s₈ ⟨⟨a15, m8⟩, k8⟩ => ?_
   refine WP.mono (Pub.base_ok (rd := .r16) (by decide) (by decide) ((k8.gpr _ (by decide)).trans a10')
     (((k17.trans k8).gpr _ (by decide)).trans h29) 0) fun s₉ ⟨⟨a16, m9⟩, k9⟩ => ?_
-  have k19 := (k17.trans k8).trans k9
-  have hm9 : s₉.mem = s₆.mem := by rw [m9, m8, m7]
+  obtain k19 := (k17.trans k8).trans k9
+  obtain hm9 : s₉.mem = s₆.mem := by rw [m9, m8, m7]
   refine WP.seq (WP.mono (addMask_ok (b := decide (0 < cc)) (n := 2 * w) (dT := slot w 3) (dM := slot w 0)
     (hs.congr k19.wr) ((k9.gpr _ (by decide)).trans a15) a16 ((k19.gpr _ (by decide)).trans h11)
     (by rw [k9.gpr _ (by decide), k8.gpr _ (by decide), k7.gpr _ (by decide), h20]; simp only [decide_eq_true_eq])
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨hT, outT, kT⟩ => ?_)
   rw [hm9, v0'] at hT
   rw [hm9] at outT
-  have hval : val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv := by
+  obtain hval : val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv := by
     refine subAdd_val hm1P hbP (by rw [← v0]; exact val32_lt _ _ _ _) hcc (val32_lt _ _ _ _) hD ?_
     rw [hT]; simp only [decide_eq_true_eq]
   refine hc t hval ?_ ((kT.gpr _ (by decide)).trans ((k9.gpr _ (by decide)).trans ((k8.gpr _ (by decide)).trans a10')))
     (k19.trans kT).mono
   intro x hx
-  have h3 := hx _ (List.mem_cons_self ..)
-  have h4 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  obtain h3 := hx _ (List.mem_cons_self ..)
+  obtain h4 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   have h3' : ofs B x < slot w 3 ∨ slot w 3 + 8 * (w + 2) ≤ ofs B x := h3
   have h4' : ofs B x < slot w 4 ∨ slot w 4 + 8 * (w + 2) ≤ ofs B x := h4
   rw [outT x (by omega_arith), out6 x (by omega_arith), m2', ow x (by omega_arith)]

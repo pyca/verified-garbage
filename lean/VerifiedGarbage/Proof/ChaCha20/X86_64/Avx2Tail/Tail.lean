@@ -52,15 +52,15 @@ theorem cst_of {s₀ : State} {p : Nat} {s : State} (h : TInv (XA s₀) s₀ p s
 theorem lastT_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hle : eL s₀ - p ≤ 256)
     {s : State} (h : TInv (XA s₀) s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     WP isa (last vl) s (DoneT s₀) := by
-  have hL := eL_lt s₀
+  obtain hL := eL_lt s₀
   obtain ⟨hm, hi⟩ := cst_of h hr9
   refine WP.seq (WP.mono (setup_ok (h.ctx0 hp hr9 rfl rfl) hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
   refine WP.seq (WP.mono (roundsS_ok vl (.inr rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
-  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
-  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
-  have hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
+  obtain g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  obtain m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  obtain hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
   refine WP.seq (WP.mono (last_ok (h.ctx0 hp hr9 g₂ (sm₂.wr.trans wr₁)) hi₂ hz₂) fun s₃ ⟨b₃, f₃, g₃, rd₃, wr₃⟩ => ?_)
-  have f₃' := wregs0 hr9 g₂ f₃
+  obtain f₃' := wregs0 hr9 g₂ f₃
   rw [m₂] at f₃'
   refine fromBufT_ok vl hp hle h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
     (wr₃.trans (sm₂.wr.trans wr₁)) f₃' fun k hk => ?_
@@ -70,15 +70,15 @@ theorem lastT_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hle : eL
 theorem last1T_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
     {s : State} (h : TInv (XA s₀) s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     WP isa (last1 vl) s (DoneT s₀) := by
-  have hL := eL_lt s₀
+  obtain hL := eL_lt s₀
   obtain ⟨hm, hi⟩ := cst_of h hr9
   refine WP.seq (WP.mono (setup1_ok (h.ctx0 hp hr9 rfl rfl) hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
   refine WP.seq (WP.mono (roundsS_ok vl (.inl rfl) hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
-  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
-  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
-  have hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
+  obtain g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  obtain m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  obtain hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
   refine WP.seq (WP.mono (last1_ok (h.ctx0 hp hr9 g₂ (sm₂.wr.trans wr₁)) hi₂ hz₂) fun s₃ ⟨b₃, f₃, g₃, rd₃, wr₃⟩ => ?_)
-  have f₃' := wregs0 hr9 g₂ f₃
+  obtain f₃' := wregs0 hr9 g₂ f₃
   rw [m₂] at f₃'
   refine fromBufT_ok vl hp (by omega_arith) h hr9 (g₃.trans g₂) (rd₃.trans (sm₂.rd.trans rd₁))
     (wr₃.trans (sm₂.wr.trans wr₁)) f₃' fun k hk => ?_
@@ -91,21 +91,21 @@ theorem last1T_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hle : e
 destination, and returns with `rsi` pointing at `buf`. -/
 theorem scalarT_ok {s₀ : State} (hp : TPre s₀) {p : Nat} {s : State} (h : TInv (XA s₀) s₀ p s) :
     WP isa scalar s (FinT s₀) := by
-  have hL := eL_lt s₀
+  obtain hL := eL_lt s₀
   have hle := h.le
   refine WP.seq (WP.mono (vz_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
-  have hsp : s₁.gpr .rsp = s₀.gpr .rsp := by rw [g₁]; exact h.keep .rsp (by simp [calleeSaved])
-  have hsp' : (toR8 s₁).gpr .rsp = s₀.gpr .rsp := by rw [X86_64.RegUpd.gpr_setReg_of_ne _ _ (by decide), hsp]
-  have hne : ∀ r : Reg, r ≠ .rsp → r ≠ .r8 → (toR8 s₁).callEntry.gpr r = s.gpr r := fun r h h8 => by
+  obtain hsp : s₁.gpr .rsp = s₀.gpr .rsp := by rw [g₁]; exact h.keep .rsp (by simp [calleeSaved])
+  obtain hsp' : (toR8 s₁).gpr .rsp = s₀.gpr .rsp := by rw [X86_64.RegUpd.gpr_setReg_of_ne _ _ (by decide), hsp]
+  obtain hne : ∀ r : Reg, r ≠ .rsp → r ≠ .r8 → (toR8 s₁).callEntry.gpr r = s.gpr r := fun r h h8 => by
     rw [State.callEntry_gpr _ h, X86_64.RegUpd.gpr_setReg_of_ne _ _ h8, g₁]
-  have h8 : (toR8 s₁).callEntry.gpr .r8 = edq s₀ + BitVec.ofNat 64 p := by
+  obtain h8 : (toR8 s₁).callEntry.gpr .r8 = edq s₀ + BitVec.ofNat 64 p := by
     rw [State.callEntry_gpr _ (by decide), X86_64.RegUpd.gpr_setReg_self, g₁, h.r11, h.rsi, XorBuf.sub_add_add]
-  have hn : (BitVec.ofNat 64 (eL s₀ - p)).toNat = eL s₀ - p := toNat_ofNat_lt (by omega_arith)
-  have hwr : s₁.wr = frT s₀ := by rw [wr₁, h.wr, hp.wr]
-  have hrd : edR s₀ ∈ s₁.rd ++ frT s₀ := by rw [← hwr, rd₁, wr₁, h.rd, h.wr]; exact hp.rd
-  have ts := pS_sub (s₀ := s₀) hle
-  have tq := pQ_sub (s₀ := s₀) hle
-  have Fce : Frame [estk s₀] s₁.mem (toR8 s₁).callEntry.mem := by
+  obtain hn : (BitVec.ofNat 64 (eL s₀ - p)).toNat = eL s₀ - p := toNat_ofNat_lt (by omega_arith)
+  obtain hwr : s₁.wr = frT s₀ := by rw [wr₁, h.wr, hp.wr]
+  obtain hrd : edR s₀ ∈ s₁.rd ++ frT s₀ := by rw [← hwr, rd₁, wr₁, h.rd, h.wr]; exact hp.rd
+  obtain ts := pS_sub (s₀ := s₀) hle
+  obtain tq := pQ_sub (s₀ := s₀) hle
+  obtain Fce : Frame [estk s₀] s₁.mem (toR8 s₁).callEntry.mem := by
     rw [State.callEntry_mem, X86_64.RegUpd.mem_setReg, hsp']
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by omega_arith) (by omega_arith))
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .rsi = ebp s₀ ∧ (∀ r ∈ calleeSaved, s₂.gpr r = s₀.gpr r) ∧
@@ -146,7 +146,7 @@ theorem scalarT_ok {s₀ : State} (hp : TPre s₀) {p : Nat} {s : State} (h : TI
       · exact ⟨Avx2.bufR (ebp s₀), by simp, 0, by simp, show 0 + 320 ≤ 320 by omega_arith⟩
     · intro s₂ rd₂ wr₂ hcs hf _ ⟨s₃, hm₃, hg₃, hpost, hrsi₃⟩
       rw [Avx2.xor_depth, hsp] at hf
-      have hce : stateAt (toR8 s₁).callEntry.mem (est s₀) = stateAt s₁.mem (est s₀) :=
+      obtain hce : stateAt (toR8 s₁).callEntry.mem (est s₀) = stateAt s₁.mem (est s₀) :=
         Xor.stateAt_frame Fce (by simpa using hp.stk_st.symm)
       simp only [State.withRegions_gpr, State.withRegions_mem,
         hne _ (by decide : Reg.rdi ≠ .rsp) (by decide), hne _ (by decide : Reg.rsi ≠ .rsp) (by decide),
@@ -157,9 +157,9 @@ theorem scalarT_ok {s₀ : State} (hp : TPre s₀) {p : Nat} {s : State} (h : TI
       · rw [← hg₃ .rsi (by decide), hrsi₃, State.withRegions_gpr, hne _ (by decide) (by decide), h.rcx]
       · have n_st : ¬ (Avx2.stR (est s₀)).Contains (edq s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
           hp.st_q _ hc (in_eqR hk)
-        have n_b : ¬ (Avx2.bufR (ebp s₀)).Contains (edq s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
+        obtain n_b : ¬ (Avx2.bufR (ebp s₀)).Contains (edq s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
           hp.q_b _ (in_eqR hk) hc
-        have n_sk : ¬ (estk s₀).Contains (edq s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
+        obtain n_sk : ¬ (estk s₀).Contains (edq s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
           hp.stk_q _ hc (in_eqR hk)
         by_cases hk' : k < p
         · rw [hf _ (by
@@ -174,10 +174,10 @@ theorem scalarT_ok {s₀ : State} (hp : TPre s₀) {p : Nat} {s : State} (h : TI
         · have ea : edq s₀ + BitVec.ofNat 64 k =
               edq s₀ + BitVec.ofNat 64 p + BitVec.ofNat 64 (k - p) := by
             rw [add_ofNat, Nat.add_sub_cancel' (by omega_arith)]
-          have ea' : edp s₀ + BitVec.ofNat 64 k =
+          obtain ea' : edp s₀ + BitVec.ofNat 64 k =
               edp s₀ + BitVec.ofNat 64 p + BitVec.ofNat 64 (k - p) := by
             rw [add_ofNat, Nat.add_sub_cancel' (by omega_arith)]
-          have x := Avx2.bytes_of_bytesAt_to (length_keystream _ _) hpost (k := k - p) (by omega_arith)
+          obtain x := Avx2.bytes_of_bytesAt_to (length_keystream _ _) hpost (k := k - p) (by omega_arith)
           rw [← ea, ← ea', Fce _ (by simpa using fun hc => hp.stk_d _ hc (in_dR hk)), m₁,
             h.src hp (k := k) (by omega_arith) hk, keystream_getD _ (by omega_arith)] at x
           rw [x, keystream_getD _ hk, ctr_ctr]
@@ -224,23 +224,23 @@ theorem last3_eq (vl : Bool) : last3 vl = .seq (.block setup3) (.seq (roundsS vl
 theorem last3T_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hge : 257 ≤ eL s₀ - p) (hle : eL s₀ - p ≤ 384)
     {s : State} (h : TInv (XA s₀) s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     WP isa (last3 vl) s (DoneT s₀) := by
-  have hL := eL_lt s₀
-  have hw : p + 4 * 64 ≤ eL s₀ := by omega_arith
+  obtain hL := eL_lt s₀
+  obtain hw : p + 4 * 64 ≤ eL s₀ := by omega_arith
   obtain ⟨hm, hi⟩ := cst_of h hr9
   rw [last3_eq vl]
   refine WP.seq (WP.mono (setup3_ok (h.ctx0 hp hr9 rfl rfl) hm hi) fun s₁ ⟨hz₁, ym₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
   refine WP.seq (WP.mono (roundsS3_ok vl hz₁ ym₁ 10) fun s₂ ⟨hz₂, _, sm₂⟩ => ?_)
-  have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
-  have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
-  have rd₂ : s₂.rd = s.rd := sm₂.rd.trans rd₁
-  have wr₂ : s₂.wr = s.wr := sm₂.wr.trans wr₁
-  have hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
+  obtain g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
+  obtain m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
+  obtain rd₂ : s₂.rd = s.rd := sm₂.rd.trans rd₁
+  obtain wr₂ : s₂.wr = s.wr := sm₂.wr.trans wr₁
+  obtain hi₂ : Incs s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi
   refine WP.seq (WP.block_append (WP.mono (last3_ok (h.ctxT hp hr9 hw (by decide) g₂ rd₂ wr₂) hi₂ hz₂)
     fun s₃ ⟨d₃, b₃, f₃, g₃, rd₃, wr₃⟩ => ?_))
-  have g₃' : s₃.gpr = s.gpr := g₃.trans g₂
+  obtain g₃' : s₃.gpr = s.gpr := g₃.trans g₂
   refine WP.mono (advN_ok (s₀ := s₀) (p := p) (N := 256) (by decide) (by omega_arith) (by rw [g₃']; exact h.rsi)
     (by rw [g₃']; exact h.rdx)) fun s₄ ⟨e₁, e₂, e₃, m₄, rd₄, wr₄⟩ => ?_
-  have gk : ∀ r, r ≠ .rsi → r ≠ .rdx → s₄.gpr r = s.gpr r := fun r a b => by rw [e₃ r a b, g₃']
+  obtain gk : ∀ r, r ≠ .rsi → r ≠ .rdx → s₄.gpr r = s.gpr r := fun r a b => by rw [e₃ r a b, g₃']
   rw [h.wregs hr9 g₂, m₂] at f₃
   refine restT_ok vl hp (w := 256) (by omega_arith) (by omega_arith) h e₁
     (by rw [gk _ (by decide) (by decide)]; exact h.r11) (by rw [gk _ (by decide) (by decide)]; exact hr9) e₂

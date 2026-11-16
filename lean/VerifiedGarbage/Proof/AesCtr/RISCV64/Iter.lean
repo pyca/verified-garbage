@@ -66,18 +66,18 @@ theorem mid_wp {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctr
     (a : Pre s₀ k s s₁) : WP isa ctrCall s₁ (Mid s₀ k) := by
   refine WP.mono (ctr_call a.call) fun s₂ c => ?_
   have g (r : Reg) (hr : r ∈ preserved) : s₂.gpr r = s.gpr r := by rw [c.saved r hr, a.saved r hr]
-  have hm0 := mOf_pos hk
-  have hle := mOf_le s₀ k
+  obtain hm0 := mOf_pos hk
+  obtain hle := mOf_le s₀ k
   have hdw := hp.data_wrap
   have hsw := hp.scr_wrap
   generalize hmd : mOf s₀ k = m at hm0 hle a c
-  have slotScr : Region.Sub (slotR s₀) (scrR s₀) := fun _ h => cR_sub _ (slot_sub s₀ _ h)
+  obtain slotScr : Region.Sub (slotR s₀) (scrR s₀) := fun _ h => cR_sub _ (slot_sub s₀ _ h)
   -- The memory before the call: the slot written.
-  have f₁ : Frame [slotR s₀] s.mem s₁.mem := by
+  obtain f₁ : Frame [slotR s₀] s.mem s₁.mem := by
     rw [a.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have segSub : Region.Sub ⟨blk s₀ k, 16 * m⟩ (dataR s₀) := UPre.seg_sub (by omega_arith)
+  obtain segSub : Region.Sub ⟨blk s₀ k, 16 * m⟩ (dataR s₀) := UPre.seg_sub (by omega_arith)
   have fc : Frame [ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀] s₁.mem s₂.mem := c.frame
-  have fAll : Frame (Mut s₀) s.mem s₂.mem :=
+  obtain fAll : Frame (Mut s₀) s.mem s₂.mem :=
     (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨cR s₀, by simp, slot_sub s₀⟩).trans
     (fc.sub fun r hr => by
@@ -87,32 +87,32 @@ theorem mid_wp {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctr
       · exact ⟨dataR s₀, by simp, segSub⟩
       · exact ⟨wsR s₀, by simp, fun _ h => h⟩)
   -- The slot after the call.
-  have dSlot : ∀ r ∈ [ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀], (slotR s₀).Disjoint r := by
+  obtain dSlot : ∀ r ∈ [ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀], (slotR s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.iv_scr.symm.sub_left slotScr
     · exact (hp.data_scr.symm.sub_left slotScr).sub_right segSub
     · exact hp.cR_wsR.sub_left (slot_sub s₀)
-  have slot : s₂.mem.readW (sv s₀) 64 = BitVec.ofNat 64 m := by
+  obtain slot : s₂.mem.readW (sv s₀) 64 = BitVec.ofNat 64 m := by
     rw [fc.readW (r := slotR s₀) (Region.contains_self _ _) dSlot (by decide),
       a.mem, Mem.readW_writeW_self64, hmd]
   -- The data and the counter block before the call.
-  have hiv : bytesAt s.mem (Iv s₀) 16 = next (iv0 s₀) k := by rw [h.iv, chainK_ctr s₀ (by omega_arith)]
-  have ivIn : bytesAt s₁.mem (Iv s₀) 16 = next (iv0 s₀) k := by
+  obtain hiv : bytesAt s.mem (Iv s₀) 16 = next (iv0 s₀) k := by rw [h.iv, chainK_ctr s₀ (by omega_arith)]
+  obtain ivIn : bytesAt s₁.mem (Iv s₀) 16 = next (iv0 s₀) k := by
     rw [Proof.Cmac.bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.iv_scr.sub_right slotScr) (by decide), hiv]
-  have big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
+  obtain big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, slotScr⟩)
-  have sched : bytesAt s₁.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp big₁
-  have hlen : (blks s₀).length = N s₀ := Proof.AesCbc.length_blocksAt _ _ _
+  obtain sched : bytesAt s₁.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp big₁
+  obtain hlen : (blks s₀).length = N s₀ := Proof.AesCbc.length_blocksAt _ _ _
   -- Blocks outside the call's.
   have outside (j : Nat) (hj : j < N s₀) (ho : j < k ∨ k + m ≤ j) :
       ∀ r ∈ [slotR s₀, ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀],
         (⟨Dp s₀ + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint r := by
     intro r hr
-    have dj : Region.Sub ⟨Dp s₀ + BitVec.ofNat 64 (16 * j), 16⟩ (dataR s₀) := Offset.sub_base _ (by omega_arith)
+    obtain dj : Region.Sub ⟨Dp s₀ + BitVec.ofNat 64 (16 * j), 16⟩ (dataR s₀) := Offset.sub_base _ (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact (hp.data_scr.sub_left dj).sub_right slotScr
@@ -122,7 +122,7 @@ theorem mid_wp {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctr
   have keepBlocks {p : Addr} {a n : Nat} (hp' : p = Dp s₀ + BitVec.ofNat 64 (16 * a)) (hn : a + n ≤ N s₀)
       (ho : a + n ≤ k ∨ k + m ≤ a) : Spec.Cbc.blocksAt s₂.mem p n = Spec.Cbc.blocksAt s.mem p n := by
     subst hp'
-    have hd : ∀ j < n, ∀ r ∈ [slotR s₀, ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀],
+    obtain hd : ∀ j < n, ∀ r ∈ [slotR s₀, ivR s₀, ⟨blk s₀ k, 16 * m⟩, wsR s₀],
         (⟨Dp s₀ + BitVec.ofNat 64 (16 * a) + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint r :=
       fun j hj => by
         rw [Offset.add_add, show 16 * a + 16 * j = 16 * (a + j) by omega_arith]
@@ -133,14 +133,14 @@ theorem mid_wp {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctr
   have dataS := h.data
   rw [outK, AesCtr.ctrMode_out] at dataS
   -- The call's blocks.
-  have segIn : Spec.Cbc.blocksAt s₁.mem (blk s₀ k) m = ((blks s₀).drop k).take m := by
+  obtain segIn : Spec.Cbc.blocksAt s₁.mem (blk s₀ k) m = ((blks s₀).drop k).take m := by
     rw [AesCtr.blocksAt_frame f₁ (fun j hj r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [Offset.add_add, show 16 * k + 16 * j = 16 * (k + j) by omega_arith]
       exact (hp.data_scr.sub_left (Offset.sub_base _ (by omega_arith))).sub_right slotScr),
       ← AesCtr.blocksAt_take _ _ (show m ≤ N s₀ - k by omega_arith), ← AesCtr.blocksAt_drop _ _ (by omega_arith), dataS,
       List.drop_left' (by rw [AesCtr.length_crypt, List.length_take, hlen, Nat.min_eq_left (by omega_arith)])]
-  have seg := AesCtr.ctr32_crypt (k := m) (by rw [ivIn, ← hmd]; exact lo32_mOf s₀ k) c.out
+  obtain seg := AesCtr.ctr32_crypt (k := m) (by rw [ivIn, ← hmd]; exact lo32_mOf s₀ k) c.out
   rw [sched, ivIn, segIn] at seg
   refine ⟨by rw [g .s1 (by decide), h.s1], by rw [g .s2 (by decide), h.s2],
     by rw [g .s3 (by decide), h.s3], by rw [g .s4 (by decide), h.s4],
@@ -148,12 +148,12 @@ theorem mid_wp {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctr
     fun r hr hv => by rw [g r hr, h.keep r hr hv], by rw [c.rd, a.rd, h.rd], by rw [c.wr, a.wr, h.wr],
     by rw [c.sp, a.sp, h.sp], h.frame.trans fAll, by rw [hmd]; exact slot, ?_, ?_, ?_⟩
   · -- The data: the first `k` blocks and those after the call's as they were, and the call's.
-    have hlc : (Spec.Ctr.crypt (Spec.Cbc.aesWith (R s₀) (wK s₀)) (iv0 s₀) ((blks s₀).take k)).length = k := by
+    obtain hlc : (Spec.Ctr.crypt (Spec.Cbc.aesWith (R s₀) (wK s₀)) (iv0 s₀) ((blks s₀).take k)).length = k := by
       rw [AesCtr.length_crypt, List.length_take, hlen, Nat.min_eq_left (by omega_arith)]
-    have hA : Spec.Cbc.blocksAt s.mem (Dp s₀) k =
+    obtain hA : Spec.Cbc.blocksAt s.mem (Dp s₀) k =
         Spec.Ctr.crypt (Spec.Cbc.aesWith (R s₀) (wK s₀)) (iv0 s₀) ((blks s₀).take k) := by
       rw [← AesCtr.blocksAt_take _ _ (show k ≤ N s₀ by omega_arith), dataS, List.take_left' hlc]
-    have hC : Spec.Cbc.blocksAt s.mem (Dp s₀ + BitVec.ofNat 64 (16 * (k + m))) (N s₀ - (k + m)) =
+    obtain hC : Spec.Cbc.blocksAt s.mem (Dp s₀ + BitVec.ofNat 64 (16 * (k + m))) (N s₀ - (k + m)) =
         (blks s₀).drop (k + m) := by
       rw [← AesCtr.blocksAt_drop _ _ (show k + m ≤ N s₀ by omega_arith), dataS]
       conv => lhs; rw [show k + m = (Spec.Ctr.crypt (Spec.Cbc.aesWith (R s₀) (wK s₀)) (iv0 s₀)
@@ -203,7 +203,7 @@ theorem setWidth_beq_zero (y : BitVec 32) : (y.setWidth 64 == 0) = (y == 0) := b
   by_cases h : y = 0
   · subst h; rfl
   · have h' : y.setWidth 64 ≠ 0 := fun e => h (by
-      have e' := congrArg BitVec.toNat e
+      obtain e' := congrArg BitVec.toNat e
       rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans y.isLt (by decide))] at e'
       exact BitVec.eq_of_toNat_eq e')
     rw [beq_eq_false_iff_ne.mpr h', beq_eq_false_iff_ne.mpr h]
@@ -221,18 +221,18 @@ structure After (s₀ : State) (k : Nat) (s s₂ : State) : Prop where
 
 /-- On past the call's blocks, with the wrap of the counter in `t1`. -/
 theorem adv_wp' {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) : WP isa (.block adv) s (After s₀ k s) := by
-  have hm0 := mOf_pos hk
-  have hle := mOf_le s₀ k
-  have hlo := lo32_mOf s₀ k
+  obtain hm0 := mOf_pos hk
+  obtain hle := mOf_le s₀ k
+  obtain hlo := lo32_mOf s₀ k
   have hdw := hp.data_wrap
-  have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  obtain hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine adv_wp (Q := Iv s₀) (S := S s₀) (P := blk s₀ k) (left := N s₀ - k) (m := mOf s₀ k)
     h.s3 h.s4 h.s5 h.s6 h.slot hle (by omega_arith) (by rw [hR]; exact in_rw (r := scrR s₀) (by simp) (cSv s₀))
     (by rw [hR]; exact in_rw (r := ivR s₀) (by simp) (cIv s₀ (by decide)))
     fun s₂ s5₂ s4₂ t1₂ g₂ m₂ rd₂ wr₂ sp₂ => ?_
   refine ⟨g₂, ?_, by rw [s5₂, Nat.sub_sub], m₂, rd₂, wr₂, sp₂, ?_⟩
   · rw [s4₂, Offset.add_add, show 16 * k + 16 * mOf s₀ k = 16 * (k + mOf s₀ k) by omega_arith]
-  have hlo2 := lo32_beWord s.mem (Iv s₀)
+  obtain hlo2 := lo32_beWord s.mem (Iv s₀)
   rw [eval_zero, t1₂, setWidth_beq_zero]
   by_cases hw : AesCtr.lo32 (next (iv0 s₀) k) + mOf s₀ k = 2 ^ 32
   · have e := h.ivw hw
@@ -240,13 +240,13 @@ theorem adv_wp' {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) : WP 
     have hw' := hw
     unfold AesCtr.lo32 at hw'
     have : (beWord s.mem (Iv s₀) 12).toNat = 0 := by rw [← hlo2]; omega_arith
-    have h0 := BitVec.eq_of_toNat_eq (y := (0 : BitVec 32)) this
+    obtain h0 := BitVec.eq_of_toNat_eq (y := (0 : BitVec 32)) this
     simp [h0, hw]
   · have e := h.iv (by omega_arith)
     rw [e, AesCtr.lo32_next (length_iv0 s₀)] at hlo2
     rw [AesCtr.lo32_next (length_iv0 s₀)] at hw hlo
     have : (beWord s.mem (Iv s₀) 12).toNat ≠ 0 := by rw [← hlo2]; omega_arith
-    have h0 : beWord s.mem (Iv s₀) 12 ≠ 0 := fun h0 => this (by rw [h0]; rfl)
+    obtain h0 : beWord s.mem (Iv s₀) 12 ≠ 0 := fun h0 => this (by rw [h0]; rfl)
     rw [AesCtr.lo32_next (length_iv0 s₀)]
     simp only [hw, decide_false, Option.some.injEq, beq_eq_false_iff_ne]
     exact h0
@@ -254,9 +254,9 @@ theorem adv_wp' {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) : WP 
 /-- The carry if the counter wrapped around. -/
 theorem fin_wp {k : Nat} (hk : k < N s₀) {s s₂ : State} (h : Mid s₀ k s) (a : After s₀ k s s₂) :
     WP isa (.ite (.zero .t1) (.block carry) (.block [])) s₂ (LInv AesCtr.ctrMode s₀ (k + mOf s₀ k)) := by
-  have hm0 := mOf_pos hk
-  have hle := mOf_le s₀ k
-  have s3₂ : s₂.gpr .s3 = Iv s₀ := by
+  obtain hm0 := mOf_pos hk
+  obtain hle := mOf_le s₀ k
+  obtain s3₂ : s₂.gpr .s3 = Iv s₀ := by
     rw [a.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide), h.s3]
   by_cases hw : AesCtr.lo32 (next (iv0 s₀) k) + mOf s₀ k = 2 ^ 32
   · refine WP.ite true (by rw [a.ev]; simp [hw]) (fun _ => ?_) (fun h => by cases h)
@@ -283,15 +283,15 @@ theorem iter_wp {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode
 /-- The loop, from `k` blocks to all of them. -/
 theorem loop_wp {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
     WP isa (.loop body (.nonzero .s5)) s (LInv AesCtr.ctrMode s₀ (N s₀)) := by
-  have hN := (s₀.gpr .a4).isLt
+  obtain hN := (s₀.gpr .a4).isLt
   refine WP.loop (M := isa) (body := body) (c := .nonzero .s5) (Q := LInv AesCtr.ctrMode s₀ (N s₀))
     (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv AesCtr.ctrMode s₀ j t) ?_ (N s₀ - k) s
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨j, rfl, hj, h⟩
   refine WP.mono (iter_wp hp hj h) fun s' h' => ?_
-  have hm0 := mOf_pos hj
-  have hle := mOf_le s₀ j
-  have ev := eval_nonzero_ofNat s' .s5 (k := N s₀ - (j + mOf s₀ j))
+  obtain hm0 := mOf_pos hj
+  obtain hle := mOf_le s₀ j
+  obtain ev := eval_nonzero_ofNat s' .s5 (k := N s₀ - (j + mOf s₀ j))
     (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hN) h'.s5
   by_cases hz' : j + mOf s₀ j = N s₀
   · left

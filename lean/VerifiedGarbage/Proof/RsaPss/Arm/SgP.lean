@@ -57,7 +57,7 @@ theorem argAtX {D : Nat} {P : EP} {σ s : State} (hP : PreP P) (hi : In D P σ) 
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = (P.lay D).fr (arg j) ∧
     InRegions (s.rd ++ s.wr) ((P.lay D).fr (arg j)) 4 ∧
     s.mem.readW ((P.lay D).fr (arg j)) 32 = (P.lay D).argv.getD j 0 := by
-  have hl : j < (P.lay D).argv.length := by
+  obtain hl : j < (P.lay D).argv.length := by
     simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil]; omega_using [hj]
   have hA := hi.ok.nargs
   simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil] at hA
@@ -81,13 +81,13 @@ theorem pa2_wp (P : EP) (hP : PreP P) {σ s : State} (hc : Ctx (P.lay h.D) P.scr
     rw [v24]; simp [EP.argv, hP.xa]
   replace v25 : s.mem.readW ((P.lay h.D).fr (arg 25)) 32 = BitVec.ofNat 32 P.prl := by
     rw [v25]; simp [EP.argv, hP.xa]
-  have wF : ∀ d, d + 4 ≤ frameBytes → InRegions s.wr ((P.lay h.D).fr d) 4 := fun d hd => hc.st.inFr hd
-  have rd25 : ∀ (m : Mem) (v : BitVec 32),
+  obtain wF : ∀ d, d + 4 ≤ frameBytes → InRegions s.wr ((P.lay h.D).fr d) 4 := fun d hd => hc.st.inFr hd
+  obtain rd25 : ∀ (m : Mem) (v : BitVec 32),
       (m.writeW ((P.lay h.D).fr 64) v).readW ((P.lay h.D).fr (arg 25)) 32 = m.readW ((P.lay h.D).fr (arg 25)) 32 :=
     fun m v => Lay.readW_fr_other _ m v (by unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; decide)
       (by decide) (by decide)
-  have l24 : arg 24 < 4096 := by decide
-  have l25 : arg 25 < 4096 := by decide
+  obtain l24 : arg 24 < 4096 := by decide
+  obtain l25 : arg 25 < 4096 := by decide
   prun [sp0, Impl.RsaPss.Arm.ld, st, hc.st.sp, hc.aFr hg, hc.rFr hg, wF, l24, l25, a24, r24, v24, a25, r25, v25,
     rd25]
 
@@ -106,15 +106,15 @@ theorem pa2_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : PreP P) :
   have hg := hi.geo
   refine WP.mono (pa2_wp h P hP hc hi) fun t ⟨m, rd, wr, sp, t0, t1, t2, t3⟩ => ?_
   obtain ⟨σ', ok⟩ := hg.ok
-  have fr : Frame [⟨(P.lay h.D).fr 64, 8⟩] s.mem t.mem := by
+  obtain fr : Frame [⟨(P.lay h.D).fr 64, 8⟩] s.mem t.mem := by
     rw [m]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_refl 64) (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))
-  have rd0 : ∀ (u : State), u.sp = s.sp → ∀ i, i < 18 → stackArg u i = u.mem.readW ((P.lay h.D).fr (4 * i)) 32 := by
+  obtain rd0 : ∀ (u : State), u.sp = s.sp → ∀ i, i < 18 → stackArg u i = u.mem.readW ((P.lay h.D).fr (4 * i)) 32 := by
     intro u hu i hi'
     simp only [stackArg, stackArgAddr, hu, hc.st.sp]
     rw [hc.aFr hg (4 * i) (by unfold frameBytes; omega_arith)]
-  have keep : ∀ i, i < 16 → stackArg t i = stackArg s i := fun i hi' => by
+  obtain keep : ∀ i, i < 16 → stackArg t i = stackArg s i := fun i hi' => by
     rw [rd0 t sp i (by omega_using [hi']), rd0 s rfl i (by omega_using [hi']), m, Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide),
       Lay.readW_fr_other _ _ _ (by omega_using [hi']) (by omega_using [hi']) (by decide)]
   refine ⟨hc.st.write fr (fun r hr => ?_) rd wr sp, hk.keep h fr fun r hr => ?_, fun i hi' => ?_,
@@ -149,9 +149,9 @@ theorem leak_st {P : EP} (hP : PreP P) {σ s : State} (hi : In h.D P σ) (hs : (
     Spec.Rsa.privatePrecomputedLeak s.mem (State.addr P.pre) P.K = P.preL := by
   have px := hi.pxT
   rw [hP.px] at px
-  have le : Spec.Rsa.precomputedWords P.K ≤ P.prl := by
+  obtain le : Spec.Rsa.precomputedWords P.K ≤ P.prl := by
     rw [hP.prlv, Spec.Rsa.privatePrecomputedWords]; omega_using []
-  have rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
+  obtain rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
   dsimp only at rw
   rw [← px.2]
   unfold Spec.Rsa.privatePrecomputedLeak
@@ -163,7 +163,7 @@ theorem key_st {P : EP} (hP : PreP P) {σ s : State} (hi : In h.D P σ) (hs : (P
     some (Spec.Rsa.wordsAt s.mem (State.addr P.pre) P.prl) := by
   have px := hi.pxT
   rw [hP.px] at px
-  have rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
+  obtain rw := hs.ro_words (R := P.PRE) hP.mem (n := P.prl) rfl
   dsimp only at rw
   rw [nB_at h hi hs, hs.ro (R := P.PP) (by simp), hs.ro (R := P.QQ) (by simp), rw]
   exact px.1
@@ -182,9 +182,9 @@ theorem call_preP {G : Spec.Mgf1.Hash} {P : EP} (hP : PreP P) {σ s : State} (hr
   have hB := ok.B56
   have hA := ok.nargs
   simp only [EP.argv, hP.xa, List.length_append, List.length_cons, List.length_nil] at hA
-  have q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
-  have oS : P.OUT.Disjoint P.SCR := List.pairwise_pair.mp ok.wrw
-  have hPm := hP.mem (D := h.D)
+  obtain q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
+  obtain oS : P.OUT.Disjoint P.SCR := List.pairwise_pair.mp ok.wrw
+  obtain hPm := hP.mem (D := h.D)
   refine priv_preP pa a16 a17 hP.prl32 hs.sp hB (by simp only [frameBytes] at fit; omega_arith) ?_
     (oS.sub_right sS') ?_ ?_ hP.prlv (key_st hP hi hs)
   · intro w hw r hr
@@ -231,7 +231,7 @@ theorem call_preP {G : Spec.Mgf1.Hash} {P : EP} (hP : PreP P) {σ s : State} (hr
     · rw [q0]; exact (Lay.fr_low (by decide)).symm
   · intro r hr
     simp only [privBufs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have fs := fun {R : Region} (hR : R ∈ (P.lay h.D).ro ++ (P.lay h.D).rw) => ok.fits R hR
+    obtain fs := fun {R : Region} (hR : R ∈ (P.lay h.D).ro ++ (P.lay h.D).rw) => ok.fits R hR
     have hg := hi.geo
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact fs (by simp)
@@ -258,15 +258,15 @@ theorem call_vpP (g : RsaOaep.Arm.OHash) (P : EP) (hP : PreP P) (v : Proof.Rsa.A
     have hi := hk.1
     have ok := hi.ok
     obtain ⟨e1, e2, sI, sS', dIS, hf, hs1, hK⟩ := call_geo h hi
-    have q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
-    have hro : ∀ R ∈ (P.lay h.D).ro, Covers [R] (s.rd ++ s.wr) := fun R hR =>
+    obtain q0 : State.addr P.B = (P.lay h.D).fr 0 := by simp
+    obtain hro : ∀ R ∈ (P.lay h.D).ro, Covers [R] (s.rd ++ s.wr) := fun R hR =>
       Covers.left (Covers.of_mem fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [hs.rd, ok.rd]; exact List.mem_append_left _ hR)
-    have inS : ∀ {o n : Nat}, o + n ≤ P.scl * 8 → Covers [⟨State.addr P.scr + BitVec.ofNat 64 o, n⟩] s.wr :=
+    obtain inS : ∀ {o n : Nat}, o + n ≤ P.scl * 8 → Covers [⟨State.addr P.scr + BitVec.ofNat 64 o, n⟩] s.wr :=
       fun hon => Covers.one ⟨P.SCR, by rw [hs.wr, ok.wr]; simp, Offset.contains_base _ hon (by omega_arith)⟩
-    have hout : Covers [P.OUT] s.wr := Covers.of_mem fun r hr => by
+    obtain hout : Covers [P.OUT] s.wr := Covers.of_mem fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [hs.wr, ok.wr]; simp
-    have wr' : Covers (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024)) s.wr :=
+    obtain wr' : Covers (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024)) s.wr :=
       hout.cons (by rw [e2]; exact inS (by unfold oRsa; omega_arith))
     refine ⟨Covers.append_left ((hro P.N (by simp)).cons ((hro P.E (by simp)).cons ?_)) wr'.right, wr'⟩
     refine Covers.cons ?_ ((hro P.PP (by simp)).cons ((hro P.QQ (by simp)).cons ((hro P.DP (by simp)).cons
@@ -284,16 +284,16 @@ theorem call_vpP (g : RsaOaep.Arm.OHash) (P : EP) (hP : PreP P) (v : Proof.Rsa.A
     have hi := hk.1
     have ok := hi.ok
     obtain ⟨e1, e2, sI, sS', dIS, hf, hs1, hK⟩ := call_geo h hi
-    have low : FrameStack.belowA s.sp Proof.Rsa.Arm.stackBytes = (P.lay h.D).LOW := by rw [hs.sp]; exact ok.low_eq
+    obtain low : FrameStack.belowA s.sp Proof.Rsa.Arm.stackBytes = (P.lay h.D).LOW := by rw [hs.sp]; exact ok.low_eq
     rw [low] at fr
-    have st : (P.lay h.D).St σ s' := hs.write fr (fun r hr => by
+    obtain st : (P.lay h.D).St σ s' := hs.write fr (fun r hr => by
       simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨P.OUT, by simp, fun _ h => h⟩
       · exact ⟨P.SCR, by simp, sS'⟩
       · exact ⟨(P.lay h.D).LOW, by simp, fun _ h => h⟩) rd wr sp
     refine ⟨⟨hi, st⟩, ?_⟩
-    have em : Spec.Rsa.bytesAt s.mem (State.addr (P.scr + BitVec.ofNat 32 oEm)) P.K =
+    obtain em : Spec.Rsa.bytesAt s.mem (State.addr (P.scr + BitVec.ofNat 32 oEm)) P.K =
         (List.range P.K).map (emF h g.G P σ) := by
       unfold Spec.Rsa.bytesAt
       refine List.map_congr_left fun i hi' => ?_
@@ -398,42 +398,42 @@ theorem in_of_preP {hs ts : List FnTable} {s : State} (h : (specP hs ts).pre s) 
     dS slS sPr sTH sT sA kO kN kE kP kQ kDP kDQ kQI kD kSl kS kPr kTH kT kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS fPr
     fTH fT kv olk el1 elK pl1 plK ql1 qlK dpl qil dql slK prl key
   have h3624 : 3624 ≤ s.sp.toNat := hsp
-  have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
-  have a7 : stackArg s 7 = stackArg s 3 := BitVec.eq_of_toNat_eq dpl
-  have a11 : stackArg s 11 = stackArg s 3 := BitVec.eq_of_toNat_eq qil
-  have a9 : stackArg s 9 = stackArg s 5 := BitVec.eq_of_toNat_eq dql
-  have a13 : stackArg s 13 = BitVec.ofNat 32 D := by
+  obtain r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
+  obtain a7 : stackArg s 7 = stackArg s 3 := BitVec.eq_of_toNat_eq dpl
+  obtain a11 : stackArg s 11 = stackArg s 3 := BitVec.eq_of_toNat_eq qil
+  obtain a9 : stackArg s 9 = stackArg s 5 := BitVec.eq_of_toNat_eq dql
+  obtain a13 : stackArg s 13 = BitVec.ofNat 32 D := by
     apply BitVec.eq_of_toNat_eq; rw [hD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [← hD]; exact (stackArg s 13).isLt)]
   rw [olk] at hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oPr oTH oT oA kO fO
   rw [dpl] at oDP dpS kDP fDP hrd
   rw [qil] at oQI qiS kQI fQI hrd
   rw [dql] at oDQ dqS kDQ fDQ hrd
   rw [hD] at oD dS kD fD hrd
-  have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
+  obtain hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
-  have below : Region.Sub (FrameStack.belowA s.sp 56)
+  obtain below : Region.Sub (FrameStack.belowA s.sp 56)
       ⟨State.addr s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (show 56 ≤ stackBytes by decide) (show stackBytes - 56 + 56 ≤ stackBytes by decide)
-  have bP : Spec.Rsa.bytesAt (entered frameBytes s).mem (State.addr (stackArg s 2)) (stackArg s 3).toNat =
+  obtain bP : Spec.Rsa.bytesAt (entered frameBytes s).mem (State.addr (stackArg s 2)) (stackArg s 3).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat :=
     bytesAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (kP.sub_left below).symm)
       (by show (stackArg s 3).toNat ≤ 2 ^ 64; omega_arith)
-  have bQ : Spec.Rsa.bytesAt (entered frameBytes s).mem (State.addr (stackArg s 4)) (stackArg s 5).toNat =
+  obtain bQ : Spec.Rsa.bytesAt (entered frameBytes s).mem (State.addr (stackArg s 4)) (stackArg s 5).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat :=
     bytesAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (kQ.sub_left below).symm)
       (by show (stackArg s 5).toNat ≤ 2 ^ 64; omega_arith)
-  have wPre : ∀ n, n ≤ (stackArg s 21).toNat →
+  obtain wPre : ∀ n, n ≤ (stackArg s 21).toNat →
       Spec.Rsa.wordsAt (entered frameBytes s).mem (State.addr (stackArg s 20)) n =
         Spec.Rsa.wordsAt s.mem (State.addr (stackArg s 20)) n := fun n hn =>
     wordsAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (kPr.sub_left below).symm.sub_left (Region.sub_prefix (len' := (stackArg s 21).toNat * 8) (by omega_using [hn])))
       (by have := (stackArg s 21).isLt; omega_using [hn])
-  have le : Spec.Rsa.precomputedWords (s.gpr .r3).toNat ≤ (stackArg s 21).toNat := by
+  obtain le : Spec.Rsa.precomputedWords (s.gpr .r3).toNat ≤ (stackArg s 21).toNat := by
     rw [prl, Spec.Rsa.privatePrecomputedWords]; omega_using []
   refine ⟨
     { ok := ?_
@@ -535,17 +535,17 @@ theorem entered_stateP (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh v
     Sy (S w.h (epwP (mvs := mvs) (vs := vs) s s' w wg)) (entered frameBytes s) (entered frameBytes s) ∧
       PreP (epwP (mvs := mvs) (vs := vs) s s' w wg) := by
   obtain ⟨-, -, hpw, hfit, hfitg, hdl⟩ := spec_tabP hs
-  have hD := dl_of hfit hh hdl
-  have hpwH := hpw.sublist (List.sublist_append_left _ _)
-  have hpwG := (hpw.sublist (List.sublist_append_right _ _)).sublist (List.sublist_append_left _ _)
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := Nat.le_trans (Nat.le_add_right _ _) (spec_spP hs)
-  have ok := (in_of_preP (hi := 0) (hc := 0) (hdg := 0) (HT := fun _ => True) (ai := 0) (au := 0) (af := 0)
+  obtain hD := dl_of hfit hh hdl
+  obtain hpwH := hpw.sublist (List.sublist_append_left _ _)
+  obtain hpwG := (hpw.sublist (List.sublist_append_right _ _)).sublist (List.sublist_append_left _ _)
+  obtain hsp' : 56 + frameBytes ≤ s.sp.toNat := Nat.le_trans (Nat.le_add_right _ _) (spec_spP hs)
+  obtain ok := (in_of_preP (hi := 0) (hc := 0) (hdg := 0) (HT := fun _ => True) (ai := 0) (au := 0) (af := 0)
     (T := fun _ => True) hs hD trivial trivial).1.ok
   rw [epP_lay] at ok
-  have hn := MdHashTable.Arm.mem_names hw
-  have hng := Proof.HashTable.Arm.mem_names hwg
-  have ht := MdHashTable.Arm.htab_entered ok hsp' (p := stackArg s 18) (by simp [epP, ep]) hfit hc hpwH hw hh
-  have tf := Proof.HashTable.Arm.tabFacts_entered ok hsp' (p := stackArg s 19) (by simp [epP, ep]) hfitg hcg hpwG
+  obtain hn := MdHashTable.Arm.mem_names hw
+  obtain hng := Proof.HashTable.Arm.mem_names hwg
+  obtain ht := MdHashTable.Arm.htab_entered ok hsp' (p := stackArg s 18) (by simp [epP, ep]) hfit hc hpwH hw hh
+  obtain tf := Proof.HashTable.Arm.tabFacts_entered ok hsp' (p := stackArg s 19) (by simp [epP, ep]) hfitg hcg hpwG
     hwg hhg
   rw [hsy _ (List.mem_append_left _ hn.1), hsy _ (List.mem_append_left _ hn.2.1),
     hsy _ (List.mem_append_left _ hn.2.2)] at ht
@@ -575,15 +575,15 @@ theorem code_okP (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v 
   obtain ⟨⟨T, hT, hh⟩, ⟨Tg, hTg, hhg⟩, -, hfit, hfitg, hdl⟩ := spec_tabP hs
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hTg
-  have hidx := (MdHashTable.Arm.held_tableOf hfit hh).2.2.2
-  have hidxg := (Proof.HashTable.Arm.held_tableOf hfitg hhg).2.1
+  obtain hidx := (MdHashTable.Arm.held_tableOf hfit hh).2.2.2
+  obtain hidxg := (Proof.HashTable.Arm.held_tableOf hfitg hhg).2.1
   obtain ⟨st, hP⟩ := entered_stateP hc hcg hs hw hwg hh hhg (s' := s) fun _ _ => rfl
   have hin := st.1.1
-  have hsp := spec_spP hs
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := Nat.le_trans (Nat.le_add_right _ _) hsp
-  have hF : FrameOk frameBytes := by decide
+  obtain hsp := spec_spP hs
+  obtain hsp' : 56 + frameBytes ≤ s.sp.toNat := Nat.le_trans (Nat.le_add_right _ _) hsp
+  obtain hF : FrameOk frameBytes := by decide
   let P := epwP (mvs := mvs) (vs := vs) s s w wg
-  have hb := (tab_vpP w.h wg.g P (tf_ofP hw hwg) w.shape w.mem hP v).wp _ _ st
+  obtain hb := (tab_vpP w.h wg.g P (tf_ofP hw hwg) w.shape w.mem hP v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp') (W := (P.lay w.h.D).W)
     (Q := fun r m => Res w.h wg.g.G P (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
@@ -598,22 +598,22 @@ theorem code_okP (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v 
       Proof.HashTable.Arm.hashAt_tableOf hfitg hidxg, Option.some.injEq] at hG
     subst hH hG
     rw [BitVec.setWidth_append_eq_right]
-    have ro := fun {R : Region} (hR : R ∈ (P.lay w.h.D).ro) =>
+    obtain ro := fun {R : Region} (hR : R ∈ (P.lay w.h.D).ro) =>
       entered_ro (F := frameBytes) (A := 88) (C := 3440) (argv := (P.lay w.h.D).argv) (rw := (P.lay w.h.D).rw) hin.ok
         hsp' hR
-    have hP' : pB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat :=
+    obtain hP' : pB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat :=
       ro (R := P.PP) (by simp)
-    have hQ : qB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat :=
+    obtain hQ : qB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat :=
       ro (R := P.QQ) (by simp)
-    have hDP : dpB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 6))
+    obtain hDP : dpB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 6))
         (stackArg s 3).toNat := ro (R := P.DP) (by simp)
-    have hDQ : dqB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 8))
+    obtain hDQ : dqB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 8))
         (stackArg s 5).toNat := ro (R := P.DQ) (by simp)
-    have hQI : qiB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10))
+    obtain hQI : qiB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10))
         (stackArg s 3).toNat := ro (R := P.QI) (by simp)
-    have hDg : digB w.h P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 12)) w.h.D :=
+    obtain hDg : digB w.h P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 12)) w.h.D :=
       ro (R := P.DIG w.h.D) (by simp)
-    have hS : saltB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 14))
+    obtain hS : saltB P (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 14))
         (stackArg s 15).toNat := ro (R := P.SALT) (by simp)
     unfold Res at res
     rw [hP', hQ, hDP, hDQ, hQI, hDg, hS] at res
@@ -634,14 +634,14 @@ theorem code_ctP (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v 
     List.getD_cons_zero, Option.some.injEq] at hp
   obtain ⟨hsp, hsy, htab, htabg, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
     a14, a15, a16, a17, a18, a19, a20, a21⟩ := hp
-  have hh₂ := (htab _ _ rfl rfl _ hT).mp hh₁
-  have hhg₂ := (htabg _ _ rfl rfl _ hTg).mp hhg₁
-  have hsy' : ∀ n ∈ MdHashTable.Arm.names mvs ++ HashTable.Arm.names vs, s₂.syms n = s₁.syms n := fun n hn =>
+  obtain hh₂ := (htab _ _ rfl rfl _ hT).mp hh₁
+  obtain hhg₂ := (htabg _ _ rfl rfl _ hTg).mp hhg₁
+  obtain hsy' : ∀ n ∈ MdHashTable.Arm.names mvs ++ HashTable.Arm.names vs, s₂.syms n = s₁.syms n := fun n hn =>
     (hsy n (by
       rcases List.mem_append.mp hn with e | e
       · exact List.mem_append_left _ e
       · exact List.mem_append_right _ (List.mem_append_left _ e))).symm
-  have hep : epwP (mvs := mvs) (vs := vs) s₁ s₁ w wg = epwP (mvs := mvs) (vs := vs) s₂ s₁ w wg := by
+  obtain hep : epwP (mvs := mvs) (vs := vs) s₁ s₁ w wg = epwP (mvs := mvs) (vs := vs) s₂ s₁ w wg := by
     obtain ⟨hl1, hleak⟩ := List.append_inj hl (by simp [RsaPkcs1Sig.Arm.bytesAt_length, h3, a1])
     obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl1) (by simp [RsaPkcs1Sig.Arm.bytesAt_length, h3])
     simp only [epP, ep]

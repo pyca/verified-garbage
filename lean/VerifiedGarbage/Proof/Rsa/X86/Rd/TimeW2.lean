@@ -83,7 +83,7 @@ theorem agreeK {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVe
     (hs : Pre0 wid B Z len N args sp s) (ht : Pre0 wid B Z len N args sp t)
     (eq : ∀ d ∈ ds, w32 s.mem B d = w32 t.mem B d) :
     VG.X86.Taint.Agree (τK ds) (view s B Z) (view t B Z) := by
-  have A0 := VG.Proof.Rsa.X86.InvBatchRt.Time.agree0 hs ht
+  obtain A0 := VG.Proof.Rsa.X86.InvBatchRt.Time.agree0 hs ht
   have w₁ := A0.wf₁
   have w₂ := A0.wf₂
   refine ⟨A0.rf, A0.wr, ⟨w₁.lens, w₁.bases, w₁.wbases, w₁.args, w₁.argBases, w₁.stk, w₁.frames, w₁.room⟩,
@@ -98,7 +98,7 @@ theorem agreeK {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVe
     obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hsl
     simp only at h₁ h₂
     change s.mem (B + BitVec.ofNat 64 k) = t.mem (B + BitVec.ofNat 64 k)
-    have e : B + BitVec.ofNat 64 k = off B d + BitVec.ofNat 64 (k - d) := by
+    obtain e : B + BitVec.ofNat 64 k = off B d + BitVec.ofNat 64 (k - d) := by
       simp only [off]; rw [VG.Offset.add_add]; congr 2; omega_using [h₁]
     rw [e, Mem.readW_byte s.mem _ (show k - d < 4 by omega_using [h₂]), Mem.readW_byte t.mem _ (show k - d < 4 by omega_using [h₂])]
     exact congrArg _ (BitVec.eq_of_toNat_eq (eq d hd))
@@ -118,7 +118,7 @@ theorem leafK {g : Geo} {P Q : State → Prop} {c : Prog isa} {ds : List Nat} (v
     (hf : ∀ s, P s → WP isa c s Q) (h : OkK ds c) :
     RelCT isa (fun s t => P s ∧ P t) c (fun s t => Q s ∧ Q t) := by
   obtain ⟨_, h⟩ := h
-  have R := VG.Proof.Rsa.X86.InvBatchRt.Time.leaf (B := g.B) (Z := g.Z) (P := fun s t => P s ∧ P t) (τK ds)
+  obtain R := VG.Proof.Rsa.X86.InvBatchRt.Time.leaf (B := g.B) (Z := g.Z) (P := fun s t => P s ∧ P t) (τK ds)
     (fun s t ⟨ps, pt⟩ => agreeK hds (hpre s ps) (hpre t pt)
       (fun d hd => (hval s ps d hd).trans (hval t pt d hd).symm))
     (fun s t ⟨ps, pt⟩ => ⟨(hpre s ps).1.ws.workspace.wr, (hpre t pt).1.ws.workspace.wr⟩)
@@ -207,17 +207,17 @@ theorem relLoop {body : Prog isa} {c : Cond} (L : Nat → State → Prop) {K : N
     (step : ∀ k s, k < K → L k s → WP isa body s fun v =>
       L (k + 1) v ∧ isa.eval c v = some (decide (k + 1 < K))) :
     RelCT isa (fun s t => L 0 s ∧ L 0 t) (.loop body c) (fun s t => L K s ∧ L K t) := by
-  have loop := VG.RelCT.loop (M := isa) (body := body) (c := c)
+  obtain loop := VG.RelCT.loop (M := isa) (body := body) (c := c)
     (Q := fun s t => L K s ∧ L K t)
     (fun remaining s t => ∃ k, k + remaining = K ∧ 0 < remaining ∧ L k s ∧ L k t)
     (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
-      have trace := (rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
+      obtain trace := (rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
       obtain ⟨is, zs⟩ := wpRes (step k s (by omega_using [sum, pos]) hs) es
       obtain ⟨it, zt⟩ := wpRes (step k t (by omega_using [sum, pos]) ht) et
       refine ⟨trace, by rw [zs, zt], fun done => ?_, fun more => ?_⟩
       · rw [zs] at done
         simp only [Option.some.injEq, decide_eq_false_iff_not] at done
-        have last : k + 1 = K := by omega_using [sum, pos, done]
+        obtain last : k + 1 = K := by omega_using [sum, pos, done]
         exact ⟨last ▸ is, last ▸ it⟩
       · rw [zs] at more
         simp only [Option.some.injEq, decide_eq_true_eq] at more
@@ -230,16 +230,16 @@ theorem relLoopB {body : Prog isa} {c : Cond} (L : Nat → State → Prop) {K : 
     (rel : ∀ k, k < K → RelCT isa (Both (L k)) body (Both (L (k + 1))))
     (fl : ∀ k s, 0 < k → k ≤ K → L k s → isa.eval c s = some (decide (k < K))) :
     RelCT isa (Both (L 0)) (.loop body c) (Both (L K)) := by
-  have loop := VG.RelCT.loop (M := isa) (body := body) (c := c) (Q := Both (L K))
+  obtain loop := VG.RelCT.loop (M := isa) (body := body) (c := c) (Q := Both (L K))
     (fun remaining s t => ∃ k, k + remaining = K ∧ 0 < remaining ∧ L k s ∧ L k t)
     (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
       obtain ⟨trace, is, it⟩ := rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et
-      have zs := fl (k + 1) sf (by omega_using []) (by omega_using [sum, pos]) is
-      have zt := fl (k + 1) tf (by omega_using []) (by omega_using [sum, pos]) it
+      obtain zs := fl (k + 1) sf (by omega_using []) (by omega_using [sum, pos]) is
+      obtain zt := fl (k + 1) tf (by omega_using []) (by omega_using [sum, pos]) it
       refine ⟨trace, by rw [zs, zt], fun done => ?_, fun more => ?_⟩
       · rw [zs] at done
         simp only [Option.some.injEq, decide_eq_false_iff_not] at done
-        have last : k + 1 = K := by omega_using [sum, pos, done]
+        obtain last : k + 1 = K := by omega_using [sum, pos, done]
         exact ⟨last ▸ is, last ▸ it⟩
       · rw [zs] at more
         simp only [Option.some.injEq, decide_eq_true_eq] at more
@@ -283,7 +283,7 @@ to come is carried from leaf to leaf with the state's correctness (`wp_viewRun`,
 theorem view_end {c : Prog isa} {s z s' : State} {B : Addr} {Z : Nat} {tr tr' : List Leak}
     (hs : (⟨B, Z⟩ : Region) ∈ s.wr) (he : Exec isa c (view s B Z) tr z) (e : Exec isa c s tr' s') :
     view s' B Z = z := by
-  have L := VG.Proof.Rsa.X86.InvBatchRt.Time.lift_exec hs he
+  obtain L := VG.Proof.Rsa.X86.InvBatchRt.Time.lift_exec hs he
   obtain ⟨-, rfl⟩ := Exec.det e L
   obtain ⟨hrd, hwr⟩ := VG.X86.Exec.rdwr he
   simp only [view, State.withRegions_rd, State.withRegions_wr] at hrd hwr
@@ -454,8 +454,8 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
     (clim : OkK [sC4] (.block (limit ++ ([.mov .ecx (.mem (sc sC4)), .alu .cmp .ecx (.reg .eax)] : List Instr))))
     (chalf : OkK [sC4] (.block halfC4)) :
     RelCT isa (Both (S g)) (wordStagesL (2 ^ k) limit body) (Both (Fin g)) := by
-  have p20 : 2 ^ k ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hk
-  have hds : ∀ d ∈ [sC4], d + 4 ≤ 160 := by decide
+  obtain p20 : 2 ^ k ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hk
+  obtain hds : ∀ d ∈ [sC4], d + 4 ≤ 160 := by decide
   unfold wordStagesL
   refine VG.RelCT.seq (R := Both (WL Pre Fin k g 0))
     (leafP (P := S) (Q := fun g' => WL Pre Fin k g' 0) (fun _ => 0) (by simp) p0S vS (by simp)
@@ -473,9 +473,9 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
   · have := hs.1; rwa [ite_eq_right (by omega_using [])] at this
   · have := ht.1; rwa [ite_eq_right (by omega_using [])] at this
   obtain ⟨j, hjd⟩ : ∃ j, j = k - i := ⟨_, rfl⟩
-  have hj : j ≤ k := by omega_using [hjd]
-  have pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
-  have Pi : ∀ g' s, WL Pre Fin k g' i s → Pre g' j s := fun g' s h => by
+  obtain hj : j ≤ k := by omega_using [hjd]
+  obtain pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
+  obtain Pi : ∀ g' s, WL Pre Fin k g' i s → Pre g' j s := fun g' s h => by
     have := h.1; rwa [ite_eq_left (by omega_using [hi]), ← hjd] at this
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   refine VG.RelCT.seq (R := Both (fun s => Pre g j s ∧ isa.eval .b s = some (decide (4 * 2 ^ j < lim))))
@@ -495,13 +495,13 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
   · have P := Pi g' v h
     obtain ⟨wv, sv⟩ := hpre g' j v hj P
     refine hlimit g' j v hj P _ _ fun u₁ K₁ m₁ e₁ => ?_
-    have wu : WsG g' u₁ := wv.rest K₁
+    obtain wu : WsG g' u₁ := wv.rest K₁
     refine wp_movS (readHdr wu (by decide)) fun u₂ U₂ _ => ?_
     refine VG.Proof.Mont.X86.Square.wp_cmpCF (v := u₂.gpr .eax) rfl fun u₃ F₃ c₃ => WP.block_nil ?_
-    have Pu := hstable g' j v u₃ hj P (K₁.trans ((U₂.keeps.mono (by simp)).trans (fupd_keeps F₃ _)))
+    obtain Pu := hstable g' j v u₃ hj P (K₁.trans ((U₂.keeps.mono (by simp)).trans (fupd_keeps F₃ _)))
       (by rw [F₃.mem, U₂.mem, m₁])
-    have ecx : (u₂.gpr .ecx).toNat = 4 * 2 ^ j := by rw [U₂.gpr, m₁, sv, ofNat_lt_toNat (by omega_using [pj])]
-    have eax : (u₂.gpr .eax).toNat = lim := by rw [U₂.other _ (by decide), e₁]
+    obtain ecx : (u₂.gpr .ecx).toNat = 4 * 2 ^ j := by rw [U₂.gpr, m₁, sv, ofNat_lt_toNat (by omega_using [pj])]
+    obtain eax : (u₂.gpr .eax).toNat = lim := by rw [U₂.other _ (by decide), e₁]
     rw [ecx, eax] at c₃
     exact ⟨Pu, c₃⟩
   · by_cases hl : 4 * 2 ^ j < lim
@@ -511,19 +511,19 @@ theorem relWordStagesL {g : Geo} {k lim : Nat} {limit : List Instr} {body : Prog
       simp [hl] at e
   · refine VG.RelCT.block_nil fun s t ⟨⟨hs, ht⟩, e⟩ => ?_
     rw [hs.2] at e
-    have hl : lim ≤ 4 * 2 ^ j := by simp at e; omega_using [e]
+    obtain hl : lim ≤ 4 * 2 ^ j := by simp at e; omega_using [e]
     exact ⟨hskip g j s hj hs.1 hl, hskip g j t hj ht.1 hl⟩
   · obtain ⟨wt, st⟩ := hpost g' j t hj Po
     refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
     refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun t₂ T₂ => ?_
-    have e₂ : (t₂.gpr .eax).toNat = 2 * 2 ^ j := by
+    obtain e₂ : (t₂.gpr .eax).toNat = 2 * 2 ^ j := by
       rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega_using [pj]), Nat.shiftRight_eq_div_pow]
       omega_using []
-    have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
+    obtain w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
     refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ _ _ => ?_
     refine VG.Proof.Mont.X86.Square.wp_cmpCF (v := BitVec.ofNat 32 4) rfl fun t₄ F₄ c₄ => WP.block_nil ?_
-    have m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
-    have N := hnext g' j t t₄ hj Po (by rw [F₄.mem, ← m₂]; exact K₃) (by rw [F₄.mem, s₃, e₂])
+    obtain m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
+    obtain N := hnext g' j t t₄ hj Po (by rw [F₄.mem, ← m₂]; exact K₃) (by rw [F₄.mem, s₃, e₂])
       ((T₁.keeps.mono (by simp)).trans ((T₂.keeps.mono (by simp)).trans ((k₃.mono (by simp)).trans
         (fupd_keeps F₄ _))))
     rw [k₃.1 .eax (by simp), e₂, ofNat_lt_toNat (by decide)] at c₄
@@ -568,8 +568,8 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
     (cinit : OkK [] (.block [.mov .eax (.imm (BitVec.ofNat 32 (2 ^ k))), .store (sc sB) .eax]))
     (chalf : OkK [sB] (.block (halfB m))) :
     RelCT isa (Both (S g)) (bitStagesL (2 ^ k) (2 ^ m) body) (Both (Fin g)) := by
-  have p20 : 2 ^ k ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hk
-  have pm : 2 ^ m ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hmk) p20
+  obtain p20 : 2 ^ k ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hk
+  obtain pm : 2 ^ m ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hmk) p20
   unfold bitStagesL
   refine VG.RelCT.seq (R := Both (BL Pre Fin k m g 0))
     (leafP (P := S) (Q := fun g' => BL Pre Fin k m g' 0) (fun _ => 0) (by simp) p0S vS (by simp)
@@ -587,9 +587,9 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
   · have := hs.1; rwa [ite_eq_right (by omega_using [])] at this
   · have := ht.1; rwa [ite_eq_right (by omega_using [])] at this
   obtain ⟨j, hjd⟩ : ∃ j, j = k - i := ⟨_, rfl⟩
-  have hj : j ≤ k := by omega_using [hjd]
-  have hmj : m ≤ j := by omega_using [hmk, hi, hjd]
-  have pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
+  obtain hj : j ≤ k := by omega_using [hjd]
+  obtain hmj : m ≤ j := by omega_using [hmk, hi, hjd]
+  obtain pj : 2 ^ j ≤ 2 ^ 20 := Nat.le_trans (Nat.pow_le_pow_right (by decide) hj) p20
   refine VG.RelCT.seq ((rbody j hmj hj).mono (fun s t ⟨hs, ht⟩ => ⟨?_, ?_⟩) fun _ _ h => h)
     (leafP (P := fun g' s => Post g' j s) (Q := fun g' => BL Pre Fin k m g' (i + 1)) (fun _ => 2 ^ j)
       (by decide) (p0Post j) (vPost j)
@@ -601,14 +601,14 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
   obtain ⟨wt, st⟩ := hpost g' j t hmj hj Po
   refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun t₂ T₂ => ?_
-  have e₂ : (t₂.gpr .eax).toNat = 2 ^ j / 2 := by
+  obtain e₂ : (t₂.gpr .eax).toNat = 2 ^ j / 2 := by
     rw [T₂.gpr, BitVec.toNat_ushiftRight, T₁.gpr, st, ofNat_lt_toNat (by omega_using [pj]), Nat.shiftRight_eq_div_pow,
       Nat.pow_one]
-  have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
+  obtain w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
   refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ _ _ => ?_
   refine VG.Proof.Mont.X86.Square.wp_cmpCF (v := BitVec.ofNat 32 (2 ^ m)) rfl fun t₄ F₄ c₄ => WP.block_nil ?_
-  have m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
-  have Nx := hnext g' j t t₄ hmj hj Po (by rw [F₄.mem, ← m₂]; exact K₃) (by rw [F₄.mem, s₃, e₂])
+  obtain m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
+  obtain Nx := hnext g' j t t₄ hmj hj Po (by rw [F₄.mem, ← m₂]; exact K₃) (by rw [F₄.mem, s₃, e₂])
     ((T₁.keeps.mono (by simp)).trans ((T₂.keeps.mono (by simp)).trans ((k₃.mono (by simp)).trans
       (fupd_keeps F₄ _))))
   rw [k₃.1 .eax (by simp), e₂, ofNat_lt_toNat (by omega_using [pm])] at c₄
@@ -620,7 +620,7 @@ theorem relBitStagesL {g : Geo} {k m : Nat} {body : Prog isa}
     simp only [this, decide_true, Option.map_some, Bool.not_true]
     exact congrArg some (decide_eq_false (by omega_using [hjd, hjm])).symm
   · have : ¬ 2 ^ j / 2 < 2 ^ m := by
-      have e : 2 ^ j = 2 ^ (j - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_using [hlt]
+      obtain e : 2 ^ j = 2 ^ (j - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_using [hlt]
       rw [e, Nat.mul_div_cancel _ (by decide)]
       exact Nat.not_lt.mpr (Nat.pow_le_pow_right (by decide) (by omega_using [hlt]))
     refine ⟨by rw [ite_eq_left (by omega_using [hjd, hlt]), show k - (i + 1) = j - 1 by omega_using [hjd]]; exact Nx.1 hlt, fun _ => ?_⟩
@@ -680,16 +680,16 @@ theorem relTimesH {g : Geo} {b : Nat} {body : Prog isa}
   obtain ⟨wt, st⟩ := hpost g' i t hi Po
   refine wp_movS (readHdr wt (by decide)) fun t₁ T₁ _ => ?_
   refine VG.Proof.Mont.X86.Rt.wp_subZ (v := BitVec.ofNat 32 1) rfl fun t₂ T₂ z₂ => ?_
-  have e₂ : (t₂.gpr .eax).toNat = b - (i + 1) := by
+  obtain e₂ : (t₂.gpr .eax).toNat = b - (i + 1) := by
     rw [T₂.gpr, T₁.gpr, st, BitVec.toNat_sub, ofNat_lt_toNat (x := b - i) (by omega_using [hb32]),
       ofNat_lt_toNat (x := 1) (by decide)]
     omega_using [hb32, hi]
-  have w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
+  obtain w₂ : WsG g' t₂ := wt.rest (T₁.keeps.trans T₂.keeps)
   refine storeHdr w₂ (by decide) .eax fun t₃ K₃ s₃ k₃ zf₃ _ => WP.block_nil ?_
-  have m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
-  have Nx := hnext g' i t t₃ hi Po (by rw [← m₂]; exact K₃) (by rw [s₃, e₂])
+  obtain m₂ : t₂.mem = t.mem := by rw [T₂.mem, T₁.mem]
+  obtain Nx := hnext g' i t t₃ hi Po (by rw [← m₂]; exact K₃) (by rw [s₃, e₂])
     ((T₁.keeps.mono (by simp)).trans ((T₂.keeps.mono (by simp)).trans (k₃.mono (by simp))))
-  have zz : (t₁.gpr .eax - BitVec.ofNat 32 1 == 0) = decide (i + 1 = b) := by
+  obtain zz : (t₁.gpr .eax - BitVec.ofNat 32 1 == 0) = decide (i + 1 = b) := by
     rw [← T₂.gpr]
     by_cases h : i + 1 = b
     · simp only [h, decide_true, beq_iff_eq]

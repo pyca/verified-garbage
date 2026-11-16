@@ -77,7 +77,7 @@ theorem frame_sub {m m' : Mem} {B : Addr} {o n : Nat} (h : Frame [⟨off B o, n�
   refine h x fun r hr hc => ?_
   simp only [List.mem_singleton] at hr
   subst hr
-  have e := ofs_rebase B x (o := o) (by omega_arith)
+  obtain e := ofs_rebase B x (o := o) (by omega_arith)
   change ofs (off B o) x + 1 ≤ n at hc
   change ofs B x < o ∨ o + n ≤ ofs B x at hx
   rcases e with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith
@@ -93,18 +93,18 @@ theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (bas
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
-  have hk1 := (s₀.gpr .r6).isLt
-  have hscr : Scr s₀ (cS s₀) (cZ s₀) := Scr.of_mem (by rw [hwr]; simp) nwS
+  obtain hk1 := (s₀.gpr .r6).isLt
+  obtain hscr : Scr s₀ (cS s₀) (cZ s₀) := Scr.of_mem (by rw [hwr]; simp) nwS
   have hn := hscr.nowrap
-  have hZ : 128 * ck s₀ + 256 ≤ cZ s₀ := by
+  obtain hZ : 128 * ck s₀ + 256 ≤ cZ s₀ := by
     show 128 * (s₀.gpr .r6).toNat + 256 ≤ (stackArg s₀ 9).toNat * 8; omega_arith
-  have hargs : (⟨stackArgAddr s₀ 0, 80⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [baseRd]
-  have sa : ∀ i, stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := fun i => by
+  obtain hargs : (⟨stackArgAddr s₀ 0, 80⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [baseRd]
+  obtain sa : ∀ i, stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := fun i => by
     simp only [stackArgAddr]; rw [BitVec.add_assoc]; congr 1
     apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
-  have hst : ∀ i < 10, InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ i) 8 := fun i hi =>
+  obtain hst : ∀ i < 10, InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ i) 8 := fun i hi =>
     ⟨_, List.mem_append_left _ hargs, by rw [sa i]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have hsep : ∀ j < 10, ∀ i < 8, ∀ x, ofs (cS s₀) x < cZ s₀ → stackArgAddr s₀ j + BitVec.ofNat 64 i ≠ x :=
+  obtain hsep : ∀ j < 10, ∀ i < 8, ∀ x, ofs (cS s₀) x < cZ s₀ → stackArgAddr s₀ j + BitVec.ofNat 64 i ≠ x :=
     fun j hj i hi x hx e => by
       subst e
       refine dSA _ (by
@@ -112,24 +112,24 @@ theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (bas
         change ((stackArgAddr s₀ j + BitVec.ofNat 64 i) - cS s₀).toNat < cZ s₀ at hx; omega_arith) ?_
       rw [sa j, Offset.add_add]
       exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have hsavR : ∀ i < 18, (⟨cS s₀, cZ s₀⟩ : Region).Contains (off (savW (cS s₀)) (8 * i)) 8 := fun i hi => by
+  obtain hsavR : ∀ i < 18, (⟨cS s₀, cZ s₀⟩ : Region).Contains (off (savW (cS s₀)) (8 * i)) 8 := fun i hi => by
     rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (save_ok s₀ (hst 8 (by decide)) fun i hi => ⟨_, by rw [hwr]; simp, hsavR i hi⟩)
     fun t ⟨s₁, a11, m1, k1, hSv⟩ => ?_
-  have kt := k1.trans hSv.keep
-  have t23 : t.gpr .r23 = cS s₀ := hSv.r23.trans a11
-  have tsp : ∀ i, stackArgAddr t i = stackArgAddr s₀ i := fun i => by simp only [stackArgAddr, kt.sp]
-  have fr : Frame [savR (savW (cS s₀))] s₀.mem t.mem := by
+  obtain kt := k1.trans hSv.keep
+  obtain t23 : t.gpr .r23 = cS s₀ := hSv.r23.trans a11
+  obtain tsp : ∀ i, stackArgAddr t i = stackArgAddr s₀ i := fun i => by simp only [stackArgAddr, kt.sp]
+  obtain fr : Frame [savR (savW (cS s₀))] s₀.mem t.mem := by
     have := hSv.frame; rw [a11, m1] at this; exact this
-  have savSub : Region.Sub (savR (savW (cS s₀))) ⟨cS s₀, cZ s₀⟩ := Offset.sub_base _ (by omega_arith)
-  have tst : ∀ i < 10, stackArg t i = stackArg s₀ i := fun i hi => by
+  obtain savSub : Region.Sub (savR (savW (cS s₀))) ⟨cS s₀, cZ s₀⟩ := Offset.sub_base _ (by omega_arith)
+  obtain tst : ∀ i < 10, stackArg t i = stackArg s₀ i := fun i hi => by
     simp only [stackArg, tsp]
     refine fr.readW (r := ⟨stackArgAddr s₀ i, 8⟩) (by simp [Region.Contains]) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr
     subst hr
-    have argSub : Region.Sub ⟨stackArgAddr s₀ i, 8⟩ ⟨stackArgAddr s₀ 0, 80⟩ := by
+    obtain argSub : Region.Sub ⟨stackArgAddr s₀ i, 8⟩ ⟨stackArgAddr s₀ 0, 80⟩ := by
       rw [sa i]; exact Offset.sub_base _ (by omega_arith)
     exact (dSA.symm.sub_left argSub).sub_right savSub
   rw [WP.block_append_iff]
@@ -137,16 +137,16 @@ theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (bas
     (fun i hi => by rw [tsp, kt.rd, kt.wr]; exact hst i hi)
     (fun j hj i hi x hx => by rw [tsp]; exact hsep j hj i hi x hx))
     fun u ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, Ou, w12⟩, ku⟩ => ?_
-  have ktu := kt.trans ku
+  obtain ktu := kt.trans ku
   refine WP.mono (setupX_ok (k := ck s₀) (pL := cpL s₀) (hscr.congr ktu.wr) (by omega_arith) ((ku.gpr _ (by decide)).trans t23)
     (by rw [ktu.gpr _ (by decide)]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm) hk'
     (by rw [w5, kt.gpr _ (by decide)]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm) hp1
     (by show (s₀.gpr .r10).toNat < 2 ^ 60; omega_arith))
     fun v ⟨⟨v10, v21, v29, v11, v27, v28, vBP, vBQ, Ov⟩, kv⟩ => ?_
-  have k := ktu.trans kv
-  have hw : ∀ d, d + 8 ≤ 96 → word v.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd =>
+  obtain k := ktu.trans kv
+  obtain hw : ∀ d, d + 8 ≤ 96 → word v.mem (cS s₀) d = word u.mem (cS s₀) d := fun d hd =>
     Ov.word (Or.inl hd) (by omega_arith)
-  have z : ∀ x : Addr, x = off x 0 := fun x => (BitVec.add_zero x).symm
+  obtain z : ∀ x : Addr, x = off x 0 := fun x => (BitVec.add_zero x).symm
   refine ⟨⟨hscr.congr k.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, vBQ, (kv.gpr _ (by decide)).trans
     ((ku.gpr _ (by decide)).trans t23), v10, v21, v29, v11, v27, v28, k.mono, fun i hi => ?_, ?_⟩,
     fun hp => by rw [hw _ (by decide), w12 hp, kt.gpr _ (by decide)]⟩
@@ -166,8 +166,8 @@ theorem front_okG (pc : Bool) {X : List Region} (s₀ : State) (h : preCore (bas
     change t.mem.readW (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 64 = _ at hs1
     change v.mem.readW (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 64 = _
     rw [Offset.add_add] at hs1 ⊢
-    have h1 := Ov.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
-    have h2 := Ou.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
+    obtain h1 := Ov.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
+    obtain h2 := Ou.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
     simp only [word] at h1 h2
     rw [h1, h2]; exact hs1
   · exact (((frame_sub (o := 112) fr (by omega_arith) (by decide)).mono (by omega_arith) (by omega_arith)).trans

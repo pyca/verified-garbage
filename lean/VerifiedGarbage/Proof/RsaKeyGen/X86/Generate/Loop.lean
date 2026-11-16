@@ -105,7 +105,7 @@ theorem genRand_length {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgr
 
 theorem rOf_used_le {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress} (h : GenFrame p o used st s) :
     used + (rOf p o used st).used ≤ p.randLen := by
-  have h2 : (rOf p o used st).used ≤ p.randLen - used := by
+  obtain h2 : (rOf p o used st).used ≤ p.randLen - used := by
     have := Spec.RsaKeyGen.primeSearch_used_le p.L p.eB st.phase.other st.remaining ((genRand o).drop used)
     rw [List.length_drop, genRand_length h] at this
     exact this
@@ -123,11 +123,11 @@ theorem head_ok {p : GenPublic} {o s t : State} {final : KeySearchResult} {used 
   have hb := hf.toGenBase
   have hin := hb.input
   have A := hin.abi
-  have hle := rOf_used_le hl.toGenFrame
+  obtain hle := rOf_used_le hl.toGenFrame
   have hlt := hin.randLen_lt
-  have hU : InRegions (t.rd ++ t.wr) ((arg o 2).setWidth 64) 4 :=
+  obtain hU : InRegions (t.rd ++ t.wr) ((arg o 2).setWidth 64) 4 :=
     ⟨uR o, by rw [hb.rd, hb.wr, A.wr]; simp, by simp [Region.Contains]⟩
-  have hu0 : t.mem.readW ((arg o 2).setWidth 64) 32 = BitVec.ofNat 32 (rOf p o used st).used := by
+  obtain hu0 : t.mem.readW ((arg o 2).setWidth 64) 32 = BitVec.ofNat 32 (rOf p o used st).used := by
     have h0 := ha.usedw
     simp only [word, BitVec.add_zero] at h0
     rw [hin.up_eq] at h0
@@ -147,7 +147,7 @@ theorem head_ok {p : GenPublic} {o s t : State} {final : KeySearchResult} {used 
           Spec.Rsa.bytesAt m (a + BitVec.ofNat 64 x) y = List.replicate y 0 := by
       rw [bytesAt_add, ← List.replicate_append_replicate] at h
       exact List.append_inj h (by simp [Spec.Rsa.bytesAt])
-    have hi5 := zeros_split (x := p.L) (y := 3 * p.L) (by rw [show p.L + 3 * p.L = 4 * p.L by omega_using []]; exact hK.high)
+    obtain hi5 := zeros_split (x := p.L) (y := 3 * p.L) (by rw [show p.L + 3 * p.L = 4 * p.L by omega_using []]; exact hK.high)
     rw [show p.slot 5 + BitVec.ofNat 64 p.L = p.slot 6 by
       rw [GenPublic.slot, GenPublic.slot, Offset.add_add]; congr 2; omega_using []] at hi5
     have sk (j n : Nat) (hj : j * p.L + n ≤ 9 * p.L) : Region.Sub ⟨p.slot j, n⟩ (kR o) := by
@@ -166,12 +166,12 @@ theorem head_ok {p : GenPublic} {o s t : State} {final : KeySearchResult} {used 
     have hfin' := hfin
     have hreq := ha.req
     rw [← hu'] at hreq
-    have F' : GenFrame p o (used + (rOf p o used st).used) ⟨st.left, st.phase, (rOf p o used st).remaining⟩ u :=
+    obtain F' : GenFrame p o (used + (rOf p o used st).used) ⟨st.left, st.phase, (rOf p o used st).remaining⟩ u :=
       ⟨hb.step k (by decide) sy hm, hle, (k.gpr (by decide)).trans hf.ebp,
         by rw [hsi, ← BitVec.ofNat_add], (k.gpr (by decide)).trans hf.edi, by rw [hu']; exact hf.random,
         by rw [hu']; exact hf.state⟩
-    have hbx : u.gpr .ebx = 4 := (k.gpr (by decide)).trans ha.ebx
-    have hst : (u.gpr .eax).toNat = (rOf p o used st).status := by rw [hax]; exact ha.status
+    obtain hbx : u.gpr .ebx = 4 := (k.gpr (by decide)).trans ha.ebx
+    obtain hst : (u.gpr .eax).toNat = (rOf p o used st).status := by rw [hax]; exact ha.status
     have hmem := ha.mem
     refine ⟨?_, ?_⟩
     swap
@@ -191,11 +191,11 @@ theorem head_ok {p : GenPublic} {o s t : State} {final : KeySearchResult} {used 
       have kept (R : Region) (hR : Region.Sub R (kR o)) (hO : R.Disjoint ⟨p.slot 4, p.L⟩)
           (hn : R.len ≤ 2 ^ 64) : Spec.Rsa.bytesAt u.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := by
         rw [hu']; exact search_kept hin hmem hR (by rw [outOf_zero]; exact hO) hn
-      have e0 := kept ⟨p.kp.setWidth 64, 4 * p.L⟩ (by rw [hin.kR_eq]; exact Region.sub_prefix (by omega_using []))
+      obtain e0 := kept ⟨p.kp.setWidth 64, 4 * p.L⟩ (by rw [hin.kR_eq]; exact Region.sub_prefix (by omega_using []))
         (dlow 4 p.L (by decide) (by omega_using [])) (show 4 * p.L ≤ 2 ^ 64 by omega_using [hv])
-      have e5 := kept ⟨p.slot 5, p.L⟩ (sk 5 p.L (by omega_using [])) (dj 5 4 p.L p.L (.inr (by omega_using [])) (by omega_using []) (by omega_using []))
+      obtain e5 := kept ⟨p.slot 5, p.L⟩ (sk 5 p.L (by omega_using [])) (dj 5 4 p.L p.L (.inr (by omega_using [])) (by omega_using []) (by omega_using []))
         (show p.L ≤ 2 ^ 64 by omega_using [hv])
-      have e6 := kept ⟨p.slot 6, 3 * p.L⟩ (sk 6 (3 * p.L) (by omega_using []))
+      obtain e6 := kept ⟨p.slot 6, 3 * p.L⟩ (sk 6 (3 * p.L) (by omega_using []))
         (dj 6 4 (3 * p.L) p.L (.inr (by omega_using [])) (by omega_using []) (by omega_using [])) (show 3 * p.L ≤ 2 ^ 64 by omega_using [hv])
       exact ⟨F', hbx, hst, hcx, hfin', e0.trans hK.low, hout, e5.trans hi5.1, e6.trans hi5.2, hreq⟩
     | q pB =>
@@ -204,11 +204,11 @@ theorem head_ok {p : GenPublic} {o s t : State} {final : KeySearchResult} {used 
       have kept (R : Region) (hR : Region.Sub R (kR o)) (hO : R.Disjoint ⟨p.slot 5, p.L⟩)
           (hn : R.len ≤ 2 ^ 64) : Spec.Rsa.bytesAt u.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := by
         rw [hu']; exact search_kept hin hmem hR (by rw [outOf_one]; exact hO) hn
-      have e0 := kept ⟨p.kp.setWidth 64, 4 * p.L⟩ (by rw [hin.kR_eq]; exact Region.sub_prefix (by omega_using []))
+      obtain e0 := kept ⟨p.kp.setWidth 64, 4 * p.L⟩ (by rw [hin.kR_eq]; exact Region.sub_prefix (by omega_using []))
         (dlow 5 p.L (by decide) (by omega_using [])) (show 4 * p.L ≤ 2 ^ 64 by omega_using [hv])
-      have e4 := kept ⟨p.slot 4, p.L⟩ (sk 4 p.L (by omega_using [])) (dj 4 5 p.L p.L (.inl (by omega_using [])) (by omega_using []) (by omega_using []))
+      obtain e4 := kept ⟨p.slot 4, p.L⟩ (sk 4 p.L (by omega_using [])) (dj 4 5 p.L p.L (.inl (by omega_using [])) (by omega_using []) (by omega_using []))
         (show p.L ≤ 2 ^ 64 by omega_using [hv])
-      have e6 := kept ⟨p.slot 6, 3 * p.L⟩ (sk 6 (3 * p.L) (by omega_using []))
+      obtain e6 := kept ⟨p.slot 6, 3 * p.L⟩ (sk 6 (3 * p.L) (by omega_using []))
         (dj 6 5 (3 * p.L) p.L (.inr (by omega_using [])) (by omega_using []) (by omega_using [])) (show 3 * p.L ≤ 2 ^ 64 by omega_using [hv])
       exact ⟨F', hbx, hst, hcx, hfin', e0.trans hK.low, e4.trans (hK.other pB rfl), hout, e6.trans hi5.2, hreq⟩
 
@@ -239,7 +239,7 @@ theorem clearAll_ok {p : GenPublic} {o t : State} {used : Nat} {st : KeyProgress
   have hi := hf.input
   have A := hi.abi
   have hv := hi.len_valid
-  have hkl : (arg o 1).toNat = 9 * p.L := by rw [A.keyLen, ← hi.L_eq]
+  obtain hkl : (arg o 1).toNat = 9 * p.L := by rw [A.keyLen, ← hi.L_eq]
   unfold clearAll
   refine WP.seq (WP.mono (WP.blockKeep [.eax, .ecx, .edx] (Q := fun v =>
       v.gpr .edx = arg o 0 ∧ v.gpr .ecx = BitVec.ofNat 32 (9 * p.L) ∧ v.gpr .eax = 0 ∧ v.mem = t.mem) ?_ (by rfl))
@@ -248,15 +248,15 @@ theorem clearAll_ok {p : GenPublic} {o t : State} {used : Nat} {st : KeyProgress
     xrun [State.ea, at_, hf.arg_ea (i := 0) (d := 20) rfl, hf.arg_in (i := 0) (by decide),
       hf.arg_val (i := 0) (by decide), hf.ebp, four_val]
     simp only [← BitVec.ofNat_add]; congr 1; omega_using []
-  have hfv : GenFrame p o used st v := hf.keyWrite (k.mono (by simp)) sy (R := kR o)
+  obtain hfv : GenFrame p o used st v := hf.keyWrite (k.mono (by simp)) sy (R := kR o)
     (fun x hx => hx) (by rw [hm]; exact Frame.refl _ _)
   refine WP.mono_syms (zeroLoop_ok (P := arg o 0) (n := 9 * p.L) (by omega_using [hv])
     (fun i hi' => (hfv.key_in (by omega_using [hkl, hi']))) (by have := A.kBound; omega_using [hkl, this]) (by omega_using [hv]) hd hc ha)
     fun u ⟨fr, hz, ku⟩ sy' => ?_
-  have ku' : Keep [.eax, .ecx, .edx] v u := Keep.ofKeeps ku
-  have sub : Region.Sub ⟨(arg o 0).setWidth 64, 9 * p.L⟩ (kR o) := fun x hx => by
+  obtain ku' : Keep [.eax, .ecx, .edx] v u := Keep.ofKeeps ku
+  obtain sub : Region.Sub ⟨(arg o 0).setWidth 64, 9 * p.L⟩ (kR o) := fun x hx => by
     simp only [Region.Contains] at hx ⊢; omega_using [hkl, hx]
-  have fr' : Frame [kR o] v.mem u.mem := fr.sub fun r hr => by
+  obtain fr' : Frame [kR o] v.mem u.mem := fr.sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr; exact ⟨kR o, List.mem_singleton_self _, sub⟩
   refine ⟨hfv.keyWrite ku' sy' (fun x hx => hx) fr', by rw [← hm]; exact fr', by rw [hi.kp_eq]; exact hz,
     (k.trans ku').mono (by simp)⟩
@@ -269,12 +269,12 @@ theorem GenFrame.stateWrite {p : GenPublic} {o t u : State} {used : Nat} {st st'
     GenFrame p o used st' u := by
   have hi := hf.input
   have A := hi.abi
-  have hS : Region.Sub ⟨p.stp.setWidth 64 + BitVec.ofNat 64 d, n⟩ (sR o) := by
+  obtain hS : Region.Sub ⟨p.stp.setWidth 64 + BitVec.ofNat 64 d, n⟩ (sR o) := by
     rw [hi.sR_eq]; exact Offset.sub_base _ hd
-  have sv : Saved u.mem p.S1 o := saved_frame hi (fun r hr => by
+  obtain sv : Saved u.mem p.S1 o := saved_frame hi (fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact (A.lowS.sub_left (low_sub (by decide))).sub_right hS) fr hf.saved
-  have fc : Frame (changes o) t.mem u.mem := fr.sub fun r hr => by
+  obtain fc : Frame (changes o) t.mem u.mem := fr.sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr; exact ⟨sR o, by simp [changes], hS⟩
   refine ⟨hf.toGenBase.keep k (fun h => (hrs _ h).1 rfl) sy sv fc, hf.used_le,
     (k.gpr fun h => (hrs _ h).2.1 rfl).trans hf.ebp, (k.gpr fun h => (hrs _ h).2.2.1 rfl).trans hf.esi,
@@ -342,8 +342,8 @@ theorem finish_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress} 
       exact Frame.refl _ _
   have hst := hf.state
   rw [← hi.stp_eq] at fr h32 h36 h40 h44
-  have z64 : (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0 := by decide
-  have hst' : StateOk p ⟨0, .p, 0⟩ t.mem := by
+  obtain z64 : (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0 := by decide
+  obtain hst' : StateOk p ⟨0, .p, 0⟩ t.mem := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, Nat.zero_le _, by decide⟩
     · rw [word_apart fr (.inl (by decide)) (by decide), hst.remaining, hr0]
     · rw [word_apart fr (.inl (by decide)) (by decide)]; exact hst.len
@@ -370,7 +370,7 @@ theorem hi_zero {m : Mem} {B : Addr} {d x : Nat} (h : m.readW (B + BitVec.ofNat 
   rw [pair32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hx])] at this
   apply BitVec.eq_of_toNat_eq
   have := (m.readW (B + BitVec.ofNat 64 d) 32).isLt
-  have h2 : (m.readW (B + BitVec.ofNat 64 (d + 4)) 32).toNat * 2 ^ 32 < 2 ^ 32 := by omega
+  obtain h2 : (m.readW (B + BitVec.ofNat 64 (d + 4)) 32).toNat * 2 ^ 32 < 2 ^ 32 := by omega
   show _ = 0
   omega_using [h2]
 
@@ -388,8 +388,8 @@ theorem nextPrime_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgres
   have hi := hb.input
   have hs := hi.sBound'
   have hv := hi.len_valid
-  have hlim := limit_lt p.L p.eB (by omega_using [hv])
-  have hph : phaseWord phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
+  obtain hlim := limit_lt p.L p.eB (by omega_using [hv])
+  obtain hph : phaseWord phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
   refine WP.mono (WP.blockKeep [.eax, .ecx, .ebx] (Q := fun t =>
       t.gpr .ebx = 4 ∧
       (t.mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 0) 32 = BitVec.ofNat 32 (limitOf p.L p.eB) ∧
@@ -424,9 +424,9 @@ theorem nextPrime_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgres
       have := p.stp.isLt
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_using [he]) (by omega_using [he]) (by omega_using [])
-  have hph1 : phaseWord st.phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
-  have h36' := hi_zero (d := 32) hst.phase hph1
-  have hst' : StateOk p ⟨st.left, phase, limitOf p.L p.eB⟩ t.mem := by
+  obtain hph1 : phaseWord st.phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
+  obtain h36' := hi_zero (d := 32) hst.phase hph1
+  obtain hst' : StateOk p ⟨st.left, phase, limitOf p.L p.eB⟩ t.mem := by
     refine ⟨?_, (far 8 (by omega_using [])).trans hst.len, (far 16 (by omega_using [])).trans hst.cap, ?_,
       (far 40 (by omega_using [])).trans hst.left, ?_, Nat.le_refl _, hst.left_lt⟩
     · exact (word_halves (d := 0) h0 h4).trans (zero_app hlim)
@@ -437,7 +437,7 @@ theorem nextPrime_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgres
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using []))
         (show 8 ≤ 2 ^ 64 by decide)
-  have fr' : Frame [⟨p.stp.setWidth 64 + BitVec.ofNat 64 0, 36⟩] s.mem t.mem := fr.sub fun r hr => by
+  obtain fr' : Frame [⟨p.stp.setWidth 64 + BitVec.ofNat 64 0, 36⟩] s.mem t.mem := fr.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
@@ -503,12 +503,12 @@ theorem dec_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress} (hf
   simp only [word] at hw
   rw [Proof.Ffdh.X86.KeyInit.readW64_split, Offset.add_add] at hw
   simp only [Nat.reduceAdd] at hw
-  have hv : (s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 44) 32 ++
+  obtain hv : (s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 44) 32 ++
       s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 40) 32).toNat = st.left := by
     rw [hw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
   have far (e : Nat) (he : e + 8 ≤ 40 ∨ 48 ≤ e) (he' : e + 8 ≤ 56) : word t.mem p.stp e = word s.mem p.stp e :=
     word_apart fr he ⟨by decide, he'⟩
-  have hst' : StateOk p ⟨st.left - 1, st.phase, st.remaining⟩ t.mem := by
+  obtain hst' : StateOk p ⟨st.left - 1, st.phase, st.remaining⟩ t.mem := by
     refine ⟨(far 0 (by omega_using []) (by omega_using [])).trans hst.remaining, (far 8 (by omega_using []) (by omega_using [])).trans hst.len,
       (far 16 (by omega_using []) (by omega_using [])).trans hst.cap, (far 32 (by omega_using []) (by omega_using [])).trans hst.phase, ?_,
       by rw [e_apart fr (by decide)]; exact hst.e, hst.remaining_le, by show st.left - 1 < 2 ^ 64; omega_using [hlt]⟩
@@ -554,7 +554,7 @@ theorem left_test {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress} 
   simp only [word] at hw
   rw [Proof.Ffdh.X86.KeyInit.readW64_split, Offset.add_add] at hw
   simp only [Nat.reduceAdd] at hw
-  have hv : (s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 44) 32 ++
+  obtain hv : (s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 44) 32 ++
       s.mem.readW (p.stp.setWidth 64 + BitVec.ofNat 64 40) 32).toNat = st.left := by
     rw [hw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
   rw [← hi.stp_eq, ← hv]
@@ -764,7 +764,7 @@ theorem measure_lt (p : GenPublic) {used n : Nat} {st st' : KeyProgress} (h0 : 0
     (hn : used + n ≤ p.randLen) (hl : st'.left ≤ st.left) :
     genMeasure p (used + n) st' < genMeasure p used st := by
   unfold genMeasure
-  have hmul : (p.randLen - (used + n) + 1) * 2 ^ 64 ≤ (p.randLen - used) * 2 ^ 64 :=
+  obtain hmul : (p.randLen - (used + n) + 1) * 2 ^ 64 ≤ (p.randLen - used) * 2 ^ 64 :=
     Nat.mul_le_mul_right _ (by omega_using [h0, hn])
   rw [Nat.add_mul, Nat.one_mul] at hmul
   omega_using [h0, hn, hl]
@@ -799,7 +799,7 @@ theorem keyOk_next {p : GenPublic} {o : State} (hi : GenInput p o) {st : KeyProg
     (h6 : Spec.Rsa.bytesAt m (p.slot 6) (3 * p.L) = List.replicate (3 * p.L) 0)
     (hother : ∀ pB, st.phase = .q pB → Spec.Rsa.bytesAt m (p.slot 4) p.L = pB) : KeyOk p st m' := by
   have hv := hi.len_valid
-  have hhigh : Spec.Rsa.bytesAt m (p.slot 5) (4 * p.L) = List.replicate (4 * p.L) 0 := by
+  obtain hhigh : Spec.Rsa.bytesAt m (p.slot 5) (4 * p.L) = List.replicate (4 * p.L) 0 := by
     rw [show 4 * p.L = p.L + 3 * p.L by omega_using [], bytesAt_add,
       show p.slot 5 + BitVec.ofNat 64 p.L = p.slot 6 by
         rw [GenPublic.slot, GenPublic.slot, Offset.add_add]; congr 2; omega_using [], h5, h6,
@@ -821,9 +821,9 @@ theorem phase_test {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress}
         t.syms = s.syms := by
   have hb := hf.toGenBase
   have hi := hb.input
-  have r32 : s.mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 = BitVec.ofNat 32 (phaseWord st.phase) := by
+  obtain r32 : s.mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 = BitVec.ofNat 32 (phaseWord st.phase) := by
     rw [← hi.stp_eq]; exact low_half hf.state.phase
-  have hph : phaseWord st.phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
+  obtain hph : phaseWord st.phase < 2 ^ 32 := by unfold phaseWord; split <;> decide
   refine WP.blockKeep [.eax, .ecx] ?_ (by rfl)
   simp only [VG.Impl.RsaKeyGen.X86.Generate.st, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd]
   xrun [State.ea, at_, hb.arg_ea (i := 7) (d := 48) rfl, hb.arg_in (i := 7) (by decide),
@@ -840,24 +840,24 @@ theorem classify_entropy (hm : Mid p o final used st u) {k a : Nat}
     (ho : (rOf p o used st).outcome = .entropy k a) :
     WP isa (.block [.mov .ebx (.imm 0)]) u (Classified p o final used st) := by
   have hv := hm.frame.input.len_valid
-  have hrem : (rOf p o used st).remaining = k := by simp only [PrimeSearchResult.remaining, ho]
+  obtain hrem : (rOf p o used st).remaining = k := by simp only [PrimeSearchResult.remaining, ho]
   have hframe := hm.frame
   rw [hrem] at hframe
   obtain ⟨tr, hfin⟩ := hm.final
-  have hks := ks_entropy (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
-  have hfinal : final = ⟨.entropy ⟨st.left, st.phase, k⟩ a, used + (rOf p o used st).used,
+  obtain hks := ks_entropy (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
+  obtain hfinal : final = ⟨.entropy ⟨st.left, st.phase, k⟩ a, used + (rOf p o used st).used,
       tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
-  have nc : ¬ContSpec p o used st := by
+  obtain nc : ¬ContSpec p o used st := by
     rintro (⟨h, -⟩ | ⟨c, h, -⟩) <;> rw [ho] at h <;> cases h
   refine WP.mono (WP.blockKeep [.ebx] (Q := fun t => t.gpr .ebx = 0 ∧ t.mem = u.mem) (by xrun) (by rfl))
     fun t ⟨⟨hbx, htm⟩, k', sy⟩ => Or.inr ⟨nc, ?_⟩
-  have hg := hframe.keepRegs k' (by decide) sy htm
+  obtain hg := hframe.keepRegs k' (by decide) sy htm
   obtain ⟨req, hw, hr⟩ := hm.req
   subst hfinal
   refine ⟨hg, hbx, ?_, ⟨req, by rw [htm]; exact hw, ?_⟩⟩
   · rw [htm, key_bytes, hm.low, hm.slot4, hm.slot5, hm.high]
-    have hout : outBytes p.L (rOf p o used st) = List.replicate p.L 0 := by simp only [outBytes, ho]
+    obtain hout : outBytes p.L (rOf p o used st) = List.replicate p.L 0 := by simp only [outBytes, ho]
     obtain ⟨left, phase, remaining⟩ := st
     cases phase with
     | p =>
@@ -874,13 +874,13 @@ theorem classify_last (hm : Mid p o final used st u) (ho : (rOf p o used st).out
     (hl : st.left < 2) {w : State}
     (hw : GenFrame p o (used + (rOf p o used st).used) ⟨st.left, st.phase, (rOf p o used st).remaining⟩ w)
     (hmem : w.mem = u.mem) : WP isa (fail 3) w (GenDone p o final) := by
-  have hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
+  obtain hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
   obtain ⟨tr, hfin⟩ := hm.final
-  have hks := ks_exhausted_last (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho (by omega_using [hl])
-  have hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
+  obtain hks := ks_exhausted_last (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho (by omega_using [hl])
+  obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw', hr⟩ := hm.req
-  have hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
   subst hfinal
   exact fail_done (final := ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩)
     hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; rfl⟩
@@ -890,14 +890,14 @@ theorem classify_none (hm : Mid p o final used st u) {c : Nat}
     (ho : (rOf p o used st).outcome = .accepted c) (h0 : (rOf p o used st).used = 0) {w : State}
     (hw : GenFrame p o (used + (rOf p o used st).used) ⟨st.left, st.phase, (rOf p o used st).remaining⟩ w)
     (hmem : w.mem = u.mem) : WP isa (fail 3) w (GenDone p o final) := by
-  have hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
+  obtain hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
   obtain ⟨tr, hfin⟩ := hm.final
-  have hks := ks_accepted_none (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
+  obtain hks := ks_accepted_none (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
     (by show ¬(List.drop (rOf p o used st).used _).length < _; rw [h0, List.drop_zero]; omega_using [])
-  have hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
+  obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw', hr⟩ := hm.req
-  have hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
   subst hfinal
   exact fail_done (final := ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩)
     hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; rfl⟩
@@ -914,9 +914,9 @@ theorem classify_next (hm : Mid p o final used st u) (ho : (rOf p o used st).out
   have hi := hm.frame.input
   have hv := hi.len_valid
   have hle := hm.frame.used_le
-  have hks := ks_exhausted_next (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho (by omega_using [hl])
-  have hout : outBytes p.L (rOf p o used st) = List.replicate p.L 0 := by simp only [outBytes, ho]
-  have h5 : Spec.Rsa.bytesAt u.mem (p.slot 5) p.L = List.replicate p.L 0 := by
+  obtain hks := ks_exhausted_next (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho (by omega_using [hl])
+  obtain hout : outBytes p.L (rOf p o used st) = List.replicate p.L 0 := by simp only [outBytes, ho]
+  obtain h5 : Spec.Rsa.bytesAt u.mem (p.slot 5) p.L = List.replicate p.L 0 := by
     rw [hm.slot5]
     obtain ⟨left, phase, remaining⟩ := st
     cases phase with
@@ -927,19 +927,19 @@ theorem classify_next (hm : Mid p o final used st u) (ho : (rOf p o used st).out
   have tk {a : Addr} {len : Nat} (ha : Region.Sub ⟨a, len⟩ ⟨p.kp.setWidth 64, 9 * p.L⟩) (hl : len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t1.mem a len = Spec.Rsa.bytesAt u.mem a len := by
     rw [kb_keep hi (by decide) fr1 ha hl, hmem]
-  have hkey : KeyOk p ⟨st.left - 1, .p, limitOf p.L p.eB⟩ t.mem := by
+  obtain hkey : KeyOk p ⟨st.left - 1, .p, limitOf p.L p.eB⟩ t.mem := by
     refine keyOk_next hi fr ?_ ?_ ?_ (fun _ h => by cases h)
     · rw [tk (Region.sub_prefix (by omega_using [])) (by omega_using [hv])]; exact hm.low
     · rw [tk (Offset.sub_base _ (by omega_using [])) (by omega_using [hv])]; exact h5
     · rw [tk (Offset.sub_base _ (by omega_using [])) (by omega_using [hv])]; exact hm.high
-  have hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
+  obtain hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
     obtain ⟨req, hw', hr'⟩ := hm.req
     have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr'
     rw [w24, word_apart fr1 (.inl (by decide)) ⟨by decide, by decide⟩, hmem, hw', this]
   refine ⟨hreq0, ⟨_, primeEntry (rOf p o used st), ⟨g, hbx, hkey⟩, ?_, ?_, rfl, .inl ⟨ho, rfl, rfl, rfl⟩⟩, hm.final⟩
   · unfold genMeasure
     dsimp only
-    have hmul : (p.randLen - (used + (rOf p o used st).used)) * 2 ^ 64 ≤ (p.randLen - used) * 2 ^ 64 :=
+    obtain hmul : (p.randLen - (used + (rOf p o used st).used)) * 2 ^ 64 ≤ (p.randLen - used) * 2 ^ 64 :=
       Nat.mul_le_mul_right _ (by omega_using [])
     omega_using [hl]
   · rw [tailOf, hks, tailOf, List.drop_drop]
@@ -954,9 +954,9 @@ theorem classify_p (hm : Mid p o final used st u) {c : Nat}
   have hi := hm.frame.input
   have hv := hi.len_valid
   have hle := hm.frame.used_le
-  have hrest : (rOf p o used st).used ≤ ((genRand o).drop used).length := by
+  obtain hrest : (rOf p o used st).used ≤ ((genRand o).drop used).length := by
     rw [List.length_drop, genRand_length hm.frame]; omega_using [hle]
-  have hks := ks_accepted_p (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
+  obtain hks := ks_accepted_p (L := p.L) (eB := p.eB) (st := st) (rand := (genRand o).drop used) ho
     (drop_lt hpos hrest) hph
   have hs4 := hm.slot4
   have hs5 := hm.slot5
@@ -964,13 +964,13 @@ theorem classify_p (hm : Mid p o final used st u) {c : Nat}
   simp only [outBytes, ho] at hs4
   refine WP.mono (nextPrime_ok (.q (Spec.Rsa.i2osp c p.L)) hw) fun t ⟨g, hbx, fr, w24, _⟩ =>
     Or.inl ⟨.inr ⟨c, ho, by omega_using [hpos], .inl hph⟩, ?_⟩
-  have hkey : KeyOk p ⟨st.left, .q (Spec.Rsa.i2osp c p.L), limitOf p.L p.eB⟩ t.mem := by
+  obtain hkey : KeyOk p ⟨st.left, .q (Spec.Rsa.i2osp c p.L), limitOf p.L p.eB⟩ t.mem := by
     refine keyOk_next hi fr ?_ ?_ ?_ (fun pB h => ?_)
     · rw [hmem]; exact hm.low
     · rw [hmem]; exact hs5
     · rw [hmem]; exact hm.high
     · cases h; rw [hmem]; exact hs4
-  have hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
+  obtain hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
     obtain ⟨req, hw', hr'⟩ := hm.req
     have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr'
     rw [w24, hmem, hw', this]
@@ -990,26 +990,26 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
   have hv := hi.len_valid
   obtain ⟨tr, hfin⟩ := hm.final
   have hle := hm.frame.used_le
-  have hrest : (rOf p o used st).used ≤ ((genRand o).drop used).length := by
+  obtain hrest : (rOf p o used st).used ≤ ((genRand o).drop used).length := by
     rw [List.length_drop, genRand_length hm.frame]; omega_using [hle]
-  have hg := drop_lt hpos hrest
+  obtain hg := drop_lt hpos hrest
   have hs4 := hm.slot4
   have hs5 := hm.slot5
   rw [hph] at hs4 hs5
   simp only [outBytes, ho] at hs5
-  have hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
+  obtain hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
   obtain ⟨req, hw24, hr⟩ := hm.req
-  have hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
   subst hr0
   refine WP.seq (WP.mono (key_run key hw) fun v hk => ?_)
-  have hkey : keyOf p w.mem = keyOp p.L p.eB pB (Spec.Rsa.i2osp c p.L) := by
+  obtain hkey : keyOf p w.mem = keyOp p.L p.eB pB (Spec.Rsa.i2osp c p.L) := by
     simp only [keyOf, hmem, hs4, hs5]
   have hstat := hk.status
   have hout := hk.out
   rw [hkey] at hstat hout
-  have X : Region.Sub ⟨p.stp.setWidth 64 + BitVec.ofNat 64 24, 8⟩ (sR o) := by
+  obtain X : Region.Sub ⟨p.stp.setWidth 64 + BitVec.ofNat 64 24, 8⟩ (sR o) := by
     rw [hi.sR_eq]; exact Offset.sub_base _ (by decide)
-  have hwv : word v.mem p.stp 24 = BitVec.ofNat 64 0 := by
+  obtain hwv : word v.mem p.stp 24 = BitVec.ofNat 64 0 := by
     refine (word_keep hk.mem fun r hr => ?_).trans (by rw [hmem]; exact hw24)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -1018,19 +1018,19 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
     · rw [← hi.low_eq]; exact A.lowS.symm.sub_left X
   unfold afterKey
   refine WP.seq (WP.mono (cmp_ok (r := .eax) rfl 1) fun x ⟨⟨he1, hmem1⟩, k1, sy1⟩ => ?_)
-  have hgx := hk.frame.same k1 sy1 hmem1
+  obtain hgx := hk.frame.same k1 sy1 hmem1
   rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, beq_nat (k := 1) hstat (by decide)] at he1
-  have hfin' : ∀ {res : KeySearchResult}, keySearch p.L p.eB st ((genRand o).drop used) = res →
+  obtain hfin' : ∀ {res : KeySearchResult}, keySearch p.L p.eB st ((genRand o).drop used) = res →
       final = res.consume used tr := fun h => by rw [hfin, tailOf, h]
   cases hkf : keyFromPrimes (16 * p.L) (Spec.Rsa.os2ip p.eB) (Spec.Rsa.os2ip pB)
       (Spec.Rsa.os2ip (Spec.Rsa.i2osp c p.L)) with
   | inl res =>
     cases res with
     | ok kk =>
-      have hks := hfin' (ks_accepted_key (L := p.L) (eB := p.eB) (res := .ok kk) ho hg hph hkf)
+      obtain hks := hfin' (ks_accepted_key (L := p.L) (eB := p.eB) (res := .ok kk) ho hg hph hkf)
       simp only [keyOp, hkf, keyStatus] at he1 hout
       refine WP.ite true he1 (fun _ => ?_) (fun h => by cases h)
-      have e : final.keyStatus = 1 := by rw [hks]; rfl
+      obtain e : final.keyStatus = 1 := by rw [hks]; rfl
       rw [← e]
       refine WP.mono (finish_done (final := final) hgx (by rw [hks]; rfl) (by rw [hks]; rfl) hrem ?_
         ⟨0, by rw [hmem1]; exact hwv, by rw [hks]; rfl⟩) fun _ h => Or.inr ⟨?_, h⟩
@@ -1042,16 +1042,16 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
         · rw [hph] at h'; cases h'
         · rw [ho] at h; cases h; rw [hph] at h'; cases h'; rw [hkf] at hk'; cases hk'
     | error fl =>
-      have hks := hfin' (ks_accepted_key (L := p.L) (eB := p.eB) (res := .error fl) ho hg hph hkf)
+      obtain hks := hfin' (ks_accepted_key (L := p.L) (eB := p.eB) (res := .error fl) ho hg hph hkf)
       simp only [keyOp, hkf, keyStatus] at he1 hstat
       refine WP.ite false he1 (fun h => by cases h) (fun _ => ?_)
       refine WP.seq (WP.mono (cmp_ok (r := .eax) rfl 2) fun y ⟨⟨he2, hmem2⟩, k2, sy2⟩ => ?_)
       rw [k1.gpr (by decide), show (2 : BitVec 32) = BitVec.ofNat 32 2 from rfl, beq_nat (k := 2) hstat (by decide)] at he2
-      have hgy := hgx.same k2 sy2 hmem2
+      obtain hgy := hgx.same k2 sy2 hmem2
       refine WP.ite false he2 (fun h => by cases h) (fun _ => ?_)
-      have e : final.keyStatus = 2 := by rw [hks]; rfl
+      obtain e : final.keyStatus = 2 := by rw [hks]; rfl
       rw [← e]
-      have nc : ¬ContSpec p o used st := by
+      obtain nc : ¬ContSpec p o used st := by
         rintro (⟨h, -⟩ | ⟨c', h, -, h' | ⟨pB', h', hk'⟩⟩)
         · rw [ho] at h; cases h
         · rw [hph] at h'; cases h'
@@ -1059,16 +1059,16 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
       exact WP.mono (fail_done (final := final) hgy (by rw [hks]; rfl) (by rw [hks]; rfl) hrem (by rw [hks]; rfl)
         ⟨0, by rw [hmem2, hmem1]; exact hwv, by rw [hks]; rfl⟩) fun _ h => Or.inr ⟨nc, h⟩
   | inr _ =>
-    have hks := ks_accepted_small (L := p.L) (eB := p.eB) ho hg hph hkf
+    obtain hks := ks_accepted_small (L := p.L) (eB := p.eB) ho hg hph hkf
     simp only [keyOp, hkf, keyStatus] at he1 hstat hout
     refine WP.ite false he1 (fun h => by cases h) (fun _ => ?_)
     refine WP.seq (WP.mono (cmp_ok (r := .eax) rfl 2) fun y ⟨⟨he2, hmem2⟩, k2, sy2⟩ => ?_)
     rw [k1.gpr (by decide), show (2 : BitVec 32) = BitVec.ofNat 32 2 from rfl, beq_nat (k := 2) hstat (by decide)] at he2
-    have hgy := hgx.same k2 sy2 hmem2
+    obtain hgy := hgx.same k2 sy2 hmem2
     refine WP.ite true he2 (fun _ => ?_) (fun h => by cases h)
     refine WP.mono (nextPrime_ok .p hgy) fun t ⟨g, hbx, fr, w24, _⟩ =>
       Or.inl ⟨.inr ⟨c, ho, by omega_using [hpos], .inr ⟨pB, hph, hkf⟩⟩, ?_⟩
-    have hkey' : KeyOk p ⟨st.left, .p, limitOf p.L p.eB⟩ t.mem :=
+    obtain hkey' : KeyOk p ⟨st.left, .p, limitOf p.L p.eB⟩ t.mem :=
       keyOk_nextH hi fr (by rw [hmem2, hmem1]; exact low_of_outs hout)
         (by rw [hmem2, hmem1]; exact high_of_outs hout) (fun _ h => by cases h)
     refine ⟨by rw [w24, hmem2, hmem1]; exact hwv, ⟨_, primeEntry (rOf p o used st) ++ [1, 2], ⟨g, hbx, hkey'⟩,
@@ -1083,22 +1083,22 @@ theorem classify_ok (key : KeyImpl) {p : GenPublic} {o s t : State} {final : Key
     WP isa (classify key.call) t (Classified p o final used st) := by
   unfold classify
   refine WP.seq (WP.mono (head_ok hi ha) fun u ⟨hm, hzf⟩ => ?_)
-  have hu32 : (rOf p o used st).used < 2 ^ 32 := by
+  obtain hu32 : (rOf p o used st).used < 2 ^ 32 := by
     have := hm.frame.used_le; have := hm.frame.input.randLen_lt; omega_arith
   cases ho : (rOf p o used st).outcome with
   | entropy k a =>
-    have hs : (rOf p o used st).status = 0 := by rw [rOf_status, ho]; rfl
+    obtain hs : (rOf p o used st).status = 0 := by rw [rOf_status, ho]; rfl
     exact WP.ite true (by show u.zf = _; rw [hzf, hs]; rfl) (fun _ => classify_entropy hm ho) (fun h => by cases h)
   | exhausted =>
-    have hs : (rOf p o used st).status = 3 := by rw [rOf_status, ho]; rfl
+    obtain hs : (rOf p o used st).status = 3 := by rw [rOf_status, ho]; rfl
     refine WP.ite false (by show u.zf = _; rw [hzf, hs]; rfl) (fun h => by cases h) (fun _ => ?_)
     refine WP.seq (WP.mono (cmp_ok (r := .eax) rfl 3) fun v ⟨⟨he2, hmem⟩, k, sy⟩ => ?_)
     rw [show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, beq_nat (k := 3) (hm.status.trans hs) (by decide)] at he2
-    have hv := hm.same k sy hmem
+    obtain hv := hm.same k sy hmem
     refine WP.ite true he2 (fun _ => ?_) (fun h => by cases h)
     unfold exhaustedGen
     refine WP.seq (WP.mono (left_test hv.frame) fun w ⟨⟨he3, hax, hmemw⟩, kw, syw⟩ => ?_)
-    have hw := hv.frame.keepRegs kw (by decide) syw hmemw
+    obtain hw := hv.frame.keepRegs kw (by decide) syw hmemw
     refine WP.ite (decide (st.left < 2)) he3 (fun hl => ?_) (fun hl => ?_)
     · refine WP.mono (classify_last hm ho (of_decide_eq_true hl) hw (hmemw.trans hmem)) fun _ h => Or.inr ⟨?_, h⟩
       rintro (⟨-, h⟩ | ⟨c, h, -⟩)
@@ -1106,16 +1106,16 @@ theorem classify_ok (key : KeyImpl) {p : GenPublic} {o s t : State} {final : Key
       · rw [ho] at h; cases h
     · exact classify_next hm ho (of_decide_eq_false hl) hw (hmemw.trans hmem) hax
   | accepted c =>
-    have hs : (rOf p o used st).status = 1 := by rw [rOf_status, ho]; rfl
+    obtain hs : (rOf p o used st).status = 1 := by rw [rOf_status, ho]; rfl
     refine WP.ite false (by show u.zf = _; rw [hzf, hs]; rfl) (fun h => by cases h) (fun _ => ?_)
     refine WP.seq (WP.mono (cmp_ok (r := .eax) rfl 3) fun v ⟨⟨he2, hmem⟩, k, sy⟩ => ?_)
     rw [show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, beq_nat (k := 3) (hm.status.trans hs) (by decide)] at he2
-    have hv := hm.same k sy hmem
+    obtain hv := hm.same k sy hmem
     refine WP.ite false he2 (fun h => by cases h) (fun _ => ?_)
     refine WP.seq (WP.mono (cmp_ok (r := .ecx) rfl 0) fun w ⟨⟨he3, hmem3⟩, k3, sy3⟩ => ?_)
     rw [hv.ecx, show (0 : BitVec 32) = BitVec.ofNat 32 0 from rfl,
       beq_nat (k := 0) (BitVec.toNat_ofNat _ _ ▸ Nat.mod_eq_of_lt hu32) (by decide)] at he3
-    have hw := hv.same k3 sy3 hmem3
+    obtain hw := hv.same k3 sy3 hmem3
     refine WP.ite (decide ((rOf p o used st).used = 0)) he3 (fun h0 => ?_) (fun h0 => ?_)
     · refine WP.mono (classify_none hm ho (of_decide_eq_true h0) hw.frame (hmem3.trans hmem)) fun _ h =>
         Or.inr ⟨?_, h⟩
@@ -1125,8 +1125,8 @@ theorem classify_ok (key : KeyImpl) {p : GenPublic} {o s t : State} {final : Key
     · have hpos : 0 < (rOf p o used st).used := by have := of_decide_eq_false h0; omega_using [this]
       unfold accepted
       refine WP.seq (WP.mono (phase_test hw.frame) fun x ⟨⟨he4, hmem4⟩, k4, sy4⟩ => ?_)
-      have hx := hw.frame.keepRegs k4 (by decide) sy4 hmem4
-      have hxm : x.mem = u.mem := hmem4.trans (hmem3.trans hmem)
+      obtain hx := hw.frame.keepRegs k4 (by decide) sy4 hmem4
+      obtain hxm : x.mem = u.mem := hmem4.trans (hmem3.trans hmem)
       obtain ⟨left, phase, remaining⟩ := st
       cases phase with
       | p => exact WP.ite true he4 (fun _ => classify_p hm ho hpos rfl hx hxm) (fun h => by cases h)
@@ -1185,7 +1185,7 @@ theorem gen_iteration (srch : Srch) (key : KeyImpl) {p : GenPublic} {o s : State
         rw [hfin, htail, Proof.RsaKeyGen.KeySearch.consume_consume]⟩
     rw [he, hl.ebx]; rfl
   · refine WP.mono (cmp_ok (r := .ebx) rfl 4) fun x ⟨⟨he, hm⟩, k, sy⟩ => Or.inl ⟨?_, hd.same k sy hm⟩
-    have hlt := keyStatus_lt final
+    obtain hlt := keyStatus_lt final
     rw [he, hd.2.1, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
       beq_nat (BitVec.toNat_ofNat _ _ ▸ Nat.mod_eq_of_lt (show final.keyStatus < 2 ^ 32 by omega_using [hlt])) (by decide)]
     simp only [Option.some.injEq, decide_eq_false_iff_not]

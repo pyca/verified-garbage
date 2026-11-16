@@ -73,8 +73,8 @@ theorem ball_val {τ : Nat} {x : List Byte} {r : BitVec 32} {out : Poly}
   rcases h with ⟨_, b, hb⟩ | ⟨h0, _⟩
   · obtain ⟨y, hy⟩ := Option.isSome_iff_exists.mp hm
     obtain ⟨c, hc, rfl⟩ := Option.map_eq_some_iff.mp hb
-    have e1 := sampleInBall_mono (Nat.le_max_left b.ball maxBounds.ball) hc
-    have e2 := sampleInBall_mono (Nat.le_max_right b.ball maxBounds.ball) hy
+    obtain e1 := sampleInBall_mono (Nat.le_max_left b.ball maxBounds.ball) hc
+    obtain e2 := sampleInBall_mono (Nat.le_max_right b.ball maxBounds.ball) hy
     rw [e1] at e2
     rw [hy, Option.some.inj e2]; rfl
   · rw [h1] at h0; cases h0
@@ -206,29 +206,29 @@ theorem zR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cm, ci⟩, ca⟩, cn⟩, z1⟩, z2⟩, z3⟩, z4⟩, y1⟩, y2⟩, y3⟩, y4⟩, f3⟩, e1⟩, hB⟩, hr⟩ := hc
   obtain ⟨h, h15⟩ := h
   have L := h.b.l.st.lay
-  have hs1 := h.b.l.k.d.s1 r hr
+  obtain hs1 := h.b.l.k.d.s1 r hr
   unfold zR
   refine WP.seq (WP.mono (mulAt_ok hP.mul L cm h.b.c.1 hs1.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
   rw [h.b.c.2, hs1.2] at hq1
-  have I1 := h.step hP1 z1 y1
+  obtain I1 := h.step hP1 z1 y1
   refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
   rw [hP1.pa (by decide), hq1.2, inverse_product] at hq2
-  have I2 := I1.step hP2 z2 y2
-  have hy2 : Pl s2 (yBase p + r) (Yv p σ (p.ℓ * t) r) := I2.y 0 (by omega_arith)
+  obtain I2 := I1.step hP2 z2 y2
+  obtain hy2 : Pl s2 (yBase p + r) (Yv p σ (p.ℓ * t) r) := I2.y 0 (by omega_arith)
   refine WP.seq (WP.mono (addAt_ok hP I2.b.l.st.lay ca hy2.1 (by rw [hP2.pa (by decide), hP1.pa (by decide)]; exact hq2.1))
     fun s3 ⟨hP3, hcs3, hq3⟩ => ?_)
   rw [hy2.2, hP2.pa (pS_bases 1), hP1.pa (pS_bases 1), hq2.2] at hq3
   have L2 := I2.b.l.st.lay
   simp only [zfam, Bool.and_eq_true] at z3 z4
-  have hz3 : Pl s3 (yBase p + r) (Zv p σ (p.ℓ * t) r) := by
+  obtain hz3 : Pl s3 (yBase p + r) (Zv p σ (p.ℓ * t) r) := by
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
     exact hq3
-  have J3 : IZb p D σ t (r + 1) s3 := ⟨I2.b.step hP3 z3.1.1.1, Fam.snoc (Fam.keep L2 hP3 f3 I2.z) hz3,
+  obtain J3 : IZb p D σ t (r + 1) s3 := ⟨I2.b.step hP3 z3.1.1.1, Fam.snoc (Fam.keep L2 hP3 f3 I2.z) hz3,
     Fam.keep L2 hP3 y3 (I2.y.shift hr),
     Fam.keep L2 hP3 z3.1.2 I2.w, (L2.keepW hP3 z3.2).trans I2.ones⟩
-  have e15 : s3.gpr .r15 = s.gpr .r15 := by
+  obtain e15 : s3.gpr .r15 = s.gpr .r15 := by
     rw [hcs3 _ (by decide), hcs2 _ (by decide), hcs1 _ (by decide)]
   refine WP.mono (normAt_okB hP J3.b.l.st.lay hB cn hz3.1 (e15.trans h15)) fun s4 ⟨hP4, _, h4⟩ => ?_
   have L3 := J3.b.l.st.lay
@@ -287,33 +287,33 @@ theorem r0R_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State
     hγ⟩, hi⟩ := hc
   obtain ⟨h, h15⟩ := h
   have L := h.b.l.st.lay
-  have hs2 := h.b.l.k.d.s2 i hi
+  obtain hs2 := h.b.l.k.d.s2 i hi
   unfold r0R
   refine WP.seq (WP.mono (mulAt_ok hP.mul L cm h.b.c.1 hs2.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
   rw [h.b.c.2, hs2.2] at hq1
-  have I1 := h.step hP1 z1 y1
+  obtain I1 := h.step hP1 z1 y1
   refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
   rw [hP1.pa (by decide), hq1.2, inverse_product] at hq2
-  have I2 := I1.step hP2 z2 y2
-  have hw2 : Pl s2 (wBase p + i) (Wv p σ (p.ℓ * t) i) := I2.w 0 (by omega_arith)
+  obtain I2 := I1.step hP2 z2 y2
+  obtain hw2 : Pl s2 (wBase p + i) (Wv p σ (p.ℓ * t) i) := I2.w 0 (by omega_arith)
   refine WP.seq (WP.mono (subAt_ok hP I2.b.l.st.lay ca hw2.1
     (by rw [hP2.pa (by decide), hP1.pa (by decide)]; exact hq2.1)) fun s3 ⟨hP3, hcs3, hq3⟩ => ?_)
   rw [hw2.2, hP2.pa (pS_bases 1), hP1.pa (pS_bases 1), hq2.2] at hq3
   have L2 := I2.b.l.st.lay
   simp only [rfam, Bool.and_eq_true] at z3 z4 z5
-  have hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := by
+  obtain hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := by
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
     exact hq3
-  have J3 : IRb p D σ t (i + 1) s3 := ⟨I2.b.step hP3 z3.1.1.1, Fam.keep L2 hP3 z3.1.1.2 I2.z,
+  obtain J3 : IRb p D σ t (i + 1) s3 := ⟨I2.b.step hP3 z3.1.1.1, Fam.keep L2 hP3 z3.1.1.2 I2.z,
     Fam.snoc (Fam.keep L2 hP3 z3.1.2 I2.w') hw3, Fam.keep L2 hP3 y3 (I2.w.shift hi), (L2.keepW hP3 z3.2).trans I2.ones⟩
   refine WP.seq (WP.mono (lowBitsAt_ok hP J3.b.l.st.lay hγ cl hw3.1) fun s4 ⟨hP4, hcs4, hq4⟩ => ?_)
   rw [hw3.2] at hq4
   have L3 := J3.b.l.st.lay
-  have J4 : IRb p D σ t (i + 1) s4 := ⟨J3.b.step hP4 z4.1.1.1, Fam.keep L3 hP4 z4.1.1.2 J3.z,
+  obtain J4 : IRb p D σ t (i + 1) s4 := ⟨J3.b.step hP4 z4.1.1.1, Fam.keep L3 hP4 z4.1.1.2 J3.z,
     Fam.keep L3 hP4 z4.1.2 J3.w', Fam.keep L3 hP4 y4 J3.w, (L3.keepW hP4 z4.2).trans J3.ones⟩
-  have e15 : s4.gpr .r15 = s.gpr .r15 := by
+  obtain e15 : s4.gpr .r15 = s.gpr .r15 := by
     rw [hcs4 _ (by decide), hcs3 _ (by decide), hcs2 _ (by decide), hcs1 _ (by decide)]
   refine WP.mono (normAt_okB hP J4.b.l.st.lay hB cn (by rw [hP4.pa (by decide)]; exact hq4.1) (e15.trans h15))
     fun s5 ⟨hP5, _, h5⟩ => ?_
@@ -328,7 +328,7 @@ theorem r0R_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State
 
 theorem zq_sub_add (a b : Zq) : a - (a + b) = -b := by
   apply Fin.ext
-  have ha := a.isLt; have hb := b.isLt
+  obtain ha := a.isLt; have hb := b.isLt
   simp only [Fin.sub_def, Fin.add_def, Fin.neg_def, q] at *
   omega_arith
 
@@ -351,7 +351,7 @@ def HFam (s : State) (b m : Nat) (f : Nat → Vector Bool n) : Prop :=
 theorem HFam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D rbs wbs s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) {b m : Nat} {f : Nat → Vector Bool n}
     (hc : famChk (rbs ++ wbs) ws b m = true) (h : HFam s b m f) : HFam s' b m f := fun j hj => by
-  have hk := famChk_one hc hj
+  obtain hk := famChk_one hc hj
   rw [hP.pa (keepB_cs hk)]
   exact hintIs_congr (VG.Proof.MlKem.bytes_frame hP.frame (L.fdisj hk) (by decide)) (h j hj)
 
@@ -426,7 +426,7 @@ theorem IHb.step {p : Params} {D : Nat} {σ s s' : State} {t a c : Nat} (h : IHb
 
 theorem ones32 {m : Mem} {a : Addr} {x : Nat} (h : m.readW a 64 = BitVec.ofNat 64 x) :
     m.readW a 32 = BitVec.ofNat 32 x := by
-  have e := readW_extract m a (w := 64) (k := 0) (n := 4) (by omega_arith)
+  obtain e := readW_extract m a (w := 64) (k := 0) (n := 4) (by omega_arith)
   rw [BitVec.add_zero, h] at e
   rw [← e]
   apply BitVec.eq_of_toNat_eq
@@ -464,76 +464,76 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cm, ci⟩, cn⟩, cc⟩, ca⟩, cs⟩, ch⟩, g1⟩, g2⟩, g3⟩, g4⟩, g5⟩, g6⟩, g7⟩, g8⟩, f5a⟩, f5b⟩, o1⟩, o2⟩, o3⟩, o4⟩, o5⟩, o7⟩, t3⟩, t4⟩, u5⟩, v1⟩, i1⟩, i2⟩, hγ'⟩, hγ⟩, hi⟩, hk⟩ := hc
   obtain ⟨h, h15⟩ := h
   have L := h.b.l.st.lay
-  have ht0 := h.b.l.k.d.t0 i hi
+  obtain ht0 := h.b.l.k.d.t0 i hi
   unfold hR
   -- `ĉ t̂₀[i]`
   refine WP.seq (WP.mono (mulAt_ok hP.mul L cm h.b.c.1 ht0.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
   rw [h.b.c.2, ht0.2] at hq1
-  have I1 := h.step hP1 g1 o1
-  have b1 : s1.gpr .rbx = s.gpr .rbx := hP1.bs _ (by decide)
+  obtain I1 := h.step hP1 g1 o1
+  obtain b1 : s1.gpr .rbx = s.gpr .rbx := hP1.bs _ (by decide)
   -- `ct₀[i]`
   refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci (by rw [pa_sc b1]; exact hq1.1))
     fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
   rw [pa_sc b1, hq1.2, inverse_product] at hq2
-  have I2 := I1.step hP2 g2 o2
-  have b2 : s2.gpr .rbx = s.gpr .rbx := (hP2.bs _ (by decide)).trans b1
-  have q2 : Pl s2 3 (CT0v p σ (p.ℓ * t) i) := by show PolyIs _ _ _; rw [pa_sc b2]; exact hq2
+  obtain I2 := I1.step hP2 g2 o2
+  obtain b2 : s2.gpr .rbx = s.gpr .rbx := (hP2.bs _ (by decide)).trans b1
+  obtain q2 : Pl s2 3 (CT0v p σ (p.ℓ * t) i) := by show PolyIs _ _ _; rw [pa_sc b2]; exact hq2
   -- its norm
-  have e2 : s2.gpr .r15 = s.gpr .r15 := by rw [hcs2 _ (by decide), hcs1 _ (by decide)]
+  obtain e2 : s2.gpr .r15 = s.gpr .r15 := by rw [hcs2 _ (by decide), hcs1 _ (by decide)]
   refine WP.seq (WP.mono (normAt_okB hP I2.b.l.st.lay hγ' cn q2.1 (e2.trans h15)) fun s3 ⟨hP3, hcs3, h3⟩ => ?_)
   rw [q2.2] at h3
-  have I3 := I2.step hP3 g3 o3
-  have q3 : Pl s3 3 (CT0v p σ (p.ℓ * t) i) := I2.b.l.st.lay.keepPoly hP3 t3 q2
+  obtain I3 := I2.step hP3 g3 o3
+  obtain q3 : Pl s3 3 (CT0v p σ (p.ℓ * t) i) := I2.b.l.st.lay.keepPoly hP3 t3 q2
   -- `T4 ← w[i] - cs₂[i]`
-  have hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I3.w' 0 (by omega_arith)
+  obtain hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I3.w' 0 (by omega_arith)
   refine WP.seq (WP.mono (copy_okB I3.b.l.st.lay cc) fun s4 ⟨hP4, hcs4, hb4⟩ => ?_)
-  have I4 := I3.step hP4 g4 o4
-  have q4 : Pl s4 3 (CT0v p σ (p.ℓ * t) i) := I3.b.l.st.lay.keepPoly hP4 t4 q3
-  have r4 : Pl s4 4 (W'v p σ (p.ℓ * t) i) := by
+  obtain I4 := I3.step hP4 g4 o4
+  obtain q4 : Pl s4 3 (CT0v p σ (p.ℓ * t) i) := I3.b.l.st.lay.keepPoly hP4 t4 q3
+  obtain r4 : Pl s4 4 (W'v p σ (p.ℓ * t) i) := by
     show PolyIs _ _ _; rw [hP4.pa (pS_bases 4)]; exact polyIs_of_bytes hb4 hw3
-  have hw4 : Pl s4 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I4.w' 0 (by omega_arith)
+  obtain hw4 : Pl s4 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I4.w' 0 (by omega_arith)
   -- `w[i] ← w[i] - cs₂[i] + ct₀[i]`
   refine WP.seq (WP.mono (addAt_ok hP I4.b.l.st.lay ca hw4.1 q4.1) fun s5 ⟨hP5, hcs5, hq5⟩ => ?_)
   rw [hw4.2, q4.2] at hq5
   have L4 := I4.b.l.st.lay
-  have hw5 : Pl s5 (wBase p + i) (W''v p σ (p.ℓ * t) i) := by
+  obtain hw5 : Pl s5 (wBase p + i) (W''v p σ (p.ℓ * t) i) := by
     show PolyIs _ _ _; rw [hP5.pa (pS_bases _)]; exact hq5
-  have J5 : IHb p D σ t (i + 1) i s5 := ⟨I4.b.step hP5 g5.1.1, Fam.keep L4 hP5 g5.1.2 I4.z,
+  obtain J5 : IHb p D σ t (i + 1) i s5 := ⟨I4.b.step hP5 g5.1.1, Fam.keep L4 hP5 g5.1.2 I4.z,
     Fam.snoc (Fam.keep L4 hP5 f5a I4.w'') hw5, Fam.keep L4 hP5 f5b (I4.w'.shift hi), HFam.keep L4 hP5 g5.2 I4.h,
     (L4.keepW hP5 o5).trans I4.ones⟩
-  have r5 : Pl s5 4 (W'v p σ (p.ℓ * t) i) := L4.keepPoly hP5 u5 r4
+  obtain r5 : Pl s5 4 (W'v p σ (p.ℓ * t) i) := L4.keepPoly hP5 u5 r4
   -- `T4 ← -ct₀[i]`
   refine WP.seq (WP.mono (subAt_ok hP J5.b.l.st.lay cs r5.1 hw5.1) fun s6 ⟨hP6, hcs6, hq6⟩ => ?_)
   rw [r5.2, hw5.2, show W''v p σ (p.ℓ * t) i = add (W'v p σ (p.ℓ * t) i) (CT0v p σ (p.ℓ * t) i) from rfl,
     sub_add_neg] at hq6
-  have J6 := J5.step hP6 g6 o4
-  have r6 : Pl s6 4 (neg (CT0v p σ (p.ℓ * t) i)) := by show PolyIs _ _ _; rw [hP6.pa (pS_bases 4)]; exact hq6
-  have hw6 : Pl s6 (wBase p + i) (W''v p σ (p.ℓ * t) i) := J6.w'' i (by omega_arith)
+  obtain J6 := J5.step hP6 g6 o4
+  obtain r6 : Pl s6 4 (neg (CT0v p σ (p.ℓ * t) i)) := by show PolyIs _ _ _; rw [hP6.pa (pS_bases 4)]; exact hq6
+  obtain hw6 : Pl s6 (wBase p + i) (W''v p σ (p.ℓ * t) i) := J6.w'' i (by omega_arith)
   -- the hint
   refine WP.seq (WP.mono (hintCall_ok hP J6.b.l.st.lay hγ ch r6.1 hw6.1) fun s7 ⟨hP7, hcs7, hq7, he7⟩ => ?_)
   rw [r6.2, hw6.2] at hq7 he7
-  have J7 := J6.step hP7 g7 o7
-  have hh7 : HFam s7 5 (i + 1) (Hv p σ (p.ℓ * t)) :=
+  obtain J7 := J6.step hP7 g7 o7
+  obtain hh7 : HFam s7 5 (i + 1) (Hv p σ (p.ℓ * t)) :=
     HFam.snoc J7.h (by rw [hP7.pa (pS_bases _)]; exact hq7)
   -- `ONES`
-  have ho7 : s7.mem.readW (pa s7 (sc oONES)) 32 = BitVec.ofNat 32 (onesSum (Hv p σ (p.ℓ * t)) i) := ones32 J7.ones
+  obtain ho7 : s7.mem.readW (pa s7 (sc oONES)) 32 = BitVec.ofNat 32 (onesSum (Hv p σ (p.ℓ * t)) i) := ones32 J7.ones
   have L7 := J7.b.l.st.lay
   refine WP.mono (onesAdd_ok s7 (L7.iR i1) (L7.iW i2)) fun s8 ⟨hm8, k8⟩ => ?_
-  have hf : Frame [⟨pa s7 (sc oONES), 8⟩] s7.mem s8.mem := by
+  obtain hf : Frame [⟨pa s7 (sc oONES), 8⟩] s7.mem s8.mem := by
     rw [hm8]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   obtain ⟨hP8, hcs8⟩ := postB_of_keep (D := D) k8 (by decide) hf
   have hP8' : PPostB D s7 s8 [(sc oONES, 8)] := hP8
   simp only [hfam, Bool.and_eq_true] at g8
-  have hS := onesSum_le (Hv p σ (p.ℓ * t)) i
-  have hS1 := hintOnes_le (Hv p σ (p.ℓ * t) i)
-  have hik : 256 * (i + 1) ≤ 256 * p.k := Nat.mul_le_mul_left _ hi
+  obtain hS := onesSum_le (Hv p σ (p.ℓ * t)) i
+  obtain hS1 := hintOnes_le (Hv p σ (p.ℓ * t) i)
+  obtain hik : 256 * (i + 1) ≤ 256 * p.k := Nat.mul_le_mul_left _ hi
   refine ⟨⟨J7.b.step hP8' g8.1.1.1.1, Fam.keep L7 hP8' g8.1.1.1.2 J7.z, Fam.keep L7 hP8' g8.1.1.2 J7.w'',
     Fam.keep L7 hP8' g8.1.2 J7.w', HFam.keep L7 hP8' g8.2 hh7, ?_⟩, ?_⟩
   · rw [hP8'.pa (sc_bases _), hm8, Mem.readW_writeW_self64, ho7, onesSum_succ]
     have he7' : ((s7.gpr .rax).setWidth 32).toNat = hintOnes [Hv p σ (p.ℓ * t) i] := he7
-    have ea : (s7.gpr .rax).setWidth 32 = BitVec.ofNat 32 (hintOnes [Hv p σ (p.ℓ * t) i]) := by
+    obtain ea : (s7.gpr .rax).setWidth 32 = BitVec.ofNat 32 (hintOnes [Hv p σ (p.ℓ * t) i]) := by
       apply BitVec.eq_of_toNat_eq; rw [he7', BitVec.toNat_ofNat]; omega_arith
-    have hlt : onesSum (Hv p σ (p.ℓ * t)) i + hintOnes [Hv p σ (p.ℓ * t) i] < 2 ^ 32 := by omega_arith
+    obtain hlt : onesSum (Hv p σ (p.ℓ * t)) i + hintOnes [Hv p σ (p.ℓ * t) i] < 2 ^ 32 := by omega_arith
     rw [ea, ← BitVec.ofNat_add, sw_ofNat hlt]
   · have e8 : s8.gpr .r15 = s3.gpr .r15 := by
       rw [hcs8 _ (by decide), hcs7 _ (by decide), hcs6 _ (by decide), hcs5 _ (by decide), hcs4 _ (by decide)]
@@ -659,7 +659,7 @@ theorem cntt_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ksCh
   have L := h.c.l.st.lay
   refine WP.mono (ipAt_ok (t := ntt) hP.ntt L c1 h.cc.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_
   rw [h.cc.2] at hq1
-  have I1 := h.c.step hP1 c2
+  obtain I1 := h.c.step hP1 c2
   exact ⟨⟨I1.l, by rw [L.keepBytes hP1 c3, h.ct], by
     show PolyIs _ _ _; rw [hP1.pa (by decide)]; exact hq1, h.some⟩, I1.y, I1.w⟩
 
@@ -673,11 +673,11 @@ theorem kInit_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : 
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 1) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s2 ⟨⟨hm2, h152⟩, k2⟩ => ?_
-  have hP2 : PPostB D s s2 [] := (postB15 k2 hm2 _).1
-  have B2 := h.b.step hP2 c13
+  obtain hP2 : PPostB D s s2 [] := (postB15 k2 hm2 _).1
+  obtain B2 := h.b.step hP2 c13
   have L2 := B2.l.st.lay
   refine WP.mono (setQ_okB L2 (by decide) (by decide) c4) fun s3 ⟨hP3, hcs3, hm3⟩ => ?_
-  have y3 := Fam.keep L2 hP3 c6 (Fam.keep L1 hP2 c16 h.y)
+  obtain y3 := Fam.keep L2 hP3 c6 (Fam.keep L1 hP2 c16 h.y)
   exact ⟨⟨B2.step hP3 c5, fun _ h => absurd h (Nat.not_lt_zero _), y3.zero,
     Fam.keep L2 hP3 c7 (Fam.keep L1 hP2 c22 h.w), by rw [hP3.pa (by decide), hm3, Mem.readW_writeW_self64]; rfl⟩,
     by rw [hcs3 _ (by decide), h152]; exact (bit_one.mpr fun _ h => absurd h (Nat.not_lt_zero _)).symm⟩
@@ -715,10 +715,10 @@ theorem onesOk_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t :
   refine ksChk_spec hc fun _ _ _ _ _ _ _ _ _ _ c8 _ _ c13 _ _ c16 c17 _ _ _ _ hω _ hk _ _ _ => ?_
   obtain ⟨J6, h156⟩ := h
   have L6 := J6.b.l.st.lay
-  have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
+  obtain hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
   refine WP.mono (onesOk_run p hω s (L6.iR c8)) fun s7 ⟨⟨h157, hm7⟩, k7⟩ => ?_
   rw [ones32 J6.ones, sign_bit (by omega_arith) (by omega_arith), h156, bit_and', bit_congr passV_iff] at h157
-  have hP7 : PPostB D s s7 [] := ⟨k7.2.1, k7.2.2, fun r hr => k7.gpr (by
+  obtain hP7 : PPostB D s s7 [] := ⟨k7.2.1, k7.2.2, fun r hr => k7.gpr (by
       simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k7.gpr (by decide),
       by rw [hm7]; exact Frame.refl _ _⟩
@@ -736,8 +736,8 @@ theorem kBranch_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t 
   have L7 := B7.l.st.lay
   refine ifOkElse_ok (D := D) (fun s8 hP8 hcs8 hm8 hne => ?_) fun s8 hP8 hcs8 hm8 he => ?_
   · rw [h.r15] at hne
-    have hpass := bit_ne.mp hne
-    have B8 := B7.step hP8 c13
+    obtain hpass := bit_ne.mp hne
+    obtain B8 := B7.step hP8 c13
     have L8 := B8.l.st.lay
     refine WP.mono (setQ_okB L8 (by decide) (by decide) c9) fun s9 ⟨hP9, hcs9, hm9⟩ => ?_
     exact .inl ⟨B8.l.k.step hP9 c18, by rw [L8.keepBytes hP9 c21, B8.ct],
@@ -746,11 +746,11 @@ theorem kBranch_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t 
       hpass, by rw [hcs9 _ (by decide), hcs8 _ (by decide), h.r15]; exact bit_one.mpr hpass,
       by rw [hP9.pa (by decide), hm9, Mem.readW_writeW_self64]; rfl, B8.l.t_lt, B8.l.rej⟩
   · rw [h.r15] at he
-    have hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => (bit_ne.mpr hp) he
-    have B8 := B7.step hP8 c13
+    obtain hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => (bit_ne.mpr hp) he
+    obtain B8 := B7.step hP8 c13
     have L8 := B8.l.st.lay
     refine WP.mono (addQ_ok (sc oKAP) p.ℓ (by decide) hl s8 (L8.iW c10) (L8.iR c23)) fun s9 ⟨hm9, k9⟩ => ?_
-    have hf : Frame [⟨pa s8 (sc oKAP), 8⟩] s8.mem s9.mem := by
+    obtain hf : Frame [⟨pa s8 (sc oKAP), 8⟩] s8.mem s9.mem := by
       rw [hm9]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     obtain ⟨hP9, hcs9⟩ := postB_of_keep (D := D) k9 (by decide) hf
     have hP9' : PPostB D s8 s9 [(sc oKAP, 8)] := hP9
@@ -768,7 +768,7 @@ theorem IZ.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t k
     (hk : k ≤ p.ℓ) {s s₁ : State} (h : IZ p D σ t k s) (hP : PPostB D s s₁ [])
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IZ p D σ t k s₁ := by
   refine ksChk_spec hc fun _ _ _ _ _ _ _ hz _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
-  have hc' := hz (k - 1) (by omega_using [hk0, hk])
+  obtain hc' := hz (k - 1) (by omega_using [hk0, hk])
   simp only [zChk, Bool.and_eq_true, decide_eq_true_eq, show k - 1 + 1 = k by omega_using [hk0]] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z4⟩, _⟩, _⟩, _⟩, y4⟩, _⟩, _⟩, _⟩, _⟩ := hc'
   exact ⟨h.1.step hP z4 y4, by rw [hcs _ (by decide), h.2]⟩
@@ -778,7 +778,7 @@ theorem IR.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t i
     (hi : i ≤ p.k) {s s₁ : State} (h : IR p D σ t i s) (hP : PPostB D s s₁ [])
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IR p D σ t i s₁ := by
   refine ksChk_spec hc fun _ _ _ _ _ _ _ _ hr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
-  have hc' := hr (i - 1) (by omega_using [hi0, hi])
+  obtain hc' := hr (i - 1) (by omega_using [hi0, hi])
   simp only [rChk, Bool.and_eq_true, decide_eq_true_eq, show i - 1 + 1 = i by omega_using [hi0]] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z5⟩, _⟩, _⟩, _⟩, _⟩, y5⟩, _⟩, _⟩, _⟩, _⟩ := hc'
   exact ⟨h.1.step hP z5 y5, by rw [hcs _ (by decide), h.2]⟩
@@ -790,7 +790,7 @@ theorem IZ.done {p : Params} {D : Nat} {σ : State} {t k : Nat} {s : State} (hk 
   rcases hd with rfl | h0
   · exact h.2
   · rw [h.2] at h0 ⊢
-    have ha : ¬ ∀ j < k, normRq [Zv p σ (p.ℓ * t) j] < p.γ₁ - p.β := fun ha => (bit_ne.mpr ha) h0
+    obtain ha : ¬ ∀ j < k, normRq [Zv p σ (p.ℓ * t) j] < p.γ₁ - p.β := fun ha => (bit_ne.mpr ha) h0
     rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha fun j hj => hz j (by omega_using [hk, hj])]
 
 /-- The checks of `r₀` stopped after `r₀[i - 1]`, the last or the first that
@@ -801,7 +801,7 @@ theorem IR.done {p : Params} {D : Nat} {σ : State} {t i : Nat} {s : State} (hi 
   rcases hd with rfl | h0
   · exact h.2
   · rw [h.2] at h0 ⊢
-    have ha : ¬ (ZOk p σ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ (p.ℓ * t) j] < p.γ₂ - p.β) :=
+    obtain ha : ¬ (ZOk p σ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ (p.ℓ * t) j] < p.γ₂ - p.β) :=
       fun ha => (bit_ne.mpr ha) h0
     rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha ⟨hz.1, fun j hj => hz.2 j (by omega_using [hi, hj])⟩]
 
@@ -812,8 +812,8 @@ theorem kFail_ko {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : 
     KO p D σ t s₁ := by
   refine ksChk_spec hc fun _ _ _ _ _ _ _ _ _ _ _ _ _ c13 _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
   rw [h15] at he
-  have hna : ¬ a := fun h' => (bit_ne.mpr h') he
-  have hf : ¬ PassV p σ (p.ℓ * t) := fun hp => hna (ha hp)
+  obtain hna : ¬ a := fun h' => (bit_ne.mpr h') he
+  obtain hf : ¬ PassV p σ (p.ℓ * t) := fun hp => hna (ha hp)
   exact ⟨hb.step hP c13, fun hp => absurd hp hf, fun hp => absurd hp hf,
     by rw [hcs _ (by decide), h15, bit_zero.mpr hna, bit_zero.mpr hf]⟩
 
@@ -829,11 +829,11 @@ theorem checksR0_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : 
     (fun i hi hi' s s₁ h hP hcs _ => IR.stable hc (by omega_using [hi]) (by omega_using [hi']) h hP hcs)
     (fun i _ hi s hs => r0R_ok hP (hr i (by omega_arith)) hs) s h) fun s6 ⟨i, _, hi, hs6, hd⟩ => ?_)
   rw [Nat.zero_add] at hi hd
-  have h15 := IR.done hi hs6 hd
+  obtain h15 := IR.done hi hs6 hd
   refine ifOkElse_ok (D := D) (fun s7 hP7 hcs7 _ hne => ?_) (fun s7 hP7 hcs7 _ he => ?_)
   · have hik : i = p.k := hd.resolve_right hne
     subst hik
-    have I7 : IR p D σ t p.k s7 := ⟨hs6.1.step hP7 d3 d4, by rw [hcs7 _ (by decide), hs6.2]⟩
+    obtain I7 : IR p D σ t p.k s7 := ⟨hs6.1.step hP7 d3 d4, by rw [hcs7 _ (by decide), hs6.2]⟩
     refine WP.seq (WP.mono (seqR_ok (I := fun i => IH p D σ t i) p.k 0 (fun i _ hi s hs => hR_ok hP (hh i (by omega_arith)) hs)
       s7 I7.ih) fun s8 hs8 => ?_)
     rw [Nat.zero_add] at hs8
@@ -855,12 +855,12 @@ theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ks
     (fun k hk hk' s s₁ h hP hcs _ => IZ.stable hc (by omega_using [hk]) (by omega_using [hk']) h hP hcs)
     (fun r _ hr s hs => zR_ok hP (hz r (by omega_arith)) hs) s3 I3) fun s4 ⟨k, _, hk, hs4, hd⟩ => ?_)
   rw [Nat.zero_add] at hk hd
-  have h15 := IZ.done hk hs4 hd
+  obtain h15 := IZ.done hk hs4 hd
   refine WP.seq (WP.mono (ifOkElse_ok (D := D) (Q := KO p D σ t) (fun s5 hP5 hcs5 _ hne => ?_)
     (fun s5 hP5 hcs5 _ he => ?_)) fun s7 h7 => kBranch_ok hc h7)
   · have hkl : k = p.ℓ := hd.resolve_right hne
     subst hkl
-    have I5 : IZ p D σ t p.ℓ s5 := ⟨hs4.1.step hP5 d1 d2, by rw [hcs5 _ (by decide), hs4.2]⟩
+    obtain I5 : IZ p D σ t p.ℓ s5 := ⟨hs4.1.step hP5 d1 d2, by rw [hcs5 _ (by decide), hs4.2]⟩
     exact checksR0_ok hP hc hc2 I5.ir
   · exact WP.block_nil_iff.mpr (kFail_ko hc hs4.1.b h15 (fun hp => hp.1) hP5 hcs5 he)
 

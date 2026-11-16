@@ -61,7 +61,7 @@ theorem consts_ok : ∀ (L : List (Nat × Nat)) {s : State} {base : Addr}, WsReg
         rw [U₂.wordsVal (fun w hw => by
           simp only [List.mem_map] at hw
           obtain ⟨e', he', rfl⟩ := hw
-          have hne : e'.1 ≠ i := fun h => hnd.1 ⟨e', he', h⟩
+          obtain hne : e'.1 ≠ i := fun h => hnd.1 ⟨e', he', h⟩
           have := hlt.2 e' he'
           simp only [sl_eq]; omega_using [hne]) (by rw [sl_eq]; omega)]
         exact e₁
@@ -106,20 +106,20 @@ theorem save_ok {s : State} {r : Reg} {base : Addr} (h0 : s.gpr r = base)
   refine sd_reg (by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact h0) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr)
     hal (d := 32) (by decide) (by decide) fun s₅ u₅ =>
     wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => WP.block_nil ?_
-  have g₅ : ∀ x, s₅.gpr x = s.gpr x := fun x => by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
-  have m₅ : s₅.mem = ((((s.mem.writeW (off base 0) (s.gpr .s0)).writeW (off base 8) (s.gpr .s1)).writeW
+  obtain g₅ : ∀ x, s₅.gpr x = s.gpr x := fun x => by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
+  obtain m₅ : s₅.mem = ((((s.mem.writeW (off base 0) (s.gpr .s0)).writeW (off base 8) (s.gpr .s1)).writeW
       (off base 16) (s.gpr .s2)).writeW (off base 24) (s.gpr .ra)).writeW (off base 32) (s.gpr .s3) := by
     simp only [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]
-  have m₈ : s₈.mem = s₅.mem := by rw [u₈.mem, u₇.mem, u₆.mem]
-  have O : ∀ {d} {m : Mem} {v : BitVec 64}, d ≤ 32 → Outside base d 8 m (m.writeW (off base d) v) :=
+  obtain m₈ : s₈.mem = s₅.mem := by rw [u₈.mem, u₇.mem, u₆.mem]
+  obtain O : ∀ {d} {m : Mem} {v : BitVec 64}, d ≤ 32 → Outside base d 8 m (m.writeW (off base d) v) :=
     fun h => writeW_outside _ _ _ (by omega_using [h])
-  have hw₈ : WsReg s₈ base := by
+  obtain hw₈ : WsReg s₈ base := by
     refine ⟨by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₅, h0], ?_, hn, hal⟩
     rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr
-  have w0 : ∀ {d e} {m : Mem} {v : BitVec 64}, d ≤ 32 → e ≤ 32 → d + 8 ≤ e ∨ e + 8 ≤ d →
+  obtain w0 : ∀ {d e} {m : Mem} {v : BitVec 64}, d ≤ 32 → e ≤ 32 → d + 8 ≤ e ∨ e + 8 ≤ d →
       word (m.writeW (off base e) v) base d = word m base d :=
     fun hd he h => (O he).word h (by omega_using [hd])
-  have e₆ : s₆.gpr r = s₅.gpr r := by
+  obtain e₆ : s₆.gpr r = s₅.gpr r := by
     by_cases h : r = .s0
     · subst h; exact u₆.gpr
     · exact u₆.other _ h
@@ -158,11 +158,11 @@ abbrev mulKW : List (Nat × Nat) := [(512, 96), (608, 448), (128, 32), (1344, 32
 
 theorem unch_of_mulKeeps {base : Addr} {m m' : Mem} (h : MC.Keeps base m m') : Unch base mulKW m m' := by
   intro x hx
-  have e := fun w hw => hx w hw
+  obtain e := fun w hw => hx w hw
   simp only [mulKW, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at e
-  have hb : ofs base x < 2 ^ 64 := (x - base).isLt
-  have hlt : ofs base x < 1504 := by omega_using [e, hb]
-  have ex : x = base + BitVec.ofNat 64 (ofs base x) := by
+  obtain hb : ofs base x < 2 ^ 64 := (x - base).isLt
+  obtain hlt : ofs base x < 1504 := by omega_using [e, hb]
+  obtain ex : x = base + BitVec.ofNat 64 (ofs base x) := by
     simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
   rw [ex]
   refine h _ (by show _ < 8192; omega_using [e, hb]) ?_ ?_
@@ -179,11 +179,11 @@ abbrev checkKW : List (Nat × Nat) :=
 
 theorem unch_of_checkKeeps {base : Addr} {m m' : Mem} (h : CC.Keeps base m m') : Unch base checkKW m m' := by
   intro x hx
-  have e := fun w hw => hx w hw
+  obtain e := fun w hw => hx w hw
   simp only [checkKW, FL, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at e
-  have hb : ofs base x < 2 ^ 64 := (x - base).isLt
-  have hlt : ofs base x < 8192 := by omega_using [e, hb]
-  have ex : x = base + BitVec.ofNat 64 (ofs base x) := by
+  obtain hb : ofs base x < 2 ^ 64 := (x - base).isLt
+  obtain hlt : ofs base x < 8192 := by omega_using [e, hb]
+  obtain ex : x = base + BitVec.ofNat 64 (ofs base x) := by
     simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
   rw [ex]
   refine h _ hlt ?_ ?_
@@ -228,13 +228,13 @@ theorem rangeOf_ok {i : Nat} (hi : i < 44) {s : State} {base : Addr} (hw : WsReg
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (ltMask_ok hw (n := 4) (a := brainpoolp256r1.sl i) (m := brainpoolp256r1.sl MN) a8
     (by decide) (by omega_using [a2]) (by decide)) fun s₁ ⟨r₁, m₁, g₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
+  obtain hw₁ := hw.of_rest r₁
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
-  have hw₂ := hw₁.of_rest r₂
+  obtain hw₂ := hw₁.of_rest r₂
   refine WP.block_append (WP.mono (zeroMask_ok hw₂ (n := 4) (a := brainpoolp256r1.sl i) a8 (by omega_using [a2]))
     fun s₃ ⟨r₃, m₃, g₃⟩ => ?_)
   refine WP.cons (exec_logicImm (by decide)) ?_
-  have hw₃' := (hw₂.of_rest r₃).of_kp (Kp.of_upd (Upd.write s₃ .a7 (s₃.gpr .a7 ^^^ BitVec.ofInt 64 (-1))))
+  obtain hw₃' := (hw₂.of_rest r₃).of_kp (Kp.of_upd (Upd.write s₃ .a7 (s₃.gpr .a7 ^^^ BitVec.ofInt 64 (-1))))
   refine WP.mono (andFlag_ok hw₃') fun s₄ ⟨f₄, r₄, O₄⟩ => ⟨?_, ?_, ?_⟩
   · exact (Kp.of_rest r₁).trans ((Kp.of_rest r₂).trans ((Kp.of_rest r₃).trans
       ((Kp.of_upd (Upd.write s₃ .a7 _)).trans (Kp.of_rest r₄))))
@@ -273,7 +273,7 @@ theorem TailConsts.of_unch {base : Addr} {s s' : State} {W' : List (Nat × Nat)}
     (U : Unch base W' s.mem s'.mem)
     (hW : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP], ∀ w ∈ W', brainpoolp256r1.sl i + 32 ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp256r1.sl i) :
     TailConsts base s' := by
-  have e : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP], sv base s' i = sv base s i := fun i hi =>
+  obtain e : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP], sv base s' i = sv base s i := fun i hi =>
     sv_unch U i (hW i hi) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
                               rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   exact ⟨(e MP (by simp)).trans h.mp, (e MN (by simp)).trans h.mn, (e ZERO (by simp)).trans h.zero,
@@ -304,14 +304,14 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
       Kp s s' ∧ Unch base [(brainpoolp256r1.sl t, 32), (own 4, 256), (brainpoolp256r1.sl o, 32), (own 4, 256)] s.mem s'.mem ∧
       sv base s' o < W.p ∧
       Fin.ofNat W.p (sv base s' o) = toM W.p (2 ^ 256) (sv base s a) * toM W.p (2 ^ 256) (sv base s ACC) := by
-  have hl : ∀ i, i < 44 → brainpoolp256r1.sl i + 8 * brainpoolp256r1Field.S.k ≤ own brainpoolp256r1Field.S.k := fun i hi => by
+  obtain hl : ∀ i, i < 44 → brainpoolp256r1.sl i + 8 * brainpoolp256r1Field.S.k ≤ own brainpoolp256r1Field.S.k := fun i hi => by
     show 64 + 32 * i + 32 ≤ 3840 + 0 - 0 + 0; omega_using [hi]
-  have hs : ∀ i, i < 44 → brainpoolp256r1.sl i < 4095 := fun i hi => by rw [sl_eq]; omega_using [hi]
+  obtain hs : ∀ i, i < 44 → brainpoolp256r1.sl i < 4095 := fun i hi => by rw [sl_eq]; omega_using [hi]
   have hk4 : brainpoolp256r1Field.S.k = 4 := rfl
   rw [affineCoord]
   refine WP.seq (WP.mono (mulCall_ok field_ok hw (o := brainpoolp256r1.sl t) (a := brainpoolp256r1.sl a) (b := brainpoolp256r1.sl ACC) (hl t ht)
     (hl a ha) (hl ACC (by decide)) (hs t ht) (hs a ha) (hs ACC (by decide)) hacc) fun s₁ ⟨C₁, lt₁, e₁⟩ => ?_)
-  have one₁ : sv base s₁ ONE = 1 := by
+  obtain one₁ : sv base s₁ ONE = 1 := by
     rw [← hone]
     exact sv_unch (C₁.mem : Unch _ _ _ _) ONE (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -322,7 +322,7 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
     (hl o ho) (hl t ht) (hl ONE (by decide)) (hs o ho) (hs t ht) (hs ONE (by decide))
     (by show sv base s₁ ONE < W.p; rw [one₁]; decide)) fun s₂ ⟨C₂, lt₂, e₂⟩ => ⟨C₁.kp.trans C₂.kp,
       Unch.trans (C₁.mem : Unch _ _ _ _) (C₂.mem : Unch _ _ _ _), lt₂, ?_⟩
-  have e₂' : sv base s₂ o * 2 ^ 256 % W.p = sv base s₁ t * 1 % W.p := by
+  obtain e₂' : sv base s₂ o * 2 ^ 256 % W.p = sv base s₁ t * 1 % W.p := by
     rw [← one₁]; exact e₂
   rw [toM_one_mul unit e₂']
   exact toM_mul unit e₁
@@ -380,44 +380,44 @@ theorem tailWith_ok (hL : VG.Proof.Weierstrass.Law W) {mulName : String} {mulCod
         toM W.p (2 ^ 256) (sv base s' RX) * toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) ∧
       sv base s' ACC < W.p ∧
       toM W.p (2 ^ 256) (sv base s' ACC) = toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
-  have hp0 : 0 < W.p := by decide
+  obtain hp0 : 0 < W.p := by decide
   rw [tail]
   -- The range.
   refine WP.seq (WP.mono (show WP isa _ s fun s' => _ ∧ s'.syms = s.syms from
     let ⟨t, s', he, hq⟩ := range_ok hw; ⟨t, s', he, hq, Exec.syms he⟩) fun s₁ ⟨⟨K₁, O₁, f₁⟩, sy₁⟩ => ?_)
-  have hw₁ := hw.of_kp K₁
+  obtain hw₁ := hw.of_kp K₁
   have U₁ := O₁.unch
-  have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
+  obtain e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
     sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega_using [hi])
       (by omega_using [hi])
-  have hc₁ := hc.of_unch U₁ (by decide)
+  obtain hc₁ := hc.of_unch U₁ (by decide)
   rw [mn_eq hc] at f₁
   -- The multiplication.
   refine WP.seq (WP.mono (hcall s₁ hw₁ (by rw [K₁.gpr _ (by decide)]; exact h3) K₁ U₁ sy₁) fun s₂ ⟨K₂, hp₂'⟩ => ?_)
   obtain ⟨hR, hK⟩ := hp₂'
-  have U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps hK
-  have hw₂ := hw₁.of_kp K₂
-  have hc₂ := hc₁.of_unch U₂ (by decide)
+  obtain U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps hK
+  obtain hw₂ := hw₁.of_kp K₂
+  obtain hc₂ := hc₁.of_unch U₂ (by decide)
   -- `Z^(p-2)`.
   refine WP.seq (WP.mono (chainPow_ok (P := chainP brainpoolp256r1) (F := brainpoolp256r1Field) field_ok chainLay unit hw₂
     (one := brainpoolp256r1.sl ONEP) (by decide) (by decide)
     (by show sv base s₂ ONEP = _; rw [hc₂.onep]; rfl) chainP_ok) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
-  have hw₃ := hw₂.of_kc K₃
-  have hc₃ := hc₂.of_unch U₃ (by decide)
+  obtain hw₃ := hw₂.of_kc K₃
+  obtain hc₃ := hc₂.of_unch U₃ (by decide)
   -- `x`.
   refine WP.mono (affine_ok hw₃ (t := XM) (o := XO) (a := RX) (by decide) (by decide) (by decide) (by decide)
     lt₃ hc₃.one) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_
-  have e₄ : ∀ i ∈ [RX, RY, RZ], sv base s₄ i = sv base s₂ i := fun i hi => by
+  obtain e₄ : ∀ i ∈ [RX, RY, RZ], sv base s₄ i = sv base s₂ i := fun i hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    have h3 : sv base s₃ i = sv base s₂ i := sv_unch U₃ i (by rcases hi with rfl | rfl | rfl <;> decide)
+    obtain h3 : sv base s₃ i = sv base s₂ i := sv_unch U₃ i (by rcases hi with rfl | rfl | rfl <;> decide)
       (by rcases hi with rfl | rfl | rfl <;> decide)
     rw [← h3]
     exact sv_unch U₄ i (by rcases hi with rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl <;> decide)
-  have fl₄ : word s₄.mem base FL = word s₁.mem base FL :=
+  obtain fl₄ : word s₄.mem base FL = word s₁.mem base FL :=
     fl_unch ((U₂.trans U₃).trans U₄) (by decide)
-  have k₁ : MC.scalar base s₁.mem = sv base s K := by
+  obtain k₁ : MC.scalar base s₁.mem = sv base s K := by
     rw [← e₁ K (by decide)]; exact coord_sv _ _ K
-  have acc₄ : sv base s₄ ACC = sv base s₃ ACC := sv_unch U₄ ACC (by decide)
+  obtain acc₄ : sv base s₄ ACC = sv base s₃ ACC := sv_unch U₄ ACC (by decide)
   have v₃' : toM W.p (2 ^ 256) (sv base s₃ ACC) = toM W.p (2 ^ 256) (sv base s₂ RZ) ^ (W.p - 2) := v₃
   refine ⟨K₁.kc.trans (K₂.kc.trans (K₃.trans K₄.kc)), ((U₁.trans U₂).trans U₃).trans U₄, by rw [fl₄, f₁], ?_, lt₄,
     ?_, by rw [acc₄]; exact lt₃, by rw [acc₄, v₃', e₄ RZ (by simp)]⟩
@@ -425,10 +425,10 @@ theorem tailWith_ok (hL : VG.Proof.Weierstrass.Law W) {mulName : String} {mulCod
     rw [k₁, point_eq hL] at hR
     obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR h1 hn
     simp only [Impl.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
-    have c0 : MC.toPoint.coordAt s₂.mem base MC.pAt = sv base s₂ RX := coord_sv _ _ RX
-    have c1 : MC.toPoint.coordAt s₂.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    obtain c0 : MC.toPoint.coordAt s₂.mem base MC.pAt = sv base s₂ RX := coord_sv _ _ RX
+    obtain c1 : MC.toPoint.coordAt s₂.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
       sv base s₂ RY := coord_sv _ _ RY
-    have c2 : MC.toPoint.coordAt s₂.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    obtain c2 : MC.toPoint.coordAt s₂.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
       sv base s₂ RZ := coord_sv _ _ RZ
     rw [c0, c1, c2] at hrep
     rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
@@ -510,8 +510,8 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} {base : Addr} (hw 
       sv base s' ACC < W.p ∧
       toM W.p (2 ^ 256) (sv base s' ACC) = toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
   refine tailWith_ok hL hw h3 hc fun s₁ hw₁ h3₁ K₁ U₁ _ => ?_
-  have hc₁ := hc.of_unch U₁ (by decide)
-  have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
+  obtain hc₁ := hc.of_unch U₁ (by decide)
+  obtain e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
     sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega_using [hi])
       (by omega_using [hi])
   refine wsCallR_ok Impl.Ecdsa.RISCV64.mulBrainpoolP256r1_noFrames (mul_rv hL) hw₁ h3₁

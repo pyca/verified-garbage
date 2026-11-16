@@ -93,7 +93,7 @@ theorem KB.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t : Nat} 
   simp only [kbChk, Bool.and_eq_true] at hc
   obtain ⟨⟨c1, c2⟩, c3⟩ := hc
   have hL := h.l.k.sc.site.ok
-  have hct : cLen p ≤ 2 ^ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
+  obtain hct : cLen p ≤ 2 ^ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
   exact ⟨⟨h.l.k.keep hk c1, (hk.cs .r27 (by decide)).trans h.l.r27, (hk.cs .r25 (by decide)).trans h.l.r25,
     h.l.t_lt, h.l.rej⟩, by rw [bytes_keepW hL hk.frame c2 (by decide) hct]; exact h.ct,
     polyIs_keepW hL hk.frame c3 (by decide) rfl h.c, h.some⟩
@@ -158,7 +158,7 @@ theorem IZ.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nz ys :
   simp only [izChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨c1, c2⟩, c3⟩, c4⟩ := hc
   have hL := h.b.l.k.sc.site.ok
-  have h0 : 0 ∈ sWb2 := by decide
+  obtain h0 : 0 ∈ sWb2 := by decide
   exact ⟨h.b.keep hF hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
     famR_keep hL h0 hk.frame c3 h.y, fun i hi => famR_keep hL h0 hk.frame c4 (fun j _ hj => h.w j hj) i
       (Nat.zero_le _) hi, (hk.cs .r26 (by decide)).trans h.r26, (hk.cs .r24 (by decide)).trans h.r24⟩
@@ -190,7 +190,7 @@ theorem IQ.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nr ws :
   simp only [iqChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨c1, c2⟩, c3⟩, c4⟩ := hc
   have hL := h.b.l.k.sc.site.ok
-  have h0 : 0 ∈ sWb2 := by decide
+  obtain h0 : 0 ∈ sWb2 := by decide
   exact ⟨h.b.keep hF hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
     fun i hi => famR_keep hL h0 hk.frame c3 (fun j _ hj => h.w' j hj) i (Nat.zero_le _) hi,
     famR_keep hL h0 hk.frame c4 h.w, (hk.cs .r26 (by decide)).trans h.r26, (hk.cs .r24 (by decide)).trans h.r24⟩
@@ -266,7 +266,7 @@ theorem IH.keep {p : Params} (hF : SFacts p) {STK : Nat} {σ : State} {t nc nh w
   simp only [ihChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨c1, c2⟩, c3⟩, c4⟩, c5⟩ := hc
   have hL := h.b.l.k.sc.site.ok
-  have h0 : 0 ∈ sWb2 := by decide
+  obtain h0 : 0 ∈ sWb2 := by decide
   exact ⟨h.b.keep hF hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
     fun i hi => famR_keep hL h0 hk.frame c3 (fun j _ hj => h.w'' j hj) i (Nat.zero_le _) hi,
     famR_keep hL h0 hk.frame c4 h.w',
@@ -316,31 +316,31 @@ omit hP hS in
 theorem za_keep {t r : Nat} (hr : r < p.ℓ) {σ s s' : State} (h : ZA p STK t r σ s) {x : Nat} (hx : 1 ≤ x ∧ x < 5)
     (hk : Kept ((slay2 p STK σ).RL [tri (pS x) 1024, tri (sc oPS) 1024, (1, 0, STK)]) s s') :
     ZA p STK t r σ s' := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
   exact ⟨h.1.keep hF hk (by csep hF),
     polyIs_keepW h.1.b.l.k.sc.site.ok hk.frame (by csep hF) (by decide) rfl h.2⟩
 
 theorem zR_piece {t r : Nat} (hr : r < p.ℓ) :
     SPiece p STK (fun σ s => IZ p STK σ t r r s) (fun σ s => IZ p STK σ t (r + 1) (r + 1) s) (zR P p r) := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hza : ∀ σ s, ZA p STK t r σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hza : ∀ σ s, ZA p STK t r σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
   -- `T1 ← NTT⁻¹(ĉ ŝ₁[r])`
-  have p1 := mulP_piece hP hS hza (x := 1) (a := 0) (b := s1Base p + r)
+  obtain p1 := mulP_piece hP hS hza (x := 1) (a := 0) (b := s1Base p + r)
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       ⟨sptr_ok rfl (by clt hF), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by csep hF, by csep hF⟩)
     (F := fun σ => chF (cV p σ (p.ℓ * t))) (G := fun σ => S1v p σ r)
     (fun _ _ h => h.1.b.c) (fun _ _ h => h.1.b.l.k.s1 r hr)
     (fun σ s s' h k => za_keep hF hr h (x := 1) (by decide) (k.monoL (by simp)))
-  have p2 := ipP_piece hS hza (t := nttInv) hP.invNtt (x := 1) (name := "vg_mldsa_inv_ntt")
+  obtain p2 := ipP_piece hS hza (t := nttInv) hP.invNtt (x := 1) (name := "vg_mldsa_inv_ntt")
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => multiplyNTT (chF (cV p σ (p.ℓ * t))) (S1v p σ r))
     (fun σ s s' h k => za_keep hF hr h (x := 1) (by decide) (k.monoL (by simp)))
   -- `y[r] ← y[r] + T1`, which is `z[r]`
-  have hzb : ∀ σ s, (IZ p STK σ t r (r + 1) s ∧
+  obtain hzb : ∀ σ s, (IZ p STK σ t r (r + 1) s ∧
       PolyIs s.mem (SL p STK σ 1) (nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S1v p σ r)))) → SC2 p STK σ s :=
     fun _ _ h => h.1.b.l.k.sc
-  have p3 := addP_piece hP hS hzb (f := yBase p + r) (g := 1)
+  obtain p3 := addP_piece hP hS hzb (f := yBase p + r) (g := 1)
     (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => Yv p σ (p.ℓ * t) r) (G := fun σ => nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S1v p σ r)))
@@ -348,12 +348,12 @@ theorem zR_piece {t r : Nat} (hr : r < p.ℓ) :
     (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
       polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
   -- its norm, into `r24`
-  have hzc : ∀ σ s, IZ p STK σ t r (r + 1) s → SC2 p STK σ s := fun _ _ h => h.b.l.k.sc
-  have p4 := normP_piece hP hS hzc (f := yBase p + r) (B := p.γ₁ - p.β) (fun σ => ⟨sptr_ok rfl (by clt hF), by csep hF⟩)
+  obtain hzc : ∀ σ s, IZ p STK σ t r (r + 1) s → SC2 p STK σ s := fun _ _ h => h.b.l.k.sc
+  obtain p4 := normP_piece hP hS hzc (f := yBase p + r) (B := p.γ₁ - p.β) (fun σ => ⟨sptr_ok rfl (by clt hF), by csep hF⟩)
     (fun σ => by csep hF) (by rcases hF.g1 with e | e <;> rw [e] <;> omega_using [])
     (F := fun σ => Zv p σ (p.ℓ * t) r)
     (fun σ s s' h k => h.keep hF k (by csep hF))
-  have p5 := and24_piece (p := p) (STK := STK) (J := fun σ s => (IZ p STK σ t r (r + 1) s ∧
+  obtain p5 := and24_piece (p := p) (STK := STK) (J := fun σ s => (IZ p STK σ t r (r + 1) s ∧
       PolyIs s.mem (SL p STK σ (yBase p + r)) (Zv p σ (p.ℓ * t) r)) ∧
       (s.gpr .r3).setWidth 32 = (if normRq [Zv p σ (p.ℓ * t) r] < p.γ₁ - p.β then 1 else 0))
     (J' := fun σ s => IZ p STK σ t (r + 1) (r + 1) s) (fun _ _ h => h.1.1.b.l.k.sc)
@@ -381,30 +381,30 @@ omit hP hS in
 theorem ra_keep {t i : Nat} (hi : i < p.k) {σ s s' : State} (h : RA p STK t i σ s) {x : Nat} (hx : 1 ≤ x ∧ x < 5)
     (hk : Kept ((slay2 p STK σ).RL [tri (pS x) 1024, tri (sc oPS) 1024, (1, 0, STK)]) s s') :
     RA p STK t i σ s' := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
   exact ⟨h.1.keep hF hk (by csep hF), polyIs_keepW h.1.b.l.k.sc.site.ok hk.frame (by csep hF) (by decide) rfl h.2⟩
 
 theorem r0R_piece {t i : Nat} (hi : i < p.k) :
     SPiece p STK (fun σ s => IQ p STK σ t i i s) (fun σ s => IQ p STK σ t (i + 1) (i + 1) s) (r0R P p i) := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hra : ∀ σ s, RA p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hra : ∀ σ s, RA p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
   -- `T1 ← NTT⁻¹(ĉ ŝ₂[i])`
-  have p1 := mulP_piece hP hS hra (x := 1) (a := 0) (b := s2Base p + i)
+  obtain p1 := mulP_piece hP hS hra (x := 1) (a := 0) (b := s2Base p + i)
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       ⟨sptr_ok rfl (by clt hF), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by csep hF, by csep hF⟩)
     (F := fun σ => chF (cV p σ (p.ℓ * t))) (G := fun σ => S2v p σ i)
     (fun _ _ h => h.1.b.c) (fun _ _ h => h.1.b.l.k.s2 i hi)
     (fun σ s s' h k => ra_keep hF hi h (x := 1) (by decide) (k.monoL (by simp)))
-  have p2 := ipP_piece hS hra (t := nttInv) hP.invNtt (x := 1) (name := "vg_mldsa_inv_ntt")
+  obtain p2 := ipP_piece hS hra (t := nttInv) hP.invNtt (x := 1) (name := "vg_mldsa_inv_ntt")
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i))
     (fun σ s s' h k => ra_keep hF hi h (x := 1) (by decide) (k.monoL (by simp)))
   -- `w[i] ← w[i] - T1`
-  have hrb : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧
+  obtain hrb : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧
       PolyIs s.mem (SL p STK σ 1) (nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i)))) → SC2 p STK σ s :=
     fun _ _ h => h.1.b.l.k.sc
-  have p3 := subP_piece hP hS hrb (f := wBase p + i) (g := 1)
+  obtain p3 := subP_piece hP hS hrb (f := wBase p + i) (g := 1)
     (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => Wv p σ (p.ℓ * t) i) (G := fun σ => nttInv (multiplyNTT (chF (cV p σ (p.ℓ * t))) (S2v p σ i)))
@@ -412,9 +412,9 @@ theorem r0R_piece {t i : Nat} (hi : i < p.k) :
     (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
       polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
   -- `T2 ← LowBits(w[i])`
-  have hrc : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)) →
+  obtain hrc : ∀ σ s, (IQ p STK σ t i (i + 1) s ∧ PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)) →
       SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
-  have p4 := lbP_piece hP hS hrc (r := wBase p + i) (o := 2) (g2 := p.γ₂)
+  obtain p4 := lbP_piece hP hS hrc (r := wBase p + i) (o := 2) (g2 := p.γ₂)
     (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, by csep hF, hF.g2,
       by have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
@@ -423,15 +423,15 @@ theorem r0R_piece {t i : Nat} (hi : i < p.k) :
     (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
       polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
   -- its norm, into `r24`
-  have hB : p.γ₂ - p.β < 2 ^ 31 := by
-    have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
+  obtain hB : p.γ₂ - p.β < 2 ^ 31 := by
+    obtain hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
     have hq : q = 8380417 := rfl
     rcases hg with e | e <;> rw [e] <;> omega_using [hq]
-  have p5 := normP_piece hP hS hrc (f := 2) (B := p.γ₂ - p.β) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
+  obtain p5 := normP_piece hP hS hrc (f := 2) (B := p.γ₂ - p.β) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
     (fun σ => by csep hF) hB (F := fun σ => R0v p σ (p.ℓ * t) i)
     (fun σ s s' h k => ⟨h.1.keep hF k (by csep hF),
       polyIs_keepW h.1.b.l.k.sc.site.ok k.frame (by csep hF) (by decide) rfl h.2⟩)
-  have p6 := and24_piece (p := p) (STK := STK) (J := fun σ s => ((IQ p STK σ t i (i + 1) s ∧
+  obtain p6 := and24_piece (p := p) (STK := STK) (J := fun σ s => ((IQ p STK σ t i (i + 1) s ∧
       PolyIs s.mem (SL p STK σ (wBase p + i)) (W'v p σ (p.ℓ * t) i)) ∧ PolyIs s.mem (SL p STK σ 2) (R0v p σ (p.ℓ * t) i)) ∧
       (s.gpr .r3).setWidth 32 = (if normRq [R0v p σ (p.ℓ * t) i] < p.γ₂ - p.β then 1 else 0))
     (J' := fun σ s => IQ p STK σ t (i + 1) (i + 1) s) (fun _ _ h => h.1.1.1.b.l.k.sc)
@@ -469,37 +469,37 @@ omit hP hS in
 theorem ha_keep {t i : Nat} (hi : i < p.k) {σ s s' : State} (h : HA p STK t i σ s) {x : Nat} (hx : 1 ≤ x ∧ x < 5)
     (hk : Kept ((slay2 p STK σ).RL [tri (pS x) 1024, tri (sc oPS) 1024, (1, 0, STK)]) s s') :
     HA p STK t i σ s' := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
   exact ⟨h.1.keep hF hk (by csep hF), polyIs_keepW h.1.b.l.k.sc.site.ok hk.frame (by csep hF) (by decide) rfl h.2⟩
 
 omit hP hS in
 theorem g2_lt : p.γ₂ < 2 ^ 31 := by
-  have hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
+  obtain hg := hF.g2; simp only [gamma2s, List.mem_cons, List.not_mem_nil, or_false] at hg
   have hq : q = 8380417 := rfl
   rcases hg with e | e <;> rw [e] <;> omega_using [hq]
 
 theorem hR_piece {t i : Nat} (hi : i < p.k) :
     SPiece p STK (fun σ s => IH p STK σ t i i i s) (fun σ s => IH p STK σ t (i + 1) (i + 1) (i + 1) s) (hR P p i) := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hg2 := g2_lt hF
-  have hha : ∀ σ s, HA p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hg2 := g2_lt hF
+  obtain hha : ∀ σ s, HA p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.b.l.k.sc
   -- `T3 ← ct₀[i] = NTT⁻¹(ĉ t̂₀[i])`
-  have p1 := mulP_piece hP hS hha (x := 3) (a := 0) (b := t0Base p + i)
+  obtain p1 := mulP_piece hP hS hha (x := 3) (a := 0) (b := t0Base p + i)
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       ⟨sptr_ok rfl (by clt hF), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by csep hF, by csep hF⟩)
     (F := fun σ => chF (cV p σ (p.ℓ * t))) (G := fun σ => T0v p σ i)
     (fun _ _ h => h.1.b.c) (fun _ _ h => h.1.b.l.k.t0 i hi)
     (fun σ s s' h k => ha_keep hF hi h (x := 3) (by decide) (k.monoL (by simp)))
-  have p2 := ipP_piece hS hha (t := nttInv) hP.invNtt (x := 3) (name := "vg_mldsa_inv_ntt")
+  obtain p2 := ipP_piece hS hha (t := nttInv) hP.invNtt (x := 3) (name := "vg_mldsa_inv_ntt")
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => multiplyNTT (chF (cV p σ (p.ℓ * t))) (T0v p σ i))
     (fun σ s s' h k => ha_keep hF hi h (x := 3) (by decide) (k.monoL (by simp)))
   -- its norm, into `r24`
-  have p3 := normP_piece hP hS hha (f := 3) (B := p.γ₂) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
+  obtain p3 := normP_piece hP hS hha (f := 3) (B := p.γ₂) (fun σ => ⟨sptr_ok rfl (by decide), by csep hF⟩)
     (fun σ => by csep hF) hg2 (F := fun σ => CT0v p σ (p.ℓ * t) i)
     (fun σ s s' h k => ha_keep hF hi h (x := 3) (by decide) (k.monoL (by simp)))
-  have p4 := and24_piece (p := p) (STK := STK) (J := fun σ s => (HA p STK t i σ s ∧
+  obtain p4 := and24_piece (p := p) (STK := STK) (J := fun σ s => (HA p STK t i σ s ∧
       PolyIs s.mem (SL p STK σ 3) (CT0v p σ (p.ℓ * t) i)) ∧
       (s.gpr .r3).setWidth 32 = (if normRq [CT0v p σ (p.ℓ * t) i] < p.γ₂ then 1 else 0))
     (J' := HB p STK t i) (fun _ _ h => h.1.1.1.b.l.k.sc)
@@ -512,7 +512,7 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
           fun ⟨a, b⟩ => ⟨⟨a, (forall_lt_succ.mpr b).1⟩, (forall_lt_succ.mpr b).2⟩⟩⟩,
       by rw [r2.mem]; exact hw⟩, by rw [r2.mem]; exact h3c⟩
   -- `T4 ← ct₀[i]`, then `T4 ← (T4 - ct₀[i]) - ct₀[i]`
-  have p5 : SPiece p STK (HB p STK t i) (fun σ s => HB p STK t i σ s ∧
+  obtain p5 : SPiece p STK (HB p STK t i) (fun σ s => HB p STK t i σ s ∧
       PolyIs s.mem (SL p STK σ 4) (CT0v p σ (p.ℓ * t) i)) (copy .r31 (oP 3) .r31 (oP 4) 1024) := by
     refine ⟨fun σ s _ h => ?_, srel2 (fun σ s h => h.1.1.b.l.k.sc) (copy_taint _ _ _)⟩
     refine WP.mono (copyS h.1.1.b.l.k.sc.site (sb := .r31) (so := oP 3) (db := .r31)
@@ -521,24 +521,24 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
     have hL := h.1.1.b.l.k.sc.site.ok
     exact ⟨⟨⟨h.1.1.keep hF k' (by csep hF), polyIs_keepW hL k'.frame (by csep hF) (by decide) rfl h.1.2⟩,
       polyIs_keepW hL k'.frame (by csep hF) (by decide) rfl h.2⟩, Proof.MlDsa.Sign.polyIs_of_bytes b' h.2⟩
-  have hhb : ∀ σ s, HB p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.1.b.l.k.sc
-  have m44 : ∀ σ, KeyGen.AddOk (slay2 p STK σ) sWb2 (pS 4) (pS 3) := fun σ =>
+  obtain hhb : ∀ σ s, HB p STK t i σ s → SC2 p STK σ s := fun _ _ h => h.1.1.b.l.k.sc
+  obtain m44 : ∀ σ, KeyGen.AddOk (slay2 p STK σ) sWb2 (pS 4) (pS 3) := fun σ =>
     ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩
-  have hbk : ∀ σ s s', HB p STK t i σ s → Kept ((slay2 p STK σ).RL [tri (pS 4) 1024, (1, 0, STK)]) s s' →
+  obtain hbk : ∀ σ s s', HB p STK t i σ s → Kept ((slay2 p STK σ).RL [tri (pS 4) 1024, (1, 0, STK)]) s s' →
       HB p STK t i σ s' := fun σ s s' h k => by
     have hL := h.1.1.b.l.k.sc.site.ok
     exact ⟨⟨h.1.1.keep hF k (by csep hF), polyIs_keepW hL k.frame (by csep hF) (by decide) rfl h.1.2⟩,
       polyIs_keepW hL k.frame (by csep hF) (by decide) rfl h.2⟩
-  have p6 := subP_piece hP hS hhb (f := 4) (g := 3) m44 (F := fun σ => CT0v p σ (p.ℓ * t) i)
+  obtain p6 := subP_piece hP hS hhb (f := 4) (g := 3) m44 (F := fun σ => CT0v p σ (p.ℓ * t) i)
     (G := fun σ => CT0v p σ (p.ℓ * t) i) (fun _ _ h => h.2) hbk
-  have p7 := subP_piece hP hS hhb (f := 4) (g := 3) m44
+  obtain p7 := subP_piece hP hS hhb (f := 4) (g := 3) m44
     (F := fun σ => sub (CT0v p σ (p.ℓ * t) i) (CT0v p σ (p.ℓ * t) i))
     (G := fun σ => CT0v p σ (p.ℓ * t) i) (fun _ _ h => h.2) hbk
   -- `w[i] ← w[i] - cs₂[i] + ct₀[i]`
-  have hhc : ∀ σ s, ((IH p STK σ t (i + 1) i (i + 1) s ∧ PolyIs s.mem (SL p STK σ 3) (CT0v p σ (p.ℓ * t) i)) ∧
+  obtain hhc : ∀ σ s, ((IH p STK σ t (i + 1) i (i + 1) s ∧ PolyIs s.mem (SL p STK σ 3) (CT0v p σ (p.ℓ * t) i)) ∧
       PolyIs s.mem (SL p STK σ 4) (neg (CT0v p σ (p.ℓ * t) i))) → SC2 p STK σ s := fun _ _ h => h.1.1.b.l.k.sc
-  have p8 := addP_piece hP hS hhc (f := wBase p + i) (g := 3)
+  obtain p8 := addP_piece hP hS hhc (f := wBase p + i) (g := 3)
     (fun σ => ⟨⟨sptr_ok rfl (by clt hF), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
     (F := fun σ => W'v p σ (p.ℓ * t) i) (G := fun σ => CT0v p σ (p.ℓ * t) i) (fun _ _ h => h.1.2)
@@ -547,10 +547,10 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
       exact ⟨⟨h.1.1.keep hF k (by csep hF), polyIs_keepW hL k.frame (by csep hF) (by decide) rfl h.1.2⟩,
         polyIs_keepW hL k.frame (by csep hF) (by decide) rfl h.2⟩)
   -- `h[i] ← MakeHint(T4, w[i])`
-  have mm : ∀ σ, KeyGen.UhOk (slay2 p STK σ) sWb2 (pS 4) (pS (wBase p + i)) p.γ₂ (pS (5 + i)) := fun σ =>
+  obtain mm : ∀ σ, KeyGen.UhOk (slay2 p STK σ) sWb2 (pS 4) (pS (wBase p + i)) p.γ₂ (pS (5 + i)) := fun σ =>
     ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by clt hF), by csep hF⟩,
       ⟨sptr_ok rfl (by clt hF), by csep hF⟩, show ix Reg.r31 ∈ sWb2 by decide, by csep hF, by csep hF, hF.g2, hg2⟩
-  have p9' : SPiece p STK (fun σ s => (IH p STK σ t (i + 1) i (i + 1) s ∧
+  obtain p9' : SPiece p STK (fun σ s => (IH p STK σ t (i + 1) i (i + 1) s ∧
         PolyIs s.mem (SL p STK σ (wBase p + i)) (W''v p σ (p.ℓ * t) i)) ∧
         PolyIs s.mem (SL p STK σ 4) (neg (CT0v p σ (p.ℓ * t) i)))
       (fun σ s => ((IH p STK σ t (i + 1) i (i + 1) s ∧
@@ -572,18 +572,18 @@ theorem hR_piece {t i : Nat} (hi : i < p.k) :
     exact ⟨⟨⟨h.keep hF k' (by csep hF), polyIs_keepW h.b.l.k.sc.site.ok k'.frame (by csep hF) (by decide) rfl hw⟩,
       hq⟩, he⟩
   -- `r26 ← r26 + |h[i]|`
-  have p9 : SPiece p STK (fun σ s => ((IH p STK σ t (i + 1) i (i + 1) s ∧
+  obtain p9 : SPiece p STK (fun σ s => ((IH p STK σ t (i + 1) i (i + 1) s ∧
         PolyIs s.mem (SL p STK σ (wBase p + i)) (W''v p σ (p.ℓ * t) i)) ∧
         HintIs s.mem (SL p STK σ (5 + i)) 1 [Hv p σ (p.ℓ * t) i]) ∧
         ((s.gpr .r3).setWidth 32).toNat = hintOnes [Hv p σ (p.ℓ * t) i])
       (fun σ s => IH p STK σ t (i + 1) (i + 1) (i + 1) s) (.block [.lsr .w .r3 .r3 0, .add .r26 .r26 .r3]) := by
     refine ⟨fun σ s _ ⟨⟨⟨h, hw⟩, hh⟩, he⟩ => WP.mono (onesAdd_ok s) fun s' ⟨e26, m, rd, wr, sp, g⟩ => ?_,
       srel2 (fun σ s h => h.1.1.1.b.l.k.sc) (by taint_decide)⟩
-    have hz : zx (s.gpr .r3) = BitVec.ofNat 64 (hintOnes [Hv p σ (p.ℓ * t) i]) := by
+    obtain hz : zx (s.gpr .r3) = BitVec.ofNat 64 (hintOnes [Hv p σ (p.ℓ * t) i]) := by
       apply BitVec.eq_of_toNat_eq
       rw [← he]
       simp only [zx, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    have hk : KB p STK σ t s' := h.b.of_eq (fun r a _ b => g r a b) m rd wr sp
+    obtain hk : KB p STK σ t s' := h.b.of_eq (fun r a _ b => g r a b) m rd wr sp
     refine ⟨hk, fun j hj => by rw [m]; exact h.z j hj, fun j hj => by
         rw [m]
         rcases (by omega_using [hj] : j < i ∨ j = i) with h' | rfl
@@ -661,7 +661,7 @@ theorem IZ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
   rcases hd with rfl|h0
   · exact h.r24
   · rw [h.r24] at h0 ⊢
-    have hn := bit_zero.mp h0
+    obtain hn := bit_zero.mp h0
     rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega_using [hk, hj]))]
 
 theorem IQ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
@@ -670,7 +670,7 @@ theorem IQ.done {p : Params} {STK : Nat} {σ : State} {t k : Nat} {s : State}
   rcases hd with rfl|h0
   · exact h.r24
   · rw [h.r24] at h0 ⊢
-    have hn := bit_zero.mp h0
+    obtain hn := bit_zero.mp h0
     rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega_using [hk, hj])⟩)]
 
 theorem rejected_ko {p : Params} {STK : Nat} {σ : State} {t : Nat} {s : State}
@@ -716,9 +716,9 @@ variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) 
 include hP hF hS
 
 theorem cntt_piece {t : Nat} : SPiece p STK (KA p STK t) (KN p STK t) (nttAt P cP) := by
-  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
-  have p1 := ipP_piece hS (I := fun σ s => ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome)
+  obtain hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  obtain hc : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
+  obtain p1 := ipP_piece hS (I := fun σ s => ICd p STK t σ s ∧ (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome)
     (fun _ _ h => h.1.1.l.k.sc) (t := ntt) hP.ntt (x := 0) (name := "vg_mldsa_ntt")
     (fun σ => ⟨⟨sptr_ok rfl (by decide), by csep hF⟩, ⟨sptr_ok rfl (by decide), by csep hF⟩,
       show ix Reg.r31 ∈ sWb2 by decide, show ix Reg.r31 ∈ sWb2 by decide, by csep hF⟩)
@@ -735,7 +735,7 @@ omit hP hF hS in
 theorem kinit_piece {t : Nat} :
     SPiece p STK (KN p STK t) (fun σ s => IZ p STK σ t 0 0 s) (.block [.li .r24 1, .li .r26 0]) := by
   refine ⟨fun σ s _ h => ?_, srel2 (fun σ s h => h.1.1.1.l.k.sc) (by taint_decide)⟩
-  have hrun : WP isa (.block [.li .r24 1, .li .r26 0]) s fun s' => s'.gpr .r24 = 1 ∧ s'.gpr .r26 = 0 ∧
+  obtain hrun : WP isa (.block [.li .r24 1, .li .r26 0]) s fun s' => s'.gpr .r24 = 1 ∧ s'.gpr .r26 = 0 ∧
       (∀ r, r ≠ .r3 → r ≠ .r26 → r ≠ .r24 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.sp = s.sp := by
     crun []
@@ -753,7 +753,7 @@ theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k
   have hk' := hF.k
   refine ⟨fun σ s _ h => WP.mono (onesOk_run p (by have := hF.om; omega_using [this]) s) fun s' ⟨e24, r2⟩ => ?_,
     srel2 (fun σ s h => h.b.l.k.sc) (onesOk_taint p)⟩
-  have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
+  obtain hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
   have hom := hF.om
   refine ⟨h.b.regs2 r2, (fun _ j hj => by rw [r2.mem]; exact h.z j hj), (fun _ j hj => by rw [r2.mem]; exact h.h j hj), ?_⟩
   rw [e24, h.r26, h.r24, sign_bit (by omega_using [hk', hS]) (by omega_using [hom]), bit_and']

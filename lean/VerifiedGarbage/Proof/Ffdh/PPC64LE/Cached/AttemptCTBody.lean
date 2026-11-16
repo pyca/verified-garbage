@@ -81,29 +81,29 @@ def XI (S D X R : Addr) (k L bits : Nat) (s₀ u : State) : Prop :=
 theorem stage1_ok {s : State} (h : BI S D X O R C Z k L p bits v s) :
     WP isa scalar s fun s₃ => LF S D X Z k L s₃ ∧ WP isa Derive.xRange s₃ (XI S D X R k L bits s) := by
   have hZ := h.env.hZ
-  have e0 := Domain.slot_eq ((k + 7) / 8) 0
-  have e28 := Domain.slot_eq ((k + 7) / 8) 28
+  obtain e0 := Domain.slot_eq ((k + 7) / 8) 0
+  obtain e28 := Domain.slot_eq ((k + 7) / 8) 28
   have hk := h.hk
   have hk' := h.hk'
   refine WP.mono (scalarC_ok h.env h.h23 h.h28 (by omega_using [hk]) h.hk' h.hb1 h.hbk h.hbw h.hyw h.hX h.hR h.hrdR h.hx
     h.hsepRX) fun s₃ ⟨⟨xb, xout⟩, k3⟩ => ?_
-  have osc := GenerateKey.out_scr xout h.hsepBX
-  have hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s.mem S d := fun d hd =>
+  obtain osc := GenerateKey.out_scr xout h.hsepBX
+  obtain hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s.mem S d := fun d hd =>
     Outside.word osc (Or.inl (by omega_using [hZ, e28, hd])) (by omega_using [hd])
-  have hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
+  obtain hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
     rw [arr, Outside.val32 osc (Or.inl (by omega_using [hZ, e0, e28])) (by omega_using [e0, hk'])]; exact h.hP
-  have e3 := h.env.keep k3 (by decide)
-  have g23 : s₃.gpr .r23 = S := (k3.gpr .r23 (by decide)).trans h.h23
-  have g21 : s₃.gpr .r21 = D := (k3.gpr .r21 (by decide)).trans h.h21
-  have g27 : s₃.gpr .r27 = BitVec.ofNat 64 L := (k3.gpr .r27 (by decide)).trans h.h27
-  have g28 : s₃.gpr .r28 = BitVec.ofNat 64 k := (k3.gpr .r28 (by decide)).trans h.h28
-  have hX3 : s₃.mem.readW (off S 64) 64 = off X 0 := by
+  obtain e3 := h.env.keep k3 (by decide)
+  obtain g23 : s₃.gpr .r23 = S := (k3.gpr .r23 (by decide)).trans h.h23
+  obtain g21 : s₃.gpr .r21 = D := (k3.gpr .r21 (by decide)).trans h.h21
+  obtain g27 : s₃.gpr .r27 = BitVec.ofNat 64 L := (k3.gpr .r27 (by decide)).trans h.h27
+  obtain g28 : s₃.gpr .r28 = BitVec.ofNat 64 k := (k3.gpr .r28 (by decide)).trans h.h28
+  obtain hX3 : s₃.mem.readW (off S 64) 64 = off X 0 := by
     show word s₃.mem S 64 = _; rw [hw3 64 (by omega_using [])]; exact h.hX
-  have hXL3 : s₃.mem.readW (off S 72) 64 = BitVec.ofNat 64 k := by
+  obtain hXL3 : s₃.mem.readW (off S 72) 64 = BitVec.ofNat 64 k := by
     show word s₃.mem S 72 = _; rw [hw3 72 (by omega_using [])]; exact h.hXL
-  have rdQ : L = 3 * k → ∀ i < k, InRegions (s₃.rd ++ s₃.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
+  obtain rdQ : L = 3 * k → ∀ i < k, InRegions (s₃.rd ++ s₃.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
     rw [Domain.off_off', k3.rd, k3.wr]; exact h.hrdD _ (by omega_using [hq, hi])
-  have sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
+  obtain sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
     rw [Domain.off_off']; exact h.hsepD _ (by omega_using [hq, hi])
   refine ⟨⟨e3, g23, g21, g27, g28, hX3, hXL3⟩, WP.mono (Derive.xRange_ok (xl := k) e3 g23 g21 g27 g28 (by omega_using [hk])
     (by omega_using []) (by rcases h.hL with e | e <;> omega_using [hk', e]) (by omega_using [hk']) (by omega_using [hk]) (Nat.le_refl _) hX3 hXL3
@@ -200,10 +200,10 @@ theorem pins_R1c : Pins R1c [.r6, .r10, .r11, .r12, .r21, .r23, .r27, .r28, .r29
 
 theorem BI_B1 {q : CG} {s : State} (h : BIq q s) : WP isa (.block mbBlock) s (B1 q) := by
   have hZ := h.env.hZ
-  have hw := Domain.slot_eq ((q.c.k + 7) / 8) 28
-  have hs1 := stage1_ok h
+  obtain hw := Domain.slot_eq ((q.c.k + 7) / 8) 28
+  obtain hs1 := stage1_ok h
   rw [scalar_eq] at hs1
-  have hm := WP.and (maskByte_ok h.env.hs (by omega_using [hZ, hw]) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega_arith))
+  obtain hm := WP.and (maskByte_ok h.env.hs (by omega_using [hZ, hw]) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega_arith))
     (WP.seq_iff.mp hs1)
   rw [maskByte_eq] at hm
   exact WP.mono (WP.and (mb_ok h.env.hs (by omega_using [hZ, hw]) h.h23 h.hbw h.hyw (by have := h.hbk; have := h.hk'; omega_arith))
@@ -213,7 +213,7 @@ theorem BI_B1 {q : CG} {s : State} (h : BIq q s) : WP isa (.block mbBlock) s (B1
 theorem B2_B3 {q : CG} {s : State} (h : B2 q s) : WP isa (.block sbBlock) s (B3 q) := by
   obtain ⟨s₀, h₀, ⟨hm, hk⟩, hw⟩ := h
   have hZ := h₀.env.hZ
-  have hw28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
+  obtain hw28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
   refine WP.mono (WP.and (sb_ok (bits := q.bits) (X := q.g.d.x.X) (R := q.g.R) (h₀.env.hs.congr hk.wr) (by omega_using [hZ, hw28])
     ((hk.gpr .r23 (by decide)).trans h₀.h23) ((hk.gpr .r28 (by decide)).trans h₀.h28)
     (by have := h₀.hbk; omega_using [this]) (by have := h₀.hk'; omega_using [this])
@@ -270,25 +270,25 @@ theorem xf_of {s₀ u : State} (h : BI S D X O R C Z k L p bits v s₀) (hx : XI
   have hZ := h.env.hZ
   have hnw := h.env.hs.nowrap
   have hk := h.hk
-  have e0 := Domain.slot_eq ((k + 7) / 8) 0
-  have e28 := Domain.slot_eq ((k + 7) / 8) 28
-  have osc := GenerateKey.out_scr xout h.hsepBX
-  have hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s₀.mem S d := fun d hd =>
+  obtain e0 := Domain.slot_eq ((k + 7) / 8) 0
+  obtain e28 := Domain.slot_eq ((k + 7) / 8) 28
+  obtain osc := GenerateKey.out_scr xout h.hsepBX
+  obtain hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem S d = word s₀.mem S d := fun d hd =>
     Outside.word osc (Or.inl (by omega_using [hZ, e28, hd])) (by omega_using [hd])
-  have hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
+  obtain hp3 : arr s₃.mem S ((k + 7) / 8) 0 = p := by
     rw [arr, Outside.val32 osc (Or.inl (by omega_using [hZ, e0, e28])) (by omega)]; exact h.hP
-  have hbD : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs X y < k → off Q i ≠ y) →
+  obtain hbD : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs X y < k → off Q i ≠ y) →
       Spec.Rsa.bytesAt s₃.mem Q n = Spec.Rsa.bytesAt s₀.mem Q n := fun Q n hq =>
     Domain.outside_bytesAt xout (by omega_using []) hq
-  have eb : Derive.bnd s₃.mem D k L p = Derive.bnd s₀.mem D k L p := by
+  obtain eb : Derive.bnd s₃.mem D k L p = Derive.bnd s₀.mem D k L p := by
     unfold Derive.bnd
     by_cases hq : L = 3 * k
     · rw [ite_eq_left hq, ite_eq_left hq, hbD _ _ fun i hi => by
         rw [Domain.off_off']; exact h.hsepDX _ (by omega_using [hq, hi])]
     · rw [ite_eq_right hq, ite_eq_right hq]
-  have cx3 := ctx_of_x (n := 8 * ctxWords ((k + 7) / 8)) xout h.hsepCX
-  have e3 := h.env.keep k3 (by decide)
-  have k34 := k3.trans k4
+  obtain cx3 := ctx_of_x (n := 8 * ctxWords ((k + 7) / 8)) xout h.hsepCX
+  obtain e3 := h.env.keep k3 (by decide)
+  obtain k34 := k3.trans k4
   rw [xb, hp3, eb] at a26
   rw [hp3] at p4
   refine ⟨⟨h.env.hs.congr k34.wr, a10, (k34.gpr .r29 (by decide)).trans h.env.h29,
@@ -393,10 +393,10 @@ theorem k6_of {q : CG} {s₀ u t : State} {rs : List Reg} (h₀ : BIq q s₀) (h
     (hw : word t.mem q.c.S 64 = word u.mem q.c.S 64) {st : Nat} (h3 : t.gpr .r3 = BitVec.ofNat 64 st)
     (hst1 : 1 ≤ st) (hst : st < 4) : K6 q.g t := by
   have hZ := h₀.env.hZ
-  have e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
+  obtain e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
   have hk := h₀.hk
   have hk' := h₀.hk'
-  have kk := hx.keep.trans k
+  obtain kk := hx.keep.trans k
   exact ⟨⟨(k.gpr _ h23).trans hx.h23, (k.gpr _ h28).trans hx.h28⟩,
     by show word t.mem _ 64 = _; rw [hw, hx.hw 64 (by omega_using [])]; exact h₀.hX,
     by rw [kk.rd, kk.wr]; exact h₀.env.hs.ld (d := 64) (n := 8) (by omega_using [hZ, e28]), h₀.hx.congr kk.wr,
@@ -406,23 +406,23 @@ theorem k6_of {q : CG} {s₀ u t : State} {rs : List Reg} (h₀ : BIq q s₀) (h
 theorem bad_ok {q : CG} {u : State} (h : XIc q u) (hv : q.g.d.v = false) :
     WP isa (.block [.load .d .r27 .r23 80]) u (BD1 q) := by
   obtain ⟨s₀, h₀, hx⟩ := h
-  have xf := xf_of h₀ hx
+  obtain xf := xf_of h₀ hx
   have hZ := h₀.env.hZ
   have hnw := h₀.env.hs.nowrap
   have hk := h₀.hk
   have hk' := h₀.hk'
-  have e8 := Domain.slot_eq ((q.c.k + 7) / 8) 8
-  have e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
-  have hO : u.mem.readW (off q.c.S 80) 64 = off q.g.d.x.O 0 := (xf.hw 80 (by omega_using [])).trans h₀.hO
+  obtain e8 := Domain.slot_eq ((q.c.k + 7) / 8) 8
+  obtain e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
+  obtain hO : u.mem.readW (off q.c.S 80) 64 = off q.g.d.x.O 0 := (xf.hw 80 (by omega_using [])).trans h₀.hO
   refine WP.mono (WP.keep [.r27] (Q := fun t => t.gpr .r27 = off q.g.d.x.O 0 ∧ t.mem = u.mem) (by
       prun [xf.h23, xf.env.hs.ld (d := 80) (n := 8) (by omega_using [hZ, e28]), hO]) (by decide)) fun t ⟨⟨a27, mt⟩, kt⟩ => ?_
-  have k10 := (kt.gpr .r10 (by decide)).trans xf.env.h10
-  have k29 := (kt.gpr .r29 (by decide)).trans xf.env.h29
-  have k28 := (kt.gpr .r28 (by decide)).trans xf.h28
-  have k23 := (kt.gpr .r23 (by decide)).trans xf.h23
-  have k11 := (kt.gpr .r11 (by decide)).trans xf.env.h11
-  have ka := xf.keep.trans kt
-  have h26 : t.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if false then 1 else 0) := by
+  obtain k10 := (kt.gpr .r10 (by decide)).trans xf.env.h10
+  obtain k29 := (kt.gpr .r29 (by decide)).trans xf.env.h29
+  obtain k28 := (kt.gpr .r28 (by decide)).trans xf.h28
+  obtain k23 := (kt.gpr .r23 (by decide)).trans xf.h23
+  obtain k11 := (kt.gpr .r11 (by decide)).trans xf.env.h11
+  obtain ka := xf.keep.trans kt
+  obtain h26 : t.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if false then 1 else 0) := by
     rw [kt.gpr .r26 (by decide)]
     have e := xf.r26
     rw [hv] at e
@@ -441,18 +441,18 @@ theorem bad_ok {q : CG} {u : State} (h : XIc q u) (hv : q.g.d.v = false) :
 theorem good_ok {q : CG} {u : State} (h : XIc q u) :
     WP isa (.block headBlock) u (GD1 q) := by
   obtain ⟨s₀, h₀, hx⟩ := h
-  have xf := xf_of h₀ hx
+  obtain xf := xf_of h₀ hx
   have hZ := h₀.env.hZ
   have hnw := h₀.env.hs.nowrap
   have hk := h₀.hk
   have hk' := h₀.hk'
-  have hw := h₀.env.hw; have hw' := h₀.env.hw'
-  have e0 := Domain.slot_eq ((q.c.k + 7) / 8) 0
-  have e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
-  have hl4 : (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k).length = q.c.k := VG.Proof.Bignum.bytesAt_length _ _ _
-  have xv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k) < 2 ^ q.bits := by
+  obtain hw := h₀.env.hw; have hw' := h₀.env.hw'
+  obtain e0 := Domain.slot_eq ((q.c.k + 7) / 8) 0
+  obtain e28 := Domain.slot_eq ((q.c.k + 7) / 8) 28
+  obtain hl4 : (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k).length = q.c.k := VG.Proof.Bignum.bytesAt_length _ _ _
+  obtain xv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k) < 2 ^ q.bits := by
     rw [xf.xb, scalarC_value (by simp [Spec.Rsa.bytesAt]) h₀.hb1 h₀.hbk]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
-  have ci : CombIn u q.c.S q.C q.g.d.x.X q.c.Z ((q.c.k + 7) / 8) (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k) q.c.p
+  obtain ci : CombIn u q.c.S q.C q.g.d.x.X q.c.Z ((q.c.k + 7) / 8) (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k) q.c.p
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem (off q.c.D q.c.k) q.c.k)) q.bits := by
     refine ⟨xf.env, xf.h23, by rw [xf.h28, hl4], by rw [show hCtx = 0 from rfl]; exact (xf.hw 0 (by omega_using [])).trans h₀.hCw,
       h₀.hc.congr xf.keep.rd xf.keep.wr, fun a ha => ?_, ?_, xf.hp,
@@ -469,16 +469,16 @@ theorem good_ok {q : CG} {u : State} (h : XIc q u) :
     · rw [← h₀.hr2]
       exact Outside.val32 xf.cx (Or.inl (by have := row1_fits ((q.c.k + 7) / 8); omega_using [this]))
         (by have := row1_fits ((q.c.k + 7) / 8); have := h₀.hc.hn; omega_arith)
-  have hP : 0 < q.c.p := by have := h₀.hp2; omega_using [this]
-  have hc : WP isa comb u (GD2 q) := by
+  obtain hP : 0 < q.c.p := by have := h₀.hp2; omega_using [this]
+  obtain hc : WP isa comb u (GD2 q) := by
     refine WP.mono (comb_ok ci) fun t ⟨⟨z1, p1, o1, r10⟩, k1⟩ => ?_
     generalize hz : Spec.Rsa.powMod (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₀.mem (off q.c.D q.c.k) q.c.k))
       (Rsa.FixedBaseComb.high q.bits (Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem q.g.d.x.X q.c.k)) 0) q.c.p = z at z1
-    have hzP : z < q.c.p := by rw [← hz, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hP
-    have t29 := (k1.gpr .r29 (by decide)).trans xf.env.h29
-    have t11 := (k1.gpr .r11 (by decide)).trans xf.env.h11
-    have t23 := (k1.gpr .r23 (by decide)).trans xf.h23
-    have t28 := (k1.gpr .r28 (by decide)).trans xf.h28
+    obtain hzP : z < q.c.p := by rw [← hz, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hP
+    obtain t29 := (k1.gpr .r29 (by decide)).trans xf.env.h29
+    obtain t11 := (k1.gpr .r11 (by decide)).trans xf.env.h11
+    obtain t23 := (k1.gpr .r23 (by decide)).trans xf.h23
+    obtain t28 := (k1.gpr .r28 (by decide)).trans xf.h28
     refine ⟨⟨r10, t29, t11, t23, t28⟩, WP.mono (Domain.exOut_split (O := q.g.d.x.O) (k := q.c.k)
       (xf.env.hs.congr k1.wr) (h₀.ho.congr (xf.keep.trans k1).wr) r10 t29 t11 t23 t28 hw hw' hZ (by omega_using [hk]) (by omega_using [])
       (by rw [hdr_of_comb o1 (by decide)]; exact (xf.hw 80 (by omega_using [])).trans h₀.hO) h₀.hsepO

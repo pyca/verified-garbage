@@ -58,7 +58,7 @@ def layerInv (F : Poly) (len : Nat) : Poly :=
 theorem layerInv_rel {b : Nat} (hb1 : 1 ≤ b) (hb : b ≤ 128) {F : Poly} {f : VG.Spec.MlDsa.Poly} (hF : Rel b F f)
     {len : Nat} (hlen : len ∈ [1, 2, 4, 8, 16, 32, 64, 128]) :
     Rel (2 * b) (layerInv F len) (nttInvLayer f len) := by
-  have hl : 0 < len ∧ 2 * len * (128 / len) = 256 ∧
+  obtain hl : 0 < len ∧ 2 * len * (128 / len) = 256 ∧
       ∀ i < 256, (i % (2 * len) < len → i + len < 256) ∧ (¬ i % (2 * len) < len → len ≤ i) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
@@ -69,16 +69,16 @@ theorem layerInv_rel {b : Nat} (hb1 : 1 ≤ b) (hb : b ≤ 128) {F : Poly} {f : 
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len
   · simp only [ite_eq_left h]
-    have h0 := hF i hi
-    have h1 := hF (i + len) ((hl.2.2 i hi).1 h)
-    have hx := Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb)
-    have hy := Nat.lt_of_lt_of_le h1.1 (Nat.mul_le_mul_right q hb)
+    obtain h0 := hF i hi
+    obtain h1 := hF (i + len) ((hl.2.2 i hi).1 h)
+    obtain hx := Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb)
+    obtain hy := Nat.lt_of_lt_of_le h1.1 (Nat.mul_le_mul_right q hb)
     exact ⟨(opInv_bound _ _ _ hb1 hb h0.1 h1.1).1, by rw [(opInv_residue _ _ _ hx hy).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega_using [hi])
-    have h1 := hF i hi
-    have hx := Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb)
-    have hy := Nat.lt_of_lt_of_le h1.1 (Nat.mul_le_mul_right q hb)
+    obtain h0 := hF (i - len) (by omega_using [hi])
+    obtain h1 := hF i hi
+    obtain hx := Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb)
+    obtain hy := Nat.lt_of_lt_of_le h1.1 (Nat.mul_le_mul_right q hb)
     exact ⟨(opInv_bound _ _ _ hb1 hb h0.1 h1.1).2, by rw [(opInv_residue _ _ _ hx hy).2, h0.2, h1.2]⟩
 
 def transformInv (F : Poly) : Poly :=
@@ -88,22 +88,22 @@ def transformInv (F : Poly) : Poly :=
 theorem transformInv6_rel (f : VG.Spec.MlDsa.Poly) :
     Rel 64 (layerInv (layerInv (layerInv (layerInv (layerInv (layerInv (lift f) 1) 2) 4) 8) 16) 32)
       (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer f 1) 2) 4) 8) 16) 32) := by
-  have h0 := lift_rel f
-  have h1 := layerInv_rel (by decide) (by decide : 1 ≤ 128) h0 (by decide : 1 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
-  have h2 := layerInv_rel (by decide) (by decide : 2 * 1 ≤ 128) h1 (by decide : 2 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
-  have h3 := layerInv_rel (by decide) (by decide : 2 * (2 * 1) ≤ 128) h2 (by decide : 4 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
-  have h4 := layerInv_rel (by decide) (by decide : 2 * (2 * (2 * 1)) ≤ 128) h3
+  obtain h0 := lift_rel f
+  obtain h1 := layerInv_rel (by decide) (by decide : 1 ≤ 128) h0 (by decide : 1 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
+  obtain h2 := layerInv_rel (by decide) (by decide : 2 * 1 ≤ 128) h1 (by decide : 2 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
+  obtain h3 := layerInv_rel (by decide) (by decide : 2 * (2 * 1) ≤ 128) h2 (by decide : 4 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
+  obtain h4 := layerInv_rel (by decide) (by decide : 2 * (2 * (2 * 1)) ≤ 128) h3
     (by decide : 8 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
-  have h5 := layerInv_rel (by decide) (by decide : 2 * (2 * (2 * (2 * 1))) ≤ 128) h4
+  obtain h5 := layerInv_rel (by decide) (by decide : 2 * (2 * (2 * (2 * 1))) ≤ 128) h4
     (by decide : 16 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
   exact layerInv_rel (by decide) (by decide : 2 * (2 * (2 * (2 * (2 * 1)))) ≤ 128) h5
     (by decide : 32 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
 
 theorem transformInv_rel (f : VG.Spec.MlDsa.Poly) :
     Rel 256 (transformInv (lift f)) (nttInvLens.foldl nttInvLayer f) := by
-  have h7 := layerInv_rel (by decide) (by decide : 64 ≤ 128) (transformInv6_rel f)
+  obtain h7 := layerInv_rel (by decide) (by decide : 64 ≤ 128) (transformInv6_rel f)
     (by decide : 64 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
-  have h8 := layerInv_rel (by decide) (by decide : 2 * 64 ≤ 128) h7
+  obtain h8 := layerInv_rel (by decide) (by decide : 2 * 64 ≤ 128) h7
     (by decide : 128 ∈ [1, 2, 4, 8, 16, 32, 64, 128])
   simpa only [nttInvLens, List.foldl_cons, List.foldl_nil, transformInv] using h8
 
@@ -118,7 +118,7 @@ theorem yinvLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay vibflyLazy len k (-4)) s fun s' => PolyIs s'.mem fP (layerInv F len) ∧ BInvYW bInvC fP s s' := by
-  have hl : 128 / len ≥ 1 ∧ 256 / len = 2 * (128 / len) ∧ 256 / len ≤ 32 := by
+  obtain hl : 128 / len ≥ 1 ∧ 256 / len = 2 * (128 / len) ∧ 256 / len ≤ 32 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl <;> decide
   rw [layerInv]
@@ -132,8 +132,8 @@ theorem yinvLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay4 vibflyLazy 62 0x55 0x00 (-8)) s fun s' => PolyIs s'.mem fP (layerInv F 4) ∧ BInvYW bInvC fP s s' := by
-  have h0 : ∀ e < 4, sel 0x00 e = 0 := by decide
-  have h5 : ∀ e < 4, sel 0x55 e = 1 := by decide
+  obtain h0 : ∀ e < 4, sel 0x00 e = 0 := by decide
+  obtain h5 : ∀ e < 4, sel 0x55 e = 1 := by decide
   rw [layerInv, show 256 / 4 - 1 = 63 from rfl, show 128 / 4 = 32 from rfl]
   exact ylay4_ok bflyInv_ok lane_vibflyLazy (block_ok opInv) 62 0x55 0x00 (-8) (fun c => 63 - c) (fun m => 62 - 2 * m)
     rfl (fun m _ => by omega_using []) (fun m _ e he => ⟨by rw [h5 e he]; omega_arith, by rw [h0 e he]; omega_using []⟩)
@@ -145,8 +145,8 @@ theorem yinvLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay2 vibflyLazy 124 0x5F 0x0A (-16)) s fun s' => PolyIs s'.mem fP (layerInv F 2) ∧
       BInvYW bInvC fP s s' := by
-  have hA : ∀ e < 4, sel 0x5F e = 3 - 2 * (e / 2) := by decide
-  have hB : ∀ e < 4, sel 0x0A e = 2 - 2 * (e / 2) := by decide
+  obtain hA : ∀ e < 4, sel 0x5F e = 3 - 2 * (e / 2) := by decide
+  obtain hB : ∀ e < 4, sel 0x0A e = 2 - 2 * (e / 2) := by decide
   rw [layerInv, show 256 / 2 - 1 = 127 from rfl, show 128 / 2 = 64 from rfl]
   exact ylay2_ok (block_ok opInv) bflyInv_ok lane_core2l 124 0x5F 0x0A (-16) (fun c => 127 - c)
     (fun i => 124 - 4 * i) rfl (fun i _ => by omega_using [])
@@ -171,7 +171,7 @@ theorem layerInv_get (F : Poly) {len : Nat} (hlen : len ∈ [1, 2, 4, 8, 16, 32,
     (layerInv F len)[i]! = if i % (2 * len) < len then
       (opInv F[i]! F[i + len]! (zetas (256 / len - 1 - i / (2 * len)))).1
       else (opInv F[i - len]! F[i]! (zetas (256 / len - 1 - i / (2 * len)))).2 := by
-  have hl : 0 < len ∧ 2 * len * (128 / len) = 256 := by
+  obtain hl : 0 < len ∧ 2 * len * (128 / len) = 256 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   rw [layerInv, Arith.Lazy.layF_get (block_ok opInv) F hl.1 _ (by omega_using [hl]) hi, VG.Proof.MlKem.X86_64.ifp (by omega_using [hi, hl])]
@@ -214,7 +214,7 @@ open VG.Proof.MlDsa.Arith.Lazy (residue Word opInv product product_lt)
 /-- A product of any doubleword by a zeta in Montgomery form, reduced: `ζ · (b mod q)`. -/
 theorem mulZL {b z m : BitVec 32} {ζ : Zq} (hz : z.toNat = ζ.val * 2 ^ 32 % q)
     (hm : m.toNat = mont (b.toNat * z.toNat)) : (csubL m).toNat = (ζ * Fin.ofNat q b.toNat).val := by
-  have hx : b.toNat * z.toNat < q * 2 ^ 32 := by
+  obtain hx : b.toNat * z.toNat < q * 2 ^ 32 := by
     rw [hz]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b.isLt (Nat.le_of_lt (Nat.mod_lt _ (by decide)))
       (by decide)) (by rw [Nat.mul_comm])
@@ -261,10 +261,10 @@ theorem bsum_lanes {a b : BitVec 128} {x y : Nat → Word} (ha : Lazy.DLanes a x
 theorem bdif_lanes {a b z : BitVec 128} {x y : Nat → Word} {ζ : Zq} (ha : Lazy.DLanes a x)
     (hb : Lazy.DLanes b y) (hz : ZLanes z fun _ => ζ) (ho : ZOdd z z) :
     Lazy.DLanes (bdif a b z) (fun i => (opInv (x i) (y i) ζ).2) := by
-  have hw : Lazy.DLanes (XBinOp.eval .paddd (XBinOp.eval .psubd b a)
+  obtain hw : Lazy.DLanes (XBinOp.eval .paddd (XBinOp.eval .psubd b a)
       (ofDwords Lazy.bInvC Lazy.bInvC Lazy.bInvC Lazy.bInvC)) (fun i => y i + 1072693376 - x i) := by
     intro i hi
-    have hb' : (dword (ofDwords Lazy.bInvC Lazy.bInvC Lazy.bInvC Lazy.bInvC) i).toNat = 1072693376 := by
+    obtain hb' : (dword (ofDwords Lazy.bInvC Lazy.bInvC Lazy.bInvC Lazy.bInvC) i).toNat = 1072693376 := by
       rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
     rw [dword_paddd _ _ hi, BitVec.toNat_add, dword_psubd _ _ hi, BitVec.toNat_sub, ha i hi, hb i hi, hb']
     simp only [Fin.val_sub, Fin.val_add, show (1072693376 : Word).val = 1072693376 from rfl]
@@ -272,15 +272,15 @@ theorem bdif_lanes {a b z : BitVec 128} {x y : Nat → Word} {ζ : Zq} (ha : Laz
     omega_using []
   intro i hi
   rw [dword_montV ho (Lazy.prod_lt hw hz) hi, hw i hi, hz i hi]
-  have ht := product_lt (y i + 1072693376 - x i) ζ
-  have ht32 : product (y i + 1072693376 - x i) ζ < 4294967296 := Nat.lt_trans ht (by decide)
+  obtain ht := product_lt (y i + 1072693376 - x i) ζ
+  obtain ht32 : product (y i + 1072693376 - x i) ζ < 4294967296 := Nat.lt_trans ht (by decide)
   simp only [opInv, Fin.val_ofNat, Nat.mod_eq_of_lt ht32]
   rfl
 
 /-- A doubleword times `R/256`, reduced. -/
 theorem scale_dw {x k : BitVec 128} {w : Nat → Word} (hx : Lazy.DLanes x w) (hk : ZLanes k fun _ => 16382)
     (ho : ZOdd k k) {e : Nat} (he : e < 4) : (dword (csubV (montV x k k)) e).toNat = (residue (w e) * 16382).val := by
-  have hb : ∀ e < 4, (dword x e).toNat * (dword k e).toNat < q * 2 ^ 32 := fun e he => by
+  obtain hb : ∀ e < 4, (dword x e).toNat * (dword k e).toNat < q * 2 ^ 32 := fun e he => by
     rw [hk e he]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (dword x e).isLt
       (Nat.le_of_lt (Nat.mod_lt _ (by decide))) (by decide)) (by rw [Nat.mul_comm])
@@ -346,10 +346,10 @@ def lastG (F : VG.Proof.MlDsa.Arith.Lazy.Poly) : Poly := (Lazy.layerInv (Lazy.la
 
 theorem lastG_get {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k < 256, F[k]!.val < 64 * q) {j : Nat} (hj : j < 64) {r : Nat} (hr : r < 4) :
     (lastG F)[j + 64 * r]! = lastOut F[j]! F[j + 64]! F[j + 128]! F[j + 192]! r := by
-  have g : (lastG F)[j + 64 * r]! = residue (Lazy.layerInv (Lazy.layerInv F 64) 128)[j + 64 * r]! * 16382 := by
+  obtain g : (lastG F)[j + 64 * r]! = residue (Lazy.layerInv (Lazy.layerInv F 64) 128)[j + 64 * r]! * 16382 := by
     rw [lastG, getElem!_pos (Vector.map _ _) (j + 64 * r) (show j + 64 * r < 256 by omega_using [hj, hr]), Vector.getElem_map,
       getElem!_pos (Lazy.layerInv (Lazy.layerInv F 64) 128) (j + 64 * r) (show j + 64 * r < 256 by omega_using [hj, hr])]
-  have h64 : ∀ k < 64, ∀ c < 2, (Lazy.layerInv F 64)[k + 128 * c]! = (opInv F[k + 128 * c]! F[k + 128 * c + 64]!
+  obtain h64 : ∀ k < 64, ∀ c < 2, (Lazy.layerInv F 64)[k + 128 * c]! = (opInv F[k + 128 * c]! F[k + 128 * c + 64]!
       (zetas (3 - c))).1 ∧ (Lazy.layerInv F 64)[k + 128 * c + 64]! = (opInv F[k + 128 * c]! F[k + 128 * c + 64]!
       (zetas (3 - c))).2 := fun k hk c hc => by
     rw [Lazy.layerInv_get F (by decide) (show k + 128 * c < 256 by omega_using [hk, hc]), ifp (by omega_using [hk]),
@@ -358,7 +358,7 @@ theorem lastG_get {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k < 256, F[k]!.
       show 256 / 64 - 1 - (k + 128 * c) / (2 * 64) = 3 - c by omega_using [hk],
       show 256 / 64 - 1 - (k + 128 * c + 64) / (2 * 64) = 3 - c by omega_using [hk]]
     exact ⟨rfl, rfl⟩
-  have h128 : ∀ k < 128, (Lazy.layerInv (Lazy.layerInv F 64) 128)[k]! =
+  obtain h128 : ∀ k < 128, (Lazy.layerInv (Lazy.layerInv F 64) 128)[k]! =
       (opInv (Lazy.layerInv F 64)[k]! (Lazy.layerInv F 64)[k + 128]! (zetas 1)).1 ∧
       (Lazy.layerInv (Lazy.layerInv F 64) 128)[k + 128]! =
       (opInv (Lazy.layerInv F 64)[k]! (Lazy.layerInv F 64)[k + 128]! (zetas 1)).2 := fun k hk => by
@@ -367,15 +367,15 @@ theorem lastG_get {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k < 256, F[k]!.
       show k + 128 - 128 = k by omega_using [], show 256 / 128 - 1 - k / (2 * 128) = 1 by omega_using [hk],
       show 256 / 128 - 1 - (k + 128) / (2 * 128) = 1 by omega_using [hk]]
     exact ⟨rfl, rfl⟩
-  have e0 := h64 j hj 0 (by decide)
-  have e1 := h64 j hj 1 (by decide)
+  obtain e0 := h64 j hj 0 (by decide)
+  obtain e1 := h64 j hj 1 (by decide)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.sub_zero] at e0 e1
   rw [show j + 128 + 64 = j + 192 by omega_using []] at e1
-  have hx : ∀ k < 256, F[k]!.val < 128 * q := fun k hk => Nat.lt_of_lt_of_le (hF k hk) (by decide)
-  have hb := fun k (hk : k < 256) => hF k hk
-  have b0 := Lazy.opInv_bound F[j]! F[j + 64]! (zetas 3) (b := 64) (by decide) (by decide) (hb j (by omega_using [hj]))
+  obtain hx : ∀ k < 256, F[k]!.val < 128 * q := fun k hk => Nat.lt_of_lt_of_le (hF k hk) (by decide)
+  obtain hb := fun k (hk : k < 256) => hF k hk
+  obtain b0 := Lazy.opInv_bound F[j]! F[j + 64]! (zetas 3) (b := 64) (by decide) (by decide) (hb j (by omega_using [hj]))
     (hb (j + 64) (by omega_using [hj]))
-  have b1 := Lazy.opInv_bound F[j + 128]! F[j + 192]! (zetas 2) (b := 64) (by decide) (by decide)
+  obtain b1 := Lazy.opInv_bound F[j + 128]! F[j + 192]! (zetas 2) (b := 64) (by decide) (by decide)
     (hb (j + 128) (by omega_using [hj])) (hb (j + 192) (by omega_using [hj]))
   rw [g]
   rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl
@@ -449,10 +449,10 @@ theorem lastOut_lanes {s t : State} (hp : LastPost s t) {a0 a1 a2 a3 : Nat → W
     (dword (t.xmm .xmm6) e).toNat = (lastOut (a0 e) (a1 e) (a2 e) (a3 e) 2).val ∧
     (dword (t.xmm .xmm5) e).toNat = (lastOut (a0 e) (a1 e) (a2 e) (a3 e) 3).val := by
   obtain ⟨z7, o7, z8, o8, z9, o9, z10, o10⟩ := hk
-  have s0 := bsum_lanes h0 h1 (zetas 3)
-  have s2 := bsum_lanes h5 h6 (zetas 2)
-  have d1 := bdif_lanes h0 h1 z7 o7
-  have d3 := bdif_lanes h5 h6 z8 o8
+  obtain s0 := bsum_lanes h0 h1 (zetas 3)
+  obtain s2 := bsum_lanes h5 h6 (zetas 2)
+  obtain d1 := bdif_lanes h0 h1 z7 o7
+  obtain d3 := bdif_lanes h5 h6 z8 o8
   rw [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2]
   exact ⟨scale_dw (bsum_lanes s0 s2 (zetas 1)) z10 o10 he, scale_dw (bsum_lanes d1 d3 (zetas 1)) z10 o10 he,
     csub_dw (bdif_lanes s0 s2 z9 o9) he (opInv_snd_lt _ _ _), csub_dw (bdif_lanes d1 d3 z9 o9) he (opInv_snd_lt _ _ _)⟩
@@ -464,10 +464,10 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
       fun s' => LastI fP F (i + 1) s'.mem ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
         Frame [pR fP] s.mem s'.mem ∧ Lazy.YConstsW Lazy.bInvC s' ∧ LastK s' ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : ∀ r < 4, 8 * i + 64 * r + 8 ≤ 256 := fun r hr => by omega_using [hi, hr]
-  have ad : ∀ r < 4, s.gpr .rdx + BitVec.ofNat 64 (256 * r) = coeffAddr fP (8 * i + 64 * r) := fun r _ => by
+  obtain j0 : ∀ r < 4, 8 * i + 64 * r + 8 ≤ 256 := fun r hr => by omega_using [hi, hr]
+  obtain ad : ∀ r < 4, s.gpr .rdx + BitVec.ofNat 64 (256 * r) = coeffAddr fP (8 * i + 64 * r) := fun r _ => by
     rw [hdx, show 256 * r = 4 * (64 * r) by omega_using [], coeffAddr_add]
-  have r0 : ∀ r < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (256 * r)) 32 := fun r hr => by
+  obtain r0 : ∀ r < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (256 * r)) 32 := fun r hr => by
     rw [ad r hr]; exact f_in32 (List.mem_append_right _ hw) (j0 r hr)
   rw [show lastLoads ++ toY lastCore ++ lastStores ++ ([.alu .sub .rcx (.imm 1)] : List Instr) =
     [.vmovdquLoad .l256 .xmm0 (at_ .rdx (256 * 0))] ++ ([.vmovdquLoad .l256 .xmm1 (at_ .rdx (256 * 1))] ++
@@ -477,21 +477,21 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
   refine WP.mono (yld_ok (r0 0 (by decide))) fun s1 ⟨L1, o1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact r0 1 (by decide))) fun s2 ⟨L2, o2⟩ => ?_
-  have o12 := o1.trans o2
+  obtain o12 := o1.trans o2
   rw [WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [o12.rd, o12.wr, o12.gpr]; exact r0 2 (by decide))) fun s3 ⟨L3, o3⟩ => ?_
-  have o13 := o12.trans o3
+  obtain o13 := o12.trans o3
   rw [WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [o13.rd, o13.wr, o13.gpr]; exact r0 3 (by decide))) fun s4 ⟨L4, o4⟩ => ?_
-  have o14 := o13.trans o4
+  obtain o14 := o13.trans o4
   rw [WP.block_append_iff]
-  have hin : ∀ r < 4, ∀ l < 2, Lazy.DLanes (s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (256 * r) +
+  obtain hin : ∀ r < 4, ∀ l < 2, Lazy.DLanes (s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (256 * r) +
       BitVec.ofNat 64 (16 * l)) 128) (fun e => F[8 * i + 4 * l + e + 64 * r]!) := fun r hr l hl => by
     rw [ad r hr]; exact lastIn hi hS hr hl
   refine WP.mono (ylanes lane_lastCore (P := fun l t => LastPost (s4.proj l) t)
     fun l hl => lastCore_ok (Lazy.yonly_yconsts o14 hc (by decide) (by decide) (by decide) l hl)) fun s5 ⟨B5, o5⟩ => ?_
-  have o15 := o14.trans o5
-  have hv : ∀ l < 2, ∀ e < 4,
+  obtain o15 := o14.trans o5
+  obtain hv : ∀ l < 2, ∀ e < 4,
       (dword (s5.lane .xmm0 l) e).toNat = (lastOut F[8 * i + 4 * l + e]! F[8 * i + 4 * l + e + 64]!
         F[8 * i + 4 * l + e + 128]! F[8 * i + 4 * l + e + 192]! 0).val ∧
       (dword (s5.lane .xmm3 l) e).toNat = (lastOut F[8 * i + 4 * l + e]! F[8 * i + 4 * l + e + 64]!
@@ -501,14 +501,14 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
       (dword (s5.lane .xmm5 l) e).toNat = (lastOut F[8 * i + 4 * l + e]! F[8 * i + 4 * l + e + 64]!
         F[8 * i + 4 * l + e + 128]! F[8 * i + 4 * l + e + 192]! 3).val := by
     intro l hl e he
-    have hk4 : LastK s4 := fun l hl => by
+    obtain hk4 : LastK s4 := fun l hl => by
       rw [o14.lane .xmm7 (by decide) l hl, o14.lane .xmm8 (by decide) l hl, o14.lane .xmm9 (by decide) l hl,
         o14.lane .xmm10 (by decide) l hl]
       exact hk l hl
-    have h0 := hin 0 (by decide) l hl
-    have h1 := hin 1 (by decide) l hl
-    have h2 := hin 2 (by decide) l hl
-    have h3 := hin 3 (by decide) l hl
+    obtain h0 := hin 0 (by decide) l hl
+    obtain h1 := hin 1 (by decide) l hl
+    obtain h2 := hin 2 (by decide) l hl
+    obtain h3 := hin 3 (by decide) l hl
     rw [← State.proj_xmm, ← State.proj_xmm, ← State.proj_xmm, ← State.proj_xmm]
     refine lastOut_lanes (a0 := fun e => F[8 * i + 4 * l + e]!) (a1 := fun e => F[8 * i + 4 * l + e + 64]!)
       (a2 := fun e => F[8 * i + 4 * l + e + 128]!) (a3 := fun e => F[8 * i + 4 * l + e + 192]!)
@@ -522,11 +522,11 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
       simp only [Nat.reduceMul] at h2 ⊢; exact h2
     · rw [State.proj_xmm, L4 l hl, o13.gpr, o13.mem]
       simp only [Nat.reduceMul] at h3 ⊢; exact h3
-  have hk5 : LastK s5 := fun l hl => by
+  obtain hk5 : LastK s5 := fun l hl => by
     rw [o15.lane .xmm7 (by decide) l hl, o15.lane .xmm8 (by decide) l hl, o15.lane .xmm9 (by decide) l hl,
       o15.lane .xmm10 (by decide) l hl]
     exact hk l hl
-  have hreg : ∀ R : XReg, ∀ r : Nat, (∀ l < 2, ∀ e < 4, (dword (s5.lane R l) e).toNat =
+  obtain hreg : ∀ R : XReg, ∀ r : Nat, (∀ l < 2, ∀ e < 4, (dword (s5.lane R l) e).toNat =
       (lastOut F[8 * i + 4 * l + e]! F[8 * i + 4 * l + e + 64]! F[8 * i + 4 * l + e + 128]!
         F[8 * i + 4 * l + e + 192]! r).val) → ∀ j, 8 * i ≤ j → j < 8 * i + 8 →
       ((s5.ymm R).extractLsb' (32 * (j - 8 * i)) 32).toNat = (lastOut F[j]! F[j + 64]! F[j + 128]! F[j + 192]! r).val := by
@@ -537,19 +537,19 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
       rw [show 8 * i + 4 * 0 + (j - 8 * i) = j by omega_using [h1]] at this; exact this
     · have := h 1 (by decide) (j - 8 * i - 4) (by omega_using [h2])
       rw [show 8 * i + 4 * 1 + (j - 8 * i - 4) = j by omega_arith] at this; exact this
-  have g5 : s5.gpr .rdx = coeffAddr fP (8 * i) := by rw [o15.gpr, hdx]
-  have a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 256 = coeffAddr fP (8 * i + 64) := by
+  obtain g5 : s5.gpr .rdx = coeffAddr fP (8 * i) := by rw [o15.gpr, hdx]
+  obtain a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 256 = coeffAddr fP (8 * i + 64) := by
     rw [show (BitVec.ofNat 64 256) = BitVec.ofNat 64 (4 * 64) from rfl, coeffAddr_add]
-  have a2 : coeffAddr fP (8 * i) + BitVec.ofNat 64 512 = coeffAddr fP (8 * i + 128) := by
+  obtain a2 : coeffAddr fP (8 * i) + BitVec.ofNat 64 512 = coeffAddr fP (8 * i + 128) := by
     rw [show (BitVec.ofNat 64 512) = BitVec.ofNat 64 (4 * 128) from rfl, coeffAddr_add]
-  have a3 : coeffAddr fP (8 * i) + BitVec.ofNat 64 768 = coeffAddr fP (8 * i + 192) := by
+  obtain a3 : coeffAddr fP (8 * i) + BitVec.ofNat 64 768 = coeffAddr fP (8 * i + 192) := by
     rw [show (BitVec.ofNat 64 768) = BitVec.ofNat 64 (4 * 192) from rfl, coeffAddr_add]
-  have w0 : InRegions s5.wr (s5.gpr .rdx) 32 := by rw [o15.wr, g5]; exact f_in32 hw (by omega_using [hi])
-  have w1 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 256) 32 := by
+  obtain w0 : InRegions s5.wr (s5.gpr .rdx) 32 := by rw [o15.wr, g5]; exact f_in32 hw (by omega_using [hi])
+  obtain w1 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 256) 32 := by
     rw [o15.wr, g5, a1]; exact f_in32 hw (by omega_using [hi])
-  have w2 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 512) 32 := by
+  obtain w2 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 512) 32 := by
     rw [o15.wr, g5, a2]; exact f_in32 hw (by omega_using [hi])
-  have w3 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 768) 32 := by
+  obtain w3 : InRegions s5.wr (s5.gpr .rdx + BitVec.ofNat 64 768) 32 := by
     rw [o15.wr, g5, a3]; exact f_in32 hw (by omega_using [hi])
   simp only [lastStores]
   vrund [State.store256_eq, State.setMem_gpr, State.setMem_wr, State.setMem_mem, State.setMem_rd,
@@ -560,7 +560,7 @@ theorem last_step {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k <
     split
     · rename_i hin'
       rw [ifp (show k % 64 < 8 * (i + 1) by omega_using [hin'])]
-      have e := lastG_get hF (show k % 64 < 64 by omega_using []) (show k / 64 < 4 by omega_using [hk])
+      obtain e := lastG_get hF (show k % 64 < 64 by omega_using []) (show k / 64 < 4 by omega_using [hk])
       rw [show k % 64 + 64 * (k / 64) = k by omega_using []] at e
       rw [e]
       rcases (by omega_using [hk] : k / 64 = 0 ∨ k / 64 = 1 ∨ k / 64 = 2 ∨ k / 64 = 3) with h | h | h | h <;> rw [h]
@@ -604,22 +604,22 @@ theorem ylast_ok {fP : Addr} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} (hF : ∀ k < 
   refine WP.mono (yconst_ok .xmm8 _ w1) fun w2 ⟨l2, k2, m2, _, o2⟩ => ?_
   refine WP.mono (yconst_ok .xmm9 _ w2) fun w3 ⟨l3, k3, m3, _, o3⟩ => ?_
   refine WP.mono (yconst_ok .xmm10 _ w3) fun w4 ⟨l4, k4, m4, _, o4⟩ => ?_
-  have cw : Lazy.YConstsW Lazy.bInvC w :=
+  obtain cw : Lazy.YConstsW Lazy.bInvC w :=
     Lazy.ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
-  have lw : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → ∀ l < 2, w4.lane r l = w.lane r l :=
+  obtain lw : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → ∀ l < 2, w4.lane r l = w.lane r l :=
     fun r h7 h8 h9 h10 l hl => by rw [o4 r h10 l hl, o3 r h9 l hl, o2 r h8 l hl, o1 r h7 l hl]
-  have cw4 : Lazy.YConstsW Lazy.bInvC w4 := fun l hl =>
+  obtain cw4 : Lazy.YConstsW Lazy.bInvC w4 := fun l hl =>
     ⟨⟨by rw [State.proj_xmm, lw _ (by decide) (by decide) (by decide) (by decide) l hl]; exact (cw l hl).q,
       by rw [State.proj_xmm, lw _ (by decide) (by decide) (by decide) (by decide) l hl]; exact (cw l hl).qinv⟩,
       by rw [State.proj_xmm, lw _ (by decide) (by decide) (by decide) (by decide) l hl]; exact (cw l hl).q2⟩
-  have hk4 : LastK w4 := fun l hl =>
+  obtain hk4 : LastK w4 := fun l hl =>
     ⟨by rw [o4 _ (by decide) l hl, o3 _ (by decide) l hl, o2 _ (by decide) l hl, l1 l hl]; rfl,
       by rw [o4 _ (by decide) l hl, o3 _ (by decide) l hl, l2 l hl]; rfl, by rw [o4 _ (by decide) l hl, l3 l hl]; rfl,
       l4 l hl⟩
-  have dx4 : w4.gpr .rdx = fP := by
+  obtain dx4 : w4.gpr .rdx = fP := by
     rw [k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide), hdx]
-  have mw4 : w4.mem = s.mem := by rw [m4, m3, m2, m1, og.mem]
-  have kw4 : Keep [.rdx, .rax] s w4 := ((((og.keep.trans k1).trans k2).trans k3).trans k4).mono (by simp)
+  obtain mw4 : w4.mem = s.mem := by rw [m4, m3, m2, m1, og.mem]
+  obtain kw4 : Keep [.rdx, .rax] s w4 := ((((og.keep.trans k1).trans k2).trans k3).trans k4).mono (by simp)
   refine WP.mono (wp_rcxLoopY (N := 8) (by decide) (by decide)
     (fun i u => LastI fP F i u.mem ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧ Lazy.YConstsW Lazy.bInvC u ∧ LastK u ∧
       Keep [.rcx, .rdx] w4 u ∧ Frame [pR fP] w4.mem u.mem)
@@ -647,7 +647,7 @@ theorem inv_eq (f : Poly) : Proof.MlDsa.montgomeryNttInv f =
   funext x
   change (x * 8347681) * Proof.MlDsa.montgomeryR = x * 16382
   rw [Fin.mul_assoc]
-  have hc : (8347681 : Spec.MlDsa.Zq) * Proof.MlDsa.montgomeryR = 16382 := by decide +kernel
+  obtain hc : (8347681 : Spec.MlDsa.Zq) * Proof.MlDsa.montgomeryR = 16382 := by decide +kernel
   rw [hc]
 
 theorem map_residue {b : Nat} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} {g : Poly} (h : Lazy.Rel b F g) :
@@ -662,18 +662,18 @@ theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (h
       Frame [pR fP, pR sP] s.mem s'.mem := by
   have hd' : (pR sP).Disjoint (pR fP) := hd.symm
   refine WP.seq (WP.mono (ypro_ok hsi hw) fun s2 ⟨hT, hc0, hf2, k2, _⟩ => ?_)
-  have hF2 : PolyIs s2.mem fP F :=
+  obtain hF2 : PolyIs s2.mem fP F :=
     polyIs_frame hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hF
-  have hdi : s2.gpr .rdi = fP := by rw [k2.gpr (by decide), hdi]
-  have hsi : s2.gpr .rsi = sP := by rw [k2.gpr (by decide), hsi]
-  have hwf : pR fP ∈ s2.wr := by rw [k2.2.2]; exact hwf
-  have hw : pR sP ∈ s2.wr := by rw [k2.2.2]; exact hw
+  obtain hdi : s2.gpr .rdi = fP := by rw [k2.gpr (by decide), hdi]
+  obtain hsi : s2.gpr .rsi = sP := by rw [k2.gpr (by decide), hsi]
+  obtain hwf : pR fP ∈ s2.wr := by rw [k2.2.2]; exact hwf
+  obtain hw : pR sP ∈ s2.wr := by rw [k2.2.2]; exact hw
   refine WP.seq (WP.mono (yconst_ok .xmm11 1072693376 s2) fun w ⟨lc, kc, mc, _, oc⟩ => ?_)
-  have hc : Lazy.YConstsW Lazy.bInvC w := fun l hl => ⟨⟨by
+  obtain hc : Lazy.YConstsW Lazy.bInvC w := fun l hl => ⟨⟨by
       rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hc0 l hl).q,
     by rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hc0 l hl).qinv⟩,
     by rw [State.proj_xmm, lc l hl]; rfl⟩
-  have hi : Lazy.LII fP sP s2 (Lazy.lift F) w :=
+  obtain hi : Lazy.LII fP sP s2 (Lazy.lift F) w :=
     ⟨by rw [mc]; exact Lazy.lift_mem hF2, by rw [mc]; exact hT, hc, kc.mono (by simp), by rw [mc]; exact Frame.refl _ _⟩
   refine Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay1_ok hd') ?_ hi
   refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay2_ok hd') ?_ hI
@@ -692,11 +692,11 @@ theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (h
 
 theorem correct (s : State) (hs : (inPlaceK Proof.MlDsa.montgomeryNttInv).pre s) :
     ∃ t s', Exec isa montNttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK Proof.MlDsa.montgomeryNttInv).post s s' := by
-  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
-  have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
+  obtain hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
+  obtain hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
   refine ymx_correct s hs (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
-  have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
+  obtain hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
     polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
       ⟨hs.2.2.2.2.2, rfl⟩
   refine WP.mono (body_ok (k1.gpr (by decide)) (k1.gpr (by decide)) hF1 (by rw [k1.2.2]; exact hwf)

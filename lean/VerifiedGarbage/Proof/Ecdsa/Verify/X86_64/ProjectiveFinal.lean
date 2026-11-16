@@ -37,7 +37,7 @@ theorem projectiveOps_run (hc : BaseCfgOk c) (e : Nat → Fe c.C) :
     runOps (projectiveOps c.sl) e (c.sl W) = e (c.sl RX) - e (c.sl XM) * e (c.sl RZ) ∧
     runOps (projectiveOps c.sl) e (c.sl XN) =
       e (c.sl RX) - (e (c.sl XM) + e (c.sl ACC)) * e (c.sl RZ) := by
-  have H := runOps_rename c.sl (projectiveOps id) e (fun _ _ _ h => sl_inj c hc.n0 h)
+  obtain H := runOps_rename c.sl (projectiveOps id) e (fun _ _ _ h => sl_inj c hc.n0 h)
   rw [← projectiveOps_rename] at H
   exact ⟨congrFun H W, congrFun H XN⟩
 
@@ -53,18 +53,18 @@ theorem projectiveOps_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
       toM c.C.p (2 ^ (64 * c.n)) (sv c base t XN) =
         tmv c.C c.n base s (c.sl RX) -
           (tmv c.C c.n base s (c.sl XM) + tmv c.C c.n base s (c.sl ACC)) * tmv c.C c.n base s (c.sl RZ) := by
-  have hL : Lay c.MP' size (· ∈ projectiveSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have I : Inv c.MP' base size c.C.p (· ∈ projectiveSlots.map c.sl) (projectiveReads.map c.sl)
+  obtain hL : Lay c.MP' size (· ∈ projectiveSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
+  obtain I : Inv c.MP' base size c.C.p (· ∈ projectiveSlots.map c.sl) (projectiveReads.map c.sl)
       (tmv c.C c.n base s) s := by
     refine ⟨hs, hM, ?_, ?_, fun _ _ => rfl⟩
     · intro x hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have sub : ∀ i ∈ projectiveReads, i ∈ projectiveSlots := by decide
+      obtain sub : ∀ i ∈ projectiveReads, i ∈ projectiveSlots := by decide
       exact List.mem_map_of_mem (sub i hi)
     · intro x hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       exact hlt i hi
-  have reads : readsOk (projectiveOps c.sl) (projectiveReads.map c.sl) = true := by
+  obtain reads : readsOk (projectiveOps c.sl) (projectiveReads.map c.sl) = true := by
     rw [projectiveOps_rename]
     exact readsOk_rename c.sl (by decide)
   refine (WP.mono (fprogB_ok hL (unitMod_pow_two hc.p_odd _) _ I ?_ reads)
@@ -75,11 +75,11 @@ theorem projectiveOps_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     all_goals
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> exact List.mem_map_of_mem (by decide)
-  have w : c.sl W ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
+  obtain w : c.sl W ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
     simp [mem_validAfter, projectiveOps, FOp.out]
-  have xn : c.sl XN ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
+  obtain xn : c.sl XN ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
     simp [mem_validAfter, projectiveOps, FOp.out]
-  have run := projectiveOps_run hc (tmv c.C c.n base s)
+  obtain run := projectiveOps_run hc (tmv c.C c.n base s)
   exact ⟨It.scr, keep.unch, It.lt _ w, It.lt _ xn, (It.val _ w).trans run.1, (It.val _ xn).trans run.2⟩
 
 
@@ -93,19 +93,19 @@ theorem projectivePrepare_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : 
       sv c base t MN = c.C.p - c.C.n := by
   have hp := hc.p_ge
   have hpR := hc.p_lt
-  have r2 : c.R * c.R % c.C.p < 2 ^ (64 * c.n) :=
+  obtain r2 : c.R * c.R % c.C.p < 2 ^ (64 * c.n) :=
     Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hpR
-  have mont : c.mont c.C.n < 2 ^ (64 * c.n) :=
+  obtain mont : c.mont c.C.n < 2 ^ (64 * c.n) :=
     Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hpR
-  have sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega_using [hpR]
+  obtain sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega_using [hpR]
   rw [Impl.Ecdsa.Verify.X86_64.Cfg.projectivePrepare, List.append_assoc, WP.block_append_iff]
   refine WP.mono (setSl_ok hc hs (o := XM) (by decide) r2) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (setSl_ok hc hs₁ (o := ACC) (by decide) mont) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   refine WP.mono (setSl_ok hc hs₂ (o := MN) (by decide) sub) fun s₃ ⟨e₃,k₃,O₃⟩ => ?_
-  have o : ∀ {s t : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem t.mem → i < 45 → i ≠ j →
+  obtain o : ∀ {s t : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem t.mem → i < 45 → i ≠ j →
       sv c base t i = sv c base s i := fun O hi hij => sv_out O hc.n10 hs.nowrap hi hij
   exact ⟨hs₂.of_keepRegs k₃ (by decide), O₁.unch.trans (O₂.unch.trans O₃.unch),
     by rw [o O₃ (by decide) (by decide), o O₂ (by decide) (by decide), e₁],
@@ -128,27 +128,27 @@ theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
   have h7 := hc.n10
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine WP.seq (WP.mono (projectivePrepare_ok hc hs) fun s₁ ⟨hs₁,U₁,xm₁,acc₁,mn₁⟩ => ?_)
-  have v₁ : ∀ {i}, i < 45 → i ∉ projectivePrepareW → sv c base s₁ i = sv c base s i :=
+  obtain v₁ : ∀ {i}, i < 45 → i ∉ projectivePrepareW → sv c base s₁ i = sv c base s i :=
     fun hi hl => sv_unch U₁ h7 hn hi (apart_slW hl)
-  have M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc
+  obtain M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc
     ((v₁ (i := MP) (by decide) (by decide)).trans hmp)
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) rfl rfl h7 hs₁ M₁ (o := XM) (a := K) (b := XM)
     (by decide) (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega_using [hrx])))
     fun s₂ ⟨k₂,lt₂,e₂⟩ => ?_)
-  have hs₂ := k₂.scr hs₁
-  have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=
+  obtain hs₂ := k₂.scr hs₁
+  obtain v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=
     fun hi hio hit => sv_keep (MP'_n c) rfl h7 hn k₂ hi hio hit
-  have M₂ := M₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
-  have xm₂ : tmv c.C c.n base s₂ (c.sl XM) = Fin.ofNat c.C.p (sv c base s K) := by
+  obtain M₂ := M₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  obtain xm₂ : tmv c.C c.n base s₂ (c.sl XM) = Fin.ofNat c.C.p (sv c base s K) := by
     show toM _ _ (sv c base s₂ XM) = _
     rw [toM_r2 (A := sv c base s₁ K) hpR (by rw [e₂, xm₁]; rfl), v₁ (by decide) (by decide)]
-  have acc₂ : tmv c.C c.n base s₂ (c.sl ACC) = Fin.ofNat c.C.p c.C.n := by
+  obtain acc₂ : tmv c.C c.n base s₂ (c.sl ACC) = Fin.ofNat c.C.p c.C.n := by
     show toM _ _ (sv c base s₂ ACC) = _
     rw [v₂ (by decide) (by decide) (by decide), acc₁]
     exact toM_cmont hc _
-  have tv₂ : ∀ {i}, i < 45 → i ∉ projectivePrepareW → i ≠ TMP →
+  obtain tv₂ : ∀ {i}, i < 45 → i ∉ projectivePrepareW → i ≠ TMP →
       tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun {i} hi hl ht => by
     show toM _ _ (sv c base s₂ i) = toM _ _ (sv c base s i)
     rw [v₂ hi (fun he => hl (by rw [he]; decide)) ht, v₁ hi hl]
@@ -160,14 +160,14 @@ theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     · rw [v₂ (by decide) (by decide) (by decide), v₁ (by decide) (by decide)]; exact hrx
     · rw [v₂ (by decide) (by decide) (by decide), acc₁]; exact Nat.mod_lt _ (by omega_using [hrx])
   have U₂ : Unch base (slW c [XM, TMP]) s₁.mem s₂.mem := k₂.unch
-  have U : Unch base (slW c projectiveAllW) s.mem s₃.mem :=
+  obtain U : Unch base (slW c projectiveAllW) s.mem s₃.mem :=
     ((U₁.trans U₂).trans U₃).mono (by
       intro w hw
       simp only [slW, projectivePrepareW, projectiveWrites, projectiveAllW, List.map_cons, List.map_nil,
         List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with ((h | h | h) | (h | h)) | (h | h | h | h | h | h) <;> simp [h])
-  have mn₃ : sv c base s₃ MN = c.C.p - c.C.n := by
-    have kept : sv c base s₃ MN = sv c base s₂ MN :=
+  obtain mn₃ : sv c base s₃ MN = c.C.p - c.C.n := by
+    obtain kept : sv c base s₃ MN = sv c base s₂ MN :=
       sv_unch U₃ h7 hn (i := MN) (by decide) (apart_slW (by decide))
     rw [kept, v₂ (by decide) (by decide) (by decide), mn₁]
   refine ⟨hs₃,U,mn₃,wlt,xnlt,?_,?_⟩
@@ -214,7 +214,7 @@ theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hP.scr.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   let A := KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
     (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)
   let fx := tmv c.C c.n base s (c.sl RX)
@@ -223,30 +223,30 @@ theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n
   rw [Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal]
   refine WP.seq (WP.mono (projectiveArithmetic_ok hc hP.scr hP.fixed.mp hP.rx_lt hP.rz_lt)
     fun t ⟨ht,U,mn,wlt,xnlt,wval,xnval⟩ => ?_)
-  have v : ∀ {i}, i < 45 → i ∉ projectiveAllW → sv c base t i = sv c base s i :=
+  obtain v : ∀ {i}, i < 45 → i ∉ projectiveAllW → sv c base t i = sv c base s i :=
     fun hi hl => sv_unch U h7 hn hi (apart_slW hl)
-  have saved := Saved.unch hP.fixed.saved (fun w hw => by
+  obtain saved := Saved.unch hP.fixed.saved (fun w hw => by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     show 48 ≤ c.sl i
     rw [sl_eq']; omega_using []) U
-  have flag : word t.mem base (c.sl FLAG) = mask A := by
+  obtain flag : word t.mem base (c.sl FLAG) = mask A := by
     rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, hn, this])]
     · exact hP.flag
     · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
         (fun h => Or.inl (by have := hc.n0; omega_using [h0, h])) Or.inr
-  have wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
+  obtain wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
     rw [← toM_eq_zero_iff hpR wlt, wval, hP.k]
     change fx - Fin.ofNat c.C.p (sigR c s₀) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
-  have xnz : sv c base t XN = 0 ↔ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz := by
+  obtain xnz : sv c base t XN = 0 ↔ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz := by
     rw [← toM_eq_zero_iff hpR xnlt, xnval, hP.k]
     change fx - (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
-  have z : fz ≠ 0 ↔ sv c base s RZ ≠ 0 := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
+  obtain z : fz ≠ 0 ↔ sv c base s RZ ≠ 0 := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
   refine WP.mono (projectiveChecks_ok hc ht saved A flag) fun s' ⟨keep,ret⟩ => ?_
   refine ⟨keep, xo, (fx * fz ^ (c.C.p - 2)).isLt, Fin.ofNat_val_eq_self _, ?_⟩
   simp only [v (i := RZ) (by decide) (by decide), v (i := K) (by decide) (by decide), hP.k, mn, wz, xnz] at ret
-  have iff : (A ∧ sv c base s RZ ≠ 0 ∧
+  obtain iff : (A ∧ sv c base s RZ ≠ 0 ∧
       (fx = Fin.ofNat c.C.p (sigR c s₀) * fz ∨
         (sigR c s₀ < c.C.p - c.C.n ∧ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz))) ↔
       (A ∧ sv c base s RZ ≠ 0 ∧ Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀)) := by

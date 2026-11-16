@@ -39,11 +39,11 @@ theorem ivStore_eq (iv : List (BitVec 32)) : ivStore iv = ivAt iv 0 := rfl
 theorem loadImm_lo (v : BitVec 32) :
     ((BitVec.ofNat 16 (v.toNat / 65536) ++ (0 : BitVec 16)).signExtend 64 |||
       (BitVec.ofNat 16 (v.toNat % 65536)).setWidth 64).setWidth 32 = v := by
-  have e1 : BitVec.ofNat 16 (v.toNat / 65536) = v.extractLsb' 16 16 := by
+  obtain e1 : BitVec.ofNat 16 (v.toNat / 65536) = v.extractLsb' 16 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofNat, BitVec.extractLsb'_toNat]
     rw [show (65536 : Nat) = 2 ^ 16 from rfl, Nat.shiftRight_eq_div_pow]
-  have e2 : BitVec.ofNat 16 (v.toNat % 65536) = v.extractLsb' 0 16 := by
+  obtain e2 : BitVec.ofNat 16 (v.toNat % 65536) = v.extractLsb' 0 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofNat, BitVec.extractLsb'_toNat, Nat.shiftRight_zero]
     rw [Nat.mod_mod_of_dvd _ (by decide)]
@@ -62,19 +62,19 @@ theorem ivAt_ok {G : GP} : ∀ (iv : List (BitVec 32)) (n : Nat) (s : State) (re
     simp only [List.length_cons] at hn hf hw
     simp only [ivAt, List.zipIdx_cons, List.flatMap_cons, loadImm, List.cons_append, List.nil_append]
     refine WP.wr exec_lis fun s₁ u₁ sp₁ _ => WP.wr exec_ori fun s₂ u₂ sp₂ _ => ?_
-    have e28 : s₂.gpr .r28 = G.scr := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h28]
-    have hw0 := hw 0 (by omega_using [])
+    obtain e28 : s₂.gpr .r28 = G.scr := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h28]
+    obtain hw0 := hw 0 (by omega_using [])
     rw [Nat.add_zero] at hw0
     refine VG.PPC64LE.WP.cons
       (s' := { s₂ with mem := s₂.mem.writeW (G.sa (sState + 4 * n)) ((s₂.gpr .r0).setWidth 32) }) ?_ ?_
     · rw [exec_store_w (by decide) (by omega_using [hn]) (by rw [e28, u₂.wr, u₁.wr]; exact hw0), e28]
-    have v₂ : (s₂.gpr .r0).setWidth 32 = v := by rw [u₂.gpr, u₁.gpr]; exact loadImm_lo v
+    obtain v₂ : (s₂.gpr .r0).setWidth 32 = v := by rw [u₂.gpr, u₁.gpr]; exact loadImm_lo v
     refine ivAt_ok vs (n + 1) _ rest Q (by exact e28) (by omega_using [hn]) (by omega_using [hf])
       (fun j hj => by
         rw [show n + 1 + j = n + (j + 1) by omega_using []]; show InRegions s₂.wr _ 4
         rw [u₂.wr, u₁.wr]; exact hw (j + 1) (by omega_using [hj]))
       fun t K' sp' F' W' => ?_
-    have fit1 : G.scr.toNat + (sState + 4 * n + 4) ≤ 2 ^ 64 := by omega_using [hf]
+    obtain fit1 : G.scr.toNat + (sState + 4 * n + 4) ≤ 2 ^ 64 := by omega_using [hf]
     refine k t ⟨fun r hr => ?_, by rw [K'.2.1]; show s₂.rd = s.rd; rw [u₂.rd, u₁.rd],
       by rw [K'.2.2]; show s₂.wr = s.wr; rw [u₂.wr, u₁.wr]⟩ (by rw [sp']; show s₂.sp = s.sp; rw [sp₂, sp₁]) ?_
       fun j hj => ?_
@@ -164,7 +164,7 @@ theorem hash1_vp {F : State → State → Prop} {c : State → Cfg} (hF : ∀ σ
     VP F (.block (ivStore Gh.iv ++ [scr .r26 sState, scr .r27 (wB G.pLen), scr .r4 sMsg]))
       (H1 (G := G) (Gh := Gh) F) := by
   refine VP.pub (SS.pub hF) [] (HO.cert1 G.pLen) (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
-  have h := hF σ s hs
+  obtain h := hF σ s hs
   have gi := h.gi
   have big := gi.wBig
   have fit := gi.scrFit
@@ -172,8 +172,8 @@ theorem hash1_vp {F : State → State → Prop} {c : State → Cfg} (hF : ∀ σ
   have hk := HO.hk
   have il := HO.ivLen
   have lens := gi.lens3
-  have wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
-  have wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
   rw [ivStore_eq]
   refine ivAt_ok Gh.iv 0 s _ _ gi.r28 (by simp only [sState] at wBh ⊢; omega_using [hk, il]) (by omega_using [big, fit, hk, il, wBh])
     (fun j hj => gi.inScr (by simp only [sState] at wBh ⊢; omega_using [big, hk, il, wBh, hj])) fun s₁ K₁ sp₁ F₁ W₁ => ?_
@@ -241,25 +241,25 @@ theorem hash2b_vp {F : State → State → Prop} {c : State → Cfg} (hF : ∀ �
   -- The regions the compression function is given.
   let rd : List Region := [⟨G.sa sMsg, HO.P.B * 1⟩]
   let wr : List Region := [⟨G.sa sState, HO.P.N⟩, ⟨G.sa (wB G.pLen), HO.P.so⟩]
-  have ec : ∀ {s : State} {r : Reg}, r ∉ linkRegs → (s.callEntry.withRegions rd wr).gpr r = s.gpr r :=
+  obtain ec : ∀ {s : State} {r : Reg}, r ∉ linkRegs → (s.callEntry.withRegions rd wr).gpr r = s.gpr r :=
     fun h => by rw [State.withRegions_gpr, State.callEntry_gpr _ h]
-  have facts : ∀ σ s, H1c (G := G) (Gh := Gh) F σ s →
+  obtain facts : ∀ σ s, H1c (G := G) (Gh := Gh) F σ s →
       (compressK HO.md).pre (s.callEntry.withRegions rd wr) ∧ Covers (rd ++ wr) (s.rd ++ s.wr) ∧
         Covers wr s.wr := by
     intro σ s ⟨⟨s₀, hs₀, K, _, _, _, _, _, e4⟩, e3, e5, e6⟩
-    have h := hF σ s₀ hs₀
+    obtain h := hF σ s₀ hs₀
     have gi := h.gi
     have big := gi.wBig
     have fit := gi.scrFit
-    have hB := HO.hB; have hN := HO.hN; have hso := HO.hso; have hk := HO.hk
+    obtain hB := HO.hB; have hN := HO.hN; have hso := HO.hso; have hk := HO.hk
     have := HO.hso0; have := HO.hk0
     have lens := gi.lens3
-    have wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
-    have wW : 1024 ≤ 8 * wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+    obtain wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+    obtain wW : 1024 ≤ 8 * wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
     have n0 : sState = 576 := rfl
     have n1 : sMsg = 512 := rfl
     have ws : s.wr = s₀.wr := K.2.2
-    have hw : Covers wr s.wr := by
+    obtain hw : Covers wr s.wr := by
       rw [ws]
       refine Covers.pair (Covers.one (gi.inScr ?_ ?_)) (Covers.one (gi.inScr ?_ ?_)) <;> omega_arith
     refine ⟨?_, Covers.append_left (Covers.right (Covers.one (by
@@ -283,13 +283,13 @@ theorem hash2b_vp {F : State → State → Prop} {c : State → Cfg} (hF : ∀ �
       rw [sp₁, sp₂, (SS.pub hF _ _ f₁).2, (SS.pub hF _ _ f₂).2]
   · obtain ⟨p, cv, wv⟩ := facts σ s hs
     obtain ⟨⟨s₀, hs₀, K, sp₀, F₀, W, e26, e27, e4⟩, e3, e5, e6⟩ := hs
-    have h := hF σ s₀ hs₀
+    obtain h := hF σ s₀ hs₀
     have gi := h.gi
     have big := gi.wBig
     have fit := gi.scrFit
-    have hN := HO.hN; have hso := HO.hso; have hB := HO.hB; have hk := HO.hk
+    obtain hN := HO.hN; have hso := HO.hso; have hB := HO.hB; have hk := HO.hk
     have lens := gi.lens3
-    have wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+    obtain wBh : sState + 32 ≤ wB G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
     refine WP.call (k := compressK HO.md) HO.callee.verified p cv wv
       (fun s' hrd hwr hsp hf hg _ hpost => ?_) HO.callee.noFrames
     simp only [compressK, State.withRegions_mem, State.callEntry_mem,
@@ -298,7 +298,7 @@ theorem hash2b_vp {F : State → State → Prop} {c : State → Cfg} (hF : ∀ �
       HO.iv s.mem _ fun j hj => by rw [GP.sa_add]; exact W j hj] at hpost
     refine ⟨s₀, hs₀, ?_, by rw [hsp, sp₀], ?_, ?_, by rw [hg _ (by decide), e26]⟩
     · refine ⟨fun r hr => ?_, by rw [hrd, K.2.1], by rw [hwr, K.2.2]⟩
-      have hp : r ∈ preserved := by revert hr; cases r <;> decide
+      obtain hp : r ∈ preserved := by revert hr; cases r <;> decide
       rw [hg r hp, K.gpr (by revert hr; cases r <;> decide)]
     · refine (F₀.mono (rs' := [G.rs sState (4 * Gh.k), G.rs (wB G.pLen) HO.P.so]) fun r hr => by
         simp only [List.mem_singleton] at hr; simp [hr]).trans (hf.sub fun r hr => ?_)
@@ -348,7 +348,7 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {dst : Nat
     obtain ⟨-, -, -, -, -, -, e₂⟩ := h₂
     simp only [List.mem_singleton] at hr; subst hr; rw [e₁, e₂]
   obtain ⟨s₀, hs₀, K, sp₀, F₀, St, e26⟩ := hs
-  have h := hF σ s₀ hs₀
+  obtain h := hF σ s₀ hs₀
   have gi := h.gi
   have big := gi.wBig
   have fit := gi.scrFit
@@ -356,15 +356,15 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {dst : Nat
   have hk0 := HO.hk0
   have hso := HO.hso
   have lens := gi.lens3
-  have wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
-  have wW : 1024 ≤ 8 * wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
-  have r28 : s.gpr .r28 = G.scr := by rw [K.gpr (by decide)]; exact gi.r28
+  obtain wBl : wB G.pLen < 2 ^ 15 := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain wW : 1024 ≤ 8 * wWords G.pLen := by rcases lens with e | e | e <;> rw [e] <;> decide
+  obtain r28 : s.gpr .r28 = G.scr := by rw [K.gpr (by decide)]; exact gi.r28
   rw [List.append_assoc, List.singleton_append]
   refine WP.wr (exec_addi (by decide) (by omega_using [hd2, wBl])) fun s₁ u₁ sp₁ _ => ?_
-  have a28 : s₁.gpr .r28 = G.sa dst := by rw [u₁.gpr, r28]
-  have a26 : s₁.gpr .r26 = G.sa sState := by rw [u₁.other _ (by decide), e26]
-  have rd₁ : s₁.rd = s₀.rd := by rw [u₁.rd, K.2.1]
-  have wr₁ : s₁.wr = s₀.wr := by rw [u₁.wr, K.2.2]
+  obtain a28 : s₁.gpr .r28 = G.sa dst := by rw [u₁.gpr, r28]
+  obtain a26 : s₁.gpr .r26 = G.sa sState := by rw [u₁.other _ (by decide), e26]
+  obtain rd₁ : s₁.rd = s₀.rd := by rw [u₁.rd, K.2.1]
+  obtain wr₁ : s₁.wr = s₀.wr := by rw [u₁.wr, K.2.2]
   refine WP.block_append (WP.mono (VG.Proof.MdStream.PPC64LE.out32_ok (n := Gh.k) true (by omega_using [hk])
     (by rw [a26, rd₁, wr₁]; exact gi.inRdWr (by omega_using [hd1, hd2, big, hk]) (by omega_using [hk0]))
     (by rw [a28, wr₁]; exact gi.inScr (by omega_using [hd2, big, hk]) (by omega_using [hk0]))
@@ -372,9 +372,9 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {dst : Nat
     fun s₂ ⟨g₂, rd₂, wr₂, sp₂, m₂⟩ => ?_)
   refine WP.wr (exec_subi (by decide) (by omega_using [hd2, wBl])) fun t u spt _ => WP.block_nil ?_
   rw [a28, a26, u₁.mem] at m₂
-  have mt : t.mem = VG.WriteBytes.writeBytes s.mem (G.sa dst) (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))) := by
+  obtain mt : t.mem = VG.WriteBytes.writeBytes s.mem (G.sa dst) (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))) := by
     rw [u.mem, m₂, HO.digest]
-  have dl : (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))).length = 4 * Gh.k := by
+  obtain dl : (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))).length = 4 * Gh.k := by
     rw [HO.digest, out_length]
   refine k σ s₀ t hs₀ ⟨fun r hr => ?_, by rw [u.rd, rd₂, rd₁], by rw [u.wr, wr₂, wr₁]⟩
     (by rw [spt, sp₂, sp₁, sp₀]) ?_ ?_
@@ -382,7 +382,7 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {dst : Nat
     · subst h28
       rw [u.gpr, g₂ _ (by decide) (by decide), a28, gi.r28, GP.sa, BitVec.add_sub_cancel]
     · have h8 : r ≠ .r8 := fun e => hr (by rw [e]; decide)
-      have h11 : r ≠ .r11 := fun e => hr (by rw [e]; decide)
+      obtain h11 : r ≠ .r11 := fun e => hr (by rw [e]; decide)
       rw [u.other _ h28, g₂ _ h8 h11, u₁.other _ h28, K.gpr hr]
   · show Frame [G.rs sState 32, G.rs (wB G.pLen) 1024, G.rs dst (4 * Gh.k)] _ _
     refine (F₀.sub fun r hr => ?_).trans ?_
@@ -394,7 +394,7 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {dst : Nat
       refine (VG.WriteBytes.writeBytes_frame _ _ _ (R := G.rs dst (4 * Gh.k)) ?_).mono (by simp)
       rw [dl]; exact Region.contains_self _ _
   · obtain ⟨ml, hb⟩ := hm σ s₀ hs₀
-    have e := VG.Proof.Sha256.Stream.bytesAt_writeBytes s.mem (G.sa dst) 0
+    obtain e := VG.Proof.Sha256.Stream.bytesAt_writeBytes s.mem (G.sa dst) 0
       (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))) (by rw [dl]; omega_using [hk])
     rw [BitVec.add_zero, Nat.zero_add, dl] at e
     show Spec.Sha256.bytesAt _ _ _ = _

@@ -166,7 +166,7 @@ theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧
       s'.mem = (s.mem.writeW (addr (s.gpr .esi) e) ve).writeW (addr (s.gpr .esi) a) va ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hn' := VG.nodup_reverse hn
+  obtain hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
   simp only [roundW, bigSig, ldq, stq, xb, xs, X, Y, List.cons_append, List.nil_append] at hn hn' ⊢
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil, and_true,
@@ -199,7 +199,7 @@ theorem scheduleW_ok (o2 o7 o15 o16 : Nat) (P Q : XReg) (hn : [P, Q, X, Y].Nodup
       let v := schedOf (m o2 1) (m o7 1) (m o15 1) (m o16 1) ++ schedOf (m o2 0) (m o7 0) (m o15 0) (m o16 0)
       (∀ r, r ≠ P → r ≠ Q → r ≠ X → r ≠ Y → s'.xmm r = s.xmm r) ∧ s'.xmm P = v ∧ s'.gpr = s.gpr ∧
       s'.mem = s.mem.writeW (addr (s.gpr .esi) o16) v ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hn' := VG.nodup_reverse hn
+  obtain hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
   simp only [scheduleW, sig5, ldo, sto, xb, xs, X, Y, List.cons_append, List.nil_append] at hn hn' ⊢
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil, and_true,
@@ -304,24 +304,24 @@ theorem wOff_last {j : Nat} (h : j % 16 = 15) : wOff j + 8 = mirOff := by simp o
 theorem xr_mod (t k : Nat) : xr t k = xr (t % 2) k := by simp only [xr, Nat.mod_mod]
 
 theorem xr_nodup (t : Nat) : [xr t 0, xr t 1, xr t 2, xr t 3, xr t 4, xr t 5, X, Y].Nodup := by
-  have key : ∀ p < 2, [xr p 0, xr p 1, xr p 2, xr p 3, xr p 4, xr p 5, X, Y].Nodup := by decide
+  obtain key : ∀ p < 2, [xr p 0, xr p 1, xr p 2, xr p 3, xr p 4, xr p 5, X, Y].Nodup := by decide
   simp only [xr_mod t]
   exact key _ (Nat.mod_lt _ (by decide))
 
 theorem xr_nodup_sched (t : Nat) : [xr t 3, xr t 4, X, Y].Nodup := by
-  have key : ∀ p < 2, [xr p 3, xr p 4, X, Y].Nodup := by decide
+  obtain key : ∀ p < 2, [xr p 3, xr p 4, X, Y].Nodup := by decide
   simp only [xr_mod t]
   exact key _ (Nat.mod_lt _ (by decide))
 
 theorem xr_succ (t k : Nat) (hk : k < 3) : xr (t + 1) k = xr t (k + 3) := by
-  have key : ∀ p < 2, ∀ k < 3, xr (p + 1) k = xr p (k + 3) := by decide
+  obtain key : ∀ p < 2, ∀ k < 3, xr (p + 1) k = xr p (k + 3) := by decide
   rw [xr_mod t, xr_mod (t + 1), show (t + 1) % 2 = (t % 2 + 1) % 2 by omega_using [], ← xr_mod]
   exact key _ (Nat.mod_lt _ (by decide)) k hk
 
 /-- The registers of roles 0–2 are none of the schedule's temporaries. -/
 theorem xr_sched_ne (t k : Nat) (hk : k < 3) :
     xr t k ≠ xr t 3 ∧ xr t k ≠ xr t 4 ∧ xr t k ≠ X ∧ xr t k ≠ Y := by
-  have key : ∀ p < 2, ∀ k < 3, xr p k ≠ xr p 3 ∧ xr p k ≠ xr p 4 ∧ xr p k ≠ X ∧ xr p k ≠ Y := by decide
+  obtain key : ∀ p < 2, ∀ k < 3, xr p k ≠ xr p 3 ∧ xr p k ≠ xr p 4 ∧ xr p k ≠ X ∧ xr p k ≠ Y := by decide
   rw [xr_mod t k, xr_mod t 3, xr_mod t 4]
   exact key _ (Nat.mod_lt _ (by decide)) k hk
 
@@ -393,12 +393,12 @@ theorem round_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : State} 
   let v := Spec.Sha512.rounds H M t
   try rewrite [show Spec.Sha512.rounds H M t = v from rfl] at *
   have hv : v = Spec.Sha512.rounds H M t := rfl
-  have hw : s.mem.readW (addr scr (wOff t)) 64 = W M t := hI.win t ht hu
+  obtain hw : s.mem.readW (addr scr (wOff t)) 64 = W M t := hI.win t ht hu
   have fit := c.fit
-  have vl := vOff_lt t
-  have e14 := vOff_sep t (i := 1) (j := 4) (by decide) (by decide) (by decide)
-  have e34 := vOff_sep t (i := 3) (j := 4) (by decide) (by decide) (by decide)
-  have rb : ∀ (o : Nat) (x : BitVec 64), o + 8 ≤ 64 → (vOff t 4 + 8 ≤ o ∨ o + 8 ≤ vOff t 4) →
+  obtain vl := vOff_lt t
+  obtain e14 := vOff_sep t (i := 1) (j := 4) (by decide) (by decide) (by decide)
+  obtain e34 := vOff_sep t (i := 3) (j := 4) (by decide) (by decide) (by decide)
+  obtain rb : ∀ (o : Nat) (x : BitVec 64), o + 8 ≤ 64 → (vOff t 4 + 8 ≤ o ∨ o + 8 ≤ vOff t 4) →
       (s.mem.writeW (addr (s.gpr .esi) (vOff t 4)) x).readW (addr (s.gpr .esi) o) 64 =
         s.mem.readW (addr (s.gpr .esi) o) 64 := fun o x ho h => by
     rw [c.esi]; exact readW64_write_ne _ _ (by have := vl 4; omega_using [fit, this]) (by omega_using [fit, ho]) h
@@ -409,22 +409,22 @@ theorem round_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : State} 
     (c.out (by have := vl 0; omega_using [this]) (by decide)) (c.out (by have := vl 4; omega_using [this]) (by decide))
     (fun x => rb _ x (vl 1) e14.symm) (fun x => rb _ x (vl 3) e34.symm)) fun s' h => ?_
   obtain ⟨hT, hNE, hAB, hg, hm, hrd, hwr⟩ := h
-  have h1 := hI.vars 1 (by decide) (by decide) (by decide)
-  have h3 := hI.vars 3 (by decide) (by decide) (by decide)
-  have h5 := hI.vars 5 (by decide) (by decide) (by decide)
-  have h6 := hI.vars 6 (by decide) (by decide) (by decide)
-  have h7 := hI.vars 7 (by decide) (by decide) (by decide)
+  obtain h1 := hI.vars 1 (by decide) (by decide) (by decide)
+  obtain h3 := hI.vars 3 (by decide) (by decide) (by decide)
+  obtain h5 := hI.vars 5 (by decide) (by decide) (by decide)
+  obtain h6 := hI.vars 6 (by decide) (by decide) (by decide)
+  obtain h7 := hI.vars 7 (by decide) (by decide) (by decide)
   simp only [c.esi, h1, h3, h5, h6, h7, hw, hI.xa, hI.xe, hI.xbc] at hT hNE hAB hm
-  have hnext : Spec.Sha512.rounds H M (t + 1) = roundKW v (K t) (W M t) := by
+  obtain hnext : Spec.Sha512.rounds H M (t + 1) = roundKW v (K t) (W M t) := by
     rw [rounds_succ, round_eq]
-  have e04 := vOff_sep t (i := 0) (j := 4) (by decide) (by decide) (by decide)
+  obtain e04 := vOff_sep t (i := 0) (j := 4) (by decide) (by decide) (by decide)
   -- The new memory, at the offsets of the working variables and the window.
-  have rm : ∀ o, o + 8 ≤ 200 → (vOff t 0 + 8 ≤ o ∨ o + 8 ≤ vOff t 0) →
+  obtain rm : ∀ o, o + 8 ≤ 200 → (vOff t 0 + 8 ≤ o ∨ o + 8 ≤ vOff t 0) →
       (vOff t 4 + 8 ≤ o ∨ o + 8 ≤ vOff t 4) → s'.mem.readW (addr scr o) 64 = s.mem.readW (addr scr o) 64 :=
     fun o ho h0 h4 => by
       rw [hm, readW64_write_ne _ _ (by have := vl 0; omega_using [fit, this]) (by omega_using [fit, ho]) h0,
         readW64_write_ne _ _ (by have := vl 4; omega_using [fit, this]) (by omega_using [fit, ho]) h4]
-  have mv : ∀ k, vOff t k + 8 ≤ mirOff := fun k => by have := vw_sep t k 0; simp only [wOff, mirOff] at *; omega_using [this]
+  obtain mv : ∀ k, vOff t k + 8 ≤ mirOff := fun k => by have := vw_sep t k 0; simp only [wOff, mirOff] at *; omega_using [this]
   refine ⟨fun k hk h0 h4 => ?_, ?_, ?_, ?_, fun j hj hj' => ?_, fun j hj hj' h0 => ?_,
     fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
   · rw [hnext]
@@ -477,14 +477,14 @@ theorem schedule_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
     (c : Ctx scr s) (hI : RInv scr H M s₀ t t s) (h16 : 16 ≤ t) (hev : t % 2 = 0) :
     WP isa (.block (schedule t)) s (RInv scr H M s₀ (t + 2) t) := by
   have fit := c.fit
-  have w' : ∀ j, wOff j + 16 ≤ 224 := fun j => by have := wOff_pair j; omega_using [this]
+  obtain w' : ∀ j, wOff j + 16 ≤ 224 := fun j => by have := wOff_pair j; omega_using [this]
   rw [schedule, WP.block_append_iff]
   refine WP.mono (scheduleW_ok _ _ _ _ _ _ (xr_nodup_sched t) s (c.inp (w' _) (by decide))
     (c.inp (w' _) (by decide)) (c.inp (w' _) (by decide)) (c.inp (w' _) (by decide))
     (c.out (w' _) (by decide))) fun s' ⟨hx, hP, hg, hm, hrd, hwr⟩ => ?_
   simp only [c.esi] at hm hP
   -- The four pairs of words it reads.
-  have p : ∀ i, 1 ≤ i → i ≤ 16 → i ≠ 1 →
+  obtain p : ∀ i, 1 ≤ i → i ≤ 16 → i ≠ 1 →
       qword (s.mem.readW (addr scr (wOff (t + 16 - i))) 128) 0 = W M (t - i) ∧
       qword (s.mem.readW (addr scr (wOff (t + 16 - i))) 128) 1 = W M (t - i + 1) := fun i hi hi' h1 => by
     rw [show wOff (t + 16 - i) = wOff (t - i) by simp only [wOff]; omega_using [h16, hi']]
@@ -497,33 +497,33 @@ theorem schedule_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
   rw [show t + 16 - 7 = t + 9 by omega_using []] at a7 b7
   rw [show t + 16 - 15 = t + 1 by omega_using []] at a15 b15
   rw [show t + 16 - 16 = t by omega_using []] at a16 b16
-  have W0 : W M t = schedOf (W M (t - 2)) (W M (t - 7)) (W M (t - 15)) (W M (t - 16)) := by
+  obtain W0 : W M t = schedOf (W M (t - 2)) (W M (t - 7)) (W M (t - 15)) (W M (t - 16)) := by
     rw [schedOf, ssig1_chain, ssig0_chain, ← W_ge M h16]
-  have W1 : W M (t + 1) =
+  obtain W1 : W M (t + 1) =
       schedOf (W M (t - 2 + 1)) (W M (t - 7 + 1)) (W M (t - 15 + 1)) (W M (t - 16 + 1)) := by
     rw [schedOf, ssig1_chain, ssig0_chain, show t - 2 + 1 = t + 1 - 2 by omega_using [h16],
       show t - 7 + 1 = t + 1 - 7 by omega_using [h16], show t - 15 + 1 = t + 1 - 15 by omega_using [h16],
       show t - 16 + 1 = t + 1 - 16 by omega_using [h16], ← W_ge M (by omega_using [h16])]
   rw [a2, b2, a7, b7, a15, b15, a16, b16, ← W0, ← W1] at hm hP
-  have tl : t % 16 ≠ 15 := by omega_using [hev]
+  obtain tl : t % 16 ≠ 15 := by omega_using [hev]
   -- The memory after the 16-byte store, and the copy of `Wₜ`.
-  have rm : ∀ o, o + 8 ≤ 224 → (wOff t + 16 ≤ o ∨ o + 8 ≤ wOff t) →
+  obtain rm : ∀ o, o + 8 ≤ 224 → (wOff t + 16 ≤ o ∨ o + 8 ≤ wOff t) →
       s'.mem.readW (addr scr o) 64 = s.mem.readW (addr scr o) 64 :=
     fun o ho h => by rw [hm, readW64_write128_ne _ _ (by have := w' t; omega_using [fit, this]) (by omega_using [fit, ho]) h]
-  have r0 : s'.mem.readW (addr scr (wOff t)) 64 = W M t := by
-    have e := readW_writeW128_q s.mem (addr scr (wOff t)) (W M (t + 1) ++ W M t) (j := 0) (by decide)
+  obtain r0 : s'.mem.readW (addr scr (wOff t)) 64 = W M t := by
+    obtain e := readW_writeW128_q s.mem (addr scr (wOff t)) (W M (t + 1) ++ W M t) (j := 0) (by decide)
     rw [addr_add0] at e
     rw [hm, e, qword_append_0]
-  have r1 : s'.mem.readW (addr scr (wOff (t + 1))) 64 = W M (t + 1) := by
+  obtain r1 : s'.mem.readW (addr scr (wOff (t + 1))) 64 = W M (t + 1) := by
     rw [hm, ← wOff_next tl, ← addr_add8 (by have := w' t; omega_using [fit, this]), readW_writeW128_q _ _ _ (by decide),
       qword_append_1]
-  have xk : ∀ k < 3, s'.xmm (xr t k) = s.xmm (xr t k) := fun k hk => by
+  obtain xk : ∀ k < 3, s'.xmm (xr t k) = s.xmm (xr t k) := fun k hk => by
     obtain ⟨n3, n4, nx, ny⟩ := xr_sched_ne t k hk
     exact hx _ n3 n4 nx ny
-  have mw : ∀ j, wOff j + 8 ≤ mirOff := fun j => by simp only [wOff, mirOff]; omega_using []
-  have mv : ∀ k, vOff t k + 8 ≤ wOff t := fun k => vw_sep t k t
+  obtain mw : ∀ j, wOff j + 8 ≤ mirOff := fun j => by simp only [wOff, mirOff]; omega_using []
+  obtain mv : ∀ k, vOff t k + 8 ≤ wOff t := fun k => vw_sep t k t
   -- The window after the store, but the copy.
-  have win' : ∀ j, j < max (t + 2) 16 → t + 2 ≤ j + 16 → s'.mem.readW (addr scr (wOff j)) 64 = W M j :=
+  obtain win' : ∀ j, j < max (t + 2) 16 → t + 2 ≤ j + 16 → s'.mem.readW (addr scr (wOff j)) 64 = W M j :=
     fun j hj hj' => by
     by_cases hjt : j = t
     · subst hjt; exact r0
@@ -535,7 +535,7 @@ theorem schedule_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
   split
   · rename_i h0
     refine WP.of_runBlock ?_
-    have o := c.out (o := mirOff) (n := 8) (by decide) (by decide)
+    obtain o := c.out (o := mirOff) (n := 8) (by decide) (by decide)
     simp only [stq, runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.store64, ea_at, hg,
       show s'.wr = s.wr from hwr, o, ↓reduceIte, hP, extractLsb'_qword, qword_append_0,
       Option.some.injEq, exists_eq_left']
@@ -582,7 +582,7 @@ abbrev wEnd (t : Nat) : Nat := t + t % 2
 theorem step_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : State} {t : Nat}
     (c₀ : Ctx scr s₀) (hI : RInv scr H M s₀ (wEnd t) t s) :
     WP isa (.block (step t)) s (RInv scr H M s₀ (wEnd (t + 1)) (t + 1)) := by
-  have c := c₀.of_rinv hI
+  obtain c := c₀.of_rinv hI
   simp only [wEnd] at hI ⊢
   unfold step
   by_cases h16 : t < 16 ∨ t % 2 = 1

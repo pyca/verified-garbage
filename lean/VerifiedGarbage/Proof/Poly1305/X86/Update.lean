@@ -164,18 +164,18 @@ theorem uprologue_ok {s₀ : State} (hp : UPre s₀) :
   have hfit := hp.st_fit
   refine WP.block_append (WP.mono (setup_ok (arg0_eq s₀) (hp.argIn (i := 0) (by decide)) hfit hp.st_in)
     fun s₁ ⟨F, A₁, c₁, hF, sv, co⟩ => ?_)
-  have esp₁ := A₁.gpr .esp (by decide)
-  have hF' := SetupF.of hF sv co
+  obtain esp₁ := A₁.gpr .esp (by decide)
+  obtain hF' := SetupF.of hF sv co
   refine wp_movm (a := addr (s₀.gpr .esp) (4 + 4 * 3)) (by rw [ea_at, esp₁])
     (by rw [A₁.rd, A₁.wr]; exact hp.argIn (by decide)) fun s₂ u₂ _ => ?_
   refine wp_movm (a := addr (s₀.gpr .esp) (4 + 4 * 1)) (by rw [ea_at, u₂.other _ (by decide), esp₁])
     (by rw [u₂.rd, u₂.wr, A₁.rd, A₁.wr]; exact hp.argIn (by decide)) fun s₃ u₃ _ => ?_
   refine wp_andx (readSrc_imm _ _) fun s₄ u₄ => wp_test fun s₅ k₅ z₅ => WP.block_nil ?_
-  have hm : s₅.mem = s₁.mem := by rw [k₅.2.1, u₄.mem, u₃.mem, u₂.mem]
-  have hedx₄ : s₄.gpr .edx = BitVec.ofNat 32 (kb s₀) := by
+  obtain hm : s₅.mem = s₁.mem := by rw [k₅.2.1, u₄.mem, u₃.mem, u₂.mem]
+  obtain hedx₄ : s₄.gpr .edx = BitVec.ofNat 32 (kb s₀) := by
     rw [u₄.gpr, u₃.gpr, u₂.mem, hp.arg_same A₁.frame (i := 1) (by decide), and15]
-  have hedx : s₅.gpr .edx = BitVec.ofNat 32 (kb s₀) := by rw [k₅.1 _ (by simp), hedx₄]
-  have hw : ∀ k < 32, words s₅.mem (stp s₀) k = F k := fun k hk => by rw [hm]; exact A₁.words k hk
+  obtain hedx : s₅.gpr .edx = BitVec.ofNat 32 (kb s₀) := by rw [k₅.1 _ (by simp), hedx₄]
+  obtain hw : ∀ k < 32, words s₅.mem (stp s₀) k = F k := fun k hk => by rw [hm]; exact A₁.words k hk
   refine ⟨F, hF', ⟨⟨c₁.keep (by rw [k₅.1 _ (by simp), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide)]) (by rw [k₅.2.2.2, u₄.wr, u₃.wr, u₂.wr]), ?_, by rw [hm]; exact A₁.frame,
       by rw [k₅.2.2.1, u₄.rd, u₃.rd, u₂.rd, A₁.rd], by rw [k₅.2.2.2, u₄.wr, u₃.wr, u₂.wr, A₁.wr],
@@ -214,17 +214,17 @@ theorem count_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State} (
     WP isa count s fun s' => Pre1 s₀ F s' ∧ s'.gpr .edx = stp s₀ + BitVec.ofNat 32 (kb s₀) ∧
       s'.gpr .eax = BitVec.ofNat 32 (min (16 - kb s₀) (dl s₀)) ∧
       s'.zf = some (decide (min (16 - kb s₀) (dl s₀) = 0)) := by
-  have hkl := kb_lt s₀
-  have hdl : dl s₀ < 2 ^ 32 := (arg s₀ 4).isLt
+  obtain hkl := kb_lt s₀
+  obtain hdl : dl s₀ < 2 ^ 32 := (arg s₀ 4).isLt
   rw [count_eq]
   refine WP.seq (wp_movi fun s₁ u₁ _ => wp_subx (readSrc_reg _ _) fun s₂ u₂ _ => ?_)
   refine wp_movm (a := addr (s₀.gpr .esp) (4 + 4 * 4))
     (by rw [ea_at, u₂.other _ (by decide), u₁.other _ (by decide), h.esp])
     (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr]; exact hp.argIn (by decide)) fun s₃ u₃ _ => ?_
   refine wp_cmpx (readSrc_reg _ _) fun s₄ k₄ _ cf₄ => WP.block_nil ?_
-  have heax₂ : s₂.gpr .eax = BitVec.ofNat 32 (16 - kb s₀) := by
+  obtain heax₂ : s₂.gpr .eax = BitVec.ofNat 32 (16 - kb s₀) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hedx, sub16_eq (by omega_using [hkl])]
-  have hecx₃ : s₃.gpr .ecx = arg s₀ 4 := by
+  obtain hecx₃ : s₃.gpr .ecx = arg s₀ 4 := by
     rw [u₃.gpr, u₂.mem, u₁.mem]; exact hp.arg_same h.frame (by decide)
   have hP₄ : Pre1 s₀ F s₄ := h.regs
     (by rw [k₄.gpr', u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
@@ -232,10 +232,10 @@ theorem count_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State} (
     (by rw [k₄.gpr', u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [k₄.2.1, u₃.mem, u₂.mem, u₁.mem]) (by rw [k₄.2.2.1, u₃.rd, u₂.rd, u₁.rd])
     (by rw [k₄.2.2.2, u₃.wr, u₂.wr, u₁.wr])
-  have hedx₄ : s₄.gpr .edx = BitVec.ofNat 32 (kb s₀) := by
+  obtain hedx₄ : s₄.gpr .edx = BitVec.ofNat 32 (kb s₀) := by
     rw [k₄.gpr', u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hedx]
-  have heax₄ : s₄.gpr .eax = BitVec.ofNat 32 (16 - kb s₀) := by rw [k₄.gpr', u₃.other _ (by decide), heax₂]
-  have hecx₄ : s₄.gpr .ecx = arg s₀ 4 := by rw [k₄.gpr', hecx₃]
+  obtain heax₄ : s₄.gpr .eax = BitVec.ofNat 32 (16 - kb s₀) := by rw [k₄.gpr', u₃.other _ (by decide), heax₂]
+  obtain hecx₄ : s₄.gpr .ecx = arg s₀ 4 := by rw [k₄.gpr', hecx₃]
   -- `eax = n`.
   refine WP.seq (WP.mono (Q := fun s₅ : State => Pre1 s₀ F s₅ ∧ s₅.gpr .edx = BitVec.ofNat 32 (kb s₀) ∧
       s₅.gpr .eax = BitVec.ofNat 32 (min (16 - kb s₀) (dl s₀))) ?_ fun s₅ ⟨hP₅, hedx₅, heax₅⟩ => ?_)
@@ -288,8 +288,8 @@ theorem copyFill_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State
   · simp only [decide_eq_false_iff_not] at h0
     refine WP.mono (copy_ok (m₀ := s₀.mem) hfit hn' (by omega_using [h0]) (by rw [h.wr]; exact hp.st_in)
       (hp.srcOk0 h.rd h.wr h.frame hn (by omega_using [h0])) h.esi hedx heax) fun s' hc => ?_
-    have hf := hc.frame hn'
-    have hU : UCommon s₀ F s' := h.toUCommon.buf (hc.keep _ (by decide) (by decide) (by decide) (by decide))
+    obtain hf := hc.frame hn'
+    obtain hU : UCommon s₀ F s' := h.toUCommon.buf (hc.keep _ (by decide) (by decide) (by decide) (by decide))
       (hc.keep _ (by decide) (by decide) (by decide) (by decide)) hf hc.rd hc.wr hfit
     exact ⟨{ hU with
       n_le := hn, n_le' := hn', esi := hc.esi
@@ -315,9 +315,9 @@ theorem absorbBuf_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Set
   obtain ⟨-, hv⟩ := h.acc hA
   obtain ⟨h4, hv'⟩ := ha hA
   refine ⟨h4, ?_⟩
-  have hl : (Bf s₀ ++ Dt s₀ n).length = 16 := by
+  obtain hl : (Bf s₀ ++ Dt s₀ n).length = 16 := by
     simp only [List.length_append, Dt, Bf, Poly1305.length_bytesAt]; omega_using [hfull]
-  have e : leNum (Bf s₀ ++ Dt s₀ n ++ [0x01]) = leNum (Bf s₀ ++ Dt s₀ n) + 2 ^ 128 * 1 := by
+  obtain e : leNum (Bf s₀ ++ Dt s₀ n ++ [0x01]) = leNum (Bf s₀ ++ Dt s₀ n) + 2 ^ 128 * 1 := by
     rw [Poly1305.leNum_append, hl]; rfl
   rw [Poly1305.absorbAll_nil] at hv
   rw [hv', buf_value hfit, ← hfull, h.buf, show (1 : BitVec 32).toNat = 1 from rfl, mod_step hv,
@@ -337,9 +337,9 @@ theorem sub_self_add (st : BitVec 32) (a : Nat) : st + BitVec.ofNat 32 a - st = 
 theorem fill_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State} (h : Pre1 s₀ F s)
     (hedx : s.gpr .edx = BitVec.ofNat 32 (kb s₀)) :
     WP isa fill s fun s' => (∃ c, Cons s₀ F c s') ∨ Done s₀ F s' := by
-  have hkl := kb_lt s₀
-  have hn : min (16 - kb s₀) (dl s₀) ≤ dl s₀ := Nat.min_le_right _ _
-  have hn' : kb s₀ + min (16 - kb s₀) (dl s₀) ≤ 16 := by
+  obtain hkl := kb_lt s₀
+  obtain hn : min (16 - kb s₀) (dl s₀) ≤ dl s₀ := Nat.min_le_right _ _
+  obtain hn' : kb s₀ + min (16 - kb s₀) (dl s₀) ≤ 16 := by
     have := Nat.min_le_left (16 - kb s₀) (dl s₀); omega_using [hkl, this]
   refine WP.seq (WP.mono (count_ok hp h hedx) fun s₁ ⟨h₁, hedx₁, heax₁, hz₁⟩ => ?_)
   refine WP.seq (WP.mono (copyFill_ok hp h₁ hn hn' hedx₁ heax₁ hz₁) fun s₂ ⟨h₂, hedx₂⟩ => ?_)
@@ -354,7 +354,7 @@ theorem fill_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s
     (fun hfull => ?_) (fun hnf => ?_)
   · exact WP.mono (absorbBuf_ok hp hF h₄ (by simpa using hfull)) fun s' h' => .inl ⟨_, h'⟩
   · simp only [decide_eq_false_iff_not] at hnf
-    have hnd : min (16 - kb s₀) (dl s₀) = dl s₀ := by omega_using [hkl, hn, hn', hnf]
+    obtain hnd : min (16 - kb s₀) (dl s₀) = dl s₀ := by omega_using [hkl, hn, hn', hnf]
     refine WP.block_nil (.inr { h₄.toUCommon with
       esi := by rw [h₄.esi, hnd]
       done := ⟨[], Bf s₀ ++ Dt s₀ (min (16 - kb s₀) (dl s₀)), h₄.acc, rfl, ?_, ?_, ?_⟩ })
@@ -389,7 +389,7 @@ its four words and `2¹²⁸`. -/
 theorem data_value {m : Mem} (hf : Frame [sR (stp s₀)] s₀.mem m) {c : Nat} (hc : c + 16 ≤ dl s₀) :
     blkv m (dp s₀ + BitVec.ofNat 32 c) 1 =
       leNum (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) 16 ++ [0x01]) := by
-  have hw : ∀ k < 4, wv m (dp s₀ + BitVec.ofNat 32 c) (4 * k) =
+  obtain hw : ∀ k < 4, wv m (dp s₀ + BitVec.ofNat 32 c) (4 * k) =
       w32 s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) k := fun k hk => by
     show (wd m _ (4 * k)).toNat = _
     rw [wd_frame hf (by simpa using hp.blk_disj hc hk)]
@@ -417,20 +417,20 @@ theorem left_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State} (h
     (hc : c ≤ dl s₀) (hesi : s.gpr .esi = dp s₀ + BitVec.ofNat 32 c) :
     WP isa (.block left) s fun s' => Keeps [.eax, .ecx] s s' ∧
       s'.gpr .eax = BitVec.ofNat 32 (dl s₀ - c) ∧ s'.zf = some (decide (dl s₀ - c = 0)) := by
-  have hdl : dl s₀ < 2 ^ 32 := (arg s₀ 4).isLt
+  obtain hdl : dl s₀ < 2 ^ 32 := (arg s₀ 4).isLt
   rw [left_eq]
   refine wp_movm (a := addr (s₀.gpr .esp) (4 + 4 * 3)) (by rw [ea_at, hU.esp])
     (by rw [hU.rd, hU.wr]; exact hp.argIn (by decide)) fun s₁ u₁ _ => ?_
   refine wp_movm (a := addr (s₀.gpr .esp) (4 + 4 * 4)) (by rw [ea_at, u₁.other _ (by decide), hU.esp])
     (by rw [u₁.rd, u₁.wr, hU.rd, hU.wr]; exact hp.argIn (by decide)) fun s₂ u₂ _ => ?_
   refine wp_addx (readSrc_reg _ _) fun s₃ u₃ _ => wp_subx (readSrc_reg _ _) fun s₄ u₄ z₄ => WP.block_nil ?_
-  have heax₃ : s₃.gpr .eax = dp s₀ + BitVec.ofNat 32 (dl s₀) := by
+  obtain heax₃ : s₃.gpr .eax = dp s₀ + BitVec.ofNat 32 (dl s₀) := by
     rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, hp.arg_same hU.frame (i := 3) (by decide),
       hp.arg_same hU.frame (i := 4) (by decide)]
     simp
-  have hesi₃ : s₃.gpr .esi = dp s₀ + BitVec.ofNat 32 c := by
+  obtain hesi₃ : s₃.gpr .esi = dp s₀ + BitVec.ofNat 32 c := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hesi]
-  have heax₄ : s₄.gpr .eax = BitVec.ofNat 32 (dl s₀ - c) := by
+  obtain heax₄ : s₄.gpr .eax = BitVec.ofNat 32 (dl s₀ - c) := by
     rw [u₄.gpr, heax₃, hesi₃, sub_left_eq hdl hc]
   refine ⟨⟨fun r hr => ?_, by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
     by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩, heax₄, ?_⟩
@@ -464,7 +464,7 @@ theorem whole_step {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Setup
     (fun hA => ⟨hF.coefs.congr fun k h₁ h₂ => h.keep k (by omega_using [h₁, h₂]) (not_hS (.inl ⟨by omega_using [h₁, h₂], h₂⟩)) (.inr h₁),
       (h.acc hA).1⟩)) fun s₁ ⟨S₁, h₁⟩ => ?_)
   refine wp_addx (readSrc_imm _ _) fun s₂ u₂ _ => ?_
-  have hC₂ : Cons s₀ F (c + 16) s₂ := by
+  obtain hC₂ : Cons s₀ F (c + 16) s₂ := by
     refine ⟨⟨h.ctx.keep (by rw [u₂.other _ (by decide), S₁.gpr _ (by decide)]) (by rw [u₂.wr, S₁.wr]),
       by rw [u₂.other _ (by decide), S₁.gpr _ (by decide)]; exact h.esp,
       by rw [u₂.mem]; exact h.frame.trans S₁.frame, by rw [u₂.rd, S₁.rd]; exact h.rd,
@@ -476,11 +476,11 @@ theorem whole_step {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Setup
     · obtain ⟨h4, hv⟩ := h₁ hA
       obtain ⟨-, hv₀⟩ := h.acc hA
       refine ⟨by rw [u₂.mem]; exact h4, ?_⟩
-      have h16 : (Bf s₀ ++ Dt s₀ c).length % 16 = 0 := by
+      obtain h16 : (Bf s₀ ++ Dt s₀ c).length % 16 = 0 := by
         simp only [List.length_append, Dt, Bf, Poly1305.length_bytesAt]; exact h.whole
-      have hb1 : 0 < (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) 16).length := by
+      obtain hb1 : 0 < (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) 16).length := by
         rw [Poly1305.length_bytesAt]; omega_using []
-      have hb2 : (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) 16).length ≤ 16 := by
+      obtain hb2 : (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) 16).length ≤ 16 := by
         rw [Poly1305.length_bytesAt]
       rw [u₂.mem, hv, h.esi, show (1 : BitVec 32).toNat = 1 from rfl, hp.data_value h.frame (by omega_using [hc, h₁, hA]),
         mod_step hv₀, Dt_add, ← List.append_assoc, Poly1305.absorbAll_append h16,
@@ -509,7 +509,7 @@ theorem whole_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF 
     (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) :
     WP isa whole s fun s' => (∃ c, Cons s₀ F c s' ∧ dl s₀ - c < 16) ∨ Done s₀ F s' := by
   obtain ⟨c, hcl, hesi⟩ := Pos.whole h
-  have hU : UCommon s₀ F s := by rcases h with ⟨_, hc⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
+  obtain hU : UCommon s₀ F s := by rcases h with ⟨_, hc⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
   refine WP.seq (WP.mono (Q := fun s₂ : State => Keeps [.eax, .ecx] s s₂ ∧ s₂.cf = some (decide (dl s₀ - c < 16)))
     (WP.block_append (WP.mono (left_ok hp hU hcl hesi) fun s₁ ⟨k₁, heax₁, _⟩ =>
       wp_cmpx (readSrc_imm _ _) fun s₂ k₂ _ cf₂ => WP.block_nil ⟨(k₁.trans k₂).mono, ?_⟩))
@@ -556,7 +556,7 @@ theorem rest_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State}
     rcases h with ⟨c, hc, _⟩ | hd
     · exact ⟨c, hc.c_le, hc.esi⟩
     · exact ⟨dl s₀, (Nat.le_refl _), hd.esi⟩
-  have hU : UCommon s₀ F s := by rcases h with ⟨_, hc, _⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
+  obtain hU : UCommon s₀ F s := by rcases h with ⟨_, hc, _⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
   refine WP.seq (WP.mono (Q := fun s₂ : State => Keeps [.eax, .ecx] s s₂ ∧
       s₂.gpr .eax = BitVec.ofNat 32 (dl s₀ - c) ∧ s₂.zf = some (decide (dl s₀ - c = 0)))
     (WP.block_append (WP.mono (left_ok hp hU hcl hesi) fun s₁ ⟨k₁, heax₁, _⟩ =>
@@ -575,18 +575,18 @@ theorem rest_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State}
     rcases h with ⟨c', hc, hlt⟩ | hd
     · have e : c' = c := add_ofNat_inj hc.c_le hcl (dl_lt s₀) (hc.esi.symm.trans hesi)
       subst e
-      have hc₂ := hc.regs k₂.gpr' k₂.gpr' k₂.gpr' k₂.2.1 k₂.2.2.1 k₂.2.2.2
+      obtain hc₂ := hc.regs k₂.gpr' k₂.gpr' k₂.gpr' k₂.2.1 k₂.2.2.1 k₂.2.2.2
       refine WP.seq (wp_mov fun s₃ u₃ _ => WP.block_nil ?_)
-      have hc₃ := hc₂.regs (u₃.other _ (by decide)) (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.mem
+      obtain hc₃ := hc₂.regs (u₃.other _ (by decide)) (u₃.other _ (by decide)) (u₃.other _ (by decide)) u₃.mem
         u₃.rd u₃.wr
       refine WP.mono (copy_ok (m₀ := s₀.mem) (j0 := 0) (n := dl s₀ - c') hfit (by omega_using [hlt]) (by omega_using [hlt, hb])
         (by rw [hc₃.wr]; exact hp.st_in)
         (hp.srcOk hc₃.rd hc₃.wr hc₃.frame (c := c') (n := dl s₀ - c') (by omega_using [hlt, hcl, hb]) (by omega_using [hlt, hb])) hc₃.esi
         (by rw [u₃.gpr, hc₂.ctx.edi]; simp) (by rw [u₃.other _ (by decide), heax₂])) fun s' hcp => ?_
-      have hf := hcp.frame (by omega_using [hlt])
-      have hU' : UCommon s₀ F s' := hc₃.toUCommon.buf (hcp.keep _ (by decide) (by decide) (by decide) (by decide))
+      obtain hf := hcp.frame (by omega_using [hlt])
+      obtain hU' : UCommon s₀ F s' := hc₃.toUCommon.buf (hcp.keep _ (by decide) (by decide) (by decide) (by decide))
         (hcp.keep _ (by decide) (by decide) (by decide) (by decide)) hf hcp.rd hcp.wr hfit
-      have hY : (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c') (dl s₀ - c')).length = dl s₀ - c' :=
+      obtain hY : (bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c') (dl s₀ - c')).length = dl s₀ - c' :=
         Poly1305.length_bytesAt _ _ _
       refine { hU' with
         esi := by rw [hcp.esi, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hc.c_le]
@@ -609,7 +609,7 @@ theorem uepilogue_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Set
       abiPreserved s₀ s' ∧ Proof.Poly1305.updateX86.post s₀ s' := by
   have hfit := hp.st_fit
   refine WP.mono (finish_ok hd.ctx) fun s₂ ⟨b₂, si₂, di₂, bp₂, sp₂, _, _, fr₂, z₂, hk₂, _, hr₂⟩ => ?_
-  have hframe : Frame [sR (stp s₀)] s₀.mem s₂.mem := hd.frame.trans fr₂
+  obtain hframe : Frame [sR (stp s₀)] s₀.mem s₂.mem := hd.frame.trans fr₂
   refine ⟨abi_of hF.saved ?_ ?_ ?_ ?_ (by rw [sp₂, hd.esp]) ?_, fun key msg hbuf hcnt => ?_⟩
   · rw [b₂, hd.keep 29 (by decide) (by decide) (by decide)]
   · rw [si₂, hd.keep 30 (by decide) (by decide) (by decide)]
@@ -618,7 +618,7 @@ theorem uepilogue_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Set
   · exact hframe.readW (Region.contains_self _ _) (by simpa using hp.ret_st) (by decide)
   · obtain ⟨W, rfl, hrep⟩ := buffered_split hfit hbuf (count_mod16 hcnt)
     obtain ⟨X, Y, hacc, hX, hY, hXY, hbufY⟩ := hd.done
-    have hA := A0_lt hrep
+    obtain hA := A0_lt hrep
     obtain ⟨hcl, hac⟩ := repr_acc hfit hrep
     obtain ⟨h4, hv⟩ := hacc hA
     rw [show W ++ Bf s₀ ++ bytesAt s₀.mem ((arg s₀ 3).setWidth 64) (arg s₀ 4).toNat = W ++ X ++ Y by
@@ -648,7 +648,7 @@ theorem Pre1.cons {s₀ s : State} {F : Nat → Nat} (h : Pre1 s₀ F s) (hk : k
     c_le := Nat.zero_le _, whole := by rw [hk]
     esi := by rw [h.esi]; simp
     acc := by
-      have e : Bf s₀ ++ Dt s₀ 0 = [] := by simp only [Bf, Dt, hk]; rfl
+      obtain e : Bf s₀ ++ Dt s₀ 0 = [] := by simp only [Bf, Dt, hk]; rfl
       rw [e]; exact h.acc }
 
 theorem update_correct {s₀ : State} (hp : UPre s₀) :
@@ -683,7 +683,7 @@ theorem update_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateX86.pre
     (h₂ : Proof.Poly1305.updateX86.pre s₂) (hpub : Proof.Poly1305.updateX86.pub s₁ s₂) :
     VG.X86.Taint.Agree updateτ₀ s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  have hp₁ := UPre.of _ h₁; have hp₂ := UPre.of _ h₂
+  obtain hp₁ := UPre.of _ h₁; have hp₂ := UPre.of _ h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, update_wf₀ hp₁, update_wf₀ hp₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => (Nat.zero_add k).symm ▸ argMem_eq hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega_using [hi]))
@@ -719,11 +719,11 @@ theorem update_ct : ConstantTime isa Proof.Poly1305.updateX86.pre Proof.Poly1305
 theorem update_verified :
     Verified X86.target Impl.Poly1305.X86.update (Proof.Poly1305.updateScratchContract X86.abi) :=
   Verified.of_correct update_ok update_ct (by
-    have a0 : arg updateSat 0 = 0x1000 := by decide
-    have a3 : arg updateSat 3 = 0x2000 := by decide
-    have a4 : arg updateSat 4 = 0 := by decide
-    have a5 : arg updateSat 5 = 0x3000 := by decide
-    have e : argAddr updateSat 0 = 0x4004 := by decide
+    obtain a0 : arg updateSat 0 = 0x1000 := by decide
+    obtain a3 : arg updateSat 3 = 0x2000 := by decide
+    obtain a4 : arg updateSat 4 = 0 := by decide
+    obtain a5 : arg updateSat 5 = 0x3000 := by decide
+    obtain e : argAddr updateSat 0 = 0x4004 := by decide
     have esp : updateSat.gpr .esp = 0x4000 := rfl
     sig_implies [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, Proof.Poly1305.updateX86,
       Proof.Poly1305.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]

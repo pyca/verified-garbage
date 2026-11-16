@@ -63,7 +63,7 @@ theorem mulHead_ok {s : State} {B : BitVec 32} {Z w N z y x t : Nat} (h : Ws s B
     (hN : N ≤ 256) (ht : t < N) (hz : z < N) (hy : y < N) (hx : x < N) (htz : t ≠ z) (htx : t ≠ x) :
     WP isa (mulHead z y x t) s fun u => Ws u B Z w N ∧ Keep B w [t] [sB] s.mem u.mem ∧ Rest opRegs s u ∧
       num u.mem B w t = (if num s.mem B w y % 2 = 0 then num s.mem B w z else num s.mem B w x) := by
-  have hsB : sB + 4 ≤ hdr := by decide
+  obtain hsB : sB + 4 ≤ hdr := by decide
   rw [mulHead, WP.seq_iff, ← List.append_nil (bitOf sB y)]
   refine bitOf_ok h hy hN hsB fun t1 h1 k1 e1 r1 => WP.block_nil ?_
   refine WP.mono (sel_ok h1 (o := t) (a := z) (b := x) (sl := sB) ht hz hx hN htz htx hsB
@@ -76,11 +76,11 @@ theorem mulTail_ok {s : State} {B : BitVec 32} {Z w N y : Nat} (h : Ws s B Z w N
       u.gpr .r6 = s.gpr .r6 - 1 ∧ u.z = (s.gpr .r6 - 1 == 0) ∧ num u.mem B w y = num s.mem B w y / 2 := by
   rw [mulTail, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_mov (op2_imm (by decide)) fun t5 u5 => WP.block_nil ?_
-  have h5 := h.of_upd u5 (by decide) (by decide) (by decide)
+  obtain h5 := h.of_upd u5 (by decide) (by decide) (by decide)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (half_ok h5 (j := y) hy hN (by rw [u5.gpr]; decide)) fun t6 ⟨h6, k6, e6, r6⟩ => ?_
   refine wp_subs (op2_imm (by decide)) fun u u7 hz7 => WP.block_nil ?_
-  have r6eq : t6.gpr .r6 = s.gpr .r6 := by rw [r6.gpr _ (by decide), u5.other _ (by decide)]
+  obtain r6eq : t6.gpr .r6 = s.gpr .r6 := by rw [r6.gpr _ (by decide), u5.other _ (by decide)]
   rw [u5.gpr, u5.mem] at e6
   rw [u5.mem] at k6
   refine ⟨h6.of_upd u7 (by decide) (by decide) (by decide), by rw [u7.mem]; exact k6,
@@ -101,43 +101,43 @@ theorem mulModStep_ok {s : State} {B : BitVec 32} {Z w N z y x a m t : Nat} (h :
         num u.mem B w x = (num s.mem B w x + num s.mem B w x) % num s.mem B w m) := by
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi
   -- The indices' facts, while the context is small.
-  have zN : z < N := by omega_arith
-  have yN : y < N := by omega_arith
-  have xN : x < N := by omega_arith
-  have aN : a < N := by omega_arith
-  have mN : m < N := by omega_arith
-  have tN : t < N := by omega_arith
-  have t1N : t + 1 + 2 < N := by omega_arith
-  have tz : t ≠ z := by omega_arith
-  have tx : t ≠ x := by omega_arith
-  have t1z : t + 1 ≠ z := by omega_arith
-  have t1t : t + 1 ≠ t := by omega_arith
-  have at0 : a ≠ t := by omega_arith
-  have at1 : a ≠ t + 1 := by omega_arith
-  have at2 : a ≠ t + 1 + 1 := by omega_arith
-  have at3 : a ≠ t + 1 + 2 := by omega_arith
-  have xt1 : x ≠ t + 1 := by omega_arith
-  have xt2 : x ≠ t + 1 + 1 := by omega_arith
-  have xt3 : x ≠ t + 1 + 2 := by omega_arith
-  have mt1 : m ≠ t + 1 := by omega_arith
-  have mt2 : m ≠ t + 1 + 1 := by omega_arith
-  have mt3 : m ≠ t + 1 + 2 := by omega_arith
-  have t1x : t + 1 ≠ x := by omega_arith
-  have yt0 : y ≠ t := by omega_arith
-  have yt1 : y ≠ t + 1 := by omega_arith
-  have yt2 : y ≠ t + 1 + 1 := by omega_arith
-  have yt3 : y ≠ t + 1 + 2 := by omega_arith
-  have zt1 : z ≠ t + 1 := by omega_arith
-  have zt2 : z ≠ t + 1 + 1 := by omega_arith
-  have zt3 : z ≠ t + 1 + 2 := by omega_arith
-  have mt0 : m ≠ t := by omega_arith
-  have xt0 : x ≠ t := by omega_arith
-  have zt0 : z ≠ t := by omega_arith
-  have fz := h.fit64 zN
-  have fy := h.fit64 yN
-  have fx := h.fit64 xN
-  have fa := h.fit64 aN
-  have fm := h.fit64 mN
+  obtain zN : z < N := by omega_arith
+  obtain yN : y < N := by omega_arith
+  obtain xN : x < N := by omega_arith
+  obtain aN : a < N := by omega_arith
+  obtain mN : m < N := by omega_arith
+  obtain tN : t < N := by omega_arith
+  obtain t1N : t + 1 + 2 < N := by omega_arith
+  obtain tz : t ≠ z := by omega_arith
+  obtain tx : t ≠ x := by omega_arith
+  obtain t1z : t + 1 ≠ z := by omega_arith
+  obtain t1t : t + 1 ≠ t := by omega_arith
+  obtain at0 : a ≠ t := by omega_arith
+  obtain at1 : a ≠ t + 1 := by omega_arith
+  obtain at2 : a ≠ t + 1 + 1 := by omega_arith
+  obtain at3 : a ≠ t + 1 + 2 := by omega_arith
+  obtain xt1 : x ≠ t + 1 := by omega_arith
+  obtain xt2 : x ≠ t + 1 + 1 := by omega_arith
+  obtain xt3 : x ≠ t + 1 + 2 := by omega_arith
+  obtain mt1 : m ≠ t + 1 := by omega_arith
+  obtain mt2 : m ≠ t + 1 + 1 := by omega_arith
+  obtain mt3 : m ≠ t + 1 + 2 := by omega_arith
+  obtain t1x : t + 1 ≠ x := by omega_arith
+  obtain yt0 : y ≠ t := by omega_arith
+  obtain yt1 : y ≠ t + 1 := by omega_arith
+  obtain yt2 : y ≠ t + 1 + 1 := by omega_arith
+  obtain yt3 : y ≠ t + 1 + 2 := by omega_arith
+  obtain zt1 : z ≠ t + 1 := by omega_arith
+  obtain zt2 : z ≠ t + 1 + 1 := by omega_arith
+  obtain zt3 : z ≠ t + 1 + 2 := by omega_arith
+  obtain mt0 : m ≠ t := by omega_arith
+  obtain xt0 : x ≠ t := by omega_arith
+  obtain zt0 : z ≠ t := by omega_arith
+  obtain fz := h.fit64 zN
+  obtain fy := h.fit64 yN
+  obtain fx := h.fit64 xN
+  obtain fa := h.fit64 aN
+  obtain fm := h.fit64 mN
   rw [mulModStep, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (mulHead_ok h hN tN zN yN xN tz tx) fun t2 ⟨h2, k2, r2, e2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -147,7 +147,7 @@ theorem mulModStep_ok {s : State} {B : BitVec 32} {Z w N z y x a m t : Nat} (h :
   refine WP.mono (addMod_ok h3 (o := x) (a := x) (b := x) (m := m) (z := z) (t := t + 1) hN xN xN xN mN zN t1N
     t1z t1x xt1 xt2 mt1 mt2 mt3 xt2 xt3) fun t4 ⟨h4, k4, r4, e4⟩ => ?_
   refine WP.mono (mulTail_ok h4 hN yN) fun u ⟨hu, k6, r6, c6, z6, e6⟩ => ?_
-  have r6eq : t4.gpr .r6 = s.gpr .r6 := by
+  obtain r6eq : t4.gpr .r6 = s.gpr .r6 := by
     rw [r4.gpr _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide)]
   refine ⟨hu, ((k2.mono.trans k3.mono).trans k4.mono).trans k6.mono,
     (r2.mono (by simp)).trans ((r3.mono (by simp)).trans ((r4.mono (by simp)).trans r6)),
@@ -155,21 +155,21 @@ theorem mulModStep_ok {s : State} {B : BitVec 32} {Z w N z y x a m t : Nat} (h :
   · rw [e6, k4.num (nm4 yt1 yt2 yt3 hyx) (by decide) fy, k3.num (nm4 yt1 yt2 yt3 hya) (by decide) fy,
       k2.num (nm1 yt0) (by decide) fy]
   · -- The values each step reads.
-    have z2 : num t2.mem B w z = 0 := by rw [k2.num (nm1 zt0) (by decide) fz, hZ]
-    have mm2 : num t2.mem B w m = num s.mem B w m := k2.num (nm1 mt0) (by decide) fm
-    have a2 : num t2.mem B w a = num s.mem B w a := k2.num (nm1 at0) (by decide) fa
-    have x2 : num t2.mem B w x = num s.mem B w x := k2.num (nm1 xt0) (by decide) fx
-    have d2 : num t2.mem B w t = num s.mem B w y % 2 * num s.mem B w x := by
+    obtain z2 : num t2.mem B w z = 0 := by rw [k2.num (nm1 zt0) (by decide) fz, hZ]
+    obtain mm2 : num t2.mem B w m = num s.mem B w m := k2.num (nm1 mt0) (by decide) fm
+    obtain a2 : num t2.mem B w a = num s.mem B w a := k2.num (nm1 at0) (by decide) fa
+    obtain x2 : num t2.mem B w x = num s.mem B w x := k2.num (nm1 xt0) (by decide) fx
+    obtain d2 : num t2.mem B w t = num s.mem B w y % 2 * num s.mem B w x := by
       rw [e2, hZ]
       rcases Nat.mod_two_eq_zero_or_one (num s.mem B w y) with e | e <;> simp [e]
-    have dlt : num t2.mem B w t < num s.mem B w m := by
+    obtain dlt : num t2.mem B w t < num s.mem B w m := by
       rw [d2]; rcases Nat.mod_two_eq_zero_or_one (num s.mem B w y) with e | e <;> simp [e] <;> omega_arith
-    have A3 := e3 z2 (by rw [a2, mm2]; exact hA) (by rw [mm2]; exact dlt) (by rw [mm2]; exact hM)
+    obtain A3 := e3 z2 (by rw [a2, mm2]; exact hA) (by rw [mm2]; exact dlt) (by rw [mm2]; exact hM)
     rw [a2, mm2, d2] at A3
-    have z3 : num t3.mem B w z = 0 := by rw [k3.num (nm4 zt1 zt2 zt3 hza) (by decide) fz, z2]
-    have mm3 : num t3.mem B w m = num s.mem B w m := by rw [k3.num (nm4 mt1 mt2 mt3 ham.symm) (by decide) fm, mm2]
-    have x3 : num t3.mem B w x = num s.mem B w x := by rw [k3.num (nm4 xt1 xt2 xt3 hxa) (by decide) fx, x2]
-    have X4 := e4 z3 (by rw [x3, mm3]; exact hX) (by rw [x3, mm3]; exact hX) (by rw [mm3]; exact hM)
+    obtain z3 : num t3.mem B w z = 0 := by rw [k3.num (nm4 zt1 zt2 zt3 hza) (by decide) fz, z2]
+    obtain mm3 : num t3.mem B w m = num s.mem B w m := by rw [k3.num (nm4 mt1 mt2 mt3 ham.symm) (by decide) fm, mm2]
+    obtain x3 : num t3.mem B w x = num s.mem B w x := by rw [k3.num (nm4 xt1 xt2 xt3 hxa) (by decide) fx, x2]
+    obtain X4 := e4 z3 (by rw [x3, mm3]; exact hX) (by rw [x3, mm3]; exact hX) (by rw [mm3]; exact hM)
     rw [x3, mm3] at X4
     refine ⟨?_, ?_⟩
     · rw [k6.num (nm1 hya.symm) (by decide) fa, k4.num (nm4 at1 at2 at3 hxa.symm) (by decide) fa, A3]
@@ -200,12 +200,12 @@ theorem mulModBody_ok {s0 u : State} {B : BitVec 32} {Z w N z y x a m t k i : Na
   have h := inv.ws
   have hi' := hi
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi'
-  have fz := h.fit64 (j := z) (by omega_arith)
-  have fm := h.fit64 (j := m) (by omega_arith)
-  have zk : num u.mem B w z = num s0.mem B w z := inv.keep.num (by simp; omega_arith) (by decide) fz
-  have mk : num u.mem B w m = num s0.mem B w m := inv.keep.num (by simp; omega_arith) (by decide) fm
+  obtain fz := h.fit64 (j := z) (by omega_arith)
+  obtain fm := h.fit64 (j := m) (by omega_arith)
+  obtain zk : num u.mem B w z = num s0.mem B w z := inv.keep.num (by simp; omega_arith) (by decide) fz
+  obtain mk : num u.mem B w m = num s0.mem B w m := inv.keep.num (by simp; omega_arith) (by decide) fm
   refine WP.mono (mulModStep_ok h hN hi) fun u' ⟨h', k', r', c', z', y', v'⟩ => ?_
-  have cnt : u.gpr .r6 - 1 = BitVec.ofNat 32 (k - (i + 1)) := by
+  obtain cnt : u.gpr .r6 - 1 = BitVec.ofNat 32 (k - (i + 1)) := by
     rw [inv.count]
     change BitVec.ofNat 32 (k - i) - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
@@ -213,9 +213,9 @@ theorem mulModBody_ok {s0 u : State} {B : BitVec 32} {Z w N z y x a m t k i : Na
   refine ⟨⟨h', inv.keep.trans k', inv.rest.trans r', by rw [c', cnt], ?_, fun hZ hA hX hM => ?_⟩, ?_⟩
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
   · obtain ⟨va, vx⟩ := inv.value hZ hA hX hM
-    have M0 : 0 < num s0.mem B w m := by omega_arith
-    have aLt : num u.mem B w a < num u.mem B w m := by rw [va, mk]; exact Nat.mod_lt _ M0
-    have xLt : num u.mem B w x < num u.mem B w m := by rw [vx, mk]; exact Nat.mod_lt _ M0
+    obtain M0 : 0 < num s0.mem B w m := by omega_arith
+    obtain aLt : num u.mem B w a < num u.mem B w m := by rw [va, mk]; exact Nat.mod_lt _ M0
+    obtain xLt : num u.mem B w x < num u.mem B w m := by rw [vx, mk]; exact Nat.mod_lt _ M0
     obtain ⟨va', vx'⟩ := v' (by rw [zk, hZ]) aLt xLt (by rw [mk]; exact hM)
     rw [va', vx', va, vx, inv.yv, mk]
     exact ⟨mulMod_arith, double_arith⟩
@@ -231,7 +231,7 @@ theorem mulMod_ok {s : State} {B : BitVec 32} {Z w N z y x a m t k : Nat} (h : W
       (num s.mem B w z = 0 → num s.mem B w a < num s.mem B w m → num s.mem B w x < num s.mem B w m →
         2 * num s.mem B w m ≤ 2 ^ (32 * w) →
         num u.mem B w a = (num s.mem B w a + num s.mem B w y % 2 ^ k * num s.mem B w x) % num s.mem B w m) := by
-  have start : MulI s B Z w N z y x a m t k 0 s :=
+  obtain start : MulI s B Z w N z y x a m t k 0 s :=
     ⟨h, Keep.refl _ _ _ _ _, Rest.refl _ _, by rw [c, Nat.sub_zero], by rw [Nat.pow_zero, Nat.div_one],
       fun _ hA hX _ => ⟨by rw [Nat.pow_zero, Nat.mod_one, Nat.zero_mul, Nat.add_zero, Nat.mod_eq_of_lt hA],
         by rw [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hX]⟩⟩
@@ -242,7 +242,7 @@ theorem mulMod_ok {s : State} {B : BitVec 32} {Z w N z y x a m t k : Nat} (h : W
   by_cases e : i + 1 = k
   · left
     refine ⟨by change some (!u'.z) = some false; simp [hz, e], iu.ws, iu.keep, iu.rest, fun hZ hA hX hM => ?_⟩
-    have v := (iu.value hZ hA hX hM).1
+    obtain v := (iu.value hZ hA hX hM).1
     rw [e] at v
     exact v
   · right

@@ -186,11 +186,11 @@ theorem storeCoefs_ok (s : State)
     WP isa (.block storeCoefs) s fun s' =>
       s'.mem = coefMem s.mem (s.gpr .r3) (rv s) (sv s) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
         s'.wr = s.wr := by
-  have o0 := hw (72 + 4 * 0) (by decide) (by decide); have o1 := hw (72 + 4 * 1) (by decide) (by decide)
-  have o2 := hw (72 + 4 * 2) (by decide) (by decide); have o3 := hw (72 + 4 * 3) (by decide) (by decide)
-  have o4 := hw (72 + 4 * 4) (by decide) (by decide); have o5 := hw (88 + 4 * 1) (by decide) (by decide)
-  have o6 := hw (88 + 4 * 2) (by decide) (by decide); have o7 := hw (88 + 4 * 3) (by decide) (by decide)
-  have o8 := hw (88 + 4 * 4) (by decide) (by decide)
+  obtain o0 := hw (72 + 4 * 0) (by decide) (by decide); have o1 := hw (72 + 4 * 1) (by decide) (by decide)
+  obtain o2 := hw (72 + 4 * 2) (by decide) (by decide); have o3 := hw (72 + 4 * 3) (by decide) (by decide)
+  obtain o4 := hw (72 + 4 * 4) (by decide) (by decide); have o5 := hw (88 + 4 * 1) (by decide) (by decide)
+  obtain o6 := hw (88 + 4 * 2) (by decide) (by decide); have o7 := hw (88 + 4 * 3) (by decide) (by decide)
+  obtain o8 := hw (88 + 4 * 4) (by decide) (by decide)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [storeCoefs, rOff, sOff, runBlock_cons, runStep_some,
     runBlock_nil, exec_store_w, o0, o1, o2, o3, o4, o5, o6, o7, o8, Option.some.injEq,
@@ -216,7 +216,7 @@ abbrev cR (st : Addr) : Region := ⟨off st 72, 36⟩
 
 theorem coefMem_frame (m : Mem) (st : Addr) (r s : Nat → BitVec 64) :
     Frame [cR st] m (coefMem m st r s) := by
-  have c : ∀ d, 72 ≤ d → d + 4 ≤ 108 → (cR st).Contains (off st d) (32 / 8) := fun d h₁ h₂ => by
+  obtain c : ∀ d, 72 ≤ d → d + 4 ≤ 108 → (cR st).Contains (off st d) (32 / 8) := fun d h₁ h₂ => by
     exact Offset.contains st h₁ (by omega_using [h₂]) (by decide)
   simp only [coefMem]
   refine (((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c (rOff 0) ?_ ?_)).writeW
@@ -236,11 +236,11 @@ theorem coefMem_coefs (m : Mem) (st : Addr) (r s : Nat → BitVec 64) (R : Nat)
   intro k hk i hi
   by_cases h : i ≤ k
   · have e : coef k i = rOff (k - i) := ite_eq_left h
-    have e' : cval R k i = lim R (k - i) := ite_eq_left h
+    obtain e' : cval R k i = lim R (k - i) := ite_eq_left h
     rw [e, e', ← hr (k - i) (by omega_using [hk, hi, h])]
     exact congrArg BitVec.toNat (coefMem_r m st r s (by omega_using [hk, hi, h]))
   · have e : coef k i = sOff (k + 5 - i) := ite_eq_right h
-    have e' : cval R k i = 5 * lim R (k + 5 - i) := ite_eq_right h
+    obtain e' : cval R k i = 5 * lim R (k + 5 - i) := ite_eq_right h
     rw [e, e', ← hs (k + 5 - i) (by omega_using [hk, hi]) (by omega_using [h])]
     exact congrArg BitVec.toNat (coefMem_s m st r s (by omega_using [hk, hi]) (by omega_using [h]))
 
@@ -297,13 +297,13 @@ theorem loadH_arith {W0 W1 W2 : Nat} (h0 : W0 < 2 ^ 64) (h1 : W1 < 2 ^ 64)
     lim (W0 + 2 ^ 64 * W1) 0 < 2 ^ 26 ∧ lim (W0 + 2 ^ 64 * W1) 1 < 2 ^ 27 ∧
     lim (W0 + 2 ^ 64 * W1) 2 < 2 ^ 26 ∧ lim (W0 + 2 ^ 64 * W1) 3 < 2 ^ 26 ∧
     (lim (W0 + 2 ^ 64 * W1) 4 + W2 * 2 ^ 24 % 2 ^ 64) % 2 ^ 64 < 2 ^ 26 := by
-  have e := val5_lim (W0 + 2 ^ 64 * W1)
-  have b0 := lim_lt (W0 + 2 ^ 64 * W1) (j := 0) (by decide)
-  have b1 := lim_lt (W0 + 2 ^ 64 * W1) (j := 1) (by decide)
-  have b2 := lim_lt (W0 + 2 ^ 64 * W1) (j := 2) (by decide)
-  have b3 := lim_lt (W0 + 2 ^ 64 * W1) (j := 3) (by decide)
-  have b4 := lim4_lt (N := W0 + 2 ^ 64 * W1) (by omega_using [h0, h1, e])
-  have hW2 : W2 ≤ 3 := by simp only [P] at hP; omega_using [hP, e]
+  obtain e := val5_lim (W0 + 2 ^ 64 * W1)
+  obtain b0 := lim_lt (W0 + 2 ^ 64 * W1) (j := 0) (by decide)
+  obtain b1 := lim_lt (W0 + 2 ^ 64 * W1) (j := 1) (by decide)
+  obtain b2 := lim_lt (W0 + 2 ^ 64 * W1) (j := 2) (by decide)
+  obtain b3 := lim_lt (W0 + 2 ^ 64 * W1) (j := 3) (by decide)
+  obtain b4 := lim4_lt (N := W0 + 2 ^ 64 * W1) (by omega_using [h0, h1, e])
+  obtain hW2 : W2 ≤ 3 := by simp only [P] at hP; omega_using [hP, e]
   generalize lim (W0 + 2 ^ 64 * W1) 0 = a0, lim (W0 + 2 ^ 64 * W1) 1 = a1,
     lim (W0 + 2 ^ 64 * W1) 2 = a2, lim (W0 + 2 ^ 64 * W1) 3 = a3,
     lim (W0 + 2 ^ 64 * W1) 4 = a4 at *
@@ -327,7 +327,7 @@ theorem coefMem_readW_low (m : Mem) (st : Addr) (r s : Nat → BitVec 64) {d : N
 
 theorem setup_ok (s₀ : State) (hw : sR (s₀.gpr .r3) ∈ s₀.wr) :
     WP isa (.block setup) s₀ (Setup s₀) := by
-  have i : ∀ d n, d + n ≤ 128 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r3) d) n :=
+  obtain i : ∀ d n, d + n ≤ 128 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .r3) d) n :=
     fun d n h => ⟨_, List.mem_append_right _ hw, contains_off h (by omega_using [h])⟩
   rw [setup, coeffs, loadH]
   simp only [List.append_assoc]
@@ -337,52 +337,52 @@ theorem setup_ok (s₀ : State) (hw : sR (s₀.gpr .r3) ∈ s₀.wr) :
     (by decide) (by decide) (by rw [k₁.2.2.1, k₁.2.2.2, x0₁]; exact i 24 8 (by decide))
     (by rw [k₁.2.2.1, k₁.2.2.2, x0₁]; exact i (24 + 8) 8 (by decide))) fun s₂ ⟨l₁, l₂, k₂⟩ => ?_)
   refine WP.block_append (WP.mono (clampR_ok s₂) fun s₃ ⟨c₁, c₂, k₃⟩ => ?_)
-  have k₁₃ := (k₁.trans k₂).trans k₃
+  obtain k₁₃ := (k₁.trans k₂).trans k₃
   refine WP.block_append (WP.mono (split_ok s₃ (by rw [(k₂.trans k₃).gpr']; exact m₁))
     fun s₄ ⟨r0, r1, r2, r3, r4, k₄⟩ => ?_)
   refine WP.block_append (WP.mono (times5_ok s₄) fun s₅ ⟨t1, t2, t3, t4, k₅⟩ => ?_)
-  have k₁₅ := (k₁₃.trans k₄).trans k₅
+  obtain k₁₅ := (k₁₃.trans k₄).trans k₅
   have x0₅ : s₅.gpr .r3 = s₀.gpr .r3 := k₁₅.gpr'
-  have m₅ : s₅.gpr .r20 = M26 := by rw [(((k₂.trans k₃).trans k₄).trans k₅).gpr']; exact m₁
+  obtain m₅ : s₅.gpr .r20 = M26 := by rw [(((k₂.trans k₃).trans k₄).trans k₅).gpr']; exact m₁
   refine WP.block_append (WP.mono (storeCoefs_ok s₅ fun d h₁ h₂ => by
     rw [k₁₅.2.2.2, x0₅]; exact ⟨_, hw, contains_off (by omega_using [h₁, h₂]) (by omega_using [h₁, h₂])⟩)
     fun s₆ ⟨mm₆, g₆, rd₆, wr₆⟩ => ?_)
-  have x0₆ : s₆.gpr .r3 = s₀.gpr .r3 := by rw [g₆, x0₅]
-  have rd₆' : s₆.rd = s₀.rd := by rw [rd₆, k₁₅.2.2.1]
-  have wr₆' : s₆.wr = s₀.wr := by rw [wr₆, k₁₅.2.2.2]
+  obtain x0₆ : s₆.gpr .r3 = s₀.gpr .r3 := by rw [g₆, x0₅]
+  obtain rd₆' : s₆.rd = s₀.rd := by rw [rd₆, k₁₅.2.2.1]
+  obtain wr₆' : s₆.wr = s₀.wr := by rw [wr₆, k₁₅.2.2.2]
   refine WP.block_append (WP.mono (load2_ok s₆ (n := .r3) (off := 0) (by decide) (by decide)
     (by decide) (by decide) (by rw [rd₆', wr₆', x0₆]; exact i 0 8 (by decide))
     (by rw [rd₆', wr₆', x0₆]; exact i (0 + 8) 8 (by decide))) fun s₇ ⟨l₃, l₄, k₇⟩ => ?_)
   refine WP.block_append (WP.mono (split_ok s₇ (by
     rw [k₇.gpr', g₆]; exact m₅))
     fun s₈ ⟨h0, h1, h2, h3, h4, k₈⟩ => ?_)
-  have k₇₈ := k₇.trans k₈
+  obtain k₇₈ := k₇.trans k₈
   refine WP.mono (moveH_ok s₈ (by
     rw [k₇₈.2.2.1, k₇₈.2.2.2, k₇₈.gpr', rd₆', wr₆', x0₆]; exact i 16 8 (by decide)))
     fun s₉ ⟨e0, e1, e2, e3, e4, k₉⟩ => ?_
-  have k₇₉ := k₇₈.trans k₉
-  have sub : ∀ r, r ∉ setupRegs → ∀ l : List Reg, (∀ x ∈ l, x ∈ setupRegs) → r ∉ l :=
+  obtain k₇₉ := k₇₈.trans k₉
+  obtain sub : ∀ r, r ∉ setupRegs → ∀ l : List Reg, (∀ x ∈ l, x ∈ setupRegs) → r ∉ l :=
     fun r hr l hl h => hr (hl r h)
-  have mem₉ : s₉.mem = coefMem s₀.mem (s₀.gpr .r3) (rv s₅) (sv s₅) := by
+  obtain mem₉ : s₉.mem = coefMem s₀.mem (s₀.gpr .r3) (rv s₅) (sv s₅) := by
     rw [k₇₉.2.1, mm₆, k₁₅.2.1, x0₅]
-  have R_eq : v s₃ .r18 + 2 ^ 64 * v s₃ .r19 = Rk s₀.mem (s₀.gpr .r3) := by
+  obtain R_eq : v s₃ .r18 + 2 ^ 64 * v s₃ .r19 = Rk s₀.mem (s₀.gpr .r3) := by
     simp only [v, c₁, c₂, l₁, l₂, x0₁, k₁.2.1]
-  have b : ∀ j < 4, lim (Rk s₀.mem (s₀.gpr .r3)) j < 2 ^ 26 := fun j hj => lim_lt _ hj
-  have b4 := lim4_lt (Rk_lt s₀.mem (s₀.gpr .r3))
-  have v5 : ∀ r ∈ [Reg.r12, .r14, .r15, .r16, .r17], v s₅ r = v s₄ r := fun r hr => by
+  obtain b : ∀ j < 4, lim (Rk s₀.mem (s₀.gpr .r3)) j < 2 ^ 26 := fun j hj => lim_lt _ hj
+  obtain b4 := lim4_lt (Rk_lt s₀.mem (s₀.gpr .r3))
+  obtain v5 : ∀ r ∈ [Reg.r12, .r14, .r15, .r16, .r17], v s₅ r = v s₄ r := fun r hr => by
     simp only [v]; rw [k₅.1 r (by revert hr; decide +revert)]
-  have q0 : v s₅ .r12 = lim (Rk s₀.mem (s₀.gpr .r3)) 0 := by rw [v5 .r12 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false]), r0, R_eq]
-  have q1 : v s₅ .r14 = lim (Rk s₀.mem (s₀.gpr .r3)) 1 := by rw [v5 .r14 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r1, R_eq]
-  have q2 : v s₅ .r15 = lim (Rk s₀.mem (s₀.gpr .r3)) 2 := by rw [v5 .r15 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r2, R_eq]
-  have q3 : v s₅ .r16 = lim (Rk s₀.mem (s₀.gpr .r3)) 3 := by rw [v5 .r16 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r3, R_eq]
-  have q4 : v s₅ .r17 = lim (Rk s₀.mem (s₀.gpr .r3)) 4 := by rw [v5 .r17 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_false, or_true]), r4, R_eq]
-  have p1 : v s₅ .r7 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 1 := by
+  obtain q0 : v s₅ .r12 = lim (Rk s₀.mem (s₀.gpr .r3)) 0 := by rw [v5 .r12 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false]), r0, R_eq]
+  obtain q1 : v s₅ .r14 = lim (Rk s₀.mem (s₀.gpr .r3)) 1 := by rw [v5 .r14 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r1, R_eq]
+  obtain q2 : v s₅ .r15 = lim (Rk s₀.mem (s₀.gpr .r3)) 2 := by rw [v5 .r15 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r2, R_eq]
+  obtain q3 : v s₅ .r16 = lim (Rk s₀.mem (s₀.gpr .r3)) 3 := by rw [v5 .r16 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), r3, R_eq]
+  obtain q4 : v s₅ .r17 = lim (Rk s₀.mem (s₀.gpr .r3)) 4 := by rw [v5 .r17 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_false, or_true]), r4, R_eq]
+  obtain p1 : v s₅ .r7 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 1 := by
     rw [t1, ← v5 .r14 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), q1, times5_eq (b 1 (by decide))]
-  have p2 : v s₅ .r8 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 2 := by
+  obtain p2 : v s₅ .r8 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 2 := by
     rw [t2, ← v5 .r15 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), q2, times5_eq (b 2 (by decide))]
-  have p3 : v s₅ .r9 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 3 := by
+  obtain p3 : v s₅ .r9 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 3 := by
     rw [t3, ← v5 .r16 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self, or_false, or_true]), q3, times5_eq (b 3 (by decide))]
-  have p4 : v s₅ .r10 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 4 := by
+  obtain p4 : v s₅ .r10 = 5 * lim (Rk s₀.mem (s₀.gpr .r3)) 4 := by
     rw [t4, ← v5 .r17 (by simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_false, or_true]), q4, times5_eq (Nat.lt_trans b4 (by decide))]
   refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, fun hlt => ?_⟩
   · rw [k₇₉.1 r (sub r hr _ (by decide)), g₆, k₁₅.1 r (sub r hr _ (by decide))]
@@ -407,9 +407,9 @@ theorem setup_ok (s₀ : State) (hw : sR (s₀.gpr .r3) ∈ s₀.wr) :
       simp only [w64]
       rw [k₇₈.2.1, k₇₈.gpr', mm₆, k₁₅.2.1, x0₆, x0₅]
       exact congrArg BitVec.toNat (coefMem_readW_low _ _ _ _ hd)
-    have w0 : v s₇ .r18 = w64 s₀.mem (s₀.gpr .r3) 0 := by
+    obtain w0 : v s₇ .r18 = w64 s₀.mem (s₀.gpr .r3) 0 := by
       simp only [v, l₃]; rw [← hs 0 (by decide), k₇₈.2.1, k₇₈.gpr']
-    have w1 : v s₇ .r19 = w64 s₀.mem (s₀.gpr .r3) 8 := by
+    obtain w1 : v s₇ .r19 = w64 s₀.mem (s₀.gpr .r3) 8 := by
       simp only [v, l₄]; rw [← hs 8 (by decide), k₇₈.2.1, k₇₈.gpr']
     rw [leNum_acc] at hlt ⊢
     rw [h4, w0, w1] at e4

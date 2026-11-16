@@ -38,9 +38,9 @@ theorem imm16 {n : Nat} (hn : n < 65536) : BitVec.setWidth 64 (BitVec.ofNat 16 n
 theorem prfHead_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block (scr .x9 sMsg ++ ([.ldrSp .x11 oI, .ldrSp .x12 oK] : List Instr))) t fun u => Same t u ∧
       u.gpr .x9 = slot t Q oScr + BitVec.ofNat 64 sMsg ∧ u.gpr .x11 = slot t Q oI ∧ u.gpr .x12 = slot t Q oK := by
-  have h184 := h 184 (by decide)
-  have h200 := h 200 (by decide)
-  have h136 := h 136 (by decide)
+  obtain h184 := h 184 (by decide)
+  obtain h200 := h 200 (by decide)
+  obtain h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
@@ -52,7 +52,7 @@ theorem prfUpdArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) {n
     WP isa (.block (prfUpdArgs n)) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = BitVec.ofNat 64 64 ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sMsg ∧
       u.gpr .x3 = BitVec.ofNat 64 n ∧ u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h184 := h 184 (by decide)
+  obtain h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [prfUpdArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
@@ -67,8 +67,8 @@ theorem prfFinArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) {n
       u.gpr .x1 = slot t Q oScr + BitVec.ofNat 64 sOuter ∧ u.gpr .x2 = BitVec.ofNat 64 (64 + n) ∧
       u.gpr .x3 = (slot t Q oI <<< 5) + (slot t Q oScr + BitVec.ofNat 64 dst) ∧
       u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h184 := h 184 (by decide)
-  have h200 := h 200 (by decide)
+  obtain h184 := h 184 (by decide)
+  obtain h200 := h 200 (by decide)
   apply WP.of_runBlock
   simp only [prfFinArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
@@ -90,7 +90,7 @@ theorem incrCL_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
     WP isa (.block (incr [.movz .x .x12 8 0])) t fun u => SameR t u ∧
       u.mem = t.mem.writeW (Q + BitVec.ofNat 64 oI) (slot t Q oI + 1) ∧
       u.gpr .x12 = BitVec.ofNat 64 8 - (slot t Q oI + 1) := by
-  have h200 := h 200 (by decide)
+  obtain h200 := h 200 (by decide)
   apply WP.of_runBlock
   simp only [incr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, State.read, State.load, State.store, Size.bits, Size.bytes, BitVec.setWidth_eq, Nat.reduceMul,
@@ -104,9 +104,9 @@ theorem incrAM_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
     WP isa (.block (incr [.ldrSp .x12 oNB])) t fun u => SameR t u ∧
       u.mem = t.mem.writeW (Q + BitVec.ofNat 64 oI) (slot t Q oI + 1) ∧
       u.gpr .x12 = slot t Q oNB - (slot t Q oI + 1) := by
-  have h200 := h 200 (by decide)
-  have h208 := h 208 (by decide)
-  have e : (t.mem.writeW (Q + BitVec.ofNat 64 200) (slot t Q oI + 1)).readW (Q + BitVec.ofNat 64 208) 64 =
+  obtain h200 := h 200 (by decide)
+  obtain h208 := h 208 (by decide)
+  obtain e : (t.mem.writeW (Q + BitVec.ofNat 64 200) (slot t Q oI + 1)).readW (Q + BitVec.ofNat 64 208) 64 =
       slot t Q oNB :=
     Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)
   apply WP.of_runBlock
@@ -160,19 +160,19 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
   have hnQ := hL.nQ
   -- The message.
   refine WP.seq (WP.mono (prfHead_ok hc.ctx.sp hc.slots) fun t₁ ⟨S₁, x9, x11, x12⟩ => ?_)
-  have hc₁ := hc.same S₁
+  obtain hc₁ := hc.same S₁
   simp only [hc.ctx.kept.scr, hc.ctx.kept.k] at x9 x12
   rw [hctr] at x11
   refine WP.seq (WP.mono (hmsg t₁ hc₁ x9 x11 x12) fun t₂ ⟨R₂, F₂, hm₂⟩ => ?_)
-  have msgSafe : ∀ r ∈ [(⟨scA L sMsg, 16⟩ : Region)], Safe L r := fun r hr => by
+  obtain msgSafe : ∀ r ∈ [(⟨scA L sMsg, 16⟩ : Region)], Safe L r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact .inl (scSub (by decide))
-  have hc₂ := hc₁.step hL R₂.rd R₂.wr R₂.sp (fun r _ => by rw [R₂.v]) (fun r hr _ => R₂.cs r hr) F₂ msgSafe
-  have k₂ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
+  obtain hc₂ := hc₁.step hL R₂.rd R₂.wr R₂.sp (fun r _ => by rw [R₂.v]) (fun r hr _ => R₂.cs r hr) F₂ msgSafe
+  obtain k₂ : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₂.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := fun a l h₁ h₂ => by
     rw [bytes_keep F₂ (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact scD hL (.inr (by unfold sMsg; omega_arith)) h₂ (by decide))
       (by unfold scrBytes at h₂; omega_arith), S₁.mem]
-  have sl₂ : ∀ d, d + 8 ≤ frameBytes → slot t₂ L.Q d = slot t L.Q d := fun d hd => by
+  obtain sl₂ : ∀ d, d + 8 ≤ frameBytes → slot t₂ L.Q d = slot t L.Q d := fun d hd => by
     show t₂.mem.readW _ 64 = t.mem.readW _ 64
     rw [F₂.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -180,15 +180,15 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
         hL.sc_sub)))) (by decide), S₁.mem]
   -- HMAC's `init` with `KDK`.
   refine mac_init hL hP hc₂ (key := sKDK) (by decide) (by decide) fun u hu => ?_
-  have hkd₂ : Spec.Rsa.bytesAt t₂.mem (scA L sKDK) 32 = kd := by rw [k₂ _ _ (by decide) (by decide), hkd]
+  obtain hkd₂ : Spec.Rsa.bytesAt t₂.mem (scA L sKDK) 32 = kd := by rw [k₂ _ _ (by decide) (by decide), hkd]
   rw [hkd₂] at hu
-  have hk0 := blockKey_length (key := kd) (by rw [← hkd]; simp [Spec.Rsa.bytesAt])
+  obtain hk0 := blockKey_length (key := kd) (by rw [← hkd]; simp [Spec.Rsa.bytesAt])
   -- `update` with the message.
   refine WP.seq (WP.mono (prfUpdArgs_ok hu.post.ctx.sp hu.post.slots (n := label.length + 4) (by omega_arith))
     fun t₄ ⟨S₄, y0, y1, y2, y3, y4⟩ => ?_)
-  have hc₄ := hu.post.same S₄
+  obtain hc₄ := hu.post.same S₄
   simp only [hu.post.ctx.kept.scr] at y0 y2 y4
-  have hmsg₄ : Spec.Rsa.bytesAt t₄.mem (scA L sMsg) (label.length + 4) = text := by
+  obtain hmsg₄ : Spec.Rsa.bytesAt t₄.mem (scA L sMsg) (label.length + 4) = text := by
     rw [S₄.mem, hu.keep.scr _ _ (by decide) (by unfold sMsg scrBytes; omega_arith) (.inr (Nat.zero_le _)), hm₂]
   refine WP.seq (WP.mono (mac_upd hL hP hc₄ (n := label.length + 4) y0 y1 y2 (by rw [y3, BitVec.toNat_ofNat]; omega_arith) y4
     (Covers.right (scCov hL hc₄.ctx (by unfold sMsg scrBytes; omega_arith)))
@@ -200,8 +200,8 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
   -- HMAC's `finalize` to the block.
   refine WP.seq (WP.mono (prfFinArgs_ok hc₅.ctx.sp hc₅.slots (n := label.length + 4) (dst := dst) (by omega_arith) hdst)
     fun t₆ ⟨S₆, z0, z1, z2, z3, z4⟩ => ?_)
-  have hc₆ := hc₅.same S₆
-  have sl₅ : slot t₅ L.Q oI = BitVec.ofNat 64 i := by
+  obtain hc₆ := hc₅.same S₆
+  obtain sl₅ : slot t₅ L.Q oI = BitVec.ofNat 64 i := by
     show t₅.mem.readW _ 64 = _
     rw [kp₅.slot _ (Nat.le_refl _) (by decide), S₄.mem, hu.keep.slot _ (Nat.le_refl _) (by decide)]
     exact (sl₂ oI (by decide)).trans hctr
@@ -211,23 +211,23 @@ theorem prfBody_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
     (by rw [htl]; omega_arith) z0 z1 (by rw [z2, htl]) z3 z4 (by rw [S₆.mem]; exact hi₅)
     (by rw [S₆.mem]; exact ho₅)) fun t₇ ⟨hc₇, hb₇, kp₇⟩ => ?_)
   -- The counter.
-  have nb₇ : slot t₇ L.Q oNB = nbv := by
+  obtain nb₇ : slot t₇ L.Q oNB = nbv := by
     show t₇.mem.readW _ 64 = _
     rw [kp₇.slot _ (by decide) (by decide), S₆.mem, kp₅.slot _ (by decide) (by decide), S₄.mem,
       hu.keep.slot _ (by decide) (by decide)]
     exact (sl₂ oNB (by decide)).trans hnb
-  have ct₇ : slot t₇ L.Q oI = BitVec.ofNat 64 i := by
+  obtain ct₇ : slot t₇ L.Q oI = BitVec.ofNat 64 i := by
     show t₇.mem.readW _ 64 = _
     rw [kp₇.slot _ (Nat.le_refl _) (by decide), S₆.mem]
     exact sl₅
   refine WP.mono (hcount t₇ hc₇ nb₇) fun w ⟨Sw, mw, xw⟩ => ?_
-  have Fw : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩] t₇.mem w.mem := by
+  obtain Fw : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩] t₇.mem w.mem := by
     rw [mw]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hcw := hc₇.step hL Sw.rd Sw.wr Sw.sp (fun r _ => by rw [Sw.v]) (fun r hr _ => Sw.cs r hr) Fw
+  obtain hcw := hc₇.step hL Sw.rd Sw.wr Sw.sp (fun r _ => by rw [Sw.v]) (fun r hr _ => Sw.cs r hr) Fw
     fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (.inr ⟨oI, Nat.le_refl _, by show oI + 8 ≤ frameBytes; decide, rfl⟩)
-  have one : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
+  obtain one : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
-  have kw : ∀ a l, a + l ≤ scrBytes →
+  obtain kw : ∀ a l, a + l ≤ scrBytes →
       Spec.Rsa.bytesAt w.mem (scA L a) l = Spec.Rsa.bytesAt t₇.mem (scA L a) l := fun a l h₂ =>
     bytes_keep Fw (fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -335,9 +335,9 @@ theorem clInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
     WP isa (.block clInit) t fun u => SameR t u ∧
       u.mem = (t.mem.writeW (Q + BitVec.ofNat 64 oI) (0 : BitVec 64)).writeW (Q + BitVec.ofNat 64 oNB)
         (((t.mem.writeW (Q + BitVec.ofNat 64 oI) (0 : BitVec 64)).readW (Q + BitVec.ofNat 64 oK) 64 + 31) >>> 5) := by
-  have h136 := h 136 (by decide)
-  have w200 := hw 200 (by decide) (by decide)
-  have w208 := hw 208 (by decide) (by decide)
+  obtain h136 := h 136 (by decide)
+  obtain w200 := hw 200 (by decide) (by decide)
+  obtain w208 := hw 208 (by decide) (by decide)
   apply WP.of_runBlock
   simp only [clInit, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.read, State.load, State.store,
     Size.bits, Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp,
@@ -395,16 +395,16 @@ theorem clStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
   have hnQ := hL.nQ
   refine WP.mono (clInit_ok hc.ctx.sp hc.slots fun d _ h₂ => hc.ctx.inFr (by unfold frameBytes; omega_arith))
     fun t₁ ⟨S₁, m₁⟩ => ?_
-  have F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩, ⟨L.Q + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
+  obtain F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩, ⟨L.Q + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
     rw [m₁]
     refine Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_cons_self ..) _ ?_)
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ ?_ <;> exact Region.contains_self _ _
-  have hc₁ := hc.step hL S₁.rd S₁.wr S₁.sp (fun r _ => by rw [S₁.v]) (fun r hr _ => S₁.cs r hr) F₁ fun r hr => by
+  obtain hc₁ := hc.step hL S₁.rd S₁.wr S₁.sp (fun r _ => by rw [S₁.v]) (fun r hr _ => S₁.cs r hr) F₁ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inr (.inr ⟨oI, Nat.le_refl _, by show oI + 8 ≤ frameBytes; decide, rfl⟩)
     · exact .inr (.inr ⟨oNB, by decide, by show oNB + 8 ≤ frameBytes; decide, rfl⟩)
-  have kp₁ : ∀ a l, a + l ≤ scrBytes →
+  obtain kp₁ : ∀ a l, a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := fun a l h₂ =>
     bytes_keep F₁ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -412,13 +412,13 @@ theorem clStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
       · exact (hL.stk_buf (d := oI) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm
       · exact (hL.stk_buf (d := oNB) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm)
       (by unfold scrBytes at h₂; omega_arith)
-  have sep : ∀ a b, a + 8 ≤ b ∨ b + 8 ≤ a → a + 8 ≤ 360 → b + 8 ≤ 360 → Mem.Sep (L.Q + BitVec.ofNat 64 a) 8
+  obtain sep : ∀ a b, a + 8 ≤ b ∨ b + 8 ≤ a → a + 8 ≤ 360 → b + 8 ≤ 360 → Mem.Sep (L.Q + BitVec.ofNat 64 a) 8
       (L.Q + BitVec.ofNat 64 b) 8 := fun a b h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
-  have ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
+  obtain ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_sep (sep _ _ (by decide) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self64]; rfl
-  have nb₁ : slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) := by
+  obtain nb₁ : slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_self64, Mem.readW_writeW_sep (sep _ _ (by decide) (by decide) (by decide)) (by decide),
       hc.ctx.kept.k, nb_eq hk]
@@ -459,20 +459,20 @@ theorem amStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t)
         Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := by
   have hnQ := hL.nQ
   refine WP.mono (amInit_ok hc.ctx.sp (hc.ctx.inFr (d := 200) (by decide))) fun t₁ ⟨S₁, m₁⟩ => ?_
-  have F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩] t.mem t₁.mem := by
+  obtain F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩] t.mem t₁.mem := by
     rw [m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hc₁ := hc.step hL S₁.rd S₁.wr S₁.sp (fun r _ => by rw [S₁.v]) (fun r hr _ => S₁.cs r hr) F₁ fun r hr => by
+  obtain hc₁ := hc.step hL S₁.rd S₁.wr S₁.sp (fun r _ => by rw [S₁.v]) (fun r hr _ => S₁.cs r hr) F₁ fun r hr => by
     rw [List.mem_singleton.mp hr]; exact .inr (.inr ⟨oI, Nat.le_refl _, by show oI + 8 ≤ frameBytes; decide, rfl⟩)
-  have kp₁ : ∀ a l, a + l ≤ scrBytes →
+  obtain kp₁ : ∀ a l, a + l ≤ scrBytes →
       Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := fun a l h₂ =>
     bytes_keep F₁ (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (hL.stk_buf (d := oI) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm)
       (by unfold scrBytes at h₂; omega_arith)
-  have ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
+  obtain ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_self64]; rfl
-  have nb₁ : slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) := by
+  obtain nb₁ : slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by unfold oNB; omega_arith) (by unfold oI; omega_arith))
       (by decide)]
@@ -484,7 +484,7 @@ theorem amLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (h 
   have hk := hL.k1024
   have hk64 := hL.k64
   refine WP.seq (WP.mono (amStart_ok hL h.post h.nb) fun t₁ ⟨hc₁, ct₁, nb₁, kp₁⟩ => ?_)
-  have hN0 : 0 < (L.k.toNat + 31) / 32 := by omega_arith
+  obtain hN0 : 0 < (L.k.toNat + 31) / 32 := by omega_arith
   refine WP.mono (prfLoop_ok (v := v) hL hP (label := messageLabel) (len := amLen) (count := [.ldrSp .x12 oNB])
     (dst := sAM) (N := (L.k.toNat + 31) / 32) (C := BitVec.ofNat 64 ((L.k.toNat + 31) / 32)) (t₀ := t₁)
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "message" ++ Spec.Rsa.i2osp (8 * L.k.toNat) 2)

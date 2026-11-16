@@ -68,11 +68,11 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     WP isa (.block (r2WidthTest (56 + 8 * j.val + 4))) s fun t =>
       t.z = decide (v = (g.sourceLength j.succ + 7) / 8) ∧ t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
   have nw := ready.workspace
-  have header := nativeHeader_of_layout s.mem (crtN g.base g.words) nw.nowrap (Nat.le_refl _) ready.layout
+  obtain header := nativeHeader_of_layout s.mem (crtN g.base g.words) nw.nowrap (Nat.le_refl _) ready.layout
   rw [ready.width] at header
   have size : 256 ≤ 8 * workspaceWords g.words := shared.main.toCrtLayoutState.size
   have hj := j.isLt
-  have lenSmall : g.sourceLength j.succ < 2 ^ 28 := by
+  obtain lenSmall : g.sourceLength j.succ < 2 ^ 28 := by
     have := (crt_width_valid shared.buffers.lengthValid).2.1
     have := shared.buffers.lengthValid.2
     have := shared.buffers.pShort
@@ -80,7 +80,7 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     have : g.sourceLength j.succ ≤ g.length := by
       unfold CrtGeometry.sourceLength; split <;> omega_arith
     omega_arith
-  have vSmall : v < 2 ^ 28 := by
+  obtain vSmall : v < 2 ^ 28 := by
     have := ready.width ▸ ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     have := nw.nowrap
@@ -90,7 +90,7 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   unfold r2WidthTest
   refine wp_ldr (a := off (State.addr (crtN g.base g.words)) 48) (by decide)
     (by rw [ready.ptr]; exact addr_add (by omega_using [size, nNow])) (nw.read (by omega_using [size])) fun u a => ?_
-  have slotAddr : State.addr (u.sp + BitVec.ofNat 32 (56 + 8 * j.val + 4)) = off (State.addr s.sp) (60 + 8 * j.val) := by
+  obtain slotAddr : State.addr (u.sp + BitVec.ofNat 32 (56 + 8 * j.val + 4)) = off (State.addr s.sp) (60 + 8 * j.val) := by
     rw [a.sp, show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []]
     exact addr_add (by omega_using [spNow])
   refine wp_loadStack (a := off (State.addr s.sp) (60 + 8 * j.val)) (by omega_using []) slotAddr
@@ -98,10 +98,10 @@ theorem r2WidthTest_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   refine wp_dp (op2_imm (by decide)) fun y c => ?_
   refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun x d => ?_
   refine wp_cmp (op2_reg _ _) fun t e zf => WP.block_nil ?_
-  have r1 : x.gpr .r1 = BitVec.ofNat 32 v := by
+  obtain r1 : x.gpr .r1 = BitVec.ofNat 32 v := by
     rw [d.other .r1 (by decide), c.other .r1 (by decide), b.other .r1 (by decide), a.gpr]
     exact header.count
-  have r2 : x.gpr .r2 = BitVec.ofNat 32 ((g.sourceLength j.succ + 7) / 8) := by
+  obtain r2 : x.gpr .r2 = BitVec.ofNat 32 ((g.sourceLength j.succ + 7) / 8) := by
     rw [d.gpr, c.gpr, dpVal, b.gpr, a.mem, shared.stack.length j]
     exact ceil8_ofNat lenSmall
   refine ⟨?_, e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),
@@ -130,7 +130,7 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
     (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) (shared : CrtShared g bs s) :
     WP isa (.block (r2Source (56 + 8 * j.val))) s fun t =>
       t.gpr .r1 = r2Src g a j ∧ t.mem = s.mem ∧ Rest [.r1, .r2, .r3] s t := by
-  have r := shared.buffers.r2 a ha
+  obtain r := shared.buffers.r2 a ha
   have slot := r.slotFit
   rcases hj with rfl | rfl
   · show WP isa (.block [.ldrSp .r1 112]) s _
@@ -141,7 +141,7 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
       .dp .sub .r3 .r2 (.imm 2), .mov .r3 (.shifted .r3 .lsr 31), .dp .add .r2 .r2 (.reg .r3),
       .dp .add .r1 .r1 (.shifted .r2 .lsl 3)]) s _
     have spNow := shared.stack.nowrap
-    have pLen : g.pLength < 2 ^ 28 := by
+    obtain pLen : g.pLength < 2 ^ 28 := by
       have := shared.buffers.pShort; have := shared.buffers.lengthValid.2; omega_arith
     have pPos := shared.buffers.pPositive
     refine wp_loadStack (a := off (State.addr s.sp) 112) (by decide) (addr_add (by omega_using [slot])) r.slotRead
@@ -155,15 +155,15 @@ theorem r2Source_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
     refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun w i => ?_
     refine wp_dp (op2_reg _ _) fun q k => ?_
     refine wp_dp (op2_lsl ⟨by decide, by decide⟩) fun t l => WP.block_nil ?_
-    have len : s.mem.readW (off (State.addr s.sp) 68) 32 = BitVec.ofNat 32 g.pLength := shared.stack.length 1
-    have cY : y.gpr .r2 = BitVec.ofNat 32 ((g.pLength + 7) / 8) := by
+    obtain len : s.mem.readW (off (State.addr s.sp) 68) 32 = BitVec.ofNat 32 g.pLength := shared.stack.length 1
+    obtain cY : y.gpr .r2 = BitVec.ofNat 32 ((g.pLength + 7) / 8) := by
       rw [e.gpr, d.gpr, dpVal, c.gpr, b.mem, len]
       exact ceil8_ofNat pLen
-    have cQ : q.gpr .r2 = BitVec.ofNat 32 (Spec.Rsa.primeWords g.pLength) := by
+    obtain cQ : q.gpr .r2 = BitVec.ofNat 32 (Spec.Rsa.primeWords g.pLength) := by
       rw [k.gpr, dpVal, i.other .r2 (by decide), f.other .r2 (by decide), i.gpr, f.gpr, dpVal, cY]
       unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords
       exact maxTwo_ofNat (by omega_using [pPos]) (by omega_using [pLen])
-    have aQ : q.gpr .r1 = a := by
+    obtain aQ : q.gpr .r1 = a := by
       rw [k.other .r1 (by decide), i.other .r1 (by decide), f.other .r1 (by decide), e.other .r1 (by decide),
         d.other .r1 (by decide), c.other .r1 (by decide), b.gpr, r.slot]
     refine ⟨?_, l.mem.trans (k.mem.trans (i.mem.trans (f.mem.trans (e.mem.trans (d.mem.trans (c.mem.trans b.mem)))))),
@@ -186,7 +186,7 @@ theorem r2_wordsAt_append (m : Mem) (p : Addr) (a b : Nat) :
 theorem read_of_toWords {m : Mem} {p : Addr} {n x : Nat}
     (h : Spec.Rsa.wordsAt m p n = Spec.Rsa.toWords x n) (hx : x < 2 ^ (64 * n)) :
     (m.read p (8 * n)).toNat = x := by
-  have e := VG.Proof.Bignum.read_eq_wv m p 0 n
+  obtain e := VG.Proof.Bignum.read_eq_wv m p 0 n
   simp only [off, BitVec.add_zero] at e
   rw [e, ← Nat.mod_eq_of_lt hx]
   rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, List.map_inj_left] at h
@@ -204,21 +204,21 @@ theorem r2Src_given {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
         ⟨State.addr g.base, g.size⟩ ∧
       Spec.Rsa.wordsAt s.mem (State.addr (r2Src g a j)) (Spec.Rsa.primeWords (g.sourceLength j.succ)) =
         Spec.Rsa.primeR2 (bs j.succ) := by
-  have r := shared.buffers.r2 a ha
+  obtain r := shared.buffers.r2 a ha
   have fit := r.fit
   have words := r.words
   have read := r.read
   have sep := r.separate
   unfold CrtGeometry.r2Words at fit words read sep
-  have p2 : 2 ≤ Spec.Rsa.primeWords g.pLength := Nat.le_max_left _ _
-  have q2 : 2 ≤ Spec.Rsa.primeWords g.qLength := Nat.le_max_left _ _
+  obtain p2 : 2 ≤ Spec.Rsa.primeWords g.pLength := Nat.le_max_left _ _
+  obtain q2 : 2 ≤ Spec.Rsa.primeWords g.qLength := Nat.le_max_left _ _
   rw [r2_wordsAt_append] at words
-  have lenP : (Spec.Rsa.wordsAt s.mem (State.addr a) (Spec.Rsa.primeWords g.pLength)).length =
+  obtain lenP : (Spec.Rsa.wordsAt s.mem (State.addr a) (Spec.Rsa.primeWords g.pLength)).length =
       (Spec.Rsa.primeR2 (bs 2)).length := by
     simp only [Spec.Rsa.wordsAt, Spec.Rsa.primeR2, Spec.Rsa.toWords, List.length_map, List.length_range]
     rw [(shared.buffers.source 2).length]; rfl
   obtain ⟨wp, wq⟩ := List.append_inj words lenP
-  have hq : State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)) =
+  obtain hq : State.addr (a + BitVec.ofNat 32 (8 * Spec.Rsa.primeWords g.pLength)) =
       State.addr a + BitVec.ofNat 64 (8 * Spec.Rsa.primeWords g.pLength) := addr_add (by omega_using [fit, q2])
   rcases hj with rfl | rfl
   · change a.toNat + 8 * Spec.Rsa.primeWords g.pLength ≤ _ ∧
@@ -287,17 +287,17 @@ theorem copied_ok {bs : Fin 7 → List Byte} (s z : State) (hj : j = 1 ∨ j = 2
   rw [← h.width] at srcFit srcRead srcSep
   have nw := ready.workspace
   have nNow := nw.nowrap
-  have hv : 2 ≤ v := ready.width ▸ ready.layout.1
-  have fits : arrAt v 8 ≤ 8 * workspaceWords g.words := ready.width ▸ ready.layout.2.2.1
-  have end4 := Nat.le_trans (array_end_le (w := v) (by decide : 4 < 8)) fits
-  have narrowSub := crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits
+  obtain hv : 2 ≤ v := ready.width ▸ ready.layout.1
+  obtain fits : arrAt v 8 ≤ 8 * workspaceWords g.words := ready.width ▸ ready.layout.2.2.1
+  obtain end4 := Nat.le_trans (array_end_le (w := v) (by decide : 4 < 8)) fits
+  obtain narrowSub := crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits
     h.shared.narrow_member
-  have dstAddr : State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)) =
+  obtain dstAddr : State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)) =
       off (State.addr (crtN g.base g.words)) (arrAt v 4) := addr_add (by omega_using [nNow, end4])
-  have dstNat : (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)).toNat =
+  obtain dstNat : (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)).toNat =
       (crtN g.base g.words).toNat + arrAt v 4 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [nNow, end4]), Nat.mod_eq_of_lt (by omega_using [nNow, end4])]
-  have dstSub : Region.Sub ⟨State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)), 8 * v⟩
+  obtain dstSub : Region.Sub ⟨State.addr (crtN g.base g.words + BitVec.ofNat 32 (arrAt v 4)), 8 * v⟩
       ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ := by
     rw [dstAddr]; exact Offset.sub_base _ (by omega_using [end4])
   rw [WP.seq_iff]
@@ -310,15 +310,15 @@ theorem copied_ok {bs : Fin 7 → List Byte} (s z : State) (hj : j = 1 ∨ j = 2
   rintro y ⟨value, frameY, _, restY⟩
   rw [dstAddr] at value frameY
   refine wp_mov (op2_reg _ _) fun x mv => WP.block_nil ?_
-  have ptrX : x.gpr .r0 = crtN g.base g.words := by
+  obtain ptrX : x.gpr .r0 = crtN g.base g.words := by
     rw [mv.gpr, restY.gpr .r5 (by decide), p5]
-  have outside := frame_array_outside (by omega_using [srcFit, dstNat] : arrAt v 4 + 8 * v < 2 ^ 64) frameY
-  have frameX : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem x.mem := by
+  obtain outside := frame_array_outside (by omega_using [srcFit, dstNat] : arrAt v 4 + 8 * v < 2 ^ 64) frameY
+  obtain frameX : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem x.mem := by
     rw [mv.mem, ← memZ]; exact outside_workspace outside (by omega_using [end4])
-  have keepsX : Keeps (State.addr (crtN g.base g.words)) (workspaceWords g.words) v 4 s.mem x.mem := by
+  obtain keepsX : Keeps (State.addr (crtN g.base g.words)) (workspaceWords g.words) v 4 s.mem x.mem := by
     rw [mv.mem, ← memZ]
     exact outside_array_prefix_keeps outside (by omega_using [nNow] : 8 * workspaceWords g.words < 2 ^ 64) (by omega_using [])
-  have restX : Rest roundClobbers s x :=
+  obtain restX : Rest roundClobbers s x :=
     restZ.trans ((restY.mono (by decide)).trans (mv.rest (by decide)))
   obtain ⟨readyX, modX⟩ := ready.after_array (by decide : 4 ≠ 0) keepsX frameX restX ptrX
   refine ⟨readyX, modX, ?_, frameX, restX⟩
@@ -338,35 +338,35 @@ def CopyOut (g : CrtGeometry) (a : BitVec 32) (j : Fin 6) (v : Nat) (s t : State
 theorem selected_ok {bs : Fin 7 → List Byte} (s x : State) (h : CopyIn g bs j v s) (copied : Copied g a j v s x) :
     WP isa (.seq (smallConst 7 1) (.seq (.block [.ldrSp .r11 48]) (selectArray 4 7 4))) x (CopyOut g a j v s) := by
   obtain ⟨readyX, modX, arr4X, frameX, restX⟩ := copied
-  have fits : arrAt v 8 ≤ 8 * workspaceWords g.words := readyX.width ▸ readyX.layout.2.2.1
+  obtain fits : arrAt v 8 ≤ 8 * workspaceWords g.words := readyX.width ▸ readyX.layout.2.2.1
   have nNow := readyX.workspace.nowrap
   have spNow := h.shared.stack.nowrap
   rw [WP.seq_iff]
   refine WP.mono (smallConstLayout_ok x 1 readyX.workspace readyX.layout readyX.width readyX.ptr
     (by decide : 7 < 8) (by decide) (by decide) readyX.stackRead readyX.stackSep readyX.saved) ?_
   rintro w ⟨_, _, number7, outside7, frame7, rest7, ptrW⟩
-  have keeps7 := outside_array_keeps outside7 (len := workspaceWords g.words) (by omega_using [nNow])
+  obtain keeps7 := outside_array_keeps outside7 (len := workspaceWords g.words) (by omega_using [nNow])
   obtain ⟨readyW, modW⟩ := readyX.after_array (by decide : 7 ≠ 0) keeps7 frame7 rest7 ptrW
-  have arr4W := (keeps_array_num keeps7 fits
+  obtain arr4W := (keeps_array_num keeps7 fits
     (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Proof.Rsa.Mont.Operand 4)
     (by decide)).trans arr4X
-  have restSW := restX.trans rest7
-  have frameSW := frameX.trans frame7
-  have flagW : w.mem.readW (off (State.addr w.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
+  obtain restSW := restX.trans rest7
+  obtain frameSW := frameX.trans frame7
+  obtain flagW : w.mem.readW (off (State.addr w.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
     rw [restSW.sp]
     exact frameSW.readW (r := ⟨off (State.addr s.sp) 48, 4⟩) (Region.contains_self _ _)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact h.slotSep) (by decide)
   rw [WP.seq_iff]
   refine wp_loadStack (a := off (State.addr w.sp) 48) (by decide) (addr_add (by rw [restSW.sp]; omega_using [spNow]))
     (by rw [restSW.rd, restSW.wr, restSW.sp]; exact h.shared.stack.read (by decide)) fun q ld => WP.block_nil ?_
-  have r11 : q.gpr .r11 = s.mem.readW (off (State.addr s.sp) 48) 32 := ld.gpr.trans flagW
-  have readyQ := readyW.of_mem ld.mem (ld.rest (by decide : Reg.r11 ∈ [Reg.r11]))
+  obtain r11 : q.gpr .r11 = s.mem.readW (off (State.addr s.sp) 48) 32 := ld.gpr.trans flagW
+  obtain readyQ := readyW.of_mem ld.mem (ld.rest (by decide : Reg.r11 ∈ [Reg.r11]))
     (by rw [ld.other .r0 (by decide)]; exact readyW.ptr)
   refine WP.mono (selectArray_ok q readyQ.workspace readyQ.layout readyQ.width readyQ.ptr
     (by decide : 4 < 8) (by decide : 7 < 8) (by decide : 4 < 8) (by rw [r11]; exact h.bit)
     readyQ.stackRead readyQ.stackSep readyQ.saved) ?_
   rintro t ⟨_, _, valueT, outsideT, frameT, restT, ptrT⟩
-  have keepsT := outside_array_keeps outsideT (len := workspaceWords g.words) (by omega_using [nNow])
+  obtain keepsT := outside_array_keeps outsideT (len := workspaceWords g.words) (by omega_using [nNow])
   obtain ⟨readyT, modT⟩ := readyQ.after_array (by decide : 4 ≠ 0) keepsT frameT restT ptrT
   refine ⟨readyT, by rw [modT, ld.mem, modW, modX], ?_, frameSW.trans (by rw [← ld.mem]; exact frameT),
     restSW.trans ((ld.rest (by decide)).trans restT)⟩
@@ -403,19 +403,19 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
       numAt t.mem (State.addr (crtN g.base g.words)) v 4 = 2 ^ (128 * v) % M ∧
       Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem ∧
       Rest roundClobbers s t := by
-  have hv : 2 ≤ v := ready.width ▸ ready.layout.1
+  obtain hv : 2 ≤ v := ready.width ▸ ready.layout.1
   obtain ⟨_, le, _, _, _, _, _⟩ := shared.narrow_fits j hj
-  have words : g.words ≤ 128 := (crt_width_valid shared.buffers.lengthValid).2.1
+  obtain words : g.words ≤ 128 := (crt_width_valid shared.buffers.lengthValid).2.1
   rw [r2Given, WP.seq_iff]
   refine WP.mono (r2WidthTest_ok s (j := j) shared ready) ?_
   rintro u ⟨z, memU, restU⟩
-  have readyU := ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans ready.ptr)
-  have sharedU := shared.of_mem memU restU
-  have flagU : u.mem.readW (off (State.addr u.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
+  obtain readyU := ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans ready.ptr)
+  obtain sharedU := shared.of_mem memU restU
+  obtain flagU : u.mem.readW (off (State.addr u.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
     rw [memU, restU.sp]
   by_cases same : v = (g.sourceLength j.succ + 7) / 8
   · refine WP.ite true (by rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true same]) (fun _ => ?_) (by simp)
-    have width : v = Spec.Rsa.primeWords (g.sourceLength j.succ) := by
+    obtain width : v = Spec.Rsa.primeWords (g.sourceLength j.succ) := by
       unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [hv, same]
     refine WP.mono (r2Copy_ok u hj ha ⟨sharedU, readyU, width, by rw [flagU]; exact bit⟩) ?_
     rintro t ⟨readyT, modT, valueT, frameT, restT⟩
@@ -427,13 +427,13 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
       exact (two_pow_mod_three v).symm
     · simp only [b0, ↓reduceIte, safePrime]
       obtain ⟨_, _, _, given⟩ := r2Src_given hj ha shared
-      have large := valid b0
-      have len : (bs j.succ).length = g.sourceLength j.succ := (shared.buffers.source j.succ).length
+      obtain large := valid b0
+      obtain len : (bs j.succ).length = g.sourceLength j.succ := (shared.buffers.source j.succ).length
       rw [← width] at given
       unfold Spec.Rsa.primeR2 at given
       rw [len, ← width] at given
       refine read_of_toWords given ?_
-      have lt := VG.Proof.Bignum.os2ip_lt (bs j.succ)
+      obtain lt := VG.Proof.Bignum.os2ip_lt (bs j.succ)
       rw [len, VG.Proof.Bignum.pow256_eq] at lt
       have : 2 ^ (8 * g.sourceLength j.succ) ≤ 2 ^ (64 * v) := Nat.pow_le_pow_right (by decide) (by omega_arith)
       have := Nat.mod_lt (2 ^ (128 * v)) (by omega_using [large] : 0 < Spec.Rsa.os2ip (bs j.succ))
@@ -441,7 +441,7 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
   · refine WP.ite false (by rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_false same]) (by simp) (fun _ => ?_)
     refine WP.mono (r2_ok u readyU (by omega_using [narrow, le, words])) ?_
     rintro t ⟨done, valueT, modT, frameT, restT⟩
-    have modU : numAt u.mem (State.addr (crtN g.base g.words)) v 0 = M := by rw [memU]; exact modulus
+    obtain modU : numAt u.mem (State.addr (crtN g.base g.words)) v 0 = M := by rw [memU]; exact modulus
     rw [modU] at valueT modT
     refine ⟨done.toReady (by rw [modT]; rw [← modU]; exact readyU.modulus), modT, valueT,
       by rw [← memU]; exact frameT, (restU.mono (by decide)).trans restT⟩
@@ -455,15 +455,15 @@ theorem crt_narrowPrimeGiven_ok {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
   rw [narrowPrimeGiven, WP.seq_iff]
   refine WP.mono (crt_narrowPrimeInv_ok s input) ?_
   rintro u ⟨readyU, modU, odd, flagU, frameU, restU⟩
-  have sharedU := shared.after_narrow (frameU.mono (by simp)) restU
-  have narrowSub := crt_region_sub_workspace shared.buffers.workspace shared.buffers.storageFits shared.narrow_member
+  obtain sharedU := shared.after_narrow (frameU.mono (by simp)) restU
+  obtain narrowSub := crt_region_sub_workspace shared.buffers.workspace shared.buffers.storageFits shared.narrow_member
   refine WP.mono (r2Given_ok u (j := j) hj ha sharedU readyU rfl (by rw [flagU]; exact input.bit)
     (by rw [flagU]; exact fun ne => (input.valid ne).1) modU (by rw [flagU])) ?_
   rintro t ⟨readyT, modT, r2T, frameT, restT⟩
-  have restST := restU.trans restT
+  obtain restST := restU.trans restT
   refine ⟨readyT, modT, odd, r2T, ?_, frameU.trans frameT, restST⟩
   rw [restST.sp]
-  have keep := (frameU.trans frameT).readW (a := off (State.addr s.sp) 48) (w := 32)
+  obtain keep := (frameU.trans frameT).readW (a := off (State.addr s.sp) 48) (w := 32)
     (r := ⟨off (State.addr s.sp) 48, 4⟩) (Region.contains_self _ _)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r

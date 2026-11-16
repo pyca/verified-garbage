@@ -217,7 +217,7 @@ structure IMid₁ (s₀ : State) (Kp Ct S : Addr) (KL : Nat) (s : State) : Prop 
 
 theorem initPre_wp {s₀ : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s₀ Kp Ct S KL) :
     WP isa (.block initPre) s₀ (IMid₁ s₀ Kp Ct S KL) := by
-  have hKL : s₀.gpr .x1 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x1
+  obtain hKL : s₀.gpr .x1 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x1
   have hw := hp.wS
   rw [show initPre = Spill.saveCode .x3 initSaved ++
     [mov .x19 .x0, .lsr .x .x20 .x1 1, mov .x21 .x2, mov .x22 .x3, mov .x1 .x20] from rfl]
@@ -301,7 +301,7 @@ theorem initMid₁_wp {s₀ s : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s�
     WP isa (.block initMid₁) s fun s' =>
       SArgs s' Ct (Ct + BitVec.ofNat 64 240) S (KL / 8 + 6) ∧ IAfter s₀ Kp Ct S KL s' ∧ s'.mem = s.mem := by
   obtain ⟨s', run, x0, x1, x2, x3, g, sp, m, rd, wr⟩ := initMid₁_ok h.x20 h.x21 h.x22
-  have h' := h.keep (fun r hr _ => g r hr) sp rd wr
+  obtain h' := h.keep (fun r hr _ => g r hr) sp rd wr
   exact WP.of_runBlock ⟨s', run, hp.sargs x0 (by rw [x1, rounds_bv hp.klen]) x2 x3 h'.rd h'.wr, h', m⟩
 
 /-- The arguments of the second call of `vg_aes_expand_key_scratch`, and the
@@ -313,14 +313,14 @@ theorem initMid₂_wp {s₀ s : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s�
     (h : IAfter s₀ Kp Ct S KL s) :
     WP isa (.block initMid₂) s fun s' => IEk s₀ Kp Ct S KL s' ∧ s'.mem = s.mem := by
   obtain ⟨s', run, x0, x1, x2, x3, g, sp, m, rd, wr⟩ := initMid₂_ok h.x19 h.x20 h.x21 h.x22
-  have h' := h.keep (fun r hr _ => g r hr) sp rd wr
+  obtain h' := h.keep (fun r hr _ => g r hr) sp rd wr
   exact WP.of_runBlock ⟨s', run, ⟨hp.eargs (by omega_arith) (by decide) x0 x1 x2 x3 h'.rd h'.wr, h'⟩, m⟩
 
 /-! ## The whole function -/
 
 theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     WP isa (init v.expand v.callee v.suffix) s₀ fun s' => GprAbi s₀ s' ∧ initAArch64.post s₀ s' := by
-  have hp := IPre.of h0
+  obtain hp := IPre.of h0
   generalize s₀.gpr .x0 = Kp at hp
   generalize s₀.gpr .x2 = Ct at hp
   generalize s₀.gpr .x3 = S at hp
@@ -331,15 +331,15 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
   have hH := hp.half
   refine WP.seq (WP.mono (initPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ek_call v h₁.args) fun s₂ h₂ => ?_)
-  have a₂ := h₁.after.keep h₂.saved h₂.sp h₂.rd h₂.wr
+  obtain a₂ := h₁.after.keep h₂.saved h₂.sp h₂.rd h₂.wr
   refine WP.seq (WP.mono (initMid₁_wp hp a₂) fun s₃ ⟨h₃, a₃, m₃⟩ => ?_)
   refine WP.seq (WP.mono (sub_call v _ h₃) fun s₄ h₄ => ?_)
-  have a₄ := a₃.keep h₄.saved h₄.sp h₄.rd h₄.wr
+  obtain a₄ := a₃.keep h₄.saved h₄.sp h₄.rd h₄.wr
   refine WP.seq (WP.mono (initMid₂_wp hp a₄) fun s₅ ⟨⟨h₅, a₅⟩, m₅⟩ => ?_)
   refine WP.seq (WP.mono (ek_call v h₅) fun s₆ h₆ => ?_)
-  have a₆ := a₅.keep h₆.saved h₆.sp h₆.rd h₆.wr
+  obtain a₆ := a₅.keep h₆.saved h₆.sp h₆.rd h₆.wr
   -- The memory, call by call.
-  have f₁ : Frame [⟨S + BitVec.ofNat 64 2176, 40⟩] s₀.mem s₁.mem := by
+  obtain f₁ : Frame [⟨S + BitVec.ofNat 64 2176, 40⟩] s₀.mem s₁.mem := by
     rw [h₁.mem]; exact Spill.saveMem_frame initSaved_bound (by decide) _ _ _
   have f₂ : Frame [⟨Ct, 240⟩, ⟨S, 512⟩] s₁.mem s₂.mem := h₂.frame
   have f₄ : Frame [⟨Ct + BitVec.ofNat 64 240, 32⟩, ⟨S, 2176⟩] s₃.mem s₄.mem := h₄.frame
@@ -348,7 +348,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
   have dSv {d : Nat} (hd : 2176 ≤ d) (hd' : d + 8 ≤ 2560) (r : Region) (hr : r ∈ [⟨Ct, 240⟩, ⟨S, 512⟩,
       ⟨Ct + BitVec.ofNat 64 240, 32⟩, ⟨S, 2176⟩, ⟨Ct + BitVec.ofNat 64 272, 240⟩]) :
       (⟨S + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
-    have sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 2560⟩ := hp.sS hd'
+    obtain sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 2560⟩ := hp.sS hd'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact (hp.c_s.sub_left (Region.sub_prefix (by decide))).symm.sub_left sub
@@ -356,9 +356,9 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     · exact (hp.c_s.sub_left (hp.sC (by decide))).symm.sub_left sub
     · exact Offset.disjoint_base S (by omega_arith) (by omega_arith)
     · exact (hp.c_s.sub_left (hp.sC (by decide))).symm.sub_left sub
-  have sv₁ : Spill.Saved S s₀.gpr initSaved s₁.mem := by
+  obtain sv₁ : Spill.Saved S s₀.gpr initSaved s₁.mem := by
     rw [h₁.mem]; exact Spill.saveMem_saved initSaved_fits _ _ _
-  have sv₆ : Spill.Saved S s₀.gpr initSaved s₆.mem := by
+  obtain sv₆ : Spill.Saved S s₀.gpr initSaved s₆.mem := by
     have b := initSaved_bound
     refine ((sv₁.frame f₂ fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega_arith) r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)).frame
@@ -366,7 +366,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)).frame
       (by rw [← m₅]; exact f₆) fun p hp' r hr => dSv (b p hp').1 (by have := b p hp'; omega_arith) r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)
-  have inR : ∀ p ∈ initRestored, InRegions (s₆.rd ++ s₆.wr) (S + BitVec.ofNat 64 p.2) 8 := by
+  obtain inR : ∀ p ∈ initRestored, InRegions (s₆.rd ++ s₆.wr) (S + BitVec.ofNat 64 p.2) 8 := by
     intro p hp'
     have := initSaved_bound p (initRestored_sub p hp')
     rw [a₆.rd, a₆.wr, hp.wr]
@@ -386,7 +386,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     have dK {a n : Nat} (ha : a + n ≤ KL) (r : Region) (hr : r ∈ [⟨Ct, 240⟩, ⟨S, 512⟩,
         ⟨Ct + BitVec.ofNat 64 240, 32⟩, ⟨S, 2176⟩, ⟨S + BitVec.ofNat 64 2176, 40⟩]) :
         (⟨Kp + BitVec.ofNat 64 a, n⟩ : Region).Disjoint r := by
-      have sub := hp.sK ha
+      obtain sub := hp.sK ha
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact (hp.k_c.sub_left sub).sub_right (Region.sub_prefix (by decide))
@@ -405,15 +405,15 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
           (by omega_arith),
         Proof.Cmac.bytesAt_frame f₁ (fun r hr => dK ha r (by simp only [List.mem_singleton] at hr; subst hr; simp))
           (by omega_arith)]
-    have key₁ : Spec.Aes.bytesAt s₁.mem Kp (KL / 2) = Spec.Aes.bytesAt s₀.mem Kp (KL / 2) := by
+    obtain key₁ : Spec.Aes.bytesAt s₁.mem Kp (KL / 2) = Spec.Aes.bytesAt s₀.mem Kp (KL / 2) := by
       have := Proof.Cmac.bytesAt_frame f₁ (fun r hr => dK (a := 0) (n := KL / 2) (by omega_arith) r
         (by simp only [List.mem_singleton] at hr; subst hr; simp)) (by omega_arith)
       rwa [k0] at this
-    have key₂ := key (a := KL / 2) (by omega_arith)
-    have sch : Spec.Aes.bytesAt s₂.mem Ct (16 * (Spec.Aes.rounds (KL / 2 / 4) + 1)) =
+    obtain key₂ := key (a := KL / 2) (by omega_arith)
+    obtain sch : Spec.Aes.bytesAt s₂.mem Ct (16 * (Spec.Aes.rounds (KL / 2 / 4) + 1)) =
         Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem Kp (KL / 2)) := by
       rw [h₂.out, key₁]
-    have hRb : 16 * (Spec.Aes.rounds (KL / 2 / 4) + 1) ≤ 240 := by simp only [Spec.Aes.rounds]; omega_arith
+    obtain hRb : 16 * (Spec.Aes.rounds (KL / 2 / 4) + 1) ≤ 240 := by simp only [Spec.Aes.rounds]; omega_arith
     refine Proof.AesSiv.keyRepr_of hp.klen ?_ ?_ ?_
     · rw [Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -443,8 +443,8 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
     (hq : initAArch64.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (init v.expand v.callee v.suffix) fun _ _ => True := by
   obtain ⟨q0, q1, q2, q3, q4⟩ := hq
-  have hp := IPre.of h0
-  have hp' : IPre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat := by
+  obtain hp := IPre.of h0
+  obtain hp' : IPre s₀' (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x1).toNat := by
     rw [q0, q1, q2, q3]; exact IPre.of h0'
   generalize s₀.gpr .x0 = Kp at hp hp'
   generalize s₀.gpr .x2 = Ct at hp hp'
@@ -467,7 +467,7 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
     · rw [h.1.x20, h.2.x20]
     · rw [h.1.x21, h.2.x21]
     · rw [h.1.x22, h.2.x22]
-  have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
+  obtain a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _
     (fun a b h => by
       obtain ⟨rfl, rfl⟩ := h
       refine agree_of q4 fun r hr => ?_
@@ -475,34 +475,34 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := IMid₁ s₀ Kp Ct S KL) (F₂ := IMid₁ s₀' Kp Ct S KL) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨initPre_wp hp, initPre_wp hp'⟩
-  have e₁ := (ek_rel v (P := fun a b => IMid₁ s₀ Kp Ct S KL a ∧ IMid₁ s₀' Kp Ct S KL b)
+  obtain e₁ := (ek_rel v (P := fun a b => IMid₁ s₀ Kp Ct S KL a ∧ IMid₁ s₀' Kp Ct S KL b)
     fun a b h => ⟨h.1.args, h.2.args, by rw [h.1.sp, h.2.sp, q4]⟩).wp
     (F₁ := IAfter s₀ Kp Ct S KL) (F₂ := IAfter s₀' Kp Ct S KL) fun a b h =>
       ⟨WP.mono (ek_call v h.1.args) fun _ h₂ => h.1.after.keep h₂.saved h₂.sp h₂.rd h₂.wr,
         WP.mono (ek_call v h.2.args) fun _ h₂ => h.2.after.keep h₂.saved h₂.sp h₂.rd h₂.wr⟩
-  have m₁ := (RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
+  obtain m₁ := (RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
     agree hB).wp
     (F₁ := fun (s : State) => SArgs s Ct (Ct + BitVec.ofNat 64 240) S (KL / 8 + 6) ∧ IAfter s₀ Kp Ct S KL s)
     (F₂ := fun (s : State) => SArgs s Ct (Ct + BitVec.ofNat 64 240) S (KL / 8 + 6) ∧ IAfter s₀' Kp Ct S KL s)
     fun a b h => ⟨WP.mono (initMid₁_wp hp h.1) fun _ p => ⟨p.1, p.2.1⟩,
       WP.mono (initMid₁_wp hp' h.2) fun _ p => ⟨p.1, p.2.1⟩⟩
-  have sk := (sub_rel v ("vg_cmac_aes_subkeys" ++ v.suffix)
+  obtain sk := (sub_rel v ("vg_cmac_aes_subkeys" ++ v.suffix)
     (P := fun a b => (SArgs a Ct (Ct + BitVec.ofNat 64 240) S (KL / 8 + 6) ∧ IAfter s₀ Kp Ct S KL a) ∧
       SArgs b Ct (Ct + BitVec.ofNat 64 240) S (KL / 8 + 6) ∧ IAfter s₀' Kp Ct S KL b)
     fun a b h => ⟨h.1.1, h.2.1, by rw [h.1.2.sp, h.2.2.sp, q4]⟩).wp
     (F₁ := IAfter s₀ Kp Ct S KL) (F₂ := IAfter s₀' Kp Ct S KL)
     fun a b h => ⟨WP.mono (sub_call v _ h.1.1) fun _ h₂ => h.1.2.keep h₂.saved h₂.sp h₂.rd h₂.wr,
       WP.mono (sub_call v _ h.2.1) fun _ h₂ => h.2.2.keep h₂.saved h₂.sp h₂.rd h₂.wr⟩
-  have m₂ := (RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
+  obtain m₂ := (RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
     agree hC).wp
     (F₁ := IEk s₀ Kp Ct S KL) (F₂ := IEk s₀' Kp Ct S KL)
     fun a b h => ⟨WP.mono (initMid₂_wp hp h.1) fun _ p => p.1, WP.mono (initMid₂_wp hp' h.2) fun _ p => p.1⟩
-  have e₂ := (ek_rel v (P := fun a b => IEk s₀ Kp Ct S KL a ∧ IEk s₀' Kp Ct S KL b)
+  obtain e₂ := (ek_rel v (P := fun a b => IEk s₀ Kp Ct S KL a ∧ IEk s₀' Kp Ct S KL b)
     fun a b h => ⟨h.1.1, h.2.1, by rw [h.1.2.sp, h.2.2.sp, q4]⟩).wp
     (F₁ := IAfter s₀ Kp Ct S KL) (F₂ := IAfter s₀' Kp Ct S KL)
     fun a b h => ⟨WP.mono (ek_call v h.1.1) fun _ h₂ => h.1.2.keep h₂.saved h₂.sp h₂.rd h₂.wr,
       WP.mono (ek_call v h.2.1) fun _ h₂ => h.2.2.keep h₂.saved h₂.sp h₂.rd h₂.wr⟩
-  have p := RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
+  obtain p := RelCT.taint (A := taint) (P := fun a b => IAfter s₀ Kp Ct S KL a ∧ IAfter s₀' Kp Ct S KL b) _
     (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, q4]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; rw [h.1.x22, h.2.x22]) hD

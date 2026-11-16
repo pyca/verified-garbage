@@ -68,13 +68,13 @@ theorem dwA_write {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) {m : Me
     dw (m.writeW (b + BitVec.ofNat 64 d) v) A (8 * j) = dw m A (8 * j) := by
   unfold dw
   rw [Mem.readW_writeW_sep (w := 64) (w' := 64) ?_ (by decide)]
-  have hs : Region.Sub ⟨b + BitVec.ofNat 64 d, 8⟩ (ownR 9 b) := own_sub hd hd'
+  obtain hs : Region.Sub ⟨b + BitVec.ofNat 64 d, 8⟩ (ownR 9 b) := own_sub hd hd'
   exact Region.Disjoint.sep (fun x h₁ h₂ => hC.adis j hj x h₁ (hs x h₂)) (Region.contains_self _ _)
     (Region.contains_self _ _)
 
 theorem carry_arith {L K c t c0 F : Nat} (hv : L + K * c = F + c0) :
     L + K * ((t + c) % 2 ^ 58) + K * 2 ^ 58 * ((t + c) / 2 ^ 58) = F + K * t + c0 := by
-  have h : K * ((t + c) % 2 ^ 58) + K * 2 ^ 58 * ((t + c) / 2 ^ 58) = K * t + K * c := by
+  obtain h : K * ((t + c) % 2 ^ 58) + K * 2 ^ 58 * ((t + c) / 2 ^ 58) = K * t + K * c := by
     rw [Nat.mul_assoc, ← Nat.mul_add, Nat.add_comm, Nat.div_add_mod, Nat.mul_add]
   omega_using [hv, h]
 
@@ -99,34 +99,34 @@ theorem carryStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s
     (hi : i < 9) {s : State} (h : CarryInv b O f c0 P d s0 i s) :
     WP isa (.block (carryStep src off i)) s (CarryInv b O f c0 P d s0 (i + 1)) := by
   have hb := hC.nowrap
-  have hCs := h.zk.kept.core hC
+  obtain hCs := h.zk.kept.core hC
   unfold carryStep
   simp only [List.cons_append, List.nil_append]
   -- The load.
-  have hld : ∀ {is : List Instr} {Q : State → Prop},
+  obtain hld : ∀ {is : List Instr} {Q : State → Prop},
       (∀ s', Upd s s' .a1 (BitVec.ofNat 64 (f i)) → WP isa (.block is) s' Q) →
       WP isa (.block (.load .d .a1 src (off + 8 * i) :: is)) s Q := fun k => by
     rcases hL with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩
     · rw [Nat.zero_add]
       refine ldA_ok hCs hi fun s' u => k s' ?_
-      have e : s.mem.readW (P + BitVec.ofNat 64 (8 * i)) 64 = BitVec.ofNat 64 (f i) := by
+      obtain e : s.mem.readW (P + BitVec.ofNat 64 (8 * i)) 64 = BitVec.ofNat 64 (f i) := by
         rw [← h.src i (Nat.le_refl _) hi]; simp only [dw, Nat.zero_add, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [e] at u; exact u
     · refine ld_ok hCs.ctx (by rw [Z_eq]; omega_using [hi]) (by rw [Z_eq]; omega_using []) fun s' u => k s' ?_
-      have e : s.mem.readW (P + BitVec.ofNat 64 (Z + 8 * i)) 64 = BitVec.ofNat 64 (f i) := by
+      obtain e : s.mem.readW (P + BitVec.ofNat 64 (Z + 8 * i)) 64 = BitVec.ofNat 64 (f i) := by
         rw [← h.src i (Nat.le_refl _) hi]; simp only [dw, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       rw [e] at u; exact u
-  have hfi := hf i hi
-  have hc := h.carry hi
+  obtain hfi := hf i hi
+  obtain hc := h.carry hi
   refine hld fun s₁ u₁ => wp_add fun s₂ u₂ => ?_
-  have e₂ : (s₂.gpr .a1).toNat = f i + (s.gpr .a4).toNat := by
+  obtain e₂ : (s₂.gpr .a1).toNat = f i + (s.gpr .a4).toNat := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfi, hc]),
       Nat.mod_eq_of_lt (by omega_using [hfi])]
-  have K₂ : ZKept b O s0 s₂ := (h.zk.keeps (rs := [.a1]) ⟨fun r hr => by
+  obtain K₂ : ZKept b O s0 s₂ := (h.zk.keeps (rs := [.a1]) ⟨fun r hr => by
     rw [u₂.other r (by simpa using hr), u₁.other r (by simpa using hr)], by rw [u₂.mem, u₁.mem],
     by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩)
-  have hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have hrest : ∀ {s' : State} {v : BitVec 64}, s'.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * i)) v →
+  obtain hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain hrest : ∀ {s' : State} {v : BitVec 64}, s'.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * i)) v →
       ∀ j, i + 1 ≤ j → j < 9 → dw s'.mem P (d + 8 * j) = f j := fun hm j hj hj' => by
     rw [hm, ← h.src j (by omega_using [hj]) hj']
     rcases hL with ⟨-, -, rfl, rfl⟩ | ⟨-, -, rfl, rfl⟩
@@ -136,16 +136,16 @@ theorem carryStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s
   · -- A limb below the top: cut, carry out.
     rename_i h8
     refine wp_srl (by decide) fun s₃ u₃ => wp_and fun s₄ u₄ => ?_
-    have hc₄ : Ctx b s₄ := ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), K₂.kept.core hC |>.ctx.a3],
+    obtain hc₄ : Ctx b s₄ := ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), K₂.kept.core hC |>.ctx.a3],
       hC.ctx.al, by rw [u₄.wr, u₃.wr]; exact (K₂.kept.core hC).ctx.wr⟩
     refine sd_ok hc₄ (by rw [Z_eq]; omega_using [hi]) (by rw [Z_eq]; omega_using []) fun s₅ u₅ => WP.block_nil ?_
-    have e₄ : (s₄.gpr .a1).toNat = (f i + (s.gpr .a4).toNat) % 2 ^ 58 := by
+    obtain e₄ : (s₄.gpr .a1).toNat = (f i + (s.gpr .a4).toNat) % 2 ^ 58 := by
       rw [u₄.gpr, u₃.other _ (by decide), u₃.other _ (by decide), K₂.a6, and_M58, e₂]
-    have e₅ : (s₅.gpr .a4).toNat = (f i + (s.gpr .a4).toNat) / 2 ^ 58 := by
+    obtain e₅ : (s₅.gpr .a4).toNat = (f i + (s.gpr .a4).toNat) / 2 ^ 58 := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, shr_toNat, e₂]
-    have hm₅ : s₅.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * i)) (s₄.gpr .a1) := by
+    obtain hm₅ : s₅.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * i)) (s₄.gpr .a1) := by
       rw [u₅.mem, u₄.mem, u₃.mem, hm₂]
-    have hz : ∀ j < 9, zl s₅.mem b j = if j = i then (f i + (s.gpr .a4).toNat) % 2 ^ 58 else zl s.mem b j :=
+    obtain hz : ∀ j < 9, zl s₅.mem b j = if j = i then (f i + (s.gpr .a4).toNat) % 2 ^ 58 else zl s.mem b j :=
       fun j hj => by rw [hm₅, zl_write hi hj, e₄]
     refine ⟨(((K₂.keeps (rs := [.a4]) ⟨fun r hr => u₃.other r (by simpa using hr), u₃.mem, u₃.rd, u₃.wr, u₃.sp⟩).keeps
       (rs := [.a1]) ⟨fun r hr => u₄.other r (by simpa using hr), u₄.mem, u₄.rd, u₄.wr, u₄.sp⟩).sd hi u₅),
@@ -159,12 +159,12 @@ theorem carryStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s
       exact carry_arith (h.val hi)
   · -- The top limb: no cut.
     rename_i h8
-    have hi8 : i = 8 := by omega_using [hi, h8]
+    obtain hi8 : i = 8 := by omega_using [hi, h8]
     subst hi8
-    have hc₂ : Ctx b s₂ := (K₂.kept.core hC).ctx
+    obtain hc₂ : Ctx b s₂ := (K₂.kept.core hC).ctx
     refine sd_ok hc₂ (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₃ u₃ => WP.block_nil ?_
-    have hm₃ : s₃.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * 8)) (s₂.gpr .a1) := by rw [u₃.mem, hm₂]
-    have hz : ∀ j < 9, zl s₃.mem b j = if j = 8 then f 8 + (s.gpr .a4).toNat else zl s.mem b j :=
+    obtain hm₃ : s₃.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * 8)) (s₂.gpr .a1) := by rw [u₃.mem, hm₂]
+    obtain hz : ∀ j < 9, zl s₃.mem b j = if j = 8 then f 8 + (s.gpr .a4).toNat else zl s.mem b j :=
       fun j hj => by rw [hm₃, zl_write (by decide) hj, e₂]
     refine ⟨K₂.sd (by decide) u₃, fun j hj hj' => absurd hj' (by omega_using [hj]), fun j hj hj8 => ?_,
       fun e => absurd e (by decide), fun e => absurd e (by decide), fun _ => ⟨?_, ?_⟩⟩
@@ -194,21 +194,21 @@ theorem and_M57 (x : BitVec 64) : (x &&& M58 >>> 1).toNat = x.toNat % 2 ^ 57 := 
 theorem topCut_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s : State} (hz : ZKept b O s0 s) :
     WP isa (.block topCut) s fun s' => ZKept b O s0 s' ∧ (s'.gpr .a4).toNat = zl s.mem b 8 / 2 ^ 57 ∧
       zl s'.mem b 8 = zl s.mem b 8 % 2 ^ 57 ∧ ∀ j < 8, zl s'.mem b j = zl s.mem b j := by
-  have hCs := hz.kept.core hC
+  obtain hCs := hz.kept.core hC
   unfold topCut
   refine ld_ok hCs.ctx (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₁ u₁ => wp_srl (by decide) fun s₂ u₂ =>
     wp_srl (by decide) fun s₃ u₃ => wp_and fun s₄ u₄ => ?_
-  have hc₄ : Ctx b s₄ := ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+  obtain hc₄ : Ctx b s₄ := ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
     u₁.other _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hCs.ctx.wr⟩
   rw [show Z + 64 = Z + 8 * 8 from rfl]
   refine sd_ok hc₄ (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₅ u₅ => WP.block_nil ?_
-  have hz₄ : ZKept b O s0 s₄ := ((((hz.keeps (rs := [.a1]) ⟨fun r hr => u₁.other r (by simpa using hr), u₁.mem, u₁.rd,
+  obtain hz₄ : ZKept b O s0 s₄ := ((((hz.keeps (rs := [.a1]) ⟨fun r hr => u₁.other r (by simpa using hr), u₁.mem, u₁.rd,
     u₁.wr, u₁.sp⟩).keeps (rs := [.a4]) ⟨fun r hr => u₂.other r (by simpa using hr), u₂.mem, u₂.rd, u₂.wr,
     u₂.sp⟩).keeps (rs := [.a7]) ⟨fun r hr => u₃.other r (by simpa using hr), u₃.mem, u₃.rd, u₃.wr, u₃.sp⟩).keeps
     (rs := [.a1]) ⟨fun r hr => u₄.other r (by simpa using hr), u₄.mem, u₄.rd, u₄.wr, u₄.sp⟩)
-  have hm₅ : s₅.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * 8)) (s₄.gpr .a1) := by
+  obtain hm₅ : s₅.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * 8)) (s₄.gpr .a1) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have e₄ : (s₄.gpr .a1).toNat = zl s.mem b 8 % 2 ^ 57 := by
+  obtain e₄ : (s₄.gpr .a1).toNat = zl s.mem b 8 % 2 ^ 57 := by
     rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₂.other _ (by decide), u₁.gpr,
       u₁.other _ (by decide), hz.a6, and_M57]; rfl
   refine ⟨hz₄.sd (by decide) u₅, ?_, by rw [hm₅, zl_write (by decide) (by decide), ite_eq_left rfl, e₄],
@@ -218,8 +218,8 @@ theorem topCut_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s : 
 theorem lv_lt {f : Nat → Nat} : ∀ {n}, (∀ j < n, f j < 2 ^ 58) → lv f n < 2 ^ (58 * n)
   | 0, _ => by simp [lv]
   | n + 1, h => by
-    have ih := lv_lt (n := n) fun j hj => h j (by omega_using [hj])
-    have hn := h n (by omega_using [])
+    obtain ih := lv_lt (n := n) fun j hj => h j (by omega_using [hj])
+    obtain hn := h n (by omega_using [])
     rw [lv, show 58 * (n + 1) = 58 * n + 58 by omega_using [], Nat.pow_add]
     have : 2 ^ (58 * n) * f n ≤ 2 ^ (58 * n) * (2 ^ 58 - 1) := Nat.mul_le_mul_left _ (by omega_using [hn])
     have : 2 ^ (58 * n) * (2 ^ 58 - 1) + 2 ^ (58 * n) = 2 ^ (58 * n) * 2 ^ 58 := by
@@ -241,16 +241,16 @@ theorem probe_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s : S
     WP isa (.block (([.li .a4 1] : List Instr) ++ (List.range 8).flatMap probeStep ++
         ([.load .d .a1 .a3 (Z + 64), .add .a1 .a1 .a4, .shift .srl .d .a4 .a1 57] : List Instr))) s fun s' =>
       Keeps [.a1, .a4] s s' ∧ (s'.gpr .a4).toNat = (lv (zl s.mem b) 9 + 1) / 2 ^ 521 := by
-  have hCs := hz.kept.core hC
+  obtain hCs := hz.kept.core hC
   rw [List.append_assoc, List.singleton_append]
   refine wp_li (imm := 1) (by decide) fun s₁ u₁ => ?_
-  have k₁ : Keeps [.a1, .a4] s s₁ := ⟨fun r hr => u₁.other r (by simp at hr; exact hr.2), u₁.mem, u₁.rd, u₁.wr, u₁.sp⟩
+  obtain k₁ : Keeps [.a1, .a4] s s₁ := ⟨fun r hr => u₁.other r (by simp at hr; exact hr.2), u₁.mem, u₁.rd, u₁.wr, u₁.sp⟩
   refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (ProbeInv b s) (N := 8) (fun i s' hi h => ?_) 8
     (Nat.le_refl _) s₁ ⟨k₁, by rw [u₁.gpr]; simp [lv]⟩) fun s₂ h₂ => ?_)
   · obtain ⟨k, e⟩ := h
-    have hc : Ctx b s' := ⟨by rw [k.1 _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [k.2.2.2.1]; exact hCs.ctx.wr⟩
-    have hlt := lv_lt (f := zl s.mem b) (n := i) fun j hj => hl j (by omega_using [hi, hj])
-    have hcar : (s'.gpr .a4).toNat ≤ 1 := by
+    obtain hc : Ctx b s' := ⟨by rw [k.1 _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [k.2.2.2.1]; exact hCs.ctx.wr⟩
+    obtain hlt := lv_lt (f := zl s.mem b) (n := i) fun j hj => hl j (by omega_using [hi, hj])
+    obtain hcar : (s'.gpr .a4).toNat ≤ 1 := by
       rw [e]; exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by rw [Nat.mul_succ, Nat.mul_one]; omega_using [hlt]))
     unfold probeStep
     refine ld_ok hc (by rw [Z_eq]; omega_using [hi]) (by rw [Z_eq]; omega_using []) fun t₁ v₁ => wp_add fun t₂ v₂ =>
@@ -260,14 +260,14 @@ theorem probe_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {s : S
         rw [v₃.other _ hr.2, v₂.other _ hr.1, v₁.other _ hr.1], by rw [v₃.mem, v₂.mem, v₁.mem],
         by rw [v₃.rd, v₂.rd, v₁.rd], by rw [v₃.wr, v₂.wr, v₁.wr], by rw [v₃.sp, v₂.sp, v₁.sp]⟩ |>.mono (by decide)
     · have hzi : dw s.mem b (Z + 8 * i) < 2 ^ 58 := hl i hi
-      have ev : (t₂.gpr .a1).toNat = zl s.mem b i + (s'.gpr .a4).toNat := by
+      obtain ev : (t₂.gpr .a1).toNat = zl s.mem b i + (s'.gpr .a4).toNat := by
         rw [v₂.gpr, v₁.gpr, v₁.other _ (by decide), BitVec.toNat_add, Nat.mod_eq_of_lt (by
           show dw s'.mem b (Z + 8 * i) + _ < _; rw [k.2.1]; omega_using [hcar, hzi]), k.2.1]; rfl
       rw [v₃.gpr, shr_toNat, ev, e, show 58 * (i + 1) = 58 * i + 58 by omega_using [], Nat.pow_add, probe_div]
   · obtain ⟨k₂, e₂⟩ := h₂
-    have hc : Ctx b s₂ := ⟨by rw [k₂.1 _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [k₂.2.2.2.1]; exact hCs.ctx.wr⟩
-    have hlt := lv_lt (f := zl s.mem b) (n := 8) fun j hj => hl j hj
-    have hcar : (s₂.gpr .a4).toNat ≤ 1 := by
+    obtain hc : Ctx b s₂ := ⟨by rw [k₂.1 _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [k₂.2.2.2.1]; exact hCs.ctx.wr⟩
+    obtain hlt := lv_lt (f := zl s.mem b) (n := 8) fun j hj => hl j hj
+    obtain hcar : (s₂.gpr .a4).toNat ≤ 1 := by
       rw [e₂]; exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by rw [Nat.mul_succ, Nat.mul_one]; omega_using [hlt]))
     refine ld_ok hc (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun t₁ v₁ => wp_add fun t₂ v₂ =>
       wp_srl (by decide) fun t₃ v₃ => WP.block_nil ⟨?_, ?_⟩
@@ -288,13 +288,13 @@ theorem canon_arith {X q : Nat} (hX : X < 2 ^ 521) (hq : q ≤ 2) :
       (X + q + (X + q + 1) / 2 ^ 521) % 2 ^ 521 < p := by
   by_cases h : X + q + 1 < 2 ^ 521
   · rw [Nat.div_eq_of_lt h, Nat.add_zero, Nat.mod_eq_of_lt (by omega_using [h])]
-    have e : X + 2 ^ 521 * q = (X + q) + p * q := by simp only [p]; omega_using []
+    obtain e : X + 2 ^ 521 * q = (X + q) + p * q := by simp only [p]; omega_using []
     rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by simp only [p]; omega_using [h])]
     exact ⟨rfl, by simp only [p]; omega_using [h]⟩
   · have h1 : (X + q + 1) / 2 ^ 521 = 1 := by omega_using [hX, hq, h]
     rw [h1]
-    have e1 : (X + q + 1) % 2 ^ 521 = X + q + 1 - 2 ^ 521 := by omega_using [hX, hq, h]
-    have e : X + 2 ^ 521 * q = (X + q + 1 - 2 ^ 521) + p * (q + 1) := by simp only [p]; omega_using [h]
+    obtain e1 : (X + q + 1) % 2 ^ 521 = X + q + 1 - 2 ^ 521 := by omega_using [hX, hq, h]
+    obtain e : X + 2 ^ 521 * q = (X + q + 1 - 2 ^ 521) + p * (q + 1) := by simp only [p]; omega_using [h]
     rw [e1, e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by simp only [p]; omega_using [hX, hq])]
     exact ⟨rfl, by simp only [p]; omega_using [hX, hq]⟩
 
@@ -313,14 +313,14 @@ theorem canon_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0)
     WP isa (.block canon) s0 fun s => ZKept b O s0 s ∧ Canon s.mem b ∧
       lv (zl s.mem b) 9 = lv (fun i => dw s0.mem A (8 * i)) 9 % p := by
   have hb := hC.nowrap
-  have e : canon = [.li .a4 0] ++ (carryPass .t4 0 ++ (topCut ++ (carryPass .a3 Z ++
+  obtain e : canon = [.li .a4 0] ++ (carryPass .t4 0 ++ (topCut ++ (carryPass .a3 Z ++
       (([.li .a4 1] ++ (List.range 8).flatMap probeStep ++
         [.load .d .a1 .a3 (Z + 64), .add .a1 .a1 .a4, .shift .srl .d .a4 .a1 57]) ++ (carryPass .a3 Z ++ topCut))))) := by
     simp only [canon, List.append_assoc, List.cons_append, List.nil_append]
   rw [e, List.singleton_append]
-  have hf0 : ∀ j < 9, dw s0.mem A (8 * j) < 2 ^ 59 := fun j hj => hA.lt hj
+  obtain hf0 : ∀ j < 9, dw s0.mem A (8 * j) < 2 ^ 59 := fun j hj => hA.lt hj
   refine wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_
-  have z₁ : ZKept b O s0 s₁ := (ZKept.refl h6).keeps (rs := [.a4])
+  obtain z₁ : ZKept b O s0 s₁ := (ZKept.refl h6).keeps (rs := [.a4])
     ⟨fun r hr => u₁.other r (by simpa using hr), u₁.mem, u₁.rd, u₁.wr, u₁.sp⟩
   -- The carries.
   refine WP.block_append (WP.mono (carryPass_ok hC (.inl ⟨rfl, rfl, rfl, rfl⟩) hf0 (c0 := 0) (by decide) z₁
@@ -328,13 +328,13 @@ theorem canon_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0)
   obtain ⟨v₂, t₂⟩ := h₂.fin rfl
   -- The bits from 521 on.
   refine WP.block_append (WP.mono (topCut_ok hC h₂.zk) fun s₃ ⟨z₃, q₃, c₃, o₃⟩ => ?_)
-  have hq : zl s₂.mem b 8 / 2 ^ 57 ≤ 2 := by
+  obtain hq : zl s₂.mem b 8 / 2 ^ 57 ≤ 2 := by
     have h8 : dw s0.mem A (8 * 8) < 2 ^ 58 := hA.2
     have t₂' : zl s₂.mem b 8 < dw s0.mem A (8 * 8) + 4 := t₂
     omega_using [t₂, h8]
-  have l₃ : Canon s₃.mem b := ⟨fun j hj => by rw [o₃ j hj]; exact h₂.lt j (by omega_using [hj]) hj, by
+  obtain l₃ : Canon s₃.mem b := ⟨fun j hj => by rw [o₃ j hj]; exact h₂.lt j (by omega_using [hj]) hj, by
     rw [c₃]; exact Nat.mod_lt _ (by decide)⟩
-  have e₃ : lv (zl s₃.mem b) 9 = lv (zl s₂.mem b) 8 + 2 ^ 464 * (zl s₂.mem b 8 % 2 ^ 57) := by
+  obtain e₃ : lv (zl s₃.mem b) 9 = lv (zl s₂.mem b) 8 + 2 ^ 464 * (zl s₂.mem b 8 % 2 ^ 57) := by
     rw [show lv (zl s₃.mem b) 9 = lv (zl s₃.mem b) 8 + 2 ^ (58 * 8) * zl s₃.mem b 8 from rfl, c₃,
       lv_congr (g := zl s₂.mem b) o₃]
   -- The carries again.
@@ -345,14 +345,14 @@ theorem canon_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0)
       · exact Nat.lt_trans l₃.2 (by decide))
     (c0 := zl s₂.mem b 8 / 2 ^ 57) (by omega_using [hq]) z₃ (fun _ _ => rfl) q₃) fun s₄ h₄ => ?_)
   obtain ⟨v₄, t₄⟩ := h₄.fin rfl
-  have hX : lv (zl s₃.mem b) 9 < 2 ^ 521 := by
+  obtain hX : lv (zl s₃.mem b) 9 < 2 ^ 521 := by
     have := lv_canon l₃; have := l₃.2; rw [show lv (zl s₃.mem b) 9 = lv (zl s₃.mem b) 8 + 2 ^ (58 * 8) * zl s₃.mem b 8
       from rfl]; omega_arith
   -- The probe.
   refine WP.block_append (WP.mono (probe_ok hC h₄.zk (fun j hj => h₄.lt j (by omega_using [hj]) hj) (by
     have := l₃.2; omega_using [c₃, t₄])) fun s₅ ⟨k₅, q₅⟩ => ?_)
-  have z₅ : ZKept b O s0 s₅ := h₄.zk.keeps k₅
-  have hq2 : (lv (zl s₄.mem b) 9 + 1) / 2 ^ 521 ≤ 1 := by rw [v₄]; omega_using [q₃, hX]
+  obtain z₅ : ZKept b O s0 s₅ := h₄.zk.keeps k₅
+  obtain hq2 : (lv (zl s₄.mem b) 9 + 1) / 2 ^ 521 ≤ 1 := by rw [v₄]; omega_using [q₃, hX]
   -- The correction.
   refine WP.block_append (WP.mono (carryPass_ok hC (.inr ⟨rfl, rfl, rfl, rfl⟩) (f := zl s₄.mem b)
     (fun j hj => by
@@ -368,7 +368,7 @@ theorem canon_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0)
     rw [show lv (zl s₇.mem b) 9 = lv (zl s₇.mem b) 8 + 2 ^ (58 * 8) * zl s₇.mem b 8 from rfl, c₇,
       lv_congr (g := zl s₆.mem b) o₇, ← top_mod hL,
       show lv (zl s₆.mem b) 8 + 2 ^ (58 * 8) * zl s₆.mem b 8 = lv (zl s₆.mem b) 9 from rfl, v₆, v₄]
-    have hv2 : lv (zl s₂.mem b) 9 = lv (zl s₃.mem b) 9 + 2 ^ 521 * (zl s₂.mem b 8 / 2 ^ 57) := by
+    obtain hv2 : lv (zl s₂.mem b) 9 = lv (zl s₃.mem b) 9 + 2 ^ 521 * (zl s₂.mem b 8 / 2 ^ 57) := by
       rw [e₃, show lv (zl s₂.mem b) 9 = lv (zl s₂.mem b) 8 + 2 ^ (58 * 8) * zl s₂.mem b 8 from rfl]
       have := Nat.div_add_mod (zl s₂.mem b 8) (2 ^ 57)
       omega_using []
@@ -393,7 +393,7 @@ theorem packInner_ok {b : Addr} (j : Nat) :
     obtain ⟨hk, h1, h2⟩ := hks k (List.mem_cons_self ..)
     rw [List.flatMap_cons, List.append_assoc, List.singleton_append]
     refine ld_ok hc (by rw [Z_eq]; omega_using [hk]) (by rw [Z_eq]; omega_using []) fun s₁ u₁ => ?_
-    have step : ∀ s₂ : State, Keeps [.a1] s₁ s₂ → (s₂.gpr .a1).toNat = shv j (zl s.mem b) k →
+    obtain step : ∀ s₂ : State, Keeps [.a1] s₁ s₂ → (s₂.gpr .a1).toNat = shv j (zl s.mem b) k →
         WP isa (.block (.add .a2 .a2 .a1 :: ks.flatMap fun k =>
           [.load .d .a1 .a3 (Z + 8 * k)] ++
           (if 64 * j ≤ 58 * k then [.shift .sll .d .a1 .a1 (58 * k - 64 * j)]
@@ -401,18 +401,18 @@ theorem packInner_ok {b : Addr} (j : Nat) :
           Keeps [.a1, .a2] s s' ∧ (s'.gpr .a2).toNat = ((s.gpr .a2).toNat + tsum (shv j (zl s.mem b)) (k :: ks)) %
             2 ^ 64 := fun s₂ k₂ e₂ => by
       refine wp_add fun s₃ u₃ => ?_
-      have k₃ : Keeps [.a1, .a2] s s₃ := ⟨fun r hr => by
+      obtain k₃ : Keeps [.a1, .a2] s s₃ := ⟨fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
           rw [u₃.other _ hr.2, k₂.1 _ (by simpa using hr.1), u₁.other _ hr.1],
         by rw [u₃.mem, k₂.2.1, u₁.mem], by rw [u₃.rd, k₂.2.2.1, u₁.rd], by rw [u₃.wr, k₂.2.2.2.1, u₁.wr],
         by rw [u₃.sp, k₂.2.2.2.2, u₁.sp]⟩
-      have hc₃ : Ctx b s₃ := ⟨by rw [k₃.1 _ (by decide), hc.a3], hc.al, by rw [k₃.2.2.2.1]; exact hc.wr⟩
+      obtain hc₃ : Ctx b s₃ := ⟨by rw [k₃.1 _ (by decide), hc.a3], hc.al, by rw [k₃.2.2.2.1]; exact hc.wr⟩
       refine WP.mono (packInner_ok j ks (fun k' hk' => hks k' (List.mem_cons_of_mem _ hk')) hc₃)
         fun s' ⟨k', e'⟩ => ⟨(k₃.trans k').mono (by decide), ?_⟩
       rw [e', u₃.gpr, BitVec.toNat_add, k₂.1 _ (by decide), u₁.other _ (by decide), e₂, k₃.2.1]
       simp only [tsum, List.map_cons, List.sum_cons]
       rw [Nat.mod_add_mod, Nat.add_assoc]
-    have hl : (s₁.gpr .a1).toNat = zl s.mem b k := by rw [u₁.gpr]; rfl
+    obtain hl : (s₁.gpr .a1).toNat = zl s.mem b k := by rw [u₁.gpr]; rfl
     split
     · rename_i hle
       refine wp_sll (by omega_using [h1]) fun s₂ u₂ => step s₂ ⟨fun r hr => u₂.other r (by simpa using hr), u₂.mem, u₂.rd, u₂.wr,
@@ -435,13 +435,13 @@ theorem packStep_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {j 
     (hk : Kept b O s0 s) :
     WP isa (.block (packStep j)) s fun s' => Kept b O s0 s' ∧
       s'.mem = s.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (BitVec.ofNat 64 (pw (zl s.mem b) j)) := by
-  have hCs := hk.core hC
+  obtain hCs := hk.core hC
   unfold packStep
   rw [List.append_assoc, List.singleton_append]
   refine wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_
-  have hc₁ : Ctx b s₁ := ⟨by rw [u₁.other _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [u₁.wr]; exact hCs.ctx.wr⟩
+  obtain hc₁ : Ctx b s₁ := ⟨by rw [u₁.other _ (by decide), hCs.ctx.a3], hCs.ctx.al, by rw [u₁.wr]; exact hCs.ctx.wr⟩
   refine WP.block_append (WP.mono (packInner_ok j _ (packLimbs_ok j) hc₁) fun s₂ ⟨k₂, e₂⟩ => ?_)
-  have K₂ : Kept b O s0 s₂ := (hk.upd u₁).keeps k₂
+  obtain K₂ : Kept b O s0 s₂ := (hk.upd u₁).keeps k₂
   refine sdO_ok (K₂.core hC) hj fun s₃ u₃ => WP.block_nil ⟨K₂.sdO hj u₃, ?_⟩
   rw [u₃.mem, k₂.2.1, u₁.mem]
   congr 1
@@ -484,9 +484,9 @@ theorem shv8_8 (l : Nat → Nat) : shv 8 l 8 = l 8 / 2 ^ 48 := by unfold shv; rw
 /-- The words gathered from canonical limbs are the residue's. -/
 theorem pack_word {l : Nat → Nat} (hl : ∀ j < 8, l j < 2 ^ 58) :
     ∀ j < 9, pw l j = lw (lv l 9) j := by
-  have h0 := hl 0 (by decide); have h1 := hl 1 (by decide); have h2 := hl 2 (by decide)
-  have h3 := hl 3 (by decide); have h4 := hl 4 (by decide); have h5 := hl 5 (by decide)
-  have h6 := hl 6 (by decide); have h7 := hl 7 (by decide)
+  obtain h0 := hl 0 (by decide); have h1 := hl 1 (by decide); have h2 := hl 2 (by decide)
+  obtain h3 := hl 3 (by decide); have h4 := hl 4 (by decide); have h5 := hl 5 (by decide)
+  obtain h6 := hl 6 (by decide); have h7 := hl 7 (by decide)
   intro j hj
   rcases j with _ | _ | _ | _ | _ | _ | _ | _ | _ | j
   · rw [pw, packLimbs0, tsum2, shv0_0, shv0_1, lv9, lw]; omega_using []
@@ -520,10 +520,10 @@ theorem pack_spec : CoreSpec 9 packC (fun A _ => Tight A) (fun A _ r => r = uv A
   unfold packC
   rw [List.append_assoc]
   refine mask_ok fun s₁ k₁ h6 => ?_
-  have hC₁ := core_of hC (fun r hr => k₁.1 r fun e => hr (by simp at e; rw [e]; decide)) k₁.2.2.1 k₁.2.2.2.1
-  have hA₁ : TightF (fun i => dw s₁.mem A (8 * i)) := by rw [k₁.2.1]; exact hA
+  obtain hC₁ := core_of hC (fun r hr => k₁.1 r fun e => hr (by simp at e; rw [e]; decide)) k₁.2.2.1 k₁.2.2.2.1
+  obtain hA₁ : TightF (fun i => dw s₁.mem A (8 * i)) := by rw [k₁.2.1]; exact hA
   refine WP.block_append (WP.mono (canon_ok hC₁ hA₁ h6) fun s₂ ⟨z₂, c₂, v₂⟩ => ?_)
-  have K₂ : Kept b O s s₂ := ((Kept.refl b O s).keeps k₁).trans z₂.kept
+  obtain K₂ : Kept b O s s₂ := ((Kept.refl b O s).keeps k₁).trans z₂.kept
   refine WP.mono (wp_range_flatMap (M := isa) (PackInv b O s s₂) (fun j t hj h => ?_) 9 (Nat.le_refl _) s₂
     ⟨K₂, fun _ _ => rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s' h' => ⟨?_, h'.kept.frame, h'.kept.gpr,
       h'.kept.rd, h'.kept.wr, h'.kept.sp⟩

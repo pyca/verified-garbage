@@ -83,14 +83,14 @@ theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (hesi : (s.gp
   rw [dblStep, WP.block_append_iff]
   refine WP.mono (dbl_ok (kt.ctx hc) rt) fun u ⟨ku, ru, hu⟩ => ?_
   refine wp_addiC fun v hv cv => WP.block_nil ?_
-  have eu : (u.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 := by rw [ku.keep.esi]; exact he
+  obtain eu : (u.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 := by rw [ku.keep.esi]; exact he
   obtain ⟨ev, cv'⟩ := dblCount_step hesi h1 h4 eu
   rw [cv'] at cv
-  have kv : IKeep x s v := kt.trans ((IKeep.of_field ku).trans (IKeep.of_counter hv))
-  have rv : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
+  obtain kv : IKeep x s v := kt.trans ((IKeep.of_field ku).trans (IKeep.of_counter hv))
+  obtain rv : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
     rw [hv.mem, show 4 - (n - 1) = (4 - n) + 1 by omega_arith, pow_succ, mul_comm, ← smul_smul, two_nsmul]
     exact ru
-  have hv16 : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
+  obtain hv16 : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
     fun i hi => by rw [hv.mem, hu i hi, ht i hi]
   rw [← hv.gpr] at ev
   by_cases hn : n = 1
@@ -156,8 +156,8 @@ theorem nibbleAddr_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s�
     WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))])
       s fun t => EaxKeep s t ∧ t.gpr .eax = arg s₀ a + BitVec.ofNat 32 (i / 2) := by
   refine Wp.wp_mov fun u₁ h₁ => Wp.wp_shr (by decide) fun u₂ h₂ _ => ?_
-  have e₂ : u₂.gpr .eax = BitVec.ofNat 32 (i / 2) := by rw [h₂.gpr, h₁.gpr, hesi, shr1_ofNat hi]
-  have hr₂ : u₂.rd ++ u₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr, hs.rd, hs.wr]
+  obtain e₂ : u₂.gpr .eax = BitVec.ofNat 32 (i / 2) := by rw [h₂.gpr, h₁.gpr, hesi, shr1_ofNat hi]
+  obtain hr₂ : u₂.rd ++ u₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr, hs.rd, hs.wr]
   refine Wp.wp_addm (B := s₀.gpr .esp) (by rw [h₂.other _ (by decide), h₁.other _ (by decide)]; exact hs.esp)
     (by rw [hr₂]; exact hp.argIn ha) fun t ht => WP.block_nil
       ⟨(EaxKeep.of_upd h₁).trans ((EaxKeep.of_upd h₂).trans (EaxKeep.of_upd ht)), ?_⟩
@@ -171,15 +171,15 @@ theorem nibbleByte_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s�
       .movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)]) s fun t => EaxKeep s t ∧
       t.gpr .eax = ((Spec.Ed25519.bytesAt s₀.mem ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n).getD
         (i / 2) 0).setWidth 32 ∧ t.zf = some (decide (i % 2 = 0)) := by
-  have hn : i < 2 ^ 32 := by omega_arith
+  obtain hn : i < 2 ^ 32 := by omega_arith
   show WP isa (.block (([.mov .eax (.reg .esi), .shift .shr .eax 1,
     .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))] : List Instr) ++
     [.movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)])) s _
   refine WP.block_append (WP.mono (nibbleAddr_ok hp hs ha hn hesi) fun u₃ ⟨k₃, e₃⟩ => ?_)
-  have hA : addr (u₃.gpr .eax) add = addr (arg s₀ a + BitVec.ofNat 32 add) (i / 2) := by
+  obtain hA : addr (u₃.gpr .eax) add = addr (arg s₀ a + BitVec.ofNat 32 add) (i / 2) := by
     rw [e₃]; simp only [addr]
     rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 32 (i / 2))]
-  have hr₃ : u₃.rd ++ u₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hs.rd, hs.wr]
+  obtain hr₃ : u₃.rd ++ u₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hs.rd, hs.wr]
   refine scalar_ld8 hA (by rw [hr₃]; exact slice_read hsl (by omega_arith) (by decide)) fun u₄ h₄ =>
     wp_testi fun t ht zt => WP.block_nil ⟨?_, ?_, ?_⟩
   · exact k₃.trans ((EaxKeep.of_upd h₄).trans (EaxKeep.of_fupd ht))
@@ -216,10 +216,10 @@ theorem entryAddr_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (o : Nat) {v : N
       Keep s t ∧ t.mem = s.mem ∧ t.gpr .edx = x + BitVec.ofNat 32 (o + 128 * (v - 1)) := by
   refine Wp.wp_subi fun s₁ h₁ _ _ => Wp.wp_movi fun s₂ h₂ => wp_mul fun s₃ h₃ => ?_
   refine Wp.wp_add fun s₄ h₄ _ => Wp.wp_addi fun s₅ h₅ => Wp.wp_mov fun s₆ h₆ => WP.block_nil ?_
-  have hk : Keep s s₆ := (updKeep h₁).trans ((updKeep h₂).trans (h₃.keep.trans
+  obtain hk : Keep s s₆ := (updKeep h₁).trans ((updKeep h₂).trans (h₃.keep.trans
     ((updKeep h₄).trans ((updKeep h₅).trans (updKeep h₆)))))
-  have e₁ : s₁.gpr .eax = BitVec.ofNat 32 (v - 1) := by rw [h₁.gpr, he]; exact Wp.ofNat_pred hv
-  have hvv : s₃.gpr .eax = BitVec.ofNat 32 (128 * (v - 1)) := by
+  obtain e₁ : s₁.gpr .eax = BitVec.ofNat 32 (v - 1) := by rw [h₁.gpr, he]; exact Wp.ofNat_pred hv
+  obtain hvv : s₃.gpr .eax = BitVec.ofNat 32 (128 * (v - 1)) := by
     apply BitVec.eq_of_toNat_eq
     change VG.Proof.X25519.X86.v s₃ .eax = _
     rw [h₃.eax]
@@ -242,20 +242,20 @@ theorem addDigit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {o : Nat} (ho : 1
     WP isa (addDigit o) s fun t => IKeep x s t ∧ t.gpr .esi = s.gpr .esi ∧
       Rep (point (env t.mem x) 0 1 2 3) (a + v • X) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i := by
-  have htest : WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t =>
+  obtain htest : WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t =>
       IKeep x s t ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.zf = some (decide (v = 0)) :=
     Wp.wp_test fun t ht zt => WP.block_nil ⟨⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr,
       by rw [ht.mem]; exact Frame.refl _ _⟩, ht.mem, ht.gpr, by rw [zt, he, digit_test_fact v hv]⟩
   refine WP.seq (WP.mono htest fun u ⟨ku, mu, gu, zu⟩ => ?_)
-  have cu := ku.ctx hc
+  obtain cu := ku.ctx hc
   refine WP.ite (!decide (v = 0)) (by show u.zf.map (!·) = _; rw [zu]; rfl) (fun h => ?_) (fun h => ?_)
   · have hv0 : v ≠ 0 := by simpa using h
     refine WP.seq ?_
     rw [WP.block_append_iff]
     refine WP.mono (entryAddr_ok cu o (by omega_arith) hv (by rw [gu]; exact he)) fun b ⟨kb, mb, pb⟩ => ?_
-    have cb := kb.ctx cu
+    obtain cb := kb.ctx cu
     refine WP.mono (pointFromTableQ_ok cb pb (by omega_arith) (by omega_arith)) fun c ⟨kc, ec, pc, hc'⟩ => ?_
-    have cc := kc.ctx cb
+    obtain cc := kc.ctx cb
     refine WP.mono (pointAddCall_ok cc (by rw [hc' 16 (Or.inr (by decide)), mb, mu]; exact hd))
       fun t ⟨kt, pt, ht⟩ => ⟨((ku.trans (IKeep.of_mem kb mb)).trans kc).trans (IKeep.of_call kt), ?_, ?_,
         fun i hi => ?_⟩
@@ -398,12 +398,12 @@ theorem addS_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h : 
     WP isa addS s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = s.gpr .esi ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (a + sNib s₀ n • (-baseAff)) := by
   refine WP.seq (WP.mono (cmp64_ok h hn hesi) fun u ⟨wu, eu, mu, cu⟩ => ?_)
-  have ru : Rep (point (env u.mem (arg s₀ 3)) 0 1 2 3) a := by rw [mu]; exact hacc
+  obtain ru : Rep (point (env u.mem (arg s₀ 3)) 0 1 2 3) a := by rw [mu]; exact hacc
   refine WP.ite (decide (n < 64)) cu (fun hh => ?_) (fun hh => ?_)
   · have h64 : n < 64 := by simpa using hh
     refine WP.seq (WP.mono (digitS_ok h64 u wu (eu.trans hesi)) fun c ⟨kc, ec⟩ => ?_)
-    have wc := wu.of_ikeep kc.ikeep (by rw [kc.mem])
-    have rc : Rep (point (env c.mem (arg s₀ 3)) 0 1 2 3) a := by rw [kc.mem]; exact ru
+    obtain wc := wu.of_ikeep kc.ikeep (by rw [kc.mem])
+    obtain rc : Rep (point (env c.mem (arg s₀ 3)) 0 1 2 3) a := by rw [kc.mem]; exact ru
     refine WP.mono (addDigit_ok wc.ctx (by decide) (by decide) (nibbleOf_lt _ _) ec wc.tb rc wc.d)
       fun t ⟨kt, et, rt, ht⟩ => ⟨wc.of_ikeep kt (ht 16 (by decide)), ?_, rt⟩
     rw [et, kc.gpr _ (by decide)]; exact eu
@@ -418,8 +418,8 @@ theorem addK_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h : 
     WP isa addK s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = s.gpr .esi ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (a + kNib s₀ n • Aa) := by
   refine WP.seq (WP.mono (digitK_ok hn s h hesi) fun c ⟨kc, ec⟩ => ?_)
-  have wc := h.of_ikeep kc.ikeep (by rw [kc.mem])
-  have rc : Rep (point (env c.mem (arg s₀ 3)) 0 1 2 3) a := by rw [kc.mem]; exact hacc
+  obtain wc := h.of_ikeep kc.ikeep (by rw [kc.mem])
+  obtain rc : Rep (point (env c.mem (arg s₀ 3)) 0 1 2 3) a := by rw [kc.mem]; exact hacc
   refine WP.mono (addDigit_ok wc.ctx (by decide) (by decide) (nibbleOf_lt _ _) ec wc.ta rc wc.d)
     fun t ⟨kt, et, rt, ht⟩ => ⟨wc.of_ikeep kt (ht 16 (by decide)), ?_, rt⟩
   rw [et, kc.gpr _ (by decide)]
@@ -442,10 +442,10 @@ theorem nibbleStep_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     WP isa nibbleStep s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = BitVec.ofNat 32 n ∧
       t.zf = some (decide (n = 0)) ∧ Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa n) := by
   refine WP.seq (WP.mono (esiDec_ok h hesi) fun u ⟨wu, eu, mu⟩ => ?_)
-  have ru : Rep (point (env u.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa (n + 1)) := by rw [mu]; exact hacc
+  obtain ru : Rep (point (env u.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa (n + 1)) := by rw [mu]; exact hacc
   refine WP.seq (WP.mono (doubleWindow_ok wu.ctx (esi_lt (by omega_arith) eu) ru) fun b ⟨kb, eb, rb, hb⟩ => ?_)
-  have wb := wu.of_ikeep kb (hb 16 (by decide))
-  have ebs : b.gpr .esi = BitVec.ofNat 32 n := eb.trans eu
+  obtain wb := wu.of_ikeep kb (hb 16 (by decide))
+  obtain ebs : b.gpr .esi = BitVec.ofNat 32 n := eb.trans eu
   refine WP.seq (WP.mono (addK_ok wb hn ebs rb) fun d ⟨wd, ed, rd⟩ => ?_)
   refine WP.seq (WP.mono (addS_ok wd hn (ed.trans ebs) rd) fun e ⟨we, ee, re⟩ => ?_)
   refine Wp.wp_test fun t ht zt => WP.block_nil ⟨we.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd,
@@ -493,26 +493,26 @@ theorem skipLoad_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
   have hp := h.pre
   have hs := h.saved
   refine Wp.wp_mov fun u₁ h₁ => Wp.wp_subi fun u₂ h₂ _ _ => ?_
-  have e₂ : u₂.gpr .edx = BitVec.ofNat 32 (c - 1) := by
+  obtain e₂ : u₂.gpr .edx = BitVec.ofNat 32 (c - 1) := by
     rw [h₂.gpr, h₁.gpr, hesi]; exact Wp.ofNat_pred hc
-  have hsp : u₂.gpr .esp = s₀.gpr .esp := by
+  obtain hsp : u₂.gpr .esp = s₀.gpr .esp := by
     rw [h₂.other _ (by decide), h₁.other _ (by decide)]; exact hs.esp
-  have hr₂ : u₂.rd ++ u₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr, hs.rd, hs.wr]
+  obtain hr₂ : u₂.rd ++ u₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr, hs.rd, hs.wr]
   refine Wp.wp_ldm hsp (by rw [hr₂]; exact hp.scratch.argIn (i := 2) (by decide)) fun u₃ h₃ => ?_
-  have m₂ : u₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
-  have e₃ : u₃.gpr .eax = arg s₀ 2 := by
+  obtain m₂ : u₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
+  obtain e₃ : u₃.gpr .eax = arg s₀ 2 := by
     rw [h₃.gpr, m₂, show (12 : Nat) = 4 + 4 * 2 from rfl]; exact hp.scratch.arg_same hs.frame (by decide)
   refine Wp.wp_add fun u₄ h₄ _ => ?_
-  have e₄ : u₄.gpr .eax = arg s₀ 2 + BitVec.ofNat 32 (c - 1) := by
+  obtain e₄ : u₄.gpr .eax = arg s₀ 2 + BitVec.ofNat 32 (c - 1) := by
     rw [h₄.gpr, e₃, h₃.other .edx (by decide), e₂]
-  have hA : addr (u₄.gpr .eax) 0 = addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1) := by
+  obtain hA : addr (u₄.gpr .eax) 0 = addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1) := by
     rw [e₄]; simp only [addr]
     rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 32 (c - 1))]
-  have hr₄ : u₄.rd ++ u₄.wr = s₀.rd ++ s₀.wr := by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, hr₂]
+  obtain hr₄ : u₄.rd ++ u₄.wr = s₀.rd ++ s₀.wr := by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, hr₂]
   refine scalar_ld8 hA (by rw [hr₄]; exact slice_read hp.challenge (by omega_arith) (by decide))
     fun u₅ h₅ => Wp.wp_test fun t ht zt => WP.block_nil ?_
   have hsl := hp.challenge
-  have byte : s.mem (addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1)) = kByte s₀ (c - 1) := by
+  obtain byte : s.mem (addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1)) = kByte s₀ (c - 1) := by
     rw [kByte, bytesAt_getD _ _ _ _ (by omega_arith), ← addr_eq (by have := hsl.fit; omega_arith)]
     apply hs.frame
     intro r hr
@@ -520,8 +520,8 @@ theorem skipLoad_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     rcases hr with rfl | rfl
     · exact hsl.sep _ (slice_contains hsl (by omega_arith) (by decide))
     · exact hsl.stk _ (slice_contains hsl (by omega_arith) (by decide))
-  have mt : t.mem = s.mem := by rw [ht.mem, h₅.mem, h₄.mem, h₃.mem, m₂]
-  have k₅ : IKeep (arg s₀ 3) s t := ⟨by rw [ht.gpr, h₅.other _ (by decide), h₄.other _ (by decide),
+  obtain mt : t.mem = s.mem := by rw [ht.mem, h₅.mem, h₄.mem, h₃.mem, m₂]
+  obtain k₅ : IKeep (arg s₀ 3) s t := ⟨by rw [ht.gpr, h₅.other _ (by decide), h₄.other _ (by decide),
       h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide)],
     by rw [ht.gpr, h₅.other _ (by decide), h₄.other _ (by decide), h₃.other _ (by decide),
       h₂.other _ (by decide), h₁.other _ (by decide)],
@@ -565,12 +565,12 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
       (skipOn s₀ m = true → SkipAt s₀ Aa R (m - 1) t) := by
   obtain ⟨wu, hm0, hm, eu, ku, ru⟩ := h
   refine WP.seq (WP.mono (skipLoad_ok wu (by omega_arith) (by omega_arith) eu) fun v ⟨wv, ev, dv, zv, mv⟩ => ?_)
-  have rv : Rep (point (env v.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [mv]; exact ru
+  obtain rv : Rep (point (env v.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [mv]; exact ru
   refine WP.ite (!decide ((kByte s₀ (32 + m - 1)).toNat = 0)) (by show v.zf.map (!·) = _; rw [zv]; rfl)
     (fun hh => ?_) (fun hh => ?_)
   · have hnz : (kByte s₀ (32 + m - 1)).toNat ≠ 0 := by simpa using hh
-    have son : skipOn s₀ m = false := by simp only [skipOn, decide_eq_false hnz, Bool.false_and]
-    have sen : skipEnd s₀ m = 32 + m := by simp only [skipEnd, hnz, ↓reduceIte]
+    obtain son : skipOn s₀ m = false := by simp only [skipOn, decide_eq_false hnz, Bool.false_and]
+    obtain sen : skipEnd s₀ m = 32 + m := by simp only [skipEnd, hnz, ↓reduceIte]
     refine Wp.wp_cmp fun t ht _ zt => WP.block_nil ⟨?_, fun _ => ?_, fun h => absurd h (by rw [son]; decide)⟩
     · rw [zt, son]; simp
     · rw [sen]
@@ -578,19 +578,19 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
         by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem]), by rw [ht.gpr, ev], ?_⟩
       rw [ht.mem, wsum_zero (by omega_arith) ku]; exact rv
   · have hz : (kByte s₀ (32 + m - 1)).toNat = 0 := by simpa using hh
-    have k' : verificationChallenge s₀ / 256 ^ (32 + m - 1) = 0 := by
+    obtain k' : verificationChallenge s₀ / 256 ^ (32 + m - 1) = 0 := by
       have := div_split (verificationChallenge s₀) (32 + m - 1)
       rw [show 32 + m - 1 + 1 = 32 + m by omega_arith, ku, ← kByte_val, hz] at this
       exact this
-    have son : skipOn s₀ m = decide (m ≠ 1) := by
+    obtain son : skipOn s₀ m = decide (m ≠ 1) := by
       simp only [skipOn, decide_eq_true hz, Bool.true_and]
-    have sen : skipEnd s₀ m = 32 + m - 1 := by simp only [skipEnd, hz, ↓reduceIte]
+    obtain sen : skipEnd s₀ m = 32 + m - 1 := by simp only [skipEnd, hz, ↓reduceIte]
     refine Wp.wp_mov fun w hw => Wp.wp_cmpi fun t ht _ zt => WP.block_nil ?_
-    have ww : WinCtx s₀ Aa R t := (wv.of_ikeep (IKeep.of_counter hw) (by rw [hw.mem])).of_ikeep
+    obtain ww : WinCtx s₀ Aa R t := (wv.of_ikeep (IKeep.of_counter hw) (by rw [hw.mem])).of_ikeep
       ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr, by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem])
-    have et : t.gpr .esi = BitVec.ofNat 32 (32 + m - 1) := by rw [ht.gpr, hw.gpr, dv]
-    have rt : Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [ht.mem, hw.mem]; exact rv
-    have zt' : t.zf = some (decide (32 + m - 1 = 32)) := by
+    obtain et : t.gpr .esi = BitVec.ofNat 32 (32 + m - 1) := by rw [ht.gpr, hw.gpr, dv]
+    obtain rt : Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [ht.mem, hw.mem]; exact rv
+    obtain zt' : t.zf = some (decide (32 + m - 1 = 32)) := by
       rw [zt, hw.gpr, dv, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl,
         Wp.sub_beq (by omega_arith) (by omega_arith)]
     refine ⟨?_, fun hf => ?_, fun hn => ?_⟩
@@ -616,7 +616,7 @@ theorem skipZero_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     (h : WinCtx s₀ Aa R s) (hesi : s.gpr .esi = BitVec.ofNat 32 64)
     (hacc : Rep (point (env s.mem (arg s₀ 3)) 0 1 2 3) 0) :
     WP isa skipZero s fun t => ∃ c, 32 ≤ c ∧ c ≤ 64 ∧ LoopAt s₀ Aa R c t := by
-  have high_zero_64 : verificationChallenge s₀ / 256 ^ (32 + 32) = 0 := Nat.div_eq_of_lt (decodeLE_lt64 _ _)
+  obtain high_zero_64 : verificationChallenge s₀ / 256 ^ (32 + 32) = 0 := Nat.div_eq_of_lt (decodeLE_lt64 _ _)
   refine WP.loop (M := isa) (Inv := fun m t => SkipAt s₀ Aa R m t) ?_ 32 s
     ⟨h, by decide, by decide, hesi, high_zero_64, hacc⟩
   intro m u hu
@@ -655,22 +655,22 @@ theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
     WP isa windowPrep s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = BitVec.ofNat 32 64 ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by
   have hfit := hp.scratch.fit
-  have hc := hs.ctx hfit hp.scratch.wr hp.scratch.stk
+  obtain hc := hs.ctx hfit hp.scratch.wr hp.scratch.stk
   refine WP.seq (WP.mono (fieldCode_ok [.const 16 Spec.Ed25519.d] hc) fun a ⟨ka, ea⟩ => ?_)
-  have sa := hs.ikeep hfit (IKeep.of_field ka)
-  have ca := ka.ctx hc
-  have tpa : ∀ o, 928 ≤ o → o + 128 ≤ 8192 → tablePoint a.mem (arg s₀ 3) o = tablePoint s.mem (arg s₀ 3) o :=
+  obtain sa := hs.ikeep hfit (IKeep.of_field ka)
+  obtain ca := ka.ctx hc
+  obtain tpa : ∀ o, 928 ≤ o → o + 128 ≤ 8192 → tablePoint a.mem (arg s₀ 3) o = tablePoint s.mem (arg s₀ 3) o :=
     fun o h1 h2 => tablePoint_frame hfit ka.frame (by decide) h2 (Or.inr h1)
   refine WP.seq (WP.mono (aTable_ok ca hA (by rw [tpa 7680 (by decide) (by decide)]; exact ha)
     (by rw [ea]; rfl)) fun b hb => ?_)
-  have sb := sa.frame2s hfit hb.keep hb.frame (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain sb := sa.frame2s hfit hb.keep hb.frame (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  have cb := sb.ctx hfit hp.scratch.wr hp.scratch.stk
+  obtain cb := sb.ctx hfit hp.scratch.wr hp.scratch.stk
   rw [windowInit, WP.block_append_iff]
   refine WP.mono (fieldCode_ok _ cb) fun d ⟨kd, ed⟩ => ?_
   refine Wp.wp_movi fun e he => WP.block_nil ?_
-  have ke : IKeep (arg s₀ 3) b e := (IKeep.of_field kd).trans (IKeep.of_counter he)
-  have de : env e.mem (arg s₀ 3) 16 = env b.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
+  obtain ke : IKeep (arg s₀ 3) b e := (IKeep.of_field kd).trans (IKeep.of_counter he)
+  obtain de : env e.mem (arg s₀ 3) 16 = env b.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
   refine ⟨⟨hp, sb.ikeep hfit ke, de.trans hb.d, fun j hj => ?_, fun j hj => ?_, ?_⟩, he.gpr, ?_⟩
   · rw [workspace_table ke cb _ (by omega_arith) (by omega_arith)]
     exact hb.table j hj

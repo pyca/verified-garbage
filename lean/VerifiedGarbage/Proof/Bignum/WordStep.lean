@@ -34,12 +34,12 @@ namespace VG.Proof.Bignum.WordStep
 /-- `q = ⌊y / m⌋ ≤ ⌊N / d⌋` for `y = N B + yₗ` and `m = d B + mₗ`, `yₗ < B`. -/
 theorem quot_le_div {N yl ml B d : Nat} (hyl : yl < B) (hd : 0 < d) :
     (N * B + yl) / (d * B + ml) ≤ N / d := by
-  have hB : 0 < B := Nat.lt_of_le_of_lt (Nat.zero_le _) hyl
+  obtain hB : 0 < B := Nat.lt_of_le_of_lt (Nat.zero_le _) hyl
   rw [Nat.le_div_iff_mul_le hd]
   generalize hq : (N * B + yl) / (d * B + ml) = q
-  have h1 : q * (d * B + ml) ≤ N * B + yl := hq ▸ Nat.div_mul_le_self _ _
-  have h2 : q * d * B ≤ q * (d * B + ml) := by rw [Nat.mul_add, Nat.mul_assoc]; omega_using []
-  have h3 : q * d * B < (N + 1) * B := by rw [Nat.add_mul, Nat.one_mul]; omega_using [hyl, h1, h2]
+  obtain h1 : q * (d * B + ml) ≤ N * B + yl := hq ▸ Nat.div_mul_le_self _ _
+  obtain h2 : q * d * B ≤ q * (d * B + ml) := by rw [Nat.mul_add, Nat.mul_assoc]; omega_using []
+  obtain h3 : q * d * B < (N + 1) * B := by rw [Nat.add_mul, Nat.one_mul]; omega_using [hyl, h1, h2]
   exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_right h3)
 
 /-- `⌊N / d⌋ ≤ q + 2` for `q = ⌊y / m⌋ < 2^64`, `y = N B + yₗ`,
@@ -48,10 +48,10 @@ theorem div_le_quot {N yl ml B d : Nat} (hml : ml < B) (hd : 2 ^ 63 ≤ d)
     (hq : (N * B + yl) / (d * B + ml) < 2 ^ 64) :
     N / d ≤ (N * B + yl) / (d * B + ml) + 2 := by
   generalize hqd : (N * B + yl) / (d * B + ml) = q at hq
-  have hB : 0 < B := Nat.lt_of_le_of_lt (Nat.zero_le _) hml
-  have hM : 0 < d * B + ml := Nat.lt_of_lt_of_le (Nat.mul_pos (by omega_using [hd]) hB) (Nat.le_add_right _ _)
+  obtain hB : 0 < B := Nat.lt_of_le_of_lt (Nat.zero_le _) hml
+  obtain hM : 0 < d * B + ml := Nat.lt_of_lt_of_le (Nat.mul_pos (by omega_using [hd]) hB) (Nat.le_add_right _ _)
   -- `y < (q + 1) m`.
-  have hy : N * B + yl < (q + 1) * (d * B + ml) := by
+  obtain hy : N * B + yl < (q + 1) * (d * B + ml) := by
     have := Nat.lt_mul_div_succ (N * B + yl) hM
     rw [hqd] at this
     rw [Nat.mul_comm (q + 1)]
@@ -59,15 +59,15 @@ theorem div_le_quot {N yl ml B d : Nat} (hml : ml < B) (hd : 2 ^ 63 ≤ d)
   rcases Nat.lt_or_ge (N / d) (q + 3) with h | h
   · omega_using [h]
   · exfalso
-    have hN : (q + 3) * d ≤ N := (Nat.le_div_iff_mul_le (by omega_using [hd])).mp h
+    obtain hN : (q + 3) * d ≤ N := (Nat.le_div_iff_mul_le (by omega_using [hd])).mp h
     -- `(q + 3) d B ≤ y < (q + 1) m < (q + 1) (d + 1) B`.
-    have h1 : (q + 3) * d * B ≤ N * B + yl := Nat.le_add_right_of_le (Nat.mul_le_mul_right B hN)
-    have h2 : (q + 1) * (d * B + ml) < (q + 1) * ((d + 1) * B) :=
+    obtain h1 : (q + 3) * d * B ≤ N * B + yl := Nat.le_add_right_of_le (Nat.mul_le_mul_right B hN)
+    obtain h2 : (q + 1) * (d * B + ml) < (q + 1) * ((d + 1) * B) :=
       Nat.mul_lt_mul_of_pos_left (by rw [Nat.add_mul, Nat.one_mul]; omega_using [hml]) (by omega_using [])
-    have h3 : (q + 3) * d * B < (q + 1) * (d + 1) * B := by rw [Nat.mul_assoc (q + 1)]; omega_using [hy, h1, h2]
-    have h4 := Nat.lt_of_mul_lt_mul_right h3
-    have e1 : (q + 3) * d = q * d + 3 * d := by rw [Nat.add_mul]
-    have e2 : (q + 1) * (d + 1) = q * d + d + q + 1 := by
+    obtain h3 : (q + 3) * d * B < (q + 1) * (d + 1) * B := by rw [Nat.mul_assoc (q + 1)]; omega_using [hy, h1, h2]
+    obtain h4 := Nat.lt_of_mul_lt_mul_right h3
+    obtain e1 : (q + 3) * d = q * d + 3 * d := by rw [Nat.add_mul]
+    obtain e2 : (q + 1) * (d + 1) = q * d + d + q + 1 := by
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_add, Nat.mul_one]; omega_using []
     omega_using [hd, hq, h4, e1, e2]
 
@@ -91,12 +91,12 @@ theorem mg_bounds {B d q0 u a K T q1 : Nat} (hd : d < B) (hq0B : q0 < B)
     (hid : (B : Int) * T + ((B : Int) - q0) * d = u * K + a * ((B : Int) - d) + B * (q1 + 1) * d) :
     q0 + (q1 + 1) * d < T + B ∧ (q1 + 1) * d ≤ T + d ∧
       (T < (q1 + 1) * d + (B - d) ∨ T < (q1 + 1) * d + q0) := by
-  have e : ((q1 + 1) * d : Nat) = ((q1 : Int) + 1) * d := by
+  obtain e : ((q1 + 1) * d : Nat) = ((q1 : Int) + 1) * d := by
     rw [Int.natCast_mul, Int.natCast_add]; rfl
-  have p0 : (0 : Int) ≤ u * K := Int.mul_nonneg (by omega_using []) (by omega_using [])
-  have p0' : (0 : Int) ≤ a * ((B : Int) - d) := Int.mul_nonneg (by omega_using []) (by omega_using [hd])
-  have pB : ((B : Int) - q0) * d < ((B : Int) - q0) * B := Int.mul_lt_mul_of_pos_left (by omega_using [hd]) (by omega_using [hq0B])
-  have pB' : ((B : Int) - q0) * d ≤ (B : Int) * d := Int.mul_le_mul_of_nonneg_right (by omega_using []) (by omega_using [])
+  obtain p0 : (0 : Int) ≤ u * K := Int.mul_nonneg (by omega_using []) (by omega_using [])
+  obtain p0' : (0 : Int) ≤ a * ((B : Int) - d) := Int.mul_nonneg (by omega_using []) (by omega_using [hd])
+  obtain pB : ((B : Int) - q0) * d < ((B : Int) - q0) * B := Int.mul_lt_mul_of_pos_left (by omega_using [hd]) (by omega_using [hq0B])
+  obtain pB' : ((B : Int) - q0) * d ≤ (B : Int) * d := Int.mul_le_mul_of_nonneg_right (by omega_using []) (by omega_using [])
   refine ⟨?_, ?_, ?_⟩
   · have : (B : Int) * ((q0 : Int) + ((q1 : Int) + 1) * d) < B * (T + B) := by grind
     have := Int.lt_of_mul_lt_mul_left this (by omega_using [])
@@ -112,14 +112,14 @@ theorem mg_bounds {B d q0 u a K T q1 : Nat} (hd : d < B) (hq0B : q0 < B)
     replace hc1 : (B : Int) - d + ((q1 : Int) + 1) * d ≤ T := by omega_using [e, hc1]
     replace hc2 : (q0 : Int) + ((q1 : Int) + 1) * d ≤ T := by omega_using [e, hc2]
     generalize hρ : (T : Int) - ((q1 : Int) + 1) * d = ρ at *
-    have p1 : (u : Int) * K ≤ ((d : Int) - 1) * d := Int.mul_le_mul (by omega_using [hu]) (by omega_using [hK])
+    obtain p1 : (u : Int) * K ≤ ((d : Int) - 1) * d := Int.mul_le_mul (by omega_using [hu]) (by omega_using [hK])
         (by omega_using []) (by omega_using [h1])
-    have p2 : (a : Int) * ((B : Int) - d) ≤ ((B : Int) - 1) * ((B : Int) - d) :=
+    obtain p2 : (a : Int) * ((B : Int) - d) ≤ ((B : Int) - 1) * ((B : Int) - d) :=
       Int.mul_le_mul_of_nonneg_right (by omega_using [ha]) (by omega_using [hd])
-    have p3 : ((B : Int) - d) * ((B : Int) - d) ≤ ρ * ((B : Int) - d) :=
+    obtain p3 : ((B : Int) - d) * ((B : Int) - d) ≤ ρ * ((B : Int) - d) :=
       Int.mul_le_mul_of_nonneg_right (by omega_using [hc1, hρ]) (by omega_using [hd])
-    have p4 : (q0 : Int) * d ≤ ρ * d := Int.mul_le_mul_of_nonneg_right (by omega_using [hc2, hρ]) (by omega_using [])
-    have hT : (T : Int) = ρ + ((q1 : Int) + 1) * d := by omega_using [hρ]
+    obtain p4 : (q0 : Int) * d ≤ ρ * d := Int.mul_le_mul_of_nonneg_right (by omega_using [hc2, hρ]) (by omega_using [])
+    obtain hT : (T : Int) = ρ + ((q1 : Int) + 1) * d := by omega_using [hρ]
     rw [hT] at hid
     grind
 
@@ -137,70 +137,70 @@ theorem mg_quot {d u a V P Q r Q1 r1 : Nat}
     (hQ1 : Q1 = (Q + if P % 2 ^ 64 < r then 2 ^ 64 - 1 else 0) % 2 ^ 64)
     (hr1 : r1 = (r + if P % 2 ^ 64 < r then d else 0) % 2 ^ 64) :
     (Q1 + if d - 1 < r1 then 1 else 0) % 2 ^ 64 = (u * 2 ^ 64 + a) / d := by
-  have hd0 : 0 < d := by omega_using [hu]
+  obtain hd0 : 0 < d := by omega_using [hu]
   -- `V d + k = 2^128`, `1 ≤ k ≤ d`.
-  have hVd : V * d ≤ 2 ^ 128 - 1 := hV ▸ Nat.div_mul_le_self _ _
-  have hVd' : 2 ^ 128 - 1 < V * d + d := by
+  obtain hVd : V * d ≤ 2 ^ 128 - 1 := hV ▸ Nat.div_mul_le_self _ _
+  obtain hVd' : 2 ^ 128 - 1 < V * d + d := by
     have := Nat.lt_mul_div_succ (2 ^ 128 - 1) hd0
     rw [← hV, Nat.mul_add, Nat.mul_one, Nat.mul_comm d V] at this; exact this
   -- `V ≥ 2^64`, so `P < 2^128`.
-  have hVB : 2 ^ 64 ≤ V := by
+  obtain hVB : 2 ^ 64 ≤ V := by
     rw [hV, Nat.le_div_iff_mul_le hd0]
     have := Nat.mul_le_mul_left (2 ^ 64) (show d ≤ 2 ^ 64 - 1 by omega_using [hd])
     omega_using [this]
-  have hVu : V * u + V ≤ V * d := by
+  obtain hVu : V * u + V ≤ V * d := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hu
-  have hPB : P < 2 ^ 128 := by omega_using [ha, hP, hVd, hVB, hVu]
+  obtain hPB : P < 2 ^ 128 := by omega_using [ha, hP, hVd, hVB, hVu]
   generalize hq1 : P / 2 ^ 64 = q1 at hQ
   generalize hq0 : P % 2 ^ 64 = q0 at hQ1 hr1
-  have hP2 : P = q1 * 2 ^ 64 + q0 := by
+  obtain hP2 : P = q1 * 2 ^ 64 + q0 := by
     have := Nat.div_add_mod P (2 ^ 64); rw [hq1, hq0] at this; omega_using [this]
-  have hq0B : q0 < 2 ^ 64 := hq0 ▸ Nat.mod_lt _ (by decide)
-  have hq1B : q1 < 2 ^ 64 := by rw [← hq1, Nat.div_lt_iff_lt_mul (by decide)]; omega_using [hPB]
+  obtain hq0B : q0 < 2 ^ 64 := hq0 ▸ Nat.mod_lt _ (by decide)
+  obtain hq1B : q1 < 2 ^ 64 := by rw [← hq1, Nat.div_lt_iff_lt_mul (by decide)]; omega_using [hPB]
   -- The quotient and remainder.
   generalize hT : u * 2 ^ 64 + a = T
   generalize hq : T / d = q
   generalize hρ : T % d = ρ
-  have hTq : T = q * d + ρ := by
+  obtain hTq : T = q * d + ρ := by
     have := Nat.div_add_mod T d; rw [hq, hρ, Nat.mul_comm] at this; omega_using [this]
-  have hρd : ρ < d := hρ ▸ Nat.mod_lt _ hd0
-  have hqB : q < 2 ^ 64 := by
+  obtain hρd : ρ < d := hρ ▸ Nat.mod_lt _ hd0
+  obtain hqB : q < 2 ^ 64 := by
     rw [← hq, Nat.div_lt_iff_lt_mul hd0]
     have := Nat.mul_le_mul_right (2 ^ 64) (show u + 1 ≤ d by omega_using [hu])
     rw [Nat.add_mul, Nat.one_mul] at this
     rw [Nat.mul_comm]; omega_using [ha, hT, this]
   -- `2^64 (T - (q₁ + 1) d) = u k + a (2^64 - d) - (2^64 - q₀) d`.
-  have hid : (2 ^ 64 : Int) * T + ((2 ^ 64 - q0 : Nat) : Int) * d =
+  obtain hid : (2 ^ 64 : Int) * T + ((2 ^ 64 - q0 : Nat) : Int) * d =
       u * ((2 ^ 128 - V * d : Nat) : Int) + a * ((2 ^ 64 - d : Nat) : Int) + 2 ^ 64 * (q1 + 1) * d := by
-    have e1 : (P : Int) = V * u + a := by rw [hP, Int.natCast_add, Int.natCast_mul]
-    have e2 : (P : Int) = q1 * 2 ^ 64 + q0 := by
+    obtain e1 : (P : Int) = V * u + a := by rw [hP, Int.natCast_add, Int.natCast_mul]
+    obtain e2 : (P : Int) = q1 * 2 ^ 64 + q0 := by
       rw [hP2, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]; rfl
-    have e3 : (T : Int) = u * 2 ^ 64 + a := by
+    obtain e3 : (T : Int) = u * 2 ^ 64 + a := by
       rw [← hT, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]; rfl
-    have e4 : ((2 ^ 128 - V * d : Nat) : Int) = 2 ^ 128 - V * d := by
+    obtain e4 : ((2 ^ 128 - V * d : Nat) : Int) = 2 ^ 128 - V * d := by
       rw [Int.natCast_sub (by omega_using [hVd]), Int.natCast_mul, Int.natCast_pow]; rfl
-    have e5 : ((2 ^ 64 - q0 : Nat) : Int) = 2 ^ 64 - q0 := by
+    obtain e5 : ((2 ^ 64 - q0 : Nat) : Int) = 2 ^ 64 - q0 := by
       rw [Int.natCast_sub (by omega_using [hq0B]), Int.natCast_pow]; rfl
-    have e6 : ((2 ^ 64 - d : Nat) : Int) = 2 ^ 64 - d := by
+    obtain e6 : ((2 ^ 64 - d : Nat) : Int) = 2 ^ 64 - d := by
       rw [Int.natCast_sub (by omega_using [hd]), Int.natCast_pow]; rfl
     grind
   generalize hK : 2 ^ 128 - V * d = K at hid
-  have hK1 : 1 ≤ K := by omega_using [hVd, hK]
-  have hKd : K ≤ d := by omega_using [hVd', hK]
+  obtain hK1 : 1 ≤ K := by omega_using [hVd, hK]
+  obtain hKd : K ≤ d := by omega_using [hVd', hK]
   -- The bounds: `q₀ - 2^64 < T - (q₁ + 1) d`, `-d ≤ T - (q₁ + 1) d` and
   -- `T - (q₁ + 1) d < max(2^64 - d, q₀)`.
-  have hb := mg_bounds (B := 2 ^ 64) (d := d) (q0 := q0) (u := u) (a := a) (K := K) (T := T) (q1 := q1)
+  obtain hb := mg_bounds (B := 2 ^ 64) (d := d) (q0 := q0) (u := u) (a := a) (K := K) (T := T) (q1 := q1)
     (by omega_using [hd]) (by omega_using [hq0B]) (by omega_using [hu]) (by omega_using [hKd]) (by omega_using [ha])
         (by omega_using [hK1, hKd]) (by omega_using [])
     (by
-      have e64 : ((2 ^ 64 : Nat) : Int) = 2 ^ 64 := by rw [Int.natCast_pow]; rfl
+      obtain e64 : ((2 ^ 64 : Nat) : Int) = 2 ^ 64 := by rw [Int.natCast_pow]; rfl
       rw [Int.natCast_sub (by omega_using [hq0B]), Int.natCast_sub (by omega_using [hd])] at hid
       simp only [e64] at hid ⊢; exact hid)
   generalize hD : (q1 + 1) * d = D at hb
-  have hDe : D = q1 * d + d := by rw [← hD, Nat.succ_mul]
+  obtain hDe : D = q1 * d + d := by rw [← hD, Nat.succ_mul]
   obtain ⟨hL, hL2, hU⟩ := hb
   -- `q` is `q₁`, `q₁ + 1` or `q₁ + 2`.
-  have hcase : (q = q1 ∧ D = q * d + d) ∨ (q = q1 + 1 ∧ D = q * d) ∨ (q = q1 + 2 ∧ q * d = D + d) := by
+  obtain hcase : (q = q1 ∧ D = q * d + d) ∨ (q = q1 + 1 ∧ D = q * d) ∨ (q = q1 + 2 ∧ q * d = D + d) := by
     rcases Nat.lt_or_ge q q1 with h | h
     · exfalso
       have := Nat.mul_le_mul_right d (show q + 1 ≤ q1 by omega_using [h])
@@ -215,7 +215,7 @@ theorem mg_quot {d u a V P Q r Q1 r1 : Nat}
       rw [show q1 + 3 = (q1 + 1) + 2 by omega_using [], Nat.add_mul, hD] at this
       omega_using [hn, hq0B, hTq, hU, this]
   -- `Q d`.
-  have hQd : Q * d = if q1 + 1 < 2 ^ 64 then D else 0 := by
+  obtain hQd : Q * d = if q1 + 1 < 2 ^ 64 then D else 0 := by
     rw [hQ]
     by_cases h : q1 + 1 < 2 ^ 64
     · simp only [Nat.mod_eq_of_lt h, h, ite_true, hD]
@@ -226,22 +226,22 @@ theorem mg_quot {d u a V P Q r Q1 r1 : Nat}
   subst hQ1 hr1 hr
   rcases hcase with ⟨rfl, hDq⟩ | ⟨rfl, hDq⟩ | ⟨rfl, hDq⟩
   · -- `T - (q₁ + 1) d < 0`: both corrections.
-    have hwrap : ¬ q + 1 < 2 ^ 64 → D = 2 ^ 64 * d := fun h => by
+    obtain hwrap : ¬ q + 1 < 2 ^ 64 → D = 2 ^ 64 * d := fun h => by
       have := Nat.succ_mul q d
       rw [show q.succ = 2 ^ 64 by omega_using [hq1B, h]] at this; omega_using [hDe, this]
-    have hm : q0 < (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 := by
+    obtain hm : q0 < (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 := by
       rw [hQd]; split
       · omega_using [hT, hTq, hρd, hL, hDe]
       · have := hwrap ‹_›; omega_using [hT, hTq, hρd, hL, hDe, this]
     rw [ite_eq_left hm, ite_eq_left hm]
-    have hm' : ¬ d - 1 < ((a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 + d) % 2 ^ 64 := by
+    obtain hm' : ¬ d - 1 < ((a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 + d) % 2 ^ 64 := by
       rw [hQd]; split
       · omega_using [hT, hTq, hρd, hDe]
       · have := hwrap ‹_›; omega_using [hT, hTq, hρd, hDe, this]
     rw [ite_eq_right hm']
     omega_using [hq1B, hQv]
   · -- `0 ≤ T - (q₁ + 1) d < d`: none, or both.
-    have hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ := by
+    obtain hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ := by
       rw [hQd, ite_eq_left (by omega_using [hqB])]; omega_using [hq0B, hT, hU, hTq, hDq]
     rw [hr]
     by_cases hm : q0 < ρ
@@ -252,11 +252,11 @@ theorem mg_quot {d u a V P Q r Q1 r1 : Nat}
       rw [ite_eq_right hm, ite_eq_right hm, Nat.add_zero, Nat.add_zero, ite_eq_right hm']
       omega_arith
   · -- `d ≤ T - (q₁ + 1) d`: the second.
-    have hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ + d := by
+    obtain hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ + d := by
       rw [hQd, ite_eq_left (by omega_arith)]; omega_arith
     rw [hr]
-    have hm : ¬ q0 < ρ + d := by omega_arith
-    have hm' : d - 1 < (ρ + d) % 2 ^ 64 := by omega_arith
+    obtain hm : ¬ q0 < ρ + d := by omega_arith
+    obtain hm' : d - 1 < (ρ + d) % 2 ^ 64 := by omega_arith
     rw [ite_eq_right hm, ite_eq_right hm, Nat.add_zero, Nat.add_zero, ite_eq_left hm']
     omega_arith
 
@@ -308,7 +308,7 @@ the two's complement of `y - a`. -/
 theorem twos_of_sub {W t a y b : Nat} (ht : t < W) (hb : b < 2) (h : t + a = y + W * b)
     (h1 : -((W : Int) / 2) ≤ (y : Int) - a) (h2 : (y : Int) - a < (W : Int) / 2) :
     t = twos W ((y : Int) - a) := by
-  have e := twos_eq h1 h2
+  obtain e := twos_eq h1 h2
   rcases (show b = 0 ∨ b = 1 by omega_using [hb]) with rfl | rfl <;>
     by_cases hv : (y : Int) - a < 0 <;> simp only [hv, ite_true, ite_false] at e <;> omega_using [h, hv, e, ht]
 
@@ -322,9 +322,9 @@ theorem twos_of_add {W m t t' c : Nat} {v : Int} (h1 : -((W : Int) / 2) ≤ v)
     (h2 : v < (W : Int) / 2) (h1' : -((W : Int) / 2) ≤ addIfNeg m v) (h2' : addIfNeg m v < (W : Int) / 2)
     (ht : t = twos W v) (ht' : t' < W) (hc : c < 2)
     (h : t' + W * c = t + if W / 2 ≤ t then m else 0) : t' = twos W (addIfNeg m v) := by
-  have e := twos_eq h1 h2
-  have e' := twos_eq h1' h2'
-  have hn := twos_neg h1 h2
+  obtain e := twos_eq h1 h2
+  obtain e' := twos_eq h1' h2'
+  obtain hn := twos_neg h1 h2
   subst ht
   unfold addIfNeg at *
   by_cases hv : v < 0
@@ -345,11 +345,11 @@ theorem addBack_two {W y m qh : Nat} (hm : 0 < m) (hW : 4 * m < W / 2)
       -((W : Int) / 2) ≤ (y : Int) - (qh * m : Nat) ∧ (y : Int) - (qh * m : Nat) < (W : Int) / 2 ∧
       -((W : Int) / 2) ≤ addIfNeg m ((y : Int) - (qh * m : Nat)) ∧
       addIfNeg m ((y : Int) - (qh * m : Nat)) < (W : Int) / 2 := by
-  have hy := Nat.div_add_mod y m
-  have hr := Nat.mod_lt y hm
+  obtain hy := Nat.div_add_mod y m
+  obtain hr := Nat.mod_lt y hm
   obtain ⟨c, hc, hqm⟩ : ∃ c, c ≤ 2 ∧ qh * m = y / m * m + c * m :=
     ⟨qh - y / m, by omega_using [h2], by rw [← Nat.add_mul]; congr 1; omega_using [h1]⟩
-  have hyP : y = y / m * m + y % m := by rw [Nat.mul_comm]; omega_using [hy]
+  obtain hyP : y = y / m * m + y % m := by rw [Nat.mul_comm]; omega_using [hy]
   rw [hqm]
   generalize y / m * m = P at *
   generalize y % m = r at *
@@ -377,41 +377,41 @@ theorem wordStep_val {w X M u2 u1 Xl d ml T1 T2 T3 b c1 c2 : Nat} (hw : 2 ≤ w)
     (h3 : T3 + 2 ^ (64 * (w + 1)) * c2 = T2 + if 2 ^ (64 * (w + 1)) / 2 ≤ T2 then M else 0) :
     T3 = X * 2 ^ 64 % M := by
   generalize hW : 2 ^ (64 * (w + 1)) = W at *
-  have hB : 2 ^ (64 * (w - 1)) = 2 ^ (64 * (w - 2)) * 2 ^ 64 := by
+  obtain hB : 2 ^ (64 * (w - 1)) = 2 ^ (64 * (w - 2)) * 2 ^ 64 := by
     rw [show 64 * (w - 1) = 64 * (w - 2) + 64 by omega_using [hw], Nat.pow_add]
-  have hWB : W = 2 ^ (64 * (w - 1)) * 2 ^ 64 * 2 ^ 64 := by
+  obtain hWB : W = 2 ^ (64 * (w - 1)) * 2 ^ 64 * 2 ^ 64 := by
     rw [← hW, show 64 * (w + 1) = 64 * (w - 1) + 64 + 64 by omega_using [hw], Nat.pow_add, Nat.pow_add]
   generalize 2 ^ (64 * (w - 1)) = B at *
-  have hM0 : 0 < M := by omega_using [hXM]
+  obtain hM0 : 0 < M := by omega_using [hXM]
   -- `x 2^64 = (u₂ 2^64 + u₁) B + xₗ 2^64`, with `xₗ 2^64 < B`.
-  have hY : X * 2 ^ 64 = (u2 * 2 ^ 64 + u1) * B + Xl * 2 ^ 64 := by rw [hX, hB]; grind
-  have hYl : Xl * 2 ^ 64 < B := by rw [hB]; exact Nat.mul_lt_mul_of_pos_right hXl (Nat.two_pow_pos 64)
+  obtain hY : X * 2 ^ 64 = (u2 * 2 ^ 64 + u1) * B + Xl * 2 ^ 64 := by rw [hX, hB]; grind
+  obtain hYl : Xl * 2 ^ 64 < B := by rw [hB]; exact Nat.mul_lt_mul_of_pos_right hXl (Nat.two_pow_pos 64)
   -- `q < 2^64`.
-  have hq : X * 2 ^ 64 / M < 2 ^ 64 := by
+  obtain hq : X * 2 ^ 64 / M < 2 ^ 64 := by
     rw [Nat.div_lt_iff_lt_mul hM0, Nat.mul_comm (2 ^ 64) M]; exact Nat.mul_lt_mul_of_pos_right hXM (Nat.two_pow_pos 64)
   rw [hY, hM] at hq
-  have hge := qhat_ge hYl (by omega_using [hd]) hq
-  have hle := qhat_le hml hd hq
+  obtain hge := qhat_ge hYl (by omega_using [hd]) hq
+  obtain hle := qhat_le hml hd hq
   rw [← hY, ← hM] at hge hle
   generalize min ((u2 * 2 ^ 64 + u1) / d) (2 ^ 64 - 1) = qh at *
   -- `4 m < W / 2`.
-  have hMW : 4 * M < W / 2 := by
+  obtain hMW : 4 * M < W / 2 := by
     have : M < B * 2 ^ 64 := by
       have := Nat.mul_le_mul_right B (show d + 1 ≤ 2 ^ 64 by omega_using [hd'])
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm (2 ^ 64)] at this
       rw [hM]; omega_using [hml, this]
     rw [hWB]; omega_using [this]
   obtain ⟨hfin, hv1, hv2, hw1, hw2⟩ := addBack_two (W := W) hM0 hMW hge hle
-  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
-  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
-  have hv1' : -((W : Int) / 2) ≤ addIfNeg M (addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat))) := by
+  obtain e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  obtain e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
+  obtain hv1' : -((W : Int) / 2) ≤ addIfNeg M (addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat))) := by
     rw [hfin]; omega_using []
-  have hv2' : addIfNeg M (addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat))) < (W : Int) / 2 := by
+  obtain hv2' : addIfNeg M (addIfNeg M ((X * 2 ^ 64 : Nat) - (qh * M : Nat))) < (W : Int) / 2 := by
     rw [hfin]; have := Nat.mod_lt (X * 2 ^ 64) hM0; omega_using [hMW, this]
-  have e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
+  obtain e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
   rw [e3, hfin]
-  have hr := Nat.mod_lt (X * 2 ^ 64) hM0
-  have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  obtain hr := Nat.mod_lt (X * 2 ^ 64) hM0
+  obtain hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
@@ -429,54 +429,54 @@ theorem wordStepDigit_val {w X D M u2 u1 Xl d ml T1 T2 T3 b c1 c2 : Nat} (hw : 2
     (h3 : T3 + 2 ^ (64 * (w + 1)) * c2 = T2 + if 2 ^ (64 * (w + 1)) / 2 ≤ T2 then M else 0) :
     T3 = (X * 2 ^ 64 + D) % M := by
   generalize hW : 2 ^ (64 * (w + 1)) = W at *
-  have hB : 2 ^ (64 * (w - 1)) = 2 ^ (64 * (w - 2)) * 2 ^ 64 := by
+  obtain hB : 2 ^ (64 * (w - 1)) = 2 ^ (64 * (w - 2)) * 2 ^ 64 := by
     rw [show 64 * (w - 1) = 64 * (w - 2) + 64 by omega_using [hw], Nat.pow_add]
-  have hWB : W = 2 ^ (64 * (w - 1)) * 2 ^ 64 * 2 ^ 64 := by
+  obtain hWB : W = 2 ^ (64 * (w - 1)) * 2 ^ 64 * 2 ^ 64 := by
     rw [← hW, show 64 * (w + 1) = 64 * (w - 1) + 64 + 64 by omega_using [hw], Nat.pow_add, Nat.pow_add]
   generalize 2 ^ (64 * (w - 1)) = B at *
-  have hM0 : 0 < M := by omega_using [hXM]
-  have hY : X * 2 ^ 64 + D = (u2 * 2 ^ 64 + u1) * B + (Xl * 2 ^ 64 + D) := by
+  obtain hM0 : 0 < M := by omega_using [hXM]
+  obtain hY : X * 2 ^ 64 + D = (u2 * 2 ^ 64 + u1) * B + (Xl * 2 ^ 64 + D) := by
     rw [hX, hB]; grind
-  have hYl : Xl * 2 ^ 64 + D < B := by
+  obtain hYl : Xl * 2 ^ 64 + D < B := by
     rw [hB]
-    have h := Nat.mul_le_mul_right (2 ^ 64) (show Xl + 1 ≤ 2 ^ (64 * (w - 2)) by omega_using [hXl])
+    obtain h := Nat.mul_le_mul_right (2 ^ 64) (show Xl + 1 ≤ 2 ^ (64 * (w - 2)) by omega_using [hXl])
     rw [Nat.add_mul, Nat.one_mul] at h
     omega_using [hD, h]
-  have hq : (X * 2 ^ 64 + D) / M < 2 ^ 64 := by
+  obtain hq : (X * 2 ^ 64 + D) / M < 2 ^ 64 := by
     rw [Nat.div_lt_iff_lt_mul hM0]
-    have h := Nat.mul_le_mul_right (2 ^ 64) (show X + 1 ≤ M by omega_using [hXM])
+    obtain h := Nat.mul_le_mul_right (2 ^ 64) (show X + 1 ≤ M by omega_using [hXM])
     rw [Nat.add_mul, Nat.one_mul] at h
     omega_using [hD, h]
   rw [hY, hM] at hq
-  have hge := qhat_ge hYl (by omega_using [hd]) hq
-  have hle := qhat_le hml hd hq
+  obtain hge := qhat_ge hYl (by omega_using [hd]) hq
+  obtain hle := qhat_le hml hd hq
   rw [← hY, ← hM] at hge hle
   generalize min ((u2 * 2 ^ 64 + u1) / d) (2 ^ 64 - 1) = qh at *
   -- `4 m < W / 2`.
-  have hMW : 4 * M < W / 2 := by
+  obtain hMW : 4 * M < W / 2 := by
     have : M < B * 2 ^ 64 := by
       have := Nat.mul_le_mul_right B (show d + 1 ≤ 2 ^ 64 by omega_using [hd'])
       rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm (2 ^ 64)] at this
       rw [hM]; omega_using [hml, this]
     rw [hWB]; omega_using [this]
   obtain ⟨hfin, hv1, hv2, hw1, hw2⟩ := addBack_two (W := W) hM0 hMW hge hle
-  have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
-  have e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
-  have hv1' : -((W : Int) / 2) ≤ addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) := by
+  obtain e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+  obtain e2 := twos_of_add hv1 hv2 hw1 hw2 e1 hT2 hc1 h2
+  obtain hv1' : -((W : Int) / 2) ≤ addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) := by
     rw [hfin]; omega_using []
-  have hv2' : addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) < (W : Int) / 2 := by
+  obtain hv2' : addIfNeg M (addIfNeg M (((X * 2 ^ 64 + D) : Nat) - (qh * M : Nat))) < (W : Int) / 2 := by
     rw [hfin]; have := Nat.mod_lt ((X * 2 ^ 64 + D)) hM0; omega_using [hMW, this]
-  have e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
+  obtain e3 := twos_of_add hw1 hw2 hv1' hv2' e2 hT3 hc2 h3
   rw [e3, hfin]
-  have hr := Nat.mod_lt ((X * 2 ^ 64 + D)) hM0
-  have hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
+  obtain hr := Nat.mod_lt ((X * 2 ^ 64 + D)) hM0
+  obtain hMW' : M < W := Nat.lt_of_lt_of_le (by omega_using [hMW]) (Nat.div_le_self W 2)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
 /-- `v = ⌊(2^128 - 1) / d⌋ - 2^64 = ⌊((2^64 - 1 - d) 2^64 + 2^64 - 1) / d⌋`. -/
 theorem recip_eq {d : Nat} (hd : d < 2 ^ 64) (_hd0 : 0 < d) :
     ((2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1)) / d = (2 ^ 128 - 1) / d - 2 ^ 64 := by
-  have e : (2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1) = 2 ^ 128 - 1 - 2 ^ 64 * d := by
+  obtain e : (2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1) = 2 ^ 128 - 1 - 2 ^ 64 * d := by
     rw [Nat.sub_mul, Nat.sub_mul]
     have := Nat.mul_le_mul_right (2 ^ 64) (show d ≤ 2 ^ 64 - 1 by omega_using [hd])
     rw [Nat.sub_mul] at this

@@ -66,10 +66,10 @@ theorem halves_bit (key : BitVec 64) : ∀ n ≤ 16, ∀ j < 28,
     rw [this]; exact ⟨rfl, rfl⟩
   | succ n ih =>
     intro hn j hj
-    have hs := tot_step n (by omega_using [hn])
-    have hm : (j + 28 - rotations.getD n 0) % 28 < 28 := Nat.mod_lt _ (by decide)
-    have ih' := ih (by omega_using [hn]) _ hm
-    have idx : ((j + 28 - rotations.getD n 0) % 28 + 448 - tot n) % 28 =
+    obtain hs := tot_step n (by omega_using [hn])
+    obtain hm : (j + 28 - rotations.getD n 0) % 28 < 28 := Nat.mod_lt _ (by decide)
+    obtain ih' := ih (by omega_using [hn]) _ hm
+    obtain idx : ((j + 28 - rotations.getD n 0) % 28 + 448 - tot n) % 28 =
         (j + 448 - tot (n + 1)) % 28 := by
       omega_using [hs.1, hs.2.1, hs.2.2, hj]
     rw [keyPrefix_succ]
@@ -121,17 +121,17 @@ private theorem selAt_eq (r i : Nat) : selAt r i = sel r i := rfl
 theorem src_sel : ∀ r < 16, ∀ j < 48, src r j < 56 ∧
     64 - pc1.getD (55 - src r j) 1 = 64 - sel r (47 - j) ∧ 1 ≤ sel r (47 - j) ∧
     sel r (47 - j) ≤ 64 ∧ 1 ≤ pc2.getD (47 - j) 1 := by
-  have h : ∀ r < 16, ∀ j < 48, src r j < 56 ∧
+  obtain h : ∀ r < 16, ∀ j < 48, src r j < 56 ∧
       64 - pc1At (55 - src r j) = 64 - selAt r (47 - j) ∧ 1 ≤ selAt r (47 - j) ∧
       selAt r (47 - j) ≤ 64 ∧ 1 ≤ pc2.getD (47 - j) 1 := by decide +kernel
   simpa only [pc1At_eq, selAt_eq] using h
 
 theorem roundKey_bit (key : BitVec 64) (r : Nat) (hr : r < 16) (j : Nat) (hj : j < 48) :
     ((expandDesKey key).getD r 0).getLsbD j = key.getLsbD (64 - sel r (47 - j)) := by
-  have hsrc := src_sel r hr j hj
+  obtain hsrc := src_sel r hr j hj
   rw [expandDesKey_prefix, stored key 16 (Nat.le_refl _) r hr,
     permute_bit _ _ (by decide) j hj, BitVec.getLsbD_append, ← hsrc.2.1]
-  have hb := halves_bit key (r + 1) (by omega_using [hr])
+  obtain hb := halves_bit key (r + 1) (by omega_using [hr])
   have hp (u : Nat) (hu : u < 56) : (permute pc1 key).getLsbD u =
       key.getLsbD (64 - pc1.getD (55 - u) 1) := permute_bit pc1 key (by decide) u hu
   unfold src at hsrc ⊢
@@ -143,7 +143,7 @@ theorem roundKey_bit (key : BitVec 64) (r : Nat) (hr : r < 16) (j : Nat) (hj : j
       decide_true, Bool.true_and]
     exact hp _ hsrc.1
   · simp only [ht, ite_false] at hsrc ⊢
-    have h56 : 56 - pc2.getD (47 - j) 1 - 28 < 28 := by omega_using [ht, hsrc.2.2.2.2]
+    obtain h56 : 56 - pc2.getD (47 - j) 1 - 28 < 28 := by omega_using [ht, hsrc.2.2.2.2]
     rw [(hb _ h56).1]
     simp only [keyInitial, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
       show (56 - pc2.getD (47 - j) 1 - 28 + 448 - tot (r + 1)) % 28 < 28 from
@@ -161,7 +161,7 @@ def pick (t0 t1 t2 t3 : BitVec 128) (idx : Nat) : BitVec 8 :=
 
 theorem tableByte_pick (v : VReg → BitVec 128) {idx : Nat} (h : idx < 64) :
     tableByte v .v16 idx = pick (v .v16) (v .v17) (v .v18) (v .v19) idx := by
-  have hc : idx / 16 = 0 ∨ idx / 16 = 1 ∨ idx / 16 = 2 ∨ idx / 16 = 3 := by omega_using [h]
+  obtain hc : idx / 16 = 0 ∨ idx / 16 = 1 ∨ idx / 16 = 2 ∨ idx / 16 = 3 := by omega_using [h]
   rcases hc with e | e | e | e <;> simp only [tableByte, pick, e] <;> rfl
 
 /-- What `tbl` on the table leaves, for the indices `m`. -/
@@ -171,7 +171,7 @@ def look (t0 t1 t2 t3 m : BitVec 128) : BitVec 128 :=
 theorem exec_look (s : State) (d : VReg) :
     exec (.vop (.tblN false 4 d .v16 d)) s =
       some (s.setV d (look (s.v .v16) (s.v .v17) (s.v .v18) (s.v .v19) (s.v d))) := by
-  have h : (ofVBytes fun i => if (vbyte (s.v d) i).toNat < 16 * 4 then
+  obtain h : (ofVBytes fun i => if (vbyte (s.v d) i).toNat < 16 * 4 then
       tableByte s.v .v16 (vbyte (s.v d) i).toNat else 0) =
       look (s.v .v16) (s.v .v17) (s.v .v18) (s.v .v19) (s.v d) := by
     unfold look
@@ -192,10 +192,10 @@ theorem tabWords_getD (i : Nat) (hi : i < 128) :
 theorem exec_tld (s : State) (t : VReg) (j : Nat) (hj : j < 64)
     (h6 : s.gpr .x6 = s.syms tabName) :
     exec (.ldrqTbl t .x6 (16 * j) tabName tabWords) s = some (s.setV t (tabVec j)) := by
-  have hc : s.gpr .x6 = s.syms tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
+  obtain hc : s.gpr .x6 = s.syms tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
       16 * j / 8 + 2 ≤ tabWords.length := by
     rw [tabWords_length]; exact ⟨h6, by omega_using [hj], by omega_using [hj], by omega_using [hj]⟩
-  have hv : tabWords.getD (16 * j / 8 + 1) 0 ++ tabWords.getD (16 * j / 8) 0 = tabVec j := by
+  obtain hv : tabWords.getD (16 * j / 8 + 1) 0 ++ tabWords.getD (16 * j / 8) 0 = tabVec j := by
     rw [tabWords_getD _ (by omega_using [hj]), tabWords_getD _ (by omega_using [hj]),
       show (16 * j / 8 + 1) / 2 = j by omega_using [], show (16 * j / 8 + 1) % 2 = 1 by omega_using [],
       show 16 * j / 8 / 2 = j by omega_using [], show 16 * j / 8 % 2 = 0 by omega_using []]
@@ -221,7 +221,7 @@ def joinB (t : Nat → BitVec 8) : BitVec 8 :=
 
 theorem joinB_bit (t : Nat → BitVec 8) : ∀ k < 8, (joinB t).getLsbD k = (t k).getLsbD 0 := by
   intro k hk
-  have hc : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
+  obtain hc : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
   rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp (disch := decide) only [joinB, sli_bit, Nat.reduceLT, ↓reduceIte, Nat.sub_self,
       Nat.lt_irrefl]
@@ -295,37 +295,37 @@ theorem loads_run (s : State) (pair : Nat) (hp : pair < 8) (h6 : s.gpr .x6 = s.s
       s'.v .v4 = tabVec (8 * pair + 4) ∧ s'.v .v5 = tabVec (8 * pair + 5) ∧
       s'.v .v6 = tabVec (8 * pair + 6) ∧ s'.v .v7 = tabVec (8 * pair + 7) := by
   let s1 := s.setV .v0 (tabVec (8 * pair + 0))
-  have e1 : exec (.ldrqTbl .v0 .x6 (16 * (8 * pair + 0)) tabName tabWords) s = some s1 :=
+  obtain e1 : exec (.ldrqTbl .v0 .x6 (16 * (8 * pair + 0)) tabName tabWords) s = some s1 :=
     exec_tld s .v0 _ (by omega_using [hp]) h6
   let s2 := s1.setV .v1 (tabVec (8 * pair + 1))
-  have e2 : exec (.ldrqTbl .v1 .x6 (16 * (8 * pair + 1)) tabName tabWords) s1 = some s2 :=
+  obtain e2 : exec (.ldrqTbl .v1 .x6 (16 * (8 * pair + 1)) tabName tabWords) s1 = some s2 :=
     exec_tld s1 .v1 _ (by omega_using [hp]) h6
   let s3 := s2.setV .v2 (tabVec (8 * pair + 2))
-  have e3 : exec (.ldrqTbl .v2 .x6 (16 * (8 * pair + 2)) tabName tabWords) s2 = some s3 :=
+  obtain e3 : exec (.ldrqTbl .v2 .x6 (16 * (8 * pair + 2)) tabName tabWords) s2 = some s3 :=
     exec_tld s2 .v2 _ (by omega_using [hp]) h6
   let s4 := s3.setV .v3 (tabVec (8 * pair + 3))
-  have e4 : exec (.ldrqTbl .v3 .x6 (16 * (8 * pair + 3)) tabName tabWords) s3 = some s4 :=
+  obtain e4 : exec (.ldrqTbl .v3 .x6 (16 * (8 * pair + 3)) tabName tabWords) s3 = some s4 :=
     exec_tld s3 .v3 _ (by omega_using [hp]) h6
   let s5 := s4.setV .v4 (tabVec (8 * pair + 4))
-  have e5 : exec (.ldrqTbl .v4 .x6 (16 * (8 * pair + 4)) tabName tabWords) s4 = some s5 :=
+  obtain e5 : exec (.ldrqTbl .v4 .x6 (16 * (8 * pair + 4)) tabName tabWords) s4 = some s5 :=
     exec_tld s4 .v4 _ (by omega_using [hp]) h6
   let s6 := s5.setV .v5 (tabVec (8 * pair + 5))
-  have e6 : exec (.ldrqTbl .v5 .x6 (16 * (8 * pair + 5)) tabName tabWords) s5 = some s6 :=
+  obtain e6 : exec (.ldrqTbl .v5 .x6 (16 * (8 * pair + 5)) tabName tabWords) s5 = some s6 :=
     exec_tld s5 .v5 _ (by omega_using [hp]) h6
   let s7 := s6.setV .v6 (tabVec (8 * pair + 6))
-  have e7 : exec (.ldrqTbl .v6 .x6 (16 * (8 * pair + 6)) tabName tabWords) s6 = some s7 :=
+  obtain e7 : exec (.ldrqTbl .v6 .x6 (16 * (8 * pair + 6)) tabName tabWords) s6 = some s7 :=
     exec_tld s6 .v6 _ (by omega_using [hp]) h6
   let s8 := s7.setV .v7 (tabVec (8 * pair + 7))
-  have e8 : exec (.ldrqTbl .v7 .x6 (16 * (8 * pair + 7)) tabName tabWords) s7 = some s8 :=
+  obtain e8 : exec (.ldrqTbl .v7 .x6 (16 * (8 * pair + 7)) tabName tabWords) s7 = some s8 :=
     exec_tld s7 .v7 _ (by omega_using [hp]) h6
-  have o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
-  have o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o8 : Tbl.VOnly tmps s s8 := o7.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
+  obtain o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o8 : Tbl.VOnly tmps s s8 := o7.trans (Tbl.VOnly.setV _ (by decide) _)
   refine ⟨s8, by rw [loads, runBlock_cons, e1, runStep_some, runBlock_cons, e2, runStep_some, runBlock_cons, e3, runStep_some, runBlock_cons, e4, runStep_some, runBlock_cons, e5, runStep_some, runBlock_cons, e6, runStep_some, runBlock_cons, e7, runStep_some, runBlock_cons, e8, runStep_some, runBlock_nil], o8, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [s8, s7, s6, s5, s4, s3, s2, s1, v_setV, reduceCtorEq, ↓reduceIte]
 
@@ -333,29 +333,29 @@ theorem tbls_run (s : State) :
     ∃ s', runBlock isa tbls s = some s' ∧ Tbl.VOnly tmps s s' ∧
       (∀ r ∈ tmps, s'.v r = look (s.v .v16) (s.v .v17) (s.v .v18) (s.v .v19) (s.v r)) := by
   let s1 := s.setV .v0 (look (s.v .v16) (s.v .v17) (s.v .v18) (s.v .v19) (s.v .v0))
-  have e1 : exec (.vop (.tblN false 4 .v0 .v16 .v0)) s = some s1 := exec_look s .v0
+  obtain e1 : exec (.vop (.tblN false 4 .v0 .v16 .v0)) s = some s1 := exec_look s .v0
   let s2 := s1.setV .v1 (look (s1.v .v16) (s1.v .v17) (s1.v .v18) (s1.v .v19) (s1.v .v1))
-  have e2 : exec (.vop (.tblN false 4 .v1 .v16 .v1)) s1 = some s2 := exec_look s1 .v1
+  obtain e2 : exec (.vop (.tblN false 4 .v1 .v16 .v1)) s1 = some s2 := exec_look s1 .v1
   let s3 := s2.setV .v2 (look (s2.v .v16) (s2.v .v17) (s2.v .v18) (s2.v .v19) (s2.v .v2))
-  have e3 : exec (.vop (.tblN false 4 .v2 .v16 .v2)) s2 = some s3 := exec_look s2 .v2
+  obtain e3 : exec (.vop (.tblN false 4 .v2 .v16 .v2)) s2 = some s3 := exec_look s2 .v2
   let s4 := s3.setV .v3 (look (s3.v .v16) (s3.v .v17) (s3.v .v18) (s3.v .v19) (s3.v .v3))
-  have e4 : exec (.vop (.tblN false 4 .v3 .v16 .v3)) s3 = some s4 := exec_look s3 .v3
+  obtain e4 : exec (.vop (.tblN false 4 .v3 .v16 .v3)) s3 = some s4 := exec_look s3 .v3
   let s5 := s4.setV .v4 (look (s4.v .v16) (s4.v .v17) (s4.v .v18) (s4.v .v19) (s4.v .v4))
-  have e5 : exec (.vop (.tblN false 4 .v4 .v16 .v4)) s4 = some s5 := exec_look s4 .v4
+  obtain e5 : exec (.vop (.tblN false 4 .v4 .v16 .v4)) s4 = some s5 := exec_look s4 .v4
   let s6 := s5.setV .v5 (look (s5.v .v16) (s5.v .v17) (s5.v .v18) (s5.v .v19) (s5.v .v5))
-  have e6 : exec (.vop (.tblN false 4 .v5 .v16 .v5)) s5 = some s6 := exec_look s5 .v5
+  obtain e6 : exec (.vop (.tblN false 4 .v5 .v16 .v5)) s5 = some s6 := exec_look s5 .v5
   let s7 := s6.setV .v6 (look (s6.v .v16) (s6.v .v17) (s6.v .v18) (s6.v .v19) (s6.v .v6))
-  have e7 : exec (.vop (.tblN false 4 .v6 .v16 .v6)) s6 = some s7 := exec_look s6 .v6
+  obtain e7 : exec (.vop (.tblN false 4 .v6 .v16 .v6)) s6 = some s7 := exec_look s6 .v6
   let s8 := s7.setV .v7 (look (s7.v .v16) (s7.v .v17) (s7.v .v18) (s7.v .v19) (s7.v .v7))
-  have e8 : exec (.vop (.tblN false 4 .v7 .v16 .v7)) s7 = some s8 := exec_look s7 .v7
-  have o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
-  have o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o8 : Tbl.VOnly tmps s s8 := o7.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain e8 : exec (.vop (.tblN false 4 .v7 .v16 .v7)) s7 = some s8 := exec_look s7 .v7
+  obtain o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
+  obtain o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o8 : Tbl.VOnly tmps s s8 := o7.trans (Tbl.VOnly.setV _ (by decide) _)
   refine ⟨s8, by rw [tbls, runBlock_cons, e1, runStep_some, runBlock_cons, e2, runStep_some, runBlock_cons, e3, runStep_some, runBlock_cons, e4, runStep_some, runBlock_cons, e5, runStep_some, runBlock_cons, e6, runStep_some, runBlock_cons, e7, runStep_some, runBlock_cons, e8, runStep_some, runBlock_nil], o8, ?_⟩
   simp only [tmps, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -365,26 +365,26 @@ theorem slis_run (s : State) :
     ∃ s', runBlock isa slis s = some s' ∧ Tbl.VOnly tmps s s' ∧
       s'.v .v0 = joinV fun k => s.v (tmp k) := by
   let s1 := s.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 1 w a b) (s.v .v0) (s.v .v1))
-  have e1 : exec (.vop (.shift .sli .b16 .v0 .v1 1)) s = some s1 := exec_sli s .v1 1 (by decide)
+  obtain e1 : exec (.vop (.shift .sli .b16 .v0 .v1 1)) s = some s1 := exec_sli s .v1 1 (by decide)
   let s2 := s1.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 2 w a b) (s1.v .v0) (s1.v .v2))
-  have e2 : exec (.vop (.shift .sli .b16 .v0 .v2 2)) s1 = some s2 := exec_sli s1 .v2 2 (by decide)
+  obtain e2 : exec (.vop (.shift .sli .b16 .v0 .v2 2)) s1 = some s2 := exec_sli s1 .v2 2 (by decide)
   let s3 := s2.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 3 w a b) (s2.v .v0) (s2.v .v3))
-  have e3 : exec (.vop (.shift .sli .b16 .v0 .v3 3)) s2 = some s3 := exec_sli s2 .v3 3 (by decide)
+  obtain e3 : exec (.vop (.shift .sli .b16 .v0 .v3 3)) s2 = some s3 := exec_sli s2 .v3 3 (by decide)
   let s4 := s3.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 4 w a b) (s3.v .v0) (s3.v .v4))
-  have e4 : exec (.vop (.shift .sli .b16 .v0 .v4 4)) s3 = some s4 := exec_sli s3 .v4 4 (by decide)
+  obtain e4 : exec (.vop (.shift .sli .b16 .v0 .v4 4)) s3 = some s4 := exec_sli s3 .v4 4 (by decide)
   let s5 := s4.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 5 w a b) (s4.v .v0) (s4.v .v5))
-  have e5 : exec (.vop (.shift .sli .b16 .v0 .v5 5)) s4 = some s5 := exec_sli s4 .v5 5 (by decide)
+  obtain e5 : exec (.vop (.shift .sli .b16 .v0 .v5 5)) s4 = some s5 := exec_sli s4 .v5 5 (by decide)
   let s6 := s5.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 6 w a b) (s5.v .v0) (s5.v .v6))
-  have e6 : exec (.vop (.shift .sli .b16 .v0 .v6 6)) s5 = some s6 := exec_sli s5 .v6 6 (by decide)
+  obtain e6 : exec (.vop (.shift .sli .b16 .v0 .v6 6)) s5 = some s6 := exec_sli s5 .v6 6 (by decide)
   let s7 := s6.setV .v0 (VArr.b16.map2 (fun w a b => VShiftOp.sli.eval 7 w a b) (s6.v .v0) (s6.v .v7))
-  have e7 : exec (.vop (.shift .sli .b16 .v0 .v7 7)) s6 = some s7 := exec_sli s6 .v7 7 (by decide)
-  have o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
-  have o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
-  have o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain e7 : exec (.vop (.shift .sli .b16 .v0 .v7 7)) s6 = some s7 := exec_sli s6 .v7 7 (by decide)
+  obtain o1 : Tbl.VOnly tmps s s1 := Tbl.VOnly.setV _ (by decide) _
+  obtain o2 : Tbl.VOnly tmps s s2 := o1.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o3 : Tbl.VOnly tmps s s3 := o2.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o4 : Tbl.VOnly tmps s s4 := o3.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o5 : Tbl.VOnly tmps s s5 := o4.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o6 : Tbl.VOnly tmps s s6 := o5.trans (Tbl.VOnly.setV _ (by decide) _)
+  obtain o7 : Tbl.VOnly tmps s s7 := o6.trans (Tbl.VOnly.setV _ (by decide) _)
   refine ⟨s7, by rw [slis, runBlock_cons, e1, runStep_some, runBlock_cons, e2, runStep_some, runBlock_cons, e3, runStep_some, runBlock_cons, e4, runStep_some, runBlock_cons, e5, runStep_some, runBlock_cons, e6, runStep_some, runBlock_cons, e7, runStep_some, runBlock_nil], o7, ?_⟩
   simp only [s7, s6, s5, s4, s3, s2, s1, v_setV, reduceCtorEq, ↓reduceIte, joinV, tmp,
     List.getD_cons_zero, List.getD_cons_succ]
@@ -401,8 +401,8 @@ theorem pair_run (s : State) (pair out : Nat) (hp : pair < 8) (ho : out % 16 = 0
   obtain ⟨a, ra, oa, a0, a1, a2, a3, a4, a5, a6, a7⟩ := loads_run s pair hp h6
   obtain ⟨b, rb, ob, hb⟩ := tbls_run a
   obtain ⟨c, rc, oc, hc⟩ := slis_run b
-  have o := (oa.trans ob).trans oc
-  have hw' : InRegions c.wr (c.gpr .x2 + BitVec.ofNat 64 out) 16 := by rw [o.wr, o.gpr]; exact hw
+  obtain o := (oa.trans ob).trans oc
+  obtain hw' : InRegions c.wr (c.gpr .x2 + BitVec.ofNat 64 out) 16 := by rw [o.wr, o.gpr]; exact hw
   have keep (r : VReg) (hr : r ∉ tmps) : c.v r = s.v r := o.2 r hr
   have ka (r : VReg) (hr : r ∉ tmps) : a.v r = s.v r := oa.2 r hr
   refine ⟨{ c with mem := c.mem.write (c.gpr .x2 + BitVec.ofNat 64 out) 16 (c.v .v0) }, by
@@ -441,9 +441,9 @@ theorem pairVec_dword (K : BitVec 64) (t0 t1 t2 t3 : BitVec 128) (hT : Tab K t0 
       ((expandDesKey (rev64 K)).getD (2 * pair + h) 0).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have hb : 8 * h + i / 8 < 16 := by omega_using [hh, hi]
-  have hk : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  have lhs : (vdword (pairVec t0 t1 t2 t3 pair) h).getLsbD i =
+  obtain hb : 8 * h + i / 8 < 16 := by omega_using [hh, hi]
+  obtain hk : i % 8 < 8 := Nat.mod_lt _ (by decide)
+  obtain lhs : (vdword (pairVec t0 t1 t2 t3 pair) h).getLsbD i =
       (vbyte (pairVec t0 t1 t2 t3 pair) (8 * h + i / 8)).getLsbD (i % 8) := by
     simp only [vdword, vbyte, BitVec.getLsbD_extractLsb', hi, hk, decide_true, Bool.true_and]
     exact congrArg _ (by omega_using [])
@@ -454,7 +454,7 @@ theorem pairVec_dword (K : BitVec 64) (t0 t1 t2 t3 : BitVec 128) (hT : Tab K t0 
   by_cases h48 : i < 48
   · have hs := src_sel (2 * pair + h) (by omega_using [hp, hh]) i h48
     obtain ⟨hlt, hmod, hdiv⟩ := keyIndex_facts _ hs.2.2.1 hs.2.2.2.1
-    have hn : (BitVec.ofNat 8 (keyIndex (sel (2 * pair + h) (47 - i)))).toNat =
+    obtain hn : (BitVec.ofNat 8 (keyIndex (sel (2 * pair + h) (47 - i)))).toNat =
         keyIndex (sel (2 * pair + h) (47 - i)) := by
       rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hlt])
     simp only [show i / 8 < 6 from by omega_using [h48], ↓reduceIte, hn, hlt]
@@ -499,28 +499,28 @@ theorem pairs_ok (s : State) (index : Nat) (hc : index < 3) (K : BitVec 64)
       rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
     intro hn
-    have hn8 : n < 8 := by omega_using [hn]
+    obtain hn8 : n < 8 := by omega_using [hn]
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (ih (by omega_using [hn])) fun a ha => ?_
-    have hT' : Tab K (a.v .v16) (a.v .v17) (a.v .v18) (a.v .v19) := by
+    obtain hT' : Tab K (a.v .v16) (a.v .v17) (a.v .v18) (a.v .v19) := by
       rw [ha.v16, ha.v17, ha.v18, ha.v19]; exact hT
-    have hwa : InRegions a.wr (a.gpr .x2 + BitVec.ofNat 64 (128 * index + 16 * n)) 16 := by
+    obtain hwa : InRegions a.wr (a.gpr .x2 + BitVec.ofNat 64 (128 * index + 16 * n)) 16 := by
       rw [ha.wr, ha.gpr, ← Offset.add_add]; exact hw n hn8
     obtain ⟨b, rb, hm, hg, hrd, hwr, hsy, hsp, b16, b17, b18, b19⟩ :=
       pair_run a n (128 * index + 16 * n) hn8 (by omega_using [hc, hn8])
         (by rw [ha.gpr, ha.syms]; exact h6) hwa
     refine WP.of_runBlock ⟨b, rb, ?_⟩
-    have d0 := pairVec_dword K _ _ _ _ hT' n 0 hn8 (by decide)
-    have d1 := pairVec_dword K _ _ _ _ hT' n 1 hn8 (by decide)
+    obtain d0 := pairVec_dword K _ _ _ _ hT' n 0 hn8 (by decide)
+    obtain d1 := pairVec_dword K _ _ _ _ hT' n 1 hn8 (by decide)
     rw [ha.gpr, ← Offset.add_add] at hm
     generalize pairVec (a.v .v16) (a.v .v17) (a.v .v18) (a.v .v19) n = V at hm d0 d1
     generalize s.gpr .x2 + BitVec.ofNat 64 (128 * index) = base at hm ha ⊢
-    have hmem : b.mem = (a.mem.writeW (base + BitVec.ofNat 64 (16 * n)) (vdword V 0)).writeW
+    obtain hmem : b.mem = (a.mem.writeW (base + BitVec.ofNat 64 (16 * n)) (vdword V 0)).writeW
         (base + BitVec.ofNat 64 (16 * n) + BitVec.ofNat 64 8) (vdword V 1) := by
       rw [hm, ← write16_dwords]
       exact congrArg _ (Tbl.ofVDwords_halves V).symm
     rw [Offset.add_add] at hmem
-    have hfr : Frame [⟨base, 128⟩] a.mem b.mem := by
+    obtain hfr : Frame [⟨base, 128⟩] a.mem b.mem := by
       rw [hmem]
       exact ((Frame.refl _ _).writeW (r := ⟨base, 128⟩) (by simp) _
         (Offset.contains_base _ (by omega_using [hn8]) (by omega_using [hn8]))).writeW
@@ -580,28 +580,28 @@ theorem spread_run (s : State) (offset : Nat) (ho : offset % 8 = 0 ∧ offset < 
   let s5 := s4.setV .v17 (ofVDwords (vdword (s4.v .v16) 0 >>> 2) (vdword (s4.v .v16) 1 >>> 2))
   let s6 := s5.setV .v18 (ofVDwords (vdword (s5.v .v16) 0 >>> 4) (vdword (s5.v .v16) 1 >>> 4))
   let s7 := s6.setV .v19 (ofVDwords (vdword (s6.v .v16) 0 >>> 6) (vdword (s6.v .v16) 1 >>> 6))
-  have e1 : exec (.ldr .x .x4 .x0 offset) s = some s1 := by rw [exec_ldr_x ho hr, hK]
-  have e2 : exec (.lsr .x .x5 .x4 1) s1 = some s2 := by
+  obtain e1 : exec (.ldr .x .x4 .x0 offset) s = some s1 := by rw [exec_ldr_x ho hr, hK]
+  obtain e2 : exec (.lsr .x .x5 .x4 1) s1 = some s2 := by
     rw [exec_lsr_x (by decide)]
     simp only [s2, s1, State.read, gpr_write_self, BitVec.setWidth_eq]
-  have e3 : exec (.vop (.ins .d2 .v16 0 .x4)) s2 = some s3 := Tbl.exec_insd _ _ _ (by decide) _
-  have e4 : exec (.vop (.ins .d2 .v16 1 .x5)) s3 = some s4 := Tbl.exec_insd _ _ _ (by decide) _
-  have e5 : exec (.vop (.shift .ushr .d2 .v17 .v16 2)) s4 = some s5 := exec_ushr _ _ _ (by decide)
-  have e6 : exec (.vop (.shift .ushr .d2 .v18 .v16 4)) s5 = some s6 := exec_ushr _ _ _ (by decide)
-  have e7 : exec (.vop (.shift .ushr .d2 .v19 .v16 6)) s6 = some s7 := exec_ushr _ _ _ (by decide)
-  have h16 : s4.v .v16 = ofVDwords K (K >>> 1) := by
+  obtain e3 : exec (.vop (.ins .d2 .v16 0 .x4)) s2 = some s3 := Tbl.exec_insd _ _ _ (by decide) _
+  obtain e4 : exec (.vop (.ins .d2 .v16 1 .x5)) s3 = some s4 := Tbl.exec_insd _ _ _ (by decide) _
+  obtain e5 : exec (.vop (.shift .ushr .d2 .v17 .v16 2)) s4 = some s5 := exec_ushr _ _ _ (by decide)
+  obtain e6 : exec (.vop (.shift .ushr .d2 .v18 .v16 4)) s5 = some s6 := exec_ushr _ _ _ (by decide)
+  obtain e7 : exec (.vop (.shift .ushr .d2 .v19 .v16 6)) s6 = some s7 := exec_ushr _ _ _ (by decide)
+  obtain h16 : s4.v .v16 = ofVDwords K (K >>> 1) := by
     simp only [s4, s3, s2, s1, v_setV, ↓reduceIte, gpr_setV, gpr_write, reduceCtorEq,
       BitVec.setWidth_eq]
     exact setLane_two _ _ _
-  have t16 : s7.v .v16 = ofVDwords K (K >>> 1) := by
+  obtain t16 : s7.v .v16 = ofVDwords K (K >>> 1) := by
     simp only [s7, s6, s5, v_setV, reduceCtorEq, ↓reduceIte]; exact h16
-  have t17 : s7.v .v17 = ofVDwords (K >>> 2) (K >>> 1 >>> 2) := by
+  obtain t17 : s7.v .v17 = ofVDwords (K >>> 2) (K >>> 1 >>> 2) := by
     simp only [s7, s6, s5, v_setV, reduceCtorEq, ↓reduceIte, h16, vdword_ofVDwords_0,
       vdword_ofVDwords_1]
-  have t18 : s7.v .v18 = ofVDwords (K >>> 4) (K >>> 1 >>> 4) := by
+  obtain t18 : s7.v .v18 = ofVDwords (K >>> 4) (K >>> 1 >>> 4) := by
     simp only [s7, s6, s5, v_setV, reduceCtorEq, ↓reduceIte, h16, vdword_ofVDwords_0,
       vdword_ofVDwords_1]
-  have t19 : s7.v .v19 = ofVDwords (K >>> 6) (K >>> 1 >>> 6) := by
+  obtain t19 : s7.v .v19 = ofVDwords (K >>> 6) (K >>> 1 >>> 6) := by
     simp only [s7, s6, s5, v_setV, reduceCtorEq, ↓reduceIte, h16, vdword_ofVDwords_0,
       vdword_ofVDwords_1]
   refine ⟨s7, by
@@ -611,7 +611,7 @@ theorem spread_run (s : State) (offset : Nat) (ho : offset % 8 = 0 ∧ offset < 
     fun r h4 h5 => ?_⟩
   · intro t ht
     rw [t16, t17, t18, t19, pick]
-    have hc : t / 16 = 0 ∨ t / 16 = 1 ∨ t / 16 = 2 ∨ t / 16 = 3 := by omega_using [ht]
+    obtain hc : t / 16 = 0 ∨ t / 16 = 1 ∨ t / 16 = 2 ∨ t / 16 = 3 := by omega_using [ht]
     rcases hc with e | e | e | e <;>
       simp only [e, ↓reduceIte, Nat.reduceEqDiff, tab_bit, BitVec.getLsbD_ushiftRight] <;>
       (by_cases h8 : t % 16 < 8
@@ -642,8 +642,8 @@ theorem component_ok (s : State) (offset index : Nat) (hc : index < 3)
   obtain ⟨a, ra, hT, am, ard, awr, asy, asp, ag⟩ := spread_run s offset ho hr
   rw [component, WP.block_append_iff]
   refine WP.of_runBlock ⟨a, ra, ?_⟩
-  have h2 : a.gpr .x2 = s.gpr .x2 := ag _ (by decide) (by decide)
-  have hp := pairs_ok a index hc _ hT (by rw [ag _ (by decide) (by decide), asy]; exact h6)
+  obtain h2 : a.gpr .x2 = s.gpr .x2 := ag _ (by decide) (by decide)
+  obtain hp := pairs_ok a index hc _ hT (by rw [ag _ (by decide) (by decide), asy]; exact h6)
     (by rw [awr, h2]; exact hw) 8 (Nat.le_refl _)
   rw [h2] at hp
   refine WP.mono hp fun b hb => ⟨fun i hi => ?_, hb.rd.trans ard, hb.wr.trans awr,
@@ -673,7 +673,7 @@ theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat) (hne : dst ≠ .x4)
     ∃ s', runBlock isa [.ldr .x .x4 src a, .str .x .x4 dst b] s = some s' ∧
       Keep [.x4] {s with
         mem := s.mem.writeW (s.gpr dst + BitVec.ofNat 64 b) (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)} s' := by
-  have hw : InRegions (s.write .x .x4 (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)).wr
+  obtain hw : InRegions (s.write .x .x4 (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)).wr
       ((s.write .x .x4 (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)).gpr dst + BitVec.ofNat 64 b) 8 := by
     simpa only [wr_write, gpr_write, hne, ite_false] using writable
   refine ⟨_, by
@@ -681,7 +681,7 @@ theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat) (hne : dst ≠ .x4)
       runBlock_cons, exec_str_x hb hw, runStep_some, runBlock_nil], ?_⟩
   constructor
   · intro r hr
-    have hn : r ≠ .x4 := by intro h; subst r; exact hr (by simp)
+    obtain hn : r ≠ .x4 := by intro h; subst r; exact hr (by simp)
     exact gpr_write_of_ne _ _ _ hn
   · simp only [gpr_write, hne, ite_false, ite_true, BitVec.setWidth_eq, mem_write]
   · rfl
@@ -712,21 +712,21 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
       List.append_nil, WP.block_append_iff]
     apply WP.mono (ih (by omega_using [hn]))
     intro s₁ h₁
-    have hbase : s₁.gpr .x2 = s.gpr .x2 := h₁.reg .x2 (by decide)
-    have readable : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 (8 * n)) 8 := by
+    obtain hbase : s₁.gpr .x2 = s.gpr .x2 := h₁.reg .x2 (by decide)
+    obtain readable : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [h₁.rd, h₁.wr, hbase]; exact hr n (by omega_using [hn])
-    have writable : InRegions s₁.wr (s₁.gpr .x2 + BitVec.ofNat 64 (256 + 8 * n)) 8 := by
+    obtain writable : InRegions s₁.wr (s₁.gpr .x2 + BitVec.ofNat 64 (256 + 8 * n)) 8 := by
       rw [h₁.wr, hbase]; exact hw n (by omega_using [hn])
     obtain ⟨s₂, run₂, keep₂⟩ := copy64_ok s₁ .x2 .x2
       (8 * n) (256 + 8 * n) (by decide) readable writable (by omega_using [hn]) (by omega_using [hn])
-    have source : s₁.mem.readW (s.gpr .x2 + BitVec.ofNat 64 (8 * n)) 64 =
+    obtain source : s₁.mem.readW (s.gpr .x2 + BitVec.ofNat 64 (8 * n)) 64 =
         s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 (8 * n)) 64 := by
       apply h₁.frame.readW (r := ⟨s.gpr .x2 + BitVec.ofNat 64 (8 * n), 8⟩)
         (Region.contains_self _ _) _ (by decide)
       intro r h
       obtain rfl := List.mem_singleton.mp h
       exact Offset.disjoint (s.gpr .x2) (by omega_using [hn]) (by omega_using [hn]) (by decide)
-    have mem₂ : s₂.mem = s₁.mem.writeW (s.gpr .x2 + BitVec.ofNat 64 (256 + 8 * n))
+    obtain mem₂ : s₂.mem = s₁.mem.writeW (s.gpr .x2 + BitVec.ofNat 64 (256 + 8 * n))
         (s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 (8 * n)) 64) := by
       have hm := keep₂.mem
       rw [hbase, source] at hm
@@ -741,7 +741,7 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
         exact h₁.keys i (by omega_using [hi, he])
     · rw [mem₂]
       apply h₁.frame.writeW (List.mem_singleton_self _) _
-      have hc := Offset.contains_base (s.gpr .x2 + BitVec.ofNat 64 256)
+      obtain hc := Offset.contains_base (s.gpr .x2 + BitVec.ofNat 64 256)
         (d := 8 * n) (n := 8) (k := 128) (by omega_using [hn]) (by omega_using [hn])
       rw [Offset.add_ofNat_add_ofNat] at hc
       exact hc
@@ -785,25 +785,25 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
     (hoff : componentOffset (origin.gpr .x1).toNat c = 8 * c) :
     WP isa (Impl.TripleDes.AArch64.Key.component (8 * c) c) s
       (fun t => Components origin t (c + 1) ∧ t.gpr .x6 = t.syms tabName) := by
-  have offsetBound := VG.Proof.TripleDes.componentOffset_bound _ c hp.valid hc
+  obtain offsetBound := VG.Proof.TripleDes.componentOffset_bound _ c hp.valid hc
   rw [hoff] at offsetBound
-  have read : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (8 * c)) 8 := by
+  obtain read : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (8 * c)) 8 := by
     rw [hs.rd, hs.wr, hs.reg .x0 (by decide) (by decide) (by decide)]
     exact hp.reads _ offsetBound
-  have write : ∀ pair < 8, InRegions s.wr
+  obtain write : ∀ pair < 8, InRegions s.wr
       (s.gpr .x2 + BitVec.ofNat 64 (128 * c) + BitVec.ofNat 64 (16 * pair)) 16 := by
     intro j hj
     rw [hs.wr, hs.reg .x2 (by decide) (by decide) (by decide), Offset.add_ofNat_add_ofNat]
     exact hp.writes _ _ (by omega_using [hc, hj])
   apply WP.mono (component_ok s (8 * c) c hc (by omega_using [hc]) h6 read write)
   intro t ht
-  have x2 := hs.reg .x2 (by decide) (by decide) (by decide)
-  have x0 := hs.reg .x0 (by decide) (by decide) (by decide)
-  have frame : Frame [⟨origin.gpr .x2 + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
+  obtain x2 := hs.reg .x2 (by decide) (by decide) (by decide)
+  obtain x0 := hs.reg .x0 (by decide) (by decide) (by decide)
+  obtain frame : Frame [⟨origin.gpr .x2 + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
     have hf := ht.frame
     rw [x2] at hf
     exact hf
-  have key : Spec.TripleDes.blockAt s.mem (s.gpr .x0 + BitVec.ofNat 64 (8 * c)) =
+  obtain key : Spec.TripleDes.blockAt s.mem (s.gpr .x0 + BitVec.ofNat 64 (8 * c)) =
       Spec.TripleDes.blockAt origin.mem (origin.gpr .x0 + BitVec.ofNat 64 (8 * c)) := by
     rw [x0]
     apply VG.Proof.TripleDes.blockAt_eq_of_frame _ hs.frame
@@ -816,17 +816,17 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
   · intro k hk j hj
     by_cases he : k = c
     · subst k
-      have h := ht.keys j hj
+      obtain h := ht.keys j hj
       rw [key, x2, Offset.add_ofNat_add_ofNat] at h
       unfold componentKeys
       rw [hoff]
       exact h
     · have before : k < c := by omega_using [hk, he]
-      have sep : (Region.mk (slot (origin.gpr .x2) k j) 8).Disjoint
+      obtain sep : (Region.mk (slot (origin.gpr .x2) k j) 8).Disjoint
           ⟨origin.gpr .x2 + BitVec.ofNat 64 (128 * c), 128⟩ :=
         Offset.disjoint _ (by omega_using [before, hj])
           (by omega_using [hk, hc, hj]) (by omega_using [hc])
-      have hmem := frame.readW (a := slot (origin.gpr .x2) k j) (w := 64) (r := ⟨slot (origin.gpr .x2) k j, 8⟩)
+      obtain hmem := frame.readW (a := slot (origin.gpr .x2) k j) (w := 64) (r := ⟨slot (origin.gpr .x2) k j, 8⟩)
         (Region.contains_self _ _) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact sep)
         (by decide)
       exact hmem.trans (hs.keys k before j hj)
@@ -837,18 +837,18 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
 theorem copyThird_ok (origin s : State) (hp : Permissions origin)
     (hs : Components origin s 2) (hn : (origin.gpr .x1).toNat = 16) :
     WP isa (.block Impl.TripleDes.AArch64.Key.copyThird) s (Components origin · 3) := by
-  have reads : ∀ i < 16, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 (8 * i)) 8 := by
+  obtain reads : ∀ i < 16, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [hs.rd, hs.wr, hs.reg .x2 (by decide) (by decide) (by decide)]
     obtain ⟨r, hr, hc⟩ := hp.writes (8 * i) 8 (by omega_using [hi])
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have writes : ∀ i < 16, InRegions s.wr (s.gpr .x2 + BitVec.ofNat 64 (256 + 8 * i)) 8 := by
+  obtain writes : ∀ i < 16, InRegions s.wr (s.gpr .x2 + BitVec.ofNat 64 (256 + 8 * i)) 8 := by
     intro i hi
     rw [hs.wr, hs.reg .x2 (by decide) (by decide) (by decide)]
     exact hp.writes _ _ (by omega_using [hi])
   apply WP.mono (copy_ok s 16 (by decide) reads writes)
   intro t ht
-  have frame : Frame [⟨origin.gpr .x2 + BitVec.ofNat 64 256, 128⟩] s.mem t.mem := by
+  obtain frame : Frame [⟨origin.gpr .x2 + BitVec.ofNat 64 256, 128⟩] s.mem t.mem := by
     have h := ht.frame
     rw [hs.reg .x2 (by decide) (by decide) (by decide)] at h
     exact h
@@ -856,22 +856,22 @@ theorem copyThird_ok (origin s : State) (hp : Permissions origin)
   · intro c hc j hj
     by_cases he : c = 2
     · subst c
-      have hRepeat : componentKeys origin.mem (origin.gpr .x0) (origin.gpr .x1).toNat 2 =
+      obtain hRepeat : componentKeys origin.mem (origin.gpr .x0) (origin.gpr .x1).toNat 2 =
           componentKeys origin.mem (origin.gpr .x0) (origin.gpr .x1).toNat 0 := by
         rw [hn]; rfl
-      have h := ht.keys j hj
+      obtain h := ht.keys j hj
       rw [hs.reg .x2 (by decide) (by decide) (by decide)] at h
       change t.mem.readW (origin.gpr .x2 + BitVec.ofNat 64 (256 + 8 * j)) 64 = _
       rw [hRepeat]
-      have first := hs.keys 0 (by decide) j hj
+      obtain first := hs.keys 0 (by decide) j hj
       simp only [slot, Nat.mul_zero, Nat.zero_add] at first
       exact h.trans first
     · have before : c < 2 := by omega_using [hc, he]
-      have sep : (Region.mk (slot (origin.gpr .x2) c j) 8).Disjoint
+      obtain sep : (Region.mk (slot (origin.gpr .x2) c j) 8).Disjoint
           ⟨origin.gpr .x2 + BitVec.ofNat 64 256, 128⟩ :=
         Offset.disjoint _ (by omega_using [before, hj])
           (by omega_using [before, hj]) (by decide)
-      have hmem := frame.readW (a := slot (origin.gpr .x2) c j) (w := 64) (r := ⟨slot (origin.gpr .x2) c j, 8⟩)
+      obtain hmem := frame.readW (a := slot (origin.gpr .x2) c j) (w := 64) (r := ⟨slot (origin.gpr .x2) c j, 8⟩)
         (Region.contains_self _ _) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact sep)
         (by decide)
       exact hmem.trans (hs.keys c before j hj)
@@ -891,8 +891,8 @@ theorem Components.schedule {origin s : State} (h : Components origin s 3) :
       VG.Proof.TripleDes.expandedMemory origin.mem (origin.gpr .x0) (origin.gpr .x1).toNat := by
   apply Vector.ext
   intro i hi
-  have fact := index_partition i hi
-  have keys := h.keys (componentIndex i) fact.1 (i % 16) fact.2.1
+  obtain fact := index_partition i hi
+  obtain keys := h.keys (componentIndex i) fact.1 (i % 16) fact.2.1
   rw [slot, ← fact.2.2] at keys
   rw [VG.Proof.TripleDes.scheduleAt_readW s.mem (origin.gpr .x2) i hi]
   simp only [VG.Proof.TripleDes.expandedMemory, Vector.getElem_ofFn]

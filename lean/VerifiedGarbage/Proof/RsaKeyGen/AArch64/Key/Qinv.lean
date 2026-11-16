@@ -82,10 +82,10 @@ theorem qinvPre_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat}
   rw [hQ] at v₁
   refine wp_seqs_append (by simp [constA]) (by simp [ltA, cmpA]) (WP.mono (constA_k h₁ (x := 3) (by decide))
     fun s₂ ⟨h₂, f₂, c₂, _⟩ => ?_)
-  have c3 : av I s₂.mem aC = 3 :=
+  obtain c3 : av I s₂.mem aC = 3 :=
     av_of_full c₂ (Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide)
       (show 2 ≤ 64 * I.W by have := h.ws.w1; omega_arith)))
-  have vP₂ : av I s₂.mem aPa = P := by
+  obtain vP₂ : av I s₂.mem aPa = P := by
     rw [f₂.av (by decide) (by decide) (by decide) hZ, f₁.av (by decide) (by decide) (by decide) hZ, hP]
   refine wp_seqs_append (by simp [ltA, cmpA]) (by simp) (WP.mono (ltA_k h₂ (a := aPa) (b := aC) (by decide)
     (by decide)) fun s₃ ⟨h₃, m₃, h15₃, _, _⟩ => ?_)
@@ -97,36 +97,36 @@ theorem qinvPre_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat}
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (WP.keep [.x10]
     (Q := fun t => t.gpr .x10 = mask (decide (P < 3)) ∧ t.mem = s₃.mem) (by brun [h15₃]) (by decide) (by decide)
       (by decide +kernel)) fun s₄ ⟨⟨h10₄, m₄⟩, k₄⟩ => WP.block_append_iff.mpr ?_))
-  have h₄ := h₃.regs m₄ k₄
+  obtain h₄ := h₃.regs m₄ k₄
   refine WP.mono (evenMaskOf_k h₄ (j := aPa) (by decide)) fun s₅ ⟨h₅, m₅, h15₅, _, _, k₅⟩ => ?_
   rw [m₄, m₃, vP₂] at h15₅
-  have h10₅ : s₅.gpr .x10 = mask (decide (P < 3)) := by rw [k₅.gpr .x10 (by decide), h10₄]
+  obtain h10₅ : s₅.gpr .x10 = mask (decide (P < 3)) := by rw [k₅.gpr .x10 (by decide), h10₄]
   refine WP.mono (WP.keep [.x15] (Q := fun t => t.gpr .x15 = mask pv ∧ t.mem = s₅.mem) (by
     brun [h15₅, h10₅, qinv_mask_or]; rw [hpv]) (by decide) (by decide) (by decide +kernel))
     fun s₆ ⟨⟨h15₆, m₆⟩, k₆⟩ => ?_
-  have h₆ := h₅.regs m₆ k₆
-  have hm₆ : s₆.mem = s₂.mem := by rw [m₆, m₅, m₄, m₃]
+  obtain h₆ := h₅.regs m₆ k₆
+  obtain hm₆ : s₆.mem = s₂.mem := by rw [m₆, m₅, m₄, m₃]
   refine WP.seq (WP.mono (zeroA_k h₆ (j := aM) (by decide)) fun s₇ ⟨h₇, f₇, _, _, k₇⟩ =>
     WP.mono (copyA_k h₇ (o := aM) (a := aPa) (by decide) (by decide) (by decide)) fun s₈ ⟨h₈, f₈, v₈, _, k₈⟩ => ?_)
-  have vP₆ : av I s₆.mem aPa = P := by rw [hm₆, vP₂]
+  obtain vP₆ : av I s₆.mem aPa = P := by rw [hm₆, vP₂]
   rw [f₇.av (by decide) (by decide) (by decide) hZ, vP₆] at v₈
-  have vC₈ : av I s₈.mem aC = 3 := by
+  obtain vC₈ : av I s₈.mem aC = 3 := by
     rw [f₈.av (by decide) (by decide) (by decide) hZ, f₇.av (by decide) (by decide) (by decide) hZ, hm₆, c3]
   -- `[aM] := M`.
   refine wp_seqs_append (by simp [selC]) (by simp [invFrom]) (WP.mono (selC_k h₈ (j := aM) (by decide) (by decide)
     (c := pv) (by rw [k₈.gpr .x15 (by decide), k₇.gpr .x15 (by decide), h15₆])) fun s₉ ⟨h₉, f₉, v₉, _, _⟩ => ?_)
   rw [v₈, vC₈] at v₉
-  have hM : (if pv = true then 3 else P) = qMod P := by rw [← hpv]; exact qMod_bad P
+  obtain hM : (if pv = true then 3 else P) = qMod P := by rw [← hpv]; exact qMod_bad P
   rw [hM] at v₉
   -- `[aV] := [aM]`.
   refine WP.mono (invFrom_k h₉ (j := aM) (by decide) (by decide)) fun s₁₀ ⟨h₁₀, f₁₀, vV₁₀, _, _⟩ => ?_
-  have hok10 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
-  have vM₁₀ : av I s₁₀.mem aM = qMod P := by rw [f₁₀.av hok10 (by decide) (by decide) hZ, v₉]
-  have vU₁₀ : av I s₁₀.mem aU = Q := by
+  obtain hok10 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
+  obtain vM₁₀ : av I s₁₀.mem aM = qMod P := by rw [f₁₀.av hok10 (by decide) (by decide) hZ, v₉]
+  obtain vU₁₀ : av I s₁₀.mem aU = Q := by
     rw [f₁₀.av hok10 (by decide) (by decide) hZ, f₉.av (by decide) (by decide) (by decide) hZ,
       f₈.av (by decide) (by decide) (by decide) hZ, f₇.av (by decide) (by decide) (by decide) hZ, hm₆,
       f₂.av (by decide) (by decide) (by decide) hZ, v₁]
-  have f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
+  obtain f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
   exact ⟨h₁₀, ((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀ |>.mono (by decide), vU₁₀,
     by rw [vV₁₀, v₉], vM₁₀⟩
 
@@ -142,7 +142,7 @@ theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h :
   rw [qinvPart_eq]
   refine wp_seqs_append (by simp [qinvPre]) (by simp) (WP.mono (qinvPre_k h hP hQ)
     fun s₁₀ ⟨h₁₀, f₁₀, vU₁₀, vV₁₀, vM₁₀⟩ => ?_)
-  have hMo := qMod_odd P
+  obtain hMo := qMod_odd P
   -- The inverse, at the primes' width.
   refine wp_seqs_append (by simp) (by simp [gcdIsOne, constA]) ?_
   simp only [seqs]
@@ -153,12 +153,12 @@ theorem qinvPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h :
     (by rw [vM₁₀]; exact qMod_lt hPw (by omega_arith)) (by rw [vV₁₀, vM₁₀])) fun s₁₁ ⟨h₁₁, f₁₁, _, hinv⟩ => ?_
   rw [vM₁₀, vU₁₀] at hinv
   obtain ⟨hg₁₁, hdv₁₁, hx₁₁⟩ := hinv hMo.1 hMo.2
-  have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT].all Rc.ok = true := by decide
-  have ok₁₁ : word s₁₁.mem I.B (8 * kOk) = mask ok := by
+  obtain hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT].all Rc.ok = true := by decide
+  obtain ok₁₁ : word s₁₁.mem I.B (8 * kOk) = mask ok := by
     rw [f₁₁.word hokI (by decide) (by decide), f₁₀.word (by decide) (by decide) (by decide), hok]
   refine WP.mono (gcdIsOne_k h₁₁ ok₁₁) fun t ⟨ht, f₁₂, ok₁₂⟩ => ?_
   rw [hg₁₁] at ok₁₂ hdv₁₁
-  have vX : av I t.mem aX₂ = av I s₁₁.mem aX₂ := f₁₂.av (by decide) (by decide) (by decide) hZ
+  obtain vX : av I t.mem aX₂ = av I s₁₁.mem aX₂ := f₁₂.av (by decide) (by decide) (by decide) hZ
   refine ⟨ht, ?_, ok₁₂, by rw [vX]; exact hdv₁₁, by rw [vX]; exact hx₁₁⟩
   exact ((f₁₀.trans f₁₁).trans f₁₂).mono (by decide)
 

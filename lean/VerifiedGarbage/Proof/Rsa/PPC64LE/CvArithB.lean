@@ -33,7 +33,7 @@ theorem nCalc_ok {s : State} {pL qL : Nat} (h20 : s.gpr .r20 = BitVec.ofNat 64 p
   refine WP.keep _ ?_ (by decide)
   prun [VG.Impl.Rsa.PPC64LE.CrtValues.nCalc, h20, h22]
   generalize hd : BitVec.ofNat 64 pL - BitVec.ofNat 64 qL = d
-  have hd' : d.toNat = (2 ^ 64 - qL + pL) % 2 ^ 64 := by
+  obtain hd' : d.toNat = (2 ^ 64 - qL + pL) % 2 ^ 64 := by
     rw [← hd, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hq]
   by_cases e : qL ≤ pL
   · have : d >>> 63 = 0#64 := by
@@ -95,7 +95,7 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   have wl := h.wle
-  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   unfold partB invSetup
   simp only [List.cons_append, List.nil_append]
   -- 1: `x = q`.
@@ -107,30 +107,30 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc]
   refine orOne_ok h2 (by decide) (by decide) fun t3 h3 k3 v3 r3 => ?_
   refine setOne_ok h3 (by decide) (by decide) fun t4 h4 k4 v4 r4 => ?_
-  have k04 : Keep opRegs s t4 := (((r1.trans r2).trans r3).trans r4).mono
+  obtain k04 : Keep opRegs s t4 := (((r1.trans r2).trans r3).trans r4).mono
   refine WP.mono (nCalc_ok (s := t4) (pL := pL) (qL := qL) (by rw [k04.gpr _ (by decide), h20]) (by rw [k04.gpr _ (by decide), h22])
     (by omega_using [hpw, wl]) (by omega_using [hqw, wl])) fun t5 ⟨⟨r11, m5⟩, k5⟩ => ?_
-  have h5 : Ws t5 B Z w nArr := h4.of_keep k5
-  have p1 : num t1.mem B w aP = P := by rw [k1.num (by decide) (by simp) (fit _ (by decide)), hp]
+  obtain h5 : Ws t5 B Z w nArr := h4.of_keep k5
+  obtain p1 : num t1.mem B w aP = P := by rw [k1.num (by decide) (by simp) (fit _ (by decide)), hp]
   rw [v2, p1] at v3
-  have q5 : num t5.mem B w 0 = Q := by
+  obtain q5 : num t5.mem B w 0 = Q := by
     rw [m5, k4.num (by decide) (by simp) (fit _ (by decide)), k3.num (by decide) (by simp) (fit _ (by decide)),
       k2.num (by decide) (by simp) (fit _ (by decide)), v1, hq]
-  have m5' : num t5.mem B w aM = modOf P := by
+  obtain m5' : num t5.mem B w aM = modOf P := by
     rw [m5, k4.num (by decide) (by simp) (fit _ (by decide)), v3]
-  have o5 : num t5.mem B w aOne = 1 := by
+  obtain o5 : num t5.mem B w aOne = 1 := by
     rw [m5, v4, k3.num (by decide) (by simp) (fit _ (by decide)), k2.num (by decide) (by simp) (fit _ (by decide)),
       k1.num (by decide) (by simp) (fit _ (by decide)), z aOne (by decide)]
   -- The primes' digits bound `q` and `m`.
-  have hn1 : 1 ≤ (max pL qL + 3) / 4 := by omega_using [hpL]
-  have hnw : (max pL qL + 3) / 4 ≤ w := by omega_using [hpw, hqw]
-  have hQn : Q < 2 ^ (32 * ((max pL qL + 3) / 4)) :=
+  obtain hn1 : 1 ≤ (max pL qL + 3) / 4 := by omega_using [hpL]
+  obtain hnw : (max pL qL + 3) / 4 ≤ w := by omega_using [hpw, hqw]
+  obtain hQn : Q < 2 ^ (32 * ((max pL qL + 3) / 4)) :=
     Nat.lt_of_lt_of_le hQ (Nat.pow_le_pow_right (by decide) (by omega_using []))
-  have hMn : modOf P < 2 ^ (32 * ((max pL qL + 3) / 4)) :=
+  obtain hMn : modOf P < 2 ^ (32 * ((max pL qL + 3) / 4)) :=
     modOf_lt (by omega_using [hpL]) (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega_using [])))
   -- 4: the inverse.
-  have r20 : t5.gpr .r20 = BitVec.ofNat 64 pL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h20]
-  have r22 : t5.gpr .r22 = BitVec.ofNat 64 qL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h22]
+  obtain r20 : t5.gpr .r20 = BitVec.ofNat 64 pL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h20]
+  obtain r22 : t5.gpr .r22 = BitVec.ofNat 64 qL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h22]
   rw [show ∀ (a b c d : Prog isa), [a, b, c, d] = [a, b] ++ [c, d] from fun _ _ _ _ => rfl,
     wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
   refine WP.mono (invB_ok h5 hw hwe r11 r20 r22 hpL hpw hqw q5 hQn m5' hMn (by unfold modOf; omega_using []))
@@ -138,17 +138,17 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
   -- 5: whether the gcd is 1.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h7 (by decide) (by decide) (by decide) (by decide)) fun t8 ⟨h8, k8, e8, r8⟩ => ?_
-  have o7 : num t7.mem B w aOne = 1 := by
+  obtain o7 : num t7.mem B w aOne = 1 := by
     rw [k7.num (by decide) (by decide) (fit _ (by decide)), o5]
   rw [o7] at e8
   -- 6: the mask.
-  have K5 : KeyWorkspace.Keep B w [0, aM, aOne] [] s.mem t5.mem := by
+  obtain K5 : KeyWorkspace.Keep B w [0, aM, aOne] [] s.mem t5.mem := by
     rw [m5]; exact k1.mono.trans (k2.mono.trans (k3.mono.trans k4.mono))
-  have K8 : KeyWorkspace.Keep B w partBArrs partBSlots s.mem t8.mem :=
+  obtain K8 : KeyWorkspace.Keep B w partBArrs partBSlots s.mem t8.mem :=
     K5.mono.trans ((k7.mono (by decide)).trans k8.mono)
-  have so : slot t8.mem B sPodd = slot s.mem B sPodd := K8.slot (by decide) (by decide)
-  have s1 : slot t8.mem B sE1 = slot s.mem B sE1 := K8.slot (by decide) (by decide)
-  have s2 : slot t8.mem B sE2 = slot s.mem B sE2 := K8.slot (by decide) (by decide)
+  obtain so : slot t8.mem B sPodd = slot s.mem B sPodd := K8.slot (by decide) (by decide)
+  obtain s1 : slot t8.mem B sE1 = slot s.mem B sE1 := K8.slot (by decide) (by decide)
+  obtain s2 : slot t8.mem B sE2 = slot s.mem B sE2 := K8.slot (by decide) (by decide)
   rw [List.append_assoc, ← List.append_nil (andS sMask sMask sE3)]
   refine andS_ok h8 (by decide) (by decide) (by decide) (by rw [so]; exact bo) (by rw [s1]; exact b1)
     fun t9 h9 k9 e9 r9 => ?_
@@ -157,10 +157,10 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
   refine andS_ok h10 (by decide) (by decide) (by decide) (by rw [e10]; split <;> omega_arith)
     (by rw [k10.slot (by decide) (by decide), k9.slot (by decide) (by decide), e8]; split <;> omega_arith)
     fun t h11 k11 e11 r11' => WP.block_nil ?_
-  have n7 : ∀ j, j < nArr → num t.mem B w j = num t8.mem B w j := fun j hj => by
+  obtain n7 : ∀ j, j < nArr → num t.mem B w j = num t8.mem B w j := fun j hj => by
     rw [k11.num (by simp) (by simp; decide) (fit _ hj), k10.num (by simp) (by simp; decide) (fit _ hj),
       k9.num (by simp) (by simp; decide) (fit _ hj)]
-  have n8 : ∀ j, j < nArr → num t8.mem B w j = num t7.mem B w j := fun j hj =>
+  obtain n8 : ∀ j, j < nArr → num t8.mem B w j = num t7.mem B w j := fun j hj =>
     k8.num (by simp) (by simp; decide) (fit _ hj)
   refine ⟨h11, K8.trans (k9.mono.trans (k10.mono.trans k11.mono)), ?_, fun h1M => ?_, ?_,
     (((((((k04.trans k5).trans r7).trans r8).trans r9).trans r10).trans r11')).mono (by decide)⟩

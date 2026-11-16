@@ -121,12 +121,12 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
     (hA : ∀ s₀ s, TPre (YE p kl) s₀ → A s₀ s → Ctx (YE p kl) s₀ s ∧ keysWord s.mem (eScr s₀) = v ∧
       (v = 0 ∨ KeysIn p s.mem (eScr s₀) (eSk p s₀))) :
     EP p kl A (fun s₀ s' => Ctx (YE p kl) s₀ s' ∧ CoreDone p s₀ s') (callPR 4 n f (coreArgs p)) := by
-  have hsk : 0 < p.skLen := by have := ps.hskLen; omega_using [this]
-  have hsig : 0 < p.sigLen := by have := ps.hsigLen; rcases ps.hcLen with h | h | h <;> omega_using [this, h]
-  have hscr : 0 < scrBytes p := by simp only [scrBytes, scratchWords]; omega_using []
+  obtain hsk : 0 < p.skLen := by have := ps.hskLen; omega_using [this]
+  obtain hsig : 0 < p.sigLen := by have := ps.hsigLen; rcases ps.hcLen with h | h | h <;> omega_using [this, h]
+  obtain hscr : 0 < scrBytes p := by simp only [scrBytes, scratchWords]; omega_using []
   obtain ⟨o0, o1, o2, w3, w4⟩ := ye_ok hkl hsk hsig hscr
-  have r3 := (Lay.okW_iff.mp w3).1
-  have r4 := (Lay.okW_iff.mp w4).1
+  obtain r3 := (Lay.okW_iff.mp w3).1
+  obtain r4 := (Lay.okW_iff.mp w4).1
   refine callPR_pieceK (lk := lk0) (K := 96) (coreArgs p) [⟨0, 0, p.skLen⟩, ⟨1, 0, 64⟩, ⟨2, 0, 32⟩]
     [⟨3, 0, p.sigLen⟩, ⟨4, 0, scrBytes p⟩] (fun _ _ h => h.1) hv hsp hst (by simp [coreArgs])
     (by simp [coreArgs]) (by simp [coreArgs, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, o0, o1, o2, r3, r4]) (by simp [YE]) (by simp [YE])
@@ -134,11 +134,11 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
     (fun s₀ s s' hp ha h' fr ⟨e, s₂, he, m₂, g₂, post⟩ => ?_)
   · obtain ⟨hc, hkw, hkv⟩ := hA s₀ s hp ha
-    have hsc : ∀ j < scrBytes p, e.mem (eScr s₀ + BitVec.ofNat 64 j) = s.mem (eScr s₀ + BitVec.ofNat 64 j) := by
+    obtain hsc : ∀ j < scrBytes p, e.mem (eScr s₀ + BitVec.ofNat 64 j) = s.mem (eScr s₀ + BitVec.ofNat 64 j) := by
       have := he.mem _ r4; rw [eScr_addr] at this; exact this
-    have hskb : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
+    obtain hskb : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o0)]; exact hc.roBytes hp o0 rfl
-    have hkp : keysWord e.mem (eScr s₀) = 0 ∨ KeysIn p e.mem (eScr s₀) (bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen) := by
+    obtain hkp : keysWord e.mem (eScr s₀) = 0 ∨ KeysIn p e.mem (eScr s₀) (bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen) := by
       rw [hskb, keysWord_congr hsc (by simp only [scrBytes, scratchWords, oKEYS]; omega_using []), hkw]
       rcases hkv with h0 | hk
       · exact .inl h0
@@ -151,21 +151,21 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
     obtain ⟨b₄, b₄', b₄'', b₄f⟩ := he.bufK hp (by simp [coreArgs]) r4 (K := 96) (by simp [YE])
     obtain ⟨x₁, x₂⟩ := he.selfK hp (by simp [coreArgs]) (K := 96) (by simp [YE])
     obtain ⟨en, hE⟩ := he.espNat hp (by simp [YE]) (by simp [coreArgs])
-    have hE2 : 120 ≤ (E1 s₀).toNat := by
+    obtain hE2 : 120 ≤ (E1 s₀).toNat := by
       rw [E1_nat s₀ hp.E0_big]; have := hp.sp; simp only [YE] at this; omega_using [this]
-    have d03 := Buf.disj hp o0 r3 (by simp [Lay.sep, YE, Lay.awr])
-    have d04 := Buf.disj hp o0 r4 (by simp [Lay.sep, YE, Lay.awr])
-    have d13 := Buf.disj hp o1 r3 (by simp [Lay.sep, YE, Lay.awr])
-    have d14 := Buf.disj hp o1 r4 (by simp [Lay.sep, YE, Lay.awr])
-    have d23 := Buf.disj hp o2 r3 (by simp [Lay.sep, YE, Lay.awr])
-    have d24 := Buf.disj hp o2 r4 (by simp [Lay.sep, YE, Lay.awr])
-    have d34 := Buf.disj hp r3 r4 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d03 := Buf.disj hp o0 r3 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d04 := Buf.disj hp o0 r4 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d13 := Buf.disj hp o1 r3 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d14 := Buf.disj hp o1 r4 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d23 := Buf.disj hp o2 r3 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d24 := Buf.disj hp o2 r4 (by simp [Lay.sep, YE, Lay.awr])
+    obtain d34 := Buf.disj hp r3 r4 (by simp [Lay.sep, YE, Lay.awr])
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp [coreArgs])
-    have a₁ := he.arg 1 (by simp [coreArgs])
-    have a₂ := he.arg 2 (by simp [coreArgs])
-    have a₃ := he.arg 3 (by simp [coreArgs])
-    have a₄ := he.arg 4 (by simp [coreArgs])
+    obtain a₀ := he.arg 0 (by simp [coreArgs])
+    obtain a₁ := he.arg 1 (by simp [coreArgs])
+    obtain a₂ := he.arg 2 (by simp [coreArgs])
+    obtain a₃ := he.arg 3 (by simp [coreArgs])
+    obtain a₄ := he.arg 4 (by simp [coreArgs])
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [signCoreContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -177,35 +177,35 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
   · obtain ⟨esp, ags⟩ := call_pubs _ hq.1 (by simp [coreArgs, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, o0, o1, o2, r3, r4]) he he'
     obtain ⟨hc, hkw, -⟩ := hA s₀ s hp ha
     obtain ⟨hc', hkw', -⟩ := hA s₀' s' hp' ha'
-    have hsc : ∀ j < scrBytes p, e.mem (eScr s₀ + BitVec.ofNat 64 j) = s.mem (eScr s₀ + BitVec.ofNat 64 j) := by
+    obtain hsc : ∀ j < scrBytes p, e.mem (eScr s₀ + BitVec.ofNat 64 j) = s.mem (eScr s₀ + BitVec.ofNat 64 j) := by
       have := he.mem _ r4; rw [eScr_addr] at this; exact this
-    have hsc' : ∀ j < scrBytes p, e'.mem (eScr s₀' + BitVec.ofNat 64 j) = s'.mem (eScr s₀' + BitVec.ofNat 64 j) := by
+    obtain hsc' : ∀ j < scrBytes p, e'.mem (eScr s₀' + BitVec.ofNat 64 j) = s'.mem (eScr s₀' + BitVec.ofNat 64 j) := by
       have := he'.mem _ r4; rw [eScr_addr] at this; exact this
-    have hkL : oKEYS + 4 ≤ scrBytes p := by simp only [scrBytes, scratchWords, oKEYS]; omega_using []
-    have k₁ : keysWord e.mem (eScr s₀) = v := by rw [keysWord_congr hsc hkL, hkw]
-    have k₂ : keysWord e'.mem (eScr s₀') = v := by rw [keysWord_congr hsc' hkL, hkw']
-    have l₁ : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
+    obtain hkL : oKEYS + 4 ≤ scrBytes p := by simp only [scrBytes, scratchWords, oKEYS]; omega_using []
+    obtain k₁ : keysWord e.mem (eScr s₀) = v := by rw [keysWord_congr hsc hkL, hkw]
+    obtain k₂ : keysWord e'.mem (eScr s₀') = v := by rw [keysWord_congr hsc' hkL, hkw']
+    obtain l₁ : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o0)]; exact hc.roBytes hp o0 rfl
-    have l₂ : bytesAt e.mem (Buf.addr s₀ ⟨1, 0, 64⟩) 64 = eMu s₀ := by
+    obtain l₂ : bytesAt e.mem (Buf.addr s₀ ⟨1, 0, 64⟩) 64 = eMu s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o1)]; exact hc.roBytes hp o1 rfl
-    have l₃ : bytesAt e.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = eRnd s₀ := by
+    obtain l₃ : bytesAt e.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = eRnd s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o2)]; exact hc.roBytes hp o2 rfl
-    have l₁' : bytesAt e'.mem (Buf.addr s₀' ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀' := by
+    obtain l₁' : bytesAt e'.mem (Buf.addr s₀' ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀' := by
       rw [Proof.MlKem.bytesAt_congr (he'.mem _ o0)]; exact hc'.roBytes hp' o0 rfl
-    have l₂' : bytesAt e'.mem (Buf.addr s₀' ⟨1, 0, 64⟩) 64 = eMu s₀' := by
+    obtain l₂' : bytesAt e'.mem (Buf.addr s₀' ⟨1, 0, 64⟩) 64 = eMu s₀' := by
       rw [Proof.MlKem.bytesAt_congr (he'.mem _ o1)]; exact hc'.roBytes hp' o1 rfl
-    have l₃' : bytesAt e'.mem (Buf.addr s₀' ⟨2, 0, 32⟩) 32 = eRnd s₀' := by
+    obtain l₃' : bytesAt e'.mem (Buf.addr s₀' ⟨2, 0, 32⟩) 32 = eRnd s₀' := by
       rw [Proof.MlKem.bytesAt_congr (he'.mem _ o2)]; exact hc'.roBytes hp' o2 rfl
     rw [← eScr_addr s₀ (scrBytes p)] at k₁
     rw [← eScr_addr s₀' (scrBytes p)] at k₂
-    have a₀ := he.arg 0 (by simp [coreArgs])
-    have a₁ := he.arg 1 (by simp [coreArgs])
-    have a₂ := he.arg 2 (by simp [coreArgs])
-    have a₄ := he.arg 4 (by simp [coreArgs])
-    have a₀' := he'.arg 0 (by simp [coreArgs])
-    have a₁' := he'.arg 1 (by simp [coreArgs])
-    have a₂' := he'.arg 2 (by simp [coreArgs])
-    have a₄' := he'.arg 4 (by simp [coreArgs])
+    obtain a₀ := he.arg 0 (by simp [coreArgs])
+    obtain a₁ := he.arg 1 (by simp [coreArgs])
+    obtain a₂ := he.arg 2 (by simp [coreArgs])
+    obtain a₄ := he.arg 4 (by simp [coreArgs])
+    obtain a₀' := he'.arg 0 (by simp [coreArgs])
+    obtain a₁' := he'.arg 1 (by simp [coreArgs])
+    obtain a₂' := he'.arg 2 (by simp [coreArgs])
+    obtain a₄' := he'.arg 4 (by simp [coreArgs])
     have hl := hq.2
     generalize e = e₁ at *
     generalize e' = e₂ at *
@@ -215,16 +215,16 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
     refine ⟨esp, ?_, hq.1.ptr o0, hq.1.ptr o1, hq.1.ptr o2, ags 3 (by simp), hq.1.ptr r4⟩
     simp only [k₁, k₂, l₁, l₂, l₃, l₁', l₂', l₃', hl]
   · obtain ⟨hc, -, -⟩ := hA s₀ s hp ha
-    have l₁ : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
+    obtain l₁ : bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.skLen⟩) p.skLen = eSk p s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o0)]; exact hc.roBytes hp o0 rfl
-    have l₂ : bytesAt e.mem (Buf.addr s₀ ⟨1, 0, 64⟩) 64 = eMu s₀ := by
+    obtain l₂ : bytesAt e.mem (Buf.addr s₀ ⟨1, 0, 64⟩) 64 = eMu s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o1)]; exact hc.roBytes hp o1 rfl
-    have l₃ : bytesAt e.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = eRnd s₀ := by
+    obtain l₃ : bytesAt e.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = eRnd s₀ := by
       rw [Proof.MlKem.bytesAt_congr (he.mem _ o2)]; exact hc.roBytes hp o2 rfl
-    have a₀ := he.arg 0 (by simp [coreArgs])
-    have a₁ := he.arg 1 (by simp [coreArgs])
-    have a₂ := he.arg 2 (by simp [coreArgs])
-    have a₃ := he.arg 3 (by simp [coreArgs])
+    obtain a₀ := he.arg 0 (by simp [coreArgs])
+    obtain a₁ := he.arg 1 (by simp [coreArgs])
+    obtain a₂ := he.arg 2 (by simp [coreArgs])
+    obtain a₃ := he.arg 3 (by simp [coreArgs])
     generalize e = e' at *
     sig_post [signCoreContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, a₃, coreArgs, List.getElem_cons_zero, List.getElem_cons_succ,
@@ -239,7 +239,7 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
 
 theorem keys_st {kl : Nat} {s₀ : State} (hp : TPre (YE p kl) s₀) {m : Mem}
     (v : Nat) : keysWord (m.writeW (Buf.addr s₀ ⟨4, oKEYS, 4⟩) (BitVec.ofNat 32 v)) (eScr s₀) = BitVec.ofNat 32 v := by
-  have hok : (YE p kl).ok ⟨4, oKEYS, 4⟩ = true := by
+  obtain hok : (YE p kl).ok ⟨4, oKEYS, 4⟩ = true := by
     simp only [Lay.ok_iff, YE, Lay.n, Lay.alen, List.length_cons, List.length_nil, List.getD_cons_zero,
       List.getD_cons_succ, scrBytes, scratchWords, oKEYS]; omega_using []
   unfold keysWord
@@ -253,7 +253,7 @@ theorem entry_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sig
     EP p p.skLen (fun s₀ s => s = P0 s₀) (fun s₀ s' => Ctx (YE p p.skLen) s₀ s' ∧ CoreDone p s₀ s')
       (entryBody p (.block (st32 oKEYS 0)) n f) := by
   unfold entryBody
-  have hw : (YE p p.skLen).okW ⟨(YE p p.skLen).sc, oKEYS, 4⟩ = true := by
+  obtain hw : (YE p p.skLen).okW ⟨(YE p p.skLen).sc, oKEYS, 4⟩ = true := by
     simp only [Lay.okW_iff, Lay.ok_iff, YE, Lay.n, Lay.alen, Lay.awr, List.length_cons, List.length_nil,
       List.getD_cons_zero, List.getD_cons_succ, scrBytes, scratchWords, oKEYS]
     exact ⟨⟨by omega_using [], by omega_using [], by omega_using []⟩, trivial⟩
@@ -272,12 +272,12 @@ theorem ePre_of {s₀ : State} (h : (signContract p X86.abi 136).pre s₀) : TPr
   sig_pre [signContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, d03, d04, d0g, d13, d14, d1g, d23, d24, d2g, d34, d3g, d4g, r0, r1, r2, r3, r4, rg,
     s0, s1, s2, s3, s4, sg, f0, f1, f2, f3, f4⟩ := h
-  have hs : (⟨(E0 s₀).setWidth 64 - 136#64, 136⟩ : Region) = below (E0 s₀) 136 := by
+  obtain hs : (⟨(E0 s₀).setWidth 64 - 136#64, 136⟩ : Region) = below (E0 s₀) 136 := by
     simp only [below]; rw [VG.X86.Taint.sub_setWidth (by omega)]
   rw [hs] at s0 s1 s2 s3 s4 sg
-  have c5 : ∀ i, i < (YE p p.skLen).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
+  obtain c5 : ∀ i, i < (YE p p.skLen).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
     rw [ye_n] at hi; omega_using [hi]
-  have aw : ∀ i, (YE p p.skLen).awr i = (i == 3 || i == 4) := fun i => by
+  obtain aw : ∀ i, (YE p p.skLen).awr i = (i == 3 || i == 4) := fun i => by
     rcases i with _ | _ | _ | _ | _ | i <;> rfl
   refine ⟨h1, by show 16 ≤ 136; decide, by rw [ye_n]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, sg, ?_, by show 4 < 5; decide⟩
   · intro i hi hw
@@ -335,12 +335,12 @@ theorem pPre_of {s₀ : State} (h : (Proof.MlDsa.preparedSignContract p X86.abi 
   sig_pre [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, d03, d04, d0g, d13, d14, d1g, d23, d24, d2g, d34, d3g, d4g, r0, r1, r2, r3, r4, rg,
     s0, s1, s2, s3, s4, sg, f0, f1, f2, f3, f4, kp⟩ := h
-  have hs : (⟨(E0 s₀).setWidth 64 - 136#64, 136⟩ : Region) = below (E0 s₀) 136 := by
+  obtain hs : (⟨(E0 s₀).setWidth 64 - 136#64, 136⟩ : Region) = below (E0 s₀) 136 := by
     simp only [below]; rw [VG.X86.Taint.sub_setWidth (by omega)]
   rw [hs] at s0 s1 s2 s3 s4 sg
-  have c5 : ∀ i, i < (YE p (preparedSecretKeyBytes p)).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
+  obtain c5 : ∀ i, i < (YE p (preparedSecretKeyBytes p)).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
     rw [ye_n] at hi; omega_using [hi]
-  have aw : ∀ i, (YE p (preparedSecretKeyBytes p)).awr i = (i == 3 || i == 4) := fun i => by
+  obtain aw : ∀ i, (YE p (preparedSecretKeyBytes p)).awr i = (i == 3 || i == 4) := fun i => by
     rcases i with _ | _ | _ | _ | _ | i <;> rfl
   refine ⟨⟨h1, by show 16 ≤ 136; decide, by rw [ye_n]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, sg, ?_, by show 4 < 5; decide⟩, kp⟩
   · intro i hi hw
@@ -420,7 +420,7 @@ theorem entry_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.Sign
     (hsp : NoSp f) (hst : stackUse f ≤ 96) {ht : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs 4 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p))) ht).isSome = true) :
     Verified X86.target (signEntry p n f) (signContract p X86.abi 136) := by
-  have ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
+  obtain ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
   refine Piece.verified (((entry_leaf hv hsp hst ps tt (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)).pre_mono (fun _ h => ePre_of h)
     fun _ _ _ _ h => ePub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) (entry_sat h3)
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
@@ -457,24 +457,24 @@ theorem prep_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
   have hk := ps.hk
   have hl := ps.hl
   have hskl := ps.hskLen
-  have eK : keysBytes p = 4 * (256 * (p.ℓ + 2 * p.k)) := by simp only [keysBytes]; omega_using []
+  obtain eK : keysBytes p = 4 * (256 * (p.ℓ + 2 * p.k)) := by simp only [keysBytes]; omega_using []
   unfold entryBody copyKeys
   rw [eK]
-  have hscr : oP (5 + 2 * p.k + 2 * p.ℓ) + 4 * (256 * (p.ℓ + 2 * p.k)) ≤ scrBytes p := by
+  obtain hscr : oP (5 + 2 * p.k + 2 * p.ℓ) + 4 * (256 * (p.ℓ + 2 * p.k)) ≤ scrBytes p := by
     simp only [oP, scrBytes, scratchWords]; omega_using []
-  have hw : (YE p (preparedSecretKeyBytes p)).okW ⟨(YE p (preparedSecretKeyBytes p)).sc, oKEYS, 4⟩ = true := by
+  obtain hw : (YE p (preparedSecretKeyBytes p)).okW ⟨(YE p (preparedSecretKeyBytes p)).sc, oKEYS, 4⟩ = true := by
     simp only [Lay.okW_iff, Lay.ok_iff, YE, Lay.n, Lay.alen, Lay.awr, List.length_cons, List.length_nil,
       List.getD_cons_zero, List.getD_cons_succ, scrBytes, scratchWords, oKEYS]
     exact ⟨⟨by omega_using [], by omega_using [], by omega_using []⟩, trivial⟩
-  have hS : (YE p (preparedSecretKeyBytes p)).ok ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ = true := by
+  obtain hS : (YE p (preparedSecretKeyBytes p)).ok ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ = true := by
     simp only [Lay.ok_iff, YE, Lay.n, Lay.alen, List.length_cons, List.length_nil, List.getD_cons_zero,
       preparedSecretKeyBytes, Spec.MlDsa.n]
     omega_using [hk]
-  have hD : (YE p (preparedSecretKeyBytes p)).okW ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩ = true := by
+  obtain hD : (YE p (preparedSecretKeyBytes p)).okW ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩ = true := by
     simp only [Lay.okW_iff, Lay.ok_iff, YE, Lay.n, Lay.alen, Lay.awr, List.length_cons, List.length_nil,
       List.getD_cons_zero, List.getD_cons_succ]
     exact ⟨⟨by omega_using [], by omega_using [hk], hscr⟩, trivial⟩
-  have hSD : ((YE p (preparedSecretKeyBytes p)).ok ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ && (YE p (preparedSecretKeyBytes p)).okW ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩ && (YE p (preparedSecretKeyBytes p)).sep ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩) = true := by
+  obtain hSD : ((YE p (preparedSecretKeyBytes p)).ok ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ && (YE p (preparedSecretKeyBytes p)).okW ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩ && (YE p (preparedSecretKeyBytes p)).sep ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩ ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩) = true := by
     simp only [Bool.and_eq_true]
     exact ⟨⟨hS, hD⟩, by simp [Lay.sep, YE, Lay.awr]⟩
   refine (piece_pure (PSK p) (liftE (ldsc_piece (Y := (YE p (preparedSecretKeyBytes p))) (ht := .block []) (by kernel_rfl)))).seq ?_
@@ -490,32 +490,32 @@ theorem prep_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
       0 p.skLen 4 (oP (5 + 2 * p.k + 2 * p.ℓ)) (256 * (p.ℓ + 2 * p.k)) (by omega_using [hk]) (by omega_using [hk, hl]) hSD t₁ t₂
       (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr hb => ?_)))
     (core_piece hv hsp hst (by simp only [preparedSecretKeyBytes]; omega_using []) ps 1 tt fun _ _ _ h => h)
-  have hok : (YE p (preparedSecretKeyBytes p)).ok ⟨4, oKEYS, 4⟩ = true := (Lay.okW_iff.mp hw).1
-  have hDo := (Lay.okW_iff.mp hD).1
+  obtain hok : (YE p (preparedSecretKeyBytes p)).ok ⟨4, oKEYS, 4⟩ = true := (Lay.okW_iff.mp hw).1
+  obtain hDo := (Lay.okW_iff.mp hD).1
   refine ⟨h', ?_, .inr ?_⟩
   · have hka : (YE p (preparedSecretKeyBytes p)).apart ⟨4, oKEYS, 4⟩
         [⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩] = true := by
       simp only [Lay.apart, hok, hDo, List.all_cons, List.all_nil, Bool.true_and, Bool.and_true]
       exact VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inl (by simp only [oKEYS, oP]; omega_using [])⟩)
-    have e := keepW hp (N := 0) (by simp [YE]) hka (fr1 fr)
-    have ea := Buf.addr_eq hp hok
+    obtain e := keepW hp (N := 0) (by simp [YE]) hka (fr1 fr)
+    obtain ea := Buf.addr_eq hp hok
     unfold keysWord at h ⊢
     rw [show eScr s₀ + BitVec.ofNat 64 oKEYS = Buf.addr s₀ ⟨4, oKEYS, 4⟩ from ea.symm, e, ea]
     exact h.1.2
   · intro i hi
-    have hf := (Proof.MlDsa.preparedSecretKey_iff.mp h.2) i hi
-    have sk : bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.skLen = eSk p s₀ := by simp only [eSk, eaddr0]
+    obtain hf := (Proof.MlDsa.preparedSecretKey_iff.mp h.2) i hi
+    obtain sk : bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.skLen = eSk p s₀ := by simp only [eSk, eaddr0]
     rw [sk] at hf
-    have whole : bytesAt s'.mem (Buf.addr s₀ ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩)
+    obtain whole : bytesAt s'.mem (Buf.addr s₀ ⟨4, oP (5 + 2 * p.k + 2 * p.ℓ), 4 * (256 * (p.ℓ + 2 * p.k))⟩)
         (4 * (256 * (p.ℓ + 2 * p.k))) =
         bytesAt s₀.mem (Buf.addr s₀ ⟨0, p.skLen, 4 * (256 * (p.ℓ + 2 * p.k))⟩) (4 * (256 * (p.ℓ + 2 * p.k))) := by
       rw [hb]; exact h.1.1.roBytes hp hS rfl
-    have sl := congrArg (fun l => (l.drop (1024 * i)).take 1024) whole
+    obtain sl := congrArg (fun l => (l.drop (1024 * i)).take 1024) whole
     rw [Proof.MlKem.bytesAt_slice _ _ (by omega_using [hi]), Proof.MlKem.bytesAt_slice _ _ (by omega_using [hi]),
       Buf.addr_eq hp hDo, Buf.addr_eq hp hS, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add,
       ← BitVec.ofNat_add] at sl
-    have e1 : oP (5 + 2 * p.k + 2 * p.ℓ) + 1024 * i = oP (5 + 2 * p.k + 2 * p.ℓ + i) := by simp only [oP]; omega_using []
-    have e2 : p.skLen + 1024 * i = p.skLen + 4 * Spec.MlDsa.n * i := by simp only [Spec.MlDsa.n]
+    obtain e1 : oP (5 + 2 * p.k + 2 * p.ℓ) + 1024 * i = oP (5 + 2 * p.k + 2 * p.ℓ + i) := by simp only [oP]; omega_using []
+    obtain e2 : p.skLen + 1024 * i = p.skLen + 4 * Spec.MlDsa.n * i := by simp only [Spec.MlDsa.n]
     rw [e1, e2] at sl
     exact PreparedKey.polyIs_of_copy sl hf
 
@@ -545,7 +545,7 @@ theorem prep_leaf {n : String} {f : Prog isa} (hv : Verified X86.target f (signC
     (hsp' : NoSp (entryBody p (copyKeys p) n f)) :
     Piece (fun s => TPre (YE p (preparedSecretKeyBytes p)) s ∧ PSK p s) (EPub p (preparedSecretKeyBytes p))
       (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (CoreDone p s₀) s₀ s') (signPrepared p n f) := by
-  have hb : Piece (fun s => TPre (YE p (preparedSecretKeyBytes p)) s ∧ PSK p s) (EPub p (preparedSecretKeyBytes p))
+  obtain hb : Piece (fun s => TPre (YE p (preparedSecretKeyBytes p)) s ∧ PSK p s) (EPub p (preparedSecretKeyBytes p))
       (fun s₀ s => s = P0 s₀) (fun s₀ s' => Ctx (YE p (preparedSecretKeyBytes p)) s₀ s' ∧ CoreDone p s₀ s')
       (entryBody p (copyKeys p) n f) :=
     { wp := fun s₀ s h₀ ha => (prep_piece hv hsp hst ps tt t₁ t₂).wp s₀ s h₀.1 ⟨ha, h₀.2⟩
@@ -572,7 +572,7 @@ theorem prepared_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.S
       h₂).isSome = true)
     (hsat : ∃ s, (Proof.MlDsa.preparedSignContract p X86.abi 136).pre s) :
     Verified X86.target (signPrepared p n f) (Proof.MlDsa.preparedSignContract p X86.abi 136) := by
-  have ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
+  obtain ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
   refine Piece.verified (((prep_leaf hv hsp hst ps tt t₁ t₂ (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)).pre_mono (fun _ h => pPre_of h)
     fun _ _ _ _ h => pPub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) hsat
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq

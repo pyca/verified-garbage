@@ -51,10 +51,10 @@ theorem zone_ofs (hs : Scr s base 8192) {x : Addr} (hx : (below (s.gpr .esp) 20)
     8192 ≤ ofs base x := by
   obtain ⟨h20, hz⟩ := hs.stk
   have hn := hs.nowrap
-  have hsp := (s.gpr .esp).isLt
+  obtain hsp := (s.gpr .esp).isLt
   simp only [Region.Contains] at hx
   simp only [ofs]
-  have e : ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
+  obtain e : ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
     rw [BitVec.toNat_setWidth, sub_toNat h20]
     exact Nat.mod_eq_of_lt (by omega_arith)
   generalize ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64) = z at hx e
@@ -82,55 +82,55 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
       WP isa body t fun t' => abiPreserved t t' ∧ Outs base (outs k t) t.mem t'.mem ∧ V t.mem t'.mem) :
     WP isa (callOp f body o a b) s fun s' => CallKeep k base o s s' ∧
       ∃ m, Frame [below (s.gpr .esp) 20] s.mem m ∧ V m s'.mem := by
-  have hown := (saveAt_le hk0 hk9).2
+  obtain hown := (saveAt_le hk0 hk9).2
   have hn := hs.nowrap
   obtain ⟨h20, hz⟩ := hs.stk
-  have hspN := (s.gpr .esp).isLt
+  obtain hspN := (s.gpr .esp).isLt
   rw [callOp]
   refine WP.seq (wp_movS rfl fun s₁ u₁ _ => wp_movS rfl fun s₂ u₂ _ => wp_movS rfl fun s₃ u₃ _ =>
     WP.block_nil ?_)
-  have g : ∀ r, r ∉ [Reg.eax, .ecx, .edx] → s₃.gpr r = s.gpr r := fun r hr => by
+  obtain g : ∀ r, r ∉ [Reg.eax, .ecx, .edx] → s₃.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₃.other _ hr.2.2, u₂.other _ hr.2.1, u₁.other _ hr.1]
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
-  have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
-  have esp₃ : s₃.gpr .esp = s.gpr .esp := g _ (by decide)
-  have edi₃ : s₃.gpr .edi = s.gpr .edi := g _ (by decide)
-  have eax₃ : s₃.gpr .eax = BitVec.ofNat 32 b := by
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+  obtain esp₃ : s₃.gpr .esp = s.gpr .esp := g _ (by decide)
+  obtain edi₃ : s₃.gpr .edi = s.gpr .edi := g _ (by decide)
+  obtain eax₃ : s₃.gpr .eax = BitVec.ofNat 32 b := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
-  have ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 a := by rw [u₃.other _ (by decide), u₂.gpr]
+  obtain ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 a := by rw [u₃.other _ (by decide), u₂.gpr]
   have edx₃ : s₃.gpr .edx = BitVec.ofNat 32 o := u₃.gpr
-  have hfit : 4 * [Reg.eax, .ecx, .edx, .edi].length + 4 ≤ (s₃.gpr .esp).toNat := by
+  obtain hfit : 4 * [Reg.eax, .ecx, .edx, .edi].length + 4 ≤ (s₃.gpr .esp).toNat := by
     rw [esp₃]; simp only [List.length_cons, List.length_nil]; omega_arith
   -- The callee's view.
   let t := ((pushed [Reg.eax, .ecx, .edx, .edi] s₃).callEntry).withRegions
     [below (s₃.gpr .esp) 16] [⟨base, 8192⟩]
-  have targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega_arith)) :=
+  obtain targ : ∀ i (hi : i < 4), arg t i = s₃.gpr ([Reg.eax, .ecx, .edx, .edi][3 - i]'(by simp; omega_arith)) :=
     fun i hi => callEntry_arg hfit (by decide) (by simpa using hi)
-  have a0 : arg t 0 = s.gpr .edi := by rw [targ 0 (by decide)]; exact edi₃
-  have hlt : ∀ x, x < 4096 → (BitVec.ofNat 32 x).toNat = x := fun x hx => by
+  obtain a0 : arg t 0 = s.gpr .edi := by rw [targ 0 (by decide)]; exact edi₃
+  obtain hlt : ∀ x, x < 4096 → (BitVec.ofNat 32 x).toNat = x := fun x hx => by
     rw [BitVec.toNat_ofNat]; omega_arith
-  have a1 : (arg t 1).toNat = o := by rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = o; rw [edx₃, hlt o (by omega_arith)]
-  have a2 : (arg t 2).toNat = a := by rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = a; rw [ecx₃, hlt a (by omega_arith)]
-  have a3 : (arg t 3).toNat = b := by rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = b; rw [eax₃, hlt b (by omega_arith)]
-  have hws : wsOf t = base := by show (arg t 0).setWidth 64 = base; rw [a0]; exact hs.edi
-  have hwsN : (arg t 0).toNat = base.toNat := by rw [a0]; exact hs.edi_toNat
-  have espT : (t.gpr .esp).toNat = (s.gpr .esp).toNat - 20 := by
+  obtain a1 : (arg t 1).toNat = o := by rw [targ 1 (by decide)]; show (s₃.gpr .edx).toNat = o; rw [edx₃, hlt o (by omega_arith)]
+  obtain a2 : (arg t 2).toNat = a := by rw [targ 2 (by decide)]; show (s₃.gpr .ecx).toNat = a; rw [ecx₃, hlt a (by omega_arith)]
+  obtain a3 : (arg t 3).toNat = b := by rw [targ 3 (by decide)]; show (s₃.gpr .eax).toNat = b; rw [eax₃, hlt b (by omega_arith)]
+  obtain hws : wsOf t = base := by show (arg t 0).setWidth 64 = base; rw [a0]; exact hs.edi
+  obtain hwsN : (arg t 0).toNat = base.toNat := by rw [a0]; exact hs.edi_toNat
+  obtain espT : (t.gpr .esp).toNat = (s.gpr .esp).toNat - 20 := by
     show ((pushed _ s₃).callEntry.gpr .esp).toNat = _
     rw [callEntry_espNat hfit, esp₃]; rfl
-  have argA : argAddr t 0 = (s₃.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
-  have argN : (argAddr t 0).toNat = (s.gpr .esp).toNat - 16 := by
+  obtain argA : argAddr t 0 = (s₃.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
+  obtain argN : (argAddr t 0).toNat = (s.gpr .esp).toNat - 16 := by
     rw [argA, esp₃, BitVec.toNat_setWidth, sub_toNat (by omega_arith)]
     exact Nat.mod_eq_of_lt (by omega_arith)
-  have retN : ((t.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
+  obtain retN : ((t.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
     rw [BitVec.toNat_setWidth, espT]; exact Nat.mod_eq_of_lt (by omega_arith)
-  have fr : Frame [below (s.gpr .esp) 20] s.mem t.mem := by
+  obtain fr : Frame [below (s.gpr .esp) 20] s.mem t.mem := by
     have := callEntry_frame hfit (rs := [Reg.eax, .ecx, .edx, .edi]) (by decide)
     rw [m₃, esp₃] at this
     exact this
-  have hpre : Pre k t := by
-    have hwsT : (wsOf t).toNat = base.toNat := by rw [hws]
+  obtain hpre : Pre k t := by
+    obtain hwsT : (wsOf t).toNat = base.toNat := by rw [hws]
     refine ⟨by show [below (s₃.gpr .esp) 16] = [(⟨argAddr t 0, 16⟩ : Region)]; rw [argA],
       by show [(⟨base, 8192⟩ : Region)] = _; rw [hws], by rw [hwsN]; exact hn, by rw [espT]; omega_arith,
       Region.disjoint_of_le (by simp only; rw [argN, hwsT]; omega_arith) (by simp only; rw [argN]; omega_arith)
@@ -161,8 +161,8 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
     revert h1 h2 h3; cases r <;> decide
   · by_cases hzx : (below (s.gpr .esp) 20).Contains x 1
     · have h1 := zone_ofs hs hzx
-      have h2 := hx outW (by simp)
-      have h3 : ofs base x < 2 ^ 64 := (x - base).isLt
+      obtain h2 := hx outW (by simp)
+      obtain h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
       omega_arith
     · rw [← m₂, O₂ x fun r hr => ?_]
@@ -189,7 +189,7 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
       wordsVal s'.mem base o S.k < S.m ∧
       wordsVal s'.mem base o S.k * 2 ^ (64 * S.k) % S.m =
         wordsVal s.mem base a S.k * wordsVal s.mem base b S.k % S.m := by
-  have hown := (saveAt_le hF.mul.k0 hF.k9).2
+  obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
   refine WP.mono (callOp_ok hF.nsMul (by
     unfold mulFn mulBody
     split <;> rfl) hF.mul.k0 hF.k9 hs ho ha hb
@@ -214,7 +214,7 @@ theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) :
     WP isa (addCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + wordsVal s.mem base b S.k) % S.m := by
-  have hown := (saveAt_le hF.mul.k0 hF.k9).2
+  obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
   refine WP.mono (callOp_ok hF.nsAdd rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) = (val32 m base a (2 * S.k) + val32 m base b (2 * S.k)) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
@@ -234,7 +234,7 @@ theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) :
     WP isa (subCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + S.m - wordsVal s.mem base b S.k) % S.m := by
-  have hown := (saveAt_le hF.mul.k0 hF.k9).2
+  obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
   refine WP.mono (callOp_ok hF.nsSub rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) =
       (val32 m base a (2 * S.k) + S.m - val32 m base b (2 * S.k)) % S.m)

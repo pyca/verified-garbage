@@ -119,9 +119,9 @@ theorem preArgsP_eq : preArgsP = preP1 ++ (argBase ++ preP2) := by simp only [pr
 theorem preP1_ok {s t : State} (h : PreP true s) (M : Mid s t) :
     WP isa (.block preP1) t fun w =>
       (w.gpr .t0 = fb s ∧ w.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oSt) (t.gpr .a0)) ∧ Keep [.t0] t w := by
-  have ho : InRegions t.wr (fb s + BitVec.ofNat 64 152) 8 := by
+  obtain ho : InRegions t.wr (fb s + BitVec.ofNat 64 152) 8 := by
     rw [M.wr]; exact in_fr s _ (by decide)
-  have hal : (fb s + BitVec.ofNat 64 152).toNat % 8 = 0 := fb_al8 h (by decide)
+  obtain hal : (fb s + BitVec.ofNat 64 152).toNat % 8 = 0 := fb_al8 h (by decide)
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [preP1, exec_addSp, M.sp, BitVec.add_zero, ho, hal, oSt]
 
@@ -132,9 +132,9 @@ theorem preP2_ok {s x : State} (h : PreP true s) (X : PreX s) (hrd : x.rd = s.rd
       (u.gpr .a0 = stackArg s 12 ∧ u.gpr .a1 = fb s + BitVec.ofNat 64 oPre ∧
         u.gpr .a2 = BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .a3).toNat) ∧ u.mem = x.mem) ∧
       Keep [.a0, .a1, .a2] x u := by
-  have i0 : InRegions (x.rd ++ x.wr) (s.sp + BitVec.ofNat 64 96) 8 := arg_inP h hrd (j := 12) (by decide)
-  have l0 : (s.sp + BitVec.ofNat 64 96).toNat % 8 = 0 := stackArgAddr_alP h X 12 (by decide)
-  have r0 : x.mem.readW (s.sp + BitVec.ofNat 64 96) 64 = stackArg s 12 := arg_read2P h hm (j := 12) (by decide)
+  obtain i0 : InRegions (x.rd ++ x.wr) (s.sp + BitVec.ofNat 64 96) 8 := arg_inP h hrd (j := 12) (by decide)
+  obtain l0 : (s.sp + BitVec.ofNat 64 96).toNat % 8 = 0 := stackArgAddr_alP h X 12 (by decide)
+  obtain r0 : x.mem.readW (s.sp + BitVec.ofNat 64 96) 64 = stackArg s 12 := arg_read2P h hm (j := 12) (by decide)
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [preP2, h6, i0, l0, r0, h0, h3, oPre, preLen, preLen_val h.k2]
 
@@ -144,12 +144,12 @@ theorem preArgsP_ok {s t : State} (h : PreP true s) (X : PreX s) (M : Mid s t) (
   rw [preArgsP_eq, WP.block_append_iff]
   refine WP.mono (WP.rdwr (preP1_ok h M)) fun w ⟨⟨⟨w0, wm⟩, kw⟩, wrd, wwr, wsp⟩ => ?_
   refine argBase_ok (s := s) (wsp.trans M.sp) fun x x6 kx xm xsp => ?_
-  have hmw : Frame [kR s, sR s] s.mem x.mem := by
+  obtain hmw : Frame [kR s, sR s] s.mem x.mem := by
     rw [xm, wm]; exact M.mem.writeW (List.mem_cons_self ..) _ (frame_contains s (by decide))
   refine WP.mono (WP.rdwr (preP2_ok h X (kx.2.1.trans (wrd.trans M.rd)) hmw x6
     ((kx.gpr (by decide)).trans w0) ((kx.gpr (by decide)).trans ((kw.gpr (by decide)).trans M.s3))))
     fun u ⟨⟨⟨u0, u1, u2, um⟩, ku⟩, urd, uwr, usp⟩ => ?_
-  have hum : u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oSt) (t.gpr .a0) := by rw [um, xm, wm]
+  obtain hum : u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oSt) (t.gpr .a0) := by rw [um, xm, wm]
   refine ⟨M.store (d := oSt) (.inl (by decide)) (by decide) _ (fun r hr => ?_) (usp.trans (xsp.trans wsp))
     (urd.trans (kx.2.1.trans wrd)) (uwr.trans (kx.2.2.trans wwr)) hum, ?_, u0, u1, u2⟩
   · rw [ku.gpr (by revert r; decide), kx.gpr (by revert r; decide), kw.gpr (by revert r; decide)]
@@ -157,7 +157,7 @@ theorem preArgsP_ok {s t : State} (h : PreP true s) (X : PreX s) (M : Mid s t) (
         Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat := by
       simp only [Spec.Rsa.bytesAt]
       refine List.map_congr_left fun i hi => ?_
-      have hi := List.mem_range.mp hi
+      obtain hi := List.mem_range.mp hi
       rw [hum]
       exact Frame.bytes (R := mR s) (Frame.writeW (Frame.refl [⟨fb s + BitVec.ofNat 64 oSt, 8⟩] t.mem)
         (List.mem_singleton_self _) _ (Region.contains_self _ _))
@@ -186,9 +186,9 @@ theorem crtOutM_store {s t : State} (h : PreP true s) (C : crtOutM s t) {d : Nat
         (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) := by
   have hk := h.k2
-  have fw : Frame [⟨fb s + BitVec.ofNat 64 d, 8⟩] t.mem m := by
+  obtain fw : Frame [⟨fb s + BitVec.ofNat 64 d, 8⟩] t.mem m := by
     rw [hm]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hb : Spec.Rsa.bytesAt m (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat =
+  obtain hb : Spec.Rsa.bytesAt m (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat =
       Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat :=
     bytes_of_frame (s := t) fw (fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -203,20 +203,20 @@ theorem crtOutM_store {s t : State} (h : PreP true s) (C : crtOutM s t) {d : Nat
 /-- The copy: `n`'s values, `pre`'s first words, in the frame. -/
 theorem preCopy_ok {s t : State} (h : PreP true s) (X : PreX s) (A : AtCopy s t) :
     WP isa preCopy t (AtPub true s) := by
-  have hk := h.k1; have hk' := h.k2
+  obtain hk := h.k1; have hk' := h.k2
   have eP : oPre = 1200 := rfl
-  have pwl := pw_le hk'
-  have pwp := pw_le_pre X
+  obtain pwl := pw_le hk'
+  obtain pwp := pw_le_pre X
   have wP := X.wP
   have alP := X.alP
-  have fbt := fb_toNat h.sp1
-  have fal := fb_al h
+  obtain fbt := fb_toNat h.sp1
+  obtain fal := fb_al h
   unfold frameBytes at fbt
-  have pw1 : 1 ≤ Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
+  obtain pw1 : 1 ≤ Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
     unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega_using [hk]
   obtain ⟨N, hN⟩ : ∃ N, Spec.Rsa.precomputedWords (s.gpr .a3).toNat = N := ⟨_, rfl⟩
   rw [hN] at pwl pwp pw1
-  have hpre : preR s ∈ s.rd := by rw [h.hrd]; simp
+  obtain hpre : preR s ∈ s.rd := by rw [h.hrd]; simp
   let Inv : Nat → State → Prop := fun i u =>
     Mid s u ∧ crtOutM s u ∧ u.gpr .a0 = stackArg s 12 + BitVec.ofNat 64 (8 * i) ∧
       u.gpr .a1 = fb s + BitVec.ofNat 64 (oPre + 8 * i) ∧
@@ -230,12 +230,12 @@ theorem preCopy_ok {s t : State} (h : PreP true s) (X : PreX s) (A : AtCopy s t)
       ⟨preR s, List.mem_append_left _ (by rw [M.rd]; exact hpre),
         Offset.contains_base (stackArg s 12) (d := 8 * i) (n := 8) (k := (stackArg s 13).toNat * 8)
           (by omega_using [pwp, hi]) (by omega_using [pwl, hi])⟩
-    have hla : (stackArg s 12 + BitVec.ofNat 64 (8 * i)).toNat % 8 = 0 := by
+    obtain hla : (stackArg s 12 + BitVec.ofNat 64 (8 * i)).toNat % 8 = 0 := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [alP]
-    have hst : InRegions u.wr (fb s + BitVec.ofNat 64 (oPre + 8 * i)) 8 := by
+    obtain hst : InRegions u.wr (fb s + BitVec.ofNat 64 (oPre + 8 * i)) 8 := by
       rw [M.wr]; exact in_fr s _ (by unfold frameBytes; omega_using [eP, pwl, hi])
-    have hsa : (fb s + BitVec.ofNat 64 (oPre + 8 * i)).toNat % 8 = 0 := fb_al8 h (by omega_using [eP])
-    have hv : u.mem.readW (stackArg s 12 + BitVec.ofNat 64 (8 * i)) 64 =
+    obtain hsa : (fb s + BitVec.ofNat 64 (oPre + 8 * i)).toNat % 8 = 0 := fb_al8 h (by omega_using [eP])
+    obtain hv : u.mem.readW (stackArg s 12 + BitVec.ofNat 64 (8 * i)) 64 =
         s.mem.readW (stackArg s 12 + BitVec.ofNat 64 (8 * i)) 64 :=
       M.mem.readW (Offset.contains_base (stackArg s 12) (d := 8 * i) (n := 8) (k := (stackArg s 13).toNat * 8)
           (by omega_using [pwp, hi]) (by omega_using [wP, pwp, hi])) (fun r hr => by
@@ -285,7 +285,7 @@ theorem publicPrecompute_length {nB : List Byte} {w : List (BitVec 64)}
   · cases h
 
 theorem preValOk_of {s : State} (X : PreX s) (hp : PreHyp s) : PreValOk true s := fun ws hw => by
-  have hl : ws.length = Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
+  obtain hl : ws.length = Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
     rw [publicPrecompute_length hw, Proof.Rsa.bytesAt_length']
   have hpre := hp
   simp only [PreHyp, Spec.Rsa.privatePrecompute] at hpre
@@ -320,24 +320,24 @@ theorem crtPtr_ok {s t : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) :
         u.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oS1) (s.gpr .a0) ∧ u.sp = t.sp) ∧
       Keep [.t0, .s1, .t6, .t1] t u := by
   have hk := h.k2
-  have ho : InRegions t.wr (fb s + BitVec.ofNat 64 168) 8 := by
+  obtain ho : InRegions t.wr (fb s + BitVec.ofNat 64 168) 8 := by
     rw [A.wr]; exact in_fr s _ (by decide)
-  have hal : (fb s + BitVec.ofNat 64 168).toNat % 8 = 0 := fb_al8 h (by decide)
+  obtain hal : (fb s + BitVec.ofNat 64 168).toNat % 8 = 0 := fb_al8 h (by decide)
   rw [crtPtr_eq, WP.block_append_iff]
   refine WP.mono (WP.rdwr (WP.keep [.t0] (Q := fun w => w.gpr .t0 = fb s ∧
       w.mem = t.mem.writeW (fb s + BitVec.ofNat 64 oS1) (s.gpr .a0))
     (by brun [ptr1, exec_addSp, A.sp, BitVec.add_zero, ho, hal, oS1, A.s1]) (by rfl) (by rfl)))
     fun w ⟨⟨⟨_, wm⟩, kw⟩, wrd, wwr, wsp⟩ => ?_
   refine argBase_ok (s := s) (wsp.trans A.sp) fun x x6 kx xm xsp => ?_
-  have hmw : Frame [kR s, sR s] s.mem x.mem := by
+  obtain hmw : Frame [kR s, sR s] s.mem x.mem := by
     rw [xm, wm]
     exact (A.mem.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..).writeW
       (List.mem_cons_self ..) _ (frame_contains s (by decide))
-  have hrd : x.rd = s.rd := kx.2.1.trans (wrd.trans A.rd)
-  have i0 : InRegions (x.rd ++ x.wr) (s.sp + BitVec.ofNat 64 96) 8 := arg_inP h hrd (j := 12) (by decide)
-  have l0 : (s.sp + BitVec.ofNat 64 96).toNat % 8 = 0 := stackArgAddr_alP h X 12 (by decide)
-  have r0 : x.mem.readW (s.sp + BitVec.ofNat 64 96) 64 = stackArg s 12 := arg_read2P h hmw (j := 12) (by decide)
-  have h3 : x.gpr .s3 = s.gpr .a3 := (kx.gpr (by decide)).trans ((kw.gpr (by decide)).trans A.s3)
+  obtain hrd : x.rd = s.rd := kx.2.1.trans (wrd.trans A.rd)
+  obtain i0 : InRegions (x.rd ++ x.wr) (s.sp + BitVec.ofNat 64 96) 8 := arg_inP h hrd (j := 12) (by decide)
+  obtain l0 : (s.sp + BitVec.ofNat 64 96).toNat % 8 = 0 := stackArgAddr_alP h X 12 (by decide)
+  obtain r0 : x.mem.readW (s.sp + BitVec.ofNat 64 96) 64 = stackArg s 12 := arg_read2P h hmw (j := 12) (by decide)
+  obtain h3 : x.gpr .s3 = s.gpr .a3 := (kx.gpr (by decide)).trans ((kw.gpr (by decide)).trans A.s3)
   refine WP.mono (WP.rdwr (WP.keep [.s1, .t1] (Q := fun u => u.gpr .s1 =
       stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat) ∧ u.mem = x.mem)
     (by brun [ptr2, x6, i0, l0, r0, h3, ptrLen_val hk]) (by rfl) (by rfl)))
@@ -368,9 +368,9 @@ theorem primes_of_hyp {s : State} (X : PreX s) {m : Mem}
     | none => rw [hw] at hpre; cases hpre
     | some ws =>
       rw [hw, Option.map_some, Option.some.injEq] at hpre
-      have hl : ws.length = Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
+      obtain hl : ws.length = Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
         rw [publicPrecompute_length hw, Proof.Rsa.bytesAt_length']
-      have hL : (stackArg s 13).toNat = Spec.Rsa.precomputedWords (s.gpr .a3).toNat +
+      obtain hL : (stackArg s 13).toNat = Spec.Rsa.precomputedWords (s.gpr .a3).toNat +
           (Spec.Rsa.primeWords (stackArg s 1).toNat + Spec.Rsa.primeWords (stackArg s 3).toNat) := by
         rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
       rw [wordsAt_off, ← hL, hm, ← hpre, List.append_assoc, ← hl, List.drop_left]
@@ -409,30 +409,30 @@ theorem crt_preP {s t u : State} (h : PreP true s) (X : PreX s) (A : AtCrt s t) 
     (h1 : u.gpr .s1 = stackArg s 12 + BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat)) :
     Proof.Bignum.RISCV64.Crt.fnContractP.pre (crtEntryG s u [r2Rs s]) := by
   have hk := h.k2
-  have hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) := fun i hi => by
+  obtain hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) := fun i hi => by
     rw [hm, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oS1; omega_using [hi])) (by omega_using [hi]) (by unfold oS1; omega_using []))
       (by decide)]
     exact A.psa i hi
-  have kk : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], u.gpr r = t.gpr r := fun r hr =>
+  obtain kk : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], u.gpr r = t.gpr r := fun r hr =>
     k.gpr (by revert r; decide)
-  have hc := crt_preG (X := [r2Rs s]) h A kk hpsa hsp
-  have g : ∀ r, r ∉ linkRegs → r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7] →
+  obtain hc := crt_preG (X := [r2Rs s]) h A kk hpsa hsp
+  obtain g : ∀ r, r ∉ linkRegs → r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7] →
       (crtEntryG s u [r2Rs s]).gpr r = t.gpr r := fun r h1 h2 => (State.callEntry_gpr u h1).trans (kk r h2)
-  have e1 : (crtEntryG s u [r2Rs s]).gpr .s1 = stackArg s 12 +
+  obtain e1 : (crtEntryG s u [r2Rs s]).gpr .s1 = stackArg s 12 +
       BitVec.ofNat 64 (8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat) :=
     (State.callEntry_gpr u (by decide)).trans h1
-  have sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := [r2Rs s]) (i := i) hi
-  have hr : Proof.Bignum.RISCV64.Crt.r2R (crtEntryG s u [r2Rs s]) = r2Rs s := by
+  obtain sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := [r2Rs s]) (i := i) hi
+  obtain hr : Proof.Bignum.RISCV64.Crt.r2R (crtEntryG s u [r2Rs s]) = r2Rs s := by
     simp only [Proof.Bignum.RISCV64.Crt.r2R, e1, g .a7 (by decide) (by decide), A.a7, sa 1 (by decide)]
-  have sub := r2Rs_sub X
-  have mk := mR_sub h
+  obtain sub := r2Rs_sub X
+  obtain mk := mR_sub h
   have wP := X.wP
-  have hl := r2Rs_len X
+  obtain hl := r2Rs_len X
   have alP := X.alP
-  have hfu : Frame [kR s] s.mem u.mem := by
+  obtain hfu : Frame [kR s] s.mem u.mem := by
     rw [hm]
     exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains s (by unfold oS1 frameBytes; omega_using []))
-  have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
+  obtain hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
     bytes_of_frame (s := s) (rs := [kR s]) hfu (p := p) (len := len)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
   refine ⟨hr ▸ hc, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -514,18 +514,18 @@ theorem restoreP_ok {s v : State} (h : PreP true s) (hv : AfterP s v) :
     WP isa (.block crtRestore) v fun w => Mid s w ∧ crtOut s w := by
   obtain ⟨t, u, A, k, hm, hsp, hrd, hwr, hsp', hf, hp, hpost⟩ := hv
   have hk := h.k2
-  have mk := mR_sub h
-  have hfu : Frame [kR s] s.mem u.mem := by
+  obtain mk := mR_sub h
+  obtain hfu : Frame [kR s] s.mem u.mem := by
     rw [hm]
     exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains s (by unfold oS1 frameBytes; omega_using []))
-  have s1v : v.mem.readW (fb s + BitVec.ofNat 64 168) 64 = s.gpr .a0 := by
+  obtain s1v : v.mem.readW (fb s + BitVec.ofNat 64 168) 64 = s.gpr .a0 := by
     rw [hf.readW (Region.contains_self _ _) (fun r hr => s1_apart h hr) (by decide), hm]
     exact Mem.readW_writeW_self64 _ _ _
-  have i1 : InRegions (v.rd ++ v.wr) (fb s + BitVec.ofNat 64 168) 8 := by
+  obtain i1 : InRegions (v.rd ++ v.wr) (fb s + BitVec.ofNat 64 168) 8 := by
     rw [hrd, hwr, k.2.1, k.2.2, A.wr]
     exact ⟨kR s, List.mem_append_right _ (List.mem_cons_self ..), frame_contains s (by decide)⟩
-  have l1 : (fb s + BitVec.ofNat 64 168).toNat % 8 = 0 := fb_al8 h (by decide)
-  have vsp : v.sp = fb s := hsp'.trans (hsp.trans A.sp)
+  obtain l1 : (fb s + BitVec.ofNat 64 168).toNat % 8 = 0 := fb_al8 h (by decide)
+  obtain vsp : v.sp = fb s := hsp'.trans (hsp.trans A.sp)
   refine WP.mono (WP.rdwr (WP.keep [.t0, .s1] (Q := fun w => w.gpr .s1 = s.gpr .a0 ∧ w.mem = v.mem)
     (by brun [crtRestore, exec_addSp, vsp, BitVec.add_zero, i1, l1, s1v, oS1]) (by rfl) (by rfl)))
     fun w ⟨⟨⟨w1, wm⟩, kw⟩, wrd, wwr, wsp⟩ => ⟨?_, ?_⟩
@@ -555,18 +555,18 @@ theorem restoreP_ok {s v : State} (h : PreP true s) (hv : AfterP s v) :
   · have g : ∀ r, r ∉ linkRegs → r ∈ [Reg.a0, .a2, .a3, .a4, .a6, .a7] →
         (crtEntryG s u [r2Rs s]).gpr r = t.gpr r := fun r h1 h2 =>
       (State.callEntry_gpr u h1).trans (k.gpr (by clear h1; revert h2; revert r; decide))
-    have hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) := fun i hi => by
+    obtain hpsa : ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) := fun i hi => by
       rw [hm, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oS1; omega_using [hi])) (by omega_using [hi]) (by unfold oS1; omega_using []))
         (by decide)]
       exact A.psa i hi
-    have sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := [r2Rs s]) (i := i) hi
+    obtain sa := fun i hi => crtEntryG_stackArg A hpsa hsp (X := [r2Rs s]) (i := i) hi
     simp only [Proof.Bignum.RISCV64.Crt.fnContractP, Proof.Bignum.RISCV64.Crt.postCore,
       g .a0 (by decide) (by decide), g .a2 (by decide) (by decide), g .a3 (by decide) (by decide),
       g .a4 (by decide) (by decide), g .a6 (by decide) (by decide), g .a7 (by decide) (by decide),
       A.a0, A.a2, A.a3, A.a4, A.a6, A.a7,
       sa 0 (by decide), sa 1 (by decide), sa 2 (by decide), sa 4 (by decide), sa 6 (by decide),
       State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem, Nat.reduceAdd] at hpost
-    have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
+    obtain hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
       bytes_of_frame (s := s) (rs := [kR s]) hfu (p := p) (len := len)
         (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
     rw [hb h.kn.symm (by have := h.wn; omega_using []), hb (iR_eq h ▸ h.ki.symm) (by have := h.k2; omega_using []),

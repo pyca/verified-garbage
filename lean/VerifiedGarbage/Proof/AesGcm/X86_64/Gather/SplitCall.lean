@@ -88,7 +88,7 @@ theorem fR_wrap : (fb s).toNat + fl s ≤ 2 ^ 64 := by
   · have e : fl s = 0 := by simp only [fl_eq, hc, ↓reduceIte]
     rw [e]; exact Nat.le_of_lt (fb s).isLt
   · have e₁ : fl s = sl s 0 := by simp only [fl_eq, hc, ↓reduceIte]
-    have e₂ : fb s = sb s 0 := by simp only [fb, hc, ↓reduceIte]
+    obtain e₂ : fb s = sb s 0 := by simp only [fb, hc, ↓reduceIte]
     have := hp.w_ls _ (slice_mem s (i := 0) (by omega_arith))
     rw [e₁, e₂]; exact this
 
@@ -97,7 +97,7 @@ theorem fR_covers : Covers [fR s] s.rd := by
   by_cases hc : Cnt s = 0
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    have e : fl s = 0 := by simp only [fl_eq, hc, ↓reduceIte]
+    obtain e : fl s = 0 := by simp only [fl_eq, hc, ↓reduceIte]
     refine ⟨dsR s, by rw [hp.rd]; simp, 0, ?_, by simp only [e]; omega_arith⟩
     show fb s = Src s + BitVec.ofNat 64 0
     simp only [fb, hc, ↓reduceIte, BitVec.ofNat_eq_ofNat, BitVec.add_zero]
@@ -117,27 +117,27 @@ theorem splitPre_of {u : State}
     (splitK M).pre u := by
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hfl := fl_le hp
-  have hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
-  have hargs : (Proof.AesGcm.args u 5) = ⟨SP s - BitVec.ofNat 64 40, 40⟩ := by
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hfl := fl_le hp
+  obtain hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
+  obtain hargs : (Proof.AesGcm.args u 5) = ⟨SP s - BitVec.ofNat 64 40, 40⟩ := by
     simp only [Proof.AesGcm.args, stackArgAddr, hrsp]
     rw [sub_add_ofNat _ (by decide)]
-  have hret : (Proof.AesGcm.ret u) = ⟨SP s - BitVec.ofNat 64 48, 8⟩ := by simp only [Proof.AesGcm.ret, hrsp]
-  have hstk : below (SP s - BitVec.ofNat 64 48) 2672 = ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ := by
+  obtain hret : (Proof.AesGcm.ret u) = ⟨SP s - BitVec.ofNat 64 48, 8⟩ := by simp only [Proof.AesGcm.ret, hrsp]
+  obtain hstk : below (SP s - BitVec.ofNat 64 48) 2672 = ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ := by
     simp only [below]
     rw [← Offset.sub_add_eq, ← BitVec.ofNat_add]
-  have tA : Region.Sub ⟨SP s - BitVec.ofNat 64 40, 40⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
-  have tR' : Region.Sub ⟨SP s - BitVec.ofNat 64 48, 8⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
-  have tS : Region.Sub ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
-  have hsp48 : (SP s - BitVec.ofNat 64 48).toNat = (SP s).toNat - 48 := toNat_sub_ofNat (by omega_arith)
-  have hsp40 : (SP s - BitVec.ofNat 64 40).toNat = (SP s).toNat - 40 := toNat_sub_ofNat (by omega_arith)
-  have hsp2720 : (SP s - BitVec.ofNat 64 2720).toNat = (SP s).toNat - 2720 := toNat_sub_ofNat (by omega_arith)
-  have d₁ : (⟨SP s - BitVec.ofNat 64 48, 8⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
+  obtain tA : Region.Sub ⟨SP s - BitVec.ofNat 64 40, 40⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
+  obtain tR' : Region.Sub ⟨SP s - BitVec.ofNat 64 48, 8⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
+  obtain tS : Region.Sub ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
+  obtain hsp48 : (SP s - BitVec.ofNat 64 48).toNat = (SP s).toNat - 48 := toNat_sub_ofNat (by omega_arith)
+  obtain hsp40 : (SP s - BitVec.ofNat 64 40).toNat = (SP s).toNat - 40 := toNat_sub_ofNat (by omega_arith)
+  obtain hsp2720 : (SP s - BitVec.ofNat 64 2720).toNat = (SP s).toNat - 2720 := toNat_sub_ofNat (by omega_arith)
+  obtain d₁ : (⟨SP s - BitVec.ofNat 64 48, 8⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
     Offset.disjoint_of_le (by simp only [hsp48, hsp40]; omega_arith) (by simp only [hsp40]; omega_arith)
-  have d₂ : (⟨SP s - BitVec.ofNat 64 2720, 2672⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
+  obtain d₂ : (⟨SP s - BitVec.ofNat 64 2720, 2672⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
     Offset.disjoint_of_le (by simp only [hsp2720, hsp40]; omega_arith) (by simp only [hsp40]; omega_arith)
-  have bF : (tR s).Disjoint (fR s) := (fR_disj fun q hq => (hp.b_ls q hq).symm).symm
+  obtain bF : (tR s).Disjoint (fR s) := (fR_disj fun q hq => (hp.b_ls q hq).symm).symm
   simp only [splitK, splitPreK, Proof.AesGcm.arg, hargs, hret, hrd, hwr, h_di, h_si, h_dx, h_cx, h_8, h_9, a0,
     a1, a2, a3, a4, hflN, hrsp, Proof.AesGcm.rounds, hstk]
   exact ⟨trivial, trivial, hp.k_d, hp.k_t, hp.n_d, hp.n_t, hp.a_d, hp.a_t,
@@ -175,10 +175,10 @@ theorem pushedW {st : State} (h : SCBase s st) {p : State}
     (hf : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem p.mem) :
     InRegions (p.rd ++ p.wr) (p.gpr .rsp + BitVec.ofNat 64 88) 8 ∧
       p.mem.readW (p.gpr .rsp + BitVec.ofNat 64 88) 64 = W s := by
-  have e88 : p.gpr .rsp + BitVec.ofNat 64 88 = SP s + BitVec.ofNat 64 48 := by
+  obtain e88 : p.gpr .rsp + BitVec.ofNat 64 88 = SP s + BitVec.ofNat 64 48 := by
     rw [hP, show (BitVec.ofNat 64 88 : Addr) = BitVec.ofNat 64 40 + BitVec.ofNat 64 48 from rfl,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]
-  have fP : Frame (wR s ++ [tR s]) s.mem p.mem := h.frame.trans (frame_stk (s := s) (by decide) (by decide) hf)
+  obtain fP : Frame (wR s ++ [tR s]) s.mem p.mem := h.frame.trans (frame_stk (s := s) (by decide) (by decide) hf)
   refine ⟨?_, by rw [e88]; exact keep_w hp fP⟩
   rw [e88, hrd, hwr, h.rd, h.wr]; exact in_cons (a_in hp (i := 5) (by decide))
 
@@ -191,16 +191,16 @@ theorem splitCtx_ok {st : State} (h : SCBase s st) {p : State}
       (∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .r11 → q.gpr r = p.gpr r) ∧ q.mem = p.mem ∧ q.rd = p.rd ∧
       q.wr = p.wr := by
   obtain ⟨a₈, e₈⟩ := pushedW hp h hP hrd hwr hf
-  have hd : ∀ r ∈ [(⟨SP s - BitVec.ofNat 64 40, 40⟩ : Region)], (kpR s).Disjoint r := fun r hr => by
+  obtain hd : ∀ r ∈ [(⟨SP s - BitVec.ofNat 64 40, 40⟩ : Region)], (kpR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.b_w.symm.sub_left kpR_sub).sub_right (stk_sub (s := s) (by decide) (by decide))
-  have k : ∀ d, d + 8 ≤ 104 → p.mem.readW (W s + BitVec.ofNat 64 d) 64 = st.mem.readW (W s + BitVec.ofNat 64 d) 64 :=
+  obtain k : ∀ d, d + 8 ≤ 104 → p.mem.readW (W s + BitVec.ofNat 64 d) 64 = st.mem.readW (W s + BitVec.ofNat 64 d) 64 :=
     fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega_arith)) hd (by decide)
-  have kc : p.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s := by rw [k 0 (by decide)]; exact h.ctx
-  have kr : p.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi := by rw [k 8 (by decide)]; exact h.rounds
-  have r₀ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 0) 8 := by
+  obtain kc : p.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s := by rw [k 0 (by decide)]; exact h.ctx
+  obtain kr : p.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi := by rw [k 8 (by decide)]; exact h.rounds
+  obtain r₀ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 0) 8 := by
     rw [hrd, hwr, h.rd, h.wr]; exact in_cons (w_in' hp (by decide))
-  have r₁ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 8) 8 := by
+  obtain r₁ : InRegions (p.rd ++ p.wr) (W s + BitVec.ofNat 64 8) 8 := by
     rw [hrd, hwr, h.rd, h.wr]; exact in_cons (w_in' hp (by decide))
   apply WP.of_runBlock
   refine ⟨_, by simp only [splitCtx, gCtx, gRounds]; xrun [a₈, e₈, r₀, r₁, kc, kr], ?_⟩
@@ -241,51 +241,51 @@ theorem splitCallEntry {st : State} (h : SCBase s st) (g : SplitRegs s st) {q : 
       stackArg (q.callEntry.withRegions (splitRd s M) (sealWr s)) 3 = stackArg s 3 ∧
       stackArg (q.callEntry.withRegions (splitRd s M) (sealWr s)) 4 = Tg s := by
   obtain ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ := Q
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hfl := fl_le hp
-  have hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hfl := fl_le hp
+  obtain hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
   have hsp := h.rsp
-  have hn8 : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
+  obtain hn8 : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
   obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.rax, .r10, .r11, .rdi, .rsi] (by decide) hn8
-  have hpj' : ∀ j (hj : j < 5), (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem.readW
+  obtain hpj' : ∀ j (hj : j < 5), (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem.readW
       (SP s - BitVec.ofNat 64 (8 * (j + 1))) 64 = st.gpr ([Reg.rax, .r10, .r11, .rdi, .rsi][j]'hj) :=
     fun j hj => by rw [← hsp]; exact hpj j hj
-  have hP : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).gpr .rsp = SP s - BitVec.ofNat 64 40 := by
+  obtain hP : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [pushed_rsp, hsp]; rfl
-  have hpf' : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem := by
+  obtain hpf' : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem := by
     rw [hsp] at hpf; exact hpf
-  have hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
+  obtain hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
     rw [pushed_wr, hsp]; rfl
-  have qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
+  obtain qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [q_g _ (by decide) (by decide) (by decide), hP]
-  have hE : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] q.mem q.callEntry.mem := by
+  obtain hE : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] q.mem q.callEntry.mem := by
     have := callEntry_frame q
     rw [qsp] at this
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
-  have hE' : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem
+  obtain hE' : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem
       q.callEntry.mem := by rw [← q_m]; exact hE
-  have fS : Frame (wR s ++ [tR s]) st.mem q.callEntry.mem :=
+  obtain fS : Frame (wR s ++ [tR s]) st.mem q.callEntry.mem :=
     (frame_stk (s := s) (by decide) (by decide) hpf').trans (frame_stk (s := s) (by decide) (by decide) hE')
-  have fU : Frame (wR s ++ [tR s]) s.mem q.callEntry.mem := h.frame.trans fS
-  have gU : ∀ r, r ≠ .rsp → (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = q.gpr r :=
+  obtain fU : Frame (wR s ++ [tR s]) s.mem q.callEntry.mem := h.frame.trans fS
+  obtain gU : ∀ r, r ≠ .rsp → (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = q.gpr r :=
     fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
-  have gS : ∀ r, r ≠ .rsp → r ≠ .rdi → r ≠ .rsi → r ≠ .r11 →
+  obtain gS : ∀ r, r ≠ .rsp → r ≠ .rdi → r ≠ .rsi → r ≠ .r11 →
       (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = st.gpr r :=
     fun r h₀ h₁ h₂ h₃ => by rw [gU r h₀, q_g r h₁ h₂ h₃, pushed_gpr _ _ h₀]
-  have hU : (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr .rsp = SP s - BitVec.ofNat 64 48 := by
+  obtain hU : (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr .rsp = SP s - BitVec.ofNat 64 48 := by
     rw [State.withRegions_gpr, State.callEntry_rsp, qsp, ← Offset.sub_add_eq]; rfl
-  have hQsp8 : 8 ≤ (SP s - BitVec.ofNat 64 40).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
-  have hQt : (SP s - BitVec.ofNat 64 40).toNat = (SP s).toNat - 40 := toNat_sub_ofNat (by omega_arith)
-  have ea : ∀ j, j < 5 → stackArg (q.callEntry.withRegions (splitRd s M) (sealWr s)) j =
+  obtain hQsp8 : 8 ≤ (SP s - BitVec.ofNat 64 40).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
+  obtain hQt : (SP s - BitVec.ofNat 64 40).toNat = (SP s).toNat - 40 := toNat_sub_ofNat (by omega_arith)
+  obtain ea : ∀ j, j < 5 → stackArg (q.callEntry.withRegions (splitRd s M) (sealWr s)) j =
       (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem.readW (SP s - BitVec.ofNat 64 40 + BitVec.ofNat 64 (8 * j)) 64 :=
     fun j hj => by rw [← q_m]; exact stackArg_entry qsp hQsp8 _ _ (by rw [hQt]; omega_arith)
-  have a0 := ea 0 (by decide)
-  have a1 := ea 1 (by decide)
-  have a2 := ea 2 (by decide)
-  have a3 := ea 3 (by decide)
-  have a4 := ea 4 (by decide)
+  obtain a0 := ea 0 (by decide)
+  obtain a1 := ea 1 (by decide)
+  obtain a2 := ea 2 (by decide)
+  obtain a3 := ea 3 (by decide)
+  obtain a4 := ea 4 (by decide)
   rw [show SP s - BitVec.ofNat 64 40 + BitVec.ofNat 64 (8 * 0) = SP s - BitVec.ofNat 64 (8 * (4 + 1)) from
     by simp, hpj' 4 (by decide)] at a0
   rw [show SP s - BitVec.ofNat 64 40 + BitVec.ofNat 64 (8 * 1) = SP s - BitVec.ofNat 64 (8 * (3 + 1)) from
@@ -302,21 +302,21 @@ theorem splitCallEntry {st : State} (h : SCBase s st) (g : SplitRegs s st) {q : 
   rw [g.r11] at a2
   rw [g.r10] at a3
   rw [g.rax] at a4
-  have hok : M.ok (q.callEntry.withRegions (splitRd s M) (sealWr s)).mem (K s) := by
+  obtain hok : M.ok (q.callEntry.withRegions (splitRd s M) (sealWr s)).mem (K s) := by
     rw [State.withRegions_mem]
     exact M.frame fU (k_apart hp) hp.w_k hp.ok
-  have hpre := splitPre_of hp hU rfl rfl (by rw [gU _ (by decide), q_di]) (by rw [gU _ (by decide), q_si])
+  obtain hpre := splitPre_of hp hU rfl rfl (by rw [gU _ (by decide), q_di]) (by rw [gU _ (by decide), q_si])
     (by rw [gS _ (by decide) (by decide) (by decide) (by decide), g.rdx])
     (by rw [gS _ (by decide) (by decide) (by decide) (by decide), g.rcx])
     (by rw [gS _ (by decide) (by decide) (by decide) (by decide), g.r8])
     (by rw [gS _ (by decide) (by decide) (by decide) (by decide), g.r9]) a0 a1 a2 a3 a4 hok
-  have hR : q.rd = s.rd := by rw [q_rd, pushed_rd, h.rd]
-  have hW : q.wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: wR s := by rw [q_wr, hPw, h.wr, hp.wr]
-  have cF : Covers [fR s] (q.rd ++ q.wr) := by rw [hR]; exact Covers.left (fR_covers hp)
-  have cw : Covers (sealWr s) q.wr := by
+  obtain hR : q.rd = s.rd := by rw [q_rd, pushed_rd, h.rd]
+  obtain hW : q.wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: wR s := by rw [q_wr, hPw, h.wr, hp.wr]
+  obtain cF : Covers [fR s] (q.rd ++ q.wr) := by rw [hR]; exact Covers.left (fR_covers hp)
+  obtain cw : Covers (sealWr s) q.wr := by
     rw [hW]
     exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (covers_of_mem (by simp)) covers_nil')
-  have cr : Covers (splitRd s M ++ sealWr s) (q.rd ++ q.wr) := by
+  obtain cr : Covers (splitRd s M ++ sealWr s) (q.rd ++ q.wr) := by
     rw [hR, hW] at cF ⊢
     rw [hp.rd] at cF ⊢
     exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (covers_of_mem (by simp))
@@ -331,54 +331,54 @@ leave. -/
 theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRegs s st) :
     WP isa (.frame (.push [.rax, .r10, .r11, .rdi, .rsi]) (.seq (.block splitCtx) (.call S.fn.name S.fn.code))
       (.pop .rax 5)) st (Done s) := by
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hfl := fl_le hp
-  have hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hfl := fl_le hp
+  obtain hflN : (BitVec.ofNat 64 (fl s)).toNat = fl s := toNat_ofNat_of_lt (by omega_arith)
   have wsp := hp.w_sp
   have wsp' := hp.w_sp'
   have hsp := h.rsp
-  have hn8 : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
+  obtain hn8 : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
   obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.rax, .r10, .r11, .rdi, .rsi] (by decide) hn8
-  have hpj' : ∀ j (hj : j < 5), (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem.readW
+  obtain hpj' : ∀ j (hj : j < 5), (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem.readW
       (SP s - BitVec.ofNat 64 (8 * (j + 1))) 64 = st.gpr ([Reg.rax, .r10, .r11, .rdi, .rsi][j]'hj) :=
     fun j hj => by rw [← hsp]; exact hpj j hj
-  have hP : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).gpr .rsp = SP s - BitVec.ofNat 64 40 := by
+  obtain hP : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [pushed_rsp, hsp]; rfl
-  have hpf' : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem := by
+  obtain hpf' : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩] st.mem (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem := by
     rw [hsp] at hpf; exact hpf
-  have hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
+  obtain hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
     rw [pushed_wr, hsp]; rfl
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono_mx (by decide)
     (splitCtx_ok hp h hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ q_mx => ?_))
   obtain ⟨hpre, cr, cw, a0, a1, a2, a3, a4⟩ := splitCallEntry hp h g
     ⟨q_di, q_si, q_g, q_m, q_rd, q_wr, q_mx.trans (pushed_mxcsr _ _)⟩
-  have qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
+  obtain qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [q_g _ (by decide) (by decide) (by decide), hP]
-  have hE : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] q.mem q.callEntry.mem := by
+  obtain hE : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] q.mem q.callEntry.mem := by
     have := callEntry_frame q
     rw [qsp] at this
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
-  have hE' : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem
+  obtain hE' : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem
       q.callEntry.mem := by rw [← q_m]; exact hE
-  have fS : Frame (wR s ++ [tR s]) st.mem q.callEntry.mem :=
+  obtain fS : Frame (wR s ++ [tR s]) st.mem q.callEntry.mem :=
     (frame_stk (s := s) (by decide) (by decide) hpf').trans (frame_stk (s := s) (by decide) (by decide) hE')
-  have fU : Frame (wR s ++ [tR s]) s.mem q.callEntry.mem := h.frame.trans fS
-  have gU : ∀ r, r ≠ .rsp → (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = q.gpr r :=
+  obtain fU : Frame (wR s ++ [tR s]) s.mem q.callEntry.mem := h.frame.trans fS
+  obtain gU : ∀ r, r ≠ .rsp → (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = q.gpr r :=
     fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
-  have gS : ∀ r, r ≠ .rsp → r ≠ .rdi → r ≠ .rsi → r ≠ .r11 →
+  obtain gS : ∀ r, r ≠ .rsp → r ≠ .rdi → r ≠ .rsi → r ≠ .r11 →
       (q.callEntry.withRegions (splitRd s M) (sealWr s)).gpr r = st.gpr r :=
     fun r h₀ h₁ h₂ h₃ => by rw [gU r h₀, q_g r h₁ h₂ h₃, pushed_gpr _ _ h₀]
   refine WP.call_sp_mx (k := splitK M) S.ok S.sp (by have := S.xd; omega_arith) hpre cr cw
     fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_
-  have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
+  obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   -- The first slice, and those after it in the output, which the push and the
   -- return address leave as they were.
-  have eF : bytesAt q.callEntry.mem (fb s) (fl s) = pt s (k0 s) := by
+  obtain eF : bytesAt q.callEntry.mem (fb s) (fl s) = pt s (k0 s) := by
     rw [pt_k0]; exact bytesAt_frame fU (fR_apart hp) (by have := fR_wrap hp; omega_arith)
-  have fS2 : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩, ⟨SP s - BitVec.ofNat 64 48, 8⟩] st.mem q.callEntry.mem :=
+  obtain fS2 : Frame [⟨SP s - BitVec.ofNat 64 40, 40⟩, ⟨SP s - BitVec.ofNat 64 48, 8⟩] st.mem q.callEntry.mem :=
     (hpf'.sub fun r hr => ⟨r, by simp at hr ⊢; exact Or.inl hr, fun _ h => h⟩).trans
       (hE'.sub fun r hr => ⟨r, by simp at hr ⊢; exact Or.inr hr, fun _ h => h⟩)
-  have eD : (bytesAt q.callEntry.mem (Dst s) (L s)).drop (fl s) =
+  obtain eD : (bytesAt q.callEntry.mem (Dst s) (L s)).drop (fl s) =
       gathered 64 s.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s) := by
     rw [show L s = fl s + (L s - fl s) by omega_arith, Proof.Cmac.Stream.bytesAt_append,
       List.drop_left' (length_bytesAt _ _ _), ← h.out]
@@ -395,17 +395,17 @@ theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRe
     gS _ (by decide : Reg.r9 ≠ .rsp) (by decide) (by decide) (by decide),
     g.rdx, g.rcx, g.r8, g.r9, hm₂, hflN, ciph_eq hp fU, hk_eq hp fU, iv_eq hp fU, ad_eq hp fU, eF, eD,
     ← (pt_split s).1] at hpost
-  have hpost := hpost hfl
-  have b4888 : Region.Sub (below (q.gpr .rsp) (S.fn.code.x86_64Depth + 8)) (tR s) := by
-    have h₁ := below_sub (sp := q.gpr .rsp) (a := S.fn.code.x86_64Depth + 8) (b := 4848)
+  obtain hpost := hpost hfl
+  obtain b4888 : Region.Sub (below (q.gpr .rsp) (S.fn.code.x86_64Depth + 8)) (tR s) := by
+    obtain h₁ := below_sub (sp := q.gpr .rsp) (a := S.fn.code.x86_64Depth + 8) (b := 4848)
       (by have := S.xd; omega_arith) (by decide)
-    have e : below (SP s - BitVec.ofNat 64 40) 4848 = ⟨SP s - BitVec.ofNat 64 4888, 4848⟩ := by
+    obtain e : below (SP s - BitVec.ofNat 64 40) 4848 = ⟨SP s - BitVec.ofNat 64 4888, 4848⟩ := by
       simp only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add]
     rw [qsp] at h₁ ⊢
     rw [e] at h₁
     exact fun a h => stk_sub (s := s) (by decide) (by decide) a (h₁ a h)
   rw [q_m] at hfr
-  have fC : Frame (wR s ++ [tR s]) st.mem s'.mem := by
+  obtain fC : Frame (wR s ++ [tR s]) st.mem s'.mem := by
     refine (hpf'.sub fun r hr => ?_).trans (hfr.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨tR s, by simp, stk_sub (s := s) (by decide) (by decide)⟩
@@ -420,8 +420,8 @@ theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRe
       show SP s - BitVec.ofNat 64 40 + BitVec.ofNat 64 40 = SP s
       exact BitVec.sub_add_cancel _ _
     · have n₁ : r ≠ .rdi := fun e => by subst e; simp [calleeSaved] at hr
-      have n₂ : r ≠ .rsi := fun e => by subst e; simp [calleeSaved] at hr
-      have n₃ : r ≠ .r11 := fun e => by subst e; simp [calleeSaved] at hr
+      obtain n₂ : r ≠ .rsi := fun e => by subst e; simp [calleeSaved] at hr
+      obtain n₃ : r ≠ .r11 := fun e => by subst e; simp [calleeSaved] at hr
       rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, q_g r n₁ n₂ n₃,
         pushed_gpr _ _ hr', h.saved r hr]
   · rw [popped_mem]
@@ -454,7 +454,7 @@ theorem copySplit_wp (S : SplitFn M) (hL : L s - fl s < 2 ^ 63) {st : State} (h 
   refine WP.seq (WP.mono (splitKeep_ok hp F₁ C₁) fun s₂ ⟨P₂, r9₂, rdi₂, r11₂, _⟩ => ?_)
   refine WP.seq (WP.mono_mx (by decide) (gatherCopy_wp s₂ (splitGatherPre hp hL P₂.toBase r9₂ rdi₂ r11₂))
     fun s₃ ⟨m₃, k₃⟩ x₃ => ?_)
-  have B₃ := split_after hp P₂ m₃ k₃ x₃
+  obtain B₃ := split_after hp P₂ m₃ k₃ x₃
   refine WP.seq (WP.mono_mx (by decide) (splitArgs_ok hp B₃)
     fun s₄ ⟨dx, cx, r8, r9, ax, r10, di, si, r11, cs, m, rd, wr⟩ x₄ => ?_)
   exact splitCall_ok hp S (B₃.regs m cs rd wr x₄).toSC ⟨dx, cx, r8, r9, ax, r10, di, si, r11⟩

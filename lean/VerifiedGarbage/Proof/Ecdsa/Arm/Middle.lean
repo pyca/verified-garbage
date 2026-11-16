@@ -67,47 +67,47 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hpn := hc.p_lt_2n
   -- `XM = X · ACC`.
   refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hf (o := XM) (a := RX) (b := ACC) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
-  have hs₁ := k₁.scr hs
-  have hf₁ := hf.of_rest k₁.rest
-  have kP₁ := hMP.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
-  have kN₁ := hMN.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
-  have one₁ : sv c base s₁ ONE = 1 :=
+  obtain hs₁ := k₁.scr hs
+  obtain hf₁ := hf.of_rest k₁.rest
+  obtain kP₁ := hMP.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  obtain kN₁ := hMN.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  obtain one₁ : sv c base s₁ ONE = 1 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hone
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by omega_using [hp3, one₁])) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
-  have hs₂ := k₂.scr hs₁
-  have hf₂ := hf₁.of_rest k₂.rest
-  have kP₂ := kP₁.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
-  have kN₂ := kN₁.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
-  have zero₂ : sv c base s₂ ZERO = 0 := by
+  obtain hs₂ := k₂.scr hs₁
+  obtain hf₂ := hf₁.of_rest k₂.rest
+  obtain kP₂ := kP₁.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  obtain kN₂ := kN₁.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  obtain zero₂ : sv c base s₂ ZERO = 0 := by
     rw [sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide), hzero]
-  have x₂ : Fin.ofNat c.C.p (sv c base s₂ X) =
+  obtain x₂ : Fin.ofNat c.C.p (sv c base s₂ X) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) := by
     rw [toM_one_mul hpR (by rw [e₂, one₁]), toM_mul hpR e₁]
   -- `RR = X mod n`.
   refine WP.seq (WP.mono (slAdd_ok hc.fn (MN'_n c) h7 hs₂ hf₂ (o := RR) (a := X) (b := ZERO) (by decide) (by decide) (by decide) (by omega_using [hpn, lt₂, zero₂])) fun s₃ ⟨k₃, e₃⟩ => ?_)
-  have hs₃ := k₃.scr hs₂
-  have hf₃ := hf₂.of_rest k₃.rest
-  have kP₃ := kP₂.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
-  have kN₃ := kN₂.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
-  have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := by
+  obtain hs₃ := k₃.scr hs₂
+  obtain hf₃ := hf₂.of_rest k₃.rest
+  obtain kP₃ := kP₂.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
+  obtain kN₃ := kN₂.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
+  obtain r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide), hr2]
-  have K₃ : sv c base s₃ K = sv c base s K := by
+  obtain K₃ : sv c base s₃ K = sv c base s K := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)]
   -- `KM = K · R² mod n`.
   refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := KM) (a := K) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_using [hpn]))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
-  have X₄ : sv c base s₄ X = sv c base s₂ X := by
+  obtain X₄ : sv c base s₄ X = sv c base s₂ X := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₄ (by decide) (by decide) (by decide),
       sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)]
   refine ⟨k₄.scr hs₃, (k₁.rest.trans k₂.rest).trans (k₃.rest.trans k₄.rest), ?_,

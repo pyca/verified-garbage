@@ -39,9 +39,9 @@ theorem CrtHalfReady.after {s t : State} {g : CrtGeometry} {bs : Fin 7 → List 
     (ho : o = 1 ∨ o = 5 ∨ o = 6 ∨ o = 7)
     (frame : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem)
     (rest : Rest rs s t) : CrtHalfReady g bs child slot v M t := by
-  have fits : arrAt v 8 ≤ 8 * workspaceWords g.words := h.1.ready.width ▸ h.1.ready.layout.2.2.1
-  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain fits : arrAt v 8 ≤ 8 * workspaceWords g.words := h.1.ready.width ▸ h.1.ready.layout.2.2.1
+  obtain op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   exact ⟨h.1.after_narrow ready frame rest,
     (keeps_array_num keeps fits op0 (by omega_using [ho])).trans h.2.1, h.2.2.1,
     (keeps_array_num keeps fits op4 (by omega_using [ho])).trans h.2.2.2.1, h.2.2.2.2⟩
@@ -64,7 +64,7 @@ theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
   let H4 := fun (bs : Fin 7 → List Byte) (M : Nat) (s : State) => H3 bs M s ∧ numAt s.mem N v 1 < numAt s.mem N v 0
   let H5 := fun (bs : Fin 7 → List Byte) (M : Nat) (s : State) => H4 bs M s ∧ numAt s.mem N v 5 = 0
   let R := fun (s : State) => ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) v s
-  have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 → Operand q := by
+  obtain op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits (s : State) {bs : Fin 7 → List Byte} {M : Nat} (h : H bs M s) :
@@ -89,7 +89,7 @@ theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
   have w5 (s : State) {bs : Fin 7 → List Byte} {M : Nat} (h : H4 bs M s) : WP isa (clearOperandBuffer 104) s (H5 bs M) := by
     refine (clearArrayWide_ok s h.1.1.1.ready (o := 5) (by decide) (by decide)).mono ?_
     rintro t ⟨ready, cleared, keeps, frame, rest⟩
-    have mod := keeps_array_num keeps (fits s h.1.1) (op 0 (by simp)) (by decide)
+    obtain mod := keeps_array_num keeps (fits s h.1.1) (op 0 (by simp)) (by decide)
     exact ⟨⟨⟨h.1.1.after ready keeps (by simp) frame rest,
       (keeps_array_num keeps (fits s h.1.1) (op 7 (by simp)) (by decide)).trans h.1.2⟩,
       by rw [mod, keeps_array_num keeps (fits s h.1.1) (op 1 (by simp)) (by decide)]; exact h.2⟩,
@@ -110,48 +110,48 @@ theorem crt_reduceHalf_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
     (reduceOperand_ok s h.1.1.ready (op 5 (by simp)) (by decide) (by decide) h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.2).mono
       fun _ k => k.1
   -- Each step in both runs.
-  have size : ∀ (s : State) {bs : Fin 7 → List Byte} {M : Nat}, H bs M s → 128 ≤ 8 * workspaceWords g.words := by
+  obtain size : ∀ (s : State) {bs : Fin 7 → List Byte} {M : Nat}, H bs M s → 128 ≤ 8 * workspaceWords g.words := by
     intro s bs M h
     have := fits s h
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega_using [this]
-  have fit3 : ∀ (s : State) {bs : Fin 7 → List Byte} {M : Nat}, H bs M s →
+  obtain fit3 : ∀ (s : State) {bs : Fin 7 → List Byte} {M : Nat}, H bs M s →
       arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
     intro s bs M h
     have := Nat.le_trans (array_end_le (w := v) (by decide : 3 < 8)) (fits s h)
     have := hv s h
     omega_arith
   intro s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
-  have sz := size s₁ hh.1
-  have f3 := fit3 s₁ hh.1
-  have c9 : RelCT isa (fun s t => R s ∧ R t ∧ s.sp = t.sp) (subModArray 1 5 6) (fun _ _ => True) :=
+  obtain sz := size s₁ hh.1
+  obtain f3 := fit3 s₁ hh.1
+  obtain c9 : RelCT isa (fun s t => R s ∧ R t ∧ s.sp = t.sp) (subModArray 1 5 6) (fun _ _ => True) :=
     subModArray_ct (by decide) (by decide) (by decide) (by decide) sz
-  have c8 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (reduceOperand 5) (fun _ _ => True) :=
+  obtain c8 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (reduceOperand 5) (fun _ _ => True) :=
     (reduceOperand_ct (op 5 (by simp)) (by decide) (by decide) f3).mono
       (fun s t h => ⟨⟨h.1.1.1.ready, h.1.1.r2_lt, by rw [h.1.2]; exact h.1.1.1.ready.modulus⟩,
         ⟨h.2.1.1.1.ready, h.2.1.1.r2_lt, by rw [h.2.1.2]; exact h.2.1.1.1.ready.modulus⟩, h.2.2⟩)
       (fun _ _ _ => trivial)
-  have c7 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (copyLow slot j 5) (fun _ _ => True) :=
+  obtain c7 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (copyLow slot j 5) (fun _ _ => True) :=
     (crt_copyLow_ct hj (by decide)).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1.1, h.2.2⟩) (fun _ _ _ => trivial)
-  have c6 : RelCT isa (fun s t => H5 bs1 M1 s ∧ H5 bs2 M2 t ∧ s.sp = t.sp) (subModArray 6 5 1) (fun _ _ => True) :=
+  obtain c6 : RelCT isa (fun s t => H5 bs1 M1 s ∧ H5 bs2 M2 t ∧ s.sp = t.sp) (subModArray 6 5 1) (fun _ _ => True) :=
     (subModArray_ct (by decide) (by decide) (by decide) (by decide) sz).mono
       (fun _ _ h => ⟨h.1.1.1.1.1.ready, h.2.1.1.1.1.1.ready, h.2.2⟩) (fun _ _ _ => trivial)
-  have c5 : RelCT isa (fun s t => H4 bs1 M1 s ∧ H4 bs2 M2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 5))
+  obtain c5 : RelCT isa (fun s t => H4 bs1 M1 s ∧ H4 bs2 M2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 5))
       (fun _ _ => True) :=
     (clearArrayWide_ct (by decide) sz).mono (fun _ _ h => ⟨h.1.1.1.1.ready, h.2.1.1.1.1.ready, h.2.2⟩)
       (fun _ _ _ => trivial)
-  have c4 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (montOp 1 1 4) (fun _ _ => True) :=
+  obtain c4 : RelCT isa (fun s t => H3 bs1 M1 s ∧ H3 bs2 M2 t ∧ s.sp = t.sp) (montOp 1 1 4) (fun _ _ => True) :=
     (montOp_ct (op 1 (by simp)) (op 1 (by simp)) (op 4 (by simp)) f3).mono
       (fun _ _ h => ⟨⟨h.1.1.1.ready, h.1.1.r2_lt⟩, ⟨h.2.1.1.1.ready, h.2.1.1.r2_lt⟩, h.2.2⟩) (fun _ _ _ => trivial)
-  have c3 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (smallConst 7 1) (fun _ _ => True) :=
+  obtain c3 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (smallConst 7 1) (fun _ _ => True) :=
     (smallConst_ct (o := 7) 1 (by decide) (by decide) (by decide)).mono
       (fun _ _ h => ⟨h.1.1.ready, h.2.1.1.ready, h.2.2⟩) (fun _ _ _ => trivial)
-  have c2 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (copyHigh slot j 1) (fun _ _ => True) :=
+  obtain c2 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (copyHigh slot j 1) (fun _ _ => True) :=
     (crt_copyHigh_ct hj (by decide)).mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
-  have c1 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 1))
+  obtain c1 : RelCT isa (fun s t => H bs1 M1 s ∧ H bs2 M2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 1))
       (fun _ _ => True) :=
     (clearArrayWide_ct (by decide) sz).mono (fun _ _ h => ⟨h.1.1.ready, h.2.1.1.ready, h.2.2⟩) (fun _ _ _ => trivial)
-  have all := crt_seq_ct c1 (fun s h => w1 s h) (fun s h => w1 s h)
+  obtain all := crt_seq_ct c1 (fun s h => w1 s h) (fun s h => w1 s h)
     (crt_seq_ct c2 (fun s h => w2 s h) (fun s h => w2 s h)
       (crt_seq_ct c3 (fun s h => w3 s h) (fun s h => w3 s h)
         (crt_seq_ct c4 (fun s h => w4 s h) (fun s h => w4 s h)

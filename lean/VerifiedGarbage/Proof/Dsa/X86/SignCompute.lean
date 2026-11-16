@@ -38,38 +38,38 @@ theorem signFinish_ok {base : Addr} {size pLen qLen p q digestLen x digest rv in
       Execution base s0 s4 ∧
       flagW base (Layout.field .mask) s4 = flagW base (Layout.field .mask) s0 := by
   have L := M.lengths
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have qp : 0 < q := by have := M.qLarge; omega
+  obtain nq : (qLen + 7) / 8 ≤ 48 := by omega
+  obtain qp : 0 < q := by have := M.qLarge; omega
   unfold Core.signFinish Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (stageProduct_ok M (X.ready (M.context nq)) (M.scalarReady (by decide) nq)
     (by decide) (M.scalarFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
-  have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.scalarFit (by decide)⟩)
-  have U1 : operandValue s1 base (.local u) qLen = x * rv % q := by
-    have V := R1.scalar_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
+  obtain E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.scalarFit (by decide)⟩)
+  obtain U1 : operandValue s1 base (.local u) qLen = x * rv % q := by
+    obtain V := R1.scalar_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
     rw [hx, hr] at V
     exact V
-  have D1 := E1.buffer D (by decide)
+  obtain D1 := E1.buffer D (by decide)
   refine WP.seq (WP.mono (stageReduce_ok (LenOperand.prefix M1.saved nq (E1.prefixLen.trans hP)) M1 (D1.stream (M1.context nq)) D1.stack (by omega)
     (by decide) (M1.scalarFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
-  have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
-  have E12 := E1.trans E2
-  have Z2 : operandValue s2 base (.local z) qLen = digest % q := by
-    have V := R2.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
+  obtain E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
+  obtain E12 := E1.trans E2
+  obtain Z2 : operandValue s2 base (.local z) qLen = digest % q := by
+    obtain V := R2.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
     rw [E1.value D (by decide) M.extent, hD] at V
     exact V
-  have U2 : operandValue s2 base (.local u) qLen = x * rv % q := by
+  obtain U2 : operandValue s2 base (.local u) qLen = x * rv % q := by
     rw [R2.toStageFrame.scalar_keep M1 (by decide) (by decide) (by decide), U1]
   refine WP.seq (WP.mono (stageSum_ok M2 (M2.scalarReady (by decide) nq) (M2.scalarReady (by decide) nq)
     (by rw [Z2]; exact Nat.mod_lt _ qp) (by rw [U2]; exact Nat.mod_lt _ qp)
     (by decide) (M2.scalarFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
-  have E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.scalarFit (by decide)⟩)
-  have E123 := E12.trans E3
-  have V3 : operandValue s3 base (.local v) qLen = (digest % q + x * rv % q) % q := by
-    have V := R3.scalar_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
+  obtain E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.scalarFit (by decide)⟩)
+  obtain E123 := E12.trans E3
+  obtain V3 : operandValue s3 base (.local v) qLen = (digest % q + x * rv % q) % q := by
+    obtain V := R3.scalar_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
     rw [Z2, U2] at V
     exact V
-  have I3 : operandValue s3 base (.local VG.Impl.Dsa.Layout.inverse) qLen = inv := by
+  obtain I3 : operandValue s3 base (.local VG.Impl.Dsa.Layout.inverse) qLen = inv := by
     rw [R3.toStageFrame.scalar_keep M2 (by decide) (by decide) (by decide),
       R2.toStageFrame.scalar_keep M1 (by decide) (by decide) (by decide),
       R1.toStageFrame.scalar_keep M (by decide) (by decide) (by decide), hi]
@@ -114,32 +114,32 @@ theorem signStart_ok {base : Addr} {size pLen qLen p q g k : Nat} {s0 : State}
       flagW base (Layout.field .mask) s3 = flagW base (Layout.field .mask) s0 := by
   have L := M.lengths
   have A := M.aligned
-  have np : (pLen + 7) / 8 ≤ 48 := by omega
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have qp : 0 < q := by have := M.qLarge; omega
-  have pp : 0 < p := by have := M.pLarge; omega
+  obtain np : (pLen + 7) / 8 ≤ 48 := by omega
+  obtain nq : (qLen + 7) / 8 ≤ 48 := by omega
+  obtain qp : 0 < q := by have := M.qLarge; omega
+  obtain pp : 0 < p := by have := M.pLarge; omega
   unfold Core.signStart Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (stagePowerP_ok M (G.ready (M.context np)) (K.ready (M.context np))
     (by decide) (M.wideFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
-  have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.wideFit (by decide)⟩)
-  have V1 : operandValue s1 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ k % p := by
-    have V := R1.wide_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
+  obtain E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.wideFit (by decide)⟩)
+  obtain V1 : operandValue s1 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ k % p := by
+    obtain V := R1.wide_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
     rw [hg, hk] at V
     exact V
   refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M1 (M1.wideStream (by decide) nq) (M1.wideStack (by decide)) (by omega)
     (by decide) (M1.scalarFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
-  have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
-  have E12 := E1.trans E2
-  have V2 : operandValue s2 base (.local r) qLen = g ^ k % p % q := by
-    have V := R2.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
+  obtain E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
+  obtain E12 := E1.trans E2
+  obtain V2 : operandValue s2 base (.local r) qLen = g ^ k % p % q := by
+    obtain V := R2.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
     rw [V1] at V
     exact V
-  have Q2 : operandValue s2 base (.local qMinusTwo) qLen = q - 2 := by
+  obtain Q2 : operandValue s2 base (.local qMinusTwo) qLen = q - 2 := by
     rw [R2.toStageFrame.scalar_keep M1 (by decide) (by decide) (by decide),
       R1.toStageFrame.scalar_keep_wide M (by decide) (by decide), hq2]
-  have K2 := E12.buffer K (by decide)
-  have VK2 : operandValue s2 base (.input .nonce) qLen = k := (E12.value K (by decide) M.extent).trans hk
+  obtain K2 := E12.buffer K (by decide)
+  obtain VK2 : operandValue s2 base (.input .nonce) qLen = k := (E12.value K (by decide) M.extent).trans hk
   refine WP.seq (WP.mono (stagePowerQ_ok M2 (K2.ready (M2.context nq))
     (M2.scalarReady (by decide) nq) (by decide) (M2.scalarFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
   refine WP.block_nil ⟨M3, ?_, ?_, ⟨E12.trans (R3.toStageFrame.execution (.inl ⟨by decide, M2.scalarFit (by decide)⟩)), ?_⟩⟩
@@ -229,7 +229,7 @@ theorem signCompute_ok {base : Addr} {size pLen qLen p q g y x k digestLen diges
   dsimp only
   have L := M.lengths
   have A := M.aligned
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  obtain nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   unfold SignVerify.signCompute Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (publicKey_ok M G Y hg hy) fun s1 ⟨M1, F1, Q1, E1⟩ => ?_)
@@ -238,7 +238,7 @@ theorem signCompute_ok {base : Addr} {size pLen qLen p q g y x k digestLen diges
     ((E1.value G (by decide) M.extent).trans hg) ((E1.value Y (by decide) M.extent).trans hy)
     ((E1.value X (by decide) M.extent).trans hx) ((E1.value K (by decide) M.extent).trans hk))
     fun s2 ⟨M2, F2, Q2, E2⟩ => ?_)
-  have E12 := E1.trans E2
+  obtain E12 := E1.trans E2
   refine WP.seq (WP.mono (signArithmetic_ok M2 (E12.buffer G (by decide)) (E12.buffer K (by decide))
     (E12.buffer X (by decide)) (E12.buffer D (by decide)) hd (E12.prefixLen.trans hP)
     ((E12.value G (by decide) M.extent).trans hg) ((E12.value K (by decide) M.extent).trans hk)
@@ -246,7 +246,7 @@ theorem signCompute_ok {base : Addr} {size pLen qLen p q g y x k digestLen diges
     (Q2.trans Q1)) fun s3 ⟨M3, R3, S3, E3, F3⟩ => ?_)
   refine WP.seq (WP.seq (WP.mono (stageZero_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     (M3.scalarReady (by decide) nq) true) fun s4 ⟨M4, F4, A4⟩ => ?_))
-  have E4 := A4.execution (.inr ⟨rfl, rfl⟩)
+  obtain E4 := A4.execution (.inr ⟨rfl, rfl⟩)
   refine WP.mono (stageZero_ok M4 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) (M4.scalarReady (by decide) nq) true)
     fun sf ⟨Mf, F5, A5⟩ => ?_
   refine WP.block_nil ⟨Mf, ?_, ?_, ?_, (((E12.trans E3).trans E4).trans (A5.execution (.inr ⟨rfl, rfl⟩)))⟩

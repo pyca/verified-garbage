@@ -215,13 +215,13 @@ theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     WP isa (salsaAt c dR) s Q := by
   unfold salsaAt
   refine WP.seq (wp_mov (fun s₁ u₁ => wp_mov (fun s₂ u₂ => WP.block_nil ?_)) hd0)
-  have e₁ : s₂.gpr .r3 = yP s₀ + BitVec.ofNat 64 o := by rw [u₂.other _ (by decide), u₁.gpr, hd]
-  have e₂ : s₂.gpr .r4 = sc s₀ := by rw [u₂.gpr, u₁.other _ (by decide), h27]
-  have e₃ : ∀ r ∈ preserved, s₂.gpr r = s.gpr r := fun r hr => by
+  obtain e₁ : s₂.gpr .r3 = yP s₀ + BitVec.ofNat 64 o := by rw [u₂.other _ (by decide), u₁.gpr, hd]
+  obtain e₂ : s₂.gpr .r4 = sc s₀ := by rw [u₂.gpr, u₁.other _ (by decide), h27]
+  obtain e₃ : ∀ r ∈ preserved, s₂.gpr r = s.gpr r := fun r hr => by
     rw [u₂.other _ (pres_ne r hr).2.1, u₁.other _ (pres_ne r hr).1]
-  have hsub : Region.Sub (slot s₀ o) (yR s₀) := y_sub hp ho
-  have hsub' : Region.Sub ⟨sc s₀, 64⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
-  have hsc : (scR s₀).Contains (sc s₀) 64 := by
+  obtain hsub : Region.Sub (slot s₀ o) (yR s₀) := y_sub hp ho
+  obtain hsub' : Region.Sub ⟨sc s₀, 64⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
+  obtain hsc : (scR s₀).Contains (sc s₀) 64 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   refine hS s₂ _ _ e₁ e₂ (hp.y_s.sub_left hsub |>.sub_right hsub')
     (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (by simp) (in_y hp ho))
@@ -262,8 +262,8 @@ theorem xP_disj {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
 theorem saved_keep {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) {m m' : Mem}
     (hf : Frame [slot s₀ o, ⟨sc s₀, 64⟩] m m') (h : Saved s₀ m) : Saved s₀ m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
-  have hp8 : p.2 + 8 ≤ 128 ∧ 64 ≤ p.2 := by revert p; decide
-  have hsub : Region.Sub ⟨sc s₀ + BitVec.ofNat 64 p.2, 8⟩ (scR s₀) := s_sub s₀ (by omega_arith)
+  obtain hp8 : p.2 + 8 ≤ 128 ∧ 64 ≤ p.2 := by revert p; decide
+  obtain hsub : Region.Sub ⟨sc s₀ + BitVec.ofNat 64 p.2, 8⟩ (scR s₀) := s_sub s₀ (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (hp.y_s.sub_left (y_sub hp ho)).sub_right hsub |>.symm
@@ -309,7 +309,7 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
         salsa (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)) →
       WP isa P s' Q) :
     WP isa (.block (xor64 dR xR sR)) s fun s' => WP isa (.seq (salsaAt c dR) P) s' Q := by
-  have lt := r_lt hp
+  obtain lt := r_lt hp
   rw [← List.append_nil (xor64 dR xR sR)]
   refine xor64_ok hd hx hs hdx (yb_disj hp ho hob) 8 (Nat.le_refl _) [] s _ gd gx gs hinx
     (fun i hi => by
@@ -317,12 +317,12 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
     (fun i hi => by
       rw [hwr, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega_arith)))
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => WP.block_nil ?_
-  have l1 : (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)).length
+  obtain l1 : (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)).length
       = 64 := by
     rw [xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
-  have f₁ : Frame [slot s₀ o] s.mem s₁.mem := by
+  obtain f₁ : Frame [slot s₀ o] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame _ _ _ (by rw [l1]; exact Region.contains_self _ _)
-  have hw := bytesAt_writeBytes_self s.mem (yP s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega_arith)
+  obtain hw := bytesAt_writeBytes_self s.mem (yP s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega_arith)
   rw [l1] at hw
   refine WP.seq (salsaAt_ok hS hp hd.2.2 ho (by rw [g₁ _ hd.1 hd.2.1, gd])
     (by rw [g₁ _ (by decide) (by decide), h27]) (by rw [wr₁, hwr, hp.wr])
@@ -360,14 +360,14 @@ theorem mem_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s s�
     Frame [yR s₀, scR s₀] s₀.mem s₅.mem ∧ Saved s₀ s₅.mem ∧
     ∀ i < k + 1, bytesAt s₅.mem (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
       bytesAt s₅.mem (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1) := by
-  have lt := r_lt hp
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_arith
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_arith
-  have F₂ := h.frame.trans (frame_big hp oE f₂)
-  have yE_eq : bytesAt s₂.mem (yE s₀ k) 64 = yAt (B s₀) (rr s₀) (2 * k) := by
+  obtain lt := r_lt hp
+  obtain oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_arith
+  obtain oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_arith
+  obtain F₂ := h.frame.trans (frame_big hp oE f₂)
+  obtain yE_eq : bytesAt s₂.mem (yE s₀ k) 64 = yAt (B s₀) (rr s₀) (2 * k) := by
     rw [b₂, h.x, b_frame hp h.frame (by omega_arith : 128 * k + 64 ≤ 128 * rr s₀),
       show 128 * k = 64 * (2 * k) by omega_arith, ← blk_B s₀ (by omega_arith), yAt_eq]
-  have hb : bytesAt s₂.mem (bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1))) 64 =
+  obtain hb : bytesAt s₂.mem (bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1))) 64 =
       blk (B s₀) (2 * k + 1) := by
     rw [blk_B s₀ (by omega_arith)]
     exact b_frame hp F₂ (by omega_arith)
@@ -393,22 +393,22 @@ theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     WP isa (.seq (.block (xor64 .r25 .r29 .r24)) <| .seq (salsaAt c .r25) <|
       .seq (.block (.addi .r24 .r24 64 :: xor64 .r26 .r25 .r24)) <| .seq (salsaAt c .r26) P)
       s Q := by
-  have lt := r_lt hp
-  have hrd : s.rd = [bR s₀] := by rw [h.rd, hp.rd]
-  have hwr : s.wr = [yR s₀, scR s₀] := by rw [h.wr, hp.wr]
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_arith
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_arith
+  obtain lt := r_lt hp
+  obtain hrd : s.rd = [bR s₀] := by rw [h.rd, hp.rd]
+  obtain hwr : s.wr = [yR s₀, scR s₀] := by rw [h.wr, hp.wr]
+  obtain oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_arith
+  obtain oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_arith
   refine WP.seq (half_ok hS hp (by decide) (by decide) (by decide) oE (ob := 128 * k) (by omega_arith)
     hrd hwr h.r25 h.r29 h.r24 h.r27 (xP_disj hp hk) (xP_in hp hk hrd hwr)
     fun s₂ rd₂ wr₂ sp₂ cs₂ f₂ b₂ => ?_)
   refine WP.seq (wp_addi (by decide) fun s₃ u₃ => ?_)
-  have k3 : ∀ r, r ≠ .r24 → r ∈ preserved → s₃.gpr r = s.gpr r := fun r h1 h2 => by
+  obtain k3 : ∀ r, r ≠ .r24 → r ∈ preserved → s₃.gpr r = s.gpr r := fun r h1 h2 => by
     rw [u₃.other _ h1, cs₂ r h2]
-  have e3 : s₃.gpr .r24 = bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1)) := by
+  obtain e3 : s₃.gpr .r24 = bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1)) := by
     rw [u₃.gpr, cs₂ _ (by decide), h.r24, add_ofNat]; congr 2; omega_arith
-  have hrd₃ : s₃.rd = [bR s₀] := by rw [u₃.rd, rd₂, hrd]
-  have hwr₃ : s₃.wr = [yR s₀, scR s₀] := by rw [u₃.wr, wr₂, hwr]
-  have e25 : s₃.gpr .r25 = yE s₀ k := by rw [k3 _ (by decide) (by decide), h.r25]
+  obtain hrd₃ : s₃.rd = [bR s₀] := by rw [u₃.rd, rd₂, hrd]
+  obtain hwr₃ : s₃.wr = [yR s₀, scR s₀] := by rw [u₃.wr, wr₂, hwr]
+  obtain e25 : s₃.gpr .r25 = yE s₀ k := by rw [k3 _ (by decide) (by decide), h.r25]
   refine half_ok hS hp (by decide) (by decide) (by decide) oO (ob := 64 * (2 * k + 1)) (by omega_arith)
     hrd₃ hwr₃ (by rw [k3 _ (by decide) (by decide), h.r26]) e25 e3
     (by rw [k3 _ (by decide) (by decide), h.r27])
@@ -417,7 +417,7 @@ theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     fun s₅ rd₅ wr₅ sp₅ cs₅ f₅ b₅ => ?_
   rw [u₃.mem] at f₅ b₅
   obtain ⟨F, S, D⟩ := mem_ok hp hk h f₂ b₂ f₅ b₅
-  have k5 : ∀ r, r ≠ .r24 → r ∈ preserved → s₅.gpr r = s.gpr r := fun r h1 h2 => by
+  obtain k5 : ∀ r, r ≠ .r24 → r ∈ preserved → s₅.gpr r = s.gpr r := fun r h1 h2 => by
     rw [cs₅ r h2, k3 r h1 h2]
   exact hQ s₅ ⟨by rw [rd₅, hrd₃, hp.rd], by rw [wr₅, hwr₃, hp.wr],
     by rw [sp₅, u₃.sp, sp₂, h.sp],
@@ -435,11 +435,11 @@ theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
     (h : Mid s₀ k s) :
     WP isa (.block [mov .r29 .r26, .addi .r24 .r24 64, .addi .r25 .r25 64,
       .addi .r26 .r26 64, .subi .r28 .r28 1]) s (Inv s₀ (k + 1)) := by
-  have lt := r_lt hp
+  obtain lt := r_lt hp
   refine wp_mov fun s₆ u₆ => wp_addi (by decide) fun s₇ u₇ => wp_addi (by decide) fun s₈ u₈ =>
     wp_addi (by decide) fun s₉ u₉ => wp_subi (by decide) fun s₁₀ u₁₀ => WP.block_nil ?_
-  have m₁₀ : s₁₀.mem = s.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
-  have g : ∀ r, r ≠ .r24 → r ≠ .r25 → r ≠ .r26 → r ≠ .r28 → r ≠ .r29 → s₁₀.gpr r = s.gpr r :=
+  obtain m₁₀ : s₁₀.mem = s.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
+  obtain g : ∀ r, r ≠ .r24 → r ≠ .r25 → r ≠ .r26 → r ≠ .r28 → r ≠ .r29 → s₁₀.gpr r = s.gpr r :=
     fun r h24 h25 h26 h28 h29 => by
       rw [u₁₀.other _ h28, u₉.other _ h26, u₈.other _ h25, u₇.other _ h24, u₆.other _ h29]
   refine ⟨(by omega_arith), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -538,22 +538,22 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : s₁.gpr = s
     WP isa (.block [mov .r28 .r4, mov .r24 .r3, mov .r25 .r5, mov .r27 .r7,
      .lsl .r9 .r4 6, .add .r26 .r5 .r9,
      .lsl .r9 .r4 7, .add .r29 .r3 .r9, .subi .r29 .r29 64]) s₁ (Inv s₀ 0) := by
-  have lt : 128 * (s₀.gpr .r4).toNat < 2 ^ 64 := r_lt hp
+  obtain lt : 128 * (s₀.gpr .r4).toNat < 2 ^ 64 := r_lt hp
   have pos := hp.pos
   refine wp_mov fun a ua => wp_mov fun b ub => wp_mov fun c uc => wp_mov fun d ud =>
     wp_lsl (by decide) fun e ue => wp_add fun f uf => wp_lsl (by decide) fun g' ug =>
     wp_add fun h uh => wp_subi (by decide) fun i ui => WP.block_nil ?_
-  have r4 : d.gpr .r4 = s₀.gpr .r4 := by
+  obtain r4 : d.gpr .r4 = s₀.gpr .r4 := by
     rw [ud.other _ (by decide), uc.other _ (by decide), ub.other _ (by decide),
       ua.other _ (by decide), g]
-  have e9 : e.gpr .r9 = BitVec.ofNat 64 (64 * rr s₀) := by
+  obtain e9 : e.gpr .r9 = BitVec.ofNat 64 (64 * rr s₀) := by
     rw [ue.gpr, r4, shl_eq (by simp; omega_arith), Nat.mul_comm]
-  have g9 : g'.gpr .r9 = BitVec.ofNat 64 (128 * rr s₀) := by
+  obtain g9 : g'.gpr .r9 = BitVec.ofNat 64 (128 * rr s₀) := by
     rw [ug.gpr, uf.other _ (by decide), ue.other _ (by decide), r4, shl_eq (by simp; omega_arith),
       Nat.mul_comm]
-  have hm' : i.mem = saveMem s₀ := by
+  obtain hm' : i.mem = saveMem s₀ := by
     rw [ui.mem, uh.mem, ug.mem, uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, ua.mem, hm]
-  have k : ∀ r, r ≠ .r9 → r ≠ .r24 → r ≠ .r25 → r ≠ .r26 → r ≠ .r27 → r ≠ .r28 → r ≠ .r29 →
+  obtain k : ∀ r, r ≠ .r9 → r ≠ .r24 → r ≠ .r25 → r ≠ .r26 → r ≠ .r27 → r ≠ .r28 → r ≠ .r29 →
       i.gpr r = s₀.gpr r := fun r h9 h24 h25 h26 h27 h28 h29 => by
     rw [ui.other _ h29, uh.other _ h29, ug.other _ h9, uf.other _ h26, ue.other _ h9,
       ud.other _ h27, uc.other _ h25, ub.other _ h24, ua.other _ h28, g]
@@ -603,12 +603,12 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : s₁.gpr = s
 
 theorem loop_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {s : State}
     (h : Inv s₀ 0 s) : WP isa (.loop (bmBody c) (.nonzero .d .r28)) s (Inv s₀ (rr s₀)) := by
-  have lt := r_lt hp
+  obtain lt := r_lt hp
   refine WP.loop (M := isa) (fun n s => ∃ k, n = rr s₀ - k ∧ k < rr s₀ ∧ Inv s₀ k s) ?_ (rr s₀) s
     ⟨0, rfl, hp.pos, h⟩
   rintro n s ⟨k, rfl, hk, hi⟩
   refine WP.mono (body_ok hS hp hk hi) fun s' hi' => ?_
-  have hz : isa.eval (.nonzero .d .r28) s' = some (decide (rr s₀ - (k + 1) ≠ 0)) := by
+  obtain hz : isa.eval (.nonzero .d .r28) s' = some (decide (rr s₀ - (k + 1) ≠ 0)) := by
     show VG.PPC64LE.eval (.nonzero .d .r28) s' = _
     rw [eval_nonzero, hi'.r28, bne, ofNat_beq_zero (by omega_arith)]
     simp
@@ -693,7 +693,7 @@ theorem correct {c : Prog isa} (hS : SalsaSpec c) (hc : c.noFrames = true) {s₀
     WP isa (blockMixWith c) s₀ fun s' =>
       abiPreserved s₀ s' ∧ Proof.Scrypt.blockMixPPC64LE.post s₀ s' := by
   obtain ⟨hp, hs⟩ := pre_of hpre
-  have hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
+  obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
     hp.r6, hp.pos⟩
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
   refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hS hpi)
@@ -738,9 +738,9 @@ theorem salsa_noFrames : Impl.Scrypt.PPC64LE.salsa.noFrames = true := by decide 
 
 theorem salsaSpec : SalsaSpec Impl.Scrypt.PPC64LE.salsa := by
   intro s d sc hd hsc hds hind hins Q hQ
-  have c3 : s.callEntry.gpr .r3 = d := (State.callEntry_gpr _ (by decide)).trans hd
-  have c4 : s.callEntry.gpr .r4 = sc := (State.callEntry_gpr _ (by decide)).trans hsc
-  have hw : Covers [⟨d, 64⟩, ⟨sc, 64⟩] s.wr := VG.Covers.pair (VG.Covers.one hind) (VG.Covers.one hins)
+  obtain c3 : s.callEntry.gpr .r3 = d := (State.callEntry_gpr _ (by decide)).trans hd
+  obtain c4 : s.callEntry.gpr .r4 = sc := (State.callEntry_gpr _ (by decide)).trans hsc
+  obtain hw : Covers [⟨d, 64⟩, ⟨sc, 64⟩] s.wr := VG.Covers.pair (VG.Covers.one hind) (VG.Covers.one hins)
   refine WP.call (k := Proof.Scrypt.salsaPPC64LE) Proof.Scrypt.PPC64LE.salsa_correct
     (rd := []) (wr := [⟨d, 64⟩, ⟨sc, 64⟩]) ?_ ?_ hw ?_ salsa_noFrames
   · simp only [Proof.Scrypt.salsaPPC64LE, State.withRegions_gpr, State.withRegions_rd,

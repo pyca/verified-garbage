@@ -277,7 +277,7 @@ theorem final_load_wp {s₀ : State} (hp : CPre s₀) :
 
 theorem final_setup_wp {s₀ : State} (hp : CPre s₀) :
     WP isa (.block finalSetup) (s₀.setReg .rax (fV s₀)) (Setup s₀) := by
-  have hw : ∀ p ∈ finalSaved, InRegions (s₀.setReg .rax (fV s₀)).wr
+  obtain hw : ∀ p ∈ finalSaved, InRegions (s₀.setReg .rax (fV s₀)).wr
       (Spill.slot ((s₀.setReg .rax (fV s₀)).gpr .rax) p.2) 8 := by
     intro p hp'
     rw [wr_setReg, gpr_setReg_self, hp.wr]
@@ -346,7 +346,7 @@ entry. -/
 theorem entry_bytes {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
     bytesAt s.callEntry.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ ∧ bytesAt s.callEntry.mem (fIv s₀) 16 = fIv0 s₀ ∧
       Spec.Cbc.blocksAt s.callEntry.mem (fD s₀) (fN s₀) = fBlks s₀ := by
-  have ef := AesCfb.X86_64.entry_frame h.mem h.rsp
+  obtain ef := AesCfb.X86_64.entry_frame h.mem h.rsp
   refine ⟨bytesAt_frame ef (fun r hr => ?_) hp.sched_len, bytesAt_frame ef (fun r hr => ?_) (by decide),
     AesCfb.X86_64.blocksAt_frame' ef fun r hr => ?_⟩ <;>
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr <;> rcases hr with rfl | rfl
@@ -384,7 +384,7 @@ theorem zero_bytes (m : Mem) (B : Addr) :
       List.replicate 16 0 := by
   apply List.ext_getElem (by simp [bytesAt])
   intro i h₁ _
-  have hi : i < 16 := by simpa [bytesAt] using h₁
+  obtain hi : i < 16 := by simpa [bytesAt] using h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate, Mem.writeW, Mem.write,
     Mem.sub_ofNat_toNat B (show i < 2 ^ 64 by omega_using [hi]), Offset.sub_toNat' B (show 8 < 2 ^ 64 by decide)
       (show i < 2 ^ 64 by omega_using [hi])]
@@ -464,7 +464,7 @@ theorem big_of {s₀ : State} {m : Mem} (hf : Frame (cW s₀) (svMem s₀) m) : 
 /-- `save`'s address, on the stack, is unchanged. -/
 theorem arg_keep {s₀ : State} (hp : CPre s₀) {s : State} (hsp : s.gpr .rsp = fSp s₀)
     (hf : Frame (cBig s₀) s₀.mem s.mem) : stackArgAddr s 0 = stackArgAddr s₀ 0 ∧ stackArg s 0 = fV s₀ := by
-  have hA : stackArgAddr s 0 = stackArgAddr s₀ 0 := by simp only [stackArgAddr, hsp]
+  obtain hA : stackArgAddr s 0 = stackArgAddr s₀ 0 := by simp only [stackArgAddr, hsp]
   refine ⟨hA, ?_⟩
   show s.mem.readW (stackArgAddr s 0) 64 = s₀.mem.readW (stackArgAddr s₀ 0) 64
   rw [hA]
@@ -525,14 +525,14 @@ theorem tail_load_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesC
 
 theorem tail_args_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesCtr.ctrMode s₀ s) :
     WP isa (.block tailArgs) (s.setReg .rax (fV s₀)) (TArgs s₀) := by
-  have f₁ := whole_cW1 h
+  obtain f₁ := whole_cW1 h
   obtain ⟨s₂, r₂, z₂, k₂, m₂, rd₂, wr₂⟩ := zero_ok (s.setReg .rax (fV s₀))
   show WP isa (.block ([.mov32 .r10 (.imm 0)] ++ (Spill.saveCode .rax zeroSlots ++ tailMoves))) _ _
   refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₂, r₂, ?_⟩)
-  have k₂' : ∀ r, r ≠ .r10 → r ≠ .rax → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
+  obtain k₂' : ∀ r, r ≠ .r10 → r ≠ .rax → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
     rw [k₂ r h₁, gpr_setReg_of_ne _ _ h₂]
-  have hrax : s₂.gpr .rax = fV s₀ := by rw [k₂ _ (by decide), gpr_setReg_self]
-  have hw : ∀ p ∈ zeroSlots, InRegions s₂.wr (Spill.slot (s₂.gpr .rax) p.2) 8 := by
+  obtain hrax : s₂.gpr .rax = fV s₀ := by rw [k₂ _ (by decide), gpr_setReg_self]
+  obtain hw : ∀ p ∈ zeroSlots, InRegions s₂.wr (Spill.slot (s₂.gpr .rax) p.2) 8 := by
     intro p hp'
     rw [wr₂, wr_setReg, h.wr, hp.wr, hrax]
     simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hp'
@@ -542,15 +542,15 @@ theorem tail_args_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesC
   refine Spill.save_then .rax zeroSlots hw ?_
   refine WP.mono (WP.of_runBlock (tailMoves_ok _))
     fun s' ⟨rdi, rsi, rdx, rcx, r8, r9, cs, r13, r14, mem, rd, wr⟩ => ?_
-  have e : ∀ r, ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr .rax) s₂.gpr zeroSlots } : State).gpr r =
+  obtain e : ∀ r, ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr .rax) s₂.gpr zeroSlots } : State).gpr r =
     s₂.gpr r := fun _ => rfl
   rw [e] at rdi rsi rdx rcx r9 r13 r14
-  have hm : s'.mem = Spill.saveMem s.mem (fV s₀) s₂.gpr zeroSlots := by
+  obtain hm : s'.mem = Spill.saveMem s.mem (fV s₀) s₂.gpr zeroSlots := by
     rw [mem]; show Spill.saveMem s₂.mem _ _ _ = _; rw [m₂, mem_setReg, hrax]
-  have fz : Frame [cBlk s₀] s.mem s'.mem := by rw [hm]; exact zero_frame s₀ _ _
-  have ivZ : ∀ r ∈ [cBlk s₀], (fIvR s₀).Disjoint r := by
+  obtain fz : Frame [cBlk s₀] s.mem s'.mem := by rw [hm]; exact zero_frame s₀ _ _
+  obtain ivZ : ∀ r ∈ [cBlk s₀], (fIvR s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_sv.sub_right (blk_sv_sub s₀)
-  have blkZ : ∀ r ∈ [cBlk s₀], (fBlk s₀).Disjoint r := by
+  obtain blkZ : ∀ r ∈ [cBlk s₀], (fBlk s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact (hp.data_sv.sub_left (AesCfb.X86_64.blk_sub s₀)).sub_right (blk_sv_sub s₀)
   refine ⟨by rw [rdi, k₂' _ (by decide) (by decide), h.rbx], by rw [rsi, k₂' _ (by decide) (by decide), h.rbp],
@@ -577,7 +577,7 @@ theorem tail_pre {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) 
     wholeK.pre (s.callEntry.withRegions [fSch s₀] [fIvR s₀, cBlk s₀, fScr s₀]) ∧
       Covers ([fSch s₀] ++ [fIvR s₀, cBlk s₀, fScr s₀]) (s.rd ++ s.wr) ∧
       Covers [fIvR s₀, cBlk s₀, fScr s₀] s.wr := by
-  have bs := blk_sv_sub s₀
+  obtain bs := blk_sv_sub s₀
   refine ⟨?_, ?_, ?_⟩
   · simp only [modeX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
@@ -638,20 +638,20 @@ theorem CPre.sched_big {s₀ : State} (hp : CPre s₀) :
 theorem tail_call_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) :
     WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (TCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
-  have ef := callEntry_frame s
-  have stk : Region.Sub (below (s.gpr .rsp) 8) (fStk s₀) := by rw [h.rsp]; exact AesCfb.X86_64.below8_sub _
-  have big := big_of (cW1_cW h.frame)
-  have eW : bytesAt s.callEntry.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ := by
+  obtain ef := callEntry_frame s
+  obtain stk : Region.Sub (below (s.gpr .rsp) 8) (fStk s₀) := by rw [h.rsp]; exact AesCfb.X86_64.below8_sub _
+  obtain big := big_of (cW1_cW h.frame)
+  obtain eW : bytesAt s.callEntry.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ := by
     rw [bytesAt_frame ef (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hp.stk_sch.symm.sub_left hp.sched_sub).sub_right stk) hp.sched_len]
     exact bytesAt_frame big hp.sched_big hp.sched_len
-  have eT : bytesAt s.callEntry.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀) := by
+  obtain eT : bytesAt s.callEntry.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀) := by
     rw [bytesAt_frame ef (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.stk_iv.symm.sub_right stk) (by decide)]
     exact h.ctr
-  have eZ : bytesAt s.callEntry.mem (cBk s₀) 16 = List.replicate 16 0 := by
+  obtain eZ : bytesAt s.callEntry.mem (cBk s₀) 16 = List.replicate 16 0 := by
     rw [bytesAt_frame ef (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hp.stk_sv.symm.sub_left (blk_sv_sub s₀)).sub_right stk) (by decide)]
@@ -667,7 +667,7 @@ theorem tail_call_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State}
     eT, AesCtr.ctrMode_out, AesCtr.ctrMode_chain, AesCbc.length_blocksAt] at post₂
   have hrounds : (s₀.gpr .rsi).toNat = fR s₀ := rfl
   rw [hrounds] at post₂
-  have fc : Frame (cW1 s₀) s.mem s'.mem := fr'.sub fun r hr => by
+  obtain fc : Frame (cW1 s₀) s.mem s'.mem := fr'.sub fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
@@ -725,22 +725,22 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
       (s.setReg .rax (fV s₀)) (Done s₀) := by
   obtain ⟨s₁, r₁, rax₁, k₁, m₁, rd₁, wr₁⟩ := key_ok (s.setReg .rax (fV s₀))
   rw [gpr_setReg_self] at rax₁
-  have k₁' : ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r := fun r hr => by rw [k₁ r hr, gpr_setReg_of_ne _ _ hr]
+  obtain k₁' : ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r := fun r hr => by rw [k₁ r hr, gpr_setReg_of_ne _ _ hr]
   rw [mem_setReg] at m₁
   rw [rd_setReg] at rd₁
   rw [wr_setReg] at wr₁
   refine WP.seq (WP.of_runBlock ⟨s₁, r₁, ?_⟩)
-  have hU : fU s₀ < 16 := Nat.mod_lt _ (by decide)
-  have hL := Nat.div_add_mod (fL s₀) 16
+  obtain hU : fU s₀ < 16 := Nat.mod_lt _ (by decide)
+  obtain hL := Nat.div_add_mod (fL s₀) 16
   have hDw := hp.data_wrap
   have hVw := hp.sv_wrap
-  have eN := AesCfb.X86_64.fN_eq s₀
-  have eU := AesCfb.X86_64.fU_eq s₀
-  have hT : (fT s₀).toNat = (fD s₀).toNat + 16 * fN s₀ := by
+  obtain eN := AesCfb.X86_64.fN_eq s₀
+  obtain eU := AesCfb.X86_64.fU_eq s₀
+  obtain hT : (fT s₀).toNat = (fD s₀).toNat + 16 * fN s₀ := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * fN s₀) (by omega),
       Nat.mod_eq_of_lt (by omega)]
-  have hB := cBk_toNat hp
-  have xp : Modes.X86_64.XPre s₁ (cBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
+  obtain hB := cBk_toNat hp
+  obtain xp : Modes.X86_64.XPre s₁ (cBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
     small := by omega_using [hU]
     disj := (((hp.data_sv.sub_left (AesCfb.X86_64.tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
       (Region.sub_prefix (by omega_using [hU]))).symm
@@ -758,7 +758,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
     dRax := by decide
     dR10 := by decide
     dRcx := by decide }
-  have x0 : Modes.X86_64.XInv s₁ (cBk s₀) (fT s₀) (fU s₀) .r13 .r14 0 s₁ := {
+  obtain x0 : Modes.X86_64.XInv s₁ (cBk s₀) (fT s₀) (fU s₀) .r13 .r14 0 s₁ := {
     rax := by rw [rax₁]; exact (BitVec.add_zero _).symm
     dat := by rw [k₁' _ (by decide), h.r13]; exact (BitVec.add_zero _).symm
     left := by rw [k₁' _ (by decide), h.r14, Nat.sub_zero]
@@ -769,7 +769,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
     wr := rfl
     gpr := fun _ _ _ _ _ _ => rfl }
   refine WP.mono (Modes.X86_64.xorLoop_wp xp x0) fun s' d => ?_
-  have tailD : ∀ r ∈ cW1 s₀, (fTail s₀).Disjoint r := by
+  obtain tailD : ∀ r ∈ cW1 s₀, (fTail s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -778,12 +778,12 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
     · exact hp.data_scr.sub_left (AesCfb.X86_64.tail_sub s₀)
     · exact (hp.data_sv.sub_left (AesCfb.X86_64.tail_sub s₀)).sub_right (blk_sv_sub s₀)
     · exact (hp.stk_data.sub_right (AesCfb.X86_64.tail_sub s₀)).symm
-  have tailS : ∀ r ∈ [fSv s₀], (fTail s₀).Disjoint r := by
+  obtain tailS : ∀ r ∈ [fSv s₀], (fTail s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.data_sv.sub_left (AesCfb.X86_64.tail_sub s₀)).sub_right (sv48_sub s₀)
-  have hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; omega_using [hU]
-  have ivT : ∀ r ∈ [fTail s₀], (fIvR s₀).Disjoint r := by
+  obtain hlen : (fTail s₀).len ≤ 2 ^ 64 := by show fU s₀ ≤ 2 ^ 64; omega_using [hU]
+  obtain ivT : ∀ r ∈ [fTail s₀], (fIvR s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact hp.iv_data.sub_right (AesCfb.X86_64.tail_sub s₀)
   refine ⟨by rw [d.gpr .rsp (by decide) (by decide) (by decide) (by decide) (by decide), k₁' _ (by decide), h.rsp],
@@ -817,12 +817,12 @@ theorem final_mid_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State}
 
 theorem final_end_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Done s₀ s) :
     WP isa (.seq (.block loadSave) (.block finalRestore)) s fun s' => gprPreserved s₀ s' ∧ s'.mem = s.mem := by
-  have big := big_of h.frame
+  obtain big := big_of h.frame
   refine WP.seq (WP.of_runBlock ⟨_, load_ok hp h.rsp h.rd h.wr big, ?_⟩)
-  have hs : Spill.Saved (s.setReg .rax (fV s₀)).mem ((s.setReg .rax (fV s₀)).gpr .rax) (fG s₀) finalSaved := by
+  obtain hs : Spill.Saved (s.setReg .rax (fV s₀)).mem ((s.setReg .rax (fV s₀)).gpr .rax) (fG s₀) finalSaved := by
     rw [mem_setReg, gpr_setReg_self]
     refine (Spill.saveMem_saved _ _ _ _ (by decide)).frame h.frame fun p hp' r hr => ?_
-    have hsub : Region.Sub ⟨Spill.slot (fV s₀) p.2, 8⟩ (cSv s₀) :=
+    obtain hsub : Region.Sub ⟨Spill.slot (fV s₀) p.2, 8⟩ (cSv s₀) :=
       Offset.sub_base _ (by have := AesCfb.X86_64.saved_slots p hp'; omega_using [this])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -919,22 +919,22 @@ theorem restore_taint : ∃ h, (taint.check (Taint.ofRegs [.rax]) (.block finalR
 theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre s₀) (h0' : ctrFinalX86_64.pre s₀')
     (hq : ctrFinalX86_64.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (cryptFinal v.callee v.suffix) fun _ _ => True := by
-  have hp := CPre.of h0
-  have hp' := CPre.of h0'
+  obtain hp := CPre.of h0
+  obtain hp' := CPre.of h0'
   obtain ⟨⟨qW, qR, qIv, qD, qL, qS, qSp, qV⟩, qLk⟩ := hq
-  have qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
-  have qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
-  have qT : fT s₀ = fT s₀' := by simp only [fT, qD, qN]
-  have qLo : AesCtr.lo32 (fIv0 s₀) = AesCtr.lo32 (fIv0 s₀') :=
+  obtain qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
+  obtain qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
+  obtain qT : fT s₀ = fT s₀' := by simp only [fT, qD, qN]
+  obtain qLo : AesCtr.lo32 (fIv0 s₀) = AesCtr.lo32 (fIv0 s₀') :=
     AesCtr.lo32_of_leak (Proof.Cmac.bytesAt_length _ _ _) (Proof.Cmac.bytesAt_length _ _ _) qLk
   -- `save` to `rax`.
-  have r₁ := taint_rel (P := fun a b => a = s₀ ∧ b = s₀') (F₁ := (· = s₀.setReg .rax (fV s₀)))
+  obtain r₁ := taint_rel (P := fun a b => a = s₀ ∧ b = s₀') (F₁ := (· = s₀.setReg .rax (fV s₀)))
     (F₂ := (· = s₀'.setReg .rax (fV s₀'))) [.rsp] loadSave_taint
     (fun a b h r hr => by
       obtain ⟨rfl, rfl⟩ := h; simp only [List.mem_singleton] at hr; subst hr; exact qSp)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_load_wp hp, final_load_wp hp'⟩
   -- The registers saved and the arguments set up.
-  have r₂ := taint_rel (P := fun a b => a = s₀.setReg .rax (fV s₀) ∧ b = s₀'.setReg .rax (fV s₀'))
+  obtain r₂ := taint_rel (P := fun a b => a = s₀.setReg .rax (fV s₀) ∧ b = s₀'.setReg .rax (fV s₀'))
     (F₁ := Setup s₀) (F₂ := Setup s₀') [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp, .rax] setup_taint
     (fun a b h r hr => by
       obtain ⟨rfl, rfl⟩ := h
@@ -943,7 +943,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
         simp only [gpr_setReg, reduceCtorEq, ↓reduceIte, qW, qR, qIv, qD, qL, qS, qSp, fV, qV])
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  have r₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
+  obtain r₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -963,7 +963,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
     (F₁ := Whole AesCtr.ctrMode s₀) (F₂ := Whole AesCtr.ctrMode s₀')
     fun a b h => ⟨whole_wp v hp h.1, whole_wp v hp' h.2⟩
   -- The test.
-  have r₄ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
+  obtain r₄ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
     (F₁ := fun (s : State) => Whole AesCtr.ctrMode s₀ s ∧ s.zf = some (decide (fU s₀ = 0)))
     (F₂ := fun (s : State) => Whole AesCtr.ctrMode s₀' s ∧ s.zf = some (decide (fU s₀' = 0))) [.r14] ftest_taint
     (fun a b h r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.1.r14, h.2.r14, qU])
@@ -971,14 +971,14 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
       (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
-    have hu' : fU s₀' ≠ 0 := qU ▸ hu
-    have a₁ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
+    obtain hu' : fU s₀' ≠ 0 := qU ▸ hu
+    obtain a₁ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
       (F₁ := Loaded (Whole AesCtr.ctrMode s₀) s₀) (F₂ := Loaded (Whole AesCtr.ctrMode s₀') s₀') [.rsp]
       loadSave_taint
       (fun a b h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.rsp, h.2.rsp, fSp, fSp, qSp])
       fun a b h => ⟨tail_load_wp hp h.1, tail_load_wp hp' h.2⟩
-    have a₂ := taint_rel (P := fun a b => Loaded (Whole AesCtr.ctrMode s₀) s₀ a ∧
+    obtain a₂ := taint_rel (P := fun a b => Loaded (Whole AesCtr.ctrMode s₀) s₀ a ∧
         Loaded (Whole AesCtr.ctrMode s₀') s₀' b)
       (F₁ := TArgs s₀) (F₂ := TArgs s₀') [.rax, .rbx, .rbp, .r12, .r15, .rsp] tailArgs_taint
       (fun a b h r hr => by
@@ -995,7 +995,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
       fun a b h => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_args_wp hp hw, tail_args_wp hp' hw'⟩
-    have a₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
+    obtain a₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
       (P := fun a b => TArgs s₀ a ∧ TArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -1013,12 +1013,12 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
           rw [ha.entry_ctr hp, hb.entry_ctr hp', qN]
           exact lo32_next_of (Proof.Cmac.bytesAt_length _ _ _) (Proof.Cmac.bytesAt_length _ _ _) qLo _).wp
       (F₁ := TCall s₀) (F₂ := TCall s₀') fun a b h => ⟨tail_call_wp v hp h.1, tail_call_wp v hp' h.2⟩
-    have a₄ := taint_rel (P := fun a b => TCall s₀ a ∧ TCall s₀' b)
+    obtain a₄ := taint_rel (P := fun a b => TCall s₀ a ∧ TCall s₀' b)
       (F₁ := Loaded (TCall s₀) s₀) (F₂ := Loaded (TCall s₀') s₀') [.rsp] loadSave_taint
       (fun a b h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.rsp, h.2.rsp, fSp, fSp, qSp])
       fun a b h => ⟨key_load_wp hp h.1, key_load_wp hp' h.2⟩
-    have a₅ := taint_rel (P := fun a b => Loaded (TCall s₀) s₀ a ∧ Loaded (TCall s₀') s₀' b)
+    obtain a₅ := taint_rel (P := fun a b => Loaded (TCall s₀) s₀ a ∧ Loaded (TCall s₀') s₀' b)
       (F₁ := Done s₀) (F₂ := Done s₀') [.rax, .r13, .r14] xor_taint
       (fun a b h r hr => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
@@ -1031,21 +1031,21 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_xor_wp hp hw hu, tail_xor_wp hp' hw' hu'⟩
     exact a₁.seq (a₂.seq ((a₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq (a₄.seq a₅)))
-  have r₅ : RelCT isa (fun a b => (Whole AesCtr.ctrMode s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
+  obtain r₅ : RelCT isa (fun a b => (Whole AesCtr.ctrMode s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
       (Whole AesCtr.ctrMode s₀' b ∧ b.zf = some (decide (fU s₀' = 0))))
       (.ite .e (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)))
       (fun a b => Done s₀ a ∧ Done s₀' b) := by
     refine RelCT.ite (fun a b h => ?_) ?_ ?_
     · show a.zf = b.zf; rw [h.1.2, h.2.2, qU]
     · refine RelCT.block_nil fun a b h => ?_
-      have h0 : fU s₀ = 0 := by
+      obtain h0 : fU s₀ = 0 := by
         have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this; simpa using this
       exact ⟨done_of_zero h.1.1.1 h0, done_of_zero h.1.2.1 (qU ▸ h0)⟩
     · refine (RelCT.exists_ fun (hu : fU s₀ ≠ 0) => tail hu).mono
         (fun a b h => ⟨?_, h.1.1.1, h.1.2.1⟩) fun _ _ h => h
       have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this; simpa using this
   -- `save` to `rax`, and the registers restored.
-  have r₆ := taint_rel (P := fun a b => Done s₀ a ∧ Done s₀' b)
+  obtain r₆ := taint_rel (P := fun a b => Done s₀ a ∧ Done s₀' b)
     (F₁ := fun (s : State) => s.gpr .rax = fV s₀) (F₂ := fun (s : State) => s.gpr .rax = fV s₀') [.rsp]
     loadSave_taint
     (fun a b h r hr => by
@@ -1053,7 +1053,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
     fun a b h => ⟨WP.of_runBlock ⟨_, load_ok hp h.1.rsp h.1.rd h.1.wr (big_of h.1.frame), gpr_setReg_self _ _ _⟩,
       WP.of_runBlock ⟨_, load_ok hp' h.2.rsp h.2.rd h.2.wr (big_of h.2.frame), gpr_setReg_self _ _ _⟩⟩
   obtain ⟨_, t₇⟩ := restore_taint
-  have r₇ := RelCT.taint (A := taint) (P := fun a b => a.gpr .rax = fV s₀ ∧ b.gpr .rax = fV s₀') _
+  obtain r₇ := RelCT.taint (A := taint) (P := fun a b => a.gpr .rax = fV s₀ ∧ b.gpr .rax = fV s₀') _
     (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1, h.2, fV, fV, qV]) t₇
   exact r₁.seq (r₂.seq ((r₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq (r₄.seq (r₅.seq (r₆.seq r₇)))))

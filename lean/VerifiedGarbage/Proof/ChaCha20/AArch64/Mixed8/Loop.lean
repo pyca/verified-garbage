@@ -47,7 +47,7 @@ theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 512 * t ≤ k
   · have he : s.gpr .x2 - BitVec.ofNat 64 512 = BitVec.ofNat 64 ((s.gpr .x2).toNat - 512) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub,BitVec.toNat_ofNat]
-      have h := (s.gpr .x2).isLt; omega_arith
+      obtain h := (s.gpr .x2).isLt; omega_arith
     rw [he,less8 _ (by have h := (s.gpr .x2).isLt; omega_arith)]
   · intro r h1 h2 h4 h5; simp only [h1,h2,h4,h5,ite_false]
   · have ht := VG.Proof.ChaCha20.AArch64.Xor.stateAt_writeW_ctr s.mem (s.gpr .x0) 8
@@ -63,10 +63,10 @@ theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 512 * t ≤ k
     VG.Proof.ChaCha20.AArch64.Xor.eval_zero s .x5,h]
   by_cases hn : n < 512
   · simp only [ite_eq_left hn]
-    have hnn : ¬ 512 ≤ n := by omega_arith
+    obtain hnn : ¬ 512 ≤ n := by omega_arith
     simp [hnn]
   · simp only [ite_eq_right hn]
-    have hnn : 512 ≤ n := by omega_arith
+    obtain hnn : 512 ≤ n := by omega_arith
     simp [hnn]
 
 /-! ## `vg_chacha20_xor`'s chunks
@@ -112,9 +112,9 @@ theorem swin_sub {s₀ : State} {t : Nat} (h : 512 * t + 512 ≤ L s₀) :
 /-- The chunk's precondition, and its source's. -/
 theorem tcp_of_inv {s₀ s : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ t s)
     (hge : 512 * t + 512 ≤ L s₀) : CP s ∧ SrcOK .x27 s := by
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  have hw : s.wr = [stR s₀,tR s₀,bR s₀] := h.wr.trans hp.wr
-  have hr : s.rd = [dR s₀] := h.rd.trans hp.rd
+  obtain hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
+  obtain hw : s.wr = [stR s₀,tR s₀,bR s₀] := h.wr.trans hp.wr
+  obtain hr : s.rd = [dR s₀] := h.rd.trans hp.rd
   refine ⟨⟨h.x20.trans h.x3.symm,?_,?_,?_,?_,?_,?_,?_,?_⟩,⟨.inr rfl,?_,?_,?_,?_⟩⟩
   · intro k; rw [hr,hw,h.x0]
     exact ⟨stR s₀,by simp,Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -148,22 +148,22 @@ theorem tcp_of_inv {s₀ s : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ t 
 theorem tchunkData {s₀ s u : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ t s)
     (hge : 512 * t + 512 ≤ L s₀) (hu : ChunkedFrom .x27 s u) : Dst s₀ (512 * (t + 1)) u.mem := by
   intro k hk
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
+  obtain hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
   by_cases hin : 512 * t ≤ k ∧ k < 512 * t + 512
   · have he : s.gpr .x1 + BitVec.ofNat 64 (k - 512 * t) = tp s₀ + BitVec.ofNat 64 k := by
       rw [h.x1,BitVec.add_assoc,← BitVec.ofNat_add,Nat.add_sub_cancel' hin.1]
-    have hs : s.gpr .x27 + BitVec.ofNat 64 (k - 512 * t) = dp s₀ + BitVec.ofNat 64 k := by
+    obtain hs : s.gpr .x27 + BitVec.ofNat 64 (k - 512 * t) = dp s₀ + BitVec.ofNat 64 k := by
       rw [h.x27,BitVec.add_assoc,← BitVec.ofNat_add,Nat.add_sub_cancel' hin.1]
-    have hh := hu.data (k - 512 * t) (by omega_arith)
+    obtain hh := hu.data (k - 512 * t) (by omega_arith)
     rw [he,hs,h.src k hk hin.1,source,h.x0,h.cnt, ← ks_shift (S0 s₀) hk hin.1] at hh
     rw [ite_eq_left (by omega_arith)]; exact hh
   · have hct : (tR s₀).Contains (tp s₀ + BitVec.ofNat 64 k) 1 :=
       Offset.contains_base _ (by omega_arith) (by omega_arith)
-    have hx : ¬ (twin s₀ t).Contains (tp s₀ + BitVec.ofNat 64 k) 1 := by
+    obtain hx : ¬ (twin s₀ t).Contains (tp s₀ + BitVec.ofNat 64 k) 1 := by
       simp only [Region.Contains,Nat.add_one_le_iff]
       rw [Offset.lt_iff _ _ (by omega_arith),Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64)]
       exact hin
-    have hh := hu.frame (tp s₀ + BitVec.ofNat 64 k) (by
+    obtain hh := hu.frame (tp s₀ + BitVec.ofNat 64 k) (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -183,7 +183,7 @@ apart from what a chunk writes. -/
 theorem tsaved_chunk {s₀ s : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ t s)
     (hge : 512 * t + 512 ≤ L s₀) {d n : Nat} (hd : 128 ≤ d) (hn : d + n ≤ 320) :
     ∀ r ∈ [sr s,scalarBuf s,dr s], (⟨bp s₀ + BitVec.ofNat 64 d,n⟩ : Region).Disjoint r := by
-  have hsub : Region.Sub ⟨bp s₀ + BitVec.ofNat 64 d,n⟩ (bR s₀) := Offset.sub_base _ hn
+  obtain hsub : Region.Sub ⟨bp s₀ + BitVec.ofNat 64 d,n⟩ (bR s₀) := Offset.sub_base _ hn
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -202,22 +202,22 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
     WP isa (.block (next ++ ([.addImm .x .x27 .x27 512] : List Instr))) u fun v => TInv s₀ (t + 1) v ∧
       v.gpr .x5 = BitVec.ofNat 64 (if L s₀ - 512 * (t + 1) < 512 then 1 else 0) ∧
       Frame [stR s₀] u.mem v.mem := by
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  have hx0 : u.gpr .x0 = st s₀ := hu.x0.trans h.x0
-  have hx1 : u.gpr .x1 = tp s₀ + BitVec.ofNat 64 (512 * t) := hu.x1.trans h.x1
-  have hx2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * t) := hu.x2.trans h.x2
-  have hx3 : u.gpr .x3 = bp s₀ := hu.x3.trans h.x3
-  have hx27 : u.gpr .x27 = dp s₀ + BitVec.ofNat 64 (512 * t) :=
+  obtain hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
+  obtain hx0 : u.gpr .x0 = st s₀ := hu.x0.trans h.x0
+  obtain hx1 : u.gpr .x1 = tp s₀ + BitVec.ofNat 64 (512 * t) := hu.x1.trans h.x1
+  obtain hx2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * t) := hu.x2.trans h.x2
+  obtain hx3 : u.gpr .x3 = bp s₀ := hu.x3.trans h.x3
+  obtain hx27 : u.gpr .x27 = dp s₀ + BitVec.ofNat 64 (512 * t) :=
     (hu.cs _ (by simp [preserved]) (by decide) (by decide)).trans h.x27
-  have hx20 : u.gpr .x20 = bp s₀ :=
+  obtain hx20 : u.gpr .x20 = bp s₀ :=
     (hu.cs _ (by simp [preserved]) (by decide) (by decide)).trans h.x20
-  have hcnt : stateAt u.mem (st s₀) = ctr (S0 s₀) (8 * t) := by
+  obtain hcnt : stateAt u.mem (st s₀) = ctr (S0 s₀) (8 * t) := by
     have hc := hu.cnt
     change stateAt u.mem (u.gpr .x0) = stateAt s.mem (s.gpr .x0) at hc
     rw [hx0,h.x0,h.cnt] at hc
     exact hc
-  have hdata := tchunkData hp h hge hu
-  have hsrc' : Src s₀ (512 * (t + 1)) u.mem :=
+  obtain hdata := tchunkData hp h hge hu
+  obtain hsrc' : Src s₀ (512 * (t + 1)) u.mem :=
     VG.Proof.ChaCha20.AArch64.Xor.src_step' hp (by omega_arith) h.src hu.frame (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -226,19 +226,19 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
       · left; change (dR s₀).Disjoint ⟨s.gpr .x3,128⟩; rw [h.x3]
         exact hp.d_b.sub_right (Region.sub_prefix (by decide : 128 ≤ 320))
       · right; change Region.Sub ⟨s.gpr .x1,512⟩ (tR s₀); rw [h.x1]; exact twin_sub hge) hdata
-  have hw : u.wr = [stR s₀,tR s₀,bR s₀] := hu.wr.trans (h.wr.trans hp.wr)
-  have hi : InRegions (u.rd ++ u.wr) (u.gpr .x0 + BitVec.ofNat 64 48) 4 := by
+  obtain hw : u.wr = [stR s₀,tR s₀,bR s₀] := hu.wr.trans (h.wr.trans hp.wr)
+  obtain hi : InRegions (u.rd ++ u.wr) (u.gpr .x0 + BitVec.ofNat 64 48) 4 := by
     rw [hu.rd,h.rd,hp.rd,hw,hx0]
     exact ⟨stR s₀,by simp,Offset.contains_base _ (by decide) (by decide)⟩
-  have ho : InRegions u.wr (u.gpr .x0 + BitVec.ofNat 64 48) 4 := by
+  obtain ho : InRegions u.wr (u.gpr .x0 + BitVec.ofNat 64 48) 4 := by
     rw [hw,hx0]
     exact ⟨stR s₀,by simp,Offset.contains_base _ (by decide) (by decide)⟩
-  have hlen : (u.gpr .x2).toNat = L s₀ - 512 * t := by
+  obtain hlen : (u.gpr .x2).toNat = L s₀ - 512 * t := by
     rw [hx2,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith)]
-  have hsaved : TSaved s₀ u.mem :=
+  obtain hsaved : TSaved s₀ u.mem :=
     Spill.Saved.frame_in h.saved (lo := 256) (n := 32) (by decide) hu.frame
       (tsaved_chunk hp h hge (by decide) (by decide))
-  have hsavedV : ∀ j : Fin 2, u.mem.read (bp s₀ + BitVec.ofNat 64 (128 + 16 * j)) 16 =
+  obtain hsavedV : ∀ j : Fin 2, u.mem.read (bp s₀ + BitVec.ofNat 64 (128 + 16 * j)) 16 =
       s₀.v (#[VReg.v8,VReg.v9][j]) := by
     intro j
     rw [hu.frame.read (r := ⟨bp s₀ + BitVec.ofNat 64 128,32⟩)
@@ -247,7 +247,7 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
   apply WP.block_append
   refine (next_ok u (by rw [hlen]; omega_arith) hi ho).mono fun v
     ⟨hv1,hv2,hv5,hkeep,hctr,hframe,hrd,hwr,hsp⟩ => ?_
-  have hns : ∀ r ∈ [⟨u.gpr .x0,64⟩], (⟨bp s₀ + BitVec.ofNat 64 128,32⟩ : Region).Disjoint r ∧
+  obtain hns : ∀ r ∈ [⟨u.gpr .x0,64⟩], (⟨bp s₀ + BitVec.ofNat 64 128,32⟩ : Region).Disjoint r ∧
       (⟨bp s₀ + BitVec.ofNat 64 256,32⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst r
     rw [hx0]
@@ -256,9 +256,9 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
   refine VG.Proof.ChaCha20.AArch64.Xor.WP.cons
     (s' := v.write .x .x27 (v.gpr .x27 + BitVec.ofNat 64 512)) (by simp [exec, State.read])
     (WP.block_nil ?_)
-  have g : ∀ r, r ≠ .x27 → (v.write .x .x27 (v.gpr .x27 + BitVec.ofNat 64 512)).gpr r = v.gpr r :=
+  obtain g : ∀ r, r ≠ .x27 → (v.write .x .x27 (v.gpr .x27 + BitVec.ofNat 64 512)).gpr r = v.gpr r :=
     fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr
-  have hadv : ∀ p : Addr, p + BitVec.ofNat 64 (512 * t) + 512 = p + BitVec.ofNat 64 (512 * (t + 1)) := by
+  obtain hadv : ∀ p : Addr, p + BitVec.ofNat 64 (512 * t) + 512 = p + BitVec.ofNat 64 (512 * (t + 1)) := by
     intro p
     rw [BitVec.add_assoc]
     change _ + (BitVec.ofNat 64 (512 * t) + BitVec.ofNat 64 512) = _
@@ -277,10 +277,10 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
       hx27]
     exact hadv _
   · intro r hr h19 h20 h21 h26
-    have n1 : r ≠ .x1 := by intro he; subst r; simp [preserved] at hr
-    have n2 : r ≠ .x2 := by intro he; subst r; simp [preserved] at hr
-    have n4 : r ≠ .x4 := by intro he; subst r; simp [preserved] at hr
-    have n5 : r ≠ .x5 := by intro he; subst r; simp [preserved] at hr
+    obtain n1 : r ≠ .x1 := by intro he; subst r; simp [preserved] at hr
+    obtain n2 : r ≠ .x2 := by intro he; subst r; simp [preserved] at hr
+    obtain n4 : r ≠ .x4 := by intro he; subst r; simp [preserved] at hr
+    obtain n5 : r ≠ .x5 := by intro he; subst r; simp [preserved] at hr
     rw [g r h21,hkeep r n1 n2 n4 n5,hu.cs r hr h19 h26,h.cs r hr h19 h20 h21 h26]
   · show stateAt v.mem (st s₀) = _
     rw [hx0,hcnt,VG.Proof.ChaCha20.AArch64.Neon4.ctr_add,
@@ -319,15 +319,15 @@ theorem tbulk_ok {s₀ : State} (hp : TPre s₀) {s : State} (h : TInv s₀ 0 s)
   refine WP.loop (M := isa) Inv ?_ (L s₀) s ⟨0,by omega_arith,hge,h⟩
   intro n s ⟨t,hn,hge,hi⟩
   refine (tbody_ok hp (by omega_arith) hi).mono fun u ⟨hu,h5⟩ => ?_
-  have hc := zero_batches h5
+  obtain hc := zero_batches h5
   by_cases he : L s₀ - 512 * (t + 1) < 512
   · left
     refine ⟨?_,t + 1,he,hu⟩
-    have hne : ¬ 512 ≤ L s₀ - 512 * (t + 1) := by omega_arith
+    obtain hne : ¬ 512 ≤ L s₀ - 512 * (t + 1) := by omega_arith
     simpa only [decide_eq_false hne] using hc
   · right
     refine ⟨?_,L s₀ - 512 * (t + 1),by omega_arith,t + 1,rfl,by omega_arith,hu⟩
-    have hne : 512 ≤ L s₀ - 512 * (t + 1) := by omega_arith
+    obtain hne : 512 ≤ L s₀ - 512 * (t + 1) := by omega_arith
     simpa only [decide_eq_true hne] using hc
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

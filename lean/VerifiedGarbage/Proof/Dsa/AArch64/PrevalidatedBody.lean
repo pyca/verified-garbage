@@ -52,41 +52,41 @@ theorem prevalidatedCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (prevalidatedAccepted L data valid) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
+  obtain hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
+  obtain hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
   unfold Prevalidated.compute
   refine WP.seq (WP.mono (readyMinus_ok h0 .q 2 (by decide)
     (by change 2 ≤ L.subgroup; omega_using [hq]) qMinusTwo (by decide) hqm) fun s1 h1 => ?_)
-  have hg1 := h1.external (by decide) hqm hg
-  have hy1 := h1.external (by decide) hqm hy
-  have hr1 := h1.external (by decide) hqm hr
-  have hs1 := h1.external (by decide) hqm hs
-  have hz1 := h1.external (by decide) hqm hz
-  have hm1 := (h1.fields (by decide) hqm .mask).trans hm
-  have hqm1 := h1.output (by decide) hqm
+  obtain hg1 := h1.external (by decide) hqm hg
+  obtain hy1 := h1.external (by decide) hqm hy
+  obtain hr1 := h1.external (by decide) hqm hr
+  obtain hs1 := h1.external (by decide) hqm hs
+  obtain hz1 := h1.external (by decide) hqm hz
+  obtain hm1 := (h1.fields (by decide) hqm .mask).trans hm
+  obtain hqm1 := h1.output (by decide) hqm
   refine WP.seq (WP.mono (readyRange_ok h1.ready .q Core.signatureR (by trivial) hr1.active
     (by rw [hrl]; omega_using [hql]) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm1) fun s2 h2 => ?_)
-  have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
-  have hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
-  have hr2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr1
-  have hs2 := h2.preserve h1.ready (by decide) (by decide) (by trivial) hs1
-  have hz2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
-  have hqm2 := h2.preserve h1.ready (Nat.le_refl _) (by decide) (by trivial) hqm1
+  obtain hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
+  obtain hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
+  obtain hr2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr1
+  obtain hs2 := h2.preserve h1.ready (by decide) (by decide) (by trivial) hs1
+  obtain hz2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
+  obtain hqm2 := h2.preserve h1.ready (Nat.le_refl _) (by decide) (by trivial) hqm1
   refine WP.seq (WP.mono (readyRange_ok h2.ready .q Core.signatureS (by trivial) hs2.active
     (by rw [hsl]; omega_using [hql]) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false h2.mask) fun s3 h3 => ?_)
-  have hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
-  have hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
-  have hr3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr2
-  have hs3 := h3.preserve h2.ready (by decide) (by decide) (by trivial) hs2
-  have hz3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz2
-  have hqm3 := h3.preserve h2.ready (Nat.le_refl _) (by decide) (by trivial) hqm2
+  obtain hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
+  obtain hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
+  obtain hr3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr2
+  obtain hs3 := h3.preserve h2.ready (by decide) (by decide) (by trivial) hs2
+  obtain hz3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz2
+  obtain hqm3 := h3.preserve h2.ready (Nat.le_refl _) (by decide) (by trivial) hqm2
   refine WP.seq (WP.mono (coreVerify_ok M h3.ready hp hq hop hoq hpf hqf data hg3 hy3 hr3 hs3 hz3
     hgl hyl hrl hsl hzl hqm3) fun s4 ⟨h4, hu4bytes, hf4, hm4eq, hk4⟩ => ?_)
-  have hr4 := h3.ready.preserveExternal h4 hf4 hk4 (by decide) (by simp [stablePointer, Core.signatureR]) hr3
-  have hm4 := hm4eq.trans h3.mask
-  have hu4 := h4.encodedLocal .q u (data.value L) (by decide) hu hu4bytes
+  obtain hr4 := h3.ready.preserveExternal h4 hf4 hk4 (by decide) (by simp [stablePointer, Core.signatureR]) hr3
+  obtain hm4 := hm4eq.trans h3.mask
+  obtain hu4 := h4.encodedLocal .q u (data.value L) (by decide) hu hu4bytes
   refine WP.mono (readyEqual_ok h4 (Core.scalar u) Core.signatureR
     (by change u < 2 ^ 16; decide) (by trivial) hu4 hr4.active
     (by simp only [encodeBE_length, ModulusSide.length, hrl])
@@ -148,12 +148,12 @@ theorem prevalidatedBody_spec (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 
       t.gpr .x0 = BitVec.ofNat 64 (Spec.Dsa.verifyBytes L.pLen L.qLen key signature digest).toNat ∧
       Outside L.base 128 (usedBytes - 128) s0.mem t.mem ∧ Keep coreRegs s0 t := by
   obtain ⟨hp, hq, _⟩ := VG.Proof.Dsa.supported_bounds hsize
-  have hv' : publicAccepted L data.generator data.publicValue true = true := by
+  obtain hv' : publicAccepted L data.generator data.publicValue true = true := by
     rw [publicAccepted_spec L data.generator data.publicValue hsize hop hoq]
     simpa only [Spec.Dsa.validatePublicKeyBytes, L.lengths, decide_true, Bool.not_true,
       hkl, bne_self_eq_false, Bool.false_or, Bool.false_eq_true, ↓reduceIte, hk,
       VerifyValues.key] using hv
-  have he : verifyAccepted L data true = prevalidatedAccepted L data true := by
+  obtain he : verifyAccepted L data true = prevalidatedAccepted L data true := by
     simp only [verifyAccepted, prevalidatedAccepted, hv']
   rw [verifyBytes_compute L data key signature digest n hsize hop hoq hqf h.rLength hkl hsl hk hr hs hqn hz, he]
   exact prevalidatedBody_ok M h0 hp hq hop hoq hpf hqf data h hm

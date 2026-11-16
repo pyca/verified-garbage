@@ -84,7 +84,7 @@ theorem step_facts {j : Nat} (hj : j < 40) :
       (∀ l jj, halfSteps.getD j default = .line l (.key jj) → countKeys (halfSteps.take j) = jj) := by
   have := stepsOk_true
   simp only [stepsOk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at this
-  have h := this.2 j hj
+  obtain h := this.2 j hj
   simp only [decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := h
   refine ⟨h1, h2, h3, h4, h5, fun l jj e => ?_⟩
@@ -122,53 +122,53 @@ theorem keyStep_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {j hh : Na
   rw [hst] at hok p1 p2 p3 p4 hkeys
   obtain ⟨kj, hkj⟩ : ∃ kj, runSteps (halfSteps.take j) k0 = kj := ⟨_, rfl⟩
   rw [hkj] at h
-  have hnext : runSteps (halfSteps.take (j + 1)) k0 = stepRun st kj := by
+  obtain hnext : runSteps (halfSteps.take (j + 1)) k0 = stepRun st kj := by
     rw [take_succ_steps hj, runSteps_append, hkj, hst]; rfl
   rw [hnext]
-  have hlen40 : 0 + (halfSteps.map Step.gather).length ≤ 2 ^ 15 := by simp [halfSteps_length]
+  obtain hlen40 : 0 + (halfSteps.map Step.gather).length ≤ 2 ^ 15 := by simp [halfSteps_length]
   unfold Impl.Cast5.PPC64LE.step
   -- The step's bytes.
   refine WP.seq (sel_ok _ 0 (Nat.zero_le j) (by simp [halfSteps_length]; omega_arith) hlen40 h2
     fun u1 k1 m1 => ?_)
   rw [Nat.sub_zero, getD_map_steps _ _ hj, hst, Step.gather_eq]
-  have h1 : KS m0 cb kb T u1 kj := h.update k1 (by rw [m1]; exact h.mem) (fun i hi => by rw [m1]; exact h.ex i hi)
+  obtain h1 : KS m0 cb kb T u1 kj := h.update k1 (by rw [m1]; exact h.mem) (fun i hi => by rw [m1]; exact h.ex i hi)
     h.len
   refine WP.mono (gather_ok h1 p1 p2 p3 p4) fun v ⟨v4, v5, v6, v7, vk, vm⟩ => ?_
-  have hv : KS m0 cb kb T v kj := h1.update vk (by rw [vm]; exact h1.mem)
+  obtain hv : KS m0 cb kb T v kj := h1.update vk (by rw [vm]; exact h1.mem)
     (fun i hi => by rw [vm]; exact h1.ex i hi) h1.len
   -- The scan.
-  have hidx : ∀ i < 4, (v.gpr (idxReg i)).toNat < 256 := by
+  obtain hidx : ∀ i < 4, (v.gpr (idxReg i)).toNat < 256 := by
     intro i hi
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_arith) with rfl | rfl | rfl | rfl
     · show (v.gpr .r14).toNat < 256; rw [v4]; exact setWidth8_lt _
     · show (v.gpr .r15).toNat < 256; rw [v5]; exact setWidth8_lt _
     · show (v.gpr .r16).toNat < 256; rw [v6]; exact setWidth8_lt _
     · show (v.gpr .r17).toNat < 256; rw [v7]; exact setWidth8_lt _
-  have sp : ScanPre v := ⟨hidx, hv.zero, by rw [hv.tblR]; exact hv.trd⟩
+  obtain sp : ScanPre v := ⟨hidx, hv.zero, by rw [hv.tblR]; exact hv.trd⟩
   refine WP.seq (WP.mono (scan_ok v sp) fun w ⟨wa, wk, wm⟩ => ?_)
-  have hw : KS m0 cb kb T w kj := hv.update wk (by rw [wm]; exact hv.mem) (fun i hi => by rw [wm]; exact hv.ex i hi)
+  obtain hw : KS m0 cb kb T w kj := hv.update wk (by rw [wm]; exact hv.mem) (fun i hi => by rw [wm]; exact hv.ex i hi)
     hv.len
   have ent (i : Nat) (hi : i < 4) (x : Byte) (hx : v.gpr (idxReg i) = x.setWidth 64) :
       lo (w.gpr (accReg i)) = tableEnt Spec.Cast5.S8 Spec.Cast5.S7 Spec.Cast5.S6 Spec.Cast5.S5
         (x.setWidth 64).toNat i := by
     rw [wa i hi, hx, lo_ext, hv.tblR]; exact ent_table hv.held (setWidth8_lt _) hi
-  have a0 : lo (w.gpr .r18) = Spec.Cast5.S8 (kj.xz.get (stepPos st).2.2.2) := by
+  obtain a0 : lo (w.gpr .r18) = Spec.Cast5.S8 (kj.xz.get (stepPos st).2.2.2) := by
     rw [show Reg.r18 = accReg 0 from rfl, ent 0 (by decide) _ v4]; simp only [tableEnt, ofNat_setWidth8]
-  have a1 : lo (w.gpr .r19) = Spec.Cast5.S7 (kj.xz.get (stepPos st).2.2.1) := by
+  obtain a1 : lo (w.gpr .r19) = Spec.Cast5.S7 (kj.xz.get (stepPos st).2.2.1) := by
     rw [show Reg.r19 = accReg 1 from rfl, ent 1 (by decide) _ v5]; simp only [tableEnt, ofNat_setWidth8]
-  have a2 : lo (w.gpr .r20) = Spec.Cast5.S6 (kj.xz.get (stepPos st).2.1) := by
+  obtain a2 : lo (w.gpr .r20) = Spec.Cast5.S6 (kj.xz.get (stepPos st).2.1) := by
     rw [show Reg.r20 = accReg 2 from rfl, ent 2 (by decide) _ v6]; simp only [tableEnt, ofNat_setWidth8]
-  have a3 : lo (w.gpr .r21) = Spec.Cast5.S5 (kj.xz.get (stepPos st).1) := by
+  obtain a3 : lo (w.gpr .r21) = Spec.Cast5.S5 (kj.xz.get (stepPos st).1) := by
     rw [show Reg.r21 = accReg 3 from rfl, ent 3 (by decide) _ v7]; simp only [tableEnt, ofNat_setWidth8]
-  have kuw' := (k1.trans vk).trans wk
-  have kuw : Keep stepRegs u w := kuw'.mono (by decide)
-  have w2 : w.gpr stp = BitVec.ofNat 64 j := by rw [kuw'.gpr (by decide), h2]
-  have wout : w.gpr out = kb + BitVec.ofNat 64 (64 * hh) := by rw [kuw'.gpr (by decide), hout]
+  obtain kuw' := (k1.trans vk).trans wk
+  obtain kuw : Keep stepRegs u w := kuw'.mono (by decide)
+  obtain w2 : w.gpr stp = BitVec.ofNat 64 j := by rw [kuw'.gpr (by decide), h2]
+  obtain wout : w.gpr out = kb + BitVec.ofNat 64 (64 * hh) := by rw [kuw'.gpr (by decide), hout]
   -- What it does with the values.
   refine WP.seq (sel_ok _ 0 (Nat.zero_le j) (by simp [halfSteps_length]; omega_arith) (by simp [halfSteps_length]) w2
     fun x kx mx => ?_)
   rw [Nat.sub_zero, getD_map_steps _ _ hj, hst]
-  have hx : KS m0 cb kb T x kj := hw.update kx (by rw [mx]; exact hw.mem) (fun i hi => by rw [mx]; exact hw.ex i hi)
+  obtain hx : KS m0 cb kb T x kj := hw.update kx (by rw [mx]; exact hw.mem) (fun i hi => by rw [mx]; exact hw.ex i hi)
     hw.len
   have gx (q : Reg) (hq : q ≠ tmp) : x.gpr q = w.gpr q := kx.gpr (by simpa using hq)
   have tail (y : State) (hy : KS m0 cb kb T y (stepRun st kj)) (ky : Keep stepRegs u y)
@@ -177,7 +177,7 @@ theorem keyStep_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {j hh : Na
         KS m0 cb kb T z (stepRun st kj) ∧ z.gpr stp = BitVec.ofNat 64 (j + 1) ∧
           z.gpr tmp = BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 40 ∧ Keep stepRegs u z := by
     refine wp_addi (by decide) (by decide) fun z₁ h₁ => wp_subi (by decide) (by decide) fun z₂ h₂ => wp_nil ?_
-    have kz : Keep [stp, tmp] y z₂ := (h₁.keep.trans h₂.keep).mono (by decide)
+    obtain kz : Keep [stp, tmp] y z₂ := (h₁.keep.trans h₂.keep).mono (by decide)
     refine ⟨hy.update kz (by rw [h₂.mem, h₁.mem]; exact hy.mem) (fun i hi => by rw [h₂.mem, h₁.mem]; exact hy.ex i hi)
       hy.len, ?_, ?_, (ky.trans kz).mono (by decide)⟩
     · rw [h₂.other _ (by decide), h₁.gpr, y2, BitVec.ofNat_add]
@@ -200,10 +200,10 @@ theorem keyStep_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {j hh : Na
       WP.mono (tail y hy ((kuw.trans kx).trans ky |>.mono (by decide))
         (by rw [ky.gpr (by decide), gx _ (by decide), w2])) fun z hz => hz
     subst e
-    have hc := hkeys l jj rfl
-    have hl := ws_length (halfSteps.take j) k0
+    obtain hc := hkeys l jj rfl
+    obtain hl := ws_length (halfSteps.take j) k0
     rw [hkj] at hl
-    have hlim : countKeys (halfSteps.take j) < 16 := by
+    obtain hlim : countKeys (halfSteps.take j) < 16 := by
       have := hok; simp only [stepOk, Bool.and_eq_true, decide_eq_true_eq] at this; omega
     exact ⟨by rw [hl, hc, hlen0], by rw [hl, hlen0]; omega_arith⟩
 
@@ -233,10 +233,10 @@ theorem half_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {hh : Nat} (h
       v.gpr hlv = u.gpr hlv - 1#64 ∧ Keep halfRegs u v := by
   unfold half
   refine WP.seq (wp_li (by decide) fun u0 hu0 => wp_nil ?_)
-  have k0u : Keep stepRegs u u0 := hu0.keep.mono (by decide)
-  have h0 : KS m0 cb kb T u0 (runSteps (halfSteps.take 0) k0) :=
+  obtain k0u : Keep stepRegs u u0 := hu0.keep.mono (by decide)
+  obtain h0 : KS m0 cb kb T u0 (runSteps (halfSteps.take 0) k0) :=
     h.update hu0.keep (by rw [hu0.mem]; exact h.mem) (fun i hi => by rw [hu0.mem]; exact h.ex i hi) h.len
-  have loop : WP isa (.loop Impl.Cast5.PPC64LE.step (.nonzero .d tmp)) u0
+  obtain loop : WP isa (.loop Impl.Cast5.PPC64LE.step (.nonzero .d tmp)) u0
       (fun v => KS m0 cb kb T v (runSteps halfSteps k0) ∧ Keep stepRegs u v) := by
     refine WP.loop (M := isa) (fun m (v : State) => ∃ j, m = 40 - j ∧ j < 40 ∧
       KS m0 cb kb T v (runSteps (halfSteps.take j) k0) ∧ v.gpr stp = BitVec.ofNat 64 j ∧ Keep stepRegs u v)
@@ -244,7 +244,7 @@ theorem half_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {hh : Nat} (h
     rintro m v ⟨j, rfl, hj, hv, v2, kv⟩
     refine WP.mono (keyStep_ok hj hv v2 (by rw [kv.gpr (by decide), hout]) hlen0 hhh)
       fun w ⟨hw, w2, wt, kw⟩ => ?_
-    have ev : isa.eval (.nonzero .d tmp) w = some (!decide (j + 1 = 40)) := by
+    obtain ev : isa.eval (.nonzero .d tmp) w = some (!decide (j + 1 = 40)) := by
       rw [eval_nonzero, wt, tmp_step_ne hj]
     by_cases he : j + 1 = 40
     · refine .inl ⟨by rw [ev, decide_eq_true he]; rfl, ?_, (kv.trans kw).mono (by decide)⟩
@@ -254,7 +254,7 @@ theorem half_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {hh : Nat} (h
   refine WP.seq (WP.mono loop fun v ⟨hv, kv⟩ => ?_)
   refine wp_addi (by decide) (by decide) fun v₁ h₁ => wp_subi (by decide) (by decide) fun v₂ h₂ => wp_nil ?_
   obtain ⟨hx, hw⟩ := runSteps_half k0
-  have k12 : Keep [out, hlv] v v₂ := (h₁.keep.trans h₂.keep).mono (by decide)
+  obtain k12 : Keep [out, hlv] v v₂ := (h₁.keep.trans h₂.keep).mono (by decide)
   refine ⟨runSteps halfSteps k0, hv.update k12 (by rw [h₂.mem, h₁.mem]; exact hv.mem)
     (fun i hi => by rw [h₂.mem, h₁.mem]; exact hv.ex i hi) hv.len, hx, hw, ?_, ?_, (kv.trans k12).mono (by decide)⟩
   · rw [h₂.other _ (by decide), h₁.gpr, kv.gpr (by decide), hout, Offset.add_add, Nat.mul_succ]
@@ -303,14 +303,14 @@ theorem zero_ok (s : State) {cb : Addr} (hc : s.gpr wkK = cb) (h0 : s.gpr .r0 = 
     (hin : ∀ {off w : Nat}, off + w ≤ 256 → InRegions s.wr (cb + BitVec.ofNat 64 off) w) (key : Addr) :
     WP isa (.block [.store .d zero wkK xOff, .store .d zero wkK (xOff + 8), .addi dst wkK xOff]) s fun u =>
       CInv s.mem key cb 0 u.mem ∧ u.gpr dst = cb + BitVec.ofNat 64 16 ∧ Keep [dst] s u := by
-  have i16 := hin (off := 16) (w := 8) (by decide)
-  have i24 := hin (off := 24) (w := 8) (by decide)
+  obtain i16 := hin (off := 16) (w := 8) (by decide)
+  obtain i24 := hin (off := 24) (w := 8) (by decide)
   unfold xOff
   refine wp_std (a := cb + BitVec.ofNat 64 16) (by decide) (by decide) (by rw [hc]) i16 fun u₁ h₁ => ?_
   refine wp_std (a := cb + BitVec.ofNat 64 24) (by decide) (by decide) (by rw [h₁.gpr]; exact congrArg (· + _) hc)
     (by rw [h₁.wr]; exact i24) fun u₂ h₂ => ?_
   refine wp_addi (by decide) (by decide) fun u₃ h₃ => wp_nil ?_
-  have mem : u₃.mem = (s.mem.writeW (cb + BitVec.ofNat 64 16) (0 : BitVec 64)).writeW
+  obtain mem : u₃.mem = (s.mem.writeW (cb + BitVec.ofNat 64 16) (0 : BitVec 64)).writeW
       (cb + BitVec.ofNat 64 24) (0 : BitVec 64) := by
     rw [h₃.mem, h₂.mem, h₁.mem, h₁.gpr, h0]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, by rw [h₃.gpr, h₂.gpr, h₁.gpr, hc], ?_⟩

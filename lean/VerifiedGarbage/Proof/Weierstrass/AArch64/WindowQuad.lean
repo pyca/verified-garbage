@@ -53,7 +53,7 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
     (hq : ∀ x ∈ [q.x, q.y, q.z], x ∈ winRo K ++ winOther K) :
     (∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winSlots K) ∧ (∀ x ∈ rcbW K.S o, x ∈ winOther K) ∧
       ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winRo K ++ winOther K := by
-  have hW : ∀ x ∈ rcbW K.S o, x ∈ winOther K := by
+  obtain hW : ∀ x ∈ rcbW K.S o, x ∈ winOther K := by
     intro x hx
     simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with h | h | h | h | h | h | h | h | h <;> subst h
@@ -66,7 +66,7 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
     · exact ho _ (by simp)
     · exact ho _ (by simp)
     · exact ho _ (by simp)
-  have hL : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winRo K ++ winOther K := by
+  obtain hL : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winRo K ++ winOther K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_right _ (hW x hx)
@@ -96,7 +96,7 @@ local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
 theorem dblSet_ok (s : State) {j : Nat} (hx : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (.block [.movz .x .x2 2 2, .add .x .x19 .x19 .x2]) s fun t =>
       t.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * 2) ∧ Keeps [.x2, .x19] s t := by
-  have c2 : (2 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32 * 2) := by
+  obtain c2 : (2 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32 * 2) := by
     apply BitVec.eq_of_toNat_eq; simp
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, show 16 * 2 < 64 by decide, ite_true,
@@ -112,13 +112,13 @@ theorem dblCnt_ok (s : State) {j c : Nat} (hj : j < 2 ^ 32) (hc : c < 2)
     WP isa (.block [.movz .x .x2 1 2, .sub .x .x19 .x19 .x2, .lsr .x .x2 .x19 32]) s fun t =>
       t.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * c) ∧ t.gpr .x2 = BitVec.ofNat 64 c ∧
       Keeps [.x2, .x19] s t := by
-  have c1 : (1 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32) := by
+  obtain c1 : (1 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32) := by
     apply BitVec.eq_of_toNat_eq; simp
-  have e : BitVec.ofNat 64 (j + 2 ^ 32 * (c + 1)) - BitVec.ofNat 64 (2 ^ 32) =
+  obtain e : BitVec.ofNat 64 (j + 2 ^ 32 * (c + 1)) - BitVec.ofNat 64 (2 ^ 32) =
       BitVec.ofNat 64 (j + 2 ^ 32 * c) := by
     rw [Nat.mul_succ, ← Nat.add_assoc, ← BitVec.ofNat_add_ofNat, BitVec.add_sub_cancel]
-  have hlt : j + 2 ^ 32 * c < 2 ^ 64 := by omega_using [hj, hc]
-  have l : BitVec.ofNat 64 (j + 2 ^ 32 * c) >>> 32 = BitVec.ofNat 64 c := by
+  obtain hlt : j + 2 ^ 32 * c < 2 ^ 64 := by omega_using [hj, hc]
+  obtain l : BitVec.ofNat 64 (j + 2 ^ 32 * c) >>> 32 = BitVec.ofNat 64 c := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt,
       Nat.mod_eq_of_lt (by omega_using [hc]), Nat.shiftRight_eq_div_pow, Nat.add_mul_div_left _ _ (by decide),
@@ -149,45 +149,45 @@ theorem dbl2_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       InvJ C (E' K.E.x) (E' K.E.y) (E' K.E.z) (mul (4 * e) P) := by
   obtain ⟨-, -, ro_lt, hz⟩ := hS.ro_tmv hL hF
   obtain ⟨a1, a2, a3, a4⟩ := hL.rcbApart_jac
-  have oR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
+  obtain oR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have oE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
+  obtain oE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have oD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winOther K := by
+  obtain oD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have sZ : ∀ x ∈ [(WinCfg.zeroPt K).x, (WinCfg.zeroPt K).y, (WinCfg.zeroPt K).z], x ∈ winRo K ++ winOther K := by
+  obtain sZ : ∀ x ∈ [(WinCfg.zeroPt K).x, (WinCfg.zeroPt K).y, (WinCfg.zeroPt K).z], x ∈ winRo K ++ winOther K := by
     intro x hx
     simp only [WinCfg.zeroPt, List.mem_cons, List.not_mem_nil, or_false, or_self] at hx
     subst hx; win_in
-  have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
+  obtain sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
     List.mem_append_right (winRo K) (h x hx)
-  have w2 := winJ_sl oD (sl _ oE) (sl _ oE)
-  have w3 := winJ_sl oE (sl _ oD) (sl _ oD)
-  have hQ := fun (a : Nat) => hC.onCurve_mul hP a
+  obtain w2 := winJ_sl oD (sl _ oE) (sl _ oE)
+  obtain w3 := winJ_sl oE (sl _ oD) (sl _ oD)
+  obtain hQ := fun (a : Nat) => hC.onCurve_mul hP a
   simp only [WinCfg.dbl2, WinCfg.double, dblJChoice_eq]
   refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2.1 w2.2.2 hI
     (by intro x hx; simp only [rcbR, dblV, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
         rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
     fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
-  have S₂ := hS.next hL I₂.scr (k₂.mono clob_combClob) U₂
-  have J₂ := InvJ.dbl' hC hM3 (hQ e) hJ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
+  obtain S₂ := hS.next hL I₂.scr (k₂.mono clob_combClob) U₂
+  obtain J₂ := InvJ.dbl' hC hM3 (hQ e) hJ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP] at J₂
   refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2.1 w3.2.2 I₂
     (by intro x hx; simp only [rcbR, dblV, List.cons_append, List.nil_append, List.mem_cons,
           List.not_mem_nil, or_false] at hx ⊢
         rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
     fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
-  have S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
-  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
+  obtain S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
+  obtain J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP, show 2 * (2 * e) = 4 * e by omega_using []] at J₃
-  have x₃ : s₃.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * ((c - 1) + 1)) := by
+  obtain x₃ : s₃.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * ((c - 1) + 1)) := by
     rw [k₃.gpr _ (x19_not_clob _), k₂.gpr _ (x19_not_clob _), hx, Nat.sub_add_cancel hc]
   refine WP.mono (dblCnt_ok s₃ hj (by omega_using [hc2, hc]) x₃) fun s₄ ⟨x₄, y₄, k₄⟩ => ?_
-  have hs₄ := S₃.scr.of_keeps k₄ (by decide)
-  have cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
+  obtain hs₄ := S₃.scr.of_keeps k₄ (by decide)
+  obtain cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
     intro r hr
     simp only [combClob, clob, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl <;> simp
@@ -216,24 +216,24 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
         tmv C K.M.n base s' K.E.z = Z := by
   obtain ⟨-, -, ro_lt, hz⟩ := hS.ro_tmv hL hF
   obtain ⟨a1, a2, a3, a4⟩ := hL.rcbApart_jac
-  have oR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
+  obtain oR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have oE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
+  obtain oE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have oD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winOther K := by
+  obtain oD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in
-  have sZ : ∀ x ∈ [(WinCfg.zeroPt K).x, (WinCfg.zeroPt K).y, (WinCfg.zeroPt K).z], x ∈ winRo K ++ winOther K := by
+  obtain sZ : ∀ x ∈ [(WinCfg.zeroPt K).x, (WinCfg.zeroPt K).y, (WinCfg.zeroPt K).z], x ∈ winRo K ++ winOther K := by
     intro x hx
     simp only [WinCfg.zeroPt, List.mem_cons, List.not_mem_nil, or_false, or_self] at hx
     subst hx; win_in
-  have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
+  obtain sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
     List.mem_append_right (winRo K) (h x hx)
-  have w1 := winJ_sl oE (sl _ oR) sZ
-  have w4 := winJ_sl oR (sl _ oE) sZ
-  have V0 : ∀ x ∈ [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z],
+  obtain w1 := winJ_sl oE (sl _ oR) sZ
+  obtain w4 := winJ_sl oR (sl _ oE) sZ
+  obtain V0 : ∀ x ∈ [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z],
       x ∈ winSlots K ∧ wordsVal s.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -242,10 +242,10 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     · exact ⟨by win_in, ro_lt _ (by simp [winRo])⟩
     · exact ⟨by win_in, ro_lt _ (by simp [winRo])⟩
     all_goals exact ⟨winOther_mem (oR _ (by simp [h])), hlt _ (by simp [h])⟩
-  have I₀ : Inv K.M base size C.p (· ∈ winSlots K) [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z]
+  obtain I₀ : Inv K.M base size C.p (· ∈ winSlots K) [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z]
       (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
-  have cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
+  obtain cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
     intro r hr
     simp only [combClob, clob, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl <;> simp
@@ -254,17 +254,17 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   -- Into Jacobian coordinates, in `E`.
   refine WP.seq (WP.mono (winN_ok hL hA hp toJN_ok a1 w1.1 w1.2.1 w1.2.2 I₀ (by rcb_sub))
     fun s₁ ⟨k₁, U₁, E₁, I₁, _, v₁⟩ => ?_)
-  have S₁ := hS.next hL I₁.scr (k₁.mono clob_combClob) U₁
-  have J₁ : InvJ C (E₁ K.E.x) (E₁ K.E.y) (E₁ K.E.z) (mul e P) :=
+  obtain S₁ := hS.next hL I₁.scr (k₁.mono clob_combClob) U₁
+  obtain J₁ : InvJ C (E₁ K.E.x) (E₁ K.E.y) (E₁ K.E.z) (mul e P) :=
     InvJ.of_toJ (z := tmv C K.M.n base s K.zero) hC hR (show toM _ _ _ = 0 by rw [hz]; exact toM_zero _ _)
       (v₁.trans (toJN_run _))
   -- The count.
   refine WP.seq (WP.mono (dblSet_ok s₁ ((k₁.gpr _ (x19_not_clob _)).trans hx))
     fun s₂ ⟨x₂, k₂⟩ => ?_)
-  have hs₂ := S₁.scr.of_keeps k₂ (by decide)
-  have S₂ := S₁.next hL hs₂ ((Keeps.regs k₂).mono cc) (by rw [k₂.mem]; exact Unch.refl _ _ _)
+  obtain hs₂ := S₁.scr.of_keeps k₂ (by decide)
+  obtain S₂ := S₁.next hL hs₂ ((Keeps.regs k₂).mono cc) (by rw [k₂.mem]; exact Unch.refl _ _ _)
   -- Twice two doublings.
-  have hloop : WP isa (.loop (WinCfg.dbl2 K) (.nonzero .x .x2)) s₂ fun t =>
+  obtain hloop : WP isa (.loop (WinCfg.dbl2 K) (.nonzero .x .x2)) s₂ fun t =>
       WinSt K C base size P s₀ t ∧ t.gpr .x19 = BitVec.ofNat 64 j ∧ ∃ E' : Nat → Fe C,
         Inv K.M base size C.p (· ∈ winSlots K) (dblV K) E' t ∧
         InvJ C (E' K.E.x) (E' K.E.y) (E' K.E.z) (mul (16 * e) P) := by
@@ -280,7 +280,7 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
         by simpa using J₁⟩
     refine WP.mono (dbl2_ok hL hA hp hC hM3 hP hF St hj hc hc2 xt It Jt)
       fun t' ⟨St', xt', yt', E', It', Jt'⟩ => ?_
-    have ev : isa.eval (.nonzero .x .x2) t' = some (decide (c - 1 ≠ 0)) := by
+    obtain ev : isa.eval (.nonzero .x .x2) t' = some (decide (c - 1 ≠ 0)) := by
       show some (t'.read .x .x2 != 0) = _
       rw [read_x, yt']
       rcases (by omega_using [hc, hc2] : c = 1 ∨ c = 2) with rfl | rfl <;> rfl
@@ -295,14 +295,14 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     (by intro x hx; simp only [rcbR, dblV, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
         rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
     fun s₆ ⟨k₆, U₆, E₆, I₆, o₆, v₆⟩ => ?_
-  have S₆ := S₅.next hL I₆.scr (k₆.mono clob_combClob) U₆
+  obtain S₆ := S₅.next hL I₆.scr (k₆.mono clob_combClob) U₆
   obtain ⟨-, -, -, hz₅⟩ := S₅.ro_tmv hL hF
-  have z₅ : E₅ K.zero = 0 := by
+  obtain z₅ : E₅ K.zero = 0 := by
     rw [← I₅.val _ (by simp [dblV]), hz₅]; exact toM_zero _ _
-  have r₆ : (E₆ K.R.x, E₆ K.R.y, E₆ K.R.z) = (E₅ K.E.x * E₅ K.E.z, E₅ K.E.y + E₅ K.zero,
+  obtain r₆ : (E₆ K.R.x, E₆ K.R.y, E₆ K.R.z) = (E₅ K.E.x * E₅ K.E.z, E₅ K.E.y + E₅ K.zero,
       E₅ K.E.z * E₅ K.E.z * E₅ K.E.z) := v₆.trans (fromJN_run _)
   simp only [z₅, Prod.mk.injEq] at r₆
-  have ez : E₆ K.E.z = E₅ K.E.z := o₆ _ (a4.apart _ (by simp [rcbR]))
+  obtain ez : E₆ K.E.z = E₅ K.E.z := o₆ _ (a4.apart _ (by simp [rcbR]))
   refine ⟨S₆, by rw [k₆.gpr _ (x19_not_clob _), x₅, hx],
     fun x hx => I₆.lt x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with
       h | h | h | h <;> simp [h, dblV]),
@@ -333,10 +333,10 @@ theorem ySelWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       simp only [WinCfg.ySelWord, List.cons_append, List.nil_append],
     WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := K.R.y + 8 * w) ho (by omega_using [ho8]) .x9) fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have m₁ : s₁.gpr .x2 = mask p := (k₁.gpr _ (by decide)).trans hx2
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain m₁ : s₁.gpr .x2 = mask p := (k₁.gpr _ (by decide)).trans hx2
   rw [WP.block_append_iff]
-  have hb : WP isa (.block [.bicRor .x .x9 .x9 .x2 0]) s₁ fun t =>
+  obtain hb : WP isa (.block [.bicRor .x .x9 .x9 .x2 0]) s₁ fun t =>
       t.gpr .x9 = word s.mem base (K.R.y + 8 * w) &&& ~~~(mask p) ∧ Keeps [.x9] s₁ t := by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
@@ -345,15 +345,15 @@ theorem ySelWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
   refine WP.mono hb fun s₂ ⟨x₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  obtain hs₂ := hs₁.of_keeps k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (const64_ok s₂ .x4 _) fun s₃ ⟨x₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
-  have m₃ : s₃.gpr .x2 = mask p := by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), m₁]
-  have n₃ : s₃.gpr .x9 = word s.mem base (K.R.y + 8 * w) &&& ~~~(mask p) := by
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain m₃ : s₃.gpr .x2 = mask p := by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), m₁]
+  obtain n₃ : s₃.gpr .x9 = word s.mem base (K.R.y + 8 * w) &&& ~~~(mask p) := by
     rw [k₃.gpr _ (by decide), x₂]
   rw [WP.block_append_iff]
-  have hc : WP isa (.block [.logic .and .x .x4 .x4 .x2, .logic .orr .x .x4 .x4 .x9]) s₃ fun t =>
+  obtain hc : WP isa (.block [.logic .and .x .x4 .x4 .x2, .logic .orr .x .x4 .x4 .x9]) s₃ fun t =>
       t.gpr .x4 = (if p then wordOf K.one w else word s.mem base (K.R.y + 8 * w)) ∧
         Keeps [.x4] s₃ t := by
     apply WP.of_runBlock
@@ -364,7 +364,7 @@ theorem ySelWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
   refine WP.mono hc fun s₄ ⟨x₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  obtain hs₄ := hs₃.of_keeps k₄ (by decide)
   refine WP.mono (st_out hs₄ (o := K.R.y + 8 * w) ho (by omega_using [ho8]) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
   · rw [m, x₄, k₄.mem, k₃.mem, k₂.mem, k₁.mem]
   · exact ((((Keeps.regs k₁).mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))).trans
@@ -385,10 +385,10 @@ theorem ySelWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (ySelWords_ok hs K p hx2 ho8 k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    obtain hs₁ := hs.of_keepRegs k₁ (by decide)
     refine WP.mono (ySelWord_ok hs₁ K p ((k₁.gpr _ (by decide)).trans hx2) (w := k) (by omega_using [hk]) ho8)
       fun s₂ ⟨m₂, k₂⟩ => ?_
-    have O₂ : Outside base (K.R.y + 8 * k) 8 s₁.mem s₂.mem := by
+    obtain O₂ : Outside base (K.R.y + 8 * k) 8 s₁.mem s₂.mem := by
       rw [m₂]; exact writeW_outside _ _ _ (by omega_using [hk, hn])
     refine ⟨fun j hj => ?_, k₁.trans k₂,
       (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
@@ -406,11 +406,11 @@ theorem ySel_ok {K : WinCfg} {base : Addr} {size : Nat} (hL : WinLay K size) (hA
       KeepRegs [.x1, .x2, .x4, .x5, .x7, .x9, .x16] s t ∧
       Unch base [(K.R.y, 8 * K.M.n)] s.mem t.mem := by
   have hn := hs.nowrap
-  have hy : K.R.y ∈ winSlots K := by win_in
-  have hz : K.E.z ∈ winSlots K := by win_in
+  obtain hy : K.R.y ∈ winSlots K := by win_in
+  obtain hz : K.E.z ∈ winSlots K := by win_in
   rw [WinCfg.ySel, WP.block_append_iff]
   refine WP.mono (zeroMask_ok hs hL.n0 (hL.lay.le _ hz) (hA.sl _ hz)) fun s₁ ⟨m₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.mono (ySelWords_ok hs₁ K _ m₁ (hA.sl _ hy) K.M.n (hL.lay.le _ hy))
     fun t ⟨e, kt, O⟩ => ⟨?_, ?_, ?_⟩
   · by_cases hz0 : wordsVal s.mem base K.E.z K.M.n = 0
@@ -442,37 +442,37 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     fun s₁ ⟨S₁, x₁, l₁, X, Y, Z, hJ, ex, ey, ez, eE⟩ => ?_)
   have hn := S₁.scr.nowrap
   refine WP.mono (ySel_ok hL hA S₁.scr (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨v₂, k₂, U₂⟩ => ?_
-  have hRy : K.R.y ∈ winOther K := by win_in
-  have c₂ : ∀ r ∈ [Reg.x1, .x2, .x4, .x5, .x7, .x9, .x16], r ∈ combClob K.M.n := by
+  obtain hRy : K.R.y ∈ winOther K := by win_in
+  obtain c₂ : ∀ r ∈ [Reg.x1, .x2, .x4, .x5, .x7, .x9, .x16], r ∈ combClob K.M.n := by
     intro r hr
     simp only [combClob, clob, maskRegs, List.mem_cons, List.mem_append, List.not_mem_nil,
       or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
-  have S₂ := S₁.next hL (S₁.scr.of_keepRegs k₂ (by decide)) (k₂.mono c₂)
+  obtain S₂ := S₁.next hL (S₁.scr.of_keepRegs k₂ (by decide)) (k₂.mono c₂)
     (U₂.mono fun w hw => by
       rw [List.mem_singleton.mp hw]
       exact List.mem_append_left _ (List.mem_map_of_mem hRy))
   obtain ⟨rxy, -, ryz, -⟩ := hL.other_ne
-  have hws : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winWs K := fun x hx => winOther_ws K x (by
+  obtain hws : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winWs K := fun x hx => winOther_ws K x (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_in)
-  have eR : ∀ x ∈ [K.R.x, K.R.z], x ≠ K.R.y →
+  obtain eR : ∀ x ∈ [K.R.x, K.R.z], x ≠ K.R.y →
       wordsVal s₂.mem base x K.M.n = wordsVal s₁.mem base x K.M.n := by
     intro x hx hne
-    have hxw : x ∈ winWs K := hws x (by
+    obtain hxw : x ∈ winWs K := hws x (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with h | h <;> simp [h])
     refine U₂.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (winWs_slots K x hxw); omega_using [hn, this])
     rw [List.mem_singleton.mp hw]
     exact hL.apart₂ hxw (hws _ (by simp)) hne
-  have ex₂ := eR K.R.x (by simp) rxy
-  have ez₂ := eR K.R.z (by simp) (Ne.symm ryz)
-  have tm : ∀ {x}, wordsVal s₂.mem base x K.M.n = wordsVal s₁.mem base x K.M.n →
+  obtain ex₂ := eR K.R.x (by simp) rxy
+  obtain ez₂ := eR K.R.z (by simp) (Ne.symm ryz)
+  obtain tm : ∀ {x}, wordsVal s₂.mem base x K.M.n = wordsVal s₁.mem base x K.M.n →
       tmv C K.M.n base s₂ x = tmv C K.M.n base s₁ x := fun h => by
     show toM _ _ _ = toM _ _ _; rw [h]
-  have hZ : (wordsVal s₁.mem base K.E.z K.M.n = 0) ↔ Z = 0 := by
+  obtain hZ : (wordsVal s₁.mem base K.E.z K.M.n = 0) ↔ Z = 0 := by
     rw [← toM_eq_zero_iff hp (l₁ _ (by simp)), ← eE]
-  have ey₂ : tmv C K.M.n base s₂ K.R.y = if Z = 0 then 1 else Y := by
+  obtain ey₂ : tmv C K.M.n base s₂ K.R.y = if Z = 0 then 1 else Y := by
     by_cases h : wordsVal s₁.mem base K.E.z K.M.n = 0
     · have e₂ : wordsVal s₂.mem base K.R.y K.M.n = K.one := by rw [v₂]; simp only [h, ↓reduceIte]
       show toM _ _ _ = _

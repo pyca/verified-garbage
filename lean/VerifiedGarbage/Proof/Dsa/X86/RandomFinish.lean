@@ -41,18 +41,18 @@ theorem zeroStep_ok {s₀ t₀ t : State} (A : RandomSignABI s₀) {k : Nat} (hk
     WP isa (.block [.store8 (at_ .esi 0) .al, .alu .add .esi (.imm 1), .alu .sub .ecx (.imm 1)]) t
       fun u => ZeroInv s₀ t₀ (k + 1) u ∧ u.zf = some (decide ((X86.arg s₀ 1).toNat - (k + 1) = 0)) := by
   have hb := A.outBound
-  have hp : t.ea (at_ .esi 0) = argumentPointer s₀ 0 + BitVec.ofNat 64 k := by
+  obtain hp : t.ea (at_ .esi 0) = argumentPointer s₀ 0 + BitVec.ofNat 64 k := by
     rw [ea_at0, I.esi]; exact ptr_add (by omega_using [hk, hb])
-  have hw : InRegions t.wr (argumentPointer s₀ 0 + BitVec.ofNat 64 k) 1 :=
+  obtain hw : InRegions t.wr (argumentPointer s₀ 0 + BitVec.ofNat 64 k) 1 :=
     ⟨rOut s₀, by rw [I.ready.wr, A.wr]; simp [rOut], Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   refine wp_store8 hp hw fun u₁ m₁ => wp_addi fun u₂ v₂ => wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
-  have hv : (t.gpr (Reg8.al).reg).setWidth 8 = 0 := by show (t.gpr .eax).setWidth 8 = 0; rw [I.eax]; rfl
+  obtain hv : (t.gpr (Reg8.al).reg).setWidth 8 = 0 := by show (t.gpr .eax).setWidth 8 = 0; rw [I.eax]; rfl
   rw [hv] at m₁
-  have kk : Keeps [.eax, .ecx, .esi] t u₃ :=
+  obtain kk : Keeps [.eax, .ecx, .esi] t u₃ :=
     ((m₁.keeps _).trans (v₂.keeps.mono (by decide))).trans (v₃.keeps.mono (by decide))
-  have mem₃ : u₃.mem = t.mem.writeW (argumentPointer s₀ 0 + BitVec.ofNat 64 k) (0 : BitVec 8) := by
+  obtain mem₃ : u₃.mem = t.mem.writeW (argumentPointer s₀ 0 + BitVec.ofNat 64 k) (0 : BitVec 8) := by
     rw [v₃.mem, v₂.mem, m₁.mem]
-  have fr : Frame [rOut s₀] t.mem u₃.mem := by
+  obtain fr : Frame [rOut s₀] t.mem u₃.mem := by
     rw [mem₃]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   refine ⟨⟨I.ready.congrW kk fr (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites]),
@@ -73,16 +73,16 @@ theorem zeroOut_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) 
     WP isa zeroOut t fun u => Ready s₀ u ∧ Frame [rOut s₀] t.mem u.mem ∧
       Spec.Rsa.bytesAt u.mem (argumentPointer s₀ 0) (X86.arg s₀ 1).toNat =
         List.replicate (X86.arg s₀ 1).toNat 0 ∧ Keeps [.eax, .ecx, .esi] t u := by
-  have hL : 0 < (X86.arg s₀ 1).toNat := by
+  obtain hL : 0 < (X86.arg s₀ 1).toNat := by
     have := A.outLength; have := A.lengths; unfold Spec.Dsa.lengthsValid at *; omega_arith
   unfold zeroOut
   refine WP.seq (wp_movS (h.argSrc A (j := 0) (by decide)) fun t₁ u₁ _ => ?_)
-  have h₁ := h.upd u₁ (by decide)
+  obtain h₁ := h.upd u₁ (by decide)
   refine wp_movS (h₁.argSrc A (j := 1) (by decide)) fun t₂ u₂ _ => wp_movS rfl fun t₃ u₃ _ => WP.block_nil ?_
-  have k₃ : Keeps [.eax, .ecx, .esi] t t₃ :=
+  obtain k₃ : Keeps [.eax, .ecx, .esi] t t₃ :=
     ((u₁.keeps.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))
-  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have I₀ : ZeroInv s₀ t 0 t₃ := ⟨h.congr k₃ (by rw [m₃]; exact Frame.refl _ _),
+  obtain m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain I₀ : ZeroInv s₀ t 0 t₃ := ⟨h.congr k₃ (by rw [m₃]; exact Frame.refl _ _),
     by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, BitVec.add_zero],
     by rw [u₃.other _ (by decide), u₂.gpr, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq],
     u₃.gpr, by rw [m₃]; exact Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), k₃⟩
@@ -141,64 +141,64 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ 
       slot u.mem (argumentPointer s₀ 2) 0 = used ∧ slot u.mem (argumentPointer s₀ 2) 4 = 0 := by
   have hub := A.usedBound
   refine clearNonce_ok h.rf fun t₁ f₁ m₁ k₁ _ => ?_
-  have fr₁ : Frame [rStack s₀] t.mem t₁.mem := by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide)
-  have h₁ : Ready s₀ t₁ := h.congr k₁ fr₁
-  have o₁ : Outs (rBase s₀) [(oNonce, 32)] t.mem t₁.mem := by
+  obtain fr₁ : Frame [rStack s₀] t.mem t₁.mem := by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide)
+  obtain h₁ : Ready s₀ t₁ := h.congr k₁ fr₁
+  obtain o₁ : Outs (rBase s₀) [(oNonce, 32)] t.mem t₁.mem := by
     rw [m₁]; exact Outs.of_outside (clearMem_outside _ _ 8 (by decide)) (List.mem_singleton_self _)
-  have sl₁ : ∀ d, d + 4 ≤ oNonce → slot t₁.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
+  obtain sl₁ : ∀ d, d + 4 ≤ oNonce → slot t₁.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
     outs_low o₁ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Nat.le_refl _) hd
       (by unfold oNonce at hd; omega_using [hd])
   refine wp_movS (h₁.argSrc A (j := 2) (by decide)) fun t₂ u₂ _ => ?_
-  have h₂ := h₁.upd u₂ (by decide)
-  have hu₁ : slot t₁.mem (rBase s₀) oUsed = used := (sl₁ _ (by decide)).trans hu
+  obtain h₂ := h₁.upd u₂ (by decide)
+  obtain hu₁ : slot t₁.mem (rBase s₀) oUsed = used := (sl₁ _ (by decide)).trans hu
   refine wp_movS (v := used) (by rw [h₂.rf.readSlot (by decide), u₂.mem]; exact congrArg some hu₁)
     fun t₃ u₃ _ => ?_
-  have h₃ := h₂.upd u₃ (by decide)
-  have hU : (⟨argumentPointer s₀ 2, 8⟩ : Region) ∈ t₃.wr := by rw [h₃.wr, A.wr]; simp
+  obtain h₃ := h₂.upd u₃ (by decide)
+  obtain hU : (⟨argumentPointer s₀ 2, 8⟩ : Region) ∈ t₃.wr := by rw [h₃.wr, A.wr]; simp
   refine wp_storeS (a := argumentPointer s₀ 2)
     (by rw [ea_at0, u₃.other _ (by decide), u₂.gpr]) ⟨_, hU, by
       have := Offset.contains_base (argumentPointer s₀ 2) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
       rwa [BitVec.add_zero] at this⟩ fun t₄ m₄ => wp_movS rfl fun t₅ u₅ _ => ?_
-  have e₅ : t₅.gpr .edx = X86.arg s₀ 2 := by rw [u₅.other _ (by decide), m₄.gpr, u₃.other _ (by decide), u₂.gpr]
-  have hw₅ : InRegions t₅.wr (argumentPointer s₀ 2 + BitVec.ofNat 64 4) 4 :=
+  obtain e₅ : t₅.gpr .edx = X86.arg s₀ 2 := by rw [u₅.other _ (by decide), m₄.gpr, u₃.other _ (by decide), u₂.gpr]
+  obtain hw₅ : InRegions t₅.wr (argumentPointer s₀ 2 + BitVec.ofNat 64 4) 4 :=
     ⟨_, by rw [u₅.wr, m₄.wr]; exact hU, Offset.contains_base _ (by decide) (by decide)⟩
   refine wp_storeS (a := argumentPointer s₀ 2 + BitVec.ofNat 64 4)
     (by show addr (t₅.gpr .edx) 4 = _; rw [e₅]; exact addr_eq (by omega_using [hub])) hw₅ fun t₆ m₆ => ?_
-  have mem₆ : t₆.mem = (t₃.mem.writeW (off (argumentPointer s₀ 2) 0) used).writeW
+  obtain mem₆ : t₆.mem = (t₃.mem.writeW (off (argumentPointer s₀ 2) 0) used).writeW
       (off (argumentPointer s₀ 2) 4) (0 : BitVec 32) := by
     rw [m₆.mem, u₅.gpr, u₅.mem, m₄.mem, u₃.gpr, off, BitVec.add_zero]
-  have fu : Frame [rUsed s₀] t₃.mem t₆.mem := by
+  obtain fu : Frame [rUsed s₀] t₃.mem t₆.mem := by
     rw [mem₆]
     exact (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have ap : ∀ d, d + 4 ≤ 120 → slot t₆.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd =>
+  obtain ap : ∀ d, d + 4 ≤ 120 → slot t₆.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd =>
     apart_slot fu A.stackUsedWide hd
-  have k₆ : Keeps [.eax, .edx] t₁ t₆ :=
+  obtain k₆ : Keeps [.eax, .edx] t₁ t₆ :=
     ((((u₂.keeps.mono (by decide)).trans (u₃.keeps.mono (by decide))).trans (m₄.keeps _)).trans
       (u₅.keeps.mono (by decide))).trans (m₆.keeps _)
-  have m₃ : t₃.mem = t₁.mem := by rw [u₃.mem, u₂.mem]
-  have h₆ : Ready s₀ t₆ := h₁.congrW k₆ (by rw [← m₃]; exact fu)
+  obtain m₃ : t₃.mem = t₁.mem := by rw [u₃.mem, u₂.mem]
+  obtain h₆ : Ready s₀ t₆ := h₁.congrW k₆ (by rw [← m₃]; exact fu)
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites])
-  have sv₆ : Saved s₀ t₆.mem := sv.of_slots fun d h₁' hd => by
+  obtain sv₆ : Saved s₀ t₆.mem := sv.of_slots fun d h₁' hd => by
     rw [ap d (by omega_using [hd]), m₃, sl₁ d (by unfold oNonce; omega_using [hd])]
   refine wp_movS (v := s₀.gpr .ebx) (by rw [h₆.rf.readSlot (by decide)]; exact congrArg some sv₆.1)
     fun t₇ u₇ _ => ?_
-  have h₇ := h₆.upd u₇ (by decide)
+  obtain h₇ := h₆.upd u₇ (by decide)
   refine wp_movS (v := s₀.gpr .esi) (by rw [h₇.rf.readSlot (by decide), u₇.mem]; exact congrArg some sv₆.2.1)
     fun t₈ u₈ _ => ?_
-  have h₈ := h₇.upd u₈ (by decide)
+  obtain h₈ := h₇.upd u₈ (by decide)
   refine wp_movS (v := s₀.gpr .edi)
     (by rw [h₈.rf.readSlot (by decide), u₈.mem, u₇.mem]; exact congrArg some sv₆.2.2.1) fun t₉ u₉ _ => ?_
-  have h₉ := h₈.upd u₉ (by decide)
+  obtain h₉ := h₈.upd u₉ (by decide)
   refine wp_movS (v := s₀.gpr .ebp)
     (by rw [h₉.rf.readSlot (by decide), u₉.mem, u₈.mem, u₇.mem]; exact congrArg some sv₆.2.2.2)
     fun t₁₀ u₁₀ _ => ?_
-  have h₁₀ := h₉.upd u₁₀ (by decide)
-  have hst₆ : slot t₆.mem (rBase s₀) oStatus = st := by rw [ap _ (by decide), m₃, sl₁ _ (by decide), hs]
+  obtain h₁₀ := h₉.upd u₁₀ (by decide)
+  obtain hst₆ : slot t₆.mem (rBase s₀) oStatus = st := by rw [ap _ (by decide), m₃, sl₁ _ (by decide), hs]
   refine wp_movS (v := st)
     (by rw [h₁₀.rf.readSlot (by decide), u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact congrArg some hst₆)
     fun t₁₁ u₁₁ _ => WP.block_nil ?_
-  have m₁₁ : t₁₁.mem = t₆.mem := by rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
+  obtain m₁₁ : t₁₁.mem = t₆.mem := by rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
   refine ⟨h₁₀.upd u₁₁ (by decide), u₁₁.gpr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
       u₇.gpr]
@@ -228,7 +228,7 @@ theorem finish_ok {s₀ t : State} (A : RandomSignABI s₀) (F : Fin s₀ t) (hR
     WP isa finish t fun u => Finished s₀ u := by
   have h := F.ready
   have hb := A.outBound
-  have hout : ∀ {m m' : Mem}, Frame [rStack s₀, rUsed s₀] m m' →
+  obtain hout : ∀ {m m' : Mem}, Frame [rStack s₀, rUsed s₀] m m' →
       Spec.Rsa.bytesAt m' (argumentPointer s₀ 0) (X86.arg s₀ 1).toNat =
         Spec.Rsa.bytesAt m (argumentPointer s₀ 0) (X86.arg s₀ 1).toNat := fun hf =>
     rBytes_frame hf (fun r hr => by
@@ -240,10 +240,10 @@ theorem finish_ok {s₀ t : State} (A : RandomSignABI s₀) (F : Fin s₀ t) (hR
   refine WP.seq (wp_movS (v := BitVec.ofNat 32 (rResult s₀).status)
     (by rw [h.rf.readSlot (by decide)]; exact congrArg some F.status)
     fun t₁ u₁ _ => wp_cmpi fun t₂ f₂ _ z₂ => WP.block_nil ?_)
-  have h₂ := (h.upd u₁ (by decide)).fupd f₂
-  have m₂ : t₂.mem = t.mem := by rw [f₂.mem, u₁.mem]
+  obtain h₂ := (h.upd u₁ (by decide)).fupd f₂
+  obtain m₂ : t₂.mem = t.mem := by rw [f₂.mem, u₁.mem]
   rw [u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega_using [hR]) (by decide)] at z₂
-  have fin : ∀ v : State, Ready s₀ v → Saved s₀ v.mem →
+  obtain fin : ∀ v : State, Ready s₀ v → Saved s₀ v.mem →
       slot v.mem (rBase s₀) oUsed = BitVec.ofNat 32 (rResult s₀).used →
       slot v.mem (rBase s₀) oStatus = BitVec.ofNat 32 (rResult s₀).status →
       Spec.Rsa.bytesAt v.mem (argumentPointer s₀ 0) (X86.arg s₀ 1).toNat =
@@ -258,7 +258,7 @@ theorem finish_ok {s₀ t : State} (A : RandomSignABI s₀) (F : Fin s₀ t) (hR
       (by rw [m₂]; exact F.out h1)
   · refine WP.seq (WP.ite true (by simp only [eval, z₂, h1, decide_false, Option.map_some, Bool.not_false])
       (fun _ => WP.mono (zeroOut_ok A h₂) fun v ⟨hv, fv, zv, _⟩ => ?_) (fun e => Bool.noConfusion e))
-    have ap : ∀ d, d + 4 ≤ 120 → slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd => by
+    obtain ap : ∀ d, d + 4 ≤ 120 → slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd => by
       rw [apart_slot fv A.stackOutWide hd, m₂]
     exact fin v hv (F.saved.of_slots fun d _ hd => ap d (by omega_using [hd])) (by rw [ap _ (by decide)]; exact F.usedW)
       (by rw [ap _ (by decide)]; exact F.status) (by rw [zv, hsig h1]; rfl)

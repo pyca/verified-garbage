@@ -88,7 +88,7 @@ theorem ivBytes_getElem? (iv : List (BitVec 32)) {j i : Nat} (hj : j < iv.length
   induction iv generalizing j with
   | nil => simp at hj
   | cons w ws ih =>
-    have chunk : ((List.range 4).map fun k => w.extractLsb' (8 * k) 8).length = 4 := by simp
+    obtain chunk : ((List.range 4).map fun k => w.extractLsb' (8 * k) 8).length = 4 := by simp
     simp only [ivBytes, List.flatMap_cons] at ih ⊢
     rcases j with _ | j
     · rw [List.getElem?_append_left (by rw [chunk]; omega_using [hi])]
@@ -104,7 +104,7 @@ theorem iv_word {m : Mem} {p : Addr} {iv : List (BitVec 32)}
   show m.read _ 4 = _
   apply Mem.read_eq_of_bytes
   intro i hi
-  have e := congrArg (·[4 * j + i]?) h
+  obtain e := congrArg (·[4 * j + i]?) h
   simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show 4 * j + i < 4 * iv.length by omega_using [hj, hi]),
     Option.map_some, ivBytes_getElem? iv hj hi, Option.some.injEq] at e
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -183,16 +183,16 @@ theorem private_input {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
     (S : Scr t E.base E.size) (C : Caller E.geometry E.capacity (E.p - 28#32) t)
     (F : Frame [below E.p 28] s.mem t.mem) (K : Keeps [.edx] (allocFrame 28 s) t) :
     CandidatePrepare.Input (E.parameters c entropy) t := by
-  have shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 28) :=
+  obtain shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
+  obtain workspaceFar : E.workspaceRegion.Disjoint (below E.p 28) :=
     (v.stackFar _ List.mem_cons_self).sub_right (below_sub (by decide) v.low)
-  have randFar : E.randRegion.Disjoint (below E.p 28) :=
+  obtain randFar : E.randRegion.Disjoint (below E.p 28) :=
     (v.stackFar _ (List.mem_cons_of_mem _ List.mem_cons_self)).sub_right (below_sub (by decide) v.low)
-  have fit : E.base.toNat + E.size ≤ 2 ^ 32 := by rw [v.baseNat]; exact v.workspaceFit
-  have W : WorkspaceFrame E.geometry [] s.mem t.mem := workspace_of_frame F fit
+  obtain fit : E.base.toNat + E.size ≤ 2 ^ 32 := by rw [v.baseNat]; exact v.workspaceFit
+  obtain W : WorkspaceFrame E.geometry [] s.mem t.mem := workspace_of_frame F fit
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
   have header := v.header
-  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
+  obtain big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
   refine ⟨⟨S, C, ?_, ?_, odd, by change 1 < c; omega_using [shape, big], Nat.le_of_lt shape.2.1⟩, ?_, ?_, ?_, ?_, ?_⟩
   · exact (W.val32 (v.geometry.arrayFit (j := 0) (by decide)) (by intro r mem; cases mem)).trans L.value
   · exact (W.val32 (v.geometry.arrayFit (j := 5) (by decide)) (by intro r mem; cases mem)).trans L.minusOne
@@ -246,28 +246,28 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
         (8 * ((E.bits + 63) / 64)) E.words E.width montName mont roundName round) (fun _ _ => True) := by
   intro s t tr ur u z H A B
   have space := v.header
-  have P := v.parameters_valid odd length H.1.input.memory.entropyLength
-  have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block [.mov .edx (.mem (sc 40))])
+  obtain P := v.parameters_valid odd length H.1.input.memory.entropyLength
+  obtain raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block [.mov .edx (.mem (sc 40))])
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
   cases A with
   | seq argsA frameA =>
     cases B with
     | seq argsB frameB =>
-      have argsTrace := (raw _ _ _ _ _ _ (H.1.input.agree H.2.input) argsA argsB).1
-      have Ua := wp_result (capacity_ok H.1.input.scratch (by omega_using [space])) argsA
-      have Ub := wp_result (capacity_ok H.2.input.scratch (by omega_using [space])) argsB
+      obtain argsTrace := (raw _ _ _ _ _ _ (H.1.input.agree H.2.input) argsA argsB).1
+      obtain Ua := wp_result (capacity_ok H.1.input.scratch (by omega_using [space])) argsA
+      obtain Ub := wp_result (capacity_ok H.2.input.scratch (by omega_using [space])) argsB
       obtain ⟨Da, _, _⟩ := H.1.keepStack v (by rw [Ua.mem]; exact Frame.refl _ _) Ua.keeps (by decide) (by decide)
         (by rw [Ua.syms])
       obtain ⟨Db, _, _⟩ := H.2.keepStack v (by rw [Ub.mem]; exact Frame.refl _ _) Ub.keeps (by decide) (by decide)
         (by rw [Ub.syms])
-      have capA := Ua.gpr.trans (H.1.capacityWord v)
-      have capB := Ub.gpr.trans (H.2.capacityWord v)
+      obtain capA := Ua.gpr.trans (H.1.capacityWord v)
+      obtain capB := Ub.gpr.trans (H.2.capacityWord v)
       cases frameA with
       | frame pushA bodyA popA =>
         cases frameB with
         | frame pushB bodyB popB =>
-          have ea := alloc_some pushA
-          have eb := alloc_some pushB
+          obtain ea := alloc_some pushA
+          obtain eb := alloc_some pushB
           subst ea eb
           cases bodyA with
           | seq storeA coreA =>
@@ -284,14 +284,14 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
               rw [CandidateFrame.privateSp, Db.input.stack] at Cb
               rw [Da.input.stack] at Fa
               rw [Db.input.stack] at Fb
-              have Ia := private_input v Da odd length Sa Ca Fa (Keeps.mono Ka (rs' := [.edx]) (by decide))
-              have Ib := private_input v Db odd length Sb Cb Fb (Keeps.mono Kb (rs' := [.edx]) (by decide))
-              have coreTrace := (CandidateTest.core_trace montVerified montNoSp montStack roundVerified roundNoSp
+              obtain Ia := private_input v Da odd length Sa Ca Fa (Keeps.mono Ka (rs' := [.edx]) (by decide))
+              obtain Ib := private_input v Db odd length Sb Cb Fb (Keeps.mono Kb (rs' := [.edx]) (by decide))
+              obtain coreTrace := (CandidateTest.core_trace montVerified montNoSp montStack roundVerified roundNoSp
                 roundStack P v.width_high (other := c) (entropy := entropy) P (Nat.zero_le _)
                 _ _ _ _ _ _ (core_pair Ia Ib) coreA coreB).1
-              have storeRaw : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.store (at_ .esp 24) .edx])
+              obtain storeRaw : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.store (at_ .esp 24) .edx])
                   (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
-              have storeTrace := (storeRaw _ _ _ _ _ _ (by
+              obtain storeTrace := (storeRaw _ _ _ _ _ _ (by
                 apply agree_regs
                 intro r mem
                 obtain rfl := List.mem_singleton.mp mem
@@ -329,8 +329,8 @@ theorem FinishPair.agree {E : Environment} {s t : State} (P : FinishPair E s t) 
 theorem status_trace {E : Environment} (v : E.Valid) :
     RelCT isa (FinishPair E) (.block Candidate.statusArgs) (ControlPair E) := by
   intro s t tr ur u z P A B
-  have space : 172 ≤ E.size := by have := v.header; omega_using [this]
-  have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block Candidate.statusArgs)
+  obtain space : 172 ≤ E.size := by have := v.header; omega_using [this]
+  obtain raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block Candidate.statusArgs)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
   obtain ⟨valueU, flagU, memU, KU⟩ := wp_result (Candidate.statusArgs_ok P.left space) A
   obtain ⟨valueZ, flagZ, memZ, KZ⟩ := wp_result (Candidate.statusArgs_ok P.right space) B
@@ -340,9 +340,9 @@ theorem status_trace {E : Environment} (v : E.Valid) :
 theorem compare_trace {E : Environment} :
     RelCT isa (ControlPair E) (.block [.alu .cmp .eax (.imm 0)]) (ControlPair E) := by
   intro s t tr ur u z P A B
-  have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .eax])) (.block [.alu .cmp .eax (.imm 0)])
+  obtain raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .eax])) (.block [.alu .cmp .eax (.imm 0)])
       (VG.X86.Taint.Agree (τr [.esp, .edi, .eax])) := checkedBlockInvariant rfl rfl
-  have agree : VG.X86.Taint.Agree (τr [.esp, .edi, .eax]) s t := by
+  obtain agree : VG.X86.Taint.Agree (τr [.esp, .edi, .eax]) s t := by
     apply agree_regs
     intro r mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -360,7 +360,7 @@ theorem finish_trace {E : Environment} (v : E.Valid) :
     RelCT isa (FinishPair E) VG.Impl.Dsa.X86.ProbablePrime.finish (fun _ _ => True) := by
   have pair {s t : State} (P : ControlPair E s t) : CandidateFinish.FinishPair E.base E.size s t :=
     ⟨P.1.left, P.1.right, P.1.used⟩
-  have space : 156 ≤ E.size := by have := v.header; omega_using [this]
+  obtain space : 156 ≤ E.size := by have := v.header; omega_using [this]
   unfold VG.Impl.Dsa.X86.ProbablePrime.finish
   refine RelCT.seq (status_trace v) (VG.RelCT.ite (fun _ _ P => P.2.2) ?_ ?_)
   · exact (CandidateFinish.used_trace space 1).mono (fun _ _ P => pair P.1) (fun _ _ _ => trivial)
@@ -381,7 +381,7 @@ theorem test_trace {mont round : Prog isa} {montName roundName : String}
   unfold VG.Impl.Dsa.X86.ProbablePrime.test
   refine RelCT.seq (R := FinishPair E) ?_ (finish_trace v)
   intro s t tr ur u z H A B
-  have trace := (tested_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v odd length
+  obtain trace := (tested_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v odd length
     _ _ _ _ _ _ H A B).1
   obtain ⟨Iu, statusU, _, _, _, _⟩ := wp_result
     (tested_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v H.1 odd length) A
@@ -420,24 +420,24 @@ theorem setup_trace {g : Geometry} (v : g.Valid) {c d : Nat} (low : 4 ≤ g.sp.t
       (.seq (.block (candidateSlots stackSlots g.w))
         (.seq tableAddress (.block (tableSlots stackSlots g.w))))
       (VG.X86.Taint.Agree (τr [.esp])) := by
-  have first : RelCT isa (fun s t => Context g c s ∧ Context g d t ∧ s.gpr .edi = g.candidate ∧ t.gpr .edi = g.candidate)
+  obtain first : RelCT isa (fun s t => Context g c s ∧ Context g d t ∧ s.gpr .edi = g.candidate ∧ t.gpr .edi = g.candidate)
       (.block (candidateSlots stackSlots g.w))
       (fun s t => s.gpr .esp = g.sp ∧ t.gpr .esp = g.sp) := by
     intro s t tr ur u z ⟨S, T, Ps, Pt⟩ E G
-    have A : VG.X86.Taint.Agree (τr [.esp]) s t :=
+    obtain A : VG.X86.Taint.Agree (τr [.esp]) s t :=
       agree_regs (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact S.stack.sp.trans T.stack.sp.symm)
-    have trace := ((erased_relCT (τ := τr [.esp]) (σ := τr [.esp]) (.block (candidateSlots stackSlots g.w)) (.block (candidateSlots stackSlots 0)) (.block []) rfl rfl rfl (by decide +kernel))
+    obtain trace := ((erased_relCT (τ := τr [.esp]) (σ := τr [.esp]) (.block (candidateSlots stackSlots g.w)) (.block (candidateSlots stackSlots 0)) (.block []) rfl rfl rfl (by decide +kernel))
       _ _ _ _ _ _ A E G).1
-    have U := wp_result (candidateSlots_ok v S Ps) E
-    have Z := wp_result (candidateSlots_ok v T Pt) G
+    obtain U := wp_result (candidateSlots_ok v S Ps) E
+    obtain Z := wp_result (candidateSlots_ok v T Pt) G
     exact ⟨trace, U.1.context.stack.sp, Z.1.context.stack.sp⟩
-  have middle : RelCT isa (fun s t => s.gpr .esp = g.sp ∧ t.gpr .esp = g.sp)
+  obtain middle : RelCT isa (fun s t => s.gpr .esp = g.sp ∧ t.gpr .esp = g.sp)
       tableAddress (VG.X86.Taint.Agree (τr [.esp])) := by
     intro s t tr ur u z ⟨S, T⟩ E G
-    have Ls : 4 ≤ (s.gpr .esp).toNat := by rw [S]; exact low
-    have Lt : 4 ≤ (t.gpr .esp).toNat := by rw [T]; exact low
-    have U := wp_result (symFrame_ok VG.Impl.RsaKeyGen.TrialTable32.symbol s Ls) E
-    have Z := wp_result (symFrame_ok VG.Impl.RsaKeyGen.TrialTable32.symbol t Lt) G
+    obtain Ls : 4 ≤ (s.gpr .esp).toNat := by rw [S]; exact low
+    obtain Lt : 4 ≤ (t.gpr .esp).toNat := by rw [T]; exact low
+    obtain U := wp_result (symFrame_ok VG.Impl.RsaKeyGen.TrialTable32.symbol s Ls) E
+    obtain Z := wp_result (symFrame_ok VG.Impl.RsaKeyGen.TrialTable32.symbol t Lt) G
     refine ⟨?_, agree_regs (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact
       (U.gpr .esp (by decide)).trans (S.trans (T.symm.trans (Z.gpr .esp (by decide)).symm)))⟩
     rw [symFrame_trace Ls E, symFrame_trace Lt G, S, T]
@@ -466,14 +466,14 @@ theorem body_trace {g : Geometry} (v : g.Valid) {c d : Nat} (pattern : SamePatte
     (tableFar : g.tableRegion.Disjoint (below g.sp 4)) :
     RelCT isa (fun s t => Ready g c s ∧ Ready g d t)
       (body stackSlots g.w) (VG.X86.Taint.Agree (τr [.esp])) := by
-  have setup : RelCT isa (fun s t => Ready g c s ∧ Ready g d t)
+  obtain setup : RelCT isa (fun s t => Ready g c s ∧ Ready g d t)
       (.seq (.block (candidateSlots stackSlots g.w))
         (.seq tableAddress (.block (tableSlots stackSlots g.w))))
       (fun s t => StateAt g c 0 g.limit s ∧ StateAt g d 0 g.limit t) := by
     intro s t tr ur u z ⟨⟨S, Ps, Ss⟩, ⟨T, Pt, St⟩⟩ E G
-    have trace := (setup_trace v low _ _ _ _ _ _ ⟨S, T, Ps, Pt⟩ E G).1
-    have U := wp_result (setup_ok v S Ps length Ss low candidateFar tableFar) E
-    have Z := wp_result (setup_ok v T Pt length St low candidateFar tableFar) G
+    obtain trace := (setup_trace v low _ _ _ _ _ _ ⟨S, T, Ps, Pt⟩ E G).1
+    obtain U := wp_result (setup_ok v S Ps length Ss low candidateFar tableFar) E
+    obtain Z := wp_result (setup_ok v T Pt length St low candidateFar tableFar) G
     exact ⟨trace, U.1, Z.1⟩
   intro s t tr ur u z H E G
   cases E with
@@ -488,7 +488,7 @@ theorem body_trace {g : Geometry} (v : g.Valid) {c d : Nat} (pattern : SamePatte
           | seq F G =>
             cases G with
             | seq K N =>
-              have R := RelCT.seq setup (loop_trace v pattern) _ _ _ _ _ _ H
+              obtain R := RelCT.seq setup (loop_trace v pattern) _ _ _ _ _ _ H
                 (.seq (.seq A (.seq B C)) L) (.seq (.seq D (.seq F K)) N)
               simpa only [List.append_assoc] using R
 
@@ -525,7 +525,7 @@ theorem setup_trace {g : Sieve.Geometry} {c d : Nat} :
     RelCT isa (fun s t => Entry g c s ∧ Entry g d t) (.block setup)
       (fun s t => Sieve.Ready g c s ∧ Sieve.Ready g d t) := by
   intro s t tr ur u z ⟨S, T⟩ E G
-  have A : VG.X86.Taint.Agree (τr [.esp, .edi]) s t := by
+  obtain A : VG.X86.Taint.Agree (τr [.esp, .edi]) s t := by
     apply agree_regs
     intro r mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -533,7 +533,7 @@ theorem setup_trace {g : Sieve.Geometry} {c d : Nat} :
     · exact S.1.stack.sp.trans T.1.stack.sp.symm
     · have H := congrArg (fun x : BitVec 32 => x - 256#32) (S.2.1.trans T.2.1.symm)
       simpa only [BitVec.add_sub_cancel] using H
-  have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block setup)
+  obtain raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block setup)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
   exact ⟨(raw _ _ _ _ _ _ A E G).1, wp_result (setup_ready S) E, wp_result (setup_ready T) G⟩
 
@@ -575,7 +575,7 @@ open VG.Proof.RsaKeyGen.X86 VG.Impl.Mont.X86
 
 theorem sieve_entry {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) : CandidateSieve.Entry E.sieveGeometry c (allocFrame 20 s) := by
-  have pointer : s.gpr .edi = E.workspace := by
+  obtain pointer : s.gpr .edi = E.workspace := by
     apply BitVec.eq_of_toNat_eq
     rw [L.input.scratch.edi_toNat, v.baseNat]
   refine ⟨sieve_context v L, ?_, ?_⟩
@@ -586,12 +586,12 @@ theorem sieve_pair {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byt
     RelCT isa (LoadedPair E c entropy) (VG.Impl.RsaKeyGen.X86.CandidateSieve.code E.width)
       (Candidate.WithFlag (LoadedPair E c entropy)
         (Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c)) := by
-  have privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
-  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) := v.stackFar _ List.mem_cons_self
-  have tableFar : E.tableRegion.Disjoint (below E.p 136) := v.stackFar _
+  obtain privateSub : (below E.sieveGeometry.sp 4).Sub (below E.p 136) := below_inner (by decide) v.low
+  obtain workspaceFar : E.workspaceRegion.Disjoint (below E.p 136) := v.stackFar _ List.mem_cons_self
+  obtain tableFar : E.tableRegion.Disjoint (below E.p 136) := v.stackFar _
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   intro s t tr ur u z P A B
-  have trace := (CandidateSieve.code_trace v.sieve_valid (c := c) (d := c) (fun _ _ => rfl) rfl
+  obtain trace := (CandidateSieve.code_trace v.sieve_valid (c := c) (d := c) (fun _ _ => rfl) rfl
     (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega_using [this])]; have := v.low; omega_using [this])
     ((workspaceFar.sub_left v.sieveCandidateSub).sub_right privateSub) (tableFar.sub_right privateSub)
     _ _ _ _ _ _ ⟨sieve_entry v P.1, sieve_entry v P.2⟩ A B).1
@@ -615,9 +615,9 @@ theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (LoadedPair E c entropy)
       (VG.Impl.Dsa.X86.ProbablePrime.sieved E.bits montName mont roundName round) (fun _ _ => True) := by
-  have shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
-  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
-  have space : 156 ≤ E.size := by have := v.header; omega_using [this]
+  obtain shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
+  obtain big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
+  obtain space : 156 ≤ E.size := by have := v.header; omega_using [this]
   have finishPair {s t : State} (P : LoadedPair E c entropy s t) : CandidateFinish.FinishPair E.base E.size s t :=
     ⟨P.1.input.scratch, P.2.input.scratch, P.1.input.usedPtr.trans P.2.input.usedPtr.symm⟩
   unfold VG.Impl.Dsa.X86.ProbablePrime.sieved
@@ -645,7 +645,7 @@ theorem body_trace {mont round : Prog isa} {montName roundName : String}
     RelCT isa (EntryPair E c entropy)
       (VG.Impl.Dsa.X86.ProbablePrime.body E.bits montName mont roundName round) (VG.X86.Taint.Agree (τr [.esp])) := by
   intro s t tr ur u z P A B
-  have raw : RelCT isa (EntryPair E c entropy)
+  obtain raw : RelCT isa (EntryPair E c entropy)
       (VG.Impl.Dsa.X86.ProbablePrime.body E.bits montName mont roundName round) (fun _ _ => True) := by
     unfold VG.Impl.Dsa.X86.ProbablePrime.body
     exact RelCT.seq (enter_trace v) (RelCT.seq (load_trace v odd)
@@ -669,7 +669,7 @@ theorem framed_trace {mont round : Prog isa} {montName roundName : String}
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (FramedPair E c entropy)
       (VG.Impl.Dsa.X86.ProbablePrime.code E.bits montName mont roundName round) (fun _ _ => True) := by
-  have restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.Mont.X86.Compact.restoreRegs)
+  obtain restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.Mont.X86.Compact.restoreRegs)
       (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
   unfold VG.Impl.Dsa.X86.ProbablePrime.code
   apply VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := VG.X86.Taint.Agree (τr [.esp])) (fun _ _ P => P.2)
@@ -729,11 +729,11 @@ theorem constantTime {mont round : Prog isa} {montName roundName : String}
       (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) := by
   apply RelCT.constantTime
   intro s t tr ur u z ⟨HS, HT, HP⟩ A B
-  have P := public_inputs HP
-  have F := call_facts HS
-  have G := call_facts HT
-  have I := F.entry b
-  have J := G.entry b
+  obtain P := public_inputs HP
+  obtain F := call_facts HS
+  obtain G := call_facts HT
+  obtain I := F.entry b
+  obtain J := G.entry b
   rw [← P.candidate, ← P.environment, ← P.entropy] at J
   exact framed_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack (F.valid b)
     F.odd F.length _ _ _ _ _ _ ⟨⟨I, J⟩, P.stack⟩ A B
@@ -792,11 +792,11 @@ theorem scratch_bound {bits : Nat} (b : Bits bits) : scratchBytes (width bits) +
 
 theorem sat_argument_word (i : Nat) (index : i < 5) :
     satArguments.readW (BitVec.ofNat 64 (0x20004 + 4 * i)) 32 = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [index]
+  obtain cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem sat_arguments (bits : Nat) (i : Nat) (index : i < 5) : arg (satState bits) i = satArgument i := by
-  have address : argAddr (satState bits) i = BitVec.ofNat 64 (0x20004 + 4 * i) := by
+  obtain address : argAddr (satState bits) i = BitVec.ofNat 64 (0x20004 + 4 * i) := by
     change ((0x20000#32 + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64) = _
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -825,7 +825,7 @@ theorem os2ip_ones : ∀ (n acc : Nat),
     rw [List.replicate_succ, List.foldl_cons, os2ip_ones n, Nat.pow_succ]
     have ff : (0xFF#8).toNat = 255 := rfl
     rw [ff]
-    have pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
+    obtain pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
     generalize 256 ^ n = p at *
     obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega_using [pos]⟩
     grind
@@ -833,9 +833,9 @@ theorem os2ip_ones : ∀ (n acc : Nat),
 theorem sat_candidate {bits : Nat} (b : Bits bits) :
     Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64) =
       2 ^ bits - 1 := by
-  have bound := scratch_bound b
-  have baseNat := satBase_toNat b
-  have bytes : Spec.Rsa.bytesAt (satMemory bits) ((satArgument 0).setWidth 64 +
+  obtain bound := scratch_bound b
+  obtain baseNat := satBase_toNat b
+  obtain bytes : Spec.Rsa.bytesAt (satMemory bits) ((satArgument 0).setWidth 64 +
       BitVec.ofNat 64 (layout bits).candidate) ((layout bits).bits / 8) = List.replicate (bits / 8) 0xFF#8 := by
     change Spec.Rsa.bytesAt (satMemory bits) (satBase bits) (bits / 8) = _
     unfold Spec.Rsa.bytesAt
@@ -866,9 +866,9 @@ theorem sat_length {bits : Nat} (b : Bits bits) :
       (Proof.Dsa.ProbablePrime.candidateAt (layout bits) (satMemory bits) ((satArgument 0).setWidth 64)) = bits := by
   rw [sat_candidate b]
   have low := b.low
-  have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
+  obtain half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
     rw [← Nat.pow_succ]; congr 1; omega_using [low]
-  have pos := Nat.two_pow_pos (bits - 1)
+  obtain pos := Nat.two_pow_pos (bits - 1)
   have := VG.Proof.RsaKeyGen.bitLength_of (n := 2 ^ bits - 1) (b := bits - 1) (by omega_using [half])
     (by rw [show bits - 1 + 1 = bits by omega_using [low]]; omega_using [half, pos])
   rw [show bits - 1 + 1 = bits by omega_using [low]] at this
@@ -891,13 +891,13 @@ theorem sat_table {bits : Nat} (b : Bits bits) :
       VG.Impl.RsaKeyGen.TrialTable32.consts := by
   apply single_held
   intro i index
-  have bound := scratch_bound b
-  have baseNat := satBase_toNat b
-  have fit : 8 * VG.Impl.RsaKeyGen.TrialTable32.packed.length ≤ 2 ^ 64 := by rw [packed_length]; decide
-  have small : i < 1024 := by simpa only [packed_length] using index
+  obtain bound := scratch_bound b
+  obtain baseNat := satBase_toNat b
+  obtain fit : 8 * VG.Impl.RsaKeyGen.TrialTable32.packed.length ≤ 2 ^ 64 := by rw [packed_length]; decide
+  obtain small : i < 1024 := by simpa only [packed_length] using index
   change (satMemory bits).readW (0x30000#64 + BitVec.ofNat 64 (8 * i)) 64 =
     VG.Impl.RsaKeyGen.TrialTable32.packed.getD i 0
-  have held := constMem_held 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed fit i index
+  obtain held := constMem_held 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed fit i index
   refine Eq.trans (Mem.readW_congr (m := satMemory bits)
     (m' := constMem 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed) ?_) held
   intro j hj
@@ -969,17 +969,17 @@ theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (sieved E.bits montName mont roundName round) s fun t =>
       Outputs E (Spec.Dsa.probablePrime c entropy) t ∧ MutableFrame E s.mem t.mem ∧ Tail E s.mem t.mem ∧
       Keeps WitnessStep.clob s t := by
-  have shape := candidate_shape odd length (by have := v.bits.low; omega)
-  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega)
+  obtain shape := candidate_shape odd length (by have := v.bits.low; omega)
+  obtain big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega)
   unfold sieved
   refine WP.seq (WP.mono (sieve_ok v L (by omega)) fun a ⟨La, flag, Wa, Ta, Ka⟩ => ?_)
   refine WP.seq (WP.mono (Candidate.cmp_bool flag) fun b ⟨B, _, cond⟩ => ?_)
   obtain ⟨Lb, Wb, Tb⟩ := La.keepStack v (by rw [B.mem]; exact Frame.refl _ _) (B.keeps []) (by decide) (by decide)
     (by rw [B.syms])
-  have Kb : Keeps WitnessStep.clob s b := (Ka.mono (by unfold WitnessStep.clob; decide)).widen (B.keeps [])
-  have Mb : MutableFrame E s.mem b.mem := (Wa.trans Wb).mutable
-  have Tsb : Tail E s.mem b.mem := Ta.trans Tb
-  have same : Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c = Spec.RsaKeyGen.obviouslyComposite E.bits c :=
+  obtain Kb : Keeps WitnessStep.clob s b := (Ka.mono (by unfold WitnessStep.clob; decide)).widen (B.keeps [])
+  obtain Mb : MutableFrame E s.mem b.mem := (Wa.trans Wb).mutable
+  obtain Tsb : Tail E s.mem b.mem := Ta.trans Tb
+  obtain same : Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c = Spec.RsaKeyGen.obviouslyComposite E.bits c :=
     obviouslyComposite_eq v.bits c
   rw [same] at cond
   cases composite : Spec.RsaKeyGen.obviouslyComposite E.bits c
@@ -989,15 +989,15 @@ theorem sieved_ok {mont round : Prog isa} {montName roundName : String}
     rw [← probablePrime_eq v entropy odd length composite] at out
     exact ⟨out, Mb.trans Mt, Tsb.trans Tt, Kb.trans Kt⟩
   · refine WP.ite true (by rw [cond, composite]) (fun _ => ?_) (fun bad => nomatch bad)
-    have result : Spec.Dsa.probablePrime c entropy = some (false, entropy) := by
-      have three : (c == 3) = false := by rw [beq_eq_false_iff_ne]; omega
+    obtain result : Spec.Dsa.probablePrime c entropy = some (false, entropy) := by
+      obtain three : (c == 3) = false := by rw [beq_eq_false_iff_ne]; omega
       unfold Spec.Dsa.probablePrime
       rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by rw [three]; decide), length,
         composite]
       rfl
     refine WP.mono (CandidateFinish.used_ok (status := 2) Lb.input.scratch (by have := v.header; omega)
       Lb.input.memory.usedWrite Lb.input.usedPtr rfl) fun t ⟨eax, mem, O, Kt⟩ => ?_
-    have F := used_frame O
+    obtain F := used_frame O
     refine ⟨⟨?_, ?_⟩, Mb.trans (MutableFrame.of_used F), Tsb.trans (used_tail v F),
       Kb.trans (Kt.mono (by decide))⟩
     · rw [eax, result]; rfl
@@ -1023,8 +1023,8 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
       Keeps bodyClob s t := by
   unfold body
   refine WP.seq (WP.mono (enter_ok v I) fun a ⟨Ia, count, O, Ka⟩ => ?_)
-  have Wa := v.work_of_outside O (by have := v.header; omega)
-  have Ta := v.tail_of_outside O (by have := v.scratchLow; omega)
+  obtain Wa := v.work_of_outside O (by have := v.header; omega)
+  obtain Ta := v.tail_of_outside O (by have := v.scratchLow; omega)
   refine WP.seq (WP.mono (load_ok v Ia count odd) fun b ⟨Lb, Wb, Tb, Kb⟩ => ?_)
   refine WP.mono (sieved_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v Lb odd length)
     fun t ⟨out, Mt, Tt, Kt⟩ => ?_
@@ -1060,8 +1060,8 @@ theorem saved_read {E : Environment} (v : E.Valid) {s t : State}
     (fit : 16 ≤ (s.gpr .esp).toNat) (sp : (Compact.entered s).gpr .esp = E.p)
     (F : MutableFrame E (Compact.entered s).mem t.mem) {i : Nat} (index : i < 4) :
     t.mem.readW (addr E.p (4 * i)) 32 = s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega)) := by
-  have fitP := pFit fit sp
-  have same := F.readW (r := (⟨E.p.setWidth 64, 16⟩ : Region)) (a := addr E.p (4 * i)) (w := 32)
+  obtain fitP := pFit fit sp
+  obtain same := F.readW (r := (⟨E.p.setWidth 64, 16⟩ : Region)) (a := addr E.p (4 * i)) (w := 32)
     (by rw [addr_eq (by omega)]; exact Offset.contains_base _ (by omega) (by omega)) (by
       intro r mem
       simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -1070,7 +1070,7 @@ theorem saved_read {E : Environment} (v : E.Valid) {s t : State}
       · exact saved_stack_far v
       · exact (v.savedFar _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))).symm)
     (by decide)
-  have word := pushed_word (rs := Compact.savedRegisters) (by decide) fit index
+  obtain word := pushed_word (rs := Compact.savedRegisters) (by decide) fit index
   change (Compact.entered s).mem.readW (addr ((Compact.entered s).gpr .esp) (4 * i)) 32 = _ at word
   rw [sp] at word
   exact same.trans word
@@ -1080,21 +1080,21 @@ theorem return_read {E : Environment} (_ : E.Valid) {s t : State}
     (returnFar : ∀ r ∈ [E.workspaceRegion, E.usedRegion], (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r)
     (F : MutableFrame E (Compact.entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-  have outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 152) := by
+  obtain outside : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 152) := by
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.base_disjoint_below _ (by decide)
-  have inner : (below E.p 136).Sub (below (s.gpr .esp) 152) := by
+  obtain inner : (below E.p 136).Sub (below (s.gpr .esp) 152) := by
     rw [← sp, Compact.entered, pushed_esp]
     exact below_inner (by decide) fit
-  have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4) (by
+  obtain same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4) (by
     intro r mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl
     · exact returnFar _ List.mem_cons_self
     · exact outside.sub_right inner
     · exact returnFar _ (List.mem_cons_of_mem _ List.mem_cons_self)) (by decide)
-  have pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) (by change 16 ≤ _; omega)
+  obtain pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) (by change 16 ≤ _; omega)
   exact same.trans (pushed.readW (Region.contains_self _ _) (by
     intro r mem; obtain rfl := List.mem_singleton.mp mem
     exact outside.sub_right (below_sub (by decide) fit)) (by decide))
@@ -1116,19 +1116,19 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
     (returnFar : ∀ r ∈ [E.workspaceRegion, E.usedRegion], (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r) :
     WP isa (VG.Impl.Dsa.X86.ProbablePrime.code E.bits montName mont roundName round) s fun t =>
       abiPreserved s t ∧ Outputs E (Spec.Dsa.probablePrime c entropy) t ∧ Tail E s.mem t.mem := by
-  have savedFit : 16 ≤ (s.gpr .esp).toNat := by omega
+  obtain savedFit : 16 ≤ (s.gpr .esp).toNat := by omega
   have entrySp := I.sp
-  have inner : NoSp (.seq (VG.Impl.Dsa.X86.ProbablePrime.body E.bits montName mont roundName round)
+  obtain inner : NoSp (.seq (VG.Impl.Dsa.X86.ProbablePrime.body E.bits montName mont roundName round)
       (.block Compact.restoreRegs)) :=
     VG.Proof.RsaKeyGen.X86.CandidateNoSp.sequence (body_noSp montNoSp roundNoSp E.bits montName roundName)
       (NoSp.of_all (by rfl))
-  have pushedTail : Tail E s.mem (Compact.entered s).mem := by
-    have F := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) savedFit
+  obtain pushedTail : Tail E s.mem (Compact.entered s).mem := by
+    obtain F := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) savedFit
     intro i _ hi
     apply F
     intro r mem
     obtain rfl := List.mem_singleton.mp mem
-    have region : below (s.gpr .esp) (4 * Compact.savedRegisters.length) = ⟨E.p.setWidth 64, 16⟩ := by
+    obtain region : below (s.gpr .esp) (4 * Compact.savedRegisters.length) = ⟨E.p.setWidth 64, 16⟩ := by
       rw [← entrySp, Compact.entered, pushed_esp]
       rfl
     rw [region]
@@ -1139,15 +1139,15 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
   refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
   refine WP.seq (WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v I odd length)
     fun t ⟨R, F, T, K⟩ => ?_)
-  have sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp
-  have fitP := pFit savedFit entrySp
+  obtain sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp
+  obtain fitP := pFit savedFit entrySp
   have read (i : Nat) (index : i < 4) : readSrc t (.mem (at_ .esp (4 * i))) = some
       (s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega))) := by
-    have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
+    obtain access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
       rw [K.2.1, K.2.2, sp]
       change InRegions (s.rd ++ (below (s.gpr .esp) 16 :: s.wr)) (addr E.p (4 * i)) 4
       refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ List.mem_cons_self, ?_⟩
-      have region : below (s.gpr .esp) 16 = ⟨E.p.setWidth 64, 16⟩ := by
+      obtain region : below (s.gpr .esp) 16 = ⟨E.p.setWidth 64, 16⟩ := by
         rw [← entrySp, Compact.entered, pushed_esp]
         rfl
       rw [region, addr_eq (by omega)]
@@ -1156,7 +1156,7 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
     rw [State.load32, ite_eq_left access, sp, saved_read v savedFit entrySp F index]
   refine WP.mono (Compact.restore_ok (read 0 (by decide)) (read 1 (by decide)) (read 2 (by decide))) ?_
   rintro u ⟨edi, esi, ebp, mem, keep⟩
-  have sp' : u.gpr .esp = E.p := (keep.1 .esp (by decide)).trans sp
+  obtain sp' : u.gpr .esp = E.p := (keep.1 .esp (by decide)).trans sp
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1202,8 +1202,8 @@ theorem correct {mont round : Prog isa} {montName roundName : String}
     (s : State) (h : (contract bits).pre s) :
     ∃ trace t, Exec isa (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round) s trace t ∧
       abiPreserved s t ∧ (contract bits).post s t := by
-  have F := call_facts h
-  have v := F.valid b
+  obtain F := call_facts h
+  obtain v := F.valid b
   obtain ⟨trace, t, run, preserved, R, T⟩ := framed_ok montVerified montNoSp montStack roundVerified roundNoSp
     roundStack v (F.entry b) F.odd F.length F.low (by
       intro r mem
@@ -1218,7 +1218,7 @@ theorem correct {mont round : Prog isa} {montName roundName : String}
   obtain ⟨status, used⟩ := R
   refine ⟨status, ?_, fun b rest same => used b rest same⟩
   intro i index outside
-  have far := outside _ List.mem_cons_self
+  obtain far := outside _ List.mem_cons_self
   change i < 0 ∨ 0 + (callEnvironment bits s).scratch ≤ i at far
   exact T i (by omega) index
 
@@ -1260,7 +1260,7 @@ open VG VG.X86 VG.Impl.Dsa.X86.ProbablePrime
 
 theorem test_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (test bits montName mont roundName round) ≤ 136 := by
-  have bound := VG.Proof.RsaKeyGen.X86.CandidateStackUse.testWith Hm Hr (bits - 1) (Spec.Dsa.primeChecks bits)
+  obtain bound := VG.Proof.RsaKeyGen.X86.CandidateStackUse.testWith Hm Hr (bits - 1) (Spec.Dsa.primeChecks bits)
     (8 * ((bits + 63) / 64)) (bits / 32) (width bits) montName roundName
   change max (stackUse (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith (bits - 1) (Spec.Dsa.primeChecks bits)
     (8 * ((bits + 63) / 64)) (bits / 32) (width bits) montName mont roundName round)) (stackUse finish) ≤ 136
@@ -1269,7 +1269,7 @@ theorem test_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : sta
 
 theorem sieved_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (sieved bits montName mont roundName round) ≤ 136 := by
-  have bound := test_stack Hm Hr bits montName roundName
+  obtain bound := test_stack Hm Hr bits montName roundName
   have sieve : stackUse (VG.Impl.RsaKeyGen.X86.CandidateSieve.code (width bits)) = 24 := rfl
   have used : stackUse (VG.Impl.RsaKeyGen.X86.CandidateFinish.used 2) = 0 := rfl
   change max (stackUse (VG.Impl.RsaKeyGen.X86.CandidateSieve.code (width bits)))
@@ -1279,14 +1279,14 @@ theorem sieved_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : s
 
 theorem body_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (body bits montName mont roundName round) ≤ 136 := by
-  have bound := sieved_stack Hm Hr bits montName roundName
+  obtain bound := sieved_stack Hm Hr bits montName roundName
   have loaded : stackUse (load (bits / 32) (width bits)) = 0 := rfl
   change max 0 (max (stackUse (load (bits / 32) (width bits))) (stackUse (sieved bits montName mont roundName round))) ≤ 136
   omega_using [bound, loaded]
 
 theorem code_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (code bits montName mont roundName round) ≤ 152 := by
-  have bound := body_stack Hm Hr bits montName roundName
+  obtain bound := body_stack Hm Hr bits montName roundName
   change max (stackUse (body bits montName mont roundName round)) 0 + 16 ≤ 152
   omega_using [bound]
 

@@ -58,7 +58,7 @@ open VG.Spec.Aes (bytesAt)
 the first. -/
 theorem args_two {σ₁ σ₂ : State} (A₂ : Args (cxOf σ₂) σ₂) (hq : onePub σ₁ σ₂) : Args (cxOf σ₁) σ₂ := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qs, qa⟩ := hq
-  have hcx : cxOf σ₂ = cxOf σ₁ := by simp only [cxOf, q0, q1, q2, q3, q4, q5, q6, q7, qs, qa]
+  obtain hcx : cxOf σ₂ = cxOf σ₁ := by simp only [cxOf, q0, q1, q2, q3, q4, q5, q6, q7, qs, qa]
   rw [hcx] at A₂
   exact A₂
 
@@ -122,22 +122,22 @@ theorem seal_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
   unfold «seal»
   refine rel_seqR (entry_rel A₁ A₂ hsp) (Runs.of_wp (entry_wp A₁)) (Runs.of_wp (entry_wp A₂))
     fun s₁ t₁ En En' => ?_
-  have h₁ : s₁.sp = t₁.sp := by rw [En.sp, En'.sp, hsp]
+  obtain h₁ : s₁.sp = t₁.sp := by rw [En.sp, En'.sp, hsp]
   refine rel_seqR (keys_rel L En.env En'.env h₁) (Runs.of_wp (keys_wp L En.env))
     (Runs.of_wp (keys_wp L En'.env)) fun s₂ t₂ K K' => ?_
-  have E₂ := En.env.of_pk K.pk
-  have E₂' := En'.env.of_pk K'.pk
-  have h₂ : s₂.sp = t₂.sp := by rw [K.pk.sp, K'.pk.sp, h₁]
+  obtain E₂ := En.env.of_pk K.pk
+  obtain E₂' := En'.env.of_pk K'.pk
+  obtain h₂ : s₂.sp = t₂.sp := by rw [K.pk.sp, K'.pk.sp, h₁]
   refine rel_seqR (polyval_rel L E₂ E₂' h₂) (Runs.of_wp (polyval_wp L E₂ K.hkey K.acc (nP_keys A₁ En K)))
     (Runs.of_wp (polyval_wp L E₂' K'.hkey K'.acc (nP_keys A₂ En' K'))) fun s₃ t₃ P P' => ?_
-  have E₃ := E₂.of_pk P.pk
-  have E₃' := E₂'.of_pk P'.pk
-  have h₃ : s₃.sp = t₃.sp := by rw [P.pk.sp, P'.pk.sp, h₂]
+  obtain E₃ := E₂.of_pk P.pk
+  obtain E₃' := E₂'.of_pk P'.pk
+  obtain h₃ : s₃.sp = t₃.sp := by rw [P.pk.sp, P'.pk.sp, h₂]
   refine rel_seqR (tag_rel L E₃ E₃' h₃ (o := 0) (.inl rfl)) (Runs.of_wp (tag_wp L E₃ (o := 0) (.inl rfl)))
     (Runs.of_wp (tag_wp L E₃' (o := 0) (.inl rfl))) fun s₄ t₄ T T' => ?_
-  have E₄ := E₃.of_pk T.pk
-  have E₄' := E₃'.of_pk T'.pk
-  have h₄ : s₄.sp = t₄.sp := by rw [T.pk.sp, T'.pk.sp, h₃]
+  obtain E₄ := E₃.of_pk T.pk
+  obtain E₄' := E₃'.of_pk T'.pk
+  obtain h₄ : s₄.sp = t₄.sp := by rw [T.pk.sp, T'.pk.sp, h₃]
   refine rel_seqR (crypt_rel L E₄ E₄' h₄) (Runs.of_wp (crypt_wp L E₄)) (Runs.of_wp (crypt_wp L E₄'))
     fun s₅ t₅ C C' => ?_
   exact rel_env [] (E₄.of_pk C.pk) (E₄'.of_pk C'.pk) (by rw [C.pk.sp, C'.pk.sp, h₄]) (by simp) ⟨_, by taint_decide⟩
@@ -149,31 +149,31 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
   unfold «open»
   refine rel_seqR (entry_rel A₁ A₂ hsp) (Runs.of_wp (entry_wp A₁)) (Runs.of_wp (entry_wp A₂))
     fun s₁ t₁ En En' => ?_
-  have h₁ : s₁.sp = t₁.sp := by rw [En.sp, En'.sp, hsp]
+  obtain h₁ : s₁.sp = t₁.sp := by rw [En.sp, En'.sp, hsp]
   refine rel_seqR (rel_env [] En.env En'.env h₁ (by simp) ⟨_, by taint_decide⟩) (Runs.of_wp (recv_wp L En.env))
     (Runs.of_wp (recv_wp L En'.env)) fun s₂ t₂ R R' => ?_
-  have E₂ := En.env.of_pk R.1
-  have E₂' := En'.env.of_pk R'.1
-  have h₂ : s₂.sp = t₂.sp := by rw [R.1.sp, R'.1.sp, h₁]
+  obtain E₂ := En.env.of_pk R.1
+  obtain E₂' := En'.env.of_pk R'.1
+  obtain h₂ : s₂.sp = t₂.sp := by rw [R.1.sp, R'.1.sp, h₁]
   refine rel_seqR (keys_rel L E₂ E₂' h₂) (Runs.of_wp (keys_wp L E₂)) (Runs.of_wp (keys_wp L E₂'))
     fun s₃ t₃ K K' => ?_
-  have E₃ := E₂.of_pk K.pk
-  have E₃' := E₂'.of_pk K'.pk
-  have h₃ : s₃.sp = t₃.sp := by rw [K.pk.sp, K'.pk.sp, h₂]
+  obtain E₃ := E₂.of_pk K.pk
+  obtain E₃' := E₂'.of_pk K'.pk
+  obtain h₃ : s₃.sp = t₃.sp := by rw [K.pk.sp, K'.pk.sp, h₂]
   refine rel_seqR (crypt_rel L E₃ E₃' h₃) (Runs.of_wp (crypt_wp L E₃)) (Runs.of_wp (crypt_wp L E₃'))
     fun s₄ t₄ C C' => ?_
-  have E₄ := E₃.of_pk C.pk
-  have E₄' := E₃'.of_pk C'.pk
-  have h₄ : s₄.sp = t₄.sp := by rw [C.pk.sp, C'.pk.sp, h₃]
+  obtain E₄ := E₃.of_pk C.pk
+  obtain E₄' := E₃'.of_pk C'.pk
+  obtain h₄ : s₄.sp = t₄.sp := by rw [C.pk.sp, C'.pk.sp, h₃]
   -- What POLYVAL needs: the key as the keys left it, and the nonce's copy.
-  have hP : ∀ {s s₁ s₂ s₃ s₄ : State}, Args c s → Entered c s s₁ →
+  obtain hP : ∀ {s s₁ s₂ s₃ s₄ : State}, Args c s → Entered c s s₁ →
       (PK s₁ s₂ ∧ bytesAt s₂.mem c.W 16 = bytesAt s₁.mem c.T 16 ∧ Frame [⟨c.W, 16⟩] s₁.mem s₂.mem) →
       KeysPost c s₂ s₃ → CryptPost c s₃ s₄ →
       Spec.Gcm.blockAt s₄.mem (c.W + BitVec.ofNat 64 64) =
         GcmSiv.Words.hkeyOf (Spec.GcmSiv.ofBytes (bytesAt s₄.mem (c.W + BitVec.ofNat 64 16) 16)) ∧
       Spec.Gcm.blockAt s₄.mem (c.W + BitVec.ofNat 64 80) = 0 ∧
       bytesAt s₄.mem (nP c.W) 12 = bytesAt s₄.mem c.N 12 := fun {s s₁ s₂ s₃ s₄} Ar En R K C => by
-    have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n,
+    obtain dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n,
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -182,7 +182,7 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact (L.d_w' (by omega_using [hd])).symm
-    have dN : ∀ r ∈ cryR c.W c.D c.n, (⟨nP c.W, 12⟩ : Region).Disjoint r := fun r hr => by
+    obtain dN : ∀ r ∈ cryR c.W c.D c.n, (⟨nP c.W, 12⟩ : Region).Disjoint r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -190,11 +190,11 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.d_w' (by decide)).symm
-    have a₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 16) 16 = bytesAt s₃.mem (c.W + BitVec.ofNat 64 16) 16 :=
+    obtain a₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 16) 16 = bytesAt s₃.mem (c.W + BitVec.ofNat 64 16) 16 :=
       bytesAt_keep C.frame (dC (by decide)) (by decide)
     have fK := K.frame
     rw [keyR_eq] at fK
-    have fR : Frame (wRs c.W [(0, 16)]) s₁.mem s₂.mem := by
+    obtain fR : Frame (wRs c.W [(0, 16)]) s₁.mem s₂.mem := by
       simp only [wRs, List.map_cons, List.map_nil, BitVec.add_zero]; exact R.2.2
     refine ⟨by rw [blockAt_frame C.frame (dC (by decide)), K.hkey, a₄],
       by rw [blockAt_frame C.frame (dC (by decide)), K.acc], ?_⟩
@@ -204,13 +204,13 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
       bytesAt_keep C.frame (buf_cryR L.n_w L.n_d) (by decide),
       bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide),
       bytesAt_keep fR (buf_keep L.n_w (by decide)) (by decide), entry_buf En.frame L.n_w (by decide)]
-  have Q := hP A₁ En R K C
-  have Q' := hP A₂ En' R' K' C'
+  obtain Q := hP A₁ En R K C
+  obtain Q' := hP A₂ En' R' K' C'
   refine rel_seqR (polyval_rel L E₄ E₄' h₄) (Runs.of_wp (polyval_wp L E₄ Q.1 Q.2.1 Q.2.2))
     (Runs.of_wp (polyval_wp L E₄' Q'.1 Q'.2.1 Q'.2.2)) fun s₅ t₅ P P' => ?_
-  have E₅ := E₄.of_pk P.pk
-  have E₅' := E₄'.of_pk P'.pk
-  have h₅ : s₅.sp = t₅.sp := by rw [P.pk.sp, P'.pk.sp, h₄]
+  obtain E₅ := E₄.of_pk P.pk
+  obtain E₅' := E₄'.of_pk P'.pk
+  obtain h₅ : s₅.sp = t₅.sp := by rw [P.pk.sp, P'.pk.sp, h₄]
   refine rel_seqR (tag_rel L E₅ E₅' h₅ (o := 240) (.inr rfl)) (Runs.of_wp (tag_wp L E₅ (o := 240) (.inr rfl)))
     (Runs.of_wp (tag_wp L E₅' (o := 240) (.inr rfl))) fun s₆ t₆ T T' => ?_
   exact rel_env [] (E₅.of_pk T.pk) (E₅'.of_pk T'.pk) (by rw [T.pk.sp, T'.pk.sp, h₅]) (by simp) ⟨_, by taint_decide⟩

@@ -105,14 +105,14 @@ theorem layF_two (F : Vector α n) {len c st st' en : Nat} (hl : 0 < len) (zi : 
       if st ≤ j ∧ j < st' then blkV op (layF blk F len zi c) len (zeta (zi c)) st (j - st)
       else if st' ≤ j ∧ j < en then blkV op (layF blk F len zi c) len (zeta (zi (c + 1))) st' (j - st')
       else (layF blk F len zi c)[j]! := by
-  have hn : ∀ x, x < 256 → x < n := fun x h => by rw [n_eq]; exact h
-  have h1 : 2 * len * (c + 1) = st' := by rw [Nat.mul_succ, ← hst, hst']
+  obtain hn : ∀ x, x < 256 → x < n := fun x h => by rw [n_eq]; exact h
+  obtain h1 : 2 * len * (c + 1) = st' := by rw [Nat.mul_succ, ← hst, hst']
   rw [layF, foldl_range_succ, foldl_range_succ, ← layF, ← hst, h1]
   generalize layF blk F len zi c = G
   clear hst h1
   subst hst' hen
   rw [hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega_using [hb]) j (hn j hj)]
-  have hG : ∀ x, x < 256 → (blk G len (zi c) st len)[x]! = if st ≤ x ∧ x < st + len then (op G[x]! G[x + len]! (zeta (zi c))).1
+  obtain hG : ∀ x, x < 256 → (blk G len (zi c) st len)[x]! = if st ≤ x ∧ x < st + len then (op G[x]! G[x + len]! (zeta (zi c))).1
       else if st + len ≤ x ∧ x < st + len + len then (op G[x - len]! G[x]! (zeta (zi c))).2 else G[x]! :=
     fun x hx => hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega_using [hb]) x (hn x hx)
   unfold blkV
@@ -148,9 +148,9 @@ theorem layF_four2 (F : Vector α n) {c st : Nat} (zi : Nat → Nat) (hst : st =
         (if j - (st + 8) < 4 then blkV op (layF blk F 2 zi c) 2 (zeta (zi (c + 2))) (st + 8) (j - (st + 8))
           else blkV op (layF blk F 2 zi c) 2 (zeta (zi (c + 3))) (st + 12) (j - (st + 8) - 4))
       else (layF blk F 2 zi c)[j]! := by
-  have two := fun (c' st' : Nat) (h : st' = 2 * 2 * c') (h' : st' + 8 ≤ 256) (x : Nat) (hx : x < 256) =>
+  obtain two := fun (c' st' : Nat) (h : st' = 2 * 2 * c') (h' : st' + 8 ≤ 256) (x : Nat) (hx : x < 256) =>
     layF_two hblk F (len := 2) (c := c') (st := st') (st' := st' + 4) (en := st' + 8) (by decide) zi h rfl rfl h' hx
-  have hH : ∀ x, st + 8 ≤ x → x < 256 → (layF blk F 2 zi (c + 2))[x]! = (layF blk F 2 zi c)[x]! := fun x h hx => by
+  obtain hH : ∀ x, st + 8 ≤ x → x < 256 → (layF blk F 2 zi (c + 2))[x]! = (layF blk F 2 zi c)[x]! := fun x h hx => by
     rw [two c st (by omega_using [hst]) (by omega_using [hb]) x hx, ite_eq_right (show ¬(st ≤ x ∧ x < st + 4) by omega_using [h]),
       ite_eq_right (show ¬(st + 4 ≤ x ∧ x < st + 8) by omega_using [h])]
   rw [show c + 4 = c + 2 + 2 by omega_using [], two (c + 2) (st + 8) (by omega_using [hst]) hb j hj, two c st (by omega_using [hst]) (by omega_using [hb]) j hj,
@@ -185,16 +185,16 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       S16R R s'.mem (spW sP) (layF blk F 4 zi (2 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
-  have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
-  have j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
-  have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
-  have r0 := sp_in (List.mem_append_right s.rd hw) j0
-  have r1 := sp_in (List.mem_append_right s.rd hw) j1
-  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
+  obtain j0 : 16 * i + 8 ≤ 256 := by bdd_omega
+  obtain j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
+  obtain a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
+  obtain r0 := sp_in (List.mem_append_right s.rd hw) j0
+  obtain r1 := sp_in (List.mem_append_right s.rd hw) j1
+  obtain rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
   generalize hG : layF blk F 4 zi (2 * i) = G at hS
-  have lx := lanes_loadR hS j0
-  have ly := lanes_loadR hS j1
-  have lz := zeta_lanes o hk hT
+  obtain lx := lanes_loadR hS j0
+  obtain ly := lanes_loadR hS j1
+  obtain lz := zeta_lanes o hk hT
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (s1 : State) => LanesR R (s1.xmm .xmm0) (fun e => G[16 * i + e + 4 * (e / 4)]!) ∧
       LanesR R (s1.xmm .xmm1) (fun e => G[16 * i + 4 + e + 4 * (e / 4)]!) ∧
@@ -229,16 +229,16 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
   refine WP.mono (hbf _ c1 _ _ _ l0 l1 l13) fun s2 ⟨a0, a3, o2⟩ => ?_
-  have g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1.keep.gpr (by decide)]
-  have e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1.keep.2.1], by rw [o2.wr, o1.keep.2.2]⟩
-  have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
-  have w0 := sp_in hw j0
-  have w1 := sp_in hw j1
-  have c2 := o2.consts c1 (by decide) (by decide)
+  obtain g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1.keep.gpr (by decide)]
+  obtain e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1.keep.2.1], by rw [o2.wr, o1.keep.2.2]⟩
+  obtain m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
+  obtain w0 := sp_in hw j0
+  obtain w1 := sp_in hw j1
+  obtain c2 := o2.consts c1 (by decide) (by decide)
   simp only [post4, xmov, xb]
   vrunm [g2, e2.1, e2.2, m2, hdx, a1, w0, w1, sx32]
-  have r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
-  have rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1.keep.gpr (by decide)]
+  obtain r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
+  obtain rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1.keep.gpr (by decide)]
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
@@ -286,7 +286,7 @@ theorem vlay4_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     {F : Vector α n} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
     WP isa (vlay4 bf k o dz) s fun s' => S16R R s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInv sP s s' := by
-  have hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
+  obtain hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
   refine WP.seq (WP.mono (vpre42 k hk0 hsi)
     fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 16) (by decide) (by decide)
@@ -299,8 +299,8 @@ theorem vlay4_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     (fun i hi u ⟨hS', hdx', h8', hb'⟩ => ?_)) fun u ⟨hS', _, _, hb'⟩ =>
       ⟨hS', ⟨(og.keep.trans hb'.keep).mono (by simp), by rw [← og.mem]; exact hb'.frame, hb'.consts,
         by rw [hb'.mxcsr, og.mxcsr]⟩⟩
-  have hT' : T16 u.mem sP := (by rw [og.mem]; exact hT : T16 w.mem sP).frame hb'.frame
-  have hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
+  obtain hT' : T16 u.mem sP := (by rw [og.mem]; exact hT : T16 w.mem sP).frame hb'.frame
+  obtain hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
   rw [show pre4 o dz ++ bf ++ [xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm3, xb .punpckhqdq .xmm1 .xmm3,
       .movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx 16) .xmm1, .alu .add .rdx (.imm 32)] ++
       ([.alu .sub .rcx (.imm 1)] : List Instr) = pre4 o dz ++ (bf ++ post4) by simp [List.append_assoc]]
@@ -332,16 +332,16 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       S16R R s'.mem (spW sP) (layF blk F 2 zi (4 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
-  have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
-  have j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
-  have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
-  have r0 := sp_in (List.mem_append_right s.rd hw) j0
-  have r1 := sp_in (List.mem_append_right s.rd hw) j1
-  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
+  obtain j0 : 16 * i + 8 ≤ 256 := by bdd_omega
+  obtain j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
+  obtain a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
+  obtain r0 := sp_in (List.mem_append_right s.rd hw) j0
+  obtain r1 := sp_in (List.mem_append_right s.rd hw) j1
+  obtain rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
   generalize hG : layF blk F 2 zi (4 * i) = G at hS
-  have lx := lanes_loadR hS j0
-  have ly := lanes_loadR hS j1
-  have lz := zeta_lanes o hk hT
+  obtain lx := lanes_loadR hS j0
+  obtain ly := lanes_loadR hS j1
+  obtain lz := zeta_lanes o hk hT
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (s1 : State) => LanesR R (s1.xmm .xmm0) (fun e => G[16 * i + 4 * (e / 2) + e % 2]!) ∧
       LanesR R (s1.xmm .xmm1) (fun e => G[16 * i + 4 * (e / 2) + 2 + e % 2]!) ∧
@@ -383,16 +383,16 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
   refine WP.mono (hbf _ c1 _ _ _ l0 l1 l13) fun s2 ⟨a0, a3, o2⟩ => ?_
-  have g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1.keep.gpr (by decide)]
-  have e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1.keep.2.1], by rw [o2.wr, o1.keep.2.2]⟩
-  have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
-  have w0 := sp_in hw j0
-  have w1 := sp_in hw j1
-  have c2 := o2.consts c1 (by decide) (by decide)
+  obtain g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1.keep.gpr (by decide)]
+  obtain e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1.keep.2.1], by rw [o2.wr, o1.keep.2.2]⟩
+  obtain m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
+  obtain w0 := sp_in hw j0
+  obtain w1 := sp_in hw j1
+  obtain c2 := o2.consts c1 (by decide) (by decide)
   simp only [post2, xmov, xb]
   vrunm [g2, e2.1, e2.2, m2, hdx, a1, w0, w1, sx32]
-  have r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
-  have rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1.keep.gpr (by decide)]
+  obtain r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
+  obtain rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1.keep.gpr (by decide)]
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
@@ -438,7 +438,7 @@ theorem vlay2_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     {F : Vector α n} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
     WP isa (vlay2 bf k o dz) s fun s' => S16R R s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInv sP s s' := by
-  have hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
+  obtain hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
   refine WP.seq (WP.mono (vpre42 k hk0 hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 16) (by decide) (by decide)
     (fun i u => S16R R u.mem (spW sP) (layF blk F 2 zi (4 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (16 * i) ∧
@@ -450,8 +450,8 @@ theorem vlay2_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     (fun i hi u ⟨hS', hdx', h8', hb'⟩ => ?_)) fun u ⟨hS', _, _, hb'⟩ =>
       ⟨hS', ⟨(og.keep.trans hb'.keep).mono (by simp), by rw [← og.mem]; exact hb'.frame, hb'.consts,
         by rw [hb'.mxcsr, og.mxcsr]⟩⟩
-  have hT' : T16 u.mem sP := (by rw [og.mem]; exact hT : T16 w.mem sP).frame hb'.frame
-  have hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
+  obtain hT' : T16 u.mem sP := (by rw [og.mem]; exact hT : T16 w.mem sP).frame hb'.frame
+  obtain hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
   rw [show pre2 o dz ++ bf ++ [xmov .xmm1 .xmm0, xb .punpckldq .xmm0 .xmm3, xb .punpckhdq .xmm1 .xmm3,
       .movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx 16) .xmm1, .alu .add .rdx (.imm 32)] ++
       ([.alu .sub .rcx (.imm 1)] : List Instr) = pre2 o dz ++ (bf ++ post2) by simp [List.append_assoc]]

@@ -73,7 +73,7 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   refine WP.block_cons_iff.mpr ⟨s₁.setReg .lr (s₁.gpr .r6), by simp [isa, exec, Op2.eval], WP.block_nil ?_⟩
   refine WP.mono (low1_wp _ hi' (by simp [gpr_setReg, g₁ .r6 (by decide), h6])) fun s₂ ⟨z₂, R₂⟩ => ?_
   -- The state before the loop.
-  have post_of : ∀ t : State, Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem t.mem →
+  obtain post_of : ∀ t : State, Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem t.mem →
       blockAtMem t.mem (State.addr p.W + BitVec.ofNat 64 lO) = lAt l (ntz i) →
       Others ntzRegs s₂ t → t.sp = s.sp → t.rd = s.rd → t.wr = s.wr →
       LNtzPost (State.addr p.W) l i s t := fun t fr v g sp rd wr =>
@@ -82,22 +82,22 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
       rw [g r (by simp [ntzRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
         R₂.gpr r (by simp [hr.2.2.2.2.1]), gpr_setReg_of_ne (h := hr.2.2.2.2.2), g₁ r (by simp [hr.1, hr.2.1, hr.2.2.1,
           hr.2.2.2.1])], sp, rd, wr⟩
-  have fr₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem s₂.mem := by
+  obtain fr₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem s₂.mem := by
     rw [R₂.mem, mem_setReg, R₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have v₂ : blockAtMem s₂.mem (State.addr p.W + BitVec.ofNat 64 lO) = lAt l 0 := by
+  obtain v₂ : blockAtMem s₂.mem (State.addr p.W + BitVec.ofNat 64 lO) = lAt l 0 := by
     rw [R₂.mem, mem_setReg, R₁.mem, blockAtMem_copy, hl0]
-  have sp₂ : s₂.sp = s.sp := by rw [R₂.sp, sp_setReg, R₁.sp]
-  have rd₂ : s₂.rd = s.rd := by rw [R₂.rd, rd_setReg, R₁.rd]
-  have wr₂ : s₂.wr = s.wr := by rw [R₂.wr, wr_setReg, R₁.wr]
-  have lr₂ : s₂.gpr .lr = BitVec.ofNat 32 i := by
+  obtain sp₂ : s₂.sp = s.sp := by rw [R₂.sp, sp_setReg, R₁.sp]
+  obtain rd₂ : s₂.rd = s.rd := by rw [R₂.rd, rd_setReg, R₁.rd]
+  obtain wr₂ : s₂.wr = s.wr := by rw [R₂.wr, wr_setReg, R₁.wr]
+  obtain lr₂ : s₂.gpr .lr = BitVec.ofNat 32 i := by
     rw [R₂.gpr _ (by decide), gpr_setReg_self, g₁ _ (by decide), h6]
-  have r11₂ : s₂.gpr .r11 = p.W := by
+  obtain r11₂ : s₂.gpr .r11 = p.W := by
     rw [R₂.gpr _ (by decide), gpr_setReg_of_ne (h := by decide), g₁ _ (by decide), E.r11]
   refine WP.ite (decide (i % 2 = 0)) (eval_eq' z₂) (fun hb => ?_)
     (fun hb => WP.block_nil (post_of s₂ fr₂ ?_ (fun _ _ => rfl) sp₂ rd₂ wr₂))
   rotate_left
   · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega_using [hb])]
-  have he : i % 2 = 0 := of_decide_eq_true hb
+  obtain he : i % 2 = 0 := of_decide_eq_true hb
   refine WP.loop (M := isa)
     (fun (k : Nat) (t : State) => ∃ j, k = i / 2 ^ j ∧ 0 < i / 2 ^ j ∧ i / 2 ^ j % 2 = 0 ∧
       ntz i = j + ntz (i / 2 ^ j) ∧ t.gpr .lr = BitVec.ofNat 32 (i / 2 ^ j) ∧
@@ -107,33 +107,33 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
     ⟨0, rfl, by simpa using hi, by simpa using he, by simp, by simpa using lr₂, fr₂, v₂,
       fun _ _ => rfl, sp₂, rd₂, wr₂⟩
   rintro k t ⟨j, rfl, hpos, hev, hntz, lrt, fr, v, g, sp, rd, wr⟩
-  have hv : i / 2 ^ j < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hi'
-  have r11t : t.gpr .r11 = p.W := by rw [g _ (by decide), r11₂]
-  have Pt : Perm p t := E.perm.of_eq rd wr
+  obtain hv : i / 2 ^ j < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hi'
+  obtain r11t : t.gpr .r11 = p.W := by rw [g _ (by decide), r11₂]
+  obtain Pt : Perm p t := E.perm.of_eq rd wr
   refine WP.block_append (WP.block_append (WP.mono (dbl_wp (b := .r11) (W := State.addr p.W)
     (P := State.addr p.W) (by decide) (by rw [r11t]) (by rw [r11t]) (by decide) (by decide)
     (by rw [r11t]; simp only [lO]; omega_using [fw]) (by rw [r11t]; simp only [lO]; omega_using [fw]) (Pt.wCR (by decide)) (Pt.wC (by decide))) fun t₁ D₁ => ?_))
-  have e : i / 2 ^ (j + 1) = i / 2 ^ j / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
-  have lr₁ : t₁.gpr .lr = BitVec.ofNat 32 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), lrt]
+  obtain e : i / 2 ^ (j + 1) = i / 2 ^ j / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+  obtain lr₁ : t₁.gpr .lr = BitVec.ofNat 32 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), lrt]
   refine WP.block_cons_iff.mpr ⟨t₁.setReg .lr (t₁.gpr .lr >>> 1), by simp [isa, exec, Op2.eval], WP.block_nil ?_⟩
   refine WP.mono (low1_wp _ (v := i / 2 ^ (j + 1)) (by omega_using [hv, e]) (by simp [gpr_setReg, lr₁, shr1 hv, e]))
     fun t₃ ⟨z₃, R₃⟩ => ?_
-  have fr' : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
+  obtain fr' : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
     rw [R₃.mem, mem_setReg, D₁.mem]
     exact fun x hx => (dblMem_frame _ _ _ x hx).trans (fr x hx)
-  have v' : blockAtMem t₃.mem (State.addr p.W + BitVec.ofNat 64 lO) = lAt l (j + 1) := by
+  obtain v' : blockAtMem t₃.mem (State.addr p.W + BitVec.ofNat 64 lO) = lAt l (j + 1) := by
     rw [R₃.mem, mem_setReg, D₁.mem, blockAtMem_dbl, v]; rfl
-  have g' : Others ntzRegs s₂ t₃ := fun r hr => by
+  obtain g' : Others ntzRegs s₂ t₃ := fun r hr => by
     simp only [ntzRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [R₃.gpr r (by simp [hr.2.2.2.2.1]), gpr_setReg_of_ne (h := hr.2.2.2.2.2),
       D₁.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1]),
       g r (by simp [ntzRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
-  have sp' : t₃.sp = s.sp := by rw [R₃.sp, sp_setReg, D₁.sp, sp]
-  have rd' : t₃.rd = s.rd := by rw [R₃.rd, rd_setReg, D₁.rd, rd]
-  have wr' : t₃.wr = s.wr := by rw [R₃.wr, wr_setReg, D₁.wr, wr]
-  have lr₃ : t₃.gpr .lr = BitVec.ofNat 32 (i / 2 ^ (j + 1)) := by
+  obtain sp' : t₃.sp = s.sp := by rw [R₃.sp, sp_setReg, D₁.sp, sp]
+  obtain rd' : t₃.rd = s.rd := by rw [R₃.rd, rd_setReg, D₁.rd, rd]
+  obtain wr' : t₃.wr = s.wr := by rw [R₃.wr, wr_setReg, D₁.wr, wr]
+  obtain lr₃ : t₃.gpr .lr = BitVec.ofNat 32 (i / 2 ^ (j + 1)) := by
     rw [R₃.gpr _ (by decide), gpr_setReg_self, lr₁, shr1 hv, e]
-  have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
+  obtain hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
     rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega_using []
   by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
   · right

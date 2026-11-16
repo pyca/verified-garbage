@@ -55,12 +55,12 @@ theorem shape_ok (h : In Ex base bytes len args s) {T : List Byte}
       sv t.mem base len .wide 9 = Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip (T.take len)) ∧
       w32 t.mem base curOff = len ∧ Kept base len [9] [curOff, kOff] s.mem t.mem := by
   have bl := h.bytes_lt
-  have f9 := slot_fit1 h (j := 9) (by decide)
-  have c1 := cb1 len
-  have w1 := cw1 len
-  have lb := len_le_bc len
+  obtain f9 := slot_fit1 h (j := 9) (by decide)
+  obtain c1 := cb1 len
+  obtain w1 := cw1 len
+  obtain lb := len_le_bc len
   have lo' := h.lower'
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   have fit := G.fit
   have small := G.small
   unfold shape
@@ -71,39 +71,39 @@ theorem shape_ok (h : In Ex base bytes len args s) {T : List Byte}
     (G.apart.sub_left (Region.sub_prefix hL))) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   rw [c1] at O₁
   rw [w1, bytesAt_take _ _ hL, hT] at V₁
-  have S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
-  have k₁ := kept_slot h O₁
+  obtain S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
+  obtain k₁ := kept_slot h O₁
   have h₁ := S₁.inp
   refine WP.seq (wp_movS (h₁.arg (i := 3) (by decide)) fun u₂ U₂ _ => ?_)
   refine hdr_store (h₁.regs U₂.keeps U₂.mem) hdr_cur fun u₃ S₃ W₃ k₃ O₃ g₃ _ _ => ?_
   refine wp_movS (hdr_read S₃.inp hdr_bits) fun u₄ U₄ _ => ?_
   refine hdr_store (S₃.inp.regs U₄.keeps U₄.mem) hdr_k fun u₅ S₅ W₅ k₅ O₅ _ _ _ => WP.block_nil ?_
-  have S₂₅ : Step Ex base bytes len args u₁ u₅ :=
+  obtain S₂₅ : Step Ex base bytes len args u₁ u₅ :=
     (Step.regs h₁ U₂.mem U₂.keeps).trans (S₃.trans ((Step.regs S₃.inp U₄.mem U₄.keeps).trans S₅))
-  have k₂₅ : Kept base len [] [curOff, kOff] u₁.mem u₅.mem :=
+  obtain k₂₅ : Kept base len [] [curOff, kOff] u₁.mem u₅.mem :=
     (by rw [U₂.mem]; exact (Kept.refl _).mono : Kept base len [] [curOff, kOff] u₁.mem u₂.mem).trans
       (k₃.mono.trans ((by rw [U₄.mem]; exact (Kept.refl _).mono : Kept base len [] [curOff, kOff] u₃.mem u₄.mem).trans
         k₅.mono))
-  have kw₅ : w32 u₅.mem base kOff = bits := by
+  obtain kw₅ : w32 u₅.mem base kOff = bits := by
     rw [W₅, U₄.gpr, k₃.word_eq, U₂.mem, k₁.word_eq, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have cw₅ : w32 u₅.mem base curOff = len := by
+  obtain cw₅ : w32 u₅.mem base curOff = len := by
     rw [k₅.word_eq, U₄.mem, W₃, U₂.gpr, h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   generalize hx : Spec.Rsa.os2ip (T.take len) = x at V₁
-  have xl : x < 2 ^ (8 * len) := by
+  obtain xl : x < 2 ^ (8 * len) := by
     have := VG.Proof.Bignum.os2ip_lt (T.take len)
     rw [List.length_take, Nat.min_eq_left hL, VG.Proof.Bignum.pow256_eq, hx] at this
     exact this
-  have sv₅ : sv u₅.mem base len .wide 9 = x := by rw [k₂₅.slot_eq, ← V₁]
+  obtain sv₅ : sv u₅.mem base len .wide 9 = x := by rw [k₂₅.slot_eq, ← V₁]
   refine WP.seq (WP.mono (cut_ok S₂₅.inp (j := 9) (by decide) true (k := bits) kw₅ (by omega_arith) (by omega_arith)
     (by rw [sv₅]; exact Nat.lt_of_lt_of_le xl (Nat.pow_le_pow_right (by decide) (by omega_arith))))
     fun u₆ ⟨h₆, O₆, V₆, K₆⟩ => ?_)
   simp only [↓reduceIte] at V₆
   rw [sv₅] at V₆
-  have S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₂₅.inp (by decide) O₆ K₆
+  obtain S₆ : Step Ex base bytes len args u₅ u₆ := Step.slot S₂₅.inp (by decide) O₆ K₆
   rw [← List.append_nil (setLow _)]
   refine setLow_ok h₆ (j := 9) (by decide) fun u₇ h₇ O₇ V₇ K₇ => WP.block_nil ?_
-  have O₇' : Outside base (lo len (.slot .wide 9)) (bc len .wide) u₆.mem u₇.mem := O₇.mono (Nat.le_refl _) (by omega_arith)
-  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.slot h₆ (by decide) O₇' K₇
+  obtain O₇' : Outside base (lo len (.slot .wide 9)) (bc len .wide) u₆.mem u₇.mem := O₇.mono (Nat.le_refl _) (by omega_arith)
+  obtain S₇ : Step Ex base bytes len args u₆ u₇ := Step.slot h₆ (by decide) O₇' K₇
   refine ⟨S₁.trans (S₂₅.trans (S₆.trans S₇)), ?_, ?_, ?_⟩
   · rw [V₇, V₆]; rfl
   · rw [(kept_slot h₆ O₇').word_eq, (kept_slot S₂₅.inp O₆).word_eq, cw₅]
@@ -119,8 +119,8 @@ theorem minus_ok (h : In Ex base bytes len args s) {p t : Nat} (hp : sv s.mem ba
       Kept base len [12, 16] [] s.mem u.mem := by
   unfold minus
   refine WP.seq (WP.mono (setW_ok h (a := 16) (v := t) (by decide) htl) fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  have S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
-  have p₁ : sv u₁.mem base len .wide 9 = p := by rw [slotKeep h (by decide) (by decide) O₁, hp]
+  obtain S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
+  obtain p₁ : sv u₁.mem base len .wide 9 = p := by rw [slotKeep h (by decide) (by decide) O₁, hp]
   refine WP.mono (subW_ok S₁.inp (o := 12) (a := 9) (b := 16) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by rw [V₁, p₁]; exact ht)) fun u ⟨S, V, k, _, _⟩ => ⟨S₁.trans S, by rw [V, V₁, p₁], ?_⟩
   exact (kept_slot h O₁).mono.trans k.mono
@@ -144,12 +144,12 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
       Kept base len [12, 16] [okOff] s.mem t.mem := by
   unfold congruences
   refine WP.seq (wp_movS (hdr_read h hdr_gen) fun u₁ U₁ _ => wp_cmpi fun u₂ F₂ _ z₂ => WP.block_nil ?_)
-  have m₂ : u₂.mem = s.mem := by rw [F₂.mem, U₁.mem]
-  have S₂ : Step Ex base bytes len args s u₂ := Step.regs h m₂ (U₁.keeps.trans (F₂.keeps _))
+  obtain m₂ : u₂.mem = s.mem := by rw [F₂.mem, U₁.mem]
+  obtain S₂ : Step Ex base bytes len args s u₂ := Step.regs h m₂ (U₁.keeps.trans (F₂.keeps _))
   have h₂ := S₂.inp
-  have p₂ : sv u₂.mem base len .wide 9 = p := by rw [m₂, hp]
-  have k₂ : Kept base len [12, 16] [okOff] s.mem u₂.mem := by rw [m₂]; exact (Kept.refl _).mono
-  have gl : g < 2 ^ 32 := by omega_arith
+  obtain p₂ : sv u₂.mem base len .wide 9 = p := by rw [m₂, hp]
+  obtain k₂ : Kept base len [12, 16] [okOff] s.mem u₂.mem := by rw [m₂]; exact (Kept.refl _).mono
+  obtain gl : g < 2 ^ 32 := by omega_arith
   refine WP.ite (decide (g = 2)) (by
       show u₂.zf = _
       rw [z₂, U₁.gpr, hg, show (2 : BitVec 32) = BitVec.ofNat 32 2 from rfl, sub_beq gl (by decide)])
@@ -159,13 +159,13 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
     unfold gen2
     refine WP.seq (lowWord_ok h₂ (j := 9) (by decide) fun u₃ m₃ K₃ e₃ => wp_andi fun u₄ U₄ =>
       wp_cmpi fun u₅ F₅ _ z₅ => WP.block_nil ?_)
-    have m₅ : u₅.mem = s.mem := by rw [F₅.mem, U₄.mem, m₃, m₂]
-    have S₅ : Step Ex base bytes len args s u₅ :=
+    obtain m₅ : u₅.mem = s.mem := by rw [F₅.mem, U₄.mem, m₃, m₂]
+    obtain S₅ : Step Ex base bytes len args s u₅ :=
       S₂.trans (Step.regs h₂ (by rw [m₅, m₂]) ((K₃.trans (U₄.keeps.mono (by decide))).trans (F₅.keeps _)))
-    have e₄ : u₄.gpr .eax = BitVec.ofNat 32 (p % 8) := by
+    obtain e₄ : u₄.gpr .eax = BitVec.ofNat 32 (p % 8) := by
       rw [U₄.gpr, e₃, p₂]
       apply BitVec.eq_of_toNat_eq
-      have e8 : p % 2 ^ 32 % 8 = p % 8 := Nat.mod_mod_of_dvd p (by decide)
+      obtain e8 : p % 2 ^ 32 % 8 = p % 8 := Nat.mod_mod_of_dvd p (by decide)
       rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.mod_lt _ (by decide)),
         show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, e8,
         Nat.mod_eq_of_lt (by omega_arith : p % 8 < 2 ^ 32)]
@@ -196,7 +196,7 @@ theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : 
       (by decide) (by decide) (by decide)) fun u₄ ⟨S₄, E₄, k₄⟩ => ?_)
     rw [V₃] at E₄
     refine WP.seq (hdr_store S₄.inp hdr_ok fun u₅ S₅ W₅ k₅ _ g₅ _ _ => WP.block_nil ?_)
-    have p₅ : sv u₅.mem base len .wide 9 = p := by rw [k₅.slot_eq, k₄.slot_eq, k₃.slot_eq, p₂]
+    obtain p₅ : sv u₅.mem base len .wide 9 = p := by rw [k₅.slot_eq, k₄.slot_eq, k₃.slot_eq, p₂]
     refine WP.seq (WP.mono (minus_ok S₅.inp (p := p) (t := 3) p₅ (by omega_arith) (by decide)) fun u₆ ⟨S₆, V₆, k₆⟩ => ?_)
     refine WP.seq (WP.mono (dividesS_ok S₆.inp (j := 12) (prime := 5) (inv := inv5) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) fun u₇ ⟨S₇, E₇, k₇⟩ => ?_)
@@ -247,7 +247,7 @@ theorem Table.step {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s) {t : State}
     (S : Step Ex base bytes len args s t) (sy : t.syms = s.syms)
     (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) : Table Tb (t.gpr .esp) t := by
   have h := S.inp
-  have fit := fR_fit h
+  obtain fit := fR_fit h
   have bl := h.bytes_lt
   have tf := TT.fit
   refine ⟨by rw [sy]; exact TT.sym, fun i hi d hd => by rw [S.keeps.2.1, S.keeps.2.2]; exact TT.read i hi d hd,
@@ -310,18 +310,18 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
       (Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
-  have hL' : (bits + 7) / 8 ≤ T.length := by omega_arith
+  obtain hL' : (bits + 7) / 8 ≤ T.length := by omega_arith
   -- The candidate and q.
   generalize hx : Spec.Rsa.os2ip (T.take len) = x
   obtain ⟨hpo, hpl, hpu⟩ := ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
   obtain ⟨hbp', hbp⟩ := ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x
-  have hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega_arith) x
+  obtain hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega_arith) x
   generalize hp : Spec.Ffdh.candidateOf bits x = p at hpo hpl hpu hbp' hbp hbq'
-  have big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have screen := screen_eq (bits := bits) (g := g) (p := p) (by omega_arith) hpo (by omega_arith)
+  obtain big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  obtain screen := screen_eq (bits := bits) (g := g) (p := p) (by omega_arith) hpo (by omega_arith)
   -- A rejection, from a stage of `s` that keeps the cursor and `used`.
-  have rej : ∀ u, Step Ex base bytes len args s u → w32 u.mem base curOff = len →
+  obtain rej : ∀ u, Step Ex base bytes len args s u → w32 u.mem base curOff = len →
       w32 u.mem base usedOff = up.toNat →
       (Spec.Ffdh.generationShape bits g p && decide ((p - 1) / 2 % 2 = 1) &&
         !VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits) &&
@@ -346,63 +346,63 @@ theorem main_ok (h : In Ex base bytes len args s) {T : List Byte}
   refine WP.seq (WP.mono_syms (congruences_ok S₁.inp P₁ (by omega_arith) hpo hbp' ⟨hb1, hb2⟩ (by rw [k₁.word_eq, hg])
     hg25) fun u₂ ⟨S₂, E₂, k₂⟩ sy₂ => ?_)
   refine WP.seq (WP.mono_syms (testEax_ok E₂) fun u₃ ⟨m₃, K₃, z₃⟩ sy₃ => ?_)
-  have S₃ : Step Ex base bytes len args s u₃ := S₁.trans (S₂.trans (Step.regs S₂.inp m₃ K₃))
-  have cur₃ : w32 u₃.mem base curOff = len := by rw [m₃, k₂.word_eq, C₁]
-  have used₃ : w32 u₃.mem base usedOff = up.toNat := by rw [m₃, k₂.word_eq, k₁.word_eq, hu]
-  have p₃ : sv u₃.mem base len .wide 9 = p := by rw [m₃, k₂.slot_eq, P₁]
-  have bits₃ : w32 u₃.mem base bitsOff = bits := by rw [m₃, k₂.word_eq, k₁.word_eq, hb]
+  obtain S₃ : Step Ex base bytes len args s u₃ := S₁.trans (S₂.trans (Step.regs S₂.inp m₃ K₃))
+  obtain cur₃ : w32 u₃.mem base curOff = len := by rw [m₃, k₂.word_eq, C₁]
+  obtain used₃ : w32 u₃.mem base usedOff = up.toNat := by rw [m₃, k₂.word_eq, k₁.word_eq, hu]
+  obtain p₃ : sv u₃.mem base len .wide 9 = p := by rw [m₃, k₂.slot_eq, P₁]
+  obtain bits₃ : w32 u₃.mem base bitsOff = bits := by rw [m₃, k₂.word_eq, k₁.word_eq, hb]
   refine WP.ite _ z₃ (fun e => rej u₃ S₃ cur₃ used₃ (by
     have : Spec.Ffdh.generationShape bits g p = false := by simpa using e
     simp [this])) fun e => ?_
-  have gt : Spec.Ffdh.generationShape bits g p = true := by simpa using e
+  obtain gt : Spec.Ffdh.generationShape bits g p = true := by simpa using e
   -- q, odd.
   refine WP.seq (WP.mono_syms (half_ok S₃.inp p₃) fun u₄ ⟨S₄, Q₄, k₄⟩ sy₄ => ?_)
   rw [show p / 2 = (p - 1) / 2 by omega_arith] at Q₄
   refine WP.seq (WP.mono_syms (oddQ_ok S₄.inp Q₄) fun u₅ ⟨S₅, m₅, z₅⟩ sy₅ => ?_)
-  have S₀₅ : Step Ex base bytes len args s u₅ := S₃.trans (S₄.trans S₅)
-  have cur₅ : w32 u₅.mem base curOff = len := by rw [m₅, k₄.word_eq, cur₃]
-  have used₅ : w32 u₅.mem base usedOff = up.toNat := by rw [m₅, k₄.word_eq, used₃]
+  obtain S₀₅ : Step Ex base bytes len args s u₅ := S₃.trans (S₄.trans S₅)
+  obtain cur₅ : w32 u₅.mem base curOff = len := by rw [m₅, k₄.word_eq, cur₃]
+  obtain used₅ : w32 u₅.mem base usedOff = up.toNat := by rw [m₅, k₄.word_eq, used₃]
   refine WP.ite _ z₅ (fun e => rej u₅ S₀₅ cur₅ used₅ (by
     have : ¬ (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
     simp [this])) fun e => ?_
-  have qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
-  have hbq := ParameterCandidate.half_pred_bitLength (bits := bits) (by omega_arith) x (by rw [hp]; exact qo)
+  obtain qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
+  obtain hbq := ParameterCandidate.half_pred_bitLength (bits := bits) (by omega_arith) x (by rw [hp]; exact qo)
   rw [hp] at hbq
   -- RSA's sieve on p.
-  have sy₀₅ : u₅.syms = s.syms := sy₅.trans (sy₄.trans (sy₃.trans (sy₂.trans sy₁)))
+  obtain sy₀₅ : u₅.syms = s.syms := sy₅.trans (sy₄.trans (sy₃.trans (sy₂.trans sy₁)))
   refine WP.seq (WP.mono_syms (sieveS_ok S₀₅.inp (j := 9) (bits := bits) (by decide) (TT.step S₀₅ sy₀₅ TA)
     (by rw [m₅, k₄.word_eq, bits₃])) fun u₆ ⟨S₆, E₆, k₆⟩ sy₆ => ?_)
   rw [m₅, k₄.slot_eq, p₃] at E₆
   refine WP.seq (WP.mono_syms (testEax_ok E₆) fun u₇ ⟨m₇, K₇, z₇⟩ sy₇ => ?_)
-  have S₀₇ : Step Ex base bytes len args s u₇ := S₀₅.trans (S₆.trans (Step.regs S₆.inp m₇ K₇))
-  have cur₇ : w32 u₇.mem base curOff = len := by rw [m₇, k₆.word_eq, cur₅]
-  have used₇ : w32 u₇.mem base usedOff = up.toNat := by rw [m₇, k₆.word_eq, used₅]
-  have ne₇ : isa.eval .ne u₇ = some (VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits)) := by
+  obtain S₀₇ : Step Ex base bytes len args s u₇ := S₀₅.trans (S₆.trans (Step.regs S₆.inp m₇ K₇))
+  obtain cur₇ : w32 u₇.mem base curOff = len := by rw [m₇, k₆.word_eq, cur₅]
+  obtain used₇ : w32 u₇.mem base usedOff = up.toNat := by rw [m₇, k₆.word_eq, used₅]
+  obtain ne₇ : isa.eval .ne u₇ = some (VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits)) := by
     show u₇.zf.map (!·) = _
     rw [show u₇.zf = _ from z₇]; simp
   refine WP.ite _ ne₇ (fun e => rej u₇ S₀₇ cur₇ used₇ (by simp [e])) fun e => ?_
   -- RSA's sieve on q.
-  have sy₀₇ : u₇.syms = s.syms := sy₇.trans (sy₆.trans sy₀₅)
+  obtain sy₀₇ : u₇.syms = s.syms := sy₇.trans (sy₆.trans sy₀₅)
   refine WP.seq (WP.mono_syms (sieveS_ok S₀₇.inp (j := 10) (bits := bits) (by decide) (TT.step S₀₇ sy₀₇ TA)
     (by rw [m₇, k₆.word_eq, m₅, k₄.word_eq, bits₃])) fun u₈ ⟨S₈, E₈, k₈⟩ sy₈ => ?_)
   rw [m₇, k₆.slot_eq, m₅, Q₄] at E₈
   refine WP.seq (WP.mono_syms (testEax_ok E₈) fun u₉ ⟨m₉, K₉, z₉⟩ sy₉ => ?_)
-  have S₀₉ : Step Ex base bytes len args s u₉ := S₀₇.trans (S₈.trans (Step.regs S₈.inp m₉ K₉))
-  have cur₉ : w32 u₉.mem base curOff = len := by rw [m₉, k₈.word_eq, cur₇]
-  have used₉ : w32 u₉.mem base usedOff = up.toNat := by rw [m₉, k₈.word_eq, used₇]
-  have ne₉ : isa.eval .ne u₉ = some (VG.Proof.RsaKeyGen.trialPrefix ((p - 1) / 2) (sieveCount bits)) := by
+  obtain S₀₉ : Step Ex base bytes len args s u₉ := S₀₇.trans (S₈.trans (Step.regs S₈.inp m₉ K₉))
+  obtain cur₉ : w32 u₉.mem base curOff = len := by rw [m₉, k₈.word_eq, cur₇]
+  obtain used₉ : w32 u₉.mem base usedOff = up.toNat := by rw [m₉, k₈.word_eq, used₇]
+  obtain ne₉ : isa.eval .ne u₉ = some (VG.Proof.RsaKeyGen.trialPrefix ((p - 1) / 2) (sieveCount bits)) := by
     show u₉.zf.map (!·) = _
     rw [show u₉.zf = _ from z₉]; simp
   refine WP.ite _ ne₉ (fun e' => rej u₉ S₀₉ cur₉ used₉ (by simp [e'])) fun e' => ?_
   -- The tests.
-  have pass : (Spec.Ffdh.generationShape bits g p && decide ((p - 1) / 2 % 2 = 1) &&
+  obtain pass : (Spec.Ffdh.generationShape bits g p && decide ((p - 1) / 2 % 2 = 1) &&
       !VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits) &&
       !VG.Proof.RsaKeyGen.trialPrefix ((p - 1) / 2) (sieveCount bits)) = true := by simp [gt, qo, e, e']
   rw [sieved_tests hL' (by rw [← hbl, hx, hp, screen, pass])]
   rw [← hbl, hx, hp]
   obtain ⟨e₁, e₂, e₃⟩ := res_map T p len (ParameterCandidate.screenedChecks p ((p - 1) / 2) (T.drop len))
   rw [← e₁, ← e₂, ← e₃]
-  have k₀₉ : Kept base len [9, 10, 12, 16] [curOff, kOff, okOff] s.mem u₉.mem :=
+  obtain k₀₉ : Kept base len [9, 10, 12, 16] [curOff, kOff, okOff] s.mem u₉.mem :=
     k₁.mono.trans (k₂.mono.trans ((by rw [m₃]; exact (Kept.refl _).mono : Kept base len [9, 10, 12, 16]
       [curOff, kOff, okOff] u₂.mem u₃.mem).trans (k₄.mono.trans ((by rw [m₅]; exact (Kept.refl _).mono :
         Kept base len [9, 10, 12, 16] [curOff, kOff, okOff] u₄.mem u₅.mem).trans (k₆.mono.trans

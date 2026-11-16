@@ -85,29 +85,29 @@ theorem init_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat}
     (hc : s.gpr .ecx = B) :
     CallPre (initX86 b) [.eax, .ecx, .edx, .ebx]
       [⟨B.setWidth 64, 0⟩, ⟨(E - BitVec.ofNat 32 16).setWidth 64, 16⟩] [⟨B.setWidth 64, 192⟩] s := by
-  have hrs : Reg.esp ∉ [Reg.eax, .ecx, .edx, .ebx] := by decide
+  obtain hrs : Reg.esp ∉ [Reg.eax, .ecx, .edx, .ebx] := by decide
   have esp₂ : s.gpr .esp = E := h.esp
-  have fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega_arith
   let sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry
   try rewrite [show (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry = sE from rfl] at *
   have hsE : sE = (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry := rfl
-  have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
-  have a1 : arg sE 1 = BitVec.ofNat 32 n := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hn]
-  have a2 : arg sE 2 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hc]
-  have a3 : arg sE 3 = 0 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
-  have eA : argAddr sE 0 = (E - BitVec.ofNat 32 16).setWidth 64 := by
+  obtain a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
+  obtain a1 : arg sE 1 = BitVec.ofNat 32 n := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hn]
+  obtain a2 : arg sE 2 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hc]
+  obtain a3 : arg sE 3 = 0 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
+  obtain eA : argAddr sE 0 = (E - BitVec.ofNat 32 16).setWidth 64 := by
     rw [hsE, callEntry_argAddr0, esp₂]; rfl
-  have eSp : sE.gpr .esp = E - BitVec.ofNat 32 20 := by
+  obtain eSp : sE.gpr .esp = E - BitVec.ofNat 32 20 := by
     rw [hsE, callEntry_esp', esp₂]; rfl
-  have stR : Region.Sub ⟨B.setWidth 64, 192⟩ ⟨B.setWidth 64, 832⟩ := Region.sub_prefix (by decide)
-  have d20 : (below E 20).Disjoint ⟨B.setWidth 64, 192⟩ :=
+  obtain stR : Region.Sub ⟨B.setWidth 64, 192⟩ ⟨B.setWidth 64, 832⟩ := Region.sub_prefix (by decide)
+  obtain d20 : (below E 20).Disjoint ⟨B.setWidth 64, 192⟩ :=
     (h.stk.sub_right stR).sub_left (below_sub (by decide) h.lo)
   refine ⟨?_, ?_, ?_⟩
   · rw [← hsE]
     simp only [initX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp]
-    have mb : (64 : Nat) ≤ b.maxBytes := by decide
+    obtain mb : (64 : Nat) ≤ b.maxBytes := by decide
     refine ⟨rfl, rfl, fun _ h₁ _ => by simp [Region.Contains] at h₁, ?_, ?_,
       by simp only [Proof.Blake2.bufOff, blockBytes]; have := h.fits; omega_arith,
       by simp; have := B.isLt; omega_arith, ?_, by simp [BitVec.toNat_ofNat]; omega_arith,
@@ -148,7 +148,7 @@ def InitIn (B E : BitVec 32) (n : Nat) (s : State) : Prop :=
 theorem init_rel {B E : BitVec 32} {n : Nat} (hn₁ : 1 ≤ n) (hn₂ : n ≤ 64) :
     RelCT isa (fun s₁ s₂ => InitIn B E n s₁ ∧ InitIn B E n s₂) Impl.Argon2.X86.HPrime.init
       fun _ _ => True := by
-  have blk : ∀ s, InitIn B E n s → WP isa (.block [.mov .eax (.imm 0), .mov .ecx (.reg .ebx)]) s
+  obtain blk : ∀ s, InitIn B E n s → WP isa (.block [.mov .eax (.imm 0), .mov .ecx (.reg .ebx)]) s
       fun t => Ctx B E t ∧ t.gpr .edx = BitVec.ofNat 32 n ∧ t.gpr .eax = 0 ∧ t.gpr .ecx = B :=
     fun s ⟨c, e⟩ => wp_movi fun s₁ u₁ => wp_mov fun s₂ u₂ => WP.block_nil
       ⟨c.of_regs (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
@@ -166,9 +166,9 @@ theorem init_rel {B E : BitVec 32} {n : Nat} (hn₁ : 1 ≤ n) (hn₂ : n ≤ 64
   refine RelCT.callWith (k := initX86 b) init_correct Proof.Blake2.X86.B.init_ct
     [⟨B.setWidth 64, 0⟩, ⟨(E - BitVec.ofNat 32 16).setWidth 64, 16⟩] [⟨B.setWidth 64, 192⟩]
     fun s₁ s₂ ⟨⟨c₁, e₁, a₁, x₁⟩, ⟨c₂, e₂, a₂, x₂⟩⟩ => ?_
-  have fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
     rw [c₁.esp]; have := c₁.lo; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
+  obtain hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
   obtain ⟨p₁, p₂⟩ := call_pub (by decide) fit hsp (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -189,44 +189,44 @@ theorem update_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32}
     CallPre (updateX86 b) [.eax, .edi, .esi, .edx, .ecx, .ebx]
       [⟨D.setWidth 64, L⟩, ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩]
       [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 192, 576⟩] s := by
-  have hrs : Reg.esp ∉ [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] := by decide
+  obtain hrs : Reg.esp ∉ [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] := by decide
   have esp₂ : s.gpr .esp = E := h.esp
   have hlo := h.lo
-  have fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₂]; simp only [List.length_cons, List.length_nil]; omega_arith
   let sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry
   try rewrite [show (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry = sE from rfl] at *
   have hsE : sE = (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry := rfl
-  have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
-  have a3 : arg sE 3 = D := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hD]
-  have a4 : (arg sE 4).toNat = L := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hL]
-  have a5 : arg sE 5 = B + 192 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
-  have eA : argAddr sE 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
+  obtain a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
+  obtain a3 : arg sE 3 = D := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hD]
+  obtain a4 : (arg sE 4).toNat = L := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hL]
+  obtain a5 : arg sE 5 = B + 192 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
+  obtain eA : argAddr sE 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
     rw [hsE, callEntry_argAddr0, esp₂]; rfl
-  have eSp : sE.gpr .esp = E - BitVec.ofNat 32 28 := by
+  obtain eSp : sE.gpr .esp = E - BitVec.ofNat 32 28 := by
     rw [hsE, callEntry_esp', esp₂]; rfl
   have hfit := h.fits
-  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
-  have stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
+  obtain e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
+  obtain stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
     h.stk.sub_right (Region.sub_prefix (by decide))
-  have scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
-  have stk60 : ∀ {k : Nat} {r : Region}, k ≤ 60 → (below E 60).Disjoint r → (below E k).Disjoint r :=
+  obtain scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
+  obtain stk60 : ∀ {k : Nat} {r : Region}, k ≤ 60 → (below E 60).Disjoint r → (below E k).Disjoint r :=
     fun hk d => d.sub_left (below_sub hk hlo)
-  have retSub : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64, 4⟩ (below E 60) := by
+  obtain retSub : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64, 4⟩ (below E 60) := by
     have := below_inner (sp := E) (a := 4) (b := 60) (k := 24) (by omega_arith) hlo
     rw [show E - BitVec.ofNat 32 28 = E - BitVec.ofNat 32 24 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
-  have calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64 - 32, 32⟩ (below E 60) := by
+  obtain calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64 - 32, 32⟩ (below E 60) := by
     have := below_inner (sp := E) (a := 32) (b := 60) (k := 28) (by omega_arith) hlo
-    have e : (E - BitVec.ofNat 32 28 - BitVec.ofNat 32 32).setWidth 64 =
+    obtain e : (E - BitVec.ofNat 32 28 - BitVec.ofNat 32 32).setWidth 64 =
         (E - BitVec.ofNat 32 28).setWidth 64 - 32 :=
       Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega_arith)]; omega_arith)
     show Region.Sub ⟨_, 32⟩ _
     rw [← e]; exact this
-  have argSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩ (below E 60) :=
+  obtain argSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩ (below E 60) :=
     below_sub (by decide) hlo
-  have b192 : (B + 192).toNat = B.toNat + 192 := by
+  obtain b192 : (B + 192).toNat = B.toNat + 192 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega_arith
   refine ⟨?_, ?_, ?_⟩
   · rw [← hsE]
@@ -266,7 +266,7 @@ theorem update_rel {B E D : BitVec 32} {L : Nat} {lo hi : BitVec 32} (hDfit : D.
     (hDk : (below E 60).Disjoint ⟨D.setWidth 64, L⟩) :
     RelCT isa (fun s₁ s₂ => UpdateIn B E D L lo hi s₁ ∧ UpdateIn B E D L lo hi s₂) update
       fun _ _ => True := by
-  have blk : ∀ s, UpdateIn B E D L lo hi s →
+  obtain blk : ∀ s, UpdateIn B E D L lo hi s →
       WP isa (.block [.mov .eax (.reg .ebx), .alu .add .eax (.imm 192)]) s
       fun t => UpdateIn B E D L lo hi t ∧ t.gpr .eax = B + 192 :=
     fun s ⟨c, e1, e2, e3, e4, cv⟩ => wp_mov fun s₁ u₁ => wp_addi fun s₂ u₂ => WP.block_nil
@@ -293,9 +293,9 @@ theorem update_rel {B E D : BitVec 32} {L : Nat} {lo hi : BitVec 32} (hDfit : D.
     [⟨D.setWidth 64, L⟩, ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩]
     [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 192, 576⟩]
     fun s₁ s₂ ⟨⟨⟨c₁, d₁, l₁, x₁, y₁, v₁⟩, a₁⟩, ⟨⟨c₂, d₂, l₂, x₂, y₂, v₂⟩, a₂⟩⟩ => ?_
-  have fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
     rw [c₁.esp]; have := c₁.lo; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
+  obtain hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
   obtain ⟨p₁, p₂⟩ := call_pub (by decide) fit hsp (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -314,45 +314,45 @@ theorem finalize_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) (ha : s.gpr .
     (hi : s.gpr .esi = B + 768) :
     CallPre (finalizeX86 b) [.eax, .esi, .edx, .ecx, .ebx] [⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩]
       [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 768, 64⟩, ⟨B.setWidth 64 + 192, 576⟩] s := by
-  have hrs : Reg.esp ∉ [Reg.eax, .esi, .edx, .ecx, .ebx] := by decide
+  obtain hrs : Reg.esp ∉ [Reg.eax, .esi, .edx, .ecx, .ebx] := by decide
   have esp₄ : s.gpr .esp = E := h.esp
   have hlo := h.lo
   have hfit := h.fits
-  have fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₄]; simp only [List.length_cons, List.length_nil]; omega_arith
   let sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry
   try rewrite [show (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry = sE from rfl] at *
   have hsE : sE = (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry := rfl
-  have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
-  have a3 : arg sE 3 = B + 768 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hi]
-  have a4 : arg sE 4 = B + 192 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
-  have eA : argAddr sE 0 = (E - BitVec.ofNat 32 20).setWidth 64 := by
+  obtain a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
+  obtain a3 : arg sE 3 = B + 768 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hi]
+  obtain a4 : arg sE 4 = B + 192 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]
+  obtain eA : argAddr sE 0 = (E - BitVec.ofNat 32 20).setWidth 64 := by
     rw [hsE, callEntry_argAddr0, esp₄]; rfl
-  have eSp : sE.gpr .esp = E - BitVec.ofNat 32 24 := by
+  obtain eSp : sE.gpr .esp = E - BitVec.ofNat 32 24 := by
     rw [hsE, callEntry_esp', esp₄]; rfl
-  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
-  have e768 : (B + 768).setWidth 64 = B.setWidth 64 + 768 := setWidth_add (d := 768) (by omega_arith)
-  have stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
+  obtain e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
+  obtain e768 : (B + 768).setWidth 64 = B.setWidth 64 + 768 := setWidth_add (d := 768) (by omega_arith)
+  obtain stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
     (h.stk.sub_right (Region.sub_prefix (by decide)))
-  have scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
-  have dgR : (below E 60).Disjoint ⟨B.setWidth 64 + 768, 64⟩ := h.stk_sub (d := 768) (by decide) (Nat.le_refl _)
-  have argSub : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below E 60) :=
+  obtain scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
+  obtain dgR : (below E 60).Disjoint ⟨B.setWidth 64 + 768, 64⟩ := h.stk_sub (d := 768) (by decide) (Nat.le_refl _)
+  obtain argSub : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below E 60) :=
     below_sub (by decide) hlo
-  have retSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below E 60) := by
+  obtain retSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below E 60) := by
     have := below_inner (sp := E) (a := 4) (b := 60) (k := 20) (by omega_arith) hlo
     rw [show E - BitVec.ofNat 32 24 = E - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
-  have calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - 32, 32⟩ (below E 60) := by
+  obtain calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - 32, 32⟩ (below E 60) := by
     have := below_inner (sp := E) (a := 32) (b := 60) (k := 24) (by omega_arith) hlo
-    have e : (E - BitVec.ofNat 32 24 - BitVec.ofNat 32 32).setWidth 64 =
+    obtain e : (E - BitVec.ofNat 32 24 - BitVec.ofNat 32 32).setWidth 64 =
         (E - BitVec.ofNat 32 24).setWidth 64 - 32 :=
       Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega_arith)]; omega_arith)
     show Region.Sub ⟨_, 32⟩ _
     rw [← e]; exact this
-  have b192 : (B + 192).toNat = B.toNat + 192 := by
+  obtain b192 : (B + 192).toNat = B.toNat + 192 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega_arith
-  have b768 : (B + 768).toNat = B.toNat + 768 := by
+  obtain b768 : (B + 768).toNat = B.toNat + 768 := by
     rw [BitVec.toNat_add, show (768 : BitVec 32).toNat = 768 from rfl]; omega_arith
   refine ⟨?_, ?_, ?_⟩
   · rw [← hsE]
@@ -392,7 +392,7 @@ def FinalizeIn (B E lo hi : BitVec 32) (s : State) : Prop :=
 theorem finalize_rel {B E lo hi : BitVec 32} :
     RelCT isa (fun s₁ s₂ => FinalizeIn B E lo hi s₁ ∧ FinalizeIn B E lo hi s₂) finalize
       fun _ _ => True := by
-  have blk : ∀ s, FinalizeIn B E lo hi s → WP isa (.block [.mov .eax (.reg .ebx), .alu .add .eax (.imm 192),
+  obtain blk : ∀ s, FinalizeIn B E lo hi s → WP isa (.block [.mov .eax (.reg .ebx), .alu .add .eax (.imm 192),
       .mov .esi (.reg .ebx), .alu .add .esi (.imm 768)]) s
       fun t => FinalizeIn B E lo hi t ∧ t.gpr .eax = B + 192 ∧ t.gpr .esi = B + 768 :=
     fun s ⟨c, e3, e4⟩ => wp_mov fun s₁ u₁ => wp_addi fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_addi fun s₄ u₄ =>
@@ -418,9 +418,9 @@ theorem finalize_rel {B E lo hi : BitVec 32} :
     [⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩]
     [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 768, 64⟩, ⟨B.setWidth 64 + 192, 576⟩]
     fun s₁ s₂ ⟨⟨⟨c₁, x₁, y₁⟩, a₁, i₁⟩, ⟨⟨c₂, x₂, y₂⟩, a₂, i₂⟩⟩ => ?_
-  have fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
+  obtain fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₁.gpr .esp).toNat := by
     rw [c₁.esp]; have := c₁.lo; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
+  obtain hsp : s₁.gpr .esp = s₂.gpr .esp := c₁.esp.trans c₂.esp.symm
   obtain ⟨p₁, p₂⟩ := call_pub (by decide) fit hsp (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

@@ -51,7 +51,7 @@ call enters it in (`State.callEntry`), and returns. -/
 theorem WP.callRaw {name : String} {c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa c s.callEntry fun s₂ => s₂.lr = s.callEntry.lr ∧ Q s₂) : WP isa (.call name c) s Q := by
   obtain ⟨t, s₂, he, hlr, hq⟩ := h
-  have hret : isa.ret s.callEntry s₂ = some s₂ := by
+  obtain hret : isa.ret s.callEntry s₂ = some s₂ := by
     simp only [isa, ret]
     exact ite_eq_left_of_eq_true _ _ (eq_true hlr)
   exact ⟨_, _, Exec.call (call_callEntry s) he hret, hq⟩
@@ -83,44 +83,44 @@ theorem montOpN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r3, .r14] (Q := fun t => t.gpr .r14 = s.lr ∧ t.gpr .r3 = s.gpr .r12 ∧ t.mem = s.mem)
     (by prun [exec_mflr, BitVec.add_zero]) (by decide)) fun t₀ ⟨⟨a14, a3, m0⟩, k0⟩ => ?_
-  have h10' : t₀.gpr .r10 = off B (slot w 0) := (k0.gpr _ (by decide)).trans h10
-  have h29' : t₀.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) := (k0.gpr _ (by decide)).trans h29
+  obtain h10' : t₀.gpr .r10 = off B (slot w 0) := (k0.gpr _ (by decide)).trans h10
+  obtain h29' : t₀.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) := (k0.gpr _ (by decide)).trans h29
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r5) (by decide) (by decide) h10' h29' o) fun t₁ ⟨⟨a5, m1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r6) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h10')
     ((k1.gpr _ (by decide)).trans h29') a) fun t₂ ⟨⟨a6, m2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r7) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10')
     ((k12.gpr _ (by decide)).trans h29') b) fun t₃ ⟨⟨a7, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r8) (by decide) (by decide) ((k13.gpr _ (by decide)).trans h10')
     ((k13.gpr _ (by decide)).trans h29') 2) fun t₄ ⟨⟨a8, m4⟩, k4⟩ => ?_
-  have k14 := k13.trans k4
+  obtain k14 := k13.trans k4
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r9) (by decide) (by decide) ((k14.gpr _ (by decide)).trans h10')
     ((k14.gpr _ (by decide)).trans h29') 3) fun t₅ ⟨⟨a9, m5⟩, k5⟩ => ?_
-  have k15 := k14.trans k5
+  obtain k15 := k14.trans k5
   refine WP.mono (WP.keep [.r4] (Q := fun t => t.gpr .r4 = BitVec.ofNat 64 (2 * w) ∧ t.mem = t₅.mem)
     (by prun [(k15.gpr .r11 (by decide)).trans ((k0.gpr .r11 (by decide)).trans h11), BitVec.add_zero])
     (by decide)) fun t₆ ⟨⟨a4, m6⟩, k6⟩ => ?_
-  have k16 := k15.trans k6
-  have hm : t₆.mem = s.mem := by rw [m6, m5, m4, m3, m2, m1, m0]
-  have g5 : t₆.gpr .r5 = off B (slot w o) := by rw [k6.gpr .r5 (by decide), k5.gpr .r5 (by decide),
+  obtain k16 := k15.trans k6
+  obtain hm : t₆.mem = s.mem := by rw [m6, m5, m4, m3, m2, m1, m0]
+  obtain g5 : t₆.gpr .r5 = off B (slot w o) := by rw [k6.gpr .r5 (by decide), k5.gpr .r5 (by decide),
     k4.gpr .r5 (by decide), k3.gpr .r5 (by decide), k2.gpr .r5 (by decide), a5]
-  have g6 : t₆.gpr .r6 = off B (slot w a) := by rw [k6.gpr .r6 (by decide), k5.gpr .r6 (by decide),
+  obtain g6 : t₆.gpr .r6 = off B (slot w a) := by rw [k6.gpr .r6 (by decide), k5.gpr .r6 (by decide),
     k4.gpr .r6 (by decide), k3.gpr .r6 (by decide), a6]
-  have g7 : t₆.gpr .r7 = off B (slot w b) := by rw [k6.gpr .r7 (by decide), k5.gpr .r7 (by decide),
+  obtain g7 : t₆.gpr .r7 = off B (slot w b) := by rw [k6.gpr .r7 (by decide), k5.gpr .r7 (by decide),
     k4.gpr .r7 (by decide), a7]
-  have g8 : t₆.gpr .r8 = off B (slot w 2) := by rw [k6.gpr .r8 (by decide), k5.gpr .r8 (by decide), a8]
-  have g9 : t₆.gpr .r9 = off B (slot w 3) := by rw [k6.gpr .r9 (by decide), a9]
-  have g3 : t₆.gpr .r3 = s.gpr .r12 := by rw [k16.gpr .r3 (by decide), a3]
-  have g14 : t₆.gpr .r14 = s.lr := by rw [k16.gpr .r14 (by decide), a14]
-  have g10 : t₆.gpr .r10 = off B (slot w 0) := (k16.gpr _ (by decide)).trans h10'
+  obtain g8 : t₆.gpr .r8 = off B (slot w 2) := by rw [k6.gpr .r8 (by decide), k5.gpr .r8 (by decide), a8]
+  obtain g9 : t₆.gpr .r9 = off B (slot w 3) := by rw [k6.gpr .r9 (by decide), a9]
+  obtain g3 : t₆.gpr .r3 = s.gpr .r12 := by rw [k16.gpr .r3 (by decide), a3]
+  obtain g14 : t₆.gpr .r14 = s.lr := by rw [k16.gpr .r14 (by decide), a14]
+  obtain g10 : t₆.gpr .r10 = off B (slot w 0) := (k16.gpr _ (by decide)).trans h10'
   -- The call: the kernel runs from the state the call enters it in.
-  have ce : ∀ r, r ∉ linkRegs → t₆.callEntry.gpr r = t₆.gpr r := fun r hr => State.callEntry_gpr t₆ hr
+  obtain ce : ∀ r, r ∉ linkRegs → t₆.callEntry.gpr r = t₆.gpr r := fun r hr => State.callEntry_gpr t₆ hr
   rw [← hm] at hinv hB ⊢
   refine WP.seq (WP.callRaw (WP.mono (kernel_ok (s := t₆.callEntry)
     (hs.congr ((State.callEntry_wr t₆).trans (k16.wr.trans k0.wr))) hn ho ha hb ho2 ho3 ha2 hb2
@@ -139,10 +139,10 @@ theorem montOpN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     · subst e11; rw [t11, h11]
     by_cases e12 : r = .r12
     · subst e12; rw [t12, ce _ (by decide), g3]
-    have hk : r ∉ kernelRegs := by
+    obtain hk : r ∉ kernelRegs := by
       simp only [kernelRegs, List.mem_cons, not_or]
       exact ⟨e11, e12, fun h => hr (List.mem_append_right _ h)⟩
-    have hl : r ∉ linkRegs := by
+    obtain hl : r ∉ linkRegs := by
       simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨fun h => hr (by subst h; decide), e11, e12⟩
     rw [kt.gpr r hk, ce r hl, k16.gpr r (fun h => hr (by

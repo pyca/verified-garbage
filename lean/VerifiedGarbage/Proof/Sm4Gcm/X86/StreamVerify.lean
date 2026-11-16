@@ -50,12 +50,12 @@ theorem FinIn.frameR {Ctx St W SP : BitVec 32} {al ah xl xh : BitVec 32} {s s' :
     (h : FinIn Ctx St W SP al ah xl xh s) (hf : Frame [rR W] s.mem s'.mem) (hbp : s'.gpr .ebp = s.gpr .ebp)
     (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     FinIn Ctx St W SP al ah xl xh s' := by
-  have sl : ∀ o, o + 4 ≤ rO → slotv s'.mem W o = slotv s.mem W o := fun o ho => by
+  obtain sl : ∀ o, o + 4 ≤ rO → slotv s'.mem W o = slotv s.mem W o := fun o ho => by
     have ho' : o + 4 ≤ 196 := ho
     rw [slotv_eq, slotv_eq]
     exact slot_frame hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl ho') (by omega_using [ho']) (by decide)
-  have hc := sl ctxO (by decide)
+  obtain hc := sl ctxO (by decide)
   rw [slotv_eq, slotv_eq] at hc
   exact ⟨h.env.keep hbp hsi hsp hrd hwr hc, by rw [sl _ (by decide)]; exact h.al, by rw [sl _ (by decide)]; exact h.ah,
     by rw [sl _ (by decide)]; exact h.xl, by rw [sl _ (by decide)]; exact h.xh⟩
@@ -96,16 +96,16 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   swap
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzp⟩ := hex
-  have FL : FinL p := (verifyPre_of hz).fl rfl (by decide) hzp
+  obtain FL : FinL p := (verifyPre_of hz).fl rfl (by decide) hzp
   have L := FL.L
-  have a8 : ∀ {s₀ : State}, pubSw 9 6 s₀ = p → arg s₀ 7 = p.2 7 := fun h =>
+  obtain a8 : ∀ {s₀ : State}, pubSw 9 6 s₀ = p → arg s₀ 7 = p.2 7 := fun h =>
     pubSw_arg h (by decide) (by decide) (by decide)
-  have a7 : ∀ {s₀ : State}, pubSw 9 6 s₀ = p → arg s₀ 6 = p.2 8 := fun h => pubSw_last h (by decide) rfl
+  obtain a7 : ∀ {s₀ : State}, pubSw 9 6 s₀ = p → arg s₀ 6 = p.2 8 := fun h => pubSw_last h (by decide) rfl
   obtain ⟨-, fT, tw⟩ := verifyPre_tag hz
   rw [a7 hzp, a8 hzp] at fT
   rw [a7 hzp, a8 hzp, pubSw_W hzp (m := 8) (by decide) rfl] at tw
   generalize hok : Spec.Gcm.tagLenOk (p.2 7).toNat = ok
-  have ht32 : (p.2 7).toNat < 2 ^ 32 := (p.2 7).isLt
+  obtain ht32 : (p.2 7).toNat < 2 ^ 32 := (p.2 7).isLt
   rw [streamVerify_eq]
   -- The entry, then the tag length.
   refine Pc.seq (finEntry_pc 9 8 rfl (by decide) [(6, tpO), (7, tglO)] (by decide) (by decide) verifyPre
@@ -128,14 +128,14 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     · mems []; rw [h.mem]; exact Frame.refl _ _
     · simp only [streamVerifyX86, ret32_eq]
       intro iv a c _ _ _
-      have e : Spec.Gcm.tagLenOk (arg s₀ 7).toNat = false := by rw [a8 h.ent.pub, hok, hf]
+      obtain e : Spec.Gcm.tagLenOk (arg s₀ 7).toNat = false := by rw [a8 h.ent.pub, hok, hf]
       simp only [e, Bool.false_eq_true, false_and, ↓reduceIte]
       regs []; rfl
   -- An allowed one: the tags compared.
   · have hT : ok = true := by simpa using hb
     have ht := hok
     rw [hT] at ht
-    have ht' : 1 ≤ (p.2 7).toNat ∧ (p.2 7).toNat ≤ 16 := by
+    obtain ht' : 1 ≤ (p.2 7).toNat ∧ (p.2 7).toNat ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at ht
       omega_using [ht]
     obtain ⟨t1, t16⟩ := ht'
@@ -170,7 +170,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
           ← slotv_eq]
         exact h.tgl⟩)) (fun _ _ h => h) ?_
     intro s₀ s₃ ⟨s₂, ⟨s', ⟨s, ⟨s₁, h⟩, b, f, g1, g2, g3, rd, wr⟩, fo, rd₂, wr₂⟩, a₃, f₃, e1, e2, e3, rd₃, wr₃⟩
-    have f₁ : Frame [rR (p.2 6)] s₁.mem s'.mem := by rw [← h.mem]; exact f
+    obtain f₁ : Frame [rR (p.2 6)] s₁.mem s'.mem := by rw [← h.mem]; exact f
     refine ⟨s₁, h.ent, fo.env.keep e1 e2 e3 rd₃ wr₃ ?_, ?_, ?_⟩
     · exact slot_frame f₃ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -187,23 +187,23 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       rw [hA 4 (by decide), hA 5 (by decide)] at hc
       rw [hA 0 (by decide), a7 h.ent.pub, a8 h.ent.pub]
       obtain ⟨hr₁, hC, hH⟩ := fin_repr h.ent L hr
-      have hC' : ciphOf s'.mem (p.2 0) = ciphOf s₁.mem (p.2 0) :=
+      obtain hC' : ciphOf s'.mem (p.2 0) = ciphOf s₁.mem (p.2 0) :=
         ciph_frame f₁ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact L.cw.sub_right (Lay.wSub (by decide)))
-      have hH' : Hk s'.mem (p.2 0) = Hk s₁.mem (p.2 0) :=
+      obtain hH' : Hk s'.mem (p.2 0) = Hk s₁.mem (p.2 0) :=
         blockAt_frame f₁ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-      have hr₂ : StreamRepr s'.mem (w64 (p.2 1)) (ciphOf s'.mem (p.2 0)) (Hk s'.mem (p.2 0)) iv a c := by
+      obtain hr₂ : StreamRepr s'.mem (w64 (p.2 1)) (ciphOf s'.mem (p.2 0)) (Hk s'.mem (p.2 0)) iv a c := by
         rw [hC', hH']
         exact streamRepr_frame f₁ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           simpa using L.st_w (a := 0) (n := 80) (d := 196) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)) hr₁
-      have tag := fo.tag iv a c hr₂ hl hc
+      obtain tag := fo.tag iv a c hr₂ hl hc
       rw [hC', hH', hC, hH] at tag
       generalize fullTag (ctxCiph s₀.mem (w64 (p.2 0))) (ctxH s₀.mem (w64 (p.2 0))) iv a c = T at tag ⊢
-      have bW : bytesAt s₂.mem (w64 (p.2 6) + BitVec.ofNat 64 0) (p.2 7).toNat = T.take (p.2 7).toNat := by
+      obtain bW : bytesAt s₂.mem (w64 (p.2 6) + BitVec.ofNat 64 0) (p.2 7).toNat = T.take (p.2 7).toNat := by
         rw [← tag, bytesAt_take _ _ t16]
-      have bR : bytesAt s₂.mem (w64 (p.2 6) + BitVec.ofNat 64 rO) 16 =
+      obtain bR : bytesAt s₂.mem (w64 (p.2 6) + BitVec.ofNat 64 rO) 16 =
           bytesAt s₀.mem (w64 (p.2 8)) (p.2 7).toNat ++ zeros (16 - (p.2 7).toNat) := by
         rw [bytesAt_frame fo.frame (rR_tagFrame L) (by decide), b, h.mem,
           bytesAt_frame h.ent.frame (fun r hr => by

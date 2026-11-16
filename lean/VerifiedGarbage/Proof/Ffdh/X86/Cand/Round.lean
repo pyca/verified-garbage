@@ -75,18 +75,18 @@ theorem pwR_sv4 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (pwR len .wide)) m m') (R : CallRoom sp base bytes) :
     sv m' base len .wide 4 = sv m base len .wide 4 := by
   have nw := h.scratch.nowrap
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
-  have bw := bc_eq_cwc len .wide
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have T := h.table_fit .wide
-  have t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
-  have e20 := lo_wide len 20
-  have e1 := lo_wide len 1
-  have e4 := lo_wide len 4
-  have e5 := lo_wide len 5
-  have e6 := lo_wide len 6
-  have e7 := lo_wide len 7
-  have e8 := lo_wide len 8
+  obtain T := h.table_fit .wide
+  obtain t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
+  obtain e20 := lo_wide len 20
+  obtain e1 := lo_wide len 1
+  obtain e4 := lo_wide len 4
+  obtain e5 := lo_wide len 5
+  obtain e6 := lo_wide len 6
+  obtain e7 := lo_wide len 7
+  obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   refine frameR_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
   intro p hp
@@ -103,21 +103,21 @@ theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog is
   have C₀ := P.ctx
   have h := C₀.inp
   have bl := h.bytes_lt
-  have f8 := h.slot_fit .wide (j := 8) (by decide)
+  obtain f8 := h.slot_fit .wide (j := 8) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have e5 := lo_wide len 5
-  have e8 := lo_wide len 8
+  obtain e5 := lo_wide len 5
+  obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   refine WP.seq (WP.mono (copyIn_ok h (j := 13) (d := 5) (by decide) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
-  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
+  obtain h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copyIn_ok h₂ (j := 11) (d := 8) (by decide) (by decide) (by decide)) fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
-  have sp₂ : u₂.gpr .esp = s.gpr .esp := K₂.1 _ (by decide)
-  have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
-  have G₂ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₂.mem :=
+  obtain sp₂ : u₂.gpr .esp = s.gpr .esp := K₂.1 _ (by decide)
+  obtain sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
+  obtain G₂ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₂.mem :=
     stR_of_outside h (by decide) O₂ ⟨_, by simp, slot_in h .wide (j := 5) (by decide)⟩
-  have G₃ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₂.mem u₃.mem :=
+  obtain G₃ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₂.mem u₃.mem :=
     stR_of_outside h (by decide) O₃ ⟨_, by simp, slot_in h .wide (j := 8) (by decide)⟩
-  have C₃ : CtxOk Ex base bytes len args .wide w u₃ := by
+  obtain C₃ : CtxOk Ex base bytes len args .wide w u₃ := by
     refine C₀.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) (K₂.trans K₃) (by decide) (by decide)
       (ws := [(lo len (.slot .wide 5), bc len .wide), (lo len (.slot .wide 8), bc len .wide)])
       ((frameR_of_outside O₂ (by omega_arith) (by simp)).trans (frameR_of_outside O₃ (by omega_arith) (by simp))) ?_ ?_
@@ -125,22 +125,22 @@ theorem pw_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {rest : Prog is
       rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
     · intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
-  have B₃ : sv u₃.mem base len .wide 5 = sv s.mem base len .wide 13 := by
+  obtain B₃ : sv u₃.mem base len .wide 5 = sv s.mem base len .wide 13 := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, V₂]
-  have E₃ : sv u₃.mem base len .wide 8 = sv s.mem base len .wide 11 := by
+  obtain E₃ : sv u₃.mem base len .wide 8 = sv s.mem base len .wide 11 := by
     rw [V₃, slotKeep h (by decide) (by decide) O₂]
-  have one₃ : sv u₃.mem base len .wide 3 = 1 := by
+  obtain one₃ : sv u₃.mem base len .wide 3 = 1 := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h (by decide) (by decide) O₂, P.one]
-  have R₃ : sv u₃.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % w := by
+  obtain R₃ : sv u₃.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % w := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, slotKeep h (by decide) (by decide) O₂, P.r2]
   refine WP.seq (WP.mono (windowPower_ok C₃ one₃ R₃) fun u ⟨C, F, K, Y⟩ => ?_)
   rw [B₃, E₃] at Y
   have room : CallRoom (u₃.gpr .esp) base bytes := C₃.inp.room
   rw [sp₃] at F room
-  have G := stR_widen F (pwR_in C₃.inp .wide 0)
-  have kt : Kept base len [] [] s.mem u.mem :=
+  obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
+  obtain kt : Kept base len [] [] s.mem u.mem :=
     ((kept_ops h G₂ h.room).trans (kept_ops h G₃ h.room)).trans (kept_ops h G h.room)
-  have R : Ready Ex base bytes len args w u :=
+  obtain R : Ready Ex base bytes len args w u :=
     ⟨C, by rw [pwR_sv3 C₃.inp F room, one₃], by rw [pwR_sv4 C₃.inp F room, R₃]⟩
   refine k u (Step.ops h ((G₂.trans G₃).trans G)
     (((K₂.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₂).trans (K₃.mono (by decide))).trans K))
@@ -155,29 +155,29 @@ theorem sqr_ok {w : Nat} (R : Ready Ex base bytes len args w s) {z : Nat} (hz : 
   have C := R.ctx
   have h := C.inp
   have hM := C.gt
-  have RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
+  obtain RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
     rw [← Nat.pow_add]; congr 1; omega_arith
   refine WP.seq (WP.mono (cmul_ok C (o := 6) (a := 6) (b := 6) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [hz]; exact hzw)) fun u₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
-  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-  have s3₁ : sv u₁.mem base len .wide 3 = sv s.mem base len .wide 3 :=
+  obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  obtain s3₁ : sv u₁.mem base len .wide 3 = sv s.mem base len .wide 3 :=
     mulR_sv h F₁ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
-  have s4₁ : sv u₁.mem base len .wide 4 = sv s.mem base len .wide 4 :=
+  obtain s4₁ : sv u₁.mem base len .wide 4 = sv s.mem base len .wide 4 :=
     mulR_sv h F₁ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (cmul_ok C₁ (o := 6) (a := 6) (b := 4) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [s4₁, R.r2]; exact Nat.mod_lt _ (by omega_arith))) fun u ⟨C₂, K₂, F₂, L₂, V₂⟩ => ?_)
   rw [sp₁] at F₂
-  have s3 : sv u.mem base len .wide 3 = sv u₁.mem base len .wide 3 :=
+  obtain s3 : sv u.mem base len .wide 3 = sv u₁.mem base len .wide 3 :=
     mulR_sv h F₂ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
-  have s4 : sv u.mem base len .wide 4 = sv u₁.mem base len .wide 4 :=
+  obtain s4 : sv u.mem base len .wide 4 = sv u₁.mem base len .wide 4 :=
     mulR_sv h F₂ h.room (by decide) (by decide) (by decide) (by decide) (by decide)
-  have G₁ := stR_widen F₁ (mulR_in h .wide (by decide) 0)
-  have G₂ := stR_widen F₂ (mulR_in h .wide (by decide) 0)
+  obtain G₁ := stR_widen F₁ (mulR_in h .wide (by decide) 0)
+  obtain G₂ := stR_widen F₂ (mulR_in h .wide (by decide) 0)
   rw [hz] at V₁
   rw [s4₁, R.r2, RR] at V₂
-  have e : sv u.mem base len .wide 6 * 2 ^ (8 * bc len .wide) % w = z * z * 2 ^ (8 * bc len .wide) % w := by
+  obtain e : sv u.mem base len .wide 6 * 2 ^ (8 * bc len .wide) % w = z * z * 2 ^ (8 * bc len .wide) % w := by
     rw [V₂, Nat.mul_mod_mod, ← Nat.mul_assoc, ← Nat.mod_mul_mod, V₁, Nat.mod_mul_mod]
-  have v := VG.Proof.Bignum.mont_cancel C.coprime e
+  obtain v := VG.Proof.Bignum.mont_cancel C.coprime e
   rw [Nat.mod_eq_of_lt L₂] at v
   exact k u (Step.ops h (G₁.trans G₂) (K₁.trans K₂))
     ⟨C₂, by rw [s3, s3₁, R.one], by rw [s4, s4₁, R.r2]⟩ v
@@ -198,34 +198,34 @@ theorem tally_ok {w : Nat} (P : Prepped Ex base bytes len args w s) {d : Nat} (h
       u.zf = some (decide (n = 1)) ∧ Kept base len [] [hitOff, jOff] s.mem u.mem ∧
       sv u.mem base len .wide 6 = sv s.mem base len .wide 6 := by
   have h := P.ctx.inp
-  have nl : n < 2 ^ 32 := by rw [← hn]; exact BitVec.isLt _
+  obtain nl : n < 2 ^ 32 := by rw [← hn]; exact BitVec.isLt _
   refine wp_orS (hdr_read h hdr_hit) fun v₁ U₁ => ?_
   refine hdr_store (h.regs U₁.keeps U₁.mem) hdr_hit fun v₂ S₂ W₂ k₂ O₂ _ _ _ => ?_
   refine wp_movS (hdr_read S₂.inp hd) fun v₃ U₃ _ => wp_subi fun v₄ U₄ _ z₄ => ?_
   refine hdr_store (S₂.inp.regs (U₃.keeps.trans U₄.keeps) (by rw [U₄.mem, U₃.mem])) hdr_j
     fun v₅ S₅ W₅ k₅ O₅ _ _ z₅ => WP.block_nil ?_
-  have dn : w32 v₂.mem base d = n := by
+  obtain dn : w32 v₂.mem base d = n := by
     rw [← hn, k₂.word_eq ⟨by rcases hd.1 with e | e <;> omega_arith, by rcases hd.1 with e | e <;> simp only [numBase] <;> omega_arith,
       hd.2, by simp only [List.mem_singleton]; exact hdh⟩, U₁.mem]
-  have e₄ : v₄.gpr .eax = BitVec.ofNat 32 n - 1 := by rw [U₄.gpr, U₃.gpr, dn]
-  have S₁ : Step Ex base bytes len args s v₁ := Step.regs h U₁.mem U₁.keeps
-  have S₄ : Step Ex base bytes len args v₂ v₄ :=
+  obtain e₄ : v₄.gpr .eax = BitVec.ofNat 32 n - 1 := by rw [U₄.gpr, U₃.gpr, dn]
+  obtain S₁ : Step Ex base bytes len args s v₁ := Step.regs h U₁.mem U₁.keeps
+  obtain S₄ : Step Ex base bytes len args v₂ v₄ :=
     Step.regs S₂.inp (by rw [U₄.mem, U₃.mem]) (U₃.keeps.trans U₄.keeps)
-  have kt : Kept base len [] [hitOff, jOff] s.mem v₅.mem :=
+  obtain kt : Kept base len [] [hitOff, jOff] s.mem v₅.mem :=
     ((by rw [U₁.mem]; exact (Kept.refl _).mono : Kept base len [] [hitOff, jOff] s.mem v₁.mem).trans
       (k₂.mono.trans ((by rw [U₄.mem, U₃.mem]; exact (Kept.refl _).mono :
         Kept base len [] [hitOff, jOff] v₂.mem v₄.mem).trans k₅.mono)))
-  have R : Ready Ex base bytes len args w v₅ :=
+  obtain R : Ready Ex base bytes len args w v₅ :=
     ((((P.toReady.regs U₁.keeps (by decide) (by decide) U₁.mem).hdr hdr_hit S₂.keeps (by decide) (by decide) O₂).regs
       (U₃.keeps.trans U₄.keeps) (by decide) (by decide) (by rw [U₄.mem, U₃.mem])).hdr hdr_j S₅.keeps (by decide)
       (by decide) O₅)
-  have e6 := lo_wide len 6
+  obtain e6 := lo_wide len 6
   have nb : numBase = 3336 := rfl
   have bl := h.bytes_lt
-  have f6 := slot_fit1 h (j := 6) (by decide)
+  obtain f6 := slot_fit1 h (j := 6) (by decide)
   rw [cb1] at f6
-  have bw := bc_eq_cwc len .wide
-  have s6 : sv v₅.mem base len .wide 6 = sv s.mem base len .wide 6 := by
+  obtain bw := bc_eq_cwc len .wide
+  obtain s6 : sv v₅.mem base len .wide 6 = sv s.mem base len .wide 6 := by
     show val32 _ _ _ _ = val32 _ _ _ _
     rw [O₅.val32 (.inr (by simp only [jOff]; omega_arith)) (by omega_arith), U₄.mem, U₃.mem,
       O₂.val32 (.inr (by simp only [hitOff]; omega_arith)) (by omega_arith), U₁.mem]
@@ -256,10 +256,10 @@ theorem squareStep_ok {w z i n : Nat} {t : State} (A : RoundAt Ex base bytes len
   unfold squareStep
   refine sqr_ok A.prep.toReady A.z6 (Nat.mod_lt _ (by omega_arith)) fun u₁ S₁ R₁ Z₁ k₁ => ?_
   rw [sq_pow] at Z₁
-  have P₁ := A.prep.keep R₁ k₁ (by decide)
+  obtain P₁ := A.prep.keep R₁ k₁ (by decide)
   refine WP.seq (WP.mono (eqW_ok S₁.inp (a := 6) (b := 15) (by decide) (by decide)) fun u₂ ⟨m₂, e₂, K₂⟩ => ?_)
   rw [Z₁, P₁.m1] at e₂
-  have P₂ := P₁.keep (P₁.toReady.regs K₂ (by decide) (by decide) m₂) (ds := []) (by rw [m₂]; exact Kept.refl _)
+  obtain P₂ := P₁.keep (P₁.toReady.regs K₂ (by decide) (by decide) m₂) (ds := []) (by rw [m₂]; exact Kept.refl _)
     (by decide)
   refine WP.mono (tally_ok P₂ hdr_j (by decide) (n := n) (by rw [m₂, k₁.word_eq, hj]) hn1
     (old := hits w z i) (by rw [m₂, k₁.word_eq, A.hit]) e₂) fun u ⟨S, P, H, J, Z, k, s6⟩ => ?_
@@ -275,39 +275,39 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
     WP isa round s fun u => Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
       w32 u.mem base hitOff = (cmask (Spec.Ffdh.mrRound w a)).toNat ∧
       Kept base len [] [hitOff, jOff] s.mem u.mem := by
-  have s1 := splitTwos_pos hw3 hodd
+  obtain s1 := splitTwos_pos hw3 hodd
   rw [mrRound_hits s1]
   generalize hz : a ^ (Spec.Rsa.splitTwos (w - 1)).2 % w = z
-  have zw : z < w := by rw [← hz]; exact Nat.mod_lt _ (by omega_arith)
+  obtain zw : z < w := by rw [← hz]; exact Nat.mod_lt _ (by omega_arith)
   unfold round
   refine pw_ok P fun u₁ S₁ P₁ Z₁ k₁ => ?_
   rw [ha, P.exp, hz] at Z₁
   refine WP.seq (WP.mono (eqW_ok S₁.inp (a := 6) (b := 3) (by decide) (by decide)) fun u₂ ⟨m₂, e₂, K₂⟩ => ?_)
   rw [Z₁, P₁.one] at e₂
-  have S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs S₁.inp m₂ K₂
+  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs S₁.inp m₂ K₂
   refine WP.seq (hdr_store (S₂.inp) hdr_hit fun u₃ S₃ W₃ k₃ O₃ _ _ _ => WP.block_nil ?_)
-  have P₃ : Prepped Ex base bytes len args w u₃ :=
+  obtain P₃ : Prepped Ex base bytes len args w u₃ :=
     P₁.keep (((P₁.toReady.regs K₂ (by decide) (by decide) m₂).hdr hdr_hit S₃.keeps (by decide) (by decide) O₃))
       ((by rw [m₂]; exact (Kept.refl _).mono : Kept base len [] [hitOff] u₁.mem u₂.mem).trans k₃)
       (by decide)
   have h₂ := S₂.inp
   have bl := h₂.bytes_lt
-  have e6 := lo_wide len 6
+  obtain e6 := lo_wide len 6
   have nb : numBase = 3336 := rfl
-  have f6 := slot_fit1 h₂ (j := 6) (by decide)
+  obtain f6 := slot_fit1 h₂ (j := 6) (by decide)
   rw [cb1] at f6
-  have bw := bc_eq_cwc len .wide
-  have z₃ : sv u₃.mem base len .wide 6 = z := by
+  obtain bw := bc_eq_cwc len .wide
+  obtain z₃ : sv u₃.mem base len .wide 6 = z := by
     show val32 _ _ _ _ = _
     rw [O₃.val32 (.inr (by simp only [hitOff]; omega_arith)) (by omega_arith), m₂]; exact Z₁
   refine WP.seq (WP.mono (eqW_ok S₃.inp (a := 6) (b := 15) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
   rw [z₃, P₃.m1] at e₄
-  have P₄ := P₃.keep (P₃.toReady.regs K₄ (by decide) (by decide) m₄) (ds := []) (by rw [m₄]; exact Kept.refl _)
+  obtain P₄ := P₃.keep (P₃.toReady.regs K₄ (by decide) (by decide) m₄) (ds := []) (by rw [m₄]; exact Kept.refl _)
     (by decide)
   refine WP.seq (WP.mono (tally_ok P₄ hdr_two (by decide) (n := (Spec.Rsa.splitTwos (w - 1)).1)
     (by rw [m₄]; exact P₃.two) s1 (old := decide (z = 1)) (by rw [m₄, W₃, e₂]) e₄)
     fun u₅ ⟨S₅, P₅, H₅, J₅, Z₅, k₅, s6₅⟩ => ?_)
-  have A : RoundAt Ex base bytes len args s w z 0 u₅ := by
+  obtain A : RoundAt Ex base bytes len args s w z 0 u₅ := by
     refine ⟨S₁.trans (S₂.trans (S₃.trans ((Step.regs S₃.inp m₄ K₄).trans S₅))), P₅, ?_, ?_, ?_⟩
     · rw [s6₅, m₄, z₃, Nat.pow_zero, Nat.pow_one, Nat.mod_eq_of_lt zw]
     · rw [H₅, hits_zero zw]
@@ -315,13 +315,13 @@ theorem round_ok {w a : Nat} (P : Prepped Ex base bytes len args w s) (ha : sv s
         (k₃.mono.trans ((by rw [m₄]; exact (Kept.refl _).mono : Kept base len [] [hitOff, jOff] u₃.mem u₄.mem).trans
           k₅)))
   generalize (Spec.Rsa.splitTwos (w - 1)).1 = sn at s1 J₅ Z₅ ⊢
-  have fin : ∀ u, RoundAt Ex base bytes len args s w z (sn - 1) u →
+  obtain fin : ∀ u, RoundAt Ex base bytes len args s w z (sn - 1) u →
       Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
       w32 u.mem base hitOff = (cmask (hits w z (sn - 1))).toNat ∧
       Kept base len [] [hitOff, jOff] s.mem u.mem := fun u A => ⟨A.step, A.prep, A.hit, A.kept⟩
   refine WP.ite (decide (sn = 1)) Z₅ (fun e => WP.block_nil (fin _ ?_)) fun e => ?_
   · rw [show sn = 1 by simpa using e]; exact A
-  have sn2 : 2 ≤ sn := by simp at e; omega_arith
+  obtain sn2 : 2 ≤ sn := by simp at e; omega_arith
   refine WP.loop (M := isa) (fun n t => ∃ i, n = sn - 1 - i ∧ i < sn - 1 ∧ RoundAt Ex base bytes len args s w z i t ∧
     w32 t.mem base jOff = sn - 1 - i) ?_ (sn - 1) u₅ ⟨0, by omega_arith, by omega_arith, A, by rw [J₅, Nat.sub_zero]⟩
   rintro n t ⟨i, rfl, hi, At, Jt⟩

@@ -25,46 +25,46 @@ theorem jointEncode_ok (M : Mont) {s : State} {P : Addr} {w n g y : Nat} {minv :
   refine WP.seq (WP.mono (jointProduct_ok M hc hw hw' (by unfold MmUse; decide)
     (by rw [hone]; exact hn)) fun s1 ⟨hc1, hl1, hv1, hf1, hk1⟩ => ?_)
   rw [hone] at hv1
-  have val1 : wv s1.mem P (slot w aY) w = 2 ^ (64 * w) % n := by
-    have h2 : wv s.mem P (slot w aR2) w % n = 2 ^ (64 * w) * 2 ^ (64 * w) % n := by rw [hr2, Nat.mod_mod]
-    have hv := VG.Proof.Dsa.mont_decode hR h2 hv1
+  obtain val1 : wv s1.mem P (slot w aY) w = 2 ^ (64 * w) % n := by
+    obtain h2 : wv s.mem P (slot w aR2) w % n = 2 ^ (64 * w) * 2 ^ (64 * w) % n := by rw [hr2, Nat.mod_mod]
+    obtain hv := VG.Proof.Dsa.mont_decode hR h2 hv1
     rwa [Nat.mod_eq_of_lt hl1] at hv
-  have r21 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hr2
-  have x1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hg
-  have y1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hy
+  obtain r21 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hr2
+  obtain x1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hg
+  obtain y1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hy
   refine WP.seq (WP.mono (jointProduct_ok M hc1 hw hw' (by unfold MmUse; decide)
     (by rw [r21]; exact Nat.mod_lt _ (by omega_using [hn]))) fun s2 ⟨hc2, hl2, hv2, hf2, hk2⟩ => ?_)
   rw [x1, r21] at hv2
-  have val2 := VG.Proof.Dsa.mont_scale hR hv2
+  obtain val2 := VG.Proof.Dsa.mont_scale hR hv2
   rw [Nat.mod_eq_of_lt hl2] at val2
-  have r22 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans r21
-  have y2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans y1
-  have acc2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans val1
+  obtain r22 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans r21
+  obtain y2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans y1
+  obtain acc2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans val1
   refine WP.seq (WP.mono (jointProduct_ok M hc2 hw hw' (by unfold MmUse; decide)
     (by rw [r22]; exact Nat.mod_lt _ (by omega_using [hn]))) fun s3 ⟨hc3, hl3, hv3, hf3, hk3⟩ => ?_)
   rw [y2, r22] at hv3
-  have val3 := VG.Proof.Dsa.mont_scale hR hv3
+  obtain val3 := VG.Proof.Dsa.mont_scale hR hv3
   rw [Nat.mod_eq_of_lt hl3] at val3
-  have x3 := (hf3.wv_of_not_mem (by decide) (by decide) hnow).trans val2
-  have acc3 := (hf3.wv_of_not_mem (by decide) (by decide) hnow).trans acc2
+  obtain x3 := (hf3.wv_of_not_mem (by decide) (by decide) hnow).trans val2
+  obtain acc3 := (hf3.wv_of_not_mem (by decide) (by decide) hnow).trans acc2
   refine WP.seq (WP.mono (jointCopy_ok hc3 hw hw' (by decide) (by decide) (by decide) (by decide))
     fun s4 ⟨hc4, hv4, hf4, hk4⟩ => ?_)
-  have gen4 := hv4.trans x3
-  have base4 := (hf4.wv_of_not_mem (by decide) (by decide) hnow).trans val3
-  have acc4 := (hf4.wv_of_not_mem (by decide) (by decide) hnow).trans acc3
+  obtain gen4 := hv4.trans x3
+  obtain base4 := (hf4.wv_of_not_mem (by decide) (by decide) hnow).trans val3
+  obtain acc4 := (hf4.wv_of_not_mem (by decide) (by decide) hnow).trans acc3
   refine WP.seq (WP.mono (jointCopy_ok hc4 hw hw' (by decide) (by decide) (by decide) (by decide))
     fun s5 ⟨hc5, hv5, hf5, hk5⟩ => ?_)
-  have one5 := hv5.trans acc4
-  have gen5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans gen4
-  have base5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans base4
-  have acc5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans acc4
+  obtain one5 := hv5.trans acc4
+  obtain gen5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans gen4
+  obtain base5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans base4
+  obtain acc5 := (hf5.wv_of_not_mem (by decide) (by decide) hnow).trans acc4
   refine WP.mono (jointCopy_ok hc5 hw hw' (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hu, hv6, hf6, hk6⟩ => ?_
-  have gen6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans gen5
-  have base6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans base5
-  have one6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans one5
-  have acc6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans acc5
-  have row6 := hv6.trans acc5
+  obtain gen6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans gen5
+  obtain base6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans base5
+  obtain one6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans one5
+  obtain acc6 := (hf6.wv_of_not_mem (by decide) (by decide) hnow).trans acc5
+  obtain row6 := hv6.trans acc5
   refine ⟨hu, ⟨gen6, base6, one6, ?_, ?_⟩, ?_,
     (((((hk1.trans hk2).trans hk3).trans hk4).trans hk5).trans hk6).mono (by decide)⟩
   · simpa only [Nat.zero_div, Nat.pow_zero, Nat.one_mul] using row6

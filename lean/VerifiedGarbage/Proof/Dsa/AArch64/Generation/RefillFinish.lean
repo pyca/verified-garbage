@@ -70,8 +70,8 @@ theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
     (hout : ∀ j < k, InRegions s.wr (op + BitVec.ofNat 64 j) 1) :
     WP isa zeroOut s fun t => (∀ i < k, t.mem (op + BitVec.ofNat 64 i) = 0) ∧
       (∀ x, (∀ i < k, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧ Keep [.x11, .x12, .x13] s t := by
-  have ho : s.mem.readW (F + BitVec.ofNat 64 sOut) 64 = op := (R.fr 19 (by decide)).trans hO
-  have hk : s.mem.readW (F + BitVec.ofNat 64 sK) 64 = BitVec.ofNat 64 k := (R.fr 21 (by decide)).trans hK
+  obtain ho : s.mem.readW (F + BitVec.ofNat 64 sOut) 64 = op := (R.fr 19 (by decide)).trans hO
+  obtain hk : s.mem.readW (F + BitVec.ofNat 64 sK) 64 = BitVec.ofNat 64 k := (R.fr 21 (by decide)).trans hK
   unfold zeroOut
   refine WP.seq (WP.mono (WP.keep [.x11, .x12, .x13] (Q := fun t => t.gpr .x11 = op ∧
       t.gpr .x12 = BitVec.ofNat 64 k ∧ t.gpr .x13 = 0 ∧ t.mem = s.mem) (by
@@ -83,10 +83,10 @@ theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
       fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], ((k₁.trans hI.keep).mono (by decide))⟩
   intro j hj t hI
-  have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
+  obtain hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
     rw [hI.keep.wr, k₁.wr]; exact hout j hj
-  have hax' : (t.gpr .x13).setWidth 8 = 0 := by rw [hI.keep.gpr .x13 (by decide), hax]; rfl
-  have hp : BitVec.ofNat 64 (k - j) - 1#64 = BitVec.ofNat 64 (k - (j + 1)) := by
+  obtain hax' : (t.gpr .x13).setWidth 8 = 0 := by rw [hI.keep.gpr .x13 (by decide), hax]; rfl
+  obtain hp : BitVec.ofNat 64 (k - j) - 1#64 = BitVec.ofNat 64 (k - (j + 1)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega_using [hj]
@@ -141,7 +141,7 @@ theorem outputZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
   · apply List.ext_getElem
     · simp only [VG.Proof.Bignum.bytesAt_length, List.length_replicate]
     · intro i hi hi'
-      have hil : i < len := by simpa only [VG.Proof.Bignum.bytesAt_length] using hi
+      obtain hil : i < len := by simpa only [VG.Proof.Bignum.bytesAt_length] using hi
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate, hm]
       exact zeros i hil
   · have ff : Frame [⟨W 6, len⟩] u.mem t.mem := by
@@ -182,28 +182,28 @@ theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
           (List.replicate (2 * p.geo.pLen + p.geo.qLen) 0) ∧
       Frame [⟨p.geo.F, frameBytes⟩, ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩] s.mem t.mem ∧
       Keep (.x0 :: mmRegs) s t := by
-  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
+  obtain pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  obtain qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.AArch64.Generation.finishOutput
   refine WP.seq (WP.mono (successStatus_ok h.layout R) fun u ⟨hz, hm, ku⟩ => ?_)
-  have mu := h.congr hm ku
-  have hwu : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ u.wr := by rw [ku.wr]; exact hw
+  obtain mu := h.congr hm ku
+  obtain hwu : (⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ : Region) ∈ u.wr := by rw [ku.wr]; exact hw
   rcases result with ⟨h19, he⟩ | ⟨h19, a, he, bytes⟩
   · have hn : W 19 ≠ 1 := h19
     refine WP.ite false (by exact hz.trans (congrArg some (beq_eq_false_iff_ne.mpr hn)))
       (fun impossible => Bool.noConfusion impossible) (fun _ => ?_)
     obtain ⟨Vu, Ru⟩ := mu.rep
-    have h6 := mu.slots 6 (by simp [generationSlots])
-    have h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
-    have call := outputZero_ok mu.layout Ru h7 ⟨by omega_using [pn], by omega_using [pn, qn]⟩
+    obtain h6 := mu.slots 6 (by simp [generationSlots])
+    obtain h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
+    obtain call := outputZero_ok mu.layout Ru h7 ⟨by omega_using [pn], by omega_using [pn, qn]⟩
     rw [h6] at call
     refine WP.mono (call hwu o.bound o.apart) fun t ⟨hr, bt, ft, kt⟩ => ?_
     rw [he]
     exact ⟨hr, bt, by simpa only [hm] using ft, (ku.trans kt).mono (by decide)⟩
   · refine WP.ite true (by apply hz.trans; rw [h19]; rfl)
       (fun _ => ?_) (fun impossible => Bool.noConfusion impossible)
-    have bytesu : Spec.Rsa.bytesAt u.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) =
+    obtain bytesu : Spec.Rsa.bytesAt u.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) =
         Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a := hm ▸ bytes
     refine WP.mono (output_copy_context mu o hwu _ (VG.Proof.Dsa.Generation.encodeParams_length _ _ _) bytesu)
       fun t ⟨hr, bt, ft, kt⟩ => ?_
@@ -259,11 +259,11 @@ theorem stores_run {s : State} {F St U : Addr} (e : ResEnv s F St U) {a b c : Bi
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.stores ++ Impl.Dsa.AArch64.Generation.Refill.statusWord k)) s
       fun t => t.mem = (written s.mem St U a b c).writeW (off F 472) (BitVec.ofNat 64 k) ∧ t.sp = s.sp ∧
         t.rd = s.rd ∧ t.wr = s.wr := by
-  have s472 : InRegions s.wr (s.sp + BitVec.ofNat 64 472) 8 := by rw [e.sp]; exact ctl_in e.ctl (k := 3) (by decide)
-  have st0 : InRegions s.wr St 8 := ⟨_, e.st, contains_head St (n := 8) (k := 32) (by decide)⟩
-  have st24 : InRegions s.wr (St + BitVec.ofNat 64 24) 8 := ⟨_, e.st, Offset.contains_base St (by decide) (by decide)⟩
-  have us0 : InRegions s.wr U 8 := ⟨_, e.us, contains_head U (n := 8) (k := 8) (by decide)⟩
-  have hm := movi_small hk
+  obtain s472 : InRegions s.wr (s.sp + BitVec.ofNat 64 472) 8 := by rw [e.sp]; exact ctl_in e.ctl (k := 3) (by decide)
+  obtain st0 : InRegions s.wr St 8 := ⟨_, e.st, contains_head St (n := 8) (k := 32) (by decide)⟩
+  obtain st24 : InRegions s.wr (St + BitVec.ofNat 64 24) 8 := ⟨_, e.st, Offset.contains_base St (by decide) (by decide)⟩
+  obtain us0 : InRegions s.wr U 8 := ⟨_, e.us, contains_head U (n := 8) (k := 8) (by decide)⟩
+  obtain hm := movi_small hk
   simp only [Impl.Dsa.AArch64.Generation.Refill.stores, Impl.Dsa.AArch64.Generation.Refill.statusWord,
     Impl.Dsa.AArch64.Generation.Refill.ctl, Nat.reduceMul, Nat.reduceAdd, List.cons_append, List.nil_append,
     VG.Impl.Bignum.AArch64.st]
@@ -290,15 +290,15 @@ theorem ranOutCheck_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
         t.gpr .x11 = BitVec.ofNat 64 (32769 * pLen) ∧
         t.gpr .x12 = BitVec.ofNat 64 (if 32769 * pLen ≤ len - c then 1 else 0) ∧ t.mem = s.mem) ∧
       Keep [.x9, .x10, .x11, .x12, .x13] s t := by
-  have w15 : s.mem.readW (s.sp + BitVec.ofNat 64 120) 64 = BitVec.ofNat 64 len := by
+  obtain w15 : s.mem.readW (s.sp + BitVec.ofNat 64 120) 64 = BitVec.ofNat 64 len := by
     rw [L.sp]; exact (R.fr 15 (by decide)).trans h15
-  have w3 : s.mem.readW (s.sp + BitVec.ofNat 64 472) 64 = BitVec.ofNat 64 c := by rw [L.sp]; exact h3
-  have l120 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 120) 8 := by rw [L.sp]; exact L.ld (d := 120) (by decide)
-  have l472 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 472) 8 := by rw [L.sp]; exact ctl_in' hv (k := 3) (by decide)
-  have hsub : BitVec.ofNat 64 len - BitVec.ofNat 64 c = BitVec.ofNat 64 (len - c) := Offset.ofNat_sub_ofNat hc
-  have hp : pLen ≤ 384 := by omega_using [hp3]
-  have e15 := shl_small pLen 15 (by omega_using [hp3])
-  have eb : BitVec.ofNat 64 (pLen * 2 ^ 15) + BitVec.ofNat 64 pLen = BitVec.ofNat 64 (32769 * pLen) := by
+  obtain w3 : s.mem.readW (s.sp + BitVec.ofNat 64 472) 64 = BitVec.ofNat 64 c := by rw [L.sp]; exact h3
+  obtain l120 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 120) 8 := by rw [L.sp]; exact L.ld (d := 120) (by decide)
+  obtain l472 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 472) 8 := by rw [L.sp]; exact ctl_in' hv (k := 3) (by decide)
+  obtain hsub : BitVec.ofNat 64 len - BitVec.ofNat 64 c = BitVec.ofNat 64 (len - c) := Offset.ofNat_sub_ofNat hc
+  obtain hp : pLen ≤ 384 := by omega_using [hp3]
+  obtain e15 := shl_small pLen 15 (by omega_using [hp3])
+  obtain eb : BitVec.ofNat 64 (pLen * 2 ^ 15) + BitVec.ofNat 64 pLen = BitVec.ofNat 64 (32769 * pLen) := by
     rw [← BitVec.ofNat_add]; congr 1; omega_using []
   refine WP.keep [.x9, .x10, .x11, .x12, .x13] ?_ (by rcases hp3 with rfl | rfl | rfl <;> decide) rfl
     (by rcases hp3 with rfl | rfl | rfl <;> decide +kernel)
@@ -317,7 +317,7 @@ theorem request_run {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^
     WP isa (.block Impl.Dsa.AArch64.Generation.Refill.request) s fun t =>
       (t.gpr .x10 = BitVec.ofNat 64 (VG.Proof.Entropy.request (256 * pLen) B L) ∧ t.gpr .x11 = BitVec.ofNat 64 B ∧
         t.mem = s.mem) ∧ Keep [.x10, .x12, .x13] s t := by
-  have e8 := shl_small pLen 8 (by omega_using [hp])
+  obtain e8 := shl_small pLen 8 (by omega_using [hp])
   refine WP.keep [.x10, .x12, .x13] ?_ (by decide) rfl (by decide +kernel)
   unfold Impl.Dsa.AArch64.Generation.Refill.request
   brun [State.write, exec_lsl_x (by decide : 8 < 64), e8, h9, h10, h11,
@@ -341,10 +341,10 @@ theorem resultsStart_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat �
     WP isa (.block Impl.Dsa.AArch64.Generation.Refill.resultsStart) s fun t =>
       (t.gpr .x14 = ctlWord s.mem F 1 ∧ t.gpr .x15 = ctlWord s.mem F 0 ∧ t.gpr .x3 = W 19 ∧ t.mem = s.mem) ∧
         Keep [.x3, .x14, .x15] s t := by
-  have w : s.mem.readW (s.sp + BitVec.ofNat 64 152) 64 = W 19 := by rw [L.sp]; exact R.fr 19 (by decide)
-  have l : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 152) 8 := by rw [L.sp]; exact L.ld (d := 152) (by decide)
-  have l448 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 448) 8 := by rw [L.sp]; exact ctl_in' hv (k := 0) (by decide)
-  have l456 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 456) 8 := by rw [L.sp]; exact ctl_in' hv (k := 1) (by decide)
+  obtain w : s.mem.readW (s.sp + BitVec.ofNat 64 152) 64 = W 19 := by rw [L.sp]; exact R.fr 19 (by decide)
+  obtain l : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 152) 8 := by rw [L.sp]; exact L.ld (d := 152) (by decide)
+  obtain l448 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 448) 8 := by rw [L.sp]; exact ctl_in' hv (k := 0) (by decide)
+  obtain l456 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 456) 8 := by rw [L.sp]; exact ctl_in' hv (k := 1) (by decide)
   refine WP.keep [.x3, .x14, .x15] ?_ (by decide)
   simp only [Impl.Dsa.AArch64.Generation.Refill.resultsStart, Impl.Dsa.AArch64.Generation.Refill.ctl,
     Nat.reduceMul, Nat.reduceAdd]
@@ -365,8 +365,8 @@ theorem prefixE_run {s : State} {F : Addr} (hsp : s.sp = F) (hv : (⟨F, 480⟩ 
     WP isa (.block [.ldrSp .x11 (Impl.Dsa.AArch64.Generation.Refill.ctl 2),
         .ldrSp .x12 (Impl.Dsa.AArch64.Generation.Refill.ctl 3)]) s fun t =>
       (t.gpr .x11 = ctlWord s.mem F 2 ∧ t.gpr .x12 = ctlWord s.mem F 3 ∧ t.mem = s.mem) ∧ Keep [.x11, .x12] s t := by
-  have l2 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 464) 8 := by rw [hsp]; exact ctl_in' hv (k := 2) (by decide)
-  have l3 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 472) 8 := by rw [hsp]; exact ctl_in' hv (k := 3) (by decide)
+  obtain l2 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 464) 8 := by rw [hsp]; exact ctl_in' hv (k := 2) (by decide)
+  obtain l3 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 472) 8 := by rw [hsp]; exact ctl_in' hv (k := 3) (by decide)
   refine WP.keep [.x11, .x12] ?_ (by decide)
   simp only [Impl.Dsa.AArch64.Generation.Refill.ctl, Nat.reduceMul, Nat.reduceAdd]
   brun [State.write, exec_ldrSp (off := 464) (by decide), exec_ldrSp (off := 472) (by decide), l2, l3]
@@ -378,7 +378,7 @@ theorem prefixZ_run {s : State} {F : Addr} (hsp : s.sp = F) (hv : (⟨F, 480⟩ 
         .ldrSp .x12 d]) s fun t =>
       (t.gpr .x11 = 0 ∧ t.gpr .x10 = 0 ∧ t.gpr .x12 = s.mem.readW (off F d) 64 ∧ t.mem = s.mem) ∧
         Keep [.x10, .x11, .x12] s t := by
-  have l : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 d) 8 := by
+  obtain l : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 d) 8 := by
     rw [hsp]; exact ⟨_, List.mem_append_right _ hv, Offset.contains_base F (by omega_using [hd]) (by omega_using [hd])⟩
   refine WP.keep [.x10, .x11, .x12] ?_ (by rcases hd with rfl | rfl <;> decide) rfl
     (by rcases hd with rfl | rfl <;> decide +kernel)
@@ -417,9 +417,9 @@ theorem results_regions : ∀ r ∈ [inState s₀, inUsed s₀, ctlRegion (refil
     r.Disjoint ⟨refillBase s₀, frameBytes⟩ ∧ r.Disjoint ⟨(refillGeometry h).hash, oRsa⟩ ∧
       (⟨(randTape h).ptr, (randTape h).bytes.length⟩ : Region).Disjoint r ∧
       r.Disjoint ⟨s₀.gpr .x5, VG.Impl.Dsa.Generation.Layout.usedBytes pBytes⟩ := by
-  have hrl : (⟨(randTape h).ptr, (randTape h).bytes.length⟩ : Region) = inRand s₀ := by
+  obtain hrl : (⟨(randTape h).ptr, (randTape h).bytes.length⟩ : Region) = inRand s₀ := by
     simp only [randTape, bytesAt_length, inRand]
-  have fb : ∀ {r : Region}, (r = inOut s₀ ∨ r = inUsed s₀ ∨ r = inRand s₀ ∨ r = inScr s₀ ∨ r = inState s₀) →
+  obtain fb : ∀ {r : Region}, (r = inOut s₀ ∨ r = inUsed s₀ ∨ r = inRand s₀ ∨ r = inScr s₀ ∨ r = inState s₀) →
       r.Disjoint ⟨refillBase s₀, frameBytes⟩ := fun hr => by
     have := h.frame_disjoint hr (d := 0) (n := frameBytes) (by decide)
     simpa only [off, BitVec.add_zero] using this
@@ -436,7 +436,7 @@ theorem genMem_results {hs : GenerationTape (refillGeometry h)} (hin : HsIn h hs
     (hsp : t.sp = s.sp) (hr : t.rd = s.rd) (hw : t.wr = s.wr) :
     GenerationMemory ((refillContext h).withHs hs) W t := by
   obtain ⟨V, R⟩ := hm.rep
-  have Rt : Rep t.mem (refillBase s₀) (refillGeometry h).hash V W :=
+  obtain Rt : Rep t.mem (refillBase s₀) (refillGeometry h).hash V W :=
     rep_of_disjoint_frame R hf (fun r hr => ((results_regions h) r hr).1.symm)
       (fun r hr => ((results_regions h) r hr).2.1.symm)
   exact ⟨lay_of_rep hm.layout R Rt rfl hsp hw, ⟨V, Rt⟩, hm.slots, hm.scratch.congr hw,
@@ -464,33 +464,33 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     (hd : LoopDone h v n c t) :
     WP isa (Impl.Dsa.AArch64.Generation.Refill.results pBytes) t (ResultsDone h v n c) := by
   obtain ⟨hs, W, hin, hm, c0, c1, fv, rdv, wrv, hx19, c3, cases⟩ := hd
-  have hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
+  obtain hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
     have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
-  have hp : pBytes ≤ 384 := by omega_using [hp3]
-  have wt : t.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr := wrv.trans hv
-  have env : ∀ x : State, x.sp = refillBase s₀ → x.wr = t.wr → ResEnv x (refillBase s₀) (s₀.gpr .x7) (s₀.gpr .x2) :=
+  obtain hp : pBytes ≤ 384 := by omega_using [hp3]
+  obtain wt : t.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr := wrv.trans hv
+  obtain env : ∀ x : State, x.sp = refillBase s₀ → x.wr = t.wr → ResEnv x (refillBase s₀) (s₀.gpr .x7) (s₀.gpr .x2) :=
     fun x hsp hw =>
     { sp := hsp
       ctl := by rw [hw, wt]; exact List.mem_cons_self ..
       st := by rw [hw, wt]; exact List.mem_cons_of_mem _ (by rw [h.wr]; simp [inState])
       us := by rw [hw, wt]; exact List.mem_cons_of_mem _ (by rw [h.wr]; simp [inUsed]) }
-  have hlen : (randTape h).bytes.length < 2 ^ 32 := by
+  obtain hlen : (randTape h).bytes.length < 2 ^ 32 := by
     have hr := h.randLength
     rw [h.width] at hr
     change (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .x3) (s₀.gpr .x4).toNat).length < _
     rw [bytesAt_length]; unfold Spec.Dsa.parameterEntropy at hr; omega_using [hp3, hr]
-  have h15 : W 15 = BitVec.ofNat 64 (randTape h).bytes.length :=
+  obtain h15 : W 15 = BitVec.ofNat 64 (randTape h).bytes.length :=
     (hm.slots 15 (by simp [generationSlots])).trans ((refillContext h).withHs hs).randLengthSlot
-  have hv480 : (⟨refillBase s₀, 480⟩ : Region) ∈ t.wr := by rw [wt]; exact List.mem_cons_self ..
-  have packedSub : ∀ r ∈ [inState s₀, inUsed s₀, ctlRegion (refillBase s₀)],
+  obtain hv480 : (⟨refillBase s₀, 480⟩ : Region) ∈ t.wr := by rw [wt]; exact List.mem_cons_self ..
+  obtain packedSub : ∀ r ∈ [inState s₀, inUsed s₀, ctlRegion (refillBase s₀)],
       (⟨off (s₀.gpr .x5) packed, 2 * pBytes + Spec.Dsa.generationQLen pBytes⟩ : Region).Disjoint r := by
-    have qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega_using []
+    obtain qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega_using []
     intro r hr
     exact ((results_regions h) r hr).2.2.2.symm.sub_left ((refillGeometry h).part_sub
       ((refillGeometry h).small_bound (d := packed) (n := 2 * pBytes + Spec.Dsa.generationQLen pBytes) (by decide)
         (by unfold VG.Impl.Dsa.Generation.Layout.arithmeticBytes; omega_using [hp3, qn])))
   -- the end, from the words stored
-  have fin : ∀ {x y : State} {a b d : BitVec 64} {st : Nat}, x.mem = t.mem → x.sp = refillBase s₀ →
+  obtain fin : ∀ {x y : State} {a b d : BitVec 64} {st : Nat}, x.mem = t.mem → x.sp = refillBase s₀ →
       x.rd = t.rd → x.wr = t.wr →
       y.mem = (written x.mem (s₀.gpr .x7) (s₀.gpr .x2) a b d).writeW (off (refillBase s₀) 472) (BitVec.ofNat 64 st) →
       y.sp = x.sp → y.rd = x.rd → y.wr = x.wr →
@@ -502,11 +502,11 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
             Spec.Dsa.encodeParams pBytes (Spec.Dsa.generationQLen pBytes) p)) →
       ResultsDone h v n c y := by
     intro x y a b d st xm xsp xrd xwr ym ysp yrd ywr ha hb hd hst out
-    have fw : Frame [inState s₀, inUsed s₀, ctlRegion (refillBase s₀)] x.mem y.mem := by
+    obtain fw : Frame [inState s₀, inUsed s₀, ctlRegion (refillBase s₀)] x.mem y.mem := by
       rw [ym]; exact results_frame _ _ _ _ _ _ _ _
-    have hmx : GenerationMemory ((refillContext h).withHs hs) W x := by
+    obtain hmx : GenerationMemory ((refillContext h).withHs hs) W x := by
       obtain ⟨V, R⟩ := hm.rep
-      have Rx : Rep x.mem (refillBase s₀) (refillGeometry h).hash V W := xm ▸ R
+      obtain Rx : Rep x.mem (refillBase s₀) (refillGeometry h).hash V W := xm ▸ R
       exact hm.frame (lay_of_rep hm.layout R Rx rfl (xsp.trans hm.layout.sp.symm) xwr) ⟨V, Rx⟩ (fun _ _ => rfl)
         (by rw [xm]; exact Frame.refl _ _) xrd xwr
     refine ⟨hs, W, t.mem, a, b, d, st, hin, genMem_results h hin hmx fw ysp yrd ywr, hx19, fv, by rw [ym, xm],
@@ -521,21 +521,21 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
   refine WP.seq (WP.mono (resultsStart_run hm.layout R hv480) fun t₁ ⟨⟨x14₁, x15₁, x3₁, m₁⟩, k₁⟩ => ?_)
   replace x14₁ : t₁.gpr .x14 = s₀.gpr .x7 := x14₁.trans c1
   replace x15₁ : t₁.gpr .x15 = s₀.gpr .x2 := x15₁.trans c0
-  have sp₁ : t₁.sp = refillBase s₀ := k₁.sp.trans hm.layout.sp
-  have ev₁ : eval (.zero .x .x3) t₁ = some (W 19 == 0) := by simp only [eval, State.read, x3₁, BitVec.setWidth_eq]
-  have cw₁ : ∀ k, ctlWord t₁.mem (refillBase s₀) k = ctlWord t.mem (refillBase s₀) k := fun k => by rw [m₁]
+  obtain sp₁ : t₁.sp = refillBase s₀ := k₁.sp.trans hm.layout.sp
+  obtain ev₁ : eval (.zero .x .x3) t₁ = some (W 19 == 0) := by simp only [eval, State.read, x3₁, BitVec.setWidth_eq]
+  obtain cw₁ : ∀ k, ctlWord t₁.mem (refillBase s₀) k = ctlWord t.mem (refillBase s₀) k := fun k => by rw [m₁]
   rcases cases with ⟨h19, hc, htot⟩ | ⟨h19, hc, c2, hk, htot⟩ | ⟨h19, a, u, hu, h16, htot, bytes⟩
   · -- no seeds left
     refine WP.ite false (ev₁.trans (by rw [h19]; rfl)) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
     refine WP.seq (WP.mono minusOne_run fun t₂ ⟨⟨ev₂, m₂⟩, k₂⟩ => ?_)
     refine WP.ite false (ev₂.trans (by rw [x3₁, h19]; rfl)) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
-    have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
+    obtain sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
     simp only [Impl.Dsa.AArch64.Generation.Refill.exhaustedWords, Impl.Dsa.AArch64.Generation.Refill.ctl,
       List.append_assoc, Nat.reduceMul, Nat.reduceAdd]
     apply WP.block_append
     refine WP.mono (prefixZ_run sp₂ (by rw [k₂.wr, k₁.wr]; exact hv480) (d := 472) (Or.inl rfl))
       fun t₃ ⟨⟨x11, x10, x12, m₃⟩, k₃⟩ => ?_
-    have mt₃ : t₃.mem = t.mem := m₃.trans (m₂.trans m₁)
+    obtain mt₃ : t₃.mem = t.mem := m₃.trans (m₂.trans m₁)
     refine WP.mono (stores_run (env t₃ (k₃.sp.trans sp₂) (k₃.wr.trans (k₂.wr.trans k₁.wr)))
       3 (by decide) x11 x10 x12 ((k₃.gpr .x14 (by decide)).trans ((k₂.gpr .x14 (by decide)).trans x14₁))
       ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁)))
@@ -548,11 +548,11 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
   · -- the tape ran out
     refine WP.ite true (ev₁.trans (by rw [h19]; rfl)) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
     obtain ⟨V₁, R₁⟩ := (genMem_keep hm m₁ k₁).rep
-    have L₁ := (genMem_keep hm m₁ k₁).layout
+    obtain L₁ := (genMem_keep hm m₁ k₁).layout
     refine WP.seq (WP.mono (ranOutCheck_run L₁ R₁ (by rw [k₁.wr]; exact hv480) (by change ctlWord t₁.mem (refillBase s₀) 3 = _; rw [cw₁]; exact c3) h15 hc
       (by omega_using [hlen]) hp3) fun t₂ ⟨⟨x10₂, x9₂, x11₂, x12₂, m₂⟩, k₂⟩ => ?_)
-    have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
-    have mt₂ : t₂.mem = t.mem := m₂.trans m₁
+    obtain sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
+    obtain mt₂ : t₂.mem = t.mem := m₂.trans m₁
     by_cases hL : 32769 * pBytes ≤ (randTape h).bytes.length - c
     · refine WP.ite false (by simp [eval, State.read, x12₂, hL]) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
       simp only [Impl.Dsa.AArch64.Generation.Refill.exhaustedWords, Impl.Dsa.AArch64.Generation.Refill.ctl,
@@ -560,12 +560,12 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
       apply WP.block_append
       refine WP.mono (prefixZ_run sp₂ (by rw [k₂.wr, k₁.wr]; exact hv480) (d := 472) (Or.inl rfl))
         fun t₃ ⟨⟨x11, x10, x12, m₃⟩, k₃⟩ => ?_
-      have mt₃ : t₃.mem = t.mem := m₃.trans mt₂
+      obtain mt₃ : t₃.mem = t.mem := m₃.trans mt₂
       refine WP.mono (stores_run (env t₃ (k₃.sp.trans sp₂) (k₃.wr.trans (k₂.wr.trans k₁.wr)))
         3 (by decide) x11 x10 x12 ((k₃.gpr .x14 (by decide)).trans ((k₂.gpr .x14 (by decide)).trans x14₁))
         ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁)))
         fun t₄ ⟨m₄, sp₄, rd₄, wr₄⟩ => ?_
-      have hL' : Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
+      obtain hL' : Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
         unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine fin mt₃ (k₃.sp.trans sp₂) (k₃.rd.trans (k₂.rd.trans k₁.rd)) (k₃.wr.trans (k₂.wr.trans k₁.wr))
         m₄ sp₄ rd₄ wr₄ ?_ ?_ ?_ ?_ (Or.inl ⟨by rw [h19]; decide, ?_⟩)
@@ -578,18 +578,18 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
       apply WP.block_append
       refine WP.mono (request_run (L := (randTape h).bytes.length - c) (B := Spec.Dsa.parameterEntropy pBytes)
         (by omega_using [hlen]) (by unfold Spec.Dsa.parameterEntropy; omega_using [hp3]) hp x9₂ x10₂ x11₂) fun t₃ ⟨⟨x10₃, x11₃, m₃⟩, k₃⟩ => ?_
-      have sp₃ : t₃.sp = refillBase s₀ := k₃.sp.trans sp₂
-      have mt₃ : t₃.mem = t.mem := m₃.trans mt₂
+      obtain sp₃ : t₃.sp = refillBase s₀ := k₃.sp.trans sp₂
+      obtain mt₃ : t₃.mem = t.mem := m₃.trans mt₂
       apply WP.block_append
       refine WP.mono (prefixE_run sp₃ (by rw [k₃.wr, k₂.wr, k₁.wr]; exact hv480))
         fun t₄ ⟨⟨x11₄, x12₄, m₄⟩, k₄⟩ => ?_
-      have mt₄ : t₄.mem = t.mem := m₄.trans mt₃
+      obtain mt₄ : t₄.mem = t.mem := m₄.trans mt₃
       refine WP.mono (stores_run (env t₄ (k₄.sp.trans sp₃) (k₄.wr.trans (k₃.wr.trans (k₂.wr.trans k₁.wr))))
         0 (by decide) x11₄ ((k₄.gpr .x10 (by decide)).trans x10₃) x12₄
         ((k₄.gpr .x14 (by decide)).trans ((k₃.gpr .x14 (by decide)).trans ((k₂.gpr .x14 (by decide)).trans x14₁)))
         ((k₄.gpr .x15 (by decide)).trans ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁))))
         fun t₅ ⟨m₅, sp₅, rd₅, wr₅⟩ => ?_
-      have hL' : ¬Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
+      obtain hL' : ¬Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
         unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine fin mt₄ (k₄.sp.trans sp₃) (k₄.rd.trans (k₃.rd.trans (k₂.rd.trans k₁.rd)))
         (k₄.wr.trans (k₃.wr.trans (k₂.wr.trans k₁.wr))) m₅ sp₅ rd₅ wr₅ ?_ ?_ ?_ ?_ (Or.inl ⟨by rw [h19]; decide, ?_⟩)
@@ -603,12 +603,12 @@ theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 48
     refine WP.ite false (ev₁.trans (by rw [h19]; rfl)) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
     refine WP.seq (WP.mono minusOne_run fun t₂ ⟨⟨ev₂, m₂⟩, k₂⟩ => ?_)
     refine WP.ite true (ev₂.trans (by rw [x3₁, h19]; rfl)) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
-    have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
+    obtain sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
     simp only [Impl.Dsa.AArch64.Generation.Refill.acceptedWords, List.append_assoc]
     apply WP.block_append
     refine WP.mono (prefixZ_run sp₂ (by rw [k₂.wr, k₁.wr]; exact hv480) (d := 128) (Or.inr rfl))
       fun t₃ ⟨⟨x11, x10, x12, m₃⟩, k₃⟩ => ?_
-    have mt₃ : t₃.mem = t.mem := m₃.trans (m₂.trans m₁)
+    obtain mt₃ : t₃.mem = t.mem := m₃.trans (m₂.trans m₁)
     refine WP.mono (stores_run (env t₃ (k₃.sp.trans sp₂) (k₃.wr.trans (k₂.wr.trans k₁.wr)))
       1 (by decide) x11 x10 x12 ((k₃.gpr .x14 (by decide)).trans ((k₂.gpr .x14 (by decide)).trans x14₁))
       ((k₃.gpr .x15 (by decide)).trans ((k₂.gpr .x15 (by decide)).trans x15₁)))
@@ -643,26 +643,26 @@ def FinishDone (v t : State) : Prop :=
 
 theorem finish_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr) (hd : LoopDone h v n c t) :
     WP isa (Impl.Dsa.AArch64.Generation.Refill.finish pBytes) t (FinishDone h v) := by
-  have o := refillOutputPlan h
-  have outLen : 2 * pBytes + Spec.Dsa.generationQLen pBytes = (s₀.gpr .x1).toNat := by
+  obtain o := refillOutputPlan h
+  obtain outLen : 2 * pBytes + Spec.Dsa.generationQLen pBytes = (s₀.gpr .x1).toNat := by
     rw [← h.width]; exact h.outLength.symm
   unfold Impl.Dsa.AArch64.Generation.Refill.finish
   simp only [VG.Impl.Bignum.AArch64.seqs]
   refine WP.seq (WP.mono (results_ok h hv hd) fun t₁ D => ?_)
   obtain ⟨hs, W, m₁, r0, r3, uv, st, hin, hm, -, fv, mt₁, hr0, hr3, huv, hst, out, sp₁, rd₁, wr₁⟩ := D
-  have o' : OutputPlan ((refillContext h).withHs hs) := ⟨o.lengthSlot, o.bound, o.separate⟩
-  have hw : (⟨((refillContext h).withHs hs).saved 6,
+  obtain o' : OutputPlan ((refillContext h).withHs hs) := ⟨o.lengthSlot, o.bound, o.separate⟩
+  obtain hw : (⟨((refillContext h).withHs hs).saved 6,
       2 * ((refillContext h).withHs hs).geo.pLen + ((refillContext h).withHs hs).geo.qLen⟩ : Region) ∈ t₁.wr := by
     change (⟨s₀.gpr .x0, 2 * pBytes + Spec.Dsa.generationQLen pBytes⟩ : Region) ∈ t₁.wr
     rw [outLen, wr₁, hv]; exact List.mem_cons_of_mem _ (by rw [h.wr]; simp [inOut])
   refine WP.seq (WP.mono (finishOutput_ok hm o' hw (expectedOf (total h)) out) fun t₂ ⟨_, bytes₂, f₂, k₂⟩ => ?_)
-  have f₂' : Frame [⟨refillBase s₀, frameBytes⟩, inOut s₀] t₁.mem t₂.mem := by
+  obtain f₂' : Frame [⟨refillBase s₀, frameBytes⟩, inOut s₀] t₁.mem t₂.mem := by
     refine f₂.mono fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl
     · exact Or.inl rfl
     · right; change _ = (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region); rw [← outLen]; rfl
-  have c3 : ctlWord t₂.mem (refillBase s₀) 3 = BitVec.ofNat 64 (total h).status := by
+  obtain c3 : ctlWord t₂.mem (refillBase s₀) 3 = BitVec.ofNat 64 (total h).status := by
     rw [ctlWord_frame f₂' (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -670,11 +670,11 @@ theorem finish_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 480
       · exact (h.frame_disjoint (r := inOut s₀) (by simp) (d := 448) (n := 32) (by decide)).symm) (by decide),
       mt₁, hst]
     exact ctlWord_write_self _ _ 3 _
-  have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
-  have l : InRegions (t₂.rd ++ t₂.wr) (t₂.sp + BitVec.ofNat 64 472) 8 := by
+  obtain sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
+  obtain l : InRegions (t₂.rd ++ t₂.wr) (t₂.sp + BitVec.ofNat 64 472) 8 := by
     rw [sp₂]
     exact ctl_in' (s := t₂) (F := refillBase s₀) (by rw [k₂.wr, wr₁, hv]; exact List.mem_cons_self ..) (k := 3) (by decide)
-  have w : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 472) 64 = BitVec.ofNat 64 (total h).status := by
+  obtain w : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 472) 64 = BitVec.ofNat 64 (total h).status := by
     rw [sp₂]; exact c3
   refine WP.mono (WP.keep [.x0] (Q := fun t₃ => t₃.gpr .x0 = BitVec.ofNat 64 (total h).status ∧ t₃.mem = t₂.mem) (by
     simp only [Impl.Dsa.AArch64.Generation.Refill.ctl, Nat.reduceMul, Nat.reduceAdd]

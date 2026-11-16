@@ -83,61 +83,61 @@ theorem open_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have hn := L.n_lt
   unfold «open»
   refine WP.seq (WP.mono (entry_wp Ar) fun s₁ En => ?_)
-  have hN₁ : Buf c s₁ N c.nl := Ar.nonce.of_eq En.rd En.wr
+  obtain hN₁ : Buf c s₁ N c.nl := Ar.nonce.of_eq En.rd En.wr
   refine WP.seq (WP.mono (ctrs_wp L En.env hN₁ En.r5 En.r6) fun s₂ ⟨pk₂, f₂, c₂⟩ => ?_)
   rw [entry_buf En.frame Ar.nonce] at c₂
-  have hnl : (bytesAt s.mem N c.nl).length = c.nl := length_bytesAt _ _ _
-  have f₂' : Frame (mutR c) s₁.mem s₂.mem := f₂.sub (c0_mut c)
-  have E₂ := En.env.of_pk pk₂
+  obtain hnl : (bytesAt s.mem N c.nl).length = c.nl := length_bytesAt _ _ _
+  obtain f₂' : Frame (mutR c) s₁.mem s₂.mem := f₂.sub (c0_mut c)
+  obtain E₂ := En.env.of_pk pk₂
   refine WP.seq (WP.mono (ctr_wp L E₂ hnl c₂) fun s₃ ⟨pk₃, f₃, h₃⟩ => ?_)
-  have E₃ := E₂.of_pk pk₃
-  have f₁₃ : Frame (mutR c) s₁.mem s₃.mem := f₂'.trans (f₃.sub (crR_mut c))
-  have c₃ : bytesAt s₃.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N c.nl) 0 := by
+  obtain E₃ := E₂.of_pk pk₃
+  obtain f₁₃ : Frame (mutR c) s₁.mem s₃.mem := f₂'.trans (f₃.sub (crR_mut c))
+  obtain c₃ : bytesAt s₃.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N c.nl) 0 := by
     rw [Proof.Cmac.bytesAt_frame f₃ (crR_disj L (.inl (by decide))) (by decide), c₂]
   refine WP.seq (WP.mono (mac_wp L E₃ (En.slots.mut L f₁₃) hnl c₃ (.inr rfl)) fun s₄ M => ?_)
   have fM := M.frame
   rw [macR_list] at fM
-  have c₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N c.nl) 0 := by
+  obtain c₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N c.nl) 0 := by
     rw [Proof.Cmac.bytesAt_frame fM (w_keep L (by decide) (by decide)) (by decide), c₃]
-  have E₄ := E₃.of_pk M.pk
+  obtain E₄ := E₃.of_pk M.pk
   refine WP.seq (WP.mono (tag_wp L E₄ hnl c₄ (.inr rfl)) fun s₅ ⟨pk₅, _, f₅, h₅⟩ => ?_)
-  have E₅ := E₄.of_pk pk₅
-  have f₁₄ : Frame (mutR c) s₁.mem s₄.mem := f₁₃.trans (M.frame.sub (macR_mut (.inr rfl)))
-  have f₁₅ : Frame (mutR c) s₁.mem s₅.mem := f₁₄.trans (f₅.sub (ctrR_mut c (.inr rfl)))
+  obtain E₅ := E₄.of_pk pk₅
+  obtain f₁₄ : Frame (mutR c) s₁.mem s₄.mem := f₁₃.trans (M.frame.sub (macR_mut (.inr rfl)))
+  obtain f₁₅ : Frame (mutR c) s₁.mem s₅.mem := f₁₄.trans (f₅.sub (ctrR_mut c (.inr rfl)))
   -- The address of the received tag, from its slot.
   refine WP.seq (wp_ld (a := c.W + BitVec.ofNat 64 240) (by decide) (by decide) (by rw [E₅.r14]; rfl)
     (E₅.perm.wR (by decide)) fun s₆ u₆ => WP.block_nil ?_)
-  have pk₆ : PK s₅ s₆ := PK.ofUpd u₆
+  obtain pk₆ : PK s₅ s₆ := PK.ofUpd u₆
   have m₆ : s₆.mem = s₅.mem := u₆.mem
-  have r18₆ : s₆.gpr .r18 = c.T := by rw [u₆.gpr]; exact (En.slots.mut L f₁₅).tag
+  obtain r18₆ : s₆.gpr .r18 = c.T := by rw [u₆.gpr]; exact (En.slots.mut L f₁₅).tag
   refine WP.seq (WP.mono (cmp_wp L (E₅.of_pk pk₆) r18₆) fun s₇ ⟨pk₇, f₇, r21₇⟩ => ?_)
   rw [m₆] at r21₇ f₇
   -- What the comparison compares.
-  have hBC : ∀ m : Mem, BlockCipher (Spec.Ccm.ctxCiph m c.K c.R) := fun _ x => Proof.Cmac.aesWith_length _ _ x
-  have k₁ := entry_ciph L En.frame
-  have k₂ : Spec.Ccm.ctxCiph s₂.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₂', k₁]
-  have k₃ : Spec.Ccm.ctxCiph s₃.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₁₃, k₁]
-  have k₄ : Spec.Ccm.ctxCiph s₄.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₁₄, k₁]
-  have bD := L.bufD Ar.perm
-  have bD₁ : Buf c s₁ c.D c.n := bD.of_eq En.rd En.wr
-  have hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
+  obtain hBC : ∀ m : Mem, BlockCipher (Spec.Ccm.ctxCiph m c.K c.R) := fun _ x => Proof.Cmac.aesWith_length _ _ x
+  obtain k₁ := entry_ciph L En.frame
+  obtain k₂ : Spec.Ccm.ctxCiph s₂.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₂', k₁]
+  obtain k₃ : Spec.Ccm.ctxCiph s₃.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₁₃, k₁]
+  obtain k₄ : Spec.Ccm.ctxCiph s₄.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₁₄, k₁]
+  obtain bD := L.bufD Ar.perm
+  obtain bD₁ : Buf c s₁ c.D c.n := bD.of_eq En.rd En.wr
+  obtain hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [c0_list] at f₂
     rw [Proof.Cmac.bytesAt_frame f₂ (bufW_keep bD₁ (by decide)) (by omega_using [hn]), entry_buf En.frame bD]
-  have ha₃ : bytesAt s₃.mem c.A c.al = bytesAt s.mem c.A c.al := by
+  obtain ha₃ : bytesAt s₃.mem c.A c.al = bytesAt s.mem c.A c.al := by
     rw [aad_mut L f₁₃, entry_buf En.frame (L.bufA Ar.perm)]
-  have hpt : bytesAt s₃.mem c.D c.n =
+  obtain hpt : bytesAt s₃.mem c.D c.n =
       Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n) := by
     rw [h₃, k₂, hd₂, crypt_eq (hBC _)]
-  have hd₇ : bytesAt s₇.mem c.D c.n = bytesAt s₃.mem c.D c.n := by
+  obtain hd₇ : bytesAt s₇.mem c.D c.n = bytesAt s₃.mem c.D c.n := by
     rw [cmpR_list] at f₇
     rw [ctrR_list] at f₅
     rw [Proof.Cmac.bytesAt_frame f₇ (bufW_keep bD₁ (by decide)) (by omega_using [hn]),
       Proof.Cmac.bytesAt_frame f₅ (bufW_keep bD₁ (by decide)) (by omega_using [hn]),
       Proof.Cmac.bytesAt_frame fM (bufW_keep bD₁ (by decide)) (by omega_using [hn])]
-  have hrecv : bytesAt s₅.mem c.T c.tl = bytesAt s.mem c.T c.tl := by
+  obtain hrecv : bytesAt s₅.mem c.T c.tl = bytesAt s.mem c.T c.tl := by
     rw [tag_mut L f₁₅, Proof.Cmac.bytesAt_frame En.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega_using [ht16])]
-  have hcomp : bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
+  obtain hcomp : bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
       Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
         (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))) := by
@@ -149,25 +149,25 @@ theorem open_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   refine WP.seq (WP.mono (mask_wp L (E₅.of_pk (pk₆.trans pk₇)) r21₇) fun s₈ ⟨pk₈, r21₈, m₈⟩ => ?_)
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun s₉ u₉ => ?_
-  have f₈ : Frame [⟨c.D, c.n⟩] s₇.mem s₈.mem := by
+  obtain f₈ : Frame [⟨c.D, c.n⟩] s₇.mem s₈.mem := by
     rw [m₈]; exact writeBytes_frame _ _ _ (by rw [List.length_map, length_bytesAt]; exact Region.contains_self _ _)
-  have f₁₈ : Frame (mutR c) s₁.mem s₈.mem :=
+  obtain f₁₈ : Frame (mutR c) s₁.mem s₈.mem :=
     (f₁₅.trans ((m₆ ▸ (show Frame [(⟨c.W + BitVec.ofNat 64 256, 32⟩ : Region)] s₆.mem s₇.mem by
       rw [m₆]; exact f₇)).sub (cmpR_mut c))).trans (f₈.sub (maskR_mut c))
-  have pk₁₉ : PK s₁ s₉ := pk₂.trans (pk₃.trans (M.pk.trans (pk₅.trans (pk₆.trans (pk₇.trans (pk₈.trans
+  obtain pk₁₉ : PK s₁ s₉ := pk₂.trans (pk₃.trans (M.pk.trans (pk₅.trans (pk₆.trans (pk₇.trans (pk₈.trans
     (PK.ofUpd u₉)))))))
-  have sv₉ : Saved c.W (saveG s) savedL s₉.mem := by rw [u₉.mem]; exact saved_mut L f₁₈ En.saved
+  obtain sv₉ : Saved c.W (saveG s) savedL s₉.mem := by rw [u₉.mem]; exact saved_mut L f₁₈ En.saved
   refine WP.mono (exit_wp (En.env.of_pk pk₁₉) sv₉ (by rw [pk₁₉.sp, En.sp])
     (fun r hr => by rw [pk₁₉.gpr r (other_keep r hr), En.others r hr])) fun s' ⟨abi, hm, r3'⟩ => ⟨abi, ?_⟩
   -- The result.
-  have hmlen : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
+  obtain hmlen : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
       (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))).length =
       c.tl := by
     rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega_using [this]), List.length_take,
       length_chain (hBC _) _ _ (by simp [Spec.Cmac.zeros])]
     omega_using [ht16]
-  have hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.T c.tl)
-  have hr3 : s'.gpr .r3 = s₇.gpr .r21 := by rw [r3', u₉.gpr, r21₈]
+  obtain hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.T c.tl)
+  obtain hr3 : s'.gpr .r3 = s₇.gpr .r21 := by rw [r3', u₉.gpr, r21₈]
   simp only [openOut, Spec.Ccm.decryptWith]
   rw [hr3, r21₇, hm, u₉.mem, m₈, masked hn, hd₇, hpt]
   by_cases he : Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)

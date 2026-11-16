@@ -36,7 +36,7 @@ theorem xorWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := ldr_ok s₁ .x9 .x15 hd
     (by rw [rd₁, wr₁, o₁ _ (by decide)]; exact hr')
   obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := eor_ok s₂ .x8 .x8 .x9
-  have x15₃ : s₃.gpr .x15 = s.gpr .x15 := by rw [o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide)]
+  obtain x15₃ : s₃.gpr .x15 = s.gpr .x15 := by rw [o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide)]
   obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := str_ok s₃ .x8 .x15 hd
     (by rw [wr₃, wr₂, wr₁, x15₃]; exact hw)
   refine ⟨s₄, ?_, ?_, fun r h1 h2 => by rw [g₄, o₃ r h1, o₂ r h2, o₁ r h1], by rw [rd₄, rd₃, rd₂, rd₁],
@@ -73,15 +73,15 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
   refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ XorInv A B c s₀ j s)
     (fun n s hs => ?_) c s₀ ⟨0, by omega_arith, hc, hs⟩
   obtain ⟨j, rfl, hj, hi⟩ := hs
-  have hA0 := hA (2 * j) (by omega_arith)
-  have hA1 := hA (2 * j + 1) (by omega_arith)
-  have hB0 := hB (2 * j) (by omega_arith)
-  have hB1 := hB (2 * j + 1) (by omega_arith)
-  have hn : 16 * c < 2 ^ 64 := by omega_arith
-  have hAs : ∀ t < 16 * c, s.mem (A + BitVec.ofNat 64 t) = s₀.mem (A + BitVec.ofNat 64 t) := fun t ht =>
+  obtain hA0 := hA (2 * j) (by omega_arith)
+  obtain hA1 := hA (2 * j + 1) (by omega_arith)
+  obtain hB0 := hB (2 * j) (by omega_arith)
+  obtain hB1 := hB (2 * j + 1) (by omega_arith)
+  obtain hn : 16 * c < 2 ^ 64 := by omega_arith
+  obtain hAs : ∀ t < 16 * c, s.mem (A + BitVec.ofNat 64 t) = s₀.mem (A + BitVec.ofNat 64 t) := fun t ht =>
     hi.frame.bytes (R := ⟨A, 16 * c⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
       (by simp only; omega_arith) ht
-  have rB : ∀ (st : State), st.rd = s₀.rd → st.wr = s₀.wr → ∀ e, e < 2 * c →
+  obtain rB : ∀ (st : State), st.rd = s₀.rd → st.wr = s₀.wr → ∀ e, e < 2 * c →
       InRegions (st.rd ++ st.wr) (B + BitVec.ofNat 64 (8 * e)) 8 := fun st h1 h2 e he => by
     rw [h1, h2]; exact (let ⟨r, hr, hc⟩ := hB e he; ⟨r, List.mem_append_right _ hr, hc⟩)
   obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := xorWord_ok s (d := 0) (by decide)
@@ -107,26 +107,26 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
       ([.addImm .x .x14 .x14 16] ++ ([.addImm .x .x15 .x15 16] ++ [.subImm .x .x17 .x17 1]))) from rfl,
       runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, runBlock_app, e₄, Option.bind_some, e₅], ?_⟩
-  have r1 : s₁.gpr .x15 = B + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide) (by decide), hi.x15]
-  have a1 : s₁.gpr .x14 = A + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide) (by decide), hi.x14]
-  have hm : s₅.mem = s₁.mem.writeW (B + BitVec.ofNat 64 (16 * j + 8))
+  obtain r1 : s₁.gpr .x15 = B + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide) (by decide), hi.x15]
+  obtain a1 : s₁.gpr .x14 = A + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide) (by decide), hi.x14]
+  obtain hm : s₅.mem = s₁.mem.writeW (B + BitVec.ofNat 64 (16 * j + 8))
       (s₁.mem.readW (A + BitVec.ofNat 64 (16 * j + 8)) 64 ^^^ s₁.mem.readW (B + BitVec.ofNat 64 (16 * j + 8)) 64) := by
     rw [m₅, m₄, m₃, m₂, r1, a1, addr_add, addr_add]
-  have hm₁ : s₁.mem = s.mem.writeW (B + BitVec.ofNat 64 (16 * j))
+  obtain hm₁ : s₁.mem = s.mem.writeW (B + BitVec.ofNat 64 (16 * j))
       (s.mem.readW (A + BitVec.ofNat 64 (16 * j)) 64 ^^^ s.mem.readW (B + BitVec.ofNat 64 (16 * j)) 64) := by
     rw [m₁, hi.x15, hi.x14, addr_add, addr_add, Nat.add_zero]
   -- `s₁` and `s` agree on `A`'s area, and on `B`'s beyond the first word.
-  have hA₁ : ∀ t < 16 * c, s₁.mem (A + BitVec.ofNat 64 t) = s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
+  obtain hA₁ : ∀ t < 16 * c, s₁.mem (A + BitVec.ofNat 64 t) = s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
     rw [hm₁, writeW_xor_apply, ite_eq_right (not_in_of_disjoint hsep ht (by omega_arith) hn)]
-  have hB₁ : ∀ t, 16 * j + 8 ≤ t → t < 16 * c → s₁.mem (B + BitVec.ofNat 64 t) = s.mem (B + BitVec.ofNat 64 t) :=
+  obtain hB₁ : ∀ t, 16 * j + 8 ≤ t → t < 16 * c → s₁.mem (B + BitVec.ofNat 64 t) = s.mem (B + BitVec.ofNat 64 t) :=
     fun t h1 h2 => by
       rw [hm₁, writeW_xor_apply, ite_eq_right (off_sub_not B (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))]
-  have g₅ : ∀ r, r ≠ .x8 → r ≠ .x9 → r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s₅.gpr r = s.gpr r :=
+  obtain g₅ : ∀ r, r ≠ .x8 → r ≠ .x9 → r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s₅.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 => by rw [o₅ r h5, o₄ r h4, o₃ r h3, g₂ r h1 h2, g₁ r h1 h2]
-  have x17₅ : s₅.gpr .x17 = BitVec.ofNat 64 (c - (j + 1)) := by
+  obtain x17₅ : s₅.gpr .x17 = BitVec.ofNat 64 (c - (j + 1)) := by
     rw [c₅, o₄ _ (by decide), o₃ _ (by decide), g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide), hi.x17,
       VG.Offset.ofNat_sub_ofNat (by omega_arith), show c - j - 1 = c - (j + 1) by omega_arith]
-  have hinv : XorInv A B c s₀ (j + 1) s₅ := by
+  obtain hinv : XorInv A B c s₀ (j + 1) s₅ := by
     refine ⟨?_, ?_, x17₅, fun t ht => ?_, fun t h1 h2 => ?_, hi.frame.trans fun x hx => ?_,
       fun r h1 h2 h3 h4 h5 => ?_, by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩
     · rw [o₅ _ (by decide), o₄ _ (by decide), a₃, g₂ _ (by decide) (by decide), a1, addr_add,
@@ -152,7 +152,7 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
       rw [hm, writeW_xor_apply, ite_eq_right (hout _ (by omega_arith)), hm₁, writeW_xor_apply,
         ite_eq_right (hout _ (by omega_arith))]
     · rw [g₅ r h1 h2 h3 h4 h5, hi.regs r h1 h2 h3 h4 h5]
-  have hz : isa.eval (.nonzero .x .x17) s₅ = some !(decide (c - (j + 1) = 0)) := by
+  obtain hz : isa.eval (.nonzero .x .x17) s₅ = some !(decide (c - (j + 1) = 0)) := by
     rw [eval_nonzero, x17₅, ofNat_beq_zero (by omega_arith)]
   by_cases hl : j + 1 = c
   · refine .inl ⟨by rw [hz, decide_eq_true (by omega_arith)]; rfl, by rw [show j + 1 = c from hl] at hinv; exact hinv⟩

@@ -184,7 +184,7 @@ theorem start_ok {Hyp : Prop} {H : Block} {m₀ : Mem} {s : State} (he : Env Ctx
       (.ite .e (firstFlush v.callees) (.block []))) s fun s' => Env Ctx St W SP s' 768 ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ Frame (tFrame St W SP 16) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length) ++ c₀)) := by
-  have r₂ := he.perm.wR (show 192 + 8 ≤ 768 by decide)
+  obtain r₂ := he.perm.wR (show 192 + 8 ≤ 768 by decide)
   obtain ⟨s₂, run₂, hz₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.mov .rax (.mem (at_ .r15 tlenO)),
       .alu .test .rax (.reg .rax)] s = some s₂ ∧ s₂.zf = some (decide (c₀.length = 0)) ∧
       (∀ r, r ≠ .rax → s₂.gpr r = s.gpr r) ∧ s₂.mem = s.mem ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
@@ -193,18 +193,18 @@ theorem start_ok {Hyp : Prop} {H : Block} {m₀ : Mem} {s : State} (he : Env Ctx
     · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
     all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  have he₂ : Env Ctx St W SP s₂ 768 := he.keep (fun r hr => by
+  obtain he₂ : Env Ctx St W SP s₂ 768 := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide)) hrd₂ hwr₂
-  have hm₂' : s₂.mem = m₀ := hm₂.trans hm
+  obtain hm₂' : s₂.mem = m₀ := hm₂.trans hm
   refine WP.ite (decide (c₀.length = 0)) (eval_e hz₂) (fun ht => ?_) (fun hf => ?_)
   · have hc : c₀ = [] := List.eq_nil_of_length_eq_zero (by simpa using ht)
     subst hc
-    have r₃ := he₂.perm.wR (show 184 + 8 ≤ 768 by decide)
+    obtain r₃ := he₂.perm.wR (show 184 + 8 ≤ 768 by decide)
     obtain ⟨s₃, run₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
         .alu .and .rbx (imm 15)] s₂ = some s₃ ∧ s₃.gpr .rbx = BitVec.ofNat 64 (a.length % 16) ∧
         (∀ r, r ≠ .rbx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-      have hand := and15 (BitVec.ofNat 64 a.length)
+      obtain hand := and15 (BitVec.ofNat 64 a.length)
       rw [imm_eq (by decide), toNat_mod16] at hand
       refine ⟨_, by xrun [he₂.r15, r₃], ?_, ?_, ?_⟩
       · simp only [gpr_setReg, gpr_arithFlags, ite_true, hm₂, hal, hand]
@@ -212,10 +212,10 @@ theorem start_ok {Hyp : Prop} {H : Block} {m₀ : Mem} {s : State} (he : Env Ctx
       all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
     unfold firstFlush
     refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-    have he₃ : Env Ctx St W SP s₃ 768 := he₂.keep (fun r hr => by
+    obtain he₃ : Env Ctx St W SP s₃ 768 := he₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃
-    have hm₃' : s₃.mem = m₀ := hm₃.trans hm₂'
+    obtain hm₃' : s₃.mem = m₀ := hm₃.trans hm₂'
     refine WP.mono (WP.with_rdwr (flush_ok v L.lay (yo := 16) (.inr rfl) (H := H) (x := a)
       ⟨he₃, by rw [hm₃']; exact hH⟩ hbx₃)) fun s₄ ⟨fo, rd₄, wr₄⟩ =>
         ⟨fo.env, by rw [rd₄, hrd₃, hrd₂], by rw [wr₄, hwr₃, hwr₂], hm₃' ▸ fo.frame, fun hy => ?_⟩
@@ -245,32 +245,32 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (c₀.length + n) ∧
         bytesAt s'.mem D n = xorKs (ciphOf m₀ Ctx) icb c₀.length (bytesAt m₀ D n)) := by
   have hlt := hd.dw.ok.lt
-  have hx : (a ++ zeros (padLen a.length) ++ c₀).length % 16 = c₀.length % 16 := by
+  obtain hx : (a ++ zeros (padLen a.length) ++ c₀).length % 16 = c₀.length % 16 := by
     have := Proof.Gcm.length_pad_mod a.length
     simp only [List.length_append, Proof.Gcm.length_zeros]; omega_arith
   simp only [streamText]
   obtain ⟨s₁, run₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp hbp hlt
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ 768 := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
+  obtain he₁ : Env Ctx St W SP s₁ 768 := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
   refine WP.ite (decide (n = 0)) (eval_e hz₁) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
     subst h0
     refine WP.block_nil ⟨he₁, hrd₁, hwr₁, by rw [hm₁, hm]; exact Frame.refl _ _, fun hy => ⟨?_, ?_, rfl⟩⟩
     · rw [bytesAt_zero, ctext_nil, List.append_nil, hm₁, hm]; exact hyA hy
     · rw [hm₁, hm]; exact hyC hy
-  have h0 : n ≠ 0 := by simpa using hf
+  obtain h0 : n ≠ 0 := by simpa using hf
   refine WP.assoc (WP.seq (WP.mono (start_ok v L he₁ (hm₁.trans hm) hP hH (by rw [hm₁]; exact hal)
     (by rw [hm₁]; exact htl) hyA) fun s₂ ⟨he₂, rd₂, wr₂, f₂, ha₂⟩ => ?_))
   -- The slots of `W`, the hash subkey, the cipher, the counter and the data, through the padding.
-  have sl₂ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
+  obtain sl₂ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_tFrame L h₁ h₂) (by decide), hm]
-  have hd₂ : DataW4 Ctx St W SP s₂ D n 768 := hd.of_eq (rd₂.trans hrd₁) (wr₂.trans hwr₁)
-  have hc₂ : ciphOf s₂.mem Ctx = ciphOf m₀ Ctx := ciph_frame f₂ (ctx_tFrame16 L)
-  have hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
+  obtain hd₂ : DataW4 Ctx St W SP s₂ D n 768 := hd.of_eq (rd₂.trans hrd₁) (wr₂.trans hwr₁)
+  obtain hc₂ : ciphOf s₂.mem Ctx = ciphOf m₀ Ctx := ciph_frame f₂ (ctx_tFrame16 L)
+  obtain hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame f₂ fun r hr => (ctx_tFrame16 L r hr).sub_left (Lay.ctxSub (by decide)), hH]
-  have hD₂ : bytesAt s₂.mem D n = bytesAt m₀ D n := bytesAt_frame f₂ (data_tFrame hd) (by omega_arith)
-  have hC₂ : Hyp → Ctr s₂.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb c₀.length :=
+  obtain hD₂ : bytesAt s₂.mem D n = bytesAt m₀ D n := bytesAt_frame f₂ (data_tFrame hd) (by omega_arith)
+  obtain hC₂ : Hyp → Ctr s₂.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb c₀.length :=
     fun hy => ctr_frame f₂ (ctr_tFrame16 L) (hyC hy)
   -- The data, its length and the text so far modulo 16.
   obtain ⟨s₃, run₃, h12₃, hbp₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ := load_ok he₂
@@ -278,22 +278,22 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
     ((sl₂ 192 (by decide) (by decide)).trans htl)
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   rw [toNat_mod16] at hbx₃
-  have he₃ := he₂.keep (load_env hg₃) hrd₃ hwr₃
-  have hd₃ : DataW4 Ctx St W SP s₃ D n 768 := hd₂.of_eq hrd₃ hwr₃
-  have sl₃ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
+  obtain he₃ := he₂.keep (load_env hg₃) hrd₃ hwr₃
+  obtain hd₃ : DataW4 Ctx St W SP s₃ D n 768 := hd₂.of_eq hrd₃ hwr₃
+  obtain sl₃ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [hm₃]; exact sl₂ d h₁ h₂
-  have hne : ∀ y : List Byte, y.length = n → c₀ ++ y ≠ [] := fun y hy e => h0 (by
+  obtain hne : ∀ y : List Byte, y.length = n → c₀ ++ y ≠ [] := fun y hy e => h0 (by
     have := congrArg List.length e
     rw [List.length_append, hy, List.length_nil] at this
     omega_arith)
   cases enc
   · -- Decrypting: the ciphertext absorbed, then decrypted.
     simp only [partWith, Bool.false_eq_true, ↓reduceIte]
-    have hai : AbsIn Ctx St W SP 16 H (a ++ zeros (padLen a.length) ++ c₀) D n s₃ 768 :=
+    obtain hai : AbsIn Ctx St W SP 16 H (a ++ zeros (padLen a.length) ++ c₀) D n s₃ 768 :=
       ⟨he₃, h12₃, hbp₃, by rw [hbx₃, hx], hd₃.dw.ok, by rw [hm₃]; exact hH₂⟩
     refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok v L.lay (.inr rfl) hai)) fun s₄ ⟨ao, rd₄, wr₄⟩ => ?_)
-    have sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
+    obtain sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
         s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
       rw [ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ h₂)
         (by decide), sl₃ d h₁ h₂]
@@ -302,11 +302,11 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
       ((sl₄ 192 (by decide) (by decide)).trans htl)
     refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
     rw [toNat_mod16] at hbx₅
-    have he₅ := ao.env.keep (load_env hg₅) hrd₅ hwr₅
-    have hd₅ : DataW4 Ctx St W SP s₅ D n 768 := hd₃.of_eq (by rw [hrd₅, rd₄]) (by rw [hwr₅, wr₄])
-    have hc₅ : ciphOf s₅.mem Ctx = ciphOf m₀ Ctx := by
+    obtain he₅ := ao.env.keep (load_env hg₅) hrd₅ hwr₅
+    obtain hd₅ : DataW4 Ctx St W SP s₅ D n 768 := hd₃.of_eq (by rw [hrd₅, rd₄]) (by rw [hwr₅, wr₄])
+    obtain hc₅ : ciphOf s₅.mem Ctx = ciphOf m₀ Ctx := by
       rw [hm₅, ciph_frame ao.frame (ctx_absFrame16 L), hm₃, hc₂]
-    have hD₅ : bytesAt s₅.mem D n = bytesAt m₀ D n := by
+    obtain hD₅ : bytesAt s₅.mem D n = bytesAt m₀ D n := by
       rw [hm₅, bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) (gs := 256) (.inr (by decide)) hd₃.dw.ok) (by omega_arith), hm₃, hD₂]
     refine WP.mono (WP.with_rdwr (crypt_ok L (icb := icb) (P := c₀.length) ⟨he₅, h12₅, hbp₅, hbx₅, hd₅⟩))
       fun s₆ ⟨co, rd₆, wr₆⟩ => ⟨co.env, by rw [rd₆, hrd₅, rd₄, hrd₃, rd₂, hrd₁], by rw [wr₆, hwr₅, wr₄, hwr₃, wr₂, hwr₁],
@@ -324,10 +324,10 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
       exact C (hm₅ ▸ ctr_frame ao.frame (ctr_absFrame16 L) (hm₃ ▸ hC₂ hy))
   · -- Encrypting: the plaintext encrypted, then the ciphertext absorbed.
     simp only [partWith, ↓reduceIte]
-    have hc₃ : ciphOf s₃.mem Ctx = ciphOf m₀ Ctx := by rw [hm₃, hc₂]
+    obtain hc₃ : ciphOf s₃.mem Ctx = ciphOf m₀ Ctx := by rw [hm₃, hc₂]
     refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L (icb := icb) (P := c₀.length) ⟨he₃, h12₃, hbp₃, hbx₃, hd₃⟩))
       fun s₄ ⟨co, rd₄, wr₄⟩ => ?_)
-    have sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
+    obtain sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 512 →
         s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
       rw [co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd₃ h₁ h₂)
         (by decide), sl₃ d h₁ h₂]
@@ -336,20 +336,20 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
       ((sl₄ 192 (by decide) (by decide)).trans htl)
     refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
     rw [toNat_mod16] at hbx₅
-    have he₅ := co.env.keep (load_env hg₅) hrd₅ hwr₅
-    have hd₅ : DataW4 Ctx St W SP s₅ D n 768 := hd₃.of_eq (by rw [hrd₅, rd₄]) (by rw [hwr₅, wr₄])
-    have hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by
+    obtain he₅ := co.env.keep (load_env hg₅) hrd₅ hwr₅
+    obtain hd₅ : DataW4 Ctx St W SP s₅ D n 768 := hd₃.of_eq (by rw [hrd₅, rd₄]) (by rw [hwr₅, wr₄])
+    obtain hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by
       rw [hm₅, blockAt_frame co.frame (fun r hr => (ctx_crFrame L hd₃ r hr).sub_left (Lay.ctxSub (by decide))),
         hm₃, hH₂]
-    have hai : AbsIn Ctx St W SP 16 H (a ++ zeros (padLen a.length) ++ c₀) D n s₅ 768 :=
+    obtain hai : AbsIn Ctx St W SP 16 H (a ++ zeros (padLen a.length) ++ c₀) D n s₅ 768 :=
       ⟨he₅, h12₅, hbp₅, by rw [hbx₅, hx], hd₅.dw.ok, hH₅⟩
     refine WP.mono (WP.with_rdwr (absorb_ok v L.lay (.inr rfl) hai))
       fun s₆ ⟨ao, rd₆, wr₆⟩ => ⟨ao.env, by rw [rd₆, hrd₅, rd₄, hrd₃, rd₂, hrd₁], by rw [wr₆, hwr₅, wr₄, hwr₃, wr₂, hwr₁],
         (tFrame_st f₂).trans ((hm₃ ▸ crFrame_st co.frame).trans (hm₅ ▸ absFrame_st ao.frame)), fun hy => ⟨?_, ?_, ?_⟩⟩
     · have C := co.out
       rw [hc₃, hm₃, hD₂] at C
-      have o := C (hm₃ ▸ hC₂ hy)
-      have A := ao.abs (hm₅ ▸ abs_frame co.frame (abs_crFrame L hd₃) (hm₃ ▸ ha₂ hy))
+      obtain o := C (hm₃ ▸ hC₂ hy)
+      obtain A := ao.abs (hm₅ ▸ abs_frame co.frame (abs_crFrame L hd₃) (hm₃ ▸ ha₂ hy))
       rw [hm₅, o] at A
       simp only [ctext, ↓reduceIte]
       rw [Proof.Gcm.ghashInput_of_ne (hne _ (Proof.Gcm.length_xorKs _ _ _ _ |>.trans (length_bytesAt _ _ _))),

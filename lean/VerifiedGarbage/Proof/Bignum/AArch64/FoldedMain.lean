@@ -36,11 +36,11 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have hZ := h.z
   have hs := h.scr
   have hn := hs.nowrap
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
-  have hw : 2 ≤ (k + 7) / 8 := by omega_using [hk1]
-  have hR : Nat.Coprime (2 ^ (64 * ((k + 7) / 8))) N := VG.Proof.Bignum.coprime_pow2 h.odd _
-  have hle := pdAll_le ((k + 7) / 8)
-  have hle' : ∀ r ∈ pdAll ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr => Nat.le_trans (hle r hr) hZ
+  obtain hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
+  obtain hw : 2 ≤ (k + 7) / 8 := by omega_using [hk1]
+  obtain hR : Nat.Coprime (2 ^ (64 * ((k + 7) / 8))) N := VG.Proof.Bignum.coprime_pow2 h.odd _
+  obtain hle := pdAll_le ((k + 7) / 8)
+  obtain hle' : ∀ r ∈ pdAll ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr => Nat.le_trans (hle r hr) hZ
   rw [rest_eq]
   refine wp_seqs_append (by simp) (by simp [phases])
     (WP.mono (pdSetupAll_ok h) fun t₂ ⟨minv, so, f₂, k₂, hR₂⟩ => ?_)
@@ -52,31 +52,31 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
     fun t₃ ⟨hg₃, hlt₃, hm₃, ha₃, k₃⟩ => ?_)
   rw [so.n] at hlt₃ hm₃
   rw [so.x, hR₂] at hm₃
-  have hn₃ : wv t₃.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = N := by
+  obtain hn₃ : wv t₃.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = N := by
     rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact so.n
-  have hinv₃ : ((word t₃.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
+  obtain hinv₃ : ((word t₃.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [ha₃.word0_of_not_mem (by decide) (by decide) hn' (by omega_using [hw])]; exact so.inv
-  have f₃ : Frm B (pdAll ((k + 7) / 8)) t₂.mem t₃.mem :=
+  obtain f₃ : Frm B (pdAll ((k + 7) / 8)) t₂.mem t₃.mem :=
     Frm.of_arrays ha₃ (by simp [pdAll, pExpRanges, pBitRanges, bitRanges])
-  have f₁₃ := f₂.trans f₃
-  have x₁₃ := Fixed.of_frm f₁₃ (pdAll_fixed _)
+  obtain f₁₃ := f₂.trans f₃
+  obtain x₁₃ := Fixed.of_frm f₁₃ (pdAll_fixed _)
   obtain ⟨x, hx⟩ := exists_mont hR h.n1 (wv t₃.mem B (slot ((k + 7) / 8) aXm) ((k + 7) / 8))
-  have he₃ := h.e.congrK (InScr.of_frm f₁₃ hle') (k₂.trans k₃)
-  have input3 : wv t₃.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb := by
+  obtain he₃ := h.e.congrK (InScr.of_frm f₁₃ hle') (k₂.trans k₃)
+  obtain input3 : wv t₃.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb := by
     rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact so.x
-  have one3 : wv t₃.mem B (slot ((k+7)/8) aOne) ((k+7)/8) = 1 := by
+  obtain one3 : wv t₃.mem B (slot ((k+7)/8) aOne) ((k+7)/8) = 1 := by
     rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact so.one
   change WP isa (.seq (Folded.fastLoop M.mm) (Folded.finishFused M.mm)) t₃ _
   refine WP.mono (phase_ok M (x := x) ⟨hg₃,hn₃,hinv₃,rfl⟩ hZ hw (by omega_using [hk2]) hR h.n1 hlt₃ hx
     input3 one3 (by rw [x₁₃ sE (by decide)]; exact h.hE)
     (by rw [x₁₃ sElen (by decide)]; exact h.hL) he₃ h.el h.L1 (by omega_using [hk2, hL2]))
     fun t₄ ⟨hg₄,hy₄,y₄,f₄',k₄⟩ => ?_
-  have f₄ : Frm B (pdAll ((k+7)/8)) t₃.mem t₄.mem :=
+  obtain f₄ : Frm B (pdAll ((k+7)/8)) t₃.mem t₄.mem :=
     f₄'.mono fun _ hr => List.mem_append_right _ hr
-  have f₁₄ := f₁₃.trans f₄
-  have x₁₄ := Fixed.of_frm f₁₄ (pdAll_fixed _)
-  have k₁₄ := (k₂.trans k₃).trans k₄
-  have mask4 : word t₄.mem B (8*sMask) = mask (decide (Spec.Rsa.os2ip xb < N)) := by
+  obtain f₁₄ := f₁₃.trans f₄
+  obtain x₁₄ := Fixed.of_frm f₁₄ (pdAll_fixed _)
+  obtain k₁₄ := (k₂.trans k₃).trans k₄
+  obtain mask4 : word t₄.mem B (8*sMask) = mask (decide (Spec.Rsa.os2ip xb < N)) := by
     rw [f₄'.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
       (by unfold sMask sFn; omega_using []),ha₃.hslot (by decide)]
     exact so.mask

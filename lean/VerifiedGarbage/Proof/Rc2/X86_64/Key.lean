@@ -56,7 +56,7 @@ theorem setMask_ok (s : State) (i : Nat) (hi : i < 7) :
   constructor
   · rw [gpr_setReg_self]
     apply small_imm
-    have bound : ∀ i < 7, 2 ^ (i + 1) - 1 < 256 := by decide
+    obtain bound : ∀ i < 7, 2 ^ (i + 1) - 1 < 256 := by decide
     exact bound i hi
   · exact ⟨fun r hr => gpr_setReg_of_ne _ _ (by simpa using hr), rfl, rfl, rfl⟩
 
@@ -70,14 +70,14 @@ theorem maskBranch_ok (s : State) (i : Nat) (hi : i < 7) :
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   apply WP.ite (s.gpr .r9 == BitVec.ofNat 64 (i + 1)) (by exact flag₁)
   · intro he
-    have eq := beq_iff_eq.mp he
+    obtain eq := beq_iff_eq.mp he
     obtain ⟨s₂, run₂, out₂, keep₂⟩ := setMask_ok s₁ i hi
     apply WP.of_runBlock
     refine ⟨s₂, run₂, ?_, ?_⟩
     · rw [ite_eq_left eq]; exact out₂
     · exact (keep₁.weaken (by simp)).trans keep₂
   · intro he
-    have ne : s.gpr .r9 ≠ BitVec.ofNat 64 (i + 1) := by simpa using he
+    obtain ne : s.gpr .r9 ≠ BitVec.ofNat 64 (i + 1) := by simpa using he
     apply WP.block_nil
     refine ⟨?_, keep₁.weaken (by simp)⟩
     rw [ite_eq_right ne]
@@ -107,13 +107,13 @@ theorem maskBranches_ok (is : List Nat) (hi : ∀ i ∈ is, i < 7)
     apply WP.seq
     apply WP.mono (maskBranch_ok s i (hi i List.mem_cons_self))
     intro s₁ h₁
-    have index₁ := (h₁.2.reg .r9 (by decide)).trans index
+    obtain index₁ := (h₁.2.reg .r9 (by decide)).trans index
     apply WP.mono (ih (fun j hj => hi j (List.mem_cons_of_mem _ hj)) s₁ index₁)
     intro s₂ h₂
     refine ⟨?_, h₁.2.trans h₂.2⟩
     rw [h₂.1, h₁.1, index]
-    have eq : BitVec.ofNat 64 k = BitVec.ofNat 64 (i + 1) ↔ k = i + 1 := by
-      have bound := hi i List.mem_cons_self
+    obtain eq : BitVec.ofNat 64 k = BitVec.ofNat 64 (i + 1) ↔ k = i + 1 := by
+      obtain bound := hi i List.mem_cons_self
       bv_omega
     simp only [eq, List.map_cons, List.mem_cons]
     by_cases he : k = i + 1
@@ -147,7 +147,7 @@ theorem maskCode_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1
   apply WP.seq
   obtain ⟨s₁, run₁, index₁, mask₁, keep₁⟩ := maskStart_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have index : s₁.gpr .r9 = BitVec.ofNat 64 (bits % 8) := by
+  obtain index : s₁.gpr .r9 = BitVec.ofNat 64 (bits % 8) := by
     rw [index₁, input]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
@@ -159,10 +159,10 @@ theorem maskCode_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1
   intro s₂ h₂
   refine ⟨?_, keep₁.trans (h₂.2.weaken (by simp))⟩
   rw [h₂.1, mask₁]
-  have exponent : 8 + bits - 8 * ((bits + 7) / 8) = if bits % 8 = 0 then 8 else bits % 8 := by
+  obtain exponent : 8 + bits - 8 * ((bits + 7) / 8) = if bits % 8 = 0 then 8 else bits % 8 := by
     split <;> omega_arith
   rw [exponent]
-  have fact : ∀ r < 8,
+  obtain fact : ∀ r < 8,
       ((if r ∈ (List.range 7).map (· + 1) then BitVec.ofNat 64 (2 ^ r - 1)
         else 255).setWidth 8) = BitVec.ofNat 8 (255 % 2 ^ (if r = 0 then 8 else r)) := by decide
   exact fact _ (Nat.mod_lt _ (by decide))
@@ -191,7 +191,7 @@ theorem descendLoop_ok (s : State)
       BytesPrefix s'.mem (s.gpr .r14) (descend l t8 (128 - t8)) 128) := by
   let I (j : Nat) (s' : State) := s'.gpr .rbx = BitVec.ofNat 64 (128 - t8 - j) ∧ KeyFrame s s' ∧
     BytesPrefix s'.mem (s.gpr .r14) (descend l t8 j) 128
-  have finish : I (128 - t8) = (fun s' => s'.gpr .rbx = 0 ∧ KeyFrame s s' ∧
+  obtain finish : I (128 - t8) = (fun s' => s'.gpr .rbx = 0 ∧ KeyFrame s s' ∧
       BytesPrefix s'.mem (s.gpr .r14) (descend l t8 (128 - t8)) 128) := by
     funext s'
     simp only [I, Nat.sub_self]
@@ -200,16 +200,16 @@ theorem descendLoop_ok (s : State)
   apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega_arith) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
-  have outPtr := frame₁.reg .r14 (by decide)
-  have len₁ := (frame₁.reg .rbp (by decide)).trans len
-  have indexNew : s₁.gpr .rbx - 1#64 = BitVec.ofNat 64 (127 - t8 - j) := by
+  obtain outPtr := frame₁.reg .r14 (by decide)
+  obtain len₁ := (frame₁.reg .rbp (by decide)).trans len
+  obtain indexNew : s₁.gpr .rbx - 1#64 = BitVec.ofNat 64 (127 - t8 - j) := by
     rw [index₁, Offset.ofNat_sub_ofNat (show 1 ≤ 128 - t8 - j by omega_arith)]
     congr 1; omega_arith
-  have loAddr : s₁.gpr .r14 + (s₁.gpr .rbx - 1#64) + 1#64 =
+  obtain loAddr : s₁.gpr .r14 + (s₁.gpr .rbx - 1#64) + 1#64 =
       s.gpr .r14 + BitVec.ofNat 64 (127 - t8 - j + 1) := by
     rw [outPtr, indexNew, BitVec.add_assoc]
     exact congrArg (s.gpr .r14 + ·) (counter_add _)
-  have hiAddr : s₁.gpr .r14 + (s₁.gpr .rbx - 1#64 + s₁.gpr .rbp) =
+  obtain hiAddr : s₁.gpr .r14 + (s₁.gpr .rbx - 1#64 + s₁.gpr .rbp) =
       s.gpr .r14 + BitVec.ofNat 64 (127 - t8 - j + t8) := by
     rw [outPtr, indexNew, len₁, ← BitVec.ofNat_add]
   have read₁ (i : Nat) (hi : i < 128) :
@@ -217,19 +217,19 @@ theorem descendLoop_ok (s : State)
     obtain ⟨r, hr, hc⟩ := writable i hi
     rw [frame₁.wr]
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have write₁ : InRegions s₁.wr (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64)) 1 := by
+  obtain write₁ : InRegions s₁.wr (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64)) 1 := by
     rw [frame₁.wr, outPtr, indexNew]
     exact writable _ (by omega_arith)
-  have readLo : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64) + 1#64) 1 := by
+  obtain readLo : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64) + 1#64) 1 := by
     rw [loAddr]; exact read₁ _ (by omega_arith)
-  have readHi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64 + s₁.gpr .rbp)) 1 := by
+  obtain readHi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - 1#64 + s₁.gpr .rbp)) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega_arith)
   apply WP.mono (descendKey_ok s₁ (by
     rw [frame₁.wr, frame₁.reg .r8 (by decide)]; exact hlookup) readLo readHi write₁)
   intro s₂ h₂
   let b := Spec.Rc2.pi ((descend l t8 j).getD (127 - t8 - j + 1) 0 ^^^
     (descend l t8 j).getD (127 - t8 - j + t8) 0)
-  have keep₂ : Keep keyTemps {s₁ with
+  obtain keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (s.gpr .r14 + BitVec.ofNat 64 (127 - t8 - j)) b} s₂ := by
     have h := h₂.2.2
     rw [loAddr, hiAddr, prefix₁ _ (by omega_arith), prefix₁ _ (by omega_arith), outPtr, indexNew] at h
@@ -245,8 +245,8 @@ theorem descendLoop_ok (s : State)
   · rw [h₂.2.1]
     change some ((s₁.gpr .rbx - 1#64) == 0#64) = _
     rw [indexNew]
-    have he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega_arith
-    have eqZero := counter_eq (127 - t8 - j) 0 (by omega_arith) (by decide)
+    obtain he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega_arith
+    obtain eqZero := counter_eq (127 - t8 - j) 0 (by omega_arith) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     rw [eqZero]
     simp only [he]
@@ -273,7 +273,7 @@ theorem fillLoop_ok (s : State)
       BytesPrefix s'.mem (s.gpr .r14) (fill key (128 - key.length)) 128) := by
   let I (j : Nat) (s' : State) := s'.gpr .rbx = BitVec.ofNat 64 (key.length + j) ∧ KeyFrame s s' ∧
     BytesPrefix s'.mem (s.gpr .r14) (fill key j) (key.length + j)
-  have finish : I (128 - key.length) = (fun s' => s'.gpr .rbx = 128 ∧ KeyFrame s s' ∧
+  obtain finish : I (128 - key.length) = (fun s' => s'.gpr .rbx = 128 ∧ KeyFrame s s' ∧
       BytesPrefix s'.mem (s.gpr .r14) (fill key (128 - key.length)) 128) := by
     funext s'
     simp only [I, Nat.add_sub_of_le (Nat.le_of_lt ht')]
@@ -282,13 +282,13 @@ theorem fillLoop_ok (s : State)
   apply forwardLoop (.block fillKey) I (128 - key.length) _ 0 (by omega_arith) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
-  have outPtr := frame₁.reg .r14 (by decide)
-  have len₁ := (frame₁.reg .r13 (by decide)).trans len
-  have loAddr : s₁.gpr .r14 + s₁.gpr .rbx - 1#64 =
+  obtain outPtr := frame₁.reg .r14 (by decide)
+  obtain len₁ := (frame₁.reg .r13 (by decide)).trans len
+  obtain loAddr : s₁.gpr .r14 + s₁.gpr .rbx - 1#64 =
       s.gpr .r14 + BitVec.ofNat 64 (key.length + j - 1) := by
     rw [outPtr, index₁]
     exact Offset.add_ofNat_sub _ (by omega_arith)
-  have hiAddr : s₁.gpr .r14 + (s₁.gpr .rbx - s₁.gpr .r13) =
+  obtain hiAddr : s₁.gpr .r14 + (s₁.gpr .rbx - s₁.gpr .r13) =
       s.gpr .r14 + BitVec.ofNat 64 j := by
     rw [outPtr, index₁, len₁, Offset.ofNat_sub_ofNat (by omega_arith), Nat.add_sub_cancel_left]
   have read₁ (i : Nat) (hi : i < 128) :
@@ -296,18 +296,18 @@ theorem fillLoop_ok (s : State)
     obtain ⟨r, hr, hc⟩ := writable i hi
     rw [frame₁.wr]
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have write₁ : InRegions s₁.wr (s₁.gpr .r14 + s₁.gpr .rbx) 1 := by
+  obtain write₁ : InRegions s₁.wr (s₁.gpr .r14 + s₁.gpr .rbx) 1 := by
     rw [frame₁.wr, outPtr, index₁]
     exact writable _ (by omega_arith)
-  have readLo : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + s₁.gpr .rbx - 1#64) 1 := by
+  obtain readLo : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + s₁.gpr .rbx - 1#64) 1 := by
     rw [loAddr]; exact read₁ _ (by omega_arith)
-  have readHi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - s₁.gpr .r13)) 1 := by
+  obtain readHi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r14 + (s₁.gpr .rbx - s₁.gpr .r13)) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega_arith)
   apply WP.mono (fillKey_ok s₁ (by
     rw [frame₁.wr, frame₁.reg .r8 (by decide)]; exact hlookup) readLo readHi write₁)
   intro s₂ h₂
   let b := Spec.Rc2.pi ((fill key j).getD (key.length + j - 1) 0 + (fill key j).getD j 0)
-  have keep₂ : Keep keyTemps {s₁ with
+  obtain keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (s.gpr .r14 + BitVec.ofNat 64 (key.length + j)) b} s₂ := by
     have h := h₂.2.2
     rw [loAddr, hiAddr, prefix₁ _ (by omega_arith), prefix₁ _ (by omega_arith), outPtr, index₁] at h
@@ -316,10 +316,10 @@ theorem fillLoop_ok (s : State)
   · refine ⟨?_, frame₁.step (key.length + j) (by omega_arith) b keep₂, ?_⟩
     · rw [h₂.1, index₁, counter_add, Nat.add_assoc]
     · rw [keep₂.mem, fill_succ]
-      have h := prefix₁.extend (show key.length + j < 128 by omega_arith) b
+      obtain h := prefix₁.extend (show key.length + j < 128 by omega_arith) b
       simpa only [fillStep, Nat.add_sub_cancel_left, Nat.add_assoc] using h
   · rw [h₂.2.1, index₁, counter_add]
-    have he : key.length + j + 1 = 128 ↔ j + 1 = 128 - key.length := by omega_arith
+    obtain he : key.length + j + 1 = 128 ↔ j + 1 = 128 - key.length := by omega_arith
     change some ((BitVec.ofNat 64 (key.length + j + 1) - BitVec.ofNat 64 128) == 0#64) = _
     rw [counter_eq _ _ (by omega_arith) (by decide)]
     simp only [he]
@@ -350,20 +350,20 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   apply forwardLoop (.block copyKey) I t _ 0 (by omega_arith) s
     ⟨zero, KeyFrame.refl s, fun i hi => by omega_arith⟩
   intro i hi s₁ ⟨index₁, frame₁, prefix₁⟩
-  have keyPtr := frame₁.reg .r12 (by decide)
-  have outPtr := frame₁.reg .r14 (by decide)
-  have len₁ := (frame₁.reg .r13 (by decide)).trans len
-  have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r12 + s₁.gpr .rbx) 1 := by
+  obtain keyPtr := frame₁.reg .r12 (by decide)
+  obtain outPtr := frame₁.reg .r14 (by decide)
+  obtain len₁ := (frame₁.reg .r13 (by decide)).trans len
+  obtain read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r12 + s₁.gpr .rbx) 1 := by
     rw [frame₁.rd, frame₁.wr, keyPtr, index₁]
     exact readable i hi
-  have write₁ : InRegions s₁.wr (s₁.gpr .r14 + s₁.gpr .rbx) 1 := by
+  obtain write₁ : InRegions s₁.wr (s₁.gpr .r14 + s₁.gpr .rbx) 1 := by
     rw [frame₁.wr, outPtr, index₁]
     exact writable i (by omega_arith)
-  have byte₁ : s₁.mem (s₁.gpr .r12 + s₁.gpr .rbx) = key.getD i 0 := by
+  obtain byte₁ : s₁.mem (s₁.gpr .r12 + s₁.gpr .rbx) = key.getD i 0 := by
     rw [keyPtr, index₁, bytesAt_getD _ _ _ _ hi]
     exact frame₁.mem.bytes (by simpa using sep) (by change t ≤ 2 ^ 64; omega_arith) hi
   obtain ⟨s₂, run₂, index₂, flag₂, keep₂⟩ := copyKey_ok s₁ read₁ write₁
-  have keep₂' : Keep keyTemps
+  obtain keep₂' : Keep keyTemps
       {s₁ with mem := s₁.mem.writeW (s.gpr .r14 + BitVec.ofNat 64 i) (key.getD i 0)} s₂ := by
     rw [byte₁] at keep₂
     simpa only [outPtr, index₁] using keep₂
@@ -372,7 +372,7 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   · refine ⟨?_, frame₁.step i (by omega_arith) _ keep₂', ?_⟩
     · rw [index₂, index₁, counter_add]
     · rw [keep₂'.mem]
-      have prefix₂ := prefix₁.extend (show i < 128 by omega_arith) (key.getD i 0)
+      obtain prefix₂ := prefix₁.extend (show i < 128 by omega_arith) (key.getD i 0)
       rw [initial_set key i] at prefix₂
       exact prefix₂
   · rw [flag₂, index₁, len₁, counter_add]
@@ -408,11 +408,11 @@ theorem maybeFill_ok (s : State)
   apply WP.seq
   obtain ⟨s₁, run₁, flag₁, keep₁⟩ := cmp128_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp))
-  have flag : s₁.zf = some (decide (key.length = 128)) := by
+  obtain frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp))
+  obtain flag : s₁.zf = some (decide (key.length = 128)) := by
     rw [flag₁, start]
     exact congrArg some (counter_eq _ _ (by omega_arith) (by decide))
-  have ptr₁ := keep₁.reg .r14 (by simp)
+  obtain ptr₁ := keep₁.reg .r14 (by simp)
   by_cases he : key.length = 128
   · apply WP.ite false (by simp only [eval, flag, he, decide_true, Option.map_some, Bool.not_true])
     · simp
@@ -424,9 +424,9 @@ theorem maybeFill_ok (s : State)
         simpa only [he, Nat.sub_self] using initialPrefix
   · apply WP.ite true (by simp only [eval, flag, he, decide_false, Option.map_some, Bool.not_false])
     · intro _
-      have writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+      obtain writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
         rw [keep₁.wr, ptr₁]; exact writable
-      have initial : BytesPrefix s₁.mem (s₁.gpr .r14) (fill key 0) key.length := by
+      obtain initial : BytesPrefix s₁.mem (s₁.gpr .r14) (fill key 0) key.length := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
       apply WP.mono (fillLoop_ok s₁ (by
         rw [keep₁.wr, keep₁.reg .r8 (by simp)]; exact hlookup) key ht (by omega_arith)
@@ -446,7 +446,7 @@ theorem setReduction_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits �
       exec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
       gpr_setReg]
     rfl, ?_⟩
-  have t8 : (s.gpr .r15 + 7#64) >>> 3 = BitVec.ofNat 64 ((bits + 7) / 8) := by
+  obtain t8 : (s.gpr .r15 + 7#64) >>> 3 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     rw [input]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -477,16 +477,16 @@ theorem maybeDescend_ok (s : State)
   apply WP.seq
   obtain ⟨s₁, run₁, flag₁, keep₁⟩ := cmpZero_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp))
-  have flag : s₁.zf = some (decide (t8 = 128)) := by
+  obtain frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp))
+  obtain flag : s₁.zf = some (decide (t8 = 128)) := by
     rw [flag₁, start]
-    have eqZero := counter_eq (128 - t8) 0 (by omega_arith) (by decide)
+    obtain eqZero := counter_eq (128 - t8) 0 (by omega_arith) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 64 (128 - t8) == 0#64) = _
     rw [eqZero]
-    have he : 128 - t8 = 0 ↔ t8 = 128 := by omega_arith
+    obtain he : 128 - t8 = 0 ↔ t8 = 128 := by omega_arith
     simp only [he]
-  have ptr₁ := keep₁.reg .r14 (by simp)
+  obtain ptr₁ := keep₁.reg .r14 (by simp)
   by_cases he : t8 = 128
   · apply WP.ite false (by simp only [eval, flag, he, decide_true, Option.map_some, Bool.not_true])
     · simp
@@ -497,9 +497,9 @@ theorem maybeDescend_ok (s : State)
       exact initialPrefix
   · apply WP.ite true (by simp only [eval, flag, he, decide_false, Option.map_some, Bool.not_false])
     · intro _
-      have writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+      obtain writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
         rw [keep₁.wr, ptr₁]; exact writable
-      have initial : BytesPrefix s₁.mem (s₁.gpr .r14) l 128 := by
+      obtain initial : BytesPrefix s₁.mem (s₁.gpr .r14) l 128 := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
       apply WP.mono (descendLoop_ok s₁ (by
         rw [keep₁.wr, keep₁.reg .r8 (by simp)]; exact hlookup) l t8 ht (by omega_arith)
@@ -534,7 +534,7 @@ theorem CoreFrame.of_keep {s s' : State} {rs : List Reg} (keep : Keep rs s s')
   rw [keep.mem]; exact Frame.refl _ _
 
 theorem CoreFrame.of_key {s s' : State} (h : KeyFrame s s') : CoreFrame s s' := by
-  have sep : ∀ r ∈ coreRegs, r ∉ keyTemps := by decide
+  obtain sep : ∀ r ∈ coreRegs, r ∉ keyTemps := by decide
   exact ⟨fun r hr => h.reg r (sep r hr), h.rd, h.wr, h.mem⟩
 
 theorem CoreFrame.trans {s₀ s₁ s₂ : State} (h₁ : CoreFrame s₀ s₁) (h₂ : CoreFrame s₁ s₂) :
@@ -557,10 +557,10 @@ theorem expandCopyFill_ok (s : State)
   apply WP.seq
   apply WP.mono (copyLoop_ok s t ht ht' len zero readable writable sep)
   intro s₁ h₁
-  have length : (Spec.Rc2.bytesAt s.mem (s.gpr .r12) t).length = t := by
+  obtain length : (Spec.Rc2.bytesAt s.mem (s.gpr .r12) t).length = t := by
     simp [Spec.Rc2.bytesAt]
-  have ptr₁ := h₁.2.1.reg .r14 (by decide)
-  have writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+  obtain ptr₁ := h₁.2.1.reg .r14 (by decide)
+  obtain writes : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
     rw [h₁.2.1.wr, ptr₁]; exact writable
   apply WP.mono (maybeFill_ok s₁ (by
     rw [h₁.2.1.wr, h₁.2.1.reg .r8 (by decide)]; exact hlookup) (Spec.Rc2.bytesAt s.mem (s.gpr .r12) t)
@@ -581,10 +581,10 @@ theorem reduceDescend_ok (s : State)
       (.ite .ne (.loop (.block descendKey) .ne) (.block [])))) s (fun s' =>
         KeyFrame s s' ∧ BytesPrefix s'.mem (s.gpr .r14)
           (descend (reduce l bits) ((bits + 7) / 8) (128 - (bits + 7) / 8)) 128) := by
-  have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega_arith
-  have writes : InRegions s.wr (s.gpr .r14 + s.gpr .rbx) 1 := by
+  obtain bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega_arith
+  obtain writes : InRegions s.wr (s.gpr .r14 + s.gpr .rbx) 1 := by
     rw [index]; exact writable _ (by omega_arith)
-  have reads : InRegions (s.rd ++ s.wr) (s.gpr .r14 + s.gpr .rbx) 1 := by
+  obtain reads : InRegions (s.rd ++ s.wr) (s.gpr .r14 + s.gpr .rbx) 1 := by
     obtain ⟨r, hr, hc⟩ := writes
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   apply WP.seq
@@ -592,12 +592,12 @@ theorem reduceDescend_ok (s : State)
   intro s₁ h₁
   have keep₁ := h₁.2
   rw [index, initialPrefix _ (by omega_arith), mask] at keep₁
-  have frame₁ := (KeyFrame.refl s).step _ (by omega_arith) _ keep₁
-  have ptr₁ := keep₁.reg .r14 (by decide)
-  have prefix₁ : BytesPrefix s₁.mem (s.gpr .r14) (reduce l bits) 128 := by
+  obtain frame₁ := (KeyFrame.refl s).step _ (by omega_arith) _ keep₁
+  obtain ptr₁ := keep₁.reg .r14 (by decide)
+  obtain prefix₁ : BytesPrefix s₁.mem (s.gpr .r14) (reduce l bits) 128 := by
     rw [keep₁.mem]
     exact initialPrefix.write (by decide) (by omega_arith) _
-  have write₁ : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+  obtain write₁ : ∀ i < 128, InRegions s₁.wr (s₁.gpr .r14 + BitVec.ofNat 64 i) 1 := by
     rw [keep₁.wr, ptr₁]; exact writable
   apply WP.mono (maybeDescend_ok s₁ (by
     rw [keep₁.wr, keep₁.reg .r8 (by decide)]; exact hlookup) (reduce l bits) ((bits + 7) / 8) bound.1 bound.2
@@ -620,9 +620,9 @@ theorem expandReduce_ok (s : State)
   apply WP.seq
   apply WP.mono (maskCode_ok s₁ bits hb hb' ((keep₁.reg .r15 (by decide)).trans input))
   intro s₂ h₂
-  have frame := (CoreFrame.of_keep keep₁ (by decide)).trans (CoreFrame.of_keep h₂.2 (by decide))
-  have ptr₂ := frame.reg .r14 (by decide)
-  have writes : ∀ i < 128, InRegions s₂.wr (s₂.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+  obtain frame := (CoreFrame.of_keep keep₁ (by decide)).trans (CoreFrame.of_keep h₂.2 (by decide))
+  obtain ptr₂ := frame.reg .r14 (by decide)
+  obtain writes : ∀ i < 128, InRegions s₂.wr (s₂.gpr .r14 + BitVec.ofNat 64 i) 1 := by
     rw [frame.wr, ptr₂]; exact writable
   apply WP.mono (reduceDescend_ok s₂ (by
     rw [frame.wr, frame.reg .r8 (by decide)]; exact hlookup) l bits hb hb'
@@ -704,7 +704,7 @@ def keyContract : Contract isa where
 theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     WP isa expandKey s (fun s' => gprPreserved s s' ∧ keyContract.post s s') := by
   obtain ⟨hrd, hwr, keyOut, keyScratch, outScratch, retOut, retScratch, ht, ht', hb, hb'⟩ := hs
-  have writes : ∀ i < 6, InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 (8 * i)) 8 := by
+  obtain writes : ∀ i < 6, InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [hwr]
     exact ⟨⟨s.gpr .r8, 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -715,29 +715,29 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   intro s₁ h₁
   obtain ⟨s₂, run₂, key₂, len₂, ptr₂, bits₂, zero₂, keep₂⟩ := pinKey_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have scratchFrame : Frame [⟨s.gpr .r8, 512⟩] s.mem s₂.mem := by
+  obtain scratchFrame : Frame [⟨s.gpr .r8, 512⟩] s.mem s₂.mem := by
     rw [keep₂.mem, h₁.2.2.2]
     exact saveMem_frame_le _ _ _ 6 64 (by decide) (by decide)
   rw [h₁.1] at key₂ len₂ ptr₂ bits₂
-  have rd₂ : s₂.rd = s.rd := keep₂.rd.trans h₁.2.1
-  have wr₂ : s₂.wr = s.wr := keep₂.wr.trans h₁.2.2.1
-  have r8₂ : s₂.gpr .r8 = s.gpr .r8 := (keep₂.reg .r8 (by decide)).trans (congrFun h₁.1 .r8)
-  have rsp₂ : s₂.gpr .rsp = s.gpr .rsp := (keep₂.reg .rsp (by decide)).trans (congrFun h₁.1 .rsp)
-  have source₂ : Spec.Rc2.bytesAt s₂.mem (s₂.gpr .r12) (s.gpr .rsi).toNat =
+  obtain rd₂ : s₂.rd = s.rd := keep₂.rd.trans h₁.2.1
+  obtain wr₂ : s₂.wr = s.wr := keep₂.wr.trans h₁.2.2.1
+  obtain r8₂ : s₂.gpr .r8 = s.gpr .r8 := (keep₂.reg .r8 (by decide)).trans (congrFun h₁.1 .r8)
+  obtain rsp₂ : s₂.gpr .rsp = s.gpr .rsp := (keep₂.reg .rsp (by decide)).trans (congrFun h₁.1 .rsp)
+  obtain source₂ : Spec.Rc2.bytesAt s₂.mem (s₂.gpr .r12) (s.gpr .rsi).toNat =
       Spec.Rc2.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat := by
     rw [key₂]
     exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega_arith)
-  have read₂ : ∀ i < (s.gpr .rsi).toNat,
+  obtain read₂ : ∀ i < (s.gpr .rsi).toNat,
       InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .r12 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, key₂, hrd, hwr]
     exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp,
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have write₂ : ∀ i < 128, InRegions s₂.wr (s₂.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+  obtain write₂ : ∀ i < 128, InRegions s₂.wr (s₂.gpr .r14 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [wr₂, ptr₂, hwr]
     exact ⟨⟨s.gpr .rcx, 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have lookup₂ : InRegions s₂.wr (s₂.gpr .r8 + BitVec.ofNat 64 64) 16 := by
+  obtain lookup₂ : InRegions s₂.wr (s₂.gpr .r8 + BitVec.ofNat 64 64) 16 := by
     rw [wr₂, r8₂, hwr]
     exact ⟨⟨s.gpr .r8, 512⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩
   apply WP.seq
@@ -745,39 +745,39 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     (by simpa using len₂) zero₂ read₂ write₂ (by rw [key₂, ptr₂]; exact keyOut))
   intro s₃ h₃
   apply WP.seq
-  have write₃ : ∀ i < 128, InRegions s₃.wr (s₃.gpr .r14 + BitVec.ofNat 64 i) 1 := by
+  obtain write₃ : ∀ i < 128, InRegions s₃.wr (s₃.gpr .r14 + BitVec.ofNat 64 i) 1 := by
     rw [h₃.1.wr, h₃.1.reg .r14 (by decide)]; exact write₂
   apply WP.mono (expandReduce_ok s₃ (by
     rw [h₃.1.wr, h₃.1.reg .r8 (by decide)]; exact lookup₂) _ (s.gpr .rdx).toNat hb hb'
     (by simpa using (h₃.1.reg .r15 (by decide)).trans bits₂) write₃
     (by rw [h₃.1.reg .r14 (by decide)]; exact h₃.2))
   intro s₄ h₄
-  have core := (CoreFrame.of_key h₃.1).trans h₄.1
-  have outFrame : Frame [⟨s.gpr .rcx, 128⟩] s₂.mem s₄.mem := by
+  obtain core := (CoreFrame.of_key h₃.1).trans h₄.1
+  obtain outFrame : Frame [⟨s.gpr .rcx, 128⟩] s₂.mem s₄.mem := by
     have h := core.mem
     rw [ptr₂] at h; exact h
-  have r8₄ : s₄.gpr .r8 = s.gpr .r8 := (core.reg .r8 (by decide)).trans r8₂
-  have rsp₄ : s₄.gpr .rsp = s.gpr .rsp := (core.reg .rsp (by decide)).trans rsp₂
-  have rd₄ := core.rd.trans rd₂
-  have wr₄ := core.wr.trans wr₂
-  have expanded : BytesPrefix s₄.mem (s.gpr .rcx)
+  obtain r8₄ : s₄.gpr .r8 = s.gpr .r8 := (core.reg .r8 (by decide)).trans r8₂
+  obtain rsp₄ : s₄.gpr .rsp = s.gpr .rsp := (core.reg .rsp (by decide)).trans rsp₂
+  obtain rd₄ := core.rd.trans rd₂
+  obtain wr₄ := core.wr.trans wr₂
+  obtain expanded : BytesPrefix s₄.mem (s.gpr .rcx)
       (Spec.Rc2.expandBytes (Spec.Rc2.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (s.gpr .rdx).toNat) 128 := by
     have h := h₄.2
     rw [h₃.1.reg .r14 (by decide), ptr₂, source₂] at h
     rw [expandBytes_eq]
-    have length : (Spec.Rc2.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat).length = (s.gpr .rsi).toNat := by
+    obtain length : (Spec.Rc2.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat).length = (s.gpr .rsi).toNat := by
       simp [Spec.Rc2.bytesAt]
     rw [length]; exact h
-  have scratchRead : ∀ i ∈ List.range 6,
+  obtain scratchRead : ∀ i ∈ List.range 6,
       InRegions (s₄.rd ++ s₄.wr) (s₄.gpr .r8 + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [rd₄, wr₄, r8₄, hrd, hwr]
-    have bound := List.mem_range.mp hi
+    obtain bound := List.mem_range.mp hi
     exact ⟨⟨s.gpr .r8, 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have stored : ∀ i ∈ List.range 6,
+  obtain stored : ∀ i ∈ List.range 6,
       s₄.mem.readW (s₄.gpr .r8 + BitVec.ofNat 64 (8 * i)) 64 = s.gpr (savedReg i) := by
     intro i hi
-    have bound := List.mem_range.mp hi
+    obtain bound := List.mem_range.mp hi
     rw [r8₄, outFrame.readW (r := ⟨s.gpr .r8, 512⟩)
       (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using outScratch.symm) (by decide),
       keep₂.mem, h₁.2.2.2]
@@ -792,7 +792,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
       by_cases hm : r ∈ (List.range 6).map savedReg
       · exact h₅.1 r hm
       · have covered : ∀ r ∈ calleeSaved, r ∈ (List.range 6).map savedReg ∨ r = .rsp := by decide
-        have he := (covered r hr).resolve_left hm
+        obtain he := (covered r hr).resolve_left hm
         subst r
         exact (h₅.2.reg .rsp hm).trans rsp₄
     · have frame : Frame [⟨s.gpr .rcx, 128⟩, ⟨s.gpr .r8, 512⟩] s.mem s₅.mem := by

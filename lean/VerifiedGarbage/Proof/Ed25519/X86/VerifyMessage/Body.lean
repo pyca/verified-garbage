@@ -111,7 +111,7 @@ theorem arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 5) :
   · intro R hR
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hR
-    have ha : L.ARGS ∈ L.inputs := by simp [Lay.inputs]
+    obtain ha : L.ARGS ∈ L.inputs := by simp [Lay.inputs]
     rcases hR with rfl | rfl
     · exact hL.sc _ ha
     · exact (hL.ks _ ha).symm
@@ -242,7 +242,7 @@ theorem setup_repr (hL : L.Ok) {u : State}
 theorem OutArgs.slot {vs : List Value} {t : State} (h : OutArgs L vs t) (hL : L.Ok)
     {j : Nat} (hj : j < vs.length) (hlen : vs.length ≤ 6) :
     Whole.slots L.E t j = value L (vs[j]'hj) := by
-  have e := h j hj
+  obtain e := h j hj
   rw [addr_eq (by have := hL.top; omega_using [hj, hlen, this])] at e
   exact e
 
@@ -251,18 +251,18 @@ theorem init_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
       Frame (hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (L.scr.setWidth 64) [] := by
   refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 4 0]) (by decide) (Whole.valid_all (by decide)))
     fun u ⟨hu, hf, hs⟩ => ?_)
-  have a0 : Whole.slots L.E u 0 = L.scr := by
-    have hh := hs.slot hL (j := 0) (by decide) (by decide)
+  obtain a0 : Whole.slots L.E u 0 = L.scr := by
+    obtain hh := hs.slot hL (j := 0) (by decide) (by decide)
     change Whole.slots L.E u 0 = L.scr + BitVec.ofNat 32 0 at hh
     simpa only [BitVec.add_zero] using hh
-  have H := hashSpace hL
-  have cov := hash_covers (L := L) (rs := Whole.initRd L.E ++ Whole.initWr L.scr) (by
+  obtain H := hashSpace hL
+  obtain cov := hash_covers (L := L) (rs := Whole.initRd L.E ++ Whole.initWr L.scr) (by
     simp only [Whole.initRd, Whole.initWr, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact .inl (argsWithin L (by decide))
     · exact scratch_covered (shaWithin L))
-  have ws := hash_writes (L := L) (rs := Whole.initWr L.scr) (by
+  obtain ws := hash_writes (L := L) (rs := Whole.initWr L.scr) (by
     intro r hr; rw [List.mem_singleton.mp hr]; exact .inr (shaWithin L))
   refine WP.mono (Whole.init_call hu H.below (Whole.init_pre hu.esp H a0) cov ws
     ((Whole.call_arg hu.esp H.below H.frameFit (by decide)).trans a0)) fun t ⟨ht, hft, hr⟩ =>
@@ -297,8 +297,8 @@ def TblAt (L : Lay) (m : Mem) : Prop :=
 
 /-- The static survives what the function writes. -/
 theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L m₀) : TblAt L s.mem := fun i hi => by
-  have tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
-  have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
+  obtain tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
+  obtain hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
     Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega_using [hi]) (by have := hL.nt; omega_using [hi])
   rw [hc.frame.readW hcon (fun R hR => by
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -312,11 +312,11 @@ theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L m₀) : TblAt L 
 theorem equation_tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L s.mem) (hy : s.syms bSym = L.tbl)
     (rd wr : List Region) :
     BHeld (s.callEntry.withRegions rd wr) [L.SCR, below (L.E - 4) 8] := by
-  have tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
+  obtain tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
   have hy' : (s.callEntry.withRegions rd wr).syms bSym = L.tbl := hy
   refine ⟨fun i hi => ?_, by rw [hy']; exact hL.nt, fun r hr => ?_⟩
   · rw [hy']
-    have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
+    obtain hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
       Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega_using [hi]) (by have := hL.nt; omega_using [hi])
     change (s.callEntry.mem).readW _ 64 = _
     rw [Frame.readW (Whole.callEntry_frame s) hcon (fun R hR => by
@@ -332,19 +332,19 @@ theorem equation_tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L s.mem) (hy 
 theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : TblAt L s.mem)
     (hy : s.syms bSym = L.tbl) :
     verifyLocal.pre (s.callEntry.withRegions (equationRd L) (equationWr L)) := by
-  have hb := equation_tbl hc hL ht hy (equationRd L) (equationWr L)
+  obtain hb := equation_tbl hc hL ht hy (equationRd L) (equationWr L)
   have hy' : (s.callEntry.withRegions (equationRd L) (equationWr L)).syms bSym = L.tbl := hy
-  have H := hashSpace hL
+  obtain H := hashSpace hL
   have ca {j : Nat} (hj : j < 64) := Whole.call_arg hc.esp H.below H.frameFit hj
   obtain ⟨a0, a1, a2, a3⟩ := ha
-  have e0 := (ca (j := 0) (by decide)).trans a0
-  have e1 := (ca (j := 1) (by decide)).trans a1
-  have e2 := (ca (j := 2) (by decide)).trans a2
-  have e3 := (ca (j := 3) (by decide)).trans a3
-  have ab := Whole.arg_base hc.esp (equationRd L) (equationWr L)
-  have stk := Whole.inner_sub_stack hL.below
-  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega_using [this]
-  have cs : callStk (s.callEntry.withRegions (equationRd L) (equationWr L)) =
+  obtain e0 := (ca (j := 0) (by decide)).trans a0
+  obtain e1 := (ca (j := 1) (by decide)).trans a1
+  obtain e2 := (ca (j := 2) (by decide)).trans a2
+  obtain e3 := (ca (j := 3) (by decide)).trans a3
+  obtain ab := Whole.arg_base hc.esp (equationRd L) (equationWr L)
+  obtain stk := Whole.inner_sub_stack hL.below
+  obtain hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega_using [this]
+  obtain cs : callStk (s.callEntry.withRegions (equationRd L) (equationWr L)) =
       below (L.E - BitVec.ofNat 32 4) 8 := by
     simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
   simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
@@ -359,7 +359,7 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : T
     (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
     Whole.inner_frame hL.below hf (d := 128) (n := 64) (by decide) (by decide), hb⟩
   all_goals
-    have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega_using [this])
+    obtain e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega_using [this])
     rw [e]
     have := hL.top; have := hL.below; omega_arith
 
@@ -373,10 +373,10 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : 
         (Spec.Ed25519.bytesAt s.mem (L.pk.setWidth 64) 32)
         (Spec.Ed25519.bytesAt s.mem (L.sig.setWidth 64) 64)
         (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 128) 64)) := by
-  have H := hashSpace hL
-  have wz : Whole.Within ⟨L.scr.setWidth 64, 0⟩ L.SCR := ⟨0, by simp, by change 0 ≤ 8192; decide⟩
-  have wsc : Whole.Within L.SCR L.SCR := ⟨0, by simp, by simp⟩
-  have cov : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
+  obtain H := hashSpace hL
+  obtain wz : Whole.Within ⟨L.scr.setWidth 64, 0⟩ L.SCR := ⟨0, by simp, by change 0 ≤ 8192; decide⟩
+  obtain wsc : Whole.Within L.SCR L.SCR := ⟨0, by simp, by simp⟩
+  obtain cov : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
     apply hash_covers
     simp only [equationRd, equationWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
@@ -387,7 +387,7 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : 
     · exact .inr ⟨L.TBL, by simp [Lay.inputs], 0, by simp, by simp⟩
     · exact scratch_covered wz
     · exact scratch_covered wsc
-  have ws : ∀ r ∈ equationWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
+  obtain ws : ∀ r ∈ equationWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
     hash_writes (by
       simp only [equationWr, List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
@@ -405,22 +405,22 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : 
     (Spec.Ed25519.bytesAt s.callEntry.mem ((arg s.callEntry 2).setWidth 64) 64)) at hp
   rw [hg .eax (by decide), (ca (j := 0) (by decide)).trans a0,
     (ca (j := 1) (by decide)).trans a1, (ca (j := 2) (by decide)).trans a2] at hp
-  have pk : Spec.Ed25519.bytesAt s.callEntry.mem (L.pk.setWidth 64) 32 =
+  obtain pk : Spec.Ed25519.bytesAt s.callEntry.mem (L.pk.setWidth 64) 32 =
       Spec.Ed25519.bytesAt s.mem (L.pk.setWidth 64) 32 := by
     apply Whole.callEntry_bytes (r := L.PK) ?_ (by change 32 ≤ 2 ^ 64; decide)
     rw [hc.esp]
     exact ((hL.ks _ (by simp [Lay.inputs])).sub_left (Whole.below_sub_stack hL.below (by decide))).symm
-  have sg : Spec.Ed25519.bytesAt s.callEntry.mem (L.sig.setWidth 64) 64 =
+  obtain sg : Spec.Ed25519.bytesAt s.callEntry.mem (L.sig.setWidth 64) 64 =
       Spec.Ed25519.bytesAt s.mem (L.sig.setWidth 64) 64 := by
     apply Whole.callEntry_bytes (r := L.SIG) ?_ (by change 64 ≤ 2 ^ 64; decide)
     rw [hc.esp]
     exact ((hL.ks _ (by simp [Lay.inputs])).sub_left (Whole.below_sub_stack hL.below (by decide))).symm
-  have ch : Spec.Ed25519.bytesAt s.callEntry.mem ((L.E + 128).setWidth 64) 64 =
+  obtain ch : Spec.Ed25519.bytesAt s.callEntry.mem ((L.E + 128).setWidth 64) 64 =
       Spec.Ed25519.bytesAt s.mem ((L.E + 128).setWidth 64) 64 := by
     apply Whole.callEntry_bytes (r := challenge L) ?_ (by change 64 ≤ 2 ^ 64; decide)
     rw [hc.esp]
     exact (Whole.frame_below hL.below H.frameFit (by decide : 128 < 256) (by decide : 128 + 64 ≤ 256)).symm
-  have ce : (L.E + 128).setWidth 64 = L.E.setWidth 64 + 128 := Whole.frame_addr H.frameFit (by decide : 128 < 256)
+  obtain ce : (L.E + 128).setWidth 64 = L.E.setWidth 64 + 128 := Whole.frame_addr H.frameFit (by decide : 128 < 256)
   rw [pk, sg, ch, ce] at hp
   exact hp
 
@@ -464,23 +464,23 @@ theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀
   rw [finalizeArgs, WP.block_append_iff]
   refine WP.mono (args_ok hc hL ha (vs := [.caller 4 0, .const 0, .const 0, .frame 192, .caller 4 192])
     (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_
-  have aa := hs.slot hL (j := 0) (by decide) (by decide)
-  have ab := hs.slot hL (j := 1) (by decide) (by decide)
-  have ac := hs.slot hL (j := 2) (by decide) (by decide)
-  have ad := hs.slot hL (j := 3) (by decide) (by decide)
-  have ae := hs.slot hL (j := 4) (by decide) (by decide)
+  obtain aa := hs.slot hL (j := 0) (by decide) (by decide)
+  obtain ab := hs.slot hL (j := 1) (by decide) (by decide)
+  obtain ac := hs.slot hL (j := 2) (by decide) (by decide)
+  obtain ad := hs.slot hL (j := 3) (by decide) (by decide)
+  obtain ae := hs.slot hL (j := 4) (by decide) (by decide)
   change Whole.slots L.E u 0 = L.scr + 0#32 at aa
   rw [BitVec.add_zero] at aa
   change Whole.slots L.E u 1 = 0#32 at ab
   change Whole.slots L.E u 2 = 0#32 at ac
   change Whole.slots L.E u 3 = L.E + 192 at ad
   change Whole.slots L.E u 4 = L.scr + 192 at ae
-  have hr : InRegions (u.rd ++ u.wr) (addr L.E 268) 4 := by
+  obtain hr : InRegions (u.rd ++ u.wr) (addr L.E 268) 4 := by
     refine ⟨L.ARGS, ?_, ?_⟩
     · rw [hu.rd]; simp [Lay.inputs]
     · rw [addr_eq (by have := hL.top; omega_using [this])]
       exact Offset.contains _ (e := 260) (k := 20) (d := 268) (n := 4) (by decide) (by decide) (by decide)
-  have hx : u.mem.readW (addr L.E 268) 32 = L.len := by
+  obtain hx : u.mem.readW (addr L.E 268) 32 = L.len := by
     rw [addr_eq (by have := hL.top; omega_using [this])]
     exact (hu.arg_word hL (j := 2) (by decide)).trans (ha 2 (by decide))
   refine WP.mono (Whole.Ctx.count hu (index := 2) (n := 64) (by have := hL.top; omega_using [this]) hr hx)
@@ -520,17 +520,17 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     WP isa (VG.Impl.Ed25519.X86.PublicKey.callWith finalizeArgs "vg_sha512_finalize_scratch" Impl.Sha512.X86.Stream.finalize) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 = Spec.Sha512.sha512 msg := by
   refine WP.seq (WP.mono (finalizeArgs_ok hc hL ha) fun u ⟨hu, hf, a0, a3, a4, ac⟩ => ?_)
-  have H := hashSpace hL
-  have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
+  obtain H := hashSpace hL
+  obtain fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
       Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
     have := hL.top; omega_using [this]
-  have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
+  obtain hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
-  have hp := Whole.finalize_pre hu.esp H a0 a3 a4 hd (digest_below hL) (by
+  obtain hp := Whole.finalize_pre hu.esp H a0 a3 a4 hd (digest_below hL) (by
     rw [digest_addr hL]
     exact Offset.base_disjoint _ (by decide) (by decide)) fit
-  have cov := hash_covers (L := L)
+  obtain cov := hash_covers (L := L)
     (rs := Whole.finalizeRd L.E ++ Whole.finalizeWr L.scr (L.E + 192)) (by
     simp only [Whole.finalizeRd, Whole.finalizeWr, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
@@ -539,17 +539,17 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     · exact scratch_covered (shaWithin L)
     · exact .inl (digestWithin hL)
     · exact scratch_covered (workWithin hL))
-  have ws := hash_writes (L := L) (rs := Whole.finalizeWr L.scr (L.E + 192)) (by
+  obtain ws := hash_writes (L := L) (rs := Whole.finalizeWr L.scr (L.E + 192)) (by
     simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inr (shaWithin L)
     · exact .inl (digestWithin hL)
     · exact .inr (workWithin hL))
   have ca {j : Nat} (hj : j < 64) := Whole.call_arg hu.esp H.below H.frameFit hj
-  have cnt : Proof.Sha512.countX86 u.callEntry = BitVec.ofNat 64 msg.length := by
+  obtain cnt : Proof.Sha512.countX86 u.callEntry = BitVec.ofNat 64 msg.length := by
     unfold Proof.Sha512.countX86
     rw [ca (j := 2) (by decide), ca (j := 1) (by decide), ac, hcount]
-  have hbsha : (Whole.SHA L.scr).Disjoint (below (u.gpr .esp) 4) := by
+  obtain hbsha : (Whole.SHA L.scr).Disjoint (below (u.gpr .esp) 4) := by
     rw [hu.esp]; exact (H.below_sha (by decide)).symm
   refine WP.mono (Whole.finalize_call hu H.below hp cov ws (ca (by decide) |>.trans a0)
     (ca (by decide) |>.trans a3) cnt hbsha (setup_repr hL hf hr) hlen)
@@ -606,9 +606,9 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         (prev ++ Spec.Ed25519.bytesAt s.mem (p.setWidth 64) n.toNat) := by
   refine WP.seq (WP.mono (args_ok hc hL ha hlen hv) fun u ⟨hu, hf, hs⟩ => ?_)
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := hargs u hs
-  have H := hashSpace hL
-  have hp := Whole.update_pre hu.esp H a0 a3 a4 a5 hi.scratch hi.below hi.fit
-  have cov := hash_covers (L := L) (rs := Whole.updateRd L.E p n ++ Whole.hashWr L.scr) (by
+  obtain H := hashSpace hL
+  obtain hp := Whole.update_pre hu.esp H a0 a3 a4 a5 hi.scratch hi.below hi.fit
+  obtain cov := hash_covers (L := L) (rs := Whole.updateRd L.E p n ++ Whole.hashWr L.scr) (by
     simp only [Whole.updateRd, Whole.hashWr, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
@@ -616,20 +616,20 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     · exact .inl (argsWithin L (by decide))
     · exact scratch_covered (shaWithin L)
     · exact scratch_covered (workWithin hL))
-  have ws := hash_writes (L := L) (rs := Whole.hashWr L.scr) (by
+  obtain ws := hash_writes (L := L) (rs := Whole.hashWr L.scr) (by
     simp only [Whole.hashWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact .inr (shaWithin L)
     · exact .inr (workWithin hL))
   have ca {j : Nat} (hj : j < 64) := Whole.call_arg hu.esp H.below H.frameFit hj
-  have cnt : Proof.Sha512.countX86 u.callEntry = BitVec.ofNat 64 prev.length := by
+  obtain cnt : Proof.Sha512.countX86 u.callEntry = BitVec.ofNat 64 prev.length := by
     unfold Proof.Sha512.countX86
     rw [ca (j := 2) (by decide), ca (j := 1) (by decide), a1, a2]
     exact (count_zero_high c).trans (congrArg (BitVec.ofNat 64) hcount)
-  have hb : Region.Disjoint ⟨p.setWidth 64, n.toNat⟩ (below (u.gpr .esp) 4) := by
+  obtain hb : Region.Disjoint ⟨p.setWidth 64, n.toNat⟩ (below (u.gpr .esp) 4) := by
     rw [hu.esp]
     exact (hi.below.sub_left (below_sub (by decide) H.below)).symm
-  have hbsha : (Whole.SHA L.scr).Disjoint (below (u.gpr .esp) 4) := by
+  obtain hbsha : (Whole.SHA L.scr).Disjoint (below (u.gpr .esp) 4) := by
     rw [hu.esp]; exact (H.below_sha (by decide)).symm
   refine WP.mono (Whole.update_call hu H.below hp cov ws (ca (by decide) |>.trans a0)
     (ca (by decide) |>.trans a3) (ca (by decide) |>.trans a4) cnt hbsha hb
@@ -761,13 +761,13 @@ theorem hash_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     (by decide) (bytes_length _ _ _) (by decide) (input_pk hL) hsig) fun v ⟨hv, _, hpk⟩ => ?_)
   change Spec.Sha512.Repr _ v.mem _ (_ ++ Spec.Ed25519.bytesAt u.mem (L.pk.setWidth 64) 32) at hpk
   rw [hu.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32 ≤ 2 ^ 64; decide)] at hpk
-  have hpkl : (Spec.Ed25519.bytesAt m₀ (L.sig.setWidth 64) 32 ++
+  obtain hpkl : (Spec.Ed25519.bytesAt m₀ (L.sig.setWidth 64) 32 ++
       Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32).length = 64 := by
     rw [List.length_append, bytes_length, bytes_length]
   refine WP.seq (WP.mono (message_step hv hL ha hpkl hpk) fun w ⟨hw, _, hmsg⟩ => ?_)
   rw [hv.input_bytes hL (r := L.MSG) (by simp [Lay.inputs])
     (by have := L.len.isLt; change L.len.toNat ≤ 2 ^ 64; omega_using [])] at hmsg
-  have hlen : (hashInput L m₀).length = L.len.toNat + 64 := by
+  obtain hlen : (hashInput L m₀).length = L.len.toNat + 64 := by
     simp only [hashInput, List.length_append, bytes_length]
     omega_using []
   refine WP.mono (finalize_step hw hL ha (msg := hashInput L m₀)
@@ -786,8 +786,8 @@ theorem reduced_challenge (digest : List Byte) :
       Spec.Ed25519.scalarReduce digest ++ Spec.Ed25519.encodeLE 32 0 := by
   simp only [Spec.Ed25519.scalarReduce, Proof.Ed25519.X86.encodeLE_eq]
   rw [show (64 : Nat) = 32 + 32 from rfl, Proof.X25519.leBytes_add]
-  have hL : Spec.Ed25519.L ≤ 256 ^ 32 := by decide
-  have hpos : 0 < Spec.Ed25519.L := by decide
+  obtain hL : Spec.Ed25519.L ≤ 256 ^ 32 := by decide
+  obtain hpos : 0 < Spec.Ed25519.L := by decide
   rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hpos) hL)]
 
 theorem setup_bytes {u : State} {d n : Nat}
@@ -806,16 +806,16 @@ theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 192) 64) := by
   refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.frame 128, .frame 192, .caller 4 0])
     (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_)
-  have a0 := hs.slot hL (j := 0) (by decide) (by decide)
-  have a1 := hs.slot hL (j := 1) (by decide) (by decide)
-  have a2 := (hs.slot hL (j := 2) (by decide) (by decide)).trans (BitVec.add_zero _)
-  have H := hashSpace hL
+  obtain a0 := hs.slot hL (j := 0) (by decide) (by decide)
+  obtain a1 := hs.slot hL (j := 1) (by decide) (by decide)
+  obtain a2 := (hs.slot hL (j := 2) (by decide) (by decide)).trans (BitVec.add_zero _)
+  obtain H := hashSpace hL
   refine WP.mono (Whole.reduce_call hu H (by simp [Lay.outputs]) (d := 128)
     (by decide) (by decide) a0 a1 a2) fun t ⟨ht, _, hd⟩ => ⟨ht, ?_⟩
-  have e128 : (L.E + 128).setWidth 64 = L.E.setWidth 64 + 128 := Whole.frame_addr H.frameFit (by decide : 128 < 256)
-  have e192 : (L.E + 192).setWidth 64 = L.E.setWidth 64 + 192 := Whole.frame_addr H.frameFit (by decide : 192 < 256)
+  obtain e128 : (L.E + 128).setWidth 64 = L.E.setWidth 64 + 128 := Whole.frame_addr H.frameFit (by decide : 128 < 256)
+  obtain e192 : (L.E + 192).setWidth 64 = L.E.setWidth 64 + 192 := Whole.frame_addr H.frameFit (by decide : 192 < 256)
   change Spec.Ed25519.bytesAt t.mem ((L.E + 128).setWidth 64) 32 = _ at hd
-  have same : Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 192) 64 =
+  obtain same : Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 192) 64 =
       Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 192) 64 :=
     setup_bytes hf (by decide : 24 ≤ 192) (by decide : 192 + 64 ≤ 256)
   rw [e128, e192, same] at hd
@@ -828,20 +828,20 @@ theorem extend_step (hc : Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
         Spec.Ed25519.encodeLE 64 (Spec.Ed25519.decodeLE digest % Spec.Ed25519.L) := by
   refine WP.mono (Whole.Ctx.zeroWords hc (start := 40) (count := 8)
     (hashSpace hL).frameFit (by decide)) fun t ⟨ht, hf, hz⟩ => ⟨ht, ?_⟩
-  have low : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 128) 32 =
+  obtain low : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 128) 32 =
       Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 128) 32 := by
     unfold Spec.Ed25519.bytesAt
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (R := ⟨L.E.setWidth 64 + 128, 32⟩) (by
       rintro r hr; rw [List.mem_singleton.mp hr]
       exact Offset.disjoint _ (by decide) (by decide) (by decide)) (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
-  have high : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 160) 32 = Spec.Ed25519.encodeLE 32 0 := by
+  obtain high : Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 160) 32 = Spec.Ed25519.encodeLE 32 0 := by
     rw [Proof.Ed25519.X86.encodeLE_eq]
     apply Proof.X25519.bytesAt_leBytes_words32
     intro j hj
-    have z := hz j hj
+    obtain z := hz j hj
     rw [addr_eq (by have := hL.top; omega_using [hj, this])] at z
-    have e : L.E.setWidth 64 + BitVec.ofNat 64 (4 * (40 + j)) =
+    obtain e : L.E.setWidth 64 + BitVec.ofNat 64 (4 * (40 + j)) =
         L.E.setWidth 64 + 160 + BitVec.ofNat 64 (4 * j) := by
       rw [show 4 * (40 + j) = 160 + 4 * j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
       rfl
@@ -867,7 +867,7 @@ theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
     (Spec.Ed25519.bytesAt m (L.sig.setWidth 64) 64).take 32 ++
       Spec.Ed25519.bytesAt m (L.pk.setWidth 64) 32 ++
       Spec.Ed25519.bytesAt m (L.msg.setWidth 64) L.len.toNat := by
-  have e : (Spec.Ed25519.bytesAt m (L.sig.setWidth 64) 64).take 32 =
+  obtain e : (Spec.Ed25519.bytesAt m (L.sig.setWidth 64) 64).take 32 =
       Spec.Ed25519.bytesAt m (L.sig.setWidth 64) 32 := by
     unfold Spec.Ed25519.bytesAt
     rw [← List.map_take, List.take_range]
@@ -885,11 +885,11 @@ theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
   refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (vs := [.caller 0 0, .caller 3 0, .frame 128, .caller 4 0])
     (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
-  have a0 := (hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)
-  have a1 := (hs.slot hL (j := 1) (by decide) (by decide)).trans (BitVec.add_zero _)
-  have a2 := hs.slot hL (j := 2) (by decide) (by decide)
-  have a3 := (hs.slot hL (j := 3) (by decide) (by decide)).trans (BitVec.add_zero _)
-  have he : Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 128) 64 =
+  obtain a0 := (hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)
+  obtain a1 := (hs.slot hL (j := 1) (by decide) (by decide)).trans (BitVec.add_zero _)
+  obtain a2 := hs.slot hL (j := 2) (by decide) (by decide)
+  obtain a3 := (hs.slot hL (j := 3) (by decide) (by decide)).trans (BitVec.add_zero _)
+  obtain he : Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 128) 64 =
       Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 128) 64 :=
     setup_bytes hf (by decide : 24 ≤ 128) (by decide : 128 + 64 ≤ 256)
   refine WP.mono (equation_call hu hL ⟨a0, a1, a2, a3⟩ ht (by rw [yu, hy])) fun t ⟨ht, eq⟩ => ⟨ht, ?_⟩

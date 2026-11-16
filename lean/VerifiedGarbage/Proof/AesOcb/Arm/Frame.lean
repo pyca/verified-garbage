@@ -92,24 +92,24 @@ theorem recv_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.me
   refine WP.seq (WP.block_append (WP.mono (zero16_wp (s := s) (o := tagO) (by decide)
     (by rw [E.r11]; simp only [tagO]; omega_arith) (by rw [E.r11]; exact E.perm.wC (by decide))) fun s₁ R₁ => ?_))
   rw [E.r11, show State.addr p.W + BitVec.ofNat 64 tagO = State.addr p.W from BitVec.add_zero _] at R₁
-  have E₁ : Env p s₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
-  have fz : Frame [⟨State.addr p.W, 16⟩] s.mem s₁.mem := by rw [R₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have A₁ : Args p s₁.mem := A.frame L fz fun r hr => by
+  obtain E₁ : Env p s₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
+  obtain fz : Frame [⟨State.addr p.W, 16⟩] s.mem s₁.mem := by rw [R₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
+  obtain A₁ : Args p s₁.mem := A.frame L fz fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_args.symm.sub_right (Region.sub_prefix (by decide))
-  have a₁₆ := E₁.perm.argR' L (k := 16) (by decide)
-  have a₂₀ := E₁.perm.argR' L (k := 20) (by decide)
+  obtain a₁₆ := E₁.perm.argR' L (k := 16) (by decide)
+  obtain a₂₀ := E₁.perm.argR' L (k := 20) (by decide)
   refine WP.of_runBlock ⟨_, by orun [E₁.sp, a₁₆, a₂₀, A₁.a16, A₁.a20], ?_⟩
-  have tW : (⟨State.addr p.T, p.tl⟩ : Region).Disjoint ⟨State.addr p.W, 16⟩ :=
+  obtain tW : (⟨State.addr p.T, p.tl⟩ : Region).Disjoint ⟨State.addr p.W, 16⟩ :=
     L.t_w.sub_right (Region.sub_prefix (by decide))
   refine WP.mono (copyLoop_ok _ (S := p.T) (D := p.W) (n := p.tl)
     ⟨by simp [gpr_setReg, E₁.sp, A₁.a16], by simp [gpr_setReg, E₁.r11], by simp [gpr_setReg, E₁.sp, A₁.a20],
       L.tl1, by omega_arith, L.tw, by omega_arith, by simp only [rd_setReg, wr_setReg]; exact E₁.perm.tag,
       by simp only [wr_setReg]; exact covers_prefix E₁.perm.w (by omega_arith),
       tW.sub_right (Region.sub_prefix (by omega_arith))⟩) fun t ⟨m, O⟩ => ?_
-  have hT : bytesAt s₁.mem (State.addr p.T) p.tl = bytesAt s.mem (State.addr p.T) p.tl :=
+  obtain hT : bytesAt s₁.mem (State.addr p.T) p.tl = bytesAt s.mem (State.addr p.T) p.tl :=
     Proof.Cmac.bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact tW)
       (by omega_arith)
-  have hlen := length_bytesAt s₁.mem (State.addr p.T) p.tl
+  obtain hlen := length_bytesAt s₁.mem (State.addr p.T) p.tl
   simp only [mem_setReg] at m
   refine ⟨?_, ?_, E₁.keep (fun r hr => ?_) (by rw [O.sp]; rfl) (by rw [O.rd]; rfl) (by rw [O.wr]; rfl),
     by rw [O.rd]; exact R₁.rd, by rw [O.wr]; exact R₁.wr⟩
@@ -133,14 +133,14 @@ theorem cmpTail_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
         bytesAt s.mem (State.addr p.W + BitVec.ofNat 64 vO) 16 then 1 else 0) ∧
       Others [.r0, .r1, .r2] s s' ∧ Keeps s s' := by
   have h11 := E.r11
-  have r₀ := E.perm.wR (show 0 + 4 ≤ 2560 by decide)
-  have r₁ := E.perm.wR (show 4 + 4 ≤ 2560 by decide)
-  have r₂ := E.perm.wR (show 8 + 4 ≤ 2560 by decide)
-  have r₃ := E.perm.wR (show 12 + 4 ≤ 2560 by decide)
-  have q₀ := E.perm.wR (show 240 + 4 ≤ 2560 by decide)
-  have q₁ := E.perm.wR (show 244 + 4 ≤ 2560 by decide)
-  have q₂ := E.perm.wR (show 248 + 4 ≤ 2560 by decide)
-  have q₃ := E.perm.wR (show 252 + 4 ≤ 2560 by decide)
+  obtain r₀ := E.perm.wR (show 0 + 4 ≤ 2560 by decide)
+  obtain r₁ := E.perm.wR (show 4 + 4 ≤ 2560 by decide)
+  obtain r₂ := E.perm.wR (show 8 + 4 ≤ 2560 by decide)
+  obtain r₃ := E.perm.wR (show 12 + 4 ≤ 2560 by decide)
+  obtain q₀ := E.perm.wR (show 240 + 4 ≤ 2560 by decide)
+  obtain q₁ := E.perm.wR (show 244 + 4 ≤ 2560 by decide)
+  obtain q₂ := E.perm.wR (show 248 + 4 ≤ 2560 by decide)
+  obtain q₃ := E.perm.wR (show 252 + 4 ≤ 2560 by decide)
   let m := s.mem
   let a := fun k : Nat => m.readW (State.addr p.W + BitVec.ofNat 64 (4 * k)) 32
   let b := fun k : Nat => m.readW (State.addr p.W + BitVec.ofNat 64 (240 + 4 * k)) 32
@@ -148,7 +148,7 @@ theorem cmpTail_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       some s₁ ∧ Others [.r0, .r1, .r2] s s₁ ∧ s₁.gpr .r0 = (a 0 ^^^ b 0 ||| a 1 ^^^ b 1) ∧ Keeps s s₁ := by
     refine ⟨_, by simp only [xorT]; orun [h11, L.wA, r₀, r₁, q₀, q₁], by others_tac, ?_, by exact ⟨rfl, rfl, rfl, rfl⟩⟩
     simp [gpr_setReg, a, b, m]
-  have h11₁ : s₁.gpr .r11 = p.W := by rw [g₁ _ (by decide), h11]
+  obtain h11₁ : s₁.gpr .r11 = p.W := by rw [g₁ _ (by decide), h11]
   have hm₁ := k₁.mem
   obtain ⟨s₂, run₂, g₂, h0₂, h1₂, k₂⟩ : ∃ s₂, runBlock isa (xorT .r1 2 ++ [.dp .orr .r0 .r0 (.reg .r1)] ++
       xorT .r1 3) s₁ = some s₂ ∧ Others [.r0, .r1, .r2] s₁ s₂ ∧
@@ -192,14 +192,14 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.mem
   refine WP.seq (WP.block_append (WP.mono (zero16_wp (s := s) (o := vO) (by decide)
     (by rw [E.r11]; simp only [vO]; omega_arith) (by rw [E.r11]; exact E.perm.wC (by decide))) fun s₁ R₁ => ?_))
   rw [E.r11] at R₁
-  have E₁ : Env p s₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
-  have fz : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₁.mem := by
+  obtain E₁ : Env p s₁ := E.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
+  obtain fz : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₁.mem := by
     rw [R₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have A₁ : Args p s₁.mem := A.frame L fz fun r hr => by
+  obtain A₁ : Args p s₁.mem := A.frame L fz fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.args_w' (by decide)
-  have a₂₀ := E₁.perm.argR' L (k := 20) (by decide)
-  have e₁ : encodable (BitVec.ofNat 32 176) = true := by decide
-  have e₂ : encodable (BitVec.ofNat 32 240) = true := by decide
+  obtain a₂₀ := E₁.perm.argR' L (k := 20) (by decide)
+  obtain e₁ : encodable (BitVec.ofNat 32 176) = true := by decide
+  obtain e₂ : encodable (BitVec.ofNat 32 240) = true := by decide
   obtain ⟨s₂, run₂, r1₂, r2₂, r3₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [addI .r1 .r11 t2O, addI .r2 .r11 vO, .ldrSp .r3 20] s₁ =
       some s₂ ∧ s₂.gpr .r1 = p.W + BitVec.ofNat 32 t2O ∧ s₂.gpr .r2 = p.W + BitVec.ofNat 32 vO ∧
       s₂.gpr .r3 = BitVec.ofNat 32 p.tl ∧ Others [.r1, .r2, .r3] s₁ s₂ ∧ Keeps s₁ s₂ :=
@@ -207,10 +207,10 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.mem
       by simp [gpr_setReg, E₁.r11, vO], by simp [gpr_setReg, E₁.sp, A₁.a20], by others_tac,
       by exact ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have E₂ : Env p s₂ := E₁.of_others g₂ k₂.sp k₂.rd k₂.wr
-  have eS := L.wA (d := t2O) (by decide)
-  have eD := L.wA (d := vO) (by decide)
-  have dSD : (⟨State.addr p.W + BitVec.ofNat 64 t2O, 16⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩ :=
+  obtain E₂ : Env p s₂ := E₁.of_others g₂ k₂.sp k₂.rd k₂.wr
+  obtain eS := L.wA (d := t2O) (by decide)
+  obtain eD := L.wA (d := vO) (by decide)
+  obtain dSD : (⟨State.addr p.W + BitVec.ofNat 64 t2O, 16⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩ :=
     L.w_w (.inl (by decide)) (by decide) (by decide)
   refine WP.seq (WP.mono (copyLoop_ok s₂ (S := p.W + BitVec.ofNat 32 t2O) (D := p.W + BitVec.ofNat 32 vO) (n := p.tl)
     ⟨r1₂, r2₂, r3₂, L.tl1, by omega_arith, by rw [L.wN (by decide)]; simp only [t2O]; omega_arith,
@@ -219,19 +219,19 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.mem
       by rw [eS, eD]; exact (dSD.sub_left (Region.sub_prefix t16)).sub_right (Region.sub_prefix t16)⟩)
     fun s₃ ⟨m₃, O₃⟩ => ?_)
   rw [eS, eD] at m₃
-  have E₃ : Env p s₃ := E₂.keep (fun r hr => by
+  obtain E₃ : Env p s₃ := E₂.keep (fun r hr => by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact O₃.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
     O₃.sp O₃.rd O₃.wr
   obtain ⟨s₄, run₄, h0₄, g₄, k₄⟩ := cmpTail_ok L E₃
-  have hlen := length_bytesAt s₂.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl
-  have f₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₃.mem := by
-    have fz' : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₂.mem := by rw [k₂.mem]; exact fz
+  obtain hlen := length_bytesAt s₂.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl
+  obtain f₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₃.mem := by
+    obtain fz' : Frame [⟨State.addr p.W + BitVec.ofNat 64 vO, 16⟩] s.mem s₂.mem := by rw [k₂.mem]; exact fz
     rw [m₃]
     exact fz'.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
-  have hS : bytesAt s₂.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl =
+  obtain hS : bytesAt s₂.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl =
       bytesAt s.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl := by
     rw [k₂.mem]
     exact Proof.Cmac.bytesAt_frame fz (fun r hr => by
@@ -240,12 +240,12 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.mem
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> decide)) k₄.sp k₄.rd k₄.wr,
     by rw [k₄.rd, O₃.rd, k₂.rd, R₁.rd], by rw [k₄.wr, O₃.wr, k₂.wr, R₁.wr]⟩
-  have hW : bytesAt s₃.mem (State.addr p.W) 16 = bytesAt s.mem (State.addr p.W) 16 :=
+  obtain hW : bytesAt s₃.mem (State.addr p.W) 16 = bytesAt s.mem (State.addr p.W) 16 :=
     Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simpa using L.w_w (a := 0) (n := 16) (d := vO) (k := 16) (.inl (by decide)) (by decide) (by decide))
       (by decide)
-  have hV : bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 vO) 16 =
+  obtain hV : bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 vO) 16 =
       bytesAt s.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl ++ zeros (16 - p.tl) := by
     rw [m₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by omega_arith), hlen, hS, k₂.mem, R₁.mem]
     exact congrArg _ (store4_zero_tail s.mem _ t16)
@@ -378,69 +378,69 @@ theorem open_wp' {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (A : Arg
     fun s₃ P₃ => ?_))))
   refine WP.seq (WP.mono (bodyOpen_ok L P₃.env P₃.args P₃.ofs P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar]))
     fun s₄ B => ?_)
-  have F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut L B.frame
+  obtain F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut L B.frame
   refine WP.mono (tag_ok L B.env (.inr rfl)) fun s₅ T₅ => ?_
-  have F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut L (.inr ⟨by decide, by decide⟩) T₅.frame
-  have A₅ : Args p s₅.mem := (P₃.args.mut L F₄).mut L F₅
+  obtain F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut L (.inr ⟨by decide, by decide⟩) T₅.frame
+  obtain A₅ : Args p s₅.mem := (P₃.args.mut L F₄).mut L F₅
   -- The received tag, at `W`.
   refine WP.seq (WP.mono (recv_ok L T₅.env A₅) fun s₆ ⟨b₆, f₆, E₆, rd₆, wr₆⟩ => ?_)
-  have F₆ : Frame (mutR p) s₅.mem s₆.mem := f₆.sub fun r hr => by
+  obtain F₆ : Frame (mutR p) s₅.mem s₆.mem := f₆.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
   -- The comparison.
   refine WP.seq (WP.mono (cmp_ok L E₆ (A₅.mut L F₆)) fun s₇ ⟨h0₇, f₇, E₇, rd₇, wr₇⟩ => ?_)
-  have F₇ : Frame (mutR p) s₆.mem s₇.mem := f₇.sub fun r hr => by
+  obtain F₇ : Frame (mutR p) s₆.mem s₇.mem := f₇.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact w_mut L (.inr ⟨by decide, by decide⟩)
   let c : Bool := decide (bytesAt s₆.mem (State.addr p.W) 16 =
     bytesAt s₆.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl ++ zeros (16 - p.tl))
   -- The mask.
   refine WP.seq (WP.mono (mask_ok L E₇ ((A₅.mut L F₆).mut L F₇) (c := c) (by
     rw [h0₇]; simp only [c]; split <;> simp_all)) fun s₈ ⟨E₈, rd₈, wr₈, g0₈, m₈⟩ => ?_)
-  have F₈ : Frame [⟨State.addr p.D, p.n⟩] s₇.mem s₈.mem := by
+  obtain F₈ : Frame [⟨State.addr p.D, p.n⟩] s₇.mem s₈.mem := by
     rw [m₈]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
-  have sv₈ : SavedAt s₈.mem p.W s₀ :=
+  obtain sv₈ : SavedAt s₈.mem p.W s₀ :=
     ((((P₃.saved.frame F₄ (saved_mut L)).frame F₅ (saved_mut L)).frame F₆ (saved_mut L)).frame F₇
       (saved_mut L)).frame F₈ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (L.d_w' (by decide)).symm
   -- `restore`.
   refine WP.mono (restore_ok E₈.r11 L.ww (covers_left E₈.perm.w) sv₈ (by rw [E₈.sp, hsp]))
     fun s' ⟨ab, hm, hr0, _, _⟩ => ⟨ab, ?_⟩
-  have x0 : s'.gpr .r0 = if c then 1 else 0 := by
+  obtain x0 : s'.gpr .r0 = if c then 1 else 0 := by
     rw [hr0, g0₈, h0₇]; simp only [c]; split <;> simp_all
-  have c₃ : ciphOf p s₃.mem = ciphOf p s₀.mem := by simp only [ciphOf, P₃.sched]
-  have i₃ : invOf p s₃.mem = invOf p s₀.mem := by simp only [invOf, P₃.sched]
-  have c₄ : ciphOf p s₄.mem = ciphOf p s₀.mem := by simp only [ciphOf, sched_mut L F₄, P₃.sched]
+  obtain c₃ : ciphOf p s₃.mem = ciphOf p s₀.mem := by simp only [ciphOf, P₃.sched]
+  obtain i₃ : invOf p s₃.mem = invOf p s₀.mem := by simp only [invOf, P₃.sched]
+  obtain c₄ : ciphOf p s₄.mem = ciphOf p s₀.mem := by simp only [ciphOf, sched_mut L F₄, P₃.sched]
   have hout := B.out
   rw [c₃, i₃, P₃.lstar, P₃.data] at hout
   have hofs := B.ofs
   rw [P₃.lstar] at hofs
   have hck := B.ck
   rw [c₃, i₃, P₃.lstar, P₃.data] at hck
-  have ld₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem) := by
+  obtain ld₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem) := by
     rw [blockAtMem_frame B.frame (by wdisj L), P₃.ld]
-  have sum₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 sumO) =
+  obtain sum₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 sumO) =
       Spec.Ocb.hash (ciphOf p s₀.mem) (lstarOf p s₀.mem) (aadOf p s₀.mem) := by
     rw [blockAtMem_frame B.frame (by wdisj L), P₃.sum]
   have tagv := T₅.val
   rw [hck, hofs, ld₄, sum₄, c₄] at tagv
-  have d₇ : bytesAt s₇.mem (State.addr p.D) p.n = bytesAt s₄.mem (State.addr p.D) p.n := by
+  obtain d₇ : bytesAt s₇.mem (State.addr p.D) p.n = bytesAt s₄.mem (State.addr p.D) p.n := by
     rw [Proof.Cmac.bytesAt_frame f₇ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by omega_arith),
       Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact L.d_w.sub_right (Region.sub_prefix (by decide))) (by omega_arith)]
     exact Proof.Cmac.bytesAt_frame T₅.frame (by ddisj L) (by omega_arith)
-  have d₈ : bytesAt s'.mem (State.addr p.D) p.n = if c then bytesAt s₄.mem (State.addr p.D) p.n else zeros p.n := by
+  obtain d₈ : bytesAt s'.mem (State.addr p.D) p.n = if c then bytesAt s₄.mem (State.addr p.D) p.n else zeros p.n := by
     rw [hm, m₈, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) (by omega_arith), length_mask,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, d₇]
-  have recv : bytesAt s₆.mem (State.addr p.W) 16 = bytesAt s₀.mem (State.addr p.T) p.tl ++ zeros (16 - p.tl) := by
+  obtain recv : bytesAt s₆.mem (State.addr p.W) 16 = bytesAt s₀.mem (State.addr p.T) p.tl ++ zeros (16 - p.tl) := by
     rw [b₆, tag_mut L F₅, tag_mut L F₄, P₃.tag]
-  have t2₆ : bytesAt s₆.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl =
+  obtain t2₆ : bytesAt s₆.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl =
       bytesAt s₅.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl :=
     Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simpa using (L.w_w (a := t2O) (n := p.tl) (d := 0) (k := 16) (.inr (by decide)) (by simp only [t2O]; omega_arith)
         (by decide))) (by omega_arith)
-  have hc : ∀ x : Block, bytesAt s₅.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl = (Spec.Ocb.toBytes x).take p.tl →
+  obtain hc : ∀ x : Block, bytesAt s₅.mem (State.addr p.W + BitVec.ofNat 64 t2O) p.tl = (Spec.Ocb.toBytes x).take p.tl →
       (c = true ↔ (Spec.Ocb.toBytes x).take p.tl = bytesAt s₀.mem (State.addr p.T) p.tl) := fun x hx => by
     show decide (_ = _) = true ↔ _
     rw [recv, t2₆, hx, decide_eq_true_iff, List.append_cancel_right_eq, eq_comm]
@@ -450,14 +450,14 @@ theorem open_wp' {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (A : Arg
   · have h' : p.n - 16 * (p.n / 16) > 0 := by omega_arith
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ t16, tagv] at hc
-    have hc := hc _ rfl
+    obtain hc := hc _ rfl
     by_cases hk : c = true
     · simp only [hc.mp hk, hk, ↓reduceIte]; exact ⟨by decide, trivial⟩
     · simp only [mt hc.mpr hk, hk, ↓reduceIte, Bool.false_eq_true]; exact ⟨by decide, rfl⟩
   · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega_arith
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ t16, tagv] at hc
-    have hc := hc _ rfl
+    obtain hc := hc _ rfl
     by_cases hk : c = true
     · simp only [hc.mp hk, hk, ↓reduceIte]; exact ⟨by decide, trivial⟩
     · simp only [mt hc.mpr hk, hk, ↓reduceIte, Bool.false_eq_true]; exact ⟨by decide, rfl⟩
@@ -528,7 +528,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesOcb.openScratchCo
         sig_eval [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Proof.AesOcb.openRoundsPost, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [openArm, openRes, ciph, inv, lstar, Arm.State.addr] at h
-        have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
+        obtain e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
         intro _
         rw [e]
         exact h

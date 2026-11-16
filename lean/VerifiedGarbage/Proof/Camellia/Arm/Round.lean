@@ -71,21 +71,21 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion sboxCfg s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
-  have hout : ∀ j < 8, e'.reg (q j) = some (sbox1T j) := by
+  obtain hout : ∀ j < 8, e'.reg (q j) = some (sbox1T j) := by
     intro j hj
     have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simpa using this
-  have key : ∀ p < 32, ∃ s', runBlock isa Impl.Camellia.Arm.sboxCode s = some s' ∧
+  obtain key : ∀ p < 32, ∃ s', runBlock isa Impl.Camellia.Arm.sboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
         (fun r => (Impl.Camellia.Arm.sboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
-    have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
+    obtain hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),
       (fun _ _ _ h => by cases h), (fun _ _ h => by cases h)⟩ he
     simp only [sboxEnv, Option.map_eq_some_iff] at h
     obtain ⟨k, hk, rfl⟩ := h
     obtain ⟨hqk, hkr⟩ := List.find?_some hk, List.mem_of_find?_eq_some hk
-    have hk8 := List.mem_range.mp hkr
+    obtain hk8 := List.mem_range.mp hkr
     simp only [beq_iff_eq] at hqk
     subst hqk
     simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
@@ -94,7 +94,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
-    have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
+    obtain hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     have := p₁.rel.reg (q j) _ (hout j hj)
     simp only [TableRel] at this
     rw [← this, testBit_sbox1T hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -154,9 +154,9 @@ theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
 /-- A frame of the first `n` slots keeps slot `k ≥ n`. -/
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨State.addr b, 4 * n⟩] m m') (hk : n ≤ k)
     (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) : m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_using [hfit])
+  obtain e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_using [hfit])
   have := b.isLt
-  have hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega_using []
+  obtain hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega_using []
   rw [e]
   exact hf.readW (r := ⟨State.addr b + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -172,20 +172,20 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   simp only [List.mem_singleton] at hr; subst hr
   have hfit := hok.slots
   simp only [slotRegion, Region.Contains] at hc
-  have hb := toNat_addr (s.gpr c.base)
-  have hk : (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4 < c.slots := by
+  obtain hb := toNat_addr (s.gpr c.base)
+  obtain hk : (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4 < c.slots := by
     omega_using [hc]
-  have hsep := hok.sep _ hk j hj (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i)
-  have e1 := wordAddr_toNat (s.gpr c.base)
+  obtain hsep := hok.sep _ hk j hj (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i)
+  obtain e1 := wordAddr_toNat (s.gpr c.base)
     (k := (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4) (by omega_using [hc, hfit])
-  have hi' : i < 4 := by simpa using hi
+  obtain hi' : i < 4 := by simpa using hi
   generalize wordAddr (s.gpr c.base) _ = W at hsep e1
   generalize wordAddr (s.gpr c.ext) j = A at *
   generalize State.addr (s.gpr c.base) = B at *
-  have hx : (A + BitVec.ofNat 64 i - A).toNat < 4 := by
+  obtain hx : (A + BitVec.ofNat 64 i - A).toNat < 4 := by
     rw [Mem.sub_ofNat_toNat A (by omega_using [hi])]; exact hi'
   refine hsep ?_ hx
-  have hBl : B.toNat < 2 ^ 32 := by omega_using [hb]
+  obtain hBl : B.toNat < 2 ^ 32 := by omega_using [hb]
   bv_omega
 
 theorem runBlock_app (a b : List Instr) (s : State) :
@@ -204,8 +204,8 @@ theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (
     ∀ l : List Nat, (∀ c ∈ l, c < 8) → xorBits W (l.map (selG j b)) = W32.rowSel YL SR j b l
   | [], _ => rfl
   | c :: l, hl => by
-    have hc := hl c List.mem_cons_self
-    have ih := xorBits_sel W YL SR hS hY hj hb l fun x hx => hl x (List.mem_cons_of_mem _ hx)
+    obtain hc := hl c List.mem_cons_self
+    obtain ih := xorBits_sel W YL SR hS hY hj hb l fun x hx => hl x (List.mem_cons_of_mem _ hx)
     simp only [List.map_cons, xorBits_cons, W32.rowSel, List.foldr_cons] at ih ⊢
     rw [ih]
     congr 1
@@ -247,28 +247,28 @@ theorem round_ok {off src dst : Nat}
       (∀ i < 16, slotW s' (src + i) = slotW s (src + i)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  have hall' : ∀ r, r ∉ layerWrites → ((preL off src).all fun i => !clobbers i r) = true ∧
+  obtain hall' : ∀ r, r ∉ layerWrites → ((preL off src).all fun i => !clobbers i r) = true ∧
       ((midLR off src).all fun i => !clobbers i r) = true ∧
       ((postP dst).all fun i => !clobbers i r) = true := fun r hr => by
     have := List.all_eq_true.mp hall r (not_layerWrites r hr)
     simp only [List.all_append, Bool.and_eq_true] at this
     exact ⟨this.1.1, this.1.2, this.2⟩
-  have hsb : sb ∉ layerWrites := by decide
-  have hkp : kp ∉ layerWrites := by decide
+  obtain hsb : sb ∉ layerWrites := by decide
+  obtain hkp : kp ∉ layerWrites := by decide
   have hfit := hok.slots
   simp only [layerCfg, keySlot] at hfit
   have hd1 : d1Slot = 40 := rfl
   have hks : keySlot = 72 := rfl
   have hyl : ylSlot = 32 := rfl
-  have hsd : (src = d1Slot ∧ dst = d2Slot) ∨ (src = d2Slot ∧ dst = d1Slot) := by
+  obtain hsd : (src = d1Slot ∧ dst = d2Slot) ∨ (src = d2Slot ∧ dst = d1Slot) := by
     rcases hcase with ⟨-, h⟩ | ⟨-, h⟩
     · exact .inl h
     · exact .inr h
-  have hsrc : d1Slot ≤ src ∧ src + 16 ≤ d1Slot + 32 := by
+  obtain hsrc : d1Slot ≤ src ∧ src + 16 ≤ d1Slot + 32 := by
     rcases hsd with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> simp [d1Slot, d2Slot]
-  have hdst : d1Slot ≤ dst ∧ dst + 16 ≤ d1Slot + 32 := by
+  obtain hdst : d1Slot ≤ dst ∧ dst + 16 ≤ d1Slot + 32 := by
     rcases hsd with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> simp [d1Slot, d2Slot]
-  have hoff : off + 16 ≤ 32 := by rcases hcase with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+  obtain hoff : off + 16 ≤ 32 := by rcases hcase with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
   -- The left word's S-box input.
   let W₁ : Nat → BitVec 32 := fun i => if i < 32 then slotW s (d1Slot + i) else keyW s (i - 32)
   obtain ⟨s₁, h₁, x₁, -, k₁, rd₁, wr₁, sp₁, o₁, f₁, -, -⟩ := linG_ok hA hok W₁
@@ -280,43 +280,43 @@ theorem round_ok {off src dst : Nat}
     (fun j hj => by
       simp only [layerCfg] at hj
       exact ⟨by omega_arith, by simp [W₁, show ¬ 32 + j < 32 by omega_arith]; rfl⟩)
-  have b₁ : s₁.gpr sb = s.gpr sb := o₁ _ (hall' sb hsb).1
-  have kp₁ : s₁.gpr kp = s.gpr kp := o₁ _ (hall' kp hkp).1
-  have hXL : ∀ j < 8, ∀ p < 32, (Qs s₁ j).getLsbD p =
+  obtain b₁ : s₁.gpr sb = s.gpr sb := o₁ _ (hall' sb hsb).1
+  obtain kp₁ : s₁.gpr kp = s.gpr kp := o₁ _ (hall' kp hkp).1
+  obtain hXL : ∀ j < 8, ∀ p < 32, (Qs s₁ j).getLsbD p =
       ((half s src (W32.inSrc (p / 8) j)).getLsbD p ^^ (keyW s (off + W32.inSrc (p / 8) j)).getLsbD p) := by
     intro j hj p hp
-    have hi := W32.inSrc_lt (c := p / 8) hj
+    obtain hi := W32.inSrc_lt (c := p / 8) hj
     rw [x₁ (q j) (preG off src j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
       preG, xorBits_cons, xorBits_cons, xorBits_nil, bitOf_word _ _ _ hp, bitOf_word _ _ _ hp, Bool.xor_false]
     simp only [W₁, half, show src - d1Slot + W32.inSrc (p / 8) j < 32 by omega_arith, ↓reduceIte,
       show ¬ 32 + off + W32.inSrc (p / 8) j < 32 by omega_arith,
       show 32 + off + W32.inSrc (p / 8) j - 32 = off + W32.inSrc (p / 8) j by omega_arith,
       show d1Slot + (src - d1Slot + W32.inSrc (p / 8) j) = src + W32.inSrc (p / 8) j by omega_arith]
-  have hok₁ : Ok layerCfg s₁ := hok.congr b₁ kp₁ rd₁ wr₁
-  have keep₁ : ∀ i < 32, slotW s₁ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
+  obtain hok₁ : Ok layerCfg s₁ := hok.congr b₁ kp₁ rd₁ wr₁
+  obtain keep₁ : ∀ i < 32, slotW s₁ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
     have := k₁ (d1Slot + i) (mem_halvesSlots hi) (by simp only [layerCfg, keySlot, d1Slot]; omega_arith)
     simp only [layerCfg] at this
     rw [slotW, b₁, this]
-  have kw₁ : ∀ j < 32, keyW s₁ j = keyW s j := fun j hj => by
+  obtain kw₁ : ∀ j < 32, keyW s₁ j = keyW s j := fun j hj => by
     simp only [keyW, kp₁]; exact frame_ext hok f₁ (by simpa [layerCfg] using hj)
   -- The left word's S-box.
   obtain ⟨s₂, h₂, sx₂, rd₂, wr₂, sp₂, o₂, f₂⟩ := sbox_ok (ok_sbox hok₁)
-  have b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb hsb).trans b₁
-  have kp₂ : s₂.gpr kp = s.gpr kp := (o₂ kp hkp).trans kp₁
-  have hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb hsb) (o₂ kp hkp) rd₂ wr₂
-  have above₂ : ∀ k, 32 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
+  obtain b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb hsb).trans b₁
+  obtain kp₂ : s₂.gpr kp = s.gpr kp := (o₂ kp hkp).trans kp₁
+  obtain hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb hsb) (o₂ kp hkp) rd₂ wr₂
+  obtain above₂ : ∀ k, 32 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
     simp only [slotW, o₂ sb hsb]
     refine slot_above (n := 32) (by simpa [slotRegion, sboxCfg] using f₂) h1 ?_
     rw [b₁]; simp [keySlot] at h2; omega_arith
-  have sub₂ : ∀ {t : State}, Ok layerCfg t → Frame [slotRegion sboxCfg t] t.mem s₂.mem →
+  obtain sub₂ : ∀ {t : State}, Ok layerCfg t → Frame [slotRegion sboxCfg t] t.mem s₂.mem →
       Frame [slotRegion layerCfg t] t.mem s₂.mem := fun _ f => f.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_singleton_self _, by
       simp only [slotRegion, sboxCfg, layerCfg]; exact Region.sub_prefix (by simp [keySlot])⟩
-  have kw₂ : ∀ j < 32, keyW s₂ j = keyW s j := fun j hj => by
+  obtain kw₂ : ∀ j < 32, keyW s₂ j = keyW s j := fun j hj => by
     rw [← kw₁ j hj]; simp only [keyW, o₂ kp hkp]
     exact frame_ext hok₁ (sub₂ hok₁ f₂) (by simpa [layerCfg] using hj)
-  have keep₂ : ∀ i < 32, slotW s₂ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
+  obtain keep₂ : ∀ i < 32, slotW s₂ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
     rw [above₂ _ (by omega_arith) (by omega_arith), keep₁ i hi]
   -- The left word's output selection, and the right word's S-box input.
   let W₃ : Nat → BitVec 32 := fun i =>
@@ -334,21 +334,21 @@ theorem round_ok {off src dst : Nat}
     (fun j hj => by
       simp only [layerCfg] at hj
       exact ⟨by omega_arith, by simp [W₃, show ¬ 40 + j < 8 by omega_arith, show ¬ 40 + j < 40 by omega_arith]; rfl⟩)
-  have b₃' : s₃.gpr sb = s₂.gpr sb := o₃ _ (hall' sb hsb).2.1
-  have b₃ : s₃.gpr sb = s.gpr sb := b₃'.trans b₂
-  have kp₃ : s₃.gpr kp = s.gpr kp := (o₃ _ (hall' kp hkp).2.1).trans kp₂
-  have hYL : ∀ j < 8, ∀ p < 32, (slotW s₃ (ylSlot + j)).getLsbD p = (Qs s₂ (W32.outSrc (p / 8) j)).getLsbD p := by
+  obtain b₃' : s₃.gpr sb = s₂.gpr sb := o₃ _ (hall' sb hsb).2.1
+  obtain b₃ : s₃.gpr sb = s.gpr sb := b₃'.trans b₂
+  obtain kp₃ : s₃.gpr kp = s.gpr kp := (o₃ _ (hall' kp hkp).2.1).trans kp₂
+  obtain hYL : ∀ j < 8, ∀ p < 32, (slotW s₃ (ylSlot + j)).getLsbD p = (Qs s₂ (W32.outSrc (p / 8) j)).getLsbD p := by
     intro j hj p hp
     have := y₃ (ylSlot + j) (ylG j) (by simp only [ylOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
       (by simp [layerCfg, ylSlot, keySlot]; omega_arith) p hp
     simp only [layerCfg] at this
     rw [slotW, b₃, ← b₂, this, ylG, xorBits_cons, xorBits_nil, bitOf_word _ _ _ hp, Bool.xor_false]
     simp only [W₃, W32.outSrc_lt hj, ↓reduceIte]
-  have hXR : ∀ j < 8, ∀ p < 32, (Qs s₃ j).getLsbD p =
+  obtain hXR : ∀ j < 8, ∀ p < 32, (Qs s₃ j).getLsbD p =
       ((half s src (8 + W32.inSrc (4 + p / 8) j)).getLsbD p ^^
         (keyW s (off + (8 + W32.inSrc (4 + p / 8) j))).getLsbD p) := by
     intro j hj p hp
-    have hi := W32.inSrc_lt (c := 4 + p / 8) hj
+    obtain hi := W32.inSrc_lt (c := 4 + p / 8) hj
     rw [x₃ (q j) (midG off src j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
       midG, xorBits_cons, xorBits_cons, xorBits_nil, bitOf_word _ _ _ hp, bitOf_word _ _ _ hp, Bool.xor_false]
     simp only [W₃, half, show ¬ 16 + (src - d1Slot) + W32.inSrc (4 + p / 8) j < 8 by omega_arith,
@@ -361,16 +361,16 @@ theorem round_ok {off src dst : Nat}
         src + (8 + W32.inSrc (4 + p / 8) j) by omega_arith]
     rw [show src + (8 + W32.inSrc (4 + p / 8) j) = d1Slot + (src - d1Slot + 8 + W32.inSrc (4 + p / 8) j) by omega_arith,
       keep₂ _ (by omega_arith)]
-  have hok₃ : Ok layerCfg s₃ := hok₂.congr (o₃ _ (hall' sb hsb).2.1) (o₃ _ (hall' kp hkp).2.1) rd₃ wr₃
-  have keep₃ : ∀ i < 32, slotW s₃ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
+  obtain hok₃ : Ok layerCfg s₃ := hok₂.congr (o₃ _ (hall' sb hsb).2.1) (o₃ _ (hall' kp hkp).2.1) rd₃ wr₃
+  obtain keep₃ : ∀ i < 32, slotW s₃ (d1Slot + i) = slotW s (d1Slot + i) := fun i hi => by
     have := k₃ (d1Slot + i) (mem_halvesSlots hi) (by simp only [layerCfg, keySlot, d1Slot]; omega_arith)
     simp only [layerCfg] at this
     rw [slotW, b₃', this]; exact keep₂ i hi
   -- The right word's S-box.
   obtain ⟨s₄, h₄, sx₄, rd₄, wr₄, sp₄, o₄, f₄⟩ := sbox_ok (ok_sbox hok₃)
-  have b₄ : s₄.gpr sb = s.gpr sb := (o₄ sb hsb).trans b₃
-  have hok₄ : Ok layerCfg s₄ := hok₃.congr (o₄ sb hsb) (o₄ kp hkp) rd₄ wr₄
-  have above₄ : ∀ k, 32 ≤ k → k < keySlot → slotW s₄ k = slotW s₃ k := fun k h1 h2 => by
+  obtain b₄ : s₄.gpr sb = s.gpr sb := (o₄ sb hsb).trans b₃
+  obtain hok₄ : Ok layerCfg s₄ := hok₃.congr (o₄ sb hsb) (o₄ kp hkp) rd₄ wr₄
+  obtain above₄ : ∀ k, 32 ≤ k → k < keySlot → slotW s₄ k = slotW s₃ k := fun k h1 h2 => by
     simp only [slotW, o₄ sb hsb]
     refine slot_above (n := 32) (by simpa [slotRegion, sboxCfg] using f₄) h1 ?_
     rw [b₃]; simp [keySlot] at h2; omega_arith
@@ -388,13 +388,13 @@ theorem round_ok {off src dst : Nat}
         simp [W₅, show ¬ 8 + k < 8 by omega_arith]; rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [linCfg] at hj)
-  have b₅' : s₅.gpr sb = s₄.gpr sb := o₅ _ (hall' sb hsb).2.2
-  have b₅ : s₅.gpr sb = s.gpr sb := b₅'.trans b₄
-  have hW₅ : ∀ i < 32, W₅ (16 + i) = slotW s (d1Slot + i) := fun i hi => by
+  obtain b₅' : s₅.gpr sb = s₄.gpr sb := o₅ _ (hall' sb hsb).2.2
+  obtain b₅ : s₅.gpr sb = s.gpr sb := b₅'.trans b₄
+  obtain hW₅ : ∀ i < 32, W₅ (16 + i) = slotW s (d1Slot + i) := fun i hi => by
     simp only [W₅, show ¬ 16 + i < 8 by omega_arith, ↓reduceIte, show ylSlot + (16 + i - 8) = d1Slot + i by
       simp [ylSlot, d1Slot]; omega_arith]
     rw [above₄ _ (by omega_arith) (by omega_arith), keep₃ i hi]
-  have hR' : ∀ w < 2, ∀ j < 8, ∀ p < 32, (half s₅ dst (8 * w + j)).getLsbD p =
+  obtain hR' : ∀ w < 2, ∀ j < 8, ∀ p < 32, (half s₅ dst (8 * w + j)).getLsbD p =
       ((half s dst (8 * w + j)).getLsbD p ^^
         W32.rowSel (fun j => slotW s₃ (ylSlot + j)) (Qs s₄) j (p % 8) (pRow (4 * w + p / 8))) := by
     intro w hw j hj p hp
@@ -414,7 +414,7 @@ theorem round_ok {off src dst : Nat}
           exact above₄ _ (by simp [ylSlot]) (by simp [ylSlot, keySlot]; omega_arith))
         hj (by omega_arith) _ fun c hc => pRow_lt hc]
     rfl
-  have hD := W32.round_rel hQ hK hR hXL sx₂ (fun j hj p hp => hYL j hj p hp) hXR sx₄ hR'
+  obtain hD := W32.round_rel hQ hK hR hXL sx₂ (fun j hj p hp => hYL j hj p hp) hXR sx₄ hR'
   refine ⟨s₅, ?_, hD, fun i hi => ?_, by rw [rd₅, rd₄, rd₃, rd₂, rd₁], by rw [wr₅, wr₄, wr₃, wr₂, wr₁],
     by rw [sp₅, sp₄, sp₃, sp₂, sp₁], fun r hr => ?_, ?_⟩
   · rw [round, runBlock_app, runBlock_app, runBlock_app, runBlock_app, h₁, Option.bind_some, h₂,
@@ -433,13 +433,13 @@ theorem round_ok {off src dst : Nat}
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by
         simp only [slotRegion, sboxCfg, layerCfg, ht]; exact Region.sub_prefix (by decide)⟩
-    have e₁ : slotRegion layerCfg s₁ = slotRegion layerCfg s := by simp only [slotRegion, layerCfg, b₁]
-    have e₂ : slotRegion layerCfg s₂ = slotRegion layerCfg s := by simp only [slotRegion, layerCfg, b₂]
-    have e₄ : slotRegion linCfg s₄ = slotRegion layerCfg s := by simp only [slotRegion, linCfg, layerCfg, b₄]
-    have g₂ : Frame [slotRegion layerCfg s] s₁.mem s₂.mem := f₂.sub (sbs b₁)
-    have g₃ : Frame [slotRegion layerCfg s] s₂.mem s₃.mem := by rw [← e₂]; exact f₃
-    have g₄ : Frame [slotRegion layerCfg s] s₃.mem s₄.mem := f₄.sub (sbs b₃)
-    have g₅ : Frame [slotRegion layerCfg s] s₄.mem s₅.mem := by rw [← e₄]; exact f₅
+    obtain e₁ : slotRegion layerCfg s₁ = slotRegion layerCfg s := by simp only [slotRegion, layerCfg, b₁]
+    obtain e₂ : slotRegion layerCfg s₂ = slotRegion layerCfg s := by simp only [slotRegion, layerCfg, b₂]
+    obtain e₄ : slotRegion linCfg s₄ = slotRegion layerCfg s := by simp only [slotRegion, linCfg, layerCfg, b₄]
+    obtain g₂ : Frame [slotRegion layerCfg s] s₁.mem s₂.mem := f₂.sub (sbs b₁)
+    obtain g₃ : Frame [slotRegion layerCfg s] s₂.mem s₃.mem := by rw [← e₂]; exact f₃
+    obtain g₄ : Frame [slotRegion layerCfg s] s₃.mem s₄.mem := f₄.sub (sbs b₃)
+    obtain g₅ : Frame [slotRegion layerCfg s] s₄.mem s₅.mem := by rw [← e₄]; exact f₅
     exact f₁.trans (g₂.trans (g₃.trans (g₄.trans g₅)))
 
 end VG.Proof.Camellia.Arm

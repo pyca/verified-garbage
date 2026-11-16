@@ -45,17 +45,17 @@ theorem frame_of_keeps {B : Addr} {wsLen : Nat} {rs : List (Nat × Nat)} {rest :
   intro x hx
   by_cases hin : (⟨B, wsLen * 8⟩ : Region).Contains x 1
   · simp only [Region.Contains] at hin
-    have hi : (x - B).toNat < 8 * wsLen := by omega
-    have ex : x = B + BitVec.ofNat 64 (x - B).toNat := by
+    obtain hi : (x - B).toNat < 8 * wsLen := by omega
+    obtain ex : x = B + BitVec.ofNat 64 (x - B).toNat := by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm]; exact (BitVec.sub_add_cancel x B).symm
     rw [ex]
     refine hk _ hi fun r hr => ?_
-    have hr' := hx _ (List.mem_append_left _ (List.mem_map.mpr ⟨r, hr, rfl⟩))
-    have hb := hrs r hr
+    obtain hr' := hx _ (List.mem_append_left _ (List.mem_map.mpr ⟨r, hr, rfl⟩))
+    obtain hb := hrs r hr
     by_contra hc
     simp only [not_or, Nat.not_lt, Nat.not_le] at hc
     apply hr'
-    have e : x - (B + BitVec.ofNat 64 r.1) = BitVec.ofNat 64 ((x - B).toNat - r.1) := by
+    obtain e : x - (B + BitVec.ofNat 64 r.1) = BitVec.ofNat 64 ((x - B).toNat - r.1) := by
       apply BitVec.eq_of_toNat_eq
       rw [← BitVec.sub_sub,
         BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
@@ -120,7 +120,7 @@ theorem GI.randB_len (h : GI G STK σ V LS s) : G.randB.length = G.randLen := by
 theorem GI.randBytes (h : GI G STK σ V LS s) {u : Nat} (hu : u ≤ G.randLen) :
     Spec.Rsa.bytesAt s.mem (G.randP u) (G.randLen - u) = G.randB.drop u := by
   have fit := h.randFit0
-  have hw : Spec.Rsa.bytesAt s.mem G.rand G.randLen = G.randB := by
+  obtain hw : Spec.Rsa.bytesAt s.mem G.rand G.randLen = G.randB := by
     rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.rand_apart (by omega), ← h.hG]; rfl
   rcases Nat.lt_or_ge u G.randLen with hl | hl
   · obtain ⟨d, hd⟩ : ∃ d, G.randLen = u + d := ⟨G.randLen - u, by omega⟩
@@ -229,7 +229,7 @@ theorem SS.wsFit (h : SS G STK0 σ c s) :
   have gi := h.gi
   have big := gi.wBig
   have fit := gi.scrFit
-  have l := lay_ok gi.lens
+  obtain l := lay_ok gi.lens
   have : G.scrLen ≤ 2 ^ 61 := by omega
   have := gi.lens
   simp only [GP.wsW]
@@ -255,19 +255,19 @@ theorem SS.tEntry_pin (h : SS G STK0 σ c s) {L : Impl.Dsa.ProbablePrime.Layout}
   obtain ⟨w63, wEq, wPos, w8⟩ := h.wsFit
   have pL := gi.lens
   obtain ⟨r0, r1, r2, r3, r4⟩ := regs
-  have e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
+  obtain e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  obtain e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have W8 : wB G.pLen + G.wsW * 8 ≤ G.scrLen * 8 := by omega
-  have hwW : (G.rs (wB G.pLen) (G.wsW * 8)).Disjoint G.rRand := by
+  obtain W8 : wB G.pLen + G.wsW * 8 ≤ G.scrLen * 8 := by omega
+  obtain hwW : (G.rs (wB G.pLen) (G.wsW * 8)).Disjoint G.rRand := by
     have := gi.pre.rC; rw [gi.hG] at this; exact this.symm.sub_left (sw G W8)
-  have hRand := gi.randSub hu
+  obtain hRand := gi.randSub hu
   have hE := gi.hEnd_le
-  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
-  have hbS : (rBelow σ STK0).Disjoint G.rScr := by have := gi.pre.bC; rw [gi.hG] at this; exact this
-  have hbR : (rBelow σ STK0).Disjoint G.rRand := by have := gi.pre.bR; rw [gi.hG] at this; exact this
-  have sp : (tEntry G u s).sp = σ.sp := by rw [State.withRegions_sp, State.callEntry_sp, gi.sp]
-  have al : ∀ {o}, o % 8 = 0 → o + 8 ≤ G.scrLen * 8 → (G.sa o).toNat % 8 = 0 := fun h8 ho => gi.al8 h8 ho
+  obtain hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
+  obtain hbS : (rBelow σ STK0).Disjoint G.rScr := by have := gi.pre.bC; rw [gi.hG] at this; exact this
+  obtain hbR : (rBelow σ STK0).Disjoint G.rRand := by have := gi.pre.bR; rw [gi.hG] at this; exact this
+  obtain sp : (tEntry G u s).sp = σ.sp := by rw [State.withRegions_sp, State.callEntry_sp, gi.sp]
+  obtain al : ∀ {o}, o % 8 = 0 → o + 8 ≤ G.scrLen * 8 → (G.sa o).toNat % 8 = 0 := fun h8 ho => gi.al8 h8 ho
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [sp]; exact gi.pre.sp16
   · rw [sp]; exact gi.pre.spLo
@@ -313,11 +313,11 @@ theorem SS.tCovers (h : SS G STK0 σ c s) {u : Nat} (hu : u ≤ G.randLen) :
   have wl := gi.randLt
   obtain ⟨w63, wEq, wPos, w8⟩ := h.wsFit
   have pL := gi.lens
-  have e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
+  obtain e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  obtain e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hE := gi.hEnd_le
-  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
+  obtain hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
   refine ⟨VG.Covers.append_left ?_ (VG.Covers.of_mem fun r hr => ?_), ?_⟩
   · rw [gi.rd, gi.pre.rd, gi.hG]
     refine VG.Covers.of_sub fun r hr => ?_
@@ -346,28 +346,28 @@ theorem SS.tCovers (h : SS G STK0 σ c s) {u : Nat} (hu : u ≤ G.randLen) :
 /-- The table, at the test's entry, under `abi.withConsts`. -/
 theorem SS.tConsts (h : SS G STK0 σ c s) (hy : s.syms = σ.syms) (u : Nat) : ConstsOk kT STK0 (tEntryK G u s) := by
   have gi := h.gi
-  have tf : G.tab.toNat + 8192 ≤ 2 ^ 64 := by have := gi.pre.tFit; rw [gi.hG] at this; exact this
-  have et : (mkG (tEntryK G u s)).rTab = G.rTab := by
+  obtain tf : G.tab.toNat + 8192 ≤ 2 ^ 64 := by have := gi.pre.tFit; rw [gi.hG] at this; exact this
+  obtain et : (mkG (tEntryK G u s)).rTab = G.rTab := by
     show (⟨s.syms Impl.RsaKeyGen.TrialTable32.symbol, 8192⟩ : Region) = ⟨G.tab, 8192⟩
     rw [hy, ← gi.hG]; rfl
-  have hC : G.rTab.Disjoint G.rScr := by have := gi.pre.tC; rw [gi.hG] at this; exact this
-  have hB : G.rTab.Disjoint (rBelow σ STK0) := by have := gi.pre.tB; rw [gi.hG] at this; exact this
+  obtain hC : G.rTab.Disjoint G.rScr := by have := gi.pre.tC; rw [gi.hG] at this; exact this
+  obtain hB : G.rTab.Disjoint (rBelow σ STK0) := by have := gi.pre.tB; rw [gi.hG] at this; exact this
   obtain ⟨w63, wEq, wPos, w8⟩ := h.wsFit
   have pL := gi.lens
-  have e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  obtain e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hE := gi.hEnd_le
-  have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
+  obtain hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [hEnd, fSave, fUsedOut] at hE ⊢; omega
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [constRegs_kT, et]; rfl
   · intro k hk i hi
     simp only [kT, Impl.RsaKeyGen.TrialTable32.consts, List.mem_cons, List.not_mem_nil, or_false] at hk
     subst hk
-    have held := gi.pre.held _ List.mem_cons_self i hi
+    obtain held := gi.pre.held _ List.mem_cons_self i hi
     dsimp only at hi held
-    have hi' : i < 1024 := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length] at hi; exact hi
+    obtain hi' : i < 1024 := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length] at hi; exact hi
     dsimp only
     rw [show (tEntryK G u s).mem = s.mem from rfl, show (tEntryK G u s).syms = s.syms from rfl]
-    have eg : σ.syms Impl.RsaKeyGen.TrialTable32.symbol = G.tab := by rw [← gi.hG]; rfl
+    obtain eg : σ.syms Impl.RsaKeyGen.TrialTable32.symbol = G.tab := by rw [← gi.hG]; rfl
     rw [← held, hy, eg]
     refine gi.frame.readW (r := G.rTab) (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8192 by omega) (by omega))
       (fun r hr => ?_) (by decide)
@@ -438,12 +438,12 @@ theorem SS.primeCall_ok {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {n
   have wl := gi.randLt
   obtain ⟨w63, wEq, wPos, w8⟩ := h.wsFit
   have pL := gi.lens
-  have pin := h.tPre hy regs hu hsize hcb hodd hbl
+  obtain pin := h.tPre hy regs hu hsize hcb hodd hbl
   obtain ⟨r0, r1, r2, r3, r4⟩ := regs
-  have e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
+  obtain e1 : (BitVec.ofNat 64 G.wsW).toNat = G.wsW := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  obtain e3 : (BitVec.ofNat 64 (G.randLen - u)).toNat = G.randLen - u := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have hBfit : (G.sa (wB G.pLen)).toNat + 8 * G.wsW ≤ 2 ^ 64 := by
+  obtain hBfit : (G.sa (wB G.pLen)).toNat + 8 * G.wsW ≤ 2 ^ 64 := by
     show (G.scr + BitVec.ofNat 64 (wB G.pLen)).toNat + _ ≤ _
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := wB G.pLen) (by omega),
       Nat.mod_eq_of_lt (by omega)]
@@ -451,19 +451,19 @@ theorem SS.primeCall_ok {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {n
   obtain ⟨hcovR, hcovW⟩ := h.tCovers hu
   refine WP.callAny ok.verified.1 pin (Covers.append hcovR hcovW)
     hcovW (fun t rd wr sp f g post => ?_) (by have := ok.stack; simp only [STK0] at this; omega)
-  have pp := ppost_of_post post
+  obtain pp := ppost_of_post post
   obtain ⟨st, keeps, used⟩ := pp
-  have eg : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4], (tEntryK G u s).gpr r = s.gpr r := fun r hr => by
+  obtain eg : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4], (tEntryK G u s).gpr r = s.gpr r := fun r hr => by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
-  have hres : resOf L (tEntryK G u s) = tRes G cb u := by
+  obtain hres : resOf L (tEntryK G u s) = tRes G cb u := by
     simp only [resOf, candOf, Proof.Dsa.ProbablePrime.candidateAt, State.withRegions_mem, State.callEntry_mem]
     rw [eg .a0 (by simp), eg .a2 (by simp), eg .a3 (by simp), r0, hcb, r2, r3, e3, gi.randBytes hu]
   refine k t g rd wr sp ?_ ?_ ?_
   · rw [State.withRegions_mem, State.callEntry_mem, State.withRegions_mem, eg .a0 (by simp), eg .a1 (by simp),
       r0, r1, e1] at keeps
-    have f' := frame_of_keeps (B := G.sa (wB G.pLen)) (wsLen := G.wsW) (rs := L.scratch)
+    obtain f' := frame_of_keeps (B := G.sa (wB G.pLen)) (wsLen := G.wsW) (rs := L.scratch)
       (rest := [⟨G.sa fUsedOut, 8⟩, below s.sp (sdepth code)])
       hBfit hL (by rw [← e1]; exact f) keeps
     refine f'.sub fun x hx => ?_

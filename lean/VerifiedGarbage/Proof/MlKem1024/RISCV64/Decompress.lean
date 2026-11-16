@@ -134,27 +134,27 @@ theorem body5_ok (h3 : s.gpr .a0 = x) (h6 : s.gpr .a3 = y) (h11 : s.gpr .t1 = c)
         ((dec 5 (G5 s x <<< 34 >>> 59)).setWidth 32)).writeW (y + BitVec.ofNat 64 24)
         ((dec 5 (G5 s x <<< 29 >>> 59)).setWidth 32)).writeW (y + BitVec.ofNat 64 28)
         ((dec 5 (G5 s x <<< 24 >>> 59)).setWidth 32) := by
-  have b0 := ib 0 (by decide)
-  have b1 := ib 1 (by decide)
-  have b2 := ib 2 (by decide)
-  have b3 := ib 3 (by decide)
-  have b4 := ib 4 (by decide)
-  have o0 := oc 0 (by decide)
-  have o1 := oc 1 (by decide)
-  have o2 := oc 2 (by decide)
-  have o3 := oc 3 (by decide)
-  have o4 := oc 4 (by decide)
-  have o5 := oc 5 (by decide)
-  have o6 := oc 6 (by decide)
-  have o7 := oc 7 (by decide)
-  have j0 := ac 0 (by decide)
-  have j1 := ac 1 (by decide)
-  have j2 := ac 2 (by decide)
-  have j3 := ac 3 (by decide)
-  have j4 := ac 4 (by decide)
-  have j5 := ac 5 (by decide)
-  have j6 := ac 6 (by decide)
-  have j7 := ac 7 (by decide)
+  obtain b0 := ib 0 (by decide)
+  obtain b1 := ib 1 (by decide)
+  obtain b2 := ib 2 (by decide)
+  obtain b3 := ib 3 (by decide)
+  obtain b4 := ib 4 (by decide)
+  obtain o0 := oc 0 (by decide)
+  obtain o1 := oc 1 (by decide)
+  obtain o2 := oc 2 (by decide)
+  obtain o3 := oc 3 (by decide)
+  obtain o4 := oc 4 (by decide)
+  obtain o5 := oc 5 (by decide)
+  obtain o6 := oc 6 (by decide)
+  obtain o7 := oc 7 (by decide)
+  obtain j0 := ac 0 (by decide)
+  obtain j1 := ac 1 (by decide)
+  obtain j2 := ac 2 (by decide)
+  obtain j3 := ac 3 (by decide)
+  obtain j4 := ac 4 (by decide)
+  obtain j5 := ac 5 (by decide)
+  obtain j6 := ac 6 (by decide)
+  obtain j7 := ac 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at b0 o0 o1 o2 o3 o4 o5 o6 o7 j0 j1 j2 j3 j4 j5 j6 j7
   crunw [dd5Body, ddByteAt, dd5Field, decompressTo, Int.reducePow, Keep, dec, G5, h3, h6, h11, h9, b0, b1, b2, b3,
     b4, o0, o1, o2, o3, o4, o5, o6, o7, j0, j1, j2, j3, j4, j5, j6, j7, preserved, List.forall_mem_cons, List.not_mem_nil,
@@ -176,33 +176,33 @@ theorem body11_ok (h3 : s.gpr .a0 = x) (h6 : s.gpr .a3 = y) (h11 : s.gpr .t1 = c
         ((dec 11 (G11b s x <<< 38 >>> 53)).setWidth 32)).writeW (y + BitVec.ofNat 64 24)
         ((dec 11 (G11b s x <<< 27 >>> 53)).setWidth 32)).writeW (y + BitVec.ofNat 64 28)
         ((dec 11 (G11b s x <<< 16 >>> 53)).setWidth 32) := by
-  have b0 := ib 0 (by decide)
-  have b1 := ib 1 (by decide)
-  have b2 := ib 2 (by decide)
-  have b3 := ib 3 (by decide)
-  have b4 := ib 4 (by decide)
-  have b5 := ib 5 (by decide)
-  have b6 := ib 6 (by decide)
-  have b7 := ib 7 (by decide)
-  have b8 := ib 8 (by decide)
-  have b9 := ib 9 (by decide)
-  have b10 := ib 10 (by decide)
-  have o0 := oc 0 (by decide)
-  have o1 := oc 1 (by decide)
-  have o2 := oc 2 (by decide)
-  have o3 := oc 3 (by decide)
-  have o4 := oc 4 (by decide)
-  have o5 := oc 5 (by decide)
-  have o6 := oc 6 (by decide)
-  have o7 := oc 7 (by decide)
-  have j0 := ac 0 (by decide)
-  have j1 := ac 1 (by decide)
-  have j2 := ac 2 (by decide)
-  have j3 := ac 3 (by decide)
-  have j4 := ac 4 (by decide)
-  have j5 := ac 5 (by decide)
-  have j6 := ac 6 (by decide)
-  have j7 := ac 7 (by decide)
+  obtain b0 := ib 0 (by decide)
+  obtain b1 := ib 1 (by decide)
+  obtain b2 := ib 2 (by decide)
+  obtain b3 := ib 3 (by decide)
+  obtain b4 := ib 4 (by decide)
+  obtain b5 := ib 5 (by decide)
+  obtain b6 := ib 6 (by decide)
+  obtain b7 := ib 7 (by decide)
+  obtain b8 := ib 8 (by decide)
+  obtain b9 := ib 9 (by decide)
+  obtain b10 := ib 10 (by decide)
+  obtain o0 := oc 0 (by decide)
+  obtain o1 := oc 1 (by decide)
+  obtain o2 := oc 2 (by decide)
+  obtain o3 := oc 3 (by decide)
+  obtain o4 := oc 4 (by decide)
+  obtain o5 := oc 5 (by decide)
+  obtain o6 := oc 6 (by decide)
+  obtain o7 := oc 7 (by decide)
+  obtain j0 := ac 0 (by decide)
+  obtain j1 := ac 1 (by decide)
+  obtain j2 := ac 2 (by decide)
+  obtain j3 := ac 3 (by decide)
+  obtain j4 := ac 4 (by decide)
+  obtain j5 := ac 5 (by decide)
+  obtain j6 := ac 6 (by decide)
+  obtain j7 := ac 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at b0 o0 o1 o2 o3 o4 o5 o6 o7 j0 j1 j2 j3 j4 j5 j6 j7
   crunw [dd11Body, ddByteAt, ddByteAtHi, dd11Field, dd11FieldHi, decompressTo, Int.reducePow, Keep, dec, G11a, G11b, h3, h6, h11, h9, b0, b1,
     b2, b3, b4, b5, b6, b7, b8, b9, b10, o0, o1, o2, o3, o4, o5, o6, o7, j0, j1, j2, j3, j4, j5, j6, j7, preserved,
@@ -217,9 +217,9 @@ theorem dec_val4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {Y : BitV
     (hY : Y.toNat = y) (hy : y < 2 ^ d) :
     (dec d Y).setWidth 32 = BitVec.ofNat 32 (decompress d y).val := by
   obtain ⟨e, lt⟩ := decompress1024_val hd hy
-  have hd' : d ≤ 11 := by rcases mem_compressWidths1024 hd with rfl | rfl <;> decide
-  have hp : 2 ^ (d - 1) ≤ 2 ^ 10 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hP : 2 ^ d ≤ 2 ^ 11 := Nat.pow_le_pow_right (by decide) hd'
+  obtain hd' : d ≤ 11 := by rcases mem_compressWidths1024 hd with rfl | rfl <;> decide
+  obtain hp : 2 ^ (d - 1) ≤ 2 ^ 10 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain hP : 2 ^ d ≤ 2 ^ 11 := Nat.pow_le_pow_right (by decide) hd'
   have hq : q = 3329 := q_eq
   refine setWidth32_ofNat ?_ (by omega_arith)
   have h3 : (3329 : BitVec 64).toNat = 3329 := rfl
@@ -235,11 +235,11 @@ theorem g5_toNat (s : State) (x : BitVec 64) :
       2 ^ 16 * (s.mem (x + BitVec.ofNat 64 2)).toNat +
       2 ^ 24 * (s.mem (x + BitVec.ofNat 64 3)).toNat +
       2 ^ 32 * (s.mem (x + BitVec.ofNat 64 4)).toNat := by
-  have b0 := (s.mem x).isLt
-  have b1 := (s.mem (x + BitVec.ofNat 64 1)).isLt
-  have b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
-  have b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
-  have b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
+  obtain b0 := (s.mem x).isLt
+  obtain b1 := (s.mem (x + BitVec.ofNat 64 1)).isLt
+  obtain b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
+  obtain b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
+  obtain b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
   simp only [Nat.reducePow] at b0 b1 b2 b3 b4
   refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
   all_goals (simp only [Nat.reducePow]; omega_arith)
@@ -251,12 +251,12 @@ theorem g11a_toNat (s : State) (x : BitVec 64) :
       2 ^ 24 * (s.mem (x + BitVec.ofNat 64 3)).toNat +
       2 ^ 32 * (s.mem (x + BitVec.ofNat 64 4)).toNat +
       2 ^ 40 * (s.mem (x + BitVec.ofNat 64 5)).toNat := by
-  have b0 := (s.mem x).isLt
-  have b1 := (s.mem (x + BitVec.ofNat 64 1)).isLt
-  have b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
-  have b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
-  have b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
-  have b5 := (s.mem (x + BitVec.ofNat 64 5)).isLt
+  obtain b0 := (s.mem x).isLt
+  obtain b1 := (s.mem (x + BitVec.ofNat 64 1)).isLt
+  obtain b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
+  obtain b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
+  obtain b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
+  obtain b5 := (s.mem (x + BitVec.ofNat 64 5)).isLt
   simp only [Nat.reducePow] at b0 b1 b2 b3 b4 b5
   refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
   all_goals (simp only [Nat.reducePow]; omega_arith)
@@ -269,12 +269,12 @@ theorem g11b_toNat (s : State) (x : BitVec 64) :
       2 ^ 24 * (s.mem (x + BitVec.ofNat 64 8)).toNat +
       2 ^ 32 * (s.mem (x + BitVec.ofNat 64 9)).toNat +
       2 ^ 40 * (s.mem (x + BitVec.ofNat 64 10)).toNat := by
-  have b5 := (s.mem (x + BitVec.ofNat 64 5)).isLt
-  have b6 := (s.mem (x + BitVec.ofNat 64 6)).isLt
-  have b7 := (s.mem (x + BitVec.ofNat 64 7)).isLt
-  have b8 := (s.mem (x + BitVec.ofNat 64 8)).isLt
-  have b9 := (s.mem (x + BitVec.ofNat 64 9)).isLt
-  have b10 := (s.mem (x + BitVec.ofNat 64 10)).isLt
+  obtain b5 := (s.mem (x + BitVec.ofNat 64 5)).isLt
+  obtain b6 := (s.mem (x + BitVec.ofNat 64 6)).isLt
+  obtain b7 := (s.mem (x + BitVec.ofNat 64 7)).isLt
+  obtain b8 := (s.mem (x + BitVec.ofNat 64 8)).isLt
+  obtain b9 := (s.mem (x + BitVec.ofNat 64 9)).isLt
+  obtain b10 := (s.mem (x + BitVec.ofNat 64 10)).isLt
   simp only [Nat.reducePow] at b5 b6 b7 b8 b9 b10
   refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
   all_goals (simp only [Nat.reducePow]; omega_arith)
@@ -372,16 +372,16 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {i : Nat} (hi : 
     (h : Inv s₀ 5 32 i s) :
     WP isa (.block dd5Body) s fun s' =>
       Inv s₀ 5 32 (i + 1) s' ∧ (s'.gpr .t1 != 0) = decide (i + 1 ≠ 32) := by
-  have hL : L s₀ = 160 := by rw [hp.len, hd]
-  have hB : (Bl s₀).length = 160 := by rw [bytesAt_length, hL]
-  have eb : ∀ k < 5, B s₀ + BitVec.ofNat 64 (5 * i) + BitVec.ofNat 64 k =
+  obtain hL : L s₀ = 160 := by rw [hp.len, hd]
+  obtain hB : (Bl s₀).length = 160 := by rw [bytesAt_length, hL]
+  obtain eb : ∀ k < 5, B s₀ + BitVec.ofNat 64 (5 * i) + BitVec.ofNat 64 k =
       B s₀ + BitVec.ofNat 64 (5 * i + k) := fun k _ => ptr_add _ _ _
-  have rb : ∀ k < 5, s.mem (B s₀ + BitVec.ofNat 64 (5 * i + k)) = (Bl s₀).getD (5 * i + k) 0 :=
+  obtain rb : ∀ k < 5, s.mem (B s₀ + BitVec.ofNat 64 (5 * i + k)) = (Bl s₀).getD (5 * i + k) 0 :=
     fun k hk => byte_rd hp h (by omega_arith)
-  have a : ∀ j < 8, F s₀ + BitVec.ofNat 64 (32 * i) + BitVec.ofNat 64 (4 * j) =
+  obtain a : ∀ j < 8, F s₀ + BitVec.ofNat 64 (32 * i) + BitVec.ofNat 64 (4 * j) =
       coeffAddr (F s₀) (8 * i + j) := fun j _ => by
     rw [ptr_add, show 32 * i + 4 * j = 4 * (8 * i + j) by omega_arith]
-  have a0 : F s₀ + BitVec.ofNat 64 (32 * i) = coeffAddr (F s₀) (8 * i) := by
+  obtain a0 : F s₀ + BitVec.ofNat 64 (32 * i) = coeffAddr (F s₀) (8 * i) := by
     rw [show 32 * i = 4 * (8 * i) by omega_arith]
   refine WP.mono (body5_ok h.a0 h.a3 h.t1 h.a6 (fun k hk => by
       rw [eb k hk]; exact in_rd hp h (by omega_arith)) (fun j hj => ?_) (fun j hj => ?_))
@@ -399,22 +399,22 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {i : Nat} (hi : 
         rw [a 4 (by decide)] | rw [a 3 (by decide)] | rw [a 2 (by decide)] | rw [a 1 (by decide)] |
         rw [a0]) <;> exact align4_add hp.alF _
   obtain ⟨c1, c2⟩ := count_step (N := 32) hi (by decide)
-  have e := g5_toNat s (B s₀ + BitVec.ofNat 64 (5 * i))
+  obtain e := g5_toNat s (B s₀ + BitVec.ofNat 64 (5 * i))
   rw [eb 1 (by omega_arith), eb 2 (by omega_arith), eb 3 (by omega_arith), eb 4 (by omega_arith),
     show B s₀ + BitVec.ofNat 64 (5 * i) = B s₀ + BitVec.ofNat 64 (5 * i + 0) from rfl,
     rb 0 (by omega_arith), rb 1 (by omega_arith), rb 2 (by omega_arith), rb 3 (by omega_arith), rb 4 (by omega_arith),
     Nat.add_zero] at e
-  have v : ∀ k < 8, (dec 5 (G5 s (B s₀ + BitVec.ofNat 64 (5 * i)) <<< (64 - 5 - 5 * k) >>>
+  obtain v : ∀ k < 8, (dec 5 (G5 s (B s₀ + BitVec.ofNat 64 (5 * i)) <<< (64 - 5 - 5 * k) >>>
       (64 - 5))).setWidth 32 = out s₀ (8 * i + k) := fun k hk => by
     rw [f5_val _ hk, out, D, hd, decodeDecompress5_group _ hB hi hk, e]
-  have v0 := v 0 (by decide)
-  have v1 := v 1 (by decide)
-  have v2 := v 2 (by decide)
-  have v3 := v 3 (by decide)
-  have v4 := v 4 (by decide)
-  have v5 := v 5 (by decide)
-  have v6 := v 6 (by decide)
-  have v7 := v 7 (by decide)
+  obtain v0 := v 0 (by decide)
+  obtain v1 := v 1 (by decide)
+  obtain v2 := v 2 (by decide)
+  obtain v3 := v 3 (by decide)
+  obtain v4 := v 4 (by decide)
+  obtain v5 := v 5 (by decide)
+  obtain v6 := v 6 (by decide)
+  obtain v7 := v 7 (by decide)
   simp only [Nat.reduceSub, Nat.reduceMul, Nat.mul_zero, Nat.add_zero] at v0 v1 v2 v3 v4 v5 v6 v7
   refine ⟨⟨?_, ?_, r11.trans c1, r9.trans h.a6, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
     ra.trans h.ra, fun r hr => (pres r hr).trans (h.pres r hr), ?_, ?_⟩, by rw [r11]; exact c2⟩
@@ -444,11 +444,11 @@ private theorem grp11_lo (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Nat) {k : Nat} (hk
       (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
         281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
         4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * k) % 2048 := by
-  have hx : 11 * k + (11 + (37 - 11 * k)) = 48 := by omega
-  have e : (281474976710656 : Nat) = 2 ^ (11 * k) * (2048 * 2 ^ (37 - 11 * k)) :=
+  obtain hx : 11 * k + (11 + (37 - 11 * k)) = 48 := by omega
+  obtain e : (281474976710656 : Nat) = 2 ^ (11 * k) * (2048 * 2 ^ (37 - 11 * k)) :=
     (show (281474976710656 : Nat) = 2 ^ 48 from rfl).trans (by
       rw [show (2048 : Nat) = 2 ^ 11 from rfl, ← Nat.pow_add, ← Nat.pow_add, hx])
-  have s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+  obtain s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
         281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
         4722366482869645213696 * b9 + 1208925819614629174706176 * b10 =
       (b0 + 2 ^ 8 * b1 + 2 ^ 16 * b2 + 2 ^ 24 * b3 + 2 ^ 32 * b4 + 2 ^ 40 * b5) +
@@ -464,14 +464,14 @@ private theorem grp11_hi (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Nat) (h0 : b0 < 25
       (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
         281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
         4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * (4 + k)) % 2048 := by
-  have s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+  obtain s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
         281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
         4722366482869645213696 * b9 + 1208925819614629174706176 * b10 =
       (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4) +
         2 ^ 40 * (b5 + 2 ^ 8 * b6 + 2 ^ 16 * b7 + 2 ^ 24 * b8 + 2 ^ 32 * b9 + 2 ^ 40 * b10) := by omega
-  have l : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 < 2 ^ 40 := by omega
-  have hx : 11 * (4 + k) = 40 + (11 * k + 4) := by omega
-  have key : (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+  obtain l : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 < 2 ^ 40 := by omega
+  obtain hx : 11 * (4 + k) = 40 + (11 * k + 4) := by omega
+  obtain key : (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
         281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
         4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * (4 + k)) =
       (b5 + 2 ^ 8 * b6 + 2 ^ 16 * b7 + 2 ^ 24 * b8 + 2 ^ 32 * b9 + 2 ^ 40 * b10) / 2 ^ (11 * k + 4) := by
@@ -483,16 +483,16 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
     (h : Inv s₀ 11 32 i s) :
     WP isa (.block dd11Body) s fun s' =>
       Inv s₀ 11 32 (i + 1) s' ∧ (s'.gpr .t1 != 0) = decide (i + 1 ≠ 32) := by
-  have hL : L s₀ = 352 := by rw [hp.len, hd]
-  have hB : (Bl s₀).length = 352 := by rw [bytesAt_length, hL]
-  have eb : ∀ k < 11, B s₀ + BitVec.ofNat 64 (11 * i) + BitVec.ofNat 64 k =
+  obtain hL : L s₀ = 352 := by rw [hp.len, hd]
+  obtain hB : (Bl s₀).length = 352 := by rw [bytesAt_length, hL]
+  obtain eb : ∀ k < 11, B s₀ + BitVec.ofNat 64 (11 * i) + BitVec.ofNat 64 k =
       B s₀ + BitVec.ofNat 64 (11 * i + k) := fun k _ => ptr_add _ _ _
-  have rb : ∀ k < 11, s.mem (B s₀ + BitVec.ofNat 64 (11 * i + k)) = (Bl s₀).getD (11 * i + k) 0 :=
+  obtain rb : ∀ k < 11, s.mem (B s₀ + BitVec.ofNat 64 (11 * i + k)) = (Bl s₀).getD (11 * i + k) 0 :=
     fun k hk => byte_rd hp h (by omega_arith)
-  have a : ∀ j < 8, F s₀ + BitVec.ofNat 64 (32 * i) + BitVec.ofNat 64 (4 * j) =
+  obtain a : ∀ j < 8, F s₀ + BitVec.ofNat 64 (32 * i) + BitVec.ofNat 64 (4 * j) =
       coeffAddr (F s₀) (8 * i + j) := fun j _ => by
     rw [ptr_add, show 32 * i + 4 * j = 4 * (8 * i + j) by omega_arith]
-  have a0 : F s₀ + BitVec.ofNat 64 (32 * i) = coeffAddr (F s₀) (8 * i) := by
+  obtain a0 : F s₀ + BitVec.ofNat 64 (32 * i) = coeffAddr (F s₀) (8 * i) := by
     rw [show 32 * i = 4 * (8 * i) by omega_arith]
   refine WP.mono (body11_ok h.a0 h.a3 h.t1 h.a6 (fun k hk => by
       rw [eb k hk]; exact in_rd hp h (by omega_arith)) (fun j hj => ?_) (fun j hj => ?_))
@@ -510,32 +510,32 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
         rw [a 4 (by decide)] | rw [a 3 (by decide)] | rw [a 2 (by decide)] | rw [a 1 (by decide)] |
         rw [a0]) <;> exact align4_add hp.alF _
   obtain ⟨c1, c2⟩ := count_step (N := 32) hi (by decide)
-  have ea := g11a_toNat s (B s₀ + BitVec.ofNat 64 (11 * i))
+  obtain ea := g11a_toNat s (B s₀ + BitVec.ofNat 64 (11 * i))
   rw [eb 1 (by omega_arith), eb 2 (by omega_arith), eb 3 (by omega_arith), eb 4 (by omega_arith), eb 5 (by omega_arith),
     show B s₀ + BitVec.ofNat 64 (11 * i) = B s₀ + BitVec.ofNat 64 (11 * i + 0) from rfl,
     rb 0 (by omega_arith), rb 1 (by omega_arith), rb 2 (by omega_arith), rb 3 (by omega_arith), rb 4 (by omega_arith),
     rb 5 (by omega_arith), Nat.add_zero] at ea
-  have ebb := g11b_toNat s (B s₀ + BitVec.ofNat 64 (11 * i))
+  obtain ebb := g11b_toNat s (B s₀ + BitVec.ofNat 64 (11 * i))
   rw [eb 5 (by omega_arith), eb 6 (by omega_arith), eb 7 (by omega_arith), eb 8 (by omega_arith), eb 9 (by omega_arith),
     eb 10 (by omega_arith), rb 5 (by omega_arith), rb 6 (by omega_arith), rb 7 (by omega_arith), rb 8 (by omega_arith),
     rb 9 (by omega_arith), rb 10 (by omega_arith)] at ebb
-  have l0 := ((Bl s₀).getD (11 * i) 0).isLt
-  have l1 := ((Bl s₀).getD (11 * i + 1) 0).isLt
-  have l2 := ((Bl s₀).getD (11 * i + 2) 0).isLt
-  have l3 := ((Bl s₀).getD (11 * i + 3) 0).isLt
-  have l4 := ((Bl s₀).getD (11 * i + 4) 0).isLt
-  have l5 := ((Bl s₀).getD (11 * i + 5) 0).isLt
-  have l6 := ((Bl s₀).getD (11 * i + 6) 0).isLt
-  have l7 := ((Bl s₀).getD (11 * i + 7) 0).isLt
-  have l8 := ((Bl s₀).getD (11 * i + 8) 0).isLt
-  have l9 := ((Bl s₀).getD (11 * i + 9) 0).isLt
-  have l10 := ((Bl s₀).getD (11 * i + 10) 0).isLt
+  obtain l0 := ((Bl s₀).getD (11 * i) 0).isLt
+  obtain l1 := ((Bl s₀).getD (11 * i + 1) 0).isLt
+  obtain l2 := ((Bl s₀).getD (11 * i + 2) 0).isLt
+  obtain l3 := ((Bl s₀).getD (11 * i + 3) 0).isLt
+  obtain l4 := ((Bl s₀).getD (11 * i + 4) 0).isLt
+  obtain l5 := ((Bl s₀).getD (11 * i + 5) 0).isLt
+  obtain l6 := ((Bl s₀).getD (11 * i + 6) 0).isLt
+  obtain l7 := ((Bl s₀).getD (11 * i + 7) 0).isLt
+  obtain l8 := ((Bl s₀).getD (11 * i + 8) 0).isLt
+  obtain l9 := ((Bl s₀).getD (11 * i + 9) 0).isLt
+  obtain l10 := ((Bl s₀).getD (11 * i + 10) 0).isLt
   simp only [Nat.reducePow] at l0 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10
-  have va : ∀ k < 4, (dec 11 (G11a s (B s₀ + BitVec.ofNat 64 (11 * i)) <<< (64 - 11 - 11 * k) >>>
+  obtain va : ∀ k < 4, (dec 11 (G11a s (B s₀ + BitVec.ofNat 64 (11 * i)) <<< (64 - 11 - 11 * k) >>>
       (64 - 11))).setWidth 32 = out s₀ (8 * i + k) := fun k hk => by
     rw [f11_val _ (by omega_arith), out, D, hd, decodeDecompress11_group _ hB hi (by omega_arith), ea]
     exact congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) (grp11_lo _ _ _ _ _ _ _ _ _ _ _ hk)
-  have vb : ∀ k < 4, (dec 11 (G11b s (B s₀ + BitVec.ofNat 64 (11 * i)) <<<
+  obtain vb : ∀ k < 4, (dec 11 (G11b s (B s₀ + BitVec.ofNat 64 (11 * i)) <<<
       (64 - 11 - (11 * k + 4)) >>> (64 - 11))).setWidth 32 = out s₀ (8 * i + 4 + k) :=
     fun k hk => by
     rw [f11_val _ (by omega_arith), out, D, hd,
@@ -543,14 +543,14 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
       decodeDecompress11_group _ hB hi (by omega_arith), ebb]
     exact congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val)
       (grp11_hi _ _ _ _ _ _ _ _ _ _ _ l0 l1 l2 l3 l4 k)
-  have v0 := va 0 (by decide)
-  have v1 := va 1 (by decide)
-  have v2 := va 2 (by decide)
-  have v3 := va 3 (by decide)
-  have v4 := vb 0 (by decide)
-  have v5 := vb 1 (by decide)
-  have v6 := vb 2 (by decide)
-  have v7 := vb 3 (by decide)
+  obtain v0 := va 0 (by decide)
+  obtain v1 := va 1 (by decide)
+  obtain v2 := va 2 (by decide)
+  obtain v3 := va 3 (by decide)
+  obtain v4 := vb 0 (by decide)
+  obtain v5 := vb 1 (by decide)
+  obtain v6 := vb 2 (by decide)
+  obtain v7 := vb 3 (by decide)
   simp only [Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero, Nat.add_zero, Nat.zero_add]
     at v0 v1 v2 v3 v4 v5 v6 v7
   refine ⟨⟨?_, ?_, r11.trans c1, r9.trans h.a6, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,

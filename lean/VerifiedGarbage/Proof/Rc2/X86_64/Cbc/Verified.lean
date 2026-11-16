@@ -81,11 +81,11 @@ structure StepPre (s : State) (n : Nat := 1) : Prop where
 
 theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
     (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ kept, s'.gpr r = s.gpr r) : StepPre s' n := by
-  have a := regs .rdi (by decide)
-  have b := regs .rbx (by decide)
-  have c := regs .rsi (by decide)
-  have d := regs .rdx (by decide)
-  have e := regs .rsp (by decide)
+  obtain a := regs .rdi (by decide)
+  obtain b := regs .rbx (by decide)
+  obtain c := regs .rsi (by decide)
+  obtain d := regs .rdx (by decide)
+  obtain e := regs .rsp (by decide)
   constructor
   · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.reads
   · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.writes
@@ -167,8 +167,8 @@ structure Pinned (s s' : State) : Prop where
 
 theorem Pinned.of_keep {s s' : State} {m : Mem} (h : Keep [.rax] {s with mem := m} s')
     (frame : Frame (stepWrites s) s.mem m) : Pinned s s' := by
-  have k : ∀ r ∈ kept, r ∉ [.rax] := by decide
-  have c : ∀ r ∈ calleeSaved, r ∉ [.rax] := by decide
+  obtain k : ∀ r ∈ kept, r ∉ [.rax] := by decide
+  obtain c : ∀ r ∈ calleeSaved, r ∉ [.rax] := by decide
   exact ⟨fun r hr => h.reg r (k r hr), fun r hr => h.reg r (c r hr), h.rd, h.wr, by rw [h.mem]; exact frame⟩
 
 theorem Pinned.of_call {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s') : Pinned s s' := by
@@ -240,8 +240,8 @@ theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
 theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h : CallPost d s s') :
     Spec.Rc2.blockAt s'.mem (stashR s).base = Spec.Rc2.blockAt s.mem (stashR s).base := by
   apply blockAt_frame h.mem
-  have sep : (stashR s).Disjoint ⟨s.gpr .rdx, 256⟩ := by
-    have h := Offset.disjoint (s.gpr .rdx) (d := 256) (n := 8) (e := 0) (k := 256)
+  obtain sep : (stashR s).Disjoint ⟨s.gpr .rdx, 256⟩ := by
+    obtain h := Offset.disjoint (s.gpr .rdx) (d := 256) (n := 8) (e := 0) (k := 256)
       (by omega_using []) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -256,33 +256,33 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
     (by simpa using hp.readData) (hp.writeBuf 256 (by decide))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   simp only [BitVec.add_zero] at keep₁
-  have frame₁ : Frame [stashR s] s.mem s₁.mem := by
+  obtain frame₁ : Frame [stashR s] s.mem s₁.mem := by
     rw [keep₁.mem]; exact frame_store64 _ _ _
-  have pin₁ : Pinned s s₁ := by
+  obtain pin₁ : Pinned s s₁ := by
     apply Pinned.of_keep keep₁
     apply (frame_store64 _ _ _).sub
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
     exact ⟨⟨s.gpr .rdx, 264⟩, by simp [stepWrites], Offset.sub_base _ (by decide)⟩
-  have hp₁ := pin₁.pre hp
-  have key₁ := pin₁.schedule hp
-  have data₁ := blockAt_frame frame₁ (s.gpr .rsi) (by simpa using hp.dataBuf.sub_right (stash_sub s))
-  have iv₁ := blockAt_frame frame₁ (s.gpr .rbx) (by simpa using hp.ivBuf.sub_right (stash_sub s))
-  have stash₁ : Spec.Rc2.blockAt s₁.mem (stashR s).base = Spec.Rc2.blockAt s.mem (s.gpr .rsi) := by
+  obtain hp₁ := pin₁.pre hp
+  obtain key₁ := pin₁.schedule hp
+  obtain data₁ := blockAt_frame frame₁ (s.gpr .rsi) (by simpa using hp.dataBuf.sub_right (stash_sub s))
+  obtain iv₁ := blockAt_frame frame₁ (s.gpr .rbx) (by simpa using hp.ivBuf.sub_right (stash_sub s))
+  obtain stash₁ : Spec.Rc2.blockAt s₁.mem (stashR s).base = Spec.Rc2.blockAt s.mem (s.gpr .rsi) := by
     rw [keep₁.mem]; exact blockAt_copy _ _ _
   apply WP.seq
   apply WP.mono (call_ok .decrypt s₁ hp₁.call)
   intro s₂ h₂
-  have pin₂ := pin₁.trans (Pinned.of_call h₂)
-  have hp₂ := pin₂.pre hp
+  obtain pin₂ := pin₁.trans (Pinned.of_call h₂)
+  obtain hp₂ := pin₂.pre hp
   have output₂ := h₂.output
   rw [pin₁.reg .rsi (by decide), pin₁.reg .rdi (by decide), key₁, data₁] at output₂
-  have iv₂ := h₂.iv hp₁
+  obtain iv₂ := h₂.iv hp₁
   rw [pin₁.reg .rbx (by decide), iv₁] at iv₂
-  have stash₂ := call_stash hp₁ h₂
+  obtain stash₂ := call_stash hp₁ h₂
   simp only [pin₁.reg .rdx (by decide)] at stash₂
-  have stash₂' := stash₂.trans stash₁
+  obtain stash₂' := stash₂.trans stash₁
   change WP isa (.block (([.mov .rax (.mem (memOp .rsi 0)), .alu .xor .rax (.mem (memOp .rbx 0)),
     .store (memOp .rsi 0) .rax] : List Instr) ++
     ([.mov .rax (.mem (memOp .rdx 256)), .store (memOp .rbx 0) .rax] : List Instr))) s₂ _
@@ -290,30 +290,30 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   obtain ⟨s₃, run₃, keep₃⟩ := xor64_ok s₂ .rsi .rbx (by decide) (by decide)
     hp₂.readData hp₂.readIv hp₂.writeData
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  have frame₃ : Frame [dataR s₂] s₂.mem s₃.mem := by
+  obtain frame₃ : Frame [dataR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
-  have pin₀₃ := pin₂.trans pin₃
-  have hp₃ := pin₀₃.pre hp
-  have data₃ : Spec.Rc2.blockAt s₃.mem (s.gpr .rsi) =
+  obtain pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₀₃ := pin₂.trans pin₃
+  obtain hp₃ := pin₀₃.pre hp
+  obtain data₃ : Spec.Rc2.blockAt s₃.mem (s.gpr .rsi) =
       Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi))
         (Spec.Rc2.blockAt s.mem (s.gpr .rsi))) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
-    have h : Spec.Rc2.blockAt s₃.mem (s₂.gpr .rsi) =
+    obtain h : Spec.Rc2.blockAt s₃.mem (s₂.gpr .rsi) =
         Proof.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rsi)) (Spec.Rc2.blockAt s₂.mem (s₂.gpr .rbx)) := by
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .rsi (by decide), pin₂.reg .rbx (by decide), output₂, iv₂] at h
     exact h
-  have stash₃ := blockAt_frame frame₃ (stashR s₂).base
+  obtain stash₃ := blockAt_frame frame₃ (stashR s₂).base
     (by simpa using (hp₂.dataBuf.sub_right (stash_sub s₂)).symm)
   simp only [pin₂.reg .rdx (by decide)] at stash₃
-  have stash₃' := stash₃.trans stash₂'
+  obtain stash₃' := stash₃.trans stash₂'
   obtain ⟨s₄, run₄, keep₄⟩ := copy64_ok s₃ .rdx .rbx 256 0 (by decide)
     (hp₃.readBuf 256 (by decide)) (by simpa using hp₃.writeIv)
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   simp only [BitVec.add_zero] at keep₄
-  have frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
+  obtain frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
     rw [keep₄.mem]; exact frame_store64 _ _ _
-  have pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
   refine ⟨pin₀₃.trans pin₄, ?_, ?_⟩
   · have same := blockAt_frame frame₄ (s₃.gpr .rsi) (by simpa using hp₃.ivData.symm)
     rw [pin₀₃.reg .rsi (by decide)] at same
@@ -340,7 +340,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
     (key : s'.gpr .rdi = s.gpr .rdi) (iv : s'.gpr .rbx = s.gpr .rbx)
     (buf : s'.gpr .rdx = s.gpr .rdx) (sp : s'.gpr .rsp = s.gpr .rsp)
     (ptr : s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 (8 * i)) : StepPre s' m := by
-  have sub : Region.Sub (dataR s' m) (dataR s n) := by
+  obtain sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨s'.gpr .rsi, 8 * m⟩ ⟨s.gpr .rsi, 8 * n⟩
     rw [ptr]
     exact Offset.sub_base _ (by omega_using [bound])
@@ -401,26 +401,26 @@ theorem encryptStep_ok (s : State) (hp : StepPre s) :
   obtain ⟨s₁, run₁, keep₁⟩ := xor64_ok s .rsi .rbx (by decide) (by decide)
     hp.readData hp.readIv hp.writeData
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
-  have hp₁ := pin₁.pre hp
-  have key₁ := pin₁.schedule hp
-  have data₁ : Spec.Rc2.blockAt s₁.mem (s.gpr .rsi) =
+  obtain pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain hp₁ := pin₁.pre hp
+  obtain key₁ := pin₁.schedule hp
+  obtain data₁ : Spec.Rc2.blockAt s₁.mem (s.gpr .rsi) =
       Proof.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .rsi)) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
   apply WP.mono (call_ok .encrypt s₁ hp₁.call)
   intro s₂ h₂
-  have pin₂ := pin₁.trans (Pinned.of_call h₂)
-  have hp₂ := pin₂.pre hp
+  obtain pin₂ := pin₁.trans (Pinned.of_call h₂)
+  obtain hp₂ := pin₂.pre hp
   have output₂ := h₂.output
   rw [pin₁.reg .rsi (by decide), pin₁.reg .rdi (by decide), key₁, data₁] at output₂
   obtain ⟨s₃, run₃, keep₃⟩ := copy64_ok s₂ .rsi .rbx 0 0 (by decide)
     (by simpa using hp₂.readData) (by simpa using hp₂.writeIv)
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   simp only [BitVec.add_zero] at keep₃
-  have frame₃ : Frame [ivR s₂] s₂.mem s₃.mem := by
+  obtain frame₃ : Frame [ivR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
   refine ⟨pin₂.trans pin₃, ?_, ?_⟩
   · have same := blockAt_frame frame₃ (s₂.gpr .rsi) (by simpa using hp₂.ivData.symm)
     rw [pin₂.reg .rsi (by decide)] at same
@@ -471,23 +471,23 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   intro s₁ h₁
   obtain ⟨s₂, run₂, ptr₂, count₂, flag₂, keep₂⟩ := advance_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have count' : s₁.gpr .rbp - 1 = BitVec.ofNat 64 (n - 1) := by
+  obtain count' : s₁.gpr .rbp - 1 = BitVec.ofNat 64 (n - 1) := by
     rw [h₁.reg .rbp (by decide), count]
     exact Offset.ofNat_sub_ofNat hn
   refine ⟨by rw [ptr₂, h₁.reg .rsi (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
   · rw [flag₂, count']
-    have eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
+    obtain eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 64 (n - 1) == 0#64) = _
     rw [eqZero]
-    have he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
+    obtain he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)
   · intro r hr hb
-    have hs : r ≠ .rsi := by
-      have fact : ∀ r ∈ calleeSaved, r ≠ .rsi := by decide
+    obtain hs : r ≠ .rsi := by
+      obtain fact : ∀ r ∈ calleeSaved, r ≠ .rsi := by decide
       exact fact r hr
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.callee r hr)
   · rw [keep₂.mem]; exact h₁.mem
@@ -551,9 +551,9 @@ theorem BodyPost.schedule {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
 theorem BodyPost.tailData {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.Rc2.blocksAt s'.mem (s.gpr .rsi + 8) n = Spec.Rc2.blocksAt s.mem (s.gpr .rsi + 8) n := by
-  have sub : Region.Sub ⟨s.gpr .rsi + 8, 8 * n⟩ (dataR s (n + 1)) :=
+  obtain sub : Region.Sub ⟨s.gpr .rsi + 8, 8 * n⟩ (dataR s (n + 1)) :=
     Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_using [])
-  have sep : (Region.mk (s.gpr .rsi + 8) (8 * n)).Disjoint (dataR s) :=
+  obtain sep : (Region.mk (s.gpr .rsi + 8) (8 * n)).Disjoint (dataR s) :=
     Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -565,13 +565,13 @@ theorem firstBlock_frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat} {m : 
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
     (frame : Frame (loopWrites s' n) s'.mem m) :
     Spec.Rc2.blockAt m (s.gpr .rsi) = Spec.Rc2.blockAt s'.mem (s.gpr .rsi) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
-  have sep : (dataR s).Disjoint ⟨s.gpr .rsi + 8, 8 * n⟩ :=
+  obtain first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
+  obtain sep : (dataR s).Disjoint ⟨s.gpr .rsi + 8, 8 * n⟩ :=
     Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blockAt_frame frame
-  have iv := h.reg .rbx (by decide) (by decide) (by decide)
-  have buf := h.reg .rdx (by decide) (by decide) (by decide)
-  have sp := h.reg .rsp (by decide) (by decide) (by decide)
+  obtain iv := h.reg .rbx (by decide) (by decide) (by decide)
+  obtain buf := h.reg .rdx (by decide) (by decide) (by decide)
+  obtain sp := h.reg .rsp (by decide) (by decide) (by decide)
   simpa only [loopWrites, ivR, dataR, stackR, iv, buf, sp, h.ptr,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right first).symm) (And.intro sep (And.intro
@@ -628,13 +628,13 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
       · have he : n + 1 ≠ 1 := by omega_using [hz]
         simp only [eval, h₁.flag, he, decide_false, Option.map_some, Bool.not_false]
       · have key := h₁.schedule (hp.head hn)
-        have tail := h₁.tailData hp bound
+        obtain tail := h₁.tailData hp bound
         have data := h₂.data
         have iv := h₂.iv
-        have ki := h₁.reg .rdi (by decide) (by decide) (by decide)
-        have vi := h₁.reg .rbx (by decide) (by decide) (by decide)
-        have bi := h₁.reg .rdx (by decide) (by decide) (by decide)
-        have sp := h₁.reg .rsp (by decide) (by decide) (by decide)
+        obtain ki := h₁.reg .rdi (by decide) (by decide) (by decide)
+        obtain vi := h₁.reg .rbx (by decide) (by decide) (by decide)
+        obtain bi := h₁.reg .rdx (by decide) (by decide) (by decide)
+        obtain sp := h₁.reg .rsp (by decide) (by decide) (by decide)
         rw [ki, vi, h₁.ptr, key, tail, h₁.iv] at data
         rw [ki, vi, h₁.ptr, key, tail, h₁.iv] at iv
         refine ⟨?_, h₂.count, ?_, ?_, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
@@ -658,9 +658,9 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
     (hp : StepPre s n) (count : s.gpr .rbp = BitVec.ofNat 64 n)
     (flag : s.zf = some (s.gpr .rbp == 0)) :
     WP isa (.ite .e (.block []) (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne)) s (LoopPost d s n) := by
-  have eqZero := counter_eq n 0 (by omega_using [bound]) (by decide)
+  obtain eqZero := counter_eq n 0 (by omega_using [bound]) (by decide)
   simp only [BitVec.sub_zero] at eqZero
-  have flag' : s.zf = some (decide (n = 0)) := by
+  obtain flag' : s.zf = some (decide (n = 0)) := by
     rw [flag, count]
     exact congrArg some eqZero
   by_cases hz : n = 0
@@ -680,8 +680,8 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
 theorem LoopPost.scratchRead {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 8 ≤ 512) :
     s'.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 = s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 := by
-  have sub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩ (bufR s) := Offset.sub_base _ hi
-  have sep : (Region.mk (s.gpr .rdx + BitVec.ofNat 64 i) 8).Disjoint ⟨s.gpr .rdx, 264⟩ :=
+  obtain sub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩ (bufR s) := Offset.sub_base _ hi
+  obtain sep : (Region.mk (s.gpr .rdx + BitVec.ofNat 64 i) 8).Disjoint ⟨s.gpr .rdx, 264⟩ :=
     Offset.disjoint_base _ lo (by omega_using [hi])
   apply h.mem.readW (r := ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩) (Region.contains_self _ _)
     (hn := by decide)
@@ -831,17 +831,17 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have g₁ (r : Reg) : s₁.gpr r = s.gpr r := keep₁.reg r (by simp)
   rw [g₁] at iv₂ count₂ data₂ buf₂ flag₂
-  have key₂ := (keep₂.reg .rdi (by decide)).trans (g₁ .rdi)
-  have sp₂ := (keep₂.reg .rsp (by decide)).trans (g₁ .rsp)
-  have rd₂ := keep₂.rd.trans keep₁.rd
-  have wr₂ := keep₂.wr.trans keep₁.wr
-  have mem₂ : s₂.mem = savedMem s := keep₂.mem.trans keep₁.mem
-  have scratchFrame : Frame [⟨s.gpr .r8, 512⟩] s.mem s₂.mem := by
+  obtain key₂ := (keep₂.reg .rdi (by decide)).trans (g₁ .rdi)
+  obtain sp₂ := (keep₂.reg .rsp (by decide)).trans (g₁ .rsp)
+  obtain rd₂ := keep₂.rd.trans keep₁.rd
+  obtain wr₂ := keep₂.wr.trans keep₁.wr
+  obtain mem₂ : s₂.mem = savedMem s := keep₂.mem.trans keep₁.mem
+  obtain scratchFrame : Frame [⟨s.gpr .r8, 512⟩] s.mem s₂.mem := by
     rw [mem₂]; exact savedMem_frame s
-  have initialKey := scheduleAt_frame scratchFrame (s.gpr .rdi) (by simpa using keyBuf)
-  have initialIv := blockAt_frame scratchFrame (s.gpr .rsi) (by simpa using ivBuf)
-  have initialData := blocksAt_frame scratchFrame (s.gpr .rdx) (s.gpr .rcx).toNat (by simpa using dataBuf)
-  have hp₂ : StepPre s₂ (s.gpr .rcx).toNat := by
+  obtain initialKey := scheduleAt_frame scratchFrame (s.gpr .rdi) (by simpa using keyBuf)
+  obtain initialIv := blockAt_frame scratchFrame (s.gpr .rsi) (by simpa using ivBuf)
+  obtain initialData := blocksAt_frame scratchFrame (s.gpr .rdx) (s.gpr .rcx).toNat (by simpa using dataBuf)
+  obtain hp₂ : StepPre s₂ (s.gpr .rcx).toNat := by
     constructor
     · simp only [keyR, ivR, dataR, bufR, key₂, iv₂, data₂, buf₂, rd₂, wr₂, hrd, hwr]
       exact fun _ _ h => h
@@ -861,20 +861,20 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   apply WP.mono (maybeLoop_ok d s₂ (s.gpr .rcx).toNat (by omega_using [fit]) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
-  have rd₃ := h₃.rd.trans rd₂
-  have wr₃ := h₃.wr.trans wr₂
-  have buf₃ := (h₃.reg .rdx (by decide) (by decide) (by decide)).trans buf₂
+  obtain rd₃ := h₃.rd.trans rd₂
+  obtain wr₃ := h₃.wr.trans wr₂
+  obtain buf₃ := (h₃.reg .rdx (by decide) (by decide) (by decide)).trans buf₂
   have reads (i : Nat) (hi : i + 8 ≤ 512) :
       InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .rdx + BitVec.ofNat 64 i) 8 := by
     rw [rd₃, wr₃, buf₃]
     obtain ⟨r, hr, hc⟩ := writes i hi
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have v₁ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 264) 64 = s.gpr .rbx := by
-    have h := h₃.scratchRead hp₂ 264 (by decide) (by decide)
+  obtain v₁ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 264) 64 = s.gpr .rbx := by
+    obtain h := h₃.scratchRead hp₂ 264 (by decide) (by decide)
     rw [buf₂, mem₂, savedMem_rbx] at h
     rw [buf₃]; exact h
-  have v₂ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 272) 64 = s.gpr .rbp := by
-    have h := h₃.scratchRead hp₂ 272 (by decide) (by decide)
+  obtain v₂ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 272) 64 = s.gpr .rbp := by
+    obtain h := h₃.scratchRead hp₂ 272 (by decide) (by decide)
     rw [buf₂, mem₂, savedMem_rbp] at h
     rw [buf₃]; exact h
   obtain ⟨s₄, run₄, rbx₄, rbp₄, keep₄⟩ := restore_ok s₃ (s.gpr .rbx) (s.gpr .rbp)
@@ -888,11 +888,11 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
       · by_cases hp : r = .rbp
         · subst r; exact rbp₄
         · rw [keep₄.reg r (by simp [hb, hp]), h₃.callee r hr hp]
-          have sep : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .rbp → r ∉ [.rbx, .rbp, .rsi, .rdx] := by decide
+          obtain sep : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .rbp → r ∉ [.rbx, .rbp, .rsi, .rdx] := by decide
           exact (keep₂.reg r (sep r hr hb hp)).trans (g₁ r)
     · let rs : List Region := [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 8 * (s.gpr .rcx).toNat⟩,
         ⟨s.gpr .r8, 512⟩, below (s.gpr .rsp) 8]
-      have loopFrame : Frame rs s₂.mem s₃.mem := by
+      obtain loopFrame : Frame rs s₂.mem s₃.mem := by
         have h := h₃.mem
         simp only [loopWrites, ivR, dataR, stackR, iv₂, data₂, buf₂, sp₂] at h
         apply h.sub
@@ -903,11 +903,11 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
         · exact ⟨⟨s.gpr .rdx, 8 * (s.gpr .rcx).toNat⟩, by simp [rs], fun _ h => h⟩
         · exact ⟨⟨s.gpr .r8, 512⟩, by simp [rs], Region.sub_prefix (by decide)⟩
         · exact ⟨below (s.gpr .rsp) 8, by simp [rs], fun _ h => h⟩
-      have frame : Frame rs s.mem s₄.mem := by
+      obtain frame : Frame rs s.mem s₄.mem := by
         rw [keep₄.mem]
         exact (scratchFrame.mono (by simp [rs])).trans loopFrame
       apply frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (hn := by decide)
-      have stackSep : (Region.mk (s.gpr .rsp) 8).Disjoint (below (s.gpr .rsp) 8) :=
+      obtain stackSep : (Region.mk (s.gpr .rsp) 8).Disjoint (below (s.gpr .rsp) 8) :=
         Offset.base_disjoint_below _ (by decide : 8 + 8 ≤ 2 ^ 64)
       simpa only [rs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
         And.intro retIv (And.intro retData (And.intro retBuf stackSep))

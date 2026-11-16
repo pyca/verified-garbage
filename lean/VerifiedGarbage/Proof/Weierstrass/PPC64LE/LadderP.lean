@@ -125,7 +125,7 @@ theorem CpOk.keep {L : LadderCfg} {base : Addr} {m m' m₀ : Mem} (h : CpOk L ba
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ qAt L.M.n ∨ ownAt L.M.n ≤ w.1) :
     CpOk L base m' m₀ := by
   obtain ⟨h1, h2, he, hb3, ha, hq, -, -, -, -⟩ := lay_nums hk3 hk6
-  have ap : ∀ x, qAt L.M.n ≤ x → x + 8 * L.M.n ≤ ownAt L.M.n →
+  obtain ap : ∀ x, qAt L.M.n ≤ x → x + 8 * L.M.n ≤ ownAt L.M.n →
       ∀ w ∈ W, x + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := fun x h1 h2 w hw =>
     (hW w hw).elim (fun h => .inr (Nat.le_trans h h1)) (fun h => .inl (Nat.le_trans h2 h))
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
@@ -196,8 +196,8 @@ theorem ladderSetup_ok {L : LadderCfg} {base : Addr} {s : State} (hw : WsReg s b
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hw.nowrap
   obtain ⟨al, bl, gxl, gyl, gzl, -, -, -⟩ := hL.al
-  have sa := hL.a; have sb := hL.b3; have sgx := hL.gx; have sgy := hL.gy; have sgz := hL.gz
-  have cG := copyPt_conds (a := L.G) hk3 hk6 (.inr rfl) (by omega_arith) (by omega_arith) (by omega_arith) ⟨gxl, gyl, gzl⟩
+  obtain sa := hL.a; have sb := hL.b3; have sgx := hL.gx; have sgy := hL.gy; have sgz := hL.gz
+  obtain cG := copyPt_conds (a := L.G) hk3 hk6 (.inr rfl) (by omega_arith) (by omega_arith) (by omega_arith) ⟨gxl, gyl, gzl⟩
   rw [ladderSetup, List.append_assoc, WP.block_append_iff]
   refine WP.mono (copyPt_ok hw.ws hw.at3 (n := L.M.n) (o := ptAt L.M.n (qAt L.M.n)) (a := L.G)
     cG.1 cG.2.1 cG.2.2.1 cG.2.2.2) fun s₁ ⟨gx₁, gy₁, gz₁, k₁, O₁⟩ => ?_
@@ -259,33 +259,33 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
   have hbe := hL.bitsE
   have hnb := hL.nbits
   obtain ⟨-, -, -, -, -, rxl, ryl, rzl⟩ := hL.al
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
-  have cR := copyPt_conds (a := L.R) hk3 hk6 (.inl rfl) (by omega_arith) (by omega_arith) (by omega_arith) ⟨rxl, ryl, rzl⟩
-  have cO := copyPt_conds (a := ptAt L.M.n (oAt L.M.n)) hk3 hk6 (.inl rfl)
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain cR := copyPt_conds (a := L.R) hk3 hk6 (.inl rfl) (by omega_arith) (by omega_arith) (by omega_arith) ⟨rxl, ryl, rzl⟩
+  obtain cO := copyPt_conds (a := ptAt L.M.n (oAt L.M.n)) hk3 hk6 (.inl rfl)
     (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith)
     (by simp only [ptAt]; omega_arith)
   -- `r31 -= 1`.
   rw [ladderPBody]
   refine WP.seq (wp_decCounter hj hI.r31 ?_)
   generalize hs₁ : s.write .r31 (BitVec.ofNat 64 (j - 1)) = s₁
-  have K₁ : Kp [.r31] s s₁ := by rw [← hs₁]; exact Kp.write _ _ (by decide)
-  have w₁ := hI.ws.of_rk (K₁.rk (rs' := powClob))
-  have m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
-  have c₁ : s₁.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hs₁]; simp only [write_gpr, ite_true]
+  obtain K₁ : Kp [.r31] s s₁ := by rw [← hs₁]; exact Kp.write _ _ (by decide)
+  obtain w₁ := hI.ws.of_rk (K₁.rk (rs' := powClob))
+  obtain m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
+  obtain c₁ : s₁.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hs₁]; simp only [write_gpr, ite_true]
   -- `P = R`.
   refine WP.mono (copyPt_ok w₁.ws w₁.at3 (n := L.M.n) (o := ptAt L.M.n (pAt L.M.n)) (a := L.R)
     cR.1 cR.2.1 cR.2.2.1 cR.2.2.2) fun s₂ ⟨px₂, py₂, pz₂, k₂, O₂⟩ => ?_
   simp only [ptAt] at px₂ py₂ pz₂ O₂
   rw [m₁] at px₂ py₂ pz₂ O₂
-  have w₂ := w₁.of_rk (k₂.rk (rs' := powClob))
-  have cp₂ : CpOk L base s₂.mem s₀.mem := hI.cp.keep hk3 hk6 (W := [(pAt L.M.n, 8 * L.M.n),
+  obtain w₂ := w₁.of_rk (k₂.rk (rs' := powClob))
+  obtain cp₂ : CpOk L base s₂.mem s₀.mem := hI.cp.keep hk3 hk6 (W := [(pAt L.M.n, 8 * L.M.n),
     (pAt L.M.n + elemBytes L.M.n, 8 * L.M.n), (pAt L.M.n + 2 * elemBytes L.M.n, 8 * L.M.n)]) O₂ (by ppc_apart)
   obtain ⟨gx₂, gy₂, gz₂, ga₂, gb₂⟩ := cp₂
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hlt₀
   obtain ⟨la, lb, lgx, lgy, lgz⟩ := hlt₀
-  have lrx : wordsVal s.mem base L.R.x L.M.n < C.p := hI.lt _ (by simp)
-  have lry : wordsVal s.mem base L.R.y L.M.n < C.p := hI.lt _ (by simp)
-  have lrz : wordsVal s.mem base L.R.z L.M.n < C.p := hI.lt _ (by simp)
+  obtain lrx : wordsVal s.mem base L.R.x L.M.n < C.p := hI.lt _ (by simp)
+  obtain lry : wordsVal s.mem base L.R.y L.M.n < C.p := hI.lt _ (by simp)
+  obtain lrz : wordsVal s.mem base L.R.z L.M.n < C.p := hI.lt _ (by simp)
   -- `O = P + P`.
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, L.M.n, d⟩) hM hodd hk3 hk6 true w₂
     (rIds_lt_of true fun x hx => by
@@ -304,20 +304,20 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
   rw [ptVal_dbl a0 d6 d7 d8] at E₃
   simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_9, enc_10] at E₃
   rw [ga₂, gb₂, px₂, py₂, pz₂] at E₃
-  have l3x := L₃ 0 (by decide)
-  have l3y := L₃ 1 (by decide)
-  have l3z := L₃ 2 (by decide)
+  obtain l3x := L₃ 0 (by decide)
+  obtain l3y := L₃ 1 (by decide)
+  obtain l3z := L₃ 2 (by decide)
   rw [enc_0] at l3x
   rw [enc_1] at l3y
   rw [enc_2] at l3z
-  have w₃ := w₂.of_rk (k₃.mono (rs' := powClob))
+  obtain w₃ := w₂.of_rk (k₃.mono (rs' := powClob))
   -- `P = O`.
   refine WP.seq (WP.mono (copyPt_ok w₃.ws w₃.at3 (n := L.M.n) (o := ptAt L.M.n (pAt L.M.n))
     (a := ptAt L.M.n (oAt L.M.n)) cO.1 cO.2.1 cO.2.2.1 cO.2.2.2)
     fun s₄ ⟨px₄, py₄, pz₄, k₄, O₄⟩ => ?_)
   simp only [ptAt] at px₄ py₄ pz₄ O₄
-  have w₄ := w₃.of_rk (k₄.rk (rs' := powClob))
-  have cp₄ : CpOk L base s₄.mem s₀.mem :=
+  obtain w₄ := w₃.of_rk (k₄.rk (rs' := powClob))
+  obtain cp₄ : CpOk L base s₄.mem s₀.mem :=
     (CpOk.keep ⟨gx₂, gy₂, gz₂, ga₂, gb₂⟩ hk3 hk6 O₃ (by ppc_apart)).keep
       hk3 hk6 (W := [(pAt L.M.n, 8 * L.M.n), (pAt L.M.n + elemBytes L.M.n, 8 * L.M.n),
         (pAt L.M.n + 2 * elemBytes L.M.n, 8 * L.M.n)]) O₄ (by ppc_apart)
@@ -340,58 +340,58 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
   simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, enc_9, enc_10,
     Bool.false_eq_true, ↓reduceIte] at E₅
   rw [ga₄, gb₄, px₄, py₄, pz₄, gx₄, gy₄, gz₄] at E₅
-  have l5x := L₅ 0 (by decide)
-  have l5y := L₅ 1 (by decide)
-  have l5z := L₅ 2 (by decide)
+  obtain l5x := L₅ 0 (by decide)
+  obtain l5y := L₅ 1 (by decide)
+  obtain l5z := L₅ 2 (by decide)
   rw [enc_0] at l5x
   rw [enc_1] at l5y
   rw [enc_2] at l5z
   have U₅ : Unch base [(oAt L.M.n, 3 * elemBytes L.M.n), (ownAt L.M.n, 4096 - ownAt L.M.n)] s₄.mem s₅.mem := O₅
   -- `P` still holds `D`.
-  have p5x : wordsVal s₅.mem base (pAt L.M.n) L.M.n = wordsVal s₃.mem base (oAt L.M.n) L.M.n := by
+  obtain p5x : wordsVal s₅.mem base (pAt L.M.n) L.M.n = wordsVal s₃.mem base (oAt L.M.n) L.M.n := by
     rw [U₅.wordsVal (by ppc_apart)
       (by omega_arith), px₄]
-  have p5y : wordsVal s₅.mem base (pAt L.M.n + elemBytes L.M.n) L.M.n =
+  obtain p5y : wordsVal s₅.mem base (pAt L.M.n + elemBytes L.M.n) L.M.n =
       wordsVal s₃.mem base (oAt L.M.n + elemBytes L.M.n) L.M.n := by
     rw [U₅.wordsVal (by ppc_apart)
       (by omega_arith), py₄]
-  have p5z : wordsVal s₅.mem base (pAt L.M.n + 2 * elemBytes L.M.n) L.M.n =
+  obtain p5z : wordsVal s₅.mem base (pAt L.M.n + 2 * elemBytes L.M.n) L.M.n =
       wordsVal s₃.mem base (oAt L.M.n + 2 * elemBytes L.M.n) L.M.n := by
     rw [U₅.wordsVal (by ppc_apart)
       (by omega_arith), pz₄]
-  have cp₅ : CpOk L base s₅.mem s₀.mem := CpOk.keep ⟨gx₄, gy₄, gz₄, ga₄, gb₄⟩ hk3 hk6 U₅ (by
+  obtain cp₅ : CpOk L base s₅.mem s₀.mem := CpOk.keep ⟨gx₄, gy₄, gz₄, ga₄, gb₄⟩ hk3 hk6 U₅ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
   -- What changed: the point functions' slots.
-  have U₁₅ : Unch base [(oAt L.M.n, 4096 - oAt L.M.n)] s.mem s₅.mem :=
+  obtain U₁₅ : Unch base [(oAt L.M.n, 4096 - oAt L.M.n)] s.mem s₅.mem :=
     ((((show Unch base _ s.mem s₂.mem from O₂).trans (show Unch base _ s₂.mem s₃.mem from O₃)).trans
       (show Unch base _ s₃.mem s₄.mem from O₄)).trans U₅).cover (pt_cover hk3 hk6 fun w hw => by
         simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with (((rfl | rfl | rfl) | rfl | rfl) | rfl | rfl | rfl) | rfl | rfl <;> (simp only; omega_arith))
-  have hU₅ : Unch base (ladWpt L) s₀.mem s₅.mem :=
+  obtain hU₅ : Unch base (ladWpt L) s₀.mem s₅.mem :=
     (hI.unch.trans U₁₅).mono fun w hw => by
       simp only [ladWpt, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with (h | h | h | h) | h <;> simp [h]
-  have hbyte : s₅.mem (off base (L.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
+  obtain hbyte : s₅.mem (off base (L.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
     rw [hU₅.byte (fun w hw => by
       simp only [ladWpt, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl <;> (simp only; omega_arith)) (by omega_arith), hbits _ (by omega_arith)]
-  have K₅ : Rk powClob s s₅ :=
+  obtain K₅ : Rk powClob s s₅ :=
     (K₁.rk (rs' := powClob)).trans <| (k₂.rk (rs' := powClob)).trans <| (k₃.mono (rs' := powClob)).trans <|
       (k₄.rk (rs' := powClob)).trans (k₅.mono (rs' := powClob))
-  have c₅ : s₅.gpr .r31 = BitVec.ofNat 64 (j - 1) := by
+  obtain c₅ : s₅.gpr .r31 = BitVec.ofNat 64 (j - 1) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), c₁]
-  have w₅ := w₄.of_rk (k₅.mono (rs' := powClob))
+  obtain w₅ := w₄.of_rk (k₅.mono (rs' := powClob))
   -- `R = O` or `P`.
   refine wp_append (WP.mono (bitMask_bool_ok w₅.ws w₅.at3 c₅ (by omega_arith) hbyte) fun s₆ ⟨g₆, k₆, m₆⟩ => ?_)
-  have sR := selPt_conds (a := L.R) hk3 hk6 rx ry rz ⟨rxl, ryl, rzl⟩
+  obtain sR := selPt_conds (a := L.R) hk3 hk6 rx ry rz ⟨rxl, ryl, rzl⟩
   refine WP.mono (selPt_ok (k₆.ws w₅.ws) (k₆.at w₅.at3) _ g₆ (n := L.M.n) (o := L.R)
     (a := ptAt L.M.n (pAt L.M.n)) (b := ptAt L.M.n (oAt L.M.n)) sR.1 sR.2.1 hL.rne sR.2.2)
     fun s₇ ⟨ex, ey, ez, k₇, O₇⟩ => ?_
   simp only [ptAt] at ex ey ez
   rw [m₆] at ex ey ez
-  have U₅₇ : Unch base [(L.R.x, 8 * L.M.n), (L.R.y, 8 * L.M.n), (L.R.z, 8 * L.M.n)] s₅.mem s₇.mem := by
+  obtain U₅₇ : Unch base [(L.R.x, 8 * L.M.n), (L.R.y, 8 * L.M.n), (L.R.z, 8 * L.M.n)] s₅.mem s₇.mem := by
     rw [← m₆]; exact O₇
-  have K₇ : Rk powClob s₅ s₇ := (k₆.rk (rs' := powClob)).trans (k₇.rk (rs' := powClob))
+  obtain K₇ : Rk powClob s₅ s₇ := (k₆.rk (rs' := powClob)).trans (k₇.rk (rs' := powClob))
   refine ⟨w₅.of_rk K₇, by rw [k₇.g, k₆.g, c₅], (hI.keep.trans K₅).trans K₇, ?_, ?_, ?_, ?_⟩
   · exact (hU₅.trans U₅₇).mono fun w hw => by
       simp only [ladWpt, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
@@ -410,21 +410,21 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {
       · rw [p5z]; exact l3z
   · have hq := hstep (j - 1) (by omega_arith) _ _ _ _ _ _ _ _ _ (by rw [Nat.sub_add_cancel hj]; exact hI.q)
       E₃.symm E₅.symm
-    have hx : tmv C L.M.n base s₇ L.R.x = if k.testBit (j - 1) then
+    obtain hx : tmv C L.M.n base s₇ L.R.x = if k.testBit (j - 1) then
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₅.mem base (oAt L.M.n) L.M.n) else
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₃.mem base (oAt L.M.n) L.M.n) := by
       show toM _ _ _ = _
       rw [ex]; split
       · rfl
       · rw [p5x]
-    have hy : tmv C L.M.n base s₇ L.R.y = if k.testBit (j - 1) then
+    obtain hy : tmv C L.M.n base s₇ L.R.y = if k.testBit (j - 1) then
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₅.mem base (oAt L.M.n + elemBytes L.M.n) L.M.n) else
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₃.mem base (oAt L.M.n + elemBytes L.M.n) L.M.n) := by
       show toM _ _ _ = _
       rw [ey]; split
       · rfl
       · rw [p5y]
-    have hz : tmv C L.M.n base s₇ L.R.z = if k.testBit (j - 1) then
+    obtain hz : tmv C L.M.n base s₇ L.R.z = if k.testBit (j - 1) then
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₅.mem base (oAt L.M.n + 2 * elemBytes L.M.n) L.M.n) else
         toM C.p (2 ^ (64 * L.M.n)) (wordsVal s₃.mem base (oAt L.M.n + 2 * elemBytes L.M.n) L.M.n) := by
       show toM _ _ _ = _
@@ -455,16 +455,16 @@ theorem ladderPt_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S :
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hs.nowrap
   have hnb := hL.nbits
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
   unfold ladderP
   simp only [hk6, ↓reduceIte]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (ladderSetup_ok hs hL) fun s₃ ⟨k₃, U₃, cp₃⟩ =>
     wp_step (exec_li hnb.2) (WP.block_nil ?_)
-  have K₄ : Kp powClob s (s₃.write .r31 (BitVec.ofNat 64 L.nbits)) :=
+  obtain K₄ : Kp powClob s (s₃.write .r31 (BitVec.ofNat 64 L.nbits)) :=
     (k₃.mono (by decide)).trans (Kp.write _ _ (by decide))
-  have low : ∀ {x}, x + 8 * L.M.n ≤ oAt L.M.n →
+  obtain low : ∀ {x}, x + 8 * L.M.n ≤ oAt L.M.n →
       wordsVal (s₃.write .r31 (BitVec.ofNat 64 L.nbits)).mem base x L.M.n = wordsVal s.mem base x L.M.n :=
     fun hx => by rw [write_mem]; exact U₃.wordsVal (by ppc_apart) (by omega_arith)
   refine countLoop_ok (Inv := fun j s' => LadInvP L C base Q s s' j) (n := L.nbits)
@@ -514,7 +514,7 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : 
     · exact .inr rfl
   · unfold ladderP
     simp only [hk6, ↓reduceIte]
-    have hM' : ModOk S.k S.m := by rw [hkS, hmS]; exact hM
+    obtain hM' : ModOk S.k S.m := by rw [hkS, hmS]; exact hM
     cases a0
     swap; · exact absurd (ha0 rfl) hk6
     exact WP.mono (ladder_ok hM' hkS hmS hp (hX (by omega_arith)) hs hlt hstep hR hbits)

@@ -64,7 +64,7 @@ theorem zeroAcc_ok (hA : acc + 64 ≤ 2048) (hA4 : acc % 4 = 0) {s : State} (hc 
       Frame [⟨b + BitVec.ofNat 64 acc, 32⟩] s.mem s'.mem ∧ Rest [.a4] s s' := by
   unfold zeroAcc
   refine wp_li (by decide) fun s1 u1 => ?_
-  have hc1 := hc.of_rest (u1.rest (ws := [.a4]) (by decide)) (by decide)
+  obtain hc1 := hc.of_rest (u1.rest (ws := [.a4]) (by decide)) (by decide)
   refine WP.mono (stores_ok (r := .a4) (o := acc) (n := 8) (by omega_using [hA]) hA4 hc1) fun s' ⟨h1, h2, _, h4⟩ =>
     ⟨fun j hj => by rw [accw, h1 j hj, u1.gpr]; rfl, by rw [← u1.mem]; exact h2,
       (u1.rest (by decide)).trans (h4.mono (by decide))⟩
@@ -84,16 +84,16 @@ theorem mulPre_ok (hA : acc + 64 ≤ 2048) (hA4 : acc % 4 = 0) {x y : Nat} {s : 
       (RowInv acc b x y s 0) := by
   rw [List.append_assoc]
   refine WP.append prologue_ok fun s1 ⟨h10, _, hr1, hm1⟩ => ?_
-  have hc1 : Ctx b s1 := hc.of_rest hr1 (by decide)
+  obtain hc1 : Ctx b s1 := hc.of_rest hr1 (by decide)
   refine WP.append (zeroAcc_ok hA hA4 hc1) fun s2 ⟨hz, hf2, hr2⟩ => ?_
-  have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
+  obtain hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   refine wp_addi (by decide) fun s3 u3 => wp_li (by decide) fun s4 u4 => WP.block_nil ?_
-  have hr : Rest clob s s4 :=
+  obtain hr : Rest clob s s4 :=
     (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans ((u3.rest (by decide)).trans
       (u4.rest (by decide))))
-  have hr' : Rest [.a4, .a6, .t0] s1 s4 :=
+  obtain hr' : Rest [.a4, .a6, .t0] s1 s4 :=
     (hr2.mono (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide)))
-  have hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
+  obtain hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
   refine ⟨hc.of_rest hr (by decide), hr, by rw [hr'.gpr _ (by decide), h10], ?_, u4.gpr, ?_, ?_⟩
   · rw [u4.other _ (by decide), u3.gpr, hc2.a3]
   · rw [hm4, ← hm1]; exact hf2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -106,7 +106,7 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
     {s0 : State} {i : Nat} (hi : i < 8) {s : State} (h : RowInv acc b x y s0 i s) :
     WP isa (.block (row acc x y)) s fun s' =>
       RowInv acc b x y s0 (i + 1) s' ∧ (s'.gpr .t0 != 0) = decide (8 - (i + 1) ≠ 0) := by
-  have hframe0 : ∀ z : Nat, z + 32 ≤ acc → ∀ k < 8,
+  obtain hframe0 : ∀ z : Nat, z + 32 ≤ acc → ∀ k < 8,
       limb s.mem b z k = limb s0.mem b z k := fun z hz k hk =>
     wd_frame h.frame fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
@@ -114,13 +114,13 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
   refine wp_lw (a := b + BitVec.ofNat 64 (x + 4 * i)) (by omega_arith)
     (by rw [h.a6, Offset.add_add, Nat.add_comm]) (al4 h.ctx.al (by omega_arith)) (h.ctx.inR (by omega_arith)) fun s1 u1 => ?_
   refine wp_li (by decide) fun s2 u2 => ?_
-  have hr2 : Rest [.a1, .a5] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : Ctx b s2 := h.ctx.of_rest hr2 (by decide)
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
-  have e1 : (s2.gpr .a1).toNat = limb s0.mem b x i := by
+  obtain hr2 : Rest [.a1, .a5] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hc2 : Ctx b s2 := h.ctx.of_rest hr2 (by decide)
+  obtain hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  obtain e1 : (s2.gpr .a1).toNat = limb s0.mem b x i := by
     rw [u2.other _ (by decide), u1.gpr, toNat_ext32, ← hframe0 x hx i hi]; rfl
-  have e9 : s2.gpr .a6 = b + BitVec.ofNat 64 (4 * i) := by rw [hr2.gpr _ (by decide), h.a6]
-  have hlt : ∀ j < 8, rowC (accw acc s.mem b) (limb s0.mem b x) (limb s0.mem b y) i j + 2 ^ 32 ≤ 2 ^ 64 :=
+  obtain e9 : s2.gpr .a6 = b + BitVec.ofNat 64 (4 * i) := by rw [hr2.gpr _ (by decide), h.a6]
+  obtain hlt : ∀ j < 8, rowC (accw acc s.mem b) (limb s0.mem b x) (limb s0.mem b y) i j + 2 ^ 32 ≤ 2 ^ 64 :=
     fun j _ => rowC_le (limb_lt _ _ _ _) (limb_lt _ _ _ _) (wd_lt _ _ _)
   refine WP.append (pass_ok (rb := .a6) (o := acc) (s0 := s2)
     (c := rowC (accw acc s.mem b) (limb s0.mem b x) (limb s0.mem b y) i)
@@ -130,8 +130,8 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
     (by rw [u2.gpr]; rfl) hlt (by decide) ?_) fun s3 hp => ?_
   · -- The sums of the row.
     intro k hk s' hp'
-    have hc' : Ctx b s' := hc2.of_rest hp'.rest (by decide)
-    have hf' : Frame [⟨b + BitVec.ofNat 64 (4 * i + acc), 4 * k⟩] s2.mem s'.mem := by
+    obtain hc' : Ctx b s' := hc2.of_rest hp'.rest (by decide)
+    obtain hf' : Frame [⟨b + BitVec.ofNat 64 (4 * i + acc), 4 * k⟩] s2.mem s'.mem := by
       have := hp'.frame; rwa [e9, Offset.add_add] at this
     simp only [rowSrc]
     refine lw0_ok hc' (d := y + 4 * k) (by omega_arith) (by omega_arith) fun t1 v1 => ?_
@@ -147,11 +147,11 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
         show wd s'.mem _ _ = wd s2.mem _ _
         exact wd_frame hf' fun r hr => by
           rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-      have ea : (t1.gpr .a1).toNat = limb s0.mem b x i := by
+      obtain ea : (t1.gpr .a1).toNat = limb s0.mem b x i := by
         rw [v1.other _ (by decide), hp'.rest.gpr _ (by decide), e1]
-      have e2 : (t2.gpr .a2).toNat = limb s0.mem b x i * limb s0.mem b y k := by
+      obtain e2 : (t2.gpr .a2).toNat = limb s0.mem b x i * limb s0.mem b y k := by
         rw [v2.gpr, toNat_mul_lt (by rw [ea, ey]; exact mul32_lt (limb_lt _ _ _ _) (limb_lt _ _ _ _)), ea, ey]
-      have e3 : (t3.gpr .a4).toNat = accw acc s.mem b (i + k) := by
+      obtain e3 : (t3.gpr .a4).toNat = accw acc s.mem b (i + k) := by
         rw [v3.gpr, toNat_ext32, v2.mem, v1.mem, accw, ← hm2]
         show wd s'.mem _ _ = _
         rw [wd_frame hf' fun r hr => by
@@ -164,26 +164,26 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
     · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
         (v4.rest (by decide))))
   · -- The carry, and the next row.
-    have hc3 : Ctx b s3 := hc2.of_rest hp.rest (by decide)
-    have e9' : s3.gpr .a6 = b + BitVec.ofNat 64 (4 * i) := by rw [hp.rest.gpr _ (by decide), e9]
+    obtain hc3 : Ctx b s3 := hc2.of_rest hp.rest (by decide)
+    obtain e9' : s3.gpr .a6 = b + BitVec.ofNat 64 (4 * i) := by rw [hp.rest.gpr _ (by decide), e9]
     refine wp_stw (a := b + BitVec.ofNat 64 (4 * i + (acc + 32))) (by omega_arith)
       (by rw [e9', Offset.add_add]) (al4 hc3.al (by omega_arith)) (hc3.inW (by omega_arith)) fun s4 u4 => ?_
     refine wp_addi (by decide) fun s5 u5 => wp_subi (by decide) fun s6 u6 => ?_
     refine WP.block_nil ?_
-    have hr6 : Rest [.a1, .a2, .a4, .a5, .a6, .t0] s s6 :=
+    obtain hr6 : Rest [.a1, .a2, .a4, .a5, .a6, .t0] s s6 :=
       (hr2.mono (by decide)).trans ((hp.rest.mono (by decide)).trans ((u4.rest _).trans
         ((u5.rest (by decide)).trans (u6.rest (by decide)))))
-    have hm6 : s6.mem = s3.mem.writeW (b + BitVec.ofNat 64 (4 * i + (acc + 32))) ((s3.gpr .a5).setWidth 32) := by
+    obtain hm6 : s6.mem = s3.mem.writeW (b + BitVec.ofNat 64 (4 * i + (acc + 32))) ((s3.gpr .a5).setWidth 32) := by
       rw [u6.mem, u5.mem, u4.mem]
-    have hpf : Frame [⟨b + BitVec.ofNat 64 (4 * i + acc), 32⟩] s.mem s3.mem := by
+    obtain hpf : Frame [⟨b + BitVec.ofNat 64 (4 * i + acc), 32⟩] s.mem s3.mem := by
       have := hp.frame; rw [e9, Offset.add_add] at this; rw [← hm2]; exact this
-    have hr11 : s6.gpr .t0 = BitVec.ofNat 64 (8 - (i + 1)) := by
+    obtain hr11 : s6.gpr .t0 = BitVec.ofNat 64 (8 - (i + 1)) := by
       rw [u6.gpr, u5.other _ (by decide), u4.gpr, hp.rest.gpr _ (by decide), hr2.gpr _ (by decide), h.t0,
         ofNat_sub_one (by omega_arith) (by omega_arith)]
       congr 1
-    have hch := chain_lt (cin := 0) hlt (by decide) 8 (Nat.le_refl _)
+    obtain hch := chain_lt (cin := 0) hlt (by decide) 8 (Nat.le_refl _)
     -- The limbs of `acc` after the row.
-    have hacc : ∀ k < i + 9, accw acc s6.mem b k =
+    obtain hacc : ∀ k < i + 9, accw acc s6.mem b k =
         rowAcc (accw acc s.mem b) (limb s0.mem b x) (limb s0.mem b y) i k := by
       intro k hk
       rw [accw, hm6]

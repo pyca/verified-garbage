@@ -90,10 +90,10 @@ theorem frame_of_frm {B : Addr} {L w : Nat} {m m' : Mem} (hf : Frm B (loopRanges
     Frame (⟨B, 8 * L⟩ :: rs) m m' := by
   intro x hx
   have e27 : slot w 27 = 256 + 27 * (8 * (w + 2)) := rfl
-  have h27 : slot w 27 ≤ 8 * L := by
+  obtain h27 : slot w 27 ≤ 8 * L := by
     rw [e27]
     exact Nat.le_trans (Nat.add_le_add_left (Nat.mul_le_mul_right _ (by decide : 27 ≤ 28)) 256) hZ
-  have hb := hx _ (List.mem_cons_self ..)
+  obtain hb := hx _ (List.mem_cons_self ..)
   simp only [Region.Contains, Nat.not_le] at hb
   refine hf x fun r hr => Or.inr ?_
   have := loopRanges_end w r hr
@@ -131,7 +131,7 @@ theorem BCtx.bytes_frame {s : State} {B R : Addr} {L w c rl t b ch : Nat} (h : B
 /-- A witness is below the candidate. -/
 theorem witness_lt {c X l : Nat} (shape : Spec.RsaKeyGen.bitLength (c - 1) = l) (hl : 2 ≤ l) :
     (Spec.RsaKeyGen.witness (c - 1) X).1 < c := by
-  have hb : 2 ^ (l - 1) ≤ c - 1 ∧ c - 1 < 2 ^ l :=
+  obtain hb : 2 ^ (l - 1) ≤ c - 1 ∧ c - 1 < 2 ^ l :=
     (VG.Proof.Dsa.bitLength_iff_bounds (v := c - 1) (by omega_arith)).mp shape
   unfold Spec.RsaKeyGen.witness
   rw [shape]
@@ -196,10 +196,10 @@ theorem after_load {σ s s1 : State} {B R : Addr} {L w c rl t b ch : Nat} {r : R
   have e := ctx.prep.env
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := e.hZ
   have hnw := e.hs.nowrap
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have e1 : Env s1 B (8 * L) w := ⟨e.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans e.s5,
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain e1 : Env s1 B (8 * L) w := ⟨e.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans e.s5,
     (k1.gpr (by decide)).trans e.t0, (k1.gpr (by decide)).trans e.s6, e.hw, e.hw', e.hZ⟩
-  have f1' : Frm B (loopRanges w) s.mem s1.mem := frm_widen f1 (by
+  obtain f1' : Frm B (loopRanges w) s.mem s1.mem := frm_widen f1 (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -232,9 +232,9 @@ theorem after_witness {σ s s1 s2 : State} {B R : Addr} {L w c rl t b ch : Nat} 
   obtain ⟨⟨v2, -, f2⟩, k2⟩ := hw
   have ctx := h.ctx
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := ctx.prep.env.hZ
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have e2 : Env s2 B (8 * L) w := e1.keep k2 (by decide)
-  have f2' : Frm B (loopRanges w) s1.mem s2.mem := frm_widen f2 (by
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain e2 : Env s2 B (8 * L) w := e1.keep k2 (by decide)
+  obtain f2' : Frm B (loopRanges w) s1.mem s2.mem := frm_widen f2 (by
     intro r hr
     simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -266,9 +266,9 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
   have hw4 := e.hw
   have hw128 := e.hw'
   have hnw := e.hs.nowrap
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
   have htw := ctx.tw
-  have hwb := witnessBytes_eq ctx.shape ctx.b1 ctx.b64
+  obtain hwb := witnessBytes_eq ctx.shape ctx.b1 ctx.b64
   unfold Impl.MillerRabin.RISCV64.Blinded.draw
   -- The draw.
   refine WP.seq (WP.mono (WP.rdwr (load_ok ctx h.used hav)) fun s1 ⟨hl, _, _, sp1⟩ => ?_)
@@ -286,22 +286,22 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
   unfold Impl.MillerRabin.RISCV64.Blinded.round
   refine WP.seq (WP.mono (VG.Proof.MillerRabin.RISCV64.Search.roundCall_ok Ri ctx2.prep ha hac ctx2.sp16 ctx2.sp
     ctx2.stk) fun s3 h3 => ?_)
-  have kw3 : ∀ d, d + 8 ≤ 256 → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s3.mem B d = word s2.mem B d :=
+  obtain kw3 : ∀ d, d + 8 ≤ 256 → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word s3.mem B d = word s2.mem B d :=
     fun d hd hk => keeps_word h3.keeps (by omega_arith) hk
-  have ctx3 : BCtx s3 B L w c R rl t b ch := ctx2.keep h3.prep (fun d hd => kw3 d (by
+  obtain ctx3 : BCtx s3 B L w c R rl t b ch := ctx2.keep h3.prep (fun d hd => kw3 d (by
       simp only [hRand, hRandLen, hK, hTop, hTopOff, hChecks] at hd
       rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith)
     (by simp only [hRand, hRandLen, hK, hTop, hTopOff, hChecks] at hd
         rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> kept_tac)) h3.rd h3.wr h3.sp
   have e3 : Env s3 B (8 * L) w := h3.prep.env
-  have used3 : word s3.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * (t + 1) * (k + 1)) := by
+  obtain used3 : word s3.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * (t + 1) * (k + 1)) := by
     rw [kw3 _ (by simp only [hUsed]; omega_arith) (by simp only [hUsed]; kept_tac)]
     rw [f2.word_eq (fun r hr => by
       simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only [hUni, hUsed, es] <;> omega_arith)
       (by simp only [hUsed]; omega_arith), u1]
     exact congrArg _ (Nat.mul_succ _ _).symm
-  have idx3 : word s3.mem B (8 * hIdx) = BitVec.ofNat 64 k := by
+  obtain idx3 : word s3.mem B (8 * hIdx) = BitVec.ofNat 64 k := by
     rw [kw3 _ (by simp only [hIdx]; omega_arith) (by simp only [hIdx]; kept_tac)]
     rw [f2.word_eq (fun r hr => by
       simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -311,33 +311,33 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [hUsed, hIdx, es] <;> omega_arith) (by simp only [hIdx]; omega_arith)]
     exact h.idx
-  have uni3 : word s3.mem B (8 * hUni) = BitVec.ofNat 64 (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 := by
+  obtain uni3 : word s3.mem B (8 * hUni) = BitVec.ofNat 64 (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 := by
     rw [kw3 _ (by simp only [hUni]; omega_arith) (by simp only [hUni]; kept_tac), u2,
       VG.Proof.RsaKeyGen.mrSB_uniform_next]
     cases (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).2 <;> rfl
-  have fr3 : Frame [⟨B, 8 * L⟩, below σ.sp 96] σ.mem s3.mem := by
-    have z2 : s2.sp = σ.sp := (sp2.trans sp1).trans h.sp
+  obtain fr3 : Frame [⟨B, 8 * L⟩, below σ.sp 96] σ.mem s3.mem := by
+    obtain z2 : s2.sp = σ.sp := (sp2.trans sp1).trans h.sp
     refine (h.frame.trans (frame_of_frm f1' hZ _)).trans ((frame_of_frm f2' hZ _).trans ?_)
     have := h3.frame
     rwa [z2] at this
-  have sp3 : s3.sp = σ.sp := (h3.sp.trans (sp2.trans sp1)).trans h.sp
-  have rd3 : s3.rd = σ.rd := (h3.rd.trans (k2.2.1.trans k1.2.1)).trans h.rd
-  have wr3 : s3.wr = σ.wr := (h3.wr.trans (k2.2.2.trans k1.2.2)).trans h.wr
-  have hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
-  have hav' : 0 + 8 * (t + 1) * k + 8 * (t + 1) ≤ r.length := by rw [hrl]; omega_arith
-  have hD : 0 + 8 * (t + 1) * k + 8 * (t + 1) = 8 * (t + 1) * (k + 1) := by
+  obtain sp3 : s3.sp = σ.sp := (h3.sp.trans (sp2.trans sp1)).trans h.sp
+  obtain rd3 : s3.rd = σ.rd := (h3.rd.trans (k2.2.1.trans k1.2.1)).trans h.rd
+  obtain wr3 : s3.wr = σ.wr := (h3.wr.trans (k2.2.2.trans k1.2.2)).trans h.wr
+  obtain hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
+  obtain hav' : 0 + 8 * (t + 1) * k + 8 * (t + 1) ≤ r.length := by rw [hrl]; omega_arith
+  obtain hD : 0 + 8 * (t + 1) * k + 8 * (t + 1) = 8 * (t + 1) * (k + 1) := by
     rw [Nat.zero_add]; exact (Nat.mul_succ (8 * (t + 1)) k).symm
   have hround : Proof.MillerRabin.Round.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 =
       Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 := rfl
   -- A store to `hStat` or `hIdx` keeps everything else.
-  have st : ∀ (s4 : State) (rs : List (Nat × Nat)), (∀ q ∈ rs, q = (8 * hIdx, 8) ∨ q = (8 * hStat, 8)) →
+  obtain st : ∀ (s4 : State) (rs : List (Nat × Nat)), (∀ q ∈ rs, q = (8 * hIdx, 8) ∨ q = (8 * hStat, 8)) →
       Env s4 B (8 * L) w → s4.gpr .t1 = s3.gpr .t1 → Frm B rs s3.mem s4.mem → s4.sp = s3.sp →
       s4.rd = s3.rd → s4.wr = s3.wr →
       LKeep σ s4 B L w c ∧ BCtx s4 B L w c R rl t b ch ∧
         word s4.mem B (8 * hUsed) = BitVec.ofNat 64 (8 * (t + 1) * (k + 1)) ∧
         Frm B (loopRanges w) s3.mem s4.mem := fun s4 rs hrs e4 t14 f4 sp4 rd4 wr4 => by
-    have f4' : Frm B (loopRanges w) s3.mem s4.mem := frm_widen f4 fun q hq => by
+    obtain f4' : Frm B (loopRanges w) s3.mem s4.mem := frm_widen f4 fun q hq => by
       rcases hrs q hq with rfl | rfl
       · exact ⟨(8 * hIdx, 16), by simp [loopRanges], Nat.le_refl _, by omega_arith⟩
       · exact ⟨_, by simp [loopRanges], Nat.le_refl _, Nat.le_refl _⟩
@@ -346,15 +346,15 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
     rw [f4.word_eq (fun q hq => by
       rcases hrs q hq with rfl | rfl <;> simp only [hUsed, hIdx, hStat] <;> omega_arith) (by simp only [hUsed]; omega_arith)]
     exact used3
-  have tapeOf : ∀ s4 : State, LKeep σ s4 B L w c → Spec.Rsa.bytesAt s4.mem R rl = r := fun s4 lk => by
+  obtain tapeOf : ∀ s4 : State, LKeep σ s4 B L w c → Spec.Rsa.bytesAt s4.mem R rl = r := fun s4 lk => by
     have z : s.sp = σ.sp := h.sp
-    have b4 := ctx.bytes_frame (m := σ.mem) (m' := s4.mem) (by rw [z]; exact lk.frame)
-    have b0 := ctx.bytes_frame (m := σ.mem) (m' := s.mem) (by rw [z]; exact h.frame)
+    obtain b4 := ctx.bytes_frame (m := σ.mem) (m' := s4.mem) (by rw [z]; exact lk.frame)
+    obtain b0 := ctx.bytes_frame (m := σ.mem) (m' := s.mem) (by rw [z]; exact h.frame)
     rw [b4, ← b0, h.tape]
   have r0v := h3.a0
   refine WP.ite (s3.gpr .a0 == 0#64) (Steps.eval_zero s3 .a0) (fun hz => ?_) (fun hz => ?_)
   · -- The witness proves `c` composite.
-    have hp : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
+    obtain hp : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 = false := by
       rw [← hround]
       rw [r0v] at hz
@@ -364,7 +364,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
     obtain ⟨hn0, hl⟩ := VG.Proof.RsaKeyGen.mrLoopAt_fail h.mr hwb (by omega_arith) hav' hp
     rw [List.drop_zero, hD] at hl
     refine WP.mono (setStat_ok (v := 2) e3 (by decide)) fun s4 ⟨⟨m4, sp4⟩, k4⟩ => ?_
-    have f4 : Frm B [(8 * hStat, 8)] s3.mem s4.mem := by
+    obtain f4 : Frm B [(8 * hStat, 8)] s3.mem s4.mem := by
       rw [m4]
       exact Frm.of_outside (o := 8 * hStat) (n := 8) (writeW_outside _ _ _ (by simp only [hStat]; omega_arith))
         (by simp)
@@ -372,23 +372,23 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
       k4.2.1 k4.2.2
     exact ⟨lk, u4, .inl ⟨hn0, by rw [m4]; exact word_writeW_self _ _ _ _, hl⟩⟩
   · -- The witness passes.
-    have hp : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
+    obtain hp : Spec.RsaKeyGen.mrIteration c (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
         (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1 = true := by
       rw [← hround]
       rw [r0v] at hz
       cases hr : Proof.MillerRabin.Round.round c (wit c (8 * (t + 1)) r (0 + 8 * (t + 1) * k)).1
       · rw [hr] at hz; exact absurd hz (by decide)
       · rfl
-    have hk63 : k + 1 < 2 ^ 63 := by
+    obtain hk63 : k + 1 < 2 ^ 63 := by
       have := ctx.rl64
       have : 8 * k ≤ 8 * (t + 1) * k := Nat.mul_le_mul_right k (by omega_arith)
       omega_arith
-    have hu63 : (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 < 2 ^ 63 :=
+    obtain hu63 : (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 < 2 ^ 63 :=
       Nat.lt_of_le_of_lt (VG.Proof.RsaKeyGen.mrSB_uniform_le _ _ _ _ _) hk63
     refine WP.mono (WP.rdwr (passed_ok e3 idx3 uni3 ctx3.checks hk63 hu63 ctx3.ch63))
       fun s4 ⟨⟨⟨i4, st4, f4⟩, k4⟩, _, _, sp4⟩ => ?_
     obtain ⟨lk, ctx4, u4, -⟩ := st s4 _ (by simp) (e3.keep k4 (by decide)) (k4.gpr (by decide)) f4 sp4 k4.2.1 k4.2.2
-    have hfirst := VG.Proof.RsaKeyGen.mrSB_first c (8 * (t + 1)) 0 r (k + 1)
+    obtain hfirst := VG.Proof.RsaKeyGen.mrSB_first c (8 * (t + 1)) 0 r (k + 1)
     by_cases hd : 16 ≤ k + 1 ∧ ch ≤ (mrSB c (8 * (t + 1)) 0 r (k + 1)).2
     · have hg : ¬ VG.Proof.RsaKeyGen.goS ch (mrSB c (8 * (t + 1)) 0 r (k + 1)) := by
         unfold VG.Proof.RsaKeyGen.goS Spec.RsaKeyGen.blindedChecks
@@ -400,7 +400,7 @@ theorem draw_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
         unfold VG.Proof.RsaKeyGen.goS Spec.RsaKeyGen.blindedChecks
         omega_arith
       obtain ⟨hn, mr'⟩ := VG.Proof.RsaKeyGen.mrLoopAt_next h.mr hwb (by omega_arith) hav' hp hg
-      have uni4 : word s4.mem B (8 * hUni) = BitVec.ofNat 64 (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 := by
+      obtain uni4 : word s4.mem B (8 * hUni) = BitVec.ofNat 64 (mrSB c (8 * (t + 1)) 0 r (k + 1)).2 := by
         rw [f4.word_eq (fun q hq => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
           rcases hq with rfl | rfl <;> simp only [hUni, hIdx, hStat] <;> omega_arith) (by simp only [hUni]; omega_arith)]
@@ -451,7 +451,7 @@ theorem eval_sub4 {t : State} {v : Nat} (h : t.gpr .t2 = BitVec.ofNat 64 v - Bit
   · rw [decide_eq_false h4]
     apply beq_false_of_ne
     intro h0
-    have h1 := BitVec.sub_eq_iff_eq_add.mp h0
+    obtain h1 := BitVec.sub_eq_iff_eq_add.mp h0
     rw [show (0 : BitVec 64) + 4#64 = 4#64 from by decide] at h1
     have := congrArg BitVec.toNat h1
     simp only [BitVec.toNat_ofNat] at this
@@ -465,7 +465,7 @@ theorem tail_ok {s : State} {B : Addr} {Z w v : Nat} (e : Env s B Z w)
         s'.wr = s.wr) ∧ Keep [.t2] s s' := by
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ Z := e.hZ
   have r160 : s.mem.readW (B + 160#64) 64 = BitVec.ofNat 64 v := hv
-  have hb : WP isa (.block [ldh .t2 hStat, .addi .t2 .t2 (-4)]) s fun (s' : State) =>
+  obtain hb : WP isa (.block [ldh .t2 hStat, .addi .t2 .t2 (-4)]) s fun (s' : State) =>
       (s'.gpr .t2 = BitVec.ofNat 64 v - BitVec.ofNat 64 4 ∧ s'.mem = s.mem) ∧ Keep [.t2] s s' := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     simp only [ldh, hStat]
@@ -475,7 +475,7 @@ theorem tail_ok {s : State} {B : Addr} {Z w v : Nat} (e : Env s B Z w)
 
 theorem lt_flag {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     (if BitVec.ofNat 64 x < BitVec.ofNat 64 y then (1 : BitVec 64) else 0) = BitVec.ofNat 64 (if x < y then 1 else 0) := by
-  have e : (BitVec.ofNat 64 x < BitVec.ofNat 64 y) ↔ x < y := by
+  obtain e : (BitVec.ofNat 64 x < BitVec.ofNat 64 y) ↔ x < y := by
     rw [BitVec.lt_def, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hy]
   by_cases h : x < y
   · simp only [e.mpr h, h, ↓reduceIte]; rfl
@@ -491,18 +491,18 @@ theorem check_ok {σ s : State} {B R : Addr} {L w c rl t b ch : Nat} {r : Rand} 
   have ctx := h.ctx
   have e := ctx.prep.env
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := e.hZ
-  have hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
+  obtain hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
   have hu : 0 + 8 * (t + 1) * k ≤ r.length := h.mr.used
   rw [hrl, Nat.zero_add] at hu
   have r144 : s.mem.readW (B + 144#64) 64 = BitVec.ofNat 64 rl := ctx.randLen
   have r152 : s.mem.readW (B + 152#64) 64 = BitVec.ofNat 64 (8 * (t + 1) * k) := h.used
   have r216 : s.mem.readW (B + 216#64) 64 = BitVec.ofNat 64 (8 * (t + 1)) := ctx.k
   have hrl64 := ctx.rl64
-  have esub : BitVec.ofNat 64 rl - BitVec.ofNat 64 (8 * (t + 1) * k) = BitVec.ofNat 64 (rl - 8 * (t + 1) * k) := by
+  obtain esub : BitVec.ofNat 64 rl - BitVec.ofNat 64 (8 * (t + 1) * k) = BitVec.ofNat 64 (rl - 8 * (t + 1) * k) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega_arith
-  have hD : 8 * (t + 1) < 2 ^ 64 := by have := ctx.tw; have := e.hw'; omega_arith
+  obtain hD : 8 * (t + 1) < 2 ^ 64 := by have := ctx.tw; have := e.hw'; omega_arith
   refine WP.mono (WP.rdwr (WP.keep _ (Q := fun u =>
       u.gpr .t4 = BitVec.ofNat 64 (if rl - 8 * (t + 1) * k < 8 * (t + 1) then 1 else 0) ∧ u.mem = s.mem) ?_
     (by rfl) (by rfl))) fun u ⟨⟨⟨u4, um⟩, ku⟩, rd, wr, sp⟩ => ⟨⟨⟨u4, um, sp⟩, rd, wr⟩, ku⟩
@@ -525,37 +525,37 @@ theorem body_ok (Ri : RoundImpl) {σ s : State} {B R : Addr} {L w c rl t b ch : 
   have ctx := h.ctx
   have e := ctx.prep.env
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := e.hZ
-  have hwb := witnessBytes_eq ctx.shape ctx.b1 ctx.b64
-  have hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
+  obtain hwb := witnessBytes_eq ctx.shape ctx.b1 ctx.b64
+  obtain hrl : r.length = rl := by rw [← h.tape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
   have hu : 0 + 8 * (t + 1) * k ≤ r.length := h.mr.used
   rw [hrl, Nat.zero_add] at hu
   -- How many octets are left.
   refine WP.seq (WP.mono (check_ok h) fun u ⟨⟨⟨u4, um, usp⟩, urd, uwr⟩, ku⟩ => ?_)
-  have eu : Env u B (8 * L) w := e.keep ku (by decide)
-  have hu' : LInv σ u B R L w c rl t b ch r k n := h.ofMem um eu (ku.gpr (by decide)) usp urd uwr
+  obtain eu : Env u B (8 * L) w := e.keep ku (by decide)
+  obtain hu' : LInv σ u B R L w c rl t b ch r k n := h.ofMem um eu (ku.gpr (by decide)) usp urd uwr
   refine WP.seq (WP.ite _ (Steps.eval_nonzero u .t4) (fun hz => ?_) (fun hz => ?_))
   · -- Too few octets left.
-    have hn : ¬ 8 * (t + 1) ≤ rl - 8 * (t + 1) * k := fun hp => by
+    obtain hn : ¬ 8 * (t + 1) ≤ rl - 8 * (t + 1) * k := fun hp => by
       rw [u4] at hz; simp only [Nat.not_lt.mpr hp, ↓reduceIte] at hz; exact absurd hz (by decide)
     obtain ⟨hn0, hl⟩ := VG.Proof.RsaKeyGen.mrLoopAt_short h.mr hwb (by omega_arith) (by rw [hrl]; omega_arith)
     rw [List.drop_zero] at hl
     refine WP.mono (WP.rdwr (setStat_ok (v := 0) eu (by decide))) fun x ⟨⟨⟨xm, xsp⟩, kx⟩, xrd, xwr, _⟩ => ?_
-    have ex : Env x B (8 * L) w := eu.keep kx (by decide)
-    have fx : Frm B (loopRanges w) u.mem x.mem := by
+    obtain ex : Env x B (8 * L) w := eu.keep kx (by decide)
+    obtain fx : Frm B (loopRanges w) u.mem x.mem := by
       rw [xm]
       exact Frm.of_outside (o := 8 * hStat) (n := 8) (writeW_outside _ _ _ (by simp only [hStat]; omega_arith))
         (by simp [loopRanges])
-    have lx := hu'.keep.ofFrm ex (kx.gpr (by decide)) fx xsp xrd xwr
+    obtain lx := hu'.keep.ofFrm ex (kx.gpr (by decide)) fx xsp xrd xwr
     refine WP.mono (tail_ok (v := 0) ex (by rw [xm]; exact word_writeW_self _ _ _ _) (by decide))
       fun y ⟨⟨⟨yev, ym, ysp⟩, yrd, ywr⟩, ky⟩ =>
         .inl ⟨by rw [yev]; rfl, hn0, lx.ofMem ym (ex.keep ky (by decide)) (ky.gpr (by decide)) ysp yrd ywr,
         by rw [ym, xm, word_writeW_self, hl]; rfl, fun b rest hr => by rw [hl] at hr; cases hr⟩
   · -- A draw.
-    have hp : 8 * (t + 1) ≤ rl - 8 * (t + 1) * k := by
+    obtain hp : 8 * (t + 1) ≤ rl - 8 * (t + 1) * k := by
       by_contra hp
       rw [u4] at hz; simp only [Nat.lt_of_not_le hp, ↓reduceIte] at hz; exact absurd hz (by decide)
     refine WP.mono (draw_ok Ri hu' (by omega_arith)) fun x ⟨lk, ux, hcase⟩ => ?_
-    have hdrop : rl - (r.drop (8 * (t + 1) * (k + 1))).length = 8 * (t + 1) * (k + 1) := by
+    obtain hdrop : rl - (r.drop (8 * (t + 1) * (k + 1))).length = 8 * (t + 1) * (k + 1) := by
       rw [List.length_drop, hrl]
       have : 8 * (t + 1) * (k + 1) = 8 * (t + 1) * k + 8 * (t + 1) := Nat.mul_succ _ _
       omega_arith
@@ -587,8 +587,8 @@ theorem init_ok {σ : State} {B R : Addr} {L w c rl t b ch : Nat} {r : Rand}
       LInv σ s0 B R L w c rl t b ch r 0 (iters0 c ch t r) := by
   have e := h.prep.env
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := e.hZ
-  have hwb := witnessBytes_eq h.shape h.b1 h.b64
-  have hrl : r.length = rl := by rw [← htape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
+  obtain hwb := witnessBytes_eq h.shape h.b1 h.b64
+  obtain hrl : r.length = rl := by rw [← htape]; exact VG.Proof.RsaKeyGen.rand_bytes_length _ _ _
   refine WP.mono (WP.rdwr (WP.keep [.t2] (Q := fun s0 => s0.mem = ((σ.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 0)).writeW
       (off B (8 * hUni)) (BitVec.ofNat 64 0)).writeW (off B (8 * hStat)) (BitVec.ofNat 64 4))
     (by simp only [sth, hIdx, hUni, hStat]
@@ -597,13 +597,13 @@ theorem init_ok {σ : State} {B R : Addr} {L w c rl t b ch : Nat} {r : Rand}
           e.hs.st (d := 32) (n := 8) (by omega_arith), e.hs.al8 (d := 32) (by omega_arith) (by decide),
           e.hs.st (d := 160) (n := 8) (by omega_arith), e.hs.al8 (d := 160) (by omega_arith) (by decide)])
       (by rfl) (by rfl))) fun s0 ⟨⟨m0, k0⟩, rd0, wr0, sp0⟩ => ?_
-  have e0 : Env s0 B (8 * L) w := e.keep k0 (by decide)
-  have o1 := writeW_outside σ.mem B (BitVec.ofNat 64 0) (d := 8 * hIdx) (by simp only [hIdx]; omega_arith)
-  have o2 := writeW_outside (σ.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 0)) B (BitVec.ofNat 64 0)
+  obtain e0 : Env s0 B (8 * L) w := e.keep k0 (by decide)
+  obtain o1 := writeW_outside σ.mem B (BitVec.ofNat 64 0) (d := 8 * hIdx) (by simp only [hIdx]; omega_arith)
+  obtain o2 := writeW_outside (σ.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 0)) B (BitVec.ofNat 64 0)
     (d := 8 * hUni) (by simp only [hUni]; omega_arith)
-  have o3 := writeW_outside ((σ.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 0)).writeW (off B (8 * hUni))
+  obtain o3 := writeW_outside ((σ.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 0)).writeW (off B (8 * hUni))
     (BitVec.ofNat 64 0)) B (BitVec.ofNat 64 4) (d := 8 * hStat) (by simp only [hStat]; omega_arith)
-  have f0 : Frm B (loopRanges w) σ.mem s0.mem := by
+  obtain f0 : Frm B (loopRanges w) σ.mem s0.mem := by
     rw [m0]
     refine Frm.trans (Frm.trans (frm_widen (Frm.of_outside (rs := [(8 * hIdx, 8)]) o1 (by simp)) ?_)
       (Frm.of_outside o2 (by simp [loopRanges]))) (Frm.of_outside o3 (by simp [loopRanges]))
@@ -611,9 +611,9 @@ theorem init_ok {σ : State} {B R : Addr} {L w c rl t b ch : Nat} {r : Rand}
     simp only [List.mem_singleton] at hq
     subst hq
     exact ⟨(8 * hIdx, 16), by simp [loopRanges], Nat.le_refl _, by omega_arith⟩
-  have fr0 : Frame [⟨B, 8 * L⟩, below σ.sp 96] σ.mem s0.mem := frame_of_frm f0 hZ _
-  have ctx0 := h.ofFrm e0 (k0.gpr (by decide)) f0 rd0 wr0 sp0
-  have hd := fun d (h1 : d + 8 ≤ 8 * hIdx ∨ 8 * hIdx + 8 ≤ d) (h2 : d + 8 ≤ 8 * hUni ∨ 8 * hUni + 8 ≤ d)
+  obtain fr0 : Frame [⟨B, 8 * L⟩, below σ.sp 96] σ.mem s0.mem := frame_of_frm f0 hZ _
+  obtain ctx0 := h.ofFrm e0 (k0.gpr (by decide)) f0 rd0 wr0 sp0
+  obtain hd := fun d (h1 : d + 8 ≤ 8 * hIdx ∨ 8 * hIdx + 8 ≤ d) (h2 : d + 8 ≤ 8 * hUni ∨ 8 * hUni + 8 ≤ d)
       (h3 : d + 8 ≤ 8 * hStat ∨ 8 * hStat + 8 ≤ d) (h4 : d + 8 ≤ 2 ^ 64) =>
     (o3.word h3 h4).trans ((o2.word h2 h4).trans (o1.word h1 h4))
   refine ⟨ctx0, ?_, ?_, ?_, ?_, ?_, fr0, sp0, rd0, wr0,

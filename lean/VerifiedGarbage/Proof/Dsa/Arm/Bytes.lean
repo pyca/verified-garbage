@@ -49,7 +49,7 @@ theorem rsa_bytesAt (m : Mem) (p : Addr) (n : Nat) : Spec.Rsa.bytesAt m p n = Sp
 /-- `r8` after `j` words: `len - 4 (j + 1)` bytes into the component. -/
 theorem r8_at {e x : BitVec 32} {len j : Nat} (h : x + BitVec.ofNat 32 (4 * j) = e + BitVec.ofNat 32 (len - 4))
     (hj : 4 * (j + 1) ≤ len) : x = e + BitVec.ofNat 32 (len - 4 * (j + 1)) := by
-  have h' := congrArg BitVec.toNat h
+  obtain h' := congrArg BitVec.toNat h
   apply BitVec.eq_of_toNat_eq
   have := x.isLt; have := e.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at h' ⊢
@@ -76,11 +76,11 @@ theorem zeroPadInline_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base 
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     refine VG.Proof.X25519.Arm.WP.append (zeroPadInline_ok hs h10 hK hK4 k (by omega_arith)) fun s₁ ⟨w₁, e₁, R₁, O₁⟩ => ?_
     refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
-    have w₂ := w₁.of_upd u₂ (by decide)
+    obtain w₂ := w₁.of_upd u₂ (by decide)
     refine wp_str (by omega_arith) (w₂.ea (K := o) (d := 4 * k) (by
       rw [u₂.other .r10 (by decide), u₂.other .r12 (by decide), R₁.gpr .r10 (by decide), R₁.gpr .r12 (by decide)]
       exact h10) (by omega_arith)) (w₂.write (d := o + 4 * k) (n := 4) (by omega_arith)) fun s₃ m₃ => WP.block_nil ?_
-    have O₂ : Outside base (o + 4 * k) 4 s₁.mem s₃.mem := by
+    obtain O₂ : Outside base (o + 4 * k) 4 s₁.mem s₃.mem := by
       rw [m₃.mem, u₂.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     refine ⟨w₂.of_mupd m₃, fun j hj => ?_, R₁.trans ((u₂.rest (by decide)).trans (m₃.rest _)),
       (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
@@ -98,14 +98,14 @@ theorem zeroPadLoop_ok {s : State} {base : Addr} {size o k : Nat} (hs : Ws s bas
   unfold zeroPadLoop
   refine WP.seq (wp_movw fun s₁ u₁ => wp_dp (op2_reg _ _) fun s₂ u₂ =>
     wp_mov (op2_imm (by decide)) fun t u₃ => WP.block_nil ?_)
-  have R : Rest [.r4, .r9, .r10] s t :=
+  obtain R : Rest [.r4, .r9, .r10] s t :=
     ((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))
-  have wt : Ws t base size := hs.of_rest R (by decide)
+  obtain wt : Ws t base size := hs.of_rest R (by decide)
   have r4 : t.gpr .r4 = 0 := u₃.gpr
-  have mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have p0 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 o := by
+  obtain mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain p0 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 o := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]; exact h10
-  have p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 (o + 4 * k) := by
+  obtain p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 (o + 4 * k) := by
     rw [u₃.other _ (by decide), u₂.gpr, VG.Proof.X25519.Arm.dpVal, u₁.gpr,
       u₁.other .r10 (by decide), h10, movw_ofNat h16, Offset.add_add]
   clear u₁ u₂ u₃
@@ -117,7 +117,7 @@ theorem zeroPadLoop_ok {s : State} {base : Addr} {size o k : Nat} (hs : Ws s bas
     ⟨wt, r4, R, fun i hi => absurd hi (Nat.not_lt_zero _), by rw [mt]; exact Outside.refl _ _ _ _⟩
     p0 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, _, c, d, e⟩ _ => ⟨a, d, e, c⟩
   intro j hj u ⟨wu, r4u, Ru, Vu, Ou⟩ pu p9u
-  have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
+  obtain e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
   refine wp_str (by decide) (wu.ea (K := o + 4 * j) (at_ptr pu e12) (by omega_arith)) (wu.write (d := o + 4 * j + 0) (n := 4) (by omega_arith))
     fun u₁ m₁ => wp_bump (by decide) fun u₂ v₂ => WP.block_nil ⟨⟨wu.of_mupd m₁ |>.of_upd v₂ (by decide), ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · rw [v₂.other .r4 (by decide), m₁.gpr]; exact r4u
@@ -154,20 +154,20 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
       Rest [.r4, .r8, .r9, .r10] s t ∧ Outside base out (8 * n) s.mem t.mem := by
   have hn := hs.nowrap
   let P := State.addr (s.gpr .r11)
-  have hP : P.toNat = (s.gpr .r11).toNat := VG.Proof.X25519.Arm.addr_toNat _
+  obtain hP : P.toNat = (s.gpr .r11).toNat := VG.Proof.X25519.Arm.addr_toNat _
   unfold loadComponent
   refine WP.seq (wp_movw fun s₀ u₀ => wp_dp (op2_reg _ _) fun s₁ u₁ =>
     wp_ptr (d := .r10) (by decide) (by omega_arith) fun s₂ u₂ => wp_ptr (d := .r9) (by decide) (by omega_arith) fun t u₃ =>
     WP.block_nil ?_)
-  have R : Rest [.r4, .r8, .r9, .r10] s t := ((u₀.rest (by decide)).trans (u₁.rest (by decide))).trans
+  obtain R : Rest [.r4, .r8, .r9, .r10] s t := ((u₀.rest (by decide)).trans (u₁.rest (by decide))).trans
     ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
-  have mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem, u₀.mem]
-  have r8 : t.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4) := by
+  obtain mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem, u₀.mem]
+  obtain r8 : t.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, VG.Proof.X25519.Arm.dpVal]
     rw [movw_ofNat (by omega_arith)]
-  have p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 out := by
+  obtain p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 out := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte]
-  have p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 out + BitVec.ofNat 32 (4 * (len / 4)) := by
+  obtain p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 out + BitVec.ofNat 32 (4 * (len / 4)) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, Offset.add_add]
     rw [show 4 * (len / 4) = len by omega_arith]
   clear u₀ u₁ u₂ u₃
@@ -182,27 +182,27 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
       by rw [mt]; exact Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
     p10 p9 ?_ fun u I pu => ?_)
   · intro j hj u ⟨wu, Ru, e8, Ou, Vu⟩ pu p9u
-    have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
-    have r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega_arith)
-    have ha : State.addr (u.gpr .r8 + BitVec.ofNat 32 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := by
+    obtain e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
+    obtain r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega_arith)
+    obtain ha : State.addr (u.gpr .r8 + BitVec.ofNat 32 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := by
       rw [BitVec.add_zero, r8u]; exact VG.Arm.addr_add (by omega_arith)
-    have hrd : InRegions (u.rd ++ u.wr) (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
+    obtain hrd : InRegions (u.rd ++ u.wr) (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
       rw [Ru.rd, Ru.wr]; exact hr _ (by omega_arith)
-    have hkeep : u.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 =
+    obtain hkeep : u.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 =
         s.mem.readW (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 32 :=
       readW32_keep fun i hi => VG.Proof.Weierstrass.keep_of_disjoint (Ou.mono (Nat.le_refl _) (by omega_arith)) hd
         (by omega_arith) (by omega_arith) (by omega_arith)
     refine wp_ldr (by decide) ha hrd fun u₁ v₁ => wp_rev fun u₂ v₂ => ?_
-    have w₂ := (wu.of_upd v₁ (by decide)).of_upd v₂ (by decide)
+    obtain w₂ := (wu.of_upd v₁ (by decide)).of_upd v₂ (by decide)
     refine wp_str (by decide) (w₂.ea (K := out + 4 * j) (d := 0) (at_ptr (by
       rw [v₂.other .r10 (by decide), v₁.other .r10 (by decide)]; exact pu)
       (by rw [v₂.other .r12 (by decide), v₁.other .r12 (by decide)]; exact e12)) (by omega_arith))
       (w₂.write (d := out + 4 * j + 0) (n := 4) (by omega_arith)) fun u₃ m₃ => ?_
     refine wp_dp (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 4) (by decide))) fun u₄ v₄ =>
       wp_bump (by decide) fun u₅ v₅ => WP.block_nil ?_
-    have O₂ : Outside base (out + 4 * j) 4 u.mem u₃.mem := by
+    obtain O₂ : Outside base (out + 4 * j) 4 u.mem u₃.mem := by
       rw [m₃.mem, v₂.mem, v₁.mem, Nat.add_zero]; exact writeW32_outside _ _ _ (by omega_arith)
-    have m₅ : u₅.mem = u₃.mem := by rw [v₅.mem, v₄.mem]
+    obtain m₅ : u₅.mem = u₃.mem := by rw [v₅.mem, v₄.mem]
     refine ⟨⟨(((w₂.of_mupd m₃).of_upd v₄ (by decide)).of_upd v₅ (by decide)),
       Ru.trans ((((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (m₃.rest _)).trans
         ((v₄.rest (by decide)).trans (v₅.rest (by decide)))), ?_, ?_, fun i hi => ?_⟩, ?_, ?_⟩
@@ -221,7 +221,7 @@ theorem loadComponent_ok {s : State} {base : Addr} {size len n out : Nat} (hs : 
         v₁.other .r9 (by decide)]
       exact p9u
   · obtain ⟨wu, Ru, _, Ou, Vu⟩ := I
-    have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
+    obtain e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
     refine WP.mono (zeroPad_ok wu (o := out + len) (k := 2 * n - len / 4)
       (by rw [pu, e12, Offset.add_add, show out + 4 * (len / 4) = out + len by omega_arith]) (by omega_arith) (by omega_arith)) fun t ⟨wt, Z, R₂, O₂⟩ => ⟨wt, ?_, Ru.trans (R₂.mono (by decide)), ?_⟩
     · rw [decodeBE_ofBytes, rsa_bytesAt]
@@ -253,25 +253,25 @@ theorem storeComponent_ok {s : State} {base : Addr} {size len input : Nat} (hs :
       Rest [.r4, .r8, .r9, .r10] s t ∧ Outside (State.addr (s.gpr .r11)) 0 len s.mem t.mem := by
   have hn := hs.nowrap
   let P := State.addr (s.gpr .r11)
-  have hP : P.toNat = (s.gpr .r11).toNat := VG.Proof.X25519.Arm.addr_toNat _
+  obtain hP : P.toNat = (s.gpr .r11).toNat := VG.Proof.X25519.Arm.addr_toNat _
   let mask : BitVec 32 := if accepted then BitVec.allOnes 32 else 0
   unfold storeComponent
   refine WP.seq (wp_movw fun s₀ u₀ => wp_dp (op2_reg _ _) fun s₁ u₁ =>
     wp_ptr (d := .r10) (by decide) (by omega_arith) fun s₂ u₂ => wp_ptr (d := .r9) (by decide) (by omega_arith) fun t u₃ =>
     WP.block_nil ?_)
-  have R : Rest [.r4, .r8, .r9, .r10] s t := ((u₀.rest (by decide)).trans (u₁.rest (by decide))).trans
+  obtain R : Rest [.r4, .r8, .r9, .r10] s t := ((u₀.rest (by decide)).trans (u₁.rest (by decide))).trans
     ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
-  have mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem, u₀.mem]
-  have r8 : t.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4) := by
+  obtain mt : t.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem, u₀.mem]
+  obtain r8 : t.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, VG.Proof.X25519.Arm.dpVal]
     rw [movw_ofNat (by omega_arith)]
-  have p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 input := by
+  obtain p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 input := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte]
-  have p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 input + BitVec.ofNat 32 (4 * (len / 4)) := by
+  obtain p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 input + BitVec.ofNat 32 (4 * (len / 4)) := by
     simp only [u₃.get, u₂.get, u₁.get, u₀.get, reduceCtorEq, ↓reduceIte, Offset.add_add]
     rw [show 4 * (len / 4) = len by omega_arith]
   clear u₀ u₁ u₂ u₃
-  have hPl : P.toNat + len ≤ 2 ^ 64 := by omega_arith
+  obtain hPl : P.toNat + len ≤ 2 ^ 64 := by omega_arith
   refine ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 input) (step := 4) (k := len / 4)
     (fun j u => Ws u base size ∧ Rest [.r4, .r8, .r9, .r10] s u ∧
       u.gpr .r8 + BitVec.ofNat 32 (4 * j) = s.gpr .r11 + BitVec.ofNat 32 (len - 4) ∧
@@ -285,9 +285,9 @@ theorem storeComponent_ok {s : State} {base : Addr} {size len input : Nat} (hs :
       by rw [mt]; exact Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
     p10 p9 ?_ fun u ⟨wu, Ru, _, Ou, Vu⟩ _ => ⟨wu, ?_, Ru, ?_⟩
   · intro j hj u ⟨wu, Ru, e8, Ou, Vu⟩ pu p9u
-    have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
-    have r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega_arith)
-    have hword : u.mem.readW (off base (input + 4 * j + 0)) 32 = s.mem.readW (off base (input + 4 * j)) 32 := by
+    obtain e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
+    obtain r8u : u.gpr .r8 = s.gpr .r11 + BitVec.ofNat 32 (len - 4 * (j + 1)) := r8_at e8 (by omega_arith)
+    obtain hword : u.mem.readW (off base (input + 4 * j + 0)) 32 = s.mem.readW (off base (input + 4 * j)) 32 := by
       rw [Nat.add_zero]
       show u.mem.readW (base + BitVec.ofNat 64 (input + 4 * j)) 32 = s.mem.readW (base + BitVec.ofNat 64 (input + 4 * j)) 32
       rw [← Offset.add_add]
@@ -296,22 +296,22 @@ theorem storeComponent_ok {s : State} {base : Addr} {size len input : Nat} (hs :
     refine wp_ldr (by decide) (wu.ea (K := input + 4 * j) (d := 0) (at_ptr pu e12) (by omega_arith))
       (wu.read (d := input + 4 * j + 0) (n := 4) (by omega_arith)) fun u₁ v₁ => ?_
     refine wp_dp (op2_reg _ _) fun u₂ v₂ => wp_rev fun u₃ v₃ => ?_
-    have w₃ := ((wu.of_upd v₁ (by decide)).of_upd v₂ (by decide)).of_upd v₃ (by decide)
-    have ha₃ : State.addr (u₃.gpr .r8 + BitVec.ofNat 32 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := by
+    obtain w₃ := ((wu.of_upd v₁ (by decide)).of_upd v₂ (by decide)).of_upd v₃ (by decide)
+    obtain ha₃ : State.addr (u₃.gpr .r8 + BitVec.ofNat 32 0) = P + BitVec.ofNat 64 (len - 4 * (j + 1)) := by
       rw [BitVec.add_zero, v₃.other .r8 (by decide), v₂.other .r8 (by decide), v₁.other .r8 (by decide), r8u]
       exact VG.Arm.addr_add (by omega_arith)
-    have hw₃ : InRegions u₃.wr (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
+    obtain hw₃ : InRegions u₃.wr (P + BitVec.ofNat 64 (len - 4 * (j + 1))) 4 := by
       rw [v₃.wr, v₂.wr, v₁.wr, Ru.wr]; exact hw _ _ (by omega_arith)
     refine wp_str (by decide) ha₃ hw₃ fun u₄ m₄ => ?_
     refine wp_dp (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 4) (by decide))) fun u₅ v₅ =>
       wp_bump (by decide) fun u₆ v₆ => WP.block_nil ?_
-    have v₃' : u₃.gpr .r4 = byteRev32 (s.mem.readW (off base (input + 4 * j)) 32 &&& mask) := by
+    obtain v₃' : u₃.gpr .r4 = byteRev32 (s.mem.readW (off base (input + 4 * j)) 32 &&& mask) := by
       rw [v₃.gpr, v₂.gpr, VG.Proof.X25519.Arm.dpVal, v₁.gpr, v₁.other .r3 (by decide), Ru.gpr .r3 (by decide), hc,
         hword]
-    have mem₃ : u₃.mem = u.mem := by rw [v₃.mem, v₂.mem, v₁.mem]
-    have O₂ : Outside P (len - 4 * (j + 1)) 4 u.mem u₄.mem := by
+    obtain mem₃ : u₃.mem = u.mem := by rw [v₃.mem, v₂.mem, v₁.mem]
+    obtain O₂ : Outside P (len - 4 * (j + 1)) 4 u.mem u₄.mem := by
       rw [m₄.mem, mem₃]; exact writeW32_outside _ _ _ (by omega_arith)
-    have m₆ : u₆.mem = u₄.mem := by rw [v₆.mem, v₅.mem]
+    obtain m₆ : u₆.mem = u₄.mem := by rw [v₆.mem, v₅.mem]
     refine ⟨⟨(((w₃.of_mupd m₄).of_upd v₅ (by decide)).of_upd v₆ (by decide)),
       Ru.trans ((((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans ((v₃.rest (by decide)).trans
         (m₄.rest _))).trans ((v₅.rest (by decide)).trans (v₆.rest (by decide)))), ?_, ?_, fun i hi => ?_⟩, ?_, ?_⟩

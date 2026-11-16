@@ -147,7 +147,7 @@ theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha 
         t.mem = s.mem ∧ Keeps [.eax, .ecx] s t := by
   unfold diffLimb
   refine load_ok hs (by simp only [X2, slot]; omega_arith) fun u hu => ?_
-  have us := hs.of_upd hu (by decide)
+  obtain us := hs.of_upd hu (by decide)
   refine wp_alu (Or.inr (Or.inr (Or.inr (Or.inr rfl)))) (rd_sc us (by omega_arith)) fun v hv _ => ?_
   refine wp_alu (Or.inr (Or.inr (Or.inr (Or.inl rfl)))) rfl fun w hw _ => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [hw.gpr]
@@ -164,7 +164,7 @@ theorem diffSlot_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : 
         (word t.mem base BAD) ∧ Outside base BAD 4 s.mem t.mem ∧ Keeps [.eax, .ecx] s t := by
   unfold diffSlot
   refine wp_mov rfl fun u hu => ?_
-  have us := hs.of_upd hu (by decide)
+  obtain us := hs.of_upd hu (by decide)
   let inv := fun n (t : State) =>
     (t.gpr .ecx).toNat < 65536 ∧ (t.gpr .ecx = 0 ↔ ∀ i < n, limbs s.mem base X2 i = limbs s.mem base a i) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ecx] s t
@@ -175,7 +175,7 @@ theorem diffSlot_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : 
       fun _ => rfl⟩, hu.mem, hu.rest (by simp)⟩) fun t ⟨tb, tz, tm, tk⟩ => ?_
   · refine WP.mono (diffLimb_ok (hs.of_keeps tk (by decide)) ha hn) fun v ⟨vc, vm, vk⟩ => ?_
     rw [tm] at vc
-    have x := xor_limb (h1 n hn) (h2 n hn)
+    obtain x := xor_limb (h1 n hn) (h2 n hn)
     refine ⟨?_, ?_, vm.trans tm, tk.trans (vk.mono (by simp))⟩
     · rw [vc, BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 16) tb x.1
     · rw [vc]
@@ -198,15 +198,15 @@ theorem valN_inj {f g : Nat → Nat} :
   | 0, _, _, _, i, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, hf, hg, h, i, hi => by
     rw [valN_succ, valN_succ] at h
-    have lf := valN_lt (n := n) (fun j hj => hf j (by omega_arith))
-    have lg := valN_lt (n := n) (fun j hj => hg j (by omega_arith))
-    have hp : 0 < radix ^ n := Nat.pow_pos (by decide)
-    have e1 : f n = g n := by
+    obtain lf := valN_lt (n := n) (fun j hj => hf j (by omega_arith))
+    obtain lg := valN_lt (n := n) (fun j hj => hg j (by omega_arith))
+    obtain hp : 0 < radix ^ n := Nat.pow_pos (by decide)
+    obtain e1 : f n = g n := by
       have := congrArg (· / radix ^ n) h
       simp only [Nat.add_mul_div_left _ _ hp, Nat.div_eq_of_lt lf, Nat.div_eq_of_lt lg, Nat.zero_add] at this
       exact this
     rw [e1] at h
-    have e0 : valN f n = valN g n := by omega_arith
+    obtain e0 : valN f n = valN g n := by omega_arith
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · exact valN_inj (fun j hj => hf j (by omega_arith)) (fun j hj => hg j (by omega_arith)) e0 i hi
     · exact e1
@@ -230,65 +230,65 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       CKeep base s t ∧ BoundedEnv t.mem base ∧ (∀ i : Index, i ≠ 1 → E t.mem base i = E s.mem base i) ∧
         BadUpd (E s.mem base a = E s.mem base b) (word s.mem base BAD) (word t.mem base BAD) ∧
         Keeps workRegs s t := by
-  have sa := slot_range a
-  have sb := slot_range b
+  obtain sa := slot_range a
+  obtain sb := slot_range b
   have hX2v : X2 = 192 := rfl
   have hA : ACC = 3584 := rfl
   have hX2 : X2 = slot (1 : Index).val := rfl
-  have s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
-  have s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
-  have sab := slot_sep hab
+  obtain s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
+  obtain s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
+  obtain sab := slot_sep hab
   unfold eqSlots
   simp only [List.append_assoc]
   -- slot 1 = slot a
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs (o := X2) (a := slot a.val) (by decide) (by omega_arith)
     (Or.inr (by omega_arith))) fun s1 ⟨f1, m1, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
-  have bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
+  obtain hs1 := hs.of_keeps k1 (by decide)
+  obtain bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs1 bd1) fun s2 ⟨b2, v2, m2, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  obtain hs2 := hs1.of_keeps k2 (by decide)
   -- slot a = slot 1
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs2 (o := slot a.val) (a := X2) (by omega_arith) (by decide)
     (Or.inr (by omega_arith))) fun s3 ⟨f3, m3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by decide)
+  obtain hs3 := hs2.of_keeps k3 (by decide)
   -- slot 1 = slot b
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs3 (o := X2) (a := slot b.val) (by decide) (by omega_arith)
     (Or.inr (by omega_arith))) fun s4 ⟨f4, m4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by decide)
-  have lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
+  obtain hs4 := hs3.of_keeps k4 (by decide)
+  obtain lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
     intro i hi
     rw [m3.limbs (by omega_arith) (by omega_arith) hi, m2.limbs s1b (by omega_arith) hi,
       m1.limbs (by omega_arith) (by omega_arith) hi]
-  have bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
+  obtain bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
-  have la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
+  obtain hs5 := hs4.of_keeps k5 (by decide)
+  obtain la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
     intro i hi
     rw [m5.limbs s1a (by omega_arith) hi, m4.limbs (by omega_arith) (by omega_arith) hi, f3 i hi]
-  have ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
+  obtain ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
   refine WP.mono (diffSlot_ok hs5 (by omega_arith) b5 ba5) fun t ⟨tb, tm, tk⟩ => ?_
-  have fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
+  obtain fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
     rw [show fe s5.mem base (slot a.val) = fe s2.mem base X2 from valN_congr la5, v2]
     exact congrArg (· % Spec.X448.P) (valN_congr f1)
-  have fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
+  obtain fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
     rw [v5]; exact congrArg (· % Spec.X448.P) ((valN_congr f4).trans (valN_congr lb3))
-  have tl : ∀ d, 64 ≤ d → d + 112 ≤ 2880 → ∀ j < 28, limbs t.mem base d j = limbs s5.mem base d j :=
+  obtain tl : ∀ d, 64 ≤ d → d + 112 ≤ 2880 → ∀ j < 28, limbs t.mem base d j = limbs s5.mem base d j :=
     fun d h1 h2 j hj => tm.limbs (Or.inr (by simp only [BAD]; omega_arith)) (by omega_arith) hj
-  have other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
+  obtain other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i hi1 hia j hj
-    have si := slot_range i
-    have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
-    have sai := slot_sep hia
+    obtain si := slot_range i
+    obtain s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
+    obtain sai := slot_sep hia
     rw [tl _ si.1 si.2 j hj, m5.limbs s1i (by omega_arith) hj, m4.limbs (by omega_arith) (by omega_arith) hj,
       m3.limbs (by omega_arith) (by omega_arith) hj, m2.limbs s1i (by omega_arith) hj,
       m1.limbs (by omega_arith) (by omega_arith) hj]
-  have kw : Keeps workRegs s t := by
+  obtain kw : Keeps workRegs s t := by
     refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
   refine ⟨⟨kw.mono (fun r hr => List.mem_cons_of_mem _ hr), ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_, kw⟩

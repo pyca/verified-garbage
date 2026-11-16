@@ -105,7 +105,7 @@ theorem pb_in (s : State) {d : Nat} (h : d + 8 ≤ privBytes) : (PB s).Contains 
 theorem slot_PB (s : State) {d : Nat} (hd : d + 8 ≤ frameBytes) :
     ∀ r ∈ [PB s], Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := fun r hr => by
   rw [List.mem_singleton.mp hr]
-  have h := Offset.disjoint_below_above (fb s) (m := privBytes) (a := 0) (l := frameBytes) (by decide)
+  obtain h := Offset.disjoint_below_above (fb s) (m := privBytes) (a := 0) (l := frameBytes) (by decide)
   rw [BitVec.add_zero] at h
   exact (h.sub_right (Offset.sub_base _ hd)).symm
 
@@ -128,18 +128,18 @@ theorem copies_ok {t₀ : State} (h12 : t₀.gpr .r12 = pb s) (hrd : t₀.rd = s
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (copies_ok h12 hrd hwr hm n (by omega_using [hn])) fun t ⟨k, fm, got⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    have hmt : Frame [kD s] s.mem t.mem := hm.trans (fm.sub fun r hr => by
+    obtain hmt : Frame [kD s] s.mem t.mem := hm.trans (fm.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨kD s, List.mem_singleton_self _, pb_sub s (by unfold frameBytes privBytes; omega_using [])⟩)
-    have hb : t.gpr .r12 = fb s - BitVec.ofNat 64 privBytes := by rw [k.get .r12, h12]
+    obtain hb : t.gpr .r12 = fb s - BitVec.ofNat 64 privBytes := by rw [k.get .r12, h12]
     refine wp_argD P (j := n) (o := privBytes) (by omega_using [hn]) hb (k.rd.trans hrd) ?_ (fun t₁ o₁ e₁ => ?_)
       ⟨by unfold arg frameBytes privBytes; omega_using [hn], by unfold arg frameBytes privBytes; omega_using []⟩
     · exact Frame.mono hmt fun _ h => h
-    have hw : InRegions t₁.wr (pb s + BitVec.ofNat 64 (104 + 8 * n)) 8 := by
+    obtain hw : InRegions t₁.wr (pb s + BitVec.ofNat 64 (104 + 8 * n)) 8 := by
       rw [o₁.wr, k.wr, hwr]; exact psa_in (by omega_using []) (by unfold privBytes; omega_using [hn])
     refine wp_std (a := pb s + BitVec.ofNat 64 (104 + 8 * n)) (by rw [o₁.get .r12, hb]) hw (fun t₂ m₂ => wp_nil ?_)
       (by decide) ⟨by omega_using [hn], by omega_using []⟩
-    have k₂ : Keep [.r0] t₀ t₂ := (k.trans (o₁.keep.trans m₂.keep)).mono
+    obtain k₂ : Keep [.r0] t₀ t₂ := (k.trans (o₁.keep.trans m₂.keep)).mono
     refine ⟨k₂, ?_, fun j hj => ?_⟩
     · rw [m₂.mem, o₁.mem]
       exact fm.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by omega_using []))

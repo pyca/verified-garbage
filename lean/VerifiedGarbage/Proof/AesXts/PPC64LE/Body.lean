@@ -43,8 +43,8 @@ theorem preserved_ne' {r : Reg} (hr : r ∈ preserved) : r ≠ .r9 ∧ r ≠ .r1
 theorem preA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
     {s : State} (h : LInv M s₀ k s) :
     WP isa (.block pre) s (Pre s₀ (blk s₀ k) (xorMem s.mem (blk s₀ k) (Iv s₀)) s) := by
-  have hR := h.regs hp
-  have hW := h.wrs hp
+  obtain hR := h.regs hp
+  obtain hW := h.wrs hp
   refine xorInto_wp (P := blk s₀ k) (Q := Iv s₀) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) h.r17 h.r16
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk0 hk)) (by rw [hR]; exact in_rw (by simp) (hp.cBlk8 hk))
@@ -67,8 +67,8 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
   refine WP.seq (WP.mono (preA_wp hp hk h) fun s₁ a => ?_)
   refine WP.seq (WP.mono (blk_call (name := name) ok nf a.pre) fun s₂ c => ?_)
   have g₂ (r : Reg) (hr : r ∈ preserved) : s₂.gpr r = s.gpr r := by rw [c.saved r hr, a.saved r hr]
-  have hW₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, a.wr, h.wrs hp]
-  have hR₂ : s₂.rd ++ s₂.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+  obtain hW₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, a.wr, h.wrs hp]
+  obtain hR₂ : s₂.rd ++ s₂.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [c.rd, c.wr, a.rd, a.wr, h.regs hp]
   rw [post, List.append_assoc]
   refine xorInto_wp (P := blk s₀ k) (Q := Iv s₀) (by decide) (by decide) (by decide) (by decide)
@@ -80,8 +80,8 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
   have g₃' (r : Reg) (hr : r ∈ preserved) : s₃.gpr r = s.gpr r := by
     obtain ⟨-, -, -, -, -, h9, h10⟩ := preserved_ne hr
     rw [g₃ r h9 h10, g₂ r hr]
-  have hR₃ : s₃.rd ++ s₃.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd₃, wr₃, hR₂]
-  have hW₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr₃, hW₂]
+  obtain hR₃ : s₃.rd ++ s₃.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd₃, wr₃, hR₂]
+  obtain hW₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr₃, hW₂]
   refine mulA_wp (Q := Iv s₀) (by rw [g₃' .r16 (by decide), h.r16])
     (by rw [hR₃]; exact in_rw (by simp) cIv0) (by rw [hR₃]; exact in_rw (by simp) cIv8)
     (by rw [hW₃]; exact in_rw (by simp) cIv0) (by rw [hW₃]; exact in_rw (by simp) cIv8)
@@ -93,10 +93,10 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
     obtain ⟨h9, h10, h11, h12⟩ := preserved_ne' hr
     rw [keep₅ r h17 h18, g₄ r h9 h10 h11 h12, g₃' r hr]
   -- Memory.
-  have f₁ : Frame [⟨blk s₀ k, 16⟩] s.mem s₁.mem := by rw [a.mem]; exact xorMem_frame _ _ _
-  have f₃ : Frame [⟨blk s₀ k, 16⟩] s₂.mem s₃.mem := by rw [mem₃]; exact xorMem_frame _ _ _
-  have f₄ : Frame [ivR s₀] s₃.mem s₄.mem := by rw [mem₄]; exact alphaMem_frame _ _
-  have fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨S s₀, 2064⟩] s.mem s₅.mem := by
+  obtain f₁ : Frame [⟨blk s₀ k, 16⟩] s.mem s₁.mem := by rw [a.mem]; exact xorMem_frame _ _ _
+  obtain f₃ : Frame [⟨blk s₀ k, 16⟩] s₂.mem s₃.mem := by rw [mem₃]; exact xorMem_frame _ _ _
+  obtain f₄ : Frame [ivR s₀] s₃.mem s₄.mem := by rw [mem₄]; exact alphaMem_frame _ _
+  obtain fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨S s₀, 2064⟩] s.mem s₅.mem := by
     rw [mem₅]
     refine (f₁.sub fun r hr => ?_).trans ((c.frame.sub fun r hr => ?_).trans
       ((f₃.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)))
@@ -107,7 +107,7 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
       · exact ⟨⟨S s₀, 2064⟩, by simp, Region.sub_prefix (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
+  obtain big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
     (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -115,18 +115,18 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
       · exact ⟨ivR s₀, by simp, fun _ h => h⟩
       · exact ⟨dataR s₀, by simp, fun _ h => h⟩
       · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
-  have callIv : ∀ r ∈ [⟨blk s₀ k, 16⟩, ⟨S s₀, 2048⟩], (ivR s₀).Disjoint r := by
+  obtain callIv : ∀ r ∈ [⟨blk s₀ k, 16⟩, ⟨S s₀, 2048⟩], (ivR s₀).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (hp.blk_iv hk).symm
     · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
-  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
+  obtain hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   -- The tweak on entry to the block, the new block, and the new tweak.
-  have ivIn : bytesAt s₂.mem (Iv s₀) 16 = chainK (AesXts.xtsMode enc) s₀ k := by
+  obtain ivIn : bytesAt s₂.mem (Iv s₀) 16 = chainK (AesXts.xtsMode enc) s₀ k := by
     rw [bytesAt_frame c.frame callIv (by decide), a.mem,
       bytesAt_frame (xorMem_frame _ _ _) (one (hp.blk_iv hk).symm) (by decide), h.iv]
-  have newBlk : bytesAt s₅.mem (blk s₀ k) 16 =
+  obtain newBlk : bytesAt s₅.mem (blk s₀ k) 16 =
       Spec.Xts.block (ciphOf enc (R s₀) (wK s₀)) (Spec.Xts.next (iv0 s₀) k)
         ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk)) := by
     rw [mem₅, mem₄, bytesAt_frame (alphaMem_frame _ _) (one (hp.blk_iv hk)) (by decide), mem₃,
@@ -134,12 +134,12 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
       xorMem_bytes _ (hp.blk_iv hk), h.block hk, h.iv]
     simp only [chainK, AesXts.xtsMode_chain, hlt]
     rfl
-  have newIv : bytesAt s₅.mem (Iv s₀) 16 = Spec.Xts.mulAlpha (chainK (AesXts.xtsMode enc) s₀ k) := by
+  obtain newIv : bytesAt s₅.mem (Iv s₀) 16 = Spec.Xts.mulAlpha (chainK (AesXts.xtsMode enc) s₀ k) := by
     rw [mem₅, mem₄, alphaMem_bytes, mem₃,
       bytesAt_frame (xorMem_frame _ _ _) (one (hp.blk_iv hk).symm) (by decide), ivIn]
-  have hl : (outK (AesXts.xtsMode enc) s₀ k).length = k := by
+  obtain hl : (outK (AesXts.xtsMode enc) s₀ k).length = k := by
     rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
-  have outSucc :
+  obtain outSucc :
       outK (AesXts.xtsMode enc) s₀ (k + 1) = outK (AesXts.xtsMode enc) s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
     rw [newBlk]
     simp only [outK, AesXts.xtsMode_out, take_succ_blks s₀ hk, AesXts.crypt_snoc, hlt]

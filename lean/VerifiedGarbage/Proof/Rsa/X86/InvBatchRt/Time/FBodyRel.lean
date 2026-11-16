@@ -80,7 +80,7 @@ theorem relLoopF (F : Fits Z len) (K : Nat) :
   have et : isa.eval .ne t = t.zf.map (!·) := rfl
   refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega_using [hk], hb, ?_, by omega_using [hk]⟩⟩
   · rw [es, zs] at hf
-    have h0 : k - 1 = 0 := by by_contra h0; simp_all
+    obtain h0 : k - 1 = 0 := by by_contra h0; simp_all
     rw [h0] at hb
     exact hb
   · rw [es, zs] at ht
@@ -92,18 +92,18 @@ theorem relInitF (F : Fits Z len) :
       (Both lay B Z len N (nw len) args sp (· = (3 * nw len + 2) / 2) T2) := by
   have F1 := F.fit
   have F2 := F.two
-  have r0 := rv_a len 0 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
-  have r7 := rv_a len 7 (nw len)
-  have r8 := rv_a len 8 (nw len); have r12 := rv_a len 12 (nw len)
-  have r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
-  have r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
-  have h21 : rv (kw len) { arr := 2, half := 1 } (nw len) = rv (kw len) (a 2) (nw len) + 4 * nw len := rv_half1' len 2
-  have h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
+  obtain r0 := rv_a len 0 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
+  obtain r7 := rv_a len 7 (nw len)
+  obtain r8 := rv_a len 8 (nw len); have r12 := rv_a len 12 (nw len)
+  obtain r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
+  obtain r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
+  obtain h21 : rv (kw len) { arr := 2, half := 1 } (nw len) = rv (kw len) (a 2) (nw len) + 4 * nw len := rv_half1' len 2
+  obtain h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
   have f1 : fgSz * (nw len + 1) = 16 * (nw len + 1) := rfl
   have f2 : fgSz * (nw len + 2) = 16 * (nw len + 2) := rfl
   have d1 : deSz * (nw len + 1) = 20 * (nw len + 1) := rfl
   have d2 : deSz * (nw len + 2) = 20 * (nw len + 2) := rfl
-  have efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl; have eP : sP = 176 := rfl
+  obtain efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl; have eP : sP = 176 := rfl
   unfold initF
   simp only [seqs]
   refine RelCT.seq (relSlots (by taint_decide)) ?_

@@ -109,17 +109,17 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   refine WP.seq (WP.mono (entry_wp Ar) fun s₁ En => ?_)
   -- The keys.
   refine WP.seq (WP.mono (keys_wp L En.env) fun s₂ Ky => ?_)
-  have E₂ := En.env.of_pk Ky.pk
+  obtain E₂ := En.env.of_pk Ky.pk
   -- POLYVAL and the tag input.
   refine WP.seq (WP.mono (polyval_wp L E₂ Ky.hkey Ky.acc) fun s₃ Po => ?_)
-  have E₃ := E₂.of_pk Po.pk
+  obtain E₃ := E₂.of_pk Po.pk
   -- The tag.
   refine WP.seq (WP.mono (tag_wp L E₃ (o := 0) (by decide)) fun s₄ Tg => ?_)
-  have E₄ := E₃.of_pk Tg.pk
+  obtain E₄ := E₃.of_pk Tg.pk
   -- Counter mode.
   refine WP.seq (WP.mono (crypt_wp L E₄) fun s₅ Cr => ?_)
-  have E₅ := E₄.of_pk Cr.pk
-  have pk₅ : PK s₁ s₅ := Ky.pk.trans (Po.pk.trans (Tg.pk.trans Cr.pk))
+  obtain E₅ := E₄.of_pk Cr.pk
+  obtain pk₅ : PK s₁ s₅ := Ky.pk.trans (Po.pk.trans (Tg.pk.trans Cr.pk))
   -- The copy of the tag, and `restore`.
   have fK := Ky.frame
   have fP := Po.frame
@@ -127,39 +127,39 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   rw [keyR_eq] at fK
   rw [polyR_eq] at fP
   rw [tagR_eq] at fT
-  have f₅ : Frame (mutR c) s₁.mem s₅.mem :=
+  obtain f₅ : Frame (mutR c) s₁.mem s₅.mem :=
     (((fK.sub (wRs_mut (by decide))).trans (fP.sub (wRs_mut (by decide)))).trans
       (fT.sub (wRs_mut (by decide)))).trans (Cr.frame.sub (cryR_mut c))
   refine WP.block_append (WP.mono (tagOut_wp E₅ (by rw [pk₅.wr, En.wr]; exact hTw)) fun s₆ ⟨pk₆, hm₆⟩ => ?_)
-  have fO : Frame [⟨c.T, 16⟩] s₅.mem s₆.mem := by rw [hm₆]; exact copy2Mem_frame _ _ _
-  have sv₆ : Saved c.W (saveG s) savedL s₆.mem :=
+  obtain fO : Frame [⟨c.T, 16⟩] s₅.mem s₆.mem := by rw [hm₆]; exact copy2Mem_frame _ _ _
+  obtain sv₆ : Saved c.W (saveG s) savedL s₆.mem :=
     (saved_mut L f₅ En.saved).frame_in savedL_bound fO fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (L.t_w.sub_right (Lay.wSub (by decide))).symm
-  have pk₁₆ : PK s₁ s₆ := pk₅.trans pk₆
+  obtain pk₁₆ : PK s₁ s₆ := pk₅.trans pk₆
   refine WP.mono (exit_wp (E₅.of_pk pk₆) sv₆ (by rw [pk₁₆.sp, En.sp])
     (fun r hr => by rw [pk₁₆.gpr r (other_keep r hr), En.others r hr])) fun s' ⟨abi, hm, _⟩ => ⟨abi, ?_⟩
   -- What the pieces read.
-  have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem c.K c.R = Spec.GcmSiv.ctxCiph s.mem c.K c.R := by
+  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem c.K c.R = Spec.GcmSiv.ctxCiph s.mem c.K c.R := by
     unfold Spec.GcmSiv.ctxCiph
     rw [entry_buf En.frame (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])]
-  have n₁ : bytesAt s₁.mem c.N 12 = bytesAt s.mem c.N 12 := entry_buf En.frame L.n_w (by decide)
-  have n₂ : bytesAt s₂.mem c.N 12 = bytesAt s.mem c.N 12 := by
+  obtain n₁ : bytesAt s₁.mem c.N 12 = bytesAt s.mem c.N 12 := entry_buf En.frame L.n_w (by decide)
+  obtain n₂ : bytesAt s₂.mem c.N 12 = bytesAt s.mem c.N 12 := by
     rw [bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide), n₁]
-  have a₂ : bytesAt s₂.mem c.A c.al = bytesAt s.mem c.A c.al := by
+  obtain a₂ : bytesAt s₂.mem c.A c.al = bytesAt s.mem c.A c.al := by
     rw [bytesAt_keep fK (buf_keep L.a_w (by decide)) (by omega_using [hal]), entry_buf En.frame L.a_w (by omega_using [hal])]
-  have d₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
+  obtain d₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [bytesAt_keep fK (buf_keep L.d_w (by decide)) (by omega_using [hn]), entry_buf En.frame L.d_w (by omega_using [hn])]
-  have d₄ : bytesAt s₄.mem c.D c.n = bytesAt s.mem c.D c.n := by
+  obtain d₄ : bytesAt s₄.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [bytesAt_keep fT (buf_keep L.d_w (by decide)) (by omega_using [hn]),
       bytesAt_keep fP (buf_keep L.d_w (by decide)) (by omega_using [hn]), d₂]
-  have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (c.W + BitVec.ofNat 64 256) c.R =
+  obtain key₃ : Spec.GcmSiv.ctxCiph s₃.mem (c.W + BitVec.ofNat 64 256) c.R =
       Spec.GcmSiv.ctxCiph s₂.mem (c.W + BitVec.ofNat 64 256) c.R :=
     ciph_keep fP (w_keep L (by decide) (by decide)) hRb
-  have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (c.W + BitVec.ofNat 64 256) c.R =
+  obtain key₄ : Spec.GcmSiv.ctxCiph s₄.mem (c.W + BitVec.ofNat 64 256) c.R =
       Spec.GcmSiv.ctxCiph s₂.mem (c.W + BitVec.ofNat 64 256) c.R := by
     rw [ciph_keep fT (w_keep L (by decide) (by decide)) hRb, key₃]
-  have t₅ : bytesAt s₅.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s₄.mem (c.W + BitVec.ofNat 64 0) 16 :=
+  obtain t₅ : bytesAt s₅.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s₄.mem (c.W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -171,10 +171,10 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   rw [BitVec.add_zero] at t₅
   have tg := Tg.out
   rw [BitVec.add_zero] at tg
-  have d₆ : bytesAt s₆.mem c.D c.n = bytesAt s₅.mem c.D c.n :=
+  obtain d₆ : bytesAt s₆.mem c.D c.n = bytesAt s₅.mem c.D c.n :=
     bytesAt_keep fO (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by omega_using [hn])
-  have tO : bytesAt s₆.mem c.T 16 = bytesAt s₅.mem c.W 16 := by rw [hm₆, copy2Mem_bytes]
+  obtain tO : bytesAt s₆.mem c.T 16 = bytesAt s₅.mem c.W 16 := by rw [hm₆, copy2Mem_bytes]
   have au := Ky.auth
   have ci := Ky.ciph
   rw [hK₁, n₁] at au ci
@@ -190,7 +190,7 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
 /-- `vg_aes_gcm_siv_seal`. -/
 theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {s : State} (h : sealPPC64LE.pre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealPPC64LE.post s s' := by
-  have A := args_of_seal h
+  obtain A := args_of_seal h
   refine WP.mono (seal_wp' hti A.1 A.2) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩
   simp only [sealPPC64LE]
   simpa only [cxOf] using hp

@@ -64,7 +64,7 @@ theorem outside_frame {L : GL} (hL : L.Ok) {o n : Nat} (hon : o + n ≤ 32) {m m
   intro x hx
   have hF := hL.fnw
   refine ho x ?_
-  have hn := hx L.nR (by simp)
+  obtain hn := hx L.nR (by simp)
   simp only [Region.Contains, off] at hn
   rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega_using [])] at hn
   simp only [ofs, oNonce, frameBytes] at hn hF ⊢
@@ -96,7 +96,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
       R.key.getD (List.replicate (glOf s₀).ol 0))
     (hnone : R.status ≠ 1 → R.key = none) :
     WP isa (finish olen) t (Fin s₀ R) := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   have hq := hL.ql
   have hp := hL.pl
   have hF := hL.fnw
@@ -104,10 +104,10 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
   unfold finish
   refine WP.seq (WP.mono (WP.keep (c := .block [.subi .r3 .r31 1]) [.r3] (Q := fun t₁ => t₁.mem = t.mem ∧
     t₁.gpr .r3 = t.gpr .r31 - BitVec.ofNat 64 1) (by prun) (by decide)) fun t₁ ⟨⟨m1, a3⟩, k1⟩ => ?_)
-  have hc₁ : Ctx (glOf s₀) s₀ t₁ := hc.step hL k1.sp k1.rd k1.wr (fun r hr => k1.gpr r (ctx_r3 r hr))
+  obtain hc₁ : Ctx (glOf s₀) s₀ t₁ := hc.step hL k1.sp k1.rd k1.wr (fun r hr => k1.gpr r (ctx_r3 r hr))
     (by rw [m1]; exact Frame.refl _ _)
   -- `out` holds the result's octets.
-  have hout : ∀ (P : State → Prop), (∀ t₂, Ctx (glOf s₀) s₀ t₂ → Keep [.r0, .r3, .r16, .r17] t₁ t₂ →
+  obtain hout : ∀ (P : State → Prop), (∀ t₂, Ctx (glOf s₀) s₀ t₂ → Keep [.r0, .r3, .r16, .r17] t₁ t₂ →
       Spec.Rsa.bytesAt t₂.mem (glOf s₀).out (glOf s₀).ol =
         R.key.getD (List.replicate (glOf s₀).ol 0) → P t₂) →
       WP isa (.ite (.zero .d .r3) (.block []) (zeroOut olen)) t₁ P := by
@@ -123,7 +123,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
         (by prun [hc₁.r18, hc₁.r20, hc₁.r21, ← BitVec.ofNat_add]; exact ⟨rfl, by simp only [GL.ol]; congr 1; omega_using []⟩)
         (by decide))
         fun t₂ ⟨⟨b0, b16, b17, m2⟩, k2⟩ => ?_)
-      have ho : Scr t₂ (glOf s₀).out (glOf s₀).ol :=
+      obtain ho : Scr t₂ (glOf s₀).out (glOf s₀).ol :=
         Scr.of_mem (by rw [k2.wr, hc₁.wr, hwr]; simp) hL.nwOut
       refine WP.mono (zeroLoop_ok (by simp only [GL.ol]; omega_using [hq]) (by simp only [GL.ol]; omega_using [hq, hp]) ho b0 b16 b17)
         fun t₃ ⟨⟨z3, o3⟩, k3⟩ => ?_
@@ -136,29 +136,29 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
         exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega_using [hc'])
       · rw [z3, hnone hs]; rfl
   refine WP.seq (hout _ fun t₂ hc₂ k2 o2 => ?_)
-  have c25 : t₂.gpr .r25 = BitVec.ofNat 64 R.used := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h25)
-  have c31 : t₂.gpr .r31 = BitVec.ofNat 64 R.status := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h31)
+  obtain c25 : t₂.gpr .r25 = BitVec.ofNat 64 R.used := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h25)
+  obtain c31 : t₂.gpr .r31 = BitVec.ofNat 64 R.status := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h31)
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (clearNonce_ok t₂ hF hc₂.sp (scr_nonce hL rfl hc₂.wr)) fun t₃ ⟨⟨_, _, o3⟩, k3⟩ => ?_
-  have hc₃ : Ctx (glOf s₀) s₀ t₃ := hc₂.step hL k3.sp k3.rd k3.wr (fun r hr => k3.gpr r (ctx_012 r hr))
+  obtain hc₃ : Ctx (glOf s₀) s₀ t₃ := hc₂.step hL k3.sp k3.rd k3.wr (fun r hr => k3.gpr r (ctx_012 r hr))
     (outside_frame hL (o := 0) (n := 32) (by decide) o3)
-  have hus : InRegions t₃.wr ((glOf s₀).used + BitVec.ofNat 64 0) 8 := by
+  obtain hus : InRegions t₃.wr ((glOf s₀).used + BitVec.ofNat 64 0) 8 := by
     rw [hc₃.wr, hwr, BitVec.add_zero]
     exact ⟨(glOf s₀).usedR, by simp, Region.contains_self _ _⟩
-  have hus' : InRegions t₃.wr (glOf s₀).used 8 := by rw [← BitVec.add_zero (glOf s₀).used]; exact hus
+  obtain hus' : InRegions t₃.wr (glOf s₀).used 8 := by rw [← BitVec.add_zero (glOf s₀).used]; exact hus
   refine WP.mono (WP.keep (c := .block [.store .d .r25 .r30 0, .addi .r3 .r31 0]) [.r3] (Q := fun t₄ =>
     t₄.mem = t₃.mem.writeW ((glOf s₀).used + BitVec.ofNat 64 0) (BitVec.ofNat 64 R.used) ∧
       t₄.gpr .r3 = BitVec.ofNat 64 R.status)
     (by prun [hc₃.r30, (k3.gpr _ (by decide)).trans c25, (k3.gpr _ (by decide)).trans c31, hus, hus', add0]) (by decide))
     fun t₄ ⟨⟨m4, a3⟩, k4⟩ => ?_
   -- The used word apart from the frame and `out`.
-  have huR : (glOf s₀).usedR.Contains ((glOf s₀).used + BitVec.ofNat 64 0) 8 := by
+  obtain huR : (glOf s₀).usedR.Contains ((glOf s₀).used + BitVec.ofNat 64 0) 8 := by
     rw [BitVec.add_zero]; exact Region.contains_self _ _
-  have fw : ∀ d, d + 8 ≤ frameBytes → t₄.mem.readW (off (glOf s₀).F d) 64 = t₃.mem.readW (off (glOf s₀).F d) 64 :=
+  obtain fw : ∀ d, d + 8 ≤ frameBytes → t₄.mem.readW (off (glOf s₀).F d) 64 = t₃.mem.readW (off (glOf s₀).F d) 64 :=
     fun d hd => by
       rw [m4, Mem.readW_writeW_sep (Region.Disjoint.sep (GL.Ok.frame_disj (d := d) (n := 8) hL.dFU hd)
         (Region.contains_self _ _) huR) (by decide)]
-  have hin : ∀ i < 19, InRegions (t₄.rd ++ t₄.wr) (off (glOf s₀).F (oSave + 8 * i)) 8 := fun i hi => by
+  obtain hin : ∀ i < 19, InRegions (t₄.rd ++ t₄.wr) (off (glOf s₀).F (oSave + 8 * i)) 8 := fun i hi => by
     rw [k4.rd, k4.wr, hc₃.rd, hc₃.wr]
     exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), frameR_contains hL rfl (by simp only [oSave]; omega_using [])
       (by simp only [oSave, frameBytes]; omega_using [hi])⟩
@@ -179,7 +179,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
 /-- The exit's state, after the frame is freed, meets the contract. -/
 theorem fin_post {s₀ t : State} (h : gkContract.pre s₀) (hst : (gkRes s₀).status ≤ 2) (hf : Fin s₀ (gkRes s₀) t) :
     abiPreserved s₀ (freed frameBytes t) ∧ gkContract.post s₀ (freed frameBytes t) := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   have hq := hL.ql
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     hol, -, -⟩ := h
@@ -253,12 +253,12 @@ abbrev resOf (s₀ : State) : Spec.Dsa.GenerateKeyResult :=
   else ⟨none, 0, 0, [4]⟩
 
 theorem gkRes_eq {s₀ : State} (h : gkContract.pre s₀) : gkRes s₀ = resOf s₀ := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   have hq := hL.ql
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, hkl, -⟩ := h
   have e7 : (s₀.gpr .r7).toNat = (glOf s₀).kl := hkl
-  have hq' : (Spec.Dsa.paramsBytes (glOf s₀).pl (glOf s₀).ql (parOf s₀)).q = qOf s₀ := by
+  obtain hq' : (Spec.Dsa.paramsBytes (glOf s₀).pl (glOf s₀).ql (parOf s₀)).q = qOf s₀ := by
     rw [VG.Proof.Dsa.paramsBytes_eq]
     show Spec.Dsa.decodeBE _ = Spec.Dsa.decodeBE _
     rw [VG.Proof.Dsa.bytesAt_slice s₀.mem _ (by simp only [GL.kl]; omega_using [])]
@@ -296,7 +296,7 @@ theorem frame_byte {L : GL} (hL : L.Ok) {rs : List Region} (hd : ∀ r ∈ rs, L
     (hf : Frame rs m m') {d : Nat} (hdl : d < frameBytes) : m' (off L.F d) = m (off L.F d) := by
   have hF := hL.fnw
   refine hf _ fun r hr hc => ?_
-  have hin : L.frR.Contains (off L.F d) 1 :=
+  obtain hin : L.frR.Contains (off L.F d) 1 :=
     VG.Offset.contains_base _ (by omega_using [hdl]) (by simp only [frameBytes] at hdl; omega_using [hdl])
   exact hd r hr _ hin hc
 
@@ -310,7 +310,7 @@ structure Chk (s₀ : State) (t : State) : Prop where
 theorem checked_ok {s₀ t : State} (h : gkContract.pre s₀) (he : Entered (glOf s₀) s₀ t) :
     WP isa (.seq (.block checkArgs) (.call "vg_dsa_check_parameters" Impl.Dsa.PPC64LE.Params.checkParameters)) t
       (Chk s₀) := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   refine WP.seq (WP.mono (checkArgs_ok hL he.ctx) fun t₂ ⟨ca, m2, k2⟩ => WP.mono (check_ok h ca) fun t₃ ck => ?_)
   refine ⟨ck.ctx, (ck.pres _ (by decide)).trans ((k2.gpr _ (by decide)).trans he.r25), fun j hj => ?_, ck.r3⟩
   rw [frame_byte hL (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dFS) ck.frame
@@ -332,29 +332,29 @@ theorem derive_wp {s₀ t : State} (h : gkContract.pre s₀) (hq : 1 < qOf s₀)
         t'.gpr .r31 = BitVec.ofNat 64 (resOf s₀).status ∧
         ((resOf s₀).status = 1 → Spec.Rsa.bytesAt t'.mem (glOf s₀).out (glOf s₀).ol =
           (resOf s₀).key.getD (List.replicate (glOf s₀).ol 0)) := by
-  have hL := glOf_ok h
-  have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
-  have hst := sampleStatus_le (drawOf s₀)
+  obtain hL := glOf_ok h
+  obtain hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
+  obtain hst := sampleStatus_le (drawOf s₀)
   unfold Impl.Dsa.PPC64LE.Generate.derive
   refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun t₂ => t₂.mem = t.mem ∧
     t₂.gpr .r3 = t.gpr .r31 - BitVec.ofNat 64 1) (by prun) (by decide)) fun t₂ ⟨⟨m2, a3⟩, k2⟩ => ?_)
-  have c₂ : Ctx (glOf s₀) s₀ t₂ :=
+  obtain c₂ : Ctx (glOf s₀) s₀ t₂ :=
     hc.step hL k2.sp k2.rd k2.wr (fun r hr => k2.gpr r (ctx_r3 r hr)) (by rw [m2]; exact Frame.refl _ _)
-  have b25 : t₂.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := (k2.gpr _ (by decide)).trans h25
+  obtain b25 : t₂.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := (k2.gpr _ (by decide)).trans h25
   refine WP.ite (decide (sampleStatus (drawOf s₀) = 1))
     (by rw [eval_zero, a3, h31, RS.sub1_beq _ (by omega_using [hst])]) (fun hs => ?_) (fun hs => ?_)
   · simp only [decide_eq_true_eq] at hs
     obtain ⟨x, hx⟩ := Option.isSome_iff_exists.mp (RS.sampleStatus_some.mp hs)
-    have hR : resOf s₀ = ⟨dkOf s₀ x, Spec.Dsa.signStatus (dkOf s₀ x), (drawOf s₀).used,
+    obtain hR : resOf s₀ = ⟨dkOf s₀ x, Spec.Dsa.signStatus (dkOf s₀ x), (drawOf s₀).used,
         (drawOf s₀).trace ++ [if (dkOf s₀ x).isSome then 5 else 6]⟩ := by
       simp only [resOf, hchk, ite_true, hx]
-    have hnonce : Spec.Rsa.bytesAt t₂.mem (off (glOf s₀).F oNonce) (glOf s₀).ql =
+    obtain hnonce : Spec.Rsa.bytesAt t₂.mem (off (glOf s₀).F oNonce) (glOf s₀).ql =
         Spec.Dsa.encodeBE (glOf s₀).ql x := by
       rw [m2]
       exact RS.nonce_eq (W := (eOf s₀).W) hE.Wq hz (hk x hx)
     refine WP.seq (WP.mono (deriveArgs_ok hL c₂) fun t₃ ⟨da, m3, k3⟩ => ?_)
     refine WP.seq (WP.mono (derive_ok h da hchk) fun t₄ dv => ?_)
-    have es : dresOf (glOf s₀) t₃.mem = dkOf s₀ x := by
+    obtain es : dresOf (glOf s₀) t₃.mem = dkOf s₀ x := by
       simp only [dresOf, dkOf, parOf]; rw [m3, c₂.par, hnonce]
     have hr3 := dv.r3
     rw [es] at hr3
@@ -380,11 +380,11 @@ theorem derive_wp {s₀ t : State} (h : gkContract.pre s₀) (hq : 1 < qOf s₀)
         split at hz' <;> simp_all
       · rw [m5, dv.out, es, hR]
   · simp only [decide_eq_false_iff_not] at hs
-    have hx : (drawOf s₀).scalar = none := by
+    obtain hx : (drawOf s₀).scalar = none := by
       cases hc' : (drawOf s₀).scalar with
       | none => rfl
       | some k => exact absurd (RS.sampleStatus_some.mpr (by rw [hc']; rfl)) hs
-    have hR : resOf s₀ = ⟨none, if (drawOf s₀).trace.getLast? == some 2 then 2 else 0, (drawOf s₀).used,
+    obtain hR : resOf s₀ = ⟨none, if (drawOf s₀).trace.getLast? == some 2 then 2 else 0, (drawOf s₀).used,
         (drawOf s₀).trace⟩ := by
       simp only [resOf, hchk, ite_true, hx]
     refine WP.block_nil ⟨c₂, by rw [b25, hR], ?_, fun h1 => ?_⟩
@@ -405,21 +405,21 @@ structure VOut (s₀ : State) (t : State) : Prop where
 
 theorem valid_ok {s₀ t₂ : State} (h : gkContract.pre s₀) (ck : Chk s₀ t₂) (hchk : chkOf s₀ = true) :
     WP isa valid t₂ (VOut s₀) := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   have hql := hL.ql
   unfold valid
   refine WP.seq (WP.mono (prepareQ_ok h ck.ctx) fun t₃ ⟨sc, h0, m3, k3⟩ => ?_)
-  have c25 : t₃.gpr .r25 = BitVec.ofNat 64 0 := (k3.gpr _ (by decide)).trans ck.r25
+  obtain c25 : t₃.gpr .r25 = BitVec.ofNat 64 0 := (k3.gpr _ (by decide)).trans ck.r25
   refine WP.ite (decide (¬ 1 < qOf s₀)) (by rw [eval_zero]; exact congrArg some (by
     by_cases hq : 1 < qOf s₀
     · simp only [hq, not_true_eq_false, decide_false, beq_eq_false_iff_ne, ne_eq]; exact fun e => (h0.mp e) hq
     · simp only [hq, not_false_eq_true, decide_true, beq_iff_eq]; exact h0.mpr hq)) (fun hq => ?_) (fun hq => ?_)
   · -- q ≤ 1: no draw.
     simp only [decide_eq_true_eq] at hq
-    have hd : drawOf s₀ = ⟨none, 0, [4]⟩ := by
+    obtain hd : drawOf s₀ = ⟨none, 0, [4]⟩ := by
       show Spec.Dsa.Random.sample (qOf s₀) (127 + 1) _ = _
       rw [Spec.Dsa.Random.sample, ite_eq_left (show qOf s₀ ≤ 1 by omega_using [hq])]
-    have hR : resOf s₀ = ⟨none, 0, 0, [4]⟩ := by simp only [resOf, hchk, hd]; rfl
+    obtain hR : resOf s₀ = ⟨none, 0, 0, [4]⟩ := by simp only [resOf, hchk, hd]; rfl
     refine WP.mono (WP.keep (c := .block [.li .r31 0]) [.r31] (Q := fun t₄ => t₄.mem = t₃.mem ∧
       t₄.gpr .r31 = BitVec.ofNat 64 0) (by prun) (by decide)) fun t₄ ⟨⟨m4, a31⟩, k4⟩ => ?_
     refine ⟨sc.ctx.step hL k4.sp k4.rd k4.wr (fun r hr => k4.gpr r (ctx_31 r hr))
@@ -429,34 +429,34 @@ theorem valid_ok {s₀ t₂ : State} (h : gkContract.pre s₀) (ck : Chk s₀ t�
     · rw [hR] at h1; exact absurd h1 (by decide)
   · -- q > 1: the draw and the derivation.
     simp only [decide_eq_false_iff_not, Decidable.not_not] at hq
-    have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
-    have hQ := seOf_Q (L := glOf s₀) s₀.mem hq
+    obtain hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
+    obtain hQ := seOf_Q (L := glOf s₀) s₀.mem hq
     have hW : (eOf s₀).W ≤ (eOf s₀).ql := hE.Wq
     have hql' : (eOf s₀).ql ≤ 32 := hE.ql
     have hF := hL.fnw
     refine WP.seq (WP.mono (sample_ok hE hQ (sc.env h hq) c25 (Nat.zero_le _)) fun t₄ so => ?_)
     rw [List.drop_zero] at so
-    have c₄ : Ctx (glOf s₀) s₀ t₄ := sc.ctx.step hL so.keep.sp so.keep.rd so.keep.wr
+    obtain c₄ : Ctx (glOf s₀) s₀ t₄ := sc.ctx.step hL so.keep.sp so.keep.rd so.keep.wr
       (fun r hr => so.keep.gpr r (ctx_draw r hr))
       (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql']) so.out)
-    have nz : NZero s₀ t₄.mem := fun j hj => by
-      have e : ofs (eOf s₀).F (off (glOf s₀).F (oNonce + j)) = oNonce + j :=
+    obtain nz : NZero s₀ t₄.mem := fun j hj => by
+      obtain e : ofs (eOf s₀).F (off (glOf s₀).F (oNonce + j)) = oNonce + j :=
         Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql, hj])
-      have hj' : oNonce + j < (eOf s₀).o := by
+      obtain hj' : oNonce + j < (eOf s₀).o := by
         have e2 : (eOf s₀).ql = (glOf s₀).ql := rfl
         simp only [SE.o]; omega_using [hj, e2]
       rw [so.out _ (.inl (by rw [e]; exact hj')), m3]
       exact ck.nonce j (by omega_using [hql, hj])
-    have r25 : t₄.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := by rw [so.r25, Nat.zero_add]
+    obtain r25 : t₄.gpr .r25 = BitVec.ofNat 64 (drawOf s₀).used := by rw [so.r25, Nat.zero_add]
     exact WP.mono (derive_wp h hq c₄ nz r25 so.r31 so.cand hchk) fun t₅ ⟨c, a, b, d⟩ => ⟨c, a, b, d⟩
 
 
 theorem generate_correct (s₀ : State) (h : gkContract.pre s₀) :
     ∃ tr t, Exec isa Impl.Dsa.PPC64LE.Generate.code s₀ tr t ∧ abiPreserved s₀ t ∧ gkContract.post s₀ t := by
   show WP isa Impl.Dsa.PPC64LE.Generate.code s₀ fun t => abiPreserved s₀ t ∧ gkContract.post s₀ t
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   have hql := hL.ql
-  have hfin : ∀ t, Ctx (glOf s₀) s₀ t → t.gpr .r25 = BitVec.ofNat 64 (resOf s₀).used →
+  obtain hfin : ∀ t, Ctx (glOf s₀) s₀ t → t.gpr .r25 = BitVec.ofNat 64 (resOf s₀).used →
       t.gpr .r31 = BitVec.ofNat 64 (resOf s₀).status →
       ((resOf s₀).status = 1 → Spec.Rsa.bytesAt t.mem (glOf s₀).out (glOf s₀).ol =
         (resOf s₀).key.getD (List.replicate (glOf s₀).ol 0)) →
@@ -472,9 +472,9 @@ theorem generate_correct (s₀ : State) (h : gkContract.pre s₀) :
   refine WP.seq (WP.ite (decide ((if chkOf s₀ then 1 else 0) = 0))
     (by rw [RS.eval_zero_w, RS.setWidth_beq_zero ck.r3]) (fun hc => ?_) (fun hc => ?_))
   · -- An invalid domain.
-    have hchk : chkOf s₀ = false := by
+    obtain hchk : chkOf s₀ = false := by
       cases hc' : chkOf s₀ <;> simp_all
-    have hR : resOf s₀ = ⟨none, 0, 0, [4]⟩ := by simp only [resOf, hchk]; rfl
+    obtain hR : resOf s₀ = ⟨none, 0, 0, [4]⟩ := by simp only [resOf, hchk]; rfl
     refine WP.mono (WP.keep (c := .block [.li .r31 0]) [.r31] (Q := fun t₃ => t₃.mem = t₂.mem ∧
       t₃.gpr .r31 = BitVec.ofNat 64 0) (by prun) (by decide)) fun t₃ ⟨⟨m3, a31⟩, k3⟩ => ?_
     refine hfin t₃ (ck.ctx.step hL k3.sp k3.rd k3.wr (fun r hr => k3.gpr r (ctx_31 r hr))
@@ -483,7 +483,7 @@ theorem generate_correct (s₀ : State) (h : gkContract.pre s₀) :
     · rw [a31, hR]
     · rw [hR] at h1; exact absurd h1 (by decide)
   · -- A valid domain.
-    have hchk : chkOf s₀ = true := by
+    obtain hchk : chkOf s₀ = true := by
       cases hc' : chkOf s₀ <;> simp_all
     exact WP.mono (valid_ok h ck hchk) fun t₄ v => hfin t₄ v.ctx v.r25 v.r31 v.out
 

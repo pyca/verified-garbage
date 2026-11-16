@@ -41,7 +41,7 @@ theorem zadds_ok (s : State) :
     WP isa (.block zadds) s fun t =>
       (∀ i < 4, t.gpr (Sqr.Z i) = s.gpr (Sqr.A i) + s.gpr (Sqr.A (i + 4))) ∧ t.mem = s.mem ∧
       Keeps zRegs s t := by
-  have e : zadds = (List.range 4).flatMap fun i => [.add .x (Sqr.Z i) (Sqr.A i) (Sqr.A (i + 4))] := by
+  obtain e : zadds = (List.range 4).flatMap fun i => [.add .x (Sqr.Z i) (Sqr.A i) (Sqr.A (i + 4))] := by
     simp only [zadds]; rfl
   rw [e]
   let inv := fun n (t : State) =>
@@ -50,7 +50,7 @@ theorem zadds_ok (s : State) :
   refine wp_range_flatMap (M := isa) (N := 4) inv (fun n t hn ⟨tv, tm, tk⟩ => ?_) 4 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), rfl, Keeps.refl _ _⟩
   refine WP.mono (add_ok t _ _ _) fun u ⟨uv, um, uk⟩ => ?_
-  have aA : ∀ j < 8, t.gpr (Sqr.A j) = s.gpr (Sqr.A j) := fun j hj => tk.1 _ (by
+  obtain aA : ∀ j < 8, t.gpr (Sqr.A j) = s.gpr (Sqr.A j) := fun j hj => tk.1 _ (by
     intro h
     simp only [zRegs, List.mem_cons, List.not_mem_nil, or_false] at h
     revert h; revert j; decide)
@@ -79,7 +79,7 @@ theorem double_ok {s : State} {base : Addr} (hs : Scr s base) {h k : Nat} (hh : 
     [Instr.add .x Sqr.R.t (Sqr.limb h k) (Sqr.limb h k)] ++ [st Sqr.R.t (KD + 24 * h + 8 * k)] from rfl,
     WP.block_append_iff]
   refine WP.mono (add_ok s _ _ _) fun u ⟨uv, um, uk⟩ => ?_
-  have us : Scr u base := hs.of_keeps uk (by decide)
+  obtain us : Scr u base := hs.of_keeps uk (by decide)
   refine WP.mono (stw_ok us _ (d := KD + 24 * h + 8 * k) (by omega_arith) (by omega_arith))
     fun t ⟨tw, tO, tg, tr, twr⟩ => ⟨fun d hd hs' => ?_, ?_, by rw [← um]; exact tO.mono (by omega_arith) (by omega_arith)⟩
   · rw [tw d hd hs', uv, um]
@@ -192,22 +192,22 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
   rw [sqr_split, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
     WP.block_append_iff]
   refine WP.mono (loadA_ok hs (PtrOk.x3 hs ha8 (by omega_arith)) (by decide)) fun t1 ⟨a1, m1, k1⟩ => ?_
-  have s1 : Scr t1 base := hs.of_keeps k1 (by decide)
+  obtain s1 : Scr t1 base := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (consts_ok t1) fun t2 ⟨mk2, z2, m2, k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (zadds_ok t2) fun t3 ⟨z3, m3, k3⟩ => ?_
-  have s3 : Scr t3 base := (s1.of_keeps k2 (by decide)).of_keeps k3 (by decide)
+  obtain s3 : Scr t3 base := (s1.of_keeps k2 (by decide)).of_keeps k3 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (doubles_ok s3) fun t4 ⟨d4, o4, k4, O4⟩ => ?_
-  have s4 : Scr t4 base := s3.of_keeps k4 (by decide)
-  have sumlt : ∀ x y : BitVec 64, x.toNat < 2 ^ 63 → y.toNat < 2 ^ 63 →
+  obtain s4 : Scr t4 base := s3.of_keeps k4 (by decide)
+  obtain sumlt : ∀ x y : BitVec 64, x.toNat < 2 ^ 63 → y.toNat < 2 ^ 63 →
       (x + y).toNat = x.toNat + y.toNat := fun x y hx hy => by
     rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith)]
   have fI : ∀ i < 8, f i < Ib := fa
-  have A2 : ∀ i < 8, (t2.gpr (Mul.A i)).toNat = f i := fun i hi => by
+  obtain A2 : ∀ i < 8, (t2.gpr (Mul.A i)).toNat = f i := fun i hi => by
     rw [k2.1 _ (A_consts i hi), a1 i hi]
-  have L4 : ∀ h < 3, ∀ i < 4, (t4.gpr (Sqr.limb h i)).toNat = lv f h i := by
+  obtain L4 : ∀ h < 3, ∀ i < 4, (t4.gpr (Sqr.limb h i)).toNat = lv f h i := by
     intro h hh i hi
     rw [k4.1 _ (AZ_pre h hh i hi)]
     obtain rfl | rfl | rfl : h = 0 ∨ h = 1 ∨ h = 2 := by omega_arith
@@ -221,32 +221,32 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
       rw [sumlt _ _ (by rw [A2 i (by omega_arith)]; have := fI i (by omega_arith); simp only [Ib] at this; omega_arith)
         (by rw [A2 _ (by omega_arith)]; have := fI (i + 4) (by omega_arith); simp only [Ib] at this; omega_arith)]
       rw [A2 i (by omega_arith), A2 _ (by omega_arith)]; rfl
-  have lvb : ∀ h < 3, ∀ i < 4, lv f h i < 2 ^ 62 := by
+  obtain lvb : ∀ h < 3, ∀ i < 4, lv f h i < 2 ^ 62 := by
     intro h hh i hi
     have := fI i (by omega_arith); have := fI (i + 4) (by omega_arith)
     obtain rfl | rfl | rfl : h = 0 ∨ h = 1 ∨ h = 2 := by omega_arith
     all_goals simp only [lv, Ib] at *; omega_arith
-  have D4 : ∀ h < 3, ∀ k < 3, (word t4.mem base (KD + 24 * h + 8 * k)).toNat = 2 * lv f h k := by
+  obtain D4 : ∀ h < 3, ∀ k < 3, (word t4.mem base (KD + 24 * h + 8 * k)).toNat = 2 * lv f h k := by
     intro h hh k hk
     rw [d4 h hh k hk]
-    have e : t3.gpr (Sqr.limb h k) = t4.gpr (Sqr.limb h k) := (k4.1 _ (AZ_pre h hh k (by omega_arith))).symm
+    obtain e : t3.gpr (Sqr.limb h k) = t4.gpr (Sqr.limb h k) := (k4.1 _ (AZ_pre h hh k (by omega_arith))).symm
     rw [e, sumlt _ _ (by rw [L4 h hh k (by omega_arith)]; have := lvb h hh k (by omega_arith); omega_arith)
       (by rw [L4 h hh k (by omega_arith)]; have := lvb h hh k (by omega_arith); omega_arith), L4 h hh k (by omega_arith)]
     omega_arith
-  have hfit := fits_of fa fa
+  obtain hfit := fits_of fa fa
   let P := fun (t : State) =>
     (∀ h < 3, ∀ i < 4, t.gpr (Sqr.limb h i) = t4.gpr (Sqr.limb h i)) ∧
     (∀ d, d + 8 ≤ 8192 → (d + 8 ≤ o ∨ o + 64 ≤ d) → word t.mem base d = word t4.mem base d)
-  have hP : ∀ t u, P t → Keeps (colWrites Sqr.R [Sqr.L, Sqr.H]) t u →
+  obtain hP : ∀ t u, P t → Keeps (colWrites Sqr.R [Sqr.L, Sqr.H]) t u →
       Outside base o 64 t.mem u.mem → P u := by
     intro t u ⟨pa, pm⟩ k o
     exact ⟨fun h hh i hi => (k.1 _ (AZ_colWrites h hh i hi)).trans (pa h hh i hi),
       fun d hd hd' => (o.word hd' hd).trans (pm d hd hd')⟩
-  have hsem : ∀ d < 4, ∀ t, P t → ∀ e,
+  obtain hsem : ∀ d < 4, ∀ t, P t → ∀ e,
       sem (srcVal t base a) e (Sqr.column d) Sqr.L = reduced (rows f f 8) d ∧
       sem (srcVal t base a) e (Sqr.column d) Sqr.H = reduced (rows f f 8) (d + 4) := by
     intro d hd t ⟨pa, pm⟩ e
-    have hv : ∀ h < 3, ∀ i j, i ≤ j → j < 4 →
+    obtain hv : ∀ h < 3, ∀ i j, i ≤ j → j < 4 →
         ((srcVal t base a (Sqr.src h (i, j)).1 : Nat) : Int) * (srcVal t base a (Sqr.src h (i, j)).2 : Nat) =
         (if i = j then 1 else 2) * (lv f h i : Int) * lv f h j := by
       intro h hh i j hij hj
@@ -268,7 +268,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     (by rw [k4.1 _ (by decide), k3.1 _ (by decide)]; exact mk2)
     (by rw [k4.1 _ (by decide), k3.1 _ (by decide)]; exact z2))
     fun t5 ⟨p5, i5, k5⟩ => ?_
-  have lb : ∀ j < 8, (if j < 4 then chainLimb (reduced (rows f f 8)) 0 j
+  obtain lb : ∀ j < 8, (if j < 4 then chainLimb (reduced (rows f f 8)) 0 j
       else chainLimb (reduced (rows f f 8)) 4 (j - 4)) < radix := fun j _ => by
     split <;> exact Nat.mod_lt _ (by decide)
   refine WP.mono (finish_ok i5.scr (PtrOk.x3 i5.scr ho8 (by omega_arith)) (by decide) i5.mask (stage_limbs i5)
@@ -277,7 +277,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     fun t6 ⟨v6, o6, k6⟩ => ⟨fun i hi => by rw [v6 i hi, finVal_out _ i hi], ?_, ?_⟩
   · intro x h1 h2
     simp only [ofs] at h1 h2
-    have e4 : t4.mem x = t3.mem x := O4 x (by simp only [ofs]; omega_arith)
+    obtain e4 : t4.mem x = t3.mem x := O4 x (by simp only [ofs]; omega_arith)
     rw [o6 x (by simp only [ofs]; omega_arith), i5.out x (by simp only [ofs]; omega_arith), e4, m3, m2, m1]
   · refine (k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       ((k5.mono ?_).trans (k6.mono ?_)))))

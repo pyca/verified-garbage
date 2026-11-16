@@ -40,30 +40,30 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
   let N := Spec.Dsa.qCandidate (8 * p.qLen) seed.bytes
   have qshape := VG.Proof.Dsa.Generation.qCandidate_shape
     (show 2 ≤ 8 * p.qLen by rcases p.qWidth with h | h <;> omega_using [h]) seed.bytes
-  have qfit : N < 256 ^ p.qLen := by
+  obtain qfit : N < 256 ^ p.qLen := by
     change N < (2 ^ 8) ^ p.qLen
     rw [← Nat.pow_mul]
     exact qshape.2.2
-  have qdecode : Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.qLen N) = N := VG.Proof.Dsa.decodeBE_encodeBE qfit
-  have ha : arithmetic + arithmeticBytes ≤ usedBytes p.pLen := by
+  obtain qdecode : Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.qLen N) = N := VG.Proof.Dsa.decodeBE_encodeBE qfit
+  obtain ha : arithmetic + arithmeticBytes ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> decide
-  have hs : shaped + p.pLen ≤ usedBytes p.pLen := by
+  obtain hs : shaped + p.pLen ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> decide
-  have hp : VG.Impl.Dsa.Generation.Layout.p + p.pLen ≤ usedBytes p.pLen := by
+  obtain hp : VG.Impl.Dsa.Generation.Layout.p + p.pLen ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> decide
-  have he : exponent + p.pLen ≤ usedBytes p.pLen := by
+  obtain he : exponent + p.pLen ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> decide
-  have hq : q + p.qLen ≤ usedBytes p.pLen := by
+  obtain hq : q + p.qLen ≤ usedBytes p.pLen := by
     rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide
-  have hh : VG.Impl.Dsa.Generation.Layout.hash + oRsa ≤ usedBytes p.pLen := by
+  obtain hh : VG.Impl.Dsa.Generation.Layout.hash + oRsa ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> decide
-  have hhash : hashes + (p.count + 1) * p.qLen ≤ usedBytes p.pLen := by
+  obtain hhash : hashes + (p.count + 1) * p.qLen ≤ usedBytes p.pLen := by
     have hn := p.hashSizes.2.1
     rcases p.width with h | h | h <;> rw [h] <;> unfold hashes usedBytes domainCheck <;> omega_using [hn]
-  have hw : wrappedSeed + p.qLen ≤ usedBytes p.pLen := by
+  obtain hw : wrappedSeed + p.qLen ≤ usedBytes p.pLen := by
     rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
+  obtain qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
+  obtain pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
   refine {
     hash := p.hashPlan seed seedLength W offset carry h1 h3 h4 h2
     B := VG.Proof.Bignum.off p.B arithmetic
@@ -109,7 +109,7 @@ def GenerationGeometry.constructPlan (p : GenerationGeometry) (seed : Generation
       VG.Proof.Bignum.off (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B hashes) ((p.count + 1) * p.qLen - p.pLen)) i ≠ VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) shaped) j
     rw [h5]
     intro i hi j hj eq
-    have dis := p.parts_disjoint hhash hs (Or.inl (by
+    obtain dis := p.parts_disjoint hhash hs (Or.inl (by
       have := p.hashSizes.2.1; unfold hashes shaped; omega_using [this]))
     apply dis (VG.Proof.Bignum.off (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B hashes) ((p.count + 1) * p.qLen - p.pLen)) i)
     · rw [VG.Proof.Bignum.off_off]
@@ -188,13 +188,13 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
   have bound (d : Nat) (hd : d ≤ domainCheck) (n : Nat) (hn : n ≤ arithmeticBytes) :
       d + n ≤ usedBytes p.pLen := by
     rcases p.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
-  have ha := bound arithmetic (by decide) arithmeticBytes (by rfl)
-  have hh := bound VG.Impl.Dsa.Generation.Layout.hash (by decide) oRsa (by decide)
-  have hw := bound witness (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
-  have hp := bound VG.Impl.Dsa.Generation.Layout.p (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
-  have he := bound exponent (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
+  obtain pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
+  obtain qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
+  obtain ha := bound arithmetic (by decide) arithmeticBytes (by rfl)
+  obtain hh := bound VG.Impl.Dsa.Generation.Layout.hash (by decide) oRsa (by decide)
+  obtain hw := bound witness (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
+  obtain hp := bound VG.Impl.Dsa.Generation.Layout.p (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
+  obtain he := bound exponent (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
   refine {
     construct := p.constructPlan seed seedLength W offset carry h1 h3 h4 h2 h5 h0
     rand := rand.bytes
@@ -288,8 +288,8 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact rand.part he
   · exact (p.stack_part hh).symm
   all_goals
-    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega_using []
-    have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
+    obtain hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega_using []
+    obtain hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
       rw [h5]; exact Region.sub_prefix hd
   · change (W 5).toNat + domainCheck ≤ 2 ^ 64
     have := p.arenaBound
@@ -324,18 +324,18 @@ def GenerationGeometry.searchPlan (p : GenerationGeometry) (seed rand : Generati
     (h5 : W 5 = p.B) (h0 : W 0 = VG.Proof.Bignum.off p.B shaped)
     (h14 : W 14 = rand.ptr) (h15 : W 15 = BitVec.ofNat 64 rand.bytes.length) : SearchPlan := by
   let a := p.primalityPlan seed rand seedLength W offset carry h1 h3 h4 h2 h5 h0 h14 h15
-  have writes : a.changed = p.pWork := by
+  obtain writes : a.changed = p.pWork := by
     dsimp only [a, PPrimalityPlan.changed, PPrimalityPlan.testWrites, PConstructPlan.changed,
       HashPlan.changed, GenerationGeometry.primalityPlan, GenerationGeometry.constructPlan, GenerationGeometry.hashPlan]
     rw [h5]
     rfl
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
-  have hc := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.control) (n := 24) (by decide) (by decide)
-  have hq := p.small_bound (d := q) (n := p.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
-  have hh := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hp := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.p) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
-  have he := p.small_bound (d := exponent) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  obtain pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
+  obtain qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
+  obtain hc := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.control) (n := 24) (by decide) (by decide)
+  obtain hq := p.small_bound (d := q) (n := p.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
+  obtain hh := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+  obtain hp := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.p) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  obtain he := p.small_bound (d := exponent) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   refine {
     attempt := a
     C := VG.Proof.Bignum.off p.B VG.Impl.Dsa.Generation.Layout.control
@@ -424,13 +424,13 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     (hq : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen =
       Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes)) :
     SearchMemory (h.searchPlan seed hlen h1) W s := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
-  have h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
-  have ha := p.geo.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
-  have hqbound := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
-  have hb := p.geo.small_bound (d := wrappedSeed) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
-  have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+  obtain pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  obtain qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
+  obtain h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
+  obtain ha := p.geo.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
+  obtain hqbound := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
+  obtain hb := p.geo.small_bound (d := wrappedSeed) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
+  obtain hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   have write (d n : Nat) (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
       ∀ i < n, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.geo.B d) i) 1 := by
     intro i hi
@@ -454,7 +454,7 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     exponentWrite := ?_
     witnessWrite := ?_
     arena := (by
-      have hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
+      obtain hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
       have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega_using []) (by decide)
       simp only [VG.Proof.Bignum.off, BitVec.add_zero] at this
       change Scr s (W 5) domainCheck

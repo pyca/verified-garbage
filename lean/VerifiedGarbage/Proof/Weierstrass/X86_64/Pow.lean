@@ -94,33 +94,33 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   have hmo' := hM₀.mo
   have hbase := hL.base
   have hbl := hL.bits
-  have hM : ModOkW P.M size m s.mem base :=
+  obtain hM : ModOkW P.M size m s.mem base :=
     ⟨hM₀.n0, hM₀.mo, hM₀.tmp, hM₀.sep,
       by rw [hI.unch.wordsVal hmo (by omega_using [hn, hmo'])]; exact hM₀.val, hM₀.inv, hM₀.red⟩
-  have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
+  obtain hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega_using [hn, hbase])
   -- `sub rbx, 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (decRbx_ok s hj (by omega_using [hjn, hnb]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_
-  have hs₁ := hI.scr.of_keeps k₁ (by decide)
+  obtain hs₁ := hI.scr.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   refine WP.mono (mul_ok hs₁ (hm₁ ▸ hM) hacc hacc hacc ham ham ham
     (hmo (P.acc, _) (by simp [powW])).symm (by rw [hm₁]; exact hI.lt))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
-  have hs₂ := k₂.scr hs₁
-  have hM₂ : ModOkW P.M size m s₂.mem base :=
+  obtain hs₂ := k₂.scr hs₁
+  obtain hM₂ : ModOkW P.M size m s₂.mem base :=
     ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
       rw [k₂.unch.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · exact hmo _ (by simp [powW])
         · exact hmo _ (by simp [powW])) (by omega_using [hn, hmo']), hm₁]; exact hM.val, hM.inv, hM.red⟩
-  have v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
+  obtain v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) ^ 2 := by
     rw [toM_mul hm (e₂.trans (by rw [hm₁])), Lean.Grind.Semiring.pow_two]
-  have hB₂ : wordsVal s₂.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n := by
+  obtain hB₂ : wordsVal s₂.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n := by
     rw [k₂.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
@@ -131,34 +131,34 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   refine WP.mono (mul_ok hs₂ hM₂ htmp hacc hL.base hL.tmp_mtmp ham (hbw (P.M.tmp, _) (by simp [powW]))
     (hmo (P.tmp, _) (by simp [powW])).symm (by rw [hB₂]; exact hB))
     fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_
-  have hs₃ := k₃.scr hs₂
-  have hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
+  obtain hs₃ := k₃.scr hs₂
+  obtain hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
     k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact hat
       · exact ham) (by omega_using [hn, hacc])
-  have v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
+  obtain v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) *
         toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) := by
     rw [toM_mul hm e₃, hB₂]
   -- The mask of bit `j - 1`, the selection, and `test rbx, rbx`.
-  have hU₃ : Unch base (powW P) s₀.mem s₃.mem := by
+  obtain hU₃ : Unch base (powW P) s₀.mem s₃.mem := by
     refine ((hI.unch.trans (by rw [← hm₁]; exact k₂.unch)).trans k₃.unch).mono fun w hw => ?_
     simp only [powW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     grind
-  have hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
+  obtain hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
     rw [hU₃.byte (fun w hw => by have := hL.bits_w w hw; omega_using [hj, hjn, this]) (by omega_using [hj, hjn, hn, hbl]), hbits _ (by omega_using [hj, hjn])]
-  have hrbx₃ : s₃.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+  obtain hrbx₃ : s₃.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _), b₁]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (bitMask_bool_ok hs₃ hrbx₃ (by have := hL.bits; omega_using [hj, hjn, hbl]) hbyte)
     fun s₄ ⟨c₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  obtain hs₄ := hs₃.of_keeps k₄ (by decide)
   refine WP.mono (sel_ok (e.testBit (j - 1)) P.M.n hs₄ c₄ hacc hacc htmp (Or.inl (Nat.le_refl _))
     (by omega_using [hat])) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
-  have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  have hrbx₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+  obtain hs₅ := hs₄.of_keepRegs k₅ (by decide)
+  obtain hrbx₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₅.gpr _ (by decide), k₄.1 _ (by decide), hrbx₃]
   refine WP.mono (testRbx_ok s₅ (by omega_using [hjn, hnb]) hrbx₅) fun s₆ ⟨z₆, k₆⟩ => ⟨?_, z₆⟩
   have hm₆ : s₆.mem = s₅.mem := k₆.2.1
@@ -166,10 +166,10 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   refine ⟨hs₅.of_keeps k₆ (by decide), by rw [k₆.1 _ (by decide), hrbx₅], ?_, ?_, ?_, ?_⟩
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · have hr' : r ∉ clob P.M.n := fun h => hr (List.mem_cons_of_mem _ h)
-      have hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
-      have hra : r ≠ .rax := fun h => hr' (h ▸ by simp [clob])
-      have hrc : r ≠ .rcx := fun h => hr' (h ▸ by simp [clob])
-      have hrd : r ≠ .rdx := fun h => hr' (h ▸ by simp [clob])
+      obtain hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
+      obtain hra : r ≠ .rax := fun h => hr' (h ▸ by simp [clob])
+      obtain hrc : r ≠ .rcx := fun h => hr' (h ▸ by simp [clob])
+      obtain hrd : r ≠ .rdx := fun h => hr' (h ▸ by simp [clob])
       rw [k₆.1 r (by simp), k₅.gpr r (by simp [hra, hrd]), k₄.1 r (by simp [hra, hrc]),
         k₃.gpr r hr', k₂.gpr r hr', k₁.1 r (by simp [hrb]), hI.keep.gpr r hr]
     · rw [k₆.2.2.1, k₅.rd, k₄.2.2.1, k₃.rd, k₂.rd, k₁.2.2.1, hI.keep.rd]
@@ -200,7 +200,7 @@ theorem pow_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowL
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by
   have hn := hs.nowrap
   have hnb := hL.nbits
-  have hm0 : 0 < m := m_pos hB
+  obtain hm0 : 0 < m := m_pos hB
   rw [pow]
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -213,7 +213,7 @@ theorem pow_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowL
   have hm₂ : s₂.mem = s₁.mem := k₂.2.1
   refine ⟨(hs.of_keepRegs k₁ (by decide)).of_keeps k₂ (by decide), b₂, ?_, ?_, ?_, ?_⟩
   · refine ⟨fun r hr => ?_, by rw [k₂.2.2.1, k₁.rd], by rw [k₂.2.2.2, k₁.wr]⟩
-    have hra : r ≠ .rax := fun h => hr (h ▸ by simp [powClob, clob])
+    obtain hra : r ≠ .rax := fun h => hr (h ▸ by simp [powClob, clob])
     rw [k₂.1 r (fun h => hr (by simp at h; simp [h, powClob])), k₁.gpr r (by simp [hra])]
   · rw [hm₂]; exact O₁.unch.mono fun w hw => by simp at hw; simp [hw, powW]
   · rw [hm₂, e₁, hO]; exact Nat.mod_lt _ hm0

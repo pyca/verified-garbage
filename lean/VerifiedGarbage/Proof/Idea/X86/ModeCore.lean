@@ -90,19 +90,19 @@ theorem prepare_wp {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.Idea
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .esi (.reg .edi) _ s rfl
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mov_run .edx (.mem (argOp 0)) _ s₁
     (load_src (by rw [e₁.reg .esp (by decide), e₁.rd, e₁.wr]; exact hin))
-  have e₁₂ : Keep [.esi, .edx] s s₂ := (e₁.weaken (by decide)).trans (e₂.weaken (by decide))
-  have esi₂ : s₂.gpr .esi = B := by rw [e₂.reg .esi (by decide), v₁, hB']
-  have edx₂ : s₂.gpr .edx = p := by rw [v₂, e₁.mem, e₁.reg .esp (by decide)]; exact hp
-  have hcp : CopyPre (4 * modeCore.total) s₂ :=
+  obtain e₁₂ : Keep [.esi, .edx] s s₂ := (e₁.weaken (by decide)).trans (e₂.weaken (by decide))
+  obtain esi₂ : s₂.gpr .esi = B := by rw [e₂.reg .esi (by decide), v₁, hB']
+  obtain edx₂ : s₂.gpr .edx = p := by rw [v₂, e₁.mem, e₁.reg .esp (by decide)]; exact hp
+  obtain hcp : CopyPre (4 * modeCore.total) s₂ :=
     ⟨by rw [edx₂, e₁₂.rd, e₁₂.wr]; exact hsch, by rw [esi₂, e₁₂.wr]; exact hs.wr,
       by rw [modeCore_total]; decide, by rw [edx₂, esi₂]; exact hdis _ hR, by rw [edx₂]; exact hfit,
       by rw [esi₂]; exact hs.fit⟩
   obtain ⟨t, ht, ci⟩ := copy_run s₂ hcp 26 (Nat.le_refl _)
-  have he : runBlock isa modePrepare s = some t := by
+  obtain he : runBlock isa modePrepare s = some t := by
     rw [modePrepare, show ([.mov .esi (.reg .edi), .mov .edx (.mem (argOp 0))] : List Instr) =
       [.mov .esi (.reg .edi)] ++ [.mov .edx (.mem (argOp 0))] from rfl, List.append_assoc]
     exact run_append h₁ (run_append h₂ ht)
-  have treg : ∀ r, r ≠ .eax → t.gpr r = s₂.gpr r := fun r hr => ci.keep.reg r (by simpa using hr)
+  obtain treg : ∀ r, r ≠ .eax → t.gpr r = s₂.gpr r := fun r hr => ci.keep.reg r (by simpa using hr)
   refine WP.of_runBlock ⟨t, he, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [show B.setWidth 64 = (s₂.gpr .esi).setWidth 64 by rw [esi₂],
       scheduleAt_of_words (S := (s₂.gpr .edx).setWidth 64) fun i hi => ci.words i hi, edx₂, e₁₂.mem]
@@ -132,36 +132,36 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
       Spec.Idea.blockAt s'.mem (bufA B) = Spec.Idea.cryptBlock k (Spec.Idea.blockAt s.mem (bufA B)) ∧
       Frame [⟨addr B dataSlot, 4⟩, ⟨addr B t0Slot, 4⟩, ⟨bufA B, 8⟩] s.mem s'.mem ∧
       s'.gpr .edi = B ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hA := bufA_eq hfit
+  obtain hA := bufA_eq hfit
   have hds : dataSlot = 108 := rfl
-  have inB : ∀ d, d + 4 ≤ 184 → InRegions s.wr (B.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
+  obtain inB : ∀ d, d + 4 ≤ 184 → InRegions s.wr (B.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
     ⟨_, hwr, Offset.contains_base _ hd (by omega_using [hd])⟩
   -- The setup.
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .esi (.reg .edi) _ s rfl
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mov_run .eax (.reg .edi) _ s₁ rfl
   obtain ⟨s₃, h₃, v₃, e₃⟩ := alu_run .add (by simp) .eax (.imm (BitVec.ofNat 32 (4 * bufSlot))) _ s₂ rfl
-  have e₀₃ : Keep [.esi, .eax] s s₃ :=
+  obtain e₀₃ : Keep [.esi, .eax] s s₃ :=
     ((e₁.weaken (by decide)).trans (e₂.weaken (by decide))).trans (e₃.weaken (by decide))
-  have esi₃ : s₃.gpr .esi = B := by rw [e₃.reg .esi (by decide), e₂.reg .esi (by decide), v₁, hB]
-  have eax₃ : s₃.gpr .eax = B + BitVec.ofNat 32 (4 * bufSlot) := by
+  obtain esi₃ : s₃.gpr .esi = B := by rw [e₃.reg .esi (by decide), e₂.reg .esi (by decide), v₁, hB]
+  obtain eax₃ : s₃.gpr .eax = B + BitVec.ofNat 32 (4 * bufSlot) := by
     rw [v₃, v₂, e₁.reg .edi (by decide), hB]; rfl
   obtain ⟨s₄, h₄, m₄, g₄, rd₄, wr₄⟩ := store_run .esi .eax dataSlot s₃ (by
     rw [esi₃, e₀₃.wr, addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]; exact inB _ (by decide))
   rw [esi₃, eax₃, e₀₃.mem] at m₄
-  have f₄ : Frame [⟨addr B dataSlot, 4⟩] s.mem s₄.mem := by
+  obtain f₄ : Frame [⟨addr B dataSlot, 4⟩] s.mem s₄.mem := by
     rw [m₄]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
-  have sched₄ : Spec.Idea.scheduleAt s₄.mem (B.setWidth 64) = k := by
+  obtain sched₄ : Spec.Idea.scheduleAt s₄.mem (B.setWidth 64) = k := by
     rw [scheduleAt_frame f₄ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]
       exact Offset.base_disjoint _ (by decide) (by omega_using [hds]), hk]
-  have blk₄ : Spec.Idea.blockAt s₄.mem (bufA B) = Spec.Idea.blockAt s.mem (bufA B) :=
+  obtain blk₄ : Spec.Idea.blockAt s₄.mem (bufA B) = Spec.Idea.blockAt s.mem (bufA B) :=
     blockAt_congr (frame_bytes f₄ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [hA, addr_eq (by rw [show dataSlot = 108 from rfl]; omega_using [hfit])]
       exact (Offset.disjoint _ (by decide) (by omega_using []) (by omega_using [hds]))) (by decide))
-  have esi₄ : s₄.gpr .esi = B := by rw [g₄, esi₃]
-  have hb : BlockAt k (B + BitVec.ofNat 32 (4 * bufSlot)) (bufA B) s₄ :=
+  obtain esi₄ : s₄.gpr .esi = B := by rw [g₄, esi₃]
+  obtain hb : BlockAt k (B + BitVec.ofNat 32 (4 * bufSlot)) (bufA B) s₄ :=
     { key := ⟨⟨46, by decide, by rw [esi₄]; omega_using [hfit], by rw [esi₄, wr₄, e₀₃.wr]; exact hwr⟩,
         by rw [esi₄]; simp only [slots]; omega_using [hfit], by rw [esi₄]; exact sched₄⟩
       slot := by rw [esi₄, m₄, Mem.readW_writeW_self32]
@@ -176,10 +176,10 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
   -- ECB's block, but its stores.
   obtain ⟨s₅, h₅, x₅, e₅⟩ := load_run s₄ hb
   obtain ⟨s₆, h₆, x₆, e₆⟩ := rounds_run k _ 8 (by decide) s₅ x₅ (hb.key.keep e₅ (by decide))
-  have e₄₆ : KeepT roundWrites s₄ s₆ := ((e₅.weaken (by decide)).toT).trans (by decide) e₆
+  obtain e₄₆ : KeepT roundWrites s₄ s₆ := ((e₅.weaken (by decide)).toT).trans (by decide) e₆
   obtain ⟨s₇, h₇, x₇, e₇⟩ := output_run k _ s₆ x₆ (hb.key.keepT e₄₆ (by decide))
-  have e₄₇ : KeepT roundWrites s₄ s₇ := e₄₆.trans (by decide) e₇.toT
-  have esi₇ : s₇.gpr .esi = B := (e₄₇.reg .esi (by decide)).trans esi₄
+  obtain e₄₇ : KeepT roundWrites s₄ s₇ := e₄₆.trans (by decide) e₇.toT
+  obtain esi₇ : s₇.gpr .esi = B := (e₄₇.reg .esi (by decide)).trans esi₄
   -- The stores, through `esi`.
   obtain ⟨s₈, h₈, v₈, e₈⟩ := join_run .ebx .edi (by decide) _ _ s₇ x₇.ebx x₇.edi
   obtain ⟨s₉, h₉, m₉, g₉, rd₉, wr₉⟩ := store_run .esi .ebx (4 * bufSlot) s₈ (by
@@ -187,14 +187,14 @@ theorem modeCrypt_run {k : Spec.Idea.Schedule} {B : BitVec 32} (s : State) (hB :
     exact let ⟨r, hr, hc⟩ := inB 132 (by decide); ⟨r, hr, by rw [← hA] at hc; exact hc⟩)
   obtain ⟨s₁₀, h₁₀, v₁₀, e₁₀⟩ := join_run .ecx .ebp (by decide) _ _ s₉
     (by rw [g₉, e₈.reg .ecx (by decide), x₇.ecx]) (by rw [g₉, e₈.reg .ebp (by decide), x₇.ebp])
-  have esi₁₀ : s₁₀.gpr .esi = B := by rw [e₁₀.reg .esi (by decide), g₉, e₈.reg .esi (by decide), esi₇]
+  obtain esi₁₀ : s₁₀.gpr .esi = B := by rw [e₁₀.reg .esi (by decide), g₉, e₈.reg .esi (by decide), esi₇]
   obtain ⟨s₁₁, h₁₁, m₁₁, g₁₁, rd₁₁, wr₁₁⟩ := store_run .esi .ecx (4 * bufSlot + 4) s₁₀ (by
     rw [esi₁₀, e₁₀.wr, wr₉, e₈.wr, e₄₇.wr, wr₄, e₀₃.wr, addr_eq (by simp only [bufSlot, slots]; omega_using [hfit])]
     exact inB 136 (by decide))
   obtain ⟨s₁₂, h₁₂, v₁₂, e₁₂⟩ := mov_run .edi (.reg .esi) _ s₁₁ rfl
-  have a4 : addr B (4 * bufSlot + 4) = bufA B + BitVec.ofNat 64 4 := by
+  obtain a4 : addr B (4 * bufSlot + 4) = bufA B + BitVec.ofNat 64 4 := by
     rw [hA, addr_eq (by simp only [bufSlot, slots]; omega_using [hfit]), Offset.add_add]; rfl
-  have hm : s₁₂.mem = (s₇.mem.writeW (bufA B + BitVec.ofNat 64 0) (s₈.gpr .ebx)).writeW
+  obtain hm : s₁₂.mem = (s₇.mem.writeW (bufA B + BitVec.ofNat 64 0) (s₈.gpr .ebx)).writeW
       (bufA B + BitVec.ofNat 64 4) (s₁₀.gpr .ecx) := by
     rw [e₁₂.mem, m₁₁, esi₁₀, e₁₀.mem, m₉, e₈.reg .esi (by decide), esi₇, e₈.mem, a4, BitVec.add_zero]
   refine ⟨s₁₂, ?_, ?_, ?_, by rw [v₁₂, g₁₁, esi₁₀], ?_, ?_, ?_⟩
@@ -225,9 +225,9 @@ theorem crypt_wp {s : State} {B : BitVec 32} {k : Spec.Idea.Schedule}
         Spec.Idea.cipher k (Spec.Aes.bytesAt s.mem (blkAddr modeCore B j) (4 * modeCore.bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 184 ≤ 2 ^ 32 := hs.fit
-  have hA := bufA_eq hfit
+  obtain hA := bufA_eq hfit
   obtain ⟨s', e, hb, f, edi', esp', rd', wr'⟩ := modeCrypt_run s hB hs.wr hfit hr
-  have hsub : ∀ r ∈ [(⟨addr B dataSlot, 4⟩ : Region), ⟨addr B t0Slot, 4⟩, ⟨bufA B, 8⟩],
+  obtain hsub : ∀ r ∈ [(⟨addr B dataSlot, 4⟩ : Region), ⟨addr B t0Slot, 4⟩, ⟨bufA B, 8⟩],
       ∃ d n, r = ⟨B.setWidth 64 + BitVec.ofNat 64 d, n⟩ ∧ 104 ≤ d ∧ d + n ≤ 140 := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -244,7 +244,7 @@ theorem crypt_wp {s : State} {B : BitVec 32} {k : Spec.Idea.Schedule}
       exact Offset.sub_base _ (by simp only [modeCore, coreSlots, bufSlot, slots]; omega_using [h2])⟩
   · have hj0 : j = 0 := by simp only [modeCore] at hj; omega_using [hj]
     subst hj0
-    have ha : blkAddr modeCore B 0 = bufA B := by
+    obtain ha : blkAddr modeCore B 0 = bufA B := by
       rw [hA]; simp only [blkAddr, slotA, modeCore, bufSlot, slots, Nat.mul_zero, BitVec.add_zero]
     rw [ha, modeCore_bw, show 4 * 2 = 8 from rfl, bytesAt_eq, hb, cipher_bytes]
 

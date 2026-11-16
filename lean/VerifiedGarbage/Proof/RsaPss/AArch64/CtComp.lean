@@ -95,31 +95,31 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       CInv hH t F S V₀ h₀ nbm ((ℓ + H.P.L) / H.P.B) (b + 1) u' ∧
         ((u'.gpr .x9).toNat ≠ 0 ↔ b + 1 ≠ nbm) := by
   generalize hfbd : (ℓ + H.P.L) / H.P.B = fb at I ⊢
-  have hso := so_lt hH
+  obtain hso := so_lt hH
   have hN := hH.N_le
   have hN0 := hH.sizes.dims.N.1
   have hB0 := hH.B_pos
   have hBl := hH.B_le
   have hL := hH.L
-  have hBb : H.P.B * (b + 1) ≤ H.P.B * nbm := Nat.mul_le_mul_left _ hb
-  have hBn : H.P.B * nbm ≤ 2048 := by rw [Nat.mul_comm]; exact hnb
-  have hBb' : H.P.B * b + H.P.B ≤ H.P.B * nbm := by rw [← Nat.mul_succ]; exact hBb
-  have hcm : b * H.P.B = H.P.B * b := Nat.mul_comm _ _
-  have hnb1 : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right _ hB0) hnb
-  have Lu : Lay u F S := L.congr I.sp I.wr (by rw [I.cs .x20 (by decide)])
+  obtain hBb : H.P.B * (b + 1) ≤ H.P.B * nbm := Nat.mul_le_mul_left _ hb
+  obtain hBn : H.P.B * nbm ≤ 2048 := by rw [Nat.mul_comm]; exact hnb
+  obtain hBb' : H.P.B * b + H.P.B ≤ H.P.B * nbm := by rw [← Nat.mul_succ]; exact hBb
+  obtain hcm : b * H.P.B = H.P.B * b := Nat.mul_comm _ _
+  obtain hnb1 : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right _ hB0) hnb
+  obtain Lu : Lay u F S := L.congr I.sp I.wr (by rw [I.cs .x20 (by decide)])
   refine WP.of_syms ?_
   simp only [seqs]
   unfold compArgs
   refine WP.seq (WP.of_syms (wp_lsl hlg fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ =>
     wp_nil fun sy₃ => ?_))
-  have O₃ : Only [.x1] u u₃ := (o₁.trans (o₂.trans o₃)).mono
-  have x1 : u₃.gpr .x1 = off S (oY + H.P.B * b) := by
+  obtain O₃ : Only [.x1] u u₃ := (o₁.trans (o₂.trans o₃)).mono
+  obtain x1 : u₃.gpr .x1 = off S (oY + H.P.B * b) := by
     rw [e₃, e₂, e₁, o₁.get .x20, I.x27, I.cs .x20 (by decide), L.x20, lsl_val (by rw [hB]; omega_arith),
       hB]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [Nat.mul_comm b]; omega_arith
-  have hcall : CallOk u₃ H.P.N H.P.B H.P.so (off S oSt) S (off S (oY + H.P.B * b)) := {
+  obtain hcall : CallOk u₃ H.P.N H.P.B H.P.so (off S oSt) S (off S (oY + H.P.B * b)) := {
     x19 := by rw [O₃.get .x19, I.cs .x19 (by decide), h19]
     x20 := by rw [O₃.get .x20, I.cs .x20 (by decide), L.x20]
     x1 := x1
@@ -143,11 +143,11 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       refine Covers.cons (Covers.one (Lu.st (by unfold oSt oRsa; omega_arith))) (Covers.cons (Covers.one ?_) Covers.nil)
       have := Lu.st (o := 0) (n := H.P.so) (by unfold oRsa; omega_arith)
       rwa [off, BitVec.add_zero] at this }
-  have hC₃ : u₃.mem.readW (u₃.sp + BitVec.ofNat 64 sCmpH) 64 = u₃.syms cn := by
+  obtain hC₃ : u₃.mem.readW (u₃.sp + BitVec.ofNat 64 sCmpH) 64 = u₃.syms cn := by
     rw [O₃.mem, O₃.sp, Lu.sp, sy₃, I.sy, I.fr.readW (r := ⟨F, frameBytes⟩) (Offset.contains_base _ (by decide) (by decide))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact L.dFS) (by decide)]
     exact hC
-  have hin₃ : InRegions (u₃.rd ++ u₃.wr) (u₃.sp + BitVec.ofNat 64 sCmpH) 8 := by
+  obtain hin₃ : InRegions (u₃.rd ++ u₃.wr) (u₃.sp + BitVec.ofNat 64 sCmpH) 8 := by
     rw [O₃.rd, O₃.wr, O₃.sp, Lu.sp]; exact Lu.fld (by decide)
   refine WP.seq (WP.mono_syms (compT_ok f hH.comp hcall hin₃ hC₃ (by rw [sy₃, I.sy]; exact hfc)
       (Q := fun s' => (s'.rd = u₃.rd ∧
@@ -158,46 +158,46 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (u₃.v r).extractLsb' 0 64)
       fun s' a b c d e f g => ⟨⟨a, b, c, d, e, f⟩, g⟩)
     fun v ⟨⟨vrd, vwr, vcs, vsp, vfr, vst⟩, vv⟩ syv => ?_)
-  have Lv : Lay v F S := Lu.congr (by rw [vsp, O₃.sp]) (by rw [vwr, O₃.wr])
+  obtain Lv : Lay v F S := Lu.congr (by rw [vsp, O₃.sp]) (by rw [vwr, O₃.wr])
     (by rw [vcs .x20 (by decide) (by decide), O₃.get .x20])
-  have v22 : v.gpr .x22 = BitVec.ofNat 64 ℓ := by
+  obtain v22 : v.gpr .x22 = BitVec.ofNat 64 ℓ := by
     rw [vcs .x22 (by decide) (by decide), O₃.get .x22, I.cs .x22 (by decide), h22]
-  have v27 : v.gpr .x27 = BitVec.ofNat 64 b := by rw [vcs .x27 (by decide) (by decide), O₃.get .x27, I.x27]
+  obtain v27 : v.gpr .x27 = BitVec.ofNat 64 b := by rw [vcs .x27 (by decide) (by decide), O₃.get .x27, I.x27]
   refine WP.seq (WP.mono (select_ok H Lv (V := fun o => v.mem (off S o)) (fun _ _ => rfl) hB hlg hN0 hN hL.2 hℓ
     (by omega_arith) v22 v27) fun w ⟨wK, wfr, wR⟩ => ?_)
   rw [hfbd] at wR
   -- the frame's slot is kept
-  have frS : Frame [⟨S, oRsa⟩] t.mem w.mem := by
+  obtain frS : Frame [⟨S, oRsa⟩] t.mem w.mem := by
     refine I.fr.trans ((Frame.sub (by rw [O₃.mem] at vfr; exact vfr) fun r hr => ?_).trans wfr)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by unfold oSt oRsa; omega_arith)⟩
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by unfold oRsa; omega_arith)⟩
-  have slot : w.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by
+  obtain slot : w.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by
     rw [frS.readW (r := ⟨F, frameBytes⟩) (Offset.contains_base _ (by decide) (by decide))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact L.dFS) (by decide), hNb]
   refine wp_addImm (by decide) fun w₁ p₁ f₁ => wp_ldrSp (by decide) ?_ fun w₂ p₂ f₂ =>
     wp_sub fun w₃ p₃ f₃ => wp_nil ?_
   · rw [p₁.sp, wK.sp, Lv.sp, p₁.rd, p₁.wr, wK.rd, wK.wr]; exact Lv.fld (d := sNb) (n := 8) (by decide)
-  have P₃ : Only [.x27, .x9] w w₃ := (p₁.trans (p₂.trans p₃)).mono
+  obtain P₃ : Only [.x27, .x9] w w₃ := (p₁.trans (p₂.trans p₃)).mono
   rw [p₁.sp, wK.sp, Lv.sp, p₁.mem, slot] at f₂
-  have x27 : w₃.gpr .x27 = BitVec.ofNat 64 (b + 1) := by
+  obtain x27 : w₃.gpr .x27 = BitVec.ofNat 64 (b + 1) := by
     rw [p₃.get .x27, p₂.get .x27, f₁, wK.get .x27, v27, BitVec.ofNat_add_ofNat]
   -- bytes outside the regions the call and the selection write
-  have wv : ∀ o < oRsa, ¬ (oSel ≤ o ∧ o < oSel + H.P.N) → w.mem (off S o) = v.mem (off S o) := fun o ho h => by
+  obtain wv : ∀ o < oRsa, ¬ (oSel ≤ o ∧ o < oSel + H.P.N) → w.mem (off S o) = v.mem (off S o) := fun o ho h => by
     rw [wR o ho]; simp only [vSel]; rw [ite_eq_right (fun h' => h h'.2)]
-  have vu : ∀ o < oRsa, ¬ (oSt ≤ o ∧ o < oSt + H.P.N) → H.P.so ≤ o → v.mem (off S o) = u.mem (off S o) :=
+  obtain vu : ∀ o < oRsa, ¬ (oSt ≤ o ∧ o < oSt + H.P.N) → H.P.so ≤ o → v.mem (off S o) = u.mem (off S o) :=
     fun o ho h h' => by
       rw [vfr (off S o) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact not_in S (by omega_arith) (by unfold oRsa at ho; omega_arith) (by unfold oSt; omega_arith)
         · exact not_in0 S h' (by unfold oRsa at ho; omega_arith) (by omega_arith)), O₃.mem]
-  have hY : ∀ k < H.P.B, u.mem (off S (oY + H.P.B * b) + BitVec.ofNat 64 k) =
+  obtain hY : ∀ k < H.P.B, u.mem (off S (oY + H.P.B * b) + BitVec.ofNat 64 k) =
       (yList V₀ (nbm * H.P.B)).getD (H.P.B * b + k) 0 := fun k hk => by
     rw [off_add, yList_getD (by rw [Nat.mul_comm nbm]; omega_arith), I.keep _ (by unfold oY oRsa; omega_arith)
       (by unfold CompW oY oSt oSel; omega_arith), Nat.add_assoc]
-  have stw : hH.md.stateAt w.mem (off S oSt) = hH.md.compressList h₀ (yList V₀ (nbm * H.P.B)) (b + 1) := by
+  obtain stw : hH.md.stateAt w.mem (off S oSt) = hH.md.compressList h₀ (yList V₀ (nbm * H.P.B)) (b + 1) := by
     rw [hH.md.stateAt_congr (mem := v.mem) fun i hi => by
         rw [off_add]; exact wv _ (by unfold oSt oRsa; omega_arith) (by unfold oSt oSel; omega_arith), vst,
       O₃.mem, I.st, hH.md.compressList_succ]
@@ -210,11 +210,11 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
   case wr => rw [P₃.wr, wK.wr, vwr, O₃.wr, I.wr]
   case cs =>
     intro r hr
-    have h1 : r ∉ [Reg.x27, .x9] := by revert r; decide
-    have h2 : r ∉ [Reg.x15, .x9, .x13, .x10, .x11, .x12, .x14] := by revert r; decide
-    have h3 : r ∈ preserved := by revert r; decide
-    have h4 : r ≠ .x30 := by revert r; decide
-    have h5 : r ∉ [Reg.x1] := by revert r; decide
+    obtain h1 : r ∉ [Reg.x27, .x9] := by revert r; decide
+    obtain h2 : r ∉ [Reg.x15, .x9, .x13, .x10, .x11, .x12, .x14] := by revert r; decide
+    obtain h3 : r ∈ preserved := by revert r; decide
+    obtain h4 : r ≠ .x30 := by revert r; decide
+    obtain h5 : r ∉ [Reg.x1] := by revert r; decide
     rw [P₃.gpr r h1, wK.gpr r h2, vcs r h3 h4, O₃.gpr r h5, I.cs r hr]
   case vec => intro r hr; rw [P₃.vcs r hr, wK.vcs r hr, vv r hr, O₃.vcs r hr, I.vec r hr]
   case fr => rw [P₃.mem]; exact frS

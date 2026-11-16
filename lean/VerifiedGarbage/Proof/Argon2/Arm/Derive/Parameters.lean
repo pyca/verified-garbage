@@ -77,54 +77,54 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
     (hq : ∀ t, Stage n D.toNat (k + 1) t → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (bit ++ is)) s Q := by
   obtain ⟨hc, ha⟩ := h
-  have hm : k + (31 - k) = 31 := by omega_using [hk]
-  have pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
-  have e32 : 32 - k = 31 - k + 1 := by omega_using [hk]
-  have p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
-  have hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
-  have hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
-  have hb1 : n % 2 ^ (32 - k) / 2 ^ (31 - k) ≤ 1 := by
-    have h' : 2 ^ (32 - k) = 2 ^ (31 - k) * 2 := by rw [e32, Nat.pow_succ]
+  obtain hm : k + (31 - k) = 31 := by omega_using [hk]
+  obtain pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
+  obtain e32 : 32 - k = 31 - k + 1 := by omega_using [hk]
+  obtain p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
+  obtain hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
+  obtain hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
+  obtain hb1 : n % 2 ^ (32 - k) / 2 ^ (31 - k) ≤ 1 := by
+    obtain h' : 2 ^ (32 - k) = 2 ^ (31 - k) * 2 := by rw [e32, Nat.pow_succ]
     exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [h', hRlt]))
-  have hR'lt : n % 2 ^ (32 - k) % 2 ^ (31 - k) < 2 ^ (31 - k) := Nat.mod_lt _ (pos _)
-  have hqlt : n / 2 ^ (32 - k) / D.toNat < 2 ^ k := by
+  obtain hR'lt : n % 2 ^ (32 - k) % 2 ^ (31 - k) < 2 ^ (31 - k) := Nat.mod_lt _ (pos _)
+  obtain hqlt : n / 2 ^ (32 - k) / D.toNat < 2 ^ k := by
     refine Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.div_lt_of_lt_mul ?_)
     rw [← Nat.pow_add, show 32 - k + k = 32 by omega_using [hk]]; exact hn
-  have hrlt : n / 2 ^ (32 - k) % D.toNat < D.toNat := Nat.mod_lt _ hD
+  obtain hrlt : n / 2 ^ (32 - k) % D.toNat < D.toNat := Nat.mod_lt _ hD
   -- Abbreviations, as numbers.
   generalize hN : n / 2 ^ (32 - k) = N at hc ha hqlt hrlt
   generalize hRR : n % 2 ^ (32 - k) = R at hc hRlt hRb hb1 hR'lt
   generalize hbb : R / 2 ^ (31 - k) = b at hRb hb1
   generalize hR' : R % 2 ^ (31 - k) = R' at hRb hR'lt
   -- The next stage's numbers.
-  have N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
+  obtain N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
     rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega_using [hk], e32, Nat.pow_succ,
       Nat.mod_mul_right_div_self, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (n / 2 ^ (31 - k)) 2
     omega_using [this]
-  have R'' : n % 2 ^ (32 - (k + 1)) = R' := by
+  obtain R'' : n % 2 ^ (32 - (k + 1)) = R' := by
     rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega_using [hk], e32, Nat.pow_succ, Nat.mod_mul_right_mod]
-  have step := Proof.Argon2.divide_step (n := N) (d := D.toNat) (q := N / D.toNat) (r := N % D.toNat)
+  obtain step := Proof.Argon2.divide_step (n := N) (d := D.toNat) (q := N / D.toNat) (r := N % D.toNat)
     (bit := b) (Nat.div_add_mod' N _).symm hrlt hb1
   dsimp only at step
   obtain ⟨st₁, st₂⟩ := step
-  have res := Proof.Argon2.divide_result hD st₁ st₂
+  obtain res := Proof.Argon2.divide_result hD st₁ st₂
   -- The instructions, with `K = 2 ^ k` and `P = R' · K`.
-  have pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
-  have hP : R' * 2 ^ (k + 1) = 2 * (R' * 2 ^ k) := by rw [pk, Nat.mul_left_comm]
-  have hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
+  obtain pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
+  obtain hP : R' * 2 ^ (k + 1) = 2 * (R' * 2 ^ k) := by rw [pk, Nat.mul_left_comm]
+  obtain hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
     have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega_using [hR'lt])
     rw [Nat.add_mul, Nat.one_mul, p31] at this
     exact this
-  have hr1 : (s.gpr .r1).toNat = b * 2 ^ 31 + R' * 2 ^ k + N / D.toNat := by
+  obtain hr1 : (s.gpr .r1).toNat = b * 2 ^ 31 + R' * 2 ^ k + N / D.toNat := by
     rw [hc, hRb, Nat.add_mul, Nat.mul_assoc, p31]
   generalize hPP : R' * 2 ^ k = P at hP hPb hr1
   generalize hKK : 2 ^ k = K at hPb hqlt pk
   simp only [bit, List.cons_append, List.nil_append]
   refine wp_adds (op2_reg _ _) fun s₁ u₁ c₁ => ?_
-  have cb : s₁.c = decide (b = 1) := by
+  obtain cb : s₁.c = decide (b = 1) := by
     rw [c₁, hr1]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hD, hD2, hN, ha, hrlt, hc, hPP, hP, hPb, hqlt, N', st₁, st₂, res, hr1]
-  have v₁ : (s₁.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) := by
+  obtain v₁ : (s₁.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) := by
     rw [u₁.gpr, BitVec.toNat_add, hr1]
     rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl
     · rw [Nat.mod_eq_of_lt (by omega_using [hPb, hqlt])]; omega_using []
@@ -132,18 +132,18 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
         (2 * P + 2 * (N / D.toNat)) + 2 ^ 32 by omega_using [], Nat.add_mod_right,
         Nat.mod_eq_of_lt (by omega_using [hPb, hqlt])]
   refine wp_adc (op2_reg _ _) fun s₂ u₂ _ => ?_
-  have v₂ : (s₂.gpr .r0).toNat = 2 * (N % D.toNat) + b := by
+  obtain v₂ : (s₂.gpr .r0).toNat = 2 * (N % D.toNat) + b := by
     rw [u₂.gpr, u₁.other _ (by decide), cb, BitVec.toNat_add, BitVec.toNat_add, ha]
     rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hrlt, hD2]
   refine wp_subsC (op2_reg _ _) fun s₃ u₃ c₃ => ?_
-  have d₂ : s₂.gpr .r2 = D := by rw [u₂.other _ (by decide), u₁.other _ (by decide), hb]
+  obtain d₂ : s₂.gpr .r2 = D := by rw [u₂.other _ (by decide), u₁.other _ (by decide), hb]
   rw [d₂] at u₃ c₃
   rw [v₂] at c₃
   refine wp_adc (op2_imm (by decide)) fun s₄ u₄ _ => ?_
   -- The quotient bit.
   generalize ht : (if 2 * (N % D.toNat) + b < D.toNat then 0 else 1) = t
-  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_using []
-  have v₄ : (s₄.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) + t := by
+  obtain ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_using []
+  obtain v₄ : (s₄.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) + t := by
     rw [u₄.gpr, c₃, u₃.other _ (by decide), u₂.other _ (by decide), BitVec.toNat_add, BitVec.toNat_add, v₁,
       ← ht]
     by_cases hv : 2 * (N % D.toNat) + b < D.toNat
@@ -153,7 +153,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
     · simp only [hv, ite_false, show D.toNat ≤ 2 * (N % D.toNat) + b by omega_using [hv], decide_true, ite_true]
       simp; omega_using [hPb, hqlt]
   refine wp_and (op2_imm (by decide)) fun s₅ u₅ => ?_
-  have v₅ : s₅.gpr .r3 = BitVec.ofNat 32 t := by
+  obtain v₅ : s₅.gpr .r3 = BitVec.ofNat 32 t := by
     apply BitVec.eq_of_toNat_eq
     rw [u₅.gpr, BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, v₄,
       BitVec.toNat_ofNat]
@@ -166,7 +166,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
       u₅.other _ (by decide), v₄, ← ht]
     omega_using []
   · -- `r0`: the remainder.
-    have d₆ : s₆.gpr .r2 = D := by
+    obtain d₆ : s₆.gpr .r2 = D := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), d₂]
     rw [N', ← res.2, u₈.gpr, u₇.gpr, u₇.other _ (by decide), u₆.gpr, u₆.other _ (by decide), d₆, v₅,
       u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, ← ht]
@@ -199,7 +199,7 @@ theorem code_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 
     (hq : ∀ t, (t.gpr .r1).toNat = (s.gpr .r1).toNat / D.toNat →
       (t.gpr .r0).toNat = (s.gpr .r1).toNat % D.toNat → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (code ++ is)) s Q := by
-  have hn := (s.gpr .r1).isLt
+  obtain hn := (s.gpr .r1).isLt
   simp only [code, List.cons_append]
   refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
   refine bits_ok hD hD2 hn 32 (Nat.le_refl _) s₁ (by rw [u₁.other _ (by decide), hb]) ⟨?_, ?_⟩
@@ -264,34 +264,34 @@ theorem parameters_ok {is : List Instr} {Q : State → Prop}
   simp only [parameters, List.cons_append, List.append_assoc]
   refine inv_start fun s₁ i₁ _ _ => ?_
   refine wp_ldarg hp i₁ (i := Impl.Argon2.Arm.Derive.lanesArg) (by decide) fun s₂ u₂ => ?_
-  have i₂ := i₁.upd u₂ (by decide)
+  obtain i₂ := i₁.upd u₂ (by decide)
   refine wp_mov (op2_lsl (by decide)) fun s₃ u₃ => ?_
-  have i₃ := i₂.upd u₃ (by decide)
-  have e₃ : (s₃.gpr .r2).toNat = 4 * lanesN s₀ := by
+  obtain i₃ := i₂.upd u₃ (by decide)
+  obtain e₃ : (s₃.gpr .r2).toNat = 4 * lanesN s₀ := by
     rw [u₃.gpr, u₂.gpr, shl_nat (by have : (arg s₀ 7).toNat < 2 ^ 24 := hL; show (arg s₀ 7).toNat * 4 < _; omega_using [this])]
     show (arg s₀ 7).toNat * 4 = 4 * (arg s₀ 7).toNat
     omega_using []
   refine wp_stloc hp i₃ (d := divisorOff) (by decide) fun s₄ i₄ v₄ _ g₄ _ => ?_
   refine wp_ldarg hp i₄ (i := Impl.Argon2.Arm.Derive.memoryCostArg) (by decide) fun s₅ u₅ => ?_
-  have i₅ := i₄.upd u₅ (by decide)
-  have r2₅ : s₅.gpr .r2 = s₃.gpr .r2 := by rw [u₅.other _ (by decide), g₄]
+  obtain i₅ := i₄.upd u₅ (by decide)
+  obtain r2₅ : s₅.gpr .r2 = s₃.gpr .r2 := by rw [u₅.other _ (by decide), g₄]
   refine Divide.code_ok (D := s₃.gpr .r2) (by rw [e₃]; omega_using [hL1]) (by rw [e₃]; omega_using [hL]) r2₅ fun s₆ c₆ _ k₆ => ?_
-  have i₆ := i₅.keep k₆
+  obtain i₆ := i₅.keep k₆
   rw [u₅.gpr, e₃] at c₆
-  have c₆' : (s₆.gpr .r1).toNat = (prm s₀).segmentLen := by rw [c₆, hseg]; rfl
+  obtain c₆' : (s₆.gpr .r1).toNat = (prm s₀).segmentLen := by rw [c₆, hseg]; rfl
   refine wp_stloc hp i₆ (d := segLenOff) (by decide) fun s₇ i₇ v₇ o₇ g₇ _ => ?_
-  have hll : (prm s₀).laneLen ≤ blocksN s₀ :=
+  obtain hll : (prm s₀).laneLen ≤ blocksN s₀ :=
     Nat.le_trans (Nat.le_mul_of_pos_left _ hL1) (Nat.le_of_eq hb.symm)
-  have hsegL : (prm s₀).laneLen * 1024 + 16384 ≤ 2 ^ 32 :=
+  obtain hsegL : (prm s₀).laneLen * 1024 + 16384 ≤ 2 ^ 32 :=
     Nat.le_trans (Nat.add_le_add_right (Nat.mul_le_mul_right 1024 hll) _) hBl
   refine wp_mov (op2_lsl (by decide)) fun s₈ u₈ => ?_
-  have i₈ := i₇.upd u₈ (by decide)
-  have e₈ : (s₈.gpr .r1).toNat = (prm s₀).laneLen := by
+  obtain i₈ := i₇.upd u₈ (by decide)
+  obtain e₈ : (s₈.gpr .r1).toNat = (prm s₀).laneLen := by
     rw [u₈.gpr, g₇, shl_nat (by rw [c₆']; omega), c₆', hlane]; omega_using []
   refine wp_stloc hp i₈ (d := laneLenOff) (by decide) fun s₉ i₉ v₉ o₉ g₉ _ => ?_
   refine wp_mov (op2_lsl (by decide)) fun s₁₀ u₁₀ => ?_
-  have i₁₀ := i₉.upd u₁₀ (by decide)
-  have e₁₀ : (s₁₀.gpr .r1).toNat = (prm s₀).laneLen * 1024 := by
+  obtain i₁₀ := i₉.upd u₁₀ (by decide)
+  obtain e₁₀ : (s₁₀.gpr .r1).toNat = (prm s₀).laneLen * 1024 := by
     rw [u₁₀.gpr, g₉, shl_nat (by rw [e₈]; omega_using [hsegL]), e₈]
   refine wp_stloc hp i₁₀ (d := strideOff) (by decide) fun s₁₁ i₁₁ v₁₁ o₁₁ _ _ => k s₁₁ i₁₁ ⟨?_, ?_, ?_, ?_⟩
   · rw [o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem, o₉ _ (by decide) (by decide), lw_mem u₈.mem,

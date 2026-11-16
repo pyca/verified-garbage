@@ -157,7 +157,7 @@ include L
 theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb : Block}
     (h : Mid Ctx W SP H R n D Tg X ρ s) (o : CrOut Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
-  have dWK : ∀ r ∈ crFrame (W + BitVec.ofNat 64 16) W D n, (keyR W).Disjoint r := by
+  obtain dWK : ∀ r ∈ crFrame (W + BitVec.ofNat 64 16) W D n, (keyR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -208,10 +208,10 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     exact ⟨by simp [gpr_write, h₂.x23], by simp [gpr_write, h₂.x26], by simp [gpr_write],
       ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  have he₃ := h₂.env.of_regs r₃
-  have hd₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n := hdat.of_eq (by rw [r₃.rd, h₂.rd]) (by rw [r₃.wr, h₂.wr])
-  have x22₃ : s₃.gpr .x22 = BitVec.ofNat 64 R := by rw [r₃.others _ (by decide), h₂.x22, h22]
-  have fr₃ : Frame [workR W, ⟨D, n⟩] ρ.mem s₃.mem := by
+  obtain he₃ := h₂.env.of_regs r₃
+  obtain hd₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n := hdat.of_eq (by rw [r₃.rd, h₂.rd]) (by rw [r₃.wr, h₂.wr])
+  obtain x22₃ : s₃.gpr .x22 = BitVec.ofNat 64 R := by rw [r₃.others _ (by decide), h₂.x22, h22]
+  obtain fr₃ : Frame [workR W, ⟨D, n⟩] ρ.mem s₃.mem := by
     rw [r₃.mem]
     refine hf.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., ?_⟩)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -232,7 +232,7 @@ theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid 
     refine ⟨_, by arun [], ?_⟩
     exact ⟨by simp [gpr_write, h.x27], by simp [gpr_write, h.x26], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
-  have hM : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H [] D n 0 s₄.mem 0 s₅ :=
+  obtain hM : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H [] D n 0 s₄.mem 0 s₅ :=
     ⟨h.env.of_regs r₅, fun r hr => r₅.others r (by
         simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> decide), Nat.zero_le _, by rw [x23₅]; simp,
@@ -259,12 +259,12 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
   refine WP.mono (reload_ok (H := H) (by rw [he₇.x19]; exact he₇.perm.wR (by decide))
     (by rw [he₇.x19]; exact he₇.perm.wR (by decide)) (by rw [he₇.x19]) (by rw [he₇.x19]; exact h.key.2)
     h.key.1) fun s₈ ⟨hk₈, g₈, v₈, m₈, rd₈, wr₈, sp₈⟩ => ?_
-  have he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := he₇.keep (fun r hr => g₈ r (by
+  obtain he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := he₇.keep (fun r hr => g₈ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
   refine WP.mono (loadRev_ok Y .x20 16 s₈ (by decide) (by decide) (by rw [he₈.x20]; exact he₈.perm.stR (by decide)))
     fun s₉ ⟨l₉, o₉⟩ => ?_
-  have he₉ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ := he₈.keep (fun r _ => by rw [o₉.gpr]) o₉.sp o₉.rd o₉.wr
+  obtain he₉ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ := he₈.keep (fun r _ => by rw [o₉.gpr]) o₉.sp o₉.rd o₉.wr
   obtain ⟨s₁₀, run₁₀, x13₁₀, x12₁₀, r₁₀, v₁₀⟩ : ∃ s₁₀, runBlock isa [mov .x13 .x24, mov .x12 .x23] s₉ = some s₁₀ ∧
       s₁₀.gpr .x13 = BitVec.ofNat 64 (n - j) ∧ s₁₀.gpr .x12 = D + BitVec.ofNat 64 j ∧
       Regs [.x13, .x12] s₉ s₁₀ ∧ s₁₀.v = s₉.v := by
@@ -273,12 +273,12 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
     · simp [gpr_write, o₉.gpr, g₈ .x24 (by decide), hm.x24]
     · simp [gpr_write, o₉.gpr, g₈ .x23 (by decide), hm.x23]
   refine WP.of_runBlock ⟨s₁₀, run₁₀, ?_⟩
-  have he₁₀ := he₉.of_regs r₁₀
-  have hk₁₀ : HKey H s₁₀ :=
+  obtain he₁₀ := he₉.of_regs r₁₀
+  obtain hk₁₀ : HKey H s₁₀ :=
     hk₈.of_v (by rw [v₁₀, o₉.v C (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)])
-  have hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D + BitVec.ofNat 64 j) (n - j) :=
+  obtain hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D + BitVec.ofNat 64 j) (n - j) :=
     ((dataOk_of h.data).drop hjn).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])
-  have x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
+  obtain x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega_using [hlt]) hdj.rd
@@ -289,9 +289,9 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
   unfold Impl.AesGcm.AArch64.Fast.lensTagAt
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  have w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₂ := he₁₁.perm.wW (show 104 + 8 ≤ 2560 by decide)
-  have q₁ := he₁₁.perm.wR (show 224 + 8 ≤ 2560 by decide)
+  obtain w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 2560 by decide)
+  obtain w₂ := he₁₁.perm.wW (show 104 + 8 ≤ 2560 by decide)
+  obtain q₁ := he₁₁.perm.wR (show 224 + 8 ≤ 2560 by decide)
   obtain ⟨s₁₂, run₁₂, og₁₂, sp₁₂, rd₁₂, wr₁₂, v₁₂⟩ : ∃ s₁₂, runBlock isa
       [.ldr .x .x10 .x19 alenO, .lsl .x .x9 .x10 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 .x26 3,
         .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] s₁₁ = some s₁₂ ∧
@@ -299,10 +299,10 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
     refine ⟨_, by arun [he₁₁.x19, q₁, w₁, w₂], ?_⟩
     exact ⟨by others_tac, rfl, rfl, rfl, rfl⟩
   refine WP.of_runBlock ⟨s₁₂, run₁₂, ?_⟩
-  have he₁₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₂ := he₁₁.keep (fun r hr => og₁₂ r (by
+  obtain he₁₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₂ := he₁₁.keep (fun r hr => og₁₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁₂ rd₁₂ wr₁₂
-  have hk₁₂ : HKey H s₁₂ := hk₁₁.of_v (by rw [v₁₂]) (by rw [v₁₂]) (by rw [v₁₂])
+  obtain hk₁₂ : HKey H s₁₂ := hk₁₁.of_v (by rw [v₁₂]) (by rw [v₁₂]) (by rw [v₁₂])
   rw [WP.block_append_iff]
   refine WP.mono (mulT_ok hMK (y := padStep H (blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16))
       (bytesAt s₁₀.mem (D + BitVec.ofNat 64 j) (n - j))) hk₁₂ (by rw [v₁₂]; exact y₁₁)
@@ -311,12 +311,12 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
   rw [WP.block_append_iff]
   refine WP.mono (storeY_ok y₁₃ (by rw [o₁₃.gpr, o₁₃.wr, he₁₂.x20]; exact he₁₂.perm.stW (by decide)))
     fun s₁₄ ⟨_, _, o₁₄⟩ => ?_
-  have g₁₄ : s₁₄.gpr = s₁₂.gpr := by rw [o₁₄.gpr]; exact o₁₃.gpr
-  have he₁₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₄ :=
+  obtain g₁₄ : s₁₄.gpr = s₁₂.gpr := by rw [o₁₄.gpr]; exact o₁₃.gpr
+  obtain he₁₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₄ :=
     he₁₂.keep (fun r _ => by rw [g₁₄]) (by rw [o₁₄.sp, o₁₃.sp]) (by rw [o₁₄.rd, o₁₃.rd]) (by rw [o₁₄.wr, o₁₃.wr])
-  have x22₁₄ : s₁₄.gpr .x22 = BitVec.ofNat 64 R := by
+  obtain x22₁₄ : s₁₄.gpr .x22 = BitVec.ofNat 64 R := by
     rw [g₁₄, og₁₂ _ (by decide), og₁₁ _ (by decide), r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x22]
-  have x28₁₄ : s₁₄.gpr .x28 = Tg := by
+  obtain x28₁₄ : s₁₄.gpr .x28 = Tg := by
     rw [g₁₄, og₁₂ _ (by decide), og₁₁ _ (by decide), r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x28]
   exact WP.mono (tagSeg_ok L (o := o) ho he₁₄ (fun _ _ => rfl : Kept s₁₄.gpr s₁₄) x22₁₄ h.rounds)
     fun s' h' => ⟨_, _, _, _, h', x28₁₄⟩
@@ -373,34 +373,34 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
     (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₂ (by decide) m₂.x26 m₂.data.ok.lt
       (tail_big m₂.data.wr m₂.data.ok.lt (by simp) (Nat.zero_add n))))
     fun s₄ t₄ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
-  have M₁ := Mid.crypt L m₁ o₁ rd₁ wr₁
-  have M₂ := Mid.crypt L m₂ o₂ rd₂ wr₂
+  obtain M₁ := Mid.crypt L m₁ o₁ rd₁ wr₁
+  obtain M₂ := Mid.crypt L m₂ o₂ rd₂ wr₂
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x26, .x27] (by rw [M₁.env.sp, M₂.env.sp])
       (by agree_tac [M₁.env.x19, M₂.env.x19, M₁.env.x20, M₂.env.x20, M₁.env.x21, M₂.env.x21, M₁.x26, M₂.x26,
         M₁.x27, M₂.x27]) ⟨_, by taint_decide⟩)
     (WP.with_rdwr (ctC_ok L M₁ o₁.x25)) (WP.with_rdwr (ctC_ok L M₂ o₂.x25)) fun s₅ t₅ ⟨a₁, rd₅, wr₅⟩ ⟨a₂, rd₅', wr₅'⟩ => ?_
-  have fr₁ : Frame [workR W, ⟨D, n⟩] ρ₁.mem s₅.mem := M₁.fr.trans (absFrame_wd a₁.frame)
-  have fr₂ : Frame [workR W, ⟨D, n⟩] ρ₂.mem t₅.mem := M₂.fr.trans (absFrame_wd a₂.frame)
-  have r₁ : s₅.rd = ρ₁.rd := rd₅.trans M₁.rd
-  have w₁ : s₅.wr = ρ₁.wr := wr₅.trans M₁.wr
-  have r₂ : t₅.rd = ρ₂.rd := rd₅'.trans M₂.rd
-  have w₂ : t₅.wr = ρ₂.wr := wr₅'.trans M₂.wr
-  have sY : Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ (workR W) := stW (by decide)
-  have sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR W) := Lay.wSub (by decide)
-  have hexH : ∀ r ∈ ex, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := fun r hr =>
+  obtain fr₁ : Frame [workR W, ⟨D, n⟩] ρ₁.mem s₅.mem := M₁.fr.trans (absFrame_wd a₁.frame)
+  obtain fr₂ : Frame [workR W, ⟨D, n⟩] ρ₂.mem t₅.mem := M₂.fr.trans (absFrame_wd a₂.frame)
+  obtain r₁ : s₅.rd = ρ₁.rd := rd₅.trans M₁.rd
+  obtain w₁ : s₅.wr = ρ₁.wr := wr₅.trans M₁.wr
+  obtain r₂ : t₅.rd = ρ₂.rd := rd₅'.trans M₂.rd
+  obtain w₂ : t₅.wr = ρ₂.wr := wr₅'.trans M₂.wr
+  obtain sY : Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ (workR W) := stW (by decide)
+  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR W) := Lay.wSub (by decide)
+  obtain hexH : ∀ r ∈ ex, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))
-  have hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
+  obtain hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
-  have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
-  have hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
+  obtain hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
+  obtain hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
       (WP.mono (hgh₁ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁ hDd) fun _ g => ⟨g, trivial⟩)))
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₂
       (WP.mono (hgh₂ a₂.call sY sS r₂ w₂ a₂.env.sp fr₂ hDd) fun _ g => ⟨g, trivial⟩)))
     fun s₇ t₇ ⟨⟨⟨b₁, l₁⟩, _⟩, rd₇, wr₇⟩ ⟨⟨⟨b₂, l₂⟩, _⟩, rd₇', wr₇'⟩ => ?_
-  have N₁ := MidG.absorbX L M₁ b₁ (by rw [rd₇, rd₅]) (by rw [wr₇, wr₅]) hexK
-  have N₂ := MidG.absorbX L M₂ b₂ (by rw [rd₇', rd₅']) (by rw [wr₇', wr₅']) hexK
+  obtain N₁ := MidG.absorbX L M₁ b₁ (by rw [rd₇, rd₅]) (by rw [wr₇, wr₅]) hexK
+  obtain N₂ := MidG.absorbX L M₂ b₂ (by rw [rd₇', rd₅']) (by rw [wr₇', wr₅']) hexK
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
@@ -453,19 +453,19 @@ theorem sealWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
       RelCT isa (Eq2 s₁ s₂) cl TT) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  have h₁ := hpre _ p₁
-  have h₂ := hpre _ p₂
+  obtain h₁ := hpre _ p₁
+  obtain h₂ := hpre _ p₂
   have hq₀ := hq
-  have exq := hexq hq
+  obtain exq := hexq hq
   obtain ⟨f₁, f₂⟩ := oneFacts (by omega_using [] : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
+  obtain qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_using [])
   have L := f₁.ol.lay
   have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
   have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := qt.symm
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
   have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := f₂.hW
-  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_using [hw]
+  obtain hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_using [hw]
   unfold Impl.AesGcm.AArch64.Fast.sealWithE
   refine rel_seq (entryStash_rel (k := 8 * w) (j := 0) (by omega_using [hw]) rfl (.inl rfl) f₁ f₂ (by omega_using []) qsp
       (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
@@ -476,44 +476,44 @@ theorem sealWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
       (f₂.hsp 0 (by omega_using [])) hT₂ (f₂.argW (by omega_using [])) q0.symm f₂.perm)
       (entry_keeps hk (by decide) hW₂ (f₂.hsp w (by omega_using [])) (f₂.hsp 0 (by omega_using [])) f₂.perm.w))
     fun τ₁ τ₂ ⟨a₁, k₁⟩ ⟨a₂, k₂⟩ => ?_
-  have k5₁ : τ₁.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₁ .x5 (by simp), ofNat_toNat']
-  have k5₂ : τ₂.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₂ .x5 (by simp), ← q5, ofNat_toNat']
-  have k24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [a₁.2.2.2.1, ofNat_toNat']
-  have k24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [a₂.2.2.2.1, ← q3, ofNat_toNat']
+  obtain k5₁ : τ₁.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₁ .x5 (by simp), ofNat_toNat']
+  obtain k5₂ : τ₂.gpr .x5 = BitVec.ofNat 64 (σ₁.gpr .x5).toNat := by rw [k₂ .x5 (by simp), ← q5, ofNat_toNat']
+  obtain k24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [a₁.2.2.2.1, ofNat_toNat']
+  obtain k24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [a₂.2.2.2.1, ← q3, ofNat_toNat']
   refine rel_seq (rel_taint [.x5, .x24] (by rw [a₁.1.sp, a₂.1.sp, qsp]) (by agree_tac [k5₁, k5₂, k24₁, k24₂])
       ⟨_, by taint_decide⟩)
     (cond_ok k5₁ (σ₁.gpr .x5).isLt k24₁ (σ₁.gpr .x3).isLt) (cond_ok k5₂ (σ₁.gpr .x5).isLt k24₂ (σ₁.gpr .x3).isLt)
     fun u₁ u₂ ⟨c₁, r₁⟩ ⟨c₂, r₂⟩ => ?_
-  have b₁ := SealEntered.of_regs a₁ r₁
-  have b₂ := SealEntered.of_regs a₂ r₂
+  obtain b₁ := SealEntered.of_regs a₁ r₁
+  obtain b₂ := SealEntered.of_regs a₂ r₂
   refine rel_ite (eval_zero c₁ (by split <;> decide)) (eval_zero c₂ (by split <;> decide)) (fun ht => ?_)
     (fun _ => sealRest_rel v h₁ h₂ hq₀ b₁ b₂)
-  have hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 := by
+  obtain hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12 := by
     by_contra hc; simp [hc] at ht
-  have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl b₁
-  have i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm b₂
+  obtain i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl b₁
+  obtain i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm b₂
   rw [← qsp] at i₂
   rw [hc.2] at i₁ i₂
   have ol := f₁.ol
-  have sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
-  have hn := (σ₁.gpr .x7).isLt
-  have g₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
+  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
+  obtain hn := (σ₁.gpr .x7).isLt
+  obtain g₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
     rw [r₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₁ r hr]
-  have g₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
+  obtain g₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r := fun r hr => by
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₂ r hr]
     simp at hr; rcases hr with rfl | rfl | rfl | rfl
     · exact q4.symm
     · exact q5.symm
     · exact q6.symm
     · exact q7.symm
-  have mkD : ∀ {σ u : State}, OneFacts σ σ₁ (w + 1) w → u.wr = σ.wr →
+  obtain mkD : ∀ {σ u : State}, OneFacts σ σ₁ (w + 1) w → u.wr = σ.wr →
       DataW (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
     fun f wr => ⟨⟨covers_left (by rw [wr]; exact f.dataW), hn, ol.dw, ol.data.sub_right sub16, ol.data⟩,
       by rw [wr]; exact f.dataW, ol.cd⟩
-  have hf : ∀ {σ u : State}, Frame [entryR (stackArg σ₁ w)] σ.mem u.mem →
+  obtain hf : ∀ {σ u : State}, Frame [entryR (stackArg σ₁ w)] σ.mem u.mem →
       Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ.mem u.mem :=
     fun f => f.sub fun r hr => ⟨_, List.mem_cons_self .., entryR_work _ r hr⟩
-  have hgh₂ := @hgh σ₂
+  obtain hgh₂ := @hgh σ₂
   rw [f₂.hW, ← q0, ← q6, ← q7] at hgh₂
   have e₁ := b₁
   have e₂ := b₂

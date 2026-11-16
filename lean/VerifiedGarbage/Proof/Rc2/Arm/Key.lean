@@ -82,19 +82,19 @@ theorem consts_pi {st : Nat} {s : State} (hc : ConstsOk piConsts st s) :
       PiHeld s.mem (State.addr (s.syms piSym)) ∧
       ∀ r ∈ abi.reserved st s, (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint r := by
   obtain ⟨hd, hh, ht, -⟩ := hc
-  have e : constRegs piConsts s = [⟨State.addr (s.syms piSym), 256⟩] := by
+  obtain e : constRegs piConsts s = [⟨State.addr (s.syms piSym), 256⟩] := by
     rw [constRegs, piConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, piQuads_length]; rfl
   have hl : piConsts.length = 1 := rfl
   rw [e, hl] at hd
   rw [e] at ht
   obtain ⟨hfit, hwr, hres⟩ := List.forall_mem_singleton.mp ht
-  have hfit' : (s.syms piSym).toNat + 256 ≤ 2 ^ 32 := by
+  obtain hfit' : (s.syms piSym).toNat + 256 ≤ 2 ^ 32 := by
     have : (State.addr (s.syms piSym)).toNat = (s.syms piSym).toNat := by
       simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_arith)
     rw [this] at hfit; exact hfit
-  have held : PiHeld s.mem (State.addr (s.syms piSym)) := fun i hi => hh _ List.mem_cons_self i hi
+  obtain held : PiHeld s.mem (State.addr (s.syms piSym)) := fun i hi => hh _ List.mem_cons_self i hi
   refine ⟨⟨⟨hfit', ?_, fun i hi => held.byte hi⟩, rfl⟩, hwr, hd, held, hres⟩
-  have hm : (⟨State.addr (s.syms piSym), 256⟩ : Region) ∈ s.rd.drop (s.rd.length - 1) := by
+  obtain hm : (⟨State.addr (s.syms piSym), 256⟩ : Region) ∈ s.rd.drop (s.rd.length - 1) := by
     rw [hd]; exact List.mem_singleton_self _
   exact List.mem_of_mem_drop hm
 
@@ -103,7 +103,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
     WP isa expandKey s (fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ keyContract.post s s') := by
   obtain ⟨hrd', hwr, keyOut, keyScratch, outScratch, argsOut, argsScratch, keyFit, outFit, scratchFit, spFit, ht, ht', hb, hb'⟩ := hs
   obtain ⟨hT, twr, tdrop, -, -⟩ := consts_pi hc
-  have hrd : s.rd = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, ⟨stackArgAddr s 0, 4⟩,
+  obtain hrd : s.rd = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, ⟨stackArgAddr s 0, 4⟩,
       ⟨State.addr (s.syms piSym), 256⟩] := by
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, tdrop]
     have h' : s.rd.take (s.rd.length - piConsts.length) = _ := hrd'
@@ -111,9 +111,9 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
   clear argsOut argsScratch spFit
   simp only [stripConsts_wr, stripConsts_gpr, stackArg_stripConsts]
     at hwr keyOut keyScratch outScratch keyFit outFit scratchFit ht ht' hb hb'
-  have tOut : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r3), 128⟩ :=
+  obtain tOut : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r3), 128⟩ :=
     twr _ (by rw [hwr]; exact List.mem_cons_self)
-  have tScr : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (stackArg s 0), 512⟩ :=
+  obtain tScr : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (stackArg s 0), 512⟩ :=
     twr _ (by rw [hwr]; simp)
   rw [expandKey]
   apply WP.seq
@@ -135,72 +135,72 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
   rw [h₁.1, gpr₀ .r1 (by decide)] at len₂
   rw [h₁.1, gpr₀ .r3 (by decide)] at ptr₂
   rw [h₁.1, gpr₀ .r2 (by decide)] at bits₂
-  have scratchFrame : Frame [⟨State.addr (stackArg s 0), 512⟩] s.mem s₂.mem := by
+  obtain scratchFrame : Frame [⟨State.addr (stackArg s 0), 512⟩] s.mem s₂.mem := by
     rw [keep₂.mem, h₁.2.2.2, keep₀.mem, scratch₀]
     exact Spill.saveMem_frame _ _ _ (by decide) _ (by decide)
-  have rd₂ : s₂.rd = s.rd := keep₂.rd.trans (h₁.2.1.trans keep₀.rd)
-  have wr₂ : s₂.wr = s.wr := keep₂.wr.trans (h₁.2.2.1.trans keep₀.wr)
-  have source₂ : Spec.Rc2.bytesAt s₂.mem (State.addr (s₂.gpr .r4)) (s.gpr .r1).toNat =
+  obtain rd₂ : s₂.rd = s.rd := keep₂.rd.trans (h₁.2.1.trans keep₀.rd)
+  obtain wr₂ : s₂.wr = s.wr := keep₂.wr.trans (h₁.2.2.1.trans keep₀.wr)
+  obtain source₂ : Spec.Rc2.bytesAt s₂.mem (State.addr (s₂.gpr .r4)) (s.gpr .r1).toNat =
       Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat := by
     rw [key₂]
     exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega_arith)
-  have read₂ : ∀ i < (s.gpr .r1).toNat,
+  obtain read₂ : ∀ i < (s.gpr .r1).toNat,
       InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r4) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, key₂, hrd, hwr]
     exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp,
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have write₂ : ∀ i < 128, InRegions s₂.wr (State.addr (s₂.gpr .r6) + BitVec.ofNat 64 i) 1 := by
+  obtain write₂ : ∀ i < 128, InRegions s₂.wr (State.addr (s₂.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [wr₂, ptr₂, hwr]
     exact ⟨⟨State.addr (s.gpr .r3), 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have sy₂ : s₂.syms = s.syms := (runBlock_syms run₂).trans (sy₁.trans (runBlock_syms run₀))
-  have hT₂ : PiAt (s.syms piSym) s₂ := by
+  obtain sy₂ : s₂.syms = s.syms := (runBlock_syms run₂).trans (sy₁.trans (runBlock_syms run₀))
+  obtain hT₂ : PiAt (s.syms piSym) s₂ := by
     refine ⟨⟨hT.fit, by rw [rd₂]; exact hT.rd, fun i hi => ?_⟩, by rw [sy₂]⟩
     rw [scratchFrame.bytes (R := ⟨State.addr (s.syms piSym), 256⟩) (by simpa using tScr) (by simp) hi]
     exact hT.held i hi
-  have tOut₂ : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s₂.gpr .r6), 128⟩ := by
+  obtain tOut₂ : (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint ⟨State.addr (s₂.gpr .r6), 128⟩ := by
     rw [ptr₂]; exact tOut
   apply WP.seq
   apply WP.mono (expandCopyFill_ok s₂ (s.gpr .r1).toNat ht ht' hT₂ tOut₂ (by rw [key₂]; exact keyFit) (by rw [ptr₂]; exact outFit)
     (by simpa using len₂) zero₂ read₂ write₂ (by rw [key₂, ptr₂]; exact keyOut))
   intro s₃ h₃
   apply WP.seq
-  have write₃ : ∀ i < 128, InRegions s₃.wr (State.addr (s₃.gpr .r6) + BitVec.ofNat 64 i) 1 := by
+  obtain write₃ : ∀ i < 128, InRegions s₃.wr (State.addr (s₃.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     rw [h₃.1.wr, h₃.1.reg .r6 (by decide)]; exact write₂
   apply WP.mono (expandReduce_ok s₃ _ (s.gpr .r2).toNat hb hb' (hT₂.frame h₃.1 tOut₂)
     (by rw [h₃.1.reg .r6 (by decide)]; exact tOut₂) (by rw [h₃.1.reg .r6 (by decide), ptr₂]; exact outFit)
     (by simpa using (h₃.1.reg .r7 (by decide)).trans bits₂) write₃
     (by rw [h₃.1.reg .r6 (by decide)]; exact h₃.2))
   intro s₄ h₄
-  have core := (CoreFrame.of_key h₃.1).trans h₄.1
-  have outFrame : Frame [⟨State.addr (s.gpr .r3), 128⟩] s₂.mem s₄.mem := by
+  obtain core := (CoreFrame.of_key h₃.1).trans h₄.1
+  obtain outFrame : Frame [⟨State.addr (s.gpr .r3), 128⟩] s₂.mem s₄.mem := by
     have h := core.mem
     rw [ptr₂] at h; exact h
-  have r8₄ : s₄.gpr .r8 = stackArg s 0 := (core.reg .r8 (by decide)).trans r8₂
-  have rd₄ := core.rd.trans rd₂
-  have wr₄ := core.wr.trans wr₂
-  have expanded : BytesPrefix s₄.mem (State.addr (s.gpr .r3))
+  obtain r8₄ : s₄.gpr .r8 = stackArg s 0 := (core.reg .r8 (by decide)).trans r8₂
+  obtain rd₄ := core.rd.trans rd₂
+  obtain wr₄ := core.wr.trans wr₂
+  obtain expanded : BytesPrefix s₄.mem (State.addr (s.gpr .r3))
       (Spec.Rc2.expandBytes (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat) (s.gpr .r2).toNat) 128 := by
     have h := h₄.2
     rw [h₃.1.reg .r6 (by decide), ptr₂, source₂] at h
     rw [expandBytes_eq]
-    have length : (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat).length = (s.gpr .r1).toNat := by
+    obtain length : (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat).length = (s.gpr .r1).toNat := by
       simp [Spec.Rc2.bytesAt]
     rw [length]; exact h
   rw [WP.block_append_iff]
   obtain ⟨s₅, run₅, base₅, keep₅⟩ := scratchBase_ok s₄
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   rw [r8₄] at base₅
-  have rd₅ := keep₅.rd.trans rd₄
-  have wr₅ := keep₅.wr.trans wr₄
-  have stored : Spill.Saved s₅.mem (State.addr (s₅.gpr .r12)) s.gpr (slotsOf saved) := by
+  obtain rd₅ := keep₅.rd.trans rd₄
+  obtain wr₅ := keep₅.wr.trans wr₄
+  obtain stored : Spill.Saved s₅.mem (State.addr (s₅.gpr .r12)) s.gpr (slotsOf saved) := by
     intro p hp
-    have bound := keySlots_ok.bound hp
+    obtain bound := keySlots_ok.bound hp
     rw [keep₅.mem, base₅, outFrame.readW (r := ⟨State.addr (stackArg s 0), 512⟩)
       (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using outScratch.symm) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, Spill.saveMem_saved _ _ _ _ keySlots_ok p hp]
-    have sep : ∀ p ∈ slotsOf saved, p.1 ≠ .r12 := by decide
+    obtain sep : ∀ p ∈ slotsOf saved, p.1 ≠ .r12 := by decide
     exact gpr₀ _ (sep p hp)
   rw [keyRestore_eq]
   apply WP.mono (Spill.restore_block_ok keySlots_ok (by decide) (by rw [base₅]; omega_arith)
@@ -232,7 +232,7 @@ theorem keyTaint_wf {s : State} (h : keyContract.pre (stripConsts piConsts s)) :
   simp only [stripConsts_wr, stripConsts_sp, stackArg_stripConsts, stackArgAddr_stripConsts] at wr ao asc spfit
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨spfit, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
-  have addr : State.addr s.sp = stackArgAddr s 0 := by simp [stackArgAddr]
+  obtain addr : State.addr s.sp = stackArgAddr s 0 := by simp [stackArgAddr]
   simp only [keyTaint, addr, wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact ao

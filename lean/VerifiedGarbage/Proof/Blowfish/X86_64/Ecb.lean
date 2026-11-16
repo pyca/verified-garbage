@@ -47,7 +47,7 @@ theorem constants_run (t : State) :
   refine ⟨t₃, cat_run (cat_run r₁ r₂) r₃, by rw [k₃ _ (by decide) (by decide), k₂ _ (by decide) (by decide), v₁],
     by rw [k₃ _ (by decide) (by decide), v₂], v₃, fun d h1 h2 h3 h4 => by rw [k₃ _ h3 h4, k₂ _ h2 h4, k₁ _ h1 h4],
     fun g h => by rw [g₃ _ h, g₂ _ h, g₁ _ h], ?_⟩
-  have u : ∀ {a c : State}, a = { c with gpr := a.gpr, xmm := a.xmm } → Upd c a := fun h => by
+  obtain u : ∀ {a c : State}, a = { c with gpr := a.gpr, xmm := a.xmm } → Upd c a := fun h => by
     unfold Upd; rw [h]
   exact Upd.trans (u e₃) (Upd.trans (u e₂) (u e₁))
 
@@ -105,24 +105,24 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
       (.block (storeBlock ++ ([.alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 1)] : List Instr))))) u
       (fun u' => EInv S D B n up s₀ (k + 1) u' ∧ u'.zf = some (BitVec.ofNat 64 (n - (k + 1)) == 0)) := by
   have fit := L.fit
-  have hrdw : u.rd ++ u.wr = [⟨S, 4168⟩, ⟨D, 8 * n⟩, ⟨B, 256⟩] := by rw [I.rd, I.wr, L.rd, L.wr]; rfl
-  have dR : (⟨D, 8 * n⟩ : Region) ∈ u.wr := by rw [I.wr, L.wr]; exact List.mem_cons_self
-  have bR : (⟨B, 256⟩ : Region) ∈ u.wr := by rw [I.wr, L.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
-  have sR : (⟨S, 4168⟩ : Region) ∈ u.rd ++ u.wr := by rw [hrdw]; exact List.mem_cons_self
+  obtain hrdw : u.rd ++ u.wr = [⟨S, 4168⟩, ⟨D, 8 * n⟩, ⟨B, 256⟩] := by rw [I.rd, I.wr, L.rd, L.wr]; rfl
+  obtain dR : (⟨D, 8 * n⟩ : Region) ∈ u.wr := by rw [I.wr, L.wr]; exact List.mem_cons_self
+  obtain bR : (⟨B, 256⟩ : Region) ∈ u.wr := by rw [I.wr, L.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
+  obtain sR : (⟨S, 4168⟩ : Region) ∈ u.rd ++ u.wr := by rw [hrdw]; exact List.mem_cons_self
   -- the block in
   obtain ⟨u₁, r₁, l₁, h₁, k₁, g₁, up₁⟩ := loadBlock_run u (wAt D k) I.rsi fun o ho =>
     ⟨_, List.mem_append_right _ dR, by rw [Offset.add_add]; exact Offset.contains_base D (by omega_arith) (by omega_arith)⟩
   apply WP.seq
   refine WP.of_runBlock ⟨u₁, r₁, ?_⟩
-  have m₁ : u₁.mem = u.mem := by rw [up₁]
-  have hK : scheduleAt u.mem S = scheduleAt s₀.mem S :=
+  obtain m₁ : u₁.mem = u.mem := by rw [up₁]
+  obtain hK : scheduleAt u.mem S = scheduleAt s₀.mem S :=
     scheduleAt_eq_of_frame S I.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact L.keyData
       · exact L.keyBuf
-  have CE : CipherEnv .rdi S u₁ := by
-    have rdw₁ : u₁.rd ++ u₁.wr = u.rd ++ u.wr := by rw [up₁]
+  obtain CE : CipherEnv .rdi S u₁ := by
+    obtain rdw₁ : u₁.rd ++ u₁.wr = u.rd ++ u.wr := by rw [up₁]
     refine ⟨⟨by rw [g₁ _ (by decide), I.rdi], by decide, by decide, by decide, fun off h => ?_,
       by rw [k₁ _ (by decide) (by decide), I.xmm _ (by decide), L.ones],
       by rw [k₁ _ (by decide) (by decide), I.xmm _ (by decide), L.sixteen],
@@ -131,15 +131,15 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
     · rw [rdw₁]; exact ⟨_, sR, Offset.contains_base S (by omega_arith) (by omega_arith)⟩
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun u₂ ⟨c₁, c₂, O⟩ => ?_
-  have up₂ : Upd u u₂ := Upd.trans O.upd up₁
-  have wr₂ : u₂.wr = u.wr := by rw [up₂]
-  have m₂ : u₂.mem = u.mem := by rw [up₂]
-  have gu : ∀ g, g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → u₂.gpr g = u.gpr g :=
+  obtain up₂ : Upd u u₂ := Upd.trans O.upd up₁
+  obtain wr₂ : u₂.wr = u.wr := by rw [up₂]
+  obtain m₂ : u₂.mem = u.mem := by rw [up₂]
+  obtain gu : ∀ g, g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → u₂.gpr g = u.gpr g :=
     fun g h1 h2 h3 h4 h5 => by rw [O.gpr _ h1 h2 h3 h4 h5, g₁ _ h5]
-  have subK : Region.Sub ⟨wAt D k, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_arith)
-  have subB : Region.Sub ⟨B, 16⟩ ⟨B, 256⟩ := Region.sub_prefix (by omega_arith)
-  have dKB : (⟨wAt D k, 8⟩ : Region).Disjoint ⟨B, 16⟩ := (L.dataBuf.sub_left subK).sub_right subB
-  have SE : StoreEnv (wAt D k) B u₂ := by
+  obtain subK : Region.Sub ⟨wAt D k, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_arith)
+  obtain subB : Region.Sub ⟨B, 16⟩ ⟨B, 256⟩ := Region.sub_prefix (by omega_arith)
+  obtain dKB : (⟨wAt D k, 8⟩ : Region).Disjoint ⟨B, 16⟩ := (L.dataBuf.sub_left subK).sub_right subB
+  obtain SE : StoreEnv (wAt D k) B u₂ := by
     refine ⟨by rw [gu _ (by decide) (by decide) (by decide) (by decide) (by decide), I.rsi],
       by rw [gu _ (by decide) (by decide) (by decide) (by decide) (by decide), I.rcx],
       ⟨_, by rw [wr₂]; exact dR, Offset.contains_base D (by omega_arith) (by omega_arith)⟩,
@@ -150,11 +150,11 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
   refine WP.of_runBlock ⟨u₅, ?_, ?_, ?_⟩
   · refine cat_run r₃ ?_
     rw [runBlock_cons, r₄, runStep_some, runBlock_cons, r₅, runStep_some, runBlock_nil]
-  have m₅ : u₅.mem = u₃.mem := by rw [up₅, up₄]
-  have g₅ : ∀ g, g ≠ .rsi → g ≠ .rdx → u₅.gpr g = u₃.gpr g := fun g h1 h2 => by rw [k₅ _ h2, k₄ _ h1]
-  have hgk : ∀ g, g ≠ .rsi → g ≠ .rdx → g ≠ .r11 → g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → u₅.gpr g = u.gpr g :=
+  obtain m₅ : u₅.mem = u₃.mem := by rw [up₅, up₄]
+  obtain g₅ : ∀ g, g ≠ .rsi → g ≠ .rdx → u₅.gpr g = u₃.gpr g := fun g h1 h2 => by rw [k₅ _ h2, k₄ _ h1]
+  obtain hgk : ∀ g, g ≠ .rsi → g ≠ .rdx → g ≠ .r11 → g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → u₅.gpr g = u.gpr g :=
     fun g h1 h2 h3 h4 h5 h6 h7 => by rw [g₅ _ h1 h2, g₃ _ h3, gu _ h4 h5 h6 h7 h3]
-  have other : ∀ b, b < n → b ≠ k → blockAt u₅.mem (wAt D b) = blockAt u.mem (wAt D b) := fun b hb hne => by
+  obtain other : ∀ b, b < n → b ≠ k → blockAt u₅.mem (wAt D b) = blockAt u.mem (wAt D b) := fun b hb hne => by
     rw [m₅, blockAt_frame f₃ fun r hr => ?_, m₂]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -213,37 +213,37 @@ theorem ecb_correct (up : Bool) {s : State} (h : EcbPre s) : WP isa (ecb up) s (
   apply WP.seq
   obtain ⟨s₀, r₀, o₀, x₀, l₀, k₀, g₀, up₀⟩ := constants_run s
   refine WP.of_runBlock ⟨s₀, r₀, ?_⟩
-  have m₀ : s₀.mem = s.mem := by rw [up₀]
-  have L : LoopEnv S D B n s₀ := by
+  obtain m₀ : s₀.mem = s.mem := by rw [up₀]
+  obtain L : LoopEnv S D B n s₀ := by
     refine ⟨by rw [up₀]; exact h.rd, by rw [up₀]; exact h.wr, h.keyData, h.keyBuf, h.dataBuf, fit,
       g₀ _ (by decide), g₀ _ (by decide), o₀, x₀, l₀⟩
   apply WP.seq
   let s₁ := arithFlags s₀ (s₀.gpr .rdx &&& s₀.gpr .rdx) false false
   refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_test, runStep_some, runBlock_nil], ?_⟩
-  have g₁ : s₁.gpr = s₀.gpr := by simp only [s₁, gpr_arithFlags]
-  have I0 : EInv S D B n up s₀ 0 s₁ := by
+  obtain g₁ : s₁.gpr = s₀.gpr := by simp only [s₁, gpr_arithFlags]
+  obtain I0 : EInv S D B n up s₀ 0 s₁ := by
     refine ⟨by omega_arith, ?_, ?_, ?_, ?_, fun g _ _ _ _ _ _ _ => by rw [g₁], fun d _ => rfl,
       fun b hb => by omega_arith, fun b _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
     · rw [g₁, g₀ _ (by decide)]; simp [wAt, D]
     · rw [g₁, g₀ _ (by decide)]; simp [n]
     · rw [g₁, g₀ _ (by decide)]
     · rw [g₁, g₀ _ (by decide)]
-  have fin : ∀ u, EInv S D B n up s₀ n u → EcbPost up s u := fun u I => by
+  obtain fin : ∀ u, EInv S D B n up s₀ n u → EcbPost up s u := fun u I => by
     refine ⟨fun b hb => ?_, fun g h1 h2 h3 h4 h5 h6 h7 => ?_, ?_⟩
     · rw [I.done b hb, m₀]
     · rw [I.gpr _ h1 h2 h3 h4 h5 h6 h7, g₀ _ h3]
     · rw [← m₀]; exact I.frame
-  have zf₁ : s₁.zf = some (s.gpr .rdx == 0) := by
+  obtain zf₁ : s₁.zf = some (s.gpr .rdx == 0) := by
     simp only [s₁, zf_arithFlags, g₀ _ (show Reg.rdx ≠ .r11 by decide), BitVec.and_self]
   apply WP.ite (s.gpr .rdx == 0) zf₁
   · intro hz
-    have hn : n = 0 := by
+    obtain hn : n = 0 := by
       have := congrArg BitVec.toNat (beq_iff_eq.mp hz)
       simpa [n] using this
     apply WP.block_nil
     exact fin s₁ (hn ▸ I0)
   · intro hz
-    have hn : 0 < n := by
+    obtain hn : 0 < n := by
       have : s.gpr .rdx ≠ 0 := by simpa using hz
       have : (s.gpr .rdx).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
       omega_arith
@@ -251,13 +251,13 @@ theorem ecb_correct (up : Bool) {s : State} (h : EcbPre s) : WP isa (ecb up) s (
       (fun m u => ∃ k, k < n ∧ m = n - k ∧ EInv S D B n up s₀ k u) ?_ n s₁ ⟨0, hn, rfl, I0⟩) fin
     intro m u ⟨k, hk, hm, I⟩
     refine WP.mono (ecb_step L hk I) fun u' ⟨I', zu⟩ => ?_
-    have ev : isa.eval .ne u' = some (!(BitVec.ofNat 64 (n - (k + 1)) == 0)) := by
+    obtain ev : isa.eval .ne u' = some (!(BitVec.ofNat 64 (n - (k + 1)) == 0)) := by
       show u'.zf.map (!·) = _; rw [zu]; rfl
     by_cases e : k + 1 = n
     · left
       refine ⟨by rw [ev, e, Nat.sub_self]; rfl, e ▸ I'⟩
     · right
-      have nz : BitVec.ofNat 64 (n - (k + 1)) ≠ 0 := by
+      obtain nz : BitVec.ofNat 64 (n - (k + 1)) ≠ 0 := by
         intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
       exact ⟨by rw [ev, show (BitVec.ofNat 64 (n - (k + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
         n - (k + 1), by omega_arith, k + 1, by omega_arith, rfl, I'⟩

@@ -56,7 +56,7 @@ theorem stageMask_ok (s : State) {k v : Nat} (hk : k ≤ 5) (hv : v < 64) (h6 : 
     simp only [gpr_setReg, ite_true, h6, bit32_0 hv]
     rfl
   · have h1 : 1 ≤ k := by omega_using [hk0]
-    have h31 : k ≤ 31 := by omega_using [hk]
+    obtain h31 : k ≤ 31 := by omega_using [hk]
     refine ⟨_, by orun [stageMask, hk0, h1, h31], ?_, by rfl, by others_tac, by rfl, by rfl, by rfl⟩
     simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, h6, bit32 hv]
     rfl
@@ -76,9 +76,9 @@ theorem stageWords_ok (s : State) {a : Nat} (ha : 0 < a) (ha' : a < 32) (b : Boo
     ∃ s', runBlock isa (stageWords a) s = some s' ∧ words s' = shlIf b a (words s) ∧
       Ran [.r0, .r1, .r2, .r3, .r4, .r5, .r8] s.mem s s' := by
   have h1 : 1 ≤ a := ha
-  have h31 : a ≤ 31 := by omega_using [ha']
-  have h1' : 1 ≤ 32 - a := by omega_using [ha']
-  have h31' : 32 - a ≤ 31 := by omega_using [ha]
+  obtain h31 : a ≤ 31 := by omega_using [ha']
+  obtain h1' : 1 ≤ 32 - a := by omega_using [ha']
+  obtain h31' : 32 - a ≤ 31 := by omega_using [ha]
   refine ⟨_, by orun [stageWords, sel, h1, h31, h1', h31', List.flatMap_cons, List.flatMap_nil], ?_, by rfl,
     by others_tac, by rfl, by rfl, by rfl⟩
   simp only [words, gpr_setReg, ite_true, ite_false, reduceCtorEq, h7]
@@ -172,18 +172,18 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
     ∃ s', runBlock isa offset0 s = some s' ∧
       Off0Post (State.addr p.W)
         ((stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128) s s' := by
-  have ew : ∀ k, k < 2560 → State.addr (p.W + BitVec.ofNat 32 k) = State.addr p.W + BitVec.ofNat 64 k :=
+  obtain ew : ∀ k, k < 2560 → State.addr (p.W + BitVec.ofNat 32 k) = State.addr p.W + BitVec.ofNat 64 k :=
     fun k hk => L.wA hk
-  have e112 := ew 112 (by decide)
-  have e116 := ew 116 (by decide)
-  have e120 := ew 120 (by decide)
-  have e124 := ew 124 (by decide)
-  have e208 := ew 208 (by decide)
-  have r112 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 112) 4 := E.perm.wR (by decide)
-  have r116 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 116) 4 := E.perm.wR (by decide)
-  have r120 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 120) 4 := E.perm.wR (by decide)
-  have r124 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 124) 4 := E.perm.wR (by decide)
-  have r208 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 208) 4 := E.perm.wR (by decide)
+  obtain e112 := ew 112 (by decide)
+  obtain e116 := ew 116 (by decide)
+  obtain e120 := ew 120 (by decide)
+  obtain e124 := ew 124 (by decide)
+  obtain e208 := ew 208 (by decide)
+  obtain r112 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 112) 4 := E.perm.wR (by decide)
+  obtain r116 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 116) 4 := E.perm.wR (by decide)
+  obtain r120 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 120) 4 := E.perm.wR (by decide)
+  obtain r124 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 124) 4 := E.perm.wR (by decide)
+  obtain r208 : InRegions (s.rd ++ s.wr) (State.addr p.W + BitVec.ofNat 64 208) 4 := E.perm.wR (by decide)
   simp only [botO] at hbot
   obtain ⟨s₁, run₁, w₁, r6₁, R₁⟩ : ∃ s₁, runBlock isa off0Head s = some s₁ ∧
       words s₁ = stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO)) ∧
@@ -191,7 +191,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
     refine ⟨_, by orun [off0Head, E.r11, e112, e116, e120, e124, e208, r112, r116, r120, r124, r208], ?_, ?_,
       by rfl, by others_tac, by rfl, by rfl, by rfl⟩
     · simp only [words, gpr_setReg, ite_true, ite_false, reduceCtorEq, rev_eq]
-      have hb : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO) =
+      obtain hb : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO) =
           byteRev32 (s.mem.readW (State.addr p.W + BitVec.ofNat 64 112) 32) ++
             byteRev32 (s.mem.readW (State.addr p.W + BitVec.ofNat 64 116) 32) ++
             byteRev32 (s.mem.readW (State.addr p.W + BitVec.ofNat 64 120) 32) ++
@@ -201,7 +201,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
         exact this
       rw [stretch, hb, Proof.Ocb.stretch_words32]
     · simp only [gpr_setReg, ite_true, hbot]
-  have keep : ∀ {t t' : State}, Ran stageRegs t.mem t t' → t.gpr .r6 = BitVec.ofNat 32 v →
+  obtain keep : ∀ {t t' : State}, Ran stageRegs t.mem t t' → t.gpr .r6 = BitVec.ofNat 32 v →
       t'.gpr .r6 = BitVec.ofNat 32 v := fun R h => by rw [R.gpr _ (by decide), h]
   obtain ⟨s₂, run₂, w₂, R₂⟩ := stage_ok s₁ (k := 0) (a := 1) (by decide) (by decide) (by decide) hv r6₁
   obtain ⟨s₃, run₃, w₃, R₃⟩ := stage_ok s₂ (k := 1) (a := 2) (by decide) (by decide) (by decide) hv (keep R₂ r6₁)
@@ -212,42 +212,42 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
   obtain ⟨s₆, run₆, w₆, R₆⟩ := stage_ok s₅ (k := 4) (a := 16) (by decide) (by decide) (by decide) hv
     (keep R₅ (keep R₄ (keep R₃ (keep R₂ r6₁))))
   obtain ⟨s₇, run₇, w₇, R₇⟩ := stage32_ok s₆ hv (keep R₆ (keep R₅ (keep R₄ (keep R₃ (keep R₂ r6₁)))))
-  have hw7 : words s₇ = stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO)) <<< v := by
+  obtain hw7 : words s₇ = stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO)) <<< v := by
     rw [w₇, w₆, w₅, w₄, w₃, w₂, w₁, Proof.Ocb.shl_stages _ hv]
-  have hO : s₇.gpr .r0 ++ s₇.gpr .r1 ++ s₇.gpr .r2 ++ s₇.gpr .r3 =
+  obtain hO : s₇.gpr .r0 ++ s₇.gpr .r1 ++ s₇.gpr .r2 ++ s₇.gpr .r3 =
       (stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
     rw [← Proof.Ocb.top4 _ _ _ _ (s₇.gpr .r4) (s₇.gpr .r5), show s₇.gpr .r0 ++ s₇.gpr .r1 ++ s₇.gpr .r2 ++
       s₇.gpr .r3 ++ s₇.gpr .r4 ++ s₇.gpr .r5 = words s₇ from rfl, hw7, Proof.Ocb.offset_shl _ (by omega_using [hv])]
-  have hm₇ : s₇.mem = s.mem := by rw [R₇.mem, R₆.mem, R₅.mem, R₄.mem, R₃.mem, R₂.mem, R₁.mem]
-  have hsp₇ : s₇.sp = s.sp := by rw [R₇.sp, R₆.sp, R₅.sp, R₄.sp, R₃.sp, R₂.sp, R₁.sp]
-  have hrd₇ : s₇.rd = s.rd := by rw [R₇.rd, R₆.rd, R₅.rd, R₄.rd, R₃.rd, R₂.rd, R₁.rd]
-  have hwr₇ : s₇.wr = s.wr := by rw [R₇.wr, R₆.wr, R₅.wr, R₄.wr, R₃.wr, R₂.wr, R₁.wr]
-  have g₁₇ : Others [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8] s s₇ := fun r hr => by
+  obtain hm₇ : s₇.mem = s.mem := by rw [R₇.mem, R₆.mem, R₅.mem, R₄.mem, R₃.mem, R₂.mem, R₁.mem]
+  obtain hsp₇ : s₇.sp = s.sp := by rw [R₇.sp, R₆.sp, R₅.sp, R₄.sp, R₃.sp, R₂.sp, R₁.sp]
+  obtain hrd₇ : s₇.rd = s.rd := by rw [R₇.rd, R₆.rd, R₅.rd, R₄.rd, R₃.rd, R₂.rd, R₁.rd]
+  obtain hwr₇ : s₇.wr = s.wr := by rw [R₇.wr, R₆.wr, R₅.wr, R₄.wr, R₃.wr, R₂.wr, R₁.wr]
+  obtain g₁₇ : Others [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8] s s₇ := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    have h' : r ∉ stageRegs := by
+    obtain h' : r ∉ stageRegs := by
       simp [stageRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1,
         hr.2.2.2.2.2.2.2.2]
     rw [R₇.gpr r h', R₆.gpr r h', R₅.gpr r h', R₄.gpr r h', R₃.gpr r h', R₂.gpr r h',
       R₁.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1])]
-  have r11₇ : s₇.gpr .r11 = p.W := by rw [g₁₇ _ (by decide), E.r11]
-  have P₇ : Perm p s₇ := E.perm.of_eq hrd₇ hwr₇
-  have ww : ∀ d, d + 4 ≤ 2560 → InRegions s₇.wr (State.addr p.W + BitVec.ofNat 64 d) 4 := fun d h => P₇.wW h
-  have e16 := ew 16 (by decide)
-  have e20 := ew 20 (by decide)
-  have e24 := ew 24 (by decide)
-  have e28 := ew 28 (by decide)
-  have e224 := ew 224 (by decide)
-  have e228 := ew 228 (by decide)
-  have e232 := ew 232 (by decide)
-  have e236 := ew 236 (by decide)
-  have w16 := ww 16 (by decide)
-  have w20 := ww 20 (by decide)
-  have w24 := ww 24 (by decide)
-  have w28 := ww 28 (by decide)
-  have w224 := ww 224 (by decide)
-  have w228 := ww 228 (by decide)
-  have w232 := ww 232 (by decide)
-  have w236 := ww 236 (by decide)
+  obtain r11₇ : s₇.gpr .r11 = p.W := by rw [g₁₇ _ (by decide), E.r11]
+  obtain P₇ : Perm p s₇ := E.perm.of_eq hrd₇ hwr₇
+  obtain ww : ∀ d, d + 4 ≤ 2560 → InRegions s₇.wr (State.addr p.W + BitVec.ofNat 64 d) 4 := fun d h => P₇.wW h
+  obtain e16 := ew 16 (by decide)
+  obtain e20 := ew 20 (by decide)
+  obtain e24 := ew 24 (by decide)
+  obtain e28 := ew 28 (by decide)
+  obtain e224 := ew 224 (by decide)
+  obtain e228 := ew 228 (by decide)
+  obtain e232 := ew 232 (by decide)
+  obtain e236 := ew 236 (by decide)
+  obtain w16 := ww 16 (by decide)
+  obtain w20 := ww 20 (by decide)
+  obtain w24 := ww 24 (by decide)
+  obtain w28 := ww 28 (by decide)
+  obtain w224 := ww 224 (by decide)
+  obtain w228 := ww 228 (by decide)
+  obtain w232 := ww 232 (by decide)
+  obtain w236 := ww 236 (by decide)
   obtain ⟨s₈, run₈, m₈, R₈⟩ : ∃ s₈, runBlock isa off0Tail s₇ = some s₈ ∧
       s₈.mem = Proof.Cmac.store4 (Proof.Cmac.store4 s₇.mem (State.addr p.W + BitVec.ofNat 64 16)
           (byteRev32 (s₇.gpr .r0)) (byteRev32 (s₇.gpr .r1)) (byteRev32 (s₇.gpr .r2)) (byteRev32 (s₇.gpr .r3)))
@@ -258,7 +258,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
       w232, w236], ?_, by rfl, by others_tac, by rfl, by rfl, by rfl⟩
     simp only [mem_setReg, mem_store, gpr_setReg, ite_true, ite_false, reduceCtorEq, rev_eq, Proof.Cmac.store4,
       Offset.add_add]
-  have val : ∀ (M : Mem) (C : Addr), blockAtMem (Proof.Cmac.store4 M C
+  obtain val : ∀ (M : Mem) (C : Addr), blockAtMem (Proof.Cmac.store4 M C
       (byteRev32 (s₇.gpr .r0)) (byteRev32 (s₇.gpr .r1)) (byteRev32 (s₇.gpr .r2)) (byteRev32 (s₇.gpr .r3))) C =
       (stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := fun M C => by
     rw [blockAtMem, Proof.Cmac.bytesAt_store4, Proof.Cmac.le4_rev4, ← hO]

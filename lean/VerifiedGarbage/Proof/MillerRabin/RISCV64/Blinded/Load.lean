@@ -100,15 +100,15 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl t b ch used : Nat} (h : BCtx 
   have htw := h.tw
   have hw4 := e.hw
   have hw128 := e.hw'
-  have hD : 8 * (t + 1) ≤ 8 * w := by omega
+  obtain hD : 8 * (t + 1) ≤ 8 * w := by omega
   unfold load loadDraw
   -- The tape's address, `hUsed`, and array 4's base.
   refine WP.assoc' (WP.seq (WP.mono (loadA_ok h hu) fun u ⟨⟨u7, u8, ua7, um⟩, ku⟩ => ?_))
-  have hu' : Scr u B (8 * L) := hs.congr ku.2.2
-  have hNr : ∀ i < 8 * (t + 1), InRegions (u.rd ++ u.wr) (off (R + BitVec.ofNat 64 used) i) 1 := fun i hi => by
+  obtain hu' : Scr u B (8 * L) := hs.congr ku.2.2
+  obtain hNr : ∀ i < 8 * (t + 1), InRegions (u.rd ++ u.wr) (off (R + BitVec.ofNat 64 used) i) 1 := fun i hi => by
     rw [ku.2.1, ku.2.2, show off (R + BitVec.ofNat 64 used) i = R + BitVec.ofNat 64 used + BitVec.ofNat 64 i from rfl,
       Offset.add_add]; exact h.rdR _ (by omega)
-  have hNs : ∀ i < 8 * (t + 1), ∀ x, ofs B x < 8 * L → off (R + BitVec.ofNat 64 used) i ≠ x := fun i hi x hx => by
+  obtain hNs : ∀ i < 8 * (t + 1), ∀ x, ofs B x < 8 * L → off (R + BitVec.ofNat 64 used) i ≠ x := fun i hi x hx => by
     rw [show off (R + BitVec.ofNat 64 used) i = R + BitVec.ofNat 64 used + BitVec.ofNat 64 i from rfl,
       Offset.add_add]; exact h.sepR _ (by omega) x hx
   refine WP.assoc' (WP.seq (WP.mono (loadN_ok (k := 8 * (t + 1)) hu' ua7
@@ -117,41 +117,41 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl t b ch used : Nat} (h : BCtx 
     (by simp only [slot, hdrBytes]; omega) hNr hNs)
     fun v ⟨vv, vo, kv⟩ => ?_))
   -- The memory so far: `hUsed` and array 4.
-  have fu : Frm B [(8 * hUsed, 8), (slot w 4, 8 * (w + 2))] s.mem v.mem := by
+  obtain fu : Frm B [(8 * hUsed, 8), (slot w 4, 8 * (w + 2))] s.mem v.mem := by
     refine Frm.trans (Frm.of_outside (o := 8 * hUsed) (n := 8) ?_ (by simp))
       (Frm.of_outside (o := slot w 4) (n := 8 * (w + 2)) (fun x hx => vo x (by simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at hx ⊢; omega)) (by simp))
     rw [um]; exact writeW_outside _ _ _ (by simp only [hUsed]; omega)
-  have bytes : Spec.Rsa.bytesAt u.mem (R + BitVec.ofNat 64 used) (8 * (t + 1)) =
+  obtain bytes : Spec.Rsa.bytesAt u.mem (R + BitVec.ofNat 64 used) (8 * (t + 1)) =
       Spec.Rsa.bytesAt s.mem (R + BitVec.ofNat 64 used) (8 * (t + 1)) := by
     rw [um]
     refine h.bytes_keep (fun x hx => writeW_outside _ _ _ (by simp only [hUsed]; omega) x (by simp only [hUsed]; omega)) hav
-  have hval : wv v.mem B (slot w 4) w = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (R + BitVec.ofNat 64 used) (8 * (t + 1))) := by
+  obtain hval : wv v.mem B (slot w 4) w = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (R + BitVec.ofNat 64 used) (8 * (t + 1))) := by
     rw [← Pre.wordsVal_eq_wv, vv, bytes]
-  have hlt : wv v.mem B (slot w 4) w < 2 ^ (64 * (t + 1)) := by
+  obtain hlt : wv v.mem B (slot w 4) w < 2 ^ (64 * (t + 1)) := by
     rw [hval]
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (R + BitVec.ofNat 64 used) (8 * (t + 1)))
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
     rwa [show (256 : Nat) ^ (8 * (t + 1)) = 2 ^ (64 * (t + 1)) by
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega] at this
   -- Header words the draw reads.
-  have kvu := ku.trans kv
-  have v6 : v.gpr .s6 = B := (kvu.gpr (by decide)).trans e.s6
-  have v5 : v.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) := (kvu.gpr (by decide)).trans e.s5
-  have vw : ∀ d, d + 8 ≤ 256 → d % 8 = 0 → d ≠ 8 * hUsed → word v.mem B d = word s.mem B d := fun d hd h8 hn =>
+  obtain kvu := ku.trans kv
+  obtain v6 : v.gpr .s6 = B := (kvu.gpr (by decide)).trans e.s6
+  obtain v5 : v.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2)) := (kvu.gpr (by decide)).trans e.s5
+  obtain vw : ∀ d, d + 8 ≤ 256 → d % 8 = 0 → d ≠ 8 * hUsed → word v.mem B d = word s.mem B d := fun d hd h8 hn =>
     fu.word_eq (fun r hr => by
       simp only [hUsed, List.mem_cons, List.not_mem_nil, or_false] at hr hn
       rcases hr with rfl | rfl <;> simp only [slot, hdrBytes] <;> omega) (by omega)
-  have hv : Scr v B (8 * L) := hs.congr kvu.2.2
-  have r128 : v.mem.readW (B + 128#64) 64 = BitVec.ofNat 64 (8 * t) :=
+  obtain hv : Scr v B (8 * L) := hs.congr kvu.2.2
+  obtain r128 : v.mem.readW (B + 128#64) 64 = BitVec.ofNat 64 (8 * t) :=
     (vw 128 (by omega) (by decide) (by simp [hUsed])).trans h.topOff
-  have r192 : v.mem.readW (B + 192#64) 64 = BitVec.ofNat 64 (2 ^ b - 1) :=
+  obtain r192 : v.mem.readW (B + 192#64) 64 = BitVec.ofNat 64 (2 ^ b - 1) :=
     (vw 192 (by omega) (by decide) (by simp [hUsed])).trans h.top
   have es4 : slot w 4 = 256 + 4 * (8 * (w + 2)) := rfl
   -- `a7` back, then the top word's mask.
   refine WP.seq (WP.mono (WP.keep [.a7] (Q := fun (y : State) => y.gpr .a7 = off B (slot w 0) ∧ y.mem = v.mem)
       (by brun [v6, hdrBytes]; simp only [slot, hdrBytes, Nat.zero_mul, Nat.add_zero]) (by rfl) (by rfl))
     fun y ⟨⟨y7, ym⟩, ky⟩ => ?_)
-  have ey : Env y B (8 * L) w := ⟨hv.congr ky.2.2, y7, (ky.gpr (by decide)).trans v5,
+  obtain ey : Env y B (8 * L) w := ⟨hv.congr ky.2.2, y7, (ky.gpr (by decide)).trans v5,
     (ky.gpr (by decide)).trans ((kvu.gpr (by decide)).trans e.t0),
     (ky.gpr (by decide)).trans v6, hw4, hw128, e.hZ⟩
   refine WP.mono (WP.keep [.t2, .t3, .t4] (Q := fun x =>
@@ -161,12 +161,12 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl t b ch used : Nat} (h : BCtx 
   · simp only [topAddr, List.append_assoc]
     rw [WP.block_append_iff]
     refine WP.mono (ey.base (rd := .t3) (by decide) 4) fun z ⟨⟨z3, zm⟩, kz⟩ => ?_
-    have z6 : z.gpr .s6 = B := (kz.gpr (by decide)).trans ey.s6
-    have hz : Scr z B (8 * L) := ey.hs.congr kz.2.2
-    have z7 : z.gpr .a7 = off B (slot w 0) := (kz.gpr (by decide)).trans y7
+    obtain z6 : z.gpr .s6 = B := (kz.gpr (by decide)).trans ey.s6
+    obtain hz : Scr z B (8 * L) := ey.hs.congr kz.2.2
+    obtain z7 : z.gpr .a7 = off B (slot w 0) := (kz.gpr (by decide)).trans y7
     simp only [ldh, hTopOff, hTop]
-    have ha : slot w 4 + 8 * t + 8 ≤ 8 * L := by simp only [slot, hdrBytes]; omega
-    have ha8 : (slot w 4 + 8 * t) % 8 = 0 := by simp only [slot, hdrBytes]; omega
+    obtain ha : slot w 4 + 8 * t + 8 ≤ 8 * L := by simp only [slot, hdrBytes]; omega
+    obtain ha8 : (slot w 4 + 8 * t) % 8 = 0 := by simp only [slot, hdrBytes]; omega
     brun [z6, z3, zm, ym, r128, r192, hz.ld (d := 128) (n := 8) (by omega), hz.al8 (d := 128) (by omega) (by decide),
       hz.ld (d := 192) (n := 8) (by omega), hz.al8 (d := 192) (by omega) (by decide),
       hz.ld (d := slot w 4 + 8 * t) (n := 8) ha, hz.al8 (d := slot w 4 + 8 * t) ha ha8,
@@ -180,7 +180,7 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl t b ch used : Nat} (h : BCtx 
       exact (writeW_outside _ _ _ ha).word (by omega) (by simp only [slot, hdrBytes]; omega)
     · rw [xm, (writeW_outside _ _ _ (by simp only [slot, hdrBytes]; omega)).word
         (by simp only [hUsed, slot, hdrBytes]; omega) (by simp only [hUsed]; omega)]
-      have hv1 : word v.mem B (8 * hUsed) = word u.mem B (8 * hUsed) :=
+      obtain hv1 : word v.mem B (8 * hUsed) = word u.mem B (8 * hUsed) :=
         vo.word (by simp only [hUsed, slot, hdrBytes]; omega) (by simp only [hUsed]; omega)
       rw [hv1, um]
       exact word_writeW_self _ _ _ _

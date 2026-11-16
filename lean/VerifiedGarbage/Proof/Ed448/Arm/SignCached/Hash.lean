@@ -117,8 +117,8 @@ theorem seed_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
       Spec.Ed448.bytesAt u.mem (State.addr L.E + BitVec.ofNat 64 S) 114 =
         Spec.Sha3.shake256 (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) 114 := by
   have hk := hL.kit
-  have hw : Whole.Within ⟨State.addr L.seed, 57⟩ L.SEED := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have hR : L.SEED ∈ L.inputs := by simp [Lay.inputs]
+  obtain hw : Whole.Within ⟨State.addr L.seed, 57⟩ L.SEED := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain hR : L.SEED ∈ L.inputs := by simp [Lay.inputs]
   obtain ⟨hcov, hd⟩ := hL.input_data hR hw
   unfold seedHash
   refine WP.seq (WP.mono (hk.zero_ok hc ha (scr_at L)) fun t1 ⟨hc1, hz, hf1⟩ => ?_)
@@ -130,7 +130,7 @@ theorem seed_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
     fun t3 ⟨hc3, hf3, hs3⟩ => ?_)
   refine WP.mono (hk.sqz_step hc3 ha (scr_at L) (d := S) (by decide) (by decide)) fun u ⟨hu, hf4, hb⟩ =>
     ⟨hu, ((W.zero hf1).trans (W.abs hf2)).trans ((W.abs hf3).trans (W.sqz (by simp) hf4)), ?_⟩
-  have e := hk.input_bytes hc1 hR hw (by change 57 ≤ 2 ^ 64; decide)
+  obtain e := hk.input_bytes hc1 hR hw (by change 57 ≤ 2 ^ 64; decide)
   simp only at e
   rw [hb, hs3, ← PublicKey.shake256_eq, e]
 
@@ -143,18 +143,18 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     (by simp [reduceExec, S]) (WP.block_nil ?_))
   have hsp := hc.sp
   have ht := hL.top
-  have e12 : (t.setReg .r12 (t.sp + BitVec.ofNat 32 S)).gpr .r12 = L.E + BitVec.ofNat 32 S := by
+  obtain e12 : (t.setReg .r12 (t.sp + BitVec.ofNat 32 S)).gpr .r12 = L.E + BitVec.ofNat 32 S := by
     simp [State.setReg, hsp]
   refine WP.mono (PublicKey.pruneOps_ok (q := State.addr L.E + BitVec.ofNat 64 S)
     (by rw [e12]; exact hL.kit.frame_addr (by decide))
     (by rw [e12]; exact hL.kit.frame_fit (by decide))
     (fun j hj => by
-      have h := hc.writable_frame (Offset.contains_base (State.addr L.E) (d := S + j) (n := 1)
+      obtain h := hc.writable_frame (Offset.contains_base (State.addr L.E) (d := S + j) (n := 1)
         (k := 248) (by simp only [S]; omega_using [hj]) (by simp only [S]; omega_using [hj]))
       rw [← Offset.add_add] at h
       exact h))
     fun u ⟨um, usp, urd, uwr, ug⟩ => ?_
-  have hf : Frame [L.fr S 57] t.mem u.mem := by
+  obtain hf : Frame [L.fr S 57] t.mem u.mem := by
     rw [um]
     refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _
       ?_).writeW (List.mem_singleton_self _) _ ?_
@@ -193,10 +193,10 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
           (Spec.Ed448.bytesAt t.mem (State.addr L.E + BitVec.ofNat 64 K) 57 ++
             Spec.Ed448.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
   have hk := hL.kit
-  have wx : Whole.Within ⟨State.addr L.ctx, L.ctxLen.toNat⟩ L.CTX := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have wm : Whole.Within ⟨State.addr L.msg, L.len.toNat⟩ L.MSG := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have rx : L.CTX ∈ L.inputs := by simp [Lay.inputs]
-  have rm : L.MSG ∈ L.inputs := by simp [Lay.inputs]
+  obtain wx : Whole.Within ⟨State.addr L.ctx, L.ctxLen.toNat⟩ L.CTX := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain wm : Whole.Within ⟨State.addr L.msg, L.len.toNat⟩ L.MSG := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain rx : L.CTX ∈ L.inputs := by simp [Lay.inputs]
+  obtain rm : L.MSG ∈ L.inputs := by simp [Lay.inputs]
   obtain ⟨cx, dx⟩ := hL.input_data rx wx
   obtain ⟨cm, dm⟩ := hL.input_data rm wm
   unfold nonceHash
@@ -208,15 +208,15 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (by rw [hk.frame_addr (by decide)]; exact .inl (frame_within _ (by decide)))
     (by rw [hk.frame_addr (by decide)]; exact hL.away_hdr) (hk.frame_fit (by decide)) (PublicKey.repr_nil hz))
     fun t2 ⟨hc2, hf2, hr2, hp2⟩ => ?_)
-  have hh1 := hL.away_hdr.bytes (ex := []) (fun _ h => nomatch h) (W.zero hf1) (by change 10 ≤ 2 ^ 64; decide)
+  obtain hh1 := hL.away_hdr.bytes (ex := []) (fun _ h => nomatch h) (W.zero hf1) (by change 10 ≤ 2 ^ 64; decide)
   simp only at hh1
   rw [hk.frame_addr (by decide), hh1, hh] at hr2
-  have hp2' : t2.gpr .r0 = BitVec.ofNat 32 ((hdrBytes L.ctxLen).length % 136) := by rw [hp2, hdr_len]
+  obtain hp2' : t2.gpr .r0 = BitVec.ofNat 32 ((hdrBytes L.ctxLen).length % 136) := by rw [hp2, hdr_len]
   -- The context.
   refine WP.seq (WP.mono (next_abs hc2 hL ha (src := .caller 3 0) (len := .caller 4 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx hL.nx hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
+  obtain ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- The prefix.
@@ -225,7 +225,7 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (by rw [hk.frame_addr (by decide)]; exact .inl (frame_within _ (by decide)))
     (by rw [hk.frame_addr (by decide)]; exact hL.away_k) (hk.frame_fit (by decide)) hr3 hp3)
     fun t4 ⟨hc4, hf4, hr4, hp4⟩ => ?_)
-  have hk3 := hL.away_k.bytes (ex := []) (fun _ h => nomatch h)
+  obtain hk3 := hL.away_k.bytes (ex := []) (fun _ h => nomatch h)
     (((W.zero hf1).trans (W.abs hf2)).trans (W.abs hf3)) (by change 57 ≤ 2 ^ 64; decide)
   simp only at hk3
   rw [hk.frame_addr (by decide), hk3] at hr4 hp4
@@ -233,7 +233,7 @@ theorem nonce_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc4 hL ha (src := .caller 5 0) (len := LEN) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value, LEN]) cm dm hL.nm hr4 hp4) fun t5 ⟨hc5, hf5, hr5, hp5⟩ => ?_)
-  have em := hk.input_bytes hc4 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
+  obtain em := hk.input_bytes hc4 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr5 hp5
   -- Pad and squeeze.
@@ -255,12 +255,12 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
           (Spec.Ed448.bytesAt t.mem (State.addr L.out) 57 ++ Spec.Ed448.bytesAt m₀ (State.addr L.pk) 57 ++
             Spec.Ed448.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
   have hk := hL.kit
-  have wx : Whole.Within ⟨State.addr L.ctx, L.ctxLen.toNat⟩ L.CTX := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have wp : Whole.Within ⟨State.addr L.pk, 57⟩ L.PK := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have wm : Whole.Within ⟨State.addr L.msg, L.len.toNat⟩ L.MSG := ⟨0, (BitVec.add_zero _).symm, by simp⟩
-  have rx : L.CTX ∈ L.inputs := by simp [Lay.inputs]
-  have rp : L.PK ∈ L.inputs := by simp [Lay.inputs]
-  have rm : L.MSG ∈ L.inputs := by simp [Lay.inputs]
+  obtain wx : Whole.Within ⟨State.addr L.ctx, L.ctxLen.toNat⟩ L.CTX := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain wp : Whole.Within ⟨State.addr L.pk, 57⟩ L.PK := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain wm : Whole.Within ⟨State.addr L.msg, L.len.toNat⟩ L.MSG := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+  obtain rx : L.CTX ∈ L.inputs := by simp [Lay.inputs]
+  obtain rp : L.PK ∈ L.inputs := by simp [Lay.inputs]
+  obtain rm : L.MSG ∈ L.inputs := by simp [Lay.inputs]
   obtain ⟨cx, dx⟩ := hL.input_data rx wx
   obtain ⟨cp, dp⟩ := hL.input_data rp wp
   obtain ⟨cm, dm⟩ := hL.input_data rm wm
@@ -273,15 +273,15 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (by rw [hk.frame_addr (by decide)]; exact .inl (frame_within _ (by decide)))
     (by rw [hk.frame_addr (by decide)]; exact hL.away_hdr) (hk.frame_fit (by decide)) (PublicKey.repr_nil hz))
     fun t2 ⟨hc2, hf2, hr2, hp2⟩ => ?_)
-  have hh1 := hL.away_hdr.bytes (ex := []) (fun _ h => nomatch h) (W.zero hf1) (by change 10 ≤ 2 ^ 64; decide)
+  obtain hh1 := hL.away_hdr.bytes (ex := []) (fun _ h => nomatch h) (W.zero hf1) (by change 10 ≤ 2 ^ 64; decide)
   simp only at hh1
   rw [hk.frame_addr (by decide), hh1, hh] at hr2
-  have hp2' : t2.gpr .r0 = BitVec.ofNat 32 ((hdrBytes L.ctxLen).length % 136) := by rw [hp2, hdr_len]
+  obtain hp2' : t2.gpr .r0 = BitVec.ofNat 32 ((hdrBytes L.ctxLen).length % 136) := by rw [hp2, hdr_len]
   -- The context.
   refine WP.seq (WP.mono (next_abs hc2 hL ha (src := .caller 3 0) (len := .caller 4 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx hL.nx hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
+  obtain ex := hk.input_bytes hc2 rx wx (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- `R`.
@@ -289,7 +289,7 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     ⟨by decide, by decide⟩ (valid_const (by decide)) (by simp [argVal, Lay.value]) rfl
     (.inr ⟨L.OUT, List.mem_append_right _ (out_in L), r0_within L⟩) hL.away_r0 (by have := hL.no; omega_using [this]) hr3 hp3)
     fun t4 ⟨hc4, hf4, hr4, hp4⟩ => ?_)
-  have hr3' := hL.away_r0.bytes (ex := []) (fun _ h => nomatch h)
+  obtain hr3' := hL.away_r0.bytes (ex := []) (fun _ h => nomatch h)
     (((W.zero hf1).trans (W.abs hf2)).trans (W.abs hf3)) (by change 57 ≤ 2 ^ 64; decide)
   simp only at hr3'
   rw [hr3'] at hr4 hp4
@@ -297,14 +297,14 @@ theorem chal_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (next_abs hc4 hL ha (src := .caller 2 0) (len := .const 57) (P := L.pk) (N := 57)
     ⟨by decide, by decide⟩ (valid_const (by decide)) (by simp [argVal, Lay.value]) rfl cp dp hL.np hr4 hp4)
     fun t5 ⟨hc5, hf5, hr5, hp5⟩ => ?_)
-  have ep := hk.input_bytes hc4 rp wp (by change 57 ≤ 2 ^ 64; decide)
+  obtain ep := hk.input_bytes hc4 rp wp (by change 57 ≤ 2 ^ 64; decide)
   simp only at ep
   rw [ep] at hr5 hp5
   -- The message.
   refine WP.seq (WP.mono (next_abs hc5 hL ha (src := .caller 5 0) (len := LEN) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value, LEN]) cm dm hL.nm hr5 hp5) fun t6 ⟨hc6, hf6, hr6, hp6⟩ => ?_)
-  have em := hk.input_bytes hc5 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
+  obtain em := hk.input_bytes hc5 rm wm (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr6 hp6
   -- Pad and squeeze.

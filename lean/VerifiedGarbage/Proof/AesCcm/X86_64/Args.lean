@@ -55,26 +55,26 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
     (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
     ∃ s₁, runBlock isa entry s = some s₁ ∧ Env K W SP s₁ ∧ Slots W R N A D nl al n tl s₁.mem ∧
       Saved s₁.mem W s.gpr ∧ Frame [entryR W] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have a₈ := in_off (d := 0) (n := 8) hargs (by decide) (by decide)
-  have a₁₆ := in_off (d := 8) (n := 8) hargs (by decide) (by decide)
-  have a₃₂ := in_off (d := 24) (n := 8) hargs (by decide) (by decide)
-  have a₄₀ := in_off (d := 32) (n := 8) hargs (by decide) (by decide)
+  obtain a₈ := in_off (d := 0) (n := 8) hargs (by decide) (by decide)
+  obtain a₁₆ := in_off (d := 8) (n := 8) hargs (by decide) (by decide)
+  obtain a₃₂ := in_off (d := 24) (n := 8) hargs (by decide) (by decide)
+  obtain a₄₀ := in_off (d := 32) (n := 8) hargs (by decide) (by decide)
   rw [add_ofNat_assoc, show 8 + 0 = 8 from rfl] at a₈
   rw [add_ofNat_assoc] at a₁₆ a₃₂ a₄₀
-  have w₁ := P.wW (show 112 + 8 ≤ 2560 by decide)
-  have w₂ := P.wW (show 120 + 8 ≤ 2560 by decide)
-  have w₃ := P.wW (show 128 + 8 ≤ 2560 by decide)
-  have w₄ := P.wW (show 136 + 8 ≤ 2560 by decide)
-  have w₅ := P.wW (show 144 + 8 ≤ 2560 by decide)
-  have w₆ := P.wW (show 152 + 8 ≤ 2560 by decide)
-  have w₇ := P.wW (show 160 + 8 ≤ 2560 by decide)
-  have w₈ := P.wW (show 168 + 8 ≤ 2560 by decide)
-  have w₉ := P.wW (show 176 + 8 ≤ 2560 by decide)
-  have w₁₀ := P.wW (show 184 + 8 ≤ 2560 by decide)
-  have w₁₁ := P.wW (show 192 + 8 ≤ 2560 by decide)
-  have w₁₂ := P.wW (show 200 + 8 ≤ 2560 by decide)
-  have w₁₃ := P.wW (show 208 + 8 ≤ 2560 by decide)
-  have w₁₄ := P.wW (show 232 + 8 ≤ 2560 by decide)
+  obtain w₁ := P.wW (show 112 + 8 ≤ 2560 by decide)
+  obtain w₂ := P.wW (show 120 + 8 ≤ 2560 by decide)
+  obtain w₃ := P.wW (show 128 + 8 ≤ 2560 by decide)
+  obtain w₄ := P.wW (show 136 + 8 ≤ 2560 by decide)
+  obtain w₅ := P.wW (show 144 + 8 ≤ 2560 by decide)
+  obtain w₆ := P.wW (show 152 + 8 ≤ 2560 by decide)
+  obtain w₇ := P.wW (show 160 + 8 ≤ 2560 by decide)
+  obtain w₈ := P.wW (show 168 + 8 ≤ 2560 by decide)
+  obtain w₉ := P.wW (show 176 + 8 ≤ 2560 by decide)
+  obtain w₁₀ := P.wW (show 184 + 8 ≤ 2560 by decide)
+  obtain w₁₁ := P.wW (show 192 + 8 ≤ 2560 by decide)
+  obtain w₁₂ := P.wW (show 200 + 8 ≤ 2560 by decide)
+  obtain w₁₃ := P.wW (show 208 + 8 ≤ 2560 by decide)
+  obtain w₁₄ := P.wW (show 232 + 8 ≤ 2560 by decide)
   obtain ⟨s₁, run₁, h⟩ : ∃ s₁, runBlock isa
       ([.mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
         [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi,
@@ -88,7 +88,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
       s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al ∧
       s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = D ∧
       s₁.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
-    have cE : ∀ d, 112 ≤ d → d + 8 ≤ 240 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
+    obtain cE : ∀ d, 112 ≤ d → d + 8 ≤ 240 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
       fun d h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
     refine ⟨_, by crun [save, saved, List.map_cons, List.map_nil, hW, hsp, hD, hn, a₈, a₁₆, a₄₀, w₁, w₂, w₃, w₄,
       w₅, w₆, w₇, w₈, w₉, w₁₀, w₁₁, w₁₂, w₁₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -107,14 +107,14 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
     all_goals simp (disch := decide) only [mem_setReg, readW_writeW_off, Mem.readW_writeW_self64, gpr_setReg,
       ite_true, ite_false, reduceCtorEq, hsi, hdx, hcx, hr8, hr9]
   obtain ⟨hsp₁, h15, h13, hrd₁, hwr₁, f₁, sv₁, s232, s160, s168, s176, s184, s192, s200⟩ := h
-  have htl₁ : s₁.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl := by
+  obtain htl₁ : s₁.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl := by
     rw [f₁.readW (r := ⟨SP + BitVec.ofNat 64 32, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      have e : SP + BitVec.ofNat 64 32 = SP + BitVec.ofNat 64 8 + BitVec.ofNat 64 24 := by rw [add_ofNat_assoc]
+      obtain e : SP + BitVec.ofNat 64 32 = SP + BitVec.ofNat 64 8 + BitVec.ofNat 64 24 := by rw [add_ofNat_assoc]
       rw [e]
       exact (hargsW.sub_left (Offset.sub_base _ (by decide))).sub_right (Lay.wSub (by decide))) (by decide), htl]
-  have a₃₂' : InRegions (s₁.rd ++ s₁.wr) (SP + BitVec.ofNat 64 32) 8 := by rw [hrd₁, hwr₁]; exact a₃₂
-  have w₁₃' : InRegions s₁.wr (W + BitVec.ofNat 64 208) 8 := by rw [hwr₁]; exact w₁₃
+  obtain a₃₂' : InRegions (s₁.rd ++ s₁.wr) (SP + BitVec.ofNat 64 32) 8 := by rw [hrd₁, hwr₁]; exact a₃₂
+  obtain w₁₃' : InRegions s₁.wr (W + BitVec.ofNat 64 208) 8 := by rw [hwr₁]; exact w₁₃
   obtain ⟨s₂, run₂, hm₂, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       [.mov .rax (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rax] s₁ = some s₂ ∧
       s₂.mem = s₁.mem.writeW (W + BitVec.ofNat 64 208) (BitVec.ofNat 64 tl) ∧
@@ -123,7 +123,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
     · simp only [mem_setReg]
     · intro r h; simp only [gpr_setReg, h, ite_false]
     all_goals rfl
-  have k : ∀ {d}, (d + 8 ≤ 208 ∨ 216 ≤ d) → d + 8 ≤ 2 ^ 64 →
+  obtain k : ∀ {d}, (d + 8 ≤ 208 ∨ 216 ≤ d) → d + 8 ≤ 2 ^ 64 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ => by
     rw [hm₂, readW_writeW_off _ (by omega_using [h₁]) h₂ (by decide)]
   refine ⟨s₂, ?_, ⟨by rw [hg₂ _ (by decide), h13], by rw [hg₂ _ (by decide), h15], by rw [hg₂ _ (by decide), hsp₁],
@@ -154,18 +154,18 @@ theorem restore_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {g : Reg → B
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = g p.1) ∧ s'.mem = s.mem ∧
       s'.gpr .rsp = s.gpr .rsp ∧ s'.gpr .rax = s.gpr .rax := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 112 + 8 ≤ 2560 by decide)
-  have r₂ := E.perm.wR (show 120 + 8 ≤ 2560 by decide)
-  have r₃ := E.perm.wR (show 128 + 8 ≤ 2560 by decide)
-  have r₄ := E.perm.wR (show 136 + 8 ≤ 2560 by decide)
-  have r₅ := E.perm.wR (show 144 + 8 ≤ 2560 by decide)
-  have r₆ := E.perm.wR (show 152 + 8 ≤ 2560 by decide)
-  have v₁ := hs (.rbx, 112) (by decide)
-  have v₂ := hs (.rbp, 120) (by decide)
-  have v₃ := hs (.r12, 128) (by decide)
-  have v₄ := hs (.r13, 136) (by decide)
-  have v₅ := hs (.r14, 144) (by decide)
-  have v₆ := hs (.r15, 152) (by decide)
+  obtain r₁ := E.perm.wR (show 112 + 8 ≤ 2560 by decide)
+  obtain r₂ := E.perm.wR (show 120 + 8 ≤ 2560 by decide)
+  obtain r₃ := E.perm.wR (show 128 + 8 ≤ 2560 by decide)
+  obtain r₄ := E.perm.wR (show 136 + 8 ≤ 2560 by decide)
+  obtain r₅ := E.perm.wR (show 144 + 8 ≤ 2560 by decide)
+  obtain r₆ := E.perm.wR (show 152 + 8 ≤ 2560 by decide)
+  obtain v₁ := hs (.rbx, 112) (by decide)
+  obtain v₂ := hs (.rbp, 120) (by decide)
+  obtain v₃ := hs (.r12, 128) (by decide)
+  obtain v₄ := hs (.r13, 136) (by decide)
+  obtain v₅ := hs (.r14, 144) (by decide)
+  obtain v₆ := hs (.r15, 152) (by decide)
   refine ⟨_, by crun [restore, saved, List.map_cons, List.map_nil, h15, r₁, r₂, r₃, r₄, r₅, r₆], ?_, ?_, ?_, ?_⟩
   · intro p hp
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -284,10 +284,10 @@ theorem args_of_seal {s : State} (h : sealPre s) :
       TagBuf (arg s 4) (s.gpr .rsp) (arg s 0) (arg s 1).toNat (arg s 2) (arg s 3).toNat) ∧
       Covers [⟨arg s 2, (arg s 3).toNat⟩] s.wr ∧ (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨arg s 2, (arg s 3).toNat⟩ := by
   obtain ⟨hrd, hwr, hl, hrt⟩ := h
-  have mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+  obtain mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
       args s 5], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨arg s 0, (arg s 1).toNat⟩ : Region), ⟨arg s 2, (arg s 3).toNat⟩, ⟨arg s 4, 2560⟩],
+  obtain mwr : ∀ r ∈ [(⟨arg s 0, (arg s 1).toNat⟩ : Region), ⟨arg s 2, (arg s 3).toNat⟩, ⟨arg s 4, 2560⟩],
       Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mwr _ (by simp), hrt⟩
@@ -299,10 +299,10 @@ theorem args_of_open {s : State} (h : openPre s) :
       TagBuf (arg s 4) (s.gpr .rsp) (arg s 0) (arg s 1).toNat (arg s 2) (arg s 3).toNat) ∧
       Covers [⟨arg s 2, (arg s 3).toNat⟩] (s.rd ++ s.wr) := by
   obtain ⟨hrd, hwr, hl⟩ := h
-  have mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+  obtain mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
       ⟨arg s 2, (arg s 3).toNat⟩, args s 5], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨arg s 0, (arg s 1).toNat⟩ : Region), ⟨arg s 4, 2560⟩], Covers [r] s.wr := fun r hr =>
+  obtain mwr : ∀ r ∈ [(⟨arg s 0, (arg s 1).toNat⟩ : Region), ⟨arg s 4, 2560⟩], Covers [r] s.wr := fun r hr =>
     covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mrd _ (by simp)⟩
@@ -323,7 +323,7 @@ variable {K W SP N A D : Addr} {R nl al n tl : Nat} {m m' : Mem}
 
 theorem slots_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hf : Frame (mutR W SP D n) m m') (S : Slots W R N A D nl al n tl m) : Slots W R N A D nl al n tl m' := by
-  have k : ∀ d, (112 ≤ d ∧ d + 8 ≤ 216 ∨ 232 ≤ d ∧ d + 8 ≤ 240) →
+  obtain k : ∀ d, (112 ≤ d ∧ d + 8 ≤ 216 ∨ 232 ≤ d ∧ d + 8 ≤ 240) →
       m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 := fun d hd =>
     hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (w := 64) (Region.contains_self _ _) (kept_mut L hD hd) (by decide)
   exact ⟨by rw [k 232 (by decide)]; exact S.rounds, by rw [k 160 (by decide)]; exact S.nonce,
@@ -335,7 +335,7 @@ theorem saved_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 25
     (hf : Frame (mutR W SP D n) m m') {g : Reg → BitVec 64} (S : Saved m W g) : Saved m' W g := by
   intro p hp
   rw [← S p hp]
-  have hd : 112 ≤ p.2 ∧ p.2 + 8 ≤ 216 := by
+  obtain hd : 112 ≤ p.2 ∧ p.2 + 8 ≤ 216 := by
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   exact hf.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (w := 64) (Region.contains_self _ _) (kept_mut L hD (.inl hd))
@@ -384,7 +384,7 @@ pieces write. -/
 theorem argT_disj (hW : (⟨SP + BitVec.ofNat 64 8, 40⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hD : (⟨SP + BitVec.ofNat 64 8, 40⟩ : Region).Disjoint ⟨D, n⟩) :
     ∀ r ∈ entryR W :: mutR W SP D n, (⟨SP + BitVec.ofNat 64 24, 8⟩ : Region).Disjoint r := by
-  have hs : Region.Sub ⟨SP + BitVec.ofNat 64 24, 8⟩ ⟨SP + BitVec.ofNat 64 8, 40⟩ := by
+  obtain hs : Region.Sub ⟨SP + BitVec.ofNat 64 24, 8⟩ ⟨SP + BitVec.ofNat 64 8, 40⟩ := by
     rw [show SP + BitVec.ofNat 64 24 = SP + BitVec.ofNat 64 8 + BitVec.ofNat 64 16 by rw [add_ofNat_assoc]]
     exact Offset.sub_base _ (by decide)
   intro r hr

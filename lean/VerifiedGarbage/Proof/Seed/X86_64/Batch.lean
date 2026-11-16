@@ -32,17 +32,17 @@ theorem batchSize_ok (s : State) :
   let s₁ := arithFlags v (v.gpr .rcx - (16 : BitVec 32).signExtend 64) c
     (subOverflow (v.gpr .rcx) ((16 : BitVec 32).signExtend 64) (v.gpr .rcx - (16 : BitVec 32).signExtend 64))
   have e₁ : runBlock isa [movR .rcx .rdx, .alu .cmp .rcx (.imm 16)] s = some s₁ := rfl
-  have g₁ : ∀ r, s₁.gpr r = v.gpr r := fun r => by simp only [s₁, gpr_arithFlags]
-  have hc : c = decide ((s.gpr .rdx).toNat < 16) := by
+  obtain g₁ : ∀ r, s₁.gpr r = v.gpr r := fun r => by simp only [s₁, gpr_arithFlags]
+  obtain hc : c = decide ((s.gpr .rdx).toNat < 16) := by
     simp only [c, v, gpr_setReg_self]; rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   refine WP.ite c (by show s₁.cf = some c; rfl) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · rw [hc] at hb
-    have hlt := of_decide_eq_true hb
+    obtain hlt := of_decide_eq_true hb
     refine ⟨by rw [g₁, gpr_setReg_self, Nat.min_eq_left (by omega_using [hlt]), BitVec.ofNat_toNat, BitVec.setWidth_eq],
       fun r hr => by rw [g₁, gpr_setReg_of_ne (s := s) _ hr], rfl, rfl, rfl⟩
   · rw [hc] at hb
-    have hge := of_decide_eq_false hb
+    obtain hge := of_decide_eq_false hb
     let s₂ := s₁.setReg .rcx ((16 : BitVec 32).signExtend 64)
     refine WP.of_runBlock ⟨s₂, rfl, ?_⟩
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -82,7 +82,7 @@ theorem quad_of_lanes {t : State} {m : Mem} {p : Addr} {b : Nat}
 
 theorem encodeSwapped_get (t : State) (b : Nat) {i : Nat} (hi : i < 16) :
     (encodeSwapped (quad t b))[i] = outByte t b i := by
-  have hk : ∀ w < 4, (#v[(quad t b).2.2.1, (quad t b).2.2.2, (quad t b).1, (quad t b).2.1] :
+  obtain hk : ∀ w < 4, (#v[(quad t b).2.2.1, (quad t b).2.2.2, (quad t b).1, (quad t b).2.1] :
       Vector Spec.Seed.Word 4).getD w 0 = lv t (arrSlot ((w + 2) % 4)) b := by
     intro w hw
     rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega_using [hw]) with rfl | rfl | rfl | rfl <;> rfl
@@ -100,7 +100,7 @@ theorem blockAt_of_bytes {m : Mem} {q : Addr} {v : Spec.Seed.Block}
 theorem masks_of_frame {s s' : State} {R : Region} (hm : MasksIn s) (hr9 : s'.gpr .r9 = s.gpr .r9)
     (hfr : Frame [R] s.mem s'.mem) (hd : R.Disjoint (scratchR s)) : MasksIn s' := by
   intro kv hkv
-  have hlt := maskSlots_lt kv hkv
+  obtain hlt := maskSlots_lt kv hkv
   rw [← hm kv hkv]
   show s'.mem.readW (Straight.wordAddr (s'.gpr .r9) kv.1) 64 = s.mem.readW (Straight.wordAddr (s.gpr .r9) kv.1) 64
   rw [hr9]
@@ -152,8 +152,8 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   let n := (s.gpr .rdx).toNat
   let k := min n 16
   let p := s.gpr .rsi
-  have hk1 : 1 ≤ k := by have := h.pos; omega
-  have hk16 : k ≤ 16 := by omega_using []
+  obtain hk1 : 1 ≤ k := by have := h.pos; omega
+  obtain hk16 : k ≤ 16 := by omega_using []
   have hpos := h.pos
   -- the copy in
   apply WP.seq
@@ -162,49 +162,49 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   apply WP.seq
   obtain ⟨s₂, e₂, r10₂, rbx₂, g₂, m₂, rd₂, wr₂⟩ := copyStart_ok s₁
   refine WP.of_runBlock ⟨s₂, e₂, ?_⟩
-  have G₂ : ∀ r, r ≠ .rcx → r ≠ .r10 → r ≠ .rbx → s₂.gpr r = s.gpr r := fun r a b c =>
+  obtain G₂ : ∀ r, r ≠ .rcx → r ≠ .r10 → r ≠ .rbx → s₂.gpr r = s.gpr r := fun r a b c =>
     (g₂ r b c).trans (g₁ r a)
-  have r9₂ : s₂.gpr .r9 = s.gpr .r9 := G₂ _ (by decide) (by decide) (by decide)
-  have scr₂ : scratchR s₂ = scratchR s := by simp only [scratchR, r9₂]
-  have arr₂ : arraysR s₂ = arraysR s := by simp only [arraysR, r9₂]
-  have room₂ : Room s₂ := room_congr h.room r9₂ (by rw [wr₂, wr₁])
-  have pre₂ : CopyPre s₂ p k := by
+  obtain r9₂ : s₂.gpr .r9 = s.gpr .r9 := G₂ _ (by decide) (by decide) (by decide)
+  obtain scr₂ : scratchR s₂ = scratchR s := by simp only [scratchR, r9₂]
+  obtain arr₂ : arraysR s₂ = arraysR s := by simp only [arraysR, r9₂]
+  obtain room₂ : Room s₂ := room_congr h.room r9₂ (by rw [wr₂, wr₁])
+  obtain pre₂ : CopyPre s₂ p k := by
     refine ⟨room₂, ⟨hk1, hk16⟩, fun b hb w hw => ?_, ?_⟩
     · obtain ⟨r, hr, hc⟩ := h.data b hb w hw
       exact ⟨r, by rw [rd₂, wr₂, rd₁, wr₁]; exact List.mem_append_right _ hr, hc⟩
     · rw [arr₂]; exact h.dataSep.sub_right (arraysR_sub_scratch s)
-  have inv₂ : CopyInInv s₂ p k (k - k) s₂ := by
+  obtain inv₂ : CopyInInv s₂ p k (k - k) s₂ := by
     refine ⟨by omega_using [], ?_, ?_, ?_, fun w _ b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [r10₂, Nat.sub_self, Nat.mul_zero, ofNat_zero_add, g₁ _ (by decide)]
     · rw [Nat.sub_self, Nat.mul_zero, ofNat_zero_add, rbx₂, g₂ _ (by decide) (by decide)]
     · rw [Nat.sub_self, Nat.sub_zero, g₂ _ (by decide) (by decide), c₁]
   refine WP.mono (copyIn_loop pre₂ k s₂ inv₂ hk1 (Nat.le_refl _)) fun s₃ i₃ => ?_
-  have r9₃ : s₃.gpr .r9 = s.gpr .r9 := (i₃.regs _ (by decide) (by decide) (by decide) (by decide)).trans r9₂
-  have G₃ : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rsp], s₃.gpr r = s.gpr r := by
+  obtain r9₃ : s₃.gpr .r9 = s.gpr .r9 := (i₃.regs _ (by decide) (by decide) (by decide) (by decide)).trans r9₂
+  obtain G₃ : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rsp], s₃.gpr r = s.gpr r := by
     intro r hr
     have : r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .rcx ∧ r ≠ .r10 := by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide
     rw [i₃.regs _ this.1 this.2.1 this.2.2.1 this.2.2.2]
     exact G₂ _ this.2.2.1 this.2.2.2 this.2.1
-  have rd₃ : s₃.rd = s.rd := by rw [i₃.rd, rd₂, rd₁]
-  have wr₃ : s₃.wr = s.wr := by rw [i₃.wr, wr₂, wr₁]
-  have room₃ : Room s₃ := room_congr h.room r9₃ wr₃
-  have f₃ : Frame [arraysR s] s.mem s₃.mem := by
+  obtain rd₃ : s₃.rd = s.rd := by rw [i₃.rd, rd₂, rd₁]
+  obtain wr₃ : s₃.wr = s.wr := by rw [i₃.wr, wr₂, wr₁]
+  obtain room₃ : Room s₃ := room_congr h.room r9₃ wr₃
+  obtain f₃ : Frame [arraysR s] s.mem s₃.mem := by
     have := i₃.frame; rw [arr₂, m₂, m₁] at this; exact this
-  have masks₃ : MasksIn s₃ := masks_of_arrays h.masks r9₃ f₃
-  have scr₃ : scratchR s₃ = scratchR s := by simp only [scratchR, r9₃]
-  have keys₃ : KeysOk d s₃ (s₃.gpr .rdi) := by
+  obtain masks₃ : MasksIn s₃ := masks_of_arrays h.masks r9₃ f₃
+  obtain scr₃ : scratchR s₃ = scratchR s := by simp only [scratchR, r9₃]
+  obtain keys₃ : KeysOk d s₃ (s₃.gpr .rdi) := by
     rw [G₃ .rdi (by simp)]
     intro j hj
     obtain ⟨a, b, c⟩ := h.keys j hj
     exact ⟨by rw [rd₃, wr₃]; exact a, by rw [rd₃, wr₃]; exact b, by rw [scr₃]; exact c⟩
   -- the keys are as on entry
-  have hkeys : ∀ j < 16, keysAt d s₃.mem (s₃.gpr .rdi) j = keysAt d s.mem (s.gpr .rdi) j := by
+  obtain hkeys : ∀ j < 16, keysAt d s₃.mem (s₃.gpr .rdi) j = keysAt d s.mem (s.gpr .rdi) j := by
     intro j hj
     rw [G₃ .rdi (by simp)]
     obtain ⟨-, -, hdis⟩ := h.keys j hj
-    have hd : ∀ r ∈ [arraysR s], Region.Disjoint ⟨kp d (s.gpr .rdi) j, 8⟩ r := by
+    obtain hd : ∀ r ∈ [arraysR s], Region.Disjoint ⟨kp d (s.gpr .rdi) j, 8⟩ r := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact hdis.sub_right (arraysR_sub_scratch s)
     simp only [keysAt]
@@ -213,14 +213,14 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
       exact f₃.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using [])) hd (by decide)
   -- the blocks, in the lanes
-  have hq₃ : ∀ b < k, quad s₃ b = decodeQ (Spec.Seed.blockAt s.mem (p + BitVec.ofNat 64 (16 * b))) := by
+  obtain hq₃ : ∀ b < k, quad s₃ b = decodeQ (Spec.Seed.blockAt s.mem (p + BitVec.ofNat 64 (16 * b))) := by
     intro b hb
     refine quad_of_lanes fun w hw => ?_
     rw [i₃.lanes w hw b hb, m₂, m₁]
   -- the rounds
   apply WP.seq
   refine WP.mono (rounds_ok d room₃ masks₃ keys₃) fun s₄ ⟨q₄, masks₄, room₄, rd₄, wr₄, g₄, f₄⟩ => ?_
-  have G₄ : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .r9, .rsp], s₄.gpr r = s.gpr r := by
+  obtain G₄ : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .r9, .rsp], s₄.gpr r = s.gpr r := by
     intro r hr
     rw [g₄ r hr]
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
@@ -230,7 +230,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     · exact G₃ _ (by simp)
     · exact r9₃
     · exact G₃ _ (by simp)
-  have hq₄ : ∀ b < k, quad s₄ b = roundsN (keysAt d s.mem (s.gpr .rdi)) 16
+  obtain hq₄ : ∀ b < k, quad s₄ b = roundsN (keysAt d s.mem (s.gpr .rdi)) 16
       (decodeQ (Spec.Seed.blockAt s.mem (p + BitVec.ofNat 64 (16 * b)))) := by
     intro b hb
     rw [q₄ b (by omega_using [hb]), hq₃ b hb]
@@ -241,42 +241,42 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   apply WP.seq
   obtain ⟨s₆, e₆, r10₆, rbx₆, g₆, m₆, rd₆, wr₆⟩ := copyStart_ok s₅
   refine WP.of_runBlock ⟨s₆, e₆, ?_⟩
-  have G₆ : ∀ r, r ≠ .rcx → r ≠ .r10 → r ≠ .rbx → s₆.gpr r = s₄.gpr r := fun r a b c =>
+  obtain G₆ : ∀ r, r ≠ .rcx → r ≠ .r10 → r ≠ .rbx → s₆.gpr r = s₄.gpr r := fun r a b c =>
     (g₆ r b c).trans (g₅ r a)
-  have r9₆ : s₆.gpr .r9 = s.gpr .r9 := (G₆ _ (by decide) (by decide) (by decide)).trans (G₄ _ (by simp))
-  have rdx₄ : s₄.gpr .rdx = s.gpr .rdx := G₄ _ (by simp)
-  have rsi₄ : s₄.gpr .rsi = p := G₄ _ (by simp)
-  have rd₆ : s₆.rd = s.rd := by rw [rd₆, rd₅, rd₄, rd₃]
-  have wr₆ : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃]
-  have arr₆ : arraysR s₆ = arraysR s := by simp only [arraysR, r9₆]
-  have pre₆ : CopyOutPre s₆ p k := by
+  obtain r9₆ : s₆.gpr .r9 = s.gpr .r9 := (G₆ _ (by decide) (by decide) (by decide)).trans (G₄ _ (by simp))
+  obtain rdx₄ : s₄.gpr .rdx = s.gpr .rdx := G₄ _ (by simp)
+  obtain rsi₄ : s₄.gpr .rsi = p := G₄ _ (by simp)
+  obtain rd₆ : s₆.rd = s.rd := by rw [rd₆, rd₅, rd₄, rd₃]
+  obtain wr₆ : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃]
+  obtain arr₆ : arraysR s₆ = arraysR s := by simp only [arraysR, r9₆]
+  obtain pre₆ : CopyOutPre s₆ p k := by
     refine ⟨room_congr h.room r9₆ wr₆, ⟨hk1, hk16⟩, fun b hb w hw => ?_, ?_⟩
     · rw [wr₆]; exact h.data b hb w hw
     · rw [arr₆]; exact h.dataSep.sub_right (arraysR_sub_scratch s)
-  have inv₆ : CopyOutInv s₆ p k (k - k) s₆ := by
+  obtain inv₆ : CopyOutInv s₆ p k (k - k) s₆ := by
     refine ⟨by omega_using [], ?_, ?_, ?_, fun b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [r10₆, Nat.sub_self, Nat.mul_zero, ofNat_zero_add, g₅ _ (by decide), rsi₄]
     · rw [Nat.sub_self, Nat.mul_zero, ofNat_zero_add, rbx₆, g₆ _ (by decide) (by decide)]
     · rw [Nat.sub_self, Nat.sub_zero, g₆ _ (by decide) (by decide), c₅, rdx₄]
-  have quad₆ : ∀ b, quad s₆ b = quad s₄ b := fun b => by
+  obtain quad₆ : ∀ b, quad s₆ b = quad s₄ b := fun b => by
     simp only [quad, lv, laneA, m₆, m₅, r9₆, G₄ .r9 (by simp)]
   apply WP.seq
   refine WP.mono (copyOut_loop pre₆ k s₆ inv₆ hk1 (Nat.le_refl _)) fun s₇ i₇ => ?_
   apply WP.seq
   refine WP.mono (batchSize_ok s₇) fun s₈ ⟨c₈, g₈, m₈, rd₈, wr₈⟩ => ?_
-  have G₇ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .r10 → s₇.gpr r = s₄.gpr r :=
+  obtain G₇ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .r10 → s₇.gpr r = s₄.gpr r :=
     fun r a b c e => (i₇.regs r a b c e).trans (G₆ r c e b)
-  have rdx₇ : s₇.gpr .rdx = s.gpr .rdx := (G₇ _ (by decide) (by decide) (by decide) (by decide)).trans rdx₄
-  have c₈' : s₈.gpr .rcx = BitVec.ofNat 64 k := by rw [c₈, rdx₇]
-  have r10₈ : s₈.gpr .r10 = p + BitVec.ofNat 64 (16 * k) := by rw [g₈ _ (by decide), i₇.r10]
+  obtain rdx₇ : s₇.gpr .rdx = s.gpr .rdx := (G₇ _ (by decide) (by decide) (by decide) (by decide)).trans rdx₄
+  obtain c₈' : s₈.gpr .rcx = BitVec.ofNat 64 k := by rw [c₈, rdx₇]
+  obtain r10₈ : s₈.gpr .r10 = p + BitVec.ofNat 64 (16 * k) := by rw [g₈ _ (by decide), i₇.r10]
   obtain ⟨s₉, e₉, rsi₉, g₉, m₉, rd₉, wr₉, -⟩ := exec_movR s₈ .rsi .r10
   obtain ⟨s', e', rdx', zf', g', m', rd', wr'⟩ := exec_sub_reg s₉ .rdx .rcx
   refine WP.of_runBlock ⟨s', by rw [runBlock_cons, e₉, runStep_some, runBlock_cons, e', runStep_some,
     runBlock_nil], ?_⟩
-  have rdx₉ : s₉.gpr .rdx = s.gpr .rdx := by rw [g₉ _ (by decide), g₈ _ (by decide), rdx₇]
-  have rcx₉ : s₉.gpr .rcx = BitVec.ofNat 64 k := by rw [g₉ _ (by decide), c₈']
-  have mem' : s'.mem = s₇.mem := by rw [m', m₉, m₈]
-  have G' : ∀ r ∈ [Reg.rdi, .r9, .rsp], s'.gpr r = s.gpr r := by
+  obtain rdx₉ : s₉.gpr .rdx = s.gpr .rdx := by rw [g₉ _ (by decide), g₈ _ (by decide), rdx₇]
+  obtain rcx₉ : s₉.gpr .rcx = BitVec.ofNat 64 k := by rw [g₉ _ (by decide), c₈']
+  obtain mem' : s'.mem = s₇.mem := by rw [m', m₉, m₈]
+  obtain G' : ∀ r ∈ [Reg.rdi, .r9, .rsp], s'.gpr r = s.gpr r := by
     intro r hr
     have : r ≠ .rdx ∧ r ≠ .rsi ∧ r ≠ .rcx ∧ r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .r10 := by
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
@@ -284,21 +284,21 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     rw [g' _ this.1, g₉ _ this.2.1, g₈ _ this.2.2.1, G₇ _ this.2.2.2.1 this.2.2.2.2.1 this.2.2.1 this.2.2.2.2.2]
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
     exact G₄ _ (by rcases hr with rfl | rfl | rfl <;> simp)
-  have r9' : s'.gpr .r9 = s.gpr .r9 := G' _ (by simp)
+  obtain r9' : s'.gpr .r9 = s.gpr .r9 := G' _ (by simp)
   -- the memory
-  have f₇ : Frame [⟨p, 16 * k⟩] s₄.mem s₇.mem := by
+  obtain f₇ : Frame [⟨p, 16 * k⟩] s₄.mem s₇.mem := by
     have := i₇.frame; rw [m₆, m₅] at this; exact this
-  have frame : Frame [workR s, ⟨p, 16 * k⟩] s.mem s'.mem := by
+  obtain frame : Frame [workR s, ⟨p, 16 * k⟩] s.mem s'.mem := by
     rw [mem']
-    have a : Frame [workR s, ⟨p, 16 * k⟩] s.mem s₃.mem :=
+    obtain a : Frame [workR s, ⟨p, 16 * k⟩] s.mem s₃.mem :=
       (f₃.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨workR s, List.mem_cons_self, arraysR_sub_work s⟩)
-    have b : Frame [workR s, ⟨p, 16 * k⟩] s₃.mem s₄.mem :=
+    obtain b : Frame [workR s, ⟨p, 16 * k⟩] s₃.mem s₄.mem :=
       f₄.mono fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         simp only [workR, r9₃]; exact List.mem_cons_self
-    have c : Frame [workR s, ⟨p, 16 * k⟩] s₄.mem s₇.mem :=
+    obtain c : Frame [workR s, ⟨p, 16 * k⟩] s₄.mem s₇.mem :=
       f₇.mono fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact List.mem_cons_of_mem _ List.mem_cons_self

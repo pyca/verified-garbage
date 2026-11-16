@@ -97,26 +97,26 @@ theorem omA_rel (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al
     RelCT isa (Eq2 t₁ t₂) (omA v.callees) TT := by
   have L := o₁.lay
   have hal := o₁.aad.lt
-  have hn := (dataOk_of o₁.dat).lt
-  have sl := slots_omFrame L o₁.ddW
-  have mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame W) → ∀ {m m' : Mem}, Frame rs m m' →
+  obtain hn := (dataOk_of o₁.dat).lt
+  obtain sl := slots_omFrame L o₁.ddW
+  obtain mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame W) → ∀ {m m' : Mem}, Frame rs m m' →
       Frame (omFrame W) m m' := fun hs _ _ hf => hf.mono hs
   unfold omA
   refine front_rel L v o₁.front o₂.front fun u₁ u₂ p₁ p₂ => ?_
-  have mkB : ∀ {s t u : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl s t →
+  obtain mkB : ∀ {s t u : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl s t →
       FrontOut Ctx (W + BitVec.ofNat 64 16) W SP t.gpr D al n t u →
       BodyInG to Ctx (W + BitVec.ofNat 64 16) W SP u.gpr R n 0 D (Spec.Gcm.zeros al) []
         (blockAt u.mem (Ctx + BitVec.ofNat 64 240)) u := fun o p =>
     ⟨p.env, fun _ _ => rfl, by rw [p.x22, o.x22], o.rounds, by rw [p.x25, Proof.Gcm.length_zeros],
       p.x26, p.x27, p.x28, rfl, by decide, data_of_eq o.dat (by rw [p.rd]) (by rw [p.wr]), rfl⟩
-  have B₁ := mkB o₁ p₁
-  have B₂ := mkB o₂ p₂
+  obtain B₁ := mkB o₁ p₁
+  obtain B₂ := mkB o₂ p₂
   refine rel_seq (decAbs_relG L v B₁ B₂ rfl) (decAbs_ok L v B₁) (decAbs_ok L v B₂)
     fun w₁ w₂ ⟨e₁, kk₁, _, fr₁, _, _, _⟩ ⟨e₂, kk₂, _, fr₂, _, _, _⟩ => ?_
-  have F₁ : Frame (omFrame W) t₁.mem w₁.mem :=
+  obtain F₁ : Frame (omFrame W) t₁.mem w₁.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₁.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₁)
-  have F₂ : Frame (omFrame W) t₂.mem w₂.mem :=
+  obtain F₂ : Frame (omFrame W) t₂.mem w₂.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₂.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₂)
   refine rel_seq (rel_taint [.x19] (by rw [e₁.sp, e₂.sp]) (by agree_tac [e₁.x19, e₂.x19]) ⟨_, by taint_decide⟩)
@@ -125,18 +125,18 @@ theorem omA_rel (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al
     (finPrep_ok (al := al) (n := n) e₂.x19 (covers_left e₂.perm.w)
       (by rw [slot_kept F₂ sl (by decide) (by decide), o₂.sL]) (by rw [slot_kept F₂ sl (by decide) (by decide), o₂.sN]))
     fun z₁ z₂ ⟨x26₁, x27₁, r₁⟩ ⟨x26₂, x27₂, r₂⟩ => ?_
-  have y22₁ : z₁.gpr .x22 = BitVec.ofNat 64 R := by
+  obtain y22₁ : z₁.gpr .x22 = BitVec.ofNat 64 R := by
     rw [r₁.others _ (by decide), kk₁ .x22 (by decide), p₁.x22, o₁.x22]
-  have y22₂ : z₂.gpr .x22 = BitVec.ofNat 64 R := by
+  obtain y22₂ : z₂.gpr .x22 = BitVec.ofNat 64 R := by
     rw [r₂.others _ (by decide), kk₂ .x22 (by decide), p₂.x22, o₂.x22]
   refine rel_seq (finBody_rel L v (.inr rfl) (e₁.of_regs r₁) (e₂.of_regs r₂) (fun _ _ => rfl)
       (fun _ _ => rfl) y22₁ y22₂ o₁.rounds x26₁ x26₂ x27₁ x27₂ hal hn)
     (finBody_env v L (.inr rfl) (e₁.of_regs r₁) (fun _ _ => rfl) y22₁ o₁.rounds x26₁ x27₁ hn)
     (finBody_env v L (.inr rfl) (e₂.of_regs r₂) (fun _ _ => rfl) y22₂ o₂.rounds x26₂ x27₂ hn)
     fun g₁ g₂ ⟨ge₁, _, gf₁⟩ ⟨ge₂, _, gf₂⟩ => ?_
-  have G₁ : Frame (omFrame W) t₁.mem g₁.mem :=
+  obtain G₁ : Frame (omFrame W) t₁.mem g₁.mem :=
     F₁.trans (by rw [r₁.mem] at gf₁; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₁)
-  have G₂ : Frame (omFrame W) t₂.mem g₂.mem :=
+  obtain G₂ : Frame (omFrame W) t₂.mem g₂.mem :=
     F₂.trans (by rw [r₂.mem] at gf₂; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₂)
   refine rel_seq (rel_taint [.x19] (by rw [ge₁.sp, ge₂.sp]) (by agree_tac [ge₁.x19, ge₂.x19]) ⟨_, by taint_decide⟩)
     (ldr28_ok (V := BitVec.ofNat 64 tl) ge₁ (by rw [slot_kept G₁ sl (by decide) (by decide), o₁.sT]))
@@ -152,8 +152,8 @@ theorem wipeLd_ok {Ctx W SP O : Addr} {n : Nat} {s : State} (he : Env Ctx (W + B
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) :
     WP isa (.block [.ldr .x .x9 .x19 dstO, .ldr .x .x10 .x19 lenO, imm .x11 0]) s fun s' =>
       s'.gpr .x9 = O ∧ s'.gpr .x10 = BitVec.ofNat 64 n ∧ s'.sp = s.sp := by
-  have q₁ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
-  have q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  obtain q₁ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
   refine WP.run ⟨_, by arun [he.x19, q₁, q₂, dstO], rfl⟩ fun s' hs' => ?_
   subst hs'
   refine ⟨?_, ?_, rfl⟩
@@ -169,7 +169,7 @@ theorem wipeTo_rel {Ctx W SP O : Addr} {n : Nat} {σ₁ σ₂ : State}
     (sN₁ : σ₁.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sN₂ : σ₂.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) :
     RelCT isa (Eq2 σ₁ σ₂) (wipeG true) TT := by
-  have tw : ∃ h, (taint.check (Taint.ofRegs [.x9, .x10]) wipeLoop h).isSome = true := ⟨_, by taint_decide⟩
+  obtain tw : ∃ h, (taint.check (Taint.ofRegs [.x9, .x10]) wipeLoop h).isSome = true := ⟨_, by taint_decide⟩
   exact rel_seq (rel_taint [.x19] (by rw [he₁.sp, he₂.sp]) (by agree_tac [he₁.x19, he₂.x19]) ⟨_, by taint_decide⟩)
     (wipeLd_ok he₁ sO₁ sN₁) (wipeLd_ok he₂ sO₂ sN₂) fun _ _ ⟨x9₁, x10₁, sp₁⟩ ⟨x9₂, x10₂, sp₂⟩ =>
       rel_taint [.x9, .x10] (by rw [sp₁, sp₂, he₁.sp, he₂.sp]) (by agree_tac [x9₁, x9₂, x10₁, x10₂]) tw
@@ -188,13 +188,13 @@ theorem omBG_rel (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omBG v.callees to) TT := by
   unfold omBG
-  have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
+  obtain tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have cr : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
+  obtain cr : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
       (to = false → s₈.gpr .x26 = m₁.gpr .x26) → s₈.wr = m₁.wr → ∀ icb, WP isa (cryptAlG v.callees to) s₈
         (CrOutG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
     fun h _ _ icb => cryptAlG_ok L v to (icb := icb) h rfl
-  have cr₂ : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
+  obtain cr₂ : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
       (to = false → s₈.gpr .x26 = m₂.gpr .x26) → s₈.wr = m₂.wr → ∀ icb, WP isa (cryptAlG v.callees to) s₈
         (CrOutG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
     fun h _ _ icb => cryptAlG_ok L v to (icb := icb) h rfl
@@ -203,12 +203,12 @@ theorem omBG_rel (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n
     fun a b ⟨ea, xa, _, _⟩ ⟨eb, xb, _, _⟩ =>
       rel_taint [.x27] (by rw [ea.sp, eb.sp]) (by agree_tac [xa, xb, hx]) tm
   have x27₁ := mo₁.x27
-  have x27₂ : m₂.gpr .x27 = _ := hx ▸ x27₁
-  have hlt : ∀ B : Bool, (if B then 1 else 0 : Nat) < 2 ^ 64 := fun B => by cases B <;> decide
-  have tld : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (([.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO,
+  obtain x27₂ : m₂.gpr .x27 = _ := hx ▸ x27₁
+  obtain hlt : ∀ B : Bool, (if B then 1 else 0 : Nat) < 2 ^ 64 := fun B => by cases B <;> decide
+  obtain tld : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (([.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO,
       imm .x25 0] : List Instr) ++ cond to ([.ldr .x .x26 .x19 dstO] : List Instr) [])) h).isSome = true := by
     cases to <;> exact ⟨_, by taint_decide⟩
-  have sO : ∀ {s₀ m : State}, MidOG to fr Ctx W SP D O Np A R nl al n tl s₀ m →
+  obtain sO : ∀ {s₀ m : State}, MidOG to fr Ctx W SP D O Np A R nl al n tl s₀ m →
       cond to (m.mem.readW (W + BitVec.ofNat 64 320) 64 = O) True := fun mo => by
     cases to
     · trivial
@@ -280,13 +280,13 @@ theorem openRestWithFl_rel {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D O Tg :
   refine rel_seq (rel_taint [.x28] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac [o₁.x28, o₂.x28])
       ⟨_, by taint_decide⟩)
     (tagLenOk_ok s₁ o₁.x28 o₁.tlt) (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun u₁ u₂ ⟨x9₁, r₁⟩ ⟨x9₂, r₂⟩ => ?_
-  have tr : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block restore) h).isSome = true := ⟨_, by taint_decide⟩
-  have p₁ := o₁.of_regs r₁
-  have p₂ := o₂.of_regs r₂
-  have y12₁ : u₁.gpr .x12 = Tg := by rw [r₁.others _ (by decide), x12₁]
-  have y12₂ : u₂.gpr .x12 = Tg := by rw [r₂.others _ (by decide), x12₂]
-  have hlt : ((if Spec.Gcm.tagLenOk tl then 1 else 0 : Nat)) < 2 ^ 64 := by split <;> decide
-  have kx : ∀ {s u t : State}, Regs [.x9, .x10] s u → Others loopRegs u t →
+  obtain tr : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block restore) h).isSome = true := ⟨_, by taint_decide⟩
+  obtain p₁ := o₁.of_regs r₁
+  obtain p₂ := o₂.of_regs r₂
+  obtain y12₁ : u₁.gpr .x12 = Tg := by rw [r₁.others _ (by decide), x12₁]
+  obtain y12₂ : u₂.gpr .x12 = Tg := by rw [r₂.others _ (by decide), x12₂]
+  obtain hlt : ((if Spec.Gcm.tagLenOk tl then 1 else 0 : Nat)) < 2 ^ 64 := by split <;> decide
+  obtain kx : ∀ {s u t : State}, Regs [.x9, .x10] s u → Others loopRegs u t →
       ∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s.gpr r := fun r og q hq => by
     rw [og q (by simp at hq; rcases hq with rfl | rfl | rfl | rfl <;> decide),
       r.others q (by simp at hq; rcases hq with rfl | rfl | rfl | rfl <;> decide)]
@@ -297,9 +297,9 @@ theorem openRestWithFl_rel {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D O Tg :
       fun o' hT hok og => hm₂ o' hT hok (kx r₂ og)) fun w₁ w₂ e₁ e₂ =>
       rel_taint [.x19] (by rw [e₁.1.sp, e₂.1.sp]) (by agree_tac [e₁.1.x19, e₂.1.x19]) tr
   · exact hflr p₁ p₂ (by revert ht; cases Spec.Gcm.tagLenOk tl <;> simp)
-  have hok : Spec.Gcm.tagLenOk tl = true := by
+  obtain hok : Spec.Gcm.tagLenOk tl = true := by
     revert hf; cases Spec.Gcm.tagLenOk tl <;> simp
-  have hle := tagLenOk_le hok
+  obtain hle := tagLenOk_le hok
   refine rel_seq (rel_taint [.x19, .x28, .x12] (by rw [p₁.env.sp, p₂.env.sp])
       (by agree_tac [p₁.env.x19, p₂.env.x19, p₁.x28, p₂.x28, y12₁, y12₂]) ⟨_, by taint_decide⟩)
     (tagIn_ok p₁.env.x19 y12₁ p₁.x28 hle p₁.tagR p₁.env.perm.w (p₁.dtW.sub_right (Region.sub_prefix (by decide))))
@@ -347,7 +347,7 @@ theorem openRestWithG_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : Stat
       RelCT isa (Eq2 t₁ t₂) m TT) :
     RelCT isa (Eq2 s₁ s₂) (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m))
       (.block restore))) TT := by
-  have t0 : ∃ h, (taint.check (Taint.ofRegs []) (.block [imm .x0 0]) h).isSome = true := ⟨_, by taint_decide⟩
+  obtain t0 : ∃ h, (taint.check (Taint.ofRegs []) (.block [imm .x0 0]) h).isSome = true := ⟨_, by taint_decide⟩
   exact openRestWithFl_rel o₁ o₂ x12₁ x12₂ (fun o' _ hmem hok => failZero_ok o' (by rw [hmem]; exact hF₁) hok)
     (fun o' _ hmem hok => failZero_ok o' (by rw [hmem]; exact hF₂) hok)
     (fun p₁ p₂ _ => rel_taint [] (by rw [p₁.env.sp, p₂.env.sp]) (by agree_tac []) t0) hm₁ hm₂ hm
@@ -452,26 +452,26 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (.seq (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) X) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  have h₁ := hpre _ p₁
-  have h₂ := hpre _ p₂
+  obtain h₁ := hpre _ p₁
+  obtain h₂ := hpre _ p₂
   have hq₀ := hq.1
   obtain ⟨hq, hres⟩ := hq
-  have hR₁ : rounds (σ₁.gpr .x1) := (openLay h₁).1.rounds
-  have hR₂ : rounds (σ₂.gpr .x1) := (openLay h₂).1.rounds
+  obtain hR₁ : rounds (σ₁.gpr .x1) := (openLay h₁).1.rounds
+  obtain hR₂ : rounds (σ₂.gpr .x1) := (openLay h₂).1.rounds
   obtain ⟨f₁, f₂⟩ := oneFacts (by omega_arith : w < w + 1) (openCore h₁) (openCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by omega_arith)
-  have qg : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_arith)
+  obtain qt : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by omega_arith)
+  obtain qg : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by omega_arith)
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
   have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := f₂.hW
-  have hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_arith
+  obtain hk : 8 * w % 8 = 0 ∧ 8 * w < 32768 := by omega_arith
   have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := rfl
   have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := qt.symm
-  have t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x12 0]) h).isSome = true := ⟨_, by taint_decide⟩
-  have ka : (Code.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)) : Prog isa).allInstrs
+  obtain t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x12 0]) h).isSome = true := ⟨_, by taint_decide⟩
+  obtain ka : (Code.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)) : Prog isa).allInstrs
       (fun i => [Reg.x4, .x5, .x6, .x7].all fun r => !clobbers i r) = true := by
     rcases hw with rfl | rfl <;> decide
-  have kc : (Code.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)) : Prog isa).noCalls =
+  obtain kc : (Code.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)) : Prog isa).noCalls =
       true := by
     rcases hw with rfl | rfl <;> decide
   refine rel_seq (RelCT.block_split (rel_seq (entryStash_rel (k := 8 * w) (j := 8) (by omega_arith) rfl (.inr rfl) f₁ f₂
@@ -486,11 +486,11 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
     fun s₁ s₂ ⟨⟨o₁, x12₁⟩, k₁⟩ ⟨⟨o₂, x12₂⟩, k₂⟩ => ?_
   rw [f₂.hW, ← q0, ← q1, ← q2, ← q3, ← q4, ← q5, ← q6, ← q7, ← qsp, ← qt, ← qg] at o₂
   rw [← qg] at x12₂
-  have hb : (openRes σ₁).isSome = (openRes σ₂).isSome := by
+  obtain hb : (openRes σ₁).isSome = (openRes σ₂).isSome := by
     rw [openLeakOf, openLeakOf, ite_eq_right_of_eq_false _ _ (eq_false (not_not_intro hR₁)),
       ite_eq_right_of_eq_false _ _ (eq_false (not_not_intro hR₂))] at hres
     revert hres; cases (openRes σ₁).isSome <;> cases (openRes σ₂).isSome <;> simp
-  have hr₂ : openRes σ₂ = Spec.Gcm.openResult (ctxCiph σ₂.mem (σ₁.gpr .x0) (σ₁.gpr .x1).toNat)
+  obtain hr₂ : openRes σ₂ = Spec.Gcm.openResult (ctxCiph σ₂.mem (σ₁.gpr .x0) (σ₁.gpr .x1).toNat)
       (ctxH σ₂.mem (σ₁.gpr .x0)) (stackArg σ₁ 1).toNat
       (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat) (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
       (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat) (bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat) := by

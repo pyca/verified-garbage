@@ -60,15 +60,15 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion sboxCfg s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
-  have hout : ∀ j < 8, e'.slot j = some (sbox1T j) := by
+  obtain hout : ∀ j < 8, e'.slot j = some (sbox1T j) := by
     intro j hj
     have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simpa using this
-  have key : ∀ p < 32, ∃ s', runBlock isa sboxCode s = some s' ∧
+  obtain key : ∀ p < 32, ∃ s', runBlock isa sboxCode s = some s' ∧
       Post (TableRel p (bsByte (slotW s) p).toNat) sboxCfg (fun _ => none) e' s s'
         (fun r => (sboxCode.all fun i => i.dst != some r) = false) := by
     intro p hp
-    have hc := (bsByte (slotW s) p).isLt
+    obtain hc := (bsByte (slotW s) p).isLt
     refine run (table_sound hp hc) hok ⟨(fun r a h => by cases h), fun k a _ h => ?_,
       (fun _ _ _ h => by cases h)⟩ he
     simp only [sboxEnv] at h
@@ -82,7 +82,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
-    have hc := (bsByte (slotW s) p).isLt
+    obtain hc := (bsByte (slotW s) p).isLt
     have := p₁.rel.slot j _ (by simp [sboxCfg]; omega_using [hj]) (hout j hj)
     have hb : s''.gpr sb = s.gpr sb := p₁.base
     simp only [TableRel, sboxCfg, hb] at this
@@ -156,7 +156,7 @@ theorem runBlock_app (a b : List Instr) (s : State) :
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hfit])
+  obtain e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hfit])
   rw [e]
   exact hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -173,12 +173,12 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   simp only [List.mem_singleton] at hr; subst hr
   have hfit := hok.fit
   simp only [slotRegion, Region.Contains] at hc
-  have hb : ((s.gpr c.base).setWidth 64).toNat = (s.gpr c.base).toNat := by
+  obtain hb : ((s.gpr c.base).setWidth 64).toNat = (s.gpr c.base).toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr c.base).isLt; omega_using [])]
-  have hi' : i < 4 := by simpa using hi
+  obtain hi' : i < 4 := by simpa using hi
   generalize hx : wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i = x at hc
-  have hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega_using [hc]
-  have hsep := hok.sep _ hk j hj x
+  obtain hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega_using [hc]
+  obtain hsep := hok.sep _ hk j hj x
   rw [wordAddr, addr_eq (by omega_using [hfit, hc])] at hsep
   refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega_using [hi])]; exact hi')
   generalize (s.gpr c.base).setWidth 64 = B at *
@@ -190,8 +190,8 @@ theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (
     ∀ l : List Nat, (∀ c ∈ l, c < 8) → xorBits W (l.map (selG j b)) = W32.rowSel YL SR j b l
   | [], _ => rfl
   | c :: l, hl => by
-    have hc := hl c List.mem_cons_self
-    have ih := xorBits_sel W YL SR hS hY hj hb l fun x hx => hl x (List.mem_cons_of_mem _ hx)
+    obtain hc := hl c List.mem_cons_self
+    obtain ih := xorBits_sel W YL SR hS hY hj hb l fun x hx => hl x (List.mem_cons_of_mem _ hx)
     simp only [List.map_cons, xorBits_cons, W32.rowSel, List.foldr_cons] at ih ⊢
     rw [ih]
     congr 1

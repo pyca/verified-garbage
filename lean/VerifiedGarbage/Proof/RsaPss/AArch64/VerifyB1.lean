@@ -80,7 +80,7 @@ theorem zero_bit (b : Byte) : (BitVec.setWidth 64 b - BitVec.ofNat 64 1) >>> 63 
   by_cases h : b = 0
   · subst h; rw [ite_eq_left rfl]; decide
   · rw [ite_eq_right h]
-    have h' : b.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
+    obtain h' : b.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow]
     have := b.isLt
@@ -108,8 +108,8 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
     · rw [o₇.get .x13, o₆.get .x13, e₅, e₄]; rfl
     · rw [o₇.get .x14, e₆]; rfl
     · rw [e₇]; rfl
-  have Ru : Rep u.mem S V := O.mem ▸ R
-  have Lu : Lay u F S := L.congr O.sp O.wr (O.get .x20)
+  obtain Ru : Rep u.mem S V := O.mem ▸ R
+  obtain Lu : Lay u F S := L.congr O.sp O.wr (O.get .x20)
   refine WP.mono (wp_countdown (cnt := .x12) (N := db) (by omega_using [he, c6]) hdb
     (fun j v => Only [.x9, .x8, .x16, .x17, .x10, .x11, .x12, .x13, .x14, .x15] u v ∧
       v.gpr .x10 = off S (e + j) ∧ v.gpr .x11 = BitVec.ofNat 64 j ∧
@@ -126,59 +126,59 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
     wp_orr fun w₉ q₉ g₉ => wp_movz fun w₁₀ q₁₀ g₁₀ => wp_sub fun w₁₁ q₁₁ g₁₁ => wp_and fun w₁₂ q₁₂ g₁₂ =>
     wp_addImm (by decide) fun w₁₃ q₁₃ g₁₃ => wp_addImm (by decide) fun w₁₄ q₁₄ g₁₄ =>
     wp_subImm (by decide) fun w₁₅ q₁₅ g₁₅ => wp_nil ?_
-  have Q : Only [.x9, .x8, .x16, .x17, .x14, .x15, .x13, .x10, .x11, .x12] v w₁₅ :=
+  obtain Q : Only [.x9, .x8, .x16, .x17, .x14, .x15, .x13, .x10, .x11, .x12] v w₁₅ :=
     (q₁.trans (q₂.trans (q₃.trans (q₄.trans (q₅.trans (q₆.trans (q₇.trans (q₈.trans (q₉.trans (q₁₀.trans
       (q₁₁.trans (q₁₂.trans (q₁₃.trans (q₁₄.trans q₁₅)))))))))))))).mono
   generalize hb : V (e + j) = b
-  have v9 : w₁.gpr .x9 = b.setWidth 64 := by rw [g₁, hO.mem, Ru _ (by omega_using [he, hj]), hb]
-  have v8 : w₃.gpr .x8 = if b = 0 then 1#64 else 0#64 := by rw [g₃, g₂, v9, zero_bit]
-  have v16 : w₅.gpr .x16 = (w₃.gpr .x8 - BitVec.ofNat 64 1) &&& v.gpr .x13 := by
+  obtain v9 : w₁.gpr .x9 = b.setWidth 64 := by rw [g₁, hO.mem, Ru _ (by omega_using [he, hj]), hb]
+  obtain v8 : w₃.gpr .x8 = if b = 0 then 1#64 else 0#64 := by rw [g₃, g₂, v9, zero_bit]
+  obtain v16 : w₅.gpr .x16 = (w₃.gpr .x8 - BitVec.ofNat 64 1) &&& v.gpr .x13 := by
     rw [g₅, g₄, q₄.get .x13, q₃.get .x13, q₂.get .x13, q₁.get .x13]
-  have v14 : w₁₅.gpr .x14 = v.gpr .x14 ||| (BitVec.ofNat 64 j &&& w₅.gpr .x16) := by
+  obtain v14 : w₁₅.gpr .x14 = v.gpr .x14 ||| (BitVec.ofNat 64 j &&& w₅.gpr .x16) := by
     rw [q₁₅.get .x14, q₁₄.get .x14, q₁₃.get .x14, q₁₂.get .x14, q₁₁.get .x14, q₁₀.get .x14, q₉.get .x14,
       q₈.get .x14, g₇, g₆, q₆.get .x14, q₅.get .x14, q₄.get .x14, q₃.get .x14, q₂.get .x14, q₁.get .x14,
       q₅.get .x11, q₄.get .x11, q₃.get .x11, q₂.get .x11, q₁.get .x11, h11']
-  have v15 : w₁₅.gpr .x15 = v.gpr .x15 ||| (b.setWidth 64 &&& w₅.gpr .x16) := by
+  obtain v15 : w₁₅.gpr .x15 = v.gpr .x15 ||| (b.setWidth 64 &&& w₅.gpr .x16) := by
     rw [q₁₅.get .x15, q₁₄.get .x15, q₁₃.get .x15, q₁₂.get .x15, q₁₁.get .x15, q₁₀.get .x15, g₉, g₈,
       q₈.get .x15, q₇.get .x15, q₆.get .x15, q₅.get .x15, q₄.get .x15, q₃.get .x15, q₂.get .x15, q₁.get .x15,
       q₇.get .x9, q₆.get .x9, q₅.get .x9, q₄.get .x9, q₃.get .x9, q₂.get .x9, v9, q₇.get .x16, q₆.get .x16]
-  have v13 : w₁₅.gpr .x13 = v.gpr .x13 &&& (0#64 - w₃.gpr .x8) := by
+  obtain v13 : w₁₅.gpr .x13 = v.gpr .x13 &&& (0#64 - w₃.gpr .x8) := by
     rw [q₁₅.get .x13, q₁₄.get .x13, q₁₃.get .x13, g₁₂, q₁₁.get .x13, q₁₀.get .x13, q₉.get .x13, q₈.get .x13,
       q₇.get .x13, q₆.get .x13, q₅.get .x13, q₄.get .x13, q₃.get .x13, q₂.get .x13, q₁.get .x13, g₁₁, g₁₀,
       q₁₀.get .x8, q₉.get .x8, q₈.get .x8, q₇.get .x8, q₆.get .x8, q₅.get .x8, q₄.get .x8]
     rfl
-  have x10 : w₁₅.gpr .x10 = off S (e + (j + 1)) := by
+  obtain x10 : w₁₅.gpr .x10 = off S (e + (j + 1)) := by
     rw [q₁₅.get .x10, q₁₄.get .x10, g₁₃, q₁₂.get .x10, q₁₁.get .x10, q₁₀.get .x10, q₉.get .x10, q₈.get .x10,
       q₇.get .x10, q₆.get .x10, q₅.get .x10, q₄.get .x10, q₃.get .x10, q₂.get .x10, q₁.get .x10, h10', off_add,
       Nat.add_assoc]
-  have x11 : w₁₅.gpr .x11 = BitVec.ofNat 64 (j + 1) := by
+  obtain x11 : w₁₅.gpr .x11 = BitVec.ofNat 64 (j + 1) := by
     rw [q₁₅.get .x11, g₁₄, q₁₃.get .x11, q₁₂.get .x11, q₁₁.get .x11, q₁₀.get .x11, q₉.get .x11, q₈.get .x11,
       q₇.get .x11, q₆.get .x11, q₅.get .x11, q₄.get .x11, q₃.get .x11, q₂.get .x11, q₁.get .x11, h11',
       BitVec.ofNat_add_ofNat]
-  have x12 : w₁₅.gpr .x12 = v.gpr .x12 - BitVec.ofNat 64 1 := by
+  obtain x12 : w₁₅.gpr .x12 = v.gpr .x12 - BitVec.ofNat 64 1 := by
     rw [g₁₅, q₁₄.get .x12, q₁₃.get .x12, q₁₂.get .x12, q₁₁.get .x12, q₁₀.get .x12, q₉.get .x12, q₈.get .x12,
       q₇.get .x12, q₆.get .x12, q₅.get .x12, q₄.get .x12, q₃.get .x12, q₂.get .x12, q₁.get .x12]
   suffices key : w₁₅.gpr .x13 = (if nz (fun i => V (e + i)) (j + 1) = none then BitVec.allOnes 64 else 0) ∧
       w₁₅.gpr .x14 = BitVec.ofNat 64 ((nz (fun i => V (e + i)) (j + 1)).getD 0) ∧
       w₁₅.gpr .x15 = (nzV (fun i => V (e + i)) (j + 1)).setWidth 64 from
     ⟨⟨(hO.trans Q).mono, x10, x11, key.1, key.2.1, key.2.2⟩, x12⟩
-  have hS : ∀ i, nz (fun i => V (e + i)) j = some i → nz (fun i => V (e + i)) (j + 1) = some i := fun i h => by
+  obtain hS : ∀ i, nz (fun i => V (e + i)) j = some i → nz (fun i => V (e + i)) (j + 1) = some i := fun i h => by
     simp only [nz, h]
-  have hN0 : nz (fun i => V (e + i)) j = none → b = 0 → nz (fun i => V (e + i)) (j + 1) = none := fun h h0 => by
+  obtain hN0 : nz (fun i => V (e + i)) j = none → b = 0 → nz (fun i => V (e + i)) (j + 1) = none := fun h h0 => by
     simp only [nz, h, hb, h0, ite_true]
-  have hN1 : nz (fun i => V (e + i)) j = none → b ≠ 0 → nz (fun i => V (e + i)) (j + 1) = some j := fun h h0 => by
+  obtain hN1 : nz (fun i => V (e + i)) j = none → b ≠ 0 → nz (fun i => V (e + i)) (j + 1) = some j := fun h h0 => by
     simp only [nz, h, hb, h0, ite_false]
-  have az : ∀ x : BitVec 64, x &&& 0 = 0 := fun x => by ext i; simp
-  have za : ∀ x : BitVec 64, 0 &&& x = 0 := fun x => by ext i; simp
-  have oz : ∀ x : BitVec 64, x ||| 0 = x := fun x => by ext i; simp
-  have zo : ∀ x : BitVec 64, 0 ||| x = x := fun x => by ext i; simp
-  have aa : ∀ x : BitVec 64, x &&& BitVec.allOnes 64 = x := fun x => BitVec.and_allOnes
+  obtain az : ∀ x : BitVec 64, x &&& 0 = 0 := fun x => by ext i; simp
+  obtain za : ∀ x : BitVec 64, 0 &&& x = 0 := fun x => by ext i; simp
+  obtain oz : ∀ x : BitVec 64, x ||| 0 = x := fun x => by ext i; simp
+  obtain zo : ∀ x : BitVec 64, 0 ||| x = x := fun x => by ext i; simp
+  obtain aa : ∀ x : BitVec 64, x &&& BitVec.allOnes 64 = x := fun x => BitVec.and_allOnes
   have hb0 : (1#64 - BitVec.ofNat 64 1) = 0 := rfl
   have hb1 : (0#64 - BitVec.ofNat 64 1) = BitVec.allOnes 64 := rfl
   by_cases hN : nz (fun i => V (e + i)) j = none
   · rw [hN, ite_eq_left rfl] at h13'
     rw [hN] at h14'
-    have h15'' : v.gpr .x15 = 0 := by rw [h15']; simp only [nzV, hN]; rfl
+    obtain h15'' : v.gpr .x15 = 0 := by rw [h15']; simp only [nzV, hN]; rfl
     by_cases b0 : b = 0
     · have e1 := hN0 hN b0
       rw [v8, ite_eq_left b0] at v16
@@ -191,7 +191,7 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
       refine ⟨by rw [v13, h13', v8, ite_eq_right b0, e1]; rfl, by rw [v14, h14', aa]; simp [e1],
         by rw [v15, h15'', aa, zo]; simp only [nzV, e1, hb]⟩
   · obtain ⟨i, hi⟩ := Option.ne_none_iff_exists'.mp hN
-    have e1 := hS i hi
+    obtain e1 := hS i hi
     rw [hi] at h13' h14'
     rw [h13', ite_eq_right (by simp), az] at v16
     rw [v16, az, oz] at v14 v15
@@ -296,54 +296,54 @@ theorem b1_ok {H : Hash} {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → B
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
   have c6 : oRsa = 8192 := rfl
-  have hW : ∀ {d : Nat}, d + 8 ≤ frameBytes → (d + 8 ≤ sNb ∨ sNb + 8 ≤ d) → (d + 8 ≤ sDone ∨ sDone + 8 ≤ d) →
+  obtain hW : ∀ {d : Nat}, d + 8 ≤ frameBytes → (d + 8 ≤ sNb ∨ sNb + 8 ≤ d) → (d + 8 ≤ sDone ∨ sDone + 8 ≤ d) →
       ∀ {m : Mem}, Frame (mgfWr F S) t.mem m → m.readW (off F d) 64 = t.mem.readW (off F d) 64 :=
     fun hd h1 h2 _ hf => slot_keep hf (L.slotW hd h1 h2)
   unfold seqs seqs seqs seqs seqs
   -- `acc0`.
   refine WP.seq (WP.mono_syms (acc0_ok L R (by omega_using [hk]) hk2 hlo h23 h24 hLo hC) fun u1 ⟨O1, x26₁⟩ sy1 => ?_)
-  have L1 := L.congr O1.sp O1.wr (O1.get .x20)
-  have R1 : Rep u1.mem S V := O1.mem ▸ R
-  have E1 : Env Gm g u1 F S p := E.step L (by rw [O1.mem]; exact Frame.refl _ _) O1.rd O1.wr sy1
+  obtain L1 := L.congr O1.sp O1.wr (O1.get .x20)
+  obtain R1 : Rep u1.mem S V := O1.mem ▸ R
+  obtain E1 : Env Gm g u1 F S p := E.step L (by rw [O1.mem]; exact Frame.refl _ _) O1.rd O1.wr sy1
   -- The mask.
   refine WP.seq (WP.mono (mgfXor_ok hGm hGh hGl hGv L1 R1 (e := oEm + lo) (db := db) ⟨by omega_using [], hdb, by omega_using [hk, hk2, c1, c2]⟩
     (by rw [O1.get .x24, h24]) (by rw [O1.get .x25, h25]) E1)
     fun u2 ⟨sp2, rd2, wr2, cs2, v2, fr2, sy2, em2⟩ => ?_)
-  have L2 := L1.congr sp2 wr2 (cs2 .x20 (by decide) (by decide))
-  have F2 : Frame (mgfWr F S) t.mem u2.mem := by rw [O1.mem] at fr2; exact fr2
+  obtain L2 := L1.congr sp2 wr2 (cs2 .x20 (by decide) (by decide))
+  obtain F2 : Frame (mgfWr F S) t.mem u2.mem := by rw [O1.mem] at fr2; exact fr2
   -- `DB`'s top bits.
   refine WP.seq (WP.mono_syms (clearTop_ok L2 (fun _ _ => rfl) (e := oEm + lo) (c := c)
     (by rw [cs2 .x24 (by decide) (by decide), O1.get .x24, h24]) (by omega_using [hlo, c1, c6])
     (by rw [hW (by decide) (by decide) (by decide) F2, hC])) fun u3 ⟨k3, f3, R3⟩ sy3 => ?_)
-  have L3 := L2.congr k3.sp k3.wr (k3.get .x20)
-  have hX : ∀ {d : Nat}, d + 8 ≤ frameBytes → (d + 8 ≤ sNb ∨ sNb + 8 ≤ d) → (d + 8 ≤ sDone ∨ sDone + 8 ≤ d) →
+  obtain L3 := L2.congr k3.sp k3.wr (k3.get .x20)
+  obtain hX : ∀ {d : Nat}, d + 8 ≤ frameBytes → (d + 8 ≤ sNb ∨ sNb + 8 ≤ d) → (d + 8 ≤ sDone ∨ sDone + 8 ≤ d) →
       u3.mem.readW (off F d) 64 = t.mem.readW (off F d) 64 := fun hd h1 h2 => by
     rw [slot_keep f3 (L.slotSd hd), hW hd h1 h2 F2]
   -- The first nonzero byte.
   generalize hmk : mkB Gs H.D V (oEm + lo) db = mk
   have hmk' : Spec.Mgf1.mgf1 Gs ((List.range H.D).map fun i => V (oEm + lo + db + i)) db = mk := hmk
   rw [hmk'] at em2
-  have hv : ∀ o, oEm ≤ o → o < oY →
+  obtain hv : ∀ o, oEm ≤ o → o < oY →
       upd (fun o => u2.mem (off S o)) (oEm + lo) (u2.mem (off S (oEm + lo)) &&& c) o =
         wct V mk (oEm + lo) db c o := fun o h1 h2 => by
     unfold wct upd
     simp only []
     rw [em2 o h1 h2, em2 (oEm + lo) (by omega_using []) (by omega_using [hlo, c1, c2])]
-  have hf : ∀ i < db, upd (fun o => u2.mem (off S o)) (oEm + lo) (u2.mem (off S (oEm + lo)) &&& c) (oEm + lo + i) =
+  obtain hf : ∀ i < db, upd (fun o => u2.mem (off S o)) (oEm + lo) (u2.mem (off S (oEm + lo)) &&& c) (oEm + lo + i) =
       wct V mk (oEm + lo) db c (oEm + lo + i) := fun i hi => hv _ (by omega_using []) (by omega_using [hk, hk2, c1, c2, hi])
   refine WP.seq (WP.mono_syms (posScan_ok L3 R3 (e := oEm + lo) (db := db) (by omega_using [hk, hk2, c1, c6]) (by omega_using [hdb])
     (by rw [k3.get .x24, cs2 .x24 (by decide) (by decide), O1.get .x24, h24])
     (by rw [k3.get .x25, cs2 .x25 (by decide) (by decide), O1.get .x25, h25])) fun u4 ⟨O4, x13₄, x14₄, x15₄⟩ sy4 => ?_)
   rw [nz_congr hf] at x13₄ x14₄
   rw [nzV_congr hf] at x15₄
-  have L4 := L3.congr O4.sp O4.wr (O4.get .x20)
+  obtain L4 := L3.congr O4.sp O4.wr (O4.get .x20)
   -- Its checks.
   refine WP.seq (WP.mono_syms (posCheck_ok L4 x13₄ x14₄ x15₄ (acc := acc0V V k lo c) (any := any) (sv := sv)
     (by rw [O4.get .x26, k3.get .x26, cs2 .x26 (by decide) (by decide), x26₁]; rfl)
     (by rw [O4.get .x25, k3.get .x25, cs2 .x25 (by decide) (by decide), O1.get .x25, h25]) (nz_lt (by omega_using [hdb]))
     (by rw [O4.mem, hX (by decide) (by decide) (by decide), hA])
     (by rw [O4.mem, hX (by decide) (by decide) (by decide), hS])) fun u5 ⟨k5, m5, x26₅⟩ sy5 => hQ u5 ?_)
-  have R5 := R3.frame (m' := u5.mem) (rs := [slotR F sPos]) (by rw [m5, O4.mem]; exact frame_slot _ F sPos _)
+  obtain R5 := R3.frame (m' := u5.mem) (rs := [slotR F sPos]) (by rw [m5, O4.mem]; exact frame_slot _ F sPos _)
     (L.slotS (by decide))
   subst hmk
   exact {

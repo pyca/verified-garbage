@@ -103,7 +103,7 @@ theorem pins_list {α : Type} {Φ : α → State → Prop} {rs : List Reg} (f : 
 theorem qLoadDigit_ok {e : Nat} {a : RpP × Nat} {s : State} (h : QB e a s) :
     WP isa (.seq (.block qLoad) (.block qDigit)) s (Q1 e a) := by
   have hw := h.ws
-  have hW := wW_eq a.1.k
+  obtain hW := wW_eq a.1.k
   have hn := hw.scr.nowrap
   have hZ := hw.hZ
   have hw2 := hw.w2
@@ -129,15 +129,15 @@ theorem qLoadDigit_ok {e : Nat} {a : RpP × Nat} {s : State} (h : QB e a s) :
 theorem qStepW_ok {e : Nat} {a : RpP × Nat} {t : State} (h1 : Q1 e a t) :
     WP isa Impl.Rsa.X86_64.WordReduce.step t (Q2 e a) := by
   obtain ⟨s, h, hr, hm₂, k12⟩ := h1
-  have hbx₂ := hr .rbx (by simp)
-  have h10₂ := hr .r10 (by simp)
-  have h8₂ := hr .r8 (by simp)
-  have hbp₂ := hr .rbp (by simp)
-  have h12₂ := hr .r12 (by simp)
+  obtain hbx₂ := hr .rbx (by simp)
+  obtain h10₂ := hr .r10 (by simp)
+  obtain h8₂ := hr .r8 (by simp)
+  obtain hbp₂ := hr .rbp (by simp)
+  obtain h12₂ := hr .r12 (by simp)
   simp only [qStepVal] at hbx₂ h10₂ h8₂ hbp₂ h12₂
   clear hr
   have hw := h.ws
-  have hW := wW_eq a.1.k
+  obtain hW := wW_eq a.1.k
   have h8 := h.kb.1
   have e3 := h.e3
   have hn := hw.scr.nowrap
@@ -160,25 +160,25 @@ theorem qStepW_ok {e : Nat} {a : RpP × Nat} {t : State} (h1 : Q1 e a t) :
   simp only at *
   generalize wW p.k = W at *
   generalize wk p.k = hh at *
-  have hs₂ := hw.scr.congr k12.2.2
-  have wD : ∀ i < hh, word t.mem p.B (slot W qD + 8 * i) = word s.mem p.B (slot W qD + 8 * i) := fun i hi => by
+  obtain hs₂ := hw.scr.congr k12.2.2
+  obtain wD : ∀ i < hh, word t.mem p.B (slot W qD + 8 * i) = word s.mem p.B (slot W qD + 8 * i) := fun i hi => by
     rw [hm₂]; exact (writeW_outside s.mem p.B _ (by q_omega)).word (by q_omega) (by q_omega)
-  have wR : ∀ i < hh, word t.mem p.B (slot W qR + 8 * i) = word s.mem p.B (slot W qR + 8 * i) := fun i hi => by
+  obtain wR : ∀ i < hh, word t.mem p.B (slot W qR + 8 * i) = word s.mem p.B (slot W qR + 8 * i) := fun i hi => by
     rw [hm₂]; exact (writeW_outside s.mem p.B _ (by q_omega)).word (by q_omega) (by q_omega)
-  have vD : wv t.mem p.B (slot W qD) hh = wv s.mem p.B (slot W qD) hh := wv_congr wD
-  have vR : wv t.mem p.B (slot W qR) hh = wv s.mem p.B (slot W qR) hh := wv_congr wR
-  have tD : word t.mem p.B (slot W qD + 8 * (hh - 1)) = word s.mem p.B (slot W qD + 8 * (hh - 1)) :=
+  obtain vD : wv t.mem p.B (slot W qD) hh = wv s.mem p.B (slot W qD) hh := wv_congr wD
+  obtain vR : wv t.mem p.B (slot W qR) hh = wv s.mem p.B (slot W qR) hh := wv_congr wR
+  obtain tD : word t.mem p.B (slot W qD + 8 * (hh - 1)) = word s.mem p.B (slot W qD + 8 * (hh - 1)) :=
     wD _ (by omega_arith)
-  have rV : word t.mem p.B (slot W qV) = word s.mem p.B (slot W qV) := by
+  obtain rV : word t.mem p.B (slot W qV) = word s.mem p.B (slot W qV) := by
     rw [hm₂]; exact (writeW_outside s.mem p.B _ (by q_omega)).word (by q_omega) (by q_omega)
   refine WP.mono (WordReduce.stepQ_ok hs₂ hbx₂ h10₂ h8₂ h12₂ hbp₂ (by omega_arith) (by omega_arith)
     (by q_omega) (by q_omega) (by q_omega) (by q_omega) (by q_omega) (by q_omega)
     (by rw [tD]; exact hhd) (by rw [rV, tD]; exact hhv) (by rw [vR, vD]; exact hhx))
     fun s₃ ⟨_, f₃, k₃, _⟩ => ?_
-  have hw₂ : Ws t p.B p.Z W := hw.congrP (P := fun y => slot W qV + 8 ≤ y ∧ y < slot W qV + 16)
+  obtain hw₂ : Ws t p.B p.Z W := hw.congrP (P := fun y => slot W qV + 8 ≤ y ∧ y < slot W qV + 16)
     (by rw [hm₂]; exact FrmP.of_writeW _ (by q_omega) fun _ h1 h2 => ⟨h1, h2⟩)
     (fun y hy => .inl (by omega_arith)) k12 (by decide)
-  have hw₃ : Ws s₃ p.B p.Z W := hw₂.congr f₃ (fun r hr => by
+  obtain hw₃ : Ws s₃ p.B p.Z W := hw₂.congr f₃ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Or.inl (by q_omega)) k₃ (by decide)
   refine ⟨hw₃, ?_, hc1, hcN, h8, kb.2, e3⟩
@@ -218,7 +218,7 @@ theorem qBody_ct (e : Nat) : RelCT isa (Two (QB e)) qBody fun _ _ => True := by
   obtain ⟨hw, hc, hc1, hcN, h8, hk, e3⟩ := h
   have hZ := hw.hZ
   have h256 := hw.h256
-  have hW := wW_eq a.1.k
+  obtain hW := wW_eq a.1.k
   obtain ⟨sA, sQ, sR, sD, sT, sV, s16⟩ := qSlots (wW a.1.k)
   rw [s16] at hZ
   refine WP.seq (WP.mono (qPos_ok hw hc) fun t ⟨hbx, hax, _, k⟩ => WP.mono (qTail_ok (hw.scr.congr k.2.2)
@@ -246,9 +246,9 @@ theorem outD {p : RpP} {s t : State} (h : GD wW F p s ∧ FDp p s) {o n : Nat}
   have hn := h.1.ws.scr.nowrap
   have hZ := h.1.ws.hZ
   have kb := h.1.kb
-  have hW := wW_eq p.k
-  have e16 := slotE (wW p.k) 16
-  have eD := slotE (wW p.k) qD
+  obtain hW := wW_eq p.k
+  obtain e16 := slotE (wW p.k) 16
+  obtain eD := slotE (wW p.k) qD
   unfold FDp
   rw [ho.word (by simp only [qD] at *; omega_arith) (by simp only [qD] at *; omega_arith)]
   exact h.2
@@ -260,12 +260,12 @@ theorem GD.frmC {p : RpP} {s t : State} (h : GD wW F p s) {rs : List (Nat × Nat
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
   have h256 := h.ws.h256
-  have hP : ∀ y, (∃ r ∈ rs, r.1 ≤ y ∧ y < r.1 + r.2) → (256 ≤ y ∨ (200 ≤ y ∧ y < 208)) ∧ y < p.Z :=
+  obtain hP : ∀ y, (∃ r ∈ rs, r.1 ≤ y ∧ y < r.1 + r.2) → (256 ≤ y ∨ (200 ≤ y ∧ y < 208)) ∧ y < p.Z :=
     fun y ⟨r, hr, h1, h2⟩ => by
       rcases hrs r hr with ⟨a, b⟩ | rfl
       · exact ⟨.inl (by omega_arith), by omega_arith⟩
       · simp only at h1 h2; exact ⟨.inr ⟨h1, h2⟩, by omega_arith⟩
-  have hf' : FrmP p.B (fun y => ∃ r ∈ rs, r.1 ≤ y ∧ y < r.1 + r.2) s.mem t.mem :=
+  obtain hf' : FrmP p.B (fun y => ∃ r ∈ rs, r.1 ≤ y ∧ y < r.1 + r.2) s.mem t.mem :=
     FrmP.of_frm hf fun r hr y h1 h2 => ⟨r, hr, h1, h2⟩
   refine h.next hf' (fun y hy => ⟨?_, (hP y hy).2⟩) k hr (fun c hc => ⟨c, ?_⟩)
     fun I e hFI => by subst e; exact hF I s t _ hFI hf' hP k.2.1 k.2.2
@@ -288,7 +288,7 @@ theorem qSeed_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : Arr F) {hc : VG
       ([.mov .rax (.reg .r12), .alu .add .rax (.imm (BitVec.ofNat 32 e)), .shift .shl .rax 3, .alu .add .rsi (.reg .rax),
         .alu .sub .r12 (.imm 1)] : List Instr))))) copyWords) hc).isSome = true) :
     RelCT isa (Two fun p s => GD wW F p s ∧ FDp p s) (qSeed e) (Two fun p s => GD wW F p s ∧ FDp p s) := by
-  have eq : qSeed e = .seq (.block (ws ++ (base qA .rsi ++ (base qR .rbx ++ (hOf ++
+  obtain eq : qSeed e = .seq (.block (ws ++ (base qA .rsi ++ (base qR .rbx ++ (hOf ++
       ([.mov .rax (.reg .r12), .alu .add .rax (.imm (BitVec.ofNat 32 e)), .shift .shl .rax 3, .alu .add .rsi (.reg .rax),
         .alu .sub .r12 (.imm 1)] : List Instr)))))) copyWords := by
     simp only [qSeed, List.append_assoc]
@@ -296,16 +296,16 @@ theorem qSeed_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : Arr F) {hc : VG
   refine wsG_ct (w := wW) (F := F) (fun _ _ h => h.1) ht fun p s h => ?_
   rw [← eq]
   have hw := h.1.ws
-  have L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, h.1.kb.1, he1, he3⟩
+  obtain L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, h.1.kb.1, he1, he3⟩
   have kb := h.1.kb
-  have hW := wW_eq p.k
+  obtain hW := wW_eq p.k
   have hn := hw.scr.nowrap
   have hZ := hw.hZ
   obtain ⟨sA, sQ, sR, sD, sT, sV, s16⟩ := qSlots (wW p.k)
   rw [s16] at hZ
   unfold qSeed
   refine WP.seq (WP.mono (qSeedB_ok hw L) fun u ⟨hsi, hbx, h12, mu, ku⟩ => ?_)
-  have hsu := hw.scr.congr ku.2.2
+  obtain hsu := hw.scr.congr ku.2.2
   refine WP.mono (copyWords_ok hsi hbx h12 (by omega_arith) (by omega_arith) (by omega_arith)
     (fun i hi => hsu.ld (by omega_arith)) (fun i hi => hsu.st (by omega_arith))
     (fun i hi b hb => by rw [ofs_off p.B (by omega_arith)]; omega_arith)) fun t ⟨_, _, o, k⟩ => ?_
@@ -316,15 +316,15 @@ theorem recipQ_ct (hF : Arr F) :
     RelCT isa (Two fun p s => GD wW F p s ∧ FDp p s)
       (.seq (.block (ws ++ base qD .r10 ++ base qV .r8 ++ hOf)) R2Words.recip)
       (Two fun p s => GD wW F p s ∧ FDp p s) := by
-  have eq : ws ++ base qD .r10 ++ base qV .r8 ++ hOf = ws ++ (base qD .r10 ++ (base qV .r8 ++ hOf)) := by
+  obtain eq : ws ++ base qD .r10 ++ base qV .r8 ++ hOf = ws ++ (base qD .r10 ++ (base qV .r8 ++ hOf)) := by
     simp only [List.append_assoc]
   rw [eq]
   refine wsG_ct (w := wW) (F := F) (fun _ _ h => h.1) (by taint_decide) fun p s h => ?_
   rw [← eq]
   have hw := h.1.ws
-  have L : QLay (wW p.k) (wk p.k) 1 := ⟨wW_eq _, h.1.kb.1, by decide, by decide⟩
+  obtain L : QLay (wW p.k) (wk p.k) 1 := ⟨wW_eq _, h.1.kb.1, by decide, by decide⟩
   have kb := h.1.kb
-  have hW := wW_eq p.k
+  obtain hW := wW_eq p.k
   have hn := hw.scr.nowrap
   have hZ := hw.hZ
   obtain ⟨sA, sQ, sR, sD, sT, sV, s16⟩ := qSlots (wW p.k)
@@ -333,7 +333,7 @@ theorem recipQ_ct (hF : Arr F) :
     WP.mono (R2w.recip_ok (hw.scr.congr ku.2.2) h10 h12 h8' (w := wk p.k) (by omega_arith) (by omega_arith)
       (by omega_arith) (by rw [mu]; exact h.2)) fun t ⟨m, k⟩ => ?_)
   rw [mu] at m
-  have o : Outside p.B (slot (wW p.k) qV) 8 s.mem t.mem := by rw [m]; exact writeW_outside _ _ _ (by omega_arith)
+  obtain o : Outside p.B (slot (wW p.k) qV) 8 s.mem t.mem := by rw [m]; exact writeW_outside _ _ _ (by omega_arith)
   exact outD h o (by omega_arith) (by omega_arith) (by omega_arith) (ku.trans k) (by decide) hF
 
 theorem qCnt_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : ArrC F) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -346,7 +346,7 @@ theorem qCnt_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : ArrC F) {hc : VG
   refine wsG_block_ct (w := wW) (F := F) (fun _ _ h => h.1) ht fun p s h => ?_
   rw [← List.append_assoc]
   have hw := h.1.ws
-  have L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, h.1.kb.1, he1, he3⟩
+  obtain L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, h.1.kb.1, he1, he3⟩
   have hn := hw.scr.nowrap
   have hZ := hw.hZ
   have h256 := hw.h256
@@ -354,8 +354,8 @@ theorem qCnt_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : ArrC F) {hc : VG
     rw [m]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [sCt, sFn]; omega_arith)) (List.mem_singleton_self _))
     (fun r hr => .inr (List.mem_singleton.mp hr)) k (by decide) hF, ?_⟩
   have kb := h.1.kb
-  have hW := wW_eq p.k
-  have eD := slotE (wW p.k) qD
+  obtain hW := wW_eq p.k
+  obtain eD := slotE (wW p.k) qD
   unfold FDp
   rw [m, (writeW_outside s.mem p.B _ (by simp only [sCt, sFn]; omega_arith)).word (by simp only [qD] at *; simp only [sCt, sFn]; omega_arith)
     (by simp only [qD] at *; omega_arith)]
@@ -389,7 +389,7 @@ theorem pos_of_top {m : Mem} {B : Addr} {d h : Nat} (h1 : 1 ≤ h) (hd : 2 ^ 63 
   have := wv_add m B d (h - 1) 1
   rw [show h - 1 + 1 = h by omega_arith] at this
   simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero] at this
-  have hp := Nat.two_pow_pos (64 * (h - 1))
+  obtain hp := Nat.two_pow_pos (64 * (h - 1))
   have : 0 < 2 ^ (64 * (h - 1)) * (word m B (d + 8 * (h - 1))).toNat := Nat.mul_pos hp (by omega_arith)
   omega_arith
 
@@ -409,7 +409,7 @@ theorem qLoop_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : ArrC F) :
     · rwa [show wk p.k + e - (j + 1) = wk p.k + e - j - 1 by omega_arith]
     · have hn := hI'.ws.scr.nowrap
       have hZ := hI'.ws.hZ
-      have hW := wW_eq p.k
+      obtain hW := wW_eq p.k
       obtain ⟨sA, sQ, sR, sD, sT, sV, s16⟩ := qSlots (wW p.k)
       rw [s16] at hZ
       refine g.frmC hI'.frm (fun r hr => ?_) hI'.keep (by simp [mmRegs]) hF
@@ -446,12 +446,12 @@ theorem qPre_ct (e : Nat) (he1 : 1 ≤ e) (he3 : e ≤ 3) (hF : ArrC F) {h₁ h�
       (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => ?_
   have hw := h.1.ws
   have kb := h.1.kb
-  have L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, kb.1, he1, he3⟩
+  obtain L : QLay (wW p.k) (wk p.k) e := ⟨wW_eq _, kb.1, he1, he3⟩
   refine WP.mono (qPre_ok hw L h.2) fun t ⟨hI, ha, top, rcp, _, _, _, f, k⟩ => ⟨?_, _,
     pos_of_top (by omega_arith) h.2, hI, ha, by rw [top]; exact h.2, rcp⟩
   have hn := hw.scr.nowrap
   have hZ := hw.hZ
-  have hW := wW_eq p.k
+  obtain hW := wW_eq p.k
   obtain ⟨sA, sQ, sR, sD, sT, sV, s16⟩ := qSlots (wW p.k)
   rw [s16] at hZ
   refine h.1.frmC f (fun r hr => ?_) k (by simp [mmRegs]) hF

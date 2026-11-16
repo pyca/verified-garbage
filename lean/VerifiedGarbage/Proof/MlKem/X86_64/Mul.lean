@@ -91,11 +91,11 @@ theorem inRd {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀) {j : Nat} (hj : j + 
 /-- `f` and `g` are not written. -/
 theorem coeffFG {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀)
     {k : Nat} (hk : k < 256) : (coeffAt m p k).toNat = ((polyAt s₀.mem p)[k]!).val := by
-  have hd : ∀ r ∈ [pR (hP s₀), pR (sP s₀)], (polyRegion p).Disjoint r := by
+  obtain hd : ∀ r ∈ [pR (hP s₀), pR (sP s₀)], (polyRegion p).Disjoint r := by
     rcases hp' with rfl | rfl
     · simpa using ⟨hp.2.2.1.symm, hp.2.2.2.2.2.1⟩
     · simpa using ⟨hp.2.2.2.1.symm, hp.2.2.2.2.2.2.1⟩
-  have hr : Reduced s₀.mem p := by
+  obtain hr : Reduced s₀.mem p := by
     rcases hp' with rfl | rfl
     · exact hp.2.2.2.2.2.2.2.2.2.2.2.1
     · exact hp.2.2.2.2.2.2.2.2.2.2.2.2
@@ -131,13 +131,13 @@ theorem prod_val {i : Nat} (hi : i < 16) {X1 X2 : BitVec 128} {F G : Poly}
 theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block (mulBody ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have hrr : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [hI.rd, hI.wr]
-  have hj : 16 * i + 16 ≤ 256 := by omega_using [hi]
-  have rF : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
+  obtain hrr : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [hI.rd, hI.wr]
+  obtain hj : 16 * i + 16 ≤ 256 := by omega_using [hi]
+  obtain rF : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
     rw [hrr, hI.rsi]; exact inRd hp (.inl rfl) hj ht
-  have rG : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
+  obtain rG : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
     rw [hrr, hI.rdx]; exact inRd hp (.inr rfl) hj ht
-  have r0 : ∀ {a : Addr}, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 (16 * 0)) 16 →
+  obtain r0 : ∀ {a : Addr}, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 (16 * 0)) 16 →
       InRegions (s.rd ++ s.wr) a 16 := fun h => by rwa [Nat.mul_zero, add_ofNat_zero] at h
   simp only [mulBody, List.append_assoc]
   rw [WP.block_append_iff]
@@ -147,33 +147,33 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
   refine WP.mono (deintG_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact r0 (rG 0 (by decide)))
     (by rw [o1.rd, o1.wr, o1.gpr]; exact rG 1 (by decide)) (by rw [o1.rd, o1.wr, o1.gpr]; exact rG 2 (by decide))
     (by rw [o1.rd, o1.wr, o1.gpr]; exact rG 3 (by decide))) fun s2 ⟨e6, e10, o2⟩ => ?_
-  have o12 := o1.trans o2
-  have hz : InRegions (s2.rd ++ s2.wr) (s2.gpr .r8) 16 := by
+  obtain o12 := o1.trans o2
+  obtain hz : InRegions (s2.rd ++ s2.wr) (s2.gpr .r8) 16 := by
     rw [o12.rd, o12.wr, o12.gpr, hrr, hI.r8, hp.1, hp.2.1]
     exact ⟨pR (sP s₀), by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (s3 : State) => s3.xmm .xmm13 = s2.mem.readW (s2.gpr .r8) 128 ∧ XOnly [.xmm13] s2 s3)
     (by vrunm [hz]; xonly) fun s3 ⟨e13, o3⟩ => ?_
-  have o123 := o12.trans o3
+  obtain o123 := o12.trans o3
   -- the lanes `vbase` multiplies
-  have LF : ∀ t < 4, ∀ e < 4, (dword (s.mem.readW (s.gpr .rsi + BitVec.ofNat 64 (16 * t)) 128) e).toNat =
+  obtain LF : ∀ t < 4, ∀ e < 4, (dword (s.mem.readW (s.gpr .rsi + BitVec.ofNat 64 (16 * t)) 128) e).toNat =
       ((F s₀)[16 * i + (4 * t + e)]!).val := fun t ht => by rw [hI.rsi]; exact loads hp hI.frame (.inl rfl) hj ht
-  have LG : ∀ t < 4, ∀ e < 4, (dword (s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (16 * t)) 128) e).toNat =
+  obtain LG : ∀ t < 4, ∀ e < 4, (dword (s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 (16 * t)) 128) e).toNat =
       ((G s₀)[16 * i + (4 * t + e)]!).val := fun t ht => by rw [hI.rdx]; exact loads hp hI.frame (.inr rfl) hj ht
-  have DF := deint_lanes (c := fun k => ((F s₀)[16 * i + k]!).val)
+  obtain DF := deint_lanes (c := fun k => ((F s₀)[16 * i + k]!).val)
     (fun e he => by have := LF 0 (by decide) e he; simpa only [Nat.mul_zero, add_ofNat_zero, Nat.zero_add] using this)
     (fun e he => LF 1 (by decide) e he) (fun e he => LF 2 (by decide) e he) (fun e he => LF 3 (by decide) e he)
     (fun k _ => by have := val_lt ((F s₀)[16 * i + k]!); omega_using [this])
-  have DG := deint_lanes (c := fun k => ((G s₀)[16 * i + k]!).val)
+  obtain DG := deint_lanes (c := fun k => ((G s₀)[16 * i + k]!).val)
     (fun e he => by have := LG 0 (by decide) e he; simpa only [Nat.mul_zero, add_ofNat_zero, Nat.zero_add] using this)
     (fun e he => LG 1 (by decide) e he) (fun e he => LG 2 (by decide) e he) (fun e he => LG 3 (by decide) e he)
     (fun k _ => by have := val_lt ((G s₀)[16 * i + k]!); omega_using [this])
-  have x0 : s3.xmm .xmm0 = s1.xmm .xmm0 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
-  have x4 : s3.xmm .xmm4 = s1.xmm .xmm4 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
-  have x6 : s3.xmm .xmm6 = s2.xmm .xmm6 := o3.xmm _ (by decide)
-  have x10 : s3.xmm .xmm10 = s2.xmm .xmm10 := o3.xmm _ (by decide)
+  obtain x0 : s3.xmm .xmm0 = s1.xmm .xmm0 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
+  obtain x4 : s3.xmm .xmm4 = s1.xmm .xmm4 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
+  obtain x6 : s3.xmm .xmm6 = s2.xmm .xmm6 := o3.xmm _ (by decide)
+  obtain x10 : s3.xmm .xmm10 = s2.xmm .xmm10 := o3.xmm _ (by decide)
   rw [o1.gpr, o1.mem] at e6 e10
-  have hZ : ZLanes (s3.xmm .xmm13) (fun e => gamma (8 * i + e)) := fun e he => by
+  obtain hZ : ZLanes (s3.xmm .xmm13) (fun e => gamma (8 * i + e)) := fun e he => by
     rw [e13, o12.mem, o12.gpr, hI.r8, word_readW _ _ he, wAddr_add, ← wordAt, hI.tab _ (by omega_using [hi, he]), gTab_eq]
   rw [WP.block_append_iff]
   refine WP.mono (vbase_ok (x0 := fun e => (F s₀)[16 * i + 2 * e]!) (x1 := fun e => (F s₀)[16 * i + 2 * e + 1]!)
@@ -182,14 +182,14 @@ theorem step {i : Nat} (hi : i < 16) {s : State} (hI : Inv s₀ i s) :
     (fun e he => by rw [x0, e0]; exact DF.1 e he) (fun e he => by rw [x4, e4]; exact DF.2 e he)
     (fun e he => by rw [x6, e6]; exact DG.1 e he) (fun e he => by rw [x10, e10]; exact DG.2 e he) hZ)
     fun s4 ⟨h1, h2, o4⟩ => ?_
-  have o1234 := o123.trans o4
-  have hw4 : pR (hP s₀) ∈ s4.wr := by rw [o1234.wr, hI.wr, hp.2.1]; simp
+  obtain o1234 := o123.trans o4
+  obtain hw4 : pR (hP s₀) ∈ s4.wr := by rw [o1234.wr, hI.wr, hp.2.1]; simp
   rw [WP.block_append_iff]
   refine WP.mono (vinter_ok hj (by rw [o1234.gpr, hI.rdi]) hw4)
     fun s5 ⟨out, inr, f5, g5, rd5, wr5, mx5, x5⟩ => ?_
-  have sx64 : BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (4 * 16) := by decide
+  obtain sx64 : BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (4 * 16) := by decide
   vrunm [g5, o1234.gpr, sx64]
-  have tS : ∀ k < 128, wordAt s5.mem (sP s₀) k = wordAt s.mem (sP s₀) k := fun k hk => by
+  obtain tS : ∀ k < 128, wordAt s5.mem (sP s₀) k = wordAt s.mem (sP s₀) k := fun k hk => by
     rw [wordAt, f5.readW (r := pR (sP s₀)) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.2.2.2.2.1.symm) (by decide), o1234.mem]; rfl
   constructor

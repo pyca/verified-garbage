@@ -47,14 +47,14 @@ theorem bcast_low (v : BitVec 128) (b : Byte) (h : dword v 0 = b.setWidth 32) :
   rw [word_eq_dword _ hi, show shufDwords (XBinOp.eval .punpcklwd v v) 0 =
       ofDwords (dword (XBinOp.eval .punpcklwd v v) 0) (dword (XBinOp.eval .punpcklwd v v) 0)
         (dword (XBinOp.eval .punpcklwd v v) 0) (dword (XBinOp.eval .punpcklwd v v) 0) from rfl]
-  have d0 : dword (XBinOp.eval .punpcklwd v v) 0 = word v 0 ++ word v 0 := by
+  obtain d0 : dword (XBinOp.eval .punpcklwd v v) 0 = word v 0 ++ word v 0 := by
     rw [dword_words]
     simp only [XBinOp.eval, word_ofWords _ (show 2 * 0 + 1 < 8 by decide), word_ofWords _ (show 2 * 0 < 8 by decide)]
     rfl
-  have w0 : word v 0 = b.setWidth 16 := by
+  obtain w0 : word v 0 = b.setWidth 16 := by
     rw [word_eq_dword _ (by decide), show 0 / 2 = 0 from rfl, h]
     apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]; omega_using [hj]
-  have hd : ∀ k < 4, dword (ofDwords (word v 0 ++ word v 0) (word v 0 ++ word v 0) (word v 0 ++ word v 0)
+  obtain hd : ∀ k < 4, dword (ofDwords (word v 0 ++ word v 0) (word v 0 ++ word v 0) (word v 0 ++ word v 0)
       (word v 0 ++ word v 0)) k = word v 0 ++ word v 0 := by
     intro k hk
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp
@@ -135,7 +135,7 @@ theorem state_eta (t : State) :
 theorem reduce_run (t : State) {b : Nat} (hb : b < 4) :
     ∃ t', runBlock isa (reduce b) t = some t' ∧ t'.xmm (accReg b) = reduceV (t.xmm (accReg b)) ∧
       (∀ d, d ≠ tmp → d ≠ accReg b → t'.xmm d = t.xmm d) ∧ t' = { t with xmm := t'.xmm } := by
-  have ne := (accReg_ne b hb).1
+  obtain ne := (accReg_ne b hb).1
   let ops : List XOp := [.pshufd tmp (accReg b) 0x4E, .bin .por (accReg b) tmp, .pshufd tmp (accReg b) 0xB1,
     .bin .por (accReg b) tmp, .bin .movdqa tmp (accReg b), .shift .psrld tmp (BitVec.ofNat 8 16),
     .bin .por (accReg b) tmp, .bin .movdqa tmp (accReg b), .shift .psrld tmp (BitVec.ofNat 8 8),
@@ -181,7 +181,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
   let iops : List XOp := [.bin .movdqa idxReg xL, .shift .pslld idxReg (BitVec.ofNat 8 (24 - 8 * (3 - j))),
     .shift .psrld idxReg (BitVec.ofNat 8 24), .bin .punpcklwd idxReg idxReg, .pshufd idxReg idxReg 0]
   let t₁ := iops.foldl (fun t op => op.exec t) s
-  have hidx : t₁.xmm idxReg = bcast x := by
+  obtain hidx : t₁.xmm idxReg = bcast x := by
     simp (disch := decide) only [t₁, iops, List.foldl, XOp.exec, xmm_setXmm_self, eval_movdqa]
     refine bcast_low _ _ ?_
     rw [psrld_dword0 _ _ (by decide), pslld_dword0 _ _ (by simp; omega_using [])]
@@ -192,63 +192,63 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
   let pops : List XOp := (List.range 4).map fun b => .bin .pxor (accReg b) (accReg b)
   let t₃ := pops.foldl (fun t op => op.exec t) t₂
   let t₄ := (t₃.setReg32 .r8 0).setReg32 .r9 16
-  have run₄ : runBlock isa (index (3 - j) ++ loadConst kReg evenStart ++
+  obtain run₄ : runBlock isa (index (3 - j) ++ loadConst kReg evenStart ++
       (List.range 4).map (fun b => bin .pxor (accReg b) (accReg b)) ++
       [.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 16)]) s = some t₄ := by
     refine cat_run (cat_run (cat_run (by rw [index_eq]; exact runXops iops s) r₂) (runXops pops t₂)) ?_
     rw [runBlock_cons, exec_mov32_imm, runStep_some, runBlock_cons, exec_mov32_imm, runStep_some, runBlock_nil]
   -- what the init leaves
-  have g₁ : t₁.gpr = s.gpr := by simp only [t₁, iops, List.foldl, XOp.exec, gpr_setXmm]
-  have x₁ : ∀ d, d ≠ idxReg → t₁.xmm d = s.xmm d := fun d h => by
+  obtain g₁ : t₁.gpr = s.gpr := by simp only [t₁, iops, List.foldl, XOp.exec, gpr_setXmm]
+  obtain x₁ : ∀ d, d ≠ idxReg → t₁.xmm d = s.xmm d := fun d h => by
     simp only [t₁, iops, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h]
   have pops_eq : pops = [.bin .pxor .xmm8 .xmm8, .bin .pxor .xmm9 .xmm9, .bin .pxor .xmm10 .xmm10,
       .bin .pxor .xmm11 .xmm11] := rfl
-  have x₄ : ∀ d, d ∉ lookXRegs → t₄.xmm d = s.xmm d := fun d hd => by
-    have h1 : d ≠ idxReg := fun e => hd (by rw [e]; decide)
-    have h2 : d ≠ kReg := fun e => hd (by rw [e]; decide)
-    have h3 : d ≠ tmp := fun e => hd (by rw [e]; decide)
-    have h8 : d ≠ .xmm8 := fun e => hd (by rw [e]; decide)
-    have h9 : d ≠ .xmm9 := fun e => hd (by rw [e]; decide)
-    have h10 : d ≠ .xmm10 := fun e => hd (by rw [e]; decide)
-    have h11 : d ≠ .xmm11 := fun e => hd (by rw [e]; decide)
+  obtain x₄ : ∀ d, d ∉ lookXRegs → t₄.xmm d = s.xmm d := fun d hd => by
+    obtain h1 : d ≠ idxReg := fun e => hd (by rw [e]; decide)
+    obtain h2 : d ≠ kReg := fun e => hd (by rw [e]; decide)
+    obtain h3 : d ≠ tmp := fun e => hd (by rw [e]; decide)
+    obtain h8 : d ≠ .xmm8 := fun e => hd (by rw [e]; decide)
+    obtain h9 : d ≠ .xmm9 := fun e => hd (by rw [e]; decide)
+    obtain h10 : d ≠ .xmm10 := fun e => hd (by rw [e]; decide)
+    obtain h11 : d ≠ .xmm11 := fun e => hd (by rw [e]; decide)
     simp only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, xmm_setReg, xmm_setXmm_of_ne _ _ h8,
       xmm_setXmm_of_ne _ _ h9, xmm_setXmm_of_ne _ _ h10, xmm_setXmm_of_ne _ _ h11]
     rw [x₂ _ h2 h3, x₁ _ h1]
-  have a₄ : ∀ b < 4, t₄.xmm (accReg b) = 0 := fun b hb => by
+  obtain a₄ : ∀ b < 4, t₄.xmm (accReg b) = 0 := fun b hb => by
     rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, xmm_setReg,
         xmm_setXmm_of_ne, xmm_setXmm_self, accReg, List.getD_cons_zero, List.getD_cons_succ, reduceXBinOpEval,
         BitVec.xor_self] <;> rfl
-  have xs₄ : ∀ d, d ≠ .xmm8 → d ≠ .xmm9 → d ≠ .xmm10 → d ≠ .xmm11 → t₄.xmm d = t₂.xmm d :=
+  obtain xs₄ : ∀ d, d ≠ .xmm8 → d ≠ .xmm9 → d ≠ .xmm10 → d ≠ .xmm11 → t₄.xmm d = t₂.xmm d :=
     fun d h8 h9 h10 h11 => by
       simp only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, xmm_setReg, xmm_setXmm_of_ne _ _ h8,
         xmm_setXmm_of_ne _ _ h9, xmm_setXmm_of_ne _ _ h10, xmm_setXmm_of_ne _ _ h11]
-  have i₄ : t₄.xmm idxReg = bcast x := by
+  obtain i₄ : t₄.xmm idxReg = bcast x := by
     rw [xs₄ _ (by decide) (by decide) (by decide) (by decide), x₂ _ (by decide) (by decide), hidx]
-  have k₄ : t₄.xmm kReg = rowK 0 := by
+  obtain k₄ : t₄.xmm kReg = rowK 0 := by
     rw [xs₄ _ (by decide) (by decide) (by decide) (by decide), k₂]
     refine ext_word fun w hw => ?_
     rw [evenStart, rowK, word_ofWords _ hw, word_ofWords _ hw, Nat.mul_zero, Nat.zero_add]
-  have g₄ : ∀ g, g ≠ .r8 → g ≠ .r9 → g ≠ .r11 → t₄.gpr g = s.gpr g := fun g h8 h9 h11 => by
+  obtain g₄ : ∀ g, g ≠ .r8 → g ≠ .r9 → g ≠ .r11 → t₄.gpr g = s.gpr g := fun g h8 h9 h11 => by
     simp only [t₄, State.setReg32, gpr_setReg_of_ne _ _ h9, gpr_setReg_of_ne _ _ h8, t₃, pops_eq, List.foldl,
       XOp.exec, gpr_setXmm]
     rw [g₂ _ h11, g₁]
-  have r8₄ : t₄.gpr .r8 = BitVec.ofNat 64 (16 * 0) := by
+  obtain r8₄ : t₄.gpr .r8 = BitVec.ofNat 64 (16 * 0) := by
     simp only [t₄, State.setReg32, gpr_setReg_of_ne _ _ (show Reg.r8 ≠ Reg.r9 by decide), gpr_setReg_self]; rfl
-  have r9₄ : t₄.gpr .r9 = BitVec.ofNat 64 (16 - 0) := by
+  obtain r9₄ : t₄.gpr .r9 = BitVec.ofNat 64 (16 - 0) := by
     simp only [t₄, State.setReg32, gpr_setReg_self]; rfl
-  have e₄ : t₄ = { s with gpr := t₄.gpr, xmm := t₄.xmm } := by
+  obtain e₄ : t₄ = { s with gpr := t₄.gpr, xmm := t₄.xmm } := by
     simp only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, State.setReg, State.setXmm]
     rw [e₂]; simp only [t₁, iops, List.foldl, XOp.exec, State.setXmm]
-  have hrd₄ : t₄.rd = s.rd := by rw [e₄]
-  have hwr₄ : t₄.wr = s.wr := by rw [e₄]
-  have hm₄ : t₄.mem = s.mem := by rw [e₄]
+  obtain hrd₄ : t₄.rd = s.rd := by rw [e₄]
+  obtain hwr₄ : t₄.wr = s.wr := by rw [e₄]
+  obtain hm₄ : t₄.mem = s.mem := by rw [e₄]
   refine WP.of_runBlock ⟨t₄, run₄, ?_⟩
-  have SE : ScanEnv sch S x j t₄ := by
+  obtain SE : ScanEnv sch S x j t₄ := by
     refine ⟨hj, by rw [g₄ _ E.ne8 E.ne9 E.ne11, E.hsch], E.ne8, E.ne9, fun off h => ?_, i₄,
       by rw [x₄ _ (by decide), E.ones], by rw [x₄ _ (by decide), E.sixteen], by rw [x₄ _ (by decide), E.low]⟩
     rw [hrd₄, hwr₄]; exact E.rd off h
-  have I0 : RowInv sch S x j t₄ 0 t₄ :=
+  obtain I0 : RowInv sch S x j t₄ 0 t₄ :=
     ⟨by omega_using [], r8₄, r9₄, k₄, fun b hb => by rw [a₄ b hb, scanAcc_zero], fun _ _ => rfl, fun _ _ _ => rfl,
       state_eta t₄⟩
   apply WP.seq
@@ -258,12 +258,12 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
   · intro m u ⟨r, hr, hm, I⟩
     obtain ⟨u', ru, I', zu⟩ := row_run SE hr I
     refine WP.of_runBlock ⟨u', ru, ?_⟩
-    have ev : isa.eval .ne u' = some (!(BitVec.ofNat 64 (16 - (r + 1)) == 0)) := by
+    obtain ev : isa.eval .ne u' = some (!(BitVec.ofNat 64 (16 - (r + 1)) == 0)) := by
       show u'.zf.map (!·) = _; rw [zu]; rfl
     by_cases h : r + 1 = 16
     · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩
     · right
-      have nz : BitVec.ofNat 64 (16 - (r + 1)) ≠ 0 := by
+      obtain nz : BitVec.ofNat 64 (16 - (r + 1)) ≠ 0 := by
         intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hr, h, this]
       exact ⟨by rw [ev, show (BitVec.ofNat 64 (16 - (r + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
         16 - (r + 1), by omega_using [hr, hm], r + 1,
@@ -277,7 +277,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
     .shift .pslld (accReg 3) (BitVec.ofNat 8 24), .bin .por (accReg 0) (accReg 1), .bin .por (accReg 0) (accReg 2),
     .bin .por (accReg 0) (accReg 3)]
   let w := cops.foldl (fun t op => op.exec t) w3
-  have red : ∀ b < 4, dword (reduceV (v.xmm (accReg b))) 0 = (pl S j b t₄.mem x.toNat).setWidth 32 :=
+  obtain red : ∀ b < 4, dword (reduceV (v.xmm (accReg b))) 0 = (pl S j b t₄.mem x.toNat).setWidth 32 :=
     fun b hb => by rw [Iv.acc b hb]; exact reduce_scan _ x.isLt
   refine WP.of_runBlock ⟨w, ?_, ?_, ?_⟩
   · refine cat_run (a := (List.range 4).flatMap reduce) ?_ (runXops cops w3)
@@ -299,12 +299,12 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
       simp only [w, cops, List.foldl, XOp.exec, gpr_setXmm]; rw [e3, e2, e1, e0]
     refine ⟨fun d hd => ?_, fun g h8 h9 h11 => ?_, ?_⟩
     · have n0 : d ≠ accReg 0 := fun e => hd (by rw [e]; decide)
-      have n1 : d ≠ accReg 1 := fun e => hd (by rw [e]; decide)
-      have n2 : d ≠ accReg 2 := fun e => hd (by rw [e]; decide)
-      have n3 : d ≠ accReg 3 := fun e => hd (by rw [e]; decide)
-      have nt : d ≠ tmp := fun e => hd (by rw [e]; decide)
-      have sub : ∀ e ∈ rowXRegs, e ∈ lookXRegs := by decide
-      have hr : d ∉ rowXRegs := fun h => hd (sub d h)
+      obtain n1 : d ≠ accReg 1 := fun e => hd (by rw [e]; decide)
+      obtain n2 : d ≠ accReg 2 := fun e => hd (by rw [e]; decide)
+      obtain n3 : d ≠ accReg 3 := fun e => hd (by rw [e]; decide)
+      obtain nt : d ≠ tmp := fun e => hd (by rw [e]; decide)
+      obtain sub : ∀ e ∈ rowXRegs, e ∈ lookXRegs := by decide
+      obtain hr : d ∉ rowXRegs := fun h => hd (sub d h)
       simp only [w, cops, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ n0, xmm_setXmm_of_ne _ _ n1,
         xmm_setXmm_of_ne _ _ n2, xmm_setXmm_of_ne _ _ n3]
       rw [k3 _ nt n3, k2 _ nt n2, k1 _ nt n1, k0 _ nt n0, Iv.xmm _ hr, x₄ _ hd]
@@ -350,8 +350,8 @@ theorem Upd.setXmm {a c : State} (h : Upd c a) (d : XReg) (v : BitVec 128) : Upd
 theorem FOnly.refl (s : State) : FOnly s s := ⟨fun _ _ => rfl, fun _ _ _ _ => rfl, state_eta s⟩
 
 theorem FOnly.env {sch : Reg} {S : Addr} {s t : State} (E : LookEnv sch S s) (h : FOnly s t) : LookEnv sch S t := by
-  have hrd : t.rd = s.rd := by rw [h.eq]
-  have hwr : t.wr = s.wr := by rw [h.eq]
+  obtain hrd : t.rd = s.rd := by rw [h.eq]
+  obtain hwr : t.wr = s.wr := by rw [h.eq]
   refine ⟨by rw [h.gpr _ E.ne8 E.ne9 E.ne11, E.hsch], E.ne8, E.ne9, E.ne11, fun off ho => ?_,
     by rw [h.xmm _ (by decide), E.ones], by rw [h.xmm _ (by decide), E.sixteen], by rw [h.xmm _ (by decide), E.low]⟩
   rw [hrd, hwr]; exact E.rd off ho
@@ -371,8 +371,8 @@ theorem fstep {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j : Nat}
     (O : FOnly s t) (hf : 0 < j → dword (t.xmm fReg) 0 = fAcc (scheduleAt s.mem S) (dword (s.xmm xL) 0) (j - 1)) :
     WP isa (.seq (lookup sch j) (.block [combine j])) t (fun t' =>
       dword (t'.xmm fReg) 0 = fAcc (scheduleAt s.mem S) (dword (s.xmm xL) 0) j ∧ FOnly s t') := by
-  have hm : t.mem = s.mem := by rw [O.eq]
-  have hx : t.xmm xL = s.xmm xL := O.xmm _ (by decide)
+  obtain hm : t.mem = s.mem := by rw [O.eq]
+  obtain hx : t.xmm xL = s.xmm xL := O.xmm _ (by decide)
   apply WP.seq
   refine WP.mono (lookup_run (O.env E) hj) fun u ⟨hu, L⟩ => ?_
   rw [hm, hx] at hu
@@ -392,7 +392,7 @@ theorem fstep {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j : Nat}
         simp only [combineX_0, combineX_1, combineX_2, combineX_3, XOp.exec, xmm_setXmm_self] <;> rfl
     refine ⟨fun d hd => ?_, fun g h8 h9 h11 => ?_, ?_⟩
     · have n : d ≠ fReg := fun e => hd (by rw [e]; decide)
-      have hl : d ∉ lookXRegs := fun h => hd (List.mem_cons_of_mem _ h)
+      obtain hl : d ∉ lookXRegs := fun h => hd (List.mem_cons_of_mem _ h)
       rw [hx, xmm_setXmm_of_ne _ _ n, L.xmm _ hl, O.xmm _ hd]
     · rw [hx, gpr_setXmm, L.gpr _ h8 h9 h11, O.gpr _ h8 h9 h11]
     · rw [hx]; exact Upd.setXmm (Upd.trans L.eq O.eq) _ _
@@ -401,7 +401,7 @@ theorem f_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) :
     WP isa (f sch) s (fun s' =>
       dword (s'.xmm fReg) 0 = Spec.Blowfish.f (scheduleAt s.mem S) (dword (s.xmm xL) 0) ∧ FOnly s s') := by
   rw [Impl.Blowfish.X86_64.f]
-  have st := fun (j : Nat) (hj : j < 4) (t : State) (O : FOnly s t) hf => WP.seq_iff.mp (fstep E hj O hf)
+  obtain st := fun (j : Nat) (hj : j < 4) (t : State) (O : FOnly s t) hf => WP.seq_iff.mp (fstep E hj O hf)
   apply WP.seq
   refine WP.mono (st 0 (by decide) s (FOnly.refl s) (fun h => absurd h (by decide))) fun t0 h0 => ?_
   apply WP.seq

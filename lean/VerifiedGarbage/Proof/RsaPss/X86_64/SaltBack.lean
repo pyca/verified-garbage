@@ -226,7 +226,7 @@ theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : Di
         (lk.G.hash msg).getD i 0 = V (oEm + lo + db + i) then 1 else 0
   have generic {v : State} (kv : Keep [.rax] u v) (hm : v.mem = u.mem) (hs : v.syms = u.syms) :
       WP isa (genericSaltBack f H) v Q := by
-    have Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
+    obtain Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
     refine WP.mono (vback_ok hH K lk hdk Lv (hm ▸ R) (hs ▸ hT) he hdb hpos hl hdg hlo hdb1 hpd hfit
       (fun i hi => by rw [kv.2.1, kv.2.2]; exact hdR i hi)
       (fun i hi => by rw [kv.2.2]; exact hdO i hi)) fun t ⟨Lt, rd, wr, cs, ⟨Vt, Wt, Rt, hw⟩, out⟩ => ?_
@@ -240,8 +240,8 @@ theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : Di
   · xrun [ea_sp, L.rsp, L.ld (d := sAny) (by decide), R.rd (d := sAny) 35 rfl (by decide)]
     rw [BitVec.and_self]
     rfl
-  have Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
-  have Rv : Rep v.mem F S V W := hm ▸ R
+  obtain Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
+  obtain Rv : Rep v.mem F S V W := hm ▸ R
   refine WP.ite (M := isa) _ (show isa.eval .e v = _ from hz) (fun hb => ?_) (fun _ => generic kv hm sv)
   rw [decide_eq_true_eq] at hb
   refine WP.seq (X86_64.WP.mono_syms (WP.keep [.rax] (Q := fun w =>
@@ -249,11 +249,11 @@ theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : Di
   · xrun [ea_sp, Lv.rsp, Lv.ld (d := sSlen) (by decide), Lv.ld (d := sDb) (by decide),
       Rv.rd (d := sSlen) 36 rfl (by decide), Rv.rd (d := sDb) 24 rfl (by decide), hdb]
     simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show db < 2 ^ 64 by omega_using [hfit])]
-  have kuw : Keep [.rax] u w := (kv.trans kw).mono (by decide)
-  have hmu : w.mem = u.mem := hmw.trans hm
+  obtain kuw : Keep [.rax] u w := (kv.trans kw).mono (by decide)
+  obtain hmu : w.mem = u.mem := hmw.trans hm
   refine WP.ite (M := isa) _ (show isa.eval .b w = _ from hc) (fun hf => ?_) (fun _ => generic kuw hmu (sw.trans sv))
   rw [decide_eq_true_eq] at hf
-  have Lw := L.congr (kuw.gpr (by decide)) kuw.2.2 (by rw [hmu])
+  obtain Lw := L.congr (kuw.gpr (by decide)) kuw.2.2 (by rw [hmu])
   refine WP.mono (fixedSaltBack_ok hH K lk Lw (hmu ▸ R) he hdb
     (show W 36 = BitVec.ofNat 64 (W 36).toNat by simp) hdg hlo hf hfit
     (fun i hi => by rw [kuw.2.1, kuw.2.2]; exact hdR i hi)

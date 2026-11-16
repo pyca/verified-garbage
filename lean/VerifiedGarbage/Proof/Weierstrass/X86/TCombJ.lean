@@ -39,10 +39,10 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   dsimp only [TCombCfg.toComb] at hnd
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
     List.not_mem_nil, or_false, not_or] at hnd
-  have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
-  have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
-  have hNZ : NeZero C.p := ⟨by omega_arith⟩
-  have hspS : SpOk K.stepJ 20 := ⟨NoSp.loop hsp.right.left.1, hsp.right.left.2⟩
+  obtain hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
+  obtain hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
+  obtain hNZ : NeZero C.p := ⟨by omega_arith⟩
+  obtain hspS : SpOk K.stepJ 20 := ⟨NoSp.loop hsp.right.left.1, hsp.right.left.2⟩
   unfold TCombCfg.combJ
   refine WP.seq (WP.mono (firstJ_ok hL hC hG hV hpn hb1 hs hM hF hsp.left) fun s₁ I₁ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun s' =>
@@ -55,33 +55,33 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     (fun s' hi => by rw [Nat.sub_zero] at hi; exact hi) (by omega_arith)
     (by rw [show K.J - (K.J - 1) = 1 by omega_arith]; exact I₁)) fun s₂ I₂ => ?_)
   -- `Y = 1` where `Z = 0`.
-  have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
+  obtain hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
     rw [I₂.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
       (by have := hle K.zero (by tcomb_mem); omega_arith), hF.zero]
-  have ayz : K.A.y + 8 * K.M.n ≤ K.zero ∨ K.zero + 8 * K.M.n ≤ K.A.y := by
+  obtain ayz : K.A.y + 8 * K.M.n ≤ K.zero ∨ K.zero + 8 * K.M.n ≤ K.A.y := by
     have := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb]) (K.A.y, 8 * K.M.n)
       (by simp [combW, combWs, TCombCfg.toComb])
     dsimp only [TCombCfg.toComb] at this; omega_arith
   refine WP.seq (WP.mono (outFix_ok K I₂.scr hnn.1 (Nat.lt_trans hV.one_lt hpn) (hle _ (by tcomb_mem))
     (hle _ (by tcomb_mem)) (hle _ (by tcomb_mem)) ayz hz₂) fun s₃ ⟨ey₃, k₃, O₃⟩ => ?_)
-  have hs₃ := I₂.scr.of_keepRegs k₃ (by decide)
-  have b64 : ∀ x ∈ combSlots K.toComb, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
+  obtain hs₃ := I₂.scr.of_keepRegs k₃ (by decide)
+  obtain b64 : ∀ x ∈ combSlots K.toComb, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := hle x hx; omega_using [this, hn]
-  have ex₃ : wordsVal s₃.mem base K.A.x K.M.n = wordsVal s₂.mem base K.A.x K.M.n :=
+  obtain ex₃ : wordsVal s₃.mem base K.A.x K.M.n = wordsVal s₂.mem base K.A.x K.M.n :=
     O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)) (b64 _ (by tcomb_mem))
-  have ez₃ : wordsVal s₃.mem base K.A.z K.M.n = wordsVal s₂.mem base K.A.z K.M.n :=
+  obtain ez₃ : wordsVal s₃.mem base K.A.z K.M.n = wordsVal s₂.mem base K.A.z K.M.n :=
     O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)) (b64 _ (by tcomb_mem))
   have UA : Unch base [(K.A.y, 8 * K.M.n)] s₂.mem s₃.mem := O₃.unch
-  have hmoW := tcombW_mo hL hM
-  have hAyW : (K.A.y, 8 * K.M.n) ∈ tcombW K := List.mem_append_left _ (by
+  obtain hmoW := tcombW_mo hL hM
+  obtain hAyW : (K.A.y, 8 * K.M.n) ∈ tcombW K := List.mem_append_left _ (by
     simp only [combWx, combW, combWs, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false,
       TCombCfg.toComb]; simp)
-  have U₃ : Unch base (tcombW K) s.mem s₃.mem := (I₂.unch.trans UA).mono fun w hw => by
+  obtain U₃ : Unch base (tcombW K) s.mem s₃.mem := (I₂.unch.trans UA).mono fun w hw => by
     rcases List.mem_append.mp hw with h | h
     · exact h
     · rw [List.mem_singleton.mp h]; exact hAyW
-  have hM₃ : ModOkW K.M size C.p s₃.mem base := hM.unch U₃ hmoW (by omega_arith)
-  have hlt₃ : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₃.mem base x K.M.n < C.p := by
+  obtain hM₃ : ModOkW K.M size C.p s₃.mem base := hM.unch U₃ hmoW (by omega_arith)
+  obtain hlt₃ : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₃.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
@@ -90,27 +90,27 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       · exact hV.one_lt
       · exact I₂.lt _ (by simp)
     · rw [ez₃]; exact I₂.lt _ (by simp)
-  have hSlA : ∀ x ∈ [K.A.x, K.A.y, K.A.z], x ∈ combSlots K.toComb := by
+  obtain hSlA : ∀ x ∈ [K.A.x, K.A.y, K.A.z], x ∈ combSlots K.toComb := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> tcomb_mem
-  have I₃ : Inv K.M base size C.p (· ∈ combSlots K.toComb) [K.A.x, K.A.y, K.A.z] (tmv C K.M.n base s₃) s₃ :=
+  obtain I₃ : Inv K.M base size C.p (· ∈ combSlots K.toComb) [K.A.x, K.A.y, K.A.z] (tmv C K.M.n base s₃) s₃ :=
     ⟨hs₃, hM₃, hSlA, hlt₃, fun _ _ => rfl⟩
-  have hS : ∀ op ∈ K.outOps, ∀ x ∈ op.out :: op.ins, x ∈ combSlots K.toComb := by
+  obtain hS : ∀ op ∈ K.outOps, ∀ x ∈ op.out :: op.ins, x ∈ combSlots K.toComb := by
     intro op hop x hx
     simp only [TCombCfg.outOps, List.mem_cons, List.not_mem_nil, or_false] at hop
     rcases hop with rfl | rfl | rfl <;>
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx <;>
       rcases hx with rfl | rfl | rfl <;> tcomb_mem
-  have hR : readsOk K.outOps [K.A.x, K.A.y, K.A.z] = true := by
+  obtain hR : readsOk K.outOps [K.A.x, K.A.y, K.A.z] = true := by
     simp [readsOk, TCombCfg.outOps, FOp.ins, FOp.out]
   refine WP.mono (fprog_ok hL.comb.lay (hL.wkOk hV.fn) hV.unit K.outOps I₃ hS hR)
     fun s₄ ⟨P₄, I₄⟩ => ?_
-  have hval : ∀ x ∈ [K.A.x, K.A.y, K.A.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
+  obtain hval : ∀ x ∈ [K.A.x, K.A.y, K.A.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
       runOps K.outOps (tmv C K.M.n base s₃) x ∧ wordsVal s₄.mem base x K.M.n < C.p := fun x hx => by
-    have hm : x ∈ validAfter K.outOps [K.A.x, K.A.y, K.A.z] := (mem_validAfter _ _).mpr (Or.inl hx)
+    obtain hm : x ∈ validAfter K.outOps [K.A.x, K.A.y, K.A.z] := (mem_validAfter _ _).mpr (Or.inl hx)
     exact ⟨I₄.val x hm, I₄.lt x hm⟩
-  have U₄ : Unch base (tcombW K) s₃.mem s₄.mem := P₄.unch.mono fun w hw => by
+  obtain U₄ : Unch base (tcombW K) s₃.mem s₄.mem := P₄.unch.mono fun w hw => by
     rcases List.mem_append.mp hw with h | h
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp h
       simp only [TCombCfg.outOps, FOp.out, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
@@ -129,18 +129,18 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       rcases hr with rfl | rfl | rfl <;> simp [powClob, clob])).trans
       (Keeps.mono ⟨P₄.gpr, P₄.rd, P₄.wr⟩ clob_powClob)
   · -- The values.
-    have e : ∀ x ∈ [K.A.x, K.A.y, K.A.z], tmv C K.M.n base s₄ x = runOps K.outOps (tmv C K.M.n base s₃) x :=
+    obtain e : ∀ x ∈ [K.A.x, K.A.y, K.A.z], tmv C K.M.n base s₄ x = runOps K.outOps (tmv C K.M.n base s₃) x :=
       fun x hx => (hval x hx).1
     rw [e _ (by simp), e _ (by simp), e _ (by simp)]
-    have hxt : K.A.x ≠ K.S.t0 := by grind
-    have hzt : K.A.z ≠ K.S.t0 := by grind
-    have hxz : K.A.x ≠ K.A.z := by grind
-    have hxy : K.A.x ≠ K.A.y := by grind
-    have hyt : K.A.y ≠ K.S.t0 := by grind
-    have hyz : K.A.y ≠ K.A.z := by grind
+    obtain hxt : K.A.x ≠ K.S.t0 := by grind
+    obtain hzt : K.A.z ≠ K.S.t0 := by grind
+    obtain hxz : K.A.x ≠ K.A.z := by grind
+    obtain hxy : K.A.x ≠ K.A.y := by grind
+    obtain hyt : K.A.y ≠ K.S.t0 := by grind
+    obtain hyz : K.A.y ≠ K.A.z := by grind
     simp only [TCombCfg.outOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
       hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
-    have hy : tmv C K.M.n base s₃ K.A.y = if tmv C K.M.n base s₂ K.A.z = 0 then 1
+    obtain hy : tmv C K.M.n base s₃ K.A.y = if tmv C K.M.n base s₂ K.A.z = 0 then 1
         else tmv C K.M.n base s₂ K.A.y := by
       show toM _ _ _ = _
       rw [ey₃]
@@ -150,12 +150,12 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       · have h' : tmv C K.M.n base s₂ K.A.z ≠ 0 := fun h0 =>
           h ((toM_eq_zero_iff hV.unit (I₂.lt _ (by simp))).mp h0)
         simp only [h, h', ↓reduceIte]
-    have ex : tmv C K.M.n base s₃ K.A.x = tmv C K.M.n base s₂ K.A.x := by
+    obtain ex : tmv C K.M.n base s₃ K.A.x = tmv C K.M.n base s₂ K.A.x := by
       show toM _ _ _ = toM _ _ _; rw [ex₃]
-    have ez : tmv C K.M.n base s₃ K.A.z = tmv C K.M.n base s₂ K.A.z := by
+    obtain ez : tmv C K.M.n base s₃ K.A.z = tmv C K.M.n base s₂ K.A.z := by
       show toM _ _ _ = toM _ _ _; rw [ez₃]
     rw [hy, ex, ez]
-    have h := InvJ.out hC I₂.rep
+    obtain h := InvJ.out hC I₂.rep
     rwa [bpart_top (by omega_arith) (Nat.lt_of_lt_of_le hk hB.kmax), zmul_natCast] at h
 
 end VG.Proof.Weierstrass.X86

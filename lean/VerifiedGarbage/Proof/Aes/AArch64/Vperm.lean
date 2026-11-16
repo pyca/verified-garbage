@@ -84,7 +84,7 @@ private theorem aesInvSbox_row (b : BitVec 8) : aesInvSbox b = row (invSboxT inT
 /-- The S-box, from the tables. -/
 theorem sbo_eq : ∀ x : BitVec 8,
     aesSbox x = nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 := by
-  have h : ∀ x : BitVec 8, row (sboxT inTabs) x.toNat =
+  obtain h : ∀ x : BitVec 8, row (sboxT inTabs) x.toNat =
       nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 := by decide +kernel
   exact fun x => (aesSbox_row x).trans (h x)
 
@@ -283,7 +283,7 @@ theorem vbyte_mixX (x : BitVec 128) {e : Nat} (he : e < 16) :
     vbyte (mixX (ioV (Lv x)) (joV (Lv x))) e =
       L (aesMul 0x02 (aesSbox (vbyte x (srI e)) ^^^ 0x63)) ^^^
         L (aesSbox (vbyte x (srI (rI 1 e))) ^^^ 0x63) := by
-  have h1 := rI_lt 1 (by decide) e he
+  obtain h1 := rI_lt 1 (by decide) e he
   rw [mixX, vbyte_xor, vbyte_perm _ he (p_sr e he) (srI_lt e he),
     vbyte_perm _ he (p_rsr e he) (srI_lt _ h1), vbyte_sA2 _ (srI_lt e he), vbyte_sA _ (srI_lt _ h1)]
 
@@ -293,10 +293,10 @@ theorem mixV_eq (x k : BitVec 128) :
       Lv (aesMixColumns (aesMapBytes aesSbox (aesShiftRows x)) ^^^ k) := by
   apply ext_vbyte
   intro e he
-  have h0 := rI_lt 0 (by decide) e he
-  have h1 := rI_lt 1 (by decide) e he
-  have h2 := rI_lt 2 (by decide) e he
-  have h3 := rI_lt 3 (by decide) e he
+  obtain h0 := rI_lt 0 (by decide) e he
+  obtain h1 := rI_lt 1 (by decide) e he
+  obtain h2 := rI_lt 2 (by decide) e he
+  obtain h3 := rI_lt 3 (by decide) e he
   rw [mixV, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_perm _ he (p_r3sr e he) (srI_lt _ h3),
     vbyte_perm _ he (p_rot e he) h1, vbyte_mixX _ he, vbyte_mixX _ h1, vbyte_sA _ (srI_lt _ h3),
     vbyte_LcV _ he, rI_rI e he, vbyte_Lv _ he, vbyte_xor, vbyte_mixColumns _ he]
@@ -316,7 +316,7 @@ theorem lastV_eq (x k : BitVec 128) :
     lastV (ioV (Lv x)) (joV (Lv x)) k = aesMapBytes aesSbox (aesShiftRows x) ^^^ k := by
   apply ext_vbyte
   intro e he
-  have hs := srI_lt e he
+  obtain hs := srI_lt e he
   rw [lastV, vbyte_xor, vbyte_perm _ he (p_sr e he) hs, vbyte_xor, vbyte_tblV _ _ hs, vbyte_tblV _ _ hs,
     vbyte_ioV _ hs, vbyte_joV _ hs, vbyte_Lv _ hs, vbyte_xor, vbyte_c63 e he, vbyte_xor,
     vbyte_mapBytes _ _ he, vbyte_shiftRows _ he, sbo_eq,
@@ -370,7 +370,7 @@ theorem tabWords_length : tabWords.length = 32 := by simp [tabWords]
 /-- The two words of vector `j` of the static, as `ldrqTbl` loads them. -/
 theorem tabWords_pair {j : Nat} (hj : j < 16) :
     tabWords.getD (16 * j / 8 + 1) 0 ++ tabWords.getD (16 * j / 8) 0 = tabVec j := by
-  have g : ∀ i < 32, tabWords.getD i 0 = (tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := fun i hi => by
+  obtain g : ∀ i < 32, tabWords.getD i 0 = (tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := fun i hi => by
     simp [tabWords, hi]
   rw [show 16 * j / 8 = 2 * j by omega_arith, g _ (by omega_arith), g _ (by omega_arith),
     show (2 * j + 1) / 2 = j by omega_arith, show (2 * j + 1) % 2 = 1 by omega_arith,
@@ -380,7 +380,7 @@ theorem tabWords_pair {j : Nat} (hj : j < 16) :
 /-- Loading vector `j` of the static, whose address is in `x6`. -/
 theorem exec_tld {j : Nat} (hj : j < 16) {s : State} (hx : s.gpr .x6 = s.syms tabName) :
     exec (tld j) s = some (s.setV (treg j) (tabVec j)) := by
-  have hc : s.gpr .x6 = s.syms tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
+  obtain hc : s.gpr .x6 = s.syms tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
       16 * j / 8 + 2 ≤ tabWords.length :=
     ⟨hx, by omega_arith, by omega_arith, by rw [tabWords_length]; omega_arith⟩
   simp only [tld, exec, ite_eq_left_of_eq_true _ _ (eq_true hc), tabWords_pair hj]
@@ -433,7 +433,7 @@ theorem setup_ok (s : State) :
       (∀ g, g ≠ .x6 → t.gpr g = s.gpr g) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   unfold setup
   let a := s.write .x .x6 (s.syms tabName)
-  have ax : a.gpr .x6 = a.syms tabName := gpr_write_self _ _ _ _
+  obtain ax : a.gpr .x6 = a.syms tabName := gpr_write_self _ _ _ _
   rw [List.singleton_append, WP.block_cons_iff]
   refine ⟨a, exec_adrSym, ?_⟩
   refine WP.mono (tldTable_ok ax) fun t ⟨trow, tv, tl⟩ => ?_
@@ -458,7 +458,7 @@ theorem keyx_run (s : State) (hc : Consts s) {d t : VReg}
   let c := b.setV t (tblV (b.v .v27) (b.v t))
   let e := c.setV d (tblV (c.v .v28) (c.v d))
   let u := e.setV d (e.v d ^^^ e.v t)
-  have o : VOnly [d, t] s u :=
+  obtain o : VOnly [d, t] s u :=
     ((((VOnly.setV s (by simp) _).trans (VOnly.setV a (by simp) _)).trans (VOnly.setV b (by simp) _)).trans
       (VOnly.setV c (by simp) _)).trans (VOnly.setV e (by simp) _)
   refine ⟨u, ?_, ?_, o⟩
@@ -552,7 +552,7 @@ theorem read_x (s : State) (r : Reg) : s.read .x r = s.gpr r := by
 theorem ofNat_bne_zero {k : Nat} (h0 : 0 < k) (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = true := by
   rw [bne_iff_ne]
   intro h
-  have h' := congrArg BitVec.toNat h
+  obtain h' := congrArg BitVec.toNat h
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at h'
   have h'' : k = 0 := h'
   omega_using [h0, h'']
@@ -566,7 +566,7 @@ theorem shiftSub_st (v : BitVec 128) :
     st (aesMapBytes aesSbox (aesShiftRows v)) = shiftRows (subBytes (st v)) := by
   apply st_ext
   intro i hi
-  have hs : i % 4 + 4 * ((i / 4 + i % 4) % 4) < 16 := by omega_arith
+  obtain hs : i % 4 + 4 * ((i / 4 + i % 4) % 4) < 16 := by omega_arith
   rw [getD_st _ hi, getD_shiftRows _ hi, getD_subBytes _ hs, getD_st _ hs, vbyte_mapBytes _ _ hi,
     vbyte_shiftRows _ hi]
   exact congrFun VG.Proof.Aes.Vector.sbox_eq _
@@ -608,47 +608,47 @@ theorem round_ok {s₀ : State} {K : Addr} {R : Nat} {x : Spec.Aes.State} (hK : 
   let a := s.write .x .x0 (s.read .x .x0 + BitVec.ofNat 64 16)
   rw [WP.block_cons_iff]
   refine ⟨a, exec_addImm_x (imm := 16) (by decide), WP.block_nil ?_⟩
-  have a0 : a.gpr .x0 = K + BitVec.ofNat 64 (16 * (j + 1)) := by
+  obtain a0 : a.gpr .x0 = K + BitVec.ofNat 64 (16 * (j + 1)) := by
     rw [show a.gpr .x0 = s.gpr .x0 + BitVec.ofNat 64 16 by simp [a, State.write, read_x], hI.x0,
       BitVec.add_assoc, ← BitVec.ofNat_add]
     rfl
   have ard : a.rd = s₀.rd := hI.rd
   have amem : a.mem = s₀.mem := hI.mem
-  have ac : Consts a := hI.consts.of_v fun _ _ => rfl
+  obtain ac : Consts a := hI.consts.of_v fun _ _ => rfl
   rw [WP.block_append_iff]
   obtain ⟨b, hb, b5, ob⟩ := key_run a (off := 0) (by decide) ⟨_, List.mem_append_left _ (by rw [ard]; exact hK),
     by rw [a0, BitVec.add_zero]; exact Offset.contains_base K (by omega_arith) (by omega_arith)⟩
   refine WP.of_runBlock ⟨b, hb, ?_⟩
-  have ob' : VOnly temps a b := vonly_mono ob (by decide)
-  have bc : Consts b := ac.of_v ob'.2
+  obtain ob' : VOnly temps a b := vonly_mono ob (by decide)
+  obtain bc : Consts b := ac.of_v ob'.2
   rw [WP.block_append_iff]
   obtain ⟨c, hc, c5, oc⟩ := keyx_run b bc (.inr ⟨rfl, rfl⟩)
   refine WP.of_runBlock ⟨c, hc, ?_⟩
-  have oc' : VOnly temps b c := vonly_mono oc (by decide)
-  have cc : Consts c := bc.of_v oc'.2
+  obtain oc' : VOnly temps b c := vonly_mono oc (by decide)
+  obtain cc : Consts c := bc.of_v oc'.2
   rw [WP.block_append_iff]
   obtain ⟨d, hd, d2, d3, od⟩ := invert_run c cc.v16 cc.v17 cc.v18
   refine WP.of_runBlock ⟨d, hd, ?_⟩
-  have od' : VOnly temps c d := vonly_mono od (by decide)
-  have dc : Consts d := cc.of_v od'.2
+  obtain od' : VOnly temps c d := vonly_mono od (by decide)
+  obtain dc : Consts d := cc.of_v od'.2
   rw [WP.block_append_iff]
   obtain ⟨e, he, e0, oe⟩ := mix_run d dc
   refine WP.of_runBlock ⟨e, he, ?_⟩
-  have oe' : VOnly temps d e := vonly_mono oe (by decide)
-  have o : VOnly temps a e := ((ob'.trans oc').trans od').trans oe'
+  obtain oe' : VOnly temps d e := vonly_mono oe (by decide)
+  obtain o : VOnly temps a e := ((ob'.trans oc').trans od').trans oe'
   let f := e.write .x .x1 (e.read .x .x1 - BitVec.ofNat 64 1)
   rw [WP.block_cons_iff]
   refine ⟨f, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hk : KeyIs (a.mem.readW (a.gpr .x0 + BitVec.ofNat 64 0) 128)
+  obtain hk : KeyIs (a.mem.readW (a.gpr .x0 + BitVec.ofNat 64 0) 128)
       (roundKey (bytesAt s₀.mem K (16 * (R + 1))) (j + 1)) := by
     rw [a0, BitVec.add_zero, amem]
     exact keyIs_readW s₀.mem K (by omega_arith)
-  have c0 : c.v .v0 = Lv X := by
+  obtain c0 : c.v .v0 = Lv X := by
     rw [oc.2 _ (by decide), ob.2 _ (by decide)]
     exact hX
-  have d5 : d.v .v5 = LcV (a.mem.readW (a.gpr .x0 + BitVec.ofNat 64 0) 128) := by
+  obtain d5 : d.v .v5 = LcV (a.mem.readW (a.gpr .x0 + BitVec.ofNat 64 0) 128) := by
     rw [od.2 _ (by decide), c5, b5]
-  have ex1 : e.gpr .x1 = BitVec.ofNat 64 (R - 1 - j) := by
+  obtain ex1 : e.gpr .x1 = BitVec.ofNat 64 (R - 1 - j) := by
     rw [o.gpr, show a.gpr .x1 = s.gpr .x1 by simp [a, State.write]]; exact hI.x1
   refine ⟨dc.of_v oe'.2, ?_, ?_,
     ⟨aesMixColumns (aesMapBytes aesSbox (aesShiftRows X)) ^^^
@@ -673,7 +673,7 @@ theorem loop_ok {s₀ : State} {K : Addr} {R : Nat} {x : Spec.Aes.State} (hK : (
     RInv s₀ K R (bytesAt s₀.mem K (16 * (R + 1))) x j t) ?_ (R - 1) s ⟨0, rfl, hR2, hI⟩
   rintro n t ⟨j, hn, hj, hI⟩
   refine WP.mono (round_ok hK hR hj hI) fun t' hI' => ?_
-  have he : isa.eval (.nonzero .x .x1) t' = some (BitVec.ofNat 64 (R - 1 - (j + 1)) != 0) := by
+  obtain he : isa.eval (.nonzero .x .x1) t' = some (BitVec.ofNat 64 (R - 1 - (j + 1)) != 0) := by
     simp [AArch64.eval, State.read, hI'.x1]
   rcases Nat.lt_or_ge (j + 2) R with h | h
   · exact .inr ⟨by rw [he, ofNat_bne_zero (by omega_arith) (by omega_arith)], R - 1 - (j + 1), by omega_arith,
@@ -692,22 +692,22 @@ theorem last_ok {s₀ : State} {K : Addr} {R : Nat} {x : Spec.Aes.State} (hK : (
       t.sp = s₀.sp := by
   obtain ⟨X, hX, hst⟩ := hI.st
   rw [List.append_assoc, WP.block_append_iff]
-  have ea : s.gpr .x0 + BitVec.ofNat 64 16 = K + BitVec.ofNat 64 (16 * R) := by
+  obtain ea : s.gpr .x0 + BitVec.ofNat 64 16 = K + BitVec.ofNat 64 (16 * R) := by
     rw [hI.x0, BitVec.add_assoc, ← BitVec.ofNat_add, show 16 * (R - 1) + 16 = 16 * R by omega_arith]
   obtain ⟨b, hb, b5, ob⟩ := key_run s (off := 16) (by decide)
     ⟨_, List.mem_append_left _ (by rw [hI.rd]; exact hK),
       by rw [ea]; exact Offset.contains_base K (by omega_arith) (by omega_arith)⟩
   refine WP.of_runBlock ⟨b, hb, ?_⟩
-  have ob' : VOnly temps s b := vonly_mono ob (by decide)
-  have bc : Consts b := hI.consts.of_v ob'.2
+  obtain ob' : VOnly temps s b := vonly_mono ob (by decide)
+  obtain bc : Consts b := hI.consts.of_v ob'.2
   rw [WP.block_append_iff]
   obtain ⟨d, hd, d2, d3, od⟩ := invert_run b bc.v16 bc.v17 bc.v18
   refine WP.of_runBlock ⟨d, hd, ?_⟩
-  have od' : VOnly temps b d := vonly_mono od (by decide)
-  have dc : Consts d := bc.of_v od'.2
+  obtain od' : VOnly temps b d := vonly_mono od (by decide)
+  obtain dc : Consts d := bc.of_v od'.2
   obtain ⟨t, ht, t0, ot⟩ := last_run d dc
-  have ot' : VOnly temps d t := vonly_mono ot (by decide)
-  have o : VOnly temps s t := (ob'.trans od').trans ot'
+  obtain ot' : VOnly temps d t := vonly_mono ot (by decide)
+  obtain o : VOnly temps s t := (ob'.trans od').trans ot'
   refine WP.of_runBlock ⟨t, ht, ?_, fun r h0 h1 => ?_, o.mem.trans hI.mem, o.rd.trans hI.rd,
     o.wr.trans hI.wr, (VOnly.sp o).trans hI.sp⟩
   · have hk : KeyIs (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 16) 128)
@@ -728,27 +728,27 @@ theorem first_ok {s : State} {K : Addr} {R : Nat} (hc : Consts s) (hK : (⟨K, 2
   obtain ⟨a, ha, a5, oa⟩ := key_run s (off := 0) (by decide) ⟨_, List.mem_append_left _ hK,
     by rw [h0]; exact Offset.contains_base K (by decide) (by decide)⟩
   refine WP.of_runBlock ⟨a, ha, ?_⟩
-  have oa' : VOnly temps s a := vonly_mono oa (by decide)
-  have ac : Consts a := hc.of_v oa'.2
+  obtain oa' : VOnly temps s a := vonly_mono oa (by decide)
+  obtain ac : Consts a := hc.of_v oa'.2
   rw [WP.block_append_iff]
   obtain ⟨b, hb, b0, ob⟩ := keyx_run a ac (.inl ⟨rfl, rfl⟩)
   refine WP.of_runBlock ⟨b, hb, ?_⟩
-  have ob' : VOnly temps a b := vonly_mono ob (by decide)
-  have bc : Consts b := ac.of_v ob'.2
+  obtain ob' : VOnly temps a b := vonly_mono ob (by decide)
+  obtain bc : Consts b := ac.of_v ob'.2
   rw [WP.block_append_iff]
   obtain ⟨c, hc', c5, oc⟩ := keyx_run b bc (.inr ⟨rfl, rfl⟩)
   refine WP.of_runBlock ⟨c, hc', ?_⟩
-  have oc' : VOnly temps b c := vonly_mono oc (by decide)
-  have o : VOnly temps s c := (oa'.trans ob').trans oc'
+  obtain oc' : VOnly temps b c := vonly_mono oc (by decide)
+  obtain o : VOnly temps s c := (oa'.trans ob').trans oc'
   let d := c.setV .v0 (c.v .v0 ^^^ c.v .v5)
   let f := d.write .x .x1 (d.read .x .x1 - BitVec.ofNat 64 1)
   rw [WP.block_cons_iff]
   refine ⟨d, exec_eorv _ _ _ _, ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨f, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hk : KeyIs (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128)
+  obtain hk : KeyIs (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128)
       (roundKey (bytesAt s.mem K (16 * (R + 1))) 0) := by
-    have h := keyIs_readW s.mem K (L := 16 * (R + 1)) (j := 0) (by omega_arith)
+    obtain h := keyIs_readW s.mem K (L := 16 * (R + 1)) (j := 0) (by omega_arith)
     rw [Nat.mul_zero] at h
     rw [h0]
     exact h
@@ -775,11 +775,11 @@ theorem core_ok {s : State} {K : Addr} {R : Nat} (hK : (⟨K, 240⟩ : Region) �
       st (t.v .v0) = cipher R (bytesAt s.mem K (16 * (R + 1))) (st (s.v .v0)) ∧
       (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x6 → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.sp = s.sp := by
-  have hR14 : R ≤ 14 := by omega_arith
-  have hR2 : 2 ≤ R := by omega_arith
+  obtain hR14 : R ≤ 14 := by omega_arith
+  obtain hR2 : 2 ≤ R := by omega_arith
   unfold core
   refine WP.seq (WP.mono (setup_ok s) fun a ⟨ac, a0, ag, am, ard, awr, asp⟩ => ?_)
-  have hKa : (⟨K, 240⟩ : Region) ∈ a.rd := by rw [ard]; exact hK
+  obtain hKa : (⟨K, 240⟩ : Region) ∈ a.rd := by rw [ard]; exact hK
   unfold rounds
   refine WP.seq (WP.mono (first_ok ac hKa ((ag _ (by decide)).trans h0) ((ag _ (by decide)).trans h1)
     ⟨hR2, hR14⟩) fun c hI => ?_)
@@ -805,7 +805,7 @@ def Dl (x : BitVec 8) : BitVec 8 := D x ^^^ 0xd1
 /-- The inverse S-box, from the tables. -/
 theorem isb_eq : ∀ z : BitVec 8,
     aesInvSbox z = nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by
-  have h : ∀ z : BitVec 8, row (invSboxT inTabs) z.toNat =
+  obtain h : ∀ z : BitVec 8, row (invSboxT inTabs) z.toNat =
       nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by decide +kernel
   exact fun z => (aesInvSbox_row z).trans (h z)
 
@@ -844,7 +844,7 @@ theorem imix_byte (u₀ u₁ u₂ u₃ k₀ k₁ k₂ k₃ : BitVec 8) :
         (Dl (aesMul 0x0d u₂) ^^^ Dl (aesMul 0x09 u₃)) =
       D (aesMul 0x0e (u₀ ^^^ k₀) ^^^ aesMul 0x0b (u₁ ^^^ k₁) ^^^ aesMul 0x0d (u₂ ^^^ k₂) ^^^
         aesMul 0x09 (u₃ ^^^ k₃)) := by
-  have hD : ∀ x, D x = Dl x ^^^ 0xd1 := fun x => by
+  obtain hD : ∀ x, D x = Dl x ^^^ 0xd1 := fun x => by
     rw [Dl, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
   rw [hD, hD, xor_of_bits Dl_bits, xor_of_bits Dl_bits, xor_of_bits Dl_bits,
     xor_of_bits (f := fun x => Dl (aesMul 0x0e x)) g0_bits, xor_of_bits (f := fun x => Dl (aesMul 0x0b x)) g1_bits,
@@ -894,9 +894,9 @@ theorem isrI_lt : ∀ t < 16, isrI t < 16 := by decide
 theorem vbyte_keyV (k : BitVec 128) {e : Nat} (he : e < 16) :
     vbyte (keyV k) e = D (aesMul 0x0e (vbyte k e)) ^^^ Dl (aesMul 0x0b (vbyte k (rI 1 e))) ^^^
       Dl (aesMul 0x0d (vbyte k (rI 2 e))) ^^^ Dl (aesMul 0x09 (vbyte k (rI 3 e))) := by
-  have h1 := rI_lt 1 (by decide) e he
-  have h2 := rI_lt 2 (by decide) e he
-  have h3 := rI_lt 3 (by decide) e he
+  obtain h1 := rI_lt 1 (by decide) e he
+  obtain h2 := rI_lt 2 (by decide) e he
+  obtain h3 := rI_lt 3 (by decide) e he
   rw [keyV, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_perm _ he (p_rot e he) h1,
     vbyte_perm _ he (p_rot2 e he) h2, vbyte_perm _ he (p_rot3 e he) h3, vbyte_Yv _ _ _ he,
     vbyte_Yv _ _ _ h1, vbyte_Yv _ _ _ h2, vbyte_Yv _ _ _ h3, y0_tab, y1_tab, y2_tab, y3_tab]
@@ -914,7 +914,7 @@ theorem vbyte_xV {u t p : BitVec 128} {c : BitVec 8} {n : Nat} (hn : n < 4)
       Dl (aesMul c (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))))
     (x : BitVec 128) {e : Nat} (he : e < 16) :
     vbyte (xV u t p (ioV (Dv x)) (joV (Dv x))) e = Dl (aesMul c (aesInvSbox (vbyte x (isrI (rI n e))))) := by
-  have hs := isrI_lt _ (rI_lt n hn e he)
+  obtain hs := isrI_lt _ (rI_lt n hn e he)
   rw [xV, vbyte_perm _ he (hp e he) hs, vbyte_xor, vbyte_tblV _ _ hs, vbyte_tblV _ _ hs, vbyte_ioV _ hs,
     vbyte_joV _ hs, vbyte_Dv _ hs, ht, isb_eq]
 
@@ -925,10 +925,10 @@ theorem mixV_eq (x k : BitVec 128) :
       Dv (aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k)) := by
   apply ext_vbyte
   intro e he
-  have h0 := rI_lt 0 (by decide) e he
-  have h1 := rI_lt 1 (by decide) e he
-  have h2 := rI_lt 2 (by decide) e he
-  have h3 := rI_lt 3 (by decide) e he
+  obtain h0 := rI_lt 0 (by decide) e he
+  obtain h1 := rI_lt 1 (by decide) e he
+  obtain h2 := rI_lt 2 (by decide) e he
+  obtain h3 := rI_lt 3 (by decide) e he
   rw [mixV, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_xV (by decide) p_p0 x0_tab _ he,
     vbyte_xV (by decide) p_p1 x1_tab _ he, vbyte_xV (by decide) p_p2 x2_tab _ he,
     vbyte_xV (by decide) p_p3 x3_tab _ he, vbyte_keyV _ he, vbyte_Dv _ he, vbyte_invMixColumns _ he]
@@ -950,7 +950,7 @@ theorem lastV_eq (x k : BitVec 128) :
     lastV (ioV (Dv x)) (joV (Dv x)) k = aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k := by
   apply ext_vbyte
   intro e he
-  have hs := isrI_lt _ (rI_lt 0 (by decide) e he)
+  obtain hs := isrI_lt _ (rI_lt 0 (by decide) e he)
   rw [lastV, vbyte_xor, vbyte_perm _ he (p_p0 e he) hs, vbyte_xor, vbyte_tblV _ _ hs, vbyte_tblV _ _ hs,
     vbyte_ioV _ hs, vbyte_joV _ hs, vbyte_Dv _ hs, ← isb_eq, vbyte_xor, vbyte_mapBytes _ _ he,
     vbyte_invShiftRows _ he, rI_zero e he]
@@ -993,7 +993,7 @@ theorem tabWords_length : Dec.tabWords.length = 60 := by simp [Dec.tabWords]
 /-- The two words of vector `j` of the static, as `ldrqTbl` loads them. -/
 theorem tabWords_pair {j : Nat} (hj : j < 30) :
     Dec.tabWords.getD (16 * j / 8 + 1) 0 ++ Dec.tabWords.getD (16 * j / 8) 0 = Dec.tabVec j := by
-  have g : ∀ i < 60, Dec.tabWords.getD i 0 = (Dec.tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := fun i hi => by
+  obtain g : ∀ i < 60, Dec.tabWords.getD i 0 = (Dec.tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := fun i hi => by
     simp [Dec.tabWords, hi]
   rw [show 16 * j / 8 = 2 * j by omega_arith, g _ (by omega_arith), g _ (by omega_arith),
     show (2 * j + 1) / 2 = j by omega_arith, show (2 * j + 1) % 2 = 1 by omega_arith,
@@ -1003,7 +1003,7 @@ theorem tabWords_pair {j : Nat} (hj : j < 30) :
 /-- Loading vector `j` of the static, whose address is in `x6`. -/
 theorem exec_tld (r : VReg) {j : Nat} (hj : j < 30) {s : State} (hx : s.gpr .x6 = s.syms Dec.tabName) :
     exec (Dec.tld r j) s = some (s.setV r (Dec.tabVec j)) := by
-  have hc : s.gpr .x6 = s.syms Dec.tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
+  obtain hc : s.gpr .x6 = s.syms Dec.tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
       16 * j / 8 + 2 ≤ Dec.tabWords.length :=
     ⟨hx, by omega_arith, by omega_arith, by rw [tabWords_length]; omega_arith⟩
   simp only [Dec.tld, exec, ite_eq_left_of_eq_true _ _ (eq_true hc), tabWords_pair hj]
@@ -1044,7 +1044,7 @@ theorem setup_ok {s : State} {K : Addr} {R : Nat} (h0 : s.gpr .x0 = K) (h1 : s.g
   let a := s.write .x .x6 (s.read .x .x1 <<< 4)
   let b := a.write .x .x0 (a.read .x .x0 + a.read .x .x6)
   let c := b.write .x .x6 (b.syms Dec.tabName)
-  have cx : c.gpr .x6 = c.syms Dec.tabName := gpr_write_self _ _ _ _
+  obtain cx : c.gpr .x6 = c.syms Dec.tabName := gpr_write_self _ _ _ _
   rw [show ([.lsl .x .x6 .x1 4, .add .x .x0 .x0 .x6, .adrSym .x6 Dec.tabName] : List Instr) ++
       ((List.range 15).map fun j => Dec.tld (treg j) j) =
     .lsl .x .x6 .x1 4 :: .add .x .x0 .x0 .x6 :: .adrSym .x6 Dec.tabName ::
@@ -1054,7 +1054,7 @@ theorem setup_ok {s : State} {K : Addr} {R : Nat} (h0 : s.gpr .x0 = K) (h1 : s.g
   refine ⟨b, exec_add, ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨c, exec_adrSym, ?_⟩
-  have c0 : c.gpr .x0 = K + BitVec.ofNat 64 (16 * R) := by
+  obtain c0 : c.gpr .x0 = K + BitVec.ofNat 64 (16 * R) := by
     rw [show c.gpr .x0 = s.gpr .x0 + s.gpr .x1 <<< 4 by simp [c, b, a, State.write, read_x], h0, h1,
       shl4 R hR]
   refine WP.mono (tldTable_ok cx) fun t ⟨trow, tv, tl⟩ => ?_
@@ -1086,9 +1086,9 @@ theorem keyTerm_run (s : State) (hx : s.gpr .x6 = s.syms Dec.tabName) {d : VReg}
   let c := b.setV .v1 (tblV (b.v .v1) (b.v .v6))
   let e := c.setV .v2 (tblV (c.v .v2) (c.v .v5))
   let t := e.setV d (e.v .v1 ^^^ e.v .v2)
-  have hab : runBlock isa [Dec.tld .v1 jl, Dec.tld .v2 jh] s = some b :=
+  obtain hab : runBlock isa [Dec.tld .v1 jl, Dec.tld .v2 jh] s = some b :=
     runBlock_cat_some (a := [Dec.tld .v1 jl]) (b := [Dec.tld .v2 jh]) (tld_run s .v1 hl hx) (tld_run a .v2 hh hx)
-  have o : VOnly [.v1, .v2, .v7] s t :=
+  obtain o : VOnly [.v1, .v2, .v7] s t :=
     ((((VOnly.setV s (by simp) _).trans (VOnly.setV a (by simp) _)).trans (VOnly.setV b (by simp) _)).trans
       (VOnly.setV c (by simp) _)).trans (VOnly.setV e (by rcases hd with rfl | rfl <;> simp) _)
   refine ⟨t, ?_, ?_, fun h => ?_, o⟩
@@ -1121,45 +1121,45 @@ theorem key_run (s : State) (hc : Consts s) :
   let a := s.setV .v6 (s.v .v5 &&& s.v .v16)
   let b := a.setV .v5 (ushr4 (a.v .v5))
   have hb : runBlock isa [.vop (.logic .and .v6 .v5 .v16), .vop (.shift .ushr .b16 .v5 .v5 4)] s = some b := rfl
-  have ob : VOnly [.v1, .v2, .v5, .v6, .v7] s b := (VOnly.setV s (by simp) _).trans (VOnly.setV a (by simp) _)
-  have b6 : b.v .v6 = s.v .v5 &&& mask := by
+  obtain ob : VOnly [.v1, .v2, .v5, .v6, .v7] s b := (VOnly.setV s (by simp) _).trans (VOnly.setV a (by simp) _)
+  obtain b6 : b.v .v6 = s.v .v5 &&& mask := by
     simp only [b, a, v_setV, reduceCtorEq, ite_true, ite_false, hc.v16]
-  have b5 : b.v .v5 = ushr4 (s.v .v5) := by
+  obtain b5 : b.v .v5 = ushr4 (s.v .v5) := by
     simp only [b, a, v_setV, reduceCtorEq, ite_true, ite_false]
-  have w : ∀ {u v : State}, VOnly [.v1, .v2, .v7] u v → VOnly [.v1, .v2, .v5, .v6, .v7] u v :=
+  obtain w : ∀ {u v : State}, VOnly [.v1, .v2, .v7] u v → VOnly [.v1, .v2, .v5, .v6, .v7] u v :=
     fun o => vonly_mono o (by decide)
-  have x : ∀ {u v : State}, u.gpr .x6 = u.syms Dec.tabName → VOnly [.v1, .v2, .v7] u v →
+  obtain x : ∀ {u v : State}, u.gpr .x6 = u.syms Dec.tabName → VOnly [.v1, .v2, .v7] u v →
       v.gpr .x6 = v.syms Dec.tabName := fun {u v} h o => by
     rw [o.gpr, show v.syms = u.syms by rw [o.1]]; exact h
   have bx : b.gpr .x6 = b.syms Dec.tabName := hc.x6
   obtain ⟨c, hc', c7, -, oc⟩ := keyTerm_run b bx (.inl rfl) (jl := 15) (jh := 16) (by decide) (by decide)
-  have h1 := runBlock_cat_some hb hc'
-  have cx := x bx oc
+  obtain h1 := runBlock_cat_some hb hc'
+  obtain cx := x bx oc
   obtain ⟨d, hd, d1, d7, od⟩ := keyTerm_run c cx (.inr rfl) (jl := 17) (jh := 18) (by decide) (by decide)
-  have h2 := runBlock_cat_some h1 hd
-  have dx := x cx od
+  obtain h2 := runBlock_cat_some h1 hd
+  obtain dx := x cx od
   obtain ⟨e, he, e7, e5, e6, oe⟩ := keyRot_run d dx (jp := 23) (by decide)
-  have h3 := runBlock_cat_some h2 he
-  have ex := x dx oe
+  obtain h3 := runBlock_cat_some h2 he
+  obtain ex := x dx oe
   obtain ⟨f, hf, f1, f7, of⟩ := keyTerm_run e ex (.inr rfl) (jl := 19) (jh := 20) (by decide) (by decide)
-  have h4 := runBlock_cat_some h3 hf
-  have fx := x ex of
+  obtain h4 := runBlock_cat_some h3 hf
+  obtain fx := x ex of
   obtain ⟨g, hg, g7, g5, g6, og⟩ := keyRot_run f fx (jp := 24) (by decide)
-  have h5 := runBlock_cat_some h4 hg
-  have gx := x fx og
+  obtain h5 := runBlock_cat_some h4 hg
+  obtain gx := x fx og
   obtain ⟨h, hh, i1, i7, oh⟩ := keyTerm_run g gx (.inr rfl) (jl := 21) (jh := 22) (by decide) (by decide)
-  have h6 := runBlock_cat_some h5 hh
-  have hx := x gx oh
+  obtain h6 := runBlock_cat_some h5 hh
+  obtain hx := x gx oh
   obtain ⟨t, ht, t7, -, -, ot⟩ := keyRot_run h hx (jp := 25) (by decide)
-  have h7 := runBlock_cat_some h6 ht
-  have c5 : c.v .v5 = b.v .v5 := oc.2 _ (by decide)
-  have c6 : c.v .v6 = b.v .v6 := oc.2 _ (by decide)
-  have d5 : d.v .v5 = b.v .v5 := (od.2 _ (by decide)).trans c5
-  have d6 : d.v .v6 = b.v .v6 := (od.2 _ (by decide)).trans c6
-  have f5 : f.v .v5 = b.v .v5 := (of.2 _ (by decide)).trans (e5.trans d5)
-  have f6 : f.v .v6 = b.v .v6 := (of.2 _ (by decide)).trans (e6.trans d6)
-  have k5 : h.v .v5 = b.v .v5 := (oh.2 _ (by decide)).trans (g5.trans f5)
-  have k6 : h.v .v6 = b.v .v6 := (oh.2 _ (by decide)).trans (g6.trans f6)
+  obtain h7 := runBlock_cat_some h6 ht
+  obtain c5 : c.v .v5 = b.v .v5 := oc.2 _ (by decide)
+  obtain c6 : c.v .v6 = b.v .v6 := oc.2 _ (by decide)
+  obtain d5 : d.v .v5 = b.v .v5 := (od.2 _ (by decide)).trans c5
+  obtain d6 : d.v .v6 = b.v .v6 := (od.2 _ (by decide)).trans c6
+  obtain f5 : f.v .v5 = b.v .v5 := (of.2 _ (by decide)).trans (e5.trans d5)
+  obtain f6 : f.v .v6 = b.v .v6 := (of.2 _ (by decide)).trans (e6.trans d6)
+  obtain k5 : h.v .v5 = b.v .v5 := (oh.2 _ (by decide)).trans (g5.trans f5)
+  obtain k6 : h.v .v6 = b.v .v6 := (oh.2 _ (by decide)).trans (g6.trans f6)
   refine ⟨t, h7, ?_, (((((((ob.trans (w oc)).trans (w od)).trans (w oe)).trans (w of)).trans (w og)).trans
     (w oh)).trans (w ot))⟩
   rw [t7, i7 rfl, g7, f7 rfl, e7, d7 rfl, c7, i1, f1, d1, g6, g5, e6, e5, c6, c5, d6, d5, f6, f5, b6, b5]
@@ -1212,7 +1212,7 @@ theorem last_run (s : State) (hc : Consts s) :
   let e := d.setV .v0 (d.v .v0 ^^^ d.v .v1)
   let f := e.setV .v0 (tblV (e.v .v0) (e.v .v27))
   let t := f.setV .v0 (f.v .v0 ^^^ f.v .v5)
-  have hab : runBlock isa [Dec.tld .v0 28, Dec.tld .v1 29] s = some b :=
+  obtain hab : runBlock isa [Dec.tld .v0 28, Dec.tld .v1 29] s = some b :=
     runBlock_cat_some (a := [Dec.tld .v0 28]) (b := [Dec.tld .v1 29]) (tld_run s .v0 (by decide) hc.x6)
       (tld_run a .v1 (by decide) hc.x6)
   refine ⟨t, runBlock_cat_some (a := [Dec.tld .v0 28, Dec.tld .v1 29]) hab rfl, ?_, ?_⟩
@@ -1258,9 +1258,9 @@ theorem prev_ok {s : State} {K : Addr} {n : Nat} (hc : Consts s) (hK : (⟨K, 24
   let a := s.write .x .x0 (s.read .x .x0 - BitVec.ofNat 64 16)
   rw [WP.block_cons_iff]
   refine ⟨a, exec_subImm_x (imm := 16) (by decide), ?_⟩
-  have a0 : a.gpr .x0 = K + BitVec.ofNat 64 (16 * (n - 1)) := by
+  obtain a0 : a.gpr .x0 = K + BitVec.ofNat 64 (16 * (n - 1)) := by
     rw [show a.gpr .x0 = s.gpr .x0 - BitVec.ofNat 64 16 by simp [a, State.write, read_x], h0, sub16 K h1]
-  have ac : Consts a := hc.of_write (by decide) _
+  obtain ac : Consts a := hc.of_write (by decide) _
   obtain ⟨b, hb, b5, ob⟩ := Vperm.key_run a (off := 0) (by decide)
     ⟨_, List.mem_append_left _ (show (⟨K, 240⟩ : Region) ∈ a.rd from hK),
       by rw [a0, BitVec.add_zero]; exact Offset.contains_base K (by omega_arith) (by omega_arith)⟩
@@ -1282,31 +1282,31 @@ theorem round_ok {s₀ : State} {K : Addr} {R : Nat} {z : Spec.Aes.State} (hK : 
   rw [WP.block_append_iff]
   obtain ⟨c, hc, c7, oc⟩ := key_run b bc
   refine WP.of_runBlock ⟨c, hc, ?_⟩
-  have oc' : VOnly temps b c := vonly_mono oc (by decide)
-  have cc : Consts c := bc.of_v oc'
+  obtain oc' : VOnly temps b c := vonly_mono oc (by decide)
+  obtain cc : Consts c := bc.of_v oc'
   rw [WP.block_append_iff]
   obtain ⟨d, hd, d2, d3, od⟩ := invert_run c cc.v16 cc.v17 cc.v18
   refine WP.of_runBlock ⟨d, hd, ?_⟩
-  have od' : VOnly temps c d := vonly_mono od (by decide)
-  have dc : Consts d := cc.of_v od'
+  obtain od' : VOnly temps c d := vonly_mono od (by decide)
+  obtain dc : Consts d := cc.of_v od'
   rw [WP.block_append_iff]
   obtain ⟨e, he, e0, oe⟩ := mix_run d dc
   refine WP.of_runBlock ⟨e, he, ?_⟩
-  have oe' : VOnly temps d e := vonly_mono oe (by decide)
-  have o : VOnly temps b e := (oc'.trans od').trans oe'
+  obtain oe' : VOnly temps d e := vonly_mono oe (by decide)
+  obtain o : VOnly temps b e := (oc'.trans od').trans oe'
   let f := e.write .x .x1 (e.read .x .x1 - BitVec.ofNat 64 1)
   rw [WP.block_cons_iff]
   refine ⟨f, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hk : KeyIs (s.mem.readW (K + BitVec.ofNat 64 (16 * (R - j - 1))) 128)
+  obtain hk : KeyIs (s.mem.readW (K + BitVec.ofNat 64 (16 * (R - j - 1))) 128)
       (roundKey (bytesAt s₀.mem K (16 * (R + 1))) (R - 1 - j)) := by
     rw [hI.mem, show R - j - 1 = R - 1 - j by omega_arith]
     exact keyIs_readW s₀.mem K (by omega_arith)
-  have c0 : c.v .v0 = Dv Z := by
+  obtain c0 : c.v .v0 = Dv Z := by
     rw [oc.2 _ (by decide), bv _ (by decide)]
     exact hZ
-  have d7 : d.v .v7 = keyV (s.mem.readW (K + BitVec.ofNat 64 (16 * (R - j - 1))) 128) := by
+  obtain d7 : d.v .v7 = keyV (s.mem.readW (K + BitVec.ofNat 64 (16 * (R - j - 1))) 128) := by
     rw [od.2 _ (by decide), c7, b5]
-  have ex1 : e.gpr .x1 = BitVec.ofNat 64 (R - 1 - j) := by
+  obtain ex1 : e.gpr .x1 = BitVec.ofNat 64 (R - 1 - j) := by
     rw [o.gpr, bg _ (by decide)]; exact hI.x1
   refine ⟨(dc.of_v oe').of_write (by decide) _, ?_, ?_,
     ⟨aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows Z) ^^^
@@ -1333,7 +1333,7 @@ theorem loop_ok {s₀ : State} {K : Addr} {R : Nat} {z : Spec.Aes.State} (hK : (
     RInv s₀ K R (bytesAt s₀.mem K (16 * (R + 1))) z j t) ?_ (R - 1) s ⟨0, rfl, hR2, hI⟩
   rintro n t ⟨j, hn, hj, hI⟩
   refine WP.mono (round_ok hK hR hj hI) fun t' hI' => ?_
-  have he : isa.eval (.nonzero .x .x1) t' = some (BitVec.ofNat 64 (R - 1 - (j + 1)) != 0) := by
+  obtain he : isa.eval (.nonzero .x .x1) t' = some (BitVec.ofNat 64 (R - 1 - (j + 1)) != 0) := by
     simp [AArch64.eval, State.read, hI'.x1]
   rcases Nat.lt_or_ge (j + 2) R with h | h
   · exact .inr ⟨by rw [he, ofNat_bne_zero (by omega_arith) (by omega_arith)], R - 1 - (j + 1), by omega_arith,
@@ -1358,10 +1358,10 @@ theorem last_ok {s₀ : State} {K : Addr} {R : Nat} {x : Spec.Aes.State} (hK : (
   rw [WP.block_append_iff]
   obtain ⟨d, hd, d2, d3, od⟩ := invert_run b bc.v16 bc.v17 bc.v18
   refine WP.of_runBlock ⟨d, hd, ?_⟩
-  have od' : VOnly temps b d := vonly_mono od (by decide)
-  have dc : Consts d := bc.of_v od'
+  obtain od' : VOnly temps b d := vonly_mono od (by decide)
+  obtain dc : Consts d := bc.of_v od'
   obtain ⟨t, ht, t0, ot⟩ := last_run d dc
-  have o : VOnly temps b t := od'.trans (vonly_mono ot (by decide))
+  obtain o : VOnly temps b t := od'.trans (vonly_mono ot (by decide))
   refine WP.of_runBlock ⟨t, ht, ?_, fun r h0 h1 => ?_, o.mem.trans (bm.trans hI.mem),
     o.rd.trans (brd.trans hI.rd), o.wr.trans (bwr.trans hI.wr), (VOnly.sp o).trans (bsp.trans hI.sp)⟩
   · have hk : KeyIs (s.mem.readW (K + BitVec.ofNat 64 (16 * (R - (R - 1) - 1))) 128)
@@ -1385,20 +1385,20 @@ theorem first_ok {s : State} {K : Addr} {R : Nat} (hc : Consts s) (hK : (⟨K, 2
   obtain ⟨a, ha, a5, oa⟩ := Vperm.key_run s (off := 0) (by decide) ⟨_, List.mem_append_left _ hK,
     by rw [h0, BitVec.add_zero]; exact Offset.contains_base K (by omega_arith) (by omega_arith)⟩
   refine WP.of_runBlock ⟨a, ha, ?_⟩
-  have oa' : VOnly temps s a := vonly_mono oa (by decide)
-  have ac : Consts a := hc.of_v oa'
+  obtain oa' : VOnly temps s a := vonly_mono oa (by decide)
+  obtain ac : Consts a := hc.of_v oa'
   let b := a.setV .v0 (a.v .v0 ^^^ a.v .v5)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨b, rfl, ?_⟩
-  have ob : VOnly temps a b := VOnly.setV a (by simp) _
-  have bc : Consts b := ac.of_v ob
+  obtain ob : VOnly temps a b := VOnly.setV a (by simp) _
+  obtain bc : Consts b := ac.of_v ob
   let c := b.setV .v2 (Dec.tabVec 26)
   let d := c.setV .v3 (Dec.tabVec 27)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨d, runBlock_cat_some (a := [Dec.tld .v2 26]) (b := [Dec.tld .v3 27])
     (tld_run b .v2 (by decide) bc.x6) (tld_run c .v3 (by decide) bc.x6), ?_⟩
-  have od : VOnly temps b d := (VOnly.setV b (by simp) _).trans (VOnly.setV c (by simp) _)
-  have dc : Consts d := bc.of_v od
+  obtain od : VOnly temps b d := (VOnly.setV b (by simp) _).trans (VOnly.setV c (by simp) _)
+  obtain dc : Consts d := bc.of_v od
   let e := d.setV .v1 (d.v .v0 &&& d.v .v16)
   let f := e.setV .v0 (ushr4 (e.v .v0))
   let g := f.setV .v1 (tblV (f.v .v2) (f.v .v1))
@@ -1406,17 +1406,17 @@ theorem first_ok {s : State} {K : Addr} {R : Nat} (hc : Consts s) (hK : (⟨K, 2
   let i := h.setV .v0 (h.v .v0 ^^^ h.v .v1)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨i, rfl, ?_⟩
-  have oi : VOnly temps d i := ((((VOnly.setV d (by simp) _).trans (VOnly.setV e (by simp) _)).trans
+  obtain oi : VOnly temps d i := ((((VOnly.setV d (by simp) _).trans (VOnly.setV e (by simp) _)).trans
     (VOnly.setV f (by simp) _)).trans (VOnly.setV g (by simp) _)).trans (VOnly.setV h (by simp) _)
-  have o : VOnly temps s i := ((oa'.trans ob).trans od).trans oi
+  obtain o : VOnly temps s i := ((oa'.trans ob).trans od).trans oi
   let t := i.write .x .x1 (i.read .x .x1 - BitVec.ofNat 64 1)
   rw [WP.block_cons_iff]
   refine ⟨t, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hk : KeyIs (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128)
+  obtain hk : KeyIs (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128)
       (roundKey (bytesAt s.mem K (16 * (R + 1))) R) := by
     rw [h0, BitVec.add_zero]
     exact keyIs_readW s.mem K (by omega_arith)
-  have i0 : i.v .v0 = firstV (s.v .v0 ^^^ s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128) := by
+  obtain i0 : i.v .v0 = firstV (s.v .v0 ^^^ s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 0) 128) := by
     simp only [i, h, g, f, e, d, c, b, v_setV, reduceCtorEq, ite_true, ite_false, ac.v16, a5,
       show a.v .v0 = s.v .v0 from oa.2 _ (by decide), firstV]
     rfl
@@ -1440,11 +1440,11 @@ theorem core_ok {s : State} {K : Addr} {R : Nat} (hK : (⟨K, 240⟩ : Region) �
       st (t.v .v0) = invCipher R (bytesAt s.mem K (16 * (R + 1))) (st (s.v .v0)) ∧
       (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x6 → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.sp = s.sp := by
-  have hR14 : R ≤ 14 := by omega_arith
-  have hR2 : 2 ≤ R := by omega_arith
+  obtain hR14 : R ≤ 14 := by omega_arith
+  obtain hR2 : 2 ≤ R := by omega_arith
   rw [Dec.core]
   refine WP.seq (WP.mono (setup_ok h0 h1 hR) fun a ⟨ac, av, a0, ag, am, ard, awr, asp⟩ => ?_)
-  have hKa : (⟨K, 240⟩ : Region) ∈ a.rd := by rw [ard]; exact hK
+  obtain hKa : (⟨K, 240⟩ : Region) ∈ a.rd := by rw [ard]; exact hK
   rw [Dec.rounds]
   refine WP.seq (WP.mono (first_ok ac hKa a0 ((ag _ (by decide) (by decide)).trans h1) ⟨hR2, hR14⟩)
     fun c hI => ?_)

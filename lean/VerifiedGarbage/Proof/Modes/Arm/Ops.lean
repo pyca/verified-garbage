@@ -162,12 +162,12 @@ theorem writable (x : Blk) : Covers [⟨addrOf c Dp S x, sz c ds x⟩] wr := by
 theorem disjoint {x y : Blk} (hxy : x ≠ y) :
     Region.Disjoint ⟨addrOf c Dp S x, sz c ds x⟩ ⟨addrOf c Dp S y, sz c ds y⟩ := by
   have hS : S.toNat + oOff + 2 * c.bs ≤ 2 ^ 32 := h.fS
-  have ot : Region.Disjoint ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩
+  obtain ot : Region.Disjoint ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩
       ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ :=
     VG.Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-  have dO : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩ :=
+  obtain dO : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩ :=
     h.sep.sub_right (Region.sub_prefix (by omega_arith))
-  have dT : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ :=
+  obtain dT : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ :=
     h.sep.sub_right (by rw [← VG.Offset.add_add]; exact VG.Offset.sub_base _ (by omega_arith))
   cases x <;> cases y <;> first | exact absurd rfl hxy | skip
   · exact dO
@@ -241,8 +241,8 @@ theorem writeW_over_step {m : Mem} {P : Addr} {j : Nat} {f : Nat → Byte} (hj :
   simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq]
   by_cases hx : (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8
   · rw [ite_eq_left (show (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
-    have e : (x - P).toNat = j := by bv_omega
-    have z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega_arith
+    obtain e : (x - P).toNat = j := by bv_omega
+    obtain z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega_arith
     simp only [over]; rw [ite_eq_left (show (x - P).toNat < j + 1 by omega_arith), e, z]
     simp
   · rw [ite_eq_right (show ¬ (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
@@ -256,7 +256,7 @@ theorem bytesAt_over_prefix (m : Mem) (P : Addr) {n k : Nat} (f : Nat → Byte) 
     bytesAt (over m P k f) P n = (List.range n).map fun i => if i < k then f i else m (P + BitVec.ofNat 64 i) := by
   apply List.map_congr_left
   intro i hi
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   simp only [over]; rw [VG.Proof.Modes.off_self P (by omega_arith)]
 
 /-! ## One operation, and a list of them -/
@@ -303,7 +303,7 @@ theorem blkMem_over {c : Core} {ds : Nat} {Dp S : BitVec 32} {wr : List Region} 
     (hv : (List.range (sz c ds x)).map f = v) {k : Nat} (hk : k = sz c ds x) :
     BlkMem c ds Dp S (over m (addrOf c Dp S x) k f) (b.set x v) := by
   subst hk
-  have hfit : ∀ y, sz c ds y ≤ 2 ^ 64 := fun y => by have := h.sz_le y; have := h.fS; omega_arith
+  obtain hfit : ∀ y, sz c ds y ≤ 2 ^ 64 := fun y => by have := h.sz_le y; have := h.fS; omega_arith
   intro z
   by_cases hz : z = x
   · subst hz
@@ -330,10 +330,10 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     {s : State} (h : Lay c ds Dp S s.wr) (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) {b : Blks}
     (hb : BlkMem c ds Dp S s.mem b) {op : Op} (hok : opOk c.bs byte op = true) :
     WP isa (.block (c.opCode op)) s (OpsInv c ds Dp S s (runOp op b)) := by
-  have hfit : c.bs ≤ 2 ^ 64 := by have := h.fS; omega_arith
-  have hl := bm_len hb
+  obtain hfit : c.bs ≤ 2 ^ 64 := by have := h.fS; omega_arith
+  obtain hl := bm_len hb
   -- A whole-block operation is on blocks of `c.bs` bytes.
-  have whole : ∀ {x y : Blk}, (x != y && (!byte || (x != .d && y != .d))) = true →
+  obtain whole : ∀ {x y : Blk}, (x != y && (!byte || (x != .d && y != .d))) = true →
       x ≠ y ∧ sz c ds x = c.bs ∧ sz c ds y = c.bs := fun {x y} hxy => by
     simp only [Bool.and_eq_true, bne_iff_ne, ne_eq, Bool.or_eq_true, Bool.not_eq_true'] at hxy
     refine ⟨hxy.1, ?_, ?_⟩ <;> rcases hxy.2 with hb' | hb'
@@ -343,9 +343,9 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     · cases y <;> simp_all [sz]
   cases op with
   | inc =>
-    have hbs : c.bs = 16 := by simpa [opOk] using hok
+    obtain hbs : c.bs = 16 := by simpa [opOk] using hok
     let P := addrOf c Dp S .o
-    have w : Covers [⟨P, 16⟩] s.wr := by simpa [P, sz, hbs] using h.writable .o
+    obtain w : Covers [⟨P, 16⟩] s.wr := by simpa [P, sz, hbs] using h.writable .o
     have inW (d n : Nat) (hd : d + n ≤ 16) : InRegions s.wr (P + BitVec.ofNat 64 d) n :=
       w _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hd (by omega_arith)⟩
     obtain ⟨s', he, hg, hsp, hm, hrd, hwr⟩ := Counter.incr_ok s (base := .r8) (off := oOff)
@@ -354,7 +354,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       (fun d n hd => by
         obtain ⟨r, hr, hc⟩ := inW d n hd
         exact ⟨r, List.mem_append_right _ hr, hc⟩) inW
-    have hf := Counter.incMem_frame s.mem P
+    obtain hf := Counter.incMem_frame s.mem P
     refine WP.of_runBlock ⟨s', he, hg, hrd, hwr, hsp, ?_, ?_⟩
     · rw [hm]
       exact hf.sub (fun r hr => by
@@ -367,13 +367,13 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       | o =>
         change bytesAt (Counter.incMem s.mem P) P c.bs = Spec.Ctr.inc b.o
         rw [hbs, Counter.incMem_bytes]
-        have e := hb .o
+        obtain e := hb .o
         change bytesAt s.mem P c.bs = b.o at e
         rw [hbs] at e
         rw [e]
       | d =>
         change bytesAt (Counter.incMem s.mem P) (addrOf c Dp S .d) ds = b.d
-        have e : bytesAt s.mem (addrOf c Dp S .d) ds = b.d := hb .d
+        obtain e : bytesAt s.mem (addrOf c Dp S .d) ds = b.d := hb .d
         rw [← e]
         exact List.map_congr_left fun i hi => hf.bytes
           (R := ⟨addrOf c Dp S .d, ds⟩) (by
@@ -382,7 +382,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
           (by change ds ≤ 2 ^ 64; have := h.ds_le; omega_arith) (List.mem_range.mp hi)
       | t =>
         change bytesAt (Counter.incMem s.mem P) (addrOf c Dp S .t) c.bs = b.t
-        have e : bytesAt s.mem (addrOf c Dp S .t) c.bs = b.t := hb .t
+        obtain e : bytesAt s.mem (addrOf c Dp S .t) c.bs = b.t := hb .t
         rw [← e]
         exact List.map_congr_left fun i hi => hf.bytes
           (R := ⟨addrOf c Dp S .t, c.bs⟩) (by
@@ -408,16 +408,16 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       · simp [Spec.Cbc.xor, hl, hx, hy]
       · intro i h₁ h₂
         simp only [List.length_map, List.length_range] at h₁
-        have ex : ∀ z (hz : i < (b.get z).length), (b.get z)[i] = s.mem (addrOf c Dp S z + BitVec.ofNat 64 i) :=
+        obtain ex : ∀ z (hz : i < (b.get z).length), (b.get z)[i] = s.mem (addrOf c Dp S z + BitVec.ofNat 64 i) :=
           fun z hz => by rw [List.getElem_eq_getD 0, bm_get hb z (by rw [← hl z]; exact hz)]
         simp only [List.getElem_map, List.getElem_range, Spec.Cbc.xor, List.getElem_zipWith]
         rw [ex x, ex y]
   | xorB x y =>
-    have hxy : x ≠ y := by simpa [opOk] using hok
-    have px := h.sz_pos x
-    have py := h.sz_pos y
-    have hA := h.byte_addr h6 h8 x px
-    have hB := h.byte_addr h6 h8 y py
+    obtain hxy : x ≠ y := by simpa [opOk] using hok
+    obtain px := h.sz_pos x
+    obtain py := h.sz_pos y
+    obtain hA := h.byte_addr h6 h8 x px
+    obtain hB := h.byte_addr h6 h8 y py
     simp only [Nat.add_zero, add0] at hA hB
     simp only [Core.opCode]
     refine MdStream.Arm.wp_ldrb (a := addrOf c Dp S x) (by have := h.base_off x; have := h.sz_le x; omega_arith) hA
@@ -438,10 +438,10 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     · rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp]
     -- The memory: `over` of the first byte of `x`.
     all_goals
-      have em : s₄.mem = over s.mem (addrOf c Dp S x) 1 fun _ =>
+      obtain em : s₄.mem = over s.mem (addrOf c Dp S x) 1 fun _ =>
           s.mem (addrOf c Dp S x) ^^^ s.mem (addrOf c Dp S y) := by
         rw [u₄.mem, u₃.gpr, u₃.mem, u₂.other _ (by decide), u₂.gpr, u₂.mem, u₁.gpr, u₁.mem]
-        have e := writeW_over_step (m := s.mem) (P := addrOf c Dp S x) (j := 0)
+        obtain e := writeW_over_step (m := s.mem) (P := addrOf c Dp S x) (j := 0)
           (f := fun _ => s.mem (addrOf c Dp S x) ^^^ s.mem (addrOf c Dp S y)) (by decide)
         rw [VG.Proof.Modes.over_zero, add0] at e
         rw [← e]
@@ -450,7 +450,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
         simp [BitVec.toNat_xor]
     · rw [em]; exact frame_over _ x _ px
     · rw [em]
-      have hfx : sz c ds x ≤ 2 ^ 64 := by have := h.sz_le x; have := h.fS; omega_arith
+      obtain hfx : sz c ds x ≤ 2 ^ 64 := by have := h.sz_le x; have := h.fS; omega_arith
       intro z
       by_cases hz : z = x
       · subst hz
@@ -468,27 +468,27 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
         exact bytesAt_over_other _ _ ((h.disjoint (Ne.symm hz)).sub_left (Region.sub_prefix px))
           (by have := h.sz_le z; have := h.fS; omega_arith)
   | shift x y =>
-    have hxy : x ≠ y := by simp [opOk] at hok; exact hok.1
-    have hx : sz c ds x = c.bs := by simp [opOk] at hok; cases x <;> simp_all [sz]
-    have px := h.sz_pos x
-    have py := h.sz_pos y
+    obtain hxy : x ≠ y := by simp [opOk] at hok; exact hok.1
+    obtain hx : sz c ds x = c.bs := by simp [opOk] at hok; cases x <;> simp_all [sz]
+    obtain px := h.sz_pos x
+    obtain py := h.sz_pos y
     have hfit' : c.bs ≤ 2 ^ 64 := hfit
-    have off := h.base_off x
-    have offy := h.base_off y
-    have ly := h.sz_le y
+    obtain off := h.base_off x
+    obtain offy := h.base_off y
+    obtain ly := h.sz_le y
     let A := addrOf c Dp S x
     let B := addrOf c Dp S y
     let f : Nat → Byte := fun i => if i < c.bs - 1 then s.mem (A + BitVec.ofNat 64 (i + 1)) else s.mem B
-    have hwx := h.writable x
-    have hwy := h.writable y
+    obtain hwx := h.writable x
+    obtain hwy := h.writable y
     simp only [Core.opCode]
     rw [WP.block_append_iff]
     refine WP.mono (wp_range_flatMap (M := isa) (N := c.bs - 1) (fun j t => (∀ r, r ≠ .r9 → t.gpr r = s.gpr r) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.mem = over s.mem A j f) (fun j t hj hi => ?_) _ (Nat.le_refl _)
         s ⟨fun _ _ => rfl, rfl, rfl, rfl, by rw [VG.Proof.Modes.over_zero]⟩) fun t ⟨g, rd, wr, sp, hm⟩ => ?_
     · obtain ⟨g, rd, wr, sp, hm⟩ := hi
-      have h6' : t.gpr .r6 = Dp := by rw [g _ (by decide), h6]
-      have h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
+      obtain h6' : t.gpr .r6 = Dp := by rw [g _ (by decide), h6]
+      obtain h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
       refine MdStream.Arm.wp_ldrb (a := A + BitVec.ofNat 64 (j + 1)) (by omega_arith)
         (by rw [Nat.add_assoc]; exact h.byte_addr h6' h8' x (by omega_arith))
         (by rw [rd, wr]; exact h.byte_in (Covers.right (rd := s.rd) hwx) (by omega_arith)) fun t₁ u₁ => ?_
@@ -503,17 +503,17 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
         simp only [f, ite_eq_left (show j < c.bs - 1 from hj)]; simp]
       exact writeW_over_step (by omega_arith)
     · have h6' : t.gpr .r6 = Dp := by rw [g _ (by decide), h6]
-      have h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
-      have hB := h.byte_addr h6' h8' y py
+      obtain h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
+      obtain hB := h.byte_addr h6' h8' y py
       simp only [Nat.add_zero, add0] at hB
       refine MdStream.Arm.wp_ldrb (a := B) (by omega_arith) hB
         (by rw [rd, wr]; have := h.byte_in (Covers.right (rd := s.rd) hwy) py; simpa [add0] using this) fun t₁ u₁ => ?_
       refine MdStream.Arm.wp_strb (a := A + BitVec.ofNat 64 (c.bs - 1)) (by omega_arith)
         (by rw [u₁.other _ (base_ne9 c x)]; exact h.byte_addr h6' h8' x (by omega_arith))
         (by rw [u₁.wr, wr]; exact h.byte_in hwx (by omega_arith)) fun t₂ u₂ => WP.block_nil ?_
-      have em : t₂.mem = over s.mem A c.bs f := by
+      obtain em : t₂.mem = over s.mem A c.bs f := by
         rw [u₂.mem, u₁.gpr, u₁.mem, hm]
-        have eB : over s.mem A (c.bs - 1) f B = f (c.bs - 1) := by
+        obtain eB : over s.mem A (c.bs - 1) f B = f (c.bs - 1) := by
           have := VG.Proof.Modes.over_sep (m := s.mem) (f := f) (P := A) (Q := B) (n := c.bs - 1) (k := sz c ds y)
             (((h.disjoint hxy).sub_left (Region.sub_prefix (by omega_arith)))) (i := 0) py (by omega_arith)
           simp only [add0] at this
@@ -527,7 +527,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       rw [hx, ← hb x, ← hb y]
       obtain ⟨n, hn⟩ : ∃ n, c.bs = n + 1 := ⟨c.bs - 1, by omega_arith⟩
       obtain ⟨k, hk⟩ : ∃ k, sz c ds y = k + 1 := ⟨sz c ds y - 1, by omega_arith⟩
-      have e1 : (List.range (n + 1)).map f =
+      obtain e1 : (List.range (n + 1)).map f =
           (List.range n).map (fun i => s.mem (A + BitVec.ofNat 64 (i + 1))) ++ [s.mem B] := by
         rw [List.range_succ, List.map_append, List.map_singleton]
         congr 1
@@ -549,8 +549,8 @@ theorem opsCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → d
     simp only [List.all_cons, Bool.and_eq_true] at hok
     rw [Core.opsCode, List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (opCode_wp hds h h6 h8 hb hok.1) fun s₁ h₁ => ?_
-    have h6' : s₁.gpr .r6 = Dp := by rw [h₁.regs _ (by decide) (by decide), h6]
-    have h8' : s₁.gpr .r8 = S := by rw [h₁.regs _ (by decide) (by decide), h8]
+    obtain h6' : s₁.gpr .r6 = Dp := by rw [h₁.regs _ (by decide) (by decide), h6]
+    obtain h8' : s₁.gpr .r8 = S := by rw [h₁.regs _ (by decide) (by decide), h8]
     exact WP.mono (ih (h₁.wr ▸ h) h6' h8' h₁.blks hok.2) fun s₂ h₂ => h₁.trans h₂
 
 end VG.Proof.Modes.Arm

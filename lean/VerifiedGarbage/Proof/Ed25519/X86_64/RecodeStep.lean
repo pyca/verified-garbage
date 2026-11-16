@@ -65,16 +65,16 @@ theorem recodeLoad_ok {s : State} {base : Addr} (hs : Scratch s base) {src i : N
       .mov .rcx (.reg .rsi), .alu .and .rcx (.imm 7)]) s fun t =>
       t.gpr .rbx = s.mem.readW (off base (src + i / 8)) 64 ∧ t.gpr .rcx = BitVec.ofNat 64 (i % 8) ∧
       Keeps [.rax, .rbx, .rcx] s t := by
-  have hshr : BitVec.ofNat 64 i >>> 3 = BitVec.ofNat 64 (i / 8) := by
+  obtain hshr : BitVec.ofNat 64 i >>> 3 = BitVec.ofNat 64 (i / 8) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
-  have hea : base + BitVec.ofNat 64 (i / 8) * BitVec.ofNat 64 1 + BitVec.ofInt 64 (src : Int) =
+  obtain hea : base + BitVec.ofNat 64 (i / 8) * BitVec.ofNat 64 1 + BitVec.ofInt 64 (src : Int) =
       off base (src + i / 8) := by
     rw [BitVec.ofInt_natCast, BitVec.mul_one, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
-  have hrg : InRegions (s.rd ++ s.wr) (off base (src + i / 8)) 8 :=
+  obtain hrg : InRegions (s.rd ++ s.wr) (off base (src + i / 8)) 8 :=
     ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hsrc (by omega_arith)⟩
-  have hand : BitVec.ofNat 64 i &&& (7 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (i % 8) := by
+  obtain hand : BitVec.ofNat 64 i &&& (7 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (i % 8) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (7 : BitVec 32).signExtend 64 = BitVec.ofNat 64 7 from rfl,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 7 < 2 ^ 64 by decide),
@@ -168,14 +168,14 @@ theorem recodeBits_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
 theorem recodeTest_ok (s : State) {b c : Nat} (hb : (s.gpr .rbx).toNat % 2 = b) (hc1 : c ≤ 1)
     (hc : s.gpr .r8 = BitVec.ofNat 64 c) :
     WP isa (.block recodeTest) s fun t => t.zf = some (decide (b = c)) ∧ Keeps [.rax] s t := by
-  have hb1 : b < 2 := by omega_arith
-  have hand : s.gpr .rbx &&& (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 b := by
+  obtain hb1 : b < 2 := by omega_arith
+  obtain hand : s.gpr .rbx &&& (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 b := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide),
       Nat.mod_eq_of_lt (by omega_arith), show (1 : Nat) = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     exact hb
-  have hz : (BitVec.ofNat 64 b - BitVec.ofNat 64 c == 0) = decide (b = c) := by
+  obtain hz : (BitVec.ofNat 64 b - BitVec.ofNat 64 c == 0) = decide (b = c) := by
     obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_arith
     all_goals obtain rfl | rfl : c = 0 ∨ c = 1 := by omega_arith
     all_goals decide
@@ -210,17 +210,17 @@ theorem recodeW_ok (s : State) {w W c : Nat} (hw : 1 ≤ w ∧ w ≤ 8)
       .alu .cmp .rbx (.imm (BitVec.ofNat 32 (2 ^ (w - 1))))]) s fun t =>
       t.gpr .rbx = BitVec.ofNat 64 (W + c) ∧ t.cf = some (decide (W + c < 2 ^ (w - 1))) ∧
         Keeps [.rbx] s t := by
-  have h8 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hw.2
-  have h8' : 2 ^ (w - 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hW : W < 2 ^ w := hb ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
-  have hand : s.gpr .rbx &&& (BitVec.ofNat 32 (2 ^ w - 1)).signExtend 64 = BitVec.ofNat 64 W := by
+  obtain h8 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hw.2
+  obtain h8' : 2 ^ (w - 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain hW : W < 2 ^ w := hb ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
+  obtain hand : s.gpr .rbx &&& (BitVec.ofNat 32 (2 ^ w - 1)).signExtend 64 = BitVec.ofNat 64 W := by
     apply BitVec.eq_of_toNat_eq
     rw [sext_small (by omega_arith), BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (show 2 ^ w - 1 < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
       Nat.and_two_pow_sub_one_eq_mod, hb]
-  have hadd : BitVec.ofNat 64 W + BitVec.ofNat 64 c = BitVec.ofNat 64 (W + c) := by
+  obtain hadd : BitVec.ofNat 64 W + BitVec.ofNat 64 c = BitVec.ofNat 64 (W + c) := by
     rw [BitVec.ofNat_add]
-  have hcf : (BitVec.ofNat 64 (W + c)).toNat < ((BitVec.ofNat 32 (2 ^ (w - 1))).signExtend 64).toNat ↔
+  obtain hcf : (BitVec.ofNat 64 (W + c)).toNat < ((BitVec.ofNat 32 (2 ^ (w - 1))).signExtend 64).toNat ↔
       W + c < 2 ^ (w - 1) := by
     rw [sext_small (by omega_arith), BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]
@@ -239,8 +239,8 @@ theorem recodeNeg_ok (s : State) {w W : Nat} (hw : w ≤ 8) (hW : W ≤ 2 ^ w + 
       .mov .rbx (.reg .rax), .mov32 .r8 (.imm 1)]) s fun t =>
       t.gpr .rbx = BitVec.ofNat 64 (2 ^ w + 1 - W) ∧ t.gpr .r8 = BitVec.ofNat 64 1 ∧
         Keeps [.rax, .rbx, .r8] s t := by
-  have h8 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hw
-  have hsub : BitVec.ofNat 64 (2 ^ w + 1) - BitVec.ofNat 64 W = BitVec.ofNat 64 (2 ^ w + 1 - W) := by
+  obtain h8 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hw
+  obtain hsub : BitVec.ofNat 64 (2 ^ w + 1) - BitVec.ofNat 64 W = BitVec.ofNat 64 (2 ^ w + 1 - W) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (show 2 ^ w + 1 < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show W < 2 ^ 64 by omega_arith),
@@ -279,13 +279,13 @@ theorem recodeStore_ok {s : State} {base : Addr} (hs : Scratch s base) {i w dst 
       t.gpr .rsi = BitVec.ofNat 64 (i + w) ∧
       t.mem = s.mem.writeW (off base (2048 + 2 * i + dst)) (BitVec.ofNat 8 u) ∧
       (∀ r, r ≠ .rax → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hea : base + (BitVec.ofNat 64 i + BitVec.ofNat 64 i) * BitVec.ofNat 64 1 +
+  obtain hea : base + (BitVec.ofNat 64 i + BitVec.ofNat 64 i) * BitVec.ofNat 64 1 +
       BitVec.ofInt 64 ((2048 + dst : Nat) : Int) = off base (2048 + 2 * i + dst) := by
     rw [BitVec.ofInt_natCast, BitVec.mul_one, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
     exact congrArg (fun n => off base n) (by omega_arith)
-  have hrg : InRegions s.wr (off base (2048 + 2 * i + dst)) 1 :=
+  obtain hrg : InRegions s.wr (off base (2048 + 2 * i + dst)) 1 :=
     ⟨_, hs.wr, Offset.contains_base _ (show 2048 + 2 * i + dst + 1 ≤ 8192 by omega_arith) (by omega_arith)⟩
-  have hw8 : (BitVec.ofNat 64 u).setWidth 8 = BitVec.ofNat 8 u := by
+  obtain hw8 : (BitVec.ofNat 64 u).setWidth 8 = BitVec.ofNat 8 u := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     omega_arith
@@ -339,42 +339,42 @@ theorem recodeStep_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (recodeBits_ok hs hsrc hX hi hrsi (by omega_arith)) fun a ⟨ab, ka⟩ => ?_
-  have hbit : (a.gpr .rbx).toNat % 2 = X / 2 ^ st.i % 2 := by
+  obtain hbit : (a.gpr .rbx).toNat % 2 = X / 2 ^ st.i % 2 := by
     rw [ab]; exact bits_mod X st.i 1 (by decide)
-  have hwin : (a.gpr .rbx).toNat % 2 ^ w = X / 2 ^ st.i % 2 ^ w := by
+  obtain hwin : (a.gpr .rbx).toNat % 2 ^ w = X / 2 ^ st.i % 2 ^ w := by
     rw [ab]; exact bits_mod X st.i w (by omega_arith)
   refine WP.mono (recodeTest_ok a hbit hc1 (by rw [ka.1 _ (by decide)]; exact hr8)) fun b ⟨bz, kb⟩ => ?_
-  have kab : Keeps recRegs s b := (ka.mono (by decide)).trans (kb.mono (by decide))
-  have hbx : b.gpr .rbx = a.gpr .rbx := kb.1 _ (by decide)
-  have hbrsi : b.gpr .rsi = s.gpr .rsi := (kb.1 _ (by decide)).trans (ka.1 _ (by decide))
-  have hbr8 : b.gpr .r8 = s.gpr .r8 := (kb.1 _ (by decide)).trans (ka.1 _ (by decide))
+  obtain kab : Keeps recRegs s b := (ka.mono (by decide)).trans (kb.mono (by decide))
+  obtain hbx : b.gpr .rbx = a.gpr .rbx := kb.1 _ (by decide)
+  obtain hbrsi : b.gpr .rsi = s.gpr .rsi := (kb.1 _ (by decide)).trans (ka.1 _ (by decide))
+  obtain hbr8 : b.gpr .r8 = s.gpr .r8 := (kb.1 _ (by decide)).trans (ka.1 _ (by decide))
   refine WP.ite (decide (X / 2 ^ st.i % 2 = st.c)) (by simp only [eval, bz]) (fun h => ?_) (fun h => ?_)
   · have heq : X / 2 ^ st.i % 2 = st.c := of_decide_eq_true h
-    have hst : step w X st = ⟨st.i + 1, st.c, st.u⟩ := by unfold step; rw [ite_eq_left heq]
+    obtain hst : step w X st = ⟨st.i + 1, st.c, st.u⟩ := by unfold step; rw [ite_eq_left heq]
     rw [hst]
     refine WP.mono (rsiInc_ok b (i := st.i) (by rw [hbrsi]; exact hrsi)) fun t ⟨tr, kt⟩ => ?_
-    have kbt := kab.trans (kt.mono (by decide))
+    obtain kbt := kab.trans (kt.mono (by decide))
     refine ⟨tr, by rw [kt.1 _ (by decide), hbr8]; exact hr8, fun j hj => ?_, RecKeep.of_keeps kbt (by decide)⟩
     rw [kbt.2.1]; exact hu j hj
   · have hne : ¬ X / 2 ^ st.i % 2 = st.c := by simpa using h
-    have hlt : X / 2 ^ st.i % 2 ^ w < 2 ^ w := Nat.mod_lt _ (Nat.two_pow_pos _)
+    obtain hlt : X / 2 ^ st.i % 2 ^ w < 2 ^ w := Nat.mod_lt _ (Nat.two_pow_pos _)
     rw [recodeWindow]
     refine WP.seq (WP.mono (recodeW_ok b (W := X / 2 ^ st.i % 2 ^ w) (by omega_arith) (by rw [hbx]; exact hwin) hc1
       (by rw [hbr8]; exact hr8)) fun c ⟨cb, ccf, kc⟩ => ?_)
-    have kbc := kab.trans (kc.mono (by decide))
-    have hs' : Scratch c base := hs.of_keeps kbc (by decide)
-    have crsi : c.gpr .rsi = BitVec.ofNat 64 st.i := by rw [kc.1 _ (by decide), hbrsi]; exact hrsi
-    have h8 : 2 ^ w ≤ 256 := (Nat.pow_le_pow_right (by decide) hw.2 : 2 ^ w ≤ 2 ^ 8)
-    have h8' : 2 ^ (w - 1) ≤ 256 := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ (w - 1) ≤ 2 ^ 8)
-    have h1 : 2 ≤ 2 ^ (w - 1) := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ 1 ≤ 2 ^ (w - 1))
+    obtain kbc := kab.trans (kc.mono (by decide))
+    obtain hs' : Scratch c base := hs.of_keeps kbc (by decide)
+    obtain crsi : c.gpr .rsi = BitVec.ofNat 64 st.i := by rw [kc.1 _ (by decide), hbrsi]; exact hrsi
+    obtain h8 : 2 ^ w ≤ 256 := (Nat.pow_le_pow_right (by decide) hw.2 : 2 ^ w ≤ 2 ^ 8)
+    obtain h8' : 2 ^ (w - 1) ≤ 256 := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ (w - 1) ≤ 2 ^ 8)
+    obtain h1 : 2 ≤ 2 ^ (w - 1) := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ 1 ≤ 2 ^ (w - 1))
     refine WP.seq (WP.ite (decide (X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1))) (by simp only [eval, ccf])
       (fun hW => ?_) (fun hW => ?_))
     · have hW' : X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1) := of_decide_eq_true hW
-      have hst : step w X st = ⟨st.i + w, 0, upd st.u st.i (X / 2 ^ st.i % 2 ^ w + st.c)⟩ := by
+      obtain hst : step w X st = ⟨st.i + w, 0, upd st.u st.i (X / 2 ^ st.i % 2 ^ w + st.c)⟩ := by
         unfold step; rw [ite_eq_right hne, ite_eq_left hW']
       rw [hst]
       refine WP.mono (recodePos_ok c) fun d ⟨d8, db, kd⟩ => ?_
-      have kcd := kbc.trans (kd.mono (by decide))
+      obtain kcd := kbc.trans (kd.mono (by decide))
       refine WP.mono (recodeStore_ok (hs'.of_keeps kd (by decide)) (i := st.i) (w := w)
         (u := X / 2 ^ st.i % 2 ^ w + st.c) (by omega_arith) hdst
         (by omega_arith) (by rw [kd.1 _ (by decide)]; exact crsi) (by rw [db]; exact cb)) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
@@ -388,12 +388,12 @@ theorem recodeStep_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
           exact kcd.1 r hr
         · rw [tm, keep_write (by omega_arith) hdst _ x hx, kcd.2.1]
     · have hW' : ¬ X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1) := by simpa using hW
-      have hst : step w X st =
+      obtain hst : step w X st =
           ⟨st.i + w, 1, upd st.u st.i (2 ^ w + 1 - (X / 2 ^ st.i % 2 ^ w + st.c))⟩ := by
         unfold step; rw [ite_eq_right hne, ite_eq_right hW']
       rw [hst]
       refine WP.mono (recodeNeg_ok c hw.2 (by omega_arith) cb) fun d ⟨db, d8, kd⟩ => ?_
-      have kcd := kbc.trans (kd.mono (by decide))
+      obtain kcd := kbc.trans (kd.mono (by decide))
       refine WP.mono (recodeStore_ok (hs'.of_keeps kd (by decide)) (i := st.i) (w := w) (by omega_arith) hdst
         (by omega_arith) (by rw [kd.1 _ (by decide)]; exact crsi) db) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
       refine ⟨tr, by rw [tg _ (by decide) (by decide)]; exact d8, fun j hj => ?_, ?_⟩

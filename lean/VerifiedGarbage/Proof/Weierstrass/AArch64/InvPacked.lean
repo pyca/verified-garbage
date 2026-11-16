@@ -43,15 +43,15 @@ theorem psteps_shl {d f g P Q : Int} {n : Nat} (hn : n ≤ 62) (hf : f % 2 = 1) 
       ((psteps k (~~~BitVec.ofInt 64 d, BitVec.ofInt 64 P, BitVec.ofInt 64 Q)).2.2 <<< (63 - k)).toNat =
         2 ^ 63 := by
   rw [psteps_rel hn hf hd hP hQ k hk.le]
-  have hb := Int.emod_two_eq_zero_or_one (msteps k (MSt.init d f g)).g
-  have hG : ((msteps k (MSt.init d f g)).q * P + (msteps k (MSt.init d f g)).r * Q) % 2 ^ (k + 1) =
+  obtain hb := Int.emod_two_eq_zero_or_one (msteps k (MSt.init d f g)).g
+  obtain hG : ((msteps k (MSt.init d f g)).q * P + (msteps k (MSt.init d f g)).r * Q) % 2 ^ (k + 1) =
       2 ^ k * ((msteps k (MSt.init d f g)).g % 2) := by
     obtain ⟨-, mg⟩ := msteps_mat (d := d) (g := g) hf k
-    have hdv : (2 : Int) ^ (k + 1) ∣ 2 ^ n := pow_dvd_pow 2 (by omega_using [hk])
+    obtain hdv : (2 : Int) ^ (k + 1) ∣ 2 ^ n := pow_dvd_pow 2 (by omega_using [hk])
     rw [← pow_mul_emod_succ, mg, ← Int.emod_emod_of_dvd _ hdv, ← Int.emod_emod_of_dvd (_ * f + _) hdv]
     congr 1
     rw [Int.add_emod, Int.mul_emod _ P, hP, ← Int.mul_emod, Int.mul_emod _ Q, hQ, ← Int.mul_emod, ← Int.add_emod]
-  have hs := shl_bit (by omega_using [hn, hk]) hb hG
+  obtain hs := shl_bit (by omega_using [hn, hk]) hb hG
   simp only at hs ⊢
   rcases hb with h | h <;> rw [h] at hs
   · left; simpa using hs
@@ -149,27 +149,27 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
   obtain ⟨F, hF⟩ : ∃ F, s.gpr .x8 = F := ⟨_, rfl⟩
   obtain ⟨G, hG⟩ : ∃ G, s.gpr g = G := ⟨_, rfl⟩
   rw [hG] at hsh
-  have hbit := and_mask_iff G (j := j) (by omega_arith)
-  have hsb := shl_getLsbD G (j := j) (by omega_arith)
-  have hmsb : E.msb = decide (2 ^ 63 ≤ E.toNat) := BitVec.msb_eq_decide E
+  obtain hbit := and_mask_iff G (j := j) (by omega_arith)
+  obtain hsb := shl_getLsbD G (j := j) (by omega_arith)
+  obtain hmsb : E.msb = decide (2 ^ 63 ≤ E.toNat) := BitVec.msb_eq_decide E
   have hlt := E.isLt
-  have m2 : s.gpr .x12 + s.gpr .x12 = BitVec.ofNat 64 (2 ^ (j + 1)) := by
+  obtain m2 : s.gpr .x12 + s.gpr .x12 = BitVec.ofNat 64 (2 ^ (j + 1)) := by
     rw [hm, ← BitVec.ofNat_add, Nat.pow_succ, Nat.mul_two]
   rw [hE, hF, hG]
   unfold pstep
   simp only
   rcases hsh with h0 | h1
   · have hz : G <<< (63 - j) = 0 := BitVec.eq_of_toNat_eq (by rw [h0]; rfl)
-    have hb : G.getLsbD j = false := by rw [← hsb, hz]; simp
+    obtain hb : G.getLsbD j = false := by rw [← hsb, hz]; simp
     refine WP.mono (pstepCode_run s hg (odd := false) (neg := E.msb)
       (by rw [hm, hG, decide_eq_true (hbit.mpr hb)]; rfl) (by rw [hE])) fun s' ⟨e1, e8, et, e12, k⟩ => ?_
     rw [ite_f (by rw [h0]; omega_arith), ite_t hz]
     refine ⟨?_, by rw [e12, m2], k⟩
     simp only [e1, e8, et, Bool.false_and, Bool.false_eq_true, ↓reduceIte, hE, hF, hG]
   · have hz : ¬ G <<< (63 - j) = 0 := fun h => by rw [h] at h1; simp at h1
-    have hb : G.getLsbD j = true := by
+    obtain hb : G.getLsbD j = true := by
       rw [← hsb, ← BitVec.testBit_toNat, h1]; exact Nat.testBit_two_pow_self
-    have hnz : ¬ G &&& BitVec.ofNat 64 (2 ^ j) = 0 := fun h => by rw [hbit.mp h] at hb; exact absurd hb (by decide)
+    obtain hnz : ¬ G &&& BitVec.ofNat 64 (2 ^ j) = 0 := fun h => by rw [hbit.mp h] at hb; exact absurd hb (by decide)
     refine WP.mono (pstepCode_run s hg (odd := true) (neg := E.msb)
       (by rw [hm, hG, decide_eq_false hnz]; rfl) (by rw [hE])) fun s' ⟨e1, e8, et, e12, k⟩ => ?_
     refine ⟨?_, by rw [e12, m2], k⟩
@@ -204,7 +204,7 @@ theorem pstepsList_ok (s : State) {N : Nat} (hN : N ≤ 62) (hm : s.gpr .x12 = 1
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (pstepsList_ok s hN hm hsh n (by omega_arith)) fun s₁ ⟨e₁, m₁, k₁⟩ => ?_
-    have hs := hsh n (by omega_arith)
+    obtain hs := hsh n (by omega_arith)
     rw [← e₁] at hs
     refine WP.mono (pstepCode_ok s₁ (j := n) (by omega_arith) (gReg_cases n) m₁ hs) fun s₂ ⟨e₂, m₂, k₂⟩ =>
       ⟨by rw [e₂, Divstep.psteps, ← e₁], m₂, k₁.trans (k₂.mono ?_)⟩
@@ -244,7 +244,7 @@ theorem pset_ok (s : State) :
 /-- A row's start as an integer: the low 15 bits, plus a constant. -/
 theorem pset_int (w c : BitVec 64) {C : Int} (hc : c = BitVec.ofInt 64 C) :
     (w &&& 0x7fff) + c = BitVec.ofInt 64 (((w.toNat % 2 ^ 15 : Nat) : Int) + C) := by
-  have h : (w &&& 0x7fff) = BitVec.ofNat 64 (w.toNat % 2 ^ 15) := by
+  obtain h : (w &&& 0x7fff) = BitVec.ofNat 64 (w.toNat % 2 ^ 15) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, show (0x7fff : BitVec 64).toNat = 2 ^ 15 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (lt_trans (Nat.mod_lt _ (by decide)) (by decide))]
@@ -274,9 +274,9 @@ theorem pext_ok (s : State) {g g' : Reg} (hg : g = .x9 ∧ g' = .x10 ∨ g = .x1
       Keeps [.x8, .x11, .x13, .x17, g, g'] s s' := by
   rw [pext, WP.block_append_iff]
   refine WP.mono (pextK_ok s) fun s₁ ⟨c13, c17, k₁⟩ => ?_
-  have e8 : s₁.gpr .x8 = s.gpr .x8 := k₁.gpr _ (by decide)
-  have e9 : s₁.gpr .x9 = s.gpr .x9 := k₁.gpr _ (by decide)
-  have e10 : s₁.gpr .x10 = s.gpr .x10 := k₁.gpr _ (by decide)
+  obtain e8 : s₁.gpr .x8 = s.gpr .x8 := k₁.gpr _ (by decide)
+  obtain e9 : s₁.gpr .x9 = s.gpr .x9 := k₁.gpr _ (by decide)
+  obtain e10 : s₁.gpr .x10 = s.gpr .x10 := k₁.gpr _ (by decide)
   apply WP.of_runBlock
   rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
@@ -360,9 +360,9 @@ structure ChunkAt (K : Nat) (first : Bool) (T : MSt) (s : State) : Prop where
 theorem prow_mod {w : BitVec 64} {F : Int} {K n k : Nat} (hn : n ≤ 15) (hK : n ≤ K) (hk : 15 ≤ k)
     (h : (w.toNat : Int) % 2 ^ K = F % 2 ^ K) :
     (((w.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ k) % 2 ^ n = F % 2 ^ n := by
-  have d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
-  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega_arith)
-  have d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
+  obtain d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
+  obtain d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega_arith)
+  obtain d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
   rw [Int.natCast_mod, Nat.cast_pow, Nat.cast_ofNat, Int.add_emod, Int.emod_eq_zero_of_dvd d2, add_zero,
     Int.emod_emod_of_dvd _ d1, Int.emod_emod, ← Int.emod_emod_of_dvd _ d3, h, Int.emod_emod_of_dvd _ d3]
 
@@ -376,13 +376,13 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
       (last = false → ((s'.gpr .x2).toNat : Int) % 2 ^ (K - n) = (msteps n T).f % 2 ^ (K - n) ∧
         ((s'.gpr .x3).toNat : Int) % 2 ^ (K - n) = (msteps n T).g % 2 ^ (K - n)) ∧
       Keeps chunkRegs s s' := by
-  have hmat := Divstep.msteps_mat (d := T.d) (g := T.g) hf n
-  have bnd := Divstep.msteps_bnd T.d T.f T.g n
-  have lo := Divstep.msteps_lo T.d T.f T.g n
-  have hP := prow_mod (w := s.gpr .x2) hn.2 hK.1 (k := 31) (by norm_num) hI.f
-  have hQ := prow_mod (w := s.gpr .x3) hn.2 hK.1 (k := 47) (by norm_num) hI.g
-  have hrel := Divstep.psteps_rel (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith) hf hd hP hQ n le_rfl
-  have hsh := fun k (hk : k < n) => Divstep.psteps_shl (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith)
+  obtain hmat := Divstep.msteps_mat (d := T.d) (g := T.g) hf n
+  obtain bnd := Divstep.msteps_bnd T.d T.f T.g n
+  obtain lo := Divstep.msteps_lo T.d T.f T.g n
+  obtain hP := prow_mod (w := s.gpr .x2) hn.2 hK.1 (k := 31) (by norm_num) hI.f
+  obtain hQ := prow_mod (w := s.gpr .x3) hn.2 hK.1 (k := 47) (by norm_num) hI.g
+  obtain hrel := Divstep.psteps_rel (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith) hf hd hP hQ n le_rfl
+  obtain hsh := fun k (hk : k < n) => Divstep.psteps_shl (d := T.d) (f := T.f) (g := T.g) (n := n) (by omega_arith)
     hf hd hP hQ hk
   rw [Divstep.msteps_gen n T]
   simp only
@@ -392,7 +392,7 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
   refine WP.mono (pset_ok s) fun s₁ ⟨x8₁, x9₁, x12₁, k₁⟩ => ?_
   rw [pset_int _ _ c31] at x8₁
   rw [pset_int _ _ c47] at x9₁
-  have e₁ : (s₁.gpr .x1, s₁.gpr .x8, s₁.gpr .x9) = (~~~BitVec.ofInt 64 T.d,
+  obtain e₁ : (s₁.gpr .x1, s₁.gpr .x8, s₁.gpr .x9) = (~~~BitVec.ofInt 64 T.d,
       BitVec.ofInt 64 ((((s.gpr .x2).toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31),
       BitVec.ofInt 64 ((((s.gpr .x3).toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47)) := by
     rw [k₁.gpr _ (by decide), hI.d, x8₁, x9₁]
@@ -401,14 +401,14 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
   rw [e₁, hrel] at e₂
   simp only [Prod.mk.injEq] at e₂
   obtain ⟨d₂, f₂, g₂⟩ := e₂
-  have p15 : (2 : Int) ^ n ≤ 2 ^ 15 := pow_le_pow_right₀ (by norm_num) hn.2
-  have ha : (s.gpr .x2).toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
-  have hb : (s.gpr .x3).toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
+  obtain p15 : (2 : Int) ^ n ≤ 2 ^ 15 := pow_le_pow_right₀ (by norm_num) hn.2
+  obtain ha : (s.gpr .x2).toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
+  obtain hb : (s.gpr .x3).toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
   obtain ⟨eu, ev⟩ := Divstep.pext_rel ha hb (u := m.u) (v := m.v) (by linarith [lo.1]) (by linarith [lo.2.1])
     (by linarith [bnd.1])
   obtain ⟨eq, er⟩ := Divstep.pext_rel ha hb (u := m.q) (v := m.r) (by linarith [lo.2.2.1])
     (by linarith [lo.2.2.2.1]) (by linarith [bnd.2])
-  have D : ∀ r ∈ [Reg.x2, .x3, .x4, .x5, .x6, .x7], r ∉ [Reg.x8, .x9, .x12, .x13, .x16] ∧ r ∉ pRegs ∧
+  obtain D : ∀ r ∈ [Reg.x2, .x3, .x4, .x5, .x6, .x7], r ∉ [Reg.x8, .x9, .x12, .x13, .x16] ∧ r ∉ pRegs ∧
       r ∉ [Reg.x8, .x11, .x13, .x17, .x9, .x10] ∧ r ∉ [Reg.x8, .x11, .x13, .x17, .x10, .x9] := by decide
   rcases gReg_cases n with ⟨hA, hB⟩ | ⟨hA, hB⟩ <;>
   · rw [WP.block_append_iff]
@@ -417,19 +417,19 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
     rw [f₂, ev] at v₃
     rw [g₂, eq] at q₃
     rw [g₂, er] at r₃
-    have d₃ : s₃.gpr .x1 = ~~~BitVec.ofInt 64 m.d := by rw [k₃.gpr _ (by rw [hA, hB]; decide), d₂]
-    have R₃ : ∀ r ∈ [Reg.x2, .x3, .x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
+    obtain d₃ : s₃.gpr .x1 = ~~~BitVec.ofInt 64 m.d := by rw [k₃.gpr _ (by rw [hA, hB]; decide), d₂]
+    obtain R₃ : ∀ r ∈ [Reg.x2, .x3, .x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
       obtain ⟨a, b, c, c'⟩ := D r hr
       rw [k₃.gpr r (by rw [hA, hB]; first | exact c | exact c'), k₂.gpr r b, k₁.gpr r a]
     rw [WP.block_append_iff]
-    have hlow : WP isa (.block (if last = true then [] else plow n (gReg n) (gReg (n + 1)))) s₃ fun s₄ =>
+    obtain hlow : WP isa (.block (if last = true then [] else plow n (gReg n) (gReg (n + 1)))) s₃ fun s₄ =>
         (∀ r ∈ [Reg.x1, .x4, .x5, .x6, .x7, .x8, .x11, gReg n, gReg (n + 1)], s₄.gpr r = s₃.gpr r) ∧
         (last = false → ((s₄.gpr .x2).toNat : Int) % 2 ^ (K - n) = m.f % 2 ^ (K - n) ∧
           ((s₄.gpr .x3).toNat : Int) % 2 ^ (K - n) = m.g % 2 ^ (K - n)) ∧
         Keeps [.x2, .x3, .x13, .x16] s₃ s₄ := by
       cases last
       · simp only [Bool.false_eq_true, ↓reduceIte]
-        have dl : ∀ r ∈ [Reg.x1, .x4, .x5, .x6, .x7, .x8, .x11, gReg n, gReg (n + 1)],
+        obtain dl : ∀ r ∈ [Reg.x1, .x4, .x5, .x6, .x7, .x8, .x11, gReg n, gReg (n + 1)],
             r ∉ [Reg.x2, .x3, .x13, .x16] := by rw [hA, hB]; decide
         refine WP.mono (plow_ok s₃ (n := n) (by omega_arith) (by rw [hA, hB]; decide)) fun s₄ ⟨w2, w3, k₄⟩ =>
           ⟨fun r hr => k₄.gpr r (dl r hr), fun _ => ⟨?_, ?_⟩, k₄⟩
@@ -441,9 +441,9 @@ theorem pchunk_ok (s : State) {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ 
         exact WP.block_nil_iff.mpr ⟨fun _ _ => rfl, fun h => absurd h (by decide), fun _ _ => rfl, rfl, rfl, rfl,
           rfl⟩
     refine WP.mono hlow fun s₄ ⟨R₄, w₄, k₄⟩ => ?_
-    have k34 : Keeps chunkRegs s s₄ := (((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans
+    obtain k34 : Keeps chunkRegs s s₄ := (((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans
       (k₃.mono (by rw [hA, hB]; decide))).trans (k₄.mono (by decide))
-    have x1₄ : s₄.gpr .x1 = ~~~BitVec.ofInt 64 m.d := by rw [R₄ _ (by simp), d₃]
+    obtain x1₄ : s₄.gpr .x1 = ~~~BitVec.ofInt 64 m.d := by rw [R₄ _ (by simp), d₃]
     cases first
     · simp only [Bool.false_eq_true, ↓reduceIte]
       obtain ⟨m4, m5, m6, m7⟩ := hI.mat rfl
@@ -502,15 +502,15 @@ theorem pwords_ok (s : State) {d f g : Int} (hd : |d| ≤ 2 ^ 30) (hf : f % 2 = 
       t.gpr .x7 = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).r ∧ Keeps chunkRegs s t := by
   set T0 := MSt.init d f g with hT0
   have f0 : T0.f % 2 = 1 := hf
-  have odd : ∀ k, (msteps k T0).f % 2 = 1 := Divstep.msteps_f_odd f0
-  have dd : ∀ k, |(msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
+  obtain odd : ∀ k, (msteps k T0).f % 2 = 1 := Divstep.msteps_f_odd f0
+  obtain dd : ∀ k, |(msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
     have := Divstep.msteps_d T0 k
     rw [show T0.d = d from rfl] at this
     omega_arith
   simp only [pwords, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (notD_ok s) fun s₁ ⟨b₁, k₁⟩ => ?_
-  have c₁ : ChunkAt 64 true T0 s₁ :=
+  obtain c₁ : ChunkAt 64 true T0 s₁ :=
     ⟨by rw [b₁, h1]; rfl, by rw [k₁.gpr _ (by decide)]; exact h2, by rw [k₁.gpr _ (by decide)]; exact h3,
       fun _ => ⟨rfl, rfl, rfl, rfl⟩, fun h => absurd h (by decide)⟩
   rw [WP.block_append_iff]

@@ -154,7 +154,7 @@ structure CallPost4 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
 theorem CallPre4.blk_pre {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State} {W D S : Addr}
     {R : Nat} (h : CallPre4 s W D S R) :
     (Proof.Aes.blocksAArch64 f).pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨D, 64⟩, ⟨S, 2048⟩]) := by
-  have hR := toNat_rounds h.rounds
+  obtain hR := toNat_rounds h.rounds
   simp only [Proof.Aes.blocksAArch64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
     h.x0, h.x1, h.x2, h.x3, h.x4, hR, four_toNat, Nat.reduceMul]
@@ -176,7 +176,7 @@ theorem blk_call4 {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
     (nf : b.code.noFrames = true)
     {s : State} {W D S : Addr} {R : Nat} (h : CallPre4 s W D S R) :
     WP isa (.call b.name b.code) s (CallPost4 f s W D S R) := by
-  have hR := toNat_rounds h.rounds
+  obtain hR := toNat_rounds h.rounds
   refine WP.call (k := Proof.Aes.blocksAArch64 f) ok (rd := [⟨W, 240⟩])
     (wr := [⟨D, 64⟩, ⟨S, 2048⟩]) h.blk_pre h.reads h.writes ?_ nf
   intro s' hrd hwr hsp hf hsaved _ hpost
@@ -242,7 +242,7 @@ theorem advance4_regs {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 4 ≤ 
       s'.gpr .x23 = BitVec.ofNat 64 (N s₀ - (k + 4)) ∧ Few s₀ (k + 4) s' ∧
       (∀ r, r ≠ .x22 → r ≠ .x23 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have dec : BitVec.ofNat 64 (N s₀ - k) - BitVec.ofNat 64 4 = BitVec.ofNat 64 (N s₀ - (k + 4)) := by
+  obtain dec : BitVec.ofNat 64 (N s₀ - k) - BitVec.ofNat 64 4 = BitVec.ofNat 64 (N s₀ - (k + 4)) := by
     rw [Offset.ofNat_sub_ofNat (by omega_using [hk]), Nat.sub_sub]
   refine ⟨_, by
     rw [advance4, List.cons_append, List.cons_append, List.nil_append, few, runBlock_cons,
@@ -316,7 +316,7 @@ end
 theorem LInv.blockAt {M : Mode} {s₀ : State} {k i : Nat} {s : State} (h : LInv M s₀ k s) (hki : k ≤ i)
     (hi : i < N s₀) :
     bytesAt s.mem (blk s₀ i) 16 = (blks s₀)[i]'(by simp [Spec.Cbc.blocksAt]; exact hi) := by
-  have hl : (outK M s₀ k).length = k := by
+  obtain hl : (outK M s₀ k).length = k := by
     rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hki, hi]
   have := congrArg (·[i]?) h.data
   simp only [List.getElem?_eq_getElem (show i < (Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀)).length by
@@ -486,7 +486,7 @@ theorem UPre.blocksAt_step4 {m m' : Mem} {k : Nat} (hk : k + 4 ≤ N s₀)
     Spec.Cbc.blocksAt m' (Dp s₀) (N s₀) =
       ys ++ [bytesAt m' (blk s₀ (k + 0)) 16, bytesAt m' (blk s₀ (k + 1)) 16, bytesAt m' (blk s₀ (k + 2)) 16,
         bytesAt m' (blk s₀ (k + 3)) 16] ++ (blks s₀).drop (k + 4) := by
-  have hn : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
+  obtain hn : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
   rw [blocksAt_set4 fun j hj hjk => Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by decide), hy,
     set_prefix _ _ _ hl (by omega_using [hk, hn]), set_prefix _ _ _ (by simp [hl]) (by omega_using [hk, hn]),
     set_prefix _ _ _ (by simp [hl]) (by omega_using [hk, hn]), set_prefix _ _ _ (by simp [hl]) (by omega_using [hk, hn])]
@@ -531,7 +531,7 @@ theorem groupLoop_wp {M : Mode} {group : Prog isa} (hg : GroupOk M group) {s₀ 
   refine WP.ite (decide (N s₀ - k₀ < 4)) (eval_few_nonzero hf) (fun hb => ?_) (fun hb => ?_)
   · exact WP.block_nil ⟨k₀, hk₀, by simpa using hb, h⟩
   · let I : Nat → State → Prop := fun m s => ∃ k, m = N s₀ - k ∧ k + 4 ≤ N s₀ ∧ LInv M s₀ k s
-    have hstep : ∀ m s, I m s → WP isa group s (fun s' =>
+    obtain hstep : ∀ m s, I m s → WP isa group s (fun s' =>
         (isa.eval (.zero .x .x9) s' = some false ∧ ∃ k, k ≤ N s₀ ∧ N s₀ - k < 4 ∧ LInv M s₀ k s') ∨
         (isa.eval (.zero .x .x9) s' = some true ∧ ∃ m' < m, I m' s')) := by
       rintro m s ⟨k, rfl, hk, hI⟩
@@ -548,8 +548,8 @@ theorem groups_wp {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hb :
     WP isa (groups group one) s (LInv M s₀ (N s₀)) := by
   refine WP.seq (WP.mono (few_wp hp h) fun s₁ ⟨h₁, f₁⟩ => ?_)
   refine WP.seq (WP.mono (groupLoop_wp hg hp (Nat.zero_le _) h₁ f₁) fun s₂ ⟨k, hk, _, h₂⟩ => ?_)
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have ev := eval_zero_x23 (x := N s₀ - k) (by omega_using [hN]) h₂.x23
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
+  obtain ev := eval_zero_x23 (x := N s₀ - k) (by omega_using [hN]) h₂.x23
   by_cases hz : N s₀ - k = 0
   · refine WP.ite true (by rw [ev]; simp [hz]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     have : k = N s₀ := by omega_using [hk, hz]
@@ -613,18 +613,18 @@ theorem group_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.A
       (.seq (.block pre) (.seq (.call b.name b.code) (.block post))) fun _ _ => True := by
   obtain ⟨_, hA⟩ := hA
   obtain ⟨_, hB⟩ := hB
-  have a := (RelCT.taint (A := taint)
+  obtain a := (RelCT.taint (A := taint)
     (P := fun s₁ s₂ => k + 4 ≤ N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂) _
     (fun _ _ h => LInv.agree hq h.2.1 h.2.2) hA).wp
     (F₁ := Mid4 s₀ k (D s₀ k)) (F₂ := Mid4 s₀' k (D s₀' k)) fun _ _ h =>
       ⟨wpA hp h.1 h.2.1, wpA hp' (by rw [← pub_N hq]; exact h.1) h.2.2⟩
-  have c := (blk_rel4 ok ct (P := fun s₁ s₂ => Mid4 s₀ k (D s₀ k) s₁ ∧ Mid4 s₀' k (D s₀' k) s₂) fun s₁ s₂ h =>
+  obtain c := (blk_rel4 ok ct (P := fun s₁ s₂ => Mid4 s₀ k (D s₀ k) s₁ ∧ Mid4 s₀' k (D s₀' k) s₂) fun s₁ s₂ h =>
       ⟨h.1.pre, by rw [pub_W hq, pub_S hq, pubD hq k, pub_R hq]; exact h.2.pre,
         by rw [h.1.sp, h.2.sp, pub_sp hq]⟩).wp
     (F₁ := After s₀ k) (F₂ := After s₀' k) fun s₁ s₂ h =>
       ⟨WP.mono (blk_call4 ok nf h.1.pre) fun _ hc => After.of4 h.1 hc,
        WP.mono (blk_call4 ok nf h.2.pre) fun _ hc => After.of4 h.2 hc⟩
-  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) _
+  obtain b := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) _
     (fun s₁ s₂ h => agree_of (by rw [h.1.sp, h.2.sp, pub_sp hq]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -647,7 +647,7 @@ theorem groupLoop_ct {M : Mode} {group : Prog isa} (hg : GroupOk M group) (hc : 
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeAArch64 M).pub s₀ s₀') (n : Nat) :
     RelCT isa (GRel M s₀ s₀' n) (.loop group (.zero .x .x9)) (GDone M s₀ s₀') := by
   refine RelCT.loop (M := isa) (GRel M s₀ s₀') (fun n => ?_) n
-  have hN := pub_N hq
+  obtain hN := pub_N hq
   refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : GRel M s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
   by_cases hn : n = N s₀ - k
   swap
@@ -656,13 +656,13 @@ theorem groupLoop_ct {M : Mode} {group : Prog isa} (hg : GroupOk M group) (hc : 
   by_cases hk : k + 4 ≤ N s₀
   swap
   · exact RelCT.of_false fun _ _ h => hk h.2.1
-  have ct := (hc hp hp' hq k).wp
+  obtain ct := (hc hp hp' hq k).wp
     (F₁ := fun (s' : State) => LInv M s₀ (k + 4) s' ∧ Few s₀ (k + 4) s')
     (F₂ := fun (s' : State) => LInv M s₀' (k + 4) s' ∧ Few s₀' (k + 4) s')
     fun _ _ h => ⟨hg hp h.1 h.2.1, hg hp' (by rw [← hN]; exact h.1) h.2.2⟩
   refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨l₁, c₁⟩, ⟨l₂, c₂⟩⟩ => ?_
-  have e₁ := eval_few_zero c₁
-  have e₂ := eval_few_zero c₂
+  obtain e₁ := eval_few_zero c₁
+  obtain e₂ := eval_few_zero c₂
   rw [← hN] at e₂
   refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
   · rw [e₁] at hf
@@ -677,21 +677,21 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeAArch64 M).pub s₀ s₀') :
     RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) (groups group one)
       fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b := by
-  have hN := pub_N hq
-  have hbd : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
+  obtain hN := pub_N hq
+  obtain hbd : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
   obtain ⟨_, hfew⟩ : ∃ h, (taint.check (Taint.ofRegs [.x23]) (.block few) h).isSome = true :=
     ⟨_, by taint_decide⟩
   obtain ⟨_, hnil⟩ : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true :=
     ⟨_, by taint_decide⟩
   -- `x9`, whether fewer than four blocks are left.
-  have fw := (RelCT.taint (A := taint) (P := fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) _
+  obtain fw := (RelCT.taint (A := taint) (P := fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) _
     (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, pub_sp hq]) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.x23, h.2.x23, hN]) hfew).wp
     (F₁ := fun (s : State) => LInv M s₀ 0 s ∧ Few s₀ 0 s)
     (F₂ := fun (s : State) => LInv M s₀' 0 s ∧ Few s₀' 0 s)
     fun a b h => ⟨few_wp hp h.1, few_wp hp' h.2⟩
   -- The groups, if at least four blocks.
-  have loop : RelCT isa (fun a b => (LInv M s₀ 0 a ∧ Few s₀ 0 a) ∧ (LInv M s₀' 0 b ∧ Few s₀' 0 b))
+  obtain loop : RelCT isa (fun a b => (LInv M s₀ 0 a ∧ Few s₀ 0 a) ∧ (LInv M s₀' 0 b ∧ Few s₀' 0 b))
       (.ite (.nonzero .x .x9) (.block []) (.loop group (.zero .x .x9))) (GDone M s₀ s₀') := by
     refine RelCT.ite (fun a b h => ?_) ?_ ?_
     · rw [eval_few_nonzero h.1.2, eval_few_nonzero h.2.2, hN]
@@ -709,7 +709,7 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
         have : ¬ (N s₀ - 0 < 4) := by simpa using this
         omega_using [this], h.1.1.1, h.1.2.1⟩) fun _ _ h => h
   -- The blocks left, one at a time.
-  have tail : RelCT isa (GDone M s₀ s₀')
+  obtain tail : RelCT isa (GDone M s₀ s₀')
       (.ite (.zero .x .x23) (.block []) (.loop one (.nonzero .x .x23)))
       fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b := by
     refine (RelCT.exists_ fun k => ?_).mono (fun a b (h : GDone M s₀ s₀' a b) => h) fun _ _ h => h
@@ -727,7 +727,7 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
         (fun a b h => agree_of (by rw [h.1.2.2.1.sp, h.1.2.2.2.sp, pub_sp hq]) fun r hr => by simp at hr)
         hnil).wp
         (F₁ := LInv M s₀ (N s₀)) (F₂ := LInv M s₀' (N s₀')) fun a b h => by
-          have e : k = N s₀ := by
+          obtain e : k = N s₀ := by
             have := h.2; rw [ev h.1.2.2.1] at this
             have : N s₀ - k = 0 := by simpa using this
             omega_using [hk, this]
@@ -775,8 +775,8 @@ theorem UPre.saveAt_ok {j : Nat} (hj : j < 3) {t : State} (x22 : t.gpr .x22 = bl
     (x24 : t.gpr .x24 = S s₀) (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa (saveAt j) t = some t' ∧ (∀ r, r ≠ .x9 → t'.gpr r = t.gpr r) ∧ t'.sp = t.sp ∧
       t'.mem = copyMem t.mem (sl s₀ j) (blk s₀ (k + j)) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact copy_ok t (dst := .x24) (src := .x22) (d := gOff + 16 * j) (e := 16 * j)
     (by rw [x24]) (by rw [x24, sl8]) (by rw [x22, UPre.blk_add]) (by rw [x22, UPre.blk_add8])
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk0 (k := k + j) (by omega_using [hk, hj])))
@@ -790,8 +790,8 @@ theorem UPre.saveLast_ok {t : State} (x22 : t.gpr .x22 = blk s₀ k)
     (x24 : t.gpr .x24 = S s₀) (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa (copy .x24 cOff .x22 48) t = some t' ∧ (∀ r, r ≠ .x9 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = copyMem t.mem (Sv s₀) (blk s₀ (k + 3)) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact copy_ok t (dst := .x24) (src := .x22) (d := cOff) (e := 48)
     (by rw [x24]; rfl) (by rw [x24]; exact sv8 _)
     (by rw [x22]; exact UPre.blk_add (j := 3)) (by rw [x22]; exact UPre.blk_add8 (j := 3))
@@ -805,8 +805,8 @@ theorem UPre.xor0_ok {t : State} (x21 : t.gpr .x21 = Iv s₀) (x22 : t.gpr .x22 
     (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa xorInto t = some t' ∧ (∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = xorMem t.mem (blk s₀ (k + 0)) (Iv s₀) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact xorInto_ok t (P := blk s₀ (k + 0)) (Q := Iv s₀) x22 x21
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk0 (k := k + 0) (by omega_using [hk])))
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk8 (k := k + 0) (by omega_using [hk])))
@@ -820,8 +820,8 @@ theorem UPre.fixAt_ok {j : Nat} (hj : j < 3) {t : State} (x22 : t.gpr .x22 = blk
     ∃ t', runBlock isa (fixAt j) t = some t' ∧ (∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = xorMem t.mem (blk s₀ (k + (j + 1))) (sl s₀ j) ∧ t'.rd = t.rd ∧
       t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact xorAt_ok t (dst := .x22) (src := .x24) (d := 16 * (j + 1)) (e := gOff + 16 * j)
     (by rw [x22, UPre.blk_add]) (by rw [x22, UPre.blk_add8]) (by rw [x24]) (by rw [x24, sl8])
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk0 (k := k + (j + 1)) (by omega_using [hk, hj])))
@@ -839,8 +839,8 @@ theorem UPre.last_ok {t : State} (x21 : t.gpr .x21 = Iv s₀) (x24 : t.gpr .x24 
     (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa (copy .x21 0 .x24 cOff) t = some t' ∧ (∀ r, r ≠ .x9 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = copyMem t.mem (Iv s₀) (Sv s₀) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact copy_ok t (dst := .x21) (src := .x24) (d := 0) (e := cOff) (P := Iv s₀) (Q := Sv s₀)
     (by rw [x21]; simp) (by rw [x21]) (by rw [x24]; rfl) (by rw [x24]; exact sv8 _)
     (by rw [hR]; exact in_rw (by simp) cSv0) (by rw [hR]; exact in_rw (by simp) cSv8)
@@ -921,16 +921,16 @@ theorem decA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
 
 theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) := by
   intro s₀ hp k hk s h
-  have len : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
+  obtain len : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
   refine WP.seq (WP.mono (decA4_wp hp hk h) fun t₅ a => ?_)
   refine WP.seq (WP.mono (blk_call4 v.decOk v.decNoFrames a.pre) fun t₆ c => ?_)
   have g₆ (r : Reg) (hr : r ∈ preserved) (h30 : r ≠ .x30) : t₆.gpr r = s.gpr r := by
     rw [c.saved r hr h30, a.saved r hr]
-  have rd₆ : t₆.rd = s₀.rd := by rw [c.rd, a.rd, h.rd]
-  have wr₆ : t₆.wr = s₀.wr := by rw [c.wr, a.wr, h.wr]
-  have x21₆ : t₆.gpr .x21 = Iv s₀ := by rw [g₆ _ (by simp [preserved]) (by decide), h.x21]
-  have x22₆ : t₆.gpr .x22 = blk s₀ k := by rw [g₆ _ (by simp [preserved]) (by decide), h.x22]
-  have x24₆ : t₆.gpr .x24 = S s₀ := by rw [g₆ _ (by simp [preserved]) (by decide), h.x24]
+  obtain rd₆ : t₆.rd = s₀.rd := by rw [c.rd, a.rd, h.rd]
+  obtain wr₆ : t₆.wr = s₀.wr := by rw [c.wr, a.wr, h.wr]
+  obtain x21₆ : t₆.gpr .x21 = Iv s₀ := by rw [g₆ _ (by simp [preserved]) (by decide), h.x21]
+  obtain x22₆ : t₆.gpr .x22 = blk s₀ k := by rw [g₆ _ (by simp [preserved]) (by decide), h.x22]
+  obtain x24₆ : t₆.gpr .x24 = S s₀ := by rw [g₆ _ (by simp [preserved]) (by decide), h.x24]
   obtain ⟨t₇, run₇, g₇, sp₇, m₇, rd₇, wr₇⟩ := hp.xor0_ok hk x21₆ x22₆ rd₆ wr₆
   obtain ⟨t₈, run₈, g₈, sp₈, m₈, rd₈, wr₈⟩ := hp.fixAt_ok hk (j := 0) (by decide)
     (by rw [g₇ _ (by decide) (by decide), x22₆]) (by rw [g₇ _ (by decide) (by decide), x24₆])
@@ -961,7 +961,7 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) 
     rw [keep₁₂ r h22 h23 (preserved_ne hr).1, g₁₁ r (preserved_ne hr).1,
       g₁₀' r (preserved_ne hr).1 (preserved_ne hr).2, g₆ r hr h30]
   -- Memory.
-  have fAll : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₁₂.mem := by
+  obtain fAll : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₁₂.mem := by
     rw [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇]
     refine (a.frame.sub ?_).trans ((c.frame.sub ?_).trans (((xorMem_frameB _ (by decide) _).sub ?_).trans
       (((xorMem_frameB _ (by decide) _).sub ?_).trans (((xorMem_frameB _ (by decide) _).sub ?_).trans
@@ -974,7 +974,7 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) 
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨⟨S s₀, 2064⟩, by simp, Region.sub_prefix (by decide)⟩
     all_goals subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  have big₄ : Frame (Big s₀) s₀.mem t₅.mem :=
+  obtain big₄ : Frame (Big s₀) s₀.mem t₅.mem :=
     (UPre.big_of h.frame).trans (UPre.bigStep (a.frame.sub (all_cons ⟨⟨S s₀, 2064⟩, by simp, fun _ h => h⟩
       (all_cons ⟨gR s₀, by simp, fun _ h => h⟩ all_nil))))
   have hb (j : Nat) (hj : j < 4) :
@@ -992,47 +992,47 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) 
       bytesAt t₆.mem (sl s₀ j) 16 = (blks s₀)[k + j]'(by rw [len]; omega_using [hk, hj]) := by
     rw [Proof.Cmac.bytesAt_frame c.frame (all_cons (hp.dT64 hk hj) (all_cons (hp.dTS hj) all_nil)) (by decide),
       a.slot j hj, hb j (by omega_using [hj])]
-  have svL : bytesAt t₆.mem (Sv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
+  obtain svL : bytesAt t₆.mem (Sv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [Proof.Cmac.bytesAt_frame c.frame (all_cons (hp.dV64 hk) (all_cons hp.sv_scr all_nil)) (by decide),
       a.last, hb 3 (by decide)]
-  have iv₆ : bytesAt t₆.mem (Iv s₀) 16 = Spec.Cbc.next (iv0 s₀) ((blks s₀).take k) := by
+  obtain iv₆ : bytesAt t₆.mem (Iv s₀) 16 = Spec.Cbc.next (iv0 s₀) ((blks s₀).take k) := by
     rw [Proof.Cmac.bytesAt_frame c.frame (all_cons (hp.dI64 hk) (all_cons hp.dIS all_nil)) (by decide),
       Proof.Cmac.bytesAt_frame a.frame (all_cons hp.dIS' (all_cons hp.dIG all_nil)) (by decide), h.iv]
     simp only [chainK, cbcMode_chain, cts, Bool.false_eq_true, ite_false]
   -- The blocks and the chaining value after the group.
-  have o0 : bytesAt t₁₂.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
+  obtain o0 : bytesAt t₁₂.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))) (Spec.Cbc.next (iv0 s₀) ((blks s₀).take k)) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_other, m₇, xorMem_bytes,
       d 0 (by decide), iv₆] <;> cbc_gd hp hk
-  have o1 : bytesAt t₁₂.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
+  obtain o1 : bytesAt t₁₂.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_bytes, m₇, xorMem_other,
       xorMem_other, d 1 (by decide), sv 0 (by decide)] <;> cbc_gd hp hk
-  have o2 : bytesAt t₁₂.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
+  obtain o2 : bytesAt t₁₂.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_bytes, m₈, xorMem_other, xorMem_other, m₇,
       xorMem_other, xorMem_other, d 2 (by decide), sv 1 (by decide)] <;> cbc_gd hp hk
-  have o3 : bytesAt t₁₂.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
+  obtain o3 : bytesAt t₁₂.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 3]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_bytes, m₉, xorMem_other, xorMem_other, m₈, xorMem_other,
       xorMem_other, m₇, xorMem_other, xorMem_other, d 3 (by decide), sv 2 (by decide)] <;> cbc_gd hp hk
-  have ivF : bytesAt t₁₂.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
+  obtain ivF : bytesAt t₁₂.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [m₁₂, m₁₁, copyMem_bytes, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_other, m₇, xorMem_other,
       svL] <;> cbc_gd hp hk
   -- The mode.
-  have take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
+  obtain take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] := by
-    have t₀ : (blks s₀).take (k + 1) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] :=
+    obtain t₀ : (blks s₀).take (k + 1) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₁ : (blks s₀).take (k + 2) = (blks s₀).take (k + 1) ++ [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] :=
+    obtain t₁ : (blks s₀).take (k + 2) = (blks s₀).take (k + 1) ++ [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₂ : (blks s₀).take (k + 3) = (blks s₀).take (k + 2) ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] :=
+    obtain t₂ : (blks s₀).take (k + 3) = (blks s₀).take (k + 2) ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₃ : (blks s₀).take (k + 4) = (blks s₀).take (k + 3) ++ [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] :=
+    obtain t₃ : (blks s₀).take (k + 4) = (blks s₀).take (k + 3) ++ [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
     rw [t₃, t₂, t₁, t₀]
-  have hl : (outK (cbcMode false) s₀ k).length = k := by
+  obtain hl : (outK (cbcMode false) s₀ k).length = k := by
     rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   obtain ⟨x19', x20', x21', x24', other'⟩ := h.next g
   refine ⟨⟨x19', x20', x21', x22₁₂, x23₁₂, x24', other', ?_, ?_, ?_, ?_, ?_, ?_⟩, few₁₂⟩

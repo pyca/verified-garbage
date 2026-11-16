@@ -89,7 +89,7 @@ theorem loadS_ok (s : State) (h : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8)
       (t.gpr .r11 = stackArg s 0 ∧ t.mem = s.mem ∧ t.sp = s.sp) ∧ Keep [.r11] s t := by
   refine WP.keep _ ?_ (by decide)
   simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd] at h
-  have ea : exec (.addSp .r11 96) s = some (s.write .r11 (s.sp + BitVec.ofNat 64 96)) := by
+  obtain ea : exec (.addSp .r11 96) s = some (s.write .r11 (s.sp + BitVec.ofNat 64 96)) := by
     simp [exec]
   prun [ea, h, BitVec.add_zero]
   rfl
@@ -113,11 +113,11 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ 
         word t.mem S oQ = s.gpr .r9 ∧ word t.mem S oQLen = s.gpr .r10 ∧ word t.mem S oQInv = s.gpr .r3 ∧
         Outside S 0 88 s.mem t.mem) ∧ Keep [] s t := by
   have hn := hs.nowrap
-  have step : ∀ {t : State} {o : Nat} {r : Reg}, Scr t S Z → t.gpr .r23 = S → o + 8 ≤ 88 → o % 8 = 0 →
+  obtain step : ∀ {t : State} {o : Nat} {r : Reg}, Scr t S Z → t.gpr .r23 = S → o + 8 ≤ 88 → o % 8 = 0 →
       WP isa (.block [.store .d r .r23 o]) t fun u =>
         (word u.mem S o = t.gpr r ∧ Outside S o 8 t.mem u.mem) ∧ Keep [] t u :=
     fun ht h23 ho ho' => Crt.st1_ok ht h23 (by omega_arith) (by omega_arith)
-  have kw : ∀ {m m' : Mem} {o d : Nat}, Outside S o 8 m m' → d + 8 ≤ o ∨ o + 8 ≤ d → d + 8 ≤ 88 →
+  obtain kw : ∀ {m m' : Mem} {o d : Nat}, Outside S o 8 m m' → d + 8 ≤ o ∨ o + 8 ≤ d → d + 8 ≤ 88 →
       word m' S d = word m S d := fun h hd hd' => h.word hd (by omega_arith)
   rw [show PrivPre.args = [.store .d .r3 .r23 0] ++ ([.store .d .r5 .r23 8] ++ ([.store .d .r6 .r23 16] ++ ([.store .d .r3 .r23 24] ++ ([.store .d .r7 .r23 32] ++ ([.store .d .r8 .r23 40] ++ ([.store .d .r9 .r23 48] ++ ([.store .d .r10 .r23 56] ++ [.store .d .r3 .r23 80]))))))) from rfl]
   rw [WP.block_append_iff]
@@ -127,34 +127,34 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ 
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s1) (o := 8) (r := .r5) (hs.congr k1.wr) ((k1.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s2 ⟨⟨w2, F2⟩, j2⟩ => ?_
-  have k2 := k1.trans j2
+  obtain k2 := k1.trans j2
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s2) (o := 16) (r := .r6) (hs.congr k2.wr) ((k2.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s3 ⟨⟨w3, F3⟩, j3⟩ => ?_
-  have k3 := k2.trans j3
+  obtain k3 := k2.trans j3
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s3) (o := 24) (r := .r3) (hs.congr k3.wr) ((k3.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s4 ⟨⟨w4, F4⟩, j4⟩ => ?_
-  have k4 := k3.trans j4
+  obtain k4 := k3.trans j4
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s4) (o := 32) (r := .r7) (hs.congr k4.wr) ((k4.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s5 ⟨⟨w5, F5⟩, j5⟩ => ?_
-  have k5 := k4.trans j5
+  obtain k5 := k4.trans j5
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s5) (o := 40) (r := .r8) (hs.congr k5.wr) ((k5.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s6 ⟨⟨w6, F6⟩, j6⟩ => ?_
-  have k6 := k5.trans j6
+  obtain k6 := k5.trans j6
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s6) (o := 48) (r := .r9) (hs.congr k6.wr) ((k6.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s7 ⟨⟨w7, F7⟩, j7⟩ => ?_
-  have k7 := k6.trans j7
+  obtain k7 := k6.trans j7
   rw [WP.block_append_iff]
   refine WP.mono (step (t := s7) (o := 56) (r := .r10) (hs.congr k7.wr) ((k7.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s8 ⟨⟨w8, F8⟩, j8⟩ => ?_
-  have k8 := k7.trans j8
+  obtain k8 := k7.trans j8
   refine WP.mono (step (t := s8) (o := 80) (r := .r3) (hs.congr k8.wr) ((k8.gpr _ (by simp)).trans h23) (by decide) (by decide))
     fun s9 ⟨⟨w9, F9⟩, j9⟩ => ?_
-  have k9 := k8.trans j9
+  obtain k9 := k8.trans j9
   simp only [oOut, oN, oNLen, oIn, oP, oPLen, oQ, oQLen, oQInv]
   refine ⟨⟨by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), kw F6 (by decide) (by decide), kw F5 (by decide) (by decide), kw F4 (by decide) (by decide), kw F3 (by decide) (by decide), kw F2 (by decide) (by decide), w1], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), kw F6 (by decide) (by decide), kw F5 (by decide) (by decide), kw F4 (by decide) (by decide), kw F3 (by decide) (by decide), w2, k1.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), kw F6 (by decide) (by decide), kw F5 (by decide) (by decide), kw F4 (by decide) (by decide), w3, k2.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), kw F6 (by decide) (by decide), kw F5 (by decide) (by decide), w4, k3.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), kw F6 (by decide) (by decide), w5, k4.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), kw F7 (by decide) (by decide), w6, k5.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), kw F8 (by decide) (by decide), w7, k6.gpr _ (by simp)], by rw [kw F9 (by decide) (by decide), w8, k7.gpr _ (by simp)], by rw [ w9, k8.gpr _ (by simp)], ?_⟩, k9.mono⟩
   exact ((((((((F1.mono (by decide) (by decide)).trans (F2.mono (by decide) (by decide))).trans (F3.mono (by decide) (by decide))).trans (F4.mono (by decide) (by decide))).trans (F5.mono (by decide) (by decide))).trans (F6.mono (by decide) (by decide))).trans (F7.mono (by decide) (by decide))).trans (F8.mono (by decide) (by decide))).trans (F9.mono (by decide) (by decide))

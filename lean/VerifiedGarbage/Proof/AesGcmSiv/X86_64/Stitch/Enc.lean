@@ -74,7 +74,7 @@ theorem setupT_ok {s₀ : State} (hp : SPre s₀) {s₁ : State} (l0 : ∀ l < 2
     WP isa (.block (storesK .r11 pregs 0 ++ setupC)) s₁ (Ready s₀ fun k l => s₁.lane (preg16 k) l) := by
   have hwp := hp.wrap_p
   have hwd := hp.wrap_d
-  have hr11 : s₁.gpr .r11 = pp s₀ := g₁ _ (by decide)
+  obtain hr11 : s₁.gpr .r11 = pp s₀ := g₁ _ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (storesK_ok .r11 pregs 0 s₁ (fun k hk => by
       rw [wr₁, hr11]; exact in_sub_int hp.p_in (by simp [pregs] at hk; omega_arith))
@@ -82,17 +82,17 @@ theorem setupT_ok {s₀ : State} (hp : SPre s₀) {s₁ : State} (l0 : ∀ l < 2
   rw [hr11, Nat.mul_zero, BitVec.add_zero, show 32 * pregs.length = 256 from rfl, m₁] at fr
   replace fr : Frame [pR s₀] s₀.mem s₂.mem := fr.sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
     simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
-  have hp₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → blockAt s₂.mem p = blockAt s₀.mem p :=
+  obtain hp₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → blockAt s₂.mem p = blockAt s₀.mem p :=
     fun hd => by rw [blockAt_outP fr hd]
-  have hpw₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → s₂.mem.readW p 128 = s₀.mem.readW p 128 :=
+  obtain hpw₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → s₂.mem.readW p 128 = s₀.mem.readW p 128 :=
     fun hd => by rw [readW_outP fr hd]
-  have hpb₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → bytesAt s₂.mem p 16 = bytesAt s₀.mem p 16 :=
+  obtain hpb₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → bytesAt s₂.mem p 16 = bytesAt s₀.mem p 16 :=
     fun hd => by rw [bytesAt_outP fr hd (by decide)]
   refine WP.mono (setupC_ok s₂ (fun l hl => by rw [l₂]; exact l0 l hl)
     (by rw [wr₂, wr₁, g₂, g₁ _ (by decide)]; exact hp.y_in)
     (by rw [wr₂, wr₁, g₂, g₁ _ (by decide)]; exact hp.c_in))
     fun s₃ ⟨y0, y1, c140, c141, c15, r10, rax, rdx, gk, lk, m₃, rd₃, wr₃⟩ => ?_
-  have gs : ∀ r, r ≠ .rax → s₂.gpr r = s₀.gpr r := fun r hr => by rw [g₂, g₁ r hr]
+  obtain gs : ∀ r, r ≠ .rax → s₂.gpr r = s₀.gpr r := fun r hr => by rw [g₂, g₁ r hr]
   refine ⟨⟨Nat.zero_le _, fun l hl => ?_, fun l hl => ?_, c15, ?_, ?_, ?_, ?_, fun k hk => ?_, ?_, ?_⟩,
     by rw [rdx, gs _ (by decide)], by rw [rax, gs _ (by decide)],
     fun r h1 h2 h3 => by rw [gk r h1 h2 h3, gs r h1], fun k hk l hl => ?_,
@@ -121,8 +121,8 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
   have hwp := hp.wrap_p
   have hwd := hp.wrap_d
   have h16 := hp.nb16
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
+  obtain hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  obtain none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ YFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, YFrame.refl _ _⟩
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
@@ -131,13 +131,13 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
   refine WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 0 + 8) (j := 4) (by omega_arith) hA₁
     (by rw [hg₁, hR.rdx]) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hm₂⟩ => ?_
-  have dP : ∀ c, c + 8 ≤ nb s₀ → ∀ r' ∈ [(⟨bAddr s₀ c, 128⟩ : Region)], (pR s₀).Disjoint r' := fun c hc r hr => by
+  obtain dP : ∀ c, c + 8 ≤ nb s₀ → ∀ r' ∈ [(⟨bAddr s₀ c, 128⟩ : Region)], (pR s₀).Disjoint r' := fun c hc r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega_arith))
-  have lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ VG.Impl.Gcm.X86_64.Stitch.aregs → ∀ l < 2,
+  obtain lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ VG.Impl.Gcm.X86_64.Stitch.aregs → ∀ l < 2,
       s₂.lane r l = s.lane r l := fun r h13 h14 hr l hl => by
     rw [hl₂ r h13 h14 hr (by simp) l hl, hl₁ r h13 h14 hr (by simp) l hl]
-  have gk : s₂.gpr = s.gpr := by rw [hg₂, hg₁]
+  obtain gk : s₂.gpr = s.gpr := by rw [hg₂, hg₁]
   refine ⟨by simpa using hA₂, Nat.le_refl _, by rw [gk, hR.rdx]; simp, ?_, by rw [gk]; exact hR.rax,
     fun r h1 h2 _ h4 => by rw [gk]; exact hR.gpr r h1 h2 h4, fun k hk l hl => ?_,
     fun l hl => by rw [lk _ (by decide) (by decide) (by decide) l hl]; exact hR.m1 l hl,
@@ -154,8 +154,8 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
 theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (hI : EInv s₀ P e s) :
     WP isa (.block [.alu .cmp .r9 (.imm 32)]) s fun s' =>
       EInv s₀ P e s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e - 1) < 32)) := by
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have e32 : BitVec.signExtend 64 (32 : BitVec 32) = 32 := by decide
+  obtain hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  obtain e32 : BitVec.signExtend 64 (32 : BitVec 32) = 32 := by decide
   have hr9 := hI.r9
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags, isa,
@@ -166,12 +166,12 @@ theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
 theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
     (hI : EInv s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' := by
-  have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
+  obtain fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
     fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega_arith, hI⟩
   refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
   · exact WP.block_nil (fin 1 (by simpa using h) s hI)
   · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInv s₀ P e s
-    have hstep : ∀ m s, I m s → WP isa body s (fun s' =>
+    obtain hstep : ∀ m s, I m s → WP isa body s (fun s' =>
         (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s') ∨
         (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
       rintro m s ⟨e, rfl, he, hI⟩
@@ -199,7 +199,7 @@ theorem ghRun_ok {s₀ : State} {a : Addr} {X : Nat → Block} {P : Nat → Nat 
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (ghRun_ok n (by omega_arith) s hE hz hy) fun s₁ ⟨hE₁, p₁, y₁, f₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    have hk : ordE n < 8 := by
+    obtain hk : ordE n < 8 := by
       rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4 ∨ n = 5 ∨ n = 6 ∨ n = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact WP.mono (ghStep hk (Nat.zero_le _) hE₁ p₁ y₁) fun s' ⟨hE', p', y', f'⟩ => ⟨hE', p', y', f₁.trans f'⟩
@@ -210,7 +210,7 @@ theorem ghRun_ok {s₀ : State} {a : Addr} {X : Nat → Block} {P : Nat → Nat 
 theorem storeCtr_ok (s : State) (hin : InRegions s.wr (s.gpr .rax) 16) :
     WP isa (.block storeCtr) s fun s' => s'.mem = s.mem.writeW (s.gpr .rax) (s.lane .xmm14 0) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r l, s'.lane r l = s.lane r l) := by
-  have hin' : InRegions s.wr (s.gpr .rax + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 := by
+  obtain hin' : InRegions s.wr (s.gpr .rax + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 := by
     rw [BitVec.ofInt_natCast, BitVec.add_zero]; exact hin
   apply WP.of_runBlock
   simp only [storeCtr, runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.store128_eq,
@@ -227,26 +227,26 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   have hw := hp.wrap_d
   have hwp := hp.wrap_p
   have h1e := hI.one
-  have hm0 : s.lane .xmm0 0 = revMask := hI.a.msk 0 (by decide)
+  obtain hm0 : s.lane .xmm0 0 = revMask := hI.a.msk 0 (by decide)
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (storeCtr_ok s (by rw [hI.rax, hI.a.wr]; exact hp.c_in))
     fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁⟩ => ?_
   -- The counter's memory is neither the data nor the working space.
-  have cD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
+  obtain cD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
     hp.d_c.sub_left (Offset.sub_base _ (by omega_arith))
-  have cP : ∀ k < 8, ∀ l < 2, Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l), 16⟩ (cR s₀) :=
+  obtain cP : ∀ k < 8, ∀ l < 2, Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l), 16⟩ (cR s₀) :=
     fun k hk l hl => hp.p_c.sub_left (Offset.sub_base _ (by omega_arith))
   rw [hI.rax] at m₁
-  have fC : Frame [cR s₀] s.mem s₁.mem := by rw [m₁]; exact frame_write16 _ _ _
+  obtain fC : Frame [cR s₀] s.mem s₁.mem := by rw [m₁]; exact frame_write16 _ _ _
   let a := s.gpr .rdx
   let X : Nat → Block := fun i => Spec.GcmSiv.ofBytes (ctb s₀ (16 * (e - 1) + i))
   let yl : Nat → Block := fun l => s.lane .xmm2 l
   have ha : a.toNat = (dp s₀).toNat + 256 * (e - 1) := hI.rdx
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
+  obtain hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   simp only [lastG, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (zero_lanes s₁) fun s₂ ⟨z₂, f₂, _⟩ => ?_
-  have hE₂ : GEnv s₀ 0 a X P s₂ :=
+  obtain hE₂ : GEnv s₀ 0 a X P s₂ :=
     { rdx := by rw [f₂.gpr, g₁]
       r11 := by rw [f₂.gpr, g₁, hr11]
       xs := fun i _ hi => by
@@ -276,10 +276,10 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
       rw [f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl, l₁]; exact hI.m1 l hl))
     fun s₄ ⟨_, y4, _, f₄⟩ => ?_
   rw [p₃ 0 (by decide), p₃ 1 (by decide)] at y4
-  have hm0₄ : s₄.lane .xmm0 0 = revMask := by
+  obtain hm0₄ : s₄.lane .xmm0 0 = revMask := by
     rw [f₄.lane _ (by decide) 0 (by decide), f₃.lane _ (by decide) 0 (by decide),
       f₂.lane _ (by decide) 0 (by decide), l₁]; exact hm0
-  have g₄ : s₄.gpr = s.gpr := by rw [f₄.gpr, f₃.gpr, f₂.gpr, g₁]
+  obtain g₄ : s₄.gpr = s.gpr := by rw [f₄.gpr, f₃.gpr, f₂.gpr, g₁]
   rw [show storeY = [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
     .vmovdquStore .l128 (VG.Impl.Gcm.X86_64.Pclmul.at_ .rcx 0) .xmm2] ++ [.vop .vzeroupper] from rfl,
     WP.block_append_iff]
@@ -287,15 +287,15 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
       rw [g₄, f₄.wr, f₃.wr, f₂.wr, wr₁, hI.a.wr, hI.gpr _ (by decide) (by decide) (by decide) (by decide)]
       exact hp.y_in)) fun s₅ ⟨m₅, g₅, rd₅, wr₅, _⟩ => ?_
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  have hrcx : s.gpr .rcx = yp s₀ := hI.gpr _ (by decide) (by decide) (by decide) (by decide)
+  obtain hrcx : s.gpr .rcx = yp s₀ := hI.gpr _ (by decide) (by decide) (by decide) (by decide)
   rw [g₄, hrcx] at m₅
-  have m₄ : s₄.mem = s₁.mem := by rw [f₄.mem, f₃.mem, f₂.mem]
+  obtain m₄ : s₄.mem = s₁.mem := by rw [f₄.mem, f₃.mem, f₂.mem]
   rw [m₄, m₁] at m₅
   -- The final memory: the counter, then `Y`, written.
-  have fY : Frame [yR s₀] s₁.mem s₅.mem := by rw [m₅, ← m₁]; exact frame_write16 _ _ _
-  have yD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (yR s₀) := fun k hk =>
+  obtain fY : Frame [yR s₀] s₁.mem s₅.mem := by rw [m₅, ← m₁]; exact frame_write16 _ _ _
+  obtain yD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (yR s₀) := fun k hk =>
     hp.d_y.sub_left (Offset.sub_base _ (by omega_arith))
-  have hb : ∀ k < nb s₀, bytesAt s₅.mem (bAddr s₀ k) 16 = ctb s₀ k := fun k hk => by
+  obtain hb : ∀ k < nb s₀, bytesAt s₅.mem (bAddr s₀ k) 16 = ctb s₀ k := fun k hk => by
     rw [Proof.AesGcm.X86_64.bytesAt_frame fY (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact yD k hk) (by decide),
       Proof.AesGcm.X86_64.bytesAt_frame fC (fun r hr => by

@@ -34,23 +34,23 @@ theorem divHdr_ok {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B 
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine ptr_ok h (by decide) hq fun s1 p1 r1 m1 h1 => ?_
   refine wp_strSlot h1 (d := 0) (by decide) fun s2 u2 => ?_
-  have h2 := h1.of_mupd u2
+  obtain h2 := h1.of_mupd u2
   refine ptr_ok h2 (by decide) hr fun s3 p3 r3 m3 h3 => ?_
   refine wp_strSlot h3 (d := 4) (by decide) fun s4 u4 => ?_
-  have h4 := h3.of_mupd u4
+  obtain h4 := h3.of_mupd u4
   refine ptr_ok h4 (by decide) hd fun s5 p5 r5 m5 h5 => ?_
   refine wp_strSlot h5 (d := 8) (by decide) fun s6 u6 => ?_
-  have h6 := h5.of_mupd u6
+  obtain h6 := h5.of_mupd u6
   refine ptr_ok h6 (by decide) ht fun s7 p7 r7 m7 h7 => ?_
   refine wp_strSlot h7 (d := 12) (by decide) fun u u8 => ?_
-  have k2 : Keep B w [] [0, 4, 8, 12] s1.mem s2.mem := by rw [u2.mem]; exact keep_write _ _ (by simp) (by decide)
-  have k4 : Keep B w [] [0, 4, 8, 12] s3.mem s4.mem := by rw [u4.mem]; exact keep_write _ _ (by simp) (by decide)
-  have k6 : Keep B w [] [0, 4, 8, 12] s5.mem s6.mem := by rw [u6.mem]; exact keep_write _ _ (by simp) (by decide)
-  have k8 : Keep B w [] [0, 4, 8, 12] s7.mem u.mem := by rw [u8.mem]; exact keep_write _ _ (by simp) (by decide)
-  have K : Keep B w [] [0, 4, 8, 12] s.mem u.mem := by
+  obtain k2 : Keep B w [] [0, 4, 8, 12] s1.mem s2.mem := by rw [u2.mem]; exact keep_write _ _ (by simp) (by decide)
+  obtain k4 : Keep B w [] [0, 4, 8, 12] s3.mem s4.mem := by rw [u4.mem]; exact keep_write _ _ (by simp) (by decide)
+  obtain k6 : Keep B w [] [0, 4, 8, 12] s5.mem s6.mem := by rw [u6.mem]; exact keep_write _ _ (by simp) (by decide)
+  obtain k8 : Keep B w [] [0, 4, 8, 12] s7.mem u.mem := by rw [u8.mem]; exact keep_write _ _ (by simp) (by decide)
+  obtain K : Keep B w [] [0, 4, 8, 12] s.mem u.mem := by
     rw [← m1]; refine k2.trans ?_; rw [← m3]; refine k4.trans ?_; rw [← m5]; refine k6.trans ?_
     rw [← m7]; exact k8
-  have rd : ∀ (m : Mem) (o : Nat) (v : BitVec 32) (e : Nat), (e + 4 ≤ o ∨ o + 4 ≤ e) ∧ e < 100 ∧ o < 100 →
+  obtain rd : ∀ (m : Mem) (o : Nat) (v : BitVec 32) (e : Nat), (e + 4 ≤ o ∨ o + 4 ≤ e) ∧ e < 100 ∧ o < 100 →
       (m.writeW (off (State.addr B) o) v).readW (off (State.addr B) e) 32 = m.readW (off (State.addr B) e) 32 :=
     fun m o v e he => Mem.readW_writeW_sep (Offset.sep _ he.1 (by omega_using [he]) (by omega_using [he])) (by decide)
   refine k u (h7.of_mupd u8) K ⟨?_, ?_, ?_, ?_, ?_⟩ ((r1.mono (by simp)).trans ((u2.rest _).trans
@@ -102,26 +102,26 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
       WP isa VG.Impl.Rsa.Arm.Div.code u (StC s0) := by
   have pre := h.base.pre
   have hw := h.ws
-  have fit := fun j (hj : j < nArr) => hw.fit64 (j := j) hj
+  obtain fit := fun j (hj : j < nArr) => hw.fit64 (j := j) hj
   unfold divN
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok hw (o := aDD) (a := aP) (by decide) (by decide) (by decide) (by decide))
     fun t1 ⟨h1, k1, e1, r1, top1⟩ => ?_
-  have b1 := h.base.keep k1 (by decide) (by simp) (by simp) r1.sp r1.rd r1.wr
+  obtain b1 := h.base.keep k1 (by decide) (by simp) (by simp) r1.sp r1.rd r1.wr
   show WP isa (.block (bitOf sPodd aP ++ divHdr aDQ aDR aDD aDT)) t1 _
   refine bitOf_ok h1 (by decide) (by decide) (by decide) fun t2 h2 k2 o2 r2 => ?_
-  have b2 := b1.keep k2 (by simp) (by decide) (by decide) r2.sp r2.rd r2.wr
+  obtain b2 := b1.keep k2 (by simp) (by decide) (by decide) r2.sp r2.rd r2.wr
   rw [← List.append_nil (divHdr _ _ _ _)]
-  have c2 : t2.mem.readW (off (State.addr (cvB s0)) 16) 32 = BitVec.ofNat 32 (cvW s0) := by
+  obtain c2 : t2.mem.readW (off (State.addr (cvB s0)) 16) 32 = BitVec.ofNat 32 (cvW s0) := by
     rw [← h.count]
     refine BitVec.eq_of_toNat_eq ?_
     change slot t2.mem (cvB s0) 16 = slot s.mem (cvB s0) 16
     rw [k2.slot (by decide) (by decide), k1.slot (by decide) (by simp)]
   refine divHdr_ok h2 (by decide) (by decide) (by decide) (by decide) c2 fun t3 h3 k3 d3 r3 => WP.block_nil ?_
-  have b3 := b2.keep k3 (by simp) (by decide) (by decide) r3.sp r3.rd r3.wr
-  have fDD := fit aDD (by decide)
+  obtain b3 := b2.keep k3 (by simp) (by decide) (by decide) r3.sp r3.rd r3.wr
+  obtain fDD := fit aDD (by decide)
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
-  have top3 : w32 t3.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
+  obtain top3 : w32 t3.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
     rw [k3.word (by omega_arith) (by simp) (by decide) fDD, k2.word (by omega_arith) (by simp) (by decide) fDD, top1,
       top_of_full (h.zeros aDD (by decide))]
   refine ⟨divGeom_ctx h3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -129,20 +129,20 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
   refine WP.mono (div_ok h3 (q := aDQ) (r := aDR) (d := aDD) (t := aDT) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) d3 top3)
     fun t ⟨k, r, v⟩ => ?_
-  have bt := b3.keep k (by decide) (by simp) (by simp) r.sp r.rd r.wr
+  obtain bt := b3.keep k (by decide) (by simp) (by simp) r.sp r.rd r.wr
   -- Transport through the four steps.
-  have tr : ∀ j, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT → j < nArr →
+  obtain tr : ∀ j, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT → j < nArr →
       val32 t.mem (State.addr (cvB s0)) (arr (cvW s0) j) (cvW s0 + 2) =
         val32 s.mem (State.addr (cvB s0)) (arr (cvW s0) j) (cvW s0 + 2) := by
     intro j h1 h2 h3 h4 hj
     rw [k.full (by simp; omega_arith) (by simp) (fit j hj), k3.full (by simp) (by decide) (fit j hj),
       k2.full (by simp) (by decide) (fit j hj), k1.full (by simpa using fun e => h1 e.symm) (by simp) (fit j hj)]
-  have trn : ∀ j, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT → j < nArr →
+  obtain trn : ∀ j, j ≠ aDD → j ≠ aDQ → j ≠ aDR → j ≠ aDT → j < nArr →
       num t.mem (cvB s0) (cvW s0) j = num s.mem (cvB s0) (cvW s0) j := by
     intro j h1 h2 h3 h4 hj
     rw [k.num (by simp; omega_arith) (by simp) (fit j hj), k3.num (by simp) (by decide) (fit j hj),
       k2.num (by simp) (by decide) (fit j hj), k1.num (by simpa using fun e => h1 e.symm) (by simp) (fit j hj)]
-  have p1 : num t1.mem (cvB s0) (cvW s0) aP = Spec.Rsa.os2ip (pBytes s0) := by
+  obtain p1 : num t1.mem (cvB s0) (cvW s0) aP = Spec.Rsa.os2ip (pBytes s0) := by
     rw [k1.num (by decide) (by simp) (fit _ (by decide)), h.p]
   refine ⟨bt, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun j hj => ?_⟩
   · rw [← c2]
@@ -155,9 +155,9 @@ theorem divN_pre_ok {s0 s : State} (h : StA s0 s) :
   · rw [trn _ (by decide) (by decide) (by decide) (by decide) (by decide), h.d]
   · rw [k.word (by omega_arith) (by decide) (by simp) fDD, top3]
   · intro pos
-    have dd : num t3.mem (cvB s0) (cvW s0) aDD = Spec.Rsa.os2ip (pBytes s0) := by
+    obtain dd : num t3.mem (cvB s0) (cvW s0) aDD = Spec.Rsa.os2ip (pBytes s0) := by
       rw [k3.num (by simp) (by decide) fDD, k2.num (by simp) (by decide) fDD, e1, h.p]
-    have dq : num t3.mem (cvB s0) (cvW s0) aDQ = Spec.Rsa.os2ip (nBytes s0) := by
+    obtain dq : num t3.mem (cvB s0) (cvW s0) aDQ = Spec.Rsa.os2ip (nBytes s0) := by
       rw [k3.num (by simp) (by decide) (fit _ (by decide)), k2.num (by simp) (by decide) (fit _ (by decide)),
         k1.num (by decide) (by simp) (fit _ (by decide)), h.n]
     obtain ⟨vr, vq⟩ := v (by rw [dd]; exact pos)

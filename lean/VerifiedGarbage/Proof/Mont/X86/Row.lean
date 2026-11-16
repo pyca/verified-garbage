@@ -47,29 +47,29 @@ theorem steps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     rw [steps_succ]
     refine WP.block_append (WP.mono (steps_ok hs hp hw (k := k) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-    have hs₁ := hs.of_keeps K₁ (by decide)
-    have hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+    obtain hs₁ := hs.of_keeps K₁ (by decide)
+    obtain hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
       rw [K₁.1 _ (by decide), K₁.1 _ (by decide)]; exact hp
     refine WP.mono (mulStep_ok hs₁ hp₁ (j := k) (by omega_arith) (by omega_arith)) fun u ⟨m₂, b₂, K₂⟩ => ?_
-    have e : 4 * i + (acc + 4 * k) = w + 4 * k := by omega_arith
+    obtain e : 4 * i + (acc + 4 * k) = w + 4 * k := by omega_arith
     rw [e] at m₂ b₂
-    have ecx₁ : s₁.gpr .ecx = s.gpr .ecx := K₁.1 _ (by decide)
-    have bk : w32 s₁.mem base (b + 4 * k) = w32 s.mem base (b + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
-    have tk : w32 s₁.mem base (w + 4 * k) = w32 s.mem base (w + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
+    obtain ecx₁ : s₁.gpr .ecx = s.gpr .ecx := K₁.1 _ (by decide)
+    obtain bk : w32 s₁.mem base (b + 4 * k) = w32 s.mem base (b + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
+    obtain tk : w32 s₁.mem base (w + 4 * k) = w32 s.mem base (w + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
     rw [ecx₁, bk, tk] at m₂ b₂
-    have W := writeW32_outside s₁.mem base (d := w + 4 * k)
+    obtain W := writeW32_outside s₁.mem base (d := w + 4 * k)
       (BitVec.ofNat 32 ((s.gpr .ecx).toNat * w32 s.mem base (b + 4 * k) + (s₁.gpr .ebx).toNat +
         w32 s.mem base (w + 4 * k))) (by omega_arith)
     rw [← m₂] at W
     refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_, K₁.trans K₂⟩
-    have hlow : val32 u.mem base w k = val32 s₁.mem base w k := W.val32 (by omega_arith) (by omega_arith)
-    have htop : w32 u.mem base (w + 4 * k) = ((s.gpr .ecx).toNat * w32 s.mem base (b + 4 * k) +
+    obtain hlow : val32 u.mem base w k = val32 s₁.mem base w k := W.val32 (by omega_arith) (by omega_arith)
+    obtain htop : w32 u.mem base (w + 4 * k) = ((s.gpr .ecx).toNat * w32 s.mem base (b + 4 * k) +
         (s₁.gpr .ebx).toNat + w32 s.mem base (w + 4 * k)) % 2 ^ 32 := by
       rw [m₂, w32_write_self, BitVec.toNat_ofNat]
     rw [val32_succ, val32_succ, val32_succ, hlow, htop, b₂, pow32_succ]
     generalize hxd : (s.gpr .ecx).toNat * w32 s.mem base (b + 4 * k) + (s₁.gpr .ebx).toNat +
       w32 s.mem base (w + 4 * k) = x at *
-    have hx := Nat.div_add_mod x (2 ^ 32)
+    obtain hx := Nat.div_add_mod x (2 ^ 32)
     generalize 2 ^ (32 * k) = P at *
     grind
 
@@ -84,54 +84,54 @@ theorem carryUp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       val32 u.mem base (w + 4 * N) 2 = val32 s.mem base (w + 4 * N) 2 + (s.gpr .ebx).toNat ∧
       Keeps [.eax] s u := by
   have hn := hs.nowrap
-  have e₀ : 4 * i + (acc + 4 * N) = w + 4 * N := by omega_arith
-  have e₁ : 4 * i + (acc + 4 * N + 4) = w + 4 * N + 4 := by omega_arith
+  obtain e₀ : 4 * i + (acc + 4 * N) = w + 4 * N := by omega_arith
+  obtain e₁ : 4 * i + (acc + 4 * N + 4) = w + 4 * N + 4 := by omega_arith
   simp only [carryUp]
   refine wp_movS (readSrc_at hs hp (d := acc + 4 * N) (by omega_arith)) fun s₁ u₁ cf₁ => ?_
   refine wp_addS rfl fun s₂ u₂ c₂ => ?_
-  have k₂ : Keeps [.eax] s s₂ := ⟨fun r hr => by
+  obtain k₂ : Keeps [.eax] s s₂ := ⟨fun r hr => by
       rw [u₂.other _ (by simpa using hr), u₁.other _ (by simpa using hr)],
     by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
-  have hs₂ := hs.of_keeps k₂ (by decide)
-  have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+  obtain hs₂ := hs.of_keeps k₂ (by decide)
+  obtain hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [k₂.1 _ (by decide), k₂.1 _ (by decide)]; exact hp
   refine wp_storeS (hs₂.ea_at hp₂ (d := acc + 4 * N) (by omega_arith)) (hs₂.write (n := 4) (by omega_arith))
     fun s₃ m₃ => ?_
-  have k₃ : Keeps [.eax] s s₃ := ⟨fun r hr => by rw [m₃.gpr]; exact k₂.1 r hr, by rw [m₃.rd, k₂.2.1],
+  obtain k₃ : Keeps [.eax] s s₃ := ⟨fun r hr => by rw [m₃.gpr]; exact k₂.1 r hr, by rw [m₃.rd, k₂.2.1],
     by rw [m₃.wr, k₂.2.2]⟩
-  have hs₃ := hs.of_keeps k₃ (by decide)
-  have hp₃ : s₃.gpr .ebp = s₃.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+  obtain hs₃ := hs.of_keeps k₃ (by decide)
+  obtain hp₃ : s₃.gpr .ebp = s₃.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [k₃.1 _ (by decide), k₃.1 _ (by decide)]; exact hp
   refine wp_movS (readSrc_at hs₃ hp₃ (d := acc + 4 * N + 4) (by omega_arith)) fun s₄ u₄ cf₄ => ?_
   refine wp_adcS rfl (by rw [cf₄, m₃.cf]; exact c₂) fun s₅ u₅ _ => ?_
-  have k₅ : Keeps [.eax] s s₅ := ⟨fun r hr => by
+  obtain k₅ : Keeps [.eax] s s₅ := ⟨fun r hr => by
       rw [u₅.other _ (by simpa using hr), u₄.other _ (by simpa using hr)]; exact k₃.1 r hr,
     by rw [u₅.rd, u₄.rd, k₃.2.1], by rw [u₅.wr, u₄.wr, k₃.2.2]⟩
-  have hs₅ := hs.of_keeps k₅ (by decide)
-  have hp₅ : s₅.gpr .ebp = s₅.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+  obtain hs₅ := hs.of_keeps k₅ (by decide)
+  obtain hp₅ : s₅.gpr .ebp = s₅.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [k₅.1 _ (by decide), k₅.1 _ (by decide)]; exact hp
   refine wp_storeS (hs₅.ea_at hp₅ (d := acc + 4 * N + 4) (by omega_arith)) (hs₅.write (n := 4) (by omega_arith))
     fun s₆ m₆ => WP.block_nil ?_
   rw [e₀] at m₃
   rw [e₁] at m₆
-  have hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have hm₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
+  obtain hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain hm₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
   rw [hm₂] at m₃
   rw [hm₅, m₃.mem] at m₆
-  have W₀ := writeW32_outside s.mem base (d := w + 4 * N) (s₂.gpr .eax) (by omega_arith)
-  have W₁ := writeW32_outside (s.mem.writeW (off base (w + 4 * N)) (s₂.gpr .eax)) base
+  obtain W₀ := writeW32_outside s.mem base (d := w + 4 * N) (s₂.gpr .eax) (by omega_arith)
+  obtain W₁ := writeW32_outside (s.mem.writeW (off base (w + 4 * N)) (s₂.gpr .eax)) base
     (d := w + 4 * N + 4) (s₅.gpr .eax) (by omega_arith)
   rw [← m₆.mem] at W₁
   refine ⟨(W₀.mono (Nat.le_refl _) (by omega_arith)).trans (W₁.mono (by omega_arith) (by omega_arith)), ?_,
     ⟨fun r hr => by rw [m₆.gpr]; exact k₅.1 r hr, by rw [m₆.rd, k₅.2.1], by rw [m₆.wr, k₅.2.2]⟩⟩
   -- The words.
-  have a₂ : s₂.gpr .eax = s.mem.readW (off base (w + 4 * N)) 32 + s.gpr .ebx := by
+  obtain a₂ : s₂.gpr .eax = s.mem.readW (off base (w + 4 * N)) 32 + s.gpr .ebx := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), e₀]
   have h0 : ∀ x : BitVec 32, x + 0 = x := BitVec.add_zero
-  have a₅ : s₅.gpr .eax = s₃.mem.readW (off base (w + 4 * N + 4)) 32 +
+  obtain a₅ : s₅.gpr .eax = s₃.mem.readW (off base (w + 4 * N + 4)) 32 +
       (BitVec.ofBool (decide (2 ^ 32 ≤ (s₁.gpr .eax).toNat + (s₁.gpr .ebx).toNat))).setWidth 32 := by
     rw [u₅.gpr, u₄.gpr, e₁, h0]
-  have t₁ : w32 s₃.mem base (w + 4 * N + 4) = w32 s.mem base (w + 4 * N + 4) := by
+  obtain t₁ : w32 s₃.mem base (w + 4 * N + 4) = w32 s.mem base (w + 4 * N + 4) := by
     rw [m₃.mem]; exact w32_write_ne hn (by omega_arith) (by omega_arith) (by omega_arith) _
   rw [u₁.gpr, u₁.other _ (by decide), e₀, m₃.mem] at a₅
   simp only [val32, Nat.mul_zero, Nat.add_zero]
@@ -162,25 +162,25 @@ theorem mulRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hn := hs.nowrap
   simp only [mulRow, List.cons_append]
   refine wp_movS rfl fun s₀ u₀ _ => ?_
-  have k₀ : Keeps [.eax, .ebx, .edx] s s₀ := ⟨fun r hr => u₀.other r (by simp_all), u₀.rd, u₀.wr⟩
-  have hs₀ := hs.of_keeps k₀ (by decide)
-  have hp₀ : s₀.gpr .ebp = s₀.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+  obtain k₀ : Keeps [.eax, .ebx, .edx] s s₀ := ⟨fun r hr => u₀.other r (by simp_all), u₀.rd, u₀.wr⟩
+  obtain hs₀ := hs.of_keeps k₀ (by decide)
+  obtain hp₀ : s₀.gpr .ebp = s₀.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [k₀.1 _ (by decide), k₀.1 _ (by decide)]; exact hp
   refine WP.block_append (WP.mono (steps_ok hs₀ hp₀ hw (k := N) hb (by omega_arith) (by omega_arith))
     fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  have k₁ := k₀.trans K₁
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
+  obtain k₁ := k₀.trans K₁
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [k₁.1 _ (by decide), k₁.1 _ (by decide)]; exact hp
   have z : (0 : BitVec 32).toNat = 0 := rfl
   rw [u₀.gpr, u₀.mem, u₀.other _ (by decide), z, Nat.add_zero] at V₁
   rw [u₀.mem] at O₁
-  have hhi : val32 s₁.mem base (w + 4 * N) 2 = val32 s.mem base (w + 4 * N) 2 := O₁.val32 (by omega_arith) (by omega_arith)
-  have hsplit : val32 s.mem base w (N + 2) = val32 s.mem base w N + 2 ^ (32 * N) * val32 s.mem base (w + 4 * N) 2 :=
+  obtain hhi : val32 s₁.mem base (w + 4 * N) 2 = val32 s.mem base (w + 4 * N) 2 := O₁.val32 (by omega_arith) (by omega_arith)
+  obtain hsplit : val32 s.mem base w (N + 2) = val32 s.mem base w N + 2 ^ (32 * N) * val32 s.mem base (w + 4 * N) 2 :=
     val32_append _ _ _ _ _
   rw [pow32_add, show 32 * 2 = 64 by rfl] at hlt
-  have hP : 0 < 2 ^ (32 * N) := Nat.two_pow_pos _
-  have hlt₁ : val32 s₁.mem base (w + 4 * N) 2 + (s₁.gpr .ebx).toNat < 2 ^ 64 := by
+  obtain hP : 0 < 2 ^ (32 * N) := Nat.two_pow_pos _
+  obtain hlt₁ : val32 s₁.mem base (w + 4 * N) 2 + (s₁.gpr .ebx).toNat < 2 ^ 64 := by
     rw [hhi]
     rw [hsplit] at hlt
     refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (32 * N)) ?_

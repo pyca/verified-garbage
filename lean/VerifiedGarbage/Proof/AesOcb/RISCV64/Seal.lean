@@ -142,13 +142,13 @@ theorem bytesAt_W {W P : Addr} {k : Nat} (hP : (⟨P, k⟩ : Region).Disjoint �
 theorem ctxCiph_W {K W : Addr} (L : Lay K W) {m m' : Mem} (h : Frame [⟨W, 2560⟩] m m') {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) : ctxCiph m' K R = ctxCiph m K R := by
   unfold ctxCiph
-  have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
+  obtain hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   rw [bytesAt_W (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega_using [hR]) h]
 
 theorem ctxInv_W {K W : Addr} (L : Lay K W) {m m' : Mem} (h : Frame [⟨W, 2560⟩] m m') {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) : Spec.Ocb.ctxInv m' K R = Spec.Ocb.ctxInv m K R := by
   unfold Spec.Ocb.ctxInv
-  have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
+  obtain hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   rw [bytesAt_W (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega_using [hR]) h]
 
 theorem ctxLstar_W {K W : Addr} (L : Lay K W) {m m' : Mem} (h : Frame [⟨W, 2560⟩] m m') :
@@ -210,31 +210,31 @@ theorem preRest_wp {s₀ s₁ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
     (ha3 : s₀.gpr .a3 = BitVec.ofNat 64 nl) (ha4 : s₀.gpr .a4 = A) (ha5 : s₀.gpr .a5 = BitVec.ofNat 64 al)
     (ha6 : s₀.gpr .a6 = D) :
     WP isa (.seq nonce Impl.AesOcb.RISCV64.hash) s₁ (Pre s₁.gpr K W N A D R nl al tl s₀) := by
-  have L : Lay (s₁.gpr .s2) (s₁.gpr .s0) := by rw [P₁.s2, P₁.s0, ha0]; exact Ar.lay
+  obtain L : Lay (s₁.gpr .s2) (s₁.gpr .s0) := by rw [P₁.s2, P₁.s0, ha0]; exact Ar.lay
   have E₁ := P₁.env
-  have hs3 : s₁.gpr .s3 = BitVec.ofNat 64 R := P₁.s3.trans ha1
-  have F₁ : Frame [⟨W, 2560⟩] s₀.mem s₁.mem := frameW P₁.frame (entryR_W W)
+  obtain hs3 : s₁.gpr .s3 = BitVec.ofNat 64 R := P₁.s3.trans ha1
+  obtain F₁ : Frame [⟨W, 2560⟩] s₀.mem s₁.mem := frameW P₁.frame (entryR_W W)
   have rd₁ := P₁.keeps.rd
   have wr₁ := P₁.keeps.wr
   have hW₁ : s₁.gpr .s0 = W := P₁.s0
-  have hK₁ : s₁.gpr .s2 = K := P₁.s2.trans ha0
-  have hKD : (⟨s₁.gpr .s2, 256⟩ : Region).Disjoint ⟨D, n⟩ := by rw [hK₁]; exact Ar.data.k
-  have S₁ : Slots W A D s₁.mem := by have := P₁.slots; rwa [ha4, ha6] at this
+  obtain hK₁ : s₁.gpr .s2 = K := P₁.s2.trans ha0
+  obtain hKD : (⟨s₁.gpr .s2, 256⟩ : Region).Disjoint ⟨D, n⟩ := by rw [hK₁]; exact Ar.data.k
+  obtain S₁ : Slots W A D s₁.mem := by have := P₁.slots; rwa [ha4, ha6] at this
   -- `Offset_0`.
   refine WP.seq (WP.mono (nonce_ok L Ar.rounds hs3 E₁ (P₁.s4.trans ha2) (P₁.s5.trans ha3) (P₁.s8.trans htl)
     Ar.n1 Ar.n15 (by have := Ar.t16; omega_using [this]) (by rw [hW₁]; exact Ar.nonce.of_eq rd₁ wr₁) hKD) fun s₂ P₂ => ?_)
-  have pf₂ : Frame (nonceR W) s₁.mem s₂.mem := by have := P₂.frame; rwa [hW₁] at this
+  obtain pf₂ : Frame (nonceR W) s₁.mem s₂.mem := by have := P₂.frame; rwa [hW₁] at this
   have ofs₂ := P₂.ofs
   have o0₂ := P₂.o0
   rw [hW₁] at ofs₂ o0₂
-  have keep₂ : ∀ {d : Nat}, 32 ≤ d → d + 16 ≤ 112 →
+  obtain keep₂ : ∀ {d : Nat}, 32 ≤ d → d + 16 ≤ 112 →
       blockAtMem s₂.mem (W + BitVec.ofNat 64 d) = blockAtMem s₁.mem (W + BitVec.ofNat 64 d) := fun h₁ h₂ => by
     have := P₂.keep h₁ h₂; rwa [hW₁] at this
-  have F₂ : Frame [⟨W, 2560⟩] s₁.mem s₂.mem := frameW pf₂ (nonceR_W W)
-  have S₂ : Slots W A D s₂.mem := Slots.mut Ar.lay Ar.data.w (nonceR_mut (D := D) (n := n) pf₂) S₁
+  obtain F₂ : Frame [⟨W, 2560⟩] s₁.mem s₂.mem := frameW pf₂ (nonceR_W W)
+  obtain S₂ : Slots W A D s₂.mem := Slots.mut Ar.lay Ar.data.w (nonceR_mut (D := D) (n := n) pf₂) S₁
   -- `HASH`.
-  have F₁₂ := F₁.trans F₂
-  have C : HCtx (s₁.gpr .s2) (s₁.gpr .s0) D n R (ctxCiph s₀.mem K R) (ctxLstar s₀.mem K) A (bytesAt s₀.mem A al)
+  obtain F₁₂ := F₁.trans F₂
+  obtain C : HCtx (s₁.gpr .s2) (s₁.gpr .s0) D n R (ctxCiph s₀.mem K R) (ctxLstar s₀.mem K) A (bytesAt s₀.mem A al)
       s₂ :=
     { lay := L, rounds := Ar.rounds
       ciph := by rw [hK₁, ctxCiph_W Ar.lay F₁₂ Ar.rounds]
@@ -245,17 +245,17 @@ theorem preRest_wp {s₀ s₁ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
       kd := hKD, dw := by rw [hW₁]; exact Ar.data.w }
   refine WP.mono (hash_ok C P₂.env hs3 (by rw [hW₁]; exact S₂.aad) (by rw [P₁.s10, ha5, length_bytesAt])
     (by rw [hW₁, keep₂ (by decide) (by decide), P₁.l0, ha0])) fun s₃ H₃ => ?_
-  have hf₃ : Frame (hashR W) s₂.mem s₃.mem := by have := H₃.frame; rwa [hW₁] at this
-  have F₃ : Frame [⟨W, 2560⟩] s₂.mem s₃.mem := frameW hf₃ (hashR_W W)
-  have k₃ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (112 ≤ d ∧ d + 16 ≤ 272) ∨
+  obtain hf₃ : Frame (hashR W) s₂.mem s₃.mem := by have := H₃.frame; rwa [hW₁] at this
+  obtain F₃ : Frame [⟨W, 2560⟩] s₂.mem s₃.mem := frameW hf₃ (hashR_W W)
+  obtain k₃ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (112 ≤ d ∧ d + 16 ≤ 272) ∨
       (288 ≤ d ∧ d + 16 ≤ 296) ∨ (312 ≤ d ∧ d + 16 ≤ 384)) →
       blockAtMem s₃.mem (W + BitVec.ofNat 64 d) = blockAtMem s₂.mem (W + BitVec.ofNat 64 d) := fun {d} hd =>
     blockAtMem_frame hf₃ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Ar.lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
-  have sv₂ : SavedAt s₂.mem W s₀ := saved_mut Ar.lay Ar.data.w P₁.saved (nonceR_mut (D := D) (n := n) pf₂)
-  have sv₃ : SavedAt s₃.mem W s₀ := saved_mut Ar.lay Ar.data.w sv₂ (hashR_mut (D := D) (n := n) hf₃)
-  have nonce₁ : bytesAt s₁.mem N nl = bytesAt s₀.mem N nl := bytesAt_W Ar.nonce.w Ar.nonce.lt F₁
+  obtain sv₂ : SavedAt s₂.mem W s₀ := saved_mut Ar.lay Ar.data.w P₁.saved (nonceR_mut (D := D) (n := n) pf₂)
+  obtain sv₃ : SavedAt s₃.mem W s₀ := saved_mut Ar.lay Ar.data.w sv₂ (hashR_mut (D := D) (n := n) hf₃)
+  obtain nonce₁ : bytesAt s₁.mem N nl = bytesAt s₀.mem N nl := bytesAt_W Ar.nonce.w Ar.nonce.lt F₁
   refine ⟨H₃.env, F₁₂.trans F₃, by rw [H₃.rd, P₂.rd, rd₁], by rw [H₃.wr, P₂.wr, wr₁], sv₃,
     Slots.mut Ar.lay Ar.data.w (hashR_mut (D := D) (n := n) hf₃) S₂, ?_, ?_, ?_, ?_, ?_,
     by have := H₃.sum; rwa [hW₁] at this⟩
@@ -297,13 +297,13 @@ theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp 
       (∀ r, r ∉ xpRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold tagOut
   refine WP.seq (wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => WP.block_nil ?_)
-  have a0₃ : s₃.gpr .a0 = V .s0 := by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, E.s0]
-  have a1₃ : s₃.gpr .a1 = V .s9 := by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.s9]
-  have a2₃ : s₃.gpr .a2 = BitVec.ofNat 64 tl := by
+  obtain a0₃ : s₃.gpr .a0 = V .s0 := by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, E.s0]
+  obtain a1₃ : s₃.gpr .a1 = V .s9 := by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.s9]
+  obtain a2₃ : s₃.gpr .a2 = BitVec.ofNat 64 tl := by
     rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.s8, hs8]
-  have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
-  have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   refine WP.mono (Proof.AesGcm.RISCV64.copyLoop_ok s₃ ⟨a0₃, a1₃, a2₃, h1, by omega_using [h16],
     by rw [rd₃, wr₃]; exact covers_left (covers_prefix E.perm.w (by omega_using [h16])),
     by rw [wr₃]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega_using [h16]))).symm⟩) fun t ⟨mt, ot⟩ => ?_
@@ -323,48 +323,48 @@ theorem seal_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧
       Spec.Ocb.encryptWith (ctxCiph s₀.mem K R) (ctxLstar s₀.mem K) tl (bytesAt s₀.mem N nl)
         (bytesAt s₀.mem A al) (bytesAt s₀.mem D n) = (bytesAt s'.mem D n, bytesAt s'.mem T tl) := by
-  have L₀ : Lay (s₀.gpr .a0) W := by rw [ha0]; exact Ar.lay
-  have hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := by rw [ha0]; exact Ar.perm.k
+  obtain L₀ : Lay (s₀.gpr .a0) W := by rw [ha0]; exact Ar.lay
+  obtain hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := by rw [ha0]; exact Ar.perm.k
   unfold «seal» front
   refine WP.seq (WP.seq (WP.mono (entry_ok L₀ Ar.perm.w hC Ar.sa hW hT Ar.args Ar.argsW) fun s₁ P₁ => ?_))
   have hW₁ : s₁.gpr .s0 = W := P₁.s0
-  have hK₁ : s₁.gpr .s2 = K := P₁.s2.trans ha0
-  have hs3 : s₁.gpr .s3 = BitVec.ofNat 64 R := P₁.s3.trans ha1
-  have h11 : s₁.gpr .s11 = BitVec.ofNat 64 n := P₁.s11.trans ha7
-  have L : Lay (s₁.gpr .s2) (s₁.gpr .s0) := by rw [hK₁, hW₁]; exact Ar.lay
+  obtain hK₁ : s₁.gpr .s2 = K := P₁.s2.trans ha0
+  obtain hs3 : s₁.gpr .s3 = BitVec.ofNat 64 R := P₁.s3.trans ha1
+  obtain h11 : s₁.gpr .s11 = BitVec.ofNat 64 n := P₁.s11.trans ha7
+  obtain L : Lay (s₁.gpr .s2) (s₁.gpr .s0) := by rw [hK₁, hW₁]; exact Ar.lay
   refine WP.assoc (WP.seq (WP.mono (preRest_wp Ar P₁ htl ha0 ha1 ha2 ha3 ha4 ha5 ha6) fun s₃ P₃ => ?_))
-  have hD₃ : DBuf (s₁.gpr .s2) (s₁.gpr .s0) s₃ D n := by
+  obtain hD₃ : DBuf (s₁.gpr .s2) (s₁.gpr .s0) s₃ D n := by
     rw [hK₁, hW₁]; exact Ar.data.of_eq P₃.rd P₃.wr
-  have c₃ : ctxCiph s₃.mem K R = ctxCiph s₀.mem K R := ctxCiph_W Ar.lay P₃.frame Ar.rounds
-  have l₃ : ctxLstar s₃.mem K = ctxLstar s₀.mem K := ctxLstar_W Ar.lay P₃.frame
-  have d₃ : bytesAt s₃.mem D n = bytesAt s₀.mem D n := bytesAt_W Ar.data.w Ar.data.lt P₃.frame
+  obtain c₃ : ctxCiph s₃.mem K R = ctxCiph s₀.mem K R := ctxCiph_W Ar.lay P₃.frame Ar.rounds
+  obtain l₃ : ctxLstar s₃.mem K = ctxLstar s₀.mem K := ctxLstar_W Ar.lay P₃.frame
+  obtain d₃ : bytesAt s₃.mem D n = bytesAt s₀.mem D n := bytesAt_W Ar.data.w Ar.data.lt P₃.frame
   refine WP.seq (WP.mono (bodySeal_ok L P₃.env Ar.rounds hs3 h11 (by rw [hW₁]; exact P₃.slots.data) hD₃
     (O0 := Spec.Ocb.offset0 (ctxCiph s₀.mem K R) tl (bytesAt s₀.mem N nl)) (by rw [hW₁]; exact P₃.ofs)
     (by rw [hW₁]; exact P₃.o0) (by rw [hW₁]; exact P₃.ck) (by rw [hW₁, hK₁, P₃.l0, l₃])) fun s₄ B => ?_)
-  have Bf : Frame (bodyR W D n) s₃.mem s₄.mem := by have := B.frame; rwa [hW₁] at this
-  have F₄ : Frame (mutR W D n) s₃.mem s₄.mem := bodyR_mut Bf
-  have cK₄ : ctxCiph s₄.mem K R = ctxCiph s₀.mem K R := (ctxCiph_mut Ar.lay Ar.data.k F₄ Ar.rounds).trans c₃
-  have ld₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (ctxLstar s₀.mem K) := by
+  obtain Bf : Frame (bodyR W D n) s₃.mem s₄.mem := by have := B.frame; rwa [hW₁] at this
+  obtain F₄ : Frame (mutR W D n) s₃.mem s₄.mem := bodyR_mut Bf
+  obtain cK₄ : ctxCiph s₄.mem K R = ctxCiph s₀.mem K R := (ctxCiph_mut Ar.lay Ar.data.k F₄ Ar.rounds).trans c₃
+  obtain ld₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (ctxLstar s₀.mem K) := by
     rw [body_keep Ar.lay Ar.data.w Bf (d := ldO) (by decide), P₃.ld]
-  have sum₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 sumO) =
+  obtain sum₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 sumO) =
       Spec.Ocb.hash (ctxCiph s₀.mem K R) (ctxLstar s₀.mem K) (bytesAt s₀.mem A al) := by
     rw [body_keep Ar.lay Ar.data.w Bf (d := sumO) (by decide), P₃.sum]
   -- The tag.
   refine WP.mono (tag_ok L B.env Ar.rounds hs3 (.inl rfl)) fun s₅ T₅ => ?_
-  have Tf : Frame [⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 tagO, 16⟩, ⟨W + BitVec.ofNat 64 512, 2048⟩]
+  obtain Tf : Frame [⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 tagO, 16⟩, ⟨W + BitVec.ofNat 64 512, 2048⟩]
       s₄.mem s₅.mem := by have := T₅.frame; rwa [hW₁] at this
-  have F₅ : Frame (mutR W D n) s₄.mem s₅.mem := tagR_mut (.inl (by decide)) Tf
-  have sv₅ := saved_mut Ar.lay Ar.data.w (saved_mut Ar.lay Ar.data.w P₃.saved F₄) F₅
+  obtain F₅ : Frame (mutR W D n) s₄.mem s₅.mem := tagR_mut (.inl (by decide)) Tf
+  obtain sv₅ := saved_mut Ar.lay Ar.data.w (saved_mut Ar.lay Ar.data.w P₃.saved F₄) F₅
   -- The copy of the tag.
   have E₅ := T₅.env
-  have hTd : (⟨s₁.gpr .s9, tl⟩ : Region).Disjoint ⟨s₁.gpr .s0, 2560⟩ := by rw [P₁.s9, hW₁]; exact Ar.tag.w
+  obtain hTd : (⟨s₁.gpr .s9, tl⟩ : Region).Disjoint ⟨s₁.gpr .s0, 2560⟩ := by rw [P₁.s9, hW₁]; exact Ar.tag.w
   refine WP.seq (WP.mono (tagOut_ok E₅ Ar.t1 Ar.t16 (P₁.s8.trans htl)
     (by rw [P₁.s9, T₅.wr, B.wr, P₃.wr]; exact hTw) hTd) fun s₆ ⟨m₆, g₆, sp₆, rd₆, wr₆⟩ => ?_)
-  have E₆ := E₅.others g₆ sp₆ rd₆ wr₆
+  obtain E₆ := E₅.others g₆ sp₆ rd₆ wr₆
   rw [P₁.s9, hW₁] at m₆
-  have F₆ : Frame [⟨T, tl⟩] s₅.mem s₆.mem := by
+  obtain F₆ : Frame [⟨T, tl⟩] s₅.mem s₆.mem := by
     rw [m₆]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _)
-  have sv₆ : SavedAt s₆.mem W s₀ := sv₅.frame F₆ fun r hr => by
+  obtain sv₆ : SavedAt s₆.mem W s₀ := sv₅.frame F₆ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (Ar.tag.w.sub_right (Lay.wSub (W := W) (d := 128) (n := 104) (by decide))).symm
   -- `restore`.
@@ -379,13 +379,13 @@ theorem seal_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
   rw [hW₁, d₃] at hck
   have hn := Ar.data.lt
   have ht := Ar.tag.lt
-  have d₇ : bytesAt s₇.mem D n = bytesAt s₄.mem D n := by
+  obtain d₇ : bytesAt s₇.mem D n = bytesAt s₄.mem D n := by
     rw [m₇, Proof.Cmac.bytesAt_frame F₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Ar.td.symm) (by omega_using [hn])]
     exact Proof.Cmac.bytesAt_frame Tf (tag_data Ar.data.w (by decide)) (by omega_using [hn])
   have tv := T₅.val
   rw [hW₁, hK₁, show W + BitVec.ofNat 64 tagO = W from BitVec.add_zero W] at tv
-  have t₇ : bytesAt s₇.mem T tl = (Spec.Ocb.toBytes (blockAtMem s₅.mem W)).take tl := by
+  obtain t₇ : bytesAt s₇.mem T tl = (Spec.Ocb.toBytes (blockAtMem s₅.mem W)).take tl := by
     rw [m₇, m₆, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]) ht, length_bytesAt,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, bytesAt_take_block _ _ Ar.t16]
   rw [Proof.Ocb.encryptWith_eq, d₇, hout, t₇, tv, hck, hofs, ld₄, sum₄, cK₄]

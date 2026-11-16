@@ -36,7 +36,7 @@ theorem mixed_z_pair_arith (s : State) (i : Nat) (hi : i<4) :
       t.gpr (mixedZR0 i)=(if s.zf then (if i=0 then 1 else 0) else s.gpr (mixedZR0 i)) ∧
       t.gpr (mixedZR1 i)=(if s.zf then 0 else s.gpr (mixedZR1 i)) ∧
       t.zf=s.zf ∧ Keeps (mixedZPairClob i) s t := by
-  have hc : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega_arith
+  obtain hc : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega_arith
   rcases hc with rfl|rfl|rfl|rfl <;> apply WP.of_runBlock <;>
     simp only [mixedZPairArith,mixedZR0,mixedZR1,mixedZZero,runBlock_cons,runStep_some,runBlock_nil,
       reduceExec,read_x,RegUpd.gpr_write,RegUpd.zf_write,CondCode.holds,BitVec.setWidth_eq,
@@ -61,8 +61,8 @@ theorem mixed_z_pair_ok {s : State} {p : Addr} {size a : Nat} (i : Nat) (hi : i<
       t.gpr (mixedZR0 i)=(if s.zf then (if i=0 then 1 else 0) else word s.mem p a) ∧
       t.gpr (mixedZR1 i)=(if s.zf then 0 else word s.mem p (a+8)) ∧
       t.zf=s.zf ∧ Keeps (mixedZPairClob i) s t := by
-  have hc : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega_arith
-  have hr : Reg.x30≠mixedZR0 i ∧ mixedZR0 i≠mixedZR1 i := by rcases hc with rfl|rfl|rfl|rfl <;> decide
+  obtain hc : i=0 ∨ i=1 ∨ i=2 ∨ i=3 := by omega_arith
+  obtain hr : Reg.x30≠mixedZR0 i ∧ mixedZR0 i≠mixedZR1 i := by rcases hc with rfl|rfl|rfl|rfl <;> decide
   rw [mixedZPair,WP.block_append_iff]
   refine WP.mono (mixed_two_loads_ok hp ha ha8 hr.1 hr.2) fun u ⟨e0,e1,ku,zu⟩ => ?_
   refine WP.mono (mixed_z_pair_arith u i hi) fun t ⟨a0,a1,zt,kt⟩ => ?_
@@ -128,34 +128,34 @@ theorem mixed_select_z_ok {s : State} {p : Addr} {size a : Nat}
   refine WP.mono (mixed_z_pair_ok 1 (by decide) (hp.of_keeps pre1 (by decide)) (by omega_arith) (by omega_arith))
     fun v ⟨e2,e3,z1,k1⟩ => ?_
   simp only [mixedZR0,mixedZR1,ite_false,reduceCtorEq] at e2 e3
-  have pre2 : Keeps [.x0,.x1,.x2,.x3,.x4,.x20] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
-  have flag2 : v.zf=s.zf := z1.trans flag1
+  obtain pre2 : Keeps [.x0,.x1,.x2,.x3,.x4,.x20] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
+  obtain flag2 : v.zf=s.zf := z1.trans flag1
   rw [WP.block_append_iff]
   refine WP.mono (mixed_z_pair_ok 2 (by decide) (hp.of_keeps pre2 (by decide)) (by omega_arith) (by omega_arith))
     fun w ⟨e4,e5,z2,k2⟩ => ?_
   simp only [mixedZR0,mixedZR1,ite_false,reduceCtorEq] at e4 e5
-  have pre3 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x20] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
-  have flag3 : w.zf=s.zf := z2.trans flag2
+  obtain pre3 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x20] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
+  obtain flag3 : w.zf=s.zf := z2.trans flag2
   rw [WP.block_append_iff]
   refine WP.mono (mixed_z_pair_ok 3 (by decide) (hp.of_keeps pre3 (by decide)) (by omega_arith) (by omega_arith))
     fun x ⟨e6,e7,z3,k3⟩ => ?_
   simp only [mixedZR0,mixedZR1,ite_false,reduceCtorEq] at e6 e7
-  have pre4 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x20] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
-  have flag4 : x.zf=s.zf := z3.trans flag3
+  obtain pre4 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x20] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
+  obtain flag4 : x.zf=s.zf := z3.trans flag3
   refine WP.mono (mixed_z_last_ok (hp.of_keeps pre4 (by decide)) (by omega_arith) (by omega_arith))
     fun t ⟨e8,z4,k4⟩ => ?_
-  have tail0 : Keeps [.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x20] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
+  obtain tail0 : Keeps [.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x20] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
   rw [←tail0.gpr .x0 (by decide)] at e0
   rw [←tail0.gpr .x1 (by decide)] at e1
-  have tail1 : Keeps [.x4,.x5,.x6,.x7,.x8,.x9,.x20] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
+  obtain tail1 : Keeps [.x4,.x5,.x6,.x7,.x8,.x9,.x20] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
   rw [flag1,pre1.mem] at e2 e3
   rw [←tail1.gpr .x2 (by decide)] at e2
   rw [←tail1.gpr .x3 (by decide)] at e3
-  have tail2 : Keeps [.x6,.x7,.x8,.x9,.x20] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
+  obtain tail2 : Keeps [.x6,.x7,.x8,.x9,.x20] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
   rw [flag2,pre2.mem] at e4 e5
   rw [←tail2.gpr .x4 (by decide)] at e4
   rw [←tail2.gpr .x5 (by decide)] at e5
-  have tail3 : Keeps [.x8,.x9,.x20] x t := (k4.mono (by decide))
+  obtain tail3 : Keeps [.x8,.x9,.x20] x t := (k4.mono (by decide))
   rw [flag3,pre3.mem] at e6 e7
   rw [←tail3.gpr .x6 (by decide)] at e6
   rw [←tail3.gpr .x7 (by decide)] at e7
@@ -193,34 +193,34 @@ theorem mixed_select_x_ok {s : State} {pa pb : Addr} {size cap a b : Nat}
   refine WP.mono (mixed_select_pair_ok .x2 .x3 (hp.of_keeps pre1 (by decide)) (hq.of_keeps pre1 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun v ⟨e2,e3,z1,k1⟩ => ?_
-  have pre2 : Keeps [.x0,.x1,.x2,.x3,.x20,.x21] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
-  have flag2 : v.zf=s.zf := z1.trans flag1
+  obtain pre2 : Keeps [.x0,.x1,.x2,.x3,.x20,.x21] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
+  obtain flag2 : v.zf=s.zf := z1.trans flag1
   rw [WP.block_append_iff]
   refine WP.mono (mixed_select_pair_ok .x4 .x5 (hp.of_keeps pre2 (by decide)) (hq.of_keeps pre2 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun w ⟨e4,e5,z2,k2⟩ => ?_
-  have pre3 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x20,.x21] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
-  have flag3 : w.zf=s.zf := z2.trans flag2
+  obtain pre3 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x20,.x21] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
+  obtain flag3 : w.zf=s.zf := z2.trans flag2
   rw [WP.block_append_iff]
   refine WP.mono (mixed_select_pair_ok .x6 .x7 (hp.of_keeps pre3 (by decide)) (hq.of_keeps pre3 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun x ⟨e6,e7,z3,k3⟩ => ?_
-  have pre4 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x20,.x21] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
-  have flag4 : x.zf=s.zf := z3.trans flag3
+  obtain pre4 : Keeps [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x20,.x21] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
+  obtain flag4 : x.zf=s.zf := z3.trans flag3
   refine WP.mono (mixed_select_word_ok .x8 (hp.of_keeps pre4 (by decide)) (hq.of_keeps pre4 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide)) fun t ⟨e8,z4,k4⟩ => ?_
-  have tail0 : Keeps [.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x20,.x21] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
+  obtain tail0 : Keeps [.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x20,.x21] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
   rw [←tail0.gpr .x0 (by decide)] at e0
   rw [←tail0.gpr .x1 (by decide)] at e1
-  have tail1 : Keeps [.x4,.x5,.x6,.x7,.x8,.x20,.x21] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
+  obtain tail1 : Keeps [.x4,.x5,.x6,.x7,.x8,.x20,.x21] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
   rw [flag1,pre1.mem] at e2 e3
   rw [←tail1.gpr .x2 (by decide)] at e2
   rw [←tail1.gpr .x3 (by decide)] at e3
-  have tail2 : Keeps [.x6,.x7,.x8,.x20,.x21] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
+  obtain tail2 : Keeps [.x6,.x7,.x8,.x20,.x21] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
   rw [flag2,pre2.mem] at e4 e5
   rw [←tail2.gpr .x4 (by decide)] at e4
   rw [←tail2.gpr .x5 (by decide)] at e5
-  have tail3 : Keeps [.x8,.x20,.x21] x t := (k4.mono (by decide))
+  obtain tail3 : Keeps [.x8,.x20,.x21] x t := (k4.mono (by decide))
   rw [flag3,pre3.mem] at e6 e7
   rw [←tail3.gpr .x6 (by decide)] at e6
   rw [←tail3.gpr .x7 (by decide)] at e7
@@ -258,34 +258,34 @@ theorem mixed_select_y_ok {s : State} {pa pb : Addr} {size cap a b : Nat}
   refine WP.mono (mixed_select_pair_ok .x12 .x13 (hp.of_keeps pre1 (by decide)) (hq.of_keeps pre1 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun v ⟨e2,e3,z1,k1⟩ => ?_
-  have pre2 : Keeps [.x10,.x11,.x12,.x13,.x20,.x21] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
-  have flag2 : v.zf=s.zf := z1.trans flag1
+  obtain pre2 : Keeps [.x10,.x11,.x12,.x13,.x20,.x21] s v := (pre1.mono (by decide)).trans (k1.mono (by decide))
+  obtain flag2 : v.zf=s.zf := z1.trans flag1
   rw [WP.block_append_iff]
   refine WP.mono (mixed_select_pair_ok .x14 .x15 (hp.of_keeps pre2 (by decide)) (hq.of_keeps pre2 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun w ⟨e4,e5,z2,k2⟩ => ?_
-  have pre3 : Keeps [.x10,.x11,.x12,.x13,.x14,.x15,.x20,.x21] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
-  have flag3 : w.zf=s.zf := z2.trans flag2
+  obtain pre3 : Keeps [.x10,.x11,.x12,.x13,.x14,.x15,.x20,.x21] s w := (pre2.mono (by decide)).trans (k2.mono (by decide))
+  obtain flag3 : w.zf=s.zf := z2.trans flag2
   rw [WP.block_append_iff]
   refine WP.mono (mixed_select_pair_ok .x16 .x17 (hp.of_keeps pre3 (by decide)) (hq.of_keeps pre3 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide))
     fun x ⟨e6,e7,z3,k3⟩ => ?_
-  have pre4 : Keeps [.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x20,.x21] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
-  have flag4 : x.zf=s.zf := z3.trans flag3
+  obtain pre4 : Keeps [.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x20,.x21] s x := (pre3.mono (by decide)).trans (k3.mono (by decide))
+  obtain flag4 : x.zf=s.zf := z3.trans flag3
   refine WP.mono (mixed_select_word_ok .x19 (hp.of_keeps pre4 (by decide)) (hq.of_keeps pre4 (by decide))
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by decide)) fun t ⟨e8,z4,k4⟩ => ?_
-  have tail0 : Keeps [.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
+  obtain tail0 : Keeps [.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21] u t := (k1.mono (by decide)).trans ((k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide)))))
   rw [←tail0.gpr .x10 (by decide)] at e0
   rw [←tail0.gpr .x11 (by decide)] at e1
-  have tail1 : Keeps [.x14,.x15,.x16,.x17,.x19,.x20,.x21] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
+  obtain tail1 : Keeps [.x14,.x15,.x16,.x17,.x19,.x20,.x21] v t := (k2.mono (by decide)).trans ((k3.mono (by decide)).trans ((k4.mono (by decide))))
   rw [flag1,pre1.mem] at e2 e3
   rw [←tail1.gpr .x12 (by decide)] at e2
   rw [←tail1.gpr .x13 (by decide)] at e3
-  have tail2 : Keeps [.x16,.x17,.x19,.x20,.x21] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
+  obtain tail2 : Keeps [.x16,.x17,.x19,.x20,.x21] w t := (k3.mono (by decide)).trans ((k4.mono (by decide)))
   rw [flag2,pre2.mem] at e4 e5
   rw [←tail2.gpr .x14 (by decide)] at e4
   rw [←tail2.gpr .x15 (by decide)] at e5
-  have tail3 : Keeps [.x19,.x20,.x21] x t := (k4.mono (by decide))
+  obtain tail3 : Keeps [.x19,.x20,.x21] x t := (k4.mono (by decide))
   rw [flag3,pre3.mem] at e6 e7
   rw [←tail3.gpr .x16 (by decide)] at e6
   rw [←tail3.gpr .x17 (by decide)] at e7
@@ -311,7 +311,7 @@ def mixedSelectXYClob : List Reg := [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,
   .x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21]
 
 theorem mixedSelectXY_source : mixedSelectXYCode=(mixedFnBlocks.flatten.drop 4316).take 54 := by
-  have h := drop_flatten_prefix mixedFnBlocks 134 4288 28
+  obtain h := drop_flatten_prefix mixedFnBlocks 134 4288 28
     (by rw [List.length_flatten]; lit_decide)
   simp only [Nat.reduceAdd] at h
   exact congrArg (List.take 54) h.symm
@@ -329,7 +329,7 @@ theorem mixed_select_xy_ok {s : State} {pa pb : Addr} {size cap : Nat}
     fun u ⟨ex,zu,ku⟩ => ?_
   refine WP.mono (mixed_select_y_ok (hp.of_keeps ku (by decide)) (hq.of_keeps ku (by decide))
     ha hb (by decide) (by decide)) fun t ⟨ey,zt,kt⟩ => ?_
-  have oldX : mixedSelectXRegs.map t.gpr=mixedSelectXRegs.map u.gpr := List.map_congr_left fun r hr =>
+  obtain oldX : mixedSelectXRegs.map t.gpr=mixedSelectXRegs.map u.gpr := List.map_congr_left fun r hr =>
     kt.gpr r ((by decide : ∀r∈mixedSelectXRegs,r∉[Reg.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21]) r hr)
   rw [zu,ku.mem] at ey
   exact ⟨oldX.trans ex,ey,zt.trans zu,(ku.mono (by decide)).trans (kt.mono (by decide))⟩
@@ -351,7 +351,7 @@ theorem storesR_zf {size : Nat} {rn : Reg} : ∀ (rs : List Reg) {s : State} {p 
     simp only [List.length_cons] at ho
     rw [storesR,←List.singleton_append,WP.block_append_iff]
     refine WP.mono (stR_ok hp (d:=o) (by omega_arith) ho8 r) fun u e => ?_
-    have hpu : PtrW u rn p size := by subst e; exact ⟨hp.reg,hp.st,hp.enc,hp.nowrap⟩
+    obtain hpu : PtrW u rn p size := by subst e; exact ⟨hp.reg,hp.st,hp.enc,hp.nowrap⟩
     refine WP.mono (storesR_zf rs hpu (by omega_arith) (by omega_arith)) fun t h => ?_
     rw [h,e]
 
@@ -362,7 +362,7 @@ theorem mixed_storesR_ok {s : State} {p : Addr} {size o : Nat} {rn : Reg} (rs : 
       Outside p o (8*rs.length) s.mem t.mem ∧ t.zf=s.zf := by
   obtain ⟨t,ht,value,k,frame⟩ := VG.AArch64.Interleave.runBlock_of_WP (storesR_ok rs hp ho ho8 nd)
   obtain ⟨u,hu,flag⟩ := VG.AArch64.Interleave.runBlock_of_WP (storesR_zf rs hp ho ho8)
-  have eq : u=t := Option.some.inj (hu.symm.trans ht)
+  obtain eq : u=t := Option.some.inj (hu.symm.trans ht)
   subst u
   exact WP.of_runBlock ⟨t,ht,value,k,frame,flag⟩
 
@@ -383,7 +383,7 @@ def mixedMuxClob : List Reg := [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,
   .x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21]
 
 theorem mixedMux_source : mixedMuxCode=(mixedFnBlocks.flatten.drop 4316).take 105 := by
-  have h := drop_flatten_prefix mixedFnBlocks 134 4288 28
+  obtain h := drop_flatten_prefix mixedFnBlocks 134 4288 28
     (by rw [List.length_flatten]; lit_decide)
   simp only [Nat.reduceAdd] at h
   exact congrArg (List.take 105) h.symm
@@ -404,41 +404,41 @@ theorem mixed_mux_ok {s : State} {pa pb po : Addr} {size cap room : Nat}
   refine WP.mono (mixed_select_xy_ok hp hq (by omega_arith) hb) fun u ⟨xm,ym,zu,ku⟩ => ?_
   have valueIf (b : Bool) (xs ys : List VG.Proof.Ed25519.Word64.Word) :
       value (if b then xs else ys)=(if b then value xs else value ys) := by cases b <;> rfl
-  have xv := congrArg value xm
-  have yv := congrArg value ym
+  obtain xv := congrArg value xm
+  obtain yv := congrArg value ym
   simp only [value_map_gpr,valueIf,readWords_value] at xv yv
-  have hou := ho.of_keepRegs (Keeps.regs ku) (by decide)
+  obtain hou := ho.of_keepRegs (Keeps.regs ku) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mixed_storesR_ok mixedSelectXRegs hou (by simpa only [show mixedSelectXRegs.length=9 from rfl] using (by omega_arith : 0+8*9≤room))
     (by decide) (by decide)) fun v ⟨xs,kv,ov,zv⟩ => ?_
   simp only [show mixedSelectXRegs.length=9 from rfl,Nat.reduceMul] at xs ov
-  have yv' : regsVal v mixedSelectYRegs=regsVal u mixedSelectYRegs := regsVal_congr fun r _ => kv.gpr r (by simp)
+  obtain yv' : regsVal v mixedSelectYRegs=regsVal u mixedSelectYRegs := regsVal_congr fun r _ => kv.gpr r (by simp)
   rw [←yv']
     at yv -- retain the selected value without rereading the source buffers
-  have hov := hou.of_keepRegs kv (by simp)
+  obtain hov := hou.of_keepRegs kv (by simp)
   rw [WP.block_append_iff]
   refine WP.mono (mixed_storesR_ok mixedSelectYRegs hov (by simpa only [show mixedSelectYRegs.length=9 from rfl] using (by omega_arith : 72+8*9≤room))
     (by decide) (by decide)) fun w ⟨ys,kw,ow,zw⟩ => ?_
   simp only [show mixedSelectYRegs.length=9 from rfl,Nat.reduceMul] at ys ow
-  have frameXY : Outside po 0 144 s.mem w.mem := by
+  obtain frameXY : Outside po 0 144 s.mem w.mem := by
     rw [←ku.mem]
     exact (ov.mono (by decide) (by decide)).trans (ow.mono (by decide) (by decide))
-  have kp : KeepRegs mixedSelectXYClob s w := (Keeps.regs ku).trans
+  obtain kp : KeepRegs mixedSelectXYClob s w := (Keeps.regs ku).trans
     ((kv.mono (by simp)).trans (kw.mono (by simp)))
-  have hwZ : wordsVal w.mem pa 360 9=wordsVal s.mem pa 360 9 := stableZ w.mem frameXY
-  have wz : w.zf=s.zf := zw.trans (zv.trans zu)
+  obtain hwZ : wordsVal w.mem pa 360 9=wordsVal s.mem pa 360 9 := stableZ w.mem frameXY
+  obtain wz : w.zf=s.zf := zw.trans (zv.trans zu)
   rw [WP.block_append_iff]
   refine WP.mono (mixed_select_z_ok (hp.of_keepRegs kp (by decide)) ha (by decide)) fun x ⟨zm,zx,kx⟩ => ?_
-  have zval := congrArg value zm
+  obtain zval := congrArg value zm
   simp only [value_map_gpr,valueIf,readWords_value] at zval
   rw [wz,hwZ] at zval
-  have hox := (ho.of_keepRegs kp (by decide)).of_keepRegs (Keeps.regs kx) (by decide)
+  obtain hox := (ho.of_keepRegs kp (by decide)).of_keepRegs (Keeps.regs kx) (by decide)
   refine WP.mono (mixed_storesR_ok mixedSelectZRegs hox (by simpa only [show mixedSelectZRegs.length=9 from rfl] using (by omega_arith : 144+8*9≤room))
     (by decide) (by decide)) fun t ⟨zs,kt,ot,zt⟩ => ?_
   simp only [show mixedSelectZRegs.length=9 from rfl,Nat.reduceMul] at zs ot
-  have finalX : wordsVal t.mem po 0 9=wordsVal v.mem po 0 9 := by
+  obtain finalX : wordsVal t.mem po 0 9=wordsVal v.mem po 0 9 := by
     rw [ot.wordsVal (by decide) (by decide),kx.mem,ow.wordsVal (by decide) (by decide)]
-  have finalY : wordsVal t.mem po 72 9=wordsVal w.mem po 72 9 := by
+  obtain finalY : wordsVal t.mem po 72 9=wordsVal w.mem po 72 9 := by
     rw [ot.wordsVal (by decide) (by decide),kx.mem]
   refine ⟨finalX.trans (xs.trans xv),finalY.trans (ys.trans yv),?_,zt.trans (zx.trans wz),
     (kp.mono (by decide)).trans (((Keeps.regs kx).mono (by decide)).trans (kt.mono (by simp))),?_⟩

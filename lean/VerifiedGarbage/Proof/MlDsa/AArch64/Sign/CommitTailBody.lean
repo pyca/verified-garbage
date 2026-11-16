@@ -117,7 +117,7 @@ theorem upperWord_step {s : State} {A B : Spec.Sha3.State} {m : Mem} {p : Addr} 
     rw [ht,hp j (by omega_using [hj]),upper_pair,hm,h4,seedPrefix_get _ _ _ _ _ (by omega_using [hj]),ite_eq_left (by omega_using [])]
   · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he
     rw [hv _ hij,hp i hi,seedPrefix_get _ _ _ _ _ hi,seedPrefix_get _ _ _ _ _ hi]
-    have hc : (i<j)↔(i<j+1) := by omega_using [he]
+    obtain hc : (i<j)↔(i<j+1) := by omega_using [he]
     simp only [hc]
 
 /-- All eight seed words are loaded without disturbing the commitment. -/
@@ -128,7 +128,7 @@ theorem upperWords_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B)
       RegKeep [.x7] s t ∧ t.mem=s.mem ∧ Pairs t A (seedPrefix B s.mem (s.gpr .x4) 8) := by
   let I := fun j t => RegKeep [.x7] s t ∧ t.mem=s.mem ∧
     Pairs t A (seedPrefix B s.mem (s.gpr .x4) j)
-  have hz : seedPrefix B s.mem (s.gpr .x4) 0=B := by
+  obtain hz : seedPrefix B s.mem (s.gpr .x4) 0=B := by
     apply Vector.ext
     intro i hi
     simp only [seedPrefix,Vector.getElem_ofFn,Nat.not_lt_zero,ite_false,Fin.getElem_fin]
@@ -217,7 +217,7 @@ theorem clearHigh_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B)
     WP isa (.block ((List.range 17).map fun j => .vop (.ins .d2 (vreg (8+j)) 1 .x7))) s fun t =>
       RegKeep [] s t ∧ t.mem=s.mem ∧ Pairs t A (clearPrefix B 17) := by
   let I := fun j t => RegKeep [] s t ∧ t.mem=s.mem ∧ Pairs t A (clearPrefix B j)
-  have hz : clearPrefix B 0=B := by
+  obtain hz : clearPrefix B 0=B := by
     apply Vector.ext
     intro i hi
     simp only [clearPrefix,Vector.getElem_ofFn,Fin.getElem_fin,Nat.add_zero]
@@ -255,7 +255,7 @@ theorem nonce_ok (s : State) :
   refine WP.cons rfl (WP.cons rfl (WP.cons rfl (WP.cons rfl (WP.block_nil_iff.mpr ?_))))
   refine ⟨⟨fun r hr => ?_,rfl,rfl,rfl⟩,rfl,rfl,?_⟩
   · have h7 : r≠.x7 := fun h => hr (by simp only [h,List.mem_cons,true_or])
-    have h8 : r≠.x8 := fun h => hr (by simp [h])
+    obtain h8 : r≠.x8 := fun h => hr (by simp [h])
     simp only [RegUpd.gpr_write,h7,h8,ite_false]
   · simp only [RegUpd.gpr_write_self,RegUpd.gpr_write,State.read,Size.bits,
       BitVec.setWidth_eq,reduceCtorEq,ite_false]
@@ -283,7 +283,7 @@ private theorem pad7_ok (s : State) :
       RegKeep [.x7] s t ∧ t.mem=s.mem ∧ t.v=s.v ∧ t.gpr .x7=0x8000000000000000 := by
   refine WP.cons rfl (WP.block_nil_iff.mpr ?_)
   refine ⟨⟨fun r hr => ?_,rfl,rfl,rfl⟩,rfl,rfl,rfl⟩
-  have hr' : r≠.x7 := by simpa using hr
+  obtain hr' : r≠.x7 := by simpa using hr
   simp only [RegUpd.gpr_write,hr',ite_false]
 
 /-- Adds the two-byte nonce and SHAKE padding to the second stream. -/
@@ -296,7 +296,7 @@ theorem upperFinish_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
     [.vop (.ins .d2 .v8 1 .x7),.movz .x .x7 0x8000 3,.vop (.ins .d2 .v16 1 .x7)])) s _
   rw [WP.block_append_iff]
   refine WP.mono (nonce_ok s) fun a ⟨ha,hma,hva,ea⟩ => ?_
-  have hpa : Pairs a A B := by intro i hi; rw [hva]; exact hp i hi
+  obtain hpa : Pairs a A B := by intro i hi; rw [hva]; exact hp i hi
   change WP isa (.block (([.vop (.ins .d2 .v8 1 .x7)] : List Instr) ++
     [.movz .x .x7 0x8000 3,.vop (.ins .d2 .v16 1 .x7)])) a _
   rw [WP.block_append_iff]
@@ -306,7 +306,7 @@ theorem upperFinish_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
     [.vop (.ins .d2 .v16 1 .x7)])) b _
   rw [WP.block_append_iff]
   refine WP.mono (pad7_ok b) fun c ⟨hc,hmc,hvc,ec⟩ => ?_
-  have hpc : Pairs c A (replaceWord B 8 (nonceWord (s.gpr .x5))) := by
+  obtain hpc : Pairs c A (replaceWord B 8 (nonceWord (s.gpr .x5))) := by
     intro i hi; rw [hvc]; exact hpb i hi
   refine WP.mono (insertHigh_ok (j:=16) (by decide) hpc) fun t ⟨ht,hmt,hpt⟩ => ?_
   rw [ec] at hpt
@@ -360,7 +360,7 @@ theorem highLast_ok {s : State} {p : Addr} (hp : s.gpr .x10=p)
     WP isa (.block [.umov .x .x7 .v16 1,.str .x .x7 .x10 128]) s fun t =>
       SqueezeKeep s t ∧ t.mem=s.mem.writeW (p+128) (vdword (s.v .v16) 1) := by
   refine WP.cons (s':=s.write .x .x7 (vdword (s.v .v16) 1)) rfl ?_
-  have h := Upd.write64 s .x7 (vdword (s.v .v16) 1)
+  obtain h := Upd.write64 s .x7 (vdword (s.v .v16) 1)
   refine wp_str (by decide) (by rw [h.other .x10 (by decide),hp])
     (by rw [h.wr]; exact hout) fun t ht => WP.block_nil_iff.mpr ?_
   refine ⟨⟨fun r _ hr => (congrFun ht.gpr r).trans (h.other r hr),
@@ -394,10 +394,10 @@ theorem highPairs_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
     (fun k t hk ht => ?_) 8 (Nat.le_refl _) s
     ⟨SqueezeKeep.refl _,fun _ h => by omega,Frame.refl _ _⟩)
     fun t h => ⟨h.1,h.1.pairs hp,h.2.1,h.2.2⟩
-  have hpt := ht.1.pairs hp
+  obtain hpt := ht.1.pairs hp
   refine WP.mono (highPair_ok hk ((ht.1.gpr .x10 (by decide) (by decide)).trans hptr)
     (by rw [ht.1.wr]; exact hout k hk)) fun u hu => ?_
-  have hm : u.mem=t.mem.write (p+BitVec.ofNat 64 (16*k)) 16 (ofVDwords B[2*k]! B[2*k+1]!) := by
+  obtain hm : u.mem=t.mem.write (p+BitVec.ofNat 64 (16*k)) 16 (ofVDwords B[2*k]! B[2*k+1]!) := by
     rw [hu.2,hpt _ (by omega_using [hk]),hpt _ (by omega_using [hk]),vdword_ofVDwords_1,vdword_ofVDwords_1]
   refine ⟨ht.1.trans hu.1,?_,?_⟩
   · intro i hi
@@ -424,8 +424,8 @@ theorem highRate_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
   refine WP.mono (highPairs_ok hp hptr hout) fun a ha => ?_
   refine WP.mono (highLast_ok ((ha.1.gpr .x10 (by decide) (by decide)).trans hptr)
     (by rw [ha.1.wr]; exact hlast)) fun t ht => ?_
-  have hm : t.mem=a.mem.writeW (p+128) B[16]! := by
-    have hp16 : a.v .v16=ofVDwords A[16]! B[16]! := ha.2.1 16 (by decide)
+  obtain hm : t.mem=a.mem.writeW (p+128) B[16]! := by
+    obtain hp16 : a.v .v16=ofVDwords A[16]! B[16]! := ha.2.1 16 (by decide)
     rw [ht.2,hp16,vdword_ofVDwords_1]
   refine ⟨ha.1.trans ht.1,ht.1.pairs ha.2.1,⟨?_,?_⟩,?_⟩
   · intro i hi
@@ -437,7 +437,7 @@ theorem highRate_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
   · change t.mem.readW (p+128) 64=B[16]!
     rw [hm,Mem.readW_writeW_self64]
   · rw [hm]
-    have hf : Frame [⟨p,136⟩] s.mem a.mem := ha.2.2.2.sub (by
+    obtain hf : Frame [⟨p,136⟩] s.mem a.mem := ha.2.2.2.sub (by
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
@@ -508,12 +508,12 @@ theorem upperInit_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B)
   change WP isa (.block (.movz .x .x7 0 0 ::
     (((List.range 17).map fun i => .vop (.ins .d2 (vreg (8+i)) 1 .x7)) ++ upperFinish))) a _
   refine wp_movz fun b hb => ?_
-  have hpb : Pairs b A (seedPrefix B s.mem (s.gpr .x4) 8) := by
+  obtain hpb : Pairs b A (seedPrefix B s.mem (s.gpr .x4) 8) := by
     intro i hi; rw [hb.vec]; exact hpa i hi
   rw [WP.block_append_iff]
   refine WP.mono (clearHigh_ok hpb (by rw [hb.gpr]; rfl)) fun c ⟨hc,hmc,hpc⟩ => ?_
   refine WP.mono (upperFinish_ok hpc) fun t ⟨ht,hmt,hpt⟩ => ?_
-  have h5 : c.gpr .x5=s.gpr .x5 :=
+  obtain h5 : c.gpr .x5=s.gpr .x5 :=
     (hc.gpr .x5 (by simp)).trans ((hb.other .x5 (by decide)).trans (ha.gpr .x5 (by decide)))
   rw [h5,seedNonceState_eq] at hpt
   exact ⟨(((ha.trans (RegKeep.upd hb)).trans hc).trans ht).mono (by simp),
@@ -570,7 +570,7 @@ theorem initial_ok {s : State}
     refine WP.cons rfl (WP.block_nil_iff.mpr ?_)
     refine ⟨?_,hmb.trans hma,?_,hpb⟩
     · refine ⟨fun r hr => ?_,hb.rd.trans ha.rd,hb.wr.trans ha.wr,hb.sp.trans ha.sp⟩
-      have h5 : r≠.x5 := fun he => hr (by simp [he])
+      obtain h5 : r≠.x5 := fun he => hr (by simp [he])
       simp only [RegUpd.gpr_write,h5,ite_false]
       exact (hb.gpr r (fun hh => hr (by simp_all))).trans
         (ha.gpr r (fun hh => hr (by simp_all)))
@@ -661,7 +661,7 @@ theorem coreRound_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
       RoundState σ wlen w1 work A B i i t ∧ RegKeep [.x16] s t := by
   refine WP.mono (VG.Proof.Sha3.AArch64.Neon.Hw.rounds2_ok h.pairs)
     fun t ⟨hk,hp⟩ => ?_
-  have hl : RegKeep [.x16] s t :=
+  obtain hl : RegKeep [.x16] s t :=
     ⟨fun r hr => hk.gpr r (fun he => hr (by simp [he])),hk.rd,hk.wr,hk.sp⟩
   refine ⟨⟨⟨(h.keep.trans hl).mono (by simp [coreRegs]),?_,?_,?_⟩,hp⟩,hl⟩
   · rw [hk.mem]; exact h.frame
@@ -677,7 +677,7 @@ theorem coreEmit_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
   by_cases hi : i<5
   · have h12 : s.gpr .x12=BitVec.ofNat 64 (5-i) := by
       rw [hl.masks,Nat.min_eq_left (by omega_arith)]
-    have h10 : s.gpr .x10=work+BitVec.ofNat 64 (256+136*i) := by
+    obtain h10 : s.gpr .x10=work+BitVec.ofNat 64 (256+136*i) := by
       rw [hl.out,Nat.min_eq_left (by omega_arith)]
     refine WP.ite false (by
       rw [eval_zero,h12]
@@ -696,17 +696,17 @@ theorem coreEmit_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
       change InRegions σ.wr ((work+BitVec.ofNat 64 (256+136*i))+BitVec.ofNat 64 128) 8
       rw [Offset.add_add]
       exact hc.writable _ _ (by omega_arith)
-    have hka : RegKeep [.x6,.x7] s a :=
+    obtain hka : RegKeep [.x6,.x7] s a :=
       ⟨fun r hr => hk.gpr r (fun he => hr (by simp [he])) (fun he => hr (by simp [he])),
         hk.rd,hk.wr,hk.sp⟩
     refine wp_addImm (by decide) fun b hb => wp_subImm (by decide) fun t ht =>
       WP.block_nil ?_
-    have h10a : a.gpr .x10=s.gpr .x10 := hka.gpr .x10 (by decide)
-    have h12a : a.gpr .x12=s.gpr .x12 := hka.gpr .x12 (by decide)
-    have h11a : a.gpr .x11=s.gpr .x11 := hka.gpr .x11 (by decide)
+    obtain h10a : a.gpr .x10=s.gpr .x10 := hka.gpr .x10 (by decide)
+    obtain h12a : a.gpr .x12=s.gpr .x12 := hka.gpr .x12 (by decide)
+    obtain h11a : a.gpr .x11=s.gpr .x11 := hka.gpr .x11 (by decide)
     rw [buffer_addr] at ho hf
-    have hpb := pairs_upd hp hb
-    have hpt := pairs_upd hpb ht
+    obtain hpb := pairs_upd hp hb
+    obtain hpt := pairs_upd hpb ht
     refine ⟨⟨⟨((h.keep.trans hka).trans ((RegKeep.upd hb).trans (RegKeep.upd ht))).mono
       (by simp [coreRegs]),?_,?_,?_⟩,hpt⟩,⟨?_,?_,?_⟩⟩
     · rw [ht.mem,hb.mem]
@@ -757,7 +757,7 @@ theorem coreFull_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     (hi : i<(64+wlen)/136-1) (h : RoundState σ wlen w1 work A B i (i+1) s) :
     WP isa (.block full) s fun t =>
       CoreState σ wlen w1 work A B (i+1) t ∧ RegKeep [.x5,.x7] s t := by
-  have hptr : s.gpr .x5=w1+BitVec.ofNat 64 (72+136*i) := by
+  obtain hptr : s.gpr .x5=w1+BitVec.ofNat 64 (72+136*i) := by
     rw [h.ptr,inputPtr,fullCount,Nat.min_eq_left (by omega_arith)]
   refine WP.mono (full_ok h.pairs (fun j hj=>?_)) fun t ⟨hk,hm,hp5,hp⟩ => ?_
   · rw [hptr,Offset.add_add]
@@ -830,15 +830,15 @@ theorem coreAbsorb_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     (h11 : s.gpr .x11=BitVec.ofNat 64 ((64+wlen)/136+1-i)) :
     WP isa (absorbNext wlen) s fun t =>
       CoreState σ wlen w1 work A B (i+1) t ∧ RegKeep [.x5,.x7,.x13] s t := by
-  have hN : (64+wlen)/136≤8 := by rcases hc.length with rfl|rfl <;> decide
-  have hN1 : 1≤(64+wlen)/136 := by rcases hc.length with rfl|rfl <;> decide
+  obtain hN : (64+wlen)/136≤8 := by rcases hc.length with rfl|rfl <;> decide
+  obtain hN1 : 1≤(64+wlen)/136 := by rcases hc.length with rfl|rfl <;> decide
   refine WP.seq (wp_subImm (by decide) fun a ha => WP.block_nil ?_)
-  have hra : RoundState σ wlen w1 work A B i (i+1) a :=
+  obtain hra : RoundState σ wlen w1 work A B i (i+1) a :=
     ⟨h.toCoreEnv.upd ha (by simp [coreRegs]) (by decide),pairs_upd h.pairs ha⟩
-  have h13 : a.gpr .x13=BitVec.ofNat 64 ((64+wlen)/136+1-i)-BitVec.ofNat 64 1 := by
+  obtain h13 : a.gpr .x13=BitVec.ofNat 64 ((64+wlen)/136+1-i)-BitVec.ofNat 64 1 := by
     rw [ha.gpr,h11]
-  have h11a : a.gpr .x11=s.gpr .x11 := ha.other .x11 (by decide)
-  have hka : RegKeep [.x13] s a := RegKeep.upd ha
+  obtain h11a : a.gpr .x11=s.gpr .x11 := ha.other .x11 (by decide)
+  obtain hka : RegKeep [.x13] s a := RegKeep.upd ha
   by_cases hl : i=(64+wlen)/136
   · refine WP.ite true (by
       rw [eval_zero,h13,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
@@ -855,11 +855,11 @@ theorem coreAbsorb_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     simp only [Option.some.injEq,decide_eq_false_iff_not]
     omega_arith) (fun hb => Bool.noConfusion hb) fun _ => ?_
   refine WP.seq (wp_subImm (by decide) fun b hb => WP.block_nil ?_)
-  have hrb : RoundState σ wlen w1 work A B i (i+1) b :=
+  obtain hrb : RoundState σ wlen w1 work A B i (i+1) b :=
     ⟨hra.toCoreEnv.upd hb (by simp [coreRegs]) (by decide),pairs_upd hra.pairs hb⟩
-  have h13b : b.gpr .x13=BitVec.ofNat 64 ((64+wlen)/136+1-i)-BitVec.ofNat 64 2 := by
+  obtain h13b : b.gpr .x13=BitVec.ofNat 64 ((64+wlen)/136+1-i)-BitVec.ofNat 64 2 := by
     rw [hb.gpr,h11a,h11]
-  have hkb : RegKeep [.x13] s b := (hka.trans (RegKeep.upd hb)).mono (by simp)
+  obtain hkb : RegKeep [.x13] s b := (hka.trans (RegKeep.upd hb)).mono (by simp)
   by_cases hp : i=(64+wlen)/136-1
   · refine WP.ite true (by
       rw [eval_zero,h13b,Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
@@ -893,15 +893,15 @@ only five cached-mask squeeze blocks. -/
 theorem core_ok {σ s : State} {wlen : Nat} {w1 work : Addr} {A B : Spec.Sha3.State}
     (hc : CoreConfig σ wlen w1 work) (h : CoreState σ wlen w1 work A B 0 s) :
     WP isa (coreFor wlen) s (CoreState σ wlen w1 work A B ((64+wlen)/136+1)) := by
-  have hN : (64+wlen)/136≤8 := by rcases hc.length with rfl|rfl <;> decide
-  have h19 : s.gpr .x19=work := (h.keep.gpr .x19 (by decide)).trans hc.workPtr
+  obtain hN : (64+wlen)/136≤8 := by rcases hc.length with rfl|rfl <;> decide
+  obtain h19 : s.gpr .x19=work := (h.keep.gpr .x19 (by decide)).trans hc.workPtr
   refine WP.seq (wp_movz fun a ha => wp_movz fun b hb => wp_addImm (by decide) fun c hc' =>
     WP.block_nil ?_)
-  have hsc : CoreState σ wlen w1 work A B 0 c :=
+  obtain hsc : CoreState σ wlen w1 work A B 0 c :=
     ⟨((h.toCoreEnv.upd ha (by simp [coreRegs]) (by decide)).upd hb (by simp [coreRegs])
       (by decide)).upd hc' (by simp [coreRegs]) (by decide),
       pairs_upd (pairs_upd (pairs_upd h.pairs ha) hb) hc'⟩
-  have hlc : LoopRegs wlen work 0 0 c := by
+  obtain hlc : LoopRegs wlen work 0 0 c := by
     refine ⟨?_,?_,?_⟩
     · rw [hc'.other .x11 (by decide),hb.other .x11 (by decide),ha.gpr]
       rcases hc.length with rfl|rfl <;> rfl
@@ -911,14 +911,14 @@ theorem core_ok {σ s : State} {wlen : Nat} {w1 work : Addr} {A B : Spec.Sha3.St
     ⟨0,by omega_arith,by omega_arith,hsc,hlc⟩
   rintro k t ⟨i,hik,hk,hs,hl⟩
   refine WP.seq (WP.mono (coreRound_ok hs) fun a ⟨ha,hka⟩ => ?_)
-  have hla := hl.keep hka (by simp)
+  obtain hla := hl.keep hka (by simp)
   refine WP.seq (WP.mono (coreEmit_ok hc ha hla) fun b ⟨hb,hlb⟩ => ?_)
   refine WP.seq (WP.mono (coreAbsorb_ok hc (by omega_arith) hb hlb.left) fun d ⟨hd,hkd⟩ => ?_)
-  have hld := hlb.keep hkd (by simp)
+  obtain hld := hlb.keep hkd (by simp)
   refine wp_subImm (by decide) fun e he => WP.block_nil ?_
-  have hse : CoreState σ wlen w1 work A B (i+1) e :=
+  obtain hse : CoreState σ wlen w1 work A B (i+1) e :=
     ⟨hd.toCoreEnv.upd he (by simp [coreRegs]) (by decide),pairs_upd hd.pairs he⟩
-  have h11 : e.gpr .x11=BitVec.ofNat 64 ((64+wlen)/136+1-(i+1)) := by
+  obtain h11 : e.gpr .x11=BitVec.ofNat 64 ((64+wlen)/136+1-(i+1)) := by
     rw [he.gpr,hld.left,Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   by_cases hlast : i=(64+wlen)/136
@@ -948,7 +948,7 @@ open VG
 
 theorem nonceWord_value (k : BitVec 64) :
     (nonceWord k).toNat=k.toNat%65536+2031616 := by
-  have hx : ((k <<< 48) >>> 48).toNat=k.toNat%65536 := by
+  obtain hx : ((k <<< 48) >>> 48).toNat=k.toNat%65536 := by
     rw [BitVec.toNat_ushiftRight,BitVec.toNat_shiftLeft,Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow]
     change (k.toNat*281474976710656 % (65536*281474976710656))/281474976710656=_
     rw [Nat.mul_mod_mul_right,Nat.mul_div_cancel _ (by decide)]
@@ -988,9 +988,9 @@ theorem nonceValue_byte (a k : BitVec 64) (hk : a.toNat=k.toNat%65536+2031616) {
       ite_eq_right (by omega_arith : ¬ i=2)]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.extractLsb'_toNat]
-    have hb : 8*i≥24 := by omega_arith
-    have he : a.toNat<2^24 := by omega_arith
-    have hdiv : a.toNat/2^(8*i)=0 := Nat.div_eq_of_lt (Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) hb))
+    obtain hb : 8*i≥24 := by omega_arith
+    obtain he : a.toNat<2^24 := by omega_arith
+    obtain hdiv : a.toNat/2^(8*i)=0 := Nat.div_eq_of_lt (Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) hb))
     rw [Nat.shiftRight_eq_div_pow,hdiv]
     rfl
 
@@ -1162,7 +1162,7 @@ theorem firstState_eq (m : Mem) (mu w1 : Addr) :
   apply ext_bytes
   intro j hj
   rw [firstState_byte m mu w1 hj,byteOf_xorBytes _ _ hj]
-  have hz : byteOf zero j=0 := by
+  obtain hz : byteOf zero j=0 := by
     rw [byteOf_eq' _ hj]
     simp [zero]
   rw [hz]
@@ -1254,8 +1254,8 @@ theorem lowRun_full (m : Mem) (mu w1 : Addr) {wlen : Nat} (hw : 72≤wlen)
 theorem lowRun_pad65 (m : Mem) (mu w1 : Addr) :
     lowRun 768 m w1 (firstState m mu w1) 7=
       absorb 136 (pad 136 shakeSuffix (hashMessage m mu w1 768)) := by
-  have hf := lowRun_full m mu w1 (wlen:=768) (by decide) (i:=5) (by decide)
-  have hr : Rep 136 (hashMessage m mu w1 768)=
+  obtain hf := lowRun_full m mu w1 (wlen:=768) (by decide) (i:=5) (by decide)
+  obtain hr : Rep 136 (hashMessage m mu w1 768)=
       VG.Proof.Sha3.AArch64.Sha3.Vector.xorWords (absorbN 136 (hashMessage m mu w1 768) 6)
         m (w1+752) 2 := by
     rw [Rep,absorb_eq,hashMessage_length,hashMessage_tail m mu w1 (n:=6) (by decide) (by decide),xorWords_eq]
@@ -1270,8 +1270,8 @@ theorem lowRun_pad65 (m : Mem) (mu w1 : Addr) :
 theorem lowRun_pad87 (m : Mem) (mu w1 : Addr) :
     lowRun 1024 m w1 (firstState m mu w1) 9=
       absorb 136 (pad 136 shakeSuffix (hashMessage m mu w1 1024)) := by
-  have hf := lowRun_full m mu w1 (wlen:=1024) (by decide) (i:=7) (by decide)
-  have hr : Rep 136 (hashMessage m mu w1 1024)=absorbN 136 (hashMessage m mu w1 1024) 8 := by
+  obtain hf := lowRun_full m mu w1 (wlen:=1024) (by decide) (i:=7) (by decide)
+  obtain hr : Rep 136 (hashMessage m mu w1 1024)=absorbN 136 (hashMessage m mu w1 1024) 8 := by
     rw [Rep,absorb_eq,hashMessage_length,hashMessage_tail m mu w1 (n:=8) (by decide) (by decide)]
     exact xorBytes_nil _
   rw [absorb_pad (by decide : 1<136) (by decide : 136≤200),hashMessage_length,hr]
@@ -1324,7 +1324,7 @@ private theorem pair_ok {s : State} {A B : Spec.Sha3.State} {p : Addr} {i : Nat}
       fun t ht => WP.block_nil_iff.mpr ?_
   refine ⟨((RegKeep.vupd ha).trans (RegKeep.vmem ht)).mono (by simp),?_,?_⟩
   · intro j hj
-    have hj25 : vreg j≠.v25 := by
+    obtain hj25 : vreg j≠.v25 := by
       change vreg j≠vreg 25
       rw [ne_eq,vreg_inj j (by omega) 25 (by decide)]; omega
     rw [ht.v,ha.get _ hj25]
@@ -1449,16 +1449,16 @@ theorem sponge_ok {s : State} {wlen : Nat} (hc : CoreConfig s wlen (s.gpr .x1) (
         (Optimized.Resident.permuted (seedNonceState s.mem (s.gpr .x4) (s.gpr .x5)) ((64+wlen)/136+1)) ∧
       Spec.Sha3.bytesAt t.mem (bufferBase (s.gpr .x19)) 640 =
         Spec.MlDsa.H (seedBytes s.mem (s.gpr .x4) (s.gpr .x5)) 640 := by
-  have hw : 768≤wlen := by rcases hc.length with rfl|rfl <;> decide
+  obtain hw : 768≤wlen := by rcases hc.length with rfl|rfl <;> decide
   rw [WP.seq_iff]
   refine WP.mono (initial_ok hmu (fun j hj => hc.readable _ _ (by omega_using [hw, hj]))
     (hc.readable 64 8 (by omega_using [hw])) hseed) ?_
   intro a ⟨ha,hma,h5,hp⟩
-  have hca : CoreConfig a wlen (s.gpr .x1) (s.gpr .x19) := by
+  obtain hca : CoreConfig a wlen (s.gpr .x1) (s.gpr .x19) := by
     refine ⟨hc.length,ha.gpr .x19 (by decide),?_,?_,hc.separate⟩
     · intro d n hn; rw [ha.rd,ha.wr]; exact hc.readable d n hn
     · intro d n hn; rw [ha.wr]; exact hc.writable d n hn
-  have hstart : CoreState a wlen (s.gpr .x1) (s.gpr .x19)
+  obtain hstart : CoreState a wlen (s.gpr .x1) (s.gpr .x19)
       (firstState s.mem (s.gpr .x0) (s.gpr .x1))
       (seedNonceState s.mem (s.gpr .x4) (s.gpr .x5)) 0 a := by
     refine ⟨⟨RegKeep.refl _ _,Frame.refl _ _,?_,fun _ hi => by omega⟩,hp⟩
@@ -1469,7 +1469,7 @@ theorem sponge_ok {s : State} {wlen : Nat} (hc : CoreConfig s wlen (s.gpr .x1) (
   · simpa only [hma] using ht.frame
   · simpa only [hma] using ht.pairs
   · have ho := ht.output
-    have hn : min ((64+wlen)/136+1) 5=5 := by rcases hc.length with rfl|rfl <;> decide
+    obtain hn : min ((64+wlen)/136+1) 5=5 := by rcases hc.length with rfl|rfl <;> decide
     rw [hn,seedNonceState_A0] at ho
     exact Optimized.ResidentMask.stream_mask_bytes (d:=20) (Or.inr rfl)
       (seedBytes_length _ _ _) ho
@@ -1541,7 +1541,7 @@ theorem decode_access_ok {s : State} (h1 : s.gpr .x1=640)
       Frame [polyRegion (s.gpr .x4)] s.mem t.mem ∧ Keep decodeRegs s t := by
   let a := s.withRegions [⟨s.gpr .x0,640⟩] [polyRegion (s.gpr .x4)]
   obtain ⟨tr,t,he,hv,hf,hk⟩ := decode_ok (s:=a) h1 (by simp [a]) (by simp [a]) hsep
-  have hw := VG.AArch64.Exec.widen he (rd:=s.rd) (wr:=s.wr)
+  obtain hw := VG.AArch64.Exec.widen he (rd:=s.rd) (wr:=s.wr)
     (Covers.append_left (Covers.one hin) (Covers.right (Covers.one hout))) (Covers.one hout)
   change Exec isa _ s tr (t.withRegions s.rd s.wr) at hw
   exact ⟨tr,_,hw,hv,hf,⟨hk.gpr,rfl,rfl,hk.sp,hk.vcs⟩⟩
@@ -1552,7 +1552,7 @@ theorem decode_poly {m n : Mem} {a out : Addr}
     PolyIs n out (toRq (bitUnpack (Spec.Sha3.bytesAt m a 640) 524287 524288)) := by
   refine polyIs_of_toNat fun i hi => ?_
   have hq : q=8380417 := rfl
-  have hy := field_lt (inNum m a 20) 20 i (by decide)
+  obtain hy := field_lt (inNum m a 20) 20 i (by decide)
   have hy' := hy
   unfold inNum at hy'
   rw [hc i hi,buWord,BitVec.toNat_setWidth,subModQ_toNat (by decide) (by omega_using [hq]),
@@ -1578,8 +1578,8 @@ open VG.Proof.MlDsa.AArch64.Optimized.Resident
 theorem ratePairs_word {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     (h : RatePairs m a n A) {i : Nat} (hi : i<2*n) :
     m.readW (a+BitVec.ofNat 64 (8*i)) 64=A[i]! := by
-  have hp := h (i/2) (by omega_using [hi])
-  have hv := congrArg (fun v => vdword v (i%2)) hp
+  obtain hp := h (i/2) (by omega_using [hi])
+  obtain hv := congrArg (fun v => vdword v (i%2)) hp
   rw [vdword_read16 _ _ (by omega_using [])] at hv
   rcases (show i%2=0 ∨ i%2=1 by omega_using []) with hm|hm
   · rw [hm,vdword_ofVDwords_0] at hv
@@ -1592,8 +1592,8 @@ theorem ratePairs_word {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
 theorem ratePairs_byte {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     (h : RatePairs m a n A) {j : Nat} (hj : j<16*n) :
     m (a+BitVec.ofNat 64 j)=Proof.Sha3.byteOf A j := by
-  have hw := ratePairs_word h (i:=j/8) (by omega_using [hj])
-  have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
+  obtain hw := ratePairs_word h (i:=j/8) (by omega_using [hj])
+  obtain he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
   change (m.read (a+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8=_ at he
   rw [Mem.extractLsb'_read m _ (by omega_using [])] at he
   rw [BitVec.add_assoc,← BitVec.ofNat_add,show 8*(j/8)+j%8=j by omega_using []] at he
@@ -1643,7 +1643,7 @@ theorem parse_ok {s : State}
     fun t ⟨hc,hf,hk⟩ => ?_
   simp only [ha.mem,ha.other .x0 (by decide),ha.other .x4 (by decide)] at hc hf
   refine ⟨?_,hf,decode_poly hc⟩
-  have hb : RegKeep decodeRegs a t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
+  obtain hb : RegKeep decodeRegs a t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
   exact ((RegKeep.upd ha).trans hb).mono (by simp [parseRegs])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
@@ -1686,9 +1686,9 @@ theorem front_ok {s : State} {wlen : Nat} (hp : FrontPre wlen s) :
   rw [WP.seq_iff,List.append_assoc,List.append_assoc,WP.block_append_iff]
   refine WP.mono (pro_ok (fun i hi => hp.work _ _ (by omega_using [hi]))
     (fun i hi => hp.work _ _ (by omega_using [hi]))) fun a ⟨ha,hva,hsa,hfa,h19,h20,h21⟩ => ?_
-  have hsub : (Region.mk (s.gpr .x3) 160).Sub ⟨s.gpr .x3,2048⟩ := by
+  obtain hsub : (Region.mk (s.gpr .x3) 160).Sub ⟨s.gpr .x3,2048⟩ := by
     simpa using Offset.sub_base (s.gpr .x3) (d:=0) (n:=160) (k:=2048) (by decide)
-  have hconfig : CoreConfig a wlen (a.gpr .x1) (a.gpr .x19) := by
+  obtain hconfig : CoreConfig a wlen (a.gpr .x1) (a.gpr .x19) := by
     refine ⟨hp.length,rfl,?_,?_,?_⟩
     · intro d n hn; rw [ha.rd,ha.wr,ha.gpr .x1 (by decide)]; exact hp.packed d n hn
     · intro d n hn; rw [ha.wr,h19]; exact hp.work d n hn
@@ -1700,16 +1700,16 @@ theorem front_ok {s : State} {wlen : Nat} (hp : FrontPre wlen s) :
     rw [ha.rd,ha.wr,ha.gpr .x4 (by decide)]; exact hp.seed _ _ (by omega_using [hi])))
     fun t ⟨ht,hft,hpt,hbytes⟩ => ?_
   rw [h19] at hft hbytes
-  have hmu : Spec.Sha3.bytesAt a.mem (s.gpr .x0) 64=Spec.Sha3.bytesAt s.mem (s.gpr .x0) 64 := by
+  obtain hmu : Spec.Sha3.bytesAt a.mem (s.gpr .x0) 64=Spec.Sha3.bytesAt s.mem (s.gpr .x0) 64 := by
     apply Proof.MlKem.bytesAt_frame hfa ?_ (by decide)
     intro r hr; rcases List.mem_singleton.mp hr with rfl
     exact hp.muSep.sub_right hsub
-  have hpw : Spec.Sha3.bytesAt a.mem (s.gpr .x1) wlen=Spec.Sha3.bytesAt s.mem (s.gpr .x1) wlen := by
+  obtain hpw : Spec.Sha3.bytesAt a.mem (s.gpr .x1) wlen=Spec.Sha3.bytesAt s.mem (s.gpr .x1) wlen := by
     apply Proof.MlKem.bytesAt_frame hfa ?_ (by rcases hp.length with rfl|rfl <;> decide)
     intro r hr; rcases List.mem_singleton.mp hr with rfl
     exact hp.packedSep.sub_right hsub
-  have hseed : seedBytes a.mem (s.gpr .x4) (s.gpr .x5)=seedBytes s.mem (s.gpr .x4) (s.gpr .x5) := by
-    have hb : Spec.Sha3.bytesAt a.mem (s.gpr .x4) 64=Spec.Sha3.bytesAt s.mem (s.gpr .x4) 64 :=
+  obtain hseed : seedBytes a.mem (s.gpr .x4) (s.gpr .x5)=seedBytes s.mem (s.gpr .x4) (s.gpr .x5) := by
+    obtain hb : Spec.Sha3.bytesAt a.mem (s.gpr .x4) 64=Spec.Sha3.bytesAt s.mem (s.gpr .x4) 64 :=
       Proof.MlKem.bytesAt_frame hfa (by
         intro r hr; rcases List.mem_singleton.mp hr with rfl
         exact hp.seedSep.sub_right hsub) (by decide)
@@ -1764,13 +1764,13 @@ theorem outputStage_ok {s : State} {A B : Spec.Sha3.State} {n : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (output_ok (s:=a) (A:=A) (B:=B) (p:=s.gpr .x21) n hn (by intro i hi; rw [ha.vec]; exact hp i hi)
     ha.gpr (by intro i hi; rw [ha.wr]; exact hout i hi)) fun b ⟨hb,hpb,hbytes,hf⟩ => ?_
-  have hfb : Frame [⟨s.gpr .x21,16*n⟩] s.mem b.mem := by simpa only [ha.mem] using hf
+  obtain hfb : Frame [⟨s.gpr .x21,16*n⟩] s.mem b.mem := by simpa only [ha.mem] using hf
   refine WP.cons rfl (wp_mov fun t ht => WP.block_nil_iff.mpr ?_)
   refine ⟨?_,?_,?_,?_,?_⟩
   · refine ⟨fun r hr => ?_,ht.rd.trans hb.rd |>.trans ha.rd,
       ht.wr.trans hb.wr |>.trans ha.wr,ht.sp.trans hb.sp |>.trans ha.sp⟩
-    have h4 : r≠.x4 := fun e => hr (by simp [e])
-    have h0 : r≠.x0 := fun e => hr (by simp [e])
+    obtain h4 : r≠.x4 := fun e => hr (by simp [e])
+    obtain h0 : r≠.x0 := fun e => hr (by simp [e])
     rw [ht.other r h4,RegUpd.gpr_write,ite_eq_right h0,hb.gpr r (by simp),ha.other r (by
       intro e; apply hr; simp [e])]
   · rw [ht.mem]; exact hfb
@@ -1819,8 +1819,8 @@ theorem body_ok {σ s : State} {wlen olen : Nat} (hp : Pre wlen olen σ) (hs : F
     WP isa (.seq (.block (outputStage olen))
       (.seq (.block [.movz .x .x1 640 0]) Impl.MlDsa.AArch64.Pack.bitUnpack)) s (BodyPost wlen olen σ) := by
   obtain ⟨hk,hsv,hf,h19,h20,h21,A,B,hpAB,hhash,hbytes⟩ := hs
-  have hmul : 16*(olen/16)=olen := by rcases hp.outLength with rfl|rfl <;> decide
-  have hn : olen/16≤12 := by rcases hp.outLength with rfl|rfl <;> decide
+  obtain hmul : 16*(olen/16)=olen := by rcases hp.outLength with rfl|rfl <;> decide
+  obtain hn : olen/16≤12 := by rcases hp.outLength with rfl|rfl <;> decide
   rw [WP.seq_iff,← hmul]
   refine WP.mono (outputStage_ok hn hpAB (fun i hi => by
     rw [hk.wr,h21]; exact hp.output _ _ (by omega_using [hi]))) fun a ⟨ha,hfa,h0,h4,hout⟩ => ?_
@@ -1828,17 +1828,17 @@ theorem body_ok {σ s : State} {wlen olen : Nat} (hp : Pre wlen olen σ) (hs : F
   rw [hmul,h21] at hfa hout
   rw [h19] at h0
   rw [h20] at h4
-  have hasv : Saved σ a.mem := hsv.keep hfa (by
+  obtain hasv : Saved σ a.mem := hsv.keep hfa (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl
     exact hp.outWork.symm.sub_left (by
       simpa using Offset.sub_base (σ.gpr .x3) (d:=0) (n:=160) (k:=2048) (by decide)))
-  have habytes : Spec.Sha3.bytesAt a.mem (bufferBase (σ.gpr .x3)) 640=
+  obtain habytes : Spec.Sha3.bytesAt a.mem (bufferBase (σ.gpr .x3)) 640=
       H (seedBytes σ.mem (σ.gpr .x4) (σ.gpr .x5)) 640 := by
     rw [Proof.MlKem.bytesAt_frame hfa (by
       intro r hr; rcases List.mem_singleton.mp hr with rfl
       exact hp.outWork.symm.sub_left (Offset.sub_base _ (d:=256) (n:=640) (k:=2048) (by decide))) (by decide)]
     exact hbytes
-  have hahash := hhash olen (by rcases hp.outLength with rfl|rfl <;> decide)
+  obtain hahash := hhash olen (by rcases hp.outLength with rfl|rfl <;> decide)
   rw [hahash] at hout
   refine WP.mono (parse_ok (s:=a) (by
     rw [ha.rd,ha.wr,hk.rd,hk.wr,h0]; exact hp.readWork 256 640 (by decide)) (by

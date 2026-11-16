@@ -95,7 +95,7 @@ theorem sign_bit {X : List Byte} {τ i : Nat} (hτ : τ ≤ 256) (hi0 : 256 - τ
 /-- The word of the sign `b`, `1 + (q - 2) b`. -/
 theorem sgn_word (x : BitVec 64) {v : BitVec 64} (hv : v.toNat = q - 2) {o : BitVec 64} (ho : o.toNat = 1) :
     (o + (x &&& o) * v).setWidth 32 = zw (ofInt (if x.getLsbD 0 then -1 else 1)) := by
-  have hb : (x &&& o).toNat = if x.getLsbD 0 then 1 else 0 := by
+  obtain hb : (x &&& o).toNat = if x.getLsbD 0 then 1 else 0 := by
     rw [BitVec.toNat_and, ho, show (1 : Nat) = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
       BitVec.getLsbD, Nat.testBit, Nat.shiftRight_zero, Nat.one_and_eq_mod_two]
     split <;> rename_i h <;> simp at h <;> omega_arith
@@ -113,19 +113,19 @@ theorem set_ok {aP : Addr} {c : IPoly} {i j : Nat} (hij : j ≤ i) (hi : i < 256
       s'.gpr .x9 = s.gpr .x9 >>> 1 ∧
       CStored s'.mem aP ((c.set! i c[j]!).set! j (if (s.gpr .x9).getLsbD 0 then -1 else 1)) ∧
       Frame [polyR aP] s.mem s'.mem := by
-  have addr : ∀ {x : BitVec 64} {k : Nat}, x.toNat = k → k < 256 → aP + x <<< 2 = coeffAddr aP k :=
+  obtain addr : ∀ {x : BitVec 64} {k : Nat}, x.toNat = k → k < 256 → aP + x <<< 2 = coeffAddr aP k :=
     fun {x k} hx hk => by
       rw [coeffAddr]; congr 1; apply BitVec.eq_of_toNat_eq
       rw [toNat_lsl_n (by rw [hx]; simp only [Nat.reducePow]; omega_arith), hx, BitVec.toNat_ofNat]; omega_arith
   refine wp_lsl (by decide) fun s₁ o₁ e₁ => wp_add fun s₂ o₂ e₂ => wp_lsl (by decide) fun s₃ o₃ e₃ =>
     wp_add fun s₄ o₄ e₄ => ?_
-  have a8 : s₄.gpr .x8 = coeffAddr aP j := by
+  obtain a8 : s₄.gpr .x8 = coeffAddr aP j := by
     rw [o₄.get .x8, o₃.get .x8, e₂, o₁.get .x26, h26, e₁]; exact addr h6 (by omega_arith)
-  have a13 : s₄.gpr .x13 = coeffAddr aP i := by
+  obtain a13 : s₄.gpr .x13 = coeffAddr aP i := by
     rw [e₄, o₃.get .x26, o₂.get .x26, o₁.get .x26, h26, e₃, o₂.get .x10, o₁.get .x10]; exact addr h10 hi
-  have w4 : s₄.wr = s.wr := by rw [o₄.wr, o₃.wr, o₂.wr, o₁.wr]
-  have r4 : s₄.rd = s.rd := by rw [o₄.rd, o₃.rd, o₂.rd, o₁.rd]
-  have m4 : s₄.mem = s.mem := by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]
+  obtain w4 : s₄.wr = s.wr := by rw [o₄.wr, o₃.wr, o₂.wr, o₁.wr]
+  obtain r4 : s₄.rd = s.rd := by rw [o₄.rd, o₃.rd, o₂.rd, o₁.rd]
+  obtain m4 : s₄.mem = s.mem := by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]
   refine wp_ldrw (a := coeffAddr aP j) (by decide) (by rw [a8, ptr_zero])
     (by rw [r4, w4]; exact Proof.MlKem.AArch64.in_rd_wr (hw j (by omega_arith))) fun s₅ o₅ e₅ => ?_
   refine wp_strw (a := coeffAddr aP i) (by decide) (by rw [o₅.get .x13, a13, ptr_zero])
@@ -136,22 +136,22 @@ theorem set_ok {aP : Addr} {c : IPoly} {i j : Nat} (hij : j ≤ i) (hi : i < 256
     (by rw [o₈.wr, o₇.wr, o₆.wr, o₅.wr, w4]; exact hw j (by omega_arith)) fun s₉ o₉ => ?_
   refine wp_lsr (by decide) fun s₁₀ o₁₀ e₁₀ => wp_addImm (by decide) fun s₁₁ o₁₁ e₁₁ =>
     wp_subImm (by decide) fun s₁₂ o₁₂ e₁₂ => wp_nil ?_
-  have k₈ := (((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans o₆.keep).trans
+  obtain k₈ := (((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans o₆.keep).trans
     o₇.keep).trans o₈.keep).mono (rs' := [.x8, .x13, .x14]) (by decide)
-  have k₅ := ((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).mono
+  obtain k₅ := ((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).mono
     (rs' := [.x8, .x13, .x14]) (by decide)
-  have v14 : s₈.gpr .x14 = s.gpr .x15 + (s.gpr .x9 &&& s.gpr .x15) * s.gpr .x12 := by
+  obtain v14 : s₈.gpr .x14 = s.gpr .x15 + (s.gpr .x9 &&& s.gpr .x15) * s.gpr .x12 := by
     rw [e₈, o₇.get .x15, o₇.get .x12, e₇, o₆.gpr, k₅.get .x9, k₅.get .x15, k₅.get .x12]
-  have m₉ : s₉.mem = (s.mem.writeW (coeffAddr aP i) (s.mem.readW (coeffAddr aP j) 32)).writeW
+  obtain m₉ : s₉.mem = (s.mem.writeW (coeffAddr aP i) (s.mem.readW (coeffAddr aP j) 32)).writeW
       (coeffAddr aP j) (zw (ofInt (if (s.gpr .x9).getLsbD 0 then -1 else 1))) := by
     rw [o₉.mem, o₈.mem, o₇.mem, o₆.mem, v14, sgn_word _ h12 h15, e₅, o₅.mem, m4]
     congr 2
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, toNat_readW32, Nat.mod_eq_of_lt (s.mem.readW _ 32).isLt]
-  have k₁₂ := (((((((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans
+  obtain k₁₂ := (((((((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans
     o₆.keep).trans o₇.keep).trans o₈.keep).trans o₉.keep).trans o₁₀.keep).trans o₁₁.keep).trans
     o₁₂.keep).mono (rs' := [.x8, .x13, .x14, .x9, .x10, .x11]) (by decide)
-  have m₁₂ : s₁₂.mem = s₉.mem := by rw [o₁₂.mem, o₁₁.mem, o₁₀.mem]
+  obtain m₁₂ : s₁₂.mem = s₉.mem := by rw [o₁₂.mem, o₁₁.mem, o₁₀.mem]
   refine ⟨k₁₂, ?_, ?_, ?_, fun k hk => ?_, ?_⟩
   · rw [o₁₂.get .x10, e₁₁, o₁₀.get .x10, o₉.gpr, k₈.get .x10, toNat_add_n (by rw [h10]; simp; omega_arith), h10]; rfl
   · rw [e₁₂, o₁₁.get .x11, o₁₀.get .x11, o₉.gpr, k₈.get .x11, toNat_sub_n (by rw [h11]; simp; omega_arith),
@@ -198,24 +198,24 @@ theorem BAt.byte {X : List Byte} {bP aP : Addr} {τ : Nat} {s₀ : State} (hp : 
 theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} (hτ : τ ≤ 64) {s₀ : State}
     (hp : LPre X bP aP τ s₀) {t : Nat} (ht : t < 264) {s : State} (h : BAt X bP aP τ s₀ t s) :
     WP isa bBody s fun s' => BAt X bP aP τ s₀ (t + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 264) := by
-  have hle := St_le X τ t
-  have hge := St_ge X τ t
-  have hj : ((X.drop 8).getD t 0) = X.getD (8 + t) 0 := by
+  obtain hle := St_le X τ t
+  obtain hge := St_ge X τ t
+  obtain hj : ((X.drop 8).getD t 0) = X.getD (8 + t) 0 := by
     rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_drop]
-  have ht1 : St X τ (t + 1) = bStep τ (signs X) (St X τ t) ((X.drop 8).getD t 0) := by
+  obtain ht1 : St X τ (t + 1) = bStep τ (signs X) (St X τ t) ((X.drop 8).getD t 0) := by
     simp only [St]
     rw [take_succ'' _ (by rw [List.length_drop, hX]; omega_arith), bFold_snoc]
-  have hw : ∀ k < 256, InRegions s.wr (coeffAddr aP k) 4 := fun k hk => by rw [h.keep.wr]; exact hp.ina k hk
+  obtain hw : ∀ k < 256, InRegions s.wr (coeffAddr aP k) 4 := fun k hk => by rw [h.keep.wr]; exact hp.ina k hk
   -- the tail of the iteration
-  have tail : ∀ u : State, Keep [.x6, .x7, .x8, .x13, .x14, .x9, .x10, .x11] s u → Frame [polyR aP] s.mem u.mem →
+  obtain tail : ∀ u : State, Keep [.x6, .x7, .x8, .x13, .x14, .x9, .x10, .x11] s u → Frame [polyR aP] s.mem u.mem →
       u.gpr .x9 = W X >>> ((St X τ (t + 1)).2 - (256 - τ)) → (u.gpr .x10).toNat = (St X τ (t + 1)).2 →
       (u.gpr .x11).toNat = 256 - (St X τ (t + 1)).2 → CStored u.mem aP (St X τ (t + 1)).1 →
       WP isa (.block [.addImm .x .x2 .x2 1, .subImm .x .x5 .x5 1]) u fun s' =>
         BAt X bP aP τ s₀ (t + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 264) := by
     intro u ku fu x9 x10 x11 st
     refine wp_addImm (by decide) fun u₁ o₁ e₁ => wp_subImm (by decide) fun u₂ o₂ e₂ => wp_nil ?_
-    have c5 : (u₁.gpr .x5).toNat = 264 - t := by rw [o₁.get .x5, ku.get .x5, h.x5]
-    have v5 : (u₂.gpr .x5).toNat = 264 - (t + 1) := by
+    obtain c5 : (u₁.gpr .x5).toNat = 264 - t := by rw [o₁.get .x5, ku.get .x5, h.x5]
+    obtain v5 : (u₂.gpr .x5).toNat = 264 - (t + 1) := by
       rw [e₂, toNat_sub_n (by rw [c5]; simp; omega_arith), c5]; simp; omega_arith
     refine ⟨⟨((h.keep.trans ku).trans (o₁.keep.trans o₂.keep)).mono, h.frame.trans (by
         rw [o₂.mem, o₁.mem]; exact fu), ?_, v5, by rw [o₂.get .x9, o₁.get .x9, x9],
@@ -225,30 +225,30 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
     rw [o₂.get .x2, e₁, ku.get .x2, h.x2, ptr_add, Nat.add_assoc]
   by_cases hf : (St X τ t).2 = 256
   · -- `i = 256`: nothing to do
-    have e : St X τ (t + 1) = St X τ t := by rw [ht1, bStep_full (by simp only [n]; omega_arith)]
+    obtain e : St X τ (t + 1) = St X τ t := by rw [ht1, bStep_full (by simp only [n]; omega_arith)]
     refine WP.seq (WP.ite true (by rw [eval_zero, eq_zero_iff, h.x11, hf]; rfl) (fun _ => wp_nil ?_)
       (fun h => nomatch h))
     exact tail s (Keep.refl _ _) (Frame.refl _ _) (by rw [e, h.x9]) (by rw [e, h.x10]) (by rw [e, h.x11])
       (by rw [e]; exact h.st)
   refine WP.seq (WP.ite false (by rw [eval_zero, eq_zero_iff, h.x11]; simp; omega_arith) (fun h => nomatch h)
     fun _ => ?_)
-  have hin : InRegions (s.rd ++ s.wr) (s.gpr .x2) 1 := by
+  obtain hin : InRegions (s.rd ++ s.wr) (s.gpr .x2) 1 := by
     rw [h.keep.rd, h.keep.wr, h.x2]; exact hp.inb _ (by omega_arith)
-  have hb : s.mem (s.gpr .x2) = (X.drop 8).getD t 0 := by rw [hj, h.x2]; exact h.byte hp (by omega_arith)
+  obtain hb : s.mem (s.gpr .x2) = (X.drop 8).getD t 0 := by rw [hj, h.x2]; exact h.byte hp (by omega_arith)
   refine WP.seq (wp_ldrb (a := s.gpr .x2) (by decide) (ptr_zero _) hin fun s₁ o₁ e₁ =>
     wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ => wp_nil ?_)
-  have k₃ := ((o₁.keep.trans o₂.keep).trans o₃.keep).mono (rs' := [.x6, .x7]) (by decide)
-  have v6 : (s₃.gpr .x6).toNat = ((X.drop 8).getD t 0).toNat := by
+  obtain k₃ := ((o₁.keep.trans o₂.keep).trans o₃.keep).mono (rs' := [.x6, .x7]) (by decide)
+  obtain v6 : (s₃.gpr .x6).toNat = ((X.drop 8).getD t 0).toNat := by
     rw [o₃.get .x6, o₂.get .x6, e₁, toNat_byte, hb]
-  have hjl := ((X.drop 8).getD t 0).isLt
-  have v7 : (s₃.gpr .x7).toNat = if (St X τ t).2 < ((X.drop 8).getD t 0).toNat then 1 else 0 := by
+  obtain hjl := ((X.drop 8).getD t 0).isLt
+  obtain v7 : (s₃.gpr .x7).toNat = if (St X τ t).2 < ((X.drop 8).getD t 0).toNat then 1 else 0 := by
     rw [e₃, e₂, o₁.get .x10]
     exact lt_bit h.x10 (by rw [e₁, toNat_byte, hb])
       (by omega_arith) (by simp only [Nat.reducePow] at hjl ⊢; omega_arith)
-  have hi : (St X τ t).2 < n := by simp only [n]; omega_arith
+  obtain hi : (St X τ t).2 < n := by simp only [n]; omega_arith
   by_cases hr : (St X τ t).2 < ((X.drop 8).getD t 0).toNat
   · -- rejected
-    have e : St X τ (t + 1) = St X τ t := by
+    obtain e : St X τ (t + 1) = St X τ t := by
       rw [ht1]; unfold bStep; rw [ifT hi, ifT hr]
     refine WP.ite true (by rw [eval_nonzero, ne_zero_iff, v7, ifT hr]; rfl) (fun _ => wp_nil ?_)
       (fun h => nomatch h)
@@ -256,7 +256,7 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
       (by rw [e, k₃.get .x9, h.x9]) (by rw [e, k₃.get .x10, h.x10]) (by rw [e, k₃.get .x11, h.x11])
       (by rw [e, o₃.mem, o₂.mem, o₁.mem]; exact h.st)
   · -- a coefficient set
-    have e : St X τ (t + 1) = (((St X τ t).1.set! (St X τ t).2 (St X τ t).1[((X.drop 8).getD t 0).toNat]!).set!
+    obtain e : St X τ (t + 1) = (((St X τ t).1.set! (St X τ t).2 (St X τ t).1[((X.drop 8).getD t 0).toNat]!).set!
         ((X.drop 8).getD t 0).toNat (if (signs X).getD ((St X τ t).2 + τ - 256) false then -1 else 1),
         (St X τ t).2 + 1) := by
       rw [ht1]; unfold bStep; rw [ifT hi, ifF hr]
@@ -267,7 +267,7 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
         (by rw [k₃.get .x11, h.x11]) (by rw [k₃.get .x12, h.x12]) (by rw [k₃.get .x15, h.x15])
         (by rw [o₃.wr, o₂.wr, o₁.wr]; exact hw) (by rw [o₃.mem, o₂.mem, o₁.mem]; exact h.st))
         fun s₄ ⟨k₄, x10, x11, x9, st, f₄⟩ => ?_)
-    have sg : (s₃.gpr .x9).getLsbD 0 = (signs X).getD ((St X τ t).2 + τ - 256) false := by
+    obtain sg : (s₃.gpr .x9).getLsbD 0 = (signs X).getD ((St X τ t).2 + τ - 256) false := by
       rw [k₃.get .x9, h.x9]; exact sign_bit (by omega_arith) hge (by omega_arith) hτ
     rw [sg] at st
     refine tail s₄ (k₃.trans k₄).mono (by rw [← show s₃.mem = s.mem by rw [o₃.mem, o₂.mem, o₁.mem]]; exact f₄) ?_
@@ -284,13 +284,13 @@ theorem loop_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
     wp_sub fun s₃ o₃ e₃ => wp_mov fun s₄ o₄ e₄ => wp_addImm (by decide) fun s₅ o₅ e₅ =>
     wp_movz fun s₆ o₆ e₆ => movQ_ok fun s₇ o₇ e₇ => wp_subImm (by decide) fun s₈ o₈ e₈ =>
     wp_movz fun s₉ o₉ e₉ => wp_nil ?_)
-  have k₉ := ((((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans o₆.keep).trans
+  obtain k₉ := ((((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans o₆.keep).trans
     o₇.keep).trans o₈.keep).trans o₉.keep)
-  have m₉ : s₉.mem = s₀.mem := by
+  obtain m₉ : s₉.mem = s₀.mem := by
     rw [o₉.mem, o₈.mem, o₇.mem, o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
   have hS : St X τ 0 = (Vector.replicate n 0, 256 - τ) := rfl
-  have x27 : s₂.gpr .x27 = s₀.gpr .x27 := by rw [o₂.get .x27, o₁.get .x27]
-  have i₀ : BAt X bP aP τ s₀ 0 s₉ := ⟨k₉.mono, by rw [m₉]; exact Frame.refl _ _,
+  obtain x27 : s₂.gpr .x27 = s₀.gpr .x27 := by rw [o₂.get .x27, o₁.get .x27]
+  obtain i₀ : BAt X bP aP τ s₀ 0 s₉ := ⟨k₉.mono, by rw [m₉]; exact Frame.refl _ _,
     by rw [o₉.get .x2, o₈.get .x2, o₇.get .x2, o₆.get .x2, e₅, o₄.get .x25, o₃.get .x25, o₂.get .x25,
       o₁.get .x25, ← hp.x25, ptr_add],
     by rw [o₉.get .x5, o₈.get .x5, o₇.get .x5, e₆]; rfl,

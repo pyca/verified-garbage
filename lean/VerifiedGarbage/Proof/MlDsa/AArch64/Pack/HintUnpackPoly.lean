@@ -98,12 +98,12 @@ include hp in
 theorem hbuInit_ok : WP isa hbuInit s₀ (hbuInitPost s₀) := by
   obtain ⟨hk4, hk8, -, hsum, hr4⟩ := up_facts hp
   have hwr := hp.2.1
-  have hl := (s₀.gpr .x4).isLt
+  obtain hl := (s₀.gpr .x4).isLt
   unfold hbuInit hbuPro
   refine WP.seq (wp_lsr (by decide) fun s₁ o₁ e₁ => wp_sub fun s₂ o₂ e₂ => wp_movz fun s₃ o₃ e₃ =>
     wp_mov fun s₄ o₄ e₄ => wp_mov fun s₅ o₅ e₅ => wp_mov fun s₆ o₆ e₆ => wp_nil ?_)
-  have k₆ := ((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆
-  have x15 : s₆.gpr .x15 = 0 := by rw [o₆.get .x15, o₅.get .x15, o₄.get .x15, e₃]; rfl
+  obtain k₆ := ((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆
+  obtain x15 : s₆.gpr .x15 = 0 := by rw [o₆.get .x15, o₅.get .x15, o₄.get .x15, e₃]; rfl
   refine WP.mono (count_loop (n := (s₀.gpr .x4).toNat) (by omega_arith) (fun t s =>
       s.gpr .x10 = s₀.gpr .x3 + BitVec.ofNat 64 (4 * t) ∧
       (s.gpr .x8).toNat = (s₀.gpr .x4).toNat - t ∧ Keep [.x8, .x10] s₆ s ∧ Frame [uR s₀] s₀.mem s.mem ∧
@@ -220,7 +220,7 @@ include hp in
 /-- A byte of `y`, unchanged by the writes to `h`. -/
 theorem yByte {s : State} (hc : UCom s₀ s) {t : Nat} (ht : t < uLen s₀) :
     s.mem (s₀.gpr .x0 + BitVec.ofNat 64 t) = (uY s₀).getD t 0 := by
-  have hl := (s₀.gpr .x1).isLt
+  obtain hl := (s₀.gpr .x1).isLt
   have e1 : uLen s₀ = (s₀.gpr .x1).toNat := rfl
   rw [Array.getD_eq_getD_getElem?, List.getElem?_toArray, ← List.getD_eq_getElem?_getD, bytesAt_getD _ _ ht]
   refine hc.frame _ fun r hr hc' => ?_
@@ -233,7 +233,7 @@ theorem yLoad_ok {r : Reg} {t : Nat} (ht : t < uLen s₀) {s : State} (hc : UCom
     (h5 : s.gpr .x5 = BitVec.ofNat 64 t) :
     WP isa (.block [.add .x .x13 .x9 .x5, .ldrb r .x13 0]) s fun s' =>
       s'.gpr r = BitVec.ofNat 64 ((uY s₀).getD t 0).toNat ∧ Only [.x13, r] s s' := by
-  have hl := (s₀.gpr .x1).isLt
+  obtain hl := (s₀.gpr .x1).isLt
   have e1 : uLen s₀ = (s₀.gpr .x1).toNat := rfl
   have hrd := hp.1
   refine wp_add fun s₁ o₁ e₁ => wp_ldrb (by decide) (by rw [e₁, hc.x9, h5, ptr_zero])
@@ -277,22 +277,22 @@ theorem set_ok {i bound idx v : Nat} (hi : i < uk s₀) (hv : v < 256) {hA : Arr
         HArr s₀ s'.mem (huSet i v hA) := by
   obtain ⟨hk4, hk8, -, -, hr4⟩ := up_facts hp
   have hwr := hp.2.1
-  have ha : s₀.gpr .x3 + BitVec.ofNat 64 (1024 * i) + BitVec.ofNat 64 v <<< 2 =
+  obtain ha : s₀.gpr .x3 + BitVec.ofNat 64 (1024 * i) + BitVec.ofNat 64 v <<< 2 =
       coeffAddr (s₀.gpr .x3) (256 * i + v) := by
     rw [show BitVec.ofNat 64 v <<< 2 = BitVec.ofNat 64 (4 * v) by
         apply BitVec.eq_of_toNat_eq
         rw [toNat_lsl_n (by rw [BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_arith,
       ptr_add, coeffAddr, show 1024 * i + 4 * v = 4 * (256 * i + v) by omega_arith]
-  have hin : (uR s₀).Contains (coeffAddr (s₀.gpr .x3) (256 * i + v)) 4 :=
+  obtain hin : (uR s₀).Contains (coeffAddr (s₀.gpr .x3) (256 * i + v)) 4 :=
     Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold hbuSet
   refine wp_lsl (by decide) fun s₁ o₁ e₁ => wp_add fun s₂ o₂ e₂ =>
     wp_strw ⟨by decide, by decide⟩ (by rw [e₂, o₁.get .x3, e₁, hP.x3, h10, ptr_zero, ha])
       (by rw [o₂.wr, o₁.wr, hP.com.wr, hwr]; exact ⟨_, .head _, hin⟩) fun s₃ h₃ =>
     wp_addImm (by decide) fun s₄ o₄ e₄ => wp_addImm (by decide) fun s₅ o₅ e₅ => wp_nil ?_
-  have k₅ := (((o₁.keep.trans o₂.keep).trans h₃.keep).trans o₄.keep).trans o₅.keep
-  have m₅ : s₅.mem = s.mem.writeW (coeffAddr (s₀.gpr .x3) (256 * i + v)) (1 : BitVec 32) := by
+  obtain k₅ := (((o₁.keep.trans o₂.keep).trans h₃.keep).trans o₄.keep).trans o₅.keep
+  obtain m₅ : s₅.mem = s.mem.writeW (coeffAddr (s₀.gpr .x3) (256 * i + v)) (1 : BitVec 32) := by
     rw [o₅.mem, o₄.mem, h₃.mem, o₂.mem, o₁.mem, o₂.get .x15, o₁.get .x15, hP.com.x15]; rfl
   refine ⟨hP.of_keep k₅ (by rw [m₅]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hin),
     by rw [o₅.get .x5, e₄, h₃.gpr, o₂.get .x5, o₁.get .x5, h5, ofNat_succ64],
@@ -322,8 +322,8 @@ theorem ucoef_ok {i bound first idx : Nat} (hi : i < uk s₀) (hfi : first ≤ i
           (s'.gpr .x10 != 0) = decide (idx' < bound)
         | none => s'.gpr .x5 = BitVec.ofNat 64 256 ∧ (s'.gpr .x10 != 0) = false) := by
   obtain ⟨hk4, hk8, hω80, hsum, hr4⟩ := up_facts hp
-  have hv := ((uY s₀).getD idx 0).isLt
-  have hpv : prevV (uY s₀) first idx ≤ 256 := by
+  obtain hv := ((uY s₀).getD idx 0).isLt
+  obtain hpv : prevV (uY s₀) first idx ≤ 256 := by
     unfold prevV; split
     · have := ((uY s₀).getD (idx - 1) 0).isLt; omega_arith
     · omega_arith
@@ -334,15 +334,15 @@ theorem ucoef_ok {i bound first idx : Nat} (hi : i < uk s₀) (hfi : first ≤ i
   rw [WP.block_append_iff]
   refine WP.mono (yLoad_ok hp (r := .x10) (by omega_arith) hP.com h5) fun s₁ ⟨h10₁, o₁⟩ =>
     wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ => wp_nil ?_
-  have k₃ := (o₁.trans o₂).trans o₃
-  have hP₃ : PCom s₀ i bound s₃ := hP.of_only k₃
-  have hc : (s₃.gpr .x14 != 0) = decide (((uY s₀).getD idx 0).toNat < prevV (uY s₀) first idx) := by
+  obtain k₃ := (o₁.trans o₂).trans o₃
+  obtain hP₃ : PCom s₀ i bound s₃ := hP.of_only k₃
+  obtain hc : (s₃.gpr .x14 != 0) = decide (((uY s₀).getD idx 0).toNat < prevV (uY s₀) first idx) := by
     rw [e₃, e₂, o₁.get .x11, h11, h10₁, nz_lt (by rw [toNat_ofNat_small (by omega_arith)]; omega_arith)
       (by rw [toNat_ofNat_small (by omega_arith)]; omega_arith), toNat_ofNat_small (by omega_arith), toNat_ofNat_small (by omega_arith)]
   refine WP.seq (WP.ite _ (eval_nonzero s₃ .x14) (fun hf => ?_) (fun hs => ?_))
   · -- Not above the previous one: fail.
     rw [hc] at hf
-    have hn : huStep (uY s₀) i first (hA, idx) 0 = none := by rw [huStep_eq, ite_pos' (of_decide_eq_true hf)]
+    obtain hn : huStep (uY s₀) i first (hA, idx) 0 = none := by rw [huStep_eq, ite_pos' (of_decide_eq_true hf)]
     rw [hn]
     refine WP.mono (fail_ok s₃) fun s₄ ⟨h5₄, o₄⟩ => ?_
     refine WP.mono (cmp_ok (r := .x7) s₄ (by rw [o₄.get .x7, hP₃.x7, toNat_ofNat_small (by omega_arith)]; omega_arith)
@@ -352,8 +352,8 @@ theorem ucoef_ok {i bound first idx : Nat} (hi : i < uk s₀) (hfi : first ≤ i
     exact decide_eq_false (by omega_arith)
   · -- Set it.
     rw [hc] at hs
-    have hs' := of_decide_eq_false hs
-    have hn : huStep (uY s₀) i first (hA, idx) 0 =
+    obtain hs' := of_decide_eq_false hs
+    obtain hn : huStep (uY s₀) i first (hA, idx) 0 =
         some (huSet i ((uY s₀).getD idx 0).toNat hA, idx + 1) := by rw [huStep_eq, ite_neg' hs']
     rw [hn]
     refine WP.mono (set_ok hp hi hv (idx := idx) (hA := hA) (hP := hP₃) (by rw [k₃.get .x5, h5]) (by rw [o₃.get .x10, o₂.get .x10, h10₁])
@@ -379,16 +379,16 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
   obtain ⟨hk4, hk8, hω80, hsum, hr4⟩ := up_facts hp
   unfold hbuCoefs
   refine WP.seq (wp_movz fun s₁ o₁ e₁ => wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ => wp_nil ?_)
-  have k₃ := (o₁.trans o₂).trans o₃
-  have hP₃ : PCom s₀ i bound s₃ := hP.of_only k₃
-  have h5₃ : s₃.gpr .x5 = BitVec.ofNat 64 first := by rw [k₃.get .x5, h5]
-  have hc : (s₃.gpr .x10 != 0) = decide (first < bound) := by
+  obtain k₃ := (o₁.trans o₂).trans o₃
+  obtain hP₃ : PCom s₀ i bound s₃ := hP.of_only k₃
+  obtain h5₃ : s₃.gpr .x5 = BitVec.ofNat 64 first := by rw [k₃.get .x5, h5]
+  obtain hc : (s₃.gpr .x10 != 0) = decide (first < bound) := by
     rw [e₃, e₂, o₁.get .x5, o₁.get .x7, h5, hP.x7, nz_lt (by rw [toNat_ofNat_small (by omega_arith)]; omega_arith)
       (by rw [toNat_ofNat_small (by omega_arith)]; omega_arith), toNat_ofNat_small (by omega_arith), toNat_ofNat_small (by omega_arith)]
   refine WP.ite _ (eval_nonzero s₃ .x10) (fun hlt => ?_) (fun hge => ?_)
   · -- The coefficients, while the index is less than the bound.
     rw [hc] at hlt
-    have hlt := of_decide_eq_true hlt
+    obtain hlt := of_decide_eq_true hlt
     refine WP.loop (M := isa) (fun m s' => ∃ t hA' idx', m = bound - idx' ∧
         optFold (huStep (uY s₀) i first) (List.range t) (hA, first) = some (hA', idx') ∧ idx' = first + t ∧
         idx' < bound ∧ PCom s₀ i bound s' ∧ s'.gpr .x5 = BitVec.ofNat 64 idx' ∧
@@ -397,9 +397,9 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
       ⟨0, hA, first, rfl, rfl, rfl, hlt, hP₃, h5₃, by rw [o₃.get .x11, o₂.get .x11, e₁]; unfold prevV; rw [ite_neg' (Nat.lt_irrefl _)]; rfl,
         by rw [k₃.mem]; exact hh⟩
     refine WP.mono (ucoef_ok hp hi (by omega_arith) hlt' hbω hP' h5' h11' hh') fun s'' ⟨hP'', hm''⟩ => ?_
-    have hF1 : optFold (huStep (uY s₀) i first) (List.range (t + 1)) (hA, first) =
+    obtain hF1 : optFold (huStep (uY s₀) i first) (List.range (t + 1)) (hA, first) =
         huStep (uY s₀) i first (hA', idx') t := by rw [optFold_range_succ, hF]; rfl
-    have hst : huStep (uY s₀) i first (hA', idx') t = huStep (uY s₀) i first (hA', idx') 0 := by
+    obtain hst : huStep (uY s₀) i first (hA', idx') t = huStep (uY s₀) i first (hA', idx') 0 := by
       rw [huStep_eq, huStep_eq]
     cases hs : huStep (uY s₀) i first (hA', idx') 0 with
     | none =>
@@ -414,8 +414,8 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
       rw [hs] at hm''
       obtain ⟨hA'', idx''⟩ := st
       obtain ⟨h5'', h11'', hh'', c''⟩ := hm''
-      have hi'' : idx'' = idx' + 1 := huStep_idx hs
-      have hF2 : optFold (huStep (uY s₀) i first) (List.range (t + 1)) (hA, first) = some (hA'', idx'') := by
+      obtain hi'' : idx'' = idx' + 1 := huStep_idx hs
+      obtain hF2 : optFold (huStep (uY s₀) i first) (List.range (t + 1)) (hA, first) = some (hA'', idx'') := by
         rw [hF1, hst]; exact hs
       by_cases e : idx'' < bound
       · refine .inr ⟨by rw [eval_nonzero, c'', decide_eq_true e], bound - idx'', by omega_arith, t + 1, hA'', idx'', rfl,
@@ -425,7 +425,7 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
         exact ⟨by omega_arith, h5'', hh''⟩
   · -- No coefficient.
     rw [hc] at hge
-    have hge := of_decide_eq_false hge
+    obtain hge := of_decide_eq_false hge
     refine WP.block_nil ⟨hP₃, ?_⟩
     rw [show bound - first = 0 by omega_arith]
     exact ⟨by omega_arith, h5₃, by rw [k₃.mem]; exact hh⟩
@@ -450,42 +450,42 @@ theorem upolyBody_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i 
     WP isa hbuPoly s fun s' => UCom s₀ s' ∧ s'.gpr .x3 = s.gpr .x3 ∧ s'.gpr .x6 = s.gpr .x6 ∧
       s'.gpr .x12 = s.gpr .x12 ∧ SRel s₀ (huS s₀ (i + 1)) s' := by
   obtain ⟨hk4, hk8, hω80, hsum, hr4⟩ := up_facts hp
-  have hl := (s₀.gpr .x1).isLt
+  obtain hl := (s₀.gpr .x1).isLt
   have e1 : uLen s₀ = (s₀.gpr .x1).toNat := rfl
   have hrd := hp.1
-  have hsucc : huS s₀ (i + 1) = (huS s₀ i).bind fun st => huPoly (uω s₀) (uY s₀) st i := optFold_range_succ _ _ _
+  obtain hsucc : huS s₀ (i + 1) = (huS s₀ i).bind fun st => huPoly (uω s₀) (uY s₀) st i := optFold_range_succ _ _ _
   unfold hbuPoly
   -- The bound.
-  have hbl := ((uY s₀).getD (uω s₀ + i) 0).isLt
+  obtain hbl := ((uY s₀).getD (uω s₀ + i) 0).isLt
   refine WP.seq (wp_ldrb (by decide) (by rw [hI.x6, ptr_zero])
     (by rw [hI.com.rd, hI.com.wr, hrd]; exact ⟨_, .head _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     fun s₁ o₁ e₁ => wp_sub fun s₂ o₂ e₂ => wp_sub fun s₃ o₃ e₃ => wp_orr fun s₄ o₄ e₄ =>
       wp_lsr (by decide) fun s₅ o₅ e₅ => wp_nil ?_)
-  have k₅ := (((o₁.trans o₂).trans o₃).trans o₄).trans o₅
-  have hc₅ : UCom s₀ s₅ := hI.com.of_only k₅
-  have hb : s₁.gpr .x7 = BitVec.ofNat 64 ((uY s₀).getD (uω s₀ + i) 0).toNat := by
+  obtain k₅ := (((o₁.trans o₂).trans o₃).trans o₄).trans o₅
+  obtain hc₅ : UCom s₀ s₅ := hI.com.of_only k₅
+  obtain hb : s₁.gpr .x7 = BitVec.ofNat 64 ((uY s₀).getD (uω s₀ + i) 0).toNat := by
     rw [e₁, yByte hp hI.com (by omega_arith)]
     apply BitVec.eq_of_toNat_eq
     rw [toNat_byte, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have hb2 : (s₁.gpr .x7).toNat = ((uY s₀).getD (uω s₀ + i) 0).toNat := by rw [hb, toNat_ofNat_small (by omega_arith)]
-  have hx5 : (s.gpr .x5).toNat ≤ 256 := by
+  obtain hb2 : (s₁.gpr .x7).toNat = ((uY s₀).getD (uω s₀ + i) 0).toNat := by rw [hb, toNat_ofNat_small (by omega_arith)]
+  obtain hx5 : (s.gpr .x5).toNat ≤ 256 := by
     have := hI.st
     revert this
     cases huS s₀ i with
     | none => intro h; rw [SRel] at h; rw [h, toNat_ofNat_small (by decide)]
     | some st => obtain ⟨hA, idx⟩ := st; intro ⟨h, h', _⟩; rw [h, toNat_ofNat_small (by omega_arith)]; omega_arith
-  have hω2 : (s₁.gpr .x2).toNat = uω s₀ := by rw [o₁.get .x2, hI.com.x2, toNat_ofNat_small (by omega_arith)]
-  have hc : (s₅.gpr .x10 != 0) =
+  obtain hω2 : (s₁.gpr .x2).toNat = uω s₀ := by rw [o₁.get .x2, hI.com.x2, toNat_ofNat_small (by omega_arith)]
+  obtain hc : (s₅.gpr .x10 != 0) =
       decide (((uY s₀).getD (uω s₀ + i) 0).toNat < (s.gpr .x5).toNat ∨ uω s₀ < ((uY s₀).getD (uω s₀ + i) 0).toNat) := by
     rw [e₅, e₄, o₃.get .x10, e₃, e₂, o₂.get .x7, o₁.get .x5, o₂.get .x2,
       nz_or (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), hb2, hω2]
-  have hkeep : ∀ {s' : State} {rs : List Reg}, Keep rs s₅ s' → Reg.x3 ∉ rs → Reg.x6 ∉ rs → Reg.x12 ∉ rs →
+  obtain hkeep : ∀ {s' : State} {rs : List Reg}, Keep rs s₅ s' → Reg.x3 ∉ rs → Reg.x6 ∉ rs → Reg.x12 ∉ rs →
       s'.gpr .x3 = s.gpr .x3 ∧ s'.gpr .x6 = s.gpr .x6 ∧ s'.gpr .x12 = s.gpr .x12 := fun hk h3 h6 h12 =>
     ⟨by rw [hk.gpr _ h3, k₅.get .x3], by rw [hk.gpr _ h6, k₅.get .x6], by rw [hk.gpr _ h12, k₅.get .x12]⟩
   refine WP.ite _ (eval_nonzero s₅ .x10) (fun hf => ?_) (fun hs => ?_)
   · -- A failed check, now or before.
     rw [hc] at hf
-    have hf := of_decide_eq_true hf
+    obtain hf := of_decide_eq_true hf
     refine WP.mono (fail_ok s₅) fun s₆ ⟨h5₆, o₆⟩ => ?_
     obtain ⟨k3, k6, k12⟩ := hkeep o₆.keep (by decide) (by decide) (by decide)
     refine ⟨hc₅.of_only o₆, k3, k6, k12, ?_⟩
@@ -503,7 +503,7 @@ theorem upolyBody_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i 
       exact h5₆
   · -- The coefficients.
     rw [hc] at hs
-    have hs := of_decide_eq_false hs
+    obtain hs := of_decide_eq_false hs
     have hst := hI.st
     revert hst
     cases hS : huS s₀ i with
@@ -516,7 +516,7 @@ theorem upolyBody_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i 
       obtain ⟨hA, idx⟩ := st
       intro ⟨h5, hidx, hh⟩
       rw [h5, toNat_ofNat_small (by omega_arith)] at hs
-      have hP₅ : PCom s₀ i ((uY s₀).getD (uω s₀ + i) 0).toNat s₅ :=
+      obtain hP₅ : PCom s₀ i ((uY s₀).getD (uω s₀ + i) 0).toNat s₅ :=
         ⟨hc₅, by rw [k₅.get .x3, hI.x3], by rw [k₅.get .x6, hI.x6], by rw [o₅.get .x7, o₄.get .x7, o₃.get .x7,
           o₂.get .x7, hb], by rw [k₅.get .x12, hI.x12]⟩
       refine WP.mono (coefs_ok hp hi (first := idx) (hA := hA) (by omega_arith) (by omega_arith) hP₅ (by rw [k₅.get .x5, h5])
@@ -539,8 +539,8 @@ theorem upoly_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i s) :
   refine WP.seq (WP.mono (upolyBody_ok hp hi hI) fun s₁ ⟨hc₁, h3, h6, h12, st₁⟩ => ?_)
   refine wp_addImm (by decide) fun s₂ o₂ e₂ => wp_addImm (by decide) fun s₃ o₃ e₃ =>
     wp_subImm (by decide) fun s₄ o₄ e₄ => wp_nil ?_
-  have k₄ := (o₂.trans o₃).trans o₄
-  have c12 : (s₄.gpr .x12).toNat = uk s₀ - (i + 1) := by
+  obtain k₄ := (o₂.trans o₃).trans o₄
+  obtain c12 : (s₄.gpr .x12).toNat = uk s₀ - (i + 1) := by
     rw [e₄, o₃.get .x12, o₂.get .x12, h12]; exact count_step hI.x12 hi
   refine ⟨⟨hc₁.of_only k₄, ?_, ?_, c12, ?_⟩, by rw [c12]; omega_arith⟩
   · rw [o₄.get .x3, e₃, o₂.get .x3, h3, hI.x3, ptr_add, show 1024 * i + 1024 = 1024 * (i + 1) by omega_arith]

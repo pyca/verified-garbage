@@ -44,7 +44,7 @@ theorem exponentValid_sat (v : Nat) : Spec.Rsa.exponentValid (sat v) = Spec.Rsa.
   by_cases h : v < 2 ^ 33
   · rw [Nat.min_eq_left (Nat.le_of_lt h)]
   · rw [Nat.min_eq_right (by omega_arith)]
-    have h2 : (decide (v < 2 ^ 33)) = false := decide_eq_false h
+    obtain h2 : (decide (v < 2 ^ 33)) = false := decide_eq_false h
     simp only [Spec.Rsa.exponentValid, h2, Bool.and_false]
     decide
 
@@ -57,7 +57,7 @@ theorem out_bytes {m m' : Mem} {O B : Addr} {d k w v : Nat} (hkw : k ≤ 8 * w)
   rw [VG.Proof.Bignum.reversed_i2osp m m' (off B d) O k fun j hj => by
     rw [h j hj, off, off, Offset.add_add]]
   congr 1
-  have e := VG.Proof.Bignum.read_eq_wv m B d w
+  obtain e := VG.Proof.Bignum.read_eq_wv m B d w
   rw [hv] at e
   rw [VG.Proof.Bignum.read_prefix_value m (off B d) hkw (by
     rw [e, ← VG.Proof.Bignum.pow256_eq]; exact hvk), e]
@@ -73,7 +73,7 @@ theorem zero_bytes {m' : Mem} {O : Addr} {k : Nat} (h : ∀ i < k, m' (off O i) 
 theorem bytes_apart {m m' : Mem} {B X : Addr} {Z o n k : Nat} (h : Mont.Outside B o n m m') (hn : o + n ≤ Z)
     (hsep : ∀ i < k, ∀ x, ofs B x < Z → off X i ≠ x) : Spec.Rsa.bytesAt m' X k = Spec.Rsa.bytesAt m X k := by
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   show m' (off X i) = m (off X i)
   refine h _ (Or.inr ?_)
   have := hsep i hi (off X i)
@@ -92,8 +92,8 @@ theorem mask_and_prop (a : Bool) (p : Prop) [Decidable p] :
 theorem frame_two {S O : Addr} {d L k : Nat} {m m₁ m' : Mem} (h₁ : Mont.Outside S d L m m₁)
     (h₂ : Mont.Outside O 0 k m₁ m') (hdL : d + L ≤ 2 ^ 64) : Frame [⟨off S d, L⟩, ⟨O, k⟩] m m' := by
   intro x hx
-  have a := hx _ (List.mem_cons_self ..)
-  have b := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+  obtain a := hx _ (List.mem_cons_self ..)
+  obtain b := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   simp only [Region.Contains] at a b
   rw [h₂ x (Or.inr (by simp only [Mont.ofs]; omega_arith))]
   refine h₁ x ?_
@@ -189,30 +189,30 @@ theorem mid5_ok {d : PD} {s : State} {c : Prog isa} {Q : State → Prop} (h : Mi
     WP isa (.seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX (.seq sanitize c))))) s Q := by
   have hnw := h.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
-  have hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
-  have hkw : d.k ≤ 8 * d.w := by omega_arith
-  have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
+  obtain hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
+  obtain hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
+  obtain hkw : d.k ≤ 8 * d.w := by omega_arith
+  obtain e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   have hZ := h.hZ
   -- `e`.
   refine WP.seq (WP.mono (readE_ok (E := d.E) (L := d.L) h.a4 h.a5 h.L1
     (by have := h.Lk; have := h.k1024; omega_arith) h.rdE) fun s₁ ⟨⟨a7', m1⟩, k1⟩ => ?_)
-  have hev2 : d.ev s.mem ≤ 2 ^ 33 := by unfold PD.ev sat; omega_arith
+  obtain hev2 : d.ev s.mem ≤ 2 ^ 33 := by unfold PD.ev sat; omega_arith
   refine WP.seq (WP.mono (checkE_ok a7' hev2) fun s₂ ⟨⟨a9, a7'', m2⟩, k2⟩ => ?_)
-  have k12 := k1.trans k2
-  have m12 : s₂.mem = s.mem := m2.trans m1
+  obtain k12 := k1.trans k2
+  obtain m12 : s₂.mem = s.mem := m2.trans m1
   -- `pre` into arrays 0 and 1.
   refine WP.seq (WP.mono (copyPre_ok (h.scr.congr k12.2.2) h.nwP h.alP (by rw [k12.2.1, k12.2.2]; exact h.rdP)
     ((k12.gpr (by decide)).trans h.a2) ((k12.gpr (by decide)).trans h.a7)
     ((k12.gpr (by decide)).trans h.s5) ((k12.gpr (by decide)).trans h.t0) (by omega_arith) hw' hZ h.sepP)
     fun s₃ ⟨⟨c0, c1, out3⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [m12] at c0 c1 out3
-  have N3 : wv s₃.mem d.S (slot d.w 0) d.w = wv s.mem d.P 0 d.w :=
+  obtain N3 : wv s₃.mem d.S (slot d.w 0) d.w = wv s.mem d.P 0 d.w :=
     VG.Proof.Bignum.wv_congr2 fun i hi => by rw [Nat.zero_add]; exact c0 i hi
-  have R3 : wv s₃.mem d.S (slot d.w 1) d.w = wv s.mem d.P (8 * d.w) d.w :=
+  obtain R3 : wv s₃.mem d.S (slot d.w 1) d.w = wv s.mem d.P (8 * d.w) d.w :=
     VG.Proof.Bignum.wv_congr2 fun i hi => c1 i hi
   -- The input into array 4.
   refine WP.seq (WP.mono (loadX_ok (h.scr.congr k13.2.2) ((k13.gpr (by decide)).trans h.s6)
@@ -221,10 +221,10 @@ theorem mid5_ok {d : PD} {s : State} {c : Prog isa} {Q : State → Prop} (h : Mi
     ((k13.gpr (by decide)).trans h.t0) (by omega_arith) hkw hw' hZ (by rw [k13.2.1, k13.2.2]; exact h.rdX) h.sepX)
     fun s₄ ⟨⟨x4, z4, out4, a74, s74⟩, k4⟩ => ?_)
   rw [bytes_apart out3 (by omega_arith) h.sepX] at x4
-  have k14 := k13.trans k4
-  have N4 : wv s₄.mem d.S (slot d.w 0) d.w = wv s.mem d.P 0 d.w := by
+  obtain k14 := k13.trans k4
+  obtain N4 : wv s₄.mem d.S (slot d.w 0) d.w = wv s.mem d.P 0 d.w := by
     rw [← wsv_wv, Mont.Outside.wordsVal out4 (by omega_arith) (by omega_arith), wsv_wv, N3]
-  have R4 : wv s₄.mem d.S (slot d.w 1) d.w = wv s.mem d.P (8 * d.w) d.w := by
+  obtain R4 : wv s₄.mem d.S (slot d.w 1) d.w = wv s.mem d.P (8 * d.w) d.w := by
     rw [← wsv_wv, Mont.Outside.wordsVal out4 (by omega_arith) (by omega_arith), wsv_wv, R3]
   -- `n` and `R² mod n` made safe.
   refine WP.seq (WP.mono (sanitize_ok (h.scr.congr k14.2.2) (by omega_arith) hw' hZ a74
@@ -271,17 +271,17 @@ theorem mid7_ok {d : PD} {s t : State} (h : Mid d s) (h5 : M5 d s t) :
     WP isa (.seq (.block minv) checkX) t (M7 d t) := by
   have hnw := h.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
-  have hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
-  have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
-  have e0 := e 0; have e8 := e 8
+  obtain hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
+  obtain hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
+  obtain e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   have hZ := h.hZ
   have k5 := h5.keep
-  have hs₅ := h.scr.congr k5.2.2
+  obtain hs₅ := h.scr.congr k5.2.2
   refine WP.seq (WP.mono (minv_ok hs₅ h5.a7 (slot_al _ 0) (by omega_arith) h5.low)
     fun s₆ ⟨⟨iinv, m6⟩, k6⟩ => ?_)
-  have k56 := k5.trans k6
+  obtain k56 := k5.trans k6
   exact WP.mono (checkX_ok (h.scr.congr k56.2.2) (by omega_arith) hw' hZ ((k6.gpr (by decide)).trans h5.a7)
     ((k56.gpr (by decide)).trans h.s5) ((k56.gpr (by decide)).trans h.t0)
     (by rw [m6]; exact h5.top)) fun s₇ ⟨⟨c9, out7⟩, k7⟩ => ⟨s₆, ⟨iinv, m6⟩, k6, ⟨c9, out7⟩, k7⟩
@@ -295,26 +295,26 @@ theorem mid8_ok {d : PD} {s t s₇ : State} {Q : State → Prop} (h : Mid d s) (
     (h7 : M7 d t s₇) (hQ : ∀ u N, M8 d s u N → Q u) : WP isa power s₇ Q := by
   have hnw := h.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
-  have hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
-  have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8
+  obtain hw8 : 8 ≤ d.w := by have := h.k64; omega_arith
+  obtain hw' : d.w < 2 ^ 31 := by have := h.k1024; omega_arith
+  obtain e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   have hZ := h.hZ
   have k5 := h5.keep
   obtain ⟨s₆, ⟨iinv, m6⟩, k6, ⟨c9, out7⟩, k7⟩ := h7
-  have k56 := k5.trans k6
-  have k57 := k56.trans k7
-  have out7' : Mont.Outside d.S (slot d.w 3) (8 * d.w) t.mem s₇.mem := by
+  obtain k56 := k5.trans k6
+  obtain k57 := k56.trans k7
+  obtain out7' : Mont.Outside d.S (slot d.w 3) (8 * d.w) t.mem s₇.mem := by
     rw [← m6]; exact fun x hx => out7 x hx
   rw [m6, wsv_wv, wsv_wv] at c9
-  have N7 : wv s₇.mem d.S (slot d.w 0) d.w = wv t.mem d.S (slot d.w 0) d.w := by
+  obtain N7 : wv s₇.mem d.S (slot d.w 0) d.w = wv t.mem d.S (slot d.w 0) d.w := by
     rw [← wsv_wv, ← wsv_wv]; exact Mont.Outside.wordsVal out7' (by omega_arith) (by omega_arith)
-  have R7 : wv s₇.mem d.S (slot d.w 1) d.w = wv t.mem d.S (slot d.w 1) d.w := by
+  obtain R7 : wv s₇.mem d.S (slot d.w 1) d.w = wv t.mem d.S (slot d.w 1) d.w := by
     rw [← wsv_wv, ← wsv_wv]; exact Mont.Outside.wordsVal out7' (by omega_arith) (by omega_arith)
-  have X7 : wv s₇.mem d.S (slot d.w 4) d.w = wv t.mem d.S (slot d.w 4) d.w := by
+  obtain X7 : wv s₇.mem d.S (slot d.w 4) d.w = wv t.mem d.S (slot d.w 4) d.w := by
     rw [← wsv_wv, ← wsv_wv]; exact Mont.Outside.wordsVal out7' (by omega_arith) (by omega_arith)
-  have W7 : Mont.word s₇.mem d.S (slot d.w 0) = Mont.word t.mem d.S (slot d.w 0) :=
+  obtain W7 : Mont.word s₇.mem d.S (slot d.w 0) = Mont.word t.mem d.S (slot d.w 0) :=
     Mont.Outside.word out7' (by omega_arith) (by omega_arith)
   refine WP.mono (power_ok (E := d.ev s.mem) (h.scr.congr k57.2.2) (by omega_arith) hw' hZ
     ((k7.gpr (by decide)).trans ((k6.gpr (by decide)).trans h5.a7)) ((k57.gpr (by decide)).trans h.s5)
@@ -331,14 +331,14 @@ theorem mid8_ok {d : PD} {s t s₇ : State} {Q : State → Prop} (h : Mid d s) (
     (fun hodd htop hRR => ?_) ?_ |> hQ s₈ _
   · rw [k8.gpr (by decide), c9, k6.gpr (by decide), h5.s9, h5.x, mask_and_prop]
   · obtain ⟨N5, RR5⟩ := h5.valid hodd htop
-    have hRl : wv s.mem d.P (8 * d.w) d.w < wv s.mem d.P 0 d.w := by
+    obtain hRl : wv s.mem d.P (8 * d.w) d.w < wv s.mem d.P 0 d.w := by
       rw [hRR]; exact Nat.mod_lt _ (by omega_arith)
     refine ⟨N5, fun he => p8 ?_ ?_⟩
     · simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at he
       omega_using [he]
     · rw [RR5 hRl, N5, hRR]
   · have o8 : Mont.Outside d.S (slot d.w 0) (8 * (8 * (d.w + 2))) s₇.mem s₈.mem := fun x hx => out8 x fun j hj => by
-      have e2 := e 2; have e5 := e 5; have e6 := e 6; have e7 := e 7
+      obtain e2 := e 2; have e5 := e 5; have e6 := e 6; have e7 := e 7
       simp only [powJs, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp only [Mont.ofs, ofs] at hx ⊢ <;> omega_arith
@@ -349,7 +349,7 @@ theorem midOut_ok {d : PD} {s u : State} {N : Nat} {Q : State → Prop} (h : Mid
     WP isa (.seq output (.block PublicChecked.restore)) u Q := by
   have hnw := h.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
-  have hkw : d.k ≤ 8 * d.w := by omega_arith
+  obtain hkw : d.k ≤ 8 * d.w := by omega_arith
   have e0 : slot d.w 0 = hdrBytes + 0 * (8 * (d.w + 2)) := rfl
   have e8 : slot d.w 8 = hdrBytes + 8 * (8 * (d.w + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
@@ -366,16 +366,16 @@ theorem midOut_ok {d : PD} {s u : State} {N : Nat} {Q : State → Prop} (h : Mid
   obtain ⟨hN, res⟩ := h8.res hodd htop
     (by rw [hr, hn, ← Nat.pow_add, show 64 * d.w + 64 * d.w = 128 * d.w by omega_arith])
   rw [hN, hn] at res ob t3
-  have hE := exponentValid_sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L))
-  have hnk : Spec.Rsa.os2ip nB < 256 ^ d.k := by rw [← hl]; exact VG.Proof.Bignum.os2ip_lt nB
+  obtain hE := exponentValid_sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L))
+  obtain hnk : Spec.Rsa.os2ip nB < 256 ^ d.k := by rw [← hl]; exact VG.Proof.Bignum.os2ip_lt nB
   unfold Spec.Rsa.publicOpChecked Spec.Rsa.publicOp Spec.Rsa.encrypt
   rw [← hE, hl]
   by_cases hb : (Spec.Rsa.exponentValid (d.ev s.mem) && decide (d.x s.mem < Spec.Rsa.os2ip nB)) = true
   · obtain ⟨he, hx⟩ : Spec.Rsa.exponentValid (d.ev s.mem) = true ∧ d.x s.mem < Spec.Rsa.os2ip nB := by
       simpa using hb
-    have hlt : d.ev s.mem < 2 ^ 33 := by
+    obtain hlt : d.ev s.mem < 2 ^ 33 := by
       simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, decide_eq_true_eq] at he; exact he.2
-    have hev : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L)) =
+    obtain hev : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L)) =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L) := by
       unfold PD.ev sat at hlt; unfold sat; omega_arith
     replace res := res he

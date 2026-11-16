@@ -112,14 +112,14 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
         word t.mem BX (slot w 7 + 8 * w) = 0 ∧ Outside BX 256 (slot w 8 - 256) s.mem t.mem ∧
         t.gpr .r10 = off BX (slot w 0)) ∧ Keep loadXRegs s t := by
   have hn := hs.nowrap
-  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
-  have e8 := e 8
+  obtain e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4; have e5 := e 5; have e6 := e 6; have e7 := e 7
+  obtain e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  have hn8 : BX.toNat + slot w 8 ≤ 2 ^ 64 := by omega_arith
-  have hd : ∀ {m m' : Mem}, Outside BX 256 (slot w 8 - 256) m m' → ∀ d, d + 8 ≤ 256 → word m' BX d = word m BX d :=
+  obtain hn8 : BX.toNat + slot w 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hd : ∀ {m m' : Mem}, Outside BX 256 (slot w 8 - 256) m m' → ∀ d, d + 8 ≤ 256 → word m' BX d = word m BX d :=
     fun h d hd => h.word (Or.inl hd) (by omega_arith)
-  have hbz : ∀ {m m' : Mem} {A : Addr} {L : Nat}, Outside BX 256 (slot w 8 - 256) m m' →
+  obtain hbz : ∀ {m m' : Mem} {A : Addr} {L : Nat}, Outside BX 256 (slot w 8 - 256) m m' →
       (∀ i < L, ∀ x, ofs BX x < Z → off A i ≠ x) → Spec.Rsa.bytesAt m' A L = Spec.Rsa.bytesAt m A L :=
     fun h hs' => bytesAt_out h (by omega_arith) hs'
   unfold loadX
@@ -127,55 +127,55 @@ theorem loadX_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z w k pL qL : Nat} (hs
     (by prun [h10, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (onesWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw1 hw'
     (by omega_arith)) fun s₂ ⟨⟨h1s, o2⟩, k2⟩ => ?_)
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [m1] at o2
-  have O2 := out_arrs (w := w) o2 (by omega_arith) (by omega_arith)
+  obtain O2 := out_arrs (w := w) o2 (by omega_arith) (by omega_arith)
   -- `n` into array 1.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 1) (A := Na) (L := k) (hs.congr k12.wr) hZ (by decide)
     hw' ((k12.gpr _ (by decide)).trans h23) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h21) ((k12.gpr _ (by decide)).trans h29) ((k12.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O2 _ (by decide)]; exact hNa) (by rw [hd O2 _ (by decide)]; exact hK) hk hkw
     (fun i hi => by rw [k12.rd, k12.wr]; exact rN i hi) sN) fun s₃ ⟨⟨v1, t1, o3, b10⟩, k3⟩ => ?_))
-  have k13 := k12.trans k3
-  have O3 := out_arrs (w := w) o3 (by omega_arith) (by have := slot_le (w := w) (j := 1) (by decide); omega_arith)
-  have O23 := O2.trans O3
+  obtain k13 := k12.trans k3
+  obtain O3 := out_arrs (w := w) o3 (by omega_arith) (by have := slot_le (w := w) (j := 1) (by decide); omega_arith)
+  obtain O23 := O2.trans O3
   -- `p` into array 4.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 4) (A := Pa) (L := pL) (hs.congr k13.wr) hZ (by decide)
     hw' ((k13.gpr _ (by decide)).trans h23) b10
     ((k13.gpr _ (by decide)).trans h21) ((k13.gpr _ (by decide)).trans h29) ((k13.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O23 _ (by decide)]; exact hPa) (by rw [hd O23 _ (by decide)]; exact hPL)
     hp hpw (fun i hi => by rw [k13.rd, k13.wr]; exact rP i hi) sP) fun s₄ ⟨⟨v4, t4, o4, c10⟩, k4⟩ => ?_))
-  have k14 := k13.trans k4
-  have O4 := out_arrs (w := w) o4 (by omega_arith) (by have := slot_le (w := w) (j := 4) (by decide); omega_arith)
-  have O24 := O23.trans O4
+  obtain k14 := k13.trans k4
+  obtain O4 := out_arrs (w := w) o4 (by omega_arith) (by have := slot_le (w := w) (j := 4) (by decide); omega_arith)
+  obtain O24 := O23.trans O4
   -- `q` into array 5.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 5) (A := Qa) (L := qL) (hs.congr k14.wr) hZ (by decide)
     hw' ((k14.gpr _ (by decide)).trans h23) c10
     ((k14.gpr _ (by decide)).trans h21) ((k14.gpr _ (by decide)).trans h29) ((k14.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O24 _ (by decide)]; exact hQa) (by rw [hd O24 _ (by decide)]; exact hQL)
     hq hqw (fun i hi => by rw [k14.rd, k14.wr]; exact rQ i hi) sQ) fun s₅ ⟨⟨v5, t5, o5, d10⟩, k5⟩ => ?_))
-  have k15 := k14.trans k5
-  have O5 := out_arrs (w := w) o5 (by omega_arith) (by have := slot_le (w := w) (j := 5) (by decide); omega_arith)
-  have O25 := O24.trans O5
+  obtain k15 := k14.trans k5
+  obtain O5 := out_arrs (w := w) o5 (by omega_arith) (by have := slot_le (w := w) (j := 5) (by decide); omega_arith)
+  obtain O25 := O24.trans O5
   -- The input into array 6.
   refine wp_reassoc2 (WP.seq (WP.mono (loadOne_ok (j := 6) (A := Ia) (L := k) (hs.congr k15.wr) hZ (by decide)
     hw' ((k15.gpr _ (by decide)).trans h23) d10
     ((k15.gpr _ (by decide)).trans h21) ((k15.gpr _ (by decide)).trans h29) ((k15.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O25 _ (by decide)]; exact hIa) (by rw [hd O25 _ (by decide)]; exact hK)
     hk hkw (fun i hi => by rw [k15.rd, k15.wr]; exact rI i hi) sI) fun s₆ ⟨⟨v6, t6, o6, e10⟩, k6⟩ => ?_))
-  have k16 := k15.trans k6
-  have O6 := out_arrs (w := w) o6 (by omega_arith) (by have := slot_le (w := w) (j := 6) (by decide); omega_arith)
-  have O26 := O25.trans O6
+  obtain k16 := k15.trans k6
+  obtain O6 := out_arrs (w := w) o6 (by omega_arith) (by have := slot_le (w := w) (j := 6) (by decide); omega_arith)
+  obtain O26 := O25.trans O6
   -- `qInv` into array 7.
   refine WP.mono (loadOne_ok (j := 7) (A := QIa) (L := pL) (hs.congr k16.wr) hZ (by decide)
     hw' ((k16.gpr _ (by decide)).trans h23) e10
     ((k16.gpr _ (by decide)).trans h21) ((k16.gpr _ (by decide)).trans h29) ((k16.gpr _ (by decide)).trans h11)
     (by decide) (by decide) (by rw [hd O26 _ (by decide)]; exact hQIa) (by rw [hd O26 _ (by decide)]; exact hPL)
     hp hpw (fun i hi => by rw [k16.rd, k16.wr]; exact rQI i hi) sQI) fun t ⟨⟨v7, t7, o7, t10⟩, k7⟩ => ?_
-  have O7 := out_arrs (w := w) o7 (by omega_arith) (by have := slot_le (w := w) (j := 7) (by decide); omega_arith)
-  have hones : Mont.val32 s₂.mem BX (slot w 0) (2 * w) = 2 ^ (64 * w) - 1 := by
+  obtain O7 := out_arrs (w := w) o7 (by omega_arith) (by have := slot_le (w := w) (j := 7) (by decide); omega_arith)
+  obtain hones : Mont.val32 s₂.mem BX (slot w 0) (2 * w) = 2 ^ (64 * w) - 1 := by
     rw [Pre.val32_eq_wv]; exact wv_ones h1s
-  have w0 : ∀ {m m' : Mem} {i : Nat}, Outside BX (slot w i) (8 * (w + 1)) m m' → i ≠ 0 →
+  obtain w0 : ∀ {m m' : Mem} {i : Nat}, Outside BX (slot w i) (8 * (w + 1)) m m' → i ≠ 0 →
       word m' BX (slot w 0) = word m BX (slot w 0) := fun h hi => by
     have := arr_word (q := 0) h hi (by decide) (by omega_arith) hn8
     simpa only [Nat.mul_zero, Nat.add_zero] using this

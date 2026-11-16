@@ -67,12 +67,12 @@ theorem cfb_out (R : Nat) (w : List Byte) (m : Mem) (D : Addr) (iv : Spec.Aes.St
   rw [AesCfb.cfbMode_out, AesCfb.cfb, ite_eq_right Bool.false_ne_true, cfbDecrypt_eq,
     show (Spec.Cbc.blocksAt m D n).length = n by simp [Spec.Cbc.blocksAt]]
   refine List.map_congr_left fun j hj => ?_
-  have hj := List.mem_range.mp hj
-  have e₁ : (Spec.Cbc.blocksAt m D n).getD j [] = (cbcC m D j).toList := by
+  obtain hj := List.mem_range.mp hj
+  obtain e₁ : (Spec.Cbc.blocksAt m D n).getD j [] = (cbcC m D j).toList := by
     rw [blocksAt_cbcC]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj, Option.map_some,
       Option.getD_some]
-  have e₂ : (iv.toList :: Spec.Cbc.blocksAt m D n).getD j [] = (cbcP m D iv j).toList := by
+  obtain e₂ : (iv.toList :: Spec.Cbc.blocksAt m D n).getD j [] = (cbcP m D iv j).toList := by
     cases j with
     | zero => rfl
     | succ j =>
@@ -158,9 +158,9 @@ theorem cfbLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).to
       Foot s₀ b s s' ∧ cfbL s₀.mem (s₀.gpr .a3) iv R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
-  have hdat := hb.dat hs
-  have hscr := hb.scr hs
-  have hbase := hb.base hs
+  obtain hdat := hb.dat hs
+  obtain hscr := hb.scr hs
+  obtain hbase := hb.base hs
   obtain ⟨n1, n2, n3, -, -, -, -, n8, n9, n10, n11⟩ := q_c4 k hk
   by_cases h0 : k = 0
   · subst h0
@@ -181,7 +181,7 @@ theorem cfbLoad_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).to
       (by rw [o₁ _ (Ne.symm n1) (by decide) (by decide)]; exact hb.a3)
       (by rw [rd₁, wr₁]; exact List.mem_append_right _ hdat) hn (by omega_using [hkn]) (by omega_using [hk]) ⟨n2, n10, n11⟩)
       fun s₂ ⟨e₂, o₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
-    have hv : wBlk (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * (k - 1))) 64)
+    obtain hv : wBlk (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * (k - 1))) 64)
         (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * (k - 1) + 8))) 64) =
         cbcP s₀.mem (s₀.gpr .a3) iv (4 * g + k) := by
       rw [show 64 * g + 16 * (k - 1) = 16 * (4 * g + (k - 1)) by omega_using [],
@@ -199,15 +199,15 @@ theorem cfbStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
       Foot s₀ b s s' ∧ cfbS s₀.mem (s₀.gpr .a3) iv R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
-  have hdat := hb.dat hs
-  have hscr := hb.scr hs
-  have hbase := hb.base hs
-  have hkm : k < min 4 ((s₀.gpr .a4).toNat - 4 * g) := by omega_using [hk, hkn]
+  obtain hdat := hb.dat hs
+  obtain hscr := hb.scr hs
+  obtain hbase := hb.base hs
+  obtain hkm : k < min 4 ((s₀.gpr .a4).toNat - 4 * g) := by omega_using [hk, hkn]
   obtain ⟨-, -, -, -, -, -, -, n8, n9, n10, n11⟩ := q_c4 k hk
-  have eA : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k) =
+  obtain eA : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k) =
       s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) := by
     rw [show 64 * g + 16 * k = 16 * (4 * g + k) by omega_using []]
-  have eA8 : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8)) =
+  obtain eA8 : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8)) =
       s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8 := by
     rw [show 64 * g + (16 * k + 8) = 16 * (4 * g + k) + 8 by omega_using [], add_off8]
   unfold cfbStore
@@ -215,10 +215,10 @@ theorem cfbStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
   -- The low doubleword of `Cⱼ`, into the state's slot, XORed, stored.
   refine WP.mono (data_ld (off := 16 * k) hb.a3 (List.mem_append_right _ hdat) hn (by omega_using [hkn]) (by omega_using [hk])
     (d := .t2) ⟨by decide, by decide, by decide⟩) fun s₁ ⟨e₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
-  have g₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide) (by decide) (by decide)
+  obtain g₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide) (by decide) (by decide)
   refine slot_st (hscr.congr wr₁ g₁) (g₁.trans hbase) (by decide) fun s₂ u₂ => wp_xor fun s₃ u₃ =>
     WP.block_nil ?_
-  have o₃ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₃.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₃ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₃.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [u₃.other _ h, u₂.gpr, o₁ _ h h0 h1]
   refine WP.mono (data_st (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k)
     (by rw [o₃ _ (by decide) (by decide) (by decide)]; exact hb.a3)
@@ -230,38 +230,38 @@ theorem cfbStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
     (by rw [rd₄, wr₄, u₃.rd, u₃.wr, u₂.rd, u₂.wr, rd₁, wr₁]; exact List.mem_append_right _ hdat)
     hn (by omega_using [hkn]) (by omega_using [hk]) (d := .t2) ⟨by decide, by decide, by decide⟩)
     fun s₅ ⟨e₅, o₅, m₅, rd₅, wr₅, sp₅⟩ => ?_
-  have o₅' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₅.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₅' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₅.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [o₅ _ h h0 h1, o₄ _ h0 h1, o₃ _ h h0 h1]
-  have g₅ : s₅.gpr sb = s.gpr sb := o₅' _ (by decide) (by decide) (by decide)
+  obtain g₅ : s₅.gpr sb = s.gpr sb := o₅' _ (by decide) (by decide) (by decide)
   refine slot_st (hscr.congr (by rw [wr₅, wr₄, u₃.wr, u₂.wr, wr₁]) g₅) (g₅.trans hbase) (by decide)
     fun s₆ u₆ => wp_xor fun s₇ u₇ => WP.block_nil ?_
-  have o₇ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₇.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₇ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₇.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [u₇.other _ h, u₆.gpr, o₅' _ h h0 h1]
   refine WP.mono (data_st (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8)
     (by rw [o₇ _ (by decide) (by decide) (by decide)]; exact hb.a3)
     (by rw [u₇.wr, u₆.wr, wr₅, wr₄, u₃.wr, u₂.wr, wr₁]; exact hdat) hn (by omega_using [hkn]) (by omega_using [hk]) (by decide))
     fun s₈ ⟨m₈, o₈, rd₈, wr₈, sp₈⟩ => ?_
   -- The separations, and the values.
-  have sAA : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 8
+  obtain sAA : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 8
       (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 8 := by
     rw [← add_off8]; exact Offset.sep _ (Or.inr (by omega_using [])) (by omega_using [hkn, hn]) (by omega_using [hkn, hn])
-  have sAS₀ : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 8
+  obtain sAS₀ : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 8
       (b + BitVec.ofNat 64 (8 * stLo)) 8 := by
     rw [← add_off8]; exact data_sep_slot hs (by decide) (by omega_using [hkn])
-  have sAS₁ : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 8
+  obtain sAS₁ : Mem.Sep (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 8
       (b + BitVec.ofNat 64 (8 * (stLo + 1))) 8 := data_sep_slot hs (by decide) (by omega_using [hkn])
-  have e₁' : s₁.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64 := by
+  obtain e₁' : s₁.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64 := by
     rw [e₁, eA]
-  have x₃ : s₃.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64 ^^^
+  obtain x₃ : s₃.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64 ^^^
       s.gpr (q k) := by
     rw [u₃.gpr, u₂.gpr, e₁', o₁ _ (q_neW k).2.2.1 n8 n9]
-  have t₅ : s₅.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64 := by
+  obtain t₅ : s₅.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64 := by
     rw [e₅, eA8, m₄, u₃.mem, u₂.mem, m₁, eA, Mem.readW_writeW_sep sAA (by decide),
       Mem.readW_writeW_sep sAS₀ (by decide)]
-  have x₇ : s₇.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64 ^^^
+  obtain x₇ : s₇.gpr .t2 = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64 ^^^
       s.gpr (q (k + 4)) := by
     rw [u₇.gpr, u₆.gpr, t₅, o₅' _ (q_neW _).2.2.1 n10 n11]
-  have hm₈ : s₈.mem = ((((s.mem.writeW (b + BitVec.ofNat 64 (8 * stLo))
+  obtain hm₈ : s₈.mem = ((((s.mem.writeW (b + BitVec.ofNat 64 (8 * stLo))
       (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64)).writeW
       (b + BitVec.ofNat 64 (8 * (stLo + 1)))
       (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64)).writeW
@@ -269,22 +269,22 @@ theorem cfbStore_ok {g k : Nat} (hk : k < 4) (hkn : 4 * g + k < (s₀.gpr .a4).t
       (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) (s₇.gpr .t2)) := by
     rw [m₈, u₇.mem, u₆.mem, t₅, m₅, m₄, u₃.mem, u₂.mem, e₁', m₁, eA, eA8, writeW64_comm _ sAS₁]
   -- The block's values.
-  have hC : wBlk (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64)
+  obtain hC : wBlk (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64)
       (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64) =
       cbcC s₀.mem (s₀.gpr .a3) (4 * g + k) := by
     rw [← stateAt_wBlk]; exact ecbInv_orig hd (Nat.le_refl _) hkn
-  have hv : wBlk (s₃.gpr .t2) (s₇.gpr .t2) = cfbD R w s₀.mem (s₀.gpr .a3) iv (4 * g + k) := by
+  obtain hv : wBlk (s₃.gpr .t2) (s₇.gpr .t2) = cfbD R w s₀.mem (s₀.gpr .a3) iv (4 * g + k) := by
     rw [x₃, x₇, wBlk_xor, hC]
     show vxor _ (wBlk (Q s k) (Q s (k + 4))) = _
     rw [← regBlock_wBlk, hblk k hkm (Nat.le_refl _)]
-  have st := ecbInv_step (v₁ := s₃.gpr .t2) (v₂ := s₇.gpr .t2) (by omega_using [hn]) hkn
+  obtain st := ecbInv_step (v₁ := s₃.gpr .t2) (v₂ := s₇.gpr .t2) (by omega_using [hn]) hkn
     (ecbInv_frame (slot2_frame s.mem b (j := stLo) (by decide)
       (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))) 64)
       (s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k)) + 8) 64)) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hs.dScr (by decide)) hn hd) (wBlk_bytes hv)
-  have o₈' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₈.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₈' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₈.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [o₈ _ h0 h1, o₇ _ h h0 h1]
-  have hQ : ∀ c, regBlock (Q s₈) c = regBlock (Q s) c := fun c => by
+  obtain hQ : ∀ c, regBlock (Q s₈) c = regBlock (Q s) c := fun c => by
     rw [regBlock_wBlk, regBlock_wBlk]
     show wBlk (s₈.gpr (q c)) (s₈.gpr (q (c + 4))) = wBlk (s.gpr (q c)) (s.gpr (q (c + 4)))
     rw [o₈' _ (q_neW _).2.2.1 (q_neW _).1 (q_neW _).2.1, o₈' _ (q_neW _).2.2.1 (q_neW _).1 (q_neW _).2.1]

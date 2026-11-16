@@ -52,53 +52,53 @@ theorem inverseLoad_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo 
       num t.mem B (w.words n) aM = val32 s.mem B (mo.offset n) (w.words n) ∧
       (∀ j, j < 15 → j ≠ 0 → j ≠ aM → num t.mem B (w.words n) j = 0) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
-  have H := shrinkRt (h.runtime hw) bound
+  obtain H := shrinkRt (h.runtime hw) bound
   have hn := h.old.workspace.nowrap
-  have f0 := H.ws.arr_fit (j := 0) (by decide)
-  have fm := H.ws.arr_fit (j := aM) (by decide)
+  obtain f0 := H.ws.arr_fit (j := 0) (by decide)
+  obtain fm := H.ws.arr_fit (j := aM) (by decide)
   rw [kw_words h.width] at f0 fm
   have srcBound := L.source_bound
   have moBound := L.modulus_bound
   have srcSep := L.source_outside
   have moSep := L.modulus_outside
-  have sepSource : (Loc.array w 0).offset n + 4 * w.words n ≤ src.offset n ∨
+  obtain sepSource : (Loc.array w 0).offset n + 4 * w.words n ≤ src.offset n ∨
       src.offset n + 4 * w.words n ≤ (Loc.array w 0).offset n := by
     simp only [offset_array, arr, S] at *
     omega_arith
-  have sepModulus : (Loc.array w aM).offset n + 4 * w.words n ≤ mo.offset n ∨
+  obtain sepModulus : (Loc.array w aM).offset n + 4 * w.words n ≤ mo.offset n ∨
       mo.offset n + 4 * w.words n ≤ (Loc.array w aM).offset n := by
     simp only [offset_array, arr, S, aM] at *
     omega_arith
   unfold inverseLoad VG.Impl.Rsa.X86.Keys.seqs
   refine WP.seq (WP.mono (clear_ok h w hw (by decide) bound) fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
   have zeros (j : Nat) (hj : j < 15) : num u.mem B (w.words n) j = 0 := by
-    have V := zero j hj
+    obtain V := zero j hj
     rw [offset_array, val32_append] at V
     change val32 u.mem B (arr (w.words n) j) (w.words n) = 0
     omega_arith
-  have source : val32 u.mem B (src.offset n) (w.words n) = val32 s.mem B (src.offset n) (w.words n) :=
+  obtain source : val32 u.mem B (src.offset n) (w.words n) = val32 s.mem B (src.offset n) (w.words n) :=
     Ou.val32 (by simp only [arr, S] at srcSep; omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (copy_loc_ok hu w (.array w 0) src
     (by simp only [offset_array]; unfold S at f0; omega_arith) srcBound sepSource)
     fun v ⟨hv, Ov, input, Kv⟩ => ?_)
   rw [offset_array] at Ov input
   change num v.mem B (w.words n) 0 = val32 u.mem B (src.offset n) (w.words n) at input
-  have vKeep : Keep B (w.words n) [0] [] u.mem v.mem :=
+  obtain vKeep : Keep B (w.words n) [0] [] u.mem v.mem :=
     Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ov) (by unfold S; omega_arith) (by simp)
-  have vFrame : Outside B hdr (4 * (15 * (w.words n + 2))) s.mem v.mem :=
+  obtain vFrame : Outside B hdr (4 * (15 * (w.words n + 2))) s.mem v.mem :=
     Ou.trans (Ov.mono (by unfold arr; omega_arith)
       (by unfold arr S; omega_arith))
-  have modulus : val32 v.mem B (mo.offset n) (w.words n) = val32 s.mem B (mo.offset n) (w.words n) :=
+  obtain modulus : val32 v.mem B (mo.offset n) (w.words n) = val32 s.mem B (mo.offset n) (w.words n) :=
     vFrame.val32 (by simp only [arr, S] at moSep; omega_arith) (by omega_arith)
   refine WP.mono (copy_loc_ok hv w (.array w aM) mo
     (by simp only [offset_array]; unfold S at fm; omega_arith) moBound sepModulus)
     fun t ⟨ht, Ot, valueM, Kt⟩ => ?_
   rw [offset_array] at Ot valueM
   change num t.mem B (w.words n) aM = val32 v.mem B (mo.offset n) (w.words n) at valueM
-  have tKeep : Keep B (w.words n) [aM] [] v.mem t.mem :=
+  obtain tKeep : Keep B (w.words n) [aM] [] v.mem t.mem :=
     Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ot) (by unfold S; omega_arith) (by simp)
   have bankfit (j : Nat) (hj : j < 15) : arr (w.words n) j + S (w.words n) ≤ 2 ^ 64 := by
-    have fit := H.ws.fit64 hj
+    obtain fit := H.ws.fit64 hj
     rwa [kw_words h.width] at fit
   refine ⟨ht, vFrame.trans (Ot.mono (by unfold arr; omega_arith)
     (by unfold arr S aM; omega_arith)), ?_, valueM.trans modulus, ?_,
@@ -162,37 +162,37 @@ theorem inverseBank_ok {s : State} {B : Addr} {Z len a m : Nat} {w : Width}
     WP isa (VG.Impl.RsaKeyGen.X86.KeyRuntime.inverseBank w) s fun t =>
       RtWs w.lay t B Z len 15 ∧ Keep B (kw len) [1, 2, aNM] [] s.mem t.mem ∧
       InverseReady B (kw len) a m t ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have f0 := h.ws.fit64 (j := 0) (by decide)
-  have f1 := h.ws.fit64 (j := 1) (by decide)
-  have f2 := h.ws.fit64 (j := 2) (by decide)
-  have f3 := h.ws.fit64 (j := 3) (by decide)
-  have fm := h.ws.fit64 (j := aM) (by decide)
-  have fz := h.ws.fit64 (j := aZero) (by decide)
+  obtain f0 := h.ws.fit64 (j := 0) (by decide)
+  obtain f1 := h.ws.fit64 (j := 1) (by decide)
+  obtain f2 := h.ws.fit64 (j := 2) (by decide)
+  obtain f3 := h.ws.fit64 (j := 3) (by decide)
+  obtain fm := h.ws.fit64 (j := aM) (by decide)
+  obtain fz := h.ws.fit64 (j := aZero) (by decide)
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.inverseBank seqs
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.copy_ok h (by decide) (by decide) (by decide)) fun u ⟨hu, Ou, v1, Ku, _⟩ => ?_)
-  have two : num u.mem B (kw len) 2 = 0 := by rw [Ou.num (by decide) (by simp) f2, x₁]
+  obtain two : num u.mem B (kw len) 2 = 0 := by rw [Ou.num (by decide) (by simp) f2, x₁]
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.setOne_ok hu (by decide)) fun v ⟨hv, Ov, v2, Kv⟩ => ?_)
   rw [two, Nat.zero_div, Nat.mul_zero, Nat.add_zero] at v2
-  have z : num v.mem B (kw len) aZero = 0 := by
+  obtain z : num v.mem B (kw len) aZero = 0 := by
     rw [Ov.num (by decide) (by simp) fz, Ou.num (by decide) (by simp) fz, zero]
-  have mV : num v.mem B (kw len) aM = m := by
+  obtain mV : num v.mem B (kw len) aM = m := by
     rw [Ov.num (by decide) (by simp) fm, Ou.num (by decide) (by simp) fm, modulus]
   refine WP.mono (VG.Proof.Rsa.X86.KeyRt.sub3_ok hv (by decide) (by decide) (by decide))
     fun t ⟨ht, Ot, subtract, bit, Kt⟩ => ?_
   rw [z, mV, Nat.zero_add] at subtract
-  have borrow : (t.gpr .ebx).toNat = 1 := by
+  obtain borrow : (t.gpr .ebx).toNat = 1 := by
     by_cases p : (t.gpr .ebx).toNat = 0
     · rw [p, Nat.mul_zero] at subtract
       omega
     · omega
   rw [borrow, Nat.mul_one] at subtract
-  have one : num t.mem B (kw len) 1 = m := by
+  obtain one : num t.mem B (kw len) 1 = m := by
     rw [Ot.num (by decide) (by simp) f1, Ov.num (by decide) (by simp) f1, v1, modulus]
-  have twoT : num t.mem B (kw len) 2 = 1 := by rw [Ot.num (by decide) (by simp) f2, v2]
-  have value0 : num t.mem B (kw len) 0 = a := by
+  obtain twoT : num t.mem B (kw len) 2 = 1 := by rw [Ot.num (by decide) (by simp) f2, v2]
+  obtain value0 : num t.mem B (kw len) 0 = a := by
     rw [Ot.num (by decide) (by simp) f0, Ov.num (by decide) (by simp) f0,
       Ou.num (by decide) (by simp) f0, input]
-  have value3 : num t.mem B (kw len) 3 = 0 := by
+  obtain value3 : num t.mem B (kw len) 3 = 0 := by
     rw [Ot.num (by decide) (by simp) f3, Ov.num (by decide) (by simp) f3,
       Ou.num (by decide) (by simp) f3, x₂]
   refine ⟨ht, (Ou.join Ov (js := [1, 2, aNM]) (ds := [])).join Ot
@@ -230,8 +230,8 @@ theorem inverseSetup_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo
   unfold inverseSetup
   refine WP.seq (WP.mono (inverseLoad_ok h bound hw L)
     fun u ⟨hu, Ou, input, modulus, zero, Ku⟩ => ?_)
-  have Hu := shrinkRt (hu.runtime hw) bound
-  have bankProof := inverseBank_ok Hu
+  obtain Hu := shrinkRt (hu.runtime hw) bound
+  obtain bankProof := inverseBank_ok Hu
     (by simpa only [kw_words h.width] using input)
     (by simpa only [kw_words h.width] using modulus) (by omega_using [odd])
     (by simpa only [kw_words h.width] using zero aZero (by decide) (by decide) (by decide))
@@ -239,10 +239,10 @@ theorem inverseSetup_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo
     (by simpa only [kw_words h.width] using zero 3 (by decide) (by decide) (by decide))
   rw [kw_words h.width] at bankProof
   refine WP.mono bankProof fun v ⟨_, Ov, ready, Kv⟩ => ?_
-  have hv : Ws v B Z n N := hu.afterBank hw Kv Ov
+  obtain hv : Ws v B Z n N := hu.afterBank hw Kv Ov
     (by
       intro j hj
-      have small := (by decide : ∀ j ∈ ([1, 2, aNM] : List Nat), j < 15) j hj
+      obtain small := (by decide : ∀ j ∈ ([1, 2, aNM] : List Nat), j < 15) j hj
       omega_using [bound, small])
     (by simp)
   have bankV := ready.initial
@@ -272,7 +272,7 @@ theorem inverseFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo 
   refine WP.mono (callInverse_ok R) fun t ⟨ht, Ot, gcd, bezout, lt, Kt, _⟩ => ?_
   rw [input, modulus] at gcd bezout
   rw [modulus] at lt
-  have spV : v.gpr .esp = s.gpr .esp := Kv.1 .esp (by decide)
+  obtain spV : v.gpr .esp = s.gpr .esp := Kv.1 .esp (by decide)
   rw [spV] at Ot
   exact ⟨ht, (OutsS.of_outs Ov).trans Ot, gcd, bezout, lt, Kv.trans (Kt.mono (by decide))⟩
 

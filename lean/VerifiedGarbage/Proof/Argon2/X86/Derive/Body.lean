@@ -53,8 +53,8 @@ theorem sub32 {x y : BitVec 32} {n m : Nat} (h₁ : y.toNat ≤ x.toNat)
     Region.Sub ⟨x.setWidth 64, n⟩ ⟨y.setWidth 64, m⟩ := by
   intro a ha
   simp only [Region.Contains] at ha ⊢
-  have hx := toNat_w x
-  have hy := toNat_w y
+  obtain hx := toNat_w x
+  obtain hy := toNat_w y
   have := x.isLt
   bv_omega
 
@@ -181,7 +181,7 @@ def deriveX86 : Contract X86.isa where
 theorem disjoint_total {a b : Region} (h : a.Disjoint b) {N : Nat}
     (ha : a.base.toNat + a.len ≤ N) (hb : b.base.toNat + b.len ≤ N) (pa : 0 < a.len) (pb : 0 < b.len) :
     a.len + b.len ≤ N := by
-  have key : ∀ {a b : Region}, a.Disjoint b → a.base.toNat ≤ b.base.toNat → b.base.toNat + b.len ≤ N →
+  obtain key : ∀ {a b : Region}, a.Disjoint b → a.base.toNat ≤ b.base.toNat → b.base.toNat + b.len ≤ N →
       0 < b.len → a.base.toNat + a.len ≤ b.base.toNat := fun {a b} h hle hb pb => by
     by_contra hlt
     refine h b.base ?_ ?_
@@ -291,22 +291,22 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
     (hb : WP isa body (entry s₀) fun t => BodyDone s₀ t ∧ Q t)
     (hQ : ∀ t u, Q t → u.mem = t.mem → Q u) :
     WP isa derive s₀ fun u => abiPreserved s₀ u ∧ Q u := by
-  have hE := (E0 s₀).isLt
+  obtain hE := (E0 s₀).isLt
   have hlo' : 160 ≤ (s₀.gpr .esp).toNat := hlo
-  have nf : ∀ {r : Reg} {k : Nat} {rs : List Reg} {b : Prog isa}, r ≠ .esp → NoSp b →
+  obtain nf : ∀ {r : Reg} {k : Nat} {rs : List Reg} {b : Prog isa}, r ≠ .esp → NoSp b →
       NoSp (.frame (.push rs) b (.pop r k)) := fun {r k rs b} hr hb i hi => by
     simp only [instrs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hi
     rcases hi with (rfl | hi) | rfl
     · rfl
     · exact hb i hi
     · simp [Taint.clobbers, Taint.dst, hr]
-  have e1 : ((pushed [.ebp] s₀).gpr .esp).toNat = (E0 s₀).toNat - 4 := by
+  obtain e1 : ((pushed [.ebp] s₀).gpr .esp).toNat = (E0 s₀).toNat - 4 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith)]; rfl
-  have e2 : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (E0 s₀).toNat - 8 := by
+  obtain e2 : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (E0 s₀).toNat - 8 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e1]; rfl
-  have e3 : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat = (E0 s₀).toNat - 12 := by
+  obtain e3 : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat = (E0 s₀).toNat - 12 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e2]; rfl
-  have e4 : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
+  obtain e4 : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
       (E0 s₀).toNat - 16 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e3]; rfl
   simp only [derive, saved, frames]
@@ -321,46 +321,46 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
   refine WP.frame (by simp [locals]) (by decide) (by decide)
     (by simp only [List.length_replicate, locals]; omega_arith) hsp (hb.mono fun t ⟨d, q⟩ => ?_)
   -- The pops.
-  have add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =
+  obtain add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =
       E s₀ + BitVec.ofNat 32 (a + 4) := fun a => by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   let t₁ := popped .eax (List.replicate (locals / 4) Reg.eax).length t
   try rewrite [show popped .eax (List.replicate (locals / 4) Reg.eax).length t = t₁ from rfl] at *
   have ht₁ : t₁ = popped .eax (List.replicate (locals / 4) Reg.eax).length t := rfl
-  have sp₁ : t₁.gpr .esp = E s₀ + BitVec.ofNat 32 144 := by
+  obtain sp₁ : t₁.gpr .esp = E s₀ + BitVec.ofNat 32 144 := by
     rw [ht₁, popped_esp, d.esp]; simp [locals]
   let t₂ := popped .ebx [Reg.ebx].length t₁
   try rewrite [show popped .ebx [Reg.ebx].length t₁ = t₂ from rfl] at *
   have ht₂ : t₂ = popped .ebx [Reg.ebx].length t₁ := rfl
-  have sp₂ : t₂.gpr .esp = E s₀ + BitVec.ofNat 32 148 := by
+  obtain sp₂ : t₂.gpr .esp = E s₀ + BitVec.ofNat 32 148 := by
     rw [ht₂, popped_esp, sp₁]; exact add4 144
   let t₃ := popped .esi [Reg.esi].length t₂
   try rewrite [show popped .esi [Reg.esi].length t₂ = t₃ from rfl] at *
   have ht₃ : t₃ = popped .esi [Reg.esi].length t₂ := rfl
-  have sp₃ : t₃.gpr .esp = E s₀ + BitVec.ofNat 32 152 := by
+  obtain sp₃ : t₃.gpr .esp = E s₀ + BitVec.ofNat 32 152 := by
     rw [ht₃, popped_esp, sp₂]; exact add4 148
   let t₄ := popped .edi [Reg.edi].length t₃
   try rewrite [show popped .edi [Reg.edi].length t₃ = t₄ from rfl] at *
   have ht₄ : t₄ = popped .edi [Reg.edi].length t₃ := rfl
-  have sp₄ : t₄.gpr .esp = E s₀ + BitVec.ofNat 32 156 := by
+  obtain sp₄ : t₄.gpr .esp = E s₀ + BitVec.ofNat 32 156 := by
     rw [ht₄, popped_esp, sp₃]; exact add4 152
   let u := popped .ebp [Reg.ebp].length t₄
   try rewrite [show popped .ebp [Reg.ebp].length t₄ = u from rfl] at *
   have hu : u = popped .ebp [Reg.ebp].length t₄ := rfl
-  have spu : u.gpr .esp = E0 s₀ := by
+  obtain spu : u.gpr .esp = E0 s₀ := by
     rw [hu, popped_esp, sp₄, List.length_singleton, add4 156, E_sub hlo 160 (by decide)]; simp
-  have mu : u.mem = t.mem := by simp [hu, ht₄, ht₃, ht₂, ht₁]
-  have b₂ : t₂.gpr .ebx = s₀.gpr .ebx := by
+  obtain mu : u.mem = t.mem := by simp [hu, ht₄, ht₃, ht₂, ht₁]
+  obtain b₂ : t₂.gpr .ebx = s₀.gpr .ebx := by
     rw [ht₂, List.length_singleton, popped_one_self _ _ (by decide), sp₁, ht₁, popped_mem]
     exact d.saved 0 (by decide)
-  have b₃ : t₃.gpr .esi = s₀.gpr .esi := by
+  obtain b₃ : t₃.gpr .esi = s₀.gpr .esi := by
     rw [ht₃, List.length_singleton, popped_one_self _ _ (by decide), sp₂, ht₂, popped_mem, ht₁,
       popped_mem]
     exact d.saved 1 (by decide)
-  have b₄ : t₄.gpr .edi = s₀.gpr .edi := by
+  obtain b₄ : t₄.gpr .edi = s₀.gpr .edi := by
     rw [ht₄, List.length_singleton, popped_one_self _ _ (by decide), sp₃, ht₃, popped_mem, ht₂,
       popped_mem, ht₁, popped_mem]
     exact d.saved 2 (by decide)
-  have b₅ : u.gpr .ebp = s₀.gpr .ebp := by
+  obtain b₅ : u.gpr .ebp = s₀.gpr .ebp := by
     rw [hu, List.length_singleton, popped_one_self _ _ (by decide), sp₄, ht₄, popped_mem, ht₃,
       popped_mem, ht₂, popped_mem, ht₁, popped_mem]
     exact d.saved 3 (by decide)
@@ -431,10 +431,10 @@ include hp
 
 theorem entry_frame : Frame [below (E0 s₀) 160] s₀.mem (entry s₀).mem := by
   have hlo : 244 ≤ (s₀.gpr .esp).toNat := hp.esp_lo
-  have hE := (s₀.gpr .esp).isLt
+  obtain hE := (s₀.gpr .esp).isLt
   have hE0 : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   -- Each push writes within the 160 bytes below `esp` on entry.
-  have step : ∀ {rs : List Reg} {s : State}, .esp ∉ rs → 4 * rs.length ≤ (s.gpr .esp).toNat →
+  obtain step : ∀ {rs : List Reg} {s : State}, .esp ∉ rs → 4 * rs.length ≤ (s.gpr .esp).toNat →
       (s₀.gpr .esp).toNat - 160 ≤ (s.gpr .esp).toNat - 4 * rs.length →
       (s.gpr .esp).toNat ≤ (s₀.gpr .esp).toNat → Frame [below (E0 s₀) 160] s.mem (pushed rs s).mem :=
     fun {rs s} hrs hn h₁ h₂ => (pushed_frame hrs hn).sub fun r hr => by
@@ -443,14 +443,14 @@ theorem entry_frame : Frame [below (E0 s₀) 160] s₀.mem (entry s₀).mem := b
       · rw [sub_nat hn, sub_nat (by omega_arith)]; omega_arith
       · rw [sub_nat hn, sub_nat (by omega_arith)]; omega_arith
   -- The stack pointer after each push.
-  have n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
+  obtain n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
     pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo])
-  have n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
+  obtain n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₁]), n₁]; rfl
-  have n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
+  obtain n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
       (s₀.gpr .esp).toNat - 12 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₂]), n₂]; rfl
-  have n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
+  obtain n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
       (s₀.gpr .esp).toNat - 16 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₃]), n₃]; rfl
   exact ((((step (by decide) (by rw [List.length_singleton]; omega_using [hlo])
@@ -495,38 +495,38 @@ theorem entry_saved {j : Nat} (hj : j < 4) : (entry s₀).mem.readW (slot s₀ j
   have hlo : 244 ≤ (s₀.gpr .esp).toNat := hp.esp_lo
   have hi : (s₀.gpr .esp).toNat + 76 ≤ 2 ^ 32 := hp.esp_hi
   -- The stack pointer after each push, and the facts the pushes need, once.
-  have n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
+  obtain n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
     pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo])
-  have n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
+  obtain n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₁]), n₁]; rfl
-  have n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
+  obtain n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
       (s₀.gpr .esp).toNat - 12 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₂]), n₂]; rfl
-  have n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
+  obtain n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
       (s₀.gpr .esp).toNat - 16 := by
     rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₃]), n₃]; rfl
-  have k₁ : 4 * [Reg.ebx].length ≤ ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat := by
+  obtain k₁ : 4 * [Reg.ebx].length ≤ ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat := by
     rw [List.length_singleton, n₃]; omega_using [hlo]
-  have k₂ : 4 * [Reg.esi].length ≤ ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat := by
+  obtain k₂ : 4 * [Reg.esi].length ≤ ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat := by
     rw [List.length_singleton, n₂]; omega_using [hlo]
-  have k₃ : 4 * [Reg.edi].length ≤ ((pushed [.ebp] s₀).gpr .esp).toNat := by
+  obtain k₃ : 4 * [Reg.edi].length ≤ ((pushed [.ebp] s₀).gpr .esp).toNat := by
     rw [List.length_singleton, n₁]; omega_using [hlo]
-  have sl : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat = (s₀.gpr .esp).toNat - 16 + 4 * j := by
+  obtain sl : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat = (s₀.gpr .esp).toNat - 16 + 4 * j := by
     have := (s₀.gpr .esp).isLt
     have hlo' : 244 ≤ (E0 s₀).toNat := hp.esp_lo
     have hE0 : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
     rw [add_nat (by rw [sub_nat (by omega_using [hlo'])]; omega_using [hlo', hE0, hi, hj]),
       sub_nat (by omega_using [hlo'])]
     omega_using [hlo', hE0]
-  have ha : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat + 4 ≤ 2 ^ 32 := by rw [sl]; omega_using [hlo, hi, hj]
-  have p₃ : 1 ≤ j → ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat ≤
+  obtain ha : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat + 4 ≤ 2 ^ 32 := by rw [sl]; omega_using [hlo, hi, hj]
+  obtain p₃ : 1 ≤ j → ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat ≤
       (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₃, sl]; omega_using [hlo, h]
-  have p₂ : 2 ≤ j → ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat ≤
+  obtain p₂ : 2 ≤ j → ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat ≤
       (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₂, sl]; omega_using [hlo, h]
-  have p₁ : 3 ≤ j → ((pushed [.ebp] s₀).gpr .esp).toNat ≤
+  obtain p₁ : 3 ≤ j → ((pushed [.ebp] s₀).gpr .esp).toNat ≤
       (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₁, sl]; omega_using [hlo, h]
   -- The slot is the word the push of `savedVal j` wrote.
-  have w : ∀ (s : State), (s.gpr .esp).toNat = (s₀.gpr .esp).toNat - 12 + 4 * j →
+  obtain w : ∀ (s : State), (s.gpr .esp).toNat = (s₀.gpr .esp).toNat - 12 + 4 * j →
       4 ≤ (s.gpr .esp).toNat ∧ E s₀ + BitVec.ofNat 32 (144 + 4 * j) = s.gpr .esp - BitVec.ofNat 32 4 :=
     fun s h => ⟨by rw [h]; omega_using [hlo],
       BitVec.eq_of_toNat_eq (by rw [sl, sub_nat (by rw [h]; omega_using [hlo]), h]; omega_using [hlo])⟩
@@ -589,17 +589,17 @@ theorem E_hi : (E s₀).toNat + 236 ≤ 2 ^ 32 := by
 theorem loc_stk {d n : Nat} (h : d + n ≤ 144) :
     Region.Sub ⟨(E s₀ + BitVec.ofNat 32 d).setWidth 64, n⟩ (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
-  have h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
+  obtain hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
+  obtain h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
     rw [add_nat (by omega_arith), hE]
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  obtain h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
   exact sub32 (by rw [h1, h2]; omega_arith) (by rw [h1, h2]; omega_arith)
 
 theorem call_stk : Region.Sub (callR s₀) (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
-  have h1 : (E s₀ - BitVec.ofNat 32 84).toNat = (E0 s₀).toNat - 244 := by rw [sub_nat (by omega_arith), hE]; omega_arith
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  obtain hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
+  obtain h1 : (E s₀ - BitVec.ofNat 32 84).toNat = (E0 s₀).toNat - 244 := by rw [sub_nat (by omega_arith), hE]; omega_arith
+  obtain h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
   exact sub32 (by rw [h1, h2]) (by rw [h1, h2]; omega_arith)
 
 /-- A word of the locals. -/
@@ -627,9 +627,9 @@ theorem E_nat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by have := hp
 theorem frame_stk {d n : Nat} (h : d + n ≤ 160) :
     Region.Sub ⟨(E s₀ + BitVec.ofNat 32 d).setWidth 64, n⟩ (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
+  obtain h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
     rw [add_nat (by rw [E_nat hp]; omega_arith), E_nat hp]
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  obtain h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
   exact sub32 (by rw [h1, h2]; omega_arith) (by rw [h1, h2]; omega_arith)
 
 /-- What lies above the locals is outside the body's regions. -/
@@ -639,7 +639,7 @@ theorem above_disj {a : BitVec 32} {n : Nat} (ha : (E s₀).toNat + 144 ≤ a.to
     (ho : Region.Disjoint ⟨a.setWidth 64, n⟩ (outR s₀)) :
     ∀ r ∈ bodyW s₀, Region.Disjoint ⟨a.setWidth 64, n⟩ r := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE := E_nat hp
+  obtain hE := E_nat hp
   intro r hr
   simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -652,12 +652,12 @@ theorem above_disj {a : BitVec 32} {n : Nat} (ha : (E s₀).toNat + 144 ≤ a.to
 
 theorem Inv.done {s : State} (h : Inv s₀ s) : BodyDone s₀ s := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE := E_nat hp
-  have hE' : (E0 s₀ - BitVec.ofNat 32 160).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
+  obtain hE := E_nat hp
+  obtain hE' : (E0 s₀ - BitVec.ofNat 32 160).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
   refine ⟨h.esp, fun j hj => ?_, ?_⟩
   · have sl : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat = (E s₀).toNat + (144 + 4 * j) :=
       add_nat (by have := E_hi hp; omega_arith)
-    have st := frame_stk hp (d := 144 + 4 * j) (n := 4) (by omega_arith)
+    obtain st := frame_stk hp (d := 144 + 4 * j) (n := 4) (by omega_arith)
     rw [h.frame.readW (r := ⟨slot s₀ j, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact entry_saved hp hj
     refine above_disj hp (by rw [sl]; omega_arith) (by rw [sl]; omega_arith) ?_ ?_ ?_
@@ -678,7 +678,7 @@ theorem Inv.done {s : State} (h : Inv s₀ s) : BodyDone s₀ s := by
 theorem arg_addr {i : Nat} (hi : i < 18) :
     addr (E s₀) (Impl.Argon2.X86.Derive.argOff i) = argAddr s₀ i := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE := E_nat hp
+  obtain hE := E_nat hp
   simp only [addr, argAddr, Impl.Argon2.X86.Derive.argOff, Impl.Argon2.X86.Derive.locals]
   congr 1
   apply BitVec.eq_of_toNat_eq
@@ -703,11 +703,11 @@ theorem Inv.arg_in {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
 theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     s.mem.readW (addr (E s₀) (Impl.Argon2.X86.Derive.argOff i)) 32 = arg s₀ i := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE := E_nat hp
-  have ai : (E0 s₀ + BitVec.ofNat 32 (4 + 4 * i)).toNat = (E0 s₀).toNat + 4 + 4 * i := by
+  obtain hE := E_nat hp
+  obtain ai : (E0 s₀ + BitVec.ofNat 32 (4 + 4 * i)).toNat = (E0 s₀).toNat + 4 + 4 * i := by
     rw [add_nat (by omega_arith)]; omega_arith
   rw [arg_addr hp hi]
-  have sub := arg_word hp hi
+  obtain sub := arg_word hp hi
   rw [h.frame.readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
   · refine (entry_frame hp).readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
@@ -723,14 +723,14 @@ theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
 theorem Inv.input {s : State} (h : Inv s₀ s) {R : Region}
     (hR : R ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀]) :
     bytesAt s.mem R.base R.len = bytesAt s₀.mem R.base R.len := by
-  have hR' : R ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, argR s₀] := by
+  obtain hR' : R ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, argR s₀] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl | rfl <;> simp
-  have hS : R ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, memR s₀, scrR s₀, outR s₀] := by
+  obtain hS : R ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, memR s₀, scrR s₀, outR s₀] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl | rfl <;> simp
-  have stk := (hp.stk_all R hS).symm
-  have hl : R.len ≤ 2 ^ 64 := by
+  obtain stk := (hp.stk_all R hS).symm
+  obtain hl : R.len ≤ 2 ^ 64 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl | rfl <;> exact Nat.le_of_lt (Nat.lt_trans (BitVec.isLt _) (by decide))
   apply Proof.Blake2.bytesAt_congr

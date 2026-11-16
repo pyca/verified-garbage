@@ -61,7 +61,7 @@ theorem SchedAt.frame {s s' : State} {k : Schedule} {S : BitVec 32} {rs : List R
     (ha : Apart S (s.ea (at_ .esp 4)) rs) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) : SchedAt s' k S := by
   obtain ⟨hin, hv, hk, hsch, hfit⟩ := h
-  have hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
+  obtain hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
     show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
   refine ⟨by rw [hrd, hwr, hea]; exact hin, ?_, ?_, by rw [hrd, hwr]; exact hsch, hfit⟩
   · rw [hea, hf.readW (Region.contains_self _ _) (fun r hr => (ha r hr).2) (by decide), hv]
@@ -71,7 +71,7 @@ theorem Ready.frame {s s' : State} {k : Schedule} {rs : List Region} (h : Ready 
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem)
     (hs : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : Ready s' k := by
   obtain ⟨S, hS, ha⟩ := h
-  have hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
+  obtain hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
     show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
   exact ⟨S, hS.frame (ha.sub hs) hesp hrd hwr hf, by rw [hwr, hea]; exact ha⟩
 
@@ -79,7 +79,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Schedule} (h : KeyA
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
     KeyArgs s' rs k := by
   obtain ⟨S, hS, ha, hw⟩ := h
-  have hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
+  obtain hea : s'.ea (at_ .esp 4) = s.ea (at_ .esp 4) := by
     show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
   exact ⟨S, hS.frame ha hesp hrd hwr hf, by rw [hea]; exact ha, by rw [hwr, hea]; exact hw⟩
 
@@ -103,7 +103,7 @@ theorem store_run (u : State) {B : BitVec 32} (hb : u.gpr .ebp = B) (bfit : B.to
     WP isa (.block modeStore) u fun t =>
       t.mem = (u.mem.writeW (slot B 40) (bswap (u.mem.readW (slot B 16) 32))).writeW (slot B 44)
         (bswap (u.mem.readW (slot B 20) 32)) ∧ t.gpr .edi = B := by
-  have e : ∀ v : BitVec 32, (u.mem.writeW (slot B 40) v).readW (slot B 20) 32 = u.mem.readW (slot B 20) 32 :=
+  obtain e : ∀ v : BitVec 32, (u.mem.writeW (slot B 40) v).readW (slot B 20) 32 = u.mem.readW (slot B 20) 32 :=
     fun v => Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)
   unfold modeStore
   brun [bufOff, hb, addr_slot48 bfit, r16, r20, w40, w44, e]
@@ -135,16 +135,16 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
   have hB' : s.gpr .edi = B := hB
   have hfit := hs.fit
   rw [dirCore_total] at hfit
-  have bfit : B.toNat + 48 ≤ 2 ^ 32 := by omega_using [hfit]
+  obtain bfit : B.toNat + 48 ≤ 2 ^ 32 := by omega_using [hfit]
   have scr : (⟨B.setWidth 64, 88⟩ : Region) ∈ s.wr := hs.wr
   have hea : s.ea (at_ .esp 4) = addr (s.gpr .esp) 4 := rfl
-  have wS : ∀ d, d + 4 ≤ 48 → InRegions s.wr (slot B d) 4 := fun d hd =>
+  obtain wS : ∀ d, d + 4 ≤ 48 → InRegions s.wr (slot B d) 4 := fun d hd =>
     ⟨_, scr, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
-  have core48 : Region.Sub ⟨B.setWidth 64, 48⟩ ⟨B.setWidth 64, 88⟩ := Region.sub_prefix (by decide)
-  have aS := (ha _ scr).1
-  have aA := (ha _ scr).2
+  obtain core48 : Region.Sub ⟨B.setWidth 64, 48⟩ ⟨B.setWidth 64, 88⟩ := Region.sub_prefix (by decide)
+  obtain aS := (ha _ scr).1
+  obtain aA := (ha _ scr).2
   let Pa := slot B 40
-  have e44 : Pa + BitVec.ofNat 64 4 = slot B 44 := Offset.add_add _ _ _
+  obtain e44 : Pa + BitVec.ofNat 64 4 = slot B 44 := Offset.add_add _ _ _
   show WP isa (.seq (.block (modeSetup ++ loadBlock)) (.seq (cipher 4 up) (.block modeStore))) s _
   apply WP.seq
   rw [WP.block_append_iff]
@@ -152,10 +152,10 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     fun u₁ ⟨⟨m₁, bp₁⟩, k₁⟩ => ?_
   have wr₁ : u₁.wr = s.wr := k₁.2.2
   have rd₁ : u₁.rd = s.rd := k₁.2.1
-  have w₁ : ∀ d, d + 4 ≤ 48 → InRegions u₁.wr (slot B d) 4 := fun d hd => by rw [wr₁]; exact wS d hd
-  have e0 : addr (B + BitVec.ofNat 32 40) 0 = Pa := by
+  obtain w₁ : ∀ d, d + 4 ≤ 48 → InRegions u₁.wr (slot B d) 4 := fun d hd => by rw [wr₁]; exact wS d hd
+  obtain e0 : addr (B + BitVec.ofNat 32 40) 0 = Pa := by
     unfold addr; rw [ofs_add, ← addr, addr_slot48 bfit (by decide)]
-  have e4 : addr (B + BitVec.ofNat 32 40) 4 = Pa + BitVec.ofNat 64 4 := by
+  obtain e4 : addr (B + BitVec.ofNat 32 40) 4 = Pa + BitVec.ofNat 64 4 := by
     unfold addr; rw [ofs_add, ← addr, addr_slot48 bfit (by decide), e44]
   refine WP.mono (WP.keep [.eax, .ebx] (loadBlock_run u₁ (B := B) bp₁ (by omega_using [hfit]) (w₁ 16 (by decide))
     (w₁ 20 (by decide)) (region_in (w₁ 32 (by decide)))
@@ -163,28 +163,28 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     (by rw [e44]; exact region_in (w₁ 44 (by decide)))
     (by rw [e44]; exact Offset.sep _ (by decide) (by decide) (by decide))) (by decide))
     fun u₂ ⟨m₂, k₂⟩ => ?_
-  have k₁₂ : Keep [.ebp, .ebx, .eax] s u₂ := (k₁.trans k₂).mono (by decide)
-  have esp₂ : u₂.gpr .esp = s.gpr .esp := k₁₂.gpr (by decide)
-  have F₂ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₂.mem := by
+  obtain k₁₂ : Keep [.ebp, .ebx, .eax] s u₂ := (k₁.trans k₂).mono (by decide)
+  obtain esp₂ : u₂.gpr .esp = s.gpr .esp := k₁₂.gpr (by decide)
+  obtain F₂ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₂.mem := by
     rw [m₂, m₁]
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (d := 32) (n := 4)
       (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (d := 16) (n := 4)
       (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (d := 20) (n := 4)
       (by decide) (by decide))
-  have wide : ∀ {m m' : Mem}, Frame [⟨B.setWidth 64, 48⟩] m m' → Frame [⟨B.setWidth 64, 88⟩] m m' := fun hf =>
+  obtain wide : ∀ {m m' : Mem}, Frame [⟨B.setWidth 64, 48⟩] m m' → Frame [⟨B.setWidth 64, 88⟩] m m' := fun hf =>
     hf.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, core48⟩
-  have apS : Apart S (s.ea (at_ .esp 4)) [⟨B.setWidth 64, 88⟩] := ha.sub fun r hr => by
+  obtain apS : Apart S (s.ea (at_ .esp 4)) [⟨B.setWidth 64, 88⟩] := ha.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, scr, fun _ h => h⟩
   -- the block in, as the halves
-  have blk₁ : blockAt u₁.mem Pa = blockAt s.mem Pa := by
+  obtain blk₁ : blockAt u₁.mem Pa = blockAt s.mem Pa := by
     rw [m₁]
     exact blockAt_frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
       fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (by decide) (by decide) (by decide)
   -- the cipher
-  have CE : CipherEnv 4 S B u₂ := by
+  obtain CE : CipherEnv 4 S B u₂ := by
     refine ⟨(k₂.gpr (by decide)).trans bp₁, by omega_using [hfit], ?_, ?_, ?_, hSfit, fun o ho => ?_, ?_, ?_⟩
     · rw [k₂.2.2, wr₁]; exact ⟨_, scr, contains_pre _ (by decide)⟩
     · rw [keep_reads k₁₂, esp₂, ← hea]; exact hin
@@ -194,27 +194,27 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     · rw [esp₂, ← hea]; exact aA.symm.sub_left (Region.sub_prefix (by decide))
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun u₃ ⟨c₃, ck₃, cf₃⟩ => ?_
-  have k₃ : Keep [.ebp, .ebx, .eax, .ecx, .edx, .esi, .edi] s u₃ := (k₁₂.trans ck₃).mono (by decide)
-  have F₃ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₃.mem :=
+  obtain k₃ : Keep [.ebp, .ebx, .eax, .ecx, .edx, .esi, .edi] s u₃ := (k₁₂.trans ck₃).mono (by decide)
+  obtain F₃ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₃.mem :=
     F₂.trans (cf₃.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩)
-  have w₃ : ∀ d, d + 4 ≤ 48 → InRegions u₃.wr (slot B d) 4 := fun d hd => by rw [k₃.2.2]; exact wS d hd
+  obtain w₃ : ∀ d, d + 4 ≤ 48 → InRegions u₃.wr (slot B d) 4 := fun d hd => by rw [k₃.2.2]; exact wS d hd
   -- the block out
   refine WP.mono (WP.keep [.eax, .edi] (store_run u₃ ((ck₃.gpr (by decide)).trans CE.bp) bfit
     (region_in (w₃ 16 (by decide))) (region_in (w₃ 20 (by decide))) (w₃ 40 (by decide)) (w₃ 44 (by decide))) (by
       decide))
     fun u₄ ⟨⟨m₄, di₄⟩, k₄⟩ => ?_
-  have k₄' : Keep [.ebp, .ebx, .eax, .ecx, .edx, .esi, .edi] s u₄ := (k₃.trans k₄).mono (by decide)
-  have esp₄ : u₄.gpr .esp = s.gpr .esp := k₄'.gpr (by decide)
-  have F₄ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₄.mem := by
+  obtain k₄' : Keep [.ebp, .ebx, .eax, .ecx, .edx, .esi, .edi] s u₄ := (k₃.trans k₄).mono (by decide)
+  obtain esp₄ : u₄.gpr .esp = s.gpr .esp := k₄'.gpr (by decide)
+  obtain F₄ : Frame [⟨B.setWidth 64, 48⟩] s.mem u₄.mem := by
     rw [m₄]
     exact (F₃.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (d := 40) (n := 4) (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (d := 44) (n := 4) (by decide)
       (by decide))
   have rd₄ : u₄.rd = s.rd := k₄'.2.1
   have wr₄ : u₄.wr = s.wr := k₄'.2.2
-  have hS : SchedAt s k S := ⟨hin, hv, hk, hsch, hSfit⟩
+  obtain hS : SchedAt s k S := ⟨hin, hv, hk, hsch, hSfit⟩
   refine ⟨di₄, esp₄, ⟨S, hS.frame apS esp₄ rd₄ wr₄ (wide F₄),
       by rw [wr₄, show u₄.ea (at_ .esp 4) = s.ea (at_ .esp 4) by
         show (u₄.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [esp₄]]; exact ha⟩,
@@ -222,15 +222,15 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self, fun _ h => h⟩
   · obtain rfl : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
-    have hba : blkAddr (dirCore up) B 0 = Pa := by
+    obtain hba : blkAddr (dirCore up) B 0 = Pa := by
       simp only [blkAddr, slotA, dirCore, Offset.add_add]; rfl
-    have e16 : u₂.mem.readW (slot B 16) 32 = decodeWord (blockAt u₁.mem Pa) 0 := by
+    obtain e16 : u₂.mem.readW (slot B 16) 32 = decodeWord (blockAt u₁.mem Pa) 0 := by
       rw [m₂, Mem.readW_writeW_sep (slot_sep B (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self32]
-    have e20 : u₂.mem.readW (slot B 20) 32 = decodeWord (blockAt u₁.mem Pa) 4 := by
+    obtain e20 : u₂.mem.readW (slot B 20) 32 = decodeWord (blockAt u₁.mem Pa) 4 := by
       rw [m₂, Mem.readW_writeW_self32]
     rw [e16, e20, blk₁] at c₃
-    have hK : scheduleAt u₂.mem (S.setWidth 64) = k := by
+    obtain hK : scheduleAt u₂.mem (S.setWidth 64) = k := by
       rw [hk]; exact scheduleAt_eq_of_frame _ (wide F₂) fun r hr => (apS r hr).1
     rw [hK] at c₃
     rw [hba]

@@ -62,20 +62,20 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
       Keep clobbered s t ∧
       Frame [pairR p, stR st, callR q, frame s.sp] s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧ stateAt t.mem st = keccakF S := by
-  have hscr : Region.Sub (scrR q) (callR q) := Region.sub_prefix (by decide : 128 ≤ 136)
-  have hslotS : Region.Sub ⟨q + BitVec.ofNat 64 128, 8⟩ (callR q) :=
+  obtain hscr : Region.Sub (scrR q) (callR q) := Region.sub_prefix (by decide : 128 ≤ 136)
+  obtain hslotS : Region.Sub ⟨q + BitVec.ofNat 64 128, 8⟩ (callR q) :=
     Offset.sub_base q (d := 128) (n := 8) (k := 136) (by decide)
-  have hslotR : (callR q).Contains (q + BitVec.ofNat 64 128) 8 := Offset.contains_base q (by decide) (by decide)
-  have hslot : InRegions s.wr (q + BitVec.ofNat 64 128) 8 :=
+  obtain hslotR : (callR q).Contains (q + BitVec.ofNat 64 128) 8 := Offset.contains_base q (by decide) (by decide)
+  obtain hslot : InRegions s.wr (q + BitVec.ofNat 64 128) 8 :=
     hcov _ _ ⟨callR q, by simp, hslotR⟩
-  have hsub : Covers [pairR p, stR st, scrR q] [pairR p, stR st, callR q] :=
+  obtain hsub : Covers [pairR p, stR st, scrR q] [pairR p, stR st, callR q] :=
     Covers.of_sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨pairR p, by simp, 0, (BitVec.add_zero p).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨stR st, by simp, 0, (BitVec.add_zero st).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨callR q, by simp, 0, (BitVec.add_zero q).symm, by simp only [scrR, callR]; decide⟩
-  have hslot_sep : ∀ r ∈ [pairR p, stR st, scrR q] ++ [below s.sp (16 * 8)],
+  obtain hslot_sep : ∀ r ∈ [pairR p, stR st, scrR q] ++ [below s.sp (16 * 8)],
       (⟨q + BitVec.ofNat 64 128, 8⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -86,23 +86,23 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
     · exact (f2.sub_right hslotS).symm
   unfold Impl.MlKem.AArch64.Hybrid.x3call
   refine WP.seq (VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun s₁ o₁ e₁ => ?_)
-  have h2 : s₁.gpr .x2 = q := by rw [e₁, hp, hq]
+  obtain h2 : s₁.gpr .x2 = q := by rw [e₁, hp, hq]
   refine VG.Proof.Sha3.AArch64.wp_str ⟨by decide, by decide⟩ (by rw [h2]) (by rw [o₁.wr]; exact hslot)
     fun s₂ m₂ => VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun s₃ o₃ e₃ =>
       VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun s₄ o₄ e₄ => WP.block_nil ?_
-  have h0 : s₄.gpr .x0 = p := by
+  obtain h0 : s₄.gpr .x0 = p := by
     rw [o₄.gpr _ (by decide), e₃, BitVec.add_zero, m₂.gpr, o₁.gpr _ (by decide), hp]
-  have h1 : s₄.gpr .x1 = st := by
+  obtain h1 : s₄.gpr .x1 = st := by
     rw [e₄, BitVec.add_zero, o₃.gpr _ (by decide), m₂.gpr, o₁.gpr _ (by decide), hst]
-  have h2' : s₄.gpr .x2 = q := by
+  obtain h2' : s₄.gpr .x2 = q := by
     rw [o₄.gpr _ (by decide), o₃.gpr _ (by decide), m₂.gpr, h2]
-  have hlr : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → s₄.gpr r = s.gpr r := fun r h0 h1 h2 => by
+  obtain hlr : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → s₄.gpr r = s.gpr r := fun r h0 h1 h2 => by
     rw [o₄.gpr _ (by simpa using h1), o₃.gpr _ (by simpa using h0), m₂.gpr, o₁.gpr _ (by simpa using h2)]
-  have hm : s₄.mem = s.mem.writeW (q + BitVec.ofNat 64 128) (s.gpr .x30) := by
+  obtain hm : s₄.mem = s.mem.writeW (q + BitVec.ofNat 64 128) (s.gpr .x30) := by
     rw [o₄.mem, o₃.mem, m₂.mem, o₁.mem, o₁.gpr _ (by decide)]
-  have hw : s₄.wr = s.wr := o₄.wr.trans (o₃.wr.trans (m₂.wr.trans o₁.wr))
-  have hsp₄ : s₄.sp = s.sp := o₄.sp.trans (o₃.sp.trans (m₂.sp.trans o₁.sp))
-  have ent : ∀ r, r = .x0 ∨ r = .x1 ∨ r = .x2 → (s₄.callEntry.withRegions [] [pairR p, stR st, scrR q]).gpr r = s₄.gpr r := by
+  obtain hw : s₄.wr = s.wr := o₄.wr.trans (o₃.wr.trans (m₂.wr.trans o₁.wr))
+  obtain hsp₄ : s₄.sp = s.sp := o₄.sp.trans (o₃.sp.trans (m₂.sp.trans o₁.sp))
+  obtain ent : ∀ r, r = .x0 ∨ r = .x1 ∨ r = .x2 → (s₄.callEntry.withRegions [] [pairR p, stR st, scrR q]).gpr r = s₄.gpr r := by
     intro r hr
     simp only [State.withRegions_gpr]
     rcases hr with rfl | rfl | rfl <;> exact State.callEntry_gpr s₄ (by decide)
@@ -121,28 +121,28 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
     (by have hd := depth sha3; omega_using [hd]))
   intro t hr hwr hsp hf hk hv hpost
   rw [hsp₄] at hf
-  have hf : Frame ([pairR p, stR st, scrR q] ++ [below s.sp (16 * 8)]) s₄.mem t.mem :=
+  obtain hf : Frame ([pairR p, stR st, scrR q] ++ [below s.sp (16 * 8)]) s₄.mem t.mem :=
     hf.sub fun r hr => by
       rw [List.mem_append, List.mem_singleton] at hr
       rcases hr with hr | rfl
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
           below_sub (by have hd := depth sha3; omega_using [hd]) (by decide)⟩
-  have hf₄ : Frame [callR q] s.mem s₄.mem := by
+  obtain hf₄ : Frame [callR q] s.mem s₄.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hslotR
-  have hpair₄ : PairAt s₄.mem p A B := fun i hi => by
+  obtain hpair₄ : PairAt s₄.mem p A B := fun i hi => by
     rw [hf₄.read (pair_contains p hi) (by simpa using d02) (by decide)]; exact hpair i hi
-  have hS₄ : stateAt s₄.mem st = S := by
+  obtain hS₄ : stateAt s₄.mem st = S := by
     rw [← hS]
     exact VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame hf₄ (by simpa using d12)
   simp only [VG.Proof.Sha3.AArch64.Hybrid.X3.K, State.withRegions_mem, State.callEntry_mem,
     ent .x0 (by simp), ent .x1 (by simp), h0, h1] at hpost
   obtain ⟨hA, hB⟩ := stateX2_of_pairAt hpair₄
   rw [hA, hB, hS₄] at hpost
-  have hval : t.mem.readW (q + BitVec.ofNat 64 128) 64 = s.gpr .x30 := by
+  obtain hval : t.mem.readW (q + BitVec.ofNat 64 128) 64 = s.gpr .x30 := by
     rw [hf.readW (r := ⟨q + BitVec.ofNat 64 128, 8⟩) (Region.contains_self _ _) hslot_sep (by decide),
       hm, Mem.readW_writeW_self64]
-  have ht19 : t.gpr .x19 = p := by rw [hk .x19 (by decide) (by decide), hlr .x19 (by decide) (by decide) (by decide), hp]
+  obtain ht19 : t.gpr .x19 = p := by rw [hk .x19 (by decide) (by decide), hlr .x19 (by decide) (by decide) (by decide), hp]
   refine VG.Proof.Sha3.AArch64.wp_ldr (a := q + BitVec.ofNat 64 128) ⟨by decide, by decide⟩
     (by rw [ht19, ← hq, BitVec.add_assoc]; rfl)
     (by obtain ⟨R, hR, hc⟩ := hslot
@@ -225,10 +225,10 @@ theorem tail_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) pair hd hpa hpb hin hwa hwb)
     fun u ⟨hu, hfu, hau, hbu⟩ => ?_
   refine wp_addImm (by decide) fun v1 h1 e1 => wp_addImm (by decide) fun t h2 e2 => wp_nil ?_
-  have ku : Keep [.x6, .x7] s u := ⟨fun r hr => by
+  obtain ku : Keep [.x6, .x7] s u := ⟨fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact hu.gpr r hr.1 hr.2,
     hu.rd, hu.wr, hu.sp, fun r _ => by rw [hu.vec]⟩
-  have ot : Only [.x20, .x21] u t := (h1.trans h2).mono (by simp)
+  obtain ot : Only [.x20, .x21] u t := (h1.trans h2).mono (by simp)
   have hm : t.mem = u.mem := ot.mem
   refine ⟨(ku.trans ot.keep).mono (by simp), ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm]; exact hfu
@@ -283,7 +283,7 @@ theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : 
   refine WP.seq (WP.mono (absorbBlock_ok S hS h25 h28 hb hE hst hl.ek
     (covers_mono hl.cov (by simp))
     hl.dSE) fun u ⟨ku, fu, su⟩ => ?_)
-  have pu : PairAt u.mem p A B :=
+  obtain pu : PairAt u.mem p A B :=
     VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pair fu (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dPS)
   refine WP.seq (WP.mono (x3call_ok (sha3 := sha3) (q := p + 1536) (S := stateAt u.mem st)
@@ -291,16 +291,16 @@ theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : 
     (by rw [ku.sp]; exact hl.sp) (by rw [ku.sp]; exact hl.fP) (by rw [ku.sp]; exact hl.fS)
     (by rw [ku.sp]; exact hl.fC) (by rw [ku.wr]; exact hl.cov)) fun v ⟨kv, fv, pv, sv⟩ => ?_)
   rw [ku.sp] at fv
-  have kuv := ku.trans kv
+  obtain kuv := ku.trans kv
   refine WP.mono (tail_ok (by rw [kuv.get .x19, h19]) (by rw [kuv.get .x20, h20])
     (by rw [kuv.get .x21, h21]) pv
     (fun i hi => by rw [kuv.rd, kuv.wr]; exact hl.hin i hi)
     (fun i hi => by rw [kuv.wr]; exact hl.hwa i hi) (fun i hi => by rw [kuv.wr]; exact hl.hwb i hi)
     hl.dAB hl.dPA hl.dPB) fun t ⟨kt, ft, at', bt, t20, t21⟩ => ?_
-  have fvt : ∀ r ∈ [rateR21 a, rateR21 b], (pairR p).Disjoint r := by
+  obtain fvt : ∀ r ∈ [rateR21 a, rateR21 b], (pairR p).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl; exact hl.dPA; exact hl.dPB
-  have svt : ∀ r ∈ [rateR21 a, rateR21 b], (stR st).Disjoint r := by
+  obtain svt : ∀ r ∈ [rateR21 a, rateR21 b], (stR st).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl; exact hl.dSA; exact hl.dSB
   refine ⟨(kuv.trans kt).mono (by simp [stepRegs, clobbered]), ?_, ?_, at', bt, ?_, t20, t21⟩
@@ -321,7 +321,7 @@ theorem plainStep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e s
       Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
       stateAt t.mem st = stateAt s.mem st ∧
       t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 := by
-  have hc := Paired.squeezeBlock_ok (sha3 := sha3) (rp := .x19) (ra := .x20) (rb := .x21) h19 h20 h21 (by rw [h19]; rfl)
+  obtain hc := Paired.squeezeBlock_ok (sha3 := sha3) (rp := .x19) (ra := .x20) (rb := .x21) h19 h20 h21 (by rw [h19]; rfl)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) pair hl.hin hl.hwa hl.hwb hl.dAB hl.dPA hl.dPB hl.dPC
     (covers_mono hl.cov (by simp))
@@ -331,10 +331,10 @@ theorem plainStep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e s
   rw [WP.block_append_iff]
   refine WP.mono hu fun v ⟨kv, pv, av, bv, fv, vv⟩ => ?_
   refine wp_addImm (by decide) fun v1 h1 e1 => wp_addImm (by decide) fun t h2 e2 => wp_nil ?_
-  have hv : Keep Paired.blockRegs s v := ⟨kv.gpr, kv.rd, kv.wr, kv.sp, vv⟩
-  have ot : Only [.x20, .x21] v t := (h1.trans h2).mono (by simp)
+  obtain hv : Keep Paired.blockRegs s v := ⟨kv.gpr, kv.rd, kv.wr, kv.sp, vv⟩
+  obtain ot : Only [.x20, .x21] v t := (h1.trans h2).mono (by simp)
   have hm : t.mem = v.mem := ot.mem
-  have fr : ∀ r ∈ [pairR p, rateR21 a, rateR21 b, callR (p + 1536)], (stR st).Disjoint r := by
+  obtain fr : ∀ r ∈ [pairR p, rateR21 a, rateR21 b, callR (p + 1536)], (stR st).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hl.dPS.symm

@@ -39,18 +39,18 @@ theorem restore_ok (original s : State) (base : s.gpr .rbx = original.gpr .r8)
   have read (d : Nat) (h : d + 8 ≤ 16384) :
       InRegions (s.rd ++ s.wr) (original.gpr .r8 + BitVec.ofNat 64 d) 8 :=
     ⟨_, readable, Offset.contains_base _ h (by omega_arith)⟩
-  have r840 := read 840 (by decide)
-  have r848 := read 848 (by decide)
-  have r856 := read 856 (by decide)
-  have r864 := read 864 (by decide)
-  have r872 := read 872 (by decide)
-  have r880 := read 880 (by decide)
-  have v840 := values .rbp 840 (by decide)
-  have v848 := values .r12 848 (by decide)
-  have v856 := values .r13 856 (by decide)
-  have v864 := values .r14 864 (by decide)
-  have v872 := values .r15 872 (by decide)
-  have v880 := values .rbx 880 (by decide)
+  obtain r840 := read 840 (by decide)
+  obtain r848 := read 848 (by decide)
+  obtain r856 := read 856 (by decide)
+  obtain r864 := read 864 (by decide)
+  obtain r872 := read 872 (by decide)
+  obtain r880 := read 880 (by decide)
+  obtain v840 := values .rbp 840 (by decide)
+  obtain v848 := values .r12 848 (by decide)
+  obtain v856 := values .r13 856 (by decide)
+  obtain v864 := values .r14 864 (by decide)
+  obtain v872 := values .r15 872 (by decide)
+  obtain v880 := values .rbx 880 (by decide)
   apply WP.of_runBlock
   simp only [restore, saved, List.map_cons, List.map_nil, runBlock_cons,
     runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_at,
@@ -88,20 +88,20 @@ theorem finishInput_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
       bytesAt t.mem (s.gpr .rbx + 768) 64 = Spec.Blake2.finalHash b h0 d ∧ Keeps s t := by
   unfold finishInput
   refine WP.seq (wp_mov fun a ha _ _ => wp_addi fun u hu => WP.block_nil ?_)
-  have ku : Keeps s u := by
+  obtain ku : Keeps s u := by
     refine ⟨fun r hr => ?_, hu.rd.trans ha.rd, hu.wr.trans ha.wr, ?_⟩
     · have hn : r ≠ .rsi := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
       exact (hu.other r hn).trans (ha.other r hn)
     · rw [hu.mem, ha.mem]; exact Frame.refl _ _
-  have repr' : Repr b h0 u.mem (u.gpr .rbx) d := by rw [hu.mem, ha.mem, ku.rbx]; exact repr
-  have count : u.gpr .rsi = BitVec.ofNat 64 d.length := by
+  obtain repr' : Repr b h0 u.mem (u.gpr .rbx) d := by rw [hu.mem, ha.mem, ku.rbx]; exact repr
+  obtain count : u.gpr .rsi = BitVec.ofNat 64 d.length := by
     rw [hu.gpr, ha.gpr, length, BitVec.ofNat_add, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     exact BitVec.add_comm _ _
-  have len : d.length < 2 ^ 64 := by rw [length]; omega_arith
-  have wr : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [ku.rbx, ku.wr]; exact hwr
-  have sw : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
+  obtain len : d.length < 2 ^ 64 := by rw [length]; omega_arith
+  obtain wr : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [ku.rbx, ku.wr]; exact hwr
+  obtain sw : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
     rw [ku.rbx, ku.rsp]; exact stackWork
   refine (finalize_ok v u h0 d repr' count len wr sw).mono ?_
   rintro t ⟨out, regs, rd, wr', frame⟩
@@ -135,46 +135,46 @@ theorem first_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
   unfold first
   refine WP.seq ((chooseLength_ok s).mono ?_)
   rintro a ⟨lengthA, ka⟩
-  have na : (a.gpr .rsi).toNat = min (s.gpr .r15).toNat 64 := by
+  obtain na : (a.gpr .rsi).toNat = min (s.gpr .r15).toNat 64 := by
     rw [lengthA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have wrA : (⟨a.gpr .rbx, 16384⟩ : Region) ∈ a.wr := by rw [ka.rbx, ka.wr]; exact hwr
-  have swA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
+  obtain wrA : (⟨a.gpr .rbx, 16384⟩ : Region) ∈ a.wr := by rw [ka.rbx, ka.wr]; exact hwr
+  obtain swA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
     rw [ka.rbx, ka.rsp]; exact stackWork
-  have retA : (below (a.gpr .rsp) 8).Disjoint ⟨a.gpr .rbx, 192⟩ :=
+  obtain retA : (below (a.gpr .rsp) 8).Disjoint ⟨a.gpr .rbx, 192⟩ :=
     (swA.sub_left (below_sub (by decide) (by decide))).sub_right (Region.sub_prefix (by decide))
-  have lenA : 1 ≤ (a.gpr .rsi).toNat ∧ (a.gpr .rsi).toNat ≤ 64 := by rw [na]; omega_arith
+  obtain lenA : 1 ≤ (a.gpr .rsi).toNat ∧ (a.gpr .rsi).toNat ≤ 64 := by rw [na]; omega_arith
   refine WP.seq ((init_ok v a lenA wrA retA).mono ?_)
   rintro u ⟨reprU, regsU, rdU, wrU, frameU⟩
-  have ku : Keeps a u := ⟨regsU, rdU, wrU, init_frame _ _ frameU⟩
-  have ksu := ka.trans ku
-  have reprU' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) u.mem (u.gpr .rbx) [] := by
+  obtain ku : Keeps a u := ⟨regsU, rdU, wrU, init_frame _ _ frameU⟩
+  obtain ksu := ka.trans ku
+  obtain reprU' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) u.mem (u.gpr .rbx) [] := by
     rw [ku.rbx]; simpa only [na] using reprU
-  have wrU' : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [ksu.rbx, ksu.wr]; exact hwr
-  have swU : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
+  obtain wrU' : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [ksu.rbx, ksu.wr]; exact hwr
+  obtain swU : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
     rw [ksu.rbx, ksu.rsp]; exact stackWork
-  have headU : bytesAt u.mem (u.gpr .rbx + 832) 4 = Spec.Argon2.le32 (s.gpr .r15).toNat := by
+  obtain headU : bytesAt u.mem (u.gpr .rbx + 832) 4 = Spec.Argon2.le32 (s.gpr .r15).toNat := by
     rw [ksu.rbx, ksu.prefix stackWork]; exact headBytes
   refine WP.seq ((absorbFixed_ok v u _ 832 4 (by decide) (by decide) reprU' wrU' swU).mono ?_)
   rintro w ⟨reprW, kw⟩
-  have ksw := ksu.trans kw
-  have r12 : w.gpr .r12 = s.gpr .r12 := ksw.regs _ (by decide)
-  have r13 : w.gpr .r13 = s.gpr .r13 := ksw.regs _ (by decide)
-  have headLen : (Spec.Argon2.le32 (s.gpr .r15).toNat).length = 4 := by
+  obtain ksw := ksu.trans kw
+  obtain r12 : w.gpr .r12 = s.gpr .r12 := ksw.regs _ (by decide)
+  obtain r13 : w.gpr .r13 = s.gpr .r13 := ksw.regs _ (by decide)
+  obtain headLen : (Spec.Argon2.le32 (s.gpr .r15).toNat).length = 4 := by
     simp only [Spec.Argon2.le32, Spec.Blake2.wordBytes, List.length_map, List.length_range]
-  have reprW' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) w.mem (w.gpr .rbx)
+  obtain reprW' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) w.mem (w.gpr .rbx)
       (Spec.Argon2.le32 (s.gpr .r15).toNat) := by
     rw [kw.rbx]
     simpa only [show BitVec.ofNat 64 832 = (832 : Addr) from rfl, headU] using reprW
-  have wrW : (⟨w.gpr .rbx, 16384⟩ : Region) ∈ w.wr := by rw [ksw.rbx, ksw.wr]; exact hwr
-  have dataW : Covers [⟨w.gpr .r12, (w.gpr .r13).toNat⟩] (w.rd ++ w.wr) := by
+  obtain wrW : (⟨w.gpr .rbx, 16384⟩ : Region) ∈ w.wr := by rw [ksw.rbx, ksw.wr]; exact hwr
+  obtain dataW : Covers [⟨w.gpr .r12, (w.gpr .r13).toNat⟩] (w.rd ++ w.wr) := by
     rw [r12, r13, ksw.rd, ksw.wr]; exact hdata
-  have dwW : (⟨w.gpr .r12, (w.gpr .r13).toNat⟩ : Region).Disjoint ⟨w.gpr .rbx, 16384⟩ := by
+  obtain dwW : (⟨w.gpr .r12, (w.gpr .r13).toNat⟩ : Region).Disjoint ⟨w.gpr .rbx, 16384⟩ := by
     rw [r12, r13, ksw.rbx]; exact dataWork
-  have swW : (below (w.gpr .rsp) 16).Disjoint ⟨w.gpr .rbx, 16384⟩ := by
+  obtain swW : (below (w.gpr .rsp) 16).Disjoint ⟨w.gpr .rbx, 16384⟩ := by
     rw [ksw.rsp, ksw.rbx]; exact stackWork
-  have sdW : (below (w.gpr .rsp) 16).Disjoint ⟨w.gpr .r12, (w.gpr .r13).toNat⟩ := by
+  obtain sdW : (below (w.gpr .rsp) 16).Disjoint ⟨w.gpr .r12, (w.gpr .r13).toNat⟩ := by
     rw [ksw.rsp, r12, r13]; exact stackData
-  have inputW : bytesAt w.mem (w.gpr .r12) (w.gpr .r13).toNat =
+  obtain inputW : bytesAt w.mem (w.gpr .r12) (w.gpr .r13).toNat =
       bytesAt s.mem (s.gpr .r12) (s.gpr .r13).toNat := by
     rw [r12, r13]
     exact ksw.bytes _ (show (s.gpr .r13).toNat ≤ 2 ^ 64 by omega_arith)
@@ -182,22 +182,22 @@ theorem first_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
   refine WP.seq ((absorbInput_ok v w _ _ headLen reprW' (by rw [r13]; exact len)
     wrW dataW dwW swW sdW).mono ?_)
   rintro x ⟨reprX, kx⟩
-  have ksx := ksw.trans kx
-  have reprX' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) x.mem (x.gpr .rbx)
+  obtain ksx := ksw.trans kx
+  obtain reprX' : Repr b (Spec.Blake2.init b (min (s.gpr .r15).toNat 64) 0) x.mem (x.gpr .rbx)
       (Spec.Argon2.le32 (s.gpr .r15).toNat ++ bytesAt s.mem (s.gpr .r12) (s.gpr .r13).toNat) := by
     rw [kx.rbx]; simpa only [inputW] using reprX
-  have r13X : x.gpr .r13 = s.gpr .r13 := ksx.regs _ (by decide)
-  have length : (Spec.Argon2.le32 (s.gpr .r15).toNat ++ bytesAt s.mem (s.gpr .r12) (s.gpr .r13).toNat).length =
+  obtain r13X : x.gpr .r13 = s.gpr .r13 := ksx.regs _ (by decide)
+  obtain length : (Spec.Argon2.le32 (s.gpr .r15).toNat ++ bytesAt s.mem (s.gpr .r12) (s.gpr .r13).toNat).length =
       4 + (x.gpr .r13).toNat := by
     rw [List.length_append, headLen, r13X]
     simp only [bytesAt, List.length_map, List.length_range]
-  have wrX : (⟨x.gpr .rbx, 16384⟩ : Region) ∈ x.wr := by rw [ksx.rbx, ksx.wr]; exact hwr
-  have swX : (below (x.gpr .rsp) 16).Disjoint ⟨x.gpr .rbx, 16384⟩ := by
+  obtain wrX : (⟨x.gpr .rbx, 16384⟩ : Region) ∈ x.wr := by rw [ksx.rbx, ksx.wr]; exact hwr
+  obtain swX : (below (x.gpr .rsp) 16).Disjoint ⟨x.gpr .rbx, 16384⟩ := by
     rw [ksx.rsp, ksx.rbx]; exact stackWork
   refine (finishInput_ok v x _ _ reprX' length (by rw [r13X]; exact len) wrX swX).mono ?_
   rintro t ⟨out, kt⟩
   refine ⟨?_, ksx.trans kt⟩
-  have result := congrArg (List.take (min (s.gpr .r15).toNat 64)) out
+  obtain result := congrArg (List.take (min (s.gpr .r15).toNat 64)) out
   rw [ksx.rbx] at result
   exact result.trans (Proof.Argon2.H_stream _ _).symm
 
@@ -224,12 +224,12 @@ theorem maybeChain_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s : S
     WP isa (.ite .b (.block []) (chain (hash v))) s (ChainResult s n) := by
   refine WP.ite (decide (32 * n + lastLen < 65)) (by simp only [eval, cf]) ?_ ?_
   · intro h
-    have hn : n = 0 := by have := of_decide_eq_true h; omega_arith
+    obtain hn : n = 0 := by have := of_decide_eq_true h; omega_arith
     subst n
     exact WP.block_nil (ChainResult.refl s)
   · intro h
-    have hn : 1 ≤ n := by have := of_decide_eq_false h; omega_arith
-    have p := space.prefix (show 32 * n ≤ 32 * n + lastLen by omega_arith)
+    obtain hn : 1 ≤ n := by have := of_decide_eq_false h; omega_arith
+    obtain p := space.prefix (show 32 * n ≤ 32 * n + lastLen by omega_arith)
     exact chain_ok v n lastLen s hn last space.bound count p.work p.out p.sep p.stackWork p.stackOut
 
 theorem extendDigest_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s : State)
@@ -242,58 +242,58 @@ theorem extendDigest_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s :
         Spec.Argon2.H lastLen (chainDigest n (bytesAt s.mem (s.gpr .rbx + 768) 64)) ∧
       t.gpr .r15 = BitVec.ofNat 64 lastLen := by
   unfold extendDigest
-  have short := space.prefix (show 32 ≤ 32 * (n + 1) + lastLen by omega_arith)
-  have sep32 := short.sep.sub_left (Offset.sub_base _ (by decide : 768 + 32 ≤ 16384))
+  obtain short := space.prefix (show 32 ≤ 32 * (n + 1) + lastLen by omega_arith)
+  obtain sep32 := short.sep.sub_left (Offset.sub_base _ (by decide : 768 + 32 ≤ 16384))
   refine WP.seq ((emitPrefix_ok s short.work short.out sep32).mono ?_)
   intro a ha
-  have wa := Written.of_emitted ha
-  have lenA : (bytesAt s.mem (s.gpr .rbx + 768) 32).length = 32 := by
+  obtain wa := Written.of_emitted ha
+  obtain lenA : (bytesAt s.mem (s.gpr .rbx + 768) 32).length = 32 := by
     simp only [bytesAt, List.length_map, List.length_range]
-  have spaceA : Space a (32 * n + lastLen) := space.advance wa (by rw [lenA]; omega_arith)
-  have countA : a.gpr .r15 = BitVec.ofNat 64 (32 * n + lastLen) := by
+  obtain spaceA : Space a (32 * n + lastLen) := space.advance wa (by rw [lenA]; omega_arith)
+  obtain countA : a.gpr .r15 = BitVec.ofNat 64 (32 * n + lastLen) := by
     rw [ha.remaining, count, show (32 : Addr) = BitVec.ofNat 64 32 from rfl,
       Offset.ofNat_sub_ofNat (by omega_arith : 32 ≤ 32 * (n + 1) + lastLen)]
     rw [show 32 * (n + 1) + lastLen - 32 = 32 * n + lastLen by omega_arith]
-  have digestA : bytesAt a.mem (a.gpr .rbx + 768) 64 = bytesAt s.mem (s.gpr .rbx + 768) 64 := by
+  obtain digestA : bytesAt a.mem (a.gpr .rbx + 768) 64 = bytesAt s.mem (s.gpr .rbx + 768) 64 := by
     rw [wa.rbx]; exact ha.digest short.sep
   refine WP.seq (wp_cmpi fun u gu mu ru wu cf _ => WP.block_nil ?_)
-  have ku : Keeps a u := ⟨fun r _ => congrFun gu r, ru, wu, by rw [mu]; exact Frame.refl _ _⟩
-  have countU : u.gpr .r15 = BitVec.ofNat 64 (32 * n + lastLen) := (congrFun gu _).trans countA
-  have cfU : u.cf = some (decide (32 * n + lastLen < 65)) := by
+  obtain ku : Keeps a u := ⟨fun r _ => congrFun gu r, ru, wu, by rw [mu]; exact Frame.refl _ _⟩
+  obtain countU : u.gpr .r15 = BitVec.ofNat 64 (32 * n + lastLen) := (congrFun gu _).trans countA
+  obtain cfU : u.cf = some (decide (32 * n + lastLen < 65)) := by
     rw [cf, countA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt spaceA.bound]; rfl
   refine WP.seq ((maybeChain_ok v n lastLen u (spaceA.keeps ku) last countU cfU).mono ?_)
   intro w hw
-  have ww := (Written.of_chain hw).before_keeps ku
-  have digestU : bytesAt u.mem (u.gpr .rbx + 768) 64 = bytesAt s.mem (s.gpr .rbx + 768) 64 := by
+  obtain ww := (Written.of_chain hw).before_keeps ku
+  obtain digestU : bytesAt u.mem (u.gpr .rbx + 768) 64 = bytesAt s.mem (s.gpr .rbx + 768) 64 := by
     rw [mu, gu]; exact digestA
-  have ww' : Written a (chainPrefixes n (bytesAt s.mem (s.gpr .rbx + 768) 64)) w := by
+  obtain ww' : Written a (chainPrefixes n (bytesAt s.mem (s.gpr .rbx + 768) 64)) w := by
     simpa only [digestU] using ww
-  have wsw := space.join wa ww' (by rw [lenA, Proof.Argon2.chainPrefixes_length]; omega_arith)
-  have produced : ((bytesAt s.mem (s.gpr .rbx + 768) 32) ++
+  obtain wsw := space.join wa ww' (by rw [lenA, Proof.Argon2.chainPrefixes_length]; omega_arith)
+  obtain produced : ((bytesAt s.mem (s.gpr .rbx + 768) 32) ++
       chainPrefixes n (bytesAt s.mem (s.gpr .rbx + 768) 64)).length = 32 * (n + 1) := by
     rw [List.length_append, lenA, Proof.Argon2.chainPrefixes_length]; omega_arith
-  have spaceW : Space w lastLen := space.advance wsw (by rw [produced])
-  have countW : w.gpr .r15 = BitVec.ofNat 64 lastLen := by
+  obtain spaceW : Space w lastLen := space.advance wsw (by rw [produced])
+  obtain countW : w.gpr .r15 = BitVec.ofNat 64 lastLen := by
     rw [hw.remaining, countU, Offset.ofNat_sub_ofNat (by omega_arith : 32 * n ≤ 32 * n + lastLen)]
     rw [Nat.add_sub_cancel_left]
-  have digestW : bytesAt w.mem (w.gpr .rbx + 768) 64 =
+  obtain digestW : bytesAt w.mem (w.gpr .rbx + 768) 64 =
       chainDigest n (bytesAt s.mem (s.gpr .rbx + 768) 64) := by
     rw [hw.regs .rbx (by decide) (by decide) (by decide), hw.digest, digestU]
   refine WP.seq (wp_mov fun x hx _ _ => WP.block_nil ?_)
-  have kx : Keeps w x := by
+  obtain kx : Keeps w x := by
     refine ⟨fun r hr => ?_, hx.rd, hx.wr, ?_⟩
     · have hn : r ≠ .rsi := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
       exact hx.other r hn
     · rw [hx.mem]; exact Frame.refl _ _
-  have spaceX := spaceW.keeps kx
-  have lenX : (x.gpr .rsi).toNat = lastLen := by
+  obtain spaceX := spaceW.keeps kx
+  obtain lenX : (x.gpr .rsi).toNat = lastLen := by
     rw [hx.gpr, countW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt spaceW.bound]
   refine (next_ok v x (by rw [lenX]; omega_arith) spaceX.work spaceX.stackWork).mono ?_
   rintro t ⟨dt, kt⟩
-  have wwt := Written.of_keeps (kx.trans kt)
-  have written := space.join wsw wwt (by rw [produced, List.length_nil]; omega_arith)
+  obtain wwt := Written.of_keeps (kx.trans kt)
+  obtain written := space.join wsw wwt (by rw [produced, List.length_nil]; omega_arith)
   refine ⟨?_, ?_, ?_⟩
   · simpa only [List.append_nil, bytesAt_take _ _ 32 64 (by decide)] using written
   · rw [lenX, kx.rbx, hx.mem, digestW, wsw.rbx] at dt
@@ -307,18 +307,18 @@ theorem longOutput_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s : S
       Written s (Spec.Argon2.longHash lastLen (n + 1) (bytesAt s.mem (s.gpr .rbx + 768) 64)) t := by
   refine WP.seq ((extendDigest_ok v n lastLen s space last count).mono ?_)
   rintro u ⟨written, digest, remaining⟩
-  have len : ((bytesAt s.mem (s.gpr .rbx + 768) 64).take 32 ++
+  obtain len : ((bytesAt s.mem (s.gpr .rbx + 768) 64).take 32 ++
       chainPrefixes n (bytesAt s.mem (s.gpr .rbx + 768) 64)).length = 32 * (n + 1) := by
     simp only [List.length_append, List.length_take, bytesAt, List.length_map,
       List.length_range, Proof.Argon2.chainPrefixes_length]
     omega_arith
-  have spaceU : Space u lastLen := space.advance written (by rw [len])
+  obtain spaceU : Space u lastLen := space.advance written (by rw [len])
   refine (copyRemaining_ok u lastLen spaceU (by omega_arith) last.2 remaining).mono ?_
   intro t copied
-  have out : bytesAt u.mem (u.gpr .rbx + 768) lastLen =
+  obtain out : bytesAt u.mem (u.gpr .rbx + 768) lastLen =
       Spec.Argon2.H lastLen (chainDigest n (bytesAt s.mem (s.gpr .rbx + 768) 64)) := by
     rw [written.rbx, ← bytesAt_take _ _ lastLen 64 last.2]; exact digest
-  have all := space.join written copied (by
+  obtain all := space.join written copied (by
     rw [len]; simp only [bytesAt, List.length_map, List.length_range, Nat.le_refl])
   rw [out, ← Proof.Argon2.longHash_chain] at all
   exact all
@@ -341,43 +341,43 @@ theorem finishOutput_ok (v : Proof.Blake2.X86_64.Backend) (s : State) (n : Nat) 
     WP isa (finishOutput (hash v)) s (Written s (Spec.Argon2.hPrime n input)) := by
   unfold finishOutput
   refine WP.seq (wp_cmpi fun u gu mu ru wu cf _ => WP.block_nil ?_)
-  have ku : Keeps s u := ⟨fun r _ => congrFun gu r, ru, wu, by rw [mu]; exact Frame.refl _ _⟩
-  have countU : u.gpr .r15 = BitVec.ofNat 64 n := (congrFun gu _).trans count
-  have cfU : u.cf = some (decide (n < 65)) := by
+  obtain ku : Keeps s u := ⟨fun r _ => congrFun gu r, ru, wu, by rw [mu]; exact Frame.refl _ _⟩
+  obtain countU : u.gpr .r15 = BitVec.ofNat 64 n := (congrFun gu _).trans count
+  obtain cfU : u.cf = some (decide (n < 65)) := by
     rw [cf, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt space.bound]; rfl
   apply WP.seq
   refine WP.ite (decide (n < 65)) (by simp only [eval, cfU]) ?_ ?_
   · intro h
-    have short : n ≤ 64 := by have := of_decide_eq_true h; omega_arith
+    obtain short : n ≤ 64 := by have := of_decide_eq_true h; omega_arith
     apply WP.block_nil
     refine (copyRemaining_ok u n (space.keeps ku) positive short countU).mono ?_
     intro t ht
-    have result := ht.before_keeps ku
-    have value : bytesAt u.mem (u.gpr .rbx + 768) n = Spec.Argon2.hPrime n input := by
+    obtain result := ht.before_keeps ku
+    obtain value : bytesAt u.mem (u.gpr .rbx + 768) n = Spec.Argon2.hPrime n input := by
       rw [mu, gu, ← bytesAt_take _ _ n 64 short]
       simpa only [Nat.min_eq_left short, Spec.Argon2.hPrime, ite_eq_left short] using digest
     rw [value] at result
     exact result
   · intro h
-    have long : 64 < n := by have := of_decide_eq_false h; omega_arith
+    obtain long : 64 < n := by have := of_decide_eq_false h; omega_arith
     let r := (n + 31) / 32 - 2
     let lastLen := n - 32 * r
-    have bounds : 1 ≤ r ∧ 33 ≤ lastLen ∧ lastLen ≤ 64 ∧ 32 * r + lastLen = n :=
+    obtain bounds : 1 ≤ r ∧ 33 ≤ lastLen ∧ lastLen ≤ 64 ∧ 32 * r + lastLen = n :=
       Proof.Argon2.longHash_bounds n long
     obtain ⟨q, hq⟩ := Nat.exists_eq_succ_of_ne_zero (show r ≠ 0 by omega_arith)
     change r = q + 1 at hq
-    have size : 32 * (q + 1) + lastLen = n := by rw [← hq]; exact bounds.2.2.2
-    have spaceU : Space u (32 * (q + 1) + lastLen) := by rw [size]; exact space.keeps ku
-    have countLong : u.gpr .r15 = BitVec.ofNat 64 (32 * (q + 1) + lastLen) := by rw [size]; exact countU
+    obtain size : 32 * (q + 1) + lastLen = n := by rw [← hq]; exact bounds.2.2.2
+    obtain spaceU : Space u (32 * (q + 1) + lastLen) := by rw [size]; exact space.keeps ku
+    obtain countLong : u.gpr .r15 = BitVec.ofNat 64 (32 * (q + 1) + lastLen) := by rw [size]; exact countU
     apply WP.seq_iff.mp
     refine (longOutput_ok v q lastLen u spaceU ⟨bounds.2.1, bounds.2.2.1⟩ countLong).mono ?_
     intro t ht
-    have result := ht.before_keeps ku
-    have digestU : bytesAt u.mem (u.gpr .rbx + 768) 64 =
+    obtain result := ht.before_keeps ku
+    obtain digestU : bytesAt u.mem (u.gpr .rbx + 768) 64 =
         Spec.Argon2.H 64 (Spec.Argon2.le32 n ++ input) := by
       rw [mu, gu]
       simpa only [Nat.min_eq_right (show 64 ≤ n by omega_arith), bytesAt_take _ _ 64 64 (by decide)] using digest
-    have value : Spec.Argon2.longHash lastLen (q + 1) (bytesAt u.mem (u.gpr .rbx + 768) 64) =
+    obtain value : Spec.Argon2.longHash lastLen (q + 1) (bytesAt u.mem (u.gpr .rbx + 768) 64) =
         Spec.Argon2.hPrime n input := by
       rw [digestU, ← hq, Spec.Argon2.hPrime, ite_eq_right (show ¬ n ≤ 64 by omega_arith)]
     rw [value] at result
@@ -398,24 +398,24 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
       Frame [outputR s, workR s, stackR s] s.mem t.mem := by
   obtain ⟨rd, wr, len, lo, hi, dw, ow, sd, so, sw, _, _⟩ := pre
-  have work : (workR s) ∈ s.wr := by rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
+  obtain work : (workR s) ∈ s.wr := by rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
   unfold code
   refine WP.seq ((setup_ok s work).mono ?_)
   intro a ha
-  have sp : a.gpr .rsp = s.gpr .rsp := ha.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have workA : (⟨a.gpr .rbx, 16384⟩ : Region) ∈ a.wr := by
+  obtain sp : a.gpr .rsp = s.gpr .rsp := ha.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain workA : (⟨a.gpr .rbx, 16384⟩ : Region) ∈ a.wr := by
     rw [ha.workspace, ha.wr]; exact work
-  have dataA : Covers [⟨a.gpr .r12, (a.gpr .r13).toNat⟩] (a.rd ++ a.wr) := by
+  obtain dataA : Covers [⟨a.gpr .r12, (a.gpr .r13).toNat⟩] (a.rd ++ a.wr) := by
     rw [ha.input, ha.length, ha.rd, rd]
     intro p n ⟨r, hr, hc⟩
     exact ⟨r, List.mem_append_left _ hr, hc⟩
-  have dwA : (⟨a.gpr .r12, (a.gpr .r13).toNat⟩ : Region).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
+  obtain dwA : (⟨a.gpr .r12, (a.gpr .r13).toNat⟩ : Region).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
     rw [ha.input, ha.length, ha.workspace]; exact dw
-  have swA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
+  obtain swA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .rbx, 16384⟩ := by
     rw [sp, ha.workspace]; exact sw
-  have sdA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .r12, (a.gpr .r13).toNat⟩ := by
+  obtain sdA : (below (a.gpr .rsp) 16).Disjoint ⟨a.gpr .r12, (a.gpr .r13).toNat⟩ := by
     rw [sp, ha.input, ha.length]; exact sd
-  have inputA : bytesAt a.mem (a.gpr .r12) (a.gpr .r13).toNat =
+  obtain inputA : bytesAt a.mem (a.gpr .r12) (a.gpr .r13).toNat =
       bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat := by
     rw [ha.input, ha.length, ha.mem]
     apply Proof.Blake2.bytesAt_congr
@@ -424,9 +424,9 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
     intro r hr
     simp only [List.mem_singleton] at hr; subst r
     exact dw.sub_right (Offset.sub_base _ (by decide : 832 + 56 ≤ 16384))
-  have headA : bytesAt a.mem (a.gpr .rbx + 832) 4 = Spec.Argon2.le32 (a.gpr .r15).toNat := by
+  obtain headA : bytesAt a.mem (a.gpr .rbx + 832) 4 = Spec.Argon2.le32 (a.gpr .r15).toNat := by
     rw [ha.mem, ha.workspace, ha.remaining]; exact setupMem_prefix s
-  have spaceA : Space a (s.gpr .rcx).toNat := by
+  obtain spaceA : Space a (s.gpr .rcx).toNat := by
     refine ⟨by omega_arith, workA, ?_, ?_, swA, ?_⟩
     · intro i hi'
       rw [ha.wr, ha.output, wr]
@@ -436,10 +436,10 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
   refine WP.seq ((first_ok v a (by rw [ha.remaining]; exact ⟨lo, hi⟩)
     (by rw [ha.length]; exact len) headA workA dataA dwA swA sdA).mono ?_)
   rintro b ⟨digestB, kb⟩
-  have spaceB := spaceA.keeps kb
-  have countB : b.gpr .r15 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
+  obtain spaceB := spaceA.keeps kb
+  obtain countB : b.gpr .r15 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
     rw [kb.regs _ (by decide), ha.remaining, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have digestB' : (bytesAt b.mem (b.gpr .rbx + 768) 64).take (min (s.gpr .rcx).toNat 64) =
+  obtain digestB' : (bytesAt b.mem (b.gpr .rbx + 768) 64).take (min (s.gpr .rcx).toNat 64) =
       Spec.Argon2.H (min (s.gpr .rcx).toNat 64)
         (Spec.Argon2.le32 (s.gpr .rcx).toNat ++ bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) := by
     rw [kb.rbx]
@@ -447,23 +447,23 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
   refine WP.seq ((finishOutput_ok v b (s.gpr .rcx).toNat
     (bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) spaceB lo countB digestB').mono ?_)
   intro x hx
-  have baseB : b.gpr .rbx = s.gpr .r8 := kb.rbx.trans ha.workspace
-  have spB : b.gpr .rsp = s.gpr .rsp := kb.rsp.trans sp
-  have dstB : b.gpr .r14 = s.gpr .rdx := (kb.regs _ (by decide)).trans ha.output
-  have wrX : x.wr = s.wr := hx.wr.trans (kb.wr.trans ha.wr)
-  have frame : Frame [⟨s.gpr .r8, 832⟩, stackR s, outputR s] a.mem x.mem := by
-    have fb : Frame [⟨s.gpr .r8, 832⟩, stackR s, outputR s] a.mem b.mem := by
+  obtain baseB : b.gpr .rbx = s.gpr .r8 := kb.rbx.trans ha.workspace
+  obtain spB : b.gpr .rsp = s.gpr .rsp := kb.rsp.trans sp
+  obtain dstB : b.gpr .r14 = s.gpr .rdx := (kb.regs _ (by decide)).trans ha.output
+  obtain wrX : x.wr = s.wr := hx.wr.trans (kb.wr.trans ha.wr)
+  obtain frame : Frame [⟨s.gpr .r8, 832⟩, stackR s, outputR s] a.mem x.mem := by
+    obtain fb : Frame [⟨s.gpr .r8, 832⟩, stackR s, outputR s] a.mem b.mem := by
       apply kb.frame.sub
       intro r hr
       rw [ha.workspace, sp] at hr
       exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     exact fb.trans (by simpa only [baseB, spB, dstB, stackR, outputR, Proof.Argon2.hPrime_length] using hx.frame)
-  have values : ∀ r d, (r, d) ∈ saved →
+  obtain values : ∀ r d, (r, d) ∈ saved →
       x.mem.readW (s.gpr .r8 + BitVec.ofNat 64 d) 64 = s.gpr r := by
     intro r d hr
-    have bounds : ∀ rd ∈ saved, 832 ≤ rd.2 ∧ rd.2 + 8 ≤ 16384 := by decide
+    obtain bounds : ∀ rd ∈ saved, 832 ≤ rd.2 ∧ rd.2 + 8 ≤ 16384 := by decide
     obtain ⟨dlo, dhi⟩ := bounds (r, d) hr
-    have keep : x.mem.readW (s.gpr .r8 + BitVec.ofNat 64 d) 64 =
+    obtain keep : x.mem.readW (s.gpr .r8 + BitVec.ofNat 64 d) 64 =
         a.mem.readW (s.gpr .r8 + BitVec.ofNat 64 d) 64 := by
       apply frame.readW (r := ⟨s.gpr .r8 + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
       intro q hq
@@ -473,9 +473,9 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
       · exact (sw.sub_right (Offset.sub_base _ dhi)).symm
       · exact (ow.sub_right (Offset.sub_base _ dhi)).symm
     rw [keep, ha.mem]; exact setupMem_saved s r d hr
-  have baseX := hx.rbx.trans baseB
-  have spX := hx.rsp.trans spB
-  have readable : workR s ∈ x.rd ++ x.wr := List.mem_append_right _ (wrX.symm ▸ work)
+  obtain baseX := hx.rbx.trans baseB
+  obtain spX := hx.rsp.trans spB
+  obtain readable : workR s ∈ x.rd ++ x.wr := List.mem_append_right _ (wrX.symm ▸ work)
   refine (restore_ok s x baseX spX readable values).mono ?_
   rintro t ⟨regs, mem, _, _⟩
   refine ⟨?_, regs, ?_⟩
@@ -483,7 +483,7 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
     rw [mem]
     simpa only [dstB, Proof.Argon2.hPrime_length] using hx.bytes
   · rw [mem]
-    have setupFrame : Frame [outputR s, workR s, stackR s] s.mem a.mem := by
+    obtain setupFrame : Frame [outputR s, workR s, stackR s] s.mem a.mem := by
       rw [ha.mem]
       apply (setupMem_frame s).sub
       intro r hr
@@ -501,7 +501,7 @@ theorem code_wp (v : Proof.Blake2.X86_64.Backend) (s : State) (pre : localContra
 
 theorem code_mxcsr (v : Proof.Blake2.X86_64.Backend) :
     (code (hash v)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have init : (hash v).init.allInstrs (fun i => !loadsMxcsr i) = true := by
+  obtain init : (hash v).init.allInstrs (fun i => !loadsMxcsr i) = true := by
     change (Impl.Blake2.X86_64.Stream.init Spec.Blake2.b).allInstrs _ = true
     lit_decide
   have update : (hash v).update.allInstrs (fun i => !loadsMxcsr i) = true := v.updateMxcsr

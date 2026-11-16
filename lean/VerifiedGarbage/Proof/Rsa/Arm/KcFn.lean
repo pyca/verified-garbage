@@ -71,15 +71,15 @@ theorem entry_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) :
   rw [wp_seqs_cons (by simp)]
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   refine wp_mov (op2_reg _ _) fun s5 u5 => WP.block_nil ?_
-  have e5 := e3.of_rest ((u4.rest (ws := [.r4, .r6]) (by simp)).trans (u5.rest (by simp))) (u5.mem.trans u4.mem)
+  obtain e5 := e3.of_rest ((u4.rest (ws := [.r4, .r6]) (by simp)).trans (u5.rest (by simp))) (u5.mem.trans u4.mem)
     (by decide) (by decide) (by decide) (by decide) (by decide)
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (e5.load_ok (j := aN) (by decide) (src := σ.gpr .r0) (k := fK σ) h.rdN h.nS h.fN
     (by omega_arith) (Nat.le_refl _) (by rw [u5.other _ (by decide), u4.gpr, e3.r10])
     (by rw [u5.gpr, u4.other _ (by decide), e3.r11]; simp)) fun t6 ⟨e6, r6⟩ => ?_
-  have p4' : t6.gpr .r4 = σ.gpr .r0 := by
+  obtain p4' : t6.gpr .r4 = σ.gpr .r0 := by
     rw [r6.gpr _ (by decide), u5.other _ (by decide), u4.gpr, e3.r10]
-  have p6' : t6.gpr .r6 = BitVec.ofNat 32 (fK σ) := by
+  obtain p6' : t6.gpr .r6 = BitVec.ofNat 32 (fK σ) := by
     rw [r6.gpr _ (by decide), u5.gpr, u4.other _ (by decide), e3.r11]; simp
   refine WP.mono (modulusCheck_ok t6 (src := σ.gpr .r0) (k := fK σ) kb.1 kb.2 h.fN
     ⟨_, List.mem_append_left _ (by rw [e6.base.rd]; exact h.rdN), Region.contains_self _ _⟩ p4' p6')
@@ -99,28 +99,28 @@ theorem eLoad_ok {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) :
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
   have fS := pre.fS
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
-  have rdS : (geo iS σ).B.toNat + 64 ≤ 2 ^ 32 := by omega_arith
-  have ldS : ∀ (d : Nat) (u : State), Mid nA iS ins σ u A → d + 4 ≤ 64 →
+  obtain hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  obtain rdS : (geo iS σ).B.toNat + 64 ≤ 2 ^ 32 := by omega_arith
+  obtain ldS : ∀ (d : Nat) (u : State), Mid nA iS ins σ u A → d + 4 ≤ 64 →
       State.addr (u.gpr .r8 + BitVec.ofNat 32 d) = off (State.addr (geo iS σ).B) d ∧
       InRegions (u.rd ++ u.wr) (off (State.addr (geo iS σ).B) d) 4 := fun d u hu hd =>
     ⟨by rw [hu.ws.r8]; exact VG.Arm.addr_add (by omega_arith),
       ⟨rS iS σ, List.mem_append_right _ (by rw [hu.base.wr, pre.wr]; simp),
         Offset.contains_base _ (by omega_arith) (by omega_arith)⟩⟩
   refine wp_ldr (by decide) (ldS sE s h (by decide)).1 (ldS sE s h (by decide)).2 fun s1 u1 => ?_
-  have h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem (by decide) (by decide)
+  obtain h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem (by decide) (by decide)
   refine wp_ldr (by decide) (ldS sEl s1 h1 (by decide)).1 (ldS sEl s1 h1 (by decide)).2
     fun s2 u2 => WP.block_nil ?_
-  have h2 := h1.of_rest (u2.rest (ws := [.lr]) (by simp)) u2.mem (by decide) (by decide)
-  have e1 : s2.gpr .r1 = σ.gpr .r2 := by
+  obtain h2 := h1.of_rest (u2.rest (ws := [.lr]) (by simp)) u2.mem (by decide) (by decide)
+  obtain e1 : s2.gpr .r1 = σ.gpr .r2 := by
     rw [u2.other _ (by decide), u1.gpr]
     exact BitVec.eq_of_toNat_eq (h.base.saved 9 (by decide))
-  have e2 : s2.gpr .lr = σ.gpr .r3 := by
+  obtain e2 : s2.gpr .lr = σ.gpr .r3 := by
     rw [u2.gpr, u1.mem]
     exact BitVec.eq_of_toNat_eq (h.base.saved 10 (by decide))
   have le := pre.e2
   have kb := pre.kb
-  have len : (eBytes σ).length = (σ.gpr .r3).toNat := VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _
+  obtain len : (eBytes σ).length = (σ.gpr .r3).toNat := VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _
   refine ⟨h2, ⟨by rw [len]; omega_arith, by rw [len]; exact pre.fE,
     by rw [len]; exact ⟨_, List.mem_append_left _ (by rw [h2.base.rd]; exact pre.rdE), Region.contains_self _ _⟩,
     fun i hi => ?_⟩, e1, by rw [len, e2]; simp⟩
@@ -137,7 +137,7 @@ theorem expCheck_ok {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A)
     WP isa exponentCheck s fun t => Mid nA iS ins σ t A ∧
       t.gpr .r7 = BitVec.ofNat 32 (Spec.Rsa.exponentValid (eV σ)).toNat := by
   have pre := h.base.pre
-  have len : (eBytes σ).length = (σ.gpr .r3).toNat := VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _
+  obtain len : (eBytes σ).length = (σ.gpr .r3).toNat := VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _
   exact WP.mono (exponentCheck_ok s (by rw [len]; exact pre.e1) hi.1.countFit hi.1.sourceFit hi.1.read
     hi.1.bytes hi.2.1 hi.2.2) fun t ⟨v, m, r⟩ => ⟨h.of_rest r m (by decide) (by decide), v⟩
 
@@ -163,14 +163,14 @@ theorem Mid.bodyIn {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) (
     (hv : A = vals v) (hA : ∀ j < nArr, A j < 2 ^ (32 * (geo iS σ).w)) : BodyIn (geo iS σ) v s := by
   have pre := h.base.pre
   have w16 := pre.w16
-  have hvj : ∀ j < nArr, A j = vals v j := fun j _ => by rw [hv]
+  obtain hvj : ∀ j < nArr, A j = vals v j := fun j _ => by rw [hv]
   refine ⟨h.ws.nowrap, h.ws.writable, h.ws.fits, pre.kb, h.ws.r8, by rw [h.r11]; simp, h.cnt, fun j hj => ?_,
     ?_⟩
   · have hj' := List.mem_range.mp hj
     rw [← hvj j hj', ← h.full j hj']
     exact val32_low2 (by rw [h.full j hj']; exact hA j hj')
   · have := h.full aVD (by decide)
-    have hz : A aVD = 0 := by rw [hvj _ (by decide)]; rfl
+    obtain hz : A aVD = 0 := by rw [hvj _ (by decide)]; rfl
     exact top_of_full (this.trans hz)
 
 /-- `ret`: the mask returned. -/
@@ -180,7 +180,7 @@ theorem ret_ok {σ s : State} {c : Bool} (h : FnBase nA iS ins σ s) (h8 : s.gpr
   have pre := h.pre
   have fits := pre.fits
   have fS := pre.fS
-  have hz : 160 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  obtain hz : 160 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
   have eM : sMask = 120 := rfl
@@ -201,14 +201,14 @@ theorem ldrSaved {σ s : State} (h : FnBase nA iS ins σ s) (p12 : s.gpr .r12 = 
   have pre := h.pre
   have fS := pre.fS
   have fits := pre.fits
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  obtain hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
   refine wp_ldr (by omega_arith) (by rw [p12]; exact addr_add (by omega_arith))
     ⟨rS iS σ, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp),
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun s' u => k s' ?_
-  have e : s.mem.readW (off (State.addr (geo iS σ).B) (20 + 4 * i)) 32 = σ.gpr (savedReg i) :=
+  obtain e : s.mem.readW (off (State.addr (geo iS σ).B) (20 + 4 * i)) 32 = σ.gpr (savedReg i) :=
     BitVec.eq_of_toNat_eq (h.saved i hi)
   exact ⟨by rw [u.gpr]; exact e, u.other, u.mem, u.rd, u.wr, u.sp⟩
 
@@ -219,26 +219,26 @@ theorem restore_ok {σ s : State} (h : FnBase nA iS ins σ s) (h4 : 4 * iS < 409
   refine h.ldrSp (i := iS) (by have := pre.hS; omega_arith) h4 fun s1 d1 u1 => ?_
   have p12 : s1.gpr .r12 = (geo iS σ).B := u1.gpr
   refine ldrSaved d1 p12 (i := 0) (by decide) fun s2 u2 => ?_
-  have d2 := d1.of_rest (u2.rest (ws := [.r4]) (by simp)) u2.mem
+  obtain d2 := d1.of_rest (u2.rest (ws := [.r4]) (by simp)) u2.mem
   refine ldrSaved d2 (by rw [u2.other _ (by decide), p12]) (i := 1) (by decide) fun s3 u3 => ?_
-  have d3 := d2.of_rest (u3.rest (ws := [.r5]) (by simp)) u3.mem
+  obtain d3 := d2.of_rest (u3.rest (ws := [.r5]) (by simp)) u3.mem
   refine ldrSaved d3 (by rw [u3.other _ (by decide), u2.other _ (by decide), p12]) (i := 2) (by decide)
     fun s4 u4 => ?_
-  have d4 := d3.of_rest (u4.rest (ws := [.r6]) (by simp)) u4.mem
-  have q4 : s4.gpr .r12 = (geo iS σ).B := by
+  obtain d4 := d3.of_rest (u4.rest (ws := [.r6]) (by simp)) u4.mem
+  obtain q4 : s4.gpr .r12 = (geo iS σ).B := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p12]
   refine ldrSaved d4 q4 (i := 3) (by decide) fun s5 u5 => ?_
-  have d5 := d4.of_rest (u5.rest (ws := [.r7]) (by simp)) u5.mem
+  obtain d5 := d4.of_rest (u5.rest (ws := [.r7]) (by simp)) u5.mem
   refine ldrSaved d5 (by rw [u5.other _ (by decide), q4]) (i := 4) (by decide) fun s6 u6 => ?_
-  have d6 := d5.of_rest (u6.rest (ws := [.r8]) (by simp)) u6.mem
-  have q6 : s6.gpr .r12 = (geo iS σ).B := by rw [u6.other _ (by decide), u5.other _ (by decide), q4]
+  obtain d6 := d5.of_rest (u6.rest (ws := [.r8]) (by simp)) u6.mem
+  obtain q6 : s6.gpr .r12 = (geo iS σ).B := by rw [u6.other _ (by decide), u5.other _ (by decide), q4]
   refine ldrSaved d6 q6 (i := 5) (by decide) fun s7 u7 => ?_
-  have d7 := d6.of_rest (u7.rest (ws := [.r9]) (by simp)) u7.mem
+  obtain d7 := d6.of_rest (u7.rest (ws := [.r9]) (by simp)) u7.mem
   refine ldrSaved d7 (by rw [u7.other _ (by decide), q6]) (i := 6) (by decide) fun s8 u8 => ?_
-  have d8 := d7.of_rest (u8.rest (ws := [.r10]) (by simp)) u8.mem
-  have q8 : s8.gpr .r12 = (geo iS σ).B := by rw [u8.other _ (by decide), u7.other _ (by decide), q6]
+  obtain d8 := d7.of_rest (u8.rest (ws := [.r10]) (by simp)) u8.mem
+  obtain q8 : s8.gpr .r12 = (geo iS σ).B := by rw [u8.other _ (by decide), u7.other _ (by decide), q6]
   refine ldrSaved d8 q8 (i := 7) (by decide) fun s9 u9 => ?_
-  have d9 := d8.of_rest (u9.rest (ws := [.r11]) (by simp)) u9.mem
+  obtain d9 := d8.of_rest (u9.rest (ws := [.r11]) (by simp)) u9.mem
   refine ldrSaved d9 (by rw [u9.other _ (by decide), q8]) (i := 8) (by decide) fun t u10 => WP.block_nil ?_
   refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -283,7 +283,7 @@ theorem fn_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {body :
   refine WP.mono (entry_ok h h4) fun s1 ⟨m1, z1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   -- What the three ways out leave for `restore`.
-  have exit : ∀ (u : State) (c : Bool), FnBase nA iS ins σ u → (Spec.Rsa.modulusValid (nV σ) (fK σ) = true →
+  obtain exit : ∀ (u : State) (c : Bool), FnBase nA iS ins σ u → (Spec.Rsa.modulusValid (nV σ) (fK σ) = true →
       Spec.Rsa.exponentValid (eV σ) = true → P c) →
       u.gpr .r0 = BitVec.ofNat 32
         (if Spec.Rsa.modulusValid (nV σ) (fK σ) && Spec.Rsa.exponentValid (eV σ) && c then 1 else 0) →
@@ -294,9 +294,9 @@ theorem fn_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {body :
     refine WP.mono (eCheck_ok m1) fun s2 ⟨m2, z2⟩ => ?_
     refine WP.ite s2.z rfl (fun he => ?_) (fun he => ?_)
     · rw [WP.seq_iff]
-      have bi := m2.bodyIn v hv hA
+      obtain bi := m2.bodyIn v hv hA
       refine WP.mono (hbody s2 m2 bi (by rw [← z1]; exact hn) (by rw [← z2]; exact he)) fun t ⟨A, live, c, ht, hP⟩ => ?_
-      have bt : FnBase nA iS ins σ t := m2.base.keep ht.keep (fun j hj => List.mem_range.mp hj) (by decide)
+      obtain bt : FnBase nA iS ins σ t := m2.base.keep ht.keep (fun j hj => List.mem_range.mp hj) (by decide)
         (by decide) ht.rest.sp ht.rest.rd ht.rest.wr
       refine WP.mono (ret_ok bt ht.ws.r8 ht.mask) fun u ⟨bu, ru⟩ => exit u c bu (fun _ _ => hP) ?_
       rw [ru, ← z1, ← z2, hn, he]

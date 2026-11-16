@@ -90,21 +90,21 @@ theorem clearLoop_ok {r : Reg} (hra : r ≠ .eax) (hrc : r ≠ .ecx) (hrs : r �
   refine WP.loop (M := isa) (fun m s => ∃ j, m = n - j ∧ j < n ∧ CI s₀ s₁ r X n j s)
     ?_ n s₁ ⟨0, by omega_arith, by omega_arith, h⟩
   rintro m s ⟨j, rfl, hj, c⟩
-  have ea : addr (s.gpr r) 0 = X.setWidth 64 + BitVec.ofNat 64 (4 * j) := by
+  obtain ea : addr (s.gpr r) 0 = X.setWidth 64 + BitVec.ofNat 64 (4 * j) := by
     rw [c.ptr, addr32 (by omega_arith), Nat.add_zero]
-  have hc : R.Contains (addr (s.gpr r) 0) 4 := by
+  obtain hc : R.Contains (addr (s.gpr r) 0) 4 := by
     rw [ea, hRX, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact Offset.contains_base (k := R.len) _ (by omega_arith) (by omega_arith)
-  have hcX : (⟨X.setWidth 64, 4 * n⟩ : Region).Contains (addr (s.gpr r) 0) 4 := by
+  obtain hcX : (⟨X.setWidth 64, 4 * n⟩ : Region).Contains (addr (s.gpr r) 0) 4 := by
     rw [ea]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   simp only [Impl.Argon2.X86.Derive.clearWordAt]
   refine Wp.wp_stm rfl (by rw [c.inv.wr]; exact ⟨_, hRw, hc⟩) fun t₁ u₁ => ?_
-  have i₁ := c.inv.store hR hc u₁
+  obtain i₁ := c.inv.store hR hc u₁
   refine wp_addi fun t₂ u₂ => wp_subi fun t u _ zf => WP.block_nil ?_
-  have i₃ := (i₁.upd u₂ hrs hrb).upd u (by decide) (by decide)
-  have e₁ : t.gpr .ecx = BitVec.ofNat 32 (n - (j + 1)) := by
+  obtain i₃ := (i₁.upd u₂ hrs hrb).upd u (by decide) (by decide)
+  obtain e₁ : t.gpr .ecx = BitVec.ofNat 32 (n - (j + 1)) := by
     rw [u.gpr, u₂.other _ hrc.symm, u₁.gpr, c.ecx, Wp.ofNat_pred (by omega_arith)]; rfl
-  have next : CI s₀ s₁ r X n (j + 1) t := by
+  obtain next : CI s₀ s₁ r X n (j + 1) t := by
     refine ⟨i₃, ?_, e₁, ?_, fun q a b d => ?_, fun i hi => ?_, ?_⟩
     · rw [u.other _ hrc, u₂.gpr, u₁.gpr, c.ptr, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]; rfl
@@ -124,7 +124,7 @@ theorem clearLoop_ok {r : Reg} (hra : r ≠ .eax) (hrc : r ≠ .ecx) (hrs : r �
         · rename_i hn; rw [BitVec.toNat_ofNat] at hn; omega_arith
     · rw [u.mem, u₂.mem, u₁.mem]
       exact c.frame.writeW (List.mem_singleton_self _) _ hcX
-  have z : t.zf = some (decide (n - (j + 1) = 0)) := by
+  obtain z : t.zf = some (decide (n - (j + 1) = 0)) := by
     rw [zf, u₂.other _ hrc.symm, u₁.gpr, c.ecx, Wp.ofNat_pred (by omega_arith), Wp.ofNat_beq_zero (by omega_arith)]
     rfl
   by_cases done : j + 1 = n
@@ -138,16 +138,16 @@ theorem clear_ok {s : State} (h : Inv s₀ s) :
       ∀ i < blocksN s₀ * 1024, t.mem (memB s₀ + BitVec.ofNat 64 i) = 0 := by
   have hb := hp.blocks_lt
   have hm := hp.mem_fits
-  have b1 := blocks_pos hp
+  obtain b1 := blocks_pos hp
   have eb : blocksN s₀ = (arg s₀ 14).toNat := rfl
   unfold Impl.Argon2.X86.Derive.clear Impl.Argon2.X86.Derive.clearSetup
   simp only [List.cons_append]
   refine WP.seq (wp_ldarg hp h (i := 13) (by decide) fun s₁ u₁ =>
     wp_ldarg hp (h.upd u₁ (by decide) (by decide)) (i := 14) (by decide) fun s₂ u₂ => ?_)
-  have i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
+  obtain i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
   refine dbl_ok 8 (by rw [u₂.gpr]; omega_arith) fun s₃ e₃ k₃ => wp_movi fun s₄ u₄ => WP.block_nil ?_
-  have i₄ := (i₂.keep k₃).upd u₄ (by decide) (by decide)
-  have e4 : (4 * (blocksN s₀ * 256)) = blocksN s₀ * 1024 := by omega_arith
+  obtain i₄ := (i₂.keep k₃).upd u₄ (by decide) (by decide)
+  obtain e4 : (4 * (blocksN s₀ * 256)) = blocksN s₀ * 1024 := by omega_arith
   refine (clearLoop_ok (r := .edi) (by decide) (by decide) (by decide) (by decide) (X := memP s₀) (n := blocksN s₀ * 256) (R := memR s₀) (by simp) (mem_mem hp) (off := 0)
       (BitVec.add_zero _).symm (show 0 + 4 * (blocksN s₀ * 256) ≤ blocksN s₀ * 1024 by omega_arith)
       (show blocksN s₀ * 1024 < 2 ^ 64 by omega_arith) (by omega_arith) (by omega_arith)
@@ -175,8 +175,8 @@ theorem zeroWords_ok {s : State} (h : Inv s₀ s) {r : Reg} (hra : r ≠ .eax) (
       Frame [⟨X.setWidth 64, 4 * n⟩] s.mem t.mem ∧ ∀ i < 4 * n, t.mem (X.setWidth 64 + BitVec.ofNat 64 i) = 0 := by
   unfold Impl.Argon2.X86.Derive.zeroWords
   refine WP.seq (wp_movi fun s₁ u₁ => wp_movi fun s₂ u₂ => WP.block_nil ?_)
-  have i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
-  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
+  obtain m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   refine (clearLoop_ok hra hrc hrs hrb hR hRw hRX hRn hR64 hX hn ⟨i₂, ?_, ?_, ?_, fun _ _ _ _ => rfl,
       fun i hi => absurd hi (by omega_arith), Frame.refl _ _⟩).mono fun t c => ⟨c.inv, fun q a b d => ?_, ?_, c.zero⟩
   · rw [u₂.other _ hrc, u₁.other _ hra, hptr]; simp
@@ -222,8 +222,8 @@ theorem read_zero {m : Mem} {a : Addr} {n : Nat} (h : ∀ i < n, m (a + BitVec.o
   induction n generalizing a with
   | zero => rfl
   | succ n ih =>
-    have h0 : m a = 0 := by simpa using h 0 (by omega_arith)
-    have h1 : m.read (a + 1) n = 0 := ih fun i hi => by
+    obtain h0 : m a = 0 := by simpa using h 0 (by omega_arith)
+    obtain h1 : m.read (a + 1) n = 0 := ih fun i hi => by
       rw [BitVec.add_assoc, show (1 : Addr) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
       exact h (1 + i) (by omega_arith)
     simp only [Mem.read, h0, h1]
@@ -267,7 +267,7 @@ theorem initCell_old (p : Spec.Argon2.Params) (h0 : List Byte) {l k : Nat}
     (h₀ : k ≠ l * p.laneLen) (h₁ : k ≠ l * p.laneLen + 1) :
     initCell p h0 (l + 1) k = initCell p h0 l k := by
   unfold initCell
-  have hdm := Nat.div_add_mod k p.laneLen
+  obtain hdm := Nat.div_add_mod k p.laneLen
   by_cases hq : k / p.laneLen = l
   · rw [hq, Nat.mul_comm] at hdm
     rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
@@ -316,7 +316,7 @@ theorem call_sub {O : Region} (hO : Region.Sub O (memR s₀) ∨ Region.Sub O (o
 /-- The first 64 bytes of the locals are outside a call's frame. -/
 theorem h0_call {O : Region} (hO : Region.Sub O (memR s₀) ∨ Region.Sub O (outR s₀)) :
     ∀ r ∈ [O, scrR s₀, callR s₀], Region.Disjoint ⟨(E s₀).setWidth 64, 64⟩ r := by
-  have sub : Region.Sub ⟨(E s₀).setWidth 64, 64⟩ (locR s₀) := Region.sub_prefix (by decide)
+  obtain sub : Region.Sub ⟨(E s₀).setWidth 64, 64⟩ (locR s₀) := Region.sub_prefix (by decide)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -329,7 +329,7 @@ theorem h0_call {O : Region} (hO : Region.Sub O (memR s₀) ∨ Region.Sub O (ou
 /-- A cell of the memory matrix is outside `scratch`, `out`'s and the stack below the locals. -/
 theorem cell_disj {k : Nat} (hk : k < blocksN s₀) :
     ∀ r ∈ [scrR s₀, callR s₀], Region.Disjoint ⟨matrixCell (memB s₀) k, 1024⟩ r := by
-  have sub : Region.Sub ⟨matrixCell (memB s₀) k, 1024⟩ (memR s₀) := matrixCell_sub _ _ _ hk
+  obtain sub : Region.Sub ⟨matrixCell (memB s₀) k, 1024⟩ (memR s₀) := matrixCell_sub _ _ _ hk
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -361,36 +361,36 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
       blockAt t.mem (matrixCell (memB s₀) (l * (prm s₀).laneLen + c)) = parseBlock (initialBytes h0 l c) ∧
       ∀ k < blocksN s₀, k ≠ l * (prm s₀).laneLen + c →
         blockAt t.mem (matrixCell (memB s₀) k) = blockAt s.mem (matrixCell (memB s₀) k) := by
-  have hE := E_hi hp
+  obtain hE := E_hi hp
   have hs := hp.scr_fits
   have hm := hp.mem_fits
   have hlt := hp.lanes_lt
-  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
-  have hcell : l * (prm s₀).laneLen + c < blocksN s₀ := by
+  obtain L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
+  obtain hcell : l * (prm s₀).laneLen + c < blocksN s₀ := by
     rw [hp.blocks_eq]
     have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega_arith)
     rw [Nat.succ_mul] at this
     omega_arith
   unfold Impl.Argon2.X86.Derive.initBlock Impl.Argon2.X86.Derive.hPrimeCall
   refine WP.seq (wp_movi fun s₁ u₁ => ?_)
-  have i₁ := h.upd u₁ (by decide) (by decide)
+  obtain i₁ := h.upd u₁ (by decide) (by decide)
   refine wp_stloc hp i₁ (d := 64) (by decide) fun s₂ i₂ v₂ o₂ g₂ m₂ => ?_
   refine wp_stloc hp i₂ (d := 68) (by decide) fun s₃ i₃ v₃ o₃ g₃ m₃ => ?_
   refine wp_movi fun s₄ u₄ => wp_movi fun s₅ u₅ => wp_ldarg hp ((i₃.upd u₄ (by decide) (by decide)).upd u₅
     (by decide) (by decide)) (i := 15) (by decide) fun s₆ u₆ => WP.block_nil ?_
-  have i₆ := ((i₃.upd u₄ (by decide) (by decide)).upd u₅ (by decide) (by decide)).upd u₆ (by decide) (by decide)
-  have m₆ : s₆.mem = s₃.mem := by rw [u₆.mem, u₅.mem, u₄.mem]
-  have g₆ : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s₆.gpr r = s.gpr r := fun r a b d => by
+  obtain i₆ := ((i₃.upd u₄ (by decide) (by decide)).upd u₅ (by decide) (by decide)).upd u₆ (by decide) (by decide)
+  obtain m₆ : s₆.mem = s₃.mem := by rw [u₆.mem, u₅.mem, u₄.mem]
+  obtain g₆ : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s₆.gpr r = s.gpr r := fun r a b d => by
     rw [u₆.other _ d, u₅.other _ b, u₄.other _ a, g₃, g₂, u₁.other _ a]
   have ebp₆ : s₆.gpr .ebp = E s₀ := i₆.ebp
-  have eax₆ : (s₆.gpr .eax).toNat = 72 := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr]; rfl
-  have ecx₆ : (s₆.gpr .ecx).toNat = 1024 := by rw [u₆.other _ (by decide), u₅.gpr]; rfl
-  have edi₆ : s₆.gpr .edi = s.gpr .edi := g₆ _ (by decide) (by decide) (by decide)
-  have O : (s₆.gpr .edi).setWidth 64 = matrixCell (memB s₀) (l * (prm s₀).laneLen + c) := by
+  obtain eax₆ : (s₆.gpr .eax).toNat = 72 := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr]; rfl
+  obtain ecx₆ : (s₆.gpr .ecx).toNat = 1024 := by rw [u₆.other _ (by decide), u₅.gpr]; rfl
+  obtain edi₆ : s₆.gpr .edi = s.gpr .edi := g₆ _ (by decide) (by decide) (by decide)
+  obtain O : (s₆.gpr .edi).setWidth 64 = matrixCell (memB s₀) (l * (prm s₀).laneLen + c) := by
     rw [edi₆, edi, cell_addr hp hcell]
-  have sO : Region.Sub ⟨(s₆.gpr .edi).setWidth 64, (s₆.gpr .ecx).toNat⟩ (memR s₀) := by
+  obtain sO : Region.Sub ⟨(s₆.gpr .edi).setWidth 64, (s₆.gpr .ecx).toNat⟩ (memR s₀) := by
     rw [O, ecx₆]; exact cell_in_mem hcell
-  have hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
+  obtain hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
   refine hcall_ok hp i₆ (r := .ebp) (by decide) u₆.gpr
     ⟨locR s₀, by simp, 0, by rw [ebp₆]; simp, by rw [eax₆]; show 0 + 72 ≤ 144; omega_arith⟩ (by rw [ebp₆, eax₆]; omega_arith)
     ⟨memR s₀, by simp, (l * (prm s₀).laneLen + c) * 1024, by rw [O]; rfl, by rw [ecx₆]; exact hcell'⟩
@@ -399,7 +399,7 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
   · -- The parameters.
     exact Prm.of_lw pr fun d hd => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      have hd' : 72 ≤ d ∧ d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
+      obtain hd' : 72 ≤ d ∧ d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
       rw [lw_keep hp fr (call_sub (.inl sO)) hd'.2, lw_mem m₆, o₃ d (by omega_arith) (by omega_arith),
         o₂ d (by omega_arith) (by omega_arith), lw_mem u₁.mem]
   · rw [bytes_keep fr (h0_call hp (.inl sO)) (by omega_arith), m₆, m₃,
@@ -408,11 +408,11 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
   · rw [cs .edi (by decide), edi₆]
   · refine Proof.Argon2.blockAt_of_initialBytes _ _ _ _ _ ?_
     rw [← O, ← ecx₆, post, ecx₆, ebp₆, eax₆, bytes72, m₆]
-    have w64 : s₃.mem.readW ((E s₀).setWidth 64 + BitVec.ofNat 64 64) 32 = BitVec.ofNat 32 c := by
+    obtain w64 : s₃.mem.readW ((E s₀).setWidth 64 + BitVec.ofNat 64 64) 32 = BitVec.ofNat 32 c := by
       rw [← addr_eq (by omega_arith)]
       show lw s₀ s₃ 64 = _
       rw [o₃ 64 (by decide) (by decide), v₂, u₁.gpr]
-    have w68 : s₃.mem.readW ((E s₀).setWidth 64 + BitVec.ofNat 64 68) 32 = BitVec.ofNat 32 l := by
+    obtain w68 : s₃.mem.readW ((E s₀).setWidth 64 + BitVec.ofNat 64 68) 32 = BitVec.ofNat 32 l := by
       rw [← addr_eq (by omega_arith)]
       show lw s₀ s₃ 68 = _
       rw [v₃, g₂, u₁.other _ (by decide), esi]
@@ -420,7 +420,7 @@ theorem initBlock_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List B
       u₁.mem, b0]
     rfl
   · intro k hk ne
-    have fs : Frame [⟨addr (E s₀) 64, 4⟩, ⟨addr (E s₀) 68, 4⟩] s.mem s₃.mem := by
+    obtain fs : Frame [⟨addr (E s₀) 64, 4⟩, ⟨addr (E s₀) 68, 4⟩] s.mem s₃.mem := by
       rw [m₃, m₂, u₁.mem]
       exact ((Frame.refl _ _).writeW (w := 32) List.mem_cons_self _ (Region.contains_self _ _)).writeW (w := 32)
         (List.mem_cons_of_mem _ List.mem_cons_self) _ (Region.contains_self _ _)
@@ -463,23 +463,23 @@ include hp
 theorem lane_ok {h0 : List Byte} {l : Nat} {s : State} (hl : l < lanesN s₀) (h : LI s₀ h0 l s) :
     WP isa Impl.Argon2.X86.Derive.initLane s fun t =>
       LI s₀ h0 (l + 1) t ∧ t.cf = some (decide (l + 1 < lanesN s₀)) := by
-  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
+  obtain L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
   have hlt := hp.lanes_lt
   unfold Impl.Argon2.X86.Derive.initLane
   refine WP.seq ((initBlock_ok hp h.inv h.pr h.b0 hl (c := 0) (by decide) h.esi
     (by rw [h.edi, Nat.add_zero])).mono fun s₁ ⟨i₁, p₁, b₁, e₁, d₁, w₁, o₁⟩ => ?_)
   refine WP.seq (wp_addi fun s₂ u₂ => WP.block_nil ?_)
-  have i₂ := i₁.upd u₂ (by decide) (by decide)
+  obtain i₂ := i₁.upd u₂ (by decide) (by decide)
   refine WP.seq ((initBlock_ok hp i₂ (p₁.of_mem u₂.mem) (h0 := h0) (by rw [u₂.mem]; exact b₁) hl (c := 1) (by decide)
     (by rw [u₂.other _ (by decide), e₁, h.esi]) (by rw [u₂.gpr, d₁, h.edi, show (1024 : BitVec 32) = BitVec.ofNat 32 1024 from rfl, BitVec.add_assoc,
       BitVec.ofNat_add_ofNat, Nat.succ_mul])).mono fun s₃ ⟨i₃, p₃, b₃, e₃, d₃, w₃, o₃⟩ => ?_)
   simp only [Impl.Argon2.X86.Derive.nextLane, Impl.Argon2.X86.Derive.fr]
   refine wp_ldloc hp i₃ (d := Impl.Argon2.X86.Derive.strideOff) (by decide) fun s₄ u₄ =>
     wp_add fun s₅ u₅ _ => wp_subi fun s₆ u₆ _ _ => wp_addi fun s₇ u₇ => ?_
-  have i₇ := (((i₃.upd u₄ (by decide) (by decide)).upd u₅ (by decide) (by decide)).upd u₆ (by decide)
+  obtain i₇ := (((i₃.upd u₄ (by decide) (by decide)).upd u₅ (by decide) (by decide)).upd u₆ (by decide)
     (by decide)).upd u₇ (by decide) (by decide)
-  have m₇ : s₇.mem = s₃.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem]
-  have esi₇ : s₇.gpr .esi = BitVec.ofNat 32 (l + 1) := by
+  obtain m₇ : s₇.mem = s₃.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem]
+  obtain esi₇ : s₇.gpr .esi = BitVec.ofNat 32 (l + 1) := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), e₃,
       u₂.other _ (by decide), e₁, h.esi, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
       BitVec.ofNat_add_ofNat]
@@ -524,8 +524,8 @@ theorem laneStart_ok {s : State} {h0 : List Byte} (h : Inv s₀ s ∧ Prm s₀ s
     WP isa (.block [.mov .edi (Impl.Argon2.X86.Derive.fr (Impl.Argon2.X86.Derive.argOff 13)), .mov .esi (.imm 0)]) s (LI s₀ h0 0) := by
   obtain ⟨i₁, p₁, b₁, z₁⟩ := h
   refine wp_ldarg hp i₁ (i := 13) (by decide) fun s₂ u₂ => wp_movi fun s₃ u₃ => WP.block_nil ?_
-  have i₃ := (i₁.upd u₂ (by decide) (by decide)).upd u₃ (by decide) (by decide)
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem]
+  obtain i₃ := (i₁.upd u₂ (by decide) (by decide)).upd u₃ (by decide) (by decide)
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem]
   refine ⟨i₃, p₁.of_mem m₃, by rw [m₃]; exact b₁, u₃.gpr, ?_, fun k hk => ?_⟩
   · rw [u₃.other _ (by decide), u₂.gpr]; simp
   · rw [initCell_zero, m₃]
@@ -549,9 +549,9 @@ theorem memoryInit_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {h0 : List 
   by_cases done : l + 1 < lanesN s₀
   · refine .inr ⟨by simp only [eval, cu, done, decide_true], lanesN s₀ - (l + 1), by omega_arith, l + 1, rfl, done, hu⟩
   · refine .inl ⟨by simp only [eval, cu, done, decide_false], hu.inv, hu.pr, ?_⟩
-    have hl' : l + 1 = lanesN s₀ := by omega_arith
+    obtain hl' : l + 1 = lanesN s₀ := by omega_arith
     refine ⟨Proof.Argon2.initMemory_size _ _, fun k hk => ?_⟩
-    have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
+    obtain hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
     rw [hu.cells k hk', Array.getElem?_eq_getElem (by rw [Proof.Argon2.initMemory_size]; exact hk),
       Option.getD_some, Proof.Argon2.initMemory_cell _ _ _ hk, initCell, hl']
     have : k / (prm s₀).laneLen < lanesN s₀ := by

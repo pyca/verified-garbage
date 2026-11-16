@@ -83,7 +83,7 @@ theorem Saved.frame {w : Nat} {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h :
     (hf : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩, stkR s₀] m m') : Saved s₀ m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
     have := saved_bound p hp'
-    have hsub : Region.Sub ⟨Spill.slot (scr s₀) p.2, 8⟩ (scR s₀) := Offset.sub_base _ (by omega_arith)
+    obtain hsub : Region.Sub ⟨Spill.slot (scr s₀) p.2, 8⟩ (scR s₀) := Offset.sub_base _ (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.st_scr.symm.sub_left hsub
@@ -112,13 +112,13 @@ theorem prologue_ok {w : Nat} {s₀ : State} (hp : Pre w s₀) :
   refine WP.mono (Spill.save_ok .rcx saved s₀ fun p hp' => ?_) fun s₁ ⟨g₁, rd₁, wr₁, m₁⟩ => ?_
   · have := saved_bound p hp'
     exact ⟨scR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have f₁ : Frame [⟨scr s₀ + BitVec.ofNat 64 512, 48⟩] s₀.mem s₁.mem :=
+  obtain f₁ : Frame [⟨scr s₀ + BitVec.ofNat 64 512, 48⟩] s₀.mem s₁.mem :=
     m₁ ▸ Spill.saveMem_frame _ _ _ _ fun p hp' => by
       have := saved_bound p hp'; exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
-  have v₁ : Saved s₀ s₁.mem := m₁ ▸ Spill.saveMem_saved _ _ _ _ (by decide)
+  obtain v₁ : Saved s₀ s₁.mem := m₁ ▸ Spill.saveMem_saved _ _ _ _ (by decide)
   refine wp_mov fun s₂ u₂ _ _ => wp_mov fun s₃ u₃ _ _ => wp_mov fun s₄ u₄ _ _ =>
     wp_mov fun s₅ u₅ _ _ => WP.block_nil ?_
-  have hm : s₅.mem = s₁.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
+  obtain hm : s₅.mem = s₁.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
   refine ⟨by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁], ?_, ?_, ?_,
     ?_, ?_, by rw [hm]; exact f₁, by rw [hm]; exact v₁⟩
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, g₁]
@@ -140,15 +140,15 @@ theorem bufLen_ok (hP : blockBytes w = 64 ∨ blockBytes w = 128) {s : State} :
   unfold Impl.Blake2.X86_64.Stream.bufLen
   refine WP.seq (wp_mov fun s₁ u₁ _ _ => wp_subi fun s₂ u₂ _ => wp_andi fun s₃ u₃ => wp_addi fun s₄ u₄ =>
     wp_test fun s₅ g₅ m₅ rd₅ wr₅ z₅ => WP.block_nil ?_)
-  have hn := (s.gpr .r14).isLt
+  obtain hn := (s.gpr .r14).isLt
   generalize hn' : (s.gpr .r14).toNat = n at hn
-  have hr14 : s.gpr .r14 = BitVec.ofNat 64 n := by rw [← hn', BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have g : ∀ r, r ≠ .r13 → s₅.gpr r = s.gpr r := fun r h => by
+  obtain hr14 : s.gpr .r14 = BitVec.ofNat 64 n := by rw [← hn', BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain g : ∀ r, r ≠ .r13 → s₅.gpr r = s.gpr r := fun r h => by
     rw [g₅, u₄.other r h, u₃.other r h, u₂.other r h, u₁.other r h]
-  have hm : s₅.mem = s.mem := by rw [m₅, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have hrd : s₅.rd = s.rd := by rw [rd₅, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  have hwr : s₅.wr = s.wr := by rw [wr₅, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have hz : s₅.zf = some (decide (n = 0)) := by
+  obtain hm : s₅.mem = s.mem := by rw [m₅, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain hrd : s₅.rd = s.rd := by rw [rd₅, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain hwr : s₅.wr = s.wr := by rw [wr₅, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  obtain hz : s₅.zf = some (decide (n = 0)) := by
     rw [z₅, ← congrFun g₅ .r14, g .r14 (by decide), BitVec.and_self, hr14, ofNat_beq_zero hn]
   refine WP.ite (decide (n = 0)) hz (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
@@ -186,16 +186,16 @@ theorem zeroLoop_ok {s₀ : State} {st : Addr} {r k : Nat} (hk : 1 ≤ k) (hk' :
     ⟨0, by omega_arith, by omega_arith, by omega_arith, by rw [hr13, Nat.add_zero], by rw [hrax, Nat.sub_zero],
       fun _ _ _ => rfl, rfl, rfl, by rw [List.replicate_zero, writeBytes_nil]⟩
   rintro n s ⟨j, rfl, hj, h⟩
-  have hrbx' : s.gpr .rbx = st := by rw [h.other .rbx (by decide) (by decide), hrbx]
+  obtain hrbx' : s.gpr .rbx = st := by rw [h.other .rbx (by decide) (by decide), hrbx]
   refine wp_store8 (r := .r9) (a := st + BitVec.ofNat 64 (bufOff w + r) + BitVec.ofNat 64 j) ?_
     (by rw [h.wr]; exact hdst j hj) fun s₂ g₂ m₂ rd₂ wr₂ => ?_
   · simp only [State.ea, Impl.Blake2.X86_64.Stream.bufByte, hrbx', h.r13, N_eq, BitVec.ofNat_add,
       BitVec.mul_one, ofInt_natCast]
     ac_rfl
   refine wp_addi fun s₃ u₃ => wp_subi fun s₄ u₄ hz₄ => WP.block_nil ?_
-  have hrax' : s₄.gpr .rax = BitVec.ofNat 64 (k - (j + 1)) := by
+  obtain hrax' : s₄.gpr .rax = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [u₄.gpr, u₃.other .rax (by decide), g₂, h.rax, sx1, ofNat_pred (by omega_arith), Nat.sub_sub]
-  have hI : ZI s₀ (st + BitVec.ofNat 64 (bufOff w + r)) r k (j + 1) s₄ := by
+  obtain hI : ZI s₀ (st + BitVec.ofNat 64 (bufOff w + r)) r k (j + 1) s₄ := by
     refine ⟨by omega_arith, ?_, hrax', fun x h1 h2 => ?_, ?_, ?_, ?_⟩
     · rw [u₄.other .r13 (by decide), u₃.gpr, g₂, h.r13, sx1, ← Nat.add_assoc, ofNat_succ]
     · rw [u₄.other x h1, u₃.other x h2, g₂, h.other x h1 h2]
@@ -204,7 +204,7 @@ theorem zeroLoop_ok {s₀ : State} {st : Addr} {r k : Nat} (hk : 1 ≤ k) (hk' :
     · rw [u₄.mem, u₃.mem, m₂, h.other .r9 (by decide) (by decide), hr9, h.mem,
         List.replicate_succ', writeBytes_snoc _ _ _ _ (by simp; omega_arith), List.length_replicate]
       rfl
-  have hzf : s₄.zf = some (decide (k - (j + 1) = 0)) := by
+  obtain hzf : s₄.zf = some (decide (k - (j + 1) = 0)) := by
     rw [hz₄, u₃.other .rax (by decide), g₂, h.rax, sx1, ofNat_pred (show 1 ≤ k - j by omega_arith),
       ofNat_beq_zero (by omega_arith), show k - j - 1 = k - (j + 1) by omega_arith]
   by_cases hjk : j + 1 = k
@@ -227,19 +227,19 @@ theorem pad_ok {s : State} {st : Addr} {r : Nat} (hr : r ≤ blockBytes w)
   unfold Impl.Blake2.X86_64.Stream.pad
   refine WP.seq (wp_mov32i fun s₁ u₁ _ _ => wp_mov32i fun s₂ u₂ _ _ => wp_sub fun s₃ u₃ z₃ =>
     WP.block_nil ?_)
-  have g : ∀ x, x ≠ .r9 → x ≠ .rax → s₃.gpr x = s.gpr x := fun x h1 h2 => by
+  obtain g : ∀ x, x ≠ .r9 → x ≠ .rax → s₃.gpr x = s.gpr x := fun x h1 h2 => by
     rw [u₃.other x h2, u₂.other x h2, u₁.other x h1]
-  have hrax : s₃.gpr .rax = BitVec.ofNat 64 (blockBytes w - r) := by
+  obtain hrax : s₃.gpr .rax = BitVec.ofNat 64 (blockBytes w - r) := by
     rw [u₃.gpr, u₂.other .r13 (by decide), u₂.gpr, u₁.other .r13 (by decide), hr13, B_eq,
       zx_ofNat (by omega_arith), sub_ofNat hr]
-  have hz : s₃.zf = some (decide (blockBytes w - r = 0)) := by
+  obtain hz : s₃.zf = some (decide (blockBytes w - r = 0)) := by
     rw [z₃, ← u₃.gpr, hrax, ofNat_beq_zero (by omega_arith)]
   refine WP.ite (decide (blockBytes w - r = 0)) hz (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     refine ⟨fun x h1 h2 _ => g x h1 h2, by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], ?_⟩
     rw [hb, List.replicate_zero, writeBytes_nil, u₃.mem, u₂.mem, u₁.mem]
   · simp only [decide_eq_false_iff_not] at hb
-    have hwr : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+    obtain hwr : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
     refine zeroLoop_ok (st := st) (r := r) (by omega_arith) (by omega_arith)
       (by rw [g _ (by decide) (by decide), hrbx])
       (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hr13]) hrax
@@ -291,11 +291,11 @@ theorem args_ok {σ : State} (hN : bufOff w < 2 ^ 31) :
       fun s => Setup σ s (σ.gpr .rbx + BitVec.ofNat 64 (bufOff w)) 1 (σ.gpr .r14) true := by
   refine wp_mov fun s₁ u₁ _ _ => wp_mov fun s₂ u₂ _ _ => wp_addi fun s₃ u₃ => wp_mov32i fun s₄ u₄ _ _ =>
     wp_mov fun s₅ u₅ _ _ => wp_mov32i fun s₆ u₆ _ _ => wp_mov fun s₇ u₇ _ _ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r9 → s₇.gpr r = σ.gpr r :=
+  obtain g : ∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r9 → s₇.gpr r = σ.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by
       rw [u₇.other r h6, u₆.other r h5, u₅.other r h4, u₄.other r h3, u₃.other r h2, u₂.other r h2,
         u₁.other r h1]
-  have hcs : ∀ r ∈ calleeSaved, r ≠ .rdi ∧ r ≠ .rsi ∧ r ≠ .rdx ∧ r ≠ .rcx ∧ r ≠ .r8 ∧ r ≠ .r9 := by
+  obtain hcs : ∀ r ∈ calleeSaved, r ≠ .rdi ∧ r ≠ .rsi ∧ r ≠ .rdx ∧ r ≠ .rcx ∧ r ≠ .r8 ∧ r ≠ .r9 := by
     decide
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
@@ -320,10 +320,10 @@ theorem callOk_of {s₀ σ : State} (hp : Pre w s₀) (hs : bufOff w + blockByte
     CallOk (w := w) σ (st s₀) (scr s₀) (st s₀ + BitVec.ofNat 64 (bufOff w))
       (blockBytes w * (1 : BitVec 64).toNat) := by
   rw [show (1 : BitVec 64).toNat = 1 from rfl, Nat.mul_one]
-  have hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
-  have hbuf : Region.Sub ⟨st s₀ + BitVec.ofNat 64 (bufOff w), blockBytes w⟩ (stR s₀ w) :=
+  obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
+  obtain hbuf : Region.Sub ⟨st s₀ + BitVec.ofNat 64 (bufOff w), blockBytes w⟩ (stR s₀ w) :=
     Offset.sub_base _ (by omega_arith)
-  have hscr : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
+  obtain hscr : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
   refine ⟨hrbx, hr15, (hp.st_scr.sub_left hstN).sub_right hscr,
     Offset.disjoint_base _ (Nat.le_refl _) (by omega_arith), (hp.st_scr.sub_left hbuf).sub_right hscr,
     by rw [hsp]; exact hp.stk_st.sub_right hstN, by rw [hsp]; exact hp.stk_scr.sub_right hscr,
@@ -366,13 +366,13 @@ theorem output_ok {σ : State} (hN : bufOff w < 2 ^ 32) (hN8 : bufOff w % 8 = 0)
     WP isa (.block (output (w := w))) σ fun s =>
       (∀ r, r ≠ .rax → s.gpr r = σ.gpr r) ∧ s.rd = σ.rd ∧ s.wr = σ.wr ∧
       s.mem = writeBytes σ.mem (σ.gpr .rbp) (bytesAt σ.mem (σ.gpr .rbx) (bufOff w)) := by
-  have e : 8 * (Impl.Blake2.X86_64.Stream.N w / 8) = bufOff w := by rw [N_eq]; omega_arith
+  obtain e : 8 * (Impl.Blake2.X86_64.Stream.N w / 8) = bufOff w := by rw [N_eq]; omega_arith
   rw [output_eq, ← e]
   refine wp_range_flatMap (M := isa) (OInv σ) (fun k s hk ⟨hg, hrd, hwr, hm⟩ => ?_) _ (Nat.le_refl _) σ
     ⟨fun _ _ => rfl, rfl, rfl, by rw [Nat.mul_zero]; simp [bytesAt, writeBytes_nil]⟩
   rw [N_eq] at hk
-  have hk8 : 8 * k + 8 ≤ bufOff w := by omega_arith
-  have hl : (bytesAt σ.mem (σ.gpr .rbx) (8 * k)).length = 8 * k := by simp [bytesAt]
+  obtain hk8 : 8 * k + 8 ≤ bufOff w := by omega_arith
+  obtain hl : (bytesAt σ.mem (σ.gpr .rbx) (8 * k)).length = 8 * k := by simp [bytesAt]
   refine wp_movm (a := σ.gpr .rbx + BitVec.ofNat 64 (8 * k))
     (by rw [ea_at, hg _ (by decide)]) (by rw [hrd, hwr]; exact hin _ _ (Offset.contains_base _ hk8 (by omega_arith)))
     fun s₁ u₁ => wp_store (a := σ.gpr .rbp + BitVec.ofNat 64 (8 * k)) ?_ ?_ fun s₂ g₂ m₂ rd₂ wr₂ =>
@@ -386,7 +386,7 @@ theorem output_ok {σ : State} (hN : bufOff w < 2 ^ 32) (hN8 : bufOff w % 8 = 0)
       exact (writeBytes_frame (R := ⟨σ.gpr .rbp, bufOff w⟩) _ _ _
         (VG.Proof.Blake2.X86_64.Stream.contains_prefix _ (by omega_arith))).readW
         (Offset.contains_base (k := bufOff w) _ hk8 (by omega_arith)) (by simpa using hd) (by decide)
-    have e := writeBytes_append σ.mem (σ.gpr .rbp) (bytesAt σ.mem (σ.gpr .rbx) (8 * k))
+    obtain e := writeBytes_append σ.mem (σ.gpr .rbp) (bytesAt σ.mem (σ.gpr .rbx) (8 * k))
       (wordBytes (σ.mem.readW (σ.gpr .rbx + BitVec.ofNat 64 (8 * k)) 64))
       (by rw [hl]; simp [wordBytes]; omega_arith)
     rw [hl] at e
@@ -413,46 +413,46 @@ theorem correct {callee : Impl.Blake2.X86_64.Stream.Callee} {w : Nat} {P : Param
     (hpre : (finalizeX86_64 P).pre s₀) :
     WP isa (Impl.Blake2.X86_64.Stream.finalize P callee) s₀ fun s' =>
       gprPreserved s₀ s' ∧ (finalizeX86_64 P).post s₀ s' := by
-  have hp := pre_of hpre
+  obtain hp := pre_of hpre
   have hw := hP.w
   obtain ⟨hs, hs16, -, -, -⟩ := Init.sizes hw
   have hbb := hP.bb
   have hNe := hP.N
-  have hN8 : bufOff w % 8 = 0 := by simp only [bufOff]; omega_arith
-  have hN : bufOff w < 2 ^ 31 := by omega_arith
-  have hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
-  have hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 512, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
+  obtain hN8 : bufOff w % 8 = 0 := by simp only [bufOff]; omega_arith
+  obtain hN : bufOff w < 2 ^ 31 := by omega_arith
+  obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
+  obtain hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 512, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
     simpa using hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))
   unfold Impl.Blake2.X86_64.Stream.finalize
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
-  have hkeep : ∀ i < bufOff w + blockBytes w,
+  obtain hkeep : ∀ i < bufOff w + blockBytes w,
       s₁.mem (st s₀ + BitVec.ofNat 64 i) = s₀.mem (st s₀ + BitVec.ofNat 64 i) :=
     fun i hi => h₁.frame.bytes (R := stR s₀ w) hsave_st (by simp only; omega_arith) hi
   refine WP.seq (WP.mono (bufLen_ok hbb) fun s₂ ⟨r13₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   rw [h₁.r14] at r13₂
   generalize hn : (s₀.gpr .rsi).toNat = n at r13₂
-  have hr : bufLen w n ≤ blockBytes w := bufLen_le (by omega_arith) n
-  have hrbx₂ : s₂.gpr .rbx = st s₀ := by rw [g₂ _ (by decide), h₁.rbx]
+  obtain hr : bufLen w n ≤ blockBytes w := bufLen_le (by omega_arith) n
+  obtain hrbx₂ : s₂.gpr .rbx = st s₀ := by rw [g₂ _ (by decide), h₁.rbx]
   refine WP.seq (WP.mono (pad_ok (st := st s₀) hr (by omega_arith) hrbx₂ r13₂ fun i hi => ?_)
     fun s₃ ⟨g₃, rd₃, wr₃, m₃⟩ => ?_)
   · rw [wr₂, h₁.wr, hp.wr, Offset.add_ofNat_add_ofNat]
     exact ⟨stR s₀ w, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have g₃' : ∀ r, r ≠ .r9 → r ≠ .rax → r ≠ .r13 → s₃.gpr r = s₁.gpr r := fun r h1 h2 h3 => by
+  obtain g₃' : ∀ r, r ≠ .r9 → r ≠ .rax → r ≠ .r13 → s₃.gpr r = s₁.gpr r := fun r h1 h2 h3 => by
     rw [g₃ r h1 h2 h3, g₂ r h3]
-  have hrd₃ : s₃.rd = s₀.rd := by rw [rd₃, rd₂, h₁.rd]
-  have hwr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, h₁.wr]
-  have hsp₃ : s₃.gpr .rsp = s₀.gpr .rsp := by rw [g₃' _ (by decide) (by decide) (by decide), h₁.rsp]
-  have hrbx₃ : s₃.gpr .rbx = st s₀ := by rw [g₃' _ (by decide) (by decide) (by decide), h₁.rbx]
-  have hm₃ : s₃.mem = writeBytes s₁.mem (st s₀ + BitVec.ofNat 64 (bufOff w + bufLen w n))
+  obtain hrd₃ : s₃.rd = s₀.rd := by rw [rd₃, rd₂, h₁.rd]
+  obtain hwr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, h₁.wr]
+  obtain hsp₃ : s₃.gpr .rsp = s₀.gpr .rsp := by rw [g₃' _ (by decide) (by decide) (by decide), h₁.rsp]
+  obtain hrbx₃ : s₃.gpr .rbx = st s₀ := by rw [g₃' _ (by decide) (by decide) (by decide), h₁.rbx]
+  obtain hm₃ : s₃.mem = writeBytes s₁.mem (st s₀ + BitVec.ofNat 64 (bufOff w + bufLen w n))
       (List.replicate (blockBytes w - bufLen w n) 0) := by rw [m₃, m₂]
   -- The call.
   refine WP.seq (compressWith_ok hf (WP.mono (args_ok (σ := s₃) hN) fun s' h => by rw [hrbx₃] at h; exact h)
     (callOk_of hp hs hrd₃ hwr₃ hrbx₃ (by rw [g₃' _ (by decide) (by decide) (by decide), h₁.r15]) hsp₃)
     fun s₄ rd₄ wr₄ cs₄ f₄ e₄ => ?_)
-  have hrbx₄ : s₄.gpr .rbx = st s₀ := by rw [cs₄ _ (by decide), hrbx₃]
-  have hrbp₄ : s₄.gpr .rbp = op s₀ := by
+  obtain hrbx₄ : s₄.gpr .rbx = st s₀ := by rw [cs₄ _ (by decide), hrbx₃]
+  obtain hrbp₄ : s₄.gpr .rbp = op s₀ := by
     rw [cs₄ _ (by decide), g₃' _ (by decide) (by decide) (by decide), h₁.rbp]
-  have hwr₄ : s₄.wr = s₀.wr := by rw [wr₄, hwr₃]
+  obtain hwr₄ : s₄.wr = s₀.wr := by rw [wr₄, hwr₃]
   rw [WP.block_append_iff]
   refine WP.mono (output_ok (σ := s₄) (by omega_arith) hN8 (fun a k h => ?_) (fun a k h => ?_) ?_)
     fun s₅ ⟨g₅, rd₅, wr₅, m₅⟩ => ?_
@@ -464,10 +464,10 @@ theorem correct {callee : Impl.Blake2.X86_64.Stream.Callee} {w : Nat} {P : Param
     exact ⟨outR s₀ w, by simp, h⟩
   · rw [hrbx₄, hrbp₄]; exact hp.st_out.sub_left hstN
   -- What the calls and stores wrote.
-  have F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩, stkR s₀] s₁.mem s₅.mem := by
-    have f₃ : Frame [stR s₀ w] s₁.mem s₃.mem := by
+  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩, stkR s₀] s₁.mem s₅.mem := by
+    obtain f₃ : Frame [stR s₀ w] s₁.mem s₃.mem := by
       rw [hm₃]; exact writeBytes_frame _ _ _ (Offset.contains_base _ (by simp; omega_arith) (by omega_arith))
-    have f₅ : Frame [outR s₀ w] s₄.mem s₅.mem := by
+    obtain f₅ : Frame [outR s₀ w] s₄.mem s₅.mem := by
       rw [m₅, hrbp₄]
       exact writeBytes_frame _ _ _ (VG.Proof.Blake2.X86_64.Stream.contains_prefix _ (by simp [bytesAt]))
     rw [hsp₃] at f₄
@@ -497,7 +497,7 @@ theorem correct {callee : Impl.Blake2.X86_64.Stream.Callee} {w : Nat} {P : Param
       (by simpa using ⟨hp.ret_st, hp.ret_out, hp.ret_scr, ret_stk s₀⟩) (by decide)
   · have hnd : n = d.length := by rw [← hn, hcnt, toNat_ofNat_lt hlt]
     subst hnd
-    have hr14 : (s₃.gpr .r14).toNat = d.length := by
+    obtain hr14 : (s₃.gpr .r14).toNat = d.length := by
       rw [g₃' _ (by decide) (by decide) (by decide), h₁.r14, hn]
     rw [m₆, m₅, hrbp₄, hrbx₄, bytesAt_writeBytes_self _ _ (by simp [bytesAt]) (by omega_arith),
       bytesAt_state _ _ (hw.symm), e₄, show (1 : BitVec 64).toNat = 0 + 1 from rfl, compressBlocks_succ,

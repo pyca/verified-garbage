@@ -34,42 +34,42 @@ theorem buildStart_ok {n context size m : Nat} {base : Addr} {s : State}
       wordsVal t.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n * 2^(64*n) % m ∧
       Outs base (startRanges n context) s.mem t.mem ∧ Keeps powerClob s t := by
   have bound := L.bound
-  have b0 := L.slot (i := 0) (by decide)
-  have b3 := L.slot (i := 3) (by decide)
-  have b4 := L.slot (i := 4) (by decide)
-  have b5 := L.slot (i := 5) (by decide)
-  have b6 := L.slot (i := 6) (by decide)
+  obtain b0 := L.slot (i := 0) (by decide)
+  obtain b3 := L.slot (i := 3) (by decide)
+  obtain b4 := L.slot (i := 4) (by decide)
+  obtain b5 := L.slot (i := 5) (by decide)
+  obtain b6 := L.slot (i := 6) (by decide)
   have nw := C.scr.nowrap
   unfold VG.Impl.Mont.X86.Comb.buildStart VG.Impl.Mont.X86.Comb.seq
   simp only [List.foldr_cons, List.foldr_nil]
   refine WP.seq (WP.mono (high_copy_ok L C (by omega_arith) (Nat.le_refl _) (by omega_arith) (.inr (.inr b0)))
     fun a ⟨Ca, Pa, Oa, Ka⟩ => ?_)
-  have Ra : wordsVal a.mem base (slot n 4) n = 2^(128*n) % m :=
+  obtain Ra : wordsVal a.mem base (slot n 4) n = 2^(128*n) % m :=
     (high_write_low L C.scr (by decide) Oa (Nat.le_refl _)).trans r2
-  have Ga := high_write_low L C.scr (i := 5) (by decide) Oa (Nat.le_refl _)
-  have Onea := (high_write_low L C.scr (i := 3) (by decide) Oa (Nat.le_refl _)).trans one
-  have Pa' : wordsVal a.mem base context n = m := Pa.trans C.modulus.val
+  obtain Ga := high_write_low L C.scr (i := 5) (by decide) Oa (Nat.le_refl _)
+  obtain Onea := (high_write_low L C.scr (i := 3) (by decide) Oa (Nat.le_refl _)).trans one
+  obtain Pa' : wordsVal a.mem base context n = m := Pa.trans C.modulus.val
   refine WP.seq (WP.mono (high_copy_ok L Ca (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun b ⟨Cb, Rb, Ob, Kb⟩ => ?_)
-  have Rb' : wordsVal b.mem base (context+8*n) n = 2^(128*n) % m := Rb.trans Ra
-  have Pb : wordsVal b.mem base context n = m := (Ob.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Pa'
-  have Rlow : wordsVal b.mem base (slot n 4) n = 2^(128*n) % m :=
+  obtain Rb' : wordsVal b.mem base (context+8*n) n = 2^(128*n) % m := Rb.trans Ra
+  obtain Pb : wordsVal b.mem base context n = m := (Ob.wordsVal (.inl (by omega_arith)) (by omega_arith)).trans Pa'
+  obtain Rlow : wordsVal b.mem base (slot n 4) n = 2^(128*n) % m :=
     (high_write_low L Ca.scr (by decide) Ob (by omega_arith)).trans Ra
-  have Glow := (high_write_low L Ca.scr (i := 5) (by decide) Ob (by omega_arith)).trans Ga
-  have Onelow := (high_write_low L Ca.scr (i := 3) (by decide) Ob (by omega_arith)).trans Onea
+  obtain Glow := (high_write_low L Ca.scr (i := 5) (by decide) Ob (by omega_arith)).trans Ga
+  obtain Onelow := (high_write_low L Ca.scr (i := 3) (by decide) Ob (by omega_arith)).trans Onea
   refine WP.seq (WP.mono (encodeBase_ok Cb Onelow Rlow) fun c ⟨Cc, Yc, Gc, Oc, Kc⟩ => ?_)
-  have Pc : wordsVal c.mem base context n = m := (encode_high L Cb.scr Oc (Nat.le_refl _) (by omega_arith)).trans Pb
-  have Rc : wordsVal c.mem base (context+8*n) n = 2^(128*n) % m :=
+  obtain Pc : wordsVal c.mem base context n = m := (encode_high L Cb.scr Oc (Nat.le_refl _) (by omega_arith)).trans Pb
+  obtain Rc : wordsVal c.mem base (context+8*n) n = 2^(128*n) % m :=
     (encode_high L Cb.scr Oc (by omega_arith) (by omega_arith)).trans Rb'
-  have Gc' : wordsVal c.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n * 2^(64*n) % m := by
+  obtain Gc' : wordsVal c.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n * 2^(64*n) % m := by
     rw [Gc, Glow]
   refine WP.seq (WP.mono (high_copy_ok L Cc (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun d ⟨Cd, Yd, Od, Kd⟩ => ?_)
-  have Pd := (Od.wordsVal (d := context) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Pc
-  have Rd := (Od.wordsVal (d := context+8*n) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Rc
-  have Yd' := Yd.trans Yc
-  have Gd := (high_write_low L Cc.scr (i := 5) (by decide) Od (by omega_arith)).trans Gc'
-  have entry1 : entry n (context+16*n) 1 = context+24*n := by unfold entry; omega_arith
+  obtain Pd := (Od.wordsVal (d := context) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Pc
+  obtain Rd := (Od.wordsVal (d := context+8*n) (k := n) (.inl (by omega_arith)) (by omega_arith)).trans Rc
+  obtain Yd' := Yd.trans Yc
+  obtain Gd := (high_write_low L Cc.scr (i := 5) (by decide) Od (by omega_arith)).trans Gc'
+  obtain entry1 : entry n (context+16*n) 1 = context+24*n := by unfold entry; omega_arith
   rw [entry1]
   refine WP.seq (WP.mono (high_copy_ok L Cd (by omega_arith) (by omega_arith) (by omega_arith) (.inr (.inr (by omega_arith))))
     fun t ⟨Ct, Gt, Ot, Kt⟩ => WP.block_nil ?_)
@@ -82,8 +82,8 @@ theorem buildStart_ok {n context size m : Nat} {base : Addr} {s : State}
       (Oc.mono (fun _ h => List.mem_append_left _ h))).trans
       (start_table_frame Od (by omega_arith) (by omega_arith))).trans (start_table_frame Ot (by omega_arith) (by omega_arith))
   · have kab : Keeps powerClob s b := (Ka.mono (by decide)).trans (Kb.mono (by decide))
-    have kac : Keeps powerClob s c := kab.trans (Kc.mono (by decide))
-    have kad : Keeps powerClob s d := kac.trans (Kd.mono (by decide))
+    obtain kac : Keeps powerClob s c := kab.trans (Kc.mono (by decide))
+    obtain kad : Keeps powerClob s d := kac.trans (Kd.mono (by decide))
     exact kad.trans (Kt.mono (by decide))
 
 end VG.Proof.Mont.X86.Comb

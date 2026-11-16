@@ -138,53 +138,53 @@ theorem deriveCheckedBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s : 
       Outside L.base 128 (deriveExtent - 128) s.mem t.mem ∧ Keep coreRegs s t := by
   intro y
   obtain ⟨hql1, hqu, hqp, hpu⟩ := L.widths
-  have hp384 : 0 < L.pLen ∧ L.pLen ≤ 384 := by
-    have hl := L.lengths; unfold Spec.Dsa.lengthsValid at hl; omega_using [hl]
-  have hend : t2 + L.pLen ≤ usedBytes := by unfold t2 usedBytes; omega_using [hp384]
+  obtain hp384 : 0 < L.pLen ∧ L.pLen ≤ 384 := by
+    obtain hl := L.lengths; unfold Spec.Dsa.lengthsValid at hl; omega_using [hl]
+  obtain hend : t2 + L.pLen ≤ usedBytes := by unfold t2 usedBytes; omega_using [hp384]
   unfold seqs
   -- 0 < x < q
   refine WP.seq (WP.mono (readyRange_ok hr .q Core.privateScalar (by trivial) (hx.shrink (by decide)).active
     (by rw [hxl]; omega_using [hql1]) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm) fun s1 h1 => ?_)
-  have hf1 : Outside L.base 128 (deriveExtent - 128) s.mem s1.mem := h1.frame.mono (by decide) (by decide)
-  have hg1 := hg.frame hr h1.ready hf1 h1.keep (by decide) (by simp [stablePointer, Core.generator])
-  have hq1 := hqb.frame hr h1.ready hf1 h1.keep (by decide) (by change Field.q ≠ .mask; decide)
-  have hx1 := hx.frame hr h1.ready hf1 h1.keep (by decide) (by simp [stablePointer, Core.privateScalar])
+  obtain hf1 : Outside L.base 128 (deriveExtent - 128) s.mem s1.mem := h1.frame.mono (by decide) (by decide)
+  obtain hg1 := hg.frame hr h1.ready hf1 h1.keep (by decide) (by simp [stablePointer, Core.generator])
+  obtain hq1 := hqb.frame hr h1.ready hf1 h1.keep (by decide) (by change Field.q ≠ .mask; decide)
+  obtain hx1 := hx.frame hr h1.ready hf1 h1.keep (by decide) (by simp [stablePointer, Core.privateScalar])
   -- y = g^x mod p, at t2
-  have step2 := readyPow_ok M Sq h1.ready .p hp hpo Core.generator Core.privateScalar (by trivial) (by trivial)
+  obtain step2 := readyPow_ok M Sq h1.ready .p hp hpo Core.generator Core.privateScalar (by trivial) (by trivial)
     (hg1.shrink (by decide)).active (hx1.shrink (by decide)).active (by rw [hgl]; omega_using [hp384])
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hxl]; omega_using [hql1]) (by rw [hxl]; omega_using [hqu]) t2 (by decide) hend
-  have step2' : WP isa (Core.pow Sq.mm M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2)) s1
+  obtain step2' : WP isa (Core.pow Sq.mm M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2)) s1
       (CallResult L .p t2 y s1) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value] using step2
   refine WP.seq (WP.mono step2' fun s2 h2 => ?_)
-  have hf2 : Outside L.base 128 (deriveExtent - 128) s1.mem s2.mem :=
+  obtain hf2 : Outside L.base 128 (deriveExtent - 128) s1.mem s2.mem :=
     (h2.scheduleFrame (by decide) hend).mono (by decide) (by decide)
-  have hg2 := hg1.frame h1.ready h2.ready hf2 h2.keep (by decide) (by simp [stablePointer, Core.generator])
-  have hq2 := hq1.frame h1.ready h2.ready hf2 h2.keep (by decide) (by change Field.q ≠ .mask; decide)
-  have hm2 := (h2.fields (by decide) hend .mask).trans h1.mask
-  have hs2 : Scr s2 L.base deriveExtent := hs.congr (h1.keep.trans h2.keep).2.2
+  obtain hg2 := hg1.frame h1.ready h2.ready hf2 h2.keep (by decide) (by simp [stablePointer, Core.generator])
+  obtain hq2 := hq1.frame h1.ready h2.ready hf2 h2.keep (by decide) (by change Field.q ≠ .mask; decide)
+  obtain hm2 := (h2.fields (by decide) hend .mask).trans h1.mask
+  obtain hs2 : Scr s2 L.base deriveExtent := hs.congr (h1.keep.trans h2.keep).2.2
   -- y, copied past the signer's layout
   refine WP.seq (WP.mono (copyY_ok h2.ready hs2) fun s3 ⟨h3, hy3, hf3o, hk3⟩ => ?_)
-  have hf3 : Outside L.base 128 (deriveExtent - 128) s2.mem s3.mem :=
+  obtain hf3 : Outside L.base 128 (deriveExtent - 128) s2.mem s3.mem :=
     hf3o.mono (by decide) (by unfold deriveExtent; omega_using [hp384])
-  have hg3 := hg2.frame h2.ready h3 hf3 hk3 (by decide) (by simp [stablePointer, Core.generator])
-  have hq3 := hq2.frame h2.ready h3 hf3 hk3 (by decide) (by change Field.q ≠ .mask; decide)
-  have hm3 : word s3.mem L.base Field.mask.offset = mask (decide (0 < Spec.Dsa.decodeBE xb ∧
+  obtain hg3 := hg2.frame h2.ready h3 hf3 hk3 (by decide) (by simp [stablePointer, Core.generator])
+  obtain hq3 := hq2.frame h2.ready h3 hf3 hk3 (by decide) (by change Field.q ≠ .mask; decide)
+  obtain hm3 : word s3.mem L.base Field.mask.offset = mask (decide (0 < Spec.Dsa.decodeBE xb ∧
       Spec.Dsa.decodeBE xb < L.subgroup) && true) := by
     refine (hf3o.word (Or.inl (by decide)) (by decide)).trans ?_
     simpa only [Bool.false_eq_true, ↓reduceIte, ModulusSide.value] using hm2
-  have hyb : ∀ i (hi : i < L.pLen), s3.mem (off L.base derivedY + BitVec.ofNat 64 i) =
+  obtain hyb : ∀ i (hi : i < L.pLen), s3.mem (off L.base derivedY + BitVec.ofNat 64 i) =
       (Spec.Dsa.encodeBE L.pLen y)[i]'(by rw [VG.Proof.Dsa.encodeBE_length]; exact hi) := by
     intro i hi
     rw [hy3 i hi]
-    have hb := congrArg (fun l => l[i]?) h2.bytes
+    obtain hb := congrArg (fun l => l[i]?) h2.bytes
     simp only [ModulusSide.length, Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range hi,
       Option.map_some] at hb
     rw [List.getElem?_eq_getElem (by rw [VG.Proof.Dsa.encodeBE_length]; exact hi)] at hb
     exact Option.some.inj hb
-  have hys : OperandBytes s3 L.base usedBytes Core.publicValue (Spec.Dsa.encodeBE L.pLen y) := by
+  obtain hys : OperandBytes s3 L.base usedBytes Core.publicValue (Spec.Dsa.encodeBE L.pLen y) := by
     refine ⟨(h3.fields .pLen (by decide)).trans (by rw [VG.Proof.Dsa.encodeBE_length]; exact L.pLength), ?_⟩
     simp only [Core.publicValue, pointerValue, h3.fields .y (by decide), hy]
     refine ⟨fun i hi => ?_, fun i hi => hyb i (by rwa [VG.Proof.Dsa.encodeBE_length] at hi), fun i hi => ?_⟩
@@ -213,37 +213,37 @@ theorem deriveCheckedSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {origi
       (DerivePost p original) := by
   obtain ⟨hsize, hpo, hqo⟩ := p.shapeFacts ha
   obtain ⟨hp1, hq255, _⟩ := VG.Proof.Dsa.supported_bounds hsize
-  have hpf : Spec.Dsa.decodeBE p.pb ≤ 256 ^ p.pLen := by
-    have hh := VG.Proof.Dsa.decodeBE_lt p.pb; rw [p.pbLength] at hh; exact Nat.le_of_lt hh
-  have hqf : Spec.Dsa.decodeBE p.qb ≤ 256 ^ p.qLen := by
-    have hh := VG.Proof.Dsa.decodeBE_lt p.qb; rw [p.qbLength] at hh; exact Nat.le_of_lt hh
+  obtain hpf : Spec.Dsa.decodeBE p.pb ≤ 256 ^ p.pLen := by
+    obtain hh := VG.Proof.Dsa.decodeBE_lt p.pb; rw [p.pbLength] at hh; exact Nat.le_of_lt hh
+  obtain hqf : Spec.Dsa.decodeBE p.qb ≤ 256 ^ p.qLen := by
+    obtain hh := VG.Proof.Dsa.decodeBE_lt p.qb; rw [p.qbLength] at hh; exact Nat.le_of_lt hh
   have hl := p.lengths
   unfold Spec.Dsa.lengthsValid at hl
   refine WP.seq (WP.mono (deriveInitialize_ok h hs ha) fun u ⟨pi, qi, hr, ho, hm, hsv, hframe, hkeep⟩ => ?_)
   let L := (p.layout original h.pLength).withInverses pi qi
-  have hsu : Scr u p.base deriveExtent := h.scratch.congr hkeep.2.2
+  obtain hsu : Scr u p.base deriveExtent := h.scratch.congr hkeep.2.2
   apply wpAppendSequences (a := [Checks.range qWorkspace Core.privateScalar,
     Core.pow Sq.mm M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2),
     Generate.copyY, seqs (Checks.publicPrefix M.mm)]) (b := [Generate.writeKey, .block SignVerify.result])
     (by simp) (by simp)
   refine WP.mono (deriveCheckedBody_ok (L := L) M Sq hr hsu hp1 hq255 hpo hqo hpf hqf ho.generator ho.subgroup ho.scalar
     p.gbLength p.xLength rfl hm) fun v ⟨hv, hmv, hyv, hfv, hkv⟩ => ?_
-  have hframe' : InScr p.base deriveExtent original.mem v.mem :=
+  obtain hframe' : InScr p.base deriveExtent original.mem v.mem :=
     hframe.trans (InScr.of_outside hfv (by decide))
-  have hkeep' : Keep coreRegs original v := (hkeep.trans hkv).mono (by decide)
-  have hsv' : Scr v p.base deriveExtent := h.scratch.congr hkeep'.2.2
+  obtain hkeep' : Keep coreRegs original v := (hkeep.trans hkv).mono (by decide)
+  obtain hsv' : Scr v p.base deriveExtent := h.scratch.congr hkeep'.2.2
   obtain ⟨_, _, _, hxs⟩ := h.sources hframe' hkeep'
-  have hparams := h.paramsSource.congrK hframe' hkeep'
+  obtain hparams := h.paramsSource.congrK hframe' hkeep'
   set valid := prefixAccepted L p.gb p.yb
     (decide (0 < Spec.Dsa.decodeBE p.x ∧ Spec.Dsa.decodeBE p.x < L.subgroup) && true) with hvalid
-  have hfields : KeyFields v p.base (original.gpr .rdi) (original.gpr .rdx) (off p.base derivedY)
+  obtain hfields : KeyFields v p.base (original.gpr .rdi) (original.gpr .rdx) (off p.base derivedY)
       (original.gpr .r9) p.pLen p.qLen valid :=
     ⟨hv.fields .out (by decide), hv.fields .p (by decide), hv.fields .y (by decide),
       hv.fields .x (by decide), (hv.fields .pLen (by decide)).trans h.pLength,
       hv.fields .qLen (by decide), hmv⟩
   have hn := hsv'.nowrap
-  have hp384 : p.pLen ≤ 384 := by omega_using [hl]
-  have hpq : 0 < p.pLen ∧ 0 < p.qLen := by omega_using [hl]
+  obtain hp384 : p.pLen ≤ 384 := by omega_using [hl]
+  obtain hpq : 0 < p.pLen ∧ 0 < p.qLen := by omega_using [hl]
   have hreg : v.rd = original.rd ∧ v.wr = original.wr := hkeep'.2
   unfold seqs
   refine WP.seq (WP.mono (writeKey_ok hsv' hv.parent.rdi (by decide) hfields hpq.1 hpq.2 (by omega_using [hl])
@@ -255,15 +255,15 @@ theorem deriveCheckedSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {origi
     ⟨fun i hi => hxs.rd i (by rw [p.xLength]; exact hi), h.xOut⟩
     (fun i hi => by rw [hreg.2]; exact h.outWrite i hi))
     fun w ⟨hw₁, hw₂, hw₃, hwf, hkw⟩ => ?_)
-  have hwv : ∀ d, d + 8 ≤ deriveExtent → word w.mem p.base d = word v.mem p.base d := fun d hd =>
+  obtain hwv : ∀ d, d + 8 ≤ deriveExtent → word w.mem p.base d = word v.mem p.base d := fun d hd =>
     Mem.readW_congr fun b hb => hwf _ (scr_ne_out h.outSeparate (d := d) (i := b) (by omega_using [hd, hb]) (by omega_using [hn]))
   refine WP.mono (result_ok (hsv'.congr hkw.2.2) ((hkw.gpr (by decide)).trans hv.parent.rdi) (by decide)
     ((hwv _ (by decide)).trans hmv)) fun t ⟨hret, hsave, hmem, hkt⟩ => ?_
-  have hyfit : p.y < 256 ^ p.pLen :=
+  obtain hyfit : p.y < 256 ^ p.pLen :=
     Nat.lt_of_lt_of_le (VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hp1])) hpf
-  have hres : Spec.Dsa.deriveKeyBytes p.pLen p.qLen p.params p.x =
+  obtain hres : Spec.Dsa.deriveKeyBytes p.pLen p.qLen p.params p.x =
       if valid then some (p.params ++ p.yb ++ p.x) else none := by
-    have hg : Spec.Dsa.powMod (Spec.Dsa.decodeBE p.gb) (Spec.Dsa.decodeBE p.qb) (Spec.Dsa.decodeBE p.pb) = 1 := by
+    obtain hg : Spec.Dsa.powMod (Spec.Dsa.decodeBE p.gb) (Spec.Dsa.decodeBE p.qb) (Spec.Dsa.decodeBE p.pb) = 1 := by
       rw [p.check_eq, ha, Bool.true_and] at hc
       simp only [Bool.and_eq_true, decide_eq_true_eq] at hc
       exact hc.1
@@ -271,7 +271,7 @@ theorem deriveCheckedSuccess_ok (M : Mont) (Sq : MontS) {p : DeriveInput} {origi
     unfold prefixAccepted
     rw [VG.Proof.Dsa.decodeBE_encodeBE hyfit]
     rfl
-  have hlen : p.outLen = p.params.length + p.yb.length + p.x.length := by
+  obtain hlen : p.outLen = p.params.length + p.yb.length + p.x.length := by
     rw [p.paramsLength, VG.Proof.Dsa.encodeBE_length, p.xLength]; unfold DeriveInput.outLen; omega_arith
   refine ⟨?_, ?_, fun i hi => (hsave i hi).trans ((hwv _ (by unfold deriveExtent derivedY usedBytes; omega_using [hi])).trans
       ((hfv.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hsv i hi))), ?_,

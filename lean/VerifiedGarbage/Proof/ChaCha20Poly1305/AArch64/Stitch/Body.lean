@@ -68,10 +68,10 @@ theorem acc_preserved : ∀ r ∈ accRegs, r ∈ preserved ∧ r ≠ .x19 ∧ r 
   decide
 
 theorem rebase_cp {s₀ : State} (u : State) (hp : CP s₀) : CP (rebase s₀ u) := by
-  have e0 : (rebase s₀ u).gpr .x0 = s₀.gpr .x0 := rebase_of (by decide)
-  have e1 : (rebase s₀ u).gpr .x1 = s₀.gpr .x1 := rebase_of (by decide)
-  have e3 : (rebase s₀ u).gpr .x3 = s₀.gpr .x3 := rebase_of (by decide)
-  have e20 : (rebase s₀ u).gpr .x20 = s₀.gpr .x20 := rebase_of (by decide)
+  obtain e0 : (rebase s₀ u).gpr .x0 = s₀.gpr .x0 := rebase_of (by decide)
+  obtain e1 : (rebase s₀ u).gpr .x1 = s₀.gpr .x1 := rebase_of (by decide)
+  obtain e3 : (rebase s₀ u).gpr .x3 = s₀.gpr .x3 := rebase_of (by decide)
+  obtain e20 : (rebase s₀ u).gpr .x20 = s₀.gpr .x20 := rebase_of (by decide)
   obtain ⟨h20, hrd, hvr, hc, hb, hd, h1, h2, h3⟩ := hp
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [VG.Proof.ChaCha20.AArch64.Mixed8.sr, VG.Proof.ChaCha20.AArch64.Mixed8.br,
@@ -137,8 +137,8 @@ theorem prepared_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.C
     (hv : v = Nat.repeat innerBlock (2 * 0) (ctr (source s₀) 6))
     (hd : Done blocks v R a W n .x26 (s₀.gpr .x27) s u) : Prepared (rebase s₀ u) u 5 := by
   subst hb hv
-  have hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide)
-  have hsrc : source u = source s := by
+  obtain hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide)
+  obtain hsrc : source u = source s := by
     simp only [source, hd.mem, hd.keep _ not_words_x0 (by decide) x0_not_poly]
   refine ⟨?_, hd.table, ?_, ?_, ?_, ?_, hd.rd.trans h.rd, hd.wr.trans h.wr, hd.sp.trans h.sp, ?_⟩
   · rw [source_rebase]; exact hd.vec
@@ -175,17 +175,17 @@ theorem second_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.Cha
     (hv : v = Nat.repeat innerBlock (2 * 0) (ctr (source s₀) 7))
     (hd : Done blocks v R a W n .x20 (s₀.gpr .x27) s u) : Second (rebase s₀ u) u 5 := by
   subst hb hv
-  have hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide) (by decide)
-  have hsrc : source u = source s := by
+  obtain hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide) (by decide)
+  obtain hsrc : source u = source s := by
     simp only [source, hd.mem, hd.keep _ not_words_x0 (by decide) x0_not_poly]
   have he (f : VG.Spec.ChaCha20.State → VG.Spec.ChaCha20.State) (x : VG.Spec.ChaCha20.State) :
       Nat.repeat f 5 (Nat.repeat f 5 x) = Nat.repeat f 10 x := rfl
   have hvec := hd.vec
-  have he' : (fun j => Nat.repeat innerBlock 5 (Nat.repeat innerBlock 5 (ctr (source s₀) j))) =
+  obtain he' : (fun j => Nat.repeat innerBlock 5 (Nat.repeat innerBlock 5 (ctr (source s₀) j))) =
       (fun j => Nat.repeat innerBlock 10 (ctr (source s₀) j)) :=
     funext fun j => he innerBlock (ctr (source s₀) j)
   rw [he'] at hvec
-  have h20 : u.gpr .x20 = s₀.gpr .x3 := by rw [hd.x20, hx0, ← hx, hp.x20]
+  obtain h20 : u.gpr .x20 = s₀.gpr .x3 := by rw [hd.x20, hx0, ← hx, hp.x20]
   refine ⟨?_, hd.table, ?_, ?_, ?_, ?_, ?_, ?_, hd.rd.trans h.rd, hd.wr.trans h.wr,
     hd.sp.trans h.sp, ?_⟩
   · rw [source_rebase]; exact hvec
@@ -251,7 +251,7 @@ theorem Acc.frame {R a : Nat} {s u : State} (h : Acc R a s)
     (hg : ∀ r ∈ [Reg.x21, .x22, .x23], u.gpr r = s.gpr r)
     (hk : ∀ d, (d = Poly.r0Off ∨ d = Poly.r1Off) → Poly.rword u d = Poly.rword s d) :
     Acc R a u := by
-  have hv : Poly.hval u = Poly.hval s := by
+  obtain hv : Poly.hval u = Poly.hval s := by
     simp only [Poly.hval, hg .x21 (by decide), hg .x22 (by decide), hg .x23 (by decide)]
   exact ⟨by rw [hv]; exact h.h, by rw [hg .x23 (by decide)]; exact h.h2,
     by simp only [Poly.rval, hk _ (.inl rfl), hk _ (.inr rfl)]; exact h.key,
@@ -286,11 +286,11 @@ structure ChunkPreW (st₀ st₁ bk₀ bk₁ : Instr) (r : Reg) (B₀ B₁ : Add
 
 /-- A chunk's source, for states with the accumulator's registers of `u`. -/
 theorem srcOK_rebase {r : Reg} {s : State} (h : SrcOK r s) (u : State) : SrcOK r (rebase s u) := by
-  have hr : (rebase s u).gpr r = s.gpr r := by
+  obtain hr : (rebase s u).gpr r = s.gpr r := by
     rcases h.reg with rfl | rfl <;> exact rebase_of (by decide)
-  have e0 : (rebase s u).gpr .x0 = s.gpr .x0 := rebase_of (by decide)
-  have e1 : (rebase s u).gpr .x1 = s.gpr .x1 := rebase_of (by decide)
-  have e3 : (rebase s u).gpr .x3 = s.gpr .x3 := rebase_of (by decide)
+  obtain e0 : (rebase s u).gpr .x0 = s.gpr .x0 := rebase_of (by decide)
+  obtain e1 : (rebase s u).gpr .x1 = s.gpr .x1 := rebase_of (by decide)
+  obtain e3 : (rebase s u).gpr .x3 = s.gpr .x3 := rebase_of (by decide)
   exact ⟨h.reg, by simpa only [hr, rebase_rd, rebase_wr] using h.src,
     by simpa only [sr, hr, e0] using h.st_s, by simpa only [br, hr, e3] using h.s_b,
     by simpa only [dr, hr, e1] using h.alias⟩
@@ -315,103 +315,103 @@ theorem chunkWith_ok {st₀ st₁ bk₀ bk₁ : Instr} {r : Reg} {l₀ k₀ l₁
   have hcp := hp.cp
   have hkey (rs : List Region) (h : ∀ r ∈ rs, r ∈ [sr s, scalarBuf s, VG.Proof.ChaCha20.AArch64.Mixed8.dr s]) :
       ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => hp.key r (h r hr)
-  have hlow : (lowBuf s).Sub (scalarBuf s) := Region.sub_prefix (by decide : 64 ≤ 128)
+  obtain hlow : (lowBuf s).Sub (scalarBuf s) := Region.sub_prefix (by decide : 64 ≤ 128)
   unfold chunkWith
   apply WP.seq
   refine (prepare_ok s hcp).mono fun pa hpa => ?_
-  have x0a : pa.gpr .x0 = s.gpr .x0 := hpa.keep _ not_words_x0 (by decide) (by decide)
-  have rwa := rword_of hpa.frame x0a (hkey _ (by simp))
-  have accA : Acc R a pa := ha.frame (acc_regs_keep fun r hr =>
+  obtain x0a : pa.gpr .x0 = s.gpr .x0 := hpa.keep _ not_words_x0 (by decide) (by decide)
+  obtain rwa := rword_of hpa.frame x0a (hkey _ (by simp))
+  obtain accA : Acc R a pa := ha.frame (acc_regs_keep fun r hr =>
     hpa.keep _ (not_words_preserved (acc_preserved r hr).1) (acc_preserved r hr).2.1
       (acc_preserved r hr).2.2.1) rwa
-  have rdA : Readable B₀ (16 * (l₀ + 5 * k₀)) pa :=
+  obtain rdA : Readable B₀ (16 * (l₀ + 5 * k₀)) pa :=
     readable_of hp.blk₀ hp.k0 hp.k1 hpa.rd hpa.wr x0a
   -- The first phase.
   apply WP.seq
-  have x27a : pa.gpr .x27 = s.gpr .x27 :=
+  obtain x27a : pa.gpr .x27 = s.gpr .x27 :=
     hpa.keep _ (not_words_preserved (by decide)) (by decide) (by decide)
   refine (phaseWith_ok (W := B₀) (len := 16 * (l₀ + 5 * k₀)) (Nat.le_refl _) hpa.vec hpa.scalar
     hpa.table (hp.st₀ pa hpa.saved.len hpa.saved.data x27a)
     (fun w h20 h26 => hp.bk₀ w h20 (h26.trans hpa.saved.data)) accA rdA).mono fun pb hpb => ?_
-  have prB := prepared_rebase hp.x20 hpa rfl rfl hpb
-  have hcp₁ := rebase_cp pb hcp
+  obtain prB := prepared_rebase hp.x20 hpa rfl rfl hpb
+  obtain hcp₁ := rebase_cp pb hcp
   -- The second block.
   apply WP.seq
   refine (second_ok hcp₁ prB).mono fun pc hpc => ?_
-  have x0c : pc.gpr .x0 = s.gpr .x0 :=
+  obtain x0c : pc.gpr .x0 = s.gpr .x0 :=
     (hpc.keep _ not_words_x0 (by decide) (by decide) (by decide)).trans (rebase_of (by decide))
-  have x19c : pc.gpr .x19 = s.gpr .x2 := by rw [hpc.saved.len, rebase_of (by decide)]
-  have x26c : pc.gpr .x26 = s.gpr .x1 := by rw [hpc.saved.data, rebase_of (by decide)]
-  have fc : Frame [sr s, lowBuf s] s.mem pc.mem := by
+  obtain x19c : pc.gpr .x19 = s.gpr .x2 := by rw [hpc.saved.len, rebase_of (by decide)]
+  obtain x26c : pc.gpr .x26 = s.gpr .x1 := by rw [hpc.saved.data, rebase_of (by decide)]
+  obtain fc : Frame [sr s, lowBuf s] s.mem pc.mem := by
     simpa only [sr, lowBuf, rebase_mem, rebase_of (show Reg.x0 ∉ accRegs by decide),
       rebase_of (show Reg.x3 ∉ accRegs by decide)] using hpc.frame
-  have rwc := rword_of fc x0c (fun r hr => by
+  obtain rwc := rword_of fc x0c (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.key _ (by simp)
     · exact (hp.key _ (by simp)).sub_right hlow)
-  have rwb : ∀ d, (d = Poly.r0Off ∨ d = Poly.r1Off) → Poly.rword pb d = Poly.rword s d := by
+  obtain rwb : ∀ d, (d = Poly.r0Off ∨ d = Poly.r1Off) → Poly.rword pb d = Poly.rword s d := by
     intro d hd
     rw [← rwa d hd]
     simp only [Poly.rword, hpb.mem, hpb.keep _ not_words_x0 (by decide) x0_not_poly]
-  have accC := hpb.acc.frame (acc_regs_keep fun r hr =>
+  obtain accC := hpb.acc.frame (acc_regs_keep fun r hr =>
       (hpc.keep _ (not_words_preserved (acc_preserved r hr).1) (by
         intro he; rw [he] at hr; exact absurd hr (by decide)) (acc_preserved r hr).2.1
         (acc_preserved r hr).2.2.1).trans (rebase_acc hr))
     (fun d hd => (rwc d hd).trans (rwb d hd).symm)
-  have rdC : Readable B₁ (16 * (l₁ + 5 * k₁)) pc :=
+  obtain rdC : Readable B₁ (16 * (l₁ + 5 * k₁)) pc :=
     readable_of hp.blk₁ hp.k0 hp.k1 (hpc.rd.trans (rebase_rd _ _)) (hpc.wr.trans (rebase_wr _ _)) x0c
   -- The second phase.
   apply WP.seq
-  have x27c : pc.gpr .x27 = s.gpr .x27 :=
+  obtain x27c : pc.gpr .x27 = s.gpr .x27 :=
     (hpc.keep _ (not_words_preserved (by decide)) (by decide) (by decide) (by decide)).trans
       (rebase_of (by decide))
   refine (phaseWith_ok (W := B₁) (len := 16 * (l₁ + 5 * k₁)) (Nat.le_refl _) hpc.vec hpc.scalar
     hpc.table (hp.st₁ pc x19c x26c x27c) (fun w h20 h26 => hp.bk₁ w h20 (h26.trans x26c)) accC rdC).mono
     fun pd hpd => ?_
-  have hcp₂ := rebase_cp pd hcp₁
-  have hx₁ : (rebase s pb).gpr .x20 = (rebase s pb).gpr .x0 + 64#64 := by
+  obtain hcp₂ := rebase_cp pd hcp₁
+  obtain hx₁ : (rebase s pb).gpr .x20 = (rebase s pb).gpr .x0 + 64#64 := by
     rw [rebase_of (by decide), rebase_of (by decide)]; exact hp.x20
-  have seD := second_rebase hcp₁ hx₁ hpc (by rw [source_rebase]) (by rw [source_rebase])
+  obtain seD := second_rebase hcp₁ hx₁ hpc (by rw [source_rebase]) (by rw [source_rebase])
     (by rw [rebase_of (show Reg.x27 ∉ accRegs by decide)]; exact hpd)
   rw [rebase_rebase] at seD hcp₂
-  have hsr₂ : SrcOK r (rebase s pd) := srcOK_rebase hp.src pd
+  obtain hsr₂ : SrcOK r (rebase s pd) := srcOK_rebase hp.src pd
   -- The rest of the kernel's chunk.
   apply WP.seq
   refine (spill2_ok hcp₂ seD).mono fun pe hpe => ?_
   apply WP.seq
   refine (finishFrom_ok r hcp₂ hsr₂ hpe).mono fun pf hpf => ?_
   refine (lastFrom_ok r hcp₂ hsr₂ hpf).mono fun pg hpg => ?_
-  have hacc : ∀ r ∈ accRegs, pg.gpr r = pd.gpr r := fun r hr =>
+  obtain hacc : ∀ r ∈ accRegs, pg.gpr r = pd.gpr r := fun r hr =>
     (hpg.cs r (acc_preserved r hr).1 (acc_preserved r hr).2.1 (acc_preserved r hr).2.2.1).trans
       (rebase_acc hr)
   rw [rebase_congr s hacc]
   refine ⟨hpg, ?_⟩
   -- The accumulator.
-  have x0g : pg.gpr .x0 = s.gpr .x0 := hpg.x0.trans (rebase_of (by decide))
-  have fg : Frame [sr s, scalarBuf s, VG.Proof.ChaCha20.AArch64.Mixed8.dr s] s.mem pg.mem := by
+  obtain x0g : pg.gpr .x0 = s.gpr .x0 := hpg.x0.trans (rebase_of (by decide))
+  obtain fg : Frame [sr s, scalarBuf s, VG.Proof.ChaCha20.AArch64.Mixed8.dr s] s.mem pg.mem := by
     simpa only [sr, scalarBuf, VG.Proof.ChaCha20.AArch64.Mixed8.dr, rebase_mem,
       rebase_of (show Reg.x0 ∉ accRegs by decide), rebase_of (show Reg.x1 ∉ accRegs by decide),
       rebase_of (show Reg.x3 ∉ accRegs by decide)] using hpg.frame
-  have rwg := rword_of fg x0g (hkey _ (fun r hr => hr))
-  have rwd : ∀ d, (d = Poly.r0Off ∨ d = Poly.r1Off) → Poly.rword pd d = Poly.rword s d := by
+  obtain rwg := rword_of fg x0g (hkey _ (fun r hr => hr))
+  obtain rwd : ∀ d, (d = Poly.r0Off ∨ d = Poly.r1Off) → Poly.rword pd d = Poly.rword s d := by
     intro d hd
     rw [← rwc d hd]
     simp only [Poly.rword, hpd.mem, hpd.keep _ not_words_x0 (by decide) x0_not_poly]
-  have accG := hpd.acc.frame (acc_regs_keep hacc) (fun d hd => (rwg d hd).trans (rwd d hd).symm)
+  obtain accG := hpd.acc.frame (acc_regs_keep hacc) (fun d hd => (rwg d hd).trans (rwd d hd).symm)
   -- The bytes absorbed.
-  have bA : bytesAt pa.mem B₀ (16 * (l₀ + 5 * k₀)) = bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀)) :=
+  obtain bA : bytesAt pa.mem B₀ (16 * (l₀ + 5 * k₀)) = bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀)) :=
     bytesAt_frame hpa.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.win₀ _ (by simp)) hp.le₀
-  have bC : bytesAt pc.mem B₁ (16 * (l₁ + 5 * k₁)) = bytesAt s.mem B₁ (16 * (l₁ + 5 * k₁)) :=
+  obtain bC : bytesAt pc.mem B₁ (16 * (l₁ + 5 * k₁)) = bytesAt s.mem B₁ (16 * (l₁ + 5 * k₁)) :=
     bytesAt_frame fc (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.win₁ _ (by simp)
       · exact (hp.win₁ _ (by simp)).sub_right hlow) hp.le₁
   rw [bC, bA] at accG
-  have hl : (bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀))).length % 16 = 0 := by
+  obtain hl : (bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀))).length % 16 = 0 := by
     rw [Poly1305.length_bytesAt]; omega_using []
   rw [← Poly1305.absorbAll_append hl] at accG
   exact accG
@@ -459,14 +459,14 @@ theorem chunk_ok (enc : Bool) {R a : Nat} {B : Addr} (s : State) (hp : ChunkPre 
     cases enc
     · simp only [Bool.false_eq_true, ite_false, hp.x27, dataOf, BitVec.add_zero]
     · simp only [ite_true, h26, hp.x1 rfl]
-  have pre : ChunkPreW (start enc 0) (start enc 1) (back enc 0) (back enc 1) .x27
+  obtain pre : ChunkPreW (start enc 0) (start enc 1) (back enc 0) (back enc 1) .x27
       (B + BitVec.ofNat 64 (256 * 0)) (B + BitVec.ofNat 64 (256 * 1)) (16 * (1 + 5 * 3)) (16 * (1 + 5 * 3)) s :=
     ⟨hp.cp, hp.x20, hst 0 (by decide), hst 1 (by decide), hbk 0 (by decide), hbk 1 (by decide), hp.src,
       hb 0 (by decide), hb 1 (by decide), hp.k0, hp.k1,
       fun r hr => (hp.win r hr).sub_left (hwin 0 (by decide)),
       fun r hr => (hp.win r hr).sub_left (hwin 1 (by decide)), by decide, by decide, hp.key⟩
   refine (chunkWith_ok s pre ha).mono fun g ⟨hg, hag⟩ => ⟨hg, ?_⟩
-  have e : bytesAt s.mem (B + BitVec.ofNat 64 (256 * 0)) (16 * (1 + 5 * 3)) ++
+  obtain e : bytesAt s.mem (B + BitVec.ofNat 64 (256 * 0)) (16 * (1 + 5 * 3)) ++
       bytesAt s.mem (B + BitVec.ofNat 64 (256 * 1)) (16 * (1 + 5 * 3)) = bytesAt s.mem B 512 := by
     rw [show B + BitVec.ofNat 64 (256 * 0) = B by simp, Nat.mul_one,
       show 16 * (1 + 5 * 3) = 256 from rfl, ← Poly1305.bytesAt_add]
@@ -555,7 +555,7 @@ theorem tinv_rebase {s₀ s : State} {t : Nat} (h : TInv s₀ t s) (u : State) :
     · rw [rebase_acc ha, rebase_acc ha]
     · rw [rebase_of ha, rebase_of ha]; exact h.cs r hr h19 h20 h27 h26
   · have e := h.saved p hp
-    have hp' : p.1 ∉ accRegs :=
+    obtain hp' : p.1 ∉ accRegs :=
       (show ∀ q ∈ VG.Impl.ChaCha20.AArch64.Mixed8.savedFrom, q.1 ∉ accRegs by decide) p hp
     simpa only [bp_rebase, rebase_mem, rebase_of hp'] using e
 
@@ -589,18 +589,18 @@ theorem body_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hin : enc = true �
       (TInv (rebase s₀ v) (t + 1) v ∧
         v.gpr .x5 = BitVec.ofNat 64 (if L s₀ - 512 * (t + 1) < 512 then 1 else 0)) ∧
       Acc R (absorbAll R a (bytesAt s.mem (dp s₀ + BitVec.ofNat 64 w) 512)) v := by
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  have hBin : (⟨dp s₀ + BitVec.ofNat 64 w, 512⟩ : Region).Sub (dR s₀) := Offset.sub_base _ hw
+  obtain hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
+  obtain hBin : (⟨dp s₀ + BitVec.ofNat 64 w, 512⟩ : Region).Sub (dR s₀) := Offset.sub_base _ hw
   have hx0 : s.gpr .x0 = st s₀ := h.x0
-  have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
-  have hwin : (⟨dp s₀ + BitVec.ofNat 64 w, 512⟩ : Region).Disjoint (stR s₀) ∧
+  obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
+  obtain hwin : (⟨dp s₀ + BitVec.ofNat 64 w, 512⟩ : Region).Disjoint (stR s₀) ∧
       (⟨dp s₀ + BitVec.ofNat 64 w, 512⟩ : Region).Disjoint (bR s₀) :=
     ⟨hp.st_d.symm.sub_left hBin, hp.d_b.sub_left hBin⟩
-  have hsb : (scalarBuf s).Sub (bR s₀) := by
+  obtain hsb : (scalarBuf s).Sub (bR s₀) := by
     simp only [scalarBuf, h.x3]; exact Region.sub_prefix (by decide)
-  have hkey : (keyR s).Sub (bR s₀) := by simp only [keyR, hx0]; exact hp.key_sub
+  obtain hkey : (keyR s).Sub (bR s₀) := by simp only [keyR, hx0]; exact hp.key_sub
   obtain ⟨hcp, hsrc⟩ := tcp_of_inv hp.toTPre h hge
-  have hpre : ChunkPre enc (dp s₀ + BitVec.ofNat 64 w) s := by
+  obtain hpre : ChunkPre enc (dp s₀ + BitVec.ofNat 64 w) s := by
     refine ⟨hcp, by rw [h.x20, hx0, hp.bp], h.x27.trans hB, fun he => by rw [h.x1, h.x27, hin he],
       hsrc, fun d hd => ?_, ?_, ?_, ?_, ?_⟩
     · rw [hrw, hp.rd, hp.wr]
@@ -628,13 +628,13 @@ theorem body_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hin : enc = true �
   refine (chunk_ok enc s hpre ha).mono fun g ⟨hg, hag⟩ => ?_
   refine (tnext_ok (tpre_rebase g hp.toTPre) (by simpa using hge) (tinv_rebase h g) hg).mono
     fun v ⟨hv, h5, hf⟩ => ?_
-  have hacc : ∀ r ∈ accRegs, v.gpr r = g.gpr r := fun r hr =>
+  obtain hacc : ∀ r ∈ accRegs, v.gpr r = g.gpr r := fun r hr =>
     (hv.cs r (acc_preserved r hr).1 (by intro he; rw [he] at hr; exact absurd hr (by decide))
       (acc_preserved r hr).2.2.2 (by intro he; rw [he] at hr; exact absurd hr (by decide))
       (acc_preserved r hr).2.2.1).trans (rebase_acc hr)
   rw [rebase_congr s₀ hacc]
   refine ⟨⟨hv, by simpa using h5⟩, hag.frame (acc_regs_keep hacc) ?_⟩
-  have hg0 : g.gpr .x0 = st s₀ := (hg.x0.trans (rebase_x0 _ _)).trans hx0
+  obtain hg0 : g.gpr .x0 = st s₀ := (hg.x0.trans (rebase_x0 _ _)).trans hx0
   refine rword_frame (by simpa using hf) (hv.x0.trans (by simp [hg0])) ?_
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
@@ -656,13 +656,13 @@ theorem enter_frame (s : State)
       [.addImm .x .x27 .x1 0, .addImm .x .x1 .x4 0])) from rfl]
   refine Spill.save_ok (by decide) (fun p hp' => ho p.2 8 (by revert p; decide)) ?_
   let b : State := { s with mem := Spill.saveMem s.mem (s.gpr .x3) s.gpr VG.Impl.ChaCha20.AArch64.Mixed8.savedFrom }
-  have f₁ : Frame (enterR s) s.mem b.mem :=
+  obtain f₁ : Frame (enterR s) s.mem b.mem :=
     (Spill.saveMem_frame (lo := 256) (n := 32) (by decide) (by decide) _ _ _).mono (by simp)
   apply WP.block_cons_iff.mpr
   let a := b.write .x .x20 (b.gpr .x3 + BitVec.ofNat 64 0)
   refine ⟨a, by simpa only [State.read, BitVec.setWidth_eq] using
     exec_addImm_x (s := b) (d := .x20) (n := .x3) (imm := 0) (by decide), ?_⟩
-  have ha3 : a.gpr .x3 = s.gpr .x3 := RegUpd.gpr_write_of_ne _ .x _ (by decide)
+  obtain ha3 : a.gpr .x3 = s.gpr .x3 := RegUpd.gpr_write_of_ne _ .x _ (by decide)
   have haw : a.wr = s.wr := rfl
   refine WP.block_append_iff.mpr ((VG.Proof.ChaCha20.AArch64.Mixed8.saveV_ok a
     (by rw [haw, ha3]; exact ho 128 16 (by decide))

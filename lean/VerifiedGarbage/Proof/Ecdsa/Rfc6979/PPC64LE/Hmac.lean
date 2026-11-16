@@ -123,7 +123,7 @@ theorem scrBase_ok {t : State} (hc : Ctx L g lr m₀ t) {is : List Instr} {Q : S
     WP isa (.block (Cfg.scrBase ++ is)) t Q := by
   simp only [Cfg.scrBase, List.cons_append, List.nil_append]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
-  have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
+  obtain hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
   refine stepLd (a := L.B + BitVec.ofNat 64 272) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
     (hc.inFrK k₁ (by omega_using []) (by omega_using [])) fun t₂ k₂ m₂ v₂ => ?_
   refine k t₂ (k₁.mono.trans k₂.mono) (by rw [m₂, m₁]) (by rw [k₂.gpr _ (by decide), hb]) ?_
@@ -136,7 +136,7 @@ theorem argBase_ok {t : State} (hc : Ctx L g lr m₀ t) {is : List Instr} {Q : S
     WP isa (.block (Cfg.argBase ++ is)) t Q := by
   simp only [Cfg.argBase, List.cons_append, List.nil_append]
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
-  have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
+  obtain hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
   refine stepLd (a := L.B + BitVec.ofNat 64 272) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
     (hc.inFrK k₁ (by omega_using []) (by omega_using [])) fun t₂ k₂ m₂ v₂ => ?_
   refine k t₂ (k₁.mono.trans k₂.mono) (by rw [m₂, m₁]) (by rw [k₂.gpr _ (by decide), hb]) ?_
@@ -174,13 +174,13 @@ theorem tcall_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) (h11 : t.gpr .
   unfold Cfg.tcall
   refine WP.seq (WP.of_syms (stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide)
     (by rw [h11, fr_add]; rfl) (hc.inFrK (Kp.refl [] t) (by omega_using []) (by omega_using [])) fun t₂ k₂ m₂ v₂ => ?_))
-  have h12 : t₂.gpr .r12 = L.tab := by rw [v₂, hc.pTab]
+  obtain h12 : t₂.gpr .r12 = L.tab := by rw [v₂, hc.pTab]
   refine stepLd (a := L.tab + BitVec.ofNat 64 (8 * j)) (by decide) ⟨by omega_using [hj], by omega_using []⟩ (by rw [h12])
     (by rw [k₂.rd, k₂.wr]; exact hc.inTab hL hj) fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
-  have K : Kp [.r12] t t₃ := k₂.trans k₃
-  have hm : t₃.mem = t.mem := by rw [m₃, m₂]
-  have hc₃ : Ctx L g lr m₀ t₃ := hc.kp hL K hm hsy
-  have h12' : t₃.gpr .r12 = t.syms n := by rw [v₃, m₂, hc.tabWord hL hj, hw]
+  obtain K : Kp [.r12] t t₃ := k₂.trans k₃
+  obtain hm : t₃.mem = t.mem := by rw [m₃, m₂]
+  obtain hc₃ : Ctx L g lr m₀ t₃ := hc.kp hL K hm hsy
+  obtain h12' : t₃.gpr .r12 = t.syms n := by rw [v₃, m₂, hc.tabWord hL hj, hw]
   refine WP.icalls_of_call (a := t.syms n) (by simp only [PPC64LE.icall, h12']) ?_
     (h t₃ hc₃ hm fun r hr => K.gpr r (by simp [hr]))
   show ts.find? (fun q => t₃.syms q.1 == t.syms n) = _
@@ -215,7 +215,7 @@ theorem xorPad_length (k : List Byte) (p : Byte) : (Spec.Hmac.xorPad k p).length
 theorem blockKey_length {k : List Byte} (hk : k.length = P.v.H.D) :
     (Spec.Hmac.blockKey P.v.ok.SH.H k).length = P.v.H.B := by
   have hB := P.v.ok.hB
-  have hDB : P.v.H.D < P.v.H.B := by nums
+  obtain hDB : P.v.H.D < P.v.H.B := by nums
   simp only [Spec.Hmac.blockKey, hk, hB, show ¬ P.v.H.B < P.v.H.D by omega_using [hDB], ite_false, List.length_append,
     List.length_replicate]
   omega_using [hDB]
@@ -239,8 +239,8 @@ theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
     (hc.inFrK ((k₁.toA.trans k₃.toA).trans k₄.toA) (by omega_using []) (by omega_using []))
     fun t₅ k₅ m₅ v₅ => ?_
   refine stepAddi (by decide) (by decide) fun t₆ k₆ m₆ v₆ => wp_nil fun hsy => ?_
-  have K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
-  have hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
+  obtain K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
+  obtain hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
   refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
@@ -266,17 +266,17 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
   rw [hT.1] at htm
   refine tcall_ok hL hcu h11 (j := 0) (by decide) htm.1 hok.i fun u' hc' hm' hk' => ?_
   have hsp : u'.sp = L.B + BitVec.ofNat 64 96 := hc'.sp
-  have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], u'.gpr r = u.gpr r := fun r hr => hk' r (by
+  obtain e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], u'.gpr r = u.gpr r := fun r hr => hk' r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
-  have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
+  obtain dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
     fun h h₁ h₂ => Offset.disjoint _ h (by omega_using [h₂]) (by omega_using [h₁])
-  have kS : ∀ {e k : Nat}, e + k ≤ 8192 →
+  obtain kS : ∀ {e k : Nat}, e + k ≤ 8192 →
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 128, P.v.H.D⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
     fun h => hL.stk_scr (by nums) h
-  have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below u'.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
+  obtain bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below u'.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
     rw [hsp, L.below96]; exact hL.low_scr h
-  have hDB : P.v.H.D ≤ P.v.H.B := by nums
+  obtain hDB : P.v.H.D ≤ P.v.H.B := by nums
   refine WP.of_syms (initCall P.K (n := P.v.initN) (inner := L.scr + BitVec.ofNat 64 0)
     (outer := L.scr + BitVec.ofNat 64 192) (key := L.B + BitVec.ofNat 64 128)
     (scr := L.scr + BitVec.ofNat 64 384) (kl := P.v.H.D)
@@ -299,7 +299,7 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
       rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩)
     fun u'' h₁ h₂ h₃ h₄ hcs hi ho hsy => ?_)
   rw [hsp, L.below96] at h₄
-  have hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.K.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.K.H.S⟩,
+  obtain hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.K.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.K.H.S⟩,
       ⟨L.scr + BitVec.ofNat 64 384, P.K.I.scratch * 8⟩] ++ [⟨L.B, 96⟩], Region.Sub r ⟨L.scr, 2256⟩ ∨
         Region.Sub r ⟨L.B, 96⟩ := by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
@@ -308,7 +308,7 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀ 
     · exact .inl (scr_work (by nums))
     · exact .inl (scr_work (by nums))
     · exact .inr fun _ h => h
-  have hkey : keyOf P L u'.mem = keyOf P L t.mem := by simp only [keyOf, hm', hmu]
+  obtain hkey : keyOf P L u'.mem = keyOf P L t.mem := by simp only [keyOf, hm', hmu]
   refine ⟨⟨hc'.keep hL h₁ h₂ h₃ hcs h₄ (fun r hr => by
       rcases hs r hr with h | h
       · exact .inr (.inl (sub_trans h (Region.sub_prefix (by omega_using []))))
@@ -340,8 +340,8 @@ theorem updVArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
     (hc.inFrK ((k₁.toA.trans k₃.toA).trans k₄.toA) (by omega_using []) (by omega_using []))
     fun t₅ k₅ m₅ v₅ => ?_
   refine stepAddi (by decide) (by decide) fun t₆ k₆ m₆ v₆ => wp_nil fun hsy => ?_
-  have K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
-  have hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
+  obtain K : Kp argRegs t t₆ := ((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA)
+  obtain hm : t₆.mem = t.mem := by rw [m₆, m₅, m₄, m₃, m₁]
   refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
     exact (BitVec.add_zero _).symm
@@ -369,9 +369,9 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m�
   refine stepAddi (by decide) (by decide) fun t₆ k₆ m₆ v₆ => ?_
   refine stepLi hlen fun t₇ k₇ m₇ v₇ => ?_
   refine stepAddi (by decide) (by decide) fun t₈ k₈ m₈ v₈ => wp_nil fun hsy => ?_
-  have K : Kp argRegs t t₈ :=
+  obtain K : Kp argRegs t t₈ :=
     ((((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA).trans k₇.toA).trans k₈.toA)
-  have hm : t₈.mem = t.mem := by rw [m₈, m₇, m₆, m₅, m₄, m₃, m₁]
+  obtain hm : t₈.mem = t.mem := by rw [m₈, m₇, m₆, m₅, m₄, m₃, m₁]
   refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide),
       k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
@@ -402,13 +402,13 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
   rw [hT.1, hT.2] at hok
   rw [hT.1] at htm
   refine tcall_ok hL hc h11 (j := 1) (by decide) htm.2.1 hok.u fun w hcw hmw hkw => ?_
-  have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w.gpr r = u.gpr r := fun r hr => hkw r (by
+  obtain e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w.gpr r = u.gpr r := fun r hr => hkw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   have hsp : w.sp = L.B + BitVec.ofNat 64 96 := hcw.sp
-  have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
+  obtain dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
     fun h h₁ h₂ => Offset.disjoint _ h (by omega_using [h₂]) (by omega_using [h₁])
-  have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below w.sp 48).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
+  obtain bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below w.sp 48).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
     rw [hsp, L.below48]; exact hL.stk_scr (by omega_using []) h
   have hl := hd.len_le
   have hW := P.K.hW
@@ -429,14 +429,14 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
       rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩)
     fun w' h₁ h₂ h₃ h₄ hcs hupd hsy => ?_)
   rw [hsp, L.below48] at h₄
-  have hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.v.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 384, P.v.H.W⟩] ++
+  obtain hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.v.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 384, P.v.H.W⟩] ++
       [⟨L.B + BitVec.ofNat 64 48, 48⟩], Region.Sub r ⟨L.scr, 2256⟩ ∨ Region.Sub r ⟨L.B, 96⟩ := by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inl (scr_work (by nums))
     · exact .inl (scr_work (by nums))
     · exact .inr (Offset.sub_base _ (by omega_using []))
-  have hf : Frame (W L) w.mem w'.mem := h₄.sub fun r hr => by
+  obtain hf : Frame (W L) w.mem w'.mem := h₄.sub fun r hr => by
     rcases hs r hr with h | h
     · exact ⟨⟨L.scr, 2256⟩, by simp, h⟩
     · exact ⟨⟨L.B, 96⟩, by simp, h⟩
@@ -464,7 +464,7 @@ theorem updV_step (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu :
       St P L g lr m₀ k0 (Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 192) P.v.H.D) u' ∧
       Frame (W L) u.mem u'.mem := by
   refine WP.seq (WP.mono (updVArgs_ok hL hT hu.ctx) fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
-  have hw : St P L g lr m₀ k0 [] w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
+  obtain hw : St P L g lr m₀ k0 [] w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
   refine WP.mono (upd_call_ok hL hT hw (len := P.v.H.D)
     (.inl ⟨192, rfl, by omega_using [], by nums⟩) (by nums) (by simp; nums) h3 (by simpa using h4) h5 h6 h7 h11)
     fun u' ⟨hs, hf⟩ => ?_
@@ -479,7 +479,7 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State}
       Frame (W L) u.mem u'.mem := by
   refine WP.seq (WP.mono (updMArgs_ok hL hT hu.ctx (len := len) (by omega_using [hlen]))
     fun w ⟨hcw, hmw, _, h3, h4, h5, h6, h7, h11⟩ => ?_)
-  have hw : St P L g lr m₀ k0 text w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
+  obtain hw : St P L g lr m₀ k0 text w := ⟨hcw, hu.klen, hu.tlen, hmw ▸ hu.inner, hmw ▸ hu.outer⟩
   refine WP.mono (upd_call_ok hL hT hw (len := len) (.inr ⟨sMsg, rfl, by decide, by simp only [sMsg]; omega_using [hlen]⟩)
     hlen (by rw [ht]; nums) h3 (by rw [h4, ht]) h5 h6 h7 h11) fun u' ⟨hs, hf⟩ => ?_
   rw [hmw] at hs
@@ -507,10 +507,10 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g lr m₀
   refine stepAddi (by decide) hlen fun t₇ k₇ m₇ v₇ => ?_
   refine stepAddSp hdst fun t₈ k₈ m₈ v₈ => ?_
   refine stepAddi (by decide) (by decide) fun t₉ k₉ m₉ v₉ => wp_nil fun hsy => ?_
-  have K : Kp argRegs t t₉ :=
+  obtain K : Kp argRegs t t₉ :=
     (((((((k₁.toA.trans k₃.toA).trans k₄.toA).trans k₅.toA).trans k₆.toA).trans k₇.toA).trans
       k₈.toA).trans k₉.toA)
-  have hm : t₉.mem = t.mem := by rw [m₉, m₈, m₇, m₆, m₅, m₄, m₃, m₁]
+  obtain hm : t₉.mem = t.mem := by rw [m₉, m₈, m₇, m₆, m₅, m₄, m₃, m₁]
   refine ⟨hc.kp hL K hm hsy, hm, K, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₉.gpr _ (by decide), k₈.gpr _ (by decide), k₇.gpr _ (by decide), k₆.gpr _ (by decide),
       k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), s₁]
@@ -547,16 +547,16 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
   rw [hT.1, hT.2] at hok
   rw [hT.1] at htm
   refine tcall_ok hL hcw h11 (j := 2) (by decide) htm.2.2 hok.f fun w₁ hc₁ hm₁ hk₁ => ?_
-  have e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w₁.gpr r = w.gpr r := fun r hr => hk₁ r (by
+  obtain e : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], w₁.gpr r = w.gpr r := fun r hr => hk₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   have hsp : w₁.sp = L.B + BitVec.ofNat 64 96 := hc₁.sp
-  have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
+  obtain dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
     fun h h₁ h₂ => Offset.disjoint _ h (by omega_using [h₂]) (by omega_using [h₁])
-  have oS : ∀ {e k : Nat}, e + k ≤ 8192 →
+  obtain oS : ∀ {e k : Nat}, e + k ≤ 8192 →
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 (96 + dst), P.v.H.D⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
     fun h => hL.stk_scr (by nums) h
-  have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below w₁.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
+  obtain bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below w₁.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
     rw [hsp, L.below96]; exact hL.low_scr h
   refine WP.of_syms (finCall P.K (n := P.v.finN) (inner := L.scr + BitVec.ofNat 64 0)
     (outer := L.scr + BitVec.ofNat 64 192) (out := L.B + BitVec.ofNat 64 (96 + dst))
@@ -583,7 +583,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
       · exact ⟨L.SCR, by simp, within_off _ (by nums)⟩)
     fun w' h₁ h₂ h₃ h₄ hcs hfin hsy => ?_)
   rw [hsp, L.below96] at h₄
-  have hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.K.H.S⟩ : Region), ⟨L.B + BitVec.ofNat 64 (96 + dst), P.K.H.D⟩,
+  obtain hs : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.K.H.S⟩ : Region), ⟨L.B + BitVec.ofNat 64 (96 + dst), P.K.H.D⟩,
       ⟨L.scr + BitVec.ofNat 64 384, P.K.I.scratch * 8⟩] ++ [⟨L.B, 96⟩],
       ∃ r' ∈ W L ++ [⟨L.B + BitVec.ofNat 64 (96 + dst), P.v.H.D⟩], Region.Sub r r' := by
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
@@ -592,8 +592,8 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
     · exact ⟨⟨L.B + BitVec.ofNat 64 (96 + dst), P.v.H.D⟩, by simp, fun _ h => h⟩
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by nums)⟩
     · exact ⟨⟨L.B, 96⟩, by simp, fun _ h => h⟩
-  have hm : w₁.mem = u.mem := hm₁.trans hmw
-  have hbs : P.v.I.S.H.blockSize = P.v.H.B := by rw [P.v.hIS]; exact P.v.ok.hB
+  obtain hm : w₁.mem = u.mem := hm₁.trans hmw
+  obtain hbs : P.v.I.S.H.blockSize = P.v.H.B := by rw [P.v.hIS]; exact P.v.ok.hB
   refine ⟨hc₁.keep hL h₁ h₂ h₃ hcs h₄ (fun r hr => ?_) hsy, hm ▸ h₄.sub hs, ?_⟩
   · obtain ⟨r', hr', hs'⟩ := hs r hr
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'

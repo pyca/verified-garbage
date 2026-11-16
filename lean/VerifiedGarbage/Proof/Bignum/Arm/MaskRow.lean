@@ -68,8 +68,8 @@ theorem add3 (A M c : BitVec 32) :
       (if decide (2 ^ 32 ≤ (A + M).toNat + c.toNat) then 1 else 0)).toNat * 2 ^ 32 =
       A.toNat + M.toNat + c.toNat := by
   have := A.isLt; have := M.isLt; have := c.isLt
-  have e1 := BitVec.toNat_add (A + M) c
-  have e2 := BitVec.toNat_add A M
+  obtain e1 := BitVec.toNat_add (A + M) c
+  obtain e2 := BitVec.toNat_add A M
   have k00 : ((0 : BitVec 32) + 0 + 0 + 0 + 0).toNat = 0 := rfl
   have k01 : ((0 : BitVec 32) + 0 + 0 + 0 + 1).toNat = 1 := rfl
   have k10 : ((0 : BitVec 32) + 0 + 1 + 0 + 0).toNat = 1 := rfl
@@ -86,10 +86,10 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hn := ctx.nowrap
-  have rd : ∀ d, d + 4 ≤ size → InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 := fun d hd => by
+  obtain rd : ∀ d, d + 4 ≤ size → InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 := fun d hd => by
     rcases row_writable ctx inv.rest.wr hd with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
-  have r1s : s.gpr .r1 = s0.gpr .r1 := inv.rest.gpr _ (by decide)
+  obtain r1s : s.gpr .r1 = s0.gpr .r1 := inv.rest.gpr _ (by decide)
   simp only [maskWord]
   refine wp_ldr (by decide) (row_addr (d := b + 4 * i) ctx inv.inPtr (by omega_using [hi, hb])) (rd _ (by omega_using [hi, hb])) fun s1 u1 => ?_
   refine wp_ldr (a := off (State.addr base) (o + 4 * i)) (by decide)
@@ -100,10 +100,10 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
   refine wp_adc (op2_imm (by decide)) fun s5 u5 c5 => ?_
   refine wp_adds (op2_reg _ _) fun s6 u6 c6 => ?_
   refine wp_adc (op2_imm (by decide)) fun s7 u7 c7 => ?_
-  have p7 : s7.gpr .r0 = s.gpr .r0 := by
+  obtain p7 : s7.gpr .r0 = s.gpr .r0 := by
     rw [u7.other _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
       u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide)]
-  have wr7 : s7.wr = s0.wr := by
+  obtain wr7 : s7.wr = s0.wr := by
     rw [u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact inv.rest.wr
   refine wp_str (by decide) (by rw [p7]; exact row_addr (d := o + 4 * i) ctx inv.outPtr (by omega_using [hi, ho]))
     (row_writable ctx wr7 (by omega_using [hi, ho])) fun s8 u8 => ?_
@@ -111,23 +111,23 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
   refine wp_dp (op2_imm (by decide)) fun s10 u10 => ?_
   refine wp_subs (op2_imm (by decide)) fun t u11 z11 => WP.block_nil ?_
   -- The word's value.
-  have m7 : s7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have r3t : t.gpr .r3 = s7.gpr .r3 := by
+  obtain m7 : s7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain r3t : t.gpr .r3 = s7.gpr .r3 := by
     rw [u11.other _ (by decide), u10.other _ (by decide), u9.other _ (by decide), u8.gpr]
-  have r11t : t.gpr .r11 = s7.gpr .r11 := by
+  obtain r11t : t.gpr .r11 = s7.gpr .r11 := by
     rw [u11.other _ (by decide), u10.other _ (by decide), u9.other _ (by decide), u8.gpr]
-  have mt : t.mem = s.mem.writeW (off (State.addr base) (o + 4 * i)) (t.gpr .r3) := by
+  obtain mt : t.mem = s.mem.writeW (off (State.addr base) (o + 4 * i)) (t.gpr .r3) := by
     rw [u11.mem, u10.mem, u9.mem, u8.mem, m7, r3t]
-  have hv : (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
+  obtain hv : (t.gpr .r3).toNat + (t.gpr .r11).toNat * 2 ^ 32 =
       (mbit (s0.gpr .r1)).toNat * w32 s.mem (State.addr base) (b + 4 * i) +
         w32 s.mem (State.addr base) (o + 4 * i) + (s.gpr .r11).toNat := by
-    have e3 : s3.gpr .r2 = s.mem.readW (off (State.addr base) (b + 4 * i)) 32 &&& s0.gpr .r1 := by
+    obtain e3 : s3.gpr .r2 = s.mem.readW (off (State.addr base) (b + 4 * i)) 32 &&& s0.gpr .r1 := by
       rw [u3.gpr, dpVal, u2.other _ (by decide), u1.gpr, u2.other _ (by decide), u1.other _ (by decide), r1s]
-    have e2 : s3.gpr .r3 = s.mem.readW (off (State.addr base) (o + 4 * i)) 32 := by
+    obtain e2 : s3.gpr .r3 = s.mem.readW (off (State.addr base) (o + 4 * i)) 32 := by
       rw [u3.other _ (by decide), u2.gpr, u1.mem]
-    have e10 : s4.gpr .r10 = 0 := by
+    obtain e10 : s4.gpr .r10 = 0 := by
       rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), inv.zero]
-    have e11 : s5.gpr .r11 = s.gpr .r11 := by
+    obtain e11 : s5.gpr .r11 = s.gpr .r11 := by
       rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
         u1.other _ (by decide)]
     rw [r3t, r11t, u7.gpr, u7.other _ (by decide), c6, u6.gpr, u6.other _ (by decide), u5.gpr,
@@ -136,11 +136,11 @@ theorem maskWord_ok {s0 s : State} {base : BitVec 32} {size o b n i : Nat}
     rw [← and_mask hm (s.mem.readW (off (State.addr base) (b + 4 * i)) 32)]
     omega_using []
   obtain ⟨outside, value⟩ := row_value_step_of (x := mbit (s0.gpr .r1)) ctx inv.outside inv.value hi mt hv
-  have keep : ∀ r, r ∉ ([.r2, .r3, .r4, .r11] : List Reg) → s8.gpr r = s.gpr r := fun r hr => by
+  obtain keep : ∀ r, r ∉ ([.r2, .r3, .r4, .r11] : List Reg) → s8.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u8.gpr, u7.other _ hr.2.2.2, u6.other _ hr.2.1, u5.other _ hr.2.2.1, u4.other _ hr.2.1, u3.other _ hr.1,
       u2.other _ hr.2.1, u1.other _ hr.1]
-  have lr10 : s10.gpr .lr = BitVec.ofNat 32 (n - i) := by
+  obtain lr10 : s10.gpr .lr = BitVec.ofNat 32 (n - i) := by
     rw [u10.other _ (by decide), u9.other _ (by decide), keep .lr (by decide), inv.count]
   refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, outside, value, ?_⟩, ?_⟩
   · rw [u11.other _ (by decide), u10.other _ (by decide), u9.gpr, dpVal, keep .r0 (by decide), inv.outPtr]
@@ -179,7 +179,7 @@ theorem maskRow_ok (s : State) {base : BitVec 32} {size o b n : Nat}
       Rest maskRowClobbers s t := by
   rw [maskRow, WP.seq_iff]
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => WP.block_nil ?_
-  have I0 : MaskRowInv s base o b n 0 s1 :=
+  obtain I0 : MaskRowInv s base o b n 0 s1 :=
     ⟨Nat.zero_le _, by rw [u1.other _ (by decide), hp0]; rfl, by rw [u1.other _ (by decide), hp12]; rfl,
       by rw [u1.other _ (by decide), hcount]; rfl, u1.gpr, by rw [u1.mem]; exact Outside.refl _ _ _ _,
       by rw [u1.mem, u1.other _ (by decide)]; simp [val32], u1.rest (by simp)⟩

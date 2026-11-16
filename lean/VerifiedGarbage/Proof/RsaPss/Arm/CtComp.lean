@@ -72,28 +72,28 @@ theorem comp_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 
   have fit := hg.fit
   obtain ⟨σ', ok⟩ := hg.ok
   have ho3 : o + h.B ≤ 3072 := ho'
-  have aSt : State.addr (scr + BitVec.ofNat 32 oSt) = sa scr oSt := hg.addr (by decide)
-  have aO : State.addr (scr + BitVec.ofNat 32 o) = sa scr o := hg.addr (by pomega)
-  have a0 : State.addr (scr + BitVec.ofNat 32 oCW) = sa scr oCW := hg.addr (by decide)
-  have d1 : (sR scr oSt h.N).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (by pomega) (by pomega) (by pomega)
-  have d2 : (sR scr o h.B).Disjoint (sR scr oSt h.N) := Geo.sep (o := o) (n := h.B) (e := oSt) (k := h.N)
+  obtain aSt : State.addr (scr + BitVec.ofNat 32 oSt) = sa scr oSt := hg.addr (by decide)
+  obtain aO : State.addr (scr + BitVec.ofNat 32 o) = sa scr o := hg.addr (by pomega)
+  obtain a0 : State.addr (scr + BitVec.ofNat 32 oCW) = sa scr oCW := hg.addr (by decide)
+  obtain d1 : (sR scr oSt h.N).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (by pomega) (by pomega) (by pomega)
+  obtain d2 : (sR scr o h.B).Disjoint (sR scr oSt h.N) := Geo.sep (o := o) (n := h.B) (e := oSt) (k := h.N)
     (by left; unfold oSt; omega_using [ho3]) (by unfold oRsa; omega_using [ho3]) (by unfold oSt oRsa at *; omega_using [hN])
-  have d3 : (sR scr o h.B).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (o := o) (n := h.B) (e := oCW) (k := h.H.md.so)
+  obtain d3 : (sR scr o h.B).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (o := o) (n := h.B) (e := oCW) (k := h.H.md.so)
     (by left; unfold oCW; omega_using [ho3]) (by unfold oRsa; omega_using [ho3]) (by unfold oCW oRsa at *; omega_using [hso])
-  have f0 : (scr + BitVec.ofNat 32 oSt).toNat + h.N ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
-  have f1 : (scr + BitVec.ofNat 32 o).toNat + h.B ≤ 2 ^ 32 := by rw [hg.scr_lt (by pomega)]; pomega
-  have f3 : (scr + BitVec.ofNat 32 oCW).toNat + h.H.md.so ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
-  have rO : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr o) h.B :=
+  obtain f0 : (scr + BitVec.ofNat 32 oSt).toNat + h.N ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
+  obtain f1 : (scr + BitVec.ofNat 32 o).toNat + h.B ≤ 2 ^ 32 := by rw [hg.scr_lt (by pomega)]; pomega
+  obtain f3 : (scr + BitVec.ofNat 32 oCW).toNat + h.H.md.so ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
+  obtain rO : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr o) h.B :=
     fun σ s hc => hg.rd hc.st (o := o) (n := h.B) (by unfold oRsa; omega_using [ho3])
-  have rSt : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oSt) h.N := fun σ s hc => hg.wr hc.st (by pomega)
-  have rCW : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oCW) h.H.md.so := fun σ s hc => hg.wr hc.st (by pomega)
-  have rStR : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr oSt) h.N := fun σ s hc => hg.rd hc.st (by pomega)
-  have rCWR : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr oCW) h.H.md.so :=
+  obtain rSt : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oSt) h.N := fun σ s hc => hg.wr hc.st (by pomega)
+  obtain rCW : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oCW) h.H.md.so := fun σ s hc => hg.wr hc.st (by pomega)
+  obtain rStR : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr oSt) h.N := fun σ s hc => hg.rd hc.st (by pomega)
+  obtain rCWR : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr oCW) h.H.md.so :=
     fun σ s hc => hg.rd hc.st (by pomega)
-  have wSt : ∃ R ∈ L.W, Region.Sub (sR scr oSt h.N) R := hg.inW (by pomega)
-  have wCW : ∃ R ∈ L.W, Region.Sub (sR scr oCW h.H.md.so) R := hg.inW (by pomega)
-  have tSt : Region.Disjoint ⟨L.fr sS, 4⟩ (sR scr oSt h.N) := hg.slot ok (by pomega) (by rw [hg.F]; decide)
-  have tCW : Region.Disjoint ⟨L.fr sS, 4⟩ (sR scr oCW h.H.md.so) := hg.slot ok (by pomega) (by rw [hg.F]; decide)
+  obtain wSt : ∃ R ∈ L.W, Region.Sub (sR scr oSt h.N) R := hg.inW (by pomega)
+  obtain wCW : ∃ R ∈ L.W, Region.Sub (sR scr oCW h.H.md.so) R := hg.inW (by pomega)
+  obtain tSt : Region.Disjoint ⟨L.fr sS, 4⟩ (sR scr oSt h.N) := hg.slot ok (by pomega) (by rw [hg.F]; decide)
+  obtain tCW : Region.Disjoint ⟨L.fr sS, 4⟩ (sR scr oCW h.H.md.so) := hg.slot ok (by pomega) (by rw [hg.F]; decide)
   let F₁ : State → State → Prop := fun σ s => (Ctx L scr σ s ∧ X σ s.mem ∧ s.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧
     s.gpr .r1 = scr + BitVec.ofNat 32 o ∧ s.gpr .r2 = 1 ∧ s.gpr .r3 = scr + BitVec.ofNat 32 oCW) ∧ s.syms = σ.syms
   refine VP.seq (G := F₁) (VP.taint [.r6] compSet_cert (fun _ _ _ _ h₁ h₂ r hr => by
@@ -110,7 +110,7 @@ theorem comp_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 
   -- The call of the compression function, by its contract.
   let rd : List Region := [⟨State.addr (scr + BitVec.ofNat 32 o), h.B⟩]
   let wr : List Region := [⟨State.addr (scr + BitVec.ofNat 32 oSt), h.N⟩, ⟨State.addr (scr + BitVec.ofNat 32 oCW), h.H.md.so⟩]
-  have pre : ∀ σ s, F₁ σ s → (Pbkdf2.Md.Arm.compK h.md h.H.md.so).pre (s.callEntry.withRegions rd wr) := by
+  obtain pre : ∀ σ s, F₁ σ s → (Pbkdf2.Md.Arm.compK h.md h.H.md.so).pre (s.callEntry.withRegions rd wr) := by
     rintro σ s ⟨⟨hc, _, r0, r1, r2, r3⟩, _⟩
     simp only [Pbkdf2.Md.Arm.compK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
@@ -120,7 +120,7 @@ theorem comp_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 
     · rw [aSt, a0]; exact d1
     · rw [aO, aSt]; exact d2
     · rw [aO, a0]; exact d3
-  have cov : ∀ σ s, F₁ σ s → Covers (rd ++ wr) (s.rd ++ s.wr) ∧ Covers wr s.wr := by
+  obtain cov : ∀ σ s, F₁ σ s → Covers (rd ++ wr) (s.rd ++ s.wr) ∧ Covers wr s.wr := by
     rintro σ s ⟨⟨hc, _⟩, _⟩
     refine ⟨?_, ?_⟩
     · simp only [rd, wr, List.cons_append, List.nil_append]; rw [aO, aSt, a0]
@@ -142,9 +142,9 @@ theorem comp_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 
   refine WP.mono_syms (WP.call (k := Pbkdf2.Md.Arm.compK h.md h.H.md.so) h.ok.comp.verified (pre σ s ⟨⟨hc, hx, r0, r1, r2, r3⟩, sy⟩)
     (cov σ s ⟨⟨hc, hx, r0, r1, r2, r3⟩, sy⟩).1 (cov σ s ⟨⟨hc, hx, r0, r1, r2, r3⟩, sy⟩).2
     (fun s' rd' wr' sp' fr _ _ hpost => ?_) h.ok.comp.noCalls) fun s' hq sy' => ⟨hq, sy'.trans sy⟩
-  have c0 : s.callEntry.gpr .r0 = scr + BitVec.ofNat 32 oSt := (State.callEntry_gpr _ (by decide)).trans r0
-  have c1 : s.callEntry.gpr .r1 = scr + BitVec.ofNat 32 o := (State.callEntry_gpr _ (by decide)).trans r1
-  have c2 : (s.callEntry.gpr .r2).toNat = 1 := by rw [State.callEntry_gpr _ (by decide), r2]; rfl
+  obtain c0 : s.callEntry.gpr .r0 = scr + BitVec.ofNat 32 oSt := (State.callEntry_gpr _ (by decide)).trans r0
+  obtain c1 : s.callEntry.gpr .r1 = scr + BitVec.ofNat 32 o := (State.callEntry_gpr _ (by decide)).trans r1
+  obtain c2 : (s.callEntry.gpr .r2).toNat = 1 := by rw [State.callEntry_gpr _ (by decide), r2]; rfl
   simp only [Pbkdf2.Md.Arm.compK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2]
     at hpost
   simp only [wr] at fr

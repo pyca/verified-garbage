@@ -83,37 +83,37 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
   have hbl := hL.bits
   have := hW.le; have := hW.acc; have := hW.tmp; have := hW.base; have := hW.mo; have := hW.mtmp
   have := hW.bits
-  have hmo : ∀ w ∈ powWx P wk, P.M.mo + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.M.mo := by
+  obtain hmo : ∀ w ∈ powWx P wk, P.M.mo + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.M.mo := by
     intro w hw
     simp only [powWx, List.mem_append, List.mem_singleton] at hw
     rcases hw with hw | rfl
     · exact hL.mo_w w hw
     · exact .inl hW.mo
-  have hbw : ∀ w ∈ powWx P wk, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base := by
+  obtain hbw : ∀ w ∈ powWx P wk, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base := by
     intro w hw
     simp only [powWx, List.mem_append, List.mem_singleton] at hw
     rcases hw with hw | rfl
     · exact hL.base_w w hw
     · exact .inl hW.base
-  have hM : ModOkW P.M size m s.mem base :=
+  obtain hM : ModOkW P.M size m s.mem base :=
     ⟨hM₀.n0, hM₀.mo, hM₀.tmp, hM₀.sep,
       by rw [hI.unch.wordsVal hmo (by omega_arith)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
-  have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
+  obtain hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega_arith)
   -- `r11 -= 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq (wp_decCounter hj hI.r11 fun s₁ u₁ => WP.block_nil ?_)
   have b₁ := u₁.gpr
   have hm₁ := u₁.mem
-  have hs₁ := hI.scr.of_rest (u₁.rest (ws := [.r11]) (by simp)) (by decide)
-  have hf₁ : Far s₁ base 8192 := (hf₀.of_rest hI.keep).of_rest (u₁.rest (ws := [.r11]) (by simp))
+  obtain hs₁ := hI.scr.of_rest (u₁.rest (ws := [.r11]) (by simp)) (by decide)
+  obtain hf₁ : Far s₁ base 8192 := (hf₀.of_rest hI.keep).of_rest (u₁.rest (ws := [.r11]) (by simp))
   refine WP.seq (WP.mono (Mont.mulCall_ok hF.ok hs₁ hf₁ (hF.fits hW.acc) (hF.fits hW.acc) (hF.fits hW.acc)
     (by rw [hF.k, hF.m, hm₁]; exact hI.lt)) fun s₂ ⟨K₂, lt₂, e₂⟩ => ?_)
   rw [hF.k, hF.m] at lt₂ e₂
-  have k₂ : ProgKeep P.M base wk [P.acc] s₁ s₂ := .of_call hF K₂
-  have hs₂ := k₂.scr hs₁
+  obtain k₂ : ProgKeep P.M base wk [P.acc] s₁ s₂ := .of_call hF K₂
+  obtain hs₂ := k₂.scr hs₁
   have hU₂ := k₂.unchOne
-  have hM₂ : ModOkW P.M size m s₂.mem base :=
+  obtain hM₂ : ModOkW P.M size m s₂.mem base :=
     ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
       rw [hU₂.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -121,10 +121,10 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
         · exact hmo _ (by simp [powWx, powW])
         · exact hmo _ (by simp [powWx, powW])
         · exact hmo _ (by simp [powWx])) (by omega_arith), hm₁]; exact hM.val, hM.inv, hM.red⟩
-  have v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
+  obtain v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) ^ 2 := by
     rw [toM_mul hm (e₂.trans (by rw [hm₁])), Lean.Grind.Semiring.pow_two]
-  have hB₂ : wordsVal s₂.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n := by
+  obtain hB₂ : wordsVal s₂.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n := by
     rw [hU₂.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
@@ -132,47 +132,47 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
       · exact hbw _ (by simp [powWx, powW])
       · exact hbw _ (by simp [powWx])) (by omega_arith), hm₁, hBs]
   -- `tmp = acc · base`.
-  have hf₂ : Far s₂ base 8192 := hf₁.of_rest k₂.rest
+  obtain hf₂ : Far s₂ base 8192 := hf₁.of_rest k₂.rest
   refine WP.seq (WP.mono (Mont.mulCall_ok hF.ok hs₂ hf₂ (hF.fits hW.tmp) (hF.fits hW.acc) (hF.fits hW.base)
     (by rw [hF.k, hF.m, hB₂]; exact hB)) fun s₃ ⟨K₃, lt₃, e₃⟩ => ?_)
   rw [hF.k, hF.m] at lt₃ e₃
-  have k₃ : ProgKeep P.M base wk [P.tmp] s₂ s₃ := .of_call hF K₃
-  have hs₃ := k₃.scr hs₂
-  have hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
+  obtain k₃ : ProgKeep P.M base wk [P.tmp] s₂ s₃ := .of_call hF K₃
+  obtain hs₃ := k₃.scr hs₂
+  obtain hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
     k₃.unchOne.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
       · exact hat
       · exact ham
       · exact .inl hW.acc) (by omega_arith)
-  have v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
+  obtain v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) *
         toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) := by
     rw [toM_mul hm e₃, hB₂]
   -- The mask of bit `j - 1`, and the selection.
-  have hU₃ : Unch base (powWx P wk) s₀.mem s₃.mem := by
+  obtain hU₃ : Unch base (powWx P wk) s₀.mem s₃.mem := by
     refine ((hI.unch.trans (by rw [← hm₁]; exact hU₂)).trans k₃.unchOne).mono fun w hw => ?_
     simp only [powWx, powW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     grind
-  have hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
+  obtain hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
     rw [hU₃.byte (fun w hw => by
       simp only [powWx, List.mem_append, List.mem_singleton] at hw
       rcases hw with hw | rfl
       · have := hL.bits_w w hw; omega_arith
       · simp only; omega_arith) (by omega_using [hjn, hbl]), hbits _ (by omega_using [hjn, hnb])]
-  have hesi₃ : s₃.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
+  obtain hesi₃ : s₃.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₃.rest.gpr _ r11_not_clob, k₂.rest.gpr _ r11_not_clob, b₁]
-  have hk₃ : Rest powClob s₀ s₃ :=
+  obtain hk₃ : Rest powClob s₀ s₃ :=
     ((hI.keep.trans (u₁.rest (by simp [powClob]))).trans (k₂.rest.mono clob_powClob)).trans
       (k₃.rest.mono clob_powClob)
   simp only [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (bitMask_bool_ok hs₃ (hf₀.of_rest hk₃) hesi₃ (by omega_using [hjn, hnb, hbl]) hb8 hbyte)
     fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_
-  have hs₄ := hs₃.of_rest k₄ (by decide)
+  obtain hs₄ := hs₃.of_rest k₄ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (sel_ok (e.testBit (j - 1)) (2 * P.M.n) hs₄ c₄ (o := P.acc) (a := P.acc)
     (b := P.tmp) (by omega_arith) (by omega_arith) (by omega_arith) (Or.inl (Nat.le_refl _)) (by omega_using [hat]))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
-  have hesi₅ : s₅.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
+  obtain hesi₅ : s₅.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), hesi₃]
   refine wp_testCounter (by omega_using [hjn, hbl]) hesi₅ fun s₆ f₆ z₆ => WP.block_nil ⟨⟨hs₄.of_rest (k₅.trans (f₆.rest _))
     (by decide), by rw [f₆.gpr, hesi₅], (hk₃.trans (k₄.mono (by simp [powClob, clob]))).trans
@@ -207,7 +207,7 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by
   have hn := hs.nowrap
   have hnb := hL.nbits
-  have hm0 : 0 < m := m_pos hB
+  obtain hm0 : 0 < m := m_pos hB
   have hacc := hL.acc
   have hone := hL.one
   rw [pow]
@@ -218,7 +218,7 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
     (fun j s' h1 h2 hi => powBody_ok hL hW hF hm hb8 hf hM hB hbits h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hnb.1 ?_
   have hm₂ : s₂.mem = s₁.mem := u₂.mem
-  have hv : wordsVal s₂.mem base P.acc P.M.n = wordsVal s.mem base P.one P.M.n := by
+  obtain hv : wordsVal s₂.mem base P.acc P.M.n = wordsVal s.mem base P.one P.M.n := by
     rw [hm₂, wordsVal_eq_val32, e₁, ← wordsVal_eq_val32]
   refine ⟨(hs.of_rest k₁ (by decide)).of_rest (u₂.rest (ws := [.r11]) (by simp)) (by decide), u₂.gpr,
     (k₁.mono (by simp [powClob, clob])).trans (u₂.rest (by simp [powClob])), ?_, ?_, ?_⟩

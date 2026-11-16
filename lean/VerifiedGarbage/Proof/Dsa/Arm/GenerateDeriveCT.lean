@@ -130,7 +130,7 @@ theorem deriveCtx {s t : State} {base : Addr} {size : Nat} (h : derivePre s)
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
+  obtain big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig, Ix⟩ := deriveIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [deriveIns, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -163,7 +163,7 @@ theorem derive_bytes {s₁ s₂ : State} (hl : deriveLeak s₁ = deriveLeak s₂
       Spec.Rsa.bytesAt s₂.mem (State.addr (s₁.gpr .r2) + BitVec.ofNat 64 o) l := by
   simp only [deriveLeak, deriveParams] at hl
   rw [← hr2, ← hr3] at hl
-  have E := List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h) |>.mp
+  obtain E := List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h) |>.mp
     (List.append_inj hl (by simp [Spec.Rsa.bytesAt])).1
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
@@ -174,19 +174,19 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     ConstantTime isa deriveArm.pre deriveArm.pub (Generate.deriveWith compute) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
-  have a0 := ha 0 (by decide)
-  have a1 := ha 1 (by decide)
-  have a2 := ha 2 (by decide)
-  have a3 := ha 3 (by decide)
-  have a4 := ha 4 (by decide)
+  obtain a0 := ha 0 (by decide)
+  obtain a1 := ha 1 (by decide)
+  obtain a2 := ha 2 (by decide)
+  obtain a3 := ha 3 (by decide)
+  obtain a4 := ha 4 (by decide)
   obtain ⟨sp₁, _, wr₁, _, _, _, dOA₁, _, _, dSA₁, _, _, _, _, hv, _, hpl, hsw⟩ := id h₁
   obtain ⟨_, _, wr₂, _, _, _, dOA₂, _, _, dSA₂, _, _, _, _, _, _, _, _⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hs16 : 128 * (arg s₁ 0).toNat ≤ (arg s₁ 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
-  have hb₂ : State.addr (arg s₂ 3) = State.addr (arg s₁ 3) := by rw [a3]
-  have hz₂ : (arg s₂ 4).toNat * 8 = (arg s₁ 4).toNat * 8 := by rw [a4]
+  obtain hb₂ : State.addr (arg s₂ 3) = State.addr (arg s₁ 3) := by rw [a3]
+  obtain hz₂ : (arg s₂ 4).toNat * 8 = (arg s₁ 4).toNat * 8 := by rw [a4]
   simp only [Generate.deriveWith, Core.sequence, List.foldr]
   refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 20 _ rfl) (agree_args (n := 5) hsp (by omega_arith) ha
       (fun r hr => by
@@ -203,7 +203,7 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
         · exact dSA₂.symm)))
     (WP.mono (deriveEntry_ok h₁) fun u I => Env.of_installed I (by omega_arith))
     (WP.mono (deriveEntry_ok h₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega_arith)
+      obtain E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
   refine genDispatch_trace (Generate.deriveSized compute) _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
@@ -211,33 +211,33 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     (by rw [E₂.field (d := 100) (v := arg s₂ 0) (by simp), a0])
     (by rw [E₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
-  have F₁ := E₁.of_mem R₁ (by decide) M₁
-  have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
-  have C₁ := deriveCtx h₁ rfl rfl F₁
-  have C₂ := deriveCtx h₂ hb₂ hz₂ F₂
+  obtain F₁ := E₁.of_mem R₁ (by decide) M₁
+  obtain F₂ := E₂.of_mem R₂ (by decide) M₂
+  obtain hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
+  obtain C₁ := deriveCtx h₁ rfl rfl F₁
+  obtain C₂ := deriveCtx h₂ hb₂ hz₂ F₂
   rw [← a0, ← a2] at C₂
-  have pe : ∀ {u₁ u₂ : State} (G₁ : Env s₁ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₁) u₁)
+  obtain pe : ∀ {u₁ u₂ : State} (G₁ : Env s₁ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₁) u₁)
       (G₂ : Env s₂ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₂) u₂),
       ∀ i ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat, PtrEq (State.addr (arg s₁ 3)) u₁ u₂ i.1 := by
     intro u₁ u₂ G₁ G₂ i hi
     unfold PtrEq
     rw [derivePtrs G₁ i hi, derivePtrs (pLen := (arg s₁ 0).toNat) (qLen := (arg s₁ 2).toNat) G₂ i hi, hr2, a0, a1, a2]
-  have key := fun {o l : Nat} (h : o + l ≤ (s₁.gpr .r3).toNat) => derive_bytes hl hr2 hr3 (o := o) (l := l) h
-  have Vp : deriveVal s₂ (.input .p) = deriveVal s₁ (.input .p) := by
-    have k := key (o := 0) (l := (arg s₁ 0).toNat) (by omega_arith)
+  obtain key := fun {o l : Nat} (h : o + l ≤ (s₁.gpr .r3).toNat) => derive_bytes hl hr2 hr3 (o := o) (l := l) h
+  obtain Vp : deriveVal s₂ (.input .p) = deriveVal s₁ (.input .p) := by
+    obtain k := key (o := 0) (l := (arg s₁ 0).toNat) (by omega_arith)
     rw [BitVec.add_zero] at k
     simp only [deriveVal]; rw [← hr2, ← a0, k]
-  have Vq : deriveVal s₂ (.input .q) = deriveVal s₁ (.input .q) := by
+  obtain Vq : deriveVal s₂ (.input .q) = deriveVal s₁ (.input .q) := by
     simp only [deriveVal]; rw [← hr2, ← a0, ← a2, key (by omega_arith)]
-  have mp : (.input .p, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
-  have mq : (.input .q, (arg s₁ 2).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
-  have mg : (.input .g, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
-  have mx : (.input .nonce, (arg s₁ 2).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
-  have Pe : operand (State.addr (arg s₁ 3)) t₁ (.input .p) (arg s₁ 0).toNat =
+  obtain mp : (.input .p, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
+  obtain mq : (.input .q, (arg s₁ 2).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
+  obtain mg : (.input .g, (arg s₁ 0).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
+  obtain mx : (.input .nonce, (arg s₁ 2).toNat) ∈ deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat := by simp [deriveIns]
+  obtain Pe : operand (State.addr (arg s₁ 3)) t₁ (.input .p) (arg s₁ 0).toNat =
       operand (State.addr (arg s₁ 3)) t₂ (.input .p) (arg s₁ 0).toNat := by
     rw [(C₁.inp mp).value, (C₂.inp mp).value, Vp]
-  have Qe : operand (State.addr (arg s₁ 3)) t₁ (.input .q) (arg s₁ 2).toNat =
+  obtain Qe : operand (State.addr (arg s₁ 3)) t₁ (.input .q) (arg s₁ 2).toNat =
       operand (State.addr (arg s₁ 3)) t₂ (.input .q) (arg s₁ 2).toNat := by
     rw [(C₁.inp mq).value, (C₂.inp mq).value, Vq]
   unfold Generate.deriveSized
@@ -246,13 +246,13 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     (check_ok F₁.ws hz wp wq (C₁.inp mp).toReady (C₁.inp mq).toReady rfl rfl)
     (check_ok F₂.ws hz wp wq (C₂.inp mp).toReady (C₂.inp mq).toReady rfl rfl)
     fun v₁ v₂ ⟨Z₁, K₁, _, S₁, O₁⟩ ⟨Z₂, K₂, _, S₂, O₂⟩ => ?_)
-  have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
+  obtain kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
-  have G₁ := F₁.keep (deriveFields_ok s₁) S₁ (by decide) O₁ kee
-  have G₂ := F₂.keep (deriveFields_ok s₂) S₂ (by decide) O₂ kee
-  have ho : ∀ {w₁ w₂ : State}, Env s₁ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₁) w₁ →
+  obtain G₁ := F₁.keep (deriveFields_ok s₁) S₁ (by decide) O₁ kee
+  obtain G₂ := F₂.keep (deriveFields_ok s₂) S₂ (by decide) O₂ kee
+  obtain ho : ∀ {w₁ w₂ : State}, Env s₁ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₁) w₁ →
       Env s₂ (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) (deriveFields s₂) w₂ →
       hdr (State.addr (arg s₁ 3)) w₁ 96 = hdr (State.addr (arg s₁ 3)) w₂ 96 ∧
       hdr (State.addr (arg s₁ 3)) w₁ 64 = hdr (State.addr (arg s₁ 3)) w₂ 64 ∧
@@ -267,13 +267,13 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
       rw [eval_eq, Z₁] at hf
       exact Classical.not_not.mp (of_decide_eq_false (Option.some.inj hf))
     rw [(C₁.inp mp).value, (C₁.inp mq).value] at valid
-    have B₁ := shape_bounds valid
-    have Dm₁ : DomainOk (deriveVal s₁ (.input .p)) (deriveVal s₁ (.input .q)) := ⟨B₁.1, B₁.2.1, B₁.2.2.1, B₁.2.2.2⟩
-    have Dm₂ : DomainOk (deriveVal s₂ (.input .p)) (deriveVal s₂ (.input .q)) := by rw [Vp, Vq]; exact Dm₁
-    have D₁ := deriveCtx h₁ rfl rfl G₁
-    have D₂ := deriveCtx h₂ hb₂ hz₂ G₂
+    obtain B₁ := shape_bounds valid
+    obtain Dm₁ : DomainOk (deriveVal s₁ (.input .p)) (deriveVal s₁ (.input .q)) := ⟨B₁.1, B₁.2.1, B₁.2.2.1, B₁.2.2.2⟩
+    obtain Dm₂ : DomainOk (deriveVal s₂ (.input .p)) (deriveVal s₂ (.input .q)) := by rw [Vp, Vq]; exact Dm₁
+    obtain D₁ := deriveCtx h₁ rfl rfl G₁
+    obtain D₂ := deriveCtx h₂ hb₂ hz₂ G₂
     rw [← a0, ← a2] at D₂
-    have X : Pair (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) ((arg s₁ 4).toNat * 8) (arg s₁ 0).toNat
+    obtain X : Pair (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) ((arg s₁ 4).toNat * 8) (arg s₁ 0).toNat
         (arg s₁ 2).toNat (((arg s₁ 0).toNat + 7) / 8) (((arg s₁ 2).toNat + 7) / 8)
         (deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat) (deriveVal s₁) (deriveVal s₂) v₁ v₂ :=
       ⟨D₁, D₂, pe G₁ G₂⟩
@@ -281,12 +281,12 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
       (hc X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp mx) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
       (hc X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp mx) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
       fun w₁ w₂ ⟨_, _, Rn₁⟩ ⟨_, _, Rn₂⟩ => ?_)
-    have keep : ∀ r ∈ runRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
+    obtain keep : ∀ r ∈ runRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
         (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
-    have H₁ := G₁.keep (deriveFields_ok s₁) Rn₁.rest (by decide) Rn₁.mem keep
-    have H₂ := G₂.keep (deriveFields_ok s₂) Rn₂.rest (by decide) Rn₂.mem keep
+    obtain H₁ := G₁.keep (deriveFields_ok s₁) Rn₁.rest (by decide) Rn₁.mem keep
+    obtain H₂ := G₂.keep (deriveFields_ok s₂) Rn₂.rest (by decide) Rn₂.mem keep
     obtain ⟨e96, e64, e88⟩ := ho H₁ H₂
     exact writeKey_trace _ _ H₁.ws H₂.ws (by omega_arith) (by omega_arith) e96 e64 e88
 

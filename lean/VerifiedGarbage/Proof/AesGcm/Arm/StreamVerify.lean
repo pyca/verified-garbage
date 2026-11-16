@@ -51,18 +51,18 @@ def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
 theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} (ha : a.length % 16 = (arg s₀ 0).toNat % 16)
     (hP : (arg s₀ 3 ++ arg s₀ 2).toNat = ct.length) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
-  have h' : finPre 7 6 s₀ := streamVerifyPreArm.fin h
-  have L := finLay h'
+  obtain h' : finPre 7 6 s₀ := streamVerifyPreArm.fin h
+  obtain L := finLay h'
   have hR := h'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have spf := h'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have fW := h'.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hin : args s₀ 7 ∈ s₀.rd := h'.1.2
   obtain ⟨hrd, -, -, -, -, -, -, tW, -, -, -, -, -, -, -, fT, -⟩ := h
-  have hTr : Covers [⟨State.addr (arg s₀ 4), (arg s₀ 5).toNat⟩] (s₀.rd ++ s₀.wr) :=
+  obtain hTr : Covers [⟨State.addr (arg s₀ 4), (arg s₀ 5).toNat⟩] (s₀.rd ++ s₀.wr) :=
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨State.addr (arg s₀ 4), (arg s₀ 5).toNat⟩ : Region).Disjoint
+  obtain dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨State.addr (arg s₀ 4), (arg s₀ 5).toNat⟩ : Region).Disjoint
       ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ := fun hd => tW.sub_right (Lay.wSub hd)
-  have dW : ∀ {d k : Nat}, d + k ≤ 2560 → (164 ≤ d ∨ d + k ≤ 128) →
+  obtain dW : ∀ {d k : Nat}, d + k ≤ 2560 → (164 ≤ d ∨ d + k ≤ 128) →
       (savedR (arg s₀ 6)).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ :=
     fun h₁ h₂ => Lay.w_w (by omega_using [h₂]) (by decide) h₁
   refine WP.seq (WP.block_append (fin1_wp (wi := 6) h' (by decide) (by decide) fun s₁ h1 => ?_))
@@ -74,17 +74,17 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
     · intro r hr; simp [gpr_setReg, hr]
     · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have he₂ := h1.env.keep (fun r hr => by
+  obtain he₂ := h1.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide)) k₂.sp k₂.rd k₂.wr
   refine WP.seq (WP.mono (tagLenOk_ok h6₂ (arg s₀ 5).isLt) fun s₃ ⟨hz₃, g₃, k₃⟩ => ?_)
-  have k₁₃ := k₂.trans k₃
-  have he₃ := he₂.keep (fun r hr => by
+  obtain k₁₃ := k₂.trans k₃
+  obtain he₃ := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide)) k₃.sp k₃.rd k₃.wr
-  have hk₃ := h1.args.of_eq k₁₃.mem k₁₃.sp k₁₃.rd k₁₃.wr
-  have sv₃ : SavedAt s₃.mem (arg s₀ 6) s₀ := k₁₃.mem ▸ h1.saved
-  have mid : WP isa (.ite .eq (.block [.mov .r0 (imm 0)]) (.seq recv (.seq (finTag 0) (.seq (.block [.ldrSp .r6 20])
+  obtain hk₃ := h1.args.of_eq k₁₃.mem k₁₃.sp k₁₃.rd k₁₃.wr
+  obtain sv₃ : SavedAt s₃.mem (arg s₀ 6) s₀ := k₁₃.mem ▸ h1.saved
+  obtain mid : WP isa (.ite .eq (.block [.mov .r0 (imm 0)]) (.seq recv (.seq (finTag 0) (.seq (.block [.ldrSp .r6 20])
       (cmp 0))))) s₃ fun s' => (∃ k7, Env (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 6) s₀.sp k7
         (s₀.gpr .r1) s') ∧ SavedAt s'.mem (arg s₀ 6) s₀ ∧ VerPost s₀ a ct s' := by
     refine WP.ite _ (eval_eq' hz₃) (fun ht => ?_) (fun hf => ?_)
@@ -96,29 +96,29 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
       simp [gpr_setReg]
     · have hok : Spec.Gcm.tagLenOk (arg s₀ 5).toNat = true := by simpa using hf
       obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
-      have h6₃ : s₃.gpr .r6 = BitVec.ofNat 32 (arg s₀ 5).toNat := by rw [g₃ _ (by decide), h6₂]
+      obtain h6₃ : s₃.gpr .r6 = BitVec.ofNat 32 (arg s₀ 5).toNat := by rw [g₃ _ (by decide), h6₂]
       obtain ⟨i4, v4⟩ := hk₃.at spf hin 4 (by decide) (show 4 * 4 = 16 from rfl)
       refine WP.seq (WP.mono (recv_ok L he₃ i4 v4 (by rw [hk₃.rd, hk₃.wr]; exact hTr) fT (dT (by decide)) h6₃ t1 t16)
         fun s₄ hh => ?_)
       obtain ⟨hb₄, hf₄, g₄, rd₄, wr₄, sp₄⟩ := hh
-      have he₄ := he₃.keep (fun r hr => by
+      obtain he₄ := he₃.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₄ _ (by decide) (by decide) (by decide) (by decide)
           (by decide)) sp₄ rd₄ wr₄
-      have dA : ∀ {d k : Nat}, d + k ≤ 2560 → (args s₀ 7).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ :=
+      obtain dA : ∀ {d k : Nat}, d + k ≤ 2560 → (args s₀ 7).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ :=
         fun hd => (h'.2.2.2.2.2.2.1.sub_left (Lay.wSub hd)).symm
-      have hk₄ := hk₃.frame spf hf₄ (fun r hr => by
+      obtain hk₄ := hk₃.frame spf hf₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact dA (by decide)) sp₄ rd₄ wr₄
-      have f₀₄ : Frame [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩] s₀.mem s₄.mem :=
+      obtain f₀₄ : Frame [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩] s₀.mem s₄.mem :=
         (h1.frame.mono (by simp)).trans ((k₁₃.mem ▸ hf₄ : Frame _ s₁.mem s₄.mem).mono (by simp))
-      have dc₀₄ : ∀ r ∈ [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩],
+      obtain dc₀₄ : ∀ r ∈ [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩],
           (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact L.cw'.sub_right (Lay.wSub (by decide))
         · exact L.cw'.sub_right (Lay.wSub (by decide))
-      have ds₀₄ : ∀ r ∈ [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩],
+      obtain ds₀₄ : ∀ r ∈ [savedR (arg s₀ 6), ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 256, 16⟩],
           (⟨State.addr (s₀.gpr .r2), 80⟩ : Region).Disjoint r := by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -138,7 +138,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
         · intro r hr; simp [gpr_setReg, hr]
         · exact ⟨rfl, rfl, rfl, rfl⟩
       refine WP.seq (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-      have he₆ := he₅.keep (fun r hr => by
+      obtain he₆ := he₅.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide)) k₆.sp k₆.rd k₆.wr
       refine WP.mono (cmp_ok L he₆ (o := 0) (.inl rfl) h6₆ t1 t16) fun s₇ hh => ?_
@@ -150,7 +150,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
       · have sv₅ := (sv₃.frame hf₄ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact dW (by decide) (.inl (by decide)))).frame fo.frame
           (saved_tagFrame L (.inl rfl))
-        have sv₆ : SavedAt s₆.mem (arg s₀ 6) s₀ := k₆.mem ▸ sv₅
+        obtain sv₆ : SavedAt s₆.mem (arg s₀ 6) s₀ := k₆.mem ▸ sv₅
         refine sv₆.frame hf₇ ?_
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact dW (by decide) (.inl (by decide))
@@ -158,7 +158,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
             fullTag (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat)
               (ctxH s₀.mem (State.addr (s₀.gpr .r0))) iv a ct := by
           rw [k₆.mem]; exact fin_out h' f₀₄ dc₀₄ ds₀₄ fo hs hl
-        have hrc : bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 256) 16 =
+        obtain hrc : bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 256) 16 =
             bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat ++ zeros (16 - (arg s₀ 5).toNat) := by
           rw [k₆.mem, bytesAt_frame fo.frame (fun r hr => by
               simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -173,7 +173,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
             bytesAt_frame h1.frame (fun r hr => by
               simp only [List.mem_singleton] at hr; subst hr
               exact dT (d := 128) (k := 36) (by decide)) (by omega_using [])]
-        have hX : (bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 0) (arg s₀ 5).toNat ++
+        obtain hX : (bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 0) (arg s₀ 5).toNat ++
               zeros (16 - (arg s₀ 5).toNat) = bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 256) 16) ↔
             (fullTag (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat)
               (ctxH s₀.mem (State.addr (s₀.gpr .r0))) iv a ct).take (arg s₀ 5).toNat =
@@ -195,7 +195,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
 
 theorem streamVerify_wp {s₀ : State} (h : streamVerifyArm.pre s₀) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyArm.post s₀ s' := by
-  have h₀ := ver_run h (a := List.replicate ((arg s₀ 0).toNat % 16) 0)
+  obtain h₀ := ver_run h (a := List.replicate ((arg s₀ 0).toNat % 16) 0)
     (ct := List.replicate (arg s₀ 3 ++ arg s₀ 2).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte =>

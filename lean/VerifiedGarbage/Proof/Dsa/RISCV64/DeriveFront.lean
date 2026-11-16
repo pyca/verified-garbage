@@ -90,40 +90,40 @@ its header, the domain and x into `s11` and `ra`, and `out` and the lengths
 into the header. Memory changes only in the header. -/
 theorem dfront_ok {s : State} (h : dContract.pre s) :
     WP isa (.block Derive.entry) s fun t => DFront s t ∧ Keep dentryRegs s t := by
-  have hL := dlayOf_ok h
+  obtain hL := dlayOf_ok h
   have hZ := hL.z256
-  have hpl : (s.gpr .a4).toNat < 2 ^ 16 := by have := hL.pl; simp only [dlayOf] at this; omega_using [this]
-  have hql : (s.gpr .a6).toNat < 2 ^ 16 := by have := hL.ql; simp only [dlayOf] at this; omega_using [this]
+  obtain hpl : (s.gpr .a4).toNat < 2 ^ 16 := by have := hL.pl; simp only [dlayOf] at this; omega_using [this]
+  obtain hql : (s.gpr .a6).toNat < 2 ^ 16 := by have := hL.ql; simp only [dlayOf] at this; omega_using [this]
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, nw, -, -, -, -, alS, -⟩ := h
-  have hscr : ∀ t : State, t.wr = s.wr → ScrL t (dlayOf s) := fun t ht =>
+  obtain hscr : ∀ t : State, t.wr = s.wr → ScrL t (dlayOf s) := fun t ht =>
     Scr.of_mem (by rw [ht, hwr]; simp [dlayOf]) nw alS
   unfold Derive.entry
   rw [List.append_assoc]
   refine WP.block_append (WP.mono (WP.keep [.t2] (Q := fun u => u.gpr .t2 = s.gpr .a7 ∧
     u.mem = s.mem) (by brun [BitVec.add_zero]) (by rfl) (by rfl)) fun s₁ ⟨⟨a2, m1⟩, k1⟩ => ?_)
-  have hs₁ := hscr s₁ k1.2.2
-  have hin : ∀ i < 13, InRegions s₁.wr (off (savW (s.gpr .a7)) (8 * i)) 8 := fun i hi => by
+  obtain hs₁ := hscr s₁ k1.2.2
+  obtain hin : ∀ i < 13, InRegions s₁.wr (off (savW (s.gpr .a7)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq]; exact hs₁.st (d := saveOff i) (by simp only [saveOff, dlayOf] at hZ ⊢; omega_arith)
-  have hal : ∀ i < 13, (off (savW (s.gpr .a7)) (8 * i)).toNat % 8 = 0 := fun i hi => by
+  obtain hal : ∀ i < 13, (off (savW (s.gpr .a7)) (8 * i)).toNat % 8 = 0 := fun i hi => by
     rw [← saveOff_eq]; exact hs₁.al8 (d := saveOff i) (by simp only [saveOff, dlayOf] at hZ ⊢; omega_arith)
       (by simp only [saveOff]; omega_using [])
   refine WP.block_append (WP.mono (saveT2_ok s₁ a2 hin hal) fun s₂ hS₂ => ?_)
-  have k12 := k1.trans hS₂.keep
-  have e : ∀ r, r ≠ .t2 → r ≠ .s6 → s₂.gpr r = s.gpr r := fun r h1 h2 =>
+  obtain k12 := k1.trans hS₂.keep
+  obtain e : ∀ r, r ≠ .t2 → r ≠ .s6 → s₂.gpr r = s.gpr r := fun r h1 h2 =>
     k12.gpr fun hm => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hm
       rcases hm with hm | hm | hm
       · exact h1 hm
       · exact h1 hm
       · exact h2 hm
-  have hs₂ := hscr s₂ k12.2.2
+  obtain hs₂ := hscr s₂ k12.2.2
   obtain ⟨_, hal24⟩ := ScrL.hdr hs₂ hL (d := 24) (by decide) (by decide)
   obtain ⟨_, hal16⟩ := ScrL.hdr hs₂ hL (d := 16) (by decide) (by decide)
   have hal24' : (off (s.gpr .a7) 24).toNat % 8 = 0 := hal24
   have hal16' : (off (s.gpr .a7) 16).toNat % 8 = 0 := hal16
-  have hst24 : InRegions s₂.wr (off (s.gpr .a7) 24) 8 := hs₂.st (d := 24) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
-  have hst16 : InRegions s₂.wr (off (s.gpr .a7) 16) 8 := hs₂.st (d := 16) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
-  have hpk := pack_entry0 (s.gpr .a4) (s.gpr .a6) hpl hql
+  obtain hst24 : InRegions s₂.wr (off (s.gpr .a7) 24) 8 := hs₂.st (d := 24) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
+  obtain hst16 : InRegions s₂.wr (off (s.gpr .a7) 16) 8 := hs₂.st (d := 16) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
+  obtain hpk := pack_entry0 (s.gpr .a4) (s.gpr .a6) hpl hql
   refine WP.mono (WP.keep [.s11, .ra, .t3] (Q := fun t =>
       t.mem = (s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)).writeW (off (s.gpr .a7) 16)
         (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0) ∧
@@ -132,17 +132,17 @@ theorem dfront_ok {s : State} (h : dContract.pre s) :
           e .a4 (by decide) (by decide), e .a6 (by decide) (by decide), Sign.hOut, hLens, hst24, hal24', hst16,
           hal16', hpk, exec_shift_d (show 16 < 64 by decide), BitVec.add_zero]) (by decide) (by rfl))
     fun t ⟨⟨mt, t11, tra⟩, kt⟩ => ?_
-  have k := k12.trans kt
+  obtain k := k12.trans kt
   have hp16 : (dlayOf s).pl < 2 ^ 16 := hpl
   have hq16 : (dlayOf s).ql < 2 ^ 16 := hql
-  have hnw : (s.gpr .a7).toNat + 256 ≤ 2 ^ 64 := by simp only [dlayOf] at hZ; omega_using [hZ, nw]
-  have w16 := writeW_outside (s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)) (s.gpr .a7) (d := 16)
+  obtain hnw : (s.gpr .a7).toNat + 256 ≤ 2 ^ 64 := by simp only [dlayOf] at hZ; omega_using [hZ, nw]
+  obtain w16 := writeW_outside (s₂.mem.writeW (off (s.gpr .a7) 24) (s.gpr .a0)) (s.gpr .a7) (d := 16)
     (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 0) (by omega_using [])
-  have w24 := writeW_outside s₂.mem (s.gpr .a7) (d := 24) (s.gpr .a0) (by omega_using [])
-  have hlen : word t.mem (s.gpr .a7) hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 := by
+  obtain w24 := writeW_outside s₂.mem (s.gpr .a7) (d := 24) (s.gpr .a0) (by omega_using [])
+  obtain hlen : word t.mem (s.gpr .a7) hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 := by
     rw [mt]; exact word_writeW_self _ _ _ _
   have hlen' : word t.mem (dlayOf s).S hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 := hlen
-  have f1 : Outside (s.gpr .a7) 128 104 s₁.mem s₂.mem :=
+  obtain f1 : Outside (s.gpr .a7) 128 104 s₁.mem s₂.mem :=
     VG.Proof.Bignum.frame_outside (base := s.gpr .a7) (d := 128) (len := 104) hS₂.frame (by omega_using [])
   refine ⟨⟨⟨(kt.gpr (by decide)).trans hS₂.s6, t11, tra, by rw [hlen']; exact pack_pl hp16 hq16 (by decide) (by decide),
     by rw [hlen']; exact pack_ql hp16 hq16 (by decide) (by decide)⟩, hscr t k.2.2, hlen, ?_, fun i hi => ?_, ?_⟩,

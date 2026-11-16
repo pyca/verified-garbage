@@ -134,11 +134,11 @@ theorem tabSel_ct : RelCT isa (Two (SelP 16)) (seqs Crt.tabSelect) fun _ _ => Tr
     fun p s ⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩ => ?_) ?_
   · have hn := hc.scrT.nowrap
     refine WP.mono (selInit_ok hc ht) fun t₁ ⟨hm₁, k₁⟩ => ⟨by decide, t₁, minv, X, Xc, v, ?_, hw, hw', hv⟩
-    have o1 := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sEnt) (off (off p.B p.o) (slot p.wx 8)) (by decide)
-    have o2 := writeW_outside (s.mem.writeW (off (off p.B p.o) (8 * Crt.sEnt)) (off (off p.B p.o) (slot p.wx 8)))
+    obtain o1 := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sEnt) (off (off p.B p.o) (slot p.wx 8)) (by decide)
+    obtain o2 := writeW_outside (s.mem.writeW (off (off p.B p.o) (8 * Crt.sEnt)) (off (off p.B p.o) (slot p.wx 8)))
       (off p.B p.o) (d := 8 * Crt.sJ) (BitVec.setWidth 64 (0 : BitVec 32)) (by decide)
     rw [← hm₁] at o2
-    have f₁ : Frm (off p.B p.o) (selRanges p.wx) s.mem t₁.mem :=
+    obtain f₁ : Frm (off p.B p.o) (selRanges p.wx) s.mem t₁.mem :=
       (Frm.of_outside o1 (by simp [selRanges])).trans (Frm.of_outside o2 (by simp [selRanges]))
     refine ⟨hc.of_win (f₁.mono (selRanges_sub p.wx)) k₁.2.2 (k₁.gpr (by decide)), ?_, ?_, ?_, .inl rfl,
       Frm.refl _ _ _, Keep.refl _ _⟩
@@ -206,24 +206,24 @@ theorem crtWin_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
       fun _ _ => True := by
   rw [expWin_eq]
   refine RelCT.seqs_append (by simp) (by simp) ?_
-  have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) Sq.mm
+  obtain sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) Sq.mm
       (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) Sq.ct)
       fun _ _ h => winSqS_q Sq h
   -- Four squarings.
-  have sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) Sq.mm
+  obtain sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) Sq.mm
       (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws)
       (fun _ _ ⟨_, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
       Sq.ct) fun q s ⟨_, t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ => by
-        have hp : v * 16 ^ q.2 < 2 ^ 56 := by
+        obtain hp : v * 16 ^ q.2 < 2 ^ 56 := by
           have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega_arith) with h | h <;> rw [h] <;> decide
           have := Nat.mul_le_mul_left v this; omega_arith
-        have hXR : X ≤ 2 ^ (64 * q.1.wx) := by rw [← hI.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
+        obtain hXR : X ≤ 2 ^ (64 * q.1.wx) := by rw [← hI.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
         exact winSqS_q Sq ⟨minv, X, Xc, _, hI.ctx, hI.tab, Nat.lt_of_lt_of_le hI.ylt (Sq.le hXR), hI.v, hp, hw, hw',
           hR⟩
   -- The window, and `sV` up.
-  have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd)
+  obtain mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd)
       (.block [.mov .rdx (.mem (hdr Crt.sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .store (hdr Crt.sV) .rax,
         .shift .shr .rdx 4, .alu .and .rdx (.imm 15), .store (hdr Crt.sNib) .rdx])
@@ -233,15 +233,15 @@ theorem crtWin_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
     obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
     have hn := hc.scrT.nowrap
     refine WP.mono (winMid_ok hc hV (by omega_arith)) fun t ⟨hm, k⟩ => ?_
-    have o1 := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
-    have o2 := writeW_outside (s.mem.writeW (off (off q.1.B q.1.o) (8 * Crt.sV)) (BitVec.ofNat 64 (16 * V)))
+    obtain o1 := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
+    obtain o2 := writeW_outside (s.mem.writeW (off (off q.1.B q.1.o) (8 * Crt.sV)) (BitVec.ofNat 64 (16 * V)))
       (off q.1.B q.1.o) (d := 8 * Crt.sNib) (BitVec.ofNat 64 (V / 16 % 16)) (by decide)
     rw [← hm] at o2
-    have f : Frm (off q.1.B q.1.o) (crtWinRanges q.1.wx) s.mem t.mem :=
+    obtain f : Frm (off q.1.B q.1.o) (crtWinRanges q.1.wx) s.mem t.mem :=
       (Frm.of_outside o1 (by simp [crtWinRanges])).trans (Frm.of_outside o2 (by simp [crtWinRanges]))
-    have hc' := hc.of_win f k.2.2 (k.gpr (by decide))
-    have hY0 := slot_le (w := q.1.wx) (show Public.aY < 8 by decide)
-    have hYe : wv t.mem (off q.1.B q.1.o) (slot q.1.wx Public.aY) q.1.wx =
+    obtain hc' := hc.of_win f k.2.2 (k.gpr (by decide))
+    obtain hY0 := slot_le (w := q.1.wx) (show Public.aY < 8 by decide)
+    obtain hYe : wv t.mem (off q.1.B q.1.o) (slot q.1.wx Public.aY) q.1.wx =
         wv s.mem (off q.1.B q.1.o) (slot q.1.wx Public.aY) q.1.wx := by
       rw [o2.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sNib < 32 by decide); omega_arith) (by omega_arith),
         o1.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sV < 32 by decide); omega_arith) (by omega_arith)]
@@ -259,7 +259,7 @@ theorem crtWin_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
     (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) hS) fun q s h => ?_) ?_
   · obtain ⟨⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩, minv', X', Xc', hc₂, htab, -, -⟩ := h
     refine WP.mono (S.ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
-    have hX : X' = X := hc₂.n.symm.trans hc.n
+    obtain hX : X' = X := hc₂.n.symm.trans hc.n
     rw [hT, ← hX]; exact htab.lt _ hv
   simp only [seqs]
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) t => t.gpr .rdi = off q.1.B q.1.o)
@@ -317,18 +317,18 @@ theorem crtByte_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) : RelCT isa 
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) fun _ _ => True := by
   simp only [seqs]
   rw [crtByteHead_eq]
-  have w₁ : ∀ (q : BPub × Nat) s, q.2 < q.1.len ∧ CBytesInv q.1 q.2 s →
+  obtain w₁ : ∀ (q : BPub × Nat) s, q.2 < q.1.len ∧ CBytesInv q.1 q.2 s →
       WP isa (.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))]) s (CHeadMid q) := by
     rintro q s ⟨hi, t₀, minv, X, Xc, eb, hI, hrest⟩
     exact WP.mono (crtByteHead1_ok hI) fun t ⟨h1, h2, h3⟩ => ⟨hi, ⟨t₀, minv, X, Xc, eb, h3, hrest⟩, h1, h2⟩
-  have w₂ : ∀ (q : BPub × Nat) s, CHeadMid q s →
+  obtain w₂ : ∀ (q : BPub × Nat) s, CHeadMid q s →
       WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax,
         .mov32 .rax (.imm 2), .store (hdr Crt.sBit) .rax]) s fun t => 0 < 2 ∧ WinI q.1.x 0 t := by
     rintro q s ⟨hi, ⟨t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, -, he, hout⟩, hax, hcx⟩
-    have hi' : q.2 < eb.length := by omega_arith
+    obtain hi' : q.2 < eb.length := by omega_arith
     exact WP.mono (crtByteHead2_ok rfl hi' he.rd he.val hout hI hax hcx) fun t ⟨_, _, hB⟩ =>
       ⟨by decide, t, minv, X, Xc, _, _, hB, hw, hw', hR, hXN, (eb[q.2]'hi').isLt⟩
-  have h₃ : RelCT isa (Two fun (p : XPub) s => WinI p 2 s)
+  obtain h₃ : RelCT isa (Two fun (p : XPub) s => WinI p 2 s)
       (.block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]) fun _ _ => True :=
     rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
@@ -391,7 +391,7 @@ theorem buildBody_ct (M : Mont) (n : Nat) :
     RelCT isa (Two fun (q : XPub × Nat) s => q.2 < n - 2 ∧ BldI n q.1 q.2 s)
       (seqs (tabBody M.mm)) fun _ _ => True := by
   -- `T := T Xc`.
-  have mmPart : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < n - 2 ∧ BldI n q.1 q.2 s) (M.mm Crt.aT Crt.aT Crt.aXc)
+  obtain mmPart : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < n - 2 ∧ BldI n q.1 q.2 s) (M.mm Crt.aT Crt.aT Crt.aXc)
       (Two (BldM n)) := by
     refine two_post (two_map (fun q : XPub × Nat => q.1.ws)
       (fun _ _ ⟨_, _, minv, _, _, hI, _⟩ => ⟨minv, hI.ctx.good, Nat.le_refl _⟩)
@@ -401,23 +401,23 @@ theorem buildBody_ct (M : Mont) (n : Nat) :
     refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.x, hc.n]; exact hXN)) fun t ⟨_, _, _, ha, k⟩ => ?_
-    have f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx n) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
+    obtain f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx n) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub q.1.wx)) k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩,
       by rw [ha.hslot (by decide)]; exact hI.ent, hi⟩
   -- `sEnt` up.
-  have entPart : RelCT isa (Two (BldM n)) Crt.nextEnt
+  obtain entPart : RelCT isa (Two (BldM n)) Crt.nextEnt
       (Two fun (q : XPub × Nat) s => EntP n Crt.aT (q.1, q.2 + 2) s) := by
     refine two_post (rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h.1.rdi) (by taint_decide))
       fun q s ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hi⟩ => ?_
     refine WP.mono (nextEnt_ok hc he) fun t ⟨hm, k⟩ => ?_
-    have o := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sEnt)
+    obtain o := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sEnt)
       (off (off q.1.B q.1.o) (slot q.1.wx (8 + (q.2 + 1)) + 8 * (q.1.wx + 2))) (by decide)
     rw [← hm] at o
     exact ⟨⟨minv, X, Xc, hc.of_frm (Frm.of_outside o (by simp [crtExpRanges, crtWinRanges])) k.2.2
       (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ]; rfl, by simp only; omega_arith,
       by decide⟩
   -- Entry `i + 2 := T`, the count.
-  have restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP n Crt.aT (q.1, q.2 + 2) s)
+  obtain restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP n Crt.aT (q.1, q.2 + 2) s)
       (seqs (Crt.toEnt Crt.aT ++
         [.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]]))
       fun _ _ => True := by
@@ -443,8 +443,8 @@ theorem toEnt_post {n a : Nat} {q : XPub × Nat} {s : State} (h : EntP n a q s) 
       ∀ k < 32, word t.mem (off q.1.B q.1.o) (8 * k) = word s.mem (off q.1.B q.1.o) (8 * k) := by
   obtain ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hj, ha⟩ := h
   have hn := hc.scrT.nowrap
-  have hE := ent_le q.1.wx hj
-  have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega_arith)
+  obtain hE := ent_le q.1.wx hj
+  obtain hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega_arith)
   refine WP.mono (toEnt_ok hc hw hw' ha hj he) fun t ⟨_, o, k⟩ => ⟨⟨minv, X, Xc, hc.of_frm
     (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx n) hE8 (by omega_arith)) (by simp [crtExpRanges]))
     k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩, fun k hk => ?_⟩
@@ -463,11 +463,11 @@ theorem tabPre_ct (n : Nat) (hn : 3 ≤ n) {hc : VG.Taint.Hint VG.X86_64.Taint.T
     (rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ ⟨_, _, _, hc, _⟩ => hc.good.rdi) (by taint_decide))
     fun p s ⟨minv, X, Xc, hc, hXN, hY, hw, hw', hR⟩ => ?_) ?_
   · refine WP.mono (tabInit_ok hc) fun t ⟨hm, k⟩ => ?_
-    have o1 := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sTab) (off (off p.B p.o) (slot p.wx 8)) (by decide)
-    have o2 := writeW_outside (s.mem.writeW (off (off p.B p.o) (8 * Crt.sTab)) (off (off p.B p.o) (slot p.wx 8)))
+    obtain o1 := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sTab) (off (off p.B p.o) (slot p.wx 8)) (by decide)
+    obtain o2 := writeW_outside (s.mem.writeW (off (off p.B p.o) (8 * Crt.sTab)) (off (off p.B p.o) (slot p.wx 8)))
       (off p.B p.o) (d := 8 * Crt.sEnt) (off (off p.B p.o) (slot p.wx 8)) (by decide)
     rw [← hm] at o2
-    have f : Frm (off p.B p.o) (buildRanges p.wx n) s.mem t.mem :=
+    obtain f : Frm (off p.B p.o) (buildRanges p.wx n) s.mem t.mem :=
       (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub p.wx)) k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩,
       by rw [hm, word_writeW_self]; rfl, by simp only; omega_arith, by decide⟩
@@ -483,7 +483,7 @@ theorem tabPre_ct (n : Nat) (hn : 3 ≤ n) {hc : VG.Taint.Hint VG.X86_64.Taint.T
     (rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h.1.rdi) (by taint_decide))
     fun p s ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he⟩ => ?_) ?_
   · refine WP.mono (nextEnt_ok hc he) fun t ⟨hm, k⟩ => ?_
-    have o := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sEnt)
+    obtain o := writeW_outside s.mem (off p.B p.o) (d := 8 * Crt.sEnt)
       (off (off p.B p.o) (slot p.wx 8 + 8 * (p.wx + 2))) (by decide)
     rw [← hm] at o
     exact ⟨⟨minv, X, Xc, hc.of_frm (Frm.of_outside o (by simp [crtExpRanges, crtWinRanges])) k.2.2
@@ -542,7 +542,7 @@ theorem crtLink_ok {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hlo := hc.lo
-  have hl : InRegions (s.rd ++ s.wr) (off (off a.x.B a.x.o) (8 * Crt.sLink)) 8 :=
+  obtain hl : InRegions (s.rd ++ s.wr) (off (off a.x.B a.x.o) (8 * Crt.sLink)) 8 :=
     hc.good.scr.ld (by have := hdr_lt_slot a.x.wx 8 (show Crt.sLink < 32 by decide); omega_arith)
   exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = a.x.B)
     (by xrun [State.ea, hdr, hc.rdi, hdrOff, hl, hc.link]) rfl)
@@ -555,19 +555,19 @@ theorem crtExpInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) s (TPre 16 a.x) := by
   obtain ⟨minv, X, x, y, eb, hc, hw2, hwx, hw30, hn, hinv, hodd, hxl, -, hyl, -, hsp, hsl, hep, hel, -⟩ := h
   have hPn := hc.scrT.nowrap
-  have hY0 := slot_le (w := a.x.wx) (show Public.aY < 8 by decide)
-  have hY1 := hdr_lt_slot a.x.wx Public.aY (show 31 < 32 by decide)
-  have hc₀ : CExpCtx s (off a.x.B a.x.o) a.x.wx minv X (wv s.mem (off a.x.B a.x.o) (slot a.x.wx Crt.aXc) a.x.wx) :=
+  obtain hY0 := slot_le (w := a.x.wx) (show Public.aY < 8 by decide)
+  obtain hY1 := hdr_lt_slot a.x.wx Public.aY (show 31 < 32 by decide)
+  obtain hc₀ : CExpCtx s (off a.x.B a.x.o) a.x.wx minv X (wv s.mem (off a.x.B a.x.o) (slot a.x.wx Crt.aXc) a.x.wx) :=
     ⟨hc.good, hc.scrT, hn, hinv, rfl⟩
   refine WP.mono (crtExpInit_ok hc hsp hsl hep hel) fun t₁ ⟨hm₁, k₁⟩ => ?_
-  have o1 := writeW_outside s.mem (off a.x.B a.x.o) (d := 8 * Crt.sExp) a.ptr (by decide)
-  have o2 := writeW_outside (s.mem.writeW (off (off a.x.B a.x.o) (8 * Crt.sExp)) a.ptr) (off a.x.B a.x.o)
+  obtain o1 := writeW_outside s.mem (off a.x.B a.x.o) (d := 8 * Crt.sExp) a.ptr (by decide)
+  obtain o2 := writeW_outside (s.mem.writeW (off (off a.x.B a.x.o) (8 * Crt.sExp)) a.ptr) (off a.x.B a.x.o)
     (d := 8 * Crt.sExpLen) (BitVec.ofNat 64 eb.length) (by decide)
-  have o3 := writeW_outside ((s.mem.writeW (off (off a.x.B a.x.o) (8 * Crt.sExp)) a.ptr).writeW
+  obtain o3 := writeW_outside ((s.mem.writeW (off (off a.x.B a.x.o) (8 * Crt.sExp)) a.ptr).writeW
     (off (off a.x.B a.x.o) (8 * Crt.sExpLen)) (BitVec.ofNat 64 eb.length)) (off a.x.B a.x.o) (d := 8 * Crt.sI)
     (BitVec.setWidth 64 (0 : BitVec 32)) (by decide)
   rw [← hm₁] at o3
-  have f₁ : Frm (off a.x.B a.x.o) (crtExpRanges a.x.wx) s.mem t₁.mem :=
+  obtain f₁ : Frm (off a.x.B a.x.o) (crtExpRanges a.x.wx) s.mem t₁.mem :=
     ((Frm.of_outside o1 (by simp [crtExpRanges])).trans (Frm.of_outside o2 (by simp [crtExpRanges]))).trans
       (Frm.of_outside o3 (by simp [crtExpRanges]))
   refine ⟨minv, X, _, hc₀.of_frm f₁ k₁.2.2 (k₁.gpr (by decide)), hxl, ?_, hw2, by omega_arith,
@@ -609,8 +609,8 @@ theorem crtExpLoopS_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) {sp sl :
     have hBn := hc.scr.nowrap
     have hi := hc.hi
     have hlo := hc.lo
-    have h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega_arith
-    have hout : ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i) :=
+    obtain h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega_arith
+    obtain hout : ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i) :=
       fun i hi' => by
         have := he.out i hi'
         rcases ofs_rebase a.x.B (a.ptr + BitVec.ofNat 64 i) (o := a.x.o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩

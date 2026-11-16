@@ -66,18 +66,18 @@ structure SO1 (n wi : Nat) (s₀ s₁ : State) : Prop where
 
 theorem one1_wp {s₀ : State} (h : onePre n wi s₀) (hn : wi < n) (hwi : 4 * wi < 4096) {Q : State → Prop}
     (k : ∀ s₁, SO1 n wi s₀ s₁ → Q s₁) : WP isa (.block (oneEntry (4 * wi))) s₀ Q := by
-  have hst := oSt_addr h
+  obtain hst := oSt_addr h
   have ww := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   obtain ⟨⟨hc, -, -, hin⟩, ⟨-, hw, -⟩, -, -, -, -, -, -, -, -, dWA, -, -, -, -, -, -, -, -, -, fW, -, spf⟩ := h
-  have hA : ∀ r ∈ [savedR (arg s₀ wi)], (args s₀ n).Disjoint r := fun r hr => by
+  obtain hA : ∀ r ∈ [savedR (arg s₀ wi)], (args s₀ n).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (dWA.sub_left (Lay.wSub (by decide))).symm
-  have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) :=
+  obtain hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) :=
     covers_of_mem (List.mem_append_left _ hc)
-  have hW : Covers [⟨State.addr (arg s₀ wi), 768⟩] s₀.wr := covers_of_mem hw
-  have hS : Covers [⟨State.addr (oSt s₀ wi), 80⟩] s₀.wr := by rw [hst]; exact covers_off hW (by decide) (by decide)
-  have ha : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 (4 * wi))) 4 := arg_in hn spf hin
+  obtain hW : Covers [⟨State.addr (arg s₀ wi), 768⟩] s₀.wr := covers_of_mem hw
+  obtain hS : Covers [⟨State.addr (oSt s₀ wi), 80⟩] s₀.wr := by rw [hst]; exact covers_off hW (by decide) (by decide)
+  obtain ha : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 (4 * wi))) 4 := arg_in hn spf hin
   refine entry_ok (off := 4 * wi) hwi ha fW hW fun s₁ g12 g rd wr sp sv fr => ?_
-  have hk : ArgsKeep n s₀ s₁ := (ArgsKeep.refl n s₀).frame spf fr hA sp rd wr
+  obtain hk : ArgsKeep n s₀ s₁ := (ArgsKeep.refl n s₀).frame spf fr hA sp rd wr
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   refine k _ ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩⟩, ?_, ?_, ?_, sv, fr⟩
   any_goals (simp [gpr_setReg, g, g12]; done)
@@ -121,7 +121,7 @@ variable {n wi : Nat}
 /-- The stack arguments are apart from what `j0` (and the other pieces) write. -/
 theorem one_argsJ0 {s₀ : State} (h : onePre n wi s₀) :
     ∀ r ∈ j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp, (args s₀ n).Disjoint r := by
-  have hst := oSt_addr h
+  obtain hst := oSt_addr h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   obtain ⟨-, -, -, -, -, -, -, -, -, -, dWA, -⟩ := h
   intro r hr
@@ -160,12 +160,12 @@ structure OA (n wi : Nat) (s₀ : State) (m₁ : Mem) (s : State) : Prop where
 
 theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 : SO1 n wi s₀ s₁) :
     WP isa oneAad s₁ (OA n wi s₀ s₁.mem) := by
-  have L := oneLay h
+  obtain L := oneLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
   obtain ⟨hrd, -, -, -, -, dnW, -, daW, -, -, -, -, bn, ba, -, -, -, fn, fa, -, -, -, -⟩ := id h
-  have hH₁ := ctxH_keep h1.frame (ctx_saved L)
-  have ji : J0In (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp (s₀.gpr .r7) (s₀.gpr .r3)
+  obtain hH₁ := ctxH_keep h1.frame (ctx_saved L)
+  obtain ji : J0In (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp (s₀.gpr .r7) (s₀.gpr .r3)
       (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (s₀.gpr .r1) (s₀.gpr .r2).toNat s₁ :=
     ⟨h1.env, hH₁, h1.r4, by rw [h1.r5]; simp, ⟨by
       rw [h1.args.rd, h1.args.wr]; exact covers_of_mem (List.mem_append_left _ hrd.2.1),
@@ -173,12 +173,12 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
   refine WP.seq (WP.mono (WP.with_rdwr (j0_ok L ji)) fun s₂ hh => ?_)
   obtain ⟨jo, rd₂, wr₂, sp₂⟩ := hh
   obtain ⟨k7, he₂⟩ := jo.env
-  have hiv : bytesAt s₁.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat =
+  obtain hiv : bytesAt s₁.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat =
       bytesAt s₀.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat :=
     bytesAt_frame h1.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide))) (by omega_arith)
   rw [hiv] at jo
-  have hk₂ := h1.args.frame spf jo.frame (one_argsJ0 h) sp₂ rd₂ wr₂
+  obtain hk₂ := h1.args.frame spf jo.frame (one_argsJ0 h) sp₂ rd₂ wr₂
   obtain ⟨a0, v0⟩ := hk₂.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
   have h8₂ := he₂.r8
   obtain ⟨s₃, run₃, h4₃, h5₃, h6₃, g₃, k₃⟩ : ∃ s₃, runBlock isa [.mov .r4 (.reg .r8), .ldrSp .r5 0, .mov .r6 (imm 0)] s₂ =
@@ -191,25 +191,25 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
     · intro r x y z; simp [gpr_setReg, x, y, z]
     · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ := he₂.keep (fun r hr => by
+  obtain he₃ := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide) (by decide)) k₃.sp k₃.rd k₃.wr
-  have hk₃ := hk₂.of_eq k₃.mem k₃.sp k₃.rd k₃.wr
-  have hda : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₃ (s₀.gpr .r3) (arg s₀ 0).toNat :=
+  obtain hk₃ := hk₂.of_eq k₃.mem k₃.sp k₃.rd k₃.wr
+  obtain hda : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₃ (s₀.gpr .r3) (arg s₀ 0).toNat :=
     ⟨by rw [hk₃.rd, hk₃.wr]; exact covers_of_mem (List.mem_append_left _ hrd.2.2.1), (arg s₀ 0).isLt, fa,
       oSt_disj h daW, daW, ba⟩
-  have haad : bytesAt s₃.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat =
+  obtain haad : bytesAt s₃.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat =
       bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat := by
     rw [k₃.mem, bytesAt_frame jo.frame (one_dataJ0 h daW ba) (by omega_arith),
       bytesAt_frame h1.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide))) (by omega_arith)]
-  have ai : AbsIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) 16 (ctxH s₀.mem (State.addr (s₀.gpr .r0))) []
+  obtain ai : AbsIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) 16 (ctxH s₀.mem (State.addr (s₀.gpr .r0))) []
       (s₀.gpr .r3) (arg s₀ 0).toNat s₃ :=
     ⟨he₃, h4₃, by rw [h5₃]; simp, by rw [h6₃]; rfl, hda, by rw [k₃.mem]; exact jo.hH⟩
   refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun s₄ hh => ?_)
   obtain ⟨ab, rd₄, wr₄, sp₄⟩ := hh
   rw [haad, List.nil_append] at ab
-  have hk₄ := hk₃.frame spf ab.frame (disj_sub (one_argsJ0 h) abs16_sub) sp₄ rd₄ wr₄
+  obtain hk₄ := hk₃.frame spf ab.frame (disj_sub (one_argsJ0 h) abs16_sub) sp₄ rd₄ wr₄
   obtain ⟨b1, w1⟩ := hk₄.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
   obtain ⟨s₅, run₅, h6₅, g₅, k₅⟩ : ∃ s₅, runBlock isa [.ldrSp .r6 0, .dp .and .r6 .r6 (imm 15)] s₄ = some s₅ ∧
       s₅.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 0).toNat % 16) ∧ (∀ r, r ≠ .r6 → s₅.gpr r = s₄.gpr r) ∧ Keeps s₄ s₅ := by
@@ -218,18 +218,18 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
     · intro r x; simp [gpr_setReg, x]
     · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
-  have he₅ := ab.env.keep (fun r hr => by
+  obtain he₅ := ab.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₅ _ (by decide)) k₅.sp k₅.rd k₅.wr
-  have hk₅ := hk₄.of_eq k₅.mem k₅.sp k₅.rd k₅.wr
-  have hH₄ : blockAt s₄.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  obtain hk₅ := hk₄.of_eq k₅.mem k₅.sp k₅.rd k₅.wr
+  obtain hH₄ : blockAt s₄.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl)), k₃.mem]; exact jo.hH
   refine WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl)
     (x := bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat) (H := ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     ⟨he₅, by rw [k₅.mem]; exact hH₄⟩ (by rw [h6₅, length_bytesAt]))) fun s₆ hh => ?_
   obtain ⟨fl, rd₆, wr₆, sp₆⟩ := hh
   rw [k₅.mem] at fl
-  have keepA : ∀ {d : Nat}, (d = 0 ∨ d = 48) → ∀ r ∈ absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
+  obtain keepA : ∀ {d : Nat}, (d = 0 ∨ d = 48) → ∀ r ∈ absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
       (⟨State.addr (oSt s₀ wi) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -237,7 +237,7 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
     · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
     · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
     · exact (L.stk_st (by omega_arith)).symm
-  have keepT : ∀ {d : Nat}, (d = 0 ∨ d = 48) → ∀ r ∈ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
+  obtain keepT : ∀ {d : Nat}, (d = 0 ∨ d = 48) → ∀ r ∈ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
       (⟨State.addr (oSt s₀ wi) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -245,7 +245,7 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
     · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
     · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
     · exact (L.stk_st (by omega_arith)).symm
-  have blk : ∀ {d : Nat}, (d = 0 ∨ d = 48) → blockAt s₆.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 d) =
+  obtain blk : ∀ {d : Nat}, (d = 0 ∨ d = 48) → blockAt s₆.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 d) =
       blockAt s₂.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 d) := fun hd => by
     rw [blockAt_frame fl.frame (keepT hd), blockAt_frame ab.frame (keepA hd), k₃.mem]
   refine ⟨⟨k7, fl.env⟩, hk₄.frame spf fl.frame (disj_sub (one_argsJ0 h) t16_sub) (sp₆.trans k₅.sp) (rd₆.trans k₅.rd)
@@ -288,25 +288,25 @@ theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 :
     (he : Env (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) s) (hk : ArgsKeep n s₀ s) {icb : Block}
     (hcb : blockAt s.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 48) = icb) :
     WP isa oneCrypt s (OC n wi s₀ k7 icb s.mem) := by
-  have L := oneLay h
+  obtain L := oneLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
   have dcD := h.2.2.1
   have hwr := h.2.1
   obtain ⟨s₁, run₁, h4, h5, h6, g₁, k₁⟩ := dataArgs_run hk spf hin hn
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ := he.keep (fun r hr => by
+  obtain he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)) k₁.sp k₁.rd k₁.wr
-  have hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
-  have ci : CrIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) icb 0 (arg s₀ 1)
+  obtain hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
+  obtain ci : CrIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) icb 0 (arg s₀ 1)
       (arg s₀ 2).toNat s₁ :=
     ⟨he₁, h4, by rw [h5]; simp, by rw [h6],
       ⟨one_dataOk h hk₁, by rw [hk₁.wr]; exact covers_of_mem hwr.1, dcD⟩⟩
   refine WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₂ hh => ?_
   obtain ⟨co, rd₂, wr₂, sp₂⟩ := hh
-  have hA : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 1) (arg s₀ 2).toNat, (args s₀ n).Disjoint r := by
-    have hst := oSt_addr h
+  obtain hA : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 1) (arg s₀ 2).toNat, (args s₀ n).Disjoint r := by
+    obtain hst := oSt_addr h
     obtain ⟨-, -, -, -, -, -, -, -, -, dDA, dWA, -⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -316,7 +316,7 @@ theorem oneCrypt_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {k7 :
     · exact (dWA.sub_left (Lay.wSub (by decide))).symm
     · exact (below_args s₀ spf).symm
   rw [k₁.mem] at co
-  have c0 := Proof.Gcm.ctr_zero s.mem _ (State.addr (oSt s₀ wi) + BitVec.ofNat 64 64)
+  obtain c0 := Proof.Gcm.ctr_zero s.mem _ (State.addr (oSt s₀ wi) + BitVec.ofNat 64 64)
     (ciphOf s.mem (State.addr (s₀.gpr .r0))) hcb
   exact ⟨co.env, hk₁.frame spf (k₁.mem ▸ co.frame) hA sp₂ rd₂ wr₂, by rw [co.out c0, Proof.Gcm.gctr_eq],
     co.frame⟩
@@ -327,7 +327,7 @@ theorem padded_eq (a c : List Byte) :
     (a ++ zeros (padLen a.length) ++ c) ++ zeros (padLen (a ++ zeros (padLen a.length) ++ c).length) = padded a c := by
   by_cases hc : c = []
   · subst hc
-    have h0 : padLen (a ++ zeros (padLen a.length) ++ []).length = 0 := by
+    obtain h0 : padLen (a ++ zeros (padLen a.length) ++ []).length = 0 := by
       apply Proof.Gcm.padLen_of_mod
       simp only [List.append_nil, List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
     rw [h0]; simp [padded, Proof.Gcm.ghashInput_nil, zeros]
@@ -382,7 +382,7 @@ structure OT (n wi : Nat) (s₀ : State) (o : Nat) (a : List Byte) (J : Block) (
 
 theorem one_argsOt {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 0 ∨ o = 112) :
     ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (args s₀ n).Disjoint r := by
-  have hst := oSt_addr h
+  obtain hst := oSt_addr h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   obtain ⟨-, -, -, -, -, -, -, -, -, -, dWA, -⟩ := h
   intro r hr
@@ -401,11 +401,11 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     (hab : Absorbed s.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 16) (State.addr (oSt s₀ wi) + BitVec.ofNat 64 32)
       (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (a ++ zeros (padLen a.length))) :
     WP isa (oneTag o) s (OT n wi s₀ o a (blockAt s.mem (State.addr (oSt s₀ wi))) s.mem) := by
-  have L := oneLay h
+  obtain L := oneLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
-  have hA := one_argsOt h ho
-  have dC : ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
+  obtain hA := one_argsOt h ho
+  obtain dC : ∀ r ∈ otFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp o, (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -414,19 +414,19 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     · exact L.cw'.sub_right (Lay.wSub (by omega_arith))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.kc.symm
-  have dJ : ∀ r ∈ absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16 ++ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
+  obtain dJ : ∀ r ∈ absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16 ++ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
       (⟨State.addr (oSt s₀ wi), 16⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have e1 : ∀ {d k : Nat}, 16 ≤ d → d + k ≤ 80 →
+    obtain e1 : ∀ {d k : Nat}, 16 ≤ d → d + k ≤ 80 →
         (⟨State.addr (oSt s₀ wi), 16⟩ : Region).Disjoint ⟨State.addr (oSt s₀ wi) + BitVec.ofNat 64 d, k⟩ := fun h1 h2 => by
       have := Lay.st_st (st := oSt s₀ wi) (a := 0) (n := 16) (.inl h1) (by decide) h2
       rwa [add_ofNat_zero] at this
-    have e2 : ∀ {d k : Nat}, 96 ≤ d → d + k ≤ 768 →
+    obtain e2 : ∀ {d k : Nat}, 96 ≤ d → d + k ≤ 768 →
         (⟨State.addr (oSt s₀ wi), 16⟩ : Region).Disjoint ⟨State.addr (arg s₀ wi) + BitVec.ofNat 64 d, k⟩ := fun h1 h2 => by
       have := L.st_w (a := 0) (n := 16) (by decide) (.inr ⟨h1, h2⟩)
       rwa [add_ofNat_zero] at this
-    have e3 : (⟨State.addr (oSt s₀ wi), 16⟩ : Region).Disjoint (below s₀.sp) := by
+    obtain e3 : (⟨State.addr (oSt s₀ wi), 16⟩ : Region).Disjoint (below s₀.sp) := by
       have := (L.stk_st (a := 0) (n := 16) (by decide)).symm
       rwa [add_ofNat_zero] at this
     rcases hr with (rfl | rfl | rfl | rfl) | (rfl | rfl | rfl | rfl)
@@ -438,21 +438,21 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     · exact e2 (by decide) (by decide)
     · exact e2 (by decide) (by decide)
     · exact e3
-  have hx : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
+  obtain hx : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   obtain ⟨s₁, run₁, h4, h5, h6, g₁, k₁⟩ := dataArgs_run hk spf hin hn
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ := he.keep (fun r hr => by
+  obtain he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)) k₁.sp k₁.rd k₁.wr
-  have hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
-  have ai : AbsIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) 16 (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
+  obtain hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
+  obtain ai : AbsIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) 16 (ctxH s₀.mem (State.addr (s₀.gpr .r0)))
       (a ++ zeros (padLen a.length)) (arg s₀ 1) (arg s₀ 2).toNat s₁ :=
     ⟨he₁, h4, by rw [h5]; simp, by rw [h6, hx], one_dataOk h hk₁, by rw [k₁.mem]; exact hH⟩
   refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun s₂ hh => ?_)
   obtain ⟨ab, rd₂, wr₂, sp₂⟩ := hh
   rw [k₁.mem] at ab
-  have hk₂ := hk₁.frame spf (k₁.mem ▸ ab.frame) (disj_sub hA abs_otSub) sp₂ rd₂ wr₂
+  obtain hk₂ := hk₁.frame spf (k₁.mem ▸ ab.frame) (disj_sub hA abs_otSub) sp₂ rd₂ wr₂
   obtain ⟨b3, w3⟩ := hk₂.at spf hin 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
   obtain ⟨s₃, run₃, h6₃, g₃, k₃⟩ : ∃ s₃, runBlock isa [.ldrSp .r6 8, .dp .and .r6 .r6 (imm 15)] s₂ = some s₃ ∧
       s₃.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 2).toNat % 16) ∧ (∀ r, r ≠ .r6 → s₃.gpr r = s₂.gpr r) ∧ Keeps s₂ s₃ := by
@@ -461,21 +461,21 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     · intro r x; simp [gpr_setReg, x]
     · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ := ab.env.keep (fun r hr => by
+  obtain he₃ := ab.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide)) k₃.sp k₃.rd k₃.wr
-  have hk₃ := hk₂.of_eq k₃.mem k₃.sp k₃.rd k₃.wr
-  have hH₂ : blockAt s₂.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
+  obtain hk₃ := hk₂.of_eq k₃.mem k₃.sp k₃.rd k₃.wr
+  obtain hH₂ : blockAt s₂.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)) := by
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hH
   let ct := bytesAt s.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat
-  have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (arg s₀ 2).toNat % 16 := by
+  obtain hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (arg s₀ 2).toNat % 16 := by
     simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_arith
   refine WP.seq (WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl)
     (x := (a ++ zeros (padLen a.length)) ++ ct) (H := ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [h6₃, hlx]))) fun s₄ hh => ?_)
   obtain ⟨fl, rd₄, wr₄, sp₄⟩ := hh
   rw [k₃.mem] at fl
-  have hk₄ := hk₂.frame spf fl.frame (disj_sub hA t_otSub) (sp₄.trans k₃.sp) (rd₄.trans k₃.rd) (wr₄.trans k₃.wr)
+  obtain hk₄ := hk₂.frame spf fl.frame (disj_sub hA t_otSub) (sp₄.trans k₃.sp) (rd₄.trans k₃.rd) (wr₄.trans k₃.wr)
   obtain ⟨c1, x1⟩ := hk₄.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
   obtain ⟨c3, x3⟩ := hk₄.at spf hin 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
   obtain ⟨s₅, run₅, h4₅, h5₅, h6₅, h7₅, g₅, k₅⟩ : ∃ s₅, runBlock isa [.ldrSp .r4 0, .mov .r5 (imm 0), .ldrSp .r6 8,
@@ -489,22 +489,22 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     · intro r x y z q; simp [gpr_setReg, x, y, z, q]
     · exact ⟨rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
-  have he₅ := fl.env.set7 h7₅ (fun r hr => by
+  obtain he₅ := fl.env.set7 h7₅ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₅ _ (by decide) (by decide) (by decide) (by decide))
     k₅.sp k₅.rd k₅.wr
-  have hk₅ := hk₄.of_eq k₅.mem k₅.sp k₅.rd k₅.wr
+  obtain hk₅ := hk₄.of_eq k₅.mem k₅.sp k₅.rd k₅.wr
   refine WP.mono (WP.with_rdwr (tag_ok L ho he₅
     (H := ctxH s₀.mem (State.addr (s₀.gpr .r0))) (by rw [k₅.mem]; exact fl.hH) rfl)) fun s₆ hh => ?_
   obtain ⟨tg, rd₆, wr₆, sp₆⟩ := hh
   rw [h4₅, h5₅, h6₅, h7₅, k₅.mem] at tg
-  have f₄ : Frame (absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16 ++ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16) s.mem s₄.mem :=
+  obtain f₄ : Frame (absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16 ++ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16) s.mem s₄.mem :=
     (ab.frame.mono (fun r hr => List.mem_append_left _ hr)).trans
       ((k₃.mem ▸ fl.frame : Frame _ s₂.mem s₄.mem).mono (fun r hr => List.mem_append_right _ hr))
   refine ⟨⟨_, tg.env⟩, hk₄.frame spf tg.frame (disj_sub hA tag_otSub) (sp₆.trans k₅.sp) (rd₆.trans k₅.rd)
     (wr₆.trans k₅.wr), ?_, ?_⟩
   · rw [tg.out]
-    have hw := (fl.abs (ab.abs hab)).whole_eq (by
+    obtain hw := (fl.abs (ab.abs hab)).whole_eq (by
       simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
     rw [padded_eq] at hw
     rw [hw, ciph_frame f₄ (disj_sub dC (fun r hr => by
@@ -514,9 +514,9 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
         · exact t_otSub r hr)),
       blockAt_frame f₄ dJ]
     have z0 : (0 : BitVec 32).toNat = 0 := rfl
-    have l1 : ((0 : BitVec 32) ++ arg s₀ 0).toNat = a.length := by
+    obtain l1 : ((0 : BitVec 32) ++ arg s₀ 0).toNat = a.length := by
       rw [Proof.Gcm.toNat_append, ← hl, z0, Nat.zero_mul, Nat.zero_add]
-    have l3 : ((0 : BitVec 32) ++ arg s₀ 2).toNat = ct.length := by
+    obtain l3 : ((0 : BitVec 32) ++ arg s₀ 2).toNat = ct.length := by
       rw [Proof.Gcm.toNat_append, length_bytesAt, z0, Nat.zero_mul, Nat.zero_add]
     rw [l1, l3]
   · refine (f₄.sub fun r hr => ?_).trans (tg.frame.sub tag_otSub)

@@ -97,23 +97,23 @@ theorem bflyBody_eq : bflyBody =
 
 theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z : Zq}
     (h : BIn s p G j len zA z) : WP isa (.block bflyBody) s (BOut s p (bfly G j len z)) := by
-  have hj : j < n := by have := h.hj; rw [n_eq]; omega_arith
-  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_arith
+  obtain hj : j < n := by have := h.hj; rw [n_eq]; omega_arith
+  obtain hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_arith
   have hl := h.hl
-  have ha := polyIs_coeffAt h.poly hj
-  have hb := polyIs_coeffAt h.poly hjl
-  have la := val_lt G[j]!
-  have lb := val_lt G[j + len]!
-  have lz := val_lt z
+  obtain ha := polyIs_coeffAt h.poly hj
+  obtain hb := polyIs_coeffAt h.poly hjl
+  obtain la := val_lt G[j]!
+  obtain lb := val_lt G[j + len]!
+  obtain lz := val_lt z
   rw [coeffAt_eq] at ha hb
   generalize ea : (G[j]!).val = a at ha la
   generalize eb : (G[j + len]!).val = b at hb lb
   have hzv := h.z_v
   generalize ez : z.val = zv at lz hzv
-  have hzm : zv * 2 ^ 32 % q < q := Nat.mod_lt _ (by decide)
-  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_arith)
-  have hz' : (BitVec.ofNat 32 (zv * 2 ^ 32 % q)).toNat = zv * 2 ^ 32 % q := toNat_ofNat32 (mod_q_lt32 _)
-  have hbz : b * (zv * 2 ^ 32 % q) < q * 2 ^ 32 := by
+  obtain hzm : zv * 2 ^ 32 % q < q := Nat.mod_lt _ (by decide)
+  obtain hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_arith)
+  obtain hz' : (BitVec.ofNat 32 (zv * 2 ^ 32 % q)).toNat = zv * 2 ^ 32 % q := toNat_ofNat32 (mod_q_lt32 _)
+  obtain hbz : b * (zv * 2 ^ 32 % q) < q * 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lb hzm
     rw [q_eq] at this ⊢; omega_arith
   rw [bflyBody_eq]
@@ -126,22 +126,22 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, State.setReg, State.ea, at_, h.ea_d, h.ea_z,
       hb, hzv]
     rw [hb', hz']
-  have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
+  obtain g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [o₂.gpr r (by simp [h1, h2, h3]), execMul_other _ _ h1 h2]
     simp only [State.setReg, h1, h2, ite_false]
-  have esi₂ := g₂ .esi (by decide) (by decide) (by decide)
-  have edi₂ := g₂ .edi (by decide) (by decide) (by decide)
-  have ecx₂ := g₂ .ecx (by decide) (by decide) (by decide)
-  have m₂ : s₂.mem = s.mem := by rw [o₂.mem]; rfl
-  have rd₂ : s₂.rd = s.rd := by rw [o₂.rd]; rfl
-  have wr₂ : s₂.wr = s.wr := by rw [o₂.wr]; rfl
-  have ht : mont (b * (zv * 2 ^ 32 % q)) % q = b * zv % q := mont_mulR b zv
-  have bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 (b * zv % q) := eq_ofNat_of_toNat (v₂.trans ht)
-  have hrw : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p (j + len)) V).readW (coeffAddr p j) 32 =
+  obtain esi₂ := g₂ .esi (by decide) (by decide) (by decide)
+  obtain edi₂ := g₂ .edi (by decide) (by decide) (by decide)
+  obtain ecx₂ := g₂ .ecx (by decide) (by decide) (by decide)
+  obtain m₂ : s₂.mem = s.mem := by rw [o₂.mem]; rfl
+  obtain rd₂ : s₂.rd = s.rd := by rw [o₂.rd]; rfl
+  obtain wr₂ : s₂.wr = s.wr := by rw [o₂.wr]; rfl
+  obtain ht : mont (b * (zv * 2 ^ 32 % q)) % q = b * zv % q := mont_mulR b zv
+  obtain bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 (b * zv % q) := eq_ofNat_of_toNat (v₂.trans ht)
+  obtain hrw : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p (j + len)) V).readW (coeffAddr p j) 32 =
       s.mem.readW (coeffAddr p j) 32 := fun V => coeffAt_writeW_ne _ _ hj hjl (by omega_arith) V
   have inI := h.in_i
   have inD := h.in_d
-  have inI' := inRd h.in_i
+  obtain inI' := inRd h.in_i
   have ea_i := h.ea_i
   have ea_d := h.ea_d
   apply WP.of_runBlock
@@ -150,23 +150,23 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, esi₂, edi₂, ecx₂, m₂,
     rd₂, wr₂, bx₂, ea_i, ea_d, inI, inD, inI', hrw, ha, Option.some.injEq,
     exists_eq_left']
-  have lt := Nat.mod_lt (b * zv) (show q > 0 by decide)
+  obtain lt := Nat.mod_lt (b * zv) (show q > 0 by decide)
   rw [q_eq] at lt
-  have e1 : (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 (b * zv % q)).toNat = a + q - b * zv % q := by
-    have hQ : (BitVec.ofNat 32 a + qImm).toNat = a + 8380417 := by
+  obtain e1 : (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 (b * zv % q)).toNat = a + q - b * zv % q := by
+    obtain hQ : (BitVec.ofNat 32 a + qImm).toNat = a + 8380417 := by
       rw [BitVec.toNat_add, toNat_ofNat32 (by omega_arith), qImm_toNat, q_eq, Nat.mod_eq_of_lt (by omega_arith)]
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, toNat_ofNat32 (by rw [q_eq]; omega_arith)]; rw [q_eq]; omega_arith),
       hQ, toNat_ofNat32 (by rw [q_eq]; omega_arith), q_eq]
-  have e2 : (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * zv % q)).toNat = a + b * zv % q := by
+  obtain e2 : (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * zv % q)).toNat = a + b * zv % q := by
     rw [BitVec.toNat_add, toNat_ofNat32 (by omega_arith), toNat_ofNat32 (by rw [q_eq]; omega_arith),
       Nat.mod_eq_of_lt (by rw [q_eq]; omega_arith)]
   rw [csubQ_eq (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 (b * zv % q)) _ (by rw [e1, q_eq]; omega_arith),
     csubQ_eq (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * zv % q)) _ (by rw [e2, q_eq]; omega_arith), e1, e2]
-  have ht' : (z * G[j + len]!).val = b * zv % q := by
+  obtain ht' : (z * G[j + len]!).val = b * zv % q := by
     rw [val_mul, ez, eb, Nat.mul_comm]
-  have hv1 : BitVec.ofNat 32 ((a + q - b * zv % q) % q) = BitVec.ofNat 32 ((G[j]! - z * G[j + len]!).val) := by
+  obtain hv1 : BitVec.ofNat 32 ((a + q - b * zv % q) % q) = BitVec.ofNat 32 ((G[j]! - z * G[j + len]!).val) := by
     rw [sub_val, ht', ea]
-  have hv2 : BitVec.ofNat 32 ((a + b * zv % q) % q) = BitVec.ofNat 32 ((G[j]! + z * G[j + len]!).val) := by
+  obtain hv2 : BitVec.ofNat 32 ((a + b * zv % q) % q) = BitVec.ofNat 32 ((G[j]! + z * G[j + len]!).val) := by
     rw [val_add', ht', ea]
   refine ⟨fun r h1 h2 h3 h4 h5 h6 => ?_, ?_, ?_, ?_, ?_, rfl, rfl, ?_, ?_⟩
   · simp only [h1, h2, h4, h5, h6, ite_false]; exact g₂ r h1 h2 h3
@@ -194,32 +194,32 @@ theorem ibflyBody_eq : ibflyBody =
 
 theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z : Zq}
     (h : BIn s p G j len zA z) : WP isa (.block ibflyBody) s (BOut s p (bflyInv G j len z)) := by
-  have hj : j < n := by have := h.hj; rw [n_eq]; omega_arith
-  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_arith
+  obtain hj : j < n := by have := h.hj; rw [n_eq]; omega_arith
+  obtain hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_arith
   have hl := h.hl
-  have ha := polyIs_coeffAt h.poly hj
-  have hb := polyIs_coeffAt h.poly hjl
-  have la := val_lt G[j]!
-  have lb := val_lt G[j + len]!
-  have lz := val_lt z
+  obtain ha := polyIs_coeffAt h.poly hj
+  obtain hb := polyIs_coeffAt h.poly hjl
+  obtain la := val_lt G[j]!
+  obtain lb := val_lt G[j + len]!
+  obtain lz := val_lt z
   rw [coeffAt_eq] at ha hb
   have hzv := h.z_v
   generalize ea : (G[j]!).val = a at ha la
   generalize eb : (G[j + len]!).val = b at hb lb
   generalize ez : z.val = zv at lz hzv
-  have hzm : zv * 2 ^ 32 % q < q := Nat.mod_lt _ (by decide)
-  have ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega_arith)
-  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_arith)
-  have hz' : (BitVec.ofNat 32 (zv * 2 ^ 32 % q)).toNat = zv * 2 ^ 32 % q := toNat_ofNat32 (mod_q_lt32 _)
-  have hbz : (a + q - b) * (zv * 2 ^ 32 % q) < q * 2 ^ 32 := by
+  obtain hzm : zv * 2 ^ 32 % q < q := Nat.mod_lt _ (by decide)
+  obtain ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega_arith)
+  obtain hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_arith)
+  obtain hz' : (BitVec.ofNat 32 (zv * 2 ^ 32 % q)).toNat = zv * 2 ^ 32 % q := toNat_ofNat32 (mod_q_lt32 _)
+  obtain hbz : (a + q - b) * (zv * 2 ^ 32 % q) < q * 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt (show a + q - b < 2 * q by rw [q_eq]; omega_arith) hzm
     rw [q_eq] at this ⊢; omega_arith
-  have hrz : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p j) V).readW zA 32 = s.mem.readW zA 32 :=
+  obtain hrz : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p j) V).readW zA 32 = s.mem.readW zA 32 :=
     fun V => Mem.readW_writeW_sep h.z_sep (by decide)
   have inI := h.in_i
   have inD := h.in_d
-  have inI' := inRd h.in_i
-  have inD' := inRd h.in_d
+  obtain inI' := inRd h.in_i
+  obtain inD' := inRd h.in_d
   have inZ := h.in_z
   have ea_i := h.ea_i
   have ea_d := h.ea_d
@@ -231,11 +231,11 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
     State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, ea_i, ea_d,
     ea_z, inI, inI', inD', inZ, ha, hb, hrz, hzv, Option.some.injEq,
     exists_eq_left']
-  have hsub : (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 b).toNat = a + q - b := by
-    have hQ : (BitVec.ofNat 32 a + qImm).toNat = a + q := by
+  obtain hsub : (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 b).toNat = a + q - b := by
+    obtain hQ : (BitVec.ofNat 32 a + qImm).toNat = a + q := by
       rw [BitVec.toNat_add, ha', qImm_toNat, Nat.mod_eq_of_lt (by rw [q_eq]; omega_arith)]
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, hb']; omega_arith), hQ, hb']
-  have hsum : (BitVec.ofNat 32 a + BitVec.ofNat 32 b).toNat = a + b := by
+  obtain hsum : (BitVec.ofNat 32 a + BitVec.ofNat 32 b).toNat = a + b := by
     rw [BitVec.toNat_add, ha', hb', Nat.mod_eq_of_lt (by omega_arith)]
   refine mred_spec (r := .ebx) (by decide) (by decide) _ _ _ (x := (a + q - b) * (zv * 2 ^ 32 % q)) ?_ hbz
     fun s₂ o₂ v₂ => ?_
@@ -245,24 +245,24 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
   have m₂ := o₂.mem
   simp only [execMul, State.setReg, State.setFlags] at m₂
   rw [csubQ_eq _ _ (by rw [hsum, q_eq]; omega_arith), hsum] at m₂
-  have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
+  obtain g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [o₂.gpr r (by simp [h1, h2, h3]), execMul_other _ _ h1 h2]
     simp only [h1, h2, h3, ite_false]
-  have esi₂ := g₂ .esi (by decide) (by decide) (by decide)
-  have edi₂ := g₂ .edi (by decide) (by decide) (by decide)
-  have ecx₂ := g₂ .ecx (by decide) (by decide) (by decide)
-  have rd₂ : s₂.rd = s.rd := by rw [o₂.rd]; rfl
-  have wr₂ : s₂.wr = s.wr := by rw [o₂.wr]; rfl
-  have ht : mont ((a + q - b) * (zv * 2 ^ 32 % q)) % q = (a + q - b) * zv % q := mont_mulR _ zv
-  have bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 ((a + q - b) * zv % q) := eq_ofNat_of_toNat (v₂.trans ht)
+  obtain esi₂ := g₂ .esi (by decide) (by decide) (by decide)
+  obtain edi₂ := g₂ .edi (by decide) (by decide) (by decide)
+  obtain ecx₂ := g₂ .ecx (by decide) (by decide) (by decide)
+  obtain rd₂ : s₂.rd = s.rd := by rw [o₂.rd]; rfl
+  obtain wr₂ : s₂.wr = s.wr := by rw [o₂.wr]; rfl
+  obtain ht : mont ((a + q - b) * (zv * 2 ^ 32 % q)) % q = (a + q - b) * zv % q := mont_mulR _ zv
+  obtain bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 ((a + q - b) * zv % q) := eq_ofNat_of_toNat (v₂.trans ht)
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some,
     esi₂, edi₂, ecx₂, m₂, rd₂, wr₂, bx₂, ea_d, inD, Option.some.injEq,
     exists_eq_left']
-  have hv1 : BitVec.ofNat 32 ((a + b) % q) = BitVec.ofNat 32 ((G[j]! + G[j + len]!).val) := by
+  obtain hv1 : BitVec.ofNat 32 ((a + b) % q) = BitVec.ofNat 32 ((G[j]! + G[j + len]!).val) := by
     rw [val_add', ea, eb]
-  have hv2 : BitVec.ofNat 32 ((a + q - b) * zv % q) =
+  obtain hv2 : BitVec.ofNat 32 ((a + q - b) * zv % q) =
       BitVec.ofNat 32 ((z * (G[j]! - G[j + len]!)).val) := by
     rw [val_mul, sub_val, ez, ea, eb, Nat.mul_comm zv, Nat.mod_mul_mod]
   refine ⟨fun r h1 h2 h3 h4 h5 h6 => ?_, ?_, ?_, ?_, ?_, rfl, rfl, ?_, ?_⟩
@@ -430,7 +430,7 @@ theorem bfly_step {s₀ : State} (hp : Pre s₀) (b : Bfly) {T : List Nat} {zv :
       eval .ne s' = some (decide (t + 1 < len)) := by
   have ff := hp.f_fit
   have fs := hp.s_fit
-  have bin : BIn s (fA s₀) (blockN b.op H len (zv k) start t) (start + t) len (coeffAddr (sA s₀) k) (zv k) := {
+  obtain bin : BIn s (fA s₀) (blockN b.op H len (zv k) start t) (start + t) len (coeffAddr (sA s₀) k) (zv k) := {
     ea_i := by rw [h.esi, ea_add (by omega_arith), Nat.add_zero]
     ea_d := by rw [h.edi, ea_add (by omega_arith), Nat.add_zero]; congr 2; omega_arith
     ea_z := by rw [h.ebp, ea_add (by omega_arith), Nat.add_zero]
@@ -523,11 +523,11 @@ theorem ptr_prev (x : BitVec 32) {a b : Nat} (h : b ≤ a) :
 /-- The loop over blocks goes on while blocks are left. -/
 theorem blk_cond {len B c : Nat} (hB : len * B = 128) (hc : c < B) :
     (!decide (4 * (2 * len * c + len + len) = 1024)) = decide (c + 1 < B) := by
-  have hl : 0 < len := by
+  obtain hl : 0 < len := by
     rcases Nat.eq_zero_or_pos len with h | h
     · rw [h, Nat.zero_mul] at hB; exact absurd hB (by decide)
     · exact h
-  have e : 4 * (2 * len * c + len + len) = 8 * (len * (c + 1)) := by
+  obtain e : 4 * (2 * len * c + len + len) = 8 * (len * (c + 1)) := by
     rw [Nat.mul_succ, Nat.mul_assoc 2]; omega_arith
   rw [e]
   by_cases h : c + 1 = B
@@ -555,10 +555,10 @@ theorem blockEnd_piece (up : Bool) (len c B : Nat) (hB : len * B = 128) (hc : c 
       (.block (blockEnd (dzOf up))) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) ht
   · have ff := hp.f_fit
-    have hsl : (s.gpr .esp + BitVec.ofNat 32 24).setWidth 64 = argAddr s₀ 1 := by
+    obtain hsl : (s.gpr .esp + BitVec.ofNat 32 24).setWidth 64 = argAddr s₀ 1 := by
       rw [h.esp]; exact P0_argAddr s₀ 1
-    have ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 1) 4 := hp.in_a h.wr (by decide)
-    have hlc : 2 * len * c + 2 * len ≤ 256 := by
+    obtain ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 1) 4 := hp.in_a h.wr (by decide)
+    obtain hlc : 2 * len * c + 2 * len ≤ 256 := by
       have : len * (c + 1) ≤ len * B := Nat.mul_le_mul_left _ hc
       rw [Nat.mul_succ] at this; rw [Nat.mul_assoc]; omega_arith
     apply WP.of_runBlock
@@ -602,7 +602,7 @@ theorem layer_piece (hT : TabOK T zv) (up : Bool) (len B : Nat) (hB : len * B = 
     Piece Pre Pub (fun s₀ s => LB s₀ T (P s₀) (kf len 0) s)
       (fun s₀ s => LB s₀ T (layerN b.op (P s₀) len (zf zv kf len) B) (kf len B) s)
       (layerCode b.body (dzOf up) len) := by
-  have hl : 0 < len := by
+  obtain hl : 0 < len := by
     rcases Nat.eq_zero_or_pos len with h | h
     · rw [h, Nat.zero_mul] at hB; exact absurd hB (by decide)
     · exact h
@@ -615,7 +615,7 @@ theorem layer_piece (hT : TabOK T zv) (up : Bool) (len B : Nat) (hB : len * B = 
   · refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) t₁
     · have hsl : (s.gpr .esp + BitVec.ofNat 32 20).setWidth 64 = argAddr s₀ 0 := by
         rw [h.esp]; exact P0_argAddr s₀ 0
-      have ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 0) 4 := hp.in_a h.wr (by decide)
+      obtain ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 0) 4 := hp.in_a h.wr (by decide)
       apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some, State.setReg,
         State.ea, at_, State.load32, hsl, ins, h.mem.arg0, ite_true, Option.some.injEq, exists_eq_left']

@@ -60,17 +60,17 @@ theorem subkeys_rel {s₀ s₀' : State} (h0 : subkeysArm.pre s₀) (h0' : subke
     (hq : subkeysArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') subkeys fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄⟩ := hq
-  have hp := SPre.of h0
-  have hp' := SPre.of h0'
+  obtain hp := SPre.of h0
+  obtain hp' := SPre.of h0'
   have eW : W s₀' = W s₀ := q₁.symm
-  have eR : R s₀' = R s₀ := by rw [R, R, q₂]
+  obtain eR : R s₀' = R s₀ := by rw [R, R, q₂]
   have eK : Kb s₀' = Kb s₀ := q₃.symm
   have eS : Sc s₀' = Sc s₀ := q₄.symm
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.block subkeysPre) h).isSome =
       true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.r5, .r6]) (.block subkeysPost) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SAfter s₀) (G' := SAfter s₀')
+  obtain a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SAfter s₀) (G' := SAfter s₀')
     (Taint.ofRegs [.r0, .r1, .r2, .r3])
     (fun s s' e e' => by
       subst e e'
@@ -78,11 +78,11 @@ theorem subkeys_rel {s₀ s₀' : State} (h0 : subkeysArm.pre s₀) (h0' : subke
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, hA⟩
     (fun s e => by rw [e]; exact pre_wp hp) (fun s e => by rw [e]; exact pre_wp hp')
-  have c := rel_wp (F := SAfter s₀) (F' := SAfter s₀') (G := SPost s₀) (G' := SPost s₀')
+  obtain c := rel_wp (F := SAfter s₀) (F' := SAfter s₀') (G := SPost s₀) (G' := SPost s₀')
     (ctr_rel (sp₀ := s₀.sp) fun s₁ s₂ h =>
       ⟨h.1.pre, by have := h.2.pre; rwa [eW, eS, eK, eR] at this, h.1.sp, h.2.sp.trans q₀.symm⟩)
     (fun _ h => spost_wp h) (fun _ h => spost_wp h)
-  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => SPost s₀ s₁ ∧ SPost s₀' s₂) (Taint.ofRegs [.r5, .r6])
+  obtain b := RelCT.taint (A := taint) (P := fun s₁ s₂ => SPost s₀ s₁ ∧ SPost s₀' s₂) (Taint.ofRegs [.r5, .r6])
     (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -145,11 +145,11 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
   have sf := hp.scr_fit
   have tf := hp.st_fit
   have hR := hp.rounds
-  have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
-  have r2 : s.gpr .r2 = St s₀ := h.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
-  have cSt : (⟨Ca s₀, 16⟩ : Region).Disjoint (stR s₀) := hp.st_scr.symm.sub_left (Offset.sub_base _ (by decide))
-  have wSt : Covers [stR s₀] s₀.wr := by
+  obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
+  obtain r2 : s.gpr .r2 = St s₀ := h.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
+  obtain cSt : (⟨Ca s₀, 16⟩ : Region).Disjoint (stR s₀) := hp.st_scr.symm.sub_left (Offset.sub_base _ (by decide))
+  obtain wSt : Covers [stR s₀] s₀.wr := by
     rw [hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
@@ -165,23 +165,23 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
       exact fun a n hi => wSt a n hi |> fun ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ hr, hc⟩)
     (by rw [h.r5, h.wr]; exact hp.cS (by decide)) fun s₁ g₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
-  have r2₂ : s₂.gpr .r2 = St s₀ := by rw [u₂.other _ (by decide), g₁.gpr _ (by decide) (by decide), r2]
+  obtain r2₂ : s₂.gpr .r2 = St s₀ := by rw [u₂.other _ (by decide), g₁.gpr _ (by decide) (by decide), r2]
   refine Proof.CmacAes.Arm.zeroBlk_ok u₂.gpr (by decide) (by rw [r2₂]; omega_arith)
     (by rw [r2₂, add0, u₂.wr, g₁.wr, h.wr]; exact wSt) fun s₃ G₃ m₃ rd₃ wr₃ sp₃ => ?_
   refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_add (op2_imm (by decide)) fun s₅ u₅ =>
     wp_mov (op2_imm (by decide)) fun s₆ u₆ => WP.block_nil ?_
-  have keep : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r12 → r ≠ .lr → s₆.gpr r = s.gpr r :=
+  obtain keep : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r12 → r ≠ .lr → s₆.gpr r = s.gpr r :=
     fun r h2 h3 h4 h12 hlr => by
       rw [u₆.other _ h4, u₅.other _ h2, u₄.other _ h3, G₃, u₂.other _ h12, g₁.gpr _ h12 hlr]
-  have r5₆ : s₆.gpr .r5 = S s₀ := by rw [keep _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r5]
-  have sp₆ : s₆.sp = s₀.sp := by rw [u₆.sp, u₅.sp, u₄.sp, sp₃, u₂.sp, g₁.sp, h.sp]
-  have rd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, g₁.rd, h.rd]
-  have wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, g₁.wr, h.wr]
-  have mem₆ : s₆.mem = Proof.Cmac.zero4 (Proof.Cmac.xor4Mem s.mem (Ca s₀) (Ca s₀) (State.addr (St s₀)))
+  obtain r5₆ : s₆.gpr .r5 = S s₀ := by rw [keep _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r5]
+  obtain sp₆ : s₆.sp = s₀.sp := by rw [u₆.sp, u₅.sp, u₄.sp, sp₃, u₂.sp, g₁.sp, h.sp]
+  obtain rd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, g₁.rd, h.rd]
+  obtain wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, g₁.wr, h.wr]
+  obtain mem₆ : s₆.mem = Proof.Cmac.zero4 (Proof.Cmac.xor4Mem s.mem (Ca s₀) (Ca s₀) (State.addr (St s₀)))
       (State.addr (St s₀)) := by
     rw [u₆.mem, u₅.mem, u₄.mem, m₃, r2₂, add0, u₂.mem, g₁.mem, h.r5, r2, add0]
-  have hb : below s₆ = belowR s₀ := by rw [below, sp₆]; rfl
-  have stS : Spec.Aes.bytesAt s.mem (State.addr (St s₀)) 16 = Spec.Aes.bytesAt s₀.mem (State.addr (St s₀)) 16 :=
+  obtain hb : below s₆ = belowR s₀ := by rw [below, sp₆]; rfl
+  obtain stS : Spec.Aes.bytesAt s.mem (State.addr (St s₀)) 16 = Spec.Aes.bytesAt s₀.mem (State.addr (St s₀)) 16 :=
     Proof.Cmac.bytesAt_frame16 ((fsMem_frame s₀).trans (h.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scrR s₀, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩)) fun r hr => by
@@ -243,7 +243,7 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
 theorem finPre_wp {s₀ : State} (hp : FPre s₀) : WP isa finPre s₀ (FMid s₀) := by
   refine WP.seq (WP.mono (finSave_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (Q := BPost s₀) ?_ fun _ h => finArgs_wp hp h)
-  have ev : isa.eval .eq s₁ = some (decide (N s₀ = 16)) := by
+  obtain ev : isa.eval .eq s₁ = some (decide (N s₀ = 16)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, h₁.z]
   by_cases hL : N s₀ = 16
   · exact WP.ite true (by rw [ev]; simp [hL]) (fun _ => full_wp hp hL h₁) (fun h => by cases h)
@@ -263,16 +263,16 @@ def finalizeRawArm : Contract isa := { finalizeArm with post := finalizeRaw }
 
 theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeRaw s₀ s' := by
-  have hp := FPre.of h0
+  obtain hp := FPre.of h0
   have hR := hp.rounds
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
+  obtain hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   have sf := hp.scr_fit
-  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
+  obtain cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ctr_call h₁.pre) fun s₂ h₂ => ?_)
-  have r5₂ : s₂.gpr .r5 = S s₀ := by rw [h₂.saved .r5 (by simp [preserved]) (by decide), h₁.r5]
-  have rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]
-  have inS : ∀ d, d + 4 ≤ 2176 → InRegions (s₂.rd ++ s₂.wr) (State.addr (S s₀) + BitVec.ofNat 64 d) 4 :=
+  obtain r5₂ : s₂.gpr .r5 = S s₀ := by rw [h₂.saved .r5 (by simp [preserved]) (by decide), h₁.r5]
+  obtain rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]
+  obtain inS : ∀ d, d + 4 ≤ 2176 → InRegions (s₂.rd ++ s₂.wr) (State.addr (S s₀) + BitVec.ofNat 64 d) 4 :=
     fun d hd => by
       rw [rdwr₂]
       obtain ⟨r, hr, hc⟩ := in_of_cov (hp.cS (d := d) (n := 4) hd)
@@ -289,9 +289,9 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     (by rw [ho₃ _ (by decide), r5₂]; exact addr_add (by omega_arith))
     (by rw [rd₃, wr₃]; exact inS _ (by decide)) fun s₄ u₄ => WP.block_nil ?_
   -- The slots, which nothing after the save writes.
-  have slot : ∀ r d, (r, d) ∈ fsaved → s₂.mem.readW (State.addr (S s₀) + BitVec.ofNat 64 d) 32 = s₀.gpr r := by
+  obtain slot : ∀ r d, (r, d) ∈ fsaved → s₂.mem.readW (State.addr (S s₀) + BitVec.ofNat 64 d) 32 = s₀.gpr r := by
     intro r d hrd
-    have hd : 2064 ≤ d ∧ d + 4 ≤ 2076 := by
+    obtain hd : 2064 ≤ d ∧ d + 4 ≤ 2076 := by
       simp only [fsaved, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hrd
       omega
     rw [h₂.frame.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -307,9 +307,9 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
         · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
         · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))) (by decide),
       fsMem_slot s₀ hrd]
-  have sch : Spec.Aes.bytesAt s₁.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) =
+  obtain sch : Spec.Aes.bytesAt s₁.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) =
       Spec.Aes.bytesAt s₀.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) := by
-    have f : Frame [scrR s₀, stR s₀] s₀.mem s₁.mem :=
+    obtain f : Frame [scrR s₀, stR s₀] s₀.mem s₁.mem :=
       (((fsMem_frame s₀).mono (by simp)).trans (h₁.frame.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -333,7 +333,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
 
 theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeArm.post s₀ s' := by
-  have hp := FPre.of h0
+  obtain hp := FPre.of h0
   refine WP.mono (finalize_raw_wp h0) fun s' ⟨ab, raw⟩ => ⟨ab, fun hk msg hm hne hst => ?_⟩
   have hk' : Spec.Aes.bytesAt s₀.mem (State.addr (W s₀) + BitVec.ofNat 64 240) 32 =
       (Spec.Cmac.subkeys (ciph s₀) 16).1 ++ (Spec.Cmac.subkeys (ciph s₀) 16).2 := hk
@@ -368,26 +368,26 @@ theorem finalize_rel {s₀ s₀' : State} (h0 : finalizeArm.pre s₀) (h0' : fin
     (hq : finalizeArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') finalize fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, q₅, q₆⟩ := hq
-  have hp := FPre.of h0
-  have hp' := FPre.of h0'
+  obtain hp := FPre.of h0
+  obtain hp' := FPre.of h0'
   have eW : W s₀' = W s₀ := q₁.symm
-  have eR : R s₀' = R s₀ := by rw [R, R, q₂]
+  obtain eR : R s₀' = R s₀ := by rw [R, R, q₂]
   have eSt : St s₀' = St s₀ := q₃.symm
   have eS : S s₀' = S s₀ := q₆.symm
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (argTaint [.r0, .r1, .r2, .r3] 8) finPre h).isSome = true :=
     ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.r5]) (.block finEnd) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have wfA : ∀ {s : State}, FPre s →
+  obtain wfA : ∀ {s : State}, FPre s →
       s.sp.toNat + 8 ≤ 2 ^ 32 ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr s.sp, 8⟩ r := fun {s} h => by
-    have e : (⟨State.addr s.sp, 8⟩ : Region) = argsR s := by simp [stackArgAddr]
+    obtain e : (⟨State.addr s.sp, 8⟩ : Region) = argsR s := by simp [stackArgAddr]
     refine ⟨h.sp_fit, ?_⟩
     rw [e, h.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact h.st_args.symm
     · exact h.scr_args.symm
-  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := FMid s₀) (G' := FMid s₀')
+  obtain a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := FMid s₀) (G' := FMid s₀')
     (argTaint [.r0, .r1, .r2, .r3] 8)
     (fun s s' e e' => by
       subst e e'
@@ -399,13 +399,13 @@ theorem finalize_rel {s₀ s₀' : State} (h0 : finalizeArm.pre s₀) (h0' : fin
         · exact q₅
         · exact q₆) ⟨_, hA⟩
     (fun s e => by rw [e]; exact finPre_wp hp) (fun s e => by rw [e]; exact finPre_wp hp')
-  have c := rel_wp (F := FMid s₀) (F' := FMid s₀') (G := fun s => s.gpr .r5 = S s₀)
+  obtain c := rel_wp (F := FMid s₀) (F' := FMid s₀') (G := fun s => s.gpr .r5 = S s₀)
     (G' := fun s => s.gpr .r5 = S s₀')
     (ctr_rel (sp₀ := s₀.sp) fun s₁ s₂ h =>
       ⟨h.1.pre, by have := h.2.pre; rwa [eW, eS, eSt, eR] at this, h.1.sp, h.2.sp.trans q₀.symm⟩)
     (fun _ h => WP.mono (ctr_call h.pre) fun _ hc => by rw [hc.saved .r5 (by simp [preserved]) (by decide), h.r5])
     (fun _ h => WP.mono (ctr_call h.pre) fun _ hc => by rw [hc.saved .r5 (by simp [preserved]) (by decide), h.r5])
-  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => s₁.gpr .r5 = S s₀ ∧ s₂.gpr .r5 = S s₀')
+  obtain b := RelCT.taint (A := taint) (P := fun s₁ s₂ => s₁.gpr .r5 = S s₀ ∧ s₂.gpr .r5 = S s₀')
     (Taint.ofRegs [.r5]) (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; rw [h.1, h.2, eS]) hB

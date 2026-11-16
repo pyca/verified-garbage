@@ -40,19 +40,19 @@ open VG.Proof.AesCcm (ctxCiph_frame ctrBlock_split length_bytesAt)
 theorem le4_flags (x : BitVec 32) {c f : Nat} (hc : c < 256) (hf : f < 256)
     (h0 : x.extractLsb' 0 8 = BitVec.ofNat 8 c) :
     le4 ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f) = BitVec.ofNat 8 f :: (le4 x).drop 1 := by
-  have hi : ∀ o j, 8 ≤ o → o + j < 32 → (BitVec.ofNat 32 c).getLsbD (o + j) = false ∧
+  obtain hi : ∀ o j, 8 ≤ o → o + j < 32 → (BitVec.ofNat 32 c).getLsbD (o + j) = false ∧
       (BitVec.ofNat 32 f).getLsbD (o + j) = false := fun o j h₁ h₂ => by
-    have hp : 256 ≤ 2 ^ (o + j) := Nat.pow_le_pow_right (n := 2) (i := 8) (by decide) (by omega_arith)
+    obtain hp : 256 ≤ 2 ^ (o + j) := Nat.pow_le_pow_right (n := 2) (i := 8) (by decide) (by omega_arith)
     simp only [BitVec.getLsbD_ofNat, Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hc hp),
       Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hf hp), Bool.and_false, and_self]
-  have ek : ∀ o, 8 ≤ o → o + 8 ≤ 32 →
+  obtain ek : ∀ o, 8 ≤ o → o + 8 ≤ 32 →
       ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f).extractLsb' o 8 = x.extractLsb' o 8 := fun o h₁ h₂ => by
     ext j hj
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_xor, (hi o j h₁ (by omega_arith)).1,
       (hi o j h₁ (by omega_arith)).2, Bool.xor_false, Bool.or_false]
-  have e0 : ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f).extractLsb' 0 8 = BitVec.ofNat 8 f := by
+  obtain e0 : ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f).extractLsb' 0 8 = BitVec.ofNat 8 f := by
     ext j hj
-    have hx := congrArg (fun b : BitVec 8 => b.getLsbD j) h0
+    obtain hx := congrArg (fun b : BitVec 8 => b.getLsbD j) h0
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, Nat.zero_add,
       BitVec.getLsbD_ofNat] at hx
     simp only [BitVec.getElem_extractLsb', Nat.zero_add, BitVec.getLsbD_or,
@@ -85,13 +85,13 @@ theorem b0_bytes {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.leng
     le4 ((w₀ ^^^ BitVec.ofNat 32 (14 - nonce.length)) ||| BitVec.ofNat 32 f) ++ le4 w₁ ++ le4 w₂ ++
       le4 (w₃ ||| rev (BitVec.ofNat 32 n)) = BitVec.ofNat 8 f :: (Spec.Ccm.ctrBlock nonce n).drop 1 := by
   have l := Proof.Cmac.length_le4
-  have h0 : w₀.extractLsb' 0 8 = BitVec.ofNat 8 (14 - nonce.length) := by
+  obtain h0 : w₀.extractLsb' 0 8 = BitVec.ofNat 8 (14 - nonce.length) := by
     have := congrArg List.head? hc
     rw [le4_eq w₀] at this
     simp only [List.cons_append, List.head?_cons, Spec.Ccm.ctrBlock, Option.some.injEq] at this
     rw [this]; congr 1; omega_arith
   rw [le4_flags w₀ (by omega_arith) hf h0]
-  have hl : (le4 w₀ ++ le4 w₁ ++ le4 w₂).length = 12 := by simp [l]
+  obtain hl : (le4 w₀ ++ le4 w₁ ++ le4 w₂).length = 12 := by simp [l]
   rw [ctrBlock_split h7 h13 hn, ← hc, Proof.AesCcm.le4_or, le4_rev_ofNat hn4, List.take_left' hl,
     List.drop_left' hl]
   rw [le4_eq w₀]; rfl
@@ -150,41 +150,41 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
       bytesAt s'.mem (State.addr w + BitVec.ofNat 64 y) 16 = Spec.Cmac.zeros 16 ∧
       bytesAt s'.mem (State.addr w + BitVec.ofNat 64 32) 16 = Spec.Ccm.b0 tl nonce al n := by
   refine WP.seq (WP.mono (flags_ok he hk etl eal ht4 ht16 h13 hal) fun s₁ ⟨h0₁, g₁, k₁⟩ => ?_)
-  have he₁ := he.keep (fun r hr => by
+  obtain he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide)) k₁.sp k₁.rd k₁.wr
-  have hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
+  obtain hk₁ := hk.of_eq k₁.mem k₁.sp k₁.rd k₁.wr
   obtain ⟨i3, v3⟩ := hk₁.at 3 (by decide) (show 4 * 3 = 12 from rfl)
   have h10 := he₁.r10
   have h11 := he₁.r11
-  have r₀ := he₁.perm.wR (show 48 + 4 ≤ 2560 by decide)
-  have r₁ := he₁.perm.wR (show 52 + 4 ≤ 2560 by decide)
-  have r₂ := he₁.perm.wR (show 56 + 4 ≤ 2560 by decide)
-  have r₃ := he₁.perm.wR (show 60 + 4 ≤ 2560 by decide)
-  have w₀ := he₁.perm.wW (show 32 + 4 ≤ 2560 by decide)
-  have w₁ := he₁.perm.wW (show 36 + 4 ≤ 2560 by decide)
-  have w₂ := he₁.perm.wW (show 40 + 4 ≤ 2560 by decide)
-  have w₃ := he₁.perm.wW (show 44 + 4 ≤ 2560 by decide)
-  have q : ∀ a d, a + 4 ≤ d ∨ d + 4 ≤ a → a + 4 ≤ 2560 → d + 4 ≤ 2560 →
+  obtain r₀ := he₁.perm.wR (show 48 + 4 ≤ 2560 by decide)
+  obtain r₁ := he₁.perm.wR (show 52 + 4 ≤ 2560 by decide)
+  obtain r₂ := he₁.perm.wR (show 56 + 4 ≤ 2560 by decide)
+  obtain r₃ := he₁.perm.wR (show 60 + 4 ≤ 2560 by decide)
+  obtain w₀ := he₁.perm.wW (show 32 + 4 ≤ 2560 by decide)
+  obtain w₁ := he₁.perm.wW (show 36 + 4 ≤ 2560 by decide)
+  obtain w₂ := he₁.perm.wW (show 40 + 4 ≤ 2560 by decide)
+  obtain w₃ := he₁.perm.wW (show 44 + 4 ≤ 2560 by decide)
+  obtain q : ∀ a d, a + 4 ≤ d ∨ d + 4 ≤ a → a + 4 ≤ 2560 → d + 4 ≤ 2560 →
       (⟨State.addr w + BitVec.ofNat 64 a, 4⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, 4⟩ :=
     fun a d h₁ h₂ h₃ => L.w_w h₁ h₂ h₃
-  have p₁ := fun m v => sepW (m := m) (v := v) (q 52 32 (by decide) (by decide) (by decide))
-  have p₂ := fun m v => sepW (m := m) (v := v) (q 56 32 (by decide) (by decide) (by decide))
-  have p₃ := fun m v => sepW (m := m) (v := v) (q 56 36 (by decide) (by decide) (by decide))
-  have p₄ := fun m v => sepW (m := m) (v := v) (q 60 32 (by decide) (by decide) (by decide))
-  have p₅ := fun m v => sepW (m := m) (v := v) (q 60 36 (by decide) (by decide) (by decide))
-  have p₆ := fun m v => sepW (m := m) (v := v) (q 60 40 (by decide) (by decide) (by decide))
-  have e := fun d (hd : d < 2560) => L.wA (d := d) hd
-  have p₇ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
+  obtain p₁ := fun m v => sepW (m := m) (v := v) (q 52 32 (by decide) (by decide) (by decide))
+  obtain p₂ := fun m v => sepW (m := m) (v := v) (q 56 32 (by decide) (by decide) (by decide))
+  obtain p₃ := fun m v => sepW (m := m) (v := v) (q 56 36 (by decide) (by decide) (by decide))
+  obtain p₄ := fun m v => sepW (m := m) (v := v) (q 60 32 (by decide) (by decide) (by decide))
+  obtain p₅ := fun m v => sepW (m := m) (v := v) (q 60 36 (by decide) (by decide) (by decide))
+  obtain p₆ := fun m v => sepW (m := m) (v := v) (q 60 40 (by decide) (by decide) (by decide))
+  obtain e := fun d (hd : d < 2560) => L.wA (d := d) hd
+  obtain p₇ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
     (d := 32) (by decide))
-  have p₈ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
+  obtain p₈ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
     (d := 36) (by decide))
-  have p₉ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
+  obtain p₉ := fun m v => sepW (m := m) (v := v) (hk₁.slot_w 3 (by decide) (show 4 * 3 = 12 from rfl)
     (d := 40) (by decide))
   let m := s₁.mem
   let W := State.addr w
   let f := 4 * (tl - 2) + (14 - nl) + if al = 0 then 0 else 64
-  have hf : f < 256 := by simp only [f]; split <;> omega_arith
+  obtain hf : f < 256 := by simp only [f]; split <;> omega_arith
   obtain ⟨s₂, run₂, hm₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [.ldr .r1 .r11 c0O, .dp .eor .r1 .r1 (.reg .r10),
       .dp .orr .r1 .r1 (.reg .r0), .str .r1 .r11 bO, .ldr .r1 .r11 (c0O + 4), .str .r1 .r11 (bO + 4),
       .ldr .r1 .r11 (c0O + 8), .str .r1 .r11 (bO + 8), .ldr .r1 .r11 (c0O + 12), .ldrSp .r2 12, .rev .r2 .r2,
@@ -200,7 +200,7 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
         store4_eq, add_ofNat_assoc, m, W, f]
     · intro r a b; simp [gpr_setReg, a, b]
     · exact ⟨rfl, rfl, rfl⟩
-  have he₂ := he₁.keep (fun r hr => by
+  obtain he₂ := he₁.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide)) k₂.2.2 k₂.1 k₂.2.1
   obtain ⟨s₃, run₃, hm₃, g₃, rd₃, wr₃, sp₃, -⟩ := zero16_ok L he₂ (d := y) (by omega_arith) (by omega_arith)
@@ -210,13 +210,13 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
       .ldr .r1 .r11 (c0O + 8), .str .r1 .r11 (bO + 8), .ldr .r1 .r11 (c0O + 12), .ldrSp .r2 12, .rev .r2 .r2,
       .dp .orr .r1 .r1 (.reg .r2), .str .r1 .r11 (bO + 12)] ++ zero16 y from rfl]
     exact runBlock_app_of run₂ run₃, ?_⟩
-  have dY : (⟨W + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩ := by
+  obtain dY : (⟨W + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩ := by
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  have f₂ : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₂.mem := by
+  obtain f₂ : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₂.mem := by
     rw [hm₂, show m = s.mem from k₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have f₃ : Frame [⟨W + BitVec.ofNat 64 y, 16⟩] s₂.mem s₃.mem := by
+  obtain f₃ : Frame [⟨W + BitVec.ofNat 64 y, 16⟩] s₂.mem s₃.mem := by
     rw [hm₃]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   refine ⟨he₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -233,12 +233,12 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
     rw [bytes_words] at hw
     simp only [add_ofNat_assoc] at hw
     rw [← k₁.mem] at hw
-    have hnm : n < 256 ^ min (15 - nonce.length) 4 := by
+    obtain hnm : n < 256 ^ min (15 - nonce.length) 4 := by
       rw [hnl]
       rcases Nat.le_total (15 - nl) 4 with h | h
       · rw [Nat.min_eq_left h]; exact hn
       · rw [Nat.min_eq_right h]; exact Nat.lt_of_lt_of_le hn4 (by decide)
-    have hb := b0_bytes (f := f) (by omega_arith) (by omega_arith) hw hf hnm hn4
+    obtain hb := b0_bytes (f := f) (by omega_arith) (by omega_arith) hw hf hnm hn4
     rw [hnl] at hb
     rw [hb]
     simp only [Spec.Ccm.b0, Spec.Ccm.ctrBlock, List.drop_succ_cons, List.drop_zero, hnl, f]

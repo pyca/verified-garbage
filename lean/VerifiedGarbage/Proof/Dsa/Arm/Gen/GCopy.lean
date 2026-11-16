@@ -50,29 +50,29 @@ theorem copyOut_vp {L j dst n : Nat} (cert : Cert7 (copyN (scr L .r0 dst) (ptr .
   have fit := gi.scrFit
   have l := h.lens
   have kb := h.kbNat
-  have hjN := h.liveOk j hj
-  have fa : arr G.w j + S G.w ≤ kz G.pLen := (h.ws).arr_fit hjN
+  obtain hjN := h.liveOk j hj
+  obtain fa : arr G.w j + S G.w ≤ kz G.pLen := (h.ws).arr_fit hjN
   have hS : S G.w = 4 * (G.w + 2) := rfl
-  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega_arith
-  have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
-  have ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
+  obtain w96 : G.w ≤ 96 := by simp only [GP.w]; omega_arith
+  obtain inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
+  obtain ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
     h.ws.addr (by omega_arith)
-  have e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
+  obtain e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
     rw [gi.kaddr]; simp only [off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have as : State.addr (G.scr + BitVec.ofNat 32 dst) = G.sa dst := gi.saddr (by omega_arith)
-  have va := h.arrs.get hj
+  obtain as : State.addr (G.scr + BitVec.ofNat 32 dst) = G.sa dst := gi.saddr (by omega_arith)
+  obtain va := h.arrs.get hj
   unfold copyN
   rw [List.append_assoc]
   refine WP.seq (h.ptr_ok (r := .r1) (by decide) (by simp only [nArrs] at hjN; omega_arith) fun s₁ p₁ R₁ m₁ => ?_)
-  have r8₁ : s₁.gpr .r8 = G.KB := by rw [R₁.gpr _ (by decide), h.r8]
+  obtain r8₁ : s₁.gpr .r8 = G.KB := by rw [R₁.gpr _ (by decide), h.r8]
   refine scr_ok (d := .r0) (o := dst) r8₁ rfl l (by omega_arith) fun s₂ v₂ R₂ M₂ => ?_
   refine wp_movw fun s₃ u₃ => WP.block_nil ?_
-  have R₃ : Rest [.r0, .r1, .r12, .lr] s s₃ := (R₁.mono (by simp)).trans ((R₂.mono (by simp)).trans
+  obtain R₃ : Rest [.r0, .r1, .r12, .lr] s s₃ := (R₁.mono (by simp)).trans ((R₂.mono (by simp)).trans
     (u₃.rest (by simp)))
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, M₂, m₁]
-  have srcFit : (G.KB + BitVec.ofNat 32 (arr G.w j)).toNat + n ≤ 2 ^ 32 := by
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, M₂, m₁]
+  obtain srcFit : (G.KB + BitVec.ofNat 32 (arr G.w j)).toNat + n ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat]; omega_arith
-  have dstFit : (G.scr + BitVec.ofNat 32 dst).toNat + n ≤ 2 ^ 32 := by
+  obtain dstFit : (G.scr + BitVec.ofNat 32 dst).toNat + n ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat]; omega_arith
   refine WP.mono (VG.Proof.Bignum.Arm.copyBuffer_ok s₃ (src := G.KB + BitVec.ofNat 32 (arr G.w j))
     (dst := G.scr + BitVec.ofNat 32 dst) (n := n) hn0 srcFit dstFit (by omega_arith)
@@ -103,28 +103,28 @@ theorem copyIn_vp {L j src n v : Nat} (cert : Cert7 (copyN (ptr .r0 j) (scr L .r
   have fit := gi.scrFit
   have l := h.lens
   have kb := h.kbNat
-  have fa : arr G.w j + S G.w ≤ kz G.pLen := (h.ws).arr_fit hjN
+  obtain fa : arr G.w j + S G.w ≤ kz G.pLen := (h.ws).arr_fit hjN
   have hS : S G.w = 4 * (G.w + 2) := rfl
-  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega_arith
-  have w1 : 1 ≤ G.w := by simp only [GP.w]; omega_arith
-  have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
-  have ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
+  obtain w96 : G.w ≤ 96 := by simp only [GP.w]; omega_arith
+  obtain w1 : 1 ≤ G.w := by simp only [GP.w]; omega_arith
+  obtain inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
+  obtain ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
     h.ws.addr (by omega_arith)
-  have e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
+  obtain e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
     rw [gi.kaddr]; simp only [off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have as : State.addr (G.scr + BitVec.ofNat 32 src) = G.sa src := gi.saddr (by omega_arith)
+  obtain as : State.addr (G.scr + BitVec.ofNat 32 src) = G.sa src := gi.saddr (by omega_arith)
   unfold copyN
   rw [List.append_assoc]
   refine WP.seq (scr_ok (d := .r1) (o := src) h.r8 rfl l (by omega_arith) fun s₁ v₁ R₁ M₁ => ?_)
-  have h₁ := h.of_rest (R₁.mono (ws' := [.r12, .r1]) (by simp)) M₁
+  obtain h₁ := h.of_rest (R₁.mono (ws' := [.r12, .r1]) (by simp)) M₁
   refine h₁.ptr_ok (r := .r0) (by decide) (by simp only [nArrs] at hjN; omega_arith) fun s₂ p₂ R₂ m₂ => ?_
   refine wp_movw fun s₃ u₃ => WP.block_nil ?_
-  have R₃ : Rest [.r0, .r1, .r12, .lr] s s₃ := (R₁.mono (by simp)).trans ((R₂.mono (by simp)).trans
+  obtain R₃ : Rest [.r0, .r1, .r12, .lr] s s₃ := (R₁.mono (by simp)).trans ((R₂.mono (by simp)).trans
     (u₃.rest (by simp)))
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, m₂, M₁]
-  have srcFit : (G.scr + BitVec.ofNat 32 src).toNat + n ≤ 2 ^ 32 := by
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, m₂, M₁]
+  obtain srcFit : (G.scr + BitVec.ofNat 32 src).toNat + n ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat]; omega_arith
-  have dstFit : (G.KB + BitVec.ofNat 32 (arr G.w j)).toNat + n ≤ 2 ^ 32 := by
+  obtain dstFit : (G.KB + BitVec.ofNat 32 (arr G.w j)).toNat + n ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat]; omega_arith
   refine WP.mono (VG.Proof.Bignum.Arm.copyBuffer_ok s₃ (src := G.scr + BitVec.ofNat 32 src)
     (dst := G.KB + BitVec.ofNat 32 (arr G.w j)) (n := n) (by omega_arith) srcFit dstFit (by omega_arith)
@@ -138,15 +138,15 @@ theorem copyIn_vp {L j src n v : Nat} (cert : Cert7 (copyN (ptr .r0 j) (scr L .r
   rintro t ⟨rt, ft, _, Rt⟩
   rw [ad, m₃] at ft rt
   rw [as] at rt
-  have hrK : Region.Sub ⟨off (State.addr G.KB) (arr G.w j), n⟩ ⟨off (State.addr G.KB) (arr G.w j), S G.w⟩ :=
+  obtain hrK : Region.Sub ⟨off (State.addr G.KB) (arr G.w j), n⟩ ⟨off (State.addr G.KB) (arr G.w j), S G.w⟩ :=
     fun a h => by simp only [Region.Contains] at h ⊢; omega_arith
-  have k : Keep G.KB G.w [j] [] s.mem t.mem :=
+  obtain k : Keep G.KB G.w [j] [] s.mem t.mem :=
     VG.Proof.Rsa.Arm.CrtValues.Keep.of_frame_arr (ft.sub fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, hrK⟩) (by omega_arith)
-  have fK : Frame [G.rK] s.mem t.mem := ft.sub fun r hr => by
+  obtain fK : Frame [G.rK] s.mem t.mem := ft.sub fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨G.rK, List.mem_singleton_self _, Offset.sub_base (State.addr G.KB) (by omega_arith)⟩
-  have vw : num t.mem G.KB G.w j = v := by
+  obtain vw : num t.mem G.KB G.w j = v := by
     rw [← ev, ← rt, hn]
     exact (VG.Proof.Bignum.read_eq_val32 t.mem (State.addr G.KB) G.w (arr G.w j)).symm
   exact ⟨h.of_op ((R₃.mono (ws' := [.r0, .r1, .r2, .r12, .lr]) (by simp)).trans (Rt.mono (by simp))) fK hjN k vw, x⟩

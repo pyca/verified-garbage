@@ -64,41 +64,41 @@ theorem sized_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   have P := h.pre
   have dims := hr.dimensions
   have nw' := hr.scratch.nowrap
-  have wbe := wb_eq len
-  have f7 := hr.fits (j := 7) (by decide)
-  have wl := wb_ge h.lower
-  have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
-  have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
-  have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
-  have n0 : numAt len 0 = 256 := by simp [numAt, numOff]
+  obtain wbe := wb_eq len
+  obtain f7 := hr.fits (j := 7) (by decide)
+  obtain wl := wb_ge h.lower
+  obtain e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
+  obtain e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
+  obtain e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
+  obtain n0 : numAt len 0 = 256 := by simp [numAt, numOff]
   have h256 : numOff = 256 := rfl
   unfold PrecomputedRt.sized
   refine WP.seq (WP.mono (importKey_ok hr P) fun u ⟨V0, V4, V3, O₁, K₁⟩ => ?_)
-  have O₁' : Outside base 0 bytes s.mem u.mem := O₁.mono (by omega_using []) (by omega_using [f7, e5, h256])
-  have hu := h.keep K₁ (by decide) (by decide) O₁'
+  obtain O₁' : Outside base 0 bytes s.mem u.mem := O₁.mono (by omega_using []) (by omega_using [f7, e5, h256])
+  obtain hu := h.keep K₁ (by decide) (by decide) O₁'
   refine WP.seq (WP.mono (checks_ok hu.rt V3) fun v ⟨Z, O₂, K₂⟩ => ?_)
   simp only [checkOffset] at O₂
-  have O₂' : Outside base 0 bytes u.mem v.mem := O₂.mono (by omega_using []) (by omega_using [f7, wl])
-  have hv := hu.keep K₂ (by decide) (by decide) O₂'
-  have Osv : Outside base 16 (bytes - 16) s.mem v.mem :=
+  obtain O₂' : Outside base 0 bytes u.mem v.mem := O₂.mono (by omega_using []) (by omega_using [f7, wl])
+  obtain hv := hu.keep K₂ (by decide) (by decide) O₂'
+  obtain Osv : Outside base 16 (bytes - 16) s.mem v.mem :=
     (O₁.mono (by omega_using [h256]) (by omega_using [f7, e5, h256])).trans (O₂.mono (by omega_using []) (by omega_using [f7, wl]))
-  have Osv0 : Outside base 0 bytes s.mem v.mem := O₁'.trans O₂'
-  have W := scratch_words Osv0 (by omega_using [nw']) (n := 2 * Spec.Rsa.modulusWords len) (by omega_using [dims])
+  obtain Osv0 : Outside base 0 bytes s.mem v.mem := O₁'.trans O₂'
+  obtain W := scratch_words Osv0 (by omega_using [nw']) (n := 2 * Spec.Rsa.modulusWords len) (by omega_using [dims])
     (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega_using []] using h.preApart)
-  have Ksv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (K₁.mono (by decide)).trans (K₂.mono (by decide))
-  have uv : ∀ j, j ≤ 4 → val32 v.mem base (numAt len j) (nw len) = val32 u.mem base (numAt len j) (nw len) :=
+  obtain Ksv : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (K₁.mono (by decide)).trans (K₂.mono (by decide))
+  obtain uv : ∀ j, j ≤ 4 → val32 v.mem base (numAt len j) (nw len) = val32 u.mem base (numAt len j) (nw len) :=
     fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega_using [])) (by
       have := (hr.fits (j := j) (by omega_using [hj])).1; simp only [nw, wb] at *; omega_using [nw', this])
   -- The values, as the modulus a key's values give.
   set M := val32 s.mem (byteAddr (args 2)) 0 (nw len) with hM
   set T := val32 s.mem (byteAddr (args 2)) (wb len) (nw len) with hT
-  have key : ∀ nB : List Byte, nB.length = len →
+  obtain key : ∀ nB : List Byte, nB.length = len →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.mem (byteAddr (args 2)) (2 * Spec.Rsa.modulusWords len)) →
       Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) len = true ∧ M = Spec.Rsa.os2ip nB ∧
         T = 2 ^ (32 * nw len) * 2 ^ (32 * nw len) % M := by
     intro nB length k
     obtain ⟨valid, modulus, power⟩ := pre_of_some length h.lower k
-    have mW : M = Spec.Rsa.os2ip nB := by rw [hM, val32_eq_wv]; exact modulus
+    obtain mW : M = Spec.Rsa.os2ip nB := by rw [hM, val32_eq_wv]; exact modulus
     refine ⟨valid, mW, ?_⟩
     rw [hT, show wb len = 8 * ((len + 7) / 8) from rfl, val32_eq_wv]
     show wv s.mem _ (8 * ((len + 7) / 8)) ((len + 7) / 8) = _
@@ -108,15 +108,15 @@ theorem sized_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
     omega_using []
   refine WP.ite (!Accepted M T) (by show v.zf = _; rw [Z, V0, V4]) ?_ ?_
   · intro bad
-    have failed : ∀ nB : List Byte, nB.length = len →
+    obtain failed : ∀ nB : List Byte, nB.length = len →
         Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt v.mem (byteAddr (args 2)) (2 * Spec.Rsa.modulusWords len)) →
         Spec.Rsa.publicOpChecked nB (Spec.Rsa.bytesAt v.mem (byteAddr (args 4)) (args 5).toNat)
           (Spec.Rsa.bytesAt v.mem (byteAddr (args 6)) len) = none := by
       intro nB length kv
       rw [W] at kv
       obtain ⟨valid, mW, tW⟩ := key nB length kv
-      have facts := valid_facts valid h.lower
-      have acc : Accepted M T = true := by
+      obtain facts := valid_facts valid h.lower
+      obtain acc : Accepted M T = true := by
         simp only [Accepted, Bool.and_eq_true, decide_eq_true_eq]
         refine ⟨⟨by omega_using [mW, facts], by rw [tW]; exact Nat.mod_lt _ (by omega_using [mW, facts])⟩, by omega_using [mW, facts]⟩
       rw [acc] at bad
@@ -124,13 +124,13 @@ theorem sized_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
     refine WP.mono (precomputedFailure_post hv failed) fun t ⟨Pt, Kt⟩ => ⟨Post.of_old ?_, Ksv.trans Kt⟩
     exact precomputedPost_compose h Osv Pt
   · intro good
-    have acc : Accepted M T = true := by simpa using good
+    obtain acc : Accepted M T = true := by simpa using good
     simp only [Accepted, Bool.and_eq_true, decide_eq_true_eq] at acc
     obtain ⟨⟨hM1, hTM⟩, odd⟩ := acc
-    have EB := scratch_bytes Osv0 (by have := h.eBound; have := h.upper; omega_using []) h.eApart
-    have XB := scratch_bytes Osv0 (by have := h.upper; omega_using [dims]) h.inApart
-    have spv : v.gpr .esp = s.gpr .esp := Ksv.1 _ (by decide)
-    have Wv : val32 v.mem base 128 2 = val32 s.mem base 128 2 := by
+    obtain EB := scratch_bytes Osv0 (by have := h.eBound; have := h.upper; omega_using []) h.eApart
+    obtain XB := scratch_bytes Osv0 (by have := h.upper; omega_using [dims]) h.inApart
+    obtain spv : v.gpr .esp = s.gpr .esp := Ksv.1 _ (by decide)
+    obtain Wv : val32 v.mem base 128 2 = val32 s.mem base 128 2 := by
       rw [O₂.val32 (.inl (by decide)) (by decide), O₁.val32 (.inl (by decide)) (by decide)]
     refine WP.mono (applyInput_ok hv.rt X.hbase X.hbytes (by rw [spv]; exact X.room) (by rw [spv]; exact X.top)
       (M := M) (x := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 6)) len))
@@ -139,11 +139,11 @@ theorem sized_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
       (by rw [uv 3 (by decide), V3]) (by rw [Wv, E]) (by rw [XB])) fun t ⟨B, Ax, F, Kt⟩ => ⟨⟨?_, ?_⟩, Ksv.trans Kt⟩
     · intro nB length k
       obtain ⟨valid, mW, tW⟩ := key nB length k
-      have fit : M < 2 ^ (8 * len) := by
-        have B := os2ip_lt nB
+      obtain fit : M < 2 ^ (8 * len) := by
+        obtain B := os2ip_lt nB
         rw [length, pow256_eq] at B
         rw [mW]; exact B
-      have Bv := B (by rw [uv 4 (by decide), V4]; exact tW) fit
+      obtain Bv := B (by rw [uv 4 (by decide), V4]; exact tW) fit
       refine publicOutput_written length valid validE ?_ ?_
       · rw [Bv, powMod_eq, ← mW]
         split <;> simp_all only [i2osp_zero']

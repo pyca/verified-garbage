@@ -67,7 +67,7 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       (SiIn p) := by
   refine ⟨fun s₀ s ⟨hpre, hpub, hs⟩ => ?_, ?_⟩
   · subst s
-    have L := streamInit_lay hpre
+    obtain L := streamInit_lay hpre
     have hp := hpre
     simp only [streamInitPre] at hp
     sig_split hp
@@ -77,24 +77,24 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       hdrop19 hdrop20 hdrop21 hdrop23
     have fa := hp
     clear hp
-    have a : ∀ i, i < 5 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hpub hi
-    have esp := pubOf_esp hpub
+    obtain a : ∀ i, i < 5 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hpub hi
+    obtain esp := pubOf_esp hpub
     rw [ofNat_lit, below_eq sp] at k_n
-    have wW : Covers [⟨w64 (arg s₀ 4), 2560⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
-    have rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
+    obtain wW : Covers [⟨w64 (arg s₀ 4), 2560⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
+    obtain rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
-    have aw : (argsR (s₀.gpr .esp) 5).Disjoint ⟨w64 (arg s₀ 4), 2560⟩ := by rw [argsR_eq]; exact d_wa.symm
+    obtain aw : (argsR (s₀.gpr .esp) 5).Disjoint ⟨w64 (arg s₀ 4), 2560⟩ := by rw [argsR_eq]; exact d_wa.symm
     refine entry_ok siKeeps siTail (by decide) (by decide) (by decide) (by decide) rfl rfl wW rA aw
       (by omega_using [fa]) fw fun s₂ e => ?_
-    have he : Env (arg s₀ 0) (arg s₀ 3) (arg s₀ 4) (s₀.gpr .esp) s₂ :=
+    obtain he : Env (arg s₀ 0) (arg s₀ 3) (arg s₀ 4) (s₀.gpr .esp) s₂ :=
       ⟨e.ebp, e.esi, e.esp, by rw [e.rd, e.wr, hrd]; exact covers_of_mem (by simp),
         by rw [e.wr, hwr]; exact covers_of_mem (by simp), by rw [e.wr]; exact wW,
         e.slots (0, ctxO) (by simp)⟩
     refine ⟨_, by xrun [he.ebp, L.aW, he.wIn], ?_⟩
-    have hf : Frame [⟨w64 (arg s₀ 4) + BitVec.ofNat 64 zO, 4⟩] s₂.mem
+    obtain hf : Frame [⟨w64 (arg s₀ 4) + BitVec.ofNat 64 zO, 4⟩] s₂.mem
         (s₂.mem.writeW (w64 (arg s₀ 4) + BitVec.ofNat 64 zO) (BitVec.ofNat 32 0)) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    have sl : ∀ {o}, 128 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ zO ∨ zO + 4 ≤ o) → slotv (s₂.mem.writeW
+    obtain sl : ∀ {o}, 128 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ zO ∨ zO + 4 ≤ o) → slotv (s₂.mem.writeW
         (w64 (arg s₀ 4) + BitVec.ofNat 64 zO) (BitVec.ofNat 32 0)) (arg s₀ 4) o = slotv s₂.mem (arg s₀ 4) o :=
       fun h₁ h₂ h₃ => slot_frame hf fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega_using [h₂]) (by decide)
@@ -145,7 +145,7 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25
     have fa := hp
     clear hp
-    have rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
+    obtain rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     exact WP.mono (arg0_ok (argIn_of rA (by omega_using [fa]) (by decide))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubOf_arg hpub (by decide), by rw [sp]; exact pubOf_esp hpub⟩
@@ -170,7 +170,7 @@ theorem streamInit_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   swap
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzp⟩ := hex
-  have L : Lay (p.2 0) (p.2 3) (p.2 4) p.1 24 := by
+  obtain L : Lay (p.2 0) (p.2 3) (p.2 4) p.1 24 := by
     have := streamInit_lay hz
     rwa [pubOf_arg hzp (i := 0) (by decide), pubOf_arg hzp (i := 3) (by decide),
       pubOf_arg hzp (i := 4) (by decide), pubOf_esp hzp] at this
@@ -180,21 +180,21 @@ theorem streamInit_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   refine Pc.taint [.ebp] (fun s₀ s ⟨s₁, h₁, ho, rd, wr⟩ => ?_) (fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.env.ebp, h₂.env.ebp]) (by taint_decide)
   have he := ho.env
-  have esp := pubOf_esp h₁.pub
-  have a : ∀ i, i < 5 → arg s₀ i = p.2 i := fun i hi => pubOf_arg h₁.pub hi
+  obtain esp := pubOf_esp h₁.pub
+  obtain a : ∀ i, i < 5 → arg s₀ i = p.2 i := fun i hi => pubOf_arg h₁.pub hi
   have fE := h₁.frame
   have fJ := ho.frame
-  have hsv : SavedAt s.mem (p.2 4) s₀ := h₁.saved.frameK fJ (kept_j0Frame L)
-  have rJ : ∀ r ∈ j0Frame (p.2 3) (p.2 4) p.1 24, (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
+  obtain hsv : SavedAt s.mem (p.2 4) s₀ := h₁.saved.frameK fJ (kept_j0Frame L)
+  obtain rJ : ∀ r ∈ j0Frame (p.2 3) (p.2 4) p.1 24, (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact r_s
     · exact r_w.sub_right (Lay.wSub (by decide))
     · exact r_w.sub_right (Lay.wSub (by decide))
     · exact ret_below sp
-  have rE : ∀ r ∈ [(⟨w64 (p.2 4) + BitVec.ofNat 64 128, 2432⟩ : Region)], (⟨w64 p.1, 4⟩ : Region).Disjoint r :=
+  obtain rE : ∀ r ∈ [(⟨w64 (p.2 4) + BitVec.ofNat 64 128, 2432⟩ : Region)], (⟨w64 p.1, 4⟩ : Region).Disjoint r :=
     fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact r_w.sub_right (Lay.wSub (by decide))
-  have hret : s.mem.readW (w64 (s₀.gpr .esp)) 32 = s₀.mem.readW (w64 (s₀.gpr .esp)) 32 := by
+  obtain hret : s.mem.readW (w64 (s₀.gpr .esp)) 32 = s₀.mem.readW (w64 (s₀.gpr .esp)) 32 := by
     rw [esp, ret_kept fJ rJ, ret_kept fE rE]
   refine WP.mono (exit_ok he.ebp (by rw [he.esp, esp]) (covers_left he.wW) L.fw hsv hret)
     fun s' ⟨abi, m', _, _, _⟩ => ⟨abi, fun ciph => ?_⟩
@@ -209,11 +209,11 @@ theorem streamInit_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   rw [a 1 (by decide), a 2 (by decide), a 4 (by decide)] at d_nw
   rw [a 1 (by decide), a 2 (by decide)] at fn
   rw [a 0 (by decide), a 1 (by decide), a 2 (by decide), a 3 (by decide)]
-  have hH : Hk s₁.mem (p.2 0) = ctxH s₀.mem (w64 (p.2 0)) := by
+  obtain hH : Hk s₁.mem (p.2 0) = ctxH s₀.mem (w64 (p.2 0)) := by
     rw [ctxH_eq]
     exact blockAt_frame fE fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-  have hD : bytesAt s₁.mem (w64 (p.2 1)) (p.2 2).toNat = bytesAt s₀.mem (w64 (p.2 1)) (p.2 2).toNat :=
+  obtain hD : bytesAt s₁.mem (w64 (p.2 1)) (p.2 2).toNat = bytesAt s₀.mem (w64 (p.2 1)) (p.2 2).toNat :=
     bytesAt_frame (p := w64 (p.2 1)) (n := (p.2 2).toNat) fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact d_nw.sub_right (Lay.wSub (d := 128) (n := 2432) (by decide))) (by omega_using [])

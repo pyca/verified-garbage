@@ -34,7 +34,7 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
     WP isa (half w j) s fun t => Ws t B Z w N ∧ Keep B w [j] [] s.mem t.mem ∧
       num t.mem B w j = (num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat) / 2 ∧
       Keeps [.eax, .edx, .ebp] s t := by
-  have fit := h.arr_fit hj
+  obtain fit := h.arr_fit hj
   simp only [S] at fit
   have nw := h.workspace.nowrap
   unfold half
@@ -42,32 +42,32 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
   change WP isa (.seq (.block [.store (VG.Impl.Mont.X86.sc (arr w j + 4 * w)) .ebx])
     (VG.Impl.Mont.X86.Dynamic.shiftDown (w + 1) (arr w j))) s _
   refine WP.seq (wp_storeS (h.workspace.ea (by omega_using [fit])) (h.workspace.write (by omega_using [fit])) fun u U => WP.block_nil ?_)
-  have hu := h.workspace.of_keeps (U.keeps []) (by decide)
+  obtain hu := h.workspace.of_keeps (U.keeps []) (by decide)
   refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftDown_ok hu (k := w + 1) (out := arr w j) (by omega_using [wpos]) (by omega_using [fit])) ?_
   rintro t ⟨frame, value, rest⟩
-  have stored := writeW32_outside s.mem B (d := arr w j + 4 * w) (s.gpr .ebx) (by omega_using [fit, nw])
-  have keepU : Keep B w [j] [] s.mem u.mem := by
+  obtain stored := writeW32_outside s.mem B (d := arr w j + 4 * w) (s.gpr .ebx) (by omega_using [fit, nw])
+  obtain keepU : Keep B w [j] [] s.mem u.mem := by
     rw [U.mem]
     exact Keep.of_arr stored (by unfold S; omega_using []) (by simp)
-  have keepT : Keep B w [j] [] u.mem t.mem :=
+  obtain keepT : Keep B w [j] [] u.mem t.mem :=
     Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega_using []) (by simp)
   refine ⟨h.rest ((U.keeps _).trans rest), keepU.trans keepT, ?_, (U.keeps _).trans rest⟩
-  have original : val32 u.mem B (arr w j) (w + 1) =
+  obtain original : val32 u.mem B (arr w j) (w + 1) =
       num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat := by
     rw [val32_succ, U.mem, w32_write_self, stored.val32 (by omega_using []) (by omega_using [fit, nw])]
   rw [original] at value
-  have bound := val32_lt s.mem B (arr w j) w
-  have positive : 0 < 2 ^ (32 * w) := Nat.two_pow_pos _
-  have small : (num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat) / 2 < 2 ^ (32 * w) := by
-    have mul : 2 ^ (32 * w) * (s.gpr .ebx).toNat ≤ 2 ^ (32 * w) := by
+  obtain bound := val32_lt s.mem B (arr w j) w
+  obtain positive : 0 < 2 ^ (32 * w) := Nat.two_pow_pos _
+  obtain small : (num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat) / 2 < 2 ^ (32 * w) := by
+    obtain mul : 2 ^ (32 * w) * (s.gpr .ebx).toNat ≤ 2 ^ (32 * w) := by
       simpa using Nat.mul_le_mul_left (2 ^ (32 * w)) bit
     unfold num
     omega_using [bound, mul]
-  have lower := val32_lt t.mem B (arr w j) w
+  obtain lower := val32_lt t.mem B (arr w j) w
   rw [val32_succ] at value
-  have topZero : w32 t.mem B (arr w j + 4 * w) = 0 := by
+  obtain topZero : w32 t.mem B (arr w j + 4 * w) = 0 := by
     by_contra ne
-    have ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 t.mem B (arr w j + 4 * w) by omega_using [ne])
+    obtain ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 t.mem B (arr w j + 4 * w) by omega_using [ne])
     simp only [Nat.mul_one] at ge
     omega_using [hj, bit, fit, nw, wpos, value, original, bound, positive, small, lower, ne, ge]
   rw [topZero, Nat.mul_zero, Nat.add_zero] at value
@@ -112,15 +112,15 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
         (if num s.mem B w A < num s.mem B w (A + 1) then (num s.mem B w (A + 1) - num s.mem B w A) / 2
           else (num s.mem B w A - num s.mem B w (A + 1)) / 2) else num s.mem B w A / 2) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have hsOdd : sOdd + 4 ≤ hdr := by decide
-  have hsB : sB + 4 ≤ hdr := by decide
-  have hsC : sC + 4 ≤ hdr := by decide
-  have fA := h.fit64 (j := A) (by idx)
-  have fA1 := h.fit64 (j := A + 1) (by idx)
-  have fT1 := h.fit64 (j := aT1) (by idx)
-  have fT2 := h.fit64 (j := aT2) (by idx)
-  have fT3 := h.fit64 (j := aT3) (by idx)
-  have fD1 := h.fit64 (j := D + 1) (by idx)
+  obtain hsOdd : sOdd + 4 ≤ hdr := by decide
+  obtain hsB : sB + 4 ≤ hdr := by decide
+  obtain hsC : sC + 4 ≤ hdr := by decide
+  obtain fA := h.fit64 (j := A) (by idx)
+  obtain fA1 := h.fit64 (j := A + 1) (by idx)
+  obtain fT1 := h.fit64 (j := aT1) (by idx)
+  obtain fT2 := h.fit64 (j := aT2) (by idx)
+  obtain fT3 := h.fit64 (j := aT3) (by idx)
+  obtain fD1 := h.fit64 (j := D + 1) (by idx)
   generalize hu : num s.mem B w A = u
   generalize hv : num s.mem B w (A + 1) = v
   unfold invU
@@ -128,8 +128,8 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (bitOf_ok h (by idx) hsOdd) fun t1 ⟨h1, k1, o1, r1⟩ => ?_
   rw [hu] at o1
-  have u1 : num t1.mem B w A = u := by rw [k1.num (by simp) (by simp; decide) fA, hu]
-  have v1 : num t1.mem B w (A + 1) = v := by rw [k1.num (by simp) (by simp; decide) fA1, hv]
+  obtain u1 : num t1.mem B w A = u := by rw [k1.num (by simp) (by simp; decide) fA, hu]
+  obtain v1 : num t1.mem B w (A + 1) = v := by rw [k1.num (by simp) (by simp; decide) fA1, hv]
   -- 2: `u - v`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sub3_ok h1 (by idx) (by idx) (by idx) (by idx) (by idx)) fun t2 ⟨h2, k2, d2, b2, r2⟩ => ?_
@@ -137,27 +137,27 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
   -- 3: the masks.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.block_append (WP.mono (store_slot h2 hsB .ebx) fun t3' ⟨h3', k3', sB3, r3'⟩ => ?_)
-  have o3 : slot t3'.mem B sOdd = u % 2 := by
+  obtain o3 : slot t3'.mem B sOdd = u % 2 := by
     rw [k3'.slot hsOdd (by decide), k2.slot hsOdd (by simp), o1]
   refine WP.mono (andS_ok h3' hsC hsOdd hsB (by rw [o3]; omega_arith) (by rw [sB3]; exact b2)) fun t3 ⟨h3, k3, c3, r3⟩ => ?_
   rw [o3, sB3] at c3
-  have lt : (t2.gpr .ebx).toNat = 1 ↔ u < v := by
+  obtain lt : (t2.gpr .ebx).toNat = 1 ↔ u < v := by
     have := borrow_iff d2 (val32_lt _ _ _ _) b2; omega_arith
-  have c3' : slot t3.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
+  obtain c3' : slot t3.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
     rw [c3]; by_cases e : u < v <;> simp [e, lt]
-  have K3 : Keep B w [] [sB, sC] t2.mem t3.mem := k3'.join k3
-  have o3' : slot t3.mem B sOdd = u % 2 := by rw [k3.slot hsOdd (by decide), o3]
-  have u3 : num t3.mem B w A = u := by
+  obtain K3 : Keep B w [] [sB, sC] t2.mem t3.mem := k3'.join k3
+  obtain o3' : slot t3.mem B sOdd = u % 2 := by rw [k3.slot hsOdd (by decide), o3]
+  obtain u3 : num t3.mem B w A = u := by
     rw [K3.num (by simp) (by simp; decide) fA, k2.num (by idx) (by simp) fA, u1]
-  have v3 : num t3.mem B w (A + 1) = v := by
+  obtain v3 : num t3.mem B w (A + 1) = v := by
     rw [K3.num (by simp) (by simp; decide) fA1, k2.num (by idx) (by simp) fA1, v1]
   -- 4: `v - u`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sub3_ok h3 (by idx) (by idx) (by idx) (by idx) (by idx)) fun t4 ⟨h4, k4, d4, b4, r4⟩ => ?_
   rw [u3, v3] at d4
-  have cs4 : slot t4.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
+  obtain cs4 : slot t4.mem B sC = (if u % 2 = 1 ∧ u < v then 1 else 0) := by
     rw [k4.slot hsC (by simp), c3']
-  have cb4 : slot t4.mem B sC ≤ 1 := by rw [cs4]; split <;> omega_arith
+  obtain cb4 : slot t4.mem B sC ≤ 1 := by rw [cs4]; split <;> omega_arith
   -- 5: `v'`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok h4 (by idx) (by idx) (by idx) hsC cb4) fun t5 ⟨h5, k5, e5, r5⟩ => ?_
@@ -170,7 +170,7 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
     k4.num (by idx) (by simp) fT1, K3.num (by simp) (by simp; decide) fT1] at e6
   -- 7: `u'` before the halving.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have od6 : slot t6.mem B sOdd = u % 2 := by
+  obtain od6 : slot t6.mem B sOdd = u % 2 := by
     rw [k6.slot hsOdd (by simp), k5.slot hsOdd (by simp), k4.slot hsOdd (by simp), o3']
   refine WP.mono (sel_ok h6 (by idx) (by idx) (by idx) hsOdd
     (by rw [od6]; omega_arith)) fun t7 ⟨h7, k7, e7, r7⟩ => ?_
@@ -178,7 +178,7 @@ theorem invU_ok {s : State} {B : Addr} {Z w N A D : Nat} (h : Ws s B Z w N)
   -- 8, 9: the halving.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_movS rfl fun t8 u8 _ => WP.block_nil ?_
-  have h8 := h7.rest u8.keeps (by decide) (by decide)
+  obtain h8 := h7.rest u8.keeps (by decide) (by decide)
   refine WP.mono (half_ok h8 (by idx) (by rw [u8.gpr]; decide)) fun t ⟨h9, k9, e9, r9⟩ => ?_
   rw [u8.gpr, u8.mem] at e9
   rw [u8.mem] at k9

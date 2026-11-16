@@ -315,15 +315,15 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State �
     WP isa (.block (load ++ rest)) s₀ Q := by
   simp only [load, List.cons_append, List.nil_append]
   refine wp_movm (a := addr (s₀.gpr .esp) 4) rfl (arg_in hp (by omega_arith) (by omega_arith)) fun s₁ u₁ => ?_
-  have k₁ : Keep s₀ s₁ := ⟨by rw [u₁.gpr]; rfl, fun r h => u₁.other r h, u₁.rd, u₁.wr⟩
+  obtain k₁ : Keep s₀ s₁ := ⟨by rw [u₁.gpr]; rfl, fun r h => u₁.other r h, u₁.rd, u₁.wr⟩
   refine wp_ldq (ea_b hp k₁ (d := 0) (by omega_arith)) (in_b16 hp k₁ (by omega_arith)) fun s₂ R₂ m₂ x₂ o₂ => ?_
-  have k₂ := k₁.regs R₂
+  obtain k₂ := k₁.regs R₂
   refine wp_ldq (ea_b hp k₂ (d := 16) (by omega_arith)) (in_b16 hp k₂ (by omega_arith)) fun s₃ R₃ m₃ x₃ o₃ => ?_
-  have k₃ := k₂.regs R₃
+  obtain k₃ := k₂.regs R₃
   refine wp_ldq (ea_b hp k₃ (d := 32) (by omega_arith)) (in_b16 hp k₃ (by omega_arith)) fun s₄ R₄ m₄ x₄ o₄ => ?_
-  have k₄ := k₃.regs R₄
+  obtain k₄ := k₃.regs R₄
   refine wp_ldq (ea_b hp k₄ (d := 48) (by omega_arith)) (in_b16 hp k₄ (by omega_arith)) fun s₅ R₅ m₅ x₅ o₅ => ?_
-  have k₅ := k₄.regs R₅
+  obtain k₅ := k₄.regs R₅
   have e₁ : s₁.mem = s₀.mem := u₁.mem
   refine k s₅ k₅ (by rw [m₅, m₄, m₃, m₂, e₁]) ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩
   · rw [o₅ .xmm0 (by decide), o₄ .xmm0 (by decide), o₃ .xmm0 (by decide), x₂, e₁]
@@ -342,7 +342,7 @@ theorem rows_read (m : Mem) (p : Addr) (X₀ X₁ X₂ X₃ : BitVec 128) {j : N
     ((((m.writeW (p + BitVec.ofNat 64 0) X₀).writeW (p + BitVec.ofNat 64 16) X₁).writeW
       (p + BitVec.ofNat 64 32) X₂).writeW (p + BitVec.ofNat 64 48) X₃).readW (p + BitVec.ofNat 64 (4 * j)) 32 =
       dword (if j < 4 then X₀ else if j < 8 then X₁ else if j < 12 then X₂ else X₃) (j % 4) := by
-  have hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
+  obtain hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
   rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega_arith) with h | h | h | h
   · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
@@ -372,44 +372,44 @@ theorem addRows_ok {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {s : Stat
       ∀ j < 16, s'.mem.readW (bA s₀ + BitVec.ofNat 64 (4 * j)) 32 = R[j]! + (V s₀)[j]! := by
   unfold addRows
   refine wp_ldq (ea_b hp hk (d := 0) (by omega_arith)) (in_b16 hp hk (by omega_arith)) fun s₁ R₁ m₁ x₁ o₁ => ?_
-  have k₁ := hk.regs R₁
+  obtain k₁ := hk.regs R₁
   refine wp_ldq (ea_b hp k₁ (d := 16) (by omega_arith)) (in_b16 hp k₁ (by omega_arith)) fun s₂ R₂ m₂ x₂ o₂ => ?_
-  have k₂ := k₁.regs R₂
+  obtain k₂ := k₁.regs R₂
   refine wp_ldq (ea_b hp k₂ (d := 32) (by omega_arith)) (in_b16 hp k₂ (by omega_arith)) fun s₃ R₃ m₃ x₃ o₃ => ?_
-  have k₃ := k₂.regs R₃
+  obtain k₃ := k₂.regs R₃
   refine wp_ldq (ea_b hp k₃ (d := 48) (by omega_arith)) (in_b16 hp k₃ (by omega_arith)) fun s₄ R₄ m₄ x₄ o₄ => ?_
-  have k₄ := k₃.regs R₄
+  obtain k₄ := k₃.regs R₄
   refine wp_xbin fun s₅ R₅ m₅ x₅ o₅ => wp_xbin fun s₆ R₆ m₆ x₆ o₆ => wp_xbin fun s₇ R₇ m₇ x₇ o₇ =>
     wp_xbin fun s₈ R₈ m₈ x₈ o₈ => ?_
-  have k₈ := (((k₄.regs R₅).regs R₆).regs R₇).regs R₈
+  obtain k₈ := (((k₄.regs R₅).regs R₆).regs R₇).regs R₈
   refine wp_stq (ea_b hp k₈ (d := 0) (by omega_arith)) (out_b16 hp k₈ (by omega_arith)) fun s₉ R₉ m₉ x₉ => ?_
-  have k₉ := k₈.regs R₉
+  obtain k₉ := k₈.regs R₉
   refine wp_stq (ea_b hp k₉ (d := 16) (by omega_arith)) (out_b16 hp k₉ (by omega_arith)) fun s₁₀ R₁₀ m₁₀ x₁₀ => ?_
-  have k₁₀ := k₉.regs R₁₀
+  obtain k₁₀ := k₉.regs R₁₀
   refine wp_stq (ea_b hp k₁₀ (d := 32) (by omega_arith)) (out_b16 hp k₁₀ (by omega_arith)) fun s₁₁ R₁₁ m₁₁ x₁₁ => ?_
-  have k₁₁ := k₁₀.regs R₁₁
+  obtain k₁₁ := k₁₀.regs R₁₁
   refine wp_stq (ea_b hp k₁₁ (d := 48) (by omega_arith)) (out_b16 hp k₁₁ (by omega_arith)) fun s₁₂ R₁₂ m₁₂ x₁₂ => ?_
   refine WP.block_nil ⟨k₁₁.regs R₁₂, fun j hj => ?_⟩
   -- The rows stored, as sums of the loaded rows and those of the result.
-  have l₀ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
-  have y₀ : s₈.xmm .xmm0 = XBinOp.eval .paddd (s.xmm .xmm0) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 0) 128) := by
+  obtain l₀ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  obtain y₀ : s₈.xmm .xmm0 = XBinOp.eval .paddd (s.xmm .xmm0) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 0) 128) := by
     rw [o₈ .xmm0 (by decide), o₇ .xmm0 (by decide), o₆ .xmm0 (by decide), x₅, o₄ .xmm0 (by
       decide), o₃ .xmm0 (by decide), o₂ .xmm0 (by decide), o₁ .xmm0 (by decide), o₄ .xmm3 (by
       decide), o₃ .xmm3 (by decide), o₂ .xmm3 (by decide), x₁, hm]
-  have y₁ : s₉.xmm .xmm1 = XBinOp.eval .paddd (s.xmm .xmm1) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 16) 128) := by
+  obtain y₁ : s₉.xmm .xmm1 = XBinOp.eval .paddd (s.xmm .xmm1) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 16) 128) := by
     rw [x₉, o₈ .xmm1 (by decide), o₇ .xmm1 (by decide), x₆, o₅ .xmm1 (by decide), o₄ .xmm1 (by
       decide), o₃ .xmm1 (by decide), o₂ .xmm1 (by decide), o₁ .xmm1 (by decide), o₅ .xmm5 (by
       decide), o₄ .xmm5 (by decide), o₃ .xmm5 (by decide), x₂, m₁, hm]
-  have y₂ : s₁₀.xmm .xmm2 = XBinOp.eval .paddd (s.xmm .xmm2) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 32) 128) := by
+  obtain y₂ : s₁₀.xmm .xmm2 = XBinOp.eval .paddd (s.xmm .xmm2) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 32) 128) := by
     rw [x₁₀, x₉, o₈ .xmm2 (by decide), x₇, o₆ .xmm2 (by decide), o₅ .xmm2 (by decide), o₄ .xmm2
       (by decide), o₃ .xmm2 (by decide), o₂ .xmm2 (by decide), o₁ .xmm2 (by decide), o₆ .xmm6
       (by decide), o₅ .xmm6 (by decide), o₄ .xmm6 (by decide), x₃, m₂, m₁, hm]
-  have y₃ : s₁₁.xmm .xmm4 = XBinOp.eval .paddd (s.xmm .xmm4) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 48) 128) := by
+  obtain y₃ : s₁₁.xmm .xmm4 = XBinOp.eval .paddd (s.xmm .xmm4) (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 48) 128) := by
     rw [x₁₁, x₁₀, x₉, x₈, o₇ .xmm4 (by decide), o₆ .xmm4 (by decide), o₅ .xmm4 (by decide), o₄
       .xmm4 (by decide), o₃ .xmm4 (by decide), o₂ .xmm4 (by decide), o₁ .xmm4 (by decide), o₇
       .xmm7 (by decide), o₆ .xmm7 (by decide), o₅ .xmm7 (by decide), x₄, m₃, m₂, m₁, hm]
   rw [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, m₅, l₀, y₃, y₂, y₁, y₀, rows_read _ _ _ _ _ _ hj]
-  have hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
+  obtain hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
   rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega_arith) with c | c | c | c
   · rw [ite_eq_left c]
     refine (sum_word (k := 0) (by decide) hq ((h.r0 _ hq).trans
@@ -446,9 +446,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa salsa s₀ fun s' => Keep s₀ s' ∧ Proof.Scrypt.salsaX86.post s₀ s' := by
   refine WP.seq (load_ok hp fun s₁ k₁ m₁ a₁ => ?_)
   refine WP.mono (toDiag_ok a₁) fun s₂ ⟨a₂, g₂, m₂, r₂, w₂⟩ => ?_
-  have k₂ := k₁.same ⟨g₂, m₂, r₂, w₂⟩
+  obtain k₂ := k₁.same ⟨g₂, m₂, r₂, w₂⟩
   refine WP.seq (WP.mono (rounds_ok a₂ 4) fun s₃ ⟨a₃, e₃⟩ => ?_)
-  have k₃ := k₂.same e₃
+  obtain k₃ := k₂.same e₃
   rw [finish, WP.block_append_iff]
   refine WP.mono (fromDiag_ok a₃) fun s₄ ⟨o₄, g₄, m₄, r₄, w₄⟩ => ?_
   refine WP.mono (addRows_ok hp (k₃.same ⟨g₄, m₄, r₄, w₄⟩) (by rw [m₄, e₃.mem, m₂, m₁]) o₄)
@@ -459,7 +459,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaX86.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.X86.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaX86.post s s' := by
-  have hp := pre_of s hs
+  obtain hp := pre_of s hs
   obtain ⟨t, s', he, hk, h₂⟩ := correct hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ?_⟩, h₂⟩
   · refine hk.gpr r ?_; rintro rfl; simp [calleeSaved] at hr

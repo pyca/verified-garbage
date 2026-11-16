@@ -65,7 +65,7 @@ theorem mB_eq {m : Mem} {S : Addr} {D n : Nat} {mh rest : List Byte} (hmh : mh.l
     mB m S (8 + D + n) = List.replicate 8 0 ++ mh ++ rest := by
   apply List.ext_getElem (by simp [Spec.Sha256.bytesAt, hmh, hr]; omega_arith)
   intro i h₁ h₂
-  have hi : i < 8 + D + n := by simpa [Spec.Sha256.bytesAt] using h₁
+  obtain hi : i < 8 + D + n := by simpa [Spec.Sha256.bytesAt] using h₁
   have := h i hi
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some] at this
   simp only [Spec.Sha256.bytesAt, List.getElem_map, List.getElem_range]
@@ -94,9 +94,9 @@ theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = 
       Base Sp (vP D) s t' ∧ t'.gpr .r3 = if t.gpr .r24 = 0#64 ∧ ∀ i < D, view t.mem (Sp s) (lN + dN + i) =
         (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN (stackArg s 0).toNat)).getD i 0 then 1#64 else 0#64 := by
   have F := L.F
-  have Fh := hfits hH
+  obtain Fh := hfits hH
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
-  have hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64
+  obtain hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64
   have hY : oY = 2560 := rfl
   generalize hS : (stackArg s 0).toNat = sl at hsl
   refine WP.seq (WP.mono_syms (prefix_ok L hD (n := 8) (Nat.le_refl _) (by decide) h) fun t₁ ⟨b₁, g₁, v₁⟩ y₁ => ?_)
@@ -105,14 +105,14 @@ theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = 
   refine WP.seq (WP.mono (hashFixed_ok F hH T hD b₂ (y₂.trans (y₁.trans sy)) (by rw [hS]; omega_arith))
     fun t₃ ⟨⟨b₃, g₃, s₃, d₃⟩, _⟩ => ?_)
   rw [hS] at d₃
-  have g24 : t₃.gpr .r24 = t.gpr .r24 := by
+  obtain g24 : t₃.gpr .r24 = t.gpr .r24 := by
     rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide)]
   refine WP.mono (cmpH_ok L hD (o := oDig) (by omega_arith) b₃ (by rw [g24]; exact ha)) fun t' ⟨b', _, r'⟩ => ⟨b', ?_⟩
   rw [r', g24]
-  have vH : ∀ i < D, view t₃.mem (Sp s) (lN + dN + i) = view t.mem (Sp s) (lN + dN + i) := fun i hi => by
+  obtain vH : ∀ i < D, view t₃.mem (Sp s) (lN + dN + i) = view t.mem (Sp s) (lN + dN + i) := fun i hi => by
     rw [s₃ _ (by omega_arith) (fun p hp => by simp at hp; rcases hp with rfl | rfl | rfl <;> simp only <;> omega_arith),
       v₂ _ (by omega_arith), ifn (by omega_arith), v₁ _ (by omega_arith), ifn (by omega_arith), ifn (by omega_arith)]
-  have hM : mB t₂.mem (Sp s) (8 + D + sl) = mFix (view t.mem (Sp s)) (mh D s) lN dN sl := by
+  obtain hM : mB t₂.mem (Sp s) (8 + D + sl) = mFix (view t.mem (Sp s)) (mh D s) lN dN sl := by
     refine mB_eq (by simp [Spec.Rsa.bytesAt]) (by simp) fun i hi => ?_
     rw [getD_m3 (D := D) (by simp [Spec.Rsa.bytesAt]), v₂ _ (by omega_arith)]
     by_cases h₁ : i < 8
@@ -131,7 +131,7 @@ theorem fixed_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = 
         simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (show i - 8 - D < sl by omega_arith),
           Option.map_some, Option.getD_some]
         congr 2; omega_arith
-  have vD : ∀ i < D, view t₃.mem (Sp s) (oDig + i) =
+  obtain vD : ∀ i < D, view t₃.mem (Sp s) (oDig + i) =
       (Gs.hash (mFix (view t.mem (Sp s)) (mh D s) lN dN sl)).getD i 0 := fun i hi => by
     have d₃' := d₃
     rw [show Spec.Sha256.bytesAt t₂.mem (off (Sp s) oY) (8 + D + sl) = _ from hM] at d₃'
@@ -156,7 +156,7 @@ theorem any_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hH
         (Gs.hash (mAny (view t.mem (Sp s)) (mh D s) lN dN pos sl)).getD i 0 then 1#64 else 0#64 := by
   have F := L.F
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
-  have hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64
+  obtain hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64
   have hY : oY = 2560 := rfl
   refine WP.seq (WP.mono_syms (prefix_ok L hD (n := 2048) (by decide) (Nat.le_refl _) h) fun t₁ ⟨b₁, g₁, v₁⟩ y₁ => ?_)
   refine WP.seq (WP.mono_syms (copyDb_ok L hD b₁) fun t₂ ⟨b₂, g₂, v₂⟩ y₂ => ?_)
@@ -164,14 +164,14 @@ theorem any_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hH
     fun t₃ ⟨b₃, k₃, v₃⟩ y₃ => ?_)
   let b := oY + 8 + D
   let msg := mAny (view t.mem (Sp s)) (mh D s) lN dN pos sl
-  have hml : msg.length = 8 + D + sl := by simp [msg, mAny, Spec.Rsa.bytesAt]; omega_arith
-  have w₂ : ∀ o < oRsa, ¬(b ≤ o ∧ o < b + dN) → ¬(oY ≤ o ∧ o < oY + 2048) → view t₂.mem (Sp s) o = view t.mem (Sp s) o :=
+  obtain hml : msg.length = 8 + D + sl := by simp [msg, mAny, Spec.Rsa.bytesAt]; omega_arith
+  obtain w₂ : ∀ o < oRsa, ¬(b ≤ o ∧ o < b + dN) → ¬(oY ≤ o ∧ o < oY + 2048) → view t₂.mem (Sp s) o = view t.mem (Sp s) o :=
     fun o ho h₁ h₂ => by rw [v₂ o ho, ifn h₁, v₁ o ho, ifn (by omega_arith), ifn h₂]
-  have hz : ∀ x, dN ≤ x → x < dN + 2 ^ 9 → view t₂.mem (Sp s) (b + x) = 0 := fun x h₁ h₂ => by
+  obtain hz : ∀ x, dN ≤ x → x < dN + 2 ^ 9 → view t₂.mem (Sp s) (b + x) = 0 := fun x h₁ h₂ => by
     have : (2 : Nat) ^ 9 = 512 := rfl
     rw [v₂ _ (by omega_arith), ifn (by omega_arith), v₁ _ (by omega_arith), ifn (by omega_arith), ifp (by omega_arith)]
-  have hMl : (mh D s).length = D := by simp [Spec.Rsa.bytesAt]
-  have hYv : ∀ i < 2048, view t₃.mem (Sp s) (oY + i) = msg.getD i 0 := by
+  obtain hMl : (mh D s).length = D := by simp [Spec.Rsa.bytesAt]
+  obtain hYv : ∀ i < 2048, view t₃.mem (Sp s) (oY + i) = msg.getD i 0 := by
     intro i hi
     show _ = (mAny (view t.mem (Sp s)) (mh D s) lN dN pos sl).getD i 0
     unfold mAny
@@ -202,13 +202,13 @@ theorem any_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hH
   refine WP.seq (WP.mono (ctHash_ok L hH T ok hl hD hN hB b₃ (y₃.trans (y₂.trans (y₁.trans sy))) (sl := sl)
     (by rw [k₃.get .r25, g₂ _ (by decide), g₁ _ (by decide), h25]) (by omega_arith) hml hYv)
     fun t₄ ⟨⟨b₄, g24₄, mem₄, d₄⟩, _⟩ => ?_)
-  have g24 : t₄.gpr .r24 = t.gpr .r24 := by rw [g24₄, k₃.get .r24, g₂ _ (by decide), g₁ _ (by decide)]
+  obtain g24 : t₄.gpr .r24 = t.gpr .r24 := by rw [g24₄, k₃.get .r24, g₂ _ (by decide), g₁ _ (by decide)]
   refine WP.mono (cmpH_ok L hD (o := oDig) (by omega_arith) b₄ (by rw [g24]; exact ha)) fun t' ⟨b', _, r'⟩ => ⟨b', ?_⟩
   rw [r', g24]
-  have vH : ∀ i < D, view t₄.mem (Sp s) (lN + dN + i) = view t.mem (Sp s) (lN + dN + i) := fun i hi => by
+  obtain vH : ∀ i < D, view t₄.mem (Sp s) (lN + dN + i) = view t.mem (Sp s) (lN + dN + i) := fun i hi => by
     rw [mem₄ _ (by omega_arith), v₃ _ (by omega_arith), shV_out _ _ _ _ _ _ (by omega_arith),
       w₂ _ (by omega_arith) (by omega_arith) (by omega_arith)]
-  have vD : ∀ i < D, view t₄.mem (Sp s) (oDig + i) = (Gs.hash msg).getD i 0 := fun i hi => by rw [d₄ i hi, hGh]
+  obtain vD : ∀ i < D, view t₄.mem (Sp s) (oDig + i) = (Gs.hash msg).getD i 0 := fun i hi => by rw [d₄ i hi, hGh]
   by_cases e : t.gpr .r24 = 0#64 ∧ ∀ i < D, view t.mem (Sp s) (lN + dN + i) = (Gs.hash msg).getD i 0
   · rw [ifp e, ifp ⟨e.1, fun i hi => by rw [vH i hi, vD i hi]; exact e.2 i hi⟩]
   · rw [ifn e, ifn fun h' => e ⟨h'.1, fun i hi => by rw [← vH i hi, ← vD i hi]; exact h'.2 i hi⟩]
@@ -266,8 +266,8 @@ theorem dbArgs_ok {H : Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
   subst hD
   refine wp_add fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_add fun t₃ o₃ e₃ =>
     wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_nil ?_
-  have k₄ : Only [.r26, .r27, .r24, .r25] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  have a26 : t₁.gpr .r26 = off (Sp s) lN := by rw [e₁, h.r14, h.plo, L.hlo]
+  obtain k₄ : Only [.r26, .r27, .r24, .r25] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
+  obtain a26 : t₁.gpr .r26 = off (Sp s) lN := by rw [e₁, h.r14, h.plo, L.hlo]
   exact ⟨h.only F k₄, k₄,
     by rw [o₄.get .r24, e₃, o₂.get .r26, a26, o₂.get .r21, o₁.get .r21, h.pdb, L.hdb]; exact off_off _ _ _,
     by rw [e₄], by rw [o₄.get .r26, o₃.get .r26, o₂.get .r26, a26],
@@ -278,21 +278,21 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) :
     WP isa (.block clearTop) t fun w => Base Sp (vP D) s w ∧ Keep [.r4, .r5] t w ∧
       ∀ o < oSt, view w.mem (Sp s) o = if o = lN then view t.mem (Sp s) lN &&& c else view t.mem (Sp s) o := by
   have F := L.F
-  have hk := L.hk; have hk2 := L.k2; have hl := L.l1
-  have a6 : ∀ {u : State}, Only [.r4] t u → u.gpr .r4 = t.gpr .r14 + t.gpr .r17 → u.gpr .r4 = off (Sp s) lN :=
+  obtain hk := L.hk; have hk2 := L.k2; have hl := L.l1
+  obtain a6 : ∀ {u : State}, Only [.r4] t u → u.gpr .r4 = t.gpr .r14 + t.gpr .r17 → u.gpr .r4 = off (Sp s) lN :=
     fun o e => by rw [e, h.r14, h.plo, L.hlo]
   refine wp_add fun t₆ o₆ e₆ => ?_
   refine wp_lbz (a := off (Sp s) lN) (by rw [a6 o₆ e₆, BitVec.add_zero])
     (by rw [o₆.rd, o₆.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_arith) _) fun t₇ o₇ e₇ => ?_
   refine wp_and fun t₈ o₈ e₈ => wp_stb (a := off (Sp s) lN) (by rw [o₈.get .r4, o₇.get .r4, a6 o₆ e₆,
     BitVec.add_zero]) (by rw [o₈.wr, o₇.wr, o₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega_arith)) fun w mw => ?_
-  have k₈ : Only [.r4, .r5] t t₈ := (o₆.trans (o₇.trans o₈)).mono
-  have hK : Keep [.r4, .r5] t w := (k₈.keep.trans mw.keep).mono
-  have hb : (t₈.gpr .r5).setWidth 8 = view t.mem (Sp s) lN &&& c := by
+  obtain k₈ : Only [.r4, .r5] t t₈ := (o₆.trans (o₇.trans o₈)).mono
+  obtain hK : Keep [.r4, .r5] t w := (k₈.keep.trans mw.keep).mono
+  obtain hb : (t₈.gpr .r5).setWidth 8 = view t.mem (Sp s) lN &&& c := by
     rw [e₈, e₇, o₇.get .r18, o₆.get .r18, h.pc, L.hc, o₆.mem]
     simp only [BitVec.setWidth_and, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide), BitVec.setWidth_eq]
     rfl
-  have hm : w.mem = t.mem.writeW (off (Sp s) lN) (view t.mem (Sp s) lN &&& c) := by
+  obtain hm : w.mem = t.mem.writeW (off (Sp s) lN) (view t.mem (Sp s) lN &&& c) := by
     rw [mw.mem, hb, k₈.mem]
   refine wp_nil ⟨h.keep F hK (R := [⟨off (Sp s) lN, 1⟩]) (by
       rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
@@ -307,12 +307,12 @@ theorem unmask_ok {H : Hash} (hD : H.D = D) {G : Hash} (hG : HashOK G) {g : Fns}
       (∀ o < oSt, view t'.mem (Sp s) o = dbV Gm (view t.mem (Sp s)) lN dN D c o) → WP isa rest t' Q) :
     WP isa (.seq (.block (dbArgs H)) (.seq (mgfXorT g gArg) (.seq (.block clearTop) rest))) t Q := by
   have F := L.F
-  have hk := L.hk; have hk2 := L.k2; have hd1 := L.d1; have hD64 := L.D64
+  obtain hk := L.hk; have hk2 := L.k2; have hd1 := L.d1; have hD64 := L.D64
   refine WP.seq (WP.mono_syms (dbArgs_ok L hD h) fun t₄ ⟨b₄, k₄, x24, x25, x26, x27⟩ y₄ => ?_)
   refine WP.seq (WP.mono (mgfXorT_ok F hG Tg hGh hGl hGv (src := lN + dN) (srcLen := D) (dst := lN) (dstLen := dN)
     ⟨by omega_arith, by omega_arith, .inr (by omega_arith), by omega_arith⟩ b₄ (y₄.trans sy) x24 x25 x26 x27)
     fun t₅ ⟨⟨b₅, v₅⟩, y₅⟩ => ?_)
-  have V4 : view t₄.mem (Sp s) = view t.mem (Sp s) := by rw [k₄.mem]
+  obtain V4 : view t₄.mem (Sp s) = view t.mem (Sp s) := by rw [k₄.mem]
   rw [V4] at v₅
   refine WP.seq (WP.mono_syms (clearTop_ok L b₅) fun w ⟨b, _, v⟩ yw => k w b (yw.trans y₅) fun o ho => ?_)
   rw [v o ho, dbV]
@@ -379,7 +379,7 @@ theorem lzr_le (w : Nat → Byte) (i : Nat) : lzr w i ≤ i := by
 /-- `(b - 1) >>> 63`: 1 if `b = 0`, 0 if not. -/
 theorem isz_eq (b : Byte) : (b.setWidth 64 - BitVec.ofNat 64 1) >>> 63 = if b = 0 then 1#64 else 0#64 := by
   have hb := b.isLt
-  have e : b = BitVec.ofNat 8 b.toNat := (BitVec.ofNat_toNat _ b).trans (BitVec.setWidth_eq _) |>.symm
+  obtain e : b = BitVec.ofNat 8 b.toNat := (BitVec.ofNat_toNat _ b).trans (BitVec.setWidth_eq _) |>.symm
   generalize b.toNat = n at hb e
   subst e
   revert n; decide +kernel
@@ -402,32 +402,32 @@ theorem scan_step {w : Nat → Byte} {S : Addr} {lN i : Nat} {u u' : State} (I :
     (h7 : u'.gpr .r7 = u.gpr .r7 &&& (BitVec.ofNat 64 0 - u'.gpr .r11))
     (h4 : u'.gpr .r4 = u.gpr .r4 + BitVec.ofNat 64 1) (h6 : u'.gpr .r6 = u.gpr .r6 + BitVec.ofNat 64 1) :
     ScanI w S lN (i + 1) u' := by
-  have hz := isz_eq (w i)
+  obtain hz := isz_eq (w i)
   rw [← hb] at hz
   rw [hz] at h11
-  have hl := lzr_le w i
-  have r4' : u'.gpr .r4 = off S (lN + (i + 1)) := by rw [h4, I.r4]; exact off_off _ _ _
-  have r6' : u'.gpr .r6 = BitVec.ofNat 64 (i + 1) := by rw [h6, I.r6, BitVec.ofNat_add]
+  obtain hl := lzr_le w i
+  obtain r4' : u'.gpr .r4 = off S (lN + (i + 1)) := by rw [h4, I.r4]; exact off_off _ _ _
+  obtain r6' : u'.gpr .r6 = BitVec.ofNat 64 (i + 1) := by rw [h6, I.r6, BitVec.ofNat_add]
   by_cases e : lzr w i = i
   · have I7 := I.r7; have I8 := I.r8; have I9 := I.r9
     rw [ifp e] at I7
     rw [ifn (by omega_using [e])] at I8 I9
     by_cases z : w i = 0
     · rw [ifp z] at h11
-      have h12' : u'.gpr .r12 = 0#64 := by rw [h12, h11, I7]; rfl
+      obtain h12' : u'.gpr .r12 = 0#64 := by rw [h12, h11, I7]; rfl
       refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifp e, ifp z]
       · rw [ifp rfl, h7, I7, h11]; rfl
       · rw [ifn (by omega_using []), h8, I8, h12', BitVec.and_zero, BitVec.or_zero]
       · rw [ifn (by omega_using []), h9, I9, h12', BitVec.and_zero, BitVec.or_zero]
     · rw [ifn z] at h11
-      have h12' : u'.gpr .r12 = BitVec.allOnes 64 := by rw [h12, h11, I7]; rfl
+      obtain h12' : u'.gpr .r12 = BitVec.allOnes 64 := by rw [h12, h11, I7]; rfl
       refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifp e, ifn z]
       · rw [ifn (by omega_using []), h7, I7, h11]; rfl
       · rw [ifp (by omega_using []), h8, I8, h12', BitVec.and_allOnes, I.r6]; simp
       · rw [ifp (by omega_using []), h9, I9, h12', BitVec.and_allOnes, hb, ← e]; simp
   · have I7 := I.r7
     rw [ifn e] at I7
-    have h12' : u'.gpr .r12 = 0#64 := by rw [h12, I7, BitVec.and_zero]
+    obtain h12' : u'.gpr .r12 = 0#64 := by rw [h12, I7, BitVec.and_zero]
     refine ⟨r4', r6', ?_, ?_, ?_⟩ <;> rw [lzr_succ, ifn e]
     · rw [ifn (by omega_using [hl]), h7, I7, BitVec.zero_and]
     · rw [ifp (by omega_using [hl]), h8, I.r8, ifp (by omega_using [hl, e]), h12', BitVec.and_zero, BitVec.or_zero]
@@ -445,13 +445,13 @@ theorem scan_ok {t : State} (h : Base Sp (vP D) s t) {w : Nat → Byte}
       t'.gpr .r8 = BitVec.ofNat 64 (if lzr w dN < dN then lzr w dN else 0) ∧
       t'.gpr .r9 = (if lzr w dN < dN then w (lzr w dN) else 0).setWidth 64 := by
   have F := L.F
-  have hk := L.hk; have hk2 := L.k2; have hl := L.l1; have hd1 := L.d1
+  obtain hk := L.hk; have hk2 := L.k2; have hl := L.l1; have hd1 := L.d1
   refine WP.seq (wp_add fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_li (by decide) fun t₃ o₃ e₃ =>
     wp_li (by decide) fun t₄ o₄ e₄ => wp_subi fun t₅ o₅ e₅ => wp_li (by decide) fun t₆ o₆ e₆ =>
     wp_li (by decide) fun t₇ o₇ e₇ => wp_nil ?_)
-  have k₇ : Only [.r4, .r5, .r6, .r7, .r8, .r9] t t₇ :=
+  obtain k₇ : Only [.r4, .r5, .r6, .r7, .r8, .r9] t t₇ :=
     (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans o₇)))))).mono
-  have I0 : ScanI w (Sp s) lN 0 t₇ := by
+  obtain I0 : ScanI w (Sp s) lN 0 t₇ := by
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [o₇.get .r4, o₆.get .r4, o₅.get .r4, o₄.get .r4, o₃.get .r4, o₂.get .r4, e₁, h.r14, h.plo, L.hlo]; rfl
     · rw [o₇.get .r6, o₆.get .r6, o₅.get .r6, o₄.get .r6, e₃]
@@ -469,13 +469,13 @@ theorem scan_ok {t : State} (h : Base Sp (vP D) s t) {w : Nat → Byte}
       wp_and fun u₆ p₆ f₆ => wp_or fun u₇ p₇ f₇ => wp_and fun u₈ p₈ f₈ => wp_or fun u₉ p₉ f₉ =>
       wp_li (by decide) fun u₁₀ p₁₀ f₁₀ => wp_sub fun u₁₁ p₁₁ f₁₁ => wp_and fun u₁₂ p₁₂ f₁₂ =>
       wp_addi fun u₁₃ p₁₃ f₁₃ => wp_addi fun u₁₄ p₁₄ f₁₄ => wp_subi fun u₁₅ p₁₅ f₁₅ => wp_nil ?_
-    have q : Only [.r10, .r11, .r12, .r3, .r8, .r9, .r7, .r4, .r6, .r5] u u₁₅ :=
+    obtain q : Only [.r10, .r11, .r12, .r3, .r8, .r9, .r7, .r4, .r6, .r5] u u₁₅ :=
       (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans (p₇.trans (p₈.trans (p₉.trans (p₁₀.trans (p₁₁.trans (p₁₂.trans (p₁₃.trans (p₁₄.trans p₁₅)))))))))))))).mono
-    have v₁ : u₁₅.gpr .r10 = (w i).setWidth 64 := by
+    obtain v₁ : u₁₅.gpr .r10 = (w i).setWidth 64 := by
       rw [p₁₅.get .r10, p₁₄.get .r10, p₁₃.get .r10, p₁₂.get .r10, p₁₁.get .r10, p₁₀.get .r10,
         p₉.get .r10, p₈.get .r10, p₇.get .r10, p₆.get .r10, p₅.get .r10, p₄.get .r10, p₃.get .r10, p₂.get .r10, f₁,
         o.mem, k₇.mem, ← hw i hi]; rfl
-    have p₁' : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8, .r9], u₁.gpr r = u.gpr r := fun r hr => p₁.get r (by revert r; decide)
+    obtain p₁' : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8, .r9], u₁.gpr r = u.gpr r := fun r hr => p₁.get r (by revert r; decide)
     refine ⟨⟨scan_step I v₁ ?_ ?_ ?_ ?_ ?_ ?_ ?_, (o.trans q).mono⟩, ?_⟩ <;>
       simp (disch := decide) only [p₁₅.gpr, p₁₄.gpr, p₁₃.gpr, p₁₂.gpr, p₁₁.gpr, p₁₀.gpr, p₉.gpr, p₈.gpr, p₇.gpr, p₆.gpr, p₅.gpr, p₄.gpr, p₃.gpr, p₂.gpr, f₁₅, f₁₄, f₁₃, f₁₂, f₁₁, f₁₀, f₉, f₈, f₇, f₆, f₅, f₄, f₃, f₂, p₁' _ (by decide : Reg.r4 ∈ _), p₁' _ (by decide : Reg.r5 ∈ _), p₁' _ (by decide : Reg.r6 ∈ _),
         p₁' _ (by decide : Reg.r7 ∈ _), p₁' _ (by decide : Reg.r8 ∈ _), p₁' _ (by decide : Reg.r9 ∈ _)]
@@ -530,16 +530,16 @@ theorem posCheck_ok {t : State} (h : Base Sp (vP D) s t) {a : Byte} {pos : Nat} 
     WP isa (.block posCheck) t fun t' => Base Sp (vP D) s t' ∧ Only [.r4, .r24, .r3, .r9, .r25] t t' ∧
       t'.gpr .r24 = a.setWidth 64 ||| (val ^^^ 1#64) ∧ t'.gpr .r25 = BitVec.ofNat 64 (dN - pos - 1) := by
   have F := L.F
-  have hk := L.hk; have hk2 := L.k2
+  obtain hk := L.hk; have hk2 := L.k2
   generalize hK : (s.gpr .r4).toNat = kN at hk hk2 ha
   refine wp_add fun t₁ o₁ e₁ => wp_subi fun t₂ o₂ e₂ => ?_
-  have a₂ : t₂.gpr .r4 = off (Sp s) (kN - 1) := by
+  obtain a₂ : t₂.gpr .r4 = off (Sp s) (kN - 1) := by
     rw [e₂, e₁, h.r14, h.pk, ← ofNat_toNat (s.gpr .r4), hK, off_sub _ (by omega_using [hk]) (by omega_using [hK])]
   refine wp_lbz (a := off (Sp s) (kN - 1)) (by rw [a₂, BitVec.add_zero])
     (by rw [o₂.rd, o₁.rd, o₂.wr, o₁.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_using [hk2]) _) fun t₃ o₃ e₃ => ?_
   refine wp_li (by decide) fun t₄ o₄ e₄ => wp_xor fun t₅ o₅ e₅ => wp_or fun t₆ o₆ e₆ =>
     wp_sub fun t₇ o₇ e₇ => wp_subi fun t₈ o₈ e₈ => wp_nil ?_
-  have k₈ : Only [.r4, .r24, .r3, .r9, .r25] t t₈ :=
+  obtain k₈ : Only [.r4, .r24, .r3, .r9, .r25] t t₈ :=
     (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans (o₇.trans o₈))))))).mono
   refine ⟨h.only F k₈, k₈, ?_, ?_⟩
   · rw [o₈.get .r24, o₇.get .r24, e₆, o₅.get .r24, o₄.get .r24, e₃, e₅, o₄.get .r9, o₃.get .r9, o₂.get .r9,
@@ -558,7 +558,7 @@ theorem lenCheck_ok {t : State} (h : Base Sp (vP D) s t) {v : BitVec 64} {sl : N
   refine WP.ite _ (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · have ha0 : anyL s = 0 := by rw [← h.pany]; simpa using hz
     refine wp_xor fun w₁ p₁ f₁ => wp_or fun w p f => ?_
-    have q : Only [.r3, .r24] t w := (p₁.trans p).mono
+    obtain q : Only [.r3, .r24] t w := (p₁.trans p).mono
     refine wp_nil ⟨h.only F q, q, ?_⟩
     rw [f, p₁.get .r24, h24, f₁, h25, h.psl, ifp ha0]
   · have ha0 : anyL s ≠ 0 := by rw [← h.pany]; simpa using hz
@@ -650,7 +650,7 @@ end
 
 theorem dbV_congr {Gm : Spec.Mgf1.Hash} {V V' : Nat → Byte} {lN dN D : Nat} {c : Byte} (hf : lN + dN + D ≤ 1024)
     (h : ∀ o < 1024, V o = V' o) {o : Nat} (ho : o < 1024) : dbV Gm V lN dN D c o = dbV Gm V' lN dN D c o := by
-  have hs : srcB V (lN + dN) D = srcB V' (lN + dN) D :=
+  obtain hs : srcB V (lN + dN) D = srcB V' (lN + dN) D :=
     List.map_congr_left fun i hi => h _ (by have := List.mem_range.mp hi; omega_arith)
   simp only [dbV, mixV, hs, h o ho]
 
@@ -674,31 +674,31 @@ theorem post_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = h
         then 1#64 else 0#64 := by
   have F := L.F
   obtain ⟨hE, hSt, hDg, hCt, hW, hRs⟩ := offs
-  have hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64; have hd1 := L.d1
+  obtain hk := L.hk; have hk2 := L.k2; have hD0 := L.D0; have hD64 := L.D64; have hd1 := L.d1
   generalize hK : (s.gpr .r4).toNat = k at hk hk2
   let V := view t.mem (Sp s)
   refine WP.seq (WP.mono_syms (acc0_ok L h) fun t₁ ⟨b₁, g₁, v₁⟩ y₁ => ?_)
   rw [hK] at v₁
   refine unmask_ok L hD hG Tg hGmh hGml hGmv b₁ (y₁.trans sy) fun t₂ b₂ y₂ v₂ => ?_
-  have e₁ : ∀ o < 1024, view t₁.mem (Sp s) o = v1 V lN c k o := fun o ho => by rw [v₁ o (by omega_arith)]; rfl
-  have W : ∀ o < 1024, view t₂.mem (Sp s) o = dbV Gm (v1 V lN c k) lN dN D c o := fun o ho => by
+  obtain e₁ : ∀ o < 1024, view t₁.mem (Sp s) o = v1 V lN c k o := fun o ho => by rw [v₁ o (by omega_arith)]; rfl
+  obtain W : ∀ o < 1024, view t₂.mem (Sp s) o = dbV Gm (v1 V lN c k) lN dN D c o := fun o ho => by
     rw [v₂ o (by omega_arith), dbV_congr (by omega_arith) e₁ ho]
   refine WP.seq (WP.mono_syms (scan_ok L b₂ (w := wR Gm V D lN dN c k) fun j hj => by rw [W _ (by omega_arith)]; rfl)
     fun t₃ ⟨b₃, m₃, g₃, x8, x9⟩ y₃ => ?_)
-  have hpos : posR Gm V D lN dN c k < dN := by
+  obtain hpos : posR Gm V D lN dN c k < dN := by
     unfold posR; split <;> omega_arith
-  have ha : view t₃.mem (Sp s) ((s.gpr .r4).toNat - 1) = accB V lN c k := by
+  obtain ha : view t₃.mem (Sp s) ((s.gpr .r4).toNat - 1) = accB V lN c k := by
     rw [hK, m₃, W _ (by omega_arith), dbV]
     simp only [mixV]
     rw [ifn (by omega_arith), ifn (by omega_arith), v1, ifp rfl]
   refine check_ok L b₃ (a := accB V lN c k) (pos := posR Gm V D lN dN c k)
     (val := (valR Gm V D lN dN c k).setWidth 64) ha x8 hpos x9 fun t₄ b₄ m₄ g₄ x24 x25 y₄ => ?_
-  have sy₄ : t₄.syms = s.syms := y₄.trans (y₃.trans y₂)
-  have W₄ : ∀ o < 1024, view t₄.mem (Sp s) o = dbV Gm (v1 V lN c k) lN dN D c o := fun o ho => by
+  obtain sy₄ : t₄.syms = s.syms := y₄.trans (y₃.trans y₂)
+  obtain W₄ : ∀ o < 1024, view t₄.mem (Sp s) o = dbV Gm (v1 V lN c k) lN dN D c o := fun o ho => by
     rw [m₄, m₃, W o ho]
-  have vH : ∀ i < D, dbV Gm (v1 V lN c k) lN dN D c (lN + dN + i) = V (lN + dN + i) := fun i hi => by
+  obtain vH : ∀ i < D, dbV Gm (v1 V lN c k) lN dN D c (lN + dN + i) = V (lN + dN + i) := fun i hi => by
     simp only [dbV, mixV]; rw [ifn (by omega_arith), ifn (by omega_arith), v1, ifn (by omega_arith)]
-  have hacc : (t₄.gpr .r24).toNat < 2 ^ 63 := by
+  obtain hacc : (t₄.gpr .r24).toNat < 2 ^ 63 := by
     rw [x24, accW]
     refine or_lt (or_lt (byte_lt _) (xor1_lt _)) ?_
     split
@@ -711,7 +711,7 @@ theorem post_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = h
   refine WP.ite _ (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   all_goals have g20 : t₄.gpr .r20 = anyL s := by rw [g₄ _ (by decide), g₃ _ (by decide), b₂.pany]
   · have h0 : anyL s = 0 := by rw [g20] at hz; simpa using hz
-    have hM : mFix (view t₄.mem (Sp s)) (mh D s) lN dN (stackArg s 0).toNat =
+    obtain hM : mFix (view t₄.mem (Sp s)) (mh D s) lN dN (stackArg s 0).toNat =
         mR Gm V D lN dN c k (mh D s) (anyL s) (stackArg s 0) := by
       rw [mR, ifp h0]
       have := hfit h0
@@ -725,7 +725,7 @@ theorem post_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = h
     · rw [ifn e, ifn fun h' => e ⟨by rw [← x24']; exact h'.1, fun i hi => by
         rw [← vH i hi, ← W₄ _ (by omega_arith)]; exact h'.2 i hi⟩]
   · have h0 : anyL s ≠ 0 := by rw [g20] at hz; simpa using hz
-    have hM : mAny (view t₄.mem (Sp s)) (mh D s) lN dN (posR Gm V D lN dN c k) (slR Gm V D lN dN c k) =
+    obtain hM : mAny (view t₄.mem (Sp s)) (mh D s) lN dN (posR Gm V D lN dN c k) (slR Gm V D lN dN c k) =
         mR Gm V D lN dN c k (mh D s) (anyL s) (stackArg s 0) := by
       rw [mR, ifn h0]
       simp only [mAny]
@@ -733,7 +733,7 @@ theorem post_ok (hD : H.D = D) {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = h
       split
       · rw [W₄ _ (by omega_arith)]
       · rfl
-    have hsl : slR Gm V D lN dN c k + posR Gm V D lN dN c k + 1 = dN := by unfold slR; omega_arith
+    obtain hsl : slR Gm V D lN dN c k + posR Gm V D lN dN c k + 1 = dN := by unfold slR; omega_arith
     refine WP.mono (any_ok L hH T hD hGh ok hl hN hB b₄ sy₄ (pos := posR Gm V D lN dN c k)
       (sl := slR Gm V D lN dN c k) (by rw [g₄ _ (by decide), x8]; rfl) hpos x25 hsl hacc) fun t' ⟨b', r'⟩ => ⟨b', ?_⟩
     rw [r', hM]

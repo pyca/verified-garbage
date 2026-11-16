@@ -34,13 +34,13 @@ open VG.Proof.Cmac (le8)
 /-- A right shift by whole bytes drops the low bytes. -/
 theorem le8_ushiftRight (x : BitVec 64) {k : Nat} (hk : k ≤ 8) :
     le8 (x >>> (8 * k)) = (le8 x).drop k ++ Spec.Ccm.zeros k := by
-  have hl : ((le8 x).drop k).length = 8 - k := by rw [List.length_drop, Proof.Cmac.length_le8]
-  have hlen : (le8 (x >>> (8 * k))).length = ((le8 x).drop k ++ Spec.Ccm.zeros k).length := by
+  obtain hl : ((le8 x).drop k).length = 8 - k := by rw [List.length_drop, Proof.Cmac.length_le8]
+  obtain hlen : (le8 (x >>> (8 * k))).length = ((le8 x).drop k ++ Spec.Ccm.zeros k).length := by
     rw [Proof.Cmac.length_le8, List.length_append, hl, Spec.Ccm.zeros, List.length_replicate]
     omega_using [hk]
   apply List.ext_getElem hlen
   intro i h₁ h₂
-  have hi : i < 8 := by rwa [Proof.Cmac.length_le8] at h₁
+  obtain hi : i < 8 := by rwa [Proof.Cmac.length_le8] at h₁
   by_cases h : i < 8 - k
   · rw [List.getElem_append_left (by rw [hl]; exact h), List.getElem_drop]
     simp only [le8, List.getElem_map, List.getElem_range]
@@ -107,12 +107,12 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
       bytesAt s'.mem (W + BitVec.ofNat 64 32) 16 =
         Spec.Ccm.encodeLen a ++ Spec.Ccm.zeros (16 - Proof.AesCcm.hdrLen a) := by
   have h15 := E.r15
-  have w₁ := E.perm.wW (show 32 + 8 ≤ 2560 by decide)
-  have w₂ := E.perm.wW (show 40 + 8 ≤ 2560 by decide)
-  have w₃ := E.perm.wW (show 34 + 8 ≤ 2560 by decide)
-  have e40 : W + BitVec.ofNat 64 40 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
-  have e34 : W + BitVec.ofNat 64 34 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 2 := by rw [add_ofNat_assoc]
-  have cB : ∀ d k, 32 ≤ d → d + k ≤ 48 → (⟨W + BitVec.ofNat 64 32, 16⟩ : Region).Contains (W + BitVec.ofNat 64 d) k :=
+  obtain w₁ := E.perm.wW (show 32 + 8 ≤ 2560 by decide)
+  obtain w₂ := E.perm.wW (show 40 + 8 ≤ 2560 by decide)
+  obtain w₃ := E.perm.wW (show 34 + 8 ≤ 2560 by decide)
+  obtain e40 : W + BitVec.ofNat 64 40 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
+  obtain e34 : W + BitVec.ofNat 64 34 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 2 := by rw [add_ofNat_assoc]
+  obtain cB : ∀ d k, 32 ≤ d → d + k ≤ 48 → (⟨W + BitVec.ofNat 64 32, 16⟩ : Region).Contains (W + BitVec.ofNat 64 d) k :=
     fun d k h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
   -- `B` zeroed; CF for `a < 2¹⁶ − 2⁸`.
   obtain ⟨s₁, run₁, hm₁, hcf₁, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
@@ -126,22 +126,22 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
         BitVec.toNat_ofNat]
     · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
     all_goals rfl
-  have hz : bytesAt s₁.mem (W + BitVec.ofNat 64 32) 16 = Spec.Ccm.zeros 16 := by
+  obtain hz : bytesAt s₁.mem (W + BitVec.ofNat 64 32) 16 = Spec.Ccm.zeros 16 := by
     rw [hm₁, e40, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; rfl
-  have fz : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₁.mem := by
+  obtain fz : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₁.mem := by
     rw [hm₁]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) (0 : BitVec 64) (cB 32 8 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) (0 : BitVec 64) (cB 40 8 (by decide) (by decide))
-  have E₁ : Env K W SP s₁ := E.keep (fun r hr => by
+  obtain E₁ : Env K W SP s₁ := E.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide)) hrd₁ hwr₁
-  have hbp₁ : s₁.gpr .rbp = BitVec.ofNat 64 a := by rw [hg₁ _ (by decide), hbp]
+  obtain hbp₁ : s₁.gpr .rbp = BitVec.ofNat 64 a := by rw [hg₁ _ (by decide), hbp]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have ha64 := toNat_ofNat_of_lt ha
+  obtain ha64 := toNat_ofNat_of_lt ha
   refine WP.ite (decide (a < 2 ^ 16 - 2 ^ 8)) (eval_b hcf₁) (fun ht => ?_) (fun hf => ?_)
   · -- `[a]₁₆`.
-    have h₁ := of_decide_eq_true ht
-    have w₁' := E₁.perm.wW (show 32 + 8 ≤ 2560 by decide)
+    obtain h₁ := of_decide_eq_true ht
+    obtain w₁' := E₁.perm.wW (show 32 + 8 ≤ 2560 by decide)
     refine WP.of_runBlock ⟨_, by crun [E₁.r15, w₁'], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · exact E₁.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -170,14 +170,14 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
       · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
       all_goals rfl
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    have E₂ : Env K W SP s₂ := E₁.keep (fun r hr => by
+    obtain E₂ : Env K W SP s₂ := E₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide)) hrd₂ hwr₂
-    have hbp₂ : s₂.gpr .rbp = BitVec.ofNat 64 a := by rw [hg₂ _ (by decide), hbp₁]
+    obtain hbp₂ : s₂.gpr .rbp = BitVec.ofNat 64 a := by rw [hg₂ _ (by decide), hbp₁]
     refine WP.ite (decide (a < 2 ^ 32)) (eval_b hcf₂) (fun ht => ?_) (fun hf => ?_)
     · -- `0xff ‖ 0xfe ‖ [a]₃₂`.
-      have h₂ := of_decide_eq_true ht
-      have w₁' := E₂.perm.wW (show 32 + 8 ≤ 2560 by decide)
+      obtain h₂ := of_decide_eq_true ht
+      obtain w₁' := E₂.perm.wW (show 32 + 8 ≤ 2560 by decide)
       refine WP.of_runBlock ⟨_, by crun [E₂.r15, w₁'], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · exact E₂.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -197,15 +197,15 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
           show bswap64 (BitVec.ofNat 64 a) >>> 16 = bswap64 (BitVec.ofNat 64 a) >>> (8 * 2) from rfl,
           le8_ushiftRight _ (by decide), le8_bswap64_ofNat ha, be_split (q := 4) (by decide) (by omega),
           encodeLen_mid h₁ h₂, le8_feff, show Proof.AesCcm.hdrLen a = 6 by simp [Proof.AesCcm.hdrLen, h₁, h₂]]
-        have hl4 := Proof.AesCcm.length_be 4 a
+        obtain hl4 := Proof.AesCcm.length_be 4 a
         rcases hb : Spec.Ccm.be 4 a with _ | ⟨b₀, _ | ⟨b₁, _ | ⟨b₂, _ | ⟨b₃, _ | ⟨_, _⟩⟩⟩⟩⟩ <;>
           rw [hb] at hl4 <;> simp at hl4
         simp [Spec.Ccm.zeros, List.replicate]
 
     · -- `0xff ‖ 0xff ‖ [a]₆₄`.
-      have h₂ := of_decide_eq_false hf
-      have w₁' := E₂.perm.wW (show 32 + 8 ≤ 2560 by decide)
-      have w₃' := E₂.perm.wW (show 34 + 8 ≤ 2560 by decide)
+      obtain h₂ := of_decide_eq_false hf
+      obtain w₁' := E₂.perm.wW (show 32 + 8 ≤ 2560 by decide)
+      obtain w₃' := E₂.perm.wW (show 34 + 8 ≤ 2560 by decide)
       refine WP.of_runBlock ⟨_, by crun [E₂.r15, w₁', w₃'], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · exact E₂.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

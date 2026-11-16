@@ -65,14 +65,14 @@ theorem xStep_ok (s : State) {d₀ : Reg} (h1 : d₀ ≠ .x1) (h2 : d₀ ≠ .x2
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · have e1 := Word64.addCarry_value (BitVec.ofNat 64 ((s.gpr .x16).toNat * (s.gpr d₀).toNat / 2 ^ 64))
       (s.gpr .x17 * s.gpr d₀) false
-    have e2 := Word64.addCarry_value (BitVec.ofNat 64 ((s.gpr .x17).toNat * (s.gpr d₀).toNat / 2 ^ 64))
+    obtain e2 := Word64.addCarry_value (BitVec.ofNat 64 ((s.gpr .x17).toNat * (s.gpr d₀).toNat / 2 ^ 64))
       (s.gpr d₀) (Word64.carryOut (BitVec.ofNat 64 ((s.gpr .x16).toNat * (s.gpr d₀).toNat / 2 ^ 64))
         (s.gpr .x17 * s.gpr d₀) false)
-    have m1 := VG.Proof.Ed25519.AArch64.mul_lo_hi (s.gpr .x16) (s.gpr d₀)
-    have m2 := VG.Proof.Ed25519.AArch64.mul_lo_hi (s.gpr .x17) (s.gpr d₀)
+    obtain m1 := VG.Proof.Ed25519.AArch64.mul_lo_hi (s.gpr .x16) (s.gpr d₀)
+    obtain m2 := VG.Proof.Ed25519.AArch64.mul_lo_hi (s.gpr .x17) (s.gpr d₀)
     simp only [VG.Proof.Ed25519.AArch64.mulHi] at m1 m2
     simp only [Word64.addCarry, Word64.carryOut] at e1 e2
-    have hc : ∀ c : Bool, ((0 : BitVec 64) + 0 + BitVec.ofNat 64 c.toNat).toNat = c.toNat := by
+    obtain hc : ∀ c : Bool, ((0 : BitVec 64) + 0 + BitVec.ofNat 64 c.toNat).toNat = c.toNat := by
       intro c; cases c <;> rfl
     dsimp only [Size.bits] at hc ⊢
     rw [hc]
@@ -96,7 +96,7 @@ theorem sbc0_ok (s : State) (d : Reg) (hz : s.gpr .x7 = 0) :
     change (Word64.addCarry (s.gpr d) (~~~0) s.c).toNat + _ = _
     have hn : (~~~(0 : BitVec 64)).toNat = 2 ^ 64 - 1 := rfl
     rw [hn] at e
-    have hb : ∀ c, (Word64.carryOut (s.gpr d) (~~~0) c).toNat ≤ 1 := fun c => Bool.toNat_le _
+    obtain hb : ∀ c, (Word64.carryOut (s.gpr d) (~~~0) c).toNat ≤ 1 := fun c => Bool.toNat_le _
     revert e
     cases s.c <;> intro e <;> have := hb false <;> have := hb true <;>
       simp only [Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false] at e ⊢ <;> omega_arith
@@ -124,7 +124,7 @@ theorem sStep_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
   refine WP.mono (subc_ok s₃ d₄ d₄ .x7 false rfl) fun s₄ ⟨v₄, c₄, k₄⟩ => ?_
   rw [← List.singleton_append, WP.block_append_iff]
   refine WP.mono (subc_ok s₄ d₅ d₅ .x7 false rfl) fun s₅ ⟨v₅, c₅, k₅⟩ => ?_
-  have z₅ : s₅.gpr .x7 = 0 := by
+  obtain z₅ : s₅.gpr .x7 = 0 := by
     rw [k₅.gpr _ (by simpa using Ne.symm h5x7), k₄.gpr _ (by simpa using Ne.symm h4x7),
       k₃.gpr _ (by simpa using Ne.symm h3x7), k₂.gpr _ (by simpa using Ne.symm h2x7),
       k₁.gpr _ (by simpa using Ne.symm h1x7), hz]
@@ -132,42 +132,42 @@ theorem sStep_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
   refine ⟨?_, (k₁.mono (by sub_regs)).trans ((k₂.mono (by sub_regs)).trans ((k₃.mono (by sub_regs)).trans
     ((k₄.mono (by sub_regs)).trans ((k₅.mono (by sub_regs)).trans (k₆.mono (by sub_regs))))))⟩
   -- Each word's value, read through the later writes.
-  have g₁ : t.gpr d₁ = s₁.gpr d₁ := by
+  obtain g₁ : t.gpr d₁ = s₁.gpr d₁ := by
     rw [k₆.gpr _ (by simpa using Ne.symm h01), k₅.gpr _ (by simpa using h15),
       k₄.gpr _ (by simpa using h14), k₃.gpr _ (by simpa using h13), k₂.gpr _ (by simpa using h12)]
-  have g₂ : t.gpr d₂ = s₂.gpr d₂ := by
+  obtain g₂ : t.gpr d₂ = s₂.gpr d₂ := by
     rw [k₆.gpr _ (by simpa using Ne.symm h02), k₅.gpr _ (by simpa using h25),
       k₄.gpr _ (by simpa using h24), k₃.gpr _ (by simpa using h23)]
-  have g₃ : t.gpr d₃ = s₃.gpr d₃ := by
+  obtain g₃ : t.gpr d₃ = s₃.gpr d₃ := by
     rw [k₆.gpr _ (by simpa using Ne.symm h03), k₅.gpr _ (by simpa using h35), k₄.gpr _ (by simpa using h34)]
-  have g₄ : t.gpr d₄ = s₄.gpr d₄ := by
+  obtain g₄ : t.gpr d₄ = s₄.gpr d₄ := by
     rw [k₆.gpr _ (by simpa using Ne.symm h04), k₅.gpr _ (by simpa using h45)]
-  have g₅ : t.gpr d₅ = s₅.gpr d₅ := by rw [k₆.gpr _ (by simpa using Ne.symm h05)]
+  obtain g₅ : t.gpr d₅ = s₅.gpr d₅ := by rw [k₆.gpr _ (by simpa using Ne.symm h05)]
   -- The inputs, read through the earlier writes.
-  have i₂ : s₁.gpr d₂ = s.gpr d₂ := k₁.gpr _ (by simpa using Ne.symm h12)
-  have i₃ : s₂.gpr d₃ = s.gpr d₃ := by
+  obtain i₂ : s₁.gpr d₂ = s.gpr d₂ := k₁.gpr _ (by simpa using Ne.symm h12)
+  obtain i₃ : s₂.gpr d₃ = s.gpr d₃ := by
     rw [k₂.gpr _ (by simpa using Ne.symm h23), k₁.gpr _ (by simpa using Ne.symm h13)]
-  have i₄ : s₃.gpr d₄ = s.gpr d₄ := by
+  obtain i₄ : s₃.gpr d₄ = s.gpr d₄ := by
     rw [k₃.gpr _ (by simpa using Ne.symm h34), k₂.gpr _ (by simpa using Ne.symm h24),
       k₁.gpr _ (by simpa using Ne.symm h14)]
-  have i₅ : s₄.gpr d₅ = s.gpr d₅ := by
+  obtain i₅ : s₄.gpr d₅ = s.gpr d₅ := by
     rw [k₄.gpr _ (by simpa using Ne.symm h45), k₃.gpr _ (by simpa using Ne.symm h35),
       k₂.gpr _ (by simpa using Ne.symm h25), k₁.gpr _ (by simpa using Ne.symm h15)]
-  have i₀ : s₅.gpr d₀ = s.gpr d₀ := by
+  obtain i₀ : s₅.gpr d₀ = s.gpr d₀ := by
     rw [k₅.gpr _ (by simpa using h05), k₄.gpr _ (by simpa using h04),
       k₃.gpr _ (by simpa using h03), k₂.gpr _ (by simpa using h02), k₁.gpr _ (by simpa using h01)]
-  have x₂ : s₁.gpr .x2 = s.gpr .x2 := k₁.gpr _ (by simpa using Ne.symm h1x2)
-  have x₃ : s₂.gpr .x3 = s.gpr .x3 := by
+  obtain x₂ : s₁.gpr .x2 = s.gpr .x2 := k₁.gpr _ (by simpa using Ne.symm h1x2)
+  obtain x₃ : s₂.gpr .x3 = s.gpr .x3 := by
     rw [k₂.gpr _ (by simpa using Ne.symm h2x3), k₁.gpr _ (by simpa using Ne.symm h1x3)]
-  have x₇₃ : s₃.gpr .x7 = 0 := by
+  obtain x₇₃ : s₃.gpr .x7 = 0 := by
     rw [k₃.gpr _ (by simpa using Ne.symm h3x7), k₂.gpr _ (by simpa using Ne.symm h2x7),
       k₁.gpr _ (by simpa using Ne.symm h1x7), hz]
-  have x₇₄ : s₄.gpr .x7 = 0 := by rw [k₄.gpr _ (by simpa using Ne.symm h4x7), x₇₃]
-  have e₁ := sub_borrow (s.gpr d₁) (s.gpr .x1) true
-  have e₂ := sub_borrow (s₁.gpr d₂) (s₁.gpr .x2) s₁.c
-  have e₃ := sub_borrow (s₂.gpr d₃) (s₂.gpr .x3) s₂.c
-  have e₄ := sub_borrow (s₃.gpr d₄) (s₃.gpr .x7) s₃.c
-  have e₅ := sub_borrow (s₄.gpr d₅) (s₄.gpr .x7) s₄.c
+  obtain x₇₄ : s₄.gpr .x7 = 0 := by rw [k₄.gpr _ (by simpa using Ne.symm h4x7), x₇₃]
+  obtain e₁ := sub_borrow (s.gpr d₁) (s.gpr .x1) true
+  obtain e₂ := sub_borrow (s₁.gpr d₂) (s₁.gpr .x2) s₁.c
+  obtain e₃ := sub_borrow (s₂.gpr d₃) (s₂.gpr .x3) s₂.c
+  obtain e₄ := sub_borrow (s₃.gpr d₄) (s₃.gpr .x7) s₃.c
+  obtain e₅ := sub_borrow (s₄.gpr d₅) (s₄.gpr .x7) s₄.c
   simp only [ite_true, ite_false, Bool.false_eq_true] at v₁ c₁ v₂ c₂ v₃ c₃ v₄ c₄ v₅ c₅
   rw [← v₁, ← c₁] at e₁
   rw [← v₂, ← c₂] at e₂
@@ -199,9 +199,9 @@ theorem montreds_arith {a W X T L j : Nat} (ha : a < 2 ^ 64)
     (hX : X = 0xffffffff00000001 * W / 2 ^ 64 + 0xffffffff * W + 2 ^ 64 * W)
     (hS : T + X = L + 2 ^ 320 * W + 2 ^ 384 * j) (hT : T < 2 ^ 384) (hL : L < 2 ^ 320) :
     2 ^ 64 * T = a + 2 ^ 64 * L + W * p := by
-  have hc := low_cancel hW ha
-  have hW64 : W < 2 ^ 64 := by omega_arith
-  have hdiv := Nat.div_add_mod (0xffffffff00000001 * W) (2 ^ 64)
+  obtain hc := low_cancel hW ha
+  obtain hW64 : W < 2 ^ 64 := by omega_arith
+  obtain hdiv := Nat.div_add_mod (0xffffffff00000001 * W) (2 ^ 64)
   rw [hc] at hdiv
   rw [show W * p = W * 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
     from rfl]
@@ -216,7 +216,7 @@ theorem montreds_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
       (∃ w < 2 ^ 64, 2 ^ 64 * regsVal t [d₁, d₂, d₃, d₄, d₅, d₀] =
         regsVal s [d₀, d₁, d₂, d₃, d₄, d₅] + w * p) ∧
       Keeps [.x1, .x2, .x3, d₀, d₁, d₂, d₃, d₄, d₅] s t := by
-  have hf' : [d₀, d₁, d₂, d₃, d₄, d₅, .x1, .x2, .x3, .x7].Nodup :=
+  obtain hf' : [d₀, d₁, d₂, d₃, d₄, d₅, .x1, .x2, .x3, .x7].Nodup :=
     (List.Sublist.nodup (by simp) hf)
   have hn := hf
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
@@ -224,45 +224,45 @@ theorem montreds_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
     ⟨h12, h13, h14, h15, h1x1, h1x2, h1x3, -, -, -⟩, ⟨h23, h24, h25, h2x1, h2x2, h2x3, -, -, -⟩,
     ⟨h34, h35, h3x1, h3x2, h3x3, -, -, -⟩, ⟨h45, h4x1, h4x2, h4x3, -, -, -⟩,
     ⟨h5x1, h5x2, h5x3, -, -, -⟩, -⟩ := hn
-  have split : ∀ i₁ i₂ i₃ i₄ i₅ i₆ i₇ i₈ i₉ i₁₀ i₁₁ i₁₂ i₁₃ i₁₄ : Instr,
+  obtain split : ∀ i₁ i₂ i₃ i₄ i₅ i₆ i₇ i₈ i₉ i₁₀ i₁₁ i₁₂ i₁₃ i₁₄ : Instr,
       [i₁, i₂, i₃, i₄, i₅, i₆, i₇, i₈, i₉, i₁₀, i₁₁, i₁₂, i₁₃, i₁₄] =
         [i₁, i₂] ++ ([i₃, i₄, i₅, i₆, i₇, i₈] ++ [i₉, i₁₀, i₁₁, i₁₂, i₁₃, i₁₄]) :=
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   rw [montreds, split, WP.block_append_iff]
   refine WP.mono (wStep_ok s h0x1) fun s₁ ⟨w₁, _, k₁⟩ => ?_
-  have z₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x7), hz]
+  obtain z₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x7), hz]
   rw [WP.block_append_iff]
   refine WP.mono (xStep_ok s₁ h0x1 h0x2 h0x3 z₁) fun s₂ ⟨x₂, k₂⟩ => ?_
-  have z₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), z₁]
+  obtain z₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), z₁]
   refine WP.mono (sStep_ok s₂ hf' z₂) fun t ⟨⟨j, hS⟩, k₃⟩ => ?_
   refine ⟨?_, (k₁.mono (by sub_regs)).trans ((k₂.mono (by sub_regs)).trans (k₃.mono (by sub_regs)))⟩
-  have g16 : s₁.gpr .x16 = c0 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x16), h16]
-  have g17 : s₁.gpr .x17 = c1 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x17), h17]
+  obtain g16 : s₁.gpr .x16 = c0 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x16), h16]
+  obtain g17 : s₁.gpr .x17 = c1 := by rw [k₁.gpr _ (by simpa using Ne.symm h0x17), h17]
   rw [g16, g17] at x₂
-  have gd : ∀ r, r ≠ d₀ → r ≠ .x1 → r ≠ .x2 → r ≠ .x3 → s₂.gpr r = s.gpr r := fun r a b c d => by
+  obtain gd : ∀ r, r ≠ d₀ → r ≠ .x1 → r ≠ .x2 → r ≠ .x3 → s₂.gpr r = s.gpr r := fun r a b c d => by
     rw [k₂.gpr _ (by simp [b, c, d]), k₁.gpr _ (by simp [a, b])]
-  have w₂ : s₂.gpr d₀ = s.gpr d₀ <<< 32 + s.gpr d₀ := by
+  obtain w₂ : s₂.gpr d₀ = s.gpr d₀ <<< 32 + s.gpr d₀ := by
     rw [k₂.gpr _ (by simp [h0x1, h0x2, h0x3]), w₁]
-  have hW : (s.gpr d₀ <<< 32 + s.gpr d₀).toNat =
+  obtain hW : (s.gpr d₀ <<< 32 + s.gpr d₀).toNat =
       ((s.gpr d₀).toNat * 2 ^ 32 % 2 ^ 64 + (s.gpr d₀).toNat) % 2 ^ 64 := by
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   refine ⟨(s.gpr d₀ <<< 32 + s.gpr d₀).toNat, BitVec.isLt _, ?_⟩
-  have hX : regsVal s₂ [.x1, .x2, .x3] =
+  obtain hX : regsVal s₂ [.x1, .x2, .x3] =
       0xffffffff00000001 * (s.gpr d₀ <<< 32 + s.gpr d₀).toNat / 2 ^ 64 +
         0xffffffff * (s.gpr d₀ <<< 32 + s.gpr d₀).toNat + 2 ^ 64 * (s.gpr d₀ <<< 32 + s.gpr d₀).toNat := by
     rw [w₁] at x₂
     simp only [regsVal]
     rw [show c0.toNat = 0xffffffff00000001 from rfl, show c1.toNat = 0xffffffff from rfl] at x₂
     omega_arith
-  have hD : regsVal s₂ [d₁, d₂, d₃, d₄, d₅, d₀] =
+  obtain hD : regsVal s₂ [d₁, d₂, d₃, d₄, d₅, d₀] =
       regsVal s [d₁, d₂, d₃, d₄, d₅] + 2 ^ 320 * (s.gpr d₀ <<< 32 + s.gpr d₀).toNat := by
     simp only [regsVal, gd d₁ (Ne.symm h01) h1x1 h1x2 h1x3, gd d₂ (Ne.symm h02) h2x1 h2x2 h2x3,
       gd d₃ (Ne.symm h03) h3x1 h3x2 h3x3, gd d₄ (Ne.symm h04) h4x1 h4x2 h4x3,
       gd d₅ (Ne.symm h05) h5x1 h5x2 h5x3, w₂]
     omega_arith
   rw [hX, hD] at hS
-  have hT := regsVal_lt t [d₁, d₂, d₃, d₄, d₅, d₀]
-  have hL := regsVal_lt s [d₁, d₂, d₃, d₄, d₅]
+  obtain hT := regsVal_lt t [d₁, d₂, d₃, d₄, d₅, d₀]
+  obtain hL := regsVal_lt s [d₁, d₂, d₃, d₄, d₅]
   simp only [List.length_cons, List.length_nil] at hT hL
   rw [regsVal]
   exact montreds_arith (s.gpr d₀).isLt hW rfl hS hT hL
@@ -326,8 +326,8 @@ theorem reds_ok (s : State) (hz : s.gpr .x7 = 0) :
       Keeps (([.x16, .x17] : List Reg) ++ (([.x1, .x2, .x3] : List Reg) ++ lowRegs)) s t := by
   rw [reds, WP.block_append_iff]
   refine WP.mono (redConsts_ok s hz) fun s₁ ⟨h16, h17, k₁⟩ => ?_
-  have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by decide), hz]
-  have hl : regsVal s₁ lowRegs = regsVal s lowRegs :=
+  obtain hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by decide), hz]
+  obtain hl : regsVal s₁ lowRegs = regsVal s lowRegs :=
     regsVal_congr fun r hr => k₁.gpr r (by revert r; decide)
   refine WP.mono (redsN_ok 6 (by decide) s₁ hz₁ h16 h17) fun t ⟨⟨W, hW, e⟩, k₂⟩ => ?_
   rw [rot_six, hl] at e

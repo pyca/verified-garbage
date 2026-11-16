@@ -103,7 +103,7 @@ theorem stack_eq : (⟨State.addr (s₀.sp - BitVec.ofNat 32 8), 8⟩ : Region) 
   rw [addr_sub hp.sp8]
 
 theorem lay_ok : (lay s₀ K).Ok := by
-  have es := stack_eq hp
+  obtain es := stack_eq hp
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [lay, List.length_cons, List.length_nil] at hi
     rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
@@ -163,15 +163,15 @@ macro "ldecide" : tactic => `(tactic| plain_simp_names first
 theorem KEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : KEnv K s₀ s) {xs : List Reg}
     {W : List (Nat × Nat × Nat)} (hk : KeptX xs ((lay s₀ K).RL W) s s') (hx : ∀ r ∈ [Reg.r4, .r5, .r6, .r7], r ∉ xs)
     (hW : W.all (okW K) = true) : KEnv K s₀ s' := by
-  have hL := lay_ok hp
-  have h1 : sepAll (lay s₀ K).sizes (0, 840, 36) W = true :=
+  obtain hL := lay_ok hp
+  obtain h1 : sepAll (lay s₀ K).sizes (0, 840, 36) W = true :=
     List.all_eq_true.mpr fun w hw => by
       have := List.all_eq_true.mp hW w hw; simp only [okW, Bool.and_eq_true] at this; exact this.1
-  have h2 : sepAll (lay s₀ K).sizes (2, 0, 64) W = true :=
+  obtain h2 : sepAll (lay s₀ K).sizes (2, 0, 64) W = true :=
     List.all_eq_true.mpr fun w hw => by
       have := List.all_eq_true.mp hW w hw; simp only [okW, Bool.and_eq_true] at this; exact this.2
-  have hd := Lay.disjAll hL h1
-  have hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
+  obtain hd := Lay.disjAll hL h1
+  obtain hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
     Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨hk.ctx (by simp at hx; exact hx.2.2.2) h.ctx, ?_, ?_, ?_, hk.rd.trans h.rd, hk.wr.trans h.wr,
     hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_⟩
@@ -191,36 +191,36 @@ theorem buf_wr {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
 
 theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     WP isa (.block K.kgSetup) s₀ fun s => KEnv K s₀ s ∧ s.mem ((lay s₀ K).A 0 oK) = BitVec.ofNat 8 K.k := by
-  have hL := lay_ok hp
+  obtain hL := lay_ok hp
   have hK := hp.wf
   have fc := hp.f_c
   have := hK.scr
   obtain ⟨w0, -, -, -⟩ := buf_wr hp
-  have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions s₀.wr ((lay s₀ K).A 0 o) n := fun h =>
+  obtain wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions s₀.wr ((lay s₀ K).A 0 o) n := fun h =>
     Lay.covers w0 (by simp only [lay, Lay.size, List.getD_cons_zero]; omega_using [this, h]) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [KemLay.kgSetup, WP.block_append_iff]
   refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega_using [this]) fc) fun i hi => by
     rw [add_ofNat_add]; exact wS (by omega_using [hi])) fun s₁ h₁ => ?_
-  have g3 : s₁.gpr .r3 = pScr s₀ := by rw [h₁.gpr]
-  have e872 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (oSave + 32)) = (lay s₀ K).A 0 872 := by
+  obtain g3 : s₁.gpr .r3 = pScr s₀ := by rw [h₁.gpr]
+  obtain e872 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (oSave + 32)) = (lay s₀ K).A 0 872 := by
     rw [g3]; exact addr_add (by offs)
-  have e1152 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 oK) = (lay s₀ K).A 0 1152 := by
+  obtain e1152 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 oK) = (lay s₀ K).A 0 1152 := by
     rw [g3]; exact addr_add (by offs)
-  have i872 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (oSave + 32))) 4 := by
+  obtain i872 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (oSave + 32))) 4 := by
     rw [e872, h₁.wr]; exact wS (by decide)
-  have i1152 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 oK)) 1 := by
+  obtain i1152 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 oK)) 1 := by
     rw [e1152, h₁.wr]; exact wS (by decide)
-  have o1 : oSave + 32 < 4096 := by decide
-  have o2 : oK < 4096 := by decide
-  have e3 : encodable (BitVec.ofNat 32 K.k) = true := by kenc
+  obtain o1 : oSave + 32 < 4096 := by decide
+  obtain o2 : oK < 4096 := by decide
+  obtain e3 : encodable (BitVec.ofNat 32 K.k) = true := by kenc
   run_block [i872, i1152, o1, o2, e3]
   have eS : (lay s₀ K).A 0 840 = State.addr (s₀.gpr .r3) + BitVec.ofNat 64 840 := rfl
-  have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
+  obtain ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
       (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
-  have ne2 : ∀ i < 9, ∀ (m : Mem) (v : Byte), (m.writeW ((lay s₀ K).A 0 1152) v).readW
+  obtain ne2 : ∀ i < 9, ∀ (m : Mem) (v : Byte), (m.writeW ((lay s₀ K).A 0 1152) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
       (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
@@ -242,7 +242,7 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
       rw [add_ofNat_add], ne2 8 (by decide), add_ofNat_add, Mem.readW_writeW_self32, h₁.gpr]
   · show bytesAt ((s₁.mem.writeW _ _).writeW _ _) _ _ = _
     rw [e872, e1152]
-    have fr : Frame ((lay s₀ K).RL [(0, 840, 36), (0, 1152, 1)]) s₀.mem
+    obtain fr : Frame ((lay s₀ K).RL [(0, 840, 36), (0, 1152, 1)]) s₀.mem
         ((s₁.mem.writeW ((lay s₀ K).A 0 872) (s₁.gpr .lr)).writeW ((lay s₀ K).A 0 1152)
           (BitVec.setWidth 8 (BitVec.ofNat 32 K.k))) := by
       refine ((h₁.frame.sub fun r hr => ⟨Lay.R (lay s₀ K) 0 840 36, by simp, ?_⟩).writeW
@@ -323,13 +323,13 @@ theorem g_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s)
       KEnv K s₀ s' ∧ bytesAt s'.mem ((lay s₀ K).A 0 oG) 32 = VG.Proof.MlKem.KPke.kgRho K.p (D s₀) ∧
       bytesAt s'.mem ((lay s₀ K).A 0 oSigma) 32 = VG.Proof.MlKem.KPke.kgSigma K.p (D s₀) := by
   have hK := hp.wf
-  have hin := g_ins hp h
-  have hout := g_outs hp h
-  have hD : bytesAt s.mem ((lay s₀ K).A 2 0) 32 = D s₀ := by
+  obtain hin := g_ins hp h
+  obtain hout := g_outs hp h
+  obtain hD : bytesAt s.mem ((lay s₀ K).A 2 0) 32 = D s₀ := by
     have := congrArg (List.take 32) h.seed
     rw [bytesAt_take _ _ (by decide), bytesAt_take _ _ (by decide)] at this
     rw [this]; show bytesAt s₀.mem (State.addr (pSeed s₀) + BitVec.ofNat 64 0) 32 = _; rw [add_ofNat_zero]
-  have hin' : (List.map ((lay s₀ K).pb kidx s.mem) [⟨.r4, 0, 32⟩, ⟨.r7, oK, 1⟩]).flatten =
+  obtain hin' : (List.map ((lay s₀ K).pb kidx s.mem) [⟨.r4, 0, 32⟩, ⟨.r7, oK, 1⟩]).flatten =
       D s₀ ++ [BitVec.ofNat 8 K.k] := by
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil]
     show bytesAt s.mem ((lay s₀ K).A 2 0) 32 ++ bytesAt s.mem ((lay s₀ K).A 0 oK) 1 = _
@@ -339,10 +339,10 @@ theorem g_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ s)
   · exact h.keep hp (k'.x []) (by simp) (by ldecide)
   · have e1 := o'.1
     rw [hin'] at e1
-    have e2 : bytesAt s'.mem ((lay s₀ K).A 0 oG) 64 = (G (D s₀ ++ [BitVec.ofNat 8 K.k])).1 ++
+    obtain e2 : bytesAt s'.mem ((lay s₀ K).A 0 oG) 64 = (G (D s₀ ++ [BitVec.ofNat 8 K.k])).1 ++
         (G (D s₀ ++ [BitVec.ofNat 8 K.k])).2 := e1.trans (G_split _)
     rw [show (64 : Nat) = 32 + 32 from rfl, bytesAt_add] at e2
-    have l1 : (bytesAt s'.mem ((lay s₀ K).A 0 oG) 32).length = (G (D s₀ ++ [BitVec.ofNat 8 K.k])).1.length := by
+    obtain l1 : (bytesAt s'.mem ((lay s₀ K).A 0 oG) 32).length = (G (D s₀ ++ [BitVec.ofNat 8 K.k])).1.length := by
       rw [bytesAt_length, VG.Proof.MlKem.G_fst_length]
     obtain ⟨r1, r2⟩ := List.append_inj e2 l1
     refine ⟨r1, ?_⟩
@@ -355,7 +355,7 @@ theorem rho_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KEnv K s₀ 
     WP isa (copy .r7 oG .r7 oSeed 32) s fun s' => KEnv K s₀ s' ∧
       bytesAt s'.mem ((lay s₀ K).A 0 oSeed) 32 = VG.Proof.MlKem.KPke.kgRho K.p (D s₀) ∧
       bytesAt s'.mem ((lay s₀ K).A 0 oSigma) 32 = VG.Proof.MlKem.KPke.kgSigma K.p (D s₀) := by
-  have hL := lay_ok hp
+  obtain hL := lay_ok hp
   have hK := hp.wf
   obtain ⟨w0, -, -, -⟩ := buf_wr hp
   refine WP.mono (copyL hL (i := 0) (j := 0) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ h.ctx.r7 h.ctx.r7
@@ -493,8 +493,8 @@ theorem kr2_ok {s₁ : State}
     (r : RowInv K (lay s₀ K) false (ρ₀ K s₀) (sK K s₀) i (okK K s₀ i) s K.k s₁) :
     WP isa (.block (ptrTo .r0 .r7 K.oAcc :: slotAt .r1 .r9 (oPoly (2 * K.k)))) s₁ (KR2 K s₀ i s) := by
   have hK := hp.wf
-  have hc₁ := h.ctxOf r.kx (by decide)
-  have g9₁ : s₁.gpr .r9 = BitVec.ofNat 32 i := by rw [r.kx.cs .r9 (by decide) (by decide) (by decide), h.r9]
+  obtain hc₁ := h.ctxOf r.kx (by decide)
+  obtain g9₁ : s₁.gpr .r9 = BitVec.ofNat 32 i := by rw [r.kx.cs .r9 (by decide) (by decide) (by decide), h.r9]
   refine WP.mono (ptrSlot_ok (i := i) hc₁.r7 g9₁ (by kenc) (by kenc)) fun s₂ ⟨o₂, a0, a1⟩ => ?_
   rw [slot_eq _ (by offs), show oPoly (2 * K.k) + 1024 * i = oPoly (K.k + (K.k + i)) by offs] at a1
   exact ⟨((r.kx.weaken (by simp)).monoL (by simp)).trans (o₂.x _ _),
@@ -503,10 +503,10 @@ theorem kr2_ok {s₁ : State}
     by rw [o₂.mem, ← rowAcc_eq]; exact r.acc⟩
 
 theorem kr3_ok {s₂ : State} (r : KR2 K s₀ i s s₂) : WP isa callAdd s₂ (KR3 K s₀ i s) := by
-  have hL := lay_ok hp
-  have hc₂ := h.ctxOf r.kx (by decide)
+  obtain hL := lay_ok hp
+  obtain hc₂ := h.ctxOf r.kx (by decide)
   obtain ⟨-, -, c_slots, -, -, c_add⟩ := rowK_ok hp.wf hi
-  have sl₂ : PolyIs s₂.mem ((lay s₀ K).A 0 (oPoly (K.k + (K.k + i))))
+  obtain sl₂ : PolyIs s₂.mem ((lay s₀ K).A 0 (oPoly (K.k + (K.k + i))))
       (ntt (VG.Proof.MlKem.cbd (VG.Proof.MlKem.KPke.kgSigma K.p (D s₀)) (K.k + i))) :=
     Lay.polyIs_keep hL r.kx.frame (c_slots (K.k + i) (by omega_using [hi])) (h.slots (K.k + i) (by omega_using [hi]))
   exact addL hL r.r0 r.r1 c_add hc₂.buf0 (mem_rd_wr hc₂.buf0) r.acc sl₂ fun s₃ k₃ p₃ =>
@@ -516,16 +516,16 @@ theorem kr3_ok {s₂ : State} (r : KR2 K s₀ i s s₂) : WP isa callAdd s₂ (K
 theorem kr4_ok {s₃ : State} (r : KR3 K s₀ i s s₃) :
     WP isa (.block (ptrTo .r0 .r7 K.oAcc :: at384 .r1 .r5 .r9)) s₃ (KR4 K s₀ i s) := by
   have hK := hp.wf
-  have hc₃ := h.ctxOf r.kx (by decide)
-  have g5₃ : s₃.gpr .r5 = pEk s₀ := by rw [r.kx.cs .r5 (by decide) (by decide) (by decide), h.env.r5]
+  obtain hc₃ := h.ctxOf r.kx (by decide)
+  obtain g5₃ : s₃.gpr .r5 = pEk s₀ := by rw [r.kx.cs .r5 (by decide) (by decide) (by decide), h.env.r5]
   refine WP.mono (ptr384_ok (b := .r5) (.inl rfl) hc₃.r7 g5₃ r.r9 (by kenc)) fun s₄ ⟨o₄, b0, b1⟩ => ?_
   rw [at384_eq _ (by offs)] at b1
   exact ⟨⟨r.kx.trans (o₄.x _ _), by rw [o₄.cs .r9 (by decide) (by decide), r.r9],
     by rw [o₄.cs .r11 (by decide) (by decide), r.r11], by rw [o₄.mem]; exact r.acc⟩, b0, b1⟩
 
 theorem kr5_ok {s₄ : State} (r : KR4 K s₀ i s s₄) : WP isa callEncode12 s₄ (KR5 K s₀ i s) := by
-  have hL := lay_ok hp
-  have hc₄ := h.ctxOf r.r3.kx (by decide)
+  obtain hL := lay_ok hp
+  obtain hc₄ := h.ctxOf r.r3.kx (by decide)
   obtain ⟨-, -, -, -, c_enc, -⟩ := rowK_ok hp.wf hi
   obtain ⟨-, w3, -, -⟩ := buf_wr hp
   exact encode12L hL (i := 0) (j := 3) (o' := 384 * i) r.r0 r.r1 c_enc (mem_rd_wr hc₄.buf0)
@@ -535,7 +535,7 @@ theorem kr5_ok {s₄ : State} (r : KR4 K s₀ i s s₄) : WP isa callEncode12 s�
 
 theorem kr6_ok {s₅ : State} (r : KR5 K s₀ i s s₅) :
     WP isa (.block (count .r9 K.k)) s₅ fun s' => KRow K s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = K.k) := by
-  have hL := lay_ok hp
+  obtain hL := lay_ok hp
   have hK := hp.wf
   have k4 := hK.k4
   obtain ⟨c_ok, c_rho, c_slots, c_ek, -, -⟩ := rowK_ok hK hi
@@ -644,8 +644,8 @@ theorem ks1_ok : WP isa (.block (slotAt .r0 .r9 (oPoly K.k) ++ at384 .r1 .r6 .r9
   · rw [a1, at384_eq _ (by offs)]; rfl
 
 theorem ks2_ok {s₁ : State} (r : KS1 K s₀ j s s₁) : WP isa callEncode12 s₁ (KS2 K s₀ j s) := by
-  have hL := lay_ok hp
-  have hc₁ := h.env.ctx.only r.o
+  obtain hL := lay_ok hp
+  obtain hc₁ := h.env.ctx.only r.o
   obtain ⟨-, -, -, -, -, c_enc⟩ := sK_ok hp.wf hj
   obtain ⟨-, -, w4, -⟩ := buf_wr hp
   exact encode12L hL (i := 0) (j := 4) (o' := 384 * j) r.r0 r.r1 c_enc (mem_rd_wr hc₁.buf0)
@@ -655,7 +655,7 @@ theorem ks2_ok {s₁ : State} (r : KS1 K s₀ j s s₁) : WP isa callEncode12 s�
 
 theorem ks3_ok {s₂ : State} (r : KS2 K s₀ j s s₂) :
     WP isa (.block (count .r9 K.k)) s₂ fun s' => KS K s₀ (j + 1) s' ∧ s'.z = decide (j + 1 = K.k) := by
-  have hL := lay_ok hp
+  obtain hL := lay_ok hp
   have hK := hp.wf
   have k4 := hK.k4
   obtain ⟨c_ok, c_rho, c_ek, c_slots, c_dk, -⟩ := sK_ok hK hj
@@ -798,7 +798,7 @@ theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K
       fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
         s'.gpr .r0 = (if okK K s₀ K.k then 1 else 0) ∧ bytesAt s'.mem (State.addr (pEk s₀)) K.ekLen = EK K s₀ ∧
         bytesAt s'.mem (State.addr (pDk s₀)) K.dkLen = DK K s₀ := by
-  have hL := lay_ok hp
+  obtain hL := lay_ok hp
   have hK := hp.wf
   have k4 := hK.k4
   have scr := hK.scr
@@ -809,8 +809,8 @@ theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K
   refine WP.seq (WP.mono (copyL hL (i := 0) (j := 3) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ h₀.ctx.r7 h₀.r5
     (by decide) hK.encT (by decide) (by decide) (by decide) f1 (by rw [h₀.rd, h₀.wr]; exact mem_rd_wr w0)
     (by rw [h₀.wr]; exact w3)) fun s₁ ⟨k₁, b₁⟩ => ?_)
-  have h₁ := h₀.keep hp (k₁.x []) (by simp) f2
-  have ek₁ : bytesAt s₁.mem ((lay s₀ K).A 3 0) K.ekLen = EK K s₀ := by
+  obtain h₁ := h₀.keep hp (k₁.x []) (by simp) f2
+  obtain ek₁ : bytesAt s₁.mem ((lay s₀ K).A 3 0) K.ekLen = EK K s₀ := by
     rw [ek_split, bytes_catK, add_ofNat_add, Nat.zero_add, b₁, h.rho]
     refine congrArg (· ++ _) (catK_congr fun i hi => ?_)
     rw [add_ofNat_add, Nat.zero_add]
@@ -820,16 +820,16 @@ theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K
     ⟨by decide, by decide⟩ h₁.r5 h₁.r6 (by decide) hK.encT hK.encEk (by offs) (by offs) f4
     (by rw [h₁.rd, h₁.wr]; exact mem_rd_wr w3) (by rw [h₁.wr]; exact w4)) fun s₂ ⟨k₂, b₂⟩ => ?_)
   rw [ek₁] at b₂
-  have h₂ := h₁.keep hp (k₂.x []) (by simp) f5
-  have ek₂ : bytesAt s₂.mem ((lay s₀ K).A 3 0) K.ekLen = EK K s₀ :=
+  obtain h₂ := h₁.keep hp (k₂.x []) (by simp) f5
+  obtain ek₂ : bytesAt s₂.mem ((lay s₀ K).A 3 0) K.ekLen = EK K s₀ :=
     (Lay.bytes_keep hL k₂.frame f6 (by offs)).trans ek₁
   -- `H(ek)`
-  have hin := h_ins hp h₂
-  have hout := h_outs hp h₂
+  obtain hin := h_ins hp h₂
+  obtain hout := h_outs hp h₂
   refine WP.seq (WP.mono (hash_ok (idx := kidx) rate136 (by decide) (by decide) (by decide) h₂.ctx
     (List.cons_ne_nil _ _) hin hout (List.pairwise_singleton _ _)) fun s₃ ⟨k₃, o₃⟩ => ?_)
-  have h₃ := h₂.keep hp (k₃.x []) (by simp) f7
-  have hek₃ : bytesAt s₃.mem ((lay s₀ K).A 4 (768 * K.k + 32)) 32 = H (EK K s₀) := by
+  obtain h₃ := h₂.keep hp (k₃.x []) (by simp) f7
+  obtain hek₃ : bytesAt s₃.mem ((lay s₀ K).A 4 (768 * K.k + 32)) 32 = H (EK K s₀) := by
     have e := o₃.1
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil] at e
     refine e.trans ?_
@@ -839,8 +839,8 @@ theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K
   refine WP.seq (WP.mono (copyL hL (i := 2) (j := 4) (so := 32) (dO := 768 * K.k + 64) (len := 32)
     ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ h₃.r4 h₃.r6 (by decide) hK.encZ (by decide) (by decide) (by decide)
     f8 (by rw [h₃.rd, h₃.wr]; exact w2) (by rw [h₃.wr]; exact w4)) fun s₄ ⟨k₄, b₄⟩ => ?_)
-  have h₄ := h₃.keep hp (k₄.x []) (by simp) f9
-  have z₄ : bytesAt s₄.mem ((lay s₀ K).A 4 (768 * K.k + 64)) 32 = Z s₀ := by
+  obtain h₄ := h₃.keep hp (k₄.x []) (by simp) f9
+  obtain z₄ : bytesAt s₄.mem ((lay s₀ K).A 4 (768 * K.k + 64)) 32 = Z s₀ := by
     rw [b₄]
     have := congrArg (List.drop 32) h₃.seed
     rw [bytesAt_drop _ _ (by decide), bytesAt_drop _ _ (by decide)] at this
@@ -856,9 +856,9 @@ theorem tail_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : KS K s₀ K
         ((Lay.bytes_keep hL k₃.frame (f12 i hi).2.1 (by decide)).trans
         ((Lay.bytes_keep hL k₂.frame (f12 i hi).2.2.1 (by decide)).trans
           (Lay.bytes_keep hL k₁.frame (f12 i hi).2.2.2 (by decide))))
-    have e4 := (Lay.bytes_keep hL k₄.frame (i := 4) (o := 384 * K.k) (l := K.ekLen) f13 (by offs)).trans
+    obtain e4 := (Lay.bytes_keep hL k₄.frame (i := 4) (o := 384 * K.k) (l := K.ekLen) f13 (by offs)).trans
       ((Lay.bytes_keep hL k₃.frame f14 (by offs)).trans b₂)
-    have hh := (Lay.bytes_keep hL k₄.frame (i := 4) (o := 768 * K.k + 32) (l := 32) f15 (by decide)).trans hek₃
+    obtain hh := (Lay.bytes_keep hL k₄.frame (i := 4) (o := 768 * K.k + 32) (l := 32) f15 (by decide)).trans hek₃
     simp only [Lay.A] at e4 hh z₄ kd
     rw [m', show State.addr (pDk s₀) = State.addr ((lay s₀ K).ptr 4) from rfl, dk_split, bytes_catK, e4, hh, z₄]
     refine congrArg (· ++ _ ++ _ ++ _) (catK_congr fun i hi => ?_)

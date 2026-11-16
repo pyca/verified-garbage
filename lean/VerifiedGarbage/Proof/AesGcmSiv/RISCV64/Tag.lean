@@ -67,8 +67,8 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
         CtrCall t₁₃ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 112) (c.W + BitVec.ofNat 64 o)
           (c.W + BitVec.ofNat 64 1792) c.R 1 ∧ ∀ r ∈ [Reg.s9, .s10, .s11], t₁₃.gpr r = t.gpr r := by
   have hw := L.ww
-  have o₁ : o + 16 ≤ 256 := by omega_using [ho]
-  have o₈ : o % 8 = 0 := by rcases ho with rfl | rfl <;> decide
+  obtain o₁ : o + 16 ≤ 256 := by omega_using [ho]
+  obtain o₈ : o % 8 = 0 := by rcases ho with rfl | rfl <;> decide
   unfold copy16 zero16 ctrArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_ld (a := c.W + BitVec.ofNat 64 96) (by decide) (by rw [E.s0] <;> rfl)
@@ -77,8 +77,8 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
     (by rw [u₁.other _ (by decide), E.s0, Offset.add_add] <;> rfl)
     (by rw [Offset.add_add]; exact L.wal8 (by decide) (by decide))
     (by rw [u₁.rd, u₁.wr, Offset.add_add]; exact E.perm.wR (by decide)) fun t₂ u₂ => ?_
-  have g₂ : ∀ r, r ≠ .a0 → r ≠ .a1 → t₂.gpr r = t.gpr r := fun r h3 h4 => by rw [u₂.other _ h4, u₁.other _ h3]
-  have wr₂ : t₂.wr = t.wr := by rw [u₂.wr, u₁.wr]
+  obtain g₂ : ∀ r, r ≠ .a0 → r ≠ .a1 → t₂.gpr r = t.gpr r := fun r h3 h4 => by rw [u₂.other _ h4, u₁.other _ h3]
+  obtain wr₂ : t₂.wr = t.wr := by rw [u₂.wr, u₁.wr]
   refine wp_sd (a := c.W + BitVec.ofNat 64 112) (by decide)
     (by rw [g₂ _ (by decide) (by decide), E.s0] <;> rfl) (L.wal8 (by decide) (by decide))
     (by rw [wr₂]; exact E.perm.wW (by decide)) fun t₃ u₃ => ?_
@@ -87,8 +87,8 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
     (by rw [Offset.add_add]; exact L.wal8 (by decide) (by decide))
     (by rw [u₃.wr, wr₂, Offset.add_add]; exact E.perm.wW (by decide)) fun t₄ u₄ => ?_
   refine wp_li (by decide) fun t₅ u₅ => ?_
-  have w14 : t₅.gpr .s0 = c.W := by rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, g₂ _ (by decide) (by decide), E.s0]
-  have wr₅ : t₅.wr = t.wr := by rw [u₅.wr, u₄.wr, u₃.wr, wr₂]
+  obtain w14 : t₅.gpr .s0 = c.W := by rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, g₂ _ (by decide) (by decide), E.s0]
+  obtain wr₅ : t₅.wr = t.wr := by rw [u₅.wr, u₄.wr, u₃.wr, wr₂]
   refine wp_sd (a := c.W + BitVec.ofNat 64 o) (by omega_using [ho]) (by rw [w14]) (L.wal8 (by omega_using [ho]) o₈)
     (by rw [wr₅]; exact E.perm.wW (by omega_using [ho])) fun t₆ u₆ => ?_
   refine wp_sd (a := c.W + BitVec.ofNat 64 o + BitVec.ofNat 64 8) (by omega_using [ho]) (by rw [u₆.gpr, w14, Offset.add_add])
@@ -97,18 +97,18 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
   refine wp_addi (by decide) fun t₈ u₈ => wp_mv fun t₉ u₉ => wp_addi (by decide) fun t₁₀ u₁₀ =>
     wp_addi (by decide) fun t₁₁ u₁₁ => wp_addi (by omega_using [ho]) fun t₁₂ u₁₂ => wp_li (by decide) fun t₁₃ u₁₃ =>
     WP.block_nil ?_
-  have pk : PK t t₁₃ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
+  obtain pk : PK t t₁₃ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
     ((PK.ofUpd u₅).trans ((PK.ofMupd u₆).trans ((PK.ofMupd u₇).trans ((PK.ofUpd u₈).trans ((PK.ofUpd u₉).trans
     ((PK.ofUpd u₁₀).trans ((PK.ofUpd u₁₁).trans ((PK.ofUpd u₁₂).trans (PK.ofUpd u₁₃))))))))))))
-  have E₁₃ := E.of_pk pk
-  have pk₈ : PK t t₈ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
+  obtain E₁₃ := E.of_pk pk
+  obtain pk₈ : PK t t₈ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
     ((PK.ofUpd u₅).trans ((PK.ofMupd u₆).trans ((PK.ofMupd u₇).trans (PK.ofUpd u₈)))))))
-  have w14' : t₇.gpr .s0 = c.W := by rw [u₇.gpr, u₆.gpr, w14]
-  have hm : t₁₃.mem = Proof.Cmac.zero2 (copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) := by
+  obtain w14' : t₇.gpr .s0 = c.W := by rw [u₇.gpr, u₆.gpr, w14]
+  obtain hm : t₁₃.mem = Proof.Cmac.zero2 (copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) := by
     rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.gpr, u₆.mem, u₅.gpr, u₅.mem, u₄.mem,
       u₃.gpr, u₃.mem, u₂.gpr, u₂.other .a0 (by decide), u₁.gpr, u₂.mem, u₁.mem]
     rfl
-  have dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
+  obtain dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
     L.w_w (by omega_using [ho]) (by omega_using [ho]) (by decide)
   refine ⟨pk, hm, ?_, fun r hr => ?_⟩
   swap
@@ -136,22 +136,22 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
 theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
     WP isa (tag o) t (TagPost c o t) := by
   have hw := L.ww
-  have o₁ : o + 16 ≤ 256 := by omega_using [ho]
+  obtain o₁ : o + 16 ≤ 256 := by omega_using [ho]
   unfold tag
   refine WP.seq (WP.mono (tagArgs_wp L E ho) fun t₁₃ ⟨pk, hm, cc, reg₁⟩ => ?_)
-  have dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
+  obtain dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
     L.w_w (by omega_using [ho]) (by omega_using [ho]) (by decide)
-  have fZ := Proof.Cmac.frame_store2 (m := copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) 0 0
-  have f₁ : Frame [⟨c.W + BitVec.ofNat 64 112, 16⟩, ⟨c.W + BitVec.ofNat 64 o, 16⟩] t.mem t₁₃.mem := by
+  obtain fZ := Proof.Cmac.frame_store2 (m := copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) 0 0
+  obtain f₁ : Frame [⟨c.W + BitVec.ofNat 64 112, 16⟩, ⟨c.W + BitVec.ofNat 64 o, 16⟩] t.mem t₁₃.mem := by
     rw [hm, Proof.Cmac.zero2]
     exact ((copyMem_frame _ _).mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; simp).trans
       (fZ.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; simp)
-  have hb₁ : bytesAt t₁₃.mem (c.W + BitVec.ofNat 64 112) 16 = bytesAt t.mem (c.W + BitVec.ofNat 64 96) 16 := by
+  obtain hb₁ : bytesAt t₁₃.mem (c.W + BitVec.ofNat 64 112) 16 = bytesAt t.mem (c.W + BitVec.ofNat 64 96) 16 := by
     rw [hm, Proof.Cmac.zero2, Proof.Cmac.bytesAt_frame16 fZ (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dO.symm), copyMem_bytes]
-  have hz₁ : Spec.Gcm.blockAt t₁₃.mem (c.W + BitVec.ofNat 64 o) = 0 := by
+  obtain hz₁ : Spec.Gcm.blockAt t₁₃.mem (c.W + BitVec.ofNat 64 o) = 0 := by
     rw [hm, Spec.Gcm.blockAt, Proof.Cmac.zero2_bytes]; decide
-  have ek₁ : Spec.GcmSiv.ctxCiph t₁₃.mem (c.W + BitVec.ofNat 64 256) c.R =
+  obtain ek₁ : Spec.GcmSiv.ctxCiph t₁₃.mem (c.W + BitVec.ofNat 64 256) c.R =
       Spec.GcmSiv.ctxCiph t.mem (c.W + BitVec.ofNat 64 256) c.R := by
     unfold Spec.GcmSiv.ctxCiph
     rw [Proof.Cmac.bytesAt_frame f₁ (fun q hq => by
@@ -161,7 +161,7 @@ theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o 
       · exact (L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])).sub_left (Region.sub_prefix L.rb))
       (by have := L.rb; omega_using [this])]
   refine WP.mono (ctr_call cc) fun t₁₄ P => ?_
-  have reg : ∀ r, r ∈ [Reg.s9, .s10, .s11] → t₁₄.gpr r = t.gpr r := fun r hr => by
+  obtain reg : ∀ r, r ∈ [Reg.s9, .s10, .s11] → t₁₄.gpr r = t.gpr r := fun r hr => by
     rw [P.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;>
       decide), reg₁ r hr]
   refine ⟨pk.trans (PK.ofSaved P.rd P.wr P.sp P.saved), reg _ (by simp), reg _ (by simp), reg _ (by simp),

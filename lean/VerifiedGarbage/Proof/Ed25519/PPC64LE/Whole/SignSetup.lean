@@ -73,7 +73,7 @@ theorem sign_slot {sn : Nat} {s : State} (hp : SignPre sn s) :
     (slotArea (s.gpr .r9) 224 signRegs).Disjoint ⟨s.gpr .r8, 8192⟩ ∧
     (slotArea (s.gpr .r9) 224 signRegs).Disjoint (below s.sp 48) ∧
     ∀ d n, d + n ≤ 224 → (slotArea (s.gpr .r9) 224 signRegs).Disjoint ⟨s.gpr .r9 + BitVec.ofNat 64 d, n⟩ := by
-  have hs : Region.Sub (slotArea (s.gpr .r9) 224 signRegs) ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain hs : Region.Sub (slotArea (s.gpr .r9) 224 signRegs) ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
   refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
   exact Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
@@ -85,8 +85,8 @@ theorem signV_r25 (s : State) : signV s .r25 = s.gpr .r9 := rfl
 theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
     WP isa (.block signSetup) s fun t => SignInv s t ∧
       bytesAt t.mem (s.gpr .r9 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .r5) 32 := by
-  have hF : (⟨s.gpr .r9, 288⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hsl : ∀ p ∈ slots 224 signRegs, p.2 + 8 ≤ 288 := by decide
+  obtain hF : (⟨s.gpr .r9, 288⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hsl : ∀ p ∈ slots 224 signRegs, p.2 + 8 ≤ 288 := by decide
   obtain ⟨-, -, -, hsl₄⟩ := sign_slot hp
   unfold signSetup
   refine save_ok (by decide) (by decide) (by decide)
@@ -96,21 +96,21 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
   refine wp_addi (by decide) (by decide) fun u₁ h₁ => wp_addi (by decide) (by decide) fun u₂ h₂ =>
     wp_addi (by decide) (by decide) fun u₃ h₃ => wp_addi (by decide) (by decide) fun u₄ h₄ =>
     wp_addi (by decide) (by decide) fun u₅ h₅ => wp_addi (by decide) (by decide) fun u₆ h₆ => ?_
-  have m₆ : u₆.mem = u.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  have g₆ : ∀ r, r ∉ signRegs → u₆.gpr r = u.gpr r := fun r hr => by
+  obtain m₆ : u₆.mem = u.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+  obtain g₆ : ∀ r, r ∉ signRegs → u₆.gpr r = u.gpr r := fun r hr => by
     simp only [signRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨a, b, c, d, e, f⟩ := hr
     rw [h₆.other _ f, h₅.other _ e, h₄.other _ d, h₃.other _ c, h₂.other _ b, h₁.other _ a]
-  have gu : ∀ r, r ≠ .r0 → u.gpr r = s.gpr r := fun r h => hu.gpr r (by simpa using h)
-  have rd₆ : u₆.rd = s.rd := by rw [h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd, hu.rd]
-  have wr₆ : u₆.wr = s.wr := by rw [h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, hu.wr]
-  have sp₆ : u₆.sp = s.sp := by rw [h₆.sp, h₅.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp, hu.sp]
-  have e5 : u₆.gpr .r5 = s.gpr .r5 := by rw [g₆ _ (by decide), gu _ (by decide)]
-  have e25 : u₆.gpr .r25 = s.gpr .r9 := by
+  obtain gu : ∀ r, r ≠ .r0 → u.gpr r = s.gpr r := fun r h => hu.gpr r (by simpa using h)
+  obtain rd₆ : u₆.rd = s.rd := by rw [h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd, hu.rd]
+  obtain wr₆ : u₆.wr = s.wr := by rw [h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, hu.wr]
+  obtain sp₆ : u₆.sp = s.sp := by rw [h₆.sp, h₅.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp, hu.sp]
+  obtain e5 : u₆.gpr .r5 = s.gpr .r5 := by rw [g₆ _ (by decide), gu _ (by decide)]
+  obtain e25 : u₆.gpr .r25 = s.gpr .r9 := by
     rw [h₆.gpr, h₅.other _ (by decide), h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide),
       h₁.other _ (by decide), BitVec.add_zero, gu _ (by decide)]
-  have hP : (⟨s.gpr .r5, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
-  have hsep : ∀ i < 4, ∀ j < 4, Mem.Sep (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
+  obtain hP : (⟨s.gpr .r5, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
+  obtain hsep : ∀ i < 4, ∀ j < 4, Mem.Sep (s.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8
       (s.gpr .r9 + BitVec.ofNat 64 (192 + 8 * j)) 8 := fun i hi j hj =>
     hp.pF.sep (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   rw [← List.append_nil (copyIn .r5 .r25 192)]
@@ -121,7 +121,7 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
     (fun k hk => by rw [wr₆]; exact in_base hF (by omega_using [hk]) (by omega_using [hk]))
     (fun k hk => Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [])) hsep
     (fun i hi j hj hij => Offset.sep _ (by omega_using [hij]) (by omega_using [hi]) (by omega_using [hj])) fun t ht hft hw => WP.block_nil ?_
-  have fin : Frame [slotArea (s.gpr .r9) 224 signRegs, ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩] s.mem t.mem :=
+  obtain fin : Frame [slotArea (s.gpr .r9) 224 signRegs, ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩] s.mem t.mem :=
     (hfr.mono (by simp)).trans (by rw [m₆] at hft; exact hft.mono (by simp))
   refine ⟨⟨by rw [ht.rd, rd₆], by rw [ht.wr, wr₆], by rw [ht.sp, sp₆], fun r hr => ?_, fun r hr hn => ?_, ?_,
     fin.sub fun r hr => ?_⟩, ?_⟩
@@ -150,8 +150,8 @@ theorem signSetup_ok {sn : Nat} {s : State} (hp : SignPre sn s) :
     · exact ⟨⟨s.gpr .r9, 288⟩, by simp, Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨s.gpr .r9, 288⟩, by simp, Offset.sub_base _ (by decide)⟩
   · refine bytes32_of_words fun k hk => ?_
-    have hw' := hw k hk
-    have hr' : u.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 :=
+    obtain hw' := hw k hk
+    obtain hr' : u.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (s.gpr .r5 + BitVec.ofNat 64 (8 * k)) 64 :=
       hfr.readW (r := ⟨s.gpr .r5, 32⟩) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])) (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact (hp.pF.sub_right (Offset.sub_base _ (by decide)))) (by decide)
     rw [Offset.add_add, hw', m₆, hr']

@@ -66,16 +66,16 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
     WP isa (Impl.Rc2.X86.Cbc.blockCall d) s (CallPost d s) := by
   rw [blockCall_eq]
   let rs : List Reg := [.ebp, .esi, .ebx]
-  have hrs : .esp ∉ rs := by decide
+  obtain hrs : .esp ∉ rs := by decide
   have fit : 4 * rs.length + 4 ≤ (s.gpr .esp).toNat := hp.stackLo
   let sE := (pushed rs s).callEntry
-  have a0 : arg sE 0 = s.gpr .ebx := by rw [callEntry_arg fit hrs (by decide)]; rfl
-  have a1 : arg sE 1 = s.gpr .esi := by rw [callEntry_arg fit hrs (by decide)]; rfl
-  have a2 : arg sE 2 = s.gpr .ebp := by rw [callEntry_arg fit hrs (by decide)]; rfl
-  have eA : argAddr sE 0 = ((s.gpr .esp) - BitVec.ofNat 32 12).setWidth 64 := by rw [callEntry_argAddr0]; rfl
-  have eSp : sE.gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 := by rw [callEntry_esp']; rfl
-  have b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
-  have r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 16).setWidth 64, 4⟩ (below (s.gpr .esp) 16) :=
+  obtain a0 : arg sE 0 = s.gpr .ebx := by rw [callEntry_arg fit hrs (by decide)]; rfl
+  obtain a1 : arg sE 1 = s.gpr .esi := by rw [callEntry_arg fit hrs (by decide)]; rfl
+  obtain a2 : arg sE 2 = s.gpr .ebp := by rw [callEntry_arg fit hrs (by decide)]; rfl
+  obtain eA : argAddr sE 0 = ((s.gpr .esp) - BitVec.ofNat 32 12).setWidth 64 := by rw [callEntry_argAddr0]; rfl
+  obtain eSp : sE.gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 := by rw [callEntry_esp']; rfl
+  obtain b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
+  obtain r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 16).setWidth 64, 4⟩ (below (s.gpr .esp) 16) :=
     Region.sub_prefix (by decide)
   refine callWithGpr (k := blockContract d) (block_correct d) (block_nosp d) (by decide) hrs
     hp.stackLo (rd := [⟨addr32 (s.gpr .ebx), 128⟩, ⟨argAddr sE 0, 12⟩])
@@ -106,13 +106,13 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
     change (blockContract d).post (sE.withRegions _ _) s₂ at post
     simp only [blockContract, State.withRegions_gpr, State.withRegions_mem, arg_withRegions,
       a0, a1, mem₂] at post
-    have stackFrame := callEntry_frame fit hrs
+    obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 16] s.mem sE.mem at stackFrame
     refine ⟨?_, cs, rd, wr, frame, ?_⟩
     · intro r hr
       by_cases he : r = .ecx
       · subst r
-        have memGpr : s₂.gpr .ecx = s'.gpr .ecx := gpr₂ .ecx (by decide) (by decide)
+        obtain memGpr : s₂.gpr .ecx = s'.gpr .ecx := gpr₂ .ecx (by decide) (by decide)
         rw [← memGpr, post.1]
         exact (State.callEntry_gpr _ (by decide)).trans (pushed_gpr rs s (by decide))
       · have fact : ∀ r ∈ kept, r ≠ .ecx → r ∈ calleeSaved := by decide
@@ -142,7 +142,7 @@ theorem halves {rs : List Region} {p : Addr} (h : InRegions rs p 8) :
   · refine ⟨r, hr, ?_⟩
     unfold Region.Contains at hc ⊢
     rw [BitVec.add_sub_comm, BitVec.toNat_add]
-    have bound := Nat.mod_le ((p - r.base).toNat + (BitVec.ofNat 64 4).toNat) (2 ^ 64)
+    obtain bound := Nat.mod_le ((p - r.base).toNat + (BitVec.ofNat 64 4).toNat) (2 ^ 64)
     change ((p - r.base).toNat + 4) % 2 ^ 64 + 4 ≤ r.len
     change ((p - r.base).toNat + 4) % 2 ^ 64 ≤ (p - r.base).toNat + 4 at bound
     omega_using [hc]
@@ -158,7 +158,7 @@ theorem loadPair_ok (s : State) (lo hi src : Reg) (a : Nat)
   obtain ⟨rd0, rd4⟩ := halves readable
   rw [BitVec.add_assoc, ← BitVec.ofNat_add] at rd4
   rw [runBlock_cons, exec_load s lo src a (by omega_using [fit]) rd0, runStep_some]
-  have rd4' : InRegions ((s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).rd ++
+  obtain rd4' : InRegions ((s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).rd ++
       (s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).wr)
       (addr32 ((s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).gpr src) +
         BitVec.ofNat 64 (a + 4)) 4 := by
@@ -215,7 +215,7 @@ theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat)
   rw [WP.block_append_iff]
   obtain ⟨s₁, run₁, lo₁, hi₁, keep₁⟩ := loadPair_ok s .eax .edx src a (by decide) srcSep srcFit readable
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have ptr := keep₁.reg dst (by simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using dstSep)
+  obtain ptr := keep₁.reg dst (by simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using dstSep)
   obtain ⟨s₂, run₂, keep₂⟩ := storePair_ok s₁ .eax .edx dst b
     (by rw [ptr]; exact dstFit) (by rw [keep₁.wr, ptr]; exact writable)
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
@@ -266,8 +266,8 @@ theorem xor64_ok (s : State) (dst iv : Reg)
     WP isa (.block (Impl.Rc2.X86.Cbc.xor64 dst iv)) s (fun s' =>
       Keep temps {s with mem := (s.mem.writeW (addr32 (s.gpr dst))
         (s.mem.readW (addr32 (s.gpr dst)) 64 ^^^ s.mem.readW (addr32 (s.gpr iv)) 64))} s') := by
-  have ds : dst ≠ .eax ∧ dst ≠ .edx := by simpa only [temps, List.mem_cons, List.not_mem_nil, or_false, not_or] using dstSep
-  have vs : iv ≠ .eax ∧ iv ≠ .edx := by simpa only [temps, List.mem_cons, List.not_mem_nil, or_false, not_or] using ivSep
+  obtain ds : dst ≠ .eax ∧ dst ≠ .edx := by simpa only [temps, List.mem_cons, List.not_mem_nil, or_false, not_or] using dstSep
+  obtain vs : iv ≠ .eax ∧ iv ≠ .edx := by simpa only [temps, List.mem_cons, List.not_mem_nil, or_false, not_or] using ivSep
   change WP isa (.block (([.mov .eax (.mem (memOp dst 0)), .mov .edx (.mem (memOp dst 4))] : List Instr) ++
     (([.alu .xor .eax (.mem (memOp iv 0)), .alu .xor .edx (.mem (memOp iv 4))] : List Instr) ++
       [.store (memOp dst 0) .eax, .store (memOp dst 4) .edx]))) s _
@@ -275,13 +275,13 @@ theorem xor64_ok (s : State) (dst iv : Reg)
   obtain ⟨s₁, run₁, lo₁, hi₁, keep₁⟩ := loadPair_ok s .eax .edx dst 0 (by decide) ds.1
     (by simpa using dstFit) (by simpa using readDst)
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have iv₁ := keep₁.reg iv ivSep
+  obtain iv₁ := keep₁.reg iv ivSep
   rw [WP.block_append_iff]
   obtain ⟨s₂, run₂, lo₂, hi₂, keep₂⟩ := xorPair_ok s₁ iv vs
     (by rw [iv₁]; exact ivFit) (by rw [keep₁.rd, keep₁.wr, iv₁]; exact readIv)
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have keep : Keep temps s s₂ := keep₁.trans keep₂
-  have ptr := keep.reg dst dstSep
+  obtain keep : Keep temps s s₂ := keep₁.trans keep₂
+  obtain ptr := keep.reg dst dstSep
   obtain ⟨s₃, run₃, keep₃⟩ := storePair_ok s₂ .eax .edx dst 0
     (by rw [ptr]; simpa using dstFit) (by rw [keep.wr, ptr]; simpa using writable)
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
@@ -358,11 +358,11 @@ structure StepPre (s : State) (n : Nat := 1) : Prop where
 
 theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
     (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ kept, s'.gpr r = s.gpr r) : StepPre s' n := by
-  have a := regs .ebx (by decide)
-  have b := regs .ecx (by decide)
-  have c := regs .esi (by decide)
-  have d := regs .ebp (by decide)
-  have e := regs .esp (by decide)
+  obtain a := regs .ebx (by decide)
+  obtain b := regs .ecx (by decide)
+  obtain c := regs .esi (by decide)
+  obtain d := regs .ebp (by decide)
+  obtain e := regs .esp (by decide)
   constructor
   · simpa only [a] using hp.keyFit
   · simpa only [b] using hp.ivFit
@@ -385,7 +385,7 @@ theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
 
 theorem StepPre.keep {s s' : State} {m : Mem} {n : Nat} (hp : StepPre s n) (h : Keep [.eax, .edx] {s with mem := m} s') : StepPre s' n :=
   hp.transport h.rd h.wr fun r hr => h.reg r (by
-    have sep : ∀ r ∈ kept, r ∉ [.eax, .edx] := by decide
+    obtain sep : ∀ r ∈ kept, r ∉ [.eax, .edx] := by decide
     exact sep r hr)
 
 theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
@@ -459,8 +459,8 @@ structure Pinned (s s' : State) : Prop where
 
 theorem Pinned.of_keep {s s' : State} {m : Mem} (h : Keep [.eax, .edx] {s with mem := m} s')
     (frame : Frame (stepWrites s) s.mem m) : Pinned s s' := by
-  have k : ∀ r ∈ kept, r ∉ [.eax, .edx] := by decide
-  have c : ∀ r ∈ calleeSaved, r ∉ [.eax, .edx] := by decide
+  obtain k : ∀ r ∈ kept, r ∉ [.eax, .edx] := by decide
+  obtain c : ∀ r ∈ calleeSaved, r ∉ [.eax, .edx] := by decide
   exact ⟨fun r hr => h.reg r (k r hr), fun r hr => h.reg r (c r hr), h.rd, h.wr, by rw [h.mem]; exact frame⟩
 
 theorem Pinned.of_call {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s') : Pinned s s' := by
@@ -528,8 +528,8 @@ theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
 theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h : CallPost d s s') :
     Spec.Rc2.blockAt s'.mem (stashR s).base = Spec.Rc2.blockAt s.mem (stashR s).base := by
   apply blockAt_frame h.mem
-  have sep : (stashR s).Disjoint ⟨addr32 (s.gpr .ebp), 256⟩ := by
-    have h := Offset.disjoint (addr32 (s.gpr .ebp)) (d := 256) (n := 8) (e := 0) (k := 256)
+  obtain sep : (stashR s).Disjoint ⟨addr32 (s.gpr .ebp), 256⟩ := by
+    obtain h := Offset.disjoint (addr32 (s.gpr .ebp)) (d := 256) (n := 8) (e := 0) (k := 256)
       (by omega_using []) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -544,63 +544,63 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
     (by simpa using hp.dataFit) (by have := hp.bufFit; omega_using [this]) (by simpa using hp.readData) (hp.writeBuf 256 (by decide)))
   intro s₁ keep₁
   simp only [BitVec.add_zero] at keep₁
-  have frame₁ : Frame [stashR s] s.mem s₁.mem := by
+  obtain frame₁ : Frame [stashR s] s.mem s₁.mem := by
     rw [keep₁.mem]; exact frame_store64 _ _ _
-  have pin₁ : Pinned s s₁ := by
+  obtain pin₁ : Pinned s s₁ := by
     apply Pinned.of_keep keep₁
     apply (frame_store64 _ _ _).sub
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
     exact ⟨⟨addr32 (s.gpr .ebp), 264⟩, by simp [stepWrites], Offset.sub_base _ (by decide)⟩
-  have hp₁ := pin₁.pre hp
-  have key₁ := pin₁.schedule hp
-  have data₁ := blockAt_frame frame₁ (addr32 (s.gpr .esi)) (by simpa using hp.dataBuf.sub_right (stash_sub s))
-  have iv₁ := blockAt_frame frame₁ (addr32 (s.gpr .ecx)) (by simpa using hp.ivBuf.sub_right (stash_sub s))
-  have stash₁ : Spec.Rc2.blockAt s₁.mem (stashR s).base = Spec.Rc2.blockAt s.mem (addr32 (s.gpr .esi)) := by
+  obtain hp₁ := pin₁.pre hp
+  obtain key₁ := pin₁.schedule hp
+  obtain data₁ := blockAt_frame frame₁ (addr32 (s.gpr .esi)) (by simpa using hp.dataBuf.sub_right (stash_sub s))
+  obtain iv₁ := blockAt_frame frame₁ (addr32 (s.gpr .ecx)) (by simpa using hp.ivBuf.sub_right (stash_sub s))
+  obtain stash₁ : Spec.Rc2.blockAt s₁.mem (stashR s).base = Spec.Rc2.blockAt s.mem (addr32 (s.gpr .esi)) := by
     rw [keep₁.mem]; exact blockAt_copy _ _ _
   apply WP.seq
   apply WP.mono (call_ok .decrypt s₁ hp₁.call)
   intro s₂ h₂
-  have pin₂ := pin₁.trans (Pinned.of_call h₂)
-  have hp₂ := pin₂.pre hp
+  obtain pin₂ := pin₁.trans (Pinned.of_call h₂)
+  obtain hp₂ := pin₂.pre hp
   have output₂ := h₂.output
   rw [pin₁.reg .esi (by decide), pin₁.reg .ebx (by decide), key₁, data₁] at output₂
-  have iv₂ := h₂.iv hp₁
+  obtain iv₂ := h₂.iv hp₁
   rw [pin₁.reg .ecx (by decide), iv₁] at iv₂
-  have stash₂ := call_stash hp₁ h₂
+  obtain stash₂ := call_stash hp₁ h₂
   simp only [pin₁.reg .ebp (by decide)] at stash₂
-  have stash₂' := stash₂.trans stash₁
+  obtain stash₂' := stash₂.trans stash₁
   change WP isa (.block (Impl.Rc2.X86.Cbc.xor64 .esi .ecx ++
     Impl.Rc2.X86.Cbc.copy64 .ebp .ecx 256 0)) s₂ _
   rw [WP.block_append_iff]
   apply WP.mono (xor64_ok s₂ .esi .ecx (by decide) (by decide)
     (by simpa using hp₂.dataFit) hp₂.ivFit hp₂.readData hp₂.readIv hp₂.writeData)
   intro s₃ keep₃
-  have frame₃ : Frame [dataR s₂] s₂.mem s₃.mem := by
+  obtain frame₃ : Frame [dataR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
-  have pin₀₃ := pin₂.trans pin₃
-  have hp₃ := pin₀₃.pre hp
-  have data₃ : Spec.Rc2.blockAt s₃.mem (addr32 (s.gpr .esi)) =
+  obtain pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₀₃ := pin₂.trans pin₃
+  obtain hp₃ := pin₀₃.pre hp
+  obtain data₃ : Spec.Rc2.blockAt s₃.mem (addr32 (s.gpr .esi)) =
       Proof.Rc2.xorBlock (Spec.Rc2.decryptBlock (Spec.Rc2.scheduleAt s.mem (addr32 (s.gpr .ebx)))
         (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .esi)))) (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .ecx))) := by
-    have h : Spec.Rc2.blockAt s₃.mem (addr32 (s₂.gpr .esi)) =
+    obtain h : Spec.Rc2.blockAt s₃.mem (addr32 (s₂.gpr .esi)) =
         Proof.Rc2.xorBlock (Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .esi))) (Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .ecx))) := by
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .esi (by decide), pin₂.reg .ecx (by decide), output₂, iv₂] at h
     exact h
-  have stash₃ := blockAt_frame frame₃ (stashR s₂).base
+  obtain stash₃ := blockAt_frame frame₃ (stashR s₂).base
     (by simpa using (hp₂.dataBuf.sub_right (stash_sub s₂)).symm)
   simp only [pin₂.reg .ebp (by decide)] at stash₃
-  have stash₃' := stash₃.trans stash₂'
+  obtain stash₃' := stash₃.trans stash₂'
   apply WP.mono (copy64_ok s₃ .ebp .ecx 256 0 (by decide) (by decide)
     (by have := hp₃.bufFit; omega_using [this]) (by simpa using hp₃.ivFit) (hp₃.readBuf 256 (by decide)) (by simpa using hp₃.writeIv))
   intro s₄ keep₄
   simp only [BitVec.add_zero] at keep₄
-  have frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
+  obtain frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
     rw [keep₄.mem]; exact frame_store64 _ _ _
-  have pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
   refine ⟨pin₀₃.trans pin₄, ?_, ?_⟩
   · have same := blockAt_frame frame₄ (addr32 (s₃.gpr .esi)) (by simpa using hp₃.ivData.symm)
     rw [pin₀₃.reg .esi (by decide)] at same
@@ -628,14 +628,14 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
     (key : s'.gpr .ebx = s.gpr .ebx) (iv : s'.gpr .ecx = s.gpr .ecx)
     (buf : s'.gpr .ebp = s.gpr .ebp) (sp : s'.gpr .esp = s.gpr .esp)
     (ptr : s'.gpr .esi = s.gpr .esi + BitVec.ofNat 32 (8 * i)) : StepPre s' m := by
-  have ptrAddr : addr32 (s'.gpr .esi) = addr32 (s.gpr .esi) + BitVec.ofNat 64 (8 * i) := by
+  obtain ptrAddr : addr32 (s'.gpr .esi) = addr32 (s.gpr .esi) + BitVec.ofNat 64 (8 * i) := by
     rw [ptr]; exact addr_add startFit
-  have fit : (s'.gpr .esi).toNat + 8 * m ≤ 2 ^ 32 := by
+  obtain fit : (s'.gpr .esi).toNat + 8 * m ≤ 2 ^ 32 := by
     rw [ptr, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega_using [startFit]),
       Nat.mod_eq_of_lt startFit]
     have := hp.dataFit
     omega_using [bound, this]
-  have sub : Region.Sub (dataR s' m) (dataR s n) := by
+  obtain sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨addr32 (s'.gpr .esi), 8 * m⟩ ⟨addr32 (s.gpr .esi), 8 * n⟩
     rw [ptrAddr]
     exact Offset.sub_base _ (by omega_using [bound])
@@ -700,26 +700,26 @@ theorem encryptStep_ok (s : State) (hp : StepPre s) :
   apply WP.mono (xor64_ok s .esi .ecx (by decide) (by decide)
     (by simpa using hp.dataFit) hp.ivFit hp.readData hp.readIv hp.writeData)
   intro s₁ keep₁
-  have pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
-  have hp₁ := pin₁.pre hp
-  have key₁ := pin₁.schedule hp
-  have data₁ : Spec.Rc2.blockAt s₁.mem (addr32 (s.gpr .esi)) =
+  obtain pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain hp₁ := pin₁.pre hp
+  obtain key₁ := pin₁.schedule hp
+  obtain data₁ : Spec.Rc2.blockAt s₁.mem (addr32 (s.gpr .esi)) =
       Proof.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .esi))) (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .ecx))) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
   apply WP.mono (call_ok .encrypt s₁ hp₁.call)
   intro s₂ h₂
-  have pin₂ := pin₁.trans (Pinned.of_call h₂)
-  have hp₂ := pin₂.pre hp
+  obtain pin₂ := pin₁.trans (Pinned.of_call h₂)
+  obtain hp₂ := pin₂.pre hp
   have output₂ := h₂.output
   rw [pin₁.reg .esi (by decide), pin₁.reg .ebx (by decide), key₁, data₁] at output₂
   apply WP.mono (copy64_ok s₂ .esi .ecx 0 0 (by decide) (by decide)
     (by simpa using hp₂.dataFit) (by simpa using hp₂.ivFit) (by simpa using hp₂.readData) (by simpa using hp₂.writeIv))
   intro s₃ keep₃
   simp only [BitVec.add_zero] at keep₃
-  have frame₃ : Frame [ivR s₂] s₂.mem s₃.mem := by
+  obtain frame₃ : Frame [ivR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  obtain pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
   refine ⟨pin₂.trans pin₃, ?_, ?_⟩
   · have same := blockAt_frame frame₃ (addr32 (s₂.gpr .esi)) (by simpa using hp₂.ivData.symm)
     rw [pin₂.reg .esi (by decide)] at same
@@ -770,17 +770,17 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   intro s₁ h₁
   obtain ⟨s₂, run₂, ptr₂, count₂, flag₂, keep₂⟩ := advance_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have count' : s₁.gpr .edi - 1 = BitVec.ofNat 32 (n - 1) := by
+  obtain count' : s₁.gpr .edi - 1 = BitVec.ofNat 32 (n - 1) := by
     rw [h₁.reg .edi (by decide), count]
     exact Offset.ofNat_sub_ofNat hn
   refine ⟨by rw [ptr₂, h₁.reg .esi (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
   · rw [zeroCount, flag₂, count']
-    have eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
+    obtain eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 32 (n - 1) == 0#32) = _
     rw [eqZero]
-    have he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
+    obtain he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)

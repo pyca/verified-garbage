@@ -59,7 +59,7 @@ theorem SAVE_eq : SAVE = 1024 := rfl
 /-- The 32 bytes at `q` whose words are an element's. -/
 theorem bytes_of_words {m m₀ : Mem} {q b : Addr} {a : Nat} (h : ∀ j < 8, wd m q (4 * j) = limb m₀ b a j) :
     decodeLE (bytesAt m q 32) = V m₀ b a := by
-  have e : decodeLE (bytesAt m q 32) = V m q 0 := by
+  obtain e : decodeLE (bytesAt m q 32) = V m q 0 := by
     rw [Proof.Ed25519.decodeLE_eq]
     show Proof.X25519.leNum (Spec.X25519.bytesAt m q 32) = _
     rw [Proof.X25519.leNum_bytesAt_read, ← read_V, BitVec.add_zero]
@@ -92,34 +92,34 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
       bytesAt t.mem (s.gpr .r3) 32 = Spec.Ed25519.scalarReduce (bytesAt s.mem (s.gpr .r4) 64) := by
   have hS := SR_eq
   have hV := SAVE_eq
-  have hws : (⟨s.gpr .r5, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hout : (⟨s.gpr .r3, 32⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hwide : (⟨s.gpr .r4, 64⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
+  obtain hws : (⟨s.gpr .r5, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hout : (⟨s.gpr .r3, 32⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hwide : (⟨s.gpr .r4, 64⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
   unfold scalarReduce scalarReduceSetup
   rw [scalarSave_eq]
   refine WP.seq (Spill.save_ok (b := .r5) (by decide) saveList_fits
     (fun p hpl => in_base hws (by have := saveList_in p hpl; omega_arith) (by have := saveList_in p hpl; omega_arith)) ?_)
   -- The state after the saves.
   let s1 : State := { s with mem := Spill.saveMem s.mem (s.gpr .r5) s.gpr saveList }
-  have hsv : Spill.Saved (s.gpr .r5) s.gpr saveList s1.mem := Spill.saveMem_saved (by decide) _ _ _
-  have hf1 : Frame [⟨s.gpr .r5, 8192⟩] s.mem s1.mem :=
+  obtain hsv : Spill.Saved (s.gpr .r5) s.gpr saveList s1.mem := Spill.saveMem_saved (by decide) _ _ _
+  obtain hf1 : Frame [⟨s.gpr .r5, 8192⟩] s.mem s1.mem :=
     Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega_arith) (by decide) _ _ _
   refine wp_addi (by decide) (by decide) fun s2 u2 => wp_addi (by decide) (by decide) fun s3 u3 =>
     wp_addi (by decide) (by decide) fun s4 u4 => WP.block_nil ?_
-  have hr4 : Rest [.r6, .r14, .r27] s1 s4 :=
+  obtain hr4 : Rest [.r6, .r14, .r27] s1 s4 :=
     (u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide)))
-  have hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
-  have e6 : s4.gpr .r6 = s.gpr .r5 := by
+  obtain hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
+  obtain e6 : s4.gpr .r6 = s.gpr .r5 := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, BitVec.add_zero]
-  have e27 : s4.gpr .r27 = s.gpr .r3 := by
+  obtain e27 : s4.gpr .r27 = s.gpr .r3 := by
     rw [u4.other _ (by decide), u3.gpr, u2.other _ (by decide), BitVec.add_zero]
-  have e14 : s4.gpr .r14 = s.gpr .r4 := by
+  obtain e14 : s4.gpr .r14 = s.gpr .r4 := by
     rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), BitVec.add_zero]
-  have hc4 : Ctx (s.gpr .r5) s4 := ⟨e6, 8192, by decide, by rw [hr4.wr]; exact hws⟩
+  obtain hc4 : Ctx (s.gpr .r5) s4 := ⟨e6, 8192, by decide, by rw [hr4.wr]; exact hws⟩
   -- The bytes of `wide`, kept by the saves.
-  have hwb : ∀ i < 64, ¬ (⟨s.gpr .r5, 8192⟩ : Region).Contains (s.gpr .r4 + BitVec.ofNat 64 i) 1 :=
+  obtain hwb : ∀ i < 64, ¬ (⟨s.gpr .r5, 8192⟩ : Region).Contains (s.gpr .r4 + BitVec.ofNat 64 i) 1 :=
     fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
-  have hb1 : bytesAt s4.mem (s.gpr .r4) 64 = bytesAt s.mem (s.gpr .r4) 64 := by
+  obtain hb1 : bytesAt s4.mem (s.gpr .r4) 64 = bytesAt s.mem (s.gpr .r4) 64 := by
     rw [hm4]
     simp only [bytesAt, List.map_inj_left]
     intro i hi
@@ -128,22 +128,22 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
     (fun i hi => by rw [hr4.rd, hr4.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_arith) (by omega_arith)))
     fun s5 ⟨hr5, hf5, hv5⟩ => ?_)
   rw [hb1] at hv5
-  have hc5 : Ctx (s.gpr .r5) s5 := hc4.of_rest hr5 (by decide)
+  obtain hc5 : Ctx (s.gpr .r5) s5 := hc4.of_rest hr5 (by decide)
   -- The copy to `out`, and the restores.
   unfold scalarFinish
   rw [scalarRestore_eq]
   simp only [List.cons_append, List.nil_append]
   refine wp_addi (by decide) (by decide) fun s6 u6 => ?_
-  have e14' : s6.gpr .r14 = s.gpr .r3 := by rw [u6.gpr, hr5.gpr _ (by decide), e27, BitVec.add_zero]
-  have hc6 : Ctx (s.gpr .r5) s6 := hc5.of_rest (u6.rest (ws := [.r14]) (by decide)) (by decide)
-  have hwr6 : s6.wr = s.wr := by rw [u6.wr, hr5.wr, hr4.wr]
-  have hrd6 : s6.rd = s.rd := by rw [u6.rd, hr5.rd, hr4.rd]
+  obtain e14' : s6.gpr .r14 = s.gpr .r3 := by rw [u6.gpr, hr5.gpr _ (by decide), e27, BitVec.add_zero]
+  obtain hc6 : Ctx (s.gpr .r5) s6 := hc5.of_rest (u6.rest (ws := [.r14]) (by decide)) (by decide)
+  obtain hwr6 : s6.wr = s.wr := by rw [u6.wr, hr5.wr, hr4.wr]
+  obtain hrd6 : s6.rd = s.rd := by rw [u6.rd, hr5.rd, hr4.rd]
   refine WP.append (packField_ok hc6 e14' (a := SR) (dst := 0) (by omega_arith) (by decide)
     (fun k hk => by rw [hwr6]; exact in_base hout (by omega_arith) (by omega_arith))
     (by rw [BitVec.add_zero]; exact hp.out_ws.sub_right (Offset.sub_base _ (by omega_arith))))
     fun s7 hp7 => ?_
-  have hsv7 : Spill.Saved (s.gpr .r5) s.gpr saveList s7.mem := by
-    have h5 : Spill.Saved (s.gpr .r5) s.gpr saveList s5.mem := by
+  obtain hsv7 : Spill.Saved (s.gpr .r5) s.gpr saveList s7.mem := by
+    obtain h5 : Spill.Saved (s.gpr .r5) s.gpr saveList s5.mem := by
       rw [← hm4] at hsv
       refine hsv.frame_in (lo := SAVE) (n := 96) saveList_in hf5 fun r hr => ?_
       rw [List.mem_singleton.mp hr]
@@ -164,10 +164,10 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
     · exact .inl hm
     · refine .inr ?_
       rw [saveList_regs] at hm
-      have h1 : r ∉ ([.r7] : List Reg) := by revert hr hm; cases r <;> decide
-      have h2 : r ∉ ([.r14] : List Reg) := by revert hr hm; cases r <;> decide
-      have h3 : r ∉ engClob := by revert hr hm; cases r <;> decide
-      have h4 : r ∉ ([.r6, .r14, .r27] : List Reg) := by revert hr hm; cases r <;> decide
+      obtain h1 : r ∉ ([.r7] : List Reg) := by revert hr hm; cases r <;> decide
+      obtain h2 : r ∉ ([.r14] : List Reg) := by revert hr hm; cases r <;> decide
+      obtain h3 : r ∉ engClob := by revert hr hm; cases r <;> decide
+      obtain h4 : r ∉ ([.r6, .r14, .r27] : List Reg) := by revert hr hm; cases r <;> decide
       rw [hp7.rest.gpr _ h1, u6.other _ (by simpa using h2), hr5.gpr _ h3, hr4.gpr _ h4]
   · rw [h8.sp, hp7.rest.sp, u6.sp, hr5.sp, hr4.sp]
   · rw [h8.mem]

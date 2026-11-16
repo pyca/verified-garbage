@@ -54,11 +54,11 @@ theorem a_tail_using (hash : FixedHash.HashFn)
       simp only [preg, e28 kb₂]
       exact sdisj hp (by kom) (by kom) (by decide)))
     fun s₃ ⟨k₃, o₃⟩ => ?_)
-  have kb₃ := kb₂.hash hp k₃ fun p hp' => by
+  obtain kb₃ := kb₂.hash hp k₃ fun p hp' => by
     rcases mem2' hp' with rfl | rfl
     · exact ⟨3, KP, 32, rfl, by decide, by dek, by dek, .inr (.inr (by kom))⟩
     · exact ⟨3, RB, 32, rfl, by decide, by dek, by dek, .inr (.inr (by kom))⟩
-  have msg : (List.map (pbytes s₂) [⟨.x28, MB, 32⟩, ⟨.x25, 768 * P.k + 32, 32⟩]).flatten =
+  obtain msg : (List.map (pbytes s₂) [⟨.x28, MB, 32⟩, ⟨.x25, 768 * P.k + 32, 32⟩]).flatten =
       mD P s₀ ++ KPke.dkH P.params (dkD P s₀) := by
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, pbytes,
       e28 kb₂, kb₂.x25]
@@ -66,15 +66,15 @@ theorem a_tail_using (hash : FixedHash.HashFn)
     rfl
   obtain ⟨o₁, o₂, -⟩ := o₃
   rw [msg] at o₁ o₂
-  have hG := G_eq (mD P s₀ ++ KPke.dkH P.params (dkD P s₀))
-  have kp₃ : bytesAt s₃.mem (sA (deL P) s₀ KP) 32 = (gD P s₀).1 := by
+  obtain hG := G_eq (mD P s₀ ++ KPke.dkH P.params (dkD P s₀))
+  obtain kp₃ : bytesAt s₃.mem (sA (deL P) s₀ KP) 32 = (gD P s₀).1 := by
     rw [← e28 kb₂, o₁]; show _ = (G (mD P s₀ ++ KPke.dkH P.params (dkD P s₀))).1; rw [hG]; rfl
-  have r₃ : bytesAt s₃.mem (sA (deL P) s₀ RB) 32 = (gD P s₀).2 := by
+  obtain r₃ : bytesAt s₃.mem (sA (deL P) s₀ RB) 32 = (gD P s₀).2 := by
     rw [← e28 kb₂, o₂]; show _ = (G (mD P s₀ ++ KPke.dkH P.params (dkD P s₀))).2; rw [hG]; rfl
   have k₃' := k₃
   simp only [VG.Proof.MlKem.AArch64.STr, VG.Proof.MlKem.AArch64.WKr, preg, List.map_cons, List.map_nil,
     kb₂.x28, kb₂.sp] at k₃'
-  have m₃ : bytesAt s₃.mem (sA (deL P) s₀ MB) 32 = mD P s₀ := by
+  obtain m₃ : bytesAt s₃.mem (sA (deL P) s₀ MB) 32 = mD P s₀ := by
     rw [bytesAt_frame k₃'.frame (fun r hr => by
       rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
       · exact sdisj hp (by kom) (by kom) (by decide)
@@ -88,9 +88,9 @@ theorem a_tail_using (hash : FixedHash.HashFn)
     (by decide) (by kom) (by decide) (hp.args.rdisj (by dek) (by dek) (by dek) (hp.fs (by kom)) (by dek)
       (by dek)) kb₃.x25 kb₃.x28 (cov_r hp kb₃ (b := 0) (by dek) (by dek)) (cov_s hp kb₃ (by kom)))
     fun s₄ ⟨k₄, f₄, b₄⟩ => ?_
-  have kb₄ := kb₃.frame k₄ f₄ (by decide) fun r hr => by
+  obtain kb₄ := kb₃.frame k₄ f₄ (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact safe_scr hp (by kom)
-  have far₄ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ SB ∨ SB + 32 ≤ o) →
+  obtain far₄ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ SB ∨ SB + 32 ≤ o) →
       bytesAt s₄.mem (sA (deL P) s₀ o) l = bytesAt s₃.mem (sA (deL P) s₀ o) l := fun f h => by
     refine bytesAt_frame f₄ (fun r hr => ?_) (by kom)
     rw [List.mem_singleton.mp hr]
@@ -150,29 +150,29 @@ theorem uW_step {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {i : Nat
       Frame [R (kA s₀) (deL P).sc (PP P) 1024,R (kA s₀) (deL P).sc (yOff P i) 1024,
         R (kA s₀) (deL P).sc NS 1024] s.mem t.mem ∧ Optimized.TransformTables t := by
   have hw := hp.wf
-  have hpo := po_y hw hi
-  have hu := du_le hi
-  have fu : 32 * P.du * i + 32 * P.du ≤ (deL P).len 1 := by dek
+  obtain hpo := po_y hw hi
+  obtain hu := du_le hi
+  obtain fu : 32 * P.du * i + 32 * P.du ≤ (deL P).len 1 := by dek
   apply WPs.seqs (by simp)
   refine WPs.cons (WP.mono_syms (ddL_ok hp hc (k := 1) (o := 32 * P.du * i) (d := P.du) (off := PP P)
     (by decide) fu (.inl rfl) (po_PP hw) (.inl (by dek)) h.kb) fun s₁ ⟨kb₁, f₁, p₁, x₁⟩ sy₁ => ?_)
-  have e₁ := h.frame kb₁ x₁ f₁ fun r hr => by
+  obtain e₁ := h.frame kb₁ x₁ f₁ fun r hr => by
     rw [List.mem_singleton.mp hr]; exact dfar hp (by omega_using [hi]) (po_PP hw).le (by lom)
   rw [slice_eq h.kb (b := 1) (by decide) fu] at p₁
-  have ht₁ := ht.frame sy₁ (kb₁.rd.trans h.kb.rd.symm) (kb₁.wr.trans h.kb.wr.symm) (kb₁.sp.trans h.kb.sp.symm)
+  obtain ht₁ := ht.frame sy₁ (kb₁.rd.trans h.kb.rd.symm) (kb₁.wr.trans h.kb.wr.symm) (kb₁.sp.trans h.kb.sp.symm)
     f₁ (cov_w hp h.kb ⟨hp.scw,hp.scb⟩ (o:=PP P) (l:=1024) (hp.fs (po_PP hw).le))
   refine WPs.cons (WP.mono_syms (narrowW_ok hp (po_PP hw) hpo (by lom) kb₁ p₁)
     fun s₂ ⟨kb₂, f₂, p₂, x₂⟩ sy₂ => ?_)
-  have e₂ := e₁.frame kb₂ x₂ f₂ fun r hr => by
+  obtain e₂ := e₁.frame kb₂ x₂ f₂ fun r hr => by
     rw [List.mem_singleton.mp hr]; exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
-  have ht₂ := ht₁.frame sy₂ (kb₂.rd.trans kb₁.rd.symm) (kb₂.wr.trans kb₁.wr.symm) (kb₂.sp.trans kb₁.sp.symm)
+  obtain ht₂ := ht₁.frame sy₂ (kb₂.rd.trans kb₁.rd.symm) (kb₂.wr.trans kb₁.wr.symm) (kb₂.sp.trans kb₁.sp.symm)
     f₂ (cov_w hp kb₁ ⟨hp.scw,hp.scb⟩ (o:=yOff P i) (l:=1024) (hp.fs hpo.le))
   refine WPs.single (WP.mono_syms (nttW_ok hp hpo kb₂ p₂ ht₂) fun s₃ ⟨kb₃, f₃, p₃, x₃⟩ sy₃ => ?_)
-  have e₃ := e₂.frame kb₃ x₃ f₃ fun r hr => by
+  obtain e₃ := e₂.frame kb₃ x₃ f₃ fun r hr => by
     rcases mem2' hr with rfl | rfl
     · exact dfar hp (by omega_using [hi]) hpo.le (.inr (by simp only [yOff]; omega_using []))
     · exact dfar hp (by omega_using [hi]) (by kom) (.inl (by kom))
-  have ht₃ := ht₂.frame sy₃ (kb₃.rd.trans kb₂.rd.symm) (kb₃.wr.trans kb₂.wr.symm) (kb₃.sp.trans kb₂.sp.symm)
+  obtain ht₃ := ht₂.frame sy₃ (kb₃.rd.trans kb₂.rd.symm) (kb₃.wr.trans kb₂.wr.symm) (kb₃.sp.trans kb₂.sp.symm)
     f₃ (covers_cons (cov_s hp kb₂ hpo.le) (cov_s hp kb₂ (o:=NS) (l:=1024) (by kom)))
   refine ⟨⟨e₃.kb,e₃.x24,fun i' hi' => ?_⟩,
     ((f₁.mono (by simp)).trans (f₂.mono (by simp))).trans (f₃.mono (by simp)),ht₃⟩
@@ -215,13 +215,13 @@ theorem m_tailW {s₀ s : State} (hp : Pre P (deL P) s₀) (hc : Calls P)
   rw [t₄.2] at t₅
   refine WPs.cons (WP.mono (widenW_ok hp (po_TP hw) (po_PP hw) (by lom) kb₅ t₅)
     fun s₆ ⟨kb₆, f₆, t₆, x₆⟩ => ?_)
-  have fv : 32 * P.du * P.k + 32 * P.dv ≤ (deL P).len 1 := by
+  obtain fv : 32 * P.du * P.k + 32 * P.dv ≤ (deL P).len 1 := by
     simp only [deL, List.getD_cons_zero, List.getD_cons_succ, KemLay.ctLen]
     rw [Nat.mul_add, Nat.mul_assoc]
   refine WPs.cons (WP.mono (ddL_ok hp hc (k := 1) (o := 32 * P.du * P.k) (d := P.dv) (off := EP P) (by decide)
     fv (.inr rfl) (po_EP hw) (.inl (by dek)) kb₆) fun s₇ ⟨kb₇, f₇, p₇, x₇⟩ => ?_)
   rw [slice_eq kb₆ (b := 1) (by decide) fv] at p₇
-  have t₇ := polyIs_frame f₇ (fun r hr => by
+  obtain t₇ := polyIs_frame f₇ (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact papart hp (po_PP hw) (po_EP hw) (by lom)) t₆
   refine WPs.cons (WP.mono (sub_ok hp (po_EP hw) (po_PP hw) (by lom) kb₇ p₇.1 t₇.1)
     fun s₈ ⟨kb₈, f₈, p₈, x₈⟩ => ?_)
@@ -257,53 +257,53 @@ theorem fused_m_ok {s₀ s : State} (hp : Pre P (deL P) s₀) (hc : Calls P) (ht
     WP isa (Impl.MlKem.AArch64.Optimized.decryptM P) s fun t => KB P (deL P) s₀ t ∧ t.gpr .x24=1 ∧
       bytesAt t.mem (sA (deL P) s₀ MB) 32=mD P s₀ := by
   have hw := hp.wf
-  have far : ∀o l, o+l≤P.scl → (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint
+  obtain far : ∀o l, o+l≤P.scl → (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint
       (R (kA s₀) (deL P).sc o l) := by
     intro o l hf
-    have hd : (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint (R (kA s₀) (deL P).sc 0 P.scl) := by
+    obtain hd : (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint (R (kA s₀) (deL P).sc 0 P.scl) := by
       simpa only [R,ptr_zero] using ha
     exact hd.sub_right (R.sub2 (by omega_using []) (by omega_using [hf]))
   apply WPs.seqs (by simp)
   rw [List.append_assoc]
   apply WPs.append
   refine WPs.mono_syms (uW_all hp hc htr ⟨h.kb,h.x24,fun _ hj => by omega⟩) fun t ⟨dt,ft,trt⟩ hs => ?_
-  have gt : Dot.GammaArtifact t.mem (t.syms "VG_MLKEM_GAMMA") := by
+  obtain gt : Dot.GammaArtifact t.mem (t.syms "VG_MLKEM_GAMMA") := by
     rw [hs]; apply gamma_frame ht ft
     intro r hh
     simp only [uWritesW, List.mem_cons, List.not_mem_nil, or_false] at hh
     rcases hh with rfl | rfl | rfl <;> exact far _ _ (by lom)
-  have hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ ((deL P).slot 0)+BitVec.ofNat 64 (0+384*j)) 384)=
+  obtain hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ ((deL P).slot 0)+BitVec.ofNat 64 (0+384*j)) 384)=
       dcS (KPke.dkPke P.params (dkD P s₀)) j := by
     intro j hj
     simp only [deL,Nat.zero_add]
     rw [←bytesAt_slice s₀.mem (kA s₀ 0) (show 384*j+384≤(deL P).len 0 by dek),dcS_eq s₀ hj]
     rfl
-  have d0 : DecodeInvW P (deL P) s₀ t.mem (dcS (KPke.dkPke P.params (dkD P s₀)))
+  obtain d0 : DecodeInvW P (deL P) s₀ t.mem (dcS (KPke.dkPke P.params (dkD P s₀)))
       (fun j => ntt (KPke.dcU P.params (cD P s₀) j)) 1 0 t :=
     ⟨dt.kb,dt.x24,fun _ hj => by omega,dt.u,Frame.refl _ _⟩
   apply WPs.append
-  have dec := WPs.range (fun _ hj _ h => decode_stepW hp (kE := 0) (eo := 0) (by decide) (by change 0<2; decide)
+  obtain dec := WPs.range (fun _ hj _ h => decode_stepW hp (kE := 0) (eo := 0) (by decide) (by change 0<2; decide)
     (by dek) hj hT h) d0
   simp only [Nat.zero_add] at dec
   refine WPs.mono_syms dec fun u du hsu => ?_
-  have gu : Dot.GammaArtifact u.mem (u.syms "VG_MLKEM_GAMMA") := by
+  obtain gu : Dot.GammaArtifact u.mem (u.syms "VG_MLKEM_GAMMA") := by
     rw [hsu]
     apply gamma_frame gt du.frame
     intro r hh
     rw [List.mem_singleton.mp hh,hs]
-    have hkk := Nat.mul_le_mul_right P.k hw.facts.1
+    obtain hkk := Nat.mul_le_mul_right P.k hw.facts.1
     simp only [Nat.one_mul] at hkk
     exact far _ _ (by lom)
-  have cu : Covers [⟨u.syms "VG_MLKEM_GAMMA",512⟩] (u.rd++u.wr) := by
+  obtain cu : Covers [⟨u.syms "VG_MLKEM_GAMMA",512⟩] (u.rd++u.wr) := by
     simpa only [hsu,hs,du.kb.rd,du.kb.wr,←h.kb.rd,←h.kb.wr] using hcT
-  have au : (polyRegion (sA (deL P) s₀ (TP P))).Disjoint ⟨u.syms "VG_MLKEM_GAMMA",512⟩ := by
+  obtain au : (polyRegion (sA (deL P) s₀ (TP P))).Disjoint ⟨u.syms "VG_MLKEM_GAMMA",512⟩ := by
     rw [hsu,hs]; exact (far _ _ (by lom)).symm
-  have tru := trt.frame hsu (du.kb.rd.trans dt.kb.rd.symm) (du.kb.wr.trans dt.kb.wr.symm)
+  obtain tru := trt.frame hsu (du.kb.rd.trans dt.kb.rd.symm) (du.kb.wr.trans dt.kb.wr.symm)
     (du.kb.sp.trans dt.kb.sp.symm) du.frame (cov_w hp dt.kb ⟨hp.scw,hp.scb⟩ (hp.fs (by lom)))
   refine WPs.cons (WP.mono_syms (fusedW_ok hp (po_TP hw) du.kb (decodedTerms P)
     (decoded_readyW hp du gu cu au).data) fun w ⟨kw,fw,pw,xw⟩ hus => ?_)
   rw [decoded_sum] at pw
-  have trw := tru.frame hus (kw.rd.trans du.kb.rd.symm) (kw.wr.trans du.kb.wr.symm)
+  obtain trw := tru.frame hus (kw.rd.trans du.kb.rd.symm) (kw.wr.trans du.kb.wr.symm)
     (kw.sp.trans du.kb.sp.symm) fw (cov_w hp du.kb ⟨hp.scw,hp.scb⟩ (hp.fs (by lom)))
   exact m_tailW hp hc trw kw (xw.trans du.x24) pw
 
@@ -333,7 +333,7 @@ theorem start_using_ok (hash : FixedHash.HashFn)
     WP isa (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P) s₀ (AfterA P s₀) := by
   have hw := hp.wf
   refine WP.seq (WP.mono_syms (prologue_ok hp) fun s₁ h₁ hs => ?_)
-  have gt : Dot.GammaArtifact s₁.mem (s₁.syms "VG_MLKEM_GAMMA") := by
+  obtain gt : Dot.GammaArtifact s₁.mem (s₁.syms "VG_MLKEM_GAMMA") := by
     rw [hs]
     rcases h₁.mem with hm | hf
     · rwa [hm]
@@ -341,9 +341,9 @@ theorem start_using_ok (hash : FixedHash.HashFn)
       intro r hh
       rw [List.mem_singleton.mp hh]
       exact ha.sub_right (R.sub (by lom))
-  have ct : Covers [⟨s₁.syms "VG_MLKEM_GAMMA",512⟩] (s₁.rd++s₁.wr) := by
+  obtain ct : Covers [⟨s₁.syms "VG_MLKEM_GAMMA",512⟩] (s₁.rd++s₁.wr) := by
     simpa only [hs,h₁.keep.rd,h₁.keep.wr] using hcT
-  have tr₁ : Optimized.TransformTables s₁ := by
+  obtain tr₁ : Optimized.TransformTables s₁ := by
     apply htr.frame hs h₁.keep.rd h₁.keep.wr h₁.keep.sp
     · rcases h₁.mem with hm | hf
       · simpa only [hm] using Frame.refl [R (kA s₀) (deL P).sc (SV P) 48] s₀.mem

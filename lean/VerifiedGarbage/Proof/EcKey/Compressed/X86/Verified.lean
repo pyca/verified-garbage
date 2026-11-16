@@ -58,10 +58,10 @@ theorem tag_ok {c : Cfg} {s : State} {base : Addr} (hs : Scr s base size)
   refine wp_logicS (.inl rfl) rfl fun s₂ u₂ => ?_
   refine wp_orS rfl fun s₃ u₃ => ?_
   refine wp_logicS (.inl rfl) rfl fun s₄ u₄ => ?_
-  have K : Keeps [.eax] s s₄ := u₁.keeps.trans (u₂.keeps.trans (u₃.keeps.trans u₄.keeps))
-  have hm : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have ho : s₄.gpr .ebx = o := (K.1 _ (by decide)).trans hout
-  have ht : (s₄.gpr .eax).setWidth 8 =
+  obtain K : Keeps [.eax] s s₄ := u₁.keeps.trans (u₂.keeps.trans (u₃.keeps.trans u₄.keeps))
+  obtain hm : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain ho : s₄.gpr .ebx = o := (K.1 _ (by decide)).trans hout
+  obtain ht : (s₄.gpr .eax).setWidth 8 =
       if b then BitVec.ofNat 8 (2 + sv c base s Impl.Ecdh.X86.QY % 2) else 0 := by
     rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr,
       u₃.other .ecx (by decide), u₂.other .ecx (by decide), u₁.other .ecx (by decide), hf]
@@ -110,34 +110,34 @@ theorem finish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s
   have hsz : size = 8192 := rfl
   have h7 := hc.n10
   have h0 := hc.n0
-  have hE := sl_le c h7 (i := E) (by decide)
-  have hY := sl_le c h7 (i := Impl.Ecdh.X86.QY) (by decide)
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hE := sl_le c h7 (i := E) (by decide)
+  obtain hY := sl_le c h7 (i := Impl.Ecdh.X86.QY) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   have hn := hs.nowrap
   have hlhi := hc.len_hi
   have hl8 := hc.len8
   rw [finish_eq]
   refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega_using [h0, hF])) fun s₁ u₁ _ => ?_
   refine wp_movS (show readSrc s₁ (.mem (Cfg.argOp 0)) = some o by
-    have hea : s₁.ea (Cfg.argOp 0) = s.ea (Cfg.argOp 0) := by
+    obtain hea : s₁.ea (Cfg.argOp 0) = s.ea (Cfg.argOp 0) := by
       show addr (s₁.gpr .esp) _ = addr (s.gpr .esp) _
       rw [u₁.other _ (by decide)]
     rw [← hout]; show s₁.load32 _ = s.load32 _
     rw [State.load32, State.load32, hea, u₁.rd, u₁.wr, u₁.mem]) fun s₂ u₂ _ => ?_
-  have K₂ : Keeps [.ebx, .ecx] s s₂ := (u₁.keeps.mono (by simp)).trans (u₂.keeps.mono (by simp))
-  have hs₂ := hs.of_keeps K₂ (by decide)
+  obtain K₂ : Keeps [.ebx, .ecx] s s₂ := (u₁.keeps.mono (by simp)).trans (u₂.keeps.mono (by simp))
+  obtain hs₂ := hs.of_keeps K₂ (by decide)
   have hb₂ : s₂.gpr .ebx = o := u₂.gpr
-  have hc₂ : s₂.gpr .ecx = mask32 (b = true) := by rw [u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
-  have m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
+  obtain hc₂ : s₂.gpr .ecx = mask32 (b = true) := by rw [u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
+  obtain m₂ : s₂.mem = s.mem := u₂.mem.trans u₁.mem
   refine WP.block_append (WP.mono (tag_ok hs₂ (by omega_using [h0, hY]) hb₂
     (by rw [K₂.2.2]; exact ⟨_, hw, by simpa using Offset.contains_base (o.setWidth 64) (d := 0) (n := 1) (by omega_using []) (by decide)⟩)
     b hc₂ h0) fun s₃ ⟨L₃, O₃, K₃⟩ => ?_)
   simp only [sv, m₂] at L₃
-  have hs₃ := hs₂.of_keeps K₃ (by decide)
-  have hb₃ : s₃.gpr .ebx = o := (K₃.1 _ (by decide)).trans hb₂
-  have hc₃ : s₃.gpr .ecx = mask32 (b = true) := (K₃.1 _ (by decide)).trans hc₂
-  have U₃ := O₃.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
-  have x₃ : wordsVal s₃.mem base (c.sl E) c.n = sv c base s E := by
+  obtain hs₃ := hs₂.of_keeps K₃ (by decide)
+  obtain hb₃ : s₃.gpr .ebx = o := (K₃.1 _ (by decide)).trans hb₂
+  obtain hc₃ : s₃.gpr .ecx = mask32 (b = true) := (K₃.1 _ (by decide)).trans hc₂
+  obtain U₃ := O₃.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
+  obtain x₃ : wordsVal s₃.mem base (c.sl E) c.n = sv c base s E := by
     rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hE]) (by omega_using [hsz, hE]), m₂]
   refine WP.block_append (WP.mono (storeBytes_ok hs₃ (dst := .ebx) (d := 1) (a := c.sl E)
     (by decide) (by decide) b hc₃ hE (by omega_using [hl8]) hlhi (by rw [hb₃]; omega_using [hofit])
@@ -146,12 +146,12 @@ theorem finish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s
     (by rw [hb₃]; exact (hd.symm.sub_left (Offset.sub_base base hE)).sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega_using [])))) fun s₄ ⟨e₄, K₄, O₄⟩ => ?_)
   rw [hb₃, x₃] at e₄
   rw [hb₃] at O₄
-  have hs₄ := hs₃.of_keeps K₄ (by decide)
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega_using [])))
-  have hsv₄ : ∀ rd ∈ Cfg.saved, s₄.mem.readW (off base rd.2) 32 = g rd.1 := by
+  obtain hs₄ := hs₃.of_keeps K₄ (by decide)
+  obtain U₄ := O₄.unch_far (hd.symm.sub_right (Offset.sub_base (o.setWidth 64) (d := 1) (by omega_using [])))
+  obtain hsv₄ : ∀ rd ∈ Cfg.saved, s₄.mem.readW (off base rd.2) 32 = g rd.1 := by
     intro rd hrd
     have := saved_lt rd hrd
-    have ap : ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 := by
+    obtain ap : ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 := by
       intro w hw; obtain rfl := List.mem_singleton.mp hw; exact .inl (by omega)
     rw [Unch.readW32 U₄ ap (by omega_using [this]), Unch.readW32 U₃ ap (by omega_using [this]), m₂, hsv rd hrd]
   refine WP.mono (tail_ok hs₄ hsv₄ b (by rw [K₄.1 _ (by decide), hc₃]))
@@ -190,19 +190,19 @@ theorem compress_key (c : Cfg) (s : State) :
     Spec.EcKey.compressPublicKey c.C
       (Spec.EcKey.bytesAt s.mem (ptr s 1) (2 * c.C.len + 1)) =
     if KeyOk c s then some (BitVec.ofNat 8 (2 + keyY c s % 2) :: toBytes c.C.len (keyX c s)) else none := by
-  have hlen : (Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
+  obtain hlen : (Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]
     omega
-  have hhead : (Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).head? =
+  obtain hhead : (Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).head? =
       some (s.mem (ptr s 1)) := by rw [peer_bytes]; rfl
-  have hx : ofBytes (((Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
+  obtain hx : ofBytes (((Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
       keyX c s := by
     rw [peer_bytes, List.drop_one, List.tail_cons, List.take_left' (length_bytesAt _ _ _)]
     rfl
-  have hy : ofBytes ((Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
+  obtain hy : ofBytes ((Spec.Ecdsa.bytesAt s.mem (ptr s 1) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       keyY c s := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
-  have hv : Proof.Ecdh.Valid c.C (s.mem (ptr s 1)) (keyX c s) (keyY c s) ↔ KeyOk c s := by
+  obtain hv : Proof.Ecdh.Valid c.C (s.mem (ptr s 1)) (keyX c s) (keyY c s) ↔ KeyOk c s := by
     constructor
     · rintro ⟨h4, hx, hy, he⟩
       exact ⟨⟨⟨h4, hx⟩, hy⟩, he⟩
@@ -220,7 +220,7 @@ def compressFront (c : Cfg) : Prog isa :=
 
 theorem compressFront_ok {c : Cfg} (hc : CfgOk c) {s : State}
     (hp : InputPre c (1 + 2 * c.C.len) s) : WP isa (compressFront c) s (Front c s) := by
-  have h := front_ok hc hp (rest := .block []) (fun _ F => WP.block_nil F)
+  obtain h := front_ok hc hp (rest := .block []) (fun _ F => WP.block_nil F)
   simpa only [compressFront, WP.seq_iff (M := isa), WP.block_nil_iff (M := isa)] using h
 
 theorem compress_correct (c : Cfg) (hc : CfgOk c)
@@ -228,11 +228,11 @@ theorem compress_correct (c : Cfg) (hc : CfgOk c)
     (s : State) (hs : (compressContract c.C).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.X86.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
-  have hp := codec_input (c := c) hs
+  obtain hp := codec_input (c := c) hs
   obtain ⟨hrd, hwr, how, hpo, hpw, hao, haw, hro, hrw, hfit, hpk, hws, hsf, hlo, hso, hsw⟩ := hs
   simp only [Bool.false_eq_true, ite_false] at hrd hwr
-  have hfront : SpOk (compressFront c) 28 := hsp.left.seq (hsp.right.left.seq hsp.right.right.left)
-  have hrun : WP isa (Impl.EcKey.Compressed.X86.compress c) s fun u =>
+  obtain hfront : SpOk (compressFront c) 28 := hsp.left.seq (hsp.right.left.seq hsp.right.right.left)
+  obtain hrun : WP isa (Impl.EcKey.Compressed.X86.compress c) s fun u =>
       (compressContract c.C).post s u ∧
       (∀ rd ∈ Cfg.saved, u.gpr rd.1 = s.gpr rd.1) ∧ u.gpr .esp = s.gpr .esp := by
     change WP isa ([.block (c.setupWith Impl.EcKey.Compressed.X86.args),
@@ -241,9 +241,9 @@ theorem compress_correct (c : Cfg) (hc : CfgOk c)
     rw [WP.split]
     refine WP.seq (WP.mono (WP.spFrame hfront hlo (compressFront_ok hc
       (by simpa only [Nat.add_comm] using hp))) fun t ⟨F, W⟩ => ?_)
-    have hin : InRegions (s.rd ++ s.wr) (argAddr s 0) 4 :=
+    obtain hin : InRegions (s.rd ++ s.wr) (argAddr s 0) 4 :=
       ⟨_, by rw [hrd, hwr]; simp, arg_containsN (k := 3) (by omega) (by decide)⟩
-    have hdarg : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 28], Region.Disjoint ⟨argAddr s 0, 4⟩ r := by
+    obtain hdarg : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 28], Region.Disjoint ⟨argAddr s 0, 4⟩ r := by
       intro r hr
       rw [hwr] at hr
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -251,7 +251,7 @@ theorem compress_correct (c : Cfg) (hc : CfgOk c)
       · exact hao.sub_left (arg_subN (k := 3) (by omega) (by decide))
       · exact haw.sub_left (arg_subN (k := 3) (by omega) (by decide))
       · exact (below_disjoint_args hlo (by omega) (by decide)).symm
-    have hout := argLoad_frame hin hdarg F.esp (by rw [F.rd, F.wr]) W
+    obtain hout := argLoad_frame hin hdarg F.esp (by rw [F.rd, F.wr]) W
     refine WP.mono (finish_ok hc F.scr hout (by omega)
       (by rw [F.wr, hwr]; simp [Nat.add_comm]) (by simpa only [Nat.add_comm] using how)
       F.saved (decide (KeyOk c s)) (by simp only [F.flag, decide_eq_true_eq]))
@@ -302,14 +302,14 @@ theorem compress_verified {c : Cfg} (hc : CfgOk c) (I : Spec.EcKey.Instance) (hC
       (Impl.EcKey.Compressed.X86.compress c))
     (hsig : ∃ s, (I.compressPublicKeyContract abi 28).pre s) :
     Verified target (Impl.EcKey.Compressed.X86.compress c) (I.compressPublicKeyContract abi 28) := by
-  have himp := compress_implies I hsig
+  obtain himp := compress_implies I hsig
   have hsat := himp.sat_left
-  have localSat : ∃ s, (compressContract c.C).pre s := by
+  obtain localSat : ∃ s, (compressContract c.C).pre s := by
     obtain ⟨s, hs⟩ := hsat
     refine ⟨s.withRegions (codecRd (2 * I.curve.len + 1) s) (codecWr (I.curve.len + 1) s), ?_⟩
     rw [hC]
     exact codecWide_pre hs
-  have localVerified : Verified target (Impl.EcKey.Compressed.X86.compress c) (compressContract I.curve) := by
+  obtain localVerified : Verified target (Impl.EcKey.Compressed.X86.compress c) (compressContract I.curve) := by
     rw [← hC]
     exact Verified.of_correct (compress_correct c hc hsp) hct (.refl localSat)
   apply Verified.of_implies (Verified.narrowTo localVerified

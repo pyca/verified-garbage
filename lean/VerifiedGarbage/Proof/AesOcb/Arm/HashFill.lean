@@ -71,10 +71,10 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
   have fw := L.ww
   have fa := L.aw
   have al32 := L.al_lt
-  have hb : bufO + 16 * i + 16 ≤ 512 := by simp only [bufO]; omega_using [hi, hc]
+  obtain hb : bufO + 16 * i + 16 ≤ 512 := by simp only [bufO]; omega_using [hi, hc]
   unfold hashFill
   refine WP.seq (WP.mono (lNtz_ok (i := j + i + 1) L E (by omega_using []) (by omega_using [hj, fa]) h6 hl0) fun t₁ P₁ => ?_)
-  have E₁ : Env p t₁ := E.of_others P₁.gpr P₁.sp P₁.rd P₁.wr
+  obtain E₁ : Env p t₁ := E.of_others P₁.gpr P₁.sp P₁.rd P₁.wr
   have g₁ : Others ntzRegs t t₁ := P₁.gpr
   -- the offset
   refine WP.block_append (WP.block_append (WP.mono (xorB_wp (s := t₁) (pb := .r11) (qb := .r11) (cb := .r11)
@@ -84,30 +84,30 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
     (by rw [E₁.r11]; exact E₁.perm.wCR (by decide)) (by rw [E₁.r11]; exact E₁.perm.wCR (by decide))
     (by rw [E₁.r11]; exact E₁.perm.wC (by decide))) fun t₂ R₂ => ?_))
   rw [E₁.r11] at R₂
-  have E₂ : Env p t₂ := E₁.of_others R₂.gpr R₂.sp R₂.rd R₂.wr
-  have oh₂ : blockAtMem t₂.mem (State.addr p.W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i + 1) := by
+  obtain E₂ : Env p t₂ := E₁.of_others R₂.gpr R₂.sp R₂.rd R₂.wr
+  obtain oh₂ : blockAtMem t₂.mem (State.addr p.W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i + 1) := by
     rw [R₂.mem, blockAtMem_xor4 _ (Proof.Cmac.Sep4.self _)
       (Proof.Cmac.Sep4.of_disjoint (L.w_w (.inr (by decide)) (by decide) (by decide))), P₁.val,
       blockAtMem_frame P₁.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)), hoh]
     rfl
-  have g₂ : ∀ r, r ∉ ntzRegs → t₂.gpr r = t.gpr r := fun r hr => by
-    have h' : r ∉ [Reg.r0, .r1] := fun h => hr (by
+  obtain g₂ : ∀ r, r ∉ ntzRegs → t₂.gpr r = t.gpr r := fun r hr => by
+    obtain h' : r ∉ [Reg.r0, .r1] := fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
       rcases h with h | h <;> simp [h])
     rw [R₂.gpr r h', g₁ r hr]
-  have fr₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 ohO, 16⟩]
+  obtain fr₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 ohO, 16⟩]
       t.mem t₂.mem := by
     rw [R₂.mem]; exact (P₁.frame.mono (by simp)).trans ((Proof.Cmac.xor4Mem_frame _ _ _ _).mono (by simp))
   -- the block of the associated data
-  have eA : State.addr (p.A + BitVec.ofNat 32 (16 * (j + i))) = State.addr p.A + BitVec.ofNat 64 (16 * (j + i)) :=
+  obtain eA : State.addr (p.A + BitVec.ofNat 32 (16 * (j + i))) = State.addr p.A + BitVec.ofNat 64 (16 * (j + i)) :=
     w_A L (by omega_using [hj])
-  have eB : State.addr (p.W + BitVec.ofNat 32 (bufO + 16 * i)) = State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i) :=
+  obtain eB : State.addr (p.W + BitVec.ofNat 32 (bufO + 16 * i)) = State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i) :=
     L.wA (by omega_using [hb])
-  have r4₂ : t₂.gpr .r4 = p.A + BitVec.ofNat 32 (16 * (j + i)) := by rw [g₂ _ (by decide), h4]
-  have r8₂ : t₂.gpr .r8 = p.W + BitVec.ofNat 32 (bufO + 16 * i) := by rw [g₂ _ (by decide), h8]
-  have hj' : 16 * (j + i) + 16 ≤ p.al := by omega_using [hj]
-  have dA : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Sub ⟨State.addr p.A, p.al⟩ :=
+  obtain r4₂ : t₂.gpr .r4 = p.A + BitVec.ofNat 32 (16 * (j + i)) := by rw [g₂ _ (by decide), h4]
+  obtain r8₂ : t₂.gpr .r8 = p.W + BitVec.ofNat 32 (bufO + 16 * i) := by rw [g₂ _ (by decide), h8]
+  obtain hj' : 16 * (j + i) + 16 ≤ p.al := by omega_using [hj]
+  obtain dA : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Sub ⟨State.addr p.A, p.al⟩ :=
     Offset.sub_base _ (by omega_using [hj])
   refine WP.mono (xorB_wp (s := t₂) (pb := .r4) (qb := .r11) (cb := .r8) (pd := 0) (qd := ohO) (cd := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -118,18 +118,18 @@ theorem hashFill_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {l : Block} 
     (by rw [E₂.r11]; exact E₂.perm.wCR (by decide))
     (by rw [r8₂, eB, BitVec.add_zero]; exact E₂.perm.wC (by omega_using [hb]))) fun t₃ R₃ => ?_
   rw [r4₂, r8₂, E₂.r11, eA, eB, BitVec.add_zero, BitVec.add_zero] at R₃
-  have fB : Frame [⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩] t₂.mem t₃.mem := by
+  obtain fB : Frame [⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩] t₂.mem t₃.mem := by
     rw [R₃.mem]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
-  have dAW : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint
+  obtain dAW : (⟨State.addr p.A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint
       ⟨State.addr p.W + BitVec.ofNat 64 (bufO + 16 * i), 16⟩ := (L.a_w' (by omega_using [hb])).sub_left dA
-  have g₃ : ∀ r, r ∉ fillRegs → t₃.gpr r = t.gpr r := fun r hr => by
+  obtain g₃ : ∀ r, r ∉ fillRegs → t₃.gpr r = t.gpr r := fun r hr => by
     simp only [fillRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [R₃.gpr r (by simp [hr.1, hr.2.1]), g₂ r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2.2.2])]
-  have r4₃ : t₃.gpr .r4 = p.A + BitVec.ofNat 32 (16 * (j + i)) := by rw [R₃.gpr _ (by decide), r4₂]
-  have r8₃ : t₃.gpr .r8 = p.W + BitVec.ofNat 32 (bufO + 16 * i) := by rw [R₃.gpr _ (by decide), r8₂]
-  have r6₃ : t₃.gpr .r6 = BitVec.ofNat 32 (j + i + 1) := by rw [R₃.gpr _ (by decide), g₂ _ (by decide), h6]
-  have r5₃ : t₃.gpr .r5 = BitVec.ofNat 32 (c - i) := by rw [R₃.gpr _ (by decide), g₂ _ (by decide), h5]
+  obtain r4₃ : t₃.gpr .r4 = p.A + BitVec.ofNat 32 (16 * (j + i)) := by rw [R₃.gpr _ (by decide), r4₂]
+  obtain r8₃ : t₃.gpr .r8 = p.W + BitVec.ofNat 32 (bufO + 16 * i) := by rw [R₃.gpr _ (by decide), r8₂]
+  obtain r6₃ : t₃.gpr .r6 = BitVec.ofNat 32 (j + i + 1) := by rw [R₃.gpr _ (by decide), g₂ _ (by decide), h6]
+  obtain r5₃ : t₃.gpr .r5 = BitVec.ofNat 32 (c - i) := by rw [R₃.gpr _ (by decide), g₂ _ (by decide), h5]
   refine WP.of_runBlock ⟨_, by orun [r4₃, r8₃, r6₃, r5₃], ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, Proof.AesGcm.Arm.mem_subFlags]

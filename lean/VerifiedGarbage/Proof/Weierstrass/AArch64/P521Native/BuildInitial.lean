@@ -74,17 +74,17 @@ theorem build_seed_ok {base table : Addr} {s : State}
       (∀x,(ofs base x<3944 ∨ 3952≤ofs base x) → (ofs table x<0 ∨ 216≤ofs table x) → t.mem x=s.mem x) := by
   rw [buildSeed,WP.seq_iff]
   refine WP.mono (stR_ok hs.ptrW (d:=3944) (by decide) (by decide) .x20) fun u eu => ?_
-  have ku : KeepRegs [.x1] s u := by
+  obtain ku : KeepRegs [.x1] s u := by
     rw [eu]
     exact ⟨fun _ _ => rfl,rfl,rfl,rfl⟩
-  have hu := hs.of_keepRegs ku (by decide)
-  have pu := pt.of_keepRegs ku (by decide)
-  have fu : Outside base 3944 8 s.mem u.mem := by
+  obtain hu := hs.of_keepRegs ku (by decide)
+  obtain pu := pt.of_keepRegs ku (by decide)
+  obtain fu : Outside base 3944 8 s.mem u.mem := by
     rw [eu]
     exact writeW_outside _ _ _ (by decide)
-  have saved : word u.mem base 3944=s.gpr .x20 := by rw [eu,word_writeW_self]
+  obtain saved : word u.mem base 3944=s.gpr .x20 := by rw [eu,word_writeW_self]
   refine WP.mono (build_seed_store_ok hu pu apart) fun t ⟨xt,yt,zt,kt,ft⟩ => ?_
-  have wt := ft.unch_far apart
+  obtain wt := ft.unch_far apart
   refine ⟨?_,?_,?_,?_,ku.trans kt,?_,?_⟩
   · rw [xt]; exact fu.wordsVal (Or.inl (by decide)) (by decide)
   · rw [yt]; exact fu.wordsVal (Or.inl (by decide)) (by decide)
@@ -116,20 +116,20 @@ theorem build_seed_tail_ok {base table : Addr} {s : State}
       BuildLoopFrame base table 1 216 s.mem t.mem := by
   rw [buildSeedTail,WP.seq_iff]
   refine WP.mono (build_seed_pointer_ok s) fun u ⟨gu,ku,vu⟩ => ?_
-  have hu := hs.of_keepRegs (Keeps.regs ku) (by decide)
-  have pu := pt.of_keepRegs (Keeps.regs ku) (by decide)
-  have g20 : u.gpr .x20=off table 216 := by rw [gu,pt.reg]
-  have piece := build_output_ptr pu (e:=216) (by decide) g20
-  have pieceApart := build_output_apart apart (e:=216) (by decide)
+  obtain hu := hs.of_keepRegs (Keeps.regs ku) (by decide)
+  obtain pu := pt.of_keepRegs (Keeps.regs ku) (by decide)
+  obtain g20 : u.gpr .x20=off table 216 := by rw [gu,pt.reg]
+  obtain piece := build_output_ptr pu (e:=216) (by decide) g20
+  obtain pieceApart := build_output_apart apart (e:=216) (by decide)
   rw [WP.seq_iff]
   refine WP.mono (build_advance_ok hu piece pieceApart) fun v ⟨tv,ev,kv,cross,fv⟩ => ?_
   refine WP.mono (build_seed_counter_ok v) fun t ⟨gt,ct,kt,_⟩ => ?_
-  have regs : KeepRegs [.x1,.x19,.x20] s t := by
+  obtain regs : KeepRegs [.x1,.x19,.x20] s t := by
     refine ⟨?_,kt.rd.trans (kv.rd.trans ku.rd),kt.wr.trans (kv.wr.trans ku.wr),kt.sp.trans (kv.sp.trans ku.sp)⟩
     intro r hr
-    have h1 : r≠.x1 := by intro e; subst r; exact hr (by simp)
-    have h19 : r≠.x19 := by intro e; subst r; exact hr (by simp)
-    have h20 : r≠.x20 := by intro e; subst r; exact hr (by simp)
+    obtain h1 : r≠.x1 := by intro e; subst r; exact hr (by simp)
+    obtain h19 : r≠.x19 := by intro e; subst r; exact hr (by simp)
+    obtain h20 : r≠.x20 := by intro e; subst r; exact hr (by simp)
     exact (kt.gpr r (by simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]; exact ⟨h20,h19⟩)).trans
       ((kv.gpr r (by simpa only [List.mem_singleton] using h1)).trans
         (ku.gpr r (by simpa only [List.mem_singleton] using h20)))
@@ -182,45 +182,45 @@ theorem build_initial_with_frame {C : Curve} (hp : C.p=fieldPrime) (law : Law C)
     WP isa buildInitial s fun t => BuildLoopInv C base table P 2 t ∧
       BuildInitialFrame base table s.mem t.mem ∧ t.sp=s.sp ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
       t.v .v31=s.v .v31 ∧ (∀r∈[Reg.x26,.x27,.x28,.x30],t.gpr r=s.gpr r) ∧ word t.mem base 3944=s.gpr .x20 := by
-  have primeOne : 1<fieldPrime := by
+  obtain primeOne : 1<fieldPrime := by
     dsimp only [fieldPrime]
     rw [VG.Proof.Mont.AArch64.P521Square.prime_value]
     decide
   have apart := layout.tableApart.disjoint
-  have piece : PtrW s .x26 table 216 :=
+  obtain piece : PtrW s .x26 table 216 :=
     ⟨ctx.tableW.reg,fun d hd => ctx.tableW.st d (by omega_arith),by decide,by have h:=ctx.tableW.nowrap; omega_arith⟩
-  have pieceApart := apart.sub_right (VG.Offset.sub_base table (d:=0) (by decide : 0+216≤3456))
-  have pieceApart' : Region.Disjoint ⟨base,8192⟩ ⟨table,216⟩ := by simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using pieceApart
+  obtain pieceApart := apart.sub_right (VG.Offset.sub_base table (d:=0) (by decide : 0+216≤3456))
+  obtain pieceApart' : Region.Disjoint ⟨base,8192⟩ ⟨table,216⟩ := by simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using pieceApart
   rw [buildInitial,WP.seq_iff]
   refine WP.mono (seed_v31 (build_seed_ok ctx.workspace piece pieceApart')) fun u ⟨⟨x0,y0,z0,stash,ku,fu,seedCross⟩,seedV⟩ => ?_
-  have hu := ctx.workspace.of_keepRegs ku (by decide)
-  have pwu := ctx.tableW.of_keepRegs ku (by decide)
-  have pru := ctx.readTable.of_keepRegs ku (by decide)
+  obtain hu := ctx.workspace.of_keepRegs ku (by decide)
+  obtain pwu := ctx.tableW.of_keepRegs ku (by decide)
+  obtain pru := ctx.readTable.of_keepRegs ku (by decide)
   have usame (d : Nat) (hd : d+72≤3944) : wordsVal u.mem base d 9=wordsVal s.mem base d 9 :=
     fu.wordsVal (by intro w hw; simp only [List.mem_cons,List.not_mem_nil,or_false] at hw; rcases hw with rfl|rfl <;> exact Or.inl (by omega_arith)) (by omega_arith)
-  have uone : wordsVal u.mem base 424 9=1 := (usame 424 (by decide)).trans one
-  have upx : wordsVal u.mem base 2800 9<fieldPrime := by rw [usame 2800 (by decide)]; exact px
-  have upy : wordsVal u.mem base 3160 9<fieldPrime := by rw [usame 3160 (by decide)]; exact py
-  have upeer : peerPoint C u.mem base=P := by simpa only [peerPoint,usame 2800 (by decide),usame 3160 (by decide)] using peer
-  have start : InvJ C (Fin.ofNat C.p (wordsVal u.mem base 2800 9))
+  obtain uone : wordsVal u.mem base 424 9=1 := (usame 424 (by decide)).trans one
+  obtain upx : wordsVal u.mem base 2800 9<fieldPrime := by rw [usame 2800 (by decide)]; exact px
+  obtain upy : wordsVal u.mem base 3160 9<fieldPrime := by rw [usame 3160 (by decide)]; exact py
+  obtain upeer : peerPoint C u.mem base=P := by simpa only [peerPoint,usame 2800 (by decide),usame 3160 (by decide)] using peer
+  obtain start : InvJ C (Fin.ofNat C.p (wordsVal u.mem base 2800 9))
       (Fin.ofNat C.p (wordsVal u.mem base 3160 9)) (Fin.ofNat C.p (wordsVal u.mem base 424 9)) P := by
     rw [uone,←upeer]
     exact InvJ.affine law _ _
   rw [WP.seq_iff]
   refine WP.mono (build_double_group hp law ha hu (by decide) (by decide) upx upy
     (by rw [uone]; exact primeOne) hP start) fun v ⟨dv,jv,hv,pv,fv⟩ => ?_
-  have fieldFrame := build_double_frame fv
-  have fieldOutside : Outside base 0 8192 u.mem v.mem := fieldFrame.unch.outside (by decide)
+  obtain fieldFrame := build_double_frame fv
+  obtain fieldOutside : Outside base 0 8192 u.mem v.mem := fieldFrame.unch.outside (by decide)
   have vsame (d : Nat) (hd : d+72≤1288 ∨ (2152≤d ∧ d+72≤3952)) :
       wordsVal v.mem base d 9=wordsVal u.mem base d 9 :=
     fieldFrame.readonly d 9 (by omega_arith) (by omega_arith)
   have tableSame (d : Nat) (hd : d+72≤3456) : wordsVal v.mem table d 9=wordsVal u.mem table d 9 :=
     layout.tableApart.wordsVal fieldOutside 9 d (by omega_arith)
-  have pvw : PtrW v .x26 table 3456 :=
+  obtain pvw : PtrW v .x26 table 3456 :=
     ⟨(pv.gpr .x26 (by decide)).trans pwu.reg,by rw [pv.wr]; exact pwu.st,pwu.enc,pwu.nowrap⟩
   refine WP.mono (seed_tail_v31 (build_seed_tail_ok hv pvw apart)) fun t ⟨⟨trow,ecur,ptr,count,kt,_,ft⟩,tailV⟩ => ?_
-  have ht := hv.of_keepRegs kt (by decide)
-  have ctxT : NormalizeContext base table 8192 t :=
+  obtain ht := hv.of_keepRegs kt (by decide)
+  obtain ctxT : NormalizeContext base table 8192 t :=
     ⟨ht,⟨(kt.gpr .x26 (by decide)).trans ((pv.gpr .x26 (by decide)).trans pru.reg),
       by rw [kt.rd,kt.wr,pv.rd,pv.wr]; exact pru.ld,pru.enc⟩,
       pvw.of_keepRegs kt (by decide)⟩
@@ -229,18 +229,18 @@ theorem build_initial_with_frame {C : Curve} (hp : C.p=fieldPrime) (law : Law C)
       (by omega_arith) (by omega_arith),vsame d (by omega_arith),usame d (by omega_arith)]
   have first (c : Nat) (hc : c<3) : wordsVal t.mem table (72*c) 9=wordsVal s.mem base (if c=0 then 2800 else if c=1 then 3160 else 424) 9 := by
     rw [ft.table_words layout.tableApart (by decide) 9 (72*c) (by omega_arith) (Or.inl (by omega_arith)),tableSame _ (by omega_arith)]
-    have cases : c=0 ∨ c=1 ∨ c=2 := by omega_arith
+    obtain cases : c=0 ∨ c=1 ∨ c=2 := by omega_arith
     rcases cases with rfl|rfl|rfl
     · exact x0
     · exact y0
     · exact z0
-  have currentPoint := pointAt_copy (C:=C) ecur
-  have rowPoint := pointAt_copy (C:=C) trow
-  have two : Spec.Weierstrass.add P P=mul 2 P := by
+  obtain currentPoint := pointAt_copy (C:=C) ecur
+  obtain rowPoint := pointAt_copy (C:=C) trow
+  obtain two : Spec.Weierstrass.add P P=mul 2 P := by
     calc
       Spec.Weierstrass.add P P=Spec.Weierstrass.add (mul 1 P) (mul 1 P) := by rw [mul_one_pt]
       _=mul (1+1) P := law.add_mul_mul hP 1 1
-  have ready : BuildLoopInv C base table P 2 t := by
+  obtain ready : BuildLoopInv C base table P 2 t := by
     refine ⟨ctxT,ptr,count,by rw [tsame 2800 (by decide)]; exact px,
       by rw [tsame 3160 (by decide)]; exact py,?_,?_,?_,?_,?_,?_,?_⟩
     · simpa only [peerPoint,tsame 2800 (by decide),tsame 3160 (by decide)] using peer
@@ -249,8 +249,8 @@ theorem build_initial_with_frame {C : Curve} (hp : C.p=fieldPrime) (law : Law C)
         by rw [eq 1 (by decide)]; exact dv.2.1,by rw [eq 2 (by decide)]; exact dv.2.2⟩
     · rw [currentPoint,←two]; exact jv
     · intro i hi c hc
-      have ci : c=0 ∨ c=1 ∨ c=2 := by omega_arith
-      have ii : i=0 ∨ i=1 := by omega_arith
+      obtain ci : c=0 ∨ c=1 ∨ c=2 := by omega_arith
+      obtain ii : i=0 ∨ i=1 := by omega_arith
       rcases ii with rfl|rfl
       · rw [show 216*0+72*c=72*c by omega_arith,first c hc]
         rcases ci with rfl|rfl|rfl
@@ -264,7 +264,7 @@ theorem build_initial_with_frame {C : Curve} (hp : C.p=fieldPrime) (law : Law C)
         · exact dv.2.1
         · exact dv.2.2
     · intro i hi
-      have ii : i=0 ∨ i=1 := by omega_arith
+      obtain ii : i=0 ∨ i=1 := by omega_arith
       rcases ii with rfl|rfl
       · simp only [Nat.zero_add,mul_one_pt]
         have fx:=first 0 (by decide)
@@ -292,7 +292,7 @@ theorem build_initial_with_frame {C : Curve} (hp : C.p=fieldPrime) (law : Law C)
   · have e := ft.workspace_words layout.tableApart (by decide) (by decide) 1 3944
       (by decide) (Or.inr (by decide)) (Or.inl (by decide))
     simp only [wordsVal,Nat.mul_zero,Nat.add_zero] at e
-    have we : word t.mem base 3944=word v.mem base 3944 := BitVec.eq_of_toNat_eq e
+    obtain we : word t.mem base 3944=word v.mem base 3944 := BitVec.eq_of_toNat_eq e
     rw [we,fieldFrame.unch.word (by decide) (by decide),stash]
 
  theorem build_initial_ok {C : Curve} (hp : C.p=fieldPrime) (law : Law C) (ha : AM3 C)

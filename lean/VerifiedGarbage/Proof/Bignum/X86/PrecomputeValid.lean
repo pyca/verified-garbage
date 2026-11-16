@@ -53,7 +53,7 @@ theorem pcBytesAt_frame {rs : List Region} {m m' : Mem} (F : Frame rs m m') {p :
   unfold Spec.Rsa.bytesAt
   apply List.map_congr_left
   intro i hi
-  have hl := List.mem_range.mp hi
+  obtain hl := List.mem_range.mp hi
   exact F _ fun r hr => hd r hr _ (Offset.contains_base p (by omega_using [hl]) (by omega_using [hn, hl]))
 
 section
@@ -70,16 +70,16 @@ theorem pcSetWidth_ok (h : PrecomputeInputs base bytes len args s) :
   have top := h.top
   unfold PrecomputeFn.setWidth
   refine wp_movS (h.stack 3 (by decide)).readSrc fun u₁ e₁ _ => ?_
-  have sp₁ : u₁.gpr .esp = s.gpr .esp := e₁.other _ (by decide)
-  have ea : u₁.ea (argAt 0 1) = stackAddress s 1 := by
+  obtain sp₁ : u₁.gpr .esp = s.gpr .esp := e₁.other _ (by decide)
+  obtain ea : u₁.ea (argAt 0 1) = stackAddress s 1 := by
     simp only [stackAddress, ← sp₁]; rfl
   refine wp_storeS ea (by rw [e₁.wr]; exact h.argWrite) fun u m => WP.block_nil ?_
-  have K : Keeps [.eax] s u := e₁.keeps.trans (m.keeps _)
-  have esp : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
-  have eax : u₁.gpr .eax = BitVec.ofNat 32 len := by rw [e₁.gpr, h.nLen]
-  have mu : u.mem = s.mem.writeW (stackAddress s 1) (BitVec.ofNat 32 len) := by rw [m.mem, e₁.mem, eax]
-  have sa : ∀ i, stackAddress u i = stackAddress s i := fun i => by simp only [stackAddress, esp]
-  have W : 16 * Spec.Rsa.modulusWords len = 2 * wb len := by simp only [wb]; omega_using []
+  obtain K : Keeps [.eax] s u := e₁.keeps.trans (m.keeps _)
+  obtain esp : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  obtain eax : u₁.gpr .eax = BitVec.ofNat 32 len := by rw [e₁.gpr, h.nLen]
+  obtain mu : u.mem = s.mem.writeW (stackAddress s 1) (BitVec.ofNat 32 len) := by rw [m.mem, e₁.mem, eax]
+  obtain sa : ∀ i, stackAddress u i = stackAddress s i := fun i => by simp only [stackAddress, esp]
+  obtain W : 16 * Spec.Rsa.modulusWords len = 2 * wb len := by simp only [wb]; omega_using []
   refine ⟨⟨h.scratch.of_keeps K (by decide) (by decide), h.lower, h.upper, h.space, fun i hi => ?_,
     by simp [pcArgs], by simp only [pcArgs]; exact h.nLen, by simp only [pcArgs]; exact h.hbase,
     by simp only [pcArgs]; exact h.hbytes, by simp only [pcArgs, ← W]; exact h.outFit,
@@ -134,26 +134,26 @@ theorem pcLoad_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
     WP isa (.seq (load 0 2 3) (.block (VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff))) s
       (PcLoaded s base bytes len args (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len))) := by
   have dims := h.dimensions
-  have facts := valid_facts valid h.lower
+  obtain facts := valid_facts valid h.lower
   have nw' := h.scratch.nowrap
-  have hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
-  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
-  have f0 := hfit 0 (by decide)
-  have wbe := wb_eq len
-  have n0 : numOff = numAt len 0 := by simp [numAt]
+  obtain hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
+  obtain e0 : numAt len 0 = 256 := by simp [numAt, numOff]
+  obtain f0 := hfit 0 (by decide)
+  obtain wbe := wb_eq len
+  obtain n0 : numOff = numAt len 0 := by simp [numAt]
   set M := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hMdef
-  have hlo : 2 ^ (8 * (len - 1)) ≤ M := by
+  obtain hlo : 2 ^ (8 * (len - 1)) ≤ M := by
     have hv := valid
     rw [Spec.Rsa.modulusValid, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at hv
     rw [← pow256_eq]; exact of_decide_eq_true hv.2
-  have hhi : M < 2 ^ (8 * len) := by
+  obtain hhi : M < 2 ^ (8 * len) := by
     have := os2ip_lt (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)
     rwa [bytesAt_length, pow256_eq] at this
   refine WP.seq (WP.mono (load_ok h (j := 0) (by decide)) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
-  have P₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by have := hfit 0 (by decide); omega_using [f0]))
+  obtain P₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by have := hfit 0 (by decide); omega_using [f0]))
   refine WP.mono (inverse_ok P₁ (by rw [n0, V₁]; exact facts.1)) fun u₂ ⟨I₂, O₂, K₂⟩ => ?_
   rw [n0, V₁] at I₂
-  have P₂ := P₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by simp only [invOff]; omega_using [e0, f0]))
+  obtain P₂ := P₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by simp only [invOff]; omega_using [e0, f0]))
   refine ⟨P₂, (K₁.mono (by decide)).trans (K₂.mono (by decide)),
     (frame16 nw' O₁ (by rw [e0]; omega_using []) (hfit 0 (by decide))).trans
       (frame16 nw' O₂ (by simp only [invOff]; omega_using []) (by simp only [invOff]; omega_using [e0, f0])),
@@ -166,9 +166,9 @@ theorem pcStart_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
       (PcStarted s base bytes len args (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len))) := by
   have dims := h.dimensions
   have nw' := h.scratch.nowrap
-  have n0 : numOff = numAt len 0 := by simp [numAt]
-  have f0 := (h.fits (j := 0) (by decide)).1
-  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
+  obtain n0 : numOff = numAt len 0 := by simp [numAt]
+  obtain f0 := (h.fits (j := 0) (by decide)).1
+  obtain e0 : numAt len 0 = 256 := by simp [numAt, numOff]
   unfold PrecomputeFn.start
   refine WP.seq (WP.mono (pcLoad_ok h valid) fun u L => ?_)
   refine WP.mono (VG.Proof.Bignum.X86.R2Words.run_ok L.pi L.mod) fun t ⟨V, Mt, O, K⟩ => ?_
@@ -189,19 +189,19 @@ theorem pcFinish_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → 
       val32 t.mem (byteAddr (args 0)) (wb len) (nw len) = val32 s.mem base (numAt len 4) (nw len) ∧
       Frame [⟨byteAddr (args 0), 2 * wb len⟩] s.mem t.mem ∧ Keeps [.eax, .ecx, .ebp, .esi] s t := by
   have nw' := h.scratch.nowrap
-  have wbe := wb_eq len
-  have wbl := wb_le h.upper
-  have hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
+  obtain wbe := wb_eq len
+  obtain wbl := wb_le h.upper
+  obtain hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (h.fits hj).1
   unfold PrecomputeFn.finish
   refine WP.seq (WP.mono (copyOut_ok h (j := 0) (by decide) false) fun u₇ ⟨V₇, O₇, K₇⟩ => ?_)
   simp only [Bool.false_eq_true, ite_false] at V₇ O₇
   obtain ⟨P₇, F₇⟩ := h.keepOut K₇ (by decide) (by decide) top O₇ (by omega_using [])
-  have pA : Region.Disjoint ⟨off (byteAddr (args 0)) 0, wb len⟩ ⟨base, bytes⟩ :=
+  obtain pA : Region.Disjoint ⟨off (byteAddr (args 0)) 0, wb len⟩ ⟨base, bytes⟩ :=
     h.outApart.sub_left (by
       have := sub_off (base := byteAddr (args 0)) (d := 0) (n := wb len) (e := 0) (k := 2 * wb len) (Nat.le_refl _)
         (by omega_using [])
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this)
-  have V₄₇ : val32 u₇.mem base (numAt len 4) (nw len) = val32 s.mem base (numAt len 4) (nw len) := by
+  obtain V₄₇ : val32 u₇.mem base (numAt len 4) (nw len) = val32 s.mem base (numAt len 4) (nw len) := by
     rw [← read_eq_val32, ← read_eq_val32]
     refine congrArg BitVec.toNat (F₇.read (r := ⟨off base (numAt len 4), 4 * nw len⟩) (Region.contains_self _ _)
       (fun r hr => ?_) (by omega))
@@ -211,9 +211,9 @@ theorem pcFinish_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → 
         simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using h)).symm
   refine WP.seq (WP.mono (copyOut_ok P₇ (j := 4) (by decide) true) fun u₈ ⟨V₈, O₈, K₈⟩ => ?_)
   simp only [ite_true, V₄₇] at V₈ O₈
-  have sp₇ : u₇.gpr .esp = s.gpr .esp := K₇.1 _ (by decide)
+  obtain sp₇ : u₇.gpr .esp = s.gpr .esp := K₇.1 _ (by decide)
   obtain ⟨-, F₈⟩ := P₇.keepOut K₈ (by decide) (by decide) (by rw [sp₇]; exact top) O₈ (by omega_using [])
-  have pre : ∀ {o n : Nat}, o + n ≤ 2 * wb len →
+  obtain pre : ∀ {o n : Nat}, o + n ≤ 2 * wb len →
       Region.Sub ⟨off (byteAddr (args 0)) o, n⟩ ⟨byteAddr (args 0), 2 * wb len⟩ := fun {o n} hon => by
     have := sub_off (base := byteAddr (args 0)) (d := o) (n := n) (e := 0) (k := 2 * wb len) (Nat.zero_le _)
       (by omega_using [hon])
@@ -231,21 +231,21 @@ theorem pcCompute_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
     (h : PcIn base bytes len args s) (R : CallRoom (s.gpr .esp) base bytes) (top : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32)
     (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)) len = true) :
     WP isa PrecomputeFn.compute s fun _ => True := by
-  have f5 : numAt len 5 + (3 * wb len + 56) ≤ bytes := (h.fits (j := 0) (by decide)).2
-  have f4 := (h.fits (j := 4) (by decide)).1
+  obtain f5 : numAt len 5 + (3 * wb len + 56) ≤ bytes := (h.fits (j := 0) (by decide)).2
+  obtain f4 := (h.fits (j := 4) (by decide)).1
   unfold PrecomputeFn.compute
   refine WP.seq (WP.mono (pcStart_ok h valid) fun u₅ S => ?_)
-  have sp₅ : u₅.gpr .esp = s.gpr .esp := S.keep.1 _ (by decide)
+  obtain sp₅ : u₅.gpr .esp = s.gpr .esp := S.keep.1 _ (by decide)
   refine WP.seq (WP.mono (squares_ok S.pi (by rw [sp₅]; exact R) (by rw [sp₅]; exact top) S.mod S.inv S.lt S.val)
     fun u₆ ⟨_, F₆, K₆⟩ => ?_)
   rw [sp₅] at F₆
-  have F₆s : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] u₅.mem u₆.mem := F₆.sub fun r hr => by
+  obtain F₆s : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] u₅.mem u₆.mem := F₆.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f4])⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f5])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-  have P₆ := S.pi.keepF K₆ (by decide) (by decide) (by rw [sp₅]; exact R) (by rw [sp₅]; exact top)
+  obtain P₆ := S.pi.keepF K₆ (by decide) (by decide) (by rw [sp₅]; exact R) (by rw [sp₅]; exact top)
     (by rw [sp₅]; exact F₆s)
   exact WP.mono (pcFinish_ok P₆ (by rw [(K₆.1 _ (by decide)).trans sp₅]; exact top)) fun _ _ => trivial
 
@@ -256,51 +256,51 @@ theorem precomputeValid_ok {s : State} {base : Addr} {bytes len : Nat} {args : N
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have dims := h.dimensions
   have nw' := h.scratch.nowrap
-  have wbe := wb_eq len
+  obtain wbe := wb_eq len
   have R := h.room
   have top := h.top
   set M := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hMdef
   set W := Spec.Rsa.modulusWords len with hW
-  have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
-  have n0 : numOff = numAt len 0 := by simp [numAt]
-  have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
+  obtain e0 : numAt len 0 = 256 := by simp [numAt, numOff]
+  obtain n0 : numOff = numAt len 0 := by simp [numAt]
+  obtain e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
   let Regs : List Region := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), 16 * W⟩, below (s.gpr .esp) 96,
     ⟨addr (s.gpr .esp) 8, 4⟩]
   unfold PrecomputeFn.valid
   -- `n_len` into argument 1.
   refine WP.seq (WP.mono (pcSetWidth_ok h) fun u₀ ⟨P₀, F₀, K₀⟩ => ?_)
-  have sp₀ : u₀.gpr .esp = s.gpr .esp := K₀.1 _ (by decide)
-  have hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (P₀.fits hj).1
-  have f5 : numAt len 5 + (3 * wb len + 56) ≤ bytes := (P₀.fits (j := 0) (by decide)).2
-  have G₀ : Frame Regs s.mem u₀.mem := F₀.mono fun r hr => by
+  obtain sp₀ : u₀.gpr .esp = s.gpr .esp := K₀.1 _ (by decide)
+  obtain hfit : ∀ j ≤ 7, numAt len j + wb len ≤ bytes := fun j hj => (P₀.fits hj).1
+  obtain f5 : numAt len 5 + (3 * wb len + 56) ≤ bytes := (P₀.fits (j := 0) (by decide)).2
+  obtain G₀ : Frame Regs s.mem u₀.mem := F₀.mono fun r hr => by
     rw [List.mem_singleton.mp hr]; simp [Regs]
-  have N₀ : Spec.Rsa.bytesAt u₀.mem (byteAddr (args 2)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len := by
+  obtain N₀ : Spec.Rsa.bytesAt u₀.mem (byteAddr (args 2)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len := by
     refine pcBytesAt_frame F₀ (fun r hr => ?_) (by omega_using [dims])
     rw [List.mem_singleton.mp hr]
     have := h.nArg
     simpa only [stackAddress] using this
-  have a2 : pcArgs len args 2 = args 2 := by simp [pcArgs]
-  have a0 : pcArgs len args 0 = args 0 := by simp [pcArgs]
+  obtain a2 : pcArgs len args 2 = args 2 := by simp [pcArgs]
+  obtain a0 : pcArgs len args 0 = args 0 := by simp [pcArgs]
   -- `2^(65 W) mod M`, the squares and the copies.
   unfold PrecomputeFn.compute
   refine WP.seq (WP.mono (pcStart_ok P₀ (by rw [a2, N₀]; exact valid)) fun u₅ S => ?_)
   rw [a2, N₀] at S
-  have sp₅ : u₅.gpr .esp = s.gpr .esp := (S.keep.1 _ (by decide)).trans sp₀
+  obtain sp₅ : u₅.gpr .esp = s.gpr .esp := (S.keep.1 _ (by decide)).trans sp₀
   refine WP.seq (WP.mono (squares_ok S.pi (by rw [sp₅]; exact R) (by rw [sp₅]; exact top) S.mod S.inv S.lt S.val)
     fun u₆ ⟨V₆, F₆, K₆⟩ => ?_)
   rw [sp₅] at F₆
-  have F₆s : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] u₅.mem u₆.mem := F₆.sub fun r hr => by
+  obtain F₆s : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] u₅.mem u₆.mem := F₆.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by have := hfit 4 (by decide); omega_using [this])⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f5])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-  have P₆ := S.pi.keepF K₆ (by decide) (by decide) (by rw [sp₅]; exact R) (by rw [sp₅]; exact top)
+  obtain P₆ := S.pi.keepF K₆ (by decide) (by decide) (by rw [sp₅]; exact R) (by rw [sp₅]; exact top)
     (by rw [sp₅]; exact F₆s)
-  have M₆ : val32 u₆.mem base (numAt len 0) (nw len) = M := by
+  obtain M₆ : val32 u₆.mem base (numAt len 0) (nw len) = M := by
     rw [mulFrame_val32 R nw' F₆ (.inl (by rw [e0, e4]; omega_using [wbe])) (by simp only [numAt, numOff]; omega_using [wbe])
       (by have := hfit 0 (by decide); omega_using [wbe, this]) (hfit 4 (by decide)) f5, ← n0, S.mod]
-  have sp₆ : u₆.gpr .esp = s.gpr .esp := (K₆.1 _ (by decide)).trans sp₅
+  obtain sp₆ : u₆.gpr .esp = s.gpr .esp := (K₆.1 _ (by decide)).trans sp₅
   refine WP.mono (pcFinish_ok P₆ (by rw [sp₆]; exact top)) fun t ⟨eax, V₀, V₄, F₈, K₈⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · rw [VG.Proof.Bignum.publicPrecompute_some (bytesAt_length _ _ _) valid]
     refine ⟨eax, ?_⟩
@@ -318,7 +318,7 @@ theorem precomputeValid_ok {s : State} {base : Addr} {bytes len : Nat} {args : N
       · exact ⟨_, List.mem_cons_self .., sub_off (by rw [e4]; omega_using []) (by have := hfit 4 (by decide); omega_using [this])⟩
       · exact ⟨_, List.mem_cons_self .., sub_off (by simp only [numAt, numOff]; omega_using []) (by omega_using [f5])⟩
       · exact ⟨_, by simp [Regs], fun _ h => h⟩
-    have H₈ : Frame Regs u₆.mem t.mem := F₈.sub fun r hr => by
+    obtain H₈ : Frame Regs u₆.mem t.mem := F₈.sub fun r hr => by
       rw [List.mem_singleton.mp hr, a0]
       exact ⟨⟨byteAddr (args 0), 16 * W⟩, by simp [Regs], by
         rw [show 2 * wb len = 16 * W by simp only [wb]; omega_using []]; exact fun _ h => h⟩

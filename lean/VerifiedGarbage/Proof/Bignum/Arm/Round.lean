@@ -127,13 +127,13 @@ theorem value_step_of {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hs := ctx.separate
-  have own := houtside.w32 (d := o + 4 + 4 * i) (by omega_using []) (by omega_using [hi, hn, ho])
-  have src := houtside.w32 (d := b + 4 * i) (by omega_using [hi, hs]) (by omega_using [hi, hn, hb])
+  obtain own := houtside.w32 (d := o + 4 + 4 * i) (by omega_using []) (by omega_using [hi, hn, ho])
+  obtain src := houtside.w32 (d := b + 4 * i) (by omega_using [hi, hs]) (by omega_using [hi, hn, hb])
   rw [own, src] at hv
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, ho])
+  obtain wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, ho])
   rw [← hm] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, ho])
-  have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
+  obtain low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, ho])
+  obtain top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [hm, w32_write_self]
   refine ⟨(houtside.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_⟩
   rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
@@ -192,43 +192,43 @@ theorem step_ok (s : State) (a acc b : Addr) (x : BitVec 32)
   refine WP.mono (rowProduct_ok s1 x (by rw [u1.other .r1 (by decide), h1])
     (by rw [u1.other .r10 (by decide), h10]) (by rw [u1.other .r9 (by decide), h9])) ?_
   rintro s2 ⟨prod, frame2⟩
-  have ptr2 : s2.gpr .r0 = s.gpr .r0 :=
+  obtain ptr2 : s2.gpr .r0 = s.gpr .r0 :=
     (frame2.regs .r0 (by decide)).trans (u1.other .r0 (by decide))
   rw [WP.seq_iff]
   refine wp_ldr (a := acc) (by decide) (by rw [ptr2]; exact hacc)
     (by rw [frame2.rd, frame2.wr, u1.rd, u1.wr]; exact haccRead) fun s3 u3 => WP.block_nil ?_
-  have mem3 : s3.mem = s.mem := u3.mem.trans (frame2.mem.trans u1.mem)
-  have acc3 : s3.gpr .r5 = s.mem.readW acc 32 := by rw [u3.gpr, frame2.mem, u1.mem]
-  have carry3 : s3.gpr .r11 = s.gpr .r11 :=
+  obtain mem3 : s3.mem = s.mem := u3.mem.trans (frame2.mem.trans u1.mem)
+  obtain acc3 : s3.gpr .r5 = s.mem.readW acc 32 := by rw [u3.gpr, frame2.mem, u1.mem]
+  obtain carry3 : s3.gpr .r11 = s.gpr .r11 :=
     (u3.other .r11 (by decide)).trans ((frame2.regs .r11 (by decide)).trans (u1.other .r11 (by decide)))
-  have prod3 : (s3.gpr .r3).toNat + (s3.gpr .r4).toNat * 2 ^ 32 =
+  obtain prod3 : (s3.gpr .r3).toNat + (s3.gpr .r4).toNat * 2 ^ 32 =
       x.toNat * (s.mem.readW b 32).toNat := by
     rw [u3.other .r3 (by decide), u3.other .r4 (by decide), prod, u1.gpr]
-  have hb := mac_bound x (s.mem.readW b 32) (s.mem.readW acc 32) (s.gpr .r11)
+  obtain hb := mac_bound x (s.mem.readW b 32) (s.mem.readW acc 32) (s.gpr .r11)
   rw [WP.seq_iff]
   apply WP.block_append_iff.mpr
   refine WP.mono (addWord_ok s3 .r5 (by rw [prod3, acc3]; omega)) ?_
   rintro s4 ⟨sum4, frame4⟩
-  have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by decide)).trans carry3
+  obtain carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by decide)).trans carry3
   refine WP.mono (addCarry_ok s4 (by rw [sum4, prod3, acc3, carry4]; exact hb)) ?_
   rintro s5 ⟨sum5, frame5⟩
-  have ptr5 : s5.gpr .r0 = s.gpr .r0 :=
+  obtain ptr5 : s5.gpr .r0 = s.gpr .r0 :=
     (frame5.regs .r0 (by decide)).trans ((frame4.regs .r0 (by decide)).trans
       ((u3.other .r0 (by decide)).trans ptr2))
   refine wp_str (a := a) (by decide) (by rw [ptr5]; exact ha)
     (by rw [frame5.wr, frame4.wr, u3.wr, frame2.wr, u1.wr]; exact hwrite) fun s6 u6 => WP.block_nil ?_
-  have out6 : s6.gpr .r3 = s5.gpr .r3 := congrFun u6.gpr .r3
-  have carry6 : s6.gpr .r11 = s5.gpr .r11 := congrFun u6.gpr .r11
+  obtain out6 : s6.gpr .r3 = s5.gpr .r3 := congrFun u6.gpr .r3
+  obtain carry6 : s6.gpr .r11 = s5.gpr .r11 := congrFun u6.gpr .r11
   refine ⟨?_, ?_, ?_⟩
   · rw [out6, carry6, sum5, sum4, prod3, acc3, carry4]
   · rw [u6.mem, frame5.mem, frame4.mem, mem3, out6]
   · have r2 : Rest rowClobbers s1 s2 := ⟨fun r hr => frame2.regs r (by
         intro h; apply hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
         rcases h with h | h | h | h | h | h | h <;> simp [h]), frame2.rd, frame2.wr, frame2.sp⟩
-    have r4 : Rest rowClobbers s3 s4 := ⟨fun r hr => frame4.regs r (by
+    obtain r4 : Rest rowClobbers s3 s4 := ⟨fun r hr => frame4.regs r (by
         intro h; apply hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
         rcases h with h | h <;> simp [h]), frame4.rd, frame4.wr, frame4.sp⟩
-    have r5 : Rest rowClobbers s4 s5 := ⟨fun r hr => frame5.regs r (by
+    obtain r5 : Rest rowClobbers s4 s5 := ⟨fun r hr => frame5.regs r (by
         intro h; apply hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
         rcases h with h | h <;> simp [h]), frame5.rd, frame5.wr, frame5.sp⟩
     exact (u1.rest (by decide)).trans (r2.trans ((u3.rest (by decide)).trans (r4.trans (r5.trans
@@ -258,16 +258,16 @@ theorem body_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hn := ctx.nowrap
-  have readB := writable ctx inv.rest.wr (d := b + 4 * i) (by omega_arith)
-  have readB' : InRegions (s.rd ++ s.wr) (off (State.addr base) (b + 4 * i)) 4 := by
+  obtain readB := writable ctx inv.rest.wr (d := b + 4 * i) (by omega_arith)
+  obtain readB' : InRegions (s.rd ++ s.wr) (off (State.addr base) (b + 4 * i)) 4 := by
     rcases readB with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   rw [VG.Impl.Bignum.Arm.DownRow.body, WP.seq_iff]
-  have readAcc := writable ctx inv.rest.wr (d := o + 4 + 4 * i) (by omega_arith)
-  have readAcc' : InRegions (s.rd ++ s.wr) (off (State.addr base) (o + 4 + 4 * i)) 4 := by
+  obtain readAcc := writable ctx inv.rest.wr (d := o + 4 + 4 * i) (by omega_arith)
+  obtain readAcc' : InRegions (s.rd ++ s.wr) (off (State.addr base) (o + 4 + 4 * i)) 4 := by
     rcases readAcc with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
-  have accAddr : State.addr (s.gpr .r0 + BitVec.ofNat 32 4) =
+  obtain accAddr : State.addr (s.gpr .r0 + BitVec.ofNat 32 4) =
       off (State.addr base) (o + 4 + 4 * i) := by
     rw [inv.outPtr, Offset.add_add]
     have := VG.Arm.addr_add (a := base) (k := o + 4 * i + 4) (by omega_arith)
@@ -280,9 +280,9 @@ theorem body_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   obtain ⟨outside, value⟩ := value_step ctx inv hi m1 v1
   refine WP.mono (rowAdvance_ok s1) ?_
   rintro s2 ⟨p0, p12, cnt, zero, mem, k2⟩
-  have count1 : s1.gpr .lr = BitVec.ofNat 32 (n - i) :=
+  obtain count1 : s1.gpr .lr = BitVec.ofNat 32 (n - i) :=
     (k1.gpr .lr (by decide)).trans inv.count
-  have count2 : s2.gpr .lr = BitVec.ofNat 32 (n - (i + 1)) := by
+  obtain count2 : s2.gpr .lr = BitVec.ofNat 32 (n - (i + 1)) := by
     rw [cnt, count1]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
@@ -346,9 +346,9 @@ theorem code_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   rw [VG.Impl.Bignum.Arm.DownRow.code,WP.seq_iff]
   refine WP.mono (rowSplit_ok s) ?_
   rintro s1 ⟨h1,h10,h9,mem1,rest1⟩
-  have ctx1 : Ctx s1 base size o b n := { ctx with
+  obtain ctx1 : Ctx s1 base size o b n := { ctx with
     writable := by rw [rest1.wr]; exact ctx.writable }
-  have inv1 : LoopInv s1 x base o b n 0 s1 := by
+  obtain inv1 : LoopInv s1 x base o b n 0 s1 := by
     refine ⟨by omega_using [],?_,?_,?_,Outside.refl _ _ _ _,?_,Rest.refl _ _⟩
     · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r0 (by decide)).trans hp0
     · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r12 (by decide)).trans hp12
@@ -358,7 +358,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   refine WP.mono (loop_ok ctx1 inv1 hn h1 h10 h9) ?_
   intro t ht
   refine wp_dp (op2_lsl (by decide)) fun u hu => WP.block_nil ?_
-  have r1 : u.gpr .r1=s.gpr .r1 := by
+  obtain r1 : u.gpr .r1=s.gpr .r1 := by
     rw [hu.gpr,dpVal,ht.rest.gpr .r1 (by decide),ht.rest.gpr .r10 (by decide),h1,h10]
     exact join16 _
   refine ⟨ht.index,?_,?_,?_,?_,?_,?_⟩
@@ -410,7 +410,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
         w32 s.mem (State.addr base) acc ∧
       t.mem=s.mem ∧ Rest roundClobbers s t := by
   rw [VG.Impl.Bignum.Arm.FusedReduction.first, WP.seq_iff]
-  have args : WP isa (.block VG.Impl.Bignum.Arm.FusedReduction.firstArgs) s fun u =>
+  obtain args : WP isa (.block VG.Impl.Bignum.Arm.FusedReduction.firstArgs) s fun u =>
       u.gpr .r2=s.mem.readW (off (State.addr base) mod) 32 ∧
       u.gpr .r10=s.mem.readW (off (State.addr base) acc) 32 ∧
       u.mem=s.mem ∧ Rest [.r2,.r10] s u := by
@@ -427,23 +427,23 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
   rw [WP.seq_iff]
   refine WP.mono (mac_ok u) ?_
   rintro v ⟨value,frame⟩
-  have r0 : v.gpr .r0=base+BitVec.ofNat 32 acc :=
+  obtain r0 : v.gpr .r0=base+BitVec.ofNat 32 acc :=
     (frame.regs .r0 (by decide)).trans ((restU.gpr .r0 (by decide)).trans ptr)
-  have r1 : v.gpr .r1=s.gpr .r1 :=
+  obtain r1 : v.gpr .r1=s.gpr .r1 :=
     (frame.regs .r1 (by decide)).trans (restU.gpr .r1 (by decide))
-  have r12 : v.gpr .r12=base+BitVec.ofNat 32 mod :=
+  obtain r12 : v.gpr .r12=base+BitVec.ofNat 32 mod :=
     (frame.regs .r12 (by decide)).trans ((restU.gpr .r12 (by decide)).trans source)
-  have lr : v.gpr .lr=BitVec.ofNat 32 n :=
+  obtain lr : v.gpr .lr=BitVec.ofNat 32 n :=
     (frame.regs .lr (by decide)).trans ((restU.gpr .lr (by decide)).trans count)
   rw [restU.gpr .r1 (by decide),input,accumulator,restU.gpr .r11 (by decide),carry] at value
   simp only [show (0:BitVec 32).toNat=0 from rfl,Nat.add_zero] at value
-  have high : 2^32*(v.gpr .r4).toNat=(s.gpr .r1).toNat*w32 s.mem (State.addr base) mod+
+  obtain high : 2^32*(v.gpr .r4).toNat=(s.gpr .r1).toNat*w32 s.mem (State.addr base) mod+
       w32 s.mem (State.addr base) acc := by
     change (v.gpr .r3).toNat+(v.gpr .r4).toNat*2^32=_ at value
-    have low := (v.gpr .r3).isLt
+    obtain low := (v.gpr .r3).isLt
     dsimp only [w32] at cancel ⊢
     omega
-  have kept : Rest roundClobbers s v := (restU.mono (by decide)).trans
+  obtain kept : Rest roundClobbers s v := (restU.mono (by decide)).trans
     ((show Rest clobbers u v from ⟨frame.regs,frame.rd,frame.wr,frame.sp⟩).mono
       (by decide))
   unfold VG.Impl.Bignum.Arm.FusedReduction.firstNext
@@ -490,7 +490,7 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
         (off (State.addr base) (d+4)) (t.gpr .r4) ∧
       t.gpr .r0=base+BitVec.ofNat 32 (d+8) ∧ Rest [.r0,.r3,.r4] s t := by
   rw [VG.Impl.Bignum.Arm.FusedReduction.top,WP.seq_iff]
-  have loads : WP isa (.block [.ldr .r3 .r0 4,.ldr .r4 .r0 8]) s fun u =>
+  obtain loads : WP isa (.block [.ldr .r3 .r0 4,.ldr .r4 .r0 8]) s fun u =>
       u.gpr .r3=s.mem.readW (off (State.addr base) (d+4)) 32 ∧
       u.gpr .r4=s.mem.readW (off (State.addr base) (d+8)) 32 ∧
       u.mem=s.mem ∧ Rest [.r3,.r4] s u := by
@@ -503,15 +503,15 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
       k.mem.trans h.mem,(h.rest (by decide)).trans (k.rest (by decide))⟩
   refine WP.mono loads ?_
   rintro u ⟨low,high,memU,restU⟩
-  have carry : u.gpr .r11=s.gpr .r11 := restU.gpr .r11 (by decide)
+  obtain carry : u.gpr .r11=s.gpr .r11 := restU.gpr .r11 (by decide)
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok u .r11 (by rw [low,high,carry];dsimp only [w32] at bound;omega)) ?_
   rintro v ⟨value,frame⟩
-  have pv : v.gpr .r0=base+BitVec.ofNat 32 d :=
+  obtain pv : v.gpr .r0=base+BitVec.ofNat 32 d :=
     (frame.regs .r0 (by decide)).trans ((restU.gpr .r0 (by decide)).trans ptr)
-  have mv : v.mem=s.mem := frame.mem.trans memU
-  have wv : v.wr=s.wr := frame.wr.trans restU.wr
-  have wsv := ws.congr wv
+  obtain mv : v.mem=s.mem := frame.mem.trans memU
+  obtain wv : v.wr=s.wr := frame.wr.trans restU.wr
+  obtain wsv := ws.congr wv
   refine wp_str (a:=off (State.addr base) d) (by decide)
     (by simpa only [Nat.add_zero] using wsv.ea pv (imm:=0) (by omega))
     (by rw [wv];exact ws.write (by omega)) fun a ha => ?_
@@ -547,7 +547,7 @@ theorem quotient_value {B P T M t0 tl th m0 ml q c0 rl cr rh : Nat}
     (acc : T=t0+B*(tl+P*th)) (modulus : M=m0+B*ml)
     (first : B*c0=q*m0+t0) (row : rl+P*cr=tl+q*ml+c0)
     (top : rh=th+cr) : B*(rl+P*rh)=T+q*M := by
-  have step := congrArg (fun x => B*x) row
+  obtain step := congrArg (fun x => B*x) row
   grind
 
 end VG.Proof.Bignum.Arm.FusedReduction
@@ -580,7 +580,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
   rw [VG.Impl.Bignum.Arm.FusedReduction.code,WP.seq_iff]
   refine WP.mono (first_ok s ws (by omega_arith) (by omega_arith) (by omega_arith) ptr source count carry cancel) ?_
   rintro u ⟨ptrU,sourceU,countU,scalarU,first,memU,restU⟩
-  have ctx : DownRow.Ctx u base size acc (mod+4) (n-1) :=
+  obtain ctx : DownRow.Ctx u base size acc (mod+4) (n-1) :=
     ⟨ws.nowrap,by omega_arith,by omega_arith,by rcases separate with h|h <;> omega_arith,
       by rw [restU.wr];exact ws.writable⟩
   rw [WP.seq_iff]
@@ -590,59 +590,59 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
   let H := val32 s.mem (State.addr base) (acc+4*n) 2
   let L := val32 s.mem (State.addr base) (acc+4) (n-1)
   let Q := (s.gpr .r1).toNat
-  have rowValue : val32 v.mem (State.addr base) acc (n-1)+P*(v.gpr .r11).toNat=
+  obtain rowValue : val32 v.mem (State.addr base) acc (n-1)+P*(v.gpr .r11).toNat=
       L+Q*val32 s.mem (State.addr base) (mod+4) (n-1)+(u.gpr .r11).toNat := by
     simpa only [memU,scalarU] using row.value
-  have accSplit : val32 s.mem (State.addr base) acc (n+2)=
+  obtain accSplit : val32 s.mem (State.addr base) acc (n+2)=
       w32 s.mem (State.addr base) acc+2^32*(L+P*H) := by
     rw [show n+2=(n+1)+1 by omega_arith,val32]
-    have split := val32_append s.mem (State.addr base) (acc+4) (n-1) 2
+    obtain split := val32_append s.mem (State.addr base) (acc+4) (n-1) 2
     simpa only [show n-1+2=n+1 by omega_arith,show acc+4+4*(n-1)=acc+4*n by omega_arith] using
       congrArg (fun x => w32 s.mem (State.addr base) acc+2^32*x) split
-  have modSplit : val32 s.mem (State.addr base) mod n=
+  obtain modSplit : val32 s.mem (State.addr base) mod n=
       w32 s.mem (State.addr base) mod+2^32*val32 s.mem (State.addr base) (mod+4) (n-1) := by
     calc
       _ = val32 s.mem (State.addr base) mod ((n-1)+1) := by congr 1;omega_arith
       _ = _ := rfl
-  have total : 2^32*(val32 v.mem (State.addr base) acc (n-1)+P*(H+(v.gpr .r11).toNat))=
+  obtain total : 2^32*(val32 v.mem (State.addr base) acc (n-1)+P*(H+(v.gpr .r11).toNat))=
       val32 s.mem (State.addr base) acc (n+2)+Q*val32 s.mem (State.addr base) mod n :=
     quotient_value accSplit modSplit first rowValue rfl
-  have power : 2^32*(P*2^64)=2^(32*(n+2)) := by
+  obtain power : 2^32*(P*2^64)=2^(32*(n+2)) := by
     dsimp only [P]
     rw [←Nat.pow_add,←Nat.pow_add]
     congr 1
     omega_arith
-  have topBound : H+(v.gpr .r11).toNat<2^64 := by
+  obtain topBound : H+(v.gpr .r11).toNat<2^64 := by
     have cap := capacity
     change _+Q*_< _ at cap
     rw [←total,←power] at cap
-    have small : 2^32*(P*(H+(v.gpr .r11).toNat))<2^32*(P*2^64) :=
+    obtain small : 2^32*(P*(H+(v.gpr .r11).toNat))<2^32*(P*2^64) :=
       Nat.lt_of_le_of_lt (Nat.mul_le_mul_left _ (Nat.le_add_left _ _)) cap
     exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_mul_lt_mul_left small)
-  have outside : Outside (State.addr base) acc (4*(n-1)) s.mem v.mem := by
+  obtain outside : Outside (State.addr base) acc (4*(n-1)) s.mem v.mem := by
     simpa only [memU] using row.outside
   have oldTop (j : Nat) (hj : j<2) :
       w32 v.mem (State.addr base) (acc+4*n+4*j)=w32 s.mem (State.addr base) (acc+4*n+4*j) :=
     outside.w32 (by omega_arith) (by have := ws.nowrap;omega_arith)
-  have fitTop : acc+4*(n-1)+12≤size := by omega_arith
-  have native : Rest roundClobbers u v := (row.rest.mono (by decide))
-  have rest : Rest roundClobbers s v := restU.trans native
-  have workspaceV := ws.congr rest.wr
+  obtain fitTop : acc+4*(n-1)+12≤size := by omega_arith
+  obtain native : Rest roundClobbers u v := (row.rest.mono (by decide))
+  obtain rest : Rest roundClobbers s v := restU.trans native
+  obtain workspaceV := ws.congr rest.wr
   refine WP.mono (top_ok v workspaceV fitTop row.outPtr ?_) ?_
   · have lo := oldTop 0 (by decide)
-    have hi := oldTop 1 (by decide)
+    obtain hi := oldTop 1 (by decide)
     simp only [Nat.mul_zero,Nat.add_zero,Nat.mul_one] at lo hi
     rw [show acc+4*(n-1)+4=acc+4*n by omega_arith,
       show acc+4*(n-1)+8=acc+4*n+4 by omega_arith,lo,hi]
     simpa only [H,val32,Nat.mul_zero,Nat.add_zero,Nat.add_assoc] using topBound
   · rintro t ⟨topValue,memT,ptrT,restT⟩
-    have nowrap : (State.addr base).toNat+size≤2^32 := by
+    obtain nowrap : (State.addr base).toNat+size≤2^32 := by
       simpa only [VG.Proof.X25519.Arm.addr_toNat] using ws.nowrap
     obtain ⟨outTop,whole⟩ := rowCarry_memory (base:=State.addr base) (n:=n-1)
       nowrap (by omega_arith) memT
-    have topEquation : (t.gpr .r3).toNat+2^32*(t.gpr .r4).toNat=H+(v.gpr .r11).toNat := by
-      have lo := oldTop 0 (by decide)
-      have hi := oldTop 1 (by decide)
+    obtain topEquation : (t.gpr .r3).toNat+2^32*(t.gpr .r4).toNat=H+(v.gpr .r11).toNat := by
+      obtain lo := oldTop 0 (by decide)
+      obtain hi := oldTop 1 (by decide)
       simp only [Nat.mul_zero,Nat.add_zero,Nat.mul_one] at lo hi
       rw [show acc+4*(n-1)+4=acc+4*n by omega_arith,
         show acc+4*(n-1)+8=acc+4*n+4 by omega_arith,lo,hi] at topValue
@@ -697,11 +697,11 @@ theorem fusedStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i :
   · simpa only [show acc+4*n+28=tmp+12 by omega_using [layout]] using hdr.inverse
   · simpa only [show acc+4*n+44=tmp+28 by omega_using [layout]] using hdr.accPtr
   · rintro u ⟨scalar,p0,p12,cnt,carry,memU,restU⟩
-    have modLow : val32 s.mem (State.addr base) mod n%2^32=w32 s.mem (State.addr base) mod := by
+    obtain modLow : val32 s.mem (State.addr base) mod n%2^32=w32 s.mem (State.addr base) mod := by
       simpa only [show n-1+1=n by omega_using [count]] using val32_mod_low s.mem (State.addr base) mod (n-1)
-    have lowInverse : (w32 s.mem (State.addr base) mod*inv.toNat+1)%2^32=0 := by
+    obtain lowInverse : (w32 s.mem (State.addr base) mod*inv.toNat+1)%2^32=0 := by
       simpa only [Nat.add_mod,Nat.mul_mod,modLow,Nat.mod_mod] using inverse
-    have cancel : ((u.gpr .r1).toNat*w32 u.mem (State.addr base) mod+
+    obtain cancel : ((u.gpr .r1).toNat*w32 u.mem (State.addr base) mod+
         w32 u.mem (State.addr base) acc)%2^32=0 := by
       rw [memU,scalar,BitVec.toNat_mul]
       simpa only [w32,Nat.mul_comm] using
@@ -743,29 +743,29 @@ theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : 
   rw [montRound, WP.seq_iff]
   refine WP.mono (productStage_ok s ctx hdr hi ptr hT hB) ?_
   rintro u ⟨product, hdrU, ptrU, outsideU, keepU⟩
-  have modulus := outsideU.val32 (d := mod) (k := n) (by omega_using [sep]) (by omega_using [nowrap, mfits])
-  have ctxU := ctx.congr keepU.wr
+  obtain modulus := outsideU.val32 (d := mod) (k := n) (by omega_using [sep]) (by omega_using [nowrap, mfits])
+  obtain ctxU := ctx.congr keepU.wr
   let q := (inv * u.mem.readW (off (State.addr base) acc) 32).toNat
-  have hq : q < 2 ^ 32 := (inv * u.mem.readW (off (State.addr base) acc) 32).isLt
-  have ha : w32 s.mem (State.addr base) (a + 4 * i) < 2 ^ 32 :=
+  obtain hq : q < 2 ^ 32 := (inv * u.mem.readW (off (State.addr base) acc) 32).isLt
+  obtain ha : w32 s.mem (State.addr base) (a + 4 * i) < 2 ^ 32 :=
     (s.mem.readW (off (State.addr base) (a + 4 * i)) 32).isLt
-  have capacity := round_fit hT ha hB hq (val32_lt s.mem (State.addr base) mod n)
+  obtain capacity := round_fit hT ha hB hq (val32_lt s.mem (State.addr base) mod n)
   rw [WP.seq_iff]
   refine WP.mono (fusedStage_ok u ctxU hdrU ptrU (by rw [modulus];exact hInv) ?_) ?_
   · rw [product,modulus]
     exact capacity
   · rintro v ⟨quotient,hdrV,ptrV,outsideV,keepV⟩
-    have ctxV := ctxU.congr keepV.wr
+    obtain ctxV := ctxU.congr keepV.wr
     refine WP.mono (roundFinish_ok (tmp:=tmp) (top:=acc+4*(n+1)) v ctxV.workspace (by have := ctx.tmpFits;omega_using [this])
       (by have := ctx.layout;omega_using [this]) ptrV) ?_
     rintro t ⟨memT,ptrT,zero,keepT⟩
     have mt : t.mem=finishMem v.mem (State.addr base) (acc+4*(n+1)) tmp := memT
-    have nowrap' : (State.addr base).toNat+size≤2^32 := by
+    obtain nowrap' : (State.addr base).toNat+size≤2^32 := by
       simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
     obtain ⟨result,frame⟩ := finish_value (mem:=v.mem) (acc:=acc) (n:=n) (tmp:=tmp)
       nowrap' (by have := ctx.tmpFits;omega_using [this]) rfl (by have := ctx.layout;omega_using [this])
     rw [←mt] at result frame
-    have value : 2^32*val32 t.mem (State.addr base) acc (n+2)=
+    obtain value : 2^32*val32 t.mem (State.addr base) acc (n+2)=
         val32 s.mem (State.addr base) acc (n+2)+
           w32 s.mem (State.addr base) (a+4*i)*val32 s.mem (State.addr base) b n+
             q*val32 s.mem (State.addr base) mod n := by

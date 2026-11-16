@@ -58,23 +58,23 @@ theorem setupG_ok' {s₀ : State} (hk_in : InRegions (s₀.rd ++ s₀.wr) (kp s�
   refine WP.mono (const_ok .xmm0 _ s₀ (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (const_ok .xmm1 _ s₁ (by decide)) fun s₂ ⟨c₂, o₂⟩ => ?_
-  have o₁₂ := o₁.trans o₂
+  obtain o₁₂ := o₁.trans o₂
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 s₂ (by decide)
     (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
     (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hk_in (by decide))) fun s₃ ⟨l₃, o₃⟩ => ?_
-  have o₁₃ := o₁₂.trans o₃
+  obtain o₁₃ := o₁₂.trans o₃
   rw [WP.block_append_iff]
   refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
-  have hH : x * φ (s₄.xmm .xmm3) = φ (hk s₀) := by
+  obtain hH : x * φ (s₄.xmm .xmm3) = φ (hk s₀) := by
     rw [t₄, l₃, o₁₂.mem, o₁₂.gpr _ (by decide), BitVec.ofInt_natCast]; rfl
   rw [WP.block_append_iff]
   refine WP.mono (mul_ok .xmm4 .xmm3 .xmm3 s₄ (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂])) fun s₇ ⟨m₇, o₇⟩ => ?_
-  have hH2 : x * φ (s₇.xmm .xmm4) = φ (hk s₀) ^ 2 := by
+  obtain hH2 : x * φ (s₇.xmm .xmm4) = φ (hk s₀) ^ 2 := by
     rw [m₇, show ∀ a : Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, hH, pow_two]
-  have o₁₇ := o₁₃.trans (o₄.trans o₇)
+  obtain o₁₇ := o₁₃.trans (o₄.trans o₇)
   rw [WP.block_append_iff]
   refine WP.mono (powersYP_ok (H := hk s₀)
     (by rw [(o₂.trans (o₃.trans (o₄.trans o₇))).xmm _ (by decide), c₁, rev_eq])
@@ -129,37 +129,37 @@ theorem finE_mul (H : Block) (X : Nat → Block) (P : Nat → Nat → Block) (yl
     (hP : ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ H ^ (16 - 2 * k - l)) :
     reduce (accN ordE X P yl 0 8) ^^^ reduce (accN ordE X P yl 1 8) =
       mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((yl 0 ^^^ X 0)) H ^^^ X 1) H ^^^ X 2) H ^^^ X 3) H ^^^ X 4) H ^^^ X 5) H ^^^ X 6) H ^^^ X 7) H ^^^ X 8) H ^^^ X 9) H ^^^ X 10) H ^^^ X 11) H ^^^ X 12) H ^^^ X 13) H ^^^ X 14) H ^^^ X 15) H := by
-  have h₁ := hP 7 (by decide) 1 (by decide)
+  obtain h₁ := hP 7 (by decide) 1 (by decide)
   rw [show 16 - 2 * 7 - 1 = 1 from rfl, pow_one] at h₁
-  have h₂ := hP 7 (by decide) 0 (by decide)
+  obtain h₂ := hP 7 (by decide) 0 (by decide)
   rw [show 16 - 2 * 7 - 0 = 2 from rfl] at h₂
-  have h₃ := hP 6 (by decide) 1 (by decide)
+  obtain h₃ := hP 6 (by decide) 1 (by decide)
   rw [show 16 - 2 * 6 - 1 = 3 from rfl] at h₃
-  have h₄ := hP 6 (by decide) 0 (by decide)
+  obtain h₄ := hP 6 (by decide) 0 (by decide)
   rw [show 16 - 2 * 6 - 0 = 4 from rfl] at h₄
-  have h₅ := hP 5 (by decide) 1 (by decide)
+  obtain h₅ := hP 5 (by decide) 1 (by decide)
   rw [show 16 - 2 * 5 - 1 = 5 from rfl] at h₅
-  have h₆ := hP 5 (by decide) 0 (by decide)
+  obtain h₆ := hP 5 (by decide) 0 (by decide)
   rw [show 16 - 2 * 5 - 0 = 6 from rfl] at h₆
-  have h₇ := hP 4 (by decide) 1 (by decide)
+  obtain h₇ := hP 4 (by decide) 1 (by decide)
   rw [show 16 - 2 * 4 - 1 = 7 from rfl] at h₇
-  have h₈ := hP 4 (by decide) 0 (by decide)
+  obtain h₈ := hP 4 (by decide) 0 (by decide)
   rw [show 16 - 2 * 4 - 0 = 8 from rfl] at h₈
-  have h₉ := hP 3 (by decide) 1 (by decide)
+  obtain h₉ := hP 3 (by decide) 1 (by decide)
   rw [show 16 - 2 * 3 - 1 = 9 from rfl] at h₉
-  have h₁₀ := hP 3 (by decide) 0 (by decide)
+  obtain h₁₀ := hP 3 (by decide) 0 (by decide)
   rw [show 16 - 2 * 3 - 0 = 10 from rfl] at h₁₀
-  have h₁₁ := hP 2 (by decide) 1 (by decide)
+  obtain h₁₁ := hP 2 (by decide) 1 (by decide)
   rw [show 16 - 2 * 2 - 1 = 11 from rfl] at h₁₁
-  have h₁₂ := hP 2 (by decide) 0 (by decide)
+  obtain h₁₂ := hP 2 (by decide) 0 (by decide)
   rw [show 16 - 2 * 2 - 0 = 12 from rfl] at h₁₂
-  have h₁₃ := hP 1 (by decide) 1 (by decide)
+  obtain h₁₃ := hP 1 (by decide) 1 (by decide)
   rw [show 16 - 2 * 1 - 1 = 13 from rfl] at h₁₃
-  have h₁₄ := hP 1 (by decide) 0 (by decide)
+  obtain h₁₄ := hP 1 (by decide) 0 (by decide)
   rw [show 16 - 2 * 1 - 0 = 14 from rfl] at h₁₄
-  have h₁₅ := hP 0 (by decide) 1 (by decide)
+  obtain h₁₅ := hP 0 (by decide) 1 (by decide)
   rw [show 16 - 2 * 0 - 1 = 15 from rfl] at h₁₅
-  have h₁₆ := hP 0 (by decide) 0 (by decide)
+  obtain h₁₆ := hP 0 (by decide) 0 (by decide)
   rw [show 16 - 2 * 0 - 0 = 16 from rfl] at h₁₆
   simp only [accN, List.range_succ, List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons,
     List.foldl_nil, ordE, inp, hy1, ↓reduceIte, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero,
@@ -171,37 +171,37 @@ theorem finD_mul (H : Block) (X : Nat → Block) (P : Nat → Nat → Block) (yl
     (hP : ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ H ^ (16 - 2 * k - l)) :
     reduce (accN ordD X P yl 0 8) ^^^ reduce (accN ordD X P yl 1 8) =
       mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((yl 0 ^^^ X 0)) H ^^^ X 1) H ^^^ X 2) H ^^^ X 3) H ^^^ X 4) H ^^^ X 5) H ^^^ X 6) H ^^^ X 7) H ^^^ X 8) H ^^^ X 9) H ^^^ X 10) H ^^^ X 11) H ^^^ X 12) H ^^^ X 13) H ^^^ X 14) H ^^^ X 15) H := by
-  have h₁ := hP 7 (by decide) 1 (by decide)
+  obtain h₁ := hP 7 (by decide) 1 (by decide)
   rw [show 16 - 2 * 7 - 1 = 1 from rfl, pow_one] at h₁
-  have h₂ := hP 7 (by decide) 0 (by decide)
+  obtain h₂ := hP 7 (by decide) 0 (by decide)
   rw [show 16 - 2 * 7 - 0 = 2 from rfl] at h₂
-  have h₃ := hP 6 (by decide) 1 (by decide)
+  obtain h₃ := hP 6 (by decide) 1 (by decide)
   rw [show 16 - 2 * 6 - 1 = 3 from rfl] at h₃
-  have h₄ := hP 6 (by decide) 0 (by decide)
+  obtain h₄ := hP 6 (by decide) 0 (by decide)
   rw [show 16 - 2 * 6 - 0 = 4 from rfl] at h₄
-  have h₅ := hP 5 (by decide) 1 (by decide)
+  obtain h₅ := hP 5 (by decide) 1 (by decide)
   rw [show 16 - 2 * 5 - 1 = 5 from rfl] at h₅
-  have h₆ := hP 5 (by decide) 0 (by decide)
+  obtain h₆ := hP 5 (by decide) 0 (by decide)
   rw [show 16 - 2 * 5 - 0 = 6 from rfl] at h₆
-  have h₇ := hP 4 (by decide) 1 (by decide)
+  obtain h₇ := hP 4 (by decide) 1 (by decide)
   rw [show 16 - 2 * 4 - 1 = 7 from rfl] at h₇
-  have h₈ := hP 4 (by decide) 0 (by decide)
+  obtain h₈ := hP 4 (by decide) 0 (by decide)
   rw [show 16 - 2 * 4 - 0 = 8 from rfl] at h₈
-  have h₉ := hP 3 (by decide) 1 (by decide)
+  obtain h₉ := hP 3 (by decide) 1 (by decide)
   rw [show 16 - 2 * 3 - 1 = 9 from rfl] at h₉
-  have h₁₀ := hP 3 (by decide) 0 (by decide)
+  obtain h₁₀ := hP 3 (by decide) 0 (by decide)
   rw [show 16 - 2 * 3 - 0 = 10 from rfl] at h₁₀
-  have h₁₁ := hP 2 (by decide) 1 (by decide)
+  obtain h₁₁ := hP 2 (by decide) 1 (by decide)
   rw [show 16 - 2 * 2 - 1 = 11 from rfl] at h₁₁
-  have h₁₂ := hP 2 (by decide) 0 (by decide)
+  obtain h₁₂ := hP 2 (by decide) 0 (by decide)
   rw [show 16 - 2 * 2 - 0 = 12 from rfl] at h₁₂
-  have h₁₃ := hP 1 (by decide) 1 (by decide)
+  obtain h₁₃ := hP 1 (by decide) 1 (by decide)
   rw [show 16 - 2 * 1 - 1 = 13 from rfl] at h₁₃
-  have h₁₄ := hP 1 (by decide) 0 (by decide)
+  obtain h₁₄ := hP 1 (by decide) 0 (by decide)
   rw [show 16 - 2 * 1 - 0 = 14 from rfl] at h₁₄
-  have h₁₅ := hP 0 (by decide) 1 (by decide)
+  obtain h₁₅ := hP 0 (by decide) 1 (by decide)
   rw [show 16 - 2 * 0 - 1 = 15 from rfl] at h₁₅
-  have h₁₆ := hP 0 (by decide) 0 (by decide)
+  obtain h₁₆ := hP 0 (by decide) 0 (by decide)
   rw [show 16 - 2 * 0 - 0 = 16 from rfl] at h₁₆
   simp only [accN, List.range_succ, List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons,
     List.foldl_nil, ordD, inp, hy1, ↓reduceIte, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero,
@@ -236,7 +236,7 @@ theorem dec_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa 
 256 bytes of the copy of the powers cleared, the rest as it was. -/
 theorem enc_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa enc s₀ fun s => EPost s₀ s ∧ PieceL 256 (fun _ _ => true) s₀ s := by
-  have hL : WP isa Impl.Gcm.X86_64.Stitch.encLoops s₀ fun s =>
+  obtain hL : WP isa Impl.Gcm.X86_64.Stitch.encLoops s₀ fun s =>
       EPost s₀ s ∧ Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, 256⟩] s₀.mem s.mem :=
     WP.seq (WP.mono (setup_okF hp) fun _ ⟨_, hR, hpw, f₁⟩ =>
       WP.mono (encTail_okF hp hm (finE hpw) hR) fun s₂ ⟨h, f₂⟩ => ⟨h,
@@ -253,7 +253,7 @@ theorem enc_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
 256 bytes of the copy of the powers cleared, the rest as it was. -/
 theorem dec_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa dec s₀ fun s => DPost s₀ s ∧ PieceL 256 (fun _ _ => true) s₀ s := by
-  have hL : WP isa Impl.Gcm.X86_64.Stitch.decLoops s₀ fun s =>
+  obtain hL : WP isa Impl.Gcm.X86_64.Stitch.decLoops s₀ fun s =>
       DPost s₀ s ∧ Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, 256⟩] s₀.mem s.mem :=
     WP.seq (WP.mono (setup_okF hp) fun _ ⟨_, hR, hpw, f₁⟩ =>
       WP.mono (decTail_okF hp hm (finD hpw) hR) fun s₂ ⟨h, f₂⟩ => ⟨h,
@@ -304,7 +304,7 @@ theorem stored {H : Block} {C : Addr} {s s' : State} {j d : Nat} (hd : d = 2 * (
     (pw : ∀ k < 8, ∀ l < 2, x * φ (s.lane (preg16 k) l) = φ H ^ (16 - 2 * k - l + d)) :
     ∀ i < 8, ∀ l < 2, s'.mem.readW (C + BitVec.ofNat 64 (256 + 32 * (j - 8 + i) + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * (j - 8 + i) + 2 - l)) := fun i hi l hl => by
-  have h := sv i (by rw [pregs_rev_length]; exact hi) l hl
+  obtain h := sv i (by rw [pregs_rev_length]; exact hi) l hl
   rw [pregs_rev i (by rw [pregs_rev_length]; exact hi),
     show 32 * (j + i) + 16 * l = 256 + 32 * (j - 8 + i) + 16 * l by omega_using [hj]] at h
   rw [h]

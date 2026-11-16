@@ -49,14 +49,14 @@ theorem passed_ok {s : State} {B : Addr} {Z w I U ch : Nat} (e : Env s B Z w)
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ Z := e.hZ
   refine WP.keep _ ?_ (by rfl) (by rfl)
   have r176 : s.mem.readW (B + 176#64) 64 = BitVec.ofNat 64 I := hk
-  have o176 := writeW_outside s.mem B (BitVec.ofNat 64 (I + 1)) (d := 176) (by omega_using [])
-  have r16 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 16#64) 64 = BitVec.ofNat 64 U :=
+  obtain o176 := writeW_outside s.mem B (BitVec.ofNat 64 (I + 1)) (d := 176) (by omega_using [])
+  obtain r16 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 16#64) 64 = BitVec.ofNat 64 U :=
     (o176.word (by omega_using []) (by omega_using [])).trans hu
-  have r168 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 168#64) 64 = BitVec.ofNat 64 ch :=
+  obtain r168 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 168#64) 64 = BitVec.ofNat 64 ch :=
     (o176.word (by omega_using []) (by omega_using [])).trans hch
-  have ek : BitVec.ofNat 64 I + 1#64 = BitVec.ofNat 64 (I + 1) := by rw [← BitVec.ofNat_add]
-  have g1 := ge_val (BitVec.ofNat 64 (I + 1)) (BitVec.ofNat 64 17)
-  have g2 := ge_val (BitVec.ofNat 64 U) (BitVec.ofNat 64 ch)
+  obtain ek : BitVec.ofNat 64 I + 1#64 = BitVec.ofNat 64 (I + 1) := by rw [← BitVec.ofNat_add]
+  obtain g1 := ge_val (BitVec.ofNat 64 (I + 1)) (BitVec.ofNat 64 17)
+  obtain g2 := ge_val (BitVec.ofNat 64 U) (BitVec.ofNat 64 ch)
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hk'])] at g1
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hch']), Nat.mod_eq_of_lt (by omega_using [hu'])] at g2
   simp only [passed, geFlag, ldh, sth, hIdx, hUni, hChecks, hStat]
@@ -68,7 +68,7 @@ theorem passed_ok {s : State} {B : Addr} {Z w I U ch : Nat} (e : Env s B Z w)
     exec_li (show imm12 4 by decide)]
   simp only [ek, r16, r168]
   rw [show (1#64 : BitVec 64) = BitVec.ofInt 64 1 from rfl, g1, g2]
-  have hv : BitVec.ofNat 64 4 - (BitVec.ofNat 64 (if ch ≤ U then 1 else 0) &&&
+  obtain hv : BitVec.ofNat 64 4 - (BitVec.ofNat 64 (if ch ≤ U then 1 else 0) &&&
       BitVec.ofNat 64 (if 17 ≤ I + 1 then 1 else 0)) * BitVec.ofNat 64 3 =
       BitVec.ofNat 64 (statOf I U ch) := by
     by_cases h1 : ch ≤ U <;> by_cases h2 : 17 ≤ I + 1 <;> simp [statOf, h1, h2] <;> decide
@@ -104,7 +104,7 @@ theorem RdPost.word {s t : State} {B : Addr} {L w c a I U ch d : Nat} (h : RdPos
 theorem frame_of_low {B : Addr} {L e : Nat} {m m' : Mem} (h : ∀ x, e ≤ ofs B x → m' x = m x) (he : e ≤ 8 * L)
     (rs : List Region) : Frame (⟨B, 8 * L⟩ :: rs) m m' := by
   intro x hx
-  have hb := hx _ (List.mem_cons_self ..)
+  obtain hb := hx _ (List.mem_cons_self ..)
   simp only [Region.Contains, Nat.not_le] at hb
   exact h x (by show e ≤ (x - B).toNat; omega_using [he, hb])
 
@@ -113,7 +113,7 @@ theorem frame_of_low {B : Addr} {L e : Nat} {m m' : Mem} (h : ∀ x, e ≤ ofs B
 theorem slot_bounds {w L j : Nat} (hL : 256 + 28 * (8 * (w + 2)) ≤ 8 * L) (hj : j ≤ 27) :
     256 ≤ slot w j ∧ slot w j + 8 * (w + 2) ≤ 8 * L := by
   have e : slot w j = 256 + j * (8 * (w + 2)) := rfl
-  have hm : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ hj
+  obtain hm : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ hj
   rw [e]
   omega_using [hL, hm]
 
@@ -133,18 +133,18 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
   unfold VG.Impl.RsaKeyGen.RISCV64.Witness.round
   refine WP.seq (WP.mono (VG.Proof.MillerRabin.RISCV64.Search.roundCall_ok R h ha hac hal hsp hstk)
     fun u hu => ?_)
-  have kw : ∀ d, d + 8 ≤ 256 → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word u.mem B d = word s.mem B d :=
+  obtain kw : ∀ d, d + 8 ≤ 256 → (∀ i, d ≤ i → i < d + 8 → Kept w i) → word u.mem B d = word s.mem B d :=
     fun d hd hk => keeps_word hu.keeps (by omega_arith) hk
   have hsu := hu.prep.env.hs
   have hnw := hsu.nowrap
   have hL : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := hu.prep.env.hZ
   -- A store to `hStat` or `hIdx` keeps `Prep`, the round's bytes and the frame.
-  have keepP : ∀ (t : State), (∀ x, (ofs B x < 160 ∨ 168 ≤ ofs B x) → (ofs B x < 176 ∨ 184 ≤ ofs B x) →
+  obtain keepP : ∀ (t : State), (∀ x, (ofs B x < 160 ∨ 168 ≤ ofs B x) → (ofs B x < 176 ∨ 184 ≤ ofs B x) →
       t.mem x = u.mem x) → Env t B (8 * L) w → t.gpr .t1 = u.gpr .t1 →
       Prep t B L w c ∧ (∀ i, i < 8 * L → RKept w i → t.mem (B + BitVec.ofNat 64 i) = s.mem (B + BitVec.ofNat 64 i)) ∧
         Frame [⟨B, 8 * L⟩, below s.sp 96] s.mem t.mem := by
     intro t hb et ht1
-    have wq : ∀ d, d + 8 ≤ 8 * L → (d + 8 ≤ 160 ∨ 168 ≤ d) → (d + 8 ≤ 176 ∨ 184 ≤ d) →
+    obtain wq : ∀ d, d + 8 ≤ 8 * L → (d + 8 ≤ 160 ∨ 168 ≤ d) → (d + 8 ≤ 176 ∨ 184 ≤ d) →
         word t.mem B d = word u.mem B d := fun d hd h1 h2 =>
       Mem.readW_congr fun i hi => hb _ (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega_using [h1, hi])
         (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega_using [h2, hi])
@@ -157,21 +157,21 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
       obtain ⟨sj, sj'⟩ := slot_bounds (j := j) hL (by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide)
       exact VG.Proof.Bignum.wv_congr fun i hi => wq _ (by omega_using [sj', hi]) (by omega_using [sj]) (by omega_using [sj])
     · have h20 := hk.2 20 (by simp)
-      have h22 := hk.2 22 (by simp)
-      have hi' : i < 2 ^ 64 := by omega_arith
+      obtain h22 := hk.2 22 (by simp)
+      obtain hi' : i < 2 ^ 64 := by omega_arith
       rw [hb _ (by rw [ofs_byte B hi']; omega_using [h20]) (by rw [ofs_byte B hi']; omega_using [h22])]
       exact keeps_byte hu.keeps hi hk.1
     · exact hu.frame.trans (frame_of_low (e := 184) (fun x hx => hb x (by omega_using [hx]) (by omega_using [hx])) (by omega_using [hZ]) _)
   refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by split <;> decide) hu.a0) (fun hz => ?_) (fun hz => ?_)
   · have hr : Proof.MillerRabin.Round.round c a = false := by
       by_contra hc; simp [hc] at hz
-    have st := hsu.st (d := 160) (n := 8) (by omega_using [hZ])
+    obtain st := hsu.st (d := 160) (n := 8) (by omega_using [hZ])
     refine WP.mono (WP.rdwr <| WP.keep [.t2] (Q := fun t => t.mem = u.mem.writeW (off B (8 * hStat)) (BitVec.ofNat 64 2)) (by
       simp only [sth, hStat]
       brun [hu.prep.env.s6, st, hsu.al8 (d := 160) (by omega_using [hZ]) (by decide), exec_li (show imm12 2 by decide)])
       (by decide)) fun t ⟨⟨tm, kt⟩, trd, twr, tsp⟩ => ?_
-    have et := hu.prep.env.keep kt (by decide)
-    have wo := writeW_outside u.mem B (d := 8 * hStat) (BitVec.ofNat 64 2) (by simp only [hStat]; omega_using [])
+    obtain et := hu.prep.env.keep kt (by decide)
+    obtain wo := writeW_outside u.mem B (d := 8 * hStat) (BitVec.ofNat 64 2) (by simp only [hStat]; omega_using [])
     obtain ⟨p, kk, fr⟩ := keepP t (fun x h1 _ => by rw [tm]; exact wo x (by simpa only [hStat] using h1)) et
       (kt.gpr (by decide))
     refine ⟨p, ?_, ?_, kk, fr, trd.trans hu.rd, twr.trans hu.wr, tsp.trans hu.sp, fun r hr h1 h2 => ?_⟩
@@ -183,16 +183,16 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
         hu.cs r hr h1]
   · have hr : Proof.MillerRabin.Round.round c a = true := by
       by_contra hc; simp [hc] at hz
-    have kI : word u.mem B (8 * hIdx) = BitVec.ofNat 64 I := by
+    obtain kI : word u.mem B (8 * hIdx) = BitVec.ofNat 64 I := by
       rw [kw _ (by simp only [hIdx]; omega_using []) (by simp only [hIdx]; kept_tac), hI]
-    have kU : word u.mem B (8 * hUni) = BitVec.ofNat 64 U := by
+    obtain kU : word u.mem B (8 * hUni) = BitVec.ofNat 64 U := by
       rw [kw _ (by simp only [hUni]; omega_using []) (by simp only [hUni]; kept_tac), hU]
-    have kC : word u.mem B (8 * hChecks) = BitVec.ofNat 64 ch := by
+    obtain kC : word u.mem B (8 * hChecks) = BitVec.ofNat 64 ch := by
       rw [kw _ (by simp only [hChecks]; omega_using []) (by simp only [hChecks]; kept_tac), hch]
     refine WP.mono (WP.rdwr (passed_ok hu.prep.env kI kU kC hI' hU' hch')) fun t ⟨⟨tm, kt⟩, trd, twr, tsp⟩ => ?_
-    have et := hu.prep.env.keep kt (by decide)
-    have wo1 := writeW_outside u.mem B (d := 8 * hIdx) (BitVec.ofNat 64 (I + 1)) (by simp only [hIdx]; omega_using [])
-    have wo2 := writeW_outside (u.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 (I + 1))) B (d := 8 * hStat)
+    obtain et := hu.prep.env.keep kt (by decide)
+    obtain wo1 := writeW_outside u.mem B (d := 8 * hIdx) (BitVec.ofNat 64 (I + 1)) (by simp only [hIdx]; omega_using [])
+    obtain wo2 := writeW_outside (u.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 (I + 1))) B (d := 8 * hStat)
       (BitVec.ofNat 64 (statOf I U ch)) (by simp only [hStat]; omega_using [])
     obtain ⟨p, kk, fr⟩ := keepP t (fun x h1 h2 => by
       rw [tm]; exact (wo2 x (by simpa only [hStat] using h1)).trans (wo1 x (by simpa only [hIdx] using h2))) et

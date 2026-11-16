@@ -56,16 +56,16 @@ theorem stack_parts {E : BitVec 32} (hE : 40 ≤ E.toNat) :
       Region.Sub (below E 20) (below E 40) ∧
       Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below E 40) ∧
       Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - 12, 12⟩ (below E 40) := by
-  have r1 : ∀ k, k + 4 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ (below E 40) :=
+  obtain r1 : ∀ k, k + 4 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ (below E 40) :=
     fun k hk => by
       have := below_inner (sp := E) (a := 4) (b := 40) (k := k) (by omega_arith) hE
-      have e : (⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ : Region) = below (E - BitVec.ofNat 32 k) 4 := by
+      obtain e : (⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ : Region) = below (E - BitVec.ofNat 32 k) 4 := by
         simp only [below]; congr 2; bv_omega
       rw [e]; exact this
-  have r2 : ∀ k, k + 12 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ (below E 40) :=
+  obtain r2 : ∀ k, k + 12 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ (below E 40) :=
     fun k hk => by
       have := below_inner (sp := E) (a := 12) (b := 40) (k := k) (by omega_arith) hE
-      have e : (⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ : Region) = below (E - BitVec.ofNat 32 k) 12 := by
+      obtain e : (⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ : Region) = below (E - BitVec.ofNat 32 k) 12 := by
         simp only [below]
         rw [Taint.sub_setWidth (show 12 ≤ (E - BitVec.ofNat 32 k).toNat by rw [sub_toNat (by omega_arith)]; omega_arith)]
         rfl
@@ -112,24 +112,24 @@ theorem absorb_pre {s : State} {E S D W : BitVec 32} {rate pos len : Nat} (hesp 
     (cW : Within (reg32 W 640) s.wr) :
     CallPre Proof.Sha3.absorbX86 rs6 [reg32 D len] [reg32 S 200, reg32 W 640, below E 24] s := by
   have hE := hk.hE
-  have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
-  have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
+  obtain a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a3 : arg (pushed rs6 s).callEntry 3 = D := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
-  have a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
+  obtain a3 : arg (pushed rs6 s).callEntry 3 = D := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
+  obtain a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
-  have a5 : arg (pushed rs6 s).callEntry 5 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
-  have eA : argAddr (pushed rs6 s).callEntry 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
+  obtain a5 : arg (pushed rs6 s).callEntry 5 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
+  obtain eA : argAddr (pushed rs6 s).callEntry 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
     rw [callEntry_argAddr0, hesp]; rfl
-  have eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
-  have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
-  have t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
+  obtain eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
+  obtain t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
+  obtain t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
+  obtain t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
   obtain ⟨p24, pr, pst, -, -, -⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Sha3.absorbX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
@@ -169,23 +169,23 @@ theorem absorb_post {s s' : State} {E S D W : BitVec 32} {rate pos len : Nat} (h
     ∀ msg, Repr s.mem (S.setWidth 64) rate msg → pos = msg.length % rate →
       Repr s'.mem (S.setWidth 64) rate (msg ++ bytesAt s.mem (D.setWidth 64) len) := by
   obtain ⟨s₂, m₂, post, -⟩ := h
-  have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a3 : arg (pushed rs6 s).callEntry 3 = D := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
-  have a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
+  obtain a3 : arg (pushed rs6 s).callEntry 3 = D := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
+  obtain a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
-  have fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
+  obtain fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
   simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, toNat_ofNat32 hlen,
     toNat_ofNat32 hrate, toNat_ofNat32 hpos, m₂] at post
   intro msg hm hp
-  have eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
+  obtain eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
-  have eD : bytesAt (pushed rs6 s).callEntry.mem (D.setWidth 64) len = bytesAt s.mem (D.setWidth 64) len :=
+  obtain eD : bytesAt (pushed rs6 s).callEntry.mem (D.setWidth 64) len = bytesAt s.mem (D.setWidth 64) len :=
     bytesAt_frame fr (by simpa using bD.symm) (by omega_arith)
   have := post msg (by unfold Spec.Sha3.Repr; rw [eS]; exact hm) hp
   rwa [eD] at this
@@ -205,20 +205,20 @@ theorem pad_pre {s : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp : s.g
     (cS : Within (reg32 S 200) s.wr) (cW : Within (reg32 W 640) s.wr) :
     CallPre Proof.Sha3.padX86 rs5 [] [reg32 S 200, reg32 W 640, below E 20] s := by
   have hE := hk.hE
-  have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
-  have a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
+  obtain a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs5 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs5 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a4 : arg (pushed rs5 s).callEntry 4 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
-  have eA : argAddr (pushed rs5 s).callEntry 0 = (E - BitVec.ofNat 32 20).setWidth 64 := by
+  obtain a4 : arg (pushed rs5 s).callEntry 4 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
+  obtain eA : argAddr (pushed rs5 s).callEntry 0 = (E - BitVec.ofNat 32 20).setWidth 64 := by
     rw [callEntry_argAddr0, hesp]; rfl
-  have eSp : (pushed rs5 s).callEntry.gpr .esp = E - BitVec.ofNat 32 24 := by rw [callEntry_esp', hesp]; rfl
-  have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
+  obtain eSp : (pushed rs5 s).callEntry.gpr .esp = E - BitVec.ofNat 32 24 := by rw [callEntry_esp', hesp]; rfl
+  obtain t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
+  obtain t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
   obtain ⟨-, -, -, p20, pr, pst⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Sha3.padX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
@@ -251,20 +251,20 @@ theorem pad_post {s s' : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp :
     ∀ msg, Repr s.mem (S.setWidth 64) rate msg → pos = msg.length % rate →
       stateAt s'.mem (S.setWidth 64) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg) := by
   obtain ⟨s₂, m₂, post⟩ := h
-  have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs5 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs5 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a3 : arg (pushed rs5 s).callEntry 3 = BitVec.ofNat 32 sfx := by
+  obtain a3 : arg (pushed rs5 s).callEntry 3 = BitVec.ofNat 32 sfx := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
-  have fr := entry_frame hesp hE (rs := rs5) (by decide) (by decide)
+  obtain fr := entry_frame hesp hE (rs := rs5) (by decide) (by decide)
   simp only [Proof.Sha3.padX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, toNat_ofNat32 hrate,
     toNat_ofNat32 hpos, m₂] at post
   intro msg hm hp
-  have eS : stateAt (pushed rs5 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
+  obtain eS : stateAt (pushed rs5 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   exact post msg (by unfold Spec.Sha3.Repr; rw [eS]; exact hm) hp
 
@@ -277,24 +277,24 @@ theorem squeeze_pre {s : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp
     (cS : Within (reg32 S 200) s.wr) (cO : Within (reg32 O len) s.wr) (cW : Within (reg32 W 640) s.wr) :
     CallPre Proof.Sha3.squeezeX86 rs6 [] [reg32 S 200, reg32 O len, reg32 W 640, below E 24] s := by
   have hE := hk.hE
-  have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
-  have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
+  obtain a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a3 : arg (pushed rs6 s).callEntry 3 = O := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
-  have a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
+  obtain a3 : arg (pushed rs6 s).callEntry 3 = O := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
+  obtain a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
-  have a5 : arg (pushed rs6 s).callEntry 5 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
-  have eA : argAddr (pushed rs6 s).callEntry 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
+  obtain a5 : arg (pushed rs6 s).callEntry 5 = W := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edi
+  obtain eA : argAddr (pushed rs6 s).callEntry 0 = (E - BitVec.ofNat 32 24).setWidth 64 := by
     rw [callEntry_argAddr0, hesp]; rfl
-  have eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
-  have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
-  have t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
+  obtain eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
+  obtain t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
+  obtain t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
+  obtain t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
   obtain ⟨p24, pr, pst, -, -, -⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Sha3.squeezeX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
@@ -333,20 +333,20 @@ theorem squeeze_post {s s' : State} {E S O W : BitVec 32} {rate pos len : Nat} (
       ∃ pos' ≤ rate, ∀ d, squeezeFrom rate (stateAt s'.mem (S.setWidth 64)) pos' d =
         squeezeFrom rate (stateAt s.mem (S.setWidth 64)) (pos + len) d := by
   obtain ⟨s₂, m₂, post⟩ := h
-  have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
-  have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
-  have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
+  obtain a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
+  obtain a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a3 : arg (pushed rs6 s).callEntry 3 = O := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
-  have a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
+  obtain a3 : arg (pushed rs6 s).callEntry 3 = O := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
+  obtain a4 : arg (pushed rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
-  have fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
+  obtain fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
   simp only [Proof.Sha3.squeezeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4,
     toNat_ofNat32 hlen, toNat_ofNat32 hrate, toNat_ofNat32 hpos, m₂] at post
-  have eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
+  obtain eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   rw [eS] at post
   exact ⟨post.1, _, post.2.1, post.2.2⟩
@@ -459,10 +459,10 @@ theorem absorb_piece (E S D W : State → BitVec 32) (rate pos len : Nat) (hr : 
   · have h := hA s₀ s h₀ ha
     exact absorb_pre h.esp h.args h.bufs h.fD h.dDS h.dDW h.bD hr hp hlen h.cD h.cS h.cW
   · obtain ⟨e₁, e₂, e₃, e₄⟩ := hpub s₀ s₀' h₀ h₀' hq
-    have h := hA s₀ s h₀ ha
-    have h' := hA s₀' s' h₀' ha'
+    obtain h := hA s₀ s h₀ ha
+    obtain h' := hA s₀' s' h₀' ha'
     rw [← e₁, ← e₂, ← e₃, ← e₄] at h'
-    have hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
+    obtain hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
     exact ⟨by rw [e₃], by rw [e₁, e₂, e₄], hsp,
       args6_eq (by rw [h.esp]; exact h.bufs.hE) hsp (absArgs_eq h.args h'.args) _ _⟩
   · have h := hA s₀ s h₀ ha
@@ -499,10 +499,10 @@ theorem pad_piece (E S W : State → BitVec 32) (rate pos sfx : Nat) (hr : rate 
   · have h := hA s₀ s h₀ ha
     exact pad_pre h.esp h.args h.bufs hr hp h.cS h.cW
   · obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' h₀ h₀' hq
-    have h := hA s₀ s h₀ ha
-    have h' := hA s₀' s' h₀' ha'
+    obtain h := hA s₀ s h₀ ha
+    obtain h' := hA s₀' s' h₀' ha'
     rw [← e₁, ← e₂, ← e₃] at h'
-    have hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
+    obtain hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
     exact ⟨rfl, by rw [e₁, e₂, e₃], hsp,
       args5_eq (by rw [h.esp]; exact h.bufs.hE) hsp (padArgs_eq h.args h'.args) _ _⟩
   · have h := hA s₀ s h₀ ha
@@ -540,10 +540,10 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
   · have h := hA s₀ s h₀ ha
     exact squeeze_pre h.esp h.args h.bufs h.fO h.dSO h.dOW h.bO hr hp hlen h.cS h.cO h.cW
   · obtain ⟨e₁, e₂, e₃, e₄⟩ := hpub s₀ s₀' h₀ h₀' hq
-    have h := hA s₀ s h₀ ha
-    have h' := hA s₀' s' h₀' ha'
+    obtain h := hA s₀ s h₀ ha
+    obtain h' := hA s₀' s' h₀' ha'
     rw [← e₁, ← e₂, ← e₃, ← e₄] at h'
-    have hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
+    obtain hsp : s.gpr .esp = s'.gpr .esp := h.esp.trans h'.esp.symm
     exact ⟨rfl, by rw [e₁, e₂, e₃, e₄], hsp,
       args6_eq (by rw [h.esp]; exact h.bufs.hE) hsp (absArgs_eq h.args h'.args) _ _⟩
   · have h := hA s₀ s h₀ ha

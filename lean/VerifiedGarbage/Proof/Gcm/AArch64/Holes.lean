@@ -228,57 +228,57 @@ theorem pm_ok (s : State) {X Y OL OH : Reg} (hr : PmRegs X Y OL OH) (hK : Masks 
     WP isa (.block (pmCode X Y OL OH)) s fun t =>
       t.gpr OL = (pm (s.gpr X) (s.gpr Y)).1 ∧ t.gpr OH = (pm (s.gpr X) (s.gpr Y)).2 ∧
       Keep (OL :: OH :: pmTmp) s t := by
-  have hx := hr.x; have hy := hr.y; have hl := hr.l; have hh := hr.h
+  obtain hx := hr.x; have hy := hr.y; have hl := hr.l; have hh := hr.h
   simp only [pmTmp, holesRegs, maskRegs, HB, B, T, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false, not_or] at hx hy hl hh
   -- what the code writes
-  have sW : pmTmp ⊆ OL :: OH :: pmTmp := fun _ h => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
-  have sA : [T, HB] ⊆ OL :: OH :: pmTmp := fun _ h => sW ((by decide : [T, HB] ⊆ pmTmp) h)
-  have sB : holesRegs ⊆ OL :: OH :: pmTmp := fun _ h => sW ((by decide : holesRegs ⊆ pmTmp) h)
-  have sC : [OL, T, HB] ⊆ OL :: OH :: pmTmp := List.cons_subset.mpr ⟨List.mem_cons_self, sA⟩
+  obtain sW : pmTmp ⊆ OL :: OH :: pmTmp := fun _ h => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+  obtain sA : [T, HB] ⊆ OL :: OH :: pmTmp := fun _ h => sW ((by decide : [T, HB] ⊆ pmTmp) h)
+  obtain sB : holesRegs ⊆ OL :: OH :: pmTmp := fun _ h => sW ((by decide : holesRegs ⊆ pmTmp) h)
+  obtain sC : [OL, T, HB] ⊆ OL :: OH :: pmTmp := List.cons_subset.mpr ⟨List.mem_cons_self, sA⟩
   have sD : [OH, T, B, HB] ⊆ OL :: OH :: pmTmp := List.cons_subset.mpr
     ⟨List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => sW ((by decide : [T, B, HB] ⊆ pmTmp) h)⟩
-  have sE : [OL, OH, Z 0, T] ⊆ OL :: OH :: pmTmp := List.cons_subset.mpr ⟨List.mem_cons_self,
+  obtain sE : [OL, OH, Z 0, T] ⊆ OL :: OH :: pmTmp := List.cons_subset.mpr ⟨List.mem_cons_self,
     List.cons_subset.mpr ⟨List.mem_cons_of_mem _ List.mem_cons_self,
       fun _ h => sW ((by decide : [Z 0, T] ⊆ pmTmp) h)⟩⟩
   -- and what it does not
-  have hXW : X ∉ OL :: OH :: pmTmp :=
+  obtain hXW : X ∉ OL :: OH :: pmTmp :=
     List.not_mem_cons_of_ne_of_not_mem hr.xl (List.not_mem_cons_of_ne_of_not_mem hr.xh hr.x)
-  have hYW : Y ∉ OL :: OH :: pmTmp :=
+  obtain hYW : Y ∉ OL :: OH :: pmTmp :=
     List.not_mem_cons_of_ne_of_not_mem hr.yl (List.not_mem_cons_of_ne_of_not_mem hr.yh hr.y)
-  have hKW : ∀ i < 4, K i ∉ OL :: OH :: pmTmp := fun i _ =>
+  obtain hKW : ∀ i < 4, K i ∉ OL :: OH :: pmTmp := fun i _ =>
     List.not_mem_cons_of_ne_of_not_mem (fun e => hr.l (e ▸ List.mem_append_right _ (K_mem i)))
       (List.not_mem_cons_of_ne_of_not_mem (fun e => hr.h (e ▸ List.mem_append_right _ (K_mem i)))
         ((by decide : ∀ r ∈ maskRegs, r ∉ pmTmp) _ (K_mem i)))
-  have lA : OL ∉ holesRegs := not_mem_of_sub hr.l (by decide)
-  have lB : OL ∉ [OH, T, B, HB] :=
+  obtain lA : OL ∉ holesRegs := not_mem_of_sub hr.l (by decide)
+  obtain lB : OL ∉ [OH, T, B, HB] :=
     List.not_mem_cons_of_ne_of_not_mem hr.lh (not_mem_of_sub hr.l (by decide))
-  have hA : OH ∉ holesRegs := not_mem_of_sub hr.h (by decide)
+  obtain hA : OH ∉ holesRegs := not_mem_of_sub hr.h (by decide)
   rw [pmCode_eq]
   refine WP.block_append_iff.mpr (WP.mono (g1_ok s hy.2.2.2.2.2.2.2.2.2.2) fun u1 ⟨a1, b1, k1⟩ => ?_)
-  have w1 : Keep (OL :: OH :: pmTmp) s u1 := k1.mono sA
+  obtain w1 : Keep (OL :: OH :: pmTmp) s u1 := k1.mono sA
   refine WP.block_append_iff.mpr (WP.mono (holes_ok u1 (w1.masks hK hKW)) fun u2 ⟨z2, k2⟩ => ?_)
-  have w2 := w1.step k2 sB
-  have l2 : u2.gpr (Z 0) = Holes.pmL (s.gpr X) (s.gpr Y) := by rw [z2, a1, b1]; rfl
+  obtain w2 := w1.step k2 sB
+  obtain l2 : u2.gpr (Z 0) = Holes.pmL (s.gpr X) (s.gpr Y) := by rw [z2, a1, b1]; rfl
   refine WP.block_append_iff.mpr (WP.mono (g2_ok u2 hr.xl hr.yl hy.2.2.2.2.2.2.2.2.2.2
     hl.2.2.2.2.2.2.2.2.2.2.1 hl.1) fun u3 ⟨l3, a3, b3, k3⟩ => ?_)
-  have w3 := w2.step k3 sC
+  obtain w3 := w2.step k3 sC
   refine WP.block_append_iff.mpr (WP.mono (holes_ok u3 (w3.masks hK hKW)) fun u4 ⟨z4, k4⟩ => ?_)
-  have w4 := w3.step k4 sB
-  have h4 : u4.gpr (Z 0) = Holes.pmH (s.gpr X) (s.gpr Y) := by
+  obtain w4 := w3.step k4 sB
+  obtain h4 : u4.gpr (Z 0) = Holes.pmH (s.gpr X) (s.gpr Y) := by
     rw [z4, a3, b3, w2.gpr hXW, w2.gpr hYW]; rfl
   refine WP.block_append_iff.mpr (WP.mono (g3_ok u4 hr.xh hx.2.2.2.2.2.2.2.2.2.2 hr.yh
     hy.2.2.2.2.2.2.2.2.2.2 hy.2.2.2.2.2.2.2.2.2.1 hy.1 hh.2.2.2.2.2.2.2.2.2.2.1 hh.2.2.2.2.2.2.2.2.2.1
     hh.1) fun u5 ⟨h5, a5, b5, k5⟩ => ?_)
-  have w5 := w4.step k5 sD
+  obtain w5 := w4.step k5 sD
   refine WP.block_append_iff.mpr (WP.mono (holes_ok u5 (w5.masks hK hKW)) fun u6 ⟨z6, k6⟩ => ?_)
-  have w6 := w5.step k6 sB
+  obtain w6 := w5.step k6 sB
   refine WP.mono (g4_ok u6 hr.lh hl.2.2.2.2.2.2.2.2.2.2.1 hl.2.2.2.2.2.1 hh.2.2.2.2.2.2.2.2.2.2.1
     hh.2.2.2.2.2.1) fun t ⟨e1, e2, k7⟩ => ?_
-  have l6 : u6.gpr OL = Holes.pmL (s.gpr X) (s.gpr Y) := by
+  obtain l6 : u6.gpr OL = Holes.pmL (s.gpr X) (s.gpr Y) := by
     rw [k6.gpr lA, k5.gpr lB, k4.gpr lA, l3, l2]
-  have h6 : u6.gpr OH = Holes.pmH (s.gpr X) (s.gpr Y) := by rw [k6.gpr hA, h5, h4]
-  have m6 : u6.gpr (Z 0) = holes (Holes.lo32 (s.gpr X) ^^^ Holes.hi32 (s.gpr X))
+  obtain h6 : u6.gpr OH = Holes.pmH (s.gpr X) (s.gpr Y) := by rw [k6.gpr hA, h5, h4]
+  obtain m6 : u6.gpr (Z 0) = holes (Holes.lo32 (s.gpr X) ^^^ Holes.hi32 (s.gpr X))
       (fun j => (Holes.lo32 (s.gpr Y) ^^^ Holes.hi32 (s.gpr Y)) &&& Holes.K j) := by
     rw [z6, a5, b5, w4.gpr hXW, w4.gpr hYW]
   refine ⟨?_, ?_, w6.step k7 sE⟩
@@ -327,36 +327,36 @@ theorem mulCode_ok (s : State) (hK : Masks s) (hyx : s.gpr YX = s.gpr Y0 ^^^ s.g
     WP isa (.block mulCode) s fun t =>
       t.gpr ZH ++ t.gpr ZL = Holes.mulK (s.gpr Y0) (s.gpr Y1) (s.gpr KW0) (s.gpr KW1) ∧
       t.gpr KW0 = s.gpr KW0 ∧ Keep mulRegs s t := by
-  have r1 : PmRegs Y0 KW0 L1 L2 := by constructor <;> decide
-  have r2 : PmRegs Y1 KW1 H1 H2 := by constructor <;> decide
-  have r3 : PmRegs YX KW0 Y0 Y1 := by constructor <;> decide
-  have hm : ∀ i < 4, K i ∉ mulRegs := fun i _ => (by decide : ∀ r ∈ maskRegs, r ∉ mulRegs) _ (K_mem i)
+  obtain r1 : PmRegs Y0 KW0 L1 L2 := by constructor <;> decide
+  obtain r2 : PmRegs Y1 KW1 H1 H2 := by constructor <;> decide
+  obtain r3 : PmRegs YX KW0 Y0 Y1 := by constructor <;> decide
+  obtain hm : ∀ i < 4, K i ∉ mulRegs := fun i _ => (by decide : ∀ r ∈ maskRegs, r ∉ mulRegs) _ (K_mem i)
   rw [mulCode_eq]
   refine WP.block_append_iff.mpr (WP.mono (pm_ok s r1 hK) fun u1 ⟨a1, b1, k1⟩ => ?_)
-  have w1 : Keep mulRegs s u1 := k1.mono (by decide)
+  obtain w1 : Keep mulRegs s u1 := k1.mono (by decide)
   refine WP.block_append_iff.mpr (WP.mono (pm_ok u1 r2 (w1.masks hK hm)) fun u2 ⟨a2, b2, k2⟩ => ?_)
-  have w2 := w1.step k2 (by decide)
+  obtain w2 := w1.step k2 (by decide)
   refine WP.block_append_iff.mpr (WP.mono (xk_ok u2) fun u3 ⟨a3, k3⟩ => ?_)
-  have w3 := w2.step k3 (by decide)
+  obtain w3 := w2.step k3 (by decide)
   refine WP.block_append_iff.mpr (WP.mono (pm_ok u3 r3 (w3.masks hK hm)) fun u4 ⟨a4, b4, k4⟩ => ?_)
-  have w4 := w3.step k4 (by decide)
+  obtain w4 := w3.step k4 (by decide)
   refine WP.mono (tail_ok u4) fun t ⟨e, f, k5⟩ => ?_
   -- the halves of `H'`
-  have q1 : u2.gpr KW1 = s.gpr KW1 := w2.gpr (by decide)
-  have q0 : u2.gpr KW0 = s.gpr KW0 := by rw [k2.gpr (by decide), k1.gpr (by decide)]
-  have q3 : u3.gpr KW0 = s.gpr KW0 ^^^ s.gpr KW1 := by rw [a3, q0, q1]
-  have q4 : u4.gpr KW0 = s.gpr KW0 ^^^ s.gpr KW1 := by rw [k4.gpr (by decide), q3]
-  have q4' : u4.gpr KW1 = s.gpr KW1 := w4.gpr (by decide)
+  obtain q1 : u2.gpr KW1 = s.gpr KW1 := w2.gpr (by decide)
+  obtain q0 : u2.gpr KW0 = s.gpr KW0 := by rw [k2.gpr (by decide), k1.gpr (by decide)]
+  obtain q3 : u3.gpr KW0 = s.gpr KW0 ^^^ s.gpr KW1 := by rw [a3, q0, q1]
+  obtain q4 : u4.gpr KW0 = s.gpr KW0 ^^^ s.gpr KW1 := by rw [k4.gpr (by decide), q3]
+  obtain q4' : u4.gpr KW1 = s.gpr KW1 := w4.gpr (by decide)
   -- the three products
-  have l1 : u4.gpr L1 = (pm (s.gpr Y0) (s.gpr KW0)).1 := by
+  obtain l1 : u4.gpr L1 = (pm (s.gpr Y0) (s.gpr KW0)).1 := by
     rw [k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), a1]
-  have l2 : u4.gpr L2 = (pm (s.gpr Y0) (s.gpr KW0)).2 := by
+  obtain l2 : u4.gpr L2 = (pm (s.gpr Y0) (s.gpr KW0)).2 := by
     rw [k4.gpr (by decide), k3.gpr (by decide), k2.gpr (by decide), b1]
-  have h1 : u4.gpr H1 = (pm (s.gpr Y1) (s.gpr KW1)).1 := by
+  obtain h1 : u4.gpr H1 = (pm (s.gpr Y1) (s.gpr KW1)).1 := by
     rw [k4.gpr (by decide), k3.gpr (by decide), a2, k1.gpr (by decide), k1.gpr (by decide)]
-  have h2 : u4.gpr H2 = (pm (s.gpr Y1) (s.gpr KW1)).2 := by
+  obtain h2 : u4.gpr H2 = (pm (s.gpr Y1) (s.gpr KW1)).2 := by
     rw [k4.gpr (by decide), k3.gpr (by decide), b2, k1.gpr (by decide), k1.gpr (by decide)]
-  have yx3 : u3.gpr YX = s.gpr Y0 ^^^ s.gpr Y1 := by
+  obtain yx3 : u3.gpr YX = s.gpr Y0 ^^^ s.gpr Y1 := by
     rw [k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide), hyx]
   refine ⟨?_, by rw [f, q4, q4', xor_xor_self], w4.step k5 (by decide)⟩
   rw [e, l1, l2, h1, h2, a4, b4, yx3, q3]
@@ -375,11 +375,11 @@ theorem load_ok (s : State)
     WP isa (.block load) s fun t =>
       t.gpr Y0 ++ t.gpr Y1 = blockAt s.mem (s.gpr .x1) ^^^ blockAt s.mem (s.gpr .x2) ∧
       t.gpr YX = t.gpr Y0 ^^^ t.gpr Y1 ∧ Keep [Y0, Y1, YX, T] s t := by
-  have y0 : InRegions (s.rd ++ s.wr) (s.gpr .x1) 8 := by
+  obtain y0 : InRegions (s.rd ++ s.wr) (s.gpr .x1) 8 := by
     have := hy 0 (by decide); rwa [show s.gpr .x1 + BitVec.ofNat 64 0 = s.gpr .x1 from BitVec.add_zero _] at this
-  have d0 : InRegions (s.rd ++ s.wr) (s.gpr .x2) 8 := by
+  obtain d0 : InRegions (s.rd ++ s.wr) (s.gpr .x2) 8 := by
     have := hd 0 (by decide); rwa [show s.gpr .x2 + BitVec.ofNat 64 0 = s.gpr .x2 from BitVec.add_zero _] at this
-  have y8 := hy 8 (by decide); have d8 := hd 8 (by decide)
+  obtain y8 := hy 8 (by decide); have d8 := hd 8 (by decide)
   apply WP.of_runBlock
   refine ⟨_, by hrun [load, Y0, Y1, YX, T, y0, y8, d0, d8], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -396,9 +396,9 @@ theorem store_ok (s : State)
       s'.gpr .x2 = s.gpr .x2 + 16 ∧ s'.gpr .x3 = s.gpr .x3 - 1 ∧
       (∀ r, r ≠ .x2 → r ≠ .x3 → r ≠ ZH → r ≠ ZL → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have y0 : InRegions s.wr (s.gpr .x1) 8 := by
+  obtain y0 : InRegions s.wr (s.gpr .x1) 8 := by
     have := hy 0 (by decide); rwa [show s.gpr .x1 + BitVec.ofNat 64 0 = s.gpr .x1 from BitVec.add_zero _] at this
-  have y8 := hy 8 (by decide)
+  obtain y8 := hy 8 (by decide)
   apply WP.of_runBlock
   refine ⟨_, by hrun [store, ZH, ZL, y0, y8], ?_⟩
   refine ⟨?_, ?_, ?_, fun r h2 h3 h7 h8 => ?_, rfl, rfl⟩
@@ -431,9 +431,9 @@ theorem setup_ok (s : State)
       t.gpr KW1 = Holes.key1 (rev64 (s.mem.readW (s.gpr .x0) 64))
         (rev64 (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 8) 64)) ∧
       Masks t ∧ Keep setupRegs s t := by
-  have h0 : InRegions (s.rd ++ s.wr) (s.gpr .x0) 8 := by
+  obtain h0 : InRegions (s.rd ++ s.wr) (s.gpr .x0) 8 := by
     have := hh 0 (by decide); rwa [show s.gpr .x0 + BitVec.ofNat 64 0 = s.gpr .x0 from BitVec.add_zero _] at this
-  have h8 := hh 8 (by decide)
+  obtain h8 := hh 8 (by decide)
   apply WP.of_runBlock
   refine ⟨_, by hrun [setup, KW0, KW1, T, B, K, h0, h8], ?_⟩
   refine ⟨?_, ?_, fun i hi => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -493,32 +493,32 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.block_append_iff.mpr (WP.mono (load_ok s
     (fun d hd => by rw [hL.rd, hL.wr, hL.x1]; exact hp.in_y hd)
     (fun d hd => by rw [hL.rd, hL.wr, hL.x2]; exact hp.in_blk hi hd)) fun u1 ⟨a1, b1, k1⟩ => ?_)
-  have m1 : Masks u1 := k1.masks hL.masks fun j _ =>
+  obtain m1 : Masks u1 := k1.masks hL.masks fun j _ =>
     (by decide : ∀ r ∈ maskRegs, r ∉ [Y0, Y1, YX, T]) _ (K_mem j)
   refine WP.block_append_iff.mpr (WP.mono (mulCode_ok u1 m1 b1) fun u2 ⟨z2, q2, k2⟩ => ?_)
-  have hx1₂ : u2.gpr .x1 = yp s₀ := by rw [k2.gpr (by decide), k1.gpr (by decide), hL.x1]
-  have hm₂ : u2.mem = s.mem := k2.2.1.trans k1.2.1
+  obtain hx1₂ : u2.gpr .x1 = yp s₀ := by rw [k2.gpr (by decide), k1.gpr (by decide), hL.x1]
+  obtain hm₂ : u2.mem = s.mem := k2.2.1.trans k1.2.1
   refine WP.mono (store_ok u2 fun d hd => by rw [k2.2.2.2, k1.2.2.2, hL.wr, hx1₂]; exact hp.out_y hd)
     fun s₃ ⟨hm₃, hx2₃, hx3₃, hk₃, hrd₃, hwr₃⟩ => ?_
   -- the registers that are neither loaded, nor multiplied, nor stored
-  have keep : ∀ r, r ∉ [Y0, Y1, YX, T] → r ∉ mulRegs → r ≠ .x2 → r ≠ .x3 → s₃.gpr r = s.gpr r :=
+  obtain keep : ∀ r, r ∉ [Y0, Y1, YX, T] → r ∉ mulRegs → r ≠ .x2 → r ≠ .x3 → s₃.gpr r = s.gpr r :=
     fun r hr hr' h2 h3 => by
       rw [hk₃ r h2 h3 (fun e => hr' (e ▸ by decide)) (fun e => hr' (e ▸ by decide)), k2.gpr hr',
         k1.gpr hr]
-  have hx3 : u2.gpr .x3 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
+  obtain hx3 : u2.gpr .x3 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [k2.gpr (by decide), k1.gpr (by decide), hL.x3, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
       Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
-  have hblk : blockAt s.mem (blkAddr s₀ i) = blockAt s₀.mem (blkAddr s₀ i) :=
+  obtain hblk : blockAt s.mem (blkAddr s₀ i) = blockAt s₀.mem (blkAddr s₀ i) :=
     blockAt_frame hL.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.y_d.symm.sub_left (hp.blk_sub hi)
       · exact hp.d_scr.sub_left (hp.blk_sub hi)
-  have hy : blockAt s₃.mem (yp s₀) =
+  obtain hy : blockAt s₃.mem (yp s₀) =
       ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i + 1)) := by
     rw [hm₃, hx1₂, blockAt_storeMem, z2, ghashFrom_blocksAt_succ, ← hL.y, k1.gpr (r := KW0) (by decide),
       k1.gpr (r := KW1) (by decide), hL.k0, hL.k1, Holes.mulK_eq, a1, hL.x1, hL.x2, hblk, blockAt_rev']
-  have hcommon : Common s₀ (i + 1) s₃ := by
+  obtain hcommon : Common s₀ (i + 1) s₃ := by
     refine ⟨by rw [keep _ (by decide) (by decide) (by decide) (by decide), hL.x1],
       by rw [keep _ (by decide) (by decide) (by decide) (by decide), hL.x4],
       by rw [keep _ (by decide) (by decide) (by decide) (by decide), hL.x30],
@@ -536,19 +536,19 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       · rw [List.mem_singleton] at hr; subst hr
         rw [show scr s₀ + BitVec.ofNat 64 0 = scr s₀ from BitVec.add_zero _]
         exact hp.y_scr.symm
-  have hev : eval (.nonzero .x .x3) s₃ = some (BitVec.ofNat 64 (nb s₀ - (i + 1)) != 0) := by
+  obtain hev : eval (.nonzero .x .x3) s₃ = some (BitVec.ofNat 64 (nb s₀ - (i + 1)) != 0) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hx3₃, hx3]
   by_cases hlast : i + 1 = nb s₀
   · left
     rw [hlast, Nat.sub_self] at hev
     exact ⟨hev.trans (by decide), hlast ▸ hcommon⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
+    obtain hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
     refine ⟨?_, by omega_using [hi, hlast], { hcommon with x2 := ?_, x3 := ?_ }⟩
     · have := hp.nb_lt
-      have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
+      obtain h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
         intro h
-        have h' := congrArg BitVec.toNat h
+        obtain h' := congrArg BitVec.toNat h
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])] at h'
         exact hne h'
       exact hev.trans (by simpa using h0)
@@ -561,7 +561,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 theorem ghash_wp {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' := by
-  have hev : eval (.zero .x .x3) s₀ = some (s₀.gpr .x3 == 0) := by
+  obtain hev : eval (.zero .x .x3) s₀ = some (s₀.gpr .x3 == 0) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
   refine WP.ite (s₀.gpr .x3 == 0) hev (fun h => ?_) (fun h => ?_)
   · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
@@ -572,16 +572,16 @@ theorem ghash_wp {s₀ : State} (hp : Pre s₀) :
       simp only [beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     -- the registers saved, the key and the masks
-    have fS : Frame [scrR s₀] s₀.mem (Spill.saveMem s₀.mem (scr s₀) s₀.gpr saved) :=
+    obtain fS : Frame [scrR s₀] s₀.mem (Spill.saveMem s₀.mem (scr s₀) s₀.gpr saved) :=
       Spill.saveMem_frame_base (by decide) (by decide) _ _ _
-    have hscr : ∀ r ∈ [scrR s₀], (hR s₀).Disjoint r := fun r hr => by
+    obtain hscr : ∀ r ∈ [scrR s₀], (hR s₀).Disjoint r := fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.h_scr
     refine WP.seq ?_
     rw [show save = Spill.saveCode .x4 saved from rfl]
     refine Spill.save_ok (by decide) (fun p hp' => hp.in_scr
       (by have := (by decide : ∀ p ∈ saved, p.2 + 8 ≤ 80) p hp'; omega_using [this])) ?_
     refine WP.mono (setup_ok _ fun d hd => hp.in_h hd) fun s₁ ⟨e0, e1, mk, k⟩ => ?_
-    have hL₀ : LInv s₀ 0 s₁ := by
+    obtain hL₀ : LInv s₀ 0 s₁ := by
       refine ⟨⟨k.gpr (by decide), k.gpr (by decide), k.gpr (by decide), k.2.2.1, k.2.2.2, mk, ?_, ?_,
         ?_, ?_, ?_⟩, ?_, ?_⟩
       · rw [e0]
@@ -603,7 +603,7 @@ theorem ghash_wp {s₀ : State} (hp : Pre s₀) :
       · rw [k.gpr (by decide)]; simp [nb]
     -- the blocks
     let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
-    have hstep : ∀ m s, Inv m s → WP isa (.block body) s (fun s' =>
+    obtain hstep : ∀ m s, Inv m s → WP isa (.block body) s (fun s' =>
         (eval (.nonzero .x .x3) s' = some false ∧ Common s₀ (nb s₀) s') ∨
         (eval (.nonzero .x .x3) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL⟩

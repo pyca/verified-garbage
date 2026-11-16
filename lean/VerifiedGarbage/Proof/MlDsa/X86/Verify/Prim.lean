@@ -56,12 +56,12 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
   simp only [Bool.and_eq_true] at hk
   obtain ⟨⟨⟨⟨⟨hD, hAw⟩, hW⟩, dDA⟩, dDW⟩, dAW⟩ := hk
-  have hA₁ := (Lay.okW_iff.mp hAw).1
-  have hW₁ := (Lay.okW_iff.mp hW).1
-  have hbnd : L < 2 ^ 32 ∧ τ < 2 ^ 32 := by
+  obtain hA₁ := (Lay.okW_iff.mp hAw).1
+  obtain hW₁ := (Lay.okW_iff.mp hW).1
+  obtain hbnd : L < 2 ^ 32 ∧ τ < 2 ^ 32 := by
     simp only [Proof.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb; omega_using [hb]
-  have eL : (BitVec.ofNat 32 L).toNat = L := KeyGen.toNat_ofNat32 hbnd.1
-  have eτ : (BitVec.ofNat 32 τ).toNat = τ := KeyGen.toNat_ofNat32 hbnd.2
+  obtain eL : (BitVec.ofNat 32 L).toNat = L := KeyGen.toNat_ofNat32 hbnd.1
+  obtain eτ : (BitVec.ofNat 32 τ).toNat = τ := KeyGen.toNat_ofNat32 hbnd.2
   refine callPR_piece _ [⟨da, dO, L⟩] [⟨aa, ao, 1024⟩, ⟨wa, wo, 2048⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hD, hA₁, hW₁, hbnd]) hN (by simp [hD]) (by simp [hAw, hW]) tt hA
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -71,15 +71,15 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
     obtain ⟨w₁, w₂, w₃, w₄⟩ := he.buf hp hN (by simp) hW₁ hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have d₁ := Buf.disj hp hD hA₁ dDA
-    have d₂ := Buf.disj hp hD hW₁ dDW
-    have d₃ := Buf.disj hp hA₁ hW₁ dAW
+    obtain d₁ := Buf.disj hp hD hA₁ dDA
+    obtain d₂ := Buf.disj hp hD hW₁ dDW
+    obtain d₃ := Buf.disj hp hA₁ hW₁ dAW
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
-    have a₄ := he.arg 4 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
+    obtain a₄ := he.arg 4 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
@@ -89,11 +89,11 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
     have := hb
     ent_pre
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hD, hA₁, hW₁, hbnd]) he he'
-    have hs := hseed s₀ s₀' s s' hp hp' hq ha ha'
-    have a₀ := he.arg 0 (by simp)
-    have a₀' := he'.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₁' := he'.arg 1 (by simp)
+    obtain hs := hseed s₀ s₀' s s' hp hp' hq ha ha'
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₀' := he'.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₁' := he'.arg 1 (by simp)
     rw [← Proof.MlKem.bytesAt_congr (he.mem _ hD), ← Proof.MlKem.bytesAt_congr (he'.mem _ hD)] at hs
     generalize e = e₁ at *
     generalize e' = e₂ at *
@@ -105,9 +105,9 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
     refine ⟨esp, ?_, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp), ags 4 (by simp)⟩
     rw [a₁, a₁', eL, hs]
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
@@ -137,10 +137,10 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
   simp only [Bool.and_eq_true] at hk
   obtain ⟨⟨⟨⟨hH, hR⟩, hOw⟩, dHO⟩, dRO⟩ := hk
-  have hO := (Lay.okW_iff.mp hOw).1
-  have hgb : g < 2 ^ 32 := by
+  obtain hO := (Lay.okW_iff.mp hOw).1
+  obtain hgb : g < 2 ^ 32 := by
     simp only [Proof.MlDsa.gamma2s, Spec.MlDsa.q, List.mem_cons, List.not_mem_nil, or_false] at hg; omega_using [hg]
-  have eg : (BitVec.ofNat 32 g).toNat = g := KeyGen.toNat_ofNat32 hgb
+  obtain eg : (BitVec.ofNat 32 g).toNat = g := KeyGen.toNat_ofNat32 hgb
   refine callP_piece _ [⟨ha, hao, 1024⟩, ⟨ra, ro, 1024⟩] [⟨oa, oo, 1024⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hH, hR, hO, hgb]) hN (by simp [hH, hR]) (by simp [hOw]) tt (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -150,14 +150,14 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
     obtain ⟨o₁, o₂, o₃, o₄⟩ := he.buf hp hN (by simp) hO hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have d₁ := Buf.disj hp hH hO dHO
-    have d₂ := Buf.disj hp hR hO dRO
-    have rr := ent_reduced he hR (hA s₀ s hp ha).2
+    obtain d₁ := Buf.disj hp hH hO dHO
+    obtain d₂ := Buf.disj hp hR hO dRO
+    obtain rr := ent_reduced he hR (hA s₀ s hp ha).2
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.useHintContract, Proof.MlDsa.useHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -172,9 +172,9 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.useHintContract, Proof.MlDsa.useHintSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
@@ -203,12 +203,12 @@ theorem bu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitUnpackC
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
   simp only [Bool.and_eq_true] at hk
   obtain ⟨⟨hV, hFw⟩, dVF⟩ := hk
-  have hF := (Lay.okW_iff.mp hFw).1
+  obtain hF := (Lay.okW_iff.mp hFw).1
   obtain ⟨hav, hbv, hL'⟩ := bp_bounds (a, b) hab
   rw [← hL] at hL'
-  have ea : (BitVec.ofNat 32 a).toNat = a := KeyGen.toNat_ofNat32 hav
-  have eb : (BitVec.ofNat 32 b).toNat = b := KeyGen.toNat_ofNat32 hbv
-  have eL : (BitVec.ofNat 32 L).toNat = L := KeyGen.toNat_ofNat32 hL'
+  obtain ea : (BitVec.ofNat 32 a).toNat = a := KeyGen.toNat_ofNat32 hav
+  obtain eb : (BitVec.ofNat 32 b).toNat = b := KeyGen.toNat_ofNat32 hbv
+  obtain eL : (BitVec.ofNat 32 L).toNat = L := KeyGen.toNat_ofNat32 hL'
   refine callP_piece _ [⟨va, vo, L⟩] [⟨fa, fo, 1024⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hF, hV, hav, hbv, hL']) hN (by simp [hV]) (by simp [hFw]) tt hA
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -217,13 +217,13 @@ theorem bu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitUnpackC
     obtain ⟨f₁, f₂, f₃, f₄⟩ := he.buf hp hN (by simp) hF hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have d₁ := Buf.disj hp hV hF dVF
+    obtain d₁ := Buf.disj hp hV hF dVF
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
-    have a₄ := he.arg 4 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
+    obtain a₄ := he.arg 4 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.bitUnpackContract, Proof.MlDsa.bitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
@@ -242,10 +242,10 @@ theorem bu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitUnpackC
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp), ags 4 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
-    have a₄ := he.arg 4 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
+    obtain a₄ := he.arg 4 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.bitUnpackContract, Proof.MlDsa.bitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
@@ -270,7 +270,7 @@ theorem t1_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.unpackT1Co
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
   simp only [Bool.and_eq_true] at hk
   obtain ⟨⟨hV, hFw⟩, dVF⟩ := hk
-  have hF := (Lay.okW_iff.mp hFw).1
+  obtain hF := (Lay.okW_iff.mp hFw).1
   refine callP_piece _ [⟨va, vo, 320⟩] [⟨fa, fo, 1024⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hF, hV]) hN (by simp [hV]) (by simp [hFw]) tt hA
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -279,10 +279,10 @@ theorem t1_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.unpackT1Co
     obtain ⟨f₁, f₂, f₃, f₄⟩ := he.buf hp hN (by simp) hF hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have d₁ := Buf.disj hp hV hF dVF
+    obtain d₁ := Buf.disj hp hV hF dVF
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.unpackT1Contract, Proof.MlDsa.unpackT1Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -296,7 +296,7 @@ theorem t1_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.unpackT1Co
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.unpackT1Contract, Proof.MlDsa.unpackT1Sig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
@@ -327,13 +327,13 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
   simp only [Bool.and_eq_true] at hk
   obtain ⟨⟨hYb, hHw⟩, dYH⟩ := hk
-  have hH := (Lay.okW_iff.mp hHw).1
-  have hb : ω + k < 2 ^ 32 ∧ ω < 2 ^ 32 ∧ 256 * k < 2 ^ 32 := by
+  obtain hH := (Lay.okW_iff.mp hHw).1
+  obtain hb : ω + k < 2 ^ 32 ∧ ω < 2 ^ 32 ∧ 256 * k < 2 ^ 32 := by
     simp only [Proof.MlDsa.hintParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hwk; omega_using [hwk]
-  have e1 : (BitVec.ofNat 32 (ω + k)).toNat = ω + k := KeyGen.toNat_ofNat32 hb.1
-  have e2 : (BitVec.ofNat 32 ω).toNat = ω := KeyGen.toNat_ofNat32 hb.2.1
-  have e3 : (BitVec.ofNat 32 (256 * k)).toNat = 256 * k := KeyGen.toNat_ofNat32 hb.2.2
-  have e4 : ω + k - ω = k := by omega_using []
+  obtain e1 : (BitVec.ofNat 32 (ω + k)).toNat = ω + k := KeyGen.toNat_ofNat32 hb.1
+  obtain e2 : (BitVec.ofNat 32 ω).toNat = ω := KeyGen.toNat_ofNat32 hb.2.1
+  obtain e3 : (BitVec.ofNat 32 (256 * k)).toNat = 256 * k := KeyGen.toNat_ofNat32 hb.2.2
+  obtain e4 : ω + k - ω = k := by omega_using []
   refine callPR_piece _ [⟨ya, yo, ω + k⟩] [⟨ha, ho, 256 * k * 4⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hYb, hH, hb]) hN (by simp [hYb]) (by simp [hHw]) tt hA
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -342,13 +342,13 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
     obtain ⟨h₁, h₂, h₃, h₄⟩ := he.buf hp hN (by simp) hH hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have d₁ := Buf.disj hp hYb hH dYH
+    obtain d₁ := Buf.disj hp hYb hH dYH
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
-    have a₄ := he.arg 4 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
+    obtain a₄ := he.arg 4 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.hintBitUnpackContract, Proof.MlDsa.hintBitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
@@ -359,11 +359,11 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
     have := hwk
     ent_pre
   · obtain ⟨esp, ags⟩ := call_pubs _ hq (by simp [Arg.ok, hYb, hH, hb]) he he'
-    have hs := hseed s₀ s₀' s s' hp hp' hq ha ha'
-    have a₀ := he.arg 0 (by simp)
-    have a₀' := he'.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₁' := he'.arg 1 (by simp)
+    obtain hs := hseed s₀ s₀' s s' hp hp' hq ha ha'
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₀' := he'.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₁' := he'.arg 1 (by simp)
     rw [← Proof.MlKem.bytesAt_congr (he.mem _ hYb), ← Proof.MlKem.bytesAt_congr (he'.mem _ hYb)] at hs
     generalize e = e₁ at *
     generalize e' = e₂ at *
@@ -375,10 +375,10 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
     refine ⟨esp, ?_, ags 0 (by simp), ags 1 (by simp), ags 2 (by simp), ags 3 (by simp), ags 4 (by simp)⟩
     rw [a₁, a₁', e1, hs]
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
-    have a₂ := he.arg 2 (by simp)
-    have a₃ := he.arg 3 (by simp)
-    have a₄ := he.arg 4 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
+    obtain a₂ := he.arg 2 (by simp)
+    obtain a₃ := he.arg 3 (by simp)
+    obtain a₄ := he.arg 4 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.hintBitUnpackContract, Proof.MlDsa.hintBitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
@@ -400,7 +400,7 @@ theorem normLt_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.normLt
       B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callPR Y.sc "vg_mldsa_norm_lt" c [.buf ⟨fa, fo, 1024⟩, .imm bd]) := by
   obtain ⟨⟨K, hK, hv⟩, hst, hsp⟩ := hc
-  have eb : (BitVec.ofNat 32 bd).toNat = bd := KeyGen.toNat_ofNat32 hbd
+  obtain eb : (BitVec.ofNat 32 bd).toNat = bd := KeyGen.toNat_ofNat32 hbd
   refine callPR_pieceRO _ [⟨fa, fo, 1024⟩] [] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hk, hbd]) hN (by simp [hk]) (by simp) tt (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)
@@ -408,10 +408,10 @@ theorem normLt_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.normLt
   · obtain ⟨f₁, f₂, f₃, f₄⟩ := he.buf hp hN (by simp) hk hK
     obtain ⟨x₁, x₂⟩ := he.self hp hN (by simp) hK
     obtain ⟨en, hE⟩ := he.espNat hp hN (by simp)
-    have rf := ent_reduced he hk (hA s₀ s hp ha).2
+    obtain rf := ent_reduced he hk (hA s₀ s hp ha).2
     have := (E1 s₀).isLt
-    have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
+    obtain a₀ := he.arg 0 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
     have aa := he.argAddr0
     generalize e = e' at *
     sig_pre [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -425,7 +425,7 @@ theorem normLt_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.normLt
     simp only [arg_withRegions]
     exact ⟨esp, ags 0 (by simp), ags 1 (by simp)⟩
   · have a₀ := he.arg 0 (by simp)
-    have a₁ := he.arg 1 (by simp)
+    obtain a₁ := he.arg 1 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.normLtContract, Proof.MlDsa.normLtSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post

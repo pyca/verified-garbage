@@ -63,7 +63,7 @@ theorem bmagBV {w v s : Nat} (hw : w < 9) (hv : v ≤ 2 ^ w) (hs : s ≤ 1) :
     ((BitVec.ofNat 64 v - (BitVec.ofNat 64 (2 ^ w) &&& (0#64 - BitVec.ofNat 64 s))) ^^^
         (0#64 - BitVec.ofNat 64 s)) - (0#64 - BitVec.ofNat 64 s) =
       BitVec.ofNat 64 (if s = 1 then 2 ^ w - v else v) := by
-  have h9 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+  obtain h9 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
   obtain rfl | rfl : s = 0 ∨ s = 1 := by omega_using [hs]
   · simp
   · simp only [↓reduceIte]
@@ -112,17 +112,17 @@ theorem bwindow_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat}
       t.gpr .r9 = BitVec.ofNat 64 (combWin K.w k j) ∧
         t.gpr .r7 = BitVec.ofNat 64 (bcar K.w k (j + 1)) ∧ Kp [.r5, .r7, .r9] s t ∧ t.mem = s.mem := by
   let count := if j = K.J - 1 then K.topBits else K.w
-  have bounds := windowBits_bounds hj start cover
+  obtain bounds := windowBits_bounds hj start cover
   change count ≤ K.w ∧ K.w * j + count ≤ K.L.nbits ∧ (count = K.w ∨ K.w * j + count = K.L.nbits) at bounds
   let v := fun i => (k.testBit (K.w * j + i)).toNat
-  have hv : ∀ i, v i ≤ 1 := fun i => by dsimp only [v]; cases k.testBit (K.w * j + i) <;> decide
-  have bytes : ∀ i < count, s.mem (off base (K.L.bits + K.w * j + i)) = BitVec.ofNat 8 (v i) := by
+  obtain hv : ∀ i, v i ≤ 1 := fun i => by dsimp only [v]; cases k.testBit (K.w * j + i) <;> decide
+  obtain bytes : ∀ i < count, s.mem (off base (K.L.bits + K.w * j + i)) = BitVec.ofNat 8 (v i) := by
     intro i hi
     rw [show K.L.bits + K.w * j + i = K.L.bits + (K.w * j + i) by omega_using [], hb _ (by omega_using [bounds, hi])]
     dsimp only [v]
     cases k.testBit (K.w * j + i) <;> rfl
-  have hh := hornerWindow_ok K (s := s) (j := j) (count := count) hs h4 bounds.1 hw.2 ho (by omega_using [hl, bounds]) hv bytes
-  have win : hornerVal v 0 count = combWin K.w k j := window_without_padding bounds.1 bounds.2.2 hk
+  obtain hh := hornerWindow_ok K (s := s) (j := j) (count := count) hs h4 bounds.1 hw.2 ho (by omega_using [hl, bounds]) hv bytes
+  obtain win : hornerVal v 0 count = combWin K.w k j := window_without_padding bounds.1 bounds.2.2 hk
   by_cases e : j = K.J - 1
   · refine WP.ite true (by rw [last]; simp [e]) (fun _ => ?_) (fun hf => by cases hf)
     simp only [count, e, ↓reduceIte] at hh win
@@ -134,7 +134,7 @@ theorem bwindow_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat}
   · refine WP.ite false (by rw [last]; simp [e]) (fun ht => by cases ht) (fun _ => ?_)
     simp only [count, e, ↓reduceIte] at hh win
     refine wp_append (WP.mono hh fun s₁ ⟨v₁, k₁, m₁⟩ => ?_)
-    have top : K.w * j + (K.w - 1) < K.L.nbits := by
+    obtain top : K.w * j + (K.w - 1) < K.L.nbits := by
       have : K.w * j + K.w ≤ K.L.nbits := by simpa only [count, e, ↓reduceIte] using bounds.2.1
       omega_using [hw, this]
     unfold TCombCfg.topBit
@@ -162,15 +162,15 @@ theorem bdigit_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat} (carry : 
   rw [WP.seq_iff]
   refine WP.mono (lastTest_ok K (j := j) (by omega_using [hj, hJ]) (by omega_using [hJ]) (by rw [k₁.g]; exact gj))
     fun s₂ ⟨z₂, k₂, m₂⟩ => ?_
-  have k₁₂ : Kp [.r4, .r6] s s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
+  obtain k₁₂ : Kp [.r4, .r6] s s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (bwindow_ok K (k₁₂.ws hs) (by rw [At, k₂.g]; exact p₁) hw hj start cover short ho hl hk z₂
     (by intro i hi; rw [m₂, m₁]; exact hb i hi)) fun s₃ ⟨v₃, c₃, k₃, m₃⟩ => ?_
-  have hW := Nat.mod_lt (k / 2 ^ (K.w * j)) (Nat.two_pow_pos K.w)
-  have hs1 := bcar_le K.w k (j + 1)
-  have h2w : 2 ^ K.w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
-  have h4 : At s₃ base .r4 (K.w * j) := by rw [At, k₃.g, k₂.g]; exact p₁
-  have key : ∀ (u : State) (c : Nat), c ≤ 1 → u.gpr .r9 = BitVec.ofNat 64 (combWin K.w k j + c) →
+  obtain hW := Nat.mod_lt (k / 2 ^ (K.w * j)) (Nat.two_pow_pos K.w)
+  obtain hs1 := bcar_le K.w k (j + 1)
+  obtain h2w : 2 ^ K.w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+  obtain h4 : At s₃ base .r4 (K.w * j) := by rw [At, k₃.g, k₂.g]; exact p₁
+  obtain key : ∀ (u : State) (c : Nat), c ≤ 1 → u.gpr .r9 = BitVec.ofNat 64 (combWin K.w k j + c) →
       u.gpr .r7 = BitVec.ofNat 64 (bcar K.w k (j + 1)) → bcar K.w k j = c →
       WP isa (.block [.li .r5 0, .sub .r5 .r5 .r7, .li .r6 (2 ^ K.w), .logic .and .r6 .r6 .r5,
         .sub .r9 .r9 .r6, .logic .xor .r9 .r9 .r5, .sub .r9 .r9 .r5]) u fun t =>
@@ -190,23 +190,23 @@ theorem bdigit_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat} (carry : 
     · exact (((((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans
         (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
         (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide)))
-  have k₀₃ : Kp [.r4, .r5, .r6, .r7, .r9] s s₃ := (k₁₂.mono (by decide)).trans (k₃.mono (by decide))
+  obtain k₀₃ : Kp [.r4, .r5, .r6, .r7, .r9] s s₃ := (k₁₂.mono (by decide)).trans (k₃.mono (by decide))
   cases carry with
   | false =>
-    have j0 : j = 0 := by simpa using hc
+    obtain j0 : j = 0 := by simpa using hc
     simp only [Bool.false_eq_true, ↓reduceIte, List.nil_append]
     refine WP.mono (key s₃ 0 (by decide) (by rw [v₃, Nat.add_zero]) c₃ (by simp [bcar, j0]))
       fun t ⟨vt, kt, mt⟩ => ⟨vt, k₀₃.trans (kt.mono (by decide)), by rw [mt, m₃, m₂, m₁]⟩
   | true =>
-    have j0 : j ≠ 0 := by simpa using hc
+    obtain j0 : j ≠ 0 := by simpa using hc
     simp only [↓reduceIte, List.cons_append, List.nil_append]
-    have below : K.w * j - 1 < K.L.nbits := by
+    obtain below : K.w * j - 1 < K.L.nbits := by
       have : K.w * j ≤ K.w * (K.J - 1) := Nat.mul_le_mul_left _ (by omega_using [hj])
       have : 1 ≤ K.w * j := Nat.one_le_iff_ne_zero.mpr (Nat.mul_ne_zero (by omega_using [hw]) j0)
       omega_arith
     refine wp_step (lbz_ok (k₃.ws (k₁₂.ws hs)) h4 (by decide) (d := K.L.bits - 1) (by omega_using [hb1, hl, below])) ?_
     refine wp_step exec_add ?_
-    have hc1 := bcar_le K.w k j
+    obtain hc1 := bcar_le K.w k j
     refine WP.mono (key _ (bcar K.w k j) hc1 ?_ (by simp only [write_gpr, reduceCtorEq, ite_false]; exact c₃) rfl)
       fun t ⟨vt, kt, mt⟩ => ⟨vt, ?_, ?_⟩
     · simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
@@ -229,7 +229,7 @@ theorem bsign_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat}
     WP isa K.bsign s fun t =>
       t.gpr .r10 = (if bcar K.w k (j + 1) = 0 then 0 else BitVec.allOnes 64) ∧
         Kp [.r4, .r6, .r10] s t ∧ t.mem = s.mem := by
-  have bounds := windowBits_bounds hj start cover
+  obtain bounds := windowBits_bounds hj start cover
   change (if j = K.J - 1 then K.topBits else K.w) ≤ K.w ∧
     K.w * j + (if j = K.J - 1 then K.topBits else K.w) ≤ K.L.nbits ∧
     ((if j = K.J - 1 then K.topBits else K.w) = K.w ∨
@@ -244,7 +244,7 @@ theorem bsign_ok (K : TCombCfg) {s : State} {base : Addr} {j k : Nat}
     rw [last, bcar_last hw.1 start short hk]
     exact ⟨rfl, (ku.mono (by decide)).trans (Kp.write _ _ (by decide)), mu⟩
   · refine WP.ite false (by rw [zero]; simp [last]) (fun ht => by cases ht) (fun _ => ?_)
-    have top : K.w * j + (K.w - 1) < K.L.nbits := by
+    obtain top : K.w * j + (K.w - 1) < K.L.nbits := by
       have : K.w * j + K.w ≤ K.L.nbits := by simpa only [last, ↓reduceIte] using bounds.2.1
       omega_using [hw, this]
     refine wp_append (WP.mono (windowIndex_ok K (j := j) (ku.at h3) (by omega_using [hw]) (by rw [ku.g]; exact gj))
@@ -270,7 +270,7 @@ theorem boothEntry_rep {C : Curve} (hC : Law C) {w J j k R one : Nat}
     (hz : z = (if bmag w k j = 0 then 0 else one)) (hlt : y < C.p) :
     Rep C (toM C.p R x) (toM C.p R (if bcar w k (j + 1) = 0 then y else (C.p - y) % C.p))
       (toM C.p R z) (bentry C w k j) := by
-  have rep := combEntry_rep hC h unit hone hj (bmag_le hw k j)
+  obtain rep := combEntry_rep hC h unit hone hj (bmag_le hw k j)
   rw [← hx, ← hy, ← hz] at rep
   unfold bentry
   by_cases pos : bcar w k (j + 1) = 0
@@ -278,8 +278,8 @@ theorem boothEntry_rep {C : Curve} (hC : Law C) {w J j k R one : Nat}
     exact rep
   · have one : bcar w k (j + 1) = 1 := by have := bcar_le w k (j + 1); omega_using [pos, this]
     simp only [one, Nat.one_ne_zero, ↓reduceIte]
-    have neg : toM C.p R ((C.p - y) % C.p) = -toM C.p R y := by
-      have sub := toM_sub (m := C.p) (R := R) (A := 0) (B := y) (by omega_using [hlt])
+    obtain neg : toM C.p R ((C.p - y) % C.p) = -toM C.p R y := by
+      obtain sub := toM_sub (m := C.p) (R := R) (A := 0) (B := y) (by omega_using [hlt])
       simp only [Nat.zero_add, toM_zero] at sub
       grind
     rw [neg]
@@ -300,9 +300,9 @@ theorem bentry_ok (K : TCombCfg) (carry : Bool) {C : Curve} {tbl : List (List (N
         (bentry C K.w k j) ∧
       wordsVal t.mem base K.Q.z K.L.M.n = (if bmag K.w k j = 0 then 0 else K.one) := by
   unfold TCombCfg.bentry
-  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
-  have hfit : C.p ≤ 2 ^ (64 * K.L.M.n) := Nat.le_of_lt h.modulus.m_lt
-  have hl := lay_nums h.layout.point.k3 h.layout.point.k6
+  obtain hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  obtain hfit : C.p ≤ 2 ^ (64 * K.L.M.n) := Nat.le_of_lt h.modulus.m_lt
+  obtain hl := lay_nums h.layout.point.k3 h.layout.point.k6
   obtain ⟨hqx, hqy, hqz, hqa, hown, hown', -, -, hq4⟩ := q_lay h.layout
   have lo := h.layout.low
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lo
@@ -310,41 +310,41 @@ theorem bentry_ok (K : TCombCfg) (carry : Bool) {C : Curve} {tbl : List (List (N
   have hbits := h.layout.point.bitsE
   have hb4 := h.layout.point.bits
   have nowrap := i.wsr.nowrap
-  have hH15 : K.H + 1 ≤ 2 ^ 15 := by
+  obtain hH15 : K.H + 1 ≤ 2 ^ 15 := by
     have := h.row
     have := Nat.le_mul_of_pos_left K.H (show 0 < 16 * K.L.M.n by have := h.layout.point.k3; omega_using [this])
     omega_arith
   refine WP.seq (WP.mono_syms (bdigit_ok K carry i.wsr.ws i.wsr.at3 ⟨h.w1, h.w9⟩ hj (Nat.le_of_lt h.J15) h.startBits
     h.coverBits short h.bitsOff hb1 hbits hk hc gj i.bits) fun u ⟨gu, ku, mu⟩ syu => ?_)
-  have iu : CurveInputs K C tbl base T k u :=
+  obtain iu : CurveInputs K C tbl base T k u :=
     i.keep h.layout hd (ku.rk (rs' := fnClob)) (by decide) (by rw [mu]; exact Unch.refl _ _ _) syu
   refine WP.seq (WP.mono_syms (selectTable_ok K (a := bmag K.w k j) iu.wsr hq4 h.layout.al.1
     (by omega_using [hl, hqx]) (by omega_using [hl, zlo]) (.inl (by omega_using [hqx, zlo])) (Nat.lt_of_lt_of_le h.one_lt hfit) iu.zero
     (by have := h.layout.point.k3; omega_using [this]) (by have := h.layout.point.k6; omega_using [hl]) hH15 h.row (bmag_le h.w1 k j) gu
     (by rw [ku.g]; exact gj) iu.table iu.symbol h.tables.len h.tables.lenH hj (by have := h.J15; omega_using [this]) hp hfit hd)
     fun v ⟨xv, yv, zv, kv, ov⟩ syv => ?_)
-  have ouv : Unch base (loopWrites K) u.mem v.mem :=
+  obtain ouv : Unch base (loopWrites K) u.mem v.mem :=
     ov.unch.cover fun w hw' => by
       rw [List.mem_singleton] at hw'; subst hw'
       exact ⟨(oAt K.L.M.n, 72 * K.L.M.n), by simp [loopWrites], by dsimp only; omega_using [hqx], by dsimp only; omega_using [hqx]⟩
-  have iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ouv syv
-  have ylt : wordsVal v.mem base K.Q.y K.L.M.n < C.p := by
+  obtain iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ouv syv
+  obtain ylt : wordsVal v.mem base K.Q.y K.L.M.n < C.p := by
     rw [yv]; split
     · exact h.one_lt
     · exact Nat.mod_lt _ hp
-  have oldR : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
+  obtain oldR : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
       wordsVal v.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := by
     intro x hx
-    have lowx : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by
+    obtain lowx : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     rw [ov.wordsVal (.inl (by omega_using [hqx, lowx])) (by omega_using [hl, lowx]), mu]
-  have mask : ∀ a, Rk fnClob v a → Unch base [(K.neg, 8 * K.L.M.n), (own K.L.M.n, 64 * K.L.M.n)] v.mem a.mem →
+  obtain mask : ∀ a, Rk fnClob v a → Unch base [(K.neg, 8 * K.L.M.n), (own K.L.M.n, 64 * K.L.M.n)] v.mem a.mem →
       WP isa K.bsign a fun b =>
         b.gpr .r10 = (if bcar K.w k (j + 1) = 0 then 0 else BitVec.allOnes 64) ∧ Kp [.r4, .r6, .r10] a b ∧
           b.mem = a.mem := by
     intro a ka ma
-    have wa := iv.wsr.of_rk ka
+    obtain wa := iv.wsr.of_rk ka
     refine WP.mono (bsign_ok K wa.ws wa.at3 ⟨h.w1, h.w9⟩ hj (Nat.le_of_lt h.J15) h.startBits h.coverBits short hbits hk
       (by rw [ka.g, kv.g, ku.g]; exact gj) fun b hb => ?_) fun t ⟨v', k', m'⟩ => ⟨v', k', m'⟩
     rw [ma.byte (fun w hw' => by
@@ -401,9 +401,9 @@ theorem maddCallF_ok (F : Impl.Weierstrass.Mont.Modulus) (name : String) [NeZero
         maddJF (Eb F.k F.m false s.mem base 3) (Eb F.k F.m false s.mem base 4)
           (Eb F.k F.m false s.mem base 5) (Eb F.k F.m false s.mem base 6)
           (Eb F.k F.m false s.mem base 7) := by
-  have hcov : Covers [⟨base, 8192⟩] s.wr := Covers.of_mem fun r hr => by
+  obtain hcov : Covers [⟨base, 8192⟩] s.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact hw.wr
-  have g3 : ∀ t : State, (t.callEntry.withRegions [] [⟨base, 8192⟩]).gpr .r3 = t.gpr .r3 := fun t => by
+  obtain g3 : ∀ t : State, (t.callEntry.withRegions [] [⟨base, 8192⟩]).gpr .r3 = t.gpr .r3 := fun t => by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide)]
   refine WP.call (k := ⟨fun t => PrePt F.k F.m false t ∧ t.gpr .r3 = base ∧ t.mem = s.mem,
       fun t t' => (∀ r, r ∉ fnClob → t'.gpr r = t.gpr r) ∧
@@ -431,7 +431,7 @@ theorem maddCallF_ok (F : Impl.Weierstrass.Mont.Modulus) (name : String) [NeZero
   intro s' r' w' p' _ _ _ ⟨G, O, L, E⟩
   simp only [State.withRegions_mem, State.callEntry_mem, g3, hw.r3, State.withRegions_gpr] at G O L E
   refine ⟨⟨fun r hr => ?_, r', w', p'⟩, O, L, E⟩
-  have hl : r ∉ linkRegs := not_mem_sub hr
+  obtain hl : r ∉ linkRegs := not_mem_sub hr
   rw [G r hr, State.callEntry_gpr _ hl]
 
 /-- `maddCallF_ok` for the comb's call, of `n`-word numbers modulo `m`. -/
@@ -476,24 +476,24 @@ theorem bstep_math {C : Curve} (hC : Law C) (hG : onCurve C (G C) = true) (hM3 :
   rw [bpart_succ_pt hC hG hw]
   by_cases h0 : bmag w k j = 0
   · simp only [h0, ↓reduceIte]
-    have hQ : bentry C w k j = .infinity := by
+    obtain hQ : bentry C w k j = .infinity := by
       unfold bentry
       rw [h0, show combPtW C w j 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul]]
       split <;> rfl
     rw [hQ, add_infinity]
     exact hR
   · simp only [h0, ↓reduceIte] at hez ⊢
-    have hQa := Rep.eq_affine hC (hez ▸ hE)
+    obtain hQa := Rep.eq_affine hC (hez ▸ hE)
     by_cases hz0 : Z = 0
     · simp only [hz0, ↓reduceIte]
-      have hP : zmul (bpart w k j) (G C) = .infinity := by
+      obtain hP : zmul (bpart w k j) (G C) = .infinity := by
         rw [hz0] at hR; exact InvJ.eq_infinity hR
       rw [hP, infinity_add']
       exact InvJ.of_rep01 hE (Or.inl hez)
     · simp only [hz0, ↓reduceIte]
-      have hon : onCurve C (bentry C w k j) = true := by
+      obtain hon : onCurve C (bentry C w k j) = true := by
         rw [bentry_eq hw]; exact hC.onCurve_zmul hG _
-      have hne : zmul (bpart w k j) (G C) ≠ bentry C w k j := by
+      obtain hne : zmul (bpart w k j) (G C) ≠ bentry C w k j := by
         rw [bentry_eq hw]
         exact booth_ne hC hG hB.n hB.n0 hB.cop hB.safe hw hB.J2 hB.kmax hk hj1 hj h0
       rw [hQa] at hon hne ⊢
@@ -553,7 +553,7 @@ theorem orWords_ok {s : State} {base : Addr} (hs : Ws s base 8192) (h3 : At s ba
     refine wp_step (ld0_ok (k₁.ws hs) (k₁.at h3) (by decide) (by omega_using [hz4]) (by omega_using [hk])) ?_
     refine wp_step exec_logic (WP.block_nil ?_)
     refine ⟨?_, (k₁.trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide)), m₁⟩
-    have ev : ∀ x y : BitVec 64, (x ||| y = 0) = (x = 0 ∧ y = 0) := fun _ _ => propext BitVec.or_eq_zero_iff
+    obtain ev : ∀ x y : BitVec 64, (x ||| y = 0) = (x = 0 ∧ y = 0) := fun _ _ => propext BitVec.or_eq_zero_iff
     simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
     rw [ev, e₁, m₁]
     constructor
@@ -578,7 +578,7 @@ theorem zMask_ok (K : TCombCfg) {s : State} {base : Addr} (hs : Ws s base 8192) 
   refine ⟨?_, ((Kp.write _ _ (by decide)).trans k₁ |>.mono (by decide)).trans (k₂.mono (by decide)),
     by rw [m₂, m₁]; rfl⟩
   rw [e₂]
-  have iff : s₁.gpr .r4 = 0 ↔ wordsVal s.mem base K.L.R.z K.L.M.n = 0 := by
+  obtain iff : s₁.gpr .r4 = 0 ↔ wordsVal s.mem base K.L.R.z K.L.M.n = 0 := by
     simp only [write_gpr, ite_true, write_mem] at e₁
     rw [e₁]
     constructor
@@ -702,7 +702,7 @@ theorem rsel_ok (K : TCombCfg) (h : Layout K) {s : State} {base : Addr} (hw : Ws
   have hlo := h.low
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (nzOf_ok (r := .r9) (by decide)) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_
-  have e₁' : s₁.gpr .r10 = if decide (s.gpr .r9 ≠ 0) then BitVec.allOnes 64 else 0 := by
+  obtain e₁' : s₁.gpr .r10 = if decide (s.gpr .r9 ≠ 0) then BitVec.allOnes 64 else 0 := by
     rw [e₁]; by_cases e : s.gpr .r9 = 0 <;> simp [e]
   rw [WP.block_append_iff]
   refine WP.mono (selPt_ok' (k₁.ws hw.ws) (k₁.at hw.at3) _ e₁' (n := K.L.M.n) (o := K.L.R) (a := K.L.R)
@@ -985,7 +985,7 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
       (∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal t.mem base x K.L.M.n < C.p) ∧
       Rep C (tmv C K.L.M.n base t K.L.R.x) (tmv C K.L.M.n base t K.L.R.y) (tmv C K.L.M.n base t K.L.R.z) P := by
   have h := hJ.base
-  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  obtain hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
   have hk3 := h.layout.point.k3
   have hk6 := h.layout.point.k6
   have := lay_nums hk3 hk6
@@ -1009,27 +1009,27 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (zMask_ok K hw.ws hw.at3 (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) rzl (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, rzl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz])) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_
   rw [nzMask_eq] at e₁
-  have w₁ := hw.of_kp k₁
+  obtain w₁ := hw.of_kp k₁
   rw [WP.block_append_iff]
   refine WP.mono (setConstW_ok w₁ (o := K.Q.y) (n := K.L.M.n) (by omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz])
     (Nat.lt_trans h.one_lt fit)) fun s₂ ⟨o₂, y₂, k₂⟩ => ?_
-  have w₂ := w₁.of_kp k₂
+  obtain w₂ := w₁.of_kp k₂
   refine WP.mono (sel_ok (decide (wordsVal s.mem base K.L.R.z K.L.M.n ≠ 0)) K.L.M.n w₂.ws w₂.at3
     (by rw [k₂.g]; exact e₁) (o := K.L.R.y) (a := K.Q.y)
     (b := K.L.R.y) ryl (by omega_using [hk3, hk6, this, hqx, hqy, hqa, hq4, rx, ry, rz, zlo, nlo, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) ryl (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (by omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (by omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (.inl (Nat.le_refl _)))
     fun s₃ ⟨y₃, k₃, o₃⟩ => ?_
-  have w₃ := w₂.of_kp k₃
+  obtain w₃ := w₂.of_kp k₃
   -- what `s₃` holds
-  have kept : ∀ x ∈ [K.L.R.x, K.L.R.z, K.zero],
+  obtain kept : ∀ x ∈ [K.L.R.x, K.L.R.z, K.zero],
       wordsVal s₃.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    have top : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by
+    obtain top : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by
       rcases hx with rfl | rfl | rfl <;> [exact rx; exact rz; exact zlo]
     rw [o₃.wordsVal (by rcases hx with rfl | rfl | rfl <;> [exact rxy; exact ryz.symm; exact zy])
         (by omega_using [this, top]),
       o₂.wordsVal (.inl (by omega_using [top, hqx, hqy])) (by omega_using [this, top]), m₁]
-  have yv : wordsVal s₃.mem base K.L.R.y K.L.M.n = if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then K.one
+  obtain yv : wordsVal s₃.mem base K.L.R.y K.L.M.n = if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then K.one
       else wordsVal s.mem base K.L.R.y K.L.M.n := by
     rw [y₃, o₂.wordsVal (by omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]), y₂, m₁]
     by_cases e : wordsVal s.mem base K.L.R.z K.L.M.n = 0 <;> simp [e]
@@ -1041,7 +1041,7 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
   dsimp only at hk hm
   subst hk hm
   let V : List Nat := [K.L.R.x, K.L.R.y, K.L.R.z, K.zero]
-  have I₃ : Inv K.L.M.n base C.p (· ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.neg, K.zero]) V
+  obtain I₃ : Inv K.L.M.n base C.p (· ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.neg, K.zero]) V
       (fun x => tmv C K.L.M.n base s₃ x) s₃ := by
     refine ⟨w₃, by simp [V], ?_, fun _ _ => rfl⟩
     simp only [V, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
@@ -1050,24 +1050,24 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     split
     · exact h.one_lt
     · exact lty
-  have ne : K.L.R.x ≠ K.L.R.y ∧ K.L.R.x ≠ K.L.R.z ∧ K.L.R.y ≠ K.L.R.z ∧ K.neg ≠ K.L.R.x ∧
+  obtain ne : K.L.R.x ≠ K.L.R.y ∧ K.L.R.x ≠ K.L.R.z ∧ K.L.R.y ≠ K.L.R.z ∧ K.neg ≠ K.L.R.x ∧
       K.neg ≠ K.L.R.y ∧ K.neg ≠ K.L.R.z ∧ K.zero ≠ K.L.R.x ∧ K.zero ≠ K.L.R.y ∧ K.zero ≠ K.L.R.z ∧
       K.zero ≠ K.neg :=
     ⟨by omega_using [hk3, rxy], by omega_using [hk3, rxz], by omega_using [hk3, ryz], by omega_using [hk3, nx],
       by omega_using [hk3, ny], by omega_using [hk3, nz], by omega_using [hk3, zx], by omega_using [hk3, zy],
       by omega_using [hk3, zz], by omega_using [hk3, nzr]⟩
   obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, n₁₀⟩ := ne
-  have reads : readsOk (fromJ { K.L.S with t0 := K.neg } K.L.R ⟨K.zero, K.zero, K.zero⟩ K.L.R) V = true := by
+  obtain reads : readsOk (fromJ { K.L.S with t0 := K.neg } K.L.R ⟨K.zero, K.zero, K.zero⟩ K.L.R) V = true := by
     simp [readsOk, fromJ, FOp.ins, FOp.out, V]
   refine WP.mono (fprog_ok (M := K.L.M) (S := ⟨c, wF, C.p, K.L.M.n, d⟩) h.modulus rfl hJ.outLay h.unit _ I₃
     (by simp [fromJ, FOp.ins, FOp.out]) reads) fun t ⟨kt, It⟩ => ?_
-  have val : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], tmv C K.L.M.n base t x =
+  obtain val : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], tmv C K.L.M.n base t x =
       runOps (fromJ { K.L.S with t0 := K.neg } K.L.R ⟨K.zero, K.zero, K.zero⟩ K.L.R)
         (fun x => tmv C K.L.M.n base s₃ x) x := fun x hx =>
     It.val x (by
       rw [mem_validAfter]; left; simp only [V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with e | e | e <;> simp [e])
-  have ltt : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal t.mem base x K.L.M.n < C.p := fun x hx =>
+  obtain ltt : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal t.mem base x K.L.M.n < C.p := fun x hx =>
     It.lt x (by
       rw [mem_validAfter]; left; simp only [V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with e | e | e <;> simp [e])
@@ -1081,15 +1081,15 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
       kt.rd.trans (k₃.rd.trans (k₂.rd.trans k₁.rd)), kt.wr.trans (k₃.wr.trans (k₂.wr.trans k₁.wr)),
       kt.sp.trans (k₃.sp.trans (k₂.sp.trans k₁.sp))⟩
   · have u₁ : Unch base (writes K) s.mem s₁.mem := by rw [m₁]; exact Unch.refl _ _ _
-    have u₂ : Unch base (writes K) s₁.mem s₂.mem :=
+    obtain u₂ : Unch base (writes K) s₁.mem s₂.mem :=
       Unch.cover (W := [(K.Q.y, 8 * K.L.M.n)]) (Outs.of_outside o₂ (List.mem_singleton_self _)) fun w hw' => by
         rw [List.mem_singleton] at hw'; subst hw'
         exact ⟨(oAt K.L.M.n, 4096 - oAt K.L.M.n), by simp [writes], by dsimp only; omega_using [hqx, hqy], by dsimp only; omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]⟩
-    have u₃ : Unch base (writes K) s₂.mem s₃.mem :=
+    obtain u₃ : Unch base (writes K) s₂.mem s₃.mem :=
       Unch.cover (W := [(K.L.R.y, 8 * K.L.M.n)]) (Outs.of_outside o₃ (List.mem_singleton_self _)) fun w hw' => by
         rw [List.mem_singleton] at hw'; subst hw'
         exact ⟨_, by simp [writes], Nat.le_refl _, Nat.le_refl _⟩
-    have u₄ : Unch base (writes K) s₃.mem t.mem := Unch.cover kt.mem fun w hw' => by
+    obtain u₄ : Unch base (writes K) s₃.mem t.mem := Unch.cover kt.mem fun w hw' => by
       simp only [fromJ, List.map_cons, List.map_nil, FOp.out, List.cons_append, List.nil_append,
         List.mem_cons, List.not_mem_nil, or_false] at hw'
       rcases hw' with rfl | rfl | rfl | rfl | rfl
@@ -1101,20 +1101,20 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     exact (u₁.trans (u₂.trans (u₃.trans u₄))).cover fun w hw' => ⟨w, by
       simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
   · have out := InvJ.out hC inv
-    have ex := val K.L.R.x (by simp)
-    have ey := val K.L.R.y (by simp)
-    have ez := val K.L.R.z (by simp)
+    obtain ex := val K.L.R.x (by simp)
+    obtain ey := val K.L.R.y (by simp)
+    obtain ez := val K.L.R.z (by simp)
     simp only [fromJ, runOps_cons, runOps_nil, FOp.run, Function.update_apply, n₁, n₂, n₃, n₇, n₉, n₁₀,
       Ne.symm n₁, Ne.symm n₂, Ne.symm n₃, Ne.symm n₄, Ne.symm n₅, Ne.symm n₆, ↓reduceIte] at ex ey ez
     rw [ex, ey, ez]
-    have z₃ : tmv C K.L.M.n base s₃ K.zero = 0 := by
+    obtain z₃ : tmv C K.L.M.n base s₃ K.zero = 0 := by
       show toM _ _ _ = _
       rw [kept _ (by simp), zero]; exact toM_zero _ _
-    have tx : tmv C K.L.M.n base s₃ K.L.R.x = tmv C K.L.M.n base s K.L.R.x := by
+    obtain tx : tmv C K.L.M.n base s₃ K.L.R.x = tmv C K.L.M.n base s K.L.R.x := by
       show toM _ _ _ = toM _ _ _; rw [kept _ (by simp)]
-    have tz : tmv C K.L.M.n base s₃ K.L.R.z = tmv C K.L.M.n base s K.L.R.z := by
+    obtain tz : tmv C K.L.M.n base s₃ K.L.R.z = tmv C K.L.M.n base s K.L.R.z := by
       show toM _ _ _ = toM _ _ _; rw [kept _ (by simp)]
-    have ty : tmv C K.L.M.n base s₃ K.L.R.y =
+    obtain ty : tmv C K.L.M.n base s₃ K.L.R.y =
         if tmv C K.L.M.n base s K.L.R.z = 0 then 1 else tmv C K.L.M.n base s K.L.R.y := by
       show toM _ _ _ = _
       rw [yv]
@@ -1156,10 +1156,10 @@ theorem loopJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     (fun n t ⟨j, hjn, D⟩ => ?_) n t ⟨j, hn, hD⟩
   refine WP.mono (bstep_ok K hJ.base hC hG hJ.am3 hJ.booth hJ.short hJ.bits1 D.inputs D.acc (by omega_using [hjn]) hk hk
     D.r31 hd) fun t' ⟨kt, ot, it, at', gt, lt⟩ => ?_
-  have D' : Done K C tbl base T k s₀ (j + 1) t' :=
+  obtain D' : Done K C tbl base T k s₀ (j + 1) t' :=
     ⟨D.keep.trans kt, (D.unch.trans (ot.cover hJ.base.layout.loop_cover)).cover fun w hw' => ⟨w, by
       simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩, it, at', gt⟩
-  have e := eval_more lt
+  obtain e := eval_more lt
   by_cases last : j + 1 = K.J - 1
   · refine .inl ⟨by rw [e]; simp [last], ?_⟩
     rw [← last]; exact D'
@@ -1191,7 +1191,7 @@ theorem combJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       Rep C (tmv C K.L.M.n base t K.L.R.x) (tmv C K.L.M.n base t K.L.R.y) (tmv C K.L.M.n base t K.L.R.z)
         (mul k (G C)) := by
   have h := hJ.base
-  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  obtain hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
   have hk3 := h.layout.point.k3
   have hk6 := h.layout.point.k6
   have := lay_nums hk3 hk6
@@ -1205,17 +1205,17 @@ theorem combJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
   have nowrap := hw.nowrap
   unfold TCombCfg.combJ
   -- `a` and `3b` to the point functions' slots, and `r31 = 0`
-  have start : WP isa (.block (ladderSetup K.L ++ [.li .r31 0])) s fun t => Kp [.r4, .r31] s t ∧
+  obtain start : WP isa (.block (ladderSetup K.L ++ [.li .r31 0])) s fun t => Kp [.r4, .r31] s t ∧
       Unch base [(oAt K.L.M.n, 4096 - oAt K.L.M.n)] s.mem t.mem ∧ CpOk K.L base t.mem s.mem ∧
       t.gpr .r31 = BitVec.ofNat 64 0 := by
     refine wp_append (WP.mono (ladderSetup_ok hw h.layout.point) fun u ⟨ku, ou, cp⟩ => ?_)
     refine wp_step (exec_li (by decide)) (WP.block_nil ⟨(ku.mono (by decide)).trans (Kp.write _ _ (by decide)),
       ou, cp, by simp only [write_gpr, ite_true]⟩)
   refine WP.seq (WP.mono_syms start fun u ⟨ku, ou, cp, gu⟩ syu => ?_)
-  have ou' : Unch base (writes K) s.mem u.mem := ou.cover fun w hw' => by
+  obtain ou' : Unch base (writes K) s.mem u.mem := ou.cover fun w hw' => by
     rw [List.mem_singleton] at hw'; subst hw'
     exact ⟨_, by simp [writes], Nat.le_refl _, Nat.le_refl _⟩
-  have iu : CurveInputs K C tbl base T k u := by
+  obtain iu : CurveInputs K C tbl base T k u := by
     refine ⟨hw.of_kp ku, ht.unch (by rw [ku.rd, ku.wr]) ou' (fun w hw' => by
         have := h.layout.bounded w hw'; omega_using [this]) hd, by rw [syu]; exact sym, ?_, ?_, ?_, ?_⟩
     · rw [ou.wordsVal (fun r hr => by
@@ -1228,25 +1228,25 @@ theorem combJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
   -- window 0's entry, to `R`
   refine WP.seq (WP.mono_syms (bentry_ok K false h hC iu (by have := hJ.booth.J2; omega_using [this]) hk gu hJ.short hJ.bits1
     (by simp) hd) fun v ⟨kv, ov, rv, lv, pv, zv⟩ syv => ?_)
-  have iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ov syv
+  obtain iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ov syv
   refine WP.seq (WP.mono_syms (copyPt_ok iv.wsr.ws iv.wsr.at3 (n := K.L.M.n) (o := K.L.R) (a := K.Q)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [hqy, hqz, hq4, rxl, ryl, rzl])
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [hk3, hk6, this, hqx, hqy, hqz, hqa, hq4, rx, ry, rz, zlo, rxl, ryl, rzl])
     h.layout.point.rne
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [hk3, hk6, this, hqx, hqy, hqz, hqa, hq4, rx, ry, rz, zlo, rxl, ryl, rzl]))
     fun v₁ ⟨x₁, y₁, z₁, k₁, o₁⟩ sy₁ => ?_)
-  have U₁ : Unch base (loopWrites K) v.mem v₁.mem := Unch.cover o₁ fun w hw' => by
+  obtain U₁ : Unch base (loopWrites K) v.mem v₁.mem := Unch.cover o₁ fun w hw' => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw'
     rcases hw' with rfl | rfl | rfl <;> exact ⟨_, by simp [loopWrites], Nat.le_refl _, Nat.le_refl _⟩
-  have i₁ : CurveInputs K C tbl base T k v₁ := iv.keep h.layout hd (k₁.rk (rs' := fnClob)) (by decide) U₁ sy₁
-  have keep₁ : Rk powClob s v₁ :=
+  obtain i₁ : CurveInputs K C tbl base T k v₁ := iv.keep h.layout hd (k₁.rk (rs' := fnClob)) (by decide) U₁ sy₁
+  obtain keep₁ : Rk powClob s v₁ :=
     (ku.rk (by decide)).trans ((kv.mono (by decide)).trans (k₁.rk (by decide)))
-  have ovU : Unch base (loopWrites K) u.mem v₁.mem := (ov.trans U₁).cover fun w hw' => ⟨w, by
+  obtain ovU : Unch base (loopWrites K) u.mem v₁.mem := (ov.trans U₁).cover fun w hw' => ⟨w, by
     simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
-  have unch₁ : Unch base (writes K) s.mem v₁.mem :=
+  obtain unch₁ : Unch base (writes K) s.mem v₁.mem :=
     (ou'.trans (ovU.cover h.layout.loop_cover)).cover fun w hw' => ⟨w, by
       simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
-  have acc₁ : JAcc K C base k 0 v₁ := by
+  obtain acc₁ : JAcc K C base k 0 v₁ := by
     refine ⟨?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       rw [x₁, y₁, z₁]
@@ -1259,7 +1259,7 @@ theorem combJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       split
       · exact .inr (toM_zero _ _)
       · exact .inl h.one
-  have D₁ : Done K C tbl base T k s 0 v₁ :=
+  obtain D₁ : Done K C tbl base T k s 0 v₁ :=
     ⟨keep₁, unch₁, i₁, acc₁, by rw [k₁.g, kv.g]; exact gu⟩
   -- the windows `1 … J - 1`, and `R` out of Jacobian coordinates
   have J2 := hJ.booth.J2
@@ -1267,11 +1267,11 @@ theorem combJ_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
   refine WP.mono (bout_ok K hJ hC D.inputs.wsr D.inputs.zero D.acc.lt D.acc.inv) fun u ⟨ku', ou'', lu, ru⟩ =>
     ⟨D.keep.trans ku', (D.unch.trans ou'').cover fun w hw' => ⟨w, by
       simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩, lu, ?_⟩
-  have top : k < 2 ^ (K.w * K.J - 1) := by
+  obtain top : k < 2 ^ (K.w * K.J - 1) := by
     have hs := hJ.short
     have hst := h.startBits
     unfold TCombCfg.topBits at hs
-    have e : K.w * K.J = K.w * (K.J - 1) + K.w := by
+    obtain e : K.w * K.J = K.w * (K.J - 1) + K.w := by
       rw [← Nat.mul_succ]; congr 1; omega_using [J2]
     exact Nat.lt_of_lt_of_le hk (Nat.pow_le_pow_right (by decide) (by omega_using [hs, e]))
   rw [show K.J - 1 + 1 = K.J by omega_using [J2], bpart_top (by omega_using [J2]) top, zmul_natCast] at ru

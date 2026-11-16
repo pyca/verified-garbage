@@ -39,25 +39,25 @@ theorem seedIn_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen =
   have sz := v.size_ge
   have nl := G.hash.N_le
   have sf := v.seedsFit
-  have q0 : 0 < g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
-  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
-  have kq : k * E.qLen + E.qLen ≤ E.seedsLen := by rw [Nat.add_mul] at hk; omega_arith
-  have sl : E.seeds.toNat < 2 ^ 32 := by omega_arith
+  obtain q0 : 0 < g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain kq : k * E.qLen + E.qLen ≤ E.seedsLen := by rw [Nat.add_mul] at hk; omega_arith
+  obtain sl : E.seeds.toNat < 2 ^ 32 := by omega_arith
   have sN := v.seedsNat
   have si := v.seedsIn
-  have seedW : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
+  obtain seedW : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
       E.seeds + BitVec.ofNat 64 (k * E.qLen) := by
     apply BitVec.eq_of_toNat_eq
-    have e : (E.seeds + BitVec.ofNat 64 (k * E.qLen)).toNat = E.seeds.toNat + k * E.qLen := by
+    obtain e : (E.seeds + BitVec.ofNat 64 (k * E.qLen)).toNat = E.seeds.toNat + k * E.qLen := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k * E.qLen) (by omega_arith),
         Nat.mod_eq_of_lt (by omega_arith)]
     simp only [BitVec.toNat_setWidth, e]
     rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
-  have seedN : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).toNat = E.seeds.toNat + k * E.qLen := by
+  obtain seedN : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).toNat = E.seeds.toNat + k * E.qLen := by
     rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k * E.qLen) (by omega_arith),
       Nat.mod_eq_of_lt (a := E.seeds.toNat + k * E.qLen) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   unfold Geo.seedIn
-  have seedW' : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
+  obtain seedW' : ((E.seeds + BitVec.ofNat 64 (k * E.qLen)).setWidth 32).setWidth 64 =
       E.wit + BitVec.ofNat 64 (E.seedsOff + k * E.qLen) := by
     rw [seedW, Env.seeds, VG.Offset.add_add]
   have wl := v.witFit
@@ -107,7 +107,7 @@ theorem shape_mem (m : Mem) (op : Addr) {n : Nat} (hn : 2 ≤ n) (hn' : n < 2 ^ 
       (m.writeW op (m op ||| (128#8))).writeW (op + BitVec.ofNat 64 (n - 1))
         (m (op + BitVec.ofNat 64 (n - 1)) ||| (1#8)) := by
   intro m₁
-  have ne : op + BitVec.ofNat 64 (n - 1) ≠ op := by
+  obtain ne : op + BitVec.ofNat 64 (n - 1) ≠ op := by
     simpa using Offset.add_ofNat_ne op (by omega_arith : n - 1 < 2 ^ 64) (by decide : 0 < 2 ^ 64) (by omega_arith)
   simp only [m₁, VG.WriteBytes.writeW8_apply, ne, ↓reduceIte]
 
@@ -121,11 +121,11 @@ structure QAt (E : Env) (g : Geo) (s t : State) : Prop where
 
 theorem qPre_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart (qPre g) := by
   have sz := v.size_ge
-  have p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
-  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
+  obtain q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   intro o ho
   simp only [qPre, List.mem_cons, List.not_mem_nil, or_false] at ho
-  have szq : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
+  obtain szq : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
     rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> rw [h] <;> decide
   rcases ho with rfl | rfl | rfl | rfl <;>
     simp only [sState, sHScr, sPk, sPP, fOut, fWitLen, hdr] <;> omega_arith
@@ -155,7 +155,7 @@ theorem q1_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.q
   have sz := v.size_ge
   have nl := G.hash.N_le
   have hN := G.N
-  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   refine VG.X86.WP.mono_syms (seedIn_ok G v hq B hk hS) fun t₁ ⟨S₁, F₁, K₁⟩ sy₁ => ⟨?_, S₁⟩
   exact QAt.step G v ⟨B, Env.Chg.refl _ _, rfl, rfl, rfl⟩ (Env.Chg.of_frame F₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -169,7 +169,7 @@ theorem q2_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₁ : State} (
       Spec.Rsa.bytesAt t.mem (off E.base (sPk + g.pLen)) g.H.N = Spec.Dsa.seedHash (8 * g.qLen) (chunk E k) := by
   have sz := v.size_ge
   have nl := G.hash.N_le
-  have p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
+  obtain p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
   have hN := G.N
   have so := G.hash.ok.sizes.so
   have sW := G.hash.ok.sizes.W
@@ -204,8 +204,8 @@ theorem q3_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₂ : State} (
         VG.Proof.Ffdh.ParameterCandidate.shapedOctets (Spec.Dsa.seedHash (8 * g.qLen) (chunk E k)) 7 := by
   have sz := v.size_ge
   have nl := G.hash.N_le
-  have p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
-  have q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
+  obtain q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   have hN := G.N
   have B₂ := Q₂.base
   rw [show orByte (sPk + g.pLen + g.qLen - 1) 1 = orByte (sPk + g.pLen + g.H.N - 1) 1 ++ [] by
@@ -215,16 +215,16 @@ theorem q3_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₂ : State} (
       (by decide) fun t₃ g₃ rd₃ wr₃ sy₃ m₃ => WP.block_nil ?_
   rw [m₃'] at m₃
   have nw := v.scratchFit
-  have aEq : off E.base (sPk + g.pLen + g.H.N - 1) = off E.base (sPk + g.pLen) + BitVec.ofNat 64 (g.H.N - 1) := by
+  obtain aEq : off E.base (sPk + g.pLen + g.H.N - 1) = off E.base (sPk + g.pLen) + BitVec.ofNat 64 (g.H.N - 1) := by
     simp only [off, VG.Offset.add_add]; congr 2; omega_arith
   rw [aEq, shape_mem t₂.mem _ (by omega_arith) (by omega_arith)] at m₃
   set D := Spec.Dsa.seedHash (8 * g.qLen) (chunk E k) with hD
-  have Dl : D.length = g.H.N := by rw [hD, ← G.seedHash]; exact G.hash.hash_length _
-  have qPk : (sPk + g.pLen, g.qLen) ∈ qPre g := by simp [qPre]
+  obtain Dl : D.length = g.H.N := by rw [hD, ← G.seedHash]; exact G.hash.hash_length _
+  obtain qPk : (sPk + g.pLen, g.qLen) ∈ qPre g := by simp [qPre]
   refine ⟨Q₂.step G v ?_ (by rw [g₃ _ (by decide), g₃' _ (by decide)]) (by rw [g₃ _ (by decide), g₃' _ (by decide)])
     (by rw [rd₃, rd₃']) (by rw [wr₃, wr₃']) (by rw [sy₃, sy₃']), ?_⟩
   · rw [m₃]
-    have h1 := (Env.Chg.refl (E := E) (qPre g) t₂.mem).byte qPk (i := 0) (by omega_arith) (by omega_arith)
+    obtain h1 := (Env.Chg.refl (E := E) (qPre g) t₂.mem).byte qPk (i := 0) (by omega_arith) (by omega_arith)
       (t₂.mem (off E.base (sPk + g.pLen)) ||| 128#8)
     rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at h1
     exact h1.byte qPk (i := g.H.N - 1) (by omega_arith) (by omega_arith) _
@@ -247,17 +247,17 @@ theorem q4_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₃ : State} (
           Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k) := by
   have sz := v.size_ge
   have nl := G.hash.N_le
-  have p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
-  have q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
+  obtain p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_arith
+  obtain q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_arith
   have hN := G.N
   have B₃ := Q₃.base
   have nw := v.scratchFit
   set D := Spec.Dsa.seedHash (8 * g.qLen) (chunk E k) with hD
-  have Dl : D.length = g.H.N := by rw [hD, ← G.seedHash]; exact G.hash.hash_length _
-  have candLe : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).candidate + g.qLen ≤
+  obtain Dl : D.length = g.H.N := by rw [hD, ← G.seedHash]; exact G.hash.hash_length _
+  obtain candLe : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).candidate + g.qLen ≤
       (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size := by
     simp only [VG.Impl.Dsa.X86.ProbablePrime.layout]; omega_arith
-  have candLay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
+  obtain candLay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
     rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> rw [h] <;> decide
   refine VG.X86.WP.mono_syms (copyS_ok B₃.scr
     (dst := sPP + (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).candidate) (src := sPk + g.pLen) (n := g.qLen)
@@ -272,7 +272,7 @@ theorem q4_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t₃ : State} (
         Spec.Dsa.qCandidate (8 * g.qLen) (chunk E k) :=
       VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [← hD, Dl, hN])
     unfold Proof.Dsa.ProbablePrime.candidateAt
-    have b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).bits / 8 = g.qLen := by
+    obtain b8 : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).bits / 8 = g.qLen := by
       show 8 * g.qLen / 8 = g.qLen; omega_arith
     rw [b8, VG.Offset.add_add, R₄, ← hN, shaped, qval, hN]
   · have qval : Spec.Dsa.decodeBE (VG.Proof.Ffdh.ParameterCandidate.shapedOctets D 7) =
@@ -287,9 +287,9 @@ theorem qPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     (hU : s.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used) (hu : used ≤ E.witLen) :
     WP isa g.qPart s (QPost E g k used s) := by
   have sz := v.size_ge
-  have q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
-  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
-  have p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+  obtain q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+  obtain q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+  obtain p384 : g.pLen ≤ 384 := by rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
   unfold Geo.qPart
   simp only [seqs]
   refine WP.seq (WP.mono (q1_ok G v hq B hk hS) fun t₁ h₁ => ?_)
@@ -300,20 +300,20 @@ theorem qPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   obtain ⟨Q₃, shaped⟩ := h₃
   refine WP.seq (WP.mono (q4_ok G v Q₃ shaped) fun t₄ h₄ => ?_)
   obtain ⟨Q₄, cval, qval⟩ := h₄
-  have lay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 8 * ppWords := by
+  obtain lay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 8 * ppWords := by
     rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> rw [h] <;> decide
-  have candLay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
+  obtain candLay : (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size ≤ 1632 := by
     rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> rw [h] <;> decide
-  have Ap := qPre_apart G v
-  have qsh := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * g.qLen) (by omega) (chunk E k)
-  have hU₄ : t₄.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
+  obtain Ap := qPre_apart G v
+  obtain qsh := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * g.qLen) (by omega) (chunk E k)
+  obtain hU₄ : t₄.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 used := by
     rw [Env.Chg.word v Q₄.chg (by simp only [fUsed, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
       simp only [qPre, List.mem_cons, List.not_mem_nil, or_false] at ho
       rcases ho with rfl | rfl | rfl | rfl <;> simp only [sState, sHScr, sPk, sPP, fUsed, hdr] <;> omega⟩), hU]
   refine VG.X86.WP.mono_syms (test_ok G.qv G.qNoSp G.qStack v Q₄.base hU₄ hu lay (by rw [cval]; exact qsh.1)
     (by rw [cval]; exact VG.Proof.Dsa.Generation.qCandidate_bitLength (by omega) _)) fun t₅ P sy₅ => ?_
   rw [cval] at P
-  have szq : VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width (8 * g.qLen)) ≤
+  obtain szq : VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width (8 * g.qLen)) ≤
       (VG.Impl.Dsa.X86.ProbablePrime.layout (8 * g.qLen)).size := by
     simp only [VG.Impl.Dsa.X86.ProbablePrime.layout]; omega
   refine ⟨P.base, ?_, P.res, P.used, ?_, P.rd.trans Q₄.rd, P.wr.trans Q₄.wr, P.syms.trans Q₄.syms⟩

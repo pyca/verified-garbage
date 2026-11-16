@@ -50,56 +50,56 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
   refine WP.mono (saves_ok saved 0 (s:=s₁) (by decide)) fun s₂ ⟨k₂,l₂,_,v₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pointers_ok s₂) fun s₃ ⟨go,ga,k₃,v₃⟩ => ?_
-  have x0₃ : s₃.gpr .x0=base := by rw [k₃.gpr _ (by decide),k₂.gpr,k₁.gpr _ (by decide)]
-  have hs₃ : Scr s₃ base W := ⟨x0₃,by rw [k₃.wr,k₂.wr,k₁.wr,hp.wr]; simp [base],hp.fit,by omega_arith⟩
-  have gpa : s₃.gpr .x1=pa := by rw [ga,k₂.gpr,g₂,k₁.gpr _ (by decide)]
-  have hpa : Ptr s₃ .x1 pa 72 := by
+  obtain x0₃ : s₃.gpr .x0=base := by rw [k₃.gpr _ (by decide),k₂.gpr,k₁.gpr _ (by decide)]
+  obtain hs₃ : Scr s₃ base W := ⟨x0₃,by rw [k₃.wr,k₂.wr,k₁.wr,hp.wr]; simp [base],hp.fit,by omega_arith⟩
+  obtain gpa : s₃.gpr .x1=pa := by rw [ga,k₂.gpr,g₂,k₁.gpr _ (by decide)]
+  obtain hpa : Ptr s₃ .x1 pa 72 := by
     refine ⟨gpa,fun d hd => ?_,by decide⟩
     change InRegions _ (off pa d) 8
     dsimp only [pa]
     rw [off_off]
-    have h := hs₃.ld (d:=arg s .x2+d) (by omega_arith)
+    obtain h := hs₃.ld (d:=arg s .x2+d) (by omega_arith)
     rwa [x0₃] at h
-  have hmem₃ : s₃.mem=s.mem := k₃.mem.trans (k₂.mem.trans k₁.mem)
+  obtain hmem₃ : s₃.mem=s.mem := k₃.mem.trans (k₂.mem.trans k₁.mem)
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Weierstrass.AArch64.Mont.WP.block_novec (by decide)
     (loadsR_ok aRegs hpa (a:=0) (by decide) (by decide) (by decide) (by decide)))
     fun s₄ ⟨⟨a₄,k₄,_⟩,v₄⟩ => ?_
   change regsVal s₄ aRegs=wordsVal s₃.mem pa 0 9 at a₄
-  have a₄' : regsVal s₄ aRegs=wordsVal s.mem base (arg s .x2) 9 := by
+  obtain a₄' : regsVal s₄ aRegs=wordsVal s.mem base (arg s .x2) 9 := by
     rw [a₄,wordsVal_off,Nat.add_zero,hmem₃]
   rw [WP.block_append_iff]
   refine WP.mono (park_ok s₄) fun s₅ ⟨z₅,po₅,k₅,v₅⟩ => ?_
-  have a₅ : regsVal s₅ aRegs=wordsVal s.mem base (arg s .x2) 9 := by
+  obtain a₅ : regsVal s₅ aRegs=wordsVal s.mem base (arg s .x2) 9 := by
     rw [regsVal_congr (fun r hr => k₅.gpr r (by
-      have h : ∀r∈aRegs,r∉([Reg.x30]:List Reg) := by decide
+      obtain h : ∀r∈aRegs,r∉([Reg.x30]:List Reg) := by decide
       exact h r hr)),a₄']
   rw [WP.block_append_iff]
   refine WP.mono (squareCore_ok s₅ z₅ (by rw [a₅]; exact ha)) fun s₆ ⟨b₆,c₆,k₆,v₆⟩ => ?_
   rw [a₅] at c₆
   rw [WP.block_append_iff]
   refine WP.mono (unpark_ok s₆) fun s₇ ⟨po₇,k₇,v₇⟩ => ?_
-  have k₃₇ : Keeps fnClob s₃ s₇ :=
+  obtain k₃₇ : Keeps fnClob s₃ s₇ :=
     (k₄.mono (by decide)).trans ((k₅.mono (by decide)).trans ((k₆.mono (by decide)).trans (k₇.mono (by decide))))
-  have hs₇ := hs₃.of_keeps k₃₇ (by decide)
-  have hmem₇ : s₇.mem=s.mem := k₃₇.mem.trans hmem₃
-  have v₇₂ : ∀d,d≠.v22 → s₇.v d=s₂.v d := fun d hd => by rw [v₇,v₆,v₅ d hd,v₄,v₃]
-  have gpo : s₇.gpr .x30=po := by
+  obtain hs₇ := hs₃.of_keeps k₃₇ (by decide)
+  obtain hmem₇ : s₇.mem=s.mem := k₃₇.mem.trans hmem₃
+  obtain v₇₂ : ∀d,d≠.v22 → s₇.v d=s₂.v d := fun d hd => by rw [v₇,v₆,v₅ d hd,v₄,v₃]
+  obtain gpo : s₇.gpr .x30=po := by
     rw [po₇,v₆,po₅,k₄.gpr _ (by decide),go,k₂.gpr,g₁,k₁.gpr _ (by decide)]
-  have hpo : PtrW s₇ .x30 po 72 := by
+  obtain hpo : PtrW s₇ .x30 po 72 := by
     refine ⟨gpo,fun d hd => ?_,by decide,?_⟩
     · change InRegions _ (off po d) 8
       dsimp only [po]
       rw [off_off]
-      have h := hs₇.st (d:=arg s .x1+d) (by omega_arith)
+      obtain h := hs₇.st (d:=arg s .x1+d) (by omega_arith)
       rwa [hs₇.x0] at h
     · have hfit := hp.fit
       dsimp only [po,base,off]
       rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (a:=arg s .x1) (by omega_arith),Nat.mod_eq_of_lt (by omega_arith)]
       omega_arith
-  have out₇ : regsVal s₇ (uRegs.take 9)=regsVal s₆ (uRegs.take 9) :=
+  obtain out₇ : regsVal s₇ (uRegs.take 9)=regsVal s₆ (uRegs.take 9) :=
     regsVal_congr (fun r hr => k₇.gpr r (by
-      have h : ∀r∈uRegs.take 9,r∉([Reg.x30]:List Reg) := by decide
+      obtain h : ∀r∈uRegs.take 9,r∉([Reg.x30]:List Reg) := by decide
       exact h r hr))
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Weierstrass.AArch64.Mont.WP.block_novec (by decide)
@@ -109,35 +109,35 @@ theorem square_fn_ok {s : State} {W : Nat} (hp : Pre 9 W s)
   change Outside po 0 72 s₇.mem s₈.mem at o₈
   rw [restores_eq]
   refine WP.mono (restores_ok saved 0 (by decide) (by decide)) fun t ⟨k₉,v₉,r₉⟩ => ?_
-  have out : wordsVal t.mem base (arg s .x1) 9=regsVal s₆ (uRegs.take 9) := by
-    have e := wordsVal_off s₈.mem base (arg s .x1) 0 9
+  obtain out : wordsVal t.mem base (arg s .x1) 9=regsVal s₆ (uRegs.take 9) := by
+    obtain e := wordsVal_off s₈.mem base (arg s .x1) 0 9
     rw [Nat.add_zero] at e
     rw [k₉.mem,←e]
     exact out₈.trans out₇
-  have vkeep : ∀d,d≠.v22 → (∀i<12,d≠(slot i).1) → t.v d=s.v d := fun d hd hi => by
+  obtain vkeep : ∀d,d≠.v22 → (∀i<12,d≠(slot i).1) → t.v d=s.v d := fun d hd hi => by
     rw [v₉,v₈,v₇₂ d hd,v₂ d hi,v₁]
-  have gpres : ∀r∈preserved,t.gpr r=s.gpr r := by
+  obtain gpres : ∀r∈preserved,t.gpr r=s.gpr r := by
     intro r hr
-    have hsave : saved=preserved := by decide
+    obtain hsave : saved=preserved := by decide
     rw [←hsave] at hr
     obtain ⟨i,hi,rfl⟩ := List.mem_iff_getElem.mp hr
-    have l := l₂ i hi
+    obtain l := l₂ i hi
     rw [Nat.zero_add] at l
     rw [r₉ i hi,Nat.zero_add,lane,v₈,v₇₂ _ (by
-      have h : ∀i<12,(slot i).1≠.v22 := by decide
+      obtain h : ∀i<12,(slot i).1≠.v22 := by decide
       exact h i (by have hlen : saved.length=11 := rfl; omega_arith))]
     change lane s₂.v i=s.gpr saved[i]
     rw [l,k₁.gpr _ (by
-      have h : ∀r∈saved,r∉([Reg.x1,.x2,.x3]:List Reg) := by decide
+      obtain h : ∀r∈saved,r∉([Reg.x1,.x2,.x3]:List Reg) := by decide
       exact h _ (List.getElem_mem hi))]
-  have spkeep : t.sp=s.sp := by rw [k₉.sp,k₈.sp,k₇.sp,k₆.sp,k₅.sp,k₄.sp,k₃.sp,k₂.sp,k₁.sp]
+  obtain spkeep : t.sp=s.sp := by rw [k₉.sp,k₈.sp,k₇.sp,k₆.sp,k₅.sp,k₄.sp,k₃.sp,k₂.sp,k₁.sp]
   refine ⟨⟨gpres,spkeep,?_⟩,?_,⟨by rw [out]; exact b₆,by rw [out]; exact c₆⟩,?_,?_,?_,⟨vkeep .v29 (by decide) (by decide),vkeep .v31 (by decide) (by decide)⟩⟩
   · intro d hd
-    have h : ∀d∈preservedV,d≠.v22 ∧ ∀i<12,d≠(slot i).1 := by decide
+    obtain h : ∀d∈preservedV,d≠.v22 ∧ ∀i<12,d≠(slot i).1 := by decide
     rw [vkeep d (h d hd).1 (h d hd).2]
   · intro x hx _
     rw [k₉.mem]
-    have h := Outside.of_off o₈ (by dsimp only [po,base] at *; have hfit:=hp.fit; omega_arith)
+    obtain h := Outside.of_off o₈ (by dsimp only [po,base] at *; have hfit:=hp.fit; omega_arith)
     rw [h x hx,hmem₇]
   · rw [k₉.gpr _ (by decide),k₈.gpr _ (by simp),k₃₇.gpr _ (by decide),k₃.gpr _ (by decide),k₂.gpr,k₁.gpr _ (by decide)]
   · rw [k₉.rd,k₈.rd,k₃₇.rd,k₃.rd,k₂.rd,k₁.rd]

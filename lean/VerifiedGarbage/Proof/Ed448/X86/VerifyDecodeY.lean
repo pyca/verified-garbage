@@ -37,11 +37,11 @@ theorem loadLimbs_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : (s.gpr 
       Outside base o 112 s.mem t.mem ∧ Keeps [.eax, .edx] s t
   refine wp_range_flatMap (M := isa) (N := 28) inv (fun n t hn ⟨tf, tm, tk⟩ => ?_) 28 (by decide) s
     ⟨fun _ h => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
-  have byte : ∀ j < 56, t.mem (q + BitVec.ofNat 64 j) = s.mem (q + BitVec.ofNat 64 j) :=
+  obtain byte : ∀ j < 56, t.mem (q + BitVec.ofNat 64 j) = s.mem (q + BitVec.ofNat 64 j) :=
     fun j hj => tm _ (Or.inr (by have := hd j hj; omega_using [ho, this]))
-  have eq : decoded t.mem q n = decoded s.mem q n := by
+  obtain eq : decoded t.mem q n = decoded s.mem q n := by
     simp only [decoded, byteN]; rw [byte _ (by omega_using [hn]), byte _ (by omega_using [hn])]
-  have te : t.gpr .esi = s.gpr .esi := tk.1 _ (by decide)
+  obtain te : t.gpr .esi = s.gpr .esi := tk.1 _ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (byteLimb_ok (src := 0) (q := q)
     (by rw [te, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero, hq]) (by rw [te]; omega_using [hfit]) hn
@@ -70,7 +70,7 @@ theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : (s.gpr .
     fun u hu => ?_
   refine wp_mov rfl fun v hv => ?_
   refine wp_shift (by decide) fun w hw => ?_
-  have sw := ((hs.of_upd hu (by decide)).of_upd hv (by decide)).of_upd hw (by decide)
+  obtain sw := ((hs.of_upd hu (by decide)).of_upd hv (by decide)).of_upd hw (by decide)
   refine store_ok sw (by decide) fun x hx => ?_
   refine wp_alu (Or.inr (Or.inr (Or.inl rfl))) rfl fun y hy _ => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [hy.gpr]; change (x.gpr .eax &&& 0x7f#32).toNat = _
@@ -102,67 +102,67 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       E t.mem base yo = Proof.X448.toFe (valN (decoded s.mem (p.setWidth 64)) 28) ∧
       (∀ i : Index, i ≠ 1 → i ≠ yo → E t.mem base i = E s.mem base i) := by
   generalize hq : p.setWidth 64 = q at hr hd ⊢
-  have sy := slot_range yo
+  obtain sy := slot_range yo
   have hX2v : X2 = 192 := rfl
   have hA : ACC = 3584 := rfl
   have hX2 : X2 = slot (1 : Index).val := rfl
-  have s1y : slot yo.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot yo.val := by rw [hX2]; exact slot_sep hyo
+  obtain s1y : slot yo.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot yo.val := by rw [hX2]; exact slot_sep hyo
   unfold decodeY
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (loadLimbs_ok hs (by rw [hp, hq]) (by rw [hp]; exact hfit)
     (fun j hj => hr j (by omega_using [hj])) (fun j hj => hd j (by omega_using [hj]))
     (o := slot yo.val) ⟨by omega_using [sy], by omega_using [sy]⟩) fun s1 ⟨f1, m1, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
-  have b56 : s1.mem (q + BitVec.ofNat 64 56) = s.mem (q + BitVec.ofNat 64 56) :=
+  obtain hs1 := hs.of_keeps k1 (by decide)
+  obtain b56 : s1.mem (q + BitVec.ofNat 64 56) = s.mem (q + BitVec.ofNat 64 56) :=
     m1 _ (Or.inr (by have := hd 56 (by decide); omega_using [sy, this]))
   rw [WP.block_append_iff]
   refine WP.mono (signByte_ok hs1 (q := q) (by rw [k1.1 _ (by decide), hp, hq])
     (by rw [k1.1 _ (by decide), hp]; exact hfit) (by rw [k1.2.1, k1.2.2]; exact hr 56 (by decide)))
     fun s2 ⟨r2, m2, k2⟩ => ?_
   rw [b56] at r2 m2
-  have hs2 := hs1.of_keeps k2 (by decide)
-  have o2 : Outside base SIGN 4 s1.mem s2.mem := by rw [m2]; exact writeW_outside _ _ _ (by decide)
-  have l2 : ∀ i < 28, limbs s2.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
+  obtain hs2 := hs1.of_keeps k2 (by decide)
+  obtain o2 : Outside base SIGN 4 s1.mem s2.mem := by rw [m2]; exact writeW_outside _ _ _ (by decide)
+  obtain l2 : ∀ i < 28, limbs s2.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
     rw [o2.limbs (Or.inr (by simp only [SIGN]; omega_using [sy])) (by omega_using [sy]) hi, f1 i hi]
   rw [WP.block_append_iff]
   refine WP.mono (orBad_ok (s := s2) hs2 (by decide)
     (P := (s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0)
     (by rw [r2]; omega_using []) (by rw [← r2]; exact ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩))
     fun s3 ⟨b3, m3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by decide)
-  have l3 : ∀ i < 28, limbs s3.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
+  obtain hs3 := hs2.of_keeps k3 (by decide)
+  obtain l3 : ∀ i < 28, limbs s3.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
     rw [m3.limbs (Or.inr (by simp only [BAD]; omega_using [sy])) (by omega_using [sy]) hi, l2 i hi]
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs3 (o := X2) (a := slot yo.val) (by decide) (by omega_using [sy])
     (Or.inr (by omega_using [s1y]))) fun s4 ⟨f4, m4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by decide)
-  have bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, l3 i hi]; exact decoded_lt _ _ _
+  obtain hs4 := hs3.of_keeps k4 (by decide)
+  obtain bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, l3 i hi]; exact decoded_lt _ _ _
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
-  have l5 : ∀ i < 28, limbs s5.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
+  obtain hs5 := hs4.of_keeps k5 (by decide)
+  obtain l5 : ∀ i < 28, limbs s5.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
     rw [m5.limbs s1y (by omega_using [sy, hA]) hi, m4.limbs (by omega_using [s1y]) (by omega_using [sy]) hi, l3 i hi]
-  have by5 : Bounded s5.mem base (slot yo.val) := fun i hi => by rw [l5 i hi]; exact decoded_lt _ _ _
+  obtain by5 : Bounded s5.mem base (slot yo.val) := fun i hi => by rw [l5 i hi]; exact decoded_lt _ _ _
   refine WP.mono (diffSlot_ok hs5 (by omega_using [sy]) b5 by5) fun t ⟨tb, tm, tk⟩ => ?_
-  have fe5 : fe s5.mem base X2 = valN (decoded s.mem q) 28 % Spec.X448.P := by
+  obtain fe5 : fe s5.mem base X2 = valN (decoded s.mem q) 28 % Spec.X448.P := by
     rw [v5]; exact congrArg (· % Spec.X448.P) ((valN_congr f4).trans (valN_congr l3))
-  have fy5 : fe s5.mem base (slot yo.val) = valN (decoded s.mem q) 28 := valN_congr l5
-  have tl : ∀ dd, 64 ≤ dd → dd + 112 ≤ 2880 → ∀ j < 28, limbs t.mem base dd j = limbs s5.mem base dd j :=
+  obtain fy5 : fe s5.mem base (slot yo.val) = valN (decoded s.mem q) 28 := valN_congr l5
+  obtain tl : ∀ dd, 64 ≤ dd → dd + 112 ≤ 2880 → ∀ j < 28, limbs t.mem base dd j = limbs s5.mem base dd j :=
     fun dd h1 h2 j hj => tm.limbs (Or.inr (by simp only [BAD]; omega_using [h1])) (by omega_using [h2]) hj
-  have other : ∀ i : Index, i ≠ 1 → i ≠ yo → ∀ j < 28,
+  obtain other : ∀ i : Index, i ≠ 1 → i ≠ yo → ∀ j < 28,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i hi1 hiy j hj
-    have si := slot_range i
-    have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
-    have syi := slot_sep hiy
+    obtain si := slot_range i
+    obtain s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
+    obtain syi := slot_sep hiy
     rw [tl _ si.1 si.2 j hj, m5.limbs s1i (by omega_using [hA, si]) hj, m4.limbs (by omega_using [s1i]) (by omega_using [si]) hj,
       m3.limbs (Or.inr (by simp only [BAD]; omega_using [si])) (by omega_using [si]) hj,
       o2.limbs (Or.inr (by simp only [SIGN]; omega_using [si])) (by omega_using [si]) hj, m1.limbs (by omega_using [syi]) (by omega_using [si]) hj]
-  have bad3 : word s5.mem base BAD = word s3.mem base BAD := by
+  obtain bad3 : word s5.mem base BAD = word s3.mem base BAD := by
     rw [m5.word (Or.inl (by simp only [BAD]; omega_using [hX2v])) (by simp only [BAD, ACC]; omega_using []),
       m4.word (Or.inl (by simp only [BAD]; omega_using [hX2v])) (by decide)]
-  have bad2 : word s2.mem base BAD = word s.mem base BAD := by
+  obtain bad2 : word s2.mem base BAD = word s.mem base BAD := by
     rw [o2.word (Or.inl (by decide)) (by decide), m1.word (Or.inl (by simp only [BAD]; omega_using [sy])) (by decide)]
   refine ⟨⟨?_, ?_⟩, fun i j hj => ?_, ?_, ?_, ?_, fun i h1 hy => ?_⟩
   · refine ((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans
@@ -183,7 +183,7 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     exact Mem.readW_writeW_self32 _ _ _
   · rw [bad3] at tb
     rw [bad2] at b3
-    have h := b3.trans tb
+    obtain h := b3.trans tb
     refine h.congr (and_congr_right fun _ => ?_)
     rw [limbs_eq_iff b5 by5, fe5, fy5]
     exact Nat.mod_eq_iff_lt (NeZero.ne Spec.X448.P)

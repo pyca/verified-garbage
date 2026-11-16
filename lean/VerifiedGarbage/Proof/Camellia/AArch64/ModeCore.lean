@@ -79,10 +79,10 @@ theorem ready_frame {dir : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitV
     (_ : Modes.AArch64.WrIn rs s s') (hg : ∀ r, r ∉ modeRegs (dirCore dir) → s'.gpr r = s.gpr r) :
     Ready dir s' B k := by
   obtain ⟨hR, ⟨hm, he⟩, hx4⟩ := h
-  have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
+  obtain hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint h1 (hd r hr)) (by decide)
-  have hg4 : k.1 / 6 ≤ 4 := by omega_arith
+  obtain hg4 : k.1 / 6 ≤ 4 := by omega_arith
   refine ⟨hR, ⟨fun kv hkv => ?_, fun i hi => (he i hi).congr fun j hj => ?_⟩, ?_⟩
   · have hk := mask_range hkv
     rw [← hm kv hkv]
@@ -99,8 +99,8 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
   rw [hws]
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_arith
+  obtain hi := List.mem_range.mp hi
+  obtain hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_arith
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
 /-- The cipher of the direction `d`. -/
@@ -170,7 +170,7 @@ theorem keepTail_ok (s : State) : ∃ s', runBlock isa keepTail s = some s' ∧
 /-- A block that writes no vector register `v` keeps it. -/
 theorem runBlock_keepV {is : List Instr} {s s' : State} {v : VReg} (hv : ∀ i ∈ is, vdstOf i ≠ some v)
     (e : runBlock isa is s = some s') : s'.v v = s.v v := by
-  have w : WP isa (.block is) s fun x => x = s' := WP.of_runBlock ⟨s', e, rfl⟩
+  obtain w : WP isa (.block is) s fun x => x = s' := WP.of_runBlock ⟨s', e, rfl⟩
   obtain ⟨t, u, he, rfl⟩ := w
   exact Exec.vec (c := .block is) hv he
 
@@ -237,27 +237,27 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
     (by cases d <;> decide)
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .x3 sb
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movz_ok s₃ .x4 (v := slots) (by decide)
-  have eargs : runBlock isa ([.movz .x .x2 (BitVec.ofNat 16 (dirFlagOf d)) 0] ++ ([movR .x3 sb] ++
+  obtain eargs : runBlock isa ([.movz .x .x2 (BitVec.ofNat 16 (dirFlagOf d)) 0] ++ ([movR .x3 sb] ++
       [.movz .x .x4 (BitVec.ofNat 16 slots) 0])) (kept .x1 s) = some s₄ := by
     rw [runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some, e₄]
-  have v₄ : ∀ v ∈ keepVs, s₄.v v = (kept .x1 s).v v := fun v hv => by
+  obtain v₄ : ∀ v ∈ keepVs, s₄.v v = (kept .x1 s).v v := fun v hv => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
     rcases hv with rfl | rfl | rfl | rfl | rfl <;> cases d <;> exact runBlock_keepV (by decide) eargs
-  have x0₄ : s₄.gpr .x0 = p := by
+  obtain x0₄ : s₄.gpr .x0 = p := by
     rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide)]; exact hp
-  have x1₄ : s₄.gpr .x1 = BitVec.ofNat 64 R := by
+  obtain x1₄ : s₄.gpr .x1 = BitVec.ofNat 64 R := by
     rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide)]; exact hx1
-  have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (dirFlagOf d) := by rw [o₄ _ (by decide), o₃ _ (by decide), r₂]
-  have x3₄ : s₄.gpr .x3 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
+  obtain x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 (dirFlagOf d) := by rw [o₄ _ (by decide), o₃ _ (by decide), r₂]
+  obtain x3₄ : s₄.gpr .x3 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
   have x4₄ : s₄.gpr .x4 = BitVec.ofNat 64 slots := r₄
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
+  obtain mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
   show WP isa (prepareCall d) s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
-  have hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
+  obtain hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * slots⟩ :=
     (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; omega_arith))
-  have w : WP isa (.call "vg_camellia_prepare_keys" prepareKeys) s₄ fun s' =>
+  obtain w : WP isa (.call "vg_camellia_prepare_keys" prepareKeys) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
       Holds layout s'.mem B R (schedWords s.mem p R) (specDir d) := by
     refine WP.call (k := prepAArch64) prep_correct (rd := [⟨p, 272⟩]) (wr := [⟨B, 8 * slots⟩]) ?_
@@ -267,14 +267,14 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
       (by rw [wr₄']; exact ws_covers hs) (fun s' hrd hwr _ hf _ _ hpost => ⟨hrd, hwr, hf, ?_⟩) (by lit_decide)
     · have g0 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x0 = p := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄]
-      have g1 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = R := by
+      obtain g1 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = R := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄, toNat_rounds hRr]
-      have g2 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x2 =
+      obtain g2 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x2 =
           BitVec.ofNat 64 (dirFlagOf d) := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄]
-      have g3 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x3 = B := by
+      obtain g3 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x3 = B := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), x3₄]
-      have g4 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x4).toNat = slots := by
+      obtain g4 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x4).toNat = slots := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x4 ∉ linkRegs), x4₄, toNat_slots]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · rw [State.withRegions_rd, g0]
@@ -287,17 +287,17 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
       · rw [g4, size_eq]
     · obtain ⟨hH, -⟩ := hpost
       have hm : (s'.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).mem = s'.mem := rfl
-      have hm₀ : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).mem = s.mem := by
+      obtain hm₀ : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).mem = s.mem := by
         rw [State.withRegions_mem, State.callEntry_mem, mem₄]
-      have g0 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x0 = p := by
+      obtain g0 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x0 = p := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄]
-      have g1 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = R := by
+      obtain g1 : ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x1).toNat = R := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄, toNat_rounds hRr]
-      have g2 : Proof.Camellia.Prepared.directionOf
+      obtain g2 : Proof.Camellia.Prepared.directionOf
           ((s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x2).toNat = specDir d := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄]
         cases d <;> rfl
-      have g3 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x3 = B := by
+      obtain g3 : (s₄.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * slots⟩]).gpr .x3 = B := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), x3₄]
       change Holds layout _ _ _ _ _ at hH
       rw [hm, hm₀, g0, g1, g2, g3] at hH
@@ -332,7 +332,7 @@ theorem holds_of_keeps {R : Nat} (hR : R = 18 ∨ R = 24) {m m' : Mem} {B : Addr
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  have hg4 : R / 6 ≤ 4 := by omega_arith
+  obtain hg4 : R / 6 ≤ 4 := by omega_arith
   rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_arith) (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     rw [evenSlot_eq, m3Slot_eq, keySlot_eq, savedSlot_eq, tailSlot_eq]
@@ -356,27 +356,27 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := movR_ok (kept .x4 s) .x0 .x4
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .x1 sb
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movz_ok s₃ .x2 (v := slots) (by decide)
-  have eargs : runBlock isa ([movR .x0 .x4] ++ ([movR .x1 sb] ++ [.movz .x .x2 (BitVec.ofNat 16 slots) 0]))
+  obtain eargs : runBlock isa ([movR .x0 .x4] ++ ([movR .x1 sb] ++ [.movz .x .x2 (BitVec.ofNat 16 slots) 0]))
       (kept .x4 s) = some s₄ := by
     rw [runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some, e₄]
-  have v₄ : ∀ v ∈ keepVs, s₄.v v = (kept .x4 s).v v := fun v hv => by
+  obtain v₄ : ∀ v ∈ keepVs, s₄.v v = (kept .x4 s).v v := fun v hv => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
     rcases hv with rfl | rfl | rfl | rfl | rfl <;> exact runBlock_keepV (by decide) eargs
-  have x0₄ : s₄.gpr .x0 = BitVec.ofNat 64 R := by
+  obtain x0₄ : s₄.gpr .x0 = BitVec.ofNat 64 R := by
     rw [o₄ _ (by decide), o₃ _ (by decide), r₂]; exact hx4
-  have x1₄ : s₄.gpr .x1 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
+  obtain x1₄ : s₄.gpr .x1 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide)]; exact hB
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 slots := r₄
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
+  obtain mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, kept_mem]
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, kept_rd]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, kept_wr]
   show WP isa cryptCall s _
   refine WP.seq (WP.of_runBlock ⟨s₄, by
     rw [show keepHead = keepHeadWith .x4 from rfl, runBlock_app, keepHead_ok, Option.bind_some]; exact eargs, ?_⟩)
-  have hH : Holds layout s.mem B R ws (specDir d) := by
+  obtain hH : Holds layout s.mem B R ws (specDir d) := by
     refine holds_of_words ?_
     rw [ofSpecDir_specDir]
     exact words_of_readyAt hready
-  have w : WP isa (.call "vg_camellia_crypt_prepared" cryptPrepared) s₄ fun s' =>
+  obtain w : WP isa (.call "vg_camellia_crypt_prepared" cryptPrepared) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ Frame [⟨B, 8 * slots⟩] s₄.mem s'.mem ∧
       Spec.Camellia.blocksAt s'.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks =
         Spec.Camellia.ecb (Spec.Camellia.subkeysOfWords R ws) (specDir d)
@@ -387,11 +387,11 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
       (by rw [wr₄']; exact ws_covers hs) (fun s' hrd hwr _ hf _ _ hpost => ⟨hrd, hwr, hf, ?_⟩) (by lit_decide)
     · have g0 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x0).toNat = R := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄, toNat_rounds hRr]
-      have g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x1 = B := by
+      obtain g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x1 = B := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄]
-      have g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x2).toNat = slots := by
+      obtain g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x2).toNat = slots := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄, toNat_slots]
-      have hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
+      obtain hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
         rw [State.withRegions_mem, State.callEntry_mem, mem₄]
       refine ⟨rfl, ?_, ?_, ?_, ?_, ?_⟩
       · rw [State.withRegions_wr, g1, g2, Nat.mul_comm]
@@ -401,13 +401,13 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
       · rw [g0, g1, hm₀]; exact ⟨ws, specDir d, hH⟩
     · obtain ⟨hB', hK⟩ := hpost
       have hm : (s'.withRegions [] [⟨B, 8 * slots⟩]).mem = s'.mem := rfl
-      have hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
+      obtain hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).mem = s.mem := by
         rw [State.withRegions_mem, State.callEntry_mem, mem₄]
-      have g0 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x0).toNat = R := by
+      obtain g0 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x0).toNat = R := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₄, toNat_rounds hRr]
-      have g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x1 = B := by
+      obtain g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x1 = B := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), x1₄]
-      have g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x2).toNat = slots := by
+      obtain g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * slots⟩]).gpr .x2).toNat = slots := by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), x2₄, toNat_slots]
       rw [hm, hm₀, g0, g1] at hB'
       rw [hm, hm₀, g1, g2] at hK
@@ -426,7 +426,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
     exact f₅.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (Nat.le_refl _)⟩
   · have hj' : j < 8 := hj
-    have ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := by
+    obtain ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := by
       rw [VG.Offset.add_add]; rfl
     rw [ha, dirCipher_bytes, bytesAt_eq_blockAt, m₆, blockAt_of_ecb hE hj']
 

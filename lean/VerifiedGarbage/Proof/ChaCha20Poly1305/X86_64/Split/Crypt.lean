@@ -68,19 +68,19 @@ theorem splitArgs_ok {s₀ : State} (hT : SPre s₀) {m : Nat} {s : State} (h : 
     (hS3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3) :
     WP isa (.block splitArgs) s fun s' => SArgs s₀ m s' ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
-  have hL9 := (s₀.gpr .r9).isLt
+  obtain hL9 := (s₀.gpr .r9).isLt
   have hle := h.le
-  have hm : m < 2 ^ 64 := by simp only [L] at hle; omega_arith
-  have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have ra : s.gpr .rsi - s.gpr .r14 = BitVec.ofNat 64 m := by
+  obtain hm : m < 2 ^ 64 := by simp only [L] at hle; omega_arith
+  obtain hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
+  obtain ra : s.gpr .rsi - s.gpr .r14 = BitVec.ofNat 64 m := by
     rw [h.rsi, h.r14, off_eq, Offset.add_sub_cancel_left]
-  have i2 := in_arg2 hT hrd (.inl rfl)
-  have i3 := in_arg2 hT hrd (.inr rfl)
-  have e2 : off (s.gpr .rsp) 24 = stackArgAddr s₀ 2 := by rw [h.rsp]; exact argAddr_eq s₀ 2
-  have e3 : off (s.gpr .rsp) 32 = stackArgAddr s₀ 3 := by rw [h.rsp]; exact argAddr_eq s₀ 3
-  have em : (BitVec.ofNat 64 m).toNat = m := toNat_ofNat_lt hm
-  have s3 : stackArg s₀ 3 = BitVec.ofNat 64 (SL s₀) := by simp [SL]
-  have eS : (BitVec.ofNat 64 (SL s₀)).toNat = SL s₀ := toNat_ofNat_lt hSL
+  obtain i2 := in_arg2 hT hrd (.inl rfl)
+  obtain i3 := in_arg2 hT hrd (.inr rfl)
+  obtain e2 : off (s.gpr .rsp) 24 = stackArgAddr s₀ 2 := by rw [h.rsp]; exact argAddr_eq s₀ 2
+  obtain e3 : off (s.gpr .rsp) 32 = stackArgAddr s₀ 3 := by rw [h.rsp]; exact argAddr_eq s₀ 3
+  obtain em : (BitVec.ofNat 64 m).toNat = m := toNat_ofNat_lt hm
+  obtain s3 : stackArg s₀ 3 = BitVec.ofNat 64 (SL s₀) := by simp [SL]
+  obtain eS : (BitVec.ofNat 64 (SL s₀)).toNat = SL s₀ := toNat_ofNat_lt hSL
   by_cases hcn : SL s₀ < m
   · have hk : min m (SL s₀) = SL s₀ := Nat.min_eq_right (Nat.le_of_lt hcn)
     apply WP.of_runBlock
@@ -136,8 +136,8 @@ theorem srcM_sub {s₀ : State} (hT : SPre s₀) (m : Nat) : Region.Sub (srcM s�
 theorem srcM_wrap {s₀ : State} (hT : SPre s₀) (m : Nat) :
     (sp s₀ + BitVec.ofNat 64 (min m (SL s₀))).toNat + (SL s₀ - m) ≤ 2 ^ 64 := by
   have hw := hT.wrap_s
-  have hs := (sp s₀ + BitVec.ofNat 64 (min m (SL s₀))).isLt
-  have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
+  obtain hs := (sp s₀ + BitVec.ofNat 64 (min m (SL s₀))).isLt
+  obtain hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
   by_cases h2 : (sp s₀).toNat + min m (SL s₀) < 2 ^ 64
   · rw [BitVec.toNat_add, toNat_ofNat_lt (show min m (SL s₀) < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt h2]; omega_arith
   · omega_arith
@@ -147,14 +147,14 @@ theorem SArgs.pre {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) 
     (hrsp : s.gpr .rsp = s₀.gpr .rsp) :
     Proof.ChaCha20.xorSplitX86_64.pre (s.withRegions [srcM s₀ m] (wrM s₀ m)) := by
   have hp := hT.hp
-  have hL9 := (s₀.gpr .r9).isLt
-  have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
-  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
-  have sm := srcM_sub hT m
-  have dm := dRm_sub s₀ hm
-  have c64 := sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)
-  have c128 := sub_ctx s₀ (k := 128) (n := 320) (by lit_omega)
+  obtain hL9 := (s₀.gpr .r9).isLt
+  obtain hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
+  obtain eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
+  obtain eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
+  obtain sm := srcM_sub hT m
+  obtain dm := dRm_sub s₀ hm
+  obtain c64 := sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)
+  obtain c128 := sub_ctx s₀ (k := 128) (n := 320) (by lit_omega)
   simp only [Proof.ChaCha20.xorSplitX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hrsp, eL, eS]
   refine ⟨trivial, trivial, by have := hT.le; omega_arith,
@@ -200,13 +200,13 @@ theorem SArgs.inline {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s�
           (keystream (stateAt s.mem (off (cx s₀) 64)) (L s₀ - m)) → Q s') :
     WP isa Impl.ChaCha20.X86_64.Avx512.xorSplit s Q := by
   have hp := hT.hp
-  have hL9 := (s₀.gpr .r9).isLt
-  have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
-  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
+  obtain hL9 := (s₀.gpr .r9).isLt
+  obtain hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
+  obtain eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
+  obtain eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
   have hd := xorSplit_depth
-  have hw := SArgs.hw hT hm hwr
-  have hc := SArgs.hc hT hm hrd hwr
+  obtain hw := SArgs.hw hT hm hwr
+  obtain hc := SArgs.hc hT hm hrd hwr
   refine WP.inlineSp Proof.ChaCha20.X86_64.Avx512Split.xorSplit_correct xorSplit_nosp (by omega_arith)
     (h.pre hT hm hrsp) hc hw fun s' rd' wr' abi f _ post => hQ s' rd' wr' abi ?_ ?_
   · refine f.sub fun r hr => ?_
@@ -234,8 +234,8 @@ theorem bytesAt_eq_zip {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : 
 theorem zip_get {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : xs.length = n)
     (hks : ks.length = n) (h : bytesAt m p n = List.zipWith (· ^^^ ·) xs ks) {k : Nat} (hk : k < n) :
     m (p + BitVec.ofNat 64 k) = xs.getD k 0 ^^^ ks.getD k 0 := by
-  have hk1 : k < (bytesAt m p n).length := by simp [bytesAt, hk]
-  have e := List.getElem_of_eq h hk1
+  obtain hk1 : k < (bytesAt m p n).length := by simp [bytesAt, hk]
+  obtain e := List.getElem_of_eq h hk1
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith] at e
   rw [e, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some,
     List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some]
@@ -270,31 +270,31 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
     (hS3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3) :
     WP isa cryptBigSplit s (CryptedS s₀ s) := by
   have hp := hT.hp
-  have hL9 := (s₀.gpr .r9).isLt
-  have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have hM : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
-  have hML : mm s₀ ≤ L s₀ := mOf_le_len 960 1024 (L s₀)
-  have hdvd : 64 ∣ mm s₀ := by rw [mm, mOf_big hbig]; exact splitOf_dvd (.inr (.inl rfl)) _
+  obtain hL9 := (s₀.gpr .r9).isLt
+  obtain hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
+  obtain hM : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
+  obtain hML : mm s₀ ≤ L s₀ := mOf_le_len 960 1024 (L s₀)
+  obtain hdvd : 64 ∣ mm s₀ := by rw [mm, mOf_big hbig]; exact splitOf_dvd (.inr (.inl rfl)) _
   refine WP.seq (WP.mono (cryptPre_ok Proof.ChaCha20.X86_64.XorImpl.avx512 (pass_of _) hp h)
     fun s₁ ⟨a₁, cs₁, rd₁, mx, fx, dx, m₁⟩ => ?_)
   change XArgsM s₀ (mm s₀) s₁ at a₁
   change Frame [⟨dp s₀, mm s₀⟩] s.mem mx at fx
   change ∀ k < mm s₀, _ at dx
   change s₁.mem = mx.writeW (off (cx s₀) 112) (BitVec.ofNat 32 (mm s₀ / 64 + 1)) at m₁
-  have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
+  obtain fw : Frame [sub s₀ 64 64] mx s₁.mem := by
     rw [m₁]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
-  have dpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (sub s₀ 64 64).Disjoint r := fun r hr => by
+  obtain dpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (sub s₀ 64 64).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix hML)
-  have hpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (arg2R s₀).Disjoint r := fun r hr => by
+  obtain hpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (arg2R s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hT.g_d.sub_right (Region.sub_prefix hML)
-  have harg : ∀ r ∈ [sub s₀ 64 64], (arg2R s₀).Disjoint r := fun r hr => by
+  obtain harg : ∀ r ∈ [sub s₀ 64 64], (arg2R s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hT.g_c.sub_right (sub_ctx s₀ (by lit_omega))
-  have st₁ : stateAt s₁.mem (off (cx s₀) 64) =
+  obtain st₁ : stateAt s₁.mem (off (cx s₀) 64) =
       VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (mm s₀ / 64) := by
     rw [m₁, stateAt_ctrW, stateAt_frame fx dpre, hst, set12_ctr]
   refine WP.seq (WP.mono (splitArgs_ok hT a₁ (by rw [rd₁, h.rd])
@@ -303,14 +303,14 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
     fun s₂ ⟨sa₂, cs₂, rd₂, wr₂, m₂⟩ => ?_)
   refine WP.seq (sa₂.inline hT hML (by rw [cs₂ _ calleeSaved_rsp, a₁.rsp]) (by rw [rd₂, rd₁, h.rd])
     (by rw [wr₂, a₁.wr]) fun s₃ rd₃ wr₃ abi₃ f₃ data₃ => ?_)
-  have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s₂.gpr r := fun r hr => abi₃.1 r hr
+  obtain cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s₂.gpr r := fun r hr => abi₃.1 r hr
   refine WP.mono (ptr_ok .rsi .r15 (k := 128) (by lit_omega) s₃) fun s₄ ⟨e4, g₄, rd₄, wr₄, m₄⟩ => ?_
-  have r15 : s₃.gpr .r15 = cx s₀ := by
+  obtain r15 : s₃.gpr .r15 = cx s₀ := by
     rw [cs₃ _ (by decide), cs₂ _ (by decide), cs₁ _ (by decide), h.r15]
   -- A byte of the data is in none of the regions but the data's.
-  have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+  obtain nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
-  have nstk : ∀ {k : Nat}, k < L s₀ → ¬ (stkR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+  obtain nstk : ∀ {k : Nat}, k < L s₀ → ¬ (stkR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun hk hc => hp.stk_d _ hc (byte_dR hk)
   have m₂s : s₂.mem = s₁.mem := m₂
   refine ⟨by rw [e4, r15, off_eq], fun r hr h15 => ?_, by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, a₁.wr, h.wr],
@@ -320,7 +320,7 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [g₄ r hrsi, cs₃ r hr, cs₂ r hr, cs₁ r hr]
   · rw [m₄]
-    have f₂₃ : Frame (wrM s₀ (mm s₀) ++ [stkR s₀]) s₁.mem s₃.mem := m₂s ▸ f₃
+    obtain f₂₃ : Frame (wrM s₀ (mm s₀) ++ [stkR s₀]) s₁.mem s₃.mem := m₂s ▸ f₃
     refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans (f₂₃.sub fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨dR s₀, by simp, Region.sub_prefix hML⟩
@@ -336,10 +336,10 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
     apply bytesAt_eq_zip (length_PTs _ _) (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
     rw [PTs_getD _ hk]
-    have m₁k : ∀ {x : Addr}, ¬ (sub s₀ 64 64).Contains x 1 → s₁.mem x = mx x :=
+    obtain m₁k : ∀ {x : Addr}, ¬ (sub s₀ 64 64).Contains x 1 → s₁.mem x = mx x :=
       fun hx => fw _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
     -- `src`'s bytes, as on entry.
-    have src_k : ∀ {j : Nat}, j < SL s₀ → s₁.mem (sp s₀ + BitVec.ofNat 64 j) = s.mem (sp s₀ + BitVec.ofNat 64 j) :=
+    obtain src_k : ∀ {j : Nat}, j < SL s₀ → s₁.mem (sp s₀ + BitVec.ofNat 64 j) = s.mem (sp s₀ + BitVec.ofNat 64 j) :=
       fun hj => by
         rw [m₁k (hT.nctx hj (by lit_omega)), fx _ fun r hr => ?_]
         simp only [List.mem_singleton] at hr; subst hr
@@ -356,13 +356,13 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
       · exact nstk hk
     · have hj : k - mm s₀ < L s₀ - mm s₀ := by omega_arith
       have hle := hT.le
-      have e₃ := zip_get (by simp only [List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega_arith)
+      obtain e₃ := zip_get (by simp only [List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega_arith)
         (VG.Proof.ChaCha20.length_keystream _ _) data₃ hj
-      have ea : off (dp s₀) (mm s₀) + BitVec.ofNat 64 (k - mm s₀) = dp s₀ + BitVec.ofNat 64 k := by
+      obtain ea : off (dp s₀) (mm s₀) + BitVec.ofNat 64 (k - mm s₀) = dp s₀ + BitVec.ofNat 64 k := by
         rw [off_eq, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
       rw [ea, getD_split (VG.Proof.Poly1305.length_bytesAt _ _ _),
         m₂s, st₁] at e₃
-      have ks : (keystream (VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (mm s₀ / 64))
+      obtain ks : (keystream (VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (mm s₀ / 64))
           (L s₀ - mm s₀)).getD (k - mm s₀) 0 =
           (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0 := by
         obtain ⟨a, ha⟩ := hdvd
@@ -395,12 +395,12 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (PTs s₀ s.mem) ∧
       ∀ k < zeroLen 6 (64 + mm s₀), s'.mem (off (cx s₀) (672 + k)) = 0 := by
   have hp := hT.hp
-  have hL9 := (s₀.gpr .r9).isLt
-  have hm : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
+  obtain hL9 := (s₀.gpr .r9).isLt
+  obtain hm : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
   unfold cryptSplit
   refine WP.seq (WP.mono (cmpFold_ok (fold := 960) (by lit_omega) h.r13)
     fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
-  have h₁ : Inv s₀ s₁ := h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
+  obtain h₁ : Inv s₀ s₁ := h.step (fun r _ => by rw [g₁]) rd₁ wr₁ (rs := []) (by rw [m₁]; exact Frame.refl _ _)
     (fun _ h => by simp at h) (fun _ h => by simp at h)
   refine WP.seq (WP.mono (Q := CryptedS s₀ s₁) ?_ fun s₂ c₂ => ?_)
   · refine WP.ite (decide (L s₀ < 960 + 1)) (by simp [eval, c₁]) (fun hc => ?_) (fun hc => ?_)
@@ -412,11 +412,11 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
       exact cryptBigSplit_ok hT h₁ (by omega_using [hc]) (by rw [m₁]; exact hst) (by rw [m₁]; exact hks)
         (by rw [m₁]; exact hS2) (by rw [m₁]; exact hS3)
   refine WP.seq (WP.mono (anchor_ok .rsi (k := 128) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
-  have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
+  obtain cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
     by_cases h15 : r = .r15
     · subst h15; rw [e3, c₂.rsi, off_sub, h.r15]
     · rw [g₃ r h15, c₂.cs r hr h15, g₁]
-  have i₃ : Inv s₀ s₃ := h.step cs₃ (by rw [rd₃, c₂.rd, rd₁]) (by rw [wr₃, c₂.wr, wr₁])
+  obtain i₃ : Inv s₀ s₃ := h.step cs₃ (by rw [rd₃, c₂.rd, rd₁]) (by rw [wr₃, c₂.wr, wr₁])
     (by rw [m₃, ← m₁]; exact c₂.frame) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -435,14 +435,14 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
   refine WP.mono (zeroKs_okZ (w := 6) (.inr (.inr rfl)) hp (n := 64 + mm s₀) (by omega_using []) (by lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆Z, zl₆, z₆⟩ => ?_
-  have f₃₆Z : Frame [sub s₀ 672 (zeroLen 6 (64 + mm s₀))] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆Z
-  have f₆ : Frame [sub s₀ 672 1024] s₅.mem s₆.mem := f₆Z.sub fun r hr => by
+  obtain f₃₆Z : Frame [sub s₀ 672 (zeroLen 6 (64 + mm s₀))] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆Z
+  obtain f₆ : Frame [sub s₀ 672 1024] s₅.mem s₆.mem := f₆Z.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_singleton_self _, sub_sub s₀ (Nat.le_refl _) (by omega_using [zl₆]) (by omega_using [zl₆])⟩
-  have cs₆ : ∀ r ∈ calleeSaved, s₆.gpr r = s₃.gpr r := fun r hr => by
-    have h' := calleeSaved_ne hr
+  obtain cs₆ : ∀ r ∈ calleeSaved, s₆.gpr r = s₃.gpr r := fun r hr => by
+    obtain h' := calleeSaved_ne hr
     rw [g₆ r h'.1 h'.2.1, g₅ r h'.2.2.1, g₄ r h'.2.2.1]
-  have f₅₆ : Frame [sub s₀ 672 1024] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆
+  obtain f₅₆ : Frame [sub s₀ 672 1024] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆
   refine ⟨i₃.step cs₆ (by rw [rd₆, rd₅, rd₄]) (by rw [wr₆, wr₅, wr₄]) f₅₆
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sub_work s₀ (by lit_omega) (by lit_omega))
     (fun r hr => by

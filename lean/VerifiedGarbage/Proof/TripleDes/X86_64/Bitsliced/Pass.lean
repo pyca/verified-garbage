@@ -46,40 +46,40 @@ theorem keyLoad_ok {s : State} (h : Room s) (hkey : InRegions (s.rd ++ s.wr) (sl
   let K := s.mem.readW kp 64
   let δ := sl s stepSlot
   let s₁ := s.setReg .rax kp
-  have e₁ : exec (ld .rax keySlot) s = some s₁ := exec_ld h (by decide) .rax
+  obtain e₁ : exec (ld .rax keySlot) s = some s₁ := exec_ld h (by decide) .rax
   let s₂ := s₁.setReg .r15 K
-  have e₂ : exec (.mov .r15 (.mem { base := .rax, disp := 0 })) s₁ = some s₂ := by
-    have hea : s₁.ea { base := .rax, disp := 0 } = kp := by
+  obtain e₂ : exec (.mov .r15 (.mem { base := .rax, disp := 0 })) s₁ = some s₂ := by
+    obtain hea : s₁.ea { base := .rax, disp := 0 } = kp := by
       simp [State.ea, s₁, gpr_setReg]
-    have hl : s₁.load64 kp = some K := by
+    obtain hl : s₁.load64 kp = some K := by
       simp only [State.load64, s₁, rd_setReg, wr_setReg, mem_setReg, hkey, ite_true, kp, K]
     simp only [exec, readSrc, hea, hl, Option.map_some]
     rfl
-  have h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg]) (by simp [s₂, s₁, wr_setReg])
-  have sl₂ : ∀ x, sl s₂ x = sl s x := by
+  obtain h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg]) (by simp [s₂, s₁, wr_setReg])
+  obtain sl₂ : ∀ x, sl s₂ x = sl s x := by
     intro x; simp only [sl, s₂, s₁, mem_setReg, gpr_setReg]; rfl
   let s₃ := s₂.setReg .rdx δ
-  have e₃ : exec (ld .rdx stepSlot) s₂ = some s₃ := by
+  obtain e₃ : exec (ld .rdx stepSlot) s₂ = some s₃ := by
     rw [exec_ld h₂ (by decide) .rdx, sl₂]
   let v := kp + δ
   let s₄ := (arithFlags s₃ v (decide (2 ^ 64 ≤ kp.toNat + δ.toNat)) (addOverflow kp δ v)).setReg .rax v
-  have e₄ : exec (.alu .add .rax (.reg .rdx)) s₃ = some s₄ := by
+  obtain e₄ : exec (.alu .add .rax (.reg .rdx)) s₃ = some s₄ := by
     simp only [exec, execAlu, readSrc, Option.bind_some]
-    have ha : s₃.gpr .rax = kp := by simp [s₃, s₂, s₁, gpr_setReg]
-    have hd : s₃.gpr .rdx = δ := by simp [s₃, gpr_setReg]
+    obtain ha : s₃.gpr .rax = kp := by simp [s₃, s₂, s₁, gpr_setReg]
+    obtain hd : s₃.gpr .rdx = δ := by simp [s₃, gpr_setReg]
     rw [ha, hd]
-  have h₄ : Room s₄ := h₂.congr (by simp [s₄, s₃, s₂, s₁, gpr_setReg])
+  obtain h₄ : Room s₄ := h₂.congr (by simp [s₄, s₃, s₂, s₁, gpr_setReg])
     (by simp [s₄, s₃, wr_setReg, wr_arithFlags])
-  have e₅ := exec_st (r := Reg.rax) h₄ (by decide : keySlot < 128)
+  obtain e₅ := exec_st (r := Reg.rax) h₄ (by decide : keySlot < 128)
   let s₅ : State := { s₄ with mem := stMem s₄ keySlot (s₄.gpr .rax) }
   let s₆ := (s₅.setFlags (some ((s₅.gpr .r15).rotateRight 48).msb) none s₅.zf s₅.sf).setReg .r15
     ((s₅.gpr .r15).rotateRight 48)
-  have e₆ : exec (.shift .ror .r15 48) s₅ = some s₆ := by
+  obtain e₆ : exec (.shift .ror .r15 48) s₅ = some s₆ := by
     simp only [exec, execShift]; rfl
-  have rcx₄ : s₄.gpr .rcx = s.gpr .rcx := by simp [s₄, s₃, s₂, s₁, gpr_setReg]
-  have mem₄ : s₄.mem = s.mem := by simp [s₄, s₃, s₂, s₁, mem_setReg, mem_arithFlags]
-  have rax₄ : s₄.gpr .rax = v := by simp [s₄, gpr_setReg]
-  have sl₆ : ∀ x < 128, sl s₆ x = if x = keySlot then v else sl s x := by
+  obtain rcx₄ : s₄.gpr .rcx = s.gpr .rcx := by simp [s₄, s₃, s₂, s₁, gpr_setReg]
+  obtain mem₄ : s₄.mem = s.mem := by simp [s₄, s₃, s₂, s₁, mem_setReg, mem_arithFlags]
+  obtain rax₄ : s₄.gpr .rax = v := by simp [s₄, gpr_setReg]
+  obtain sl₆ : ∀ x < 128, sl s₆ x = if x = keySlot then v else sl s x := by
     intro x hx
     simp only [sl, s₆, mem_setReg, mem_setFlags, gpr_setReg, gpr_setFlags]
     simp only [show ¬ Reg.rcx = Reg.r15 by decide, ite_false, s₅]
@@ -114,10 +114,10 @@ bits of the S-boxes before it. -/
 theorem keyBits (K : BitVec 64) {j i : Nat} (hj : j < 8) (hi : i < 6) :
     (K.rotateRight 48 <<< (6 * j)).getLsbD (58 + i) = (K.setWidth 48).getLsbD (inBit j i) := by
   rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateRight, BitVec.getLsbD_setWidth]
-  have h1 : ¬ 58 + i < 6 * j := by omega_using [hj]
-  have h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega_using [hj]
-  have h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega_using [hj]
-  have h4 : inBit j i < 48 := by unfold inBit; omega_using [hi]
+  obtain h1 : ¬ 58 + i < 6 * j := by omega_using [hj]
+  obtain h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega_using [hj]
+  obtain h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega_using [hj]
+  obtain h4 : inBit j i < 48 := by unfold inBit; omega_using [hi]
   simp only [h1, decide_false, Bool.not_false, Bool.true_and, h2, ite_false, h3, h4, decide_true,
     Bool.true_and, show 58 + i < 64 by omega_using [hi], show 58 + i - 6 * j < 64 by omega_using [hi]]
 
@@ -133,7 +133,7 @@ theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : S
       Frame.refl _ _⟩
   | succ n ih =>
     obtain ⟨s₁, run₁, w₁, hi₁, r₁, rd₁, wr₁, c₁, sp₁, f₁⟩ := ih (by omega_using [hn])
-    have h₁ := h.congr c₁ wr₁
+    obtain h₁ := h.congr c₁ wr₁
     obtain ⟨s₂, run₂, w₂, hi₂, r₂, rd₂, wr₂, c₂, sp₂, f₂⟩ :=
       sboxStep_ok ρ (by omega_using [hn] : n < 8) h₁ (K.setWidth 48)
         (fun i hi => by rw [r₁]; exact keyBits K (by omega_using [hn]) hi)
@@ -161,7 +161,7 @@ theorem round_ok (ρ : Role) {s : State} (h : Room s)
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
       Frame [scratchR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, r₁, key₁, sl₁, rd₁, wr₁, c₁, sp₁, f₁⟩ := keyLoad_ok h hkey
-  have h₁ := h.congr c₁ wr₁
+  obtain h₁ := h.congr c₁ wr₁
   obtain ⟨s₂, run₂, w₂, hi₂, -, rd₂, wr₂, c₂, sp₂, f₂⟩ := stepsCode_ok ρ _ (Nat.le_refl 8) h₁ r₁
   refine ⟨s₂, ?_, fun x hx => ?_, ?_, fun x hx hl hne => ?_, rd₂.trans rd₁, wr₂.trans wr₁,
     c₂.trans c₁, sp₂.trans sp₁, ?_⟩
@@ -225,20 +225,20 @@ theorem decCode_ok {s : State} (h : Room s) {k : Nat} (hk : k < 128) :
       Frame [scratchR s] s.mem s'.mem := by
   let v := sl s k
   let s₁ := s.setReg .rax v
-  have e₁ : exec (ld .rax k) s = some s₁ := exec_ld h hk .rax
+  obtain e₁ : exec (ld .rax k) s = some s₁ := exec_ld h hk .rax
   let r := v - (1 : BitVec 32).signExtend 64
   let s₂ := (arithFlags s₁ r (decide (v.toNat < ((1 : BitVec 32).signExtend 64).toNat))
     (subOverflow v ((1 : BitVec 32).signExtend 64) r)).setReg .rax r
-  have e₂ : exec (.alu .sub .rax (.imm 1)) s₁ = some s₂ := by
+  obtain e₂ : exec (.alu .sub .rax (.imm 1)) s₁ = some s₂ := by
     simp only [exec, execAlu, readSrc, Option.bind_some]
     simp only [s₁, gpr_setReg_self]; rfl
-  have h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg])
+  obtain h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg])
     (by simp [s₂, s₁, wr_setReg, wr_arithFlags])
-  have e₃ := exec_st (r := Reg.rax) h₂ hk
+  obtain e₃ := exec_st (r := Reg.rax) h₂ hk
   have hr : r = v - 1 := rfl
-  have rcx₂ : s₂.gpr .rcx = s.gpr .rcx := by simp [s₂, s₁, gpr_setReg]
-  have mem₂ : s₂.mem = s.mem := by simp [s₂, s₁, mem_setReg, mem_arithFlags]
-  have sl₃ : ∀ x < 128, (stMem s₂ k (s₂.gpr .rax)).readW (wordAddr (s₂.gpr .rcx) x) 64 =
+  obtain rcx₂ : s₂.gpr .rcx = s.gpr .rcx := by simp [s₂, s₁, gpr_setReg]
+  obtain mem₂ : s₂.mem = s.mem := by simp [s₂, s₁, mem_setReg, mem_arithFlags]
+  obtain sl₃ : ∀ x < 128, (stMem s₂ k (s₂.gpr .rax)).readW (wordAddr (s₂.gpr .rcx) x) 64 =
       if x = k then v - 1 else sl s x := by
     intro x hx
     rw [readW_stMem s₂ hk _ hx]
@@ -279,14 +279,14 @@ theorem roundPair_ok {s : State} (h : Room s) (h₁ : Apart s (sl s keySlot))
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
       Frame [scratchR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, w₁, key₁, misc₁, rd₁, wr₁, c₁, sp₁, f₁⟩ := round_ok .ba h h₁.read
-  have g₁ := h.congr c₁ wr₁
-  have step₁ : sl s₁ stepSlot = sl s stepSlot := misc₁ _ (by decide) (by decide) (by decide)
+  obtain g₁ := h.congr c₁ wr₁
+  obtain step₁ : sl s₁ stepSlot = sl s stepSlot := misc₁ _ (by decide) (by decide) (by decide)
   have hk₁ : sl s₁ keySlot = sl s keySlot + sl s stepSlot := key₁
-  have a₂ : Apart s₁ (sl s₁ keySlot) := by rw [hk₁]; exact h₂.congr c₁ rd₁ wr₁
+  obtain a₂ : Apart s₁ (sl s₁ keySlot) := by rw [hk₁]; exact h₂.congr c₁ rd₁ wr₁
   obtain ⟨s₂, run₂, w₂, key₂, misc₂, rd₂, wr₂, c₂, sp₂, f₂⟩ := round_ok .ab g₁ a₂.read
-  have g₂ := g₁.congr c₂ wr₂
+  obtain g₂ := g₁.congr c₂ wr₂
   obtain ⟨s₃, run₃, cnt₃, zf₃, sl₃, rd₃, wr₃, c₃, sp₃, f₃⟩ := decCode_ok g₂ (by decide : roundSlot < 128)
-  have kread : s₁.mem.readW (sl s keySlot + sl s stepSlot) 64 =
+  obtain kread : s₁.mem.readW (sl s keySlot + sl s stepSlot) 64 =
       s.mem.readW (sl s keySlot + sl s stepSlot) 64 := h₂.readW f₁
   refine ⟨s₃, ?_, fun x hx => ?_, ?_, ?_, ?_, fun x hx hlo hk hr => ?_, rd₃.trans (rd₂.trans rd₁),
     wr₃.trans (wr₂.trans wr₁), c₃.trans (c₂.trans c₁), sp₃.trans (sp₂.trans sp₁), ?_⟩
@@ -359,35 +359,35 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
   intro m s hs
   let a₀ := sl s₀ keySlot
   let δ := sl s₀ stepSlot
-  have hδ : sl s stepSlot = δ := hs.misc _ (by decide) (by decide) (by decide) (by decide)
-  have n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega_using [this]
-  have a₁ : Apart s (sl s keySlot) := by
+  obtain hδ : sl s stepSlot = δ := hs.misc _ (by decide) (by decide) (by decide) (by decide)
+  obtain n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega_using [this]
+  obtain a₁ : Apart s (sl s keySlot) := by
     rw [hs.key]; exact (hk _ (by omega_using [n16])).congr hs.rcx hs.rd hs.wr
-  have a₂ : Apart s (sl s keySlot + sl s stepSlot) := by
+  obtain a₂ : Apart s (sl s keySlot + sl s stepSlot) := by
     rw [hs.key, hδ, kptr_succ]; exact (hk _ n16).congr hs.rcx hs.rd hs.wr
   obtain ⟨s', run', w', key', cnt', zf', misc', rd', wr', c', sp', f'⟩ := roundPair_ok hs.room a₁ a₂
   refine WP.of_runBlock ⟨s', run', ?_⟩
-  have frame' : Frame [scratchR s₀] s₀.mem s'.mem := by
+  obtain frame' : Frame [scratchR s₀] s₀.mem s'.mem := by
     have := hs.frame
     rw [show scratchR s = scratchR s₀ by simp only [scratchR, hs.rcx]] at f'
     exact this.trans f'
-  have k1 : (s.mem.readW (sl s keySlot) 64).setWidth 48 =
+  obtain k1 : (s.mem.readW (sl s keySlot) 64).setWidth 48 =
       keyAt s₀.mem a₀ δ (2 * (8 - m)) := by
     rw [hs.key]; simp only [keyAt]
     rw [((hk _ (by omega_using [n16])).readW hs.frame)]
-  have k2 : (s.mem.readW (sl s keySlot + sl s stepSlot) 64).setWidth 48 =
+  obtain k2 : (s.mem.readW (sl s keySlot + sl s stepSlot) 64).setWidth 48 =
       keyAt s₀.mem a₀ δ (2 * (8 - m) + 1) := by
     rw [hs.key, hδ, kptr_succ]; simp only [keyAt]
     rw [((hk _ n16).readW hs.frame)]
-  have words' : ∀ x < 64, words s' x = pairs (keyAt s₀.mem a₀ δ) (8 - m + 1) (words s₀) x := by
+  obtain words' : ∀ x < 64, words s' x = pairs (keyAt s₀.mem a₀ δ) (8 - m + 1) (words s₀) x := by
     intro x hx
     rw [w' x hx, k1, k2]
     simp only [pairs]
     exact roundW_congr .ab _ (roundW_congr .ba _ hs.words) x hx
-  have misc'' : ∀ x < 128, 72 ≤ x → x ≠ keySlot → x ≠ roundSlot → sl s' x = sl s₀ x :=
+  obtain misc'' : ∀ x < 128, 72 ≤ x → x ≠ keySlot → x ≠ roundSlot → sl s' x = sl s₀ x :=
     fun x hx hlo hk hr => (misc' x hx hlo hk hr).trans (hs.misc x hx hlo hk hr)
-  have room' := hs.room.congr c' wr'
-  have cntv : sl s roundSlot - 1 = BitVec.ofNat 64 (m - 1) := by
+  obtain room' := hs.room.congr c' wr'
+  obtain cntv : sl s roundSlot - 1 = BitVec.ofNat 64 (m - 1) := by
     rw [hs.cnt]
     exact cnt_sub m hs.pos
   by_cases h1 : m = 1
@@ -432,26 +432,26 @@ theorem passKeyCode_ok {s : State} (h : Room s) (a b : BitVec 32) :
       Frame [scratchR s] s.mem s'.mem := by
   let v := sl s schedSlot
   let s₁ := s.setReg .rdx v
-  have e₁ : exec (ld .rdx schedSlot) s = some s₁ := exec_ld h (by decide) .rdx
-  have e₂ := exec_addImm s₁ .rdx a
+  obtain e₁ : exec (ld .rdx schedSlot) s = some s₁ := exec_ld h (by decide) .rdx
+  obtain e₂ := exec_addImm s₁ .rdx a
   let w := s₁.gpr .rdx + a.signExtend 64
   let s₂ := (arithFlags s₁ w (decide (2 ^ 64 ≤ (s₁.gpr .rdx).toNat + (a.signExtend 64).toNat))
       (addOverflow (s₁.gpr .rdx) (a.signExtend 64) w)).setReg .rdx w
-  have h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg]) (by simp [s₂, s₁, wr_setReg, wr_arithFlags])
-  have e₃ := exec_st (r := Reg.rdx) h₂ (by decide : keySlot < 128)
+  obtain h₂ : Room s₂ := h.congr (by simp [s₂, s₁, gpr_setReg]) (by simp [s₂, s₁, wr_setReg, wr_arithFlags])
+  obtain e₃ := exec_st (r := Reg.rdx) h₂ (by decide : keySlot < 128)
   let s₃ : State := { s₂ with mem := stMem s₂ keySlot (s₂.gpr .rdx) }
-  have e₄ := exec_movImm s₃ .rdx b
+  obtain e₄ := exec_movImm s₃ .rdx b
   let s₄ := s₃.setReg .rdx (b.signExtend 64)
-  have h₄ : Room s₄ := h₂.congr (by simp [s₄, s₃, gpr_setReg]) (by simp [s₄, s₃, wr_setReg])
-  have e₅ := exec_st (r := Reg.rdx) h₄ (by decide : stepSlot < 128)
+  obtain h₄ : Room s₄ := h₂.congr (by simp [s₄, s₃, gpr_setReg]) (by simp [s₄, s₃, wr_setReg])
+  obtain e₅ := exec_st (r := Reg.rdx) h₄ (by decide : stepSlot < 128)
   let s₅ : State := { s₄ with mem := stMem s₄ stepSlot (s₄.gpr .rdx) }
-  have c₂ : s₂.gpr .rcx = s.gpr .rcx := by simp [s₂, s₁, gpr_setReg]
-  have m₂ : s₂.mem = s.mem := by simp [s₂, s₁, mem_setReg, mem_arithFlags]
-  have sl₅ : ∀ x < 128, sl s₅ x = if x = stepSlot then b.signExtend 64 else
+  obtain c₂ : s₂.gpr .rcx = s.gpr .rcx := by simp [s₂, s₁, gpr_setReg]
+  obtain m₂ : s₂.mem = s.mem := by simp [s₂, s₁, mem_setReg, mem_arithFlags]
+  obtain sl₅ : ∀ x < 128, sl s₅ x = if x = stepSlot then b.signExtend 64 else
       if x = keySlot then v + a.signExtend 64 else sl s x := by
     intro x hx
-    have a₅ := sl_st s₄ (by decide : stepSlot < 128) (s₄.gpr .rdx) hx
-    have a₃ := sl_st s₂ (by decide : keySlot < 128) (s₂.gpr .rdx) hx
+    obtain a₅ := sl_st s₄ (by decide : stepSlot < 128) (s₄.gpr .rdx) hx
+    obtain a₃ := sl_st s₂ (by decide : keySlot < 128) (s₂.gpr .rdx) hx
     change sl { s₄ with mem := stMem s₄ stepSlot (s₄.gpr .rdx) } x = _
     rw [a₅]
     simp only [s₄, sl_setReg _ (by decide : Reg.rdx ≠ .rcx), gpr_setReg_self]
@@ -474,7 +474,7 @@ theorem passKeyCode_ok {s : State} (h : Room s) (a b : BitVec 32) :
   · simp [s₅, s₄, s₃, s₂, s₁, gpr_setReg]
   · simp [s₅, s₄, s₃, s₂, s₁, gpr_setReg]
   · have f₃ := stMem_frame (s := s₂) (by decide : keySlot < 128) (s₂.gpr .rdx)
-    have f₅ := stMem_frame (s := s₄) (by decide : stepSlot < 128) (s₄.gpr .rdx)
+    obtain f₅ := stMem_frame (s := s₄) (by decide : stepSlot < 128) (s₄.gpr .rdx)
     rw [show scratchR s₂ = scratchR s by simp only [scratchR, c₂], m₂] at f₃
     rw [show scratchR s₄ = scratchR s by simp [scratchR, s₄, s₃, gpr_setReg, c₂]] at f₅
     exact f₃.trans f₅
@@ -510,7 +510,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     (h : Room s) (hc : sl s passSlot = BitVec.ofNat 64 p) :
     WP isa (passStart d) s (StartPost d p s) := by
   -- the code of a branch, and what follows it
-  have branch : ∀ (s₁ : State), Room s₁ → (∀ x < 128, sl s₁ x = sl s x) → s₁.gpr .rcx = s.gpr .rcx →
+  obtain branch : ∀ (s₁ : State), Room s₁ → (∀ x < 128, sl s₁ x = sl s x) → s₁.gpr .rcx = s.gpr .rcx →
       s₁.gpr .rsp = s.gpr .rsp → s₁.rd = s.rd → s₁.wr = s.wr → Frame [scratchR s] s.mem s₁.mem →
       WP isa (.block (passKeyCode d p)) s₁ (fun s₂ =>
         WP isa (.block [.mov .rax (.imm 8), st roundSlot .rax]) s₂ (StartPost d p s)) := by
@@ -518,14 +518,14 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     obtain ⟨s₂, run₂, key₂, step₂, misc₂, -, rd₂, wr₂, c₂, sp₂, f₂⟩ :=
       passKeyCode_ok h₁ (BitVec.ofNat 32 (passKey d p).1) (BitVec.ofInt 32 (passKey d p).2)
     refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-    have h₂ := h₁.congr c₂ wr₂
-    have e₃ := exec_movImm s₂ .rax 8
+    obtain h₂ := h₁.congr c₂ wr₂
+    obtain e₃ := exec_movImm s₂ .rax 8
     let s₃ := s₂.setReg .rax ((8 : BitVec 32).signExtend 64)
-    have h₃ : Room s₃ := h₂.congr (by simp [s₃, gpr_setReg]) (by simp [s₃, wr_setReg])
-    have e₄ := exec_st (r := Reg.rax) h₃ (by decide : roundSlot < 128)
+    obtain h₃ : Room s₃ := h₂.congr (by simp [s₃, gpr_setReg]) (by simp [s₃, wr_setReg])
+    obtain e₄ := exec_st (r := Reg.rax) h₃ (by decide : roundSlot < 128)
     refine WP.of_runBlock ⟨{ s₃ with mem := stMem s₃ roundSlot (s₃.gpr .rax) }, ?_, ?_⟩
     · rw [runBlock_cons, e₃, runStep_some, runBlock_cons, e₄, runStep_some, runBlock_nil]
-    have sl₄ : ∀ x < 128, sl { s₃ with mem := stMem s₃ roundSlot (s₃.gpr .rax) } x =
+    obtain sl₄ : ∀ x < 128, sl { s₃ with mem := stMem s₃ roundSlot (s₃.gpr .rax) } x =
         if x = roundSlot then 8 else sl s₂ x := by
       intro x hx
       rw [sl_st s₃ (by decide) _ hx]
@@ -549,27 +549,27 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
       exact f₁.trans (f₂.trans f)
   -- load the count and compare it with 3
   let s₁ := s.setReg .rax (BitVec.ofNat 64 p)
-  have e₁ : exec (ld .rax passSlot) s = some s₁ := by rw [exec_ld h (by decide) .rax, hc]
+  obtain e₁ : exec (ld .rax passSlot) s = some s₁ := by rw [exec_ld h (by decide) .rax, hc]
   let t₁ := arithFlags s₁ (s₁.gpr .rax - (3 : BitVec 32).signExtend 64)
     (decide ((s₁.gpr .rax).toNat < ((3 : BitVec 32).signExtend 64).toNat))
     (subOverflow (s₁.gpr .rax) ((3 : BitVec 32).signExtend 64) (s₁.gpr .rax - (3 : BitVec 32).signExtend 64))
-  have hrun₁ : runBlock isa [ld .rax passSlot, .alu .cmp .rax (.imm 3)] s = some t₁ := by
+  obtain hrun₁ : runBlock isa [ld .rax passSlot, .alu .cmp .rax (.imm 3)] s = some t₁ := by
     rw [runBlock_cons, e₁, runStep_some, cmp_run]
-  have ht₁ : Room t₁ := h.congr (by simp [t₁, s₁, gpr_setReg])
+  obtain ht₁ : Room t₁ := h.congr (by simp [t₁, s₁, gpr_setReg])
     (by simp [t₁, s₁, wr_setReg, wr_arithFlags])
-  have sl₁ : ∀ x < 128, sl t₁ x = sl s x := by
+  obtain sl₁ : ∀ x < 128, sl t₁ x = sl s x := by
     intro x _; simp only [t₁, sl_arithFlags, s₁, sl_setReg _ (by decide : Reg.rax ≠ .rcx)]
-  have c₁ : t₁.gpr .rcx = s.gpr .rcx := by simp [t₁, s₁, gpr_setReg]
-  have sp₁ : t₁.gpr .rsp = s.gpr .rsp := by simp [t₁, s₁, gpr_setReg]
-  have rd₁ : t₁.rd = s.rd := by simp [t₁, s₁, rd_setReg, rd_arithFlags]
-  have wr₁ : t₁.wr = s.wr := by simp [t₁, s₁, wr_setReg, wr_arithFlags]
-  have f₁ : Frame [scratchR s] s.mem t₁.mem := by
+  obtain c₁ : t₁.gpr .rcx = s.gpr .rcx := by simp [t₁, s₁, gpr_setReg]
+  obtain sp₁ : t₁.gpr .rsp = s.gpr .rsp := by simp [t₁, s₁, gpr_setReg]
+  obtain rd₁ : t₁.rd = s.rd := by simp [t₁, s₁, rd_setReg, rd_arithFlags]
+  obtain wr₁ : t₁.wr = s.wr := by simp [t₁, s₁, wr_setReg, wr_arithFlags]
+  obtain f₁ : Frame [scratchR s] s.mem t₁.mem := by
     simp only [t₁, s₁, mem_setReg, mem_arithFlags]; exact Frame.refl _ _
-  have rax₁ : t₁.gpr .rax = BitVec.ofNat 64 p := by simp [t₁, s₁, gpr_setReg]
+  obtain rax₁ : t₁.gpr .rax = BitVec.ofNat 64 p := by simp [t₁, s₁, gpr_setReg]
   apply WP.seq
   refine WP.of_runBlock ⟨t₁, hrun₁, ?_⟩
   apply WP.seq
-  have zf₁ : isa.eval .e t₁ = some (p == 3) := by
+  obtain zf₁ : isa.eval .e t₁ = some (p == 3) := by
     show t₁.zf = _
     simp only [t₁, zf_arithFlags, s₁, gpr_setReg_self]
     rcases hp with ⟨h1, h3⟩
@@ -580,24 +580,24 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     subst this
     exact branch t₁ ht₁ sl₁ c₁ sp₁ rd₁ wr₁ f₁
   · intro h3
-    have hp3 : p ≠ 3 := by simpa using h3
+    obtain hp3 : p ≠ 3 := by simpa using h3
     apply WP.seq
     let t₂ := arithFlags t₁ (t₁.gpr .rax - (2 : BitVec 32).signExtend 64)
       (decide ((t₁.gpr .rax).toNat < ((2 : BitVec 32).signExtend 64).toNat))
       (subOverflow (t₁.gpr .rax) ((2 : BitVec 32).signExtend 64) (t₁.gpr .rax - (2 : BitVec 32).signExtend 64))
     refine WP.of_runBlock ⟨t₂, cmp_run t₁ 2, ?_⟩
-    have ht₂ : Room t₂ := ht₁.congr (by simp [t₂]) (by simp [t₂, wr_arithFlags])
-    have zf₂ : isa.eval .e t₂ = some (p == 2) := by
+    obtain ht₂ : Room t₂ := ht₁.congr (by simp [t₂]) (by simp [t₂, wr_arithFlags])
+    obtain zf₂ : isa.eval .e t₂ = some (p == 2) := by
       show t₂.zf = _
       simp only [t₂, zf_arithFlags, rax₁]
       rcases hp with ⟨h1, h3⟩
       rcases p with _ | _ | _ | _ | p <;> first | omega | decide
-    have sl₂ : ∀ x < 128, sl t₂ x = sl s x := fun x hx => by simp only [t₂, sl_arithFlags]; exact sl₁ x hx
-    have c₂ : t₂.gpr .rcx = s.gpr .rcx := by simp only [t₂, gpr_arithFlags, c₁]
-    have sp₂ : t₂.gpr .rsp = s.gpr .rsp := by simp only [t₂, gpr_arithFlags, sp₁]
-    have rd₂ : t₂.rd = s.rd := by simp only [t₂, rd_arithFlags, rd₁]
-    have wr₂ : t₂.wr = s.wr := by simp only [t₂, wr_arithFlags, wr₁]
-    have f₂ : Frame [scratchR s] s.mem t₂.mem := by simp only [t₂, mem_arithFlags]; exact f₁
+    obtain sl₂ : ∀ x < 128, sl t₂ x = sl s x := fun x hx => by simp only [t₂, sl_arithFlags]; exact sl₁ x hx
+    obtain c₂ : t₂.gpr .rcx = s.gpr .rcx := by simp only [t₂, gpr_arithFlags, c₁]
+    obtain sp₂ : t₂.gpr .rsp = s.gpr .rsp := by simp only [t₂, gpr_arithFlags, sp₁]
+    obtain rd₂ : t₂.rd = s.rd := by simp only [t₂, rd_arithFlags, rd₁]
+    obtain wr₂ : t₂.wr = s.wr := by simp only [t₂, wr_arithFlags, wr₁]
+    obtain f₂ : Frame [scratchR s] s.mem t₂.mem := by simp only [t₂, mem_arithFlags]; exact f₁
     apply WP.ite (p == 2) zf₂
     · intro h2
       have : p = 2 := by simpa using h2
@@ -623,7 +623,7 @@ theorem pairs_keys_congr {w : Nat} {key key' : Nat → BitVec 48} (n : Nat)
 
 theorem partner_lt : ∀ k < 128, ∀ y, partner k = some y → y < 64 := by
   intro k hk y h
-  have key : ∀ k < 128, (partner k).all (· < 64) = true := by lit_decide
+  obtain key : ∀ k < 128, (partner k).all (· < 64) = true := by lit_decide
   have := key k hk
   rw [h] at this
   simpa using this
@@ -664,10 +664,10 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
   intro s₁ p₁
   have h₁ := p₁.room
   apply WP.seq
-  have hk₁ : ∀ r < 16, Apart s₁ (sl s₁ keySlot + BitVec.ofNat 64 r * sl s₁ stepSlot) := by
+  obtain hk₁ : ∀ r < 16, Apart s₁ (sl s₁ keySlot + BitVec.ofNat 64 r * sl s₁ stepSlot) := by
     intro r hr
     rw [p₁.key, p₁.step]; exact (hk r hr).congr p₁.rcx p₁.rd p₁.wr
-  have inv : LoopInv s₁ 8 s₁ := by
+  obtain inv : LoopInv s₁ 8 s₁ := by
     refine ⟨h₁, rfl, rfl, rfl, rfl, by decide, by decide, fun _ _ => rfl, ?_, ?_,
       fun _ _ _ _ _ => rfl, Frame.refl _ _⟩
     · simp
@@ -676,25 +676,25 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
   intro s₂ p₂
   have h₂ := p₂.room
   obtain ⟨s₃, run₃, sw₃, hi₃, rd₃, wr₃, c₃, sp₃, f₃⟩ := swapHalves_ok h₂
-  have h₃ := h₂.congr c₃ wr₃
+  obtain h₃ := h₂.congr c₃ wr₃
   obtain ⟨s₄, run₄, cnt₄, zf₄, misc₄, rd₄, wr₄, c₄, sp₄, f₄⟩ := decCode_ok h₃ (by decide : passSlot < 128)
   refine WP.of_runBlock ⟨s₄, by rw [passEnd_eq]; exact runBlock_cat_some run₃ run₄, ?_⟩
-  have keys : ∀ r < 16, keyAt s₁.mem (sl s₁ keySlot) (sl s₁ stepSlot) r =
+  obtain keys : ∀ r < 16, keyAt s₁.mem (sl s₁ keySlot) (sl s₁ stepSlot) r =
       keyAt s.mem (passA d p (sl s schedSlot)) (passD d p) r := by
     intro r hr
     simp only [keyAt, p₁.key, p₁.step]
-    have e := (hk r hr).readW p₁.frame
+    obtain e := (hk r hr).readW p₁.frame
     simp only [passA, passD] at e
     rw [e]; rfl
-  have state₁ : ∀ x < 64, words s₁ x = words s x := fun x hx =>
+  obtain state₁ : ∀ x < 64, words s₁ x = words s x := fun x hx =>
     p₁.misc _ (by unfold stSlot; omega_using [hx]) (by unfold stSlot keySlot; omega_using [hx])
       (by unfold stSlot stepSlot; omega_using [hx]) (by unfold stSlot roundSlot; omega_using [hx])
-  have high : ∀ x < 128, 72 ≤ x → x ≠ keySlot → x ≠ roundSlot → x ≠ passSlot →
+  obtain high : ∀ x < 128, 72 ≤ x → x ≠ keySlot → x ≠ roundSlot → x ≠ passSlot →
       sl s₄ x = sl s₁ x := by
     intro x hx hlo hkx hrx hpx
     rw [misc₄ x hx hpx, hi₃ x hx hlo, p₂.misc x hx hlo hkx hrx]
-  have pass₁ : sl s₁ passSlot = sl s passSlot := p₁.misc _ (by decide) (by decide) (by decide) (by decide)
-  have pass₃ : sl s₃ passSlot = sl s passSlot := by
+  obtain pass₁ : sl s₁ passSlot = sl s passSlot := p₁.misc _ (by decide) (by decide) (by decide) (by decide)
+  obtain pass₃ : sl s₃ passSlot = sl s passSlot := by
     rw [hi₃ _ (by decide) (by decide), p₂.misc _ (by decide) (by decide) (by decide) (by decide), pass₁]
   refine ⟨h₃.congr c₄ wr₄, c₄.trans (c₃.trans (p₂.rcx.trans p₁.rcx)),
     sp₄.trans (sp₃.trans (p₂.rsp.trans p₁.rsp)), rd₄.trans (rd₃.trans (p₂.rd.trans p₁.rd)),
@@ -713,7 +713,7 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
     exact p₁.misc x hx a b c
   · have g₃ : Frame [scratchR s] s₂.mem s₃.mem := by
       rwa [show scratchR s₂ = scratchR s by simp only [scratchR, p₂.rcx, p₁.rcx]] at f₃
-    have g₄ : Frame [scratchR s] s₃.mem s₄.mem := by
+    obtain g₄ : Frame [scratchR s] s₃.mem s₄.mem := by
       rwa [show scratchR s₃ = scratchR s by simp only [scratchR, c₃, p₂.rcx, p₁.rcx]] at f₄
     have g₂ := p₂.frame
     rw [show scratchR s₁ = scratchR s by simp only [scratchR, p₁.rcx]] at g₂

@@ -92,7 +92,7 @@ include hP hF hS
 omit hP hS in
 theorem rho_ok {σ s : State} (h : VB p STK σ s) (h24 : s.gpr .r24 = 1) :
     WP isa (copy .r30 0 .r31 oSB 32) s (VS p STK 0 0 σ) := by
-  have hk := hF.k; have hl := hF.l
+  obtain hk := hF.k; have hl := hF.l
   refine WP.mono (copyS h.vc.site (sb := .r30) (so := 0) (db := .r31) (dO := oSB) (len := 32)
     ⟨vptr_ok rfl (by decide), by vsep hF⟩ ⟨vptr_ok rfl (by decide), by vsep hF⟩ (by decide) (by decide) (by decide)
     (by decide) (by decide) (by vsep hF))
@@ -109,76 +109,76 @@ theorem rho_ok {σ s : State} (h : VB p STK σ s) (h24 : s.gpr .r24 = 1) :
 omit hP hS in
 theorem rn_m {σ : State} {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) :
     RnOk (vlay p STK σ) vWb (sc oSB) (pS (20 + (8 * r + c))) (sc oSS) := by
-  have hk := hF.k; have hl := hF.l
+  obtain hk := hF.k; have hl := hF.l
   exact ⟨⟨vptr_ok rfl (by decide), by vsep hF⟩, ⟨vptr_ok rfl (by unfold oP; omega_arith), by vsep hF⟩,
     ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.r31 ∈ vWb by decide,
     show ix Reg.r31 ∈ vWb by decide, by vsep hF, by vsep hF, by vsep hF⟩
 
 theorem aOne_ok {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) {σ s : State} (h : VS p STK r c σ s) :
     WP isa (aOne P (8 * r + c)) s (VS p STK r (c + 1) σ) := by
-  have hk := hF.k; have hl := hF.l
+  obtain hk := hF.k; have hl := hF.l
   have hs := h.vb.vc.site
   have hL := hs.ok
   unfold aOne sampled
-  have e8 : (8 * r + c) % 8 = c := by omega_arith
-  have e8' : (8 * r + c) / 8 = r := by omega_arith
+  obtain e8 : (8 * r + c) % 8 = c := by omega_arith
+  obtain e8' : (8 * r + c) / 8 = r := by omega_arith
   rw [e8, e8']
   -- `s` and `r` to the seed
   refine WP.seq (WP.block_append (WP.mono (setB_ok hs (q := sc (oSB + 32)) ⟨vptr_ok rfl (by decide), by vsep hF⟩
     (by decide) (by decide) (v := c) (by omega_arith)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁)
       (q := sc (oSB + 33)) ⟨vptr_ok rfl (by decide), by vsep hF⟩ (by decide) (by decide) (v := r) (by omega_arith))
       fun s₂ ⟨k₂, b₂⟩ => ?_))
-  have kv := (h.vb.keep hF k₁ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)).keep hF k₂
+  obtain kv := (h.vb.keep hF k₁ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)).keep hF k₂
     (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
-  have hseed : bytesAt s₂.mem ((vlay p STK σ).A 0 oSB) 34 = aSeed (pkOf p σ) r c := by
-    have b₀ := (bytes_keepW hL k₂.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
+  obtain hseed : bytesAt s₂.mem ((vlay p STK σ).A 0 oSB) 34 = aSeed (pkOf p σ) r c := by
+    obtain b₀ := (bytes_keepW hL k₂.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
       ((bytes_keepW hL k₁.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans h.rho)
-    have b₁' := bytes_keepW hL k₂.frame (i := 0) (o := oSB + 32) (l := 1) (by vsep hF) (by decide) (by decide)
+    obtain b₁' := bytes_keepW hL k₂.frame (i := 0) (o := oSB + 32) (l := 1) (by vsep hF) (by decide) (by decide)
     rw [show (34 : Nat) = 32 + 1 + 1 from rfl, Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add, b₀,
       show aSeed (pkOf p σ) r c = _ from seedA_eq (vRho (pkOf p σ)) r c, List.append_assoc]
     refine congrArg _ ?_
-    have e1 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 32)) 1 = [BitVec.ofNat 8 c] := b₁'.trans b₁
+    obtain e1 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 32)) 1 = [BitVec.ofNat 8 c] := b₁'.trans b₁
     have e2 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 33)) 1 = [BitVec.ofNat 8 r] := b₂
     simp only [Lay.A, BitVec.add_assoc, ← BitVec.ofNat_add] at e1 e2 ⊢
     rw [e1, e2]; rfl
-  have kept12 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₂.mem (aA p STK σ r' s') = polyAt s.mem (aA p STK σ r' s') ∧
+  obtain kept12 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₂.mem (aA p STK σ r' s') = polyAt s.mem (aA p STK σ r' s') ∧
       (Reduced s.mem (aA p STK σ r' s') → Reduced s₂.mem (aA p STK σ r' s')) := fun r' s' hs' hd => by
     have := hd.lt (by omega_arith) (by omega_arith)
     exact
     ⟨(polyAt_keepW hL k₂.frame (by vsep hF) (by decide) rfl).trans (polyAt_keepW hL k₁.frame (by vsep hF) (by decide) rfl),
       fun hr' => reduced_keepW hL k₂.frame (by vsep hF) (by decide) rfl (reduced_keepW hL k₁.frame (by vsep hF)
         (by decide) rfl hr')⟩
-  have h24₂ : s₂.gpr .r24 = s.gpr .r24 := by rw [k₂.cs .r24 (by decide), k₁.cs .r24 (by decide)]
+  obtain h24₂ : s₂.gpr .r24 = s.gpr .r24 := by rw [k₂.cs .r24 (by decide), k₁.cs .r24 (by decide)]
   -- the call
   refine WP.seq (rn_ok hP.rejNtt kv.vc.site hS (rn_m hF hr hc) fun s₃ k₃ hred hout => ?_)
   have hseed' : bytesAt s₂.mem (lpa (vlay p STK σ) (sc oSB)) 34 = _ := hseed
   rw [hseed'] at hout
-  have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  have kv₃ := kv.keep hF k₃ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
-  have kept3 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₃.mem (aA p STK σ r' s') = polyAt s₂.mem (aA p STK σ r' s') ∧
+  obtain hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
+  obtain kv₃ := kv.keep hF k₃ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
+  obtain kept3 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₃.mem (aA p STK σ r' s') = polyAt s₂.mem (aA p STK σ r' s') ∧
       (Reduced s₂.mem (aA p STK σ r' s') → Reduced s₃.mem (aA p STK σ r' s')) := fun r' s' hs' hd => by
     have := hd.lt (by omega_arith) (by omega_arith)
     exact
     ⟨polyAt_keepW hL k₃.frame (by vsep hF) (by decide) rfl,
       fun hr' => reduced_keepW hL k₃.frame (by vsep hF) (by decide) rfl hr'⟩
-  have rho₃ : bytesAt s₃.mem ((vlay p STK σ).A 0 oSB) 32 = vRho (pkOf p σ) :=
+  obtain rho₃ : bytesAt s₃.mem ((vlay p STK σ).A 0 oSB) 32 = vRho (pkOf p σ) :=
     (bytes_keepW hL k₃.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
       ((bytes_keepW hL k₂.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
         ((bytes_keepW hL k₁.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans h.rho))
-  have h24₃ : s₃.gpr .r24 = s.gpr .r24 := by rw [k₃.cs .r24 (by decide), h24₂]
+  obtain h24₃ : s₃.gpr .r24 = s.gpr .r24 := by rw [k₃.cs .r24 (by decide), h24₂]
   -- the result and the mask
   refine WP.mono (andMask_ok kv₃.vc.site (a := pS (20 + (8 * r + c))) ⟨vptr_ok rfl (by unfold oP; omega_arith), by vsep hF⟩
     (show ix Reg.r31 ∈ vWb by decide) hr01) fun s₄ ⟨s₅, r₅, k₄, r₄, co⟩ => ?_
   obtain ⟨pi, p1, _⟩ := masked_poly hred co
-  have kv₄ := (kv₃.regs2 r₅).keep hF k₄ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
-  have kept4 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₄.mem (aA p STK σ r' s') = polyAt s₃.mem (aA p STK σ r' s') ∧
+  obtain kv₄ := (kv₃.regs2 r₅).keep hF k₄ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
+  obtain kept4 : ∀ r' s', s' < p.ℓ → Dn r c r' s' → polyAt s₄.mem (aA p STK σ r' s') = polyAt s₃.mem (aA p STK σ r' s') ∧
       (Reduced s₃.mem (aA p STK σ r' s') → Reduced s₄.mem (aA p STK σ r' s')) := fun r' s' hs' hd => by
     have := hd.lt (by omega_arith) (by omega_arith)
     rw [← r₅.mem]
     exact
     ⟨polyAt_keepW hL k₄.frame (by vsep hF) (by decide) rfl,
       fun hr' => reduced_keepW hL k₄.frame (by vsep hF) (by decide) rfl hr'⟩
-  have ea : lpa (vlay p STK σ) (pS (20 + (8 * r + c))) = aA p STK σ r c := by
+  obtain ea : lpa (vlay p STK σ) (pS (20 + (8 * r + c))) = aA p STK σ r c := by
     show (vlay p STK σ).A 0 (oP (20 + (8 * r + c))) = _
     rw [← Nat.add_assoc]
   rw [ea] at pi p1 hout
@@ -226,15 +226,15 @@ theorem aOne_two {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) (σ : State) :
     RelCT isa (fun x y => Two (vlay p STK σ) vWb STK x y ∧
       bytesAt x.mem ((vlay p STK σ).A 0 oSB) 32 = bytesAt y.mem ((vlay p STK σ).A 0 oSB) 32) (aOne P (8 * r + c))
       fun _ _ => True := by
-  have hk := hF.k; have hl := hF.l
+  obtain hk := hF.k; have hl := hF.l
   unfold aOne sampled
-  have e8 : (8 * r + c) % 8 = c := by omega_arith
-  have e8' : (8 * r + c) / 8 = r := by omega_arith
+  obtain e8 : (8 * r + c) % 8 = c := by omega_arith
+  obtain e8' : (8 * r + c) / 8 = r := by omega_arith
   rw [e8, e8']
   let F := fun (x x' : State) => (∃ rs, Kept rs x x') ∧
     bytesAt x'.mem ((vlay p STK σ).A 0 oSB) 34 = bytesAt x.mem ((vlay p STK σ).A 0 oSB) 32 ++
       [BitVec.ofNat 8 c, BitVec.ofNat 8 r]
-  have hF1 : ∀ x, Site (vlay p STK σ) vWb STK x →
+  obtain hF1 : ∀ x, Site (vlay p STK σ) vWb STK x →
       WP isa (.block (setB (sc (oSB + 32)) c ++ setB (sc (oSB + 33)) r)) x (F x) := fun x hs =>
     WP.block_append (WP.mono (setB_ok hs (q := sc (oSB + 32)) ⟨vptr_ok rfl (by decide), by vsep hF⟩ (by decide)
       (by decide) (v := c) (by omega_arith)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oSB + 33))
@@ -242,13 +242,13 @@ theorem aOne_two {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) (σ : State) :
         ⟨⟨_, (k₁.monoL (W' := [tri (sc (oSB + 32)) 1, tri (sc (oSB + 33)) 1]) (by simp)).trans (k₂.monoL (by simp))⟩,
         by
         have hL := hs.ok
-        have b₁' := bytes_keepW hL k₂.frame (i := 0) (o := oSB + 32) (l := 1) (by vsep hF) (by decide) (by decide)
-        have b₀ := (bytes_keepW hL k₂.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
+        obtain b₁' := bytes_keepW hL k₂.frame (i := 0) (o := oSB + 32) (l := 1) (by vsep hF) (by decide) (by decide)
+        obtain b₀ := (bytes_keepW hL k₂.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide)).trans
           (bytes_keepW hL k₁.frame (i := 0) (o := oSB) (l := 32) (by vsep hF) (by decide) (by decide))
         rw [show (34 : Nat) = 32 + 1 + 1 from rfl, Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add, b₀,
           List.append_assoc]
         refine congrArg _ ?_
-        have e1 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 32)) 1 = [BitVec.ofNat 8 c] := b₁'.trans b₁
+        obtain e1 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 32)) 1 = [BitVec.ofNat 8 c] := b₁'.trans b₁
         have e2 : bytesAt s₂.mem ((vlay p STK σ).A 0 (oSB + 33)) 1 = [BitVec.ofNat 8 r] := b₂
         simp only [Lay.A, BitVec.add_assoc, ← BitVec.ofNat_add] at e1 e2 ⊢
         rw [e1, e2]; rfl⟩)
@@ -260,7 +260,7 @@ theorem aOne_two {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) (σ : State) :
         bytesAt x.mem ((vlay p STK σ).A 0 oSB) 34 = bytesAt y.mem ((vlay p STK σ).A 0 oSB) 34)
       fun x' y' ⟨_, x, y, ⟨T, e32⟩, ⟨⟨_, kx⟩, bx⟩, ⟨⟨_, ky⟩, by'⟩⟩ =>
         ⟨⟨T.1.kept kx, T.2.1.kept ky, by rw [kx.sp, ky.sp]; exact T.2.2⟩, by rw [bx, by', e32]⟩) ?_
-  have ok := fun x (hs : Site (vlay p STK σ) vWb STK x) =>
+  obtain ok := fun x (hs : Site (vlay p STK σ) vWb STK x) =>
     rn_ok hP.rejNtt hs hS (name := "vg_mldsa_rej_ntt_poly") (rn_m hF (σ := σ) hr hc)
       (Q := fun x' => ∃ rs, Kept rs x x') fun _ k _ _ => ⟨_, k⟩
   refine RelCT.seq (VG.Proof.MlDsa.PPC64LE.KeyGen.RelCT.two (fun _ _ h => h.1) (rn_tr hP.rejNtt hS (rn_m hF hr hc)
@@ -279,7 +279,7 @@ theorem aOne_piece {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) :
 
 omit hP hF hS in
 theorem VS.next {r : Nat} {σ s : State} (h : VS p STK r p.ℓ σ s) : VS p STK (r + 1) 0 σ s := by
-  have e : ∀ r' s', s' < p.ℓ → (Dn (r + 1) 0 r' s' ↔ Dn r p.ℓ r' s') := fun r' s' hs => by
+  obtain e : ∀ r' s', s' < p.ℓ → (Dn (r + 1) 0 r' s' ↔ Dn r p.ℓ r' s') := fun r' s' hs => by
     simp only [Dn]; omega_arith
   obtain ⟨q, hq, hok, hbad⟩ := h.ok
   exact ⟨h.vb, h.rho, fun r' s' hs hd => h.red r' s' hs ((e r' s' hs).mp hd),

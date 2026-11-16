@@ -151,7 +151,7 @@ theorem wp_g {a b c d x y : Nat} {V Bk : BitVec 32}
     WP isa (.block (g a b c d x y ++ rest)) s Q := by
   unfold g
   simp only [List.append_assoc]
-  have iV : ∀ o, o + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (A V o) 4 ∧
+  obtain iV : ∀ o, o + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (A V o) 4 ∧
       InRegions (s.rd ++ s.wr) (A V (o + 4)) 4 := Reg64.rd s.rd hRV
   -- Load the four words.
   refine wp_ld64 (by decide) (by decide) (by omega_arith) h3 rfl (iV a ha).1 (iV a ha).2
@@ -159,20 +159,20 @@ theorem wp_g {a b c d x y : Nat} {V Bk : BitVec 32}
   refine wp_ld64 (by decide) (by decide) (by omega_arith) (by rw [o₁.gpr _ (by decide), h3]) o₁.mem
     (by rw [o₁.rd, o₁.wr]; exact (iV b hb).1) (by rw [o₁.rd, o₁.wr]; exact (iV b hb).2)
     fun s₂ o₂ pb => ?_
-  have O₂ := o₁.trans o₂
+  obtain O₂ := o₁.trans o₂
   refine wp_ld64 (by decide) (by decide) (by omega_arith) (by rw [O₂.gpr _ (by decide), h3]) O₂.mem
     (by rw [O₂.rd, O₂.wr]; exact (iV c hc).1) (by rw [O₂.rd, O₂.wr]; exact (iV c hc).2)
     fun s₃ o₃ pc => ?_
-  have O₃ := O₂.trans o₃
+  obtain O₃ := O₂.trans o₃
   refine wp_ld64 (by decide) (by decide) (by omega_arith) (by rw [O₃.gpr _ (by decide), h3]) O₃.mem
     (by rw [O₃.rd, O₃.wr]; exact (iV d hd).1) (by rw [O₃.rd, O₃.wr]; exact (iV d hd).2)
     fun s₄ o₄ pd => ?_
-  have O₄ := O₃.trans o₄
+  obtain O₄ := O₃.trans o₄
   -- a := a + b + m[x]
   refine wp_add64 (by decide) (by decide)
     (pa.of_only ((o₂.trans o₃).trans o₄) (by decide) (by decide))
     (pb.of_only (o₃.trans o₄) (by decide) (by decide)) fun s₅ o₅ p₅ => ?_
-  have O₅ := O₄.trans o₅
+  obtain O₅ := O₄.trans o₅
   refine wp_ld64 (by decide) (by decide) (by omega_arith) (by rw [O₅.gpr _ (by decide), h1]) O₅.mem
     (by rw [O₅.rd, O₅.wr]; exact (hRB x hx).1) (by rw [O₅.rd, O₅.wr]; exact (hRB x hx).2)
     fun s₆ o₆ pX => ?_
@@ -181,7 +181,7 @@ theorem wp_g {a b c d x y : Nat} {V Bk : BitVec 32}
   -- d := (d ⊕ a) >>> 32
   refine wp_xor64 (by decide) (by decide)
     (pd.of_only (((o₅.trans o₆).trans o₇)) (by decide) (by decide)) p₇ fun s₈ o₈ p₈ => ?_
-  have pd₁ := pair_swap p₈
+  obtain pd₁ := pair_swap p₈
   -- c := c + d
   refine wp_add64 (by decide) (by decide)
     (pc.of_only ((((o₄.trans o₅).trans o₆).trans o₇).trans o₈) (by decide) (by decide)) pd₁
@@ -192,7 +192,7 @@ theorem wp_g {a b c d x y : Nat} {V Bk : BitVec 32}
       (by decide)) pc₁ fun s₁₀ o₁₀ p₁₀ => ?_
   refine wp_rotr (n := 24) (by decide) (by decide) (by decide) (by decide) (by decide) p₁₀
     fun s₁₁ o₁₁ pb₁ => ?_
-  have O₁₁ := (((((((O₅.trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀).trans o₁₁))
+  obtain O₁₁ := (((((((O₅.trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀).trans o₁₁))
   -- a := a + b + m[y]
   refine wp_ld64 (by decide) (by decide) (by omega_arith) (by rw [O₁₁.gpr _ (by decide), h1]) O₁₁.mem
     (by rw [O₁₁.rd, O₁₁.wr]; exact (hRB y hy).1) (by rw [O₁₁.rd, O₁₁.wr]; exact (hRB y hy).2)
@@ -218,14 +218,14 @@ theorem wp_g {a b c d x y : Nat} {V Bk : BitVec 32}
       (by decide)) pc₂ fun s₁₈ o₁₈ p₁₈ => ?_
   refine wp_rotr' (n := 63) (by decide) (by decide) (by decide) (by decide) (by decide) p₁₈
     fun s₁₉ o₁₉ pb₂ => ?_
-  have O₁₉ := (((((((((O₁₁.trans o₁₂).trans o₁₃).trans o₁₄).trans o₁₅).trans o₁₆).trans o₁₇).trans
+  obtain O₁₉ := (((((((((O₁₁.trans o₁₂).trans o₁₃).trans o₁₄).trans o₁₅).trans o₁₆).trans o₁₇).trans
     o₁₈).trans o₁₉))
-  have pa₂' := pa₂.of_only ((((o₁₅.trans o₁₆).trans o₁₇).trans o₁₈).trans o₁₉) (by decide) (by decide)
-  have pc₂' := pc₂.of_only (o₁₈.trans o₁₉) (by decide) (by decide)
-  have pd₂' := pd₂.of_only ((o₁₇.trans o₁₈).trans o₁₉) (by decide) (by decide)
+  obtain pa₂' := pa₂.of_only ((((o₁₅.trans o₁₆).trans o₁₇).trans o₁₈).trans o₁₉) (by decide) (by decide)
+  obtain pc₂' := pc₂.of_only (o₁₈.trans o₁₉) (by decide) (by decide)
+  obtain pd₂' := pd₂.of_only ((o₁₇.trans o₁₈).trans o₁₉) (by decide) (by decide)
   -- Store them.
-  have w : Reg64 s₁₉.wr V 128 := by rw [O₁₉.wr]; exact hRV
-  have r3 : s₁₉.gpr .r3 = V := by rw [O₁₉.gpr _ (by decide), h3]
+  obtain w : Reg64 s₁₉.wr V 128 := by rw [O₁₉.wr]; exact hRV
+  obtain r3 : s₁₉.gpr .r3 = V := by rw [O₁₉.gpr _ (by decide), h3]
   refine wp_st (by omega_arith) r3 pa₂' (w a ha).1 (w a ha).2 fun s₂₀ u₂₀ => ?_
   refine wp_st (by omega_arith) (by rw [u₂₀.gpr, r3]) (by rw [Pair, u₂₀.gpr]; exact pb₂)
     (by rw [u₂₀.wr]; exact (w b hb).1) (by rw [u₂₀.wr]; exact (w b hb).2) fun s₂₁ u₂₁ => ?_
@@ -287,15 +287,15 @@ theorem gAt_ok {x y z u : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hu : u
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hq
   obtain ⟨⟨nxy, nxz, nxu⟩, ⟨nyz, nyu⟩, nzu, -⟩ := hq
-  have sj := (Spec.Blake2.sigmaAt r (2 * i)).isLt
-  have sk := (Spec.Blake2.sigmaAt r (2 * i + 1)).isLt
+  obtain sj := (Spec.Blake2.sigmaAt r (2 * i)).isLt
+  obtain sk := (Spec.Blake2.sigmaAt r (2 * i + 1)).isLt
   have fitV := c.fitV
   unfold gAt
   rw [← List.append_nil (g _ _ _ _ _ _)]
   refine wp_g (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [h.wr]; exact c.wV) (by rw [h.rd, h.wr]; exact c.rB) (by rw [h.gpr _ (by decide), c.r3])
     (by rw [h.gpr _ (by decide), c.r1]) fun s' w => WP.block_nil ?_
-  have hm : ∀ j (hj : j < 16), rd64 s.mem Bk (8 * j) = M ⟨j, hj⟩ := fun j hj => by
+  obtain hm : ∀ j (hj : j < 16), rd64 s.mem Bk (8 * j) = M ⟨j, hj⟩ := fun j hj => by
     rw [rd64_frame h.frame (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact c.disj)
       c.fitB (by omega_arith)]
     exact c.msg j hj
@@ -321,7 +321,7 @@ theorem gAt_ok {x y z u : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hu : u
     · subst ex; simp only [ey, ez, eu, ite_true, ite_false]
     simp only [ey, ez, eu, ex, ite_false]
   · rw [w.mem, gMem]
-    have m := List.mem_singleton_self (⟨State.addr V, 128⟩ : Region)
+    obtain m := List.mem_singleton_self (⟨State.addr V, 128⟩ : Region)
     exact frame_write64 (frame_write64 (frame_write64 (frame_write64 h.frame m fitV (by omega_arith) _) m fitV
       (by omega_arith) _) m fitV (by omega_arith) _) m fitV (by omega_arith) _
 
@@ -408,7 +408,7 @@ theorem initV_get (h : HashValue w) (t : Nat) (f : Bool) (k : Nat) (hk : k < 16)
     (initV P h t f)[k] =
       if hk8 : k < 8 then h[k] else P.IV[k - 8] ^^^ tweakV t f (k - 8) := by
   unfold initV tweakV flagW
-  have ha : ∀ j (hj : j < 16), (h ++ P.IV)[j] = if h8 : j < 8 then h[j] else P.IV[j - 8] :=
+  obtain ha : ∀ j (hj : j < 16), (h ++ P.IV)[j] = if h8 : j < 8 then h[j] else P.IV[j - 8] :=
     fun j hj => Vector.getElem_append hj
   by_cases e12 : k = 12
   · subst e12; cases f <;> simp [ha]
@@ -416,9 +416,9 @@ theorem initV_get (h : HashValue w) (t : Nat) (f : Bool) (k : Nat) (hk : k < 16)
   · subst e13; cases f <;> simp [ha]
   by_cases e14 : k = 14
   · subst e14; cases f <;> simp [ha]
-  have e4 : k - 8 ≠ 4 := by omega_arith
-  have e5 : k - 8 ≠ 5 := by omega_arith
-  have e6 : k - 8 ≠ 6 := by omega_arith
+  obtain e4 : k - 8 ≠ 4 := by omega_arith
+  obtain e5 : k - 8 ≠ 5 := by omega_arith
+  obtain e6 : k - 8 ≠ 6 := by omega_arith
   cases f <;> simp [Ne.symm e12, Ne.symm e13, Ne.symm e14, e4, e5, e6, ha k hk]
 
 end InitV
@@ -452,9 +452,9 @@ theorem Ctx.disjW {st scr : BitVec 32} {s : State} (c : Ctx st scr s) : (stR st)
 theorem rd64_frame_hi {m m' : Mem} {scr : BitVec 32} (fit : scr.toNat + 512 ≤ 2 ^ 32)
     (hf : Frame [workR scr] m m') {o : Nat} (h1 : 128 ≤ o) (h2 : o + 8 ≤ 512) :
     rd64 m' scr o = rd64 m scr o := by
-  have hd : ∀ r ∈ [workR scr], Region.Disjoint ⟨State.addr scr + BitVec.ofNat 64 128, 384⟩ r := by
+  obtain hd : ∀ r ∈ [workR scr], Region.Disjoint ⟨State.addr scr + BitVec.ofNat 64 128, 384⟩ r := by
     simp only [List.mem_singleton, forall_eq]; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-  have c : ∀ d, 128 ≤ d → d + 4 ≤ 512 →
+  obtain c : ∀ d, 128 ≤ d → d + 4 ≤ 512 →
       Region.Contains ⟨State.addr scr + BitVec.ofNat 64 128, 384⟩ (A scr d) (32 / 8) := fun d h h' => by
     rw [A_eq (by omega_arith)]; exact Offset.contains _ h (by omega_arith) (by omega_arith)
   simp only [rd64]
@@ -479,7 +479,7 @@ theorem ldH_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun s₁ h₁ => ?_
-    have c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
+    obtain c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [ldH, ← List.append_nil (Impl.Sha512.Arm.st .r4 .r5 .r3 (8 * n))]
     refine wp_ld (by decide) (by decide) (by omega_arith) c₁.r0 (c₁.wS _ (by omega_arith)).1
@@ -530,17 +530,17 @@ theorem ldIV_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) (T : Nat →
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun s₁ h₁ => ?_
-    have c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
+    obtain c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [ldIV, ← List.append_nil (Impl.Sha512.Arm.st .r4 .r5 .r3 (64 + 8 * n))]
-    have tw := tweak_ok n
+    obtain tw := tweak_ok n
     refine wp_const64 (by decide) fun s₂ o₂ p₂ => ?_
     refine wp_ld (by decide) (by decide) (by omega_arith) (by rw [o₂.gpr _ (by decide), c₁.r3])
       (by rw [o₂.wr]; exact (c₁.wV _ tw.2).1) (by rw [o₂.wr]; exact (c₁.wV _ tw.2).2)
       fun s₃ o₃ p₃ => ?_
     refine wp_xor64 (by decide) (by decide) (p₂.of_only o₃ (by decide) (by decide)) p₃
       fun s₄ o₄ p₄ => ?_
-    have O := (o₂.trans o₃).trans o₄
+    obtain O := (o₂.trans o₃).trans o₄
     refine wp_st (by omega_arith) (by rw [O.gpr _ (by decide), c₁.r3]) p₄
       (by rw [O.wr]; exact (c₁.wV _ (by omega_arith)).1) (by rw [O.wr]; exact (c₁.wV _ (by omega_arith)).2)
       fun s₅ u₅ => WP.block_nil ⟨fun r hr => ?_, by rw [u₅.rd, O.rd, h₁.rd],
@@ -572,8 +572,8 @@ theorem init_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) (T : Nat →
   unfold Impl.Blake2.Arm.B.init
   rw [WP.block_append_iff]
   refine WP.mono (ldH_ok c 8 (Nat.le_refl _)) fun s₁ h₁ => ?_
-  have c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
-  have hT₁ : ∀ k < 8, rd64 s₁.mem scr (tweak k) = T k := fun k hk => by
+  obtain c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
+  obtain hT₁ : ∀ k < 8, rd64 s₁.mem scr (tweak k) = T k := fun k hk => by
     rw [rd64_frame_hi c.fitV h₁.frame (tweak_ok k).1 (tweak_ok k).2]; exact hT k hk
   refine WP.mono (ldIV_ok c₁ T hT₁ 8 (Nat.le_refl _)) fun s₂ h₂ => ?_
   refine ⟨fun r hr => by rw [h₂.gpr r hr, h₁.gpr r hr], by rw [h₂.rd, h₁.rd], by rw [h₂.wr, h₁.wr],
@@ -606,7 +606,7 @@ theorem fin_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun s₁ h₁ => ?_
-    have c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
+    obtain c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [finH, ← List.append_nil (Impl.Sha512.Arm.st .r4 .r5 .r0 (8 * n))]
     refine wp_ld (by decide) (by decide) (by omega_arith) c₁.r0 (c₁.wS _ (by omega_arith)).1
@@ -614,7 +614,7 @@ theorem fin_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
     refine wp_ld (by decide) (by decide) (by omega_arith) (by rw [o₂.gpr _ (by decide), c₁.r3])
       (by rw [o₂.wr]; exact (c₁.wV _ (by omega_arith)).1) (by rw [o₂.wr]; exact (c₁.wV _ (by omega_arith)).2)
       fun s₃ o₃ p₃ => ?_
-    have O₃ := o₂.trans o₃
+    obtain O₃ := o₂.trans o₃
     refine wp_ld (by decide) (by decide) (by omega_arith) (by rw [O₃.gpr _ (by decide), c₁.r3])
       (by rw [O₃.wr]; exact (c₁.wV _ (by omega_arith)).1) (by rw [O₃.wr]; exact (c₁.wV _ (by omega_arith)).2)
       fun s₄ o₄ p₄ => ?_
@@ -622,7 +622,7 @@ theorem fin_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
       (p₃.of_only o₄ (by decide) (by decide)) fun s₅ o₅ p₅ => ?_
     refine wp_xor64 (by decide) (by decide) p₅ (p₄.of_only o₅ (by decide) (by decide))
       fun s₆ o₆ p₆ => ?_
-    have O := ((O₃.trans o₄).trans o₅).trans o₆
+    obtain O := ((O₃.trans o₄).trans o₅).trans o₆
     refine wp_st (by omega_arith) (by rw [O.gpr _ (by decide), c₁.r0]) p₆
       (by rw [O.wr]; exact (c₁.wS _ (by omega_arith)).1) (by rw [O.wr]; exact (c₁.wS _ (by omega_arith)).2)
       fun s₇ u₇ => WP.block_nil ⟨fun r hr => ?_, by rw [u₇.rd, O.rd, h₁.rd],

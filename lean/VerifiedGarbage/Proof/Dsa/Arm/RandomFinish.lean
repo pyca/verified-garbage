@@ -48,16 +48,16 @@ theorem zeroStep_ok {s₀ t₀ t : State} (A : RandomABI s₀) {k : Nat} (hk : k
     WP isa (.block [.strb .r0 .r1 0, .dp .add .r1 .r1 (.imm 1), .subs .r2 .r2 (.imm 1)]) t
       fun u => ZeroInv s₀ t₀ (k + 1) u ∧ u.z = decide ((s₀.gpr .r1).toNat - (k + 1) = 0) := by
   have hb := A.outBound
-  have hw : InRegions t.wr (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k) 1 :=
+  obtain hw : InRegions t.wr (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k) 1 :=
     ⟨rOut s₀, by rw [I.ready.wr, A.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine wp_strb (by decide) (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega_arith)]) hw fun u₁ m₁ =>
     wp_inc fun u₂ v₂ => wp_dec fun u₃ v₃ z₃ => WP.block_nil ?_
-  have hv : (t.gpr .r0).setWidth 8 = 0 := by rw [I.r0]; rfl
+  obtain hv : (t.gpr .r0).setWidth 8 = 0 := by rw [I.r0]; rfl
   rw [hv] at m₁
-  have R : Rest [.r0, .r1, .r2] t u₃ := (m₁.rest _).trans ((v₂.rest (by decide)).trans (v₃.rest (by decide)))
-  have mem₃ : u₃.mem = t.mem.writeW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k) (0 : BitVec 8) := by
+  obtain R : Rest [.r0, .r1, .r2] t u₃ := (m₁.rest _).trans ((v₂.rest (by decide)).trans (v₃.rest (by decide)))
+  obtain mem₃ : u₃.mem = t.mem.writeW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 k) (0 : BitVec 8) := by
     rw [v₃.mem, v₂.mem, m₁.mem]
-  have fr : Frame [rOut s₀] t.mem u₃.mem := by
+  obtain fr : Frame [rOut s₀] t.mem u₃.mem := by
     rw [mem₃]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine ⟨⟨I.ready.congrW R fr (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites]),
@@ -80,15 +80,15 @@ theorem zeroOut_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) (sv
     WP isa zeroOut t fun u => RReady s₀ u ∧ Frame [rOut s₀] t.mem u.mem ∧
       Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
         List.replicate (s₀.gpr .r1).toNat 0 ∧ Rest [.r0, .r1, .r2] t u := by
-  have hL : 0 < (s₀.gpr .r1).toNat := by
+  obtain hL : 0 < (s₀.gpr .r1).toNat := by
     have := A.outLength; have := A.lengths; unfold Spec.Dsa.lengthsValid at *; omega_arith
   unfold zeroOut
   refine WP.seq (wp_ld h (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
     wp_mov (op2_imm (by decide)) fun t₃ u₃ => WP.block_nil ?_)
-  have R₃ : Rest [.r0, .r1, .r2] t t₃ :=
+  obtain R₃ : Rest [.r0, .r1, .r2] t t₃ :=
     (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
-  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have I₀ : ZeroInv s₀ t 0 t₃ := ⟨h.congr R₃ (by rw [m₃]; exact Frame.refl _ _),
+  obtain m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain I₀ : ZeroInv s₀ t 0 t₃ := ⟨h.congr R₃ (by rw [m₃]; exact Frame.refl _ _),
     by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, sv.2.1, BitVec.add_zero],
     by rw [u₃.other _ (by decide), u₂.gpr, u₁.mem, sv.2.2.1, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq],
     u₃.gpr, by rw [m₃]; exact Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), R₃⟩
@@ -169,18 +169,18 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) 
       slot u.mem (State.addr (s₀.gpr .r2)) 4 = 0 := by
   have hub := A.usedBound
   refine clearNonce_ok h fun t₁ h₁ m₁ k₁ _ => ?_
-  have fr₁ : Frame [rStack s₀] t.mem t₁.mem := by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide)
-  have o₁ : Outs (rBase s₀) [(oNonce, 32)] t.mem t₁.mem := by
+  obtain fr₁ : Frame [rStack s₀] t.mem t₁.mem := by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide)
+  obtain o₁ : Outs (rBase s₀) [(oNonce, 32)] t.mem t₁.mem := by
     rw [m₁]; exact Outs.of_outside (clearMem_outside _ _ 8 (by decide)) (List.mem_singleton_self _)
-  have sv₁ : Saved s₀ t₁.mem := sv.of_outs o₁ (by decide)
-  have sl₁ : ∀ d, d + 4 ≤ oNonce → slot t₁.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
+  obtain sv₁ : Saved s₀ t₁.mem := sv.of_outs o₁ (by decide)
+  obtain sl₁ : ∀ d, d + 4 ≤ oNonce → slot t₁.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
     outs_low o₁ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Nat.le_refl _) hd
       (by unfold oNonce at hd; omega_arith)
   refine wp_ld h₁ (by decide) fun t₂ u₂ => wp_ld (h₁.upd u₂) (by decide) fun t₃ u₃ => ?_
-  have h₃ := (h₁.upd u₂).upd u₃
-  have r4₃ : t₃.gpr .r4 = s₀.gpr .r2 := by rw [u₃.other _ (by decide), u₂.gpr]; exact sv₁.2.2.2.1
-  have r0₃ : t₃.gpr .r0 = used := by rw [u₃.gpr, u₂.mem, sl₁ _ (by decide), hu]
-  have hU : (rUsed s₀) ∈ t₃.wr := by rw [h₃.wr, A.wr]; simp
+  obtain h₃ := (h₁.upd u₂).upd u₃
+  obtain r4₃ : t₃.gpr .r4 = s₀.gpr .r2 := by rw [u₃.other _ (by decide), u₂.gpr]; exact sv₁.2.2.2.1
+  obtain r0₃ : t₃.gpr .r0 = used := by rw [u₃.gpr, u₂.mem, sl₁ _ (by decide), hu]
+  obtain hU : (rUsed s₀) ∈ t₃.wr := by rw [h₃.wr, A.wr]; simp
   refine wp_str (a := State.addr (s₀.gpr .r2)) (by decide) (by rw [BitVec.add_zero, r4₃])
     ⟨_, hU, by
       have := Offset.contains_base (State.addr (s₀.gpr .r2)) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
@@ -188,23 +188,23 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) 
   refine wp_str (a := State.addr (s₀.gpr .r2) + BitVec.ofNat 64 4) (by decide)
     (by rw [u₅.other _ (by decide), m₄.gpr, r4₃, VG.Arm.addr_add (by omega_arith)])
     ⟨_, by rw [u₅.wr, m₄.wr]; exact hU, Offset.contains_base _ (by decide) (by decide)⟩ fun t₆ m₆ => ?_
-  have mem₆ : t₆.mem = (t₃.mem.writeW (off (State.addr (s₀.gpr .r2)) 0) used).writeW
+  obtain mem₆ : t₆.mem = (t₃.mem.writeW (off (State.addr (s₀.gpr .r2)) 0) used).writeW
       (off (State.addr (s₀.gpr .r2)) 4) (0 : BitVec 32) := by
     rw [m₆.mem, u₅.gpr, u₅.mem, m₄.mem, r0₃, off, BitVec.add_zero]
-  have fu : Frame [rUsed s₀] t₃.mem t₆.mem := by
+  obtain fu : Frame [rUsed s₀] t₃.mem t₆.mem := by
     rw [mem₆]
     exact (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have ap : ∀ d, d + 4 ≤ frameBytes → slot t₆.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd =>
+  obtain ap : ∀ d, d + 4 ≤ frameBytes → slot t₆.mem (rBase s₀) d = slot t₃.mem (rBase s₀) d := fun d hd =>
     apart_slot fu A.stackUsed hd
-  have m₃ : t₃.mem = t₁.mem := by rw [u₃.mem, u₂.mem]
-  have h₆ : RReady s₀ t₆ := h₃.congrW (ws := [.r0]) ((m₄.rest _).trans ((u₅.rest (by decide)).trans (m₆.rest _))) fu
+  obtain m₃ : t₃.mem = t₁.mem := by rw [u₃.mem, u₂.mem]
+  obtain h₆ : RReady s₀ t₆ := h₃.congrW (ws := [.r0]) ((m₄.rest _).trans ((u₅.rest (by decide)).trans (m₆.rest _))) fu
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [rWrites])
-  have sv₆ : Saved s₀ t₆.mem := sv₁.of_slots fun d _ hd => by rw [ap d hd, m₃]
-  have hst₆ : slot t₆.mem (rBase s₀) oStatus = st := by rw [ap _ (by decide), m₃, sl₁ _ (by decide), hs]
+  obtain sv₆ : Saved s₀ t₆.mem := sv₁.of_slots fun d _ hd => by rw [ap d hd, m₃]
+  obtain hst₆ : slot t₆.mem (rBase s₀) oStatus = st := by rw [ap _ (by decide), m₃, sl₁ _ (by decide), hs]
   obtain ⟨sr, -⟩ := sv₆
   refine wp_ld h₆ (by decide) fun t₇ u₇ => ?_
-  have h₇ := h₆.upd u₇
+  obtain h₇ := h₆.upd u₇
   refine wp_ld h₇ (by decide) fun t₈ u₈ => wp_ld (h₇.upd u₈) (by decide) fun t₉ u₉ =>
     wp_ld ((h₇.upd u₈).upd u₉) (by decide) fun t₁₀ u₁₀ =>
     wp_ld (((h₇.upd u₈).upd u₉).upd u₁₀) (by decide) fun t₁₁ u₁₁ =>
@@ -214,15 +214,15 @@ theorem finalBlock_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) 
     wp_ld (((((((h₇.upd u₈).upd u₉).upd u₁₀).upd u₁₁).upd u₁₂).upd u₁₃).upd u₁₄) (by decide) fun t₁₅ u₁₅ =>
     wp_ld ((((((((h₇.upd u₈).upd u₉).upd u₁₀).upd u₁₁).upd u₁₂).upd u₁₃).upd u₁₄).upd u₁₅) (by decide)
       fun t₁₆ u₁₆ => WP.block_nil ?_
-  have mm : t₁₆.mem = t₆.mem := by
+  obtain mm : t₁₆.mem = t₆.mem := by
     rw [u₁₆.mem, u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
-  have R : Rest [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] t₆ t₁₆ :=
+  obtain R : Rest [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] t₆ t₁₆ :=
     (u₇.rest (by decide)).trans ((u₈.rest (by decide)).trans ((u₉.rest (by decide)).trans ((u₁₀.rest (by decide)).trans
       ((u₁₁.rest (by decide)).trans ((u₁₂.rest (by decide)).trans ((u₁₃.rest (by decide)).trans
       ((u₁₄.rest (by decide)).trans ((u₁₅.rest (by decide)).trans (u₁₆.rest (by decide))))))))))
-  have R₆ : Rest [.r0, .r2, .r4] t t₆ := ((k₁.mono (by decide)).trans ((u₂.rest (by decide)).trans
+  obtain R₆ : Rest [.r0, .r2, .r4] t t₆ := ((k₁.mono (by decide)).trans ((u₂.rest (by decide)).trans
     (u₃.rest (by decide)))).trans ((m₄.rest _).trans ((u₅.rest (by decide)).trans (m₆.rest _)))
-  have hm : ∀ t' : State, t'.mem = t₆.mem → ∀ i < 9, slot t'.mem (rBase s₀) (4 * i) =
+  obtain hm : ∀ t' : State, t'.mem = t₆.mem → ∀ i < 9, slot t'.mem (rBase s₀) (4 * i) =
       s₀.gpr (savedRegs.getD i .r0) := fun t' e i hi => by rw [e]; exact sr i hi
   refine ⟨by rw [R.sp, R₆.sp], by rw [R.rd, R₆.rd], by rw [R.wr, R₆.wr], ?_, ?_, fun r hr => ?_, ?_, ?_⟩
   · rw [mm]; exact (fr₁.mono (by simp)).trans ((show Frame [rUsed s₀] t₁.mem t₆.mem by rw [← m₃]; exact fu).mono
@@ -265,7 +265,7 @@ theorem rfinish_ok {s₀ t : State} (A : RandomABI s₀) (F : RFin s₀ t) (hR :
     WP isa finish t fun u => Finished s₀ u := by
   have h := F.ready
   have hb := A.outBound
-  have hout : ∀ {m m' : Mem}, Frame [rStack s₀, rUsed s₀] m m' →
+  obtain hout : ∀ {m m' : Mem}, Frame [rStack s₀, rUsed s₀] m m' →
       Spec.Rsa.bytesAt m' (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
         Spec.Rsa.bytesAt m (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat := fun hf =>
     rBytes_frame hf (fun r hr => by
@@ -276,11 +276,11 @@ theorem rfinish_ok {s₀ t : State} (A : RandomABI s₀) (F : RFin s₀ t) (hR :
   unfold finish
   rw [finishBlock_eq]
   refine WP.seq (wp_ld h (by decide) fun t₁ u₁ => wp_cmp (op2_imm (by decide)) fun t₂ f₂ z₂ => WP.block_nil ?_)
-  have h₂ := (h.upd u₁).fupd f₂
-  have m₂ : t₂.mem = t.mem := by rw [f₂.mem, u₁.mem]
-  have R₂ : Rest [.r0] t t₂ := (u₁.rest (by decide)).trans (f₂.rest _)
+  obtain h₂ := (h.upd u₁).fupd f₂
+  obtain m₂ : t₂.mem = t.mem := by rw [f₂.mem, u₁.mem]
+  obtain R₂ : Rest [.r0] t t₂ := (u₁.rest (by decide)).trans (f₂.rest _)
   rw [u₁.gpr, F.status, one_beq (by omega_arith)] at z₂
-  have fin : ∀ v : State, RReady s₀ v → Rest [.r0, .r1, .r2] t v → Frame (rWrites s₀) t.mem v.mem →
+  obtain fin : ∀ v : State, RReady s₀ v → Rest [.r0, .r1, .r2] t v → Frame (rWrites s₀) t.mem v.mem →
       Saved s₀ v.mem → slot v.mem (rBase s₀) oUsed = BitVec.ofNat 32 (rResult s₀).used →
       slot v.mem (rBase s₀) oStatus = BitVec.ofNat 32 (rResult s₀).status →
       Spec.Rsa.bytesAt v.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
@@ -297,7 +297,7 @@ theorem rfinish_ok {s₀ t : State} (A : RandomABI s₀) (F : RFin s₀ t) (hR :
   · refine WP.seq (WP.ite true (by rw [eval_ne, z₂, decide_eq_false h1]; rfl)
       (fun _ => WP.mono (zeroOut_ok A h₂ (by rw [m₂]; exact F.saved)) fun v ⟨hv, fv, zv, Rv⟩ => ?_)
       (fun e => Bool.noConfusion e))
-    have ap : ∀ d, d + 4 ≤ frameBytes → slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd => by
+    obtain ap : ∀ d, d + 4 ≤ frameBytes → slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd => by
       rw [apart_slot fv A.stackOut hd, m₂]
     exact fin v hv ((R₂.mono (by decide)).trans Rv) (by rw [← m₂]; exact fv.mono (by simp [rWrites]))
       (F.saved.of_slots fun d _ hd => ap d hd) (by rw [ap _ (by decide)]; exact F.usedW)

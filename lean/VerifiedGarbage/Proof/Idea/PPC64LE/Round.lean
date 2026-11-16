@@ -91,7 +91,7 @@ theorem mulKey_ok (r : Reg) (d : Nat) (hd : d < 2 ^ 15) (s : State)
       t.mem = s.mem) ?_ writes_only rfl) fun t ⟨⟨h1, h2⟩, hk⟩ => ⟨h1, h2, hk⟩
   simp only [mulKey, List.append_assoc]
   rw [WP.block_append_iff]
-  have h1 : WP isa (.block [mov .r11 r, .load .w .r12 .r3 d]) s fun u =>
+  obtain h1 : WP isa (.block [mov .r11 r, .load .w .r12 .r3 d]) s fun u =>
       u.gpr .r11 = s.gpr r ∧
       u.gpr .r12 = (s.mem.readW (s.gpr .r3 + BitVec.ofNat 64 d) 32).setWidth 64 ∧
       u.gpr .r0 = 65535 ∧ u.mem = s.mem := by
@@ -174,47 +174,47 @@ theorem round_ok (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea.
         (z.getD (6 * j + 3) 0) (z.getD (6 * j + 4) 0) (z.getD (6 * j + 5) 0) x) t ∧
       t.mem = s.mem ∧ Keep roundWrites s t := by
   simp only [round, List.append_assoc]
-  have k0 := key_at hk j 0 (by omega_using [hj])
+  obtain k0 := key_at hk j 0 (by omega_using [hj])
   simp only [Nat.mul_zero, Nat.add_zero] at k0
   rw [WP.block_append_iff]
   refine WP.mono (mulKey_ok .r6 (12 * j) (by omega_using [hj]) s hk.mask k0.1) fun s₁ ⟨v₁, m₁, e₁⟩ => ?_
   rw [hx.r6, setWidth_setWidth16, k0.2] at v₁
-  have hk₁ := hk.keep e₁ m₁ (by decide) (by decide)
-  have k3 := key_at hk₁ j 3 (by omega_using [hj])
+  obtain hk₁ := hk.keep e₁ m₁ (by decide) (by decide)
+  obtain k3 := key_at hk₁ j 3 (by omega_using [hj])
   simp only [Nat.reduceMul] at k3
   rw [WP.block_append_iff]
   refine WP.mono (mulKey_ok .r9 (12 * j + 6) (by omega_using [hj]) s₁ hk₁.mask k3.1) fun s₂ ⟨v₂, m₂, e₂⟩ => ?_
   rw [e₁.gpr (by decide), hx.r9, setWidth_setWidth16, k3.2] at v₂
-  have hk₂ := hk₁.keep e₂ m₂ (by decide) (by decide)
-  have k1 := key_at hk₂ j 1 (by omega_using [hj])
+  obtain hk₂ := hk₁.keep e₂ m₂ (by decide) (by decide)
+  obtain k1 := key_at hk₂ j 1 (by omega_using [hj])
   simp only [Nat.mul_one] at k1
   rw [WP.block_append_iff]
   refine WP.mono (addKey_ok (r := .r7) (by decide) (12 * j + 2) (by omega_using [hj]) s₂ (x.getD 1 0)
     ((e₂.gpr (by decide)).trans ((e₁.gpr (by decide)).trans hx.r7)) hk₂.mask k1.1)
     fun s₃ ⟨v₃, m₃, e₃⟩ => ?_
   rw [k1.2] at v₃
-  have hk₃ := hk₂.keep e₃ m₃ (by decide) (by decide)
-  have k2 := key_at hk₃ j 2 (by omega_using [hj])
+  obtain hk₃ := hk₂.keep e₃ m₃ (by decide) (by decide)
+  obtain k2 := key_at hk₃ j 2 (by omega_using [hj])
   simp only [Nat.reduceMul] at k2
   rw [WP.block_append_iff]
   refine WP.mono (addKey_ok (r := .r8) (by decide) (12 * j + 4) (by omega_using [hj]) s₃ (x.getD 2 0)
     ((e₃.gpr (by decide)).trans ((e₂.gpr (by decide)).trans ((e₁.gpr (by decide)).trans hx.r8)))
     hk₃.mask k2.1) fun s₄ ⟨v₄, m₄, e₄⟩ => ?_
   rw [k2.2] at v₄
-  have hk₄ := hk₃.keep e₄ m₄ (by decide) (by decide)
-  have k4 := key_at hk₄ j 4 (by omega_using [hj])
-  have k5 := key_at hk₄ j 5 (by omega_using [hj])
+  obtain hk₄ := hk₃.keep e₄ m₄ (by decide) (by decide)
+  obtain k4 := key_at hk₄ j 4 (by omega_using [hj])
+  obtain k5 := key_at hk₄ j 5 (by omega_using [hj])
   simp only [Nat.reduceMul] at k4 k5
   -- The words through the pieces.
-  have r6₄ : s₄.gpr .r6 = (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0)).setWidth 64 :=
+  obtain r6₄ : s₄.gpr .r6 = (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0)).setWidth 64 :=
     (e₄.gpr (by decide)).trans ((e₃.gpr (by decide)).trans ((e₂.gpr (by decide)).trans v₁))
-  have r9₄ : s₄.gpr .r9 = (Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)).setWidth 64 :=
+  obtain r9₄ : s₄.gpr .r9 = (Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)).setWidth 64 :=
     (e₄.gpr (by decide)).trans ((e₃.gpr (by decide)).trans v₂)
-  have r7₄ : s₄.gpr .r7 = (x.getD 1 0 + z.getD (6 * j + 1) 0).setWidth 64 :=
+  obtain r7₄ : s₄.gpr .r7 = (x.getD 1 0 + z.getD (6 * j + 1) 0).setWidth 64 :=
     (e₄.gpr (by decide)).trans v₃
   have r8₄ : s₄.gpr .r8 = (x.getD 2 0 + z.getD (6 * j + 2) 0).setWidth 64 := v₄
   rw [WP.block_append_iff]
-  have h5 : WP isa (.block [.logic .xor .r11 .r6 .r8, .load .w .r12 .r3 (12 * j + 8)]) s₄ fun u =>
+  obtain h5 : WP isa (.block [.logic .xor .r11 .r6 .r8, .load .w .r12 .r3 (12 * j + 8)]) s₄ fun u =>
       u.gpr .r11 = s₄.gpr .r6 ^^^ s₄.gpr .r8 ∧
       u.gpr .r12 = (s₄.mem.readW (s₄.gpr .r3 + BitVec.ofNat 64 (12 * j + 8)) 32).setWidth 64 ∧
       u.mem = s₄.mem ∧ Keep [.r11, .r12] s₄ u := by
@@ -226,29 +226,29 @@ theorem round_ok (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea.
   refine WP.mono h5 fun s₅ ⟨a₅, d₅, m₅, e₅⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (mul_keep s₅ ((e₅.gpr (by decide)).trans hk₄.mask)) fun s₆ ⟨v₆, m₆, e₆⟩ => ?_
-  have hm₆ : s₆.mem = s₄.mem := m₆.trans m₅
-  have t₀ : s₆.gpr .r12 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
+  obtain hm₆ : s₆.mem = s₄.mem := m₆.trans m₅
+  obtain t₀ : s₆.gpr .r12 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
       (x.getD 2 0 + z.getD (6 * j + 2) 0)) (z.getD (6 * j + 4) 0)).setWidth 64 := by
     rw [v₆, a₅, d₅, r6₄, r8₄, xor_setWidth, setWidth_setWidth16, lo16, k4.2]
-  have e₄₆ : Keep [.r11, .r12] s₄ s₆ := (e₅.trans e₆).mono (by decide)
-  have hk₆ : KeyOk z s₆ := hk₄.keep e₄₆ hm₆ (by decide) (by decide)
+  obtain e₄₆ : Keep [.r11, .r12] s₄ s₆ := (e₅.trans e₆).mono (by decide)
+  obtain hk₆ : KeyOk z s₆ := hk₄.keep e₄₆ hm₆ (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (p6_ok s₆ (12 * j + 10) (by omega_using [hj]) (by
     rw [e₄₆.2.1, e₄₆.2.2, e₄₆.gpr (by decide)]; exact k5.1)) fun s₇ ⟨b₇, a₇, d₇, m₇, e₇⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (mul_keep s₇ ((e₇.gpr (by decide)).trans hk₆.mask)) fun s₈ ⟨v₈, m₈, e₈⟩ => ?_
-  have t₁ : s₈.gpr .r12 = (Spec.Idea.mul (((x.getD 1 0 + z.getD (6 * j + 1) 0) ^^^
+  obtain t₁ : s₈.gpr .r12 = (Spec.Idea.mul (((x.getD 1 0 + z.getD (6 * j + 1) 0) ^^^
       Spec.Idea.mul (x.getD 3 0) (z.getD (6 * j + 3) 0)) +
       Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
         (x.getD 2 0 + z.getD (6 * j + 2) 0)) (z.getD (6 * j + 4) 0))
       (z.getD (6 * j + 5) 0)).setWidth 64 := by
     rw [v₈, a₇, d₇, e₄₆.gpr (by decide), e₄₆.gpr (by decide), r7₄, r9₄, t₀, xor_setWidth,
       add_setWidth, lo16, e₄₆.gpr (by decide), hm₆, k5.2]
-  have e₆₈ : Keep [.r10, .r11, .r12] s₆ s₈ := (e₇.trans e₈).mono (by decide)
-  have r10₈ : s₈.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
+  obtain e₆₈ : Keep [.r10, .r11, .r12] s₆ s₈ := (e₇.trans e₈).mono (by decide)
+  obtain r10₈ : s₈.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (z.getD (6 * j) 0) ^^^
       (x.getD 2 0 + z.getD (6 * j + 2) 0)) (z.getD (6 * j + 4) 0)).setWidth 64 := by
     rw [e₈.gpr (by decide), b₇, t₀]
-  have g₈ : ∀ r ∈ [Reg.r6, .r7, .r8, .r9], s₈.gpr r = s₄.gpr r := by
+  obtain g₈ : ∀ r ∈ [Reg.r6, .r7, .r8, .r9], s₈.gpr r = s₄.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>

@@ -141,39 +141,39 @@ theorem stepHead_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} {n : Na
       wd s'.mem x SWAP = BitVec.ofNat 32 (bit k n) := by
   have hc := h.ctx
   have hfit := hc.fit
-  have hsw := ladderAfter_swap_le k x1 (n := n + 1) (by omega_using [hn])
-  have hb := bit_le k n
+  obtain hsw := ladderAfter_swap_le k x1 (n := n + 1) (by omega_using [hn])
+  obtain hb := bit_le k n
   refine Wp.wp_subi fun s₁ u₁ _ _ => Wp.wp_mov fun s₂ u₂ => Wp.wp_add fun s₃ u₃ _ => ?_
-  have esi₁ : s₁.gpr .esi = BitVec.ofNat 32 n := by
+  obtain esi₁ : s₁.gpr .esi = BitVec.ofNat 32 n := by
     rw [u₁.gpr, h.esi]; exact Wp.ofNat_pred (by omega_using [])
-  have esi₃ : s₃.gpr .esi = BitVec.ofNat 32 n := by
+  obtain esi₃ : s₃.gpr .esi = BitVec.ofNat 32 n := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), esi₁]
-  have eax₃ : s₃.gpr .eax = x + BitVec.ofNat 32 n := by
+  obtain eax₃ : s₃.gpr .eax = x + BitVec.ofNat 32 n := by
     rw [u₃.gpr, u₂.gpr, u₂.other .esi (by decide), esi₁, u₁.other _ (by decide), hc.edi]
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have edi₃ : s₃.gpr .edi = x := by
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain edi₃ : s₃.gpr .edi = x := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.edi]
-  have c₃ : Ctx 4096 x s₃ := hc.keep (by rw [edi₃, hc.edi]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+  obtain c₃ : Ctx 4096 x s₃ := hc.keep (by rw [edi₃, hc.edi]) (by rw [u₃.wr, u₂.wr, u₁.wr])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
   refine wp_movzx8 (a := addr x (BITS + n)) (by rw [eax₃, addr_add_ofNat])
     (c₃.inRW (by simp only [BITS]; omega_using [hn]) (by decide)) fun s₄ u₄ => ?_
-  have eax₄ : s₄.gpr .eax = BitVec.ofNat 32 (bit k n) := by
+  obtain eax₄ : s₄.gpr .eax = BitVec.ofNat 32 (bit k n) := by
     rw [u₄.gpr, m₃, h.bits n (by omega_using [hn]), byte_ofNat hb]
-  have c₄ := (updKeep u₄).ctx c₃
+  obtain c₄ := (updKeep u₄).ctx c₃
   refine Wp.wp_ldm c₄.edi (c₄.inRW (by simp only [SWAP]; decide) (by decide)) fun s₅ u₅ => ?_
   refine Wp.wp_xor fun s₆ u₆ => ?_
-  have edx₆ : s₆.gpr .edx = BitVec.ofNat 32 ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n) := by
+  obtain edx₆ : s₆.gpr .edx = BitVec.ofNat 32 ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n) := by
     rw [u₆.gpr, u₅.gpr, u₄.mem, m₃, u₅.other .eax (by decide), eax₄]
     exact (congrArg (· ^^^ _) h.swap).trans (ofNat_xor hsw hb)
-  have c₆ := (updKeep u₆).ctx ((updKeep u₅).ctx c₄)
+  obtain c₆ := (updKeep u₆).ctx ((updKeep u₅).ctx c₄)
   refine Wp.wp_stm c₆.edi (c₆.inW (by simp only [SWAP]; decide) (by decide)) fun s₇ u₇ => ?_
   refine Wp.wp_movi fun s₈ u₈ => Wp.wp_sub fun s₉ u₉ _ => WP.block_nil ?_
-  have m₇ : s₉.mem = s.mem.writeW (addr x SWAP) (BitVec.ofNat 32 (bit k n)) := by
+  obtain m₇ : s₉.mem = s.mem.writeW (addr x SWAP) (BitVec.ofNat 32 (bit k n)) := by
     rw [u₉.mem, u₈.mem, u₇.mem, u₆.other .eax (by decide), u₅.other .eax (by decide), eax₄, u₆.mem,
       u₅.mem, u₄.mem, m₃]
-  have hf : Frame [sub x SWAP 4] s.mem s₉.mem := by
+  obtain hf : Frame [sub x SWAP 4] s.mem s₉.mem := by
     rw [m₇]; exact frame_write1 (Frame.refl _ _) hfit (by decide) (Nat.le_refl _) (Nat.le_refl _) _
-  have g : ∀ r, r ≠ .ecx → r ≠ .eax → r ≠ .edx → r ≠ .esi → s₉.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+  obtain g : ∀ r, r ≠ .ecx → r ≠ .eax → r ≠ .edx → r ≠ .esi → s₉.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [u₉.other _ h1, u₈.other _ h1, u₇.gpr, u₆.other _ h3, u₅.other _ h3, u₄.other _ h2, u₃.other _ h2,
       u₂.other _ h2, u₁.other _ h4]
   refine ⟨h.toBase.of_frame (g _ (by decide) (by decide) (by decide) (by decide))
@@ -194,7 +194,7 @@ theorem stepHead_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} {n : Na
 theorem frame2_wide {m m' : Mem} {x : BitVec 32} {a b : Nat} (hx : x.toNat + 4096 ≤ 2 ^ 32)
     (hf : Frame [sub x a 32, sub x b 32] m m') (ha : isSlot 288 a = true) (hb : isSlot 288 b = true) :
     Frame [sub x 288 640] m m' := by
-  have ha1 := slot_ge ha; have ha2 := slot_below ha; have hb1 := slot_ge hb; have hb2 := slot_below hb
+  obtain ha1 := slot_ge ha; have ha2 := slot_below ha; have hb1 := slot_ge hb; have hb2 := slot_below hb
   simp only [Below, T] at ha2 hb2
   exact hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -206,9 +206,9 @@ theorem frame2_wide {m m' : Mem} {x : BitVec 32} {a b : Nat} (hx : x.toNat + 409
 theorem F_frame2 {m m' : Mem} {x : BitVec 32} {a b q : Nat} (hx : x.toNat + 4096 ≤ 2 ^ 32)
     (hf : Frame [sub x a 32, sub x b 32] m m') (ha : isSlot 288 a = true) (hb : isSlot 288 b = true)
     (hq : isSlot 288 q = true) (hqa : q ≠ a) (hqb : q ≠ b) : F m' x q = F m x q := by
-  have ha2 := slot_below ha; have hb2 := slot_below hb; have hq2 := slot_below hq
+  obtain ha2 := slot_below ha; have hb2 := slot_below hb; have hq2 := slot_below hq
   simp only [Below, T] at ha2 hb2 hq2
-  have sa := slot_ne ha hq hqa; have sb := slot_ne hb hq hqb
+  obtain sa := slot_ne ha hq hqa; have sb := slot_ne hb hq hqb
   simp only [F]
   refine congrArg toFe (fe_frame fun j hj => wd_frame hf fun r hr => ?_)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -221,40 +221,40 @@ theorem step_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} {n : Nat} (
     (h : LInv x k x1 s₀ (n + 1) s) :
     WP isa (.block step) s fun s' => LInv x k x1 s₀ n s' ∧ s'.zf = some (decide (n = 0)) := by
   have hfit := h.ctx.fit
-  have hsw := xor_le_one (ladderAfter_swap_le k x1 (n := n + 1) (by omega_using [hn])) (bit_le k n)
+  obtain hsw := xor_le_one (ladderAfter_swap_le k x1 (n := n + 1) (by omega_using [hn])) (bit_le k n)
   simp only [step, List.append_assoc]
   refine WP.block_append (WP.mono (stepHead_ok hn h) fun s₁ ⟨b₁, esi₁, ecx₁, F₁, sw₁⟩ => ?_)
   refine WP.block_append (WP.mono (cswap_ok b₁.ctx (X := X2) (Y := X3) (by decide) (by decide) (by decide)
     hsw ecx₁) fun s₂ ⟨k₂, ecx₂, f₂, x₂, y₂⟩ => ?_)
-  have b₂ := b₁.ops k₂ (frame2_wide hfit f₂ (by decide) (by decide))
+  obtain b₂ := b₁.ops k₂ (frame2_wide hfit f₂ (by decide) (by decide))
   refine WP.block_append (WP.mono (cswap_ok b₂.ctx (X := Z2) (Y := Z3) (by decide) (by decide) (by decide)
     hsw (ecx₂.trans ecx₁)) fun s₃ ⟨k₃, _, f₃, x₃, y₃⟩ => ?_)
-  have b₃ := b₂.ops k₃ (frame2_wide hfit f₃ (by decide) (by decide))
+  obtain b₃ := b₂.ops k₃ (frame2_wide hfit f₃ (by decide) (by decide))
   refine WP.block_append (WP.mono (ops_ok stepOps b₃.ctx stepOps_valid) fun s₄ ⟨k₄, f₄, e₄⟩ => ?_)
-  have b₄ := b₃.ops k₄ f₄
+  obtain b₄ := b₃.ops k₄ f₄
   refine Wp.wp_test fun s₅ u₅ z₅ => WP.block_nil ?_
   -- The values after the swaps.
-  have hstep := ladderAfter_step k x1 hn
+  obtain hstep := ladderAfter_step k x1 hn
   have v₁ : ∀ q, isSlot 288 q = true → F s₁.mem x q = F s.mem x q := F₁
-  have eX2 : F s₃.mem x X2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  obtain eX2 : F s₃.mem x X2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).x2 (ladderAfter k x1 (n + 1)).x3).1 := by
     rw [F_frame2 hfit f₃ (by decide) (by decide) (by decide) (by decide) (by decide), F_ite _ x₂,
       v₁ _ (by decide), v₁ _ (by decide), h.vx2, h.vx3, cswap_fst]
-  have eX3 : F s₃.mem x X3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  obtain eX3 : F s₃.mem x X3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).x2 (ladderAfter k x1 (n + 1)).x3).2 := by
     rw [F_frame2 hfit f₃ (by decide) (by decide) (by decide) (by decide) (by decide), F_ite _ y₂,
       v₁ _ (by decide), v₁ _ (by decide), h.vx2, h.vx3, cswap_snd]
-  have eZ2 : F s₃.mem x Z2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  obtain eZ2 : F s₃.mem x Z2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).z2 (ladderAfter k x1 (n + 1)).z3).1 := by
     rw [F_ite _ x₃, F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       v₁ _ (by decide), v₁ _ (by decide), h.vz2, h.vz3, cswap_fst]
-  have eZ3 : F s₃.mem x Z3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  obtain eZ3 : F s₃.mem x Z3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).z2 (ladderAfter k x1 (n + 1)).z3).2 := by
     rw [F_ite _ y₃, F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       v₁ _ (by decide), v₁ _ (by decide), h.vz2, h.vz3, cswap_snd]
-  have eX1 : F s₃.mem x X1 = x1 := by
+  obtain eX1 : F s₃.mem x X1 = x1 := by
     rw [F_frame2 hfit f₃ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide), v₁ _ (by decide), h.vx1]
   obtain ⟨r2, rz2, r3, rz3, r1⟩ := run_step (F s₃.mem x)

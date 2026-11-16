@@ -161,7 +161,7 @@ private theorem sub_tape {r : Addr} {n used : Nat} (hu : used ≤ n) :
 
 private theorem nowrap_tape {r : Addr} {n used : Nat} (hn : r.toNat + n ≤ 2 ^ 64) (hu : used ≤ n) :
     (r + BitVec.ofNat 64 used).toNat + (n - used) ≤ 2 ^ 64 := by
-  have hul : used < 2 ^ 64 ∨ n - used = 0 := by omega_using [hn]
+  obtain hul : used < 2 ^ 64 ∨ n - used = 0 := by omega_using [hn]
   rcases hul with hul | hz
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hul]
     have := Nat.mod_le (r.toNat + used) (2 ^ 64)
@@ -205,10 +205,10 @@ theorem SearchLive.callFacts {p : SearchPublic} {original s : State} {used remai
   obtain ⟨⟨woe, wop, wor, -⟩, ⟨wue, wup, wur, -⟩, ⟨wse, wsp, wsr, -⟩, -⟩ := hwr
   obtain ⟨⟨-, bo⟩, ⟨-, bu⟩, ⟨-, bs⟩, -, ⟨-, be⟩, ⟨-, bp⟩, ⟨-, br⟩, -⟩ := hstk
   obtain ⟨no, nu, ns, -, ne, np, nr, -⟩ := hnw
-  have hR : Region.Sub (rR (searchOfState original) used) (inRand original) := sub_tape hu
-  have hA := rA_sub (searchOfState original)
-  have hRet := rRet_sub (searchOfState original)
-  have hLow := rLow_sub (searchOfState original)
+  obtain hR : Region.Sub (rR (searchOfState original) used) (inRand original) := sub_tape hu
+  obtain hA := rA_sub (searchOfState original)
+  obtain hRet := rRet_sub (searchOfState original)
+  obtain hLow := rLow_sub (searchOfState original)
   have hsp' : (searchOfState original).sp = original.gpr .rsp := rfl
   rw [hsp'] at hA hRet hLow
   refine ⟨hsp, htop, pou, woe, wop, wor.sub_right hR, pos, bo.symm.sub_right hA,
@@ -261,7 +261,7 @@ def CallRegs (p : SearchPublic) (s : State) : Prop :=
 theorem SearchLive.frame_ld {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) {t : State} (hw : t.wr = (allocated 40 s).wr) :
     ∀ d, d + 8 ≤ 160 → InRegions (t.rd ++ t.wr) (p.F + BitVec.ofNat 64 d) 8 := by
-  have scr := h.input.frame_scr h.wr
+  obtain scr := h.input.frame_scr h.wr
   intro d hd
   obtain ⟨r, hr, hc⟩ := scr.st hd
   refine ⟨r, List.mem_append_right _ ?_, hc⟩
@@ -273,7 +273,7 @@ theorem read_past_call (m : Mem) (F : Addr) (v : BitVec 64) {d e : Nat} (hd : d 
     (he : e + 48 ≤ 2 ^ 64) :
     (m.writeW (F - BitVec.ofNat 64 40 + BitVec.ofNat 64 d) v).readW (F + BitVec.ofNat 64 e) 64 =
       m.readW (F + BitVec.ofNat 64 e) 64 := by
-  have hF : F + BitVec.ofNat 64 e = F - BitVec.ofNat 64 40 + BitVec.ofNat 64 (40 + e) := by
+  obtain hF : F + BitVec.ofNat 64 e = F - BitVec.ofNat 64 40 + BitVec.ofNat 64 (40 + e) := by
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rw [hF]
   exact Mem.readW_writeW_sep (Offset.sep _ (d := 40 + e) (n := 8) (e := d) (k := 8) (Or.inr (by omega_using [hd]))
@@ -290,37 +290,37 @@ theorem search_arguments_ok {p : SearchPublic} {original s : State} {used remain
     WP isa (.block arguments) (allocated 40 s) fun t =>
       CallRegs p t ∧ t.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used) ∧
       Keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (allocated 40 s) t := by
-  have hl := h.frame_ld (t := allocated 40 s) rfl
-  have hsp : (allocated 40 s).gpr .rsp = p.F - BitVec.ofNat 64 40 := by rw [allocated_rsp, h.rsp]
-  have hr12 : (allocated 40 s).gpr .r12 = p.F := by rw [allocated_reg _ _ _ (by decide), h.r12]
+  obtain hl := h.frame_ld (t := allocated 40 s) rfl
+  obtain hsp : (allocated 40 s).gpr .rsp = p.F - BitVec.ofNat 64 40 := by rw [allocated_rsp, h.rsp]
+  obtain hr12 : (allocated 40 s).gpr .r12 = p.F := by rw [allocated_reg _ _ _ (by decide), h.r12]
   have hF := h.input.F_toNat
   have hroom : 336 ≤ p.sp.toNat := h.input.room
-  have haw : (allocated 40 s).wr = ⟨p.F - BitVec.ofNat 64 40, 40⟩ :: s.wr := by
+  obtain haw : (allocated 40 s).wr = ⟨p.F - BitVec.ofNat 64 40, 40⟩ :: s.wr := by
     show (⟨s.gpr .rsp - BitVec.ofNat 64 40, 40⟩ : Region) :: s.wr = _
     rw [h.rsp]
-  have scr : Scr (allocated 40 s) (p.F - BitVec.ofNat 64 40) 40 :=
+  obtain scr : Scr (allocated 40 s) (p.F - BitVec.ofNat 64 40) 40 :=
     Scr.of_mem (by rw [haw]; exact List.mem_cons_self ..) (by
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, show (BitVec.ofNat 64 40).toNat = 40 from rfl]; omega_using [hF, hroom])]
       have := h.input.top
       simp only [show (BitVec.ofNat 64 40).toNat = 40 from rfl]
       omega_using [])
-  have hs : ∀ d, d + 8 ≤ 40 → InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40 + BitVec.ofNat 64 d) 8 :=
+  obtain hs : ∀ d, d + 8 ≤ 40 → InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40 + BitVec.ofNat 64 d) 8 :=
     fun _ hd => scr.st hd
-  have hs0 : InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40) 8 := by
+  obtain hs0 : InRegions (allocated 40 s).wr (p.F - BitVec.ofNat 64 40) 8 := by
     simpa only [BitVec.add_zero] using hs 0 (by decide)
   have hv (j : Nat) (v : BitVec 64) (hj : (j, v) ∈ p.headers used remaining) :
       s.mem.readW (p.F + BitVec.ofNat 64 (8 * j)) 64 = v := h.headers (j, v) hj
-  have hv5 := hv 5 p.op (by simp [SearchPublic.headers])
-  have hv6 := hv 6 (BitVec.ofNat 64 p.len) (by simp [SearchPublic.headers])
-  have hv7 := hv 7 p.up (by simp [SearchPublic.headers])
-  have hv8 := hv 8 p.ep (by simp [SearchPublic.headers])
-  have hv9 := hv 9 (BitVec.ofNat 64 p.elen) (by simp [SearchPublic.headers])
-  have hv10 := hv 10 p.pp (by simp [SearchPublic.headers])
-  have hv11 := hv 11 (BitVec.ofNat 64 p.plen) (by simp [SearchPublic.headers])
-  have hv12 := hv 12 (p.rp + BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
-  have hv13 := hv 13 (BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
-  have hv14 := hv 14 p.B (by simp [SearchPublic.headers])
-  have hv15 := hv 15 (BitVec.ofNat 64 (p.Z / 8)) (by simp [SearchPublic.headers])
+  obtain hv5 := hv 5 p.op (by simp [SearchPublic.headers])
+  obtain hv6 := hv 6 (BitVec.ofNat 64 p.len) (by simp [SearchPublic.headers])
+  obtain hv7 := hv 7 p.up (by simp [SearchPublic.headers])
+  obtain hv8 := hv 8 p.ep (by simp [SearchPublic.headers])
+  obtain hv9 := hv 9 (BitVec.ofNat 64 p.elen) (by simp [SearchPublic.headers])
+  obtain hv10 := hv 10 p.pp (by simp [SearchPublic.headers])
+  obtain hv11 := hv 11 (BitVec.ofNat 64 p.plen) (by simp [SearchPublic.headers])
+  obtain hv12 := hv 12 (p.rp + BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
+  obtain hv13 := hv 13 (BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
+  obtain hv14 := hv 14 p.B (by simp [SearchPublic.headers])
+  obtain hv15 := hv 15 (BitVec.ofNat 64 (p.Z / 8)) (by simp [SearchPublic.headers])
   simp only [Nat.reduceMul] at hv5 hv6 hv7 hv8 hv9 hv10 hv11 hv12 hv13 hv14 hv15
   refine WP.mono (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (Q := fun t =>
     CallRegs p t ∧ t.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) ?_ rfl)
@@ -365,11 +365,11 @@ theorem call_arg {p : SearchPublic} {used : Nat} {s u : State} (hu : u.gpr .rsp 
     (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) (j : Nat) (hj : j < 5) :
     stackArg (callState p used u) j = frameValue (callValues p used) j
       (word s.mem (p.sp - BitVec.ofNat 64 200) (8 * j)) := by
-  have e1 : p.sp - BitVec.ofNat 64 200 - 8 + BitVec.ofNat 64 (8 + 8 * j) =
+  obtain e1 : p.sp - BitVec.ofNat 64 200 - 8 + BitVec.ofNat 64 (8 + 8 * j) =
       p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j) := by
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
       BitVec.sub_add_cancel]
-  have sep : Mem.Sep (p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j)) (64 / 8)
+  obtain sep : Mem.Sep (p.sp - BitVec.ofNat 64 200 + BitVec.ofNat 64 (8 * j)) (64 / 8)
       (p.sp - BitVec.ofNat 64 200 - 8) (64 / 8) := by
     have := Offset.sep (p.sp - BitVec.ofNat 64 200 - 8) (d := 8 + 8 * j) (n := 8) (e := 0) (k := 8)
       (.inr (by omega_using [])) (by omega_using [hj]) (by decide)
@@ -400,42 +400,42 @@ theorem call_cand_pre {p : SearchPublic} {used : Nat} {s u : State} (hf : CallFa
     (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) (ha : CallRegs p u)
     (hm : u.mem = writeFrame s.mem (p.F - BitVec.ofNat 64 40) (callValues p used)) :
     sharedCandContract.pre (callState p used u) := by
-  have a0 : arg (callState p used u) 0 = BitVec.ofNat 64 p.plen := by
+  obtain a0 : arg (callState p used u) 0 = BitVec.ofNat 64 p.plen := by
     show stackArg _ 0 = _
     rw [call_arg hu hm 0 (by decide)]; rfl
-  have a1 : arg (callState p used u) 1 = p.rp + BitVec.ofNat 64 used := by
+  obtain a1 : arg (callState p used u) 1 = p.rp + BitVec.ofNat 64 used := by
     show stackArg _ 1 = _
     rw [call_arg hu hm 1 (by decide)]; rfl
-  have a2 : arg (callState p used u) 2 = BitVec.ofNat 64 (p.randLen - used) := by
+  obtain a2 : arg (callState p used u) 2 = BitVec.ofNat 64 (p.randLen - used) := by
     show stackArg _ 2 = _
     rw [call_arg hu hm 2 (by decide)]; rfl
-  have a3 : arg (callState p used u) 3 = p.B := by
+  obtain a3 : arg (callState p used u) 3 = p.B := by
     show stackArg _ 3 = _
     rw [call_arg hu hm 3 (by decide)]; rfl
-  have a4 : arg (callState p used u) 4 = BitVec.ofNat 64 (p.Z / 8) := by
+  obtain a4 : arg (callState p used u) 4 = BitVec.ofNat 64 (p.Z / 8) := by
     show stackArg _ 4 = _
     rw [call_arg hu hm 4 (by decide)]; rfl
   obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha
-  have t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
+  obtain t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega_using [this])]
-  have tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
+  obtain tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
-  have tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
+  obtain tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
-  have tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
+  obtain tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega_using [this])]
-  have tz : (BitVec.ofNat 64 (p.Z / 8)).toNat * 8 = p.Z := by
+  obtain tz : (BitVec.ofNat 64 (p.Z / 8)).toNat * 8 = p.Z := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nS; omega_using [this])]; exact hf.z8
-  have tz' : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := by
+  obtain tz' : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nS; omega_using [tz])]
-  have hsp := call_rsp (used := used) hu
-  have h208 : (p.sp - BitVec.ofNat 64 208).toNat = p.sp.toNat - 208 := by
+  obtain hsp := call_rsp (used := used) hu
+  obtain h208 : (p.sp - BitVec.ofNat 64 208).toNat = p.sp.toNat - 208 := by
     have := hf.room
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, show (BitVec.ofNat 64 208).toNat = 208 from rfl]; omega_using [this]),
       show (BitVec.ofNat 64 208).toNat = 208 from rfl]
-  have hargs : stackArgAddr (callState p used u) 0 = p.sp - BitVec.ofNat 64 200 := by
+  obtain hargs : stackArgAddr (callState p used u) 0 = p.sp - BitVec.ofNat 64 200 := by
     rw [call_argAddr hu, Nat.mul_zero, BitVec.add_zero]
-  have hlow : below (p.sp - BitVec.ofNat 64 208) 128 = rLow p := by
+  obtain hlow : below (p.sp - BitVec.ofNat 64 208) 128 = rLow p := by
     simp only [below, rLow, BitVec.sub_sub]; rfl
   have hret := hf.ret
   have hlo := hf.low
@@ -448,7 +448,7 @@ theorem call_cand_pre {p : SearchPublic} {used : Nat} {s u : State} (hf : CallFa
       call_gpr (show Reg.rdx ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
       call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
       hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, t8, tl, tp, tr, tz', hf.z8, callReads, callWrites]
-    have hsp' : (p.sp - BitVec.ofNat 64 208).toNat + 48 ≤ 2 ^ 64 := by
+    obtain hsp' : (p.sp - BitVec.ofNat 64 208).toNat + 48 ≤ 2 ^ 64 := by
       rw [h208]; have := hf.top; omega_using []
     exact ⟨hsp', by trivial, by trivial, hf.oU, hf.oE, hf.oP, hf.oR, hf.oS, hf.oA, hf.uE, hf.uP, hf.uR, hf.uS, hf.uA,
       hf.eS, hf.pS, hf.rS', hf.sA, rO', rU', rE', rP', rR', rS', rA', hf.nO, hf.nU, hf.nE, hf.nP, hf.nR,
@@ -472,8 +472,8 @@ theorem writeFrame_frame_size (m : Mem) (B : Addr) (values : List (Nat × BitVec
   induction values generalizing m with
   | nil => exact Frame.refl _ _
   | cons e values ih =>
-    have he := hvalues e (List.mem_cons_self ..)
-    have hstore : Frame [⟨B, size⟩] m (m.writeW (off B (8 * e.1)) e.2) :=
+    obtain he := hvalues e (List.mem_cons_self ..)
+    obtain hstore : Frame [⟨B, size⟩] m (m.writeW (off B (8 * e.1)) e.2) :=
       Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Offset.contains_base _ he (by omega_using [hsize, he]))
     exact hstore.trans (ih _ (fun x hx => hvalues x (List.mem_cons_of_mem _ hx)))
 
@@ -536,9 +536,9 @@ theorem call_frame (h : SearchLive p original used remaining s) {u t : State}
     Frame (SearchInput.callChanges original) s.mem t.mem := by
   have hi := h.input
   have hsp : original.gpr .rsp = p.sp := hi.sp_eq.symm
-  have hlow : (⟨original.gpr .rsp - BitVec.ofNat 64 stackUse, 176⟩ : Region) ∈
+  obtain hlow : (⟨original.gpr .rsp - BitVec.ofNat 64 stackUse, 176⟩ : Region) ∈
       SearchInput.callChanges original := by simp [SearchInput.callChanges]
-  have h1 : Frame (SearchInput.callChanges original) s.mem u.mem := by
+  obtain h1 : Frame (SearchInput.callChanges original) s.mem u.mem := by
     rw [hm, F_40]
     apply (writeFrame_frame_size _ _ (callValues p used) (size := 40) (by decide) (by
       simp only [callValues, List.mem_cons, List.not_mem_nil, or_false]
@@ -548,7 +548,7 @@ theorem call_frame (h : SearchLive p original used remaining s) {u t : State}
     refine ⟨_, hlow, ?_⟩
     rw [hsp]
     exact Offset.sub_below _ (by decide) (by decide)
-  have h2 : Frame (SearchInput.callChanges original) u.mem t.mem := by
+  obtain h2 : Frame (SearchInput.callChanges original) u.mem t.mem := by
     apply hf.sub
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
@@ -588,9 +588,9 @@ theorem call_mem_frame (h : SearchLive p original used remaining s) {u : State}
     (hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200) :
     Frame (SearchInput.changes original) s.mem (callState p used u).mem := by
   have hsp : original.gpr .rsp = p.sp := h.input.sp_eq.symm
-  have hin : below (original.gpr .rsp) stackUse ∈ SearchInput.changes original := by
+  obtain hin : below (original.gpr .rsp) stackUse ∈ SearchInput.changes original := by
     simp [SearchInput.changes]
-  have h1 : Frame (SearchInput.changes original) s.mem u.mem := by
+  obtain h1 : Frame (SearchInput.changes original) s.mem u.mem := by
     rw [hm, F_40]
     apply (writeFrame_frame_size _ _ (callValues p used) (size := 40) (by decide) (by
       simp only [callValues, List.mem_cons, List.not_mem_nil, or_false]
@@ -617,7 +617,7 @@ theorem call_inputs (h : SearchLive p original used remaining s) {u : State}
       Spec.Rsa.bytesAt (callState p used u).mem p.pp p.plen = searchP original ∧
       Spec.Rsa.bytesAt (callState p used u).mem (p.rp + BitVec.ofNat 64 used) (p.randLen - used) =
         (searchRand original).drop used := by
-  have hf := call_mem_frame h hm hu
+  obtain hf := call_mem_frame h hm hu
   refine ⟨(h.input.e_frame hf).trans h.e, (h.input.p_frame hf).trans h.other, ?_⟩
   rw [bytesAt_drop, h.input.random_frame hf, h.random]
 
@@ -653,23 +653,23 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
     WP isa (candidateRun (candidateCall v)) s fun t =>
       SearchLive p original used remaining t ∧ CandPost p (searchP original) (searchRand original) used t := by
   have hf := h.callFacts
-  have hroom : 40 ≤ (s.gpr .rsp).toNat := by
+  obtain hroom : 40 ≤ (s.gpr .rsp).toNat := by
     rw [h.rsp, h.input.F_toNat]; have : 336 ≤ p.sp.toNat := h.input.room; omega_using [this]
   unfold candidateRun
   apply frame_alloc (by decide) (by decide) (by decide) hroom
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨ha, hm, k⟩ => ?_)
-  have hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200 := by
+  obtain hu : u.gpr .rsp = p.sp - BitVec.ofNat 64 200 := by
     rw [k.gpr (by decide), allocated_rsp, h.rsp, F_40]
-  have hpre := call_cand_pre hf hu ha hm
-  have hd := sharedCandidate_depth v
-  have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
+  obtain hpre := call_cand_pre hf hu ha hm
+  obtain hd := sharedCandidate_depth v
+  obtain hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
   refine WP.callF (k := sharedCandContract)
     (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_ctl v))
     (SpSafe.of_all (sharedCandidate_sp v))
     (by change (sharedCandidateCode v).x86_64Depth + 16 < 2 ^ 64; omega_using [hd]) hpre
     (call_covers_reads h k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
   intro t hrd hwr hcs hfr ⟨s₂, hm₂, hg₂, hpost⟩ _
-  have htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
+  obtain htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
   refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, ?_, ?_⟩
   · apply h.restore (show (freed 40 t).rd = s.rd from hrd.trans k.2.1)
       (show (freed 40 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
@@ -686,15 +686,15 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
   · obtain ⟨he, hpb, hrand⟩ := call_inputs h hm hu
     obtain ⟨a0, a1, a2, -, -⟩ := call_args (used := used) hu hm
     obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha
-    have t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
+    obtain t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega_using [this])]
-    have tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
+    obtain tl : (BitVec.ofNat 64 p.len).toNat = p.len := by
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
-    have tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
+    obtain tp : (BitVec.ofNat 64 p.plen).toNat = p.plen := by
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
-    have tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
+    obtain tr : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used := by
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega_using [this])]
-    have hres : candRes (callState p used u) =
+    obtain hres : candRes (callState p used u) =
         Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used) := by
       simp only [candRes, call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
         call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
@@ -703,7 +703,7 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
     simp only [sharedCandContract, candPost, hres, a2, tr, call_gpr (show Reg.rdi ≠ .rsp by decide),
       call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rdx ≠ .rsp by decide), hdi, hsi, hdx,
       tl] at hp
-    have hrax : (freed 40 t).gpr .rax = s₂.gpr .rax := by
+    obtain hrax : (freed 40 t).gpr .rax = s₂.gpr .rax := by
       rw [freed_reg _ _ _ (by decide), hg₂ .rax (by decide)]
     have hmem : (freed 40 t).mem = s₂.mem := hm₂.symm
     unfold CandPost

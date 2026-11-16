@@ -56,7 +56,7 @@ theorem signPrevDispatch_ok (widths : List (Nat × Nat))
   | nil => simp only [List.not_mem_nil] at member
   | cons w rest ih =>
     obtain ⟨wp, wq⟩ := w
-    have B := bound (wp, wq) List.mem_cons_self
+    obtain B := bound (wp, wq) List.mem_cons_self
     unfold PrevalidatedSign.dispatch
     refine WP.seq (WP.mono (widthMatch_ok hs hz hp hq B.1 B.2) fun t ⟨Z, R, M⟩ => ?_)
     refine WP.ite t.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
@@ -88,31 +88,31 @@ theorem signPrevCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
   have fits := Sc.fits
-  have Qlt := operand_lt_of Iq
+  obtain Qlt := operand_lt_of Iq
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  obtain ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   simp only [PrevalidatedSign.compute, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
     Iq.value (by omega_using [hQ]) hQo (by omega_using [hQ]) (by decide) (by decide) (by omega_using [q32, big, L2]) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_)
-  have Sc₁ := Sc.stage St₁
-  have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
+  obtain Sc₁ := Sc.stage St₁
+  obtain r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.next Sc St₁ (.inr ho)
   refine WP.seq (WP.mono (range_ok Sc₁.ws (by omega_using [big]) Sc.wq (r₁ Iq).toReady (r₁ Ik).toReady false)
     fun u₂ ⟨F₂, St₂⟩ => ?_)
   rw [(r₁ Iq).value, (r₁ Ik).value] at F₂
-  have Sc₂ := Sc₁.stage St₂
-  have r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
+  obtain Sc₂ := Sc₁.stage St₂
+  obtain r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
     fun I => (r₁ I).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)
-  have L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
+  obtain L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
     rw [St₂.localVal_eq (by omega_using [L2]) (by omega_using [q32, L2]) (by omega_using []) (by omega_using [L2])]
     exact localVal_of_bytes B₁ (by omega_using [Qlt])
-  have hc₂ : countValue base u₂ Core.digestPrefix = c :=
+  obtain hc₂ : countValue base u₂ Core.digestPrefix = c :=
     ((countValue_stage St₂ (by omega_using [])).trans (countValue_stage St₁ (by omega_using [L2]))).trans hc
   refine WP.seq (WP.mono (sign_ok Sc₂ (r₂ Ip) (r₂ Iq) (r₂ Ig) (r₂ Ix) (r₂ Ik) (r₂ Id) hc₂ L₂ hP hPo hQ hQo)
     fun u₃ ⟨R₃, S₃, M₃, Rn₃⟩ => ?_)
-  have Sc₃ := Sc₂.run Rn₃
+  obtain Sc₃ := Sc₂.run Rn₃
   refine WP.seq (WP.seq (WP.mono (zero_ok Sc₃.ws (by omega_arith) Sc.wq
     (localReady (o := Impl.Dsa.Layout.r) (len := qLen) Sc₃.ws (by omega_arith) (by omega_arith) (by omega_arith)) true)
     fun u₄ ⟨F₄, St₄⟩ => WP.mono (zero_ok (St₄.ws Sc₃.ws) (by omega_arith) Sc.wq
@@ -148,34 +148,34 @@ theorem signPrevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y 
       Body base (State.addr (pointerValue base s (.input .out))) (2 * qLen) s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
-  have Qlt := operand_lt_of Iq
-  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
+  obtain Qlt := operand_lt_of Iq
+  obtain qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   unfold PrevalidatedSign.body
   refine WP.seq (WP.mono (signPrevCompute_ok Sc Ip Iq Ig Ix Ik Id hc hP hPo hQ hQo) fun u ⟨Fu, Ru, Su, Rn⟩ => ?_)
-  have mu : maskW base u = mask32 (signChecks P Q G Y X K D) := by
+  obtain mu : maskW base u = mask32 (signChecks P Q G Y X K D) := by
     rw [Fu, hm, BitVec.allOnes_and]
     exact mask32_iff ⟨fun ⟨hk, hr, hs⟩ => ⟨pre.1, ⟨pre.2.1, hk⟩, pre.2.2, hr, hs⟩,
       fun ⟨_, ⟨_, hk⟩, _, hr, hs⟩ => ⟨hk, hr, hs⟩⟩
-  have Pu : pointerValue base u (.input .out) = pointerValue base s (.input .out) :=
+  obtain Pu : pointerValue base u (.input .out) = pointerValue base s (.input .out) :=
     pointerValue_keep (Rn.rest.gpr .r12 (by decide)) Rn.mem (by decide) (by decide : Impl.Dsa.Layout.Field.out ≠ .mask)
-  have Ou := O.run Rn
-  have wu := Rn.ws Sc.ws
+  obtain Ou := O.run Rn
+  obtain wu := Rn.ws Sc.ws
   refine WP.seq (WP.mono (writeScalar_ok wu big Sc.wq q32 (by omega_arith) (by omega_arith) Ru (by simp only [rValue]; exact qlt _)
     _ mu Ou false) fun v ⟨Bv, mv, Pv, Wv, Kv, _, Bdv⟩ => ?_)
-  have wv := wu.of_rest Bdv.rest (by decide)
+  obtain wv := wu.of_rest Bdv.rest (by decide)
   refine WP.seq (WP.mono (writeScalar_ok (v := sValue P Q G X K D) wv big Sc.wq q32 (by omega_arith) (by omega_arith)
     (by rw [Kv _ _ (by omega_arith) (by omega_arith)]; exact Su) (by simp only [sValue]; exact qlt _) _ (mv.trans mu)
     (Ou.keep Pv Wv) true) fun w ⟨Bw, mw, Pw, Ww, Kw, Ew, Bdw⟩ => ?_)
-  have ww := wv.of_rest Bdw.rest (by decide)
+  obtain ww := wv.of_rest Bdw.rest (by decide)
   refine WP.mono (result_ok ww (by omega_arith) _ ((mw.trans mv).trans mu)) fun t ⟨r0, Rt, Mt⟩ => ⟨r0, ?_, ?_⟩
   · rw [Pu] at Bv
     rw [Pv, Pu] at Bw
     simp only [Bool.false_eq_true, ↓reduceIte] at Bv Bw
     rw [Mt]
     refine VG.Proof.Dsa.signatureBytes _ ?_ Bw
-    have E := Ew 0 qLen (by omega_arith) (.inl (by simp only [↓reduceIte]; omega_arith))
+    obtain E := Ew 0 qLen (by omega_arith) (.inl (by simp only [↓reduceIte]; omega_arith))
     rw [Pv, Pu, BitVec.add_zero] at E
     rw [E]
     simpa only [BitVec.add_zero] using Bv
@@ -189,50 +189,50 @@ theorem prevSign_correct {s : State} (h : prevSignPre s) :
   obtain ⟨hsp, hrd, hwr, _, _, _, dOS, _, dKS, dNS, dDS, _, fO, fK, fN, fD, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s 0).toNat ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hs16 : 128 * (arg s 0).toNat ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   simp only [PrevalidatedSign.sign, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (signEntry_ok h) fun u I => ?_)
-  have E₀ := Env.of_installed I (by omega_arith)
-  have fok := signFields_ok s
+  obtain E₀ := Env.of_installed I (by omega_arith)
+  obtain fok := signFields_ok s
   refine WP.seq (signPrevDispatch_ok _ E₀.ws (by omega_arith) (widths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)]) fun t₁ R₁ M₁ => ?_)
-  have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 6).toNat * 8 := by omega_arith
-  have kr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  obtain E₁ := E₀.of_mem R₁ (by decide) M₁
+  obtain hz : 4960 ≤ (arg s 6).toNat * 8 := by omega_arith
+  obtain kr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h rfl rfl E₁
   unfold PrevalidatedSign.sized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
     fun t₂ ⟨Z, M, D₂, R₂, O₂⟩ => ?_)
   refine WP.ite t₂.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
   · have nv := of_decide_eq_true (Z ▸ ht)
-    have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
+    obtain E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
       simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)
-    have po : pointerValue (State.addr (arg s 5)) t₂ (.input .out) = s.gpr .r0 :=
+    obtain po : pointerValue (State.addr (arg s 5)) t₂ (.input .out) = s.gpr .r0 :=
       E₂.field (d := 96) (v := s.gpr .r0) (by simp)
     refine WP.mono (failure_ok E₂.ws (by omega_arith) (signOutput h rfl rfl E₂) (by rw [E₂.field (d := 104) (v := arg s 2) (by simp)])
       q0 q32) fun t₃ ⟨Z₃, B₃, R₃, O₃⟩ => ?_
     rw [po] at B₃ O₃
-    have none : signRes s = none :=
+    obtain none : signRes s = none :=
       VG.Proof.Dsa.signBytes_invalid_shape (by rw [signKey _ _ (by omega_arith)]; exact nv)
     refine finish_ok (E₂.ws.of_rest R₃ (by decide)) (by omega_arith) (E₂.saved_outside O₃ (hr1 ▸ dOS) (by omega_arith))
       (R₃.sp.trans E₂.sp) fun u A r0 M => ⟨A, ?_, ?_⟩
     · rw [BitVec.setWidth_append_eq_right, r0, Z₃, none]; rfl
     · rw [M, hr1, B₃, none]; rfl
   · have valid := Classical.not_not.mp (of_decide_eq_false (Z ▸ hf))
-    have hm : maskW (State.addr (arg s 5)) t₂ = BitVec.allOnes 32 := by
+    obtain hm : maskW (State.addr (arg s 5)) t₂ = BitVec.allOnes 32 := by
       rw [M]; simp only [mask32, valid, ↓reduceIte]
-    have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
+    obtain E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
       simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)
-    have po : pointerValue (State.addr (arg s 5)) t₂ (.input .out) = s.gpr .r0 :=
+    obtain po : pointerValue (State.addr (arg s 5)) t₂ (.input .out) = s.gpr .r0 :=
       E₂.field (d := 96) (v := s.gpr .r0) (by simp)
     obtain ⟨Ip, Iq, Ig, Iy, Ix⟩ := signKeyIn h rfl rfl E₂
-    have In := signNonceIn h rfl rfl E₂
-    have Id := signDigestIn h rfl rfl E₂ (Nat.min_le_left (arg s 4).toNat (qWidth (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
+    obtain In := signNonceIn h rfl rfl E₂
+    obtain Id := signDigestIn h rfl rfl E₂ (Nat.min_le_left (arg s 4).toNat (qWidth (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
         (State.addr (s.gpr .r2) + BitVec.ofNat 64 (arg s 0).toNat) (arg s 2).toNat))))
-    have hc : countValue (State.addr (arg s 5)) t₂ Core.digestPrefix = min (arg s 4).toNat (qWidth
+    obtain hc : countValue (State.addr (arg s 5)) t₂ Core.digestPrefix = min (arg s 4).toNat (qWidth
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
           (State.addr (s.gpr .r2) + BitVec.ofNat 64 (arg s 0).toNat) (arg s 2).toNat))) := by
       refine D₂.trans ?_
@@ -240,13 +240,13 @@ theorem prevSign_correct {s : State} (h : prevSignPre s) :
     rw [VG.Proof.Dsa.bytesAt_prefix, qWidth_of_shape valid] at Id
     rw [qWidth_of_shape valid] at hc
     obtain ⟨hP, hPo, hQ, hQo⟩ := shape_bounds valid
-    have chk := of_decide_eq_true ((VG.Proof.Dsa.validatePrivateKeyBytes_eq hv
+    obtain chk := of_decide_eq_true ((VG.Proof.Dsa.validatePrivateKeyBytes_eq hv
       (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3)
       (signKey _ _ (by omega_arith))).symm.trans hval)
     refine WP.mono (signPrevBody_ok ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig Ix In Id hc hP hPo hQ hQo hm
       (signOutput h rfl rfl E₂) chk.2) fun t₃ ⟨Z₃, B₃, Bd₃⟩ => ?_
     rw [po] at B₃ Bd₃
-    have SR : signRes s = _ := signBytes_eq (nonce := Spec.Rsa.bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat) (digest := Spec.Rsa.bytesAt s.mem (State.addr (arg s 3)) (arg s 4).toNat) hv valid
+    obtain SR : signRes s = _ := signBytes_eq (nonce := Spec.Rsa.bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat) (digest := Spec.Rsa.bytesAt s.mem (State.addr (arg s 3)) (arg s 4).toNat) hv valid
       (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3)
       (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]) (signKey _ _ (by omega_arith)) rfl
     refine finish_ok (E₂.ws.of_rest Bd₃.rest (by decide)) (by omega_arith) (E₂.saved_body Bd₃ (hr1 ▸ dOS) (by omega_arith))

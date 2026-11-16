@@ -155,26 +155,26 @@ theorem xtsMulA_ok {s : State} {X b : Addr} (hscr : Scr s X 2048) (hb : s.gpr sb
   refine wp_srl (by decide) fun s₈ u₈ => wp_sll (by decide) fun s₉ u₉ => wp_xor fun s₁₀ u₁₀ => ?_
   refine wp_sll (by decide) fun s₁₁ u₁₁ => wp_or fun s₁₂ u₁₂ => ?_
   -- Only the temporaries change, up to here.
-  have o₁₂ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ .t2 → r ≠ .t3 → s₁₂.gpr r = s.gpr r := fun r h0 h1 h2 h3 => by
+  obtain o₁₂ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ .t2 → r ≠ .t3 → s₁₂.gpr r = s.gpr r := fun r h0 h1 h2 h3 => by
     rw [u₁₂.other _ h1, u₁₁.other _ h1, u₁₀.other _ h0, u₉.other _ h0, u₈.other _ h3, u₇.other _ h2,
       u₆.other _ h3, u₅.other _ h2, u₄.other _ h3, u₃.other _ h2, u₂.other _ h1, u₁.other _ h0]
-  have m₁₂ : s₁₂.mem = s.mem := by
+  obtain m₁₂ : s₁₂.mem = s.mem := by
     rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have wr₁₂ : s₁₂.wr = s.wr := by
+  obtain wr₁₂ : s₁₂.wr = s.wr := by
     rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have b₁₂ : s₁₂.gpr sb = b := by rw [o₁₂ _ (by decide) (by decide) (by decide) (by decide), hb]
-  have scr₁₂ : Scr s₁₂ X 2048 := hscr.congr wr₁₂ (by rw [b₁₂, hb])
+  obtain b₁₂ : s₁₂.gpr sb = b := by rw [o₁₂ _ (by decide) (by decide) (by decide) (by decide), hb]
+  obtain scr₁₂ : Scr s₁₂ X 2048 := hscr.congr wr₁₂ (by rw [b₁₂, hb])
   generalize hL : s.mem.readW (b + BitVec.ofNat 64 (8 * stLo)) 64 = L
   generalize hH : s.mem.readW (b + BitVec.ofNat 64 (8 * (stLo + 1))) 64 = H
-  have e₁ : s₁.gpr t0 = L := by rw [u₁.gpr, hL]
-  have e₂ : s₂.gpr t1 = H := by rw [u₂.gpr, u₁.mem, hH]
-  have v₀ : s₁₂.gpr t0 = (L <<< 1) ^^^ (if H.msb then (0x87 : BitVec 64) else 0) := by
+  obtain e₁ : s₁.gpr t0 = L := by rw [u₁.gpr, hL]
+  obtain e₂ : s₂.gpr t1 = H := by rw [u₂.gpr, u₁.mem, hH]
+  obtain v₀ : s₁₂.gpr t0 = (L <<< 1) ^^^ (if H.msb then (0x87 : BitVec 64) else 0) := by
     rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, u₉.gpr, u₉.other .t2 (by decide),
       u₈.other t0 (by decide), u₈.other .t2 (by decide), u₇.gpr, u₇.other t0 (by decide), u₆.gpr,
       u₆.other t0 (by decide), u₆.other .t2 (by decide), u₅.gpr, u₅.other t0 (by decide), u₄.gpr,
       u₄.other t0 (by decide), u₄.other .t2 (by decide), u₃.gpr, u₃.other t0 (by decide), u₂.other t0 (by decide),
       e₁, e₂, ushr63, mask87]
-  have v₁ : s₁₂.gpr t1 = (H <<< 1) ||| (if L.msb then (1 : BitVec 64) else 0) := by
+  obtain v₁ : s₁₂.gpr t1 = (H <<< 1) ||| (if L.msb then (1 : BitVec 64) else 0) := by
     rw [u₁₂.gpr, u₁₁.gpr, u₁₁.other .t3 (by decide), u₁₀.other t1 (by decide), u₁₀.other .t3 (by decide),
       u₉.other t1 (by decide), u₉.other .t3 (by decide), u₈.gpr, u₈.other t1 (by decide),
       u₇.other t1 (by decide), u₇.other t0 (by decide), u₆.other t1 (by decide), u₆.other t0 (by decide),
@@ -256,12 +256,12 @@ theorem xtsLoad_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 0
       Foot s₀ b s s' ∧ xtsL f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
-  have hdat := hb.dat hs
-  have hscr := hb.scr hs
-  have hbase := hb.base hs
+  obtain hdat := hb.dat hs
+  obtain hscr := hb.scr hs
+  obtain hbase := hb.base hs
   obtain ⟨n1, n2, n3, -, -, n6, n7, n8, n9, n10, n11⟩ := q_c4 k hk
-  have hbl : blkLo k + 1 < 88 := by unfold blkLo; omega_using [hk]
-  have sc : ∀ {u : State}, u.wr = s.wr → u.gpr sb = s.gpr sb → Scr u X 2048 ∧ u.gpr sb = b :=
+  obtain hbl : blkLo k + 1 < 88 := by unfold blkLo; omega_using [hk]
+  obtain sc : ∀ {u : State}, u.wr = s.wr → u.gpr sb = s.gpr sb → Scr u X 2048 ∧ u.gpr sb = b :=
     fun hw hg => ⟨hscr.congr hw hg, hg.trans hbase⟩
   unfold xtsLoad
   repeat rw [WP.block_append_iff (M := isa)]
@@ -293,33 +293,33 @@ theorem xtsLoad_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 0
       u₄.other _ (Ne.symm n6), o₃ _ (Ne.symm n6) (by decide) (by decide), u₂.gpr, u₁.other _ (by decide)])
   -- The tweak times `α`.
   refine WP.mono (xtsMulA_ok scr₈ b₈) fun s₁₀ ⟨o₁₀, m₁₀, rd₁₀, wr₁₀, sp₁₀⟩ => ?_
-  have g₁₀ : ∀ r, r ≠ q k → r ≠ q (k + 4) → r ≠ t0 → r ≠ t1 → r ≠ .t2 → r ≠ .t3 → s₁₀.gpr r = s.gpr r :=
+  obtain g₁₀ : ∀ r, r ≠ q k → r ≠ q (k + 4) → r ≠ t0 → r ≠ t1 → r ≠ .t2 → r ≠ .t3 → s₁₀.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by
       rw [o₁₀ r h3 h4 h5 h6, u₈.other _ h2, o₇ _ h2 h3 h4, u₆.gpr, u₅.other _ h5, u₄.other _ h1, o₃ _ h1 h3 h4,
         u₂.gpr, u₁.other _ h5]
-  have hm₈ : s₈.mem = (s.mem.writeW (b + BitVec.ofNat 64 (8 * blkLo k))
+  obtain hm₈ : s₈.mem = (s.mem.writeW (b + BitVec.ofNat 64 (8 * blkLo k))
       (s.mem.readW (b + BitVec.ofNat 64 (8 * stLo)) 64)).writeW (b + BitVec.ofNat 64 (8 * (blkLo k + 1)))
       (s.mem.readW (b + BitVec.ofNat 64 (8 * (stLo + 1))) 64) := by
     rw [u₈.mem, m₇, u₆.mem, u₅.gpr, u₅.mem, u₄.mem, m₃, u₂.mem, u₁.gpr, u₁.mem,
       slot_writeW_ne _ _ (by omega_using [hbl]) (by decide) (by unfold blkLo stLo; omega_using [])]
-  have hA : 64 * g + 16 * k + 8 ≤ 16 * (s₀.gpr .a4).toNat := by omega_using [hkn]
-  have hA8 : 64 * g + (16 * k + 8) + 8 ≤ 16 * (s₀.gpr .a4).toNat := by omega_using [hkn]
-  have vk : s₁₀.gpr (q k) = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k)) 64 ^^^
+  obtain hA : 64 * g + 16 * k + 8 ≤ 16 * (s₀.gpr .a4).toNat := by omega_using [hkn]
+  obtain hA8 : 64 * g + (16 * k + 8) + 8 ≤ 16 * (s₀.gpr .a4).toNat := by omega_using [hkn]
+  obtain vk : s₁₀.gpr (q k) = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k)) 64 ^^^
       s.mem.readW (b + BitVec.ofNat 64 (8 * stLo)) 64 := by
     rw [o₁₀ _ (q_neW k).1 (q_neW k).2.1 (q_neW k).2.2.1 (q_neW k).2.2.2.1, u₈.other _ n3, o₇ _ n3 n8 n9, u₆.gpr,
       u₅.other _ (q_neW k).2.2.1, u₄.gpr, e₃, o₃ _ (Ne.symm (q_neW k).2.2.1) (by decide) (by decide), u₂.gpr,
       u₁.gpr, u₂.mem, u₁.mem, data_slot hs (j := blkLo k) (by omega_using [hbl]) _ hA]
-  have vk4 : s₁₀.gpr (q (k + 4)) = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8))) 64 ^^^
+  obtain vk4 : s₁₀.gpr (q (k + 4)) = s.mem.readW (s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8))) 64 ^^^
       s.mem.readW (b + BitVec.ofNat 64 (8 * (stLo + 1))) 64 := by
     rw [o₁₀ _ (q_neW (k + 4)).1 (q_neW (k + 4)).2.1 (q_neW (k + 4)).2.2.1 (q_neW (k + 4)).2.2.2.1, u₈.gpr, e₇,
       o₇ _ (Ne.symm (q_neW (k + 4)).2.2.1) (by decide) (by decide), u₆.mem, u₆.gpr, u₅.gpr, u₅.mem, u₄.mem, m₃,
       u₂.mem, u₁.mem, data_slot hs (j := blkLo k + 1) hbl _ hA8, data_slot hs (j := blkLo k) (by omega_using [hbl]) _ hA8,
       slot_writeW_ne _ _ (by omega_using [hbl]) (by decide) (by unfold blkLo stLo; omega_using [])]
-  have e₈ : EcbInv s₀.mem s₈.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat (4 * g) (xtsF f R w s₀.mem (s₀.gpr .a3) t) := by
+  obtain e₈ : EcbInv s₀.mem s₈.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat (4 * g) (xtsF f R w s₀.mem (s₀.gpr .a3) t) := by
     rw [hm₈]
     exact ecbInv_frame (slot2_frame _ _ (by omega_using [hbl]) _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hs.dScr (by unfold blkLo; omega_using [hk])) hn hd
-  have hs₈ : ∀ c, c < 4 → slotBlk s₁₀.mem b (blkLo c) = slotBlk s₈.mem b (blkLo c) := fun c hc => by
+  obtain hs₈ : ∀ c, c < 4 → slotBlk s₁₀.mem b (blkLo c) = slotBlk s₈.mem b (blkLo c) := fun c hc => by
     rw [m₁₀]; exact slot2_other _ _ (by decide) (by unfold blkLo; omega_using [hc]) (by unfold blkLo stLo; omega_using []) _ _
   refine ⟨⟨fun r h1 h2 => ?_, by rw [rd₁₀, u₈.rd, rd₇, u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd],
     by rw [wr₁₀, u₈.wr, wr₇, u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr],
@@ -362,20 +362,20 @@ theorem xtsStore_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 
       Foot s₀ b s s' ∧ xtsS f s₀.mem (s₀.gpr .a3) t R w (s₀.gpr .a4).toNat b g (k + 1) s'.mem (Q s') := by
   obtain ⟨hd, hst, hblk⟩ := hl
   have hn := hs.n16
-  have hdat := hb.dat hs
-  have hscr := hb.scr hs
-  have hbase := hb.base hs
-  have hkm : k < min 4 ((s₀.gpr .a4).toNat - 4 * g) := by omega_using [hk, hkn]
-  have hbl : blkLo k + 1 < 88 := by unfold blkLo; omega_using [hk]
+  obtain hdat := hb.dat hs
+  obtain hscr := hb.scr hs
+  obtain hbase := hb.base hs
+  obtain hkm : k < min 4 ((s₀.gpr .a4).toNat - 4 * g) := by omega_using [hk, hkn]
+  obtain hbl : blkLo k + 1 < 88 := by unfold blkLo; omega_using [hk]
   obtain ⟨-, -, -, -, -, -, -, n8, n9, n10, n11⟩ := q_c4 k hk
-  have sc : ∀ {u : State}, u.wr = s.wr → u.gpr sb = s.gpr sb → Scr u X 2048 ∧ u.gpr sb = b :=
+  obtain sc : ∀ {u : State}, u.wr = s.wr → u.gpr sb = s.gpr sb → Scr u X 2048 ∧ u.gpr sb = b :=
     fun hw hg => ⟨hscr.congr hw hg, hg.trans hbase⟩
   unfold xtsStore
   repeat rw [WP.block_append_iff (M := isa)]
   refine slot_ld hscr hbase (by omega_using [hbl]) fun s₁ u₁ => wp_xor fun s₂ u₂ => WP.block_nil ?_
-  have o₂ : ∀ r, r ≠ .t2 → s₂.gpr r = s.gpr r := fun r h => by rw [u₂.other _ h, u₁.other _ h]
-  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have x₂ : s₂.gpr .t2 = s.mem.readW (b + BitVec.ofNat 64 (8 * blkLo k)) 64 ^^^ s.gpr (q k) := by
+  obtain o₂ : ∀ r, r ≠ .t2 → s₂.gpr r = s.gpr r := fun r h => by rw [u₂.other _ h, u₁.other _ h]
+  obtain m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain x₂ : s₂.gpr .t2 = s.mem.readW (b + BitVec.ofNat 64 (8 * blkLo k)) 64 ^^^ s.gpr (q k) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (q_neW k).2.2.1]
   refine WP.mono (data_stW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k) hal (by omega_using [])
     (by rw [o₂ _ (by decide)]; exact hb.a3) (by rw [u₂.wr, u₁.wr]; exact hdat) hn (by omega_using [hkn]) (by omega_using [hk])
@@ -383,10 +383,10 @@ theorem xtsStore_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 
   obtain ⟨scr₃, b₃⟩ := sc (u := s₃) (by rw [wr₃, u₂.wr, u₁.wr]) (by
     rw [o₃ _ (by decide) (by decide), o₂ _ (by decide)])
   refine slot_ld scr₃ b₃ (by omega_using [hbl]) fun s₄ u₄ => wp_xor fun s₅ u₅ => WP.block_nil ?_
-  have o₅ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₅.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₅ : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₅.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [u₅.other _ h, u₄.other _ h, o₃ _ h0 h1, o₂ _ h]
-  have m₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
-  have x₅ : s₅.gpr .t2 = s₃.mem.readW (b + BitVec.ofNat 64 (8 * (blkLo k + 1))) 64 ^^^ s.gpr (q (k + 4)) := by
+  obtain m₅ : s₅.mem = s₃.mem := by rw [u₅.mem, u₄.mem]
+  obtain x₅ : s₅.gpr .t2 = s₃.mem.readW (b + BitVec.ofNat 64 (8 * (blkLo k + 1))) 64 ^^^ s.gpr (q (k + 4)) := by
     rw [u₅.gpr, u₄.gpr, u₄.other _ (q_neW _).2.2.1, o₃ _ n10 n11, o₂ _ (q_neW _).2.2.1]
   refine WP.mono (data_stW (D := s₀.gpr .a3) (g := g) (n := (s₀.gpr .a4).toNat) (off := 16 * k + 8) hal (by omega_using [])
     (by rw [o₅ _ (by decide) (by decide) (by decide)]; exact hb.a3)
@@ -394,33 +394,33 @@ theorem xtsStore_ok {wd : Bool} (hal : wd = true → (s₀.gpr .a3).toNat % 8 = 
     fun s₆ ⟨m₆, o₆, rd₆, wr₆, sp₆⟩ => ?_
   -- The memory: the data block.
   let A := s₀.gpr .a3 + BitVec.ofNat 64 (16 * (4 * g + k))
-  have eA : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k) = A := by
+  obtain eA : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + 16 * k) = A := by
     rw [show 64 * g + 16 * k = 16 * (4 * g + k) by omega_using []]
-  have eA8 : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8)) = A + 8 := by
+  obtain eA8 : s₀.gpr .a3 + BitVec.ofNat 64 (64 * g + (16 * k + 8)) = A + 8 := by
     rw [show 64 * g + (16 * k + 8) = 16 * (4 * g + k) + 8 by omega_using [], add_off8]
-  have fd₃ : Frame [⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩] s.mem s₃.mem := by
+  obtain fd₃ : Frame [⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩] s.mem s₃.mem := by
     rw [m₃, m₂, eA]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega_using [hkn]) (by omega_using [hkn, hn]))
-  have slot₃ : ∀ j, j < 88 → s₃.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 =
+  obtain slot₃ : ∀ j, j < 88 → s₃.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 =
       s.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 := fun j hj =>
     fd₃.readW (Region.contains_self _ _) (hs.slotW_data hj) (by decide)
-  have hm₆ : s₆.mem = (s.mem.writeW A (s₂.gpr .t2)).writeW (A + 8) (s₅.gpr .t2) := by
+  obtain hm₆ : s₆.mem = (s.mem.writeW A (s₂.gpr .t2)).writeW (A + 8) (s₅.gpr .t2) := by
     rw [m₆, m₅, m₃, m₂, eA, eA8]
-  have hv : wBlk (s₂.gpr .t2) (s₅.gpr .t2) = xtsF f R w s₀.mem (s₀.gpr .a3) t (4 * g + k) := by
+  obtain hv : wBlk (s₂.gpr .t2) (s₅.gpr .t2) = xtsF f R w s₀.mem (s₀.gpr .a3) t (4 * g + k) := by
     rw [x₂, x₅, slot₃ _ hbl, wBlk_xor]
     show vxor (slotBlk s.mem b (blkLo k)) (wBlk (Q s k) (Q s (k + 4))) = _
     rw [(hblk k hkm).1, ← regBlock_wBlk, (hblk k hkm).2 (Nat.le_refl _)]
-  have st := ecbInv_step (v₁ := s₂.gpr .t2) (v₂ := s₅.gpr .t2) (by omega_using [hn]) hkn hd (wBlk_bytes hv)
+  obtain st := ecbInv_step (v₁ := s₂.gpr .t2) (v₂ := s₅.gpr .t2) (by omega_using [hn]) hkn hd (wBlk_bytes hv)
   rw [← hm₆] at st
-  have slot₆ : ∀ j, j < 88 → s₆.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 =
+  obtain slot₆ : ∀ j, j < 88 → s₆.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 =
       s.mem.readW (b + BitVec.ofNat 64 (8 * j)) 64 := fun j hj =>
     (st.2.readW (Region.contains_self _ _) (hs.slotW_data hj) (by decide))
-  have hsl : ∀ j, j + 1 < 88 → slotBlk s₆.mem b j = slotBlk s.mem b j := fun j hj => by
+  obtain hsl : ∀ j, j + 1 < 88 → slotBlk s₆.mem b j = slotBlk s.mem b j := fun j hj => by
     unfold slotBlk; rw [slot₆ _ (by omega_using [hj]), slot₆ _ hj]
-  have o₆' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₆.gpr r = s.gpr r := fun r h h0 h1 => by
+  obtain o₆' : ∀ r, r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₆.gpr r = s.gpr r := fun r h h0 h1 => by
     rw [o₆ _ h0 h1, o₅ _ h h0 h1]
-  have hQ : ∀ c, regBlock (Q s₆) c = regBlock (Q s) c := fun c => by
+  obtain hQ : ∀ c, regBlock (Q s₆) c = regBlock (Q s) c := fun c => by
     rw [regBlock_wBlk, regBlock_wBlk]
     show wBlk (s₆.gpr (q c)) (s₆.gpr (q (c + 4))) = wBlk (s.gpr (q c)) (s.gpr (q (c + 4)))
     rw [o₆' _ (q_neW _).2.2.1 (q_neW _).1 (q_neW _).2.1, o₆' _ (q_neW _).2.2.1 (q_neW _).1 (q_neW _).2.1]

@@ -93,14 +93,14 @@ theorem absorbLengths_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv
   refine WP.seq (WP.mono (ptrs3_ok (a := 448) (b := 0) (by lit_omega) (by lit_omega) 1 s)
     fun s₁ ⟨h0, h1, h2, k₁⟩ => ?_)
   rw [h.x21] at h0 h1
-  have wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
+  obtain wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
   have m₁ := k₁.mem_eq
   refine blocks_call (n := 1) h0 h1 h2 (by lit_omega)
     (sub_disj s₀ (b := 0) (m := 16 * 1) (by lit_omega) (by lit_omega) (by lit_omega))
     (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega_using [this])
     (covers2 hp wr₁ (a := 448) (n := 128) (b := 0) (m := 16 * 1) (by lit_omega) (by lit_omega))
     (covers1 hp wr₁ (a := 448) (n := 128) (by lit_omega)) fun s₂ k₂ repr₂ => ?_
-  have hk : Kept (macR s₀) s s₂ :=
+  obtain hk : Kept (macR s₀) s s₂ :=
     (kept_mac0 k₁).trans (kept_mac (k := 448) (n := 128) (by lit_omega) (by lit_omega) k₂)
   exact ⟨mac_inv0 h hk, hk, fun key msg hr => by rw [← m₁]; exact repr₂ key msg (by rw [m₁]; exact hr)⟩
 
@@ -113,9 +113,9 @@ theorem finalizeTo_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e
   unfold finalizeTo
   refine WP.seq (WP.mono (fptrs_ok (out := out) (by lit_omega) s) fun s₁ ⟨h0, h1, h2, k₁⟩ => ?_)
   rw [h.x21] at h0 h2
-  have wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
+  obtain wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
   have m₁ := k₁.mem_eq
-  have ho : out + 16 ≤ 1280 := by omega_using [hout]
+  obtain ho : out + 16 ≤ 1280 := by omega_using [hout]
   refine finalize_call h0 h1 h2 (sub_disj s₀ (by lit_omega) (by lit_omega) ho)
     (Covers.right (covers_sub hp wr₁ _ (by
       intro r hr; simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -158,26 +158,26 @@ theorem polyIn_core {s₀ : State} (hp : APre e s₀) {s : State} (hx21 : s.gpr 
   refine wp_str (a := off (cx s₀) 40) (by decide) (by rw [g₁.gpr, hx21])
     (by rw [g₁.wr]; exact o 40 (by lit_omega)) fun s₂ g₂ => ?_
   refine wp_const64 fun s₃ u₃ => ?_
-  have x21₃ : s₃.gpr .x21 = cx s₀ := by rw [u₃.other _ (by decide), g₂.gpr, g₁.gpr, hx21]
-  have rw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, g₂.rd, g₂.wr, g₁.rd, g₁.wr]
+  obtain x21₃ : s₃.gpr .x21 = cx s₀ := by rw [u₃.other _ (by decide), g₂.gpr, g₁.gpr, hx21]
+  obtain rw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, g₂.rd, g₂.wr, g₁.rd, g₁.wr]
   refine wp_ldr (a := off (cx s₀) 472) (by decide) (by rw [x21₃]) (by rw [rw₃]; exact i 472 (by lit_omega))
     fun s₄ u₄ => ?_
   refine wp_and fun s₅ u₅ => ?_
   refine wp_str (a := off (cx s₀) 288) (by decide) (by rw [u₅.other _ (by decide), u₄.other _ (by decide), x21₃])
     (by rw [u₅.wr, u₄.wr, u₃.wr, g₂.wr, g₁.wr]; exact o 288 (by lit_omega)) fun s₆ g₆ => ?_
   refine wp_const64 fun s₇ u₇ => ?_
-  have x21₇ : s₇.gpr .x21 = cx s₀ := by
+  obtain x21₇ : s₇.gpr .x21 = cx s₀ := by
     rw [u₇.other _ (by decide), g₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), x21₃]
-  have rw₇ : s₇.rd ++ s₇.wr = s.rd ++ s.wr := by rw [u₇.rd, u₇.wr, g₆.rd, g₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, rw₃]
+  obtain rw₇ : s₇.rd ++ s₇.wr = s.rd ++ s.wr := by rw [u₇.rd, u₇.wr, g₆.rd, g₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, rw₃]
   refine wp_ldr (a := off (cx s₀) 480) (by decide) (by rw [x21₇]) (by rw [rw₇]; exact i 480 (by lit_omega))
     fun s₈ u₈ => ?_
   refine wp_and fun s₉ u₉ => ?_
   refine wp_str (a := off (cx s₀) 296) (by decide) (by rw [u₉.other _ (by decide), u₈.other _ (by decide), x21₇])
     (by rw [u₉.wr, u₈.wr, u₇.wr, g₆.wr, u₅.wr, u₄.wr, u₃.wr, g₂.wr, g₁.wr]; exact o 296 (by lit_omega))
     fun s₁₀ g₁₀ => ?_
-  have x21₁₀ : s₁₀.gpr .x21 = cx s₀ := by
+  obtain x21₁₀ : s₁₀.gpr .x21 = cx s₀ := by
     rw [g₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), x21₇]
-  have rw₁₀ : s₁₀.rd ++ s₁₀.wr = s.rd ++ s.wr := by rw [g₁₀.rd, g₁₀.wr, u₉.rd, u₉.wr, u₈.rd, u₈.wr, rw₇]
+  obtain rw₁₀ : s₁₀.rd ++ s₁₀.wr = s.rd ++ s.wr := by rw [g₁₀.rd, g₁₀.wr, u₉.rd, u₉.wr, u₈.rd, u₈.wr, rw₇]
   refine wp_ldr (a := off (cx s₀) 456) (by decide) (by rw [x21₁₀]) (by rw [rw₁₀]; exact i 456 (by lit_omega))
     fun s₁₁ u₁₁ => ?_
   refine wp_ldr (a := off (cx s₀) 464) (by decide) (by rw [u₁₁.other _ (by decide), x21₁₀])
@@ -185,18 +185,18 @@ theorem polyIn_core {s₀ : State} (hp : APre e s₀) {s : State} (hx21 : s.gpr 
   refine wp_ldr (a := off (cx s₀) 448) (by decide)
     (by rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), x21₁₀])
     (by rw [u₁₂.rd, u₁₂.wr, u₁₁.rd, u₁₁.wr, rw₁₀]; exact i 448 (by lit_omega)) fun s₁₃ u₁₃ => ?_
-  have m₂ : s₂.mem = (s.mem.writeW (off (cx s₀) 32) (s.gpr .x27)).writeW (off (cx s₀) 40) (s.gpr .x28) := by
+  obtain m₂ : s₂.mem = (s.mem.writeW (off (cx s₀) 32) (s.gpr .x27)).writeW (off (cx s₀) 40) (s.gpr .x28) := by
     rw [g₂.mem, g₁.mem, g₁.gpr]
-  have r472 : s₃.mem.readW (off (cx s₀) 472) 64 = s.mem.readW (off (cx s₀) 472) 64 := by
+  obtain r472 : s₃.mem.readW (off (cx s₀) 472) 64 = s.mem.readW (off (cx s₀) 472) 64 := by
     rw [u₃.mem, m₂, readW64_off _ _ _ (by lit_omega) (by lit_omega) (by lit_omega),
       readW64_off _ _ _ (by lit_omega) (by lit_omega) (by lit_omega)]
-  have m₆ : s₆.mem = s₂.mem.writeW (off (cx s₀) 288) (s.mem.readW (off (cx s₀) 472) 64 &&& M0) := by
+  obtain m₆ : s₆.mem = s₂.mem.writeW (off (cx s₀) 288) (s.mem.readW (off (cx s₀) 472) 64 &&& M0) := by
     rw [g₆.mem, u₅.mem, u₄.mem, u₃.mem, u₅.gpr, u₄.gpr, u₄.other _ (by decide), u₃.gpr, ← u₃.mem, r472]
-  have r480 : s₇.mem.readW (off (cx s₀) 480) 64 = s.mem.readW (off (cx s₀) 480) 64 := by
+  obtain r480 : s₇.mem.readW (off (cx s₀) 480) 64 = s.mem.readW (off (cx s₀) 480) 64 := by
     rw [u₇.mem, m₆, m₂, readW64_off _ _ _ (by lit_omega) (by lit_omega) (by lit_omega),
       readW64_off _ _ _ (by lit_omega) (by lit_omega) (by lit_omega),
       readW64_off _ _ _ (by lit_omega) (by lit_omega) (by lit_omega)]
-  have m₁₀ : s₁₀.mem = memIn s.mem (cx s₀) (s.gpr .x27) (s.gpr .x28) := by
+  obtain m₁₀ : s₁₀.mem = memIn s.mem (cx s₀) (s.gpr .x27) (s.gpr .x28) := by
     rw [g₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₉.gpr, u₈.gpr, u₈.other _ (by decide), u₇.gpr, ← u₇.mem, r480,
       u₇.mem, m₆, m₂]
     rfl
@@ -266,18 +266,18 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
       u.rd = s.rd ∧ u.wr = s.wr := by
   have o (d : Nat) (hd : d + 8 ≤ 1280) : InRegions s₀.wr (off (cx s₀) d) 8 := hp.in_ctx hd
   have i (d : Nat) (hd : d + 8 ≤ 1280) : InRegions (s₀.rd ++ s₀.wr) (off (cx s₀) d) 8 := hp.in_ctx' hd
-  have hc : off (cx s₀) 64 - BitVec.ofNat 64 64 = cx s₀ := BitVec.add_sub_cancel _ _
+  obtain hc : off (cx s₀) 64 - BitVec.ofNat 64 64 = cx s₀ := BitVec.add_sub_cancel _ _
   unfold polyOut
   simp only [List.cons_append, List.nil_append, List.append_assoc]
   refine wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => ?_
   refine WP.block_append (WP.mono (Poly1305.AArch64.Radix64.reduce_ok s₃) fun s₄ ⟨e₄, k₄⟩ => ?_)
   have g₃ (r : Reg) (h4 : r ≠ .x4) (h5 : r ≠ .x5) (h6 : r ≠ .x6) : s₃.gpr r = s.gpr r := by
     rw [u₃.other _ h6, u₂.other _ h5, u₁.other _ h4]
-  have m₄ : s₄.mem = s.mem := by rw [k₄.2.1, u₃.mem, u₂.mem, u₁.mem]
-  have rw₄ : s₄.rd = s.rd ∧ s₄.wr = s.wr := ⟨by rw [k₄.2.2.1, u₃.rd, u₂.rd, u₁.rd],
+  obtain m₄ : s₄.mem = s.mem := by rw [k₄.2.1, u₃.mem, u₂.mem, u₁.mem]
+  obtain rw₄ : s₄.rd = s.rd ∧ s₄.wr = s.wr := ⟨by rw [k₄.2.2.1, u₃.rd, u₂.rd, u₁.rd],
     by rw [k₄.2.2.2, u₃.wr, u₂.wr, u₁.wr]⟩
   refine wp_subImm (by decide) fun s₅ u₅ => ?_
-  have x21₅ : s₅.gpr .x21 = cx s₀ := by
+  obtain x21₅ : s₅.gpr .x21 = cx s₀ := by
     rw [u₅.gpr, k₄.gpr' (r := .x0), g₃ _ (by decide) (by decide) (by decide), hx0, hc]
   refine wp_str (a := off (cx s₀) 448) (by decide) (by rw [x21₅])
     (by rw [u₅.wr, rw₄.2, hwr]; exact o 448 (by lit_omega)) fun s₆ g₆ => ?_
@@ -285,10 +285,10 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     (by rw [g₆.wr, u₅.wr, rw₄.2, hwr]; exact o 456 (by lit_omega)) fun s₇ g₇ => ?_
   refine wp_str (a := off (cx s₀) 464) (by decide) (by rw [g₇.gpr, g₆.gpr, x21₅])
     (by rw [g₇.wr, g₆.wr, u₅.wr, rw₄.2, hwr]; exact o 464 (by lit_omega)) fun s₈ g₈ => ?_
-  have x21₈ : s₈.gpr .x21 = cx s₀ := by rw [g₈.gpr, g₇.gpr, g₆.gpr, x21₅]
-  have rw₈ : s₈.rd ++ s₈.wr = s₀.rd ++ s₀.wr := by
+  obtain x21₈ : s₈.gpr .x21 = cx s₀ := by rw [g₈.gpr, g₇.gpr, g₆.gpr, x21₅]
+  obtain rw₈ : s₈.rd ++ s₈.wr = s₀.rd ++ s₀.wr := by
     rw [g₈.rd, g₈.wr, g₇.rd, g₇.wr, g₆.rd, g₆.wr, u₅.rd, u₅.wr, rw₄.1, rw₄.2, hrd, hwr]
-  have m₈ : s₈.mem = Poly1305.AArch64.storeHm s.mem (off (cx s₀) 448) (s₄.gpr .x4) (s₄.gpr .x5)
+  obtain m₈ : s₈.mem = Poly1305.AArch64.storeHm s.mem (off (cx s₀) 448) (s₄.gpr .x4) (s₄.gpr .x5)
       (s₄.gpr .x6) := by
     rw [g₈.mem, g₇.mem, g₆.mem, u₅.mem, m₄, g₇.gpr, g₆.gpr, u₅.other _ (by decide),
       u₅.other _ (by decide), u₅.other _ (by decide)]
@@ -307,10 +307,10 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     (by rw [u₉.rd, u₉.wr, rw₈]; exact i 40 (by lit_omega)) fun s₁₀ u₁₀ => ?_
   have g₁₀ (r : Reg) (h27 : r ≠ .x27) (h28 : r ≠ .x28) : s₁₀.gpr r = s₈.gpr r := by
     rw [u₁₀.other _ h28, u₉.other _ h27]
-  have x12 : s₁₀.gpr .x1 = s.gpr .x1 ∧ s₁₀.gpr .x2 = s.gpr .x2 := by
+  obtain x12 : s₁₀.gpr .x1 = s.gpr .x1 ∧ s₁₀.gpr .x2 = s.gpr .x2 := by
     refine ⟨?_, ?_⟩ <;> rw [g₁₀ _ (by decide) (by decide), g₈.gpr, g₇.gpr, g₆.gpr,
       u₅.other _ (by decide), k₄.gpr', g₃ _ (by decide) (by decide) (by decide)]
-  have common : ∀ u : State, (∀ r, r ≠ .x22 → r ≠ .x23 → u.gpr r = s₁₀.gpr r) → u.mem = s₁₀.mem →
+  obtain common : ∀ u : State, (∀ r, r ≠ .x22 → r ≠ .x23 → u.gpr r = s₁₀.gpr r) → u.mem = s₁₀.mem →
       u.rd = s₁₀.rd → u.wr = s₁₀.wr →
       ((s.gpr .x23).toNat ≤ 4 → Poly1305.AArch64.Radix64.hval u = hacc s % Spec.Poly1305.P) ∧
       u.mem = Poly1305.AArch64.storeHm s.mem (off (cx s₀) 448) (u.gpr .x4) (u.gpr .x5) (u.gpr .x6) ∧
@@ -326,11 +326,11 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     refine ⟨fun h23 => ?_, ?_, ?_, ?_, ?_, fun r hr' => ?_, ?_, ?_⟩
     · have a4 : s₃.gpr .x4 = s.gpr .x21 := by
         rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
-      have a5 : s₃.gpr .x5 = s.gpr .x22 := by
+      obtain a5 : s₃.gpr .x5 = s.gpr .x22 := by
         rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)]
-      have a6 : s₃.gpr .x6 = s.gpr .x23 := by
+      obtain a6 : s₃.gpr .x6 = s.gpr .x23 := by
         rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
-      have e := e₄ (by rw [a6]; exact h23)
+      obtain e := e₄ (by rw [a6]; exact h23)
       simp only [Poly1305.AArch64.Radix64.hval, h456 .x4 (by decide), h456 .x5 (by decide),
         h456 .x6 (by decide), a4, a5, a6] at e ⊢
       exact e
@@ -340,7 +340,7 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     · rw [hu _ (by decide) (by decide), u₁₀.gpr, u₉.mem, r8 40 (by decide)]
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
       obtain ⟨h4, h5, h6, h9, h10, h11, h12, h13, h14, h21, h22, h23, h27, h28⟩ := hr'
-      have hk : r ∉ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14] := by
+      obtain hk : r ∉ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14] := by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
         exact ⟨h4, h5, h6, h9, h10, h11, h12, h13, h14⟩
       rw [hu _ h22 h23, g₁₀ _ h27 h28, g₈.gpr, g₇.gpr, g₆.gpr, u₅.other _ h21, k₄.1 r hk, g₃ _ h4 h5 h6]
@@ -405,7 +405,7 @@ theorem polyEnd_ok {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     refine VG.Proof.ChaCha20.AArch64.Xor.wp_movS fun s₃ u₃ sp₃ v₃ => WP.block_nil ?_
     have g₁ : ∀ r, r ≠ .x15 → s₁.gpr r = s.gpr r := u₁.other
     have o3 : ∀ r, r ≠ .x28 → s₃.gpr r = s₂.gpr r := u₃.other
-    have ha : hacc s₁ = hacc s := by simp only [hacc, g₁ .x21 (by decide), g₁ .x22 (by decide), g₁ .x23 (by decide)]
+    obtain ha : hacc s₁ = hacc s := by simp only [hacc, g₁ .x21 (by decide), g₁ .x22 (by decide), g₁ .x23 (by decide)]
     refine ⟨⟨fun h => ?_, ?_, by rw [o3 _ (by decide), x21], by rw [o3 _ (by decide), x27, u₁.mem], ?_,
       by rw [o3 _ (by decide), x22, g₁ _ (by decide), g₁ _ (by decide)],
       by rw [o3 _ (by decide), x23, g₁ _ (by decide), g₁ _ (by decide)], fun r hr => ?_,
@@ -418,7 +418,7 @@ theorem polyEnd_ok {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
     · show s₃.gpr .x28 = s.gpr .x4 - s.gpr .x1
       rw [u₃.gpr, g .x15 (by decide), u₁.gpr]
     · have h28 : r ≠ .x28 := fun h => hr (by subst h; simp)
-      have h15 : r ≠ .x15 := fun h => hr (by subst h; simp)
+      obtain h15 : r ≠ .x15 := fun h => hr (by subst h; simp)
       rw [o3 r h28, g r (fun hm => hr (outRegs_sub r hm)), g₁ r h15]
   · show WP isa (.block (polyOut true)) s _
     refine WP.mono (polyOut_ok hp true hx0 hrd hwr) fun u ⟨⟨hv, m, x21, x27, x28, x22, x23, g, rd, wr⟩, rest⟩ =>

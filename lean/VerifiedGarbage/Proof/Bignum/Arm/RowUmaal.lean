@@ -94,7 +94,7 @@ theorem ldr_block {t n : Reg} {k : Nat} (hk : k < 4096) {s s₁ : State} {tr : L
     InRegions (s.rd ++ s.wr) (State.addr (s.gpr n + BitVec.ofNat 32 k)) 4 ∧
       s₁ = s.setReg t (s.mem.readW (State.addr (s.gpr n + BitVec.ofNat 32 k)) 32) ∧
       tr = [.addr (State.addr (s.gpr n + BitVec.ofNat 32 k))] := by
-  have h := Exec.block_iff.mp h
+  obtain h := Exec.block_iff.mp h
   by_cases hr : InRegions (s.rd ++ s.wr) (State.addr (s.gpr n + BitVec.ofNat 32 k)) 4
   · simp only [execBlock, isa, exec, hk, ↓reduceIte, State.load32, hr, Option.map_some, addrs,
       Option.some.injEq, Prod.mk.injEq, List.map_cons, List.map_nil, List.append_nil] at h
@@ -106,7 +106,7 @@ theorem str_block {t n : Reg} {k : Nat} (hk : k < 4096) {s s₁ : State} {tr : L
     InRegions s.wr (State.addr (s.gpr n + BitVec.ofNat 32 k)) 4 ∧
       s₁ = { s with mem := s.mem.writeW (State.addr (s.gpr n + BitVec.ofNat 32 k)) (s.gpr t) } ∧
       tr = [.addr (State.addr (s.gpr n + BitVec.ofNat 32 k))] := by
-  have h := Exec.block_iff.mp h
+  obtain h := Exec.block_iff.mp h
   by_cases hr : InRegions s.wr (State.addr (s.gpr n + BitVec.ofNat 32 k)) 4
   · simp only [execBlock, isa, exec, hk, ↓reduceIte, State.store32, hr, Option.map_some, addrs,
       Option.some.injEq, Prod.mk.injEq, List.map_cons, List.map_nil, List.append_nil] at h
@@ -198,10 +198,10 @@ theorem rowMac_ok (s : State)
   apply WP.block_append_iff.mpr
   refine WP.mono (addWord_ok s .r5 (by omega_using [h])) ?_
   rintro u ⟨sum, fu⟩
-  have c11 : u.gpr .r11 = s.gpr .r11 := fu.regs .r11 (by decide)
+  obtain c11 : u.gpr .r11 = s.gpr .r11 := fu.regs .r11 (by decide)
   refine WP.mono (addCarry_ok u (by rw [sum, c11]; omega_using [h])) ?_
   rintro t ⟨sum', ft⟩
-  have r4 : t.gpr .r4 = u.gpr .r4 := ft.regs .r4 (by decide)
+  obtain r4 : t.gpr .r4 = u.gpr .r4 := ft.regs .r4 (by decide)
   refine ⟨⟨u.gpr .r3, by rw [r4, sum], by rw [sum', r4, c11]⟩, ?_⟩
   exact (fu.mono (by decide)).trans (ft.mono (by decide))
 
@@ -222,55 +222,55 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
   obtain ⟨s₄, t₄, t₅, e₄, e₅, rfl⟩ := seq_inv h₃
   obtain ⟨hr₁, rfl, rfl⟩ := ldr_block hk e₁
   -- `rowProduct`
-  have p1 : (s.setReg .r2 (inW k s)).gpr .r1 = x &&& mask16 := by
+  obtain p1 : (s.setReg .r2 (inW k s)).gpr .r1 = x &&& mask16 := by
     simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h1
-  have p10 : (s.setReg .r2 (inW k s)).gpr .r10 = x >>> 16 := by
+  obtain p10 : (s.setReg .r2 (inW k s)).gpr .r10 = x >>> 16 := by
     simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h10
-  have p9 : (s.setReg .r2 (inW k s)).gpr .r9 = mask16 := by
+  obtain p9 : (s.setReg .r2 (inW k s)).gpr .r9 = mask16 := by
     simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]; exact h9
   obtain ⟨_, _, w₂, prod, f₂⟩ := rowProduct_ok _ x p1 p10 p9
   rw [(Exec.det w₂ e₂).2] at prod f₂
   obtain ⟨_, _, w₂', v2, v6, v7⟩ := rowProduct_regs (s.setReg .r2 (inW k s))
   rw [(Exec.det w₂' e₂).2] at v2 v6 v7
-  have t₂0 : t₂ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₂)
+  obtain t₂0 : t₂ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₂)
   subst t₂0
-  have g0 : s₂.gpr .r0 = s.gpr .r0 := by
+  obtain g0 : s₂.gpr .r0 = s.gpr .r0 := by
     rw [f₂.regs .r0 (by decide)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
   have m₂ : s₂.mem = s.mem := f₂.mem
   -- the accumulator word
   obtain ⟨hr₃, rfl, rfl⟩ := ldr_block hk e₃
   -- `addWord r5 ++ addCarry`
   let s₃ := s₂.setReg .r5 (s₂.mem.readW (State.addr (s₂.gpr .r0 + BitVec.ofNat 32 k)) 32)
-  have a3 : s₃.gpr .r5 = accW k s := by
+  obtain a3 : s₃.gpr .r5 = accW k s := by
     simp only [s₃, gpr_setReg, ↓reduceIte, g0, m₂, accW]
-  have c3 : s₃.gpr .r11 = s.gpr .r11 := by
+  obtain c3 : s₃.gpr .r11 = s.gpr .r11 := by
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [f₂.regs .r11 (by decide)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
-  have p3 : (s₃.gpr .r3).toNat + (s₃.gpr .r4).toNat * 2 ^ 32 = (inW k s).toNat * x.toNat := by
+  obtain p3 : (s₃.gpr .r3).toNat + (s₃.gpr .r4).toNat * 2 ^ 32 = (inW k s).toNat * x.toNat := by
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [prod, Nat.mul_comm]; simp only [gpr_setReg, ↓reduceIte]
-  have hb := mac_bound (inW k s) x (accW k s) (s.gpr .r11)
+  obtain hb := mac_bound (inW k s) x (accW k s) (s.gpr .r11)
   obtain ⟨_, _, w₄, ⟨lo, sumA, sumC⟩, f₄⟩ := rowMac_ok s₃ (by rw [p3, a3, c3]; omega_using [hb])
   rw [(Exec.det w₄ e₄).2] at sumA sumC f₄
-  have t₄0 : t₄ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₄)
+  obtain t₄0 : t₄ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₄)
   subst t₄0
-  have g40 : s₄.gpr .r0 = s.gpr .r0 := by
+  obtain g40 : s₄.gpr .r0 = s.gpr .r0 := by
     rw [f₄.regs .r0 (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]; exact g0
   obtain ⟨hw₅, rfl, rfl⟩ := str_block hk e₅
-  have lo3 : s₄.gpr .r3 = BitVec.ofNat 32 (stepSum k x s) := by
+  obtain lo3 : s₄.gpr .r3 = BitVec.ofNat 32 (stepSum k x s) := by
     refine toNat_lo (hi := s₄.gpr .r11) ?_
     rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
-  have hi11 : s₄.gpr .r11 = BitVec.ofNat 32 (stepSum k x s / 2 ^ 32) := by
+  obtain hi11 : s₄.gpr .r11 = BitVec.ofNat 32 (stepSum k x s / 2 ^ 32) := by
     refine toNat_hi (lo := s₄.gpr .r3) ?_
     rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
-  have hi4 : s₄.gpr .r4 = BitVec.ofNat 32
+  obtain hi4 : s₄.gpr .r4 = BitVec.ofNat 32
       (((inW k s).toNat * x.toNat + (0 : BitVec 32).toNat + (accW k s).toNat) / 2 ^ 32) := by
     refine toNat_hi (lo := lo) ?_
     rw [sumA, p3, a3]; simp
-  have keep : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r11 →
+  obtain keep : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r11 →
       s₄.gpr r = s.gpr r := by
     intro r h2 h3 h4 h5 h6 h7 h11
-    have e4 := f₄.regs r (by simp [h3, h4, h11])
+    obtain e4 := f₄.regs r (by simp [h3, h4, h11])
     rw [e4]
     simp only [s₃, gpr_setReg, h5, ↓reduceIte]
     by_cases h8 : r = .r8
@@ -279,17 +279,17 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
       simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [f₂.regs r (by simp [h2, h3, h4, h5, h6, h7, h8])]
     simp only [gpr_setReg, h2, ↓reduceIte]
-  have k5 : s₄.gpr .r5 = accW k s := by rw [f₄.regs _ (by decide)]; exact a3
-  have k2 : s₄.gpr .r2 = inW k s &&& mask16 := by
+  obtain k5 : s₄.gpr .r5 = accW k s := by rw [f₄.regs _ (by decide)]; exact a3
+  obtain k2 : s₄.gpr .r2 = inW k s &&& mask16 := by
     rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v2, p9]; simp only [gpr_setReg, ↓reduceIte]
-  have k6 : s₄.gpr .r6 = inW k s >>> 16 := by
+  obtain k6 : s₄.gpr .r6 = inW k s >>> 16 := by
     rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v6]; simp only [gpr_setReg, ↓reduceIte]
-  have k7 : s₄.gpr .r7 = (x &&& mask16) * (inW k s >>> 16) := by
+  obtain k7 : s₄.gpr .r7 = (x &&& mask16) * (inW k s >>> 16) := by
     rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v7, p1]; simp only [gpr_setReg, ↓reduceIte]
-  have wr₄ : s₄.wr = s.wr := by rw [f₄.wr]; exact f₂.wr
+  obtain wr₄ : s₄.wr = s.wr := by rw [f₄.wr]; exact f₂.wr
   refine ⟨by simp [g0, g40], hr₁, by rw [g40, wr₄] at hw₅; exact hw₅, ?_⟩
   refine ⟨funext fun r => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · change s₄.gpr r = _
@@ -331,7 +331,7 @@ theorem rowStepU_exec {k : Nat} (hk : k < 4096) (n : State)
     execBlock isa (rowStepU k) n = some (stepNew k n,
       [.addr (State.addr (n.gpr .r12 + BitVec.ofNat 32 k)), .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)),
         .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 k))]) := by
-  have hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)) 4 := by
+  obtain hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)) 4 := by
     obtain ⟨R, hR, hc⟩ := hw; exact ⟨R, List.mem_append_right _ hR, hc⟩
   simp only [rowStepU, execBlock, isa, exec, hk, ↓reduceIte, State.load32, State.store32, Op2.eval,
     gpr_setReg, reduceCtorEq, rd_setReg, wr_setReg, mem_setReg, hr, hr0, hw, Option.map_some, addrs,
@@ -371,7 +371,7 @@ theorem rowFirstU_exec (n : State)
     execBlock isa rowFirstU n = some ((stepNew 0 n).setReg .r5 (n.gpr .r5),
       [.addr (State.addr (n.gpr .r12 + BitVec.ofNat 32 0)), .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)),
         .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 0))]) := by
-  have hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)) 4 := by
+  obtain hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)) 4 := by
     obtain ⟨R, hR, hc⟩ := hw; exact ⟨R, List.mem_append_right _ hR, hc⟩
   simp only [rowFirstU, execBlock, isa, exec,
     show (0 < 4096) = True by decide, ↓reduceIte, State.load32, State.store32,
@@ -417,7 +417,7 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
   obtain ⟨o₁, t₀, r, e₀, h₁, rfl⟩ := seq_inv h
   obtain ⟨o₂, t₄, ta, e₄, ea, rfl⟩ := seq_inv h₁
   obtain ⟨rfl, rd₀, wr₀, nf₀⟩ := rowStepAt_fwd (k := 0) (by decide) h1 h10 h9 e₀
-  have g₁ : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r11 →
+  obtain g₁ : ∀ r, r ≠ .r2 → r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r11 →
       o₁.gpr r = o.gpr r := by
     intro r h2 h3 h4 h5 h6 h7 h11
     rw [nf₀.gpr]; simp only [stepOld, gpr_setReg, h2, h3, h4, h5, h6, h7, h11, ↓reduceIte]
@@ -425,32 +425,32 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
     (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h1])
     (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h10])
     (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h9]) e₄
-  have ea' := Exec.block_iff.mp ea
+  obtain ea' := Exec.block_iff.mp ea
   rw [advance_noFlags (nf₄.trans (stepOld_noFlags nf₀)), advState_exec] at ea'
   simp only [Option.some.injEq, Prod.mk.injEq] at ea'
   obtain ⟨rfl, rfl⟩ := ea'
-  have r0 : o.gpr .r0 = n.gpr .r0 := ag.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have r12 : o.gpr .r12 = n.gpr .r12 := ag.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have o₁r0 : o₁.gpr .r0 = o.gpr .r0 :=
+  obtain r0 : o.gpr .r0 = n.gpr .r0 := ag.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain r12 : o.gpr .r12 = n.gpr .r12 := ag.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain o₁r0 : o₁.gpr .r0 = o.gpr .r0 :=
     g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have o₁r12 : o₁.gpr .r12 = o.gpr .r12 :=
+  obtain o₁r12 : o₁.gpr .r12 = o.gpr .r12 :=
     g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have o₁rd : o₁.rd = o.rd := nf₀.rd
   have o₁wr : o₁.wr = o.wr := nf₀.wr
-  have nr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r12 + 0)) 4 := by
+  obtain nr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r12 + 0)) 4 := by
     rw [← r12, ← ag.rd, ← ag.wr]; exact rd₀
-  have nw0 : InRegions n.wr (State.addr (n.gpr .r0 + 0)) 4 := by
+  obtain nw0 : InRegions n.wr (State.addr (n.gpr .r0 + 0)) 4 := by
     rw [← r0, ← ag.wr]; exact wr₀
-  have nr4 : InRegions ((stepNew 0 n).rd ++ (stepNew 0 n).wr)
+  obtain nr4 : InRegions ((stepNew 0 n).rd ++ (stepNew 0 n).wr)
       (State.addr ((stepNew 0 n).gpr .r12 + 4#32)) 4 := by
       simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, rd_setReg, wr_setReg]
       rw [← r12, ← ag.rd, ← ag.wr, ← o₁r12, ← o₁rd, ← o₁wr]; exact rd₄
-  have nw4 : InRegions (stepNew 0 n).wr
+  obtain nw4 : InRegions (stepNew 0 n).wr
       (State.addr ((stepNew 0 n).gpr .r0 + 4#32)) 4 := by
       simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, wr_setReg]
       rw [← r0, ← ag.wr, ← o₁r0, ← o₁wr]; exact wr₄
-  have n0 := rowFirstU_exec n nr0 nw0
-  have n4 := rowStepU_exec (k := 4) (by decide) ((stepNew 0 n).setReg .r5 (n.gpr .r5))
+  obtain n0 := rowFirstU_exec n nr0 nw0
+  obtain n4 := rowStepU_exec (k := 4) (by decide) ((stepNew 0 n).setReg .r5 (n.gpr .r5))
     (by simpa only [rd_setReg, wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nr4)
     (by simpa only [wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nw4)
   rw [stepNew_set5] at n4
@@ -460,15 +460,15 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
     simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, o₁r0, o₁r12, r0, r12, List.append_nil,
       List.cons_append, List.nil_append]
   · have kept : ∀ r, r ≠ .r2 → r ≠ .r4 → r ≠ .r6 → r ≠ .r7 → r ≠ .r9 → o.gpr r = n.gpr r := ag.gpr
-    have r1 := kept .r1 (by decide) (by decide) (by decide) (by decide) (by decide)
-    have r8 := kept .r8 (by decide) (by decide) (by decide) (by decide) (by decide)
-    have r10 := kept .r10 (by decide) (by decide) (by decide) (by decide) (by decide)
-    have r11 := kept .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
-    have rlr := kept .lr (by decide) (by decide) (by decide) (by decide) (by decide)
+    obtain r1 := kept .r1 (by decide) (by decide) (by decide) (by decide) (by decide)
+    obtain r8 := kept .r8 (by decide) (by decide) (by decide) (by decide) (by decide)
+    obtain r10 := kept .r10 (by decide) (by decide) (by decide) (by decide) (by decide)
+    obtain r11 := kept .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
+    obtain rlr := kept .lr (by decide) (by decide) (by decide) (by decide) (by decide)
     subst hx
-    have hn1 : n.gpr .r1 = n.gpr .r9 &&& mask16 := r1 ▸ h1
-    have gs : ∀ (s : State) (a b : BitVec 32), (subFlags s a b).gpr = s.gpr := fun _ _ _ => rfl
-    have ms : ∀ (s : State) (a b : BitVec 32), (subFlags s a b).mem = s.mem := fun _ _ _ => rfl
+    obtain hn1 : n.gpr .r1 = n.gpr .r9 &&& mask16 := r1 ▸ h1
+    obtain gs : ∀ (s : State) (a b : BitVec 32), (subFlags s a b).gpr = s.gpr := fun _ _ _ => rfl
+    obtain ms : ∀ (s : State) (a b : BitVec 32), (subFlags s a b).mem = s.mem := fun _ _ _ => rfl
     refine NoFlags.eq ⟨funext fun r => ?_, ag.sp.symm, ?_, ag.rd.symm, ag.wr.symm, ag.unknowns.symm,
       ag.syms.symm⟩ ?_ ?_ ?_ ?_
     · cases r <;> simp only [endState, advState, stepNew, stepOld, stepSum, inW, accW, gs, gpr_setReg,
@@ -526,17 +526,17 @@ theorem rowLoopU_sim {x : BitVec 32} {s s' : State} {t : List Leak}
     (h1 : s.gpr .r1 = x &&& mask16) (h10 : s.gpr .r10 = x >>> 16) (h9 : s.gpr .r9 = mask16)
     (h : Exec isa rowLoop2 s t s') : Exec isa rowLoopU s t s' := by
   let n := s.setReg .r9 (s.gpr .r1 ||| (s.gpr .r10 <<< 16))
-  have ej : Exec isa (.block rowUJoin) s [] n := by
+  obtain ej : Exec isa (.block rowUJoin) s [] n := by
     refine Exec.block_iff.mpr ?_
     simp only [rowUJoin, execBlock, isa, exec, Op2.eval, show (1 ≤ 16 ∧ 16 ≤ 31) = True by decide,
       ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil]
     rfl
-  have hx : n.gpr .r9 = x := by
+  obtain hx : n.gpr .r9 = x := by
     simp only [n, gpr_setReg, ↓reduceIte, h1, h10]; exact join16 x
-  have ag : Agree s n := ⟨fun r _ _ _ _ h9' => by simp only [n, gpr_setReg, h9', ↓reduceIte],
+  obtain ag : Agree s n := ⟨fun r _ _ _ _ h9' => by simp only [n, gpr_setReg, h9', ↓reduceIte],
     rfl, rfl, rfl, rfl, rfl, rfl⟩
   obtain ⟨n', e', rfl⟩ := loop_sim h ag h1 h10 h9 hx
-  have ee : Exec isa (.block rowUEnd) n' [] (endState n') := Exec.block_iff.mpr (rowUEnd_exec n')
+  obtain ee : Exec isa (.block rowUEnd) n' [] (endState n') := Exec.block_iff.mpr (rowUEnd_exec n')
   have := Exec.seq ej (Exec.seq e' ee)
   rwa [List.nil_append, List.append_nil] at this
 
@@ -549,7 +549,7 @@ theorem row_sim : Sim (M := isa) row rowU := by
   obtain ⟨s₂, t₂, r₂, e₂, h₂, rfl⟩ := seq_inv h₁
   obtain ⟨s₃, t₃, r₃, e₃, h₃, rfl⟩ := seq_inv h₂
   obtain ⟨s₄, t₄, t₅, e₄, e₅, rfl⟩ := seq_inv h₃
-  have wp : WP isa (.block (rowSplit ++ rowParity)) s fun u =>
+  obtain wp : WP isa (.block (rowSplit ++ rowParity)) s fun u =>
       u.gpr .r1 = s.gpr .r1 &&& mask16 ∧ u.gpr .r10 = s.gpr .r1 >>> 16 ∧ u.gpr .r9 = mask16 := by
     apply WP.block_append_iff.mpr
     refine WP.mono (rowSplit_ok s) ?_
@@ -561,11 +561,11 @@ theorem row_sim : Sim (M := isa) row rowU := by
     exact ⟨a, b, c⟩
   obtain ⟨_, _, w, a1, a10, a9⟩ := wp
   rw [(Exec.det w e₁).2] at a1 a10 a9
-  have k2 : ∀ r, r = .r1 ∨ r = .r10 ∨ r = .r9 → s₃.gpr r = s₁.gpr r := by
+  obtain k2 : ∀ r, r = .r1 ∨ r = .r10 ∨ r = .r9 → s₃.gpr r = s₁.gpr r := by
     rintro r hr
     rw [VG.Arm.Exec.gpr (fun i hi => by rcases hr with rfl | rfl | rfl <;> revert i hi <;> decide) e₃,
       VG.Arm.Exec.gpr (fun i hi => by rcases hr with rfl | rfl | rfl <;> revert i hi <;> decide) e₂]
-  have E₄ : Exec isa (.ite .ne rowLoopU (.block [])) s₃ t₄ s₄ := by
+  obtain E₄ : Exec isa (.ite .ne rowLoopU (.block [])) s₃ t₄ s₄ := by
     cases e₄ with
     | iteT hc e =>
       exact .iteT hc (rowLoopU_sim (by rw [k2 _ (.inl rfl), a1]) (by rw [k2 _ (.inr (.inl rfl)), a10])

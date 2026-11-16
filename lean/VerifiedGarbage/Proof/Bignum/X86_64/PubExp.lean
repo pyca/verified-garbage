@@ -27,10 +27,10 @@ def expPhaseRanges (w : Nat) : List (Nat × Nat) := (slot w aXm, 8 * (w + 2)) ::
 theorem expPhaseRanges_arr (w : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aY)
     (h4 : j ≠ aXm) : ∀ r ∈ expPhaseRanges w, slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
   have := hdr_lt_slot w j (show 31 < 32 by decide)
-  have s1 := slot_sep (w := w) h1
-  have s2 := slot_sep (w := w) h2
-  have s3 := slot_sep (w := w) h3
-  have s4 := slot_sep (w := w) h4
+  obtain s1 := slot_sep (w := w) h1
+  obtain s2 := slot_sep (w := w) h2
+  obtain s3 := slot_sep (w := w) h3
+  obtain s4 := slot_sep (w := w) h4
   have := hj
   simp only [expPhaseRanges, expRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega_arith
@@ -52,8 +52,8 @@ theorem mmN_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
       wv t'.mem B (slot w o) w < N ∧
       wv t'.mem B (slot w o) w * 2 ^ (64 * w) % N = wv t.mem B (slot w a) w * wv t.mem B (slot w b) w % N ∧
       Arrays B w [aAcc, aTmp, o] t.mem t'.mem ∧ Keep mmRegs t t' := by
-  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
-  have hnm : aN ∉ [aAcc, aTmp, o] := by
+  obtain hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
+  obtain hnm : aN ∉ [aAcc, aTmp, o] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨by decide, by decide, Ne.symm d5⟩
   refine WP.mono (M.mm_ok hg hZ hw hw' ho ha hb d1 d2 d3 d4 hinv (by rw [hn]; exact hB) d6 d7)
     fun t' ⟨hg', hlt', hm, hA, k⟩ => ?_
@@ -92,15 +92,15 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
     WP isa (seqs expSteps) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aY) w = X ^ Spec.Rsa.os2ip eb % N ∧
       Frm B (expPhaseRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
-  have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
+  obtain hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
+  obtain hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
   unfold expSteps
   -- `Y := R`.
   refine WP.seq (WP.mono (mmN_ok Mont.base (o := aY) (a := aR2) (b := aOne) hg hZ hw hw' (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hn hinv (by rw [hone]; exact hN1))
     fun t₁ ⟨hg₁, hn₁, hinv₁, hlt₁, hm₁, ha₁, k₁⟩ => ?_)
-  have f₁ := Frm.ep_of_arrays ha₁ (by simp)
-  have hY₁ : wv t₁.mem B (slot w aY) w % N = 2 ^ (64 * w) % N := by
+  obtain f₁ := Frm.ep_of_arrays ha₁ (by simp)
+  obtain hY₁ : wv t₁.mem B (slot w aY) w % N = 2 ^ (64 * w) % N := by
     apply VG.Proof.Bignum.mont_cancel hR
     rw [hm₁, hone, Nat.mul_one, hr2]
   -- `X := x R`.
@@ -108,29 +108,29 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hn₁ hinv₁
     (by rw [f₁.ep_wv hn' (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hlt2))
     fun t₂ ⟨hg₂, hn₂, hinv₂, hlt₂, hm₂, ha₂, k₂⟩ => ?_)
-  have f₂ := Frm.ep_of_arrays ha₂ (by simp)
+  obtain f₂ := Frm.ep_of_arrays ha₂ (by simp)
   rw [f₁.ep_wv hn' (by decide) (by decide) (by decide) (by decide) (by decide),
     f₁.ep_wv hn' (by decide) (by decide) (by decide) (by decide) (by decide), hX] at hm₂
-  have hX₂ : wv t₂.mem B (slot w aXm) w % N = X * 2 ^ (64 * w) % N := by
+  obtain hX₂ : wv t₂.mem B (slot w aXm) w % N = X * 2 ^ (64 * w) % N := by
     apply VG.Proof.Bignum.mont_cancel hR
     rw [hm₂, Nat.mul_mod, hr2, ← Nat.mul_mod, Nat.mul_assoc]
-  have hY₂ : wv t₂.mem B (slot w aY) w = wv t₁.mem B (slot w aY) w :=
+  obtain hY₂ : wv t₂.mem B (slot w aY) w = wv t₁.mem B (slot w aY) w :=
     ha₂.wv_of_not_mem (by decide) (by decide) hn'
   -- The exponentiation.
-  have f₁₂ := f₁.trans f₂
-  have hs₂ : ∀ i < 32, i ≠ sI → i ≠ sV → i ≠ sBit → word t₂.mem B (8 * i) = word s.mem B (8 * i) :=
+  obtain f₁₂ := f₁.trans f₂
+  obtain hs₂ : ∀ i < 32, i ≠ sI → i ≠ sV → i ≠ sBit → word t₂.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi h0 h1 h2 => f₁₂.ep_hdr hi h0 h1 h2
-  have hin₂ : InScr B Z s.mem t₂.mem :=
+  obtain hin₂ : InScr B Z s.mem t₂.mem :=
     InScr.of_frm f₁₂ fun r hr => Nat.le_trans (expPhaseRanges_le w r hr) hZ
-  have heb₂ := heb.congrK hin₂ (k₁.trans k₂)
+  obtain heb₂ := heb.congrK hin₂ (k₁.trans k₂)
   refine WP.seq (WP.mono (expLoop_ok (x := X) (Y := wv t₂.mem B (slot w aY) w) ⟨hg₂, hn₂, hinv₂, rfl⟩ hZ hw hw' hR
     hlt₂ hX₂ rfl (by rw [hY₂]; exact hlt₁) (by rw [hY₂]; exact hY₁)
     (by rw [hs₂ sE (by decide) (by decide) (by decide) (by decide)]; exact he)
     (by rw [hs₂ sElen (by decide) (by decide) (by decide) (by decide)]; exact hlen)
     hL hL1 hL' (fun i hi => heb₂.rd i (by omega_using [hL, hi])) (fun i hi => heb₂.val i (by omega_using [hL, hi]))
     (fun i hi => heb₂.out i (by omega_using [hL, hi]))) fun t₃ ⟨hc₃, ⟨Y₃, hY₃, hYN₃, hYc₃⟩, f₃, k₃⟩ => ?_)
-  have f₃' : Frm B (expPhaseRanges w) t₂.mem t₃.mem := f₃.mono fun r hr => List.mem_cons_of_mem _ hr
-  have f₁₃ := f₁₂.trans f₃'
+  obtain f₃' : Frm B (expPhaseRanges w) t₂.mem t₃.mem := f₃.mono fun r hr => List.mem_cons_of_mem _ hr
+  obtain f₁₃ := f₁₂.trans f₃'
   -- `Y R⁻¹`.
   refine WP.mono (mmN_ok Mont.base (o := aY) (a := aY) (b := aOne) hc₃.good hZ hw hw' (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc₃.n hc₃.inv
@@ -139,7 +139,7 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
       (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   rw [f₁₃.ep_wv (j := aOne) hn' (by decide) (by decide) (by decide) (by decide) (by decide), hone, Nat.mul_one,
     hY₃] at hm₄
-  have hc : wv t.mem B (slot w aY) w % N = X ^ Spec.Rsa.os2ip eb % N := by
+  obtain hc : wv t.mem B (slot w aY) w % N = X ^ Spec.Rsa.os2ip eb % N := by
     apply VG.Proof.Bignum.mont_cancel hR
     rw [hm₄, hYc₃]
   rw [← hc, Nat.mod_eq_of_lt hlt₄]
