@@ -70,7 +70,7 @@ def Ready (s : State) (B : Addr) (k : Spec.Seed.Schedule) : Prop :=
 
 theorem dirCipher_bytes (d : Direction) (k : Spec.Seed.Schedule) (m : Mem) (p : Addr) :
     dirCipher d k (Spec.Aes.bytesAt m p 16) = (cipher d k (Spec.Seed.blockAt m p)).toList := by
-  have h : (Vector.ofFn fun i : Fin 16 => (Spec.Aes.bytesAt m p 16).getD i.val 0) = Spec.Seed.blockAt m p := by
+  obtain h : (Vector.ofFn fun i : Fin 16 => (Spec.Aes.bytesAt m p 16).getD i.val 0) = Spec.Seed.blockAt m p := by
     ext i hi; simp [Spec.Aes.bytesAt, Spec.Seed.blockAt]
   cases d <;> simp only [dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, cipher, h]
 
@@ -94,7 +94,7 @@ theorem ready_frame {d : Direction} {s s' : State} {B : Addr} {k : Spec.Seed.Sch
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B))
     (_ : WrIn rs s s') (hg : ∀ r, r ∉ Proof.Modes.X86_64.modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready s' B k := by
   obtain ⟨hk, hst, hsd⟩ := h
-  have hsp : s'.gpr .rsp = s.gpr .rsp := hg .rsp (by simp only [Proof.Modes.X86_64.modeRegs, dirCore]; decide)
+  obtain hsp : s'.gpr .rsp = s.gpr .rsp := hg .rsp (by simp only [Proof.Modes.X86_64.modeRegs, dirCore]; decide)
   refine ⟨?_, by rw [hsp]; exact hst, by rw [hsp]; exact hsd⟩
   rw [scheduleAt_frame hf fun r hr => ?_]
   · exact hk
@@ -106,7 +106,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Seed.Schedule}
     (hr : ∀ r ∈ [Reg.rdi, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
     (hf : Frame rs s.mem s'.mem) : ModeKeyArgs s' rs k := by
   obtain ⟨p, hp, hk, hin, hfit, hdis, hst, hsd⟩ := h
-  have hsp : s'.gpr .rsp = s.gpr .rsp := hr .rsp (by simp)
+  obtain hsp : s'.gpr .rsp = s.gpr .rsp := hr .rsp (by simp)
   refine ⟨p, by rw [hr .rdi (by simp), hp], ?_, by rw [hrd]; exact hin, hfit, hdis, by rw [hsp]; exact hst,
     by rw [hsp]; exact hsd⟩
   rw [hk]
@@ -121,14 +121,14 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   obtain ⟨p, hp, rfl, hin, hfit, hdis, hst, hsd⟩ := hk
   have hfB := hs.fit
   rw [total_eq] at hfB
-  have hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 1536⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]))
+  obtain hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 1536⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]))
   refine WP.mono (copyN_wp (k := 16) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp, by decide,
     by decide, fun w hw => ⟨_, hs.wr, by
       rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot, bufSlot]; omega_using [hw])
         (by simp only [schedSlot, bufSlot]; omega_using [hw])⟩,
     fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
     (hsep.sub_right (Offset.sub_base B (by decide))).symm, by omega_using []⟩) fun s' h => ?_
-  have hsp : s'.gpr .rsp = s.gpr .rsp := h.regs .rsp (by decide)
+  obtain hsp : s'.gpr .rsp = s.gpr .rsp := h.regs .rsp (by decide)
   refine ⟨⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega_using [])], by rw [hsp]; exact hst,
       by rw [hsp, ← total_eq d]; exact hsd _ hR⟩,
     by rw [h.regs _ (by decide), hB], hsp, h.regs _ (by decide), h.regs _ (by decide), ?_, h.rd, h.wr⟩
@@ -164,15 +164,15 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
   obtain ⟨s₁, e₁, x₁, g₁, m₁, rd₁, wr₁⟩ := Modes.X86_64.movqX_ok s .xmm12 sb
   obtain ⟨s₂, e₂, x₂, g₂, m₂, rd₂, wr₂⟩ := Modes.X86_64.movqX_ok s₁ .xmm13 .r12
   obtain ⟨s₃, e₃, x₃, g₃, m₃, rd₃, wr₃⟩ := Modes.X86_64.movqX_ok s₂ .xmm14 .r13
-  have x₃₁₂ : s₃.xmm .xmm12 = (0 : BitVec 64) ++ s.gpr sb := by
+  obtain x₃₁₂ : s₃.xmm .xmm12 = (0 : BitVec 64) ++ s.gpr sb := by
     have h₂ : some (s₁.setXmm .xmm13 ((0 : BitVec 64) ++ s₁.gpr .r12)) = some s₂ := e₂
     have h₃ : some (s₂.setXmm .xmm14 ((0 : BitVec 64) ++ s₂.gpr .r13)) = some s₃ := e₃
     rw [← Option.some.inj h₃, RegUpd.xmm_setXmm_of_ne _ _ (by decide), ← Option.some.inj h₂,
       RegUpd.xmm_setXmm_of_ne _ _ (by decide), x₁]
-  have x₃₁₃ : s₃.xmm .xmm13 = (0 : BitVec 64) ++ s.gpr .r12 := by
+  obtain x₃₁₃ : s₃.xmm .xmm13 = (0 : BitVec 64) ++ s.gpr .r12 := by
     have h₃ : some (s₂.setXmm .xmm14 ((0 : BitVec 64) ++ s₂.gpr .r13)) = some s₃ := e₃
     rw [← Option.some.inj h₃, RegUpd.xmm_setXmm_of_ne _ _ (by decide), x₂, g₁]
-  have x₃₁₄ : s₃.xmm .xmm14 = (0 : BitVec 64) ++ s.gpr .r13 := by rw [x₃, g₂, g₁]
+  obtain x₃₁₄ : s₃.xmm .xmm14 = (0 : BitVec 64) ++ s.gpr .r13 := by rw [x₃, g₂, g₁]
   -- The arguments: `rdi`, `rsi`, `rdx` and `rcx` to the schedule's copy, the buffer, its sixteen blocks and
   -- the working space.
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := movR_ok s₃ .rdi sb
@@ -181,23 +181,23 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
   obtain ⟨s₇, e₇, r₇, o₇, m₇, rd₇, wr₇⟩ := addImm_ok s₆ .rsi (BitVec.ofNat 32 (8 * bufSlot))
   obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈⟩ := movImm_ok s₇ .rdx 16
   obtain ⟨s₉, e₉, r₉, o₉, m₉, rd₉, wr₉⟩ := movR_ok s₈ .rcx sb
-  have g₉ : ∀ x, x ≠ .rdi → x ≠ .rsi → x ≠ .rdx → x ≠ .rcx → s₉.gpr x = s.gpr x := fun x h1 h2 h3 h4 => by
+  obtain g₉ : ∀ x, x ≠ .rdi → x ≠ .rsi → x ≠ .rdx → x ≠ .rcx → s₉.gpr x = s.gpr x := fun x h1 h2 h3 h4 => by
     rw [o₉ x h4, o₈ x h3, o₇ x h2, o₆ x h2, o₅ x h1, o₄ x h1, g₃, g₂, g₁]
-  have sb₃ : s₃.gpr sb = B := by rw [g₃, g₂, g₁, hB]
-  have rdi₉ : s₉.gpr .rdi = schedAddr B := by
+  obtain sb₃ : s₃.gpr sb = B := by rw [g₃, g₂, g₁, hB]
+  obtain rdi₉ : s₉.gpr .rdi = schedAddr B := by
     rw [o₉ _ (by decide), o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), r₅, r₄, sb₃,
       signExtend_small (by decide)]
-  have rsi₉ : s₉.gpr .rsi = bufAt B := by
+  obtain rsi₉ : s₉.gpr .rsi = bufAt B := by
     rw [o₉ _ (by decide), o₈ _ (by decide), r₇, r₆, o₅ _ (by decide), o₄ _ (by decide), sb₃,
       signExtend_small (by decide)]
-  have rdx₉ : s₉.gpr .rdx = 16 := by rw [o₉ _ (by decide), r₈]
-  have rcx₉ : s₉.gpr .rcx = B := by
+  obtain rdx₉ : s₉.gpr .rdx = 16 := by rw [o₉ _ (by decide), r₈]
+  obtain rcx₉ : s₉.gpr .rcx = B := by
     rw [r₉, o₈ _ (by decide), o₇ _ (by decide), o₆ _ (by decide), o₅ _ (by decide), o₄ _ (by decide), sb₃]
-  have rsp₉ : s₉.gpr .rsp = s.gpr .rsp := g₉ _ (by decide) (by decide) (by decide) (by decide)
-  have mem₉ : s₉.mem = s.mem := by rw [m₉, m₈, m₇, m₆, m₅, m₄, m₃, m₂, m₁]
-  have rd₉' : s₉.rd = s.rd := by rw [rd₉, rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁]
-  have wr₉' : s₉.wr = s.wr := by rw [wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]
-  have xmm₉ : s₉.xmm = s₃.xmm := by
+  obtain rsp₉ : s₉.gpr .rsp = s.gpr .rsp := g₉ _ (by decide) (by decide) (by decide) (by decide)
+  obtain mem₉ : s₉.mem = s.mem := by rw [m₉, m₈, m₇, m₆, m₅, m₄, m₃, m₂, m₁]
+  obtain rd₉' : s₉.rd = s.rd := by rw [rd₉, rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁]
+  obtain wr₉' : s₉.wr = s.wr := by rw [wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]
+  obtain xmm₉ : s₉.xmm = s₃.xmm := by
     rw [Modes.X86_64.runBlock_vec (by decide) e₉, Modes.X86_64.runBlock_vec (by decide) e₈,
       Modes.X86_64.runBlock_vec (by decide) e₇, Modes.X86_64.runBlock_vec (by decide) e₆,
       Modes.X86_64.runBlock_vec (by decide) e₅, Modes.X86_64.runBlock_vec (by decide) e₄]
@@ -212,13 +212,13 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
       runBlock_app, e₇, Option.bind_some, runBlock_app, e₈, Option.bind_some, e₉], ?_⟩)
   -- The call.
   have stS : Region.Disjoint (stkRegion (s.gpr .rsp) 8) ⟨B, 1536⟩ := hsd
-  have sub : ∀ off len, off + len ≤ 1536 → ∃ r' ∈ s₉.wr, ∃ o,
+  obtain sub : ∀ off len, off + len ≤ 1536 → ∃ r' ∈ s₉.wr, ∃ o,
       (B + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + len ≤ r'.len :=
     fun off len h => ⟨_, by rw [wr₉']; exact hw, off, rfl, h⟩
-  have sub0 : ∃ r' ∈ s₉.wr, ∃ o, B = r'.base + BitVec.ofNat 64 o ∧ o + 1088 ≤ r'.len := by
+  obtain sub0 : ∃ r' ∈ s₉.wr, ∃ o, B = r'.base + BitVec.ofNat 64 o ∧ o + 1088 ≤ r'.len := by
     obtain ⟨r', h1, o, h2, h3⟩ := sub 0 1088 (by decide)
     exact ⟨r', h1, o, by rw [← h2]; exact (BitVec.add_zero B).symm, h3⟩
-  have w : WP isa (blockCall d) s₉ fun s' => (s'.rd = s₉.rd ∧ s'.wr = s₉.wr ∧
+  obtain w : WP isa (blockCall d) s₉ fun s' => (s'.rd = s₉.rd ∧ s'.wr = s₉.wr ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s₉.gpr r) ∧
       Frame [⟨bufAt B, 256⟩, ⟨B, 1088⟩, stkRegion (s.gpr .rsp) 8] s₉.mem s'.mem ∧
       Spec.Seed.blocksAt s'.mem (bufAt B) 16 =
@@ -232,7 +232,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
       (fun s' hrd hwr hcs hf _ hpost => ?_)
     · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, abi, argRegs]
       rw [rdi₉, rsi₉, rdx₉, rcx₉, rsp₉, show (16 : BitVec 64).toNat * 16 = 256 from rfl]
-      have hfit : ∀ off, off < 1536 → (B + BitVec.ofNat 64 off).toNat = B.toNat + off := fun off h => by
+      obtain hfit : ∀ off, off < 1536 → (B + BitVec.ofNat 64 off).toNat = B.toNat + off := fun off h => by
         rw [Offset.toNat_add_ofNat]; omega_using [hfB, h]
       refine ⟨rfl, rfl, sched_buf B, sched_work B, Offset.disjoint_base B (by decide) (by decide),
         stS.sub_right (Offset.sub_base B (by decide)), stS.sub_right (Offset.sub_base B (by decide)),
@@ -256,7 +256,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
       refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
       sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs] at hpost
       rw [BitVec.setWidth_eq, rdi₉, rsi₉, rdx₉, show (16 : BitVec 64).toNat = 16 from rfl] at hpost
-      have hfr := callEntry_frame' s₉
+      obtain hfr := callEntry_frame' s₉
       rw [State.callEntry_mem, rsp₉] at hfr
       rw [rsp₉] at hpost
       rw [← hm₂, hpost, Proof.Seed.scheduleAt_frame hfr (p := schedAddr B) fun r hr => by
@@ -273,11 +273,11 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
   refine WP.of_runBlock ⟨u₃, by
     rw [show cryptTail = [.movqR sb .xmm12] ++ ([.movqR .r12 .xmm13] ++ [.movqR .r13 .xmm14]) from rfl,
       runBlock_app, q₁, Option.bind_some, runBlock_app, q₂, Option.bind_some, q₃], ?_⟩
-  have xx : u₂.xmm = s₃.xmm := by rw [xu₂, xu₁, xmm₁₀, xmm₉]
-  have mu : u₃.mem = s₁₀.mem := by rw [n₃, n₂, n₁]
-  have rspu : u₃.gpr .rsp = s.gpr .rsp := by
+  obtain xx : u₂.xmm = s₃.xmm := by rw [xu₂, xu₁, xmm₁₀, xmm₉]
+  obtain mu : u₃.mem = s₁₀.mem := by rw [n₃, n₂, n₁]
+  obtain rspu : u₃.gpr .rsp = s.gpr .rsp := by
     rw [p₃ _ (by decide), p₂ _ (by decide), p₁ _ (by decide), cs₁₀ .rsp (by decide), rsp₉]
-  have fsched : ∀ r ∈ [(⟨bufAt B, 256⟩ : Region), ⟨B, 1088⟩, stkRegion (s.gpr .rsp) 8],
+  obtain fsched : ∀ r ∈ [(⟨bufAt B, 256⟩ : Region), ⟨B, 1088⟩, stkRegion (s.gpr .rsp) 8],
       Region.Disjoint ⟨schedAddr B, 128⟩ r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -300,7 +300,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
     · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · have hj16 : j < 16 := by simp only [dirCore] at hj; exact hj
-    have ea : blkAddr (dirCore d) B j = bufAt B + BitVec.ofNat 64 (16 * j) := by
+    obtain ea : blkAddr (dirCore d) B j = bufAt B + BitVec.ofNat 64 (16 * j) := by
       rw [blkAddr, bufAt, Offset.add_add]; simp only [dirCore, bufSlot]
     rw [dirCore_bw, show 8 * 2 = 16 from rfl, ea, dirCipher_bytes, bytesAt_eq, mu,
       blockAt_of_ecb res₁₀ hj16, mem₉, hk]

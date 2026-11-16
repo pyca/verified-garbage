@@ -42,12 +42,12 @@ abbrev wRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r12,
 
 theorem wbody_run (s : State) : ∃ t, runBlock isa wbody s = some t ∧ win t = wstep (win s) ∧
     t.gpr .r6 = s.gpr .r6 - 1 ∧ t.z = ((s.gpr .r6 - 1) &&& 31 == 0) ∧ Rest wRegs s t ∧ t.mem = s.mem := by
-  have e1 : encodable 1 = true := by decide
-  have e2 : encodable 2 = true := by decide
-  have e31 : encodable 31 = true := by decide
-  have e0 : encodable 0 = true := by decide
-  have s1 : (1 ≤ 1 ∧ 1 ≤ 31) = True := by decide
-  have s31 : (1 ≤ 31 ∧ 31 ≤ 31) = True := by decide
+  obtain e1 : encodable 1 = true := by decide
+  obtain e2 : encodable 2 = true := by decide
+  obtain e31 : encodable 31 = true := by decide
+  obtain e0 : encodable 0 = true := by decide
+  obtain s1 : (1 ≤ 1 ∧ 1 ≤ 31) = True := by decide
+  obtain s31 : (1 ≤ 31 ∧ 31 ≤ 31) = True := by decide
   obtain ⟨t, run⟩ : ∃ t, runBlock isa wbody s = some t := ⟨_, by
     simp only [wbody, wstepI, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
       reduceExec, Op2.eval, Option.map_some, e0, e1, e2, e31, s1, s31, ↓reduceIte]
@@ -60,7 +60,7 @@ theorem wbody_run (s : State) : ∃ t, runBlock isa wbody s = some t ∧ win t =
   · simp only [win, wstep, subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte, sub_shl1]
   · simp only [subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte]
   · simp only [subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte]
-    have z0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by simp
+    obtain z0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by simp
     rw [z0]
   · simp only [wRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h0, h1, h2, h3, h4, h5, h6, h10, h11, h12, hl⟩ := hr
@@ -91,10 +91,10 @@ theorem wloop_ok (s : State) {b : Nat} (hb : 32 * b + 30 < 2 ^ 32)
   rintro n t ⟨j, hjn, hn, hw, hr6, hr, hm⟩
   obtain ⟨u, run, w', r6', z', ru, mu⟩ := wbody_run t
   refine WP.of_runBlock ⟨u, run, ?_⟩
-  have e := ofNat_sub_one_and31 (j := j) (by omega_using [hjn, hn]) hb
+  obtain e := ofNat_sub_one_and31 (j := j) (by omega_using [hjn, hn]) hb
   rw [hr6, e.1] at r6'
   rw [hr6, e.1, e.2] at z'
-  have wu : win u = wsteps (j + 1) (win s) := by rw [w', hw, wsteps_succ]
+  obtain wu : win u = wsteps (j + 1) (win s) := by rw [w', hw, wsteps_succ]
   by_cases hd : j + 1 = 30
   · left
     refine ⟨by change some (!u.z) = some false; simp [z', hd], ?_, ?_, hr.trans ru, by rw [mu, hm]⟩
@@ -132,19 +132,19 @@ theorem wload_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk s B Z W k N
     WP isa (.block wload) s fun t => win t = win0 s.mem B W ∧ t.gpr .r6 = BitVec.ofNat 32 (32 * b + 30) ∧
       t.mem = s.mem ∧ Rest wRegs s t ∧ Gk t B Z W k N := by
   have hz := h.hdr_le
-  have fF := h.arr_fit (j := bF) (Nat.lt_of_lt_of_le (by decide) hN)
-  have fG := h.arr_fit (j := bG) (Nat.lt_of_lt_of_le (by decide) hN)
+  obtain fF := h.arr_fit (j := bF) (Nat.lt_of_lt_of_le (by decide) hN)
+  obtain fG := h.arr_fit (j := bG) (Nat.lt_of_lt_of_le (by decide) hN)
   have hS : S W = 4 * (W + 2) := rfl
   simp only [wload, List.append_assoc, List.cons_append, List.nil_append]
   refine h.ptr_ok (r := .r12) (j := bF) (by decide) (by decide) fun s1 p1 r1 m1 h1 => ?_
   refine wp_ldr (by decide) (h1.arrAddr (j := bF) (Nat.lt_of_lt_of_le (by decide) hN) (d := 0)
     (by simpa using p1) (by omega_using [hS])) (h1.read (by omega_using [fF, hS])) fun s2 u2 => ?_
-  have h2 : Gk s2 B Z W k N := h1.rest (u2.rest (ws := [.r1]) (by simp))
+  obtain h2 : Gk s2 B Z W k N := h1.rest (u2.rest (ws := [.r1]) (by simp))
   refine h2.ptr_ok (r := .r12) (j := bG) (by decide) (by decide) fun s3 p3 r3 m3 h3 => ?_
   refine wp_ldr (by decide) (h3.arrAddr (j := bG) (Nat.lt_of_lt_of_le (by decide) hN) (d := 0)
     (by simpa using p3) (by omega_using [hS])) (h3.read (by omega_using [fG, hS])) fun s4 u4 => ?_
-  have h4 : Gk s4 B Z W k N := h3.rest (u4.rest (ws := [.r2]) (by simp))
-  have hsl : sOdd + 4 ≤ hdr := by decide
+  obtain h4 : Gk s4 B Z W k N := h3.rest (u4.rest (ws := [.r2]) (by simp))
+  obtain hsl : sOdd + 4 ≤ hdr := by decide
   refine wp_ldr (a := off (State.addr B) sOdd) (by decide) (h4.slotAddr (by omega_using [hz, hsl])) (h4.read (by omega_using [hz, hsl]))
     fun s5 u5 => ?_
   refine wp_mov (op2_imm (by decide)) fun s6 u6 => ?_
@@ -152,9 +152,9 @@ theorem wload_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk s B Z W k N
   refine wp_mov (op2_imm (by decide)) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun s9 u9 => ?_
   refine wp_dp (op2_imm (by decide)) fun t u10 => WP.block_nil ?_
-  have mt : t.mem = s.mem := by
+  obtain mt : t.mem = s.mem := by
     rw [u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, m3, u2.mem, m1]
-  have rt : Rest wRegs s t := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((r3.mono (by simp)).trans
+  obtain rt : Rest wRegs s t := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((r3.mono (by simp)).trans
     ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans ((u6.rest (by simp)).trans ((u7.rest (by simp)).trans
       ((u8.rest (by simp)).trans ((u9.rest (by simp)).trans (u10.rest (by simp))))))))))
   refine ⟨?_, ?_, mt, rt, h.rest rt⟩
@@ -188,46 +188,46 @@ theorem wstore_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk s B Z W k 
       bw t.mem B (arr W 1 + 8) = s.gpr .r5 ∧ bw t.mem B (arr W 3) = s.gpr .r10 ∧ Rest [.r12] s t ∧
       Gk t B Z W k N := by
   have hz := h.hdr_le
-  have f1 := h.arr_fit (j := 1) (by omega_using [hN])
-  have f3 := h.arr_fit (j := 3) (by omega_using [hN])
-  have a13 := arr_end (w := W) (show 1 < 3 by decide)
-  have h0 : hdr ≤ arr W 1 := Nat.le_add_right _ _
+  obtain f1 := h.arr_fit (j := 1) (by omega_using [hN])
+  obtain f3 := h.arr_fit (j := 3) (by omega_using [hN])
+  obtain a13 := arr_end (w := W) (show 1 < 3 by decide)
+  obtain h0 : hdr ≤ arr W 1 := Nat.le_add_right _ _
   have hN64 := h.nowrap
   have hS : S W = 4 * (W + 2) := rfl
-  have hW : 1 ≤ W := Nat.le_trans h.kpos h.kle
+  obtain hW : 1 ≤ W := Nat.le_trans h.kpos h.kle
   simp only [wstore, cU, cV, cQ, cR, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_str (a := off (State.addr B) sOdd) (by decide) (h.slotAddr (by simp only [sOdd, hdr] at *; omega_using [hz]))
     (h.write (by simp only [sOdd, hdr] at *; omega_using [hz])) fun s1 u1 => ?_
-  have h1 : Gk s1 B Z W k N := h.rest (u1.rest [])
+  obtain h1 : Gk s1 B Z W k N := h.rest (u1.rest [])
   refine h1.ptr_ok (r := .r12) (j := 1) (by decide) (by decide) fun s2 p2 r2 m2 h2 => ?_
   refine wp_str (by decide) (h2.arrAddr (r := .r12) (o := 0) (j := 1) (by omega_using [hN]) (d := 0) (by simpa using p2)
     (by omega_using [hS])) (h2.write (by omega_using [f1, hS])) fun s3 u3 => ?_
-  have h3 : Gk s3 B Z W k N := h2.rest (u3.rest [])
-  have p3 : s3.gpr .r12 = B + BitVec.ofNat 32 (arr W 1 + 0) := by rw [u3.gpr]; simpa using p2
+  obtain h3 : Gk s3 B Z W k N := h2.rest (u3.rest [])
+  obtain p3 : s3.gpr .r12 = B + BitVec.ofNat 32 (arr W 1 + 0) := by rw [u3.gpr]; simpa using p2
   refine wp_str (by decide) (h3.arrAddr (r := .r12) (o := 4) (j := 1) (by omega_using [hN]) (d := 0) p3 (by omega_using [hS]))
     (h3.write (by omega_using [f1, hS])) fun s4 u4 => ?_
-  have h4 : Gk s4 B Z W k N := h3.rest (u4.rest [])
-  have p4 : s4.gpr .r12 = B + BitVec.ofNat 32 (arr W 1 + 0) := by rw [u4.gpr]; exact p3
+  obtain h4 : Gk s4 B Z W k N := h3.rest (u4.rest [])
+  obtain p4 : s4.gpr .r12 = B + BitVec.ofNat 32 (arr W 1 + 0) := by rw [u4.gpr]; exact p3
   refine wp_str (by decide) (h4.arrAddr (r := .r12) (o := 8) (j := 1) (by omega_using [hN]) (d := 0) p4 (by omega_using [hS, hW]))
     (h4.write (by omega_using [f3, a13, hS])) fun s5 u5 => ?_
-  have h5 : Gk s5 B Z W k N := h4.rest (u5.rest [])
+  obtain h5 : Gk s5 B Z W k N := h4.rest (u5.rest [])
   refine h5.ptr_ok (r := .r12) (j := 3) (by decide) (by decide) fun s6 p6 r6 m6 h6 => ?_
   refine wp_str (by decide) (h6.arrAddr (r := .r12) (o := 0) (j := 3) (by omega_using [hN]) (d := 0) (by simpa using p6)
     (by omega_using [hS])) (h6.write (by omega_using [f3, hS])) fun t u7 => WP.block_nil ?_
   simp only [Nat.add_zero] at u3 u4 u5 u7
-  have g : ∀ r, r ≠ .r12 → s6.gpr r = s.gpr r := fun r hr => by
+  obtain g : ∀ r, r ≠ .r12 → s6.gpr r = s.gpr r := fun r hr => by
     rw [r6.gpr r (by simpa using hr), u5.gpr, u4.gpr, u3.gpr, r2.gpr r (by simpa using hr), u1.gpr]
-  have g4 : ∀ r, r ≠ .r12 → s4.gpr r = s.gpr r := fun r hr => by
+  obtain g4 : ∀ r, r ≠ .r12 → s4.gpr r = s.gpr r := fun r hr => by
     rw [u4.gpr, u3.gpr, r2.gpr r (by simpa using hr), u1.gpr]
-  have g3 : ∀ r, r ≠ .r12 → s3.gpr r = s.gpr r := fun r hr => by
+  obtain g3 : ∀ r, r ≠ .r12 → s3.gpr r = s.gpr r := fun r hr => by
     rw [u3.gpr, r2.gpr r (by simpa using hr), u1.gpr]
-  have g2 : ∀ r, r ≠ .r12 → s2.gpr r = s.gpr r := fun r hr => by rw [r2.gpr r (by simpa using hr), u1.gpr]
-  have ht : t.mem = ((((s.mem.writeW (off (State.addr B) sOdd) (s.gpr .r0)).writeW (off (State.addr B) (arr W 1))
+  obtain g2 : ∀ r, r ≠ .r12 → s2.gpr r = s.gpr r := fun r hr => by rw [r2.gpr r (by simpa using hr), u1.gpr]
+  obtain ht : t.mem = ((((s.mem.writeW (off (State.addr B) sOdd) (s.gpr .r0)).writeW (off (State.addr B) (arr W 1))
       (s.gpr .r3)).writeW (off (State.addr B) (arr W 1 + 4)) (s.gpr .r4)).writeW
       (off (State.addr B) (arr W 1 + 8)) (s.gpr .r5)).writeW (off (State.addr B) (arr W 3)) (s.gpr .r10) := by
     rw [u7.mem, m6, u5.mem, u4.mem, u3.mem, m2, u1.mem, g .r10 (by decide), g4 .r5 (by decide),
       g3 .r4 (by decide), g2 .r3 (by decide)]
-  have hsO : sOdd + 4 ≤ hdr := by decide
+  obtain hsO : sOdd + 4 ≤ hdr := by decide
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, h.rest (ws := [.r12]) ?_⟩
   · rw [ht]
     generalize s.gpr .r0 = v0
@@ -235,11 +235,11 @@ theorem wstore_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk s B Z W k 
     generalize s.gpr .r4 = v4
     generalize s.gpr .r5 = v5
     generalize s.gpr .r10 = v10
-    have o1 : ∀ (m : Mem) (v : BitVec 32) (d : Nat) (j : Nat), d + 4 ≤ S W → j ∈ [1, 3] →
+    obtain o1 : ∀ (m : Mem) (v : BitVec 32) (d : Nat) (j : Nat), d + 4 ≤ S W → j ∈ [1, 3] →
         arr W j + d + 4 ≤ 2 ^ 64 →
         Keep B W [1, 3] [sOdd] m (m.writeW (off (State.addr B) (arr W j + d)) v) :=
       fun m v d j hd hj fit => Keep.of_arr (o := j) (d := d) (writeW32_outside m _ v fit) hd hj
-    have o1' : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j ∈ [1, 3] → arr W j + 4 ≤ 2 ^ 64 →
+    obtain o1' : ∀ (m : Mem) (v : BitVec 32) (j : Nat), j ∈ [1, 3] → arr W j + 4 ≤ 2 ^ 64 →
         Keep B W [1, 3] [sOdd] m (m.writeW (off (State.addr B) (arr W j)) v) :=
       fun m v j hj fit => o1 m v 0 j (by omega_using [hS]) hj fit
     exact ((((keep_write _ _ (by simp) (by omega_using [hz, hN64, hsO])).trans (o1' _ _ 1 (by simp) (by omega_using [f1, hN64]))).trans
@@ -273,7 +273,7 @@ theorem divsteps_ok {s : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk s B Z W 
   refine WP.mono (wload_ok h hN h6) fun s1 ⟨w1, r61, m1, rr1, g1⟩ => ?_
   rw [WP.seq_iff]
   refine WP.mono (wloop_ok s1 hb r61) fun s2 ⟨w2, r62, rr2, m2⟩ => ?_
-  have g2 : Gk s2 B Z W k N := g1.rest rr2
+  obtain g2 : Gk s2 B Z W k N := g1.rest rr2
   refine WP.mono (wstore_ok g2 hN) fun t ⟨kt, d, u, v, q, r, rt, gt⟩ => ?_
   rw [w1] at w2
   rw [m2, m1] at kt
@@ -303,7 +303,7 @@ theorem Mat.keep {m m' : Mem} {B : BitVec 32} {W : Nat} {u v q r : Int} {js : Li
     (k : Keep B W js [] m m') (hj : ∀ j ∈ js, j ≠ 1 ∧ j ≠ 3) (hW : 1 ≤ W) (f1 : arr W 1 + S W ≤ 2 ^ 64)
     (f3 : arr W 3 + S W ≤ 2 ^ 64) : Mat m' B W u v q r := by
   have hS : S W = 4 * (W + 2) := rfl
-  have e : ∀ (c : Coef), (c.arr = 1 ∨ c.arr = 3) → c.off + 4 ≤ S W →
+  obtain e : ∀ (c : Coef), (c.arr = 1 ∨ c.arr = 3) → c.off + 4 ≤ S W →
       bw m' B (arr W c.arr + c.off) = bw m B (arr W c.arr + c.off) := fun c hc ho => by
     apply BitVec.eq_of_toNat_eq
     have := Keep.aw k (j := c.arr) ho (fun x hx => by rcases hc with h | h <;> rw [h] <;> simp [hj x hx])

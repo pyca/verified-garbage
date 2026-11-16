@@ -75,48 +75,48 @@ abbrev q11 (D : BitVec 128) : BitVec 128 :=
 /-- `q11`: the number whose 88 bits are the four pairs. -/
 theorem toNat_q11 {D : BitVec 128} {p : Nat → Nat} (hp : ∀ i < 4, (dword D i).toNat = p i)
     (hlt : ∀ i < 4, p i < 2 ^ 22) : (q11 D).toNat = p 0 + 2 ^ 22 * p 1 + 2 ^ 44 * (p 2 + 2 ^ 22 * p 3) := by
-  have b0 := hlt 0 (by decide); have b1 := hlt 1 (by decide); have b2 := hlt 2 (by decide)
-  have b3 := hlt 3 (by decide)
-  have h0 : (dword (VVarOp.eval .vpsllvd D s10) 0).toNat = p 0 * 2 ^ 10 := by
+  obtain b0 := hlt 0 (by decide); have b1 := hlt 1 (by decide); have b2 := hlt 2 (by decide)
+  obtain b3 := hlt 3 (by decide)
+  obtain h0 : (dword (VVarOp.eval .vpsllvd D s10) 0).toNat = p 0 * 2 ^ 10 := by
     rw [dword_sllv _ _ (by decide), show (dword s10 0).toNat = 10 from rfl, itT (by decide), BitVec.toNat_shiftLeft,
       Nat.shiftLeft_eq, hp 0 (by decide)]
     exact Nat.mod_eq_of_lt (by omega_arith)
-  have h1 : (dword (VVarOp.eval .vpsllvd D s10) 1).toNat = p 1 := by
+  obtain h1 : (dword (VVarOp.eval .vpsllvd D s10) 1).toNat = p 1 := by
     rw [dword_sllv _ _ (by decide), show (dword s10 1).toNat = 0 from rfl, itT (by decide), BitVec.shiftLeft_zero,
       hp 1 (by decide)]
-  have h2 : (dword (VVarOp.eval .vpsllvd D s10) 2).toNat = p 2 * 2 ^ 10 := by
+  obtain h2 : (dword (VVarOp.eval .vpsllvd D s10) 2).toNat = p 2 * 2 ^ 10 := by
     rw [dword_sllv _ _ (by decide), show (dword s10 2).toNat = 10 from rfl, itT (by decide), BitVec.toNat_shiftLeft,
       Nat.shiftLeft_eq, hp 2 (by decide)]
     exact Nat.mod_eq_of_lt (by omega_arith)
-  have h3 : (dword (VVarOp.eval .vpsllvd D s10) 3).toNat = p 3 := by
+  obtain h3 : (dword (VVarOp.eval .vpsllvd D s10) 3).toNat = p 3 := by
     rw [dword_sllv _ _ (by decide), show (dword s10 3).toNat = 0 from rfl, itT (by decide), BitVec.shiftLeft_zero,
       hp 3 (by decide)]
   dsimp only [q11]
   generalize VVarOp.eval .vpsllvd D s10 = A at h0 h1 h2 h3
-  have a0 : (qword A 0).toNat = 2 ^ 10 * (p 0 + 2 ^ 22 * p 1) := by rw [toNat_qword0, h0, h1]; omega_arith
-  have a1 : (qword A 1).toNat = 2 ^ 10 * (p 2 + 2 ^ 22 * p 3) := by rw [toNat_qword1, h2, h3]; omega_arith
-  have l0 : p 0 + 2 ^ 22 * p 1 < 2 ^ 44 := by omega_arith
-  have l1 : p 2 + 2 ^ 22 * p 3 < 2 ^ 44 := by omega_arith
+  obtain a0 : (qword A 0).toNat = 2 ^ 10 * (p 0 + 2 ^ 22 * p 1) := by rw [toNat_qword0, h0, h1]; omega_arith
+  obtain a1 : (qword A 1).toNat = 2 ^ 10 * (p 2 + 2 ^ 22 * p 3) := by rw [toNat_qword1, h2, h3]; omega_arith
+  obtain l0 : p 0 + 2 ^ 22 * p 1 < 2 ^ 44 := by omega_arith
+  obtain l1 : p 2 + 2 ^ 22 * p 3 < 2 ^ 44 := by omega_arith
   generalize p 0 + 2 ^ 22 * p 1 = Q₀ at a0 l0 ⊢
   generalize p 2 + 2 ^ 22 * p 3 = Q₁ at a1 l1 ⊢
-  have eV : VVarOp.eval .vpsrlvq A v1030 = (qword A 1 >>> 30) ++ (qword A 0 >>> 10) := by
+  obtain eV : VVarOp.eval .vpsrlvq A v1030 = (qword A 1 >>> 30) ++ (qword A 0 >>> 10) := by
     simp only [VVarOp.eval, show (qword v1030 0).toNat = 10 from rfl, show (qword v1030 1).toNat = 30 from rfl,
       show 10 < 64 by decide, show 30 < 64 by decide, ↓reduceIte]
-  have eB0 : (qword (XShiftOp.eval .psllq (XShiftOp.eval .psrldq A 8) 34) 0).toNat =
+  obtain eB0 : (qword (XShiftOp.eval .psllq (XShiftOp.eval .psrldq A 8) 34) 0).toNat =
       (qword A 1).toNat * 2 ^ 34 % 2 ^ 64 := by
     rw [psrldq8]
     simp only [XShiftOp.eval, show (34 : BitVec 8).toNat = 34 from rfl, show ¬ 63 < 34 by decide, ↓reduceIte,
       qword_app0, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, toNat_qword0, toNat_qword1, dword_ofDwords_0,
       dword_ofDwords_1]
-  have eB1 : (qword (XShiftOp.eval .psllq (XShiftOp.eval .psrldq A 8) 34) 1).toNat = 0 := by
+  obtain eB1 : (qword (XShiftOp.eval .psllq (XShiftOp.eval .psrldq A 8) 34) 1).toNat = 0 := by
     rw [psrldq8]
     simp only [XShiftOp.eval, show (34 : BitVec 8).toNat = 34 from rfl, show ¬ 63 < 34 by decide, ↓reduceIte,
       qword_app1, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, toNat_qword1, dword_ofDwords_2, dword_ofDwords_3,
       show (0 : BitVec 32).toNat = 0 from rfl]
   generalize XShiftOp.eval .psllq (XShiftOp.eval .psrldq A 8) 34 = Y at eB0 eB1
-  have m1 : 2 ^ 10 * Q₁ * 2 ^ 34 % 2 ^ 64 = 2 ^ 44 * (Q₁ % 2 ^ 20) := by omega_arith
-  have m2 : 2 ^ 10 * Q₁ / 2 ^ 30 = Q₁ / 2 ^ 20 := by omega_arith
-  have m3 : 2 ^ 10 * Q₀ / 2 ^ 10 = Q₀ := by omega_arith
+  obtain m1 : 2 ^ 10 * Q₁ * 2 ^ 34 % 2 ^ 64 = 2 ^ 44 * (Q₁ % 2 ^ 20) := by omega_arith
+  obtain m2 : 2 ^ 10 * Q₁ / 2 ^ 30 = Q₁ / 2 ^ 20 := by omega_arith
+  obtain m3 : 2 ^ 10 * Q₀ / 2 ^ 10 = Q₀ := by omega_arith
   rw [toNat_qwords, eV]
   simp only [XBinOp.eval, qword_app0, qword_app1, BitVec.toNat_add, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow, a0, a1, eB0, eB1, m1, m2, m3]
@@ -131,22 +131,22 @@ theorem pack11 {D₀ D₁ : BitVec 128} {p p' : Nat → Nat} (hp : ∀ i < 4, (d
       2 ^ 88 * (p' 0 + 2 ^ 22 * p' 1 + 2 ^ 44 * (p' 2 + 2 ^ 22 * p' 3))) :
     XBinOp.eval .por (q11 D₀) (XShiftOp.eval .pslldq (q11 D₁) 11) = BitVec.ofNat 128 V ∧
       (XShiftOp.eval .psrldq (q11 D₁) 5).extractLsb' 0 64 = BitVec.ofNat 64 (V / 2 ^ 128) := by
-  have eA := toNat_q11 hp hlt
-  have eB := toNat_q11 hp' hlt'
-  have c0 := hlt 0 (by decide); have c1 := hlt 1 (by decide); have c2 := hlt 2 (by decide)
-  have c3 := hlt 3 (by decide); have d0 := hlt' 0 (by decide); have d1 := hlt' 1 (by decide)
-  have d2 := hlt' 2 (by decide); have d3 := hlt' 3 (by decide)
-  have hA : p 0 + 2 ^ 22 * p 1 + 2 ^ 44 * (p 2 + 2 ^ 22 * p 3) < 2 ^ 88 := by omega_arith
-  have hN : p' 0 + 2 ^ 22 * p' 1 + 2 ^ 44 * (p' 2 + 2 ^ 22 * p' 3) < 2 ^ 88 := by omega_arith
+  obtain eA := toNat_q11 hp hlt
+  obtain eB := toNat_q11 hp' hlt'
+  obtain c0 := hlt 0 (by decide); have c1 := hlt 1 (by decide); have c2 := hlt 2 (by decide)
+  obtain c3 := hlt 3 (by decide); have d0 := hlt' 0 (by decide); have d1 := hlt' 1 (by decide)
+  obtain d2 := hlt' 2 (by decide); have d3 := hlt' 3 (by decide)
+  obtain hA : p 0 + 2 ^ 22 * p 1 + 2 ^ 44 * (p 2 + 2 ^ 22 * p 3) < 2 ^ 88 := by omega_arith
+  obtain hN : p' 0 + 2 ^ 22 * p' 1 + 2 ^ 44 * (p' 2 + 2 ^ 22 * p' 3) < 2 ^ 88 := by omega_arith
   generalize q11 D₀ = E₀ at eA
   generalize q11 D₁ = E₁ at eB
   generalize p 0 + 2 ^ 22 * p 1 + 2 ^ 44 * (p 2 + 2 ^ 22 * p 3) = A at hV eA hA
   generalize p' 0 + 2 ^ 22 * p' 1 + 2 ^ 44 * (p' 2 + 2 ^ 22 * p' 3) = N at hV eB hN
-  have eS : (XShiftOp.eval .pslldq E₁ 11).toNat = 2 ^ 88 * (N % 2 ^ 40) := by
+  obtain eS : (XShiftOp.eval .pslldq E₁ 11).toNat = 2 ^ 88 * (N % 2 ^ 40) := by
     simp only [XShiftOp.eval, show (11 : BitVec 8).toNat = 11 from rfl, show min 11 16 * 8 = 88 from rfl,
       BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, eB]
     omega_arith
-  have eR : (XShiftOp.eval .psrldq E₁ 5).toNat = N / 2 ^ 40 := by
+  obtain eR : (XShiftOp.eval .psrldq E₁ 5).toNat = N / 2 ^ 40 := by
     simp only [XShiftOp.eval, show (5 : BitVec 8).toNat = 5 from rfl, show min 5 16 * 8 = 40 from rfl,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, eB]
   constructor
@@ -173,10 +173,10 @@ theorem pack5 {Q₀ Q₁ : BitVec 128} {a₀ a₁ b₀ b₁ : Nat} (h₀ : (qwor
     (lb₀ : b₀ < 2 ^ 40) {V : Nat} (hV : V = a₀ + 2 ^ 40 * a₁ + 2 ^ 80 * b₀ + 2 ^ 120 * b₁) :
     XBinOp.eval .por (XBinOp.eval .pshufb Q₀ m5a) (XBinOp.eval .pshufb Q₁ m5b) = BitVec.ofNat 128 V ∧
       dword (XShiftOp.eval .psrldq Q₁ 9) 0 = BitVec.ofNat 32 (V / 2 ^ 128) := by
-  have ea : XBinOp.eval .pshufb Q₀ m5a = ofBytes fun i =>
+  obtain ea : XBinOp.eval .pshufb Q₀ m5a = ofBytes fun i =>
       if i < 5 then byte Q₀ i else if i < 10 then 0 else if i < 15 then byte Q₀ (8 + (i - 10)) else 0 := by
     simp only [XBinOp.eval, ofBytes]; rfl
-  have eb : XBinOp.eval .pshufb Q₁ m5b = ofBytes fun i =>
+  obtain eb : XBinOp.eval .pshufb Q₁ m5b = ofBytes fun i =>
       if i < 5 then 0 else if i < 10 then byte Q₁ (i - 5) else if i < 15 then 0 else byte Q₁ (8 + 0) := by
     simp only [XBinOp.eval, ofBytes]; rfl
   constructor
@@ -198,13 +198,13 @@ theorem pack5 {Q₀ Q₁ : BitVec 128} {a₀ a₁ b₀ b₁ : Nat} (h₀ : (qwor
       hV, show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
     omega_arith
   · apply BitVec.eq_of_toNat_eq
-    have e := toNat_qwords Q₁
+    obtain e := toNat_qwords Q₁
     rw [h₁, g₁] at e
-    have hX : a₀ + 2 ^ 40 * a₁ + 2 ^ 80 * b₀ < 2 ^ 120 := by omega_arith
-    have e1 : (a₁ + 2 ^ 64 * b₁) / 2 ^ 72 = b₁ / 2 ^ 8 := by
+    obtain hX : a₀ + 2 ^ 40 * a₁ + 2 ^ 80 * b₀ < 2 ^ 120 := by omega_arith
+    obtain e1 : (a₁ + 2 ^ 64 * b₁) / 2 ^ 72 = b₁ / 2 ^ 8 := by
       rw [show (72 : Nat) = 64 + 8 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul,
         Nat.add_mul_div_left _ _ (Nat.two_pow_pos 64), Nat.div_eq_of_lt (show a₁ < 2 ^ 64 by omega_arith), Nat.zero_add]
-    have e2 : (a₀ + 2 ^ 40 * a₁ + 2 ^ 80 * b₀ + 2 ^ 120 * b₁) / 2 ^ 128 = b₁ / 2 ^ 8 := by
+    obtain e2 : (a₀ + 2 ^ 40 * a₁ + 2 ^ 80 * b₀ + 2 ^ 120 * b₁) / 2 ^ 128 = b₁ / 2 ^ 8 := by
       rw [show (128 : Nat) = 120 + 8 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul,
         Nat.add_mul_div_left _ _ (Nat.two_pow_pos 120), Nat.div_eq_of_lt hX, Nat.zero_add]
     rw [toNat_dword', Nat.mul_zero, Nat.pow_zero, Nat.div_one, BitVec.toNat_ofNat, hV, e2]
@@ -231,7 +231,7 @@ theorem wp_store16 {m : MemOp} {r : Reg} {a : Addr} (ha : s.ea m = a) (hout : In
 theorem wp_vmovdqa256 {d a : XReg} (k : ∀ s', LUpd s s' d (fun l => s.lane a l) → WP isa (.block is) s' Q) :
     WP isa (.block (.vop (.vmovdqa .l256 d a) :: is)) s Q :=
   WP.cons (s' := s.setV .l256 d (s.lane a 0) (s.lane a 1)) rfl (k _ (by
-    have h := LUpd.setV256 s d (s.lane a 0) (s.lane a 1)
+    obtain h := LUpd.setV256 s d (s.lane a 0) (s.lane a 1)
     exact ⟨fun l hl => by rw [h.val l hl]; rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl,
       h.other, h.gpr, h.mem, h.rd, h.wr, h.syms⟩))
 
@@ -389,9 +389,9 @@ theorem grp11_ok (hc : C11 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + Bit
   simp only [cmPack11, yb, List.cons_append, List.nil_append]
   refine wp_vvar fun s3 u3 => wp_vsh fun s4 u4 => wp_vvar fun s5 u5 => wp_vsh fun s6 u6 => wp_vbin fun s7 u7 =>
     wp_vext1 fun s8 u8 => wp_vsh128 fun s9 u9 => wp_vbin128 fun s10 u10 => ?_
-  have cK : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 → ∀ l < 2, s2.lane r l = s.lane r l :=
+  obtain cK : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 → ∀ l < 2, s2.lane r l = s.lane r l :=
     fun r a b c d l hl => by rw [o2 r a b c d l hl, o1 r a b l hl]
-  have D : ∀ l < 2, ∀ i < 4, (dword (s2.lane .xmm0 l) i).toNat =
+  obtain D : ∀ l < 2, ∀ i < 4, (dword (s2.lane .xmm0 l) i).toNat =
       compress 11 (z (8 * l + 2 * i)) + 2 ^ 11 * compress 11 (z (8 * l + (2 * i + 1))) := fun l hl i hi => by
     rw [h2 l hl, o1 .xmm8 (by decide) (by decide) l hl, o1 .xmm9 (by decide) (by decide) l hl,
       o1 .xmm10 (by decide) (by decide) l hl, o1 .xmm11 (by decide) (by decide) l hl,
@@ -400,34 +400,34 @@ theorem grp11_ok (hc : C11 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + Bit
     exact dword_hiL (d := 11) (off := 36) (sh := 0x2000) (mk := 0x7FF) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (c := fun j => compress 11 (z (8 * l + j)))
       (fun j hj => hiW11 (h1 l hl j hj)) (fun j _ => compress_lt _ _) hi
-  have E : ∀ l < 2, s7.lane .xmm0 l = q11 (s2.lane .xmm0 l) := fun l hl => by
+  obtain E : ∀ l < 2, s7.lane .xmm0 l = q11 (s2.lane .xmm0 l) := fun l hl => by
     rw [u7.val l hl, u6.val l hl, u6.other .xmm0 (by decide) l hl, u5.val l hl, u5.other .xmm1 (by decide) l hl,
       u4.val l hl, u4.other .xmm0 (by decide) l hl, u4.other .xmm7 (by decide) l hl, u3.val l hl,
       u3.other .xmm7 (by decide) l hl, cK .xmm7 (by decide) (by decide) (by decide) (by decide) l hl, hc.c7 l hl,
       cK .xmm14 (by decide) (by decide) (by decide) (by decide) l hl, hc.c14 l hl]
     rfl
-  have lt : ∀ l < 2, ∀ i < 4, compress 11 (z (8 * l + 2 * i)) + 2 ^ 11 * compress 11 (z (8 * l + (2 * i + 1))) <
+  obtain lt : ∀ l < 2, ∀ i < 4, compress 11 (z (8 * l + 2 * i)) + 2 ^ 11 * compress 11 (z (8 * l + (2 * i + 1))) <
       2 ^ 22 := fun l _ i _ => by
     have := compress_lt 11 (z (8 * l + 2 * i)); have := compress_lt 11 (z (8 * l + (2 * i + 1))); omega_arith
   obtain ⟨hR, hT⟩ := pack11 (D 0 (by decide)) (D 1 (by decide)) (lt 0 (by decide)) (lt 1 (by decide))
     (V := digits 11 ((List.range 16).map fun j => compress 11 (z j))) (by rw [dig16_11])
-  have g10 : s10.gpr = s.gpr := by
+  obtain g10 : s10.gpr = s.gpr := by
     rw [u10.gpr, u9.gpr, u8.gpr, u7.gpr, u6.gpr, u5.gpr, u4.gpr, u3.gpr, g2, g1]
-  have m10 : s10.mem = s.mem := by
+  obtain m10 : s10.mem = s.mem := by
     rw [u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, m2, m1]
-  have w10 : s10.wr = s.wr := by rw [u10.wr, u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, w2, w1]
-  have r10 : s10.rd = s.rd := by rw [u10.rd, u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, r2, r1]
-  have y1 : s10.lane .xmm1 0 = q11 (s2.lane .xmm0 1) := by
+  obtain w10 : s10.wr = s.wr := by rw [u10.wr, u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, w2, w1]
+  obtain r10 : s10.rd = s.rd := by rw [u10.rd, u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, r2, r1]
+  obtain y1 : s10.lane .xmm1 0 = q11 (s2.lane .xmm0 1) := by
     rw [u10.other .xmm1 (by decide) 0 (by decide), u9.other .xmm1 (by decide) 0 (by decide), u8.val 0 (by decide),
       itT rfl, E 1 (by decide)]
-  have x0 : s10.lane .xmm0 0 = BitVec.ofNat 128 (digits 11 ((List.range 16).map fun j => compress 11 (z j))) := by
+  obtain x0 : s10.lane .xmm0 0 = BitVec.ofNat 128 (digits 11 ((List.range 16).map fun j => compress 11 (z j))) := by
     rw [u10.val 0 (by decide), itT rfl, u9.other .xmm0 (by decide) 0 (by decide),
       u8.other .xmm0 (by decide) 0 (by decide), E 0 (by decide), u9.val 0 (by decide), itT rfl,
       u8.val 0 (by decide), itT rfl, E 1 (by decide)]
     exact hR
   refine wp_vst128 (a := s.gpr .r8) (by rw [ea_at, add_ofNat_zero, g10]) (by rw [w10]; exact hw16)
     fun s11 g11 l11 m11 r11 w11 => wp_vsh128 fun s12 u12 => wp_movqR fun s13 u13 => ?_
-  have hax : s13.gpr .rax =
+  obtain hax : s13.gpr .rax =
       BitVec.ofNat 64 (digits 11 ((List.range 16).map fun j => compress 11 (z j)) / 2 ^ 128) := by
     rw [u13.gpr, show s12.xmm .xmm1 = s12.lane .xmm1 0 from rfl, u12.val 0 (by decide), itT rfl, l11, y1]
     exact hT
@@ -469,19 +469,19 @@ theorem dword_pp {A B K : BitVec 128} (hK : ∀ i < 4, word K (2 * i) = 1 ∧ wo
     (dword (XBinOp.eval .pmaddwd (XBinOp.eval .packssdw A B) K) 1).toNat = a 2 + 2 ^ 10 * a 3 ∧
     (dword (XBinOp.eval .pmaddwd (XBinOp.eval .packssdw A B) K) 2).toNat = b 0 + 2 ^ 10 * b 1 ∧
     (dword (XBinOp.eval .pmaddwd (XBinOp.eval .packssdw A B) K) 3).toNat = b 2 + 2 ^ 10 * b 3 := by
-  have hw : ∀ e < 8, (word (XBinOp.eval .packssdw A B) e).toNat = if e < 4 then a e else b (e - 4) := fun e he => by
+  obtain hw : ∀ e < 8, (word (XBinOp.eval .packssdw A B) e).toNat = if e < 4 then a e else b (e - 4) := fun e he => by
     rw [word_packssdw_small _ _ he (fun j hj => by rw [ha j hj]; have := la j hj; omega_arith)
       (fun j hj => by rw [hb j hj]; have := lb j hj; omega_arith)]
     split
     · rw [ha e (by omega_arith)]
     · rw [hb (e - 4) (by omega_arith)]
-  have hl : ∀ e < 8, (if e < 4 then a e else b (e - 4)) < 2 ^ 10 := fun e he => by
+  obtain hl : ∀ e < 8, (if e < 4 then a e else b (e - 4)) < 2 ^ 10 := fun e he => by
     split
     · exact la e (by omega_arith)
     · exact lb (e - 4) (by omega_arith)
-  have h := fun i (hi : i < 4) => dword_pair (d := 10) (c := fun e => if e < 4 then a e else b (e - 4)) (by decide)
+  obtain h := fun i (hi : i < 4) => dword_pair (d := 10) (c := fun e => if e < 4 then a e else b (e - 4)) (by decide)
     hK hw hl (i := i) hi
-  have h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide); have h3 := h 3 (by decide)
+  obtain h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide); have h3 := h 3 (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.reduceSub] at h0 h1 h2 h3
   exact ⟨h0, h1, h2, h3⟩
 
@@ -495,9 +495,9 @@ theorem qword_pp {A B K : BitVec 128} (hK : ∀ i < 4, word K (2 * i) = 1 ∧ wo
       (qword (q10 (XBinOp.eval .pmaddwd (XBinOp.eval .packssdw A B) K)) 1).toNat =
         b 0 + 2 ^ 10 * b 1 + 2 ^ 20 * (b 2 + 2 ^ 10 * b 3) := by
   obtain ⟨p0, p1, p2, p3⟩ := dword_pp hK ha hb la lb
-  have a0 := la 0 (by decide); have a1 := la 1 (by decide); have a2 := la 2 (by decide)
-  have a3 := la 3 (by decide); have b0 := lb 0 (by decide); have b1 := lb 1 (by decide)
-  have b2 := lb 2 (by decide); have b3 := lb 3 (by decide)
+  obtain a0 := la 0 (by decide); have a1 := la 1 (by decide); have a2 := la 2 (by decide)
+  obtain a3 := la 3 (by decide); have b0 := lb 0 (by decide); have b1 := lb 1 (by decide)
+  obtain b2 := lb 2 (by decide); have b3 := lb 3 (by decide)
   exact qword_q10 (p := fun i => if i = 0 then a 0 + 2 ^ 10 * a 1 else if i = 1 then a 2 + 2 ^ 10 * a 3
       else if i = 2 then b 0 + 2 ^ 10 * b 1 else b 2 + 2 ^ 10 * b 3)
     (fun i hi => by
@@ -530,10 +530,10 @@ theorem grp5_ok (hc : C5 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVe
     (fun j hj => by rw [Nat.zero_add]; exact hx j (by omega_arith)) (fun j _ => val_lt _)
     fun s1 h1 o1 g1 m1 r1 w1 => ?_
   refine lo_ok fun s2 h2 o2 g2 m2 r2 w2 => wp_vmovdqa256 fun s3 u3 => ?_
-  have g3 : s3.gpr = s.gpr := by rw [u3.gpr, g2, g1]
-  have m3 : s3.mem = s.mem := by rw [u3.mem, m2, m1]
-  have r3 : s3.rd = s.rd := by rw [u3.rd, r2, r1]
-  have w3 : s3.wr = s.wr := by rw [u3.wr, w2, w1]
+  obtain g3 : s3.gpr = s.gpr := by rw [u3.gpr, g2, g1]
+  obtain m3 : s3.mem = s.mem := by rw [u3.mem, m2, m1]
+  obtain r3 : s3.rd = s.rd := by rw [u3.rd, r2, r1]
+  obtain w3 : s3.wr = s.wr := by rw [u3.wr, w2, w1]
   refine ld_ok (o := 64) (by rw [r3, w3, g3]; exact hin2) (by rw [r3, w3, g3]; exact hin3)
     (x := fun j => (z (16 + j)).val)
     (fun j hj => by rw [m3, g3, show 64 + 4 * j = 4 * (16 + j) by omega_arith]; exact hx (16 + j) (by omega_arith))
@@ -542,20 +542,20 @@ theorem grp5_ok (hc : C5 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVe
   simp only [cmPack5, yb, List.cons_append, List.nil_append]
   refine wp_vbin fun s6 u6 => wp_vbin fun s7 u7 => wp_vvar fun s8 u8 => wp_vsh fun s9 u9 => wp_vext1 fun s10 u10 =>
     wp_vbin128 fun s11 u11 => wp_vbin128 fun s12 u12 => wp_vbin128 fun s13 u13 => ?_
-  have k2 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → ∀ l < 2, s2.lane r l = s.lane r l :=
+  obtain k2 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → ∀ l < 2, s2.lane r l = s.lane r l :=
     fun r a b l hl => by rw [o2 r a l hl, o1 r a b l hl]
-  have k4 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s4.lane r l = s.lane r l :=
+  obtain k4 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s4.lane r l = s.lane r l :=
     fun r a b c l hl => by rw [o4 r a b l hl, u3.other r c l hl, k2 r a b l hl]
-  have k5 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s5.lane r l = s.lane r l :=
+  obtain k5 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s5.lane r l = s.lane r l :=
     fun r a b c l hl => by rw [o5 r a l hl, k4 r a b c l hl]
-  have DA : ∀ l < 2, ∀ i < 4, (dword (s2.lane .xmm0 l) i).toNat =
+  obtain DA : ∀ l < 2, ∀ i < 4, (dword (s2.lane .xmm0 l) i).toNat =
       compress 5 (z (8 * l + 2 * i)) + 2 ^ 5 * compress 5 (z (8 * l + (2 * i + 1))) := fun l hl i hi => by
     rw [h2 l hl, o1 .xmm10 (by decide) (by decide) l hl, o1 .xmm11 (by decide) (by decide) l hl,
       o1 .xmm12 (by decide) (by decide) l hl, o1 .xmm13 (by decide) (by decide) l hl, hc.c10 l hl, hc.c11 l hl,
       hc.c12 l hl, hc.c13 l hl]
     exact dword_loL (d := 5) (sh := 0x400) (mk := 0x1F) (by decide) (by decide) (by decide) (by decide) (by decide)
       (c := fun j => compress 5 (z (8 * l + j))) (fun j hj => loW5 (h1 l hl j hj)) (fun j _ => compress_lt _ _) hi
-  have DB : ∀ l < 2, ∀ i < 4, (dword (s5.lane .xmm0 l) i).toNat =
+  obtain DB : ∀ l < 2, ∀ i < 4, (dword (s5.lane .xmm0 l) i).toNat =
       compress 5 (z (16 + (8 * l + 2 * i))) + 2 ^ 5 * compress 5 (z (16 + (8 * l + (2 * i + 1)))) :=
     fun l hl i hi => by
     rw [h5 l hl, k4 .xmm10 (by decide) (by decide) (by decide) l hl, k4 .xmm11 (by decide) (by decide) (by decide) l hl,
@@ -564,26 +564,26 @@ theorem grp5_ok (hc : C5 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVe
     exact dword_loL (d := 5) (sh := 0x400) (mk := 0x1F) (by decide) (by decide) (by decide) (by decide) (by decide)
       (c := fun j => compress 5 (z (16 + (8 * l + j)))) (fun j hj => loW5 (h4 l hl j hj))
       (fun j _ => compress_lt _ _) hi
-  have ltA : ∀ l < 2, ∀ i < 4, compress 5 (z (8 * l + 2 * i)) + 2 ^ 5 * compress 5 (z (8 * l + (2 * i + 1))) <
+  obtain ltA : ∀ l < 2, ∀ i < 4, compress 5 (z (8 * l + 2 * i)) + 2 ^ 5 * compress 5 (z (8 * l + (2 * i + 1))) <
       2 ^ 10 := fun l _ i _ => by
     have := compress_lt 5 (z (8 * l + 2 * i)); have := compress_lt 5 (z (8 * l + (2 * i + 1))); omega_arith
-  have ltB : ∀ l < 2, ∀ i < 4, compress 5 (z (16 + (8 * l + 2 * i))) +
+  obtain ltB : ∀ l < 2, ∀ i < 4, compress 5 (z (16 + (8 * l + 2 * i))) +
       2 ^ 5 * compress 5 (z (16 + (8 * l + (2 * i + 1)))) < 2 ^ 10 := fun l _ i _ => by
     have := compress_lt 5 (z (16 + (8 * l + 2 * i))); have := compress_lt 5 (z (16 + (8 * l + (2 * i + 1))))
     omega_arith
-  have e7 : ∀ l < 2, s7.lane .xmm0 l = XBinOp.eval .pmaddwd (XBinOp.eval .packssdw (s2.lane .xmm0 l)
+  obtain e7 : ∀ l < 2, s7.lane .xmm0 l = XBinOp.eval .pmaddwd (XBinOp.eval .packssdw (s2.lane .xmm0 l)
       (s5.lane .xmm0 l)) (wc 0x04000001) := fun l hl => by
     rw [u7.val l hl, u6.val l hl, u6.other .xmm8 (by decide) l hl,
       k5 .xmm8 (by decide) (by decide) (by decide) l hl, hc.c8 l hl, o5 .xmm4 (by decide) l hl,
       o4 .xmm4 (by decide) (by decide) l hl, u3.val l hl]
     rfl
-  have e9 : ∀ l < 2, s9.lane .xmm0 l = q10 (s7.lane .xmm0 l) := fun l hl => by
+  obtain e9 : ∀ l < 2, s9.lane .xmm0 l = q10 (s7.lane .xmm0 l) := fun l hl => by
     rw [u9.val l hl, u8.val l hl, u7.other .xmm14 (by decide) l hl, u6.other .xmm14 (by decide) l hl,
       k5 .xmm14 (by decide) (by decide) (by decide) l hl, hc.c14 l hl]
-  have c := fun (j : Nat) => compress_lt 5 (z j)
-  have q0 := qword_pp (K := wc 0x04000001) (by decide) (DA 0 (by decide)) (DB 0 (by decide)) (ltA 0 (by decide))
+  obtain c := fun (j : Nat) => compress_lt 5 (z j)
+  obtain q0 := qword_pp (K := wc 0x04000001) (by decide) (DA 0 (by decide)) (DB 0 (by decide)) (ltA 0 (by decide))
     (ltB 0 (by decide))
-  have q1 := qword_pp (K := wc 0x04000001) (by decide) (DA 1 (by decide)) (DB 1 (by decide)) (ltA 1 (by decide))
+  obtain q1 := qword_pp (K := wc 0x04000001) (by decide) (DA 1 (by decide)) (DB 1 (by decide)) (ltA 1 (by decide))
     (ltB 1 (by decide))
   rw [← e7 0 (by decide), ← e9 0 (by decide)] at q0
   rw [← e7 1 (by decide), ← e9 1 (by decide)] at q1
@@ -599,18 +599,18 @@ theorem grp5_ok (hc : C5 s) (hin0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVe
         have := c (16 + (8 * 0 + (2 * 2 + 1))); have := c (16 + (8 * 0 + 2 * 3))
         have := c (16 + (8 * 0 + (2 * 3 + 1))); omega_arith)
     (by rw [dig32_5])
-  have g13 : s13.gpr = s.gpr := by
+  obtain g13 : s13.gpr = s.gpr := by
     rw [u13.gpr, u12.gpr, u11.gpr, u10.gpr, u9.gpr, u8.gpr, u7.gpr, u6.gpr, g5, g4, g3]
-  have m13 : s13.mem = s.mem := by
+  obtain m13 : s13.mem = s.mem := by
     rw [u13.mem, u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, u7.mem, u6.mem, m5, m4, m3]
-  have w13 : s13.wr = s.wr := by rw [u13.wr, u12.wr, u11.wr, u10.wr, u9.wr, u8.wr, u7.wr, u6.wr, w5, w4, w3]
-  have r13 : s13.rd = s.rd := by rw [u13.rd, u12.rd, u11.rd, u10.rd, u9.rd, u8.rd, u7.rd, u6.rd, r5, r4, r3]
-  have k9 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s9.lane r l = s.lane r l := fun r a b c l hl => by
+  obtain w13 : s13.wr = s.wr := by rw [u13.wr, u12.wr, u11.wr, u10.wr, u9.wr, u8.wr, u7.wr, u6.wr, w5, w4, w3]
+  obtain r13 : s13.rd = s.rd := by rw [u13.rd, u12.rd, u11.rd, u10.rd, u9.rd, u8.rd, u7.rd, u6.rd, r5, r4, r3]
+  obtain k9 : ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm4 → ∀ l < 2, s9.lane r l = s.lane r l := fun r a b c l hl => by
     rw [u9.other r a l hl, u8.other r a l hl, u7.other r a l hl, u6.other r a l hl, k5 r a b c l hl]
-  have y1 : s13.lane .xmm1 0 = s9.lane .xmm0 1 := by
+  obtain y1 : s13.lane .xmm1 0 = s9.lane .xmm0 1 := by
     rw [u13.other .xmm1 (by decide) 0 (by decide), u12.other .xmm1 (by decide) 0 (by decide),
       u11.other .xmm1 (by decide) 0 (by decide), u10.val 0 (by decide), itT rfl]
-  have x0 : s13.lane .xmm0 0 = BitVec.ofNat 128 (digits 5 ((List.range 32).map fun j => compress 5 (z j))) := by
+  obtain x0 : s13.lane .xmm0 0 = BitVec.ofNat 128 (digits 5 ((List.range 32).map fun j => compress 5 (z j))) := by
     rw [u13.val 0 (by decide), itT rfl, u12.other .xmm0 (by decide) 0 (by decide), u12.val 0 (by decide), itT rfl,
       u11.val 0 (by decide), itT rfl, u11.other .xmm1 (by decide) 0 (by decide),
       u11.other .xmm9 (by decide) 0 (by decide), u10.val 0 (by decide), itT rfl,
@@ -680,12 +680,12 @@ theorem step11 (hdd : dArg s₀ .rsi = 11) {i : Nat} (hi : i < 16) {s : State} (
     (by rw [hI.r8, Offset.add_add]; exact outN hp hdd hI.wr (by omega_arith))
     fun s1 m1 o1 g1 r1 w1 => ?_
   refine wp_addi' fun s2 u2 => wp_addi' fun s3 u3 => wp_subi' fun s4 u4 hz => WP.block_nil ?_
-  have hV := digits_lt (w := 11) (L := (List.range 16).map fun (j : Nat) => compress 11 (CE.F s₀)[16 * i + j]!)
+  obtain hV := digits_lt (w := 11) (L := (List.range 16).map fun (j : Nat) => compress 11 (CE.F s₀)[16 * i + j]!)
     (fun a ha => by obtain ⟨t, _, rfl⟩ := List.mem_map.mp ha; exact compress_lt _ _)
   rw [List.length_map, List.length_range, show 11 * 16 = 176 from rfl] at hV
-  have hV' : digits 11 ((List.range 16).map fun (j : Nat) => compress 11 (CE.F s₀)[16 * i + j]!) / 2 ^ 128 < 2 ^ 64 :=
+  obtain hV' : digits 11 ((List.range 16).map fun (j : Nat) => compress 11 (CE.F s₀)[16 * i + j]!) / 2 ^ 128 < 2 ^ 64 :=
     Nat.div_lt_of_lt_mul (by omega_arith)
-  have hw : Written s.mem s1.mem (CE.oP s₀ + BitVec.ofNat 64 (22 * i)) (16 + 4 + 2) fun j =>
+  obtain hw : Written s.mem s1.mem (CE.oP s₀ + BitVec.ofNat 64 (22 * i)) (16 + 4 + 2) fun j =>
       (compressEncode 11 (CE.F s₀))[22 * i + j]! := by
     rw [m1, hI.r8]
     refine (((written16 _ _ _).append (written4 _ _ _) (by decide)).append (written2 _ _ _) (by decide)).congr
@@ -702,7 +702,7 @@ theorem step11 (hdd : dArg s₀ .rsi = 11) {i : Nat} (hi : i < 16) {s : State} (
           Nat.div_div_eq_div_mul, ← Nat.pow_add, show 128 + 8 * (4 + t) = 8 * (20 + t) by omega_arith]
   obtain ⟨hf', hd'⟩ := Written.step (val := fun k => (compressEncode 11 (CE.F s₀))[k]!) hI.frame hI.done hw
     (show 22 * i + (16 + 4 + 2) ≤ 32 * 11 by omega_arith) (by decide)
-  have hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
+  obtain hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
   refine ⟨⟨?_, ?_, by rw [u4.rd, u3.rd, u2.rd, r1, hI.rd], by rw [u4.wr, u3.wr, u2.wr, w1, hI.wr],
     (((hI.c.pres fun r a b c d _ _ _ l hl => o1 r a b c d l hl).pres (Hi7.of_lane u2.lane)).pres
       (Hi7.of_lane u3.lane)).pres (Hi7.of_lane u4.lane),
@@ -755,12 +755,12 @@ theorem step5 (hdd : dArg s₀ .rsi = 5) {i : Nat} (hi : i < 8) {s : State} (hI 
     (by rw [hI.r8, Offset.add_add]; exact outN hp hdd hI.wr (by omega_arith))
     fun s1 m1 o1 g1 r1 w1 => ?_
   refine wp_addi' fun s2 u2 => wp_addi' fun s3 u3 => wp_subi' fun s4 u4 hz => WP.block_nil ?_
-  have hV := digits_lt (w := 5) (L := (List.range 32).map fun (j : Nat) => compress 5 (CE.F s₀)[32 * i + j]!)
+  obtain hV := digits_lt (w := 5) (L := (List.range 32).map fun (j : Nat) => compress 5 (CE.F s₀)[32 * i + j]!)
     (fun a ha => by obtain ⟨t, _, rfl⟩ := List.mem_map.mp ha; exact compress_lt _ _)
   rw [List.length_map, List.length_range, show 5 * 32 = 160 from rfl] at hV
-  have hV' : digits 5 ((List.range 32).map fun (j : Nat) => compress 5 (CE.F s₀)[32 * i + j]!) / 2 ^ 128 < 2 ^ 32 :=
+  obtain hV' : digits 5 ((List.range 32).map fun (j : Nat) => compress 5 (CE.F s₀)[32 * i + j]!) / 2 ^ 128 < 2 ^ 32 :=
     Nat.div_lt_of_lt_mul (by omega_arith)
-  have hw : Written s.mem s1.mem (CE.oP s₀ + BitVec.ofNat 64 (20 * i)) (16 + 4) fun j =>
+  obtain hw : Written s.mem s1.mem (CE.oP s₀ + BitVec.ofNat 64 (20 * i)) (16 + 4) fun j =>
       (compressEncode 5 (CE.F s₀))[20 * i + j]! := by
     rw [m1, hI.r8]
     refine ((written16 _ _ _).append (written4 _ _ _) (by decide)).congr fun j hj => ?_
@@ -772,7 +772,7 @@ theorem step5 (hdd : dArg s₀ .rsi = 5) {i : Nat} (hi : i < 8) {s : State} (hI 
         show 128 + 8 * t = 8 * (16 + t) by omega_arith]
   obtain ⟨hf', hd'⟩ := Written.step (val := fun k => (compressEncode 5 (CE.F s₀))[k]!) hI.frame hI.done hw
     (show 20 * i + (16 + 4) ≤ 32 * 5 by omega_arith) (by decide)
-  have hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
+  obtain hm4 : s4.mem = s1.mem := by rw [u4.mem, u3.mem, u2.mem]
   refine ⟨⟨?_, ?_, by rw [u4.rd, u3.rd, u2.rd, r1, hI.rd], by rw [u4.wr, u3.wr, u2.wr, w1, hI.wr],
     (((hI.c.pres fun r a b c d e _ _ l hl => o1 r a b c d e l hl).pres (Hi7.of_lane u2.lane)).pres
       (Hi7.of_lane u3.lane)).pres (Hi7.of_lane u4.lane),
@@ -811,7 +811,7 @@ theorem wp11 {s₀ : State} (hp : (compressEncodeWK [11]).pre s₀) :
     WP isa cm11 s₀ fun s' =>
       bytesAt s'.mem (s₀.gpr .rdx) (s₀.gpr .rcx).toNat = compressEncode (dArg s₀ .rsi) (CE.F s₀) ∧
         Frame [⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩] s₀.mem s'.mem := by
-  have h11 : dArg s₀ .rsi = 11 := List.mem_singleton.mp hp.2.2.2.2.2.1
+  obtain h11 : dArg s₀ .rsi = 11 := List.mem_singleton.mp hp.2.2.2.2.2.1
   rw [CE.lenEq hp h11, h11]
   exact main11 hp h11
 
@@ -819,7 +819,7 @@ theorem wp5 {s₀ : State} (hp : (compressEncodeWK [5]).pre s₀) :
     WP isa cm5 s₀ fun s' =>
       bytesAt s'.mem (s₀.gpr .rdx) (s₀.gpr .rcx).toNat = compressEncode (dArg s₀ .rsi) (CE.F s₀) ∧
         Frame [⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩] s₀.mem s'.mem := by
-  have h5 : dArg s₀ .rsi = 5 := List.mem_singleton.mp hp.2.2.2.2.2.1
+  obtain h5 : dArg s₀ .rsi = 5 := List.mem_singleton.mp hp.2.2.2.2.2.1
   rw [CE.lenEq hp h5, h5]
   exact main5 hp h5
 

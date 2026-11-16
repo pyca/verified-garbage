@@ -67,11 +67,11 @@ theorem save1_ok (s₀ : State) {i : Nat} (hi : 8 * i < 2048)
     WP isa (.block [.addSp .t0 0, .load .d .t0 .t0 (8 * i)]) s₀ fun s =>
       (s.gpr .t0 = stackArg s₀ i ∧ s.mem = s₀.mem ∧ s.sp = s₀.sp) ∧ Keep [.t0] s₀ s := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  have e : s₀.sp + BitVec.ofNat 64 0 + BitVec.ofNat 64 (8 * i) = stackArgAddr s₀ i := by
+  obtain e : s₀.sp + BitVec.ofNat 64 0 + BitVec.ofNat 64 (8 * i) = stackArgAddr s₀ i := by
     rw [add_ofNat_zero']; rfl
-  have ha : ((s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).gpr .t0 + BitVec.ofNat 64 (8 * i)).toNat % 8 = 0 := by
+  obtain ha : ((s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).gpr .t0 + BitVec.ofNat 64 (8 * i)).toNat % 8 = 0 := by
     rw [gpr_write_self, e]; exact hal
-  have hin' : InRegions ((s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).rd ++ (s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).wr)
+  obtain hin' : InRegions ((s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).rd ++ (s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).wr)
       ((s₀.write .t0 (s₀.sp + BitVec.ofNat 64 0)).gpr .t0 + BitVec.ofNat 64 (8 * i)) 8 := by
     rw [gpr_write_self, e]; exact hin
   apply WP.of_runBlock
@@ -211,18 +211,18 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
     (hT : (taint.check (Taint.ofRegs (.s11 :: mvRegs))
       (seqs (([setup, .block eArr] : List (Prog isa)) ++ loads ++ body ++ ([.block ret] : List (Prog isa)))) hc3).isSome = true) :
     RelCT isa (Two F.C0) (fn (8 * oS) moves loads body) fun _ _ => True := by
-  have same : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → F.B x = F.B y ∧ F.E x = F.E y ∧ F.N x = F.N y ∧
+  obtain same : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → F.B x = F.B y ∧ F.E x = F.E y ∧ F.N x = F.N y ∧
       F.L x = F.L y ∧ F.K x = F.K y ∧
       Spec.Rsa.bytesAt x.mem (F.E x) (F.L x) = Spec.Rsa.bytesAt y.mem (F.E y) (F.L y) ∧
       F.nB x = F.nB y ∧ ∀ r ∈ argRegs, x.gpr r = y.gpr r :=
     fun hx hy => H.hsame _ _ hx.1 hy.1 (hx.2.trans hy.2.symm)
-  have sameEv : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → (F.ev x ↔ F.ev y) := fun hx hy => by
+  obtain sameEv : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → (F.ev x ↔ F.ev y) := fun hx hy => by
     obtain ⟨-, -, -, -, -, he, -⟩ := same hx hy
     simp only [KC.ev, KC.eN, he]
-  have sameMv : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → (F.mv x ↔ F.mv y) := fun hx hy => by
+  obtain sameMv : ∀ {a : β} {x y : State}, F.C0 a x → F.C0 a y → (F.mv x ↔ F.mv y) := fun hx hy => by
     obtain ⟨-, -, -, -, hk, -, hn, -⟩ := same hx hy
     simp only [KC.mv, hk, hn]
-  have rdOf : ∀ {s0 v : State}, F.Pre s0 → KBase (F.B s0) (F.Z s0) s0 v → ∀ {P : Addr} {M : Nat},
+  obtain rdOf : ∀ {s0 v : State}, F.Pre s0 → KBase (F.B s0) (F.Z s0) s0 v → ∀ {P : Addr} {M : Nat},
       (⟨P, M⟩ : Region) ∈ s0.rd → P.toNat + M ≤ 2 ^ 64 → ∀ i < M, InRegions (v.rd ++ v.wr) (off P i) 1 :=
     fun _ bv _ _ hP wP i hi =>
       ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hP), Offset.contains_base _ (by omega_using [hi]) (by omega_using [wP, hi])⟩
@@ -232,21 +232,21 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
     (RelCT.seq (R := Two F.S1) ?_ ?_)) ?_) ?_
   · -- `save`'s first part.
     refine two_post (two_taint _ (fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil) hS1) fun a s c0 => ?_
-    have hp := H.hk s c0.1
+    obtain hp := H.hk s c0.1
     exact WP.mono (save1_ok s hoS (hp.arg_rd hp.hoS) (hp.arg_al hp.hoS)) fun t ⟨⟨t0, tm, tsp⟩, k⟩ =>
       ⟨s, c0, ⟨t0.trans hp.base, tm, tsp⟩, k⟩
   · -- `save`'s second part and the moves.
     refine two_post (two_taint _ ?_ hS2) fun a s ⟨s0, c0, ht⟩ => ?_
     · rintro a s₁ s₂ ⟨x, hx, ⟨tx, -, -⟩, kx⟩ ⟨y, hy, ⟨ty, -, -⟩, ky⟩ r hr
-      have hs := same hx hy
+      obtain hs := same hx hy
       rcases List.mem_cons.mp hr with rfl | hr
       · rw [tx, ty, hs.1]
       · rw [kx.gpr (argRegs_ne_t0 r hr), ky.gpr (argRegs_ne_t0 r hr), hs.2.2.2.2.2.2.2 r hr]
-    have hp := H.hk s0 c0.1
-    have hZ : 96 ≤ F.Z s0 := by have := hp.zk; omega_using [this]
+    obtain hp := H.hk s0 c0.1
+    obtain hZ : 96 ≤ F.Z s0 := by have := hp.zk; omega_using [this]
     rw [WP.block_append_iff]
     refine WP.mono (save2_ok s0 (Scr.of_mem hp.wr hp.nowrap hp.al) hZ ht) fun u hu => ?_
-    have bu := KBase.of_saved hu hZ
+    obtain bu := KBase.of_saved hu hZ
     exact WP.mono (H.hm s0 c0.1 u hu) fun v ⟨mv, vm, vrd, vwr, v11, v4, v5, v1, v2⟩ =>
       ⟨s0, c0, mv, ⟨vrd.trans bu.rd, vwr.trans bu.wr, fun x hx => by rw [vm]; exact bu.frame x hx,
         fun i hi => by rw [vm]; exact bu.hdr i hi, v11.trans bu.s11⟩, v4, v5, v1, v2⟩
@@ -259,41 +259,41 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
     · -- `readE`.
       refine two_post (two_taint [.a4, .a5] ?_ (by taint_decide)) fun a v ⟨s0, c0, m⟩ => ?_
       · rintro a s₁ s₂ ⟨x, hx, mx⟩ ⟨y, hy, my⟩ r hr
-        have hs := same hx hy
+        obtain hs := same hx hy
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [mx.2.2.1, my.2.2.1, hs.2.1]
         · rw [mx.2.2.2.1, my.2.2.2.1, hs.2.2.2.1]
-      have hL := H.hL s0 c0.1
-      have hE := H.hE s0 c0.1
+      obtain hL := H.hL s0 c0.1
+      obtain hE := H.hE s0 c0.1
       refine WP.mono (Pub.readE_ok m.2.2.1 m.2.2.2.1 hL.1 (by omega_using [hL]) (rdOf c0.1 m.2.1 hE.1 hE.2.2))
         fun u ⟨⟨u7, um⟩, ku⟩ => ⟨s0, v, c0, m, ⟨by rw [u7, m.bytesE H c0.1], um⟩, ku.mono (by decide)⟩
     · -- `e` checked, and the moves to `check`.
       refine two_post (two_taint [.s1, .s2] ?_ (by taint_decide)) fun a u ⟨s0, v, c0, m, ⟨u7, um⟩, ku⟩ => ?_
       · rintro a s₁ s₂ ⟨x, vx, hx, mx, -, kx⟩ ⟨y, vy, hy, my, -, ky⟩ r hr
-        have hs := same hx hy
+        obtain hs := same hx hy
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [kx.gpr (by decide), ky.gpr (by decide), mx.2.2.2.2.1, my.2.2.2.2.1, hs.2.2.1]
         · rw [kx.gpr (by decide), ky.gpr (by decide), mx.2.2.2.2.2, my.2.2.2.2.2, hs.2.2.2.2.1]
-      have hsat : sat (F.eN s0) ≤ 2 ^ 33 := by unfold sat; omega_using []
+      obtain hsat : sat (F.eN s0) ≤ 2 ^ 33 := by unfold sat; omega_using []
       refine WP.mono (tB_ok u7 hsat ((ku.gpr (by decide)).trans m.2.2.2.2.1) ((ku.gpr (by decide)).trans m.2.2.2.2.2))
         fun y ⟨⟨y5, y4, y7, y8, ym⟩, ky⟩ => ⟨s0, v, c0, m, ⟨y5, y4, y7, y8, ym.trans um⟩, (ku.trans ky).mono (by decide)⟩
     · -- `check`'s first part.
       refine two_post (two_taint [.s7, .s8] ?_ (by taint_decide)) fun a y ⟨s0, v, c0, m, ⟨y5, y4, y7, y8, ym⟩, ky⟩ => ?_
       · rintro a s₁ s₂ ⟨x, vx, hx, mx, ⟨-, -, x7, x8, -⟩, -⟩ ⟨y, vy, hy, my, ⟨-, -, z7, z8, -⟩, -⟩ r hr
-        have hs := same hx hy
+        obtain hs := same hx hy
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [x7, z7, hs.2.2.1]
         · rw [x8, z8, hs.2.2.2.2.1]
-      have hp := H.hk s0 c0.1
-      have hN := H.hN s0 c0.1
+      obtain hp := H.hk s0 c0.1
+      obtain hN := H.hN s0 c0.1
       have hk := hp.k64
-      have hlen : (F.nB s0).length = F.K s0 := by simp [KC.nB, Spec.Rsa.bytesAt]
-      have hrd : ∀ i < F.K s0, InRegions (y.rd ++ y.wr) (off (F.N s0) i) 1 := fun i hi => by
+      obtain hlen : (F.nB s0).length = F.K s0 := by simp [KC.nB, Spec.Rsa.bytesAt]
+      obtain hrd : ∀ i < F.K s0, InRegions (y.rd ++ y.wr) (off (F.N s0) i) 1 := fun i hi => by
         rw [ky.2.1, ky.2.2]; exact rdOf c0.1 m.2.1 hN.1 hN.2.2 i hi
-      have eb := m.bytesN H c0.1
+      obtain eb := m.bytesN H c0.1
       refine WP.mono (check1_ok (nb := F.nB s0) y7 y8 hk hlen hrd fun i hi => by
           rw [← Pre.getD_of_lt (by omega_using [hlen, hi]), ym, ← eb]
           simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, hi])
@@ -304,15 +304,15 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
       refine two_post (two_taint [.t4, .s8] ?_ (by taint_decide))
         fun a z ⟨s0, v, c0, m, ⟨z0, z4, z5, z4', z8, zm⟩, kz⟩ => ?_
       · rintro a s₁ s₂ ⟨x, vx, hx, mx, ⟨-, x4, -, -, x8, -⟩, -⟩ ⟨y, vy, hy, my, ⟨-, y4, -, -, y8, -⟩, -⟩ r hr
-        have hs := same hx hy
+        obtain hs := same hx hy
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [x4, y4, hs.2.2.2.2.2.2.1]
         · rw [x8, y8, hs.2.2.2.2.1]
-      have hp := H.hk s0 c0.1
+      obtain hp := H.hk s0 c0.1
       have hk := hp.k64
       have hk' := hp.k1024
-      have hlen : (F.nB s0).length = F.K s0 := by simp [KC.nB, Spec.Rsa.bytesAt]
+      obtain hlen : (F.nB s0).length = F.K s0 := by simp [KC.nB, Spec.Rsa.bytesAt]
       refine WP.mono (check2_ok (nb := F.nB s0) z8 hk hk' hlen (by rw [z0, Pre.getD_of_lt (by omega_using [hk, hlen])])
         (by rw [z4, Pre.getD_of_lt (by omega_using [hk, hlen])])) fun x ⟨x0, xm, kx⟩ =>
           ⟨s0, v, c0, m, ⟨x0, by rw [kx.gpr (by decide), z5], by rw [kx.gpr (by decide), z4'], xm.trans zm⟩,
@@ -340,7 +340,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
         obtain ⟨ev, mv⟩ := t0.mp hz
         exact WP.mono (H.hv s0 c0.1 v t m.1 kt (m.base kt tm) t4 ev mv) fun u hu => ⟨s0, c0, hu⟩
       · rintro s₁ s₂ ⟨⟨a, h₁, h₂, hsp⟩, hc⟩
-        have z1 := zero_of_eval hc
+        obtain z1 := zero_of_eval hc
         obtain ⟨x, vx, hx, mx, ⟨x0, x4, xm⟩, kx⟩ := h₁
         obtain ⟨y, vy, hy, my, ⟨y0, y4, ym⟩, ky⟩ := h₂
         obtain ⟨ev, mv⟩ := x0.mp z1
@@ -351,9 +351,9 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
       refine RelCT.mono (two_post (Φ := F.S7) (two_taint [] (fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil)
         (by taint_decide)) ?_) (fun _ _ h => h.1) fun _ _ h => h
       rintro a t ⟨s0, v, c0, m, ⟨-, -, tm⟩, kt⟩
-      have bt := m.base kt tm
+      obtain bt := m.base kt tm
       refine WP.mono (WP.keep [.a0] (Q := fun u => u.mem = t.mem) (by
-        have e : exec (.li .a0 0) t = some (t.write .a0 (BitVec.ofNat 64 0)) := by
+        obtain e : exec (.li .a0 0) t = some (t.write .a0 (BitVec.ofNat 64 0)) := by
           rw [exec_li (by decide)]; rfl
         brun [ret0, e]) (by rfl) (by rfl)) fun u ⟨um, ku⟩ => ⟨s0, c0, bt.of_regs ku um⟩
     · -- `restore`.

@@ -99,12 +99,12 @@ theorem Scr.piece {M : CtxMode} {s : State} (hp : BP M s) {Z : Nat → Bool} {s�
     Scr s 0 (fun d => Z d || (decide (o ≤ d) && decide (d < o + ℓ) && zf (Gcm.X86_64.Stitch.nb s₃) (d - o)))
       s₄.mem := by
   obtain ⟨hf, hz⟩ := hP
-  have ec : Gcm.X86_64.Stitch.cR s₃ = cR s := by
+  obtain ec : Gcm.X86_64.Stitch.cR s₃ = cR s := by
     simp only [Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.cp, ga _ (by simp [argRegs] : Reg.rdx ∈ argRegs)]
-  have ey : Gcm.X86_64.Stitch.yR s₃ = yR s := by
+  obtain ey : Gcm.X86_64.Stitch.yR s₃ = yR s := by
     simp only [Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.yp, ga _ (by simp [argRegs] : Reg.rcx ∈ argRegs)]
   have ep : Gcm.X86_64.Stitch.pp s₃ = S s + BitVec.ofNat 64 o := h11
-  have pd : Region.Sub (Gcm.X86_64.Stitch.dR s₃) (dR s) := by
+  obtain pd : Region.Sub (Gcm.X86_64.Stitch.dR s₃) (dR s) := by
     show Region.Sub ⟨s₃.gpr .r8, 16 * Gcm.X86_64.Stitch.nb s₃⟩ _
     rw [ga _ (by simp [argRegs])]; exact Region.sub_prefix (by omega_using [hq])
   rw [ec, ey, ep] at hf
@@ -129,7 +129,7 @@ theorem Scr.piece {M : CtxMode} {s : State} (hp : BP M s) {Z : Nat → Bool} {s�
       rw [hf _ fun r hr hc => ?_, h.rest d h1 h2]
       · simp only [hnot, Bool.false_and, Bool.or_false]
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        have hS := contains_S s h2
+        obtain hS := contains_S s h2
         rcases hr with rfl | rfl | rfl | rfl
         · exact hp.c_s.symm _ hS hc
         · exact hp.y_s.symm _ hS hc
@@ -196,12 +196,12 @@ theorem rest_okF {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : Sta
 theorem tailHeadL_ok {q : Nat} {ys : List Block} {st : State} (h : Mid s q q ys st) :
     WP isa (.block [.mov .r11 (.mem (at_ .rsp 8)), .mov .r8 (.mem (at_ .r11 argN)), .alu .test .r8 (.reg .r8)])
       st fun st' => (Mid s q q ys st' ∧ st'.zf = some (decide (n s - q = 0))) ∧ st'.mem = st.mem := by
-  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
-  have a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
+  obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+  obtain a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
     rw [h.rd, h.wr, h.rsp]; exact a_in hp
-  have hS : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 8) 64 = S s := by rw [h.rsp, keep_a hp h.frame]; rfl
-  have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
-  have hz := and_self_beq (show n s - q < 2 ^ 64 by omega_using [hn])
+  obtain hS : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 8) 64 = S s := by rw [h.rsp, keep_a hp h.frame]; rfl
+  obtain r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
+  obtain hz := and_self_beq (show n s - q < 2 ^ 64 by omega_using [hn])
   apply WP.of_runBlock
   refine ⟨_, by simp only [argN]; xrun [a₀, hS, r₆, h.kept.n], ⟨?_, by simp only [zf_arithFlags, hz]⟩, ?_⟩
   · exact h.slots hp (fun r h1 h2 h3 => by simp [gpr_setReg, gpr_arithFlags, h1, h2]) h.kept (Frame.refl _ _) rfl rfl
@@ -236,10 +236,10 @@ theorem callsF (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (g
     WP.mono (ctr_callF ctr cf (CtrCall.toF hc)) fun st₃ g => ?_))
   have f₃ := g.frame
   rw [R₂.rsp] at f₃
-  have sub3 : ∀ r ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), below (SP s) 8],
+  obtain sub3 : ∀ r ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), below (SP s) 8],
       r ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, 2048⟩, below (SP s) 8] := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> simp
-  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).ctr r (sub3 r hr))
+  obtain R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).ctr r (sub3 r hr))
     (fun r hr => (apart_a hp hq).ctr r (sub3 r hr)) (g.saved _ (by decide)) g.rd g.wr
   refine WP.seq (WP.mono (ghArgs_ok hp R₃ hlt) fun st₄ ⟨hg, R₄, _, m₄⟩ =>
     WP.mono (gh_callF gh gf (GhCall.toF hg)) fun st₅ g' => ?_)
@@ -269,7 +269,7 @@ theorem tailL_ok (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) 
   refine WP.seq (WP.mono (tailHeadL_ok hp M) fun st₁ ⟨⟨M₁, hz⟩, hm⟩ => ?_)
   rw [← hm] at hS
   refine WP.ite (decide (n s - q = 0)) (by simp only [eval, hz]) (fun _ => WP.block_nil hS) (fun e => ?_)
-  have hlt : q < n s := by simp at e; omega_using [e]
+  obtain hlt : q < n s := by simp at e; omega_using [e]
   exact WP.mono (callsF hp ctr cf gh gf M₁ hlt) fun st' hf => hS.frame hf (sR_calls hp M₁.q_le)
 
 /-- What the calls of the decryption's `tail` write, with implementations of
@@ -284,7 +284,7 @@ theorem callsD (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (g
     WP.mono (gh_callF gh gf (GhCall.toF hg)) fun st₃ g => ?_))
   have f₃ := g.frame
   rw [R₂.rsp] at f₃
-  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => by
+  obtain R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (apart_kR' hp hq).y
@@ -311,7 +311,7 @@ theorem tailD_ok (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) 
   refine WP.seq (WP.mono (tailHeadL_ok hp M) fun st₁ ⟨⟨M₁, hz⟩, hm⟩ => ?_)
   rw [← hm] at hS
   refine WP.ite (decide (n s - q = 0)) (by simp only [eval, hz]) (fun _ => WP.block_nil hS) (fun e => ?_)
-  have hlt : q < n s := by simp at e; omega_using [e]
+  obtain hlt : q < n s := by simp at e; omega_using [e]
   exact WP.mono (callsD hp ctr cf gh gf M₁ hlt) fun st' hf => hS.frame hf (sR_calls hp M₁.q_le)
 
 /-! ## Without interleaved loops -/
@@ -350,12 +350,12 @@ theorem stitchL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat →
       Scr s 0 (fun d => decide (16 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
         decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
         zf (n s - n s % 16) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
-  have hS₀ := Scr.entry hk hf
-  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+  obtain hS₀ := Scr.entry hk hf
+  obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
   · have h0 : n s - n s % 16 = 0 := by simp at h; omega_arith
-    have hlt : ¬ 16 ≤ n s := by simp at h; omega_arith
+    obtain hlt : ¬ 16 ≤ n s := by simp at h; omega_arith
     refine WP.block_nil ⟨?_, ?_⟩
     · rw [h0]
       exact mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk)
@@ -364,28 +364,28 @@ theorem stitchL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat →
   · have h16 : 16 ≤ n s := by simp at h; omega_arith
     refine WP.seq (WP.mono (split_ok (s := s) (aligned := aligned) (by rw [g₂]; exact hg _ (by decide)))
       fun s₃ ⟨h9, h11₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
-    have ga : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r := fun r hr => by
+    obtain ga : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r := fun r hr => by
       simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide), g₂,
         hg r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
-    have gc : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
+    obtain gc : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), g₂,
         hg r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
-    have g11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    obtain g11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
       rw [h11₃, g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
-    have rd₃' : s₃.rd = s.rd := rd₃.trans (rd₂.trans hrd)
-    have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
-    have hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
-    have hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
-    have hnb : Gcm.X86_64.Stitch.nb s₃ = n s - n s % 16 := by
+    obtain rd₃' : s₃.rd = s.rd := rd₃.trans (rd₂.trans hrd)
+    obtain wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
+    obtain hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
+    obtain hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
+    obtain hnb : Gcm.X86_64.Stitch.nb s₃ = n s - n s % 16 := by
       simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega_arith)]
-    have hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by rw [hnb]; omega_arith
-    have hS₃ : Scr s 0 (fun _ => false) s₃.mem := by rw [m₃, m₂]; exact hS₀
+    obtain hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by rw [hnb]; omega_arith
+    obtain hS₃ : Scr s 0 (fun _ => false) s₃.mem := by rw [m₃, m₂]; exact hS₀
     refine WP.mono (hpiece s₃ (spreM_of hp (by omega_arith) (by omega_arith) h9 ga g11 rd₃' wr₃' hf₃) hm)
       fun s₄ ⟨hP, hL⟩ => ⟨?_, ?_⟩
     · refine mid_of_post hp (by omega_arith) h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd
@@ -434,45 +434,45 @@ theorem fullBodyL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat �
       Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
         decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
         zf (n s) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
-  have hS₀ := Scr.entry hk hf
-  have ho := AlignedScratch.offset_bounds aligned (S s)
+  obtain hS₀ := Scr.entry hk hf
+  obtain ho := AlignedScratch.offset_bounds aligned (S s)
   -- The loops, from a state with `s₁`'s registers and memory.
-  have pc : ∀ s₂ : State, 2 ≤ n s → s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
+  obtain pc : ∀ s₂ : State, 2 ≤ n s → s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
       WP isa (stitchPart piece aligned true) s₂ fun st =>
         Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
           decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
           zf (n s) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
     intro s₂ h2 g₂ m₂ rd₂ wr₂
     refine WP.seq (WP.mono (scratch_ok (aligned := aligned) s₂) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
-    have keepR : ∀ r, r ≠ .r11 → s₄.gpr r = s.gpr r := fun r c => by rw [g₄ r c, g₂, hg r c]
-    have ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
+    obtain keepR : ∀ r, r ≠ .r11 → s₄.gpr r = s.gpr r := fun r c => by rw [g₄ r c, g₂, hg r c]
+    obtain ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
       simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide)
-    have g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    obtain g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
       rw [h11₄, g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
-    have h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    obtain h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
       rw [keepR _ (by decide)]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)|>.symm
-    have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₂, hrd]
-    have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₂, hwr]
-    have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄, m₂]; exact hf
-    have hn9 : Gcm.X86_64.Stitch.nb s₄ = n s := by
+    obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₂, hrd]
+    obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₂, hwr]
+    obtain hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄, m₂]; exact hf
+    obtain hn9 : Gcm.X86_64.Stitch.nb s₄ = n s := by
       show (s₄.gpr .r9).toNat = _
       rw [h9]; exact toNat_ofNat_of_lt (s.gpr .r9).isLt
-    have hS₄ : Scr s 0 (fun _ => false) s₄.mem := by rw [m₄, m₂]; exact hS₀
+    obtain hS₄ : Scr s 0 (fun _ => false) s₄.mem := by rw [m₄, m₂]; exact hS₀
     refine WP.mono (hpiece s₄ (spreM_of hp (lo := 1) (by omega_using [h2]) (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄))
       fun s₅ ⟨_, hL⟩ => ?_
     refine (Scr.piece hp (by omega_using [ho]) hoℓ hS₄ g11 ga (by rw [hn9]) hL).congr fun d _ _ => ?_
     simp only [hn9, decide_eq_true h2, Bool.true_and, Bool.false_or]
   -- The calls, from a state with `s₁`'s registers and memory.
-  have cl : n s < 2 → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
+  obtain cl : n s < 2 → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
       WP isa (.seq (.block rest) (tail (ctrCall ⟨ctr.callee.name, ctr.callee.code⟩) (ghCall gh.fn))) s₂ fun st =>
         Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
           decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
           zf (n s) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
     intro hlt s₂ g₂ m₂ rd₂ wr₂
-    have M := mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk) (by rw [m₂]; exact hf)
+    obtain M := mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk) (by rw [m₂]; exact hf)
       (rd₂.trans hrd) (wr₂.trans hwr)
-    have hS₂ : Scr s 0 (fun _ => false) s₂.mem := by rw [m₂]; exact hS₀
+    obtain hS₂ : Scr s 0 (fun _ => false) s₂.mem := by rw [m₂]; exact hS₀
     refine WP.seq (WP.mono (rest_okF hp (q := 0) (by omega_using [hlt]) M) fun st' ⟨M', hf'⟩ => ?_)
     refine WP.mono (tailL_ok hp ctr cf gh gf M' (hS₂.slots hf' M'.kept)) fun st h => h.congr fun d _ _ => ?_
     simp only [show ¬ 2 ≤ n s by omega_using [hlt], decide_false, Bool.false_and]

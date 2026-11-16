@@ -68,7 +68,7 @@ theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha 
   refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun u hu => ?_
   refine load_ok (hs.of_upd hu (by decide) (by decide)) (by omega_using [ha, hi]) fun v hv => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun w hw => ?_
-  have x := xor_limb (x := word s.mem base (X2 + 4 * i)) (y := word s.mem base (a + 4 * i)) h1 h2
+  obtain x := xor_limb (x := word s.mem base (X2 + 4 * i)) (y := word s.mem base (a + 4 * i)) h1 h2
   refine WP.mono (orBad_ok (P := limbs s.mem base X2 i = limbs s.mem base a i)
     (by rw [hw.gpr, hv.other _ (by decide), hu.gpr, hv.gpr, hu.mem]; exact x.1)
     (by rw [hw.gpr, hv.other _ (by decide), hu.gpr, hv.gpr, hu.mem]; exact x.2))
@@ -121,15 +121,15 @@ theorem valN_inj {f g : Nat → Nat} :
   | 0, _, _, _, i, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, hf, hg, h, i, hi => by
     rw [valN_succ, valN_succ] at h
-    have lf := valN_lt (n := n) (fun j hj => hf j (by omega_using [hj]))
-    have lg := valN_lt (n := n) (fun j hj => hg j (by omega_using [hj]))
-    have hp : 0 < radix ^ n := Nat.pow_pos (by decide)
-    have e1 : f n = g n := by
+    obtain lf := valN_lt (n := n) (fun j hj => hf j (by omega_using [hj]))
+    obtain lg := valN_lt (n := n) (fun j hj => hg j (by omega_using [hj]))
+    obtain hp : 0 < radix ^ n := Nat.pow_pos (by decide)
+    obtain e1 : f n = g n := by
       have := congrArg (· / radix ^ n) h
       simp only [Nat.add_mul_div_left _ _ hp, Nat.div_eq_of_lt lf, Nat.div_eq_of_lt lg, Nat.zero_add] at this
       exact this
     rw [e1] at h
-    have e0 : valN f n = valN g n := by omega_using [h]
+    obtain e0 : valN f n = valN g n := by omega_using [h]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · exact valN_inj (fun j hj => hf j (by omega_using [hj])) (fun j hj => hg j (by omega_using [hj])) e0 i hi
     · exact e1
@@ -147,61 +147,61 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       CKeep base s t ∧ BoundedEnv t.mem base ∧ (∀ i : Index, i ≠ 1 → E t.mem base i = E s.mem base i) ∧
         BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r10) (t.gpr .r10) ∧
         Keeps (.r10 :: workRegs) s t := by
-  have sa := slot_range a
-  have sb := slot_range b
+  obtain sa := slot_range a
+  obtain sb := slot_range b
   have hX2v : X2 = 192 := rfl
   have hA : ACC = 3584 := rfl
   have hX2 : X2 = slot (1 : Index).val := rfl
-  have s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
-  have s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
-  have sab := slot_sep hab
+  obtain s1a : slot a.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot a.val := by rw [hX2]; exact slot_sep ha1
+  obtain s1b : slot b.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot b.val := by rw [hX2]; exact slot_sep hb1
+  obtain sab := slot_sep hab
   unfold eqSlots
   simp only [List.append_assoc]
   -- slot 1 = slot a
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot a.val) (by decide) (by omega_using [sa])
     (Or.inr (by omega_using [s1a]))) fun s1 ⟨f1, m1, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
-  have bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
+  obtain hs1 := hs.of_keeps k1 (by decide)
+  obtain bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs1 bd1) fun s2 ⟨b2, v2, m2, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  obtain hs2 := hs1.of_keeps k2 (by decide)
   -- slot a = slot 1
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs2 (o := slot a.val) (a := X2) (by omega_using [sa]) (by decide)
     (Or.inr (by omega_using [s1a]))) fun s3 ⟨f3, m3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by decide)
+  obtain hs3 := hs2.of_keeps k3 (by decide)
   -- slot 1 = slot b
   refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot b.val) (by decide) (by omega_using [sb])
     (Or.inr (by omega_using [s1b]))) fun s4 ⟨f4, m4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by decide)
+  obtain hs4 := hs3.of_keeps k4 (by decide)
   -- what each stage leaves
-  have lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
+  obtain lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
     intro i hi
     rw [m3.limbs (by omega_using [sab]) (by omega_using [sb]) hi, m2.limbs s1b (by omega_using [sb, hA]) hi,
       m1.limbs (by omega_using [s1b]) (by omega_using [sb]) hi]
-  have bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
+  obtain bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
-  have la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
+  obtain hs5 := hs4.of_keeps k5 (by decide)
+  obtain la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
     intro i hi
     rw [m5.limbs s1a (by omega_using [sa, hA]) hi, m4.limbs (by omega_using [s1a]) (by omega_using [sa]) hi, f3 i hi]
-  have ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
+  obtain ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
   refine WP.mono (diffSlot_ok hs5 (by omega_using [sa]) b5 ba5) fun t ⟨tb, tm, tk⟩ => ?_
   -- the values
-  have fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
+  obtain fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
     rw [show fe s5.mem base (slot a.val) = fe s2.mem base X2 from valN_congr la5, v2]
     exact congrArg (· % Spec.X448.P) (valN_congr f1)
-  have fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
+  obtain fb : fe s5.mem base X2 = fe s.mem base (slot b.val) % Spec.X448.P := by
     rw [v5]; exact congrArg (· % Spec.X448.P) ((valN_congr f4).trans (valN_congr lb3))
   -- the other slots
-  have other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
+  obtain other : ∀ i : Index, i ≠ 1 → i ≠ a → ∀ j < 28,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i hi1 hia j hj
-    have si := slot_range i
-    have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
-    have sai := slot_sep hia
+    obtain si := slot_range i
+    obtain s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
+    obtain sai := slot_sep hia
     rw [tm, m5.limbs s1i (by omega_using [hA, si]) hj, m4.limbs (by omega_using [s1i]) (by omega_using [si]) hj,
       m3.limbs (by omega_using [sai]) (by omega_using [si]) hj, m2.limbs s1i (by omega_using [hA, si]) hj,
       m1.limbs (by omega_using [s1i]) (by omega_using [si]) hj]
-  have kw : Keeps (.r10 :: workRegs) s t := by
+  obtain kw : Keeps (.r10 :: workRegs) s t := by
     refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
   refine ⟨⟨kw.mono (fun r hr => by revert r; decide), ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_, kw⟩

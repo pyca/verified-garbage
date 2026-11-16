@@ -50,69 +50,69 @@ theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer 
       (∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d) ∧
       (∀ k, k < 32 → k ≠ j → num t.mem E.base E.n k = num s.mem E.base E.n k) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have H := context_workspace valid C h
-  have fits := h.arr_fit hj
-  have fit64 := h.fit64 hj
+  obtain H := context_workspace valid C h
+  obtain fits := h.arr_fit hj
+  obtain fit64 := h.fit64 hj
   have head := h.hdr_le
   have nowrap := h.workspace.nowrap
   unfold S at fits fit64
   unfold writeArray arraySetup
   refine WP.seq (WP.seq (WP.mono (sel_ok H hj (by decide) hj (by decide)
     (by rw [mask]; cases accept <;> decide) (Or.inl nonzero)) fun u ⟨Hu, Ou, selected, Ku⟩ => ?_))
-  have raw : Outside E.base (arr E.n j) (S E.n) s.mem u.mem := by
+  obtain raw : Outside E.base (arr E.n j) (S E.n) s.mem u.mem := by
     intro a ha
     apply Ou a
     intro r hr
     change r ∈ [(arr E.n j, S E.n)] at hr
     obtain rfl := List.mem_singleton.mp hr
     exact ha
-  have ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
-  have ownFar : (argsRegion sp).Disjoint ⟨off E.base (arr E.n j), S E.n⟩ :=
+  obtain ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
+  obtain ownFar : (argsRegion sp).Disjoint ⟨off E.base (arr E.n j), S E.n⟩ :=
     C.separate.sub_right (Offset.sub_base E.base (by unfold S; exact fits))
-  have Cu := C.keepFar Ku ownFrame (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact ownFar)
-  have chosen : num u.mem E.base E.n j = if accept then num s.mem E.base E.n j else 0 := by
+  obtain Cu := C.keepFar Ku ownFrame (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact ownFar)
+  obtain chosen : num u.mem E.base E.n j = if accept then num s.mem E.base E.n j else 0 := by
     rw [selected, mask, zero]
     cases accept <;> rfl
-  have Pu := context_argument Cu (i := pointer) hp
-  have Lu := context_argument Cu (i := length) hl
+  obtain Pu := context_argument Cu (i := pointer) hp
+  obtain Lu := context_argument Cu (i := length) hl
   simp only [List.cons_append, List.nil_append]
   refine wp_movS Pu.readSrc fun a A _ => ?_
   refine wp_movS (Lu.keep A.keeps (by decide) (by rw [A.mem]; exact Outside.refl _ _ _ _)).readSrc
     fun b Bb _ => ?_
-  have Kab : Keeps [.ebx, .ecx] u b := (A.keeps.mono (by decide)).trans (Bb.keeps.mono (by decide))
-  have mb : b.mem = u.mem := Bb.mem.trans A.mem
-  have Hb := Hu.keep Kab (by rw [mb]; exact Outside.refl _ _ _ _)
-  have ebx_b : b.gpr .ebx = p := by rw [Bb.other _ (by decide), A.gpr, pointerEq]
-  have ecx_b : b.gpr .ecx = BitVec.ofNat 32 len := by rw [Bb.gpr, lengthEq]
+  obtain Kab : Keeps [.ebx, .ecx] u b := (A.keeps.mono (by decide)).trans (Bb.keeps.mono (by decide))
+  obtain mb : b.mem = u.mem := Bb.mem.trans A.mem
+  obtain Hb := Hu.keep Kab (by rw [mb]; exact Outside.refl _ _ _ _)
+  obtain ebx_b : b.gpr .ebx = p := by rw [Bb.other _ (by decide), A.gpr, pointerEq]
+  obtain ecx_b : b.gpr .ecx = BitVec.ofNat 32 len := by rw [Bb.gpr, lengthEq]
   refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
     (by change arr E.n j < _; omega_using [fits, nowrap]) fun c Kc mc Pc => ?_
   refine wp_addS rfl fun d D _ => wp_subS rfl fun e Ee _ => WP.block_nil ?_
-  have Kce : Keeps [.esi] c e := (D.keeps.mono (by decide)).trans (Ee.keeps.mono (by decide))
-  have me : e.mem = u.mem := by rw [Ee.mem, D.mem, mc, mb]
-  have Kue : Keeps [.ebx, .ecx, .esi, .edx] u e :=
+  obtain Kce : Keeps [.esi] c e := (D.keeps.mono (by decide)).trans (Ee.keeps.mono (by decide))
+  obtain me : e.mem = u.mem := by rw [Ee.mem, D.mem, mc, mb]
+  obtain Kue : Keeps [.ebx, .ecx, .esi, .edx] u e :=
     ((Kab.mono (by decide)).trans (Kc.mono (by decide))).trans (Kce.mono (by decide))
-  have Kse : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s e := (Ku.mono (by decide)).trans (Kue.mono (by decide))
-  have ebx_e : e.gpr .ebx = p := by
+  obtain Kse : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s e := (Ku.mono (by decide)).trans (Kue.mono (by decide))
+  obtain ebx_e : e.gpr .ebx = p := by
     rw [Ee.other _ (by decide), D.other _ (by decide), Kc.1 _ (by decide), ebx_b]
-  have ecx_e : e.gpr .ecx = BitVec.ofNat 32 len := by
+  obtain ecx_e : e.gpr .ecx = BitVec.ofNat 32 len := by
     rw [Ee.other _ (by decide), D.other _ (by decide), Kc.1 _ (by decide), ecx_b]
-  have ecx_c : c.gpr .ecx = BitVec.ofNat 32 len := by rw [Kc.1 _ (by decide), ecx_b]
-  have srcNat : (c.gpr .esi).toNat = E.base.toNat + arr E.n j := by
+  obtain ecx_c : c.gpr .ecx = BitVec.ofNat 32 len := by rw [Kc.1 _ (by decide), ecx_b]
+  obtain srcNat : (c.gpr .esi).toNat = E.base.toNat + arr E.n j := by
     have P : (c.gpr .esi).toNat = (E.base.toNat + arr E.n j) % 2 ^ 32 := Pc
     rw [P, Nat.mod_eq_of_lt (by omega_using [fits, nowrap])]
-  have lenSmall : len < 2 ^ 32 := by omega_using [bound, fits, nowrap]
-  have esi_e : e.gpr .esi = c.gpr .esi + BitVec.ofNat 32 (len - 1) := by
+  obtain lenSmall : len < 2 ^ 32 := by omega_using [bound, fits, nowrap]
+  obtain esi_e : e.gpr .esi = c.gpr .esi + BitVec.ofNat 32 (len - 1) := by
     rw [Ee.gpr, D.gpr, ecx_c]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [show (1 : BitVec 32).toNat = 1 from rfl]
     have := (c.gpr .esi).isLt
     omega_using [positive]
-  have source : byteAddr (c.gpr .esi) = off E.base (arr E.n j) := by
+  obtain source : byteAddr (c.gpr .esi) = off E.base (arr E.n j) := by
     apply BitVec.eq_of_toNat_eq
     simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, srcNat]
     omega_using []
-  have rd : e.rd ++ e.wr = s.rd ++ s.wr := by rw [Kse.2.1, Kse.2.2]
+  obtain rd : e.rd ++ e.wr = s.rd ++ s.wr := by rw [Kse.2.1, Kse.2.2]
   refine WP.mono (VG.Proof.Bignum.X86.reverseBuffer_ok e (src := c.gpr .esi) (dst := p) positive
     (by omega_using [bound, fits, nowrap, srcNat]) fit lenSmall
     (by rw [rd, source]; exact h.workspace.read (by omega_using [bound, fits]))
@@ -123,8 +123,8 @@ theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer 
   rw [source, me] at V
   rw [me] at F
   change Frame [⟨p.setWidth 64, len⟩] u.mem t.mem at F
-  have all : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := Kse.trans (Kt.mono (by decide))
-  have prefixValue : (u.mem.read (off E.base (arr E.n j)) len).toNat =
+  obtain all : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := Kse.trans (Kt.mono (by decide))
+  obtain prefixValue : (u.mem.read (off E.base (arr E.n j)) len).toNat =
       num u.mem E.base E.n j % 2 ^ (8 * len) := by
     rw [VG.Proof.Bignum.read_prefix u.mem _ bound, BitVec.toNat_setWidth, VG.Proof.Bignum.read_eq_val32]
   refine ⟨h.rest all, Cu.keepFar ((Kue.mono (rs' := [.eax, .ebx, .ecx, .esi, .edx]) (by decide)).trans (Kt.mono (by decide))) F

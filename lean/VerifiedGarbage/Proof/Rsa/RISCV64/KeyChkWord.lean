@@ -40,12 +40,12 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     WP isa (seqs (divWA a d)) s fun t => ∃ X,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → X = A a % A d) ∧
       Stg g s0 (upd A aVR X) (aVR :: live) c t := by
-  have aR : a ≠ aVR := fun e => hfree a ha (by simp [e])
-  have aD : a ≠ aVD := fun e => hfree a ha (by simp [e])
-  have aT : a ≠ aVT := fun e => hfree a ha (by simp [e])
-  have dR : d ≠ aVR := fun e => hfree d hd (by simp [e])
-  have dD : d ≠ aVD := fun e => hfree d hd (by simp [e])
-  have zR : aZ ≠ aVR := by decide
+  obtain aR : a ≠ aVR := fun e => hfree a ha (by simp [e])
+  obtain aD : a ≠ aVD := fun e => hfree a ha (by simp [e])
+  obtain aT : a ≠ aVT := fun e => hfree a ha (by simp [e])
+  obtain dR : d ≠ aVR := fun e => hfree d hd (by simp [e])
+  obtain dD : d ≠ aVD := fun e => hfree d hd (by simp [e])
+  obtain zR : aZ ≠ aVR := by decide
   have hS : S g.w = 8 * (g.w + 2) := rfl
   have hwl := h.ws.wle
   unfold divWA
@@ -54,15 +54,15 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   rw [kc_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h1.copy_ok (o := aVD) (a := d) (by decide) (List.mem_cons_of_mem _ hd) (Ne.symm dD))
     fun t2 h2 => ?_
-  have nR : num t2.mem g.B g.w aVR = 0 := by rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), upd_self, hA0]
-  have nD : num t2.mem g.B g.w aVD = A d := by rw [h2.arrs.get (by simp), upd_self, upd_ne _ _ dR]
+  obtain nR : num t2.mem g.B g.w aVR = 0 := by rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), upd_self, hA0]
+  obtain nD : num t2.mem g.B g.w aVD = A d := by rw [h2.arrs.get (by simp), upd_self, upd_ne _ _ dR]
   rw [kc_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (fixTop_ok h2.ws (m := aVD) (by decide) (by decide) (by omega_using [hw]))
     fun t3 ⟨w3, f3, v3, p3, _, _, k3, o3⟩ => ?_
   rw [show seqs [VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT] = VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT
     from rfl]
-  have fitR := h.ws.fit64 (j := aVR) (by decide)
-  have r0 : wordsVal t3.mem g.B (arr g.w aVR) (g.w / 2 + 1) = 0 := by
+  obtain fitR := h.ws.fit64 (j := aVR) (by decide)
+  obtain r0 : wordsVal t3.mem g.B (arr g.w aVR) (g.w / 2 + 1) = 0 := by
     rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega_using [hS, this])
       (by simp) (by omega_using [hS, fitR])]
     exact wordsVal_zero_part (d := arr g.w aVR) (a := 0) (c := g.w / 2 + 1) nR (by omega_using [hw]) |>.symm ▸ by simp
@@ -70,38 +70,38 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     (by decide) (by decide) (Ne.symm aR) (by decide) (by decide) (by decide) aT (by omega_using [hw]) (by omega_arith) hw2 r0 p3)
     fun t ⟨w4, f4, k4, x4, top4, hi4⟩ => ?_
   -- `[a]` in `t3`, and `[aVR]`'s `w` words.
-  have na : num t3.mem g.B g.w a = A a := by
+  obtain na : num t3.mem g.B g.w a = A a := by
     rw [f3.num (by simp; exact aD.symm) (by simp) (h.ws.fit64 (h.live_lt a ha)), h2.arrs.get (by simp [ha]),
       upd_ne _ _ aD, upd_ne _ _ aR]
   generalize hM : wordsVal t3.mem g.B (arr g.w aVD) (g.w / 2) = M at x4
   rw [na] at x4
-  have hR : num t.mem g.B g.w aVR = A a % M := by
-    have e1 := wordsVal_append t.mem g.B (arr g.w aVR) (g.w / 2) (g.w - g.w / 2)
-    have e2 := wordsVal_append t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 (g.w - g.w / 2 - 1)
+  obtain hR : num t.mem g.B g.w aVR = A a % M := by
+    obtain e1 := wordsVal_append t.mem g.B (arr g.w aVR) (g.w / 2) (g.w - g.w / 2)
+    obtain e2 := wordsVal_append t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 (g.w - g.w / 2 - 1)
     rw [show g.w / 2 + (g.w - g.w / 2) = g.w by omega_using []] at e1
     rw [show 1 + (g.w - g.w / 2 - 1) = g.w - g.w / 2 by omega_using [hw], show arr g.w aVR + 8 * (g.w / 2) + 8 * 1 =
       arr g.w aVR + 8 * (g.w / 2 + 1) by omega_using [], show g.w - g.w / 2 - 1 = g.w - 1 - g.w / 2 by omega_using [], hi4] at e2
-    have z2 : wordsVal t3.mem g.B (arr g.w aVR + 8 * (g.w / 2 + 1)) (g.w - 1 - g.w / 2) = 0 := by
+    obtain z2 : wordsVal t3.mem g.B (arr g.w aVR + 8 * (g.w / 2 + 1)) (g.w - 1 - g.w / 2) = 0 := by
       rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega_using [hS, this])
         (by simp) (by omega_using [hS, fitR])]
       exact wordsVal_zero_part nR (by omega_using [hw])
-    have w1 : wordsVal t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 = 0 := by
+    obtain w1 : wordsVal t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 = 0 := by
       simp only [wordsVal, top4]; rfl
     rw [z2, w1, Nat.mul_zero, Nat.add_zero] at e2
     show wordsVal t.mem g.B (arr g.w aVR) g.w = _
     rw [e1, e2, Nat.mul_zero, Nat.add_zero, x4]
-  have F : Keys.Frame g.B g.w [aVD, aVR, aVT] [] t2.mem t.mem :=
+  obtain F : Keys.Frame g.B g.w [aVD, aVR, aVT] [] t2.mem t.mem :=
     (f3.mono (js' := [aVD, aVR, aVT]) (by simp) (by simp)).trans (f4.mono (js' := [aVD, aVR, aVT]) (by simp) (by simp))
   refine ⟨A a % M, fun hlo hhi => ?_, ?_⟩
   · -- The divisor is `[d]`, whose top word is not zero.
-    have mv : wordsVal t2.mem g.B (arr g.w aVD) (g.w / 2) = A d := words_low (by omega_using []) nD hhi
-    have tp := top_pos (m := t2.mem) (B := g.B) (d := arr g.w aVD) (v := g.w / 2) (by omega_using [hw]) (by rw [mv]; exact hlo)
+    obtain mv : wordsVal t2.mem g.B (arr g.w aVD) (g.w / 2) = A d := words_low (by omega_using []) nD hhi
+    obtain tp := top_pos (m := t2.mem) (B := g.B) (d := arr g.w aVD) (v := g.w / 2) (by omega_using [hw]) (by rw [mv]; exact hlo)
     rw [← hM, v3, mv, ite_eq_right (by omega_using [tp]), Nat.add_zero]
   · refine h2.next w4 F (by decide) (by simp) (k3.trans k4) (by decide) ?_ ?_ ?_ (h2.mask_keep F (by simp))
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj
       · rw [upd_self]; exact hR
-      have hn := hfree j hj
+      obtain hn := hfree j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
       rw [upd_ne _ _ hn.1, F.num
         (by simp; exact ⟨Ne.symm hn.2.1, Ne.symm hn.1, Ne.symm hn.2.2⟩) (by simp) (h.ws.fit64 (h.live_lt j hj)),
@@ -122,9 +122,9 @@ theorem Stg.mulEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     (hA0 : A aZ = 0) (hf : Free live) :
     WP isa (seqs (mulQ y x ++ eqA aVQ b)) s
       (Stg g s0 A live (c && decide (A y * A x % 2 ^ (64 * g.w) = A b))) := by
-  have yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
-  have xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
-  have bQ : b ≠ aVQ := fun e => hf b hb (by simp [e])
+  obtain yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
+  obtain xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
+  obtain bQ : b ≠ aVQ := fun e => hf b hb (by simp [e])
   unfold mulQ
   rw [List.cons_append, kc_seqs_cons (by simp [eqA])]
   refine WP.mono (h.copy_ok (o := aVQ) (a := aZ) (by decide) hz (by decide)) fun t1 h1 => ?_
@@ -134,7 +134,7 @@ theorem Stg.mulEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   refine WP.mono (h2.eqA_ok (a := aVQ) (b := b) (by simp) (by simp [hb])) fun t h3 => ?_
   simp only [upd_self, upd_ne _ _ bQ, upd_ne _ _ yQ, upd_ne _ _ xQ] at h3
   refine (h3.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
-  have jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
+  obtain jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
   rw [upd_ne _ _ jQ, upd_ne _ _ jQ]
 
 /-- `mulQH y x ++ eqA aVQ b`: the mask and'ed with `[y] [x] mod 2^(64 w) = [b]`, for `[y]` and `[x]`
@@ -145,9 +145,9 @@ theorem Stg.mulEqH_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (hY : A y < 2 ^ (64 * (g.w / 2))) (hX : A x < 2 ^ (64 * (g.w / 2))) :
     WP isa (seqs (mulQH y x ++ eqA aVQ b)) s
       (Stg g s0 A live (c && decide (A y * A x % 2 ^ (64 * g.w) = A b))) := by
-  have yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
-  have xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
-  have bQ : b ≠ aVQ := fun e => hf b hb (by simp [e])
+  obtain yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
+  obtain xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
+  obtain bQ : b ≠ aVQ := fun e => hf b hb (by simp [e])
   unfold mulQH
   rw [List.cons_append, kc_seqs_cons (by simp [eqA])]
   refine WP.mono (h.copy_ok (o := aVQ) (a := aZ) (by decide) hz (by decide)) fun t1 h1 => ?_
@@ -158,7 +158,7 @@ theorem Stg.mulEqH_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
   refine WP.mono (h2.eqA_ok (a := aVQ) (b := b) (by simp) (by simp [hb])) fun t h3 => ?_
   simp only [upd_self, upd_ne _ _ bQ, upd_ne _ _ yQ, upd_ne _ _ xQ] at h3
   refine (h3.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
-  have jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
+  obtain jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
   rw [upd_ne _ _ jQ, upd_ne _ _ jQ]
 
 /-- `divWA a d ++ eqA aVR b`: the mask and'ed with `Y = [b]`, `Y` `[a] mod [d]`
@@ -169,13 +169,13 @@ theorem Stg.divEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     WP isa (seqs (divWA a d ++ eqA aVR b)) s fun t => ∃ Y,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → Y = A a % A d) ∧
       Stg g s0 A live (c && decide (Y = A b)) t := by
-  have bR : b ≠ aVR := fun e => hf b hb (by simp [e])
+  obtain bR : b ≠ aVR := fun e => hf b hb (by simp [e])
   rw [kc_seqs_append (by simp [divWA]) (by simp [eqA])]
   refine WP.mono (h.divWA_ok ha hd hz hA0 hf hw hwl hw2) fun t1 ⟨Y, hY, h1⟩ => ?_
   refine WP.mono (h1.eqA_ok (a := aVR) (b := b) (by simp) (by simp [hb])) fun t h2 => ⟨Y, hY, ?_⟩
   rw [upd_self, upd_ne _ _ bR] at h2
   refine (h2.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
-  have jR : j ≠ aVR := fun e => hf j hj (by simp [e])
+  obtain jR : j ≠ aVR := fun e => hf j hj (by simp [e])
   rw [upd_ne _ _ jR]
 
 /-- `mulModOne y x d`: the mask and'ed with `X = 1`, `X` `([y] [x] mod
@@ -186,9 +186,9 @@ theorem Stg.mulModOne_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
     WP isa (seqs (mulModOne y x d)) s fun t => ∃ X,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → X = A y * A x % 2 ^ (64 * g.w) % A d) ∧
       Stg g s0 A live (c && decide (X = 1)) t := by
-  have yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
-  have xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
-  have dQ : d ≠ aVQ := fun e => hf d hd (by simp [e])
+  obtain yQ : y ≠ aVQ := fun e => hf y hy (by simp [e])
+  obtain xQ : x ≠ aVQ := fun e => hf x hx (by simp [e])
+  obtain dQ : d ≠ aVQ := fun e => hf d hd (by simp [e])
   unfold mulModOne mulQ
   simp only [List.cons_append, List.nil_append]
   rw [kc_seqs_cons (by simp [divWA])]
@@ -196,7 +196,7 @@ theorem Stg.mulModOne_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
   rw [kc_seqs_cons (by simp [divWA])]
   refine WP.mono (h1.mulLow_ok (o := aVQ) (y := y) (x := x) (by simp) (by simp [hy]) (by simp [hx]) (Ne.symm yQ)
     (Ne.symm xQ) (by decide) (by rw [upd_self, hA0])) fun t2 h2 => ?_
-  have hf2 : ∀ j ∈ aVQ :: live, j ∉ [aVR, aVD, aVT] := fun j hj => by
+  obtain hf2 : ∀ j ∈ aVQ :: live, j ∉ [aVR, aVD, aVT] := fun j hj => by
     rcases List.mem_cons.mp hj with rfl | hj
     · decide
     · have := hf j hj; simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
@@ -208,7 +208,7 @@ theorem Stg.mulModOne_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
     exact hX hlo hhi
   · simp only [upd_ne _ _ (by decide : aOne ≠ aVQ), hA1] at h3
     refine (h3.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
-    have jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
+    obtain jQ : j ≠ aVQ := fun e => hf j hj (by simp [e])
     rw [upd_ne _ _ jQ, upd_ne _ _ jQ]
 
 
@@ -231,7 +231,7 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
         (crtBitsW v.n v.p v.q v.dP v.dQ v.qI (v.p * v.q % 2 ^ (64 * g.w)) Xq X₁ X₂) t := by
   unfold crtChecksW
   simp only [List.append_assoc]
-  have f0 : Free live0 := by decide
+  obtain f0 : Free live0 := by decide
   rw [← List.append_assoc (mulQH aP aQ), kc_seqs_append (by simp [mulQH]) (by simp [ltA])]
   refine WP.mono (h.mulEqH_ok (y := aP) (x := aQ) (b := aN) (by decide) (by decide) (by decide) (by decide) rfl f0
     hw2 hpB hqB) fun t1 h1 => ?_
@@ -249,7 +249,7 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
   refine WP.mono (h5.copy_ok (o := aM2) (a := aQ) (by decide) (by decide) (by decide)) fun t6 h6 => ?_
   rw [kc_seqs_cons (by simp [ltA])]
   refine WP.mono (h6.clrLow_ok (j := aM2) (by decide) (by decide)) fun t7 h7 => ?_
-  have f7 : Free (aM2 :: aM1 :: live0) := by decide
+  obtain f7 : Free (aM2 :: aM1 :: live0) := by decide
   -- `dP`.
   rw [kc_seqs_append (by simp [ltA]) (by simp [mulModOne, mulQ])]
   refine WP.mono (h7.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t8 h8 => ?_
@@ -275,7 +275,7 @@ theorem dChecksW_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
   unfold dChecksW
   simp only [List.append_assoc]
-  have ff : ∀ j ∈ liveFin, j ∉ [aVR, aVD, aVT] := by decide
+  obtain ff : ∀ j ∈ liveFin, j ∉ [aVR, aVD, aVT] := by decide
   rw [kc_seqs_append (by simp [ltA]) (by simp [divWA])]
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
   rw [← List.append_assoc, kc_seqs_append (by simp [divWA]) (by simp [divWA])]
@@ -296,12 +296,12 @@ theorem shape_ok {s : State} {pl ql w : Nat} (h5 : s.gpr .s5 = BitVec.ofNat 64 p
     WP isa (.block shape) s fun t =>
       ((t.gpr .t0 = 0 ↔ (pl % 8 = 0 ∧ 4 * w = pl ∧ pl = ql ∧ 32 ≤ pl)) ∧ t.mem = s.mem) ∧ Keep [.t0, .t1] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  have hP : ∀ x : Nat, x < 2 ^ 32 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
+  obtain hP : ∀ x : Nat, x < 2 ^ 32 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
     rw [BitVec.toNat_ofNat]; omega_using [hx]
   unfold shape
   brun [h5, h6, h9, kc_exec_li32]
   simp only [bv_or0, bv_xor0, bv_lt_ite0]
-  have l2 : BitVec.ofNat 64 w <<< 2 = BitVec.ofNat 64 (4 * w) := by
+  obtain l2 : BitVec.ofNat 64 w <<< 2 = BitVec.ofNat 64 (4 * w) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hP w (by omega_using [hw]), BitVec.toNat_ofNat]; omega_using []
   simp only [l2, bv_and7, hP pl hpl, BitVec.lt_def, show (32#64).toNat = 32 from rfl, Nat.not_lt]

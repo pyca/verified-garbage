@@ -135,14 +135,14 @@ theorem save_ok {rest : List Instr} {s : State} {Q : State → Prop} (hal : s.sp
   rw [save_eq]
   simp only [List.cons_append, List.nil_append]
   refine wp_addSp (by decide) fun s₀ u₀ => ?_
-  have g0 : s₀.gpr .t0 = s.sp := by rw [u₀.gpr]; exact BitVec.add_zero _
+  obtain g0 : s₀.gpr .t0 = s.sp := by rw [u₀.gpr]; exact BitVec.add_zero _
   have o : ∀ r, r ≠ .t0 → s₀.gpr r = s.gpr r := u₀.other
-  have st : ∀ d, d % 8 = 0 → 512 ≤ d → d + 8 ≤ 560 → ∀ s' : State, s'.gpr .t0 = s.sp →
+  obtain st : ∀ d, d % 8 = 0 → 512 ≤ d → d + 8 ≤ 560 → ∀ s' : State, s'.gpr .t0 = s.sp →
       s'.wr = s.wr →
       s'.gpr .t0 + BitVec.ofNat 64 d = s.sp + BitVec.ofNat 64 d ∧
       (s.sp + BitVec.ofNat 64 d).toNat % 8 = 0 ∧ InRegions s'.wr (s.sp + BitVec.ofNat 64 d) 8 :=
     fun d hd h₁ h₂ s' h₀ hw => ⟨by rw [h₀], al8 hal hd (by omega_using [h₂]), by rw [hw]; exact hin d h₁ h₂⟩
-  have hc : ∀ d, 512 ≤ d → d + 8 ≤ 560 →
+  obtain hc : ∀ d, 512 ≤ d → d + 8 ≤ 560 →
       (⟨s.sp + BitVec.ofNat 64 512, 48⟩ : Region).Contains (s.sp + BitVec.ofNat 64 d) (64 / 8) :=
     fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
   obtain ⟨a1, l1, i1⟩ := st 512 (by decide) (by omega_using []) (by omega_using []) s₀ g0 u₀.wr
@@ -163,8 +163,8 @@ theorem save_ok {rest : List Instr} {s : State} {Q : State → Prop} (hal : s.sp
     (by rw [g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr, g0])
     (by rw [g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr, u₀.wr])
   refine wp_sd (by decide) a6 l6 i6 fun s₆ g₆ => ?_
-  have gg : s₆.gpr = s₀.gpr := by rw [g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr]
-  have hm : s₆.mem = (((((s.mem.writeW (s.sp + BitVec.ofNat 64 512) (s.gpr .ra)).writeW
+  obtain gg : s₆.gpr = s₀.gpr := by rw [g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr]
+  obtain hm : s₆.mem = (((((s.mem.writeW (s.sp + BitVec.ofNat 64 512) (s.gpr .ra)).writeW
       (s.sp + BitVec.ofNat 64 520) (s.gpr .s2)).writeW (s.sp + BitVec.ofNat 64 528) (s.gpr .s3)).writeW
       (s.sp + BitVec.ofNat 64 536) (s.gpr .s4)).writeW (s.sp + BitVec.ofNat 64 544) (s.gpr .s5)).writeW
       (s.sp + BitVec.ofNat 64 552) (s.gpr .s6) := by
@@ -201,17 +201,17 @@ theorem epilogue_ok {s : State} {g : Reg → BitVec 64} (hal : s.sp.toNat % 16 =
   refine wp_mv fun s₀ u₀ => ?_
   rw [restore_eq]
   refine wp_addSp (by decide) fun s₁ u₁ => ?_
-  have g1 : s₁.gpr .t0 = s.sp := by rw [u₁.gpr, u₀.sp]; exact BitVec.add_zero _
-  have v : ∀ r d, (r, d) ∈ saved → s.mem.readW (s.sp + BitVec.ofNat 64 d) 64 = g r :=
+  obtain g1 : s₁.gpr .t0 = s.sp := by rw [u₁.gpr, u₀.sp]; exact BitVec.add_zero _
+  obtain v : ∀ r d, (r, d) ∈ saved → s.mem.readW (s.sp + BitVec.ofNat 64 d) 64 = g r :=
     fun r d h => hsv (r, d) h
-  have ld : ∀ d, d % 8 = 0 → 512 ≤ d → d + 8 ≤ 560 → ∀ s' : State, s'.gpr .t0 = s.sp →
+  obtain ld : ∀ d, d % 8 = 0 → 512 ≤ d → d + 8 ≤ 560 → ∀ s' : State, s'.gpr .t0 = s.sp →
       s'.rd = s.rd → s'.wr = s.wr →
       s'.gpr .t0 + BitVec.ofNat 64 d = s.sp + BitVec.ofNat 64 d ∧
       (s.sp + BitVec.ofNat 64 d).toNat % 8 = 0 ∧ InRegions (s'.rd ++ s'.wr) (s.sp + BitVec.ofNat 64 d) 8 :=
     fun d hd h₁ h₂ s' h₀ hr hw => ⟨by rw [h₀], al8 hal hd (by omega_using [h₂]), by rw [hr, hw]; exact hin d h₁ h₂⟩
-  have rd₁ : s₁.rd = s.rd := by rw [u₁.rd, u₀.rd]
-  have wr₁ : s₁.wr = s.wr := by rw [u₁.wr, u₀.wr]
-  have m₁ : s₁.mem = s.mem := by rw [u₁.mem, u₀.mem]
+  obtain rd₁ : s₁.rd = s.rd := by rw [u₁.rd, u₀.rd]
+  obtain wr₁ : s₁.wr = s.wr := by rw [u₁.wr, u₀.wr]
+  obtain m₁ : s₁.mem = s.mem := by rw [u₁.mem, u₀.mem]
   obtain ⟨a1, l1, i1⟩ := ld 512 (by decide) (by omega_using []) (by omega_using []) s₁ g1 rd₁ wr₁
   refine wp_ld (by decide) a1 l1 i1 fun s₂ u₂ => ?_
   obtain ⟨a2, l2, i2⟩ := ld 520 (by decide) (by omega_using []) (by omega_using []) s₂
@@ -235,8 +235,8 @@ theorem epilogue_ok {s : State} {g : Reg → BitVec 64} (hal : s.sp.toNat % 16 =
       u₃.other _ (by decide), u₂.other _ (by decide), g1])
     (by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
   refine wp_ld (by decide) a6 l6 i6 fun s₇ u₇ => WP.block_nil ?_
-  have mm : ∀ (x : State), x.mem = s₁.mem → x.mem = s.mem := fun x h => h.trans m₁
-  have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
+  obtain mm : ∀ (x : State), x.mem = s₁.mem → x.mem = s.mem := fun x h => h.trans m₁
+  obtain m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
   refine k s₇ ?_ (fun p hp => ?_) (fun r hr h0 ht => ?_) m₇
     (by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁])
     (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
@@ -284,7 +284,7 @@ private theorem wp_sltu {d n m : Reg}
 end
 
 private theorem and7_eq_zero {x : BitVec 64} (h : x &&& 7 = 0) : x.toNat % 8 = 0 := by
-  have h' := congrArg BitVec.toNat h
+  obtain h' := congrArg BitVec.toNat h
   rwa [BitVec.toNat_and, show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod] at h'
 
@@ -304,11 +304,11 @@ theorem laneCheck_ok {s : State} {st : Addr} {j n : Nat} (h2 : s.gpr .s2 = st)
   refine wp_add fun s₁ u₁ => wp_or fun s₂ u₂ => wp_andi7 fun s₃ u₃ =>
     wp_li (by decide) fun s₄ u₄ => wp_sltu fun s₅ u₅ => wp_or fun s₆ u₆ =>
     wp_andi7 fun s₇ u₇ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₇.gpr r = s.gpr r :=
+  obtain g : ∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₇.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 => by
       rw [u₇.other r h4, u₆.other r h1, u₅.other r h3, u₄.other r h4, u₃.other r h1,
         u₂.other r h1, u₁.other r h2]
-  have ht2 : s₇.gpr .t2 = st + BitVec.ofNat 64 j := by
+  obtain ht2 : s₇.gpr .t2 = st + BitVec.ofNat 64 j := by
     rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h2, h4]
   refine ⟨g, ht2, by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
@@ -318,14 +318,14 @@ theorem laneCheck_ok {s : State} {st : Addr} {j n : Nat} (h2 : s.gpr .s2 = st)
   · have e6 : s₄.gpr .s6 = BitVec.ofNat 64 n := by
       rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
         u₁.other _ (by decide), h6]
-    have e4 : s₁.gpr .s4 = BitVec.ofNat 64 j := by rw [u₁.other _ (by decide), h4]
-    have e2 : s₁.gpr .t2 = st + BitVec.ofNat 64 j := by rw [u₁.gpr, h2, h4]
+    obtain e4 : s₁.gpr .s4 = BitVec.ofNat 64 j := by rw [u₁.other _ (by decide), h4]
+    obtain e2 : s₁.gpr .t2 = st + BitVec.ofNat 64 j := by rw [u₁.gpr, h2, h4]
     rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₅.gpr, u₄.gpr,
       u₄.other _ (by decide), u₃.gpr, u₂.gpr, e6, e4, e2] at hz
     obtain ⟨ha, hb⟩ := BitVec.or_eq_zero_iff.mp hz
     rw [BitVec.and_or_distrib_right] at ha
     obtain ⟨h₁, h₃⟩ := BitVec.or_eq_zero_iff.mp ha
-    have h₃' := and7_eq_zero h₃
+    obtain h₃' := and7_eq_zero h₃
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj] at h₃'
     refine ⟨h₃', and7_eq_zero h₁, ?_⟩
     by_cases hl : BitVec.ofNat 64 n < 8#64
@@ -344,7 +344,7 @@ theorem loadData_ok {al : Bool} {rest : List Instr} {s : State} {Q : State → P
     WP isa (.block (loadData al ++ rest)) s Q := by
   cases al
   · rw [loadData, ite_eq_right (by decide), WP.block_append_iff]
-    have ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
+    obtain ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
     refine WP.mono (Words64.loadLE64_ok (d := .t1) (tmp := .t3) (tmp2 := .t4) (n := .s5) (off := 0)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by rw [ea]; exact hin)) fun s' u => k s' ?_
@@ -362,7 +362,7 @@ theorem storeData_ok {al : Bool} {rest : List Instr} {s : State} {Q : State → 
     WP isa (.block (storeData al ++ rest)) s Q := by
   cases al
   · rw [storeData, ite_eq_right (by decide), WP.block_append_iff]
-    have ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
+    obtain ea : s.gpr .s5 + BitVec.ofNat 64 0 = a := by rw [h5]; simp
     refine WP.mono (Words64.storeLE64_ok (v := .t1) (tmp := .t3) (tmp2 := .t4) (n := .s5) (off := 0)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [ea]; exact hout))
       fun s' ⟨g, m, rd, wr, sp⟩ => k s' g (by rw [m, ea]) rd wr sp

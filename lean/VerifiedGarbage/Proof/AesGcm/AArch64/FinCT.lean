@@ -90,16 +90,16 @@ theorem streamFinish_ct (v : GcmImpl) :
   rw [← q3] at x26₂
   rw [← q4] at x27₂
   rw [← q5] at x28₂
-  have a26₁ : τ₁.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a26₂ : τ₂.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a27₁ : τ₁.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a27₂ : τ₂.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a26₁ : τ₁.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a26₂ : τ₂.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a27₁ : τ₁.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a27₂ : τ₂.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine rel_seq (finBody_rel L v (.inl rfl) e₁ e₂ k₁ k₂ x22₁ x22₂ hRb a26₁ a26₂ a27₁ a27₂
       (σ₁.gpr .x3).isLt (σ₁.gpr .x4).isLt)
     (finBody_env v L (.inl rfl) e₁ k₁ x22₁ hRb a26₁ a27₁ (σ₁.gpr .x4).isLt)
     (finBody_env v L (.inl rfl) e₂ k₂ x22₂ hRb a26₂ a27₂ (σ₁.gpr .x4).isLt) fun τ₁' τ₂' f₁ f₂ => ?_
-  have c28₁ : τ₁'.gpr .x28 = σ₁.gpr .x5 := (f₁.2.1 .x28 (by decide)).trans x28₁
-  have c28₂ : τ₂'.gpr .x28 = σ₁.gpr .x5 := (f₂.2.1 .x28 (by decide)).trans x28₂
+  obtain c28₁ : τ₁'.gpr .x28 = σ₁.gpr .x5 := (f₁.2.1 .x28 (by decide)).trans x28₁
+  obtain c28₂ : τ₂'.gpr .x28 = σ₁.gpr .x5 := (f₂.2.1 .x28 (by decide)).trans x28₂
   exact rel_taint [.x19, .x28] (by rw [f₁.1.sp, f₂.1.sp])
     (by agree_tac [f₁.1.x19, f₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
@@ -127,25 +127,25 @@ theorem streamVerify_ct (v : GcmImpl) :
   rw [← q5] at x12₂
   rw [← rd₁, ← wr₁] at tR₁
   rw [← rd₂, ← wr₂] at tR₂
-  have t28₁ : τ₁.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat := by rw [x28₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have t28₂ : τ₂.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat := by rw [x28₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a26₁ : τ₁.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a26₂ : τ₂.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a27₁ : τ₁.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have a27₂ : τ₂.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have htl := (σ₁.gpr .x6).isLt
+  obtain t28₁ : τ₁.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat := by rw [x28₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain t28₂ : τ₂.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat := by rw [x28₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a26₁ : τ₁.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a26₂ : τ₂.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat := by rw [x26₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a27₁ : τ₁.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain a27₂ : τ₂.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat := by rw [x27₂, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain htl := (σ₁.gpr .x6).isLt
   refine rel_seq (rel_taint [.x28] (by rw [e₁.sp, e₂.sp]) (by agree_tac [t28₁, t28₂]) ⟨_, by taint_decide⟩)
     (tagLenOk_ok τ₁ t28₁ htl) (tagLenOk_ok τ₂ t28₂ htl) fun τ₁' τ₂' ⟨x9₁, r₁⟩ ⟨x9₂, r₂⟩ => ?_
-  have ge₁ := e₁.of_regs r₁
-  have ge₂ := e₂.of_regs r₂
-  have gk₁ := k₁.of_others r₁.others
-  have gk₂ := k₂.of_others r₂.others
+  obtain ge₁ := e₁.of_regs r₁
+  obtain ge₂ := e₂.of_regs r₂
+  obtain gk₁ := k₁.of_others r₁.others
+  obtain gk₂ := k₂.of_others r₂.others
   -- The branch and its run.
-  have ev : ∀ {τ : State}, τ.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat then 1 else 0) →
+  obtain ev : ∀ {τ : State}, τ.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat then 1 else 0) →
       isa.eval (.zero .x .x9) τ =
         some (decide ((if Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat then 1 else 0) = 0)) :=
     fun h => eval_zero h (by split <;> decide)
-  have tIn : ∀ {τ' : State} (hok : Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat = true),
+  obtain tIn : ∀ {τ' : State} (hok : Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat = true),
       Env (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ' → τ'.gpr .x12 = σ₁.gpr .x5 →
       τ'.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat →
       Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ'.rd ++ τ'.wr) →
@@ -155,7 +155,7 @@ theorem streamVerify_ct (v : GcmImpl) :
         ⟨he.keep (fun r hr => og r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl <;> decide)) sp rd wr, Kept.of_others (fun _ _ => rfl) og⟩
-  have run : ∀ {τ' : State} {k : Reg → BitVec 64}, Env (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ' →
+  obtain run : ∀ {τ' : State} {k : Reg → BitVec 64}, Env (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ' →
       Kept k τ' → τ'.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk (σ₁.gpr .x6).toNat then 1 else 0) →
       τ'.gpr .x22 = BitVec.ofNat 64 (σ₁.gpr .x1).toNat → τ'.gpr .x26 = BitVec.ofNat 64 (σ₁.gpr .x3).toNat →
       τ'.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat → τ'.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat →
@@ -183,18 +183,18 @@ theorem streamVerify_ct (v : GcmImpl) :
         (by rw [x10₅]; simp only [decide_eq_true_eq])) fun _ ⟨_, r⟩ => he₅.of_regs r
   have g9₁ : τ₁'.gpr .x9 = _ := x9₁
   have g9₂ : τ₂'.gpr .x9 = _ := x9₂
-  have o22₁ : τ₁'.gpr .x22 = _ := (r₁.others .x22 (by decide)).trans x22₁
-  have o22₂ : τ₂'.gpr .x22 = _ := (r₂.others .x22 (by decide)).trans x22₂
-  have o26₁ : τ₁'.gpr .x26 = _ := (r₁.others .x26 (by decide)).trans a26₁
-  have o26₂ : τ₂'.gpr .x26 = _ := (r₂.others .x26 (by decide)).trans a26₂
-  have o27₁ : τ₁'.gpr .x27 = _ := (r₁.others .x27 (by decide)).trans a27₁
-  have o27₂ : τ₂'.gpr .x27 = _ := (r₂.others .x27 (by decide)).trans a27₂
-  have o28₁ : τ₁'.gpr .x28 = _ := (r₁.others .x28 (by decide)).trans t28₁
-  have o28₂ : τ₂'.gpr .x28 = _ := (r₂.others .x28 (by decide)).trans t28₂
-  have o12₁ : τ₁'.gpr .x12 = _ := (r₁.others .x12 (by decide)).trans x12₁
-  have o12₂ : τ₂'.gpr .x12 = _ := (r₂.others .x12 (by decide)).trans x12₂
-  have oR₁ : Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ₁'.rd ++ τ₁'.wr) := by rw [r₁.rd, r₁.wr]; exact tR₁
-  have oR₂ : Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ₂'.rd ++ τ₂'.wr) := by rw [r₂.rd, r₂.wr]; exact tR₂
+  obtain o22₁ : τ₁'.gpr .x22 = _ := (r₁.others .x22 (by decide)).trans x22₁
+  obtain o22₂ : τ₂'.gpr .x22 = _ := (r₂.others .x22 (by decide)).trans x22₂
+  obtain o26₁ : τ₁'.gpr .x26 = _ := (r₁.others .x26 (by decide)).trans a26₁
+  obtain o26₂ : τ₂'.gpr .x26 = _ := (r₂.others .x26 (by decide)).trans a26₂
+  obtain o27₁ : τ₁'.gpr .x27 = _ := (r₁.others .x27 (by decide)).trans a27₁
+  obtain o27₂ : τ₂'.gpr .x27 = _ := (r₂.others .x27 (by decide)).trans a27₂
+  obtain o28₁ : τ₁'.gpr .x28 = _ := (r₁.others .x28 (by decide)).trans t28₁
+  obtain o28₂ : τ₂'.gpr .x28 = _ := (r₂.others .x28 (by decide)).trans t28₂
+  obtain o12₁ : τ₁'.gpr .x12 = _ := (r₁.others .x12 (by decide)).trans x12₁
+  obtain o12₂ : τ₂'.gpr .x12 = _ := (r₂.others .x12 (by decide)).trans x12₂
+  obtain oR₁ : Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ₁'.rd ++ τ₁'.wr) := by rw [r₁.rd, r₁.wr]; exact tR₁
+  obtain oR₂ : Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ₂'.rd ++ τ₂'.wr) := by rw [r₂.rd, r₂.wr]; exact tR₂
   refine rel_seq (rel_ite (ev g9₁) (ev g9₂) (fun _ => ?_) (fun hf => ?_))
     (run ge₁ gk₁ g9₁ o22₁ o26₁ o27₁ o28₁ o12₁ oR₁) (run ge₂ gk₂ g9₂ o22₂ o26₂ o27₂ o28₂ o12₂ oR₂)
     fun τ₁ τ₂ f₁ f₂ => ?_
@@ -214,8 +214,8 @@ theorem streamVerify_ct (v : GcmImpl) :
       (finBody_env v L (.inr rfl) he₃' hk₃' (by rw [hk₃' .x22 (by decide), o22₂]) hRb
         (by rw [hk₃' .x26 (by decide), o26₂]) (by rw [hk₃' .x27 (by decide), o27₂]) (σ₁.gpr .x4).isLt)
       fun τ₄ τ₄' ⟨he₄, hk₄, _⟩ ⟨he₄', hk₄', _⟩ => ?_
-    have c28₁ : τ₄.gpr .x28 = _ := (hk₄ .x28 (by decide)).trans o28₁
-    have c28₂ : τ₄'.gpr .x28 = _ := (hk₄' .x28 (by decide)).trans o28₂
+    obtain c28₁ : τ₄.gpr .x28 = _ := (hk₄ .x28 (by decide)).trans o28₁
+    obtain c28₂ : τ₄'.gpr .x28 = _ := (hk₄' .x28 (by decide)).trans o28₂
     refine rel_seq (rel_taint [.x19, .x28] (by rw [he₄.sp, he₄'.sp])
         (by agree_tac [he₄.x19, he₄'.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩)
       (cmp_ok L he₄ hk₄ c28₁ (tagLenOk_le hok)) (cmp_ok L he₄' hk₄' c28₂ (tagLenOk_le hok))

@@ -32,7 +32,7 @@ theorem bytesAt_squeeze (m : Mem) (p : Addr) : bytesAt m p 32 = squeezeFrom 136 
   apply List.ext_getElem
   · rw [bytesAt_length, Proof.Sha3.length_squeezeFrom (by decide) (by decide)]
   · intro i h1 h2
-    have hi : i < 32 := by simpa only [bytesAt_length] using h1
+    obtain hi : i < 32 := by simpa only [bytesAt_length] using h1
     rw [Proof.Sha3.squeezeFrom_getElem (by decide) (by decide) _ hi, Nat.zero_add,
       Nat.div_eq_of_lt (by omega_using [hi] : i < 136), Nat.mod_eq_of_lt (by omega_using [hi] : i < 136)]
     show _ = Proof.Sha3.byteOf (stateAt m p) i
@@ -70,19 +70,19 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
     (by decide) (by decide) (by decide) (by decide) (sdisj hp (by lom) (by lom) (by lom))
     hB.kb.x28 hB.kb.x28 (cov_sr hp hB.kb (by lom)) (cov_s hp hB.kb (by lom)))
     fun s₃ ⟨k₁, f₁, b₁⟩ => ?_)
-  have kb₃ := hB.kb.frame k₁ f₁ (by decide) fun r hr => by
+  obtain kb₃ := hB.kb.frame k₁ f₁ (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact safe_scr hp (by lom)
-  have far₁ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ HB ∨ HB + 32 ≤ o) →
+  obtain far₁ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ HB ∨ HB + 32 ≤ o) →
       ∀ r ∈ [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32], (R (kA s₀) (enL P).sc o l).Disjoint r :=
     fun f h r hr => by rw [List.mem_singleton.mp hr]; exact sdisj hp f (by lom) h
-  have h₃ : bytesAt s₃.mem (sA (enL P) s₀ HB) 32 = H (ekE P s₀) := by
+  obtain h₃ : bytesAt s₃.mem (sA (enL P) s₀ HB) 32 = H (ekE P s₀) := by
     rw [show sA (enL P) s₀ HB = kA s₀ 4 + BitVec.ofNat 64 HB from rfl, b₁,
       show KEM.ST = 0 from rfl, ptr_zero, H_eq, bytesAt_squeeze]
     show squeezeFrom 136 (stateAt sB.mem (kA s₀ (enL P).sc)) 0 32 = _
     rw [hst]; rfl
-  have m₃ : bytesAt s₃.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
+  obtain m₃ : bytesAt s₃.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
     rw [bytesAt_frame f₁ (far₁ (o := MB) (l := 32) (by lom) (by decide)) (by decide)]; exact hm
-  have x24₃ : s₃.gpr .x24 = sB.gpr .x24 := k₁.get .x24
+  obtain x24₃ : s₃.gpr .x24 = sB.gpr .x24 := k₁.get .x24
   -- `G(m ‖ H(ek))`
   refine WP.mono (hG (hsetup hp kb₃ (by decide : 72 ∈ Spec.Sha3.rates)) (by decide) (by simp)
     (fun p hp' => by
@@ -98,26 +98,26 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
       simp only [preg, kb₃.x26, e28 kb₃]
       exact hp.args.rdisj (by enk) (by enk) (by enk) (by enk) (by enk) (by enk)))
     fun s₄ ⟨k₄, o₄⟩ => ?_
-  have kb₄ := kb₃.hash hp k₄ fun p hp' => by
+  obtain kb₄ := kb₃.hash hp k₄ fun p hp' => by
     rcases mem2' hp' with rfl | rfl
     · exact ⟨1, 0, 32, rfl, by decide, by enk, by enk, .inl (by enk)⟩
     · exact ⟨3, RB, 32, rfl, by decide, by enk, by enk, .inr (.inr (by enk))⟩
-  have msg : (List.map (pbytes s₃) [⟨.x28, MB, 32⟩, ⟨.x28, HB, 32⟩]).flatten = mE s₀ ++ H (ekE P s₀) := by
+  obtain msg : (List.map (pbytes s₃) [⟨.x28, MB, 32⟩, ⟨.x28, HB, 32⟩]).flatten = mE s₀ ++ H (ekE P s₀) := by
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, pbytes,
       e28 kb₃]
     rw [m₃, h₃]
   obtain ⟨o₁, o₂, -⟩ := o₄
   rw [msg] at o₁ o₂
-  have hG' := G_eq (mE s₀ ++ H (ekE P s₀))
-  have key₄ : bytesAt s₄.mem (kA s₀ 2) 32 = (gE P s₀).1 := by
-    have e : kA s₀ 2 = s₃.gpr .x26 + BitVec.ofNat 64 0 := by rw [kb₃.x26, ptr_zero]; rfl
+  obtain hG' := G_eq (mE s₀ ++ H (ekE P s₀))
+  obtain key₄ : bytesAt s₄.mem (kA s₀ 2) 32 = (gE P s₀).1 := by
+    obtain e : kA s₀ 2 = s₃.gpr .x26 + BitVec.ofNat 64 0 := by rw [kb₃.x26, ptr_zero]; rfl
     rw [e, o₁]; show _ = (G (mE s₀ ++ H (ekE P s₀))).1; rw [hG']; rfl
-  have r₄ : bytesAt s₄.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2 := by
+  obtain r₄ : bytesAt s₄.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2 := by
     rw [← e28 kb₃, o₂]; show _ = (G (mE s₀ ++ H (ekE P s₀))).2; rw [hG']; rfl
   have k₄' := k₄
   simp only [VG.Proof.MlKem.AArch64.STr, VG.Proof.MlKem.AArch64.WKr, preg, List.map_cons, List.map_nil,
     kb₃.x28, kb₃.x26, kb₃.sp] at k₄'
-  have far₄ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 840 ≤ o → (o + l ≤ RB ∨ RB + 32 ≤ o) →
+  obtain far₄ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 840 ≤ o → (o + l ≤ RB ∨ RB + 32 ≤ o) →
       ∀ r ∈ [Region.mk (kA s₀ (enL P).sc + BitVec.ofNat 64 KEM.ST) 200,
         ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 WK, 640⟩, below s₀.sp 16,
         ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩, ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 RB, 32⟩],
@@ -128,11 +128,11 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
     · exact below_R hp hp.scb (hp.fs f)
     · exact hp.args.rdisj (by enk) (by enk) (hp.fs f) (by enk) (by enk) (by enk)
     · exact sdisj hp f (by lom) hr
-  have far34 : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 840 ≤ o → (o + l ≤ RB ∨ RB + 32 ≤ o) →
+  obtain far34 : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 840 ≤ o → (o + l ≤ RB ∨ RB + 32 ≤ o) →
       (o + l ≤ HB ∨ HB + 32 ≤ o) →
       bytesAt s₄.mem (sA (enL P) s₀ o) l = bytesAt sB.mem (sA (enL P) s₀ o) l := fun f h8 hr hh => by
     rw [bytesAt_frame k₄'.frame (far₄ f h8 hr) (by lom), bytesAt_frame f₁ (far₁ f hh) (by lom)]
-  have farA : ∀ (e : Nat), e < P.k * P.k → ∀ r ∈ [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] ++
+  obtain farA : ∀ (e : Nat), e < P.k * P.k → ∀ r ∈ [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] ++
       [Region.mk (kA s₀ (enL P).sc + BitVec.ofNat 64 KEM.ST) 200,
         ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 WK, 640⟩, below s₀.sp 16,
         ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩, ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 RB, 32⟩],
@@ -140,7 +140,7 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
     rcases List.mem_append.mp hr with hr | hr
     · exact far₁ (o := AH + 1024 * e) (l := 1024) (by lom) (.inr (by lom)) r hr
     · exact far₄ (o := AH + 1024 * e) (l := 1024) (by lom) (by lom) (.inr (by lom)) r hr
-  have f14 := (f₁.mono (fun r hr => List.mem_append_left _ hr)).trans
+  obtain f14 := (f₁.mono (fun r hr => List.mem_append_left _ hr)).trans
     (k₄'.frame.mono (fun r hr => List.mem_append_right [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] hr))
   refine ⟨⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩, f14⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho

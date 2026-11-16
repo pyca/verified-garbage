@@ -58,19 +58,19 @@ def blockMem (m : Mem) (p : Addr) (column : Nat) (lane : Addr) : Mem :=
 theorem blockMem_frame (m : Mem) (p : Addr) (column : Nat) (lane : Addr) :
     Frame [⟨p + 64, 8⟩] m (blockMem m p column lane) := by
   unfold blockMem
-  have first : Frame [⟨p + 64, 8⟩] m (m.writeW (p + 64) (BitVec.ofNat 32 column)) :=
+  obtain first : Frame [⟨p + 64, 8⟩] m (m.writeW (p + 64) (BitVec.ofNat 32 column)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (by simpa only [BitVec.add_zero] using
         Offset.contains_base (p + 64) (d := 0) (n := 4) (k := 8) (by decide) (by decide))
   apply first.writeW (List.mem_singleton_self _)
-  have eq : p + 68 = (p + 64) + BitVec.ofNat 64 4 := by rw [BitVec.add_assoc]; rfl
+  obtain eq : p + 68 = (p + 64) + BitVec.ofNat 64 4 := by rw [BitVec.add_assoc]; rfl
   rw [eq]
   exact Offset.contains_base _ (by decide : 4 + 4 ≤ 8) (by decide)
 
 theorem blockMem_bytes (m : Mem) (p : Addr) (column : Nat) (lane : Addr) :
     bytesAt (blockMem m p column lane) p 72 =
       bytesAt m p 64 ++ Spec.Argon2.le32 column ++ Spec.Argon2.le32 lane.toNat := by
-  have first : bytesAt (blockMem m p column lane) p 64 = bytesAt m p 64 := by
+  obtain first : bytesAt (blockMem m p column lane) p 64 = bytesAt m p 64 := by
     apply Proof.Blake2.bytesAt_congr
     intro i hi
     apply (blockMem_frame m p column lane).bytes (R := ⟨p, 64⟩) _
@@ -78,17 +78,17 @@ theorem blockMem_bytes (m : Mem) (p : Addr) (column : Nat) (lane : Addr) :
     · intro r hr; simp only [List.mem_singleton] at hr; subst r
       exact Offset.base_disjoint _ (by decide) (by decide)
 
-  have columnWord : (blockMem m p column lane).readW (p + 64) 32 = BitVec.ofNat 32 column := by
+  obtain columnWord : (blockMem m p column lane).readW (p + 64) 32 = BitVec.ofNat 32 column := by
     unfold blockMem
     rw [Mem.readW_writeW_sep ?_ (by decide), Mem.readW_writeW_self32]
     exact Offset.sep p (by decide) (by decide) (by decide)
-  have laneWord : (blockMem m p column lane).readW (p + 68) 32 = lane.setWidth 32 :=
+  obtain laneWord : (blockMem m p column lane).readW (p + 68) 32 = lane.setWidth 32 :=
     Mem.readW_writeW_self32 _ _ _
-  have words := Proof.Blake2.bytesAt_add (blockMem m p column lane) (p + 64) 4 4
-  have pos : p + 64 + BitVec.ofNat 64 4 = p + 68 := by rw [BitVec.add_assoc]; rfl
+  obtain words := Proof.Blake2.bytesAt_add (blockMem m p column lane) (p + 64) 4 4
+  obtain pos : p + 64 + BitVec.ofNat 64 4 = p + 68 := by rw [BitVec.add_assoc]; rfl
   rw [pos, ← Proof.Blake2.wordBytes_readW _ _ (Or.inl rfl),
     ← Proof.Blake2.wordBytes_readW _ _ (Or.inl rfl), columnWord, laneWord] at words
-  have header := Proof.Blake2.bytesAt_add (blockMem m p column lane) p 64 8
+  obtain header := Proof.Blake2.bytesAt_add (blockMem m p column lane) p 64 8
   change bytesAt (blockMem m p column lane) (p + 64) 8 = _ at words
   rw [show BitVec.ofNat 64 64 = (64 : Addr) from rfl, first, words, ← BitVec.ofNat_toNat 32 lane, ← List.append_assoc] at header
   exact header
@@ -144,7 +144,7 @@ structure BlockReady (s : State) : Prop where
 
 theorem BlockArgs.regs {s t : State} {column : Nat} (h : BlockArgs s t column)
     (r : Reg) (hr : r ∈ calleeSaved) : t.gpr r = s.gpr r := by
-  have hn : r ≠ .rax ∧ r ≠ .rdi ∧ r ≠ .rsi ∧ r ≠ .rdx ∧ r ≠ .rcx ∧ r ≠ .r8 := by
+  obtain hn : r ≠ .rax ∧ r ≠ .rdi ∧ r ≠ .rsi ∧ r ≠ .rdx ∧ r ≠ .rcx ∧ r ≠ .r8 := by
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   exact h.other r hn.1 hn.2.1 hn.2.2.1 hn.2.2.2.1 hn.2.2.2.2.1 hn.2.2.2.2.2
@@ -155,8 +155,8 @@ theorem BlockReady.prefix {s : State} (h : BlockReady s) (d : Nat)
 
 theorem BlockArgs.ready {s t : State} {column : Nat} (a : BlockArgs s t column)
     (h : BlockReady s) : CallReady t := by
-  have base := a.regs .rbx (by decide)
-  have sp := a.regs .rsp (by decide)
+  obtain base := a.regs .rbx (by decide)
+  obtain sp := a.regs .rsp (by decide)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [a.input, a.rd, a.wr]
     intro p n ⟨r, hr, hc⟩
@@ -299,10 +299,10 @@ theorem Space.same {s t : State} {memory : Addr} {bytes : Nat} (h : Space s memo
 theorem Space.blockReady {s : State} {memory : Addr} {bytes d : Nat}
     (h : Space s memory bytes) (dst : s.gpr .r14 = memory + BitVec.ofNat 64 d)
     (bound : d + 1024 ≤ bytes) : BlockReady s := by
-  have outputSub : Region.Sub ⟨s.gpr .r14, 1024⟩ ⟨memory, bytes⟩ := by
+  obtain outputSub : Region.Sub ⟨s.gpr .r14, 1024⟩ ⟨memory, bytes⟩ := by
     rw [dst]; exact Offset.sub_base _ bound
-  have outputCover : Covers [⟨s.gpr .r14, 1024⟩] s.wr := by
-    have narrow : Covers [⟨s.gpr .r14, 1024⟩] [⟨memory, bytes⟩] := Covers.of_sub (by
+  obtain outputCover : Covers [⟨s.gpr .r14, 1024⟩] s.wr := by
+    obtain narrow : Covers [⟨s.gpr .r14, 1024⟩] [⟨memory, bytes⟩] := Covers.of_sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
       exact ⟨_, List.mem_singleton_self _, d, dst, bound⟩)
     exact fun p n hp => h.matrix p n (narrow p n hp)
@@ -357,33 +357,33 @@ theorem lane_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
     (s : State) (memory : Addr) (bytes d : Nat) (space : Space s memory bytes)
     (dst : s.gpr .r14 = memory + BitVec.ofNat 64 d) (bound : d + 2048 ≤ bytes) :
     WP isa (lane name (HPrime.hash v)) s (LaneDone s) := by
-  have ready := space.blockReady dst (by omega_arith)
+  obtain ready := space.blockReady dst (by omega_arith)
   unfold lane
   refine WP.seq ((block_ok v name s 0 ready).mono ?_)
   intro a ha
-  have spaceA := space.same ha.wr (ha.regs .rbp (by decide))
+  obtain spaceA := space.same ha.wr (ha.regs .rbp (by decide))
     (ha.regs .rbx (by decide)) (ha.regs .rsp (by decide))
   refine WP.seq ((advance_ok a).mono ?_)
   intro b hb
-  have spaceB := spaceA.same hb.wr (hb.other .rbp (by decide))
+  obtain spaceB := spaceA.same hb.wr (hb.other .rbp (by decide))
     (hb.other .rbx (by decide)) (hb.other .rsp (by decide))
-  have base : b.gpr .r14 = s.gpr .r14 + 1024 := by rw [hb.destination, ha.regs .r14 (by decide)]
-  have bp : b.gpr .rbp = s.gpr .rbp := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have bx : b.gpr .rbx = s.gpr .rbx := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have sp : b.gpr .rsp = s.gpr .rsp := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have laneB : b.gpr .r12 = s.gpr .r12 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have strideB : b.gpr .r13 = s.gpr .r13 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have remainingB : b.gpr .r15 = s.gpr .r15 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
-  have dstB : b.gpr .r14 = memory + BitVec.ofNat 64 (d + 1024) := by
+  obtain base : b.gpr .r14 = s.gpr .r14 + 1024 := by rw [hb.destination, ha.regs .r14 (by decide)]
+  obtain bp : b.gpr .rbp = s.gpr .rbp := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain bx : b.gpr .rbx = s.gpr .rbx := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain sp : b.gpr .rsp = s.gpr .rsp := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain laneB : b.gpr .r12 = s.gpr .r12 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain strideB : b.gpr .r13 = s.gpr .r13 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain remainingB : b.gpr .r15 = s.gpr .r15 := (hb.other _ (by decide)).trans (ha.regs _ (by decide))
+  obtain dstB : b.gpr .r14 = memory + BitVec.ofNat 64 (d + 1024) := by
     rw [base, dst, BitVec.ofNat_add, BitVec.add_assoc]; rfl
-  have readyB := spaceB.blockReady dstB (by omega_arith)
+  obtain readyB := spaceB.blockReady dstB (by omega_arith)
   refine WP.seq ((block_ok v name b 1 readyB).mono ?_)
   intro c hc
   refine (laneEnd_ok c).mono ?_
   intro t ht
   have secondFrame := hc.frame
   rw [base, bx, sp, bp] at secondFrame
-  have keptFirst : bytesAt c.mem (s.gpr .r14) 1024 = bytesAt b.mem (s.gpr .r14) 1024 := by
+  obtain keptFirst : bytesAt c.mem (s.gpr .r14) 1024 = bytesAt b.mem (s.gpr .r14) 1024 := by
     apply Proof.Blake2.bytesAt_congr
     intro i hi
     apply secondFrame.bytes (R := ⟨s.gpr .r14, 1024⟩) _
@@ -396,7 +396,7 @@ theorem lane_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
     · rw [dst]; exact space.stackMatrix.symm.sub_left (Offset.sub_base _ (by omega_arith))
     · rw [dst]; exact space.frameMatrix.symm.sub_left (Offset.sub_base _ (by omega_arith)) |>.sub_right
         (Offset.sub_base _ (by decide : 64 + 8 ≤ 272))
-  have h0B : bytesAt b.mem (b.gpr .rbp) 64 = bytesAt s.mem (s.gpr .rbp) 64 := by
+  obtain h0B : bytesAt b.mem (b.gpr .rbp) 64 = bytesAt s.mem (s.gpr .rbp) 64 := by
     rw [hb.mem, bp]; exact ha.h0 ready
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ht.rd.trans (hc.rd.trans (hb.rd.trans ha.rd)),
     ht.wr.trans (hc.wr.trans (hb.wr.trans ha.wr)), ?_⟩
@@ -415,10 +415,10 @@ theorem lane_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
       ((hb.other r h14).trans (ha.regs r hr)))
   · rw [ht.mem]
     rw [hb.mem] at secondFrame
-    have firstFrame := frame_widen (p := s.gpr .r14) (d := 0)
+    obtain firstFrame := frame_widen (p := s.gpr .r14) (d := 0)
       (by simpa using ha.frame)
       (by decide)
-    have finalFrame := frame_widen (p := s.gpr .r14) (d := 1024)
+    obtain finalFrame := frame_widen (p := s.gpr .r14) (d := 1024)
       (by simpa only [show BitVec.ofNat 64 1024 = (1024 : Addr) from rfl] using secondFrame) (by decide)
     exact firstFrame.trans finalFrame
 
@@ -442,7 +442,7 @@ def Initialized (m : Mem) (base : Addr) (lanes q done : Nat) (h0 : List Byte) : 
 
 theorem cell_bound (lanes q lane column : Nat) (hl : lane < lanes) (hc : column < q) :
     lane * q + column < lanes * q := by
-  have mul := Nat.mul_le_mul_right q (show lane + 1 ≤ lanes by omega_arith)
+  obtain mul := Nat.mul_le_mul_right q (show lane + 1 ≤ lanes by omega_arith)
   rw [Nat.add_mul, Nat.one_mul] at mul
   omega_arith
 
@@ -460,7 +460,7 @@ theorem cell_sep (q j lane column : Nat) (hq : 2 ≤ q) (hc : column < q)
       omega_arith
     · have eq : lane = j := by omega_arith
       subst lane
-      have large : 2 ≤ column := other.elim (fun h => False.elim (h rfl)) id
+      obtain large : 2 ≤ column := other.elim (fun h => False.elim (h rfl)) id
       omega_arith
 
 theorem initialized_zero (m : Mem) (base : Addr) (lanes q : Nat)
@@ -478,16 +478,16 @@ theorem initialized_lane {s t : State} (memory : Addr) (lanes q j : Nat)
     (hash : bytesAt s.mem (s.gpr .rbp) 64 = h0)
     (initialized : Initialized s.mem memory lanes q j h0) (done : LaneDone s t) :
     Initialized t.mem memory lanes q (j + 1) h0 := by
-  have laneValue : (s.gpr .r12).toNat = j := by
+  obtain laneValue : (s.gpr .r12).toNat = j := by
     rw [laneReg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have currentEnd : 1024 * (j * q) + 2048 ≤ 2 ^ 64 := by
-    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
+  obtain currentEnd : 1024 * (j * q) + 2048 ≤ 2 ^ 64 := by
+    obtain mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at mul
     have b := space.bound
     omega_arith
   have cellEnd (lane column : Nat) (hl : lane < lanes) (hc : column < q) :
       1024 * (lane * q + column) + 1024 ≤ 2 ^ 64 := by
-    have cell := cell_bound lanes q lane column hl hc
+    obtain cell := cell_bound lanes q lane column hl hc
     have b := space.bound
     omega_arith
   intro lane hl column hc
@@ -510,8 +510,8 @@ theorem initialized_lane {s t : State} (memory : Addr) (lanes q j : Nat)
         rw [Nat.mul_add, Nat.mul_one]
         exact eq
       · have large : 2 ≤ column := by omega_arith
-        have sep := cell_sep q j j column hq hc (Or.inr large)
-        have kept : blockAt t.mem (memory + BitVec.ofNat 64 (1024 * (j * q + column))) =
+        obtain sep := cell_sep q j j column hq hc (Or.inr large)
+        obtain kept : blockAt t.mem (memory + BitVec.ofNat 64 (1024 * (j * q + column))) =
             blockAt s.mem (memory + BitVec.ofNat 64 (1024 * (j * q + column))) := by
           apply blockAt_frame done.frame
           intro r hr
@@ -628,10 +628,10 @@ theorem clear_ok (s : State) (memory : Addr) (blocks : Nat) (lo : 1 ≤ blocks)
   unfold clear
   refine WP.seq ((clearSetup_ok s memoryRead blocksRead).mono ?_)
   intro b hb
-  have count : b.gpr .rax = BitVec.ofNat 64 (128 * blocks) := by
+  obtain count : b.gpr .rax = BitVec.ofNat 64 (128 * blocks) := by
     rw [hb.count, blocksWord, show (128 : Addr) = BitVec.ofNat 64 128 from rfl,
       ← BitVec.ofNat_mul, Nat.mul_comm]
-  have dst : b.gpr .r14 = memory := hb.destination.trans memoryWord
+  obtain dst : b.gpr .r14 = memory := hb.destination.trans memoryWord
   have zero := hb.zero
   have mem := hb.mem
   have rd := hb.rd
@@ -775,7 +775,7 @@ theorem LaneDone.keeps {s t : State} (memory : Addr) (bytes d : Nat)
     (bound : d + 2048 ≤ bytes) : Keeps s t memory bytes := by
   refine ⟨?_, h.rd, h.wr, ?_⟩
   · intro r hr
-    have facts : ∀ r ∈ keptRegs, r ∈ calleeSaved ∧ r ≠ .r14 ∧ r ≠ .r12 ∧ r ≠ .r15 := by decide
+    obtain facts : ∀ r ∈ keptRegs, r ∈ calleeSaved ∧ r ≠ .r14 ∧ r ≠ .r12 ∧ r ≠ .r15 := by decide
     obtain ⟨cs, h14, h12, h15⟩ := facts r hr
     exact h.regs r cs h14 h12 h15
   · apply h.frame.sub
@@ -816,19 +816,19 @@ theorem lane_step (v : Proof.Blake2.X86_64.Backend) (name : String)
     WP isa (lane name (HPrime.hash v)) s fun t =>
       LoopI s₀ memory lanes q (j + 1) h0 t ∧
       t.zf = some (decide (lanes - (j + 1) = 0)) := by
-  have spaceS := space.keeps h.keeps
-  have endBound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
-    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
+  obtain spaceS := space.keeps h.keeps
+  obtain endBound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
+    obtain mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at mul
     omega_arith
   refine (lane_ok v name s memory (1024 * (lanes * q)) (1024 * (j * q))
     spaceS h.destination endBound).mono ?_
   intro t ht
-  have kt := ht.keeps memory _ _ h.destination endBound
-  have nextCount : BitVec.ofNat 64 (lanes - j) - 1 = BitVec.ofNat 64 (lanes - (j + 1)) := by
+  obtain kt := ht.keeps memory _ _ h.destination endBound
+  obtain nextCount : BitVec.ofNat 64 (lanes - j) - 1 = BitVec.ofNat 64 (lanes - (j + 1)) := by
     rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
-  have next : LoopI s₀ memory lanes q (j + 1) h0 t := by
+  obtain next : LoopI s₀ memory lanes q (j + 1) h0 t := by
     refine ⟨by omega_arith, ?_, ?_, ?_, ?_, h.keeps.trans kt,
       initialized_lane memory lanes q j h0 spaceS hq hj lanesBound h.destination h.lane
         h.hash h.initialized ht, (kt.h0 spaceS).trans h.hash⟩
@@ -837,13 +837,13 @@ theorem lane_step (v : Proof.Blake2.X86_64.Backend) (name : String)
     · rw [ht.lane, h.lane, BitVec.ofNat_add]; rfl
     · rw [ht.remaining, h.remaining, nextCount]
     · exact (kt.regs .r13 (by decide)).trans h.stride
-  have zf : t.zf = some (decide (lanes - (j + 1) = 0)) := by
+  obtain zf : t.zf = some (decide (lanes - (j + 1) = 0)) := by
     rw [ht.zf, h.remaining, nextCount]
     congr 1
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     constructor
     · intro eq
-      have num := congrArg BitVec.toNat eq
+      obtain num := congrArg BitVec.toNat eq
       simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : lanes - (j + 1) < 2 ^ 64),
         show (0 : Addr).toNat = 0 from rfl] using num
     · intro eq; rw [eq]; rfl
@@ -921,17 +921,17 @@ theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
       Frame [⟨memory, 1024 * (lanes * q)⟩, ⟨s.gpr .rbx, 16384⟩,
         below (s.gpr .rsp) 24, ⟨s.gpr .rbp + 64, 8⟩] s.mem t.mem := by
   unfold code lanesSetupCode
-  have blocksPositive : 1 ≤ lanes * q := by
-    have mul := Nat.mul_le_mul_right q lo
+  obtain blocksPositive : 1 ≤ lanes * q := by
+    obtain mul := Nat.mul_le_mul_right q lo
     rw [Nat.one_mul] at mul; omega_arith
   refine WP.seq ((clear_ok s memory (lanes * q) blocksPositive space.bound memoryRead
     blocksRead memoryWord blocksWord space.matrix).mono ?_)
   intro a ha
-  have bpA := ha.other .rbp (by decide) (by decide) (by decide)
-  have bxA := ha.other .rbx (by decide) (by decide) (by decide)
-  have spA := ha.other .rsp (by decide) (by decide) (by decide)
-  have spaceA := space.same ha.wr bpA bxA spA
-  have hashA : bytesAt a.mem (a.gpr .rbp) 64 = bytesAt s.mem (s.gpr .rbp) 64 := by
+  obtain bpA := ha.other .rbp (by decide) (by decide) (by decide)
+  obtain bxA := ha.other .rbx (by decide) (by decide) (by decide)
+  obtain spA := ha.other .rsp (by decide) (by decide) (by decide)
+  obtain spaceA := space.same ha.wr bpA bxA spA
+  obtain hashA : bytesAt a.mem (a.gpr .rbp) 64 = bytesAt s.mem (s.gpr .rbp) 64 := by
     rw [bpA]
     apply Proof.Blake2.bytesAt_congr
     intro i hi
@@ -946,10 +946,10 @@ theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
     ((ha.word space (by decide)).trans lanesWord)
     ((ha.other .r13 (by decide) (by decide) (by decide)).trans laneLength)).mono ?_)
   intro b hb
-  have bpB := hb.other .rbp (by decide) (by decide) (by decide) (by decide)
-  have bxB := hb.other .rbx (by decide) (by decide) (by decide) (by decide)
-  have spB := hb.other .rsp (by decide) (by decide) (by decide) (by decide)
-  have spaceB := spaceA.same hb.wr bpB bxB spB
+  obtain bpB := hb.other .rbp (by decide) (by decide) (by decide) (by decide)
+  obtain bxB := hb.other .rbx (by decide) (by decide) (by decide) (by decide)
+  obtain spB := hb.other .rsp (by decide) (by decide) (by decide) (by decide)
+  obtain spaceB := spaceA.same hb.wr bpB bxB spB
   refine (lanesLoop_ok v name b memory lanes q (bytesAt s.mem (s.gpr .rbp) 64)
     spaceB lo lanesBound hq hb.destination hb.lane hb.remaining hb.stride ?_ ?_).mono ?_
   · rw [hb.mem, ha.mem]
@@ -959,7 +959,7 @@ theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
     refine ⟨ht.initialized, ht.keeps.rbp.trans (bpB.trans bpA),
       ht.keeps.rbx.trans (bxB.trans bxA), ht.keeps.rsp.trans (spB.trans spA),
       (ht.keeps.regs .r13 (by decide)).trans hb.stride, ht.keeps.rd.trans (hb.rd.trans ha.rd), ht.keeps.wr.trans (hb.wr.trans ha.wr), ?_⟩
-    have fb : Frame [⟨memory, 1024 * (lanes * q)⟩, ⟨s.gpr .rbx, 16384⟩,
+    obtain fb : Frame [⟨memory, 1024 * (lanes * q)⟩, ⟨s.gpr .rbx, 16384⟩,
         below (s.gpr .rsp) 24, ⟨s.gpr .rbp + 64, 8⟩] s.mem b.mem := by
       rw [hb.mem]
       exact (ha.frame space.bound).mono (by
@@ -980,11 +980,11 @@ theorem Initialized.spec {m : Mem} {base : Addr} {p : Spec.Argon2.Params}
     Proof.Argon2.blockAt m (base + BitVec.ofNat 64 (1024 * k)) =
       (Spec.Argon2.initMemory p h0).memory[k]'(by
         rw [Proof.Argon2.initMemory_size]; exact hk) := by
-  have blocks := Proof.Argon2.blocks_lanes p hl
-  have lane : k / p.laneLen < p.lanes := by
+  obtain blocks := Proof.Argon2.blocks_lanes p hl
+  obtain lane : k / p.laneLen < p.lanes := by
     apply (Nat.div_lt_iff_lt_mul hq).mpr
     simpa only [blocks] using hk
-  have cell := h (k / p.laneLen) lane (k % p.laneLen) (Nat.mod_lt _ hq)
+  obtain cell := h (k / p.laneLen) lane (k % p.laneLen) (Nat.mod_lt _ hq)
   rw [Nat.mul_comm (k / p.laneLen) p.laneLen, Nat.div_add_mod] at cell
   simp only [lane, true_and] at cell
   rw [Proof.Argon2.initMemory_cell p h0 k hk]
@@ -1077,11 +1077,11 @@ theorem block_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (column : Na
     RelCT isa (fun s t => BlockReady s ∧ BlockReady t ∧ AgreeSaved s t)
       (block name (HPrime.hash v) column) AgreeSaved := by
   let P := fun s t => BlockReady s ∧ BlockReady t ∧ AgreeSaved s t
-  have args := ((blockArgs_rel column ct).mono (P' := P) (fun _ _ h => h.2.2)
+  obtain args := ((blockArgs_rel column ct).mono (P' := P) (fun _ _ h => h.2.2)
     (fun _ _ h => h)).wpDep (fun s t hp => by
       exact ⟨blockArgs_ok s column (hp.1.prefix 64 (by decide)) (hp.1.prefix 68 (by decide)),
         blockArgs_ok t column (hp.2.1.prefix 64 (by decide)) (hp.2.1.prefix 68 (by decide))⟩)
-  have call := hPrime_call_rel v name (P := fun a b =>
+  obtain call := hPrime_call_rel v name (P := fun a b =>
       True ∧ ∃ s t, P s t ∧ BlockArgs s a column ∧ BlockArgs t b column) (by
     intro a b h
     obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -1092,7 +1092,7 @@ theorem block_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (column : Na
     · exact ha.work.trans ((hp.2.2 .rbx (by decide)).trans hb.work.symm)
     · exact (ha.regs .rsp (by decide)).trans
         ((hp.2.2 .rsp (by decide)).trans (hb.regs .rsp (by decide)).symm))
-  have full := (args.seq call).wpDep (fun s t hp =>
+  obtain full := (args.seq call).wpDep (fun s t hp =>
     ⟨block_ok v name s column hp.1, block_ok v name t column hp.2.1⟩)
   exact full.mono (fun _ _ h => h) (by
     intro a b h
@@ -1132,7 +1132,7 @@ theorem block_lane_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (column
     (memory : Addr) (bytes d : Nat) (bound : d + 1024 ≤ bytes) :
     RelCT isa (RelatedLane memory bytes d) (block name (HPrime.hash v) column)
       (RelatedLane memory bytes d) := by
-  have h := ((block_rel v name column ct).mono
+  obtain h := ((block_rel v name column ct).mono
     (P' := RelatedLane memory bytes d) (fun _ _ hp =>
       ⟨hp.1.space.blockReady hp.1.destination bound,
         hp.2.1.space.blockReady hp.2.1.destination bound, hp.2.2⟩)
@@ -1153,7 +1153,7 @@ theorem advance_rel : RelCT isa AgreeSaved
 theorem advance_lane_rel (memory : Addr) (bytes d : Nat) :
     RelCT isa (RelatedLane memory bytes d) (.block [.alu .add .r14 (.imm 1024)])
       (RelatedLane memory bytes (d + 1024)) := by
-  have h := (advance_rel.mono (P' := RelatedLane memory bytes d)
+  obtain h := (advance_rel.mono (P' := RelatedLane memory bytes d)
     (fun _ _ h => h.2.2) (fun _ _ h => h)).wpDep
     (fun s t _ => ⟨advance_ok s, advance_ok t⟩)
   have ready {s t : State} (h : Advanced s t) (hs : LaneReady memory bytes d s) :
@@ -1200,17 +1200,17 @@ theorem lanesLoop_rel (v : Proof.Blake2.X86_64.Backend) (name : String)
       (.loop (lane name (HPrime.hash v)) .ne) AgreeSaved := by
   let I := fun n s t => ∃ j, n = lanes - j ∧ j < lanes ∧
     LoopI s₁ memory lanes q j h₁ s ∧ LoopI s₂ memory lanes q j h₂ t ∧ AgreeSaved s t
-  have steps : ∀ n, RelCT isa (I n) (lane name (HPrime.hash v)) fun a b =>
+  obtain steps : ∀ n, RelCT isa (I n) (lane name (HPrime.hash v)) fun a b =>
       isa.eval .ne a = isa.eval .ne b ∧
       (isa.eval .ne a = some false → AgreeSaved a b) ∧
       (isa.eval .ne a = some true → ∃ m < n, I m a b) := by
     intro n s t trace₁ trace₂ a b hp e₁ e₂
     obtain ⟨j, rfl, hj, hs, ht, pub⟩ := hp
-    have bound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
-      have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
+    obtain bound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
+      obtain mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
       rw [Nat.add_mul, Nat.one_mul] at mul
       omega_arith
-    have related : RelatedLane memory (1024 * (lanes * q)) (1024 * (j * q)) s t :=
+    obtain related : RelatedLane memory (1024 * (lanes * q)) (1024 * (j * q)) s t :=
       ⟨⟨space₁.keeps hs.keeps, hs.destination⟩,
         ⟨space₂.keeps ht.keeps, ht.destination⟩, pub⟩
     obtain ⟨trace, pubNext⟩ := lane_rel v name memory _ _ bound _ _ _ _ _ _ related e₁ e₂
@@ -1223,7 +1223,7 @@ theorem lanesLoop_rel (v : Proof.Blake2.X86_64.Backend) (name : String)
     refine ⟨trace, ?_, fun _ => pubNext, ?_⟩
     · simp only [eval, ha.2, hb.2]
     · intro taken
-      have remaining : lanes - (j + 1) ≠ 0 := by
+      obtain remaining : lanes - (j + 1) ≠ 0 := by
         intro zero
         simp only [eval, ha.2, zero, decide_true, Option.map_some,
           Bool.not_true, Option.some.injEq, Bool.false_eq_true] at taken
@@ -1274,7 +1274,7 @@ theorem clear_rel (memory : Addr) (lanes q : Nat) :
     RelCT isa (fun s t => Ready memory lanes q s ∧ Ready memory lanes q t ∧ AgreeBases s t)
       clear AgreeBases := by
   let P := fun s t => Ready memory lanes q s ∧ Ready memory lanes q t ∧ AgreeBases s t
-  have prep := (clearSetup_rel.mono (P' := P) (fun _ _ h => h.2.2)
+  obtain prep := (clearSetup_rel.mono (P' := P) (fun _ _ h => h.2.2)
     (fun _ _ h => h)).wpDep (fun s t h =>
       ⟨clearSetup_ok s h.1.memoryRead h.1.blocksRead,
         clearSetup_ok t h.2.1.memoryRead h.2.1.blocksRead⟩)
@@ -1288,7 +1288,7 @@ theorem clear_rel (memory : Addr) (lanes q : Nat) :
   · rw [ha.count, hb.count, hp.1.blocksWord, hp.2.1.blocksWord]
   · rw [ha.destination, hb.destination, hp.1.memoryWord, hp.2.1.memoryWord]
   · have excluded : ∀ r ∈ publicBases, r ≠ .r14 ∧ r ≠ .rax ∧ r ≠ .rcx := by decide
-    have hn := excluded r hr
+    obtain hn := excluded r hr
     exact (ha.other r hn.1 hn.2.1 hn.2.2).trans
       ((hp.2.2 r hr).trans (hb.other r hn.1 hn.2.1 hn.2.2).symm)
 
@@ -1315,9 +1315,9 @@ structure LoopReady (memory : Addr) (lanes q : Nat) (s : State) : Prop where
 theorem Cleared.ready {s t : State} {memory : Addr} {lanes q : Nat}
     (h : Cleared s t memory (lanes * q)) (hs : Ready memory lanes q s) :
     Ready memory lanes q t := by
-  have bp := h.other .rbp (by decide) (by decide) (by decide)
-  have bx := h.other .rbx (by decide) (by decide) (by decide)
-  have sp := h.other .rsp (by decide) (by decide) (by decide)
+  obtain bp := h.other .rbp (by decide) (by decide) (by decide)
+  obtain bx := h.other .rbx (by decide) (by decide) (by decide)
+  obtain sp := h.other .rsp (by decide) (by decide) (by decide)
   refine ⟨hs.space.same h.wr bp bx sp, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [h.rd, h.wr, bp]; exact hs.memoryRead
   · rw [h.rd, h.wr, bp]; exact hs.lanesRead
@@ -1330,7 +1330,7 @@ theorem Cleared.ready {s t : State} {memory : Addr} {lanes q : Nat}
 theorem Setup.loopReady {s a b : State} {memory : Addr} {lanes q : Nat}
     (hs : Ready memory lanes q s) (ha : Cleared s a memory (lanes * q))
     (hb : Setup a b memory lanes q) : LoopReady memory lanes q b := by
-  have ready := ha.ready hs
+  obtain ready := ha.ready hs
   refine ⟨ready.space.same hb.wr (hb.other .rbp (by decide) (by decide) (by decide) (by decide))
     (hb.other .rbx (by decide) (by decide) (by decide) (by decide))
     (hb.other .rsp (by decide) (by decide) (by decide) (by decide)), ?_,
@@ -1354,7 +1354,7 @@ theorem Setup.agree {s t a b : State} {memory : Addr} {lanes q : Nat}
   · subst r; exact ha.remaining.trans hb.remaining.symm
   by_cases h13 : r = .r13
   · subst r; exact ha.stride.trans hb.stride.symm
-  have included : ∀ r ∈ calleeSaved, r ≠ .r14 → r ≠ .r12 → r ≠ .r15 → r ≠ .r13 →
+  obtain included : ∀ r ∈ calleeSaved, r ≠ .r14 → r ≠ .r12 → r ≠ .r15 → r ≠ .r13 →
       r ∈ publicBases := by decide
   exact (ha.other r h14 h12 h15 h13).trans
     ((hp r (included r hr h14 h12 h15 h13)).trans (hb.other r h14 h12 h15 h13).symm)
@@ -1378,27 +1378,27 @@ theorem code_ct (v : Proof.Blake2.X86_64.Backend) (name : String)
     (hq : 2 ≤ q) :
     ConstantTime isa (Ready memory lanes q) AgreeBases (code name (HPrime.hash v)) := by
   let P := fun s t => Ready memory lanes q s ∧ Ready memory lanes q t ∧ AgreeBases s t
-  have blocksPositive : 1 ≤ lanes * q := by
-    have mul := Nat.mul_le_mul_right q lo
+  obtain blocksPositive : 1 ≤ lanes * q := by
+    obtain mul := Nat.mul_le_mul_right q lo
     rw [Nat.one_mul] at mul; omega_arith
-  have cleared := (clear_rel memory lanes q).wpDep (fun s t hp =>
+  obtain cleared := (clear_rel memory lanes q).wpDep (fun s t hp =>
     ⟨clear_ok s memory (lanes * q) blocksPositive hp.1.space.bound hp.1.memoryRead
         hp.1.blocksRead hp.1.memoryWord hp.1.blocksWord hp.1.space.matrix,
       clear_ok t memory (lanes * q) blocksPositive hp.2.1.space.bound hp.2.1.memoryRead
         hp.2.1.blocksRead hp.2.1.memoryWord hp.2.1.blocksWord hp.2.1.space.matrix⟩)
   let R := fun a b => AgreeBases a b ∧ ∃ s t, P s t ∧
     Cleared s a memory (lanes * q) ∧ Cleared t b memory (lanes * q)
-  have setup := (lanesSetup_rel.mono (P' := R) (fun _ _ h => h.1)
+  obtain setup := (lanesSetup_rel.mono (P' := R) (fun _ _ h => h.1)
     (fun _ _ h => h)).wpDep (F := fun a b => Setup a b memory lanes q) (by
     intro a b hp
     obtain ⟨_, s, t, hst, ha, hb⟩ := hp
-    have ra := ha.ready hst.1
-    have rb := hb.ready hst.2.1
+    obtain ra := ha.ready hst.1
+    obtain rb := hb.ready hst.2.1
     exact ⟨lanesSetup_ok a memory lanes q ra.memoryRead ra.lanesRead ra.memoryWord
         ra.lanesWord ra.laneLength,
       lanesSetup_ok b memory lanes q rb.memoryRead rb.lanesRead rb.memoryWord
         rb.lanesWord rb.laneLength⟩)
-  have prepared : RelCT isa R lanesSetupCode (fun a b =>
+  obtain prepared : RelCT isa R lanesSetupCode (fun a b =>
       LoopReady memory lanes q a ∧ LoopReady memory lanes q b ∧ AgreeSaved a b) := setup.mono (fun _ _ h => h) (by
     intro a b h
     obtain ⟨_, c, d, hp, ha, hb⟩ := h
@@ -1441,7 +1441,7 @@ theorem Done.frame_word {s t : State} {memory : Addr} {lanes q : Nat}
     (d : Nat) (bound : d + 8 ≤ 272) (separate : d + 8 ≤ 64 ∨ 72 ≤ d) :
     t.mem.readW (t.gpr .rbp + BitVec.ofNat 64 d) 64 = s.mem.readW (s.gpr .rbp + BitVec.ofNat 64 d) 64 := by
   rw [done.bp]
-  have sub : Region.Sub ⟨s.gpr .rbp + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
+  obtain sub : Region.Sub ⟨s.gpr .rbp + BitVec.ofNat 64 d, 8⟩ ⟨s.gpr .rbp, 272⟩ := Offset.sub_base _ bound
   exact done.frame.readW (r := ⟨s.gpr .rbp + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1499,7 +1499,7 @@ theorem dimensions_nat_ok (s : State) (p : Params) (bound : 1024 * p.laneLen < 2
   · rw [lane, stride, stride_shift _ 10 bound]
     simp only [show 2 ^ 10 = 1024 from rfl, Nat.mul_div_cancel_left _ (by decide : 0 < 1024)]
   · rw [segment, stride, stride_shift _ 12 bound]
-    have div : 1024 * p.laneLen / 4096 = p.laneLen / 4 := by
+    obtain div : 1024 * p.laneLen / 4096 = p.laneLen / 4 := by
       rw [show (4096 : Nat) = 1024 * 4 from rfl, Nat.mul_div_mul_left _ _ (by decide : 0 < 1024)]
     rw [show 2 ^ 12 = 4096 from rfl, div]
     rfl
@@ -1578,8 +1578,8 @@ structure Environment (p : Params) (s : State) : Prop where
 theorem Environment.of_state {p : Params} {s t : State} (h : Environment p s)
     (bp : t.gpr .rbp = s.gpr .rbp) (sp : t.gpr .rsp = s.gpr .rsp)
     (mem : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : Environment p t := by
-  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [mem, bp]
-  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [mem, bp]
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [mem, bp]
+  obtain work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [mem, bp]
   refine ⟨h.parameters, h.passesBound, h.layout.of_preserved bp sp base work rd wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · constructor
     · rw [rd, wr, bp]; exact h.addressLayout.frameRead
@@ -1600,10 +1600,10 @@ theorem Environment.of_state {p : Params} {s t : State} (h : Environment p s)
 theorem Reset.header {p : Params} {s t : State} (h : Environment p s) (reset : Reset s t)
     (laneLength : t.gpr .r12 = BitVec.ofNat 64 p.laneLen)
     (segmentLength : t.gpr .r13 = BitVec.ofNat 64 p.segmentLen) : FillHeader.Ready p 0 0 0 t := by
-  have bp := reset.regs .rbp (by decide)
-  have sp := reset.regs .rsp (by decide)
-  have base : FillKernel.matrix t = FillKernel.matrix s := reset.read 232 (by decide) (by decide)
-  have work : AddressCalls.work t = AddressCalls.work s := reset.read 248 (by decide) (by decide)
+  obtain bp := reset.regs .rbp (by decide)
+  obtain sp := reset.regs .rsp (by decide)
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := reset.read 232 (by decide) (by decide)
+  obtain work : AddressCalls.work t = AddressCalls.work s := reset.read 248 (by decide) (by decide)
   refine ⟨h.layout.of_preserved bp sp base work reset.rd reset.wr, ?_, ?_, ?_, ?_, ?_, laneLength,
     segmentLength, (reset.read 184 (by decide) (by decide)).trans h.lanesWord⟩
   · constructor
@@ -1655,12 +1655,12 @@ theorem code_ok (s : State) (p : Params) (h : Ready p s) :
   unfold Impl.Argon2.X86_64.FillSetup.code
   refine WP.seq ((dimensions_nat_ok s p h.bound h.stride).mono ?_)
   rintro a ⟨laneLength, segmentLength, keeps⟩
-  have bp := keeps.regs .rbp (by decide)
-  have sp := keeps.regs .rsp (by decide)
-  have environment := h.environment.of_state bp sp keeps.mem keeps.rd keeps.wr
+  obtain bp := keeps.regs .rbp (by decide)
+  obtain sp := keeps.regs .rsp (by decide)
+  obtain environment := h.environment.of_state bp sp keeps.mem keeps.rd keeps.wr
   refine (reset_ok a environment.passWrite).mono ?_
   intro t reset
-  have header := reset.header environment ((reset.regs .r12 (by decide)).trans laneLength)
+  obtain header := reset.header environment ((reset.regs .r12 (by decide)).trans laneLength)
     ((reset.regs .r13 (by decide)).trans segmentLength)
   have words (d : Nat) (lower : 8 ≤ d) (upper : d + 8 ≤ 272) :
       t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
@@ -1670,7 +1670,7 @@ theorem code_ok (s : State) (p : Params) (h : Ready p s) :
     reset.rd.trans keeps.rd, reset.wr.trans keeps.wr, ?_, reset.mxcsr.trans keeps.mxcsr, words⟩
   · rw [reset.wr, reset.regs .rbp (by decide)]; exact environment.passWrite
   · intro r hr bx q g sl
-    have ne : r ≠ .rax := by
+    obtain ne : r ≠ .rax := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact (reset.regs r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨ne, bx, sl⟩)).trans
@@ -1709,18 +1709,18 @@ open VG VG.X86_64 VG.Spec.Argon2
 
 theorem Prepared.finish_ready {s t : State} {p : Params} (ready : Ready p s) (done : Prepared s t p)
     (outputReady : FinalOutput.Ready p s) (positive : 0 < p.passes) : FillFinish.Ready p t := by
-  have bp := done.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
-  have sp := done.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
+  obtain bp := done.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
+  obtain sp := done.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
   have base : ReductionState.matrix t = ReductionState.matrix s := done.matrix
-  have output : FinalOutput.output t = FinalOutput.output s := done.words 256 (by decide) (by decide)
-  have work : FinalOutput.work t = FinalOutput.work s := done.words 248 (by decide) (by decide)
+  obtain output : FinalOutput.output t = FinalOutput.output s := done.words 256 (by decide) (by decide)
+  obtain work : FinalOutput.work t = FinalOutput.work s := done.words 248 (by decide) (by decide)
   obtain ⟨lane, slice, header⟩ := done.ready.filling.header
   have params := ready.environment.parameters
   refine ⟨done.ready, ⟨?_, ?_⟩, positive⟩
   · refine ⟨⟨params.lanesPositive, params.segment_bound.1, ?_, header.layout.frameRead 232 (by simp),
       header.layout.matrixWrite, header.layout.matrixFrame, header.laneLength⟩,
       params.lanesBound, header.layout.frameRead 184 (by simp), header.lanesWord⟩
-    have blocks := Proof.Argon2.blocks_le_memory p
+    obtain blocks := Proof.Argon2.blocks_le_memory p
     have memory := params.memoryBound
     omega_arith
   · refine ⟨outputReady.positive, outputReady.bound, ?_,
@@ -1753,8 +1753,8 @@ structure Ready (p : Params) (s : State) : Prop where
 
 theorem initialized_environment {s t : State} {p : Params} (h : Ready p s)
     (done : MemoryInit.Done s t (FillKernel.matrix s) p.lanes p.laneLen) : FillSetup.Environment p t := by
-  have base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
-  have work : AddressCalls.work t = AddressCalls.work s := done.frame_word h.initializing.space 248 (by decide) (Or.inr (by decide))
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
+  obtain work : AddressCalls.work t = AddressCalls.work s := done.frame_word h.initializing.space 248 (by decide) (Or.inr (by decide))
   have e := h.environment
   refine ⟨e.parameters, e.passesBound, e.layout.of_preserved done.bp done.sp base work done.rd done.wr,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -1775,9 +1775,9 @@ theorem initialized_environment {s t : State} {p : Params} (h : Ready p s)
 
 theorem initialized_output {s t : State} {p : Params} (h : Ready p s)
     (done : MemoryInit.Done s t (FillKernel.matrix s) p.lanes p.laneLen) : FinalOutput.Ready p t := by
-  have base : ReductionState.matrix t = ReductionState.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
-  have output : FinalOutput.output t = FinalOutput.output s := done.frame_word h.initializing.space 256 (by decide) (Or.inr (by decide))
-  have work : FinalOutput.work t = FinalOutput.work s := done.frame_word h.initializing.space 248 (by decide) (Or.inr (by decide))
+  obtain base : ReductionState.matrix t = ReductionState.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
+  obtain output : FinalOutput.output t = FinalOutput.output s := done.frame_word h.initializing.space 256 (by decide) (Or.inr (by decide))
+  obtain work : FinalOutput.work t = FinalOutput.work s := done.frame_word h.initializing.space 248 (by decide) (Or.inr (by decide))
   refine ⟨h.output.positive, h.output.bound, ?_,
     (done.frame_word h.initializing.space 264 (by decide) (Or.inr (by decide))).trans h.output.tagWord,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -1794,20 +1794,20 @@ theorem initialized_output {s t : State} {p : Params} (h : Ready p s)
 theorem initialized_setup {s t : State} {p : Params} (h : Ready p s)
     (done : MemoryInit.Done s t (FillKernel.matrix s) p.lanes p.laneLen) : FillSetup.Ready p t := by
   have params := h.environment.parameters
-  have product : p.laneLen ≤ p.lanes * p.laneLen := by
+  obtain product : p.laneLen ≤ p.lanes * p.laneLen := by
     simpa only [Nat.one_mul] using Nat.mul_le_mul_right p.laneLen (show 1 ≤ p.lanes from params.lanesPositive)
   refine ⟨initialized_environment h done, ?_, done.stride⟩
   have bound := h.initializing.space.bound
-  have bytes := Nat.mul_le_mul_left 1024 product
+  obtain bytes := Nat.mul_le_mul_left 1024 product
   omega_arith
 
 theorem initialized_represents {s t : State} {p : Params} (h : Ready p s)
     (done : MemoryInit.Done s t (FillKernel.matrix s) p.lanes p.laneLen) :
     Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks
       (initMemory p (Spec.Blake2.bytesAt s.mem (s.gpr .rbp) 64)).memory := by
-  have base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
+  obtain base : FillKernel.matrix t = FillKernel.matrix s := done.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
   rw [base]
-  have segments := Proof.Argon2.laneLen_segments p h.environment.parameters.lanesPositive
+  obtain segments := Proof.Argon2.laneLen_segments p h.environment.parameters.lanesPositive
   have minimum := h.environment.parameters.segment_bound.1
   exact done.initialized.represents h.environment.parameters.lanesPositive (by omega_arith)
 
@@ -1892,23 +1892,23 @@ theorem writes_eq (s t : State) (p : Params) (bp : t.gpr .rbp = s.gpr .rbp) (sp 
 theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params) (h : Ready p s) :
     WP isa (Impl.Argon2.X86_64.InitFill.code name (HPrime.hash v)) s (Done s · p) := by
   have params := h.environment.parameters
-  have q : 2 ≤ p.laneLen := by
-    have segments := Proof.Argon2.laneLen_segments p params.lanesPositive
+  obtain q : 2 ≤ p.laneLen := by
+    obtain segments := Proof.Argon2.laneLen_segments p params.lanesPositive
     have minimum := params.segment_bound.1
     omega_arith
-  have blocks := Proof.Argon2.lastIndex_bounds p params.lanesPositive params.segment_bound.1 0 params.lanesPositive
+  obtain blocks := Proof.Argon2.lastIndex_bounds p params.lanesPositive params.segment_bound.1 0 params.lanesPositive
   unfold Impl.Argon2.X86_64.InitFill.code
   refine WP.seq ((MemoryInit.complete_ok v name s (FillKernel.matrix s) p.lanes p.laneLen h.initializing
     params.lanesPositive (Nat.lt_trans params.lanesBound (by decide)) q).mono ?_)
   intro a initialized
-  have setupReady := initialized_setup h initialized
-  have initializedBase : FillKernel.matrix a = FillKernel.matrix s :=
+  obtain setupReady := initialized_setup h initialized
+  obtain initializedBase : FillKernel.matrix a = FillKernel.matrix s :=
     initialized.frame_word h.initializing.space 232 (by decide) (Or.inr (by decide))
-  have initializedWork : FinalOutput.work a = FinalOutput.work s :=
+  obtain initializedWork : FinalOutput.work a = FinalOutput.work s :=
     initialized.frame_word h.initializing.space 248 (by decide) (Or.inr (by decide))
-  have initializedOutput : FinalOutput.output a = FinalOutput.output s :=
+  obtain initializedOutput : FinalOutput.output a = FinalOutput.output s :=
     initialized.frame_word h.initializing.space 256 (by decide) (Or.inr (by decide))
-  have rep : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks
+  obtain rep : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks
       (initMemory p (bytesAt s.mem (s.gpr .rbp) 64)).memory := by
     rw [initializedBase]
     exact initialized.initialized.represents params.lanesPositive (by omega_arith)
@@ -1917,10 +1917,10 @@ theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
   refine (FillFinish.code_ok v name b p (prepared.finish_ready setupReady (initialized_output h initialized) h.positive)
     (initMemory p (bytesAt s.mem (s.gpr .rbp) 64)) (prepared.represents setupReady _ rep)).mono ?_
   intro t filled
-  have bp := prepared.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
-  have sp := prepared.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
-  have work : FinalOutput.work b = FinalOutput.work a := prepared.words 248 (by decide) (by decide)
-  have output : FinalOutput.output b = FinalOutput.output a := prepared.words 256 (by decide) (by decide)
+  obtain bp := prepared.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
+  obtain sp := prepared.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide) (by decide)
+  obtain work : FinalOutput.work b = FinalOutput.work a := prepared.words 248 (by decide) (by decide)
+  obtain output : FinalOutput.output b = FinalOutput.output a := prepared.words 256 (by decide) (by decide)
   refine ⟨?_, (filled.regs .rbp (by simp [calleeSaved]) (by decide) (by decide) (by decide)).trans (bp.trans initialized.bp),
     (filled.regs .rsp (by simp [calleeSaved]) (by decide) (by decide) (by decide)).trans (sp.trans initialized.sp),
     filled.rd.trans (prepared.rd.trans initialized.rd), filled.wr.trans (prepared.wr.trans initialized.wr), ?_⟩
@@ -1928,9 +1928,9 @@ theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     rw [output, initializedOutput] at digest
     exact digest
   · have initialFrame := initialization_frame h initialized
-    have setupFrame := setup_frame (p := p) prepared.frame
+    obtain setupFrame := setup_frame (p := p) prepared.frame
     rw [writes_eq s a p initialized.bp initialized.sp initializedBase initializedWork initializedOutput] at setupFrame
-    have fillFrame := filling_frame (by omega_arith : 0 < p.blocks) filled.frame
+    obtain fillFrame := filling_frame (by omega_arith : 0 < p.blocks) filled.frame
     rw [writes_eq a b p bp sp prepared.matrix work output,
       writes_eq s a p initialized.bp initialized.sp initializedBase initializedWork initializedOutput] at fillFrame
     exact (initialFrame.trans setupFrame).trans fillFrame

@@ -90,7 +90,7 @@ theorem cfbLoad_ok (s : State) {q : Addr} (hq : s.gpr .x1 = q) (rq : InRegions (
       s'.gpr .x5 = byteRev64 (s.mem.readW q 64) ∧
       (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v := by
-  have rq' : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8 := by
+  obtain rq' : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8 := by
     rw [BitVec.add_zero, hq]; exact rq
   let s₁ := s.write .x .x5 (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 0) 64)
   let s₂ := s₁.write .x .x5 (rev64 (s₁.read .x .x5))
@@ -113,16 +113,16 @@ theorem cfbStore_ok (s : State) {p q : Addr} (hp : s.gpr .x1 = p) (hq : s.gpr .x
   have inrw {a : Addr} (h : InRegions s.wr a 8) : InRegions (s.rd ++ s.wr) a 8 := by
     obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
   let s₁ := s.write .x .x5 (rev64 (s.read .x .x5))
-  have r₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 0) 8 := by
+  obtain r₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x2 + BitVec.ofNat 64 0) 8 := by
     rw [BitVec.add_zero, gpr_write_of_ne _ _ _ (by decide), hq]; exact inrw wq
   let s₂ := s₁.write .x .x6 (s₁.mem.readW (s₁.gpr .x2 + BitVec.ofNat 64 0) 64)
-  have w₂ : InRegions s₂.wr (s₂.gpr .x1 + BitVec.ofNat 64 0) 8 := by
+  obtain w₂ : InRegions s₂.wr (s₂.gpr .x1 + BitVec.ofNat 64 0) 8 := by
     simp only [s₂, s₁, BitVec.add_zero, gpr_write_of_ne _ _ _ (by decide : Reg.x1 ≠ .x5),
       gpr_write_of_ne _ _ _ (by decide : Reg.x1 ≠ .x6), hp]
     exact wp
   let s₃ : State := { s₂ with mem := s₂.mem.writeW (s₂.gpr .x1 + BitVec.ofNat 64 0) (s₂.gpr .x6) }
   let s₄ := s₃.write .x .x5 (s₃.read .x .x5 ^^^ s₃.read .x .x6)
-  have w₄ : InRegions s₄.wr (s₄.gpr .x2 + BitVec.ofNat 64 0) 8 := by
+  obtain w₄ : InRegions s₄.wr (s₄.gpr .x2 + BitVec.ofNat 64 0) 8 := by
     change InRegions s.wr (s₄.gpr .x2 + BitVec.ofNat 64 0) 8
     simp only [s₄, s₃, s₂, s₁, BitVec.add_zero, gpr_write_of_ne _ _ _ (by decide : Reg.x2 ≠ .x5),
       gpr_write_of_ne _ _ _ (by decide : Reg.x2 ≠ .x6), hq]
@@ -145,33 +145,33 @@ theorem cfbStore_ok (s : State) {p q : Addr} (hp : s.gpr .x1 = p) (hq : s.gpr .x
 /-- One block, after the setup the blocks share. -/
 theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : FInv s₀ k s) :
     WP isa (.seq (.block cfbLoad) (.seq enc (.block cfbStore))) s (FInv s₀ (k + 1)) := by
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
   have hdw := hp.data_fit
-  have rdwr : s.rd ++ s.wr = [keyR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+  obtain rdwr : s.rd ++ s.wr = [keyR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
-  have inData : (dataR s₀).Contains (D s₀ + BitVec.ofNat 64 (8 * k)) 8 :=
+  obtain inData : (dataR s₀).Contains (D s₀ + BitVec.ofNat 64 (8 * k)) 8 :=
     Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])
   obtain ⟨s₁, run₁, ax₁, keep₁, sp₁, mem₁, rd₁, wr₁, vec₁⟩ := cfbLoad_ok s h.x1
     (by rw [rdwr]; exact in_rw (r := ivR s₀) (by simp) (Region.contains_self _ _))
-  have x14₁ : s₁.gpr .x14 = W s₀ := by rw [keep₁ _ (by decide), h.x14]
-  have x15₁ : s₁.gpr .x15 = S s₀ := by rw [keep₁ _ (by decide), h.x15]
-  have bp : BlockPre s₁ := block_pre hp x14₁ x15₁ (rd₁.trans h.rd) (wr₁.trans h.wr)
-  have sch₁ : sch s₁ = K s₀ := by rw [sch, x14₁, mem₁]; exact sched_frame hp h.frame
-  have ready : TInv s₁ s₁ := ⟨Same.refl _, rfl, rfl, h.consts.congr (fun w _ _ _ _ => by rw [vec₁]),
+  obtain x14₁ : s₁.gpr .x14 = W s₀ := by rw [keep₁ _ (by decide), h.x14]
+  obtain x15₁ : s₁.gpr .x15 = S s₀ := by rw [keep₁ _ (by decide), h.x15]
+  obtain bp : BlockPre s₁ := block_pre hp x14₁ x15₁ (rd₁.trans h.rd) (wr₁.trans h.wr)
+  obtain sch₁ : sch s₁ = K s₀ := by rw [sch, x14₁, mem₁]; exact sched_frame hp h.frame
+  obtain ready : TInv s₁ s₁ := ⟨Same.refl _, rfl, rfl, h.consts.congr (fun w _ _ _ _ => by rw [vec₁]),
     h.masks.congr (fun p hp' => keep₁ _ (maskRegs_ne p hp').1),
     fun i hi => by rw [x15₁, sch₁, mem₁]; exact h.keys i hi⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (enc_ok bp ready) fun s₂ ⟨same₂, x14₂, ax₂, const₂, mask₂, keys₂⟩ => ?_)
-  have fr₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← mem₁, ← x15₁]; exact same₂.frame
-  have wr₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
-  have x1₂ : s₂.gpr .x1 = P s₀ := by
+  obtain fr₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← mem₁, ← x15₁]; exact same₂.frame
+  obtain wr₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
+  obtain x1₂ : s₂.gpr .x1 = P s₀ := by
     rw [same₂.keep .x1 (by simp [outer]), keep₁ _ (by decide), h.x1]
-  have x2₂ : s₂.gpr .x2 = D s₀ + BitVec.ofNat 64 (8 * k) := by
+  obtain x2₂ : s₂.gpr .x2 = D s₀ + BitVec.ofNat 64 (8 * k) := by
     rw [same₂.keep .x2 (by simp [outer]), keep₁ _ (by decide), h.x2]
   obtain ⟨s₃, run₃, x2₃, x3₃, keep₃, mem₃, sp₃, rd₃, wr₃, vec₃⟩ := cfbStore_ok s₂ x1₂ x2₂
     (by rw [wr₂]; exact in_rw (r := ivR s₀) (by simp) (Region.contains_self _ _))
     (by rw [wr₂]; exact in_rw (r := dataR s₀) (by simp) inData)
-  have vals₂ : ∀ j < N s₀, bytesAt s₂.mem (D s₀ + BitVec.ofNat 64 (8 * j)) 8 =
+  obtain vals₂ : ∀ j < N s₀, bytesAt s₂.mem (D s₀ + BitVec.ofNat 64 (8 * j)) 8 =
       if j < k then fbOut .cfbDec 8 (ciph s₀) s₀.mem (D s₀) (iv s₀) j
       else bytesAt s₀.mem (D s₀ + BitVec.ofNat 64 (8 * j)) 8 := by
     intro j hj
@@ -179,28 +179,28 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
       obtain rfl := List.mem_singleton.mp hr
       exact (hp.data_scr.sub_left (data_sub hj)).sub_right (Region.sub_prefix (by decide))) (by decide)]
     exact h.data j hj
-  have ivs₂ : bytesAt s₂.mem (P s₀) 8 = cbcPrev 8 s₀.mem (D s₀) (iv s₀) k := by
+  obtain ivs₂ : bytesAt s₂.mem (P s₀) 8 = cbcPrev 8 s₀.mem (D s₀) (iv s₀) k := by
     rw [bytesAt_frame fr₂ (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))) (by decide)]
     exact h.state
-  have ct₂ : le8 (s₂.mem.readW (D s₀ + BitVec.ofNat 64 (8 * k)) 64) =
+  obtain ct₂ : le8 (s₂.mem.readW (D s₀ + BitVec.ofNat 64 (8 * k)) 64) =
       bytesAt s₀.mem (D s₀ + BitVec.ofNat 64 (8 * k)) 8 := by
     rw [le8_readW, vals₂ k hk, ite_eq_right (Nat.lt_irrefl _)]
-  have value : le8 (byteRev64 (s₂.gpr .x5) ^^^ s₂.mem.readW (D s₀ + BitVec.ofNat 64 (8 * k)) 64) =
+  obtain value : le8 (byteRev64 (s₂.gpr .x5) ^^^ s₂.mem.readW (D s₀ + BitVec.ofNat 64 (8 * k)) 64) =
       fbOut .cfbDec 8 (ciph s₀) s₀.mem (D s₀) (iv s₀) k := by
     rw [BitVec.xor_comm, le8_xor, ct₂, ax₂, ax₁, sch₁, ← cipher_le8, le8_readW, h.state,
       ← CfbDec.input_eq]
     rfl
   let mid := s₂.mem.writeW (P s₀) (s₂.mem.readW (D s₀ + BitVec.ofNat 64 (8 * k)) 64)
-  have fIv : Frame [ivR s₀] s₂.mem mid :=
+  obtain fIv : Frame [ivR s₀] s₂.mem mid :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have fData : Frame [⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩] mid s₃.mem := by
+  obtain fData : Frame [⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩] mid s₃.mem := by
     rw [mem₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have fStore : Frame [ivR s₀, ⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩] s₂.mem s₃.mem :=
+  obtain fStore : Frame [ivR s₀, ⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩] s₂.mem s₃.mem :=
     (fIv.mono (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_self)).trans
       (fData.mono (fun _ hr => List.mem_cons_of_mem _ hr))
-  have stD : ∀ {d n : Nat}, d + n ≤ 1120 → ∀ r ∈ [ivR s₀, ⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩],
+  obtain stD : ∀ {d n : Nat}, d + n ≤ 1120 → ∀ r ∈ [ivR s₀, ⟨D s₀ + BitVec.ofNat 64 (8 * k), 8⟩],
       (⟨S s₀ + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
     intro d n hdn r hr
     rcases List.mem_cons.mp hr with rfl | hr
@@ -233,7 +233,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
       simp [n2, n3, n5, n6]))
   · intro i hi
     rw [fStore.readW (Region.contains_self _ _) (stD (by omega_using [hi])) (by decide)]
-    have e := keys₂ i hi
+    obtain e := keys₂ i hi
     rw [x15₁, sch₁] at e
     exact e
   · exact (h.slots.frame_in (lo := 384) (n := 72) saveSlots_facts.1 fr₂ (fun r hr => by
@@ -270,8 +270,8 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
       ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (body_ok hp hk h) fun s' h' => ?_
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
-  have ev := eval_nonzero (r := .x3) (x := N s₀ - (k + 1)) (by omega_using [hN]) h'.x3
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain ev := eval_nonzero (r := .x3) (x := N s₀ - (k + 1)) (by omega_using [hN]) h'.x3
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
@@ -282,12 +282,12 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
 
 
 theorem result_of_inv {s₀ s : State} (h : FInv s₀ (N s₀) s) : cfbDecAArch64.post s₀ s := by
-  have hc := Modes.cfbDec_of 8 (ciph s₀) s₀.mem (D s₀) (iv s₀) (N s₀)
+  obtain hc := Modes.cfbDec_of 8 (ciph s₀) s₀.mem (D s₀) (iv s₀) (N s₀)
   constructor
   · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
     rw [cbcBlocksAt_eq, cbcBlocksAt_eq]
     refine Eq.trans (List.map_congr_left fun j hj => ?_) hc.1
-    have hj := List.mem_range.mp hj
+    obtain hj := List.mem_range.mp hj
     rw [h.data j hj, ite_eq_left hj]
   · change bytesAt s.mem (P s₀) 8 = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
     rw [cbcBlocksAt_eq, h.state, ← CfbDec.input_eq]
@@ -297,18 +297,18 @@ theorem result_of_inv {s₀ s : State} (h : FInv s₀ (N s₀) s) : cfbDecAArch6
 theorem cfb_wp {s₀ : State} (hp : Pre s₀) :
     WP isa cfbDecrypt s₀ fun s =>
       cfbDecAArch64.post s₀ s ∧ ∀ i < 9, s.gpr (VG.Impl.CmacTripleDes.AArch64.savedReg i) = s₀.gpr (VG.Impl.CmacTripleDes.AArch64.savedReg i) := by
-  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
+  obtain hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
   let s₁ := (s₀.write .x .x14 (s₀.gpr .x0)).write .x .x15 ((s₀.write .x .x14 (s₀.gpr .x0)).gpr .x4)
-  have g₁ : ∀ r, r ≠ .x14 → r ≠ .x15 → s₁.gpr r = s₀.gpr r := fun r h14 h15 => by
+  obtain g₁ : ∀ r, r ≠ .x14 → r ≠ .x15 → s₁.gpr r = s₀.gpr r := fun r h14 h15 => by
     simp only [s₁, gpr_write_of_ne _ _ _ h15, gpr_write_of_ne _ _ _ h14]
-  have x14₁ : s₁.gpr .x14 = W s₀ := by simp [s₁, gpr_write]
-  have x15₁ : s₁.gpr .x15 = S s₀ := by simp [s₁, gpr_write]
+  obtain x14₁ : s₁.gpr .x14 = W s₀ := by simp [s₁, gpr_write]
+  obtain x15₁ : s₁.gpr .x15 = S s₀ := by simp [s₁, gpr_write]
   change WP isa (.seq _ _) _ _
   refine WP.seq (WP.of_runBlock ⟨s₁, by
     rw [runBlock_cons, exec_mov, runStep_some, runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩)
-  have ev := eval_zero (r := .x3) (x := N s₀) hN (by
+  obtain ev := eval_zero (r := .x3) (x := N s₀) hN (by
     rw [g₁ _ (by decide) (by decide)]; simp [N])
-  have savedNe : ∀ i < 9, VG.Impl.CmacTripleDes.AArch64.savedReg i ≠ .x14 ∧ VG.Impl.CmacTripleDes.AArch64.savedReg i ≠ .x15 := by decide
+  obtain savedNe : ∀ i < 9, VG.Impl.CmacTripleDes.AArch64.savedReg i ≠ .x14 ∧ VG.Impl.CmacTripleDes.AArch64.savedReg i ≠ .x15 := by decide
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ⟨?_, fun i hi => ?_⟩)
       (fun h => by cases h)
@@ -317,16 +317,16 @@ theorem cfb_wp {s₀ : State} (hp : Pre s₀) :
         Spec.Cbc.next, s₁, mem_write]
     · exact g₁ _ (savedNe i hi).1 (savedNe i hi).2
   refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-  have bp : BlockPre s₁ := block_pre hp x14₁ x15₁ rfl rfl
+  obtain bp : BlockPre s₁ := block_pre hp x14₁ x15₁ rfl rfl
   apply WP.seq
   refine WP.mono (prep_ok bp) fun s₂ h₂ => ?_
-  have outer₂ : ∀ r ∈ outer, s₂.gpr r = s₀.gpr r := by
+  obtain outer₂ : ∀ r ∈ outer, s₂.gpr r = s₀.gpr r := by
     intro r hr
     rw [h₂.same.keep r hr]
     simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide)
-  have hS : sch s₁ = K s₀ := by rw [sch, x14₁]; rfl
-  have inv₂ : FInv s₀ 0 s₂ := by
+  obtain hS : sch s₁ = K s₀ := by rw [sch, x14₁]; rfl
+  obtain inv₂ : FInv s₀ 0 s₂ := by
     refine ⟨by rw [h₂.x14, x14₁], by rw [h₂.same.x15, x15₁], outer₂ .x1 (by simp [outer]),
       by rw [outer₂ .x2 (by simp [outer])]; exact (BitVec.add_zero _).symm,
       by rw [outer₂ .x3 (by simp [outer])]; simp [N],
@@ -335,7 +335,7 @@ theorem cfb_wp {s₀ : State} (hp : Pre s₀) :
         obtain rfl := List.mem_singleton.mp hr
         exact ⟨⟨S s₀, 456⟩, by simp [changes], by rw [x15₁]; exact fun _ h => h⟩)
     · intro i hi
-      have e := h₂.keys i hi
+      obtain e := h₂.keys i hi
       rw [x15₁, hS] at e
       exact e
     · intro p hp'
@@ -377,7 +377,7 @@ theorem cfb64Decrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
   refine few_wp fun s₁ g₁ m₁ rd₁ wr₁ => ?_
-  have hp₁ : cfbDecAArch64.pre s₁ := by
+  obtain hp₁ : cfbDecAArch64.pre s₁ := by
     simpa only [cfbDecAArch64, batchPre, blkLen, m₁, rd₁, wr₁, g₁ .x0 (by decide), g₁ .x1 (by decide),
       g₁ .x2 (by decide), g₁ .x3 (by decide), g₁ .x4 (by decide)] using hp
   have transfer {s' : State}

@@ -58,17 +58,17 @@ theorem cmacArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
     WP isa (.block (cmacArgs₁ st)) s fun s₂ => MacKeep s s₂ ∧ s₂.gpr .r21 = s.gpr .r21 ∧
       UArgs s₂ c.C (c.W + BitVec.ofNat 64 st) P (c.W + BitVec.ofNat 64 384) c.R (Spec.Cmac.chainedLen 16 n / 16) := by
   have hn := hP.lt
-  have hcl := chainedLen_le n
-  have hcd := chainedLen_div n
+  obtain hcl := chainedLen_le n
+  obtain hcd := chainedLen_div n
   unfold cmacArgs₁ macArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_mv fun t₅ v₅ => wp_lsr (by decide) fun t₆ v₆ =>
     WP.block_nil ?_
-  have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+  obtain K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
     ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-  have E₆ := E.of_pk K.pk
-  have hq := (hP.take hcl).of_eq K.pk.rd K.pk.wr
+  obtain E₆ := E.of_pk K.pk
+  obtain hq := (hP.take hcl).of_eq K.pk.rd K.pk.wr
   rw [← hcd] at hq
   refine ⟨K, by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide),
       v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)], ?_⟩
@@ -95,17 +95,17 @@ theorem cmacArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat}
     WP isa (.block (cmacArgs₂ st)) s fun s₄ => MacKeep s s₄ ∧
       FArgs s₄ c.C (c.W + BitVec.ofNat 64 st) (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n))
         (c.W + BitVec.ofNat 64 384) (n - Spec.Cmac.chainedLen 16 n) c.R := by
-  have hcl := chainedLen_le n
-  have hrest := chainedLen_rest n
+  obtain hcl := chainedLen_le n
+  obtain hrest := chainedLen_rest n
   unfold cmacArgs₂ macArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_add fun t₅ v₅ => wp_sub fun t₆ v₆ =>
     WP.block_nil ?_
-  have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+  obtain K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
     ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-  have E₆ := E.of_pk K.pk
-  have hq' := hq.of_eq K.pk.rd K.pk.wr
+  obtain E₆ := E.of_pk K.pk
+  obtain hq' := hq.of_eq K.pk.rd K.pk.wr
   refine ⟨K, ?_⟩
   exact fargs L E₆ hst hrest hq'.src (hq'.wd (by omega_arith))
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -126,21 +126,21 @@ finalization of the tail. -/
 theorem shortArgs_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {out : Nat} (hout : out = 0 ∨ out = tO) :
     WP isa (.block (shortArgs out)) s fun s' => PK s s' ∧
       FArgs s' c.C (c.W + BitVec.ofNat 64 out) (c.W + BitVec.ofNat 64 tailO) (c.W + BitVec.ofNat 64 384) 16 c.R := by
-  have ho : out + 16 ≤ tailO ∨ tailO + 16 ≤ out := by rcases hout with rfl | rfl <;> decide
-  have ho' : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
-  have ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
+  obtain ho : out + 16 ≤ tailO ∨ tailO + 16 ≤ out := by rcases hout with rfl | rfl <;> decide
+  obtain ho' : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
+  obtain ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
   unfold shortArgs
   rw [List.append_assoc]
   refine zero16_wp E (d := out) (by omega_arith) ho8 fun s₁ pk₁ _ _ => ?_
-  have E₁ := E.of_pk pk₁
+  obtain E₁ := E.of_pk pk₁
   unfold macArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_li (by decide) fun t₆ v₆ => WP.block_nil ?_
-  have pk₆ : PK s₁ t₆ := (PK.ofUpd v₁).trans ((PK.ofUpd v₂).trans ((PK.ofUpd v₃).trans ((PK.ofUpd v₄).trans
+  obtain pk₆ : PK s₁ t₆ := (PK.ofUpd v₁).trans ((PK.ofUpd v₂).trans ((PK.ofUpd v₃).trans ((PK.ofUpd v₄).trans
     ((PK.ofUpd v₅).trans (PK.ofUpd v₆)))))
-  have E₆ := E₁.of_pk pk₆
+  obtain E₆ := E₁.of_pk pk₆
   exact ⟨pk₁.trans pk₆, fargs L E₆ (y := out) ho' (Nat.le_refl 16) (L.srcW E₆.perm (t := tailO) (k := 16) (by decide))
     (L.w_w (by omega_arith) (by decide) (by omega_arith))
     (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -163,21 +163,21 @@ theorem longArgs₁_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr}
     WP isa (.block (longArgs₁ out)) s fun s₁ => MacKeep s s₁ ∧ s₁.gpr .r21 = s.gpr .r21 ∧
       UArgs s₁ c.C (c.W + BitVec.ofNat 64 out) P (c.W + BitVec.ofNat 64 384) c.R k := by
   have hn := hP.lt
-  have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
-  have ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
+  obtain ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
+  obtain ho8 : out % 4 = 0 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₁
   refine zero16_wp E (d := out) (by omega_arith) ho8 fun s₀ pk₀ g₀ _ => ?_
   simp only [List.append_eq, List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_mv fun t₅ v₅ => wp_lsr (by decide) fun t₆ v₆ =>
     WP.block_nil ?_
-  have K₀ : MacKeep s s₀ := ⟨pk₀, g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide)⟩
-  have K : MacKeep s₀ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+  obtain K₀ : MacKeep s s₀ := ⟨pk₀, g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide), g₀ _ (by decide)⟩
+  obtain K : MacKeep s₀ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
     ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-  have E₀ := E.of_pk pk₀
-  have E₆ := E₀.of_pk K.pk
-  have hq := (hP.take hk).of_eq (by rw [K.pk.rd, pk₀.rd]) (by rw [K.pk.wr, pk₀.wr])
-  have r21₆ : t₆.gpr .r21 = s.gpr .r21 := by
+  obtain E₀ := E.of_pk pk₀
+  obtain E₆ := E₀.of_pk K.pk
+  obtain hq := (hP.take hk).of_eq (by rw [K.pk.rd, pk₀.rd]) (by rw [K.pk.wr, pk₀.wr])
+  obtain r21₆ : t₆.gpr .r21 = s.gpr .r21 := by
     simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, g₀]
   refine ⟨K₀.trans K, r21₆, ?_⟩
   exact uargs L E₆ ho hq.src (hq.wd (d := out) (k := 16) (by omega_arith)) (by omega_arith)
@@ -203,16 +203,16 @@ theorem longArgs₂_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat}
       s₄.gpr .r25 = s.gpr .r25 ∧
       UArgs s₄ c.C (c.W + BitVec.ofNat 64 out) (c.W + BitVec.ofNat 64 tailO) (c.W + BitVec.ofNat 64 384) c.R
         (jOf n) := by
-  have hj1 := jOf_le n
-  have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
+  obtain hj1 := jOf_le n
+  obtain ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₂ macArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_mv fun t₆ v₆ => WP.block_nil ?_
-  have K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+  obtain K : MacKeep s t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
     ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-  have E₆ := E.of_pk K.pk
+  obtain E₆ := E.of_pk K.pk
   refine ⟨K, by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other],
     by simp (disch := decide) only [v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other], ?_⟩
   exact uargs L E₆ ho (L.srcW E₆.perm (t := tailO) (k := 16 * jOf n) (by simp only [tailO]; omega_arith))
@@ -232,22 +232,22 @@ theorem longArgs₃_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n : Nat} 
     WP isa (.block (longArgs₃ out)) s fun s₆ => MacKeep s s₆ ∧
       FArgs s₆ c.C (c.W + BitVec.ofNat 64 out) (c.W + BitVec.ofNat 64 (tailO + 16 * jOf n))
         (c.W + BitVec.ofNat 64 384) (n - 16 * kOf n - 16 * jOf n) c.R := by
-  have hT := kOf_tail h16
-  have hJ := jOf_rest h16
-  have hj1 := jOf_le n
-  have hk : 16 * kOf n ≤ n := by omega_arith
-  have ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
+  obtain hT := kOf_tail h16
+  obtain hJ := jOf_rest h16
+  obtain hj1 := jOf_le n
+  obtain hk : 16 * kOf n ≤ n := by omega_arith
+  obtain ho : out + 16 ≤ 384 := by rcases hout with rfl | rfl <;> decide
   unfold longArgs₃ macArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
     wp_addi (by decide) (by decide) fun t₄ v₄ => wp_addi (by decide) (by decide) fun t₅ v₅ =>
     wp_lsl (by decide) fun t₆ v₆ => wp_add fun t₇ v₇ => wp_sub fun t₈ v₈ => wp_sub fun t₉ v₉ =>
     WP.block_nil ?_
-  have K : MacKeep s t₉ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+  obtain K : MacKeep s t₉ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
     ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans ((MacKeep.ofUpd v₆).trans ((MacKeep.ofUpd v₇).trans
       ((MacKeep.ofUpd v₈).trans (MacKeep.ofUpd v₉))))))))
-  have E₉ := E.of_pk K.pk
-  have sh : t₆.gpr .r9 = BitVec.ofNat 64 (16 * jOf n) := by
+  obtain E₉ := E.of_pk K.pk
+  obtain sh : t₆.gpr .r9 = BitVec.ofNat 64 (16 * jOf n) := by
     simp (disch := decide) only [v₆.gpr, v₅.other, v₄.other, v₃.other, v₂.other, v₁.other, h25]
     exact ofNat_shl4 (by omega_arith)
   refine ⟨K, ?_⟩
@@ -293,8 +293,8 @@ theorem cmacOf_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
     (h19₂ : σ₂.gpr .r19 = P) (h20₁ : σ₁.gpr .r20 = BitVec.ofNat 64 n) (h20₂ : σ₂.gpr .r20 = BitVec.ofNat 64 n) :
     RelCT isa (Eq2 σ₁ σ₂) (cmacOf stO) TT := by
   have hn := hP₁.lt
-  have hcl := chainedLen_le n
-  have head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
+  obtain hcl := chainedLen_le n
+  obtain head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
       Runs (.seq (cmacLen stO) (.block (cmacArgs₁ stO))) σ fun t => MacKeep σ t ∧
         t.gpr .r21 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n) ∧
         UArgs t c.C (c.W + BitVec.ofNat 64 stO) P (c.W + BitVec.ofNat 64 384) c.R
@@ -302,7 +302,7 @@ theorem cmacOf_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
     Runs.of_wp (WP.seq (WP.mono (cmacLen_wp E (st := stO) (by decide) (by decide) hn h20) fun s₁ ⟨K₁, h21₁, _⟩ =>
       WP.mono (cmacArgs₁_wp L (E.of_pk K₁.pk) (st := stO) (by decide) (hP.of_eq K₁.pk.rd K₁.pk.wr)
         (by rw [K₁.r19, h19]) h21₁) fun _ ⟨K₂, r21₂, U⟩ => ⟨K₁.trans K₂, by rw [r21₂, h21₁], U⟩))
-  have tail : ∀ {σ ρ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
+  obtain tail : ∀ {σ ρ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
       MacKeep σ ρ → ρ.gpr .r21 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n) →
       Runs (.block (cmacArgs₂ stO)) ρ fun t => MacKeep ρ t ∧
         FArgs t c.C (c.W + BitVec.ofNat 64 stO) (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n))
@@ -313,11 +313,11 @@ theorem cmacOf_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
   refine RelCT.assoc (rel_seqR (rel_env [.r19, .r20] E₁ E₂ hsp
       (agree_cons (h19₁.trans h19₂.symm) (agree_cons (h20₁.trans h20₂.symm) agree_nil)) ⟨_, by taint_decide⟩)
     (head E₁ hP₁ h19₁ h20₁) (head E₂ hP₂ h19₂ h20₂) fun τ₁ τ₂ ⟨K₁, r21₁, U₁⟩ ⟨K₂, r21₂, U₂⟩ => ?_)
-  have hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
+  obtain hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
   refine rel_seqR (rel_upd U₁ U₂ hspτ) (upd_keep U₁) (upd_keep U₂) fun ρ₁ ρ₂ ⟨G₁, q21₁, _⟩ ⟨G₂, q21₂, _⟩ => ?_
-  have M₁ := K₁.trans G₁
-  have M₂ := K₂.trans G₂
-  have hspρ : ρ₁.sp = ρ₂.sp := by rw [M₁.pk.sp, M₂.pk.sp, hsp]
+  obtain M₁ := K₁.trans G₁
+  obtain M₂ := K₂.trans G₂
+  obtain hspρ : ρ₁.sp = ρ₂.sp := by rw [M₁.pk.sp, M₂.pk.sp, hsp]
   refine rel_seqR (rel_env [.r19, .r20, .r21] (E₁.of_pk M₁.pk) (E₂.of_pk M₂.pk) hspρ
       (agree_cons (by rw [M₁.r19, M₂.r19, h19₁, h19₂]) (agree_cons (by rw [M₁.r20, M₂.r20, h20₁, h20₂])
         (agree_cons (by rw [q21₁, q21₂, r21₁, r21₂]) agree_nil))) ⟨_, by taint_decide⟩)
@@ -339,15 +339,15 @@ theorem aStep_rel {c : Cx} (L : Lay c) {σ₁ σ₂ s₁ s₂ : State} {i : Nat}
   refine rel_seqR (rel_env [.r17] I₁.env I₂.env hsp (agree_cons (I₁.r17.trans I₂.r17.symm) agree_nil)
       ⟨_, by taint_decide⟩)
     (Runs.of_wp (adNext_wp L I₁ hi)) (Runs.of_wp (adNext_wp L I₂ hi)) fun τ₁ τ₂ ⟨a19₁, a20₁, k₁⟩ ⟨a19₂, a20₂, k₂⟩ => ?_
-  have E₁ := I₁.env.of_pk k₁.pk
-  have E₂ := I₂.env.of_pk k₂.pk
-  have hP₁ : Buf c τ₁ (descW σ₁.mem c.A i 0) (descW σ₁.mem c.A i 1).toNat := (I₁.ads i hi).of_eq k₁.pk.rd k₁.pk.wr
-  have hP₂ : Buf c τ₂ (descW σ₁.mem c.A i 0) (descW σ₁.mem c.A i 1).toNat := by
+  obtain E₁ := I₁.env.of_pk k₁.pk
+  obtain E₂ := I₂.env.of_pk k₂.pk
+  obtain hP₁ : Buf c τ₁ (descW σ₁.mem c.A i 0) (descW σ₁.mem c.A i 1).toNat := (I₁.ads i hi).of_eq k₁.pk.rd k₁.pk.wr
+  obtain hP₂ : Buf c τ₂ (descW σ₁.mem c.A i 0) (descW σ₁.mem c.A i 1).toNat := by
     rw [d0, d1]; exact (I₂.ads i hi).of_eq k₂.pk.rd k₂.pk.wr
-  have b19₂ : τ₂.gpr .r19 = descW σ₁.mem c.A i 0 := by rw [a19₂, d0]
-  have b20₁ : τ₁.gpr .r20 = BitVec.ofNat 64 (descW σ₁.mem c.A i 1).toNat := by rw [a20₁]; simp
-  have b20₂ : τ₂.gpr .r20 = BitVec.ofNat 64 (descW σ₁.mem c.A i 1).toNat := by rw [a20₂, d1]; simp
-  have hsp₁ : τ₁.sp = τ₂.sp := by rw [k₁.pk.sp, k₂.pk.sp, hsp]
+  obtain b19₂ : τ₂.gpr .r19 = descW σ₁.mem c.A i 0 := by rw [a19₂, d0]
+  obtain b20₁ : τ₁.gpr .r20 = BitVec.ofNat 64 (descW σ₁.mem c.A i 1).toNat := by rw [a20₁]; simp
+  obtain b20₂ : τ₂.gpr .r20 = BitVec.ofNat 64 (descW σ₁.mem c.A i 1).toNat := by rw [a20₂, d1]; simp
+  obtain hsp₁ : τ₁.sp = τ₂.sp := by rw [k₁.pk.sp, k₂.pk.sp, hsp]
   refine rel_seqR (cmacOf_rel L E₁ E₂ hsp₁ hP₁ hP₂ a19₁ b19₂ b20₁ b20₂)
     (Runs.of_wp (cmacOf_wp L E₁ (st := stO) (by decide) (by decide) hP₁ a19₁ b20₁))
     (Runs.of_wp (cmacOf_wp L E₂ (st := stO) (by decide) (by decide) hP₂ b19₂ b20₂))
@@ -361,14 +361,14 @@ descriptors agree. -/
 theorem s2vAds_rel {c : Cx} (L : Lay c) {σ₁ σ₂ s₁ s₂ : State} (I₁ : AInv c σ₁ 0 s₁) (I₂ : AInv c σ₂ 0 s₂)
     (hsp : s₁.sp = s₂.sp) (hd : DescAgree c σ₁.mem σ₂.mem) : RelCT isa (Eq2 s₁ s₂) s2vAds TT := by
   have aw := L.aw
-  have hN : c.N < 2 ^ 64 := by omega_arith
-  have hσ : σ₁.sp = σ₂.sp := I₁.pk.sp.symm.trans (hsp.trans I₂.pk.sp)
-  have h18₁ : s₁.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₁.r18, Nat.sub_zero]
-  have h18₂ : s₂.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₂.r18, Nat.sub_zero]
+  obtain hN : c.N < 2 ^ 64 := by omega_arith
+  obtain hσ : σ₁.sp = σ₂.sp := I₁.pk.sp.symm.trans (hsp.trans I₂.pk.sp)
+  obtain h18₁ : s₁.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₁.r18, Nat.sub_zero]
+  obtain h18₂ : s₂.gpr .r18 = BitVec.ofNat 64 c.N := by rw [I₂.r18, Nat.sub_zero]
   unfold s2vAds
   refine rel_ite (eval_zero h18₁ hN) (eval_zero h18₂ hN) (fun _ => ?_) (fun hf => ?_)
   · exact rel_env [] I₁.env I₂.env hsp agree_nil ⟨_, by taint_decide⟩
-  have h0 : c.N ≠ 0 := by simpa using hf
+  obtain h0 : c.N ≠ 0 := by simpa using hf
   refine (RelCT.loop (Q := TT) (fun k (a b : State) => ∃ j, k = c.N - j ∧ j < c.N ∧
       AInv c σ₁ j a ∧ AInv c σ₂ j b) (fun k => ?_) (c.N - 0)).mono
     (fun a b hab => by
@@ -377,8 +377,8 @@ theorem s2vAds_rel {c : Cx} (L : Lay c) {σ₁ σ₂ s₁ s₂ : State} (I₁ : 
   refine rel_of_eq2 fun a b ⟨j, hk, hj, J₁, J₂⟩ => ?_
   refine (rel_post (aStep_rel L hj J₁ J₂ (by rw [J₁.pk.sp, J₂.pk.sp, hσ]) hd) (Runs.of_wp (aStep_wp L J₁ hj))
     (Runs.of_wp (aStep_wp L J₂ hj))).mono (fun _ _ h => h) fun a' b' ⟨J₁', J₂'⟩ => ?_
-  have ev₁ := eval_nonzero J₁'.r18 (by omega_arith)
-  have ev₂ := eval_nonzero J₂'.r18 (by omega_arith)
+  obtain ev₁ := eval_nonzero J₁'.r18 (by omega_arith)
+  obtain ev₂ := eval_nonzero J₂'.r18 (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ⟨c.N - (j + 1), ?_, j + 1, rfl, ?_, J₁', J₂'⟩⟩
   · rw [ev₁] at ht; simp at ht; omega_arith
   · rw [ev₁] at ht; simp at ht; omega_arith
@@ -394,10 +394,10 @@ include L E₁ E₂ hsp hP₁ hP₂ h19₁ h19₂ h20₁ h20₂ hout
 
 /-- The short case, `L < 16`. -/
 theorem short_rel (hn : n < 16) : RelCT isa (Eq2 σ₁ σ₂) (.seq shortTail (shortMac out)) TT := by
-  have t : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r19, .r20]))
+  obtain t : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r19, .r20]))
       (.seq shortTail (.block (shortArgs out))) h).isSome = true := by
     rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
+  obtain head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
       Runs (.seq shortTail (.block (shortArgs out))) σ fun t => PK σ t ∧
         FArgs t c.C (c.W + BitVec.ofNat 64 out) (c.W + BitVec.ofNat 64 tailO) (c.W + BitVec.ofNat 64 384) 16 c.R :=
     fun E hP h19 h20 => Runs.of_wp (WP.seq (WP.mono (shortTail_wp L E hP hn h19 h20) fun _ ⟨pk₁, _, _⟩ =>
@@ -411,19 +411,19 @@ theorem short_rel (hn : n < 16) : RelCT isa (Eq2 σ₁ σ₂) (.seq shortTail (s
 /-- The long case, `L ≥ 16`. -/
 theorem long_rel (h16 : 16 ≤ n) : RelCT isa (Eq2 σ₁ σ₂) (.seq longTail (longMac out)) TT := by
   have hn := hP₁.lt
-  have hT := kOf_tail h16
-  have hk : 16 * kOf n ≤ n := by omega_arith
-  have t₁ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r19, .r20]))
+  obtain hT := kOf_tail h16
+  obtain hk : 16 * kOf n ≤ n := by omega_arith
+  obtain t₁ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r19, .r20]))
       (.seq longTail (.block (longArgs₁ out))) h).isSome = true := by
     rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have t₂ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r20]))
+  obtain t₂ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r20]))
       (.seq jBlock (.block (longArgs₂ out))) h).isSome = true := by
     rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have t₃ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r20, .r21, .r25]))
+  obtain t₃ : ∃ h, (taint.check (Taint.ofRegs (envRegs ++ [.r20, .r21, .r25]))
       (.block (longArgs₃ out)) h).isSome = true := by
     rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   -- The tail, and the arguments of the update over the `k` blocks.
-  have head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
+  obtain head : ∀ {σ : State}, Env c σ → Buf c σ P n → σ.gpr .r19 = P → σ.gpr .r20 = BitVec.ofNat 64 n →
       Runs (.seq longTail (.block (longArgs₁ out))) σ fun t => MacKeep σ t ∧
         t.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) ∧
         UArgs t c.C (c.W + BitVec.ofNat 64 out) P (c.W + BitVec.ofNat 64 384) c.R (kOf n) := by
@@ -432,11 +432,11 @@ theorem long_rel (h16 : 16 ≤ n) : RelCT isa (Eq2 σ₁ σ₂) (.seq longTail (
     refine Runs.of_wp (WP.seq (WP.seq (WP.mono (kBlock_wp hn h16 h20) fun s₁ ⟨K₁, _, r21₁⟩ => ?_)))
     refine WP.mono (tailCopy_wp L (E.of_pk K₁.pk) (hP.of_eq K₁.pk.rd K₁.pk.wr) hk hT.1 hT.2
       (by rw [K₁.r19, h19]) (by rw [K₁.r20, h20]) r21₁) fun s₂ ⟨K₂, r21₂, _, _⟩ => ?_
-    have K₁₂ := K₁.trans K₂
+    obtain K₁₂ := K₁.trans K₂
     exact WP.mono (longArgs₁_wp L (E.of_pk K₁₂.pk) (hP.of_eq K₁₂.pk.rd K₁₂.pk.wr) hk (by rw [K₁₂.r19, h19])
       (by rw [r21₂, r21₁]) hout) fun _ ⟨K₃, r21₃, U⟩ => ⟨K₁₂.trans K₃, by rw [r21₃, r21₂, r21₁], U⟩
   -- `j`, and the arguments of the update over the first `j` blocks of the tail.
-  have head₂ : ∀ {ρ : State}, Env c ρ → ρ.gpr .r20 = BitVec.ofNat 64 n →
+  obtain head₂ : ∀ {ρ : State}, Env c ρ → ρ.gpr .r20 = BitVec.ofNat 64 n →
       ρ.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) →
       Runs (.seq jBlock (.block (longArgs₂ out))) ρ fun t => MacKeep ρ t ∧
         t.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) ∧ t.gpr .r25 = BitVec.ofNat 64 (jOf n) ∧
@@ -449,32 +449,32 @@ theorem long_rel (h16 : 16 ≤ n) : RelCT isa (Eq2 σ₁ σ₂) (.seq longTail (
   refine RelCT.assoc (rel_seqR (rel_env [.r19, .r20] E₁ E₂ hsp
       (agree_cons (h19₁.trans h19₂.symm) (agree_cons (h20₁.trans h20₂.symm) agree_nil)) t₁)
     (head E₁ hP₁ h19₁ h20₁) (head E₂ hP₂ h19₂ h20₂) fun τ₁ τ₂ ⟨K₁, r21₁, U₁⟩ ⟨K₂, r21₂, U₂⟩ => ?_)
-  have hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
+  obtain hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
   refine rel_seqR (rel_upd U₁ U₂ hspτ) (upd_keep U₁) (upd_keep U₂) fun ρ₁ ρ₂ ⟨G₁, q21₁, _⟩ ⟨G₂, q21₂, _⟩ => ?_
-  have M₁ := K₁.trans G₁
-  have M₂ := K₂.trans G₂
-  have hspρ : ρ₁.sp = ρ₂.sp := by rw [M₁.pk.sp, M₂.pk.sp, hsp]
-  have q20₁ : ρ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [M₁.r20, h20₁]
-  have q20₂ : ρ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [M₂.r20, h20₂]
-  have p21₁ : ρ₁.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [q21₁, r21₁]
-  have p21₂ : ρ₂.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [q21₂, r21₂]
+  obtain M₁ := K₁.trans G₁
+  obtain M₂ := K₂.trans G₂
+  obtain hspρ : ρ₁.sp = ρ₂.sp := by rw [M₁.pk.sp, M₂.pk.sp, hsp]
+  obtain q20₁ : ρ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [M₁.r20, h20₁]
+  obtain q20₂ : ρ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [M₂.r20, h20₂]
+  obtain p21₁ : ρ₁.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [q21₁, r21₁]
+  obtain p21₂ : ρ₂.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [q21₂, r21₂]
   refine RelCT.assoc (rel_seqR (rel_env [.r20] (E₁.of_pk M₁.pk) (E₂.of_pk M₂.pk) hspρ
       (agree_cons (q20₁.trans q20₂.symm) agree_nil) t₂)
     (head₂ (E₁.of_pk M₁.pk) q20₁ p21₁) (head₂ (E₂.of_pk M₂.pk) q20₂ p21₂)
     fun ω₁ ω₂ ⟨N₁, w21₁, w25₁, V₁⟩ ⟨N₂, w21₂, w25₂, V₂⟩ => ?_)
-  have hspω : ω₁.sp = ω₂.sp := by rw [N₁.pk.sp, N₂.pk.sp, hspρ]
+  obtain hspω : ω₁.sp = ω₂.sp := by rw [N₁.pk.sp, N₂.pk.sp, hspρ]
   refine rel_seqR (rel_upd V₁ V₂ hspω) (upd_keep V₁) (upd_keep V₂) fun υ₁ υ₂ ⟨G₁', x21₁, x25₁⟩ ⟨G₂', x21₂, x25₂⟩ => ?_
-  have Q₁ := (M₁.trans N₁).trans G₁'
-  have Q₂ := (M₂.trans N₂).trans G₂'
-  have hspυ : υ₁.sp = υ₂.sp := by rw [Q₁.pk.sp, Q₂.pk.sp, hsp]
-  have y20₁ : υ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [Q₁.r20, h20₁]
-  have y20₂ : υ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [Q₂.r20, h20₂]
-  have y21₁ : υ₁.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [x21₁, w21₁]
-  have y21₂ : υ₂.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [x21₂, w21₂]
-  have y25₁ : υ₁.gpr .r25 = BitVec.ofNat 64 (jOf n) := by rw [x25₁, w25₁]
-  have y25₂ : υ₂.gpr .r25 = BitVec.ofNat 64 (jOf n) := by rw [x25₂, w25₂]
-  have H₁ := E₁.of_pk Q₁.pk
-  have H₂ := E₂.of_pk Q₂.pk
+  obtain Q₁ := (M₁.trans N₁).trans G₁'
+  obtain Q₂ := (M₂.trans N₂).trans G₂'
+  obtain hspυ : υ₁.sp = υ₂.sp := by rw [Q₁.pk.sp, Q₂.pk.sp, hsp]
+  obtain y20₁ : υ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [Q₁.r20, h20₁]
+  obtain y20₂ : υ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [Q₂.r20, h20₂]
+  obtain y21₁ : υ₁.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [x21₁, w21₁]
+  obtain y21₂ : υ₂.gpr .r21 = BitVec.ofNat 64 (16 * kOf n) := by rw [x21₂, w21₂]
+  obtain y25₁ : υ₁.gpr .r25 = BitVec.ofNat 64 (jOf n) := by rw [x25₁, w25₁]
+  obtain y25₂ : υ₂.gpr .r25 = BitVec.ofNat 64 (jOf n) := by rw [x25₂, w25₂]
+  obtain H₁ := E₁.of_pk Q₁.pk
+  obtain H₂ := E₂.of_pk Q₂.pk
   refine rel_seqR (rel_env [.r20, .r21, .r25] H₁ H₂ hspυ
       (agree_cons (y20₁.trans y20₂.symm) (agree_cons (y21₁.trans y21₂.symm)
         (agree_cons (y25₁.trans y25₂.symm) agree_nil))) t₃)
@@ -489,15 +489,15 @@ theorem finish_rel : RelCT isa (Eq2 σ₁ σ₂) (finish out) TT := by
   unfold finish
   refine rel_seqR (rel_env [.r20] E₁ E₂ hsp (agree_cons (h20₁.trans h20₂.symm) agree_nil) ⟨_, by taint_decide⟩)
     (Runs.of_wp (finLsr_wp hn h20₁)) (Runs.of_wp (finLsr_wp hn h20₂)) fun τ₁ τ₂ ⟨K₁, r9₁⟩ ⟨K₂, r9₂⟩ => ?_
-  have hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
-  have F₁ := E₁.of_pk K₁.pk
-  have F₂ := E₂.of_pk K₂.pk
-  have q19₁ : τ₁.gpr .r19 = P := by rw [K₁.r19, h19₁]
-  have q19₂ : τ₂.gpr .r19 = P := by rw [K₂.r19, h19₂]
-  have q20₁ : τ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [K₁.r20, h20₁]
-  have q20₂ : τ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [K₂.r20, h20₂]
-  have B₁ := hP₁.of_eq K₁.pk.rd K₁.pk.wr
-  have B₂ := hP₂.of_eq K₂.pk.rd K₂.pk.wr
+  obtain hspτ : τ₁.sp = τ₂.sp := by rw [K₁.pk.sp, K₂.pk.sp, hsp]
+  obtain F₁ := E₁.of_pk K₁.pk
+  obtain F₂ := E₂.of_pk K₂.pk
+  obtain q19₁ : τ₁.gpr .r19 = P := by rw [K₁.r19, h19₁]
+  obtain q19₂ : τ₂.gpr .r19 = P := by rw [K₂.r19, h19₂]
+  obtain q20₁ : τ₁.gpr .r20 = BitVec.ofNat 64 n := by rw [K₁.r20, h20₁]
+  obtain q20₂ : τ₂.gpr .r20 = BitVec.ofNat 64 n := by rw [K₂.r20, h20₂]
+  obtain B₁ := hP₁.of_eq K₁.pk.rd K₁.pk.wr
+  obtain B₂ := hP₂.of_eq K₂.pk.rd K₂.pk.wr
   refine rel_ite (eval_zero r9₁ (by omega_arith)) (eval_zero r9₂ (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n / 16 = 0 := by simpa using ht
     exact short_rel L F₁ F₂ hspτ B₁ B₂ q19₁ q19₂ q20₁ q20₂ hout (by omega_arith)

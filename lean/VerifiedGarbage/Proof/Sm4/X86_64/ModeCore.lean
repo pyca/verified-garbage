@@ -90,7 +90,7 @@ theorem readyAt_frame {dir : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule
     (h : ReadyAt dir m B k) (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
     ReadyAt dir m' B k := by
-  have hR : ∀ d, d + 8 ≤ 8 * tableEnd → (d + 8 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ d) →
+  obtain hR : ∀ d, d + 8 ≤ 8 * tableEnd → (d + 8 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ d) →
       m'.readW (B + BitVec.ofNat 64 d) 64 = m.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 h2 =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint h1 h2 (hd r hr)) (by decide)
   refine ⟨fun kv hkv => ?_, fun e he => (h.2 e he).congr fun j hj => ?_⟩
@@ -104,7 +104,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
     (hr : ∀ r ∈ [Reg.rdi, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
     (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs k := by
   obtain ⟨p, hp, hk, hin, hfit, hdis, hst, hsdis⟩ := h
-  have hsp : s'.gpr .rsp = s.gpr .rsp := hr .rsp (by simp)
+  obtain hsp : s'.gpr .rsp = s.gpr .rsp := hr .rsp (by simp)
   refine ⟨p, by rw [hr .rdi List.mem_cons_self, hp], ?_, by rw [hrd]; exact hin, hfit, hdis,
     by rw [hsp]; exact hst, by rw [hsp]; exact hsdis⟩
   rw [hk]
@@ -117,7 +117,7 @@ theorem holds_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec.Sm
   fun r hr i hi => by
     have hr' := hr
     rw [layout_table] at hr'
-    have hi' : r.1 + i < 8 * slots := by
+    obtain hi' : r.1 + i < 8 * slots := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]
     rw [hf.bytes (R := ⟨B, 8 * slots⟩) hd (by show 8 * slots ≤ 2 ^ 64; rw [slots_eq]; omega_using []) hi']
@@ -130,7 +130,7 @@ theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {d : Spec
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  have hb : r.1 + i < 8 * slots ∧ ((384 ≤ r.1 + i ∧ r.1 + i < 408) ∨ (1024 ≤ r.1 + i ∧ r.1 + i < 3072)) := by
+  obtain hb : r.1 + i < 8 * slots ∧ ((384 ≤ r.1 + i ∧ r.1 + i < 408) ∨ (1024 ≤ r.1 + i ∧ r.1 + i < 3072)) := by
     rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]
   rw [hk (r.1 + i) hb.1 (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
@@ -172,17 +172,17 @@ theorem prepare_core (d : Dir) {s : State} {B p : Addr} (hB : s.gpr sb = B) (hw 
       Frame [⟨B, 8 * tableEnd⟩] s.mem s'.mem := by
   obtain ⟨s₁, e₁, v₁, -, g₁, rd₁, wr₁, f₁⟩ := setMasks_ok (b := B) keyMasks hB hw
     (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega_using [this]) (by decide)
-  have hsch : Spec.Sm4.scheduleAt s₁.mem p = Spec.Sm4.scheduleAt s.mem p :=
+  obtain hsch : Spec.Sm4.scheduleAt s₁.mem p = Spec.Sm4.scheduleAt s.mem p :=
     scheduleAt_congr fun i hi => f₁.bytes (R := ⟨p, 128⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hsep.sub_right (Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using []))) (by show 128 ≤ 2 ^ 64; omega_using []) hi
-  have b₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hB]
-  have hpre : SchedPre s₁ B p := ⟨b₁, by rw [wr₁]; exact hw, fitB,
+  obtain b₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hB]
+  obtain hpre : SchedPre s₁ B p := ⟨b₁, by rw [wr₁]; exact hw, fitB,
     List.mem_append_left _ (by rw [rd₁]; exact hin), hfit, hsep⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   refine WP.mono (keys_wp d hpre (by rw [g₁ _ (by decide), hp]) v₁) fun s₂ k₂ => ?_
   have b₂ : s₂.gpr sb = B := k₂.pre.base
-  have keep : ∀ r, r ∉ sboxWrites → r ≠ .rsi → r ≠ .rdi → r ≠ t0 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+  obtain keep : ∀ r, r ∉ sboxWrites → r ≠ .rsi → r ≠ .rdi → r ≠ t0 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [k₂.regs r h1 h2 h3, g₁ r h4]
   refine ⟨⟨k₂.masks.at b₂, fun e he => ?_⟩, b₂, keep _ (by decide) (by decide) (by decide) (by decide),
     keep _ (by decide) (by decide) (by decide) (by decide), keep _ (by decide) (by decide) (by decide) (by decide), ?_⟩
@@ -202,10 +202,10 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   obtain ⟨p, hp, rfl, hin, hfit, hdis, hst, hsdis⟩ := hk
   have hfB := hs.fit
   rw [dirCore_total] at hfB
-  have hsub : Covers [⟨B, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by
+  obtain hsub : Covers [⟨B, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨_, hs.wr, 0, by simp, by show 0 + 8 * slots ≤ 8 * (dirCore d).total; rw [dirCore_total, slots_eq]; omega_using []⟩
-  have hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 8 * slots⟩ :=
+  obtain hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 8 * slots⟩ :=
     (hdis _ hR).sub_right (Region.sub_prefix (by rw [dirCore_total, slots_eq]; omega_using []))
   refine WP.widen_wr hsub (WP.mono (prepare_core d (s := s.withRegions s.rd (⟨B, 8 * slots⟩ :: s.wr)) hB
     List.mem_cons_self (by rw [slots_eq]; omega_using [hfB]) hp hin hfit hsep) fun s' ⟨hr', b', rsp', rdx', r8', f'⟩ => ?_)
@@ -241,7 +241,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   have hw := hs.wr
   have hfit := hs.fit
   simp only [dirCore_total] at hw hfit
-  have hH : Holds layout s.mem B k (specDir d) := by
+  obtain hH : Holds layout s.mem B k (specDir d) := by
     refine holds_of_words ?_
     rw [ofSpecDir_specDir]
     exact words_of_readyAt hready
@@ -252,33 +252,33 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   refine WP.of_runBlock ⟨s₃, by
     rw [show ([movR .rdi sb, .movImm64 .rsi (BitVec.ofNat 64 slots)] : List Instr) =
       [movR .rdi sb] ++ [.movImm64 .rsi (BitVec.ofNat 64 slots)] from rfl, runBlock_app, e₂, Option.bind_some, e₃], ?_⟩
-  have m₃' : s₃.mem = s.mem := by rw [m₃, m₂]
-  have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]
-  have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]
-  have rsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [o₃ _ (by decide), o₂ _ (by decide)]
-  have rdi₃ : s₃.gpr .rdi = B := by rw [o₃ _ (by decide), r₂, hB]
+  obtain m₃' : s₃.mem = s.mem := by rw [m₃, m₂]
+  obtain rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]
+  obtain wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]
+  obtain rsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [o₃ _ (by decide), o₂ _ (by decide)]
+  obtain rdi₃ : s₃.gpr .rdi = B := by rw [o₃ _ (by decide), r₂, hB]
   have rsi₃ : s₃.gpr .rsi = BitVec.ofNat 64 slots := r₃
-  have rdx₃ : s₃.gpr .rdx = s.gpr .rdx := by rw [o₃ _ (by decide), o₂ _ (by decide)]
-  have r8₃ : s₃.gpr .r8 = s.gpr .r8 := by rw [o₃ _ (by decide), o₂ _ (by decide)]
-  have hE := (s.gpr .rsp).isLt
-  have stS : Region.Disjoint (stkRegion (s.gpr .rsp) 8) ⟨B, 8 * slots⟩ :=
+  obtain rdx₃ : s₃.gpr .rdx = s.gpr .rdx := by rw [o₃ _ (by decide), o₂ _ (by decide)]
+  obtain r8₃ : s₃.gpr .r8 = s.gpr .r8 := by rw [o₃ _ (by decide), o₂ _ (by decide)]
+  obtain hE := (s.gpr .rsp).isLt
+  obtain stS : Region.Disjoint (stkRegion (s.gpr .rsp) 8) ⟨B, 8 * slots⟩ :=
     sW.sub_right (Region.sub_prefix (by rw [slots_eq]; omega_using []))
   -- The return address the call stores.
-  have hret : Frame [stkRegion (s.gpr .rsp) 8] s₃.mem s₃.callEntry.mem := by
+  obtain hret : Frame [stkRegion (s.gpr .rsp) 8] s₃.mem s₃.callEntry.mem := by
     rw [State.callEntry_mem, rsp₃]
     exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using []))
-  have hHE : Holds layout s₃.callEntry.mem B k (specDir d) :=
+  obtain hHE : Holds layout s₃.callEntry.mem B k (specDir d) :=
     holds_frame (m := s₃.mem) (by rw [m₃']; exact hH) hret fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact stS.symm
   let sE := s₃.callEntry.withRegions [] [⟨B, 8 * slots⟩]
-  have eRdi : sE.gpr .rdi = B := by
+  obtain eRdi : sE.gpr .rdi = B := by
     show s₃.callEntry.gpr .rdi = B; rw [State.callEntry_gpr _ (by decide), rdi₃]
-  have eRsi : sE.gpr .rsi = BitVec.ofNat 64 slots := by
+  obtain eRsi : sE.gpr .rsi = BitVec.ofNat 64 slots := by
     show s₃.callEntry.gpr .rsi = _; rw [State.callEntry_gpr _ (by decide), rsi₃]
-  have eRsp : sE.gpr .rsp = s.gpr .rsp - 8 := by
+  obtain eRsp : sE.gpr .rsp = s.gpr .rsp - 8 := by
     show s₃.callEntry.gpr .rsp = _; rw [State.callEntry_rsp, rsp₃]
-  have tsl : (BitVec.ofNat 64 slots).toNat = slots := by rw [slots_eq]; rfl
-  have hsub : ∀ r ∈ ([⟨B, 8 * slots⟩] : List Region), ∃ r' ∈ s₃.wr, ∃ off,
+  obtain tsl : (BitVec.ofNat 64 slots).toNat = slots := by rw [slots_eq]; rfl
+  obtain hsub : ∀ r ∈ ([⟨B, 8 * slots⟩] : List Region), ∃ r' ∈ s₃.wr, ∃ off,
       r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len := fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨_, by rw [wr₃']; exact hs.wr, 0, by simp, by
@@ -298,13 +298,13 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   simp only [cryptX86_64] at post
   rw [eRdi, eRsi, tsl, mem₂] at post
   obtain ⟨hE', hK⟩ := post
-  have hEcb := hE' k (specDir d) hHE
+  obtain hEcb := hE' k (specDir d) hHE
   rw [crypt_depth, rsp₃, m₃'] at frame
   have frame' : Frame [⟨B, 8 * slots⟩, stkRegion (s.gpr .rsp) 8] s.mem s'.mem := frame
-  have sb' : s'.gpr sb = B := by rw [← g₂' _ (by decide)]; exact hsb.trans eRdi
-  have rsp' : s'.gpr .rsp = s.gpr .rsp := (cs .rsp (by decide)).trans rsp₃
-  have rdx' : s'.gpr .rdx = s.gpr .rdx := (clob .rdx (crypt_keeps (by lit_decide))).trans rdx₃
-  have r8' : s'.gpr .r8 = s.gpr .r8 := (clob .r8 (crypt_keeps (by lit_decide))).trans r8₃
+  obtain sb' : s'.gpr sb = B := by rw [← g₂' _ (by decide)]; exact hsb.trans eRdi
+  obtain rsp' : s'.gpr .rsp = s.gpr .rsp := (cs .rsp (by decide)).trans rsp₃
+  obtain rdx' : s'.gpr .rdx = s.gpr .rdx := (clob .rdx (crypt_keeps (by lit_decide))).trans rdx₃
+  obtain r8' : s'.gpr .r8 = s.gpr .r8 := (clob .r8 (crypt_keeps (by lit_decide))).trans r8₃
   refine ⟨sb', rsp', rdx', r8', ⟨?_, by rw [rsp']; exact hst, by rw [rsp']; exact sW⟩, ?_, fun j hj => ?_,
     by rw [rd', rd₃'], by rw [wr', wr₃']⟩
   · have := readyAt_of_words (words_of_holds (holds_of_keeps hHE hK))
@@ -316,9 +316,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore]; omega_using [])⟩
     · exact ⟨_, List.mem_cons_of_mem _ (by rw [stkList_dirCore]; exact List.mem_singleton_self _), fun _ h => h⟩
   · have hj' : j < 16 := hj
-    have ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := by
+    obtain ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j) := by
       simp only [bufAddr, dirCore, layout, VG.Offset.add_add]
-    have hblk : Spec.Sm4.blockAt sE.mem (B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j)) =
+    obtain hblk : Spec.Sm4.blockAt sE.mem (B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j)) =
         Spec.Sm4.blockAt s.mem (B + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j)) := by
       rw [← m₃']
       refine blockAt_frame hret fun r hr => ?_
@@ -343,7 +343,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   regs_ok := by simp only [dirCore, Modes.X86_64.regsOk]; decide
   keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame h hf hd _ hg := by
-    have hsp : _ := hg .rsp (by simp only [Modes.X86_64.modeRegs, dirCore]; decide)
+    obtain hsp : _ := hg .rsp (by simp only [Modes.X86_64.modeRegs, dirCore]; decide)
     exact ⟨readyAt_frame h.1 hf hd, by rw [hsp]; exact h.2.1, by rw [hsp]; exact h.2.2⟩
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d

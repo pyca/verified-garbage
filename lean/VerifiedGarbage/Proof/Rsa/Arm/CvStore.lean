@@ -50,18 +50,18 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
           Spec.Rsa.i2osp (num s.mem (cvB s0) (cvW s0) j % 2 ^ (8 * k)) k else List.replicate k 0) ∧
       Frame [R] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
   have pre := h.pre
-  have fa := hw.arr_fit hj
+  obtain fa := hw.arr_fit hj
   have nw := hw.nowrap
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
   have w16 := pre.w16
   have eZ : cvZ s0 = (stackArg s0 11).toNat * 8 := rfl
   have eB : (cvB s0).toNat = (stackArg s0 10).toNat := rfl
-  have hRS : R.Disjoint (rS s0) := by
+  obtain hRS : R.Disjoint (rS s0) := by
     rcases hR with rfl | rfl | rfl
     · exact pre.dpS
     · exact pre.dqS
     · exact pre.qiS
-  have hRw : R ∈ s.wr := by rw [h.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp
+  obtain hRw : R ∈ s.wr := by rw [h.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp
   unfold store
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_using [hj]) fun s1 p1 r1 m1 h1 => ?_
@@ -69,13 +69,13 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   refine wp_mov (op2_reg _ _) fun s5 u5 => WP.block_nil ?_
-  have R5 : Rest [.r0, .r1, .lr] s s5 := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans
+  obtain R5 : Rest [.r0, .r1, .lr] s s5 := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans
     ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp)))))
-  have M5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, m1]
-  have d5 := h.of_rest R5 M5
-  have ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
+  obtain M5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, m1]
+  obtain d5 := h.of_rest R5 M5
+  obtain ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
     hw.addr (by omega_using [fa, hS])
-  have srcFit : (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)).toNat + k ≤ 2 ^ 32 := by
+  obtain srcFit : (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)).toNat + k ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [fa, nw, hS]), BitVec.toNat_ofNat]; omega_using [hkw, fa, nw, hS]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (reverseBuffer_ok s5 (src := cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) (dst := dst) (n := k)
@@ -96,24 +96,24 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
       p11])) ?_
   rintro t6 ⟨by6, f6, _, r6⟩
   rw [← hb] at f6
-  have d6 := d5.out hR f6 r6.sp r6.rd r6.wr
-  have h6 := (hw.rest R5).rest r6
+  obtain d6 := d5.out hR f6 r6.sp r6.rd r6.wr
+  obtain h6 := (hw.rest R5).rest r6
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_mov (op2_reg _ _) fun s7 u7 => ?_
   refine wp_mov (op2_reg _ _) fun s8 u8 => ?_
-  have h8 := (h6.of_upd u7 (by decide) (by decide) (by decide)).of_upd u8 (by decide) (by decide) (by decide)
+  obtain h8 := (h6.of_upd u7 (by decide) (by decide) (by decide)).of_upd u8 (by decide) (by decide) (by decide)
   refine wp_ldrSlot h8 (by decide) fun s9 u9 => ?_
   refine wp_mov (op2_imm (by decide)) fun s10 u10 => ?_
   refine wp_dp (op2_reg _ _) fun s11 u11 => WP.block_nil ?_
-  have R11 : Rest [.r0, .r1, .r2, .lr] t6 s11 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans
+  obtain R11 : Rest [.r0, .r1, .r2, .lr] t6 s11 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans
     ((u9.rest (by simp)).trans ((u10.rest (by simp)).trans (u11.rest (by simp)))))
-  have M11 : s11.mem = t6.mem := by rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
-  have sm : t6.mem.readW (off (State.addr (cvB s0)) sMask) 32 = BitVec.ofNat 32 (slot s.mem (cvB s0) sMask) := by
-    have hz : 136 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) pre.fits
+  obtain M11 : s11.mem = t6.mem := by rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
+  obtain sm : t6.mem.readW (off (State.addr (cvB s0)) sMask) 32 = BitVec.ofNat 32 (slot s.mem (cvB s0) sMask) := by
+    obtain hz : 136 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) pre.fits
     rw [f6.readW (r := rS s0) (Offset.contains_base _ (by simp only [sMask]; omega) (by simp only [sMask]; omega_using []))
       (by simpa using hRS.symm) (by decide), M5]
     simp
-  have r2v : s11.gpr .r2 = -BitVec.ofNat 32 (decide (slot s.mem (cvB s0) sMask = 1)).toNat := by
+  obtain r2v : s11.gpr .r2 = -BitVec.ofNat 32 (decide (slot s.mem (cvB s0) sMask = 1)).toNat := by
     rw [u11.gpr, dpVal, u10.gpr, u10.other _ (by decide), u9.gpr, u8.mem, u7.mem, sm, mask_slot mb]
   refine WP.mono (maskBuffer_ok s11 hk (by omega_using [hkw, w16]) fit ⟨R, by rw [R11.wr, d6.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp,
       by rw [hb]; exact Region.contains_self _ _⟩

@@ -87,17 +87,17 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   by_cases hk : k + 1 ≤ q0
   swap
   · exact VP.of_false fun σ s h => hk h.1
-  have lt := sqst_lt (q0 := q0) (r := r) hE h0
+  obtain lt := sqst_lt (q0 := q0) (r := r) hE h0
   let A1 := fun σ => upd (A σ) aY (sqst P q0 r st0 σ (q0 - (k + 1))).1
   let V1 := fun σ => upd (upd (V σ) sF (sqst P q0 r st0 σ (q0 - (k + 1))).2.toNat) sQ (k + 1)
   let A2 := fun σ => upd (A1 σ) aY (mm (cOf P σ.mem) P.w (A1 σ aY) (A1 σ aY))
   let V3 := fun σ => upd (V1 σ) sE2 (if A2 σ aY = A2 σ aM1 then 1 else 0)
-  have a1Y : ∀ σ, A1 σ aY = (sqst P q0 r st0 σ (q0 - (k + 1))).1 := fun σ => upd_self _ _ _
-  have a2Y : ∀ σ, A2 σ aY = (sqst P q0 r st0 σ (q0 - k)).1 := fun σ => by
+  obtain a1Y : ∀ σ, A1 σ aY = (sqst P q0 r st0 σ (q0 - (k + 1))).1 := fun σ => upd_self _ _ _
+  obtain a2Y : ∀ σ, A2 σ aY = (sqst P q0 r st0 σ (q0 - k)).1 := fun σ => by
     show mm _ _ (A1 σ aY) (A1 σ aY) = _
     rw [a1Y, show q0 - k = q0 - (k + 1) + 1 by omega_using [hk]]
     rfl
-  have a2M : ∀ σ, E σ → A2 σ aM1 = mOf P σ := fun σ e => by
+  obtain a2M : ∀ σ, E σ → A2 σ aM1 = mOf P σ := fun σ e => by
     show upd (upd (A σ) aY _) aY _ aM1 = _
     rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), vM σ e]
   refine VP.mono (F := St P E A1 (aY :: L) V1 LS) ?_ (fun σ s h => h.2) (fun _ _ h => h)
@@ -113,10 +113,10 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   · have vQ : ∀ σ, E σ → V3 σ sQ = k + 1 := fun σ _ => by
       show upd (upd (upd (V σ) sF _) sQ (k + 1)) sE2 _ sQ = _
       rw [upd_ne _ _ (by decide), upd_self]
-    have vR3 : ∀ σ, E σ → V3 σ sR = r σ := fun σ e => by
+    obtain vR3 : ∀ σ, E σ → V3 σ sR = r σ := fun σ e => by
       show upd (upd (upd (V σ) sF _) sQ (k + 1)) sE2 _ sR = _
       rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_ne _ _ (by decide), vR σ e]
-    have vE : ∀ σ, E σ → V3 σ sE2 =
+    obtain vE : ∀ σ, E σ → V3 σ sE2 =
         (decide (mm (cOf P σ.mem) P.w (sqst P q0 r st0 σ (q0 - (k + 1))).1
           (sqst P q0 r st0 σ (q0 - (k + 1))).1 = mOf P σ)).toNat := fun σ e => by
       show upd (V1 σ) sE2 (if A2 σ aY = A2 σ aM1 then 1 else 0) sE2 = _
@@ -124,12 +124,12 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
       show (if mm _ _ (A1 σ aY) (A1 σ aY) = _ then 1 else 0) = _
       rw [a1Y]
       split <;> simp_all
-    have vF : ∀ σ, E σ → V3 σ sF = (sqst P q0 r st0 σ (q0 - (k + 1))).2.toNat := fun σ _ => by
+    obtain vF : ∀ σ, E σ → V3 σ sF = (sqst P q0 r st0 σ (q0 - (k + 1))).2.toNat := fun σ _ => by
       show upd (upd (upd (V σ) sF _) sQ (k + 1)) sE2 _ sF = _
       rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_self]
     refine (St.psqFlag (k := k) (List.mem_cons_of_mem _ hQ) (List.mem_cons_of_mem _ hR) List.mem_cons_self
       (List.mem_cons_of_mem _ hF) vQ vR3 rl (by omega_using [hq0, hk]) vE vF).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
-    have stage : SqS P E A L V LS q0 r st0 k σ s := by
+    obtain stage : SqS P E A L V LS q0 r st0 k σ s := by
       refine ⟨by omega_using [hk], h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
       · rcases List.mem_cons.mp hi with rfl | hi'
         · rw [a2Y]; exact (upd_self _ _ _).symm
@@ -211,13 +211,13 @@ theorem KS.mask_ok {j : Nat} (hj : j < 16) (h : KS P σ A L V LS s) (hw : Ws s P
   refine wp_dp (op2_imm (encodable_lt (by omega_using [hj]))) fun s3 u3 => ?_
   refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
   refine wp_mov (op2_lsr (by decide)) fun s5 u5 => ?_
-  have r5 : Rest [.r1] s1 s5 :=
+  obtain r5 : Rest [.r1] s1 s5 :=
     (u2.rest (by simp)).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp))))
-  have h5 := h1.of_rest r5 (u5.mem.trans (u4.mem.trans (u3.mem.trans u2.mem)))
-  have hw5 := hw1.rest r5
+  obtain h5 := h1.of_rest r5 (u5.mem.trans (u4.mem.trans (u3.mem.trans u2.mem)))
+  obtain hw5 := hw1.rest r5
   refine h5.str hw5 (d := sE1) (by decide) (r := .r1) fun t ht hwt _ => WP.block_nil ⟨?_, hwt⟩
-  have dl : digitOf (V sV) < 16 := by simp only [digitOf]; omega_using [vl]
-  have g : (s5.gpr .r1).toNat = (decide (digitOf (V sV) = j)).toNat := by
+  obtain dl : digitOf (V sV) < 16 := by simp only [digitOf]; omega_using [vl]
+  obtain g : (s5.gpr .r1).toNat = (decide (digitOf (V sV) = j)).toNat := by
     rw [u5.gpr, u4.gpr, dpVal, u3.gpr, dpVal, u2.gpr, u1.gpr, ofNat_shr32 vl]
     exact mask_eq _ dl _ hj
   rwa [g] at ht
@@ -232,16 +232,16 @@ theorem scanFrom_ok {d : Nat} (hd : d < 16) (hT : ∀ k < 16, aT0 + k ∈ L) (hX
     have : j = 16 := by omega_using [hjn]
     subst this
     refine WP.block_nil ⟨?_, hw⟩
-    have e : selv A d 16 = A (aT0 + d) := by simp only [selv, hd, ↓reduceIte]
+    obtain e : selv A d 16 = A (aT0 + d) := by simp only [selv, hd, ↓reduceIte]
     rw [e] at h
     exact h
   | n + 1, j, hjn, hj1, s, h, hw => by
-    have hold_L : ∀ i, hold i ∉ L := fun i => by unfold hold; split; exacts [hX, hM]
+    obtain hold_L : ∀ i, hold i ∉ L := fun i => by unfold hold; split; exacts [hX, hM]
     rw [scanFrom, WP.seq_iff]
     refine WP.mono (h.mask_ok (j := j) (by omega_using [hjn]) hw hv vl) fun s1 ⟨h1, hw1⟩ => ?_
     rw [WP.seq_iff]
-    have hb : aT0 + j ∈ hold (j + 1) :: L := List.mem_cons_of_mem _ (hT j (by omega_using [hjn]))
-    have ne1 : hold j ≠ aT0 + j := fun e => by have := hold_lt j; omega_using [e, this]
+    obtain hb : aT0 + j ∈ hold (j + 1) :: L := List.mem_cons_of_mem _ (hT j (by omega_using [hjn]))
+    obtain ne1 : hold j ≠ aT0 + j := fun e => by have := hold_lt j; omega_using [e, this]
     refine WP.mono (h1.sel_ok hw1 (hold_mem j) List.mem_cons_self hb (hold_ne j) ne1 List.mem_cons_self
       (by rw [upd_self]; cases decide (digitOf (V sV) = j) <;> decide)) fun s2 ⟨h2, hw2, _⟩ => ?_
     refine scanFrom_ok hd hT hX hM hv hE1 dv vl n (j + 1) (by omega_using [hjn]) (by omega_using []) s2 ?_ hw2
@@ -259,7 +259,7 @@ theorem scanFrom_ok {d : Nat} (hd : d < 16) (hT : ∀ k < 16, aT0 + k ∈ L) (hX
         · simp only [hdj, decide_true, Bool.toNat_true, Nat.one_ne_zero, ↓reduceIte, Nat.lt_succ_self]
         · simp only [hdj, decide_false, Bool.toNat_false, ↓reduceIte, show (d < j + 1) ↔ (d < j) by omega_using [hdj]]
       · have n1 : i ≠ hold j := fun e => hold_L j (e ▸ hi)
-        have n2 : i ≠ hold (j + 1) := fun e => hold_L (j + 1) (e ▸ hi)
+        obtain n2 : i ≠ hold (j + 1) := fun e => hold_L (j + 1) (e ▸ hi)
         rw [upd_ne _ _ n1, upd_ne _ _ n2, upd_ne _ _ n1]
     · have : e ≠ sE1 := fun x => hE1 (x ▸ he)
       rw [upd_ne _ _ this]
@@ -276,14 +276,14 @@ theorem St.pscan (hT : ∀ k < 16, aT0 + k ∈ L) (hX : aX ∉ L) (hM : aM1 ∉ 
     VP (St P E A L V LS) scan
       (St P E (fun σ => upd (A σ) aX (A σ (aT0 + digitOf (V σ sV)))) (aX :: L) V LS) := by
   refine VP.kv scan_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
-  have dl : digitOf (V σ sV) < 16 := by have := vl σ e; simp only [digitOf]; omega_using [this]
+  obtain dl : digitOf (V σ sV) < 16 := by have := vl σ e; simp only [digitOf]; omega_using [this]
   rw [scan, WP.seq_iff]
-  have t0 : aT0 ∈ L := hT 0 (by decide)
+  obtain t0 : aT0 ∈ L := hT 0 (by decide)
   refine WP.mono (h.copy_ok hw (by decide) (h.live_lt _ t0) (by decide)) fun s1 ⟨h1, hw1, _⟩ => ?_
   refine WP.mono (scanFrom_ok (A := A σ) dl hT hX hM hv hE1 rfl (vl σ e) 15 1 rfl (Nat.le_refl _) s1 ?_ hw1)
     fun t ⟨ht, hwt⟩ => ⟨e, ht, hwt⟩
   rw [h.arrs aT0 t0] at h1
-  have e1 : selv (A σ) (digitOf (V σ sV)) 1 = A σ aT0 := by
+  obtain e1 : selv (A σ) (digitOf (V σ sV)) 1 = A σ aT0 := by
     unfold selv; split
     · rw [show digitOf (V σ sV) = 0 by omega_arith]; rfl
     · rfl
@@ -349,20 +349,20 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
   have eY : aY = 6 := rfl
   have eX : aX = 5 := rfl
   intro j hj
-  have hj' : j = aY ∨ j = aX ∨ (aT0 ≤ j ∧ j < aT0 + 16) := by
+  obtain hj' : j = aY ∨ j = aX ∨ (aT0 ≤ j ∧ j < aT0 + 16) := by
     simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hj
     omega_using [e0, hj]
   rcases hj' with rfl | rfl | hj
   · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
   · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
   · have hY : j ≠ aY := by omega_using [e0, eY, hj]
-    have hX : j ≠ aX := by omega_using [e0, eX, hj]
+    obtain hX : j ≠ aX := by omega_using [e0, eX, hj]
     by_cases he : j = aT0 + i + 2
     · subst j
-      have hsub : aT0 + i + 2 - aT0 = i + 2 := by omega_using []
+      obtain hsub : aT0 + i + 2 - aT0 = i + 2 := by omega_using []
       simp (disch := omega) only [upd, AT, tabEnt, hsub, ↓ite_eq_left, ↓ite_eq_right]
     · have hidx : j - aT0 ≠ i + 2 := by omega_using [he]
-      have hbound : (j - aT0 ≤ i + 1) = (j - aT0 ≤ (i + 1) + 1) := by apply propext; omega_using [he]
+      obtain hbound : (j - aT0 ≤ i + 1) = (j - aT0 ≤ (i + 1) + 1) := by apply propext; omega_using [he]
       simp only [upd, he, hY, hX, AT, tabEnt, ↓reduceIte, hbound]
 
 
@@ -378,21 +378,21 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
   refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
   let s4 := s2.setReg .r0 (s2.gpr .r0*s2.gpr .r7+s2.gpr .r8)
-  have u4 : Upd s2 s4 .r0 (s2.gpr .r0*s2.gpr .r7+s2.gpr .r8) := Upd.setReg _ _ _
+  obtain u4 : Upd s2 s4 .r0 (s2.gpr .r0*s2.gpr .r7+s2.gpr .r8) := Upd.setReg _ _ _
   refine VG.Proof.X25519.Arm.WP.cons rfl ?_
   refine wp_dp (op2_imm (by decide)) fun s5 u5 => ?_
-  have index : s2.gpr .r0=BitVec.ofNat 32 (aT0+i+2) := by
+  obtain index : s2.gpr .r0=BitVec.ofNat 32 (aT0+i+2) := by
     rw [u2.gpr,dpVal,u1.gpr,u1.other .lr (by decide),count]
     change BitVec.ofNat 32 27-BitVec.ofNat 32 (14-i)=_
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [])]
     congr 1
     simp only [aT0]
     omega_using [hi]
-  have r5 : Rest [.r0] s s5 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
+  obtain r5 : Rest [.r0] s s5 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
     ((u4.rest (by simp)).trans (u5.rest (by simp))))
-  have mem5 : s5.mem=s.mem := by rw [u5.mem,u4.mem,u2.mem,u1.mem]
-  have hw5 : Ws s5 P.B P.Z P.W nArr := hw.rest r5 (by decide) (by decide) (by decide)
-  have p0 : s5.gpr .r0=P.B+BitVec.ofNat 32 (arr P.W (aT0+i+2)) := by
+  obtain mem5 : s5.mem=s.mem := by rw [u5.mem,u4.mem,u2.mem,u1.mem]
+  obtain hw5 : Ws s5 P.B P.Z P.W nArr := hw.rest r5 (by decide) (by decide) (by decide)
+  obtain p0 : s5.gpr .r0=P.B+BitVec.ofNat 32 (arr P.W (aT0+i+2)) := by
     rw [u5.gpr,dpVal,u4.gpr,index,
       u2.other .r8 (by decide),u1.other .r8 (by decide),
       u2.other .r7 (by decide),u1.other .r7 (by decide),hw.r7,hw.r8]
@@ -401,13 +401,13 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   refine ptr_ok hw6 (r := .r12) (by decide) (j := aY) (by decide) fun s7 p12 r7 mem7 hw7 => ?_
   refine wp_mov (op2_reg _ _) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u9 => WP.block_nil ?_
-  have hu : Ws u P.B P.Z P.W nArr := (hw7.of_upd u8 (by decide) (by decide) (by decide)).of_upd u9 (by decide) (by decide) (by decide)
-  have mu : u.mem=s.mem := by rw [u9.mem,u8.mem,mem7,mem6,mem5]
-  have restU : Rest opRegs s u := (r5.mono (by simp)).trans ((r6.mono (by simp)).trans
+  obtain hu : Ws u P.B P.Z P.W nArr := (hw7.of_upd u8 (by decide) (by decide) (by decide)).of_upd u9 (by decide) (by decide) (by decide)
+  obtain mu : u.mem=s.mem := by rw [u9.mem,u8.mem,mem7,mem6,mem5]
+  obtain restU : Rest opRegs s u := (r5.mono (by simp)).trans ((r6.mono (by simp)).trans
     ((r7.mono (by simp)).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))
-  have ho : aT0+i+2<nArr := by simp only [aT0,nArr]; omega_using [hi]
-  have ha' := h.live_lt _ ha
-  have hoa : aT0+i+2≠aY := by simp only [aT0,aY]; omega_using []
+  obtain ho : aT0+i+2<nArr := by simp only [aT0,nArr]; omega_using [hi]
+  obtain ha' := h.live_lt _ ha
+  obtain hoa : aT0+i+2≠aY := by simp only [aT0,aY]; omega_using []
   refine WP.mono (copyWords_ok u (hu.subCtx ho ha' ha' hoa hoa) hw.wpos
     (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r0 (by decide),r6.gpr .r0 (by decide),p0])
     (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r10 (by decide),p10])
@@ -416,13 +416,13 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   intro t inv
   have value := inv.value
   rw [mu] at value
-  have keep : Keep P.B P.W [aT0+i+2] [] s.mem t.mem := Keep.of_arr (d := 0)
+  obtain keep : Keep P.B P.W [aT0+i+2] [] s.mem t.mem := Keep.of_arr (d := 0)
     (by simpa only [Nat.add_zero,mu] using inv.outside) (by simp only [S]; omega_using []) (by simp)
-  have numeq : num t.mem P.B P.W (aT0+i+2)=num s.mem P.B P.W aY := by
+  obtain numeq : num t.mem P.B P.W (aT0+i+2)=num s.mem P.B P.W aY := by
     change val32 _ _ _ _=_
     rw [value]
     split <;> rfl
-  have rest := restU.trans (inv.rest.mono (by simp))
+  obtain rest := restU.trans (inv.rest.mono (by simp))
   exact ⟨h.write1 keep (by simp [wJs,aT0]; omega_using [hi]) (by simp) rest.sp rest.rd rest.wr numeq (by simp),hu.rest inv.rest⟩
 
 private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat → Nat}
@@ -476,13 +476,13 @@ theorem tab_loop {P : MP} (fios : Bool := false) :
   refine VP.loop (fun n => ?_) 13
   by_cases hn : n+1 ≤ 14
   · have hi : 14-(n+1)<14 := by omega_using []
-    have eq1 : 14-(14-(n+1))=n+1 := by omega_using [hn]
-    have eq2 : 13-(14-(n+1))=n := by omega_using [hn]
+    obtain eq1 : 14-(14-(n+1))=n+1 := by omega_using [hn]
+    obtain eq2 : 13-(14-(n+1))=n := by omega_using [hn]
     refine (tab_step (P := P) (14-(n+1)) hi (fios := fios)).mono ?_ ?_
     · intro σ s h
       simpa only [eq1] using h
     · intro σ s h
-      have ts : TS P n σ s := by simpa only [eq2] using h.1
+      obtain ts : TS P n σ s := by simpa only [eq2] using h.1
       refine ⟨?_,fun h0 => h0 ▸ ts,fun _ => ts⟩
       show some (!s.z) = _
       rw [h.2,eq2]
@@ -550,10 +550,10 @@ theorem wst_lt (h : In P σ) (j : Nat) : (wst P σ j).1 < cOf P σ.mem := by
 /-- The digit at the top of the shifted word is the window's. -/
 theorem digit_sv (h : In P σ) {m r : Nat} (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hr1 : 1 ≤ r) (hr : r ≤ 8) :
     digitOf (svOf P σ m r) = eOf P σ / 16 ^ (16 * P.w - 1 - (16 * P.w - (8 * (m - 1) + r))) % 16 := by
-  have lt : ew P σ (m - 1) < 2 ^ 32 := (σ.mem.readW _ 32).isLt
-  have e := shl_shr28 (BitVec.ofNat 32 (ew P σ (m - 1))) (t := 8 - r) (by omega_arith)
+  obtain lt : ew P σ (m - 1) < 2 ^ 32 := (σ.mem.readW _ 32).isLt
+  obtain e := shl_shr28 (BitVec.ofNat 32 (ew P σ (m - 1))) (t := 8 - r) (by omega_arith)
   rw [ofNat_toNat32 lt] at e
-  have e2 : (BitVec.ofNat 32 (ew P σ (m - 1)) <<< (4 * (8 - r)) >>> 28).toNat = digitOf (svOf P σ m r) := by
+  obtain e2 : (BitVec.ofNat 32 (ew P σ (m - 1)) <<< (4 * (8 - r)) >>> 28).toNat = digitOf (svOf P σ m r) := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   rw [← e2, e, h.ew_val (by omega_arith), show 28 - 4 * (8 - r) = 4 * (r - 1) by omega_arith, digit_word _ _ _ (by omega_arith),
     show 16 * P.w - 1 - (16 * P.w - (8 * (m - 1) + r)) = 8 * (m - 1) + (r - 1) by omega_arith]
@@ -648,7 +648,7 @@ theorem V7w_sK : V7w P m n σ sK = 8 * (m - 1) + (n + 1) := by
 theorem wst_next (h : In P σ) (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hn : n + 1 ≤ 8) :
     wst P σ (jw P m n + 1) = (Y5w P m n σ, if dgw P m n σ = 0 then (st4 P m n σ).2 else
       (decide (Y5w P m n σ = tv P σ 0) || decide (Y5w P m n σ = mOf P σ))) := by
-  have hd := digit_sv h hm1 hm (by omega_arith) hn
+  obtain hd := digit_sv h hm1 hm (by omega_arith) hn
   show mwin _ _ _ _ (eOf P σ / 16 ^ (16 * P.w - 1 - jw P m n) % 16) (wst P σ (jw P m n)) = _
   rw [← hd]
   rfl
@@ -736,20 +736,20 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
     (fun σ _ => V7w_sV) (fun σ _ => svOf_lt m (n + 1)) (fun σ _ => V7w_sE1) (fun σ _ => V7w_sE2)
     (fun σ _ => V7w_sF) (fun σ _ => V7w_sK) (by omega_arith)).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
   have pre : In P σ := h.1
-  have wn := wst_next pre hm1 hm hn
-  have j1 : jw P m n + 1 = 16 * P.w - (8 * (m - 1) + n) := by have := pre.w4; simp only [jw]; omega_arith
+  obtain wn := wst_next pre hm1 hm hn
+  obtain j1 : jw P m n + 1 = 16 * P.w - (8 * (m - 1) + n) := by have := pre.w4; simp only [jw]; omega_arith
   rw [j1] at wn
-  have hA : ∀ i ∈ LW, A5w P m n σ i = AW P (16 * P.w - (8 * (m - 1) + n)) σ i := fun i hi => by
+  obtain hA : ∀ i ∈ LW, A5w P m n σ i = AW P (16 * P.w - (8 * (m - 1) + n)) σ i := fun i hi => by
     rcases List.mem_cons.mp hi with rfl | hi
     · rw [A5w_Y]; unfold AW; rw [ite_eq_left rfl, wn]
     rcases List.mem_cons.mp hi with rfl | hi
     · rw [A5w_M]; unfold AW; rw [ite_eq_right (by decide), ite_eq_left rfl]
     · rw [A5w_tab hi, AW_tab hi]
-  have hF : (if digitOf (svOf P σ m (n + 1)) = 0 then (st4 P m n σ).2 else
+  obtain hF : (if digitOf (svOf P σ m (n + 1)) = 0 then (st4 P m n σ).2 else
       (decide (Y5w P m n σ = tv P σ 0) || decide (Y5w P m n σ = mOf P σ))).toNat =
       (wst P σ (16 * P.w - (8 * (m - 1) + n))).2.toNat := by rw [wn]
-  have hL : ∀ i ∈ LW, i ∈ aY :: aM1 :: Lt := by decide
-  have stI : 0 < n → WI P m n σ s := fun hn0 => by
+  obtain hL : ∀ i ∈ LW, i ∈ aY :: aM1 :: Lt := by decide
+  obtain stI : 0 < n → WI P m n σ s := fun hn0 => by
     refine ⟨hm1, hm, by omega_arith, h.mono (fun i hi => ⟨hL i hi, hA i hi⟩) (fun d hd => ⟨?_, ?_⟩)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -757,7 +757,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
       · simp only [upd, show sV ≠ sK by decide, ↓reduceIte]; exact svOf_next (by omega_arith)
       · rw [upd_self, upd_ne _ _ (by decide : sK ≠ sV), upd_self]
       · simp only [upd, show sF ≠ sK by decide, show sF ≠ sV by decide, ↓reduceIte]; exact hF
-  have stO : n = 0 → WO P (m - 1) σ s := fun hn0 => by
+  obtain stO : n = 0 → WO P (m - 1) σ s := fun hn0 => by
     subst hn0
     refine ⟨by omega_arith, h.mono (fun i hi => ⟨hL i hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
     · rw [hA i hi, show 16 * P.w - (8 * (m - 1) + 0) = 16 * P.w - 8 * (m - 1) by omega_arith]

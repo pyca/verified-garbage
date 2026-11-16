@@ -66,14 +66,14 @@ theorem revStep_ok {t : State} {S P : BitVec 32} {j : Nat} (hj : j + 1 < 2 ^ 32)
       t'.gpr .r4 = S + BitVec.ofNat 32 16 ∧ t'.gpr .r2 = P + BitVec.ofNat 32 16 ∧
       t'.gpr .r3 = BitVec.ofNat 32 j ∧ t'.z = decide (j = 0) ∧ Others revRegs t t' ∧ t'.sp = t.sp ∧
       t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ : InRegions (t.rd ++ t.wr) (State.addr S) 4 := by simpa using in_off hr (d := 0) (n := 4) (by decide) (by decide)
-  have r₄ := in_off hr (d := 4) (n := 4) (by decide) (by decide)
-  have r₈ := in_off hr (d := 8) (n := 4) (by decide) (by decide)
-  have r₁₂ := in_off hr (d := 12) (n := 4) (by decide) (by decide)
-  have w₀ : InRegions t.wr (State.addr P) 4 := by simpa using in_off hw (d := 0) (n := 4) (by decide) (by decide)
-  have w₄ := in_off hw (d := 4) (n := 4) (by decide) (by decide)
-  have w₈ := in_off hw (d := 8) (n := 4) (by decide) (by decide)
-  have w₁₂ := in_off hw (d := 12) (n := 4) (by decide) (by decide)
+  obtain r₀ : InRegions (t.rd ++ t.wr) (State.addr S) 4 := by simpa using in_off hr (d := 0) (n := 4) (by decide) (by decide)
+  obtain r₄ := in_off hr (d := 4) (n := 4) (by decide) (by decide)
+  obtain r₈ := in_off hr (d := 8) (n := 4) (by decide) (by decide)
+  obtain r₁₂ := in_off hr (d := 12) (n := 4) (by decide) (by decide)
+  obtain w₀ : InRegions t.wr (State.addr P) 4 := by simpa using in_off hw (d := 0) (n := 4) (by decide) (by decide)
+  obtain w₄ := in_off hw (d := 4) (n := 4) (by decide) (by decide)
+  obtain w₈ := in_off hw (d := 8) (n := 4) (by decide) (by decide)
+  obtain w₁₂ := in_off hw (d := 12) (n := 4) (by decide) (by decide)
   refine ⟨_, by srun [h4, h2, h3, add_ofNat_zero, hS, hP, r₀, r₄, r₈, r₁₂, w₀, w₄, w₈, w₁₂], ?_⟩
   refine ⟨?_, by simp [gpr_setReg, h4], by simp [gpr_setReg, h2], ?_, ?_, by others_tac, by rfl, by rfl, by rfl⟩
   · simp only [mem_setReg, mem_store, mem_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, revMem,
@@ -136,8 +136,8 @@ theorem take {k : Nat} (hk : k ≤ n) : Src p s Q k where
 
 /-- Bytes `[a, a + k)`, for `a < n`. -/
 theorem slice {a k : Nat} (hk : a + k ≤ n) (ha : a < n) : Src p s (Q + BitVec.ofNat 32 a) k := by
-  have e := h.addr ha
-  have hs : Region.Sub ⟨State.addr Q + BitVec.ofNat 64 a, k⟩ ⟨State.addr Q, n⟩ := Offset.sub_base _ hk
+  obtain e := h.addr ha
+  obtain hs : Region.Sub ⟨State.addr Q + BitVec.ofNat 64 a, k⟩ ⟨State.addr Q, n⟩ := Offset.sub_base _ hk
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [e]; exact covers_off h.rd hk h.lt
   · rw [h.toNat_add ha]; have := h.wrap; omega_arith
@@ -169,38 +169,38 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
       t.gpr .r4 = Q + BitVec.ofNat 32 (16 * c) ∧
       Others revRegs t₀ t ∧ t.sp = t₀.sp ∧ t.rd = t₀.rd ∧ t.wr = t₀.wr := by
   have hw := L.ww
-  have I₀ : RInv p Q c 0 t₀ t₀ := ⟨by rw [h4, Nat.mul_zero, add_ofNat_zero], by rw [h2],
+  obtain I₀ : RInv p Q c 0 t₀ t₀ := ⟨by rw [h4, Nat.mul_zero, add_ofNat_zero], by rw [h2],
     by rw [h3, Nat.sub_zero], Frame.refl _ _, by simp only [Spec.Gcm.blocksAt, elemsAt, List.range_zero, List.map_nil],
     fun _ _ => rfl, rfl, rfl, rfl⟩
   refine WP.loop (M := isa) (body := .block revBody) (c := .ne)
     (fun (m : Nat) (t : State) => ∃ j, m = c - j ∧ j < c ∧ RInv p Q c j t₀ t) ?_ (c - 0) t₀ ⟨0, rfl, hc1, I₀⟩
   rintro m t ⟨j, rfl, hj, I⟩
-  have eS : State.addr (Q + BitVec.ofNat 32 (16 * j)) = State.addr Q + BitVec.ofNat 64 (16 * j) :=
+  obtain eS : State.addr (Q + BitVec.ofNat 32 (16 * j)) = State.addr Q + BitVec.ofNat 64 (16 * j) :=
     hQ.addr (by omega_arith)
-  have hS : ∀ o, o < 16 → State.addr (Q + BitVec.ofNat 32 (16 * j) + BitVec.ofNat 32 o) =
+  obtain hS : ∀ o, o < 16 → State.addr (Q + BitVec.ofNat 32 (16 * j) + BitVec.ofNat 32 o) =
       State.addr (Q + BitVec.ofNat 32 (16 * j)) + BitVec.ofNat 64 o := fun o ho => by
     rw [add32_ofNat_assoc, hQ.addr (by omega_arith), eS, add_ofNat_assoc]
-  have hP : ∀ o, o < 16 → State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j) + BitVec.ofNat 32 o) =
+  obtain hP : ∀ o, o < 16 → State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j) + BitVec.ofNat 32 o) =
       State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j)) + BitVec.ofNat 64 o := fun o ho => by
     rw [add32_ofNat_assoc, L.wA (by omega_arith), L.wA (by omega_arith), add_ofNat_assoc]
-  have hr : Covers [⟨State.addr (Q + BitVec.ofNat 32 (16 * j)), 16⟩] (t.rd ++ t.wr) := by
+  obtain hr : Covers [⟨State.addr (Q + BitVec.ofNat 32 (16 * j)), 16⟩] (t.rd ++ t.wr) := by
     rw [I.rd, I.wr, eS]; exact covers_off hQ.rd (by omega_arith) hQ.lt
-  have hwr : Covers [⟨State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j)), 16⟩] t.wr := by
+  obtain hwr : Covers [⟨State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j)), 16⟩] t.wr := by
     rw [I.wr, L.wA (by omega_arith)]; exact E.perm.wC (by omega_arith)
   obtain ⟨t', run', hm', r4', r2', r3', z', ho', sp', rd', wr'⟩ :=
     revStep_ok (j := c - j - 1) (by omega_arith) hS hP I.r4 I.r2 (by rw [I.r3]; congr 1; omega_arith) hr hwr
   refine WP.of_runBlock ⟨t', run', ?_⟩
   rw [eS, L.wA (by omega_arith)] at hm'
   -- The source is outside the copies.
-  have src : bytesAt t.mem (State.addr Q + BitVec.ofNat 64 (16 * j)) 16 =
+  obtain src : bytesAt t.mem (State.addr Q + BitVec.ofNat 64 (16 * j)) 16 =
       bytesAt t₀.mem (State.addr Q + BitVec.ofNat 64 (16 * j)) 16 :=
     Proof.AesGcm.Arm.bytesAt_frame I.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hQ.rev.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub _ (by omega_arith) (by omega_arith)))
       (by decide)
-  have fr : Frame [⟨State.addr p.W + BitVec.ofNat 64 (432 + 16 * j), 16⟩] t.mem t'.mem := by
+  obtain fr : Frame [⟨State.addr p.W + BitVec.ofNat 64 (432 + 16 * j), 16⟩] t.mem t'.mem := by
     rw [hm', revMem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have I' : RInv p Q c (j + 1) t₀ t' := by
+  obtain I' : RInv p Q c (j + 1) t₀ t' := by
     refine ⟨by rw [r4', add32_ofNat_assoc, Nat.mul_succ], by rw [r2', add32_ofNat_assoc, Nat.mul_succ, Nat.add_assoc],
       by rw [r3', Nat.sub_sub], ?_, ?_, fun r hr => by rw [ho' r hr, I.others r hr],
       by rw [sp', I.sp], by rw [rd', I.rd], by rw [wr', I.wr]⟩
@@ -212,7 +212,7 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
           exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith), I.out]
       simp only [elemsAt, List.range_succ, List.map_append, List.map_cons, List.map_nil]
       rw [add_ofNat_assoc, hm', revMem_block, src]
-  have ev := eval_ne' z'
+  obtain ev := eval_ne' z'
   by_cases he : j + 1 = c
   · left
     refine ⟨ev.trans (by simp [show c - j - 1 = 0 by omega_arith]), ?_⟩
@@ -298,19 +298,19 @@ theorem chunkPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 
     · simp [gpr_setReg, ho₁ .r11 (by decide), E.r11]
     · simp [gpr_setReg, r6₁]
   refine WP.seq (WP.of_runBlock ⟨t₂, run₂, ?_⟩)
-  have E₂ : Env p t₂ := (E.of_others ho₁ sp₁ rd₁ wr₁).of_others ho₂ sp₂ rd₂ wr₂
-  have hk1 : 1 ≤ min (m / 16) 64 := by omega_arith
-  have hQ₂ : Src p t₂ Q (16 * min (m / 16) 64) :=
+  obtain E₂ : Env p t₂ := (E.of_others ho₁ sp₁ rd₁ wr₁).of_others ho₂ sp₂ rd₂ wr₂
+  obtain hk1 : 1 ≤ min (m / 16) 64 := by omega_arith
+  obtain hQ₂ : Src p t₂ Q (16 * min (m / 16) 64) :=
     (hQ.take (by omega_arith)).of_eq (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
-  have h4₂ : t₂.gpr .r4 = Q := by rw [ho₂ _ (by decide), ho₁ _ (by decide), h4]
+  obtain h4₂ : t₂.gpr .r4 = Q := by rw [ho₂ _ (by decide), ho₁ _ (by decide), h4]
   refine WP.seq (WP.mono (revLoop_ok L E₂ hk1 (by omega_arith) hQ₂ h4₂ r2₂ r3₂)
     fun t₃ ⟨fr₃, out₃, r4₃, ho₃, sp₃, rd₃, wr₃⟩ => ?_)
-  have E₃ : Env p t₃ := E₂.of_others ho₃ sp₃ rd₃ wr₃
-  have r6₃ : t₃.gpr .r6 = BitVec.ofNat 32 (min (m / 16) 64) := by
+  obtain E₃ : Env p t₃ := E₂.of_others ho₃ sp₃ rd₃ wr₃
+  obtain r6₃ : t₃.gpr .r6 = BitVec.ofNat 32 (min (m / 16) 64) := by
     rw [ho₃ _ (by decide), ho₂ _ (by decide), r6₁]
-  have r5₃ : t₃.gpr .r5 = BitVec.ofNat 32 m := by
+  obtain r5₃ : t₃.gpr .r5 = BitVec.ofNat 32 m := by
     rw [ho₃ _ (by decide), ho₂ _ (by decide), ho₁ _ (by decide), h5]
-  have m₂₁ : t₂.mem = t.mem := by rw [m₂, m₁]
+  obtain m₂₁ : t₂.mem = t.mem := by rw [m₂, m₁]
   rw [m₂₁] at fr₃ out₃
   refine Proof.AesGcm.Arm.WP.run ⟨_, by simp only [chunkArgs]; srun [], rfl⟩ fun t₄ ht₄ => ?_
   subst ht₄
@@ -368,20 +368,20 @@ theorem chunk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32}
     (h5 : t.gpr .r5 = BitVec.ofNat 32 m) :
     WP isa chunk t (ChunkPost p Q m (min (m / 16) 64) t) := by
   have hw := L.ww
-  have hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
+  obtain hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
   refine WP.seq (WP.mono (chunkPre_ok L E hm h16 hQ h4 h5) fun t₅ Pr => ?_)
   refine WP.seq (WP.mono (gh_call Pr.call) fun t₆ P => ?_)
-  have E₆ : Env p t₆ := Pr.env.of_saved P.saved P.sp P.rd P.wr
-  have r5₆ : t₆.gpr .r5 = BitVec.ofNat 32 (m - 16 * min (m / 16) 64) := by
+  obtain E₆ : Env p t₆ := Pr.env.of_saved P.saved P.sp P.rd P.wr
+  obtain r5₆ : t₆.gpr .r5 = BitVec.ofNat 32 (m - 16 * min (m / 16) 64) := by
     rw [P.saved _ (by decide) (by decide), Pr.r5]
   have fr := P.frame
   have out₆ := P.out
   simp only [L.wA (show 64 < 3760 by decide), L.wA (show 80 < 3760 by decide),
     L.wA (show 432 < 3760 by decide), L.wA (show 1456 < 3760 by decide), Pr.env.sp] at fr out₆
-  have dH : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
+  obtain dH : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
-  have dY : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
+  obtain dY : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 80, 16⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   rw [Proof.AesGcm.Arm.blockAt_frame Pr.frame dH, Proof.AesGcm.Arm.blockAt_frame Pr.frame dY, Pr.out] at out₆
@@ -503,11 +503,11 @@ theorem CInv.step {p : Prm} (L : Lay p) {σ t t' : State} {Q : BitVec 32} {m d :
     (C : ChunkPost p (Q + BitVec.ofNat 32 (16 * d)) (m - 16 * d) (min ((m - 16 * d) / 16) 64) t t') :
     CInv p σ Q m (d + min (m / 16 - d) 64) t' ∧
       t'.z = decide (m / 16 - (d + min (m / 16 - d) 64) = 0) := by
-  have hk : min ((m - 16 * d) / 16) 64 = min (m / 16 - d) 64 := by congr 1; omega_arith
+  obtain hk : min ((m - 16 * d) / 16) 64 = min (m / 16 - d) 64 := by congr 1; omega_arith
   rw [hk] at C
-  have hs := hQ.slice (a := 16 * d) (k := 16 * min (m / 16 - d) 64) (by omega_arith) (by omega_arith)
-  have ea := hQ.addr (j := 16 * d) (by omega_arith)
-  have C' := Absorbed.of_chunk C
+  obtain hs := hQ.slice (a := 16 * d) (k := 16 * min (m / 16 - d) 64) (by omega_arith) (by omega_arith)
+  obtain ea := hQ.addr (j := 16 * d) (by omega_arith)
+  obtain C' := Absorbed.of_chunk C
   rw [elemsAt_frame I.abs.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -530,7 +530,7 @@ theorem chunks_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32
   rintro k t' ⟨d, rfl, hd, I⟩
   refine WP.mono (chunk_ok L I.abs.env (by omega_arith) (by omega_arith) (I.src hQ hd) I.r4 I.r5) fun t'' C => ?_
   obtain ⟨I', z⟩ := I.step L hQ hd C
-  have ev := eval_ne' z
+  obtain ev := eval_ne' z
   by_cases he : d + min (m / 16 - d) 64 = m / 16
   · left
     refine ⟨ev.trans (by simp; omega_arith), he ▸ I'.abs, by rw [I'.r4, he], by rw [I'.r5, he]; congr 1; omega_arith⟩

@@ -62,7 +62,7 @@ variable {b : Addr}
 theorem fs_bits {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 BITS, 456⟩] m m') {q : Nat}
     (hq : q + 56 ≤ BITS ∨ BITS + 456 ≤ q) (hq' : q + 56 ≤ 2048) : FS m' b q = FS m b q := by
   have hB : BITS = 1064 := rfl
-  have e : ∀ k < 14, limb m' b q k = limb m b q k :=
+  obtain e : ∀ k < 14, limb m' b q k = limb m b q k :=
     limb_frame hf fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
       exact Offset.disjoint _ (by omega_using [hq, hk]) (by omega_using [hq', hk]) (by omega_using [hB])
@@ -74,7 +74,7 @@ theorem bytesAt_ws {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Add
     Spec.Ed448.bytesAt m' p 57 = Spec.Ed448.bytesAt m p 57 := by
   simp only [Spec.Ed448.bytesAt]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   exact hf _ fun r hr hc => hd _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (hrs r hr _ hc)
 
 end
@@ -95,17 +95,17 @@ theorem combInit_ok {s : State} (hc : Ctx b s) :
   have hZ : RZ = 112 := rfl
   have hD : DK = 336 := rfl
   have hA : ACC = 952 := rfl
-  have fa : ∀ o, o + 56 ≤ ACC + 112 → ∀ r ∈ [(⟨b + BitVec.ofNat 64 o, 56⟩ : Region)], ∃ r' ∈ [FA b],
+  obtain fa : ∀ o, o + 56 ≤ ACC + 112 → ∀ r ∈ [(⟨b + BitVec.ofNat 64 o, 56⟩ : Region)], ∃ r' ∈ [FA b],
       Region.Sub r r' := fun o ho r hr => ⟨_, List.mem_singleton_self _, by
         rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ ho⟩
   unfold combInit
   simp only [List.append_assoc]
   refine WP.append (constField_ok hc (o := RX) (by omega_using [hX]) (by omega_using [hX]) (fe_lt _)) fun t1 ⟨r1, f1, v1⟩ => ?_
-  have c1 := hc.of_rest r1 (by decide)
+  obtain c1 := hc.of_rest r1 (by decide)
   refine WP.append (constField_ok c1 (o := RY) (by omega_using [hY]) (by omega_using [hY]) (fe_lt _)) fun t2 ⟨r2, f2, v2⟩ => ?_
-  have c2 := c1.of_rest r2 (by decide)
+  obtain c2 := c1.of_rest r2 (by decide)
   refine WP.append (constField_ok c2 (o := RZ) (by omega_using [hZ]) (by omega_using [hZ]) (fe_lt _)) fun t3 ⟨r3, f3, v3⟩ => ?_
-  have c3 := c2.of_rest r3 (by decide)
+  obtain c3 := c2.of_rest r3 (by decide)
   refine WP.mono (constField_ok c3 (o := DK) (by omega_using [hD]) (by omega_using [hD]) (fe_lt _)) fun t4 ⟨r4, f4, v4⟩ =>
     ⟨r1.trans (r2.trans (r3.trans r4)), (f1.sub (fa _ (by omega_using [hX]))).trans ((f2.sub (fa _ (by omega_using [hY]))).trans
       ((f3.sub (fa _ (by omega_using [hZ, hA]))).trans (f4.sub (fa _ (by omega_using [hD, hA]))))), fun q hq => ?_⟩
@@ -121,7 +121,7 @@ theorem combInit_ok {s : State} (hc : Ctx b s) :
 /-- A slot stays through a write past the field slots. -/
 theorem fs_below_region {m m' : Mem} {e n : Nat} (hf : Frame [⟨b + BitVec.ofNat 64 e, n⟩] m m') {q : Nat}
     (hq : q + 56 ≤ e) (he : e + n ≤ 2 ^ 64) : FS m' b q = FS m b q := by
-  have e' : ∀ k < 14, limb m' b q k = limb m b q k :=
+  obtain e' : ∀ k < 14, limb m' b q k = limb m b q k :=
     limb_frame hf fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
       exact Offset.disjoint _ (.inl (by omega_using [hq, hk])) (by omega_using [hq, he, hk]) he
@@ -135,39 +135,39 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
   obtain ⟨hrd, hwr, hos, how, hsw⟩ := hp
   have hB : BITS = 1064 := rfl
   obtain ⟨b, hb⟩ : ∃ b, b = Proof.Ed25519.RISCV64.base (s.gpr .a2) := ⟨_, rfl⟩
-  have hsub : Region.Sub ⟨b, 2048⟩ ⟨s.gpr .a2, 8192⟩ := by
+  obtain hsub : Region.Sub ⟨b, 2048⟩ ⟨s.gpr .a2, 8192⟩ := by
     have := Proof.Ed25519.RISCV64.base_sub (s.gpr .a2) (o := 0) (n := 2048) (by decide)
     rwa [BitVec.add_zero, ← hb] at this
-  have hws : Region.Disjoint ⟨s.gpr .a1, 57⟩ ⟨b, 2048⟩ := hsw.sub_right hsub
-  have hwo : Region.Disjoint ⟨b, 2048⟩ ⟨s.gpr .a0, 57⟩ := (how.sub_right hsub).symm
-  have hwsr : (⟨s.gpr .a2, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
+  obtain hws : Region.Disjoint ⟨s.gpr .a1, 57⟩ ⟨b, 2048⟩ := hsw.sub_right hsub
+  obtain hwo : Region.Disjoint ⟨b, 2048⟩ ⟨s.gpr .a0, 57⟩ := (how.sub_right hsub).symm
+  obtain hwsr : (⟨s.gpr .a2, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   -- The table's region, in the working space.
-  have htsub : Region.Sub ⟨Comb.tb b, 1792⟩ ⟨s.gpr .a2, 8192⟩ := by
+  obtain htsub : Region.Sub ⟨Comb.tb b, 1792⟩ ⟨s.gpr .a2, 8192⟩ := by
     have := Align.pad_lt (s.gpr .a2)
     rw [Comb.tb, hb, Proof.Ed25519.RISCV64.base, Offset.add_add]
     exact Offset.sub_base _ (by simp only [CTAB]; omega_using [this])
-  have hts : Region.Disjoint ⟨s.gpr .a1, 57⟩ ⟨Comb.tb b, 1792⟩ := hsw.sub_right htsub
+  obtain hts : Region.Disjoint ⟨s.gpr .a1, 57⟩ ⟨Comb.tb b, 1792⟩ := hsw.sub_right htsub
   unfold scalarBase
   rw [show Impl.X448.RISCV64.align = Impl.X25519.RISCV64.align from rfl]
   simp only [List.cons_append, List.nil_append, List.append_assoc]
   refine WP.seq (wp_mv fun s1 u1 => WP.append (Proof.Ed25519.RISCV64.align_ok (q := s.gpr .a2) u1.gpr
     (by rw [u1.wr]; exact hwsr)) fun s1' ⟨hc1, hr1, hm1⟩ => WP.append (combInit_ok (b := b) (hb ▸ hc1))
     fun s2 ⟨hr2, hf2, hv2⟩ => ?_)
-  have hr2' : Rest [.a3, .a4] s s2 :=
+  obtain hr2' : Rest [.a3, .a4] s s2 :=
     (u1.rest (by decide)).trans ((hr1.mono (by decide)).trans (hr2.mono (by decide)))
-  have hc2 : Ctx b s2 := (hb ▸ hc1).of_rest hr2 (by decide)
-  have tw2 : Comb.TabW b s2 := fun d n hdn => by
+  obtain hc2 : Ctx b s2 := (hb ▸ hc1).of_rest hr2 (by decide)
+  obtain tw2 : Comb.TabW b s2 := fun d n hdn => by
     have := Align.pad_lt (s.gpr .a2)
     rw [hr2'.wr, Comb.tb, hb, Proof.Ed25519.RISCV64.base, Offset.add_add, Offset.add_add]
     exact in_base hwsr (by simp only [CTAB]; omega_using [hdn, this]) (by simp only [CTAB]; omega_using [hdn, this])
   refine WP.mono (Comb.tabBuild_ok hc2 tw2) fun s2' ⟨hc2', hr2'', hf2', htab2⟩ => ?_
-  have hr3' : Rest [.a3, .a4] s s2' := hr2'.trans hr2''
+  obtain hr3' : Rest [.a3, .a4] s s2' := hr2'.trans hr2''
   -- The scalar stays through the stores so far.
-  have hk2 : Spec.Ed448.bytesAt s2'.mem (s.gpr .a1) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57 := by
-    have e1 : Spec.Ed448.bytesAt s2'.mem (s.gpr .a1) 57 = Spec.Ed448.bytesAt s2.mem (s.gpr .a1) 57 := by
+  obtain hk2 : Spec.Ed448.bytesAt s2'.mem (s.gpr .a1) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57 := by
+    obtain e1 : Spec.Ed448.bytesAt s2'.mem (s.gpr .a1) 57 = Spec.Ed448.bytesAt s2.mem (s.gpr .a1) 57 := by
       simp only [Spec.Ed448.bytesAt]
       refine List.map_congr_left fun i hi => ?_
-      have hi := List.mem_range.mp hi
+      obtain hi := List.mem_range.mp hi
       exact hf2' _ fun r hr hc => hts _ (Offset.contains_base (s.gpr .a1) (show i + 1 ≤ 57 by omega_using [hi])
         (by omega_using [hi])) (by rw [List.mem_singleton.mp hr] at hc; exact hc)
     rw [e1, bytesAt_ws hf2 hws fun r hr => by
@@ -178,15 +178,15 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
   rw [hk2] at hb3
   generalize hK : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57) = K at hb3
   -- The elements of `R` and `d`, and the table, at the loop.
-  have fs3 : ∀ q ∈ [RX, RY, RZ, DK], FS s3.mem b q = cVal q := fun q hq => by
-    have hq' : q + 56 ≤ BITS ∧ q + 56 ≤ 2048 := by
+  obtain fs3 : ∀ q ∈ [RX, RY, RZ, DK], FS s3.mem b q = cVal q := fun q hq => by
+    obtain hq' : q + 56 ≤ BITS ∧ q + 56 ≤ 2048 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl <;> decide
     rw [fs_bits hf3 (.inl hq'.1) hq'.2, fs_below_region hf2' (e := CTAB) (by simp only [CTAB]; omega_using [hq'])
       (by simp only [CTAB]; omega_using []), hv2 q hq]
-  have tab3 : Comb.TabOk b s3.mem := fun i hi => by
+  obtain tab3 : Comb.TabOk b s3.mem := fun i hi => by
     obtain ⟨e1, e2⟩ := htab2 i hi
-    have keep : ∀ o, o + 56 ≤ 2048 → V s3.mem (Comb.tb b) o = V s2'.mem (Comb.tb b) o := fun o ho => by
+    obtain keep : ∀ o, o + 56 ≤ 2048 → V s3.mem (Comb.tb b) o = V s2'.mem (Comb.tb b) o := fun o ho => by
       unfold V
       refine val32_congr (limb_frame hf3 fun r hr k hk => ?_)
       rw [List.mem_singleton.mp hr, Comb.tb, Offset.add_add]
@@ -195,12 +195,12 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
   -- The loop.
   unfold combLoop
   refine WP.seq (WP.seq (wp_li (by decide) fun s4 u4 => WP.block_nil ?_))
-  have hc4 : Ctx b s4 := hc3.of_rest (u4.rest (ws := [.t1]) (by decide)) (by decide)
+  obtain hc4 : Ctx b s4 := hc3.of_rest (u4.rest (ws := [.t1]) (by decide)) (by decide)
   have m4 : s4.mem = s3.mem := u4.mem
-  have fx : Comb.Fixed b K s4 :=
+  obtain fx : Comb.Fixed b K s4 :=
     ⟨fun d n hdn => by rw [u4.wr, hr3.wr, hr2''.wr]; exact tw2 d n hdn, by rw [m4]; exact tab3,
       by rw [m4]; exact hb3⟩
-  have L0 : Comb.LInv b K s4 114 s4 := by
+  obtain L0 : Comb.LInv b K s4 114 s4 := by
     refine ⟨hc4, R64.Stp.refl _ _, by rw [u4.gpr], ?_, ?_⟩
     · rw [m4, fs3 DK (by decide)]; rfl
     · have e : Comb.ptOf (FS s4.mem b) = Spec.Ed448.identity := by
@@ -211,7 +211,7 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
       exact Proof.Ed448.identity_rep
   refine WP.mono (Comb.loop_ok fx 114 s4 (by decide) (Nat.le_refl _) L0) fun s5 h5 => ?_
   -- The encoding.
-  have h05 : s5.gpr .a0 = s.gpr .a0 := by
+  obtain h05 : s5.gpr .a0 = s.gpr .a0 := by
     rw [h5.stp.rest.gpr _ (by decide), u4.other _ (by decide), hr3.gpr _ (by decide), hr3'.gpr _ (by decide)]
   refine WP.mono (baseEncode_ok h5.ctx h05 (by
       rw [h5.stp.rest.wr, u4.wr, hr3.wr, hr3'.wr, hwr]; simp) hwo
@@ -226,18 +226,18 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
       (((u4.rest (ws := [.t1]) (by decide)).mono (by decide)).trans
       ((h5.stp.rest.mono (by decide)).trans (h6.2.mono (by decide)))))⟩
     show Spec.Ed448.bytesAt s6.mem (s.gpr .a0) 57 = _
-    have hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57).length = 57 := by
+    obtain hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57).length = 57 := by
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]
-    have hk := Proof.Ed448.decodeLE_below hlen
+    obtain hk := Proof.Ed448.decodeLE_below hlen
     rw [hK] at hk
     unfold Proof.Ed448.Below456 at hk
     have r5 := h5.rep
     -- `Proof/Ed448/Comb.lean` states the bound with `Monoid.npow`: the same, without evaluating it.
-    have lt_npow : ∀ {k a n : Nat},
+    obtain lt_npow : ∀ {k a n : Nat},
         k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) a n →
         k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@NPow.toPow Nat (@Monoid.toNPow Nat Nat.instMonoid))) a n :=
       fun h => h
-    have eK : Proof.Ed448.Comb.accScalar K 0 = K := Proof.Ed448.Comb.accScalar_total K (lt_npow hk)
+    obtain eK : Proof.Ed448.Comb.accScalar K 0 = K := Proof.Ed448.Comb.accScalar_total K (lt_npow hk)
     rw [eK] at r5
     rw [h6.1, Proof.Ed448.encodePoint_rep r5, Spec.Ed448.scalarBase, hK,
       Proof.Ed448.encodePoint_rep (Proof.Ed448.pointMul_rep K Proof.Ed448.basePoint_rep)]

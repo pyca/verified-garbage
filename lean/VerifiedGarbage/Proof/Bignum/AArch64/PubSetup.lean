@@ -55,7 +55,7 @@ theorem head_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr 
   have eA : sArr 0 = 8 := rfl
   have eAN : sArr aN = 8 := rfl
   have eaN : aN = 0 := rfl
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
+  obtain h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   unfold head
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3, .x12] (Q := fun t => t.gpr .x12 = BitVec.ofNat 64 ((k + 7) / 8) ∧
@@ -64,7 +64,7 @@ theorem head_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr 
     fun t₁ ⟨⟨h12, hm₁⟩, k₁⟩ => ?_
   · brun [h0, hdr_enc (show sK < 32 by decide), hdr_enc (show sW < 32 by decide),
       hs.ld (d := 8 * sK) (by omega_arith), hs.st (d := 8 * sW) (by omega_arith), hK, shr3_w k hk]
-  have hs₁ := hs.congr k₁.wr
+  obtain hs₁ := hs.congr k₁.wr
   refine WP.mono (setBases_ok hs₁ ((k₁.gpr .x0 (by decide)).trans h0) h12 (by unfold sArr; omega_arith))
     fun t ⟨hb, ho, k₂⟩ => ⟨(k₂.gpr .x12 (by decide)).trans h12, ?_, hb, ?_, (k₁.trans k₂).mono (by decide)⟩
   · rw [ho.word (by omega_arith) (by omega_arith), hm₁, word_writeW_self]
@@ -90,7 +90,7 @@ theorem Src.congrK {s t : State} {B : Addr} {Z : Nat} {p : Addr} {bs : List Byte
 theorem src_of_region {s : State} {B : Addr} {Z : Nat} {p : Addr} {len : Nat}
     (hr : (⟨p, len⟩ : Region) ∈ s.rd ++ s.wr) (hlen : len ≤ 2 ^ 64)
     (hd : (⟨p, len⟩ : Region).Disjoint ⟨B, Z⟩) : Src s B Z p (Spec.Rsa.bytesAt s.mem p len) := by
-  have hl : (Spec.Rsa.bytesAt s.mem p len).length = len := by simp [Spec.Rsa.bytesAt]
+  obtain hl : (Spec.Rsa.bytesAt s.mem p len).length = len := by simp [Spec.Rsa.bytesAt]
   refine ⟨fun i hi => ⟨_, hr, contains_byte p (by omega_arith) hlen⟩, fun i hi => ?_,
     fun i hi => out_scr hd (contains_byte p (by omega_arith) hlen)⟩
   simp [Spec.Rsa.bytesAt]
@@ -146,11 +146,11 @@ theorem pcHead_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} (hs : Scr s B Z
   have eA : sArr 0 = 8 := rfl
   have eAN : sArr aN = 8 := rfl
   have eaN : aN = 0 := rfl
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
+  obtain h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   rw [WP.block_append_iff]
   refine WP.mono (head_ok hs h0 hZ hk hK) fun t₁ ⟨_, hW₁, hb₁, hf₁, k₁⟩ => ?_
-  have hs₁ := hs.congr k₁.wr
-  have hw₁ : ∀ i, 8 * i + 8 ≤ 8 * sW ∨ (16 ≤ i ∧ i < 32) → word t₁.mem B (8 * i) = word s.mem B (8 * i) :=
+  obtain hs₁ := hs.congr k₁.wr
+  obtain hw₁ : ∀ i, 8 * i + 8 ≤ 8 * sW ∨ (16 ≤ i ∧ i < 32) → word t₁.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi => hf₁.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl) <;> omega_arith) (by omega_arith)
@@ -187,29 +187,29 @@ theorem pcLoadWith_ok {load : Prog isa} {s : State} {B : Addr} {Z k : Nat} {np :
   have eA : sArr 0 = 8 := rfl
   have eAN : sArr aN = 8 := rfl
   have eaN : aN = 0 := rfl
-  have h8 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
-  have h0' := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
-  have hsN := slot_le (w := (k + 7) / 8) (show aN < 8 by decide)
-  have hsl : ∀ r ∈ pcLoadRanges ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr =>
+  obtain h8 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
+  obtain h0' := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
+  obtain hsN := slot_le (w := (k + 7) / 8) (show aN < 8 by decide)
+  obtain hsl : ∀ r ∈ pcLoadRanges ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr =>
     Nat.le_trans (pcLoadRanges_le _ r hr) hZ
   unfold pcLoadWith
   refine WP.seq (WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN)
     fun t₁ ⟨h1, h2, h8', hW₁, hb₁, hf₁, k₁⟩ => ?_)
-  have hs₁ := hs.congr k₁.wr
-  have hf₁' : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₁.mem := hf₁.mono (by simp [pcLoadRanges])
+  obtain hs₁ := hs.congr k₁.wr
+  obtain hf₁' : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₁.mem := hf₁.mono (by simp [pcLoadRanges])
   refine WP.seq (WP.mono (hld t₁ hs₁ (hnb.congrK (InScr.of_frm hf₁' hsl) k₁) k₁.rd k₁.wr h1 h2 h8')
     fun t₂ ⟨hv₂, ha₂, k₂⟩ => ?_)
-  have hs₂ := hs₁.congr k₂.wr
-  have hf₂ : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₂.mem :=
+  obtain hs₂ := hs₁.congr k₂.wr
+  obtain hf₂ : Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t₂.mem :=
     hf₁'.trans (Frm.of_arrays1 ha₂ (by simp [pcLoadRanges]))
-  have h0₂ : t₂.gpr .x0 = B := (k₂.gpr .x0 (by decide)).trans ((k₁.gpr .x0 (by decide)).trans h0)
-  have hb₂ : ∀ j < 8, word t₂.mem B (8 * sArr j) = off B (slot ((k + 7) / 8) j) := fun j hj => by
+  obtain h0₂ : t₂.gpr .x0 = B := (k₂.gpr .x0 (by decide)).trans ((k₁.gpr .x0 (by decide)).trans h0)
+  obtain hb₂ : ∀ j < 8, word t₂.mem B (8 * sArr j) = off B (slot ((k + 7) / 8) j) := fun j hj => by
     rw [ha₂.hslot (by unfold sArr; omega_using [hj])]; exact hb₁ j hj
-  have hW₂ : word t₂.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := by
+  obtain hW₂ : word t₂.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := by
     rw [ha₂.hslot (by decide)]; exact hW₁
-  have hodd₀ : (word t₂.mem B (slot ((k + 7) / 8) aN)).toNat % 2 = 1 := by
+  obtain hodd₀ : (word t₂.mem B (slot ((k + 7) / 8) aN)).toNat % 2 = 1 := by
     rw [← wv_mod64 _ _ _ (show 1 ≤ (k + 7) / 8 by omega_using [hk1]), Nat.mod_mod_of_dvd _ (by decide), hv₂, hodd]
-  have h8₂ : t₂.gpr .x8 = off B (slot ((k + 7) / 8) aN) := (k₂.gpr .x8 (by decide)).trans h8'
+  obtain h8₂ : t₂.gpr .x8 = off B (slot ((k + 7) / 8) aN) := (k₂.gpr .x8 (by decide)).trans h8'
   show WP isa (.block ([ld .x3 .x8] ++ minv ++ [sth .x15 sMinv])) t₂ _
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = word t₂.mem B (slot ((k + 7) / 8) aN) ∧
@@ -218,13 +218,13 @@ theorem pcLoadWith_ok {load : Prog isa} {s : State} {B : Addr} {Z k : Nat} {np :
     fun t₃ ⟨⟨h3₃, hm₃⟩, k₃⟩ => ?_
   refine WP.mono (minv_ok t₃ (by rw [h3₃]; exact hodd₀)) fun t₄ ⟨hinv, k₄, hm₄⟩ => ?_
   rw [h3₃] at hinv
-  have hs₄ := (hs₂.congr k₃.wr).congr k₄.wr
-  have h0₄ : t₄.gpr .x0 = B := (k₄.gpr .x0 (by decide)).trans ((k₃.gpr .x0 (by decide)).trans h0₂)
+  obtain hs₄ := (hs₂.congr k₃.wr).congr k₄.wr
+  obtain h0₄ : t₄.gpr .x0 = B := (k₄.gpr .x0 (by decide)).trans ((k₃.gpr .x0 (by decide)).trans h0₂)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₄.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15)) (by
     brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by omega_using [hZ, eM, h8, h0'])])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ?_
-  have hm' : t.mem = t₂.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15) := by rw [hm, hm₄, hm₃]
-  have hwo : Outside B (8 * sMinv) 8 t₂.mem t.mem := by rw [hm']; exact writeW_outside _ B _ (by omega_using [eM])
+  obtain hm' : t.mem = t₂.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15) := by rw [hm, hm₄, hm₃]
+  obtain hwo : Outside B (8 * sMinv) 8 t₂.mem t.mem := by rw [hm']; exact writeW_outside _ B _ (by omega_using [eM])
   refine ⟨t₄.gpr .x15, ⟨hs₄.congr k₅.wr, (k₅.gpr .x0 (by decide)).trans h0₄, ⟨?_, ?_, fun j hj => ?_⟩⟩, ?_, ?_,
     hf₂.trans (Frm.of_outside hwo (by simp [pcLoadRanges])),
     ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩

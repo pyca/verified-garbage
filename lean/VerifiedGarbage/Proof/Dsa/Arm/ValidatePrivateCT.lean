@@ -71,7 +71,7 @@ theorem privCtx {s t : State} {base : Addr} {size : Nat} (h : validatePrivPre s)
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
+  obtain big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig, Iy, Ix, In⟩ := validatePrivIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [privIns, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -110,7 +110,7 @@ theorem priv_bytes {s₁ s₂ : State} (h₁ : validatePrivPre s₁) (hl : valid
   have r1 := h₁.2.2.2.2.2.2.2.2.1
   simp only [validatePrivLeak, validatePrivKey, Spec.Dsa.publicBytesLeak] at hl
   rw [← hr0, ← hr1, ← hr2, ← hr3] at hl
-  have E := List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h) |>.mp
+  obtain E := List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h) |>.mp
     (List.append_inj hl (by simp [Spec.Rsa.bytesAt])).1
   rw [← VG.Proof.Dsa.bytesAt_prefix, ← VG.Proof.Dsa.bytesAt_prefix,
     show min (s₁.gpr .r1).toNat (3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) =
@@ -121,16 +121,16 @@ theorem validatePriv_constantTime :
     ConstantTime isa validatePrivArm.pre validatePrivArm.pub PrevalidatedSign.validate := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
-  have a0 := ha 0 (by decide)
-  have a1 := ha 1 (by decide)
+  obtain a0 := ha 0 (by decide)
+  obtain a1 := ha 1 (by decide)
   obtain ⟨sp₁, rd₁, wr₁, _, dSA₁, _, sb₁, hv, hpl, hsw⟩ := id h₁
   obtain ⟨sp₂, rd₂, wr₂, _, dSA₂, _, sb₂, hv₂, _, hsw₂⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw]
+  obtain hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw]
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
-  have hb₂ : State.addr (arg s₂ 0) = State.addr (arg s₁ 0) := by rw [a0]
-  have hz₂ : (arg s₂ 1).toNat * 8 = (arg s₁ 1).toNat * 8 := by rw [a1]
+  obtain hb₂ : State.addr (arg s₂ 0) = State.addr (arg s₁ 0) := by rw [a0]
+  obtain hz₂ : (arg s₂ 1).toNat * 8 = (arg s₁ 1).toNat * 8 := by rw [a1]
   simp only [PrevalidatedSign.validate, Core.sequence, List.foldr]
   refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 8 _ rfl) (agree_args (n := 2) hsp (by omega_using [sp₁]) ha
       (fun r hr => by
@@ -143,7 +143,7 @@ theorem validatePriv_constantTime :
         subst hr; exact dSA₂.symm)))
     (WP.mono (validateEntry_of sp₁ (by rw [rd₁]; simp) wr₁ sb₁ hv hsw) fun u I => Env.of_installed I (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]))
     (WP.mono (validateEntry_of sp₂ (by rw [rd₂]; simp) wr₂ sb₂ hv₂ hsw₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
+      obtain E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
   refine genDispatch_trace PrevalidatedSign.validateSized _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
@@ -152,13 +152,13 @@ theorem validatePriv_constantTime :
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
     (by rw [E₂.field (d := 104) (v := s₂.gpr .r3) (by simp), hr3])
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
-  have F₁ := E₁.of_mem R₁ (by decide) M₁
-  have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
-  have C₁ := privCtx h₁ rfl rfl F₁
-  have C₂ := privCtx h₂ hb₂ hz₂ F₂
+  obtain F₁ := E₁.of_mem R₁ (by decide) M₁
+  obtain F₂ := E₂.of_mem R₂ (by decide) M₂
+  obtain hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
+  obtain C₁ := privCtx h₁ rfl rfl F₁
+  obtain C₂ := privCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
-  have pe : ∀ {u₁ u₂ : State} (G₁ : Env s₁ (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) (privateFields s₁) u₁)
+  obtain pe : ∀ {u₁ u₂ : State} (G₁ : Env s₁ (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) (privateFields s₁) u₁)
       (G₂ : Env s₂ (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) (privateFields s₂) u₂),
       ∀ i ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat, PtrEq (State.addr (arg s₁ 0)) u₁ u₂ i.1 := by
     intro u₁ u₂ G₁ G₂ i hi
@@ -166,26 +166,26 @@ theorem validatePriv_constantTime :
     rw [privPtrs G₁ i hi, privPtrs (pLen := (s₁.gpr .r2).toNat) (qLen := (s₁.gpr .r3).toNat) G₂ i hi,
       hr0, hr2, hr3]
   -- Both runs see the same key.
-  have key := fun {o l : Nat} (h : o + l ≤ 3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) =>
+  obtain key := fun {o l : Nat} (h : o + l ≤ 3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) =>
     priv_bytes h₁ hl hr0 hr1 hr2 hr3 (o := o) (l := l) h
-  have Vp : privVal s₂ (.input .p) = privVal s₁ (.input .p) := by
-    have k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega_using [])
+  obtain Vp : privVal s₂ (.input .p) = privVal s₁ (.input .p) := by
+    obtain k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega_using [])
     rw [BitVec.add_zero] at k
     simp only [privVal]; rw [← hr0, ← hr2, k]
-  have Vq : privVal s₂ (.input .q) = privVal s₁ (.input .q) := by
+  obtain Vq : privVal s₂ (.input .q) = privVal s₁ (.input .q) := by
     simp only [privVal]; rw [← hr0, ← hr2, ← hr3, key (by omega_using [])]
-  have mp : (.input .p, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+  obtain mp : (.input .p, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
     simp [privIns]
-  have mq : (.input .q, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+  obtain mq : (.input .q, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
     simp [privIns]
-  have mg : (.input .g, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+  obtain mg : (.input .g, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
     simp [privIns]
-  have my : (.input .y, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+  obtain my : (.input .y, (s₁.gpr .r2).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
     simp [privIns]
-  have Pe : operand (State.addr (arg s₁ 0)) t₁ (.input .p) (s₁.gpr .r2).toNat =
+  obtain Pe : operand (State.addr (arg s₁ 0)) t₁ (.input .p) (s₁.gpr .r2).toNat =
       operand (State.addr (arg s₁ 0)) t₂ (.input .p) (s₁.gpr .r2).toNat := by
     rw [(C₁.inp mp).value, (C₂.inp mp).value, Vp]
-  have Qe : operand (State.addr (arg s₁ 0)) t₁ (.input .q) (s₁.gpr .r3).toNat =
+  obtain Qe : operand (State.addr (arg s₁ 0)) t₁ (.input .q) (s₁.gpr .r3).toNat =
       operand (State.addr (arg s₁ 0)) t₂ (.input .q) (s₁.gpr .r3).toNat := by
     rw [(C₁.inp mq).value, (C₂.inp mq).value, Vq]
   unfold PrevalidatedSign.validateSized
@@ -194,12 +194,12 @@ theorem validatePriv_constantTime :
     (check_ok F₁.ws hz wp wq (C₁.inp mp).toReady (C₁.inp mq).toReady rfl rfl)
     (check_ok F₂.ws hz wp wq (C₂.inp mp).toReady (C₂.inp mq).toReady rfl rfl)
     fun v₁ v₂ ⟨Z₁, K₁, _, S₁, O₁⟩ ⟨Z₂, K₂, _, S₂, O₂⟩ => ?_)
-  have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 1).toNat * 8 ∧
+  obtain kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 1).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [hz]
-  have G₁ := F₁.keep (privateFields_ok s₁) S₁ (by decide) O₁ kee
-  have G₂ := F₂.keep (privateFields_ok s₂) S₂ (by decide) O₂ kee
+  obtain G₁ := F₁.keep (privateFields_ok s₁) S₁ (by decide) O₁ kee
+  obtain G₂ := F₂.keep (privateFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
   · exact SameTrace.of_relCT (RelCT.seq (block_relCT_T0 _ rfl) (RelCT.seq (block_relCT_T0 _ rfl)
       (RelCT.block_nil (Q := fun _ _ => True) fun _ _ _ => trivial))) (agree0 G₁.ws G₂.ws)
@@ -208,26 +208,26 @@ theorem validatePriv_constantTime :
       rw [eval_eq, Z₁] at hf
       exact Classical.not_not.mp (of_decide_eq_false (Option.some.inj hf))
     rw [(C₁.inp mp).value, (C₁.inp mq).value] at valid
-    have B₁ := shape_bounds valid
-    have Dm₁ : DomainOk (privVal s₁ (.input .p)) (privVal s₁ (.input .q)) :=
+    obtain B₁ := shape_bounds valid
+    obtain Dm₁ : DomainOk (privVal s₁ (.input .p)) (privVal s₁ (.input .q)) :=
       ⟨B₁.1, B₁.2.1, B₁.2.2.1, B₁.2.2.2⟩
-    have Dm₂ : DomainOk (privVal s₂ (.input .p)) (privVal s₂ (.input .q)) := by rw [Vp, Vq]; exact Dm₁
-    have D₁ := privCtx h₁ rfl rfl G₁
-    have D₂ := privCtx h₂ hb₂ hz₂ G₂
+    obtain Dm₂ : DomainOk (privVal s₂ (.input .p)) (privVal s₂ (.input .q)) := by rw [Vp, Vq]; exact Dm₁
+    obtain D₁ := privCtx h₁ rfl rfl G₁
+    obtain D₂ := privCtx h₂ hb₂ hz₂ G₂
     rw [← hr2, ← hr3] at D₂
-    have X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
+    obtain X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat) (privVal s₁) (privVal s₂) v₁ v₂ :=
       ⟨D₁, D₂, pe G₁ G₂⟩
-    have mx : (.input .x, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+    obtain mx : (.input .x, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
       simp [privIns]
-    have mk : (.input .nonce, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
+    obtain mk : (.input .nonce, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
       simp [privIns]
     refine SameTrace.assoc_left (SameTrace.seq (signingKey_trace X mp mq mg my Dm₁ Dm₂)
       (signingKey_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
       (signingKey_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
       fun w₁ w₂ ⟨_, _, A₁⟩ ⟨_, _, A₂⟩ => ?_)
-    have X₁ := X.run A₁ A₂
+    obtain X₁ := X.run A₁ A₂
     refine SameTrace.assoc_left (SameTrace.seq (privateKey_trace X₁ mp mq mg my mx mk Dm₁ Dm₂)
       (privateKey_ok X₁.C₁.S (X₁.C₁.inp mp) (X₁.C₁.inp mq) (X₁.C₁.inp mg) (X₁.C₁.inp my) (X₁.C₁.inp mx)
         (X₁.C₁.inp mk) Dm₁.hP Dm₁.hPo)

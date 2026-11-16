@@ -47,15 +47,15 @@ theorem cpTail_ok {s : State} {B Yv : Addr} {Z w k : Nat} (hs : Scr s B Z)
           (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Yv k)) then 1 else 0) ∧
         Body B w s.mem t.mem ∧ t.gpr .r23 = B) ∧ Keep cpTailRegs s t := by
   have hnw := hs.nowrap
-  have e0 := Domain.slot_eq w 0; have e4 := Domain.slot_eq w 4; have e5 := Domain.slot_eq w 5
-  have e8 := Domain.slot_eq w 8; have e9 := Domain.slot_eq w 9; have e28 := Domain.slot_eq w 28
+  obtain e0 := Domain.slot_eq w 0; have e4 := Domain.slot_eq w 4; have e5 := Domain.slot_eq w 5
+  obtain e8 := Domain.slot_eq w 8; have e9 := Domain.slot_eq w 9; have e28 := Domain.slot_eq w 28
   generalize hz : arr s.mem B w 4 = z
   generalize hP : arr s.mem B w 0 = p at hp
   generalize hy : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Yv k) = y
   unfold cpTail
   refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = B ∧ t.mem = s.mem) (by
       prun [h23, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a31, m1⟩, k1⟩ => ?_)
-  have e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, (k1.gpr .r10 (by decide)).trans h10,
+  obtain e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, (k1.gpr .r10 (by decide)).trans h10,
     (k1.gpr .r29 (by decide)).trans h29, (k1.gpr .r11 (by decide)).trans h11, a31, hw, hw', hZ⟩
   refine WP.seq (WP.mono (zMask_ok e1 ((k1.gpr .r23 (by decide)).trans h23) (by rw [m1, hP]; exact hp))
     fun s₂ ⟨⟨a26, z2, p2, o2, a10⟩, k2⟩ => ?_)
@@ -63,38 +63,38 @@ theorem cpTail_ok {s : State} {B Yv : Addr} {Z w k : Nat} (hs : Scr s B Z)
   rw [m1, hz] at z2
   rw [m1, hP] at p2
   rw [m1] at o2
-  have k12 := k1.trans k2
-  have b2 : Body B w s.mem s₂.mem := Body.of o2 (by omega_using [e0, e5]) (by omega_using [e5, e28])
+  obtain k12 := k1.trans k2
+  obtain b2 : Body B w s.mem s₂.mem := Body.of o2 (by omega_using [e0, e5]) (by omega_using [e5, e28])
   unfold loadY
   refine WP.seq ?_
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  have e2 : Env s₂ B Z w := ⟨hs.congr k12.wr, a10, (k12.gpr .r29 (by decide)).trans h29,
+  obtain e2 : Env s₂ B Z w := ⟨hs.congr k12.wr, a10, (k12.gpr .r29 (by decide)).trans h29,
     (k12.gpr .r11 (by decide)).trans h11, (k2.gpr .r31 (by decide)).trans a31, hw, hw', hZ⟩
   refine WP.mono (e2.base (rd := .r10) (by decide) (by decide) 8) fun s₃ ⟨⟨a10₃, m3⟩, k3⟩ => ?_
   refine WP.mono (WP.keep [.r6] (Q := fun t => t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s₃.mem) (by
       prun [(k3.gpr .r28 (by decide)).trans ((k12.gpr .r28 (by decide)).trans h28), BitVec.add_zero])
     (by decide)) fun s₄ ⟨⟨a6, m4⟩, k4⟩ => ?_
-  have k14 := (k12.trans k3).trans k4
+  obtain k14 := (k12.trans k3).trans k4
   refine WP.seq (WP.mono (loadN_ok (dA := slot w 8) (hs.congr k14.wr) ((k4.gpr .r10 (by decide)).trans a10₃)
     ((k14.gpr .r12 (by decide)).trans h12) a6 ((k14.gpr .r11 (by decide)).trans h11) hk hkw (by omega_using [hw'])
     (by omega_using [e8]) (by omega_using [hZ, e8, e28]) (by rw [k14.rd, k14.wr]; exact hrdY) hsepY) fun s₅ ⟨v8, o5, k5⟩ => ?_)
   rw [m4, m3, b2.bytesAt hZ hsepY, hy] at v8
-  have k15 := k14.trans k5
+  obtain k15 := k14.trans k5
   have hh : hdrBytes = 256 := rfl
   refine WP.mono (WP.keep [.r10] (Q := fun t => t.gpr .r10 = off B (slot w 0) ∧ t.mem = s₅.mem) (by
       prun [(k15.gpr .r23 (by decide)).trans h23, hh, BitVec.add_zero]
       simp [off, slot, hh]) (by decide)) fun s₆ ⟨⟨a10₆, m6⟩, k6⟩ => ?_
-  have k16 := k15.trans k6
-  have e6 : Env s₆ B Z w := ⟨hs.congr k16.wr, a10₆, (k16.gpr .r29 (by decide)).trans h29,
+  obtain k16 := k15.trans k6
+  obtain e6 : Env s₆ B Z w := ⟨hs.congr k16.wr, a10₆, (k16.gpr .r29 (by decide)).trans h29,
     (k16.gpr .r11 (by decide)).trans h11, ((k3.trans k4).trans (k5.trans k6)).gpr .r31 (by decide) |>.trans
       ((k2.gpr .r31 (by decide)).trans a31), hw, hw', hZ⟩
   refine WP.seq (WP.mono (eqMask_ok e6 .r19 (a := 4) (b := 8) (by decide) (by decide)) fun s₇ ⟨⟨a19, m7⟩, k7⟩ => ?_)
-  have o5' : Outside B (slot w 8) (8 * w) s₂.mem s₆.mem := by rw [m6, ← m3, ← m4]; exact o5
-  have z6 : val32 s₆.mem B (slot w 4) (2 * w) = z := by rw [Outside.val32 o5' (by omega_using [e4, e8]) (by omega_using [hw', e4])]; exact z2
-  have y6 : val32 s₆.mem B (slot w 8) (2 * w) = y := by rw [m6]; exact v8
+  obtain o5' : Outside B (slot w 8) (8 * w) s₂.mem s₆.mem := by rw [m6, ← m3, ← m4]; exact o5
+  obtain z6 : val32 s₆.mem B (slot w 4) (2 * w) = z := by rw [Outside.val32 o5' (by omega_using [e4, e8]) (by omega_using [hw', e4])]; exact z2
+  obtain y6 : val32 s₆.mem B (slot w 8) (2 * w) = y := by rw [m6]; exact v8
   rw [z6, y6] at a19
-  have k17 := k16.trans k7
+  obtain k17 := k16.trans k7
   refine WP.mono (WP.keep [.r26, .r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 (if good z p y then 1 else 0) ∧
       t.mem = s₇.mem) (by
       unfold both
@@ -123,7 +123,7 @@ theorem cpCmp_split {s : State} {B Yv : Addr} {Z w k : Nat} (hs : Scr s B Z)
             (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Yv k)) then 1 else 0) ∧
           Body B w s.mem t.mem ∧ t.gpr .r23 = B) ∧ Keep (([.r12] : List Reg) ++ cpTailRegs) s t := by
   have hnw := hs.nowrap
-  have e28 := Domain.slot_eq w 28
+  obtain e28 := Domain.slot_eq w 28
   refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = off Yv 0 ∧ t.mem = s.mem) (by
       prun [h23, hs.ld (d := 80) (n := 8) (by omega_using [hZ, e28]), hY]) (by decide)) fun s₁ ⟨⟨a12, m1⟩, k1⟩ =>
     ⟨⟨a12, (k1.gpr .r10 (by decide)).trans h10, (k1.gpr .r11 (by decide)).trans h11,
@@ -161,26 +161,26 @@ theorem cpBody_ok {s : State} {B D X Yv : Addr} {Z w k L xl p x g y b : Nat} (h 
   have hZ := h.hZ
   have hw := h.hw
   have hw' := h.hw'
-  have e0 := Domain.slot_eq w 0; have e8 := Domain.slot_eq w 8; have e28 := Domain.slot_eq w 28
-  have rdQ : L = 3 * k → ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
+  obtain e0 := Domain.slot_eq w 0; have e8 := Domain.slot_eq w 8; have e28 := Domain.slot_eq w 28
+  obtain rdQ : L = 3 * k → ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
     rw [off_off']; exact hrdD _ (by omega_using [hq, hi])
-  have sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
+  obtain sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
     rw [off_off']; exact hsepD _ (by omega_using [hq, hi])
-  have rdG : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D k) i) 1 := fun i hi => by
+  obtain rdG : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D k) i) 1 := fun i hi => by
     rw [off_off']; exact hrdD _ (by omega_using [hL, hi])
-  have sepG : ∀ i < k, ∀ x, ofs B x < Z → off (off D k) i ≠ x := fun i hi => by
+  obtain sepG : ∀ i < k, ∀ x, ofs B x < Z → off (off D k) i ≠ x := fun i hi => by
     rw [off_off']; exact hsepD _ (by omega_using [hL, hi])
   unfold cpBody
   refine WP.seq (WP.mono (xRange_ok h h23 h21 h27 h28 (by omega_using [hk]) (by omega_using [hwk]) (by omega_using [hk', hL]) (by omega_using [hk']) hxl hxk hX hXL
     hrdX hsepX rdQ sepQ (by omega_using [hP, hp2])) fun s₁ ⟨⟨a26, p1, b1, a10⟩, k1⟩ => ?_)
   rw [hx, hP, hb] at a26
   rw [hP] at p1
-  have e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, a10, (k1.gpr .r29 (by decide)).trans h.h29,
+  obtain e1 : Env s₁ B Z w := ⟨hs.congr k1.wr, a10, (k1.gpr .r29 (by decide)).trans h.h29,
     (k1.gpr .r11 (by decide)).trans h.h11, (k1.gpr .r31 (by decide)).trans h.h31, hw, hw', hZ⟩
-  have hw1 : ∀ d, d + 8 ≤ 256 → word s₁.mem B d = word s.mem B d := fun d hd => by
+  obtain hw1 : ∀ d, d + 8 ≤ 256 → word s₁.mem B d = word s.mem B d := fun d hd => by
     rw [Outside.word b1 (by omega_using [e0, hd]) (by omega_using [hd])]
-  have g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
-  have g28 : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
+  obtain g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
+  obtain g28 : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
   refine WP.ite (s₁.gpr .r26 == 0) (eval_zero _ _) (fun hv => ?_) (fun hv => ?_)
   · -- Out of range.
     rw [a26, mask_beq_zero, Bool.not_eq_true', decide_eq_false_iff_not] at hv
@@ -193,9 +193,9 @@ theorem cpBody_ok {s : State} {B D X Yv : Addr} {Z w k L xl p x g y b : Nat} (h 
     unfold cpGood
     refine WP.seq (WP.mono (WP.keep [.r9] (Q := fun t => t.gpr .r9 = off D k ∧ t.mem = s₁.mem) (by
         prun [(k1.gpr .r21 (by decide)).trans h21, g28]) (by decide)) fun s₂ ⟨⟨a9, m2⟩, k2⟩ => ?_)
-    have k12 := k1.trans k2
-    have e2 := e1.keep k2 (by decide)
-    have b12 : Body B w s.mem s₂.mem := by rw [m2]; exact b1
+    obtain k12 := k1.trans k2
+    obtain e2 := e1.keep k2 (by decide)
+    obtain b12 : Body B w s.mem s₂.mem := by rw [m2]; exact b1
     refine WP.seq (WP.mono (exPower_ok (Y := off D k) (X := X) (k := k) (xl := xl) e2
       ((k2.gpr .r23 (by decide)).trans g23) a9 ((k2.gpr .r28 (by decide)).trans g28) (by omega_using [hk]) (by omega_using [hwk]) hxl
       (by omega_using [hk', hxk]) (by rw [k12.rd, k12.wr]; exact rdG) sepG (by rw [k12.rd, k12.wr]; exact hrdX) hsepX
@@ -204,8 +204,8 @@ theorem cpBody_ok {s : State} {B D X Yv : Addr} {Z w k L xl p x g y b : Nat} (h 
       (by rw [m2, p1]; exact hpt)) fun s₃ ⟨⟨z3, p3, b3, r10₃⟩, k3⟩ => ?_)
     rw [b12.bytesAt hZ sepG, b12.bytesAt hZ hsepX, hg, hx, m2, p1] at z3
     rw [m2, p1] at p3
-    have k13 := k12.trans k3
-    have b13 : Body B w s.mem s₃.mem := Outside.trans b12 b3
+    obtain k13 := k12.trans k3
+    obtain b13 : Body B w s.mem s₃.mem := Outside.trans b12 b3
     unfold cpCmp
     refine WP.seq (WP.mono (cpCmp_split (Yv := Yv) (hs.congr k13.wr) r10₃ ((k13.gpr .r29 (by decide)).trans h.h29)
       ((k13.gpr .r11 (by decide)).trans h.h11) ((k3.gpr .r23 (by decide)).trans ((k2.gpr .r23 (by decide)).trans g23))

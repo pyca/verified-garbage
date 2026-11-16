@@ -95,15 +95,15 @@ theorem apHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (g : G I m₀ (
   refine WP.mono (g.setNar_ok L) fun t₃ ⟨g₃, f₃, k₃⟩ => ?_
   refine WP.mono (ws_ok g₃.ws.scr g₃.ws.x0 g₃.ws.h256 g₃.ws.hw g₃.ws.hS) fun t₄ ⟨⟨_, h11₄, m₄, _⟩, k₄⟩ => ?_
   refine WP.mono (base_ok gT .x5 ((k₄.gpr .x0 (by decide)).trans g₃.ws.x0) h11₄) fun t₅ ⟨⟨h5₅, m₅, _⟩, k₅⟩ => ?_
-  have g₅ := g₃.same (by rw [m₅, m₄]) (k₄.trans k₅) (by decide)
+  obtain g₅ := g₃.same (by rw [m₅, m₄]) (k₄.trans k₅) (by decide)
   refine WP.mono (g₅.setWid_ok L) fun t₆ ⟨g₆, f₆, k₆⟩ => ?_
   refine WP.mono (ws_ok g₆.ws.scr g₆.ws.x0 g₆.ws.h256 g₆.ws.hw g₆.ws.hS) fun t₇ ⟨⟨h12₇, h11₇, m₇, _⟩, k₇⟩ => ?_
   refine WP.mono (base_ok wX .x9 ((k₇.gpr .x0 (by decide)).trans g₆.ws.x0) h11₇) fun t₈ ⟨⟨h9₈, m₈, _⟩, k₈⟩ => ?_
   refine WP.mono (base_ok wA .x8 ((k₈.gpr .x0 (by decide)).trans ((k₇.gpr .x0 (by decide)).trans g₆.ws.x0))
     ((k₈.gpr .x11 (by decide)).trans h11₇)) fun t₉ ⟨⟨h8₉, m₉, _⟩, k₉⟩ => ?_
-  have h5₉ : t₉.gpr .x5 = off I.B (slot (vk I.k) gT) := by
+  obtain h5₉ : t₉.gpr .x5 = off I.B (slot (vk I.k) gT) := by
     rw [k₉.gpr .x5 (by decide), k₈.gpr .x5 (by decide), k₇.gpr .x5 (by decide), k₆.gpr .x5 (by decide), h5₅]
-  have h12₉ : t₉.gpr .x12 = BitVec.ofNat 64 (Wk I.k) := by rw [k₉.gpr .x12 (by decide), k₈.gpr .x12 (by decide), h12₇]
+  obtain h12₉ : t₉.gpr .x12 = BitVec.ofNat 64 (Wk I.k) := by rw [k₉.gpr .x12 (by decide), k₈.gpr .x12 (by decide), h12₇]
   refine WP.mono (WP.keep [.x7, .x11, .x13] (Q := fun t => t.gpr .x11 = off I.B (slot (vk I.k) gT) ∧
       t.gpr .x13 = BitVec.ofNat 64 (vk I.k) ∧ t.gpr .x7 = 0 ∧ t.mem = t₉.mem) (by
     brun [h5₉, h12₉]
@@ -111,10 +111,10 @@ theorem apHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (g : G I m₀ (
     simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     simp only [Wk, vk] at *
     omega_using [hk2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h11, h13, h7, mt⟩, kt⟩ => ?_
-  have hm : t.mem = t₆.mem := by rw [mt, m₉, m₈, m₇]
+  obtain hm : t.mem = t₆.mem := by rw [mt, m₉, m₈, m₇]
   refine ⟨g₆.same hm (((k₇.trans k₈).trans k₉).trans kt) (by decide), ?_, fun r hr => ?_⟩
   · have hn := g₆.ws.scr.nowrap
-    have zA' := g₆.ws.sl (j := wA) (by decide)
+    obtain zA' := g₆.ws.sl (j := wA) (by decide)
     show wv t.mem I.B (slot (Wk I.k) wA) (Wk I.k + 2) = 0
     rw [hm, Frm.hdrW_wv f₆ (slot_ge _ _) (by omega_using [hn, zA']), m₅, m₄, Frm.hdrW_wv f₃ (slot_ge _ _) (by omega_using [hn, zA'])]
     exact z
@@ -145,9 +145,9 @@ theorem aProd_ct : CTW (GC vk XT) (GC vk XT) aProd := by
       have hk1 := L.1.k1
       have hk2 := L.1.k2
       have hn := g.ws.scr.nowrap
-      have zA := g.ws.sl (j := wA) (by decide)
-      have zX := g.ws.sl (j := wX) (by decide)
-      have zg := g.ws.sl (j := gT) (by decide)
+      obtain zA := g.ws.sl (j := wA) (by decide)
+      obtain zX := g.ws.sl (j := wX) (by decide)
+      obtain zg := g.ws.sl (j := gT) (by decide)
       have pin : ∀ r ∈ [Reg.x0, .x7, .x8, .x9, .x11, .x12, .x13], s.gpr r = fA (dpub I, i) r := hp
       refine WP.mono (mulRowsLow_ok (ea := slot (vk I.k) gT) (eb := slot (Wk I.k) wX) (eA := slot (Wk I.k) wA)
         (wa := vk I.k) (W := Wk I.k) g.ws.scr (by rw [pin .x11 (by simp)]; rfl) (by rw [pin .x9 (by simp)]; rfl)
@@ -195,7 +195,7 @@ def dqf (B : Addr) (eU eR eM eT L wm j : Nat) (r : Reg) : BitVec 64 :=
 theorem DQL.pins {B : Addr} {Z eU eR eM eT L wm j : Nat} {t : State} (h : DQL B Z eU eR eM eT L wm j t) :
     ∀ r ∈ [Reg.x0, .x6, .x7, .x8, .x9, .x11, .x12], t.gpr r = dqf B eU eR eM eT L wm j r := by
   obtain ⟨s, s₀, z, hh, k, -, -, -, hI⟩ := h
-  have kk := k.trans hI.keep
+  obtain kk := k.trans hI.keep
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -212,7 +212,7 @@ theorem divQN_rel {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
     (hΦ : ∀ a s, Φ a s → DQH s (B a) (Z a) (eU a) (eR a) (eM a) (eT a) (L a) (wm a)) :
     RelCT isa (Two Φ) divQN fun _ _ => True := by
   rw [divQN_eq]
-  have hN : ∀ a s, Φ a s → 0 < L a - wm a + 1 := fun _ _ _ => by omega_using []
+  obtain hN : ∀ a s, Φ a s → 0 < L a - wm a + 1 := fun _ _ _ => by omega_using []
   refine VG.Proof.Bignum.AArch64.RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post (Ψ := fun a t =>
       0 < L a - wm a + 1 ∧ DQL (B a) (Z a) (eU a) (eR a) (eM a) (eT a) (L a) (wm a) 0 t)
     (two_taint [.x0, .x6, .x7, .x8, .x9, .x11, .x12, .x13]
@@ -231,7 +231,7 @@ theorem divQN_rel {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
     have hn := hh.hs.nowrap
     have := hh.hw; have := hh.hL; have := hh.hL'; have := hh.hU8; have := hh.hUZ; have := hh.hRZ
     have := hh.sUR; have := hh.sUM; have := hh.sUT
-    have hM0 : 0 < wv s.mem (B a) (eM a) (wm a) := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hh.htop
+    obtain hM0 : 0 < wv s.mem (B a) (eM a) (wm a) := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hh.htop
     have h₀ := hI.scr
     refine WP.mono (dqStep_ok (hh.hs.congr k.wr) ((k.gpr .x0 (by decide)).trans hh.h0)
       ((k.gpr .x11 (by decide)).trans hh.h11) ((k.gpr .x9 (by decide)).trans hh.h9)
@@ -250,15 +250,15 @@ theorem cmpTail_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ [movi .x7 0, 
     (body := .seq cmpLoop (.block (borrowMask ++ andMask)))
     (by simp only [seqs, List.append_assoc]) (by taint_decide) fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L _ => by
     subst e
-    have sA := g.ws.sl (j := wA) (by decide)
-    have sN := g.ws.sl (j := wN) (by decide)
+    obtain sA := g.ws.sl (j := wA) (by decide)
+    obtain sN := g.ws.sl (j := wN) (by decide)
     have hw1 := g.ws.w1
     have hw2 := g.ws.w2
     simp only [seqs]
     refine WP.seq (WP.mono (cmpSet_ok' g.ws wA wN) fun s₇ ⟨⟨h16, h17, h14, _, _, h7, hc, m₇⟩, k₇⟩ => ?_)
     refine WP.seq (WP.mono (cmpLoop_ok (g.ws.scr.congr k₇.wr) h16 h17 h14 hc (by omega_using [hw1]) (by omega_using [hw2]) (by omega_using [sA])
       (by omega_using [sN])) fun s₈ ⟨_, m₈, k₈⟩ => ?_)
-    have g₈ := (g.same m₇ k₇ (by decide)).same m₈ k₈ (by decide)
+    obtain g₈ := (g.same m₇ k₇ (by decide)).same m₈ k₈ (by decide)
     rw [WP.block_append_iff]
     refine WP.mono (borrowMask_ok s₈ ((k₈.gpr .x7 (by decide)).trans h7)) fun s₉ ⟨⟨h15, m₉, _⟩, k₉⟩ => ?_
     exact WP.mono (andMask_ok (g₈.same m₉ k₉ (by decide)) h15) fun t ⟨gt, _, _⟩ => ⟨I, m₀, _, rfl, gt, L, trivial⟩
@@ -283,26 +283,26 @@ theorem clrTop_w : CTW (GC Wk XT) (GC Wk XT) (seqs [.block (ws ++ base wA .x16 +
     have hZW := g.ws.hZ
     have qA : slot (Wk I.k) wA = 256 + 7 * (8 * (Wk I.k + 2)) := rfl
     have qW16 : slot (Wk I.k) 16 = 256 + 16 * (8 * (Wk I.k + 2)) := rfl
-    have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
-    have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
+    obtain hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+    obtain hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
     have hW : Wk I.k = 2 * vk I.k + 2 := rfl
     simp only [seqs]
     refine WP.seq ?_
     rw [WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (ws_ok g.ws.scr g.ws.x0 g.ws.h256 g.ws.hw g.ws.hS) fun s₁₀ ⟨⟨h12₁₀, h11₁₀, m₁₀, _⟩, k₁₀⟩ => ?_
     refine WP.mono (base_ok wA .x16 ((k₁₀.gpr .x0 (by decide)).trans g.ws.x0) h11₁₀) fun s₁₁ ⟨⟨h16₁₁, m₁₁, _⟩, k₁₁⟩ => ?_
-    have h12₁₁ : s₁₁.gpr .x12 = BitVec.ofNat 64 (Wk I.k) := (k₁₁.gpr .x12 (by decide)).trans h12₁₀
+    obtain h12₁₁ : s₁₁.gpr .x12 = BitVec.ofNat 64 (Wk I.k) := (k₁₁.gpr .x12 (by decide)).trans h12₁₀
     refine WP.mono (WP.keep [.x3, .x7, .x14, .x16] (Q := fun t => t.gpr .x16 = off I.B (slot (Wk I.k) wA + 8 * (vk I.k + 4)) ∧
         t.gpr .x14 = BitVec.ofNat 64 (vk I.k - 2) ∧ t.gpr .x7 = 0 ∧ t.mem = s₁₁.mem) (by
-      have e1 : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := by
+      obtain e1 : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := by
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
         simp only [Wk, vk] at *; omega_using [hk2]
-      have e2 : (BitVec.ofNat 64 (vk I.k + 1) + BitVec.ofNat 64 3) <<< 3 = BitVec.ofNat 64 (8 * (vk I.k + 4)) := by
+      obtain e2 : (BitVec.ofNat 64 (vk I.k + 1) + BitVec.ofNat 64 3) <<< 3 = BitVec.ofNat 64 (8 * (vk I.k + 4)) := by
         rw [BitVec.ofNat_add_ofNat, shl_ofNat (show (vk I.k + 1 + 3) * 2 ^ 3 < 2 ^ 64 by omega_using [hv2])]; congr 1; omega_using []
       brun [h16₁₁, h12₁₁, e1, e2, off_add, ofNat_sub_ofNat (show 3 ≤ vk I.k + 1 by omega_using [hv9]) (by omega_using [hv2])]
       congr 1) (by decide) (by decide) (by decide +kernel)) fun s₁₂ ⟨⟨h16₁₂, h14₁₂, h7₁₂, m₁₂⟩, k₁₂⟩ => ?_
-    have g₁₂ : G I m₀ (Wk I.k) c s₁₂ := g.same (by rw [m₁₂, m₁₁, m₁₀]) ((k₁₀.trans k₁₁).trans k₁₂) (by decide)
+    obtain g₁₂ : G I m₀ (Wk I.k) c s₁₂ := g.same (by rw [m₁₂, m₁₁, m₁₀]) ((k₁₀.trans k₁₁).trans k₁₂) (by decide)
     refine WP.mono (clearN_ok g₁₂.ws.scr h16₁₂ h14₁₂ h7₁₂ (by omega_using [hv9]) (by omega_using [hv2]) (by omega_using [hZW, qA, qW16, hW]))
       fun s₁₃ ⟨_, o₁₃, k₁₃⟩ => ⟨I, m₀, c, rfl, g₁₂.out (j := wA) (n := 8 * (Wk I.k + 2)) (by decide) (Nat.le_refl _)
         (o₁₃.mono (by omega_using []) (by omega_using [hW])) k₁₃ (by decide), L, trivial⟩
@@ -348,14 +348,14 @@ theorem divA_ct : CTW (GC vk XA) (GC Wk XO) divA := by
       have hk2 := L.1.k2
       have hn := g.ws.scr.nowrap
       have hZW := g.ws.hZ
-      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
-      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
+      obtain hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+      obtain hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
       have qN : slot (Wk I.k) wN = 256 + 4 * (8 * (Wk I.k + 2)) := rfl
       have qX : slot (Wk I.k) wX = 256 + 6 * (8 * (Wk I.k + 2)) := rfl
       have qA : slot (Wk I.k) wA = 256 + 7 * (8 * (Wk I.k + 2)) := rfl
       have qT : slot (Wk I.k) wT = 256 + 9 * (8 * (Wk I.k + 2)) := rfl
       have qW16 : slot (Wk I.k) 16 = 256 + 16 * (8 * (Wk I.k + 2)) := rfl
-      have hsC : 8 * sCnt + 8 ≤ 256 := by decide
+      obtain hsC : 8 * sCnt + 8 ≤ 256 := by decide
       have hW : Wk I.k = 2 * vk I.k + 2 := rfl
       refine WP.mono hh.ok fun s₉ ⟨_, _, _, f₉', _, k₉'⟩ => ?_
       have f₉ : Frm I.B [(slot (Wk I.k) wA, 8 * (Wk I.k - (vk I.k - 1) + 1)), (slot (Wk I.k) wX, 8 * (vk I.k - 1 + 1)),
@@ -495,13 +495,13 @@ theorem divBP_rel : RelCT isa (Two (GC Wk XO)) (seqs divBP) fun _ _ => True := b
     exact CTW.one (copyA_w (Y := XB) (by decide) (by decide) (by decide) (fun _ _ _ h o _ => ⟨XS_out h (by decide) o
       h.x.1, trivial⟩) (by taint_decide))
   · -- The stages.
-    have hf : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wGuard false k)) hc).isSome = true := by taints8
-    have hf2 : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wHeadU false nM1 sCnt false k)) hc).isSome =
+    obtain hf : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wGuard false k)) hc).isSome = true := by taints8
+    obtain hf2 : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wHeadU false nM1 sCnt false k)) hc).isSome =
       true := by taints8
-    have hg : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wGuard true k)) hc).isSome = true := by taints8
-    have hg2 : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wHeadU true wM sCnt false k)) hc).isSome =
+    obtain hg : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wGuard true k)) hc).isSome = true := by taints8
+    obtain hg2 : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0]) (.block (wHeadU true wM sCnt false k)) hc).isSome =
       true := by taints8
-    have hr : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0, .x13, .x16, .x17]) (wRest true k) hc).isSome = true := by
+    obtain hr : ∀ k < 8, ∃ hc, (taint.check (Taint.ofRegs [.x0, .x13, .x16, .x17]) (wRest true k) hc).isSome = true := by
       taints8
     exact CTW.pairs (by decide) (fun m hm => dstage_ct false (by decide) hm (hf m hm) (hf2 m hm) (hr m hm))
       fun m hm => dstage_ct true (by decide) hm (hg m hm) (hg2 m hm) (hr m hm)
@@ -509,7 +509,7 @@ theorem divBP_rel : RelCT isa (Two (GC Wk XO)) (seqs divBP) fun _ _ => True := b
     refine CTW.cons (Ψ := GC vk XT) (by simp) ⟨setNar_ws_rel (fun _ _ h => h) (by taint_decide), fun ⟨P, i⟩ s h => h.elim
       fun I m₀ c e g L _ => ?_⟩ (CTW.one (zeroA_w (X := XT) (Y := XT) (by decide) (by intros; trivial) (by taint_decide)))
     subst e
-    have hf := fixTop_ok g L.1
+    obtain hf := fixTop_ok g L.1
     simp only [List.append_assoc] at hf
     exact WP.mono hf fun t ⟨g', _⟩ => ⟨I, m₀, c, rfl, g', L, trivial⟩
 
@@ -524,7 +524,7 @@ theorem divB_ct : CTW (GC Wk XO) (GC vk XO) divB := by
     refine VG.Proof.Bignum.AArch64.RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post (Ψ := DQB) divBP_rel
       fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L xo => ?_) ?_)
     · subst e
-      have hb32 := hb32_of g L.1
+      obtain hb32 := hb32_of g L.1
       exact WP.mono (divB1_ok g L.1 rfl rfl rfl xo) fun t ⟨_, _, _, gt, hh, _, _, _, F⟩ =>
         ⟨⟨I, m₀, c, rfl, gt, L, by
           show wv t.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1
@@ -539,13 +539,13 @@ theorem divB_ct : CTW (GC Wk XO) (GC vk XO) divB := by
       have hn := g.ws.scr.nowrap
       have hZW := g.ws.hZ
       have hW : Wk I.k = 2 * vk I.k + 2 := rfl
-      have hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
-      have hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
+      obtain hv9 : 9 ≤ vk I.k := by simp only [vk]; omega_using [hk1]
+      obtain hv2 : vk I.k ≤ 200 := by simp only [vk]; omega_using [hk2]
       have qM : slot (Wk I.k) wM = 256 + 5 * (8 * (Wk I.k + 2)) := rfl
       have qT : slot (Wk I.k) wT = 256 + 9 * (8 * (Wk I.k + 2)) := rfl
       have q4 : slot (vk I.k) nRem = 256 + 4 * (8 * (vk I.k + 2)) := rfl
       have qW16 : slot (Wk I.k) 16 = 256 + 16 * (8 * (Wk I.k + 2)) := rfl
-      have hsC : 8 * sCnt + 8 ≤ 256 := by decide
+      obtain hsC : 8 * sCnt + 8 ≤ 256 := by decide
       refine WP.mono hh.ok fun s₁₇ ⟨_, _, _, f₁₇', _, k₁₇⟩ => ?_
       have f₁₇ : Frm I.B [(slot (Wk I.k) wM, 8 * (2 * vk I.k - vk I.k + 1)), (slot (vk I.k) nRem, 8 * (vk I.k + 1)),
         (slot (Wk I.k) wT, 32), (8 * sCnt, 8)] s.mem s₁₇.mem := f₁₇'
@@ -565,7 +565,7 @@ theorem divB_ct : CTW (GC Wk XO) (GC vk XO) divB := by
       (by intros; trivial) (by taint_decide)) ?_
     exact CTW.one (andZero_w (Y := XT) (by intros; trivial))
   · subst e
-    have hb32 := hb32_of g L.1
+    obtain hb32 := hb32_of g L.1
     exact WP.mono (divB_ok g L.1 rfl rfl rfl xo) fun t ⟨_, _, gt, _, _, k⟩ => ⟨I, m₀, _, rfl, gt, L, by
       show wv t.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1
       rw [k nOne _ (.inl (by decide)) (Nat.le_refl _)]; exact xo⟩
@@ -593,15 +593,15 @@ theorem sqHead_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (g : G I m₀ (
   rw [sqHead, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (ws_ok g.ws.scr g.ws.x0 g.ws.h256 g.ws.hw g.ws.hS) fun s₆ ⟨⟨_, h11₆, m₆, _⟩, k₆⟩ => ?_
   refine WP.mono (base_ok wSq .x8 ((k₆.gpr .x0 (by decide)).trans g.ws.x0) h11₆) fun s₇ ⟨⟨h8₇, m₇, _⟩, k₇⟩ => ?_
-  have g₇ := g.same (by rw [m₇, m₆]) (k₆.trans k₇) (by decide)
+  obtain g₇ := g.same (by rw [m₇, m₆]) (k₆.trans k₇) (by decide)
   refine WP.mono (g₇.setNar_ok L) fun s₈ ⟨g₈, f₈, k₈⟩ => ?_
   refine WP.mono (ws_ok g₈.ws.scr g₈.ws.x0 g₈.ws.h256 g₈.ws.hw g₈.ws.hS) fun s₉ ⟨⟨h12₉, h11₉, m₉, _⟩, k₉⟩ => ?_
   refine WP.mono (base_ok nB .x9 ((k₉.gpr .x0 (by decide)).trans g₈.ws.x0) h11₉) fun s₁₀ ⟨⟨h9₁₀, m₁₀, _⟩, k₁₀⟩ => ?_
-  have h12₁₀ : s₁₀.gpr .x12 = BitVec.ofNat 64 (vk I.k) := (k₁₀.gpr .x12 (by decide)).trans h12₉
+  obtain h12₁₀ : s₁₀.gpr .x12 = BitVec.ofNat 64 (vk I.k) := (k₁₀.gpr .x12 (by decide)).trans h12₉
   refine WP.mono (WP.keep [.x7, .x11, .x13] (Q := fun t => t.gpr .x11 = off I.B (slot (vk I.k) nB) ∧
       t.gpr .x13 = BitVec.ofNat 64 (vk I.k) ∧ t.gpr .x7 = 0 ∧ t.mem = s₁₀.mem) (by brun [h9₁₀, h12₁₀])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h11, h13, h7, mt⟩, kt⟩ => ?_
-  have hm : t.mem = s₈.mem := by rw [mt, m₁₀, m₉]
+  obtain hm : t.mem = s₈.mem := by rw [mt, m₁₀, m₉]
   refine ⟨g₈.same hm ((k₉.trans k₁₀).trans kt) (by decide), ?_, fun r hr => ?_⟩
   · have hn := g.ws.scr.nowrap
     have := g.ws.sl (j := wSq) (by decide)

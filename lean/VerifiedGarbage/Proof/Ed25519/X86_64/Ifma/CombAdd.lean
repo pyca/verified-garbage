@@ -74,8 +74,8 @@ theorem vaddA_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
     WP isa (.block vaddA) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i = aOp (lanes s 0) l i ∧ lanes s' 0 l i < 2 ^ 63) ∧
       (∀ r < 16, 5 ≤ r → r < 10 ∨ 14 ≤ r → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have hE := addB_env hs hk hx
-  have e : Sym.init.run vaddA = some vaddAS := symOf_eq _ _
+  obtain hE := addB_env hs hk hx
+  obtain e : Sym.init.run vaddA = some vaddAS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vaddAS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 h2 l hl => h.keep hr hl (vaddAS_keep r hr h1 h2)⟩
   obtain ⟨o, b⟩ := vaddAS_ok i hi l hl
@@ -91,7 +91,7 @@ theorem vstA_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s) 
     WP isa (.block vstA) s fun s' => vm s s' = s' ∧ Outside base OPL 160 s.mem s'.mem ∧
       (∀ l < 4, ∀ i < 5, slotv s'.mem base OPL l i = lanes s 0 l i) ∧
       (∀ r < 16, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have e : Sym.init.run vstA = some vstAS := symOf_eq _ _
+  obtain e : Sym.init.run vstA = some vstAS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, ?_, fun l hl i hi => ?_, fun r hr l hl => h.keep hr hl (vstAS_keep r hr)⟩
   · rw [h.mem, hs]
@@ -132,8 +132,8 @@ theorem vaddB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i = bO1 (lanes s 0) l i ∧ lanes s' 0 l i < 2 ^ 63 ∧
         lanes s' 5 l i = bO2 (lanes s 0) l i ∧ lanes s' 5 l i < 2 ^ 63) ∧
       (∀ r < 16, 14 ≤ r → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have hE := addB_env hs hk hx
-  have e : Sym.init.run vaddB = some vaddBS := symOf_eq _ _
+  obtain hE := addB_env hs hk hx
+  obtain e : Sym.init.run vaddB = some vaddBS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vaddBS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (vaddBS_keep r hr h1)⟩
   obtain ⟨o1, b1, o2, b2⟩ := vaddBS_ok i hi l hl
@@ -189,73 +189,73 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
   -- `(Y - X, Y + X, T, Z)`
   rw [WP.block_append_iff]
   refine WP.mono (vaddA_wp hs hc hcc hx) fun s₁ ⟨v₁, m₁, u₁, k₁⟩ => ?_
-  have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
-  have hc₁ : Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
-  have hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
-  have l₁ := lanes_keep (r := 5) (s := s) (t := s₁) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
+  obtain hc₁ : Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
+  obtain hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
+  obtain l₁ := lanes_keep (r := 5) (s := s) (t := s₁) (by decide) fun q hq h1 h2 l hl =>
     k₁ q hq h1 (by omega_arith) l hl
   -- carried
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₁ hc₁ hk₁.toCConsts fun l hl i hi => (u₁ l hl i hi).2)
     fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
-  have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
-  have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
-  have l₂ := lanes_keep (r := 5) (s := s₁) (t := s₂) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
+  obtain hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
+  obtain l₂ := lanes_keep (r := 5) (s := s₁) (t := s₂) (by decide) fun q hq h1 h2 l hl =>
     k₂ q hq (by omega_arith) (by omega_arith) l hl
-  have p₂ : ∀ l < 4, fe5 (lanes s₂ 0 l) = fe5 (aOp (lanes s 0) l) := fun l hl => by
+  obtain p₂ : ∀ l < 4, fe5 (lanes s₂ 0 l) = fe5 (aOp (lanes s 0) l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₂ l hl i hi).1),
       fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2; omega_arith),
       fe5_congr (fun i hi => (u₁ l hl i hi).1)]
   -- to `OPL`
   rw [WP.block_append_iff]
   refine WP.mono (vstA_wp hs₂ hc₂) fun s₃ ⟨v₃, o₃, u₃, k₃⟩ => ?_
-  have hs₃ : s₃.gpr .rdi = base := by rw [vm_gpr v₃]; exact hs₂
-  have hc₃ : Ctx s₃ := by intro d hd; rw [vm_gpr v₃, vm_wr v₃]; exact hc₂ d hd
-  have l₃ := lanes_keep (r := 5) (s := s₂) (t := s₃) (by decide) fun q hq _ _ l hl => k₃ q hq l hl
-  have e₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 5 l i = lanes s 5 l i := fun l hl i hi => by
+  obtain hs₃ : s₃.gpr .rdi = base := by rw [vm_gpr v₃]; exact hs₂
+  obtain hc₃ : Ctx s₃ := by intro d hd; rw [vm_gpr v₃, vm_wr v₃]; exact hc₂ d hd
+  obtain l₃ := lanes_keep (r := 5) (s := s₂) (t := s₃) (by decide) fun q hq _ _ l hl => k₃ q hq l hl
+  obtain e₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 5 l i = lanes s 5 l i := fun l hl i hi => by
     rw [l₃ l hl i hi, l₂ l hl i hi, l₁ l hl i hi]
   -- the first product: `(A, B, C, D)`
   rw [WP.block_append_iff]
   refine WP.mono (mulLB_wp hs₃ hc₃ (fun l hl i hi => by rw [u₃ l hl i hi]; exact (u₂ l hl i hi).2)
     (fun l hl i hi => by rw [e₃ l hl i hi]; exact hy l hl i hi)) fun s₄ ⟨⟨v₄, m₄, u₄, _⟩, b₄⟩ => ?_
-  have hs₄ : s₄.gpr .rdi = base := by rw [vm_gpr v₄]; exact hs₃
-  have hc₄ : Ctx s₄ := by intro d hd; rw [vm_gpr v₄, vm_wr v₄]; exact hc₃ d hd
-  have p₄ : ∀ l < 4, fe5 (lanes s₄ 0 l) = fe5 (aOp (lanes s 0) l) * fe5 (lanes s 5 l) := fun l hl => by
+  obtain hs₄ : s₄.gpr .rdi = base := by rw [vm_gpr v₄]; exact hs₃
+  obtain hc₄ : Ctx s₄ := by intro d hd; rw [vm_gpr v₄, vm_wr v₄]; exact hc₃ d hd
+  obtain p₄ : ∀ l < 4, fe5 (lanes s₄ 0 l) = fe5 (aOp (lanes s 0) l) * fe5 (lanes s 5 l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₄ l hl i hi).1),
       fe5_mul (fun i hi => by rw [u₃ l hl i hi]; exact (u₂ l hl i hi).2)
         (fun i hi => by rw [e₃ l hl i hi]; exact hy l hl i hi),
       fe5_congr (fun i hi => (u₃ l hl i hi).trans rfl), p₂ l hl, fe5_congr (fun i hi => e₃ l hl i hi)]
-  have mo₄ : Outside base 1024 320 s.mem s₄.mem := by
+  obtain mo₄ : Outside base 1024 320 s.mem s₄.mem := by
     rw [m₄]; rw [m₂, m₁] at o₃; exact o₃.mono (by decide) (by decide)
-  have hk₄ : EConsts s₄.mem base := hk.outside mo₄
+  obtain hk₄ : EConsts s₄.mem base := hk.outside mo₄
   -- the second operands
   rw [WP.block_append_iff]
   refine WP.mono (vaddB_wp hs₄ hc₄ hk₄.toCConsts fun l hl i hi => (u₄ l hl i hi).2)
     fun s₅ ⟨v₅, m₅, u₅, k₅⟩ => ?_
-  have hs₅ : s₅.gpr .rdi = base := by rw [vm_gpr v₅]; exact hs₄
-  have hc₅ : Ctx s₅ := by intro d hd; rw [vm_gpr v₅, vm_wr v₅]; exact hc₄ d hd
-  have hk₅ : EConsts s₅.mem base := by rw [m₅]; exact hk₄
+  obtain hs₅ : s₅.gpr .rdi = base := by rw [vm_gpr v₅]; exact hs₄
+  obtain hc₅ : Ctx s₅ := by intro d hd; rw [vm_gpr v₅, vm_wr v₅]; exact hc₄ d hd
+  obtain hk₅ : EConsts s₅.mem base := by rw [m₅]; exact hk₄
   rw [WP.block_append_iff]
   refine WP.mono (carryF_wp hs₅ hc₅ hk₅.toCConsts fun l hl i hi => (u₅ l hl i hi).2.2.2)
     fun s₆ ⟨v₆, m₆, u₆, k₆⟩ => ?_
-  have hs₆ : s₆.gpr .rdi = base := by rw [vm_gpr v₆]; exact hs₅
-  have hc₆ : Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
-  have hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
-  have l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₆ : s₆.gpr .rdi = base := by rw [vm_gpr v₆]; exact hs₅
+  obtain hc₆ : Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
+  obtain hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
+  obtain l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
     k₆ q hq (by omega_arith) (by omega_arith) l hl
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₆ hc₆ hk₆.toCConsts fun l hl i hi => by
       rw [l₆ l hl i hi]; exact (u₅ l hl i hi).2.1) fun s₇ ⟨v₇, m₇, u₇, k₇⟩ => ?_
-  have hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
-  have hc₇ : Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
-  have l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
+  obtain hc₇ : Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
+  obtain l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
     k₇ q hq (by omega_arith) (by omega_arith) l hl
   -- the first operand to `OPV`
   rw [WP.block_append_iff]
   refine WP.mono (dblC_wp hs₇ hc₇) fun s₈ ⟨v₈, o₈, u₈, k₈⟩ => ?_
-  have hs₈ : s₈.gpr .rdi = base := by rw [vm_gpr v₈]; exact hs₇
-  have hc₈ : Ctx s₈ := by intro d hd; rw [vm_gpr v₈, vm_wr v₈]; exact hc₇ d hd
-  have l₈ := lanes_keep (r := 5) (s := s₇) (t := s₈) (by decide) fun q hq _ _ l hl => k₈ q hq l hl
+  obtain hs₈ : s₈.gpr .rdi = base := by rw [vm_gpr v₈]; exact hs₇
+  obtain hc₈ : Ctx s₈ := by intro d hd; rw [vm_gpr v₈, vm_wr v₈]; exact hc₇ d hd
+  obtain l₈ := lanes_keep (r := 5) (s := s₇) (t := s₈) (by decide) fun q hq _ _ l hl => k₈ q hq l hl
   -- the second product
   refine WP.mono (mul4_wp (by decide) (mulS_eq OPV _) (mulV_nat) mulV_ok mulV_keep mulV_st hs₈ hc₈
     (fun l hl i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
@@ -268,7 +268,7 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
     fun l hl i hi => (u₉ l hl i hi).2, ?_⟩
   · rw [m₇, m₆, m₅] at o₈
     rw [m₉]; exact mo₄.trans (o₈.mono (by decide) (by decide))
-  have p₉ : ∀ l < 4, fe5 (lanes s₉ 0 l) = fe5 (bO1 (lanes s₄ 0) l) * fe5 (bO2 (lanes s₄ 0) l) :=
+  obtain p₉ : ∀ l < 4, fe5 (lanes s₉ 0 l) = fe5 (bO1 (lanes s₄ 0) l) * fe5 (bO2 (lanes s₄ 0) l) :=
     fun l hl => by
     rw [fe5_congr (fun i hi => (u₉ l hl i hi).1),
       fe5_mul (fun i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
@@ -282,8 +282,8 @@ theorem vadd_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
       fe5_congr (fun i hi => (u₅ l hl i hi).2.2.1)]
   obtain ⟨w0, w1, w2, w3⟩ := wOp_fe (lanes s₄ 0) fun l hl i hi => (u₄ l hl i hi).2
   obtain ⟨a0, a1, a2, a3⟩ := aOp_fe (lanes s 0) fun l hl i hi => by have := hx l hl i hi; omega_arith
-  have hA := p₄ 0 (by decide); have hB := p₄ 1 (by decide); have hC := p₄ 2 (by decide)
-  have hD := p₄ 3 (by decide)
+  obtain hA := p₄ 0 (by decide); have hB := p₄ 1 (by decide); have hC := p₄ 2 (by decide)
+  obtain hD := p₄ 3 (by decide)
   rw [a0] at hA; rw [a1] at hB; rw [a2] at hC; rw [a3] at hD
   simp only [lanePt, lanePt5, vAddPt]
   rw [p₉ 0 (by decide), p₉ 1 (by decide), p₉ 2 (by decide), p₉ 3 (by decide)]

@@ -53,7 +53,7 @@ theorem zeroAcc_ok (hA : acc + 128 ≤ 4096) {s : State} (hc : CtxN e b s) :
       Frame [⟨State.addr b + BitVec.ofNat 64 acc, 64⟩] s.mem s'.mem ∧ Rest [.r3] s s' := by
   unfold zeroAcc storeN
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
-  have hc1 := hc.of_rest (u1.rest (ws := [.r3]) (by decide)) (by decide)
+  obtain hc1 := hc.of_rest (u1.rest (ws := [.r3]) (by decide)) (by decide)
   refine WP.mono (wp_range_flatMap (M := isa)
     (fun n s' => (∀ j < n, accw acc s'.mem (State.addr b) j = 0) ∧
       Frame [⟨State.addr b + BitVec.ofNat 64 acc, 64⟩] s1.mem s'.mem ∧ Rest [] s1 s' ∧ s'.gpr .r3 = 0)
@@ -88,16 +88,16 @@ theorem mulPre_ok (hA : acc + 128 ≤ 4096) {x y : Nat} {s : State} (hc : CtxN e
       (RowInv e acc b x y s 0) := by
   rw [List.append_assoc]
   refine WP.append prologue_ok fun s1 ⟨h6, h8, h5, hr1, hm1⟩ => ?_
-  have hc1 : CtxN e b s1 := hc.of_rest hr1 (by decide)
+  obtain hc1 : CtxN e b s1 := hc.of_rest hr1 (by decide)
   refine WP.append (zeroAcc_ok hA hc1) fun s2 ⟨hz, hf2, hr2⟩ => ?_
-  have hc2 : CtxN e b s2 := hc1.of_rest hr2 (by decide)
+  obtain hc2 : CtxN e b s2 := hc1.of_rest hr2 (by decide)
   refine wp_mov (op2_reg _ _) fun s3 u3 => wp_mov (op2_imm (by decide)) fun s4 u4 => WP.block_nil ?_
-  have hr : Rest clob s s4 :=
+  obtain hr : Rest clob s s4 :=
     (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans ((u3.rest (by decide)).trans
       (u4.rest (by decide))))
-  have hr' : Rest [.r3, .r7, .r9] s1 s4 :=
+  obtain hr' : Rest [.r3, .r7, .r9] s1 s4 :=
     (hr2.mono (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide)))
-  have hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
+  obtain hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
   refine ⟨hc.of_rest hr (by decide), hr, by rw [hr'.gpr _ (by decide), h6],
     by rw [hr'.gpr _ (by decide), h8], ?_, u4.gpr, ?_, fun k hk => ?_, ?_⟩
   · rw [u4.other _ (by decide), u3.gpr, hc2.r0]; exact (BitVec.add_zero b).symm
@@ -112,8 +112,8 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
     (hi : i < 16) {s : State} (h : RowInv e acc b x y s0 i s) :
     WP isa (.block (row acc x y)) s fun s' =>
       RowInv e acc b x y s0 (i + 1) s' ∧ s'.z = decide (16 - (i + 1) = 0) := by
-  have hfit : b.toNat + 4096 ≤ 2 ^ 32 := by have := h.ctx.fit; omega_arith
-  have hframe0 : ∀ z : Nat, z + 64 ≤ acc → ∀ k < 16,
+  obtain hfit : b.toNat + 4096 ≤ 2 ^ 32 := by have := h.ctx.fit; omega_arith
+  obtain hframe0 : ∀ z : Nat, z + 64 ≤ acc → ∀ k < 16,
       limb s.mem (State.addr b) z k = limb s0.mem (State.addr b) z k := fun z hz k hk =>
     wd_frame h.frame fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
@@ -121,15 +121,15 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
   refine wp_ldr (a := State.addr b + BitVec.ofNat 64 (x + 4 * i)) (by omega_arith)
     (by rw [h.r7, ea7 hfit (by omega_arith), Nat.add_comm]) (h.ctx.inR (by omega_arith)) fun s1 u1 => ?_
   refine wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
-  have hr2 : Rest [.r1, .r5] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : CtxN e b s2 := h.ctx.of_rest hr2 (by decide)
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
-  have e1 : (s2.gpr .r1).toNat = limb s0.mem (State.addr b) x i := by
+  obtain hr2 : Rest [.r1, .r5] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hc2 : CtxN e b s2 := h.ctx.of_rest hr2 (by decide)
+  obtain hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  obtain e1 : (s2.gpr .r1).toNat = limb s0.mem (State.addr b) x i := by
     rw [u2.other _ (by decide), u1.gpr, ← hframe0 x hx i hi]; rfl
-  have e7 : s2.gpr .r7 = b + BitVec.ofNat 32 (4 * i) := by rw [hr2.gpr _ (by decide), h.r7]
-  have P7 : State.addr (s2.gpr .r7) = State.addr b + BitVec.ofNat 64 (4 * i) := by
+  obtain e7 : s2.gpr .r7 = b + BitVec.ofNat 32 (4 * i) := by rw [hr2.gpr _ (by decide), h.r7]
+  obtain P7 : State.addr (s2.gpr .r7) = State.addr b + BitVec.ofNat 64 (4 * i) := by
     rw [e7]; exact addr7 hfit (by omega_arith)
-  have hlt : ∀ j < 16, rowC (accw acc s.mem (State.addr b)) (limb s0.mem (State.addr b) x)
+  obtain hlt : ∀ j < 16, rowC (accw acc s.mem (State.addr b)) (limb s0.mem (State.addr b) x)
       (limb s0.mem (State.addr b) y) i j + 65536 ≤ 2 ^ 32 := fun j hj =>
     rowC_le (hlx i hi) (hly j hj) (h.lt (i + j) (by omega_arith))
   refine WP.append (pass_ok (rb := .r7) (o := acc) (s0 := s2)
@@ -139,8 +139,8 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
     (by rw [hr2.gpr _ (by decide), h.r6]) (by rw [u2.gpr]; rfl) hlt (by decide) ?_) fun s3 hp => ?_
   · -- The sums of the row.
     intro k hk s' hp'
-    have hc' : CtxN e b s' := hc2.of_rest hp'.rest (by decide)
-    have hf' : Frame [⟨State.addr b + BitVec.ofNat 64 (4 * i + acc), 4 * k⟩] s2.mem s'.mem := by
+    obtain hc' : CtxN e b s' := hc2.of_rest hp'.rest (by decide)
+    obtain hf' : Frame [⟨State.addr b + BitVec.ofNat 64 (4 * i + acc), 4 * k⟩] s2.mem s'.mem := by
       have := hp'.frame; rwa [P7, Offset.add_add] at this
     simp only [rowSrc]
     refine ldr0_ok hc' (d := y + 4 * k) (by omega_arith) fun t1 v1 => ?_
@@ -156,12 +156,12 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
         show wd s'.mem _ _ = wd s2.mem _ _
         exact wd_frame hf' fun r hr => by
           rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-      have ea : (t1.gpr .r1).toNat = limb s0.mem (State.addr b) x i := by
+      obtain ea : (t1.gpr .r1).toNat = limb s0.mem (State.addr b) x i := by
         rw [v1.other _ (by decide), hp'.rest.gpr _ (by decide), e1]
-      have hab := Nat.mul_le_mul (Nat.le_of_lt_succ (hlx i hi)) (Nat.le_of_lt_succ (hly k hk))
-      have e2 : (t2.gpr .r2).toNat = limb s0.mem (State.addr b) x i * limb s0.mem (State.addr b) y k := by
+      obtain hab := Nat.mul_le_mul (Nat.le_of_lt_succ (hlx i hi)) (Nat.le_of_lt_succ (hly k hk))
+      obtain e2 : (t2.gpr .r2).toNat = limb s0.mem (State.addr b) x i * limb s0.mem (State.addr b) y k := by
         rw [v2.gpr, toNat_mul_lt (by rw [ea, ey]; omega_arith), ea, ey]
-      have e3 : (t3.gpr .r3).toNat = accw acc s.mem (State.addr b) (i + k) := by
+      obtain e3 : (t3.gpr .r3).toNat = accw acc s.mem (State.addr b) (i + k) := by
         rw [v3.gpr, v2.mem, v1.mem, accw, ← hm2]
         show wd s'.mem _ _ = _
         rw [wd_frame hf' fun r hr => by
@@ -175,20 +175,20 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
     · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
         (v4.rest (by decide))))
   · -- The carry, and the next row.
-    have hc3 : CtxN e b s3 := hc2.of_rest hp.rest (by decide)
-    have e7' : s3.gpr .r7 = b + BitVec.ofNat 32 (4 * i) := by rw [hp.rest.gpr _ (by decide), e7]
+    obtain hc3 : CtxN e b s3 := hc2.of_rest hp.rest (by decide)
+    obtain e7' : s3.gpr .r7 = b + BitVec.ofNat 32 (4 * i) := by rw [hp.rest.gpr _ (by decide), e7]
     refine wp_str (a := State.addr b + BitVec.ofNat 64 (4 * i + (acc + 64))) (by omega_arith)
       (by rw [e7', ea7 hfit (by omega_arith)]) (hc3.inW (by omega_arith)) fun s4 u4 => ?_
     refine wp_dp (op2_imm (by decide)) fun s5 u5 => wp_subs (op2_imm (by decide)) fun s6 u6 hz => ?_
     refine WP.block_nil ?_
-    have hr6 : Rest [.r1, .r2, .r3, .r4, .r5, .r7, .r9] s s6 :=
+    obtain hr6 : Rest [.r1, .r2, .r3, .r4, .r5, .r7, .r9] s s6 :=
       (hr2.mono (by decide)).trans ((hp.rest.mono (by decide)).trans ((u4.rest _).trans
         ((u5.rest (by decide)).trans (u6.rest (by decide)))))
-    have hm6 : s6.mem = s3.mem.writeW (State.addr b + BitVec.ofNat 64 (4 * i + (acc + 64))) (s3.gpr .r5) := by
+    obtain hm6 : s6.mem = s3.mem.writeW (State.addr b + BitVec.ofNat 64 (4 * i + (acc + 64))) (s3.gpr .r5) := by
       rw [u6.mem, u5.mem, u4.mem]
-    have hpf : Frame [⟨State.addr b + BitVec.ofNat 64 (4 * i + acc), 64⟩] s.mem s3.mem := by
+    obtain hpf : Frame [⟨State.addr b + BitVec.ofNat 64 (4 * i + acc), 64⟩] s.mem s3.mem := by
       have := hp.frame; rw [P7, Offset.add_add] at this; rw [← hm2]; exact this
-    have hr9 : s6.gpr .r9 = BitVec.ofNat 32 (16 - (i + 1)) := by
+    obtain hr9 : s6.gpr .r9 = BitVec.ofNat 32 (16 - (i + 1)) := by
       rw [u6.gpr, u5.other _ (by decide), u4.gpr, hp.rest.gpr _ (by decide), hr2.gpr _ (by decide), h.r9]
       have t1 : (1 : BitVec 32).toNat = 1 := rfl
       apply BitVec.eq_of_toNat_eq
@@ -196,7 +196,7 @@ theorem row_ok (hA : acc + 128 ≤ 4096) {x y : Nat} (hx : x + 64 ≤ acc) (hy :
         t1]
       omega_arith
     -- The limbs of `acc` after the row.
-    have hacc : ∀ k < i + 17, accw acc s6.mem (State.addr b) k =
+    obtain hacc : ∀ k < i + 17, accw acc s6.mem (State.addr b) k =
         rowAcc (accw acc s.mem (State.addr b)) (limb s0.mem (State.addr b) x) (limb s0.mem (State.addr b) y) i k := by
       intro k hk
       rw [accw, hm6]
@@ -247,14 +247,14 @@ theorem mul_ok (hA : acc + 128 ≤ 4096) {o x y : Nat} (ho : o + 64 ≤ acc) (hx
       rw [h16] at hr'; exact hr'
     · exact .inr ⟨by rw [eval_ne, hz]; simp; omega_arith, 16 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, hr'⟩
   · refine wp_mov (op2_imm (by decide)) fun s3 u3 => ?_
-    have hc3 : CtxN e b s3 := h2.ctx.of_rest (u3.rest (ws := [.r5]) (by decide)) (by decide)
+    obtain hc3 : CtxN e b s3 := h2.ctx.of_rest (u3.rest (ws := [.r5]) (by decide)) (by decide)
     have hl32 : ∀ k < 32, accw acc s2.mem (State.addr b) k < 65536 := h2.lt
     have hv : val16 (accw acc s2.mem (State.addr b)) 32 = V s.mem (State.addr b) x * V s.mem (State.addr b) y :=
       h2.val
-    have hlo := val16_lt (f := accw acc s2.mem (State.addr b)) (n := 16) fun k hk => hl32 k (by omega_arith)
-    have hhi := val16_lt (f := fun k => accw acc s2.mem (State.addr b) (16 + k)) (n := 16) fun k hk =>
+    obtain hlo := val16_lt (f := accw acc s2.mem (State.addr b)) (n := 16) fun k hk => hl32 k (by omega_arith)
+    obtain hhi := val16_lt (f := fun k => accw acc s2.mem (State.addr b) (16 + k)) (n := 16) fun k hk =>
       hl32 (16 + k) (by omega_arith)
-    have hlox : ∀ z : Nat, z + 64 ≤ acc → ∀ k < 16,
+    obtain hlox : ∀ z : Nat, z + 64 ≤ acc → ∀ k < 16,
         limb s2.mem (State.addr b) z k = limb s.mem (State.addr b) z k := fun z hz k hk =>
       wd_frame h2.frame fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
@@ -264,7 +264,7 @@ theorem mul_ok (hA : acc + 128 ≤ 4096) {o x y : Nat} (ho : o + 64 ≤ acc) (hx
       fun s4 ⟨hr4, hf4, hl4, hv4⟩ => ⟨h2.rest.trans ((u3.rest (by decide)).trans (hr4.mono (by decide))),
         ?_, hl4, ?_⟩
     · intro k hk s' hp
-      have hc' : CtxN e b s' := hc3.of_rest hp.rest (by decide)
+      obtain hc' : CtxN e b s' := hc3.of_rest hp.rest (by decide)
       refine ldr0_ok hc' (d := acc + 4 * k) (by omega_arith) fun t1 v1 => ?_
       refine ldr0_ok (hc'.of_rest (v1.rest (ws := [.r3]) (by decide)) (by decide)) (d := acc + 64 + 4 * k)
         (by omega_arith) fun t2 v2 => ?_
@@ -273,16 +273,16 @@ theorem mul_ok (hA : acc + 128 ≤ 4096) {o x y : Nat} (ho : o + 64 ≤ acc) (hx
       · have el : (t1.gpr .r3).toNat = accw acc s2.mem (State.addr b) k := by
           rw [v1.gpr]; show wd s'.mem _ _ = _
           rw [wd_pass hc3 hp.frame (by omega_arith) (by omega_arith) (by omega_arith), u3.mem]; rfl
-        have eh : (t2.gpr .r2).toNat = accw acc s2.mem (State.addr b) (16 + k) := by
+        obtain eh : (t2.gpr .r2).toNat = accw acc s2.mem (State.addr b) (16 + k) := by
           rw [v2.gpr, v1.mem]; show wd s'.mem _ _ = _
           rw [wd_pass hc3 hp.frame (by omega_arith) (by omega_arith) (by omega_arith), u3.mem, accw]
           congr 1; omega_arith
-        have h8 : t2.gpr .r8 = 38 := by
+        obtain h8 : t2.gpr .r8 = 38 := by
           rw [v2.other _ (by decide), v1.other _ (by decide), hp.rest.gpr _ (by decide),
             u3.other _ (by decide), h2.r8]
-        have hh := hl32 (16 + k) (by omega_arith)
-        have hl := hl32 k (by omega_arith)
-        have e3 : (t3.gpr .r2).toNat = accw acc s2.mem (State.addr b) (16 + k) * 38 := by
+        obtain hh := hl32 (16 + k) (by omega_arith)
+        obtain hl := hl32 k (by omega_arith)
+        obtain e3 : (t3.gpr .r2).toNat = accw acc s2.mem (State.addr b) (16 + k) * 38 := by
           rw [v3.gpr, h8, toNat_mul_lt (by rw [eh]; show _ * 38 < _; omega_arith), eh]; rfl
         rw [v4.gpr]
         show (t3.gpr .r3 + t3.gpr .r2).toNat = _

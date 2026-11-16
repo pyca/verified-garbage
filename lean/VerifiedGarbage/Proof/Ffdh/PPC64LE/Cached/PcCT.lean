@@ -92,7 +92,7 @@ theorem exec_block_split {l₁ l₂ : List Instr} {s t : State} {tr : List Leak}
 theorem WP.block_split {l₁ l₂ : List Instr} {s : State} {Q : State → Prop}
     (h : WP isa (.block (l₁ ++ l₂)) s Q) : WP isa (.block l₁) s fun t => WP isa (.block l₂) t Q := by
   obtain ⟨tr, t, e, hq⟩ := h
-  have e' := exec_block_split e
+  obtain e' := exec_block_split e
   cases e' with
   | seq a b => exact ⟨_, _, a, _, _, b, hq⟩
 
@@ -155,9 +155,9 @@ theorem bbA_ok {s : State} {D : Addr} {k L : Nat} (h21 : s.gpr .r21 = D)
         t.gpr .r15 = BitVec.ofNat 64 0) ∧ Bignum.PPC64LE.Keep (([.r0, .r12] : List Reg) ++ scanRegs ++ ([.r15] : List Reg)) s t := by
   unfold bbA
   refine WP.seq (WP.mono (boundPtr_ok h21 h27 h28 (by omega_using [hL, hk32]) hk32) fun s₁ ⟨⟨a12, m1⟩, k1⟩ => ?_)
-  have hbytes : Spec.Rsa.bytesAt s₁.mem (bptr D k L) k =
+  obtain hbytes : Spec.Rsa.bytesAt s₁.mem (bptr D k L) k =
       VG.Proof.Ffdh.KeyScalar.bnd k (Spec.Rsa.bytesAt s.mem D L) := by rw [m1, bptr_bnd _ _ hL]
-  have hrdP : ∀ i < k, InRegions (s₁.rd ++ s₁.wr) (off (bptr D k L) i) 1 := fun i hi => by
+  obtain hrdP : ∀ i < k, InRegions (s₁.rd ++ s₁.wr) (off (bptr D k L) i) 1 := fun i hi => by
     rw [k1.rd, k1.wr]
     unfold bptr
     split
@@ -179,9 +179,9 @@ theorem w1_ok {s : State} {S : Addr} {Z cap bl : Nat} (hs : Scr s S Z) (hZ : 104
     (hc : cap < 2 ^ 32) (hb : bl < 2 ^ 32) :
     WP isa (.block w1) s fun t => (t.gpr .r8 = BitVec.ofNat 64 cap ∧
       t.gpr .r9 = BitVec.ofNat 64 (if cap < bl then 1 else 0)) ∧ Bignum.PPC64LE.Keep [.r8, .r9] s t := by
-  have l96 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 96) 8 := by
+  obtain l96 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 96) 8 := by
     rw [h23]; exact hs.ld (d := 96) (n := 8) (by omega_using [hZ])
-  have v96 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 96) 64 = BitVec.ofNat 64 cap := by rw [h23]; exact hcap
+  obtain v96 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 96) 64 = BitVec.ofNat 64 cap := by rw [h23]; exact hcap
   refine Bignum.PPC64LE.WP.keep [.r8, .r9] ?_ (by decide)
   unfold w1 ldh
   prun [hCap, l96, v96, h16, lt_bit hc hb]
@@ -190,9 +190,9 @@ theorem w1_ok {s : State} {S : Addr} {Z cap bl : Nat} (hs : Scr s S Z) (hZ : 104
 theorem ldh30_ok {s : State} {S C : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 8 ≤ Z) (h23 : s.gpr .r23 = S)
     (hC : s.mem.readW (off S hCtx) 64 = C) :
     WP isa (.block [ldh .r30 hCtx]) s fun t => t.gpr .r30 = C ∧ Bignum.PPC64LE.Keep [.r30] s t := by
-  have l0 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 0) 8 := by
+  obtain l0 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 0) 8 := by
     rw [h23]; exact hs.ld (d := 0) (n := 8) (by omega_using [hZ])
-  have v0 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 0) 64 = C := by rw [h23]; exact hC
+  obtain v0 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 0) 64 = C := by rw [h23]; exact hC
   refine Bignum.PPC64LE.WP.keep [.r30] ?_ (by decide)
   unfold ldh
   prun [hCtx, l0, v0]
@@ -270,44 +270,44 @@ theorem m1_ok (s : State) : WP isa (.block m1) s fun t => t.mem = s.mem ∧ Bign
 
 /-- `main`'s pieces read what `C0` says. -/
 theorem main_pins {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) : C0 q s := by
-  have mp := h.mp g
+  obtain mp := h.mp g
   have hb := h.1.1
-  have bv := BV.of_base hb
+  obtain bv := BV.of_base hb
   have hZ := mp.env.hZ
-  have hk := g.hk; have hk' := g.hk'
+  obtain hk := g.hk; have hk' := g.hk'
   have hCn := mp.hc.nowrap
   have hdom : Spec.Rsa.bytesAt s.mem q.D q.L = q.db := hb.bD
-  have hd : q.db.length = 2 * q.k ∨ q.db.length = 3 * q.k := by rw [g.hlen]; exact g.hL
-  have hv' := (VG.Proof.Ffdh.domainValid_iff q.k q.db).mp g.dv
-  have hpf := VG.Proof.Ffdh.PPC64LE.Domain.modulus_facts hv'.1
+  obtain hd : q.db.length = 2 * q.k ∨ q.db.length = 3 * q.k := by rw [g.hlen]; exact g.hL
+  obtain hv' := (VG.Proof.Ffdh.domainValid_iff q.k q.db).mp g.dv
+  obtain hpf := VG.Proof.Ffdh.PPC64LE.Domain.modulus_facts hv'.1
   have hmv := hv'.1
-  have hnorm : 2 ^ (64 * ((q.k + 7) / 8 - 1)) ≤ Spec.Rsa.os2ip (q.db.take q.k) := by
+  obtain hnorm : 2 ^ (64 * ((q.k + 7) / 8 - 1)) ≤ Spec.Rsa.os2ip (q.db.take q.k) := by
     change 2 ^ (64 * ((q.k + 7) / 8 - 1)) ≤ (Spec.Ffdh.domainOf q.k q.db).p
     simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hmv
     refine Nat.le_trans ?_ hmv.2
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega_using [])
-  have hlead := lead_ne (by omega_using [hk]) hd g.dv
-  have hcap := recognize_lt (by omega_using [hk]) hd hnorm
-  have hlo : leadOct q.bd < 256 := (q.bd.getD (VG.Proof.Ffdh.lead q.bd) 0).isLt
-  have hbl8 : bitLength (leadOct q.bd) ≤ 8 := bitLength_le_of_lt (by simpa using hlo)
-  have hbl1 : 1 ≤ bitLength (leadOct q.bd) := bitLength_pos hlead
-  have hbl : q.bl ≤ 8 * q.k := by simp only [PQ.bl]; omega_using [hk, hbl8]
-  have hbl1' : 1 ≤ q.bl := by simp only [PQ.bl]; omega_using [hbl1]
+  obtain hlead := lead_ne (by omega_using [hk]) hd g.dv
+  obtain hcap := recognize_lt (by omega_using [hk]) hd hnorm
+  obtain hlo : leadOct q.bd < 256 := (q.bd.getD (VG.Proof.Ffdh.lead q.bd) 0).isLt
+  obtain hbl8 : bitLength (leadOct q.bd) ≤ 8 := bitLength_le_of_lt (by simpa using hlo)
+  obtain hbl1 : 1 ≤ bitLength (leadOct q.bd) := bitLength_pos hlead
+  obtain hbl : q.bl ≤ 8 * q.k := by simp only [PQ.bl]; omega_using [hk, hbl8]
+  obtain hbl1' : 1 ≤ q.bl := by simp only [PQ.bl]; omega_using [hbl1]
   have hcap' : q.cap ≤ 400 := hcap
-  have hbits1 : 1 ≤ q.bits := by simp only [PQ.bits, widthOf]; split <;> omega_arith
-  have hbits : q.bits ≤ 8192 := by simp only [PQ.bits, widthOf]; split <;> omega_arith
-  have hBB := WP.bb (boundBits_ok mp.h21 mp.h27 mp.h28 mp.hL (by omega_using [hk]) (by omega_using [hk']) mp.rdD (by rw [hdom]; exact hlead))
+  obtain hbits1 : 1 ≤ q.bits := by simp only [PQ.bits, widthOf]; split <;> omega_arith
+  obtain hbits : q.bits ≤ 8192 := by simp only [PQ.bits, widthOf]; split <;> omega_arith
+  obtain hBB := WP.bb (boundBits_ok mp.h21 mp.h27 mp.h28 mp.hL (by omega_using [hk]) (by omega_using [hk']) mp.rdD (by rw [hdom]; exact hlead))
   rw [WP.seq_iff] at hBB
   refine WP.mono (WP.and (bbA_ok mp.h21 mp.h27 mp.h28 mp.hL (by omega_using [hk]) (by omega_using [hk']) mp.rdD) hBB)
     fun s₁ ⟨⟨⟨a14, a15⟩, k1⟩, hX⟩ => ⟨⟨by rw [a14, hdom], a15, (k1.gpr .r23 (by decide)).trans mp.h23⟩, ?_⟩
   refine WP.mono hX fun s₂ ⟨⟨a16, m2⟩, k2⟩ => ⟨(k2.gpr .r23 (by decide)).trans mp.h23, ?_⟩
   rw [hdom] at a16
   replace a16 : s₂.gpr .r16 = BitVec.ofNat 64 q.bl := a16
-  have g23 : s₂.gpr .r23 = q.S := (k2.gpr .r23 (by decide)).trans mp.h23
-  have hcap2 : s₂.mem.readW (off q.S hCap) 64 = BitVec.ofNat 64 q.cap := by rw [m2]; have := mp.hcap; rw [hdom] at this; exact this
-  have hs2 := mp.env.hs.congr k2.wr
-  have hW := width_ok (cap := q.cap) hs2 (Nat.le_trans (by simp only [slot]; omega_using []) hZ) g23 hcap2 a16
+  obtain g23 : s₂.gpr .r23 = q.S := (k2.gpr .r23 (by decide)).trans mp.h23
+  obtain hcap2 : s₂.mem.readW (off q.S hCap) 64 = BitVec.ofNat 64 q.cap := by rw [m2]; have := mp.hcap; rw [hdom] at this; exact this
+  obtain hs2 := mp.env.hs.congr k2.wr
+  obtain hW := width_ok (cap := q.cap) hs2 (Nat.le_trans (by simp only [slot]; omega_using []) hZ) g23 hcap2 a16
     (by omega_using [hcap']) (by omega_using [hk', hbl])
   unfold width at hW
   rw [WP.seq_iff] at hW
@@ -315,12 +315,12 @@ theorem main_pins {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) 
     (by omega_using [hk', hbl])) hW) fun s₃ ⟨⟨⟨a8, a9⟩, k3⟩, hI⟩ =>
       ⟨⟨a8, a9, (k3.gpr .r16 (by decide)).trans a16, (k3.gpr .r23 (by decide)).trans g23⟩, ?_⟩
   refine WP.mono hI fun s₄ ⟨⟨a16', m4⟩, k4⟩ => ⟨⟨a16', (k4.gpr .r23 (by decide)).trans g23⟩, ?_⟩
-  have g23' : s₄.gpr .r23 = q.S := (k4.gpr .r23 (by decide)).trans g23
-  have k24 := k2.trans k4
-  have m4' : s₄.mem = s.mem := by rw [m4, m2]
-  have hc24 : Scr s₄ q.C 24 := ⟨let ⟨B₀, o, L', hm, hb, hL, hL'⟩ := (mp.hc.congr k24.wr).wr
+  obtain g23' : s₄.gpr .r23 = q.S := (k4.gpr .r23 (by decide)).trans g23
+  obtain k24 := k2.trans k4
+  obtain m4' : s₄.mem = s.mem := by rw [m4, m2]
+  obtain hc24 : Scr s₄ q.C 24 := ⟨let ⟨B₀, o, L', hm, hb, hL, hL'⟩ := (mp.hc.congr k24.wr).wr
     ⟨B₀, o, L', hm, hb, by unfold ctxWords at hL; omega_using [hL], hL'⟩, by unfold ctxWords at hCn; omega_using [hCn]⟩
-  have hM := metadata_ok (mp.env.hs.congr k24.wr) (by simp only [slot] at hZ; omega_using [hZ]) g23' (by rw [m4']; exact mp.hC)
+  obtain hM := metadata_ok (mp.env.hs.congr k24.wr) (by simp only [slot] at hZ; omega_using [hZ]) g23' (by rw [m4']; exact mp.hC)
     hc24 a16' hbits1 hbits
   unfold metadata at hM
   rw [WP.seq_iff] at hM
@@ -329,9 +329,9 @@ theorem main_pins {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) 
   rw [WP.seq_iff] at hR
   refine WP.mono (WP.and (rowsLoop_ok hbits1 (by omega_using [hbits]) ((k5.gpr .r16 (by decide)).trans a16')) hR)
     fun s₆ ⟨⟨⟨a18, m6⟩, k6⟩, hL⟩ => ⟨⟨((((bv.keep k2).keep k4).keep k5).keep k6), a18⟩, ?_⟩
-  have bv6 : BV q s₆ := ((((bv.keep k2).keep k4).keep k5).keep k6)
-  have k26 := (k24.trans k5).trans k6
-  have hL' := WP.block_split (l₁ := [ldh .r30 hCtx]) (l₂ := mrest) hL
+  obtain bv6 : BV q s₆ := ((((bv.keep k2).keep k4).keep k5).keep k6)
+  obtain k26 := (k24.trans k5).trans k6
+  obtain hL' := WP.block_split (l₁ := [ldh .r30 hCtx]) (l₂ := mrest) hL
   refine WP.mono (WP.and (ldh30_ok (mp.env.hs.congr k26.wr) (by simp only [slot] at hZ; omega_using [hZ]) bv6.2.2.2.1
       (by rw [m6, m5, m4']; exact mp.hC)) hL')
     fun s₇ ⟨⟨a30, k7⟩, hMr⟩ => ⟨⟨bv6.keep k7, a30, (k7.gpr .r18 (by decide)).trans a18⟩, ?_⟩
@@ -451,8 +451,8 @@ theorem pins_P0 : Pins P0 [.r3, .r4, .r5, .r6, .r7, .r8, .r9] := by
   have g₂ := h₂.geo
   obtain ⟨_, e₁⟩ := h₁
   obtain ⟨_, e₂⟩ := h₂
-  have z₁ := congrArg PQ.Z e₁
-  have z₂ := congrArg PQ.Z e₂
+  obtain z₁ := congrArg PQ.Z e₁
+  obtain z₂ := congrArg PQ.Z e₂
   simp only [pqOf] at z₁ z₂
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -499,7 +499,7 @@ def L3 (q : PQ) (s : State) : Prop :=
 theorem L1_of {q : PQ} {s : State} (h : F3 q s) :
     WP isa (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) s (L1 q) := by
   obtain ⟨s₀, h0, h3⟩ := h
-  have w := pc_s4 h0.geo h3
+  obtain w := pc_s4 h0.geo h3
   unfold loadP at w
   rw [WP.seq_iff] at w
   exact WP.mono (WP.and (DA h3.1) w) fun _ ⟨e, r⟩ => ⟨e, s₀, h0, r⟩
@@ -543,7 +543,7 @@ theorem pc_rel : RelCT isa (Two P0) Precompute.code fun _ _ => True := by
 
 theorem pqOf_eq {s t : State} (h : pcContract.pub s t) : pqOf s = pqOf t := by
   obtain ⟨⟨hsp, hdom, h3, h4, h5, h6, h7, h8, h9⟩, hsym⟩ := h
-  have hb := (List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp hdom
+  obtain hb := (List.map_inj_right (fun _ _ h => BitVec.eq_of_toNat_eq h)).mp hdom
   simp only [pcDom] at hb
   rw [h5, h6] at hb
   simp only [pqOf, h3, h5, h6, h7, h8, h9, hsym, hsp, hb]

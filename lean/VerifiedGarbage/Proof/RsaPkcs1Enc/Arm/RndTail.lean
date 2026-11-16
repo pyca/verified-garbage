@@ -161,7 +161,7 @@ theorem wipeArgs_wp (h : D1 P σ s) : WP isa (.block wipeArgs) s (D2 P σ) := by
   show WP isa (.block (.addSp .r12 0 :: _)) s _
   refine Bignum.Arm.wp_stackAddr (by decide) fun t1 u1 => ?_
   refine wp_dp (op2_imm (by decide)) fun t2 u2 => ?_
-  have s2 : P.lay.St σ t2 := (hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem).of_rest
+  obtain s2 : P.lay.St σ t2 := (hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem).of_rest
     (u2.rest (ws := [.r0]) (by simp)) u2.mem
   refine s2.wp_arg (j := 4) (by simp) (by dsimp only; decide) fun t3 s3 u3 => ?_
   refine s3.wp_arg (j := 8) (by simp) (by dsimp only; decide) fun t4 s4 u4 => ?_
@@ -187,11 +187,11 @@ theorem wipe_wp (h : D2 P σ s) : WP isa Impl.Bignum.Arm.maskBytes s (D3 P σ) :
   have hs := k1.1
   have hpl := hs.1.pl_le
   have h8 := hs.1.pl8
-  have hF : oBuf + P.pl ≤ frameBytes := by simp only [oBuf, frameBytes]; omega_using [hpl]
+  obtain hF : oBuf + P.pl ≤ frameBytes := by simp only [oBuf, frameBytes]; omega_using [hpl]
   refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.B + BitVec.ofNat 32 oBuf) (n := P.pl) (by omega_using [h8]) (by omega_using [hpl])
     (hs.bufFit hF) (by rw [hs.e40]; exact hs.2.inFr hF) r0 lr) fun t ⟨_, fr, rest⟩ => ?_
   rw [hs.e40] at fr
-  have st : P.lay.St σ t := hs.2.frameW hF fr rest.rd rest.wr rest.sp
+  obtain st : P.lay.St σ t := hs.2.frameW hF fr rest.rd rest.wr rest.sp
   refine ⟨⟨hs.1, st⟩, k1.2.1, k1.2.2.2.frame fr fun r hr => ?_, rc, fun hq => written_mem (cr hq) (hs.outBytesFr hF fr),
     by rw [rest.gpr .r4 (by decide), r4]⟩
   simp only [List.mem_singleton] at hr; subst hr
@@ -263,7 +263,7 @@ theorem zeroArgs_wp (h : RJ P σ s) : WP isa (.block zeroArgs) s (R1 P σ) := by
   have hs := h.1
   show WP isa (.block (.addSp .r12 0 :: _)) s _
   refine Bignum.Arm.wp_stackAddr (by decide) fun t1 u1 => ?_
-  have s1 : P.lay.St σ t1 := hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem
+  obtain s1 : P.lay.St σ t1 := hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem
   refine s1.wp_arg (j := 0) (by simp) (by dsimp only; decide) fun t2 s2 u2 => ?_
   refine s2.wp_arg (j := 4) (by simp) (by dsimp only; decide) fun t3 s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun t4 u4 => WP.block_nil ⟨?_, ?_, ?_, u4.gpr⟩
@@ -281,7 +281,7 @@ theorem zeroOut_wp (h : R1 P σ s) : WP isa Impl.Bignum.Arm.maskBytes s (R2 P σ
   have hK' := hs.1.k1024
   refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.out) (n := P.K) (by omega_using [hK]) (by omega_using [hK'])
     hs.out_fit ⟨P.OUT, by rw [hs.2.wr, ok.wr]; simp, Region.contains_self _ _⟩ r0 lr) fun t ⟨hb, fr, rest⟩ => ?_
-  have st : P.lay.St σ t := hs.2.write fr (fun r hr => by
+  obtain st : P.lay.St σ t := hs.2.write fr (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨P.OUT, by simp, fun _ h => h⟩) rest.rd rest.wr rest.sp
   refine ⟨rj.of_rest rest (by decide) (by decide) (by decide) st, ?_, by rw [rest.gpr .r2 (by decide), r2]⟩
   show Spec.Rsa.bytesAt t.mem (State.addr P.out) P.K = _
@@ -290,7 +290,7 @@ theorem zeroOut_wp (h : R1 P σ s) : WP isa Impl.Bignum.Arm.maskBytes s (R2 P σ
 theorem cmp50_wp (h : R2 P σ s) :
     WP isa (.block [.cmp .r5 (.imm 0)]) s fun t => R2 P σ t ∧ t.z = decide (cnt P σ (N P) = 0) := by
   have hc := h.1.1.1.pl_le
-  have hN : cnt P σ (N P) ≤ P.pl := by
+  obtain hN : cnt P σ (N P) ≤ P.pl := by
     have := reject_of h.1.1.1 h.1.2.1; omega_using [this]
   refine wp_cmp (op2_imm (by decide)) fun t u z => WP.block_nil ⟨⟨h.1.of_rest (u.rest []) (by simp) (by simp)
     (by simp) (h.1.1.2.of_rest (u.rest []) u.mem), by rw [Zout, u.mem]; exact h.2.1, by rw [u.gpr]; exact h.2.2⟩, ?_⟩
@@ -317,12 +317,12 @@ theorem drawn_wp (h : R2d P σ s) : WP isa Impl.Bignum.Arm.maskBytes s (R2 P σ)
   obtain ⟨⟨rj, z, r2⟩, hpos, r0, lr⟩ := h
   have hs := rj.1
   have hpl := hs.1.pl_le
-  have hN : cnt P σ (N P) < P.pl := (reject_of hs.1 rj.2.1).2.2
-  have hF : oBuf + cnt P σ (N P) ≤ frameBytes := by simp only [oBuf, frameBytes]; omega_using [hpl, hN]
+  obtain hN : cnt P σ (N P) < P.pl := (reject_of hs.1 rj.2.1).2.2
+  obtain hF : oBuf + cnt P σ (N P) ≤ frameBytes := by simp only [oBuf, frameBytes]; omega_using [hpl, hN]
   refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.B + BitVec.ofNat 32 oBuf) (n := cnt P σ (N P)) hpos
     (by omega_using [hpl, hN]) (hs.bufFit hF) (by rw [hs.e40]; exact hs.2.inFr hF) r0 lr) fun t ⟨_, fr, rest⟩ => ?_
   rw [hs.e40] at fr
-  have st : P.lay.St σ t := hs.2.frameW hF fr rest.rd rest.wr rest.sp
+  obtain st : P.lay.St σ t := hs.2.frameW hF fr rest.rd rest.wr rest.sp
   exact ⟨rj.of_rest rest (by decide) (by decide) (by decide) st, by rw [Zout, hs.outBytesFr hF fr]; exact z,
     by rw [rest.gpr .r2 (by decide), r2]⟩
 
@@ -377,7 +377,7 @@ theorem tape_frame {m : Mem} {a b c d : BitVec 32} (hs : S P σ s)
       (State.addr P.tape + BitVec.ofNat 64 4) (b : BitVec 32)).writeW (State.addr P.tape + BitVec.ofNat 64 8)
       (c : BitVec 32)).writeW (State.addr P.tape + BitVec.ofNat 64 12) (d : BitVec 32)) :
     Spec.Rsa.bytesAt m (State.addr P.out) P.K = Spec.Rsa.bytesAt s.mem (State.addr P.out) P.K := by
-  have fr : Frame [P.TAPE] s.mem m := by
+  obtain fr : Frame [P.TAPE] s.mem m := by
     rw [hm]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by decide) (by decide))).writeW (List.mem_singleton_self _) _
@@ -398,7 +398,7 @@ theorem exhausted_wp (h : R5 P σ s) (he : P.rl = P.pl + 128) : WP isa (.block e
   obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_exhausted (hs.1.rejected rj.2.1)
     (n := P.pl) (rand := randB P σ) (by rw [randB_length]; simp only [Spec.RsaPkcs1Enc.padEntropy]; omega_using [he])
   refine wp_mov (op2_imm (by decide)) fun t1 u1 => ?_
-  have s1 : S P σ t1 := ⟨hs.1, hs.2.of_rest (u1.rest (ws := [.r9]) (by simp)) u1.mem⟩
+  obtain s1 : S P σ t1 := ⟨hs.1, hs.2.of_rest (u1.rest (ws := [.r9]) (by simp)) u1.mem⟩
   have g1 : ∀ r, r ≠ .r9 → t1.gpr r = s.gpr r := u1.other
   refine wp_strT s1 (by rw [g1 _ (by decide), r7]) (d := 0) (by decide) fun t2 s2 m2 => ?_
   refine wp_strT s2 (by rw [m2.gpr, g1 _ (by decide), r7]) (d := 4) (by decide) fun t3 s3 m3 => ?_
@@ -430,7 +430,7 @@ theorem request_wp (h : R5 P σ s) (he : P.rl ≠ P.pl + 128) : WP isa (.block r
   have hs := rj.1
   have hrl := hs.1.rl_le
   have hpl := hs.1.pl_le
-  have hc := (reject_of hs.1 rj.2.1).2.2
+  obtain hc := (reject_of hs.1 rj.2.1).2.2
   obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy (hs.1.rejected rj.2.1)
     (n := P.pl) (rand := randB P σ) (by rw [randB_length]; simp only [Spec.RsaPkcs1Enc.padEntropy]; omega_using [he, hrl])
   have r3 := rj.2.2.1
@@ -445,30 +445,30 @@ theorem request_wp (h : R5 P σ s) (he : P.rl ≠ P.pl + 128) : WP isa (.block r
   refine wp_dp (op2_reg _ _) fun t7 u7 => ?_
   refine wp_dp (op2_reg _ _) fun t8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t9 u9 => ?_
-  have r := (((((((((u1.rest (ws := [.r9, .r10, .r11]) (by simp)).trans (u2.rest (by simp))).trans
+  obtain r := (((((((((u1.rest (ws := [.r9, .r10, .r11]) (by simp)).trans (u2.rest (by simp))).trans
     (u3.rest (by simp))).trans (u4.rest (by simp))).trans (u5.rest (by simp))).trans (u6.rest (by simp))).trans
     (u7.rest (by simp))).trans (u8.rest (by simp))).trans (u9.rest (by simp)))
-  have m9 : t9.mem = s.mem := by
+  obtain m9 : t9.mem = s.mem := by
     rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have s9 : S P σ t9 := ⟨hs.1, hs.2.of_rest r m9⟩
-  have q9 : t9.gpr .r9 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) := by
+  obtain s9 : S P σ t9 := ⟨hs.1, hs.2.of_rest r m9⟩
+  obtain q9 : t9.gpr .r9 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) := by
     rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide),
       u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.gpr, dpVal, u1.gpr, dpVal,
       u1.other _ (by decide), r3, r8, r5]
     exact ofNat_add_sub (by omega_using [hc]) (by omega_using [hrl, hpl])
-  have v2 : t2.gpr .r9 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) := by
+  obtain v2 : t2.gpr .r9 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) := by
     rw [u2.gpr, dpVal, u1.gpr, dpVal, u1.other _ (by decide), r3, r8, r5]
     exact ofNat_add_sub (by omega_using [hc]) (by omega_using [hrl, hpl])
-  have c2 : t2.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by rw [u2.other _ (by decide), u1.other _ (by decide), r6]
-  have c5 : t5.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by
+  obtain c2 : t2.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by rw [u2.other _ (by decide), u1.other _ (by decide), r6]
+  obtain c5 : t5.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by
     rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), c2]
-  have c7 : t7.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by
+  obtain c7 : t7.gpr .r6 = BitVec.ofNat 32 (P.pl + 128) := by
     rw [u7.other _ (by decide), u6.other _ (by decide), c5]
-  have v5 : t5.gpr .r10 = (BitVec.ofNat 32 (P.pl + 128) - BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P))) >>> 31 - 1 := by
+  obtain v5 : t5.gpr .r10 = (BitVec.ofNat 32 (P.pl + 128) - BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P))) >>> 31 - 1 := by
     rw [u5.gpr, dpVal, u4.gpr, u3.gpr, dpVal, c2, v2]
-  have v6 : t6.gpr .r11 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) - BitVec.ofNat 32 (P.pl + 128) := by
+  obtain v6 : t6.gpr .r11 = BitVec.ofNat 32 (P.pl + P.rl - cnt P σ (N P)) - BitVec.ofNat 32 (P.pl + 128) := by
     rw [u6.gpr, dpVal, u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), v2, c5]
-  have q11 : t9.gpr .r11 = BitVec.ofNat 32 (min (P.pl + P.rl - cnt P σ (N P)) (P.pl + 128)) := by
+  obtain q11 : t9.gpr .r11 = BitVec.ofNat 32 (min (P.pl + P.rl - cnt P σ (N P)) (P.pl + 128)) := by
     rw [u9.other _ (by decide), u8.gpr, dpVal, u7.gpr, dpVal, v6, u6.other _ (by decide), v5, c7]
     exact minSel (by omega_using [hrl, hpl]) (by omega_using [hpl])
   have q10 : t9.gpr .r10 = 0 := u9.gpr

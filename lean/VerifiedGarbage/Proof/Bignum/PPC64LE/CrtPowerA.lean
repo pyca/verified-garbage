@@ -47,7 +47,7 @@ theorem bytesAt_out {B I : Addr} {Z o n k : Nat} {m m' : Mem} (h : Outside B o n
     Spec.Rsa.bytesAt m' I k = Spec.Rsa.bytesAt m I k := by
   rw [bytesAt_eq, bytesAt_eq]
   refine List.map_congr_left fun i hi => h _ ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   by_contra hc
   exact hsep i hi (I + BitVec.ofNat 64 i) (by omega) rfl
 
@@ -87,12 +87,12 @@ theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv :
       (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
         PublicChecked.base .r9 3)) (.seq (r2Step pc) (.seq reduceIn c))))) s Q := by
   have hn' := hs.nowrap
-  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  obtain e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA0 := e wA 0; have eA1 := e wA 1; have eA4 := e wA 4; have eA8 := e wA 8; have eA24 := e wA 24
-  have eX0 := e wX 0; have eX6 := e wX 6; have eX8 := e wX 8; have sXj := slot_le (w := wX) hxj
+  obtain eA0 := e wA 0; have eA1 := e wA 1; have eA4 := e wA 4; have eA8 := e wA 8; have eA24 := e wA 24
+  obtain eX0 := e wX 0; have eX6 := e wX 6; have eX8 := e wX 8; have sXj := slot_le (w := wX) hxj
   have hK' : s.mem.readW (off BX 16) 64 = BitVec.ofNat 64 k := hK
-  have hsA := hs.sub hA
+  obtain hsA := hs.sub hA
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r25, .r14] (Q := fun t => t.gpr .r25 = BitVec.ofNat 64 k ∧
@@ -103,19 +103,19 @@ theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv :
     ((k1.gpr _ (by decide)).trans h28) xj) fun s₂' ⟨⟨a15', m2'⟩, k2'⟩ => ?_
   refine WP.mono (r2Ptr_ok (hs.congr (k1.trans k2').wr) (by omega_arith)
     ((k1.trans k2').gpr _ (by decide) |>.trans h23) (m2'.trans m1) hR2) fun s₂ ⟨⟨p30, mp⟩, kp⟩ => ?_
-  have a15 : s₂.gpr .r15 = _ := (kp.gpr _ (by decide)).trans a15'
-  have m2 : s₂.mem = s₁.mem := mp.trans m2'
-  have k2 := k2'.trans kp
-  have k12 := k1.trans k2
+  obtain a15 : s₂.gpr .r15 = _ := (kp.gpr _ (by decide)).trans a15'
+  obtain m2 : s₂.mem = s₁.mem := mp.trans m2'
+  obtain k2 := k2'.trans kp
+  obtain k12 := k1.trans k2
   -- The prime.
   refine WP.seq (WP.mono (copySub_ok (hs.congr k12.wr) a15 ((k2.gpr _ (by decide)).trans a14)
     ((k12.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₃ ⟨⟨hw3, out3⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [m2, m1] at hw3 out3
-  have v0 : val32 s₃.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
+  obtain v0 : val32 s₃.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
     rw [Pre.val32_eq_wv, wv_off, ← hP]; exact wv_congr2 fun i hi => hw3 i hi
-  have hlow : (word s₃.mem (off BX oA) (slot wA 0)).toNat % 2 = 1 := by
+  obtain hlow : (word s₃.mem (off BX oA) (slot wA 0)).toNat % 2 = 1 := by
     rw [← wv_low_mod2 _ _ _ (show 1 ≤ wA by omega_arith), ← Pre.val32_eq_wv, v0, hPodd]
   -- `-p⁻¹ mod 2³²` and the bases.
   refine WP.seq ?_
@@ -123,23 +123,23 @@ theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv :
   rw [WP.block_append_iff]
   refine WP.mono (Pub.minv_ok (hsA.congr k13.wr) ((k13.gpr _ (by decide)).trans h10) (by omega_arith) hlow)
     fun s₄ ⟨⟨i12, iinv, m4⟩, k4⟩ => ?_
-  have k14 := k13.trans k4
+  obtain k14 := k13.trans k4
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r5) (by decide) (by decide) ((k14.gpr _ (by decide)).trans h10)
     ((k14.gpr _ (by decide)).trans h29) 1) fun s₅ ⟨⟨a5, m5⟩, k5⟩ => ?_
-  have k15 := k14.trans k5
+  obtain k15 := k14.trans k5
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r8) (by decide) (by decide) ((k15.gpr _ (by decide)).trans h10)
     ((k15.gpr _ (by decide)).trans h29) 2) fun s₆ ⟨⟨a8, m6⟩, k6⟩ => ?_
-  have k16 := k15.trans k6
+  obtain k16 := k15.trans k6
   refine WP.mono (Pub.base_ok (rd := .r9) (by decide) (by decide) ((k16.gpr _ (by decide)).trans h10)
     ((k16.gpr _ (by decide)).trans h29) 3) fun s₇ ⟨⟨a9, m7⟩, k7⟩ => ?_
-  have k17 := k16.trans k7
-  have hm7 : s₇.mem = s₃.mem := by rw [m7, m6, m5, m4]
-  have g12 : s₇.gpr .r12 = s₄.gpr .r12 := by
+  obtain k17 := k16.trans k7
+  obtain hm7 : s₇.mem = s₃.mem := by rw [m7, m6, m5, m4]
+  obtain g12 : s₇.gpr .r12 = s₄.gpr .r12 := by
     rw [k7.gpr .r12 (by decide), k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]
   -- `R² mod p`.
-  have hsepB : ∀ S : Addr, (∀ x, ofs S x < 8 * wA → Z ≤ ofs BX x) →
+  obtain hsepB : ∀ S : Addr, (∀ x, ofs S x < 8 * wA → Z ≤ ofs BX x) →
       ∀ x, ofs S x < 8 * wA → slot wA 24 ≤ ofs (off BX oA) x := fun S hS x hx => by
     have := hS x hx
     rcases ofs_rebase BX x (o := oA) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega_arith
@@ -155,19 +155,19 @@ theorem powerA_ok {pc q : Bool} {s : State} {BX : Addr} {Z oA wA wX xj k Pv Cv :
         (by omega_arith) hA (by rw [k17.rd, k17.wr]) (k17.gpr _ (by decide)),
       ((((k3.trans k4).trans k5).trans k6).trans k7 |>.gpr _ (by decide)).trans a30⟩))
     fun s₈ ⟨h1, out8, k8⟩ => ?_)
-  have k18 := k17.trans k8
+  obtain k18 := k17.trans k8
   rw [hm7, v0] at h1
   rw [hm7] at out8
-  have v0' : val32 s₈.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
+  obtain v0' : val32 s₈.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
     rw [out8.val32 (Or.inl (by omega_arith)) (by omega_arith), v0]
-  have w8 : w32 s₈.mem (off BX oA) (slot wA 0) = w32 s₃.mem (off BX oA) (slot wA 0) := by
+  obtain w8 : w32 s₈.mem (off BX oA) (slot wA 0) = w32 s₃.mem (off BX oA) (slot wA 0) := by
     have := out8.val32 (d := slot wA 0) (k := 1) (Or.inl (by omega_arith)) (by omega_arith)
     simpa [val32] using this
-  have out38 : Outside BX oA (slot wA 24) s.mem s₈.mem :=
+  obtain out38 : Outside BX oA (slot wA 24) s.mem s₈.mem :=
     (out3.mono (by omega_arith) (by omega_arith)).trans
       (out_sub (fun y hy => out8 y hy) (by omega_arith) (by omega_arith) (by omega_arith))
-  have g12' : s₈.gpr .r12 = s₄.gpr .r12 := (k8.gpr .r12 (by decide)).trans g12
-  have hc6 : wA * nChunks ((k + 7) / 8) wA ≤ wX + 2 := by omega_arith
+  obtain g12' : s₈.gpr .r12 = s₄.gpr .r12 := (k8.gpr .r12 (by decide)).trans g12
+  obtain hc6 : wA * nChunks ((k + 7) / 8) wA ≤ wX + 2 := by omega_arith
   -- `c mod p`.
   refine WP.seq (WP.mono (reduceIn_ok (Cv := Cv) (hs.congr k18.wr) hA hXA hw2 hw' hn ((k18.gpr _ (by decide)).trans h10)
     ((k18.gpr _ (by decide)).trans h21) ((k18.gpr _ (by decide)).trans h29) ((k18.gpr _ (by decide)).trans h11)

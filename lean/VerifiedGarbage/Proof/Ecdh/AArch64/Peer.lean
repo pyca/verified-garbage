@@ -49,7 +49,7 @@ theorem lead_ok {s : State} {q : Addr} (hq : s.gpr .x6 = q) (hin : InRegions (s.
     WP isa (.block ([zero7, .ldrb .x1 .x6 0, .movz .x .x5 4 0, .logic .eor .x .x1 .x1 .x5] ++
       Impl.Ecdh.AArch64.Cfg.isZero)) s fun s' =>
       s'.gpr .x2 = mask (s.mem q = 4) ∧ Keeps [.x1, .x2, .x5, .x7, .x16] s s' := by
-  have ha : s.gpr .x6 + BitVec.ofNat 64 0 = q := by rw [hq]; exact BitVec.add_zero _
+  obtain ha : s.gpr .x6 + BitVec.ofNat 64 0 = q := by rw [hq]; exact BitVec.add_zero _
   rw [WP.block_append_iff]
   refine WP.mono (show WP isa (.block [zero7, .ldrb .x1 .x6 0, .movz .x .x5 4 0,
       .logic .eor .x .x1 .x1 .x5]) s (fun s₁ =>
@@ -66,7 +66,7 @@ theorem lead_ok {s : State} {q : Addr} (hq : s.gpr .x6 = q) (hin : InRegions (s.
   refine WP.mono (isZero_ok s₁ z₁) fun s₂ ⟨e₂, k₂⟩ =>
     ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
   rw [e₂, e₁]
-  have key : ∀ b : Byte, (b.setWidth 64 ^^^ 4 = 0) = (b = 4) := by decide
+  obtain key : ∀ b : Byte, (b.setWidth 64 ^^^ 4 = 0) = (b = 4) := by decide
   simp only [mask, key]
 
 /-! ## Below `p` -/
@@ -210,26 +210,26 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hlo := hc.len_lo
   have hhi := hc.len_hi
   have hsz : size = 8192 := rfl
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
-  have hR2 := sl_le c h7 (i := R2P) (by decide)
-  have hB := sl_le c h7 (i := BP) (by decide)
-  have hY := sl_le c h7 (i := QY) (by decide)
-  have hE := sl_le c h7 (i := E) (by decide)
-  have hM := sl_le c h7 (i := MP) (by decide)
+  obtain hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
+  obtain hR2 := sl_le c h7 (i := R2P) (by decide)
+  obtain hB := sl_le c h7 (i := BP) (by decide)
+  obtain hY := sl_le c h7 (i := QY) (by decide)
+  obtain hE := sl_le c h7 (i := E) (by decide)
+  obtain hM := sl_le c h7 (i := MP) (by decide)
   rw [peer_eq, WP.block_append_iff]
   refine WP.mono (setConst_ok hs hR2 (sl_mod8 c R2P) (show c.R * c.R % c.C.p < 2 ^ (64 * c.n) from
     Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok hs₁ hB (sl_mod8 c BP) (show c.mont c.C.b < 2 ^ (64 * c.n) from
     Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (ptr_ok s₂ (k := 1 + c.C.len) (by omega_arith)) fun s₃ ⟨e₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
-  have hq₂ : s₂.gpr .x6 = q := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq]
-  have hq₃ : s₃.gpr .x6 = q := by rw [k₃.gpr _ (by decide), hq₂]
-  have hrw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain hq₂ : s₂.gpr .x6 = q := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq]
+  obtain hq₃ : s₃.gpr .x6 = q := by rw [k₃.gpr _ (by decide), hq₂]
+  obtain hrw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by
     rw [k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]
   rw [hq₂] at e₃
   -- `y`
@@ -240,15 +240,15 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       exact Offset.contains_base q (by omega_arith) (by omega_arith)⟩)
     (by rw [e₃]; exact (hd.sub_left (Offset.sub_base q (by omega_arith))).sub_right (Offset.sub_base base hY)))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have O₄' : Outside base (c.sl QY) (8 * c.n) s₂.mem s₄.mem := k₃.mem ▸ O₄
-  have hq₄ : s₄.gpr .x6 = q := by rw [k₄.gpr _ (by decide), hq₃]
-  have hrw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [k₄.rd, k₄.wr, hrw₃]
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  obtain O₄' : Outside base (c.sl QY) (8 * c.n) s₂.mem s₄.mem := k₃.mem ▸ O₄
+  obtain hq₄ : s₄.gpr .x6 = q := by rw [k₄.gpr _ (by decide), hq₃]
+  obtain hrw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [k₄.rd, k₄.wr, hrw₃]
   -- What the stores so far keep: everything apart from the working space.
-  have W₄ : Outside base 0 size s.mem s₄.mem :=
+  obtain W₄ : Outside base 0 size s.mem s₄.mem :=
     ((O₁.mono (Nat.zero_le _) (by omega_arith)).trans (O₂.mono (Nat.zero_le _) (by omega_arith))).trans
       (O₄'.mono (Nat.zero_le _) (by omega_arith))
-  have hq0 : s₄.mem q = s.mem q := by
+  obtain hq0 : s₄.mem q = s.mem q := by
     have := keep_of_disjoint' W₄ hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- the first byte
@@ -256,15 +256,15 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this⟩ hF (sl_mod8 c FLAG)) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
   -- The slots.
-  have v₄ : ∀ {i}, i < 45 → i ≠ R2P → i ≠ BP → i ≠ QY →
+  obtain v₄ : ∀ {i}, i < 45 → i ≠ R2P → i ≠ BP → i ≠ QY →
       wordsVal s₄.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n :=
     fun hi h₁ h₂ h₃ => by
       rw [sv_out O₄' h7 hn hi h₃, sv_out O₂ h7 hn hi h₂, sv_out O₁ h7 hn hi h₁]
-  have v₅ : ∀ {i}, i < 45 → i ≠ FLAG →
+  obtain v₅ : ∀ {i}, i < 45 → i ≠ FLAG →
       wordsVal s₅.mem base (c.sl i) c.n = wordsVal s₄.mem base (c.sl i) c.n := fun hi hf =>
     sv_flag O₅ h0 h7 hn hi hf
-  have flag₄ : word s₄.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) := by
-    have hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 8 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
+  obtain flag₄ : word s₄.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) := by
+    obtain hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 8 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
       fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega_arith
     rw [O₄'.word (hap (j := QY) (by decide) (by decide)) (by omega_arith),
       O₂.word (hap (j := BP) (by decide) (by decide)) (by omega_arith),

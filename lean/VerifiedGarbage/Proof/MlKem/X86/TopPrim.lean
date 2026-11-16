@@ -47,32 +47,32 @@ theorem inPlace_call {t : Poly → Poly} {nm : String} {c : Prog isa}
     Piece (TPre Y) (TPub Y lk) A B (callWith [.ecx, .eax] nm c) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hF, hS⟩, dFS⟩ := hc
-  have hF' := (Lay.okW_iff.mp hF).1
-  have hS' := (Lay.okW_iff.mp hS).1
+  obtain hF' := (Lay.okW_iff.mp hF).1
+  obtain hS' := (Lay.okW_iff.mp hS).1
   refine call_piece hv hsp (by decide) (by decide) (by rw [hst]; simp only [List.length_cons, List.length_nil]; omega_arith)
     (fun _ => []) (fun s₀ => [Buf.rgn s₀ ⟨fa, fo, 1024⟩, Buf.rgn s₀ ⟨sa, so, 1024⟩, below (E1 s₀) 8])
     (fun s₀ s hp ha => ?_) (fun s₀ s₀' s s' hp hp' hq ha ha' => ?_) (fun s₀ hp r hr => ?_)
     (fun s₀ s s' hp ha h' e₃ fr post => ?_)
   · obtain ⟨h, hax, hcx, hred⟩ := hA s₀ s hp ha
-    have hE := ctx_E hp h (N := 28) (by omega_arith)
-    have fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain hE := ctx_E hp h (N := 28) (by omega_arith)
+    obtain fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       simp only [List.length_cons, List.length_nil]; omega_arith
-    have a0 : arg (pushed [.ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
+    obtain a0 : arg (pushed [.ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hax
-    have a1 : arg (pushed [.ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨sa, so, 1024⟩ := by
+    obtain a1 : arg (pushed [.ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨sa, so, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hcx
-    have eA : argAddr (pushed [.ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 8).setWidth 64 := by
+    obtain eA : argAddr (pushed [.ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 8).setWidth 64 := by
       rw [callEntry_argAddr0, h.esp]; rfl
-    have eSp : (pushed [.ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 12 := by
+    obtain eSp : (pushed [.ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 12 := by
       rw [callEntry_esp', h.esp]; rfl
-    have hE' : 28 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact hE
-    have bF := Buf.stkD hp hF' (N := 4 * 2 + 4 + 16) (by omega_arith)
-    have bS := Buf.stkD hp hS' (N := 4 * 2 + 4 + 16) (by omega_arith)
+    obtain hE' : 28 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact hE
+    obtain bF := Buf.stkD hp hF' (N := 4 * 2 + 4 + 16) (by omega_arith)
+    obtain bS := Buf.stkD hp hS' (N := 4 * 2 + 4 + 16) (by omega_arith)
     obtain ⟨rF₁, rF₂, rF₃⟩ := entry_regions hE' bF
     obtain ⟨rS₁, rS₂, rS₃⟩ := entry_regions hE' bS
     obtain ⟨rA₂, rA₃⟩ := entry_self (E := E1 s₀) (k := 2) (K := 16) hE'
-    have ef := callEntry_frame fit (by decide)
-    have cv := covers_of (s := s) (n := 2) (rd := []) (wr := [Buf.rgn s₀ ⟨fa, fo, 1024⟩,
+    obtain ef := callEntry_frame fit (by decide)
+    obtain cv := covers_of (s := s) (n := 2) (rd := []) (wr := [Buf.rgn s₀ ⟨fa, fo, 1024⟩,
         Buf.rgn s₀ ⟨sa, so, 1024⟩, below (E1 s₀) 8]) (fun r hr => absurd hr (by simp)) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -93,13 +93,13 @@ theorem inPlace_call {t : Poly → Poly} {nm : String} {c : Prog isa}
     exact (bF.sub_left (below_sub (by simp) hE')).symm
   · obtain ⟨h, hax, hcx, -⟩ := hA s₀ s hp ha
     obtain ⟨h', hax', hcx', -⟩ := hA s₀' s' hp' ha'
-    have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
-    have hr : ∀ r ∈ [Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
+    obtain hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
+    obtain hr : ∀ r ∈ [Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [hcx, hcx', hq.ptr hS']
       · rw [hax, hax', hq.ptr hF']
-    have fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 28) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨rfl, by simp only [Buf.rgn, hq.ptr hF', hq.ptr hS', hq.E1], ?_⟩
     generalize he : (pushed [.ecx, .eax] s).callEntry = e
@@ -116,12 +116,12 @@ theorem inPlace_call {t : Poly → Poly} {nm : String} {c : Prog isa}
     · exact ⟨cR Y s₀, TPre.cW, stk_sub hp (by omega_arith) (by have := hp.sp16; omega_arith)⟩
   · obtain ⟨h, hax, -, -⟩ := hA s₀ s hp ha
     obtain ⟨s₂, m₂, post⟩ := post
-    have fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 28) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
-    have a0 : arg (pushed [.ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
+    obtain a0 : arg (pushed [.ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hax
-    have hE' : 28 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 28) (by omega_arith)
-    have bF := Buf.stkD hp hF' (N := 4 * 2 + 4 + 16) (by omega_arith)
+    obtain hE' : 28 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 28) (by omega_arith)
+    obtain bF := Buf.stkD hp hF' (N := 4 * 2 + 4 + 16) (by omega_arith)
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
@@ -161,8 +161,8 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
       (callWith [.edi, .edx, .ecx, .eax] "vg_mlkem_multiply_ntts" Impl.MlKem.X86.multiplyNTTs) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hH, hF'⟩, hG'⟩, hS⟩, dHF⟩, dHG⟩, dHS⟩, dFS⟩, dGS⟩ := hc
-  have hH' := (Lay.okW_iff.mp hH).1
-  have hS' := (Lay.okW_iff.mp hS).1
+  obtain hH' := (Lay.okW_iff.mp hH).1
+  obtain hS' := (Lay.okW_iff.mp hS).1
   refine call_piece Mul.verified mul_nosp (by decide) (by decide)
     (by rw [mul_stack]; simp only [List.length_cons, List.length_nil]; omega_arith)
     (fun s₀ => [Buf.rgn s₀ ⟨fa, fo, 1024⟩, Buf.rgn s₀ ⟨ga, go, 1024⟩])
@@ -171,31 +171,31 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
     (fun s₀ hp => wr_sub hp (bs := [⟨oa, oo, 1024⟩, ⟨sa, so, 1024⟩]) (by simp [hH, hS]) (by omega_arith))
     (fun s₀ s s' hp ha h' e₃ fr post => ?_)
   · obtain ⟨h, hax, hcx, hdx, hdi, rF, rG⟩ := hA s₀ s hp ha
-    have hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
-    have fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain hE' : 36 ≤ (E1 s₀).toNat := by rw [← h.esp]; exact ctx_E hp h (N := 36) (by omega_arith)
+    obtain fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       rw [h.esp]; simp only [List.length_cons, List.length_nil]; omega_arith
-    have a0 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨oa, oo, 1024⟩ := by
+    obtain a0 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨oa, oo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hax
-    have a1 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
+    obtain a1 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hcx
-    have a2 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨ga, go, 1024⟩ := by
+    obtain a2 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨ga, go, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hdx
-    have a3 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 3 = Buf.ptr s₀ ⟨sa, so, 1024⟩ := by
+    obtain a3 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 3 = Buf.ptr s₀ ⟨sa, so, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hdi
-    have eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
+    obtain eA : argAddr (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = (E1 s₀ - BitVec.ofNat 32 16).setWidth 64 := by
       rw [callEntry_argAddr0, h.esp]; rfl
-    have eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
+    obtain eSp : (pushed [.edi, .edx, .ecx, .eax] s).callEntry.gpr .esp = E1 s₀ - BitVec.ofNat 32 20 := by
       rw [callEntry_esp', h.esp]; rfl
-    have bH := Buf.stkD hp hH' (N := 4 * 4 + 4 + 16) (by omega_arith)
-    have bF := Buf.stkD hp hF' (N := 4 * 4 + 4 + 16) (by omega_arith)
-    have bG := Buf.stkD hp hG' (N := 4 * 4 + 4 + 16) (by omega_arith)
-    have bS := Buf.stkD hp hS' (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bH := Buf.stkD hp hH' (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bF := Buf.stkD hp hF' (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bG := Buf.stkD hp hG' (N := 4 * 4 + 4 + 16) (by omega_arith)
+    obtain bS := Buf.stkD hp hS' (N := 4 * 4 + 4 + 16) (by omega_arith)
     obtain ⟨rH₁, rH₂, rH₃⟩ := entry_regions hE' bH
     obtain ⟨rF₁, rF₂, rF₃⟩ := entry_regions hE' bF
     obtain ⟨rG₁, rG₂, rG₃⟩ := entry_regions hE' bG
     obtain ⟨rS₁, rS₂, rS₃⟩ := entry_regions hE' bS
     obtain ⟨rA₂, rA₃⟩ := entry_self (E := E1 s₀) (k := 4) (K := 16) hE'
-    have cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨fa, fo, 1024⟩, Buf.rgn s₀ ⟨ga, go, 1024⟩])
+    obtain cv := covers_of (s := s) (n := 4) (rd := [Buf.rgn s₀ ⟨fa, fo, 1024⟩, Buf.rgn s₀ ⟨ga, go, 1024⟩])
       (wr := [Buf.rgn s₀ ⟨oa, oo, 1024⟩, Buf.rgn s₀ ⟨sa, so, 1024⟩] ++ [below (E1 s₀) 16])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -213,7 +213,7 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
     sig_pre [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp]
-    have ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       trivial, trivial, Buf.disj hp hH' hF' dHF, Buf.disj hp hH' hG' dHG, Buf.disj hp hH' hS' dHS, rH₁,
       Buf.disj hp hF' hS' dFS, rF₁, Buf.disj hp hG' hS' dGS, rG₁, rS₁, rH₂, rF₂, rG₂, rS₂, rA₂,
@@ -221,15 +221,15 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
       reduced_congr (ek hF') rF, reduced_congr (ek hG') rG⟩
   · obtain ⟨h, hax, hcx, hdx, hdi, -⟩ := hA s₀ s hp ha
     obtain ⟨h', hax', hcx', hdx', hdi', -⟩ := hA s₀' s' hp' ha'
-    have hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
-    have hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
+    obtain hsp : s.gpr .esp = s'.gpr .esp := by rw [h.esp, h'.esp, hq.E1]
+    obtain hr : ∀ r ∈ [Reg.edi, Reg.edx, Reg.ecx, Reg.eax], s.gpr r = s'.gpr r := by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · rw [hdi, hdi', hq.ptr hS']
       · rw [hdx, hdx', hq.ptr hG']
       · rw [hcx, hcx', hq.ptr hF']
       · rw [hax, hax', hq.ptr hH']
-    have fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 36) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
     refine ⟨by simp only [Buf.rgn, hq.ptr hF', hq.ptr hG'], by simp only [Buf.rgn, hq.ptr hH', hq.ptr hS', hq.E1], ?_⟩
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e
@@ -242,15 +242,15 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
       callEntry_arg_eq (by decide) fit hsp hr (by decide)⟩
   · obtain ⟨h, hax, hcx, hdx, -⟩ := hA s₀ s hp ha
     obtain ⟨s₂, m₂, post⟩ := post
-    have fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
+    obtain fit : 4 * [Reg.edi, Reg.edx, Reg.ecx, Reg.eax].length + 4 ≤ (s.gpr .esp).toNat := by
       have := ctx_E hp h (N := 36) (by omega_arith); simp only [List.length_cons, List.length_nil]; omega_arith
-    have a0 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨oa, oo, 1024⟩ := by
+    obtain a0 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 0 = Buf.ptr s₀ ⟨oa, oo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hax
-    have a1 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
+    obtain a1 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 1 = Buf.ptr s₀ ⟨fa, fo, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hcx
-    have a2 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨ga, go, 1024⟩ := by
+    obtain a2 : arg (pushed [.edi, .edx, .ecx, .eax] s).callEntry 2 = Buf.ptr s₀ ⟨ga, go, 1024⟩ := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hdx
-    have ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
+    obtain ek := @ent_keep Y s₀ s hp h [.edi, .edx, .ecx, .eax] (by decide) (by simp; omega_arith)
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e at post
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he

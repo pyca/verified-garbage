@@ -51,26 +51,26 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
   have h7 := hc.n10
   have hn := hs.nowrap
   have hsz : size = 8192 := rfl
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
-  have hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_bits hk8
-  have hJle : c.winJ ≤ 16 * c.n + 1 := by
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  obtain hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_bits hk8
+  obtain hJle : c.winJ ≤ 16 * c.n + 1 := by
     unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
-  have hWK : c.sl WK + 16 * c.n ≤ size := by
+  obtain hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WK + 1) (by decide)
     simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega_arith
-  have hKW := sl_lt c (show ks < WK by unfold WK; omega_arith) (.inl hkT)
-  have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
+  obtain hKW := sl_lt c (show ks < WK by unfold WK; omega_arith) (.inl hkT)
+  obtain h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hJ : (winQ c).J = c.winJ := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega_arith
-  have h4 := (hc.inv (by omega_arith)).1
-  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega_arith
-  have hBs : c.sl WB + 80 * c.n ≤ size := by
+  obtain e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega_arith
+  obtain h4 := (hc.inv (by omega_arith)).1
+  obtain hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega_arith
+  obtain hBs : c.sl WB + 80 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WB + 9) (by decide)
     simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega_arith
   rw [Cfg.winPrep]
@@ -79,23 +79,23 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
   refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
     (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega_arith)
     (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hB]
   refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [e₁] at b₂
-  have U₂ : Unch base (winX c) s.mem s₂.mem :=
+  obtain U₂ : Unch base (winX c) s.mem s₂.mem :=
     ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega_arith)).unch.trans
       ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega_arith)).unch)).mono
       (fun w hw => by rcases List.mem_append.mp hw with h | h <;> (rw [List.mem_singleton.mp h]; simp [winX, hK, hB]))
-  have F₂ := F.unch h7 hn fixedOk_winX U₂
-  have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
+  obtain F₂ := F.unch h7 hn fixedOk_winX U₂
+  obtain e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
     sv_unch U₂ h7 hn hi (apart_winX hi)
-  have hM₂ := modP_of hc F₂.mp
-  have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
+  obtain hM₂ := modP_of hc F₂.mp
+  obtain tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
-  have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ) := by
+  obtain hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ) := by
     refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
     · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
     · show toM _ _ (sv c base s₂ BP) = _; rw [e₂ (by decide), hbp]; exact toM_cmont hc _
@@ -112,16 +112,16 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega_arith)
-  have hJ2 : 2 ≤ c.winJ := by
+  obtain hJ2 : 2 ≤ c.winJ := by
     unfold Cfg.winJ
     have hnb := hc.n_bits
     by_contra hlt
     have : 2 ^ c.nbits ≤ 2 ^ 2 := Nat.pow_le_pow_right (by decide) (by omega)
     omega_arith
-  have hP0 : P ≠ .infinity := by
+  obtain hP0 : P ≠ .infinity := by
     intro e
-    have hz := (hrep.z_eq_zero_iff).mpr e
-    have h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+    obtain hz := (hrep.z_eq_zero_iff).mpr e
+    obtain h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
       show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = 1
       rw [F.onep]; exact toM_one hpR
     exact hC.one_ne_zero (h1 ▸ hz)
@@ -131,15 +131,15 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
     (by rw [hJ]; exact winE_two_bound hJ2 hk8 hbd)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winW_eq] at U₃
   rw [hJ, Nat.add_sub_cancel] at R₃
-  have c₁ : ∀ r ∈ [Reg.rax, .r8], r ∈ powClob c.n := by
+  obtain c₁ : ∀ r ∈ [Reg.rax, .r8], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [powClob, clob]
     · exact List.mem_cons_of_mem _ (r8_mem_clob _)
-  have c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
+  obtain c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
-  have pc : ∀ r ∈ powClob c.n, r ∈ invClob c.n := fun r h => List.mem_cons_of_mem _ h
+  obtain pc : ∀ r ∈ powClob c.n, r ∈ invClob c.n := fun r h => List.mem_cons_of_mem _ h
   exact ⟨hs₂.of_keepRegs K₃ (rdi_not_invClob _),
     (((k₁.mono c₁).trans (k₂.mono c₂)).mono pc).trans K₃,
     (U₂.trans U₃).mono fun w hw => by
@@ -167,26 +167,26 @@ theorem mulPowJ4F_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   unfold Impl.Ecdh.X86_64.Cfg.mulQJ4F
   · refine WP.seq (WP.seq (WP.mono (maskK_ok hc hs (hk ▸ hk8)) fun s₁ ⟨hs₁, k₁, e₁, U₁⟩ => ?_))
-    have F₁ := F.unch h7 hn (fixedOk_slW (l := [K]) (by decide)) U₁
-    have v₁ : ∀ {i}, i < 45 → i ≠ K → sv c base s₁ i = sv c base s i := fun hi hne =>
+    obtain F₁ := F.unch h7 hn (fixedOk_slW (l := [K]) (by decide)) U₁
+    obtain v₁ : ∀ {i}, i < 45 → i ≠ K → sv c base s₁ i = sv c base s i := fun hi hne =>
       sv_unch U₁ h7 hn hi (apart_slW (by simpa using hne))
-    have tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+    obtain tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
       fun hi hne => by show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _); rw [v₁ hi hne]
     refine WP.seq_iff.mp (winMulJF_ok hc hFC h9 hC hO hbd hs₁ F₁ (by rw [v₁ (by decide) (by decide)]; exact hbp) hP
       (by rw [v₁ (by decide) (by decide)]; exact hpx) (by rw [v₁ (by decide) (by decide)]; exact hpy)
       (by rw [tv₁ (by decide) (by decide), tv₁ (by decide) (by decide), tv₁ (by decide) (by decide)]; exact hrep)
       (ks := K) (by decide) (by rw [e₁]; exact Nat.mod_lt _ (Nat.pow_pos (by decide))) fun s₃ W => ?_)
-    have F₃ := F₁.unch h7 hn (fixedOk_winXJ.append (fixedOk_slW (by decide))) W.unch
-    have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
+    obtain F₃ := F₁.unch h7 hn (fixedOk_winXJ.append (fixedOk_slW (by decide))) W.unch
+    obtain rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
     refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃ F₃.onep (fun h9 t ht => by
         rw [tbl_unch W.unch h7 hn (j := 1) (by decide) ht (apart_append (tbl_apart_winXJ (by decide) ht)
           (tbl_apart_slW' (by decide) (by decide) ht)),
           tbl_unch U₁ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht)]
         exact ht₁ h9 t ht)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
-    have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
+    obtain r₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
       sv_unch U₄ h7 hn hi (apart_pwW hi h₁)
     refine ⟨W.scr.of_keepRegs K₄ (rdi_not_invClob _), ?_, by rw [K₄.rd, W.keep.rd, k₁.rd],
       by rw [K₄.wr, W.keep.wr, k₁.wr], ((U₁.trans W.unch).trans U₄).mono ?_,

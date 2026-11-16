@@ -65,21 +65,21 @@ theorem metadataState_ok (s : State) {p : Inputs}
         [BitVec.ofNat 64 (bits p),BitVec.ofNat 64 (Proof.Ffdh.ScalarWidth.width (bits p)),
           BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows (bits p))] ∧
       Frame (combMetadataWrites s p.output) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have prefixFit : 24≤bytes p := by
+  obtain prefixFit : 24≤bytes p := by
     unfold bytes Spec.Ffdh.generationPrecomputedWords
     omega_arith
-  have headerSub : (⟨State.addr p.output,24⟩ : Region).Sub ⟨State.addr p.output,bytes p⟩ :=
+  obtain headerSub : (⟨State.addr p.output,24⟩ : Region).Sub ⟨State.addr p.output,bytes p⟩ :=
     by simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr p.output) (d:=0) (n:=24) (k:=bytes p) prefixFit)
-  have headerSep := localSeparate.sub_right headerSub
-  have ws : OutputBuffer p.output 24 s := ⟨by have := output.fits; omega_arith,
+  obtain headerSep := localSeparate.sub_right headerSub
+  obtain ws : OutputBuffer p.output 24 s := ⟨by have := output.fits; omega_arith,
     by
       obtain ⟨r,hr,h⟩ := output.writable
       exact ⟨r,hr,by change (State.addr p.output-r.base).toNat+24≤r.len; change (State.addr p.output-r.base).toNat+bytes p≤r.len at h; omega_arith⟩⟩
   refine WP.mono (combMetadata_ok s context.locals ws headerSep positive bound
     (context.saved 4 (by decide)) width mask) ?_
   rintro t ⟨mem,frame,restSmall⟩
-  have rest : Rest roundClobbers s t := restSmall.mono (by simp [combMetadataClobbers,roundClobbers])
-  have workspaceSep : ∀ r∈combMetadataWrites s p.output,
+  obtain rest : Rest roundClobbers s t := restSmall.mono (by simp [combMetadataClobbers,roundClobbers])
+  obtain workspaceSep : ∀ r∈combMetadataWrites s p.output,
       (⟨State.addr p.base,8*p.len⟩ : Region).Disjoint r := by
     intro r hr
     simp only [combMetadataWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -87,7 +87,7 @@ theorem metadataState_ok (s : State) {p : Inputs}
     · exact context.locals.separate.symm.sub_right (Offset.sub_base _ (by decide))
     · exact context.locals.separate.symm.sub_right (Offset.sub_base _ (by decide))
     · exact workspaceSeparate.sub_right headerSub
-  have baseSep : ∀ r∈combMetadataWrites s p.output,
+  obtain baseSep : ∀ r∈combMetadataWrites s p.output,
       (⟨State.addr s.sp,4⟩ : Region).Disjoint r := by
     intro r hr
     simp only [combMetadataWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -96,9 +96,9 @@ theorem metadataState_ok (s : State) {p : Inputs}
     · exact Offset.base_disjoint _ (by decide) (by decide)
     · exact headerSep.sub_left (by simpa only [off,BitVec.add_zero] using
         (Offset.sub_base (State.addr s.sp) (d:=0) (n:=4) (k:=72) (by decide)))
-  have ptr : t.gpr .r0=p.base := (restSmall.gpr .r0 (by simp [combMetadataClobbers])).trans context.ptr
+  obtain ptr : t.gpr .r0=p.base := (restSmall.gpr .r0 (by simp [combMetadataClobbers])).trans context.ptr
   obtain ⟨readyT,workspace⟩ := ready.after_external frame workspaceSep baseSep rest ptr
-  have contextT := context.after_frame frame rest ptr (by
+  obtain contextT := context.after_frame frame rest ptr (by
     intro r hr
     simp only [combMetadataWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl
@@ -119,7 +119,7 @@ theorem metadataState_ok (s : State) {p : Inputs}
         (off (State.addr p.output) 8) (BitVec.ofNat 64 (Proof.Ffdh.ScalarWidth.width (bits p)))).writeW
         (off (State.addr p.output) 16) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows (bits p)))).readW
         (off (State.addr s.sp) d) 32 = initial.readW (off (State.addr s.sp) d) 32 := by
-    have sub := Offset.sub_base (State.addr s.sp) (d:=d) (n:=4) (k:=72) fit
+    obtain sub := Offset.sub_base (State.addr s.sp) (d:=d) (n:=4) (k:=72) fit
     have sep (e : Nat) (he : e+8≤24) : Mem.Sep (off (State.addr s.sp) d) 4 (off (State.addr p.output) e) 8 :=
       (headerSep.sub_left sub |>.sub_right (Offset.sub_base _ he)).sep (Region.contains_self _ _) (Region.contains_self _ _)
     rw [Mem.readW_writeW_sep (sep 16 (by decide)) (by decide),
@@ -154,16 +154,16 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
       numAt t.mem (State.addr p.base) p.w 0=p.P ∧
       numAt t.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P ∧
       Frame (combPrecomputeWrites p s) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have modulusValid := Proof.Ffdh.domainValid_mod valid
+  obtain modulusValid := Proof.Ffdh.domainValid_mod valid
   change Spec.Rsa.modulusValid p.P p.k=true at modulusValid
-  have facts := Proof.Bignum.valid_facts modulusValid p.minLength
-  have params : Spec.Ffdh.parametersValid (Spec.Ffdh.domainOf p.k p.dom)=true := by
+  obtain facts := Proof.Bignum.valid_facts modulusValid p.minLength
+  obtain params : Spec.Ffdh.parametersValid (Spec.Ffdh.domainOf p.k p.dom)=true := by
     have v := valid
     unfold Spec.Ffdh.domainValid at v
     simp only [Bool.and_eq_true] at v
     exact v.1
-  have positive : 0<bits p := CachedSample.generation_positive params
-  have bound : bits p≤8192 := CachedSample.bits_bound p
+  obtain positive : 0<bits p := CachedSample.generation_positive params
+  obtain bound : bits p≤8192 := CachedSample.bits_bound p
   have localNarrow {a : State} {d : Nat} (fit : d+4≤72) :
       (⟨off (State.addr a.sp) d,4⟩ : Region).Sub ⟨State.addr a.sp,72⟩ := Offset.sub_base _ fit
   have prepFrame {u : State} (f : Frame (keyPrepareWrites p s) s.mem u.mem) :
@@ -180,7 +180,7 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
   refine WP.mono_syms (normalizedPrepareAt24_ok backend s context calls (by decide)
     (by decide) (by decide) (by decide) facts.2.1 facts.1 facts.2.2) ?_
   rintro u ⟨ctxU,readyU,modU,r2U,frameU,restU⟩ symsU
-  have envU := VettedGroups.environment.stable environment
+  obtain envU := VettedGroups.environment.stable environment
     (frameU.sub (by
       intro r hr
       simp only [keyPrepareWrites,prepareAtWrites,prepareWrites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at hr
@@ -193,25 +193,25 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
   refine WP.mono (VettedBound.law.correct u ctxU envU facts.2.2 facts.1
     (by decide) (by intro d hd; revert d; decide) (by decide) (by decide) (by decide) (by decide)) ?_
   rintro v ⟨ctxV,widthV,maskV,frameV,restV⟩
-  have rV := restU.trans restV
-  have sepLocal : ∀r∈[⟨off (State.addr u.sp) 20,4⟩,⟨off (State.addr u.sp) 68,4⟩],
+  obtain rV := restU.trans restV
+  obtain sepLocal : ∀r∈[⟨off (State.addr u.sp) 20,4⟩,⟨off (State.addr u.sp) 68,4⟩],
       (⟨State.addr p.base,8*p.len⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl <;> exact ctxU.locals.separate.symm.sub_right (Offset.sub_base _ (by decide))
-  have sepZero : ∀r∈[⟨off (State.addr u.sp) 20,4⟩,⟨off (State.addr u.sp) 68,4⟩],
+  obtain sepZero : ∀r∈[⟨off (State.addr u.sp) 20,4⟩,⟨off (State.addr u.sp) 68,4⟩],
       (⟨State.addr u.sp,4⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl <;> exact Offset.base_disjoint _ (by decide) (by decide)
   have ptrV := ctxV.ptr
   obtain ⟨readyV,workspaceV⟩ := readyU.after_external frameV sepLocal sepZero restV ptrV
-  have fit := readyU.width ▸ readyU.layout.2.2.1
-  have modV := (workspaceV.number fit (by decide : 0<8)).trans modU
-  have r2V := (workspaceV.number fit (by decide : 4<8)).trans r2U
-  have widthEq : (ScalarLayout.vetted p).width=Proof.Ffdh.ScalarWidth.width (bits p) :=
+  obtain fit := readyU.width ▸ readyU.layout.2.2.1
+  obtain modV := (workspaceV.number fit (by decide : 0<8)).trans modU
+  obtain r2V := (workspaceV.number fit (by decide : 4<8)).trans r2U
+  obtain widthEq : (ScalarLayout.vetted p).width=Proof.Ffdh.ScalarWidth.width (bits p) :=
     by
-      have width := CachedSample.layout_width p positive
+      obtain width := CachedSample.layout_width p positive
       unfold Proof.Ffdh.ScalarWidth.width
       change (ScalarLayout.vetted p).width= max 1 ((bits p+7)/8)
       rw [Nat.max_eq_right (by omega_arith)]
@@ -223,9 +223,9 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
     workspaceSeparate domainSeparate (by rw [rV.sp]; exact localSeparate)
     (by rw [rV.sp]; exact callSeparate) positive bound widthV maskV) ?_
   rintro t ⟨memory,workspaceT,header,frameT,restT⟩
-  have memoryT : Memory p s.sp t := by simpa only [rV.sp] using memory
-  have fitV := readyV.width ▸ readyV.layout.2.2.1
-  have widthNat : Proof.Ffdh.ScalarWidth.width (bits p)=(bits p+7)/8 := by
+  obtain memoryT : Memory p s.sp t := by simpa only [rV.sp] using memory
+  obtain fitV := readyV.width ▸ readyV.layout.2.2.1
+  obtain widthNat : Proof.Ffdh.ScalarWidth.width (bits p)=(bits p+7)/8 := by
     unfold Proof.Ffdh.ScalarWidth.width
     exact Nat.max_eq_right (by omega_arith)
   rw [widthNat] at header
@@ -259,17 +259,17 @@ theorem enteredPrefix_ok (backend : MontBackend) (s : State) {p : Inputs}
   refine WP.mono_syms (withAllRest (combEntry_ok (entered s) h.args h.incomingCount h.incomingBase
     h.outputReg h.domainReg h.domainLengthReg)) ?_
   rintro u ⟨⟨ctxU,frameU⟩,restU⟩ symsU
-  have context : Context p slots u :=
+  obtain context : Context p slots u :=
     ⟨⟨ctxU.workspace,ctxU.locals,ctxU.domain,ctxU.domainStack,fun d hd =>
       ctxU.saved d (by simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at hd ⊢; omega_arith)⟩,ctxU.ptr⟩
-  have environment := VettedGroups.environment.stable h.environment
+  obtain environment := VettedGroups.environment.stable h.environment
     (frameU.mono (by simp [keyCallWrites,keyWrites])) restU symsU
   refine WP.mono (prefix_ok backend u context environment (h.calls.after restU) (h.output.after restU)
     h.workspaceSeparate h.domainSeparate (by rw [restU.sp]; exact h.localSeparate)
     (by rw [restU.sp]; exact h.callSeparate) h.valid) ?_
   rintro t ⟨memory,header,modulus,r2,frameT,_restT⟩
   refine ⟨by simpa only [restU.sp] using memory,header,modulus,r2,?_⟩
-  have fullU : Frame (combPrecomputeWrites p (entered s)) (entered s).mem u.mem :=
+  obtain fullU : Frame (combPrecomputeWrites p (entered s)) (entered s).mem u.mem :=
     frameU.mono (by simp [combPrecomputeWrites])
   exact fullU.trans (by simpa only [combPrecomputeWrites,restU.sp] using frameT)
 

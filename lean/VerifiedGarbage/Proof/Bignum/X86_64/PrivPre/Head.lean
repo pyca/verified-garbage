@@ -84,9 +84,9 @@ theorem ppCtx_of {s : State} (h : ppContract.pre s) : PPCtx s := by
   have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
-  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
+  obtain hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
-  have hargs : (⟨stackArgAddr s 0, 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  obtain hargs : (⟨stackArgAddr s 0, 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   refine ⟨hk1, hk2, hpl1, hpl2, hql1, hql2, hL, by omega_arith, hs,
     fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
@@ -157,7 +157,7 @@ theorem entry_ok {s : State} (c : PPCtx s) :
   have hn := c.hs.nowrap
   have hZ := c.hZ
   have hk1 := c.hk1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
+  obtain hw : ∀ i < 32, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   have e0 : s.gpr .rsp + BitVec.ofInt 64 8 = stackArgAddr s 0 := rfl
   have e1 : s.gpr .rsp + BitVec.ofInt 64 16 = stackArgAddr s 1 := rfl
   have e2 : s.gpr .rsp + BitVec.ofInt 64 24 = stackArgAddr s 2 := rfl
@@ -201,7 +201,7 @@ theorem zeroPre_ok {t : State} {B : Addr} {Z L : Nat} {op : Addr} (hs : Scr t B 
       (∀ j < L * 8, u.mem (op + BitVec.ofNat 64 j) = 0) ∧
       (∀ x, (∀ j < L * 8, x ≠ op + BitVec.ofNat 64 j) → u.mem x = t.mem x) ∧ Keep [.rcx, .rsi, .rax] t u := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
+  obtain hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold PrivPre.zeroPre
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = op ∧
       t'.gpr .rcx = BitVec.ofNat 64 (L * 8) ∧ t'.gpr .rax = 0 ∧ t'.mem = t.mem) (by
@@ -212,9 +212,9 @@ theorem zeroPre_ok {t : State} {B : Addr} {Z L : Nat} {op : Addr} (hs : Scr t B 
       fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun u hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], (k₁.trans hI.keep).mono (by decide)⟩
   intro j _ hj u hI
-  have hst : InRegions u.wr (op + BitVec.ofNat 64 j) 1 := by
+  obtain hst : InRegions u.wr (op + BitVec.ofNat 64 j) 1 := by
     rw [hI.keep.2.2, k₁.2.2]; exact hout j hj
-  have hax' : (u.gpr .rax).setWidth 8 = 0 := by rw [hI.keep.gpr (by decide), hax]; rfl
+  obtain hax' : (u.gpr .rax).setWidth 8 = 0 := by rw [hI.keep.gpr (by decide), hax]; rfl
   refine WP.mono (WP.keep [.rsi, .rcx] (Q := fun t' =>
       t'.mem = u.mem.writeW (op + BitVec.ofNat 64 j) (0 : BitVec 8) ∧
       t'.gpr .rsi = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .rcx = BitVec.ofNat 64 (L * 8 - (j + 1)) ∧
@@ -273,25 +273,25 @@ theorem head_ok {s : State} (c : PPCtx s) :
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords,
     Spec.Rsa.modulusWords] at hL
   refine WP.mono (entry_ok c) fun t₀ ⟨hdi, hsv, hO, hN, hK, hI, hP, hPl, hQ, hQl, hDp, hDq, hQi, ho₀, k₀⟩ => ?_
-  have hs₀ := c.hs.congr k₀.2.2
+  obtain hs₀ := c.hs.congr k₀.2.2
   refine WP.mono (zeroPre_ok hs₀ hdi (by omega_using [hZ]) (L := (s.gpr .rsi).toNat) (by omega_using [hL]) (by omega_using [hk2, hL, hpl2, hql2])
     (by rw [k₀.gpr (by decide), ofNat_toNat_self]) hO (fun j hj => by rw [k₀.2.2]; exact c.hout j hj))
     fun t₁ ⟨hz₁, hf₁, k₁⟩ => ?_
-  have hs₁ := hs₀.congr k₁.2.2
+  obtain hs₁ := hs₀.congr k₁.2.2
   -- The header is not in `pre`.
-  have hh : ∀ i < 32, word t₁.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi =>
+  obtain hh : ∀ i < 32, word t₁.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi =>
     Mem.readW_congr fun b hb => hf₁ _ (fun j hj => scr_ne_out c.houts (d := 8 * i) (i := b) (by omega_using [hZ, hi, hb])
       (by omega_using [hn]) j hj)
-  have hdi₁ : t₁.gpr .rdi = stackArg s 2 := (k₁.gpr (by decide)).trans hdi
+  obtain hdi₁ : t₁.gpr .rdi = stackArg s 2 := (k₁.gpr (by decide)).trans hdi
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdx ∧
       t.gpr .rcx = s.gpr .rcx ∧ t.mem = t₁.mem) (by
     xrun [State.ea, hdr, hdi₁, hdrOff, hs₁.ld (d := 8 * sN) (by unfold sN sFn; omega_using [hZ]),
       hs₁.ld (d := 8 * sK) (by unfold sK sFn; omega_using [hZ]), hh sN (by decide), hh sK (by decide), hN, hK]) rfl)
     fun t ⟨⟨hdx, hcx, hm⟩, k₂⟩ => ?_
-  have hw : ∀ i < 32, word t.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi => by
+  obtain hw : ∀ i < 32, word t.mem (stackArg s 2) (8 * i) = word t₀.mem (stackArg s 2) (8 * i) := fun i hi => by
     rw [hm]; exact hh i hi
-  have kk := (k₀.trans k₁).trans k₂
-  have hfr : ∀ x, (∀ j < (s.gpr .rsi).toNat * 8, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
+  obtain kk := (k₀.trans k₁).trans k₂
+  obtain hfr : ∀ x, (∀ j < (s.gpr .rsi).toNat * 8, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       (stackArg s 3).toNat * 8 ≤ ofs (stackArg s 2) x → t.mem x = s.mem x := fun x hx hxz => by
     rw [hm, hf₁ x hx, ho₀ x (by omega_using [hZ, hxz])]
   exact ⟨hs₁.congr k₂.2.2, (k₂.gpr (by decide)).trans hdi₁, hdx, by rw [hcx, ofNat_toNat_self],
@@ -338,7 +338,7 @@ theorem ppPre_of {s t₁ t : State} (c : PPCtx s) (h : PPHead s t₁) (hm : t.me
       (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
       (List.replicate (s.gpr .r9).toNat 0) := by
-  have kk := h.keep.trans k
+  obtain kk := h.keep.trans k
   have hZ := c.hZ
   have hk1 := c.hk1
   have hk2 := c.hk2
@@ -347,18 +347,18 @@ theorem ppPre_of {s t₁ t : State} (c : PPCtx s) (h : PPHead s t₁) (hm : t.me
   have hL := c.hL
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords,
     Spec.Rsa.modulusWords] at hL
-  have hdi : t.gpr .rdi = stackArg s 2 := (k.gpr (by decide)).trans h.rdi
-  have hf : ∀ x, (∀ j < (s.gpr .rsi).toNat * 8, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
+  obtain hdi : t.gpr .rdi = stackArg s 2 := (k.gpr (by decide)).trans h.rdi
+  obtain hf : ∀ x, (∀ j < (s.gpr .rsi).toNat * 8, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       (stackArg s 3).toNat * 8 ≤ ofs (stackArg s 2) x → t.mem x = s.mem x := fun x hx hxz => by
     rw [hm]; exact h.frame x hx hxz
-  have hz : ∀ j < (s.gpr .rsi).toNat * 8, t.mem (s.gpr .rdi + BitVec.ofNat 64 j) = 0 := fun j hj => by
+  obtain hz : ∀ j < (s.gpr .rsi).toNat * 8, t.mem (s.gpr .rdi + BitVec.ofNat 64 j) = 0 := fun j hj => by
     rw [hm]; exact h.zero j hj
-  have hz8 : offQ (((s.gpr .rcx).toNat + 7) / 8) (s.gpr .r9).toNat + slot (wsWords (stackArg s 1).toNat) 8 +
+  obtain hz8 : offQ (((s.gpr .rcx).toNat + 7) / 8) (s.gpr .r9).toNat + slot (wsWords (stackArg s 1).toNat) 8 +
       wsTab (wsWords (stackArg s 1).toNat) ≤ (stackArg s 3).toNat * 8 :=
     crt_room hk1 hpl2 hql2 hZ
-  have hnb := Src.of_head (t := t) c.hnb (by rw [bytesAt_length]; exact c.hon) hf kk.2.1 kk.2.2
-  have hpb := Src.of_head (t := t) c.hpb (by rw [bytesAt_length]; exact c.hop) hf kk.2.1 kk.2.2
-  have hqb := Src.of_head (t := t) c.hqb (by rw [bytesAt_length]; exact c.hoq) hf kk.2.1 kk.2.2
+  obtain hnb := Src.of_head (t := t) c.hnb (by rw [bytesAt_length]; exact c.hon) hf kk.2.1 kk.2.2
+  obtain hpb := Src.of_head (t := t) c.hpb (by rw [bytesAt_length]; exact c.hop) hf kk.2.1 kk.2.2
+  obtain hqb := Src.of_head (t := t) c.hqb (by rw [bytesAt_length]; exact c.hoq) hf kk.2.1 kk.2.2
   exact
     { scr := h.scr.congr k.2.2, rdi := hdi, z := hz8, zk := (by omega_using [hZ]), k1 := hk1, k2 := hk2,
       hO := (by rw [hm]; exact h.hO), hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK),

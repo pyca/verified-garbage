@@ -71,12 +71,12 @@ theorem pad80_ok {P : Params} (hlg : 2 ^ lg P = P.B) (hlg7 : lg P ≤ 7) {t : St
   have hR : oRsa = 8192 := rfl
   have hY : oY = 2560 := rfl
   let V := view t.mem (Sp s)
-  have hB1 : 1 ≤ P.B := hlg ▸ Nat.one_le_two_pow
-  have hn : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB1) hnb
+  obtain hB1 : 1 ≤ P.B := hlg ▸ Nat.one_le_two_pow
+  obtain hn : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB1) hnb
   refine WP.seq (wp_addi (h := by decide) fun t₁ o₁ e₁ => wp_lsl (h := by omega_using [hlg7]) fun t₂ o₂ e₂ =>
     wp_li (by decide) fun t₃ o₃ e₃ => wp_nil ?_)
-  have k₃ : Only [.r4, .r5, .r6] t t₃ := (o₁.trans (o₂.trans o₃)).mono
-  have e5 : t₃.gpr .r5 = BitVec.ofNat 64 (nbm * P.B) := by
+  obtain k₃ : Only [.r4, .r5, .r6] t t₃ := (o₁.trans (o₂.trans o₃)).mono
+  obtain e5 : t₃.gpr .r5 = BitVec.ofNat 64 (nbm * P.B) := by
     rw [o₃.get .r5, e₂, o₁.get .r28, h28, ← hlg, BitVec.shiftLeft_eq_mul_twoPow]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_twoPow]
@@ -91,27 +91,27 @@ theorem pad80_ok {P : Params} (hlg : 2 ^ lg P = P.B) (hlg7 : lg P ≤ 7) {t : St
   intro i hi u ⟨bu, ku, u4, u6, vu⟩ _
   refine wp_xor fun u₁ p₁ f₁ => wp_subi fun u₂ p₂ f₂ => wp_lsr fun u₃ p₃ f₃ => wp_li (by decide)
     fun u₄ p₄ f₄ => wp_sub fun u₅ p₅ f₅ => wp_li (by decide) fun u₆ p₆ f₆ => wp_and fun u₇ p₇ f₇ => ?_
-  have k₇ : Only [.r7, .r12, .r8] u u₇ := (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans p₇)))))).mono
-  have g7 : u₇.gpr .r7 = (if i = ℓ then BitVec.allOnes 64 else 0#64) &&& BitVec.ofNat 64 0x80 := by
+  obtain k₇ : Only [.r7, .r12, .r8] u u₇ := (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans p₇)))))).mono
+  obtain g7 : u₇.gpr .r7 = (if i = ℓ then BitVec.allOnes 64 else 0#64) &&& BitVec.ofNat 64 0x80 := by
     rw [f₇, p₆.get .r7, f₅, f₄, p₄.get .r7, f₃, f₂, f₁, u6, ku.get .r29, k₃.get .r29, h29, f₆,
       eq_mask (by omega_using [hnb, hi]) hℓ]
   refine wp_lbz (a := off (Sp s) (oY + i)) (by rw [k₇.get .r4, u4, BitVec.add_zero])
     (by rw [k₇.rd, k₇.wr, bu.wr]; exact sc_inR F (by omega_using [hnb, hR, hY, hi]) _) fun u₈ p₈ f₈ => ?_
   refine wp_or fun u₉ p₉ f₉ => ?_
-  have k₉ : Only [.r7, .r12, .r8] u u₉ := (k₇.trans (p₈.trans p₉)).mono
+  obtain k₉ : Only [.r7, .r12, .r8] u u₉ := (k₇.trans (p₈.trans p₉)).mono
   refine wp_stb (a := off (Sp s) (oY + i)) (by rw [k₉.get .r4, u4, BitVec.add_zero])
     (by rw [k₉.wr, bu.wr]; exact sc_inW F (by omega_using [hnb, hR, hY, hi])) fun u₁₀ m₁₀ => ?_
   refine wp_addi fun u₁₁ p₁₁ f₁₁ => wp_addi fun u₁₂ p₁₂ f₁₂ => wp_subi fun u₁₃ p₁₃ f₁₃ => wp_nil ?_
-  have vi : u.mem (off (Sp s) (oY + i)) = V (oY + i) := by
+  obtain vi : u.mem (off (Sp s) (oY + i)) = V (oY + i) := by
     have := vu (oY + i) (by omega_using [hnb, hR, hY, hi]); simp only [v80] at this; rw [ifn (by omega_using [])] at this; exact this
-  have hb : (u₉.gpr .r8).setWidth 8 = V (oY + i) ||| (if i = ℓ then 0x80 else 0) := by
+  obtain hb : (u₉.gpr .r8).setWidth 8 = V (oY + i) ||| (if i = ℓ then 0x80 else 0) := by
     rw [f₉, f₈, p₈.get .r7, g7, k₇.mem, vi]
     have := or80 (V (oY + i)) (decide (i = ℓ))
     simp only [decide_eq_true_eq] at this
     exact this
-  have q : Keep [.r7, .r12, .r8, .r4, .r6, .r5] u u₁₃ :=
+  obtain q : Keep [.r7, .r12, .r8, .r4, .r6, .r5] u u₁₃ :=
     (k₉.keep.trans (m₁₀.keep.trans (p₁₁.keep.trans (p₁₂.keep.trans p₁₃.keep)))).mono
-  have hm : u₁₃.mem = u.mem.writeW (off (Sp s) (oY + i)) (V (oY + i) ||| (if i = ℓ then 0x80 else 0)) := by
+  obtain hm : u₁₃.mem = u.mem.writeW (off (Sp s) (oY + i)) (V (oY + i) ||| (if i = ℓ then 0x80 else 0)) := by
     rw [p₁₃.mem, p₁₂.mem, p₁₁.mem, m₁₀.mem, hb, k₉.mem]
   refine ⟨⟨bu.keep F q (R := [⟨off (Sp s) (oY + i), 1⟩]) (by
       rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
@@ -197,17 +197,17 @@ theorem lenField_ok {P : Params} {md : Proof.MdStream.Md P.B P.N P.L} {D' : Nat}
   unfold lenField
   rw [WP.block_append_iff, WP.block_append_iff]
   refine wp_addi (h := by omega_using [hO]) fun t₁ o₁ e₁ => wp_nil ?_
-  have a26 : t₁.gpr .r26 + BitVec.ofNat 64 (P.N + P.B - P.L) = off (Sp s) oLen := by
+  obtain a26 : t₁.gpr .r26 + BitVec.ofNat 64 (P.N + P.B - P.L) = off (Sp s) oLen := by
     rw [e₁, h.r14, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using [hX]
   refine (wp_lr (hs.len t₁ (by rw [a26, o₁.wr, h.wr]; exact sc_inW F (by omega_using [hL16, hO, hR]))) rfl hlr).mono
     fun t₂ ⟨⟨g₂, rd₂, wr₂, sp₂, m₂⟩, lr₂⟩ => ?_
-  have k₂ : Keep [.r26, .r8, .r11] t t₂ := ⟨fun r hr => by
+  obtain k₂ : Keep [.r26, .r8, .r11] t t₂ := ⟨fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [g₂ r hr.2.1 hr.2.2, o₁.gpr r (by simp [hr.1])], rd₂.trans o₁.rd, wr₂.trans o₁.wr, sp₂.trans o₁.sp,
     lr₂.trans o₁.lr⟩
   refine wp_addi (h := by omega_using [hL16]) fun t₃ o₃ e₃ => wp_lsr (h := by omega_using [hlg7]) fun t₄ o₄ e₄ => wp_nil ?_
-  have k₄ : Keep [.r26, .r8, .r11, .r27] t t₄ := (k₂.trans (o₃.keep.trans o₄.keep)).mono
-  have hm : t₄.mem = WriteBytes.writeBytes t.mem (off (Sp s) oLen) (md.lenOf (BitVec.ofNat 64 ℓ)) := by
+  obtain k₄ : Keep [.r26, .r8, .r11, .r27] t t₄ := (k₂.trans (o₃.keep.trans o₄.keep)).mono
+  obtain hm : t₄.mem = WriteBytes.writeBytes t.mem (off (Sp s) oLen) (md.lenOf (BitVec.ofNat 64 ℓ)) := by
     rw [o₄.mem, o₃.mem, m₂, a26, o₁.get .r29, h29, o₁.mem]
   refine ⟨h.wb F k₄ (by rw [md.lenOf_length]; omega_using [hL16, hO, hR]) hm, k₄, ?_, hm⟩
   rw [e₄, e₃, k₂.get .r29, h29, BitVec.ofNat_add_ofNat, Proof.MdStream.PPC64LE.ofNat_shr (by omega_arith)]
@@ -225,11 +225,11 @@ theorem lenLoop_ok {P : Params} (hB : P.B = 64 ∨ P.B = 128) (hLB : P.L < P.B) 
   have hO : oLen = 4608 := rfl
   have hR : oRsa = 8192 := rfl
   have hY : oY = 2560 := rfl
-  have hn : nbm ≤ 32 := by rcases hB with e | e <;> rw [e] at hnb <;> omega_using [hnb]
+  obtain hn : nbm ≤ 32 := by rcases hB with e | e <;> rw [e] at hnb <;> omega_using [hnb]
   let V := view t.mem (Sp s)
   refine WP.seq (wp_addi (h := by rcases hB with e | e <;> rw [e] <;> omega_using [hY]) fun t₁ o₁ e₁ =>
     wp_li (by decide) fun t₂ o₂ e₂ => wp_mov fun t₃ o₃ e₃ => wp_nil ?_)
-  have k₃ : Only [.r4, .r6, .r9] t t₃ := (o₁.trans (o₂.trans o₃)).mono
+  obtain k₃ : Only [.r4, .r6, .r9] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   refine WP.mono (wp_countdown (cnt := .r9) (N := nbm) (by omega_using [hn]) hn0
     (fun i u => Base Sp (vP D) s u ∧ Keep [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] t₃ u ∧
       u.gpr .r4 = off (Sp s) (oY + P.B * i + (P.B - P.L)) ∧ u.gpr .r6 = BitVec.ofNat 64 i ∧
@@ -238,22 +238,22 @@ theorem lenLoop_ok {P : Params} (hB : P.B = 64 ∨ P.B = 128) (hLB : P.L < P.B) 
       by rw [o₃.get .r6, e₂], fun o _ => by rw [k₃.mem]; rfl⟩ (by rw [e₃, o₂.get .r28, o₁.get .r28, h28]))
     fun u ⟨bu, ku, _, _, vu⟩ => ⟨bu, (k₃.keep.trans ku).mono, vu⟩
   intro i hi u ⟨bu, ku, u4, u6, vu⟩ _
-  have hBi : P.B * (i + 1) ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left _ hi) (by rw [Nat.mul_comm]; exact hnb)
-  have hBi' : P.B * i + P.B ≤ 2048 := by rw [← Nat.mul_succ]; exact hBi
+  obtain hBi : P.B * (i + 1) ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left _ hi) (by rw [Nat.mul_comm]; exact hnb)
+  obtain hBi' : P.B * i + P.B ≤ 2048 := by rw [← Nat.mul_succ]; exact hBi
   -- The mask of `i = fb`, `oLen` and `L`.
   refine WP.seq (wp_xor fun u₁ p₁ f₁ => wp_subi fun u₂ p₂ f₂ => wp_lsr fun u₃ p₃ f₃ => wp_li (by decide)
     fun u₄ p₄ f₄ => wp_sub fun u₅ p₅ f₅ => wp_addi (h := by decide) fun u₆ p₆ f₆ =>
     wp_li (by rcases hB with e | e <;> omega_using [hLB, hBi']) fun u₇ p₇ f₇ => wp_nil ?_)
-  have k₇ : Only [.r7, .r12, .r5, .r10] u u₇ :=
+  obtain k₇ : Only [.r7, .r12, .r5, .r10] u u₇ :=
     (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans (p₆.trans p₇)))))).mono
-  have g7 : u₇.gpr .r7 = if i = fb then BitVec.allOnes 64 else 0#64 := by
+  obtain g7 : u₇.gpr .r7 = if i = fb then BitVec.allOnes 64 else 0#64 := by
     rw [p₇.get .r7, p₆.get .r7, f₅, f₄, p₄.get .r7, f₃, f₂, f₁, u6, ku.get .r27, k₃.get .r27, h27,
       eq_mask (by omega_using [hn, hi]) hfb]
-  have bu₇ := bu.only F k₇
+  obtain bu₇ := bu.only F k₇
   -- The field's bytes.
-  have hBn : P.B * i ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left P.B (Nat.le_of_lt hi)) (by rw [Nat.mul_comm]; exact hnb)
+  obtain hBn : P.B * i ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left P.B (Nat.le_of_lt hi)) (by rw [Nat.mul_comm]; exact hnb)
   let W := vLen V len P.B P.L fb i
-  have g5 : u₇.gpr .r5 = off (Sp s) (oLen + 0) := by
+  obtain g5 : u₇.gpr .r5 = off (Sp s) (oLen + 0) := by
     rw [p₇.get .r5, f₆, p₅.get .r14, p₄.get .r14, p₃.get .r14, p₂.get .r14, p₁.get .r14, bu.r14]; rfl
   let a := oY + P.B * i + (P.B - P.L)
   refine WP.seq (WP.mono (wp_countdown (cnt := .r10) (N := P.L) (by omega_using [hB, hLB]) hL0
@@ -270,26 +270,26 @@ theorem lenLoop_ok {P : Params} (hB : P.B = 64 ∨ P.B = 128) (hLB : P.L < P.B) 
     refine wp_lbz (a := off (Sp s) (a + j)) (by rw [q₂.get .r4, q₁.get .r4, w4, BitVec.add_zero])
       (by rw [q₂.rd, q₂.wr, q₁.rd, q₁.wr, bw.wr]; exact sc_inR F (by omega) _) fun w₃ q₃ g₃ => ?_
     refine wp_or fun w₄ q₄ g₄ => ?_
-    have k₄ : Only [.r8, .r11] w w₄ := (q₁.trans (q₂.trans (q₃.trans q₄))).mono
+    obtain k₄ : Only [.r8, .r11] w w₄ := (q₁.trans (q₂.trans (q₃.trans q₄))).mono
     refine wp_stb (a := off (Sp s) (a + j)) (by rw [k₄.get .r4, w4, BitVec.add_zero])
       (by rw [k₄.wr, bw.wr]; exact sc_inW F (by omega)) fun w₅ m₅ => ?_
     refine wp_addi fun w₆ q₆ g₆ => wp_addi fun w₇ q₇ g₇ => wp_subi fun w₈ q₈ g₈ => wp_nil ?_
-    have vl : w.mem (off (Sp s) (oLen + j)) = len.getD j 0 := by
-      have e1 := vw (oLen + j) (by omega_using [hB, hLB, hL0, hn0, hnb, hO, hR, hn, hi, hBi, hBi', hBn, hj])
+    obtain vl : w.mem (off (Sp s) (oLen + j)) = len.getD j 0 := by
+      obtain e1 := vw (oLen + j) (by omega_using [hB, hLB, hL0, hn0, hnb, hO, hR, hn, hi, hBi, hBi', hBn, hj])
       rw [ifn (by omega)] at e1
-      have e2 : W (oLen + j) = V (oLen + j) := vLen_out _ _ _ _ _ _ _ (by omega_using [hO, hY, hBi'])
-      have e3 := vu (oLen + j) (by omega_using [hB, hLB, hL0, hn0, hnb, hO, hR, hn, hi, hBi, hBi', hBn, hj])
+      obtain e2 : W (oLen + j) = V (oLen + j) := vLen_out _ _ _ _ _ _ _ (by omega_using [hO, hY, hBi'])
+      obtain e3 := vu (oLen + j) (by omega_using [hB, hLB, hL0, hn0, hnb, hO, hR, hn, hi, hBi, hBi', hBn, hj])
       exact e1.trans (e2.trans (hlen j hj))
-    have vy : w.mem (off (Sp s) (a + j)) = W (a + j) := by
+    obtain vy : w.mem (off (Sp s) (a + j)) = W (a + j) := by
       have := vw (a + j) (by omega); rw [ifn (by omega_using [])] at this; exact this
-    have hb : (w₄.gpr .r11).setWidth 8 = W (a + j) ||| (if i = fb then len.getD j 0 else 0) := by
+    obtain hb : (w₄.gpr .r11).setWidth 8 = W (a + j) ||| (if i = fb then len.getD j 0 else 0) := by
       rw [g₄, g₃, q₃.get .r8, g₂, g₁, q₁.get .r7, kw.get .r7, g7, q₂.mem, q₁.mem, vl, vy]
       have := orMask (W (a + j)) (len.getD j 0) (decide (i = fb))
       simp only [decide_eq_true_eq] at this
       exact this
-    have q : Keep [.r8, .r11, .r4, .r5, .r10] w w₈ :=
+    obtain q : Keep [.r8, .r11, .r4, .r5, .r10] w w₈ :=
       (k₄.keep.trans (m₅.keep.trans (q₆.keep.trans (q₇.keep.trans q₈.keep)))).mono
-    have hm : w₈.mem = w.mem.writeW (off (Sp s) (a + j)) (W (a + j) ||| (if i = fb then len.getD j 0 else 0)) := by
+    obtain hm : w₈.mem = w.mem.writeW (off (Sp s) (a + j)) (W (a + j) ||| (if i = fb then len.getD j 0 else 0)) := by
       rw [q₈.mem, q₇.mem, q₆.mem, m₅.mem, hb, k₄.mem]
     refine ⟨⟨bw.keep F q (R := [⟨off (Sp s) (a + j), 1⟩]) (by
         rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
@@ -309,7 +309,7 @@ theorem lenLoop_ok {P : Params} (hB : P.B = 64 ∨ P.B = 128) (hLB : P.L < P.B) 
   -- The next block.
   refine wp_addi (h := by rcases hB with e | e <;> omega_using [hBi']) fun w₁ q₁ g₁ => wp_addi fun w₂ q₂ g₂ =>
     wp_subi fun w₃ q₃ g₃ => wp_nil ?_
-  have k₃' : Only [.r4, .r6, .r9] w w₃ := (q₁.trans (q₂.trans q₃)).mono
+  obtain k₃' : Only [.r4, .r6, .r9] w w₃ := (q₁.trans (q₂.trans q₃)).mono
   refine ⟨⟨bw.only F k₃', (ku.trans ((k₇.keep.trans kw).trans k₃'.keep)).mono, ?_, ?_, fun o ho => ?_⟩, ?_⟩
   · rw [q₃.get .r4, q₂.get .r4, g₁, w4]
     show Sp s + _ + _ = Sp s + _

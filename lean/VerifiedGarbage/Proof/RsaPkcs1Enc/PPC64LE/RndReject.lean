@@ -56,11 +56,11 @@ theorem zero_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u :
   have hk2 := hp.k2
   have wO := hp.wO
   have hok := hp.hok
-  have hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by have := hp.ps; have := hI.hc; omega_arith)
+  obtain hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by have := hp.ps; have := hI.hc; omega_arith)
   unfold zeroArgs
   refine WP.seq (wp_mov fun z₀ o₀ e₀ => wp_mov fun z₁ o₁ e₁ => wp_mov fun z₂ o₂ e₂ =>
     wp_li (by decide) fun z o₃ e₃ => wp_nil ?_)
-  have k : Keep [.r10, .r4, .r11, .r0] u z := (o₀.keep.trans (o₁.keep.trans (o₂.keep.trans o₃.keep))).mono
+  obtain k : Keep [.r10, .r4, .r11, .r0] u z := (o₀.keep.trans (o₁.keep.trans (o₂.keep.trans o₃.keep))).mono
   refine WP.mono (fill_ok (n := kOf s) (p := s.gpr .r3) (b := 0) (by unfold kOf; omega_using [hk]) (by unfold kOf; omega_using [])
     (by rw [o₃.get .r4, o₂.get .r4, e₁, o₀.get .r31, hI.r31])
     (by rw [o₃.get .r11, e₂, o₁.get .r29, o₀.get .r29, hI.r29, r7_bv])
@@ -68,8 +68,8 @@ theorem zero_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u :
   · rw [k.wr, hI.wr, hp.hwr]
     exact ⟨outR s, by simp, Offset.contains_base _ (by unfold kOf at hj; omega_using [hok, hj]) (by unfold kOf at hj; omega_using [hj])⟩
   · have K : Keep rjRegs u x := (k.trans kx).mono
-    have zm : z.mem = u.mem := by rw [o₃.mem, o₂.mem, o₁.mem, o₀.mem]
-    have hf : Frame [outR s] u.mem x.mem := by
+    obtain zm : z.mem = u.mem := by rw [o₃.mem, o₂.mem, o₁.mem, o₀.mem]
+    obtain hf : Frame [outR s] u.mem x.mem := by
       rw [mx, zm]
       exact writeBytes_frame _ _ _ (by
         rw [List.length_replicate]; exact Region.contains_self' (by unfold kOf; omega_using [hok]))
@@ -88,22 +88,22 @@ theorem wipe_ok {s : State} {u v : State} {c : Nat} (hc : c ≤ 1021) (R : Rj s 
       Rj s u c x ∧ Frame [⟨pb s, c⟩] v.mem x.mem ∧ x.gpr .r10 = v.gpr .r10 := by
   unfold wipeArgs
   refine WP.seq (wp_addSp fun z₁ o₁ e₁ => wp_addi fun z₂ o₂ e₂ => wp_mov fun z o₃ e₃ => wp_nil ?_)
-  have k : Keep [.r12, .r4, .r11] v z := (o₁.keep.trans (o₂.keep.trans o₃.keep)).mono
-  have zm : z.mem = v.mem := by rw [o₃.mem, o₂.mem, o₁.mem]
-  have z11 : z.gpr .r11 = BitVec.ofNat 64 c := by rw [e₃, o₂.get .r5, o₁.get .r5, h5]
-  have Rz : Rj s u c z := ⟨R.toFy.keep k, (R.keep.trans k).mono, zm ▸ R.fr, zm ▸ R.sv, zm ▸ R.ls⟩
-  have ev : isa.eval (.nonzero .d .r11) z = some (decide (c ≠ 0)) := by
+  obtain k : Keep [.r12, .r4, .r11] v z := (o₁.keep.trans (o₂.keep.trans o₃.keep)).mono
+  obtain zm : z.mem = v.mem := by rw [o₃.mem, o₂.mem, o₁.mem]
+  obtain z11 : z.gpr .r11 = BitVec.ofNat 64 c := by rw [e₃, o₂.get .r5, o₁.get .r5, h5]
+  obtain Rz : Rj s u c z := ⟨R.toFy.keep k, (R.keep.trans k).mono, zm ▸ R.fr, zm ▸ R.sv, zm ▸ R.ls⟩
+  obtain ev : isa.eval (.nonzero .d .r11) z = some (decide (c ≠ 0)) := by
     rw [eval_nonzero, z11, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]
   by_cases h : c = 0
   · refine WP.ite false (by rw [ev, decide_eq_false (by omega_using [h])]) (fun h => absurd h (by decide))
       fun _ => wp_nil ⟨Rz, by rw [zm]; exact Frame.refl _ _, k.get .r10⟩
   · refine WP.ite true (by rw [ev, decide_eq_true h]) (fun _ => ?_) (fun h => absurd h (by decide))
-    have zw : z.wr = fr s :: s.wr := k.wr.trans R.wr
+    obtain zw : z.wr = fr s :: s.wr := k.wr.trans R.wr
     refine WP.mono (fill_ok (n := c) (p := pb s) (b := 0) (by omega_using [h]) (by omega_using [hc])
       (by rw [o₃.get .r4, e₂, e₁, BitVec.add_zero, R.sp]) z11 (by rw [k.get .r0, h0]; rfl)
       (in_ps s z zw (by omega_using [hc]))) fun x ⟨kx, mx⟩ => ?_
-    have hf : Frame [⟨pb s, c⟩] z.mem x.mem := by rw [mx]; exact wipe_frame s _ _
-    have slD : (slR s).Disjoint ⟨pb s, c⟩ := slR_buf s (by omega_using [hc])
+    obtain hf : Frame [⟨pb s, c⟩] z.mem x.mem := by rw [mx]; exact wipe_frame s _ _
+    obtain slD : (slR s).Disjoint ⟨pb s, c⟩ := slR_buf s (by omega_using [hc])
     refine ⟨⟨Rz.toFy.keep kx, (Rz.keep.trans kx).mono,
       Rz.fr.trans (hf.sub fun r hr => by
         rw [List.mem_singleton.mp hr]; exact ⟨kR s, by simp, buf_sub s (by omega_using [hc])⟩),
@@ -228,26 +228,26 @@ theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} 
   have hP := hp.ps
   have hk2 := hp.k2
   have hcl := hI.hc
-  have hcr : (kept s (rl s)).length ≤ rl s := by
+  obtain hcr : (kept s (rl s)).length ≤ rl s := by
     have := VG.Proof.RsaPkcs1Enc.nz_length_le ((randB s).take (rl s))
     simp only [List.length_take, randB_length] at this; simp only [kept]; omega_using [this]
   unfold reject
   refine seq_assoc (WP.seq (WP.mono (zero_ok hp hM hI) fun v ⟨R, hm, h0, h10⟩ => ?_))
-  have h5 : v.gpr .r5 = BitVec.ofNat 64 (kept s (rl s)).length := by rw [R.keep.get .r5, hI.r5]
+  obtain h5 : v.gpr .r5 = BitVec.ofNat 64 (kept s (rl s)).length := by rw [R.keep.get .r5, hI.r5]
   refine seq_assoc (WP.seq (WP.mono (wipe_ok (by omega_using [hc, hP]) R h5 h0) fun w ⟨R', hf', h10'⟩ => ?_))
   refine WP.mono (budget_ok hp hc hcr R' (by rw [R'.keep.get .r5, hI.r5]) (by rw [R'.keep.get .r30, hI.r30])
     (by rw [h10', h10]))
     fun x ⟨Rx, fx, hex, hen⟩ => ⟨⟨Rx.sp, Rx.wr, Rx.hi, Rx.sv, Rx.ls⟩, Rx.rd, ?_⟩
   -- `out`
-  have bs := buf_sub s (n := (kept s (rl s)).length) (by omega_using [hc, hP])
-  have outZ : Spec.Rsa.bytesAt x.mem (s.gpr .r3) (kOf s) = List.replicate (kOf s) 0 := by
-    have e : (⟨s.gpr .r3, kOf s⟩ : Region) = outR s := by simp only [outR, kOf, hp.hok]
+  obtain bs := buf_sub s (n := (kept s (rl s)).length) (by omega_using [hc, hP])
+  obtain outZ : Spec.Rsa.bytesAt x.mem (s.gpr .r3) (kOf s) = List.replicate (kOf s) 0 := by
+    obtain e : (⟨s.gpr .r3, kOf s⟩ : Region) = outR s := by simp only [outR, kOf, hp.hok]
     rw [bytes_frame fx (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dOt) (by unfold kOf; omega_using []),
       bytes_frame hf' (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dKo.symm.sub_right bs)
         (by unfold kOf; omega_using []), hm]
     have := bytesAt_writeBytes u.mem (s.gpr .r3) (List.replicate (kOf s) 0) (by simp; unfold kOf; omega_using [])
     rwa [List.length_replicate] at this
-  have hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
+  obtain hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
   show (∃ req, _ ∧ _ ∧ _) ∧ _
   unfold Spec.Entropy.Result.Requests
   by_cases hge : Spec.RsaPkcs1Enc.padEntropy (psLen s) ≤ rl s

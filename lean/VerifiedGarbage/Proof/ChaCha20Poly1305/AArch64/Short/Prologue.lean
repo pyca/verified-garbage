@@ -70,7 +70,7 @@ theorem enter_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
       s'.gpr .x0 = off (cx s₀) 0 ∧ s'.gpr .x1 = off (cx s₀) 64 ∧ s'.gpr .x3 = off (cx s₀) 384 ∧
       s'.gpr .x20 = off (cx s₀) 384 ∧
       (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x3 → r ≠ .x20 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have o : ∀ a, a + 8 ≤ 1280 → InRegions s.wr (off (cx s₀) a) 8 := fun a h => by
+  obtain o : ∀ a, a + 8 ≤ 1280 → InRegions s.wr (off (cx s₀) a) 8 := fun a h => by
     rw [hwr]; exact hp.in_ctx h
   unfold enter
   refine wp_str (a := off (cx s₀) 632) (by decide) (by rw [hx21]) (o _ (by decide)) fun s₁ m₁ => ?_
@@ -80,8 +80,8 @@ theorem enter_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
     (by rw [m₂.wr, m₁.wr]; exact o _ (by decide)) fun s₃ m₃ => ?_
   refine wp_addImm (by decide) fun s₄ u₄ => wp_addImm (by decide) fun s₅ u₅ => wp_addImm (by decide)
     fun s₆ u₆ => wp_mov fun s₇ u₇ => WP.block_nil ?_
-  have g₃ : s₃.gpr = s.gpr := by rw [m₃.gpr, m₂.gpr, m₁.gpr]
-  have x21₆ : s₃.gpr .x21 = cx s₀ := by rw [g₃, hx21]
+  obtain g₃ : s₃.gpr = s.gpr := by rw [m₃.gpr, m₂.gpr, m₁.gpr]
+  obtain x21₆ : s₃.gpr .x21 = cx s₀ := by rw [g₃, hx21]
   refine ⟨by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃.mem, m₂.mem, m₁.mem, m₂.gpr, m₁.gpr], ?_, ?_,
     ?_, ?_, fun r h0 h1 h3 h20 => ?_, by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, m₃.rd, m₂.rd, m₁.rd],
     by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, m₃.wr, m₂.wr, m₁.wr]⟩
@@ -104,7 +104,7 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
   rw [block1_eq]
   refine WP.block_append (WP.mono (WP.withSp (saveMoves_ok hp))
     fun s₁ ⟨⟨e21, e24, e25, e22, e23, e0, e1, un₁, rd₁, wr₁, f₁, sv₁⟩, sp₁⟩ => ?_)
-  have hc₁ : CtxOk (cx s₀) (kp s₀) (np s₀) s₁ := by
+  obtain hc₁ : CtxOk (cx s₀) (kp s₀) (np s₀) s₁ := by
     refine ⟨fun a w h => by rw [rd₁, wr₁]; exact ⟨hp.in_ctx' h, hp.in_ctx h⟩, fun a ha => ?_, fun a ha => ?_⟩
     · rw [rd₁, wr₁]
       exact ⟨kR s₀, by simp [hp.k_rd], Offset.contains_base _ ha (by lit_omega)⟩
@@ -115,25 +115,25 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
     (hp.c_k.sub_left (sub_ctx s₀ (k := 0) (n := 64) (by lit_omega)))
     (hp.c_n.sub_left (sub_ctx s₀ (k := 0) (n := 64) (by lit_omega)))))
     fun s₂ ⟨⟨g₂, rd₂, wr₂, f₂, w₂⟩, sp₂⟩ => ?_)
-  have x21₂ : s₂.gpr .x21 = cx s₀ := by rw [g₂ _ (by decide), e21]
+  obtain x21₂ : s₂.gpr .x21 = cx s₀ := by rw [g₂ _ (by decide), e21]
   refine WP.block_append (WP.mono (WP.withSp (zero_ok x21₂ fun a ha => by
       rw [wr₂, wr₁]; exact hp.in_ctx (a := 64 + a) (by lit_omega)))
     fun s₃ ⟨⟨g₃, rd₃, wr₃, sp₃, _, z₃⟩, sp₃'⟩ => ?_)
-  have x21₃ : s₃.gpr .x21 = cx s₀ := by rw [g₃, x21₂]
+  obtain x21₃ : s₃.gpr .x21 = cx s₀ := by rw [g₃, x21₂]
   refine WP.mono (WP.withSp (enter_ok hp x21₃ (by rw [wr₃, wr₂, wr₁])))
     fun s₄ ⟨⟨m₄, x0₄, x1₄, x3₄, x20₄, g₄, rd₄, wr₄⟩, sp₄⟩ => ?_
-  have g : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x3 → r ≠ .x20 → r ≠ .x9 → s₄.gpr r = s₁.gpr r := by
+  obtain g : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x3 → r ≠ .x20 → r ≠ .x9 → s₄.gpr r = s₁.gpr r := by
     intro r h0 h1 h3 h20 h9; rw [g₄ r h0 h1 h3 h20, g₃, g₂ r h9]
-  have gs : ∀ r ∈ untouched, r ≠ .x20 → s₃.gpr r = s₀.gpr r := by
+  obtain gs : ∀ r ∈ untouched, r ≠ .x20 → s₃.gpr r = s₀.gpr r := by
     intro r hr _; rw [g₃, g₂ r (by rintro rfl; simp [untouched] at hr), un₁ r hr]
   have f₂' : Frame [sub s₀ 0 64] s₁.mem s₂.mem := f₂
   have f₃ : Frame [sub s₀ 64 320] s₂.mem s₃.mem := z₃.frame
-  have f₄ : Frame [sub s₀ 632 24] s₃.mem s₄.mem := by rw [m₄]; exact enter_frame _ _ _ _
-  have sub' : ∀ k n, k + n ≤ 1280 → ∀ r ∈ [sub s₀ k n], ∃ r' ∈ [workR s₀], Region.Sub r r' :=
+  obtain f₄ : Frame [sub s₀ 632 24] s₃.mem s₄.mem := by rw [m₄]; exact enter_frame _ _ _ _
+  obtain sub' : ∀ k n, k + n ≤ 1280 → ∀ r ∈ [sub s₀ k n], ∃ r' ∈ [workR s₀], Region.Sub r r' :=
     fun k n h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by lit_omega) h⟩
-  have dj : ∀ k n a w, k + n ≤ a ∨ a + w ≤ k → k + n ≤ 1280 → a + w ≤ 1280 →
+  obtain dj : ∀ k n a w, k + n ≤ a ∨ a + w ≤ k → k + n ≤ 1280 → a + w ≤ 1280 →
       ∀ r ∈ [sub s₀ k n], (sub s₀ a w).Disjoint r := fun k n a w h h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by omega_using [h]) h₂ h₁
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -173,7 +173,7 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
 /-- The kernel's precondition. -/
 theorem Post1.cp {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) : CP s := by
-  have w : ∀ a n, a + n ≤ 1280 → InRegions s.wr (off (cx s₀) a) n := fun a n hn => by
+  obtain w : ∀ a n, a + n ≤ 1280 → InRegions s.wr (off (cx s₀) a) n := fun a n hn => by
     rw [h.wr]; exact hp.in_ctx hn
   refine ⟨h.x20r, fun k => ?_, ?_, fun d n hd => ?_, fun d n hd => ?_, ?_, ?_, ?_⟩
   · rw [h.x0, off_add, h.rd, h.wr]; exact hp.in_ctx' (by have := k.isLt; omega_using [])
@@ -196,7 +196,7 @@ theorem leave_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
       s'.gpr .x1 = off (cx s₀) 64 ∧
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x26 → r ≠ .x0 → r ≠ .x1 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have i : ∀ a, a + 8 ≤ 1280 → InRegions (s.rd ++ s.wr) (off (cx s₀) a) 8 := fun a ha => by
+  obtain i : ∀ a, a + 8 ≤ 1280 → InRegions (s.rd ++ s.wr) (off (cx s₀) a) 8 := fun a ha => by
     rw [hrd, hwr]; exact hp.in_ctx' ha
   unfold leave
   refine wp_ldr (a := off (cx s₀) 632) (by decide) (by rw [hx21]) (i _ (by decide)) fun s₃ u₃ => ?_
@@ -205,7 +205,7 @@ theorem leave_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
   refine wp_ldr (a := off (cx s₀) 648) (by decide) (by rw [u₄.other _ (by decide), u₃.other _ (by decide), hx21])
     (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr]; exact i _ (by decide)) fun s₅ u₅ => ?_
   refine wp_addImm (by decide) fun s₆ u₆ => wp_addImm (by decide) fun s₇ u₇ => WP.block_nil ?_
-  have x21₅ : s₅.gpr .x21 = cx s₀ := by
+  obtain x21₅ : s₅.gpr .x21 = cx s₀ := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), hx21]
   refine ⟨?_, ?_, ?_, ?_, ?_, fun r h19 h20 h26 h0 h1 => ?_, ?_, ?_, ?_⟩
   · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]
@@ -231,26 +231,26 @@ open VG.Proof.ChaCha20.AArch64.Mixed5 in
 theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
     WP isa (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave)) s (Post2 e s₀) := by
   refine WP.seq ((chunk_ok s (h.cp hp)).mono fun s₂ c₂ => ?_)
-  have x21₂ : s₂.gpr .x21 = cx s₀ := by rw [c₂.cs _ (by decide) (by decide) (by decide), h.x21]
-  have hf₂ : Frame [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320] s.mem s₂.mem := by
+  obtain x21₂ : s₂.gpr .x21 = cx s₀ := by rw [c₂.cs _ (by decide) (by decide) (by decide), h.x21]
+  obtain hf₂ : Frame [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320] s.mem s₂.mem := by
     have := c₂.frame; simp only [sr, lowBuf, dr, h.x0, h.x3, h.x1] at this; exact this
-  have dj : ∀ a w, 448 ≤ a → a + w ≤ 1280 →
+  obtain dj : ∀ a w, 448 ≤ a → a + w ≤ 1280 →
       ∀ r ∈ [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320], (sub s₀ a w).Disjoint r := by
     intro a w ha haw r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact sub_disj s₀ (by omega_using [ha]) haw (by decide)
-  have rd : ∀ a, 632 ≤ a → a + 8 ≤ 1280 → s₂.mem.readW (off (cx s₀) a) 64 = s.mem.readW (off (cx s₀) a) 64 :=
+  obtain rd : ∀ a, 632 ≤ a → a + 8 ≤ 1280 → s₂.mem.readW (off (cx s₀) a) 64 = s.mem.readW (off (cx s₀) a) 64 :=
     fun a h₁ h₂ => hf₂.readW (r := sub s₀ a 8) (Region.contains_self _ _) (dj a 8 (by omega_using [h₁]) h₂) (by decide)
   refine WP.mono (WP.withSp (leave_ok hp x21₂ (by rw [c₂.rd, h.rd]) (by rw [c₂.wr, h.wr])))
     fun s₇ ⟨⟨x19₇, x20₇, x26₇, x0₇, x1₇, g, hm, rd₇, wr₇⟩, sp₇⟩ => ?_
-  have cs : ∀ r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x27, .x28], s₇.gpr r = s.gpr r := by
+  obtain cs : ∀ r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x27, .x28], s₇.gpr r = s.gpr r := by
     intro r hr
-    have hp' : r ∈ preserved := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with
+    obtain hp' : r ∈ preserved := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [g r (by rintro rfl; simp at hr) (by rintro rfl; simp at hr) (by rintro rfl; simp at hr)
       (by rintro rfl; simp at hr) (by rintro rfl; simp at hr),
       c₂.cs r hp' (by rintro rfl; simp at hr) (by rintro rfl; simp at hr)]
-  have fr₂ : Frame [workR s₀] s.mem s₂.mem := hf₂.sub fun r hr => by
+  obtain fr₂ : Frame [workR s₀] s.mem s₂.mem := hf₂.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by decide) (by decide)⟩
@@ -274,7 +274,7 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
   · rw [hm]; exact (h.fine.trans fr₂).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   · rw [hm]; exact h.fine.trans fr₂
   · rw [hm]
-    have hd := c₂.data k hk
+    obtain hd := c₂.data k hk
     rw [h.x1] at hd
     rw [hd, h.zero k hk]
     exact BitVec.zero_xor.trans (by simp only [source, h.x0, h.st])

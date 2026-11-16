@@ -81,7 +81,7 @@ theorem DigitInv.of_fn {s t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {N
     (htab : word t.mem P (8 * Crt.sTab) = word s.mem P (8 * Crt.sTab)) (hwr : t.wr = s.wr)
     (h0 : t.gpr .x0 = s.gpr .x0) : DigitInv P wx minv N g ex eq k t := by
   have hn := h.ctx.scrT.nowrap
-  have ax : wv t.mem P (slot wx Crt.aXc) wx = wv s.mem P (slot wx Crt.aXc) wx := fn_arr ho hn (by decide)
+  obtain ax : wv t.mem P (slot wx Crt.aXc) wx = wv s.mem P (slot wx Crt.aXc) wx := fn_arr ho hn (by decide)
   exact ⟨by rw [ax]; exact ctx_of_fn h.ctx ho hwr h0, htab.trans h.tab,
     fun j hj => by rw [fn_ent ho hn hj]; exact h.lt j hj,
     fun d hd => by rw [fn_ent ho hn (by omega_arith)]; exact h.xs d hd,
@@ -121,29 +121,29 @@ theorem groupsStep_ok (M : Mont) {s₀ s : State} {P : Addr} {wx : Nat} {minv : 
       (∃ k', GroupsInv s₀ P wx minv N g xp qp xb qb (j + 1) k' t) ∧
       ((t.gpr .x3).toNat ≠ 0 ↔ j + 1 ≠ (xb.length + 2) / 3) := by
   have hn := hI.dig.ctx.scrT.nowrap
-  have hr1 : 1 ≤ xb.length - 3 * j := by omega_arith
-  have hsub : xb.length - 3 * j - 3 = xb.length - 3 * (j + 1) := by omega_arith
-  have hmemx : ∀ i (h : i < xb.length), s.mem (xp + BitVec.ofNat 64 i) = xb[i] := fun i hi => by
+  obtain hr1 : 1 ≤ xb.length - 3 * j := by omega_arith
+  obtain hsub : xb.length - 3 * j - 3 = xb.length - 3 * (j + 1) := by omega_arith
+  obtain hmemx : ∀ i (h : i < xb.length), s.mem (xp + BitVec.ofNat 64 i) = xb[i] := fun i hi => by
     rw [hI.frm _ fun r hr => Or.inr (by have := (workRanges_ok wx r hr).2; have := hx.xout i hi; omega_arith)]
     exact hx.xv i hi
-  have hmemq : ∀ i (h : i < qb.length), s.mem (qp + BitVec.ofNat 64 i) = qb[i] := fun i hi => by
+  obtain hmemq : ∀ i (h : i < qb.length), s.mem (qp + BitVec.ofNat 64 i) = qb[i] := fun i hi => by
     rw [hI.frm _ fun r hr => Or.inr (by have := (workRanges_ok wx r hr).2; have := hx.qout i hi; omega_arith)]
     exact hx.qv i hi
   simp only [seqs]
   refine WP.seq (WP.mono (group_ok hI.dig.ctx hr1 (by omega_arith) (by rw [hx.len]; omega_arith) (by omega_arith)
     hI.rem hI.xptr hI.qptr (fun i hi => by rw [hI.keep.rd, hI.keep.wr]; exact hx.xrd i hi) hmemx
     (fun i hi => by rw [hI.keep.rd, hI.keep.wr]; exact hx.qrd i hi) hmemq) fun u ⟨hm, ku⟩ => ?_)
-  have oU : Outside P 136 120 s.mem u.mem := by
+  obtain oU : Outside P 136 120 s.mem u.mem := by
     rw [hm]
     exact (((fn_outside _ P _ (by decide) (by decide)).trans (fn_outside _ P _ (by decide) (by decide))).trans
       (fn_outside _ P _ (by decide) (by decide))).trans (fn_outside _ P _ (by decide) (by decide))
-  have hh : ∀ i < 32, i ≠ Crt.sI → i ≠ Crt.sV → i ≠ Crt.sMaskX → i ≠ Crt.sBit →
+  obtain hh : ∀ i < 32, i ≠ Crt.sI → i ≠ Crt.sV → i ≠ Crt.sMaskX → i ≠ Crt.sBit →
       word u.mem P (8 * i) = word s.mem P (8 * i) := fun i hi h1 h2 h3 h4 => by
     rw [hm, hdrStore_hdr _ _ _ (by decide) hi (Ne.symm h4), hdrStore_hdr _ _ _ (by decide) hi (Ne.symm h3),
       hdrStore_hdr _ _ _ (by decide) hi (Ne.symm h2), hdrStore_hdr _ _ _ (by decide) hi (Ne.symm h1)]
-  have hdigU := hI.dig.of_fn oU (hh _ (by decide) (by decide) (by decide) (by decide) (by decide)) ku.wr
+  obtain hdigU := hI.dig.of_fn oU (hh _ (by decide) (by decide) (by decide) (by decide) (by decide)) ku.wr
     (ku.gpr .x0 (by decide))
-  have I0 : DigitsInv u P wx minv N g (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip qb) k
+  obtain I0 : DigitsInv u P wx minv N g (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip qb) k
       (gval xb (xb.length - 3 * j)) (gval qb (xb.length - 3 * j)) (gcount (xb.length - 3 * j)) 0 u :=
     ⟨hdigU, by
         rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
@@ -151,8 +151,8 @@ theorem groupsStep_ok (M : Mont) {s₀ s : State} {P : Addr} {wx : Nat} {minv : 
       by rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, Nat.pow_zero,
           Nat.div_one],
       by rw [hm, word_writeW_self, Nat.sub_zero], DigitsKeep.refl _ _ _⟩
-  have hV24 := gval_lt xb (xb.length - 3 * j)
-  have hQ24 := gval_lt qb (xb.length - 3 * j)
+  obtain hV24 := gval_lt xb (xb.length - 3 * j)
+  obtain hQ24 := gval_lt qb (xb.length - 3 * j)
   refine WP.seq (WP.mono (digitLoop_ok M hw hw' hd hR (gcount_pos _) (gcount_le _) (by omega_arith)
     (by omega_arith)
     (fun i hi => by
@@ -161,7 +161,7 @@ theorem groupsStep_ok (M : Mont) {s₀ s : State} {P : Addr} {wx : Nat} {minv : 
     (fun i hi => by
       rw [Nat.pow_add, ← Nat.div_div_eq_div_mul, hI.qr]
       exact (group_digit qb hr1 (by rw [hx.len]; omega_arith) hi).symm) I0) fun v hv => ?_)
-  have remV : word v.mem P (8 * Crt.sI) = BitVec.ofNat 64 (xb.length - 3 * (j + 1)) := by
+  obtain remV : word v.mem P (8 * Crt.sI) = BitVec.ofNat 64 (xb.length - 3 * (j + 1)) := by
     rw [hv.rest.hdr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hm,
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),

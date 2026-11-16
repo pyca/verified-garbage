@@ -37,10 +37,10 @@ theorem splitTwos_of : ∀ (k m : Nat), 0 < m → (∀ i < k, (m / 2 ^ i) % 2 = 
     simp only [Nat.pow_zero, Nat.div_one] at hodd ⊢
     exact VG.Proof.Rsa.splitTwos_odd hodd
   | k + 1, m, hm, heven, hodd => by
-    have h0 := heven 0 (by omega_arith)
+    obtain h0 := heven 0 (by omega_arith)
     simp only [Nat.pow_zero, Nat.div_one] at h0
     rw [VG.Proof.Rsa.splitTwos_even (by omega_arith) h0]
-    have ih := splitTwos_of k (m / 2) (by omega_arith) (fun i hi => by
+    obtain ih := splitTwos_of k (m / 2) (by omega_arith) (fun i hi => by
         rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']; exact heven (i + 1) (by omega_arith))
       (by rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']; exact hodd)
     rw [ih, Nat.div_div_eq_div_mul, ← Nat.pow_succ']
@@ -60,8 +60,8 @@ theorem subW_ok (h : In Ex base bytes len args s) {o a b : Nat} (ho : o ≤ 19) 
   refine ⟨Step.slot h (by omega_arith) O K, ?_, kept_slot h O, O, K⟩
   change sv u.mem base len .wide o + sv s.mem base len .wide b = sv s.mem base len .wide a +
     2 ^ (32 * cwc len .wide) * c.toNat at V
-  have lt := val32_lt u.mem base (lo len (.slot .wide o)) (cwc len .wide)
-  have lta := val32_lt s.mem base (lo len (.slot .wide a)) (cwc len .wide)
+  obtain lt := val32_lt u.mem base (lo len (.slot .wide o)) (cwc len .wide)
+  obtain lta := val32_lt s.mem base (lo len (.slot .wide a)) (cwc len .wide)
   change sv u.mem base len .wide o < _ at lt
   change sv s.mem base len .wide a < _ at lta
   cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V <;> omega_arith
@@ -91,9 +91,9 @@ theorem Ready.slot {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} 
     (O : Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem t.mem) : Ready Ex base bytes len args w t := by
   have h := R.ctx.inp
   have bl := h.bytes_lt
-  have f := slot_fit1 h ha
+  obtain f := slot_fit1 h ha
   rw [cb1] at f
-  have ea := lo_wide len a
+  obtain ea := lo_wide len a
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have := Nat.mul_le_mul_right (st len .wide) ha9
   refine ⟨R.ctx.keepF K di sp (ws := [(lo len (.slot .wide a), bc len .wide)])
@@ -107,13 +107,13 @@ theorem Ready.hdr {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {
     (O : Outside base d 4 s.mem t.mem) : Ready Ex base bytes len args w t := by
   have h := R.ctx.inp
   have bl := h.bytes_lt
-  have hf := hdr_fit h hd
+  obtain hf := hdr_fit h hd
   have nb : numBase = 3336 := rfl
-  have e3 := lo_wide len 3
-  have e4 := lo_wide len 4
-  have f4 := slot_fit1 h (j := 4) (by decide)
+  obtain e3 := lo_wide len 3
+  obtain e4 := lo_wide len 4
+  obtain f4 := slot_fit1 h (j := 4) (by decide)
   rw [cb1] at f4
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   refine ⟨R.ctx.keepF2 K di sp (ws := [(d, 4)]) (frameR_of_outside O (by omega_arith) (List.mem_singleton_self _))
     (by simp; omega_arith) (by simp; rcases hd.1 with e | e <;> omega_arith), ?_, ?_⟩
   · rw [← R.one]; exact O.val32 (.inr (by omega)) (by omega)
@@ -130,15 +130,15 @@ theorem ready_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (
     WP isa (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) (prepare .wide)) s fun t =>
       Step Ex base bytes len args s t ∧ Ready Ex base bytes len args w t ∧ Kept base len [] [] s.mem t.mem := by
   have bl := h.bytes_lt
-  have f0 := h.slot_fit .wide (j := 0) (by decide)
+  obtain f0 := h.slot_fit .wide (j := 0) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   refine WP.seq (WP.mono (copyIn_ok h (j := j) (d := 0) hj9 hj (by decide)) fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  have F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
+  obtain F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
     stR_of_outside h (by decide) O₁ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩
-  have S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
+  obtain S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
   refine WP.mono (prepCtx_ok S₁.inp .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
   rw [V₁, hw, safeM_of hw1 hodd] at C R2
-  have F₂ := stR_widen F (prepR_in S₁.inp .wide 0)
+  obtain F₂ := stR_widen F (prepR_in S₁.inp .wide 0)
   rw [S₁.esp] at F₂
   exact ⟨S₁.trans (Step.ops S₁.inp (by rw [S₁.esp]; exact F₂) K), ⟨C, one, R2⟩,
     (kept_ops h F₁ h.room).trans (kept_ops h F₂ h.room)⟩
@@ -176,18 +176,18 @@ theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args
   have ht := H.step.inp
   have bl := ht.bytes_lt
   have nb : numBase = 3336 := rfl
-  have kl : k + 1 < 2 ^ 32 := by
-    have p1 : 2 ^ k ≤ w - 1 := (Nat.div_pos_iff.mp hp).2
-    have p2 : 2 ^ k < 2 ^ (32 * cwc len .wide) := by omega_arith
-    have p3 := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp p2
+  obtain kl : k + 1 < 2 ^ 32 := by
+    obtain p1 : 2 ^ k ≤ w - 1 := (Nat.div_pos_iff.mp hp).2
+    obtain p2 : 2 ^ k < 2 ^ (32 * cwc len .wide) := by omega_arith
+    obtain p3 := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp p2
     have := bc_le ht.upper' .wide
     simp only [cwc] at p3
     omega_arith
-  have half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by
+  obtain half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by
     rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
   refine WP.seq (WP.mono (halve_ok ht (j := 11) (by decide)) fun u₁ ⟨h₁, O₁, V₁, K₁⟩ => ?_)
   rw [H.exp] at V₁
-  have two₁ : w32 u₁.mem base twoOff = k := by
+  obtain two₁ : w32 u₁.mem base twoOff = k := by
     rw [← H.two]
     have := lo_wide len 11
     exact O₁.w32 (.inl (by simp only [twoOff]; omega_arith)) (by simp only [twoOff]; omega_arith)
@@ -196,14 +196,14 @@ theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args
   refine hdr_store (h₁.regs ((U₂.keeps.trans U₃.keeps).mono (by decide) : Keeps [.eax] u₁ u₃)
     (by rw [U₃.mem, U₂.mem])) hdr_two fun u₄ S₄ W₄ k₄ O₄ G₄ _ _ => ?_
   refine lowWord_ok S₄.inp (j := 11) (by decide) fun u₅ m₅ K₅ e₅ => wp_andZ fun u U z => WP.block_nil ?_
-  have S₃ : Step Ex base bytes len args u₁ u₃ := Step.regs h₁ (by rw [U₃.mem, U₂.mem]) (U₂.keeps.trans U₃.keeps)
-  have S₅ : Step Ex base bytes len args u₄ u := Step.regs S₄.inp (by rw [U.mem, m₅]) (K₅.trans (U.keeps.mono (by decide)))
-  have S₁ : Step Ex base bytes len args t u₁ := Step.slot ht (by decide) O₁ K₁
-  have sv₄ : sv u₄.mem base len .wide 11 = (w - 1) / 2 ^ k / 2 := by
+  obtain S₃ : Step Ex base bytes len args u₁ u₃ := Step.regs h₁ (by rw [U₃.mem, U₂.mem]) (U₂.keeps.trans U₃.keeps)
+  obtain S₅ : Step Ex base bytes len args u₄ u := Step.regs S₄.inp (by rw [U.mem, m₅]) (K₅.trans (U.keeps.mono (by decide)))
+  obtain S₁ : Step Ex base bytes len args t u₁ := Step.slot ht (by decide) O₁ K₁
+  obtain sv₄ : sv u₄.mem base len .wide 11 = (w - 1) / 2 ^ k / 2 := by
     rw [k₄.slot_eq, U₃.mem, U₂.mem, V₁]
   refine ⟨⟨H.step.trans (S₁.trans (S₃.trans (S₄.trans S₅))), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · have R₁ := H.ready.slot (a := 11) (by decide) (by decide) K₁ (by decide) (by decide) O₁
-    have R₃ := R₁.regs (U₂.keeps.trans U₃.keeps) (by decide) (by decide) (by rw [U₃.mem, U₂.mem])
+    obtain R₃ := R₁.regs (U₂.keeps.trans U₃.keeps) (by decide) (by decide) (by rw [U₃.mem, U₂.mem])
     exact (R₃.hdr hdr_two S₄.keeps (by decide) (by decide) O₄).regs (K₅.trans (U.keeps.mono (by decide))) (by decide) (by decide)
       (by rw [U.mem, m₅])
   · rw [U.mem, m₅, k₄.slot_eq, U₃.mem, U₂.mem, slotKeep ht (by decide) (by decide) O₁, H.one14]
@@ -216,9 +216,9 @@ theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args
     · exact H.even i hi
     · exact hx
   · have k₁ : Kept base len [11, 14, 15] [twoOff] t.mem u₁.mem := (kept_slot ht (a := 11) O₁).mono
-    have k₃ : Kept base len [11, 14, 15] [twoOff] u₁.mem u₃.mem := by
+    obtain k₃ : Kept base len [11, 14, 15] [twoOff] u₁.mem u₃.mem := by
       rw [U₃.mem, U₂.mem]; exact Kept.refl _ |>.mono
-    have k₅ : Kept base len [11, 14, 15] [twoOff] u₄.mem u.mem := by
+    obtain k₅ : Kept base len [11, 14, 15] [twoOff] u₄.mem u.mem := by
       rw [U.mem, m₅]; exact Kept.refl _ |>.mono
     exact H.kept.trans (k₁.trans (k₃.trans (k₄.mono.trans k₅)))
   · show u.zf = _
@@ -230,26 +230,26 @@ theorem prepHead_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j
     (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     WP isa (prepHead j) s (Halving Ex base bytes len args s w 0) := by
   have bl := h.bytes_lt
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   unfold prepHead
   refine WP.assoc (WP.seq (WP.mono (ready_ok h hj9 (by omega_arith) hw (by omega_arith) hodd) fun u₁ ⟨S₁, R₁, k₁⟩ => ?_))
   have h₁ := S₁.inp
   refine WP.seq (WP.mono (setW_ok h₁ (a := 14) (v := 1) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
-  have S₂ : Step Ex base bytes len args s u₂ := S₁.trans (Step.slot h₁ (by decide) O₂ K₂)
-  have R₂ := R₁.slot (a := 14) (by decide) (by decide) K₂ (by decide) (by decide) O₂
-  have k₂ : Kept base len [11, 14, 15] [twoOff] s.mem u₂.mem := k₁.mono.trans (kept_slot h₁ (a := 14) O₂).mono
-  have wj₂ : sv u₂.mem base len .wide j = w := by
+  obtain S₂ : Step Ex base bytes len args s u₂ := S₁.trans (Step.slot h₁ (by decide) O₂ K₂)
+  obtain R₂ := R₁.slot (a := 14) (by decide) (by decide) K₂ (by decide) (by decide) O₂
+  obtain k₂ : Kept base len [11, 14, 15] [twoOff] s.mem u₂.mem := k₁.mono.trans (kept_slot h₁ (a := 14) O₂).mono
+  obtain wj₂ : sv u₂.mem base len .wide j = w := by
     rw [slotKeep h₁ (by omega_arith) (by omega_arith) O₂, k₁.slot_eq ⟨hj9, by omega_arith, by simp⟩, hw]
   refine WP.seq (WP.mono (subW_ok S₂.inp (o := 15) (a := j) (b := 14) (by decide) (by omega_arith) (by decide) (by omega_arith)
     (by decide) (by rw [V₂, wj₂]; omega_arith)) fun u₃ ⟨S₃, V₃, k₃, O₃, K₃⟩ => ?_)
   rw [V₂, wj₂] at V₃
-  have R₃ := R₂.slot (a := 15) (by decide) (by decide) K₃ (by decide) (by decide) O₃
+  obtain R₃ := R₂.slot (a := 15) (by decide) (by decide) K₃ (by decide) (by decide) O₃
   refine WP.seq (WP.mono (copyO_ok S₃.inp (a := 15) (b := 11) (by decide) (by decide) (by decide))
     fun u₄ ⟨S₄, V₄, k₄, O₄, K₄⟩ => ?_)
-  have R₄ := R₃.slot (a := 11) (by decide) (by decide) K₄ (by decide) (by decide) O₄
+  obtain R₄ := R₃.slot (a := 11) (by decide) (by decide) K₄ (by decide) (by decide) O₄
   refine wp_movi fun u₅ U₅ => hdr_store (S₄.inp.regs U₅.keeps U₅.mem) hdr_two fun u₆ S₆ W₆ k₆ O₆ G₆ _ _ =>
     WP.block_nil ?_
-  have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp U₅.mem U₅.keeps
+  obtain S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp U₅.mem U₅.keeps
   refine ⟨S₂.trans (S₃.trans (S₄.trans (S₅.trans S₆))), ((R₄.regs U₅.keeps (by decide) (by decide) U₅.mem).hdr hdr_two
     S₆.keeps (by decide) (by decide) O₆), ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_arith), ?_⟩
   · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, k₃.slot_eq, V₂]
@@ -274,11 +274,11 @@ theorem halveRound_ok {w x : Nat} {t : State} (hw3 : 3 ≤ w) (hodd : w % 2 = 1)
       (isa.eval .e u = some true ∧ ∃ x' < x, Halved Ex base bytes len args s w x' u) := by
   obtain ⟨k, rfl, hx, hp, H⟩ := H
   refine WP.mono (halveIter_ok H hx hp hwl) fun u ⟨Hu, z⟩ => ?_
-  have half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+  obtain half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
   by_cases ev : ((w - 1) / 2 ^ (k + 1)) % 2 = 0
   · refine .inr ⟨by rw [z]; simp [ev], (w - 1) / 2 ^ (k + 1), by omega_arith, k + 1, rfl, ev, by omega_arith, Hu⟩
   · have od : ((w - 1) / 2 ^ (k + 1)) % 2 = 1 := by omega_arith
-    have sp := splitTwos_of (k + 1) (w - 1) (by omega_arith) Hu.even od
+    obtain sp := splitTwos_of (k + 1) (w - 1) (by omega_arith) Hu.even od
     refine .inl ⟨by rw [z]; simp [ev], Hu.step, ⟨Hu.ready, Hu.one14, Hu.m1, by rw [Hu.exp, sp], by rw [Hu.two, sp]⟩,
       Hu.kept⟩
 
@@ -287,7 +287,7 @@ theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ 
     (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     WP isa (prepPhase j) s fun t => Step Ex base bytes len args s t ∧ Prepped Ex base bytes len args w t ∧
       Kept base len [11, 14, 15] [twoOff] s.mem t.mem := by
-  have hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
+  obtain hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
   unfold prepPhase
   refine WP.seq (WP.mono (prepHead_ok h hj9 hj hw hw3 hodd) fun u₆ H₀ => ?_)
   refine WP.loop (M := isa) (Halved Ex base bytes len args s w) ?_ (w - 1) u₆ ⟨0, by simp, by omega_arith, by omega_arith, H₀⟩

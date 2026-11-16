@@ -39,7 +39,7 @@ def inputPoint (s : State) (i : Nat) : Option Spec.Ed25519.Point :=
 
 theorem inputPoint_number {s : State} {i : Nat} (hi : SlicePre s 3 (arg s i + BitVec.ofNat 32 0) 32) :
     decodeNumber (fe s.mem (arg s i + BitVec.ofNat 32 0) 0) = inputPoint s i := by
-  have hv : fe s.mem (arg s i + BitVec.ofNat 32 0) 0 = Spec.Ed25519.decodeLE
+  obtain hv : fe s.mem (arg s i + BitVec.ofNat 32 0) 0 = Spec.Ed25519.decodeLE
       (Spec.Ed25519.bytesAt s.mem ((arg s i + BitVec.ofNat 32 0).setWidth 64) 32) := by
     rw [← addr_zero (arg s i + BitVec.ofNat 32 0)]
     exact (decode_words s.mem 8 (by have := hi.fit; omega_using [this])).symm
@@ -124,7 +124,7 @@ theorem storeLoop_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (ar
     (k : ∀ t, Saved s₀ (arg s₀ 3) t → t.mem = s.mem.writeW (addr (arg s₀ 3) d) (s.gpr r) →
       t.gpr = s.gpr → t.zf = s.zf → WP isa (.block is) t Q) :
     WP isa (.block (.store (Impl.X25519.X86.sc d) r :: is)) s Q := by
-  have cs := hs.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
+  obtain cs := hs.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
   simp only [DPTR] at hd hd'
   refine Wp.wp_stm hs.edi (cs.inW (d := d) (n := 4) (by omega_arith) (by decide)) fun t ht => k t ?_ ht.mem ht.gpr ht.zf
   refine hs.of_offset hp.scratch.fit ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr⟩ (o := DPTR) (n := 16)
@@ -139,7 +139,7 @@ theorem loadWd_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s
     (k : ∀ t, Saved s₀ (arg s₀ 3) t → t.gpr r = wd s.mem (arg s₀ 3) d →
       (∀ r', r' ≠ r → t.gpr r' = s.gpr r') → t.mem = s.mem → WP isa (.block is) t Q) :
     WP isa (.block (.mov r (.mem (Impl.X25519.X86.sc d)) :: is)) s Q := by
-  have cs := hs.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
+  obtain cs := hs.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
   refine Wp.wp_ldm hs.edi (cs.inRW (d := d) (n := 4) hd (by decide)) fun t ht => k t ?_ ht.gpr ht.other ht.mem
   exact ⟨(ht.other _ hr.1.symm).trans hs.edi, (ht.other _ hr.2.symm).trans hs.esp, ht.rd.trans hs.rd,
     ht.wr.trans hs.wr, by rw [ht.mem]; exact hs.frame, by rw [ht.mem]; exact hs.saved, hs.stk⟩
@@ -163,23 +163,23 @@ theorem decodeStart_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (
   have hx := hp.scratch.fit
   rw [decodeStart]
   refine Wp.wp_ldm hs.esp (by rw [hs.rd, hs.wr]; exact hp.scratch.argIn (i := 0) (by decide)) fun s1 h1 => ?_
-  have hs1 := hs.upd h1
+  obtain hs1 := hs.upd h1
   refine storeLoop_ok hp hs1 (d := DPTR) (Nat.le_refl _) (by decide) .eax fun s2 hs2 m2 g2 _ => ?_
   refine Wp.wp_ldm hs2.esp (by rw [hs2.rd, hs2.wr]; exact hp.scratch.argIn (i := 1) (by decide))
     fun s3 h3 => ?_
-  have hs3 := hs2.upd h3
+  obtain hs3 := hs2.upd h3
   refine storeLoop_ok hp hs3 (d := DNEXT) (by decide) (by decide) .eax fun s4 hs4 m4 g4 _ => ?_
   refine Wp.wp_movi fun s5 h5 => ?_
-  have hs5 := hs4.upd h5
+  obtain hs5 := hs4.upd h5
   refine storeLoop_ok hp hs5 (d := DTAB) (by decide) (by decide) .eax fun s6 hs6 m6 g6 _ => ?_
   refine Wp.wp_movi fun s7 h7 => ?_
-  have hs7 := hs6.upd h7
+  obtain hs7 := hs6.upd h7
   refine storeLoop_ok hp hs7 (d := DOK) (by decide) (by decide) .eax fun t ht mt gt _ => WP.block_nil ?_
-  have a0 : s1.gpr .eax = arg s₀ 0 := by
+  obtain a0 : s1.gpr .eax = arg s₀ 0 := by
     rw [h1.gpr]; exact hp.scratch.arg_same hs.frame (i := 0) (by decide)
-  have a1 : s3.gpr .eax = arg s₀ 1 := by
+  obtain a1 : s3.gpr .eax = arg s₀ 1 := by
     rw [h3.gpr]; exact hp.scratch.arg_same hs2.frame (i := 1) (by decide)
-  have em : t.mem = (((s.mem.writeW (addr (arg s₀ 3) DPTR) (arg s₀ 0)).writeW (addr (arg s₀ 3) DNEXT) (arg s₀ 1)).writeW
+  obtain em : t.mem = (((s.mem.writeW (addr (arg s₀ 3) DPTR) (arg s₀ 0)).writeW (addr (arg s₀ 3) DNEXT) (arg s₀ 1)).writeW
       (addr (arg s₀ 3) DTAB) (7680 : BitVec 32)).writeW (addr (arg s₀ 3) DOK) (1 : BitVec 32) := by
     rw [mt, h7.gpr, h7.mem, m6, h5.gpr, h5.mem, m4, a1, h3.mem, m2, a0, h1.mem]
   refine ⟨ht, fun _ => ?_, ?_, ?_, ?_, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
@@ -203,12 +203,12 @@ theorem decodeLoad_ok {s₀ s : State} {k : Nat} (hp : VerifyPre s₀)
       Frame [sub (arg s₀ 3) 96 (4 * 8)] s.mem t.mem := by
   rw [decodeLoad]
   refine loadWd_ok hp hs (d := DPTR) (by decide) .esi (by decide) fun u hu eu _ mu => ?_
-  have cu := hu.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
-  have eu' : u.gpr .esi = arg s₀ k + BitVec.ofNat 32 0 := by rw [eu, hptr]; exact (BitVec.add_zero _).symm
-  have hr : ∀ j < 8, InRegions (u.rd ++ u.wr) (addr (arg s₀ k + BitVec.ofNat 32 0) (4 * j)) 4 := by
+  obtain cu := hu.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
+  obtain eu' : u.gpr .esi = arg s₀ k + BitVec.ofNat 32 0 := by rw [eu, hptr]; exact (BitVec.add_zero _).symm
+  obtain hr : ∀ j < 8, InRegions (u.rd ++ u.wr) (addr (arg s₀ k + BitVec.ofNat 32 0) (4 * j)) 4 := by
     intro j hj; rw [hu.rd, hu.wr]
     exact slice_read hi (by omega_using [hj]) (by decide)
-  have hsep : ∀ j < 8, (sub (arg s₀ k + BitVec.ofNat 32 0) (4 * j) 4).Disjoint (sub (arg s₀ 3) 96 (4 * 8)) := by
+  obtain hsep : ∀ j < 8, (sub (arg s₀ k + BitVec.ofNat 32 0) (4 * j) 4).Disjoint (sub (arg s₀ 3) 96 (4 * 8)) := by
     intro j hj
     refine (hi.sep.sub_left (slice_sub hi (by omega_using [hj]) (by decide))).sub_right ?_
     rw [scR_eq]; exact sub_sub hp.scratch.fit (Nat.zero_le _) (by decide) (by decide)
@@ -235,16 +235,16 @@ theorem decodeOne_ok {s₀ s : State} {k : Nat} (hp : VerifyPre s₀)
   refine WP.seq (WP.mono (decodeLoad_ok hp hi hs hptr) fun a ⟨ha, wa, fa⟩ => ?_)
   refine WP.mono (pointDecode_ok (ha.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk)) fun t ht => ?_
   have kt := ht.1
-  have e : callStk a = callStk s := by simp only [callStk, ha.esp, hs.esp]
+  obtain e : callStk a = callStk s := by simp only [callStk, ha.esp, hs.esp]
   refine ⟨ha.mulkeep hp.scratch.fit kt,
     (Frame.withStk (s := s) (frameWiden (o' := 24) (n' := 7144) fa hp.scratch.fit (by decide) (by decide)
       (by decide))).trans (e ▸ kt.frame), ?_⟩
-  have value : fe a.mem (arg s₀ 3) 96 = fe s₀.mem (arg s₀ k + BitVec.ofNat 32 0) 0 := by
+  obtain value : fe a.mem (arg s₀ 3) 96 = fe s₀.mem (arg s₀ k + BitVec.ofNat 32 0) 0 := by
     apply num_congr
     intro j hj
     simp only [Nat.zero_add]
     exact congrArg BitVec.toNat (wa j hj)
-  have h2 := Eq.mp (congrArg (fun n => DecodeResult (arg s₀ 3) (decodeNumber n) t) value) ht.2
+  obtain h2 := Eq.mp (congrArg (fun n => DecodeResult (arg s₀ 3) (decodeNumber n) t) value) ht.2
   exact ⟨decodeFlag_eq h2 (inputPoint_number hi), decodePt_eq h2 (inputPoint_number hi)⟩
 
 theorem decodeNext_eq : decodeNext = ([.mov .ecx (.reg .eax), .mov .edx (.mem (Impl.X25519.X86.sc DTAB)),
@@ -272,49 +272,49 @@ theorem decodeNext_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
   have eax0 : s.gpr .eax = signWord p.isSome := hflag
   rw [decodeNext_eq, WP.block_append_iff]
   refine Wp.wp_mov fun u1 h1 => ?_
-  have hs1 := hs.upd h1
+  obtain hs1 := hs.upd h1
   refine loadWd_ok hp hs1 (d := DTAB) (by decide) .edx (by decide) fun u2 hs2 e2 g2 m2 => ?_
   refine Wp.wp_add fun u3 h3 _ => WP.block_nil ?_
-  have hs3 := hs2.upd h3
-  have m3 : u3.mem = s.mem := by rw [h3.mem, m2, h1.mem]
-  have ed3 : u3.gpr .edx = arg s₀ 3 + BitVec.ofNat 32 (7680 + 128 * k) := by
+  obtain hs3 := hs2.upd h3
+  obtain m3 : u3.mem = s.mem := by rw [h3.mem, m2, h1.mem]
+  obtain ed3 : u3.gpr .edx = arg s₀ 3 + BitVec.ofNat 32 (7680 + 128 * k) := by
     rw [h3.gpr, e2, h1.mem, htab, g2 _ (by decide), h1.other _ (by decide), hs.edi, BitVec.add_comm]
-  have ec3 : u3.gpr .ecx = signWord p.isSome := by
+  obtain ec3 : u3.gpr .ecx = signWord p.isSome := by
     rw [h3.other _ (by decide), g2 _ (by decide), h1.gpr, eax0]
   rw [WP.block_append_iff]
   refine WP.mono (pointToTable_ok (hs3.ctx hx hp.scratch.wr hp.scratch.stk) ed3 (by omega_arith) (by omega_arith)) fun u4 ⟨k4, t4⟩ => ?_
-  have hs4 : Saved s₀ (arg s₀ 3) u4 :=
+  obtain hs4 : Saved s₀ (arg s₀ 3) u4 :=
     hs3.of_offset hx ⟨k4.gpr _ (by decide), k4.gpr _ (by decide), k4.rd, k4.wr⟩ k4.frame (by omega_arith) (by omega_arith)
       (by omega_arith)
-  have w4 : ∀ d, 7936 ≤ d → d + 4 ≤ 8192 → wd u4.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d := fun d h1 h2 => by
+  obtain w4 : ∀ d, 7936 ≤ d → d + 4 ≤ 8192 → wd u4.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d := fun d h1 h2 => by
     rw [wd_frame1 k4.frame hx (by omega_arith) h2 (Or.inr (by omega_arith)), m3]
-  have ec4 : u4.gpr .ecx = signWord p.isSome := (k4.gpr _ (by decide)).trans ec3
+  obtain ec4 : u4.gpr .ecx = signWord p.isSome := (k4.gpr _ (by decide)).trans ec3
   refine loadWd_ok hp hs4 (d := DOK) (by decide) .edx (by decide) fun u5 hs5 e5 g5 m5 => ?_
   refine Wp.wp_and fun u6 h6 => ?_
-  have hs6 := hs5.upd h6
+  obtain hs6 := hs5.upd h6
   refine storeLoop_ok hp hs6 (d := DOK) (by decide) (by decide) .edx fun u7 hs7 m7 g7 _ => ?_
   refine loadWd_ok hp hs7 (d := DNEXT) (by decide) .eax (by decide) fun u8 hs8 e8 g8 m8 => ?_
   refine storeLoop_ok hp hs8 (d := DPTR) (Nat.le_refl _) (by decide) .eax fun u9 hs9 m9 g9 _ => ?_
   refine loadWd_ok hp hs9 (d := DTAB) (by decide) .edx (by decide) fun u10 hs10 e10 g10 m10 => ?_
   refine Wp.wp_addi fun u11 h11 => ?_
-  have hs11 := hs10.upd h11
+  obtain hs11 := hs10.upd h11
   refine storeLoop_ok hp hs11 (d := DTAB) (by decide) (by decide) .edx fun u12 hs12 m12 g12 _ => ?_
   refine Wp.wp_cmpi fun t ht _ zt => WP.block_nil ?_
   -- The memory: the table entry, then three stores.
-  have dok : u7.gpr .edx = wd s.mem (arg s₀ 3) DOK &&& signWord p.isSome := by
+  obtain dok : u7.gpr .edx = wd s.mem (arg s₀ 3) DOK &&& signWord p.isSome := by
     rw [g7, h6.gpr, e5, w4 DOK (by decide) (by decide), g5 _ (by decide), ec4]
-  have dnx : u9.gpr .eax = wd s.mem (arg s₀ 3) DNEXT := by
+  obtain dnx : u9.gpr .eax = wd s.mem (arg s₀ 3) DNEXT := by
     rw [g9, e8, m7, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), h6.mem, m5,
       w4 DNEXT (by decide) (by decide)]
-  have mt : t.mem = ((u4.mem.writeW (addr (arg s₀ 3) DOK) (u7.gpr .edx)).writeW (addr (arg s₀ 3) DPTR)
+  obtain mt : t.mem = ((u4.mem.writeW (addr (arg s₀ 3) DOK) (u7.gpr .edx)).writeW (addr (arg s₀ 3) DPTR)
       (u9.gpr .eax)).writeW (addr (arg s₀ 3) DTAB) (u12.gpr .edx) := by
     rw [ht.mem, m12, h11.mem, m10, m9, m8, m7, h6.mem, m5, g7, g9, g12]
-  have tab12 : u12.gpr .edx = BitVec.ofNat 32 (7680 + 128 * (k + 1)) := by
+  obtain tab12 : u12.gpr .edx = BitVec.ofNat 32 (7680 + 128 * (k + 1)) := by
     rw [g12, h11.gpr, e10, m9, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), m8,
       m7, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), h6.mem, m5,
       w4 DTAB (by decide) (by decide), htab]
     rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> decide
-  have frm : Frame [sub (arg s₀ 3) DPTR 16] u4.mem t.mem := by
+  obtain frm : Frame [sub (arg s₀ 3) DPTR 16] u4.mem t.mem := by
     rw [mt]
     exact frame_write1 (frame_write1 (frame_write1 (Frame.refl _ _) hx (by decide) (by decide) (by decide) _) hx
       (by decide) (by decide) (by decide) _) hx (by decide) (by decide) (by decide) _
@@ -342,7 +342,7 @@ table. -/
 theorem decodeBody_ok {s₀ s : State} (hp : VerifyPre s₀) {k : Nat} (hk : k < 2) (hs : DecAt s₀ k s) :
     WP isa decodeBody s fun t => DecAt s₀ (k + 1) t ∧ t.zf = some (decide (k = 1)) := by
   have hx := hp.scratch.fit
-  have hi : SlicePre s₀ 3 (arg s₀ k + BitVec.ofNat 32 0) 32 := by
+  obtain hi : SlicePre s₀ 3 (arg s₀ k + BitVec.ofNat 32 0) 32 := by
     rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
     exacts [hp.pk, hp.r]
   rw [decodeBody]
@@ -350,8 +350,8 @@ theorem decodeBody_ok {s₀ s : State} (hp : VerifyPre s₀) {k : Nat} (hk : k <
   refine WP.seq (WP.mono (decodeOne_ok hp hi hs.saved (hs.ptr hk)) fun a hd => ?_)
   have ha := hd.1
   have fa := hd.2.1
-  have cs := hs.saved.ctx hx hp.scratch.wr hp.scratch.stk
-  have wa : ∀ d, 7168 ≤ d → d + 4 ≤ 8192 → wd a.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d :=
+  obtain cs := hs.saved.ctx hx hp.scratch.wr hp.scratch.stk
+  obtain wa : ∀ d, 7168 ≤ d → d + 4 ≤ 8192 → wd a.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d :=
     fun d h1 h2 => wd_frame1s cs fa (by decide) h2 (Or.inr (by omega_arith))
   refine WP.mono (decodeNext_ok hp ha hk hd.2.2.1 hd.2.2.2 (by rw [wa DTAB (by decide) (by decide)]; exact hs.tab))
     fun t hn => ?_
@@ -395,9 +395,9 @@ theorem verifyDecode_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ 
   refine WP.seq (WP.mono_syms (decodeBoth_ok hp hs) fun a ha ya => ?_)
   refine WP.seq (WP.of_syms (loadWd_ok hp ha.saved (d := DOK) (by decide) .eax (by decide) fun b hb eb _ mb =>
     Wp.wp_test fun c hc zc => WP.block_nil fun yc => ?_))
-  have hsc : Saved s₀ (arg s₀ 3) c := ⟨by rw [hc.gpr]; exact hb.edi, by rw [hc.gpr]; exact hb.esp,
+  obtain hsc : Saved s₀ (arg s₀ 3) c := ⟨by rw [hc.gpr]; exact hb.edi, by rw [hc.gpr]; exact hb.esp,
     hc.rd.trans hb.rd, hc.wr.trans hb.wr, by rw [hc.mem]; exact hb.frame, by rw [hc.mem]; exact hb.saved, hb.stk⟩
-  have mc : c.mem = a.mem := hc.mem.trans mb
+  obtain mc : c.mem = a.mem := hc.mem.trans mb
   apply WP.ite (decOk s₀ 2) (by
     show c.zf.map (!·) = _
     rw [zc, eb, ha.ok, BitVec.and_self]
@@ -406,8 +406,8 @@ theorem verifyDecode_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ 
     rw [decOk_two, Bool.and_eq_true] at hok
     obtain ⟨a0, ha0⟩ := Option.isSome_iff_exists.mp hok.1
     obtain ⟨r0, hr0⟩ := Option.isSome_iff_exists.mp hok.2
-    have tA : tablePoint c.mem (arg s₀ 3) 7680 = a0 := by rw [mc]; exact ha.pts 0 (by decide) a0 ha0
-    have tR : tablePoint c.mem (arg s₀ 3) 7808 = r0 := by rw [mc]; exact ha.pts 1 (by decide) r0 hr0
+    obtain tA : tablePoint c.mem (arg s₀ 3) 7680 = a0 := by rw [mc]; exact ha.pts 0 (by decide) a0 ha0
+    obtain tR : tablePoint c.mem (arg s₀ 3) 7808 = r0 := by rw [mc]; exact ha.pts 1 (by decide) r0 hr0
     obtain ⟨Aa, hAa⟩ := VG.Proof.Ed25519.decodePoint_rep ha0
     obtain ⟨Ra, hRa⟩ := VG.Proof.Ed25519.decodePoint_rep hr0
     refine WP.mono (verifyEquationPoints_ok hp hsc (by rw [yc, ya, hy]) (by rw [tA]; exact hAa) (by rw [tR]; exact hRa))

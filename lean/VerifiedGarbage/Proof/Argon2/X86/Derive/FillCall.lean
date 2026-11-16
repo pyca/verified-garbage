@@ -77,8 +77,8 @@ theorem GArg.facts {o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384) {p : B
   have hm := hp.mem_fits
   rcases h with ⟨k, hk, rfl⟩ | ⟨d, hd, hd', hdo, rfl⟩
   · have hk' : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
-    have e := cell_addr hp hk
-    have sub : Region.Sub ⟨(memP s₀ + BitVec.ofNat 32 (k * 1024)).setWidth 64, 1024⟩ (memR s₀) := by
+    obtain e := cell_addr hp hk
+    obtain sub : Region.Sub ⟨(memP s₀ + BitVec.ofNat 32 (k * 1024)).setWidth 64, 1024⟩ (memR s₀) := by
       rw [e]; exact cell_in_mem hk
     refine ⟨⟨memR s₀, by simp, k * 1024, e, hk'⟩, by rw [add_nat (by omega_arith)]; omega_arith, ?_, ?_, ?_⟩
     · exact (hp.mem_scr.sub_left sub).sub_right (Offset.sub_base _ ho')
@@ -100,60 +100,60 @@ theorem ccall_pre {s : State} (h : Inv s₀ s) (hdx : s.gpr .edx = scrP s₀) {o
       [⟨(s.gpr .eax).setWidth 64, 1024⟩, ⟨(s.gpr .esi).setWidth 64, 1024⟩,
         ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩]
       [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] s := by
-  have hE := E_nat hp
+  obtain hE := E_nat hp
   have hlo := hp.esp_lo
-  have hhi := E_hi hp
+  obtain hhi := E_hi hp
   have hs := hp.scr_fits
   have esp := h.esp
-  have nesp : Reg.esp ∉ [Reg.edx, .ecx, .esi, .eax] := by decide
-  have fit : 4 * [Reg.edx, .ecx, .esi, .eax].length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain nesp : Reg.esp ∉ [Reg.edx, .ecx, .esi, .eax] := by decide
+  obtain fit : 4 * [Reg.edx, .ecx, .esi, .eax].length + 4 ≤ (s.gpr .esp).toNat := by
     simp only [List.length_cons, List.length_nil]; rw [esp]; omega_arith
-  have a0 := callEntry_arg fit nesp (i := 0) (by simp)
-  have a1 := callEntry_arg fit nesp (i := 1) (by simp)
-  have a2 := callEntry_arg fit nesp (i := 2) (by simp)
-  have a3 := callEntry_arg fit nesp (i := 3) (by simp)
+  obtain a0 := callEntry_arg fit nesp (i := 0) (by simp)
+  obtain a1 := callEntry_arg fit nesp (i := 1) (by simp)
+  obtain a2 := callEntry_arg fit nesp (i := 2) (by simp)
+  obtain a3 := callEntry_arg fit nesp (i := 3) (by simp)
   simp only [List.length_cons, List.length_nil, List.getElem_cons_succ, List.getElem_cons_zero,
     Nat.reduceAdd, Nat.reduceSub] at a0 a1 a2 a3
   rw [hdx] at a3
   rw [hcx] at a2
   obtain ⟨⟨RX, hRX, oX, bX, lX⟩, fX, X_out, X_scr, X_call⟩ := hx.facts hp ho ho'
   obtain ⟨⟨RY, hRY, oY, bY, lY⟩, fY, Y_out, Y_scr, Y_call⟩ := hy.facts hp ho ho'
-  have eO : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o :=
+  obtain eO : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o :=
     HPrime.setWidth_add (by omega_arith)
-  have memW : ∀ R ∈ [memR s₀, scrR s₀], R ∈ s.wr := fun R hR => by
+  obtain memW : ∀ R ∈ [memR s₀, scrR s₀], R ∈ s.wr := fun R hR => by
     rw [h.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · exact mem_mem hp
     · exact scr_mem hp
-  have scrW : scrR s₀ ∈ s.wr := memW _ (by simp)
-  have cX : Covers [⟨(s.gpr .eax).setWidth 64, 1024⟩] s.wr :=
+  obtain scrW : scrR s₀ ∈ s.wr := memW _ (by simp)
+  obtain cX : Covers [⟨(s.gpr .eax).setWidth 64, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨RX, memW _ hRX, oX, bX, lX⟩
-  have cY : Covers [⟨(s.gpr .esi).setWidth 64, 1024⟩] s.wr :=
+  obtain cY : Covers [⟨(s.gpr .esi).setWidth 64, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨RY, memW _ hRY, oY, bY, lY⟩
-  have cO : Covers [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩] s.wr :=
+  obtain cO : Covers [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, o, rfl, ho'⟩
-  have cW : Covers [⟨scrB s₀, 4096⟩] s.wr :=
+  obtain cW : Covers [⟨scrB s₀, 4096⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 0, by simp, by simp⟩
-  have O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
+  obtain O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
     Offset.disjoint_base _ ho (by omega_arith)
-  have O_call : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ (callR s₀) :=
+  obtain O_call : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ (callR s₀) :=
     (call_disj hp (R := scrR s₀) (by simp)).symm.sub_left (Offset.sub_base _ ho')
-  have W_call : Region.Disjoint ⟨scrB s₀, 4096⟩ (callR s₀) :=
+  obtain W_call : Region.Disjoint ⟨scrB s₀, 4096⟩ (callR s₀) :=
     (call_disj hp (R := scrR s₀) (by simp)).symm.sub_left (Region.sub_prefix (by decide))
-  have e16 : (s.gpr .esp - BitVec.ofNat 32 16).toNat = (E s₀).toNat - 16 := by rw [esp, sub_nat (by omega_arith)]
-  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
-  have cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ (callR s₀) :=
+  obtain e16 : (s.gpr .esp - BitVec.ofNat 32 16).toNat = (E s₀).toNat - 16 := by rw [esp, sub_nat (by omega_arith)]
+  obtain e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
+  obtain cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ (callR s₀) :=
     in_call hp (by omega_arith) (by omega_arith)
-  have cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 4⟩ (callR s₀) :=
+  obtain cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 4⟩ (callR s₀) :=
     in_call hp (by omega_arith) (by omega_arith)
-  have a16 : argAddr (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry 0 =
+  obtain a16 : argAddr (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry 0 =
       (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
-  have ce : (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 :=
+  obtain ce : (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 :=
     callEntry_esp' _ _
   refine ⟨?_, ?_, ?_⟩
   · simp only [compressX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
@@ -191,68 +191,68 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .edx = scrP s₀) {o 
         compress (blockAt s.mem ((s.gpr .eax).setWidth 64)) (blockAt s.mem ((s.gpr .esi).setWidth 64)) → Q t) :
     WP isa (.frame (.push [.edx, .ecx, .esi, .eax]) (.call Impl.Argon2.X86.Derive.compressName
       Impl.Argon2.X86.compress) (.pop .eax 4)) s Q := by
-  have hE := E_nat hp
+  obtain hE := E_nat hp
   have hlo := hp.esp_lo
-  have hhi := E_hi hp
+  obtain hhi := E_hi hp
   have hs := hp.scr_fits
   have esp := h.esp
-  have nesp : Reg.esp ∉ [Reg.edx, .ecx, .esi, .eax] := by decide
-  have fit : 4 * [Reg.edx, .ecx, .esi, .eax].length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain nesp : Reg.esp ∉ [Reg.edx, .ecx, .esi, .eax] := by decide
+  obtain fit : 4 * [Reg.edx, .ecx, .esi, .eax].length + 4 ≤ (s.gpr .esp).toNat := by
     simp only [List.length_cons, List.length_nil]; rw [esp]; omega_arith
-  have a0 := callEntry_arg fit nesp (i := 0) (by simp)
-  have a1 := callEntry_arg fit nesp (i := 1) (by simp)
-  have a2 := callEntry_arg fit nesp (i := 2) (by simp)
-  have a3 := callEntry_arg fit nesp (i := 3) (by simp)
+  obtain a0 := callEntry_arg fit nesp (i := 0) (by simp)
+  obtain a1 := callEntry_arg fit nesp (i := 1) (by simp)
+  obtain a2 := callEntry_arg fit nesp (i := 2) (by simp)
+  obtain a3 := callEntry_arg fit nesp (i := 3) (by simp)
   simp only [List.length_cons, List.length_nil, List.getElem_cons_succ, List.getElem_cons_zero,
     Nat.reduceAdd, Nat.reduceSub] at a0 a1 a2 a3
   rw [hdx] at a3
   rw [hcx] at a2
   obtain ⟨⟨RX, hRX, oX, bX, lX⟩, fX, X_out, X_scr, X_call⟩ := hx.facts hp ho ho'
   obtain ⟨⟨RY, hRY, oY, bY, lY⟩, fY, Y_out, Y_scr, Y_call⟩ := hy.facts hp ho ho'
-  have eO : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o :=
+  obtain eO : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o :=
     HPrime.setWidth_add (by omega_arith)
-  have memW : ∀ R ∈ [memR s₀, scrR s₀], R ∈ s.wr := fun R hR => by
+  obtain memW : ∀ R ∈ [memR s₀, scrR s₀], R ∈ s.wr := fun R hR => by
     rw [h.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · exact mem_mem hp
     · exact scr_mem hp
-  have scrW : scrR s₀ ∈ s.wr := memW _ (by simp)
-  have cX : Covers [⟨(s.gpr .eax).setWidth 64, 1024⟩] s.wr :=
+  obtain scrW : scrR s₀ ∈ s.wr := memW _ (by simp)
+  obtain cX : Covers [⟨(s.gpr .eax).setWidth 64, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨RX, memW _ hRX, oX, bX, lX⟩
-  have cY : Covers [⟨(s.gpr .esi).setWidth 64, 1024⟩] s.wr :=
+  obtain cY : Covers [⟨(s.gpr .esi).setWidth 64, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨RY, memW _ hRY, oY, bY, lY⟩
-  have cO : Covers [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩] s.wr :=
+  obtain cO : Covers [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, o, rfl, ho'⟩
-  have cW : Covers [⟨scrB s₀, 4096⟩] s.wr :=
+  obtain cW : Covers [⟨scrB s₀, 4096⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 0, by simp, by simp⟩
-  have O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
+  obtain O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
     Offset.disjoint_base _ ho (by omega_arith)
-  have O_call : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ (callR s₀) :=
+  obtain O_call : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ (callR s₀) :=
     (call_disj hp (R := scrR s₀) (by simp)).symm.sub_left (Offset.sub_base _ ho')
-  have W_call : Region.Disjoint ⟨scrB s₀, 4096⟩ (callR s₀) :=
+  obtain W_call : Region.Disjoint ⟨scrB s₀, 4096⟩ (callR s₀) :=
     (call_disj hp (R := scrR s₀) (by simp)).symm.sub_left (Region.sub_prefix (by decide))
-  have e16 : (s.gpr .esp - BitVec.ofNat 32 16).toNat = (E s₀).toNat - 16 := by rw [esp, sub_nat (by omega_arith)]
-  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
-  have cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ (callR s₀) :=
+  obtain e16 : (s.gpr .esp - BitVec.ofNat 32 16).toNat = (E s₀).toNat - 16 := by rw [esp, sub_nat (by omega_arith)]
+  obtain e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
+  obtain cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ (callR s₀) :=
     in_call hp (by omega_arith) (by omega_arith)
-  have cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 4⟩ (callR s₀) :=
+  obtain cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 4⟩ (callR s₀) :=
     in_call hp (by omega_arith) (by omega_arith)
-  have a16 : argAddr (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry 0 =
+  obtain a16 : argAddr (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry 0 =
       (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := callEntry_argAddr0 _ _
-  have ce : (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 :=
+  obtain ce : (pushed [Reg.edx, .ecx, .esi, .eax] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 :=
     callEntry_esp' _ _
-  have pre := ccall_pre hp h hdx ho ho' hcx hx hy
+  obtain pre := ccall_pre hp h hdx ho ho' hcx hx hy
   refine WP.callWith Proof.Argon2.X86.compress_verified.1 compress_nosp (by simp) nesp
     (by rw [compress_stack, esp]; simp only [List.length_cons, List.length_nil]; omega_arith) pre
     fun t rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   simp only [compressX86, arg_withRegions, State.withRegions_mem, a0, a1, a2] at post
-  have cB : Region.Sub (below (s.gpr .esp) 20) (callR s₀) := in_call hp (by rw [e20]; omega_arith) (by rw [e20]; omega_arith)
-  have cf := callEntry_frame fit nesp
+  obtain cB : Region.Sub (below (s.gpr .esp) 20) (callR s₀) := in_call hp (by rw [e20]; omega_arith) (by rw [e20]; omega_arith)
+  obtain cf := callEntry_frame fit nesp
   simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, Nat.zero_add] at cf
   rw [compress_stack] at f'
   simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, Nat.zero_add] at f'
@@ -261,7 +261,7 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .edx = scrP s₀) {o 
     blockAt_keep cf (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact Y_call.sub_right cB),
     Proof.Argon2.X86.blockAt_eq (by rw [add_nat (by omega_arith)]; omega_arith), blk_shift] at post
-  have f₁ : Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩, callR s₀] s.mem t.mem :=
+  obtain f₁ : Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩, callR s₀] s.mem t.mem :=
     f'.sub fun q hq => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl

@@ -73,7 +73,7 @@ theorem count_loop {body : Prog isa} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64) (
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' h' => ?_
   obtain ⟨hi', hx⟩ := h'
-  have hz : isa.eval (.nonzero .x .x11) s' = some (decide (n - (k + 1) ≠ 0)) := by
+  obtain hz : isa.eval (.nonzero .x .x11) s' = some (decide (n - (k + 1) ≠ 0)) := by
     show VG.AArch64.eval (.nonzero .x .x11) s' = _
     rw [eval_nonzero, hx, ofNat_ne_zero (by omega_nat)]
   by_cases hl : k + 1 = n
@@ -147,7 +147,7 @@ theorem slot_disj (scr : Addr) {i j : Nat} (hi : i < 7) (hj : j < 7) (hij : i �
 theorem SavedRegs.frame {scr : Addr} {s₀ : State} {m m' : Mem} (h : SavedRegs H scr s₀ m)
     {rs : List Region} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (saveR H scr).Disjoint r) :
     SavedRegs H scr s₀ m' := by
-  have k : ∀ i < 7, m'.readW (slot H scr i) 64 = m.readW (slot H scr i) 64 := fun i hi =>
+  obtain k : ∀ i < 7, m'.readW (slot H scr i) 64 = m.readW (slot H scr i) 64 := fun i hi =>
     hf.readW (r := ⟨slot H scr i, 8⟩) (Region.contains_self _ _)
       (fun r hr => (hd r hr).sub_left (slot_sub H scr hi)) (by decide)
   exact ⟨by rw [k 0 (by omega_nat), h.x19], by rw [k 1 (by omega_nat), h.x20], by rw [k 2 (by omega_nat), h.x21],
@@ -164,40 +164,40 @@ theorem save_ok {s : State} {scr : Addr} {L : Nat} (h4 : s.gpr .x4 = scr) (hW : 
     (k : ∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [saveR H scr] s.mem s'.mem → SavedRegs H scr s s'.mem → WP isa (.block rest) s' Q) :
     WP isa (.block (H.save ++ rest)) s Q := by
-  have io : ∀ {t : State}, t.wr = s.wr → ∀ i < 7, InRegions t.wr (slot H scr i) 8 := fun hw i hi => by
+  obtain io : ∀ {t : State}, t.wr = s.wr → ∀ i < 7, InRegions t.wr (slot H scr i) 8 := fun hw i hi => by
     rw [hw]; exact slot_in H hsc hL hW hi
-  have ho : ∀ i < 7, (8 * H.W + 8 * i) % 8 = 0 ∧ 8 * H.W + 8 * i < 4096 * 8 := fun i hi => by omega_nat
-  have ea : ∀ {t : State}, t.gpr = s.gpr → ∀ {o : Nat} (i : Nat), o = 8 * H.W + 8 * i →
+  obtain ho : ∀ i < 7, (8 * H.W + 8 * i) % 8 = 0 ∧ 8 * H.W + 8 * i < 4096 * 8 := fun i hi => by omega_nat
+  obtain ea : ∀ {t : State}, t.gpr = s.gpr → ∀ {o : Nat} (i : Nat), o = 8 * H.W + 8 * i →
       t.gpr .x4 + BitVec.ofNat 64 o = slot H scr i := fun hg o i h => by rw [hg, h4, h]
   simp only [Stream.save, Stream.saved, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
   refine wp_str (a := slot H scr 0) (by have := ho 0 (by omega_nat); omega_nat) (ea rfl 0 (by omega_nat))
     (io rfl 0 (by omega_nat)) fun s₁ m₁ => ?_
   refine wp_str (a := slot H scr 1) (by have := ho 1 (by omega_nat); omega_nat) (ea m₁.gpr 1 (by omega_nat))
     (io m₁.wr 1 (by omega_nat)) fun s₂ m₂ => ?_
-  have g₂ : s₂.gpr = s.gpr := m₂.gpr.trans m₁.gpr
-  have w₂ : s₂.wr = s.wr := m₂.wr.trans m₁.wr
+  obtain g₂ : s₂.gpr = s.gpr := m₂.gpr.trans m₁.gpr
+  obtain w₂ : s₂.wr = s.wr := m₂.wr.trans m₁.wr
   refine wp_str (a := slot H scr 2) (by have := ho 2 (by omega_nat); omega_nat) (ea g₂ 2 (by omega_nat))
     (io w₂ 2 (by omega_nat)) fun s₃ m₃ => ?_
-  have g₃ : s₃.gpr = s.gpr := m₃.gpr.trans g₂
-  have w₃ : s₃.wr = s.wr := m₃.wr.trans w₂
+  obtain g₃ : s₃.gpr = s.gpr := m₃.gpr.trans g₂
+  obtain w₃ : s₃.wr = s.wr := m₃.wr.trans w₂
   refine wp_str (a := slot H scr 3) (by have := ho 3 (by omega_nat); omega_nat) (ea g₃ 3 (by omega_nat))
     (io w₃ 3 (by omega_nat)) fun s₄ m₄ => ?_
-  have g₄ : s₄.gpr = s.gpr := m₄.gpr.trans g₃
-  have w₄ : s₄.wr = s.wr := m₄.wr.trans w₃
+  obtain g₄ : s₄.gpr = s.gpr := m₄.gpr.trans g₃
+  obtain w₄ : s₄.wr = s.wr := m₄.wr.trans w₃
   refine wp_str (a := slot H scr 4) (by have := ho 4 (by omega_nat); omega_nat) (ea g₄ 4 (by omega_nat))
     (io w₄ 4 (by omega_nat)) fun s₅ m₅ => ?_
-  have g₅ : s₅.gpr = s.gpr := m₅.gpr.trans g₄
-  have w₅ : s₅.wr = s.wr := m₅.wr.trans w₄
+  obtain g₅ : s₅.gpr = s.gpr := m₅.gpr.trans g₄
+  obtain w₅ : s₅.wr = s.wr := m₅.wr.trans w₄
   refine wp_str (a := slot H scr 5) (by have := ho 5 (by omega_nat); omega_nat) (ea g₅ 5 (by omega_nat))
     (io w₅ 5 (by omega_nat)) fun s₆ m₆ => ?_
-  have g₆ : s₆.gpr = s.gpr := m₆.gpr.trans g₅
-  have w₆ : s₆.wr = s.wr := m₆.wr.trans w₅
+  obtain g₆ : s₆.gpr = s.gpr := m₆.gpr.trans g₅
+  obtain w₆ : s₆.wr = s.wr := m₆.wr.trans w₅
   refine wp_str (a := slot H scr 6) (by have := ho 6 (by omega_nat); omega_nat) (ea g₆ 6 (by omega_nat))
     (io w₆ 6 (by omega_nat)) fun s₇ m₇ => ?_
   refine k s₇ (m₇.gpr.trans g₆) (by rw [m₇.rd, m₆.rd, m₅.rd, m₄.rd, m₃.rd, m₂.rd, m₁.rd])
     (m₇.wr.trans w₆) (by rw [m₇.sp, m₆.sp, m₅.sp, m₄.sp, m₃.sp, m₂.sp, m₁.sp]) ?_ ?_
   · rw [m₇.mem, m₆.mem, m₅.mem, m₄.mem, m₃.mem, m₂.mem, m₁.mem]
-    have c : ∀ i < 7, (saveR H scr).Contains (slot H scr i) (64 / 8) := fun i hi => by
+    obtain c : ∀ i < 7, (saveR H scr).Contains (slot H scr i) (64 / 8) := fun i hi => by
       rw [slot, ← add_ofNat_add]; exact contains_offset (by omega_nat) (by omega_nat)
     exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by omega_nat))).writeW
       (List.mem_singleton_self _) _ (c 1 (by omega_nat))).writeW (List.mem_singleton_self _) _
@@ -207,7 +207,7 @@ theorem save_ok {s : State} {scr : Addr} {L : Nat} (h4 : s.gpr .x4 = scr) (hW : 
   · have d : ∀ i j, i < 7 → j < 7 → i ≠ j → Region.Disjoint ⟨slot H scr i, 8⟩ ⟨slot H scr j, 8⟩ :=
       fun i j hi hj hij => slot_disj H scr hi hj hij hW
     rw [m₇.mem, m₆.mem, m₅.mem, m₄.mem, m₃.mem, m₂.mem, m₁.mem, g₆, g₅, g₄, g₃, g₂, m₁.gpr]
-    have w : ∀ i j, i < 7 → j < 7 → i ≠ j → ∀ (m : Mem) (v : BitVec 64),
+    obtain w : ∀ i j, i < 7 → j < 7 → i ≠ j → ∀ (m : Mem) (v : BitVec 64),
         (m.writeW (slot H scr j) v).readW (slot H scr i) 64 = m.readW (slot H scr i) 64 :=
       fun i j hi hj hij m v => readW_writeW_ne _ _ (d i j hi hj hij)
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -234,10 +234,10 @@ theorem restore_ok {s : State} {scr : Addr} {L : Nat} (h23 : s.gpr .x23 = scr) (
     WP isa (.block H.restore) s fun s' => s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.sp = s.sp ∧ (∀ r ∈ savedRegs, s'.gpr r = s₀.gpr r) ∧
       (∀ r, r ∉ savedRegs → s'.gpr r = s.gpr r) := by
-  have io : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → ∀ i < 7, InRegions (t.rd ++ t.wr) (slot H scr i) 8 :=
+  obtain io : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → ∀ i < 7, InRegions (t.rd ++ t.wr) (slot H scr i) 8 :=
     fun hr hw i hi => by rw [hr, hw]; exact InRegions.right' (slot_in H hsc hL hW hi)
-  have ho : ∀ i < 7, (8 * H.W + 8 * i) % 8 = 0 ∧ 8 * H.W + 8 * i < 4096 * 8 := fun i hi => by omega_nat
-  have ea : ∀ {t : State}, t.gpr .x23 = scr → ∀ {o : Nat} (i : Nat), o = 8 * H.W + 8 * i →
+  obtain ho : ∀ i < 7, (8 * H.W + 8 * i) % 8 = 0 ∧ 8 * H.W + 8 * i < 4096 * 8 := fun i hi => by omega_nat
+  obtain ea : ∀ {t : State}, t.gpr .x23 = scr → ∀ {o : Nat} (i : Nat), o = 8 * H.W + 8 * i →
       t.gpr .x23 + BitVec.ofNat 64 o = slot H scr i := fun h o i ho => by rw [h, ho]
   simp only [Stream.restore, Stream.saved, List.map_cons, List.map_nil]
   refine wp_ldr (a := slot H scr 0) (by have := ho 0 (by omega_nat); omega_nat) (ea h23 0 (by omega_nat))
@@ -250,9 +250,9 @@ theorem restore_ok {s : State} {scr : Addr} {L : Nat} (h23 : s.gpr .x23 = scr) (
   refine wp_ldr (a := slot H scr 3) (by have := ho 3 (by omega_nat); omega_nat)
     (ea (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h23]) 3 (by omega_nat))
     (io (u₃.rd.trans (u₂.rd.trans u₁.rd)) (u₃.wr.trans (u₂.wr.trans u₁.wr)) 3 (by omega_nat)) fun s₄ u₄ => ?_
-  have r₄ : s₄.rd = s.rd := u₄.rd.trans (u₃.rd.trans (u₂.rd.trans u₁.rd))
-  have w₄ : s₄.wr = s.wr := u₄.wr.trans (u₃.wr.trans (u₂.wr.trans u₁.wr))
-  have x₄ : s₄.gpr .x23 = scr := by
+  obtain r₄ : s₄.rd = s.rd := u₄.rd.trans (u₃.rd.trans (u₂.rd.trans u₁.rd))
+  obtain w₄ : s₄.wr = s.wr := u₄.wr.trans (u₃.wr.trans (u₂.wr.trans u₁.wr))
+  obtain x₄ : s₄.gpr .x23 = scr := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h23]
   refine wp_ldr (a := slot H scr 4) (by have := ho 4 (by omega_nat); omega_nat) (ea x₄ 4 (by omega_nat))
     (io r₄ w₄ 4 (by omega_nat)) fun s₅ u₅ => ?_

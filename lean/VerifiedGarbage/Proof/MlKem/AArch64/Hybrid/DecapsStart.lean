@@ -42,8 +42,8 @@ theorem copyN_ok {n : Nat} {S D : Addr} {sb db : Reg} {so dO : Nat} (hn : 8 * n 
     WP isa (.block (Impl.MlKem.AArch64.Kem16.copyN n sb so db dO)) s fun s' => Keep [.x9] s s' ∧
       Frame [⟨D + BitVec.ofNat 64 dO, 8 * n⟩] s.mem s'.mem ∧
       bytesAt s'.mem (D + BitVec.ofNat 64 dO) (8 * n) = bytesAt s.mem (S + BitVec.ofNat 64 so) (8 * n) := by
-  have n9s : sb ∉ [Reg.x9] := by simpa using hs9
-  have n9d : db ∉ [Reg.x9] := by simpa using hd9
+  obtain n9s : sb ∉ [Reg.x9] := by simpa using hs9
+  obtain n9d : db ∉ [Reg.x9] := by simpa using hd9
   refine WP.mono (wp_range_flatMap (M := isa) (N := n) (fun k (s' : State) => Keep [.x9] s s' ∧
       Frame [⟨D + BitVec.ofNat 64 dO, 8 * n⟩] s.mem s'.mem ∧
       ∀ i < 8 * k, s'.mem (D + BitVec.ofNat 64 (dO + i)) = s.mem (S + BitVec.ofNat 64 (so + i)))
@@ -56,7 +56,7 @@ theorem copyN_ok {n : Nat} {S D : Addr} {sb db : Reg} {so dO : Nat} (hn : 8 * n 
       (by rw [h₂.get db n9d, k₁.get db n9d, hD])
       (by rw [h₂.wr, k₁.wr]; exact in_R (A := fun _ => D) (b := 0) hout (k := 8 * k) (by omega_using [hk]) hn)
       fun s₃ h₃ => wp_nil ?_
-    have m₃ : s₃.mem = s₁.mem.writeW (D + BitVec.ofNat 64 (dO + 8 * k))
+    obtain m₃ : s₃.mem = s₁.mem.writeW (D + BitVec.ofNat 64 (dO + 8 * k))
         (s₁.mem.readW (S + BitVec.ofNat 64 (so + 8 * k)) 64) := by
       rw [h₃.mem, e₂, h₂.mem]
     refine ⟨((k₁.trans h₂.keep).trans h₃.keep).mono, ?_, fun i hi => ?_⟩
@@ -120,7 +120,7 @@ theorem jM_base (s₀ : State) : ((jM P).reg s₀).base = sA (deL P) s₀ (CB P 
 theorem jM_ok {s₀ : State} (hp : Pre P (deL P) s₀) (hk : Stk128 P (deL P) s₀)
     (hs : SrcOk (Impl.MlKem.AArch64.Kem16.jSrc P)) : MsgOk P (deL P) (jM P) s₀ := by
   have hw := hp.wf
-  have f : CB P - 32 + (32 + P.ctLen) ≤ SV P + 48 := by lom
+  obtain f : CB P - 32 + (32 + P.ctLen) ≤ SV P + 48 := by lom
   have e : (jM P).reg s₀ = R (kA s₀) (deL P).sc (CB P - 32) (32 + P.ctLen) := rfl
   refine ⟨hs, fun s h => ?_, fun s h => ?_, ?_, fun r hr => ?_, ?_, fun e' he => ?_, ?_⟩
   · show s.gpr .x28 + BitVec.ofNat 64 (CB P - 32) = _
@@ -151,38 +151,38 @@ theorem startJ_ok {s₀ sQ : State} (hp : Pre P (deL P) s₀) (h8 : 8 * (P.ctLen
   unfold Impl.MlKem.AArch64.Kem16.startJ
   rw [WP.block_append_iff, WP.block_append_iff]
   -- the third state
-  have hS := hsetup hp kbA (by decide : 136 ∈ Spec.Sha3.rates)
+  obtain hS := hsetup hp kbA (by decide : 136 ∈ Spec.Sha3.rates)
   refine WP.mono (zeroState_ok hS (s := sQ) ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩) fun s₁ ⟨k₁, z₁⟩ => ?_
-  have e28' : ∀ o l, (⟨sQ.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) (deL P).sc o l :=
+  obtain e28' : ∀ o l, (⟨sQ.gpr .x28 + BitVec.ofNat 64 o, l⟩ : Region) = R (kA s₀) (deL P).sc o l :=
     fun o l => by rw [kbA.x28]
-  have kb₁ := kbA.call k₁ fun r hr => by
+  obtain kb₁ := kbA.call k₁ fun r hr => by
     rw [List.mem_singleton.mp hr, VG.Proof.MlKem.AArch64.STr, e28']; exact safe_scr hp (by lom)
-  have far₁ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 200 ≤ o →
+  obtain far₁ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → 200 ≤ o →
       bytesAt s₁.mem (sA (deL P) s₀ o) l = bytesAt sQ.mem (sA (deL P) s₀ o) l := fun f h => by
     refine bytesAt_frame k₁.frame (fun r hr => ?_) (by lom)
     rw [List.mem_singleton.mp hr, VG.Proof.MlKem.AArch64.STr, e28']
     exact sdisj hp f (by lom) (.inr (by simp only [KEM.ST]; omega_using [h]))
-  have z₁' : stateAt s₁.mem (kA s₀ (deL P).sc) = Spec.Sha3.zero := by
+  obtain z₁' : stateAt s₁.mem (kA s₀ (deL P).sc) = Spec.Sha3.zero := by
     rw [kbA.x28, show KEM.ST = 0 from rfl, ptr_zero] at z₁; exact z₁
-  have x24₁ : s₁.gpr .x24 = 1 := by rw [k₁.cs _ (by decide) (by decide), hA.x24]
+  obtain x24₁ : s₁.gpr .x24 = 1 := by rw [k₁.cs _ (by decide) (by decide), hA.x24]
   -- `z`
   refine WP.mono (KeyGen.copy_ok (S := kA s₀ 0) (D := kA s₀ 3) (so := 768 * P.k + 64) (dO := CB P - 32)
     (by decide) (by decide) (by lom) (by lom)
     (hp.args.rdisj (by dek) (by dek) (by dek) (hp.fs (by lom)) (by dek) (by dek))
     kb₁.x25 kb₁.x28 (cov_r hp kb₁ (b := 0) (by dek) (by dek)) (cov_s hp kb₁ (by lom)))
     fun s₂ ⟨k₂, f₂, b₂⟩ => ?_
-  have kb₂ := kb₁.frame k₂ f₂ (by decide) fun r hr => by
+  obtain kb₂ := kb₁.frame k₂ f₂ (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact safe_scr hp (by lom)
-  have far₂ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ CB P - 32 ∨ CB P ≤ o) →
+  obtain far₂ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ CB P - 32 ∨ CB P ≤ o) →
       bytesAt s₂.mem (sA (deL P) s₀ o) l = bytesAt s₁.mem (sA (deL P) s₀ o) l := fun f h => by
     refine bytesAt_frame f₂ (fun r hr => ?_) (by lom)
     rw [List.mem_singleton.mp hr]
     exact sdisj hp f (by lom) (by lom)
-  have st₂ : stateAt s₂.mem (kA s₀ (deL P).sc) = Spec.Sha3.zero := by
+  obtain st₂ : stateAt s₂.mem (kA s₀ (deL P).sc) = Spec.Sha3.zero := by
     rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame f₂ (fun r hr => by
       rw [List.mem_singleton.mp hr, stR_sc]; exact sdisj hp (by lom) (by lom) (.inl (by lom)))]
     exact z₁'
-  have x24₂ : s₂.gpr .x24 = 1 := by rw [k₂.get .x24, x24₁]
+  obtain x24₂ : s₂.gpr .x24 = 1 := by rw [k₂.get .x24, x24₁]
   -- `c`
   refine WP.mono (KeyGen.copyN_ok (n := P.ctLen / 8) (S := kA s₀ 1) (D := kA s₀ 3) (so := 0) (dO := CB P)
     (by lom) (by decide) (by decide) ⟨by decide, by lom⟩ ⟨by lom, by lom⟩
@@ -191,14 +191,14 @@ theorem startJ_ok {s₀ sQ : State} (hp : Pre P (deL P) s₀) (h8 : 8 * (P.ctLen
     (by rw [h8]; exact cov_s hp kb₂ (by lom)))
     fun s₃ ⟨k₃, f₃, b₃⟩ => ?_
   rw [h8] at f₃ b₃
-  have kb₃ := kb₂.frame k₃ f₃ (by decide) fun r hr => by
+  obtain kb₃ := kb₂.frame k₃ f₃ (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact safe_scr hp (by lom)
-  have far₃ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ CB P ∨ CB P + P.ctLen ≤ o) →
+  obtain far₃ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ CB P ∨ CB P + P.ctLen ≤ o) →
       bytesAt s₃.mem (sA (deL P) s₀ o) l = bytesAt s₂.mem (sA (deL P) s₀ o) l := fun f h => by
     refine bytesAt_frame f₃ (fun r hr => ?_) (by lom)
     rw [List.mem_singleton.mp hr]
     exact sdisj hp f (by lom) h
-  have keep : ∀ {o l : Nat}, o + l ≤ CB P - 32 → 200 ≤ o →
+  obtain keep : ∀ {o l : Nat}, o + l ≤ CB P - 32 → 200 ≤ o →
       bytesAt s₃.mem (sA (deL P) s₀ o) l = bytesAt sQ.mem (sA (deL P) s₀ o) l := fun h h' => by
     rw [far₃ (by lom) (.inl (by lom)), far₂ (by lom) (.inl h), far₁ (by lom) h']
   refine ⟨⟨kb₃, by rw [k₃.get .x24, x24₂], ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
@@ -215,7 +215,7 @@ theorem startJ_ok {s₀ sQ : State} (hp : Pre P (deL P) s₀) (h8 : 8 * (P.ctLen
       show bytesAt s₃.mem (kA s₀ 3 + BitVec.ofNat 64 (CB P - 32)) 32 =
         bytesAt s₂.mem (kA s₀ 3 + BitVec.ofNat 64 (CB P - 32)) 32 from far₃ (by lom) (.inl (by lom)), b₂,
       kb₂.ro_bytes (b := 1) (by dek) (by dek), ptr_zero]
-    have hz := slice_eq kb₁ (b := 0) (o := 768 * P.k + 64) (n := 32) (by decide) (by dek)
+    obtain hz := slice_eq kb₁ (b := 0) (o := 768 * P.k + 64) (n := 32) (by decide) (by dek)
     rw [show (deL P).slot 0 = 0 from rfl] at hz
     rw [hz]
     rfl
@@ -236,7 +236,7 @@ def decapsAArch64S (P : KemLay) : Contract AArch64.isa where
 
 theorem preSD {s : State} (h : (decapsAArch64S P).pre s) : (decapsAArch64 P).pre s ∧ Stk128 P (deL P) s := by
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp128, k0, k1, k2, k3⟩ := h
-  have sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
+  obtain sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
   refine ⟨⟨rd, wr, d02, d03, d12, d13, d23, by omega_using [sp128],
     k0.sub_left sub, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub⟩, sp128, ?_⟩
   intro b hb

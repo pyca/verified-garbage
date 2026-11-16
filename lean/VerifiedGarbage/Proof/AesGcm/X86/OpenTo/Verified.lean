@@ -183,7 +183,7 @@ theorem frameArgs_ok (a : State) (hP : (a.gpr .esp).toNat + 104 ≤ 2 ^ 32)
     (hr : ∀ d, 52 ≤ d → d + 4 ≤ 104 → InRegions (a.rd ++ a.wr) (w64 (a.gpr .esp + BitVec.ofNat 32 d)) 4) :
     ∃ e, runBlock isa frameArgs a = some e ∧ e.mem = fMem a.mem (a.gpr .esp) ∧
       (∀ r, r ≠ .eax → e.gpr r = a.gpr r) ∧ e.rd = a.rd ∧ e.wr = a.wr := by
-  have hw0 : InRegions a.wr (w64 (a.gpr .esp)) 4 := by simpa only [add_zero32] using hw 0 (by decide)
+  obtain hw0 : InRegions a.wr (w64 (a.gpr .esp)) 4 := by simpa only [add_zero32] using hw 0 (by decide)
   refine ⟨_, by
     xrun [frameArgs_eq, hw0, hw 4 (by decide), hw 8 (by decide), hw 12 (by decide), hw 16 (by decide),
       hw 20 (by decide), hw 24 (by decide), hw 28 (by decide), hw 32 (by decide), hw 36 (by decide),
@@ -205,8 +205,8 @@ include hP
 theorem fMem_frame : Frame [⟨w64 P, 48⟩] m (fMem m P) := by
   have c (d : Nat) (hd : d + 4 ≤ 48) : (⟨w64 P, 48⟩ : Region).Contains (w64 (P + BitVec.ofNat 32 d)) 4 := by
     rw [aP hP (by omega_arith)]; exact Offset.contains_base _ hd (by omega_arith)
-  have c0 : (⟨w64 P, 48⟩ : Region).Contains (w64 P) 4 := by simp [Region.Contains]
-  have hm := List.mem_singleton_self (⟨w64 P, 48⟩ : Region)
+  obtain c0 : (⟨w64 P, 48⟩ : Region).Contains (w64 P) 4 := by simp [Region.Contains]
+  obtain hm := List.mem_singleton_self (⟨w64 P, 48⟩ : Region)
   unfold fMem; dsimp only
   refine Frame.writeW ?_ hm _ (c 44 (by decide)); refine Frame.writeW ?_ hm _ (c 40 (by decide))
   refine Frame.writeW ?_ hm _ (c 36 (by decide)); refine Frame.writeW ?_ hm _ (c 32 (by decide))
@@ -343,12 +343,12 @@ structure Entered (s e : State) : Prop where
 theorem entered {s : State} (h : TP s) :
     WP isa (.block frameArgs) (allocFrame 48 s) (Entered s) := by
   have hP := h.hP
-  have esp : (allocFrame 48 s).gpr .esp = Pf s := allocFrame_esp 48 s
-  have hw : ∀ d, d + 4 ≤ 48 → InRegions (allocFrame 48 s).wr (w64 ((allocFrame 48 s).gpr .esp + BitVec.ofNat 32 d)) 4 :=
+  obtain esp : (allocFrame 48 s).gpr .esp = Pf s := allocFrame_esp 48 s
+  obtain hw : ∀ d, d + 4 ≤ 48 → InRegions (allocFrame 48 s).wr (w64 ((allocFrame 48 s).gpr .esp + BitVec.ofNat 32 d)) 4 :=
     fun d hd => by
       rw [esp, allocFrame_wr, aP hP (by omega_using [hd])]
       exact ⟨_, List.mem_cons_self .., Offset.contains_base _ hd (by omega_using [hd])⟩
-  have hr : ∀ d, 52 ≤ d → d + 4 ≤ 104 →
+  obtain hr : ∀ d, 52 ≤ d → d + 4 ≤ 104 →
       InRegions ((allocFrame 48 s).rd ++ (allocFrame 48 s).wr) (w64 ((allocFrame 48 s).gpr .esp + BitVec.ofNat 32 d)) 4 :=
     fun d h₁ h₂ => by
       refine in_left ⟨⟨argAddr s 0, 52⟩, ?_, ?_⟩
@@ -358,10 +358,10 @@ theorem entered {s : State} (h : TP s) :
   obtain ⟨e, run, hm, hg, hrd, hwr⟩ := frameArgs_ok (allocFrame 48 s) (by rw [esp]; exact hP) hw hr
   refine WP.of_runBlock ⟨e, run, ?_⟩
   rw [esp] at hm
-  have hw' := fMem_words (m := s.mem) hP
+  obtain hw' := fMem_words (m := s.mem) hP
   simp only [allocFrame_mem] at hm
-  have esp' : e.gpr .esp = Pf s := by rw [hg .esp (by decide), esp]
-  have eA : ∀ i, arg e i = (fMem s.mem (Pf s)).readW (w64 (Pf s + BitVec.ofNat 32 (4 + 4 * i))) 32 := fun i => by
+  obtain esp' : e.gpr .esp = Pf s := by rw [hg .esp (by decide), esp]
+  obtain eA : ∀ i, arg e i = (fMem s.mem (Pf s)).readW (w64 (Pf s + BitVec.ofNat 32 (4 + 4 * i))) 32 := fun i => by
     simp only [arg, argAddr, esp', hm]
   refine ⟨esp', fun r h₁ h₂ => by rw [hg r h₁, allocFrame_gpr _ _ h₂], by rw [hrd, allocFrame_rd],
     by rw [hwr, allocFrame_wr], by rw [hm]; exact fMem_frame hP, fun i hi => ?_,
@@ -415,26 +415,26 @@ theorem bodyTo : BodyTo e := by
   have pn := h.pN
   have hsp := h.sp
   have hhi := h.hi
-  have a8 := he.args 8 (by decide)
-  have a9 := he.args 9 (by decide)
-  have a10 := he.args 10 (by decide)
+  obtain a8 := he.args 8 (by decide)
+  obtain a9 := he.args 9 (by decide)
+  obtain a10 := he.args 10 (by decide)
   simp only [↓reduceIte, show (9 : Nat) ≠ 8 by decide, show (10 : Nat) ≠ 8 by decide,
     show (10 : Nat) ≠ 9 by decide] at a8 a9 a10
-  have a0 := he.a 0 (by decide); have a1 := he.a 1 (by decide); have a2 := he.a 2 (by decide)
-  have a3 := he.a 3 (by decide); have a4 := he.a 4 (by decide); have a5 := he.a 5 (by decide)
-  have a6 := he.a 6 (by decide); have a7 := he.a 7 (by decide)
+  obtain a0 := he.a 0 (by decide); have a1 := he.a 1 (by decide); have a2 := he.a 2 (by decide)
+  obtain a3 := he.a 3 (by decide); have a4 := he.a 4 (by decide); have a5 := he.a 5 (by decide)
+  obtain a6 := he.a 6 (by decide); have a7 := he.a 7 (by decide)
   have esp := he.esp
-  have rdwr : ∀ r ∈ s.rd, r ∈ e.rd ++ e.wr := fun r hr => by rw [he.rd]; exact List.mem_append_left _ hr
-  have wrwr : ∀ r ∈ s.wr, r ∈ e.wr := fun r hr => by rw [he.wr]; exact List.mem_cons_of_mem _ hr
-  have eA0 : argAddr e 0 = w64 (Pf s) + BitVec.ofNat 64 4 := by
+  obtain rdwr : ∀ r ∈ s.rd, r ∈ e.rd ++ e.wr := fun r hr => by rw [he.rd]; exact List.mem_append_left _ hr
+  obtain wrwr : ∀ r ∈ s.wr, r ∈ e.wr := fun r hr => by rw [he.wr]; exact List.mem_cons_of_mem _ hr
+  obtain eA0 : argAddr e 0 = w64 (Pf s) + BitVec.ofNat 64 4 := by
     show w64 (e.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)) = _; rw [esp]; exact aP hP (by decide)
-  have fr : ∀ {d n : Nat}, d + n ≤ 48 → Covers [⟨w64 (Pf s) + BitVec.ofNat 64 d, n⟩] (e.rd ++ e.wr) :=
+  obtain fr : ∀ {d n : Nat}, d + n ≤ 48 → Covers [⟨w64 (Pf s) + BitVec.ofNat 64 d, n⟩] (e.rd ++ e.wr) :=
     fun hd => covers_off (covers_of_mem he.frameIn) hd (by decide)
-  have kS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (below (e.gpr .esp) 32).Disjoint X :=
+  obtain kS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (below (e.gpr .esp) 32).Disjoint X :=
     fun hX => by rw [esp]; exact hX.sub_left h.stk_sub
-  have rS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (⟨w64 (e.gpr .esp), 4⟩ : Region).Disjoint X :=
+  obtain rS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (⟨w64 (e.gpr .esp), 4⟩ : Region).Disjoint X :=
     fun hX => by rw [esp]; exact hX.sub_left (h.frame_sub0 (by decide))
-  have aS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → X.Disjoint ⟨argAddr e 0, 4 * 11⟩ :=
+  obtain aS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → X.Disjoint ⟨argAddr e 0, 4 * 11⟩ :=
     fun hX => by rw [eA0]; exact (hX.sub_left (h.frame_sub (d := 4) (n := 44) (by decide))).symm
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, aS (by rw [a6, a7]; exact h.k_d), aS (by rw [a10]; exact h.k_w),
     rS (by rw [a6, a7]; exact h.k_d), rS (by rw [a10]; exact h.k_w), kS (by rw [a0]; exact h.k_c),
@@ -466,13 +466,13 @@ theorem bodyTo : BodyTo e := by
 theorem res : openRes e = toRes s := by
   have hf := he.frame
   have hR := h.rounds
-  have a0 := he.a 0 (by decide); have a1 := he.a 1 (by decide); have a2 := he.a 2 (by decide)
-  have a3 := he.a 3 (by decide); have a4 := he.a 4 (by decide); have a5 := he.a 5 (by decide)
-  have a6 := he.a 6 (by decide); have a7 := he.a 7 (by decide)
-  have a8 := he.args 8 (by decide)
-  have a9 := he.args 9 (by decide)
+  obtain a0 := he.a 0 (by decide); have a1 := he.a 1 (by decide); have a2 := he.a 2 (by decide)
+  obtain a3 := he.a 3 (by decide); have a4 := he.a 4 (by decide); have a5 := he.a 5 (by decide)
+  obtain a6 := he.a 6 (by decide); have a7 := he.a 7 (by decide)
+  obtain a8 := he.args 8 (by decide)
+  obtain a9 := he.args 9 (by decide)
   simp only [↓reduceIte, show (9 : Nat) ≠ 8 by decide] at a8 a9
-  have hc : ciphOf e.mem (arg s 0) (arg s 1).toNat = ciphOf s.mem (arg s 0) (arg s 1).toNat :=
+  obtain hc : ciphOf e.mem (arg s 0) (arg s 1).toNat = ciphOf s.mem (arg s 0) (arg s 1).toNat :=
     ciph_frame hf (h.frameDisj h.k_c) hR
   simp only [openRes, toRes, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9]
   rw [show ctxCiph e.mem (w64 (arg s 0)) (arg s 1).toNat = ctxCiph s.mem (w64 (arg s 0)) (arg s 1).toNat from hc,
@@ -571,7 +571,7 @@ theorem openTo_pc (q : OQ) :
     · simp only [List.mem_singleton] at hr; subst hr e₁ e₂
       rw [allocFrame_esp, allocFrame_esp]
       exact congrArg (fun (q : OQ) => q.1.1.1) (hqx.trans hqy.symm)
-  have hsp : NoSp (openBody vg.callees (toMode vg).bad (toMode vg).fail (toMode vg).dec) :=
+  obtain hsp : NoSp (openBody vg.callees (toMode vg).bad (toMode vg).fail (toMode vg).dec) :=
     NoSp.of_all (body_noEsp vg)
   refine Pc.mono (Pc.lift (Pc.frameSp (openBody_pc (toMode vg) q) hsp fun s₀ s ⟨hb, _, hs⟩ => by
       have := hb.op.sp
@@ -584,16 +584,16 @@ theorem openTo_pc (q : OQ) :
   · rw [← hq, he.pub_eq, show (toMode vg).x e = dstOf e from rfl, he.dst_eq, he.res (TP.of ha)]
   subst hq
   rw [hxe] at hfr
-  have T := TP.of ha
+  obtain T := TP.of ha
   have hP := T.hP
-  have eE : w64 (a.gpr .esp) = w64 (Pf a) + BitVec.ofNat 64 48 := by
+  obtain eE : w64 (a.gpr .esp) = w64 (Pf a) + BitVec.ofNat 64 48 := by
     rw [← aP hP (by decide)]; congr 1; exact (BitVec.sub_add_cancel _ _).symm
-  have rF : (⟨w64 (a.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (Pf a), 48⟩ := by
+  obtain rF : (⟨w64 (a.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (Pf a), 48⟩ := by
     rw [eE]; exact (split_disj (by omega_using [])).symm
-  have ret₁ : e.mem.readW (w64 (a.gpr .esp)) 32 = a.mem.readW (w64 (a.gpr .esp)) 32 :=
+  obtain ret₁ : e.mem.readW (w64 (a.gpr .esp)) 32 = a.mem.readW (w64 (a.gpr .esp)) 32 :=
     he.frame.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact rF) (by decide)
-  have ret₂ : s₂.mem.readW (w64 (a.gpr .esp)) 32 = e.mem.readW (w64 (a.gpr .esp)) 32 := by
+  obtain ret₂ : s₂.mem.readW (w64 (a.gpr .esp)) 32 = e.mem.readW (w64 (a.gpr .esp)) 32 := by
     refine hfr.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rw [he.wr, T.wr] at hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.mem_singleton, List.not_mem_nil,
@@ -666,8 +666,8 @@ theorem openTo_verified : Verified X86.target (Open.openTo vg.callees (toFn vg))
         pubN, roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       pub := by
         intro s₁ s₂ h₁ h₂ h
-        have hR₁ := (TP.of (to_pre s₁ h₁)).rounds
-        have hR₂ := (TP.of (to_pre s₂ h₂)).rounds
+        obtain hR₁ := (TP.of (to_pre s₁ h₁)).rounds
+        obtain hR₂ := (TP.of (to_pre s₂ h₂)).rounds
         sig_pub [toScratchK, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
           Spec.Gcm.openToSig, Spec.Gcm.openToPre, Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, toX86, toPre,
           pubN, roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
@@ -685,20 +685,20 @@ theorem openTo_verified : Verified X86.target (Open.openTo vg.callees (toFn vg))
           | with_reducible assumption
           | (apply leak_bool hR₁ hR₂; with_reducible assumption)
       sat := by
-        have a0 : arg toSat 0 = 0x1000 := by decide
-        have a1 : arg toSat 1 = 10 := by decide
-        have a2 : arg toSat 2 = 0x2000 := by decide
-        have a3 : arg toSat 3 = 0 := by decide
-        have a4 : arg toSat 4 = 0x2100 := by decide
-        have a5 : arg toSat 5 = 0 := by decide
-        have a6 : arg toSat 6 = 0x3000 := by decide
-        have a7 : arg toSat 7 = 0 := by decide
-        have a8 : arg toSat 8 = 0x3100 := by decide
-        have a9 : arg toSat 9 = 0 := by decide
-        have a10 : arg toSat 10 = 0x5000 := by decide
-        have a11 : arg toSat 11 = 0 := by decide
-        have a12 : arg toSat 12 = 0x4000 := by decide
-        have e : argAddr toSat 0 = 0x8004 := by decide
+        obtain a0 : arg toSat 0 = 0x1000 := by decide
+        obtain a1 : arg toSat 1 = 10 := by decide
+        obtain a2 : arg toSat 2 = 0x2000 := by decide
+        obtain a3 : arg toSat 3 = 0 := by decide
+        obtain a4 : arg toSat 4 = 0x2100 := by decide
+        obtain a5 : arg toSat 5 = 0 := by decide
+        obtain a6 : arg toSat 6 = 0x3000 := by decide
+        obtain a7 : arg toSat 7 = 0 := by decide
+        obtain a8 : arg toSat 8 = 0x3100 := by decide
+        obtain a9 : arg toSat 9 = 0 := by decide
+        obtain a10 : arg toSat 10 = 0x5000 := by decide
+        obtain a11 : arg toSat 11 = 0 := by decide
+        obtain a12 : arg toSat 12 = 0x4000 := by decide
+        obtain e : argAddr toSat 0 = 0x8004 := by decide
         have esp : toSat.gpr .esp = 0x8000 := rfl
         sig_implies_sat [toScratchK, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
           Spec.Gcm.openToSig, Spec.Gcm.openToPre, Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, toX86, toPre,

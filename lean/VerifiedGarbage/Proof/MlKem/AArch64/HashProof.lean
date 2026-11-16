@@ -204,30 +204,30 @@ theorem absorbsWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk ra
   | nil => exact fun first s msg _ hk hr hpos => wp_nil ⟨hk, by simpa using hr, by simpa using hpos⟩
   | cons p ps ih =>
     intro first s msg hps hk hr hpos
-    have hp := hps p (List.mem_cons_self ..)
-    have rpos := (rate_bounds hS.hrate).1
+    obtain hp := hps p (List.mem_cons_self ..)
+    obtain rpos := (rate_bounds hS.hrate).1
     have cs : ∀ r ∈ preserved, r ≠ .x30 → s.gpr r = s₀.gpr r := hk.cs
-    have gsc := cs sc hS.hsc.1 hS.hsc.2
-    have gb := cs p.base hp.base.1 hp.base.2
-    have nsc := pres_not hS.hsc.1
-    have nb := pres_not hp.base.1
+    obtain gsc := cs sc hS.hsc.1 hS.hsc.2
+    obtain gb := cs p.base hp.base.1 hp.base.2
+    obtain nsc := pres_not hS.hsc.1
+    obtain nb := pres_not hp.base.1
     refine WP.seq ?_
     rw [keccakArgs, List.append_assoc, List.append_assoc, List.append_assoc]
     refine wp_pos first fun s₁ h₁ e₁ => wp_ptrTo (Ne.symm nsc.1) hS.hst fun s₂ h₂ e₂ =>
       wp_movz fun s₃ h₃ e₃ => wp_ptrTo (Ne.symm nsc.2.2.2.2.2.1) hS.hwk fun s₄ h₄ e₄ => ?_
     refine wp_ptrTo (Ne.symm nb.2.2.2.1) hp.off fun s₅ h₅ e₅ => wp_movz fun s₆ h₆ e₆ => wp_nil ?_
-    have k₆ := (((((h₁.trans h₂).trans h₃).trans h₄).trans h₅).trans h₆).keep
-    have m₆ : s₆.mem = s.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-    have hk₆ : Kept [STr sc st s₀, WKr sc wk s₀, below s₀.sp 16] s₀ s₆ :=
+    obtain k₆ := (((((h₁.trans h₂).trans h₃).trans h₄).trans h₅).trans h₆).keep
+    obtain m₆ : s₆.mem = s.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+    obtain hk₆ : Kept [STr sc st s₀, WKr sc wk s₀, below s₀.sp 16] s₀ s₆ :=
       hk.trans (Kept.of_keep k₆ m₆ (by decide))
     have sp₆ : s₆.sp = s₀.sp := hk₆.sp
-    have hpos' : Pos first s < rate := by rw [hpos]; exact Nat.mod_lt _ rpos
-    have c0 : s₆.gpr .x0 = s₀.gpr sc + BitVec.ofNat 64 st := by
+    obtain hpos' : Pos first s < rate := by rw [hpos]; exact Nat.mod_lt _ rpos
+    obtain c0 : s₆.gpr .x0 = s₀.gpr sc + BitVec.ofNat 64 st := by
       rw [h₆.get .x0, h₅.get .x0, h₄.get .x0, h₃.get .x0, e₂, h₁.get sc (by simpa using nsc.2.2.1), gsc]
-    have c5 : s₆.gpr .x5 = s₀.gpr sc + BitVec.ofNat 64 wk := by
+    obtain c5 : s₆.gpr .x5 = s₀.gpr sc + BitVec.ofNat 64 wk := by
       rw [h₆.get .x5, h₅.get .x5, e₄, h₃.get sc (by simpa using nsc.2.1),
         h₂.get sc (by simpa using nsc.1), h₁.get sc (by simpa using nsc.2.2.1), gsc]
-    have c3 : s₆.gpr .x3 = s₀.gpr p.base + BitVec.ofNat 64 p.off := by
+    obtain c3 : s₆.gpr .x3 = s₀.gpr p.base + BitVec.ofNat 64 p.off := by
       rw [h₆.get .x3, e₅, h₄.get p.base (by simpa using nb.2.2.2.2.2.1),
         h₃.get p.base (by simpa using nb.2.1), h₂.get p.base (by simpa using nb.1),
         h₁.get p.base (by simpa using nb.2.2.1), gb]
@@ -239,14 +239,14 @@ theorem absorbsWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk ra
       (by rw [hk₆.rd, hk₆.wr]; exact covers_cons hp.cov (covers_rw' hS.cov)) (by rw [hk₆.wr]; exact hS.cov)
       fun s₇ k₇ r₇ ret₇ => ?_
     rw [sp₆] at k₇
-    have hk₇ := hk₆.trans k₇
-    have eb : bytesAt s₆.mem (s₀.gpr p.base + BitVec.ofNat 64 p.off) p.len = pbytes s₀ p :=
+    obtain hk₇ := hk₆.trans k₇
+    obtain eb : bytesAt s₆.mem (s₀.gpr p.base + BitVec.ofNat 64 p.off) p.len = pbytes s₀ p :=
       bytesAt_frame hk₆.frame (fun r hr => by
         rcases mem3 hr with rfl | rfl | rfl
         · exact hp.dst
         · exact hp.dwk
         · rw [below16]; exact hp.stk.symm) (by have := hp.len; omega_arith)
-    have rep := r₇ msg (by rw [m₆]; exact hr) hpos
+    obtain rep := r₇ msg (by rw [m₆]; exact hr) hpos
     rw [eb] at rep
     refine WP.mono (ih false s₇ (msg ++ pbytes s₀ p)
       (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hk₇ rep ?_) fun s' ⟨k', r', p'⟩ => ?_
@@ -293,28 +293,28 @@ theorem squeezesWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk r
   | nil => exact fun first s c _ _ hg _ _ => wp_nil ⟨Kept.refl _ _, trivial, hg⟩
   | cons p ps ih =>
     intro first s c hps hpw hg hple hcont
-    have hp := hps p (List.mem_cons_self ..)
+    obtain hp := hps p (List.mem_cons_self ..)
     have ⟨rpos, rle⟩ := rate_bounds hS.hrate
-    have gsc := hg.cs sc hS.hsc.1 hS.hsc.2
-    have gb := hg.cs p.base hp.base.1 hp.base.2
-    have nsc := pres_not hS.hsc.1
-    have nb := pres_not hp.base.1
+    obtain gsc := hg.cs sc hS.hsc.1 hS.hsc.2
+    obtain gb := hg.cs p.base hp.base.1 hp.base.2
+    obtain nsc := pres_not hS.hsc.1
+    obtain nb := pres_not hp.base.1
     refine WP.seq ?_
     rw [keccakArgs, List.append_assoc, List.append_assoc, List.append_assoc]
     refine wp_pos first fun s₁ h₁ e₁ => wp_ptrTo (Ne.symm nsc.1) hS.hst fun s₂ h₂ e₂ =>
       wp_movz fun s₃ h₃ e₃ => wp_ptrTo (Ne.symm nsc.2.2.2.2.2.1) hS.hwk fun s₄ h₄ e₄ => ?_
     refine wp_ptrTo (Ne.symm nb.2.2.2.1) hp.off fun s₅ h₅ e₅ => wp_movz fun s₆ h₆ e₆ => wp_nil ?_
-    have k₆ := (((((h₁.trans h₂).trans h₃).trans h₄).trans h₅).trans h₆).keep
-    have m₆ : s₆.mem = s.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-    have kk₆ : Kept [] s s₆ := Kept.of_keep k₆ m₆ (by decide)
-    have hg₆ := hg.kept kk₆
+    obtain k₆ := (((((h₁.trans h₂).trans h₃).trans h₄).trans h₅).trans h₆).keep
+    obtain m₆ : s₆.mem = s.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+    obtain kk₆ : Kept [] s s₆ := Kept.of_keep k₆ m₆ (by decide)
+    obtain hg₆ := hg.kept kk₆
     have sp₆ : s₆.sp = s₀.sp := hg₆.sp
-    have c0 : s₆.gpr .x0 = s₀.gpr sc + BitVec.ofNat 64 st := by
+    obtain c0 : s₆.gpr .x0 = s₀.gpr sc + BitVec.ofNat 64 st := by
       rw [h₆.get .x0, h₅.get .x0, h₄.get .x0, h₃.get .x0, e₂, h₁.get sc (by simpa using nsc.2.2.1), gsc]
-    have c5 : s₆.gpr .x5 = s₀.gpr sc + BitVec.ofNat 64 wk := by
+    obtain c5 : s₆.gpr .x5 = s₀.gpr sc + BitVec.ofNat 64 wk := by
       rw [h₆.get .x5, h₅.get .x5, e₄, h₃.get sc (by simpa using nsc.2.1),
         h₂.get sc (by simpa using nsc.1), h₁.get sc (by simpa using nsc.2.2.1), gsc]
-    have c3 : s₆.gpr .x3 = s₀.gpr p.base + BitVec.ofNat 64 p.off := by
+    obtain c3 : s₆.gpr .x3 = s₀.gpr p.base + BitVec.ofNat 64 p.off := by
       rw [h₆.get .x3, e₅, h₄.get p.base (by simpa using nb.2.2.2.2.2.1),
         h₃.get p.base (by simpa using nb.2.1), h₂.get p.base (by simpa using nb.1),
         h₁.get p.base (by simpa using nb.2.2.1), gb]
@@ -328,14 +328,14 @@ theorem squeezesWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk r
       (by rw [hg₆.wr]; exact covers_cons (Covers.head hS.cov) (covers_cons hp.covW (Covers.tail hS.cov)))
       fun s₇ k₇ b₇ r₇ n₇ => ?_
     rw [sp₆] at k₇
-    have hg₇ := hg₆.kept k₇
-    have out₇ : bytesAt s₇.mem (s₀.gpr p.base + BitVec.ofNat 64 p.off) p.len = squeezeFrom rate P c p.len := by
+    obtain hg₇ := hg₆.kept k₇
+    obtain out₇ : bytesAt s₇.mem (s₀.gpr p.base + BitVec.ofNat 64 p.off) p.len = squeezeFrom rate P c p.len := by
       rw [b₇, m₆, hcont]
-    have cont₇ : ∀ d, squeezeFrom rate (stateAt s₇.mem (s₀.gpr sc + BitVec.ofNat 64 st)) (Pos false s₇) d =
+    obtain cont₇ : ∀ d, squeezeFrom rate (stateAt s₇.mem (s₀.gpr sc + BitVec.ofNat 64 st)) (Pos false s₇) d =
         squeezeFrom rate P (c + p.len) d := fun d => by
       rw [show Pos false s₇ = (s₇.gpr .x0).toNat from rfl, n₇, m₆]
       exact squeezeFrom_shift rpos (by omega_arith) hcont p.len d
-    have pw := List.pairwise_cons.mp hpw
+    obtain pw := List.pairwise_cons.mp hpw
     refine WP.mono (ih false s₇ (c + p.len) (fun q hq => hps q (List.mem_cons_of_mem _ hq)) pw.2 hg₇ r₇ cont₇)
       fun s' ⟨k', o', g'⟩ => ⟨?_, ⟨?_, o'⟩, g'⟩
     · refine (kk₆.mono (by simp)).trans ((k₇.mono fun r hr => ?_).trans (k'.mono fun r hr => ?_))
@@ -402,9 +402,9 @@ theorem zeroState_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup s
     {s : State} (hg : Rg s₀ s) :
     WP isa (.block (zeroState sc st)) s fun s' =>
       Kept [STr sc st s₀] s s' ∧ stateAt s'.mem (s₀.gpr sc + BitVec.ofNat 64 st) = Spec.Sha3.zero := by
-  have nsc := pres_not hS.hsc.1
+  obtain nsc := pres_not hS.hsc.1
   refine wp_ptrTo (Ne.symm nsc.1) hS.hst fun s₁ h₁ e₁ => wp_movz fun s₂ h₂ e₂ => ?_
-  have hin : ∀ k < 25, InRegions s₂.wr (s₀.gpr sc + BitVec.ofNat 64 st + BitVec.ofNat 64 (8 * k)) 8 :=
+  obtain hin : ∀ k < 25, InRegions s₂.wr (s₀.gpr sc + BitVec.ofNat 64 st + BitVec.ofNat 64 (8 * k)) 8 :=
     fun k hk => by
       rw [h₂.wr, h₁.wr, hg.wr]
       obtain ⟨r, hr, hc⟩ := Covers.head hS.cov (s₀.gpr sc + BitVec.ofNat 64 st + BitVec.ofNat 64 (8 * k)) 8
@@ -412,7 +412,7 @@ theorem zeroState_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup s
       exact ⟨r, hr, hc⟩
   refine WP.mono (WP.preservedV (zstores_ok _ 25 (by decide) (by rw [e₂]; rfl)
     (by rw [h₂.get .x0, e₁, hg.cs sc hS.hsc.1 hS.hsc.2]) hin) (hc := by lit_decide)) fun s' ⟨⟨g', r', w', p', z', f'⟩, hv⟩ => ?_
-  have k₂ := (h₁.trans h₂).keep
+  obtain k₂ := (h₁.trans h₂).keep
   refine ⟨⟨fun r hr h30 => ?_, by rw [p', k₂.sp], by rw [r', k₂.rd], by rw [w', k₂.wr], ?_, fun r hr => (hv r hr).trans (k₂.vcs r hr)⟩,
     stateAt_zero' fun k hk => z' k hk⟩
   · have := pres_not hr
@@ -433,12 +433,12 @@ theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate 
       Kept (STr sc st s₀ :: WKr sc wk s₀ :: below s₀.sp 16 :: outs.map (preg s₀)) s₀ s' ∧
       Outs s₀ s'.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx) (ins.map (pbytes s₀)).flatten)) 0 outs := by
   have ⟨rpos, rle⟩ := rate_bounds hS.hrate
-  have nsc := pres_not hS.hsc.1
-  have g0 : Rg s₀ s₀ := ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩
+  obtain nsc := pres_not hS.hsc.1
+  obtain g0 : Rg s₀ s₀ := ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩
   refine WP.seq (WP.mono (zeroState_ok hS g0) fun s₁ ⟨k₁, z₁⟩ => ?_)
   refine WP.seq (WP.mono ((absorbsWith_ok v) hS ins true s₁ [] hin (k₁.mono (by simp)) (repr_nil z₁)
     (by rfl)) fun s₂ ⟨k₂, r₂, p₂⟩ => ?_)
-  have hie : ins.isEmpty = false := by cases ins; exact absurd rfl hne; rfl
+  obtain hie : ins.isEmpty = false := by cases ins; exact absurd rfl hne; rfl
   rw [hie, Bool.and_false, List.nil_append] at p₂
   rw [List.nil_append] at r₂
   refine WP.seq ?_
@@ -446,11 +446,11 @@ theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate 
   refine wp_pos false fun s₃ h₃ e₃ => wp_ptrTo (Ne.symm nsc.1) hS.hst fun s₄ h₄ e₄ =>
     wp_movz fun s₅ h₅ e₅ => wp_ptrTo (Ne.symm nsc.2.2.2.2.1) hS.hwk fun s₆ h₆ e₆ => wp_movz
     fun s₇ h₇ e₇ => wp_nil ?_
-  have k₇ := ((((h₃.trans h₄).trans h₅).trans h₆).trans h₇).keep
-  have m₇ : s₇.mem = s₂.mem := by rw [h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem]
-  have kk₇ : Kept [] s₂ s₇ := Kept.of_keep k₇ m₇ (by decide)
-  have hg₇ := k₂.rg.kept kk₇
-  have gsc := k₂.cs sc hS.hsc.1 hS.hsc.2
+  obtain k₇ := ((((h₃.trans h₄).trans h₅).trans h₆).trans h₇).keep
+  obtain m₇ : s₇.mem = s₂.mem := by rw [h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem]
+  obtain kk₇ : Kept [] s₂ s₇ := Kept.of_keep k₇ m₇ (by decide)
+  obtain hg₇ := k₂.rg.kept kk₇
+  obtain gsc := k₂.cs sc hS.hsc.1 hS.hsc.2
   have sp₇ : s₇.sp = s₀.sp := hg₇.sp
   refine WP.seq <| pad_callWith v (st := s₀.gpr sc + BitVec.ofNat 64 st) (sc := s₀.gpr sc + BitVec.ofNat 64 wk)
     (rate := rate) (pos := (s₂.gpr .x0).toNat)
@@ -463,9 +463,9 @@ theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate 
     (by rw [sp₇]; exact hS.sp16) (by rw [stk_sp sp₇]; exact hS.kst) (by rw [stk_sp sp₇]; exact hS.kwk)
     (by rw [hg₇.rd, hg₇.wr]; exact covers_rw' hS.cov) (by rw [hg₇.wr]; exact hS.cov) fun s₈ k₈ r₈ => ?_
   rw [sp₇] at k₈
-  have st₈ := r₈ _ (by rw [m₇]; exact r₂) p₂
+  obtain st₈ := r₈ _ (by rw [m₇]; exact r₂) p₂
   rw [show (s₇.gpr .x3).setWidth 8 = BitVec.ofNat 8 sfx by rw [e₇]; exact sfx8 hsfx] at st₈
-  have hg₈ := hg₇.kept k₈
+  obtain hg₈ := hg₇.kept k₈
   refine WP.mono ((squeezesWith_ok v) hS (P := absorb rate (pad rate (BitVec.ofNat 8 sfx) (ins.map (pbytes s₀)).flatten))
     outs true s₈ 0 hout hpw hg₈ (Nat.zero_le _) (fun d => by rw [st₈]; rfl)) fun s' ⟨k', o', _⟩ => ⟨?_, o'⟩
   refine (k₂.mono fun r hr => ?_).trans ((kk₇.mono (by simp)).trans ((k₈.mono fun r hr => ?_).trans k'))

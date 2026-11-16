@@ -58,11 +58,11 @@ theorem selBlock_ok {t : State} {B : Addr} {w : Nat} (h10 : t.gpr .r10 = off B (
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r8) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h29) 1) fun t₂ ⟨⟨a8, m2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r9) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h29) 4) fun t₃ ⟨⟨a9, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   refine WP.mono (base_ok (rd := .r5) (by decide) (by decide) ((k13.gpr _ (by decide)).trans h10)
     ((k13.gpr _ (by decide)).trans h29) 5) fun t₄ ⟨⟨a5, m4⟩, k4⟩ => ⟨⟨?_, ?_, ?_, ?_, a5, ?_⟩, (k13.trans k4).mono⟩
   · rw [k4.gpr .r20 (by decide), k3.gpr .r20 (by decide), k2.gpr .r20 (by decide), a20]
@@ -98,39 +98,39 @@ theorem step_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 ≤
         val32 t.mem B (slot w 5) (2 * w) = if decide (2 ^ 63 ≤ (s.gpr .r24).toNat) then P else S) ∧
       Outs B (stepRs w) s.mem t.mem ∧ t.gpr .r24 = s.gpr .r24 <<< 1 ∧ Keep stepRegs s t := by
   have hnw := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
+  obtain sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  obtain sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   unfold PublicChecked.step
   -- `S := a²` into array 4.
   refine WP.seq (WP.mono (montOp_ok (o := 4) (a := 5) (b := 5) hs (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ h10 h29 h11 h12 hinv hA)
     fun s₁ ⟨⟨hS, eS, o1⟩, k1⟩ => ?_)
-  have ap : ∀ {j : Nat} {ks : List Nat}, (∀ k ∈ ks, k ≠ j) →
+  obtain ap : ∀ {j : Nat} {ks : List Nat}, (∀ k ∈ ks, k ≠ j) →
       ∀ r ∈ ks.map (fun k => (slot w k, 8 * (w + 2))), slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
     intro j ks h r hr
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hr
     exact sp (Ne.symm (h k hk))
   have o1' : Outs B ([2, 3, 4].map fun k => (slot w k, 8 * (w + 2))) s.mem s₁.mem := o1
-  have hd1 : ∀ {j}, j < 8 → j ≠ 2 → j ≠ 3 → j ≠ 4 →
+  obtain hd1 : ∀ {j}, j < 8 → j ≠ 2 → j ≠ 3 → j ≠ 4 →
       val32 s₁.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) := by
     intro j hj h2 h3 h4
     exact o1'.val32 (fun r hr => by have := ap (j := j) (ks := [2, 3, 4]) (by simp; omega_arith) r hr; omega_arith)
       (by have := sl _ hj; omega_arith)
-  have hw1 : w32 s₁.mem B (slot w 0) = w32 s.mem B (slot w 0) :=
+  obtain hw1 : w32 s₁.mem B (slot w 0) = w32 s.mem B (slot w 0) :=
     Outs.w32 o1' (fun r hr => by have := ap (j := 0) (ks := [2, 3, 4]) (by decide) r hr; omega_arith)
       (by have := sl 0 (by decide); omega_arith)
-  have N1 := hd1 (j := 0) (by decide) (by decide) (by decide) (by decide)
-  have X1 := hd1 (j := 6) (by decide) (by decide) (by decide) (by decide)
+  obtain N1 := hd1 (j := 0) (by decide) (by decide) (by decide) (by decide)
+  obtain X1 := hd1 (j := 6) (by decide) (by decide) (by decide) (by decide)
   -- `P := S x` into array 1.
   refine WP.seq (WP.mono (montOp_ok (o := 1) (a := 4) (b := 6) (hs.congr k1.wr) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ
     ((k1.gpr _ (by decide)).trans h10) ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11)
     (by rw [k1.gpr .r12 (by decide)]; exact h12) (by rw [hw1, k1.gpr .r12 (by decide)]; exact hinv)
     (by rw [X1, N1]; exact hX)) fun s₂ ⟨⟨hP, eP, o2⟩, k2⟩ => ?_)
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   have o2' : Outs B ([2, 3, 1].map fun k => (slot w k, 8 * (w + 2))) s₁.mem s₂.mem := o2
-  have hd2 : ∀ {j}, j < 8 → j ≠ 2 → j ≠ 3 → j ≠ 1 →
+  obtain hd2 : ∀ {j}, j < 8 → j ≠ 2 → j ≠ 3 → j ≠ 1 →
       val32 s₂.mem B (slot w j) (2 * w) = val32 s₁.mem B (slot w j) (2 * w) := by
     intro j hj h2 h3 h1
     exact o2'.val32 (fun r hr => by have := ap (j := j) (ks := [2, 3, 1]) (by simp; omega_arith) r hr; omega_arith)
@@ -140,7 +140,7 @@ theorem step_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 ≤
   -- The selection.
   refine WP.seq (WP.mono (selBlock_ok (B := B) (w := w) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h29)) fun s₃ ⟨⟨a20, a24, a8, a9, a5, m3⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   refine WP.mono (selectAcc_ok (n := 2 * w) (dA := slot w 1) (dT := slot w 4) (dO := slot w 5)
     (hs.congr k13.wr) a8 a9 a5 ((k13.gpr _ (by decide)).trans h11) a20 (by omega_arith) (by omega_arith)
     (by have := sl 1 (by decide); omega_arith) (by have := sl 4 (by decide); omega_arith)
@@ -179,40 +179,40 @@ theorem oneP_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤
       (val32 t.mem B (slot w 7) (2 * w) = 1 ∧ Outside B (slot w 7) (8 * w) s.mem t.mem) ∧
         Keep [.r0, .r14, .r17] s t := by
   have hnw := hs.nowrap
-  have s7 := slot_le (w := w) (j := 7) (by decide)
+  obtain s7 := slot_le (w := w) (j := 7) (by decide)
   unfold PublicChecked.one
   refine WP.seq (WP.mono (base_ok (rd := .r14) (by decide) (by decide) h10 h29 7) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw1 hw'
     (by omega_arith)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
-  have k12 := k1.trans k₂
+  obtain k12 := k1.trans k₂
   rw [WP.block_append_iff]
   refine WP.mono (base_ok (rd := .r14) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h29) 7) fun s₃ ⟨⟨b14, m3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   refine WP.mono (WP.keep [.r0] (Q := fun t =>
     t.mem = s₃.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) ?_ (by decide))
     fun t ⟨tm, k4⟩ => ⟨⟨?_, ?_⟩, (k13.trans k4).mono⟩
   · prun [b14, BitVec.add_zero, (hs.congr k13.wr).st (d := slot w 7) (n := 4) (by omega_arith)]
     rfl
   · rw [m3] at tm
-    have hz32 : ∀ j < 2 * w, w32 s₂.mem B (slot w 7 + 4 * j) = 0 := fun j hj => by
-      have hword := word_eq_w32 s₂.mem B (slot w 7 + 8 * (j / 2))
+    obtain hz32 : ∀ j < 2 * w, w32 s₂.mem B (slot w 7 + 4 * j) = 0 := fun j hj => by
+      obtain hword := word_eq_w32 s₂.mem B (slot w 7 + 8 * (j / 2))
       rw [hz (j / 2) (by omega_arith)] at hword
       have : w32 s₂.mem B (slot w 7 + 8 * (j / 2)) = 0 ∧ w32 s₂.mem B (slot w 7 + 8 * (j / 2) + 4) = 0 := by
         rw [show (0 : BitVec 64).toNat = 0 from rfl] at hword; omega_arith
       rcases Nat.mod_two_eq_zero_or_one j with h | h
       · rw [show slot w 7 + 4 * j = slot w 7 + 8 * (j / 2) by omega_arith]; exact this.1
       · rw [show slot w 7 + 4 * j = slot w 7 + 8 * (j / 2) + 4 by omega_arith]; exact this.2
-    have ho := writeW32_outside s₂.mem B (d := slot w 7) ((1 : BitVec 64).setWidth 32) (by omega_arith)
-    have e := val32_append (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 1
+    obtain ho := writeW32_outside s₂.mem B (d := slot w 7) ((1 : BitVec 64).setWidth 32) (by omega_arith)
+    obtain e := val32_append (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 1
       (2 * w - 1)
     rw [show 1 + (2 * w - 1) = 2 * w by omega_arith] at e
-    have hrest : val32 (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7 + 4 * 1)
+    obtain hrest : val32 (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7 + 4 * 1)
         (2 * w - 1) = 0 := by
       rw [ho.val32 (by omega_arith) (by omega_arith)]
       exact val32_zero fun j hj => by
         rw [show slot w 7 + 4 * 1 + 4 * j = slot w 7 + 4 * (j + 1) by omega_arith]; exact hz32 _ (by omega_arith)
-    have h1 := val32_succ (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 0
+    obtain h1 := val32_succ (s₂.mem.writeW (off B (slot w 7)) ((1 : BitVec 64).setWidth 32)) B (slot w 7) 0
     rw [show slot w 7 + 4 * 0 = slot w 7 from rfl, w32_write_self] at h1
     rw [tm, e, hrest, Nat.mul_zero, Nat.add_zero, h1]
     rfl

@@ -46,38 +46,38 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (verifyAccepted L data valid) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
+  obtain hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
   unfold verifyCompute
   refine WP.seq (WP.mono (publicKey_ok M Sq h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
-  have hg1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.generator]) hg
-  have hy1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.publicValue]) hy
-  have hr1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.signatureR]) hr
-  have hs1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by trivial) hs
-  have hz1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.digest]) hz
+  obtain hg1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.generator]) hg
+  obtain hy1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.publicValue]) hy
+  obtain hr1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.signatureR]) hr
+  obtain hs1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by trivial) hs
+  obtain hz1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.digest]) hz
   refine WP.seq (WP.mono (readyRange_ok h1 .q Core.signatureR (by trivial) hr1.active
     (by rw [hrl]; omega_using [hql]) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm1) fun s2 h2 => ?_)
-  have hg2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
-  have hy2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
-  have hr2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr1
-  have hs2 := h2.preserve h1 (by decide) (by decide) (by trivial) hs1
-  have hz2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
-  have hqm2 := h2.preserve h1 (Nat.le_refl _) (by decide) (by trivial) hqm1
+  obtain hg2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
+  obtain hy2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
+  obtain hr2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr1
+  obtain hs2 := h2.preserve h1 (by decide) (by decide) (by trivial) hs1
+  obtain hz2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
+  obtain hqm2 := h2.preserve h1 (Nat.le_refl _) (by decide) (by trivial) hqm1
   refine WP.seq (WP.mono (readyRange_ok h2.ready .q Core.signatureS (by trivial) hs2.active
     (by rw [hsl]; omega_using [hql]) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false h2.mask) fun s3 h3 => ?_)
-  have hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
-  have hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
-  have hr3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr2
-  have hs3 := h3.preserve h2.ready (by decide) (by decide) (by trivial) hs2
-  have hz3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz2
-  have hqm3 := h3.preserve h2.ready (Nat.le_refl _) (by decide) (by trivial) hqm2
+  obtain hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
+  obtain hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
+  obtain hr3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.signatureR]) hr2
+  obtain hs3 := h3.preserve h2.ready (by decide) (by decide) (by trivial) hs2
+  obtain hz3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz2
+  obtain hqm3 := h3.preserve h2.ready (Nat.le_refl _) (by decide) (by trivial) hqm2
   refine WP.seq (WP.mono (coreVerify_ok M Sq h3.ready hp hq hop hoq hpf hqf data hg3 hy3 hr3 hs3 hz3
     hgl hyl hrl hsl hzl hqm3) fun s4 ⟨h4, hu4bytes, hf4, hm4eq, hk4⟩ => ?_)
-  have hr4 := h3.ready.preserveExternal h4 hf4 hk4 (by decide) (by simp [stablePointer, Core.signatureR]) hr3
-  have hm4 := hm4eq.trans h3.mask
-  have hu4 := h4.encodedLocal .q u (data.value L) (by decide) hu hu4bytes
+  obtain hr4 := h3.ready.preserveExternal h4 hf4 hk4 (by decide) (by simp [stablePointer, Core.signatureR]) hr3
+  obtain hm4 := hm4eq.trans h3.mask
+  obtain hu4 := h4.encodedLocal .q u (data.value L) (by decide) hu hu4bytes
   refine WP.mono (readyEqual_ok h4 (Core.scalar u) Core.signatureR
     (by change u < 2 ^ 31; decide) (by trivial) hu4 hr4.active
     (by simp only [encodeBE_length, ModulusSide.length, hrl])

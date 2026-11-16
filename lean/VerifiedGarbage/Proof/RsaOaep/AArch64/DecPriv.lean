@@ -69,14 +69,14 @@ theorem privW_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (h9 : t.
     WP isa (.block (scrRsa .x10 ++ ([.ldrSp .x11 sScrLen, .subImm .x .x11 .x11 1024, .str .x .x10 .x9 80,
       .str .x .x11 .x9 88] : List Instr))) t fun u =>
         Ctx L g vv m₀ u ∧ u.gpr .x9 = L.Q ∧ Rep u.mem L.Q L.scr V (privW L W) := by
-  have Ly := hc.lay hL hP R hS.scr
+  obtain Ly := hc.lay hL hP R hS.scr
   have G' := Ly.geo
-  have h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
-  have h192 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 192) 8 := Ly.ld (d := 192) (by decide)
-  have w80 : InRegions t.wr (L.Q + BitVec.ofNat 64 80) 8 := Ly.st (d := 80) (by decide)
-  have w88 : InRegions t.wr (L.Q + BitVec.ofNat 64 88) 8 := Ly.st (d := 88) (by decide)
+  obtain h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
+  obtain h192 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 192) 8 := Ly.ld (d := 192) (by decide)
+  obtain w80 : InRegions t.wr (L.Q + BitVec.ofNat 64 80) 8 := Ly.st (d := 80) (by decide)
+  obtain w88 : InRegions t.wr (L.Q + BitVec.ofNat 64 88) 8 := Ly.st (d := 88) (by decide)
   have hs : t.mem.read (L.Q + BitVec.ofNat 64 96) 8 = L.scr := Ly.slot
-  have hsl := R.rd8 (d := 192) (k := 24) rfl (by decide) hS.sl
+  obtain hsl := R.rd8 (d := 192) (k := 24) rfl (by decide) hS.sl
   refine WP.mono (Q := fun (u : State) => u.mem = (t.mem.write (off L.Q 80) 8 (L.scr + BitVec.ofNat 64 8192)).write
       (off L.Q 88) 8 (L.sl - BitVec.ofNat 64 1024) ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧
       u.gpr .x9 = t.gpr .x9 ∧ (∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r)) ?_
@@ -84,9 +84,9 @@ theorem privW_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (h9 : t.
   · oaep_run [scrRsa, sScr, sScrLen, oRsa, h9, h96, h192, w80, w88, Ly.sp, hs, hsl,
       imm16 (show 8192 < 65536 by decide)]
     oaep_fin
-  have R' : Rep u.mem L.Q L.scr V (privW L W) := by
+  obtain R' : Rep u.mem L.Q L.scr V (privW L W) := by
     rw [hm]; exact (R.wq G' (k := 10) (by decide) _).wq G' (k := 11) (by decide) _
-  have S : Step L.Q L.scr [] t u := ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by
+  obtain S : Step L.Q L.scr [] t u := ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by
     rw [hm]
     exact Frame.write (Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF L.Q (by decide)))
       (List.mem_cons_self ..) _ (cF L.Q (by decide))⟩
@@ -108,21 +108,21 @@ theorem privR_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) {V : Nat
     WP isa (.block (scr .x0 oEm ++ ([.ldrSp .x1 sK, .ldrSp .x2 sN, .ldrSp .x3 sK, .ldrSp .x4 sE, .ldrSp .x5 sEl,
       .ldrSp .x6 (arg 11), .ldrSp .x7 sK] : List Instr))) t fun u =>
         Ctx L g vv m₀ u ∧ u.mem = t.mem ∧ Ready L u := by
-  have Ly := hc.lay hL hP R hS.scr
-  have h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
-  have h160 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 160) 8 := Ly.ld (d := 160) (by decide)
-  have h168 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 168) 8 := Ly.ld (d := 168) (by decide)
-  have h176 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 176) 8 := Ly.ld (d := 176) (by decide)
-  have h184 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 184) 8 := Ly.ld (d := 184) (by decide)
-  have h376 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 376) 8 :=
+  obtain Ly := hc.lay hL hP R hS.scr
+  obtain h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
+  obtain h160 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 160) 8 := Ly.ld (d := 160) (by decide)
+  obtain h168 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 168) 8 := Ly.ld (d := 168) (by decide)
+  obtain h176 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 176) 8 := Ly.ld (d := 176) (by decide)
+  obtain h184 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 184) 8 := Ly.ld (d := 184) (by decide)
+  obtain h376 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 376) 8 :=
     ⟨L.ARGS, by rw [hc.rd]; simp, Offset.contains _ (by decide) (by have := hL.al136; omega_arith)
       (by have := hL.al152; omega_arith)⟩
   have hs : t.mem.read (L.Q + BitVec.ofNat 64 96) 8 = L.scr := Ly.slot
-  have rk := R.rd8 (d := 168) (k := 21) rfl (by decide) hS.k
-  have rn := R.rd8 (d := 160) (k := 20) rfl (by decide) hS.n
-  have re := R.rd8 (d := 176) (k := 22) rfl (by decide) hS.e
-  have rel := R.rd8 (d := 184) (k := 23) rfl (by decide) hS.el
-  have rct : t.mem.read (L.Q + BitVec.ofNat 64 376) 8 = L.ct := by rw [read8]; exact hc.args 11 (by decide)
+  obtain rk := R.rd8 (d := 168) (k := 21) rfl (by decide) hS.k
+  obtain rn := R.rd8 (d := 160) (k := 20) rfl (by decide) hS.n
+  obtain re := R.rd8 (d := 176) (k := 22) rfl (by decide) hS.e
+  obtain rel := R.rd8 (d := 184) (k := 23) rfl (by decide) hS.el
+  obtain rct : t.mem.read (L.Q + BitVec.ofNat 64 376) 8 = L.ct := by rw [read8]; exact hc.args 11 (by decide)
   refine WP.mono (Q := fun (u : State) => u.mem = t.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧
       (∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r) ∧ Ready L u) ?_
     fun u ⟨hm, hrd, hwr, hsp, hv, hcs, hr⟩ =>
@@ -177,32 +177,32 @@ theorem priv_pre' (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hc : Ctx L g vv m₀
   have hk := hL.k1024
   have hbS := hL.bS
   rw [hP] at hpQ
-  have hlow : (⟨L.Q - BitVec.ofNat 64 (S + 1), S + 1⟩ : Region) = L.LOW := by
+  obtain hlow : (⟨L.Q - BitVec.ofNat 64 (S + 1), S + 1⟩ : Region) = L.LOW := by
     show _ = (⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩ : Region); rw [hP]
-  have sa : ∀ i < 12, stackArg (t.callEntry.withRegions (privRd L) (privWr L)) i = W i := fun i hi => by
+  obtain sa : ∀ i < 12, stackArg (t.callEntry.withRegions (privRd L) (privWr L)) i = W i := fun i hi => by
     rw [stackArg_ce, hc.sp]; exact R.fr i (by unfold nW frameBytes; omega_arith)
-  have a0 := (sa 0 (by decide)).trans hA.p
-  have a1 := (sa 1 (by decide)).trans (hA.args 0 (by decide))
-  have a2 := (sa 2 (by decide)).trans (hA.args 1 (by decide))
-  have a3 := (sa 3 (by decide)).trans (hA.args 2 (by decide))
-  have a4 := (sa 4 (by decide)).trans (hA.args 3 (by decide))
-  have a5 := (sa 5 (by decide)).trans (hA.args 4 (by decide))
-  have a6 := (sa 6 (by decide)).trans (hA.args 5 (by decide))
-  have a7 := (sa 7 (by decide)).trans (hA.args 6 (by decide))
-  have a8 := (sa 8 (by decide)).trans (hA.args 7 (by decide))
-  have a9 := (sa 9 (by decide)).trans (hA.args 8 (by decide))
-  have a10 := (sa 10 (by decide)).trans hA.s10
-  have a11 := (sa 11 (by decide)).trans hA.s11
+  obtain a0 := (sa 0 (by decide)).trans hA.p
+  obtain a1 := (sa 1 (by decide)).trans (hA.args 0 (by decide))
+  obtain a2 := (sa 2 (by decide)).trans (hA.args 1 (by decide))
+  obtain a3 := (sa 3 (by decide)).trans (hA.args 2 (by decide))
+  obtain a4 := (sa 4 (by decide)).trans (hA.args 3 (by decide))
+  obtain a5 := (sa 5 (by decide)).trans (hA.args 4 (by decide))
+  obtain a6 := (sa 6 (by decide)).trans (hA.args 5 (by decide))
+  obtain a7 := (sa 7 (by decide)).trans (hA.args 6 (by decide))
+  obtain a8 := (sa 8 (by decide)).trans (hA.args 7 (by decide))
+  obtain a9 := (sa 9 (by decide)).trans (hA.args 8 (by decide))
+  obtain a10 := (sa 10 (by decide)).trans hA.s10
+  obtain a11 := (sa 11 (by decide)).trans hA.s11
   simp only [ourArg] at a1 a2 a3 a4 a5 a6 a7 a8 a9
-  have aa : stackArgAddr (t.callEntry.withRegions (privRd L) (privWr L)) 0 = L.Q + BitVec.ofNat 64 0 := by
+  obtain aa : stackArgAddr (t.callEntry.withRegions (privRd L) (privWr L)) 0 = L.Q + BitVec.ofNat 64 0 := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hc.sp]
-  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 96⟩ L.STK := DLay.Ok.sub_stk (by omega_arith)
-  have lS := DLay.Ok.low_stk (L := L)
-  have hsl := sl_sub hL
-  have hOut : Region.Sub ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩ L.SCR := Offset.sub_base _ (by omega_arith)
-  have hScr : Region.Sub ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ L.SCR :=
+  obtain arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 96⟩ L.STK := DLay.Ok.sub_stk (by omega_arith)
+  obtain lS := DLay.Ok.low_stk (L := L)
+  obtain hsl := sl_sub hL
+  obtain hOut : Region.Sub ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩ L.SCR := Offset.sub_base _ (by omega_arith)
+  obtain hScr : Region.Sub ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ L.SCR :=
     Offset.sub_base _ (by rw [hsl]; omega_arith)
-  have dOS : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩
+  obtain dOS : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩
       ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ :=
     Offset.disjoint L.scr (.inl (by omega_arith)) (by omega_arith) (by rw [hsl]; omega_arith)
   simp only [privK, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
@@ -234,13 +234,13 @@ theorem priv_pre' (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hc : Ctx L g vv m₀
 
 theorem covers_priv (hL : L.Ok) (hc : Ctx L g vv m₀ t) :
     Covers (privRd L ++ privWr L) (t.rd ++ t.wr) ∧ Covers (privWr L) t.wr := by
-  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
+  obtain z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
   have hs8 := hL.s8192
   have hk := hL.k1024
-  have hsl := sl_sub hL
-  have c1 : ∃ off, L.scr + BitVec.ofNat 64 0 = L.SCR.base + BitVec.ofNat 64 off ∧ off + L.k.toNat ≤ L.SCR.len :=
+  obtain hsl := sl_sub hL
+  obtain c1 : ∃ off, L.scr + BitVec.ofNat 64 0 = L.SCR.base + BitVec.ofNat 64 off ∧ off + L.k.toNat ≤ L.SCR.len :=
     ⟨0, rfl, by show 0 + L.k.toNat ≤ L.sl.toNat * 8; omega_arith⟩
-  have c2 : ∃ off, L.scr + BitVec.ofNat 64 8192 = L.SCR.base + BitVec.ofNat 64 off ∧
+  obtain c2 : ∃ off, L.scr + BitVec.ofNat 64 8192 = L.SCR.base + BitVec.ofNat 64 off ∧
       off + (L.sl - BitVec.ofNat 64 1024).toNat * 8 ≤ L.SCR.len :=
     ⟨8192, rfl, by show 8192 + _ ≤ L.sl.toNat * 8; rw [hsl]; omega_arith⟩
   rw [hc.rd, hc.wr]
@@ -282,22 +282,22 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
   obtain ⟨hcov, hcovw⟩ := covers_priv hL hc
   have hs8 := hL.s8192
   have hk := hL.k1024
-  have hsl := sl_sub hL
+  obtain hsl := sl_sub hL
   refine WP.callFV v.correct (priv_pre' hL hP hc hr R hA) hcov hcovw
     (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   -- What the call may change: our working space, the rest of `scratch` and the stack below the frame.
-  have hlow : Region.Sub (below t.sp (16 * v.code.aarch64Depth)) L.LOW := by
+  obtain hlow : Region.Sub (below t.sp (16 * v.code.aarch64Depth)) L.LOW := by
     rw [hc.sp]
     show Region.Sub _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
     rw [hP]; exact Offset.sub_below _ hdp (by omega_arith)
-  have hws : ∀ r ∈ privWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
+  obtain hws : ∀ r ∈ privWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
       Region.Sub r L.SCR ∨ Region.Sub r L.LOW := fun r hr => by
     simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (Offset.sub_base _ (by omega_arith))
     · exact .inl (Offset.sub_base _ (by rw [hsl]; omega_arith))
     · exact .inr hlow
-  have hfr : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  obtain hfr : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       ∀ X ∈ privWr L ++ [below t.sp (16 * v.code.aarch64Depth)], Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ X :=
     fun d h₁ h₂ X hX => by
       rcases hws X hX with hs | hs
@@ -305,10 +305,10 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
         · exact hL.stk_buf h₂ (.inr (.inr hs))
         · exact hL.args_buf h₂ h₁ (.inr (.inr hs))
       · exact (hL.fr_low h₁).sub_right hs
-  have hk' : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  obtain hk' : ∀ d, d + 8 ≤ 424 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       s'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (hfr d h₁ h₂) (by decide)
-  have hc' : Ctx L g vv m₀ s' :=
+  obtain hc' : Ctx L g vv m₀ s' :=
     ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
       fun r hr => (hvs r hr).trans (hc.vs r hr), (hk' 272 (by decide) (by decide)).trans hc.lr,
       fun j hj => (hk' _ (by omega_arith) (by omega_arith)).trans (hc.args j hj), hc.frame.trans (hf.sub fun r hr => by
@@ -318,15 +318,15 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
   refine ⟨hc', ⟨fun _ _ => rfl, fun j hj => ?_⟩, ?_⟩
   · have : 8 * j + 8 ≤ 272 := by unfold nW frameBytes at hj; omega_arith
     exact (hk' (8 * j) (by omega_arith) (.inl (by omega_arith))).trans (R.fr j hj)
-  have sa : ∀ i < 12, stackArg (t.callEntry.withRegions (privRd L) (privWr L)) i = W i := fun i hi => by
+  obtain sa : ∀ i < 12, stackArg (t.callEntry.withRegions (privRd L) (privWr L)) i = W i := fun i hi => by
     rw [stackArg_ce, hc.sp]; exact R.fr i (by unfold nW frameBytes; omega_arith)
-  have a0 := (sa 0 (by decide)).trans hA.p
-  have a1 := (sa 1 (by decide)).trans (hA.args 0 (by decide))
-  have a2 := (sa 2 (by decide)).trans (hA.args 1 (by decide))
-  have a3 := (sa 3 (by decide)).trans (hA.args 2 (by decide))
-  have a4 := (sa 4 (by decide)).trans (hA.args 3 (by decide))
-  have a6 := (sa 6 (by decide)).trans (hA.args 5 (by decide))
-  have a8 := (sa 8 (by decide)).trans (hA.args 7 (by decide))
+  obtain a0 := (sa 0 (by decide)).trans hA.p
+  obtain a1 := (sa 1 (by decide)).trans (hA.args 0 (by decide))
+  obtain a2 := (sa 2 (by decide)).trans (hA.args 1 (by decide))
+  obtain a3 := (sa 3 (by decide)).trans (hA.args 2 (by decide))
+  obtain a4 := (sa 4 (by decide)).trans (hA.args 3 (by decide))
+  obtain a6 := (sa 6 (by decide)).trans (hA.args 5 (by decide))
+  obtain a8 := (sa 8 (by decide)).trans (hA.args 7 (by decide))
   simp only [ourArg] at a1 a2 a3 a4 a6 a8
   have hp := hpost
   simp only [privK, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr,

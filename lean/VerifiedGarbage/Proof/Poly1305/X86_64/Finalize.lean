@@ -114,20 +114,20 @@ theorem fprologue_ok {s₀ : State} (hp : FPre s₀) :
   rw [fprologue_eq]
   refine WP.block_append (WP.mono (args_ok s₀) fun s₁ ⟨c₁, d₁, k₁⟩ => ?_)
   have rdi₁ : s₁.gpr .rdi = st s₀ := k₁.gpr'
-  have hw₁ : sR (s₁.gpr .rdi) ∈ s₁.wr := by rw [k₁.2.2.2, rdi₁]; exact hp.st_in
+  obtain hw₁ : sR (s₁.gpr .rdi) ∈ s₁.wr := by rw [k₁.2.2.2, rdi₁]; exact hp.st_in
   refine WP.block_append (WP.mono (save_ok s₁ hw₁) fun s₂ ⟨g₂, rd₂, wr₂, _, _, f₂, sv₂⟩ => ?_)
   refine WP.block_append (WP.mono (setup_ok s₂ (by
     rw [wr₂, g₂]; exact List.mem_append_right _ hw₁))
     fun s₃ ⟨e8, e9, e10, e11, e12, e13, k₃⟩ => ?_)
   refine WP.mono (test_ok s₃ .rdx) fun s₄ ⟨z₄, k₄⟩ => ?_
   -- The callee-saved registers are those on entry: `args` does not write them.
-  have sv : Saved (st s₀) s₀ s₂.mem := by
+  obtain sv : Saved (st s₀) s₀ s₂.mem := by
     rw [← rdi₁]
     obtain ⟨a1, a2, a3, a4, a5, a6⟩ := sv₂
     exact ⟨a1.trans k₁.gpr', a2.trans k₁.gpr', a3.trans k₁.gpr', a4.trans k₁.gpr', a5.trans k₁.gpr',
       a6.trans k₁.gpr'⟩
-  have hm : Mem₁ s₀ s₂.mem := ⟨by rw [← rdi₁, ← k₁.2.1]; exact f₂, sv⟩
-  have k := k₃.trans k₄
+  obtain hm : Mem₁ s₀ s₂.mem := ⟨by rw [← rdi₁, ← k₁.2.1]; exact f₂, sv⟩
+  obtain k := k₃.trans k₄
   rw [g₂, rdi₁, hm.readW_low (by decide)] at e8 e9 e11 e12 e13
   refine ⟨s₂.mem, hm, ⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -154,7 +154,7 @@ def padded (s₀ : State) (k : Nat) : Byte :=
 /-- The buffered bytes in the memory the prologue leaves. -/
 theorem Mem₁.tail {s₀ : State} {m₁ : Mem} (hm : Mem₁ s₀ m₁) {k : Nat} (hk : k < kf s₀) :
     m₁ (bufB (st s₀) k) = (tail s₀).getD k 0 := by
-  have hkl := kf_lt s₀
+  obtain hkl := kf_lt s₀
   simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk,
     Option.map_some, Option.getD_some]
   rw [← bufB_eq]
@@ -198,12 +198,12 @@ theorem zero_step {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h
     (hj : j < 16) {s : State} (h : ZInv s₀ m₁ s₁ j s) :
     WP isa (.block [.store8 (bufAt .r12) .rax, .alu .add .r12 (.imm 1), .alu .cmp .r12 (.imm 16)]) s
       fun s' => ZInv s₀ m₁ s₁ (j + 1) s' ∧ s'.zf = some (decide (j + 1 = 16)) := by
-  have hrdi : s.gpr .rdi = st s₀ := by
+  obtain hrdi : s.gpr .rdi = st s₀ := by
     rw [h.keep _ (by decide) (by decide), h₁.keep .rdi (by simp)]
   refine wp_store8 (r := .rax) (a := bufB (st s₀) j) (by rw [ea_bufAt s .r12 h.r12, hrdi])
     (hp.buf_in h.wr hj) fun s₂ g₂ m₂ rd₂ wr₂ => ?_
   refine wp_addi fun s₃ u₃ => wp_cmpi fun s₄ g₄ m₄ rd₄ wr₄ _ z₄ => WP.block_nil ?_
-  have hr12 : s₃.gpr .r12 = BitVec.ofNat 64 (j + 1) := by
+  obtain hr12 : s₃.gpr .r12 = BitVec.ofNat 64 (j + 1) := by
     rw [u₃.gpr, g₂, h.r12, show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide, ofNat_succ]
   refine ⟨⟨⟨Nat.le_trans h.j_le.1 (Nat.le_succ _), by omega_using [hj]⟩, by rw [g₄, hr12], by
       rw [g₄, u₃.other _ (by decide), g₂, h.rax], fun r h1 h2 => by
@@ -229,7 +229,7 @@ theorem zero_step {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h
 
 theorem zeroLoop_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h₁ : F0 s₀ m₁ s₁) {s : State}
     (h : ZInv s₀ m₁ s₁ (kf s₀) s) : WP isa zeroLoop s (ZInv s₀ m₁ s₁ 16) := by
-  have hk := kf_lt s₀
+  obtain hk := kf_lt s₀
   refine WP.loop (M := isa) (fun n s => ∃ j, n = 16 - j ∧ j < 16 ∧ ZInv s₀ m₁ s₁ j s) ?_ _ s
     ⟨kf s₀, rfl, hk, h⟩
   rintro n s ⟨j, rfl, hj, hz⟩
@@ -249,8 +249,8 @@ structure PInv (s₀ : State) (m₁ : Mem) (s₁ : State) (s : State) : Prop whe
 theorem pad1_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h₁ : F0 s₀ m₁ s₁) {s : State}
     (h : ZInv s₀ m₁ s₁ 16 s) :
     WP isa (.block [.mov32 .rax (.imm 1), .store8 (bufAt .rdx) .rax]) s (PInv s₀ m₁ s₁) := by
-  have hk := kf_lt s₀
-  have hrdi : s.gpr .rdi = st s₀ := by
+  obtain hk := kf_lt s₀
+  obtain hrdi : s.gpr .rdi = st s₀ := by
     rw [h.keep _ (by decide) (by decide), h₁.keep .rdi (by simp)]
   refine wp_mov32i fun s₂ u₂ => ?_
   refine wp_store8 (r := .rax) (a := bufB (st s₀) (kf s₀))
@@ -275,9 +275,9 @@ theorem pad1_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h�
 /-- The padded block as a number: the buffered bytes with `0x01` appended. -/
 theorem padded_value {s₀ : State} {m : Mem} (h : BufHas m (st s₀) (padded s₀)) :
     leNum (bytesAt m (off (st s₀) 56) 16) + 2 ^ 128 * (0 : BitVec 32).toNat = leNum (tail s₀ ++ [0x01]) := by
-  have hk := kf_lt s₀
-  have hlen : (tail s₀).length = kf s₀ := Poly1305.length_bytesAt _ _ _
-  have hl : (List.range 16).map (padded s₀) = (tail s₀ ++ [0x01]) ++ List.replicate (15 - kf s₀) 0 := by
+  obtain hk := kf_lt s₀
+  obtain hlen : (tail s₀).length = kf s₀ := Poly1305.length_bytesAt _ _ _
+  obtain hl : (List.range 16).map (padded s₀) = (tail s₀ ++ [0x01]) ++ List.replicate (15 - kf s₀) 0 := by
     apply List.ext_getElem
     · simp [hlen]; omega_using [hk, hlen]
     · intro k h₁ h₂
@@ -307,15 +307,15 @@ theorem tail_nil {s₀ : State} (h : kf s₀ = 0) : tail s₀ = [] := by
 
 theorem lastBlock_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} (hm : Mem₁ s₀ m₁) {s₁ : State}
     (h₁ : F0 s₀ m₁ s₁) (hpos : 0 < kf s₀) : WP isa lastBlock s₁ (Tail s₀ m₁ s₁) := by
-  have hk := kf_lt s₀
+  obtain hk := kf_lt s₀
   refine WP.seq (WP.mono (zinit_ok hm h₁) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (zeroLoop_ok hp h₁ h₂) fun s₃ h₃ => ?_)
   refine WP.block_append (WP.mono (pad1_ok hp h₁ h₃) fun s₄ h₄ => ?_)
   have g : ∀ r, r ≠ .rax → r ≠ .r12 → s₄.gpr r = s₁.gpr r := h₄.keep
-  have hq : (R1 s₀).toNat % 4 = 0 := r1_mod _
-  have hq' : (R1 s₀).toNat < 2 ^ 60 := r1_lt _
-  have hrdi : s₄.gpr .rdi = st s₀ := by rw [g _ (by decide) (by decide), h₁.keep .rdi (by simp)]
-  have hab := absorbBuf_ok s₄ (pad := 0) (Or.inl rfl) (by rw [h₄.wr, hrdi]; exact hp.st_in)
+  obtain hq : (R1 s₀).toNat % 4 = 0 := r1_mod _
+  obtain hq' : (R1 s₀).toNat < 2 ^ 60 := r1_lt _
+  obtain hrdi : s₄.gpr .rdi = st s₀ := by rw [g _ (by decide) (by decide), h₁.keep .rdi (by simp)]
+  obtain hab := absorbBuf_ok s₄ (pad := 0) (Or.inl rfl) (by rw [h₄.wr, hrdi]; exact hp.st_in)
     (q := (R1 s₀).toNat / 4)
     (by rw [g .r8 (by decide) (by decide), h₁.r8]; exact r0_lt _)
     (by rw [g .r9 (by decide) (by decide), h₁.r9]; omega_using [hq]) (by omega_using [hq, hq'])
@@ -330,11 +330,11 @@ theorem lastBlock_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} (hm : Mem₁ s
       simp only [hval, g .r11 (by decide) (by decide), g .rbx (by decide) (by decide),
         g .rbp (by decide) (by decide)]
       exact h₁.hv
-    have hb4 : (s₄.gpr .rbp).toNat ≤ 4 := by
+    obtain hb4 : (s₄.gpr .rbp).toNat ≤ 4 := by
       rw [g .rbp (by decide) (by decide), h₁.rbp]; exact hH2
     obtain ⟨hv, hb⟩ := ha hb4
     refine ⟨?_, hb⟩
-    have hlen : (tail s₀).length = kf s₀ := Poly1305.length_bytesAt _ _ _
+    obtain hlen : (tail s₀).length = kf s₀ := Poly1305.length_bytesAt _ _ _
     rw [hv, hv4, hrdi, padded_value h₄.buf, g .r8 (by decide) (by decide),
       g .r9 (by decide) (by decide), h₁.r8, h₁.r9,
       Poly1305.absorbAll_block (by omega_using [hpos, hk, hlen]) (by omega_using [hpos, hk, hlen]), Nat.mod_mod, Nat.mul_comm]
@@ -347,7 +347,7 @@ theorem add_adc_mod (a b c d : BitVec 64) :
       (a.toNat + b.toNat + 2 ^ 64 * (c.toNat + d.toNat)) % 2 ^ 128 := by
   simp only [BitVec.toNat_add]
   rw [carry_toNat]
-  have ha := a.isLt; have hb := b.isLt; have hc := c.isLt; have hd := d.isLt
+  obtain ha := a.isLt; have hb := b.isLt; have hc := c.isLt; have hd := d.isLt
   by_cases h2 : 2 ^ 64 ≤ a.toNat + b.toNat <;>
     simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_using [ha, hb, h2]
 
@@ -372,16 +372,16 @@ theorem tagWords_ok (s : State) (hin : sR (s.gpr .rdi) ∈ s.wr) (hout : ⟨s.gp
       s'.gpr .r12 = s.mem.readW (off (s.gpr .rdi) 88) 64 ∧ s'.gpr .r13 = s.mem.readW (off (s.gpr .rdi) 96) 64 ∧
       s'.gpr .r14 = s.mem.readW (off (s.gpr .rdi) 104) 64 ∧ s'.gpr .r15 = s.mem.readW (off (s.gpr .rdi) 112) 64 ∧
       s'.gpr .rsp = s.gpr .rsp ∧ s'.gpr .rcx = s.gpr .rcx := by
-  have i : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) d) 8 :=
+  obtain i : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) d) 8 :=
     fun d hd => ⟨_, List.mem_append_right _ hin, contains_off hd (by omega_using [hd])⟩
-  have o : ∀ d, d + 8 ≤ 16 → InRegions s.wr (off (s.gpr .rcx) d) 8 :=
+  obtain o : ∀ d, d + 8 ≤ 16 → InRegions s.wr (off (s.gpr .rcx) d) 8 :=
     fun d hd => ⟨_, hout, contains_off hd (by omega_using [hd])⟩
-  have i40 := i 40 (by decide); have i48 := i 48 (by decide)
-  have i0 := i 72 (by decide); have i1 := i 80 (by decide); have i2 := i 88 (by decide)
-  have i3 := i 96 (by decide); have i4 := i 104 (by decide); have i5 := i 112 (by decide)
-  have o0 := o 0 (by decide); have o8 := o 8 (by decide)
+  obtain i40 := i 40 (by decide); have i48 := i 48 (by decide)
+  obtain i0 := i 72 (by decide); have i1 := i 80 (by decide); have i2 := i 88 (by decide)
+  obtain i3 := i 96 (by decide); have i4 := i 104 (by decide); have i5 := i 112 (by decide)
+  obtain o0 := o 0 (by decide); have o8 := o 8 (by decide)
   -- The stores to the tag do not change the state.
-  have sep : ∀ d, d + 8 ≤ 128 → ∀ e, e + 8 ≤ 16 → ∀ (m : Mem) (v : BitVec 64),
+  obtain sep : ∀ d, d + 8 ≤ 128 → ∀ e, e + 8 ≤ 16 → ∀ (m : Mem) (v : BitVec 64),
       (m.writeW (off (s.gpr .rcx) e) v).readW (off (s.gpr .rdi) d) 64 = m.readW (off (s.gpr .rdi) d) 64 :=
     fun d hd e he m v => Mem.readW_writeW_sep (hsep.sep (contains_off hd (by omega_using [hd]))
       (contains_off he (by omega_using [he]))) (by decide)
@@ -402,7 +402,7 @@ theorem tagWords_ok (s : State) (hin : sR (s.gpr .rdi) ∈ s.wr) (hout : ⟨s.gp
         (c + d + (BitVec.ofBool (decide (2 ^ 64 ≤ a.toNat + b.toNat))).setWidth 64)).readW
           (off (s.gpr .rcx) 0) 64 = a + b := by
       rw [readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
-    have r8 : ((s.mem.writeW (off (s.gpr .rcx) 0) (a + b)).writeW (off (s.gpr .rcx) 8)
+    obtain r8 : ((s.mem.writeW (off (s.gpr .rcx) 0) (a + b)).writeW (off (s.gpr .rcx) 8)
         (c + d + (BitVec.ofBool (decide (2 ^ 64 ≤ a.toNat + b.toNat))).setWidth 64)).readW
           (off (s.gpr .rcx) 8) 64 = c + d + (BitVec.ofBool (decide (2 ^ 64 ≤ a.toNat + b.toNat))).setWidth 64 :=
       Mem.readW_writeW_self64 _ _ _
@@ -421,25 +421,25 @@ theorem fepilogue_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} (hm : Mem₁ s
       gprPreserved s₀ s' ∧ Proof.Poly1305.finalizeX86_64.post s₀ s' := by
   rw [List.append_assoc]
   refine WP.block_append (WP.mono (reduce_ok s) fun s₂ ⟨hr, k₂⟩ => ?_)
-  have rdi₂ : s₂.gpr .rdi = st s₀ := by
+  obtain rdi₂ : s₂.gpr .rdi = st s₀ := by
     rw [k₂.gpr' (r := .rdi), ht.keep .rdi (by simp), h₁.keep .rdi (by simp)]
-  have rcx₂ : s₂.gpr .rcx = op s₀ := by
+  obtain rcx₂ : s₂.gpr .rcx = op s₀ := by
     rw [k₂.gpr' (r := .rcx), ht.keep .rcx (by simp), h₁.rcx]
-  have wr₂ : s₂.wr = s₀.wr := by rw [k₂.2.2.2, ht.wr]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [k₂.2.2.2, ht.wr]
   refine WP.mono (tagWords_ok s₂ (by rw [wr₂, rdi₂]; exact hp.st_in) (by rw [wr₂, rcx₂]; exact hp.o_in)
     (by rw [rdi₂, rcx₂]; exact hp.st_o)) fun s₃ ⟨hw, hf₃, g1, g2, g3, g4, g5, g6, g7, g8⟩ => ?_
   rw [rdi₂, rcx₂, k₂.2.1] at hw
   rw [rcx₂, k₂.2.1] at hf₃
   rw [rdi₂, k₂.2.1] at g1 g2 g3 g4 g5 g6
   -- The state outside the buffer is as the prologue left it.
-  have low : ∀ d, d + 8 ≤ 56 ∨ 72 ≤ d → d + 8 ≤ 128 →
+  obtain low : ∀ d, d + 8 ≤ 56 ∨ 72 ≤ d → d + 8 ≤ 128 →
       s.mem.readW (off (st s₀) d) 64 = m₁.readW (off (st s₀) d) 64 := by
     intro d hd hd'
     refine ht.frame.readW (r := ⟨off (st s₀) d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     simp only [List.mem_singleton, forall_eq, bfR, off, ofInt_natCast]
     exact Offset.disjoint (st s₀) (by omega_using [hd]) (by omega_using [hd']) (by decide)
   obtain ⟨sv1, sv2, sv3, sv4, sv5, sv6⟩ := hm.saved
-  have hf : Frame [wR (st s₀), oR s₀] s₀.mem s₃.mem :=
+  obtain hf : Frame [wR (st s₀), oR s₀] s₀.mem s₃.mem :=
     (hm.frame_wR.mono (by simp)).trans ((ht.frame.sub fun r hr => ⟨wR (st s₀), by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact bfR_sub_wR _⟩).trans (hf₃.mono (by simp)))
   refine ⟨⟨fun r hr => ?_, ?_⟩, by rw [g8, rcx₂], fun key msg hbuf hcnt => ?_⟩
@@ -459,27 +459,27 @@ theorem fepilogue_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} (hm : Mem₁ s
     · exact hp.ret_o
   · obtain ⟨W, B, rfl, hrep, hBl, hBb⟩ := Buffered.split hbuf
     have hk : kf s₀ = (W ++ B).length % 16 := hcnt
-    have htail : tail s₀ = B := by rw [tail, hk, off_56, hBb]
+    obtain htail : tail s₀ = B := by rw [tail, hk, off_56, hBb]
     rw [← htail]
     obtain ⟨hlen, hkey, hacc⟩ := hrep
-    have hH2 := H2_le ⟨hlen, hkey, hacc⟩
+    obtain hH2 := H2_le ⟨hlen, hkey, hacc⟩
     obtain ⟨hv, hb⟩ := ht.acc hH2
-    have hR := hr hb
+    obtain hR := hr hb
     rw [← off_24] at hkey
     have hkey' : bytesAt s₀.mem (off (st s₀) 24) 32 = key := hkey
-    have hA : accumulate (Rn s₀) W = A0 s₀ := by rw [A0, hacc, ← hkey', clamp_key]
-    have hlt : A0 s₀ < P := by rw [← hA]; exact Poly1305.accumulate_lt _ _
-    have hV := Poly1305.absorbAll_lt (r := Rn s₀) hlt (tail s₀)
+    obtain hA : accumulate (Rn s₀) W = A0 s₀ := by rw [A0, hacc, ← hkey', clamp_key]
+    obtain hlt : A0 s₀ < P := by rw [← hA]; exact Poly1305.accumulate_lt _ _
+    obtain hV := Poly1305.absorbAll_lt (r := Rn s₀) hlt (tail s₀)
     rw [low 40 (by decide) (by decide), low 48 (by decide) (by decide), hm.readW_low (by decide),
       hm.readW_low (by decide)] at hw
-    have e₀ := (s₂.gpr .r11).isLt; have e₁ := (s₂.gpr .rbx).isLt
-    have hh : hval s₂ = Poly1305.absorbAll (Rn s₀) (A0 s₀) (tail s₀) := by
+    obtain e₀ := (s₂.gpr .r11).isLt; have e₁ := (s₂.gpr .rbx).isLt
+    obtain hh : hval s₂ = Poly1305.absorbAll (Rn s₀) (A0 s₀) (tail s₀) := by
       rw [hR, hv, Nat.mod_eq_of_lt hV]
     unfold hval at hh
     simp only [mac]
     rw [← hkey', clamp_key, key_drop, leNum_key, off_off, off_off, Poly1305.accumulate_append hlen, hA]
-    have w0 := (s₃.mem.readW (off (op s₀) 0) 64).isLt
-    have w1 := (s₃.mem.readW (off (op s₀) 8) 64).isLt
+    obtain w0 := (s₃.mem.readW (off (op s₀) 0) 64).isLt
+    obtain w1 := (s₃.mem.readW (off (op s₀) 8) 64).isLt
     rw [off_zero] at hw w0
     rw [show off (st s₀) (40 + 0) = off (st s₀) 40 from rfl, show off (st s₀) (40 + 8) = off (st s₀) 48 from rfl]
     refine Poly1305.bytesAt_leBytes_16 _ (op s₀) (Poly1305.absorbAll (Rn s₀) (A0 s₀) (tail s₀) +

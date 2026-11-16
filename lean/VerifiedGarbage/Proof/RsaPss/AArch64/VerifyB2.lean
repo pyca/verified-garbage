@@ -123,21 +123,21 @@ theorem b2_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db 
   unfold seqs seqs seqs seqs seqs seqs
   -- `Y` cleared.
   refine WP.seq (WP.mono_syms (clearY_ok L (V := fun o => u.mem (off S o)) (fun _ _ => rfl)) fun u1 ⟨k1, f1, R1⟩ sy1 => ?_)
-  have L1 := L.congr k1.sp k1.wr (k1.get .x20)
-  have hm1 : Spec.Rsa.bytesAt u1.mem dig H.D = Spec.Rsa.bytesAt u.mem dig H.D :=
+  obtain L1 := L.congr k1.sp k1.wr (k1.get .x20)
+  obtain hm1 : Spec.Rsa.bytesAt u1.mem dig H.D = Spec.Rsa.bytesAt u.mem dig H.D :=
     bytes_apartL f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by omega_arith)
   -- `mHash`.
   refine WP.seq (WP.mono_syms (copyDigest_ok hH L1 R1 (dig := dig) (by rw [slot_keep f1 (L.slotSd (by decide)), hdg])
     (by rw [k1.rd, k1.wr]; exact hr) hd) fun u2 ⟨k2, f2, R2⟩ sy2 => ?_)
   rw [hm1] at R2
   generalize hmH : Spec.Rsa.bytesAt u.mem dig H.D = mH at R2
-  have hml : mH.length = H.D := by rw [← hmH, VG.Proof.RsaPkcs1Sig.bytesAt_length]
-  have L2 := L1.congr k2.sp k2.wr (k2.get .x20)
+  obtain hml : mH.length = H.D := by rw [← hmH, VG.Proof.RsaPkcs1Sig.bytesAt_length]
+  obtain L2 := L1.congr k2.sp k2.wr (k2.get .x20)
   -- `DB`.
   refine WP.seq (WP.mono_syms (copyDb_ok hH L2 R2 (e := e) (db := db) (by omega_arith) (by omega_arith)
     (by rw [k2.get .x24, k1.get .x24, h24]) (by rw [k2.get .x25, k1.get .x25, h25])) fun u3 ⟨k3, f3, R3⟩ sy3 => ?_)
-  have L3 := L2.congr k3.sp k3.wr (k3.get .x20)
-  have F3 : Frame [⟨S, oRsa⟩] u.mem u3.mem := f1.trans (f2.trans f3)
+  obtain L3 := L2.congr k3.sp k3.wr (k3.get .x20)
+  obtain F3 : Frame [⟨S, oRsa⟩] u.mem u3.mem := f1.trans (f2.trans f3)
   -- The salt to `DB`'s place.
   refine WP.seq (WP.mono_syms (shift_ok H (by omega_arith) L3 R3 (W := fun j => W (e + j)) hpos hdb (by omega_arith)
     (fun m hm => ?_) (by rw [k3.get .x25, k2.get .x25, k1.get .x25, h25])
@@ -151,36 +151,36 @@ theorem b2_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db 
       rw [show oY + 8 + H.D + m - (oY + 8 + H.D) = m by omega_arith, hEm _ (by omega_arith) (by omega_arith)]
     · rw [ite_eq_right h]
       simp (disch := omega_arith) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hml, List.length_map, List.length_range]
-  have L4 := L3.congr k4.sp k4.wr (k4.get .x20)
+  obtain L4 := L3.congr k4.sp k4.wr (k4.get .x20)
   -- `nbm`.
   refine WP.seq (WP.mono_syms (verifyNb_ok hH L4 (db := db) (by omega_arith)
     (by rw [k4.get .x25, k3.get .x25, k2.get .x25, k1.get .x25, h25])) fun u5 ⟨k5, m5⟩ sy5 => ?_)
-  have L5 := L4.congr k5.sp k5.wr (k5.get .x20)
-  have R5 := R4.frame (m' := u5.mem) (rs := [slotR F sNb]) (by rw [m5]; exact frame_slot _ F sNb _)
+  obtain L5 := L4.congr k5.sp k5.wr (k5.get .x20)
+  obtain R5 := R4.frame (m' := u5.mem) (rs := [slotR F sNb]) (by rw [m5]; exact frame_slot _ F sNb _)
     (L.slotS (by decide))
   -- `Hash(M')`.
   generalize hmsg : msgV mH (fun i => W (e + i)) db pos = msg
-  have hmsgl : msg.length = 8 + H.D + (db - pos - 1) := by rw [← hmsg, msgV_length, hml]
-  have hnb1 := Nat.lt_div_mul_add (a := db + 7 + H.D + H.P.L) (b := H.P.B) hB0
-  have hnb2 := Nat.div_mul_le_self (db + 7 + H.D + H.P.L) H.P.B
-  have hnbB : ((db + 7 + H.D + H.P.L) / H.P.B + 1) * H.P.B =
+  obtain hmsgl : msg.length = 8 + H.D + (db - pos - 1) := by rw [← hmsg, msgV_length, hml]
+  obtain hnb1 := Nat.lt_div_mul_add (a := db + 7 + H.D + H.P.L) (b := H.P.B) hB0
+  obtain hnb2 := Nat.div_mul_le_self (db + 7 + H.D + H.P.L) H.P.B
+  obtain hnbB : ((db + 7 + H.D + H.P.L) / H.P.B + 1) * H.P.B =
       (db + 7 + H.D + H.P.L) / H.P.B * H.P.B + H.P.B := Nat.succ_mul _ _
-  have g5 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u5.gpr r = u.gpr r := by
+  obtain g5 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u5.gpr r = u.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [k5.get _ (by decide), k4.get _ (by decide), k3.get _ (by decide), k2.get _ (by decide),
         k1.get _ (by decide)]
-  have F5 : Frame (mgfWr F S) u.mem u5.mem :=
+  obtain F5 : Frame (mgfWr F S) u.mem u5.mem :=
     (F3.trans f4).mono (by simp) |>.trans (by rw [m5]; exact (frame_slot _ F sNb _).mono (by simp))
-  have hT5 : HT H dn f F u5.mem u5.syms := by rw [sy5, sy4, sy3, sy2, sy1]; exact hT.stepW L F5
+  obtain hT5 : HT H dn f F u5.mem u5.syms := by rw [sy5, sy4, sy3, sy2, sy1]; exact hT.stepW L F5
   refine WP.seq (WP.mono (ctHash_ok hH L5 R5 (msg := msg) (nbm := (db + 7 + H.D + H.P.L) / H.P.B + 1)
     (by rw [g5 .x19 (by decide), h19]) (by rw [g5 .x21 (by decide), h21])
     (by rw [k5.get .x22, x22₄, hmsgl]) (by rw [m5, Mem.readW_writeW_self64]) (by rw [hmsgl, hnbB]; omega_arith)
     (by rw [hnbB]; omega_arith) (fun i hi => ?_) hT5 hdo) fun u6 ⟨O6, d6⟩ => ?_)
   · rw [← hmsg]
     exact msg_y hH hml hpos hdb (by rw [hnbB] at hi; omega_arith)
-  have L6 := L5.congr O6.sp O6.wr (O6.cs .x20 (by decide))
+  obtain L6 := L5.congr O6.sp O6.wr (O6.cs .x20 (by decide))
   -- The comparison.
   refine WP.mono (cmpH_ok hH L6 (V := fun o => u6.mem (off S o)) (fun _ _ => rfl) (e := e) (db := db) (acc := acc)
     hfit (by rw [O6.cs .x21 (by decide), g5 .x21 (by decide), h21])

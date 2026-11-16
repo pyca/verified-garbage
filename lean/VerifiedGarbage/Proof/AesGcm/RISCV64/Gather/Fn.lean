@@ -195,9 +195,9 @@ structure Lay (s : State) : Prop where
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
   obtain ⟨rd, wr, cd, ct, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bc, bn, ba, bds, bl, barg, bd, bt,
     oc, on, oa, ods, ol, od, ot, al, w₁, w₂, hR, hgl, ca⟩ := hs
-  have hB : s.sp = Bs s + BitVec.ofNat 64 4640 := (BitVec.sub_add_cancel s.sp _).symm
-  have hBn : (Bs s).toNat + 4664 ≤ 2 ^ 64 := by
-    have e := congrArg BitVec.toNat hB
+  obtain hB : s.sp = Bs s + BitVec.ofNat 64 4640 := (BitVec.sub_add_cancel s.sp _).symm
+  obtain hBn : (Bs s).toNat + 4664 ≤ 2 ^ 64 := by
+    obtain e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Bs s).isLt
     omega_arith
@@ -226,7 +226,7 @@ variable {s : State} (h : Lay s)
 include h
 
 theorem bs_toNat : (Bs s).toNat = s.sp.toNat - 4640 := by
-  have e := congrArg BitVec.toNat h.hB
+  obtain e := congrArg BitVec.toNat h.hB
   rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
   have := h.hBn
   omega_using [e, this]
@@ -262,7 +262,7 @@ omit h in
 /-- The memory the entry left outside the frame. -/
 theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 4640⟩) {x : Addr} (hx : r.Contains x 1) :
     eMem s x = s.mem x := by
-  have hf : Frame [FA s] s.mem (eMem s) :=
+  obtain hf : Frame [FA s] s.mem (eMem s) :=
     (frame_eMem0 s).writeW (List.mem_singleton_self _) _
       (contains_pre (by decide))
   exact hf x fun r' hr' hc => by
@@ -355,31 +355,31 @@ structure Entered (s e : State) : Prop where
 
 theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (pushed .ra s) (Entered s) := by
   have asp : (pushed .ra s).sp = Bs s + BitVec.ofNat 64 4624 := h.fsp
-  have amem : (pushed .ra s).mem = eMem0 s := by
+  obtain amem : (pushed .ra s).mem = eMem0 s := by
     show s.mem.write (s.sp - 16 + 8) 8 (s.gpr .ra) = _
     rw [h.fra]
-  have awr : (pushed .ra s).wr = FA s :: s.wr := by
+  obtain awr : (pushed .ra s).wr = FA s :: s.wr := by
     show ⟨s.sp - 16, 16⟩ :: s.wr = _; rw [h.fsp]
   have ag (r : Reg) : (pushed .ra s).gpr r = s.gpr r := rfl
   have ard : (pushed .ra s).rd = s.rd := rfl
   unfold entry
   simp only [mov]
   refine wp_addSp (imm := 0) (by decide) fun u₁ v₁ => ?_
-  have p₁ : u₁.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₁.gpr, asp, BitVec.add_zero]
+  obtain p₁ : u₁.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₁.gpr, asp, BitVec.add_zero]
   refine wp_ld (a := sa s 2) (by decide) (by rw [p₁, Offset.add_add]) (h.al8 (by decide) (by decide))
     (h.sa_in (by decide) _ (by rw [v₁.rd, ard])) fun u₂ v₂ => ?_
-  have p₂ : u₂.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₂.other _ (by decide), p₁]
-  have t₂ : u₂.gpr .t1 = Tg s := by rw [v₂.gpr, v₁.mem, amem, h.e0Arg (by decide)]
+  obtain p₂ : u₂.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₂.other _ (by decide), p₁]
+  obtain t₂ : u₂.gpr .t1 = Tg s := by rw [v₂.gpr, v₁.mem, amem, h.e0Arg (by decide)]
   refine wp_sd (a := aOut s) (by decide) (by rw [p₂, BitVec.add_zero]) (h.al8 (by decide) (by decide))
     ⟨_, by rw [v₂.wr, v₁.wr, awr]; exact List.mem_cons_self .., contains_pre (by decide)⟩
     fun u₃ v₃ => ?_
-  have m₃ : u₃.mem = eMem s := by rw [v₃.mem, t₂, v₂.mem, v₁.mem, amem]
+  obtain m₃ : u₃.mem = eMem s := by rw [v₃.mem, t₂, v₂.mem, v₁.mem, amem]
   refine wp_mv fun u₄ v₄ => wp_mv fun u₅ v₅ => wp_mv fun u₆ v₆ => wp_mv fun u₇ v₇ => ?_
-  have p₇ : u₇.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by
+  obtain p₇ : u₇.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by
     rw [v₇.other _ (by decide), v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide),
       v₃.gpr, p₂]
-  have hm₇ : u₇.mem = eMem s := by rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, m₃]
-  have hr₇ : u₇.rd = s.rd := by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, ard]
+  obtain hm₇ : u₇.mem = eMem s := by rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, m₃]
+  obtain hr₇ : u₇.rd = s.rd := by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, ard]
   refine wp_ld (a := sa s 0) (by decide) (by rw [p₇, Offset.add_add]) (h.al8 (by decide) (by decide))
     (h.sa_in (by decide) _ hr₇) fun u₈ v₈ => ?_
   refine wp_ld (a := sa s 1) (by decide) (by rw [v₈.other _ (by decide), p₇, Offset.add_add])
@@ -388,7 +388,7 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (pushed .ra s
       (h6' : r ≠ .a6) (h7 : r ≠ .a7) : u₉.gpr r = s.gpr r := by
     rw [v₉.other r h7, v₈.other r h6', v₇.other r h5', v₆.other r h4, v₅.other r h6, v₄.other r h5, v₃.gpr,
       v₂.other r h1, v₁.other r h0, ag]
-  have hpres : ∀ r ∈ preserved, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t5 ∧ r ≠ .t6 ∧ r ≠ .a4 ∧ r ≠ .a5 ∧ r ≠ .a6 ∧
+  obtain hpres : ∀ r ∈ preserved, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t5 ∧ r ≠ .t6 ∧ r ≠ .a4 ∧ r ≠ .a5 ∧ r ≠ .a6 ∧
       r ≠ .a7 := by decide
   have pre (r : Reg) : u₃.gpr r = s.gpr r ∨ r = .t0 ∨ r = .t1 := by
     by_cases a : r = .t0
@@ -463,7 +463,7 @@ theorem gathered_wp {s e : State} (h : Lay s) (he : Entered s e) :
   refine WP.mono (gather_wp e (gatherPre_of h he)) fun g ⟨mg, kg⟩ => ?_
   rw [he.mem, h.hpt] at mg
   have hn : ∀ r, r ∉ gatherRegs → g.gpr r = e.gpr r := kg.gpr
-  have hpres : ∀ r ∈ preserved, r ∉ gatherRegs := by decide
+  obtain hpres : ∀ r ∈ preserved, r ∉ gatherRegs := by decide
   exact ⟨mg, (hn _ (by decide)).trans he.a0, (hn _ (by decide)).trans he.a1, (hn _ (by decide)).trans he.a2,
     (hn _ (by decide)).trans he.a3, (hn _ (by decide)).trans he.a7, (hn _ (by decide)).trans he.t5,
     (hn _ (by decide)).trans he.t6, fun r hr => (hn r (hpres r hr)).trans (he.pres r hr),
@@ -489,12 +489,12 @@ theorem ready_wp {s g : State} (h : Lay s) (hg : Gathered s g) : WP isa (.block 
   unfold callArgs
   simp only [mov]
   refine wp_mv fun u₁ v₁ => wp_mv fun u₂ v₂ => wp_addSp (imm := 0) (by decide) fun u₃ v₃ => ?_
-  have p₃ : u₃.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₃.gpr, v₂.sp, v₁.sp, hg.sp, BitVec.add_zero]
+  obtain p₃ : u₃.gpr .t0 = Bs s + BitVec.ofNat 64 4624 := by rw [v₃.gpr, v₂.sp, v₁.sp, hg.sp, BitVec.add_zero]
   refine wp_ld (a := sa s 0) (by decide) (by rw [p₃, Offset.add_add]) (h.al8 (by decide) (by decide))
     (h.sa_in (by decide) _ (by rw [v₃.rd, v₂.rd, v₁.rd, hg.rd])) fun u₄ v₄ => WP.block_nil ?_
   have g (r : Reg) (h4 : r ≠ .a4) (h5 : r ≠ .a5) (h0 : r ≠ .t0) (h6 : r ≠ .a6) : u₄.gpr r = g.gpr r := by
     rw [v₄.other r h6, v₃.other r h0, v₂.other r h5, v₁.other r h4]
-  have hpres : ∀ r ∈ preserved, r ≠ .a4 ∧ r ≠ .a5 ∧ r ≠ .t0 ∧ r ≠ .a6 := by decide
+  obtain hpres : ∀ r ∈ preserved, r ≠ .a4 ∧ r ≠ .a5 ∧ r ≠ .t0 ∧ r ≠ .a6 := by decide
   exact ⟨by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem, hg.mem],
     by rw [g _ (by decide) (by decide) (by decide) (by decide), hg.a0],
     by rw [g _ (by decide) (by decide) (by decide) (by decide), hg.a1],
@@ -540,8 +540,8 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
   have hBn := h.hBn
   have hb := h.bs_toNat
-  have h24 := h.off_toNat (k := 4624) (by decide)
-  have aS : (⟨aOut s, 8⟩ : Region).Sub ⟨Bs s, 4640⟩ := stk_sub s 4624 8 (by decide)
+  obtain h24 := h.off_toNat (k := 4624) (by decide)
+  obtain aS : (⟨aOut s, 8⟩ : Region).Sub ⟨Bs s, 4640⟩ := stk_sub s 4624 8 (by decide)
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c3, c4, c5, c6, c7, c8, c9, c10, hc.sp, cs_sub, hc.argAddr, hc.arg h]
@@ -582,11 +582,11 @@ theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
   refine WP.callAny (k := Proof.AesGcm.sealRoundsContract RISCV64.abi 4624) hv (sealSpec_pre hcp) hcov hw
     (fun z rd' wr' sp' fr' pres' post' => ?_) (by rw [seal_sdepth]; decide)
-  have hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
+  obtain hpost := sealSpec_post post' (by simp only [State.withRegions_gpr, c4]; exact h.hR)
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6, c7, c8, c9, c10,
     hc.mem, hc.arg h] at hpost
   -- The return address, from the frame, which the call kept.
-  have ra : z.mem.read (raA s) 8 = s.gpr .ra := by
+  obtain ra : z.mem.read (raA s) 8 = s.gpr .ra := by
     rw [← h.gRa, ← hc.mem]
     refine Frame.read fr' (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -603,7 +603,7 @@ theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
     abiPreserved s (popped .ra z) ∧ gatherPost s (popped .ra z) := by
   obtain ⟨rd, wr, cd, ct, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     oc, on, oa, ods, ol, od, ot, al, w₁, w₂, hR, hgl, ca⟩ := h.pre
-  have hra : z.mem.read (z.sp + 8) 8 = s.gpr .ra := by
+  obtain hra : z.mem.read (z.sp + 8) 8 = s.gpr .ra := by
     rw [hz.sp, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_add]; exact hz.ra
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · show (z.write .ra _).gpr r = _
@@ -615,7 +615,7 @@ theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
   · show encryptWith _ _ _ _ _ _ = (bytesAt (z.write .ra (z.mem.read (z.sp + 8) 8)).mem (Dst s) (L s),
       bytesAt (z.write .ra (z.mem.read (z.sp + 8) 8)).mem (Tg s) 16)
     rw [RegUpd.mem_write]
-    have hfc : Frame [FA s, dR s] s.mem (gMem s) :=
+    obtain hfc : Frame [FA s, dR s] s.mem (gMem s) :=
       ((Lay.frame_eMem (s := s)).mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
         (h.frame_gMem.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))
     have apart {r : Region} (h₁ : (⟨Bs s, 4640⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
@@ -626,11 +626,11 @@ theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
       · exact h₁.symm.sub_right (stk_sub s 4624 16 (by decide))
       · exact h₂
     obtain ⟨hc₁, hh₁⟩ := Proof.AesGcm.ctx_frame hfc (apart h.bc cd) h.hR
-    have hn : bytesAt (gMem s) (Nn s) (NL s) = bytesAt s.mem (Nn s) (NL s) :=
+    obtain hn : bytesAt (gMem s) (Nn s) (NL s) = bytesAt s.mem (Nn s) (NL s) :=
       Proof.Cmac.bytesAt_frame hfc (apart h.bn nd) (by omega_arith)
-    have ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
+    obtain ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
       Proof.Cmac.bytesAt_frame hfc (apart h.ba ad) (by omega_arith)
-    have hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
+    obtain hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
       rw [← h.hlen]
       exact Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
     have := hz.out
@@ -639,7 +639,7 @@ theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
 
 theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
     WP isa sealGather s fun z => abiPreserved s z ∧ gatherPost s z := by
-  have h := lay hs
+  obtain h := lay hs
   refine WP.frame (by have := h.w₁; omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)

@@ -230,7 +230,7 @@ theorem copyDigest_sct :
     (two_taintE [.x11, .x20] (SR.pins fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp)
       (c' := Code.eraseOff (.seq (.block [.addImm .x .x14 .x20 (oY + 8), movi .x12 zH.D])
         Impl.RsaPkcs1Sig.AArch64.copyLoop)) rfl (by taint_decide))
-  have nk : ∀ q ∈ sregs H.D, q.1 ∉ [Reg.x11] := nk_of (by decide)
+  obtain nk : ∀ q ∈ sregs H.D, q.1 ∉ [Reg.x11] := nk_of (by decide)
   unfold ld
   refine WP.of_syms ?_
   refine wp_ldrSp (by decide) (by rw [h.L.sp]; exact h.L.fld (by decide)) fun u' o e =>
@@ -262,7 +262,7 @@ theorem copySaltY_sct :
     refine wp_ldrSp (by decide) (ld_slot h.L (by decide)) fun u₁ o₁ e₁ => wp_addImm (by unfold oY; omega_arith)
       fun u₂ o₂ e₂ => wp_ldrSp (by decide) (by rw [o₂.sp, o₂.rd, o₂.wr, o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide))
         fun u₃ o₃ e₃ => wp_nil fun sy => ?_
-    have O : Only [.x11, .x14, .x12] u u₃ := (o₁.trans (o₂.trans o₃)).mono
+    obtain O : Only [.x11, .x14, .x12] u u₃ := (o₁.trans (o₂.trans o₃)).mono
     refine h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) (fun q hq => by rw [O.mem]; exact h.sl q hq) sy (by rw [O.mem]; exact Frame.refl _ _)
     rcases List.mem_append.mp hq with hq | hq
     · rw [O.get q.1 (nk q hq)]; exact h.r q hq
@@ -334,10 +334,10 @@ theorem putSalt_sct {T : Tabs} {D : Nat} :
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
   have c6 : oRsa = 8192 := rfl
-  have x24 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
+  obtain x24 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
       u.gpr .x24 = off (scr a) (oEm + loA a) := fun h =>
     h.r (.x24, fun a => off (scr a) (oEm + loA a)) (List.mem_append_left _ (by simp [sregs]))
-  have x25 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
+  obtain x25 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
       u.gpr .x25 = BitVec.ofNat 64 (dbA D a) := fun h =>
     h.r (.x25, fun a => BitVec.ofNat 64 (dbA D a)) (List.mem_append_left _ (by simp [sregs]))
   refine two_post ?_ fun a u h => ?_
@@ -359,7 +359,7 @@ theorem putSalt_sct {T : Tabs} {D : Nat} :
     refine WP.of_syms ?_
     refine wp_add fun u₁ o₁ e₁ => wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide))
       fun u₂ o₂ e₂ => wp_nil fun sy => ?_
-    have O : Only [.x14, .x12] u u₂ := (o₁.trans o₂).mono
+    obtain O : Only [.x14, .x12] u u₂ := (o₁.trans o₂).mono
     refine h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) (fun q hq => by rw [O.mem]; exact h.sl q hq) sy (by rw [O.mem]; exact Frame.refl _ _)
     rcases List.mem_append.mp hq with hq | hq
     · rw [O.get q.1 (nk q hq)]; exact h.r q hq
@@ -371,25 +371,25 @@ theorem putSalt_sct {T : Tabs} {D : Nat} :
   refine two_step (Ψ := SR T D (rsP2 D) sslots) (two_taint [.x12, .x14] (SR.pins fun r hr => by
       simp at hr; rcases hr with rfl | rfl <;> simp [rsP1]) (by taint_decide)) (fun a u h => ?_) ?_
   · have nk : ∀ q ∈ sregs D, q.1 ∉ [Reg.x14, .x9, .x11] := nk_of (by decide)
-    have hf := h.ok.fit; have hk2 := h.ok.k2
+    obtain hf := h.ok.fit; have hk2 := h.ok.k2
     have hdb : dbA D a = kA a - loA a - D - 1 := rfl
-    have x14 : u.gpr .x14 = off (scr a) (oEm + loA a + dbA D a) :=
+    obtain x14 : u.gpr .x14 = off (scr a) (oEm + loA a + dbA D a) :=
       h.r (.x14, fun a => off (scr a) (oEm + loA a + dbA D a)) (by simp [rsP1])
-    have x12 : u.gpr .x12 = a.gpr .x4 := h.r (.x12, fun a => a.gpr .x4) (by simp [rsP1])
+    obtain x12 : u.gpr .x12 = a.gpr .x4 := h.r (.x12, fun a => a.gpr .x4) (by simp [rsP1])
     unfold ld
     refine WP.of_syms ?_
     refine wp_sub fun u₃ o₃ e₃ => wp_subImm (by decide) fun u₄ o₄ e₄ => wp_movz fun u₅ o₅ e₅ => ?_
-    have h14 : u₅.gpr .x14 = off (scr a) (oEm + loA a + dbA D a - slA a - 1) := by
+    obtain h14 : u₅.gpr .x14 = off (scr a) (oEm + loA a + dbA D a - slA a - 1) := by
       rw [o₅.get .x14, e₄, e₃, x14, x12, sl_ofNat, off_sub _ (by omega_arith), off_sub _ (by omega_arith)]
-    have O₅ : Only [.x14, .x9] u u₅ := (o₃.trans (o₄.trans o₅)).mono
+    obtain O₅ : Only [.x14, .x9] u u₅ := (o₃.trans (o₄.trans o₅)).mono
     refine wp_strb (by decide) (by rw [h14, BitVec.add_zero]) (by rw [O₅.wr]; exact h.L.st (by omega_arith))
       fun u₆ m₆ => wp_addImm (by decide) fun u₇ o₇ e₇ => wp_ldrSp (by decide)
         (by rw [o₇.sp, o₇.rd, o₇.wr, m₆.sp, m₆.rd, m₆.wr, O₅.sp, O₅.rd, O₅.wr]; exact ld_slot h.L (by decide))
         fun u₈ o₈ e₈ => wp_nil fun sy => ?_
-    have K : Keep [.x14, .x9, .x11] u u₈ := (O₅.keep.trans (m₆.keep.trans (o₇.keep.trans o₈.keep))).mono
-    have hm : u₈.mem = u.mem.writeW (off (scr a) (oEm + loA a + dbA D a - slA a - 1)) (1 : Byte) := by
+    obtain K : Keep [.x14, .x9, .x11] u u₈ := (O₅.keep.trans (m₆.keep.trans (o₇.keep.trans o₈.keep))).mono
+    obtain hm : u₈.mem = u.mem.writeW (off (scr a) (oEm + loA a + dbA D a - slA a - 1)) (1 : Byte) := by
       rw [o₈.mem, o₇.mem, m₆.mem, O₅.mem, e₅]; rfl
-    have hfr := wS_frame u.mem (scr a) (x := oEm + loA a + dbA D a - slA a - 1) (by omega_arith) (1 : Byte)
+    obtain hfr := wS_frame u.mem (scr a) (x := oEm + loA a + dbA D a - slA a - 1) (by omega_arith) (1 : Byte)
     refine h.congr K.sp K.rd K.wr (K.get .x20) (fun q hq => ?_) (fun q hq => ?_) sy
       (by rw [hm]; exact hfr.mono (by simp [mgfWr]))
     · rcases List.mem_append.mp hq with hq | hq
@@ -403,7 +403,7 @@ theorem putSalt_sct {T : Tabs} {D : Nat} :
             oEm + loA a + dbA D a - slA a by omega_arith]
         · rw [K.get .x12]; exact x12
     · rw [hm, slot_keep hfr (sslots_S h.L q hq)]; exact h.sl q hq
-  have p12 : ∀ a s, SR T D (rsP2 D) sslots a s → s.gpr .x12 = a.gpr .x4 := fun a s h =>
+  obtain p12 : ∀ a s, SR T D (rsP2 D) sslots a s → s.gpr .x12 = a.gpr .x4 := fun a s h =>
     h.r (.x12, fun a => a.gpr .x4) (by simp [rsP2])
   exact two_ite (fun a s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, p12 a s₁ h₁, p12 a s₂ h₂])
     (two_taint [] (fun a s₁ s₂ h₁ h₂ => pins_nil SR.sp a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
@@ -417,7 +417,7 @@ theorem putH_sct :
   refine two_post (two_taintE [.x20, .x21, .x23, .x24, .x25] (SR.pins fun r hr => by
       simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [sregs])
     (c' := Code.eraseOff (putH zH)) rfl (by taint_decide)) fun a u h => ?_
-  have hf := h.ok.fit; have hk2 := h.ok.k2
+  obtain hf := h.ok.fit; have hk2 := h.ok.k2
   have hdb : dbA H.D a = kA a - loA a - H.D - 1 := rfl
   exact WP.mono_syms (putH_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (k := kA a)
     (h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]))
@@ -446,9 +446,9 @@ theorem names : ∀ n ∈ T.names, u.syms n = a.syms n := by
 /-- The slots of the table of `MdHash`. -/
 theorem ht : HT T.H T.dn T.f (fb a) u.mem u.syms := by
   obtain ⟨s, t₀, e, h0, fm, sy, _, _⟩ := h.ex
-  have L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
+  obtain L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
   rw [e.fb, show s.gpr .x6 = scr a from e.scr] at L0
-  have h1 := ht_of e.2.2.1 h0
+  obtain h1 := ht_of e.2.2.1 h0
   rw [e.fb] at h1
   rw [sy]
   exact h1.stepW L0 fm
@@ -456,8 +456,8 @@ theorem ht : HT T.H T.dn T.f (fb a) u.mem u.syms := by
 /-- Where MGF1 works, and the table of `MdHash`. -/
 theorem env : Env T.G T.g u (fb a) (scr a) (stackArg a 1) := by
   obtain ⟨s, t₀, e, h0, fm, sy, hrd, hwr⟩ := h.ex
-  have L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
-  have E0 := env_of e.1 e.2.2.1 h0
+  obtain L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
+  obtain E0 := env_of e.1 e.2.2.1 h0
   rw [e.fb, show s.gpr .x6 = scr a from e.scr] at L0 E0
   rw [e.arg (j := 1) (by decide)] at E0
   exact E0.step L0 fm (hrd.trans h0.e.rd.symm) (hwr.trans h0.e.wr.symm) sy
@@ -471,26 +471,26 @@ theorem ctHash_sct {T : Tabs} (hH : HashOK T.H) (hc : PssChecks T.H.P T.H.D) (hd
   have hL := hH.L
   have hB0 := hH.B_pos
   have hBl := hH.B_le
-  have hlg : 2 ^ lgB T.H = T.H.P.B ∧ lgB T.H < 64 := by
+  obtain hlg : 2 ^ lgB T.H = T.H.P.B ∧ lgB T.H < 64 := by
     unfold lgB
     rcases hH.sizes.B with h | h <;> rw [h]
     · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
-  have hb : ∀ a : State, slA a ≤ 1024 → 8 + T.H.D + slA a + 1 + T.H.P.L ≤ nbA T.H a * T.H.P.B ∧ nbA T.H a * T.H.P.B ≤ 2048 :=
+  obtain hb : ∀ a : State, slA a ≤ 1024 → 8 + T.H.D + slA a + 1 + T.H.P.L ≤ nbA T.H a * T.H.P.B ∧ nbA T.H a * T.H.P.B ≤ 2048 :=
     fun a hs => by
-      have hnb1 := Nat.lt_div_mul_add (a := 8 + T.H.D + slA a + T.H.P.L) (b := T.H.P.B) hB0
-      have hnb2 := Nat.div_mul_le_self (8 + T.H.D + slA a + T.H.P.L) T.H.P.B
-      have hnbB : ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B =
+      obtain hnb1 := Nat.lt_div_mul_add (a := 8 + T.H.D + slA a + T.H.P.L) (b := T.H.P.B) hB0
+      obtain hnb2 := Nat.div_mul_le_self (8 + T.H.D + slA a + T.H.P.L) T.H.P.B
+      obtain hnbB : ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B =
           (8 + T.H.D + slA a + T.H.P.L) / T.H.P.B * T.H.P.B + T.H.P.B := Nat.succ_mul _ _
       show _ ≤ ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ∧ ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ≤ 2048
       rw [hnbB]; omega_arith
-  have x19 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x19 = off (scr a) oSt := fun h =>
+  obtain x19 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x19 = off (scr a) oSt := fun h =>
     h.r (.x19, fun a => off (scr a) oSt) (by simp [rsL, sregs])
-  have x21 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x21 = off (scr a) oDig := fun h =>
+  obtain x21 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x21 = off (scr a) oDig := fun h =>
     h.r (.x21, fun a => off (scr a) oDig) (by simp [rsL, sregs])
-  have x22 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x22 = BitVec.ofNat 64 (8 + T.H.D + slA a) :=
+  obtain x22 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x22 = BitVec.ofNat 64 (8 + T.H.D + slA a) :=
     fun h => h.r (.x22, fun a => BitVec.ofNat 64 (8 + T.H.D + slA a)) (by simp [rsL])
-  have nb : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u →
+  obtain nb : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u →
       u.mem.readW (off (fb a) sNb) 64 = BitVec.ofNat 64 (nbA T.H a) := fun h =>
     h.sl (sNb, fun a => BitVec.ofNat 64 (nbA T.H a)) (by simp [slL])
   refine two_post (two_map (fun a => (⟨fb a, scr a, nbA T.H a, none, a.syms T.H.initN, a.syms T.H.compN, a.syms T.dn⟩ : HA)) (fun a u h => {
@@ -524,11 +524,11 @@ theorem mgfXor_sct {T : Tabs} {Gs : Spec.Mgf1.Hash} (hGm : VG.Proof.Pbkdf2.Md.AA
     RelCT isa (Two (SR T T.H.D (sregs T.H.D) sslots)) (mgfXor T.H T.g) (Two (SR T T.H.D rsT [])) := by
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
-  have hd : ∀ a : State, SOk T.H.D a → DbAt T.H.D (oEm + loA a) (dbA T.H.D a) := fun a ok => by
-    have hf := ok.fit; have hk2 := ok.k2
+  obtain hd : ∀ a : State, SOk T.H.D a → DbAt T.H.D (oEm + loA a) (dbA T.H.D a) := fun a ok => by
+    obtain hf := ok.fit; have hk2 := ok.k2
     have hdb : dbA T.H.D a = kA a - loA a - T.H.D - 1 := rfl
     exact ⟨by omega_arith, by omega_arith, by omega_arith⟩
-  have g : ∀ {a u : State}, SR T T.H.D (sregs T.H.D) sslots a u → u.gpr .x24 = off (scr a) (oEm + loA a) ∧
+  obtain g : ∀ {a u : State}, SR T T.H.D (sregs T.H.D) sslots a u → u.gpr .x24 = off (scr a) (oEm + loA a) ∧
       u.gpr .x25 = BitVec.ofNat 64 (dbA T.H.D a) := fun h =>
     ⟨h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]),
       h.r (.x25, fun a => BitVec.ofNat 64 (dbA T.H.D a)) (by simp [sregs])⟩

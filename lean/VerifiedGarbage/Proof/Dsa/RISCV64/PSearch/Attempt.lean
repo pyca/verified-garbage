@@ -164,12 +164,12 @@ theorem refill_eq (pLen qLen : Nat) (seed rest : List Byte) :
 theorem count_le (pLen p q : Nat) (r : List Byte) :
     pLen * Generation.generatorCount p q (Generation.windowCandidates pLen Spec.Dsa.generatorAttempts r) ≤
       r.length := by
-  have h1 := Generation.generatorCount_le p q (Generation.windowCandidates pLen Spec.Dsa.generatorAttempts r)
-  have h2 : (Generation.windowCandidates pLen Spec.Dsa.generatorAttempts r).length =
+  obtain h1 := Generation.generatorCount_le p q (Generation.windowCandidates pLen Spec.Dsa.generatorAttempts r)
+  obtain h2 : (Generation.windowCandidates pLen Spec.Dsa.generatorAttempts r).length =
       (r.take (Spec.Dsa.generatorAttempts * pLen)).length / pLen := by
     simp [Generation.windowCandidates, Spec.Dsa.generationChunks]
-  have h3 := Nat.div_mul_le_self (r.take (Spec.Dsa.generatorAttempts * pLen)).length pLen
-  have h4 : (r.take (Spec.Dsa.generatorAttempts * pLen)).length ≤ r.length := by
+  obtain h3 := Nat.div_mul_le_self (r.take (Spec.Dsa.generatorAttempts * pLen)).length pLen
+  obtain h4 : (r.take (Spec.Dsa.generatorAttempts * pLen)).length ≤ r.length := by
     rw [List.length_take]; exact Nat.min_le_right _ _
   rw [h2] at h1
   calc pLen * _ ≤ pLen * ((r.take (Spec.Dsa.generatorAttempts * pLen)).length / pLen) := Nat.mul_le_mul_left _ h1
@@ -179,7 +179,7 @@ theorem count_le (pLen p q : Nat) (r : List Byte) :
 /-- `(p − 1) / q` fits its octets. -/
 theorem ev_lt {pLen qLen pv qv : Nat} (hq0 : 0 < qLen) (hqp : qLen ≤ pLen) (hpu : pv < 2 ^ (8 * pLen))
     (hqlo : 2 ^ (8 * qLen - 1) ≤ qv) : (pv - 1) / qv < 256 ^ eBytes pLen qLen := by
-  have qpos : 0 < qv := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
+  obtain qpos : 0 < qv := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
   rw [show (256 : Nat) ^ eBytes pLen qLen = 2 ^ (8 * eBytes pLen qLen) from (Nat.pow_mul 2 8 _).symm]
   refine Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul qpos).mpr ?_) (Nat.pow_le_pow_right (by decide)
     (show 8 * pLen - 8 * qLen + 1 ≤ 8 * eBytes pLen qLen by simp only [eBytes]; omega))
@@ -198,9 +198,9 @@ theorem pCand_spec (HO : HashOk Gh) {k : Nat} (hw : G.pLen = 128 ∨ G.pLen = 25
     Spec.Dsa.pCandidate (8 * G.pLen) (8 * G.qLen) (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k)
       (1 + j * ((8 * G.pLen - 1) / (8 * G.qLen) + 1)) = pCand HO G k j := by
   have hqc := G.qLen_cases
-  have hsl : (seedAt G k).length = G.qLen := by
+  obtain hsl : (seedAt G k).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, hwl]; omega
-  have hc : G.pLen ≤ (cnt G + 1) * G.qLen := (cnt_facts G hw).2.1
+  obtain hc : G.pLen ≤ (cnt G + 1) * G.qLen := (cnt_facts G hw).2.1
   refine pCandidate_xBytes HO (fun i => ?_) hH hsl hlen (by omega) hc _
   rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega), HO.md.digest_length, hk4]
 
@@ -212,23 +212,23 @@ theorem attemptG_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
       (St G (attCfg G (padCl G HO.md) (K, C) (gTail G.pLen pv (Spec.Dsa.decodeBE (qBytes G C)) r')) X) := by
   have hw := A.hw
   have hqc := G.qLen_cases
-  have hq0 : 0 < G.qLen := by omega
-  have hq32 : G.qLen ≤ 32 := by omega
-  have hl384 : G.pLen ≤ 384 := by omega
-  have pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md (by omega) rfl
-  have hqb : qBytes G C = Spec.Rsa.i2osp (Spec.Dsa.decodeBE (qBytes G C)) G.qLen := by
+  obtain hq0 : 0 < G.qLen := by omega
+  obtain hq32 : G.qLen ≤ 32 := by omega
+  obtain hl384 : G.pLen ≤ 384 := by omega
+  obtain pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md (by omega) rfl
+  obtain hqb : qBytes G C = Spec.Rsa.i2osp (Spec.Dsa.decodeBE (qBytes G C)) G.qLen := by
     rw [← VG.Proof.Dsa.encodeBE_i2osp, ← hql, VG.Proof.Dsa.encodeBE_decodeBE]
-  have qlt : Spec.Dsa.decodeBE (qBytes G C) < 256 ^ G.qLen := by
+  obtain qlt : Spec.Dsa.decodeBE (qBytes G C) < 256 ^ G.qLen := by
     rw [← hql]; exact VG.Proof.Dsa.decodeBE_lt _
-  have hev : (pv - 1) / Spec.Dsa.decodeBE (qBytes G C) < 256 ^ eBytes G.pLen G.qLen :=
+  obtain hev : (pv - 1) / Spec.Dsa.decodeBE (qBytes G C) < 256 ^ eBytes G.pLen G.qLen :=
     ev_lt hq0 (by omega) hpd.upper hqlo
-  have hpv : pv < 256 ^ G.pLen := by
+  obtain hpv : pv < 256 ^ G.pLen := by
     rw [show (256 : Nat) ^ G.pLen = 2 ^ (8 * G.pLen) from (Nat.pow_mul 2 8 _).symm]; exact hpd.upper
-  have hrl : r'.length ≤ G.randLen := by rw [← A.hwl]; exact hr'.length_le
-  have hd : G.randB.drop (G.randLen - r'.length) = r' := by
+  obtain hrl : r'.length ≤ G.randLen := by rw [← A.hwl]; exact hr'.length_le
+  obtain hd : G.randB.drop (G.randLen - r'.length) = r' := by
     rw [← A.hwl]; exact Generation.suffix_drop_length hr'
-  have e8 : (8 * G.qLen - 1) ≥ 1 := by omega
-  have R : GReq G (pFin (aBase G (padCl G HO.md) K C) HO G C (some (some pv, r'))) pv
+  obtain e8 : (8 * G.qLen - 1) ≥ 1 := by omega
+  obtain R : GReq G (pFin (aBase G (padCl G HO.md) K C) HO G C (some (some pv, r'))) pv
       ((pv - 1) / Spec.Dsa.decodeBE (qBytes G C)) := by
     refine ⟨by simp [pFin], by simp [pFin, pAp, KU, aP, aE, aPm1], by simp [pFin],
       by simp [pFin, pAp, KU, aP, aE, aPm1, aOne], by simp [pFin],
@@ -253,9 +253,9 @@ theorem attemptG_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
     · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sPacked]; omega
     · simp only [pl, sPacked, sMsg]; omega
     · simp only [hql, sQ, sPacked]; omega
-  have hs : hsOf G (G.randLen - r'.length) = Generation.windowCandidates G.pLen Spec.Dsa.generatorAttempts r' := by
+  obtain hs : hsOf G (G.randLen - r'.length) = Generation.windowCandidates G.pLen Spec.Dsa.generatorAttempts r' := by
     simp only [hsOf, hd]
-  have hcnt := count_le G.pLen pv (Spec.Dsa.decodeBE (qBytes G C)) r'
+  obtain hcnt := count_le G.pLen pv (Spec.Dsa.decodeBE (qBytes G C)) r'
   unfold gcCfg at h
   rw [hs, hd] at h
   unfold gTail
@@ -265,7 +265,7 @@ theorem attemptG_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
     dsimp only at h ⊢
     by_cases hf : Spec.Dsa.generatorAttempts * G.pLen ≤ r'.length
     · simp only [hf, ↓reduceIte] at h ⊢
-      have e : G.randLen - (r'.drop (Spec.Dsa.generatorAttempts * G.pLen)).length =
+      obtain e : G.randLen - (r'.drop (Spec.Dsa.generatorAttempts * G.pLen)).length =
           G.randLen - r'.length + Spec.Dsa.generatorAttempts * G.pLen := by rw [List.length_drop]; omega
       simp only [attCfg]
       refine end_to ⟨by simp [pFin], by simp [pFin, upd]⟩
@@ -284,7 +284,7 @@ theorem attemptG_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
       subst hx; simp [pFin, pRest]
   · rw [hgen] at h
     dsimp only at h ⊢
-    have e : G.randLen - (r'.drop (G.pLen * Generation.generatorCount pv (Spec.Dsa.decodeBE (qBytes G C))
+    obtain e : G.randLen - (r'.drop (G.pLen * Generation.generatorCount pv (Spec.Dsa.decodeBE (qBytes G C))
           (Generation.windowCandidates G.pLen Spec.Dsa.generatorAttempts r'))).length =
         G.randLen - r'.length + G.pLen * Generation.generatorCount pv (Spec.Dsa.decodeBE (qBytes G C))
           (Generation.windowCandidates G.pLen Spec.Dsa.generatorAttempts r') := by
@@ -320,8 +320,8 @@ theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
         (.seq (.block (cmpF fP 1)) (.ite (.zero .t2) g.gCheck (.block []))))))
       (St G (attCfg G (padCl G HO.md) (K, C)
         (pTailS G.pLen G.qLen (Spec.Dsa.decodeBE (qBytes G C)) (seedAt G C) r)) X) := by
-  have hrl : r.length ≤ G.randLen := by rw [← A.hwl]; exact hr.length_le
-  have hd : G.randB.drop (G.randLen - r.length) = r := by
+  obtain hrl : r.length ≤ G.randLen := by rw [← A.hwl]; exact hr.length_le
+  obtain hd : G.randB.drop (G.randLen - r.length) = r := by
     rw [← A.hwl]; exact Generation.suffix_drop_length hr
   refine VP.seq (pPart_vp (c := aBase G (padCl G HO.md) K C) (k := C) (u0 := G.randLen - r.length) HO A.okp A.lay
     A.hp A.hq A.hk4 A.hH A.hwl (aBase_pnot _ _ _ _) hk (by simp) (by simp [upd]) (by omega)
@@ -330,7 +330,7 @@ theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
   · rw [aBase_LS] at ho
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl <;> exact ⟨by simp [testCfg], by simp [testCfg, upd]⟩
-  have hS0 : pSpec HO G C (G.randLen - r.length) 0 = Spec.Dsa.primeFromSeed (8 * G.pLen) (8 * G.qLen)
+  obtain hS0 : pSpec HO G C (G.randLen - r.length) 0 = Spec.Dsa.primeFromSeed (8 * G.pLen) (8 * G.qLen)
       (Spec.Dsa.decodeBE (qBytes G C)) (seedAt G C) r := by
     rw [pSpec, Generation.primeSearch_start, pU, hd]
   rw [hS0]
@@ -357,8 +357,8 @@ theorem attemptP_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.
     simp only [padCl, List.append_nil, List.mem_singleton] at hx
     subst hx; simp [pFin]
   · -- p: the generator and the check.
-    have hr' : r' <:+ G.randB := (Generation.primeSearch_suffix (seedAt G C) _ r hR).trans hr
-    have hpd := Generation.primeSearch_domain A.hw A.hlen _ _ _ _ hR
+    obtain hr' : r' <:+ G.randB := (Generation.primeSearch_suffix (seedAt G C) _ r hR).trans hr
+    obtain hpd := Generation.primeSearch_domain A.hw A.hlen _ _ _ _ hR
     refine br_vp (x := BitVec.ofNat 64 1) (by simp [pFin]) (by simp [pFin, upd]) (by decide) (by decide)
       (by decide) (fun hb => absurd hb (by decide)) fun _ => ?_
     refine br_vp (x := BitVec.ofNat 64 1) (by simp [pFin]) (by simp [pFin, upd]) (by decide) (by decide)
@@ -371,18 +371,18 @@ theorem attempt_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.L
     VP (St G ((aBase G (padCl G HO.md) K C).setV fUsed (BitVec.ofNat 64 (C + G.qLen))) X) g.attempt
       (St G (attCfg G (padCl G HO.md) (K, C) (Generation.attemptAt G.pLen G.randB C)) X) := by
   have hqc := G.qLen_cases
-  have hsl : (seedAt G C).length = G.qLen := by
+  obtain hsl : (seedAt G C).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, A.hwl]; omega
-  have hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G C)).length = G.qLen := by
+  obtain hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G C)).length = G.qLen := by
     rw [← A.hH, HO.hash _ (by omega), HO.md.digest_length, A.hk4]
-  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G C) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega
-  have ql : (qBytes G C).length = G.qLen := by
+  obtain hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G C) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega
+  obtain ql : (qBytes G C).length = G.qLen := by
     rw [qBytes, VG.Proof.Ffdh.ParameterCandidate.shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
       (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHq]
-  have hqv : Spec.Dsa.decodeBE (qBytes G C) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G C) :=
+  obtain hqv : Spec.Dsa.decodeBE (qBytes G C) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G C) :=
     Generation.qCandidate_octets (by omega) _ (by rw [hHq])
-  have qlo : 2 ^ (8 * G.qLen - 1) ≤ Spec.Dsa.decodeBE (qBytes G C) := by
+  obtain qlo : 2 ^ (8 * G.qLen - 1) ≤ Spec.Dsa.decodeBE (qBytes G C) := by
     rw [hqv]; exact (Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G C)).2.1
   unfold Geo.attempt
   simp only [Impl.Rsa.RISCV64.Keys.seqs]
@@ -414,7 +414,7 @@ theorem attempt_vp {g : Geo} (HO : HashOk g.G) {Lq Lp : Impl.Dsa.ProbablePrime.L
     simp only [padCl, List.append_nil, List.mem_singleton] at hx
     subst hx; simp [testCfg, qClaims]
   · -- q: p, g and the check.
-    have hr : r <:+ G.randB := (Generation.probablePrime_suffix hpp).trans (List.drop_suffix _ _)
+    obtain hr : r <:+ G.randB := (Generation.probablePrime_suffix hpp).trans (List.drop_suffix _ _)
     refine br_vp (x := BitVec.ofNat 64 1) (by simp [testCfg]) (by simp [testCfg, upd]) (by decide) (by decide)
       (by decide) (fun hb => absurd hb (by decide)) fun _ => ?_
     refine br_vp (x := BitVec.ofNat 64 1) (by simp [testCfg]) (by simp [testCfg, upd]) (by decide) (by decide)

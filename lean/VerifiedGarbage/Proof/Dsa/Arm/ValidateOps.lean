@@ -46,7 +46,7 @@ theorem loadSlot_ok {s : State} {base : Addr} {size len n i : Nat} {p : Pointer}
       val32 t.mem base (slot n i) (2 * n) = operand base s p len ∧
       Rest coreClob s t ∧ Outside base (slot n i) (8 * n) s.mem t.mem := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
-  have si := slot_lt (i := i) n48 hi
+  obtain si := slot_lt (i := i) n48 hi
   refine WP.mono (load_ok hs (by omega_using [hz]) R (by omega_using [hz, si]) (by omega_using [hl, si]) (by omega_using [n48]) w.four hl w.word (by omega_using [si]))
     fun t ⟨wt, Vt, Rt, Ot⟩ => ⟨wt, Vt, Rt.mono (by decide), Ot⟩
 
@@ -72,41 +72,41 @@ theorem range_ok {s : State} {base : Addr} {size len n : Nat} {modulus : Field} 
       Stage base s t 116 4 := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
   have nw := hs.nowrap
-  have s0 := slot_lt (i := 0) n48 (by decide)
-  have s8 := slot_lt (i := 8) n48 (by decide)
-  have s10 := slot_lt (i := 10) n48 (by decide)
+  obtain s0 := slot_lt (i := 0) n48 (by decide)
+  obtain s8 := slot_lt (i := 8) n48 (by decide)
+  obtain s10 := slot_lt (i := 10) n48 (by decide)
   unfold Validate.range
   dsimp only
   rw [← w.n_eq]
   refine WP.seq (WP.mono (loadSlot_ok (i := 0) hs hz w (by decide) Rq) fun u₁ ⟨w₁, M₁, R₁, O₁⟩ => ?_)
-  have Ri₁ := Ri.keep_rest R₁ (O := Outs.of_slot (i := 0) O₁ (by decide) n48) (hO := arith_hdr)
+  obtain Ri₁ := Ri.keep_rest R₁ (O := Outs.of_slot (i := 0) O₁ (by decide) n48) (hO := arith_hdr)
   refine WP.seq (WP.mono (loadSlot_ok (i := 8) w₁ hz w (by decide) Ri₁) fun u₂ ⟨w₂, A₂, R₂, O₂⟩ => ?_)
-  have K₂ : Outs base arithRanges s.mem u₂.mem :=
+  obtain K₂ : Outs base arithRanges s.mem u₂.mem :=
     (Outs.of_slot (i := 0) O₁ (by decide) n48).trans (Outs.of_slot (i := 8) O₂ (by decide) n48)
-  have Rs₂ : Rest coreClob s u₂ := R₁.trans R₂
-  have A : val32 u₂.mem base (slot n 8) (2 * n) = operand base s input len := by
+  obtain Rs₂ : Rest coreClob s u₂ := R₁.trans R₂
+  obtain A : val32 u₂.mem base (slot n 8) (2 * n) = operand base s input len := by
     rw [A₂, operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 0) O₁ (by decide) n48)
       arith_hdr Ri.ok, Ri.bytes (Outs.of_slot (i := 0) O₁ (by decide) n48) (by decide)]
-  have M : val32 u₂.mem base (slot n 0) (2 * n) = operand base s (.input modulus) len := by
+  obtain M : val32 u₂.mem base (slot n 0) (2 * n) = operand base s (.input modulus) len := by
     rw [slot_keep O₂ (by decide) n48 (by decide), M₁]
   refine WP.seq (WP.mono (checkRange_ok w₂ (k := 2 * n) (a := baseS n) (m := modS n) (flag := 116) (by omega_using [n0])
     (by simp only [baseS]; omega_using [hz, s8]) (by simp only [modS]; omega_using [hz, s0]) (by simp only [baseS]; omega_using [s8])
     (by simp only [modS]; omega_using [s0]) (by omega_using [hz]) (by decide)) fun u₃ ⟨F₃, R₃, O₃⟩ => ?_)
-  have f₂ : flagW base 116 u₂ = maskW base s := maskW_arith K₂
+  obtain f₂ : flagW base 116 u₂ = maskW base s := maskW_arith K₂
   rw [f₂] at F₃
   change val32 u₂.mem base (slot n 8) (2 * n) = _ at A
   change val32 u₂.mem base (slot n 0) (2 * n) = _ at M
   simp only [show baseS n = slot n 8 from rfl, show modS n = slot n 0 from rfl, A, M] at F₃
-  have w₃ := w₂.of_rest R₃ (by decide)
-  have Rs₃ : Rest coreClob s u₃ := Rs₂.trans (R₃.mono (by decide))
-  have K₃ : Outs base (arithRanges ++ [(116, 4)]) s.mem u₃.mem := (Outs.arith_out K₂ _ _).trans (Outs.out O₃)
+  obtain w₃ := w₂.of_rest R₃ (by decide)
+  obtain Rs₃ : Rest coreClob s u₃ := Rs₂.trans (R₃.mono (by decide))
+  obtain K₃ : Outs base (arithRanges ++ [(116, 4)]) s.mem u₃.mem := (Outs.arith_out K₂ _ _).trans (Outs.out O₃)
   cases aboveOne
   · exact WP.block_nil ⟨F₃.trans (congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte]))),
       Rs₃, K₃⟩
   · simp only [↓reduceIte, Validate.lowerTwo]
-    have two_lt : 2 < 2 ^ (32 * (2 * n)) :=
+    obtain two_lt : 2 < 2 ^ (32 * (2 * n)) :=
       Nat.lt_of_lt_of_le (by decide : 2 < 2 ^ 32) (Nat.pow_le_pow_right (by decide) (by omega_using [n0]))
-    have A₃ : val32 u₃.mem base (slot n 8) (2 * n) = operand base s input len := by
+    obtain A₃ : val32 u₃.mem base (slot n 8) (2 * n) = operand base s input len := by
       rw [O₃.val32 (by omega_using [s8]) (by omega_using [s8]), A]
     refine WP.seq (WP.mono (lessThanConstant_ok w₃ (k := 2 * n) (a := baseS n) (tmp := prodS n) (x := 2)
       (by omega_using [n0]) (by simp only [baseS]; omega_using [hz, s8]) (by simp only [prodS]; omega_using [hz, s10]) (by simp only [baseS]; omega_using [s8])
@@ -120,7 +120,7 @@ theorem range_ok {s : State} {base : Addr} {size len n : Nat} {modulus : Field} 
       have A₃' : val32 u₃.mem base (baseS n) (2 * n) = operand base s input len := A₃
       have F₃' : maskW base u₃ = _ := F₃
       refine Ft.trans ?_
-      have f₅ : flagW base 116 u₅ = maskW base u₄ := congrArg (fun m => Mem.readW m (off base 116) 32) m₅
+      obtain f₅ : flagW base 116 u₅ = maskW base u₄ := congrArg (fun m => Mem.readW m (off base 116) 32) m₅
       rw [e₅, f₅, maskW_arith O₄', F₃', A₃',
         BitVec.and_assoc, mask32_and]
       exact congrArg _ (mask32_iff (by omega_using []))
@@ -136,7 +136,7 @@ theorem zero_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
         mask32 (if want then operand base s input len ≠ 0 else operand base s input len = 0) ∧
       Stage base s t 116 4 := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
-  have s8 := slot_lt (i := 8) n48 (by decide)
+  obtain s8 := slot_lt (i := 8) n48 (by decide)
   unfold Validate.zero
   dsimp only
   rw [← w.n_eq]
@@ -153,8 +153,8 @@ theorem isOne_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
     WP isa (Validate.isOne len input) s fun t =>
       maskW base t = maskW base s &&& mask32 (operand base s input len = 1) ∧ Stage base s t 116 4 := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
-  have s8 := slot_lt (i := 8) n48 (by decide)
-  have s11 := slot_lt (i := 11) n48 (by decide)
+  obtain s8 := slot_lt (i := 8) n48 (by decide)
+  obtain s11 := slot_lt (i := 11) n48 (by decide)
   unfold Validate.isOne
   dsimp only
   rw [← w.n_eq]
@@ -162,19 +162,19 @@ theorem isOne_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
   refine WP.seq (WP.mono (setConst_ok w₁ (k := 2 * n) (o := expS n) (x := 1) (by omega_using [n0])
     (by simp only [expS]; omega_using [hz, s11]) (by simp only [expS]; omega_using [s11]) (by omega_using [n48])) fun u₂ ⟨E₂, R₂, O₂⟩ => ?_)
   rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₂
-  have w₂ := w₁.of_rest R₂ (by decide)
+  obtain w₂ := w₁.of_rest R₂ (by decide)
   refine WP.seq (WP.mono (equal_ok w₂ (k := 2 * n) (a := baseS n) (b := expS n) (by omega_using [n0])
     (by simp only [baseS]; omega_using [hz, s8]) (by simp only [expS]; omega_using [hz, s11]) (by simp only [baseS]; omega_using [s8])
     (by simp only [expS]; omega_using [s11])) fun u₃ ⟨e₃, R₃, m₃⟩ => ?_)
-  have K₂ : Outs base arithRanges s.mem u₂.mem :=
+  obtain K₂ : Outs base arithRanges s.mem u₂.mem :=
     (Outs.of_slot (i := 8) O₁ (by decide) n48).trans (Outs.of_slot (i := 11) O₂ (by decide) n48)
   refine WP.mono (andFlag_mask (w₂.of_rest R₃ (by decide)) hz) fun t ⟨Ft, Rt, Ot⟩ =>
     ⟨Ft.trans ?_, ((R₁.trans (R₂.mono (by decide))).trans (R₃.mono (by decide))).trans (Rt.mono (by decide)),
       by rw [m₃] at Ot; exact (Outs.arith_out K₂ _ _).trans (Outs.out Ot)⟩
-  have A₂ : val32 u₂.mem base (baseS n) (2 * n) = operand base s input len :=
+  obtain A₂ : val32 u₂.mem base (baseS n) (2 * n) = operand base s input len :=
     (slot_keep O₂ (by decide) n48 (by decide)).trans A₁
-  have one : 1 < 2 ^ (32 * (2 * n)) := Nat.one_lt_two_pow (by omega_using [n0])
-  have E₂' : val32 u₂.mem base (expS n) (2 * n) = 1 := by rw [E₂, Nat.mod_eq_of_lt one]
+  obtain one : 1 < 2 ^ (32 * (2 * n)) := Nat.one_lt_two_pow (by omega_using [n0])
+  obtain E₂' : val32 u₂.mem base (expS n) (2 * n) = 1 := by rw [E₂, Nat.mod_eq_of_lt one]
   rw [show maskW base u₃ = maskW base u₂ by simp only [maskW, flagW, m₃], maskW_arith K₂, e₃, A₂, E₂']
 
 theorem equalValues_ok {s : State} {base : Addr} {size len n : Nat} {a b : Pointer}
@@ -183,25 +183,25 @@ theorem equalValues_ok {s : State} {base : Addr} {size len n : Nat} {a b : Point
       maskW base t = maskW base s &&& mask32 (operand base s a len = operand base s b len) ∧
       Stage base s t 116 4 := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
-  have s8 := slot_lt (i := 8) n48 (by decide)
-  have s11 := slot_lt (i := 11) n48 (by decide)
+  obtain s8 := slot_lt (i := 8) n48 (by decide)
+  obtain s11 := slot_lt (i := 11) n48 (by decide)
   unfold Validate.equalValues
   dsimp only
   rw [← w.n_eq]
   refine WP.seq (WP.mono (loadSlot_ok (i := 8) hs hz w (by decide) Ra) fun u₁ ⟨w₁, A₁, R₁, O₁⟩ => ?_)
-  have Rb₁ := Rb.keep_rest R₁ (O := Outs.of_slot (i := 8) O₁ (by decide) n48) (hO := arith_hdr)
+  obtain Rb₁ := Rb.keep_rest R₁ (O := Outs.of_slot (i := 8) O₁ (by decide) n48) (hO := arith_hdr)
   refine WP.seq (WP.mono (loadSlot_ok (i := 11) w₁ hz w (by decide) Rb₁) fun u₂ ⟨w₂, B₂, R₂, O₂⟩ => ?_)
   refine WP.seq (WP.mono (equal_ok w₂ (k := 2 * n) (a := baseS n) (b := expS n) (by omega_using [n0])
     (by simp only [baseS]; omega_using [hz, s8]) (by simp only [expS]; omega_using [hz, s11]) (by simp only [baseS]; omega_using [s8])
     (by simp only [expS]; omega_using [s11])) fun u₃ ⟨e₃, R₃, m₃⟩ => ?_)
-  have K₂ : Outs base arithRanges s.mem u₂.mem :=
+  obtain K₂ : Outs base arithRanges s.mem u₂.mem :=
     (Outs.of_slot (i := 8) O₁ (by decide) n48).trans (Outs.of_slot (i := 11) O₂ (by decide) n48)
   refine WP.mono (andFlag_mask (w₂.of_rest R₃ (by decide)) hz) fun t ⟨Ft, Rt, Ot⟩ =>
     ⟨Ft.trans ?_, ((R₁.trans R₂).trans (R₃.mono (by decide))).trans (Rt.mono (by decide)),
       by rw [m₃] at Ot; exact (Outs.arith_out K₂ _ _).trans (Outs.out Ot)⟩
-  have A₂ : val32 u₂.mem base (baseS n) (2 * n) = operand base s a len :=
+  obtain A₂ : val32 u₂.mem base (baseS n) (2 * n) = operand base s a len :=
     (slot_keep O₂ (by decide) n48 (by decide)).trans A₁
-  have B₂' : val32 u₂.mem base (expS n) (2 * n) = operand base s b len := by
+  obtain B₂' : val32 u₂.mem base (expS n) (2 * n) = operand base s b len := by
     refine B₂.trans ?_
     rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr
       Rb.ok, Rb.bytes (Outs.of_slot (i := 8) O₁ (by decide) n48) (by decide)]
@@ -216,8 +216,8 @@ theorem minus_ok {s : State} {base : Addr} {size len n m amount output : Nat} {m
       Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len (m - amount) ∧
       Stage base s t output len := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
-  have s9 := slot_lt (i := 9) n48 (by decide)
-  have mlt : m < 256 ^ len := hm ▸ operand_lt base s _ len
+  obtain s9 := slot_lt (i := 9) n48 (by decide)
+  obtain mlt : m < 256 ^ len := hm ▸ operand_lt base s _ len
   unfold Validate.minus
   dsimp only
   rw [← w.n_eq]

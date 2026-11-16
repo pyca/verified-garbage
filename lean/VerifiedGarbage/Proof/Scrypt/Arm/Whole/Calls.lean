@@ -252,7 +252,7 @@ theorem sv_sc : Region.Sub L.SV L.SC := by
 /-- The save area as the code computes it. -/
 theorem svb_toNat : L.svb.toNat = L.scr.toNat + 128 * (L.r.toNat + 15) := by
   have := h.nc; have := h.slen; have := h.rpos
-  have e : (L.r <<< 7).toNat = L.r.toNat * 128 := by
+  obtain e : (L.r <<< 7).toNat = L.r.toNat * 128 := by
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_arith)]
   simp only [Lay.svb, BitVec.toNat_add, e, show (1920 : BitVec 32).toNat = 1920 from rfl]
   rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
@@ -261,7 +261,7 @@ theorem svb_toNat : L.svb.toNat = L.scr.toNat + 128 * (L.r.toNat + 15) := by
 theorem svb_addr {k : Nat} (hk : k < 36) :
     State.addr (L.svb + BitVec.ofNat 32 k) = L.SVA + BitVec.ofNat 64 k := by
   have := h.nc; have := h.slen; have hs := h.svb_toNat
-  have e : State.addr L.svb = L.SVA := by
+  obtain e : State.addr L.svb = L.SVA := by
     apply BitVec.eq_of_toNat_eq
     have := L.scr.isLt
     rw [toNat_addr, hs, Lay.SVA, BitVec.toNat_add, toNat_addr, BitVec.toNat_ofNat,
@@ -304,7 +304,7 @@ structure Saved (L : Lay) (g : Reg → BitVec 32) (m : Mem) : Prop where
 /-- Our stack arguments survive changes to memory that miss them. -/
 theorem Args.frame {L : Lay} {m m' : Mem} {rs : List Region} (hk : Args L m)
     (hf : Frame rs m m') (ha : ∀ R ∈ rs, L.ARGS.Disjoint R) : Args L m' := by
-  have ka : ∀ d, d + 4 ≤ 36 → m'.readW (State.addr L.sp + BitVec.ofNat 64 d) 32 =
+  obtain ka : ∀ d, d + 4 ≤ 36 → m'.readW (State.addr L.sp + BitVec.ofNat 64 d) 32 =
       m.readW (State.addr L.sp + BitVec.ofNat 64 d) 32 := fun d hd =>
     hf.readW (r := L.ARGS) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun R hR => ha R hR) (by decide)
@@ -315,7 +315,7 @@ theorem Args.frame {L : Lay} {m m' : Mem} {rs : List Region} (hk : Args L m)
 /-- So does the save area. -/
 theorem Saved.frame {L : Lay} {g : Reg → BitVec 32} {m m' : Mem} {rs : List Region} (hk : Saved L g m)
     (hf : Frame rs m m') (hs : ∀ R ∈ rs, L.SV.Disjoint R) : Saved L g m' := by
-  have ks : ∀ d, d + 4 ≤ 36 → m'.readW (L.SVA + BitVec.ofNat 64 d) 32 =
+  obtain ks : ∀ d, d + 4 ≤ 36 → m'.readW (L.SVA + BitVec.ofNat 64 d) 32 =
       m.readW (L.SVA + BitVec.ofNat 64 d) 32 := fun d hd =>
     hf.readW (r := L.SV) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun R hR => hs R hR) (by decide)
@@ -356,7 +356,7 @@ theorem lay_args (s : State) : (lay s).ARGS = ⟨stackArgAddr s 0, 36⟩ := by
 theorem lay_ok {s : State} (h : Proof.Scrypt.scryptArm.pre s) : (lay s).Ok := by
   obtain ⟨h40, h36, -, -, pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ba, vc, vo, va, co, ca, oa,
     kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, rpos, bmod, vmod, hval, olb, slen⟩ := h
-  have ea := lay_args s
+  obtain ea := lay_args s
   exact ⟨pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ea ▸ ba, vc, vo, ea ▸ va, co, ea ▸ ca, ea ▸ oa,
     kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, h40, h36, rpos, bmod, vmod, hval, olb, slen⟩
 
@@ -394,13 +394,13 @@ theorem blen_eq : L.blen.toNat = L.r.toNat * L.pp :=
 theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
 
 theorem blen_lt : L.blen.toNat * 128 < 2 ^ 32 := by
-  have hnb := h.nb; have hS := h.nS; have hA := h.nA
+  obtain hnb := h.nb; have hS := h.nS; have hA := h.nA
   refine Nat.lt_of_not_le fun hge => ?_
-  have hb0 : L.b.toNat = 0 := by omega_arith
-  have e : L.blen.toNat * 128 = 2 ^ 32 := by omega_arith
-  have eb : State.addr L.b = 0 := by
+  obtain hb0 : L.b.toNat = 0 := by omega_arith
+  obtain e : L.blen.toNat * 128 = 2 ^ 32 := by omega_arith
+  obtain eb : State.addr L.b = 0 := by
     apply BitVec.eq_of_toNat_eq; rw [toNat_addr, hb0]; rfl
-  have ex : (State.addr L.sp - BitVec.ofNat 64 40).toNat = L.sp.toNat - 40 := by
+  obtain ex : (State.addr L.sp - BitVec.ofNat 64 40).toNat = L.sp.toNat - 40 := by
     rw [Offset.toNat_sub_ofNat, toNat_addr]; omega_arith
   apply h.kb (State.addr L.sp - BitVec.ofNat 64 40)
   · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
@@ -419,8 +419,8 @@ theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
 /-- The derived key of step 1 is not too long for PBKDF2. -/
 theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
   have h₁ := h.valid.2.2.2.2.1
-  have h₂ := Nat.div_mul_le_self ((2 ^ 32 - 1) * 32) (128 * L.r.toNat)
-  have h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
+  obtain h₂ := Nat.div_mul_le_self ((2 ^ 32 - 1) * 32) (128 * L.r.toNat)
+  obtain h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
     Nat.mul_le_mul_right _ h₁
   rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
   omega_arith
@@ -485,10 +485,10 @@ theorem E.upd {t t' : State} (he : E L g m₀ t) (hL : L.Ok) (hrd : t'.rd = t.rd
 theorem save1_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (hlr : t.gpr .lr = g .lr) :
     WP isa (.block save1) t fun t' => E L g m₀ t' ∧ t'.gpr .lr = g .lr ∧ t'.gpr .r12 = L.scr ∧
       t'.mem.readW (State.addr L.scr) 32 = g .lr := by
-  have l20 := he.inArgs hL (k := 20) (by omega_arith)
-  have w0 := he.inSc (k := 0) (by have := hL.slen17; omega_arith)
+  obtain l20 := he.inArgs hL (k := 20) (by omega_arith)
+  obtain w0 := he.inSc (k := 0) (by have := hL.slen17; omega_arith)
   rw [BitVec.add_zero] at w0
-  have a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
+  obtain a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.scr
   apply WP.of_runBlock
   simp only [save1, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, State.store32,
@@ -540,25 +540,25 @@ theorem save2_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (h12 : t.gpr .r12 =
     (h0 : t.mem.readW (State.addr L.scr) 32 = g .lr) :
     WP isa (.block save2) t fun t' => E L g m₀ t' ∧ t'.gpr .r12 = L.svb ∧
       t'.mem.readW (State.addr L.scr) 32 = g .lr ∧ Saved8 L g t'.mem := by
-  have l0 := he.inArgs hL (k := 0) (by omega_arith)
-  have a0 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 0)) 32 = L.r := by
+  obtain l0 := he.inArgs hL (k := 0) (by omega_arith)
+  obtain a0 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 0)) 32 = L.r := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.r
-  have s0 := hL.svb_addr (k := 0) (by omega_arith)
-  have s4 := hL.svb_addr (k := 4) (by omega_arith)
-  have s8 := hL.svb_addr (k := 8) (by omega_arith)
-  have s12 := hL.svb_addr (k := 12) (by omega_arith)
-  have s16 := hL.svb_addr (k := 16) (by omega_arith)
-  have s20 := hL.svb_addr (k := 20) (by omega_arith)
-  have s24 := hL.svb_addr (k := 24) (by omega_arith)
-  have s28 := hL.svb_addr (k := 28) (by omega_arith)
-  have w0 := sv_in hL he (k := 0) (by omega_arith)
-  have w4 := sv_in hL he (k := 4) (by omega_arith)
-  have w8 := sv_in hL he (k := 8) (by omega_arith)
-  have w12 := sv_in hL he (k := 12) (by omega_arith)
-  have w16 := sv_in hL he (k := 16) (by omega_arith)
-  have w20 := sv_in hL he (k := 20) (by omega_arith)
-  have w24 := sv_in hL he (k := 24) (by omega_arith)
-  have w28 := sv_in hL he (k := 28) (by omega_arith)
+  obtain s0 := hL.svb_addr (k := 0) (by omega_arith)
+  obtain s4 := hL.svb_addr (k := 4) (by omega_arith)
+  obtain s8 := hL.svb_addr (k := 8) (by omega_arith)
+  obtain s12 := hL.svb_addr (k := 12) (by omega_arith)
+  obtain s16 := hL.svb_addr (k := 16) (by omega_arith)
+  obtain s20 := hL.svb_addr (k := 20) (by omega_arith)
+  obtain s24 := hL.svb_addr (k := 24) (by omega_arith)
+  obtain s28 := hL.svb_addr (k := 28) (by omega_arith)
+  obtain w0 := sv_in hL he (k := 0) (by omega_arith)
+  obtain w4 := sv_in hL he (k := 4) (by omega_arith)
+  obtain w8 := sv_in hL he (k := 8) (by omega_arith)
+  obtain w12 := sv_in hL he (k := 12) (by omega_arith)
+  obtain w16 := sv_in hL he (k := 16) (by omega_arith)
+  obtain w20 := sv_in hL he (k := 20) (by omega_arith)
+  obtain w24 := sv_in hL he (k := 24) (by omega_arith)
+  obtain w28 := sv_in hL he (k := 28) (by omega_arith)
   apply WP.of_runBlock
   simp only [save2, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, State.store32,
     Op2.eval, Nat.reduceLT, Nat.reduceLeDiff, and_self, ite_true, l0, a0, Option.map_some,
@@ -577,14 +577,14 @@ theorem save2_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (h12 : t.gpr .r12 =
 theorem save3_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (h12 : t.gpr .r12 = L.svb)
     (h0 : t.mem.readW (State.addr L.scr) 32 = g .lr) (h8 : Saved8 L g t.mem) :
     WP isa (.block save3) t fun t' => E L g m₀ t' ∧ Saved L g t'.mem := by
-  have l20 := he.inArgs hL (k := 20) (by omega_arith)
-  have a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
+  obtain l20 := he.inArgs hL (k := 20) (by omega_arith)
+  obtain a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.scr
-  have r0 : InRegions (t.rd ++ t.wr) (State.addr L.scr) 4 :=
+  obtain r0 : InRegions (t.rd ++ t.wr) (State.addr L.scr) 4 :=
     ⟨L.SC, by rw [he.rd, he.wr]; simp, by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; have := hL.slen17; omega_arith⟩
-  have s32 := hL.svb_addr (k := 32) (by omega_arith)
-  have w32 := sv_in hL he (k := 32) (by omega_arith)
+  obtain s32 := hL.svb_addr (k := 32) (by omega_arith)
+  obtain w32 := sv_in hL he (k := 32) (by omega_arith)
   apply WP.of_runBlock
   simp only [save3, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, State.store32,
     Nat.reduceLT, ite_true, l20, a20, Option.map_some, Option.some.injEq, exists_eq_left',
@@ -618,17 +618,17 @@ theorem sub_b (b x : BitVec 32) : b + x - b = x := by
 theorem pbk1Args_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (hs : Saved L g t.mem) :
     WP isa (.block pbk1Args) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .r4 = L.b ∧
       PbkArgs L L.salt L.sl L.b (BitVec.ofNat 32 (L.blen.toNat * 128)) t' := by
-  have l0 := he.inArgs hL (k := 0) (by omega_arith)
-  have l4 := he.inArgs hL (k := 4) (by omega_arith)
-  have l8 := he.inArgs hL (k := 8) (by omega_arith)
-  have l20 := he.inArgs hL (k := 20) (by omega_arith)
-  have a0 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 0)) 32 = L.r := by
+  obtain l0 := he.inArgs hL (k := 0) (by omega_arith)
+  obtain l4 := he.inArgs hL (k := 4) (by omega_arith)
+  obtain l8 := he.inArgs hL (k := 8) (by omega_arith)
+  obtain l20 := he.inArgs hL (k := 20) (by omega_arith)
+  obtain a0 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 0)) 32 = L.r := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.r
-  have a4 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 4)) 32 = L.b := by
+  obtain a4 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 4)) 32 = L.b := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.b
-  have a8 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 8)) 32 = L.blen := by
+  obtain a8 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 8)) 32 = L.blen := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.blen
-  have a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
+  obtain a20 : t.mem.readW (State.addr (t.sp + BitVec.ofNat 32 20)) 32 = L.scr := by
     rw [he.sp, hL.arg_addr (by omega_arith)]; exact he.args.scr
   apply WP.of_runBlock
   simp only [pbk1Args, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, Op2.eval,
@@ -636,10 +636,10 @@ theorem pbk1Args_ok (hL : L.Ok) {t : State} (he : E L g m₀ t) (hs : Saved L g 
     Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.mem_setReg, RegUpd.sp_setReg, RegUpd.gpr_setReg, reduceCtorEq, ite_false, ite_true, enc1, lsl7,
     sub_b]
-  have r0 := (he.regs .r0 (by decide) (by decide)).trans he.g0
-  have r1 := (he.regs .r1 (by decide) (by decide)).trans he.g1
-  have r2 := (he.regs .r2 (by decide) (by decide)).trans he.g2
-  have r3 := (he.regs .r3 (by decide) (by decide)).trans he.g3
+  obtain r0 := (he.regs .r0 (by decide) (by decide)).trans he.g0
+  obtain r1 := (he.regs .r1 (by decide) (by decide)).trans he.g1
+  obtain r2 := (he.regs .r2 (by decide) (by decide)).trans he.g2
+  obtain r3 := (he.regs .r3 (by decide) (by decide)).trans he.g3
   exact ⟨⟨he.rd, he.wr, he.sp, rfl, rfl, rfl, r0, r1, he.args, hs, Frame.mono he.frame (by simp)⟩,
     trivial, trivial, ⟨r0, r1, r2, r3, rfl, rfl, rfl, rfl⟩⟩
 
@@ -674,10 +674,10 @@ structure RomixArgs (L : Lay) (cur : BitVec 32) (t : State) : Prop where
 theorem romixArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block romixArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .r4 = t.gpr .r4 ∧
       RomixArgs L (t.gpr .r4) t' := by
-  have l12 := hc.inArgs hL (k := 12) (by omega_arith)
-  have l16 := hc.inArgs hL (k := 16) (by omega_arith)
-  have a12 := hc.arg hL (k := 12) (by omega_arith) hc.args.v
-  have a16 := hc.arg hL (k := 16) (by omega_arith) hc.args.vlen
+  obtain l12 := hc.inArgs hL (k := 12) (by omega_arith)
+  obtain l16 := hc.inArgs hL (k := 16) (by omega_arith)
+  obtain a12 := hc.arg hL (k := 12) (by omega_arith) hc.args.v
+  obtain a16 := hc.arg hL (k := 16) (by omega_arith) hc.args.vlen
   apply WP.of_runBlock
   simp only [romixArgs, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, Op2.eval,
     Nat.reduceLT, ite_true, l12, l16, a12, a16, Option.map_some, Option.some.injEq, exists_eq_left',
@@ -701,14 +701,14 @@ theorem nextBlock_ok {t : State} (hc : Ctx L g m₀ t) :
 theorem pbk2Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block pbk2Args) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
       PbkArgs L L.b (BitVec.ofNat 32 (L.blen.toNat * 128)) L.out L.ol t' := by
-  have l4 := hc.inArgs hL (k := 4) (by omega_arith)
-  have l8 := hc.inArgs hL (k := 8) (by omega_arith)
-  have l28 := hc.inArgs hL (k := 28) (by omega_arith)
-  have l32 := hc.inArgs hL (k := 32) (by omega_arith)
-  have a4 := hc.arg hL (k := 4) (by omega_arith) hc.args.b
-  have a8 := hc.arg hL (k := 8) (by omega_arith) hc.args.blen
-  have a28 := hc.arg hL (k := 28) (by omega_arith) hc.args.out
-  have a32 := hc.arg hL (k := 32) (by omega_arith) hc.args.ol
+  obtain l4 := hc.inArgs hL (k := 4) (by omega_arith)
+  obtain l8 := hc.inArgs hL (k := 8) (by omega_arith)
+  obtain l28 := hc.inArgs hL (k := 28) (by omega_arith)
+  obtain l32 := hc.inArgs hL (k := 32) (by omega_arith)
+  obtain a4 := hc.arg hL (k := 4) (by omega_arith) hc.args.b
+  obtain a8 := hc.arg hL (k := 8) (by omega_arith) hc.args.blen
+  obtain a28 := hc.arg hL (k := 28) (by omega_arith) hc.args.out
+  obtain a32 := hc.arg hL (k := 32) (by omega_arith) hc.args.ol
   apply WP.of_runBlock
   simp only [pbk2Args, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, Op2.eval,
     Nat.reduceLT, Nat.reduceLeDiff, and_self, ite_true, l4, l8, l28, l32, a4, a8, a28, a32, Option.map_some,
@@ -720,26 +720,26 @@ theorem pbk2Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 theorem restore_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block restore) t fun t' => (∀ r ∈ preserved, t'.gpr r = g r) ∧ t'.sp = t.sp ∧
       t'.mem = t.mem := by
-  have s0 := hL.svb_addr (k := 0) (by omega_arith)
-  have s4 := hL.svb_addr (k := 4) (by omega_arith)
-  have s8 := hL.svb_addr (k := 8) (by omega_arith)
-  have s12 := hL.svb_addr (k := 12) (by omega_arith)
-  have s16 := hL.svb_addr (k := 16) (by omega_arith)
-  have s20 := hL.svb_addr (k := 20) (by omega_arith)
-  have s24 := hL.svb_addr (k := 24) (by omega_arith)
-  have s28 := hL.svb_addr (k := 28) (by omega_arith)
-  have s32 := hL.svb_addr (k := 32) (by omega_arith)
-  have i : ∀ k, k + 4 ≤ 36 → InRegions (t.rd ++ t.wr) (L.SVA + BitVec.ofNat 64 k) 4 := fun k hk =>
+  obtain s0 := hL.svb_addr (k := 0) (by omega_arith)
+  obtain s4 := hL.svb_addr (k := 4) (by omega_arith)
+  obtain s8 := hL.svb_addr (k := 8) (by omega_arith)
+  obtain s12 := hL.svb_addr (k := 12) (by omega_arith)
+  obtain s16 := hL.svb_addr (k := 16) (by omega_arith)
+  obtain s20 := hL.svb_addr (k := 20) (by omega_arith)
+  obtain s24 := hL.svb_addr (k := 24) (by omega_arith)
+  obtain s28 := hL.svb_addr (k := 28) (by omega_arith)
+  obtain s32 := hL.svb_addr (k := 32) (by omega_arith)
+  obtain i : ∀ k, k + 4 ≤ 36 → InRegions (t.rd ++ t.wr) (L.SVA + BitVec.ofNat 64 k) 4 := fun k hk =>
     ⟨L.SC, by rw [hc.rd, hc.wr]; simp, sv_con hL hk⟩
-  have i0 := i 0 (by omega_arith)
-  have i4 := i 4 (by omega_arith)
-  have i8 := i 8 (by omega_arith)
-  have i12 := i 12 (by omega_arith)
-  have i16 := i 16 (by omega_arith)
-  have i20 := i 20 (by omega_arith)
-  have i24 := i 24 (by omega_arith)
-  have i28 := i 28 (by omega_arith)
-  have i32 := i 32 (by omega_arith)
+  obtain i0 := i 0 (by omega_arith)
+  obtain i4 := i 4 (by omega_arith)
+  obtain i8 := i 8 (by omega_arith)
+  obtain i12 := i 12 (by omega_arith)
+  obtain i16 := i 16 (by omega_arith)
+  obtain i20 := i 20 (by omega_arith)
+  obtain i24 := i 24 (by omega_arith)
+  obtain i28 := i 28 (by omega_arith)
+  obtain i32 := i 32 (by omega_arith)
   apply WP.of_runBlock
   simp only [restore, runBlock_cons, runStep_some, runBlock_nil, exec, State.load32, Op2.eval,
     Nat.reduceLT, Nat.reduceLeDiff, and_self, ite_true, Option.map_some, Option.some.injEq, exists_eq_left',
@@ -892,7 +892,7 @@ theorem p4_mem (h : 16 ≤ s.sp.toNat) :
         (State.addr (s.sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 4) (s.gpr .r11)).writeW
         (State.addr (s.sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 8) (s.gpr .r12)).writeW
         (State.addr (s.sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 12) (s.gpr .lr)) := by
-  have e : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' h
+  obtain e : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' h
   show storeWords s.mem (s.sp - BitVec.ofNat 32 16) [s.gpr .r10, s.gpr .r11, s.gpr .r12, s.gpr .lr] = _
   simp only [storeWords]
   rw [BitVec.add_zero, BitVec.add_assoc, BitVec.add_assoc,
@@ -904,7 +904,7 @@ theorem p4_mem (h : 16 ≤ s.sp.toNat) :
 theorem p4_arg (h : 16 ≤ s.sp.toNat) {rd wr : List Region} {i : Nat} (hi : i < 4) :
     stackArg ((pushed fr4 s).callEntry.withRegions rd wr) i = s.gpr fr4[i] := by
   have hn := s.sp.isLt
-  have e : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' h
+  obtain e : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' h
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_sp, State.callEntry_mem,
     State.callEntry_sp, p4_sp]
   rw [p4_mem h, addr_add (by omega_arith)]
@@ -940,7 +940,7 @@ theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
     (hQ : ∀ s₂ : State, After4 s wr (popped .r12 16 s₂) →
       k.post ((pushed fr4 s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) → Q (popped .r12 16 s₂)) :
     WP isa (.frame (.push fr4) (.call n c) (.pop .r12 16)) s Q := by
-  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_arith)
+  obtain h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_arith)
   refine WP.frame (rs := fr4) (r := .r12) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by simp only [List.length_cons, List.length_nil]; omega_arith) ?_
   refine WP.callF hv hpre hc hw (by rw [p4_sp, h16]; omega_arith) fun s₂ hrd hwr hsp hf hcs hpost => ?_
@@ -951,7 +951,7 @@ theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
   · have : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
     rw [popped_gpr this, hcs r hr hl, pushed_gpr]
   · rw [popped_mem]
-    have f₀ := pushed_frameA (rs := fr4) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+    obtain f₀ := pushed_frameA (rs := fr4) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     refine Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
@@ -1016,7 +1016,7 @@ theorem stk_args (hL : L.Ok) : L.STK.Disjoint L.ARGS := by
   have := hL.nA; have := hL.nS
   intro x h₁ h₂
   simp only [Region.Contains] at h₁ h₂
-  have e : x - State.addr L.sp = (x - (State.addr L.sp - BitVec.ofNat 64 40)) - BitVec.ofNat 64 40 := by
+  obtain e : x - State.addr L.sp = (x - (State.addr L.sp - BitVec.ofNat 64 40)) - BitVec.ofNat 64 40 := by
     rw [BitVec.sub_sub, BitVec.sub_add_cancel]
   rw [e, Offset.toNat_sub_ofNat] at h₂
   have := (x - (State.addr L.sp - BitVec.ofNat 64 40)).isLt
@@ -1064,14 +1064,14 @@ theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt sl out ol :
     pbkA.pre ((pushed fr4 t).callEntry.withRegions (pbkRd L salt sl) (pbkWr L out ol)) := by
   have hS := hL.nS
   have hA := hL.nA
-  have h16 : (L.sp - BitVec.ofNat 32 16).toNat = L.sp.toNat - 16 := sub_toNat' (by omega_arith)
-  have sp16 : 16 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
+  obtain h16 : (L.sp - BitVec.ofNat 32 16).toNat = L.sp.toNat - 16 := sub_toNat' (by omega_arith)
+  obtain sp16 : 16 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
   simp only [pbkA, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.withRegions_gpr,
     State.callEntry_sp, p4_sp, p4_argAddr, p4_a0 sp16, p4_a1 sp16, p4_a2 sp16, p4_a3 sp16,
     State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs),
     pushed_gpr, hc.sp, ha.r0, ha.r1, ha.r2, ha.r3, ha.r10, ha.r11, ha.r12, ha.lr, h16]
-  have sw := scr_in hL
+  obtain sw := scr_in hL
   exact ⟨by omega_arith, by omega_arith, trivial, trivial, hL.pw_in hr.ow, hL.pw_in sw, hr.so, hr.sc, hr.oc,
     ((hL.stk_in hr.ow).sub_left (args16_sub hL)).symm, ((hL.stk_in sw).sub_left (args16_sub hL)).symm,
     hL.kp.sub_left (cstk_sub hL), hr.ks.sub_left (cstk_sub hL), (hL.stk_in hr.ow).sub_left (cstk_sub hL),
@@ -1092,9 +1092,9 @@ theorem pbk_cov (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt sl out ol : 
     (hr : PbkRegions L salt sl out ol) :
     Covers (pbkRd L salt sl ++ pbkWr L out ol) ((pushed fr4 t).rd ++ (pushed fr4 t).wr) ∧
       Covers (pbkWr L out ol) (pushed fr4 t).wr := by
-  have up : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed fr4 t).rd ++ (pushed fr4 t).wr,
+  obtain up : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed fr4 t).rd ++ (pushed fr4 t).wr,
       Within r R := fun ⟨R, hR, hw⟩ => ⟨R, by rw [pushed_wr]; simp [hR], hw⟩
-  have upw : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed fr4 t).wr, Within r R :=
+  obtain upw : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed fr4 t).wr, Within r R :=
     fun ⟨R, hR, hw⟩ => ⟨R, by rw [pushed_wr]; simp [hR], hw⟩
   refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => ?_⟩
   · simp only [pbkRd, pbkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -1138,9 +1138,9 @@ theorem pbk_call {pbk : Prog isa}
   obtain ⟨cov, covw⟩ := pbk_cov hL hc hr
   refine frame4_ok (pbk_correct hv) hst (by rw [hc.sp]; exact hS) (pbk_pre' hL hc ha hr) cov covw
     fun s₂ h4 hpost => ?_
-  have hf : Frame (pbkWr L out ol ++ [L.STK]) t.mem (popped .r12 16 s₂).mem := by
+  obtain hf : Frame (pbkWr L out ol ++ [L.STK]) t.mem (popped .r12 16 s₂).mem := by
     have := h4.frame; rwa [hc.sp, stk_eq hL] at this
-  have ap := pbk_apart hL hr
+  obtain ap := pbk_apart hL hr
   refine ⟨⟨h4.rd.trans hc.rd, h4.wr.trans hc.wr, h4.sp.trans hc.sp,
     (h4.cs .r5 (by decide) (by decide)).trans hc.r5, (h4.cs .r6 (by decide) (by decide)).trans hc.r6,
     (h4.cs .r7 (by decide) (by decide)).trans hc.r7, (h4.cs .r8 (by decide) (by decide)).trans hc.r8,
@@ -1158,21 +1158,21 @@ theorem pbk_call {pbk : Prog isa}
     · exact ⟨L.SC, by simp, Within.sub (within_base _ (by have := hL.slen17; omega_arith))⟩
     · exact ⟨L.STK, by simp, fun _ h => h⟩
   · have h := hpost
-    have sp16 : 16 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
+    obtain sp16 : 16 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
     simp only [pbkA, Spec.Hmac.sha256S, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr,
       State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
       State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs),
       pushed_gpr, p4_a0 sp16, p4_a1 sp16, p4_a2 sp16, ha.r0, ha.r1, ha.r2, ha.r3, ha.r10, ha.r11, ha.r12] at h
-    have f₀ := pushed_frameA (rs := fr4) (s := t) (by simp only [List.length_cons, List.length_nil]; omega_arith)
-    have d16 : ∀ {r : Region}, L.STK.Disjoint r →
+    obtain f₀ := pushed_frameA (rs := fr4) (s := t) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+    obtain d16 : ∀ {r : Region}, L.STK.Disjoint r →
         ∀ R ∈ [(⟨State.addr (t.sp - BitVec.ofNat 32 (4 * fr4.length)), 4 * fr4.length⟩ : Region)],
         r.Disjoint R := fun hd R hR => by
       simp only [List.mem_singleton] at hR; subst hR
       rw [hc.sp]; exact (hd.sub_left (args16_sub hL)).symm
-    have e₁ : Spec.Sha256.bytesAt (pushed fr4 t).mem (State.addr L.pw) L.pwl.toNat =
+    obtain e₁ : Spec.Sha256.bytesAt (pushed fr4 t).mem (State.addr L.pw) L.pwl.toNat =
         bytesAt t.mem (State.addr L.pw) L.pwl.toNat :=
       Memory.frame_bytesAt f₀ (d16 hL.kp) (by have := L.pwl.isLt; omega_arith)
-    have e₂ : Spec.Sha256.bytesAt (pushed fr4 t).mem (State.addr salt) sl.toNat =
+    obtain e₂ : Spec.Sha256.bytesAt (pushed fr4 t).mem (State.addr salt) sl.toNat =
         bytesAt t.mem (State.addr salt) sl.toNat :=
       Memory.frame_bytesAt f₀ (d16 hr.ks) (by have := sl.isLt; omega_arith)
     rw [e₁, e₂] at h
@@ -1227,22 +1227,22 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
     Proof.Scrypt.roMixArm.pre ((pushed [.r12, .lr] t).callEntry.withRegions (romixRd L) (romixWr L i)) := by
   have hS := hL.nS
   have hA := hL.nA
-  have s8 : 8 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
-  have hb := blk_in hL hi
-  have hv : InBuf L ⟨State.addr L.v, L.vlen.toNat * 128⟩ := .inr (.inl (within_base _ (Nat.le_refl _)))
-  have hs : InBuf L ⟨State.addr L.scr, (L.r.toNat + 2) * 128⟩ :=
+  obtain s8 : 8 ≤ t.sp.toNat := by rw [hc.sp]; omega_arith
+  obtain hb := blk_in hL hi
+  obtain hv : InBuf L ⟨State.addr L.v, L.vlen.toNat * 128⟩ := .inr (.inl (within_base _ (Nat.le_refl _)))
+  obtain hs : InBuf L ⟨State.addr L.scr, (L.r.toNat + 2) * 128⟩ :=
     .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
-  have h8 : (L.sp - BitVec.ofNat 32 8).toNat = L.sp.toNat - 8 := sub_toNat' (by omega_arith)
+  obtain h8 : (L.sp - BitVec.ofNat 32 8).toNat = L.sp.toNat - 8 := sub_toNat' (by omega_arith)
   simp only [Proof.Scrypt.roMixArm, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
     State.withRegions_gpr, State.callEntry_sp, pushed_sp, p2_argAddr, p2_arg0 s8, p2_arg1,
     State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs),
     pushed_gpr, hc.sp, ha.r0, ha.r1, ha.r2, ha.r3, ha.r12, ha.lr, r2 hL, addr_blk hL hi]
-  have kb := Within.sub (within_off (State.addr L.b) (blk_le hL hi))
-  have ks := Within.sub (within_base (State.addr L.scr) (n := (L.r.toNat + 2) * 128) (k := L.slen.toNat * 128)
+  obtain kb := Within.sub (within_off (State.addr L.b) (blk_le hL hi))
+  obtain ks := Within.sub (within_base (State.addr L.scr) (n := (L.r.toNat + 2) * 128) (k := L.slen.toNat * 128)
     (by have := hL.slen; omega_arith))
   have := blk_le hL hi; have := hL.nb; have := hL.nv; have := hL.nc; have := hL.slen; have := hL.blen_lt; have := hL.rpos
-  have tb : (blkAt L i).toNat = L.b.toNat + 128 * L.r.toNat * i := by
+  obtain tb : (blkAt L i).toNat = L.b.toNat + 128 * L.r.toNat * i := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * L.r.toNat * i) (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]
   exact ⟨trivial, trivial, hL.bv.sub_left kb, (hL.bc.sub_left kb).sub_right ks, hL.vc.sub_right ks,
@@ -1254,9 +1254,9 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
 theorem romix_cov (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.pp) :
     Covers (romixRd L ++ romixWr L i) ((pushed [.r12, .lr] t).rd ++ (pushed [.r12, .lr] t).wr) ∧
       Covers (romixWr L i) (pushed [.r12, .lr] t).wr := by
-  have upw : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed [.r12, .lr] t).wr, Within r R :=
+  obtain upw : ∀ {r : Region}, (∃ R ∈ t.wr, Within r R) → ∃ R ∈ (pushed [.r12, .lr] t).wr, Within r R :=
     fun ⟨R, hR, hw⟩ => ⟨R, by rw [pushed_wr]; simp [hR], hw⟩
-  have hw := romix_wsub hL hi
+  obtain hw := romix_wsub hL hi
   refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => upw ((hw r hr).wr hc)⟩
   rcases List.mem_append.mp hr with hr | hr
   · simp only [romixRd, List.mem_singleton] at hr; subst hr
@@ -1278,7 +1278,7 @@ theorem stk_sub {t : State} (hc : Ctx L g m₀ t) : Region.Sub (stk t) L.STK := 
 /-- The regions a call of ROMix writes miss our stack arguments and the save area. -/
 theorem romix_apart (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
     ∀ R ∈ romixWr L i ++ [L.STK], L.ARGS.Disjoint R ∧ L.SV.Disjoint R := by
-  have hw := romix_wsub hL hi
+  obtain hw := romix_wsub hL hi
   intro R hR
   rcases List.mem_append.mp hR with hR | hR
   · refine ⟨hL.args_in (hw R hR), ?_⟩
@@ -1301,13 +1301,13 @@ theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi :
   obtain ⟨cov, covw⟩ := romix_cov hL hc hi
   refine frame2_ok (by decide) (by decide) RoMix.roMix_correct roMix_stack (by rw [hc.sp]; omega_arith)
     (romix_pre hL hc hi ha) cov covw fun s₂ h2 hpost => ?_
-  have hf : Frame (romixWr L i ++ [L.STK]) t.mem (popped .r12 8 s₂).mem :=
+  obtain hf : Frame (romixWr L i ++ [L.STK]) t.mem (popped .r12 8 s₂).mem :=
     Frame.sub h2.frame fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨L.STK, by simp, stk_sub hc⟩
-  have ap := romix_apart hL hi
+  obtain ap := romix_apart hL hi
   refine ⟨⟨h2.rd.trans hc.rd, h2.wr.trans hc.wr, h2.sp.trans hc.sp,
     (h2.cs .r5 (by decide) (by decide)).trans hc.r5, (h2.cs .r6 (by decide) (by decide)).trans hc.r6,
     (h2.cs .r7 (by decide) (by decide)).trans hc.r7, (h2.cs .r8 (by decide) (by decide)).trans hc.r8,
@@ -1328,13 +1328,13 @@ theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi :
       State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
       State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), pushed_gpr, ha.r0, ha.r1, ha.r3,
       addr_blk hL hi] at h
-    have f₀ := pushed_frameA (rs := [Reg.r12, Reg.lr]) (s := t)
+    obtain f₀ := pushed_frameA (rs := [Reg.r12, Reg.lr]) (s := t)
       (by simp only [List.length_cons, List.length_nil]; rw [hc.sp]; omega_arith)
-    have e : Spec.Scrypt.bytesAt (pushed [.r12, .lr] t).mem (blkA L i) (128 * L.r.toNat) =
+    obtain e : Spec.Scrypt.bytesAt (pushed [.r12, .lr] t).mem (blkA L i) (128 * L.r.toNat) =
         bytesAt t.mem (blkA L i) (128 * L.r.toNat) :=
       Memory.frame_bytesAt f₀ (fun R hR => by
         simp only [List.mem_singleton] at hR; subst hR
-        have hs : Region.Sub ⟨State.addr (t.sp - BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length)),
+        obtain hs : Region.Sub ⟨State.addr (t.sp - BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length)),
             4 * [Reg.r12, Reg.lr].length⟩ L.STK := by
           rw [hc.sp]; exact args8_sub hL
         rw [Nat.mul_comm]

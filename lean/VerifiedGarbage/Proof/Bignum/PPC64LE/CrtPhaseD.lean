@@ -48,7 +48,7 @@ open VG.Proof.Bignum.PPC64LE
 /-- Two Montgomery multiplications, the second by `R² mod P`: the product. -/
 theorem mont_chain {P R a q x5 x4 : Nat} (hR : Nat.Coprime R P) (h5 : x5 * R % P = a * q % P)
     (h4 : x4 * R % P = x5 * (R * R % P) % P) (h4P : x4 < P) : x4 = a * q % P := by
-  have e : x4 * R % P = a * q * R % P := by
+  obtain e : x4 * R % P = a * q * R % P := by
     rw [h4, Nat.mul_mod_mod, ← Nat.mul_assoc, ← Nat.mod_mul_mod, h5, Nat.mod_mul_mod]
   rw [← Nat.mod_eq_of_lt h4P]
   exact VG.Proof.Bignum.mont_cancel hR e
@@ -72,63 +72,63 @@ theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
       (val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = a * QI % Pv ∧
         Outside BX oA (slot wP 24) s.mem t.mem) ∧ Keep (.r14 :: .r15 :: Pub.montRegs) s t := by
   have hn := hs.nowrap
-  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  obtain e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA0 := e wP 0; have eA2 := e wP 2; have eA3 := e wP 3; have eA4 := e wP 4; have eA5 := e wP 5
-  have eA6 := e wP 6; have eA7 := e wP 7; have eA8 := e wP 24
-  have sX7 := slot_le (w := wX) (show 7 < 8 by decide)
-  have hsA := hs.sub hA
+  obtain eA0 := e wP 0; have eA2 := e wP 2; have eA3 := e wP 3; have eA4 := e wP 4; have eA5 := e wP 5
+  obtain eA6 := e wP 6; have eA7 := e wP 7; have eA8 := e wP 24
+  obtain sX7 := slot_le (w := wX) (show 7 < 8 by decide)
+  obtain hsA := hs.sub hA
   have hnA := hsA.nowrap
-  have hA' : oA + slot wP 24 ≤ 2 ^ 64 := by omega_arith
+  obtain hA' : oA + slot wP 24 ≤ 2 ^ 64 := by omega_arith
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) h10 h29 6) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_
   refine WP.mono (xb_ok (rd := .r15) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h27)
     ((k1.gpr _ (by decide)).trans h28) 7) fun s₂ ⟨⟨a15, m2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   refine WP.seq (WP.mono (copySub_ok (b := oA + slot wP 6) (hs.congr k12.wr) a15
     (by rw [k2.gpr _ (by decide), a14, off_off]) ((k12.gpr _ (by decide)).trans h11) (by omega_arith) hw'
     (by omega_arith) (by omega_arith) (by omega_arith)) fun s₃ ⟨⟨hw3, out3⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [m2, m1] at hw3 out3
-  have o3 : Mont.Outside (off BX oA) (slot wP 6) (8 * wP) s.mem s₃.mem :=
+  obtain o3 : Mont.Outside (off BX oA) (slot wP 6) (8 * wP) s.mem s₃.mem :=
     fun x hx => out_super out3 (by omega_arith) x hx
-  have v6 : val32 s₃.mem (off BX oA) (slot wP 6) (2 * wP) = QI := by
+  obtain v6 : val32 s₃.mem (off BX oA) (slot wP 6) (2 * wP) = QI := by
     rw [Pre.val32_eq_wv, wv_off, ← hQ]; exact wv_congr2 fun i hi => hw3 i hi
-  have v0 : val32 s₃.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
+  obtain v0 : val32 s₃.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
     rw [o3.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
-  have v3 : val32 s₃.mem (off BX oA) (slot wP 3) (2 * wP) = a := by
+  obtain v3 : val32 s₃.mem (off BX oA) (slot wP 3) (2 * wP) = a := by
     rw [o3.val32 (Or.inl (by omega_arith)) (by omega_arith), ha]
-  have v7 : val32 s₃.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv := by
+  obtain v7 : val32 s₃.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv := by
     rw [o3.val32 (Or.inr (by omega_arith)) (by omega_arith), hRR]
-  have w0 : w32 s₃.mem (off BX oA) (slot wP 0) = w32 s.mem (off BX oA) (slot wP 0) :=
+  obtain w0 : w32 s₃.mem (off BX oA) (slot wP 0) = w32 s.mem (off BX oA) (slot wP 0) :=
     o3.w32 (Or.inl (by omega_arith)) (by omega_arith)
-  have g12 : s₃.gpr .r12 = s.gpr .r12 := k13.gpr _ (by decide)
+  obtain g12 : s₃.gpr .r12 = s.gpr .r12 := k13.gpr _ (by decide)
   refine WP.seq (WP.mono (Pub.montOp_ok (o := 5) (a := 3) (b := 6) (hsA.congr k13.wr) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by unfold slot; omega_arith)
     ((k13.gpr _ (by decide)).trans h10) ((k13.gpr _ (by decide)).trans h29)
     ((k13.gpr _ (by decide)).trans h11) (by rw [g12]; exact h12) (by rw [g12, w0]; exact hinv)
     (by rw [v6, v0]; exact hQP)) fun s₄ ⟨⟨l5, e5, o4⟩, k4⟩ => ?_)
-  have k14 := k13.trans k4
+  obtain k14 := k13.trans k4
   rw [v0, v3, v6] at e5
   rw [v0] at l5
-  have hpr : ∀ j, j ≠ 2 → j ≠ 3 → j ≠ 5 → j < 8 →
+  obtain hpr : ∀ j, j ≠ 2 → j ≠ 3 → j ≠ 5 → j < 8 →
       ∀ r ∈ [(slot wP 2, 8 * (wP + 2)), (slot wP 3, 8 * (wP + 2)), (slot wP 5, 8 * (wP + 2))],
         slot wP j + 4 * (2 * wP) ≤ r.1 ∨ r.1 + r.2 ≤ slot wP j := by
     intro j h2 h3 h5 h8 r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    have s2 := slot_sep (w := wP) h2; have s3 := slot_sep (w := wP) h3; have s5 := slot_sep (w := wP) h5
+    obtain s2 := slot_sep (w := wP) h2; have s3 := slot_sep (w := wP) h3; have s5 := slot_sep (w := wP) h5
     rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
-  have v0' : val32 s₄.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
+  obtain v0' : val32 s₄.mem (off BX oA) (slot wP 0) (2 * wP) = Pv := by
     rw [o4.val32 (hpr 0 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), v0]
-  have v7' : val32 s₄.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv := by
+  obtain v7' : val32 s₄.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv := by
     rw [o4.val32 (hpr 7 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), v7]
-  have w0' : w32 s₄.mem (off BX oA) (slot wP 0) = w32 s.mem (off BX oA) (slot wP 0) := by
+  obtain w0' : w32 s₄.mem (off BX oA) (slot wP 0) = w32 s.mem (off BX oA) (slot wP 0) := by
     rw [← w0]
     refine congrArg BitVec.toNat (Mem.readW_congr fun i hi => o4 _ fun r hr => ?_)
     have := hpr 0 (by decide) (by decide) (by decide) (by decide) r hr
     rw [Mont.ofs_off (off BX oA) (d := slot wP 0) (i := i) (by omega_arith)]; omega_arith
-  have g12' : s₄.gpr .r12 = s.gpr .r12 := k14.gpr _ (by decide)
+  obtain g12' : s₄.gpr .r12 = s.gpr .r12 := k14.gpr _ (by decide)
   refine WP.mono (Pub.montOp_ok (o := 4) (a := 5) (b := 7) (hsA.congr k14.wr) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by unfold slot; omega_arith)
     ((k14.gpr _ (by decide)).trans h10) ((k14.gpr _ (by decide)).trans h29)
@@ -140,7 +140,7 @@ theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
   · have f4 := outs_sub o4 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) hA' (by omega_arith)
-    have f5 := outs_sub o5 (fun r hr => by
+    obtain f5 := outs_sub o5 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) hA' (by omega_arith)
     exact ((out3.mono (by omega_arith) (by omega_arith)).trans f4).trans f5
@@ -186,29 +186,29 @@ theorem recombineP_ok {pc : Bool} {s : State} {BX : Addr} {Z oA wP wX k Pv m1 m2
       (val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = (m1 + Pv - m2 % Pv) % Pv * QI % Pv ∧
         Outside BX oA (slot wP 24) s.mem t.mem) ∧ Keep recRegs s t := by
   have hn := hs.nowrap
-  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  obtain e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA0 := e wP 0; have eA3 := e wP 3; have eA4 := e wP 4; have eA7 := e wP 7; have eA8 := e wP 24
-  have sX7 := slot_le (w := wX) (show 7 < 8 by decide)
+  obtain eA0 := e wP 0; have eA3 := e wP 3; have eA4 := e wP 4; have eA7 := e wP 7; have eA8 := e wP 24
+  obtain sX7 := slot_le (w := wX) (show 7 < 8 by decide)
   unfold recombinePG
   refine recP1_ok hs hA hXA hw2 hw' h10 h21 h29 h11 h23 h27 h28 hK hk hk' hnw hP hP2 hPodd hm1 hm2 hR2
     fun t₁ v0 v1 v4 v7 i12 iinv out1 t10 k1 => ?_
-  have hsA := (hs.congr k1.wr).sub hA
+  obtain hsA := (hs.congr k1.wr).sub hA
   refine recP2a_ok (bj := 1) hsA (by unfold slot; omega_arith) (by decide) (by decide) (by decide) hw2 hw' t10
     ((k1.gpr _ (by decide)).trans h21) ((k1.gpr _ (by decide)).trans h29)
     ((k1.gpr _ (by decide)).trans h11) v0 v1 v4 (Nat.mod_lt _ (by omega_arith)) hm1P
     fun t₂ v3 out2 a10 k2 => ?_
-  have hr2 : ∀ j, j ≠ 3 → j ≠ 4 → j < 8 →
+  obtain hr2 : ∀ j, j ≠ 3 → j ≠ 4 → j < 8 →
       ∀ r ∈ [(slot wP 3, 8 * (wP + 2)), (slot wP 4, 8 * (wP + 2))],
         slot wP j + 4 * (2 * wP) ≤ r.1 ∨ r.1 + r.2 ≤ slot wP j := by
     intro j h3 h4 h8 r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    have s3 := slot_sep (w := wP) h3; have s4 := slot_sep (w := wP) h4
+    obtain s3 := slot_sep (w := wP) h3; have s4 := slot_sep (w := wP) h4
     rcases hr with rfl | rfl <;> simp only <;> omega_arith
-  have out2' := outs_sub (S := slot wP 24) out2 (fun r hr => by
+  obtain out2' := outs_sub (S := slot wP 24) out2 (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith) (by omega_arith)
-  have o12 := out1.trans out2'
+  obtain o12 := out1.trans out2'
   refine WP.mono (recP3_ok (hs.congr (k1.trans k2).wr) hA hXA hw2 hw' a10
     ((k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h29))
     ((k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h11))
@@ -278,28 +278,28 @@ theorem phaseD_ok {pc : Bool} {s : State} {BX : Addr} {Z oP oQ wX pL qL k Pv m1 
         Mont.Outs BX [(slot wX 6, 8 * wX), (oP, slot (wsWords pL) 24)] s.mem t.mem) ∧
       Keep (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs) s t := by
   have hn := hs.nowrap
-  have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
+  obtain e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eX6 := e wX 6; have eX7 := e wX 7; have eX8 := e wX 8
-  have eP0 := e (wsWords pL) 0; have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 24
-  have eQ8 := e (wsWords qL) 24
-  have hw2 : 2 ≤ wsWords pL := by unfold wsWords; omega_arith
+  obtain eX6 := e wX 6; have eX7 := e wX 7; have eX8 := e wX 8
+  obtain eP0 := e (wsWords pL) 0; have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 24
+  obtain eQ8 := e (wsWords qL) 24
+  obtain hw2 : 2 ≤ wsWords pL := by unfold wsWords; omega_arith
   refine WP.seq (WP.mono (exportM2_ok hs hQZ hXQ hwQ hwX h23 h27 h28 hBQ hQL hq1 hq')
     fun s₁ ⟨⟨v6, o1⟩, k1⟩ => ?_)
   -- `m₂`, below `2^(64 w_P n)`, in the words `reduceIn` reads.
-  have hKn := le_nChunks_mul (K := (k + 7) / 8) (show 1 ≤ wsWords pL by omega_arith)
-  have hM2n : M2 < 2 ^ (64 * (wsWords pL * nChunks ((k + 7) / 8) (wsWords pL))) := by
+  obtain hKn := le_nChunks_mul (K := (k + 7) / 8) (show 1 ≤ wsWords pL by omega_arith)
+  obtain hM2n : M2 < 2 ^ (64 * (wsWords pL * nChunks ((k + 7) / 8) (wsWords pL))) := by
     refine Nat.lt_of_lt_of_le hm2b ?_
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by rw [Nat.mul_comm (wsWords pL)]; omega_arith)
-  have hbytes : wv s₁.mem BX (slot wX 6) (wsWords pL * nChunks ((k + 7) / 8) (wsWords pL)) = M2 :=
+  obtain hbytes : wv s₁.mem BX (slot wX 6) (wsWords pL * nChunks ((k + 7) / 8) (wsWords pL)) = M2 :=
     wv_low (by rw [← Pre.val32_eq_wv, v6, hm2]) hM2n hnw
-  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd =>
+  obtain hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd =>
     o1.word (Or.inl (by omega_arith)) (by omega_arith)
   refine WP.seq (WP.mono (setupP_ok (oA := oP) (hs.congr k1.wr) ((k1.gpr _ (by decide)).trans h23) (by decide)
     (by decide) (by omega_arith) (by rw [hd _ (by decide)]; exact hBP) (by rw [hd _ (by decide)]; exact hPL) hp1 hp')
     fun s₂ ⟨⟨a10, a21, a29, a11, _, m2⟩, k2⟩ => ?_)
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   refine WP.mono (recombineP_ok (QI := QI) (k := k) (hs.congr k12.wr) hPZ hXP hw2 (by omega_arith) hwP hwX a10 a21
     a29 a11 ((k12.gpr _ (by decide)).trans h23) ((k12.gpr _ (by decide)).trans h27)
     ((k12.gpr _ (by decide)).trans h28) (by rw [m2, hd _ (by decide)]; exact hK) (by omega_arith) hk' hnw
@@ -311,8 +311,8 @@ theorem phaseD_ok {pc : Bool} {s : State} {BX : Addr} {Z oP oQ wX pL qL k Pv m1 
       ⟨S, pL', b, (C.mono (oA := slot wX 6) (n := 8 * wX) o1 (by omega_arith) (by omega_arith)
         (by rw [k1.rd, k1.wr]) (k1.gpr _ (by decide))).of_mem m2 (by rw [k2.rd, k2.wr]) (k2.gpr _ (by decide))⟩))
     fun t ⟨⟨v4, o2⟩, k3⟩ => ⟨⟨v4, fun x hx => ?_⟩, (k12.trans k3).mono⟩
-  have h1 := hx _ (List.mem_cons_self ..)
-  have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  obtain h1 := hx _ (List.mem_cons_self ..)
+  obtain h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   simp only at h1 h2
   have h1' : ofs BX x < slot wX 6 ∨ slot wX 6 + 8 * wX ≤ ofs BX x := h1
   have h2' : ofs BX x < oP ∨ oP + slot (wsWords pL) 24 ≤ ofs BX x := h2

@@ -99,7 +99,7 @@ theorem sub_beq {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro h'
     apply h
-    have e : BitVec.ofNat 32 x = BitVec.ofNat 32 y := by
+    obtain e : BitVec.ofNat 32 x = BitVec.ofNat 32 y := by
       rw [← BitVec.sub_add_cancel (BitVec.ofNat 32 x) (BitVec.ofNat 32 y), h']; simp
     have := congrArg BitVec.toNat e
     rwa [toNat_imm hx, toNat_imm hy] at this
@@ -116,12 +116,12 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
     {s : State} (h : InvInv b sI c v n s) :
     WP isa (invStepWith M) s fun s' => InvInv b sI c v (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
   obtain ⟨hcur⟩ := h
-  have hb := pbits (n - 1) (by omega_using [hn'])
-  have he := shr_step (P - 2) (n - 1)
+  obtain hb := pbits (n - 1) (by omega_using [hn'])
+  obtain he := shr_step (P - 2) (n - 1)
   rw [Nat.sub_add_cancel hn] at he
   unfold invStepWith
   refine WP.seq (wp_dp (op2_imm (by decide)) fun s1 u1 => WP.block_nil ?_)
-  have h1 : Cur b sI (BitVec.ofNat 32 (n - 1)) c IQ (invV v n) s1 := by
+  obtain h1 : Cur b sI (BitVec.ofNat 32 (n - 1)) c IQ (invV v n) s1 := by
     refine ⟨hcur.ctx.of_rest (u1.rest (ws := [.r10]) (by decide)) (by decide),
       hcur.stp.trans (Stp.of_rest (u1.rest (ws := [.r10]) (by decide)) (by decide) u1.mem), ?_,
       by rw [u1.other _ (by decide), hcur.r11], by rw [u1.mem]; exact hcur.slots⟩
@@ -133,16 +133,16 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
   refine WP.seq (WP.mono (opMul hM (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
     fun s2 h2 => ?_)
   -- After the square.
-  have hsq : ∀ q ∈ IQ, upd (invV v n) R (invV v n R * invV v n R) q =
+  obtain hsq : ∀ q ∈ IQ, upd (invV v n) R (invV v n R * invV v n R) q =
       upd v R (VG.Proof.X25519.pw (v Z2) (2 * ((P - 2) >>> n))) q := by
     intro q _
     by_cases hq : q = R
     · subst hq; rw [upd_self, invV, upd_self, upd_self, Nat.two_mul, ← VG.Proof.X25519.pw_mul]
     · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq, upd_of_ne _ _ hq]
-  have h2' := h2.congr (qs' := IQ) (by decide) hsq
+  obtain h2' := h2.congr (qs' := IQ) (by decide) hsq
   refine WP.seq (wp_cmp (op2_imm (by decide)) fun s3 u3 hz3 => WP.block_nil ?_)
-  have h3 := h2'.next (Fupd.rest u3 _) (by rw [u3.mem]; exact Frame.refl _ _) (by rw [u3.mem]; exact h2'.slots)
-  have hz3' : s3.z = decide (n - 1 = 4) := by
+  obtain h3 := h2'.next (Fupd.rest u3 _) (by rw [u3.mem]; exact Frame.refl _ _) (by rw [u3.mem]; exact h2'.slots)
+  obtain hz3' : s3.z = decide (n - 1 = 4) := by
     rw [hz3, h2'.r10]; exact sub_beq (by omega_using [hn']) (by decide)
   refine WP.seq (WP.mono (Q := Cur b sI (BitVec.ofNat 32 (n - 1)) c IQ (invV v (n - 1))) ?_ fun s4 h4 =>
     wp_cmp (op2_imm (by decide)) fun s5 u5 hz5 => WP.block_nil ⟨⟨h4.next (Fupd.rest u5 _)
@@ -155,8 +155,8 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
       · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
     · have h4 : n - 1 ≠ 4 := by rw [hz3'] at hf; simpa using hf
       refine WP.seq (wp_cmp (op2_imm (by decide)) fun s4 u4 hz4 => WP.block_nil ?_)
-      have h4' := h3.next (Fupd.rest u4 _) (by rw [u4.mem]; exact Frame.refl _ _) (by rw [u4.mem]; exact h3.slots)
-      have hz4' : s4.z = decide (n - 1 = 2) := by
+      obtain h4' := h3.next (Fupd.rest u4 _) (by rw [u4.mem]; exact Frame.refl _ _) (by rw [u4.mem]; exact h3.slots)
+      obtain hz4' : s4.z = decide (n - 1 = 2) := by
         rw [hz4, h3.r10]; exact sub_beq (by omega_using [hn']) (by decide)
       refine WP.ite s4.z (eval_eq _) (fun ht => WP.block_nil (h4'.congr (fun q hq => hq) fun q _ => ?_))
         (fun hf => ?_)
@@ -183,17 +183,17 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
   refine WP.seq ?_
   simp only [one, List.cons_append, List.nil_append]
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
-  have hr2 : Rest [.r1, .r2] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
+  obtain hr2 : Rest [.r1, .r2] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  obtain hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
   refine str0_ok hc2 (d := R) (by decide) fun s3 u3 => ?_
   refine WP.append (stores_ok (o := R + 4) (n := 15) (by decide) (hc2.of_rest (u3.rest []) (by decide)))
     fun s4 ⟨h4w, h4f, h4g, h4r⟩ => ?_
   refine wp_mov (op2_imm (by decide)) fun s5 u5 => WP.block_nil ?_
-  have hr5 : Rest [.r1, .r2, .r10] s s5 :=
+  obtain hr5 : Rest [.r1, .r2, .r10] s s5 :=
     (hr2.mono (by decide)).trans ((u3.rest _).trans ((h4r.mono (by decide)).trans (u5.rest (by decide))))
-  have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  obtain hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
   -- The limbs of `R`: 1, then zeros.
-  have hlimb : ∀ k < 16, limb s5.mem (State.addr b) R k = if k = 0 then 1 else 0 := by
+  obtain hlimb : ∀ k < 16, limb s5.mem (State.addr b) R k = if k = 0 then 1 else 0 := by
     intro k hk
     rw [limb, u5.mem]
     rcases Nat.eq_zero_or_pos k with rfl | hk0
@@ -203,7 +203,7 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     · have := h4w (k - 1) (by omega_using [hk])
       rw [show R + 4 + 4 * (k - 1) = R + 4 * k by omega_using [hk0], u3.gpr, u2.gpr] at this
       rw [this]; simp only [show k ≠ 0 by omega_using [hk0], ite_false]; rfl
-  have hf5 : Frame [⟨State.addr b + BitVec.ofNat 64 R, 64⟩] s.mem s5.mem := by
+  obtain hf5 : Frame [⟨State.addr b + BitVec.ofNat 64 R, 64⟩] s.mem s5.mem := by
     rw [u5.mem, ← hm2]
     refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) (s2.gpr .r1)
       (Offset.contains (State.addr b) (d := R) (n := 4) (e := R) (k := 64) (Nat.le_refl _) (by decide)
@@ -211,10 +211,10 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     rw [← u3.mem]
     exact h4f.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩
-  have hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
-  have hst5 : Stp b s s5 := ⟨hr5.mono (by decide), hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+  obtain hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
+  obtain hst5 : Stp b s s5 := ⟨hr5.mono (by decide), hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩⟩
-  have hS5 : SlotsOk s5.mem (State.addr b) IQ (invV v 255) := by
+  obtain hS5 : SlotsOk s5.mem (State.addr b) IQ (invV v 255) := by
     have hZ2 : Z2 = 192 := rfl
     have hX2 : X2 = 128 := rfl
     have hR : R = 1024 := rfl
@@ -232,7 +232,7 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX2, hR, hk])) (by omega_using [hX2, hk]) (by omega_using [hR])
       refine ⟨fun k hk => by rw [e k hk]; exact (hS X2 (by decide)).1 k hk, ?_⟩
       rw [FS, V, val16_congr e, invV, upd_of_ne _ _ (by decide)]; exact (hS X2 (by decide)).2
-  have h255 : InvInv b s5 c v 255 s5 :=
+  obtain h255 : InvInv b s5 c v 255 s5 :=
     ⟨⟨hc5, Stp.refl _ _, u5.gpr, by rw [hr5.gpr _ (by decide), h11], hS5⟩⟩
   refine WP.mono (Q := InvInv b s5 c v 0) (WP.loop (M := isa)
     (fun m s' => 1 ≤ m ∧ m ≤ 255 ∧ InvInv b s5 c v m s') ?_ 255 s5 ⟨by decide, Nat.le_refl _, h255⟩)

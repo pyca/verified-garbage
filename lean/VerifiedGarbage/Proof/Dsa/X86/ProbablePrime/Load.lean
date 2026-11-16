@@ -40,7 +40,7 @@ theorem save_ok {s : State} {base : Addr} {size n src dst : Nat} (scratch : Scr 
       Outside base dst (4 * n) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp] s t := by
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok scratch positive srcFit dstFit sep)
     fun a ⟨Oa, value, Ka⟩ => ?_)
-  have low : 0 < w32 a.mem base dst := LowWord.odd_low positive (by rw [value]; exact odd)
+  obtain low : 0 < w32 a.mem base dst := LowWord.odd_low positive (by rw [value]; exact odd)
   refine WP.mono (LowWord.decrement_ok (scratch.of_keeps Ka (by decide)) positive dstFit low)
     fun t ⟨V, Ot, Kt⟩ => ?_
   rw [value] at V
@@ -100,14 +100,14 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
   have b := v.bits
   have room := v.room
   have fit := v.workspaceFit
-  have slot0 := v.slotFit (j := 0) (by decide)
-  have slot5 := v.slotFit (j := 5) (by decide)
+  obtain slot0 := v.slotFit (j := 0) (by decide)
+  obtain slot5 := v.slotFit (j := 5) (by decide)
   have twoW := b.words_le
   have twoK := b.words_two
   have bytes := b.bytes_eq
-  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
-  have e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
-  have eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
+  obtain e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
+  obtain e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
+  obtain eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
     unfold Environment.scratch scratchBytes slot stride VG.Impl.Bignum.hdrBytes; rfl
   have hk : E.words = E.bits / 32 := rfl
   have hw : E.width = width E.bits := rfl
@@ -116,21 +116,21 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
   unfold load
   refine WP.seq (wp_movS (v := s.gpr .edi) rfl fun a A _ => wp_addS (v := BitVec.ofNat 32 E.scratch) rfl
     fun e B _ => WP.block_nil ?_)
-  have Ke : Keeps [.esi] s e := (A.keeps.mono (by decide)).trans B.keeps
-  have Se := I.scratch.of_keeps Ke (by decide)
-  have esi : e.gpr .esi = e.gpr .edi + BitVec.ofNat 32 E.scratch := by
+  obtain Ke : Keeps [.esi] s e := (A.keeps.mono (by decide)).trans B.keeps
+  obtain Se := I.scratch.of_keeps Ke (by decide)
+  obtain esi : e.gpr .esi = e.gpr .edi + BitVec.ofNat 32 E.scratch := by
     rw [B.gpr, A.gpr, Ke.1 .edi (by decide)]
-  have srcAddr : (e.gpr .esi).setWidth 64 = off E.base E.scratch := by
+  obtain srcAddr : (e.gpr .esi).setWidth 64 = off E.base E.scratch := by
     rw [esi]; exact Se.ea (by omega_arith)
-  have dstAddr : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64 = off E.base (slot E.width 0) :=
+  obtain dstAddr : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64 = off E.base (slot E.width 0) :=
     Se.ea (by omega_arith)
-  have srcNat : (e.gpr .esi).toNat = E.workspace.toNat + E.scratch := by
+  obtain srcNat : (e.gpr .esi).toNat = E.workspace.toNat + E.scratch := by
     rw [esi, BitVec.toNat_add, Se.edi_toNat, v.baseNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (by omega_arith : E.scratch < 2 ^ 32), Nat.mod_eq_of_lt (by omega_arith)]
-  have dstNat : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).toNat = E.workspace.toNat + slot E.width 0 := by
+  obtain dstNat : (e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).toNat = E.workspace.toNat + slot E.width 0 := by
     rw [BitVec.toNat_add, Se.edi_toNat, v.baseNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (by omega_arith : slot E.width 0 < 2 ^ 32), Nat.mod_eq_of_lt (by omega_arith)]
-  have C : VG.Proof.RsaKeyGen.X86.Import.Context
+  obtain C : VG.Proof.RsaKeyGen.X86.Import.Context
       ⟨e.gpr .esi, e.gpr .edi + BitVec.ofNat 32 (slot E.width 0), E.words⟩ e := by
     refine VG.Proof.RsaKeyGen.X86.Import.context_of_regions (by show 0 < E.words; omega_arith)
       (by show (e.gpr .esi).toNat + 4 * E.words ≤ 2 ^ 32; omega_arith)
@@ -143,24 +143,24 @@ theorem load_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
         ⟨(e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64, 4 * E.words⟩
       rw [srcAddr, dstAddr]
       exact Offset.disjoint E.base (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  have loaded := VG.Proof.RsaKeyGen.X86.Import.load_ok C rfl rfl
+  obtain loaded := VG.Proof.RsaKeyGen.X86.Import.load_ok C rfl rfl
   change WP isa (VG.Impl.RsaKeyGen.X86.Import.load E.words (slot E.width 0)) e _ at loaded
   refine WP.seq (WP.mono loaded fun f ⟨value, F, Kf⟩ => ?_)
   change (f.mem.read ((e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64) (4 * E.words)).toNat =
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt e.mem ((e.gpr .esi).setWidth 64) (4 * E.words)) at value
   rw [dstAddr, srcAddr, VG.Proof.Bignum.read_eq_val32] at value
-  have low : val32 f.mem E.base (slot E.width 0) E.words = c := by
+  obtain low : val32 f.mem E.base (slot E.width 0) E.words = c := by
     rw [value, ← I.memory.candidate]
     unfold Environment.candidate
     rw [hk, bytes, show e.mem = s.mem from by rw [B.mem, A.mem]]
   change Frame [⟨(e.gpr .edi + BitVec.ofNat 32 (slot E.width 0)).setWidth 64, 4 * E.words⟩] e.mem f.mem at F
   rw [dstAddr] at F
-  have Of : Outside E.base (slot E.width 0) (4 * E.words) e.mem f.mem := frame_outside F (by omega_arith)
-  have Sf := Se.of_keeps Kf (by decide)
+  obtain Of : Outside E.base (slot E.width 0) (4 * E.words) e.mem f.mem := frame_outside F (by omega_arith)
+  obtain Sf := Se.of_keeps Kf (by decide)
   refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.WitnessLoad.zeros_ok Sf (slot E.width 0 + 4 * E.words)
     (2 * E.width - E.words) (by omega_arith)) fun g ⟨Zg, Og, Kg⟩ => ?_)
-  have Sg := Sf.of_keeps Kg (by decide)
-  have whole : val32 g.mem E.base (slot E.width 0) (2 * E.width) = c := by
+  obtain Sg := Sf.of_keeps Kg (by decide)
+  obtain whole : val32 g.mem E.base (slot E.width 0) (2 * E.width) = c := by
     rw [show 2 * E.width = E.words + (2 * E.width - E.words) by omega_arith, val32_append, Zg, Nat.mul_zero,
       Nat.add_zero, Og.val32 (Or.inl (by omega_arith)) (by omega_arith), low]
   refine WP.mono (VG.Proof.RsaKeyGen.X86.CandidateSave.save_ok Sg (n := 2 * E.width)
@@ -180,10 +180,10 @@ theorem load_ok {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} 
     WP isa (load E.words E.width) s fun t =>
       Loaded E c entropy t ∧ WorkFrame E s.mem t.mem ∧ Tail E s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have slot5 := v.slotFit (j := 5) (by decide)
-  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
-  have e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
-  have eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
+  obtain slot5 := v.slotFit (j := 5) (by decide)
+  obtain e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
+  obtain e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
+  obtain eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
     unfold Environment.scratch scratchBytes slot stride VG.Impl.Bignum.hdrBytes; rfl
   refine WP.mono_syms (load_raw v I odd) fun t ⟨value, minus, O, K⟩ syms => ?_
   have fit := v.workspaceFit

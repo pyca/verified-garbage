@@ -64,13 +64,13 @@ theorem mulTailHi_ok {full : Bool} {s : State} (h : RtWs (lay full) s B Z len N)
       num u.mem B (kw len) y = num s.mem B (kw len) y / 2 := by
   rw [mulTailHi, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_movS rfl fun t5 U _ => WP.block_nil ?_
-  have h5 : RtWs (lay full) t5 B Z len N := h.keep U.keeps (by decide) (by decide) (by rw [U.mem]; exact fun _ _ => rfl)
+  obtain h5 : RtWs (lay full) t5 B Z len N := h.keep U.keeps (by decide) (by decide) (by rw [U.mem]; exact fun _ _ => rfl)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (half_ok h5 (j := y) hy (by rw [U.gpr]; decide)) fun t6 ⟨h6, k6, e6, r6⟩ => ?_
   refine wp_subS rfl fun t7 T7 _ => wp_cmpi fun u T cf _ => WP.block_nil ?_
-  have countEq : t6.gpr .esi = s.gpr .esi := (r6.1 _ (by decide)).trans (U.other _ (by decide))
-  have rest : Keeps [.esi] t6 u := T7.keeps.trans (T.keeps _)
-  have mem : u.mem = t6.mem := T.mem.trans T7.mem
+  obtain countEq : t6.gpr .esi = s.gpr .esi := (r6.1 _ (by decide)).trans (U.other _ (by decide))
+  obtain rest : Keeps [.esi] t6 u := T7.keeps.trans (T.keeps _)
+  obtain mem : u.mem = t6.mem := T.mem.trans T7.mem
   rw [U.gpr, U.mem] at e6
   rw [U.mem] at k6
   refine ⟨h6.keep rest (by decide) (by decide) (by rw [mem]; exact fun _ _ => rfl), by rw [mem]; exact k6,
@@ -93,38 +93,38 @@ theorem mulModStepHi_ok {full : Bool} {s : State} (h : RtWs (lay full) s B Z len
         num u.mem B (kw len) x = (num s.mem B (kw len) x + num s.mem B (kw len) x) % num s.mem B (kw len) m) := by
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi
   -- The indices' facts, while the context is small.
-  have zN : z < N := by omega_arith
-  have yN : y < N := by omega_arith
-  have xN : x < N := by omega_arith
-  have aN : a < N := by omega_arith
-  have mN : m < N := by omega_arith
-  have tN : t < N := by omega_arith
-  have t1N : t + 1 + 2 < N := by omega_arith
-  have at0 : a ≠ t := by omega_arith
-  have at1 : a ≠ t + 1 := by omega_arith
-  have at2 : a ≠ t + 1 + 1 := by omega_arith
-  have at3 : a ≠ t + 1 + 2 := by omega_arith
-  have xt1 : x ≠ t + 1 := by omega_arith
-  have xt2 : x ≠ t + 1 + 1 := by omega_arith
-  have xt3 : x ≠ t + 1 + 2 := by omega_arith
-  have mt1 : m ≠ t + 1 := by omega_arith
-  have mt2 : m ≠ t + 1 + 1 := by omega_arith
-  have mt3 : m ≠ t + 1 + 2 := by omega_arith
-  have yt0 : y ≠ t := by omega_arith
-  have yt1 : y ≠ t + 1 := by omega_arith
-  have yt2 : y ≠ t + 1 + 1 := by omega_arith
-  have yt3 : y ≠ t + 1 + 2 := by omega_arith
-  have zt1 : z ≠ t + 1 := by omega_arith
-  have zt2 : z ≠ t + 1 + 1 := by omega_arith
-  have zt3 : z ≠ t + 1 + 2 := by omega_arith
-  have mt0 : m ≠ t := by omega_arith
-  have xt0 : x ≠ t := by omega_arith
-  have zt0 : z ≠ t := by omega_arith
-  have fz := h.ws.fit64 zN
-  have fy := h.ws.fit64 yN
-  have fx := h.ws.fit64 xN
-  have fa := h.ws.fit64 aN
-  have fm := h.ws.fit64 mN
+  obtain zN : z < N := by omega_arith
+  obtain yN : y < N := by omega_arith
+  obtain xN : x < N := by omega_arith
+  obtain aN : a < N := by omega_arith
+  obtain mN : m < N := by omega_arith
+  obtain tN : t < N := by omega_arith
+  obtain t1N : t + 1 + 2 < N := by omega_arith
+  obtain at0 : a ≠ t := by omega_arith
+  obtain at1 : a ≠ t + 1 := by omega_arith
+  obtain at2 : a ≠ t + 1 + 1 := by omega_arith
+  obtain at3 : a ≠ t + 1 + 2 := by omega_arith
+  obtain xt1 : x ≠ t + 1 := by omega_arith
+  obtain xt2 : x ≠ t + 1 + 1 := by omega_arith
+  obtain xt3 : x ≠ t + 1 + 2 := by omega_arith
+  obtain mt1 : m ≠ t + 1 := by omega_arith
+  obtain mt2 : m ≠ t + 1 + 1 := by omega_arith
+  obtain mt3 : m ≠ t + 1 + 2 := by omega_arith
+  obtain yt0 : y ≠ t := by omega_arith
+  obtain yt1 : y ≠ t + 1 := by omega_arith
+  obtain yt2 : y ≠ t + 1 + 1 := by omega_arith
+  obtain yt3 : y ≠ t + 1 + 2 := by omega_arith
+  obtain zt1 : z ≠ t + 1 := by omega_arith
+  obtain zt2 : z ≠ t + 1 + 1 := by omega_arith
+  obtain zt3 : z ≠ t + 1 + 2 := by omega_arith
+  obtain mt0 : m ≠ t := by omega_arith
+  obtain xt0 : x ≠ t := by omega_arith
+  obtain zt0 : z ≠ t := by omega_arith
+  obtain fz := h.ws.fit64 zN
+  obtain fy := h.ws.fit64 yN
+  obtain fx := h.ws.fit64 xN
+  obtain fa := h.ws.fit64 aN
+  obtain fm := h.ws.fit64 mN
   rw [mulModStepHi, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (mulHead_ok h tN zN yN xN zt0.symm) fun t2 ⟨h2, k2, r2, e2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -134,7 +134,7 @@ theorem mulModStepHi_ok {full : Bool} {s : State} (h : RtWs (lay full) s B Z len
   refine WP.mono (addMod_ok h3 (o := x) (a := x) (b := x) (m := m) (z := z) (t := t + 1) xN xN xN mN zN t1N
     xt1 mt1 mt2 xt3) fun t4 ⟨h4, k4, r4, e4⟩ => ?_
   refine WP.mono (mulTailHi_ok h4 yN) fun u ⟨hu, k6, esi, c6, z6, e6⟩ => ?_
-  have esieq : t4.gpr .esi = s.gpr .esi := by
+  obtain esieq : t4.gpr .esi = s.gpr .esi := by
     rw [r4.1 _ (by decide), r3.1 _ (by decide), r2.1 _ (by decide)]
   refine ⟨hu, ((k2.mono.trans k3.mono).trans k4.mono).trans k6.mono,
     (r2.mono (by simp)).trans ((r3.mono (by simp)).trans ((r4.mono (by simp)).trans esi)),
@@ -142,23 +142,23 @@ theorem mulModStepHi_ok {full : Bool} {s : State} (h : RtWs (lay full) s B Z len
   · rw [e6, k4.num (nm4 yt1 yt2 yt3 hyx) (by decide) fy, k3.num (nm4 yt1 yt2 yt3 hya) (by decide) fy,
       k2.num (nm1 yt0) (by decide) fy]
   · -- The values each step reads.
-    have z2 : num t2.mem B (kw len) z = 0 := by rw [k2.num (nm1 zt0) (by decide) fz, hZ]
-    have mm2 : num t2.mem B (kw len) m = num s.mem B (kw len) m := k2.num (nm1 mt0) (by decide) fm
-    have a2 : num t2.mem B (kw len) a = num s.mem B (kw len) a := k2.num (nm1 at0) (by decide) fa
-    have x2 : num t2.mem B (kw len) x = num s.mem B (kw len) x := k2.num (nm1 xt0) (by decide) fx
-    have d2 : num t2.mem B (kw len) t = num s.mem B (kw len) y % 2 * num s.mem B (kw len) x := by
+    obtain z2 : num t2.mem B (kw len) z = 0 := by rw [k2.num (nm1 zt0) (by decide) fz, hZ]
+    obtain mm2 : num t2.mem B (kw len) m = num s.mem B (kw len) m := k2.num (nm1 mt0) (by decide) fm
+    obtain a2 : num t2.mem B (kw len) a = num s.mem B (kw len) a := k2.num (nm1 at0) (by decide) fa
+    obtain x2 : num t2.mem B (kw len) x = num s.mem B (kw len) x := k2.num (nm1 xt0) (by decide) fx
+    obtain d2 : num t2.mem B (kw len) t = num s.mem B (kw len) y % 2 * num s.mem B (kw len) x := by
       rw [e2, hZ]
       rcases Nat.mod_two_eq_zero_or_one (num s.mem B (kw len) y) with e | e <;> simp [e]
-    have dlt : num t2.mem B (kw len) t < num s.mem B (kw len) m := by
+    obtain dlt : num t2.mem B (kw len) t < num s.mem B (kw len) m := by
       rw [d2]; rcases Nat.mod_two_eq_zero_or_one (num s.mem B (kw len) y) with e | e <;> simp [e] <;> omega_arith
-    have A3 := e3 z2 (by rw [a2, mm2]; exact hA) (by rw [mm2]; exact dlt) (by rw [mm2]; exact hM)
+    obtain A3 := e3 z2 (by rw [a2, mm2]; exact hA) (by rw [mm2]; exact dlt) (by rw [mm2]; exact hM)
     rw [a2, mm2, d2] at A3
-    have z3 : num t3.mem B (kw len) z = 0 := by rw [k3.num (nm4 zt1 zt2 zt3 hza) (by decide) fz, z2]
-    have mm3 : num t3.mem B (kw len) m = num s.mem B (kw len) m := by
+    obtain z3 : num t3.mem B (kw len) z = 0 := by rw [k3.num (nm4 zt1 zt2 zt3 hza) (by decide) fz, z2]
+    obtain mm3 : num t3.mem B (kw len) m = num s.mem B (kw len) m := by
       rw [k3.num (nm4 mt1 mt2 mt3 ham.symm) (by decide) fm, mm2]
-    have x3 : num t3.mem B (kw len) x = num s.mem B (kw len) x := by
+    obtain x3 : num t3.mem B (kw len) x = num s.mem B (kw len) x := by
       rw [k3.num (nm4 xt1 xt2 xt3 hxa) (by decide) fx, x2]
-    have X4 := e4 z3 (by rw [x3, mm3]; exact hX) (by rw [x3, mm3]; exact hX) (by rw [mm3]; exact hM)
+    obtain X4 := e4 z3 (by rw [x3, mm3]; exact hX) (by rw [x3, mm3]; exact hX) (by rw [mm3]; exact hM)
     rw [x3, mm3] at X4
     refine ⟨?_, ?_⟩
     · rw [k6.num (nm1 hya.symm) (by decide) fa, k4.num (nm4 at1 at2 at3 hxa.symm) (by decide) fa, A3]
@@ -185,25 +185,25 @@ theorem mulModHiBody_ok {full : Bool} {s0 u : State} {z y x a m t k o i : Nat}
   have h := inv.ws
   have hi' := hi
   obtain ⟨ht, hz, hy, hx, ha, hm, hzy, hzx, hza, hzm, hyx, hya, hym, hxa, hxm, ham⟩ := hi'
-  have fz := h.ws.fit64 (j := z) (by omega_arith)
-  have fm := h.ws.fit64 (j := m) (by omega_arith)
-  have zk : num u.mem B (kw len) z = num s0.mem B (kw len) z := inv.keep.num (by simp; omega_arith) (by decide) fz
-  have mk : num u.mem B (kw len) m = num s0.mem B (kw len) m := inv.keep.num (by simp; omega_arith) (by decide) fm
+  obtain fz := h.ws.fit64 (j := z) (by omega_arith)
+  obtain fm := h.ws.fit64 (j := m) (by omega_arith)
+  obtain zk : num u.mem B (kw len) z = num s0.mem B (kw len) z := inv.keep.num (by simp; omega_arith) (by decide) fz
+  obtain mk : num u.mem B (kw len) m = num s0.mem B (kw len) m := inv.keep.num (by simp; omega_arith) (by decide) fm
   refine WP.mono (mulModStepHi_ok h hi) fun u' ⟨h', k', r', c', f', y', v'⟩ => ?_
-  have le : (k - (i + 1)) * stepUnit + o + stepUnit = (k - i) * stepUnit + o := by
+  obtain le : (k - (i + 1)) * stepUnit + o + stepUnit = (k - i) * stepUnit + o := by
     have : k - i = k - (i + 1) + 1 := by omega_using [hik]
     rw [this, Nat.succ_mul]; omega_using []
-  have bound : (k - i) * stepUnit + o < 2 ^ 32 :=
+  obtain bound : (k - i) * stepUnit + o < 2 ^ 32 :=
     Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_right _ (Nat.sub_le _ _)) _) hk
-  have cnt : u.gpr .esi - BitVec.ofNat 32 stepUnit = BitVec.ofNat 32 ((k - (i + 1)) * stepUnit + o) := by
+  obtain cnt : u.gpr .esi - BitVec.ofNat 32 stepUnit = BitVec.ofNat 32 ((k - (i + 1)) * stepUnit + o) := by
     rw [inv.count, ← le, BitVec.ofNat_sub_ofNat_of_le _ _ (by unfold stepUnit; omega_using []) (by omega_using []),
       Nat.add_sub_cancel]
   refine ⟨⟨h', inv.keep.trans k', inv.rest.trans r', by rw [c', cnt], ?_, fun hZ hA hX hM => ?_⟩, ?_⟩
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
   · obtain ⟨va, vx⟩ := inv.value hZ hA hX hM
-    have M0 : 0 < num s0.mem B (kw len) m := by omega_arith
-    have aLt : num u.mem B (kw len) a < num u.mem B (kw len) m := by rw [va, mk]; exact Nat.mod_lt _ M0
-    have xLt : num u.mem B (kw len) x < num u.mem B (kw len) m := by rw [vx, mk]; exact Nat.mod_lt _ M0
+    obtain M0 : 0 < num s0.mem B (kw len) m := by omega_arith
+    obtain aLt : num u.mem B (kw len) a < num u.mem B (kw len) m := by rw [va, mk]; exact Nat.mod_lt _ M0
+    obtain xLt : num u.mem B (kw len) x < num u.mem B (kw len) m := by rw [vx, mk]; exact Nat.mod_lt _ M0
     obtain ⟨va', vx'⟩ := v' (by rw [zk, hZ]) aLt xLt (by rw [mk]; exact hM)
     rw [va', vx', va, vx, inv.yv, mk]
     exact ⟨VG.Proof.Rsa.mulMod_arith, VG.Proof.Rsa.double_arith⟩
@@ -232,7 +232,7 @@ theorem mulModHi_ok {full : Bool} {s : State} (h : RtWs (lay full) s B Z len N) 
         num u.mem B (kw len) a =
           (num s.mem B (kw len) a + num s.mem B (kw len) y % 2 ^ k * num s.mem B (kw len) x) %
             num s.mem B (kw len) m) := by
-  have start : MulHiI full s B Z len N z y x a m t k o 0 s :=
+  obtain start : MulHiI full s B Z len N z y x a m t k o 0 s :=
     ⟨h, Keep.refl _ _ _ _ _, Keeps.refl _ _, by rw [c, Nat.sub_zero], by rw [Nat.pow_zero, Nat.div_one],
       fun _ hA hX _ => ⟨by rw [Nat.pow_zero, Nat.mod_one, Nat.zero_mul, Nat.add_zero, Nat.mod_eq_of_lt hA],
         by rw [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hX]⟩⟩
@@ -282,8 +282,8 @@ theorem qBitsHi_ok {full : Bool} {u : State} {B : Addr} {Z a : Nat}
   refine wp_movS c.readSrc fun t1 u1 _ => wp_ror ⟨by decide, by decide⟩ fun t2 u2 => wp_addS rfl fun t3 u3 _ =>
     WP.block_nil ⟨(u1.keeps.mono (by decide)).trans ((u2.keeps.mono (by decide)).trans (u3.keeps.mono (by decide))),
       by rw [u3.mem, u2.mem, u1.mem], ?_⟩
-  have e1 : t2.gpr .eax = BitVec.ofNat 32 (8 * a * stepUnit) := by rw [u2.gpr, u1.gpr, rot13 ha]
-  have e2 : t2.gpr .esi = u.gpr .esi := by rw [u2.other _ (by decide), u1.other _ (by decide)]
+  obtain e1 : t2.gpr .eax = BitVec.ofNat 32 (8 * a * stepUnit) := by rw [u2.gpr, u1.gpr, rot13 ha]
+  obtain e2 : t2.gpr .esi = u.gpr .esi := by rw [u2.other _ (by decide), u1.other _ (by decide)]
   rw [u3.gpr, e1, e2]
 
 /-- `operands y x m cnt`: `[aY] := [y]`, `[aX] := [x]`, `[aVD] := [m]`, then `esi` up by `2^16 k`. -/
@@ -301,13 +301,13 @@ theorem Stg.operands_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
   refine WP.mono (WP.and (h.copy_ok (o := aY) (a := y) (by decide) hy hyY.symm)
     (VG.Proof.Rsa.X86.KeyRt.copy_ok h.ws (o := aY) (a := y) (by decide) (h.live_lt y hy) hyY.symm))
     fun t1 ⟨h1, _, _, _, r1, _⟩ => ?_
-  have hx1 : x ∈ aY :: live := List.mem_cons_of_mem _ hx
+  obtain hx1 : x ∈ aY :: live := List.mem_cons_of_mem _ hx
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (WP.and (h1.copy_ok (o := aX) (a := x) (by decide) hx1 hxX.symm)
     (VG.Proof.Rsa.X86.KeyRt.copy_ok h1.ws (o := aX) (a := x) (by decide) (h1.live_lt x hx1) hxX.symm))
     fun t2 ⟨h2, _, _, _, r2, _⟩ => ?_
   rw [upd_ne _ _ hxY] at h2
-  have hm2 : m ∈ aX :: aY :: live := List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm)
+  obtain hm2 : m ∈ aX :: aY :: live := List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (WP.and (h2.copy_ok (o := aVD) (a := m) (by decide) hm2 hmV.symm)
     (VG.Proof.Rsa.X86.KeyRt.copy_ok h2.ws (o := aVD) (a := m) (by decide) (h2.live_lt m hm2) hmV.symm))
@@ -329,9 +329,9 @@ theorem Stg.mulHi_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
         R = num s.mem g.B g.w aY % 2 ^ k * num s.mem g.B g.w aX % A m) ∧
       Stg g s0 (upd A aA R) live c t ∧ t.gpr .esi = BitVec.ofNat 32 o := by
   refine WP.mono (mulModHi_ok h.ws hmi hk hk' ho e) fun t ⟨ht, k5, r5, e5, v5⟩ => ?_
-  have gZ : num s.mem g.B g.w aZ = 0 := by rw [h.arrs.get hz, hA0]
-  have gA : num s.mem g.B g.w aA = 0 := by rw [h.arrs.get ha, hAA]
-  have gM : num s.mem g.B g.w m = A m := h.arrs.get hm
+  obtain gZ : num s.mem g.B g.w aZ = 0 := by rw [h.arrs.get hz, hA0]
+  obtain gA : num s.mem g.B g.w aA = 0 := by rw [h.arrs.get ha, hAA]
+  obtain gM : num s.mem g.B g.w m = A m := h.arrs.get hm
   refine ⟨num t.mem g.B g.w aA, fun hlt hM => ?_, ?_, e5⟩
   · rw [gZ, gA, gM] at v5
     rw [v5 rfl (by omega_using [hlt]) hlt hM, Nat.zero_add]
@@ -346,21 +346,21 @@ theorem Stg.mulHi_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
 
 theorem noEsi_ltA (full : Bool) :
     ∀ i ∈ instrs (seqs (ltA full aX aVD)), VG.X86.Taint.clobbers i .esi = false := by
-  have h : (instrs (seqs (ltA full aX aVD))).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
+  obtain h : (instrs (seqs (ltA full aX aVD))).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
     rw [← Code.allInstrs_eq]; cases full <;> decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp h i hi
 
 theorem noEsi_copy (full : Bool) :
     ∀ i ∈ instrs (VG.Impl.Rsa.X86.KeyRt.copy (lay full) aA aZ), VG.X86.Taint.clobbers i .esi = false := by
-  have h : (instrs (VG.Impl.Rsa.X86.KeyRt.copy (lay full) aA aZ)).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
+  obtain h : (instrs (VG.Impl.Rsa.X86.KeyRt.copy (lay full) aA aZ)).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
     rw [← Code.allInstrs_eq]; cases full <;> decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp h i hi
 
 theorem noEsi_eqA (full : Bool) :
     ∀ i ∈ instrs (seqs (eqA full aA aOne)), VG.X86.Taint.clobbers i .esi = false := by
-  have h : (instrs (seqs (eqA full aA aOne))).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
+  obtain h : (instrs (seqs (eqA full aA aOne))).all (fun i => !VG.X86.Taint.clobbers i .esi) = true := by
     rw [← Code.allInstrs_eq]; cases full <;> decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp h i hi
@@ -388,15 +388,15 @@ theorem Stg.checkRest_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
       ([.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]] : List (Prog isa)))) s fun t => ∃ R, Prod g A y x m k R ∧
       Stg g s0 A live ((c && decide (A x < A m)) && decide (R = 1)) t ∧
       t.gpr .esi = BitVec.ofNat 32 (i - 1) ∧ t.zf = some (decide (i - 1 = 0)) := by
-  have nW : aW ∉ live := fun hw => b.free aW hw (by decide)
-  have nV : aVD ∉ live := fun hw => b.free aVD hw (by decide)
-  have nX : aX ∉ live := fun hw => b.free aX hw (by decide)
-  have nY : aY ∉ live := fun hw => b.free aY hw (by decide)
-  have nA : aA ∉ live := fun hw => b.free aA hw (by decide)
-  have vX : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aX = A x := by
+  obtain nW : aW ∉ live := fun hw => b.free aW hw (by decide)
+  obtain nV : aVD ∉ live := fun hw => b.free aVD hw (by decide)
+  obtain nX : aX ∉ live := fun hw => b.free aX hw (by decide)
+  obtain nY : aY ∉ live := fun hw => b.free aY hw (by decide)
+  obtain nA : aA ∉ live := fun hw => b.free aA hw (by decide)
+  obtain vX : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aX = A x := by
     rw [upd_ne _ _ (by decide), upd_self]
-  have vV : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aVD = A m := upd_self _ _ _
-  have keepA : ∀ j ∈ live, upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) j = A j := fun j hj => by
+  obtain vV : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aVD = A m := upd_self _ _ _
+  obtain keepA : ∀ j ∈ live, upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) j = A j := fun j hj => by
     rw [upd_ne _ _ (by rintro rfl; exact nV hj), upd_ne _ _ (by rintro rfl; exact nX hj),
       upd_ne _ _ (by rintro rfl; exact nY hj)]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
@@ -409,13 +409,13 @@ theorem Stg.checkRest_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (WP.gpr (h1.copy_ok (o := aA) (a := aZ) (by decide) (by simp [b.zero]) (by decide))
     (noEsi_copy g.full)) fun t2 ⟨h2, e2⟩ => ?_
-  have gY : num t2.mem g.B g.w aY = A y := by
+  obtain gY : num t2.mem g.B g.w aY = A y := by
     rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_self]
-  have gX : num t2.mem g.B g.w aX = A x := by rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), vX]
-  have z0 : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aZ = 0 := by
+  obtain gX : num t2.mem g.B g.w aX = A x := by rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), vX]
+  obtain z0 : upd (upd (upd A aY (A y)) aX (A x)) aVD (A m) aZ = 0 := by
     rw [keepA _ b.zero, b.zeroV]
   rw [z0] at h2
-  have h2' := h2.sub (live' := aA :: aVD :: live) fun j hj => by
+  obtain h2' := h2.sub (live' := aA :: aVD :: live) fun j hj => by
     simp only [List.mem_cons] at hj ⊢
     rcases hj with hj | hj | hj <;> simp [hj]
   -- The product.
@@ -437,11 +437,11 @@ theorem Stg.checkRest_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
   rw [wp_seqs_append (by simp [eqA]) (by simp)]
   refine WP.mono (WP.gpr (h3.eqA_ok (a := aA) (b := aOne) (by simp) (by simp [b.one]) (by simp [nW]; decide))
     (noEsi_eqA g.full)) fun t4 ⟨h4, e4⟩ => ?_
-  have one4 : upd (upd (upd (upd (upd A aY (A y)) aX (A x)) aVD (A m)) aA 0) aA R aOne = 1 := by
+  obtain one4 : upd (upd (upd (upd (upd A aY (A y)) aX (A x)) aVD (A m)) aA 0) aA R aOne = 1 := by
     rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), keepA _ b.one, b.oneV]
   rw [upd_self, one4] at h4
   refine WP.mono (VG.Proof.Rsa.X86.Div.count_ok t4) fun t ⟨ct, zt, mt, kt⟩ => ?_
-  have h5 := (h4.regs kt mt (by decide)).sub (live' := live) (fun j hj => by simp [hj])
+  obtain h5 := (h4.regs kt mt (by decide)).sub (live' := live) (fun j hj => by simp [hj])
   refine ⟨R, fun hlt hM => hR hlt hM, h5.congr' fun j hj => ?_, ?_, ?_⟩
   · rw [upd_ne _ _ (by rintro rfl; exact nA hj), upd_ne _ _ (by rintro rfl; exact nA hj), keepA j hj]
   · rw [ct, e4, e3]
@@ -466,10 +466,10 @@ theorem Stg.choose_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     WP isa (choose g.full) s fun u =>
       Stg g s0 (upd (upd (upd A aY (A (opY i))) aX (A (opX i))) aVD (A (opM i))) (aVD :: aX :: aY :: live) c u ∧
       u.gpr .esi = BitVec.ofNat 32 (opK qa i * stepUnit + i) := by
-  have nf : ∀ j ∈ inputsLive, j ∈ live ∧ j ≠ aY ∧ j ≠ aX ∧ j ≠ aVD := fun j hj =>
+  obtain nf : ∀ j ∈ inputsLive, j ∈ live ∧ j ≠ aY ∧ j ≠ aX ∧ j ≠ aVD := fun j hj =>
     ⟨hlive j hj, fun e => b.free j (hlive j hj) (by simp [e]), fun e => b.free j (hlive j hj) (by simp [e]),
       fun e => b.free j (hlive j hj) (by simp [e])⟩
-  have ops : ∀ {u : State} {y x m k : Nat} {cnt : List Instr}, Stg g s0 A live c u →
+  obtain ops : ∀ {u : State} {y x m k : Nat} {cnt : List Instr}, Stg g s0 A live c u →
       u.gpr .esi = BitVec.ofNat 32 i → y ∈ inputsLive → x ∈ inputsLive → m ∈ inputsLive →
       (∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
         WP isa (.block cnt) u (Stepped k u)) →
@@ -482,27 +482,27 @@ theorem Stg.choose_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     obtain ⟨lm, mY, mX, mV⟩ := nf m hm
     refine WP.mono (hu.operands_ok ly lx lm yY xY xX mY mX mV hcnt) fun u' ⟨h', e'⟩ => ⟨h', ?_⟩
     rw [e', eu, BitVec.ofNat_add_ofNat, Nat.add_comm]
-  have c33 : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
+  obtain c33 : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
       WP isa (.block cnt33Hi) u (Stepped 33 u) := fun u _ _ _ => cnt33Hi_ok u
-  have cq : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
+  obtain cq : ∀ u : State, RtWs g.L u g.B g.Z g.len nArr → Keeps bodyRegs s0 u → Outside g.B 0 g.Z s0.mem u.mem →
       WP isa (.block (qBitsHi g.full)) u (Stepped (8 * qa) u) := fun _ _ K O => qBitsHi_ok (qarg.keep K (by decide) O) qa2
   unfold choose
   refine WP.seq (wp_cmpi fun u U _ z => WP.block_nil ?_)
-  have hu := h.regs (U.keeps []) U.mem (by decide)
-  have eu : u.gpr .esi = BitVec.ofNat 32 i := by rw [U.gpr]; exact e
+  obtain hu := h.regs (U.keeps []) U.mem (by decide)
+  obtain eu : u.gpr .esi = BitVec.ofNat 32 i := by rw [U.gpr]; exact e
   rw [e] at z
   rcases hi with rfl | rfl | rfl
   · refine WP.ite false (by change u.zf = _; rw [z]; decide) (fun f => absurd f (by decide)) fun _ => ?_
     refine WP.seq (wp_cmpi fun u₂ U₂ _ z₂ => WP.block_nil ?_)
-    have hu₂ := hu.regs (U₂.keeps []) U₂.mem (by decide)
-    have eu₂ : u₂.gpr .esi = BitVec.ofNat 32 1 := by rw [U₂.gpr]; exact eu
+    obtain hu₂ := hu.regs (U₂.keeps []) U₂.mem (by decide)
+    obtain eu₂ : u₂.gpr .esi = BitVec.ofNat 32 1 := by rw [U₂.gpr]; exact eu
     rw [eu] at z₂
     refine WP.ite false (by change u₂.zf = _; rw [z₂]; decide) (fun f => absurd f (by decide)) fun _ => ?_
     exact ops hu₂ eu₂ (by decide) (by decide) (by decide) cq
   · refine WP.ite false (by change u.zf = _; rw [z]; decide) (fun f => absurd f (by decide)) fun _ => ?_
     refine WP.seq (wp_cmpi fun u₂ U₂ _ z₂ => WP.block_nil ?_)
-    have hu₂ := hu.regs (U₂.keeps []) U₂.mem (by decide)
-    have eu₂ : u₂.gpr .esi = BitVec.ofNat 32 2 := by rw [U₂.gpr]; exact eu
+    obtain hu₂ := hu.regs (U₂.keeps []) U₂.mem (by decide)
+    obtain eu₂ : u₂.gpr .esi = BitVec.ofNat 32 2 := by rw [U₂.gpr]; exact eu
     rw [eu] at z₂
     refine WP.ite true (by change u₂.zf = _; rw [z₂]; decide) (fun _ => ?_) fun f => absurd f (by decide)
     exact ops hu₂ eu₂ (by decide) (by decide) (by decide) c33
@@ -518,8 +518,8 @@ theorem Stg.product_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     WP isa (productCheck g.full) s fun t => ∃ R, Prod g A (opY i) (opX i) (opM i) (opK qa i) R ∧
       Stg g s0 A live ((c && decide (A (opX i) < A (opM i))) && decide (R = 1)) t ∧
       t.gpr .esi = BitVec.ofNat 32 (i - 1) ∧ t.zf = some (decide (i - 1 = 0)) := by
-  have hk : 0 < opK qa i := by unfold opK; split <;> omega_arith
-  have hk' : opK qa i * stepUnit + i < 2 ^ 32 := by unfold opK stepUnit; split <;> omega_arith
+  obtain hk : 0 < opK qa i := by unfold opK; split <;> omega_arith
+  obtain hk' : opK qa i * stepUnit + i < 2 ^ 32 := by unfold opK stepUnit; split <;> omega_arith
   rw [show productCheck g.full = seqs (choose g.full :: (ltA g.full aX aVD ++
     ([VG.Impl.Rsa.X86.KeyRt.copy (lay g.full) aA aZ, mulModHi g.full aZ aY aX aA aVD aT] : List (Prog isa)) ++
     eqA g.full aA aOne ++ ([.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]] : List (Prog isa)))) from rfl, wp_seqs_cons (by simp [ltA])]
@@ -537,7 +537,7 @@ theorem Stg.products_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
         decide (R₂ = 1)) && decide (A aQI < A aP)) && decide (R₃ = 1)) t := by
   unfold products
   refine WP.seq (wp_movi fun u U => WP.block_nil ?_)
-  have hu := h.regs U.keeps U.mem (by decide)
+  obtain hu := h.regs U.keeps U.mem (by decide)
   refine WP.loop (M := isa) (fun n u =>
       (n = 3 ∧ Stg g s0 A live c u ∧ u.gpr .esi = BitVec.ofNat 32 3) ∨
       (n = 2 ∧ ∃ R₁, Prod g A aE aDP aM1 33 R₁ ∧
@@ -602,7 +602,7 @@ theorem Stg.div_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
     · rw [upd_self]
     rcases List.mem_cons.mp hj with rfl | hj
     · rw [upd_ne _ _ (by decide), upd_self]
-    have hn := hfree j hj
+    obtain hn := hfree j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_using [hn]) (by decide) (hw.fit64 (h.live_lt j hj)),
       h.arrs.get hj]
@@ -619,27 +619,27 @@ theorem Stg.divSet_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) :
     WP isa (seqs (divSet g.full a d)) s fun u => WP isa (division g.full) u fun t => ∃ Xq Xr, (0 < A d → Xr = A a % A d ∧ Xq = A a / A d) ∧
         Stg g s0 (upd (upd A aVQ Xq) aVR Xr) (aVR :: aVQ :: live) c t := by
-  have aQ : a ≠ aVQ := fun e => hfree a ha (by simp [e])
-  have aD : a ≠ aVD := fun e => hfree a ha (by simp [e])
-  have dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
-  have dD : d ≠ aVD := fun e => hfree d hd (by simp [e])
+  obtain aQ : a ≠ aVQ := fun e => hfree a ha (by simp [e])
+  obtain aD : a ≠ aVD := fun e => hfree a ha (by simp [e])
+  obtain dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
+  obtain dD : d ≠ aVD := fun e => hfree d hd (by simp [e])
   unfold divSet
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h.copy_ok (o := aVQ) (a := a) (by decide) ha aQ.symm) fun t1 h1 => ?_
   refine WP.mono (h1.copy_ok (o := aVD) (a := d) (by decide) (List.mem_cons_of_mem _ hd) dD.symm)
     fun t2 h2 => ?_
   have h3 := h2
-  have fq : num t2.mem g.B g.w aVQ = A a := by
+  obtain fq : num t2.mem g.B g.w aVQ = A a := by
     rw [h3.arrs.get (by simp), upd_ne (j := aVD) _ _ (by decide), upd_self]
-  have fd : num t2.mem g.B g.w aVD = A d := by
+  obtain fd : num t2.mem g.B g.w aVD = A d := by
     rw [h3.arrs.get (by simp), upd_self, upd_ne (j := aVQ) _ _ dQ]
-  have h3' : Stg g s0 A live c t2 := (h3.sub (live' := live) fun j hj =>
+  obtain h3' : Stg g s0 A live c t2 := (h3.sub (live' := live) fun j hj =>
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hj)).congr' fun j hj => by
-    have hn := hfree j hj
+    obtain hn := hfree j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     rw [upd_ne _ _ hn.2.2.1, upd_ne _ _ hn.1]
   refine WP.mono (h3'.div_ok fun j hj => by
-    have hn := hfree j hj
+    obtain hn := hfree j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn ⊢
     exact ⟨hn.1, hn.2.1, hn.2.2.2⟩) fun t ⟨Xq, Xr, hv, ht⟩ => ⟨Xq, Xr, fun pos => ?_, ht⟩
   rw [fq, fd] at hv
@@ -749,7 +749,7 @@ theorem dChecks2_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : DivP g s
   unfold dChecks2
   rw [wp_seqs_append (by simp [eqA]) (by simp [divSet])]
   refine WP.mono (h.eqA_ok (a := aVR) (b := aDP) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
-  have h1' := (h1.sub (live' := liveD) (by decide)).congr (A' := aDiv0 v) rfl
+  obtain h1' := (h1.sub (live' := liveD) (by decide)).congr (A' := aDiv0 v) rfl
   exact WP.mono (h1'.divSet_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide))
     fun u wu => WP.mono wu fun t ⟨Xq', Y₂, hv, ht⟩ =>
       ⟨Y₁, Xq', Y₂, fun pos => (hY pos).1, fun pos => hv pos, ht⟩
@@ -777,7 +777,7 @@ theorem dBits_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (a
     WP isa (dBits g.full) s fun t => ∃ Y₁ Y₂, (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧
       (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
-  have h0 : Stg g s0 (aDiv0 v) liveD c s := (h.sub (live' := liveD) (by decide)).congr rfl
+  obtain h0 : Stg g s0 (aDiv0 v) liveD c s := (h.sub (live' := liveD) (by decide)).congr rfl
   unfold dBits
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (dChecks1_ok h0) fun u1 w1 => ?_
@@ -841,21 +841,21 @@ theorem checks_ok {g : Geo} {v : Vals} {s : State} {k : Nat} (h : BodyIn g v s)
     (he : Spec.Rsa.exponentValid v.e = true) :
     WP isa (if g.full then keyBody g.full else crtBody g.full) s fun t =>
       ∃ A live, Stg g s A live (validity g.full k v) t := by
-  have eBound : v.e < 2 ^ 33 := by
+  obtain eBound : v.e < 2 ^ 33 := by
     simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he
     exact he.2
   obtain ⟨B, Z, len, full⟩ := g
   cases full
   · refine WP.mono (crtBody_ok h) fun t ⟨R₁, R₂, R₃, hR, A, live, ht⟩ => ?_
-    have hR' := fun hpq => hR eBound b.pDouble b.qDouble hpq
-    have eq := VG.Proof.Rsa.crtKeyValid_bitsP hm he b.pShort b.qShort
+    obtain hR' := fun hpq => hR eBound b.pDouble b.qDouble hpq
+    obtain eq := VG.Proof.Rsa.crtKeyValid_bitsP hm he b.pShort b.qShort
       (fun hpq => (hR' hpq).1) (fun hpq => (hR' hpq).2.1) (fun hpq => (hR' hpq).2.2)
     refine ⟨A, live, ?_⟩
     change Stg ⟨B, Z, len, false⟩ s A live (Spec.Rsa.crtKeyValid k v.n v.e v.p v.q v.dP v.dQ v.qI) t
     rw [eq]; exact ht
   · refine WP.mono (keyBody_ok h) fun t ⟨R₁, R₂, R₃, Y₁, Y₂, hR, hY, A, live, ht⟩ => ?_
-    have hR' := fun hpq => hR eBound b.pDouble b.qDouble hpq
-    have eq := VG.Proof.Rsa.keyValid_bitsP hm he b.pShort b.qShort
+    obtain hR' := fun hpq => hR eBound b.pDouble b.qDouble hpq
+    obtain eq := VG.Proof.Rsa.keyValid_bitsP hm he b.pShort b.qShort
       (fun hpq => (hR' hpq).1) (fun hpq => (hR' hpq).2.1) (fun hpq => (hR' hpq).2.2) hY
     refine ⟨A, live, ?_⟩
     change Stg ⟨B, Z, len, true⟩ s A live (Spec.Rsa.keyValid k v.n v.e v.d v.p v.q v.dP v.dQ v.qI) t

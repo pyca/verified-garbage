@@ -45,66 +45,66 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   have ⟨f2, l2, _⟩ := arrays2.fit S
   have ⟨f3, l3, _⟩ := arrays3.fit S
   have ⟨f4, l4, _⟩ := arrays4.fit S
-  have a04 := Arrays.apart arrays0 arrays4 (w := w) (by decide)
+  obtain a04 := Arrays.apart arrays0 arrays4 (w := w) (by decide)
   unfold other
   refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 20) (by omega_using [head])) fun a A _ => WP.block_nil ?_)
-  have Sa := S.keepMem A.keeps (by decide) (by decide) A.mem
+  obtain Sa := S.keepMem A.keeps (by decide) (by decide) A.mem
   refine WP.seq (WP.mono (importAt_ok Sa 4 (by decide) f4 (A.gpr.trans pointer)
       sourceFit (by rw [A.keeps.2.1, A.keeps.2.2]; exact readable) separate) fun b ⟨value, Fb, Kb⟩ => ?_)
   rw [A.mem] at value Fb
-  have Ob : Outside W (slot w 4) (8 * w) s.mem b.mem := VG.Proof.RsaKeyGen.frame_outside Fb (by omega_using [separateStack, sourceFit, nowrap, head, f0, l0, f2, l2, f3, l3, f4, l4, a04])
-  have lenB : b.mem.readW (off W 4) 32 = a.mem.readW (off W 4) 32 := by
+  obtain Ob : Outside W (slot w 4) (8 * w) s.mem b.mem := VG.Proof.RsaKeyGen.frame_outside Fb (by omega_using [separateStack, sourceFit, nowrap, head, f0, l0, f2, l2, f3, l3, f4, l4, a04])
+  obtain lenB : b.mem.readW (off W 4) 32 = a.mem.readW (off W 4) 32 := by
     rw [A.mem]; exact BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (Or.inl (by omega_using [l4])) (by omega_using []))
-  have Sb := Sa.keep Kb (by decide) (by decide) lenB
-  have Kab : Keeps [.eax, .ebx, .esi, .ecx, .edx] s b := (A.keeps.mono (by decide)).trans Kb
-  have spB : b.gpr .esp = s.gpr .esp := Kab.1 .esp (by decide)
+  obtain Sb := Sa.keep Kb (by decide) (by decide) lenB
+  obtain Kab : Keeps [.eax, .ebx, .esi, .ecx, .edx] s b := (A.keeps.mono (by decide)).trans Kb
+  obtain spB : b.gpr .esp = s.gpr .esp := Kab.1 .esp (by decide)
   refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
-  have St := FilterStack.allocated_context (s := b) (by rw [spB]; omega_using [fit])
-  have apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(b.gpr .esp - 20#32).setWidth 64, 20⟩ :=
+  obtain St := FilterStack.allocated_context (s := b) (by rw [spB]; omega_using [fit])
+  obtain apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(b.gpr .esp - 20#32).setWidth 64, 20⟩ :=
     FilterStack.allocated_apart (by rw [spB]; omega_using [fit]) nowrap (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
-  have Sc : Space W L w (allocFrame 20 b) :=
+  obtain Sc : Space W L w (allocFrame 20 b) :=
     ⟨FilterStack.allocated_scratch Sb.scratch (by rw [spB]; omega_using [fit]) (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])),
       Sb.width, Sb.widthBound, Sb.space, Sb.len⟩
-  have ediB : b.gpr .edi = BitVec.ofNat 32 W.toNat := by
+  obtain ediB : b.gpr .edi = BitVec.ofNat 32 W.toNat := by
     apply BitVec.eq_of_toNat_eq
     rw [Sb.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [nowrap, head])]
   refine WP.seq (WP.mono (St.store 0 (by decide) .edi) fun c ⟨Mc, Oc, Kc, Stc⟩ => ?_)
-  have Fc := VG.Proof.Bignum.outside_frame Oc (by decide)
-  have Wc : WorkspaceFrame ⟨W, L, w⟩ [] b.mem c.mem := by
-    have H := VG.Proof.RsaKeyGen.X86.workspace_of_frame (g := ⟨W, L, w⟩) Fc nowrap (by
+  obtain Fc := VG.Proof.Bignum.outside_frame Oc (by decide)
+  obtain Wc : WorkspaceFrame ⟨W, L, w⟩ [] b.mem c.mem := by
+    obtain H := VG.Proof.RsaKeyGen.X86.workspace_of_frame (g := ⟨W, L, w⟩) Fc nowrap (by
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
       exact apartQ.sub_right (Offset.sub_base _ (by decide)))
     exact H
-  have Fcx : Framed W L w (b.gpr .esp - 20#32) c := by
+  obtain Fcx : Framed W L w (b.gpr .esp - 20#32) c := by
     refine ⟨Sc.keep Kc (by decide) (by decide) (Wc.read32 (d := 4) (by change 4 + 4 ≤ L; omega_using [head]) (fun _ mem => nomatch mem)),
       Stc, apartQ, ?_⟩
     rw [Mc, Mem.readW_writeW_self32, allocFrame_gpr _ _ (by decide), ediB]
   refine WP.seq (WP.mono (difference_ok Fcx) fun d ⟨D, Od, Kd, Fd⟩ => ?_)
   refine WP.mono (near_ok Fd.space) fun t ⟨result, Mt, Kt⟩ => ?_
   rw [show 4 * (2 * w) = 8 * w by omega_using []] at Od
-  have cand : val32 c.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
+  obtain cand : val32 c.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
     rw [Wc.val32 (d := slot w 0) (n := 2 * w) (by change _ ≤ L; omega_using [f0]) (fun _ mem => nomatch mem)]
     exact Ob.val32 (by rcases a04 with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])) (by omega_using [separateStack, sourceFit, nowrap, head, f0, l0, f2, l2, f3, l3, f4, l4, a04])
-  have prime : val32 c.mem W (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (p.setWidth 64) (8 * w)) := by
+  obtain prime : val32 c.mem W (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (p.setWidth 64) (8 * w)) := by
     rw [Wc.val32 (d := slot w 4) (n := 2 * w) (by change _ ≤ L; omega_using [f4]) (fun _ mem => nomatch mem)]
     exact value
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [freed_gpr _ _ (by decide), result, D, cand, prime, show 32 * (2 * w) = 64 * w by omega_using []]
     rfl
   · rw [freed_mem, Mt]
-    have F1 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] s.mem b.mem :=
+    obtain F1 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] s.mem b.mem :=
       Fb.sub fun r mem => by
         obtain rfl := List.mem_singleton.mp mem
         exact ⟨_, List.mem_cons_self, Offset.sub_base W f4⟩
-    have F2 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] b.mem c.mem := by
+    obtain F2 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] b.mem c.mem := by
       change Frame _ b.mem c.mem at Fc
       refine Fc.sub fun r mem => ?_
       obtain rfl := List.mem_singleton.mp mem
       refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
       rw [spB]
       exact Offset.sub_base _ (by decide)
-    have F3 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] c.mem d.mem :=
+    obtain F3 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] c.mem d.mem :=
       (workspaceGlobalFrame (g := ⟨W, L, w⟩) Od (by
         intro r mem
         simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -115,11 +115,11 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
           exact List.mem_cons_self
     exact (F1.trans F2).trans F3
   · rw [freed_mem, Mt]
-    have W1 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] s.mem b.mem :=
+    obtain W1 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] s.mem b.mem :=
       WorkspaceFrame.of_outs nowrap (Outs.of_outside Ob List.mem_cons_self)
-    have W2 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] b.mem c.mem := by
+    obtain W2 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] b.mem c.mem := by
       exact Wc.mono fun _ mem => nomatch mem
-    have W3 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] c.mem d.mem :=
+    obtain W3 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] c.mem d.mem :=
       (WorkspaceFrame.of_outs (g := ⟨W, L, w⟩) nowrap Od).mono fun r mem => List.mem_cons_of_mem _ mem
     exact (W1.trans W2).trans W3
   · have Kin : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] (allocFrame 20 b) t :=
@@ -145,19 +145,19 @@ theorem close_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   unfold close
   refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 24) (by omega_using [head])) fun a A _ =>
     wp_cmpS rfl fun b B Z => WP.block_nil ?_)
-  have K : Keeps [.eax] s b := A.keeps.widen (B.keeps [])
-  have M : b.mem = s.mem := B.mem.trans A.mem
-  have condition : isa.eval .e b = some (decide (plen = 0#32)) := by
+  obtain K : Keeps [.eax] s b := A.keeps.widen (B.keeps [])
+  obtain M : b.mem = s.mem := B.mem.trans A.mem
+  obtain condition : isa.eval .e b = some (decide (plen = 0#32)) := by
     change b.zf = _
     rw [Z, A.gpr, lengthEq]
     change some (plen - 0#32 == 0#32) = _
     rw [BitVec.sub_zero]
     rfl
-  have spB : b.gpr .esp = s.gpr .esp := K.1 .esp (by decide)
+  obtain spB : b.gpr .esp = s.gpr .esp := K.1 .esp (by decide)
   by_cases absent : plen = 0#32
   · refine WP.ite true (by rw [condition, decide_eq_true absent]) (fun _ => ?_) (fun impossible => nomatch impossible)
     refine wp_movS rfl fun t T _ => WP.block_nil ?_
-    have Mt : t.mem = s.mem := T.mem.trans M
+    obtain Mt : t.mem = s.mem := T.mem.trans M
     refine ⟨?_, by rw [Mt]; exact Frame.refl _ _, by rw [Mt]; exact WorkspaceFrame.refl _ _ _,
       (K.mono (by decide)).widen T.keeps⟩
     rw [T.gpr]

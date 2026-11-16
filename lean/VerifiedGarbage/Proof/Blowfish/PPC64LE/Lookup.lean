@@ -132,7 +132,7 @@ theorem setWidth_shr5 (idx : Byte) : (idx.setWidth 64 >>> 5).setWidth 8 = idx >>
 
 theorem vbyte_hot (u : BitVec 64) {k : Nat} (hk : k < 8) :
     vbyte (255#64 <<< 56 ++ u) k = if k = 0 then 255#8 else 0#8 := by
-  have e : vbyte (255#64 <<< 56 ++ u) k = (255#64 <<< 56).extractLsb' (8 * (7 - k)) 8 := by
+  obtain e : vbyte (255#64 <<< 56 ++ u) k = (255#64 <<< 56).extractLsb' (8 * (7 - k)) 8 := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
       show ¬ 8 * (15 - k) + i < 64 by omega_using [hk], ite_false]
@@ -194,9 +194,9 @@ theorem mask_eq {v2 v3 : BitVec 128} {idx : Byte} {i : Nat} (h2 : v2 = splatV (i
     (ofVBytes fun k => if (vbyte v2 k).toNat % 32 < 16 then vbyte v3 ((vbyte v2 k).toNat % 32)
       else vbyte v3 ((vbyte v2 k).toNat % 32 - 16)) =
       if idx.toNat / 32 = i then BitVec.allOnes 128 else 0#128 := by
-  have hx : (idx >>> 5).toNat = idx.toNat / 32 := by
+  obtain hx : (idx >>> 5).toNat = idx.toNat / 32 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have hl : idx.toNat / 32 < 8 := by have := idx.isLt; omega_using []
+  obtain hl : idx.toNat / 32 < 8 := by have := idx.isLt; omega_using []
   subst h2
   simp only [vbyte_splatV, hx, Nat.mod_eq_of_lt (show idx.toNat / 32 < 32 by omega_using []),
     show idx.toNat / 32 < 16 by omega_using [], ite_true, h3 _ hl]
@@ -280,31 +280,31 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     WP isa (.block (row j)) u fun u' =>
       RowInv s₀ j idx (i + 1) u' ∧
         u'.gpr .r12 = BitVec.ofNat 64 (1024 * j + 32 * (i + 1)) - BitVec.ofNat 64 (1024 * j + 256) := by
-  have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
-  have h3 : u.gpr .r3 = s₀.gpr .r3 := I.keep.gpr (by decide)
-  have h0 : u.gpr .r0 = 0#64 := by rw [I.keep.gpr (by decide)]; exact E.zero
+  obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
+  obtain h3 : u.gpr .r3 = s₀.gpr .r3 := I.keep.gpr (by decide)
+  obtain h0 : u.gpr .r0 = 0#64 := by rw [I.keep.gpr (by decide)]; exact E.zero
   obtain ⟨S, hS⟩ : ∃ S, s₀.gpr .r3 = S := ⟨_, rfl⟩
-  have hrp : u.gpr .r15 = S + BitVec.ofNat 64 (1024 * j + 32 * i) := by rw [I.rp, hS]
-  have reg : ∀ o, o ≤ 784 →
+  obtain hrp : u.gpr .r15 = S + BitVec.ofNat 64 (1024 * j + 32 * i) := by rw [I.rp, hS]
+  obtain reg : ∀ o, o ≤ 784 →
       InRegions (u.rd ++ u.wr) (S + BitVec.ofNat 64 (1024 * j + 32 * i + o)) 16 := fun o ho => by
     rw [hrd, ← hS]; exact E.rd _ _ (by omega_using [hj, hi, ho])
-  have f1 : ∀ o, S + BitVec.ofNat 64 (1024 * j + 32 * i) + BitVec.ofNat 64 o =
+  obtain f1 : ∀ o, S + BitVec.ofNat 64 (1024 * j + 32 * i) + BitVec.ofNat 64 o =
       S + BitVec.ofNat 64 (1024 * j + 32 * i + o) := fun o => Offset.add_add _ _ _
-  have f2 : ∀ o, S + BitVec.ofNat 64 (1024 * j + 32 * i) + 512#64 + BitVec.ofNat 64 o =
+  obtain f2 : ∀ o, S + BitVec.ofNat 64 (1024 * j + 32 * i) + 512#64 + BitVec.ofNat 64 o =
       S + BitVec.ofNat 64 (1024 * j + 32 * i + (512 + o)) := fun o => by
     rw [show (512#64 : BitVec 64) = BitVec.ofNat 64 512 from rfl, Offset.add_add, Offset.add_add, Nat.add_assoc]
   have f0 : S + BitVec.ofNat 64 (1024 * j + 32 * i) = S + BitVec.ofNat 64 (1024 * j + 32 * i + 0) := rfl
   have g16 : (16#64 : BitVec 64) = BitVec.ofNat 64 16 := rfl
   have g256 : (256#64 : BitVec 64) = BitVec.ofNat 64 256 := rfl
   have g272 : (272#64 : BitVec 64) = BitVec.ofNat 64 272 := rfl
-  have a0 := reg 0 (by decide)
-  have a16 := reg 16 (by decide)
-  have a256 := reg 256 (by decide)
-  have a272 := reg 272 (by decide)
-  have b0 := reg (512 + 0) (by decide)
-  have b16 := reg (512 + 16) (by decide)
-  have b256 := reg (512 + 256) (by decide)
-  have b272 := reg (512 + 272) (by decide)
+  obtain a0 := reg 0 (by decide)
+  obtain a16 := reg 16 (by decide)
+  obtain a256 := reg 256 (by decide)
+  obtain a272 := reg 272 (by decide)
+  obtain b0 := reg (512 + 0) (by decide)
+  obtain b16 := reg (512 + 16) (by decide)
+  obtain b256 := reg (512 + 256) (by decide)
+  obtain b272 := reg (512 + 272) (by decide)
   rw [← f0] at a0
   rw [← f1, ← g16] at a16
   rw [← f1, ← g256] at a256
@@ -320,7 +320,7 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
   simp only [sel_ite] at e6 e7 e8 e9 e10 e11 e12 e13
   have hm : u.mem = s₀.mem := I.mem
   -- The kept halves.
-  have hs : ∀ (v : VReg) (b hf o : Nat) (a : Addr), b < 4 → hf < 2 →
+  obtain hs : ∀ (v : VReg) (b hf o : Nat) (a : Addr), b < 4 → hf < 2 →
       a = S + BitVec.ofNat 64 (1024 * j + 32 * i + o) → o = 256 * b + 16 * hf →
       u.vpr v = u.vpr (vSel (2 * b + hf)) →
       idx.toNat / 32 < i + 1 →
@@ -328,7 +328,7 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     fun v b hf o a hb hhf ha ho hv h => sel_step (fun e => by
         rw [hm, ha, chunk]; congr 4; omega_using [ho, e])
       (fun h' => by rw [hv, ← hS]; exact I.sel h' b hb hf hhf) h
-  have rp' : u'.gpr .r15 = S + BitVec.ofNat 64 (1024 * j + 32 * (i + 1)) := by
+  obtain rp' : u'.gpr .r15 = S + BitVec.ofNat 64 (1024 * j + 32 * (i + 1)) := by
     rw [e15, add512_sub480, Offset.add_add]; congr 2
   refine ⟨⟨by omega_using [hi], by rw [e0, I.v0], by rw [e1, I.v1], by rw [e2, I.v2],
     by rw [e3, I.v0]; exact hot_shift _ I.hot, fun h b hb hf hhf => ?_, by rw [rp', hS],
@@ -388,9 +388,9 @@ theorem vbyte_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 16) :
 theorem pick (m : Mem) (a a' : Addr) (ha : a' = a + BitVec.ofNat 64 16) {x : Nat} (hx : x < 32) :
     (if (x ^^^ 7) < 16 then vbyte (swapDwords (m.readW a 128)) (x ^^^ 7)
       else vbyte (swapDwords (m.readW a' 128)) ((x ^^^ 7) - 16)) = m (a + BitVec.ofNat 64 x) := by
-  have lo : ∀ x < 16, (x ^^^ 7) < 16 ∧ 15 - (if (x ^^^ 7) < 8 then (x ^^^ 7) + 8 else (x ^^^ 7) - 8) = x := by
+  obtain lo : ∀ x < 16, (x ^^^ 7) < 16 ∧ 15 - (if (x ^^^ 7) < 8 then (x ^^^ 7) + 8 else (x ^^^ 7) - 8) = x := by
     decide
-  have hi : ∀ x < 32, 16 ≤ x → ¬ (x ^^^ 7) < 16 ∧ (x ^^^ 7) - 16 < 16 ∧
+  obtain hi : ∀ x < 32, 16 ≤ x → ¬ (x ^^^ 7) < 16 ∧ (x ^^^ 7) - 16 < 16 ∧
       16 + (15 - (if (x ^^^ 7) - 16 < 8 then (x ^^^ 7) - 16 + 8 else (x ^^^ 7) - 16 - 8)) = x := by
     decide
   by_cases h : x < 16
@@ -410,7 +410,7 @@ theorem assemble (b0 b1 b2 b3 : Byte) {c : Nat} (hc : c < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and]
-  have z : ∀ (b : Byte) (n : Nat), 8 ≤ n → b.getLsbD n = false := fun b n h => BitVec.getLsbD_of_ge b n h
+  obtain z : ∀ (b : Byte) (n : Nat), 8 ≤ n → b.getLsbD n = false := fun b n h => BitVec.getLsbD_of_ge b n h
   rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl
   · simp [show i < 32 by omega_using [hi], show i < 64 by omega_using [hi], hi, show i < 16 by omega_using [hi], show i < 24 by omega_using [hi]]
   · simp [show 8 + i < 32 by omega_using [hi], show 8 + i < 64 by omega_using [hi], show 8 + i < 16 by omega_using [hi],
@@ -428,8 +428,8 @@ theorem end_run (v : State) {S : Addr} {j : Nat} (hj : j < 4) {idx : Byte} {m : 
   unfold lookupEnd entryByte vperm
   brun [reduceVOpEval, vByte, vSel, vIdx, List.getD_cons_zero, List.getD_cons_succ, vpr_writeV, gpr_writeV,
     mem_writeV, List.range_succ, List.range_zero, List.map_cons, List.map_nil, top_byte, h1, vbyte_splatV, xor7_mod]
-  have hx : idx.toNat % 32 < 32 := Nat.mod_lt _ (by decide)
-  have pb : ∀ b < 4, ∀ r₀ r₁ : VReg, r₀ = vSel (2 * b) → r₁ = vSel (2 * b + 1) →
+  obtain hx : idx.toNat % 32 < 32 := Nat.mod_lt _ (by decide)
+  obtain pb : ∀ b < 4, ∀ r₀ r₁ : VReg, r₀ = vSel (2 * b) → r₁ = vSel (2 * b + 1) →
       (if idx.toNat % 32 ^^^ 7 < 16 then vbyte (v.vpr r₀) (idx.toNat % 32 ^^^ 7)
         else vbyte (v.vpr r₁) ((idx.toNat % 32 ^^^ 7) - 16)) =
         m (S + BitVec.ofNat 64 (1024 * j + 256 * b + idx.toNat)) := by
@@ -457,11 +457,11 @@ theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :
   refine WP.mono (WP.keep [.r12, .r9, .r15, .r11, .r14] (start_run t hj t9)
     (by rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
     fun u ⟨⟨u0, u1, u2, u3, u15, u11, u14, u9, um⟩, uk⟩ => ?_
-  have K0 : Keep lookRegs s u := (tk.trans uk).mono (by decide)
-  have I0 : RowInv s j idx 0 u := ⟨by decide, u0, u1, u2, u3, fun h => absurd h (Nat.not_lt_zero _),
+  obtain K0 : Keep lookRegs s u := (tk.trans uk).mono (by decide)
+  obtain I0 : RowInv s j idx 0 u := ⟨by decide, u0, u1, u2, u3, fun h => absurd h (Nat.not_lt_zero _),
     by rw [u15, tk.gpr (by decide)]; rfl, u11, u14, u9, K0, by rw [um, tm]⟩
   apply WP.seq
   refine WP.mono (rows_run E hj idx I0) fun v V => ?_
-  have hl : idx.toNat / 32 < 8 := by have := idx.isLt; omega_using []
+  obtain hl : idx.toNat / 32 < 8 := by have := idx.isLt; omega_using []
   refine WP.mono (WP.keep [.r10, .r12] (end_run v hj V.v1 (V.sel hl)) (by decide) rfl)
     fun w ⟨⟨w10, wm⟩, wk⟩ => ⟨w10, (V.keep.trans wk).mono (by decide), by rw [wm, V.mem]⟩

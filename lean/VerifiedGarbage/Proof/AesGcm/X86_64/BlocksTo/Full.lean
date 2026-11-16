@@ -151,17 +151,17 @@ theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (stitchPart piece aligned true) s₁ (Mid s (qf s) (qf s)) := by
-  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+  obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide) (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
   · have h16 : n s < 16 := by simpa using h
-    have hq : qf s = 0 := by simp [qf, h16]
+    obtain hq : qf s = 0 := by simp [qf, h16]
     rw [hq]
     exact WP.block_nil (mid_entry hp (by rw [g₂]; exact hg _ (by decide) (by decide))
       (fun r hr => by rw [g₂]; exact hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       (by rw [m₂]; exact hk) (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
   · have h16 : 16 ≤ n s := by simp at h; omega_using [h]
-    have hq : qf s = n s := by simp [qf, show ¬ n s < 16 by omega_using [h16]]
+    obtain hq : qf s = n s := by simp [qf, show ¬ n s < 16 by omega_using [h16]]
     rw [hq]
     refine WP.seq ?_
     rw [show ((if true = true then takeAllTo else [.mov .rax (.reg .r9), .alu .and .rax (imm 15),
@@ -171,24 +171,24 @@ theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
       (by rw [g₂, hg _ (by decide) (by decide)]) (by rw [g₂, h10]) (by rw [m₂]; exact hk) (by rw [m₂]; exact hf)
       (by rw [wr₂, hwr])) fun s₃ ⟨k₃, f₃, g₃, rd₃, wr₃⟩ => ?_
     refine WP.mono (Blocks.scratch_ok (aligned := aligned) s₃) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_
-    have keepR : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s.gpr r := fun r a b c => by
+    obtain keepR : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s.gpr r := fun r a b c => by
       rw [g₄ r c, g₃ r a, g₂, hg r c b]
-    have ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
+    obtain ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
       simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
-    have gc : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r hr => by
+    obtain gc : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r hr => by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
-    have h10₄ : s₄.gpr .r10 = Dst s := by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, h10]
-    have g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    obtain h10₄ : s₄.gpr .r10 = Dst s := by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, h10]
+    obtain g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
       rw [h11₄, g₃ _ (by decide), g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
-    have h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    obtain h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
       rw [keepR _ (by decide) (by decide) (by decide)]
       exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
-    have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, hrd]
-    have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, hwr]
-    have hk₄ : Kept s (n s) s₄.mem := by rw [m₄]; exact k₃
-    have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
+    obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, hrd]
+    obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, hwr]
+    obtain hk₄ : Kept s (n s) s₄.mem := by rw [m₄]; exact k₃
+    obtain hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
     exact WP.mono (hpiece s₄ (spreTo_of hp h16 (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄) (Nat.mod_one _))
       fun s₅ hP => mid_of_postTo hp (Nat.le_refl _) h9 ga gc h10₄ g11 rd₄' wr₄' hk₄ hf₄ hP
 

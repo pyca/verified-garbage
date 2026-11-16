@@ -83,25 +83,25 @@ theorem double_step3 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 0=a+0 := rfl
   have locB : doubleSlot a o 6=4080+0 := rfl
   have locO : doubleSlot a o 10=4080+288 := rfl
-  have hA := inv.bound 0 readA
-  have hB := inv.bound 6 readB
+  obtain hA := inv.bound 0 readA
+  obtain hB := inv.bound 6 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base a) 0 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base a) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := DoubleSub0_ok ctx.input ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
+  obtain kernel := DoubleSub0_ok ctx.input ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound)
     fun t ⟨value,bound,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.sub 10 0 6) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.sub 10 0 6) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
-  have ni := inv.point_update (.sub 10 0 6)
+  obtain ni := inv.point_update (.sub 10 0 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -109,7 +109,7 @@ theorem double_step3 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
         · exact Or.inl (by rw [capA])
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o C a D b he; cases he)
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,(k.gpr .x1 (by decide)).trans zeroIn,kc,double_slot_frame (out:=10) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -135,25 +135,25 @@ theorem double_step5 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 1=a+72 := rfl
   have locB : doubleSlot a o 2=a+144 := rfl
   have locO : doubleSlot a o 11=4080+360 := rfl
-  have hA := inv.bound 1 readA
-  have hB := inv.bound 2 readB
+  obtain hA := inv.bound 1 readA
+  obtain hB := inv.bound 2 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base a) 72 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base a) 72 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base a) 144 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base a) 144 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := DoubleAdd1_ok ctx.input ctx.input ctx.tempW (by decide) (by decide) (by decide) zeroIn
+  obtain kernel := DoubleAdd1_ok ctx.input ctx.input ctx.tempW (by decide) (by decide) (by decide) zeroIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound)
     fun t ⟨value,bound,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.add 11 1 2) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.add 11 1 2) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
-  have ni := inv.point_update (.add 11 1 2)
+  obtain ni := inv.point_update (.add 11 1 2)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -161,7 +161,7 @@ theorem double_step5 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
         · exact Or.inl (by rw [capA])
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o C a D b he; cases he)
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,(k.gpr .x2 (by decide)).trans zeroIn,kc,double_slot_frame (out:=11) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -184,21 +184,21 @@ theorem double_step6 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       OrdinaryInv base fieldPrime (doubleSlot a o) (12::V) (Function.update E 12 (E 8*E 8))
         (Function.update caps 12 1) t ∧ DoubleContext base a o t ∧ t.gpr .x1=0 ∧
         KeepRegs pointFullProductClob s t ∧ DoubleFrame base o s.mem t.mem := by
-  have hz := inv.bound 8 readZ
+  obtain hz := inv.bound 8 readZ
   rw [capZ,Nat.one_mul] at hz
   have locA : doubleSlot a o 8=4080+144 := rfl
   have locO : doubleSlot a o 12=4080+432 := rfl
-  have zBound : wordsVal s.mem (off base 4080) 144 9<fieldPrime := by
+  obtain zBound : wordsVal s.mem (off base 4080) 144 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hz
   refine WP.mono (DoubleSquare2_ok ctx.temp ctx.tempW (by decide) (by decide) zBound)
     fun t ⟨bound,value,zero,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 12 8 8 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 12 8 8 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locA,locO,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+432+72<2^64)
-  have ni := inv.point_update (.mul 12 8 8 false)
+  obtain ni := inv.point_update (.mul 12 8 8 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
         subst x; exact readZ)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
@@ -229,27 +229,27 @@ theorem double_step4 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 11=4080+360 := rfl
   have locB : doubleSlot a o 10=4080+288 := rfl
   have locO : doubleSlot a o 8=4080+144 := rfl
-  have hA := inv.bound 11 readA
-  have hB := inv.bound 10 readB
+  obtain hA := inv.bound 11 readA
+  obtain hB := inv.bound 10 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off (off base 4080) 360) 0 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off (off base 4080) 360) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locA,Nat.add_zero] using hA
-  have bBound : wordsVal s.mem (off (off base 4080) 288) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off (off base 4080) 288) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB,Nat.add_zero] using hB
-  have stable : StableInput s (off (off base 4080) 360) (off (off base 4080) 144) := by
+  obtain stable : StableInput s (off (off base 4080) 360) (off (off base 4080) 144) := by
     simpa only [off_off] using stable_input_apart (s:=s) (base:=base) (a:=4440) (o:=4224)
       (by decide) (by decide) (by decide)
   refine WP.mono (DoubleMul0Field_ok ctx.temp ctx.temp ctx.tempW (by decide) (by decide) (by decide) stable aBound bBound)
     fun t ⟨bound,value,zero,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 8 11 10 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 8 11 10 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul,Nat.add_zero] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod,Nat.add_zero] using he
     · have om : Outside (off base 4224) 0 72 s.mem t.mem := by simpa only [off_off] using outside
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4224+0+72<2^64)
-  have ni := inv.point_update (.mul 8 11 10 false)
+  obtain ni := inv.point_update (.mul 8 11 10 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -283,24 +283,24 @@ theorem double_step9 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 9=4080+216 := rfl
   have locB : doubleSlot a o 12=4080+432 := rfl
   have locO : doubleSlot a o 12=4080+432 := rfl
-  have hA := inv.bound 9 readA
-  have hB := inv.bound 12 readB
+  obtain hA := inv.bound 9 readA
+  obtain hB := inv.bound 12 readB
   rw [capA] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base 4080) 216 9<2*fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base 4080) 216 9<2*fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 432 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 432 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := double_cms12_ok ctx.tempW (by decide) (by decide)
+  obtain kernel := double_cms12_ok ctx.tempW (by decide) (by decide)
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound) fun t ⟨value,bound,zero,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.cms 12 12 9 9 12) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.cms 12 12 9 9 12) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+432+72<2^64)
-  have ni := inv.point_update (.cms 12 12 9 9 12)
+  obtain ni := inv.point_update (.cms 12 12 9 9 12)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -308,7 +308,7 @@ theorem double_step9 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
         · exact Or.inr ⟨12,9,9,12,rfl,rfl,by rw [capA]⟩
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o' C' a' D' b' he; cases he; rw [capB])
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,zero,kc,double_slot_frame (out:=12) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -335,26 +335,26 @@ theorem double_step7 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 0=a+0 := rfl
   have locB : doubleSlot a o 7=4080+72 := rfl
   have locO : doubleSlot a o 9=4080+216 := rfl
-  have hA := inv.bound 0 readA
-  have hB := inv.bound 7 readB
+  obtain hA := inv.bound 0 readA
+  obtain hB := inv.bound 7 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off (off base a) 0) 0 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off (off base a) 0) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locA,Nat.add_zero] using hA
-  have bBound : wordsVal s.mem (off (off base 4080) 72) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off (off base 4080) 72) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB,Nat.add_zero] using hB
-  have stable : StableInput s (off (off base a) 0) (off (off base 4080) 216) := by
+  obtain stable : StableInput s (off (off base a) 0) (off (off base 4080) 216) := by
     simpa only [off_off,Nat.add_zero] using stable_input_apart (s:=s) (base:=base) (a:=a) (o:=4296)
       (Or.inl (by omega_arith)) (by omega_arith) (by decide)
   refine WP.mono (DoubleMul1Field_ok ctx.input ctx.temp ctx.tempW (by decide) (by decide) (by decide) stable aBound bBound)
     fun t ⟨bound,value,zero,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 9 0 7 true) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 9 0 7 true) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.add_zero] using bound
     · simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.add_zero] using value
     · have om : Outside (off base 4296) 0 72 s.mem t.mem := by simpa only [off_off] using outside
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4296+0+72<2^64)
-  have ni := inv.point_update (.mul 9 0 7 true)
+  obtain ni := inv.point_update (.mul 9 0 7 true)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -384,13 +384,13 @@ theorem double_step1 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       OrdinaryInv base fieldPrime (doubleSlot a o) (7::V) (Function.update E 7 (E 1*E 1))
         (Function.update caps 7 1) t ∧ DoubleContext base a o t ∧ t.gpr .x1=0 ∧
         KeepRegs pointFullProductClob s t ∧ DoubleFrame base o s.mem t.mem := by
-  have hz := inv.bound 1 readZ
+  obtain hz := inv.bound 1 readZ
   rw [capZ,Nat.one_mul] at hz
-  have zBound : wordsVal s.mem (off base a) 72 9<fieldPrime := by
+  obtain zBound : wordsVal s.mem (off base a) 72 9<fieldPrime := by
     simpa only [doubleSlot,wordsVal_off,show (1 : Nat)<3 from by decide,ite_true,Nat.reduceMul] using hz
   refine WP.mono (DoubleSquare1_ok ctx.input ctx.tempW (by decide) (by decide) zeroIn zBound)
     fun t ⟨bound,value,zero,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 7 1 1 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 7 1 1 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,doubleSlot,show ¬(7 : Nat)<3 from by decide,
         show ¬(7 : Nat)<6 from by decide,ite_false,Nat.reduceSub,Nat.reduceMul,Nat.add_zero,
@@ -402,7 +402,7 @@ theorem double_step1 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · have he := outside_rebase outside (by decide : 4080+72+72<2^64)
       simpa only [PointOp.out,doubleSlot,show ¬(7 : Nat)<3 from by decide,
         show ¬(7 : Nat)<6 from by decide,ite_false,Nat.reduceSub,Nat.reduceMul,Nat.add_zero] using he
-  have ni := inv.point_update (.mul 7 1 1 false)
+  obtain ni := inv.point_update (.mul 7 1 1 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
         subst x; exact readZ)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
@@ -433,25 +433,25 @@ theorem double_step2 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
   have locA : doubleSlot a o 0=a+0 := rfl
   have locB : doubleSlot a o 6=4080+0 := rfl
   have locO : doubleSlot a o 11=4080+360 := rfl
-  have hA := inv.bound 0 readA
-  have hB := inv.bound 6 readB
+  obtain hA := inv.bound 0 readA
+  obtain hB := inv.bound 6 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base a) 0 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base a) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := DoubleAdd0_ok ctx.input ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
+  obtain kernel := DoubleAdd0_ok ctx.input ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound)
     fun t ⟨value,bound,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.add 11 0 6) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.add 11 0 6) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
-  have ni := inv.point_update (.add 11 0 6)
+  obtain ni := inv.point_update (.add 11 0 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -459,7 +459,7 @@ theorem double_step2 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
         · exact Or.inl (by rw [capA])
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o C a D b he; cases he)
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,(k.gpr .x1 (by decide)).trans zeroIn,kc,double_slot_frame (out:=11) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -482,13 +482,13 @@ theorem double_step0 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       OrdinaryInv base fieldPrime (doubleSlot a o) (6::V) (Function.update E 6 (E 2*E 2))
         (Function.update caps 6 1) t ∧ DoubleContext base a o t ∧ t.gpr .x1=0 ∧
         KeepRegs pointFullProductClob s t ∧ DoubleFrame base o s.mem t.mem := by
-  have hz := inv.bound 2 readZ
+  obtain hz := inv.bound 2 readZ
   rw [capZ,Nat.one_mul] at hz
-  have zBound : wordsVal s.mem (off base a) 144 9<fieldPrime := by
+  obtain zBound : wordsVal s.mem (off base a) 144 9<fieldPrime := by
     simpa only [doubleSlot,wordsVal_off,show (2 : Nat)<3 from by decide,ite_true,Nat.reduceMul] using hz
   refine WP.mono (DoubleSquare0_ok ctx.input ctx.tempW (by decide) (by decide) zBound)
     fun t ⟨bound,value,zero,_,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 6 2 2 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 6 2 2 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,doubleSlot,show ¬(6 : Nat)<3 from by decide,
         show ¬(6 : Nat)<6 from by decide,ite_false,Nat.sub_self,Nat.mul_zero,Nat.add_zero,
@@ -500,7 +500,7 @@ theorem double_step0 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · have he := outside_rebase outside (by decide : 4080+0+72<2^64)
       simpa only [PointOp.out,doubleSlot,show ¬(6 : Nat)<3 from by decide,
         show ¬(6 : Nat)<6 from by decide,ite_false,Nat.sub_self,Nat.mul_zero,Nat.add_zero] using he
-  have ni := inv.point_update (.mul 6 2 2 false)
+  obtain ni := inv.point_update (.mul 6 2 2 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
         subst x; exact readZ)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
@@ -533,24 +533,24 @@ theorem double_step15 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
   have locA : doubleSlot a o 11=4080+360 := rfl
   have locB : doubleSlot a o 10=4080+288 := rfl
   have locO : doubleSlot a o 4=o+72 := rfl
-  have hA := inv.bound 11 readA
-  have hB := inv.bound 10 readB
+  obtain hA := inv.bound 11 readA
+  obtain hB := inv.bound 10 readB
   rw [capA] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base 4080) 360 9<2*fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base 4080) 360 9<2*fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 288 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 288 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := double_cms38_ok ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn maskIn
+  obtain kernel := double_cms38_ok ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn maskIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound) fun t ⟨value,bound,mask,zero,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.cms 4 3 11 8 10) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.cms 4 3 11 8 10) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+72+72<2^64)
-  have ni := inv.point_update (.cms 4 3 11 8 10)
+  obtain ni := inv.point_update (.cms 4 3 11 8 10)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -558,7 +558,7 @@ theorem double_step15 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
         · exact Or.inr ⟨3,11,8,10,rfl,rfl,by rw [capA]⟩
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o' C' a' D' b' he; cases he; rw [capB])
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,zero,mask,kc,double_slot_frame (out:=4) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -611,24 +611,24 @@ theorem double_step14 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
   have locA : doubleSlot a o 9=4080+216 := rfl
   have locB : doubleSlot a o 12=4080+432 := rfl
   have locO : doubleSlot a o 3=o+0 := rfl
-  have hA := inv.bound 9 readA
-  have hB := inv.bound 12 readB
+  obtain hA := inv.bound 9 readA
+  obtain hB := inv.bound 12 readB
   rw [capA] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base 4080) 216 9<2*fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base 4080) 216 9<2*fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 432 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 432 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := double_cms41_ok ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn
+  obtain kernel := double_cms41_ok ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound) fun t ⟨value,bound,mask,zero,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.cms 3 4 9 1 12) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.cms 3 4 9 1 12) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod,Nat.one_mul] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+0+72<2^64)
-  have ni := inv.point_update (.cms 3 4 9 1 12)
+  obtain ni := inv.point_update (.cms 3 4 9 1 12)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -636,7 +636,7 @@ theorem double_step14 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
         · exact Or.inr ⟨4,9,1,12,rfl,rfl,by rw [capA]⟩
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o' C' a' D' b' he; cases he; rw [capB])
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,zero,mask,kc,double_slot_frame (out:=3) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -663,25 +663,25 @@ theorem double_step12 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
   have locA : doubleSlot a o 11=4080+360 := rfl
   have locB : doubleSlot a o 7=4080+72 := rfl
   have locO : doubleSlot a o 5=o+144 := rfl
-  have hA := inv.bound 11 readA
-  have hB := inv.bound 7 readB
+  obtain hA := inv.bound 11 readA
+  obtain hB := inv.bound 7 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base 4080) 360 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base 4080) 360 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 72 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 72 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := DoubleSub2_ok ctx.temp ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn maskIn
+  obtain kernel := DoubleSub2_ok ctx.temp ctx.temp ctx.output (by decide) (by decide) (by decide) zeroIn maskIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound)
     fun t ⟨value,bound,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.sub 5 11 7) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.sub 5 11 7) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+144+72<2^64)
-  have ni := inv.point_update (.sub 5 11 7)
+  obtain ni := inv.point_update (.sub 5 11 7)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -689,7 +689,7 @@ theorem double_step12 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
         · exact Or.inl (by rw [capA])
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o C a D b he; cases he)
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,(k.gpr .x1 (by decide)).trans zeroIn,mask,kc,double_slot_frame (out:=5) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -715,25 +715,25 @@ theorem double_step10 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
   have locA : doubleSlot a o 10=4080+288 := rfl
   have locB : doubleSlot a o 6=4080+0 := rfl
   have locO : doubleSlot a o 11=4080+360 := rfl
-  have hA := inv.bound 10 readA
-  have hB := inv.bound 6 readB
+  obtain hA := inv.bound 10 readA
+  obtain hB := inv.bound 6 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off base 4080) 288 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off base 4080) 288 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hA
-  have bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off base 4080) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB] using hB
-  have kernel := DoubleSub1_ok ctx.temp ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
+  obtain kernel := DoubleSub1_ok ctx.temp ctx.temp ctx.tempW (by decide) (by decide) (by decide) zeroIn
   rw [←fieldPrime] at kernel
   refine WP.mono (kernel aBound bBound)
     fun t ⟨value,bound,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.sub 11 10 6) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.sub 11 10 6) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
-  have ni := inv.point_update (.sub 11 10 6)
+  obtain ni := inv.point_update (.sub 11 10 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -741,7 +741,7 @@ theorem double_step10 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
         · exact Or.inl (by rw [capA])
         · exact Or.inl (by rw [capB]))
     result apart fits (by intro o C a D b he; cases he)
-  have kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
+  obtain kc : KeepRegs pointFullProductClob s t := k.mono (by decide)
   exact ⟨ni,ctx.of_keepRegs kc,(k.gpr .x1 (by decide)).trans zeroIn,mask,kc,double_slot_frame (out:=11) (by decide) (by decide) result.outside⟩
 
 end VG.Proof.Mont.AArch64.P521Field
@@ -764,21 +764,21 @@ theorem double_step8 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       OrdinaryInv base fieldPrime (doubleSlot a o) (10::V) (Function.update E 10 (E 11*E 11))
         (Function.update caps 10 1) t ∧ DoubleContext base a o t ∧ t.gpr .x1=0 ∧ t.gpr .x0=511 ∧
         KeepRegs pointFullProductClob s t ∧ DoubleFrame base o s.mem t.mem := by
-  have hz := inv.bound 11 readZ
+  obtain hz := inv.bound 11 readZ
   rw [capZ,Nat.one_mul] at hz
   have locA : doubleSlot a o 11=4080+360 := rfl
   have locO : doubleSlot a o 10=4080+288 := rfl
-  have zBound : wordsVal s.mem (off base 4080) 360 9<fieldPrime := by
+  obtain zBound : wordsVal s.mem (off base 4080) 360 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hz
   refine WP.mono (DoubleSquare3_ok ctx.temp ctx.tempW (by decide) (by decide) zBound)
     fun t ⟨bound,value,zero,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 10 11 11 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 10 11 11 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locA,locO,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
-  have ni := inv.point_update (.mul 10 11 11 false)
+  obtain ni := inv.point_update (.mul 10 11 11 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
         subst x; exact readZ)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
@@ -809,26 +809,26 @@ theorem double_step13 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
   have locA : doubleSlot a o 12=4080+432 := rfl
   have locB : doubleSlot a o 8=4080+144 := rfl
   have locO : doubleSlot a o 11=4080+360 := rfl
-  have hA := inv.bound 12 readA
-  have hB := inv.bound 8 readB
+  obtain hA := inv.bound 12 readA
+  obtain hB := inv.bound 8 readB
   rw [capA,Nat.one_mul] at hA
   rw [capB,Nat.one_mul] at hB
-  have aBound : wordsVal s.mem (off (off base 4080) 432) 0 9<fieldPrime := by
+  obtain aBound : wordsVal s.mem (off (off base 4080) 432) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locA,Nat.add_zero] using hA
-  have bBound : wordsVal s.mem (off (off base 4080) 144) 0 9<fieldPrime := by
+  obtain bBound : wordsVal s.mem (off (off base 4080) 144) 0 9<fieldPrime := by
     simpa only [wordsVal_off,locB,Nat.add_zero] using hB
-  have stable : StableInput s (off (off base 4080) 432) (off (off base 4080) 360) := by
+  obtain stable : StableInput s (off (off base 4080) 432) (off (off base 4080) 360) := by
     simpa only [off_off] using stable_input_apart (s:=s) (base:=base) (a:=4512) (o:=4440)
       (by decide) (by decide) (by decide)
   refine WP.mono (DoubleMul2Field_ok ctx.temp ctx.temp ctx.tempW (by decide) (by decide) (by decide) stable aBound bBound)
     fun t ⟨bound,value,zero,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 11 12 8 true) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 11 12 8 true) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.add_zero] using bound
     · simpa only [PointOp.out,PointOp.natural,locO,locA,locB,wordsVal_off,Nat.add_zero] using value
     · have om : Outside (off base 4440) 0 72 s.mem t.mem := by simpa only [off_off] using outside
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4440+0+72<2^64)
-  have ni := inv.point_update (.mul 11 12 8 true)
+  obtain ni := inv.point_update (.mul 11 12 8 true)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -858,21 +858,21 @@ theorem double_step11 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
       OrdinaryInv base fieldPrime (doubleSlot a o) (10::V) (Function.update E 10 (E 7*E 7))
         (Function.update caps 10 1) t ∧ DoubleContext base a o t ∧ t.gpr .x1=0 ∧ t.gpr .x0=511 ∧
         KeepRegs pointFullProductClob s t ∧ DoubleFrame base o s.mem t.mem := by
-  have hz := inv.bound 7 readZ
+  obtain hz := inv.bound 7 readZ
   rw [capZ,Nat.one_mul] at hz
   have locA : doubleSlot a o 7=4080+72 := rfl
   have locO : doubleSlot a o 10=4080+288 := rfl
-  have zBound : wordsVal s.mem (off base 4080) 72 9<fieldPrime := by
+  obtain zBound : wordsVal s.mem (off base 4080) 72 9<fieldPrime := by
     simpa only [wordsVal_off,locA] using hz
   refine WP.mono (DoubleSquare4_ok ctx.temp ctx.tempW (by decide) (by decide) zeroIn zBound)
     fun t ⟨bound,value,zero,mask,k,outside⟩ => ?_
-  have result : PointResult base fieldPrime (doubleSlot a o) (.mul 10 7 7 false) s t := by
+  obtain result : PointResult base fieldPrime (doubleSlot a o) (.mul 10 7 7 false) s t := by
     constructor
     · simpa only [PointOp.out,PointOp.cap,locO,wordsVal_off,Nat.one_mul] using bound
     · have he := congrArg (fun n => n%fieldPrime) value
       simpa only [PointOp.out,PointOp.natural,locA,locO,wordsVal_off,Nat.mod_mod] using he
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
-  have ni := inv.point_update (.mul 10 7 7 false)
+  obtain ni := inv.point_update (.mul 10 7 7 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx
         subst x; exact readZ)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] at hx

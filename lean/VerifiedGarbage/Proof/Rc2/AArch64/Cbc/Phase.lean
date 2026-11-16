@@ -91,43 +91,43 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
             (Spec.Rc2.blockAt s.mem (s.gpr .x23)) (Spec.Rc2.blocksAt s.mem (s.gpr .x1) (8 * (n / 8)))).2 := by
   subst e₁
   let g := n / 8
-  have z : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
+  obtain z : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
   apply WP.seq
   rw [Vec.setup, WP.block_append_iff]
-  have rk : InRegions ((s.write .x .x10 (BitVec.ofNat 64 g)).rd ++ (s.write .x .x10 (BitVec.ofNat 64 g)).wr)
+  obtain rk : InRegions ((s.write .x .x10 (BitVec.ofNat 64 g)).rd ++ (s.write .x .x10 (BitVec.ofNat 64 g)).wr)
       ((s.write .x .x10 (BitVec.ofNat 64 g)).gpr .x0) 128 :=
     hp.reads _ _ ⟨keyR s, by simp, Region.contains_self _ _⟩
   refine WP.mono (loads_ok _ rk 8 (by decide)) fun a ⟨arow, av, ae⟩ => ?_
   let s₁ := s.write .x .x10 (BitVec.ofNat 64 g)
-  have ag : a.gpr = s₁.gpr := by rw [ae]
-  have am : a.mem = s.mem := by rw [ae]; rfl
-  have ard : a.rd = s.rd := by rw [ae]; rfl
-  have awr : a.wr = s.wr := by rw [ae]; rfl
-  have asp : a.sp = s.sp := by rw [ae]; rfl
-  have s₁g : ∀ r, r ≠ .x10 → s₁.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ _ h
+  obtain ag : a.gpr = s₁.gpr := by rw [ae]
+  obtain am : a.mem = s.mem := by rw [ae]; rfl
+  obtain ard : a.rd = s.rd := by rw [ae]; rfl
+  obtain awr : a.wr = s.wr := by rw [ae]; rfl
+  obtain asp : a.sp = s.sp := by rw [ae]; rfl
+  obtain s₁g : ∀ r, r ≠ .x10 → s₁.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ _ h
   let b₁ := a.write .x .x9 (BitVec.ofNat 64 65535)
   let b₂ := b₁.setV Vec.m16 (ofVWords ((b₁.gpr .x9).setWidth 32) ((b₁.gpr .x9).setWidth 32)
     ((b₁.gpr .x9).setWidth 32) ((b₁.gpr .x9).setWidth 32))
   let b₃ := b₂.write .x .x11 (b₂.mem.readW (b₂.gpr .x23 + BitVec.ofNat 64 0) 64)
-  have x23 : b₂.gpr .x23 = s.gpr .x23 := by
+  obtain x23 : b₂.gpr .x23 = s.gpr .x23 := by
     simp only [b₂, b₁, gpr_setV, gpr_write_of_ne _ _ _ (by decide : ¬Reg.x23 = .x9), ag]
     exact s₁g _ (by decide)
-  have e₃ : exec (.ldr .x .x11 .x23 0) b₂ = some b₃ := exec_ldr_x b₂ .x11 .x23 0 ⟨by decide, by decide⟩ (by
+  obtain e₃ : exec (.ldr .x .x11 .x23 0) b₂ = some b₃ := exec_ldr_x b₂ .x11 .x23 0 ⟨by decide, by decide⟩ (by
     rw [x23, z]
     rw [show b₂.rd = s.rd from ard, show b₂.wr = s.wr from awr]
     exact hp.reads _ _ ⟨ivR s, by simp, Region.contains_self _ _⟩)
   refine WP.of_runBlock ⟨b₃, by
     rw [runBlock_cons, exec_imm _ _ _ (by decide), runStep_some, runBlock_cons, exec_dups,
       runStep_some, runBlock_cons, e₃, runStep_some, runBlock_nil], ?_⟩
-  have b3g : ∀ r, r ≠ .x9 → r ≠ .x11 → b₃.gpr r = s₁.gpr r := fun r h9 h11 => by
+  obtain b3g : ∀ r, r ≠ .x9 → r ≠ .x11 → b₃.gpr r = s₁.gpr r := fun r h9 h11 => by
     simp only [b₃, b₂, b₁, gpr_write_of_ne _ _ _ h11, gpr_setV, gpr_write_of_ne _ _ _ h9, ag]
-  have x1 : b₃.gpr .x1 = s.gpr .x1 := (b3g _ (by decide) (by decide)).trans (s₁g _ (by decide))
-  have hdata : (dataR s n).Contains (s.gpr .x1) (64 * g) := contains_prefix (by omega_arith)
-  have big : 64 * g < 2 ^ 64 := by omega_arith
+  obtain x1 : b₃.gpr .x1 = s.gpr .x1 := (b3g _ (by decide) (by decide)).trans (s₁g _ (by decide))
+  obtain hdata : (dataR s n).Contains (s.gpr .x1) (64 * g) := contains_prefix (by omega_arith)
+  obtain big : 64 * g < 2 ^ 64 := by omega_arith
   apply WP.seq
   refine WP.mono (loopV_ok s.mem (s.gpr .x0) g b₃ (by omega_arith) big ?_ ?_ ?_ ?_ ?_) fun c hc => ?_
   · intro r hr
-    have hne := (treg_ne_kb r hr).2
+    obtain hne := (treg_ne_kb r hr).2
     simp only [b₃, b₂, b₁, v_write, v_setV_of_ne _ _ hne]
     rw [arow r hr]
     rw [show s₁.mem = s.mem from rfl, show s₁.gpr .x0 = s.gpr .x0 from s₁g _ (by decide)]
@@ -138,23 +138,23 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
   · rw [x1, show b₃.wr = s.wr from awr]
     exact hp.writes _ _ ⟨dataR s n, by simp, hdata⟩
   -- The chaining value: the IV, then the last ciphertext block, stored.
-  have cx23 : c.gpr .x23 = s.gpr .x23 := by
+  obtain cx23 : c.gpr .x23 = s.gpr .x23 := by
     rw [hc.reg _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       b3g _ (by decide) (by decide), s₁g _ (by decide)]
-  have b11 : wordBlock (b₃.gpr .x11) = Spec.Rc2.blockAt s.mem (s.gpr .x23) := by
+  obtain b11 : wordBlock (b₃.gpr .x11) = Spec.Rc2.blockAt s.mem (s.gpr .x23) := by
     simp only [b₃, gpr_write_self, BitVec.setWidth_eq]
     rw [x23, z, ← blockAt_read64, show b₂.mem = s.mem from am]
   have data := hc.data
   have chain := hc.chain
   rw [b11, x1, show b₃.mem = s.mem from am] at data chain
-  have ivw : InRegions c.wr (c.gpr .x23 + BitVec.ofNat 64 0) 8 := by
+  obtain ivw : InRegions c.wr (c.gpr .x23 + BitVec.ofNat 64 0) 8 := by
     rw [cx23, z, hc.wr, show b₃.wr = s.wr from awr]
     exact hp.writes _ _ ⟨ivR s, by simp, Region.contains_self _ _⟩
   refine WP.of_runBlock ⟨_, by
     rw [runBlock_cons, exec_str_x c .x11 .x23 0 ⟨by decide, by decide⟩ ivw, runStep_some, runBlock_nil], ?_⟩
   simp only [cx23, z]
-  have ivFrame := frame_store64 c.mem (s.gpr .x23) (c.gpr .x11)
-  have sub : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
+  obtain ivFrame := frame_store64 c.mem (s.gpr .x23) (c.gpr .x11)
+  obtain sub : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
   refine ⟨?_, fun r h1 h6 h7 h9 h10 h11 h12 => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hc.ptr, x1, show 64 * g = 8 * (8 * g) by omega_arith]
   · rw [hc.reg r h1 h6 h7 h9 h10 h11 h12, b3g r h9 h11, s₁g r h10]
@@ -197,11 +197,11 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
   let s₁ := s.write .x .x10 (s.gpr .x24 >>> 3)
   refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_lsr _ _ _ (by decide), runStep_some,
     runBlock_nil], ?_⟩
-  have x10 : s.gpr .x24 >>> 3 = BitVec.ofNat 64 (n / 8) := by rw [count, ofNat_shift3 (by omega_arith)]
-  have s₁g : ∀ r, r ≠ .x10 → s₁.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ _ h
+  obtain x10 : s.gpr .x24 >>> 3 = BitVec.ofNat 64 (n / 8) := by rw [count, ofNat_shift3 (by omega_arith)]
+  obtain s₁g : ∀ r, r ≠ .x10 → s₁.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ _ h
   apply WP.seq
   -- What the masking leaves, from a state with the blocks done.
-  have finish : ∀ s₂ : State, s₂.gpr .x1 = s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * (n / 8))) →
+  obtain finish : ∀ s₂ : State, s₂.gpr .x1 = s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * (n / 8))) →
       (∀ g, g ≠ .x1 → g ≠ .x6 → g ≠ .x7 → g ≠ .x9 → g ≠ .x10 → g ≠ .x11 → g ≠ .x12 →
         s₂.gpr g = s.gpr g) → s₂.rd = s.rd → s₂.wr = s.wr →
       Frame [ivR s, dataR s (8 * (n / 8))] s.mem s₂.mem →
@@ -215,7 +215,7 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
     intro s₂ ptr reg rd wr fr data iv
     obtain ⟨s₃, run, c₃, g₃, m₃, rd₃, wr₃⟩ := mask24_ok s₂
     refine WP.of_runBlock ⟨s₃, run, ?_⟩
-    have keep : ∀ r, r ≠ .x1 → r ≠ .x6 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 →
+    obtain keep : ∀ r, r ≠ .x1 → r ≠ .x6 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 →
         r ≠ .x24 → s₃.gpr r = s.gpr r := fun r a b c d e f i j => (g₃ r j).trans (reg r a b c d e f i)
     refine ⟨by rw [g₃ _ (by decide), ptr], ?_, fun r hr h1 h24 => ?_, fun r hr h24 => ?_,
       rd₃.trans rd, wr₃.trans wr, by rw [m₃]; exact fr, by rw [m₃]; exact data, by rw [m₃]; exact iv⟩
@@ -252,27 +252,27 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
     (count : s.gpr .x24 = BitVec.ofNat 64 n) :
     WP isa (.seq Vec.phase (.ite (.zero .x .x24) (.block [])
       (.loop (Impl.Rc2.AArch64.Cbc.body .decrypt) (.nonzero .x .x24)))) s (LoopPost .decrypt s n) := by
-  have strict : 8 * n < 2 ^ 64 := Region.len_lt_of_disjoint hp.keyData (show 0 < 128 by decide)
+  obtain strict : 8 * n < 2 ^ 64 := Region.len_lt_of_disjoint hp.keyData (show 0 < 128 by decide)
   apply WP.seq
   refine WP.mono (phase_ok s hp strict count) fun s' h' => ?_
   let g := n / 8
-  have key' := h'.reg .x0 (by decide) (by decide) (by decide)
-  have iv' := h'.reg .x23 (by decide) (by decide) (by decide)
-  have buf' := h'.reg .x2 (by decide) (by decide) (by decide)
-  have hp' : StepPre s' (n % 8) :=
+  obtain key' := h'.reg .x0 (by decide) (by decide) (by decide)
+  obtain iv' := h'.reg .x23 (by decide) (by decide) (by decide)
+  obtain buf' := h'.reg .x2 (by decide) (by decide) (by decide)
+  obtain hp' : StepPre s' (n % 8) :=
     hp.slice (i := 8 * g) (by omega_arith) h'.rd h'.wr key' iv' buf' h'.ptr
   refine WP.mono (maybeLoop_ok .decrypt s' (n % 8) (by omega_arith) hp' h'.count) fun s'' h'' => ?_
-  have subG : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
-  have restSub : Region.Sub ⟨s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g)), 8 * (n % 8)⟩ (dataR s n) :=
+  obtain subG : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
+  obtain restSub : Region.Sub ⟨s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g)), 8 * (n % 8)⟩ (dataR s n) :=
     Offset.sub_base _ (by omega_arith)
-  have keyFrame : Spec.Rc2.scheduleAt s'.mem (s.gpr .x0) = Spec.Rc2.scheduleAt s.mem (s.gpr .x0) :=
+  obtain keyFrame : Spec.Rc2.scheduleAt s'.mem (s.gpr .x0) = Spec.Rc2.scheduleAt s.mem (s.gpr .x0) :=
     scheduleAt_frame h'.mem _ (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.keyIv
       · exact hp.keyData.sub_right subG)
-  have restKeep : Spec.Rc2.blocksAt s'.mem (s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g))) (n % 8) =
+  obtain restKeep : Spec.Rc2.blocksAt s'.mem (s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g))) (n % 8) =
       Spec.Rc2.blocksAt s.mem (s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g))) (n % 8) :=
     blocksAt_frame h'.mem _ _ (by
       intro r hr
@@ -280,7 +280,7 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
       rcases hr with rfl | rfl
       · exact (hp.ivData.sub_right restSub).symm
       · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith))
-  have firstKeep : Spec.Rc2.blocksAt s''.mem (s.gpr .x1) (8 * g) =
+  obtain firstKeep : Spec.Rc2.blocksAt s''.mem (s.gpr .x1) (8 * g) =
       Spec.Rc2.blocksAt s'.mem (s.gpr .x1) (8 * g) :=
     blocksAt_frame h''.mem _ _ (by
       intro r hr
@@ -290,7 +290,7 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
       · simp only [dataR, h'.ptr]; exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
       · simp only [buf']
         exact (hp.dataBuf.sub_left subG).sub_right (Region.sub_prefix (by decide : 264 ≤ 512)))
-  have split : ∀ (mm : Mem) (q : Addr), Spec.Rc2.blocksAt mm q n =
+  obtain split : ∀ (mm : Mem) (q : Addr), Spec.Rc2.blocksAt mm q n =
       Spec.Rc2.blocksAt mm q (8 * g) ++ Spec.Rc2.blocksAt mm (q + BitVec.ofNat 64 (8 * (8 * g))) (n % 8) :=
     fun mm q => by rw [← blocksAt_add]; exact congrArg _ (by omega_arith)
   have data'' := h''.data

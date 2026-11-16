@@ -59,8 +59,8 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
     WP isa (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s
       fun t => result p xb t ∧ Frame (SharedExchange.writes p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') :
       Frame (SharedExchange.writes p s) m m' :=
     f.mono (by simp [SharedExchange.writes, exchangeWrites])
@@ -68,7 +68,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
   refine WP.mono (domainNormalizedPrepareAt24_ok backend s h calls.toDomainCallMemory stable h0 h24 h32
     large odd normalized) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
-  have scalarU := scalar.after_frame frameU restU (by
+  obtain scalarU := scalar.after_frame frameU restU (by
     intro r hr
     simp only [domainPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
@@ -77,7 +77,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     · exact scalarStack.sub_right (Offset.sub_base _ (by decide))
     · exact scalarStack.sub_right (Offset.sub_base _ (by decide))
     · exact calls.scalarBelow)
-  have fU : Frame (SharedExchange.writes p s) s.mem u.mem := frameU.sub (by
+  obtain fU : Frame (SharedExchange.writes p s) s.mem u.mem := frameU.sub (by
     intro r hr
     simp only [domainPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append,
       List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -91,28 +91,28 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
   refine WP.mono (importAt_ok u 1 40 44 contextU stable h40 h44 readyU (by decide) (by decide)
     scalarU positive (Nat.le_trans scalarLength p.width.2.2.2.1) scalarCount) ?_
   rintro v ⟨contextV, readyV, x, keepsV, frameV, restV⟩
-  have fits : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1
-  have modV := (keeps_array_num keepsV fits op0 (by decide)).trans modU
-  have r2V := (keeps_array_num keepsV fits op4 (by decide)).trans r2U
+  obtain fits : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1
+  obtain modV := (keeps_array_num keepsV fits op0 (by decide)).trans modU
+  obtain r2V := (keeps_array_num keepsV fits op4 (by decide)).trans r2U
   rw [WP.seq_iff]
   refine WP.mono (scalarRange_ok v contextV stable h28 h32 h60 readyV modV odd) ?_
   rintro w ⟨contextW, readyW, flag, arraysW, frameW, restW⟩
   rw [x] at flag
-  have modW := (arraysW 0 (by simp)).trans modV
-  have r2W := (arraysW 4 (by simp)).trans r2V
-  have scalarW := (scalarU.after_workspace frameV restV).after_workspace frameW restW
-  have fUW := (fU.trans (extend frameV)).trans (extend frameW)
-  have restUW := (restU.trans restV).trans restW
+  obtain modW := (arraysW 0 (by simp)).trans modV
+  obtain r2W := (arraysW 4 (by simp)).trans r2V
+  obtain scalarW := (scalarU.after_workspace frameV restV).after_workspace frameW restW
+  obtain fUW := (fU.trans (extend frameV)).trans (extend frameW)
+  obtain restUW := (restU.trans restV).trans restW
   rw [VG.Impl.Ffdh.Arm.Domain.ifFlag, WP.seq_iff]
   refine WP.mono (testFlag_ok w) ?_
   rintro z ⟨⟨zeroZ, memZ⟩, restZ⟩
-  have ptrZ := (restZ.gpr .r0 (by simp)).trans contextW.ptr
-  have contextZ := contextW.of_mem memZ restZ ptrZ
-  have restSZ := restUW.trans (restZ.mono (by simp))
+  obtain ptrZ := (restZ.gpr .r0 (by simp)).trans contextW.ptr
+  obtain contextZ := contextW.of_mem memZ restZ ptrZ
+  obtain restSZ := restUW.trans (restZ.mono (by simp))
   by_cases valid : 0 < Spec.Rsa.os2ip xb ∧ Spec.Rsa.os2ip xb < scalarBound p
   · refine WP.ite true (by change some (!z.z) = some true; rw [zeroZ, flag, scalarValidFlag, ite_eq_left valid]; rfl) ?_ (by intro hf; cases hf)
     intro _
-    have frameZ : Frame [⟨State.addr p.base, 8 * p.len⟩] w.mem z.mem := by rw [memZ]; exact Frame.refl _ _
+    obtain frameZ : Frame [⟨State.addr p.base, 8 * p.len⟩] w.mem z.mem := by rw [memZ]; exact Frame.refl _ _
     refine WP.mono (tail_ok backend z contextZ ⟨calls.toDomainCallMemory.after restSZ,
         by rw [restSZ.sp]; exact calls.scalarBelow, by rw [restSZ.sp]; exact calls.outputBelow⟩
       stable h4 h32 h40 h44 h56 saved odd
@@ -130,7 +130,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
       exact (fUW.trans (by rw [memZ]; exact Frame.refl _ _)).trans fT
   · refine WP.ite false (by change some (!z.z) = some false; rw [zeroZ, flag, scalarValidFlag, ite_eq_right valid]; rfl) (by intro ht; cases ht) ?_
     intro _
-    have flagZ : z.gpr .r11 = 0 := by
+    obtain flagZ : z.gpr .r11 = 0 := by
       rw [restZ.gpr .r11 (by simp), flag, scalarValidFlag, ite_eq_right valid]
     refine WP.mono (fail_ok z contextZ h4 h32 flagZ (output.after restSZ) (by rw [restSZ.sp]; exact stackSep)) ?_
     rintro t ⟨status_t, bytes, frameT⟩
@@ -173,47 +173,47 @@ theorem deriveEntry_ok (s : State) {p : Inputs} (h : ArgumentMemory p [] s)
       Context p [0, 44, 40, 32, 28, 24, 4] t ∧ Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.SharedDerive.entry VG.Impl.Ffdh.Arm.Domain.st
   refine wp_stackAddr (by decide) fun s0 moved => ?_
-  have rest0 : Rest [.r12] s s0 := moved.rest (by simp)
-  have args0 := h.of_mem moved.mem rest0
-  have frame0 : Frame [⟨State.addr s.sp, 72⟩] s.mem s0.mem := by rw [moved.mem]; exact Frame.refl _ _
-  have stack0 : s0.gpr .r12 = s0.sp := by rw [moved.gpr, moved.sp, BitVec.add_zero]
+  obtain rest0 : Rest [.r12] s s0 := moved.rest (by simp)
+  obtain args0 := h.of_mem moved.mem rest0
+  obtain frame0 : Frame [⟨State.addr s.sp, 72⟩] s.mem s0.mem := by rw [moved.mem]; exact Frame.refl _ _
+  obtain stack0 : s0.gpr .r12 = s0.sp := by rw [moved.gpr, moved.sp, BitVec.add_zero]
   refine wp_store_arg .r0 4 args0 (by decide) (by decide) (by decide)
     ((rest0.gpr .r0 (by simp)).trans out) stack0 fun s1 args1 stepFrame1 stepRest1 => ?_
-  have rest1 := rest0.trans (stepRest1.mono (by simp))
-  have stack1 := (stepRest1.gpr .r12 (by simp)).trans (stack0.trans stepRest1.sp.symm)
+  obtain rest1 := rest0.trans (stepRest1.mono (by simp))
+  obtain stack1 := (stepRest1.gpr .r12 (by simp)).trans (stack0.trans stepRest1.sp.symm)
   rw [rest0.sp] at stepFrame1
-  have frame1 := frame0.trans stepFrame1
+  obtain frame1 := frame0.trans stepFrame1
   refine wp_store_arg .r2 24 args1 (by decide) (by decide) (by decide)
     ((rest1.gpr .r2 (by simp)).trans domain) stack1 fun s2 args2 stepFrame2 stepRest2 => ?_
-  have rest2 := rest1.trans (stepRest2.mono (by simp))
-  have stack2 := (stepRest2.gpr .r12 (by simp)).trans (stack1.trans stepRest2.sp.symm)
+  obtain rest2 := rest1.trans (stepRest2.mono (by simp))
+  obtain stack2 := (stepRest2.gpr .r12 (by simp)).trans (stack1.trans stepRest2.sp.symm)
   rw [rest1.sp] at stepFrame2
-  have frame2 := frame1.trans stepFrame2
+  obtain frame2 := frame1.trans stepFrame2
   refine wp_store_arg .r3 28 args2 (by decide) (by decide) (by decide)
     ((rest2.gpr .r3 (by simp)).trans domainLength) stack2 fun s3 args3 stepFrame3 stepRest3 => ?_
-  have rest3 := rest2.trans (stepRest3.mono (by simp))
-  have stack3 := (stepRest3.gpr .r12 (by simp)).trans (stack2.trans stepRest3.sp.symm)
+  obtain rest3 := rest2.trans (stepRest3.mono (by simp))
+  obtain stack3 := (stepRest3.gpr .r12 (by simp)).trans (stack2.trans stepRest3.sp.symm)
   rw [rest2.sp] at stepFrame3
-  have frame3 := frame2.trans stepFrame3
-  have allRest3 : Rest roundClobbers s s3 := rest3.mono (by simp [roundClobbers])
+  obtain frame3 := frame2.trans stepFrame3
+  obtain allRest3 : Rest roundClobbers s s3 := rest3.mono (by simp [roundClobbers])
   refine wp_retain_incoming .r3 (by decide) args3 (by decide)
     (incoming.modulus.after (by decide) frame3 allRest3) (by decide) (by decide) (by decide) stack3
     fun s4 args4 stepFrame4 stepRest4 value4 stack4 => ?_
-  have allRest4 := allRest3.trans (stepRest4.mono (by simp [roundClobbers]))
+  obtain allRest4 := allRest3.trans (stepRest4.mono (by simp [roundClobbers]))
   rw [allRest3.sp] at stepFrame4
-  have frame4 := frame3.trans stepFrame4
+  obtain frame4 := frame3.trans stepFrame4
   refine wp_retain_incoming .r3 (by decide) args4 (by decide)
     (incoming.scalar.after (by decide) frame4 allRest4) (by decide) (by decide) (by decide) stack4
     fun s5 args5 stepFrame5 stepRest5 value5 stack5 => ?_
-  have allRest5 := allRest4.trans (stepRest5.mono (by simp [roundClobbers]))
+  obtain allRest5 := allRest4.trans (stepRest5.mono (by simp [roundClobbers]))
   rw [allRest4.sp] at stepFrame5
-  have frame5 := frame4.trans stepFrame5
+  obtain frame5 := frame4.trans stepFrame5
   refine wp_retain_incoming .r3 (by decide) args5 (by decide)
     (incoming.scalarCount.after (by decide) frame5 allRest5) (by decide) (by decide) (by decide) stack5
     fun s6 args6 stepFrame6 stepRest6 value6 stack6 => ?_
-  have allRest6 := allRest5.trans (stepRest6.mono (by simp [roundClobbers]))
+  obtain allRest6 := allRest5.trans (stepRest6.mono (by simp [roundClobbers]))
   rw [allRest5.sp] at stepFrame6
-  have frame6 := frame5.trans stepFrame6
+  obtain frame6 := frame5.trans stepFrame6
   refine wp_retain_incoming .r0 (by decide) args6 (by decide)
     (incoming.scratch.after (by decide) frame6 allRest6) (by decide) (by decide) (by decide) stack6
     fun s7 args7 stepFrame7 stepRest7 value7 stack7 => WP.block_nil ?_
@@ -255,16 +255,16 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
   rw [WP.seq_iff]
   refine WP.mono (head_ok s h stable h0 h24 h32) ?_
   rintro u ⟨context, zero, frame, rest⟩
-  have entryFrame : Frame (SharedExchange.writes p s) s.mem u.mem :=
+  obtain entryFrame : Frame (SharedExchange.writes p s) s.mem u.mem :=
     frame.mono (by simp [SharedExchange.writes, exchangeWrites])
   by_cases valid : Spec.Rsa.modulusValid p.P p.k = true
   · refine WP.ite true (by change some u.z = some true; rw [zero, valid]) ?_ (by intro hf; cases hf)
     intro _
-    have facts := VG.Proof.Bignum.valid_facts valid p.minLength
-    have stable' : stableSlots (60 :: 56 :: slots) = true := by
+    obtain facts := VG.Proof.Bignum.valid_facts valid p.minLength
+    obtain stable' : stableSlots (60 :: 56 :: slots) = true := by
       change (true && (true && stableSlots slots)) = true
       rw [Bool.true_and, Bool.true_and, stable]
-    have saved' : ∀ d ∈ 60 :: 56 :: slots, d + 4 ≤ 64 ∨ 68 ≤ d := by
+    obtain saved' : ∀ d ∈ 60 :: 56 :: slots, d + 4 ≤ 64 ∨ 68 ≤ d := by
       intro d hd
       simp only [List.mem_cons] at hd
       rcases hd with rfl | rfl | hd
@@ -320,7 +320,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs} {xb : List B
     positive scalarLength scalarCount (by rw [rest.sp]; exact scalarStack) (output.after rest)
     workspaceSep (by rw [rest.sp]; exact stackSep)) ?_
   rintro t ⟨res, frameT⟩
-  have entryFrame : Frame (SharedExchange.writes p s) s.mem u.mem :=
+  obtain entryFrame : Frame (SharedExchange.writes p s) s.mem u.mem :=
     frame.mono (by simp [SharedExchange.writes, exchangeWrites])
   exact ⟨res, entryFrame.trans (by simpa only [SharedExchange.writes, exchangeWrites, rest.sp] using frameT)⟩
 

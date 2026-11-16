@@ -35,35 +35,35 @@ theorem next_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
   have head := v.headerFit
   unfold next
   refine wp_movS rfl fun a A _ => ?_
-  have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
+  obtain Sa := S.ready.scratch.of_keeps A.keeps (by decide)
   refine wp_movS (readSrc_sc Sa (by unfold roundsOffset; omega_using [head])) fun b B _ =>
     wp_addS rfl fun d D _ => ?_
-  have Kd : Keeps nextClob s d := ((A.keeps.mono (by unfold nextClob; decide)).widen B.keeps).widen D.keeps
-  have Sd := S.ready.scratch.of_keeps Kd (by unfold nextClob; decide)
-  have valueD : d.gpr .eax = BitVec.ofNat 32 (w32 s.mem g.W roundsOffset + 1) := by
+  obtain Kd : Keeps nextClob s d := ((A.keeps.mono (by unfold nextClob; decide)).widen B.keeps).widen D.keeps
+  obtain Sd := S.ready.scratch.of_keeps Kd (by unfold nextClob; decide)
+  obtain valueD : d.gpr .eax = BitVec.ofNat 32 (w32 s.mem g.W roundsOffset + 1) := by
     rw [D.gpr, B.gpr, A.mem]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     change (w32 s.mem g.W roundsOffset + 1) % 2 ^ 32 = (w32 s.mem g.W roundsOffset + 1) % 2 ^ 32
     rfl
   refine wp_storeS (Sd.ea (by unfold roundsOffset; omega_using [head])) (Sd.write (by unfold roundsOffset; omega_using [head])) fun e E => ?_
-  have Ke := Kd.widen (E.keeps [])
-  have Se := S.ready.scratch.of_keeps Ke (by unfold nextClob; decide)
-  have Oe : Outside g.W roundsOffset 4 s.mem e.mem := by
+  obtain Ke := Kd.widen (E.keeps [])
+  obtain Se := S.ready.scratch.of_keeps Ke (by unfold nextClob; decide)
+  obtain Oe : Outside g.W roundsOffset 4 s.mem e.mem := by
     rw [E.mem, D.mem, B.mem, A.mem]
     exact writeW32_outside _ _ _ (by unfold roundsOffset; decide)
-  have sampleE : e.mem.readW (off g.W 144) 32 = cmask uniform := by
+  obtain sampleE : e.mem.readW (off g.W 144) 32 = cmask uniform := by
     exact (BitVec.eq_of_toNat_eq (Oe.w32 (d := 144)
       (by unfold roundsOffset; decide) (by decide))).trans mask
   refine wp_movS (readSrc_sc Se (d := 144) (by omega_using [head])) fun f F _ => wp_andi fun h H => ?_
-  have Kh := (Ke.widen F.keeps).widen H.keeps
-  have Sh := S.ready.scratch.of_keeps Kh (by unfold nextClob; decide)
-  have uRead := readSrc_sc Sh (d := uniformOffset) (by unfold uniformOffset; omega_using [head])
+  obtain Kh := (Ke.widen F.keeps).widen H.keeps
+  obtain Sh := S.ready.scratch.of_keeps Kh (by unfold nextClob; decide)
+  obtain uRead := readSrc_sc Sh (d := uniformOffset) (by unfold uniformOffset; omega_using [head])
   refine wp_addS uRead fun i I _ => ?_
-  have Ki := Kh.widen I.keeps
-  have Si := S.ready.scratch.of_keeps Ki (by unfold nextClob; decide)
-  have valueI : i.gpr .ebx = BitVec.ofNat 32 (w32 s.mem g.W uniformOffset + uniform.toNat) := by
-    have same : h.mem.readW (off g.W uniformOffset) 32 = s.mem.readW (off g.W uniformOffset) 32 := by
+  obtain Ki := Kh.widen I.keeps
+  obtain Si := S.ready.scratch.of_keeps Ki (by unfold nextClob; decide)
+  obtain valueI : i.gpr .ebx = BitVec.ofNat 32 (w32 s.mem g.W uniformOffset + uniform.toNat) := by
+    obtain same : h.mem.readW (off g.W uniformOffset) 32 = s.mem.readW (off g.W uniformOffset) 32 := by
       rw [H.mem, F.mem]
       exact BitVec.eq_of_toNat_eq (Oe.w32 (by unfold uniformOffset roundsOffset; decide) (by unfold uniformOffset; decide))
     rw [I.gpr, H.gpr, F.gpr, sampleE, mask_bit, same]
@@ -73,26 +73,26 @@ theorem next_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
     change (uniform.toNat + w32 s.mem g.W uniformOffset) % 2 ^ 32 = (w32 s.mem g.W uniformOffset + uniform.toNat) % 2 ^ 32
     rw [Nat.add_comm]
   refine wp_storeS (Si.ea (by unfold uniformOffset; omega_using [head])) (Si.write (by unfold uniformOffset; omega_using [head])) fun j J => ?_
-  have Kj := Ki.widen (J.keeps [])
-  have Sj := S.ready.scratch.of_keeps Kj (by unfold nextClob; decide)
+  obtain Kj := Ki.widen (J.keeps [])
+  obtain Sj := S.ready.scratch.of_keeps Kj (by unfold nextClob; decide)
   refine wp_movS (readSrc_sc Sj (d := checksOffset) (by unfold checksOffset; omega_using [head])) fun t T _ => WP.block_nil ?_
-  have K := Kj.widen T.keeps
-  have Oj : Outside g.W uniformOffset 4 e.mem j.mem := by
+  obtain K := Kj.widen T.keeps
+  obtain Oj : Outside g.W uniformOffset 4 e.mem j.mem := by
     rw [J.mem, I.mem, H.mem, F.mem]
     exact writeW32_outside _ _ _ (by unfold uniformOffset; decide)
-  have O : Outs g.W nextRanges s.mem t.mem := by
+  obtain O : Outs g.W nextRanges s.mem t.mem := by
     rw [T.mem]
     exact (Outs.of_outside Oe (by simp [nextRanges])).trans (Outs.of_outside Oj (by simp [nextRanges]))
-  have gap : Outside g.W 128 96 s.mem t.mem := by
+  obtain gap : Outside g.W 128 96 s.mem t.mem := by
     rw [T.mem]
     exact (Oe.mono (by unfold roundsOffset; decide) (by unfold roundsOffset; decide)).trans
       (Oj.mono (by unfold uniformOffset; decide) (by unfold uniformOffset; decide))
-  have roundT : w32 t.mem g.W roundsOffset = w32 s.mem g.W roundsOffset + 1 := by
+  obtain roundT : w32 t.mem g.W roundsOffset = w32 s.mem g.W roundsOffset + 1 := by
     rw [T.mem, Oj.w32 (by unfold uniformOffset roundsOffset; decide) (by unfold roundsOffset; decide),
       E.mem, w32_write_self, valueD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt roundsFit]
-  have uniformT : w32 t.mem g.W uniformOffset = w32 s.mem g.W uniformOffset + uniform.toNat := by
+  obtain uniformT : w32 t.mem g.W uniformOffset = w32 s.mem g.W uniformOffset + uniform.toNat := by
     rw [T.mem, J.mem, w32_write_self, valueI, BitVec.toNat_ofNat, Nat.mod_eq_of_lt uniformFit]
-  have checksT : t.gpr .edx = s.mem.readW (off g.W checksOffset) 32 := by
+  obtain checksT : t.gpr .edx = s.mem.readW (off g.W checksOffset) 32 := by
     rw [T.gpr]
     exact BitVec.eq_of_toNat_eq ((Oj.w32 (by unfold uniformOffset checksOffset; decide) (by unfold checksOffset; decide)).trans
       (Oe.w32 (by unfold roundsOffset checksOffset; decide) (by unfold checksOffset; decide)))

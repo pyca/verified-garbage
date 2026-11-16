@@ -123,13 +123,13 @@ theorem psLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → B
   have hc := hu.ctx
   refine WP.mono (psBody_ok (by rw [hu.x11]; exact hc.in_ps hL hj)
     (by rw [hu.x13]; exact hc.in_fr (by unfold oEM frameBytes; omega_arith)) hu.x15) fun w hw => ?_
-  have hne : ∀ d, d < oEM + 2 + j → L.Q + BitVec.ofNat 64 d ≠ L.Q + BitVec.ofNat 64 (oEM + 2 + j) :=
+  obtain hne : ∀ d, d < oEM + 2 + j → L.Q + BitVec.ofNat 64 d ≠ L.Q + BitVec.ofNat 64 (oEM + 2 + j) :=
     fun d hd => Offset.add_ofNat_ne _ (by unfold oEM at hd; omega_arith) (by unfold oEM; omega_arith) (by omega_arith)
-  have hmem : w.mem = u.mem.write (L.Q + BitVec.ofNat 64 (oEM + 2 + j)) 1 (m₀ (L.ps + BitVec.ofNat 64 j)) := by
+  obtain hmem : w.mem = u.mem.write (L.Q + BitVec.ofNat 64 (oEM + 2 + j)) 1 (m₀ (L.ps + BitVec.ofNat 64 j)) := by
     rw [hw.mem, hu.x13, hu.x11, hc.ps_byte hL hj]
-  have hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 2 + j), 1⟩] u.mem w.mem := by
+  obtain hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 2 + j), 1⟩] u.mem w.mem := by
     rw [hmem]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hx12 : w.gpr .x12 = BitVec.ofNat 64 (L.pl.toNat - (j + 1)) := by
+  obtain hx12 : w.gpr .x12 = BitVec.ofNat 64 (L.pl.toNat - (j + 1)) := by
     rw [hw.x12, hu.x12, Bytes.counter_step hj L.pl.isLt]
   refine ⟨⟨?_, ?_, ?_, hx12, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · refine hc.store hL hw.rd hw.wr hw.sp hw.v (fun r hr _ => hw.other r (mem_ne hr (by decide))
@@ -180,21 +180,21 @@ theorem sep_inv {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bit
   have hc := h.ctx
   refine WP.mono (sep_ok (by rw [h.x13]; exact hc.in_fr (by unfold oEM frameBytes; omega_arith))
     (by rw [hc.sp, add_add]; exact hc.inFr (by decide))) fun w hw => ?_
-  have hmem : w.mem = (t.mem.write (L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat)) 1 0#8).writeW
+  obtain hmem : w.mem = (t.mem.write (L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat)) 1 0#8).writeW
       (L.Q + BitVec.ofNat 64 oZ) (zmask (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)) := by
     rw [hw.mem, h.x13, hc.sp, h.x14]
-  have hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat), 1⟩, ⟨L.Q + BitVec.ofNat 64 oZ, 8⟩] t.mem w.mem := by
+  obtain hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat), 1⟩, ⟨L.Q + BitVec.ofNat 64 oZ, 8⟩] t.mem w.mem := by
     rw [hmem]
     exact ((Frame.refl _ _).write (List.mem_cons_self ..) _ (Region.contains_self _ _)).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (Region.contains_self _ _)
   -- A byte of `EM` before the separator is not in the zero test's slot.
-  have hz : ∀ d, oEM ≤ d → d + 1 ≤ frameBytes →
+  obtain hz : ∀ d, oEM ≤ d → d + 1 ≤ frameBytes →
       w.mem (L.Q + BitVec.ofNat 64 d) = (t.mem.write (L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat)) 1 0#8)
         (L.Q + BitVec.ofNat 64 d) := fun d h₁ h₂ => by
     rw [hmem]
     exact Bytes.byte_writeW_sep (Offset.sep _ (by unfold oEM oZ at *; omega_arith) (by unfold frameBytes at h₂; omega_arith)
       (by unfold oZ; omega_arith))
-  have hne : ∀ d, d < oEM + 2 + L.pl.toNat →
+  obtain hne : ∀ d, d < oEM + 2 + L.pl.toNat →
       L.Q + BitVec.ofNat 64 d ≠ L.Q + BitVec.ofNat 64 (oEM + 2 + L.pl.toNat) :=
     fun d hd => Offset.add_ofNat_ne _ (by unfold oEM at hd; omega_arith) (by unfold oEM; omega_arith) (by omega_arith)
   have go : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x13 → w.gpr r = t.gpr r := hw.other
@@ -231,19 +231,19 @@ theorem msgLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → 
   have hc := hu.ctx
   refine WP.mono (msgBody_ok (by rw [hu.x6]; exact hc.in_msg hL hj)
     (by rw [hu.x13]; exact hc.in_fr (by unfold oEM frameBytes; omega_arith))) fun w hw => ?_
-  have hne : ∀ d, d < oEM + 3 + L.pl.toNat + j →
+  obtain hne : ∀ d, d < oEM + 3 + L.pl.toNat + j →
       L.Q + BitVec.ofNat 64 d ≠ L.Q + BitVec.ofNat 64 (oEM + 3 + L.pl.toNat + j) :=
     fun d hd => Offset.add_ofNat_ne _ (by unfold oEM at hd; omega_arith) (by unfold oEM; omega_arith) (by omega_arith)
-  have hmem : w.mem = u.mem.write (L.Q + BitVec.ofNat 64 (oEM + 3 + L.pl.toNat + j)) 1
+  obtain hmem : w.mem = u.mem.write (L.Q + BitVec.ofNat 64 (oEM + 3 + L.pl.toNat + j)) 1
       (m₀ (L.msg + BitVec.ofNat 64 j)) := by
     rw [hw.mem, hu.x13, hu.x6, hc.msg_byte hL hj]
-  have hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 3 + L.pl.toNat + j), 1⟩] u.mem w.mem := by
+  obtain hf : Frame [⟨L.Q + BitVec.ofNat 64 (oEM + 3 + L.pl.toNat + j), 1⟩] u.mem w.mem := by
     rw [hmem]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hx7 : w.gpr .x7 = BitVec.ofNat 64 (L.ml.toNat - (j + 1)) := by
+  obtain hx7 : w.gpr .x7 = BitVec.ofNat 64 (L.ml.toNat - (j + 1)) := by
     rw [hw.x7, hu.x7, Bytes.counter_step hj L.ml.isLt]
   have go : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x10 → r ≠ .x13 → w.gpr r = u.gpr r := hw.other
   -- The bytes below `M`'s, and the zero test's slot, are as they were.
-  have hlo : ∀ d, d < oEM + 3 + L.pl.toNat + j → w.mem (L.Q + BitVec.ofNat 64 d) = u.mem (L.Q + BitVec.ofNat 64 d) :=
+  obtain hlo : ∀ d, d < oEM + 3 + L.pl.toNat + j → w.mem (L.Q + BitVec.ofNat 64 d) = u.mem (L.Q + BitVec.ofNat 64 d) :=
     fun d hd => by rw [hmem, Bytes.write1_ne _ _ (hne d hd)]
   refine ⟨⟨?_, (go .x0 (by decide) (by decide) (by decide) (by decide)).trans hu.x0,
     (go .x1 (by decide) (by decide) (by decide) (by decide)).trans hu.x1,

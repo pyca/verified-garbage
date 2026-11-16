@@ -103,14 +103,14 @@ theorem prep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     WP isa (.block (scr .ebx sState ++ ivStore iv ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (H.N + H.N) (padBytes H.N) ((64 - H.N) / 4) ++
       ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] : List Instr) ++ scr .ebp sHScr)) s Q := by
-  have nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
+  obtain nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
   have nw := hs.nowrap
-  have hsn : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega_arith
-  have yNat := Scr.toNat_add hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
-  have yW := Scr.wide hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
+  obtain hsn : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega_arith
+  obtain yNat := Scr.toNat_add hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
+  obtain yW := Scr.wide hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
   simp only [List.append_assoc]
   refine scr_ok fun s₁ e₁ g₁ m₁ rd₁ wr₁ _ => ?_
-  have cov : ∀ d n, sState ≤ d → d + n ≤ sState + H.N + 64 →
+  obtain cov : ∀ d n, sState ≤ d → d + n ≤ sState + H.N + 64 →
       ∀ j, j + 4 ≤ n → InRegions s₁.wr (addr (s.gpr .edi + BitVec.ofNat 32 sState) (d - sState + j)) 4 := by
     intro d n h₁ h₂ j hj
     rw [addr_eq (by omega_arith), yW, Offset.add_add, wr₁]
@@ -149,25 +149,25 @@ theorem block_bytes {m : Mem} {Y : Addr} {k : Nat} (hk : k < 64) :
     writeBytes (writeBytes m Y (ivBytes iv)) (Y + BitVec.ofNat 64 (H.N + H.N)) (padBytes H.N)
         (Y + BitVec.ofNat 64 H.N + BitVec.ofNat 64 k) =
       (Spec.Sha256.bytesAt m (Y + BitVec.ofNat 64 H.N) H.N ++ padBytes H.N).getD k 0 := by
-  have nl := F.N_le; have ivl := F.ivLen
-  have pl := padBytes_length (n := H.N) (by omega_arith)
-  have il := ivBytes_length iv
-  have ml : (Spec.Sha256.bytesAt m (Y + BitVec.ofNat 64 H.N) H.N).length = H.N := by
+  obtain nl := F.N_le; have ivl := F.ivLen
+  obtain pl := padBytes_length (n := H.N) (by omega_arith)
+  obtain il := ivBytes_length iv
+  obtain ml : (Spec.Sha256.bytesAt m (Y + BitVec.ofNat 64 H.N) H.N).length = H.N := by
     simp only [Spec.Sha256.bytesAt, List.length_map, List.length_range]
   rw [Offset.add_add]
-  have d1 := Offset.sub_toNat' Y (d := H.N + H.N) (e := H.N + k) (by omega_arith) (by omega_arith)
-  have d2 := Mem.sub_ofNat_toNat Y (show H.N + k < 2 ^ 64 by omega_arith)
+  obtain d1 := Offset.sub_toNat' Y (d := H.N + H.N) (e := H.N + k) (by omega_arith) (by omega_arith)
+  obtain d2 := Mem.sub_ofNat_toNat Y (show H.N + k < 2 ^ 64 by omega_arith)
   simp only [writeBytes, d1, d2, List.getD_eq_getElem?_getD]
   by_cases hN : H.N ≤ k
   · have c1 : H.N + H.N ≤ H.N + k := by omega_arith
-    have c2 : H.N + k - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
+    obtain c2 : H.N + k - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
     simp only [c1, ↓reduceIte, c2]
     rw [List.getElem?_append_right (by rw [ml]; exact hN), ml]
     congr 2
     omega_arith
   · have c1 : ¬ H.N + H.N ≤ H.N + k := by omega_arith
-    have c2 : ¬ 2 ^ 64 + (H.N + k) - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
-    have c3 : ¬ H.N + k < (ivBytes iv).length := by rw [il]; omega_arith
+    obtain c2 : ¬ 2 ^ 64 + (H.N + k) - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
+    obtain c3 : ¬ H.N + k < (ivBytes iv).length := by rw [il]; omega_arith
     simp only [c1, ↓reduceIte, c2, c3]
     rw [List.getElem?_append_left (by rw [ml]; omega_arith)]
     simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show k < H.N by omega_arith),
@@ -185,22 +185,22 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       Frame [⟨off base sState, H.N + 64⟩, ⟨off base sHScr, H.so⟩, ⟨off base dst, H.N⟩, stk s] s.mem t.mem ∧
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .ebp → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
-  have nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
-  have hB := F.B; have hL := F.L; have hD := F.DN
+  obtain nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
+  obtain hB := F.B; have hL := F.L; have hD := F.DN
   have nw := hs.nowrap
-  have hso : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega_arith
-  have hsS : sState < size := by simp only [sState, sHScr] at hsz hso ⊢; omega_arith
+  obtain hso : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega_arith
+  obtain hsS : sState < size := by simp only [sState, sHScr] at hsz hso ⊢; omega_arith
   let Y := off base sState
-  have yNat := Scr.toNat_add hs hsS
-  have yW := Scr.wide hs hsS
-  have cNat := Scr.toNat_add hs hsC
-  have cW := Scr.wide hs hsC
+  obtain yNat := Scr.toNat_add hs hsS
+  obtain yW := Scr.wide hs hsS
+  obtain cNat := Scr.toNat_add hs hsC
+  obtain cW := Scr.wide hs hsC
   unfold Impl.Dsa.X86.Generation.hash
   simp only [seqs]
   refine WP.seq (prep_ok F hs (by omega_arith) fun t eb ea ep g rd wr m => ?_)
-  have tsp : t.gpr .esp = s.gpr .esp := g _ (by decide) (by decide) (by decide) (by decide)
-  have tdi : t.gpr .edi = s.gpr .edi := g _ (by decide) (by decide) (by decide) (by decide)
-  have cargs : CmpArgs H.N H.B H.so t (s.gpr .edi + BitVec.ofNat 32 sState) (s.gpr .edi + BitVec.ofNat 32 sHScr) :=
+  obtain tsp : t.gpr .esp = s.gpr .esp := g _ (by decide) (by decide) (by decide) (by decide)
+  obtain tdi : t.gpr .edi = s.gpr .edi := g _ (by decide) (by decide) (by decide) (by decide)
+  obtain cargs : CmpArgs H.N H.B H.so t (s.gpr .edi + BitVec.ofNat 32 sState) (s.gpr .edi + BitVec.ofNat 32 sHScr) :=
     { ebx := eb, eax := ea, ebp := ep, sp48 := by rw [tsp]; exact h48
       cst := by rw [yW, wr]; exact Scr.covers hs (by rw [hB]; omega_arith)
       csc := by rw [cW, wr]; exact Scr.covers hs (by omega_arith)
@@ -215,18 +215,18 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       nsc := by rw [cNat]; omega_arith }
   refine WP.seq (cmp_ok F.ok.comp (by rw [hB]; decide) cargs fun u au cu => ?_)
   rw [yW] at cu
-  have udi : u.gpr .edi = s.gpr .edi := (au.cs .edi (by decide)).trans tdi
-  have usp : u.gpr .esp = s.gpr .esp := (au.cs .esp (by decide)).trans tsp
+  obtain udi : u.gpr .edi = s.gpr .edi := (au.cs .edi (by decide)).trans tdi
+  obtain usp : u.gpr .esp = s.gpr .esp := (au.cs .esp (by decide)).trans tsp
   simp only [List.append_assoc]
   refine scr_ok fun v ev gv mv rdv wrv _ => scr_ok fun w ew gw mw rdw wrw _ => ?_
   have npos := F.ok.sizes.N.1
-  have hdN : dst < size := by omega_arith
-  have wbx : w.gpr .ebx = s.gpr .edi + BitVec.ofNat 32 sState := by
+  obtain hdN : dst < size := by omega_arith
+  obtain wbx : w.gpr .ebx = s.gpr .edi + BitVec.ofNat 32 sState := by
     rw [gw _ (by decide), ev, udi]
-  have wax : w.gpr .eax = s.gpr .edi + BitVec.ofNat 32 dst := by
+  obtain wax : w.gpr .eax = s.gpr .edi + BitVec.ofNat 32 dst := by
     rw [ew, gv _ (by decide), udi]
-  have dW := Scr.wide hs hdN
-  have dNat := Scr.toNat_add hs hdN
+  obtain dW := Scr.wide hs hdN
+  obtain dNat := Scr.toNat_add hs hdN
   refine WP.mono (F.ok.out w (by rw [wbx, yNat]; omega_arith) (by rw [wax, dNat]; omega_arith) ?_ ?_ ?_)
     fun x ⟨gx, rdx, wrx, mx⟩ => ?_
   · rw [wbx, yW, rdw, wrw, rdv, wrv, au.rd, au.wr, rd, wr]
@@ -235,29 +235,29 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   · rw [wbx, wax, yW, dW]; exact Offset.disjoint base (by omega_arith) (by omega_arith) (by omega_arith)
   rw [wbx, wax, yW, dW, mw, mv] at mx
   -- The value.
-  have msgEq : Spec.Sha256.bytesAt s.mem (off base (sState + H.N)) H.N =
+  obtain msgEq : Spec.Sha256.bytesAt s.mem (off base (sState + H.N)) H.N =
       Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N := by
     simp only [Y, off, Offset.add_add]
-  have pl := padBytes_length (n := H.N) (by omega_arith)
-  have ivAt : F.ok.md.stateAt t.mem Y = F.ok.iv := by
+  obtain pl := padBytes_length (n := H.N) (by omega_arith)
+  obtain ivAt : F.ok.md.stateAt t.mem Y = F.ok.iv := by
     apply F.ivVal
     rw [m, bytesAt_writeBytes_sep _ _ (Offset.sep_base Y (by omega_arith) (by omega_arith)) (by omega_arith),
       VG.Proof.Hmac.Generic.Common.bytesAt_writeBytes_self' (by rw [ivBytes_length]; omega_arith) (by omega_arith)]
-  have blk : F.ok.md.blockAt t.mem (Y + BitVec.ofNat 64 H.N) =
+  obtain blk : F.ok.md.blockAt t.mem (Y + BitVec.ofNat 64 H.N) =
       F.ok.md.parse fun k => (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N ++ padBytes H.N).getD k 0 := by
     simp only [Md.blockAt]
     refine F.ok.md.parse_congr fun k hk => ?_
     rw [m, block_bytes F (by rw [← hB]; exact hk)]
-  have ml : (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N).length = H.N := by
+  obtain ml : (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N).length = H.N := by
     simp only [Spec.Sha256.bytesAt, List.length_map, List.length_range]
-  have padEq : ∀ msg : List Byte, msg.length = H.N →
+  obtain padEq : ∀ msg : List Byte, msg.length = H.N →
       VG.Proof.MdStream.Md.rest H.B msg ++ [0x80] ++ List.replicate (H.B - H.L - 1 - H.N % H.B) 0 ++
         F.ok.md.lenBytes H.N = msg ++ padBytes H.N := by
     intro msg hm
     rw [F.lenB, hB, hL]
     simp only [VG.Proof.MdStream.Md.rest, hm, padBytes, List.append_assoc]
     rw [Nat.div_eq_of_lt (by omega_arith), Nat.mul_zero, List.drop_zero, Nat.mod_eq_of_lt (by omega_arith)]
-  have hashEq : F.ok.hH.SH.H.hash (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N) =
+  obtain hashEq : F.ok.hH.SH.H.hash (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N) =
       F.ok.md.digest (F.ok.md.compress F.ok.iv
         (F.ok.md.parse fun k => (Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N ++ padBytes H.N).getD k 0)) := by
     rw [F.ok.link.hash, Md.hash_one F.ok.md (by rw [hB]; decide) (by rw [ml, hB, hL]; omega_arith), ml,
@@ -272,9 +272,9 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
         (writeBytes_frame _ _ _ (by rw [pl]; exact Offset.contains_base Y (by omega_arith) (by omega_arith)))
     have f₂ := au.frame
     rw [yW, cW, stk, tsp] at f₂
-    have f₃ : Frame [⟨off base dst, H.N⟩] u.mem x.mem := by
+    obtain f₃ : Frame [⟨off base dst, H.N⟩] u.mem x.mem := by
       rw [mx]; exact writeBytes_frame _ _ _ (by rw [F.ok.md.digest_length]; exact contains_start _ (by omega_arith))
-    have s₂ : Region.Sub ⟨off base sState, H.N⟩ ⟨off base sState, H.N + 64⟩ := Region.sub_prefix (by omega_arith)
+    obtain s₂ : Region.Sub ⟨off base sState, H.N⟩ ⟨off base sState, H.N + 64⟩ := Region.sub_prefix (by omega_arith)
     exact frame_join f₁ f₂ f₃ s₂
 
   · intro r a b c d e

@@ -203,8 +203,8 @@ theorem copyOptional_ok (s : State) {src dst : BitVec 32} {n : Nat}
     · unfold Spec.Rsa.bytesAt
       apply List.map_congr_left
       intro j hj
-      have bound := List.mem_range.mp hj
-      have byte := inv.copied j bound
+      obtain bound := List.mem_range.mp hj
+      obtain byte := inv.copied j bound
       rw [addr_add (by omega_using [destFits, bound]), addr_add (by omega_using [sourceFits, bound]), memU] at byte
       exact byte
     · have frame := inv.frame destFits
@@ -251,30 +251,30 @@ theorem sampleSuffix_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : L
     refine WP.ite true (by change some t.z = some true; rw [zeroT, count, empty]; rfl) ?_ (by intro hf; cases hf)
     intro _
     apply WP.block_nil
-    have frame : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
-    have context := h.after_output frame rest domainSep stackSep saved
-    have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep)
+    obtain frame : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+    obtain context := h.after_output frame rest domainSep stackSep saved
+    obtain entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep)
     refine ⟨context, entropyT, ?_, ?_, rest.mono (by simp)⟩
     · simp only [sampleSuffix, empty, Spec.Rsa.bytesAt, List.range_zero, List.map_nil]
       exact (List.drop_eq_nil_iff.mpr (by omega_using [size, empty])).symm
     · rw [mem]; exact Frame.refl _ _
   · have positive : 0 < p.k - (l.lead + 1) := by omega_using [empty]
-    have out := output.slice positive (by omega_using [lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ p.k)
-    have inp := entropy.slice positive (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length)
-    have inpSize : ((rb.drop (l.lead + 1)).take (p.k - (l.lead + 1))).length = p.k - (l.lead + 1) := by
+    obtain out := output.slice positive (by omega_using [lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ p.k)
+    obtain inp := entropy.slice positive (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length)
+    obtain inpSize : ((rb.drop (l.lead + 1)).take (p.k - (l.lead + 1))).length = p.k - (l.lead + 1) := by
       simp only [List.length_take, List.length_drop, size, Nat.min_self]
-    have inpAddr := VG.Arm.addr_add (a := p.entropy) (k := l.lead + 1) (by have := entropy.fits; omega_using [size, empty, this])
-    have outAddr := VG.Arm.addr_add (a := p.privateValue) (k := l.lead + 1) (by have := output.fits; omega_using [empty, this])
-    have inpSub : (⟨State.addr (p.entropy + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
+    obtain inpAddr := VG.Arm.addr_add (a := p.entropy) (k := l.lead + 1) (by have := entropy.fits; omega_using [size, empty, this])
+    obtain outAddr := VG.Arm.addr_add (a := p.privateValue) (k := l.lead + 1) (by have := output.fits; omega_using [empty, this])
+    obtain inpSub : (⟨State.addr (p.entropy + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
         ⟨State.addr p.entropy, p.k⟩ := by rw [inpAddr]; exact Offset.sub_base _ (by omega_using [lead])
-    have outSub : (⟨State.addr (p.privateValue + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
+    obtain outSub : (⟨State.addr (p.privateValue + BitVec.ofNat 32 (l.lead + 1)), p.k - (l.lead + 1)⟩ : Region).Sub
         ⟨State.addr p.privateValue, p.k⟩ := by rw [outAddr]; exact Offset.sub_base _ (by omega_using [lead])
     refine WP.mono (copyOptional_ok s (by have := p.maxLength; omega_using [this]) (by simpa only [inpSize] using inp.fits) out.fits
       (by simpa only [inpSize] using inp.readable) out.writable ((entropySep.sub_left inpSub).sub_right outSub)
       source dest count) ?_
     rintro t ⟨bytes, frame, rest⟩
-    have context := h.after_output frame rest (domainSep.sub_right outSub) (stackSep.sub_right outSub) saved
-    have entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep.sub_right outSub)
+    obtain context := h.after_output frame rest (domainSep.sub_right outSub) (stackSep.sub_right outSub) saved
+    obtain entropyT := entropy.after_frame frame rest (by simpa [size] using entropySep.sub_right outSub)
     refine ⟨context, entropyT, ?_, ?_, rest⟩
     · rw [outAddr, inpAddr] at bytes
       rw [← VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.entropy) (by omega_using [size, lead] : (l.lead + 1) + (p.k - (l.lead + 1)) ≤ rb.length), entropy.bytes] at bytes
@@ -304,14 +304,14 @@ theorem keyCutEncoding {m : Mem} {dst : Addr} {rb : List Byte} {ld : Nat} {mask 
     (firstByte : m (off dst ld) = rb.getD ld 0 &&& mask)
     (suffixBytes : Spec.Rsa.bytesAt m (off dst (ld + 1)) (rb.length - (ld + 1)) = rb.drop (ld + 1)) :
     Spec.Rsa.bytesAt m dst rb.length = VG.Proof.Ffdh.KeyScalar.cut rb ld mask := by
-  have splitLength : rb.length = ld + (1 + (rb.length - (ld + 1))) := by omega_using [bound]
+  obtain splitLength : rb.length = ld + (1 + (rb.length - (ld + 1))) := by omega_using [bound]
   rw [splitLength, VG.Proof.Dsa.Generation.bytesAt_append,
     VG.Proof.Dsa.Generation.bytesAt_append, prefixBytes]
-  have one : Spec.Rsa.bytesAt m (off dst ld) 1 = [rb.getD ld 0 &&& mask] := by
+  obtain one : Spec.Rsa.bytesAt m (off dst ld) 1 = [rb.getD ld 0 &&& mask] := by
     simpa only [Spec.Rsa.bytesAt, List.range_succ, List.range_zero, List.map_append, List.map_nil,
       List.map_cons, BitVec.add_zero, List.nil_append] using congrArg (fun b : Byte => [b]) firstByte
   rw [one]
-  have ptr : off (off dst ld) 1 = off dst (ld + 1) := by
+  obtain ptr : off (off dst ld) 1 = off dst (ld + 1) := by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   change List.replicate ld 0 ++ ([rb.getD ld 0 &&& mask] ++
     Spec.Rsa.bytesAt m (off (off dst ld) 1) (rb.length - (ld + 1))) = _
@@ -348,54 +348,54 @@ theorem sampleCut_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List
       Frame [⟨State.addr p.privateValue, p.k⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .lr] s t := by
   have lead := l.lead_lt
   have bounds := p.maxLength
-  have prefixSub : (⟨State.addr p.privateValue, l.lead⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ :=
+  obtain prefixSub : (⟨State.addr p.privateValue, l.lead⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ :=
     Region.sub_prefix (by omega_using [lead])
-  have suffixSub : (sampleSuffix p l).Sub ⟨State.addr p.privateValue, p.k⟩ :=
+  obtain suffixSub : (sampleSuffix p l).Sub ⟨State.addr p.privateValue, p.k⟩ :=
     Offset.sub_base _ (by omega_using [lead])
-  have firstAddr : State.addr l.start = off (State.addr p.privateValue) l.lead :=
+  obtain firstAddr : State.addr l.start = off (State.addr p.privateValue) l.lead :=
     VG.Arm.addr_add (by have := output.fits; omega_using [lead, this])
-  have firstSub : (⟨State.addr l.start, 1⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ := by
+  obtain firstSub : (⟨State.addr l.start, 1⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ := by
     rw [firstAddr]
     exact Offset.sub_base _ (by omega_using [lead])
-  have prefixFirst : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint ⟨State.addr l.start, 1⟩ := by
+  obtain prefixFirst : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint ⟨State.addr l.start, 1⟩ := by
     rw [firstAddr]
     exact (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
-  have prefixSuffix : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint (sampleSuffix p l) :=
+  obtain prefixSuffix : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint (sampleSuffix p l) :=
     (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
-  have firstSuffix : (⟨State.addr l.start, 1⟩ : Region).Disjoint (sampleSuffix p l) := by
+  obtain firstSuffix : (⟨State.addr l.start, 1⟩ : Region).Disjoint (sampleSuffix p l) := by
     rw [firstAddr]
     exact Offset.disjoint _ (Or.inl (by omega_using [])) (by omega_using [lead, bounds]) (by omega_using [lead, bounds])
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy, WP.seq_iff]
   refine WP.mono (samplePrefix_ok s h saved output domainSep stackSep source dest count zero) ?_
   rintro u ⟨contextU, bytesU, ptrU, srcU, frameU, restU⟩
-  have entropyU := entropy.after_frame frameU restU (by simpa [size] using entropySep.sub_right prefixSub)
+  obtain entropyU := entropy.after_frame frameU restU (by simpa [size] using entropySep.sub_right prefixSub)
   rw [WP.seq_iff]
   refine WP.mono (sampleFirst_retained u contextU saved entropyU size (output.after restU)
     domainSep (by rw [restU.sp]; exact stackSep) entropySep srcU ptrU) ?_
   rintro v ⟨contextV, entropyV, byteV, ptrV, srcV, countV, frameV, restV⟩
-  have suffixCount : v.gpr .lr = BitVec.ofNat 32 (p.k - (l.lead + 1)) := by
+  obtain suffixCount : v.gpr .lr = BitVec.ofNat 32 (p.k - (l.lead + 1)) := by
     rw [countV]
     congr 1
   refine WP.mono (sampleSuffix_ok v contextV saved entropyV size ((output.after restU).after restV)
     domainSep (by rw [restV.sp, restU.sp]; exact stackSep) entropySep srcV ptrV suffixCount) ?_
   rintro t ⟨contextT, entropyT, suffix, frameT, restT⟩
-  have prefixV : Spec.Rsa.bytesAt v.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
+  obtain prefixV : Spec.Rsa.bytesAt v.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
     rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by omega_using [lead, bounds]) (by simpa using prefixFirst)]
     exact bytesU
-  have prefixT : Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
+  obtain prefixT : Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
     rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameT (by omega_using [lead, bounds]) (by simpa using prefixSuffix)]
     exact prefixV
-  have byteT : t.mem (State.addr l.start) = rb.getD l.lead 0 &&& l.mask.setWidth 8 := by
-    have same := frameT.bytes (R := ⟨State.addr l.start, 1⟩) (by simpa using firstSuffix) (by change 1 ≤ 2 ^ 64; decide) (i := 0) (by change 0 < 1; decide)
+  obtain byteT : t.mem (State.addr l.start) = rb.getD l.lead 0 &&& l.mask.setWidth 8 := by
+    obtain same := frameT.bytes (R := ⟨State.addr l.start, 1⟩) (by simpa using firstSuffix) (by change 1 ≤ 2 ^ 64; decide) (i := 0) (by change 0 < 1; decide)
     simp only [BitVec.add_zero] at same
     exact same.trans byteV
-  have encoded := keyCutEncoding (by omega_using [size, lead] : l.lead < rb.length) prefixT (by rw [← firstAddr]; exact byteT)
+  obtain encoded := keyCutEncoding (by omega_using [size, lead] : l.lead < rb.length) prefixT (by rw [← firstAddr]; exact byteT)
     (by simpa only [size, sampleSuffix] using suffix)
-  have fullU : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem u.mem :=
+  obtain fullU : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem u.mem :=
     frameU.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, prefixSub⟩)
-  have fullV : Frame [⟨State.addr p.privateValue, p.k⟩] u.mem v.mem :=
+  obtain fullV : Frame [⟨State.addr p.privateValue, p.k⟩] u.mem v.mem :=
     frameV.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, firstSub⟩)
-  have fullT : Frame [⟨State.addr p.privateValue, p.k⟩] v.mem t.mem :=
+  obtain fullT : Frame [⟨State.addr p.privateValue, p.k⟩] v.mem t.mem :=
     frameT.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, suffixSub⟩)
   exact ⟨contextT, entropyT, by simpa only [size] using encoded, (fullU.trans fullV).trans fullT,
     ((restU.mono (by simp)).trans restV).trans (restT.mono (by simp))⟩
@@ -451,7 +451,7 @@ theorem samplePrefix_next (s : State) {p : Inputs} {l : ScalarLayout p} {slots :
   refine WP.mono (samplePrefix_ok s h.context saved h.outputs.privateBuffer h.outputs.privateDomain h.outputs.privateStack
     h.source h.dest h.count h.zero) ?_
   rintro t ⟨context, _, dest, source, frame, rest⟩
-  have entropy := h.entropy.after_frame frame rest (by
+  obtain entropy := h.entropy.after_frame frame rest (by
     simpa [size] using entropySep.sub_right (Region.sub_prefix (by have := l.lead_lt; omega_using [this])))
   exact ⟨⟨context, entropy, h.outputs.after rest⟩, dest, source⟩
 
@@ -518,7 +518,7 @@ theorem sampleScalarArgs_next (s : State) {p : Inputs} {l : ScalarLayout p} {slo
     WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs) s (SampleCutStart p l slots rb) := by
   refine WP.mono (sampleScalarArgs_retained s h.context stable special h.width h.mask h32 h40 h48) ?_
   rintro t ⟨context, dest, source, count, zero, frame, rest⟩
-  have entropy := h.entropy.after_frame frame rest (by
+  obtain entropy := h.entropy.after_frame frame rest (by
     intro r hr
     rw [List.mem_singleton] at hr; subst r
     rw [size]
@@ -546,17 +546,17 @@ def cachedTablePtr (p : Inputs) : BitVec 32 := p.cachedContext+BitVec.ofNat 32 (
 theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenerationContext p s) :
     CombTable (cachedTablePtr p) p.w p.P p.G
       (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) s := by
-  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
-  have wordsCount : p.cachedWords=3+34*p.w := by
+  obtain wPos : 0<p.w := by have := p.width.1; omega_using [this]
+  obtain wordsCount : p.cachedWords=3+34*p.w := by
     rw [h.canonical.1]
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
     omega_using []
-  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
-  have ptrAddr : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
+  obtain size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
+  obtain ptrAddr : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
     unfold cachedTablePtr
     exact addr_add (by have := h.fit; omega_using [wPos, size, this])
-  have ptrNat : (cachedTablePtr p).toNat=p.cachedContext.toNat+(24+16*p.w) := by
+  obtain ptrNat : (cachedTablePtr p).toNat=p.cachedContext.toNat+(24+16*p.w) := by
     simp only [cachedTablePtr,BitVec.toNat_add,BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (by have := h.fit; omega_using [wordsCount, this] : 24+16*p.w<2^32)]
     exact Nat.mod_eq_of_lt (by have := h.fit; omega_using [wPos, size, this])
@@ -570,33 +570,33 @@ theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenera
     let E := Spec.Rsa.powMod p.G
       (Spec.Rsa.FixedBaseComb.exponent (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) a) p.P *
       2^(64*p.w)%p.P
-    have modValid := VG.Proof.Ffdh.domainValid_mod h.valid
-    have pPos : 0<p.P := by have := (valid_facts modValid p.minLength).2.1; exact Nat.lt_trans (by decide) this
-    have pBound : p.P<2^(64*p.w) := by
-      have v := os2ip_lt (p.dom.take p.k)
+    obtain modValid := VG.Proof.Ffdh.domainValid_mod h.valid
+    obtain pPos : 0<p.P := by have := (valid_facts modValid p.minLength).2.1; exact Nat.lt_trans (by decide) this
+    obtain pBound : p.P<2^(64*p.w) := by
+      obtain v := os2ip_lt (p.dom.take p.k)
       rw [p.pLength,pow256_eq] at v
       exact Nat.lt_of_lt_of_le v (Nat.pow_le_pow_right (by decide) (by have := p.width.2.2.2.1; omega_using [this]))
-    have eBound : E<2^(64*p.w) := Nat.lt_trans (Nat.mod_lt _ pPos) pBound
+    obtain eBound : E<2^(64*p.w) := Nat.lt_trans (Nat.mod_lt _ pPos) pBound
     have limb (i : Nat) (hi : i<p.w) :
         s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a+8*i)) 64 =
           BitVec.ofNat 64 (E/2^(64*i)) := by
       let index := 3+(2+a)*p.w+i
-      have mulA : (2+a)*p.w≤33*p.w := Nat.mul_le_mul_right _ (by omega_using [ha])
-      have indexFit : index<p.cachedWords := by dsimp [index]; omega_using [wordsCount, hi, mulA]
-      have entries := VG.Proof.Ffdh.generationValues_entry p.k p.dom a ha
-      have entry := congrArg (fun xs : List (BitVec 64) => xs[i]?) entries
+      obtain mulA : (2+a)*p.w≤33*p.w := Nat.mul_le_mul_right _ (by omega_using [ha])
+      obtain indexFit : index<p.cachedWords := by dsimp [index]; omega_using [wordsCount, hi, mulA]
+      obtain entries := VG.Proof.Ffdh.generationValues_entry p.k p.dom a ha
+      obtain entry := congrArg (fun xs : List (BitVec 64) => xs[i]?) entries
       have hik : i<Spec.Rsa.modulusWords p.k := hi
       simp only [List.getElem?_take,ite_eq_left hik,List.getElem?_drop,Spec.Rsa.toWords,
         List.getElem?_map,List.getElem?_range hik,Option.map_some] at entry
-      have read := congrArg (fun xs : List (BitVec 64) => xs[index]?) h.words
+      obtain read := congrArg (fun xs : List (BitVec 64) => xs[index]?) h.words
       simp only [Spec.Rsa.wordsAt,List.getElem?_map,List.getElem?_range indexFit,Option.map_some] at read
       change some (s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (8*index)) 64)=_ at read
       dsimp only [index,Inputs.w] at read
       rw [entry] at read
-      have offset : 24+16*p.w+8*p.w*a+8*i=8*index := by dsimp [index]; ring
+      obtain offset : 24+16*p.w+8*p.w*a+8*i=8*index := by dsimp [index]; ring
       rw [offset]
       exact Option.some.inj read
-    have value : wv s.mem (State.addr p.cachedContext) (24+16*p.w+8*p.w*a) p.w=E := by
+    obtain value : wv s.mem (State.addr p.cachedContext) (24+16*p.w+8*p.w*a) p.w=E := by
       rw [← Nat.mod_eq_of_lt eBound]
       apply wv_of_words
       intro i hi
@@ -611,17 +611,17 @@ theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenera
 theorem CachedGenerationContext.tableSeparate {p : Inputs} {s : State}
     (h : CachedGenerationContext p s) : ∀ r∈keyCallWrites p s,
       (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Disjoint r := by
-  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
-  have wordsCount : p.cachedWords=3+34*p.w := by
+  obtain wPos : 0<p.w := by have := p.width.1; omega_using [this]
+  obtain wordsCount : p.cachedWords=3+34*p.w := by
     rw [h.canonical.1]
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
     omega_using []
-  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
-  have address : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
+  obtain size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
+  obtain address : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
     unfold cachedTablePtr
     exact addr_add (by have := h.fit; omega_using [wPos, size, this])
-  have sub : (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Sub (cachedRegion p) := by
+  obtain sub : (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Sub (cachedRegion p) := by
     rw [address]
     exact Offset.sub_base _ (by omega_using [wordsCount])
   intro r hr
@@ -648,26 +648,26 @@ theorem sampleMainFlag_spec (p : Inputs) (l : ScalarLayout p) (rb : List Byte) (
     (valid : Spec.Ffdh.domainValid p.k p.dom = true) :
     (sampleMainFlag p l rb).toNat = Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
       (Spec.Rsa.os2ip (l.encode rb)) := by
-  have parameters : Spec.Ffdh.parametersValid (Spec.Ffdh.domainOf p.k p.dom) = true := by
+  obtain parameters : Spec.Ffdh.parametersValid (Spec.Ffdh.domainOf p.k p.dom) = true := by
     have h := valid
     rw [Spec.Ffdh.domainValid, Bool.and_eq_true] at h
     exact h.1
-  have modulus := VG.Proof.Ffdh.domainValid_mod valid
+  obtain modulus := VG.Proof.Ffdh.domainValid_mod valid
   rw [p.domainP] at modulus
-  have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+  obtain facts := VG.Proof.Bignum.valid_facts modulus p.minLength
   rw [VG.Proof.Ffdh.KeyScalar.keyStatus_eq parameters]
-  have publicPower := VG.Proof.Ffdh.publicValid_power parameters (Spec.Rsa.os2ip (l.encode rb))
-  have publicBool : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
+  obtain publicPower := VG.Proof.Ffdh.publicValid_power parameters (Spec.Rsa.os2ip (l.encode rb))
+  obtain publicBool : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
       (Spec.Ffdh.domainOf p.k p.dom).g ^ Spec.Rsa.os2ip (l.encode rb) % (Spec.Ffdh.domainOf p.k p.dom).p⟩ =
       keyAccepted p (l.encode rb) := by
-    have equiv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
+    obtain equiv : Spec.Ffdh.publicValid ⟨Spec.Ffdh.domainOf p.k p.dom,
       (Spec.Ffdh.domainOf p.k p.dom).g ^ Spec.Rsa.os2ip (l.encode rb) % (Spec.Ffdh.domainOf p.k p.dom).p⟩ = true ↔
         keyAccepted p (l.encode rb) = true := by
       rw [publicPower, p.domainP, p.domainG]
       simp only [keyAccepted, keyPower, VG.Proof.Bignum.powMod_eq, decide_eq_true_eq]
     exact Bool.eq_iff_iff.mpr equiv
   rw [publicBool]
-  have scalarClass := p.privateValid_native (Spec.Rsa.os2ip (l.encode rb))
+  obtain scalarClass := p.privateValid_native (Spec.Rsa.os2ip (l.encode rb))
   by_cases scalarGood : sampleScalarValid p l rb
   · have priv : Spec.Ffdh.privateValid (Spec.Ffdh.domainOf p.k p.dom) (Spec.Rsa.os2ip (l.encode rb)) = true :=
       scalarClass.mpr scalarGood
@@ -708,7 +708,7 @@ theorem sampleResult_spec {p : Inputs} {l : ScalarLayout p} {rb : List Byte} {t 
     else Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) p.k = List.replicate p.k 0 ∧
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k = List.replicate p.k 0 := by
   obtain ⟨status, privateT, publicT⟩ := result
-  have statusSpec := sampleMainFlag_spec p l rb size valid
+  obtain statusSpec := sampleMainFlag_spec p l rb size valid
   refine ⟨by rw [status]; exact statusSpec, ?_⟩
   by_cases success : Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom)
       (Spec.Rsa.os2ip (l.encode rb)) = 1
@@ -716,9 +716,9 @@ theorem sampleResult_spec {p : Inputs} {l : ScalarLayout p} {rb : List Byte} {t 
     rw [native, ite_eq_left rfl] at privateT publicT
     rw [ite_eq_left success]
     refine ⟨privateT.trans (sampleOctets_encoded p l rb size valid), ?_⟩
-    have modulus := VG.Proof.Ffdh.domainValid_mod valid
+    obtain modulus := VG.Proof.Ffdh.domainValid_mod valid
     rw [p.domainP] at modulus
-    have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
+    obtain facts := VG.Proof.Bignum.valid_facts modulus p.minLength
     rw [publicT, keyPower, p.domainP, p.domainG]
   · have native : sampleSuccess p l rb = false := by
       apply Bool.eq_false_iff.mpr
@@ -792,7 +792,7 @@ open VG VG.Arm
 
 theorem keyEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
     (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry) (fun _ _ => True) := by
-  have accesses := RelCT.block_append ((storeLocal_ct .r0 40).seq (RelCT.block_append ((storeLocal_ct .r2 36).seq (RelCT.block_append ((storeLocal_ct .r2 4).seq (RelCT.block_append ((loadLocal_ct .r3 128 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 24).seq (RelCT.block_append ((loadLocal_ct .r3 132 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 28).seq (RelCT.block_append ((loadLocal_ct .r3 136 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 32).seq (RelCT.block_append ((storeLocal_ct .r3 44).seq (RelCT.block_append ((loadLocal_ct .r3 140 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 48).seq (RelCT.block_append ((loadLocal_ct .r0 148 (by decide)).seq ((storeLocal_ct .r0 0)))))))))))))))))))))))))))
+  obtain accesses := RelCT.block_append ((storeLocal_ct .r0 40).seq (RelCT.block_append ((storeLocal_ct .r2 36).seq (RelCT.block_append ((storeLocal_ct .r2 4).seq (RelCT.block_append ((loadLocal_ct .r3 128 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 24).seq (RelCT.block_append ((loadLocal_ct .r3 132 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 28).seq (RelCT.block_append ((loadLocal_ct .r3 136 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 32).seq (RelCT.block_append ((storeLocal_ct .r3 44).seq (RelCT.block_append ((loadLocal_ct .r3 140 (by decide)).seq (RelCT.block_append ((storeLocal_ct .r3 48).seq (RelCT.block_append ((loadLocal_ct .r0 148 (by decide)).seq ((storeLocal_ct .r0 0)))))))))))))))))))))))))))
   exact (RelCT.block_append (stackAddr_ct.seq accesses)).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 
@@ -831,8 +831,8 @@ structure SampleRanged (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (rb 
 
 theorem SampleReady.after_mem {p : Inputs} {l : ScalarLayout p} {slots : List Nat} {rb : List Byte} {s t : State}
     (h : SampleReady p l slots rb s) (mem : t.mem = s.mem) (rest : Rest [] s t) : SampleReady p l slots rb t := by
-  have ptr := (rest.gpr .r0 (by simp)).trans h.context.ptr
-  have frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+  obtain ptr := (rest.gpr .r0 (by simp)).trans h.context.ptr
+  obtain frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   exact ⟨⟨h.context.toContext.of_mem mem rest ptr, by rw [rest.sp, mem]; exact h.context.scalarStart, by rw [rest.sp, mem]; exact h.context.scalarWidth, by rw [rest.sp, mem]; exact h.context.scalarMask⟩, h.ready.of_mem mem rest ptr, by rw [mem]; exact h.modulus,
     by rw [mem]; exact h.r2, h.scalar.after_workspace frame rest, h.significant.after_workspace frame rest, h.outputs.after rest⟩
 
@@ -859,7 +859,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem cachedKeyGenerateEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
     (.block VG.Impl.Ffdh.Arm.CachedKeyGenerate.entry) (fun _ _ => True) := by
-  have extra := RelCT.block_append (stackAddr_ct.seq (RelCT.block_append
+  obtain extra := RelCT.block_append (stackAddr_ct.seq (RelCT.block_append
     ((loadLocal_ct .r3 156 (by decide)).seq (storeLocal_ct .r3 52))))
   exact RelCT.block_append ((relCT_keep_sp keyEntry_ct (fun _ _ h => h)).seq
     (extra.mono (fun _ _ h => h) (fun _ _ _ => trivial)))
@@ -905,12 +905,12 @@ theorem environmentImport_next (env : SampleEnvironment) (s : State) {p : Inputs
     (stable : stableSlots slots = true) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
     (size : rb.length = p.k) (privateLength : p.privateLength = p.k) (h : SampleReady p l slots rb s) (calls : KeyCallMemory p s) (environment : env.holds p s) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 40 44) s (fun t => (SampleImported p l slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
-  have length := l.encode_length size
+  obtain length := l.encode_length size
   refine WP.mono_syms (importAt_ok s 1 40 44 h.context.toContext stable h40 h44 h.ready (by decide) (by decide) h.scalar
     (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.privateLength = _; rw [privateLength, length])) ?_
   rintro t ⟨context, ready, imported, keeps, frame, rest⟩ syms
-  have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  obtain fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   refine ⟨⟨⟨⟨h.context.after_workspace frame rest context.ptr (fun d hd => (stableSlots_at stable hd).1), ready,
     (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide)).trans h.modulus,
     (keeps_array_num keeps fits (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 4) (by decide)).trans h.r2,
@@ -948,7 +948,7 @@ theorem environmentPrepare_next (env : SampleEnvironment) (prepare : Prog isa) (
     WP isa prepare s (fun t => KeyPrepared p slots rb t ∧ KeyCallMemory p t) := by
   refine WP.mono (prep.correct s h.context environment calls stable h52 h0 h24 h32 large odd normalized) ?_
   rintro t ⟨context, ready, modulus, r2, frame, rest⟩
-  have entropy := h.entropy.after_frame frame rest (by
+  obtain entropy := h.entropy.after_frame frame rest (by
     intro r hr
     simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
@@ -1003,7 +1003,7 @@ theorem environmentKeyGenerateMain_ct (prepare sample tail : Prog isa) (env : Sa
       · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
       · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
       · exact ⟨_, by simp [keyCallWrites], fun _ hx => hx⟩)
-  have prepareCT : RelCT isa (fun s t =>
+  obtain prepareCT : RelCT isa (fun s t =>
       ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
       ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
       prepare (fun s t => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
@@ -1017,24 +1017,24 @@ theorem environmentKeyGenerateMain_ct (prepare sample tail : Prog isa) (env : Sa
     obtain ⟨-, rfl⟩ := Exec.det e2 runV
     exact ⟨trace, postU, postV, env.public_stable h.2.2.1 (Exec.syms e1) (Exec.syms e2),
       (Exec.sp e1).trans (h.2.2.2.trans (Exec.sp e2).symm)⟩
-  have sampleCT := (sampler.ct stable special normalized odd h52 h0 h24 h28 h32 h40 h48 h60 size1 size2 entropySep).mono
+  obtain sampleCT := (sampler.ct stable special normalized odd h52 h0 h24 h28 h32 h40 h48 h60 size1 size2 entropySep).mono
     (P' := fun (s t : State) => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
       ((KeyPrepared p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.1.toKeyScalarInput, h.1.2⟩, ⟨h.2.1.1.1.toKeyScalarInput, h.2.1.2⟩, h.2.2⟩) (fun _ _ h => h)
-  have sampled := (relCT_keep_sp sampleCT (fun _ _ h => h.2.2.2)).wp (fun s t h =>
+  obtain sampled := (relCT_keep_sp sampleCT (fun _ _ h => h.2.2.2)).wp (fun s t h =>
     ⟨environmentSample_next env sample layout sampler s stable special h52 h0 h24 h28 h32 h40 h48 h60 size1 entropySep h.1.1.1 h.1.1.2 h.1.2 normalized odd,
      environmentSample_next env sample layout sampler t stable special h52 h0 h24 h28 h32 h40 h48 h60 size2 entropySep h.2.1.1.1 h.2.1.1.2 h.2.1.2 normalized odd⟩)
-  have imports := (importAt_ct (p := p) (a := 1) (slot := 40) (countSlot := 44) (k := p.k) stable (by simp [h40]) (by simp [h44])
+  obtain imports := (importAt_ct (p := p) (a := 1) (slot := 40) (countSlot := 44) (k := p.k) stable (by simp [h40]) (by simp [h44])
     (by change BitVec.ofNat 32 p.privateLength = _; rw [privateLength]) (by decide)).mono
     (P' := fun (s t : State) => ((SampleReady p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleReady p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.1.context.toContext, h.1.1.1.ready⟩, ⟨h.2.1.1.1.context.toContext, h.2.1.1.1.ready⟩, h.2.2⟩) (fun _ _ h => h)
-  have ranges := (scalarRange_ct stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd).mono
+  obtain ranges := (scalarRange_ct stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd).mono
     (P' := fun (s t : State) => ((SampleImported p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleImported p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.1.context.toContext, h.1.1.1.ready, h.1.1.1.modulus⟩, ⟨h.2.1.1.1.context.toContext, h.2.1.1.1.ready, h.2.1.1.1.modulus⟩, h.2.2⟩) (fun _ _ h => h)
   have sigSize {rb : List Byte} (size : rb.length = p.k) : (((layout p).encode rb).drop (layout p).lead).length = (layout p).width := by
     rw [List.length_drop, (layout p).encode_length size]
     rfl
-  have branches : RelCT isa (fun s t => ((SampleRanged p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleRanged p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
+  obtain branches : RelCT isa (fun s t => ((SampleRanged p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((SampleRanged p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.Domain.ifFlag tail VG.Impl.Ffdh.Arm.Domain.GenerateKey.failScalar)
       (fun _ _ => True) := by
     apply ifFlag_pair_ct (decide (sampleScalarValid p (layout p) rb1))
@@ -1105,7 +1105,7 @@ theorem cachedKeyGenerateBody_ct (prepare sample tail : Prog isa) (env : SampleE
       (VG.Impl.Ffdh.Arm.CachedKeyGenerate.body prepare sample tail) (fun _ _ => True) := by
   let P := fun rb s => (KeyScalarInput p slots rb s ∧ KeyCallMemory p s) ∧ env.holds p s
   let Q := fun rb s => (KeyScalarInput p (60 :: 56 :: slots) rb s ∧ KeyCallMemory p s) ∧ env.holds p s
-  have head := (headPrefix_ct stable h0 h24 h32).mono
+  obtain head := (headPrefix_ct stable h0 h24 h32).mono
     (P' := fun (s t : State) => P rb1 s ∧ P rb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1.1.context, h.2.1.1.1.context, h.2.2⟩) (fun _ _ h => h)
   have wp (s : State) {rb : List Byte} (size : rb.length = p.k) (h : P rb s) :
@@ -1115,11 +1115,11 @@ theorem cachedKeyGenerateBody_ct (prepare sample tail : Prog isa) (env : SampleE
     refine ⟨⟨⟨context, h.1.1.entropy.after_frame frame rest (by simpa [size] using h.1.1.entropyStack),
       h.1.1.outputs.after rest, by rw [rest.sp]; exact h.1.1.entropyStack⟩, h.1.2.after rest⟩, ?_⟩
     exact env.stable h.2 (frame.mono (by simp [keyCallWrites, keyWrites])) rest syms
-  have stableU : stableSlots (60 :: 56 :: slots) = true := by
+  obtain stableU : stableSlots (60 :: 56 :: slots) = true := by
     change (true && (true && stableSlots slots)) = true
     simp only [Bool.true_and, stable]
-  have facts := VG.Proof.Bignum.valid_facts valid p.minLength
-  have main := (environmentKeyGenerateMain_ct prepare sample tail env layout prep sampler law layoutBound
+  obtain facts := VG.Proof.Bignum.valid_facts valid p.minLength
+  obtain main := (environmentKeyGenerateMain_ct prepare sample tail env layout prep sampler law layoutBound
     publicRelAll afterMem stableU
     (by simp [h52]) (by simp [h0]) (by simp [h4]) (by simp [h24]) (by simp [h28])
     (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) (by simp [h48]) (by simp) (by simp)
@@ -1179,7 +1179,7 @@ theorem cachedKeyGenerateFn_ct (prepare sample tail : Prog isa) (env : SampleEnv
   apply framed_ct (fun _ _ h => ⟨h.1.1.input.stackFits, h.2.1.1.input.stackFits⟩) (fun _ _ h => h.2.2)
   intro a b tr1 tr2 u v h e1 e2
   obtain ⟨s, t, related, rfl, rfl⟩ := h
-  have body := relCT_chain entry (fun a h => wp a h) (fun a h => wp a h)
+  obtain body := relCT_chain entry (fun a h => wp a h) (fun a h => wp a h)
     (cachedKeyGenerateBody_ct prepare sample tail env layout prep sampler law layoutBound publicRelAll afterMem
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide)
@@ -1210,7 +1210,7 @@ theorem cachedGeneration_publicRel (s t : State) : cachedGenerationEnvironment.p
 theorem cachedGeneration_afterMem {p : Inputs} {s t : State}
     (h : cachedGenerationEnvironment.holds p s) (mem : t.mem = s.mem) (rest : Rest [] s t) :
     cachedGenerationEnvironment.holds p t := by
-  have frame : Frame (keyCallWrites p s) s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+  obtain frame : Frame (keyCallWrites p s) s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   exact h.after frame (rest.mono (by simp [roundClobbers]))
 
 end VG.Proof.Ffdh.Arm
@@ -1319,12 +1319,12 @@ theorem finish_ok {base : BitVec 32} {len w M g E : Nat} {P : State → Prop} {r
   rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
   rw [h.modulus] at modulus bound value
   rw [h.one] at value
-  have final := mont_final_factor h.coprime h.value value
+  obtain final := mont_final_factor h.coprime h.value value
   rw [Nat.mod_eq_of_lt bound, Nat.mul_one, ← powMod_eq] at final
-  have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have r2 := (keeps_array_num keeps fits
+  obtain fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
+  obtain r2 := (keeps_array_num keeps fits
     (q := 4) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.r2
-  have one := (keeps_array_num keeps fits
+  obtain one := (keeps_array_num keeps fits
     (q := 7) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans h.one
   exact ⟨ready, final, modulus, r2, one, pt, TwoExp.header_of_keeps h.ready keeps, frame, rest⟩
 
@@ -1359,7 +1359,7 @@ theorem phase_ok {base source table : BitVec 32} {len w bytes N M g x : Nat}
   rw [VG.Impl.Bignum.Arm.CombExp.phase,WP.seq_iff]
   refine WP.mono (initial_ok (g:=g) K.arithmetic s ready hp controls modulus odd r2) ?_
   rintro u ⟨powerU,pu,controlsU,counterU,frameU,restU⟩
-  have start : Power base len w M g (VG.Proof.Rsa.FixedBaseComb.high N x (Spec.Rsa.FixedBaseComb.rows N)) u := by
+  obtain start : Power base len w M g (VG.Proof.Rsa.FixedBaseComb.high N x (Spec.Rsa.FixedBaseComb.rows N)) u := by
     simpa only [VG.Proof.Rsa.FixedBaseComb.high_top] using powerU
   rw [WP.seq_iff]
   refine WP.mono (rows_ok K u positive (Nat.le_refl _) fits start pu controlsU counterU) ?_
@@ -1444,8 +1444,8 @@ theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayo
       Frame (CombExp.writeRegions p.base s.sp p.len) s.mem t.mem ∧ Rest roundClobbers s t := by
   let K := CombExp.kernel backend p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb
     widthBound (by have := l.width_bounds.2; have := p.maxLength; omega_arith) scheduleFit widthFit scalarFit
-  have source : CombDigit.Source l.start eb s := ⟨exponent.fits,exponent.readable,exponent.byte⟩
-  have hp : CombExp.Persistent p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb s := by
+  obtain source : CombDigit.Source l.start eb s := ⟨exponent.fits,exponent.readable,exponent.byte⟩
+  obtain hp : CombExp.Persistent p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb s := by
     refine ⟨⟨calls.stack,rfl⟩,source,cached.table,?_,tableSeparate⟩
     intro r hr
     simp only [CombExp.writeRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -1455,16 +1455,16 @@ theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayo
   rw [VG.Impl.Ffdh.Arm.CachedPower.code,WP.seq_iff]
   refine WP.mono (args_ok s context cached ready h52) ?_
   rintro u ⟨readyU,controlsU,arraysU,frameU,restU⟩
-  have writes : Frame (CombExp.writeRegions p.base s.sp p.len) s.mem u.mem := frameU.mono (by simp [CombExp.writeRegions])
-  have hpU := K.arithmetic.stable frameU restU hp
-  have controls : CombExp.Controls p.base l.start (table p) eb.length (bits p) u := by
+  obtain writes : Frame (CombExp.writeRegions p.base s.sp p.len) s.mem u.mem := frameU.mono (by simp [CombExp.writeRegions])
+  obtain hpU := K.arithmetic.stable frameU restU hp
+  obtain controls : CombExp.Controls p.base l.start (table p) eb.length (bits p) u := by
     rw [size]; exact controlsU
   refine WP.mono (CombExp.phase_ok K u readyU hpU controls
     ((arraysU 0 (by decide)).trans modulus) odd ((arraysU 4 (by decide)).trans r2)
     positive (by omega_using [scheduleFit]) scalarFit) ?_
   rintro t ⟨rd,value,m,rr,one,_,_,frameT,restT⟩
-  have frame := writes.trans frameT
-  have rest := restU.trans restT
+  obtain frame := writes.trans frameT
+  obtain rest := restU.trans restT
   exact ⟨context.toContext.after_call calls frame rest rd.ptr (fun d hd=>(stableSlots_at stable hd).1),
     rd,value,m,rr,one,frame,rest⟩
 
@@ -1500,27 +1500,27 @@ theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count :
   let I := fun k s t => 0<k ∧ k≤Spec.Rsa.FixedBaseComb.rows N ∧ k<2^32 ∧
     LoopInput base source table len w bytes N M g x1 k P1 s ∧
     LoopInput base source table len w bytes N M g x2 k P2 t ∧ s.sp=t.sp
-  have step : ∀ k, RelCT isa (I k) (VG.Impl.Bignum.Arm.CombExp.round K1.arithmetic.op) fun u v =>
+  obtain step : ∀ k, RelCT isa (I k) (VG.Impl.Bignum.Arm.CombExp.round K1.arithmetic.op) fun u v =>
       isa.eval .ne u=isa.eval .ne v ∧ (isa.eval .ne u=some false → True) ∧
       (isa.eval .ne u=some true → ∃ m<k, I m u v) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨positiveK,boundK,fitsK,left,right,sp⟩ := h
-    have successor : k-1+1=k := by omega_using [positiveK]
-    have timing := relCT_keep_sp (round_ct K1 K2 ct (i:=k-1) (by omega_using [positiveK, boundK])) (fun _ _ h => h.2.2)
-    have leftInput : RowInput base source table len w bytes N M g
+    obtain successor : k-1+1=k := by omega_using [positiveK]
+    obtain timing := relCT_keep_sp (round_ct K1 K2 ct (i:=k-1) (by omega_using [positiveK, boundK])) (fun _ _ h => h.2.2)
+    obtain leftInput : RowInput base source table len w bytes N M g
         (VG.Proof.Rsa.FixedBaseComb.high N x1 (k-1+1)) (k-1) P1 s := by
       simpa only [successor] using (show RowInput base source table len w bytes N M g
         (VG.Proof.Rsa.FixedBaseComb.high N x1 k) (k-1) P1 s from
         ⟨left.power,left.persistent,left.controls,by simpa only [successor] using left.counter⟩)
-    have rightInput : RowInput base source table len w bytes N M g
+    obtain rightInput : RowInput base source table len w bytes N M g
         (VG.Proof.Rsa.FixedBaseComb.high N x2 (k-1+1)) (k-1) P2 t := by
       simpa only [successor] using (show RowInput base source table len w bytes N M g
         (VG.Proof.Rsa.FixedBaseComb.high N x2 k) (k-1) P2 t from
         ⟨right.power,right.persistent,right.controls,by simpa only [successor] using right.counter⟩)
     obtain ⟨trace,sp'⟩ := timing s t tr1 tr2 u v ⟨leftInput,rightInput,sp⟩ e1 e2
-    have correct1 := round_ok K1 s (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) leftInput.power leftInput.persistent
+    obtain correct1 := round_ok K1 s (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) leftInput.power leftInput.persistent
       leftInput.controls leftInput.counter
-    have correct2 := round_ok K2 t (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) rightInput.power rightInput.persistent
+    obtain correct2 := round_ok K2 t (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) rightInput.power rightInput.persistent
       rightInput.controls rightInput.counter
     rw [←ct.same] at correct2
     obtain ⟨_,_,run1,power1,p1,controls1,counter1,zero1,_,_⟩ := correct1
@@ -1531,7 +1531,7 @@ theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count :
     · change some (!u.z)=some (!v.z)
       rw [zero1,zero2]
     · intro again
-      have nonzero : k-1≠0 := by
+      obtain nonzero : k-1≠0 := by
         intro zero
         change some (!u.z)=some true at again
         simp only [zero1,zero,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
@@ -1674,24 +1674,24 @@ theorem cachedPrepareAt_ok (s : State) {p : Inputs} {slots : List Nat}
   refine WP.mono (prepareArgs_ok s 24 h stable h24 h32 h0) ?_
   rintro u ⟨contextU, stack, _, countU, _, frameU, restU⟩
   have sourceU := contextU.pBytes
-  have bytes : Spec.Rsa.bytesAt u.mem (State.addr p.domain) p.k = p.dom.take p.k := by
+  obtain bytes : Spec.Rsa.bytesAt u.mem (State.addr p.domain) p.k = p.dom.take p.k := by
     simpa only [p.pLength] using sourceU.bytes
-  have input : PrepareInput p.base p.domain p.len p.k u :=
+  obtain input : PrepareInput p.base p.domain p.len p.k u :=
     ⟨contextU.workspace, by rw [stack.savedOutput]; exact stack, contextU.ptr, countU,
       p.minLength, p.maxLength, p.publicSpace,
       by rw [← p.pLength]; exact sourceU.fits,
       by rw [← p.pLength]; exact sourceU.readable,
       by rw [← p.pLength]; exact sourceU.separate,
       by rw [bytes]; exact large, by rw [bytes]; exact odd⟩
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
     intro r hr
     refine ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], ?_⟩
     simp only [prepareWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by decide))
-  have environmentU := environment.after fullU (restU.mono (by simp [roundClobbers]))
+  obtain environmentU := environment.after fullU (restU.mono (by simp [roundClobbers]))
   refine WP.mono (cachedPrepareBody_ok u input contextU environmentU h52 stable) ?_
   rintro t ⟨contextT, readyT, modulus, r2, frameT, restT⟩
-  have frame : Frame (keyPrepareWrites p s) s.mem t.mem :=
+  obtain frame : Frame (keyPrepareWrites p s) s.mem t.mem :=
     (frameU.mono (by
       intro r hr
       simp only [keyPrepareWrites, prepareAtWrites, List.mem_append, List.mem_cons]
@@ -1722,16 +1722,16 @@ theorem cachedPrepareArgs_next (s : State) {p : Inputs} {slots : List Nat}
   refine WP.mono (prepareArgs_ok s 24 h.1 stable h24 h32 h0) ?_
   rintro u ⟨contextU, stack, _, countU, _, frameU, restU⟩
   have sourceU := contextU.pBytes
-  have bytes : Spec.Rsa.bytesAt u.mem (State.addr p.domain) p.k = p.dom.take p.k := by
+  obtain bytes : Spec.Rsa.bytesAt u.mem (State.addr p.domain) p.k = p.dom.take p.k := by
     simpa only [p.pLength] using sourceU.bytes
-  have input : PrepareInput p.base p.domain p.len p.k u :=
+  obtain input : PrepareInput p.base p.domain p.len p.k u :=
     ⟨contextU.workspace, by rw [stack.savedOutput]; exact stack, contextU.ptr, countU,
       p.minLength, p.maxLength, p.publicSpace,
       by rw [← p.pLength]; exact sourceU.fits,
       by rw [← p.pLength]; exact sourceU.readable,
       by rw [← p.pLength]; exact sourceU.separate,
       by rw [bytes]; exact large, by rw [bytes]; exact odd⟩
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
     intro r hr
     refine ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], ?_⟩
     simp only [prepareWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1745,7 +1745,7 @@ theorem cachedPrepareAt_ct {p : Inputs} {slots : List Nat}
     RelCT isa (fun s t => (Context p slots s ∧ CachedGenerationContext p s) ∧
       (Context p slots t ∧ CachedGenerationContext p t) ∧ s.sp = t.sp)
       VG.Impl.Ffdh.Arm.CachedPrepare.code (fun _ _ => True) := by
-  have args := (prepareArgs_ct 24).mono
+  obtain args := (prepareArgs_ct 24).mono
     (P' := fun (s t : State) => (Context p slots s ∧ CachedGenerationContext p s) ∧
       (Context p slots t ∧ CachedGenerationContext p t) ∧ s.sp = t.sp)
     (fun _ _ h => h.2.2) (fun _ _ h => h)
@@ -1796,7 +1796,7 @@ theorem environmentScalar_ok (env : SampleEnvironment) (layout : (p : Inputs) �
   rw [VG.Impl.Ffdh.Arm.SampleScalar.code, WP.seq_iff]
   refine WP.mono (law.correct s h environment normalized odd stable special h52 h24 h28 h32 h60) ?_
   rintro u ⟨contextU, widthU, maskU, frameU, restU⟩
-  have entropyU := entropy.after_frame frameU restU (by
+  obtain entropyU := entropy.after_frame frameU restU (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [size]
@@ -1804,7 +1804,7 @@ theorem environmentScalar_ok (env : SampleEnvironment) (layout : (p : Inputs) �
   rw [WP.seq_iff]
   refine WP.mono (sampleScalarArgs_retained u contextU stable special widthU maskU h32 h40 h48) ?_
   rintro v ⟨contextV, dstV, srcV, countV, zeroV, frameV, restV⟩
-  have entropyV := entropyU.after_frame frameV restV (by
+  obtain entropyV := entropyU.after_frame frameV restV (by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -1817,20 +1817,20 @@ theorem environmentScalar_ok (env : SampleEnvironment) (layout : (p : Inputs) �
   rintro w ⟨contextW, entropyW, bytesW, frameW, restW⟩
   refine WP.mono (localLoad_ok w .r0 contextW.locals (by decide : 0 + 4 ≤ 72)) ?_
   rintro t ⟨loaded, memT, restT⟩
-  have ptr : t.gpr .r0 = p.base := loaded.trans (contextW.saved 0 h0)
-  have memFrame : Frame [] w.mem t.mem := by rw [memT]; exact Frame.refl _ _
-  have args := contextW.toArgumentMemory.after_frame memFrame restT (by simp) (by simp)
-  have contextT : SampleContext p (layout p) slots t := by
+  obtain ptr : t.gpr .r0 = p.base := loaded.trans (contextW.saved 0 h0)
+  obtain memFrame : Frame [] w.mem t.mem := by rw [memT]; exact Frame.refl _ _
+  obtain args := contextW.toArgumentMemory.after_frame memFrame restT (by simp) (by simp)
+  obtain contextT : SampleContext p (layout p) slots t := by
     refine ⟨⟨args, ptr⟩, ?_, ?_, ?_⟩
     · rw [memT, restT.sp]; exact contextW.scalarStart
     · rw [memT, restT.sp]; exact contextW.scalarWidth
     · rw [memT, restT.sp]; exact contextW.scalarMask
-  have entropyT := entropyW.after_frame memFrame restT (by simp)
-  have fullU : Frame (keyScalarWrites p s) s.mem u.mem := frameU.mono (by simp [keyScalarWrites])
-  have fullV : Frame (keyScalarWrites p s) u.mem v.mem := by
+  obtain entropyT := entropyW.after_frame memFrame restT (by simp)
+  obtain fullU : Frame (keyScalarWrites p s) s.mem u.mem := frameU.mono (by simp [keyScalarWrites])
+  obtain fullV : Frame (keyScalarWrites p s) u.mem v.mem := by
     rw [restU.sp] at frameV
     exact frameV.mono (by simp [keyScalarWrites])
-  have fullW : Frame (keyScalarWrites p s) v.mem w.mem := frameW.mono (by simp [keyScalarWrites])
+  obtain fullW : Frame (keyScalarWrites p s) v.mem w.mem := frameW.mono (by simp [keyScalarWrites])
   refine ⟨contextT, entropyT, by rw [memT]; exact bytesW, ?_, ?_⟩
   · rw [memT]
     exact (fullU.trans fullV).trans fullW
@@ -1893,9 +1893,9 @@ theorem environmentSample_ok (env : SampleEnvironment) (layout : (p : Inputs) �
     · exact (Offset.disjoint_base _ (by decide) (by decide)).symm
     · exact (Offset.disjoint_base _ (by decide) (by decide)).symm
     · exact outputs.privateStack.sub_left (Region.sub_prefix (by decide))
-  have readyT := ready.after_external frame workspaceSep baseSep rest context.ptr
-  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
-  have scalar : Octets p.base p.privateValue p.len ((layout p).encode rb) t := by
+  obtain readyT := ready.after_external frame workspaceSep baseSep rest context.ptr
+  obtain fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  obtain scalar : Octets p.base p.privateValue p.len ((layout p).encode rb) t := by
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [(layout p).encode_length size]; exact outputs.privateBuffer.fits
     · rw [(layout p).encode_length size, rest.rd, rest.wr]
@@ -1903,7 +1903,7 @@ theorem environmentSample_ok (env : SampleEnvironment) (layout : (p : Inputs) �
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [(layout p).encode_length size]; exact outputs.privateWorkspace
     · rw [(layout p).encode_length size]; exact bytes
-  have significant := scalar.slice (d := (layout p).lead) (k := (layout p).width) (layout p).width_bounds.1
+  obtain significant := scalar.slice (d := (layout p).lead) (k := (layout p).width) (layout p).width_bounds.1
     (by rw [(layout p).encode_length size]; unfold ScalarLayout.width; have := (layout p).lead_lt; omega_using [this])
   rw [List.take_of_length_le (by rw [List.length_drop, (layout p).encode_length size]; rfl)] at significant
   exact ⟨context, readyT.1, (readyT.2.number fits (by decide : 0 < 8)).trans modulus,
@@ -1932,7 +1932,7 @@ theorem environmentBound_next (env : SampleEnvironment) (bound : Prog isa) (layo
     WP isa bound s (SampleBoundReady p (layout p) slots rb) := by
   refine WP.mono (law.correct s h.context environment normalized odd stable special h52 h24 h28 h32 h60) ?_
   rintro t ⟨context, width, mask, frame, rest⟩
-  have entropy := h.entropy.after_frame frame rest (by
+  obtain entropy := h.entropy.after_frame frame rest (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [size]
@@ -1949,15 +1949,15 @@ theorem environmentScalar_ct (env : SampleEnvironment) (bound : Prog isa) (layou
     (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩) :
     RelCT isa (fun s t => (KeyScalarInput p slots rb1 s ∧ env.holds p s) ∧ (KeyScalarInput p slots rb2 t ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SampleScalar.code bound) (fun _ _ => True) := by
-  have boundCT := (law.ct stable special normalized odd h52 h24 h28 h32 h60).mono
+  obtain boundCT := (law.ct stable special normalized odd h52 h24 h28 h32 h60).mono
     (P' := fun (s t : State) => (KeyScalarInput p slots rb1 s ∧ env.holds p s) ∧ (KeyScalarInput p slots rb2 t ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.context, h.1.2⟩, ⟨h.2.1.1.context, h.2.1.2⟩, h.2.2⟩) (fun _ _ h => h)
   have args := keyScalarArgs_ct.mono
     (P' := fun (s t : State) => SampleBoundReady p (layout p) slots rb1 s ∧ SampleBoundReady p (layout p) slots rb2 t ∧ s.sp = t.sp)
     (fun _ _ h => h.2.2) (fun _ _ h => h)
-  have cut := sampleCut_ct (l := layout p) (fun d hd => (stableSlots_at stable hd).1) size1 size2 entropySep
+  obtain cut := sampleCut_ct (l := layout p) (fun d hd => (stableSlots_at stable hd).1) size1 size2 entropySep
   unfold VG.Impl.Ffdh.Arm.SampleScalar.code
-  have bounded := (relCT_keep_sp boundCT (fun _ _ h => h.2.2.2)).wp
+  obtain bounded := (relCT_keep_sp boundCT (fun _ _ h => h.2.2.2)).wp
     (fun s t h => ⟨environmentBound_next env bound layout law s stable special normalized odd h52 h24 h28 h32 h60 size1 h.1.1 h.1.2,
       environmentBound_next env bound layout law t stable special normalized odd h52 h24 h28 h32 h60 size2 h.2.1.1 h.2.1.2⟩)
   exact bounded.seq ((relCT_chain args
@@ -2049,10 +2049,10 @@ theorem vetted_correct (backend : MontBackend) (s : State) {p : Inputs}
       numAt t.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P ∧
       numAt t.mem (State.addr p.base) p.w 7=1 ∧
       Frame (CombExp.writeRegions p.base s.sp p.len) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have positive : 0<bits p := CachedSample.bits_positive cached
-  have bound : bits p≤8192 := CachedSample.bits_bound p
-  have width : eb.length=(bits p+7)/8 := size.trans (CachedSample.layout_width p positive)
-  have small := VG.Proof.Rsa.FixedBaseComb.rows_small bound
+  obtain positive : 0<bits p := CachedSample.bits_positive cached
+  obtain bound : bits p≤8192 := CachedSample.bits_bound p
+  obtain width : eb.length=(bits p+7)/8 := size.trans (CachedSample.layout_width p positive)
+  obtain small := VG.Proof.Rsa.FixedBaseComb.rows_small bound
   exact correct backend s context cached calls stable h52 ready modulus odd r2 exponent size
     (by omega_using [width]) small.2 (by omega_using [bound]) (VG.Proof.Rsa.FixedBaseComb.rows_pos positive) scalarFit
     (by
@@ -2114,7 +2114,7 @@ theorem arithmetic_ct (backend : MontBackend) (base source table sp : BitVec 32)
       TwoExp.OpInput base len w (TwoExp.CallReady base sp len) b s ∧
       TwoExp.OpInput base len w (TwoExp.CallReady base sp len) b t ∧ s.sp=t.sp)
       ((arithmetic backend base source table sp len w M g N bs).op o a b) (fun _ _=>True) := by
-  have timing := TwoExp.sharedMontgomeryTiming base sp len w backend.name backend.mul
+  obtain timing := TwoExp.sharedMontgomeryTiming base sp len w backend.name backend.mul
     (fun _ _ _ ho ha hb s h=>backend.correct s h ho ha hb) backend.stackOk
     (fun _ _ _ ho ha hb=>backend.rawCT ho ha hb)
   exact timing.op_ct o a b ho ha hb
@@ -2187,28 +2187,28 @@ theorem code_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {eb1 eb2
       (VG.Impl.Ffdh.Arm.CachedPower.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     let l := ScalarLayout.vetted p
-    have positiveBits : 0<bits p := CachedSample.bits_positive h.1.cached
-    have boundBits : bits p≤8192 := CachedSample.bits_bound p
-    have publicWidth : l.width=(bits p+7)/8 := CachedSample.layout_width p positiveBits
-    have widthBound : bits p≤8*l.width := by omega_using [publicWidth]
-    have widthFit : bits p<2^31 := by omega_using [boundBits]
-    have bytesFit : l.width<2^32 := by
+    obtain positiveBits : 0<bits p := CachedSample.bits_positive h.1.cached
+    obtain boundBits : bits p≤8192 := CachedSample.bits_bound p
+    obtain publicWidth : l.width=(bits p+7)/8 := CachedSample.layout_width p positiveBits
+    obtain widthBound : bits p≤8*l.width := by omega_using [publicWidth]
+    obtain widthFit : bits p<2^31 := by omega_using [boundBits]
+    obtain bytesFit : l.width<2^32 := by
       have := l.width_bounds.2
       have := p.maxLength
       omega_using [boundBits, publicWidth]
-    have scheduleFit := (VG.Proof.Rsa.FixedBaseComb.rows_small boundBits).2
+    obtain scheduleFit := (VG.Proof.Rsa.FixedBaseComb.rows_small boundBits).2
     let K1 := CombExp.kernelAt backend p.base l.start (table p) sp0 p.len p.w l.width p.P p.G (bits p)
       eb1 size1 widthBound bytesFit scheduleFit widthFit fit1
     let K2 := CombExp.kernelAt backend p.base l.start (table p) sp0 p.len p.w l.width p.P p.G (bits p)
       eb2 size2 widthBound bytesFit scheduleFit widthFit fit2
-    have timing : CombExp.Timing K1 K2 := CombExp.backendTiming backend p.base l.start (table p) sp0
+    obtain timing : CombExp.Timing K1 K2 := CombExp.backendTiming backend p.base l.start (table p) sp0
       p.len p.w l.width p.P p.G (bits p) eb1 eb2 size1 size2 widthBound bytesFit scheduleFit widthFit fit1 fit2
     have argsReady (eb : List Byte) (size : eb.length=l.width) (a : State) (input : NativeInput p slots eb sp0 a) :
         WP isa VG.Impl.Ffdh.Arm.CachedPower.args a
           (CombExp.PhaseInput p.base l.start (table p) p.len p.w l.width (bits p) p.P
             (CombExp.Persistent p.base l.start (table p) sp0 p.len p.w p.P p.G (bits p) eb)) := by
       let A := CombExp.arithmetic backend p.base l.start (table p) sp0 p.len p.w p.P p.G (bits p) eb
-      have hp := persistent input.cached input.calls input.input.exponent size input.sameSp
+      obtain hp := persistent input.cached input.calls input.input.exponent size input.sameSp
       refine WP.mono (args_ok a input.input.context input.cached input.input.ready h52) ?_
       rintro b ⟨ready,controls,arrays,frame,rest⟩
       exact ⟨ready,A.stable frame rest hp,controls,(arrays 0 (by decide)).trans input.input.modulus,
@@ -2286,7 +2286,7 @@ theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) 
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if keyAccepted p xb then Spec.Rsa.i2osp (keyPower p xb) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
+  obtain fits : Proof.Rsa.Mont.arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1
   rw [VG.Impl.Ffdh.Arm.KeyGenerate.tail, WP.seq_iff]
   refine WP.mono (law.correct s h environment calls stable h52 h56 h32 ready modulus odd r2 significant significantSize (by rw [significantValue]; exact scalarFits)) ?_
   rintro u ⟨contextU, readyU, powerU, modU, _, _, frameU, restU⟩
@@ -2296,25 +2296,25 @@ theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) 
   refine WP.mono (inRange_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6)
     (by decide) (by rw [modU]; exact odd)) ?_
   rintro v ⟨readyV, flag, arraysV, frameV, restV⟩
-  have contextV := contextU.after_workspace frameV restV readyV.ptr (fun d hd => (stableSlots_at stable hd).1)
-  have powerV := (arraysV 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerU
-  have flagV : v.gpr .r11 = if keyAccepted p xb then 1 else 0 := by
+  obtain contextV := contextU.after_workspace frameV restV readyV.ptr (fun d hd => (stableSlots_at stable hd).1)
+  obtain powerV := (arraysV 6 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans powerU
+  obtain flagV : v.gpr .r11 = if keyAccepted p xb then 1 else 0 := by
     rw [powerU, modU] at flag
     simpa only [keyAccepted, decide_eq_true_eq] using flag
   rw [WP.seq_iff]
   refine WP.mono (saveResult_ok v contextV.locals) ?_
   rintro w ⟨⟨_, resultW, frameW⟩, restW⟩
-  have ptrW := (restW.gpr .r0 (by simp)).trans contextV.ptr
-  have contextW := contextV.after_local (by decide : 64 + 4 ≤ 72) frameW restW ptrW
+  obtain ptrW := (restW.gpr .r0 (by simp)).trans contextV.ptr
+  obtain contextW := contextV.after_local (by decide : 64 + 4 ≤ 72) frameW restW ptrW
     (fun d hd => (stableSlots_at stable hd).1) saved
-  have readyW := readyV.after_external frameW (by
+  obtain readyW := readyV.after_external frameW (by
     intro r hr; rw [List.mem_singleton] at hr; subst r
     exact contextV.locals.separate.symm.sub_right (Offset.sub_base _ (by decide))) (by
     intro r hr; rw [List.mem_singleton] at hr; subst r
     simpa only [off, BitVec.add_zero] using
       Offset.disjoint (State.addr v.sp) (d := 0) (n := 4) (e := 64) (k := 4) (by left; decide) (by decide) (by decide)) restW ptrW
-  have powerW := (readyW.2.number fits (by decide : 6 < 8)).trans powerV
-  have powerFits : numAt w.mem (State.addr p.base) p.w 6 < 2 ^ (8 * p.k) := by
+  obtain powerW := (readyW.2.number fits (by decide : 6 < 8)).trans powerV
+  obtain powerFits : numAt w.mem (State.addr p.base) p.w 6 < 2 ^ (8 * p.k) := by
     rw [powerW, keyPower, VG.Proof.Bignum.powMod_eq]
     have large := ready.modulus
     rw [modulus] at large
@@ -2326,29 +2326,29 @@ theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) 
   rintro z ⟨publicZ, frameZ, restZ⟩
   rw [powerW, outputY] at publicZ
   rw [outputY] at frameZ
-  have outW := ((outputs.after restU).after restV).after restW
-  have contextZ := contextW.toArgumentMemory.after_output frameZ restZ outW.publicDomain outW.publicStack
+  obtain outW := ((outputs.after restU).after restV).after restW
+  obtain contextZ := contextW.toArgumentMemory.after_output frameZ restZ outW.publicDomain outW.publicStack
     (fun d hd => (stableSlots_at stable hd).1)
-  have resultZ : z.mem.readW (off (State.addr z.sp) 64) 32 = if keyAccepted p xb then 1 else 0 := by
+  obtain resultZ : z.mem.readW (off (State.addr z.sp) 64) 32 = if keyAccepted p xb then 1 else 0 := by
     rw [restZ.sp, frameZ.readW (r := ⟨off (State.addr w.sp) 64, 4⟩) (Region.contains_self _ _)
       (by simpa using outW.publicStack.sub_left (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))) (by decide), restW.sp, resultW, flagV]
   refine WP.mono (keyFinish_ok z (keyAccepted p xb) contextZ (fun d hd => (stableSlots_at stable hd).1)
     h32 h36 h40 (outW.after restZ) resultZ) ?_
   rintro t ⟨status, privateT, publicT, frameT, _⟩
-  have privateU := scalar.after_call frameU restU (by simpa only [scalarSize] using calls.privateValue)
-  have privateW := (privateU.after_workspace frameV restV).after_frame frameW restW (by
+  obtain privateU := scalar.after_call frameU restU (by simpa only [scalarSize] using calls.privateValue)
+  obtain privateW := (privateU.after_workspace frameV restV).after_frame frameW restW (by
     intro r hr; rw [List.mem_singleton] at hr; subst r
     simpa only [scalarSize, restV.sp, restU.sp] using
       outputs.privateStack.symm.sub_right (Offset.sub_base _ (by decide : 64 + 4 ≤ 72)))
-  have privateZ := privateW.after_frame frameZ restZ (by simpa only [scalarSize, List.mem_singleton, forall_eq] using outputs.separate)
+  obtain privateZ := privateW.after_frame frameZ restZ (by simpa only [scalarSize, List.mem_singleton, forall_eq] using outputs.separate)
   have privateBytesZ := privateZ.bytes
   rw [scalarSize] at privateBytesZ
   rw [privateBytesZ] at privateT
   rw [publicZ] at publicT
   refine ⟨status, privateT, publicT, ?_⟩
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
-  have fullV : Frame (keyCallWrites p s) u.mem v.mem := frameV.mono (by simp [keyCallWrites, keyWrites])
-  have fullW : Frame (keyCallWrites p s) v.mem w.mem := frameW.sub (by
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
+  obtain fullV : Frame (keyCallWrites p s) u.mem v.mem := frameV.mono (by simp [keyCallWrites, keyWrites])
+  obtain fullW : Frame (keyCallWrites p s) v.mem w.mem := frameW.sub (by
     intro r hr; rw [List.mem_singleton] at hr; subst r
     refine ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], ?_⟩
     rw [restV.sp, restU.sp]
@@ -2401,7 +2401,7 @@ theorem environmentCallTail_ct {env : SampleEnvironment} {layout : (p : Inputs) 
     RelCT isa (fun s t => ((SamplePowerInput p (layout p) slots eb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
       ((SamplePowerInput p (layout p) slots eb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.KeyGenerate.tail power) (fun _ _ => True) := by
-  have range := (inRange_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
+  obtain range := (inRange_ct (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)).mono
     (P' := fun (s t : State) => KeyRangeInput p slots s ∧ KeyRangeInput p slots t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.KeyGenerate.tail
@@ -2508,7 +2508,7 @@ theorem cachedKeyGenerate_post (s t : State) {p : Inputs} {rb : List Byte}
   rw [BitVec.setWidth_append_eq_right]
   simp only [State.addr] at domainBytes entropyBytes
   simp only [randLength,count,domain,entropy,domainBytes,entropyBytes,privateValue,publicValue]
-  have output := sampleResult_spec size valid result
+  obtain output := sampleResult_spec size valid result
   rwa [ScalarLayout.vetted_value size] at output
 
 end VG.Proof.Ffdh.Arm
@@ -2534,12 +2534,12 @@ theorem cachedKeyGenerate_correct (prepare sample tail : Prog isa)
       abiPreserved s t ∧ (Proof.Ffdh.cachedGenerateKeyContract abi 176).post s t := by
   obtain ⟨p,rb,_,privateValue,publicValue,domain,count,_,entropy,domainBytes,entropyBytes,input,cached,valid,_cache,_words⟩ :=
     cachedKeyGenerate_data s pre
-  have modValid := VG.Proof.Ffdh.domainValid_mod valid
+  obtain modValid := VG.Proof.Ffdh.domainValid_mod valid
   rw [p.domainP] at modValid
   obtain ⟨tr,t,run,preserved,result⟩ := cachedKeyGenerateFn_ok prepare sample tail cachedGenerationEnvironment
     ScalarLayout.vetted prep sampler law CachedSample.layoutBound s input cached modValid
   refine ⟨tr,t,run,preserved,?_⟩
-  have randLength : (stackArg s 4).toNat=(stackArg s 2).toNat := by
+  obtain randLength : (stackArg s 4).toNat=(stackArg s 2).toNat := by
     sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
       abi,argRegs,reduceClassify,Loc.val,State.addr] at pre
     obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,rLen,_,_,_⟩ := pre

@@ -62,7 +62,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked pdCallCT)
 /-- Two layouts' `pre` and tables from the two entry memories are the same. -/
 theorem pre_eq {L : ELay} {m₁ m₂ : Mem} (q₁ : PreOk L m₁) (q₂ : PreOk L m₂) :
     preW L m₁ = preW L m₂ ∧ prlW L m₁ = prlW L m₂ ∧ tabW L m₁ = tabW L m₂ ∧ tabLW L m₁ = tabLW L m₂ := by
-  have h := q₁.hx.symm.trans q₂.hx
+  obtain h := q₁.hx.symm.trans q₂.hx
   simp only [List.cons.injEq, PRE, TABJ, Sig.tableRegion, Region.mk.injEq, and_true] at h
   obtain ⟨⟨h1, h2⟩, h3, h4⟩ := h
   exact ⟨h1, BitVec.eq_of_toNat_eq (by omega_using [h2]), h4, h3⟩
@@ -91,33 +91,33 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
         Table.TabX Hl.stream f (arg 8) e.L.Q e.L.scr pL aiL auL afL t)
       (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code) fun _ _ => True := by
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
-  have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
+  obtain hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   replace hD0 : 0 < Hl.D := hD0
   have hk1024 := hL.k1024
   have cSt : oSt = 3072 := rfl
   have cR : oRsa = 8192 := rfl
-  have f4 : MFit 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) :=
+  obtain f4 : MFit 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) :=
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
-  have f2 : MFit (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D :=
+  obtain f2 : MFit (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D :=
     ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
-  have ly : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → Slots e.L W →
+  obtain ly : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → Slots e.L W →
       Lay t e.L.Q e.L.scr := fun hc R hS => hc.lay hL hP16 R hS.scr
-  have hk3 : ∀ {W : Nat → BitVec 64}, Slots e.L W → W 21 = BitVec.ofNat 64 e.L.k.toNat := fun hS => by
+  obtain hk3 : ∀ {W : Nat → BitVec 64}, Slots e.L W → W 21 = BitVec.ofNat 64 e.L.k.toNat := fun hS => by
     rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hm3 : ∀ {W : Nat → BitVec 64}, Slots e.L W → W 28 = BitVec.ofNat 64 e.L.ml.toNat := fun hS => by
+  obtain hm3 : ∀ {W : Nat → BitVec 64}, Slots e.L W → W 28 = BitVec.ofNat 64 e.L.ml.toNat := fun hS => by
     rw [hS.ml, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   -- The seed's and the message's bytes are apart from our working space.
-  have hsdS : ∀ i < Hl.D, ∀ j < oRsa, off e.L.sd i ≠ off e.L.scr j := fun i hi j hj
+  obtain hsdS : ∀ i < Hl.D, ∀ j < oRsa, off e.L.sd i ≠ off e.L.scr j := fun i hi j hj
       (h' : e.L.sd + BitVec.ofNat 64 i = e.L.scr + BitVec.ofNat 64 j) =>
     (hL.sR _ (ro_SD e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega_arith) (by omega_arith)))
       (h' ▸ Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega_arith)
         (by have := hL.bR _ (ro_SD e.L); simp only at this; omega_arith))
-  have hmsS : ∀ i < e.L.ml.toNat, ∀ j < oRsa, off e.L.msg i ≠ off e.L.scr j := fun i hi j hj
+  obtain hmsS : ∀ i < e.L.ml.toNat, ∀ j < oRsa, off e.L.msg i ≠ off e.L.scr j := fun i hi j hj
       (h' : e.L.msg + BitVec.ofNat 64 i = e.L.scr + BitVec.ofNat 64 j) =>
     (hL.sR _ (ro_MSG e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega_arith) (by omega_arith)))
       (h' ▸ Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat) (by omega_arith)
         (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega_arith))
-  have inRd : ∀ {g vv m₀} {u : State} {R : Region}, Ctx e.L g vv m₀ u →
+  obtain inRd : ∀ {g vv m₀} {u : State} {R : Region}, Ctx e.L g vv m₀ u →
       R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD] ++ e.L.X ++ [e.L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
     ⟨_, List.mem_append_left _ (by rw [hcu.rd]; exact hR), h3⟩
@@ -219,9 +219,9 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
         WP.mono (loads_ok hL hP16 hc11 hq hr11) fun _ ⟨hc12, hm12, hr12⟩ =>
           ⟨hc12, V, _, hm12 ▸ hm11 ▸ R10, hS10, readyP_of hq q₁ hr12, ⟨by simp [pubW, upd], by simp [pubW, upd]⟩⟩
   refine pdCallCT c fun t₁ t₂ ⟨_, _, hl, ⟨c₁, _, _, R₁, _, r₁, A₁⟩, ⟨c₂, _, _, R₂, _, r₂, A₂⟩⟩ => ?_
-  have r₂' := readyP_of q₁ q₂ r₂
+  obtain r₂' := readyP_of q₁ q₂ r₂
   obtain ⟨w, wl, -⟩ := pre_eq q₁ q₂
-  have sa : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → CallArgs e.L W →
+  obtain sa : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → CallArgs e.L W →
       stackArg t 0 = e.L.scr + BitVec.ofNat 64 8192 ∧ stackArg t 1 = e.L.sl - BitVec.ofNat 64 1024 :=
     fun hc R hA => ⟨by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega_arith)).trans hA.s0,
       by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 1 (by unfold nW frameBytes; omega_arith)).trans hA.s1⟩
@@ -238,8 +238,8 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     simp only [Nat.mul_div_cancel _ (by decide : 0 < 8)] at hx
     rw [r₁.x2, r₁.x3, r₂'.x2, r₂'.x3, pre_words hL c₁ q₁, pre_words hL c₂ q₂, ← w, ← wl, hx]
   · rw [r₁.x4, r₁.x5, r₂.x4, r₂.x5]
-    have b₁ := c₁.bytes_ro hL (ro_E e.L)
-    have b₂ := c₂.bytes_ro hL (ro_E e.L)
+    obtain b₁ := c₁.bytes_ro hL (ro_E e.L)
+    obtain b₂ := c₂.bytes_ro hL (ro_E e.L)
     simp only at b₁ b₂
     rw [b₁, b₂, hl.2.1]
 

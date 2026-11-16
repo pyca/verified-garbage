@@ -86,8 +86,8 @@ theorem y_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L.pl + 
 
 /-- `p ≡ 1 (mod q)`, as the code checks it. -/
 theorem pmod_iff {p q : Nat} (hp : 1 ≤ p) (hq : 2 ≤ q) : (p - 1) % q = 0 ↔ p % q = 1 := by
-  have h := Nat.div_add_mod p q
-  have hr := Nat.mod_lt p (show 0 < q by omega_using [hq])
+  obtain h := Nat.div_add_mod p q
+  obtain hr := Nat.mod_lt p (show 0 < q by omega_using [hq])
   generalize p / q = a at h
   generalize p % q = r at h hr ⊢
   subst h
@@ -104,10 +104,10 @@ theorem pmod_iff {p q : Nat} (hp : 1 ≤ p) (hq : 2 ≤ q) : (p - 1) % q = 0 ↔
 theorem PBody.keepQ {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PBody L m m') :
     Outside L.Q 1600 (2 ^ 64 - 1600) m m' := by
   intro x hx
-  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega_using [e]
-  have h256 : 256 ≤ L.qOff := by rw [hL.qOff_eq]; omega_using []
-  have hlt := (x - L.S).isLt
-  have hlt' := (x - L.Q).isLt
+  obtain hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega_using [e]
+  obtain h256 : 256 ≤ L.qOff := by rw [hL.qOff_eq]; omega_using []
+  obtain hlt := (x - L.S).isLt
+  obtain hlt' := (x - L.Q).isLt
   refine h x (Or.inr ?_)
   simp only [ofs, Lay.Q, off] at hx ⊢
   rw [Offset.toNat_sub_add x L.S (by omega_arith)] at hx
@@ -146,11 +146,11 @@ theorem Checked.elem {s t u : State} {L : Lay} {key sig : Addr} {d : Nat} (hL : 
   have hw := hL.wp_ge
   have hnw := hL.nowrap
   have hbuf := hL.buf_end
-  have e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e24 := e 24
-  have hqZ : L.qOff ≤ L.Z := by have := hbuf; simp only [Lay.bOff] at this; omega_using [this]
-  have hb := p_arrays_body hL o
-  have pb : PBody L t.mem u.mem := PBody.of o (by omega_using [e1]) (by simp only [Lay.qOff, Lay.slot_eq]; omega_using [])
+  obtain e : ∀ j, slot L.wp j = 256 + j * (8 * (L.wp + 2)) := fun _ => rfl
+  obtain e0 := e 0; have e1 := e 1; have e24 := e 24
+  obtain hqZ : L.qOff ≤ L.Z := by have := hbuf; simp only [Lay.bOff] at this; omega_using [this]
+  obtain hb := p_arrays_body hL o
+  obtain pb : PBody L t.mem u.mem := PBody.of o (by omega_using [e1]) (by simp only [Lay.qOff, Lay.slot_eq]; omega_using [])
   refine ⟨hin, hc.scr.congr k.2.2, hc.regs.keep k hb hrs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [arrP, o.wordsVal (by omega_using [e0, e1]) (by omega_arith)]; exact hc.p0
   · rw [o.word (by omega_using [e0, e1]) (by omega_arith)]; exact hc.ptop
@@ -193,10 +193,10 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : Sta
   generalize hP : pOf s.mem L key = p
   generalize hQ' : qOf s.mem L key = q
   generalize hG : gOf s.mem L key = g
-  have vals : ∀ {m : Mem}, Kept L s.mem m → pOf m L key = p ∧ qOf m L key = q ∧ gOf m L key = g := fun hm => by
+  obtain vals : ∀ {m : Mem}, Kept L s.mem m → pOf m L key = p ∧ qOf m L key = q ∧ gOf m L key = g := fun hm => by
     obtain ⟨a, b, c⟩ := params_kept hk hm
     exact ⟨a.trans hP, b.trans hQ', c.trans hG⟩
-  have hPar : ParamsOk s.mem L key ↔ VG.Proof.Dsa.shapeValid p q ∧
+  obtain hPar : ParamsOk s.mem L key ↔ VG.Proof.Dsa.shapeValid p q ∧
       (1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1 := by
     rw [ParamsOk, hP, hQ', hG]
   unfold checkParams
@@ -205,9 +205,9 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : Sta
   simp only [SizesOk] at hSz
   rw [hP, hQ'] at hSz
   rw [hQ'] at w₁
-  have K₁ : Kept L s.mem t₁.mem := Kept.ofHdr hL o₁
-  have hs₁ : ScrL t₁ L := hs.congr k₁.2.2
-  have hk₁ := hk.keep k₁.2.1 k₁.2.2
+  obtain K₁ : Kept L s.mem t₁.mem := Kept.ofHdr hL o₁
+  obtain hs₁ : ScrL t₁ L := hs.congr k₁.2.2
+  obtain hk₁ := hk.keep k₁.2.1 k₁.2.2
   refine odds_ok hL hs₁ hr₁ hk₁ (fun t₂ hpo hqo m₂ k₂ => ?_)
     (fun t₂ hn m₂ k₂ => hfail t₂ (fun hK => hn (by
         obtain ⟨ep, eq, -⟩ := vals K₁
@@ -216,67 +216,67 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : Sta
   obtain ⟨ep₁, eq₁, -⟩ := vals K₁
   rw [ep₁] at hpo
   rw [eq₁] at hqo
-  have B := VG.Proof.Dsa.supported_bounds hSz
-  have K₂ : Kept L s.mem t₂.mem := by rw [m₂]; exact K₁
-  have k₁₂ := k₁.trans k₂
-  have hs₂ : ScrL t₂ L := hs.congr k₁₂.2.2
-  have hr₂ := hr₁.keepM k₂ m₂
-  have hk₂ := hk.keep k₁₂.2.1 k₁₂.2.2
-  have w₂ : word t₂.mem L.S hLens = pack L.pl L.ql (Spec.Dsa.bitLength q / 8) d := by rw [m₂]; exact w₁
+  obtain B := VG.Proof.Dsa.supported_bounds hSz
+  obtain K₂ : Kept L s.mem t₂.mem := by rw [m₂]; exact K₁
+  obtain k₁₂ := k₁.trans k₂
+  obtain hs₂ : ScrL t₂ L := hs.congr k₁₂.2.2
+  obtain hr₂ := hr₁.keepM k₂ m₂
+  obtain hk₂ := hk.keep k₁₂.2.1 k₁₂.2.2
+  obtain w₂ : word t₂.mem L.S hLens = pack L.pl L.ql (Spec.Dsa.bitLength q / 8) d := by rw [m₂]; exact w₁
   -- `p mod q = 1`.
   refine WP.seq (WP.mono (pModQ_ok hL hs₂ hr₂ hk₂ (by rw [(vals K₂).2.1]; omega_using [hqo]))
     fun t₃ ⟨⟨iq₃, q0₃, qtop₃, r0₃, qb₃⟩, k₃⟩ => ?_)
   rw [(vals K₂).1, (vals K₂).2.1] at r0₃
   rw [(vals K₂).2.1] at q0₃
-  have B₃ : Body L t₂.mem t₃.mem := qb₃.body hL
-  have K₃ := K₂.trans (Kept.ofBody hL B₃)
-  have k₁₃ := k₁₂.trans k₃
-  have hs₃ : ScrL t₃ L := hs.congr k₁₃.2.2
-  have hr₃ := hr₂.keep k₃ B₃
-  have w₃ : word t₃.mem L.S hLens = pack L.pl L.ql (Spec.Dsa.bitLength q / 8) d := by rw [B₃.word (by decide)]; exact w₂
+  obtain B₃ : Body L t₂.mem t₃.mem := qb₃.body hL
+  obtain K₃ := K₂.trans (Kept.ofBody hL B₃)
+  obtain k₁₃ := k₁₂.trans k₃
+  obtain hs₃ : ScrL t₃ L := hs.congr k₁₃.2.2
+  obtain hr₃ := hr₂.keep k₃ B₃
+  obtain w₃ : word t₃.mem L.S hLens = pack L.pl L.ql (Spec.Dsa.bitLength q / 8) d := by rw [B₃.word (by decide)]; exact w₂
   refine WP.ite _ (Steps.eval_zero _ _) (fun hb₃ => ?_) (fun hb₃ => hfail t₃ (fun hK => by
       have := (hPar.mp hK).2.2.1
       rw [pmod_iff (by omega_using [hpo]) (by omega_using [B])] at this
       rw [r0₃.mpr this] at hb₃
       exact absurd hb₃ (by decide)) K₃ hr₃ hs₃ (keepPre (keepPre (keepPre k₁₃))))
-  have pm : p % q = 1 := r0₃.mp (beq_iff_eq.mp hb₃)
+  obtain pm : p % q = 1 := r0₃.mp (beq_iff_eq.mp hb₃)
   -- The P space.
   refine WP.seq (WP.mono (setupP_ok hL hs₃ hr₃ (hk.keep k₁₃.2.1 k₁₃.2.2)
       (by rw [(vals K₃).1]; omega_using [B]) (by rw [(vals K₃).1]; exact hpo))
     fun t₄ ⟨⟨ip₄, p0₄, ptop₄, inv₄, _, p24₄, pb₄⟩, k₄⟩ => ?_)
   rw [(vals K₃).1] at p0₄ p24₄
-  have B₄ : Body L t₃.mem t₄.mem := pb₄.body hL
-  have K₄ := K₃.trans (Kept.ofBody hL B₄)
-  have k₁₄ := k₁₃.trans k₄
-  have hs₄ : ScrL t₄ L := hs.congr k₁₄.2.2
-  have hr₄ := hr₃.keep k₄ B₄
-  have hk₄ := hk.keep k₁₄.2.1 k₁₄.2.2
+  obtain B₄ : Body L t₃.mem t₄.mem := pb₄.body hL
+  obtain K₄ := K₃.trans (Kept.ofBody hL B₄)
+  obtain k₁₄ := k₁₃.trans k₄
+  obtain hs₄ : ScrL t₄ L := hs.congr k₁₄.2.2
+  obtain hr₄ := hr₃.keep k₄ B₄
+  obtain hk₄ := hk.keep k₁₄.2.1 k₁₄.2.2
   -- `Checked` before g's check.
-  have C₄ : Checked s t₄ L key sig d := ⟨ip₄, hs₄, hr₄, (by rw [hP]; exact p0₄), ptop₄, inv₄,
+  obtain C₄ : Checked s t₄ L key sig d := ⟨ip₄, hs₄, hr₄, (by rw [hP]; exact p0₄), ptop₄, inv₄,
     (by rw [hP]; exact p24₄), (by rw [pb₄.arrQ hL, hQ']; exact q0₃), (by rw [pb₄.qtop hL]; exact qtop₃),
     (by rw [B₄.word (by decide), hQ']; exact w₃)⟩
   -- g.
   refine WP.seq (WP.seq (WP.mono (ptrG_ok hs₄ hL hr₄) fun t₅ ⟨⟨a7, a8, m₅⟩, k₅⟩ => ?_))
-  have K₅ : Kept L s.mem t₅.mem := by rw [m₅]; exact K₄
-  have hk₅ := hk₄.keep k₅.2.1 k₅.2.2
-  have C₅ : Checked s t₅ L key sig d := C₄.elem hL k₅ (by decide) (k₅.gpr (by decide)) (ip₄.keep k₅)
+  obtain K₅ : Kept L s.mem t₅.mem := by rw [m₅]; exact K₄
+  obtain hk₅ := hk₄.keep k₅.2.1 k₅.2.2
+  obtain C₅ : Checked s t₅ L key sig d := C₄.elem hL k₅ (by decide) (k₅.gpr (by decide)) (ip₄.keep k₅)
     (by rw [m₅]; exact Outside.refl _ _ _ _)
   refine WP.mono (checkElem_ok hL C₅.scr C₅.regs C₅.inp hk₅
       (hk₅.sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) a7 a8 (C₅.p0.trans hP) (by omega_using [B]) hpo C₅.inv
       (by rw [C₅.p24, hP]))
     fun t₆ ⟨⟨ip₆, r0₆, o₆, t1₆⟩, k₆⟩ => ?_
-  have eg : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₅.mem (off key (L.pl + L.ql)) L.pl) = g := (vals K₅).2.2
+  obtain eg : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₅.mem (off key (L.pl + L.ql)) L.pl) = g := (vals K₅).2.2
   rw [eg, (vals K₅).2.1] at r0₆
-  have C₆ : Checked s t₆ L key sig d := C₅.elem hL k₆ (by decide) t1₆ ip₆ o₆
-  have K₆ := K₅.trans (Kept.ofBody hL (p_arrays_body hL o₆))
-  have k₁₆ := (k₁₄.trans k₅).trans k₆
+  obtain C₆ : Checked s t₆ L key sig d := C₅.elem hL k₆ (by decide) t1₆ ip₆ o₆
+  obtain K₆ := K₅.trans (Kept.ofBody hL (p_arrays_body hL o₆))
+  obtain k₁₆ := (k₁₄.trans k₅).trans k₆
   refine WP.ite _ (Steps.eval_zero _ _) (fun hb₆ => ?_) (fun hb₆ => hfail t₆ (fun hK => by
-      have H := hPar.mp hK
+      obtain H := hPar.mp hK
       rw [r0₆.mpr ⟨H.2.1.1, H.2.1.2, H.2.2.2⟩] at hb₆
       exact absurd hb₆ (by decide)) K₆ C₆.regs C₆.scr k₁₆)
-  have hg := r0₆.mp (beq_iff_eq.mp hb₆)
+  obtain hg := r0₆.mp (beq_iff_eq.mp hb₆)
   -- `rest`.
-  have hok : ParamsOk s.mem L key := hPar.mpr ⟨⟨hSz, hqo, hpo⟩, ⟨hg.1, hg.2.1⟩,
+  obtain hok : ParamsOk s.mem L key := hPar.mpr ⟨⟨hSz, hqo, hpo⟩, ⟨hg.1, hg.2.1⟩,
     (pmod_iff (by omega_using [hpo]) (by omega_using [B])).mpr pm, hg.2.2⟩
   exact hrest t₆ hok C₆ K₆ k₁₆
 
@@ -292,29 +292,29 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State 
   refine checkParams_ok hL hs hr hlen hd (hk.take (by omega_using [])) (fun t hP hc hb kc => ?_)
     (fun t hn hb hrt hst kc => hfail t (fun hK => hn (keyOk_iff.mp hK).1) hb hrt hst (keepPre (keepPre kc)))
   have hpo : pOf s.mem L key % 2 = 1 := hP.1.2.2
-  have hp2 : 2 ≤ pOf s.mem L key := (VG.Proof.Dsa.supported_bounds hP.1.1).1
+  obtain hp2 : 2 ≤ pOf s.mem L key := (VG.Proof.Dsa.supported_bounds hP.1.1).1
   unfold andThen
   refine WP.seq (WP.seq (WP.mono (ptrY_ok hc.scr hL hc.regs) fun t₇ ⟨⟨b7, b8, m₇⟩, k₇⟩ => ?_))
-  have k₀₇ := kc.trans k₇
-  have hk₇ := hk.keep k₀₇.2.1 k₀₇.2.2
-  have C₇ : Checked s t₇ L key sig d := hc.elem hL k₇ (by decide) (k₇.gpr (by decide)) (hc.inp.keep k₇)
+  obtain k₀₇ := kc.trans k₇
+  obtain hk₇ := hk.keep k₀₇.2.1 k₀₇.2.2
+  obtain C₇ : Checked s t₇ L key sig d := hc.elem hL k₇ (by decide) (k₇.gpr (by decide)) (hc.inp.keep k₇)
     (by rw [m₇]; exact Outside.refl _ _ _ _)
   refine WP.mono (checkElem_ok hL C₇.scr C₇.regs C₇.inp (hk₇.take (by omega_using []))
       (hk₇.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 b8 C₇.p0 hp2 hpo C₇.inv C₇.p24)
     fun t₈ ⟨⟨ip₈, r0₈, o₈, t1₈⟩, k₈⟩ => ?_
-  have K₇ : Kept L s.mem t₇.mem := by rw [m₇]; exact hb
-  have eq₇ := (params_kept (hk.take (by omega_using [])) K₇).2.1
-  have ey : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₇.mem (off key (2 * L.pl + L.ql)) L.pl) = yOf s.mem L key :=
+  obtain K₇ : Kept L s.mem t₇.mem := by rw [m₇]; exact hb
+  obtain eq₇ := (params_kept (hk.take (by omega_using [])) K₇).2.1
+  obtain ey : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₇.mem (off key (2 * L.pl + L.ql)) L.pl) = yOf s.mem L key :=
     y_kept hk K₇
   rw [ey, eq₇] at r0₈
-  have C₈ : Checked s t₈ L key sig d := C₇.elem hL k₈ (by decide) t1₈ ip₈ o₈
-  have K₈ := K₇.trans (Kept.ofBody hL (p_arrays_body hL o₈))
-  have k₀₈ := k₀₇.trans k₈
+  obtain C₈ : Checked s t₈ L key sig d := C₇.elem hL k₈ (by decide) t1₈ ip₈ o₈
+  obtain K₈ := K₇.trans (Kept.ofBody hL (p_arrays_body hL o₈))
+  obtain k₀₈ := k₀₇.trans k₈
   refine WP.ite _ (Steps.eval_zero _ _) (fun hb₈ => ?_) (fun hb₈ => hfail t₈ (fun hK => by
-      have H := (keyOk_iff.mp hK).2
+      obtain H := (keyOk_iff.mp hK).2
       rw [r0₈.mpr ⟨H.1.1, H.1.2, H.2⟩] at hb₈
       exact absurd hb₈ (by decide)) K₈ C₈.regs C₈.scr k₀₈)
-  have hy := r0₈.mp (beq_iff_eq.mp hb₈)
+  obtain hy := r0₈.mp (beq_iff_eq.mp hb₈)
   exact hrest t₈ (keyOk_iff.mpr ⟨hP, ⟨hy.1, hy.2.1⟩, hy.2.2⟩) C₈ K₈ k₀₈
 
 end VG.Proof.Dsa.RISCV64

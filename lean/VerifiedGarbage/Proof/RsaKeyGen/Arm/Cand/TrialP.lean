@@ -72,14 +72,14 @@ theorem entryS_ok {u : State} {B : BitVec 32} {Z W : Nat} (hw : Ws u B Z W nArr)
   simp only [List.nil_append]
   refine wp_mov (op2_imm (by decide)) fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
     wp_mov (op2_lsl (by decide)) fun u7 v7 => wp_mov (op2_lsr (by decide)) fun u8 v8 => ?_
-  have k8 : Rest [.r0, .r1, .r2, .r4, .r5, .r6] u u8 :=
+  obtain k8 : Rest [.r0, .r1, .r2, .r4, .r5, .r6] u u8 :=
     (v1.rest (by simp)).trans ((k2.mono (by simp)).trans ((k3.mono (by simp)).trans ((k4.mono (by simp)).trans
       ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans ((v7.rest (by simp)).trans (v8.rest (by simp))))))))
-  have m8 : u8.mem = u.mem := by rw [v8.mem, v7.mem, v6.mem, v5.mem, m4, m3, m2, v1.mem]
-  have hw8 := hw.rest k8
-  have r3 : ∀ x : State, Rest [.r0, .r1, .r2, .r4, .r5, .r6] u x → x.gpr .r3 = u.gpr .r3 :=
+  obtain m8 : u8.mem = u.mem := by rw [v8.mem, v7.mem, v6.mem, v5.mem, m4, m3, m2, v1.mem]
+  obtain hw8 := hw.rest k8
+  obtain r3 : ∀ x : State, Rest [.r0, .r1, .r2, .r4, .r5, .r6] u x → x.gpr .r3 = u.gpr .r3 :=
     fun x h => h.gpr _ (by decide)
-  have e8 : u8.gpr .r4 = ninv (u.gpr .r3) := by
+  obtain e8 : u8.gpr .r4 = ninv (u.gpr .r3) := by
     rw [v8.gpr, v7.gpr, v6.gpr, dpVal, v5.gpr, v5.other _ (by decide), e4, e3, e2, v1.gpr,
       r3 u3 ((v1.rest (by simp)).trans ((k2.mono (by simp)).trans (k3.mono (by simp)))),
       r3 u2 ((v1.rest (by simp)).trans (k2.mono (by simp))), r3 u1 (v1.rest (by simp))]
@@ -131,41 +131,41 @@ theorem trialWord_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
   obtain ⟨hw, mem, rest, r0, r1, a, r2, ha, hc⟩ := h
   have hn := hw.nowrap
   have hW := hw.wle
-  have ea : State.addr (u.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aC + 4 * j) := by
+  obtain ea : State.addr (u.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aC + 4 * j) := by
     rw [r0, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hw.addr (by omega_arith)
-  have rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := hw.read (by omega_arith)
-  have r3u : u.gpr .r3 = BitVec.ofNat 32 s := by rw [rest.gpr _ (by decide), r3]
-  have r4u : (u.gpr .r4).toNat = (u₀.gpr .r4).toNat := by rw [rest.gpr _ (by decide)]
+  obtain rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := hw.read (by omega_arith)
+  obtain r3u : u.gpr .r3 = BitVec.ofNat 32 s := by rw [rest.gpr _ (by decide), r3]
+  obtain r4u : (u.gpr .r4).toNat = (u₀.gpr .r4).toNat := by rw [rest.gpr _ (by decide)]
   set x := w32 m (State.addr B) (arr W aC + 4 * j) with ex
-  have rx : (u.mem.readW (off (State.addr B) (arr W aC + 4 * j)) 32).toNat = x := by rw [mem]
+  obtain rx : (u.mem.readW (off (State.addr B) (arr W aC + 4 * j)) 32).toNat = x := by rw [mem]
   simp only [trialWord, List.cons_append, List.append_assoc]
   refine wp_ldr (by decide) ea rd fun u1 v1 => wp_mov (op2_lsl (by decide)) fun u2 v2 =>
     wp_mov (op2_lsr (by decide)) fun u3 v3 => ?_
-  have h3 : (u3.gpr .r5).toNat = x % 2 ^ 16 := by rw [v3.gpr, v2.gpr, lo16, v1.gpr, rx]
-  have k3 : Rest [.r5] u u3 := (v1.rest (by simp)).trans ((v2.rest (by simp)).trans (v3.rest (by simp)))
-  have m3 : u3.mem = u.mem := by rw [v3.mem, v2.mem, v1.mem]
+  obtain h3 : (u3.gpr .r5).toNat = x % 2 ^ 16 := by rw [v3.gpr, v2.gpr, lo16, v1.gpr, rx]
+  obtain k3 : Rest [.r5] u u3 := (v1.rest (by simp)).trans ((v2.rest (by simp)).trans (v3.rest (by simp)))
+  obtain m3 : u3.mem = u.mem := by rw [v3.mem, v2.mem, v1.mem]
   refine redc_ok h3 (Nat.mod_lt _ (by decide)) (by rw [k3.gpr _ (by decide), r2]) ha
     (by rw [k3.gpr _ (by decide), r4u]) (by rw [k3.gpr _ (by decide), r3u]) hs hinv
     fun u4 k4 m4 a1 ha1 hc1 r24 => ?_
   simp only [List.nil_append]
-  have ea4 : State.addr (u4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aC + 4 * j) := by
+  obtain ea4 : State.addr (u4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aC + 4 * j) := by
     rw [k4.gpr _ (by decide), k3.gpr _ (by decide)]; exact ea
-  have rd4 : InRegions (u4.rd ++ u4.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := by
+  obtain rd4 : InRegions (u4.rd ++ u4.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := by
     rw [k4.rd, k4.wr, k3.rd, k3.wr]; exact rd
   refine wp_ldr (by decide) ea4 rd4 fun u5 v5 => wp_mov (op2_lsr (by decide)) fun u6 v6 => ?_
-  have h6 : (u6.gpr .r5).toNat = x / 2 ^ 16 := by rw [v6.gpr, hi16, v5.gpr, m4, m3, rx]
-  have k6 : Rest [.r5] u4 u6 := (v5.rest (by simp)).trans (v6.rest (by simp))
-  have hx : x < 2 ^ 32 := (m.readW _ 32).isLt
+  obtain h6 : (u6.gpr .r5).toNat = x / 2 ^ 16 := by rw [v6.gpr, hi16, v5.gpr, m4, m3, rx]
+  obtain k6 : Rest [.r5] u4 u6 := (v5.rest (by simp)).trans (v6.rest (by simp))
+  obtain hx : x < 2 ^ 32 := (m.readW _ 32).isLt
   refine redc_ok h6 (by omega_arith) (by rw [k6.gpr _ (by decide), r24]) ha1
     (by rw [k6.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), r4u])
     (by rw [k6.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), r3u]) hs hinv
     fun u7 k7 m7 a2 ha2 hc2 r27 => ?_
   refine wp_dp (op2_imm (by decide)) fun u8 v8 => wp_subs (op2_imm (by decide)) fun u9 v9 z9 => WP.block_nil ?_
-  have kall : Rest [.r0, .r1, .r2, .r5, .r6] u u9 :=
+  obtain kall : Rest [.r0, .r1, .r2, .r5, .r6] u u9 :=
     ((k3.mono (by simp)).trans ((k4.mono (by simp)).trans ((k6.mono (by simp)).trans ((k7.mono (by simp)).trans
       ((v8.rest (by simp)).trans (v9.rest (by simp)))))))
-  have m9 : u9.mem = m := by rw [v9.mem, v8.mem, m7, v6.mem, v5.mem, m4, m3, mem]
-  have r1v : u9.gpr .r1 = BitVec.ofNat 32 (W - 2 - (j + 1)) := by
+  obtain m9 : u9.mem = m := by rw [v9.mem, v8.mem, m7, v6.mem, v5.mem, m4, m3, mem]
+  obtain r1v : u9.gpr .r1 = BitVec.ofNat 32 (W - 2 - (j + 1)) := by
     rw [v9.gpr, v8.other _ (by decide), k7.gpr _ (by decide), k6.gpr _ (by decide), k4.gpr _ (by decide),
       k3.gpr _ (by decide), r1]
     apply BitVec.eq_of_toNat_eq
@@ -221,18 +221,18 @@ theorem trialFlag_ok {u : State} {a s : Nat} {f : Bool} (r2 : u.gpr .r2 = BitVec
   refine k u7 ((v1.rest (by simp)).trans ((v2.rest (by simp)).trans ((v3.rest (by simp)).trans ((v4.rest (by simp)).trans
     ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans (v7.rest (by simp))))))))
     (by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]) ?_
-  have ha' : a < 2 ^ 14 := by omega_arith
-  have hs' : s < 2 ^ 14 := by omega_arith
-  have b5 : u2.gpr .r5 = BitVec.ofNat 32 (b2n (decide (a = 0))) := by
+  obtain ha' : a < 2 ^ 14 := by omega_arith
+  obtain hs' : s < 2 ^ 14 := by omega_arith
+  obtain b5 : u2.gpr .r5 = BitVec.ofNat 32 (b2n (decide (a = 0))) := by
     rw [v2.gpr, v1.gpr, dpVal, r2]
     apply BitVec.eq_of_toNat_eq
     rw [isZero_bit (by rw [ofNat_toNat_lt (by omega_arith)]; omega_arith), ofNat_toNat_lt (by omega_arith),
       ofNat_toNat_lt (by cases decide (a = 0) <;> decide)]
     by_cases h : a = 0 <;> simp [h, b2n]
-  have b6 : u5.gpr .r6 = BitVec.ofNat 32 (b2n (decide (a = s))) := by
+  obtain b6 : u5.gpr .r6 = BitVec.ofNat 32 (b2n (decide (a = s))) := by
     rw [v5.gpr, v4.gpr, dpVal, v3.gpr, dpVal, v2.other _ (by decide), v1.other _ (by decide), r2,
       v2.other _ (by decide), v1.other _ (by decide), r3]
-    have hx : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 s).toNat < 2 ^ 14 := by
+    obtain hx : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 s).toNat < 2 ^ 14 := by
       rw [BitVec.toNat_xor, ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)]
       exact Nat.xor_lt_two_pow ha' hs'
     apply BitVec.eq_of_toNat_eq
@@ -240,17 +240,17 @@ theorem trialFlag_ok {u : State} {a s : Nat} {f : Bool} (r2 : u.gpr .r2 = BitVec
     have : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 s).toNat = 0 ↔ a = s := by
       constructor
       · intro e
-        have e' := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp (BitVec.eq_of_toNat_eq (by rw [e]; rfl)))
+        obtain e' := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp (BitVec.eq_of_toNat_eq (by rw [e]; rfl)))
         rwa [ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)] at e'
       · rintro rfl; simp
     by_cases h : a = s <;> simp [h, b2n] at this ⊢ <;> omega_arith
-  have r11' : u6.gpr .r11 = BitVec.ofNat 32 (b2n f) := by
+  obtain r11' : u6.gpr .r11 = BitVec.ofNat 32 (b2n f) := by
     rw [v6.other _ (by decide), v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide),
       v2.other _ (by decide), v1.other _ (by decide), r11]
-  have r5' : u5.gpr .r5 = BitVec.ofNat 32 (b2n (decide (a = 0))) := by
+  obtain r5' : u5.gpr .r5 = BitVec.ofNat 32 (b2n (decide (a = 0))) := by
     rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), b5]
   rw [v7.gpr, dpVal, r11', v6.gpr, dpVal, r5', b6]
-  have e : decide (a = 0 ∨ a = s) = (decide (a = 0) || decide (a = s)) := by simp
+  obtain e : decide (a = 0 ∨ a = s) = (decide (a = 0) || decide (a = s)) := by simp
   rw [e]
   generalize decide (a = 0) = x
   generalize decide (a = s) = y
@@ -269,7 +269,7 @@ theorem prime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat} {f 
       WP isa (.seq (.loop (.block trialWord) .ne) (.seq (.block trialFlag) rest)) u1 Q := by
   rw [← List.append_nil entryS]
   refine entryS_ok hw (by omega_arith) fun u1 k1 m1 hw1 e4 e0 e1 e2 => WP.block_nil ?_
-  have r31 : u1.gpr .r3 = BitVec.ofNat 32 s := by rw [k1.gpr _ (by decide), r3]
+  obtain r31 : u1.gpr .r3 = BitVec.ofNat 32 s := by rw [k1.gpr _ (by decide), r3]
   refine WP.seq (WP.mono (primeLoop_ok (u₀ := u1) ⟨hw1, m1.trans mem, Rest.refl _ _,
     by rw [Nat.mul_zero, Nat.add_zero]; exact e0, by rw [Nat.sub_zero]; exact e1,
     ⟨0, by rw [e2]; rfl, by omega_arith, by simp [val32]⟩⟩ hW hZ r31 ⟨hs.2.1, hs.2.2⟩
@@ -281,7 +281,7 @@ theorem prime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat} {f 
     (by rw [k2.gpr _ (by decide), k1.gpr _ (by decide), r11]) fun u3 k3 m3 r113 => WP.block_nil ?_
   refine k u3 (((k1.trans (k2.mono (by simp))).mono (by simp)).trans (k3.mono (by simp))) (m3.trans m2) ?_
   rw [r113]
-  have e64 : 32 * (W - 2) = 64 * ((W - 2) / 2) := by omega_arith
+  obtain e64 : 32 * (W - 2) = 64 * ((W - 2) / 2) := by omega_arith
   rw [e64] at hc
   have := (VG.Proof.RsaKeyGen.trial_div hs.1 ha hc).symm
   rw [show decide (a = 0 ∨ a = s) = decide (val32 m (State.addr B) (arr W aC) (W - 2) % s = 0) from

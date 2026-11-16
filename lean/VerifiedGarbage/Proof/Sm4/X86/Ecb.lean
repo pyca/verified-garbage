@@ -75,7 +75,7 @@ theorem ea_arg {s₀ s : State} (h : s.gpr .esp = s₀.gpr .esp) (i : Nat) : s.e
 /-- Argument `i` is in the arguments' region. -/
 theorem arg_contains (s : State) (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
-  have hs := setWidth_toNat (s.gpr .esp)
+  obtain hs := setWidth_toNat (s.gpr .esp)
   rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_using [hfit, hi]),
     show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_using [hfit])]
   exact VG.Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
@@ -105,42 +105,42 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   let n := (arg s₀ 2).toNat
   let b := arg s₀ 3
   have hfit' : b.toNat + 4 * slots ≤ 2 ^ 32 := fitB
-  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
-  have hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
-  have hrK : (⟨sched.setWidth 64, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
-  have hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  obtain hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
+  obtain hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
+  obtain hrK : (⟨sched.setWidth 64, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
+  obtain hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   -- The arguments, through writes of the scratch buffer.
-  have argR : ∀ {m : Mem}, Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem m → ∀ i < 4,
+  obtain argR : ∀ {m : Mem}, Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem m → ∀ i < 4,
       m.readW (argAddr s₀ i) 32 = arg s₀ i := fun hf i hi =>
     hf.readW (arg_contains s₀ fitE hi) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dAS) (by decide)
-  have argIn : ∀ {s : State}, s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .esp = s₀.gpr .esp → ∀ i < 4,
+  obtain argIn : ∀ {s : State}, s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .esp = s₀.gpr .esp → ∀ i < 4,
       InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4 := fun h1 h2 h3 i hi => by
     rw [h1, h2, ea_arg h3]; exact ⟨_, List.mem_append_left _ hrA, arg_contains s₀ fitE hi⟩
-  have subS : ∀ k < slots, Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * slots⟩ :=
+  obtain subS : ∀ k < slots, Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * slots⟩ :=
     fun k hk => slot_sub hfit' hk
   unfold ecb
   -- The prologue.
   obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, -⟩ := save_ok (k := 3) hwS (argIn rfl rfl rfl 3 (by decide))
     (by rw [ea_arg rfl]; rfl)
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
-  have esp₁ : s₁.gpr .esp = s₀.gpr .esp := g₁ _ (by decide) (by decide)
-  have hk₁ : SchedPre s₁ b sched :=
+  obtain esp₁ : s₁.gpr .esp = s₀.gpr .esp := g₁ _ (by decide) (by decide)
+  obtain hk₁ : SchedPre s₁ b sched :=
     ⟨b₁, by rw [wr₁]; exact hwS, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dKS⟩
   -- The table.
   refine WP.seq (WP.mono (keys_wp dir hk₁ (argIn rd₁ wr₁ esp₁ 0 (by decide))
     (by rw [ea_arg esp₁]; exact argR f₁ 0 (by decide))) fun s₂ k₂ => ?_)
   let E : Nat → Spec.Sm4.Word := dirKeys dir (Spec.Sm4.scheduleAt s₀.mem (sched.setWidth 64))
-  have hsch : Spec.Sm4.scheduleAt s₁.mem (sched.setWidth 64) = Spec.Sm4.scheduleAt s₀.mem (sched.setWidth 64) :=
+  obtain hsch : Spec.Sm4.scheduleAt s₁.mem (sched.setWidth 64) = Spec.Sm4.scheduleAt s₀.mem (sched.setWidth 64) :=
     hk₁.sched_eq (Nat.le_refl _) f₁
-  have f₀₂ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₂.mem :=
+  obtain f₀₂ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₂.mem :=
     f₁.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
       exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   have base₂ : s₂.gpr sb = b := k₂.pre.base
-  have esp₂ : s₂.gpr .esp = s₀.gpr .esp := by
+  obtain esp₂ : s₂.gpr .esp = s₀.gpr .esp := by
     rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), esp₁]
-  have sc₂ : ScrOk s₀ b E s₂.mem := by
+  obtain sc₂ : ScrOk s₀ b E s₂.mem := by
     refine ⟨fun e he => ?_, fun i hi => ?_⟩
     · have := k₂.key.keys e he
       rw [base₂, hsch] at this
@@ -151,20 +151,20 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
           simp only [List.mem_singleton] at hr; subst hr
           exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by rw [tableEnd_eq, slots_eq]; decide))
         (by rw [savedSlot_eq, tableEnd_eq]; omega_using []) (by rw [savedSlot_eq, slots_eq]; omega_using [hi])
-  have rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
-  have wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
+  obtain rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
   -- The data pointer and the count to their slots.
   obtain ⟨s₃a, e₃a, a₃a, o₃a, m₃a, rd₃a, wr₃a, f₃a⟩ := argSlot_ok s₂ (i := 1) (k := dSlot) base₂ (by decide)
     (by rw [wr₂]; exact hwS) (argIn rd₂ wr₂ esp₂ 1 (by decide))
-  have f₀₃a : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₃a.mem :=
+  obtain f₀₃a : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₃a.mem :=
     f₀₂.trans (f₃a.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact subS _ (by decide)⟩)
-  have esp₃a : s₃a.gpr .esp = s₀.gpr .esp := by rw [o₃a _ (by decide), esp₂]
+  obtain esp₃a : s₃a.gpr .esp = s₀.gpr .esp := by rw [o₃a _ (by decide), esp₂]
   obtain ⟨s₃b, e₃b, a₃b, o₃b, m₃b, rd₃b, wr₃b, f₃b⟩ := argSlot_ok s₃a (i := 2) (k := nSlot)
     ((o₃a _ (by decide)).trans base₂) (by decide) (by rw [wr₃a, wr₂]; exact hwS)
     (argIn (by rw [rd₃a, rd₂]) (by rw [wr₃a, wr₂]) esp₃a 2 (by decide))
   let s₃ := arithFlags s₃b (s₃b.gpr .eax &&& s₃b.gpr .eax) false false
-  have e₃ : runBlock isa [.mov .eax (.mem (argOp 1)), st dSlot .eax, .mov .eax (.mem (argOp 2)), st nSlot .eax,
+  obtain e₃ : runBlock isa [.mov .eax (.mem (argOp 1)), st dSlot .eax, .mov .eax (.mem (argOp 2)), st nSlot .eax,
       .alu .test .eax (.reg .eax)] s₂ = some s₃ := by
     rw [show ([.mov .eax (.mem (argOp 1)), st dSlot .eax, .mov .eax (.mem (argOp 2)), st nSlot .eax,
         .alu .test .eax (.reg .eax)] : List Instr) =
@@ -173,38 +173,38 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
       runBlock_app, e₃a, Option.bind_some, runBlock_app, e₃b, Option.bind_some]
     rfl
   refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
-  have eax₃ : s₃b.gpr .eax = arg s₀ 2 := by
+  obtain eax₃ : s₃b.gpr .eax = arg s₀ 2 := by
     rw [a₃b, ea_arg esp₃a]; exact argR f₀₃a 2 (by decide)
-  have dp₃ : s₃.mem.readW (wordAddr b dSlot) 32 = D := by
+  obtain dp₃ : s₃.mem.readW (wordAddr b dSlot) 32 = D := by
     show s₃b.mem.readW _ 32 = _
     rw [m₃b, readW_slot_write hfit' (j := dSlot) (k := nSlot) _ (by decide) (by decide), ite_eq_right (by decide),
       m₃a, readW_slot_write hfit' (j := dSlot) (k := dSlot) _ (by decide) (by decide), ite_eq_left rfl,
       ea_arg esp₂]
     exact argR f₀₂ 1 (by decide)
-  have np₃ : s₃.mem.readW (wordAddr b nSlot) 32 = BitVec.ofNat 32 n := by
+  obtain np₃ : s₃.mem.readW (wordAddr b nSlot) 32 = BitVec.ofNat 32 n := by
     show s₃b.mem.readW _ 32 = _
     rw [m₃b, readW_slot_write hfit' (j := nSlot) (k := nSlot) _ (by decide) (by decide), ite_eq_left rfl,
       ← a₃b, eax₃]
     simp only [n, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have f₃ : Frame [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩] s₂.mem s₃.mem :=
+  obtain f₃ : Frame [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩] s₂.mem s₃.mem :=
     (f₃a.sub fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self, fun _ h => h⟩).trans
       (f₃b.sub fun r hr => ⟨r, by
         rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩)
-  have sc₃ : ScrOk s₀ b E s₃.mem := sc₂.frame hfit' f₃ (dn_disj hfit')
-  have f₀₃ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₃.mem :=
+  obtain sc₃ : ScrOk s₀ b E s₃.mem := sc₂.frame hfit' f₃ (dn_disj hfit')
+  obtain f₀₃ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₃.mem :=
     f₀₂.trans (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, dn_sub hfit' r hr⟩)
-  have data₃ : ∀ i < 16 * n, s₃.mem (D.setWidth 64 + BitVec.ofNat 64 i) = s₀.mem (D.setWidth 64 + BitVec.ofNat 64 i) :=
+  obtain data₃ : ∀ i < 16 * n, s₃.mem (D.setWidth 64 + BitVec.ofNat 64 i) = s₀.mem (D.setWidth 64 + BitVec.ofNat 64 i) :=
     fun i hi => f₀₃.bytes (R := ⟨D.setWidth 64, 16 * n⟩)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega_using []) hi
-  have fr₃ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s₃.mem :=
+  obtain fr₃ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s₃.mem :=
     f₀₃.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
-  have g₃ : ∀ r, r ≠ .eax → s₃.gpr r = s₂.gpr r := fun r hr => by
+  obtain g₃ : ∀ r, r ≠ .eax → s₃.gpr r = s₂.gpr r := fun r hr => by
     show s₃b.gpr r = _; rw [o₃b r hr, o₃a r hr]
-  have base₃ : s₃.gpr .edi = b := by rw [g₃ _ (by decide)]; exact base₂
-  have esp₃ : s₃.gpr .esp = s₀.gpr .esp := by rw [g₃ _ (by decide), esp₂]
-  have rd₃ : s₃.rd = s₀.rd := by show s₃b.rd = _; rw [rd₃b, rd₃a, rd₂]
-  have wr₃ : s₃.wr = s₀.wr := by show s₃b.wr = _; rw [wr₃b, wr₃a, wr₂]
-  have hz₃ : s₃.zf = some (decide (n = 0)) := by
+  obtain base₃ : s₃.gpr .edi = b := by rw [g₃ _ (by decide)]; exact base₂
+  obtain esp₃ : s₃.gpr .esp = s₀.gpr .esp := by rw [g₃ _ (by decide), esp₂]
+  obtain rd₃ : s₃.rd = s₀.rd := by show s₃b.rd = _; rw [rd₃b, rd₃a, rd₂]
+  obtain wr₃ : s₃.wr = s₀.wr := by show s₃b.wr = _; rw [wr₃b, wr₃a, wr₂]
+  obtain hz₃ : s₃.zf = some (decide (n = 0)) := by
     rw [RegUpd.zf_arithFlags, eax₃, BitVec.and_self]
     refine congrArg some (Bool.eq_iff_iff.mpr ?_)
     rw [beq_iff_eq, decide_eq_true_iff]

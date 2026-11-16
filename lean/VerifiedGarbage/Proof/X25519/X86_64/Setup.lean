@@ -155,54 +155,54 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
     (by rw [k₁.2.2.2]; exact hw)) fun s₂ ⟨g₂, rd₂, wr₂, o₂, sv₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (movs_ok s₂) fun s₃ ⟨r12₃, rdi₃, k₃⟩ => ?_
-  have hs₃ : Scr s₃ base :=
+  obtain hs₃ : Scr s₃ base :=
     ⟨by rw [rdi₃, g₂, k₁.1 _ (by decide), hc], by rw [k₃.2.2.2, wr₂, k₁.2.2.2]; exact hw, hn⟩
   rw [WP.block_append_iff]
   refine WP.mono (store4_ok hs₃ (o := X1) (by decide)) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
-  have hs₄ : Scr s₄ base := ⟨(g₄ _).trans hs₃.rdi, wr₄ ▸ hs₃.wr, hn⟩
+  obtain hs₄ : Scr s₄ base := ⟨(g₄ _).trans hs₃.rdi, wr₄ ▸ hs₃.wr, hn⟩
   rw [WP.block_append_iff]
   refine WP.mono (store4_ok hs₄ (o := X3) (by decide)) fun s₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
-  have hs₅ : Scr s₅ base := ⟨(g₅ _).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hn⟩
+  obtain hs₅ : Scr s₅ base := ⟨(g₅ _).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hn⟩
   rw [WP.block_append_iff]
   refine WP.mono (consts_ok s₅) fun s₆ ⟨rax₆, rdx₆, k₆⟩ => ?_
-  have hs₆ : Scr s₆ base := hs₅.of_keeps k₆ (by decide)
+  obtain hs₆ : Scr s₆ base := hs₅.of_keeps k₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (stores_ok hs₆ (o := X2) (by decide) .rdx .rax .rax .rax)
     fun s₇ ⟨m₇, g₇, rd₇, wr₇⟩ => ?_
-  have hs₇ : Scr s₇ base := ⟨(g₇ _).trans hs₆.rdi, wr₇ ▸ hs₆.wr, hn⟩
+  obtain hs₇ : Scr s₇ base := ⟨(g₇ _).trans hs₆.rdi, wr₇ ▸ hs₆.wr, hn⟩
   rw [WP.block_append_iff]
   refine WP.mono (stores_ok hs₇ (o := Z2) (by decide) .rax .rax .rax .rax)
     fun s₈ ⟨m₈, g₈, rd₈, wr₈⟩ => ?_
-  have hs₈ : Scr s₈ base := ⟨(g₈ _).trans hs₇.rdi, wr₈ ▸ hs₇.wr, hn⟩
+  obtain hs₈ : Scr s₈ base := ⟨(g₈ _).trans hs₇.rdi, wr₈ ▸ hs₇.wr, hn⟩
   rw [WP.block_append_iff]
   refine WP.mono (stores_ok hs₈ (o := Z3) (by decide) .rdx .rax .rax .rax)
     fun s₉ ⟨m₉, g₉, rd₉, wr₉⟩ => ?_
-  have hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
+  obtain hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
   refine WP.mono (storeSwap_ok hs₉) fun s' ⟨m', g', rd', wr'⟩ => ?_
-  have G : ∀ r, r ∉ [Reg.rax, .rdx] → s'.gpr r = s₃.gpr r := fun r hr => by
+  obtain G : ∀ r, r ∉ [Reg.rax, .rdx] → s'.gpr r = s₃.gpr r := fun r hr => by
     rw [g', g₉, g₈, g₇, k₆.1 r hr, g₅, g₄]
-  have G₁ : ∀ r, r ∉ [Reg.r8, .r9, .r10, .r11, .rax] → s₂.gpr r = s.gpr r := fun r hr => by
+  obtain G₁ : ∀ r, r ∉ [Reg.r8, .r9, .r10, .r11, .rax] → s₂.gpr r = s.gpr r := fun r hr => by
     rw [g₂, k₁.1 r hr]
-  have e' : E s'.mem base = Function.update (E s₉.mem base) 20 (F s'.mem base (32 * 20)) := by
+  obtain e' : E s'.mem base = Function.update (E s₉.mem base) 20 (F s'.mem base (32 * 20)) := by
     rw [m']; exact E_update ((writeW_outside _ _ _ (by decide)).mono (by decide) (by decide))
-  have e₉ := E_st4 (o := Z3) s₈.mem base 6 rfl (s₈.gpr .rdx) (s₈.gpr .rax) (s₈.gpr .rax) (s₈.gpr .rax)
-  have e₈ := E_st4 (o := Z2) s₇.mem base 4 rfl (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax)
-  have e₇ := E_st4 (o := X2) s₆.mem base 3 rfl (s₆.gpr .rdx) (s₆.gpr .rax) (s₆.gpr .rax) (s₆.gpr .rax)
-  have e₅ := E_st4 (o := X3) s₄.mem base 5 rfl (s₄.gpr .r8) (s₄.gpr .r9) (s₄.gpr .r10) (s₄.gpr .r11)
-  have e₄ := E_st4 (o := X1) s₃.mem base 2 rfl (s₃.gpr .r8) (s₃.gpr .r9) (s₃.gpr .r10) (s₃.gpr .r11)
+  obtain e₉ := E_st4 (o := Z3) s₈.mem base 6 rfl (s₈.gpr .rdx) (s₈.gpr .rax) (s₈.gpr .rax) (s₈.gpr .rax)
+  obtain e₈ := E_st4 (o := Z2) s₇.mem base 4 rfl (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax)
+  obtain e₇ := E_st4 (o := X2) s₆.mem base 3 rfl (s₆.gpr .rdx) (s₆.gpr .rax) (s₆.gpr .rax) (s₆.gpr .rax)
+  obtain e₅ := E_st4 (o := X3) s₄.mem base 5 rfl (s₄.gpr .r8) (s₄.gpr .r9) (s₄.gpr .r10) (s₄.gpr .r11)
+  obtain e₄ := E_st4 (o := X1) s₃.mem base 2 rfl (s₃.gpr .r8) (s₃.gpr .r9) (s₃.gpr .r10) (s₃.gpr .r11)
   rw [← m₉] at e₉; rw [← m₈] at e₈; rw [← m₇] at e₇; rw [← m₅] at e₅; rw [← m₄] at e₄
-  have hu : ∀ t : State, (∀ r, r ∉ [Reg.rax, .rdx] → t.gpr r = s₃.gpr r) →
+  obtain hu : ∀ t : State, (∀ r, r ∉ [Reg.rax, .rdx] → t.gpr r = s₃.gpr r) →
       toFe (val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11)) =
         toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) := fun t ht => by
     rw [ht _ (by decide), ht _ (by decide), ht _ (by decide), ht _ (by decide),
       k₃.1 _ (by decide), k₃.1 _ (by decide), k₃.1 _ (by decide), k₃.1 _ (by decide), g₂, u₁]
   have one : toFe (val4 1 0 0 0) = 1 := rfl
   have zero : toFe (val4 0 0 0 0) = 0 := rfl
-  have r₈ : s₈.gpr .rdx = 1 ∧ s₈.gpr .rax = 0 := ⟨by rw [g₈, g₇, rdx₆], by rw [g₈, g₇, rax₆]⟩
-  have r₇ : s₇.gpr .rax = 0 := by rw [g₇, rax₆]
-  have o₃ : Outside base 0 4096 s.mem s₃.mem := by
+  obtain r₈ : s₈.gpr .rdx = 1 ∧ s₈.gpr .rax = 0 := ⟨by rw [g₈, g₇, rdx₆], by rw [g₈, g₇, rax₆]⟩
+  obtain r₇ : s₇.gpr .rax = 0 := by rw [g₇, rax₆]
+  obtain o₃ : Outside base 0 4096 s.mem s₃.mem := by
     rw [k₃.2.1]; exact fun x hx => (o₂.mono (by omega_arith) (by omega_arith) x hx).trans (by rw [k₁.2.1])
-  have o' : Outside base 64 4032 s₃.mem s'.mem := by
+  obtain o' : Outside base 64 4032 s₃.mem s'.mem := by
     rw [m', m₉, m₈, m₇, k₆.2.1, m₅, m₄]
     exact (((((st4_outside _ _ (by decide) _ _ _ _).mono (by decide) (by decide)).trans
       ((st4_outside _ _ (by decide) _ _ _ _).mono (by decide) (by decide))).trans
@@ -227,7 +227,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
   · rw [e', e₉, e₈, e₇, k₆.2.1, e₅, e₄]
     simp (config := {decide := true}) only [Function.update_apply, ite_true, ite_false]
     rw [hu s₄ (fun r _ => g₄ r), hu s₃ (fun _ _ => rfl), r₈.1, r₈.2, r₇, rdx₆, rax₆, one, zero]
-    have ow : Outside base SWAP 8 s₉.mem s'.mem := by rw [m']; exact writeW_outside _ _ _ (by decide)
+    obtain ow : Outside base SWAP 8 s₉.mem s'.mem := by rw [m']; exact writeW_outside _ _ _ (by decide)
     refine ⟨rfl, rfl, rfl, rfl, rfl, ?_, ?_, ?_⟩
     · rw [m', word_writeW_self, g₉, r₈.2]
     · rw [ow.fe (by decide) (by decide), m₉, (st4_outside _ _ (by decide) _ _ _ _).fe (by decide)

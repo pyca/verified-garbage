@@ -71,9 +71,9 @@ theorem copyInWord_ok {w j : Nat} (hw : w < 4) (hj : j < 16) (s : State) (h : Ro
       s'.mem = s.mem.writeW (laneA s (arrSlot w) j)
         (bswap32 (s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) := by
-  have hL : arrSlot w ∈ arrays := mem_arrA_of hw
+  obtain hL : arrSlot w ∈ arrays := mem_arrA_of hw
   unfold inWord
-  have hea : ∀ t : State, t.gpr .rbx = s.gpr .rbx → t.ea (lane .rbx (arrSlot w) 0) = laneA s (arrSlot w) j := by
+  obtain hea : ∀ t : State, t.gpr .rbx = s.gpr .rbx → t.ea (lane .rbx (arrSlot w) 0) = laneA s (arrSlot w) j := by
     intro t ht
     rw [ea_lane, ht, hrb, laneA, Nat.mul_zero, Nat.add_zero, Offset.add_add, Nat.add_comm]
   rw [runBlock_cons, exec_mov32_mem (by rw [ea_off]; exact hr), ea_off, runStep_some, runBlock_cons]
@@ -108,21 +108,21 @@ theorem copyInBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .r10 → s'.gpr r = s.gpr r) := by
   -- The block's words keep their values while the lanes are written.
-  have hkeep : ∀ (t : State), Frame [arraysR s] s.mem t.mem → ∀ w < 4,
+  obtain hkeep : ∀ (t : State), Frame [arraysR s] s.mem t.mem → ∀ w < 4,
       t.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32 =
         s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32 := by
     intro t ht w hw
     refine ht.readW (Region.contains_self _ _) ?_ (by decide)
     intro r hr'; simp only [List.mem_singleton] at hr'; subst hr'; exact hsep w hw
   obtain ⟨s1, e1, m1, rd1, wr1, g1⟩ := copyInWord_ok (w := 0) (by decide) hj s h hrb (hr 0 (by decide))
-  have h1 : Room s1 := room_congr h (g1 _ (by decide)) wr1
+  obtain h1 : Room s1 := room_congr h (g1 _ (by decide)) wr1
   obtain ⟨s2, e2, m2, rd2, wr2, g2⟩ := copyInWord_ok (w := 1) (by decide) hj s1 h1
     (by rw [g1 _ (by decide), g1 _ (by decide), hrb]) (by rw [rd1, wr1, g1 _ (by decide)]; exact hr 1 (by decide))
-  have h2 : Room s2 := room_congr h1 (g2 _ (by decide)) wr2
+  obtain h2 : Room s2 := room_congr h1 (g2 _ (by decide)) wr2
   obtain ⟨s3, e3, m3, rd3, wr3, g3⟩ := copyInWord_ok (w := 2) (by decide) hj s2 h2
     (by rw [g2 _ (by decide), g2 _ (by decide), g1 _ (by decide), g1 _ (by decide), hrb])
     (by rw [rd2, wr2, rd1, wr1, g2 _ (by decide), g1 _ (by decide)]; exact hr 2 (by decide))
-  have h3 : Room s3 := room_congr h2 (g3 _ (by decide)) wr3
+  obtain h3 : Room s3 := room_congr h2 (g3 _ (by decide)) wr3
   obtain ⟨s4, e4, m4, rd4, wr4, g4⟩ := copyInWord_ok (w := 3) (by decide) hj s3 h3
     (by rw [g3 _ (by decide), g3 _ (by decide), g2 _ (by decide), g2 _ (by decide), g1 _ (by decide),
       g1 _ (by decide), hrb])
@@ -131,13 +131,13 @@ theorem copyInBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
   obtain ⟨s5, e5, r5, g5, mem5, rd5, wr5⟩ := exec_add_imm s4 .r10 16
   obtain ⟨s6, e6, r6, g6, mem6, rd6, wr6⟩ := exec_add_imm s5 .rbx 4
   obtain ⟨s7, e7, r7, z7, g7, mem7, rd7, wr7⟩ := exec_sub_imm s6 .rcx 1
-  have hrun : runBlock isa copyInBody s = some s7 := by
+  obtain hrun : runBlock isa copyInBody s = some s7 := by
     rw [copyInBody_eq]
     rw [runBlock_append, e1, Option.bind_some, runBlock_append, e2, Option.bind_some, runBlock_append, e3,
       Option.bind_some, runBlock_append, e4, Option.bind_some, runBlock_cons, e5, runStep_some, runBlock_cons,
       e6, runStep_some, runBlock_cons, e7, runStep_some, runBlock_nil]
   -- Registers through the words.
-  have r9s : ∀ t ∈ [s1, s2, s3, s4], t.gpr .r9 = s.gpr .r9 := by
+  obtain r9s : ∀ t ∈ [s1, s2, s3, s4], t.gpr .r9 = s.gpr .r9 := by
     intro t ht
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at ht
     rcases ht with rfl | rfl | rfl | rfl
@@ -145,7 +145,7 @@ theorem copyInBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
     · rw [g2 _ (by decide), g1 _ (by decide)]
     · rw [g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
     · rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-  have r10s : ∀ t ∈ [s1, s2, s3, s4], t.gpr .r10 = s.gpr .r10 := by
+  obtain r10s : ∀ t ∈ [s1, s2, s3, s4], t.gpr .r10 = s.gpr .r10 := by
     intro t ht
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at ht
     rcases ht with rfl | rfl | rfl | rfl
@@ -153,25 +153,25 @@ theorem copyInBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
     · rw [g2 _ (by decide), g1 _ (by decide)]
     · rw [g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
     · rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-  have lA : ∀ t ∈ [s1, s2, s3, s4], ∀ k, laneA t k j = laneA s k j := by
+  obtain lA : ∀ t ∈ [s1, s2, s3, s4], ∀ k, laneA t k j = laneA s k j := by
     intro t ht k; simp only [laneA, r9s t ht]
   -- Memory.
   let v (w : Nat) := bswap32 (s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32)
-  have f1 : Frame [arraysR s] s.mem s1.mem := by
+  obtain f1 : Frame [arraysR s] s.mem s1.mem := by
     rw [m1]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (lane_inArrays (mem_arrA_of (by decide)) hj s)
-  have f2 : Frame [arraysR s] s.mem s2.mem := by
+  obtain f2 : Frame [arraysR s] s.mem s2.mem := by
     rw [m2, lA s1 (by simp)]; exact f1.writeW List.mem_cons_self _ (lane_inArrays (mem_arrA_of (by decide)) hj s)
-  have f3 : Frame [arraysR s] s.mem s3.mem := by
+  obtain f3 : Frame [arraysR s] s.mem s3.mem := by
     rw [m3, lA s2 (by simp)]; exact f2.writeW List.mem_cons_self _ (lane_inArrays (mem_arrA_of (by decide)) hj s)
-  have mm : s4.mem = (((s.mem.writeW (laneA s (arrSlot 0) j) (v 0)).writeW (laneA s (arrSlot 1) j) (v 1)).writeW
+  obtain mm : s4.mem = (((s.mem.writeW (laneA s (arrSlot 0) j) (v 0)).writeW (laneA s (arrSlot 1) j) (v 1)).writeW
       (laneA s (arrSlot 2) j) (v 2)).writeW (laneA s (arrSlot 3) j) (v 3) := by
     rw [m4, lA s3 (by simp), r10s s3 (by simp), hkeep s3 f3 3 (by decide), m3, lA s2 (by simp),
       r10s s2 (by simp), hkeep s2 f2 2 (by decide), m2, lA s1 (by simp), r10s s1 (by simp),
       hkeep s1 f1 1 (by decide), m1]
-  have r10_4 := r10s s4 (by simp)
-  have rbx_4 : s4.gpr .rbx = s.gpr .rbx := by
+  obtain r10_4 := r10s s4 (by simp)
+  obtain rbx_4 : s4.gpr .rbx = s.gpr .rbx := by
     rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-  have rcx_4 : s4.gpr .rcx = s.gpr .rcx := by
+  obtain rcx_4 : s4.gpr .rcx = s.gpr .rcx := by
     rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
   refine ⟨s7, hrun, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_⟩
   · rw [mem7, mem6, mem5, mm]
@@ -208,23 +208,23 @@ theorem copyIn_loop {s₀ : State} {p : Addr} {m : Nat} (hpre : CopyPre s₀ p m
   intro k t ⟨inv, hk1, hkm⟩
   have hm16 := hpre.le.2
   let j := m - k
-  have hj : j < 16 := by omega_arith
-  have hr9 : t.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
-  have hroom : Room t := room_congr hpre.room hr9 inv.wr
-  have hrb : t.gpr .rbx = t.gpr .r9 + BitVec.ofNat 64 (4 * j) := by rw [inv.rbx, hr9]
-  have hdata : ∀ w < 4, t.gpr .r10 + BitVec.ofNat 64 (4 * w) = p + BitVec.ofNat 64 (16 * j + 4 * w) := by
+  obtain hj : j < 16 := by omega_arith
+  obtain hr9 : t.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
+  obtain hroom : Room t := room_congr hpre.room hr9 inv.wr
+  obtain hrb : t.gpr .rbx = t.gpr .r9 + BitVec.ofNat 64 (4 * j) := by rw [inv.rbx, hr9]
+  obtain hdata : ∀ w < 4, t.gpr .r10 + BitVec.ofNat 64 (4 * w) = p + BitVec.ofNat 64 (16 * j + 4 * w) := by
     intro w _; rw [inv.r10, Offset.add_add]
-  have hr : ∀ w < 4, InRegions (t.rd ++ t.wr) (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 4 := by
+  obtain hr : ∀ w < 4, InRegions (t.rd ++ t.wr) (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 4 := by
     intro w hw; rw [hdata w hw, inv.rd, inv.wr]; exact hpre.read j (by omega_arith) w hw
-  have harr : arraysR t = arraysR s₀ := by simp [arraysR, hr9]
-  have hsep : ∀ w < 4, Region.Disjoint ⟨t.gpr .r10 + BitVec.ofNat 64 (4 * w), 4⟩ (arraysR t) := by
+  obtain harr : arraysR t = arraysR s₀ := by simp [arraysR, hr9]
+  obtain hsep : ∀ w < 4, Region.Disjoint ⟨t.gpr .r10 + BitVec.ofNat 64 (4 * w), 4⟩ (arraysR t) := by
     intro w hw
     rw [hdata w hw, harr]
     exact hpre.sep.sub_left (Offset.sub_base p (by omega_arith))
   obtain ⟨t', ht', hmem, hr10, hrbx, hrcx, hzf, hrd, hwr, hregs⟩ := copyInBody_ok hj t hroom hrb hr hsep
   refine WP.of_runBlock ⟨t', ht', ?_⟩
-  have hr9' : t'.gpr .r9 = t.gpr .r9 := hregs _ (by decide) (by decide) (by decide) (by decide)
-  have inv' : CopyInInv s₀ p m (j + 1) t' := by
+  obtain hr9' : t'.gpr .r9 = t.gpr .r9 := hregs _ (by decide) (by decide) (by decide) (by decide)
+  obtain inv' : CopyInInv s₀ p m (j + 1) t' := by
     refine ⟨by omega_arith, ?_, ?_, ?_, fun w hw b hb => ?_, ?_, fun r h1 h2 h3 h4 => ?_, by rw [hrd, inv.rd],
       by rw [hwr, inv.wr]⟩
     · rw [hr10, inv.r10, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add]; congr 2
@@ -239,7 +239,7 @@ theorem copyIn_loop {s₀ : State} {p : Addr} {m : Nat} (hpre : CopyPre s₀ p m
           List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, List.singleton_append,
           List.cons_append]
         rw [bw, ← hdata w hw]
-        have hkeep : t.mem.readW (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32 =
+        obtain hkeep : t.mem.readW (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32 =
             s₀.mem.readW (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 32 := by
           refine inv.frame.readW (Region.contains_self _ _) ?_ (by decide)
           intro r hr'; simp only [List.mem_singleton] at hr'; subst hr'; rw [← harr]; exact hsep w hw
@@ -253,7 +253,7 @@ theorem copyIn_loop {s₀ : State} {p : Addr} {m : Nat} (hpre : CopyPre s₀ p m
   by_cases hk : k = 1
   · subst hk
     left
-    have hjm : j + 1 = m := by omega_arith
+    obtain hjm : j + 1 = m := by omega_arith
     refine ⟨?_, hjm ▸ inv'⟩
     show t'.zf.map (!·) = some false
     rw [hzf, inv.rcx, show m - (m - 1) = 1 by omega_arith]; rfl
@@ -269,9 +269,9 @@ theorem bswap32_byte (x : BitVec 32) {j : Nat} (hj : j < 4) :
     (bswap32 x).extractLsb' (8 * j) 8 = (x >>> (8 * (3 - j))).setWidth 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have h4 := Proof.Seed.getLsbD_append4 (x.extractLsb' 0 8) (x.extractLsb' 8 8) (x.extractLsb' 16 8)
+  obtain h4 := Proof.Seed.getLsbD_append4 (x.extractLsb' 0 8) (x.extractLsb' 8 8) (x.extractLsb' 16 8)
     (x.extractLsb' 24 8) hi
-  have e : ((bswap32 x).extractLsb' (8 * j) 8).getLsbD i = (bswap32 x).getLsbD (8 * j + i) := by
+  obtain e : ((bswap32 x).extractLsb' (8 * j) 8).getLsbD i = (bswap32 x).getLsbD (8 * j + i) := by
     simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
   rw [e]
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
@@ -331,8 +331,8 @@ theorem copyOutWord_ok {w j : Nat} (hj : j < 16) (s : State) (h : Room s)
       s'.mem = s.mem.writeW (s.gpr .r10 + BitVec.ofNat 64 (4 * w))
         (bswap32 (lv s (arrSlot ((w + 2) % 4)) j)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) := by
-  have hL : arrSlot ((w + 2) % 4) ∈ arrays := mem_arrA_of (Nat.mod_lt _ (by decide))
-  have hea : s.ea (lane .rbx (arrSlot ((w + 2) % 4)) 0) = laneA s (arrSlot ((w + 2) % 4)) j := by
+  obtain hL : arrSlot ((w + 2) % 4) ∈ arrays := mem_arrA_of (Nat.mod_lt _ (by decide))
+  obtain hea : s.ea (lane .rbx (arrSlot ((w + 2) % 4)) 0) = laneA s (arrSlot ((w + 2) % 4)) j := by
     rw [ea_lane, hrb, laneA, Nat.mul_zero, Nat.add_zero, Offset.add_add, Nat.add_comm]
   unfold outWord
   rw [runBlock_cons, exec_mov32_mem (by rw [hea]; exact lane_rw h hL hj), hea, lv_eq, runStep_some,
@@ -341,7 +341,7 @@ theorem copyOutWord_ok {w j : Nat} (hj : j < 16) (s : State) (h : Room s)
     some ((s.setReg32 .rax (lv s (arrSlot ((w + 2) % 4)) j)).setReg32 .rax
       (bswap32 (((s.setReg32 .rax (lv s (arrSlot ((w + 2) % 4)) j)).gpr .rax).setWidth 32))) from rfl,
     runStep_some, runBlock_cons]
-  have hea2 : ∀ t : State, t.gpr .r10 = s.gpr .r10 →
+  obtain hea2 : ∀ t : State, t.gpr .r10 = s.gpr .r10 →
       t.ea { base := .r10, disp := ((4 * w : Nat) : Int) } = s.gpr .r10 + BitVec.ofNat 64 (4 * w) := by
     intro t ht; rw [ea_off, ht]
   rw [exec_store32 (by rw [hea2 _ (by simp [State.setReg32, gpr_setReg])]; exact hwr),
@@ -366,7 +366,7 @@ theorem copyOutBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .r10 → s'.gpr r = s.gpr r) := by
   -- The lanes keep their values while the block is written.
-  have hkeep : ∀ (t : State), t.gpr .r9 = s.gpr .r9 → Frame [⟨s.gpr .r10, 16⟩] s.mem t.mem → ∀ w < 4,
+  obtain hkeep : ∀ (t : State), t.gpr .r9 = s.gpr .r9 → Frame [⟨s.gpr .r10, 16⟩] s.mem t.mem → ∀ w < 4,
       lv t (arrSlot ((w + 2) % 4)) j = lv s (arrSlot ((w + 2) % 4)) j := by
     intro t ht hf w hw
     simp only [lv, laneA, ht]
@@ -375,43 +375,43 @@ theorem copyOutBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
     exact fun x h1 h2 => hsep x h2 (lane_inArrays (mem_arrA_of (Nat.mod_lt _ (by decide))) hj s
       |>.byte h1)
   obtain ⟨s1, e1, m1, rd1, wr1, g1⟩ := copyOutWord_ok (w := 0) hj s h hrb (hwr 0 (by decide))
-  have r9_1 : s1.gpr .r9 = s.gpr .r9 := g1 _ (by decide)
-  have h1 : Room s1 := room_congr h r9_1 wr1
-  have hin : ∀ w < 4, (⟨s.gpr .r10, 16⟩ : Region).Contains (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) (32 / 8) :=
+  obtain r9_1 : s1.gpr .r9 = s.gpr .r9 := g1 _ (by decide)
+  obtain h1 : Room s1 := room_congr h r9_1 wr1
+  obtain hin : ∀ w < 4, (⟨s.gpr .r10, 16⟩ : Region).Contains (s.gpr .r10 + BitVec.ofNat 64 (4 * w)) (32 / 8) :=
     fun w hw => Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have f1 : Frame [⟨s.gpr .r10, 16⟩] s.mem s1.mem := by
+  obtain f1 : Frame [⟨s.gpr .r10, 16⟩] s.mem s1.mem := by
     rw [m1]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (hin 0 (by decide))
   obtain ⟨s2, e2, m2, rd2, wr2, g2⟩ := copyOutWord_ok (w := 1) hj s1 h1
     (by rw [g1 _ (by decide), r9_1, hrb]) (by rw [wr1, g1 _ (by decide)]; exact hwr 1 (by decide))
-  have r9_2 : s2.gpr .r9 = s.gpr .r9 := by rw [g2 _ (by decide), r9_1]
-  have h2 : Room s2 := room_congr h r9_2 (by rw [wr2, wr1])
-  have r10_1 : s1.gpr .r10 = s.gpr .r10 := g1 _ (by decide)
-  have f2 : Frame [⟨s.gpr .r10, 16⟩] s.mem s2.mem := by
+  obtain r9_2 : s2.gpr .r9 = s.gpr .r9 := by rw [g2 _ (by decide), r9_1]
+  obtain h2 : Room s2 := room_congr h r9_2 (by rw [wr2, wr1])
+  obtain r10_1 : s1.gpr .r10 = s.gpr .r10 := g1 _ (by decide)
+  obtain f2 : Frame [⟨s.gpr .r10, 16⟩] s.mem s2.mem := by
     rw [m2, r10_1]; exact f1.writeW List.mem_cons_self _ (hin 1 (by decide))
   obtain ⟨s3, e3, m3, rd3, wr3, g3⟩ := copyOutWord_ok (w := 2) hj s2 h2
     (by rw [g2 _ (by decide), g1 _ (by decide), r9_2, hrb])
     (by rw [wr2, wr1, g2 _ (by decide), r10_1]; exact hwr 2 (by decide))
-  have r9_3 : s3.gpr .r9 = s.gpr .r9 := by rw [g3 _ (by decide), r9_2]
-  have h3 : Room s3 := room_congr h r9_3 (by rw [wr3, wr2, wr1])
-  have r10_2 : s2.gpr .r10 = s.gpr .r10 := by rw [g2 _ (by decide), r10_1]
-  have f3 : Frame [⟨s.gpr .r10, 16⟩] s.mem s3.mem := by
+  obtain r9_3 : s3.gpr .r9 = s.gpr .r9 := by rw [g3 _ (by decide), r9_2]
+  obtain h3 : Room s3 := room_congr h r9_3 (by rw [wr3, wr2, wr1])
+  obtain r10_2 : s2.gpr .r10 = s.gpr .r10 := by rw [g2 _ (by decide), r10_1]
+  obtain f3 : Frame [⟨s.gpr .r10, 16⟩] s.mem s3.mem := by
     rw [m3, r10_2]; exact f2.writeW List.mem_cons_self _ (hin 2 (by decide))
   obtain ⟨s4, e4, m4, rd4, wr4, g4⟩ := copyOutWord_ok (w := 3) hj s3 h3
     (by rw [g3 _ (by decide), g2 _ (by decide), g1 _ (by decide), r9_3, hrb])
     (by rw [wr3, wr2, wr1, g3 _ (by decide), r10_2]; exact hwr 3 (by decide))
-  have r10_3 : s3.gpr .r10 = s.gpr .r10 := by rw [g3 _ (by decide), r10_2]
+  obtain r10_3 : s3.gpr .r10 = s.gpr .r10 := by rw [g3 _ (by decide), r10_2]
   obtain ⟨s5, e5, r5, g5, mem5, rd5, wr5⟩ := exec_add_imm s4 .r10 16
   obtain ⟨s6, e6, r6, g6, mem6, rd6, wr6⟩ := exec_add_imm s5 .rbx 4
   obtain ⟨s7, e7, r7, z7, g7, mem7, rd7, wr7⟩ := exec_sub_imm s6 .rcx 1
-  have hrun : runBlock isa copyOutBody s = some s7 := by
+  obtain hrun : runBlock isa copyOutBody s = some s7 := by
     rw [copyOutBody_eq, runBlock_append, e1, Option.bind_some, runBlock_append, e2, Option.bind_some,
       runBlock_append, e3, Option.bind_some, runBlock_append, e4, Option.bind_some, runBlock_cons, e5,
       runStep_some, runBlock_cons, e6, runStep_some, runBlock_cons, e7, runStep_some, runBlock_nil]
-  have rbx_4 : s4.gpr .rbx = s.gpr .rbx := by
+  obtain rbx_4 : s4.gpr .rbx = s.gpr .rbx := by
     rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-  have rcx_4 : s4.gpr .rcx = s.gpr .rcx := by
+  obtain rcx_4 : s4.gpr .rcx = s.gpr .rcx := by
     rw [g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-  have r10_4 : s4.gpr .r10 = s.gpr .r10 := by rw [g4 _ (by decide), r10_3]
+  obtain r10_4 : s4.gpr .r10 = s.gpr .r10 := by rw [g4 _ (by decide), r10_3]
   refine ⟨s7, hrun, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_⟩
   · rw [mem7, mem6, mem5, m4, r10_3, hkeep s3 r9_3 f3 3 (by decide), m3, r10_2,
       hkeep s2 r9_2 f2 2 (by decide), m2, r10_1, hkeep s1 r9_1 f1 1 (by decide), m1, outWrites]
@@ -425,10 +425,10 @@ theorem copyOutBody_ok {j : Nat} (hj : j < 16) (s : State) (h : Room s)
 
 theorem outWrites_off (m : Mem) (q : Addr) (y : Nat → BitVec 32) {x : Addr}
     (h : ¬ (x - q).toNat < 16) : outWrites m q y x = m x := by
-  have hx : x = q + BitVec.ofNat 64 (x - q).toNat := by
+  obtain hx : x = q + BitVec.ofNat 64 (x - q).toNat := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have hlt := (x - q).isLt
-  have hoff : ∀ c : Nat, c ≤ 12 → ¬ (x - (q + BitVec.ofNat 64 c)).toNat < 32 / 8 := by
+  obtain hlt := (x - q).isLt
+  obtain hoff : ∀ c : Nat, c ≤ 12 → ¬ (x - (q + BitVec.ofNat 64 c)).toNat < 32 / 8 := by
     intro c hc
     have := Offset.sep q (d := (x - q).toNat) (n := 1) (e := c) (k := 4) (by omega_arith) (by omega_arith) (by omega_arith)
     refine this x ?_
@@ -440,7 +440,7 @@ theorem outWrites_off (m : Mem) (q : Addr) (y : Nat → BitVec 32) {x : Addr}
 theorem outWrites_frame {m₀ m : Mem} {p : Addr} {n j : Nat} (h : Frame [⟨p, n⟩] m₀ m) (hj : 16 * j + 16 ≤ n)
     (hn : n < 2 ^ 64) (y : Nat → BitVec 32) :
     Frame [⟨p, n⟩] m₀ (outWrites m (p + BitVec.ofNat 64 (16 * j)) y) := by
-  have hc : ∀ c, c ≤ 12 → (⟨p, n⟩ : Region).Contains (p + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 c) (32 / 8) := by
+  obtain hc : ∀ c, c ≤ 12 → (⟨p, n⟩ : Region).Contains (p + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 c) (32 / 8) := by
     intro c hc; rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   exact (((h.writeW List.mem_cons_self _ (hc 0 (by decide))).writeW List.mem_cons_self _ (hc 4 (by decide))).writeW
     List.mem_cons_self _ (hc 8 (by decide))).writeW List.mem_cons_self _ (hc 12 (by decide))
@@ -475,25 +475,25 @@ theorem copyOut_loop {s₀ : State} {p : Addr} {m : Nat} (hpre : CopyOutPre s₀
   intro k t ⟨inv, hk1, hkm⟩
   have hm16 := hpre.le.2
   let j := m - k
-  have hj : j < 16 := by omega_arith
-  have hr9 : t.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
-  have hroom : Room t := room_congr hpre.room hr9 inv.wr
-  have hrb : t.gpr .rbx = t.gpr .r9 + BitVec.ofNat 64 (4 * j) := by rw [inv.rbx, hr9]
-  have hwr : ∀ w < 4, InRegions t.wr (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 4 := by
+  obtain hj : j < 16 := by omega_arith
+  obtain hr9 : t.gpr .r9 = s₀.gpr .r9 := inv.regs _ (by decide) (by decide) (by decide) (by decide)
+  obtain hroom : Room t := room_congr hpre.room hr9 inv.wr
+  obtain hrb : t.gpr .rbx = t.gpr .r9 + BitVec.ofNat 64 (4 * j) := by rw [inv.rbx, hr9]
+  obtain hwr : ∀ w < 4, InRegions t.wr (t.gpr .r10 + BitVec.ofNat 64 (4 * w)) 4 := by
     intro w hw; rw [inv.r10, Offset.add_add, inv.wr]; exact hpre.write j (by omega_arith) w hw
-  have harr : arraysR t = arraysR s₀ := by simp [arraysR, hr9]
-  have hsep : Region.Disjoint ⟨t.gpr .r10, 16⟩ (arraysR t) := by
+  obtain harr : arraysR t = arraysR s₀ := by simp [arraysR, hr9]
+  obtain hsep : Region.Disjoint ⟨t.gpr .r10, 16⟩ (arraysR t) := by
     rw [inv.r10, harr]; exact hpre.sep.sub_left (Offset.sub_base p (by omega_arith))
   obtain ⟨t', ht', hmem, hr10, hrbx, hrcx, hzf, hrd, hwr', hregs⟩ := copyOutBody_ok hj t hroom hrb hwr hsep
   refine WP.of_runBlock ⟨t', ht', ?_⟩
   -- The lanes, as they were.
-  have hlanes : ∀ w < 4, lv t (arrSlot ((w + 2) % 4)) j = lv s₀ (arrSlot ((w + 2) % 4)) j := by
+  obtain hlanes : ∀ w < 4, lv t (arrSlot ((w + 2) % 4)) j = lv s₀ (arrSlot ((w + 2) % 4)) j := by
     intro w hw
     simp only [lv, laneA, hr9]
     refine inv.frame.readW (Region.contains_self _ _) ?_ (by decide)
     intro r hr'; simp only [List.mem_singleton] at hr'; subst hr'
     exact fun x h1 h2 => hpre.sep x h2 (lane_inArrays (mem_arrA_of (Nat.mod_lt _ (by decide))) hj s₀ |>.byte h1)
-  have inv' : CopyOutInv s₀ p m (j + 1) t' := by
+  obtain inv' : CopyOutInv s₀ p m (j + 1) t' := by
     refine ⟨by omega_arith, ?_, ?_, ?_, fun b hb i hi => ?_, ?_, fun r h1 h2 h3 h4 => ?_, by rw [hrd, inv.rd],
       by rw [hwr', inv.wr]⟩
     · rw [hr10, inv.r10, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add]; congr 2
@@ -516,7 +516,7 @@ theorem copyOut_loop {s₀ : State} {p : Addr} {m : Nat} (hpre : CopyOutPre s₀
   by_cases hk : k = 1
   · subst hk
     left
-    have hjm : j + 1 = m := by omega_arith
+    obtain hjm : j + 1 = m := by omega_arith
     refine ⟨?_, hjm ▸ inv'⟩
     show t'.zf.map (!·) = some false
     rw [hzf, inv.rcx, show m - (m - 1) = 1 by omega_arith]; rfl

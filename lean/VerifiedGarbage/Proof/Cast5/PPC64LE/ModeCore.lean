@@ -85,14 +85,14 @@ theorem ready_frame {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Cast5
     {rs : List Region} (h : Ready s B ws k) (e : KeptBut s s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem) (hs : ∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r') :
     Ready s' B ws k := by
-  have hk : ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => by
+  obtain hk : ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => by
     obtain ⟨r', hr', hsub⟩ := hs r hr
     exact (h.args.keyOut r' hr').sub_right hsub
-  have ht : ∀ r ∈ rs, (tblR s).Disjoint r := fun r hr => by
+  obtain ht : ∀ r ∈ rs, (tblR s).Disjoint r := fun r hr => by
     obtain ⟨r', hr', hsub⟩ := hs r hr
     exact (h.args.tblOut r' hr').sub_right hsub
   refine ⟨?_, by rw [keyR, e.r3]; exact h.keyScr, by rw [tblR, hsy]; exact h.tblScr⟩
-  have a := h.args.congr e.r3 hrd hwr hsy hf hk ht
+  obtain a := h.args.congr e.r3 hrd hwr hsy hf hk ht
   exact ⟨a.sched, a.key, a.kfit, by rw [keyR, e.r3]; exact h.args.keyOut, a.tbl, a.held,
     by rw [tblR, hsy]; exact h.args.tblOut⟩
 
@@ -147,55 +147,55 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
   have hfit : B.toNat + 176 ≤ 2 ^ 64 := hS.fit
   have hW : (⟨B, 176⟩ : Region) ∈ s.wr := hS.wr
   obtain ⟨hk, hkB, htB⟩ := hR
-  have hn15 : n < 2 ^ 15 := by rcases hn with rfl | rfl <;> decide
+  obtain hn15 : n < 2 ^ 15 := by rcases hn with rfl | rfl <;> decide
   refine VG.PPC64LE.WP.of_syms ?_
   simp only [dirCore, modeCrypt, List.cons_append, List.nil_append]
   -- `r29`, `r30` to `r6`, `r7`.
   refine WP.seq (WP.cons exec_logic (WP.cons exec_logic ?_))
   generalize hs₂ : ((s.write .r6 (s.gpr .r29 ||| s.gpr .r29)).write .r7
     ((s.write .r6 (s.gpr .r29 ||| s.gpr .r29)).gpr .r30 ||| (s.write .r6 (s.gpr .r29 ||| s.gpr .r29)).gpr .r30)) = s₂
-  have g₂ : ∀ r, r ≠ .r6 → r ≠ .r7 → s₂.gpr r = s.gpr r := fun r h6 h7 => by
+  obtain g₂ : ∀ r, r ≠ .r6 → r ≠ .r7 → s₂.gpr r = s.gpr r := fun r h6 h7 => by
     rw [← hs₂]; simp [State.write, h6, h7]
-  have r6₂ : s₂.gpr .r6 = s.gpr .r29 := by rw [← hs₂]; simp [State.write]
-  have r7₂ : s₂.gpr .r7 = s.gpr .r30 := by rw [← hs₂]; simp [State.write]
-  have mem₂ : s₂.mem = s.mem := by rw [← hs₂]; rfl
-  have rd₂ : s₂.rd = s.rd := by rw [← hs₂]; rfl
-  have wr₂ : s₂.wr = s.wr := by rw [← hs₂]; rfl
-  have sy₂ : s₂.syms = s.syms := by rw [← hs₂]; rfl
-  have b₂ : s₂.gpr sb = B := by rw [g₂ _ (by decide) (by decide), hB]
+  obtain r6₂ : s₂.gpr .r6 = s.gpr .r29 := by rw [← hs₂]; simp [State.write]
+  obtain r7₂ : s₂.gpr .r7 = s.gpr .r30 := by rw [← hs₂]; simp [State.write]
+  obtain mem₂ : s₂.mem = s.mem := by rw [← hs₂]; rfl
+  obtain rd₂ : s₂.rd = s.rd := by rw [← hs₂]; rfl
+  obtain wr₂ : s₂.wr = s.wr := by rw [← hs₂]; rfl
+  obtain sy₂ : s₂.syms = s.syms := by rw [← hs₂]; rfl
+  obtain b₂ : s₂.gpr sb = B := by rw [g₂ _ (by decide) (by decide), hB]
   -- Our caller's registers to their slots.
   refine Spill.save_ok (b := sb) (by decide) modeSaved_ok (fun p hp => by
     have := modeSaved_lt p hp
     exact ⟨_, by rw [wr₂]; exact hW, by rw [b₂]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) ?_
   rw [b₂]
   generalize hM : Spill.saveMem s₂.mem B s₂.gpr modeSaved = M
-  have sv : Spill.Saved B s₂.gpr modeSaved M := by rw [← hM]; exact Spill.saveMem_saved modeSaved_fits _ _ _
-  have fM : Frame [⟨B + BitVec.ofNat 64 8, 120⟩] s.mem M := by
+  obtain sv : Spill.Saved B s₂.gpr modeSaved M := by rw [← hM]; exact Spill.saveMem_saved modeSaved_fits _ _ _
+  obtain fM : Frame [⟨B + BitVec.ofNat 64 8, 120⟩] s.mem M := by
     rw [← hM, mem₂]; exact Spill.saveMem_frame modeSaved_lt (by decide) _ _ _
   -- The table's address, 255, zero and the rounds.
   refine WP.cons (exec_adrSym (by decide)) ?_
   refine wp_li (by decide) fun s₅ u₅ => wp_li (by decide) fun s₆ u₆ => wp_li hn15 fun s₇ u₇ => wp_nil ?_
-  have g₇ : ∀ r, r ≠ tbl → r ≠ c255 → r ≠ .r0 → r ≠ rnd → s₇.gpr r = s₂.gpr r := fun r h1 h2 h3 h4 => by
+  obtain g₇ : ∀ r, r ≠ tbl → r ≠ c255 → r ≠ .r0 → r ≠ rnd → s₇.gpr r = s₂.gpr r := fun r h1 h2 h3 h4 => by
     rw [u₇.other r h4, u₆.other r h3, u₅.other r h2]; simp [State.write, h1]
-  have t₇ : s₇.gpr tbl = s.syms s1234Sym := by
+  obtain t₇ : s₇.gpr tbl = s.syms s1234Sym := by
     rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), ← sy₂]; simp [State.write]
-  have c₇ : s₇.gpr c255 = 255#64 := by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
-  have z₇ : s₇.gpr .r0 = 0 := by rw [u₇.other _ (by decide), u₆.gpr]; rfl
+  obtain c₇ : s₇.gpr c255 = 255#64 := by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
+  obtain z₇ : s₇.gpr .r0 = 0 := by rw [u₇.other _ (by decide), u₆.gpr]; rfl
   have n₇ : s₇.gpr rnd = BitVec.ofNat 64 n := u₇.gpr
-  have m₇ : s₇.mem = M := by rw [u₇.mem, u₆.mem, u₅.mem]; rfl
-  have rd₇ : s₇.rd = s.rd := by rw [u₇.rd, u₆.rd, u₅.rd]; exact rd₂
-  have wr₇ : s₇.wr = s.wr := by rw [u₇.wr, u₆.wr, u₅.wr]; exact wr₂
-  have b₇ : s₇.gpr sb = B := by rw [g₇ _ (by decide) (by decide) (by decide) (by decide), b₂]
-  have r3₇ : s₇.gpr .r3 = s.gpr .r3 := by
+  obtain m₇ : s₇.mem = M := by rw [u₇.mem, u₆.mem, u₅.mem]; rfl
+  obtain rd₇ : s₇.rd = s.rd := by rw [u₇.rd, u₆.rd, u₅.rd]; exact rd₂
+  obtain wr₇ : s₇.wr = s.wr := by rw [u₇.wr, u₆.wr, u₅.wr]; exact wr₂
+  obtain b₇ : s₇.gpr sb = B := by rw [g₇ _ (by decide) (by decide) (by decide) (by decide), b₂]
+  obtain r3₇ : s₇.gpr .r3 = s.gpr .r3 := by
     rw [g₇ _ (by decide) (by decide) (by decide) (by decide), g₂ _ (by decide) (by decide)]
   -- Nothing the saves wrote is the subkeys, the table or the block.
-  have hkM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 8, 120⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
+  obtain hkM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 8, 120⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hkB.sub_right (Offset.sub_base _ (by decide))
-  have htM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 8, 120⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
+  obtain htM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 8, 120⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact htB.sub_right (Offset.sub_base _ (by decide))
-  have pre : BPre s₇ .r5 B (s.gpr .r3) n :=
+  obtain pre : BPre s₇ .r5 B (s.gpr .r3) n :=
     { ptr := b₇
       prOk := by decide
       sched := r3₇
@@ -210,9 +210,9 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       kfit := hk.kfit }
   -- The block function.
   refine WP.seq (WP.mono (crypt_ok pre up) fun v hv => ?_)
-  have gv : ∀ r, r ∉ roundRegs → v.gpr r = s₇.gpr r := fun r hr => hv.keep.gpr hr
-  have bv : v.gpr sb = B := by rw [gv _ (by decide), b₇]
-  have svv : Spill.Saved B s₂.gpr modeSaved v.mem := by
+  obtain gv : ∀ r, r ∉ roundRegs → v.gpr r = s₇.gpr r := fun r hr => hv.keep.gpr hr
+  obtain bv : v.gpr sb = B := by rw [gv _ (by decide), b₇]
+  obtain svv : Spill.Saved B s₂.gpr modeSaved v.mem := by
     rw [← m₇] at sv
     exact sv.frame hv.frame fun p hp r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -223,25 +223,25 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     exact ⟨_, by rw [hv.keep.2.1, hv.keep.2.2, rd₇, wr₇]; exact List.mem_append_right _ hW,
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) svv fun w R => ?_
   refine wp_mr fun x₁ e₁ => wp_mr fun x₂ e₂ => wp_nil fun syF => ?_
-  have gw : ∀ r, r ≠ .r29 → r ≠ .r30 → x₂.gpr r = w.gpr r := fun r h29 h30 => by
+  obtain gw : ∀ r, r ≠ .r29 → r ≠ .r30 → x₂.gpr r = w.gpr r := fun r h29 h30 => by
     rw [e₂.other r h30, e₁.other r h29]
   -- The memory: the saves and the block.
-  have memF : x₂.mem = v.mem := by rw [e₂.mem, e₁.mem, R.mem]
-  have fF : Frame [⟨B, 8 * 16⟩] s.mem x₂.mem := by
+  obtain memF : x₂.mem = v.mem := by rw [e₂.mem, e₁.mem, R.mem]
+  obtain fF : Frame [⟨B, 8 * 16⟩] s.mem x₂.mem := by
     rw [memF]
     refine (fM.sub fun r hr => ?_).trans ((m₇ ▸ hv.frame).sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-  have rdF : x₂.rd = s.rd := by rw [e₂.rd, e₁.rd, R.rd, hv.keep.2.1, rd₇]
-  have wrF : x₂.wr = s.wr := by rw [e₂.wr, e₁.wr, R.wr, hv.keep.2.2, wr₇]
-  have r3F : x₂.gpr .r3 = s.gpr .r3 := by
+  obtain rdF : x₂.rd = s.rd := by rw [e₂.rd, e₁.rd, R.rd, hv.keep.2.1, rd₇]
+  obtain wrF : x₂.wr = s.wr := by rw [e₂.wr, e₁.wr, R.wr, hv.keep.2.2, wr₇]
+  obtain r3F : x₂.gpr .r3 = s.gpr .r3 := by
     rw [gw _ (by decide) (by decide), R.other _ (by decide), gv _ (by decide), r3₇]
-  have hkF : ∀ r ∈ [(⟨B, 8 * 16⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
+  obtain hkF : ∀ r ∈ [(⟨B, 8 * 16⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hkB.sub_right (Region.sub_prefix (by decide))
-  have htF : ∀ r ∈ [(⟨B, 8 * 16⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
+  obtain htF : ∀ r ∈ [(⟨B, 8 * 16⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact htB.sub_right (Region.sub_prefix (by decide))
   refine ⟨?_, fun r hr => ?_, ⟨hk.congr r3F rdF wrF syF fF hkF htF, by rw [keyR, r3F]; exact hkB,
@@ -264,13 +264,13 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       rw [R.other r hs, gv r hr1, g₇ r hr2 hr3 hr4 hr5, g₂ r hr6 hr7]
   · -- The block.
     obtain rfl : j = 0 := by simpa using hj
-    have ea : blkAddr (dirCore up n) B 0 = B := by simp [blkAddr, slotA, dirCore]
+    obtain ea : blkAddr (dirCore up n) B 0 = B := by simp [blkAddr, slotA, dirCore]
     simp only [dirCore] at ea
-    have hb : Spec.Aes.bytesAt M B 8 = Spec.Aes.bytesAt s.mem B 8 :=
+    obtain hb : Spec.Aes.bytesAt M B 8 = Spec.Aes.bytesAt s.mem B 8 :=
       bytesAt_frame fM fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.base_disjoint _ (by decide) (by omega_arith)
-    have hkk : Spec.Cast5.scheduleAt M (s.gpr .r3) = k := by rw [scheduleAt_frame fM hkM, hk.sched]
+    obtain hkk : Spec.Cast5.scheduleAt M (s.gpr .r3) = k := by rw [scheduleAt_frame fM hkM, hk.sched]
     rw [ea, show 4 * 2 = 8 from rfl, memF, Proof.Cast5.bytesAt_eq, hv.blk, m₇, dirCipher_bytes, hkk,
       ← ofFn_bytesAt M B, hb, ofFn_bytesAt]
 

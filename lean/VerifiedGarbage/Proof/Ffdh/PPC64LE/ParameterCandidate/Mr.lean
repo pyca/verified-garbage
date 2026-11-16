@@ -75,7 +75,7 @@ theorem mrHeadBlk_ok {C : Nat} {p : PP} {mb N : Nat} {res : Option (Bool × List
   have hKw := h.m.ph.kW
   have hU := h.used
   simp only [word, off, Impl.MillerRabin.PPC64LE.Search.hK, Nat.reduceMul] at hKw hU
-  have hsub : BitVec.ofNat 64 p.r.length - BitVec.ofNat 64 u = BitVec.ofNat 64 (p.r.length - u) := by
+  obtain hsub : BitVec.ofNat 64 p.r.length - BitVec.ofNat 64 u = BitVec.ofNat 64 (p.r.length - u) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     omega_arith
@@ -101,25 +101,25 @@ theorem mrHead_ok {C : Nat} (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option 
   refine WP.ite (decide ((if (mb + 7) / 8 ≤ p.r.length - u then 1 else 0) = 0))
     (eval_zero_ofNat s₂ .r5 (by split <;> decide) a5) (fun hb => ?_) (fun hb => ?_)
   · -- No room: `hStat := 0`.
-    have hr : p.r.length < u + (mb + 7) / 8 := by
+    obtain hr : p.r.length < u + (mb + 7) / 8 := by
       by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega_arith)] at hb; exact absurd hb (by decide)
-    have st₂ : St p s₂ := h.m.st.step (by rw [m12]; exact Frm.refl _ _ _) k12
-    have l160 : InRegions s₂.wr (p.B + BitVec.ofNat 64 160) 8 := st₂.st (d := 160) (by decide)
+    obtain st₂ : St p s₂ := h.m.st.step (by rw [m12]; exact Frm.refl _ _ _) k12
+    obtain l160 : InRegions s₂.wr (p.B + BitVec.ofNat 64 160) 8 := st₂.st (d := 160) (by decide)
     refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = s₂.mem.writeW (p.B + BitVec.ofNat 64 160) (BitVec.ofNat 64 0))
       (by simp only [sth, hStat]; prun [st₂.r31, l160]) (by decide)) fun t ⟨tm, kt⟩ => ?_
-    have kt' := k12.trans kt
-    have hf : Frm p.B [(160, 8)] s.mem t.mem := by
+    obtain kt' := k12.trans kt
+    obtain hf : Frm p.B [(160, 8)] s.mem t.mem := by
       rw [tm, m12]
       exact frm_writeW (a := 160) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩ (by decide)
-    have hfr : ∀ r ∈ [((160 : Nat), (8 : Nat))], Free (wOf mb) r := fun r hr => by
+    obtain hfr : ∀ r ∈ [((160 : Nat), (8 : Nat))], Free (wOf mb) r := fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact Or.inl ⟨by simp, rfl⟩
     refine ⟨h.m.frm hf hfr kt' (by decide) (kt'.gpr _ (by decide)) (kt'.gpr _ (by decide))
       (kt'.gpr _ (by decide)), Or.inl ⟨hr, ?_⟩⟩
     simp only [word, off]; rw [tm, rw_self]
   · -- A draw.
-    have hr : u + (mb + 7) / 8 ≤ p.r.length := by
+    obtain hr : u + (mb + 7) / 8 ≤ p.r.length := by
       by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega_arith)])
-    have M₂ : MSt p mb N C s₂ := h.m.frm (rs := []) (by rw [m12]; exact Frm.refl _ _ _) (by simp) k12 (by decide)
+    obtain M₂ : MSt p mb N C s₂ := h.m.frm (rs := []) (by rw [m12]; exact Frm.refl _ _ _) (by simp) k12 (by decide)
       (k12.gpr _ (by decide)) (k12.gpr _ (by decide)) (k12.gpr _ (by decide))
     refine WP.mono (draw_ok R M₂ (by rw [m12]; exact h.used) hr (by rw [m12]; exact h.idx)
       (by rw [m12]; exact h.stat) (by have := h.ik; have := h.m.ph.k2; omega_arith))
@@ -153,27 +153,27 @@ theorem mrIter_ok {C : Nat} (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option 
   have hres := h.rest
   rw [show C - i = (C - i - 1) + 1 by omega_arith] at hres
   refine wp_then (mrHead_ok R h) fun t ⟨M, hmid⟩ => ?_
-  have l160 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 160) 8 := M.st.ld (d := 160) (by decide)
+  obtain l160 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 160) 8 := M.st.ld (d := 160) (by decide)
   refine WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = word t.mem p.B 160 - BitVec.ofNat 64 4 ∧
       v.mem = t.mem) (by simp only [ldh, hStat]; prun [M.st.r31, l160]) (by decide)) fun v ⟨⟨v3, vm⟩, vk⟩ => ?_
-  have M' : MSt p mb N C v := M.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vk (by decide)
+  obtain M' : MSt p mb N C v := M.frm (rs := []) (by rw [vm]; exact Frm.refl _ _ _) (by simp) vk (by decide)
     (vk.gpr _ (by decide)) (vk.gpr _ (by decide)) (vk.gpr _ (by decide))
-  have hw : ∀ d, word v.mem p.B d = word t.mem p.B d := fun d => by rw [vm]
-  have ev : ∀ k, k < 2 ^ 60 → word t.mem p.B 160 = BitVec.ofNat 64 k →
+  obtain hw : ∀ d, word v.mem p.B d = word t.mem p.B d := fun d => by rw [vm]
+  obtain ev : ∀ k, k < 2 ^ 60 → word t.mem p.B 160 = BitVec.ofNat 64 k →
       isa.eval (.zero .d .r3) v = some (decide (k = 4)) := fun k hk he => by
     rw [eval_zero, v3, he, stat_zero hk]
-  have hm : 1 ≤ mb := by omega_arith
+  obtain hm : 1 ≤ mb := by omega_arith
   rcases hmid with ⟨hr, h0⟩ | ⟨hr, hu, hs, hi⟩
   · -- No room for a witness.
     rw [cw_short hbl hm hr] at hres
-    have hg : mrGo p.r mb N i u C = false := by
+    obtain hg : mrGo p.r mb N i u C = false := by
       simp only [mrGo, Bool.and_eq_false_iff, decide_eq_false_iff_not]; exact Or.inl (by omega_arith)
     rw [hg]
     refine ⟨(ev 0 (by decide) h0).trans (by decide), fun _ => ⟨M', fun _ => by rw [hw]; exact h0, fun b rest hb => ?_⟩,
       fun h => absurd h (by decide)⟩
     rw [← hres] at hb; cases hb
   rw [cw_step hbl hm hr] at hres
-  have hround := mr_round_eq (wA mb p.r u) hN3 hodd
+  obtain hround := mr_round_eq (wA mb p.r u) hN3 hodd
   simp only [dStat, dIdx, mrGo, hround, decide_eq_true hr, Bool.true_and] at hs hi ⊢
   generalize wA mb p.r u = a at hs hi hres ⊢
   by_cases hrg : 2 ≤ a ∧ a < N - 1
@@ -211,26 +211,26 @@ theorem mrInit_ok {C : Nat} {p : PP} {mb N u : Nat} {s : State} (h : MSt p mb N 
     WP isa (.block [.li .r3 0, sth .r3 hIdx, .li .r3 4, sth .r3 hStat]) s
       (MrSt p mb N C (checkWitnesses N C (p.r.drop u)) 0 u) := by
   have hm1 := h.mb1
-  have l160 : InRegions s.wr (p.B + BitVec.ofNat 64 160) 8 := h.st.st (d := 160) (by decide)
-  have l176 : InRegions s.wr (p.B + BitVec.ofNat 64 176) 8 := h.st.st (d := 176) (by decide)
+  obtain l160 : InRegions s.wr (p.B + BitVec.ofNat 64 160) 8 := h.st.st (d := 160) (by decide)
+  obtain l176 : InRegions s.wr (p.B + BitVec.ofNat 64 176) 8 := h.st.st (d := 176) (by decide)
   refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = (s.mem.writeW (p.B + BitVec.ofNat 64 176)
       (BitVec.ofNat 64 0)).writeW (p.B + BitVec.ofNat 64 160) (BitVec.ofNat 64 4))
       (by simp only [sth, hIdx, hStat]; prun [h.st.r31, l160, l176]) (by decide)) fun t ⟨tm, kt⟩ => ?_
-  have hf : Frm p.B [(176, 8), (160, 8)] s.mem t.mem := by
+  obtain hf : Frm p.B [(176, 8), (160, 8)] s.mem t.mem := by
     rw [tm]
     exact frm_writeW (frm_writeW (Frm.refl _ _ _) _ ⟨(176, 8), by simp, by decide, by decide⟩ (by decide)) _
       ⟨(160, 8), by simp, by decide, by decide⟩ (by decide)
-  have hfr : ∀ r ∈ [((176 : Nat), (8 : Nat)), (160, 8)], Free (wOf mb) r := fun r hr => by
+  obtain hfr : ∀ r ∈ [((176 : Nat), (8 : Nat)), (160, 8)], Free (wOf mb) r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Or.inl ⟨by simp, rfl⟩
-  have M := h.frm hf hfr kt (by decide) (kt.gpr _ (by decide)) (kt.gpr _ (by decide)) (kt.gpr _ (by decide))
-  have t152 : word t.mem p.B 152 = BitVec.ofNat 64 u := by
+  obtain M := h.frm hf hfr kt (by decide) (kt.gpr _ (by decide)) (kt.gpr _ (by decide)) (kt.gpr _ (by decide))
+  obtain t152 : word t.mem p.B 152 = BitVec.ofNat 64 u := by
     simp only [word, off] at hu ⊢
     rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hu
-  have t160 : word t.mem p.B 160 = BitVec.ofNat 64 4 := by
+  obtain t160 : word t.mem p.B 160 = BitVec.ofNat 64 4 := by
     simp only [word, off]; rw [tm, rw_self]
-  have t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
+  obtain t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
     simp only [word, off]; rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self]
   have hK : 0 < C := h.ph.k1
   exact ⟨M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
@@ -247,13 +247,13 @@ theorem millerRabin_ok {C : Nat} (R : RoundImpl) {p : PP} {mb N u : Nat} {s : St
   refine WP.loop (fun m v => ∃ i u', m = p.r.length + 1 - u' ∧
       MrSt p mb N C (checkWitnesses N C (p.r.drop u)) i u' v) ?_ (p.r.length + 1 - u) t ?_
   · rintro m v ⟨i, u', rfl, hv⟩
-    have hit := mrIter_ok R hbl hv
+    obtain hit := mrIter_ok R hbl hv
     refine WP.mono hit fun w ⟨he, hend, hgo⟩ => ?_
     cases hg : mrGo p.r mb N i u' C
     · exact Or.inl ⟨by rw [he, hg], hend hg⟩
     · have hw := hgo hg
       have hul' := hw.ul
-      have hlt : p.r.length + 1 - (u' + (mb + 7) / 8) < p.r.length + 1 - u' := by omega_using [hul', hm1]
+      obtain hlt : p.r.length + 1 - (u' + (mb + 7) / 8) < p.r.length + 1 - u' := by omega_using [hul', hm1]
       exact Or.inr ⟨by rw [he, hg], p.r.length + 1 - (u' + (mb + 7) / 8), hlt, _, u' + (mb + 7) / 8, rfl, hw⟩
   · exact ⟨0, u, rfl, ht⟩
 

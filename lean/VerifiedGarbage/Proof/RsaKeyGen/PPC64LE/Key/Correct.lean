@@ -56,10 +56,10 @@ theorem key_result {s0 : State} (h : keyP.pre s0) {D x : Nat} (hxl : x < mL (kP 
     Spec.RsaKeyGen.keyFromPrimes (16 * kL s0) (eIn s0) (pIn s0) (qIn s0) =
       if kMask s0 D then .inl (.ok ⟨kP s0 * kQ s0, eIn s0, D, kP s0, kQ s0, D % (kP s0 - 1), D % (kQ s0 - 1), x⟩)
       else if kSmall s0 D then .inr () else .inl (.error .internal) := by
-  have p := kpre h
-  have hpl := hpl_of s0
-  have hql := hql_of s0
-  have hel := hel_of h
+  obtain p := kpre h
+  obtain hpl := hpl_of s0
+  obtain hql := hql_of s0
+  obtain hel := hel_of h
   rw [mL_eq] at hxl hx
   rw [VG.Proof.RsaKeyGen.keyFromPrimes_code p.l1 p.l2 hpl hql hel hx hxl]
   by_cases ok : okv (eIn s0) (kLc s0)
@@ -69,7 +69,7 @@ theorem key_result {s0 : State} (h : keyP.pre s0) {D x : Nat} (hxl : x < mL (kP 
     dsimp only
     by_cases hs : D ≤ 2 ^ (8 * kL s0)
     · have sm : kSmall s0 D := ⟨ok, by omega_arith⟩
-      have nm : ¬ kMask s0 D := fun m => m.1 sm
+      obtain nm : ¬ kMask s0 D := fun m => m.1 sm
       simp only [hs, nm, sm, ↓reduceIte]
     · have sm : ¬ kSmall s0 D := fun a => hs (by have := a.2; omega_arith)
       simp only [hs, sm, ↓reduceIte]
@@ -91,8 +91,8 @@ theorem key_result {s0 : State} (h : keyP.pre s0) {D x : Nat} (hxl : x < mL (kP 
   · have hi := okv_none ok
     simp only [kLc, kP, kQ] at hi
     rw [hi]
-    have sm : ¬ kSmall s0 D := fun a => ok a.1
-    have nm : ¬ kMask s0 D := fun m => ok m.2.2.1
+    obtain sm : ¬ kSmall s0 D := fun a => ok a.1
+    obtain nm : ¬ kMask s0 D := fun m => ok m.2.2.1
     simp only [nm, sm, ↓reduceIte]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Key
@@ -140,70 +140,70 @@ theorem status_toNat (a b : Nat) (ha : a ≤ 1) (hb : b ≤ 1) :
 
 theorem post_of {s0 t : State} (h : keyP.pre s0) (bp : BodyPost s0 t) : keyP.post s0 t := by
   obtain ⟨m, D, x, -, hD, xl, xd, inv, r3, outs, vN, vD, vP, vQ, vDP, vDQ, vQi⟩ := bp
-  have p := kpre h
+  obtain p := kpre h
   obtain ⟨-, -, -, hlw, -⟩ := pre_ws h
   have l1 := p.l1
   have l2 := p.l2
-  have kr := key_result h xl xd inv
+  obtain kr := key_result h xl xd inv
   have hres : resOf s0 = match Spec.RsaKeyGen.keyFromPrimes (16 * kL s0) (eIn s0) (pIn s0) (qIn s0) with
       | .inl (.ok k) => .inl (.ok [Spec.Rsa.i2osp k.n (2 * kL s0), Spec.Rsa.i2osp k.d (2 * kL s0),
           Spec.Rsa.i2osp k.p (kL s0), Spec.Rsa.i2osp k.q (kL s0), Spec.Rsa.i2osp k.dP (kL s0),
           Spec.Rsa.i2osp k.dQ (kL s0), Spec.Rsa.i2osp k.qInv (kL s0)])
       | .inl (.error f) => .inl (.error f)
       | .inr () => .inr () := rfl
-  have i1 : ∀ (c : Prop) [Decidable c], (if c then 1 else 0 : Nat) ≤ 1 := fun c _ => flag01 c
+  obtain i1 : ∀ (c : Prop) [Decidable c], (if c then 1 else 0 : Nat) ≤ 1 := fun c _ => flag01 c
   show ((t.gpr .r3).setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (resOf s0) ∧ _
   rw [r3, status_toNat _ _ (i1 _) (i1 _), hres, kr]
   have nl := p.nl
   by_cases hm : kMask s0 D
   · have hs : ¬ kSmall s0 D := hm.1
     obtain ⟨-, top, -, g, pp, qq, -, -, -⟩ := id hm
-    have hP : kP s0 < 2 ^ (8 * kL s0) := by
+    obtain hP : kP s0 < 2 ^ (8 * kL s0) := by
       have := hpl_of s0; have := hql_of s0; simp only [kP]; split <;> with_reducible assumption
-    have hQ : kQ s0 < 2 ^ (8 * kL s0) := by
+    obtain hQ : kQ s0 < 2 ^ (8 * kL s0) := by
       have := hpl_of s0; have := hql_of s0; simp only [kQ]; split <;> with_reducible assumption
     simp only [hm, hs, ↓reduceIte]
     refine ⟨rfl, ?_⟩
     simp only [hm, decide_true] at outs
     -- `p` and `q` are at least 3: an odd 1 makes `n` too small.
-    have p3 : 3 ≤ kP s0 := by
+    obtain p3 : 3 ≤ kP s0 := by
       by_contra c
       have : kP s0 = 1 := by omega_arith
       rw [this, Nat.one_mul] at top
       exact top (Nat.lt_of_lt_of_le hQ (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega_arith)))
-    have q3 : 3 ≤ kQ s0 := by
+    obtain q3 : 3 ≤ kQ s0 := by
       by_contra c
       have : kQ s0 = 1 := by omega_arith
       rw [this, Nat.mul_one] at top
       exact top (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (n := 2) (by decide) (show 8 * kL s0 ≤ 16 * kL s0 - 1 by omega_arith)))
-    have hM : mL (kP s0) = kP s0 := mL_of ⟨by omega_arith, pp⟩
+    obtain hM : mL (kP s0) = kP s0 := mL_of ⟨by omega_arith, pp⟩
     rw [hM] at xl
-    have h16 : 2 ^ (16 * kL s0) = 2 ^ (8 * kL s0) * 2 ^ (8 * kL s0) := by rw [← Nat.pow_add]; congr 1; omega_arith
-    have b8 : (256 : Nat) ^ kL s0 = 2 ^ (8 * kL s0) := by rw [Nat.pow_mul]
-    have b16 : (256 : Nat) ^ (2 * kL s0) = 2 ^ (16 * kL s0) := by
+    obtain h16 : 2 ^ (16 * kL s0) = 2 ^ (8 * kL s0) * 2 ^ (8 * kL s0) := by rw [← Nat.pow_add]; congr 1; omega_arith
+    obtain b8 : (256 : Nat) ^ kL s0 = 2 ^ (8 * kL s0) := by rw [Nat.pow_mul]
+    obtain b16 : (256 : Nat) ^ (2 * kL s0) = 2 ^ (16 * kL s0) := by
       rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega_arith
-    have hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
+    obtain hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
     simp only [outBytes, nl]
-    have bN := outs.bytes (O := s0.gpr .r3) (L := 2 * kL s0) (j := aN) (by simp) (by omega_arith) (by omega_arith)
-    have bD := outs.bytes (O := s0.gpr .r5) (L := 2 * kL s0) (j := aD) (by simp) (by omega_arith) (by omega_arith)
-    have bP := outs.bytes (O := s0.gpr .r7) (L := kL s0) (j := aP) (by simp) (by omega_arith) (by omega_arith)
-    have bQ := outs.bytes (O := s0.gpr .r9) (L := kL s0) (j := aQ) (by simp) (by omega_arith) (by omega_arith)
-    have bDP := outs.bytes (O := PPC64LE.stackArg s0 0) (L := kL s0) (j := aDP) (by simp) (by omega_arith) (by omega_arith)
-    have bDQ := outs.bytes (O := PPC64LE.stackArg s0 2) (L := kL s0) (j := aDQ) (by simp) (by omega_arith) (by omega_arith)
-    have bQi := outs.bytes (O := PPC64LE.stackArg s0 4) (L := kL s0) (j := aQi) (by simp) (by omega_arith) (by omega_arith)
+    obtain bN := outs.bytes (O := s0.gpr .r3) (L := 2 * kL s0) (j := aN) (by simp) (by omega_arith) (by omega_arith)
+    obtain bD := outs.bytes (O := s0.gpr .r5) (L := 2 * kL s0) (j := aD) (by simp) (by omega_arith) (by omega_arith)
+    obtain bP := outs.bytes (O := s0.gpr .r7) (L := kL s0) (j := aP) (by simp) (by omega_arith) (by omega_arith)
+    obtain bQ := outs.bytes (O := s0.gpr .r9) (L := kL s0) (j := aQ) (by simp) (by omega_arith) (by omega_arith)
+    obtain bDP := outs.bytes (O := PPC64LE.stackArg s0 0) (L := kL s0) (j := aDP) (by simp) (by omega_arith) (by omega_arith)
+    obtain bDQ := outs.bytes (O := PPC64LE.stackArg s0 2) (L := kL s0) (j := aDQ) (by simp) (by omega_arith) (by omega_arith)
+    obtain bQi := outs.bytes (O := PPC64LE.stackArg s0 4) (L := kL s0) (j := aQi) (by simp) (by omega_arith) (by omega_arith)
     rw [bN, bD, bP, bQ, bDP, bDQ, bQi, vN, vD, vP, vQ, vDP, vDQ, vQi, b8, b16]
     simp only [show ¬ kP s0 - 1 = 0 by omega_arith, show ¬ kQ s0 - 1 = 0 by omega_arith, ↓reduceIte]
     rw [hW] at hD
-    have e1 : kP s0 * kQ s0 % 2 ^ (16 * kL s0) = kP s0 * kQ s0 :=
+    obtain e1 : kP s0 * kQ s0 % 2 ^ (16 * kL s0) = kP s0 * kQ s0 :=
       Nat.mod_eq_of_lt (by rw [h16]; exact Nat.mul_lt_mul'' hP hQ)
-    have e5 : D % (kP s0 - 1) % 2 ^ (8 * kL s0) = D % (kP s0 - 1) :=
+    obtain e5 : D % (kP s0 - 1) % 2 ^ (8 * kL s0) = D % (kP s0 - 1) :=
       Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith))
-    have e6 : D % (kQ s0 - 1) % 2 ^ (8 * kL s0) = D % (kQ s0 - 1) :=
+    obtain e6 : D % (kQ s0 - 1) % 2 ^ (8 * kL s0) = D % (kQ s0 - 1) :=
       Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith))
     rw [e1, e5, e6, Nat.mod_eq_of_lt hD, Nat.mod_eq_of_lt hP, Nat.mod_eq_of_lt hQ,
       Nat.mod_eq_of_lt (show x < 2 ^ (8 * kL s0) by omega_arith)]
   · simp only [hm, decide_false] at outs
-    have z : outZero s0 t.mem := by
+    obtain z : outZero s0 t.mem := by
       simp only [outZero, nl]
       exact ⟨outs.zero (j := aN) (by simp) (by omega_arith), outs.zero (j := aD) (by simp) (by omega_arith),
         outs.zero (j := aP) (by simp) (by omega_arith), outs.zero (j := aQ) (by simp) (by omega_arith),
@@ -223,18 +223,18 @@ theorem restore_ok {s0 t : State} {m : Mem} (h : Fr s0 m t) :
       u.gpr .r22 = s0.gpr .r22 ∧ u.gpr .r23 = s0.gpr .r23 ∧ u.gpr .r24 = s0.gpr .r24 ∧
       u.gpr .r29 = s0.gpr .r29 ∧ u.gpr .r30 = s0.gpr .r30 ∧ u.gpr .r31 = s0.gpr .r31 ∧ u.mem = t.mem) ∧
       Keep [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r29, .r30, .r31] t u := by
-  have p := kpre h.pre
+  obtain p := kpre h.pre
   have nw := p.wS
   have hzs := p.sl
-  have hm : (⟨kB s0, kZ s0⟩ : Region) ∈ t.wr := by rw [h.wr, p.wr]; simp
-  have hs : Scr t (kB s0) (kZ s0) := Scr.of_mem hm nw
-  have e : ∀ i < 14, t.mem.readW (off (kB s0) (8 * i)) 64 = s0.gpr (savedReg i) := fun i hi => by
+  obtain hm : (⟨kB s0, kZ s0⟩ : Region) ∈ t.wr := by rw [h.wr, p.wr]; simp
+  obtain hs : Scr t (kB s0) (kZ s0) := Scr.of_mem hm nw
+  obtain e : ∀ i < 14, t.mem.readW (off (kB s0) (8 * i)) 64 = s0.gpr (savedReg i) := fun i hi => by
     rw [h.readW (by omega_arith)]; exact h.hdr i hi
-  have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
-  have e3 := e 3 (by decide); have e4 := e 4 (by decide); have e5 := e 5 (by decide)
-  have e6 := e 6 (by decide); have e7 := e 7 (by decide); have e8 := e 8 (by decide)
-  have e9 := e 9 (by decide); have e10 := e 10 (by decide); have e11 := e 11 (by decide)
-  have e12 := e 12 (by decide); have e13 := e 13 (by decide)
+  obtain e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
+  obtain e3 := e 3 (by decide); have e4 := e 4 (by decide); have e5 := e 5 (by decide)
+  obtain e6 := e 6 (by decide); have e7 := e 7 (by decide); have e8 := e 8 (by decide)
+  obtain e9 := e 9 (by decide); have e10 := e 10 (by decide); have e11 := e 11 (by decide)
+  obtain e12 := e 12 (by decide); have e13 := e 13 (by decide)
   simp only [savedReg, Nat.reduceMul] at e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 e11 e12 e13
   refine WP.keep _ ?_ (by decide)
   prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega_arith), hs.ld (d := 8) (n := 8) (by omega_arith),
@@ -264,7 +264,7 @@ theorem key_correct [InvLaw] (s : State) (h : keyP.pre s) :
   · rw [ku.sp, kt.sp, k1.sp]
   · rw [ku.lr, kt.lr, k1.lr]
   · have e3 : u.gpr .r3 = t.gpr .r3 := ku.gpr _ (by decide)
-    have po := post_of h bp
+    obtain po := post_of h bp
     show _ ∧ _
     rw [um, e3]
     exact po

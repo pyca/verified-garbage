@@ -156,8 +156,8 @@ theorem verSetup_ok {s u : State} (hp : VerPre s) (hu : ∀ r, r ≠ .r11 → u.
     WP isa (.block (saveRegs .r10 200 verifyRegs ++
       [mov .r20 .r3, mov .r21 .r8, mov .r22 .r9, mov .r24 .r4, mov .r25 .r5, mov .r28 .r6, mov .r29 .r7,
         mov .r23 .r10] ++ hdr .r23 .r25)) u (V1 s) := by
-  have hFw : (vfR s) ∈ u.wr := by rw [hwr, hp.wr]; simp
-  have g10 : u.gpr .r10 = s.gpr .r10 := hu _ (by decide)
+  obtain hFw : (vfR s) ∈ u.wr := by rw [hwr, hp.wr]; simp
+  obtain g10 : u.gpr .r10 = s.gpr .r10 := hu _ (by decide)
   refine (show WP isa (.block (saveRegs .r10 200 verifyRegs ++
       ([(.r20, .r3), (.r21, .r8), (.r22, .r9), (.r24, .r4), (.r25, .r5), (.r28, .r6), (.r29, .r7),
         (.r23, .r10)] : List (Reg × Reg)).map (fun p => mov p.1 p.2) ++ hdr .r23 .r25)) u (V1 s) from ?_)
@@ -167,11 +167,11 @@ theorem verSetup_ok {s u : State} (hp : VerPre s) (hu : ∀ r, r ≠ .r11 → u.
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
       rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact (hu _ (by decide)).symm) fun t₁ h₁ => ?_
   rw [g10] at h₁
-  have h₁ : VInv s t₁ := h₁.rebase verifyRegs_pres hrd hwr hsp hlr
+  obtain h₁ : VInv s t₁ := h₁.rebase verifyRegs_pres hrd hwr hsp hlr
     (fun r hr => hu r fun e => by revert hr; rw [e]; decide) hm
-  have g23 : t₁.gpr .r23 = s.gpr .r10 := h₁.regs _ (by decide)
-  have g25 : t₁.gpr .r25 = s.gpr .r5 := h₁.regs _ (by decide)
-  have hFw₁ : (vfR s) ∈ t₁.wr := by rw [h₁.wr, hp.wr]; simp
+  obtain g23 : t₁.gpr .r23 = s.gpr .r10 := h₁.regs _ (by decide)
+  obtain g25 : t₁.gpr .r25 = s.gpr .r5 := h₁.regs _ (by decide)
+  obtain hFw₁ : (vfR s) ∈ t₁.wr := by rw [h₁.wr, hp.wr]; simp
   refine hdr_ok (F := s.gpr .r10) (cl := (s.gpr .r5).toNat) (by decide) (by decide) g23
     (by rw [g25, ofNat_toNat]) (fun j hj => in_base hFw₁ (by omega_using [hj]) (by omega_using [hj]))
     (by simpa using in_base (d := 0) (n := 8) hFw₁ (by decide) (by decide)) (by decide)
@@ -191,16 +191,16 @@ abbrev verPieces : List Piece :=
 theorem V1.hashOk {s t : State} (hp : VerPre s) (h : V1 s t) : HashOk .r22 .r23 16 verPieces t ∧
     (verPieces.map (Piece.bytes t.mem t.gpr)).flatten =
       hdrBytes (s.gpr .r5).toNat ++ vctxB s ++ (bytesAt s.mem (s.gpr .r8) 57 ++ vpkB s ++ vmsgB s) := by
-  have g20 : t.gpr .r20 = s.gpr .r3 := h.inv.regs _ (by decide)
-  have g21 : t.gpr .r21 = s.gpr .r8 := h.inv.regs _ (by decide)
-  have g22 : t.gpr .r22 = s.gpr .r9 := h.inv.regs _ (by decide)
-  have g23 : t.gpr .r23 = s.gpr .r10 := h.inv.regs _ (by decide)
-  have g24 : t.gpr .r24 = s.gpr .r4 := h.inv.regs _ (by decide)
-  have g25 : t.gpr .r25 = s.gpr .r5 := h.inv.regs _ (by decide)
-  have g28 : t.gpr .r28 = s.gpr .r6 := h.inv.regs _ (by decide)
-  have g29 : t.gpr .r29 = s.gpr .r7 := h.inv.regs _ (by decide)
-  have hS57 : Region.Sub ⟨s.gpr .r8, 57⟩ (vsgR s) := Region.sub_prefix (by decide)
-  have cr : ∀ R ∈ [vpkR s, vcxR s, vmsR s, vsgR s], PPC64LE.Covers [R] (t.rd ++ t.wr) := fun R hR => by
+  obtain g20 : t.gpr .r20 = s.gpr .r3 := h.inv.regs _ (by decide)
+  obtain g21 : t.gpr .r21 = s.gpr .r8 := h.inv.regs _ (by decide)
+  obtain g22 : t.gpr .r22 = s.gpr .r9 := h.inv.regs _ (by decide)
+  obtain g23 : t.gpr .r23 = s.gpr .r10 := h.inv.regs _ (by decide)
+  obtain g24 : t.gpr .r24 = s.gpr .r4 := h.inv.regs _ (by decide)
+  obtain g25 : t.gpr .r25 = s.gpr .r5 := h.inv.regs _ (by decide)
+  obtain g28 : t.gpr .r28 = s.gpr .r6 := h.inv.regs _ (by decide)
+  obtain g29 : t.gpr .r29 = s.gpr .r7 := h.inv.regs _ (by decide)
+  obtain hS57 : Region.Sub ⟨s.gpr .r8, 57⟩ (vsgR s) := Region.sub_prefix (by decide)
+  obtain cr : ∀ R ∈ [vpkR s, vcxR s, vmsR s, vsgR s], PPC64LE.Covers [R] (t.rd ++ t.wr) := fun R hR => by
     rw [h.inv.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; exact hR, hc⟩
   refine ⟨⟨by decide, by decide, by decide, by simp [verPieces, dom4Pieces], by rw [g22]; exact vkenv hp h.inv, ?_,
     by rw [g23]; exact cov_in (vF hp h.inv) (by decide), by rw [g23, g22]; exact vfsc hp (by decide),
@@ -228,9 +228,9 @@ theorem V1.hashOk {s t : State} (hp : VerPre s) (h : V1 s t) : HashOk .r22 .r23 
         (by decide) (by decide) (show Reg.r29 ∈ preserved by decide) (cr _ (by simp)) hp.cM.symm
         (by rw [h.inv.sp]; exact hp.bM)
   · have kx := ver_keep hp h.inv (R := vcxR s) (.inr (.inl rfl))
-    have km := ver_keep hp h.inv (R := vmsR s) (.inr (.inr (.inl rfl)))
-    have kp := ver_keep hp h.inv (R := vpkR s) (.inl rfl)
-    have ks : bytesAt t.mem (s.gpr .r8) 57 = bytesAt s.mem (s.gpr .r8) 57 := by
+    obtain km := ver_keep hp h.inv (R := vmsR s) (.inr (.inr (.inl rfl)))
+    obtain kp := ver_keep hp h.inv (R := vpkR s) (.inl rfl)
+    obtain ks : bytesAt t.mem (s.gpr .r8) 57 = bytesAt s.mem (s.gpr .r8) 57 := by
       rw [← bytesAt_take57, ← bytesAt_take57 s.mem]
       exact congrArg (List.take 57) (ver_keep hp h.inv (R := vsgR s) (.inr (.inr (.inr rfl))))
     have h0 := h.hdr
@@ -255,14 +255,14 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
       (.seq (.call "vg_ed448_scalar_reduce" Impl.Ed448.PPC64LE.scalarReduce)
         (.block [mov .r3 .r20, mov .r4 .r21, .addi .r5 .r23 136, mov .r6 .r22])))) t (VArgs s) := by
   obtain ⟨ho, hb⟩ := h.hashOk hp
-  have g22 : t.gpr .r22 = s.gpr .r9 := h.inv.regs _ (by decide)
-  have g23 : t.gpr .r23 = s.gpr .r10 := h.inv.regs _ (by decide)
+  obtain g22 : t.gpr .r22 = s.gpr .r9 := h.inv.regs _ (by decide)
+  obtain g23 : t.gpr .r23 = s.gpr .r10 := h.inv.regs _ (by decide)
   refine WP.seq (WP.mono (hash_ok ho.psc ho.pf ho.po rfl rfl ho.env ho.ne ho.ins ho.w ho.dsc ho.dsp)
     fun t₂ ⟨k₂, d₂⟩ => ?_)
   rw [g22, g23] at k₂
   rw [g23] at d₂
   rw [hb, show (s.gpr .r5).toNat = (vctxB s).length by simp [bytesAt], dom4_hash, bytesAt_sha3] at d₂
-  have h₂ : VInv s t₂ := Inv.kept h.inv verifyRegs_pres k₂ (fun r hr => by
+  obtain h₂ : VInv s t₂ := Inv.kept h.inv verifyRegs_pres k₂ (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨vfR s, by simp, vfsub (by decide)⟩
@@ -274,14 +274,14 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
       · exact vcslot hp
       · rw [h.inv.sp]; exact vbslot hp
   -- `k`.
-  have g22' : t₂.gpr .r22 = s.gpr .r9 := h₂.regs _ (by decide)
-  have g23' : t₂.gpr .r23 = s.gpr .r10 := h₂.regs _ (by decide)
+  obtain g22' : t₂.gpr .r22 = s.gpr .r9 := h₂.regs _ (by decide)
+  obtain g23' : t₂.gpr .r23 = s.gpr .r10 := h₂.regs _ (by decide)
   unfold mov
   refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun u hu a3 a4 a5 => ?_)
   rw [g23'] at a3 a4
   rw [g22', BitVec.add_zero] at a5
-  have hW : PPC64LE.Covers [⟨s.gpr .r10 + BitVec.ofNat 64 136, 57⟩, vscR s] u.wr := by
+  obtain hW : PPC64LE.Covers [⟨s.gpr .r10 + BitVec.ofNat 64 136, 57⟩, vscR s] u.wr := by
     rw [hu.wr]
     intro a n ⟨r, hr, hc⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -294,7 +294,7 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
     fun t₃ rd₃ wr₃ sp₃ f₃ cs₃ r₃ => ?_)
   rw [hu.mem, d₂] at r₃
   rw [hu.mem] at f₃
-  have h₃ : VInv s t₃ := h₂.step verifyRegs_pres (rd₃.trans hu.rd) (wr₃.trans hu.wr) (sp₃.trans hu.sp)
+  obtain h₃ : VInv s t₃ := h₂.step verifyRegs_pres (rd₃.trans hu.rd) (wr₃.trans hu.wr) (sp₃.trans hu.sp)
     (fun r hr => (cs₃ r hr).trans (hu.pres r hr)) f₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -305,10 +305,10 @@ theorem verHash_ok {s t : State} (hp : VerPre s) (h : V1 s t) :
       · exact vfslot (by decide)
       · exact vcslot hp
   -- The arguments.
-  have g20 : t₃.gpr .r20 = s.gpr .r3 := h₃.regs _ (by decide)
-  have g21 : t₃.gpr .r21 = s.gpr .r8 := h₃.regs _ (by decide)
-  have g22'' : t₃.gpr .r22 = s.gpr .r9 := h₃.regs _ (by decide)
-  have g23'' : t₃.gpr .r23 = s.gpr .r10 := h₃.regs _ (by decide)
+  obtain g20 : t₃.gpr .r20 = s.gpr .r3 := h₃.regs _ (by decide)
+  obtain g21 : t₃.gpr .r21 = s.gpr .r8 := h₃.regs _ (by decide)
+  obtain g22'' : t₃.gpr .r22 = s.gpr .r9 := h₃.regs _ (by decide)
+  obtain g23'' : t₃.gpr .r23 = s.gpr .r10 := h₃.regs _ (by decide)
   refine wp_addi (by decide) (by decide) fun v₁ e₁ => wp_addi (by decide) (by decide) fun v₂ e₂ =>
     wp_addi (by decide) (by decide) fun v₃ e₃ => wp_addi (by decide) (by decide) fun v₄ e₄ => WP.block_nil ?_
   refine ⟨h₃.step verifyRegs_pres (by rw [e₄.rd, e₃.rd, e₂.rd, e₁.rd]) (by rw [e₄.wr, e₃.wr, e₂.wr, e₁.wr])
@@ -327,11 +327,11 @@ theorem verCall_ok (hR : Proof.Ed448.RecoverOk) {s t : State} (hp : VerPre s)
     (h : VArgs s t) :
     WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.PPC64LE.verifyEquation) t fun t' => VInv s t' ∧
       (t'.gpr .r3).setWidth 32 = if Spec.Ed448.verifyEquation (vpkB s) (vsigB s) (vkB s) then 1 else 0 := by
-  have cr : ∀ R ∈ [vpkR s, vcxR s, vmsR s, vsgR s], PPC64LE.Covers [R] (t.rd ++ t.wr) := fun R hR => by
+  obtain cr : ∀ R ∈ [vpkR s, vcxR s, vmsR s, vsgR s], PPC64LE.Covers [R] (t.rd ++ t.wr) := fun R hR => by
     rw [h.inv.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; exact hR, hc⟩
-  have hW : PPC64LE.Covers [vscR s] t.wr := fun a n ⟨r, hr, hc⟩ => by
+  obtain hW : PPC64LE.Covers [vscR s] t.wr := fun a n ⟨r, hr, hc⟩ => by
     rw [List.mem_singleton.mp hr] at hc; exact ⟨_, vC hp h.inv, hc⟩
-  have hc : PPC64LE.Covers ([vpkR s, vsgR s, ⟨s.gpr .r10 + BitVec.ofNat 64 136, 57⟩] ++ [vscR s]) (t.rd ++ t.wr) := by
+  obtain hc : PPC64LE.Covers ([vpkR s, vsgR s, ⟨s.gpr .r10 + BitVec.ofNat 64 136, 57⟩] ++ [vscR s]) (t.rd ++ t.wr) := by
     intro a n ⟨r, hr, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -358,7 +358,7 @@ abbrev verResult (s : State) : BitVec 32 :=
   if Spec.Ed448.verify (vpkB s) (vctxB s) (vmsgB s) (vsigB s) then 1 else 0
 
 theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0) = decide (x.toNat < 256) := by
-  have h : (x >>> 8).toNat = x.toNat / 256 := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  obtain h : (x >>> 8).toNat = x.toNat / 256 := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   by_cases hx : x.toNat < 256
   · simp only [hx, decide_true, beq_iff_eq]
     exact BitVec.eq_of_toNat_eq (by rw [h, Nat.div_eq_of_lt hx]; rfl)
@@ -373,16 +373,16 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s
       (t.gpr .r3).setWidth 32 = verResult s := by
   unfold verifyMessage
   refine WP.seq (WP.cons (exec_lsr_d (by decide)) (WP.block_nil ?_))
-  have hu := Upd.write s .r11 (s.gpr .r5 >>> 8)
+  obtain hu := Upd.write s .r11 (s.gpr .r5 >>> 8)
   refine wp_ite (decide ((s.gpr .r5).toNat < 256)) (by rw [eval_zero, hu.gpr, shr8_zero]) (fun hcl => ?_)
     fun hcl => ?_
   · -- `ctxlen < 256`.
-    have hcl' : (s.gpr .r5).toNat < 256 := of_decide_eq_true hcl
+    obtain hcl' : (s.gpr .r5).toNat < 256 := of_decide_eq_true hcl
     unfold verifyMain verifyHash
     refine WP.seq (WP.seq (WP.mono (verSetup_ok hp hu.other hu.rd hu.wr hu.sp rfl hu.mem) fun t₁ h₁ => ?_))
     refine WP.mono (verHash_ok hp h₁) fun t₂ h₂ => ?_
     refine WP.seq (WP.mono (verCall_ok hR hp h₂) fun t₃ ⟨h₃, r₃⟩ => ?_)
-    have hrl : ∀ p ∈ restoreList 200 verifyRegs, p.2 + 8 ≤ 272 := by decide
+    obtain hrl : ∀ p ∈ restoreList 200 verifyRegs, p.2 + 8 ≤ 272 := by decide
     refine restore_ok h₃ (by decide) (h₃.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
       (fun p (hp' : p ∈ restoreList 200 verifyRegs) =>
         show InRegions (t₃.rd ++ t₃.wr) (s.gpr .r10 + BitVec.ofNat 64 p.2) 8 by
@@ -396,7 +396,7 @@ theorem verifyMessage_wp (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VerPre s
         Bool.true_and, vkB, bytesAt_take57]
     simp only [verResult, this]
   · -- `ctxlen ≥ 256`: 0.
-    have hcl' : ¬ (s.gpr .r5).toNat < 256 := of_decide_eq_false hcl
+    obtain hcl' : ¬ (s.gpr .r5).toNat < 256 := of_decide_eq_false hcl
     refine WP.cons (exec_li (d := .r3) (imm := 0) (by decide)) (WP.block_nil ⟨fun r hr => ?_, rfl, rfl, ?_⟩)
     · rw [(Upd.write _ _ _).other _ (pres_ne hr).2.1, hu.other _ (by revert hr; cases r <;> decide)]
     · rw [(Upd.write _ _ _).gpr]

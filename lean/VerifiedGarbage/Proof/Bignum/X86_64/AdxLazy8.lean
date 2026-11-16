@@ -66,7 +66,7 @@ theorem lst_ok {s₀ t : State} {B : Addr} {Z eT eN eo i d n : Nat} {bit : Bool}
   subst hnd
   have hn := hI.scr.nowrap
   obtain ⟨c, hc, hval⟩ := hI.val
-  have ea : ∀ e, off B (e + 8 * (8 * i) + 8 * d) = off B (e + 8 * (8 * i + d)) := fun e => by
+  obtain ea : ∀ e, off B (e + 8 * (8 * i) + 8 * d) = off B (e + 8 * (8 * i + d)) := fun e => by
     congr 1; omega_using []
   refine WP.mono (WP.keep [.rax] (Q := fun t₁ =>
       ∃ c' : Bool, t₁.cf = some c' ∧ ∃ v : BitVec 64, t₁.mem = t.mem.writeW (off B (eo + 8 * (8 * i + d))) v ∧
@@ -75,7 +75,7 @@ theorem lst_ok {s₀ t : State} {B : Addr} {Z eT eN eo i d n : Nat} {bit : Bool}
     fun t₁ ⟨⟨c', h₁, v, hmem, hv⟩, k₁⟩ => ?_
   · xrun [State.ea, ix, h8, hbx, h14, addrDk, ea, hc, hr, hr.symm, hI.scr.ld hT, hI.scr.st ho]
     exact ⟨_, rfl, sbb_toNat _ _ _⟩
-  have hx : word t.mem B (eT + 8 * (8 * i + d)) = word s₀.mem B (eT + 8 * (8 * i + d)) :=
+  obtain hx : word t.mem B (eT + 8 * (8 * i + d)) = word s₀.mem B (eT + 8 * (8 * i + d)) :=
     hI.out.word (by omega_using [sT]) (by omega_using [hT, hn])
   rw [hx, hm] at hv
   refine ⟨⟨hI.scr.congr k₁.2.2, ?_, ⟨c', h₁, ?_⟩⟩, k₁⟩
@@ -105,7 +105,7 @@ theorem maskWords_ok {t : State} {B : Addr} {Z eN i h : Nat} {bit : Bool} (hs : 
       t'.gpr .r9 = mask bit &&& word t.mem B (eN + 8 * (8 * i + h + 2)) ∧
       t'.gpr .r11 = mask bit &&& word t.mem B (eN + 8 * (8 * i + h + 3)) ∧
       t'.mem = t.mem ∧ Keep [.rcx, .rdx, .r9, .r11] t t' := by
-  have ea : ∀ j, off B (eN + 8 * (8 * i) + 8 * (h + j)) = off B (eN + 8 * (8 * i + h + j)) := fun j => by
+  obtain ea : ∀ j, off B (eN + 8 * (8 * i) + 8 * (h + j)) = off B (eN + 8 * (8 * i + h + j)) := fun j => by
     congr 1; omega_using []
   refine WP.mono (WP.keep [.rcx, .rdx, .r9, .r11] (Q := fun t' =>
       t'.gpr .rcx = mask bit &&& word t.mem B (eN + 8 * (8 * i + h)) ∧
@@ -113,7 +113,7 @@ theorem maskWords_ok {t : State} {B : Addr} {Z eN i h : Nat} {bit : Bool} (hs : 
       t'.gpr .r9 = mask bit &&& word t.mem B (eN + 8 * (8 * i + h + 2)) ∧
       t'.gpr .r11 = mask bit &&& word t.mem B (eN + 8 * (8 * i + h + 3)) ∧ t'.mem = t.mem) ?_ rfl)
     fun t' ⟨h', k⟩ => ⟨h'.1, h'.2.1, h'.2.2.1, h'.2.2.2.1, h'.2.2.2.2, k⟩
-  have e0 := ea 0
+  obtain e0 := ea 0
   simp only [Nat.add_zero] at e0
   have hn := hs.nowrap
   rw [show (List.range 4).flatMap (maskWord h) = maskWord h 0 ++ maskWord h 1 ++ maskWord h 2 ++ maskWord h 3
@@ -141,44 +141,44 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z eT eN eo i h : Nat} {bit : Bool}
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (maskWords_ok hI.scr h10 h14 h13 hN) fun t₁ ⟨m0, m1, m2, m3, hm₁, k₁⟩ => ?_
   -- the masked words, as words of `m` in `s₀`
-  have mw : ∀ j < 4, word t.mem B (eN + 8 * (8 * i + h + j)) = word s₀.mem B (eN + 8 * (8 * i + h + j)) :=
+  obtain mw : ∀ j < 4, word t.mem B (eN + 8 * (8 * i + h + j)) = word s₀.mem B (eN + 8 * (8 * i + h + j)) :=
     fun j hj => hI.out.word (by omega_using [sN, hj]) (by omega_using [hN, hn, hj])
-  have mv0 := mw 0 (by decide); have mv1 := mw 1 (by decide)
-  have mv2 := mw 2 (by decide); have mv3 := mw 3 (by decide)
+  obtain mv0 := mw 0 (by decide); have mv1 := mw 1 (by decide)
+  obtain mv2 := mw 2 (by decide); have mv3 := mw 3 (by decide)
   simp only [Nat.add_zero] at mv0
   rw [mv0] at m0; rw [mv1] at m1; rw [mv2] at m2; rw [mv3] at m3
   refine WP.mono (WP.keep [.rbp] (Q := fun t₂ => t₂.cf = some c ∧ t₂.mem = t₁.mem) (by
     unfold cfFromRbp; xrun [(k₁.gpr (by decide) : t₁.gpr .rbp = t.gpr .rbp), hbp, cf_mask]) rfl)
     fun t₂ ⟨⟨c₂, hm₂⟩, k₂⟩ => ?_
-  have k12 := k₁.trans k₂
-  have g : ∀ r, r ∉ [Reg.rcx, .rdx, .r9, .r11, .rbp] → t₂.gpr r = t.gpr r := fun r hr => k12.gpr (by simpa using hr)
-  have L0 : Lc s₀ B Z eT eN eo bit (8 * i + h) t₂ :=
+  obtain k12 := k₁.trans k₂
+  obtain g : ∀ r, r ∉ [Reg.rcx, .rdx, .r9, .r11, .rbp] → t₂.gpr r = t.gpr r := fun r hr => k12.gpr (by simpa using hr)
+  obtain L0 : Lc s₀ B Z eT eN eo bit (8 * i + h) t₂ :=
     ⟨hI.scr.congr k12.2.2, by rw [hm₂, hm₁]; exact hI.out,
       ⟨c, c₂, by rw [hm₂, hm₁]; exact hval⟩⟩
   rw [show (List.range 4).flatMap (lazyWord h) = lazyWord h 0 ++ lazyWord h 1 ++ lazyWord h 2 ++ lazyWord h 3
     from rfl, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  have r8 : t₂.gpr .r8 = off B eT := (g .r8 (by decide)).trans h8
-  have rbx : t₂.gpr .rbx = off B eo := (g .rbx (by decide)).trans hbx
-  have r14 : t₂.gpr .r14 = BitVec.ofNat 64 (8 * i) := (g .r14 (by decide)).trans h14
-  have q0 : (t₂.gpr .rcx).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h))).toNat else 0 := by
+  obtain r8 : t₂.gpr .r8 = off B eT := (g .r8 (by decide)).trans h8
+  obtain rbx : t₂.gpr .rbx = off B eo := (g .rbx (by decide)).trans hbx
+  obtain r14 : t₂.gpr .r14 = BitVec.ofNat 64 (8 * i) := (g .r14 (by decide)).trans h14
+  obtain q0 : (t₂.gpr .rcx).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h))).toNat else 0 := by
     rw [(k₂.gpr (by decide) : t₂.gpr .rcx = t₁.gpr .rcx), m0, mask_and]
   refine WP.mono (lst_ok (r := .rcx) (d := h + 0) (by decide) rfl r8 rbx r14 q0 L0
     (by omega_using [hT]) (by omega_using [ho]) (by omega_using [sT])) fun t₃ ⟨L1, k₃⟩ => ?_
-  have q1 : (t₃.gpr .rdx).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 1))).toNat else 0 := by
+  obtain q1 : (t₃.gpr .rdx).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 1))).toNat else 0 := by
     rw [(k₃.gpr (by decide) : t₃.gpr .rdx = t₂.gpr .rdx), (k₂.gpr (by decide) : t₂.gpr .rdx = t₁.gpr .rdx), m1,
       mask_and]
   refine WP.mono (lst_ok (r := .rdx) (d := h + 1) (by decide) (by omega_using []) ((k₃.gpr (by decide)).trans r8)
     ((k₃.gpr (by decide)).trans rbx) ((k₃.gpr (by decide)).trans r14) q1 L1
     (by omega_using [hT]) (by omega_using [ho]) (by omega_using [sT])) fun t₄ ⟨L2, k₄⟩ => ?_
-  have k34 := k₃.trans k₄
-  have q2 : (t₄.gpr .r9).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 2))).toNat else 0 := by
+  obtain k34 := k₃.trans k₄
+  obtain q2 : (t₄.gpr .r9).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 2))).toNat else 0 := by
     rw [(k34.gpr (by decide) : t₄.gpr .r9 = t₂.gpr .r9), (k₂.gpr (by decide) : t₂.gpr .r9 = t₁.gpr .r9), m2,
       mask_and]
   refine WP.mono (lst_ok (r := .r9) (d := h + 2) (by decide) (by omega_using []) ((k34.gpr (by decide)).trans r8)
     ((k34.gpr (by decide)).trans rbx) ((k34.gpr (by decide)).trans r14) q2 L2
     (by omega_using [hT]) (by omega_using [ho]) (by omega_using [sT])) fun t₅ ⟨L3, k₅⟩ => ?_
-  have k35 := k34.trans k₅
-  have q3 : (t₅.gpr .r11).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 3))).toNat else 0 := by
+  obtain k35 := k34.trans k₅
+  obtain q3 : (t₅.gpr .r11).toNat = if bit then (word s₀.mem B (eN + 8 * (8 * i + h + 3))).toNat else 0 := by
     rw [(k35.gpr (by decide) : t₅.gpr .r11 = t₂.gpr .r11), (k₂.gpr (by decide) : t₂.gpr .r11 = t₁.gpr .r11), m3,
       mask_and]
   refine WP.mono (lst_ok (r := .r11) (d := h + 3) (by decide) (by omega_using []) ((k35.gpr (by decide)).trans r8)
@@ -206,7 +206,7 @@ theorem lazyLoads_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs :
     WP isa (.block (lazyLoads co)) s fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .r8 = off B (slot w aTmp) ∧ t.gpr .rbx = off B (slot w o) ∧
       t.mem = s.mem ∧ Keep [.r12, .r8, .rbx] s t := by
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+  obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.r12, .r8, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .r8 = off B (slot w aTmp) ∧ t.gpr .rbx = off B (slot w o) ∧ t.mem = s.mem) ?_ rfl)
@@ -222,7 +222,7 @@ theorem lazyMask_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hZ : sl
     WP isa (.block lazyMask) s fun t =>
       t.gpr .r13 = 0 - word s.mem B (slot w aTmp + 8 * w) ∧ t.gpr .rbp = mask false ∧
       t.gpr .r14 = BitVec.ofNat 64 (8 * 0) ∧ t.mem = s.mem ∧ Keep [.r13, .rbp, .r14] s t := by
-  have hTs := Nat.le_trans (slot_le (w := w) (show aTmp < 8 by decide)) hZ
+  obtain hTs := Nat.le_trans (slot_le (w := w) (show aTmp < 8 by decide)) hZ
   refine WP.mono (WP.keep [.r13, .rbp, .r14] (Q := fun t =>
       t.gpr .r13 = 0 - word s.mem B (slot w aTmp + 8 * w) ∧ t.gpr .rbp = mask false ∧
       t.gpr .r14 = BitVec.ofNat 64 (8 * 0) ∧ t.mem = s.mem) ?_ rfl)
@@ -250,20 +250,20 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
         wv s.mem B (slot w aTmp) (w + 2) % wv s.mem B (slot w aN) w ∧
       Arrays B w [o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hnw := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have hTs := sl aTmp (by decide)
-  have hNs := sl aN (by decide)
-  have hos := sl o ho
-  have soT : slot w o + 8 * (w + 2) ≤ slot w aTmp ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := slot_sep (Ne.symm ho2) |>.symm
+  obtain sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
+  obtain hTs := sl aTmp (by decide)
+  obtain hNs := sl aN (by decide)
+  obtain hos := sl o ho
+  obtain soT : slot w o + 8 * (w + 2) ≤ slot w aTmp ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := slot_sep (Ne.symm ho2) |>.symm
   -- `o` may be `m`'s array: each word of `m` is read before the word of `o` at its place is written
-  have soN : slot w o ≤ slot w aN ∨ slot w aN + 8 * (w + 2) ≤ slot w o := by
+  obtain soN : slot w o ≤ slot w aN ∨ slot w aN + 8 * (w + 2) ≤ slot w o := by
     by_cases h : o = aN
     · exact .inl (by rw [h])
     · have := slot_sep (w := w) h; unfold slot aN at *; omega_using [this]
   -- the top words of `T`
-  have hR := wv_lt s.mem B (slot w aN) w
+  obtain hR := wv_lt s.mem B (slot w aN) w
   rw [wv_top2] at hTlt
-  have hT1 : (word s.mem B (slot w aTmp + 8 * w + 8)).toNat = 0 := by
+  obtain hT1 : (word s.mem B (slot w aTmp + 8 * w + 8)).toNat = 0 := by
     rcases Nat.eq_zero_or_pos (word s.mem B (slot w aTmp + 8 * w + 8)).toNat with h | h
     · exact h
     · have : 2 ^ (64 * w) * 2 ^ 64 ≤ 2 ^ (64 * w) * ((word s.mem B (slot w aTmp + 8 * w)).toNat +
@@ -273,7 +273,7 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
         rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
       omega_arith
   rw [hT1, Nat.mul_zero, Nat.add_zero] at hTlt
-  have hTw : (word s.mem B (slot w aTmp + 8 * w)).toNat ≤ 1 := by
+  obtain hTw : (word s.mem B (slot w aTmp + 8 * w)).toNat ≤ 1 := by
     rcases Nat.lt_or_ge (word s.mem B (slot w aTmp + 8 * w)).toNat 2 with h | h
     · omega_arith
     · have : 2 ^ (64 * w) * 2 ≤ 2 ^ (64 * w) * (word s.mem B (slot w aTmp + 8 * w)).toNat :=
@@ -286,23 +286,23 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
   refine WP.seq (WP.mono (lazyMask_ok (hs.congr k₀.2.2) hZ h12₀ h8₀)
     fun s₁ ⟨h13, hbp, h14, hm₁', k₀₁⟩ => ?_)
   rw [hm₀, neg_bit_mask hTw, hbit] at h13
-  have hm₁ : s₁.mem = s.mem := hm₁'.trans hm₀
-  have k₁ := k₀.trans k₀₁
-  have h12 : s₁.gpr .r12 = BitVec.ofNat 64 w := (k₀₁.gpr (by decide)).trans h12₀
-  have h8 : s₁.gpr .r8 = off B (slot w aTmp) := (k₀₁.gpr (by decide)).trans h8₀
-  have hbx : s₁.gpr .rbx = off B (slot w o) := (k₀₁.gpr (by decide)).trans hbx₀
-  have k₁' : Keep (.r14 :: lazyRegs) s₁ s₁ := Keep.refl _ _
-  have I0 : LazyInv s₁ B Z (slot w aTmp) (slot w aN) (slot w o) bit 0 s₁ :=
+  obtain hm₁ : s₁.mem = s.mem := hm₁'.trans hm₀
+  obtain k₁ := k₀.trans k₀₁
+  obtain h12 : s₁.gpr .r12 = BitVec.ofNat 64 w := (k₀₁.gpr (by decide)).trans h12₀
+  obtain h8 : s₁.gpr .r8 = off B (slot w aTmp) := (k₀₁.gpr (by decide)).trans h8₀
+  obtain hbx : s₁.gpr .rbx = off B (slot w o) := (k₀₁.gpr (by decide)).trans hbx₀
+  obtain k₁' : Keep (.r14 :: lazyRegs) s₁ s₁ := Keep.refl _ _
+  obtain I0 : LazyInv s₁ B Z (slot w aTmp) (slot w aN) (slot w o) bit 0 s₁ :=
     ⟨⟨hs.congr k₁.2.2, Outside.refl _ _ _ _, ⟨false, hbp, by simp [mv, wv]⟩⟩, k₁', h14⟩
-  have s₁10 : s₁.gpr .r10 = off B (slot w aN) := (k₁.gpr (by decide)).trans h10
+  obtain s₁10 : s₁.gpr .r10 = off B (slot w aN) := (k₁.gpr (by decide)).trans h10
   refine wp_upto (a := 0) (N := n) hn (LazyInv s₁ B Z (slot w aTmp) (slot w aN) (slot w o) bit) ?_ ?_ I0
   · intro i _ hi t hI
-    have g : ∀ r, r ∉ (.r14 :: lazyRegs) → t.gpr r = s₁.gpr r := fun r hr => hI.keep.gpr hr
-    have t8 := (g .r8 (by decide)).trans h8
-    have t10 := (g .r10 (by decide)).trans s₁10
-    have tbx := (g .rbx (by decide)).trans hbx
-    have t13 := (g .r13 (by decide)).trans h13
-    have t12 := (g .r12 (by decide)).trans h12
+    obtain g : ∀ r, r ∉ (.r14 :: lazyRegs) → t.gpr r = s₁.gpr r := fun r hr => hI.keep.gpr hr
+    obtain t8 := (g .r8 (by decide)).trans h8
+    obtain t10 := (g .r10 (by decide)).trans s₁10
+    obtain tbx := (g .rbx (by decide)).trans hbx
+    obtain t13 := (g .r13 (by decide)).trans h13
+    obtain t12 := (g .r12 (by decide)).trans h12
     rw [WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (group_ok (h := 0) t8 t10 tbx hI.r14 t13 hI.lr (by omega_using [hTs, hi, hwN])
       (by omega_using [hNs, hi, hwN]) (by omega_using [hos, hi, hwN]) (by omega_using [soT, hi, hwN])
@@ -311,7 +311,7 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
       ((kg₁.gpr (by decide)).trans tbx) ((kg₁.gpr (by decide)).trans hI.r14) ((kg₁.gpr (by decide)).trans t13)
       L₁ (by omega_using [hTs, hi, hwN]) (by omega_using [hNs, hi, hwN]) (by omega_using [hos, hi, hwN])
       (by omega_using [soT, hi, hwN]) (by omega_using [soN, hi, hwN])) fun t₂ ⟨L₂, kg₂⟩ => ?_
-    have k12 := kg₁.trans kg₂
+    obtain k12 := kg₁.trans kg₂
     refine WP.mono (count8_ok t₂ (r := .r12) (by decide) ((k12.gpr (by decide)).trans hI.r14)
       (N := n) (by rw [(k12.gpr (by decide) : t₂.gpr .r12 = t.gpr .r12), t12, hwN]) (by omega_using [hw, hi, hwN])
       (by omega_using [hw, hwN])) fun t' ⟨hz, h14', hm', k'⟩ => ⟨hz, ?_, ?_, h14'⟩

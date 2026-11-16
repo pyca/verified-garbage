@@ -35,7 +35,7 @@ theorem ctxWord_read (C : CtxRd base bytes len args s) (hc : s.gpr .ecx = args c
     (hd : d + 4 ≤ 24) (hv : w32 s.mem (ctxAddr args) d = v) (hv' : v < 2 ^ 32) :
     readSrc s (.mem ⟨.ecx, d⟩) = some (BitVec.ofNat 32 v) := by
   have afit := C.afit
-  have ad : addr (args ctxArg) d = off (ctxAddr args) d := addr_eq (by simp only [ctxBytes] at afit; omega_using [hd, afit])
+  obtain ad : addr (args ctxArg) d = off (ctxAddr args) d := addr_eq (by simp only [ctxBytes] at afit; omega_using [hd, afit])
   rw [readSrc_mem hc (by rw [ad]; exact (C.row (d := d) (n := 4) (by simp only [ctxBytes]; omega_using [hd])).read), ad]
   congr 1
   apply BitVec.eq_of_toNat_eq
@@ -132,11 +132,11 @@ theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
   have up := h.upper
   have lo : ldOff = 24 := rfl
   have to : tOff = 28 := rfl
-  have wd : VG.Proof.Ffdh.ScalarWidth.width bits = (bits + 7) / 8 := by
+  obtain wd : VG.Proof.Ffdh.ScalarWidth.width bits = (bits + 7) / 8 := by
     simp only [VG.Proof.Ffdh.ScalarWidth.width]; omega_using [hb1]
-  have hd : VG.Proof.Ffdh.ScalarWidth.headBits bits = bits + 8 - 8 * ((bits + 7) / 8) := by
+  obtain hd : VG.Proof.Ffdh.ScalarWidth.headBits bits = bits + 8 - 8 * ((bits + 7) / 8) := by
     simp only [VG.Proof.Ffdh.ScalarWidth.headBits, wd]; omega_using [hb1]
-  have hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega_using []
+  obtain hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega_using []
   unfold Generate.metaCut
   refine WP.seq (WP.mono (metaHead_ok h C h3 hb1 hb w0 w8) fun s₁₂ ⟨S₅, k₅, W₅, edx₁₂, eax₁₂, _⟩ => ?_)
   have h₅ := S₅.inp
@@ -162,11 +162,11 @@ theorem metaCut_ok (h : In Ex base bytes len args s) (C : CtxRd base bytes len a
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hN])] at this
         simp at this; omega_using [h3, hb1, hb, w0, w8, lw, up, lo, to, wd, W₅, eax₁₂, hN, edx₁₂, hb8, hd, hj, ea, ed, e, c, this]
   · refine wp_subS rfl fun t₁ V₁ _ => ?_
-    have K₅₁ : Keeps [.eax, .ecx, .edx] s₁₂ t₁ := (Kt.mono (by decide)).trans (V₁.keeps.mono (by decide))
-    have m₁ : t₁.mem = s₁₂.mem := by rw [V₁.mem, mt]
-    have h₁ : In Ex base bytes len args t₁ := h₅.regs K₅₁ m₁
-    have p8 : 2 ^ N ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hb8.2
-    have eax₁ : t₁.gpr .eax = BitVec.ofNat 32 (2 ^ N - 1) := by
+    obtain K₅₁ : Keeps [.eax, .ecx, .edx] s₁₂ t₁ := (Kt.mono (by decide)).trans (V₁.keeps.mono (by decide))
+    obtain m₁ : t₁.mem = s₁₂.mem := by rw [V₁.mem, mt]
+    obtain h₁ : In Ex base bytes len args t₁ := h₅.regs K₅₁ m₁
+    obtain p8 : 2 ^ N ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hb8.2
+    obtain eax₁ : t₁.gpr .eax = BitVec.ofNat 32 (2 ^ N - 1) := by
       rw [V₁.gpr, ea, VG.Proof.Mont.X86.Dynamic.counter_sub (by omega_using [p8]) (Nat.two_pow_pos N)]
     refine WP.mono (storeW_ok h₁ (d := tOff) (by decide) .eax) fun u ⟨I, O, W, K⟩ => ⟨?_, ?_, ?_, ?_⟩
     · rw [m₁] at O

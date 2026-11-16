@@ -45,12 +45,12 @@ theorem sq_split (m : Mem) (base : Addr) (a n : Nat) : ∀ k, k ≤ n →
       Nat.zero_add, Nat.sub_zero]
   | k + 1, hk => by
     rw [sq_split m base a n k (by omega_using [hk])]
-    have e : n - k = (n - 1 - k) + 1 := by omega_using [hk]
+    obtain e : n - k = (n - 1 - k) + 1 := by omega_using [hk]
     rw [e, val32, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_using [], show n - (k + 1) = n - 1 - k by omega_using []]
     simp only [diagSum, sqCross]
-    have e1 : 2 ^ (32 * (2 * k + 1)) = 2 ^ (64 * k) * 2 ^ 32 := by
+    obtain e1 : 2 ^ (32 * (2 * k + 1)) = 2 ^ (64 * k) * 2 ^ 32 := by
       rw [← Nat.pow_add]; congr 1 <;> omega_using []
-    have e2 : 2 ^ (64 * (k + 1)) = 2 ^ (64 * k) * 2 ^ 32 * 2 ^ 32 := by
+    obtain e2 : 2 ^ (64 * (k + 1)) = 2 ^ (64 * k) * 2 ^ 32 * 2 ^ 32 := by
       rw [← Nat.pow_add, ← Nat.pow_add]; congr 1 <;> omega
     rw [e1, e2]
     generalize w32 m base (a + 4 * k) = x
@@ -83,11 +83,11 @@ theorem val32_replace {m m' : Mem} {base : Addr} {d i j k : Nat}
 /-- The value after `n` reductions: below `2m` for an operand below `m < 2^(32 n)`. -/
 theorem sq_red_bound {x M Q H R : Nat} (hx : x < M) (hM : M ≤ R) (hQ : Q < R)
     (h : R * H = x * x + Q * M) : H < 2 * M := by
-  have h1 : x * x ≤ x * M := Nat.mul_le_mul_left _ (Nat.le_of_lt hx)
-  have h2 : x * M < R * M := Nat.mul_lt_mul_of_pos_right (Nat.lt_of_lt_of_le hx hM)
+  obtain h1 : x * x ≤ x * M := Nat.mul_le_mul_left _ (Nat.le_of_lt hx)
+  obtain h2 : x * M < R * M := Nat.mul_lt_mul_of_pos_right (Nat.lt_of_lt_of_le hx hM)
     (Nat.lt_of_le_of_lt (Nat.zero_le _) hx)
-  have h3 : Q * M ≤ R * M := Nat.mul_le_mul_right _ (Nat.le_of_lt hQ)
-  have h4 : R * H < R * (2 * M) := by
+  obtain h3 : Q * M ≤ R * M := Nat.mul_le_mul_right _ (Nat.le_of_lt hQ)
+  obtain h4 : R * H < R * (2 * M) := by
     rw [h, Nat.mul_comm 2 M, ← Nat.mul_assoc, Nat.mul_two]
     omega_using [h1, h2, h3]
   exact Nat.lt_of_mul_lt_mul_left h4
@@ -125,7 +125,7 @@ theorem sqAnchor_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s) :
   rw [sqAnchor, WP.seq_iff]
   refine WP.mono (restoreBase_ok s h.stackRead h.savedNow) ?_
   rintro u ⟨p, mem, rest⟩
-  have hu := h.of_mem mem rest
+  obtain hu := h.of_mem mem rest
   refine wp_ldr (a := off (State.addr base) 80) (by decide) (by rw [p]; exact VG.Arm.addr_add (by omega_arith))
     (hu.read (by omega_arith)) fun t ut => WP.block_nil ?_
   exact ⟨ut.gpr.trans hu.metaNow, ut.mem.trans mem, rest.trans (ut.rest (by decide))⟩
@@ -181,27 +181,27 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   refine wp_str (by decide) (e 20 (by decide)
     (by rw [u7.other .r6 (by decide), u6.gpr, u5.other .r6 (by decide), u4.gpr, u3.gpr, u2.gpr, u1.gpr]))
     (wr 20 (by decide) (by rw [u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])) fun t u8 => WP.block_nil ?_
-  have g7 : s4.gpr .r7 = s.gpr .r7 := by rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr]
-  have g6 : s6.gpr .r6 = s.gpr .r6 := by
+  obtain g7 : s4.gpr .r7 = s.gpr .r7 := by rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr]
+  obtain g6 : s6.gpr .r6 = s.gpr .r6 := by
     rw [u6.gpr, u5.other .r6 (by decide), u4.gpr, u3.gpr, u2.gpr, u1.gpr]
-  have v1 : s5.gpr .r1 = BitVec.ofNat 32 (n - 1) := by
+  obtain v1 : s5.gpr .r1 = BitVec.ofNat 32 (n - 1) := by
     rw [u5.gpr, dpVal, g7, p7]
     change BitVec.ofNat 32 n - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
-  have v2 : s7.gpr .r1 = base + BitVec.ofNat 32 (M + 28) := by
+  obtain v2 : s7.gpr .r1 = base + BitVec.ofNat 32 (M + 28) := by
     rw [u7.gpr, dpVal, g6, p6]
     change base + BitVec.ofNat 32 M + BitVec.ofNat 32 28 = _
     rw [Offset.add_add]
-  have m1 : s1.mem = s.mem.writeW (off (State.addr base) M) (BitVec.ofNat 32 n) := by rw [u1.mem, p7]
-  have m2 : s2.mem = s1.mem.writeW (off (State.addr base) (M + 4)) (base + BitVec.ofNat 32 out) := by
+  obtain m1 : s1.mem = s.mem.writeW (off (State.addr base) M) (BitVec.ofNat 32 n) := by rw [u1.mem, p7]
+  obtain m2 : s2.mem = s1.mem.writeW (off (State.addr base) (M + 4)) (base + BitVec.ofNat 32 out) := by
     rw [u2.mem, u1.gpr, p10]
-  have m3 : s3.mem = s2.mem.writeW (off (State.addr base) (M + 8)) (base + BitVec.ofNat 32 a) := by
+  obtain m3 : s3.mem = s2.mem.writeW (off (State.addr base) (M + 8)) (base + BitVec.ofNat 32 a) := by
     rw [u3.mem, u2.gpr, u1.gpr, p8]
-  have m4 : s4.mem = s3.mem.writeW (off (State.addr base) (M + 12)) (base + BitVec.ofNat 32 a) := by
+  obtain m4 : s4.mem = s3.mem.writeW (off (State.addr base) (M + 12)) (base + BitVec.ofNat 32 a) := by
     rw [u4.mem, u3.gpr, u2.gpr, u1.gpr, p8]
-  have m6 : s6.mem = s4.mem.writeW (off (State.addr base) (M + 16)) (BitVec.ofNat 32 (n - 1)) := by
+  obtain m6 : s6.mem = s4.mem.writeW (off (State.addr base) (M + 16)) (BitVec.ofNat 32 (n - 1)) := by
     rw [u6.mem, u5.mem, v1]
-  have m8 : t.mem = s6.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (M + 28)) := by
+  obtain m8 : t.mem = s6.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (M + 28)) := by
     rw [u8.mem, u7.mem, v2]
   have o (d : Nat) (hd : d + 4 ≤ 24) (v : BitVec 32) (mem : Mem) :
       Outside (State.addr base) M 24 mem (mem.writeW (off (State.addr base) (M + d)) v) :=
@@ -221,11 +221,11 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   · rw [m8, rd_self]
   · have h0 : Outside (State.addr base) M 24 s.mem s1.mem := by
       rw [m1]; simpa only [Nat.add_zero] using o 0 (by decide) _ s.mem
-    have h2 : Outside (State.addr base) M 24 s1.mem s2.mem := by rw [m2]; exact o 4 (by decide) _ _
-    have h3 : Outside (State.addr base) M 24 s2.mem s3.mem := by rw [m3]; exact o 8 (by decide) _ _
-    have h4 : Outside (State.addr base) M 24 s3.mem s4.mem := by rw [m4]; exact o 12 (by decide) _ _
-    have h6 : Outside (State.addr base) M 24 s4.mem s6.mem := by rw [m6]; exact o 16 (by decide) _ _
-    have h8 : Outside (State.addr base) M 24 s6.mem t.mem := by rw [m8]; exact o 20 (by decide) _ _
+    obtain h2 : Outside (State.addr base) M 24 s1.mem s2.mem := by rw [m2]; exact o 4 (by decide) _ _
+    obtain h3 : Outside (State.addr base) M 24 s2.mem s3.mem := by rw [m3]; exact o 8 (by decide) _ _
+    obtain h4 : Outside (State.addr base) M 24 s3.mem s4.mem := by rw [m4]; exact o 12 (by decide) _ _
+    obtain h6 : Outside (State.addr base) M 24 s4.mem s6.mem := by rw [m6]; exact o 16 (by decide) _ _
+    obtain h8 : Outside (State.addr base) M 24 s6.mem t.mem := by rw [m8]; exact o 20 (by decide) _ _
     exact h0.trans (h2.trans (h3.trans (h4.trans (h6.trans h8))))
   · exact (u1.rest _).trans ((u2.rest _).trans ((u3.rest _).trans ((u4.rest _).trans
       ((u5.rest (by decide)).trans ((u6.rest _).trans ((u7.rest (by decide)).trans (u8.rest _)))))))
@@ -262,19 +262,19 @@ theorem sqInit_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   rw [sqInit, WP.seq_iff]
   refine WP.mono (sqMeta_ok s h p6 p7 p8 p10) ?_
   rintro u ⟨md, next, cnt, tptr, outU, restU⟩
-  have hu := h.next (Outs.of_outside (outU.mono (o' := M) (n' := 4 * (2 * n + 8)) (Nat.le_refl _) (by omega_arith)) (by simp)) restU
+  obtain hu := h.next (Outs.of_outside (outU.mono (o' := M) (n' := 4 * (2 * n + 8)) (Nat.le_refl _) (by omega_arith)) (by simp)) restU
   rw [WP.seq_iff]
   refine WP.mono (sqZeroArgs_ok u hu ((restU.gpr .r6 (by decide)).trans p6)
     ((restU.gpr .r7 (by decide)).trans p7)) ?_
   rintro v ⟨p0, plr, p3, memV, restV⟩
-  have hv := hu.of_mem memV restV
-  have cv : ZeroCtx v base size (M + 24) (2 * n + 2) :=
+  obtain hv := hu.of_mem memV restV
+  obtain cv : ZeroCtx v base size (M + 24) (2 * n + 2) :=
     ⟨nowrap, by omega_arith, ⟨_, hv.workspace.writable, Region.contains_self _ _⟩⟩
   refine WP.mono (zero_ok v cv (by omega_arith) p0 plr p3) ?_
   intro t zt
-  have outT : Outs (State.addr base) [(M, 4 * (2 * n + 8))] v.mem t.mem :=
+  obtain outT : Outs (State.addr base) [(M, 4 * (2 * n + 8))] v.mem t.mem :=
     Outs.of_outside (zt.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith)) (by simp)
-  have ht := hv.next outT zt.rest
+  obtain ht := hv.next outT zt.rest
   have kept (d : Nat) (hd : d + 4 ≤ 24) :
       t.mem.readW (off (State.addr base) (M + d)) 32 = u.mem.readW (off (State.addr base) (M + d)) 32 := by
     rw [← memV]

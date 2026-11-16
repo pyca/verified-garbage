@@ -134,7 +134,7 @@ theorem K_toNat {s : State} (h : Pre s) : (K s).toNat + 628 = (esp s).toNat := b
 /-- `n` bytes below `esp`, as an offset of `K s`. -/
 theorem below_eq {s : State} (h : Pre s) {n : Nat} (hn : n ≤ 628) :
     below (esp s) n = ⟨K s + BitVec.ofNat 64 (628 - n), n⟩ := by
-  have hk := K_toNat h
+  obtain hk := K_toNat h
   have := (esp s).isLt
   show (⟨(esp s - BitVec.ofNat 32 n).setWidth 64, n⟩ : Region) = _
   congr 1
@@ -148,7 +148,7 @@ theorem ret_eq (s : State) : (esp s).setWidth 64 = K s + BitVec.ofNat 64 628 := 
 /-- Argument `j`'s address, as an offset of `K s`. -/
 theorem argAddr_eq {s : State} (h : Pre s) {j : Nat} (hj : j < 4) :
     argAddr s j = K s + BitVec.ofNat 64 (632 + 4 * j) := by
-  have hk := K_toNat h
+  obtain hk := K_toNat h
   have := h.top
   simp only [esp] at hk this
   apply BitVec.eq_of_toNat_eq
@@ -158,7 +158,7 @@ theorem argAddr_eq {s : State} (h : Pre s) {j : Nat} (hj : j < 4) :
 /-- `esp - n`, widened, as an offset of `K s`. -/
 theorem sub_eq {s : State} (h : Pre s) {n : Nat} (hn : n ≤ 628) :
     (s.gpr .esp - BitVec.ofNat 32 n).setWidth 64 = K s + BitVec.ofNat 64 (628 - n) := by
-  have e := congrArg Region.base (below_eq h hn)
+  obtain e := congrArg Region.base (below_eq h hn)
   exact e
 
 theorem sub16 (x : BitVec 32) : x - 4 - 4 - 4 - 4 = x - BitVec.ofNat 32 16 := by bv_omega
@@ -230,7 +230,7 @@ theorem Ctx.argKeep {s t : State} (h : Pre s) (hc : Ctx s t) {j : Nat} (hj : j <
 
 theorem Ctx.argIn {s t : State} (h : Pre s) (hc : Ctx s t) {j : Nat} (hj : j < 4) :
     InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 + 4 * j)) 4 := by
-  have e : addr (t.gpr .esp) (4 + 4 * j) = argAddr s j := by
+  obtain e : addr (t.gpr .esp) (4 + 4 * j) = argAddr s j := by
     rw [show t.gpr .esp = s.gpr .esp from hc.esp]; rfl
   rw [e, hc.wr, h.wr, argAddr_eq h hj]
   refine ⟨ARGS s, by simp, ?_⟩
@@ -240,7 +240,7 @@ theorem Ctx.argIn {s t : State} (h : Pre s) (hc : Ctx s t) {j : Nat} (hj : j < 4
 
 theorem Ctx.argRead {s t : State} (h : Pre s) (hc : Ctx s t) {j d : Nat} (hj : j < 4) (hd : d = 4 + 4 * j) :
     t.mem.readW (addr (t.gpr .esp) d) 32 = arg s j := by
-  have e : addr (t.gpr .esp) d = argAddr s j := by
+  obtain e : addr (t.gpr .esp) d = argAddr s j := by
     rw [show t.gpr .esp = s.gpr .esp from hc.esp, hd]; rfl
   rw [e]; exact hc.argKeep h hj
 
@@ -253,8 +253,8 @@ theorem digestArgs_ok {s t : State} (h : Pre s) (hc : Ctx s t) :
       t'.gpr .ecx = BitVec.ofNat 32 32 ∧ t'.gpr .edx = arg s 1 := by
   refine wp_ldm rfl (hc.argIn' h (j := 2) (by decide) rfl) fun t₁ u₁ => ?_
   refine wp_movi fun t₂ u₂ => ?_
-  have c₁ := hc.upd u₁ (by decide)
-  have c₂ := c₁.upd u₂ (by decide)
+  obtain c₁ := hc.upd u₁ (by decide)
+  obtain c₂ := c₁.upd u₂ (by decide)
   refine wp_ldm rfl (c₂.argIn' h (j := 1) (by decide) rfl) fun t₃ u₃ =>
     WP.block_nil ⟨c₂.upd u₃ (by decide), ?_, ?_, ?_⟩
   · rw [u₃.other .eax (by decide), u₂.other .eax (by decide), u₁.gpr]
@@ -292,14 +292,14 @@ theorem dg_verified : Verified X86.target dgCode dgK := Proof.MdStream.X86.Diges
 
 theorem dg_nosp : NoSp dgCode := by
   refine NoSp.of_all ?_
-  have hm := Proof.MdStream.X86.Digest.noEsp Proof.Pbkdf2.Stream.X86.sha512OK
+  obtain hm := Proof.MdStream.X86.Digest.noEsp Proof.Pbkdf2.Stream.X86.sha512OK
     Proof.MdStream.X86.Digest.sha512Shape_noEsp
   simp only [dgCode, Impl.MdStream.X86.Digest.digest, Impl.StackScratch.X86.withStackScratchWiped,
     Impl.StackScratch.X86.withStackScratch, Code.allInstrs, hm, Bool.true_and]
   decide
 
 theorem dg_stack : stackUse dgCode ≤ 612 := by
-  have hm := Proof.MdStream.X86.Digest.digestMain_stack Proof.Pbkdf2.Stream.X86.sha512OK
+  obtain hm := Proof.MdStream.X86.Digest.digestMain_stack Proof.Pbkdf2.Stream.X86.sha512OK
   simp only [dgCode, Impl.MdStream.X86.Digest.digest, Impl.StackScratch.X86.withStackScratchWiped,
     Impl.StackScratch.X86.withStackScratch, stackUse]
   have hf : frameBytes (Instr.alloc (Impl.MdStream.X86.Digest.dframe Proof.Pbkdf2.Stream.X86.sha512H')) = 564 :=
@@ -312,15 +312,15 @@ theorem dg_stack : stackUse dgCode ≤ 612 := by
 theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s 2)
     (hc' : t.gpr .ecx = BitVec.ofNat 32 32) (hd : t.gpr .edx = arg s 1) :
     dgK.pre ((pushed argRegs t).callEntry.withRegions [SEED s, below (t.gpr .esp) 12] [EXP s]) := by
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by
+  obtain hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by
     show 16 ≤ _; rw [show t.gpr .esp = s.gpr .esp from hc.esp]; have := h.sp; simp only [esp] at this; omega_using [this]
-  have a0 : arg (pushed argRegs t).callEntry 0 = arg s 2 :=
+  obtain a0 : arg (pushed argRegs t).callEntry 0 = arg s 2 :=
     (callEntry_arg hfit (by decide) (by decide)).trans ha
-  have a1 : arg (pushed argRegs t).callEntry 1 = BitVec.ofNat 32 32 :=
+  obtain a1 : arg (pushed argRegs t).callEntry 1 = BitVec.ofNat 32 32 :=
     (callEntry_arg hfit (by decide) (by decide)).trans hc'
-  have a2 : arg (pushed argRegs t).callEntry 2 = arg s 1 :=
+  obtain a2 : arg (pushed argRegs t).callEntry 2 = arg s 1 :=
     (callEntry_arg hfit (by decide) (by decide)).trans hd
-  have b0 : argAddr (pushed argRegs t).callEntry 0 = (below (t.gpr .esp) 12).base :=
+  obtain b0 : argAddr (pushed argRegs t).callEntry 0 = (below (t.gpr .esp) 12).base :=
     callEntry_argAddr0 argRegs t
   sig_pre [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
@@ -330,7 +330,7 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
     show (BitVec.ofNat 32 32).toNat = 32 from rfl,
     sub_eq h (show 16 ≤ 628 by decide), sub_eq h (show 12 ≤ 628 by decide), Nat.reduceSub]
   rw [off_sub' (K s), below_eq h (by decide)]
-  have hk := K_toNat h
+  obtain hk := K_toNat h
   have ht := h.top
   simp only [esp] at hk ht
   refine ⟨?_, ?_, rfl, trivial, h.es.symm, (h.kE (by decide)).symm, h.kS (by decide), h.kE (by decide),
@@ -389,9 +389,9 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
   have hsp := h.sp
   simp only [esp] at hsp
   have hu := dg_stack
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
-  have cp := dg_cp h hc ha hc' hd
-  have hn : 4 * argRegs.length + stackUse dgCode + 4 ≤ 628 := by
+  obtain hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
+  obtain cp := dg_cp h hc ha hc' hd
+  obtain hn : 4 * argRegs.length + stackUse dgCode + 4 ≤ 628 := by
     rw [show 4 * argRegs.length = 12 from rfl]
     generalize stackUse dgCode = u at hu ⊢
     omega_using [hu]
@@ -402,15 +402,15 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
       X86.argSlots, X86.argVal, X86.argBytes] at hpost
     change Spec.Sha512.bytesAt _ _ 64 =
       Spec.Sha512.sha512 (Spec.Sha512.bytesAt (pushed argRegs t).callEntry.mem _ _) at hpost
-    have a0 : arg (pushed argRegs t).callEntry 0 = arg s 2 :=
+    obtain a0 : arg (pushed argRegs t).callEntry 0 = arg s 2 :=
       (callEntry_arg hfit (by decide) (by decide)).trans ha
-    have a1 : arg (pushed argRegs t).callEntry 1 = BitVec.ofNat 32 32 :=
+    obtain a1 : arg (pushed argRegs t).callEntry 1 = BitVec.ofNat 32 32 :=
       (callEntry_arg hfit (by decide) (by decide)).trans hc'
-    have a2 : arg (pushed argRegs t).callEntry 2 = arg s 1 :=
+    obtain a2 : arg (pushed argRegs t).callEntry 2 = arg s 1 :=
       (callEntry_arg hfit (by decide) (by decide)).trans hd
     simp only [arg_withRegions, a0, a1, a2, hm₂, show (BitVec.ofNat 32 32).toNat = 32 from rfl] at hpost
-    have hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
-    have hS : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 2).setWidth 64) 32 =
+    obtain hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
+    obtain hS : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 2).setWidth 64) 32 =
         Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32 := by
       rw [bytesAt_frame hce (fun r hr => ?_) (by decide)]
       · exact hc.bytes h.os.symm h.es.symm h.sc h.ks.symm (by decide)
@@ -424,9 +424,9 @@ theorem pkArgs_ok {s t : State} (h : Pre s) (hc : Ctx s t) :
     WP isa (.block pkArgs) t fun t' => Ctx s t' ∧ t'.mem = t.mem ∧ t'.gpr .eax = arg s 0 ∧
       t'.gpr .ecx = arg s 1 ∧ t'.gpr .edx = arg s 3 := by
   refine wp_ldm rfl (hc.argIn' h (j := 0) (by decide) rfl) fun t₁ u₁ => ?_
-  have c₁ := hc.upd u₁ (by decide)
+  obtain c₁ := hc.upd u₁ (by decide)
   refine wp_ldm rfl (c₁.argIn' h (j := 1) (by decide) rfl) fun t₂ u₂ => ?_
-  have c₂ := c₁.upd u₂ (by decide)
+  obtain c₂ := c₁.upd u₂ (by decide)
   refine wp_ldm rfl (c₂.argIn' h (j := 3) (by decide) rfl) fun t₃ u₃ =>
     WP.block_nil ⟨c₂.upd u₃ (by decide), by rw [u₃.mem, u₂.mem, u₁.mem], ?_, ?_, ?_⟩
   · rw [u₃.other .eax (by decide), u₂.other .eax (by decide), u₁.gpr]
@@ -464,9 +464,9 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
   simp only [esp] at e
   have hsp := h.sp
   simp only [esp] at hsp
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
-  have hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
-  have hheld : ∀ i < combWords.length, (pushed argRegs t).callEntry.mem.readW
+  obtain hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
+  obtain hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
+  obtain hheld : ∀ i < combWords.length, (pushed argRegs t).callEntry.mem.readW
       ((s.syms combSym).setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
     intro i hi
     have hn := h.fit
@@ -480,48 +480,48 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
       · exact h.tC
       · exact h.tK
     · rw [List.mem_singleton.mp hr]; exact h.tK.sub_right (below_stk h hc (by decide))
-  have hk' : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 1).setWidth 64) 64 =
+  obtain hk' : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 1).setWidth 64) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32) := by
     refine (bytesAt_frame hce (fun r hr => ?_) (by decide)).trans hE
     rw [List.mem_singleton.mp hr]; exact h.ke.symm.sub_right (below_stk h hc (by decide))
-  have a0 : arg (pushed argRegs t).callEntry 0 = arg s 0 :=
+  obtain a0 : arg (pushed argRegs t).callEntry 0 = arg s 0 :=
     (callEntry_arg hfit (by decide) (by decide)).trans ha
-  have a1 : arg (pushed argRegs t).callEntry 1 = arg s 1 :=
+  obtain a1 : arg (pushed argRegs t).callEntry 1 = arg s 1 :=
     (callEntry_arg hfit (by decide) (by decide)).trans hc'
-  have a2 : arg (pushed argRegs t).callEntry 2 = arg s 3 :=
+  obtain a2 : arg (pushed argRegs t).callEntry 2 = arg s 3 :=
     (callEntry_arg hfit (by decide) (by decide)).trans hd
-  have b0 : argAddr (pushed argRegs t).callEntry 0 = K s + BitVec.ofNat 64 616 := by
+  obtain b0 : argAddr (pushed argRegs t).callEntry 0 = K s + BitVec.ofNat 64 616 := by
     rw [callEntry_argAddr0 argRegs t, e]; exact sub_eq h (n := 12) (by decide)
-  have hesp : (pushed argRegs t).callEntry.gpr .esp = s.gpr .esp - 16#32 := by
+  obtain hesp : (pushed argRegs t).callEntry.gpr .esp = s.gpr .esp - 16#32 := by
     rw [callEntry_esp', e]; rfl
   generalize hX : (pushed argRegs t).callEntry.withRegions (pkRd s) (pkWr s t) = X
-  have xm : X.mem = (pushed argRegs t).callEntry.mem := by rw [← hX]; rfl
-  have xsp : X.gpr .esp = s.gpr .esp - 16#32 := by rw [← hX]; exact hesp
-  have x0 : arg X 0 = arg s 0 := by rw [← hX, arg_withRegions]; exact a0
-  have x1 : arg X 1 = arg s 1 := by rw [← hX, arg_withRegions]; exact a1
-  have x2 : arg X 2 = arg s 3 := by rw [← hX, arg_withRegions]; exact a2
-  have xb : argAddr X 0 = K s + BitVec.ofNat 64 616 := by rw [← hX, argAddr_withRegions]; exact b0
-  have xsy : X.syms = s.syms := by rw [← hX]; exact hc.sym
-  have xrd : X.rd = pkRd s := by rw [← hX]; rfl
-  have xwr : X.wr = pkWr s t := by rw [← hX]; rfl
-  have xheld : ∀ i < combWords.length,
+  obtain xm : X.mem = (pushed argRegs t).callEntry.mem := by rw [← hX]; rfl
+  obtain xsp : X.gpr .esp = s.gpr .esp - 16#32 := by rw [← hX]; exact hesp
+  obtain x0 : arg X 0 = arg s 0 := by rw [← hX, arg_withRegions]; exact a0
+  obtain x1 : arg X 1 = arg s 1 := by rw [← hX, arg_withRegions]; exact a1
+  obtain x2 : arg X 2 = arg s 3 := by rw [← hX, arg_withRegions]; exact a2
+  obtain xb : argAddr X 0 = K s + BitVec.ofNat 64 616 := by rw [← hX, argAddr_withRegions]; exact b0
+  obtain xsy : X.syms = s.syms := by rw [← hX]; exact hc.sym
+  obtain xrd : X.rd = pkRd s := by rw [← hX]; rfl
+  obtain xwr : X.wr = pkWr s t := by rw [← hX]; rfl
+  obtain xheld : ∀ i < combWords.length,
       X.mem.readW ((s.syms combSym).setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
     rw [xm]; exact hheld
-  have xk : Spec.Ed25519.bytesAt X.mem ((arg s 1).setWidth 64) 64 =
+  obtain xk : Spec.Ed25519.bytesAt X.mem ((arg s 1).setWidth 64) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32) := by rw [xm]; exact hk'
   sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   simp only [x0, x1, x2, xb, xsy, xrd, xwr, xsp, sub_eq h (show 16 ≤ 628 by decide), Nat.reduceSub]
   rw [off_sub _ (b := 280) (by decide) (by decide)]
-  have hk := K_toNat h
+  obtain hk := K_toNat h
   have ht := h.top
   simp only [esp] at hk ht
-  have k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
-  have hd : ∀ {a b : Nat}, a + 4 ≤ b → b + 12 ≤ 628 →
+  obtain k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
+  obtain hd : ∀ {a b : Nat}, a + 4 ≤ b → b + 12 ≤ 628 →
       Region.Disjoint ⟨K s + BitVec.ofNat 64 a, 4⟩ ⟨K s + BitVec.ofNat 64 b, 12⟩ :=
     fun h₁ h₂ => Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁, h₂]) (by omega_using [h₂])
-  have hd' : Region.Disjoint ⟨K s + BitVec.ofNat 64 (612 - 280), 280⟩ ⟨K s + BitVec.ofNat 64 616, 12⟩ :=
+  obtain hd' : Region.Disjoint ⟨K s + BitVec.ofNat 64 (612 - 280), 280⟩ ⟨K s + BitVec.ofNat 64 616, 12⟩ :=
     Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
   refine ⟨by rw [sub_toNat (by omega_using [hsp])]; omega_using [hsp], by rw [sub_toNat (by omega_using [hsp])]; omega_using [], rfl, xheld, h.fit,
     fun r hr => ?_, h.kT (by decide), h.kT (by decide), h.al, rfl, by simp only [pkWr, k12], h.oe, h.oc,
@@ -564,10 +564,10 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
   have hsp := h.sp
   simp only [esp] at hsp
   have hu := pk_stack
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
-  have k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
-  have cp := pk_cp h hc ha hc' hd hE
-  have hn : 4 * argRegs.length + stackUse PublicKey.publicKeyExpanded + 4 ≤ 628 := by
+  obtain hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
+  obtain k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
+  obtain cp := pk_cp h hc ha hc' hd hE
+  obtain hn : 4 * argRegs.length + stackUse PublicKey.publicKeyExpanded + 4 ≤ 628 := by
     rw [show 4 * argRegs.length = 12 from rfl]
     generalize stackUse PublicKey.publicKeyExpanded = u at hu ⊢
     omega_using [hu]
@@ -590,17 +590,17 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
     · exact h.ke.symm.sub_right (below_stk h hc hn)
   · have a0 : arg (pushed argRegs t).callEntry 0 = arg s 0 :=
       (callEntry_arg hfit' (by decide) (by decide)).trans ha
-    have a1 : arg (pushed argRegs t).callEntry 1 = arg s 1 :=
+    obtain a1 : arg (pushed argRegs t).callEntry 1 = arg s 1 :=
       (callEntry_arg hfit' (by decide) (by decide)).trans hc'
-    have hce := callEntry_frame hfit' (by decide : Reg.esp ∉ argRegs)
-    have hk' : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 1).setWidth 64) 64 =
+    obtain hce := callEntry_frame hfit' (by decide : Reg.esp ∉ argRegs)
+    obtain hk' : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 1).setWidth 64) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32) := by
       refine (bytesAt_frame hce (fun r hr => ?_) (by decide)).trans hE
       rw [List.mem_singleton.mp hr]; exact h.ke.symm.sub_right (below_stk h hc (by decide))
     generalize hX : (pushed argRegs t).callEntry.withRegions (pkRd s) (pkWr s t) = X at hpost
-    have xm : X.mem = (pushed argRegs t).callEntry.mem := by rw [← hX]; rfl
-    have x0 : arg X 0 = arg s 0 := by rw [← hX, arg_withRegions]; exact a0
-    have x1 : arg X 1 = arg s 1 := by rw [← hX, arg_withRegions]; exact a1
+    obtain xm : X.mem = (pushed argRegs t).callEntry.mem := by rw [← hX]; rfl
+    obtain x0 : arg X 0 = arg s 0 := by rw [← hX, arg_withRegions]; exact a0
+    obtain x1 : arg X 1 = arg s 1 := by rw [← hX, arg_withRegions]; exact a1
     sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts] at hpost
@@ -612,7 +612,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn PublicKey.publicKeyExpanded) s fun s' =>
       abiPreserved s s' ∧ spec.post s s' := by
-  have h := pre_of hs
+  obtain h := pre_of hs
   refine WP.seq (WP.mono (digestArgs_ok h (ctx_refl s)) fun t ⟨hc, ha, hc', hd⟩ => ?_)
   refine WP.seq (WP.mono (digest_ok h hc ha hc' hd) fun t ⟨hc, hE⟩ => ?_)
   refine WP.seq (WP.mono (pkArgs_ok h hc) fun t' ⟨hc', hm, ha, hc'', hd⟩ => ?_)
@@ -719,10 +719,10 @@ theorem regions_eq {S s : State} (p : Pub S s) :
 
 theorem body_ct (S : State) {dn pn : String} :
     RelCT isa (Rel S fun _ _ => True) (keyPair dn dgCode pn PublicKey.publicKeyExpanded) fun _ _ => True := by
-  have b₁ : RelCT isa (Rel S fun _ _ => True) (.block digestArgs) (Rel S Φ₁) :=
+  obtain b₁ : RelCT isa (Rel S fun _ _ => True) (.block digestArgs) (Rel S Φ₁) :=
     rel_block (by taint_decide) fun _ _ h hc _ => WP.mono (digestArgs_ok h hc) fun _ ⟨hc', a, b, d⟩ =>
       ⟨hc', a, b, d⟩
-  have b₂ : RelCT isa (Rel S Φ₁) (.frame (.push argRegs) (.call dn dgCode) (.pop .eax 3)) (Rel S Φ₂) := by
+  obtain b₂ : RelCT isa (Rel S Φ₁) (.frame (.push argRegs) (.call dn dgCode) (.pop .eax 3)) (Rel S Φ₂) := by
     refine rel_wp (RelCT.callWith dg_verified.1 dg_verified.2.1 [SEED S, below (S.gpr .esp) 12] [EXP S]
       fun a b hr => ?_) fun s _ h hc ⟨ha, hc', hd⟩ => digest_ok h hc ha hc' hd
     have ea := hr.esp₁
@@ -730,15 +730,15 @@ theorem body_ct (S : State) {dn pn : String} :
     obtain ⟨s₁, s₂, h₁, h₂, p₁, p₂, c₁, c₂, ⟨a₁, b₁, d₁⟩, ⟨a₂, b₂, d₂⟩⟩ := hr
     obtain ⟨r₁, r₁', -⟩ := regions_eq p₁
     obtain ⟨r₂, r₂', -⟩ := regions_eq p₂
-    have k₁ := dg_cp h₁ c₁ a₁ b₁ d₁
-    have k₂ := dg_cp h₂ c₂ a₂ b₂ d₂
+    obtain k₁ := dg_cp h₁ c₁ a₁ b₁ d₁
+    obtain k₂ := dg_cp h₂ c₂ a₂ b₂ d₂
     rw [r₁, r₁', ea] at k₁
     rw [r₂, r₂', eb] at k₂
     refine ⟨k₁, k₂, ea.trans eb.symm, ?_⟩
-    have f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
+    obtain f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
       rw [show a.gpr .esp = s₁.gpr .esp from c₁.esp]; have := h₁.sp; simp only [esp] at this
       show 16 ≤ _; omega_using [this]
-    have f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
+    obtain f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
       rw [show b.gpr .esp = s₂.gpr .esp from c₂.esp]; have := h₂.sp; simp only [esp] at this
       show 16 ≤ _; omega_using [this]
     sig_pub [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86.abi,
@@ -754,10 +754,10 @@ theorem body_ct (S : State) {dn pn : String} :
     · show a.gpr .eax = b.gpr .eax; rw [a₁, a₂, ← p₁.a2, ← p₂.a2]
     · show a.gpr .ecx = b.gpr .ecx; rw [b₁, b₂]
     · show a.gpr .edx = b.gpr .edx; rw [d₁, d₂, ← p₁.a1, ← p₂.a1]
-  have b₃ : RelCT isa (Rel S Φ₂) (.block pkArgs) (Rel S Φ₃) :=
+  obtain b₃ : RelCT isa (Rel S Φ₂) (.block pkArgs) (Rel S Φ₃) :=
     rel_block (by taint_decide) fun _ _ h hc hE => WP.mono (pkArgs_ok h hc) fun _ ⟨hc', hm, a, b, d⟩ =>
       ⟨hc', by rw [Φ₂, hm]; exact hE, a, b, d⟩
-  have b₄ : RelCT isa (Rel S Φ₃) (.frame (.push argRegs) (.call pn PublicKey.publicKeyExpanded) (.pop .eax 3))
+  obtain b₄ : RelCT isa (Rel S Φ₃) (.frame (.push argRegs) (.call pn PublicKey.publicKeyExpanded) (.pop .eax 3))
       fun _ _ => True := by
     refine RelCT.callWith PublicKey.publicKeyExpanded_verified.1 PublicKey.publicKeyExpanded_verified.2.1
       (pkRd S) (pkWr S S) fun a b hr => ?_
@@ -766,15 +766,15 @@ theorem body_ct (S : State) {dn pn : String} :
     obtain ⟨s₁, s₂, h₁, h₂, p₁, p₂, c₁, c₂, ⟨e₁, a₁, b₁, d₁⟩, ⟨e₂, a₂, b₂, d₂⟩⟩ := hr
     obtain ⟨-, r₁e, r₁o, r₁c, r₁t⟩ := regions_eq p₁
     obtain ⟨-, r₂e, r₂o, r₂c, r₂t⟩ := regions_eq p₂
-    have k₁ := pk_cp h₁ c₁ a₁ b₁ d₁ e₁
-    have k₂ := pk_cp h₂ c₂ a₂ b₂ d₂ e₂
+    obtain k₁ := pk_cp h₁ c₁ a₁ b₁ d₁ e₁
+    obtain k₂ := pk_cp h₂ c₂ a₂ b₂ d₂ e₂
     simp only [pkRd, pkWr, r₁e, r₁o, r₁c, r₁t, ea] at k₁
     simp only [pkRd, pkWr, r₂e, r₂o, r₂c, r₂t, eb] at k₂
     refine ⟨k₁, k₂, ea.trans eb.symm, ?_⟩
-    have f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
+    obtain f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
       rw [show a.gpr .esp = s₁.gpr .esp from c₁.esp]; have := h₁.sp; simp only [esp] at this
       show 16 ≤ _; omega_using [this]
-    have f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
+    obtain f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
       rw [show b.gpr .esp = s₂.gpr .esp from c₂.esp]; have := h₂.sp; simp only [esp] at this
       show 16 ≤ _; omega_using [this]
     sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
@@ -830,11 +830,11 @@ theorem sat_arg (j : Nat) (hj : j < 4) : arg satState j = satArgs.readW (argAddr
 
 theorem sat_pre : Pre satState := by
   have hl := combWords_length
-  have a0 : arg satState 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
-  have a1 : arg satState 1 = 0x2000 := (sat_arg 1 (by decide)).trans (by decide)
-  have a2 : arg satState 2 = 0x3000 := (sat_arg 2 (by decide)).trans (by decide)
-  have a3 : arg satState 3 = 0x4000 := (sat_arg 3 (by decide)).trans (by decide)
-  have held : TblWords ((satState.syms combSym).setWidth 64) satState.mem := satMemWith_held satArgs
+  obtain a0 : arg satState 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
+  obtain a1 : arg satState 1 = 0x2000 := (sat_arg 1 (by decide)).trans (by decide)
+  obtain a2 : arg satState 2 = 0x3000 := (sat_arg 2 (by decide)).trans (by decide)
+  obtain a3 : arg satState 3 = 0x4000 := (sat_arg 3 (by decide)).trans (by decide)
+  obtain held : TblWords ((satState.syms combSym).setWidth 64) satState.mem := satMemWith_held satArgs
   refine ⟨by decide, by decide, ?_, ?_, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [SEED, EXP, OUT, SCR, TB, ARGS, RET, STK, K, esp, a0, a1, a2, a3, hl]

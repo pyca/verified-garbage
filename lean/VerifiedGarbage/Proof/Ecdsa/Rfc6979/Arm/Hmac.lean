@@ -107,7 +107,7 @@ theorem scr_toNat (hL : L.Ok) {o : Nat} (ho : o < 8192) : (L.scr + BitVec.ofNat 
 theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 512) :
     (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - 512 + o := by
   have := hL.nB; have := L.sp.isLt; have := hL.na
-  have hfp : L.fp.toNat = L.sp.toNat - 512 := VG.Arm.FrameStack.sub_toNat' (by omega_arith)
+  obtain hfp : L.fp.toNat = L.sp.toNat - 512 := VG.Arm.FrameStack.sub_toNat' (by omega_arith)
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : o < 2 ^ 32), hfp]
   exact Nat.mod_eq_of_lt (by omega_arith)
 
@@ -221,11 +221,11 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
     (h3 : u.gpr .r3 = BitVec.ofNat 32 P.F.H.D) (h12 : u.gpr .r12 = L.scr + BitVec.ofNat 32 384) :
     HiArgs P.ok.hH.SH P.ok.Wi u (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.fp + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 384) P.F.H.D := by
-  have e0 := scrA hL (o := 0) (by decide)
-  have e1 := scrA hL (o := 192) (by decide)
-  have e3 := scrA hL (o := 384) (by decide)
-  have ek := hL.fpA (o := 0) (by omega_arith)
-  have hst := hc.stk_eq hL
+  obtain e0 := scrA hL (o := 0) (by decide)
+  obtain e1 := scrA hL (o := 192) (by decide)
+  obtain e3 := scrA hL (o := 384) (by decide)
+  obtain ek := hL.fpA (o := 0) (by omega_arith)
+  obtain hst := hc.stk_eq hL
   have := hL.nc; have := hL.nB; have := L.sp.isLt
   obtain ⟨_, _, _, _, _, _, _, _, _, _, hS, _, hB⟩ := P.sizes
   exact
@@ -261,7 +261,7 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
 theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).initK t (St P L g m₀ t []) := by
   refine WP.seq (WP.mono (initArgs_ok hL hT hc) fun u ⟨hcu, hmu, h0, h1, h2, h3, h12, h9⟩ => ?_)
-  have hok : TabOK P.F P.f u.syms := hT.1 ▸ hT.2 ▸ hcu.tabOk
+  obtain hok : TabOK P.F P.f u.syms := hT.1 ▸ hT.2 ▸ hcu.tabOk
   refine tcall_ok hL hcu (j := 0) (by decide) (n := P.F.hiN) (c := P.F.hiC)
     (by rw [show 4 * 0 = 0 from rfl, ← hT.1]; exact hcu.tabMem.1) hok.i
     fun u₁ c₁ m₁ y₁ k₁ => ?_
@@ -269,9 +269,9 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
   refine hi_frame P.ok.hi P.ok.hiSt (initA hL c₁ (by rw [k₁ _ (by decide)]; exact h0)
     (by rw [k₁ _ (by decide)]; exact h1) (by rw [k₁ _ (by decide)]; exact h2)
     (by rw [k₁ _ (by decide)]; exact h3) (by rw [k₁ _ (by decide)]; exact h12)) fun u' ha hi ho sy => ?_
-  have ek : Spec.Sha256.bytesAt u₁.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
+  obtain ek : Spec.Sha256.bytesAt u₁.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
     rw [hL.fpA (by omega_arith), m₁, hmu]
-  have hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH P.ok.Wi (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
+  obtain hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH P.ok.Wi (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.scr + BitVec.ofNat 32 384), Region.Sub r (WK L) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_wk hL (by decide) (by anums)
@@ -349,13 +349,13 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : BitVec 32} {le
     (h0 : w.gpr .r0 = L.scr + BitVec.ofNat 32 0) (h1 : w.gpr .r1 = da)
     (h7 : w.gpr .r7 = BitVec.ofNat 32 len) (h10 : w.gpr .r10 = L.scr + BitVec.ofNat 32 384) :
     UpdL P.ok.hH w (L.scr + BitVec.ofNat 32 0) da (L.scr + BitVec.ofNat 32 384) len := by
-  have e0 := scrA hL (o := 0) (by decide)
-  have e3 := scrA hL (o := 384) (by decide)
-  have hb := hcw.below_eq hL
-  have hn := hd.nowrap hL
+  obtain e0 := scrA hL (o := 0) (by decide)
+  obtain e3 := scrA hL (o := 384) (by decide)
+  obtain hb := hcw.below_eq hL
+  obtain hn := hd.nowrap hL
   have := hL.nc
   obtain ⟨_, _, _, _, _, _, _, _, _, _, hS, _, hB⟩ := P.sizes
-  have bsub : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 16⟩ ⟨L.B, 24⟩ := Offset.sub_base _ (by omega_arith)
+  obtain bsub : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 16⟩ ⟨L.B, 24⟩ := Offset.sub_base _ (by omega_arith)
   exact
     { r0 := h0, r1 := h1, r7 := h7, r10 := h10
       hlen := by omega_arith
@@ -387,21 +387,21 @@ theorem upd_call (hL : L.Ok) (hT : TabL P L) {t w : State} {text : List Byte} (h
     (htl : P.F.H.B + text.length < 2 ^ 32) :
     WP isa (Cfg.tcall 1 P.f.upd upd4 .r1 16) w (St P L g m₀ t (text ++ Spec.Sha256.bytesAt w.mem (State.addr da) len)) := by
   have hcw := hw.ctx
-  have hok : TabOK P.F P.f w.syms := hT.1 ▸ hT.2 ▸ hcw.tabOk
+  obtain hok : TabOK P.F P.f w.syms := hT.1 ▸ hT.2 ▸ hcw.tabOk
   refine tcall_ok hL hcw (j := 1) (by decide) (n := P.F.H.updN) (c := P.F.H.updC)
     (by rw [show 4 * 1 = 4 from rfl, ← hT.1]; exact hcw.tabMem.2.1) hok.u
     fun u₁ c₁ m₁ y₁ k₁ => ?_
-  have hw₁ : St P L g m₀ t text u₁ :=
+  obtain hw₁ : St P L g m₀ t text u₁ :=
     ⟨c₁, by rw [k₁ _ (by decide)]; exact hw.r9, m₁ ▸ hw.frame, m₁ ▸ hw.inner, m₁ ▸ hw.outer⟩
   apply WP.of_syms
   refine upd_frame P.ok.hH (updA hL c₁ hd hlen (by rw [k₁ _ (by decide)]; exact h0)
     (by rw [k₁ _ (by decide)]; exact h1) (by rw [k₁ _ (by decide)]; exact h7)
     (by rw [k₁ _ (by decide)]; exact h10)) fun w' af hr sy => ?_
-  have hws : ∀ r ∈ [(⟨State.addr (L.scr + BitVec.ofNat 32 0), P.F.H.S⟩ : Region),
+  obtain hws : ∀ r ∈ [(⟨State.addr (L.scr + BitVec.ofNat 32 0), P.F.H.S⟩ : Region),
       ⟨State.addr (L.scr + BitVec.ofNat 32 384), P.ok.hH.Wb⟩], Region.Sub r (WK L) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> exact scr_wk hL (by decide) (by anums)
-  have hcount : Pbkdf2.Stream.Arm.count u₁ = BitVec.ofNat 64
+  obtain hcount : Pbkdf2.Stream.Arm.count u₁ = BitVec.ofNat 64
       (Spec.Hmac.xorPad (Spec.Hmac.blockKey P.ok.hH.SH.H (keyOf P L t.mem)) Spec.Hmac.ipad ++ text).length := by
     rw [Pbkdf2.Stream.Arm.count, k₁ _ (by decide), k₁ _ (by decide), h2, h3, List.length_append, xorPad_length,
       blockKey_length (keyOf_length _)]
@@ -443,9 +443,9 @@ theorem updV_step (hL : L.Ok) (hT : TabL P L) {t u : State} (hu : St P L g m₀ 
   rw [← List.append_nil (scrAt .r10 sWork)]
   refine scrAt_ok c₅ (d := .r10) (by decide) (o := sWork) (by decide) fun t₆ c₆ m₆ v₆ k₆ => ?_
   refine WP.block_nil ?_
-  have hm : t₆.mem = u.mem := by rw [m₆, m₅, m₄, m₃, m₂, m₁]
-  have hv : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega_arith)
-  have hw : St P L g m₀ t [] t₆ :=
+  obtain hm : t₆.mem = u.mem := by rw [m₆, m₅, m₄, m₃, m₂, m₁]
+  obtain hv : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega_arith)
+  obtain hw : St P L g m₀ t [] t₆ :=
     ⟨c₆, by rw [k₆ _ (by decide) (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide),
         k₂ _ (by decide), k₁ _ (by decide) (by decide)]; exact hu.r9,
       hm ▸ hu.frame, hm ▸ hu.inner, hm ▸ hu.outer⟩
@@ -477,19 +477,19 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} (
   refine ldB_ok hL c₂ (d := .r2) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine ldD_ok hL c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
   refine wp_dpS (op2_reg _ _) fun t₅ u₅ => ?_
-  have c₅ := c₄.upd u₅ (by decide)
+  obtain c₅ := c₄.upd u₅ (by decide)
   refine mov0_ok c₅ (d := .r3) (by decide) fun t₆ c₆ m₆ v₆ k₆ => ?_
   refine movw_ok c₆ (d := .r7) (by decide) (v := len) (by omega_arith) fun t₇ c₇ m₇ v₇ k₇ => ?_
   rw [← List.append_nil (scrAt .r10 sWork)]
   refine scrAt_ok c₇ (d := .r10) (by decide) (o := sWork) (by decide) fun t₈ c₈ m₈ v₈ k₈ => ?_
   refine WP.block_nil ?_
-  have hm : t₈.mem = u.mem := by rw [m₈, m₇, m₆, u₅.mem, m₄, m₃, m₂, m₁]
-  have hmA : State.addr (L.scr + BitVec.ofNat 32 2256) = msgA L := scrA hL (by decide)
-  have hw : St P L g m₀ t text t₈ :=
+  obtain hm : t₈.mem = u.mem := by rw [m₈, m₇, m₆, u₅.mem, m₄, m₃, m₂, m₁]
+  obtain hmA : State.addr (L.scr + BitVec.ofNat 32 2256) = msgA L := scrA hL (by decide)
+  obtain hw : St P L g m₀ t text t₈ :=
     ⟨c₈, by rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.other _ (by decide),
         k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide), k₁ _ (by decide) (by decide)]; exact hu.r9,
       hm ▸ hu.frame, hm ▸ hu.inner, hm ▸ hu.outer⟩
-  have h2 : t₈.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + text.length) := by
+  obtain h2 : t₈.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + text.length) := by
     rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.gpr, dpVal,
       k₄ _ (by decide), v₃, v₄, hT.1, htl, BitVec.ofNat_add]
   have := upd_call (P := P) hL hT hw (da := L.scr + BitVec.ofNat 32 2256) (len := len)
@@ -519,11 +519,11 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
     (h10 : w.gpr .r10 = L.fp + BitVec.ofNat 32 dst) (h12 : w.gpr .r12 = L.scr + BitVec.ofNat 32 384) :
     HfArgs P.ok.hH.SH P.ok.Wf w (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.fp + BitVec.ofNat 32 dst) (L.scr + BitVec.ofNat 32 384) := by
-  have e0 := scrA hL (o := 0) (by decide)
-  have e1 := scrA hL (o := 192) (by decide)
-  have e3 := scrA hL (o := 384) (by decide)
-  have eo := hL.fpA (o := dst) (by omega_arith)
-  have hst := hcw.stk_eq hL
+  obtain e0 := scrA hL (o := 0) (by decide)
+  obtain e1 := scrA hL (o := 192) (by decide)
+  obtain e3 := scrA hL (o := 384) (by decide)
+  obtain eo := hL.fpA (o := dst) (by omega_arith)
+  obtain hst := hcw.stk_eq hL
   have := hL.nc; have := hL.nB; have := L.sp.isLt
   obtain ⟨_, _, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
   exact
@@ -571,24 +571,24 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} {l
   refine ldB_ok hL c₂ (d := .r2) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine ldD_ok hL c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
   refine wp_dpS (op2_reg _ _) fun t₅ u₅ => ?_
-  have c₅ := c₄.upd u₅ (by decide)
+  obtain c₅ := c₄.upd u₅ (by decide)
   refine wp_dpS (op2_imm hle) fun t₆ u₆ => ?_
-  have c₆ := c₅.upd u₆ (by decide)
+  obtain c₆ := c₅.upd u₆ (by decide)
   refine mov0_ok c₆ (d := .r3) (by decide) fun t₇ c₇ m₇ v₇ k₇ => ?_
   refine fpAdd_ok c₇ (d := .r10) (by decide) he fun t₈ c₈ m₈ v₈ k₈ => ?_
   rw [← List.append_nil (scrAt .r12 sWork)]
   refine scrAt_ok c₈ (d := .r12) (by decide) (o := sWork) (by decide) fun t₉ c₉ m₉ v₉ k₉ => ?_
   refine WP.block_nil ?_
-  have hmm : t₉.mem = u.mem := by rw [m₉, m₈, m₇, u₆.mem, u₅.mem, m₄, m₃, m₂, m₁]
-  have h2 : t₉.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + text.length) := by
+  obtain hmm : t₉.mem = u.mem := by rw [m₉, m₈, m₇, u₆.mem, u₅.mem, m₄, m₃, m₂, m₁]
+  obtain h2 : t₉.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + text.length) := by
     rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.gpr, dpVal, u₅.gpr, dpVal,
       k₄ _ (by decide), v₃, v₄, hT.1, htl, BitVec.ofNat_add, BitVec.ofNat_add, BitVec.add_assoc]
-  have h3 : t₉.gpr .r3 = 0 := by rw [k₉ _ (by decide) (by decide), k₈ _ (by decide)]; exact v₇
-  have h9 : t₉.gpr .r9 = t.gpr .r9 := by
+  obtain h3 : t₉.gpr .r3 = 0 := by rw [k₉ _ (by decide) (by decide), k₈ _ (by decide)]; exact v₇
+  obtain h9 : t₉.gpr .r9 = t.gpr .r9 := by
     rw [k₉ _ (by decide) (by decide), k₈ _ (by decide), k₇ _ (by decide), u₆.other _ (by decide),
       u₅.other _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide),
       k₁ _ (by decide) (by decide)]; exact hu.r9
-  have hok : TabOK P.F P.f t₉.syms := hT.1 ▸ hT.2 ▸ c₉.tabOk
+  obtain hok : TabOK P.F P.f t₉.syms := hT.1 ▸ hT.2 ▸ c₉.tabOk
   refine tcall_ok hL c₉ (j := 2) (by decide) (n := P.F.hfN) (c := P.F.hfC)
     (by rw [show 4 * 2 = 8 from rfl, ← hT.1]; exact c₉.tabMem.2.2) hok.f
     fun w c₁₀ m₁₀ y₁₀ k₁₀ => ?_
@@ -602,14 +602,14 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} {l
     (by rw [k₁₀ _ (by decide), k₉ _ (by decide) (by decide)]; exact v₈)
     (by rw [k₁₀ _ (by decide)]; exact v₉)) fun w' ha hpost sy => ?_
   obtain ⟨_, _, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
-  have eo := hL.fpA (o := dst) (by omega_arith)
-  have hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
-  have hm := hpost _ text (by rw [hk, hB])
+  obtain eo := hL.fpA (o := dst) (by omega_arith)
+  obtain hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
+  obtain hm := hpost _ text (by rw [hk, hB])
     (by rw [hk]; anums) (by rw [m₁₀, hmm]; exact hu.inner)
     (by rw [k₁₀ _ (by decide), k₁₀ _ (by decide), h3, h2, hB]; exact append_zero (by rw [htl]; anums))
     (by rw [m₁₀, hmm]; exact hu.outer)
   rw [eo, hD] at hm
-  have hws : ∀ r ∈ HfArgs.wr P.ok.hH.SH P.ok.Wf (L.scr + BitVec.ofNat 32 0) (L.fp + BitVec.ofNat 32 dst)
+  obtain hws : ∀ r ∈ HfArgs.wr P.ok.hH.SH P.ok.Wf (L.scr + BitVec.ofNat 32 0) (L.fp + BitVec.ofNat 32 dst)
       (L.scr + BitVec.ofNat 32 384) ++ [stk w], ∃ r' ∈ [WK L, ⟨L.B, 24⟩,
         (⟨L.B + BitVec.ofNat 64 (24 + dst), P.F.H.D⟩ : Region)], Region.Sub r r' := by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, c₁₀.stk_eq hL]

@@ -53,40 +53,40 @@ theorem quarter_run {s : State} {sch : Reg} (hR : Readable s sch) {j b q : Nat} 
         else if q != 0 then vbyte (s.v d) e else 0) ∧
       VOnly [.v28, .v29, .v30, .v31, d] s s' := by
   let base := planeOff j b + 64 * q
-  have hbase : base + 64 ≤ 4096 := by simp only [base, planeOff]; omega_arith
+  obtain hbase : base + 64 ≤ 4096 := by simp only [base, planeOff]; omega_arith
   let ld (r : Nat) := s.mem.read (s.gpr sch + BitVec.ofNat 64 (base + 16 * r)) 16
   let s₁ := s.setV .v28 (ld 0)
   let s₂ := s₁.setV .v29 (ld 1)
   let s₃ := s₂.setV .v30 (ld 2)
   let s₄ := s₃.setV .v31 (ld 3)
-  have hv : ∀ r < 4, s₄.v (tReg r) = ld r := by
+  obtain hv : ∀ r < 4, s₄.v (tReg r) = ld r := by
     intro r hr
     rcases (by omega_arith : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> rfl
-  have hv' : ∀ x, (∀ r < 4, x ≠ tReg r) → s₄.v x = s.v x := by
+  obtain hv' : ∀ x, (∀ r < 4, x ≠ tReg r) → s₄.v x = s.v x := by
     intro x hx
-    have h0 : x ≠ .v28 := hx 0 (by decide)
-    have h1 : x ≠ .v29 := hx 1 (by decide)
-    have h2 : x ≠ .v30 := hx 2 (by decide)
-    have h3 : x ≠ .v31 := hx 3 (by decide)
+    obtain h0 : x ≠ .v28 := hx 0 (by decide)
+    obtain h1 : x ≠ .v29 := hx 1 (by decide)
+    obtain h2 : x ≠ .v30 := hx 2 (by decide)
+    obtain h3 : x ≠ .v31 := hx 3 (by decide)
     simp only [s₄, s₃, s₂, s₁, v_setV_of_ne _ _ h0, v_setV_of_ne _ _ h1, v_setV_of_ne _ _ h2,
       v_setV_of_ne _ _ h3]
   let s₅ := s₄.setV d (ofVBytes fun i =>
       if (vbyte (s₄.v m) i).toNat < 16 * 4 then tableByte s₄.v (tReg 0) (vbyte (s₄.v m) i).toNat
       else if (q != 0) then vbyte (s₄.v d) i else 0)
-  have rd : ∀ r < 4, InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 (base + 16 * r)) 16 :=
+  obtain rd : ∀ r < 4, InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 (base + 16 * r)) 16 :=
     fun r hr => hR _ (by omega_arith)
-  have ho : ∀ r < 4, (base + 16 * r) % 16 = 0 ∧ base + 16 * r < 65536 := fun r hr => by
+  obtain ho : ∀ r < 4, (base + 16 * r) % 16 = 0 ∧ base + 16 * r < 65536 := fun r hr => by
     simp only [base, planeOff]; omega_arith
   refine ⟨s₅, ?_, ?_, ?_⟩
   · have e₁ : exec (.ldrq .v28 sch (planeOff j b + 64 * q + 16 * 0)) s = some s₁ :=
       exec_ldrq (ho 0 (by decide)) (rd 0 (by decide))
-    have e₂ : exec (.ldrq .v29 sch (planeOff j b + 64 * q + 16 * 1)) s₁ = some s₂ :=
+    obtain e₂ : exec (.ldrq .v29 sch (planeOff j b + 64 * q + 16 * 1)) s₁ = some s₂ :=
       exec_ldrq (ho 1 (by decide)) (rd 1 (by decide))
-    have e₃ : exec (.ldrq .v30 sch (planeOff j b + 64 * q + 16 * 2)) s₂ = some s₃ :=
+    obtain e₃ : exec (.ldrq .v30 sch (planeOff j b + 64 * q + 16 * 2)) s₂ = some s₃ :=
       exec_ldrq (ho 2 (by decide)) (rd 2 (by decide))
-    have e₄ : exec (.ldrq .v31 sch (planeOff j b + 64 * q + 16 * 3)) s₃ = some s₄ :=
+    obtain e₄ : exec (.ldrq .v31 sch (planeOff j b + 64 * q + 16 * 3)) s₃ = some s₄ :=
       exec_ldrq (ho 3 (by decide)) (rd 3 (by decide))
-    have e₅ : exec (.vop (.tblN (q != 0) 4 d (tReg 0) m)) s₄ = some s₅ := exec_tbl4 _ _ _ _ _
+    obtain e₅ : exec (.vop (.tblN (q != 0) 4 d (tReg 0) m)) s₄ = some s₅ := exec_tbl4 _ _ _ _ _
     rw [loadQuarter_eq]
     simp only [List.cons_append, List.nil_append]
     rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃,
@@ -110,7 +110,7 @@ theorem tbx_chain (T : Nat → BitVec 8) (X : Nat) (hX : X < 256) :
       if X ^^^ 64 * 2 < 64 then T (64 * 2 + (X ^^^ 64 * 2)) else
       if X ^^^ 64 < 64 then T (64 + (X ^^^ 64)) else
       if X < 64 then T (64 * 0 + X) else 0) = T X := by
-  have q := VG.AArch64.Tbl.xor_quarter X hX
+  obtain q := VG.AArch64.Tbl.xor_quarter X hX
   obtain ⟨h1, e1⟩ := q 1 (by decide)
   obtain ⟨h2, e2⟩ := q 2 (by decide)
   obtain ⟨h3, e3⟩ := q 3 (by decide)
@@ -157,28 +157,28 @@ theorem lookupPlane_run {s : State} {sch : Reg} (hR : Readable s sch) {j b : Nat
       (∀ e < 16, vbyte (s'.v (outReg b)) e =
         s.mem (s.gpr sch + BitVec.ofNat 64 (planeOff j b + (vbyte (s.v (idxReg j)) e).toNat))) ∧
       VOnly [.v28, .v29, .v30, .v31, outReg b] s s' := by
-  have ne := regs_ne j hj b hb
-  have hd : ∀ r < 4, outReg b ≠ tReg r := fun r hr => (ne 0 (by decide) r hr).1
-  have hR' : ∀ {t : State}, VOnly [.v28, .v29, .v30, .v31, outReg b] s t → Readable t sch := by
+  obtain ne := regs_ne j hj b hb
+  obtain hd : ∀ r < 4, outReg b ≠ tReg r := fun r hr => (ne 0 (by decide) r hr).1
+  obtain hR' : ∀ {t : State}, VOnly [.v28, .v29, .v30, .v31, outReg b] s t → Readable t sch := by
     intro t ht off hoff
     rw [ht.rd, ht.wr, ht.gpr]; exact hR off hoff
   obtain ⟨s₁, r₁, v₁, o₁⟩ := quarter_run hR hj hb (by decide : 0 < 4) hd (fun r hr => (ne 0 (by decide) r hr).2.1)
   obtain ⟨s₂, r₂, v₂, o₂⟩ := quarter_run (hR' o₁) hj hb (by decide : 1 < 4) hd
     (fun r hr => (ne 1 (by decide) r hr).2.2.1)
-  have o₁₂ := o₁.trans o₂
+  obtain o₁₂ := o₁.trans o₂
   obtain ⟨s₃, r₃, v₃, o₃⟩ := quarter_run (hR' o₁₂) hj hb (by decide : 2 < 4) hd
     (fun r hr => (ne 2 (by decide) r hr).2.2.1)
-  have o₁₃ := o₁₂.trans o₃
+  obtain o₁₃ := o₁₂.trans o₃
   obtain ⟨s₄, r₄, v₄, o₄⟩ := quarter_run (hR' o₁₃) hj hb (by decide : 3 < 4) hd
     (fun r hr => (ne 3 (by decide) r hr).2.2.1)
-  have o₁₄ := o₁₃.trans o₄
+  obtain o₁₄ := o₁₃.trans o₄
   refine ⟨s₄, ?_, ?_, o₁₄⟩
   · rw [lookupPlane_eq]
     exact VG.AArch64.Tbl.runBlock_cat_some r₁ (VG.AArch64.Tbl.runBlock_cat_some r₂
       (VG.AArch64.Tbl.runBlock_cat_some r₃ (VG.AArch64.Tbl.runBlock_cat_some r₄ runBlock_nil)))
   · intro e he
     -- the registers read are unchanged
-    have kept : ∀ {t : State} (x : VReg), VOnly [.v28, .v29, .v30, .v31, outReg b] s t →
+    obtain kept : ∀ {t : State} (x : VReg), VOnly [.v28, .v29, .v30, .v31, outReg b] s t →
         (∀ r < 4, x ≠ tReg r) → x ≠ outReg b → t.v x = s.v x := by
       intro t x ht hx hxo
       refine ht.2 x ?_
@@ -192,15 +192,15 @@ theorem lookupPlane_run {s : State} {sch : Reg} (hR : Readable s sch) {j b : Nat
     have g₁ : s₁.gpr = s.gpr := o₁.gpr
     have g₂ : s₂.gpr = s.gpr := o₁₂.gpr
     have g₃ : s₃.gpr = s.gpr := o₁₃.gpr
-    have q₁ : s₁.v (qReg 1) = s.v (qReg 1) := kept _ o₁ (fun r hr => (ne 1 (by decide) r hr).2.2.1)
+    obtain q₁ : s₁.v (qReg 1) = s.v (qReg 1) := kept _ o₁ (fun r hr => (ne 1 (by decide) r hr).2.2.1)
       (ne 1 (by decide) 0 (by decide)).2.2.2.2.1
-    have q₂ : s₂.v (qReg 2) = s.v (qReg 2) := kept _ o₁₂ (fun r hr => (ne 2 (by decide) r hr).2.2.1)
+    obtain q₂ : s₂.v (qReg 2) = s.v (qReg 2) := kept _ o₁₂ (fun r hr => (ne 2 (by decide) r hr).2.2.1)
       (ne 2 (by decide) 0 (by decide)).2.2.2.2.1
-    have q₃ : s₃.v (qReg 3) = s.v (qReg 3) := kept _ o₁₃ (fun r hr => (ne 3 (by decide) r hr).2.2.1)
+    obtain q₃ : s₃.v (qReg 3) = s.v (qReg 3) := kept _ o₁₃ (fun r hr => (ne 3 (by decide) r hr).2.2.1)
       (ne 3 (by decide) 0 (by decide)).2.2.2.2.1
     let X := vbyte (s.v (idxReg j)) e
     have hX : X.toNat < 256 := X.isLt
-    have hxq : ∀ q < 4, 0 < q → (vbyte (s.v (qReg q)) e).toNat = X.toNat ^^^ 64 * q := by
+    obtain hxq : ∀ q < 4, 0 < q → (vbyte (s.v (qReg q)) e).toNat = X.toNat ^^^ 64 * q := by
       intro q hq0 hq1
       rw [hq q hq0 hq1 e he, VG.AArch64.Tbl.toNat_xor_lit _ _ (by omega_arith)]
     rw [v₄ e he, q₃, hxq 3 (by decide) (by decide), v₃ e he, q₂, hxq 2 (by decide) (by decide),
@@ -259,23 +259,23 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
       (∀ b < 4, ∀ e < 16, vbyte (s'.v (outReg b)) e =
         s.mem (s.gpr sch + BitVec.ofNat 64 (planeOff j b + (vbyte (s.v (idxReg j)) e).toNat))) ∧
       VOnly lookupRegs s s' := by
-  have hidx := idx_ne_q123 j hj
+  obtain hidx := idx_ne_q123 j hj
   let s₁ := s.setV (qReg 1) (s.v (idxReg j) ^^^ s.v c64)
   let s₂ := s₁.setV (qReg 2) (s₁.v (idxReg j) ^^^ s₁.v c128)
   let s₃ := s₂.setV (qReg 3) (s₂.v (qReg 1) ^^^ s₂.v c128)
-  have X : s₃.v (idxReg j) = s.v (idxReg j) := by
+  obtain X : s₃.v (idxReg j) = s.v (idxReg j) := by
     simp only [s₃, s₂, s₁, qReg, List.getD_cons_zero, List.getD_cons_succ, v_setV_of_ne _ _ hidx.1,
       v_setV_of_ne _ _ hidx.2.1, v_setV_of_ne _ _ hidx.2.2]
-  have q1 : s₃.v (qReg 1) = s.v (idxReg j) ^^^ s.v c64 := by
+  obtain q1 : s₃.v (qReg 1) = s.v (idxReg j) ^^^ s.v c64 := by
     simp only [s₃, s₂, s₁, qReg, List.getD_cons_zero, List.getD_cons_succ, v_setV, reduceCtorEq,
       ite_true, ite_false]
-  have q2 : s₃.v (qReg 2) = s.v (idxReg j) ^^^ s.v c128 := by
+  obtain q2 : s₃.v (qReg 2) = s.v (idxReg j) ^^^ s.v c128 := by
     simp only [s₃, s₂, s₁, qReg, List.getD_cons_zero, List.getD_cons_succ, v_setV, reduceCtorEq,
       ite_true, ite_false, c128, c64, hidx.1]
-  have q3 : s₃.v (qReg 3) = s.v (idxReg j) ^^^ s.v c64 ^^^ s.v c128 := by
+  obtain q3 : s₃.v (qReg 3) = s.v (idxReg j) ^^^ s.v c64 ^^^ s.v c128 := by
     simp only [s₃, s₂, s₁, qReg, List.getD_cons_zero, List.getD_cons_succ, v_setV, reduceCtorEq,
       ite_true, ite_false, c128, c64, hidx.1]
-  have hq : ∀ q < 4, 0 < q → ∀ e < 16,
+  obtain hq : ∀ q < 4, 0 < q → ∀ e < 16,
       vbyte (s₃.v (qReg q)) e = vbyte (s₃.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q) := by
     intro q hq0 hq1 e he
     rw [X]
@@ -283,14 +283,14 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
     · rw [q1, vbyte_xor, hc.1 e he]; rfl
     · rw [q2, vbyte_xor, hc.2 e he]; rfl
     · rw [q3, vbyte_xor, vbyte_xor, hc.1 e he, hc.2 e he, BitVec.xor_assoc]; rfl
-  have o₃ : VOnly lookupRegs s s₃ :=
+  obtain o₃ : VOnly lookupRegs s s₃ :=
     (((VOnly.setV s (by simp [lookupRegs, qReg]) _).trans (VOnly.setV _ (by simp [lookupRegs, qReg]) _)).trans
       (VOnly.setV _ (by simp [lookupRegs, qReg]) _))
-  have hR₃ : ∀ {t : State}, VOnly lookupRegs s t → Readable t sch := by
+  obtain hR₃ : ∀ {t : State}, VOnly lookupRegs s t → Readable t sch := by
     intro t ht off hoff
     rw [ht.rd, ht.wr, ht.gpr]; exact hR off hoff
   -- each plane keeps what the others read and wrote
-  have step : ∀ {t : State} (b : Nat), b < 4 → VOnly lookupRegs s t →
+  obtain step : ∀ {t : State} (b : Nat), b < 4 → VOnly lookupRegs s t →
       (∀ q < 4, 0 < q → ∀ e < 16,
         vbyte (t.v (qReg q)) e = vbyte (t.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
       ∃ t', runBlock isa (lookupPlane sch j b) t = some t' ∧
@@ -302,23 +302,23 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
     refine ⟨t', r, fun e he => ?_, o⟩
     rw [v e he, ht.mem, ht.gpr]
   have ob := plane_sub
-  have hqk : ∀ {t t' : State} (b : Nat), b < 4 → VOnly [.v28, .v29, .v30, .v31, outReg b] t t' →
+  obtain hqk : ∀ {t t' : State} (b : Nat), b < 4 → VOnly [.v28, .v29, .v30, .v31, outReg b] t t' →
       (∀ q < 4, 0 < q → ∀ e < 16,
         vbyte (t.v (qReg q)) e = vbyte (t.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
       (∀ q < 4, 0 < q → ∀ e < 16,
         vbyte (t'.v (qReg q)) e = vbyte (t'.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) := by
     intro t t' b hb o h q hq0 hq1 e he
     rw [o.2 _ (q_notin q hq0 hq1 b hb), o.2 _ (idx_notin j hj b hb)]; exact h q hq0 hq1 e he
-  have ni := idx_notin j hj
+  obtain ni := idx_notin j hj
   obtain ⟨t₀, r₀, v₀, o₀⟩ := step 0 (by decide) o₃ hq
-  have p₀ := o₃.trans (VOnly.mono o₀ (ob 0 (by decide)))
+  obtain p₀ := o₃.trans (VOnly.mono o₀ (ob 0 (by decide)))
   obtain ⟨t₁, r₁, v₁, o₁⟩ := step 1 (by decide) p₀ (hqk 0 (by decide) o₀ hq)
-  have p₁ := p₀.trans (VOnly.mono o₁ (ob 1 (by decide)))
+  obtain p₁ := p₀.trans (VOnly.mono o₁ (ob 1 (by decide)))
   obtain ⟨t₂, r₂, v₂, o₂⟩ := step 2 (by decide) p₁ (hqk 1 (by decide) o₁ (hqk 0 (by decide) o₀ hq))
-  have p₂ := p₁.trans (VOnly.mono o₂ (ob 2 (by decide)))
+  obtain p₂ := p₁.trans (VOnly.mono o₂ (ob 2 (by decide)))
   obtain ⟨t₃, r₃, v₃, o₃'⟩ := step 3 (by decide) p₂
     (hqk 2 (by decide) o₂ (hqk 1 (by decide) o₁ (hqk 0 (by decide) o₀ hq)))
-  have p₃ := p₂.trans (VOnly.mono o₃' (ob 3 (by decide)))
+  obtain p₃ := p₂.trans (VOnly.mono o₃' (ob 3 (by decide)))
   refine ⟨t₃, ?_, ?_, p₃⟩
   · have e₁ : exec (veor (qReg 1) (idxReg j) c64) s = some s₁ := rfl
     have e₂ : exec (veor (qReg 2) (idxReg j) c128) s₁ = some s₂ := rfl
@@ -331,9 +331,9 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
     exact VG.AArch64.Tbl.runBlock_cat_some r₀ (VG.AArch64.Tbl.runBlock_cat_some r₁
       (VG.AArch64.Tbl.runBlock_cat_some r₂ (VG.AArch64.Tbl.runBlock_cat_some r₃ runBlock_nil)))
   · -- the index register is never written
-    have i₀ : t₀.v (idxReg j) = s.v (idxReg j) := (o₀.2 _ (ni 0 (by decide))).trans X
-    have i₁ : t₁.v (idxReg j) = s.v (idxReg j) := (o₁.2 _ (ni 1 (by decide))).trans i₀
-    have i₂ : t₂.v (idxReg j) = s.v (idxReg j) := (o₂.2 _ (ni 2 (by decide))).trans i₁
+    obtain i₀ : t₀.v (idxReg j) = s.v (idxReg j) := (o₀.2 _ (ni 0 (by decide))).trans X
+    obtain i₁ : t₁.v (idxReg j) = s.v (idxReg j) := (o₁.2 _ (ni 1 (by decide))).trans i₀
+    obtain i₂ : t₂.v (idxReg j) = s.v (idxReg j) := (o₂.2 _ (ni 2 (by decide))).trans i₁
     intro b hb e he
     have nob := out_notin
     rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl

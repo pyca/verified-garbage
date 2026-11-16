@@ -40,12 +40,12 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     (writes₀ 276 (by decide))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have g₁ (r : Reg) : s₁.gpr r = s₀.gpr r := keep₁.reg r (by simp)
-  have sp₁ : s₁.gpr .esp = s.gpr .esp := (g₁ .esp).trans (g₀ .esp (by decide))
-  have saveFrame : Frame [⟨addr32 (arg s 4), 512⟩] s.mem s₁.mem := by
+  obtain sp₁ : s₁.gpr .esp = s.gpr .esp := (g₁ .esp).trans (g₀ .esp (by decide))
+  obtain saveFrame : Frame [⟨addr32 (arg s 4), 512⟩] s.mem s₁.mem := by
     rw [keep₁.mem, ← keep₀.mem, ← buf₀]; exact savedMem_frame s₀
-  have args₁ := args_frame saveFrame sp₁ spFit (by simpa using bufArgs)
+  obtain args₁ := args_frame saveFrame sp₁ spFit (by simpa using bufArgs)
   have readArgs₁ (i : Nat) (hi : i < 4) : InRegions (s₁.rd ++ s₁.wr) (argAddr s₁ i) 4 := by
-    have ptr : argAddr s₁ i = argAddr s i := by unfold argAddr; rw [sp₁]
+    obtain ptr : argAddr s₁ i = argAddr s i := by unfold argAddr; rw [sp₁]
     rw [keep₁.rd, keep₁.wr, keep₀.rd, keep₀.wr, hrd, hwr, ptr, argAddr_eq s i (by omega_arith)]
     exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i (by omega_arith)⟩
   obtain ⟨s₂, run₂, key₂, iv₂, data₂, count₂, buf₂, flag₂, keep₂⟩ := setup_ok s₁ readArgs₁
@@ -55,16 +55,16 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   rw [args₁ 2 (by decide)] at data₂
   rw [args₁ 3 (by decide)] at count₂ flag₂
   rw [g₁, buf₀] at buf₂
-  have sp₂ := (keep₂.reg .esp (by decide)).trans sp₁
-  have rd₂ := keep₂.rd.trans (keep₁.rd.trans keep₀.rd)
-  have wr₂ := keep₂.wr.trans (keep₁.wr.trans keep₀.wr)
-  have mem₂ : s₂.mem = savedMem s₀ := keep₂.mem.trans keep₁.mem
-  have scratchFrame : Frame [⟨addr32 (arg s 4), 512⟩] s.mem s₂.mem := by
+  obtain sp₂ := (keep₂.reg .esp (by decide)).trans sp₁
+  obtain rd₂ := keep₂.rd.trans (keep₁.rd.trans keep₀.rd)
+  obtain wr₂ := keep₂.wr.trans (keep₁.wr.trans keep₀.wr)
+  obtain mem₂ : s₂.mem = savedMem s₀ := keep₂.mem.trans keep₁.mem
+  obtain scratchFrame : Frame [⟨addr32 (arg s 4), 512⟩] s.mem s₂.mem := by
     rw [mem₂, ← keep₀.mem, ← buf₀]; exact savedMem_frame s₀
-  have initialKey := scheduleAt_frame scratchFrame (addr32 (arg s 0)) (by simpa using keyBuf)
-  have initialIv := blockAt_frame scratchFrame (addr32 (arg s 1)) (by simpa using ivBuf)
-  have initialData := blocksAt_frame scratchFrame (addr32 (arg s 2)) (arg s 3).toNat (by simpa using dataBuf)
-  have hp₂ : StepPre s₂ (arg s 3).toNat := by
+  obtain initialKey := scheduleAt_frame scratchFrame (addr32 (arg s 0)) (by simpa using keyBuf)
+  obtain initialIv := blockAt_frame scratchFrame (addr32 (arg s 1)) (by simpa using ivBuf)
+  obtain initialData := blocksAt_frame scratchFrame (addr32 (arg s 2)) (arg s 3).toNat (by simpa using dataBuf)
+  obtain hp₂ : StepPre s₂ (arg s 3).toNat := by
     constructor
     · rw [key₂]; exact keyFit
     · rw [iv₂]; exact ivFit
@@ -91,31 +91,31 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   apply WP.mono (maybeLoop_ok d s₂ (arg s 3).toNat (by omega_arith) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
-  have rd₃ := h₃.rd.trans rd₂
-  have wr₃ := h₃.wr.trans wr₂
-  have buf₃ := (h₃.reg .ebp (by decide) (by decide) (by decide)).trans buf₂
+  obtain rd₃ := h₃.rd.trans rd₂
+  obtain wr₃ := h₃.wr.trans wr₂
+  obtain buf₃ := (h₃.reg .ebp (by decide) (by decide) (by decide)).trans buf₂
   have reads (i : Nat) (hi : i + 4 ≤ 512) :
       InRegions (s₃.rd ++ s₃.wr) (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 i) 4 := by
     rw [rd₃, wr₃, buf₃]
     obtain ⟨r, hr, hc⟩ := writes i hi
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have v0 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 264) 32 = s.gpr .ebp := by
-    have h := h₃.scratchRead hp₂ 264 (by decide) (by decide)
+  obtain v0 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 264) 32 = s.gpr .ebp := by
+    obtain h := h₃.scratchRead hp₂ 264 (by decide) (by decide)
     rw [buf₂, mem₂, ← buf₀, savedMem_ebp, g₀ .ebp (by decide)] at h
     rw [buf₀] at h
     rw [buf₃]; exact h
-  have v1 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 268) 32 = s.gpr .ebx := by
-    have h := h₃.scratchRead hp₂ 268 (by decide) (by decide)
+  obtain v1 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 268) 32 = s.gpr .ebx := by
+    obtain h := h₃.scratchRead hp₂ 268 (by decide) (by decide)
     rw [buf₂, mem₂, ← buf₀, savedMem_ebx, g₀ .ebx (by decide)] at h
     rw [buf₀] at h
     rw [buf₃]; exact h
-  have v2 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 272) 32 = s.gpr .esi := by
-    have h := h₃.scratchRead hp₂ 272 (by decide) (by decide)
+  obtain v2 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 272) 32 = s.gpr .esi := by
+    obtain h := h₃.scratchRead hp₂ 272 (by decide) (by decide)
     rw [buf₂, mem₂, ← buf₀, savedMem_esi, g₀ .esi (by decide)] at h
     rw [buf₀] at h
     rw [buf₃]; exact h
-  have v3 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 276) 32 = s.gpr .edi := by
-    have h := h₃.scratchRead hp₂ 276 (by decide) (by decide)
+  obtain v3 : s₃.mem.readW (addr32 (s₃.gpr .ebp) + BitVec.ofNat 64 276) 32 = s.gpr .edi := by
+    obtain h := h₃.scratchRead hp₂ 276 (by decide) (by decide)
     rw [buf₂, mem₂, ← buf₀, savedMem_edi, g₀ .edi (by decide)] at h
     rw [buf₀] at h
     rw [buf₃]; exact h
@@ -135,7 +135,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
         rw [Taint.sub_setWidth stackLo]
         exact Offset.base_disjoint_below _ (by decide)
       have frameLoop := h₃.mem
-      have retSep : ∀ r ∈ loopWrites s₂ (arg s 3).toNat, (Region.mk (addr32 (s.gpr .esp)) 4).Disjoint r := by
+      obtain retSep : ∀ r ∈ loopWrites s₂ (arg s 3).toNat, (Region.mk (addr32 (s.gpr .esp)) 4).Disjoint r := by
         simpa only [loopWrites, ivR, dataR, stackR, iv₂, data₂, buf₂, sp₂,
           List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
           And.intro retIv (And.intro retData (And.intro (retBuf.sub_right (Region.sub_prefix (by decide : 264 ≤ 512))) stackRet))

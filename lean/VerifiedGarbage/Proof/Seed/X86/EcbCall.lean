@@ -93,7 +93,7 @@ theorem pushed_arg {s : State} (h4 : 4 ≤ (s.gpr .esp).toNat) (hf : (s.gpr .esp
       (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64
     rw [pushed_esp]
     refine congrArg (BitVec.setWidth 64) ?_
-    have e : BitVec.ofNat 32 (4 + 4 * (i + 1)) = BitVec.ofNat 32 (4 * [Reg.ebx].length) + BitVec.ofNat 32 (4 + 4 * i) := by
+    obtain e : BitVec.ofNat 32 (4 + 4 * (i + 1)) = BitVec.ofNat 32 (4 * [Reg.ebx].length) + BitVec.ofNat 32 (4 + 4 * i) := by
       rw [← BitVec.ofNat_add]; congr 1; simp; omega_using []
     rw [e, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   · refine (pushed_frame (rs := [.ebx]) (by decide) (by simpa using h4)).readW (arg_contains s hf hi)
@@ -123,12 +123,12 @@ theorem argLoads_ok {s₀ : State} {E : BitVec 32} (hEd : s₀.gpr .esp = E) (hE
     ∃ s₂, runBlock isa [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)), .mov .edx (.mem (argOp 3)),
       .mov .ebx (.mem (argOp 4))] (pushed [.ebx] s₀) = some s₂ ∧ Loaded s₀ E s₂ := by
   let s₁ := pushed [.ebx] s₀
-  have esp₁ : s₁.gpr .esp = E - BitVec.ofNat 32 4 := by rw [pushed_esp, hEd]; rfl
-  have pa := fun i (hi : i < 4) => pushed_arg (s := s₀) (by rw [hEd]; omega_using [hE]) fitE hi
-  have inA : ∀ {s : State}, s.rd = s₀.rd → ∀ i < 4, InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4 :=
+  obtain esp₁ : s₁.gpr .esp = E - BitVec.ofNat 32 4 := by rw [pushed_esp, hEd]; rfl
+  obtain pa := fun i (hi : i < 4) => pushed_arg (s := s₀) (by rw [hEd]; omega_using [hE]) fitE hi
+  obtain inA : ∀ {s : State}, s.rd = s₀.rd → ∀ i < 4, InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4 :=
     fun h i hi => ⟨_, List.mem_append_left _ (by rw [h]; exact hrA), arg_contains s₀ fitE hi⟩
-  have rd₁ : s₁.rd = s₀.rd := pushed_rd _ _
-  have ea₂ : ∀ {s : State}, s.gpr .esp = s₁.gpr .esp → ∀ i, s.ea (argOp i) = s₁.ea (argOp i) := fun {s} h i => by
+  obtain rd₁ : s₁.rd = s₀.rd := pushed_rd _ _
+  obtain ea₂ : ∀ {s : State}, s.gpr .esp = s₁.gpr .esp → ∀ i, s.ea (argOp i) = s₁.ea (argOp i) := fun {s} h i => by
     show (s.gpr .esp + _).setWidth 64 = (s₁.gpr .esp + _).setWidth 64; rw [h]
   obtain ⟨sa, ea, va, oa, ma, rda, wra⟩ := ldArg_ok s₁ .eax 1 (by rw [(pa 0 (by decide)).1]; exact inA rd₁ 0 (by decide))
   obtain ⟨sb, eb, vb, ob, mb, rdb, wrb⟩ := ldArg_ok sa .ecx 2 (by
@@ -188,36 +188,36 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
           (Spec.Seed.blocksAt s₀.mem ((arg s₀ 1).setWidth 64) (arg s₀ 2).toNat) := by
   obtain ⟨hEd, hE, hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitB⟩ := hc
   have hEl := E.isLt
-  have hrs : Reg.esp ∉ [Reg.ebx, .edx, .ecx, .eax] := by decide
-  have h4 : 4 ≤ E.toNat := by omega_using [hE]
-  have espN₂ : (s₂.gpr .esp).toNat = E.toNat - 4 := by rw [hl.esp, sub_toNat h4]
-  have hfit₂ : 4 * [Reg.ebx, .edx, .ecx, .eax].length + 4 ≤ (s₂.gpr .esp).toNat := by
+  obtain hrs : Reg.esp ∉ [Reg.ebx, .edx, .ecx, .eax] := by decide
+  obtain h4 : 4 ≤ E.toNat := by omega_using [hE]
+  obtain espN₂ : (s₂.gpr .esp).toNat = E.toNat - 4 := by rw [hl.esp, sub_toNat h4]
+  obtain hfit₂ : 4 * [Reg.ebx, .edx, .ecx, .eax].length + 4 ≤ (s₂.gpr .esp).toNat := by
     rw [espN₂]; show 20 ≤ _; omega_using [hE]
-  have a0 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0 = arg s₀ 0 := by
+  obtain a0 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0 = arg s₀ 0 := by
     rw [callEntry_arg hfit₂ hrs (i := 0) (by decide)]; exact hl.eax
-  have a1 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 1 = arg s₀ 1 := by
+  obtain a1 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 1 = arg s₀ 1 := by
     rw [callEntry_arg hfit₂ hrs (i := 1) (by decide)]; exact hl.ecx
-  have a2 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 2 = arg s₀ 2 := by
+  obtain a2 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 2 = arg s₀ 2 := by
     rw [callEntry_arg hfit₂ hrs (i := 2) (by decide)]; exact hl.edx
-  have a3 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 3 = arg s₀ 3 := by
+  obtain a3 : arg (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 3 = arg s₀ 3 := by
     rw [callEntry_arg hfit₂ hrs (i := 3) (by decide)]; exact hl.ebx
-  have espE : ((pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.gpr .esp).toNat = E.toNat - 24 := by
+  obtain espE : ((pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.gpr .esp).toNat = E.toNat - 24 := by
     rw [callEntry_espNat hfit₂, espN₂]; rfl
-  have hin : Region.Sub (below (s₂.gpr .esp) 20) (below E 24) := by
+  obtain hin : Region.Sub (below (s₂.gpr .esp) 20) (below E 24) := by
     rw [hl.esp]; exact below_inner (by decide) hE
-  have argsE : (⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩ : Region) =
+  obtain argsE : (⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩ : Region) =
       below (s₂.gpr .esp) 16 := by
     rw [callEntry_argAddr0]; rfl
-  have argsSub : Region.Sub ⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩ (below E 24) := by
+  obtain argsSub : Region.Sub ⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩ (below E 24) := by
     rw [argsE]; exact fun x hx => hin x (below_sub (by decide) (by rw [espN₂]; omega_using [hE]) x hx)
-  have retSub : Region.Sub ⟨((pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.gpr .esp).setWidth 64, 4⟩
+  obtain retSub : Region.Sub ⟨((pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.gpr .esp).setWidth 64, 4⟩
       (below E 24) := by
     rw [show (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.gpr .esp =
         s₂.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 4 by
       rw [callEntry_esp', BitVec.sub_sub, ← BitVec.ofNat_add]; rfl]
     exact fun x hx => hin x (below_inner (a := 4) (k := 16) (b := 20) (by decide) (by rw [espN₂]; omega_using [hE]) x hx)
-  have fE₀ : Frame [below E 24] s₀.mem (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.mem := by
-    have f₁ : Frame [below E 24] s₀.mem s₂.mem := by
+  obtain fE₀ : Frame [below E 24] s₀.mem (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry.mem := by
+    obtain f₁ : Frame [below E 24] s₀.mem s₂.mem := by
       rw [hl.mem]
       exact (pushed_frame (rs := [.ebx]) (by decide) (by simp; rw [hEd]; omega_using [hE])).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -225,9 +225,9 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
     exact f₁.trans ((callEntry_frame hfit₂ hrs).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, hin⟩)
-  have hsch := Proof.Seed.scheduleAt_frame fE₀ (p := (arg s₀ 0).setWidth 64) fun r hr => by
+  obtain hsch := Proof.Seed.scheduleAt_frame fE₀ (p := (arg s₀ 0).setWidth 64) fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact sK.symm
-  have hblk := Proof.Seed.blocksAt_frame fE₀ (p := (arg s₀ 1).setWidth 64) (n := (arg s₀ 2).toNat)
+  obtain hblk := Proof.Seed.blocksAt_frame fE₀ (p := (arg s₀ 1).setWidth 64) (n := (arg s₀ 2).toNat)
     (fun r hr => by rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact sD.symm) (by omega_using [])
   cases d <;>
   · refine WP.callWith (k := ecbX86 _) (ecb_correct _) (ecb_noSp _) (by decide) hrs
@@ -265,9 +265,9 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
   have hE' := hE
   rw [hEd] at hE sK sD sS
   rw [← stk_eq hE] at sK sD sS
-  have hc : CallPre' s₀ E := ⟨hEd, hE, hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitB⟩
-  have h4 : 4 ≤ E.toNat := by omega_using [hE]
-  have hbody : NoSp (.seq (.block [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)),
+  obtain hc : CallPre' s₀ E := ⟨hEd, hE, hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitB⟩
+  obtain h4 : 4 ≤ E.toNat := by omega_using [hE]
+  obtain hbody : NoSp (.seq (.block [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)),
       .mov .edx (.mem (argOp 3)), .mov .ebx (.mem (argOp 4))])
       (.frame (.push [.ebx, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4)) : Prog isa) := by
     cases d
@@ -276,10 +276,10 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
   refine WP.frame (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
   obtain ⟨s₂, e₂, hl⟩ := argLoads_ok hEd hE fitE (by rw [hrd]; simp)
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl) fun s' ⟨rd', wr', cs, f, post⟩ => ?_⟩)
-  have esp' : s'.gpr .esp = E - BitVec.ofNat 32 4 := by rw [cs .esp (by decide), hl.esp]
-  have hb4 : Region.Sub ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ (below E 24) :=
+  obtain esp' : s'.gpr .esp = E - BitVec.ofNat 32 4 := by rw [cs .esp (by decide), hl.esp]
+  obtain hb4 : Region.Sub ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ (below E 24) :=
     below_sub (a := 4) (by decide) hE
-  have fr' : ∀ r ∈ [(⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩ : Region),
+  obtain fr' : ∀ r ∈ [(⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩ : Region),
       ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩] ++ [below (s₂.gpr .esp) 20],
       Region.Disjoint ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ r := fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -292,14 +292,14 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
       rw [BitVec.sub_sub, ← BitVec.ofNat_add, VG.X86.Taint.sub_setWidth (by omega_using [hE])]
       have := VG.Offset.base_disjoint_below (E.setWidth 64 - BitVec.ofNat 64 4) (n := 20) (k := 4) (by omega_using [])
       rwa [VG.Offset.sub_sub_ofNat] at this
-  have ebx' : s'.mem.readW ((s'.gpr .esp).setWidth 64) 32 = s₀.gpr .ebx := by
+  obtain ebx' : s'.mem.readW ((s'.gpr .esp).setWidth 64) 32 = s₀.gpr .ebx := by
     rw [esp', f.readW (Region.contains_self _ _) fr' (by decide), hl.mem]
     have := pushed_word (rs := [.ebx]) (s := s₀) (by decide) (by simp; omega_using [hE']) (i := 0) (by decide)
     rw [pushed_esp, hEd] at this
     simpa using this
-  have fr₀ : Frame ([(⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩ : Region),
+  obtain fr₀ : Frame ([(⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩ : Region),
       ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩] ++ [below E 24]) s₀.mem s'.mem := by
-    have f₁ : Frame [below E 24] s₀.mem s₂.mem := by
+    obtain f₁ : Frame [below E 24] s₀.mem s₂.mem := by
       rw [hl.mem]
       exact (pushed_frame (rs := [.ebx]) (by decide) (by simp; rw [hEd]; omega_using [hE])).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -460,8 +460,8 @@ theorem wideCall_implies (d : Spec.Seed.Direction) :
 
 theorem call_verified (d : Spec.Seed.Direction) :
     Verified X86.target (ecbCall d) (Proof.Seed.ecbScratchContract X86.abi d 136 24) := by
-  have hsat := (wideCall_implies d).sat_left
-  have narrowSat : ∃ s, (callX86 d).pre s := by
+  obtain hsat := (wideCall_implies d).sat_left
+  obtain narrowSat : ∃ s, (callX86 d).pre s := by
     obtain ⟨s, hs⟩ := hsat
     exact ⟨_, wideCall_pre d s hs⟩
   apply Verified.of_implies _ (wideCall_implies d)

@@ -32,33 +32,33 @@ theorem front_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
       t.gpr .rsi = off B (e + 64) ∧ t.zf = some (decide (n = 0)) ∧
       Outside B (e - 8) 72 s.mem t.mem ∧ Keep [.rdx, .rax, .rbx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   have hn := hs.nowrap
-  have hNs := slot_le (w := w) (show aN < 8 by decide)
+  obtain hNs := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxRotate8.tileFront
   refine WP.seq (WP.mono (tileBegin_ok hs hdi hH hZ hc heZ) fun a ⟨va, hp, ho, ma, ka⟩ => ?_)
   refine WP.seq (WP.mono (headN_ok (n := 8) (mi := mi) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hdi)
     ((ka.gpr (by decide)).trans hc) hp heZ (by omega_arith) (by omega_arith)
     (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he)
     (by rw [ma]; exact hH.hminv)) fun b ⟨vb, ob, kb⟩ => ?_)
-  have kab := ka.trans kb
-  have hbH : Hdr b.mem B w mi := (ma ▸ hH).of_outside ob (by omega_arith)
+  obtain kab := ka.trans kb
+  obtain hbH : Hdr b.mem B w mi := (ma ▸ hH).of_outside ob (by omega_arith)
   refine WP.seq (WP.mono (clearCarry_ok (hs.congr kab.2.2) ((kab.gpr (by decide)).trans hc)
     (by omega_arith) (by omega_arith)) fun c ⟨zc, oc, kc⟩ => ?_)
-  have kabc := kab.trans kc
-  have hcH := hbH.of_outside oc (by omega_arith)
-  have hcP : c.gpr .rbp = off B (slot w aN + 8 * 0) := by
+  obtain kabc := kab.trans kc
+  obtain hcH := hbH.of_outside oc (by omega_arith)
+  obtain hcP : c.gpr .rbp = off B (slot w aN + 8 * 0) := by
     simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rbp) (by decide)).trans hp
-  have hcO : c.gpr .rsi = off B (e + 8 * 0) := by
+  obtain hcO : c.gpr .rsi = off B (e + 8 * 0) := by
     simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rsi) (by decide)).trans ho
   refine WP.mono (nextBlock_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hdi)
     hcH hZ (by omega_arith) hcP hcO) fun t ⟨pt, ot, zt, mt, kt⟩ => ?_
-  have outb : Outside B e 64 s.mem b.mem := by rw [ma] at ob; exact ob
-  have outc : Outside B (e - 8) 72 s.mem c.mem :=
+  obtain outb : Outside B e 64 s.mem b.mem := by rw [ma] at ob; exact ob
+  obtain outc : Outside B (e - 8) 72 s.mem c.mem :=
     (outb.mono (by omega_arith) (by omega_arith)).trans (oc.mono (by omega_arith) (by omega_arith))
-  have uc : wv c.mem B e 8 = wv b.mem B e 8 := oc.wv (by omega_arith) (by omega_arith)
+  obtain uc : wv c.mem B e 8 = wv b.mem B e 8 := oc.wv (by omega_arith) (by omega_arith)
   refine ⟨?_, by rw [mt]; exact zc, pt, ot, ?_, by rw [mt]; exact outc,
     (kabc.trans kt).mono (by decide)⟩
   · intro hi
-    have hv := vb (by rw [ma]; exact hi)
+    obtain hv := vb (by rw [ma]; exact hi)
     rw [ma, va, show 64 * 8 = 512 from rfl] at hv
     rw [cols_keep kt (by decide), cols_keep kc (by decide), mt, uc]
     exact hv
@@ -91,56 +91,56 @@ theorem compute_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   unfold AdxRotate8.tileCompute
   refine WP.seq (WP.mono (front_ok hs hdi hH hZ hw hc he (by omega_arith) hsep)
     fun a ⟨va, za, pa, oa, zfa, outa, ka⟩ => ?_)
-  have ha := hH.of_outside outa (by omega_arith)
+  obtain ha := hH.of_outside outa (by omega_arith)
   refine WP.seq (WP.mono (middles_ok (hs.congr ka.2.2) ha ((ka.gpr (by decide)).trans hdi)
     ((ka.gpr (by decide)).trans hc) pa oa zfa za hZ hw he heZ hsep) fun b hb => ?_)
-  have ob : Outside B (e - 8) (8 * (w + 9)) a.mem b.mem :=
+  obtain ob : Outside B (e - 8) (8 * (w + 9)) a.mem b.mem :=
     hb.out.outside (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-  have outab : Outside B (e - 8) (8 * (w + 9)) s.mem b.mem :=
+  obtain outab : Outside B (e - 8) (8 * (w + 9)) s.mem b.mem :=
     (outa.mono (by omega_arith) (by omega_arith)).trans ob
-  have hbO : b.gpr .rsi = off B (e + 8 * w) := by rw [hb.rsi]; congr 1; omega_arith
+  obtain hbO : b.gpr .rsi = off B (e + 8 * w) := by rw [hb.rsi]; congr 1; omega_arith
   refine WP.mono (tailCore_ok hb.scr hb.rcx hbO (by omega_arith) (by omega_arith) (by omega_arith) hb.bit)
     fun t ⟨vt, bt, outt, kt⟩ => ?_
   refine ⟨?_, bt, outab.trans (outt.mono (by omega_arith) (by omega_arith)),
     (kt.gpr (by decide)).trans hb.rcx, (ka.trans (hb.keep.trans kt)).mono (by decide)⟩
   intro hi
-  have h0 := va hi
+  obtain h0 := va hi
   have h1 := hb.val
-  have tm : wv a.mem B (e + 64) (8 * n) = wv s.mem B (e + 64) (8 * n) := outa.wv (by omega_arith) (by omega_arith)
-  have nm : wv a.mem B (slot w aN + 64) (8 * n) = wv s.mem B (slot w aN + 64) (8 * n) :=
+  obtain tm : wv a.mem B (e + 64) (8 * n) = wv s.mem B (e + 64) (8 * n) := outa.wv (by omega_arith) (by omega_arith)
+  obtain nm : wv a.mem B (slot w aN + 64) (8 * n) = wv s.mem B (slot w aN + 64) (8 * n) :=
     outa.wv (by omega_arith) (by omega_arith)
-  have topb : wv b.mem B (e + 8 * w) 8 = wv a.mem B (e + 8 * w) 8 := hb.out.wv (by omega_arith) (by omega_arith) (by omega_arith)
-  have topa : wv a.mem B (e + 8 * w) 8 = wv s.mem B (e + 8 * w) 8 := outa.wv (by omega_arith) (by omega_arith)
-  have oldc : word b.mem B (e - 16) = word s.mem B (e - 16) := outab.word (by omega_arith) (by omega_arith)
-  have lo : wv t.mem B (e + 64) (8 * n) = wv b.mem B (e + 64) (8 * n) := outt.wv (by omega_arith) (by omega_arith)
+  obtain topb : wv b.mem B (e + 8 * w) 8 = wv a.mem B (e + 8 * w) 8 := hb.out.wv (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain topa : wv a.mem B (e + 8 * w) 8 = wv s.mem B (e + 8 * w) 8 := outa.wv (by omega_arith) (by omega_arith)
+  obtain oldc : word b.mem B (e - 16) = word s.mem B (e - 16) := outab.word (by omega_arith) (by omega_arith)
+  obtain lo : wv t.mem B (e + 64) (8 * n) = wv b.mem B (e + 64) (8 * n) := outt.wv (by omega_arith) (by omega_arith)
   rw [za, tm, nm] at h1
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at h1
   rw [topb, topa, oldc] at vt
-  have hv := tile_combine (R := 2 ^ 512) (P := 2 ^ (512 * n))
+  obtain hv := tile_combine (R := 2 ^ 512) (P := 2 ^ (512 * n))
     (H := cols a) (C := cols b + (word b.mem B (e - 8)).toNat)
     (Y := wv t.mem B (e + 8 * w) 8) (K := (t.gpr .rax).toNat)
     (V := wv s.mem B (e + 8 * w) 8) (Q := (word s.mem B (e - 16)).toNat) h0 h1 vt
   refine ⟨wv a.mem B e 8, ?_, ?_⟩
   · simpa only [show 64 * 8 = 512 from rfl] using wv_lt a.mem B e 8
-  have pw : 2 ^ (64 * w) = 2 ^ (512 * n) * 2 ^ 512 := by
+  obtain pw : 2 ^ (64 * w) = 2 ^ (512 * n) * 2 ^ 512 := by
     rw [show 64 * w = 512 * n + 512 by omega_arith, Nat.pow_add]
-  have output : wv t.mem B (e + 64) w = wv b.mem B (e + 64) (8 * n) +
+  obtain output : wv t.mem B (e + 64) w = wv b.mem B (e + 64) (8 * n) +
       2 ^ (512 * n) * wv t.mem B (e + 8 * w) 8 := by
-    have hx := wv_add t.mem B (e + 64) (8 * n) 8
+    obtain hx := wv_add t.mem B (e + 64) (8 * n) 8
     rw [show 8 * n + 8 = w by omega_arith, lo, show 64 * (8 * n) = 512 * n by omega_arith,
       show e + 64 + 8 * (8 * n) = e + 8 * w by omega_arith] at hx
     exact hx
-  have input : wv s.mem B e (w + 8) =
+  obtain input : wv s.mem B e (w + 8) =
       wv s.mem B e 8 + 2 ^ 512 * wv s.mem B (e + 64) (8 * n) +
         (2 ^ (512 * n) * 2 ^ 512) * wv s.mem B (e + 8 * w) 8 := by
-    have hx := wv_add s.mem B e 8 (8 * n)
+    obtain hx := wv_add s.mem B e 8 (8 * n)
     rw [show 8 + 8 * n = w by omega_arith, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
-    have hy := wv_add s.mem B e w 8
+    obtain hy := wv_add s.mem B e w 8
     rw [pw] at hy
     omega_using [hx, hy]
-  have modulus : wv s.mem B (slot w aN) w = wv s.mem B (slot w aN) 8 +
+  obtain modulus : wv s.mem B (slot w aN) w = wv s.mem B (slot w aN) 8 +
       2 ^ 512 * wv s.mem B (slot w aN + 64) (8 * n) := by
-    have hx := wv_add s.mem B (slot w aN) 8 (8 * n)
+    obtain hx := wv_add s.mem B (slot w aN) 8 (8 * n)
     rw [show 8 + 8 * n = w by omega_arith, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
     exact hx
   rw [output, input, modulus, pw]
@@ -174,25 +174,25 @@ theorem tile_ok {s : State} {B : Addr} {Z w e n L : Nat} {mi : BitVec 64}
   have hn := hs.nowrap
   unfold AdxRotate8.tile
   refine WP.seq (WP.mono (compute_ok hs hdi hH hZ hw hc he (by omega_using [he, heZ, hL, hw, hn]) hsep) fun a ⟨va, _, oa, hca, ka⟩ => ?_)
-  have ha := hH.of_outside oa (by omega_using [he, heZ, hL, hw, hn])
+  obtain ha := hH.of_outside oa (by omega_using [he, heZ, hL, hw, hn])
   refine WP.mono (tileEnd_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hdi)
     ha hZ hca (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn])) fun t ⟨wt, ct, zt, ot, kt⟩ => ?_
   refine ⟨?_, ct, zt, oa.trans (ot.mono (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn])), (ka.trans kt).mono (by decide)⟩
   intro hi
   obtain ⟨q, hq, hv⟩ := va hi
   refine ⟨q, hq, ?_⟩
-  have low : wv t.mem B (e + 64) w = wv a.mem B (e + 64) w := ot.wv (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn])
-  have outall := oa.trans (ot.mono (o' := e - 8) (n' := 8 * (w + 9)) (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn]))
-  have high : wv t.mem B (e + 8 * (w + 8)) (L - (w + 8)) =
+  obtain low : wv t.mem B (e + 64) w = wv a.mem B (e + 64) w := ot.wv (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn])
+  obtain outall := oa.trans (ot.mono (o' := e - 8) (n' := 8 * (w + 9)) (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn]))
+  obtain high : wv t.mem B (e + 8 * (w + 8)) (L - (w + 8)) =
       wv s.mem B (e + 8 * (w + 8)) (L - (w + 8)) := outall.wv (by omega_using [he, heZ, hL, hw, hn]) (by omega_using [he, heZ, hL, hw, hn])
-  have hx := wv_add t.mem B (e + 64) w (L - (w + 8))
+  obtain hx := wv_add t.mem B (e + 64) w (L - (w + 8))
   rw [show w + (L - (w + 8)) = L - 8 by omega_using [he, heZ, hL, hw, hn],
     show e + 64 + 8 * w = e + 8 * (w + 8) by omega_using [he, heZ, hL, hw, hn], low, high] at hx
-  have hy := wv_add s.mem B e (w + 8) (L - (w + 8))
+  obtain hy := wv_add s.mem B e (w + 8) (L - (w + 8))
   rw [show w + 8 + (L - (w + 8)) = L by omega_using [he, heZ, hL, hw, hn],
     show 64 * (w + 8) = 64 * w + 512 by omega_using [he, heZ, hL, hw, hn], Nat.pow_add] at hy
   rw [hx, hy, wt]
-  have result := extend_high (R := 2 ^ 512) (P := 2 ^ (64 * w))
+  obtain result := extend_high (R := 2 ^ 512) (P := 2 ^ (64 * w))
     (X := wv a.mem B (e + 64) w) (Y := wv s.mem B e (w + 8))
     (C := (a.gpr .rax).toNat) (D := (word s.mem B (e - 16)).toNat)
     (U := q) (N := wv s.mem B (slot w aN) w)

@@ -28,7 +28,7 @@ namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64
 
 theorem low_byte (K : BitVec 8) : ((bc K).extractLsb' 0 32).setWidth 8 = K := by
-  have h := vbyte_bc K (e := 0) (by decide)
+  obtain h := vbyte_bc K (e := 0) (by decide)
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have := congrArg (·.getLsbD i) h
   simp only [vbyte, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Nat.mul_zero,
@@ -51,7 +51,7 @@ theorem outScalar_ok {s : State} {K : BitVec 8} (h7 : s.v .v7 = bc K)
       t.gpr .x1 = s.gpr .x1 + 1 ∧ t.gpr .x2 = s.gpr .x2 - 1 ∧
       (∀ r, r ≠ .x1 → r ≠ .x2 → r ≠ .x6 → r ≠ .x7 → t.gpr r = s.gpr r) ∧
       t.v = s.v ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have hr : InRegions (s.rd ++ s.wr) (s.gpr .x1) 1 := by
+  obtain hr : InRegions (s.rd ++ s.wr) (s.gpr .x1) 1 := by
     obtain ⟨region, hregion, hc⟩ := hd
     exact ⟨region, List.mem_append_right _ hregion, hc⟩
   have hc8 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x :=
@@ -75,21 +75,21 @@ theorem output_ok {s : State} (hk : Consts s) {X : BitVec 8} (hx : s.v .v6 = bc 
       (∀ r, r ∉ outRegs → t.v r = s.v r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   obtain ⟨s₁, run₁, a₁, b₁, c₁, o₁⟩ := quarters_run (x := .v6) (a := .v1) (b := .v2) (c := .v3) hk X hx
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have x₁ : s₁.v .v6 = bc X := by rw [o₁.2 _ (by decide), hx]
+  obtain x₁ : s₁.v .v6 = bc X := by rw [o₁.2 _ (by decide), hx]
   obtain ⟨s₂, run₂, v₂, o₂⟩ := lookup_run (d := .v7) (t := .v1) (x := .v6) (a := .v1) (b := .v2)
     (c := .v3) X x₁ a₁ b₁ c₁ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
-  have t₁ : tbyte s₁.v = tbyte s.v := by
+  obtain t₁ : tbyte s₁.v = tbyte s.v := by
     funext k; simp only [tbyte]
     rw [o₁.2 _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(show NotTable .v1 by decide).ne _, (show NotTable .v2 by decide).ne _,
         (show NotTable .v3 by decide).ne _⟩)]
   rw [t₁] at v₂
-  have o : Only outRegs s s₂ := (o₁.mono (by decide)).trans (o₂.mono (by decide))
+  obtain o : Only outRegs s s₂ := (o₁.mono (by decide)).trans (o₂.mono (by decide))
   rw [output, WP.block_append_iff, WP.block_append_iff]
   refine WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩
-  have hd₂ : InRegions s₂.wr (s₂.gpr .x1) 1 := by rw [o.wr, o.gpr]; exact hd
+  obtain hd₂ : InRegions s₂.wr (s₂.gpr .x1) 1 := by rw [o.wr, o.gpr]; exact hd
   refine WP.mono (outScalar_ok v₂ hd₂) fun t ⟨m, x1, x2, g, v, rd, wr, sp⟩ => ?_
   refine ⟨by rw [m, o.mem, o.gpr], by rw [x1, o.gpr], by rw [x2, o.gpr],
     fun r a b c d => by rw [g r a b c d, o.gpr], fun r hr => by rw [v, o.2 r hr],
@@ -134,14 +134,14 @@ when `16 r + e` is `J`. -/
 theorem lane_eq (J : BitVec 8) {r e : Nat} (hr : r < 16) (he : e < 16) :
     BitVec.ofNat 8 (16 * (r % 4) + e) = J ^^^ BitVec.ofNat 8 (64 * (r / 4)) ↔ 16 * r + e = J.toNat := by
   have hJ := J.isLt
-  have hq : (BitVec.ofNat 8 (64 * (r / 4))).toNat = 64 * (r / 4) := by
+  obtain hq : (BitVec.ofNat 8 (64 * (r / 4))).toNat = 64 * (r / 4) := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hr])]
-  have ha : (BitVec.ofNat 8 (16 * (r % 4) + e)).toNat = 16 * (r % 4) + e := by
+  obtain ha : (BitVec.ofNat 8 (16 * (r % 4) + e)).toNat = 16 * (r % 4) + e := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [he])]
-  have low := xor_low (16 * (r % 4) + e) (by omega_using [he]) (r / 4) (by omega_using [hr])
+  obtain low := xor_low (16 * (r % 4) + e) (by omega_using [he]) (r / 4) (by omega_using [hr])
   constructor
   · intro h
-    have h' := congrArg BitVec.toNat h
+    obtain h' := congrArg BitVec.toNat h
     rw [ha, BitVec.toNat_xor, hq] at h'
     have : J.toNat = (16 * (r % 4) + e) ^^^ 64 * (r / 4) := by
       rw [h', Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
@@ -189,14 +189,14 @@ theorem writeN_run {s : State} (hk : Consts s) {J V : BitVec 8} (hq : Quarters s
     let s₃ := s₂.setV (treg n) (VSelOp.bit.eval (s₂.v (treg n)) (s₂.v si) (s₂.v .v7))
     have e₂ : exec (.vop (.cmeq .b16 .v7 (lanes (n % 4)) (dq (n / 4)))) s₁ = some s₂ := rfl
     have e₃ : exec (.vop (.bsel .bit (treg n) si .v7)) s₂ = some s₃ := rfl
-    have l₁ : s₁.v (lanes (n % 4)) = laneNums (n % 4) := by
+    obtain l₁ : s₁.v (lanes (n % 4)) = laneNums (n % 4) := by
       rw [notW _ (lanes_notW _ (by omega_using []))]; exact hk.lns _ (by omega_using [])
-    have d₁ : s₁.v (dq (n / 4)) = bc (J ^^^ BitVec.ofNat 8 (64 * (n / 4))) := by
+    obtain d₁ : s₁.v (dq (n / 4)) = bc (J ^^^ BitVec.ofNat 8 (64 * (n / 4))) := by
       rw [notW _ (dq_notW _ (by omega_using [hn]))]
       exact hq _ (by omega_using [hn])
-    have v₂ : s₂.v si = bc V := by
+    obtain v₂ : s₂.v si = bc V := by
       rw [v_setV_of_ne _ _ (by decide), notW _ (by decide)]; exact hv
-    have m_byte : ∀ e < 16, vbyte (s₂.v .v7) e =
+    obtain m_byte : ∀ e < 16, vbyte (s₂.v .v7) e =
         if 16 * n + e = J.toNat then BitVec.allOnes 8 else 0 := by
       intro e he
       rw [v_setV_self, vbyte_cmeq _ _ he, l₁, d₁, laneNums, vbyte_ofVBytes _ he, vbyte_bc _ he]
@@ -209,7 +209,7 @@ theorem writeN_run {s : State} (hk : Consts s) {J V : BitVec 8} (hq : Quarters s
           simp only [tbyte, hkn, s₃, v_setV_self]
         rw [b₃, vbyte_bit _ _ _ (16 * n + k % 16 = J.toNat) (m_byte _ (by omega_using [])), v₂,
           vbyte_bc _ (by omega_using [])]
-        have old : vbyte (s₂.v (treg n)) (k % 16) = tbyte s.v k := by
+        obtain old : vbyte (s₂.v (treg n)) (k % 16) = tbyte s.v k := by
           rw [v_setV_of_ne _ _ (notTable_v7.ne n)]
           have := t₁ k hk
           simp only [show ¬ k / 16 < n by omega_using [hkn], false_and, ite_false] at this
@@ -217,11 +217,11 @@ theorem writeN_run {s : State} (hk : Consts s) {J V : BitVec 8} (hq : Quarters s
         rw [old]
         exact ite_iff ⟨fun h => ⟨by omega_using [hkn], by omega_using [hkn, h]⟩, fun h => by omega_using [hkn, h]⟩ _ _
       · have ne : treg (k / 16) ≠ treg n := fun h => hkn (treg_inj _ (by omega_using [hk]) _ (by omega_using [hn]) h)
-        have keep : s₃.v (treg (k / 16)) = s₁.v (treg (k / 16)) := by
+        obtain keep : s₃.v (treg (k / 16)) = s₁.v (treg (k / 16)) := by
           rw [v_setV_of_ne _ _ ne, v_setV_of_ne _ _ (notTable_v7.ne _)]
         have : tbyte s₃.v k = tbyte s₁.v k := by simp only [tbyte, keep]
         rw [this, t₁ k hk]
-        have e : (k / 16 < n + 1) ↔ (k / 16 < n) := by omega_using [hkn]
+        obtain e : (k / 16 < n + 1) ↔ (k / 16 < n) := by omega_using [hkn]
         simp only [e]
     · exact (o₁.trans (Only.setV _ (by decide) _)).trans (Only.setV _ (treg_mem n (by omega_using [hn])) _)
 
@@ -292,17 +292,17 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   -- j += S[i]
   let s₁ := s.setV (dq 0) (VArr.b16.map2 (fun _ x y => x + y) (s.v (dq 0)) (s.v si))
   have e₁ : exec (.vop (.add .b16 (dq 0) (dq 0) si)) s = some s₁ := rfl
-  have o₁ : Only stepRegs s s₁ := Only.setV _ (by decide) _
-  have j₁ : s₁.v (dq 0) = bc J := by rw [v_setV_self, hj, hi, add_bc]
-  have k₁ : Consts s₁ := consts_of_only hk o₁
-  have t₁ : tbyte s₁.v = R := by
+  obtain o₁ : Only stepRegs s s₁ := Only.setV _ (by decide) _
+  obtain j₁ : s₁.v (dq 0) = bc J := by rw [v_setV_self, hj, hi, add_bc]
+  obtain k₁ : Consts s₁ := consts_of_only hk o₁
+  obtain t₁ : tbyte s₁.v = R := by
     funext k; simp only [tbyte, R]; rw [v_setV_of_ne _ _ ((show NotTable (dq 0) by decide).ne _)]
   -- the quarters
   obtain ⟨s₂, run₂, a₂, b₂, c₂, o₂⟩ := quarters_run (x := dq 0) (a := dq 1) (b := dq 2) (c := dq 3) k₁ J j₁ (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)
-  have o₂' : Only stepRegs s s₂ := o₁.trans (o₂.mono (by decide))
-  have j₂ : s₂.v (dq 0) = bc J := by rw [o₂.2 _ (by decide), j₁]
-  have t₂ : tbyte s₂.v = R := by
+  obtain o₂' : Only stepRegs s s₂ := o₁.trans (o₂.mono (by decide))
+  obtain j₂ : s₂.v (dq 0) = bc J := by rw [o₂.2 _ (by decide), j₁]
+  obtain t₂ : tbyte s₂.v = R := by
     rw [← t₁]; funext k; simp only [tbyte]
     rw [o₂.2 _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
@@ -311,15 +311,15 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   -- S[j]
   obtain ⟨s₃, run₃, v₃, o₃⟩ := lookup_run (d := .v5) (t := .v6) (x := dq 0) (a := dq 1) (b := dq 2) (c := dq 3) J j₂ a₂ b₂ c₂ (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide)
-  have o₃' : Only stepRegs s s₃ := o₂'.trans (o₃.mono (by decide))
-  have t₃ : tbyte s₃.v = R := by
+  obtain o₃' : Only stepRegs s s₃ := o₂'.trans (o₃.mono (by decide))
+  obtain t₃ : tbyte s₃.v = R := by
     rw [← t₂]; funext k; simp only [tbyte]
     rw [o₃.2 _ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(show NotTable .v5 by decide).ne _, (show NotTable .v6 by decide).ne _⟩)]
-  have v₃' : s₃.v .v5 = bc (R J.toNat) := by rw [v₃, t₂]
+  obtain v₃' : s₃.v .v5 = bc (R J.toNat) := by rw [v₃, t₂]
   -- S[j] := S[i]
-  have q₃ : Quarters s₃ J := by
+  obtain q₃ : Quarters s₃ J := by
     intro q hq
     rw [o₃.2 _ (by revert q; decide)]
     rcases (by omega_arith : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
@@ -327,18 +327,18 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
     · exact a₂
     · exact b₂
     · exact c₂
-  have i₃ : s₃.v si = bc (R l) := by
+  obtain i₃ : s₃.v si = bc (R l) := by
     rw [o₃.2 _ (by decide), o₂.2 _ (by decide), v_setV_of_ne _ _ (by decide), hi]
   obtain ⟨s₄, run₄, t₄, o₄⟩ := writeN_run (consts_of_only hk o₃') q₃ i₃ (Nat.le_refl 16)
-  have o₄' : Only stepRegs s s₄ := o₃'.trans (o₄.mono (by decide))
-  have tb₄ : ∀ k < 256, tbyte s₄.v k = if k = J.toNat then R l else R k := by
+  obtain o₄' : Only stepRegs s s₄ := o₃'.trans (o₄.mono (by decide))
+  obtain tb₄ : ∀ k < 256, tbyte s₄.v k = if k = J.toNat then R l else R k := by
     intro k hk
     rw [t₄ k hk, t₃]
     exact ite_iff ⟨fun h => h.2, fun h => ⟨by omega_arith, h⟩⟩ _ _
-  have five₄ : s₄.v .v5 = bc (R J.toNat) := by rw [o₄.2 _ (by decide), v₃']
-  have i₄ : s₄.v si = bc (R l) := by rw [o₄.2 _ (by decide), i₃]
-  have j₄ : s₄.v (dq 0) = bc J := by rw [o₄.2 _ (by decide), o₃.2 _ (by decide), j₂]
-  have n₄ : prga = true → s₄.v negBase = bc NB := fun h => by
+  obtain five₄ : s₄.v .v5 = bc (R J.toNat) := by rw [o₄.2 _ (by decide), v₃']
+  obtain i₄ : s₄.v si = bc (R l) := by rw [o₄.2 _ (by decide), i₃]
+  obtain j₄ : s₄.v (dq 0) = bc J := by rw [o₄.2 _ (by decide), o₃.2 _ (by decide), j₂]
+  obtain n₄ : prga = true → s₄.v negBase = bc NB := fun h => by
     rw [o₄'.2 _ (by decide)]; exact hn h
   -- the output index
   obtain ⟨s₆, run₆, six₆, o₆⟩ : ∃ s₆, runBlock isa
@@ -357,37 +357,37 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
         rw [runBlock_cons, ea, runStep_some, runBlock_cons, eb, runStep_some, runBlock_nil]
       · simp only [b, v_setV_self, a, v_setV_of_ne _ _ (show negBase ≠ .v6 by decide), i₄, five₄,
           n₄ rfl, add_bc]
-  have t₆ : tbyte s₆.v = tbyte s₄.v := by
+  obtain t₆ : tbyte s₆.v = tbyte s₄.v := by
     funext k; simp only [tbyte]; rw [o₆.2 _ (by simp [(show NotTable .v6 by decide).ne _])]
-  have five₆ : s₆.v .v5 = bc (R J.toNat) := by rw [o₆.2 _ (by decide), five₄]
-  have j₆ : s₆.v (dq 0) = bc J := by rw [o₆.2 _ (by decide), j₄]
+  obtain five₆ : s₆.v .v5 = bc (R J.toNat) := by rw [o₆.2 _ (by decide), five₄]
+  obtain j₆ : s₆.v (dq 0) = bc J := by rw [o₆.2 _ (by decide), j₄]
   -- the next S[i]
   let s₇ := s₆.setV si (VArr.b16.map2 (fun w _ _ => (s₆.v (treg ((l + 1) / 16))).extractLsb'
     (w * ((l + 1) % 16)) w) 0 0)
-  have e₇ : exec (.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16))) s₆ = some s₇ := by
+  obtain e₇ : exec (.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16))) s₆ = some s₇ := by
     rw [exec_vop']
     simp only [reduceVOpEval, VArr.esize, show (l + 1) % 16 < 128 / 8 by omega_arith, ite_true]
     rfl
-  have i₇ : s₇.v si = bc (tbyte s₄.v (l + 1)) := by
+  obtain i₇ : s₇.v si = bc (tbyte s₄.v (l + 1)) := by
     rw [v_setV_self, dupE_bc, ← t₆]; rfl
   -- S[i] := S[j]
   let s₈ := s₇.setV (treg 0) (setLane (s₇.v (treg 0)) 8 l ((s₇.v .v5).extractLsb' (8 * 0) 8))
-  have e₈ : exec (.vop (.insE .b16 (treg 0) l .v5 0)) s₇ = some s₈ := by
+  obtain e₈ : exec (.vop (.insE .b16 (treg 0) l .v5 0)) s₇ = some s₈ := by
     rw [exec_vop']
     simp only [reduceVOpEval, VArr.esize, show l < 128 / 8 by omega_arith, show 0 < 128 / 8 by omega_arith,
       and_self, ite_true]
     rfl
-  have five₇ : s₇.v .v5 = bc (R J.toNat) := by rw [v_setV_of_ne _ _ (by decide), five₆]
-  have t₇ : tbyte s₇.v = tbyte s₄.v := by
+  obtain five₇ : s₇.v .v5 = bc (R J.toNat) := by rw [v_setV_of_ne _ _ (by decide), five₆]
+  obtain t₇ : tbyte s₇.v = tbyte s₄.v := by
     rw [← t₆]; funext k; simp only [tbyte]
     rw [v_setV_of_ne _ _ ((show NotTable si by decide).ne _)]
-  have tb₈ : ∀ k < 256, tbyte s₈.v k = swapR R l J.toNat k := by
+  obtain tb₈ : ∀ k < 256, tbyte s₈.v k = swapR R l J.toNat k := by
     intro k hk
     by_cases h0 : k / 16 = 0
     · have : tbyte s₈.v k = vbyte (setLane (s₇.v (treg 0)) 8 l ((s₇.v .v5).extractLsb' (8 * 0) 8))
           (k % 16) := by simp only [tbyte, h0, s₈, v_setV_self]
       rw [this, vbyte_setLane _ _ hl (by omega_arith), extract_byte, five₇, vbyte_bc _ (by decide)]
-      have old : vbyte (s₇.v (treg 0)) (k % 16) = tbyte s₄.v k := by
+      obtain old : vbyte (s₇.v (treg 0)) (k % 16) = tbyte s₄.v k := by
         rw [← t₇]; simp only [tbyte, h0]
       rw [old, tb₄ k hk, swapR]
       exact ite_iff ⟨fun h => by omega_arith, fun h => by omega_arith⟩ _ _
@@ -465,8 +465,8 @@ theorem swapR_eq (T : Table) {B l : Nat} (hl : l < 256) {R : Nat → BitVec 8}
     (hR : ∀ k < 256, R k = T.getD (BitVec.ofNat 8 (B + k)).toNat 0) (j : BitVec 8) {k : Nat}
     (hk : k < 256) :
     swapR R l (j - bB B).toNat k = (swap T (BitVec.ofNat 8 (B + l)) j).getD (BitVec.ofNat 8 (B + k)).toNat 0 := by
-  have hJ := (j - bB B).isLt
-  have hJj : BitVec.ofNat 8 (B + (j - bB B).toNat) = j := (ofNat_add_eq_j hJ j).mpr rfl
+  obtain hJ := (j - bB B).isLt
+  obtain hJj : BitVec.ofNat 8 (B + (j - bB B).toNat) = j := (ofNat_add_eq_j hJ j).mpr rfl
   rw [swap_get]
   simp only [swapR, ofNat_add_eq_j hk j, ofNat_add_eq_iff hk hl]
   by_cases h1 : k = l
@@ -513,26 +513,26 @@ theorem byte_ok {l : Nat} (hl : l < 16) {B : Nat} {c : Context} {s : State} (h :
   let j := c.j + a
   let b := T.getD j.toNat 0
   have hR : ∀ k < 256, tbyte s.v k = T.getD (BitVec.ofNat 8 (B + k)).toNat 0 := h.table
-  have ha : tbyte s.v l = a := by rw [hR l (by omega_using [hl])]; simp only [a, i, hi]
-  have hJ : c.j - bB B + tbyte s.v l = j - bB B := by rw [ha, byte_add_sub]
+  obtain ha : tbyte s.v l = a := by rw [hR l (by omega_using [hl])]; simp only [a, i, hi]
+  obtain hJ : c.j - bB B + tbyte s.v l = j - bB B := by rw [ha, byte_add_sub]
   obtain ⟨s₁, run₁, t₁, j₁, i₁, o6₁, o₁⟩ := swapStep_run true hl h.consts h.j hsi fun _ => h.nb
   rw [hJ] at t₁ j₁ i₁ o6₁
-  have tab₁ : ∀ k < 256, tbyte s₁.v k = (swap T i j).getD (BitVec.ofNat 8 (B + k)).toNat 0 := by
+  obtain tab₁ : ∀ k < 256, tbyte s₁.v k = (swap T i j).getD (BitVec.ofNat 8 (B + k)).toNat 0 := by
     intro k hk; rw [t₁ k hk, swapR_eq T (by omega_using [hl]) hR j hk, ← hi]
-  have hb : tbyte s.v (j - bB B).toNat = b := by
+  obtain hb : tbyte s.v (j - bB B).toNat = b := by
     rw [hR _ (j - bB B).isLt, (ofNat_add_eq_j (j - bB B).isLt j).mpr rfl]
-  have six₁ : s₁.v .v6 = bc (a + b + (0 - bB B)) := by rw [o6₁ rfl, ha, hb]
-  have k₁ : Consts s₁ := consts_of_only h.consts o₁
+  obtain six₁ : s₁.v .v6 = bc (a + b + (0 - bB B)) := by rw [o6₁ rfl, ha, hb]
+  obtain k₁ : Consts s₁ := consts_of_only h.consts o₁
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have hd₁ : InRegions s₁.wr (s₁.gpr .x1) 1 := by rw [o₁.wr, o₁.gpr]; exact hd
+  obtain hd₁ : InRegions s₁.wr (s₁.gpr .x1) 1 := by rw [o₁.wr, o₁.gpr]; exact hd
   refine WP.mono (output_ok k₁ six₁ hd₁) fun t ⟨m, x1, x2, g, v, rd, wr, sp⟩ => ?_
-  have tt : tbyte t.v = tbyte s₁.v := by
+  obtain tt : tbyte t.v = tbyte s₁.v := by
     funext k; simp only [tbyte]; rw [v _ (by
       simp only [outRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(show NotTable .v1 by decide).ne _, (show NotTable .v2 by decide).ne _,
         (show NotTable .v3 by decide).ne _, (show NotTable .v7 by decide).ne _⟩)]
-  have step_c : step c = ({ table := swap T i j, i, j }, (swap T i j).getD (a + b).toNat 0) :=
+  obtain step_c : step c = ({ table := swap T i j, i, j }, (swap T i j).getD (a + b).toNat 0) :=
     step_eq c
   rw [step_c]
   refine ⟨⟨fun k hk => by rw [tt, tab₁ k hk], by rw [v _ (by decide), j₁],

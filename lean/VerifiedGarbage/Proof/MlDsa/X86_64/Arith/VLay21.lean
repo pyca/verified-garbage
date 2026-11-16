@@ -93,15 +93,15 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       PolyIs s'.mem fP (layF blk F 2 zi (2 * (i + 1))) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv fP s s' := by
-  have j0 : 8 * i + 4 ≤ 256 := by omega_arith
-  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
-  have a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
-  have r0 := f_in (List.mem_append_right s.rd hwf) j0
-  have r1 := f_in (List.mem_append_right s.rd hwf) j1
-  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
+  obtain j0 : 8 * i + 4 ≤ 256 := by omega_arith
+  obtain j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
+  obtain a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
+  obtain r0 := f_in (List.mem_append_right s.rd hwf) j0
+  obtain r1 := f_in (List.mem_append_right s.rd hwf) j1
+  obtain hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
   generalize hG : layF blk F 2 zi (2 * i) = G at hS
-  have lx := dlanes_load hS j0
-  have ly := dlanes_load hS j1
+  obtain lx := dlanes_load hS j0
+  obtain ly := dlanes_load hS j1
   rw [WP.block_append_iff, show pre2 o dz = [.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx 16)] ++
     (vzeta o ++ [.alu .add .r8 (.imm dz), xmov .xmm2 .xmm0, xb .punpcklqdq .xmm0 .xmm1,
       xb .punpckhqdq .xmm2 .xmm1, xmov .xmm1 .xmm2]) by simp, WP.block_append_iff]
@@ -116,14 +116,14 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       VConsts s1' ∧ s1'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ GKeep [.r8] s s1') ?_
     fun s1' ⟨l0, l1, l13, l12, c1, h81, o1'⟩ => ?_
   · have g1 : s1.gpr = s.gpr := by rw [o1.gpr]; rfl
-    have m1 : s1.mem = s.mem := by rw [o1.mem]; rfl
-    have e1 : s1.rd = s.rd ∧ s1.wr = s.wr := ⟨by rw [o1.rd]; rfl, by rw [o1.wr]; rfl⟩
-    have x1 : s1.mxcsr = s.mxcsr := by rw [o1.mxcsr]; rfl
-    have x0 : s1.xmm .xmm0 = s.mem.readW (coeffAddr fP (8 * i)) 128 := by
+    obtain m1 : s1.mem = s.mem := by rw [o1.mem]; rfl
+    obtain e1 : s1.rd = s.rd ∧ s1.wr = s.wr := ⟨by rw [o1.rd]; rfl, by rw [o1.wr]; rfl⟩
+    obtain x1 : s1.mxcsr = s.mxcsr := by rw [o1.mxcsr]; rfl
+    obtain x0 : s1.xmm .xmm0 = s.mem.readW (coeffAddr fP (8 * i)) 128 := by
       rw [o1.xmm _ (by decide)]; simp only [xmm_setXmm]; rfl
-    have x1' : s1.xmm .xmm1 = s.mem.readW (coeffAddr fP (8 * i + 4)) 128 := by
+    obtain x1' : s1.xmm .xmm1 = s.mem.readW (coeffAddr fP (8 * i + 4)) 128 := by
       rw [o1.xmm _ (by decide)]; simp only [xmm_setXmm]; rfl
-    have c1 : VConsts s1 := xonly_vconsts o1 ((hc.setXmm (by decide) (by decide) _).setXmm (by decide)
+    obtain c1 : VConsts s1 := xonly_vconsts o1 ((hc.setXmm (by decide) (by decide) _).setXmm (by decide)
       (by decide) _) (by decide) (by decide)
     vrund [g1, m1, e1.1, e1.2, x1, eval_movdqa]
     refine ⟨?_, ?_, ?_, ?_, ⟨?_, ?_⟩, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩⟩
@@ -151,16 +151,16 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       RegUpd.wr_setFlags, RegUpd.mem_setFlags, RegUpd.mxcsr_setFlags, e1.1, e1.2, m1, x1]
   rw [WP.block_append_iff]
   refine WP.mono (hbf _ c1 _ _ _ l0 l1 l13 l12) fun s2 ⟨a0, a3, o2⟩ => ?_
-  have g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
-  have e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1'.keep.2.1], by rw [o2.wr, o1'.keep.2.2]⟩
-  have m2 : s2.mem = s.mem := by rw [o2.mem, o1'.mem]
-  have w0 := f_in hwf j0
-  have w1 := f_in hwf j1
-  have c2 := xonly_vconsts o2 c1 (by decide) (by decide)
+  obtain g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
+  obtain e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1'.keep.2.1], by rw [o2.wr, o1'.keep.2.2]⟩
+  obtain m2 : s2.mem = s.mem := by rw [o2.mem, o1'.mem]
+  obtain w0 := f_in hwf j0
+  obtain w1 := f_in hwf j1
+  obtain c2 := xonly_vconsts o2 c1 (by decide) (by decide)
   simp only [post2, xmov, xb]
   vrund [g2, e2.1, e2.2, m2, hdx, a1, w0, w1, sx32]
-  have r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
-  have rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
+  obtain r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
+  obtain rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the coefficients stored
@@ -192,9 +192,9 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
     · -- the specification: two blocks
       rw [← hG, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith, layF, foldl_range_succ, foldl_range_succ, ← layF,
         hG, show 2 * 2 * (2 * i) = 8 * i by omega_arith, show 2 * 2 * (2 * i + 1) = 8 * i + 4 by omega_arith]
-      have hn : ∀ j, j < 256 → j < n := fun j h => by rw [n_eq]; exact h
+      obtain hn : ∀ j, j < 256 → j < n := fun j h => by rw [n_eq]; exact h
       rw [hblk.get _ _ _ _ _ (by decide) (by decide) (by rw [n_eq]; omega_arith) _ (hn j hj)]
-      have p2 := fun j (h : j < 256) => hblk.get G 2 (zi (2 * i)) (8 * i) 2 (by decide) (by decide)
+      obtain p2 := fun j (h : j < 256) => hblk.get G 2 (zi (2 * i)) (8 * i) 2 (by decide) (by decide)
         (by rw [n_eq]; omega_arith) j (hn j h)
       rcases (by omega_arith : j < 8 * i ∨ (8 * i ≤ j ∧ j < 8 * i + 2) ∨ (8 * i + 2 ≤ j ∧ j < 8 * i + 4) ∨
           (8 * i + 4 ≤ j ∧ j < 8 * i + 6) ∨ (8 * i + 6 ≤ j ∧ j < 8 * i + 8) ∨ 8 * i + 8 ≤ j) with
@@ -240,7 +240,7 @@ theorem vlay2_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
     WP isa (vlay2 bf k o dz) s fun s' => PolyIs s'.mem fP (layF blk F 2 zi 64) ∧ BInv fP s s' := by
-  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
+  obtain hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
   refine WP.seq (WP.mono (vpre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 32) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 2 zi (2 * i)) ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧
@@ -252,10 +252,10 @@ theorem vlay2_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (fun i hi u ⟨hS', hdx', h8', hb'⟩ => ?_)) fun u ⟨hS', _, _, hb'⟩ =>
       ⟨hS', ⟨(og.keep.trans hb'.keep).mono (by simp), by rw [← og.mem]; exact hb'.frame, hb'.consts,
         by rw [hb'.mxcsr, og.mxcsr]⟩⟩
-  have hT' : Tab zmTab u.mem sP 256 := (by rw [og.mem]; exact hT : Tab zmTab w.mem sP 256).frame hb'.frame
+  obtain hT' : Tab zmTab u.mem sP 256 := (by rw [og.mem]; exact hT : Tab zmTab w.mem sP 256).frame hb'.frame
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)
-  have hwf' : pR fP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hwf
-  have hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
+  obtain hwf' : pR fP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hwf
+  obtain hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
   rw [show [Instr.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx 16)] ++ vzeta o ++
       [.alu .add .r8 (.imm dz), xmov .xmm2 .xmm0, xb .punpcklqdq .xmm0 .xmm1, xb .punpckhqdq .xmm2 .xmm1,
         xmov .xmm1 .xmm2] ++ bf ++ [xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm3, xb .punpckhqdq .xmm1 .xmm3,
@@ -288,15 +288,15 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       PolyIs s'.mem fP (layF blk F 1 zi (4 * (i + 1))) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv fP s s' := by
-  have j0 : 8 * i + 4 ≤ 256 := by omega_arith
-  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
-  have a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
-  have r0 := f_in (List.mem_append_right s.rd hwf) j0
-  have r1 := f_in (List.mem_append_right s.rd hwf) j1
-  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
+  obtain j0 : 8 * i + 4 ≤ 256 := by omega_arith
+  obtain j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
+  obtain a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
+  obtain r0 := f_in (List.mem_append_right s.rd hwf) j0
+  obtain r1 := f_in (List.mem_append_right s.rd hwf) j1
+  obtain hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
   generalize hG : layF blk F 1 zi (4 * i) = G at hS
-  have lx := dlanes_load hS j0
-  have ly := dlanes_load hS j1
+  obtain lx := dlanes_load hS j0
+  obtain ly := dlanes_load hS j1
   rw [WP.block_append_iff, show pre1 o dz = [.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm2 (at_ .rdx 16)] ++
     (vzeta o ++ [.alu .add .r8 (.imm dz), .xop (.pshufd .xmm0 .xmm0 0xD8), .xop (.pshufd .xmm2 .xmm2 0xD8),
       xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm2, xb .punpckhqdq .xmm1 .xmm2]) by simp, WP.block_append_iff]
@@ -311,14 +311,14 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       VConsts s1' ∧ s1'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ GKeep [.r8] s s1') ?_
     fun s1' ⟨l0, l1, l13, l12, c1, h81, o1'⟩ => ?_
   · have g1 : s1.gpr = s.gpr := by rw [o1.gpr]; rfl
-    have m1 : s1.mem = s.mem := by rw [o1.mem]; rfl
-    have e1 : s1.rd = s.rd ∧ s1.wr = s.wr := ⟨by rw [o1.rd]; rfl, by rw [o1.wr]; rfl⟩
-    have x1 : s1.mxcsr = s.mxcsr := by rw [o1.mxcsr]; rfl
-    have x0 : s1.xmm .xmm0 = s.mem.readW (coeffAddr fP (8 * i)) 128 := by
+    obtain m1 : s1.mem = s.mem := by rw [o1.mem]; rfl
+    obtain e1 : s1.rd = s.rd ∧ s1.wr = s.wr := ⟨by rw [o1.rd]; rfl, by rw [o1.wr]; rfl⟩
+    obtain x1 : s1.mxcsr = s.mxcsr := by rw [o1.mxcsr]; rfl
+    obtain x0 : s1.xmm .xmm0 = s.mem.readW (coeffAddr fP (8 * i)) 128 := by
       rw [o1.xmm _ (by decide)]; simp only [xmm_setXmm]; rfl
-    have x2 : s1.xmm .xmm2 = s.mem.readW (coeffAddr fP (8 * i + 4)) 128 := by
+    obtain x2 : s1.xmm .xmm2 = s.mem.readW (coeffAddr fP (8 * i + 4)) 128 := by
       rw [o1.xmm _ (by decide)]; simp only [xmm_setXmm]; rfl
-    have c1 : VConsts s1 := xonly_vconsts o1 ((hc.setXmm (by decide) (by decide) _).setXmm (by decide)
+    obtain c1 : VConsts s1 := xonly_vconsts o1 ((hc.setXmm (by decide) (by decide) _).setXmm (by decide)
       (by decide) _) (by decide) (by decide)
     vrund [g1, m1, e1.1, e1.2, x1, eval_movdqa]
     refine ⟨?_, ?_, ?_, ?_, ⟨?_, ?_⟩, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩⟩
@@ -347,17 +347,17 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       RegUpd.wr_setFlags, RegUpd.mem_setFlags, RegUpd.mxcsr_setFlags, e1.1, e1.2, m1, x1]
   rw [WP.block_append_iff]
   refine WP.mono (hbf _ c1 _ _ _ l0 l1 l13 l12) fun s2 ⟨a0, a3, o2⟩ => ?_
-  have g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
-  have e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1'.keep.2.1], by rw [o2.wr, o1'.keep.2.2]⟩
-  have m2 : s2.mem = s.mem := by rw [o2.mem, o1'.mem]
-  have w0 := f_in hwf j0
-  have w1 := f_in hwf j1
-  have c2 := xonly_vconsts o2 c1 (by decide) (by decide)
+  obtain g2 : s2.gpr .rdx = s.gpr .rdx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
+  obtain e2 : s2.rd = s.rd ∧ s2.wr = s.wr := ⟨by rw [o2.rd, o1'.keep.2.1], by rw [o2.wr, o1'.keep.2.2]⟩
+  obtain m2 : s2.mem = s.mem := by rw [o2.mem, o1'.mem]
+  obtain w0 := f_in hwf j0
+  obtain w1 := f_in hwf j1
+  obtain c2 := xonly_vconsts o2 c1 (by decide) (by decide)
   simp only [post1, xmov, xb]
   vrund [g2, e2.1, e2.2, m2, hdx, a1, w0, w1, sx32]
-  have r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
-  have rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
-  have lg : ∀ b, b ≤ 128 → ∀ j, j < 256 → _ := fun b hb j hj => layF1_get hblk F zi (b := b) hb (j := j) hj
+  obtain r81 : s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [o2.gpr, h81]
+  obtain rc1 : s2.gpr .rcx = s.gpr .rcx := by rw [o2.gpr, o1'.keep.gpr (by decide)]
+  obtain lg : ∀ b, b ≤ 128 → ∀ j, j < 256 → _ := fun b hb j hj => layF1_get hblk F zi (b := b) hb (j := j) hj
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the coefficients stored
@@ -413,7 +413,7 @@ theorem vlay1_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
     WP isa (vlay1 bf k o dz) s fun s' => PolyIs s'.mem fP (layF blk F 1 zi 128) ∧ BInv fP s s' := by
-  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
+  obtain hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
   refine WP.seq (WP.mono (vpre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 32) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 1 zi (4 * i)) ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧
@@ -425,10 +425,10 @@ theorem vlay1_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (fun i hi u ⟨hS', hdx', h8', hb'⟩ => ?_)) fun u ⟨hS', _, _, hb'⟩ =>
       ⟨hS', ⟨(og.keep.trans hb'.keep).mono (by simp), by rw [← og.mem]; exact hb'.frame, hb'.consts,
         by rw [hb'.mxcsr, og.mxcsr]⟩⟩
-  have hT' : Tab zmTab u.mem sP 256 := (by rw [og.mem]; exact hT : Tab zmTab w.mem sP 256).frame hb'.frame
+  obtain hT' : Tab zmTab u.mem sP 256 := (by rw [og.mem]; exact hT : Tab zmTab w.mem sP 256).frame hb'.frame
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)
-  have hwf' : pR fP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hwf
-  have hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
+  obtain hwf' : pR fP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hwf
+  obtain hw' : pR sP ∈ u.wr := by rw [hb'.keep.2.2, og.keep.2.2]; exact hw
   rw [show [Instr.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm2 (at_ .rdx 16)] ++ vzeta o ++
       [.alu .add .r8 (.imm dz), .xop (.pshufd .xmm0 .xmm0 0xD8), .xop (.pshufd .xmm2 .xmm2 0xD8),
         xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm2, xb .punpckhqdq .xmm1 .xmm2] ++ bf ++

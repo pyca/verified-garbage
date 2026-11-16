@@ -77,17 +77,17 @@ theorem spillStep_frame (i : Instr) (s s' : State)
     s'.gpr .r2 = s.gpr .r2 ∧ Frame [spillRegion s] s.mem s'.mem := by
   cases i <;> simp only [spillSafe, Bool.false_eq_true] at h
   case mov d op2 =>
-    have hd : d ≠ .r2 := by simpa using h
+    obtain hd : d ≠ .r2 := by simpa using h
     simp only [reduceExec, Option.map_eq_some_iff] at he
     obtain ⟨v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case dp op d n op2 =>
-    have hd : d ≠ .r2 := by simpa using h
+    obtain hd : d ≠ .r2 := by simpa using h
     simp only [reduceExec, Option.map_eq_some_iff] at he
     obtain ⟨v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case ldr d n off =>
-    have hd : d ≠ .r2 := by simpa using h
+    obtain hd : d ≠ .r2 := by simpa using h
     simp only [reduceExec] at he
     split at he <;> [skip; cases he]
     simp only [Option.map_eq_some_iff] at he
@@ -122,14 +122,14 @@ theorem spillBlock_frame (is : List Instr) (s s' : State)
     obtain ⟨hg, hf⟩ := spillStep_frame i s s₁ fit hsafe.1 hi
     obtain ⟨hg', hf'⟩ := ih s₁ (by rw [hg]; exact fit) hsafe.2 hrest
     refine ⟨hg'.trans hg, hf.trans ?_⟩
-    have hr : spillRegion s₁ = spillRegion s := by simp only [spillRegion, hg]
+    obtain hr : spillRegion s₁ = spillRegion s := by simp only [spillRegion, hg]
     rw [hr] at hf'
     exact hf'
 
 theorem sbox_spillFrame (i : Nat) (hi : i < 8) (s s' : State)
     (fit : (s.gpr .r2).toNat + 512 ≤ 2 ^ 32)
     (he : runBlock isa (sboxCode i) s = some s') : Frame [spillRegion s] s.mem s'.mem := by
-  have h := spillSafe_check i hi
+  obtain h := spillSafe_check i hi
   rw [sboxLiteral_eq i hi] at h
   exact (spillBlock_frame _ _ _ fit h he).2
 end VG.Proof.TripleDes.Arm
@@ -167,12 +167,12 @@ theorem box_ok (i : Nat) (hi : i < 8) (s : State) (hok : Ok sboxCfg s)
       (∀ r ∈ roundKept, s'.gpr r = s.gpr r) ∧
       Frame [spillRegion s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, chunk, rd₁, wr₁, sp₁, mem₁, keep₁⟩ := roundInput_chunk i hi s hread
-  have kept₁ : ∀ r ∈ .r10 :: roundKept, s₁.gpr r = s.gpr r :=
+  obtain kept₁ : ∀ r ∈ .r10 :: roundKept, s₁.gpr r = s.gpr r :=
     fun r hr => keep₁ r (roundInput_keep i hi r hr)
   have hok₁ : Ok sboxCfg s₁ := hok.congr
     (kept₁ .r2 (by decide)) (kept₁ .r2 (by decide)) rd₁ wr₁
   obtain ⟨s₂, run₂, bits, rd₂, wr₂, sp₂, keep₂, _⟩ := sbox_ok i hi hok₁
-  have hbits : ∀ j < 4, (s₂.gpr (q j)).getLsbD 0 =
+  obtain hbits : ∀ j < 4, (s₂.gpr (q j)).getLsbD 0 =
       (Spec.TripleDes.sBox i (roundChunk i ((s.gpr .r11).setWidth 32)
         ((keyWord s).setWidth 48))).getLsbD j := by
     intro j hj
@@ -185,7 +185,7 @@ theorem box_ok (i : Nat) (hi : i < 8) (s : State) (hok : Ok sboxCfg s)
     rw [keep₃ r (roundOutput_keep i hi r hr), keep₂ r ?_, kept₁ r (List.mem_cons_of_mem _ hr)]
     revert hr; cases r <;> decide
   · have hf := sbox_spillFrame i hi s₁ s₂ hok₁.slots run₂
-    have hregion : spillRegion s₁ = spillRegion s := by
+    obtain hregion : spillRegion s₁ = spillRegion s := by
       simp only [spillRegion, kept₁ .r2 (by decide)]
     rw [hregion, mem₁] at hf
     rw [mem₃]
@@ -245,18 +245,18 @@ theorem boxPieces_eq_roundFunction (r : BitVec 32) (k : BitVec 48) :
       (0 : BitVec 32) = roundFunction r k := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  have hfold : (fun (out : Bool) i => out ^^
+  obtain hfold : (fun (out : Bool) i => out ^^
       (boxPiece i (sBox i (roundChunk i r k))).getLsbD j) =
       (fun out i => out ^^ (if boxSource j / 4 = i then
         (roundFunction r k).getLsbD j else false)) := by
     funext out i
     exact congrArg (fun b => out ^^ b) (boxPiece_round_bit i r k j hj)
-  have hbits := foldl_xor_bits (List.range 8)
+  obtain hbits := foldl_xor_bits (List.range 8)
     (fun i => boxPiece i (sBox i (roundChunk i r k))) 0 j
-  have hz : (0 : BitVec 32).getLsbD j = false := by
+  obtain hz : (0 : BitVec 32).getLsbD j = false := by
     change (BitVec.ofNat 32 0).getLsbD j = false
     exact BitVec.getLsbD_zero
-  have hinit := congrArg (fun b : Bool => (List.range 8).foldl
+  obtain hinit := congrArg (fun b : Bool => (List.range 8).foldl
     (fun out i => out ^^ (boxPiece i (sBox i (roundChunk i r k))).getLsbD j) b) hz
   have hchange := congrArg
     (fun f : Bool → Nat → Bool => (List.range 8).foldl f false) hfold
@@ -310,24 +310,24 @@ theorem boxes_ok (indices : List Nat) (hindices : ∀ i ∈ indices, i < 8)
   | nil =>
     exact ⟨s, runBlock_nil, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   | cons i indices ih =>
-    have hi : i < 8 := hindices i (List.mem_cons_self)
+    obtain hi : i < 8 := hindices i (List.mem_cons_self)
     obtain ⟨s₁, run₁, value₁, rd₁, wr₁, sp₁, keep₁, frame₁⟩ := box_ok i hi s hok hread
-    have hregion : spillRegion s₁ = spillRegion s := by
+    obtain hregion : spillRegion s₁ = spillRegion s := by
       simp only [spillRegion, keep₁ .r2 (by decide)]
-    have hr₁ : s₁.gpr .r11 = r := (keep₁ .r11 (by decide)).trans hr
+    obtain hr₁ : s₁.gpr .r11 = r := (keep₁ .r11 (by decide)).trans hr
     have hword (j : Nat) (hj : j < 2) :
         s₁.mem.readW (wordAddr (s₁.gpr .r0) j) 32 = s.mem.readW (wordAddr (s.gpr .r0) j) 32 := by
       rw [keep₁ .r0 (by decide)]
       apply frame₁.readW (r := ⟨wordAddr (s.gpr .r0) j, 4⟩) (Region.contains_self _ _)
         (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hsep j hj) (by decide)
-    have hk₁ : keyWord s₁ = k := by
+    obtain hk₁ : keyWord s₁ = k := by
       unfold keyWord
       rw [hword 0 (by decide), hword 1 (by decide)]
       exact hk
-    have hread₁ : ∀ j < 2, InRegions (s₁.rd ++ s₁.wr) (wordAddr (s₁.gpr .r0) j) 4 := by
+    obtain hread₁ : ∀ j < 2, InRegions (s₁.rd ++ s₁.wr) (wordAddr (s₁.gpr .r0) j) 4 := by
       rw [rd₁, wr₁, keep₁ .r0 (by decide)]
       exact hread
-    have hsep₁ : ∀ j < 2, (⟨wordAddr (s₁.gpr .r0) j, 4⟩ : Region).Disjoint (spillRegion s₁) := by
+    obtain hsep₁ : ∀ j < 2, (⟨wordAddr (s₁.gpr .r0) j, 4⟩ : Region).Disjoint (spillRegion s₁) := by
       rw [keep₁ .r0 (by decide), hregion]
       exact hsep
     have hok₁ : Ok sboxCfg s₁ := hok.congr
@@ -369,7 +369,7 @@ theorem swapHalves_ok (s : State) :
   · simp only [sp_setReg]
   · simp only [mem_setReg]
   · intro q hq
-    have hneq : q ≠ .lr ∧ q ≠ .r10 ∧ q ≠ .r11 := by revert hq; cases q <;> decide
+    obtain hneq : q ≠ .lr ∧ q ≠ .r10 ∧ q ≠ .r11 := by revert hq; cases q <;> decide
     simp only [gpr_setReg, hneq.1, hneq.2.1, hneq.2.2, ite_false]
 
 /-- One full Feistel round, with all eight S-boxes and the half swap. -/
@@ -392,7 +392,7 @@ theorem roundBody_ok (s : State) (l r : BitVec 32) (k : BitVec 64)
   · exact left.trans ((keep₁ .r11 (by decide)).trans hr)
   · rw [right, value, contributions_roundFunction, hl]
   · intro q hq
-    have hq' : q ∈ roundKept := by revert hq; cases q <;> decide
+    obtain hq' : q ∈ roundKept := by revert hq; cases q <;> decide
     exact (keep₂ q hq).trans (keep₁ q hq')
   · rw [mem₂]
     exact frame₁
@@ -453,7 +453,7 @@ theorem roundStep_ok (d : Spec.TripleDes.Direction) (s : State)
     roundBody_ok s l r k hl hr hk hok hread hsep
   obtain ⟨s₂, run₂, ptr₂, count₂, z₂, rd₂, wr₂, sp₂, mem₂, keep₂⟩ := roundAdvance_ok d s₁
   obtain ⟨hsub, hzero⟩ := countDown_rules n hn' hn
-  have hcount₁ : s₁.gpr .r9 = BitVec.ofNat 32 n := (keep₁ .r9 (by decide)).trans hcount
+  obtain hcount₁ : s₁.gpr .r9 = BitVec.ofNat 32 n := (keep₁ .r9 (by decide)).trans hcount
   refine ⟨s₂, ?_, ?_, ?_, ?_, ?_, ?_, rd₂.trans rd₁, wr₂.trans wr₁, sp₂.trans sp₁, ?_, ?_⟩
   · simp only [runBoxes_append, run₁, Option.bind_some, run₂]
   · exact (keep₂ .r10 (by decide) (by decide)).trans left₁
@@ -463,8 +463,8 @@ theorem roundStep_ok (d : Spec.TripleDes.Direction) (s : State)
   · change VG.Arm.eval .ne s₂ = _
     simp only [VG.Arm.eval, z₂, hcount₁, hzero]
   · intro q hq
-    have hq' : q ∈ roundOuterKept := by revert hq; cases q <;> decide
-    have hneq : q ≠ .r9 ∧ q ≠ .r0 := by revert hq; cases q <;> decide
+    obtain hq' : q ∈ roundOuterKept := by revert hq; cases q <;> decide
+    obtain hneq : q ≠ .r9 ∧ q ≠ .r0 := by revert hq; cases q <;> decide
     exact (keep₂ q hneq.1 hneq.2).trans (keep₁ q hq')
   · rw [mem₂]; exact frame₁
 
@@ -557,42 +557,42 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : BitVec 32)
     WP isa (.block (roundBody ++ roundAdvance direction)) s (fun s' =>
       (isa.eval .ne s' = some false ∧ LoopPost keys direction base origin v s') ∨
       (isa.eval .ne s' = some true ∧ ∃ m < n, LoopInv keys direction base origin v m s')) := by
-  have hj : 16 - n < 16 := by omega_using [hs.positive]
-  have hwork : spillRegion s = spillRegion origin := by
+  obtain hj : 16 - n < 16 := by omega_using [hs.positive]
+  obtain hwork : spillRegion s = spillRegion origin := by
     simp only [spillRegion, hs.regs .r2 (by decide)]
   have hokS : Ok sboxCfg s := hok.congr
     (hs.regs .r2 (by decide)) (hs.regs .r2 (by decide)) hs.rd hs.wr
-  have hreadS : ∀ t < 2, InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .r0) t) 4 := by
+  obtain hreadS : ∀ t < 2, InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .r0) t) 4 := by
     rw [hs.rd, hs.wr, hs.pointer]; exact hread _ hj
-  have hsepS : ∀ t < 2, (⟨wordAddr (s.gpr .r0) t, 4⟩ : Region).Disjoint (spillRegion s) := by
+  obtain hsepS : ∀ t < 2, (⟨wordAddr (s.gpr .r0) t, 4⟩ : Region).Disjoint (spillRegion s) := by
     rw [hs.pointer, hwork]; exact hsep _ hj
-  have hk : (keyWord s).setWidth 48 = roundKey keys direction (16 - n) := by
+  obtain hk : (keyWord s).setWidth 48 = roundKey keys direction (16 - n) := by
     change (readKey s.mem (s.gpr .r0)).setWidth 48 = _
     rw [hs.pointer]
-    have hmem := readKey_frame hs.frame (ptr := keyAddr base direction (16 - n))
+    obtain hmem := readKey_frame hs.frame (ptr := keyAddr base direction (16 - n))
       (fun t ht q hq => by obtain rfl := List.mem_singleton.mp hq; exact hsep _ hj t ht)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys _ hj)
   obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, sp, regs, frame⟩ :=
     roundStep_ok direction s _ _ (keyWord s) n hs.positive
       (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS hsepS
       hs.counter
-  have hidx : 16 - (n - 1) = 16 - n + 1 := by
+  obtain hidx : 16 - (n - 1) = 16 - n + 1 := by
     omega_using [hs.positive, hs.bounded]
-  have hleft : s'.gpr .r10 = (roundPrefix keys direction (16 - (n - 1)) v).1 := by
+  obtain hleft : s'.gpr .r10 = (roundPrefix keys direction (16 - (n - 1)) v).1 := by
     rw [hidx]
     exact left.trans (congrArg (fun pair => pair.1)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hright : s'.gpr .r11 = (roundPrefix keys direction (16 - (n - 1)) v).2 := by
+  obtain hright : s'.gpr .r11 = (roundPrefix keys direction (16 - (n - 1)) v).2 := by
     rw [hidx]
-    have hval := congrArg (fun key =>
+    obtain hval := congrArg (fun key =>
       ((roundPrefix keys direction (16 - n) v).1 ^^^
         Spec.TripleDes.roundFunction (roundPrefix keys direction (16 - n) v).2 key)) hk
     exact (right.trans hval).trans (congrArg (fun pair => pair.2)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hframe : Frame [spillRegion origin] origin.mem s'.mem := by
+  obtain hframe : Frame [spillRegion origin] origin.mem s'.mem := by
     rw [hwork] at frame
     exact hs.frame.trans frame
-  have hregs : ∀ q ∈ roundStepKept, s'.gpr q = origin.gpr q :=
+  obtain hregs : ∀ q ∈ roundStepKept, s'.gpr q = origin.gpr q :=
     fun q hq => (regs q hq).trans (hs.regs q hq)
   refine WP.of_runBlock ⟨s', run, ?_⟩
   by_cases hlast : n = 1
@@ -708,7 +708,7 @@ theorem roundsWithSwap_ok (keys : DesSchedule) (direction : Direction) (base : B
   refine ⟨s', run, left.trans hs.right, right.trans hs.left, (regs .r0 (by decide)).trans hs.pointer,
     rd.trans hs.rd, wr.trans hs.wr, sp.trans hs.sp, ?_, ?_⟩
   · intro q hq
-    have hkeep : ∀ r ∈ roundStepKept, r ∈ roundOuterKept := by decide
+    obtain hkeep : ∀ r ∈ roundStepKept, r ∈ roundOuterKept := by decide
     exact (regs q (hkeep q hq)).trans (hs.regs q hq)
   · rw [mem]
     exact hs.frame
@@ -727,15 +727,15 @@ theorem pass_ok (offset : Int) (ho : encodable (BitVec.ofNat 32 offset.natAbs) =
       roundKey keys direction j) :
     WP isa (pass offset direction) origin (PassPost keys direction base origin v) := by
   obtain ⟨s, run, ptr, count, mem, rd, wr, sp, regs⟩ := passStart_ok offset origin ho
-  have hbase : s.gpr .r2 = origin.gpr .r2 := regs .r2 (by decide) (by decide)
-  have hwork : spillRegion s = spillRegion origin := by simp only [spillRegion, hbase]
-  have hkeysS : ∀ j < 16, (readKey s.mem (keyAddr base direction j)).setWidth 48 =
+  obtain hbase : s.gpr .r2 = origin.gpr .r2 := regs .r2 (by decide) (by decide)
+  obtain hwork : spillRegion s = spillRegion origin := by simp only [spillRegion, hbase]
+  obtain hkeysS : ∀ j < 16, (readKey s.mem (keyAddr base direction j)).setWidth 48 =
       roundKey keys direction j := by rw [mem]; exact hkeys
-  have hreadS : ∀ j < 16, ∀ t < 2, InRegions (s.rd ++ s.wr) (wordAddr (keyAddr base direction j) t) 4 := by
+  obtain hreadS : ∀ j < 16, ∀ t < 2, InRegions (s.rd ++ s.wr) (wordAddr (keyAddr base direction j) t) 4 := by
     rw [rd, wr]; exact hread
-  have hsepS : ∀ j < 16, ∀ t < 2, (⟨wordAddr (keyAddr base direction j) t, 4⟩ : Region).Disjoint (spillRegion s) := by
+  obtain hsepS : ∀ j < 16, ∀ t < 2, (⟨wordAddr (keyAddr base direction j) t, 4⟩ : Region).Disjoint (spillRegion s) := by
     rw [hwork]; exact hsep
-  have htail := roundsWithSwap_ok keys direction base s v
+  obtain htail := roundsWithSwap_ok keys direction base s v
     (hok.congr hbase hbase rd wr)
     ((regs .r10 (by decide) (by decide)).trans hl)
     ((regs .r11 (by decide) (by decide)).trans hr)
@@ -746,7 +746,7 @@ theorem pass_ok (offset : Int) (ho : encodable (BitVec.ofNat 32 offset.natAbs) =
   intro s' hs
   refine ⟨hs.left, hs.right, hs.pointer, hs.rd.trans rd, hs.wr.trans wr, hs.sp.trans sp, ?_, ?_⟩
   · intro q hq
-    have hneq : ∀ r ∈ roundStepKept, r ≠ .r9 ∧ r ≠ .r0 := by decide
+    obtain hneq : ∀ r ∈ roundStepKept, r ≠ .r9 ∧ r ≠ .r0 := by decide
     exact (hs.regs q hq).trans (regs q (hneq q hq).2 (hneq q hq).1)
   · have hf := hs.frame
     rw [hwork, mem] at hf
@@ -774,12 +774,12 @@ theorem PassPost.wordState {keys : Spec.TripleDes.DesSchedule}
     {direction : Spec.TripleDes.Direction} {base : BitVec 32} {origin s : State} {x : BitVec 64}
     (hs : PassPost keys direction base origin ((x >>> 32).setWidth 32, x.setWidth 32) s) :
     WordState (desCore keys direction x) s := by
-  have hcore := VG.Proof.TripleDes.desCore_roundPrefix keys direction x
+  obtain hcore := VG.Proof.TripleDes.desCore_roundPrefix keys direction x
   let halves := roundPrefix keys direction 16 ((x >>> 32).setWidth 32, x.setWidth 32)
-  have hleft : ((desCore keys direction x >>> 32).setWidth 32) = halves.2 :=
+  obtain hleft : ((desCore keys direction x >>> 32).setWidth 32) = halves.2 :=
     (congrArg (fun v : BitVec 64 => ((v >>> 32).setWidth 32)) hcore).trans
       (VG.Proof.TripleDes.appended_left halves.2 halves.1)
-  have hright : ((desCore keys direction x).setWidth 32) = halves.1 :=
+  obtain hright : ((desCore keys direction x).setWidth 32) = halves.1 :=
     (congrArg (fun v : BitVec 64 => (v.setWidth 32)) hcore).trans
       (VG.Proof.TripleDes.appended_right halves.2 halves.1)
   exact ⟨hs.left.trans hleft.symm, hs.right.trans hright.symm⟩
@@ -814,13 +814,13 @@ theorem Ready.congr {keys : Nat → DesSchedule} {base : BitVec 32} {s t : State
     (hs : Ready keys base s) (hbase : t.gpr .r2 = s.gpr .r2)
     (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
     (hf : Frame [spillRegion s] s.mem t.mem) : Ready keys base t := by
-  have hwork : spillRegion t = spillRegion s :=
+  obtain hwork : spillRegion t = spillRegion s :=
     congrArg (fun p => (⟨State.addr p + BitVec.ofNat 64 60, 388⟩ : Region)) hbase
   refine ⟨hs.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_⟩
   · rw [hrd, hwr]; exact hs.read
   · rw [hwork]; exact hs.separate
   · intro c hc d j hj
-    have hmem := readKey_frame hf (ptr := keyAddr (componentBase base c) d j)
+    obtain hmem := readKey_frame hf (ptr := keyAddr (componentBase base c) d j)
       (fun t ht q hq => by obtain rfl := List.mem_singleton.mp hq; exact hs.separate c hc d j hj t ht)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hs.values c hc d j hj)
 
@@ -832,7 +832,7 @@ structure Stable (origin s : State) : Prop where
   frame : Frame [spillRegion origin] origin.mem s.mem
 
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
-  have hwork : spillRegion t = spillRegion s :=
+  obtain hwork : spillRegion t = spillRegion s :=
     congrArg (fun p => (⟨State.addr p + BitVec.ofNat 64 60, 388⟩ : Region)) (hs.regs .r2 (by decide))
   have hf := ht.frame
   rw [hwork] at hf
@@ -962,9 +962,9 @@ theorem readDataWords_ok (s : State) (offset : Nat) (ho : offset + 4 < 4096)
       s'.gpr .r5 = rev (s.mem.readW (State.addr (s.gpr .r1 + BitVec.ofNat 32 (offset + 4))) 32) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ≠ .r4 → r ≠ .r5 → s'.gpr r = s.gpr r) := by
-  have h0 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1 + BitVec.ofNat 32 offset)) 4 := by
+  obtain h0 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1 + BitVec.ofNat 32 offset)) 4 := by
     simpa only [Nat.mul_zero, Nat.add_zero] using hr 0 (by decide)
-  have h1 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1 + BitVec.ofNat 32 (offset + 4))) 4 := by
+  obtain h1 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1 + BitVec.ofNat 32 (offset + 4))) 4 := by
     simpa only [Nat.mul_one] using hr 1 (by decide)
   refine ⟨_, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show offset < 4096 from by omega_using [ho], h0, show offset + 4 < 4096 from ho, ite_true, State.load32,
@@ -994,7 +994,7 @@ theorem blockLoad_ok (s : State)
   obtain ⟨s₁, run₁, hi₁, lo₁, mem₁, rd₁, wr₁, sp₁, reg₁⟩ := readDataWords_ok s 0 (by decide)
     (by simpa only [Nat.zero_add] using hread)
   obtain ⟨s₂, run₂, lo₂, hi₂, rd₂, wr₂, sp₂, mem₂, reg₂⟩ := initial_raw_ok s₁
-  have input : s₁.gpr .r4 ++ s₁.gpr .r5 =
+  obtain input : s₁.gpr .r4 ++ s₁.gpr .r5 =
       Spec.TripleDes.decodeBlock (Spec.TripleDes.blockAt s.mem (State.addr (s.gpr .r1))) := by
     rw [hi₁, lo₁, decodeBlock_readW]
     simp only [BitVec.add_zero, Nat.zero_add]
@@ -1005,9 +1005,9 @@ theorem blockLoad_ok (s : State)
   · rw [blockLoad, runBoxes_append, run₁, Option.bind_some, run₂]
   · exact sp₂.trans sp₁
   · intro r hr
-    have checks : ∀ r ∈ loadKept,
+    obtain checks : ∀ r ∈ loadKept,
         ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true := by decide +kernel
-    have unused : ∀ r ∈ loadKept, r ≠ .r4 ∧ r ≠ .r5 := by decide
+    obtain unused : ∀ r ∈ loadKept, r ≠ .r4 ∧ r ≠ .r5 := by decide
     exact (reg₂ r (checks r hr)).trans (reg₁ r (unused r hr).1 (unused r hr).2)
 
 end VG.Proof.TripleDes.Arm
@@ -1064,11 +1064,11 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
     (hread : ∀ i < 9, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4) :
     WP isa (.block blockRestore) s (RestorePost original s) := by
   rw [blockRestore_eq, ← List.append_nil (List.map _ _)]
-  have hregs : (slotsOf savedRegs).map Prod.fst = savedRegs := by decide
+  obtain hregs : (slotsOf savedRegs).map Prod.fst = savedRegs := by decide
   refine Spill.restoreList_ok _ s _ (by decide) (fun p hp => ?_)
     fun s' hl ho hm hrd hwr hsp => WP.block_nil ⟨?_, ⟨fun r hr => ho r (hregs ▸ hr), hm, hrd, hwr⟩, hsp⟩
   · obtain ⟨i, hi, he⟩ := slot_index p hp
-    have hne : ∀ p ∈ slotsOf savedRegs, p.1 ≠ .r2 := by decide
+    obtain hne : ∀ p ∈ slotsOf savedRegs, p.1 ≠ .r2 := by decide
     exact ⟨hne p hp, by omega_using [hi, he], by omega_using [fit, hi, he], he ▸ hread i hi⟩
   · exact Spill.restored_of (hsaved.restored hl) fun r hr => hregs ▸ hr
 
@@ -1126,14 +1126,14 @@ structure HeadPost (keys : Nat → DesSchedule) (base : BitVec 32) (original s :
 theorem ready_afterSave {keys : Nat → DesSchedule} {base : BitVec 32} {s t : State}
     (hp : HeadPre keys base s) (hg : t.gpr = s.gpr) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (hf : Frame [saveRegion s] s.mem t.mem) : Ready keys base t := by
-  have hbase : t.gpr .r2 = s.gpr .r2 := congrFun hg .r2
+  obtain hbase : t.gpr .r2 = s.gpr .r2 := congrFun hg .r2
   refine ⟨hp.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_⟩
   · rw [hrd, hwr]; exact hp.read
   · rw [show spillRegion t = spillRegion s from
       congrArg (fun p => (⟨State.addr p + BitVec.ofNat 64 60, 388⟩ : Region)) hbase]
     exact hp.separateWork
   · intro c hc d j hj
-    have hm := readKey_frame hf (ptr := keyAddr (componentBase base c) d j)
+    obtain hm := readKey_frame hf (ptr := keyAddr (componentBase base c) d j)
       (fun t ht q hq => by obtain rfl := List.mem_singleton.mp hq; exact hp.separateSave c hc d j hj t ht)
     exact (congrArg (BitVec.setWidth 48) hm).trans (hp.values c hc d j hj)
 
@@ -1142,20 +1142,20 @@ theorem blockHead_ok (keys : Nat → DesSchedule) (base : BitVec 32) (s : State)
   apply WP.block_append
   apply WP.mono (blockSave_ok s hp.scratchFit hp.saveWrite)
   intro s₁ hs₁
-  have hready := ready_afterSave hp hs₁.gpr hs₁.rd hs₁.wr hs₁.frame
-  have hread₁ : ∀ t < 2, InRegions (s₁.rd ++ s₁.wr)
+  obtain hready := ready_afterSave hp hs₁.gpr hs₁.rd hs₁.wr hs₁.frame
+  obtain hread₁ : ∀ t < 2, InRegions (s₁.rd ++ s₁.wr)
       (State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
     rw [hs₁.rd, hs₁.wr, hs₁.gpr]; exact hp.dataRead
-  have hdata : Spec.TripleDes.blockAt s₁.mem (State.addr (s₁.gpr .r1)) =
+  obtain hdata : Spec.TripleDes.blockAt s₁.mem (State.addr (s₁.gpr .r1)) =
       Spec.TripleDes.blockAt s.mem (State.addr (s.gpr .r1)) := by
     rw [hs₁.gpr]
     exact VG.Proof.TripleDes.blockAt_eq_of_frame _ hs₁.frame
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hp.dataSeparate)
   obtain ⟨s₂, run₂, left₂, right₂, mem₂, rd₂, wr₂, sp₂, regs₂⟩ :=
     blockLoad_ok s₁ (by rw [hs₁.gpr]; exact hp.dataFit) hread₁
-  have hframe : Frame [spillRegion s₁] s₁.mem s₂.mem := by
+  obtain hframe : Frame [spillRegion s₁] s₁.mem s₂.mem := by
     rw [mem₂]; exact Frame.refl _ _
-  have hinput := congrArg (fun b => Spec.TripleDes.permute Spec.TripleDes.ip
+  obtain hinput := congrArg (fun b => Spec.TripleDes.permute Spec.TripleDes.ip
     (Spec.TripleDes.decodeBlock b)) hdata
   apply WP.of_runBlock
   refine ⟨s₂, run₂, ?_, hready.congr (regs₂ .r2 (by decide)) rd₂ wr₂ hframe,
@@ -1200,9 +1200,9 @@ theorem storeTail_ok (d : Direction) (s : State)
       s'.gpr .r0 = (if d = .encrypt then s.gpr .r0 - 384 else s.gpr .r0 + 8) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ≠ .r0 → r ≠ .r4 → r ≠ .r5 → s'.gpr r = s.gpr r) := by
-  have h0 : InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 0)) 4 := by
+  obtain h0 : InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 0)) 4 := by
     simpa only [Nat.mul_zero] using hw 0 (by decide)
-  have h1 : InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 4)) 4 := by
+  obtain h1 : InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 4)) 4 := by
     simpa only [Nat.mul_one] using hw 1 (by decide)
   cases d <;> refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, storeTail, 
@@ -1231,13 +1231,13 @@ theorem blockStore_ok (d : Direction) (s : State) (l r : BitVec 32)
       (∀ q ∈ loadKept, q ≠ .r0 → s'.gpr q = s.gpr q) := by
   obtain ⟨s₁, run₁, lo₁, hi₁, rd₁, wr₁, sp₁, mem₁, reg₁⟩ := final_raw_ok s
   rw [hl, hr] at lo₁ hi₁
-  have keeps : ∀ q ∈ loadKept, s₁.gpr q = s.gpr q := by
+  obtain keeps : ∀ q ∈ loadKept, s₁.gpr q = s.gpr q := by
     intro q hq
-    have checks : ∀ q ∈ loadKept,
+    obtain checks : ∀ q ∈ loadKept,
         ((instrs finalPermutation.lit).all fun op => !clobbers op q) = true := by decide +kernel
     exact reg₁ q (checks q hq)
-  have fit₁ : (s₁.gpr .r1).toNat + 8 ≤ 2 ^ 32 := by rw [keeps .r1 (by decide)]; exact fit
-  have hw₁ : ∀ t < 2, InRegions s₁.wr (State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
+  obtain fit₁ : (s₁.gpr .r1).toNat + 8 ≤ 2 ^ 32 := by rw [keeps .r1 (by decide)]; exact fit
+  obtain hw₁ : ∀ t < 2, InRegions s₁.wr (State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
     rw [wr₁, keeps .r1 (by decide)]; exact hw
   obtain ⟨s₂, run₂, mem₂, ptr₂, rd₂, wr₂, sp₂, reg₂⟩ := storeTail_ok d s₁ fit₁ hw₁
   refine ⟨s₂, ?_, ?_, ?_, rd₂.trans rd₁, wr₂.trans wr₁, sp₂.trans sp₁, ?_⟩
@@ -1245,7 +1245,7 @@ theorem blockStore_ok (d : Direction) (s : State) (l r : BitVec 32)
   · rw [mem₂, mem₁, keeps .r1 (by decide), hi₁, lo₁, VG.Proof.TripleDes.halves_append]
   · rw [ptr₂, keeps .r0 (by decide)]
   · intro q hq h0
-    have unused : ∀ q ∈ loadKept, q ≠ .r4 ∧ q ≠ .r5 := by decide
+    obtain unused : ∀ q ∈ loadKept, q ≠ .r4 ∧ q ≠ .r5 := by decide
     exact (reg₂ q h0 (unused q hq).1 (unused q hq).2).trans (keeps q hq)
 
 end VG.Proof.TripleDes.Arm
@@ -1284,18 +1284,18 @@ theorem blockTail_ok (original s : State) (d : Direction) (x : BitVec 64)
   obtain ⟨s₁, run₁, mem₁, ptr₁, rd₁, wr₁, sp₁, reg₁⟩ := blockStore_ok d s
     ((x >>> 32).setWidth 32) (x.setWidth 32) hword.left hword.right dataFit hwrite
   rw [VG.Proof.TripleDes.halves_append] at mem₁
-  have regs₁ : ∀ q ∈ roundStepKept, s₁.gpr q = s.gpr q := by
+  obtain regs₁ : ∀ q ∈ roundStepKept, s₁.gpr q = s.gpr q := by
     intro q hq
-    have incl : ∀ q ∈ roundStepKept, q ∈ loadKept ∧ q ≠ .r0 := by decide
+    obtain incl : ∀ q ∈ roundStepKept, q ∈ loadKept ∧ q ≠ .r0 := by decide
     exact reg₁ q (incl q hq).1 (incl q hq).2
-  have frame₁ : Frame [⟨State.addr (s.gpr .r1), 8⟩] s.mem s₁.mem := by
+  obtain frame₁ : Frame [⟨State.addr (s.gpr .r1), 8⟩] s.mem s₁.mem := by
     rw [mem₁]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have saved₁ : Saved original s₁ := by
+  obtain saved₁ : Saved original s₁ := by
     unfold Saved; rw [regs₁ .r2 (by decide)]
     exact Spill.Saved.frame hsaved slots_ok frame₁ fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (hsep.sub_right (Offset.sub_base _ (by decide))).symm
-  have reads₁ : ∀ i < 9, InRegions (s₁.rd ++ s₁.wr)
+  obtain reads₁ : ∀ i < 9, InRegions (s₁.rd ++ s₁.wr)
       (State.addr (s₁.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
     rw [rd₁, wr₁, regs₁ .r2 (by decide)]; exact hsavedRead
   apply WP.of_runBlock
@@ -1309,7 +1309,7 @@ theorem blockTail_ok (original s : State) (d : Direction) (x : BitVec 64)
     exact blockAt_writeW s.mem _ _
   · exact (hs₂.keep.reg .r0 (by decide)).trans ptr₁
   · intro q hq
-    have unused : ∀ q ∈ roundStepKept, q ∉ savedRegs := by decide
+    obtain unused : ∀ q ∈ roundStepKept, q ∉ savedRegs := by decide
     exact (hs₂.keep.reg q (unused q hq)).trans (regs₁ q hq)
   · rw [hs₂.keep.mem]; exact frame₁
 
@@ -1364,15 +1364,15 @@ theorem block_ok (keys : Schedule) (base : BitVec 32) (direction : Direction) (s
   apply WP.seq
   apply WP.mono (blockBody_ok (Spec.TripleDes.componentSchedule keys) base s₁ _ direction ((hs₁.regs .r0 (by decide)).trans hp.pointer) hs₁.ready hs₁.word)
   intro s₂ hs₂
-  have hregs₂ : ∀ q ∈ roundStepKept, s₂.gpr q = s.gpr q := by
+  obtain hregs₂ : ∀ q ∈ roundStepKept, s₂.gpr q = s.gpr q := by
     intro q hq
-    have hkeep : ∀ r ∈ roundStepKept, r ∈ loadKept := by decide
+    obtain hkeep : ∀ r ∈ roundStepKept, r ∈ loadKept := by decide
     exact (hs₂.2.2.1.regs q hq).trans (hs₁.regs q (hkeep q hq))
-  have saved₂ := hs₁.saved.congr (hs₂.2.2.1.regs .r2 (by decide)) hs₂.2.2.1.frame
-  have savedRead₂ : ∀ i < 9, InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
+  obtain saved₂ := hs₁.saved.congr (hs₂.2.2.1.regs .r2 (by decide)) hs₂.2.2.1.frame
+  obtain savedRead₂ : ∀ i < 9, InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
     rw [hs₂.2.2.1.rd, hs₂.2.2.1.wr, hs₁.rd, hs₁.wr, hregs₂ .r2 (by decide)]
     exact hp.saveRead
-  have hwrite₂ : ∀ t < 2, InRegions s₂.wr (State.addr (s₂.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
+  obtain hwrite₂ : ∀ t < 2, InRegions s₂.wr (State.addr (s₂.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
     rw [hs₂.2.2.1.wr, hs₁.wr, hregs₂ .r1 (by decide)]
     exact hwrite
   apply WP.mono (blockTail_ok s s₂ direction _ hs₂.1 saved₂
@@ -1394,15 +1394,15 @@ theorem block_ok (keys : Schedule) (base : BitVec 32) (direction : Direction) (s
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
       exact ⟨⟨State.addr (s.gpr .r2), 512⟩, by simp [blockRegions], Region.sub_prefix (by decide)⟩)
-    have hf₂ : Frame (blockRegions s) s₁.mem s₂.mem := hs₂.2.2.1.frame.sub (by
+    obtain hf₂ : Frame (blockRegions s) s₁.mem s₂.mem := hs₂.2.2.1.frame.sub (by
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
       refine ⟨⟨State.addr (s.gpr .r2), 512⟩, by simp [blockRegions], ?_⟩
-      have hbase := hs₁.regs .r2 (by decide)
+      obtain hbase := hs₁.regs .r2 (by decide)
       change Region.Sub ⟨State.addr (s₁.gpr .r2) + BitVec.ofNat 64 60, 388⟩ ⟨State.addr (s.gpr .r2), 512⟩
       rw [hbase]
       exact Offset.sub_base _ (by decide))
-    have hf₃ : Frame (blockRegions s) s₂.mem s₃.mem := hs₃.frame.sub (by
+    obtain hf₃ : Frame (blockRegions s) s₂.mem s₃.mem := hs₃.frame.sub (by
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
       rw [hregs₂ .r1 (by decide)]
@@ -1452,7 +1452,7 @@ theorem keyWordAddress (base : BitVec 32) (fit : base.toNat + 384 ≤ 2 ^ 32)
     (c j t : Nat) (hc : c < 3) (hj : j < 16) (ht : t < 2) (d : Direction) :
     wordAddr (keyAddr (componentBase base c) d j) t =
       State.addr base + BitVec.ofNat 64 (8 * (16 * c + selectedRound d j) + 4 * t) := by
-  have bound := selectedRound_bound d j hj
+  obtain bound := selectedRound_bound d j hj
   rw [wordAddr, keyAddr_component, Offset.add_ofNat_add_ofNat,
     addr_add (by omega_using [fit, hc, bound, ht])]
 
@@ -1470,35 +1470,35 @@ theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).
     HeadPre (Spec.TripleDes.componentSchedule (Spec.TripleDes.scheduleAt s.mem (State.addr (s.gpr .r0))))
       (s.gpr .r0) s := by
   obtain ⟨hrd, hwr, keySep, dataSep, keyFit, dataFit, scratchFit⟩ := hs
-  have scratchWrites : ∀ i < 128, InRegions s.wr (wordAddr (s.gpr .r2) i) 4 := by
+  obtain scratchWrites : ∀ i < 128, InRegions s.wr (wordAddr (s.gpr .r2) i) 4 := by
     intro i hi
     rw [wordAddr, addr_add (by omega_using [scratchFit, hi]), hwr]
     exact ⟨⟨State.addr (s.gpr .r2), 512⟩, by simp,
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
-  have scratchSaveWrites : ∀ i < 9, InRegions s.wr (State.addr (s.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
+  obtain scratchSaveWrites : ∀ i < 9, InRegions s.wr (State.addr (s.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     rw [hwr]
     exact ⟨⟨State.addr (s.gpr .r2), 512⟩, by simp,
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
-  have scratchSaveReads : ∀ i < 9, InRegions (s.rd ++ s.wr)
+  obtain scratchSaveReads : ∀ i < 9, InRegions (s.rd ++ s.wr)
       (State.addr (s.gpr .r2) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     obtain ⟨r, hr, hc⟩ := scratchSaveWrites i hi
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have spills : Ok sboxCfg s := by
+  obtain spills : Ok sboxCfg s := by
     refine ⟨scratchWrites, ?_, scratchFit, ?_⟩
     · intro k hk; change k < 0 at hk; omega
     · intro k hk j hj; change j < 0 at hj; omega
-  have keySub : ∀ c < 3, ∀ direction : Direction, ∀ j < 16, ∀ t < 2,
+  obtain keySub : ∀ c < 3, ∀ direction : Direction, ∀ j < 16, ∀ t < 2,
       Region.Sub ⟨wordAddr (keyAddr (componentBase (s.gpr .r0) c) direction j) t, 4⟩
         ⟨State.addr (s.gpr .r0), 384⟩ := by
     intro c hc direction j hj t ht
     rw [keyWordAddress _ keyFit c j t hc hj ht direction]
-    have bound := selectedRound_bound direction j hj
+    obtain bound := selectedRound_bound direction j hj
     exact Offset.sub_base _ (by omega_using [hc, bound, ht])
-  have workSub : Region.Sub (spillRegion s) ⟨State.addr (s.gpr .r2), 512⟩ :=
+  obtain workSub : Region.Sub (spillRegion s) ⟨State.addr (s.gpr .r2), 512⟩ :=
     Offset.sub_base _ (by decide)
-  have saveSub : Region.Sub (saveRegion s) ⟨State.addr (s.gpr .r2), 512⟩ :=
+  obtain saveSub : Region.Sub (saveRegion s) ⟨State.addr (s.gpr .r2), 512⟩ :=
     Region.sub_prefix (by decide)
   refine ⟨spills, by omega_using [scratchFit], dataFit, rfl, scratchSaveReads,
     scratchSaveWrites, ?_, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
@@ -1508,7 +1508,7 @@ theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).
       Offset.contains_base _ (by omega_using [ht]) (by omega_using [ht])⟩
   · intro c hc direction j hj t ht
     rw [keyWordAddress _ keyFit c j t hc hj ht direction, hrd, hwr]
-    have bound := selectedRound_bound direction j hj
+    obtain bound := selectedRound_bound direction j hj
     exact ⟨⟨State.addr (s.gpr .r0), 384⟩, by simp,
       Offset.contains_base _ (by omega_using [hc, bound, ht]) (by omega_using [hc, bound, ht])⟩
   · intro c hc direction j hj t ht
@@ -1545,8 +1545,8 @@ def callContract (d : Spec.TripleDes.Direction) : Contract isa :=
 
 theorem block_correct' (d : Spec.TripleDes.Direction) (s : State) (hs : (callContract d).pre s) :
     ∃ t s', Exec isa (block d) s t s' ∧ abiPreserved s s' ∧ (callContract d).post s s' := by
-  have hp := headPre_of_contract d s hs
-  have writes : ∀ t < 2, InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
+  obtain hp := headPre_of_contract d s hs
+  obtain writes : ∀ t < 2, InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by
     intro t ht
     have fit := hs.2.2.2.2.2.1
     rw [addr_add (by omega_using [fit, ht]), hs.2.1]
@@ -1556,7 +1556,7 @@ theorem block_correct' (d : Spec.TripleDes.Direction) (s : State) (hs : (callCon
     (s.gpr .r0) d s hp writes
   refine ⟨t, s', he, ⟨?_, post.sp⟩, post.result, ?_⟩
   · intro r hr
-    have covered : ∀ r ∈ preserved, r ∈ savedRegs := by decide
+    obtain covered : ∀ r ∈ preserved, r ∈ savedRegs := by decide
     exact post.saved r (covered r hr)
   · intro r hr
     simp only [kept, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1602,11 +1602,11 @@ theorem call_ok (d : Spec.TripleDes.Direction) (s : State) (hp : CallPre s) :
       State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs)]
     exact ⟨trivial, trivial, hp.keyScratch, hp.dataScratch, hp.keyFit, hp.dataFit, hp.scratchFit⟩
   · intro s' rd wr sp frame callee regs out
-    have sep : ∀ r ∈ kept, r ∉ linkRegs := by decide
-    have saved : ∀ r ∈ savedAcrossCall, r ∈ preserved ∧ r ≠ .lr := by decide
+    obtain sep : ∀ r ∈ kept, r ∉ linkRegs := by decide
+    obtain saved : ∀ r ∈ savedAcrossCall, r ∈ preserved ∧ r ≠ .lr := by decide
     refine ⟨?_, fun r hr => callee r (saved r hr).1 (saved r hr).2, rd, wr, frame, ?_⟩
     · intro r hr
-      have h := out.2 r hr
+      obtain h := out.2 r hr
       simp only [State.withRegions_gpr, State.callEntry_gpr _ (sep r hr)] at h
       exact h
     · have h := out.1
@@ -1690,10 +1690,10 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
     (key : s'.gpr .r0 = s.gpr .r0)
     (buf : s'.gpr .r2 = s.gpr .r2)
     (ptr : s'.gpr .r1 = s.gpr .r1 + BitVec.ofNat 32 (8 * i)) : StepPre s' m := by
-  have fit : (s.gpr .r1).toNat + 8 * i < 2 ^ 32 := by omega_using [hp.dataFit, bound, hm]
-  have ptrAddr : State.addr (s'.gpr .r1) = State.addr (s.gpr .r1) + BitVec.ofNat 64 (8 * i) := by
+  obtain fit : (s.gpr .r1).toNat + 8 * i < 2 ^ 32 := by omega_using [hp.dataFit, bound, hm]
+  obtain ptrAddr : State.addr (s'.gpr .r1) = State.addr (s.gpr .r1) + BitVec.ofNat 64 (8 * i) := by
     rw [ptr, addr_add fit]
-  have sub : Region.Sub (dataR s' m) (dataR s n) := by
+  obtain sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨State.addr (s'.gpr .r1), 8 * m⟩ ⟨State.addr (s.gpr .r1), 8 * n⟩
     rw [ptrAddr]
     exact Offset.sub_base _ (by omega_using [bound])
@@ -1773,7 +1773,7 @@ theorem counter_zero (n : Nat) (hn : n < 2 ^ 32) :
   simp only [beq_iff_eq, decide_eq_true_eq]
   constructor
   · intro h
-    have ht := congrArg BitVec.toNat h
+    obtain ht := congrArg BitVec.toNat h
     simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at ht
     exact ht
   · intro h; rw [h]; rfl
@@ -1811,20 +1811,20 @@ theorem body_ok (d : Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n 
   intro s₁ h₁
   obtain ⟨s₂, run₂, ptr₂, count₂, flag₂, keep₂⟩ := advance_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have count' : s₁.gpr .r3 - 1 = BitVec.ofNat 32 (n - 1) := by
+  obtain count' : s₁.gpr .r3 - 1 = BitVec.ofNat 32 (n - 1) := by
     rw [h₁.reg .r3 (by decide), count]
     exact Offset.ofNat_sub_ofNat hn
   refine ⟨by rw [ptr₂, h₁.reg .r1 (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_⟩
   · rw [flag₂, count']
     rw [counter_zero (n - 1) (by omega_using [bound])]
-    have he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
+    obtain he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)
   · intro r hr hb
-    have hs : r ≠ .r1 := by
-      have fact : ∀ r ∈ savedAcrossCall, r ≠ .r1 := by decide
+    obtain hs : r ≠ .r1 := by
+      obtain fact : ∀ r ∈ savedAcrossCall, r ≠ .r1 := by decide
       exact fact r hr
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.callee r hr)
   · rw [keep₂.mem]; exact h₁.mem
@@ -1886,9 +1886,9 @@ theorem BodyPost.schedule {d : Spec.TripleDes.Direction} {s s' : State} {n : Nat
 theorem BodyPost.tailData {d : Spec.TripleDes.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.TripleDes.blocksAt s'.mem (State.addr (s.gpr .r1) + 8) n = Spec.TripleDes.blocksAt s.mem (State.addr (s.gpr .r1) + 8) n := by
-  have sub : Region.Sub ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ (dataR s (n + 1)) :=
+  obtain sub : Region.Sub ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ (dataR s (n + 1)) :=
     Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_using [])
-  have sep : (Region.mk (State.addr (s.gpr .r1) + 8) (8 * n)).Disjoint (dataR s) :=
+  obtain sep : (Region.mk (State.addr (s.gpr .r1) + 8) (8 * n)).Disjoint (dataR s) :=
     Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply VG.Proof.TripleDes.blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -1899,12 +1899,12 @@ theorem firstBlock_frame {d : Spec.TripleDes.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
     (frame : Frame (loopWrites s' n) s'.mem m) (hn : 1 ≤ n) :
     Spec.TripleDes.blockAt m (State.addr (s.gpr .r1)) = Spec.TripleDes.blockAt s'.mem (State.addr (s.gpr .r1)) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
-  have sep : (dataR s).Disjoint ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ :=
+  obtain first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
+  obtain sep : (dataR s).Disjoint ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ :=
     Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply VG.Proof.TripleDes.blockAt_eq_of_frame _ frame
-  have buf := h.reg .r2 (by decide) (by decide) (by decide)
-  have ptrAddr : State.addr (s'.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
+  obtain buf := h.reg .r2 (by decide) (by decide) (by decide)
+  obtain ptrAddr : State.addr (s'.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
     rw [h.ptr]
     exact addr_add (k := 8) (by omega_using [hp.dataFit, hn])
   simpa only [loopWrites, dataR, buf, ptrAddr,
@@ -1967,11 +1967,11 @@ theorem loop_ok (d : Spec.TripleDes.Direction) (n : Nat) :
       · have he : n + 1 ≠ 1 := by omega_using [hz]
         simp only [eval_nonzeroCount, h₁.flag, he, decide_false, Option.map_some, Bool.not_false]
       · have key := h₁.schedule (hp.head hn)
-        have tail := h₁.tailData hp (by omega_using [bound])
+        obtain tail := h₁.tailData hp (by omega_using [bound])
         have data := h₂.data
-        have ki := h₁.reg .r0 (by decide) (by decide) (by decide)
-        have bi := h₁.reg .r2 (by decide) (by decide) (by decide)
-        have ptrAddr : State.addr (s₁.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
+        obtain ki := h₁.reg .r0 (by decide) (by decide) (by decide)
+        obtain bi := h₁.reg .r2 (by decide) (by decide) (by decide)
+        obtain ptrAddr : State.addr (s₁.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
           rw [h₁.ptr]
           exact addr_add (k := 8) (by omega_using [hp.dataFit, hz])
         rw [ki, ptrAddr, key, tail] at data
@@ -2080,9 +2080,9 @@ theorem LoopPost.scratchRead {d : Spec.TripleDes.Direction} {s s' : State} {n : 
     (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (hi : 512 ≤ i ∧ i + 4 ≤ 1024) :
     s'.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 32 =
       s.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 32 := by
-  have sub : Region.Sub ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 i, 4⟩ (bufR s) :=
+  obtain sub : Region.Sub ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 i, 4⟩ (bufR s) :=
     Offset.sub_base _ hi.2
-  have sep : (Region.mk (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 4).Disjoint
+  obtain sep : (Region.mk (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 4).Disjoint
       ⟨State.addr (s.gpr .r2), 512⟩ := Offset.disjoint_base _ (by omega_using [hi]) (by omega_using [hi])
   apply h.mem.readW (r := ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 i, 4⟩) (Region.contains_self _ _)
     (hn := by decide)
@@ -2144,18 +2144,18 @@ theorem ecb_correct (d : Spec.TripleDes.Direction) (s : State) (hs : (contract d
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have g₁ (r : Reg) : s₁.gpr r = s.gpr r := keep₁.reg r (by simp)
   rw [g₁] at count₂ buf₂ flag₂
-  have key₂ := (keep₂.reg .r0 (by decide)).trans (g₁ .r0)
-  have data₂ := (keep₂.reg .r1 (by decide)).trans (g₁ .r1)
-  have rd₂ := keep₂.rd.trans keep₁.rd
-  have wr₂ := keep₂.wr.trans keep₁.wr
-  have mem₂ : s₂.mem = savedMem s := keep₂.mem.trans keep₁.mem
-  have scratchFrame : Frame [⟨State.addr (s.gpr .r3), 1024⟩] s.mem s₂.mem := by
+  obtain key₂ := (keep₂.reg .r0 (by decide)).trans (g₁ .r0)
+  obtain data₂ := (keep₂.reg .r1 (by decide)).trans (g₁ .r1)
+  obtain rd₂ := keep₂.rd.trans keep₁.rd
+  obtain wr₂ := keep₂.wr.trans keep₁.wr
+  obtain mem₂ : s₂.mem = savedMem s := keep₂.mem.trans keep₁.mem
+  obtain scratchFrame : Frame [⟨State.addr (s.gpr .r3), 1024⟩] s.mem s₂.mem := by
     rw [mem₂]; exact savedMem_frame s
-  have initialKey := VG.Proof.TripleDes.scheduleAt_eq_of_frame (State.addr (s.gpr .r0)) scratchFrame
+  obtain initialKey := VG.Proof.TripleDes.scheduleAt_eq_of_frame (State.addr (s.gpr .r0)) scratchFrame
     (by simpa using keyBuf)
-  have initialData := VG.Proof.TripleDes.blocksAt_frame scratchFrame (State.addr (s.gpr .r1)) (s.gpr .r2).toNat
+  obtain initialData := VG.Proof.TripleDes.blocksAt_frame scratchFrame (State.addr (s.gpr .r1)) (s.gpr .r2).toNat
     (by simpa using dataBuf)
-  have hp₂ : StepPre s₂ (s.gpr .r2).toNat := by
+  obtain hp₂ : StepPre s₂ (s.gpr .r2).toNat := by
     constructor
     · simp only [keyR, dataR, bufR, key₂, data₂, buf₂, rd₂, wr₂, hrd, hwr]
       exact fun _ _ h => h
@@ -2167,24 +2167,24 @@ theorem ecb_correct (d : Spec.TripleDes.Direction) (s : State) (hs : (contract d
     · rw [key₂]; exact keyFit
     · rw [data₂]; exact fit
     · rw [buf₂]; exact bufFit
-  have flag : zeroCount s₂ = some (decide ((s.gpr .r2).toNat = 0)) := by
-    have hz := counter_zero (s.gpr .r2).toNat (s.gpr .r2).isLt
+  obtain flag : zeroCount s₂ = some (decide ((s.gpr .r2).toNat = 0)) := by
+    obtain hz := counter_zero (s.gpr .r2).toNat (s.gpr .r2).isLt
     simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq] at hz
     exact flag₂.trans (congrArg some hz)
   apply WP.seq
   apply WP.mono (maybeLoop_ok d s₂ (s.gpr .r2).toNat (by omega_using [fit]) hp₂
     (by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using count₂) flag)
   intro s₃ h₃
-  have rd₃ := h₃.rd.trans rd₂
-  have wr₃ := h₃.wr.trans wr₂
-  have buf₃ := (h₃.reg .r2 (by decide) (by decide) (by decide)).trans buf₂
-  have readable : InRegions (s₃.rd ++ s₃.wr)
+  obtain rd₃ := h₃.rd.trans rd₂
+  obtain wr₃ := h₃.wr.trans wr₂
+  obtain buf₃ := (h₃.reg .r2 (by decide) (by decide) (by decide)).trans buf₂
+  obtain readable : InRegions (s₃.rd ++ s₃.wr)
       (State.addr (s₃.gpr .r2) + BitVec.ofNat 64 512) 4 := by
     rw [rd₃, wr₃, buf₃]
     obtain ⟨r, hr, hc⟩ := writes 512 (by decide)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have link : s₃.mem.readW (State.addr (s₃.gpr .r2) + BitVec.ofNat 64 512) 32 = s.gpr .lr := by
-    have h := h₃.scratchRead hp₂ 512 (by decide)
+  obtain link : s₃.mem.readW (State.addr (s₃.gpr .r2) + BitVec.ofNat 64 512) 32 = s.gpr .lr := by
+    obtain h := h₃.scratchRead hp₂ 512 (by decide)
     rw [buf₂, mem₂, savedMem_link] at h
     rw [buf₃]; exact h
   obtain ⟨s₄, run₄, link₄, keep₄⟩ := restore_ok s₃ (s.gpr .lr)
@@ -2194,10 +2194,10 @@ theorem ecb_correct (d : Spec.TripleDes.Direction) (s : State) (hs : (contract d
   · intro r hr
     by_cases hl : r = .lr
     · subst r; exact link₄
-    have saved : ∀ r ∈ preserved, r ≠ .lr → r ∈ savedAcrossCall ∧ r ≠ .r3 := by decide
+    obtain saved : ∀ r ∈ preserved, r ≠ .lr → r ∈ savedAcrossCall ∧ r ≠ .r3 := by decide
     rw [keep₄.reg r (by simpa only [List.mem_singleton] using hl),
       h₃.callee r (saved r hr hl).1 (saved r hr hl).2]
-    have sep : ∀ r ∈ preserved, r ≠ .lr → r ∉ [.r12, .r3, .r2] := by decide
+    obtain sep : ∀ r ∈ preserved, r ≠ .lr → r ∉ [.r12, .r3, .r2] := by decide
     exact (keep₂.reg r (sep r hr hl)).trans (g₁ r)
   · have out := h₃.data
     rw [key₂, data₂, initialKey, initialData] at out

@@ -112,12 +112,12 @@ theorem Ctx.roundPre {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n 
     {l r : Spec.Cast5.Word} (hbx : s.gpr .ebx = l) (hbp : s.gpr .ebp = r) :
     RoundPre s S (K + BitVec.ofNat 32 (4 * (i - 1))) (k.getD (i - 1) 0) (k.getD (15 + i) 0) l r := by
   have hK := h.fitK
-  have a0 : addr (K + BitVec.ofNat 32 (4 * (i - 1))) 0 = K.setWidth 64 + BitVec.ofNat 64 (4 * (i - 1)) := by
-    have e := addr_eq (x := K) (k := 4 * (i - 1)) (by omega_arith)
+  obtain a0 : addr (K + BitVec.ofNat 32 (4 * (i - 1))) 0 = K.setWidth 64 + BitVec.ofNat 64 (4 * (i - 1)) := by
+    obtain e := addr_eq (x := K) (k := 4 * (i - 1)) (by omega_arith)
     unfold addr at e ⊢
     exact (congrArg (BitVec.setWidth 64) (BitVec.add_zero _)).trans e
-  have a64 : addr (K + BitVec.ofNat 32 (4 * (i - 1))) 64 = K.setWidth 64 + BitVec.ofNat 64 (4 * (15 + i)) := by
-    have e := addr_eq (x := K) (k := 4 * (15 + i)) (by omega_arith)
+  obtain a64 : addr (K + BitVec.ofNat 32 (4 * (i - 1))) 64 = K.setWidth 64 + BitVec.ofNat 64 (4 * (15 + i)) := by
+    obtain e := addr_eq (x := K) (k := 4 * (15 + i)) (by omega_arith)
     unfold addr at e ⊢
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 4 * (i - 1) + 64 = 4 * (15 + i) by omega_arith]; exact e
   refine ⟨hbx, hbp, h.si, h.fitS, h.wS, hkp, ?_, ?_, ?_, ?_, h.sp, h.dS, h.fitT, h.inT, h.dT, h.tab⟩
@@ -166,8 +166,8 @@ theorem round_step {s u : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   refine WP.mono (round_ok u ht up (h.ctx.roundPre hi hkp h.bx h.bp))
     fun v ⟨vbx, vbp, vkp, vf, vrd, vwr, vsy, vk⟩ => ?_
   have g (q : Reg) (hq : q ∉ roundRegs) : v.gpr q = u.gpr q := vk.gpr q hq
-  have usp : u.gpr .esp = s.gpr .esp := h.same .esp (by decide)
-  have vf' := roundMem_frame vf
+  obtain usp : u.gpr .esp = s.gpr .esp := h.same .esp (by decide)
+  obtain vf' := roundMem_frame vf
   refine ⟨⟨vbx, ?_, h.ctx.transfer ((g .esi (by decide)).trans h.ctx.si) (g .esp (by decide)) vrd vwr vsy vf'
       (blockMem_disjoint h.ctx), fun q hq => (g q hq).trans (h.same q hq), vrd.trans h.rd, vwr.trans h.wr,
       vsy.trans h.syms, h.frame.trans (by rw [← usp]; exact vf')⟩, vkp, ?_⟩
@@ -201,7 +201,7 @@ theorem RInv.mono {s u v : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n
     (hbx : v.gpr .ebx = u.gpr .ebx) (hbp : v.gpr .ebp = u.gpr .ebp) (hg : ∀ q, q ∉ roundRegs → v.gpr q = u.gpr q)
     (hrd : v.rd = u.rd) (hwr : v.wr = u.wr) (hsy : v.syms = u.syms) (hf : Frame [slotR S kpOff 8] u.mem v.mem) :
     RInv s S K k n lr v := by
-  have hd : ∀ r ∈ [slotR S kpOff 8], r.Disjoint ⟨K.setWidth 64, 128⟩ ∧
+  obtain hd : ∀ r ∈ [slotR S kpOff 8], r.Disjoint ⟨K.setWidth 64, 128⟩ ∧
       r.Disjoint ⟨(u.syms s1234Sym).setWidth 64, 4096⟩ ∧ r.Disjoint (slotR S 48 16) := fun r hr =>
     blockMem_disjoint h.ctx r (by rw [List.mem_singleton] at hr; subst hr; simp [blockMem])
   refine ⟨hbx.trans h.bx, hbp.trans h.bp, h.ctx.transfer ((hg .esi (by decide)).trans h.ctx.si)
@@ -222,8 +222,8 @@ theorem countDown_ok {s u : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {
         v.mem.readW (addr S gcOff) 32 = u.mem.readW (addr S gcOff) 32 - 1 ∧
         v.zf = some (u.mem.readW (addr S gcOff) 32 - 1 == 0) := by
   have c := h.ctx
-  have rg := slot_rd (s := u) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
-  have wg := slot_wr (s := u) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
+  obtain rg := slot_rd (s := u) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
+  obtain wg := slot_wr (s := u) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
   crun [c.si, rg, wg]
   refine ⟨h.mono (by simp only [gpr_setReg]; rfl) (by simp only [gpr_setReg]; rfl) (fun q hq => ?_) rfl rfl rfl
     (Frame.writeW (Frame.refl _ _) List.mem_cons_self _ (kp_contains S c.fitS (by decide) (by decide))),
@@ -317,22 +317,22 @@ theorem encStart_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n :
       groups)) s fun u => RInv s S K k n lr u ∧ u.mem.readW (addr S kpOff) 32 = K + BitVec.ofNat 32 (12 * 0) ∧
         u.mem.readW (addr S gcOff) 32 = BitVec.ofNat 32 (n / 4 + 1) ∧ u.zf = some (decide (n = 16)) := by
   have c := h.ctx
-  have e1 : (s.mem.writeW (addr S kpOff) K).readW (addr S roundsOff) 32 = BitVec.ofNat 32 n := by
+  obtain e1 : (s.mem.writeW (addr S kpOff) K).readW (addr S roundsOff) 32 = BitVec.ofNat 32 n := by
     rw [rd_sep c.fitS _ _ (by decide) (by decide) (by decide)]; exact c.roundsSlot
-  have e2 : ∀ v : BitVec 32, ((s.mem.writeW (addr S kpOff) K).writeW (addr S gcOff) v).readW (addr S roundsOff) 32 =
+  obtain e2 : ∀ v : BitVec 32, ((s.mem.writeW (addr S kpOff) K).writeW (addr S gcOff) v).readW (addr S roundsOff) 32 =
       BitVec.ofNat 32 n := fun v => by
     rw [rd_sep c.fitS _ _ (by decide) (by decide) (by decide)]; exact e1
-  have rs := slot_rd (s := s) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
-  have rr := slot_rd (s := s) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
-  have wk := slot_wr (s := s) c.fitS c.wS (d := kpOff) (n := 4) (by decide)
-  have wg := slot_wr (s := s) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
+  obtain rs := slot_rd (s := s) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
+  obtain rr := slot_rd (s := s) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
+  obtain wk := slot_wr (s := s) c.fitS c.wS (d := kpOff) (n := 4) (by decide)
+  obtain wg := slot_wr (s := s) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
   obtain ⟨g1, g2⟩ := groups_eq c.nv
   unfold groups
   crun [c.si, rs, rr, wk, wg, c.schedSlot, e1, e2, g1, g2]
   refine ⟨h.mono (by simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg]; rfl)
     (by simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg]; rfl) (fun q hq => ?_) rfl rfl rfl ?_, ?_, ?_⟩
   · have a : q ≠ .edx := fun e => hq (by rw [e]; decide)
-    have b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
+    obtain b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
     simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg, a, b, ite_false]
   · exact Frame.writeW (Frame.writeW (Frame.refl _ _) List.mem_cons_self _
       (kp_contains S c.fitS (by decide) (by decide))) List.mem_cons_self _ (kp_contains S c.fitS (by decide) (by decide))
@@ -346,17 +346,17 @@ theorem cmp16_ok {s u : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n : 
     WP isa (.block [.mov .ecx (.mem (at_ .esi roundsOff)), .alu .cmp .ecx (imm 16)]) u fun v =>
       RInv s S K k n lr v ∧ v.mem = u.mem ∧ v.zf = some (decide (n = 16)) := by
   have c := h.ctx
-  have rr := slot_rd (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
+  obtain rr := slot_rd (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
   crun [c.si, rr, c.roundsSlot, (groups_eq c.nv).2]
   refine h.mono (by simp only [gpr_arithFlags, gpr_setReg]; rfl) (by simp only [gpr_arithFlags, gpr_setReg]; rfl)
     (fun q hq => ?_) rfl rfl rfl (Frame.refl _ _)
-  have b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
+  obtain b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
   simp only [gpr_arithFlags, gpr_setReg, b, ite_false]
 
 theorem encryptBlock_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat} (h : Ctx s S K k n)
     {lr : Spec.Cast5.Word × Spec.Cast5.Word} (hbx : s.gpr .ebx = lr.1) (hbp : s.gpr .ebp = lr.2) :
     WP isa encryptBlock s fun v => RInv s S K k n (encFold k n lr) v := by
-  have hG : 0 < n / 4 + 1 ∧ n / 4 + 1 < 2 ^ 32 ∧ 3 * (n / 4) ≤ 12 := by rcases h.nv with rfl | rfl <;> decide
+  obtain hG : 0 < n / 4 + 1 ∧ n / 4 + 1 < 2 ^ 32 ∧ 3 * (n / 4) ≤ 12 := by rcases h.nv with rfl | rfl <;> decide
   unfold encryptBlock
   refine WP.seq (WP.mono (encStart_ok (RInv.init h hbx hbp)) fun u ⟨hu, ukp, ugc, _⟩ => ?_)
   refine WP.seq (WP.mono (wp_countdownF (fun v => v.mem.readW (addr S gcOff) 32) (N := n / 4 + 1) hG.2.1 hG.1
@@ -400,22 +400,22 @@ theorem decStart_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n :
       RInv s S K k n lr u ∧ u.mem.readW (addr S kpOff) 32 = K + BitVec.ofNat 32 (4 * (n - 1)) ∧
         u.mem.readW (addr S gcOff) 32 = BitVec.ofNat 32 (n / 4 + 1) ∧ u.zf = some (decide (n = 16)) := by
   have c := h.ctx
-  have e1 : ∀ v : BitVec 32, (s.mem.writeW (addr S kpOff) v).readW (addr S roundsOff) 32 = BitVec.ofNat 32 n :=
+  obtain e1 : ∀ v : BitVec 32, (s.mem.writeW (addr S kpOff) v).readW (addr S roundsOff) 32 = BitVec.ofNat 32 n :=
     fun v => by rw [rd_sep c.fitS _ _ (by decide) (by decide) (by decide)]; exact c.roundsSlot
-  have e2 : ∀ v w : BitVec 32, ((s.mem.writeW (addr S kpOff) v).writeW (addr S gcOff) w).readW (addr S roundsOff) 32 =
+  obtain e2 : ∀ v w : BitVec 32, ((s.mem.writeW (addr S kpOff) v).writeW (addr S gcOff) w).readW (addr S roundsOff) 32 =
       BitVec.ofNat 32 n := fun v w => by
     rw [rd_sep c.fitS _ _ (by decide) (by decide) (by decide)]; exact e1 v
-  have rs := slot_rd (s := s) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
-  have rr := slot_rd (s := s) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
-  have wk := slot_wr (s := s) c.fitS c.wS (d := kpOff) (n := 4) (by decide)
-  have wg := slot_wr (s := s) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
+  obtain rs := slot_rd (s := s) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
+  obtain rr := slot_rd (s := s) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
+  obtain wk := slot_wr (s := s) c.fitS c.wS (d := kpOff) (n := 4) (by decide)
+  obtain wg := slot_wr (s := s) c.fitS c.wS (d := gcOff) (n := 4) (by decide)
   obtain ⟨g1, g2⟩ := groups_eq c.nv
   unfold groups
   crun [c.si, rs, rr, wk, wg, c.schedSlot, c.roundsSlot, e1, e2, g1, g2, decKp_eq K c.nv]
   refine ⟨h.mono (by simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg]; rfl)
     (by simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg]; rfl) (fun q hq => ?_) rfl rfl rfl ?_, ?_, ?_⟩
   · have a : q ≠ .edx := fun e => hq (by rw [e]; decide)
-    have b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
+    obtain b : q ≠ .ecx := fun e => hq (by rw [e]; decide)
     simp only [gpr_setFlags, gpr_arithFlags, gpr_setReg, a, b, ite_false]
   · exact Frame.writeW (Frame.writeW (Frame.refl _ _) List.mem_cons_self _
       (kp_contains S c.fitS (by decide) (by decide))) List.mem_cons_self _ (kp_contains S c.fitS (by decide) (by decide))
@@ -428,12 +428,12 @@ theorem decFold_zero (k : Spec.Cast5.Schedule) (n : Nat) (lr : Spec.Cast5.Word �
 theorem decryptBlock_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat} (h : Ctx s S K k n)
     {lr : Spec.Cast5.Word × Spec.Cast5.Word} (hbx : s.gpr .ebx = lr.1) (hbp : s.gpr .ebp = lr.2) :
     WP isa decryptBlock s fun v => RInv s S K k n (decFold k n n lr) v := by
-  have hG : 0 < n / 4 + 1 ∧ n / 4 + 1 < 2 ^ 32 ∧ n % 3 + 3 * (n / 4 + 1) = n ∧ n % 3 ≤ 1 := by
+  obtain hG : 0 < n / 4 + 1 ∧ n / 4 + 1 < 2 ^ 32 ∧ n % 3 + 3 * (n / 4 + 1) = n ∧ n % 3 ≤ 1 := by
     rcases h.nv with rfl | rfl <;> decide
   unfold decryptBlock
   refine WP.seq (WP.mono (decStart_ok (RInv.init h hbx hbp)) fun u ⟨hu, ukp, ugc, uz⟩ => ?_)
   -- Round 16 first, if there are 16.
-  have first : WP isa (.ite .e (round 1 false) (.block [])) u fun v =>
+  obtain first : WP isa (.ite .e (round 1 false) (.block [])) u fun v =>
       RInv s S K k n (decFold k n (n % 3) lr) v ∧
         v.mem.readW (addr S kpOff) 32 = K + BitVec.ofNat 32 (4 * (n - n % 3 - 1)) ∧
         v.mem.readW (addr S gcOff) 32 = BitVec.ofNat 32 (n / 4 + 1) := by
@@ -441,7 +441,7 @@ theorem decryptBlock_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} 
     · have hn : n = 16 := of_decide_eq_true h16
       refine WP.mono (round_step hu (t := 1) (i := n) (by decide) (by rw [hn]) (by omega_arith) ukp false)
         fun x ⟨hx, xkp, xgc⟩ => ?_
-      have hd : decFold k n (n % 3) lr = Spec.Cast5.round k n lr := by
+      obtain hd : decFold k n (n % 3) lr = Spec.Cast5.round k n lr := by
         rw [hn, show 16 % 3 = 0 + 1 from rfl, decFold_succ, decFold_zero, Nat.sub_zero]
       refine ⟨(by rw [hd]; exact hx), ?_, xgc.trans ugc⟩
       rw [xkp, ite_eq_right Bool.false_ne_true, four32, sub_ofNat32 _ (by omega_arith)]
@@ -450,7 +450,7 @@ theorem decryptBlock_ok {s : State} {S K : BitVec 32} {k : Spec.Cast5.Schedule} 
         rcases h.nv with h' | h'
         · exact h'
         · exact absurd h' (of_decide_eq_false h16)
-      have hd : decFold k n (n % 3) lr = lr := by rw [hn, show 12 % 3 = 0 from rfl, decFold_zero]
+      obtain hd : decFold k n (n % 3) lr = lr := by rw [hn, show 12 % 3 = 0 from rfl, decFold_zero]
       refine WP.block_nil ⟨(by rw [hd]; exact hu), ?_, ugc⟩
       rw [ukp, hn]
   refine WP.seq (WP.mono first fun v ⟨hv, vkp, vgc⟩ => ?_)
@@ -518,13 +518,13 @@ theorem load_ok {s : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n : N
       (u.gpr .ebx, u.gpr .ebp) = Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem (D.setWidth 64)) ∧
       u.mem = s.mem ∧ (∀ q, q ∉ roundRegs → u.gpr q = s.gpr q) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.syms = s.syms := by
   have c := h.ctx
-  have rd := slot_rd (s := s) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
-  have r0 : InRegions (s.rd ++ s.wr) (addr D 0) 4 := by
+  obtain rd := slot_rd (s := s) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
+  obtain r0 : InRegions (s.rd ++ s.wr) (addr D 0) 4 := by
     rw [addr_D0 h.fitD]
     obtain ⟨g, hg, hc⟩ := h.wD
     exact (CallLay.inRegions_sub (off := 0) (l := 4) ⟨g, List.mem_append_right _ hg, hc⟩ (by omega_arith) (by decide)).imp
       fun _ ⟨a, b⟩ => ⟨a, by rwa [BitVec.add_zero] at b⟩
-  have r4 : InRegions (s.rd ++ s.wr) (addr D 4) 4 := by
+  obtain r4 : InRegions (s.rd ++ s.wr) (addr D 4) 4 := by
     rw [addr_off h.fitD 4 (by decide)]
     obtain ⟨g, hg, hc⟩ := h.wD
     exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ (by omega_arith) (by decide)
@@ -535,8 +535,8 @@ theorem load_ok {s : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n : N
   · rw [decodeBlock_blockAt, addr_D0 h.fitD, addr_off h.fitD 4 (by decide)]
     rfl
   · have a : q ≠ .edx := fun e => hq (by rw [e]; decide)
-    have b : q ≠ .ebx := fun e => hq (by rw [e]; decide)
-    have d : q ≠ .ebp := fun e => hq (by rw [e]; decide)
+    obtain b : q ≠ .ebx := fun e => hq (by rw [e]; decide)
+    obtain d : q ≠ .ebp := fun e => hq (by rw [e]; decide)
     simp only [a, b, d, ite_false]
 
 /-- What `crypt` does. -/
@@ -564,26 +564,26 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
     {lr : Spec.Cast5.Word × Spec.Cast5.Word} (h : BPre s S K D k n) (hu : RInv s S K k n lr u) :
     WP isa (.block store) u (BPost s S D (Spec.Cast5.encodeBlock (lr.2, lr.1))) := by
   have c := hu.ctx
-  have usp : u.gpr .esp = s.gpr .esp := hu.same .esp (by decide)
-  have uD : u.mem.readW (addr S dataOff) 32 = D := by
+  obtain usp : u.gpr .esp = s.gpr .esp := hu.same .esp (by decide)
+  obtain uD : u.mem.readW (addr S dataOff) 32 = D := by
     rw [slot_frame c.fitS hu.frame (fun r hr => (blockMem_disjoint h.ctx r hr).2.2) (by decide) (by decide)]
     exact h.dataSlot
   obtain ⟨N, hN⟩ : ∃ N, u.mem.readW (addr S nOff) 32 = N := ⟨_, rfl⟩
-  have w0 : InRegions u.wr (addr D 0) 4 := by
+  obtain w0 : InRegions u.wr (addr D 0) 4 := by
     rw [addr_D0 h.fitD, hu.wr]
     obtain ⟨g, hg, hc⟩ := h.wD
     exact ⟨g, hg, by unfold Region.Contains at hc ⊢; omega_arith⟩
-  have w4 : InRegions u.wr (addr D 4) 4 := by
+  obtain w4 : InRegions u.wr (addr D 4) 4 := by
     rw [addr_off h.fitD 4 (by decide), hu.wr]
     exact CallLay.inRegions_sub h.wD (by omega_arith) (by decide)
-  have rdD := slot_rd (s := u) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
-  have rsS := slot_rd (s := u) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
-  have rrR := slot_rd (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
-  have rnN := slot_rd (s := u) c.fitS c.wS (d := nOff) (n := 4) (by decide)
-  have wdD := slot_wr (s := u) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
-  have wsS := slot_wr (s := u) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
-  have wrR := slot_wr (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
-  have wnN := slot_wr (s := u) c.fitS c.wS (d := nOff) (n := 4) (by decide)
+  obtain rdD := slot_rd (s := u) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
+  obtain rsS := slot_rd (s := u) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
+  obtain rrR := slot_rd (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
+  obtain rnN := slot_rd (s := u) c.fitS c.wS (d := nOff) (n := 4) (by decide)
+  obtain wdD := slot_wr (s := u) c.fitS c.wS (d := dataOff) (n := 4) (by decide)
+  obtain wsS := slot_wr (s := u) c.fitS c.wS (d := schedOff) (n := 4) (by decide)
+  obtain wrR := slot_wr (s := u) c.fitS c.wS (d := roundsOff) (n := 4) (by decide)
+  obtain wnN := slot_wr (s := u) c.fitS c.wS (d := nOff) (n := 4) (by decide)
   have hbx := hu.bx
   have hbp := hu.bp
   -- The block written, then the public slots written back with what they hold.
@@ -591,7 +591,7 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
     ⟨_, rfl⟩
   have sb (e : Nat) (h1 : 48 ≤ e) (h2 : e + 4 ≤ 64) : m'.readW (addr S e) 32 = u.mem.readW (addr S e) 32 := by
     rw [← hm']; exact slot_block c.fitS h.fitD (h.dDS) _ _ h1 h2
-  have e : (((m'.writeW (addr S dataOff) D).writeW (addr S schedOff) K).writeW (addr S roundsOff)
+  obtain e : (((m'.writeW (addr S dataOff) D).writeW (addr S schedOff) K).writeW (addr S roundsOff)
       (BitVec.ofNat 32 n)).writeW (addr S nOff) N = m' := by
     rw [← uD, ← sb dataOff (by decide) (by decide), writeW_readW, ← c.schedSlot, ← sb schedOff (by decide) (by decide),
       writeW_readW, ← c.roundsSlot, ← sb roundsOff (by decide) (by decide), writeW_readW, ← hN,
@@ -602,19 +602,19 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   refine ⟨?_, ?_, fun q hq => ?_, hu.rd, hu.wr, hu.syms⟩
   · rw [← hm', addr_D0 h.fitD, addr_off h.fitD 4 (by decide), blockAt_write]
   · rw [← hm']
-    have c0 : (blockR D).Contains (addr D 0) (32 / 8) := by
+    obtain c0 : (blockR D).Contains (addr D 0) (32 / 8) := by
       rw [addr_D0 h.fitD]; simp [Region.Contains]
-    have c4 : (blockR D).Contains (addr D 4) (32 / 8) := by
+    obtain c4 : (blockR D).Contains (addr D 4) (32 / 8) := by
       rw [addr_off h.fitD 4 (by decide)]; exact Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by decide) (by decide)
-    have f1 := (hu.frame.mono (rs' := blockR D :: blockMem S (s.gpr .esp))
+    obtain f1 := (hu.frame.mono (rs' := blockR D :: blockMem S (s.gpr .esp))
       (fun r hr => List.mem_cons_of_mem _ hr)).writeW List.mem_cons_self (byteRev32 lr.2) c0
     exact f1.writeW List.mem_cons_self (byteRev32 lr.1) c4
   · have a : q ≠ .edx := fun e => hq (by rw [e]; decide)
-    have b : q ≠ .eax := fun e => hq (by rw [e]; decide)
-    have d : q ≠ .ecx := fun e => hq (by rw [e]; decide)
-    have f : q ≠ .edi := fun e => hq (by rw [e]; decide)
-    have g : q ≠ .ebx := fun e => hq (by rw [e]; decide)
-    have i : q ≠ .ebp := fun e => hq (by rw [e]; decide)
+    obtain b : q ≠ .eax := fun e => hq (by rw [e]; decide)
+    obtain d : q ≠ .ecx := fun e => hq (by rw [e]; decide)
+    obtain f : q ≠ .edi := fun e => hq (by rw [e]; decide)
+    obtain g : q ≠ .ebx := fun e => hq (by rw [e]; decide)
+    obtain i : q ≠ .ebp := fun e => hq (by rw [e]; decide)
     simp only [gpr_setReg, a, b, d, f, g, i, ite_false]
     exact hu.same q hq
 
@@ -623,13 +623,13 @@ theorem crypt_ok {s : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n : 
     WP isa (crypt up) s (BPost s S D (cipher up k n (Spec.Cast5.blockAt s.mem (D.setWidth 64)))) := by
   unfold crypt
   refine WP.seq (WP.mono (load_ok h) fun u ⟨hu, hlr, um, ug, urd, uwr, usy⟩ => ?_)
-  have usp : u.gpr .esp = s.gpr .esp := ug .esp (by decide)
-  have hb : BPre u S K D k n := ⟨hu, by rw [um]; exact h.dataSlot, h.fitD, by rw [uwr]; exact h.wD, h.dDS, h.dDK,
+  obtain usp : u.gpr .esp = s.gpr .esp := ug .esp (by decide)
+  obtain hb : BPre u S K D k n := ⟨hu, by rw [um]; exact h.dataSlot, h.fitD, by rw [uwr]; exact h.wD, h.dDS, h.dDK,
     by rw [usy]; exact h.dDT, by rw [usp]; exact h.dDsp⟩
   obtain ⟨lr, hlr'⟩ : ∃ lr, Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem (D.setWidth 64)) = lr := ⟨_, rfl⟩
   rw [hlr'] at hlr
-  have hbx : u.gpr .ebx = lr.1 := by rw [← hlr]
-  have hbp : u.gpr .ebp = lr.2 := by rw [← hlr]
+  obtain hbx : u.gpr .ebx = lr.1 := by rw [← hlr]
+  obtain hbp : u.gpr .ebp = lr.2 := by rw [← hlr]
   have post (v : State) (hv : RInv u S K k n (fold up k n lr) v) :
       WP isa (.block store) v (BPost s S D (cipher up k n (Spec.Cast5.blockAt s.mem (D.setWidth 64)))) := by
     refine WP.mono (store_ok hb hv) fun w hw => ?_

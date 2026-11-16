@@ -58,7 +58,7 @@ theorem ce_arg {o t : State} {used : Nat} (A : KeySearchABI o)
     arg (t.callEntry.withRegions rd wr) j = callArg o used j := by
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 52 := by rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_using [h1])
+  obtain hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 52 := by rw [he]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_using [h1])
   rw [arg_withRegions, arg_callEntry (by omega_using [h1, hn]) (by omega_using [hj, hn]), ← ha j hj]
   congr 1
   rw [show (t.gpr .esp + BitVec.ofNat 32 (4 * j)).setWidth 64 = addr (t.gpr .esp) (4 * j) from rfl, he,
@@ -119,7 +119,7 @@ theorem ctx_frame {o : State} (A : KeySearchABI o) {m : Mem} (F : Frame (frameR 
   have cB := A.cBound
   unfold Spec.Rsa.wordsAt
   refine List.map_congr_left fun i hi => ?_
-  have hi' := List.mem_range.mp hi
+  obtain hi' := List.mem_range.mp hi
   exact F.readW (r := cR o) (Offset.contains_base _ (by omega_using [hi']) (by omega_using [hi']))
     (frameR_apart A A.xc.symm A.yc.symm A.uc.symm A.bc.symm A.sc.symm A.ca A.lowC.symm) (by decide)
 
@@ -130,74 +130,74 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
       (t.callEntry.withRegions (callRd o used) (callWr o)) := by
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hs4 := esp_sub4 A he
-  have hs4n : (o.gpr .esp - BitVec.ofNat 32 56).toNat = (o.gpr .esp).toNat - 56 := VG.X86.sub_toNat (by omega_using [h1])
-  have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 176 := by
+  obtain hs4 := esp_sub4 A he
+  obtain hs4n : (o.gpr .esp - BitVec.ofNat 32 56).toNat = (o.gpr .esp).toNat - 56 := VG.X86.sub_toNat (by omega_using [h1])
+  obtain ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 176 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he,
       sw_sub A (by decide)]; rfl
-  have hl116 : (o.gpr .esp - BitVec.ofNat 32 56).setWidth 64 - 172#64 = low o := by
+  obtain hl116 : (o.gpr .esp - BitVec.ofNat 32 56).setWidth 64 - 172#64 = low o := by
     rw [sw_sub A (by decide)]; show low o + BitVec.ofNat 64 172 - BitVec.ofNat 64 172 = _
     exact BitVec.add_sub_cancel _ _
-  have xr := xR_eq A
-  have yr := yR_eq A
-  have W := win_sub A hu
-  have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
-  have Bs : Region.Sub ⟨low o, 172⟩ (lowR o) := Region.sub_prefix (by decide)
-  have dXY : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
+  obtain xr := xR_eq A
+  obtain yr := yR_eq A
+  obtain W := win_sub A hu
+  obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
+  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
+  obtain Bs : Region.Sub ⟨low o, 172⟩ (lowR o) := Region.sub_prefix (by decide)
+  obtain dXY : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr, ← yr]; exact A.xy
-  have dXD : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (dR o) := by rw [← xr]; exact A.xd
-  have dXW : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (winR o used) := by
+  obtain dXD : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (dR o) := by rw [← xr]; exact A.xd
+  obtain dXW : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (winR o used) := by
     rw [← xr]; exact A.xr.sub_right W
-  have dXB : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (bR o) := by rw [← xr]; exact A.xb
-  have dXF : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (frR o) := by
+  obtain dXB : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (bR o) := by rw [← xr]; exact A.xb
+  obtain dXF : Region.Disjoint ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ (frR o) := by
     rw [← xr]; exact A.lowX.symm.sub_right Fs
-  have dYD : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (dR o) := by rw [← yr]; exact A.yd
-  have dYW : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (winR o used) := by
+  obtain dYD : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (dR o) := by rw [← yr]; exact A.yd
+  obtain dYW : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (winR o used) := by
     rw [← yr]; exact A.yr.sub_right W
-  have dYB : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (bR o) := by rw [← yr]; exact A.yb
-  have dYF : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (frR o) := by
+  obtain dYB : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (bR o) := by rw [← yr]; exact A.yb
+  obtain dYF : Region.Disjoint ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ (frR o) := by
     rw [← yr]; exact A.lowY.symm.sub_right Fs
   have dDB : Region.Disjoint (dR o) (bR o) := A.db
-  have dDF : Region.Disjoint (dR o) (frR o) := A.lowD.symm.sub_right Fs
-  have dWB : Region.Disjoint (winR o used) (bR o) := A.rb.sub_left W
-  have dWF : Region.Disjoint (winR o used) (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
-  have dBF : Region.Disjoint (bR o) (frR o) := A.lowB.symm.sub_right Fs
-  have rX : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
+  obtain dDF : Region.Disjoint (dR o) (frR o) := A.lowD.symm.sub_right Fs
+  obtain dWB : Region.Disjoint (winR o used) (bR o) := A.rb.sub_left W
+  obtain dWF : Region.Disjoint (winR o used) (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
+  obtain dBF : Region.Disjoint (bR o) (frR o) := A.lowB.symm.sub_right Fs
+  obtain rX : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr]; exact A.lowX.sub_left Rs
-  have rY : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
+  obtain rY : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← yr]; exact A.lowY.sub_left Rs
-  have rD : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (dR o) := A.lowD.sub_left Rs
-  have rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
-  have rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (bR o) := A.lowB.sub_left Rs
-  have rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (frR o) :=
+  obtain rD : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (dR o) := A.lowD.sub_left Rs
+  obtain rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
+  obtain rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (bR o) := A.lowB.sub_left Rs
+  obtain rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (frR o) :=
     Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
-  have bX : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
+  obtain bX : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← xr]; exact A.lowX.sub_left Bs
-  have bY : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
+  obtain bY : Region.Disjoint ⟨low o, 172⟩ ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by
     rw [← yr]; exact A.lowY.sub_left Bs
-  have bD : Region.Disjoint ⟨low o, 172⟩ (dR o) := A.lowD.sub_left Bs
-  have bW : Region.Disjoint ⟨low o, 172⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
-  have bB : Region.Disjoint ⟨low o, 172⟩ (bR o) := A.lowB.sub_left Bs
-  have bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
-  have xB : (arg o 0).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.xBound; rw [A.xLen] at this; exact this
-  have yB : (arg o 2).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.yBound; rw [A.yLen] at this; exact this
-  have wB : (arg o 8 + BitVec.ofNat 32 used).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by
+  obtain bD : Region.Disjoint ⟨low o, 172⟩ (dR o) := A.lowD.sub_left Bs
+  obtain bW : Region.Disjoint ⟨low o, 172⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
+  obtain bB : Region.Disjoint ⟨low o, 172⟩ (bR o) := A.lowB.sub_left Bs
+  obtain bF : Region.Disjoint ⟨low o, 172⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
+  obtain xB : (arg o 0).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.xBound; rw [A.xLen] at this; exact this
+  obtain yB : (arg o 2).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by have := A.yBound; rw [A.yLen] at this; exact this
+  obtain wB : (arg o 8 + BitVec.ofNat 32 used).toNat + (arg o 7).toNat ≤ 2 ^ 32 := by
     rw [win_toNat A hu]; have := A.rBound; omega_using [hu, this]
-  have cX : Region.Disjoint (cR o) ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by rw [← xr]; exact A.xc.symm
-  have cY : Region.Disjoint (cR o) ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by rw [← yr]; exact A.yc.symm
+  obtain cX : Region.Disjoint (cR o) ⟨(arg o 0).setWidth 64, (arg o 7).toNat⟩ := by rw [← xr]; exact A.xc.symm
+  obtain cY : Region.Disjoint (cR o) ⟨(arg o 2).setWidth 64, (arg o 7).toNat⟩ := by rw [← yr]; exact A.yc.symm
   have cB' : Region.Disjoint (cR o) (bR o) := A.bc.symm
-  have cF : Region.Disjoint (cR o) (frR o) := A.lowC.symm.sub_right Fs
-  have rC : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (cR o) := A.lowC.sub_left Rs
-  have bC : Region.Disjoint ⟨low o, 172⟩ (cR o) := A.lowC.sub_left Bs
+  obtain cF : Region.Disjoint (cR o) (frR o) := A.lowC.symm.sub_right Fs
+  obtain rC : Region.Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ (cR o) := A.lowC.sub_left Rs
+  obtain bC : Region.Disjoint ⟨low o, 172⟩ (cR o) := A.lowC.sub_left Bs
   have cBd := A.cBound
   have cL := A.ctxLen
-  have Fv : ∀ v : BitVec 32, Frame (frameR o) o.mem (t.mem.writeW (low o + 172#64) v) := fun v =>
+  obtain Fv : ∀ v : BitVec 32, Frame (frameR o) o.mem (t.mem.writeW (low o + 172#64) v) := fun v =>
     F.writeW (List.mem_append_right _ (List.mem_singleton_self _)) v (low_contains A (d := 172) (n := 4) (by decide))
-  have dv : ∀ v : BitVec 32, Spec.Ffdh.domainValid (arg o 7).toNat
+  obtain dv : ∀ v : BitVec 32, Spec.Ffdh.domainValid (arg o 7).toNat
       (Spec.Rsa.bytesAt (t.mem.writeW (low o + 172#64) v) (argumentPointer o 5) (arg o 6).toNat) = true := fun v => by
     rw [dom_frame A (Fv v)]; exact A.domValid
-  have cg : ∀ v : BitVec 32, Spec.Ffdh.generationPrecompute (arg o 7).toNat
+  obtain cg : ∀ v : BitVec 32, Spec.Ffdh.generationPrecompute (arg o 7).toNat
       (Spec.Rsa.bytesAt (t.mem.writeW (low o + 172#64) v) (argumentPointer o 5) (arg o 6).toNat) =
         some (Spec.Rsa.wordsAt (t.mem.writeW (low o + 172#64) v) (argumentPointer o 13) (arg o 14).toNat) := fun v => by
     rw [dom_frame A (Fv v), ctx_frame A (Fv v)]; exact A.ctx
@@ -206,9 +206,9 @@ theorem call_pre {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used + (a
   have pL := A.pLen
   have dL := A.dLen
   have sL := A.scratchLength
-  have st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 56).toNat := by
+  obtain st : Proof.Ffdh.X86.stack ≤ (o.gpr .esp - BitVec.ofNat 32 56).toNat := by
     rw [hs4n]; show 172 ≤ _; omega_using [h1]
-  have st' : (o.gpr .esp - BitVec.ofNat 32 56).toNat + 4 + 52 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
+  obtain st' : (o.gpr .esp - BitVec.ofNat 32 56).toNat + 4 + 52 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
   sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes, stackBelow, Spec.Ffdh.generationContextAt]
   simp only [hs4, ha0, Nat.reduceEqDiff, Nat.reduceSub, ↓reduceIte, BitVec.add_sub_cancel, ce_arg A he ha _ _ (show 0 < 13 by decide), ce_arg A he ha _ _ (show 1 < 13 by decide),
@@ -264,7 +264,7 @@ theorem call_covers {o t : State} {used : Nat} (A : KeySearchABI o) (hu : used +
     Covers (callRd o used ++ callWr o) (t.rd ++ t.wr) ∧ Covers (callWr o) t.wr := by
   have xL := A.xLen
   have yL := A.yLen
-  have hw : ∀ r ∈ callWr o, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len := by
+  obtain hw : ∀ r ∈ callWr o, ∃ r' ∈ t.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len := by
     intro r hr
     rw [hwr, A.wr]
     simp only [callWr, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -311,9 +311,9 @@ theorem ret_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp 
 theorem below_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
     below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Cached.Generate.code + 4) = ⟨low o, 176⟩ := by
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
-  have hl := low_toNat A
+  obtain hl := low_toNat A
   have := (o.gpr .esp).isLt
-  have e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 = low o := by
+  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 = low o := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
     omega_using [h1]
@@ -334,19 +334,19 @@ theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
   unfold Spec.Ffdh.pLenValid at hpl
   have hb := A.dBound
   have hrb := A.rBound
-  have fe : ∀ v : BitVec 32, Frame [⟨low o + BitVec.ofNat 64 172, 4⟩] t.mem
+  obtain fe : ∀ v : BitVec 32, Frame [⟨low o + BitVec.ofNat 64 172, 4⟩] t.mem
       (t.mem.writeW (low o + BitVec.ofNat 64 172) v) := fun v =>
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
-  have dE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v) (argumentPointer o 5)
+  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 172, 4⟩ (lowR o) := low_sub (by decide)
+  obtain dE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v) (argumentPointer o 5)
       (arg o 6).toNat = (ofState o).dom := fun v => by
     rw [bytes_frame (fe v) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.lowD.sub_left Rs).symm) (by omega_using []),
       bytes_frame h.frame (dom_apart A) (by omega_using [])]; rfl
-  have rE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v)
+  obtain rE : ∀ v : BitVec 32, Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 172) v)
       ((arg o 8 + BitVec.ofNat 32 used).setWidth 64) (arg o 7).toNat =
       ((randOf o).drop used).take (arg o 7).toNat := fun v => by
-    have W := win_sub A hu
+    obtain W := win_sub A hu
     rw [bytes_frame (fe v) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
       (by omega_using []), bytes_frame h.frame (fun r hr => (rand_apart A r hr).sub_left W) (by omega_using []),
@@ -363,7 +363,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
   have A := h.abi
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 52 := by
+  obtain hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 52 := by
     rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_using [h1])
   obtain ⟨hc, hcw⟩ := call_covers (t := t) A hu h.rd h.wr
   refine WP.call Proof.Ffdh.X86.Cached.verified.1 callee_noSp (by rw [callee_stack, hn]; omega_using [h1])
@@ -376,17 +376,17 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     ce_arg A h.esp ha _ _ (show 8 < 13 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, ret_eq A h.esp] at hp
   have hpl := A.pLen
   unfold Spec.Ffdh.pLenValid at hpl
-  have dE := fun v => (entry_bytes h hu v).1
-  have rE := fun v => (entry_bytes h hu v).2
+  obtain dE := fun v => (entry_bytes h hu v).1
+  obtain rE := fun v => (entry_bytes h hu v).2
   simp only [dE, rE] at hp
   obtain ⟨hr, hout⟩ := hp
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
   have hS := A.sBound
-  have hA : Aligned liveDs := by decide
-  have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  have xr := xR_eq A
-  have yr := yR_eq A
-  have fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
+  obtain hA : Aligned liveDs := by decide
+  obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
+  obtain xr := xR_eq A
+  obtain yr := yR_eq A
+  obtain fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

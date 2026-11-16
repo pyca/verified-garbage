@@ -158,7 +158,7 @@ theorem outside_frame {L : RL} (hL : L.Ok) {o n : Nat} (hon : o + n ≤ 32) {m m
   intro x hx
   have hF := hL.fnw
   refine ho x ?_
-  have hn := hx L.nR (by simp)
+  obtain hn := hx L.nR (by simp)
   simp only [Region.Contains, off] at hn
   rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega_using [])] at hn
   simp only [ofs, oNonce, frameBytes] at hn hF ⊢
@@ -172,19 +172,19 @@ theorem outside_frame {L : RL} (hL : L.Ok) {o n : Nat} (hon : o + n ≤ 32) {m m
 theorem sampled {s₀ t t₁ : State} {u : Nat} {S : Spec.Dsa.Random.Sample} (h : rsContract.pre s₀)
     (hs : Scanned (rlOf s₀) s₀ t) (hz : NZero s₀ t.mem) (so : SampleOut (eOf s₀) (randOf (rlOf s₀) s₀.mem) u S t t₁)
     (hq : 1 < qOf s₀) : Scanned (rlOf s₀) s₀ t₁ ∧ NZero s₀ t₁.mem := by
-  have hL := rlOf_ok h
-  have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
+  obtain hL := rlOf_ok h
+  obtain hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
   have hW : (eOf s₀).W ≤ (eOf s₀).ql := hE.Wq
   have hql : (eOf s₀).ql ≤ 32 := hE.ql
   have hql' := hL.ql
-  have hdis : ∀ r ∈ ctxRegs, r ∉ drawRegs := by decide
+  obtain hdis : ∀ r ∈ ctxRegs, r ∉ drawRegs := by decide
   refine ⟨hs.step (hs.ctx.step hL so.keep.sp so.keep.rd so.keep.wr (fun r hr => so.keep.gpr r (hdis r hr))
     (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql]) so.out))
     (so.keep.gpr _ (by decide)) (so.keep.gpr _ (by decide)) (so.keep.gpr _ (by decide)), fun j hj => ?_⟩
   have hF := hL.fnw
-  have e : ofs (eOf s₀).F (off (rlOf s₀).F (oNonce + j)) = oNonce + j :=
+  obtain e : ofs (eOf s₀).F (off (rlOf s₀).F (oNonce + j)) = oNonce + j :=
     Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql', hj])
-  have hj' : oNonce + j < (eOf s₀).o := by
+  obtain hj' : oNonce + j < (eOf s₀).o := by
     have e2 : (eOf s₀).ql = (rlOf s₀).ql := rfl
     simp only [SE.o]; omega_using [hj, e2]
   rw [so.out _ (.inl (by rw [e]; exact hj'))]
@@ -209,7 +209,7 @@ theorem frame_byte {L : RL} (hL : L.Ok) {m m' : Mem} (hf : Frame (signWr L) m m'
     m' (off L.F d) = m (off L.F d) := by
   have hF := hL.fnw
   refine hf _ fun r hr hc => ?_
-  have hin : L.frR.Contains (off L.F d) 1 := VG.Offset.contains_base _ (by omega_using [hd]) (by simp only [frameBytes] at hd; omega_using [hd])
+  obtain hin : L.frR.Contains (off L.F d) 1 := VG.Offset.contains_base _ (by omega_using [hd]) (by simp only [frameBytes] at hd; omega_using [hd])
   simp only [signWr, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hL.dFO _ hin hc
@@ -222,16 +222,16 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
         (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a ≠ 4 → AttOut s₀ t') ∧
         (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a = 4 → 1 < a ∧
           AttInv s₀ (a - 1) (u + (randomSignDraw (inpOf (rlOf s₀) s₀.mem) u).used) t') := by
-  have hL := rlOf_ok h
-  have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
-  have hQ := seOf_Q (L := rlOf s₀) s₀.mem hq
-  have henv := hi.sc.env h hq
+  obtain hL := rlOf_ok h
+  obtain hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq
+  obtain hQ := seOf_Q (L := rlOf s₀) s₀.mem hq
+  obtain henv := hi.sc.env h hq
   have hql := hL.ql
   obtain ⟨a', rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by have := hi.ha1; omega_using [this]⟩
   generalize hD : randomSignDraw (inpOf (rlOf s₀) s₀.mem) u = D
-  have hD' : Spec.Dsa.Random.sample (qOf s₀) 128 ((randOf (rlOf s₀) s₀.mem).drop u) = D := by
+  obtain hD' : Spec.Dsa.Random.sample (qOf s₀) 128 ((randOf (rlOf s₀) s₀.mem).drop u) = D := by
     rw [← hD, draw_eq hL]
-  have hDu : u + D.used ≤ (rlOf s₀).rl := by
+  obtain hDu : u + D.used ≤ (rlOf s₀).rl := by
     have := Dsa.Random.sample_used_le (qOf s₀) 128 ((randOf (rlOf s₀) s₀.mem).drop u)
     rw [hD', List.length_drop, VG.Proof.Bignum.bytesAt_length] at this
     have := hi.hu; omega_arith
@@ -239,15 +239,15 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
   refine WP.seq (WP.seq (WP.mono (sample_ok hE hQ henv hi.r25 hi.hu) fun t₁ so => ?_))
   rw [hD'] at so
   obtain ⟨sc₁, z₁⟩ := sampled h hi.sc hi.zero so hq
-  have hst := sampleStatus_le D
+  obtain hst := sampleStatus_le D
   refine WP.seq (WP.mono (WP.keep [.r3] (Q := fun t₂ => t₂.mem = t₁.mem ∧
     t₂.gpr .r3 = t₁.gpr .r31 - BitVec.ofNat 64 1) (by prun) (by decide)) fun t₂ ⟨⟨m2, a3⟩, k2⟩ => ?_)
-  have sc₂ : Scanned (rlOf s₀) s₀ t₂ := sc₁.step (sc₁.ctx.step hL k2.sp k2.rd k2.wr
+  obtain sc₂ : Scanned (rlOf s₀) s₀ t₂ := sc₁.step (sc₁.ctx.step hL k2.sp k2.rd k2.wr
     (fun r hr => k2.gpr r (ctx_r3 r hr)) (by rw [m2]; exact Frame.refl _ _))
     (k2.gpr _ (by decide)) (k2.gpr _ (by decide)) (k2.gpr _ (by decide))
-  have b31 : t₂.gpr .r31 = BitVec.ofNat 64 (sampleStatus D) := (k2.gpr _ (by decide)).trans so.r31
-  have b25 : t₂.gpr .r25 = BitVec.ofNat 64 (u + D.used) := (k2.gpr _ (by decide)).trans so.r25
-  have b26 : t₂.gpr .r26 = BitVec.ofNat 64 (a' + 1) :=
+  obtain b31 : t₂.gpr .r31 = BitVec.ofNat 64 (sampleStatus D) := (k2.gpr _ (by decide)).trans so.r31
+  obtain b25 : t₂.gpr .r25 = BitVec.ofNat 64 (u + D.used) := (k2.gpr _ (by decide)).trans so.r25
+  obtain b26 : t₂.gpr .r26 = BitVec.ofNat 64 (a' + 1) :=
     (k2.gpr _ (by decide)).trans ((so.keep.gpr _ (by decide)).trans hi.r26)
   refine WP.ite (decide (sampleStatus D = 1)) (by rw [eval_zero, a3, so.r31, sub1_beq _ (by omega_using [hst])])
     (fun hs => ?_) (fun hs => ?_)
@@ -255,37 +255,37 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
     simp only [decide_eq_true_eq] at hs
     obtain ⟨k, hk⟩ := Option.isSome_iff_exists.mp (sampleStatus_some.mp hs)
     have hdk : randomSignDraw (inpOf (rlOf s₀) s₀.mem) u = D := hD
-    have hnonce : Spec.Rsa.bytesAt t₂.mem (off (rlOf s₀).F oNonce) (rlOf s₀).ql = Spec.Dsa.encodeBE (rlOf s₀).ql k := by
+    obtain hnonce : Spec.Rsa.bytesAt t₂.mem (off (rlOf s₀).F oNonce) (rlOf s₀).ql = Spec.Dsa.encodeBE (rlOf s₀).ql k := by
       rw [m2]
       exact nonce_eq (W := (eOf s₀).W) hE.Wq z₁ (so.cand k hk)
     refine WP.seq (WP.mono (callArgs_ok hL sc₂.ctx) fun t₃ ⟨ha3, m3, k3⟩ => ?_)
     refine WP.seq (WP.mono (sign_ok h ha3) fun t₄ sg => ?_)
-    have es : sresOf (rlOf s₀) t₃.mem = Spec.Dsa.signBytes (rlOf s₀).pl (rlOf s₀).ql
+    obtain es : sresOf (rlOf s₀) t₃.mem = Spec.Dsa.signBytes (rlOf s₀).pl (rlOf s₀).ql
         (inpOf (rlOf s₀) s₀.mem).key (Spec.Dsa.encodeBE (rlOf s₀).ql k) (inpOf (rlOf s₀) s₀.mem).digest := by
       simp only [sresOf, inpOf]; rw [m3, sc₂.ctx.key, sc₂.ctx.dig, hnonce]
-    have b26' : t₄.gpr .r26 = BitVec.ofNat 64 (a' + 1) :=
+    obtain b26' : t₄.gpr .r26 = BitVec.ofNat 64 (a' + 1) :=
       (sg.pres _ (by decide)).trans ((k3.gpr _ (by decide)).trans b26)
-    have sc₄ : Scanned (rlOf s₀) s₀ t₄ := sc₂.step sg.ctx ((sg.pres _ (by decide)).trans (k3.gpr _ (by decide)))
+    obtain sc₄ : Scanned (rlOf s₀) s₀ t₄ := sc₂.step sg.ctx ((sg.pres _ (by decide)).trans (k3.gpr _ (by decide)))
       ((sg.pres _ (by decide)).trans (k3.gpr _ (by decide))) ((sg.pres _ (by decide)).trans (k3.gpr _ (by decide)))
-    have b25' : t₄.gpr .r25 = BitVec.ofNat 64 (u + D.used) :=
+    obtain b25' : t₄.gpr .r25 = BitVec.ofNat 64 (u + D.used) :=
       (sg.pres _ (by decide)).trans ((k3.gpr _ (by decide)).trans b25)
-    have z₄ : NZero s₀ t₄.mem := fun j hj => by
+    obtain z₄ : NZero s₀ t₄.mem := fun j hj => by
       rw [frame_byte hL sg.frame (by simp only [oNonce, frameBytes]; omega_using [hql, hj]), m3, m2]; exact z₁ j hj
     have hr3 := sg.r3
     rw [es] at hr3
     refine WP.mono (callFinish_ok b26' (by omega_using []) hi.ha8 hr3) fun t₅ ⟨m5, k5, hs1, hs0⟩ => ?_
-    have sc₅ : Scanned (rlOf s₀) s₀ t₅ := sc₄.step (sc₄.ctx.step hL k5.sp k5.rd k5.wr
+    obtain sc₅ : Scanned (rlOf s₀) s₀ t₅ := sc₄.step (sc₄.ctx.step hL k5.sp k5.rd k5.wr
       (fun r hr => k5.gpr r (ctx_r26 r hr)) (by rw [m5]; exact Frame.refl _ _))
       (k5.gpr _ (by decide)) (k5.gpr _ (by decide)) (k5.gpr _ (by decide))
-    have b25'' : t₅.gpr .r25 = BitVec.ofNat 64 (u + D.used) := (k5.gpr _ (by decide)).trans b25'
-    have hdk' : (randomSignDraw (inpOf (rlOf s₀) s₀.mem) u).scalar = some k := by rw [hD]; exact hk
+    obtain b25'' : t₅.gpr .r25 = BitVec.ofNat 64 (u + D.used) := (k5.gpr _ (by decide)).trans b25'
+    obtain hdk' : (randomSignDraw (inpOf (rlOf s₀) s₀.mem) u).scalar = some k := by rw [hD]; exact hk
     cases hsr : Spec.Dsa.signBytes (rlOf s₀).pl (rlOf s₀).ql (inpOf (rlOf s₀) s₀.mem).key
         (Spec.Dsa.encodeBE (rlOf s₀).ql k) (inpOf (rlOf s₀) s₀.mem).digest with
     | some sig =>
       obtain ⟨c31, -⟩ := hs1 (by rw [hsr]; exact Nat.one_ne_zero)
       obtain ⟨rsig, rst, ru⟩ := hi.rel.success hdk' hsr
       rw [hD] at ru
-      have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 1 := by
+      obtain hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 1 := by
         simp only [randomSignAttemptStatus, hdk']
         simp only [inpOf] at hsr ⊢
         simp [hsr]
@@ -299,13 +299,13 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       · rw [m6, m5, sg.out, es, hsr, rsig]
     | none =>
       obtain ⟨c26, c31⟩ := hs0 (by rw [hsr]; rfl)
-      have rel' := hi.rel.retry hdk' hsr
+      obtain rel' := hi.rel.retry hdk' hsr
       rw [hD] at rel'
       by_cases ha0 : a' = 0
       · subst ha0
         rw [ite_eq_left rfl] at c31
         obtain ⟨-, rst, ru⟩ := rel'.exhausted
-        have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (0 + 1) = 0 := by
+        obtain hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (0 + 1) = 0 := by
           simp only [randomSignAttemptStatus, hdk']
           simp only [inpOf] at hsr ⊢
           simp [hsr]
@@ -317,7 +317,7 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
         · rw [k6.gpr _ (by decide), b25'', ← ru, Nat.zero_add]
         · rw [k6.gpr _ (by decide), c31, rst]
       · rw [Nat.add_sub_cancel, ite_eq_right ha0] at c31
-        have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 4 := by
+        obtain hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = 4 := by
           simp only [randomSignAttemptStatus, hdk']
           simp only [inpOf] at hsr ⊢
           simp [hsr, ha0]
@@ -331,13 +331,13 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
         rw [m6, m5]; exact z₄ j hj
   · -- No nonce: the sampler's status.
     simp only [decide_eq_false_iff_not] at hs
-    have hk : D.scalar = none := by
+    obtain hk : D.scalar = none := by
       cases hc : D.scalar with
       | none => rfl
       | some k => exact absurd (sampleStatus_some.mpr (by rw [hc]; rfl)) hs
     obtain ⟨rs, rst, ru⟩ := hi.rel.sample_none (hD ▸ hk)
     rw [hD] at rst ru
-    have hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = sampleStatus D := by
+    obtain hAS : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u (a' + 1) = sampleStatus D := by
       unfold randomSignAttemptStatus
       rw [hD]
       simp only [hk]

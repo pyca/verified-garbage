@@ -43,7 +43,7 @@ theorem nil_of_len {xl xh : BitVec 32} {c : List Byte} (ht : (xh ++ xl).toNat = 
   rw [append_toNat32] at ht
   by_cases hc : c = []
   · subst hc
-    have h0 : xl = 0 ∧ xh = 0 :=
+    obtain h0 : xl = 0 ∧ xh = 0 :=
       ⟨BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega_using [ht]), BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega_using [ht])⟩
     obtain ⟨rfl, rfl⟩ := h0
     rfl
@@ -69,7 +69,7 @@ structure TaSl (W : BitVec 32) (D : BitVec 32) (n : Nat) (al xl xh : BitVec 32) 
 
 theorem TaSl.frame {W D : BitVec 32} {n : Nat} {al xl xh : BitVec 32} {m m' : Mem} (h : TaSl W D n al xl xh m)
     {rs : List Region} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (keptR W).Disjoint r) : TaSl W D n al xl xh m' := by
-  have k : ∀ {o}, 128 ≤ o → o + 4 ≤ 240 → slotv m' W o = slotv m W o := fun h₁ h₂ =>
+  obtain k : ∀ {o}, 128 ≤ o → o + 4 ≤ 240 → slotv m' W o = slotv m W o := fun h₁ h₂ =>
     slot_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using [h₁]) (by omega_using [h₂]))
   exact ⟨by rw [k (by decide) (by decide)]; exact h.data, by rw [k (by decide) (by decide)]; exact h.len,
     by rw [k (by decide) (by decide)]; exact h.al, by rw [k (by decide) (by decide)]; exact h.xl,
@@ -193,14 +193,14 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
     refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨⟨h, hm⟩, _⟩ => ⟨h.env, by rw [hm]; exact Frame.refl _ _,
       fun a c _ ha => ?_⟩
     rw [hm]; simpa [bytesAt] using ha
-  have hn0 : n ≠ 0 := by simpa using hf
+  obtain hn0 : n ≠ 0 := by simpa using hf
   -- Whether there is text so far.
   refine Pc.seq (Q := fun m₀ s => (TaIn Ctx St W SP K D n al xl xh s ∧ s.mem = m₀) ∧
       s.zf = some (xl ||| xh == 0))
     (Pc.taint [.ebp] (fun m₀ s ⟨⟨h, hm⟩, _⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.1.env.ebp, h₂.1.1.env.ebp]) (by taint_decide)) ?_
   · have he := h.env
-    have h1 := h.sl.xl; have h2 := h.sl.xh
+    obtain h1 := h.sl.xl; have h2 := h.sl.xh
     rw [slotv_eq] at h1 h2
     exact WP.of_runBlock ⟨_, by xrun [he.ebp, L.aW, he.wIn', h1, h2], ⟨ta_keep h (by regs []) (by regs [])
       (by regs []) (by mems []) (by mems []) (by mems []), by mems []; exact hm⟩, by mems []⟩
@@ -214,12 +214,12 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
       · have he := h.env
         have h1 := h.sl.al
         rw [slotv_eq] at h1
-        have hand := and15 al
+        obtain hand := and15 al
         refine WP.of_runBlock ⟨_, by xrun [he.ebp, L.aW, he.wIn, he.wIn', h1], ?_⟩
-        have fb : Frame [⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem
+        obtain fb : Frame [⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem
             (s.mem.writeW (w64 W + BitVec.ofNat 64 bO) (al &&& BitVec.ofNat 32 15)) :=
           (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-        have dK : ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)], (keptR W).Disjoint r := fun r hr => by
+        obtain dK : ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)], (keptR W).Disjoint r := fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
         refine ⟨⟨he.keep (by regs []) (by regs []) (by regs []) (by mems []) (by mems []) (by
             simp only [mem_setMem, mem_setReg, mem_arithFlags]; exact slot_frame fb fun r hr =>
@@ -231,20 +231,20 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
       refine Pc.mono (Pc.lift (flush_pc L (yo := 16) (.inr rfl) (b := al.toNat % 16) (Nat.mod_lt _ (by decide)))
         (fun _ s => s.mem) fun m₀ s h => ⟨⟨h.1.env, h.2.1⟩, rfl⟩) (fun _ _ h => h)
         fun m₀ s' ⟨s, ⟨h, _, fb⟩, fo, rd, wr⟩ => ?_
-      have dS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)],
+      obtain dS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)],
           (⟨w64 St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun hk r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-      have kT : ∀ r ∈ tFrame St W SP K 16, (keptR W).Disjoint r := fun r hr => by
+      obtain kT : ∀ r ∈ tFrame St W SP K 16, (keptR W).Disjoint r := fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
         · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
         · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
         · exact (L.stk_w (by decide)).symm
-      have hHs : Hk s.mem Ctx = Hk m₀ Ctx := blockAt_frame fb fun r hr => by
+      obtain hHs : Hk s.mem Ctx = Hk m₀ Ctx := blockAt_frame fb fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-      have hH' : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame fo.frame (ctx_tFrame L (.inr rfl))
-      have dT : ∀ r ∈ tFrame St W SP K 16, (⟨w64 D, n⟩ : Region).Disjoint r := fun r hr => by
+      obtain hH' : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame fo.frame (ctx_tFrame L (.inr rfl))
+      obtain dT : ∀ r ∈ tFrame St W SP K 16, (⟨w64 D, n⟩ : Region).Disjoint r := fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact h.data.st.sub_right (Lay.stSub (by decide))
@@ -264,7 +264,7 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
         subst hc
         simp only [↓reduceIte]
         rw [Proof.Gcm.ghashInput_nil] at ha
-        have ha₁ : Absorbed s.mem (w64 St + BitVec.ofNat 64 16) (w64 St + BitVec.ofNat 64 32) (Hk s.mem Ctx) a := by
+        obtain ha₁ : Absorbed s.mem (w64 St + BitVec.ofNat 64 16) (w64 St + BitVec.ofNat 64 32) (Hk s.mem Ctx) a := by
           rw [hHs]
           exact ha.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (d := 32) (k := a.length % 16)
             (by omega_using [])) (by omega_using []))
@@ -272,7 +272,7 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
         rwa [hHs] at this
     · refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨⟨h, hm⟩, _⟩ => ⟨h, by rw [hm], by rw [hm],
         by rw [hm]; exact Frame.refl _ _, fun a c ⟨_, hx⟩ ha => ?_⟩
-      have hc : c ≠ [] := by
+      obtain hc : c ≠ [] := by
         have := nil_of_len hx; rw [hf] at this; simpa using this.symm
       simp only [hc, ↓reduceIte]; rw [hm]; exact ha
   -- The text, as the piece `absorb` takes it.
@@ -281,10 +281,10 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
     (Pc.taint [.ebp] (fun m₀ s h => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ta.env.ebp, h₂.ta.env.ebp]) (by taint_decide)) ?_
   · have he := h.ta.env
-    have h1 := h.ta.sl.data; have h2 := h.ta.sl.len; have h3 := h.ta.sl.xl
+    obtain h1 := h.ta.sl.data; have h2 := h.ta.sl.len; have h3 := h.ta.sl.xl
     rw [slotv_eq] at h1 h2 h3
     simp only [dataO, lenO, xlO] at h1 h2 h3
-    have hand := and15 xl
+    obtain hand := and15 xl
     refine WP.of_runBlock ⟨_, by xrun [setText, he.ebp, L.aW, he.wIn, he.wIn', h1, h2, h3], s, h, ?_⟩
     refine ⟨⟨he.keep (by regs []) (by regs []) (by regs []) (by mems []) (by mems []) (by mems []), ?_, ?_, ?_,
         Nat.mod_lt _ (by decide), h.ta.nlt, h.ta.data.of_eq (by mems []) (by mems [])⟩, ?_, by mems [], by mems []⟩
@@ -300,16 +300,16 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
     fun m₀ s' ⟨s, ⟨s₃, h₃, _, fr, _, _⟩, ao, _, _⟩ => ?_
   have hd := h₃.ta.data
   have hfit := hd.fit
-  have hD : bytesAt s.mem (w64 D) n = bytesAt m₀ (w64 D) n := by
+  obtain hD : bytesAt s.mem (w64 D) n = bytesAt m₀ (w64 D) n := by
     rw [bytesAt_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hd.w.sub_right (Lay.wSub (by decide))) (by omega_using [hnlt]),
       h₃.bytes]
-  have hHs : Hk s.mem Ctx = Hk m₀ Ctx := by
+  obtain hHs : Hk s.mem Ctx = Hk m₀ Ctx := by
     rw [← h₃.hk]; exact blockAt_frame fr fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
   refine ⟨ao.env, (h₃.frame.trans (pslot_taFrame fr)).trans (abs_taFrame ao.frame), fun a c ⟨hl, hx⟩ ha => ?_⟩
-  have hx' : (if c = [] then a ++ zeros (padLen a.length) else ghashInput a c).length % 16 = xl.toNat % 16 := by
-    have e := append_toNat32 xh xl
+  obtain hx' : (if c = [] then a ++ zeros (padLen a.length) else ghashInput a c).length % 16 = xl.toNat % 16 := by
+    obtain e := append_toNat32 xh xl
     split
     · next hc =>
       subst hc

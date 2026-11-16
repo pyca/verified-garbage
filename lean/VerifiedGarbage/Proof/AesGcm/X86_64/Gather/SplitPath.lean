@@ -51,7 +51,7 @@ theorem listed_zero (m : Mem) (p : Addr) (n : Nat) :
   simp only [Sig.listed, List.range_succ_eq_map, List.map_cons, List.map_map]
   refine List.cons_eq_cons.mpr ⟨by simp, List.map_congr_left fun i _ => ?_⟩
   simp only [Function.comp]
-  have e : p + BitVec.ofNat 64 ((i + 1) * (2 * (64 / 8))) =
+  obtain e : p + BitVec.ofNat 64 ((i + 1) * (2 * (64 / 8))) =
       p + BitVec.ofNat 64 16 + BitVec.ofNat 64 (i * (2 * (64 / 8))) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
   rw [e]
@@ -105,8 +105,8 @@ theorem pt_split : pt s (Cnt s) = pt s (k0 s) ++ gathered 64 s.mem (Src s + BitV
   · next h =>
     obtain ⟨n, hn⟩ : ∃ n, Cnt s = n + 1 := ⟨Cnt s - 1, by omega_arith⟩
     rw [hn, Nat.add_sub_cancel]
-    have e0 : pt s 0 = [] := by simp [pt, gathered, Sig.listed]
-    have h0 : Src s + BitVec.ofNat 64 (16 * 0) = Src s := by simp
+    obtain e0 : pt s 0 = [] := by simp [pt, gathered, Sig.listed]
+    obtain h0 : Src s + BitVec.ofNat 64 (16 * 0) = Src s := by simp
     refine ⟨?_, ?_⟩
     · show gathered 64 s.mem (Src s) (n + 1) = pt s (0 + 1) ++ _
       rw [gathered_zero, pt_succ, e0, List.nil_append, sb, sl, h0]
@@ -155,10 +155,10 @@ theorem splitT1_ok {st : State} (h : Base s (AL s) 0 st) :
       (∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧
       st'.wr = st.wr := by
   obtain ⟨a₅, e₅⟩ := h.w hp
-  have r₈ := h.slot hp (d := 64) (by decide)
-  have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
-  have hz := and_self_beq hC
-  have hleft : st.mem.readW (W s + BitVec.ofNat 64 64) 64 = BitVec.ofNat 64 (Cnt s) := by
+  obtain r₈ := h.slot hp (d := 64) (by decide)
+  obtain hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
+  obtain hz := and_self_beq hC
+  obtain hleft : st.mem.readW (W s + BitVec.ofNat 64 64) 64 = BitVec.ofNat 64 (Cnt s) := by
     rw [h.kept.left, Nat.sub_zero]
   apply WP.of_runBlock
   refine ⟨_, by simp only [gLeft]; xrun [a₅, e₅, r₈, hleft], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -173,11 +173,11 @@ theorem splitT2_ok (hc : Cnt s ≠ 0) {st : State} (h : Base s (AL s) 0 st) (h11
     WP isa (.block [.mov .r10 (.mem (at_ .r11 gDesc)), .mov .r10 (.mem (at_ .r10 8))]) st fun st' =>
       st'.gpr .r10 = BitVec.ofNat 64 (fl s) ∧ (∀ r, r ≠ .r10 → st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧
       st'.rd = st.rd ∧ st'.wr = st.wr := by
-  have r₇ := h.slot hp (d := 56) (by decide)
-  have d₈ := desc_in hp h (i := 0) (by omega_arith) (d := 8) (by decide)
-  have v₈ := sl_eq hp h.frame (i := 0) (by omega_arith)
+  obtain r₇ := h.slot hp (d := 56) (by decide)
+  obtain d₈ := desc_in hp h (i := 0) (by omega_arith) (d := 8) (by decide)
+  obtain v₈ := sl_eq hp h.frame (i := 0) (by omega_arith)
   have hd : st.mem.readW (W s + BitVec.ofNat 64 56) 64 = Src s + BitVec.ofNat 64 (16 * 0) := h.kept.desc
-  have hfl : fl s = sl s 0 := by rw [fl_eq]; simp [hc]
+  obtain hfl : fl s = sl s 0 := by rw [fl_eq]; simp [hc]
   apply WP.of_runBlock
   refine ⟨_, by simp only [gDesc]; xrun [h11, r₇, hd, d₈, v₈], ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, hfl, v₈]
@@ -198,20 +198,20 @@ theorem splitT3_ok {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : Base s (AL s) 0
         .alu .cmp .rax (imm t)]) st
       fun st' => st'.cf = some (decide (shortLen s < t)) ∧ (∀ r, r ≠ .rax → r ≠ .r10 → st'.gpr r = st.gpr r) ∧
         st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
-  have r₅ := h.slot hp (d := 40) (by decide)
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hfl := fl_le hp
-  have hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
+  obtain r₅ := h.slot hp (d := 40) (by decide)
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hfl := fl_le hp
+  obtain hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
     rw [h.kept.len, ofNat_toNat]
-  have it := imm_eq ht
-  have r16 := round16 hL
-  have m₁ : fl s % 18446744073709551616 = fl s := Nat.mod_eq_of_lt (by omega_arith)
-  have m₂ : L s % 18446744073709551616 = L s := Nat.mod_eq_of_lt (by omega_arith)
-  have m₃ : t % 18446744073709551616 = t := Nat.mod_eq_of_lt (by omega_arith)
-  have m₄ : 16 * (L s / 16) % 18446744073709551616 = 16 * (L s / 16) := Nat.mod_eq_of_lt (by omega_arith)
-  have l₁ := toNat_ofNat_of_lt (show fl s < 2 ^ 64 by omega_arith)
-  have l₂ := toNat_ofNat_of_lt (show 16 * (L s / 16) < 2 ^ 64 by omega_arith)
-  have l₃ := toNat_ofNat_of_lt (show t < 2 ^ 64 by omega_arith)
+  obtain it := imm_eq ht
+  obtain r16 := round16 hL
+  obtain m₁ : fl s % 18446744073709551616 = fl s := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₂ : L s % 18446744073709551616 = L s := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₃ : t % 18446744073709551616 = t := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₄ : 16 * (L s / 16) % 18446744073709551616 = 16 * (L s / 16) := Nat.mod_eq_of_lt (by omega_arith)
+  obtain l₁ := toNat_ofNat_of_lt (show fl s < 2 ^ 64 by omega_arith)
+  obtain l₂ := toNat_ofNat_of_lt (show 16 * (L s / 16) < 2 ^ 64 by omega_arith)
+  obtain l₃ := toNat_ofNat_of_lt (show t < 2 ^ 64 by omega_arith)
   apply WP.of_runBlock
   by_cases h₁ : 16 * (L s / 16) ≤ fl s
   · have h₁' : ¬fl s < 16 * (L s / 16) := by omega_arith
@@ -243,7 +243,7 @@ theorem w_splitT1 {st : State} (h : E2 s st) :
       .alu .test .rax (.reg .rax)]) st (G1 s) := by
   obtain ⟨B, di, si, dx, cx⟩ := h
   refine WP.mono_mx (by decide) (splitT1_ok hp B) fun s₁ ⟨r11₁, r10₁, zf₁, g₁, m₁, rd₁, wr₁⟩ mxw => ?_
-  have cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
+  obtain cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
     (by intro e; subst e; simp [calleeSaved] at hr)
   exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁ mxw, by rw [g₁ _ (by decide) (by decide) (by decide), di],
@@ -258,7 +258,7 @@ theorem w_splitT2 (hc : Cnt s ≠ 0) {st : State} (h : G1 s st) :
     WP isa (.block [.mov .r10 (.mem (at_ .r11 gDesc)), .mov .r10 (.mem (at_ .r10 8))]) st (G2 s) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, -, -⟩ := h
   refine WP.mono_mx (by decide) (splitT2_ok hp hc B r11) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂⟩ mxw => ?_
-  have cs₂ : ∀ r ∈ calleeSaved, s₂.gpr r = st.gpr r := fun r hr => g₂ r
+  obtain cs₂ : ∀ r ∈ calleeSaved, s₂.gpr r = st.gpr r := fun r hr => g₂ r
     (by intro e; subst e; simp [calleeSaved] at hr)
   exact ⟨⟨B.regs m₂ cs₂ rd₂ wr₂ mxw, by rw [g₂ _ (by decide), di], by rw [g₂ _ (by decide), si],
     by rw [g₂ _ (by decide), dx], by rw [g₂ _ (by decide), cx]⟩, by rw [g₂ _ (by decide), r11], r10₂⟩
@@ -270,7 +270,7 @@ theorem w_splitT3 {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : G2 s st) :
       fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (shortLen s < t)) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, r10⟩ := h
   refine WP.mono_mx (by rfl) (splitT3_ok hp ht B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ mxw => ?_
-  have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
+  obtain cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
   exact ⟨⟨B.regs m₃ cs₃ rd₃ wr₃ mxw, by rw [g₃ _ (by decide) (by decide), di], by rw [g₃ _ (by decide) (by decide), si],
     by rw [g₃ _ (by decide) (by decide), dx], by rw [g₃ _ (by decide) (by decide), cx]⟩,
@@ -297,15 +297,15 @@ theorem quickT_ok {q : Nat} (hq : q < 2 ^ 31) {st : State} (h : Base s (AL s) 0 
       (∀ r, r ≠ .rax → r ≠ .r11 → st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧
       st'.wr = st.wr := by
   obtain ⟨a₅, e₅⟩ := h.w hp
-  have r₅ := h.slot hp (d := 40) (by decide)
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
+  obtain r₅ := h.slot hp (d := 40) (by decide)
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
     rw [h.kept.len, ofNat_toNat]
-  have it := imm_eq hq
-  have m₂ : L s % 18446744073709551616 = L s := Nat.mod_eq_of_lt (by omega_arith)
-  have m₃ : q % 18446744073709551616 = q := Nat.mod_eq_of_lt (by omega_arith)
-  have l₂ := toNat_ofNat_of_lt hL
-  have l₃ := toNat_ofNat_of_lt (show q < 2 ^ 64 by omega_arith)
+  obtain it := imm_eq hq
+  obtain m₂ : L s % 18446744073709551616 = L s := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₃ : q % 18446744073709551616 = q := Nat.mod_eq_of_lt (by omega_arith)
+  obtain l₂ := toNat_ofNat_of_lt hL
+  obtain l₃ := toNat_ofNat_of_lt (show q < 2 ^ 64 by omega_arith)
   apply WP.of_runBlock
   refine ⟨_, by simp only [quickTest, gLen]; xrun [a₅, e₅, r₅, hlen, it], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags]
@@ -318,7 +318,7 @@ theorem w_quick {q : Nat} (hq : q < 2 ^ 31) {st : State} (h : E2 s st) :
       E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < q)) := by
   obtain ⟨B, di, si, dx, cx⟩ := h
   refine WP.mono_mx (by rfl) (quickT_ok hp hq B) fun s₁ ⟨r11₁, cf₁, g₁, m₁, rd₁, wr₁⟩ mxw => ?_
-  have cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
+  obtain cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
   exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁ mxw, by rw [g₁ _ (by decide) (by decide), di], by rw [g₁ _ (by decide) (by decide), si],
     by rw [g₁ _ (by decide) (by decide), dx], by rw [g₁ _ (by decide) (by decide), cx]⟩, r11₁, cf₁⟩
@@ -348,19 +348,19 @@ theorem selT3_ok {ts : Nat} (hts : ts < 2 ^ 31) {st : State} (h : Base s (AL s) 
       fun st' => st'.cf = some (decide (selLen s < ts)) ∧
         (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → st'.gpr r = st.gpr r) ∧
         st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
-  have r₅ := h.slot hp (d := 40) (by decide)
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hfl := fl_le hp
-  have hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
+  obtain r₅ := h.slot hp (d := 40) (by decide)
+  obtain hL : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hfl := fl_le hp
+  obtain hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
     rw [h.kept.len, ofNat_toNat]
-  have it := imm_eq hts
-  have r16 := round16 hL
-  have m₁ : fl s % 18446744073709551616 = fl s := Nat.mod_eq_of_lt (by omega_arith)
-  have m₃ : ts % 18446744073709551616 = ts := Nat.mod_eq_of_lt (by omega_arith)
-  have m₄ : 16 * (L s / 16) % 18446744073709551616 = 16 * (L s / 16) := Nat.mod_eq_of_lt (by omega_arith)
-  have l₁ := toNat_ofNat_of_lt (show fl s < 2 ^ 64 by omega_arith)
-  have l₂ := toNat_ofNat_of_lt (show 16 * (L s / 16) < 2 ^ 64 by omega_arith)
-  have l₃ := toNat_ofNat_of_lt (show ts < 2 ^ 64 by omega_arith)
+  obtain it := imm_eq hts
+  obtain r16 := round16 hL
+  obtain m₁ : fl s % 18446744073709551616 = fl s := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₃ : ts % 18446744073709551616 = ts := Nat.mod_eq_of_lt (by omega_arith)
+  obtain m₄ : 16 * (L s / 16) % 18446744073709551616 = 16 * (L s / 16) := Nat.mod_eq_of_lt (by omega_arith)
+  obtain l₁ := toNat_ofNat_of_lt (show fl s < 2 ^ 64 by omega_arith)
+  obtain l₂ := toNat_ofNat_of_lt (show 16 * (L s / 16) < 2 ^ 64 by omega_arith)
+  obtain l₃ := toNat_ofNat_of_lt (show ts < 2 ^ 64 by omega_arith)
   apply WP.of_runBlock
   by_cases h₁ : fl s < 16 * (L s / 16)
   · refine ⟨_, by simp only [selLast, gLen]; xrun [h11, h10, r₅, hlen, it, r16, execCmov, eval, l₁, l₂, l₃, m₁, m₃,
@@ -383,10 +383,10 @@ theorem w_selT3 {ts : Nat} (hts : ts < 2 ^ 31) {st : State} (h : G2 s st) :
       fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (selLen s < ts)) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, r10⟩ := h
   refine WP.mono_mx (by rfl) (selT3_ok hp hts B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ mxw => ?_
-  have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
+  obtain cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
     (by intro e; subst e; simp [calleeSaved] at hr)
-  have g : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r11], s₃.gpr r = st.gpr r := fun r hr => g₃ r
+  obtain g : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r11], s₃.gpr r = st.gpr r := fun r hr => g₃ r
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -436,27 +436,27 @@ theorem splitEntry_ok {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 =
       st'.gpr .rcx = 0 ∧ st'.zf = some (decide (Cnt s = 0)) ∧ st'.gpr .r11 = W s ∧
       (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ CBase s st' := by
   have hw := hp.w_w
-  have r₈ := h.slot hp (d := 64) (by decide)
-  have r₄ := h.slot hp (d := 32) (by decide)
-  have r₇ := h.slot hp (d := 56) (by decide)
-  have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
-  have hz := and_self_beq hC
-  have w : ∀ d, d + 8 ≤ 184 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
+  obtain r₈ := h.slot hp (d := 64) (by decide)
+  obtain r₄ := h.slot hp (d := 32) (by decide)
+  obtain r₇ := h.slot hp (d := 56) (by decide)
+  obtain hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
+  obtain hz := and_self_beq hC
+  obtain w : ∀ d, d + 8 ≤ 184 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
     rw [h.wr]; exact w_in hp (by omega_arith)
-  have hleft : st.mem.readW (W s + BitVec.ofNat 64 64) 64 = BitVec.ofNat 64 (Cnt s) := by
+  obtain hleft : st.mem.readW (W s + BitVec.ofNat 64 64) 64 = BitVec.ofNat 64 (Cnt s) := by
     rw [h.kept.left, Nat.sub_zero]
-  have hdesc : st.mem.readW (W s + BitVec.ofNat 64 56) 64 = Src s := by
+  obtain hdesc : st.mem.readW (W s + BitVec.ofNat 64 56) 64 = Src s := by
     rw [h.kept.desc]; simp
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [splitEntry, gState, gLeft, gDst, gDesc]
     xrun [h11, hsi, hdx, w 104 (by decide), w 112 (by decide), r₈, r₄, r₇, h.kept.dst, hleft, hdesc,
       readW_writeW_off], ?_⟩
-  have cs : ∀ d, 104 ≤ d → d + 8 ≤ 184 → (stR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
-    have e : W s + BitVec.ofNat 64 d = St s + BitVec.ofNat 64 (d - 104) := by
+  obtain cs : ∀ d, 104 ≤ d → d + 8 ≤ 184 → (stR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
+    obtain e : W s + BitVec.ofNat 64 d = St s + BitVec.ofNat 64 (d - 104) := by
       rw [St, BitVec.add_assoc, ofNat_add_ofNat]; congr 2; omega_arith
     rw [e]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have fS : Frame [stR s] st.mem
+  obtain fS : Frame [stR s] st.mem
       ((st.mem.writeW (W s + BitVec.ofNat 64 104) (Nn s)).writeW (W s + BitVec.ofNat 64 112) (s.gpr .rcx)) :=
     ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cs 104 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cs 112 (by decide) (by decide))
@@ -495,21 +495,21 @@ theorem splitFirst_ok (hc : Cnt s ≠ 0) {st : State} (h : Base s (AL s) 0 st)
     (h11 : st.gpr .r11 = W s) :
     WP isa (.block splitFirst) st fun st' => FirstRegs s st' ∧ (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧
       st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
-  have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
-  have d₀ := desc_in hp h (i := 0) (by omega_arith) (d := 0) (by decide)
-  have d₈ := desc_in hp h (i := 0) (by omega_arith) (d := 8) (by decide)
-  have v₀ : st.mem.readW (Src s + BitVec.ofNat 64 (16 * 0) + BitVec.ofNat 64 0) 64 = sb s 0 := by
+  obtain hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
+  obtain d₀ := desc_in hp h (i := 0) (by omega_arith) (d := 0) (by decide)
+  obtain d₈ := desc_in hp h (i := 0) (by omega_arith) (d := 8) (by decide)
+  obtain v₀ : st.mem.readW (Src s + BitVec.ofNat 64 (16 * 0) + BitVec.ofNat 64 0) 64 = sb s 0 := by
     simpa using sb_eq hp h.frame (i := 0) (by omega_arith)
-  have v₈ := sl_eq hp h.frame (i := 0) (by omega_arith)
-  have e0 : Src s + BitVec.ofNat 64 (16 * 0) = Src s := by simp
+  obtain v₈ := sl_eq hp h.frame (i := 0) (by omega_arith)
+  obtain e0 : Src s + BitVec.ofNat 64 (16 * 0) = Src s := by simp
   rw [e0] at d₀ d₈ v₀ v₈
-  have hk : k0 s = 1 := by simp [k0, hc]
-  have hfl : fl s = sl s 0 := by rw [fl_eq]; simp [hc]
-  have hfb : fb s = sb s 0 := by simp [fb, hc]
-  have hsub : BitVec.ofNat 64 (Cnt s) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (Cnt s - 1) :=
+  obtain hk : k0 s = 1 := by simp [k0, hc]
+  obtain hfl : fl s = sl s 0 := by rw [fl_eq]; simp [hc]
+  obtain hfb : fb s = sb s 0 := by simp [fb, hc]
+  obtain hsub : BitVec.ofNat 64 (Cnt s) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (Cnt s - 1) :=
     ofNat_sub (by omega_arith) hC
-  have i16 := imm_eq (n := 16) (by decide)
-  have i1 := imm_eq (n := 1) (by decide)
+  obtain i16 := imm_eq (n := 16) (by decide)
+  obtain i1 := imm_eq (n := 1) (by decide)
   apply WP.of_runBlock
   refine ⟨_, by simp only [splitFirst, imm]; xrun [h10, d₀, d₈, v₀, v₈, i16, i1], ?_⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_, ?_, ?_, ?_⟩
@@ -548,20 +548,20 @@ theorem splitKeep_ok {st : State} (F : FirstRegs s st) (C : CBase s st) :
       (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) := by
   obtain ⟨ax, cx, r9, r10, di, r11⟩ := F
   have hw := hp.w_w
-  have w : ∀ d, d + 8 ≤ 184 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
+  obtain w : ∀ d, d + 8 ≤ 184 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
     rw [C.wr]; exact w_in hp (by omega_arith)
   apply WP.of_runBlock
   refine ⟨_, by simp only [splitKeep, gState]; xrun [r11, ax, cx, r10, w 120 (by decide), w 128 (by decide)], ?_⟩
-  have cs : ∀ d, 104 ≤ d → d + 8 ≤ 184 → (stR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
-    have e : W s + BitVec.ofNat 64 d = St s + BitVec.ofNat 64 (d - 104) := by
+  obtain cs : ∀ d, 104 ≤ d → d + 8 ≤ 184 → (stR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
+    obtain e : W s + BitVec.ofNat 64 d = St s + BitVec.ofNat 64 (d - 104) := by
       rw [St, BitVec.add_assoc, ofNat_add_ofNat]; congr 2; omega_arith
     rw [e]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have fS : Frame [stR s] st.mem
+  obtain fS : Frame [stR s] st.mem
       ((st.mem.writeW (W s + BitVec.ofNat 64 120) (fb s)).writeW (W s + BitVec.ofNat 64 128)
         (BitVec.ofNat 64 (fl s))) :=
     ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cs 120 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cs 128 (by decide) (by decide))
-  have eS : ∀ d, St s + BitVec.ofNat 64 d = W s + BitVec.ofNat 64 (104 + d) := fun d => by
+  obtain eS : ∀ d, St s + BitVec.ofNat 64 d = W s + BitVec.ofNat 64 (104 + d) := fun d => by
     rw [St, BitVec.add_assoc, ofNat_add_ofNat]
   refine ⟨⟨⟨⟨?_, fun r hr => ?_, by simp [rd_setReg, C.rd], by simp [wr_setReg, C.wr], ?_, ?_, C.mx⟩, ?_, ?_⟩, ?_, ?_⟩,
     by simp [gpr_setReg, r9], by simp [gpr_setReg, di], by simp [gpr_setReg, r10], fun r hr => ?_⟩
@@ -611,8 +611,8 @@ theorem listedK_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) :
 theorem gatheredK_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) :
     gathered 64 m (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s) =
       gathered 64 s.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s) := by
-  have e₁ := gathered_k m (Src s) (k0_cases s)
-  have e₂ := gathered_k s.mem (Src s) (k0_cases s)
+  obtain e₁ := gathered_k m (Src s) (k0_cases s)
+  obtain e₂ := gathered_k s.mem (Src s) (k0_cases s)
   rw [pt_eq hp hf (Nat.le_refl _)] at e₁
   rw [pt_eq hp hf (k0_le s)] at e₁
   exact List.append_cancel_left (e₁.symm.trans e₂)
@@ -623,22 +623,22 @@ theorem splitGatherPre {st : State} (hL : L s - fl s < 2 ^ 63) (h : Base s (AL s
     (h11 : st.gpr .r11 = Src s + BitVec.ofNat 64 (16 * k0 s)) :
     GatherPre st (Src s + BitVec.ofNat 64 (16 * k0 s)) (Dst s + BitVec.ofNat 64 (fl s)) (Cnt s - k0 s)
       (L s - fl s) := by
-  have hl := listedK_eq hp h.frame
-  have hk := k0_le s
-  have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
-  have hL' : L s < 2 ^ 64 := (stackArg s 3).isLt
+  obtain hl := listedK_eq hp h.frame
+  obtain hk := k0_le s
+  obtain hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
+  obtain hL' : L s < 2 ^ 64 := (stackArg s 3).isLt
   have ws := hp.w_ds
-  have hfl := fl_le hp
-  have hdw : (Src s + BitVec.ofNat 64 (16 * k0 s)).toNat + (Cnt s - k0 s) * 16 ≤ 2 ^ 64 := by
+  obtain hfl := fl_le hp
+  obtain hdw : (Src s + BitVec.ofNat 64 (16 * k0 s)).toNat + (Cnt s - k0 s) * 16 ≤ 2 ^ 64 := by
     by_cases hz : Cnt s - k0 s = 0
     · rw [hz]; have := (Src s + BitVec.ofNat 64 (16 * k0 s)).isLt; omega_arith
     · have : (Src s + BitVec.ofNat 64 (16 * k0 s)).toNat = (Src s).toNat + 16 * k0 s := by
         rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k0 s) (by omega_arith),
           Nat.mod_eq_of_lt (by omega_arith)]
       rw [this, Nat.sub_mul]; omega_arith
-  have cD : Covers [dsR s] (st.rd ++ st.wr) := by
+  obtain cD : Covers [dsR s] (st.rd ++ st.wr) := by
     rw [h.rd, h.wr]; exact covers_left' (covers_of_mem (by rw [hp.rd]; simp))
-  have cO : Covers [dR s] st.wr := by rw [h.wr, hp.wr]; exact covers_of_mem (by simp)
+  obtain cO : Covers [dR s] st.wr := by rw [h.wr, hp.wr]; exact covers_of_mem (by simp)
   refine ⟨h11, h9, hdi, by omega_arith, hdw, hL, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gatheredLen, hl, ← gatheredLen, ← hp.glen]
     have := (pt_split s).2
@@ -710,21 +710,21 @@ theorem splitArgs_ok {st : State} (h : SPBase s st) :
       st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
   have B := h.toBase
   obtain ⟨a₅, e₅⟩ := B.w hp
-  have r₂ := B.slot hp (d := 16) (by decide)
-  have r₃ := B.slot hp (d := 24) (by decide)
-  have r₄ := B.slot hp (d := 32) (by decide)
-  have r₅ := B.slot hp (d := 40) (by decide)
-  have r₆ := B.slot hp (d := 48) (by decide)
-  have r₁₃ := B.slot hp (d := 104) (by decide)
-  have r₁₄ := B.slot hp (d := 112) (by decide)
-  have r₁₅ := B.slot hp (d := 120) (by decide)
-  have r₁₆ := B.slot hp (d := 128) (by decide)
+  obtain r₂ := B.slot hp (d := 16) (by decide)
+  obtain r₃ := B.slot hp (d := 24) (by decide)
+  obtain r₄ := B.slot hp (d := 32) (by decide)
+  obtain r₅ := B.slot hp (d := 40) (by decide)
+  obtain r₆ := B.slot hp (d := 48) (by decide)
+  obtain r₁₃ := B.slot hp (d := 104) (by decide)
+  obtain r₁₄ := B.slot hp (d := 112) (by decide)
+  obtain r₁₅ := B.slot hp (d := 120) (by decide)
+  obtain r₁₆ := B.slot hp (d := 128) (by decide)
   have n₀ : st.mem.readW (W s + BitVec.ofNat 64 104) 64 = Nn s := h.nonce
-  have n₁ : st.mem.readW (W s + BitVec.ofNat 64 112) 64 = s.gpr .rcx := by
+  obtain n₁ : st.mem.readW (W s + BitVec.ofNat 64 112) 64 = s.gpr .rcx := by
     rw [← h.nonceLen, St, Offset.add_add]
-  have n₂ : st.mem.readW (W s + BitVec.ofNat 64 120) 64 = fb s := by
+  obtain n₂ : st.mem.readW (W s + BitVec.ofNat 64 120) 64 = fb s := by
     rw [← h.first, St, Offset.add_add]
-  have n₃ : st.mem.readW (W s + BitVec.ofNat 64 128) 64 = BitVec.ofNat 64 (fl s) := by
+  obtain n₃ : st.mem.readW (W s + BitVec.ofNat 64 128) 64 = BitVec.ofNat 64 (fl s) := by
     rw [← h.firstLen, St, Offset.add_add]
   apply WP.of_runBlock
   refine ⟨_, by

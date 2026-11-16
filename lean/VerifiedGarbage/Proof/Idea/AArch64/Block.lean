@@ -40,8 +40,8 @@ theorem loadWord_run {r : Reg} (hr : r ≠ .x7) (hr₁ : r ≠ .x1) (k : Nat) (h
     ∃ s', runBlock isa (loadWord r k) s = some s' ∧
       s'.gpr r = (s.mem (a + BitVec.ofNat 64 (2 * k)) ++ s.mem (a + BitVec.ofNat 64 (2 * k + 1))).setWidth 64 ∧
       Keep [.x7, r] s s' := by
-  have h0 := hb (2 * k) (by omega_using [hk])
-  have h1 := hb (2 * k + 1) (by omega_using [hk])
+  obtain h0 := hb (2 * k) (by omega_using [hk])
+  obtain h1 := hb (2 * k + 1) (by omega_using [hk])
   simp only [loadWord, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, isa,
     State.read, Size.bits, Nat.mod_one, show 2 * k < 4096 * 1 by omega_using [hk],
     show 2 * k + 1 < 4096 * 1 by omega_using [hk], and_self, ↓reduceIte, Option.bind_some, Option.map_some,
@@ -113,30 +113,30 @@ theorem output_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) (s : State) (h
       Keep roundWrites s s' := by
   obtain ⟨hl, hv⟩ := hk.last
   obtain ⟨s₁, h₁, v₁, e₁⟩ := ldr96_run s hl
-  have m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
-  have l0 := hv 0 (by decide)
-  have l1 := hv 1 (by decide)
-  have l2 := hv 2 (by decide)
-  have l3 := hv 3 (by decide)
+  obtain m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
+  obtain l0 := hv 0 (by decide)
+  obtain l1 := hv 1 (by decide)
+  obtain l2 := hv 2 (by decide)
+  obtain l3 := hv 3 (by decide)
   simp only [Nat.mul_zero, BitVec.ushiftRight_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at l0 l1 l2 l3
   rw [← v₁] at l0 l1 l2 l3
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mul_run (d := .x3) .x3 (b := .x8) (by decide) s₁ m₁
-  have m₂ : MaskOk s₂ := (e₂.reg .x15 (by decide)).trans m₁
+  obtain m₂ : MaskOk s₂ := (e₂.reg .x15 (by decide)).trans m₁
   obtain ⟨s₃, h₃, v₃, e₃⟩ := lsr_run .x14 .x8 48 (by decide) s₂
-  have m₃ : MaskOk s₃ := (e₃.reg .x15 (by decide)).trans m₂
+  obtain m₃ : MaskOk s₃ := (e₃.reg .x15 (by decide)).trans m₂
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mul_run (d := .x6) .x6 (b := .x14) (by decide) s₃ m₃
-  have m₄ : MaskOk s₄ := (e₄.reg .x15 (by decide)).trans m₃
+  obtain m₄ : MaskOk s₄ := (e₄.reg .x15 (by decide)).trans m₃
   obtain ⟨s₅, h₅, v₅, e₅⟩ := lsr_run .x14 .x8 16 (by decide) s₄
-  have m₅ : MaskOk s₅ := (e₅.reg .x15 (by decide)).trans m₄
+  obtain m₅ : MaskOk s₅ := (e₅.reg .x15 (by decide)).trans m₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := addKey_run .x5 .x14 (by decide) s₅ m₅
-  have m₆ : MaskOk s₆ := (e₆.reg .x15 (by decide)).trans m₅
+  obtain m₆ : MaskOk s₆ := (e₆.reg .x15 (by decide)).trans m₅
   obtain ⟨s₇, h₇, v₇, e₇⟩ := lsr_run .x14 .x8 32 (by decide) s₆
-  have m₇ : MaskOk s₇ := (e₇.reg .x15 (by decide)).trans m₆
+  obtain m₇ : MaskOk s₇ := (e₇.reg .x15 (by decide)).trans m₆
   obtain ⟨s₈, h₈, v₈, e₈⟩ := addKey_run .x4 .x14 (by decide) s₇ m₇
-  have x8₇ : s₆.gpr .x8 = s₁.gpr .x8 := by
+  obtain x8₇ : s₆.gpr .x8 = s₁.gpr .x8 := by
     rw [e₆.reg .x8 (by decide), e₅.reg .x8 (by decide),
       e₄.reg .x8 (by decide), e₃.reg .x8 (by decide), e₂.reg .x8 (by decide)]
-  have x8₅ : s₄.gpr .x8 = s₁.gpr .x8 := by
+  obtain x8₅ : s₄.gpr .x8 = s₁.gpr .x8 := by
     rw [e₄.reg .x8 (by decide), e₃.reg .x8 (by decide), e₂.reg .x8 (by decide)]
   refine ⟨s₈, ?_, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [output]
@@ -208,22 +208,22 @@ theorem store_run (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .x1 =
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   obtain ⟨s₁, h₁, m₁, g₁, rd₁, wr₁, sp₁⟩ :=
     storeWord_run .x3 0 (by decide) s ha (hw _ (by decide)) (hw _ (by decide))
-  have ha₁ : s₁.gpr .x1 = a := (g₁ .x1 (by decide)).trans ha
-  have hw₁ : BlockWrite s₁ a := fun i hi => wr₁ ▸ hw i hi
+  obtain ha₁ : s₁.gpr .x1 = a := (g₁ .x1 (by decide)).trans ha
+  obtain hw₁ : BlockWrite s₁ a := fun i hi => wr₁ ▸ hw i hi
   obtain ⟨s₂, h₂, m₂, g₂, rd₂, wr₂, sp₂⟩ :=
     storeWord_run .x5 1 (by decide) s₁ ha₁ (hw₁ _ (by decide)) (hw₁ _ (by decide))
-  have ha₂ : s₂.gpr .x1 = a := (g₂ .x1 (by decide)).trans ha₁
-  have hw₂ : BlockWrite s₂ a := fun i hi => wr₂ ▸ hw₁ i hi
+  obtain ha₂ : s₂.gpr .x1 = a := (g₂ .x1 (by decide)).trans ha₁
+  obtain hw₂ : BlockWrite s₂ a := fun i hi => wr₂ ▸ hw₁ i hi
   obtain ⟨s₃, h₃, m₃, g₃, rd₃, wr₃, sp₃⟩ :=
     storeWord_run .x4 2 (by decide) s₂ ha₂ (hw₂ _ (by decide)) (hw₂ _ (by decide))
-  have ha₃ : s₃.gpr .x1 = a := (g₃ .x1 (by decide)).trans ha₂
-  have hw₃ : BlockWrite s₃ a := fun i hi => wr₃ ▸ hw₂ i hi
+  obtain ha₃ : s₃.gpr .x1 = a := (g₃ .x1 (by decide)).trans ha₂
+  obtain hw₃ : BlockWrite s₃ a := fun i hi => wr₃ ▸ hw₂ i hi
   obtain ⟨s₄, h₄, m₄, g₄, rd₄, wr₄, sp₄⟩ :=
     storeWord_run .x6 3 (by decide) s₃ ha₃ (hw₃ _ (by decide)) (hw₃ _ (by decide))
-  have v5 : s₁.gpr .x5 = (y.getD 1 0).setWidth 64 := (g₁ .x5 (by decide)).trans hy.x5
-  have v4 : s₂.gpr .x4 = (y.getD 2 0).setWidth 64 :=
+  obtain v5 : s₁.gpr .x5 = (y.getD 1 0).setWidth 64 := (g₁ .x5 (by decide)).trans hy.x5
+  obtain v4 : s₂.gpr .x4 = (y.getD 2 0).setWidth 64 :=
     (g₂ .x4 (by decide)).trans ((g₁ .x4 (by decide)).trans hy.x4)
-  have v6 : s₃.gpr .x6 = (y.getD 3 0).setWidth 64 :=
+  obtain v6 : s₃.gpr .x6 = (y.getD 3 0).setWidth 64 :=
     (g₃ .x6 (by decide)).trans ((g₂ .x6 (by decide)).trans ((g₁ .x6 (by decide)).trans hy.x6))
   rw [v6] at m₄
   rw [v4] at m₃
@@ -254,12 +254,12 @@ theorem cryptBlock_run (z : Spec.Idea.Schedule) (s : State) {a : Addr} (ha : s.g
       Frame [⟨a, 8⟩] s.mem s'.mem ∧ (∀ q, q ∉ roundWrites → s'.gpr q = s.gpr q) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   obtain ⟨s₁, h₁, x₁, e₁⟩ := load_run s ha hb
-  have k₁ := hk.keep e₁ (by decide)
-  have m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
+  obtain k₁ := hk.keep e₁ (by decide)
+  obtain m₁ : MaskOk s₁ := (e₁.reg .x15 (by decide)).trans hm
   obtain ⟨s₂, h₂, x₂, e₂⟩ := rounds_run z _ 8 (by decide) s₁ x₁ k₁ m₁
   obtain ⟨s₃, h₃, x₃, e₃⟩ := output_run z _ s₂ x₂ (k₁.keep e₂ (by decide))
     ((e₂.reg .x15 (by decide)).trans m₁)
-  have e₁₃ := ((e₁.weaken (by decide)).trans e₂).trans e₃
+  obtain e₁₃ := ((e₁.weaken (by decide)).trans e₂).trans e₃
   obtain ⟨s₄, h₄, b₄, f₄, g₄, rd₄, wr₄, sp₄⟩ := store_run _ s₃ ((e₁₃.reg .x1 (by decide)).trans ha)
     (fun i hi => e₁₃.wr ▸ hw i hi) x₃
   refine ⟨s₄, ?_, ?_, ?_, fun q hq => ?_, rd₄.trans e₁₃.rd, wr₄.trans e₁₃.wr, sp₄.trans e₁₃.sp⟩

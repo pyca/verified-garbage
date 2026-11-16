@@ -46,19 +46,19 @@ theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) (hws : WS b s) {p T : Ad
       Spec.Ed25519.encodeLE 32 (V t.mem b FR) = Spec.Ed25519.scalarBase (bytesAt s.mem p 32) := by
   unfold scalarBaseEngine
   refine WP.seq (WP.mono_syms (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ sy1 => ?_)
-  have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  have hb1 : bytesAt s1.mem p 32 = bytesAt s.mem p 32 := by
+  obtain hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
+  obtain hb1 : bytesAt s1.mem p 32 = bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
     exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])) hpd (by decide)
       (List.mem_range.mp hi)
-  have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
+  obtain hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
   refine WP.seq (WP.mono_syms (combMultiply_ok hc1 (hws.of_rest r1) (by rw [r1.gpr _ (by decide), h14])
     (fun i hi => by rw [r1.rd, r1.wr]; exact hin i hi) hpd hT1 (by rw [sy1, hsym]) apart)
     fun s3 ⟨r3, f3, p3⟩ _ => ?_)
   rw [hb1] at p3
-  have hc3 : Ctx8 b s3 := hc1.of_rest r3 (by decide)
+  obtain hc3 : Ctx8 b s3 := hc1.of_rest r3 (by decide)
   refine WP.mono (pointEncode_ok hc3) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
   · exact (r1.mono (by decide)).trans ((r3.mono (by decide)).trans (rt.mono (by decide)))
   · exact (f1.mono (by simp)).trans (f3.trans (ft.mono (by simp)))
@@ -122,58 +122,58 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   have hV : SAVE = 1024 := rfl
   have hX := FR_eq
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .a2 := ⟨_, rfl⟩
-  have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
-  have hout : (⟨s.gpr .a0, 32⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hal : b.toNat % 8 = 0 := by rw [hb]; exact hp.al
+  obtain hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
+  obtain hout : (⟨s.gpr .a0, 32⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hal : b.toNat % 8 = 0 := by rw [hb]; exact hp.al
   unfold scalarBaseSetup
   rw [baseSave_eq]
   simp only [List.cons_append, List.nil_append]
   refine WP.seq (WP.of_syms (wp_mv fun s1 u1 => ?_))
-  have e1 : s1.gpr .a3 = b := by rw [u1.gpr, hb]
-  have hsin : ∀ p ∈ baseList, InRegions s1.wr (s1.gpr .a3 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
+  obtain e1 : s1.gpr .a3 = b := by rw [u1.gpr, hb]
+  obtain hsin : ∀ p ∈ baseList, InRegions s1.wr (s1.gpr .a3 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := baseList_in p hpl
     rw [e1, u1.wr]; exact in_base hws (by omega_using [this]) (by omega_using [this])
   refine Spill.save_ok (b := .a3) (by rw [e1]; exact hal) baseList_fits hsin ?_
   generalize hs2 : ({ s1 with mem := Spill.saveMem s1.mem (s1.gpr .a3) s1.gpr baseList } : State) = s2
-  have hsv : Spill.Saved b s.gpr baseList s2.mem := by
-    have h := Spill.saveMem_saved (l := baseList) (by decide) s1.mem (s1.gpr .a3) s1.gpr
+  obtain hsv : Spill.Saved b s.gpr baseList s2.mem := by
+    obtain h := Spill.saveMem_saved (l := baseList) (by decide) s1.mem (s1.gpr .a3) s1.gpr
     rw [← hs2, ← e1]
     exact fun p hpl => by rw [h p hpl, u1.other _ (baseList_not_a3 p hpl)]
-  have hf2 : Frame [⟨b, 8192⟩] s.mem s2.mem := by
+  obtain hf2 : Frame [⟨b, 8192⟩] s.mem s2.mem := by
     rw [← hs2, ← u1.mem, ← e1]
     exact Spill.saveMem_frame_base (fun p hpl => by have := baseList_in p hpl; omega_using [this]) (by decide) _ _ _
-  have hg2 : s2.gpr = s1.gpr := by rw [← hs2]
-  have hrd2 : s2.rd = s1.rd := by rw [← hs2]
-  have hwr2 : s2.wr = s1.wr := by rw [← hs2]
-  have hsp2 : s2.sp = s1.sp := by rw [← hs2]
+  obtain hg2 : s2.gpr = s1.gpr := by rw [← hs2]
+  obtain hrd2 : s2.rd = s1.rd := by rw [← hs2]
+  obtain hwr2 : s2.wr = s1.wr := by rw [← hs2]
+  obtain hsp2 : s2.sp = s1.sp := by rw [← hs2]
   refine wp_mv fun s3 u3 => wp_mv fun s4 u4 => WP.block_nil fun sy4 => ?_
-  have hR4 : Rest [.a3, .s3, .s0] s s4 := by
-    have h34 : Rest [.s3, .s0] s2 s4 := (u3.rest (by decide)).trans (u4.rest (by decide))
+  obtain hR4 : Rest [.a3, .s3, .s0] s s4 := by
+    obtain h34 : Rest [.s3, .s0] s2 s4 := (u3.rest (by decide)).trans (u4.rest (by decide))
     refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
     · rw [h34.gpr _ (by revert hr; cases r <;> decide), hg2, u1.other _ (by revert hr; cases r <;> decide)]
     · rw [h34.rd, hrd2, u1.rd]
     · rw [h34.wr, hwr2, u1.wr]
     · rw [h34.sp, hsp2, u1.sp]
-  have hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
-  have hc4 : Ctx8 b s4 := ⟨by rw [u4.other _ (by decide), u3.other _ (by decide), hg2, e1], hal,
+  obtain hm4 : s4.mem = s2.mem := by rw [u4.mem, u3.mem]
+  obtain hc4 : Ctx8 b s4 := ⟨by rw [u4.other _ (by decide), u3.other _ (by decide), hg2, e1], hal,
     by rw [hR4.wr]; exact hws⟩
-  have e14 : s4.gpr .s0 = s.gpr .a1 := by
+  obtain e14 : s4.gpr .s0 = s.gpr .a1 := by
     rw [u4.gpr, u3.other _ (by decide), hg2, u1.other _ (by decide)]
-  have e27 : s4.gpr .s3 = s.gpr .a0 := by
+  obtain e27 : s4.gpr .s3 = s.gpr .a0 := by
     rw [u4.other _ (by decide), u3.gpr, hg2, u1.other _ (by decide)]
-  have hpd : (⟨s.gpr .a1, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := hb ▸ hp.sc_ws
-  have hsub : ∀ r ∈ [(⟨b, 8192⟩ : Region)], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
+  obtain hpd : (⟨s.gpr .a1, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := hb ▸ hp.sc_ws
+  obtain hsub : ∀ r ∈ [(⟨b, 8192⟩ : Region)], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact fun _ h => h
-  have hsc : bytesAt s4.mem (s.gpr .a1) 32 = bytesAt s.mem (s.gpr .a1) 32 := by
+  obtain hsc : bytesAt s4.mem (s.gpr .a1) 32 = bytesAt s.mem (s.gpr .a1) 32 := by
     rw [hm4]; exact bytesAt_ws hf2 hsub hpd (by decide)
-  have hin4 : ∀ i < 32, InRegions (s4.rd ++ s4.wr) (s.gpr .a1 + BitVec.ofNat 64 i) 1 := by
+  obtain hin4 : ∀ i < 32, InRegions (s4.rd ++ s4.wr) (s.gpr .a1 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [hR4.rd, hR4.wr, hp.rd]
     exact in_base (List.mem_append_left _ List.mem_cons_self) (by omega_using [hi]) (by omega_using [hi])
-  have hws4 : WS b s4 := Covers.of_sub fun r hr => by
+  obtain hws4 : WS b s4 := Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr, hR4.wr]
     exact ⟨_, hws, 0, by rw [BitVec.add_zero], by simp⟩
-  have hT4 : TblAt s4 (s.syms combSym) :=
+  obtain hT4 : TblAt s4 (s.syms combSym) :=
     ⟨hp.tal, hp.tfit, ⟨TBL (s.syms combSym), by rw [hR4.rd, hp.rd]; simp, by
       simpa only [BitVec.add_zero] using Offset.contains_base (s.syms combSym) (d := 0) (n := 49152) (k := 49152)
         (by omega_using []) (by omega_using [])⟩,
@@ -181,7 +181,7 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
         rw [hm4, ← hp.words q hq]
         exact hf2.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq]))
           (by simp only [List.mem_singleton, forall_eq]; rw [hb]; exact hp.tbl_ws) (by decide)⟩
-  have hsym4 : s4.syms combSym = s.syms combSym := congrFun sy4 combSym
+  obtain hsym4 : s4.syms combSym = s.syms combSym := congrFun sy4 combSym
   refine WP.seq (WP.mono (he hc4 hws4 e14 hin4 hpd hT4 hsym4 (hb ▸ hp.tbl_ws))
     fun s7 ⟨r7, f7, v7⟩ => ?_)
   rw [hsc] at v7
@@ -189,26 +189,26 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   unfold scalarBaseFinish
   rw [baseRestore_eq]
   simp only [List.cons_append, List.nil_append]
-  have hc7 : Ctx8 b s7 := hc4.of_rest r7 (by decide)
+  obtain hc7 : Ctx8 b s7 := hc4.of_rest r7 (by decide)
   refine wp_mv fun v uv => ?_
-  have hcv : Ctx8 b v := hc7.of_rest (uv.rest (ws := [.s0]) (by decide)) (by decide)
-  have ev : v.gpr .s0 = s.gpr .a0 := by rw [uv.gpr, r7.gpr _ (by decide), e27]
-  have hwv : v.wr = s.wr := by rw [uv.wr, r7.wr, hR4.wr]
-  have hdo : (⟨s.gpr .a0 + BitVec.ofNat 64 0, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := by
+  obtain hcv : Ctx8 b v := hc7.of_rest (uv.rest (ws := [.s0]) (by decide)) (by decide)
+  obtain ev : v.gpr .s0 = s.gpr .a0 := by rw [uv.gpr, r7.gpr _ (by decide), e27]
+  obtain hwv : v.wr = s.wr := by rw [uv.wr, r7.wr, hR4.wr]
+  obtain hdo : (⟨s.gpr .a0 + BitVec.ofNat 64 0, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := by
     rw [BitVec.add_zero]; exact hb ▸ hp.out_ws
   refine WP.block_append_iff.mpr (WP.mono (packField_ok hcv.ctx (p := .s0) (by decide) ev (a := FR) (dst := 0)
     (by omega_using [hX]) (by omega_using [hX]) (by decide)
     (fun k hk => by rw [hwv]; exact in_base hout (by omega_using [hk]) (by omega_using [hk]))
     (hdo.sub_right (Offset.sub_base b (by omega_using [hX])))) fun w hw => ?_)
-  have hsvw : Spill.Saved b s.gpr baseList w.mem := by
-    have h7 : Spill.Saved b s.gpr baseList s7.mem := by
+  obtain hsvw : Spill.Saved b s.gpr baseList w.mem := by
+    obtain h7 : Spill.Saved b s.gpr baseList s7.mem := by
       rw [← hm4] at hsv
       exact hsv.frame_in (lo := 1024) (n := 104) baseList_in f7 (combW_saves 1024 104 (by omega_using []) (by omega_using []))
     rw [← uv.mem] at h7
     exact h7.frame_in (lo := 1024) (n := 104) baseList_in hw.frame fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (hdo.sub_right (Offset.sub_base b (d := 1024) (n := 104) (by omega_using []))).symm
-  have e6w : w.gpr .a3 = b := by rw [hw.rest.gpr _ (by decide), hcv.a3]
+  obtain e6w : w.gpr .a3 = b := by rw [hw.rest.gpr _ (by decide), hcv.a3]
   rw [← List.append_nil (Spill.restoreCode .a3 baseList)]
   refine Spill.restore_ok (b := .a3) (B := b) hal e6w baseList_fits baseList_restorable
     (fun p hpl => by

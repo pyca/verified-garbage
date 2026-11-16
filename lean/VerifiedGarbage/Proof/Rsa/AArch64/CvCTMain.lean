@@ -76,7 +76,7 @@ theorem ct_app {α : Type} {Φ Ψ Ξ : α → State → Prop} {a b : List (Prog 
 /-- The four loads. -/
 theorem loads_ct0 : RelCT isa (Two GA) (seqs (loadA aN Public.sN Public.sK ++
     (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl)))) (Two GA) := by
-  have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega_using []
+  obtain k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega_using []
   refine ct_app (by simp [loadA]) (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) CvP.pN CvP.k
     (fun p s h => ?_) (by taint_decide) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA])
     (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) CvP.pP CvP.pl (fun p s h => ?_)
@@ -116,16 +116,16 @@ theorem pqZero_ct : RelCT isa (Two GB) (seqs [zeroA aU, zeroA aV]) (Two GZ) :=
     fun p s ⟨h, bP, bQ⟩ => by
       obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
       have hn := h'.ws.scr.nowrap
-      have sV := h'.ws.sl (j := aV) (by decide)
-      have h8U : 8 * 32 ≤ slot (wk I.k) aU := by
+      obtain sV := h'.ws.sl (j := aV) (by decide)
+      obtain h8U : 8 * 32 ≤ slot (wk I.k) aU := by
         have := hdr_lt_slot (wk I.k) aU (show 31 < 32 by decide); omega_using [this]
-      have eV : slot (wk I.k) aV = slot (wk I.k) aU + 8 * ((wk I.k) + 2) := by simp only [slot, aU, aV]; omega_using []
-      have pP := slot_sep (w := wk I.k) (show aU ≠ aP by decide)
-      have pP' := slot_sep (w := wk I.k) (show aV ≠ aP by decide)
-      have pQ := slot_sep (w := wk I.k) (show aU ≠ aQ by decide)
-      have pQ' := slot_sep (w := wk I.k) (show aV ≠ aQ by decide)
-      have sP := h'.ws.sl (j := aP) (by decide)
-      have sQ := h'.ws.sl (j := aQ) (by decide)
+      obtain eV : slot (wk I.k) aV = slot (wk I.k) aU + 8 * ((wk I.k) + 2) := by simp only [slot, aU, aV]; omega_using []
+      obtain pP := slot_sep (w := wk I.k) (show aU ≠ aP by decide)
+      obtain pP' := slot_sep (w := wk I.k) (show aV ≠ aP by decide)
+      obtain pQ := slot_sep (w := wk I.k) (show aU ≠ aQ by decide)
+      obtain pQ' := slot_sep (w := wk I.k) (show aV ≠ aQ by decide)
+      obtain sP := h'.ws.sl (j := aP) (by decide)
+      obtain sQ := h'.ws.sl (j := aQ) (by decide)
       exact WP.mono (pqZero_ok h') fun t ⟨ht, hz, o⟩ => ⟨⟨⟨I, m₀, c, rfl, ht, L, O, by
           show word t.mem I.B (8 * Public.sMask) = _
           rw [o.word (Or.inl (by unfold Public.sMask sFn; omega_using [h8U])) (by unfold Public.sMask sFn; omega_using [])]; exact hm⟩,
@@ -156,7 +156,7 @@ theorem pqProd_ct : RelCT isa (Two GZ) (seqs [.block (ws ++ base aP .x5 ++ base 
     · exact (k.gpr .x0 (by decide)).trans h'.ws.x0
     all_goals assumption
   · have hn := h'.ws.scr.nowrap
-    have h8U : 8 * 32 ≤ slot (wk I.k) aU := by
+    obtain h8U : 8 * 32 ≤ slot (wk I.k) aU := by
       have := hdr_lt_slot (wk I.k) aU (show 31 < 32 by decide); omega_using [this]
     exact WP.mono (pqProd_ok h' L hz bP bQ) fun t ⟨ht, _, o⟩ => ⟨I, m₀, c, rfl, ht, L, O, by
       show word t.mem I.B (8 * Public.sMask) = _
@@ -245,7 +245,7 @@ theorem guard_ct : RelCT isa (Two GA) (.block (wordGuard sPl sQl)) (Two GW) := b
     · exact (k.gpr .x0 (by decide)).trans h'.ws.x0
     · exact h16
   · have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
-    have hb : s.mem.read I.pN 1 = gbyte I.pub := by
+    obtain hb : s.mem.read I.pN 1 = gbyte I.pub := by
       refine read1_eq ?_
       have := h'.n.val 0 hn0
       rw [show I.pN + BitVec.ofNat 64 0 = I.pN by simp] at this
@@ -259,9 +259,9 @@ theorem guard_ct : RelCT isa (Two GA) (.block (wordGuard sPl sQl)) (Two GW) := b
         ⟨h.same mt kt (by decide), h9⟩
 
 theorem wordChoice_ct {j : Nat} (hj : j = aP ∨ j = aQ) : RelCT isa (Two GA) (wordChoice j) (Two GA) := by
-  have hj16 : j < 16 := by rcases hj with rfl | rfl <;> decide
-  have hjC : aC ≠ j := by rcases hj with rfl | rfl <;> decide
-  have hdiv : RelCT isa (Two GA) (seqs (divisor j)) (Two GA) := by
+  obtain hj16 : j < 16 := by rcases hj with rfl | rfl <;> decide
+  obtain hjC : aC ≠ j := by rcases hj with rfl | rfl <;> decide
+  obtain hdiv : RelCT isa (Two GA) (seqs (divisor j)) (Two GA) := by
     rcases hj with rfl | rfl
     · exact divisor_ct (by decide) (by decide) (by taint_decide)
     · exact divisor_ct (by decide) (by decide) (by taint_decide)
@@ -271,11 +271,11 @@ theorem wordChoice_ct {j : Nat} (hj : j = aP ∨ j = aQ) : RelCT isa (Two GA) (w
     obtain ⟨-, e₂⟩ := h₂
     rw [eval_zero, eval_zero, e₁, e₂]) ?_ ?_)
   · -- The guard passes: `wdiv`.
-    have hd' : RelCT isa (Two fun p s => GW p s ∧ isa.eval (.zero .x .x9) s = some true) (seqs (divisor j))
+    obtain hd' : RelCT isa (Two fun p s => GW p s ∧ isa.eval (.zero .x .x9) s = some true) (seqs (divisor j))
         (Two fun p s => GA p s ∧ GPass p) :=
       two_post (hdiv.mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ _ => trivial) fun p s ⟨⟨h, h9⟩, he⟩ => by
         obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := id h
-        have hg : GPass I.pub := by
+        obtain hg : GPass I.pub := by
           rw [eval_zero, h9] at he; simpa [GPass] using he
         exact WP.mono (cvDivisor_ok h' L hj) fun t ⟨ht, mt, _, _, _⟩ => ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩, hg⟩
     refine ct_app (by simp [divisor]) (by simp) hd' (ct_one (wdiv_ct CvP.B CvP.Z (fun p => wk p.k)
@@ -324,7 +324,7 @@ theorem guardG_ct {Φ : CvP → State → Prop} (hA : ∀ p s, Φ p s → GA p s
     · exact (k.gpr .x0 (by decide)).trans h'.ws.x0
     · exact h16
   · have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
-    have hb : s.mem.read I.pN 1 = gbyte I.pub := by
+    obtain hb : s.mem.read I.pN 1 = gbyte I.pub := by
       refine read1_eq ?_
       have := h'.n.val 0 hn0
       rw [show I.pN + BitVec.ofNat 64 0 = I.pN by simp] at this
@@ -343,10 +343,10 @@ theorem cvGuarded_ct {Φ Ψ : CvP → State → Prop} (hA : ∀ p s, Φ p s → 
     (cb : RelCT isa (Two fun p s => Φ p s ∧ ¬ GPass p) b (Two Ψ)) :
     RelCT isa (Two Φ) (guarded a b) (Two Ψ) := by
   unfold guarded
-  have tA : ∀ p s, (Φ p s ∧ s.gpr .x9 = guardVal p.k p.pl p.ql (gbyte p)) ∧
+  obtain tA : ∀ p s, (Φ p s ∧ s.gpr .x9 = guardVal p.k p.pl p.ql (gbyte p)) ∧
       isa.eval (.zero .x .x9) s = some true → Φ p s ∧ GPass p := fun p s ⟨⟨h, h9⟩, he⟩ =>
     ⟨h, by rw [eval_zero, h9] at he; simpa [GPass] using he⟩
-  have tB : ∀ p s, (Φ p s ∧ s.gpr .x9 = guardVal p.k p.pl p.ql (gbyte p)) ∧
+  obtain tB : ∀ p s, (Φ p s ∧ s.gpr .x9 = guardVal p.k p.pl p.ql (gbyte p)) ∧
       isa.eval (.zero .x .x9) s = some false → Φ p s ∧ ¬ GPass p := fun p s ⟨⟨h, h9⟩, he⟩ =>
     ⟨h, fun hg => by rw [eval_zero, h9] at he; simp only [GPass] at hg; simp [hg] at he⟩
   exact RelCT.seq (guardG_ct hA hpres) (two_ite (fun p s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2])
@@ -381,10 +381,10 @@ theorem tailDbl_ct : RelCT isa (Two GT) tailDbl (Two GAP) :=
   two_piece [.x0, .x11, .x5, .x15] (fun _ _ _ h₁ h₂ r hr => (h₁.2 r hr).trans (h₂.2 r hr).symm)
     (by taint_decide) fun p s h => by
     obtain ⟨⟨hA, hP⟩, hr⟩ := h
-    have e0 := hr .x0 (by simp)
-    have e11 := hr .x11 (by simp)
-    have e5 := hr .x5 (by simp)
-    have e15 := hr .x15 (by simp)
+    obtain e0 := hr .x0 (by simp)
+    obtain e11 := hr .x11 (by simp)
+    obtain e5 := hr .x5 (by simp)
+    obtain e15 := hr .x15 (by simp)
     simp only [ttVal] at e0 e11 e5 e15
     have hw := hA.ws.w2
     exact WP.mono (tailDbl_ok hA.ws.scr e0 e11 e5 (by omega_using []) hw hA.ws.hZ (by unfold tailT; omega_using [])
@@ -395,7 +395,7 @@ theorem tailDbl_ct : RelCT isa (Two GT) tailDbl (Two GAP) :=
         (fun r hr => ⟨aX₂, by decide, .inl (List.mem_singleton.mp hr)⟩) hD.keep (by decide), hP⟩
 
 theorem zeroAP_ct : RelCT isa (Two GAP) (zeroA aC) (Two GAP) := by
-  have e : zeroA aC = .seq (.block (ws ++ (base aC .x8 ++ [movi .x7 0]))) zeroAcc := by
+  obtain e : zeroA aC = .seq (.block (ws ++ (base aC .x8 ++ [movi .x7 0]))) zeroAcc := by
     simp only [zeroA, List.append_assoc]
   rw [e]
   exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) (by taint_decide) fun _ _ h => by
@@ -428,20 +428,20 @@ theorem placeCopy_ct : RelCT isa (Two GPl) copyWords (Two GAP) :=
   two_piece [.x16, .x17, .x12] (fun _ _ _ h₁ h₂ r hr => (h₁.2 r hr).trans (h₂.2 r hr).symm)
     (by taint_decide) fun p s h => by
     obtain ⟨⟨hA, hP⟩, hr⟩ := h
-    have e16 := hr .x16 (by simp)
-    have e17 := hr .x17 (by simp)
-    have e12 := hr .x12 (by simp)
+    obtain e16 := hr .x16 (by simp)
+    obtain e17 := hr .x17 (by simp)
+    obtain e12 := hr .x12 (by simp)
     simp only [plVal] at e16 e17 e12
     have hws := hA.ws
     have hw := hws.w2
     have hw1 := hws.w1
     have hn' := hws.scr.nowrap
-    have sl : ∀ j < 16, slot (wk p.k) j + 8 * (wk p.k + 2) ≤ p.Z := fun j hj =>
+    obtain sl : ∀ j < 16, slot (wk p.k) j + 8 * (wk p.k + 2) ≤ p.Z := fun j hj =>
       Nat.le_trans (slot_lt (w := wk p.k) hj) hws.hZ
-    have sX := sl aX₂ (by decide)
-    have sC := sl aC (by decide)
-    have hQ : tailQ (wk p.k / 2) + (wk p.k / 2 + 1) ≤ wk p.k + 2 := by unfold tailQ; omega_using []
-    have eXC : slot (wk p.k) aC = slot (wk p.k) aX₂ + 16 * (wk p.k + 2) := by simp only [slot, aC, aX₂]; omega_using []
+    obtain sX := sl aX₂ (by decide)
+    obtain sC := sl aC (by decide)
+    obtain hQ : tailQ (wk p.k / 2) + (wk p.k / 2 + 1) ≤ wk p.k + 2 := by unfold tailQ; omega_using []
+    obtain eXC : slot (wk p.k) aC = slot (wk p.k) aX₂ + 16 * (wk p.k + 2) := by simp only [slot, aC, aX₂]; omega_using []
     exact WP.mono (copyWords_ok (S := p.B) (D := p.B) (w := wk p.k / 2 + 1) e16 e17 e12 (by omega_using []) (by omega_using [hw])
       (by omega_arith) (fun j _ => hws.scr.ld (by omega_arith)) (fun j _ => hws.scr.st (by omega_arith))
       (fun j hj b hb => by rw [ofs_off p.B (by omega_arith)]; exact Or.inl (by omega_arith)))
@@ -461,8 +461,8 @@ theorem tailWdiv_ct : RelCT isa (Two GAP) (wdiv aC aP aX₂ aT [.lsr .x .x12 .x1
     have pl2 := L.pl2
     have ql2 := L.ql2
     obtain ⟨g16, -, -, -⟩ := guard_zero (k := I.k) (pl := I.pl) (ql := I.ql) (by omega_using [hk2]) (by omega_using [hk2, pl2]) (by omega_using [hk2, ql2]) hP
-    have hw2 : wk I.k % 2 = 0 := by unfold wk; omega_using [g16]
-    have hw : wk I.k < 2 ^ 24 := by unfold wk; omega_using [hk2]
+    obtain hw2 : wk I.k % 2 = 0 := by unfold wk; omega_using [g16]
+    obtain hw : wk I.k < 2 ^ 24 := by unfold wk; omega_using [hk2]
     exact WP.mono (wdiv_ok h'.ws (iX := aC) (iM := aP) (iR := aX₂) (iT := aT) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (cvWm_ok (wk I.k) hw) (tailLen_ok (wk I.k) hw2 hw) (tailXb_ok I.B (wk I.k) hw2 hw)
@@ -542,9 +542,9 @@ theorem storeBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr 
     WP.mono (base_ok j .x8 ((k₂.gpr .x0 (by decide)).trans h.x0) h11) fun s₃ ⟨⟨h8, m₃, _⟩, k₃⟩ =>
       WP.mono (WP.keep [.x1, .x9, .x15] (Q := fun t => t.gpr .x1 = ptr + BitVec.ofNat 64 len ∧
           t.gpr .x9 = BitVec.ofNat 64 len) (by
-          have h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h.x0
-          have hs₃ := h.scr.congr (k₂.trans k₃).wr
-          have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
+          obtain h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h.x0
+          obtain hs₃ := h.scr.congr (k₂.trans k₃).wr
+          obtain hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
             hs₃.ld (by have := h.h256; omega_using [hi, this])
           brun [h0₃, hdr_enc hP, hdr_enc hL, hdr_enc (show Public.sMask < 32 by decide), m₃, m₂, hl₃ sPtr hP,
             hl₃ sLen hL, hl₃ Public.sMask (by decide), hp, hl])
@@ -579,7 +579,7 @@ theorem storeA_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen 
       have h256 := hw.h256
       refine WP.mono (storeA_ws hw hj hP hL hp hl hm hl1 hlw (fun i hi => by rw [hW]; exact hwr i hi) hsep)
         fun t ⟨_, _, ht, hf, k⟩ => ?_
-      have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
+      obtain fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
         fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
       exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold argSlot at hi; omega_using [hi]), k.wr.trans hW, L, O,
         (fw _ (by decide)).trans hm⟩
@@ -591,7 +591,7 @@ theorem retMask_ct : RelCT isa (Two GS) (.block retMask) fun _ _ => True :=
 theorem stores_ct : RelCT isa (Two GS) (seqs (storeA aX₂ sQi sPl Public.sMask ++
     (storeA aX₁ sDp sPl Public.sMask ++ (storeA aV sDq sQl Public.sMask ++
       ([.block retMask] : List (Prog isa)))))) (Two fun (_ : CvP) (_ : State) => True) := by
-  have k8 : ∀ {k l : Nat}, l < k → l ≤ 8 * wk k := fun {k l} h => by unfold wk; omega_using [h]
+  obtain k8 : ∀ {k l : Nat}, l < k → l ≤ 8 * wk k := fun {k l} h => by unfold wk; omega_using [h]
   refine (ct_app (by simp [storeA]) (by simp [storeA])
     (storeA_ct (by decide) (by decide) (by decide) CvP.pQi CvP.pl (fun p s h => ?_) (by taint_decide)
       (by taint_decide))

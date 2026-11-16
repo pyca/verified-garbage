@@ -40,16 +40,16 @@ theorem counter_ok (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W)
       s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 cntOff) (s.mem.readW (W + BitVec.ofNat 64 0) 64)).writeW
         (W + BitVec.ofNat 64 (cntOff + 8)) (s.mem.readW (W + BitVec.ofNat 64 (0 + 8)) 64 &&& qmask) ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by decide)
-  have r₈ := h.inRW hrd hwr (d := 0 + 8) (n := 8) (by decide)
-  have w₀ := h.inW hwr (d := cntOff) (n := 8) (by decide)
-  have w₈ := h.inW hwr (d := cntOff + 8) (n := 8) (by decide)
+  obtain r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by decide)
+  obtain r₈ := h.inRW hrd hwr (d := 0 + 8) (n := 8) (by decide)
+  obtain w₀ := h.inW hwr (d := cntOff) (n := 8) (by decide)
+  obtain w₈ := h.inW hwr (d := cntOff + 8) (n := 8) (by decide)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, and_self, counter, cntOff, runBlock_cons, runStep_some, runBlock_nil, exec,
       addr, State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
       Option.bind_some, Option.map_some, BitVec.setWidth_eq, h19, r₀, r₈, w₀, w₈]
     rfl, ?_, fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], by rfl, by rfl, by rfl⟩
-  have hq : ~~~((BitVec.setWidth 64 (128 : BitVec 16) <<< (16 * 0) &&& ~~~((65535 : BitVec 64) <<< (16 * 2)) |||
+  obtain hq : ~~~((BitVec.setWidth 64 (128 : BitVec 16) <<< (16 * 0) &&& ~~~((65535 : BitVec 64) <<< (16 * 2)) |||
       BitVec.setWidth 64 (128 : BitVec 16) <<< (16 * 2)).rotateRight 0) = qmask := by decide
   rw [Mem.read_write_sep (Offset.sep W (d := 0 + 8) (n := 8) (e := cntOff) (k := 8) (by decide) (by decide)
     (by decide)) (by decide), hq]
@@ -246,16 +246,16 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
         Frame (⟨T, 16⟩ :: endRegions W P L) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
           (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem T 16, Spec.Aes.bytesAt s'.mem P L) := by
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
-  have hL : L ≤ 2 ^ 64 := by have := h.lt; omega_using [this]
+  obtain hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
+  obtain hL : L ≤ 2 ^ 64 := by have := h.lt; omega_using [this]
   refine WP.seq (WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   obtain ⟨s₃, run₃, m₃, g₃, sp₃, rd₃, wr₃⟩ := counter_ok h h₂.regs.x19 h₂.regs.rd h₂.regs.wr
-  have f₃ : Frame (cntRegions W) s₂.mem s₃.mem := m₃ ▸ counter_frame _ _ _ _
-  have hr₃ : Regs s₀ C D P W R L s₃ := h₂.regs.keep' (fun r hr => g₃ r (by rintro rfl; revert hr; decide)
+  obtain f₃ : Frame (cntRegions W) s₂.mem s₃.mem := m₃ ▸ counter_frame _ _ _ _
+  obtain hr₃ : Regs s₀ C D P W R L s₃ := h₂.regs.keep' (fun r hr => g₃ r (by rintro rfl; revert hr; decide)
     (by rintro rfl; revert hr; decide)) sp₃ rd₃ wr₃
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have hcnt : ∃ hi lo : BitVec 64, s₃.mem.readW (W + BitVec.ofNat 64 cntOff) 64 = rev64 hi ∧
+  obtain hcnt : ∃ hi lo : BitVec 64, s₃.mem.readW (W + BitVec.ofNat 64 cntOff) 64 = rev64 hi ∧
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = rev64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
@@ -264,14 +264,14 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
   have f₄ := h₄.frame
   -- The saved registers.
   have hb := saved_bound
-  have hsv₄ : Spill.Saved W g saved s₄.mem := by
+  obtain hsv₄ : Spill.Saved W g saved s₄.mem := by
     refine (((hsv.frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame f₄ fun p hp => ?_)
     · have := hb p hp
       exact fin_dis h (by decide) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this])
     · have := hb p hp; exact cnt_dis (by omega_using [this]) (by omega_using [this])
     · have := hb p hp; exact ctr_dis h (by omega_using [this]) (by omega_using [this])
   -- The copy of the IV to `T`.
-  have a₂ : s₄.mem.readW (W + BitVec.ofNat 64 248) 64 = T := by
+  obtain a₂ : s₄.mem.readW (W + BitVec.ofNat 64 248) 64 = T := by
     rw [hsv₄ (.x6, 248) (by decide), hgT]
   have inT (d : Nat) (hd : d + 8 ≤ 16) : InRegions s₄.wr (T + BitVec.ofNat 64 d) 8 := by
     rw [h₄.regs.wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := wT; omega_using [hd])⟩
@@ -279,37 +279,37 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
     (h.inRW h₄.regs.rd h₄.regs.wr (d := 248) (n := 8) (by decide))
     (h.inRW h₄.regs.rd h₄.regs.wr (d := 0) (n := 8) (by decide))
     (h.inRW h₄.regs.rd h₄.regs.wr (d := 8) (n := 8) (by decide)) (inT 0 (by decide)) (inT 8 (by decide))
-  have fT : Frame [⟨T, 16⟩] s₄.mem s₅.mem := by rw [m₅, k0]; exact Proof.Cmac.frame_store2 _ _ _
-  have hsv₅ : Spill.Saved W g saved s₅.mem := hsv₄.frame fT fun p hp r hr => by
+  obtain fT : Frame [⟨T, 16⟩] s₄.mem s₅.mem := by rw [m₅, k0]; exact Proof.Cmac.frame_store2 _ _ _
+  obtain hsv₅ : Spill.Saved W g saved s₅.mem := hsv₄.frame fT fun p hp r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     have := hb p hp
     exact (tW.sub_right (h.sW (d := p.2) (n := 8) (by omega_using [this]))).symm
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
   refine WP.mono (restore_wp h (by rw [g₅ _ (by decide) (by decide), h₄.regs.x19]) (by rw [rd₅, h₄.regs.rd])
     (by rw [wr₅, h₄.regs.wr]) hsv₅) fun s₆ ⟨h₆a, _, sp₆, m₆⟩ => ?_
-  have c₀ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
-  have d₀ := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)
+  obtain c₀ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
+  obtain d₀ := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)
   rw [k0] at c₀ d₀
   -- The IV: S2V's end.
-  have hv : Spec.Aes.bytesAt s₄.mem W 16 =
+  obtain hv : Spec.Aes.bytesAt s₄.mem W 16 =
       Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem P L) := by
     have o₂ := h₂.out
     rw [k0] at o₂
     rw [Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide), o₂]
   -- The ciphertext: CTR of the data from the IV's counter.
-  have hc : Spec.Aes.bytesAt s₄.mem P L =
+  obtain hc : Spec.Aes.bytesAt s₄.mem P L =
       Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₄.mem W 16))
         (Spec.Aes.bytesAt s.mem P L) := by
     rw [h₄.data, Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide),
       ctxCiph_frame f₃ (cnt_out h.c_w) hRb, ctxCiph_frame f₂ (fin_out (by decide) h.c_w) hRb,
       Proof.Cmac.bytesAt_frame f₃ (cnt_out h.p_w) hL, Proof.Cmac.bytesAt_frame f₂ (fin_out (by decide) h.p_w) hL]
   -- The copy.
-  have hT : Spec.Aes.bytesAt s₆.mem T 16 = Spec.Aes.bytesAt s₄.mem W 16 := by
-    have sp8 : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
+  obtain hT : Spec.Aes.bytesAt s₆.mem T 16 = Spec.Aes.bytesAt s₄.mem W 16 := by
+    obtain sp8 : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
       sep_of_disjoint (tW.sub_right (h.sW (d := 8) (n := 8) (by decide))).symm (by decide) (by decide)
     rw [m₆, m₅, k0, k0, Mem.readW_writeW_sep sp8 (by decide), Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_readW,
       Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
-  have hP : Spec.Aes.bytesAt s₆.mem P L = Spec.Aes.bytesAt s₄.mem P L := by
+  obtain hP : Spec.Aes.bytesAt s₆.mem P L = Spec.Aes.bytesAt s₄.mem P L := by
     rw [m₆]
     exact Proof.Cmac.bytesAt_frame fT (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact tP.symm) hL

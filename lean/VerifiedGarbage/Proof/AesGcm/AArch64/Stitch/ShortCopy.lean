@@ -62,7 +62,7 @@ theorem writeBytes_bytesAt_apply (m m' : Mem) (D S : Addr) (n : Nat) (a : Addr) 
 theorem toNat_sub_add (a D : Addr) {c : Nat} (hc : c < 2 ^ 63) :
     (a - (D + BitVec.ofNat 64 c)).toNat =
       if c ≤ (a - D).toNat then (a - D).toNat - c else 2 ^ 64 - c + (a - D).toNat := by
-  have e : a - (D + BitVec.ofNat 64 c) = (a - D) - BitVec.ofNat 64 c := by
+  obtain e : a - (D + BitVec.ofNat 64 c) = (a - D) - BitVec.ofNat 64 c := by
     rw [Offset.sub_add_eq]
   rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_arith)]
   have := (a - D).isLt
@@ -79,7 +79,7 @@ theorem writeBytes_overlap (m : Mem) (D S : Addr) {n k : Nat} (hk1 : n - 16 ≤ 
   rw [writeBytes_bytesAt_apply, writeBytes_bytesAt_apply, writeBytes_bytesAt_apply,
     toNat_sub_add a D (show n - 16 < 2 ^ 63 by omega_arith)]
   generalize ht : (a - D).toNat = t
-  have htl : t < 2 ^ 64 := ht ▸ (a - D).isLt
+  obtain htl : t < 2 ^ 64 := ht ▸ (a - D).isLt
   by_cases h1 : n - 16 ≤ t
   · simp only [h1, ite_true]
     by_cases h2 : t - (n - 16) < 16
@@ -114,17 +114,17 @@ theorem copyQ_ok (s : State) {S D : Addr} {n : Nat} (h : QPre s S D n) :
   -- `x14 = n / 16`.
   refine WP.seq (WP.of_runBlock ⟨s.write .x .x14 (s.read .x .x13 >>> 4), by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceLT, ite_true, Size.bits], ?_⟩)
-  have x14₁ : (s.write .x .x14 (s.read .x .x13 >>> 4)).gpr .x14 = BitVec.ofNat 64 (n / 16) := by
+  obtain x14₁ : (s.write .x .x14 (s.read .x .x13 >>> 4)).gpr .x14 = BitVec.ofNat 64 (n / 16) := by
     simp only [gpr_write_self, State.read, h.x13, BitVec.setWidth_eq, ofNat_lsr4 (show n < 2 ^ 64 by omega_arith)]
   generalize hs₁ : s.write .x .x14 (s.read .x .x13 >>> 4) = s₁ at x14₁
-  have g₁ : ∀ r, r ≠ .x14 → s₁.gpr r = s.gpr r := fun r hr => by rw [← hs₁]; simp [gpr_write, hr]
-  have m₁ : s₁.mem = s.mem := by rw [← hs₁, mem_write]
-  have sp₁ : s₁.sp = s.sp := by rw [← hs₁, sp_write]
-  have rd₁ : s₁.rd = s.rd := by rw [← hs₁, rd_write]
-  have wr₁ : s₁.wr = s.wr := by rw [← hs₁, wr_write]
+  obtain g₁ : ∀ r, r ≠ .x14 → s₁.gpr r = s.gpr r := fun r hr => by rw [← hs₁]; simp [gpr_write, hr]
+  obtain m₁ : s₁.mem = s.mem := by rw [← hs₁, mem_write]
+  obtain sp₁ : s₁.sp = s.sp := by rw [← hs₁, sp_write]
+  obtain rd₁ : s₁.rd = s.rd := by rw [← hs₁, rd_write]
+  obtain wr₁ : s₁.wr = s.wr := by rw [← hs₁, wr_write]
   refine WP.ite (decide (n / 16 = 0)) (eval_zero x14₁ (by omega_arith)) (fun hz => ?_) (fun hz => ?_)
   · -- Fewer than 16 bytes.
-    have lp : LoopPre s₁ S D n := ⟨by omega_arith, by rw [rd₁, wr₁]; exact h.rd, by rw [wr₁]; exact h.wr, h.disj⟩
+    obtain lp : LoopPre s₁ S D n := ⟨by omega_arith, by rw [rd₁, wr₁]; exact h.rd, by rw [wr₁]; exact h.wr, h.disj⟩
     refine WP.mono (copy_ok s₁ (by rw [g₁ _ (by decide), h.x12]) (by rw [g₁ _ (by decide), h.x11])
       (by rw [g₁ _ (by decide), h.x13]) lp) fun s' ⟨m', g', sp', rd', wr'⟩ => ⟨by rw [m', m₁], fun r hr => ?_,
         by rw [sp', sp₁], by rw [rd', rd₁], by rw [wr', wr₁]⟩
@@ -133,7 +133,7 @@ theorem copyQ_ok (s : State) {S D : Addr} {n : Nat} (h : QPre s S D n) :
         rcases hm with rfl | rfl | rfl | rfl | rfl <;> decide)),
       g₁ r (by intro e; subst e; simp at hr)]
   · have h16 : 16 ≤ n := by have := of_decide_eq_false hz; omega_arith
-    have hk1 : 1 ≤ n / 16 := by omega_arith
+    obtain hk1 : 1 ≤ n / 16 := by omega_arith
     -- The last 16 bytes' addresses, in `x9` and `x10`.
     obtain ⟨s₂, run₂, x9₂, x10₂, g₂, m₂, sp₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
         [.add .x .x9 .x12 .x13, .subImm .x .x9 .x9 16, .add .x .x10 .x11 .x13, .subImm .x .x10 .x10 16] s₁ =
@@ -149,7 +149,7 @@ theorem copyQ_ok (s : State) {S D : Addr} {n : Nat} (h : QPre s S D n) :
         rw [g₁ _ (by decide), g₁ _ (by decide), h.x11, h.x13, Offset.add_ofNat_sub D h16]
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
     -- The whole blocks.
-    have hb : BlocksPre s₂ S D (n / 16) :=
+    obtain hb : BlocksPre s₂ S D (n / 16) :=
       ⟨by rw [g₂ _ (by decide) (by decide), g₁ _ (by decide), h.x12],
         by rw [g₂ _ (by decide) (by decide), g₁ _ (by decide), h.x11],
         by rw [g₂ _ (by decide) (by decide), x14₁], hk1, by omega_arith,
@@ -158,14 +158,14 @@ theorem copyQ_ok (s : State) {S D : Addr} {n : Nat} (h : QPre s S D n) :
         (h.disj.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith))⟩
     refine WP.seq (WP.mono (copyBlocks_wp s₂ hb) fun s₃ ⟨m₃, _, _, _, kp₃⟩ => ?_)
     -- The last 16 bytes.
-    have ha : s₃.gpr .x9 + BitVec.ofNat 64 0 = S + BitVec.ofNat 64 (n - 16) := by
+    obtain ha : s₃.gpr .x9 + BitVec.ofNat 64 0 = S + BitVec.ofNat 64 (n - 16) := by
       rw [kp₃.gpr _ (by decide), x9₂, BitVec.add_zero]
-    have hb : s₃.gpr .x10 + BitVec.ofNat 64 0 = D + BitVec.ofNat 64 (n - 16) := by
+    obtain hb : s₃.gpr .x10 + BitVec.ofNat 64 0 = D + BitVec.ofNat 64 (n - 16) := by
       rw [kp₃.gpr _ (by decide), x10₂, BitVec.add_zero]
-    have hrd : InRegions (s₃.rd ++ s₃.wr) (S + BitVec.ofNat 64 (n - 16)) 16 := by
+    obtain hrd : InRegions (s₃.rd ++ s₃.wr) (S + BitVec.ofNat 64 (n - 16)) 16 := by
       rw [kp₃.rd, kp₃.wr, rd₂, wr₂, rd₁, wr₁]
       exact Proof.AesGcm.AArch64.in_off h.rd (by omega_arith) (by omega_arith)
-    have hwr : InRegions s₃.wr (D + BitVec.ofNat 64 (n - 16)) 16 := by
+    obtain hwr : InRegions s₃.wr (D + BitVec.ofNat 64 (n - 16)) 16 := by
       rw [kp₃.wr, wr₂, wr₁]
       exact Proof.AesGcm.AArch64.in_off h.wr (by omega_arith) (by omega_arith)
     refine WP.of_runBlock ⟨_, by
@@ -214,7 +214,7 @@ theorem zstores_ok {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (hv : s.v .v0
   | succ k ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun t ⟨mt, gt, vt, spt, rdt, wrt⟩ => ?_
-    have hout : InRegions t.wr (t.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * k)) 16 := by
+    obtain hout : InRegions t.wr (t.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * k)) 16 := by
       rw [wrt, gt, h19]
       exact Proof.AesGcm.AArch64.in_off hw (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) (by decide)
     refine WP.of_runBlock ⟨_, by
@@ -284,7 +284,7 @@ theorem zeroBufs_ok {W : Addr} {c : Nat} (hc6 : c ≤ 6) (s : State) (h19 : s.gp
     simp only [gpr_write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq]
     simp only [gt, gpr_setV, h19, h25]
     exact Offset.add_ofNat_sub W (by omega_arith)
-  have hout : InRegions t₁.wr (t₁.gpr .x9 + BitVec.ofNat 64 0) 16 := by
+  obtain hout : InRegions t₁.wr (t₁.gpr .x9 + BitVec.ofNat 64 0) 16 := by
     rw [wr₁, wrt, wr_setV, x9₁, BitVec.add_zero]
     exact Proof.AesGcm.AArch64.in_off hw (by omega_arith) (by decide)
   refine WP.of_runBlock ⟨t₁, run₁, ?_⟩
@@ -342,10 +342,10 @@ theorem aadIn_ok {W A : Addr} {c al : Nat} (hc6 : c ≤ 6) (s : State) (h19 : s.
     exact ⟨by simp [gpr_write, g₂ .x24 (by decide), g₁ .x24 (by decide), h24], fun r hr => by simp [gpr_write, hr],
       rfl, rfl, rfl, rfl⟩
   refine WP.of_runBlock ⟨t₃, run₃, ?_⟩
-  have m₃ : t₃.mem = s.mem := by rw [m₃', m₂, m₁]
-  have rd₃ : t₃.rd = s.rd := by rw [rd₃', rd₂, rd₁]
-  have wr₃ : t₃.wr = s.wr := by rw [wr₃', wr₂, wr₁]
-  have sp₃ : t₃.sp = s.sp := by rw [sp₃', sp₂, sp₁]
+  obtain m₃ : t₃.mem = s.mem := by rw [m₃', m₂, m₁]
+  obtain rd₃ : t₃.rd = s.rd := by rw [rd₃', rd₂, rd₁]
+  obtain wr₃ : t₃.wr = s.wr := by rw [wr₃', wr₂, wr₁]
+  obtain sp₃ : t₃.sp = s.sp := by rw [sp₃', sp₂, sp₁]
   refine WP.mono (copy_ok t₃ (S := A) (D := W + BitVec.ofNat 64 (992 - 16 * c)) (n := al)
     (by rw [g₃ _ (by decide), g₂ _ (by decide), x12₁])
     (by rw [g₃ _ (by decide), x11₂]; rfl) x13₃
@@ -382,19 +382,19 @@ theorem ctToB2_ok {W : Addr} {c n : Nat} (hc1 : 1 ≤ c) (hc6 : c ≤ 6) (hn : n
   refine WP.of_runBlock ⟨t₂.write .x .x14 (t₂.read .x .x25 >>> 4), by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceLT, ite_true, Size.bits], ?_⟩
   generalize ht₃ : t₂.write .x .x14 (t₂.read .x .x25 >>> 4) = t₃
-  have x14₃ : t₃.gpr .x14 = BitVec.ofNat 64 c := by
+  obtain x14₃ : t₃.gpr .x14 = BitVec.ofNat 64 c := by
     rw [← ht₃, gpr_write_self, State.read]
     simp only [Size.bits, BitVec.setWidth_eq]
     rw [g₂ _ (by decide), g₁ _ (by decide), h25, ofNat_lsr4 (show 16 * c < 2 ^ 64 by omega_arith),
       show 16 * c / 16 = c by omega_arith]
-  have g₃ : ∀ r, r ≠ .x14 → t₃.gpr r = t₂.gpr r := fun r hr => by rw [← ht₃]; simp [gpr_write, hr]
-  have m₃ : t₃.mem = s.mem := by rw [← ht₃, mem_write, m₂, m₁]
-  have sp₃ : t₃.sp = s.sp := by rw [← ht₃, sp_write, sp₂, sp₁]
-  have rd₃ : t₃.rd = s.rd := by rw [← ht₃, rd_write, rd₂, rd₁]
-  have wr₃ : t₃.wr = s.wr := by rw [← ht₃, wr_write, wr₂, wr₁]
+  obtain g₃ : ∀ r, r ≠ .x14 → t₃.gpr r = t₂.gpr r := fun r hr => by rw [← ht₃]; simp [gpr_write, hr]
+  obtain m₃ : t₃.mem = s.mem := by rw [← ht₃, mem_write, m₂, m₁]
+  obtain sp₃ : t₃.sp = s.sp := by rw [← ht₃, sp_write, sp₂, sp₁]
+  obtain rd₃ : t₃.rd = s.rd := by rw [← ht₃, rd_write, rd₂, rd₁]
+  obtain wr₃ : t₃.wr = s.wr := by rw [← ht₃, wr_write, wr₂, wr₁]
   -- The `c` blocks.
   refine WP.seq (WP.ite false (by rw [eval_zero x14₃ (by omega_arith)]; simp; omega_arith) (fun h => by cases h) fun _ => ?_)
-  have hb : BlocksPre t₃ (W + BitVec.ofNat 64 (880 - 16 * c)) (W + BitVec.ofNat 64 (1008 - 16 * c)) c :=
+  obtain hb : BlocksPre t₃ (W + BitVec.ofNat 64 (880 - 16 * c)) (W + BitVec.ofNat 64 (1008 - 16 * c)) c :=
     ⟨by rw [g₃ _ (by decide), g₂ _ (by decide), x12₁]; rfl, by rw [g₃ _ (by decide), x11₂]; rfl, x14₃, hc1,
       by omega_arith, by rw [rd₃, wr₃]; exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off hw
         (by omega_arith) (by decide)),
@@ -402,7 +402,7 @@ theorem ctToB2_ok {W : Addr} {c n : Nat} (hc1 : 1 ≤ c) (hc6 : c ≤ 6) (hn : n
       Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)⟩
   refine WP.mono (copyBlocks_wp t₃ hb) fun t₄ ⟨m₄, _, _, _, kp₄⟩ => ?_
   rw [WP.block_append_iff]
-  have kg : ∀ r ∈ [Reg.x19, .x25, .x26], t₄.gpr r = s.gpr r := fun r hr => by
+  obtain kg : ∀ r ∈ [Reg.x19, .x25, .x26], t₄.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       rw [kp₄.gpr _ (by decide), g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide)]
@@ -410,15 +410,15 @@ theorem ctToB2_ok {W : Addr} {c n : Nat} (hc1 : 1 ≤ c) (hc6 : c ≤ 6) (hn : n
     (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) t₄
     (by rw [kg _ (by simp), h19]) (by rw [kg _ (by simp), h25]) (by decide)
   refine WP.of_runBlock ⟨t₅, run₅, ?_⟩
-  have x26₅ : t₅.gpr .x26 = BitVec.ofNat 64 n := by rw [g₅ _ (by decide), kg _ (by simp), h26]
+  obtain x26₅ : t₅.gpr .x26 = BitVec.ofNat 64 n := by rw [g₅ _ (by decide), kg _ (by simp), h26]
   generalize ht₆ : (t₅.write .x .x9 (t₅.read .x .x9 + t₅.read .x .x26)).setV .v0 0 = t₆
-  have x9₆ : t₆.gpr .x9 = W + BitVec.ofNat 64 (1008 - 16 * c + n) := by
+  obtain x9₆ : t₆.gpr .x9 = W + BitVec.ofNat 64 (1008 - 16 * c + n) := by
     rw [← ht₆, gpr_setV, gpr_write_self, State.read, State.read]
     simp only [Size.bits, BitVec.setWidth_eq]
     rw [x9₅, x26₅, BitVec.add_assoc, ← BitVec.ofNat_add]
     unfold Impl.AesGcm.AArch64.Stitch.b2O
     rfl
-  have hout : InRegions t₆.wr (t₆.gpr .x9 + BitVec.ofNat 64 0) 16 := by
+  obtain hout : InRegions t₆.wr (t₆.gpr .x9 + BitVec.ofNat 64 0) 16 := by
     rw [x9₆, BitVec.add_zero, ← ht₆, wr_setV, wr_write, wr₅, kp₄.wr, wr₃]
     exact Proof.AesGcm.AArch64.in_off hw (by omega_arith) (by decide)
   refine WP.of_runBlock ⟨_, by
@@ -464,26 +464,26 @@ theorem ctToB2_ok0 {W : Addr} {c n : Nat} (hc1 : c = 0) (_hc6 : c ≤ 6) (hn : n
   refine WP.of_runBlock ⟨t₂.write .x .x14 (t₂.read .x .x25 >>> 4), by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceLT, ite_true, Size.bits], ?_⟩
   generalize ht₃ : t₂.write .x .x14 (t₂.read .x .x25 >>> 4) = t₃
-  have x14₃ : t₃.gpr .x14 = BitVec.ofNat 64 c := by
+  obtain x14₃ : t₃.gpr .x14 = BitVec.ofNat 64 c := by
     rw [← ht₃, gpr_write_self, State.read]
     simp only [Size.bits, BitVec.setWidth_eq]
     rw [g₂ _ (by decide), g₁ _ (by decide), h25, ofNat_lsr4 (show 16 * c < 2 ^ 64 by omega_arith),
       show 16 * c / 16 = c by omega_arith]
-  have g₃ : ∀ r, r ≠ .x14 → t₃.gpr r = t₂.gpr r := fun r hr => by rw [← ht₃]; simp [gpr_write, hr]
-  have m₃ : t₃.mem = s.mem := by rw [← ht₃, mem_write, m₂, m₁]
-  have sp₃ : t₃.sp = s.sp := by rw [← ht₃, sp_write, sp₂, sp₁]
-  have rd₃ : t₃.rd = s.rd := by rw [← ht₃, rd_write, rd₂, rd₁]
-  have wr₃ : t₃.wr = s.wr := by rw [← ht₃, wr_write, wr₂, wr₁]
+  obtain g₃ : ∀ r, r ≠ .x14 → t₃.gpr r = t₂.gpr r := fun r hr => by rw [← ht₃]; simp [gpr_write, hr]
+  obtain m₃ : t₃.mem = s.mem := by rw [← ht₃, mem_write, m₂, m₁]
+  obtain sp₃ : t₃.sp = s.sp := by rw [← ht₃, sp_write, sp₂, sp₁]
+  obtain rd₃ : t₃.rd = s.rd := by rw [← ht₃, rd_write, rd₂, rd₁]
+  obtain wr₃ : t₃.wr = s.wr := by rw [← ht₃, wr_write, wr₂, wr₁]
   -- No blocks.
   refine WP.seq (WP.ite true (by rw [eval_zero x14₃ (by omega_arith)]; simp [hc1]) (fun _ => WP.block_nil ?_)
     fun h => by cases h)
-  have m₄ : t₃.mem = writeBytes s.mem (W + BitVec.ofNat 64 (1008 - 16 * c))
+  obtain m₄ : t₃.mem = writeBytes s.mem (W + BitVec.ofNat 64 (1008 - 16 * c))
       (bytesAt s.mem (W + BitVec.ofNat 64 (880 - 16 * c)) (16 * c)) := by
     rw [m₃, hc1, show 16 * 0 = 0 from rfl, show bytesAt s.mem (W + BitVec.ofNat 64 (880 - 0)) 0 = [] from rfl,
       writeBytes_nil]
   generalize t₃ = t₄ at m₄ g₃ sp₃ rd₃ wr₃
   rw [WP.block_append_iff]
-  have kg : ∀ r ∈ [Reg.x19, .x25, .x26], t₄.gpr r = s.gpr r := fun r hr => by
+  obtain kg : ∀ r ∈ [Reg.x19, .x25, .x26], t₄.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide)]
@@ -491,15 +491,15 @@ theorem ctToB2_ok0 {W : Addr} {c n : Nat} (hc1 : c = 0) (_hc6 : c ≤ 6) (hn : n
     (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) t₄
     (by rw [kg _ (by simp), h19]) (by rw [kg _ (by simp), h25]) (by decide)
   refine WP.of_runBlock ⟨t₅, run₅, ?_⟩
-  have x26₅ : t₅.gpr .x26 = BitVec.ofNat 64 n := by rw [g₅ _ (by decide), kg _ (by simp), h26]
+  obtain x26₅ : t₅.gpr .x26 = BitVec.ofNat 64 n := by rw [g₅ _ (by decide), kg _ (by simp), h26]
   generalize ht₆ : (t₅.write .x .x9 (t₅.read .x .x9 + t₅.read .x .x26)).setV .v0 0 = t₆
-  have x9₆ : t₆.gpr .x9 = W + BitVec.ofNat 64 (1008 - 16 * c + n) := by
+  obtain x9₆ : t₆.gpr .x9 = W + BitVec.ofNat 64 (1008 - 16 * c + n) := by
     rw [← ht₆, gpr_setV, gpr_write_self, State.read, State.read]
     simp only [Size.bits, BitVec.setWidth_eq]
     rw [x9₅, x26₅, BitVec.add_assoc, ← BitVec.ofNat_add]
     unfold Impl.AesGcm.AArch64.Stitch.b2O
     rfl
-  have hout : InRegions t₆.wr (t₆.gpr .x9 + BitVec.ofNat 64 0) 16 := by
+  obtain hout : InRegions t₆.wr (t₆.gpr .x9 + BitVec.ofNat 64 0) 16 := by
     rw [x9₆, BitVec.add_zero, ← ht₆, wr_setV, wr_write, wr₅, wr₃]
     exact Proof.AesGcm.AArch64.in_off hw (by omega_arith) (by decide)
   refine WP.of_runBlock ⟨_, by
@@ -555,9 +555,9 @@ theorem storesB_ok {B : Addr} (u : State) (hx9 : u.gpr .x9 = B) (hw : Covers [�
         u'.wr = u.wr)
     (fun k u₁ hk ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_) 8 (Nat.le_refl _) u
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, rfl, rfl, rfl, rfl, rfl⟩) fun u' h => h
-  have ha : u₁.gpr .x9 + BitVec.ofNat 64 (0 + 16 * k) = B + BitVec.ofNat 64 (16 * k) := by
+  obtain ha : u₁.gpr .x9 + BitVec.ofNat 64 (0 + 16 * k) = B + BitVec.ofNat 64 (16 * k) := by
     rw [g₁, hx9, Nat.zero_add]
-  have hout : InRegions u₁.wr (u₁.gpr .x9 + BitVec.ofNat 64 (0 + 16 * k)) 16 := by
+  obtain hout : InRegions u₁.wr (u₁.gpr .x9 + BitVec.ofNat 64 (0 + 16 * k)) 16 := by
     rw [ha, wr₁]; exact Proof.AesGcm.AArch64.in_off hw (by omega_arith) (by decide)
   rw [WP.block_cons_iff]
   refine ⟨_, VG.Proof.Gcm.AArch64.Pmull.exec_strq (by omega_arith) (by omega_arith) hout, WP.block_nil ?_⟩
@@ -590,24 +590,24 @@ theorem byRoundsG_ok {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {f : Nat → 
   refine ⟨_, exec_subImm_x (imm := 12) (by decide), WP.block_nil ?_⟩
   generalize ht : (s.write .x .x13 (s.read .x .x22 - BitVec.ofNat 64 10)).write .x .x14
       ((s.write .x .x13 (s.read .x .x22 - BitVec.ofNat 64 10)).read .x .x22 - BitVec.ofNat 64 12) = t
-  have gt : ∀ r, r ≠ .x13 → r ≠ .x14 → t.gpr r = s.gpr r := fun r h13 h14 => by
+  obtain gt : ∀ r, r ≠ .x13 → r ≠ .x14 → t.gpr r = s.gpr r := fun r h13 h14 => by
     rw [← ht, gpr_write_of_ne _ _ _ h14, gpr_write_of_ne _ _ _ h13]
-  have mt : t.mem = s.mem := by rw [← ht, mem_write, mem_write]
-  have vt : t.v = s.v := by rw [← ht, v_write, v_write]
-  have spt : t.sp = s.sp := by rw [← ht, sp_write, sp_write]
-  have rdt : t.rd = s.rd := by rw [← ht, rd_write, rd_write]
-  have wrt : t.wr = s.wr := by rw [← ht, wr_write, wr_write]
-  have e13 : t.gpr .x13 = BitVec.ofNat 64 (R - 10) := by
+  obtain mt : t.mem = s.mem := by rw [← ht, mem_write, mem_write]
+  obtain vt : t.v = s.v := by rw [← ht, v_write, v_write]
+  obtain spt : t.sp = s.sp := by rw [← ht, sp_write, sp_write]
+  obtain rdt : t.rd = s.rd := by rw [← ht, rd_write, rd_write]
+  obtain wrt : t.wr = s.wr := by rw [← ht, wr_write, wr_write]
+  obtain e13 : t.gpr .x13 = BitVec.ofNat 64 (R - 10) := by
     rw [← ht]
     simp only [gpr_write_of_ne _ _ _ (show Reg.x13 ≠ Reg.x14 by decide), gpr_write_self, State.read,
       BitVec.setWidth_eq, hx22, Size.bits]
     rw [Offset.ofNat_sub_ofNat (by omega_arith)]
-  have hft := hf t gt mt vt spt rdt wrt
+  obtain hft := hf t gt mt vt spt rdt wrt
   refine WP.ite _ (eval_zero e13 (by omega_arith)) (fun h => ?_) (fun h => ?_)
   · have h10 : R = 10 := by simp only [decide_eq_true_eq] at h; omega_arith
     rw [h10] at hft; exact hft
   · have hge : 12 ≤ R := by simp only [decide_eq_false_iff_not] at h; omega_arith
-    have e14 : t.gpr .x14 = BitVec.ofNat 64 (R - 12) := by
+    obtain e14 : t.gpr .x14 = BitVec.ofNat 64 (R - 12) := by
       rw [← ht]
       simp only [gpr_write_self, State.read, BitVec.setWidth_eq,
         gpr_write_of_ne _ _ _ (show Reg.x22 ≠ Reg.x13 by decide), hx22, Size.bits]

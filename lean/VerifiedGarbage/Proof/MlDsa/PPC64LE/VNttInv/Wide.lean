@@ -70,7 +70,7 @@ theorem ibfly_lanes {A B Z ZP Q : BitVec 128} {x y z : Zq} {i : Nat} (hi : i < 4
     (hZP : (vword ZP i).toNat = z.val * 2 ^ 32 / Spec.MlDsa.q) (hQ : (vword Q i).toNat = Spec.MlDsa.q) :
     (vword (ibflyA A B Q) i).toNat = (x + y).val ∧
     (vword (ibflyB A B Z ZP Q hiC) i).toNat = (z * (y - x)).val := by
-  have hhi := vword_hi (ibflyD A B Q) ZP hi
+  obtain hhi := vword_hi (ibflyD A B Q) ZP hi
   simp only [ibflyA, ibflyB, vword_minV _ _ hi, vword_addV _ _ hi, vword_subV _ _ hi, vword_loV _ _ hi]
   simp only [ibflyD, vword_minV _ _ hi, vword_addV _ _ hi, vword_subV _ _ hi] at hhi ⊢
   exact ibfly_lane (vword A i) (vword B i) _ (vword Q i) (vword Z i) (vword ZP i) x y z hQ hZ hZP hA hB hhi
@@ -153,7 +153,7 @@ theorem lanes_ibfly_v {P : Poly} {m : Mem} {p : Addr} (hP : PolyIs m p P) {j len
     (vword (ibflyA A B Qv) e).toNat = (P[j + (e ^^^ 1)]! + P[j + len + (e ^^^ 1)]!).val ∧
     (vword (ibflyB A B Z ZP Qv hiC) e).toNat = (z * (P[j + len + (e ^^^ 1)]! - P[j + (e ^^^ 1)]!)).val := by
   intro A B
-  have hx := xor1_lt he
+  obtain hx := xor1_lt he
   refine ibfly_lanes he ?_ ?_ (hz e he) (hzp e he) (hq e he)
   · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega_using [hj, hx])
   · rw [vword_loadC _ _ _ he]; exact polyIs_toNat hP (by show _ < 256; omega_using [hj, hx])
@@ -174,42 +174,42 @@ theorem istep_ok {s₀ : State} (hp : Pre s₀) {Q : Poly} {len k p st t : Nat} 
     (h : ISInv s₀ Q len k p st t s) :
     WP isa (.block iStepBody) s fun s' =>
       ISInv s₀ Q len k p st (t + 1) s' ∧ (s'.gpr .r10 != 0) = decide (t + 1 ≠ len / 4) := by
-  have ht4 : 4 * t + 4 ≤ len := by omega
-  have ej : coeffAddr (F s₀) (st + 4 * t) + BitVec.ofNat 64 (4 * len) = coeffAddr (F s₀) (st + 4 * t + len) :=
+  obtain ht4 : 4 * t + 4 ≤ len := by omega
+  obtain ej : coeffAddr (F s₀) (st + 4 * t) + BitVec.ofNat 64 (4 * len) = coeffAddr (F s₀) (st + 4 * t + len) :=
     coeffAddr_add _ _ _
-  have ia := h.env.inR hp (j := st + 4 * t) (by omega_using [hs, ht])
-  have ib := h.env.inR hp (j := st + 4 * t + len) (by omega_using [hs, ht])
-  have oa := h.env.inW hp (j := st + 4 * t) (by omega_using [hs, ht])
-  have ob := h.env.inW hp (j := st + 4 * t + len) (by omega_using [hs, ht])
+  obtain ia := h.env.inR hp (j := st + 4 * t) (by omega_using [hs, ht])
+  obtain ib := h.env.inR hp (j := st + 4 * t + len) (by omega_using [hs, ht])
+  obtain oa := h.env.inW hp (j := st + 4 * t) (by omega_using [hs, ht])
+  obtain ob := h.env.inW hp (j := st + 4 * t + len) (by omega_using [hs, ht])
   unfold iStepBody
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (loads_run s h.r5 h.r9 h.r8 ia (by rw [ej]; exact ib)) fun s₁ e₁ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ibfly_exec s₁ (.inl ⟨rfl, rfl⟩)) fun s₂ ⟨a₂, b₂, vo₂, sy₂⟩ => ?_
-  have g₂ : s₂.gpr = s.gpr := by rw [vo₂.gpr, e₁]; rfl
+  obtain g₂ : s₂.gpr = s.gpr := by rw [vo₂.gpr, e₁]; rfl
   refine WP.mono (stores_run s₂ (x := coeffAddr (F s₀) (st + 4 * t)) (y := BitVec.ofNat 64 (4 * len))
     (by rw [g₂]; exact h.r5) (by rw [g₂]; exact h.r9) (by rw [g₂]; exact h.r8)
     (by rw [vo₂.wr, e₁]; exact oa) (by rw [vo₂.wr, e₁, ej]; exact ob))
     fun s₃ ⟨m₃, r5, r10, gk, v₃, sy₃, rd₃, wr₃, sp₃, lr₃⟩ => ?_
-  have hv : ∀ r : VReg, r ≠ .v0 → r ≠ .v1 → s₁.vpr r = s.vpr r := fun r h0 h1 => by
+  obtain hv : ∀ r : VReg, r ≠ .v0 → r ≠ .v1 → s₁.vpr r = s.vpr r := fun r h0 h1 => by
     rw [e₁]; simp only [vpr_writeV, h0, h1, ite_false]
-  have hs₂ : ∀ r : VReg, r ∉ [.v0, .v1, .v6, .v7] → s₃.vpr r = s.vpr r := fun r hr => by
+  obtain hs₂ : ∀ r : VReg, r ∉ [.v0, .v1, .v6, .v7] → s₃.vpr r = s.vpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [v₃, vo₂.v r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]), hv r hr.1 hr.2.1]
-  have m₂ : s₂.mem = s.mem := by rw [vo₂.mem, e₁]; rfl
-  have A₁ : s₁.vpr .v0 = swapDwords (s.mem.read (coeffAddr (F s₀) (st + 4 * t)) 16) := by rw [e₁]; rfl
-  have B₁ : s₁.vpr .v1 = swapDwords (s.mem.read (coeffAddr (F s₀) (st + 4 * t + len)) 16) := by
+  obtain m₂ : s₂.mem = s.mem := by rw [vo₂.mem, e₁]; rfl
+  obtain A₁ : s₁.vpr .v0 = swapDwords (s.mem.read (coeffAddr (F s₀) (st + 4 * t)) 16) := by rw [e₁]; rfl
+  obtain B₁ : s₁.vpr .v1 = swapDwords (s.mem.read (coeffAddr (F s₀) (st + 4 * t + len)) 16) := by
     rw [e₁, ← ej]; rfl
   rw [A₁, B₁, hv .v4 (by decide) (by decide)] at a₂
   rw [A₁, B₁, hv .v2 (by decide) (by decide), hv .v3 (by decide) (by decide), hv .v4 (by decide) (by decide),
     hv .v5 (by decide) (by decide), h.env.v5] at b₂
-  have lanes := fun e (he : e < 4) => lanes_ibfly_v h.poly (j := st + 4 * t) (len := len) (by omega_using [hs, ht]) h.v2 h.v3
+  obtain lanes := fun e (he : e < 4) => lanes_ibfly_v h.poly (j := st + 4 * t) (len := len) (by omega_using [hs, ht]) h.v2 h.v3
     h.env.v4 he
-  have hg : ∀ r, r ≠ .r5 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r h1 h2 => by rw [gk r h1 h2, g₂]
-  have e₁rd : s₁.rd = s.rd := by rw [e₁]; rfl
-  have e₁wr : s₁.wr = s.wr := by rw [e₁]; rfl
-  have e₁sp : s₁.sp = s.sp := by rw [e₁]; rfl
-  have e₁lr : s₁.lr = s.lr := by rw [e₁]; rfl
+  obtain hg : ∀ r, r ≠ .r5 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r h1 h2 => by rw [gk r h1 h2, g₂]
+  obtain e₁rd : s₁.rd = s.rd := by rw [e₁]; rfl
+  obtain e₁wr : s₁.wr = s.wr := by rw [e₁]; rfl
+  obtain e₁sp : s₁.sp = s.sp := by rw [e₁]; rfl
+  obtain e₁lr : s₁.lr = s.lr := by rw [e₁]; rfl
   refine ⟨⟨⟨(hg .r3 (by decide) (by decide)).trans h.env.r3, by rw [hs₂ .v4 (by decide)]; exact h.env.v4,
       (hs₂ .v5 (by decide)).trans h.env.v5,
       (hs₂ .v16 (by decide)).trans h.env.v16, (hs₂ .v17 (by decide)).trans h.env.v17,
@@ -261,32 +261,32 @@ structure IBInv (s₀ : State) (Q : Poly) (len nb m c : Nat) (s : State) : Prop 
 theorem ibstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb m c : Nat} (hl : 4 ≤ len) (hd : len % 4 = 0)
     (hnb : len * nb = 128) (hm : m + 2 * nb = 64) (hc : c < nb) {s : State} (h : IBInv s₀ Q len nb m c s) :
     WP isa iBlockCode s fun s' => IBInv s₀ Q len nb m (c + 1) s' ∧ (s'.gpr .r12 != 0) = decide (c + 1 ≠ nb) := by
-  have hnb32 : nb ≤ 32 := by
+  obtain hnb32 : nb ≤ 32 := by
     have : 4 * nb ≤ len * nb := Nat.mul_le_mul_right _ hl
     omega_using [hm]
-  have hlc : len * (c + 1) ≤ 128 := hnb ▸ Nat.mul_le_mul_left _ hc
-  have hlc' : len * c + len ≤ 128 := by rw [← Nat.mul_succ]; exact hlc
-  have hst : 2 * len * c + 2 * len ≤ 256 := by rw [Nat.mul_assoc]; omega_using [hlc']
+  obtain hlc : len * (c + 1) ≤ 128 := hnb ▸ Nat.mul_le_mul_left _ hc
+  obtain hlc' : len * c + len ≤ 128 := by rw [← Nat.mul_succ]; exact hlc
+  obtain hst : 2 * len * c + 2 * len ≤ 256 := by rw [Nat.mul_assoc]; omega_using [hlc']
   unfold iBlockCode
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
-  have ia := h.env.inRS hp (b := m + c) (by omega_using [hm, hc])
+  obtain ia := h.env.inRS hp (b := m + c) (by omega_using [hm, hc])
   refine WP.cons (exec_lxvd2x .v3 .r7 .r9 s (by decide) (by rw [h.r7, h.r9, BitVec.add_zero]; exact ia)) ?_
   refine wp_vop (eval_splat0 _ _ _) ?_
   refine WP.block_cons_iff.2 ⟨_, rfl, wp_nil ?_⟩
   simp only [vpr_writeV, ite_true, h.r7, h.r9, BitVec.add_zero]
   generalize ht₁ : State.write _ _ _ = t₁
-  have g₁ : ∀ r, r ≠ .r7 → t₁.gpr r = s.gpr r := fun r hr => by
+  obtain g₁ : ∀ r, r ≠ .r7 → t₁.gpr r = s.gpr r := fun r hr => by
     rw [← ht₁]; simp only [State.write, gpr_writeV, hr, ite_false]
-  have r7₁ : t₁.gpr .r7 = S s₀ + BitVec.ofNat 64 (4 * (m + (c + 1))) := by
+  obtain r7₁ : t₁.gpr .r7 = S s₀ + BitVec.ofNat 64 (4 * (m + (c + 1))) := by
     rw [← ht₁]; simp only [State.write, ite_true, gpr_writeV, h.r7, BitVec.add_assoc, ← BitVec.ofNat_add]
     rw [show 4 * (m + c) + 4 = 4 * (m + (c + 1)) by omega_using []]
-  have z₁ : ∀ i < 4, (vword (t₁.vpr .v3) i).toNat = shoup (zeta (2 * nb - 1 - c)) := fun i hi => by
+  obtain z₁ : ∀ i < 4, (vword (t₁.vpr .v3) i).toNat = shoup (zeta (2 * nb - 1 - c)) := fun i hi => by
     rw [← ht₁]; simp only [vpr_write, vpr_writeV, ite_true]
     rw [vword_ofVWords _ hi]
     have := vword_wideI h.env.tab (k := m + c + 1) (by omega_using []) (by omega_using [hm, hc])
     rwa [show m + c + 1 - 1 = m + c by omega_using [], show 64 - (m + c + 1) = 2 * nb - 1 - c by omega_using [hm]] at this
-  have env₁ : IEnv s₀ t₁ := by
+  obtain env₁ : IEnv s₀ t₁ := by
     rw [← ht₁]
     exact ((h.env.writeV (by decide) _).writeV (by decide) _).write (by decide) (by decide) _
   rw [WP.block_append_iff]
@@ -294,9 +294,9 @@ theorem ibstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb m c : Nat} (hl 
     (fun _ _ => zeta_nz _) z₁) fun t₂ ⟨l₂, vo₂, sy₂⟩ => ?_
   refine WP.block_cons_iff.2 ⟨_, rfl, WP.block_nil ?_⟩
   simp only [State.read, Size.ext, BitVec.setWidth_eq]
-  have env₂ : IEnv s₀ t₂ := env₁.of_vonly vo₂ (by decide)
-  have g₂ : ∀ r, r ≠ .r7 → t₂.gpr r = s.gpr r := fun r hr => by rw [vo₂.gpr, g₁ r hr]
-  have h0 : ISInv s₀ (layerN bflyInv Q len (fun c => -zetas (2 * nb - 1 - c)) c) len (2 * nb - 1 - c)
+  obtain env₂ : IEnv s₀ t₂ := env₁.of_vonly vo₂ (by decide)
+  obtain g₂ : ∀ r, r ≠ .r7 → t₂.gpr r = s.gpr r := fun r hr => by rw [vo₂.gpr, g₁ r hr]
+  obtain h0 : ISInv s₀ (layerN bflyInv Q len (fun c => -zetas (2 * nb - 1 - c)) c) len (2 * nb - 1 - c)
       (m + (c + 1)) (2 * len * c) 0 (t₂.write .r10 (t₂.gpr .r8 >>> 4)) := by
     refine ⟨env₂.write (by decide) (by decide) _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [State.write, reduceCtorEq, ite_false]; rw [g₂ _ (by decide), h.r5]; rfl
@@ -311,12 +311,12 @@ theorem ibstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb m c : Nat} (hl 
   refine WP.seq (wp_loop_nz (fun i t => ISInv s₀ (layerN bflyInv Q len (fun c => -zetas (2 * nb - 1 - c)) c) len
       (2 * nb - 1 - c) (m + (c + 1)) (2 * len * c) i t) (N := len / 4) (by omega_using [hl])
       (fun i hi t ht => istep_ok hp hl hd hst hi ht) (fun t ht => ?_) h0)
-  have x5 : t.gpr .r5 + t.gpr .r8 = coeffAddr (F s₀) (2 * len * (c + 1)) := by
+  obtain x5 : t.gpr .r5 + t.gpr .r8 = coeffAddr (F s₀) (2 * len * (c + 1)) := by
     rw [ht.r5, ht.r8, coeffAddr_add]; exact congrArg _ (by rw [Nat.mul_succ]; omega_using [hd])
   refine WP.block_cons_iff.2 ⟨t.write .r5 (t.gpr .r5 + t.gpr .r8), rfl, ?_⟩
   refine WP.block_cons_iff.2 ⟨(t.write .r5 (t.gpr .r5 + t.gpr .r8)).write .r12
     (t.gpr .r5 + t.gpr .r8 - t.gpr .r11), rfl, WP.block_nil ?_⟩
-  have g : ∀ r, r ≠ .r5 → r ≠ .r12 → ((t.write .r5 (t.gpr .r5 + t.gpr .r8)).write .r12
+  obtain g : ∀ r, r ≠ .r5 → r ≠ .r12 → ((t.write .r5 (t.gpr .r5 + t.gpr .r8)).write .r12
       (t.gpr .r5 + t.gpr .r8 - t.gpr .r11)).gpr r = t.gpr r := fun r h1 h2 => by
     simp only [State.write, h1, h2, ite_false]
   refine ⟨⟨(ht.env.write (by decide) (by decide) _).write (by decide) (by decide) _,
@@ -333,7 +333,7 @@ theorem ibstep {s₀ : State} (hp : Pre s₀) {Q : Poly} {len nb m c : Nat} (hl 
     have : 4 * (2 * len * (c + 1)) = 1024 ↔ c + 1 = nb := by
       constructor
       · intro e
-        have e' : len * (c + 1) = len * nb := by rw [hnb]; rw [Nat.mul_assoc] at e; omega_using [e]
+        obtain e' : len * (c + 1) = len * nb := by rw [hnb]; rw [Nat.mul_assoc] at e; omega_using [e]
         exact Nat.eq_of_mul_eq_mul_left (by omega_using [hl]) e'
       · intro e; rw [e, Nat.mul_assoc, hnb]
     simp only [ne_eq, this]
@@ -365,14 +365,14 @@ theorem ilayer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb m : Nat} (hl
     (hnb : len * nb = 128) (hm : m + 2 * nb = 64) {s : State} (h : ILInv s₀ R len m s) :
     WP isa iLayerCode s fun s' => ILInv s₀ (nttInvLayer R len) (2 * len) (m + nb) s' ∧
       (s'.gpr .r12 != 0) = decide (2 * len ≠ 256) := by
-  have hnb1 : 1 ≤ nb := by rcases nb with _ | nb <;> simp_all
-  have hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ (by omega_using [hl])]
-  have hdiv2 : 256 / len = 2 * nb := by
+  obtain hnb1 : 1 ≤ nb := by rcases nb with _ | nb <;> simp_all
+  obtain hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ (by omega_using [hl])]
+  obtain hdiv2 : 256 / len = 2 * nb := by
     rw [show 256 = len * (2 * nb) by rw [Nat.mul_left_comm, hnb], Nat.mul_div_cancel_left _ (by omega_using [hl])]
-  have hl128 : len ≤ 128 := by have := Nat.le_mul_of_pos_right len hnb1; omega_using [hnb, this]
+  obtain hl128 : len ≤ 128 := by have := Nat.le_mul_of_pos_right len hnb1; omega_using [hnb, this]
   unfold iLayerCode
   refine WP.seq (WP.block_cons_iff.2 ⟨s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0), rfl, WP.block_nil ?_⟩)
-  have h0 : IBInv s₀ R len nb m 0 (s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0)) := by
+  obtain h0 : IBInv s₀ R len nb m 0 (s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0)) := by
     refine ⟨h.env.write (by decide) (by decide) _, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [State.write, ite_true, h.env.r3, Nat.mul_zero]; first | done | rfl
     · simp only [State.write, reduceCtorEq, ite_false]; exact h.r8
@@ -385,7 +385,7 @@ theorem ilayer_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {len nb m : Nat} (hl
   refine WP.block_cons_iff.2 ⟨t.write .r8 (t.gpr .r8 <<< 1), rfl, ?_⟩
   refine WP.block_cons_iff.2 ⟨(t.write .r8 (t.gpr .r8 <<< 1)).write .r12 (t.gpr .r8 <<< 1 - BitVec.ofNat 64 1024),
     rfl, WP.block_nil ?_⟩
-  have x8 : t.gpr .r8 <<< 1 = BitVec.ofNat 64 (4 * (2 * len)) := by
+  obtain x8 : t.gpr .r8 <<< 1 = BitVec.ofNat 64 (4 * (2 * len)) := by
     rw [ht.r8, lsl1 (by omega_using [hl128])]; exact congrArg _ (by omega_using [])
   refine ⟨⟨(ht.env.write (by decide) (by decide) _).write (by decide) (by decide) _,
     ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -421,7 +421,7 @@ theorem iwide_ok {s₀ : State} (hp : Pre s₀) {P : Poly} {s : State} (h : IEnv
   refine wp_loop_nz (fun ℓ t => ILInv s₀ ((wideInvLens.take ℓ).foldl nttInvLayer P) (4 * 2 ^ ℓ) (64 - 64 / 2 ^ ℓ) t)
     (N := 6) (by decide) (fun ℓ hℓ t ht => ?_) (fun t ht => ht) ?_
   · rw [ifoldl_take_succ P hℓ]
-    have e : 4 ≤ 4 * 2 ^ ℓ ∧ 4 * 2 ^ ℓ % 4 = 0 ∧ 4 * 2 ^ ℓ * (32 / 2 ^ ℓ) = 128 ∧
+    obtain e : 4 ≤ 4 * 2 ^ ℓ ∧ 4 * 2 ^ ℓ % 4 = 0 ∧ 4 * 2 ^ ℓ * (32 / 2 ^ ℓ) = 128 ∧
         64 - 64 / 2 ^ ℓ + 2 * (32 / 2 ^ ℓ) = 64 ∧ 2 * (4 * 2 ^ ℓ) = 4 * 2 ^ (ℓ + 1) ∧
         64 - 64 / 2 ^ ℓ + 32 / 2 ^ ℓ = 64 - 64 / 2 ^ (ℓ + 1) ∧ (2 * (4 * 2 ^ ℓ) ≠ 256 ↔ ℓ + 1 ≠ 6) := by
       rcases (by omega_arith : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>

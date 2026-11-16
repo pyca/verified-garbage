@@ -46,7 +46,7 @@ theorem roomHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {r : Lis
         Keep [.x3, .x4, .x5, .x7] s t := by
   have hn := h.scr.nowrap
   have h256 := h.h256
-  have e1 : BitVec.ofNat 64 r.length - BitVec.ofNat 64 used = BitVec.ofNat 64 (r.length - used) :=
+  obtain e1 : BitVec.ofNat 64 r.length - BitVec.ofNat 64 used = BitVec.ofNat 64 (r.length - used) :=
     ofNat_sub_ofNat' hul hrl
   have r1 : s.mem.readW (B + BitVec.ofNat 64 (8 * kRandLen)) 64 = BitVec.ofNat 64 r.length := hrlen
   have r2 : s.mem.readW (B + BitVec.ofNat 64 (8 * kUsed)) 64 = BitVec.ofNat 64 used := hus
@@ -78,24 +78,24 @@ theorem drawLoad_ok {s : State} {B : Addr} {Z w len : Nat} (h : Ws s B Z w) {rp 
       wv t.mem B (slot w aX) w = Spec.Rsa.os2ip bs ∧ word t.mem B (8 * kUsed) = BitVec.ofNat 64 (u + len) ∧
       Frm B [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8)] s.mem t.mem ∧ Ws t B Z w ∧ Keep mmRegs s t := by
   have hn := h.scr.nowrap
-  have sj := h.sl (show aX < 16 by decide)
+  obtain sj := h.sl (show aX < 16 by decide)
   have hw2 := h.w2
   have hw1 := h.w1
-  have hUs : 8 * kUsed + 8 ≤ slot w aX := hdr_lt_slot w aX (by decide)
+  obtain hUs : 8 * kUsed + 8 ≤ slot w aX := hdr_lt_slot w aX (by decide)
   simp only [seqs]
   refine WP.seq (WP.mono (zeroA_ok h (show aX < 16 by decide)) fun s₁ ⟨hz₁, o₁, _, _, _, k₁⟩ => ?_)
-  have h₁ : Ws s₁ B Z w := h.congr (Frm.of_outside o₁ (List.mem_singleton_self _)) (fun r hr => by
+  obtain h₁ : Ws s₁ B Z w := h.congr (Frm.of_outside o₁ (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Mut.ofSlot w aX _) k₁ (by decide)
-  have hh : ∀ i < 32, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
+  obtain hh : ∀ i < 32, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
     o₁.word (Or.inl (by have := hdr_lt_slot w aX hi; omega_using [this])) (by omega_using [hi])
   refine WP.seq (WP.block_append_iff.mpr (WP.block_append_iff.mpr (WP.mono h₁.ws_ok fun s₂ ⟨⟨h12, h11, m₂, _⟩, k₂⟩ =>
     WP.mono (base_ok aX .x8 ((k₂.gpr .x0 (by decide)).trans h₁.x0) h11) fun s₃ ⟨⟨h8, m₃, _⟩, k₃⟩ =>
       WP.mono (WP.keep [.x1, .x3, .x2] (Q := fun t => t.gpr .x1 = rp + BitVec.ofNat 64 u ∧
         t.gpr .x2 = BitVec.ofNat 64 len ∧
         t.mem = s₃.mem.writeW (off B (8 * kUsed)) (BitVec.ofNat 64 (u + len))) (by
-          have h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h₁.x0
-          have hs₃ := h₁.scr.congr (k₂.trans k₃).wr
-          have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
+          obtain h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h₁.x0
+          obtain hs₃ := h₁.scr.congr (k₂.trans k₃).wr
+          obtain hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
             hs₃.ld (by have := h.h256; omega_using [hi, this])
           brun [h0₃, hdr_enc (show kRand < 32 by decide), hdr_enc (show kUsed < 32 by decide),
             hdr_enc (show kLen < 32 by decide), m₃, m₂, hl₃ kRand (by decide), hl₃ kUsed (by decide),
@@ -103,18 +103,18 @@ theorem drawLoad_ok {s : State} {B : Addr} {Z w len : Nat} (h : Ws s B Z w) {rp 
             hh kUsed (by decide), hh kLen (by decide), hR, hU, hK, BitVec.ofNat_add])
         (by decide) (by decide) (by decide +kernel))
       fun s₄ ⟨⟨h1, h2, m₄⟩, k₄⟩ => ?_)))
-  have k14 := ((k₁.trans k₂).trans k₃).trans k₄
-  have hs₄ := h.scr.congr k14.wr
-  have hm₃ : s₃.mem = s₁.mem := m₃.trans m₂
-  have oU : Outside B (8 * kUsed) 8 s₁.mem s₄.mem := by rw [m₄, hm₃]; exact writeW_outside _ _ _ (by omega_using [hn, sj, hUs])
-  have hsrc₄ : Src s₄ B Z (rp + BitVec.ofNat 64 u) bs := hsrc.congrK (fun x hx => by
+  obtain k14 := ((k₁.trans k₂).trans k₃).trans k₄
+  obtain hs₄ := h.scr.congr k14.wr
+  obtain hm₃ : s₃.mem = s₁.mem := m₃.trans m₂
+  obtain oU : Outside B (8 * kUsed) 8 s₁.mem s₄.mem := by rw [m₄, hm₃]; exact writeW_outside _ _ _ (by omega_using [hn, sj, hUs])
+  obtain hsrc₄ : Src s₄ B Z (rp + BitVec.ofNat 64 u) bs := hsrc.congrK (fun x hx => by
     rw [oU x (Or.inr (by omega_using [sj, hUs, hx])), o₁ x (Or.inr (by omega_using [sj, hx]))]) k14
   refine WP.mono (loadBE_ok (w := (len + 7) / 8) hs₄ h1 h2 ((k₄.gpr .x8 (by decide)).trans h8) hbl hl1
     (by omega_using [hlw, hw2]) rfl (by omega_using [sj, hlw]) (fun i hi => hsrc₄.rd i (by omega_using [hbl, hi]))
         (fun i hi => hsrc₄.val i (by omega_using [hbl, hi]))
     (fun i hi => Or.inr (by have := hsrc₄.out i (by omega_using [hbl, hi]); omega_using [sj, this, hlw])))
     fun t ⟨hv, o, k₅⟩ => ?_
-  have F : Frm B [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8)] s.mem t.mem :=
+  obtain F : Frm B [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8)] s.mem t.mem :=
     ((Frm.of_outside o₁ (by simp)).trans (Frm.of_outside oU (by simp))).trans
       (Frm.of_outside (o.mono (o' := slot w aX) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [hlw])) (by simp))
   refine ⟨?_, ?_, F, h.congr' F (fun r hr => by
@@ -124,8 +124,8 @@ theorem drawLoad_ok {s : State} {B : Addr} {Z w len : Nat} (h : Ws s B Z w) {rp 
       · exact KMut.hdr (by simp [kUsed, sFn, sW, sStride, sArr])) (k14.trans k₅) (by decide),
     (k14.trans k₅).mono (by decide)⟩
   · -- The words above the loaded ones are still zero.
-    have hz' : ∀ q < w + 2, word s₁.mem B (slot w aX + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz₁
-    have e := wv_add t.mem B (slot w aX) ((len + 7) / 8) (w - (len + 7) / 8)
+    obtain hz' : ∀ q < w + 2, word s₁.mem B (slot w aX + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz₁
+    obtain e := wv_add t.mem B (slot w aX) ((len + 7) / 8) (w - (len + 7) / 8)
     rw [show (len + 7) / 8 + (w - (len + 7) / 8) = w by omega_arith] at e
     rw [e, hv, wv_zero (n := w - (len + 7) / 8) fun q hq => by
         rw [o.word (by omega_arith) (by omega_arith), Nat.add_assoc, ← Nat.mul_add,
@@ -145,16 +145,16 @@ theorem drawCut_ok {s : State} {B : Addr} {Z w k : Nat} (h : Ws s B Z w) (hk : k
   have hn := hs.nowrap
   have hw1 := h.w1
   have hw2 := h.w2
-  have sX := h.sl (show aX < 16 by decide)
-  have hTs : 8 * fTop + 8 ≤ slot w aX := hdr_lt_slot w aX (by decide)
+  obtain sX := h.sl (show aX < 16 by decide)
+  obtain hTs : 8 * fTop + 8 ≤ slot w aX := hdr_lt_slot w aX (by decide)
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono h.ws_ok fun s₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aX .x16 ((k₁.gpr .x0 (by decide)).trans h.x0) h11) fun s₂ ⟨⟨h16, m₂, _⟩, k₂⟩ => ?_
-  have k12 := k₁.trans k₂
-  have hs₂ := hs.congr k12.wr
-  have h0₂ : s₂.gpr .x0 = B := (k12.gpr .x0 (by decide)).trans h.x0
-  have e12 : s₂.gpr .x12 = BitVec.ofNat 64 w := (k₂.gpr .x12 (by decide)).trans h12
-  have hm₂ : s₂.mem = s.mem := m₂.trans m₁
+  obtain k12 := k₁.trans k₂
+  obtain hs₂ := hs.congr k12.wr
+  obtain h0₂ : s₂.gpr .x0 = B := (k12.gpr .x0 (by decide)).trans h.x0
+  obtain e12 : s₂.gpr .x12 = BitVec.ofNat 64 w := (k₂.gpr .x12 (by decide)).trans h12
+  obtain hm₂ : s₂.mem = s.mem := m₂.trans m₁
   generalize ht : word s.mem B (slot w aX + 8 * (w - 1)) = top
   refine WP.mono (WP.keep [.x3, .x4, .x5] (Q := fun t => t.mem =
       s.mem.writeW (off B (slot w aX + 8 * (w - 1))) (top &&& BitVec.ofNat 64 (2 ^ k - 1))) (by
@@ -197,7 +197,7 @@ theorem drawRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {X : Na
       [.block [.csel .x .x15 .x7 .x8, .logic .and .x .x9 .x9 .x15]]) := rfl
   rw [e]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (witLow_ok h) fun s₁ ⟨hl₁, hm₁, k₁⟩ => ?_)
-  have h₁ : Ws s₁ B Z w := h.congr' (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
+  obtain h₁ : Ws s₁ B Z w := h.congr' (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
   refine wp_seqs_append (by simp) (by simp) (WP.mono (witCmp_ok h₁ (X := X) (by rw [hm₁]; exact hX)
     (by rw [hX] at hl₁; exact hl₁)) fun s₂ ⟨h9₂, hc₂, h7₂, h8₂, _, _, hm₂, k₂⟩ => ?_)
   rw [seqs_one]

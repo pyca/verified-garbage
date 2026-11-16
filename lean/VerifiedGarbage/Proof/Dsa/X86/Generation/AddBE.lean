@@ -48,10 +48,10 @@ theorem ldx_ok {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (he : s.gpr .edx = s.gpr .edi + BitVec.ofNat 32 d)
     (k : ∀ s', Upd s s' .eax ((s.mem (off base d)).setWidth 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.movzx8 .eax (at_ .edx 0) :: is)) s Q := by
-  have e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
+  obtain e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
     simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega_using [hd])
   refine cons (s' := s.setReg .eax ((s.mem (off base d)).setWidth 32)) ?_ (k _ (Upd.setReg _ _ _))
-  have hin := hs.read (d := d) (n := 1) hd
+  obtain hin := hs.read (d := d) (n := 1) hd
   simp only [exec, State.load8, at_, ea_mk, e, hin, ↓reduceIte, Option.map_some]
 
 /-- `mov byte [edx], al`, `edx` at `scratch + d`. -/
@@ -59,11 +59,11 @@ theorem stx_ok {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (he : s.gpr .edx = s.gpr .edi + BitVec.ofNat 32 d)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) ((s.gpr .eax).setWidth 8)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 (at_ .edx 0) .al :: is)) s Q := by
-  have e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
+  obtain e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
     simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega_using [hd])
   refine cons (s' := { s with mem := s.mem.writeW (off base d) ((s.gpr .eax).setWidth 8) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
-  have hout := hs.write (d := d) (n := 1) hd
+  obtain hout := hs.write (d := d) (n := 1) hd
   simp only [exec, State.store8, at_, ea_mk, e, hout, ↓reduceIte, Reg8.reg]
 
 end
@@ -95,28 +95,28 @@ theorem addStep_ok {s : State} {base : Addr} {size o n c m : Nat} (hs : Scr s ba
   obtain ⟨hle, hesi, hedx, ⟨c', hc, hcb, htake⟩, hlow, hhigh, hfr, hk, hsy⟩ := I
   have nw := hs.nowrap
   have sl := hs.size_lt
-  have ht : Scr t base size := Scr.of_eq hs (hk.1 _ (by decide)) (hk.1 _ (by decide)) hk.2.2
-  have hbt := hlow m (Nat.le_refl _)
-  have hBm : (Spec.Rsa.bytesAt s.mem (off base o) n).take (m + 1) =
+  obtain ht : Scr t base size := Scr.of_eq hs (hk.1 _ (by decide)) (hk.1 _ (by decide)) hk.2.2
+  obtain hbt := hlow m (Nat.le_refl _)
+  obtain hBm : (Spec.Rsa.bytesAt s.mem (off base o) n).take (m + 1) =
       (Spec.Rsa.bytesAt s.mem (off base o) n).take m ++ [s.mem (off base (o + m))] := by
     rw [List.take_add_one, getElem?_bytesAt _ _ (by omega_arith), off_add_ofNat]; rfl
-  have hBl := VG.Proof.Bignum.bytesAt_length s.mem (off base o) n
+  obtain hBl := VG.Proof.Bignum.bytesAt_length s.mem (off base o) n
   generalize hB : Spec.Rsa.bytesAt s.mem (off base o) n = B at htake hhigh hBm hBl ⊢
   generalize hR : Spec.Dsa.encodeBE n (Spec.Dsa.decodeBE B + c) = R at htake hhigh ⊢
-  have hRl : R.length = n := by rw [← hR, encodeBE_length]
+  obtain hRl : R.length = n := by rw [← hR, encodeBE_length]
   generalize s.mem (off base (o + m)) = b at hbt hBm
   have hbn := b.isLt
-  have hsum : b.toNat + c' < 2 ^ 32 := by omega_arith
+  obtain hsum : b.toNat + c' < 2 ^ 32 := by omega_arith
   -- The step's result.
-  have hR1 : R.take (m + 1) = Spec.Dsa.encodeBE m (Spec.Dsa.decodeBE (B.take m) + (b.toNat + c') / 256) ++
+  obtain hR1 : R.take (m + 1) = Spec.Dsa.encodeBE m (Spec.Dsa.decodeBE (B.take m) + (b.toNat + c') / 256) ++
       [BitVec.ofNat 8 (b.toNat + c')] := by
-    have h := seedAdd_snoc (B.take m) b c'
+    obtain h := seedAdd_snoc (B.take m) b c'
     rw [List.length_take, Nat.min_eq_left (by omega_arith)] at h
     rw [htake, hBm, h]
-  have hRm : R.take m = Spec.Dsa.encodeBE m (Spec.Dsa.decodeBE (B.take m) + (b.toNat + c') / 256) := by
+  obtain hRm : R.take m = Spec.Dsa.encodeBE m (Spec.Dsa.decodeBE (B.take m) + (b.toNat + c') / 256) := by
     rw [show R.take m = (R.take (m + 1)).take m by rw [List.take_take, Nat.min_eq_left (by omega_arith)], hR1,
       List.take_left' (encodeBE_length _ _)]
-  have hRg : R.getD m 0 = BitVec.ofNat 8 (b.toNat + c') := by
+  obtain hRg : R.getD m 0 = BitVec.ofNat 8 (b.toNat + c') := by
     rw [show R.getD m 0 = (R.take (m + 1)).getD m 0 by
       simp only [List.getD_eq_getElem?_getD, List.getElem?_take, show m < m + 1 by omega_arith, ↓reduceIte], hR1,
       List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [encodeBE_length]), encodeBE_length,
@@ -124,53 +124,53 @@ theorem addStep_ok {s : State} {base : Addr} {size o n c m : Nat} (hs : Scr s ba
   -- The instructions.
   simp only [addStep]
   refine ldx_ok ht (d := o + m) (by omega_arith) hedx fun s₁ u₁ => wp_add fun s₂ u₂ _ => ?_
-  have di₂ : s₂.gpr .edi = t.gpr .edi := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
-  have dx₂ : s₂.gpr .edx = t.gpr .edx := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
-  have ax₂ : s₂.gpr .eax = BitVec.ofNat 32 (b.toNat + c') := by
+  obtain di₂ : s₂.gpr .edi = t.gpr .edi := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain dx₂ : s₂.gpr .edx = t.gpr .edx := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain ax₂ : s₂.gpr .eax = BitVec.ofNat 32 (b.toNat + c') := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hc, hbt]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega_arith), Nat.mod_eq_of_lt (a := c') (by omega_arith)]
-  have ht₂ : Scr s₂ base size := Scr.of_eq ht di₂ (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
+  obtain ht₂ : Scr s₂ base size := Scr.of_eq ht di₂ (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [u₂.wr, u₁.wr])
   refine stx_ok ht₂ (d := o + m) (by omega_arith) (by rw [dx₂, di₂, hedx]) fun s₃ M₃ =>
     wp_shr (n := 8) (by decide) fun s₄ u₄ _ => wp_mov fun s₅ u₅ => wp_subi fun s₆ u₆ _ _ =>
     wp_subi fun s₇ u₇ _ _ => wp_cmpi fun s₈ f₈ _ z₈ => WP.block_nil ?_
-  have g₈ : ∀ r, r ∉ [.eax, .ecx, .edx, .esi] → s₈.gpr r = t.gpr r := fun r hr => by
+  obtain g₈ : ∀ r, r ∉ [.eax, .ecx, .edx, .esi] → s₈.gpr r = t.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [f₈.gpr, u₇.other r hr.2.2.2, u₆.other r hr.2.2.1, u₅.other r hr.2.1, u₄.other r hr.1, M₃.gpr,
       u₂.other r hr.1, u₁.other r hr.1]
-  have di₈ : s₈.gpr .edi = t.gpr .edi := g₈ _ (by decide)
-  have m₈ : s₈.mem = t.mem.writeW (off base (o + m)) (BitVec.ofNat 8 (b.toNat + c')) := by
+  obtain di₈ : s₈.gpr .edi = t.gpr .edi := g₈ _ (by decide)
+  obtain m₈ : s₈.mem = t.mem.writeW (off base (o + m)) (BitVec.ofNat 8 (b.toNat + c')) := by
     rw [f₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, M₃.mem, ax₂, setWidth8_ofNat, u₂.mem, u₁.mem]
-  have cx₈ : s₈.gpr .ecx = BitVec.ofNat 32 ((b.toNat + c') / 256) := by
+  obtain cx₈ : s₈.gpr .ecx = BitVec.ofNat 32 ((b.toNat + c') / 256) := by
     rw [f₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr, M₃.gpr, ax₂]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     rw [Nat.mod_eq_of_lt (a := b.toNat + c') (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
-  have dx₈ : s₈.gpr .edx = t.gpr .edx - 1 := by
+  obtain dx₈ : s₈.gpr .edx = t.gpr .edx - 1 := by
     rw [f₈.gpr, u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), M₃.gpr, dx₂]
-  have si₈ : s₈.gpr .esi = BitVec.ofNat 32 m := by
+  obtain si₈ : s₈.gpr .esi = BitVec.ofNat 32 m := by
     rw [f₈.gpr, u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), M₃.gpr,
       u₂.other _ (by decide), u₁.other _ (by decide), hesi]
     exact ofNat_pred (k := m + 1) (by omega_arith)
-  have zf₈ : s₈.zf = some (decide (m = 0)) := by
+  obtain zf₈ : s₈.zf = some (decide (m = 0)) := by
     rw [z₈, u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), M₃.gpr,
       u₂.other _ (by decide), u₁.other _ (by decide), hesi, ofNat_pred (k := m + 1) (by omega_arith),
       Nat.add_sub_cancel]
     exact congrArg some (sub_beq (b := 0) (by omega_arith) (by decide))
-  have rd₈ : s₈.rd = s.rd := by rw [f₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, M₃.rd, u₂.rd, u₁.rd, hk.2.1]
-  have wr₈ : s₈.wr = s.wr := by rw [f₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, M₃.wr, u₂.wr, u₁.wr, hk.2.2]
-  have sy₈ : s₈.syms = s.syms := by
+  obtain rd₈ : s₈.rd = s.rd := by rw [f₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, M₃.rd, u₂.rd, u₁.rd, hk.2.1]
+  obtain wr₈ : s₈.wr = s.wr := by rw [f₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, M₃.wr, u₂.wr, u₁.wr, hk.2.2]
+  obtain sy₈ : s₈.syms = s.syms := by
     rw [f₈.syms, u₇.syms, u₆.syms, u₅.syms, u₄.syms, M₃.syms, u₂.syms, u₁.syms, hsy]
-  have k₈ : Keeps [.eax, .ecx, .edx, .esi] s s₈ :=
+  obtain k₈ : Keeps [.eax, .ecx, .edx, .esi] s s₈ :=
     ⟨fun r hr => (g₈ r hr).trans (hk.1 r hr), rd₈, wr₈⟩
-  have ne_m : ∀ i, i < n → i ≠ m → off base (o + i) ≠ off base (o + m) := fun i hi h =>
+  obtain ne_m : ∀ i, i < n → i ≠ m → off base (o + i) ≠ off base (o + m) := fun i hi h =>
     Offset.add_ofNat_ne base (by omega_arith) (by omega_arith) (by omega_arith)
-  have fr₈ : Frame [⟨off base o, n⟩] s.mem s₈.mem := fun x hx => by
-    have hin : (⟨off base o, n⟩ : Region).Contains (off base (o + m)) 1 := by
+  obtain fr₈ : Frame [⟨off base o, n⟩] s.mem s₈.mem := fun x hx => by
+    obtain hin : (⟨off base o, n⟩ : Region).Contains (off base (o + m)) 1 := by
       rw [← off_add_ofNat]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-    have hne : x ≠ off base (o + m) := fun h => hx _ (List.mem_singleton_self _) (h ▸ hin)
+    obtain hne : x ≠ off base (o + m) := fun h => hx _ (List.mem_singleton_self _) (h ▸ hin)
     rw [m₈, WriteBytes.writeW8_apply, ite_eq_right_iff.mpr (fun h => absurd h hne), hfr x hx]
   refine ⟨zf₈, fun h0 => ⟨?_, fr₈, k₈, sy₈⟩, fun m' hm' => ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, fr₈, k₈, sy₈⟩⟩
   · -- The last byte: the result.

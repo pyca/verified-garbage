@@ -78,7 +78,7 @@ abbrev W0 (P : EP) (τ s : State) : Prop :=
 theorem w0_self {P : EP} {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns} {dn : String}
     (Q : TF h g f fg dn P) {σ s : State} (hv : V2 h P σ s) (sy : s.syms = σ.syms) : W0 h P s s := by
   obtain ⟨⟨hc, hi, hf, hb⟩, -⟩ := hv
-  have hi' := In.self h Q hi hc.st sy
+  obtain hi' := In.self h Q hi hc.st sy
   exact ⟨⟨⟨hi'.ok, hc.st.sp, rfl, rfl, Frame.refl _ _⟩, hc.slotS⟩, hi', hf, hb, fun _ _ => rfl⟩
 
 /-- What `acc` keeps. -/
@@ -122,7 +122,7 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     (VP.taint _ acc0_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun τ s ⟨⟨hc, hi, hf', hb, he⟩, r0, r7, r4, r6, r5, r12⟩ => ?_)
   · obtain ⟨a1, ra1, va1⟩ := argAt hi hc.st (j := 1) (by decide)
     replace va1 : s.mem.readW ((P.lay h.D).fr (arg 1)) 32 = BitVec.ofNat 32 P.K := va1
-    have hw : WP isa (.block accSet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+    obtain hw : WP isa (.block accSet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 oEm ∧ t.gpr .r7 = P.scr + BitVec.ofNat 32 (oEm + P.K - 1) ∧
         t.gpr .r4 = BitVec.ofNat 32 (lo P) ∧ t.gpr .r6 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧
         t.gpr .r5 = cW ((n0 P).setWidth 32) ∧ t.gpr .r12 = P.B := by
@@ -141,18 +141,18 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [h₁.2.2.2.2.2.2, h₂.2.2.2.2.2.2]
   · have aK : State.addr (P.scr + BitVec.ofNat 32 (oEm + P.K - 1)) = sa P.scr (oEm + (P.K - 1)) := by
       rw [hg.addr (by omega_arith)]; congr 2; omega_arith
-    have a0 : State.addr (P.scr + BitVec.ofNat 32 oEm) = sa P.scr (oEm + 0) := hg.addr (by omega_arith)
-    have al : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega_arith)
-    have rK : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + (P.K - 1))) 1 := hg.rd hc.st (by omega_arith)
-    have r0' : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + 0)) 1 := hg.rd hc.st (by omega_arith)
-    have rl : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
-    have hw : WP isa (.block acc0) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sAcc) (accW P τ) ∧
+    obtain a0 : State.addr (P.scr + BitVec.ofNat 32 oEm) = sa P.scr (oEm + 0) := hg.addr (by omega_arith)
+    obtain al : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega_arith)
+    obtain rK : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + (P.K - 1))) 1 := hg.rd hc.st (by omega_arith)
+    obtain r0' : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + 0)) 1 := hg.rd hc.st (by omega_arith)
+    obtain rl : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
+    obtain hw : WP isa (.block acc0) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sAcc) (accW P τ) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
       prun [acc0, mw, st, r0, r7, r4, r6, r5, r12, aK, a0, al, rK, r0', rl, he _ (show P.K - 1 < P.K by omega_arith),
         he 0 (by omega_arith), he (lo P) (by omega_arith), slotAt hi (d := sAcc) (by decide),
         hc.st.inFr (d := sAcc) (n := 4) (by show sAcc + 4 ≤ frameBytes; decide), dpVal]
     refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
-    have fr : Frame [slotR (P.lay h.D) sAcc] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
+    obtain fr : Frame [slotR (P.lay h.D) sAcc] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
     obtain ⟨σ', ok⟩ := hg.ok
     refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨hi, hf', ?_, by rw [m, Mem.readW_writeW_self32]⟩,
       fun i hi' => ?_⟩
@@ -207,10 +207,10 @@ theorem vslots_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  obtain hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, he⟩ => ?_
   let L := P.lay h.D
-  have hw : WP isa (.block (mgfSlots h.sh)) s fun t =>
+  obtain hw : WP isa (.block (mgfSlots h.sh)) s fun t =>
       t.mem = (((s.mem.writeW (L.fr Impl.RsaOaep.Arm.sDst) (P.scr + BitVec.ofNat 32 oEm + BitVec.ofNat 32 (lo P))).writeW
         (L.fr Impl.RsaOaep.Arm.sDstLen) (BitVec.ofNat 32 (dbN h P))).writeW (L.fr Impl.RsaOaep.Arm.sSrc)
           (P.scr + BitVec.ofNat 32 oEm + BitVec.ofNat 32 (lo P) + BitVec.ofNat 32 (dbN h P))).writeW
@@ -221,17 +221,17 @@ theorem vslots_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       Impl.RsaOaep.Arm.sSrcLen, Impl.RsaOaep.Arm.sDst, Impl.RsaOaep.Arm.sDstLen]
     rfl
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
-  have fr : Frame [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
+  obtain fr : Frame [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
       slotR L Impl.RsaOaep.Arm.sSrcLen] s.mem t.mem := by
     rw [m]
     exact ((((slot_frame _ _ _ _).mono (by simp)).trans ((slot_frame _ _ _ _).mono (by simp))).trans
       ((slot_frame _ _ _ _).mono (by simp))).trans ((slot_frame _ _ _ _).mono (by simp))
-  have dS : ∀ r ∈ [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
+  obtain dS : ∀ r ∈ [slotR L Impl.RsaOaep.Arm.sDst, slotR L Impl.RsaOaep.Arm.sDstLen, slotR L Impl.RsaOaep.Arm.sSrc,
       slotR L Impl.RsaOaep.Arm.sSrcLen], ∀ o n, o + n ≤ oRsa → (sR P.scr o n).Disjoint r := by
     intro r hr o n hon
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
-  have hem : ∀ i < P.K, t.mem (sa P.scr (oEm + i)) = emv P τ i := fun i hi => by
+  obtain hem : ∀ i < P.K, t.mem (sa P.scr (oEm + i)) = emv P τ i := fun i hi => by
     rw [← he i hi]
     exact fr _ fun r hr => dS r hr (oEm + i) 1 (by have := hi₀.k1024; pomega) _ (Region.contains_self _ _)
   refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨Ka.keep h hk fr fun r hr => ?_, ?_, ?_, ?_, ?_⟩,
@@ -275,8 +275,8 @@ theorem vmask_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns}
   have e1 : oEm = 0 := rfl
   have e2 : Impl.RsaOaep.Arm.oBuf = 1024 := rfl
   have fit := hg.fit
-  have fd : oEm + lo P + dbN h P ≤ Impl.RsaOaep.Arm.oBuf := by omega_arith
-  have mp := RsaOaep.Arm.mpOf g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P) (dl := dbN h P)
+  obtain fd : oEm + lo P + dbN h P ≤ Impl.RsaOaep.Arm.oBuf := by omega_arith
+  obtain mp := RsaOaep.Arm.mpOf g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P) (dl := dbN h P)
     hD0 (by omega_arith) (by omega_arith) fd (.inr (Nat.le_refl _)) (seed := seedV h P) (fun τ => by simp)
     (X := Ka h P) (fun τ m m' hk hf' => Ka.keep h hk hf' fun r hr =>
       ⟨RsaOaep.Arm.mgfW_slot g hg fd (by decide) (by decide) (by decide) r hr,
@@ -322,24 +322,24 @@ theorem vtop_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ hd, m ▸ hh⟩, r0, r1⟩
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
   · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega_arith)
-    have rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
-    have wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega_arith)
-    have hw : WP isa (.block topAnd) s fun t =>
+    obtain rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
+    obtain wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega_arith)
+    obtain hw : WP isa (.block topAnd) s fun t =>
         t.mem = s.mem.writeW (sa P.scr (oEm + lo P))
           (s.mem (sa P.scr (oEm + lo P)) &&& (cW ((n0 P).setWidth 32)).setWidth 8) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
       prun [topAnd, r0, r1, ad, rd, wd, dpVal, andByte]
     refine WP.mono hw fun t ⟨m, rd', wr', sp'⟩ => ?_
-    have fr : Frame [sR P.scr (oEm + lo P) 1] s.mem t.mem := by
+    obtain fr : Frame [sR P.scr (oEm + lo P) 1] s.mem t.mem := by
       rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_arith) (by omega_arith)
-    have kk : ∀ d, d + 4 ≤ frameBytes → t.mem.readW ((P.lay h.D).fr d) 32 = s.mem.readW ((P.lay h.D).fr d) 32 :=
+    obtain kk : ∀ d, d + 4 ≤ frameBytes → t.mem.readW ((P.lay h.D).fr d) 32 = s.mem.readW ((P.lay h.D).fr d) 32 :=
       fun d hd => by
         rw [slot_keep (v := s.mem.readW ((P.lay h.D).fr d) 32) fr (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega_arith)
             (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_arith)) rfl]
-    have hb' : Bm h P t.mem := ⟨by rw [kk _ (by decide)]; exact hk.2.2.1.1, by rw [kk _ (by decide)]; exact hk.2.2.1.2.1,
+    obtain hb' : Bm h P t.mem := ⟨by rw [kk _ (by decide)]; exact hk.2.2.1.1, by rw [kk _ (by decide)]; exact hk.2.2.1.2.1,
       by rw [kk _ (by decide)]; exact hk.2.2.1.2.2.1, by rw [kk _ (by decide)]; exact hk.2.2.1.2.2.2⟩
-    have ha' : t.mem.readW ((P.lay h.D).fr sAcc) 32 = accW P τ := by rw [kk _ (by decide)]; exact hk.2.2.2
+    obtain ha' : t.mem.readW ((P.lay h.D).fr sAcc) 32 = accW P τ := by rw [kk _ (by decide)]; exact hk.2.2.2
     refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd' wr' sp', ⟨hk.1, hk.2.1, hb', ha'⟩,
       fun i hi => ?_, fun i hi => ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith)

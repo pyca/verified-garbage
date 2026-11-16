@@ -248,44 +248,44 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   obtain ⟨t₃, f₃, r₃, o₃, n₃, d₃, w₃⟩ := movR_ok t₂ .rcx sb
   obtain ⟨t₄, f₄, r₄, o₄, n₄, d₄, w₄⟩ := addImm_ok t₃ .rcx (BitVec.ofNat 32 (8 * wsSlot))
   obtain ⟨t₅, f₅, x₅a, x₅b, x₅c, x₅d, g₅, u₅⟩ := constants_run t₄
-  have sb₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hB]
-  have mem₅ : t₅.mem = s.mem := by rw [u₅, n₄, n₃, n₂, n₁, m₁]
-  have rd₅ : t₅.rd = s.rd := by rw [u₅, d₄, d₃, d₂, d₁, rd₁]
-  have wr₅ : t₅.wr = s.wr := by rw [u₅, w₄, w₃, w₂, w₁, wr₁]
-  have rsi₅ : t₅.gpr .rsi = B := by
+  obtain sb₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hB]
+  obtain mem₅ : t₅.mem = s.mem := by rw [u₅, n₄, n₃, n₂, n₁, m₁]
+  obtain rd₅ : t₅.rd = s.rd := by rw [u₅, d₄, d₃, d₂, d₁, rd₁]
+  obtain wr₅ : t₅.wr = s.wr := by rw [u₅, w₄, w₃, w₂, w₁, wr₁]
+  obtain rsi₅ : t₅.gpr .rsi = B := by
     rw [g₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide), sb₁]
   obtain ⟨t₆, f₆, l₆a, l₆b, k₆, g₆, u₆⟩ := loadBlock_run t₅ B rsi₅ fun o ho => by
     rw [rd₅, wr₅]; exact inScr' (s := s) hw (by omega_using [ho])
-  have mem₆ : t₆.mem = s.mem := by rw [u₆, mem₅]
-  have rd₆ : t₆.rd = s.rd := by rw [u₆, rd₅]
-  have wr₆ : t₆.wr = s.wr := by rw [u₆, wr₅]
-  have g₆' : ∀ g, g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .r11 → t₆.gpr g = s₁.gpr g :=
+  obtain mem₆ : t₆.mem = s.mem := by rw [u₆, mem₅]
+  obtain rd₆ : t₆.rd = s.rd := by rw [u₆, rd₅]
+  obtain wr₆ : t₆.wr = s.wr := by rw [u₆, wr₅]
+  obtain g₆' : ∀ g, g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .r11 → t₆.gpr g = s₁.gpr g :=
     fun g h1 h3 h4 h5 => by rw [g₆ _ h5, g₅ _ h5, o₄ _ h4, o₃ _ h4, o₂ _ h3, o₁ _ h1]
-  have rdx₆ : t₆.gpr .rdx = B := by
+  obtain rdx₆ : t₆.gpr .rdx = B := by
     rw [g₆ _ (by decide), g₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁, sb₁]
-  have rdi₆ : t₆.gpr .rdi = p := by
+  obtain rdi₆ : t₆.gpr .rdi = p := by
     rw [g₆' _ (by decide) (by decide) (by decide) (by decide), g₁ _ (by decide), hp]
-  have rsi₆ : t₆.gpr .rsi = B := by rw [g₆ _ (by decide), rsi₅]
-  have rcx₆ : t₆.gpr .rcx = wsAddr B := by
+  obtain rsi₆ : t₆.gpr .rsi = B := by rw [g₆ _ (by decide), rsi₅]
+  obtain rcx₆ : t₆.gpr .rcx = wsAddr B := by
     rw [g₆ _ (by decide), g₅ _ (by decide), r₄, r₃, o₂ _ (by decide), o₁ _ (by decide), sb₁,
       signExtend_small (by decide)]
   apply WP.seq
   refine WP.of_runBlock ⟨t₆, cat_run (cat_run (cat_run f₁ (cat_run f₂ (cat_run f₃ f₄))) f₅) f₆, ?_⟩
   -- The rounds.
-  have inSch : ∀ off n, off + n ≤ 4168 → InRegions (t₆.rd ++ t₆.wr) (p + BitVec.ofNat 64 off) n :=
+  obtain inSch : ∀ off n, off + n ≤ 4168 → InRegions (t₆.rd ++ t₆.wr) (p + BitVec.ofNat 64 off) n :=
     fun off n h => ⟨_, List.mem_append_left _ (by rw [rd₆]; exact hS.rd), Offset.contains_base p h (by omega_using [h])⟩
-  have CE : CipherEnv .rdi p t₆ := by
+  obtain CE : CipherEnv .rdi p t₆ := by
     refine ⟨⟨rdi₆, by decide, by decide, by decide, fun off h => inSch off 16 (by omega_using [h]),
       by rw [k₆ _ (by decide) (by decide), x₅a], by rw [k₆ _ (by decide) (by decide), x₅b],
       by rw [k₆ _ (by decide) (by decide), x₅c]⟩, by decide, by decide, fun i hi => inSch _ 4 (by omega_using [hi])⟩
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun t₇ ⟨c₁, c₂, O⟩ => ?_
-  have mem₇ : t₇.mem = s.mem := by rw [O.upd, mem₆]
-  have rd₇ : t₇.rd = s.rd := by rw [O.upd, rd₆]
-  have wr₇ : t₇.wr = s.wr := by rw [O.upd, wr₆]
+  obtain mem₇ : t₇.mem = s.mem := by rw [O.upd, mem₆]
+  obtain rd₇ : t₇.rd = s.rd := by rw [O.upd, rd₆]
+  obtain wr₇ : t₇.wr = s.wr := by rw [O.upd, wr₆]
   have g₇ : ∀ g, g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → t₇.gpr g = t₆.gpr g := O.gpr
   -- The block out, and `sb` back.
-  have SE : StoreEnv B (wsAddr B) t₇ := by
+  obtain SE : StoreEnv B (wsAddr B) t₇ := by
     refine ⟨by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rsi₆],
       by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rcx₆],
       by rw [wr₇, show B = B + BitVec.ofNat 64 0 by simp]; exact inScr hw (by decide),
@@ -297,15 +297,15 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   refine WP.of_runBlock ⟨t₉, cat_run f₈ f₉, ?_⟩
   obtain ⟨t₁₀, f₁₀, g₁₀, n₁₀, d₁₀, w₁₀⟩ := restoreIv_run t₉
   refine WP.of_runBlock ⟨t₁₀, f₁₀, ?_⟩
-  have mem₁₀ : t₁₀.mem = t₈.mem := by rw [n₁₀, n₉]
-  have fr : Frame [⟨B, 8⟩, ⟨wsAddr B, 16⟩] s.mem t₁₀.mem := by rw [mem₁₀, ← mem₇]; exact fr₈
-  have sub : Region.Sub ⟨B, 8⟩ ⟨B, 8 * 11⟩ ∧ Region.Sub ⟨wsAddr B, 16⟩ ⟨B, 8 * 11⟩ :=
+  obtain mem₁₀ : t₁₀.mem = t₈.mem := by rw [n₁₀, n₉]
+  obtain fr : Frame [⟨B, 8⟩, ⟨wsAddr B, 16⟩] s.mem t₁₀.mem := by rw [mem₁₀, ← mem₇]; exact fr₈
+  obtain sub : Region.Sub ⟨B, 8⟩ ⟨B, 8 * 11⟩ ∧ Region.Sub ⟨wsAddr B, 16⟩ ⟨B, 8 * 11⟩ :=
     ⟨Region.sub_prefix (by decide), Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
-  have kp : ∀ g, g ≠ .r14 → g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .rax → g ≠ .r8 →
+  obtain kp : ∀ g, g ≠ .r14 → g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .rax → g ≠ .r8 →
       g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → t₁₀.gpr g = s.gpr g := fun g h1 h3 h5 h6 h7 h8 h9 h10 h11 => by
     rw [g₁₀, o₉ _ h9, g₈ _ h11, g₇ _ h7 h8 h9 h10 h11, g₆' _ h3 h5 h6 h11, g₁ _ h1]
-  have rd₁₀ : t₁₀.rd = s.rd := by rw [d₁₀, d₉, e₈, rd₇]
-  have wr₁₀ : t₁₀.wr = s.wr := by rw [w₁₀, w₉, e₈, wr₇]
+  obtain rd₁₀ : t₁₀.rd = s.rd := by rw [d₁₀, d₉, e₈, rd₇]
+  obtain wr₁₀ : t₁₀.wr = s.wr := by rw [w₁₀, w₉, e₈, wr₇]
   refine ⟨by rw [g₁₀, r₉, g₈ _ (by decide), g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide),
       rdx₆], kp _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide),
@@ -329,8 +329,8 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
       · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
   · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
     subst hj0
-    have ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
-    have hK₆ : scheduleAt t₆.mem p = k := by rw [mem₆]; exact hK
+    obtain ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
+    obtain hK₆ : scheduleAt t₆.mem p = k := by rw [mem₆]; exact hK
     rw [dirCore_bw, ea, Nat.mul_one, dirCipher_bytes, bytesAt_eq]
     refine congrArg Vector.toList (blockAt_eq _ _ _ fun i hi => ?_)
     rw [mem₁₀, b₈ i hi, c₁, c₂, l₆a, l₆b, hK₆, mem₅, show dirBlock k up (blockAt s.mem B) =
@@ -389,7 +389,7 @@ theorem crypt_keepsIv (up : Bool) : KeepsIv (dirCore up).crypt := by
               rename_i s₁ _ s₂ _ s₃ _ s₄ _ _
               simp only [saveIv, execBlock, exec, Option.map_some, Option.some.injEq, Prod.mk.injEq] at b₁
               simp only [restoreIv, execBlock, exec, Option.map_some, Option.some.injEq, Prod.mk.injEq] at b₈
-              have k14 : s₄.gpr .r14 = s₁.gpr .r14 :=
+              obtain k14 : s₄.gpr .r14 = s₁.gpr .r14 :=
                 ((keepsGpr_of_gprSafe gprSafe_finish _ _ _ e₇).trans
                   (keepsGpr_of_gprSafe (gprSafe_cipher up) _ _ _ e₅)).trans
                   (keepsGpr_of_gprSafe gprSafe_setup _ _ _ e₃)

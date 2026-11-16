@@ -88,45 +88,45 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have fits := S.fits
-  have Plt := operand_lt_of Ip
-  have Qlt := operand_lt_of Iq
+  obtain Plt := operand_lt_of Ip
+  obtain Qlt := operand_lt_of Iq
   simp only [Validate.domain, Core.sequence, List.foldr]
   refine WP.seq (WP.seq (WP.mono (range_ok S.ws (by omega_using [big]) S.wp Ip.toReady Ig.toReady true) fun v₁ ⟨F₁, St₁⟩ =>
     WP.mono (range_ok (St₁.ws S.ws) (by omega_using [big]) S.wp (Ip.next S St₁ (.inl ⟨rfl, rfl⟩)).toReady
       (Iy.next S St₁ (.inl ⟨rfl, rfl⟩)).toReady true) fun v₂ ⟨F₂, St₂⟩ => ?_))
-  have S₂ := (S.stage St₁).stage St₂
-  have Ip₂ := (Ip.next S St₁ (.inl ⟨rfl, rfl⟩)).next (S.stage St₁) St₂ (.inl ⟨rfl, rfl⟩)
-  have Iq₂ := (Iq.next S St₁ (.inl ⟨rfl, rfl⟩)).next (S.stage St₁) St₂ (.inl ⟨rfl, rfl⟩)
+  obtain S₂ := (S.stage St₁).stage St₂
+  obtain Ip₂ := (Ip.next S St₁ (.inl ⟨rfl, rfl⟩)).next (S.stage St₁) St₂ (.inl ⟨rfl, rfl⟩)
+  obtain Iq₂ := (Iq.next S St₁ (.inl ⟨rfl, rfl⟩)).next (S.stage St₁) St₂ (.inl ⟨rfl, rfl⟩)
   rw [(Ip.next S St₁ (.inl ⟨rfl, rfl⟩)).value, (Iy.next S St₁ (.inl ⟨rfl, rfl⟩)).value] at F₂
   rw [Ip.value, Ig.value] at F₁
   -- `p - 1`
   refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.t) S₂.ws (by omega_using [big]) S.wp Ip₂.toReady Ip₂.value hP hPo
     (by omega_using [hP]) (by decide) (by decide) (by simp only [Impl.Dsa.Layout.t]; omega_using [p384, big]) (by decide))
     fun v₃ ⟨B₃, St₃⟩ => ?_)
-  have S₃ := S₂.stage St₃
-  have ho₃ : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain S₃ := S₂.stage St₃
+  obtain ho₃ : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
-  have Iq₃ := Iq₂.next S₂ St₃ (.inr ho₃)
-  have L₃ : localVal base v₃ Impl.Dsa.Layout.t pLen = P - 1 := localVal_of_bytes B₃ (by omega_using [Plt])
+  obtain Iq₃ := Iq₂.next S₂ St₃ (.inr ho₃)
+  obtain L₃ : localVal base v₃ Impl.Dsa.Layout.t pLen = P - 1 := localVal_of_bytes B₃ (by omega_using [Plt])
   -- `(p - 1) mod q`
   refine WP.seq (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) S₃.ws (by omega_using [big]) S.wq Iq₃.toReady
     (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega_using [p384])
     (localReady S₃.ws (by decide) (by simp only [countValue, Impl.Dsa.Layout.t]; omega_using [p384, big]) (by decide))
     Iq₃.value hQ hQo (by decide) (by simp only [Impl.Dsa.Layout.u]; omega_using [q32, big]) (by decide)) fun v₄ ⟨B₄, St₄⟩ => ?_)
   rw [countValue, local_operand S₃.ws (by simp only [Impl.Dsa.Layout.t]; omega_using [big]), L₃] at B₄
-  have S₄ := S₃.stage St₄
-  have ho₄ : 4960 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
+  obtain S₄ := S₃.stage St₄
+  obtain ho₄ : 4960 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.u]; omega_using [q32]
-  have Iq₄ := Iq₃.next S₃ St₄ (.inr ho₄)
-  have L₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = (P - 1) % Q :=
+  obtain Iq₄ := Iq₃.next S₃ St₄ (.inr ho₄)
+  obtain L₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = (P - 1) % Q :=
     localVal_of_bytes B₄ (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [hQ])) (Nat.le_of_lt Qlt))
   -- `q ∣ p - 1`
   refine WP.seq (WP.mono (zero_ok S₄.ws (by omega_using [big]) S.wq
     (localReady (len := qLen) S₄.ws (by decide) (by simp only [Impl.Dsa.Layout.u]; omega_using [q32, big]) (by decide)) false)
     fun v₅ ⟨F₅, St₅⟩ => ?_)
   rw [local_operand S₄.ws (by simp only [Impl.Dsa.Layout.u]; omega_using [big]), L₄] at F₅
-  have S₅ := S₄.stage St₅
-  have Iq₅ := Iq₄.next S₄ St₅ (.inl ⟨rfl, rfl⟩)
+  obtain S₅ := S₄.stage St₅
+  obtain Iq₅ := Iq₄.next S₄ St₅ (.inl ⟨rfl, rfl⟩)
   -- `q - 2`
   refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) S₅.ws (by omega_using [big]) S.wq Iq₅.toReady
     Iq₅.value (by omega_using [hQ]) hQo (by omega_using [hQ]) (by decide) (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo]; omega_using [q32, big])
@@ -152,26 +152,26 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have fits := S.fits
-  have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain Plt := operand_lt_of Ip
+  obtain ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
-  have ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
+  obtain ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
   simp only [Validate.subgroup, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S.ws (by omega_using [big]) S.wp q4 qp qw Ip.toReady
     Ig.toReady Iq.toReady Ip.value hP hPo ho.1 (by omega_using [big, ho]) (by decide)) fun v₁ ⟨B₁, St₁⟩ => ?_)
   rw [Ig.value, Iq.value] at B₁
-  have S₁ := S.stage St₁
+  obtain S₁ := S.stage St₁
   refine WP.seq (WP.mono (isOne_ok S₁.ws (by omega_using [big]) S.wp (localReady S₁.ws ho.1 ht (by decide)))
     fun v₂ ⟨F₂, St₂⟩ => ?_)
   rw [local_operand S₁.ws (by omega_using [big, ho]), localVal_of_bytes B₁ (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hP])) Plt)] at F₂
-  have S₂ := S₁.stage St₂
-  have Ip₂ := (Ip.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
-  have Iq₂ := (Iq.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
-  have Iy₂ := (Iy.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
+  obtain S₂ := S₁.stage St₂
+  obtain Ip₂ := (Ip.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
+  obtain Iq₂ := (Iq.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
+  obtain Iy₂ := (Iy.next S St₁ (.inr ho)).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
   refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S₂.ws (by omega_using [big]) S.wp q4 qp qw Ip₂.toReady
     Iy₂.toReady Iq₂.toReady Ip₂.value hP hPo ho.1 (by omega_using [big, ho]) (by decide)) fun v₃ ⟨B₃, St₃⟩ => ?_)
   rw [Iy₂.value, Iq₂.value] at B₃
-  have S₃ := S₂.stage St₃
+  obtain S₃ := S₂.stage St₃
   refine WP.seq (WP.mono (isOne_ok S₃.ws (by omega_using [big]) S.wp (localReady S₃.ws ho.1 ht (by decide)))
     fun v₄ ⟨F₄, St₄⟩ => WP.block_nil ⟨?_, ?_, ?_⟩)
   · rw [local_operand S₃.ws (by omega_using [big, ho]), localVal_of_bytes B₃ (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hP])) Plt)] at F₄
@@ -203,7 +203,7 @@ theorem publicKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : N
   refine WP.seq (WP.mono (domain_ok S Ip Iq Ig Iy hP hPo hQ hQo) fun u ⟨Fu, Lu, Ru⟩ =>
     WP.mono (subgroup_ok (S.run Ru) (Ip.run Ru (by omega_using [big]) fits) (Iq.run Ru (by omega_using [big]) fits)
       (Ig.run Ru (by omega_using [big]) fits) (Iy.run Ru (by omega_using [big]) fits) hP hPo) fun t ⟨Ft, Kt, Rt⟩ => ?_)
-  have L : localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
+  obtain L : localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
     rw [Kt _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; have := S.q32; omega_using [this])]
     exact Lu
   refine ⟨?_, L, Ru.trans Rt⟩
@@ -222,10 +222,10 @@ theorem privateKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X 
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have fits := S.fits
-  have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain Plt := operand_lt_of Ip
+  obtain ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
-  have ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
+  obtain ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
   have ht' : Impl.Dsa.Layout.t = 14944 := rfl
   simp only [Validate.privateKey, Core.sequence, List.foldr]
   refine WP.seq (WP.seq (WP.mono (range_ok S.ws (by omega_using [big]) S.wq Iq.toReady Ix.toReady false) fun v₁ ⟨F₁, St₁⟩ =>
@@ -233,14 +233,14 @@ theorem privateKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X 
       (Ik.next S St₁ (.inl ⟨rfl, rfl⟩)).toReady false) fun v₂ ⟨F₂, St₂⟩ => ?_))
   rw [Iq.value, Ix.value] at F₁
   rw [(Iq.next S St₁ (.inl ⟨rfl, rfl⟩)).value, (Ik.next S St₁ (.inl ⟨rfl, rfl⟩)).value] at F₂
-  have S₂ := (S.stage St₁).stage St₂
-  have nx : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₂ base size p len v :=
+  obtain S₂ := (S.stage St₁).stage St₂
+  obtain nx : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₂ base size p len v :=
     fun I => (I.next S St₁ (.inl ⟨rfl, rfl⟩)).next (S.stage St₁) St₂ (.inl ⟨rfl, rfl⟩)
   refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S₂.ws (by omega_using [big]) S.wp q4 qp qw (nx Ip).toReady
     (nx Ig).toReady (nx Ix).toReady (nx Ip).value hP hPo ho.1 (by omega_using [big, ho]) (by decide)) fun v₃ ⟨B₃, St₃⟩ => ?_)
   rw [(nx Ig).value, (nx Ix).value] at B₃
-  have S₃ := S₂.stage St₃
-  have Iy₃ := (nx Iy).next S₂ St₃ (.inr ho)
+  obtain S₃ := S₂.stage St₃
+  obtain Iy₃ := (nx Iy).next S₂ St₃ (.inr ho)
   refine WP.seq (WP.mono (equalValues_ok S₃.ws (by omega_using [big]) S.wp (localReady S₃.ws ho.1 ht (by decide)) Iy₃.toReady)
     fun v₄ ⟨F₄, St₄⟩ => WP.block_nil ⟨?_, ?_, ?_⟩)
   · rw [local_operand S₃.ws (by omega_using [big, ho]), localVal_of_bytes B₃ (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hP])) Plt),

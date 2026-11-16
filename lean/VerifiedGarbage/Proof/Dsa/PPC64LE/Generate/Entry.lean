@@ -43,7 +43,7 @@ theorem bytes_outside {L : GL} {m m' : Mem} (ho : Outside L.F 0 frameBytes m m')
   simp only [Spec.Rsa.bytesAt, List.map_inj_left, List.mem_range]
   intro i hi
   refine ho _ (.inr ?_)
-  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hk, hi])
+  obtain hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hk, hi])
   by_contra hcon
   exact hd _ (show L.frR.Contains (A + BitVec.ofNat 64 i) 1 by
     simp only [Region.Contains, frameBytes, ofs] at hcon ⊢; omega) hc
@@ -72,43 +72,43 @@ structure Entered (L : GL) (s₀ : State) (t : State) : Prop where
 
 theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
     WP isa (.block entry) (allocated frameBytes s₀) (Entered (glOf s₀) s₀) := by
-  have hL := glOf_ok h
+  obtain hL := glOf_ok h
   generalize hLd : glOf s₀ = L at hL
-  have hsp : s₀.sp = L.sp := by rw [← hLd]; rfl
+  obtain hsp : s₀.sp = L.sp := by rw [← hLd]; rfl
   have hF := hL.fnw
   have hF' := hF
   simp only [frameBytes] at hF'
-  have hE : (allocated frameBytes s₀).sp = L.F := by simp only [allocated, hsp]
-  have hin : ∀ i < 19, InRegions (allocated frameBytes s₀).wr (off L.F (oSave + 8 * i)) 8 := fun i hi =>
+  obtain hE : (allocated frameBytes s₀).sp = L.F := by simp only [allocated, hsp]
+  obtain hin : ∀ i < 19, InRegions (allocated frameBytes s₀).wr (off L.F (oSave + 8 * i)) 8 := fun i hi =>
     ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by simp only [oSave]; omega_using [])
       (by simp only [oSave, frameBytes]; omega_using [hi])⟩
   rw [entry, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (saveRegs_ok _ hF hE hin) fun t₁ h₁ => ?_
   -- The call's data.
-  have eo : s₀.gpr .r3 = L.out := by rw [← hLd]; rfl
-  have eu : s₀.gpr .r5 = L.used := by rw [← hLd]; rfl
-  have ek : s₀.gpr .r6 = L.par := by rw [← hLd]; rfl
-  have ep : s₀.gpr .r8 = BitVec.ofNat 64 L.pl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
-  have eq : s₀.gpr .r9 = BitVec.ofNat 64 L.ql := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
-  have ed : s₀.gpr .r10 = L.rand := by rw [← hLd]; rfl
-  have a0 : stackArg s₀ 0 = BitVec.ofNat 64 L.rl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
-  have a1 : stackArg s₀ 1 = L.scr := by rw [← hLd]; rfl
-  have a2 : stackArg s₀ 2 = BitVec.ofNat 64 L.sl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
+  obtain eo : s₀.gpr .r3 = L.out := by rw [← hLd]; rfl
+  obtain eu : s₀.gpr .r5 = L.used := by rw [← hLd]; rfl
+  obtain ek : s₀.gpr .r6 = L.par := by rw [← hLd]; rfl
+  obtain ep : s₀.gpr .r8 = BitVec.ofNat 64 L.pl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
+  obtain eq : s₀.gpr .r9 = BitVec.ofNat 64 L.ql := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
+  obtain ed : s₀.gpr .r10 = L.rand := by rw [← hLd]; rfl
+  obtain a0 : stackArg s₀ 0 = BitVec.ofNat 64 L.rl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
+  obtain a1 : stackArg s₀ 1 = L.scr := by rw [← hLd]; rfl
+  obtain a2 : stackArg s₀ 2 = BitVec.ofNat 64 L.sl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
   -- Memory so far changed within the frame.
-  have o₀ : Outside L.F 0 8 s₀.mem (allocated frameBytes s₀).mem := by
+  obtain o₀ : Outside L.F 0 8 s₀.mem (allocated frameBytes s₀).mem := by
     intro x hx
     simp only [allocated, hsp, ofs] at hx ⊢
     apply Mem.write_apply
     show ¬ (x - L.F).toNat < 8
     omega_using [hx]
-  have o₁ : Outside L.F 0 frameBytes s₀.mem t₁.mem :=
+  obtain o₁ : Outside L.F 0 frameBytes s₀.mem t₁.mem :=
     (o₀.mono (by omega_using []) (by simp only [frameBytes]; omega_using [])).trans (h₁.out.mono (by omega_using [])
       (by simp only [oSave, frameBytes]; omega_using []))
   -- The arguments on the stack.
   obtain ⟨-, -, hrd, -⟩ := h
-  have hargs : ∀ i < 3, InRegions (t₁.rd ++ t₁.wr) (L.F + BitVec.ofNat 64 (argOff i)) 8 ∧
+  obtain hargs : ∀ i < 3, InRegions (t₁.rd ++ t₁.wr) (L.F + BitVec.ofNat 64 (argOff i)) 8 ∧
       t₁.mem.readW (L.F + BitVec.ofNat 64 (argOff i)) 64 = stackArg s₀ i := fun i hi => by
-    have e : L.F + BitVec.ofNat 64 (argOff i) = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := by
+    obtain e : L.F + BitVec.ofNat 64 (argOff i) = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := by
       rw [show L.F + BitVec.ofNat 64 (argOff i) = off L.F (frameBytes + (96 + 8 * i)) by
         simp only [argOff, frameBytes]; rw [show 304 + 96 + 8 * i = 304 + (96 + 8 * i) by omega_using []], F_add,
         stackArgAddr, hsp, show 32 + 8 * (8 + 0) = 96 by rfl, BitVec.add_assoc, BitVec.ofNat_add]
@@ -127,9 +127,9 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
   obtain ⟨l1, v1⟩ := hargs 1 (by decide)
   obtain ⟨l2, v2⟩ := hargs 2 (by decide)
   simp only [argOff, frameBytes, Nat.reduceAdd, Nat.reduceMul] at l0 v0 l1 v1 l2 v2
-  have st : InRegions t₁.wr (L.F + BitVec.ofNat 64 96) 8 := by
+  obtain st : InRegions t₁.wr (L.F + BitVec.ofNat 64 96) 8 := by
     rw [h₁.wr]; exact ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by omega_using []) (by simp only [frameBytes]; omega_using [])⟩
-  have hr : ∀ r, r ≠ .r0 → r ≠ .r12 → t₁.gpr r = s₀.gpr r := fun r h0 h12 => h₁.others r h0 h12
+  obtain hr : ∀ r, r ≠ .r0 → r ≠ .r12 → t₁.gpr r = s₀.gpr r := fun r h0 h12 => h₁.others r h0 h12
   simp only [argOff, oArgs, frameBytes, Nat.reduceAdd, Nat.reduceMul]
   refine WP.mono (WP.keep [.r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r30] (Q := fun t =>
     t.gpr .r18 = L.out ∧ t.gpr .r19 = L.par ∧ t.gpr .r20 = BitVec.ofNat 64 L.pl ∧ t.gpr .r21 = BitVec.ofNat 64 L.ql ∧
@@ -141,22 +141,22 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
       hr .r8 (by decide) (by decide), hr .r9 (by decide) (by decide), hr .r10 (by decide) (by decide),
       eo, eu, ek, ep, eq, ed, add0])
     (by decide)) fun t₂ ⟨⟨b18, b19, b20, b21, b22, b23, b24, b30, b25, b26, bm⟩, k₂⟩ => ?_
-  have e₂sp : t₂.sp = L.F := by rw [k₂.sp, h₁.sp, hE]
-  have e₂wr : t₂.wr = frameR frameBytes s₀ :: s₀.wr := by rw [k₂.wr, h₁.wr]; rfl
+  obtain e₂sp : t₂.sp = L.F := by rw [k₂.sp, h₁.sp, hE]
+  obtain e₂wr : t₂.wr = frameR frameBytes s₀ :: s₀.wr := by rw [k₂.wr, h₁.wr]; rfl
   refine WP.mono (clearNonce_ok t₂ hF e₂sp (scr_nonce hL hsp e₂wr)) fun t ⟨⟨_, tz, tou⟩, k₃⟩ => ?_
   -- Memory on exit, from `t₁`'s.
-  have o₂ : Outside L.F oArgs 8 t₁.mem t₂.mem := by
+  obtain o₂ : Outside L.F oArgs 8 t₁.mem t₂.mem := by
     rw [bm]
     exact (writeW_outside _ L.F (d := 96) _ (by omega_using [])).mono (by simp only [oArgs]; omega_using []) (by simp only [oArgs]; omega_using [])
-  have o₃ : Outside L.F 0 frameBytes s₀.mem t.mem :=
+  obtain o₃ : Outside L.F 0 frameBytes s₀.mem t.mem :=
     (o₁.trans (o₂.mono (by omega_using []) (by simp only [oArgs, frameBytes]; omega_using []))).trans
       (tou.mono (by omega_using []) (by simp only [oNonce, frameBytes]; omega_using []))
-  have w₃ : ∀ d, (d + 8 ≤ oArgs ∨ oNonce + 32 ≤ d) → d + 8 ≤ frameBytes →
+  obtain w₃ : ∀ d, (d + 8 ≤ oArgs ∨ oNonce + 32 ≤ d) → d + 8 ≤ frameBytes →
       t.mem.readW (off L.F d) 64 = t₁.mem.readW (off L.F d) 64 := fun d hd hd' => by
-    have e1 := tou.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
-    have e2 := o₂.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
+    obtain e1 := tou.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
+    obtain e2 := o₂.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
     exact e1.trans e2
-  have g₃ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ∉ ([.r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26,
+  obtain g₃ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ∉ ([.r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26,
       .r30] : List Reg) → t.gpr r = s₀.gpr r := fun r h0 h12 hr =>
     (k₃.gpr r (by simp [h0, h12])).trans ((k₂.gpr r hr).trans (h₁.others r h0 h12))
   refine ⟨⟨k₃.sp.trans e₂sp, by rw [k₃.rd, k₂.rd, h₁.rd]; rfl, k₃.wr.trans e₂wr, g₃ .r2 (by decide) (by decide) (by decide),

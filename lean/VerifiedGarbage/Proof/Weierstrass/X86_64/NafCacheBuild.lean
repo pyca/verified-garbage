@@ -33,7 +33,7 @@ theorem nafCacheMul_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     WP isa (Naf.cacheMul M z o).inline s fun t =>
       ProgKeep M base ((Naf.cacheOps M.n z o).map FOp.out) s t ∧
       Inv M base size m Sl (validAfter (Naf.cacheOps M.n z o) V) (runOps (Naf.cacheOps M.n z o) E) t := by
-  have hS : ∀ op∈Naf.cacheOps M.n z o,∀ x∈op.out::op.ins,Sl x := by
+  obtain hS : ∀ op∈Naf.cacheOps M.n z o,∀ x∈op.out::op.ins,Sl x := by
     intro op hop x hx
     simp only [Naf.cacheOps,List.mem_cons,List.not_mem_nil,or_false] at hop
     rcases hop with rfl|rfl <;>
@@ -46,7 +46,7 @@ theorem nafCacheMul_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       · exact h3
       · exact h2
       · exact hI.sl _ hZ
-  have hR : readsOk (Naf.cacheOps M.n z o) V=true := by
+  obtain hR : readsOk (Naf.cacheOps M.n z o) V=true := by
     simp [Naf.cacheOps,readsOk,FOp.ins,FOp.out,hZ]
   rw [Naf.cacheMul]
   split
@@ -66,7 +66,7 @@ theorem wordPieceOff_cover {w k : Nat} (hk : k<w) :
   by_cases h : k/2+1<(w+1)/2
   · exact ⟨k/2,by omega_arith,by simp only [Naf.wordPieceOff,h,ite_true]; omega_arith⟩
   · refine ⟨(w+1)/2-1,by omega_arith,?_⟩
-    have h' : ¬((w+1)/2-1+1<(w+1)/2) := by omega_arith
+    obtain h' : ¬((w+1)/2-1+1<(w+1)/2) := by omega_arith
     simp only [Naf.wordPieceOff,h',ite_false]
     omega_arith
 
@@ -91,10 +91,10 @@ theorem nafCacheLoad_ok {s : State} {base : Addr} {size n ptbl z j : Nat}
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base z (8*n) s.mem t.mem := by
   rw [Naf.cacheLoad,List.append_assoc,WP.block_append_iff]
   refine WP.mono (mov_rax_rbx_ok s hc) fun u ⟨iu,ku⟩ => ?_
-  have su := hs.of_keeps ku (by decide)
+  obtain su := hs.of_keeps ku (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (nafAddress_ok u su.rdi iu hp (by omega_arith)) fun v ⟨av,kv⟩ => ?_
-  have sv := su.of_keeps kv (by decide)
+  obtain sv := su.of_keeps kv (by decide)
   refine WP.mono (nafCopyPiecesAt_ok (a:=ptbl+24*n*j+16*n) (o:=z) (L:=8*n)
     ((n+1)/2) v sv hZ hz hSep (fun i _ => wordPieceOff_ok (by omega_arith) i)
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add]; simp only [Nat.add_assoc])
@@ -120,15 +120,15 @@ theorem nafCacheStore_ok {s : State} {base : Addr} {size n tbl o j : Nat}
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base (tbl+16*n*j) (16*n) s.mem t.mem := by
   rw [Naf.cacheStore,List.append_assoc,WP.block_append_iff]
   refine WP.mono (mov_rax_rbx_ok s hc) fun u ⟨iu,ku⟩ => ?_
-  have su := hs.of_keeps ku (by decide)
+  obtain su := hs.of_keeps ku (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (stridedAddress_ok u su.rdi iu ht (by omega_arith)) fun v ⟨av,kv⟩ => ?_
-  have sv := su.of_keeps kv (by decide)
+  obtain sv := su.of_keeps kv (by decide)
   refine WP.mono (nafCopyPiecesAt_ok (a:=o) (o:=tbl+16*n*j) (L:=16*n) (p:=fun i => 16*i)
     n v sv ho hT hSep.symm (fun i hi => ⟨by omega_arith,by omega_arith⟩)
     (fun i _ => by rw [ea_sc,sv.rdi])
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
-  have cov : ∀ k,k<2*n → ∃ i<n,16*i≤8*k ∧ 8*k<16*i+16 := fun k hk => ⟨k/2,by omega_arith,by omega_arith,by omega_arith⟩
+  obtain cov : ∀ k,k<2*n → ∃ i<n,16*i≤8*k ∧ 8*k<16*i+16 := fun k hk => ⟨k/2,by omega_arith,by omega_arith,by omega_arith⟩
   refine ⟨?_,?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
     wt.trans (kv.2.2.2.trans ku.2.2.2)⟩,?_⟩
   · have e := nafCopyAt_wordsAt (d:=0) (w:=n) et (fun k _ hk => cov k (by omega_arith))
@@ -183,14 +183,14 @@ theorem cacheTableEnv_entry {m : Nat} [NeZero m] {n ptbl tbl : Nat} {E : Nat →
   induction k with
   | zero => omega_arith
   | succ k ih =>
-    have hz : cacheTableEnv n ptbl tbl E k (ptbl+24*n*k+16*n)=E (ptbl+24*n*k+16*n) := by
+    obtain hz : cacheTableEnv n ptbl tbl E k (ptbl+24*n*k+16*n)=E (ptbl+24*n*k+16*n) := by
       apply cacheTableEnv_other
       intro j hj
       have := entry_end_le (16*n) (show j<8 by omega_arith)
       have := entry_end_le (24*n) (show k<8 by omega_arith)
       omega_arith
-    have h23 : tbl+16*n*k≠tbl+16*n*k+8*n := by omega_arith
-    have hzk : ptbl+24*n*k+16*n≠tbl+16*n*k := by
+    obtain h23 : tbl+16*n*k≠tbl+16*n*k+8*n := by omega_arith
+    obtain hzk : ptbl+24*n*k+16*n≠tbl+16*n*k := by
       have := entry_end_le (16*n) (show k<8 by omega_arith)
       have := entry_end_le (24*n) (show k<8 by omega_arith)
       omega_arith
@@ -201,8 +201,8 @@ theorem cacheTableEnv_entry {m : Nat} [NeZero m] {n ptbl tbl : Nat} {E : Nat →
       refine ⟨?_,?_⟩ <;> first | trivial | rfl
     · have hik : i<k := by omega_arith
       have := entry_end_le (16*n) hik
-      have n2 : tbl+16*n*i≠tbl+16*n*k ∧ tbl+16*n*i≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
-      have n3 : tbl+16*n*i+8*n≠tbl+16*n*k ∧ tbl+16*n*i+8*n≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
+      obtain n2 : tbl+16*n*i≠tbl+16*n*k ∧ tbl+16*n*i≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
+      obtain n3 : tbl+16*n*i+8*n≠tbl+16*n*k ∧ tbl+16*n*i+8*n≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
       simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
         Function.update_of_ne n2.1,Function.update_of_ne n2.2,Function.update_of_ne n3.1,
         Function.update_of_ne n3.2]
@@ -255,19 +255,19 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       CacheLoopKeep M base tbl e s t ∧
       Inv M base size m Sl (cacheTableSlots M.n tbl (i+1)++V) (cacheTableEnv M.n ptbl tbl E (i+1)) t := by
   have hn := hC.hn
-  have hn0 : 0<M.n := by omega_arith
+  obtain hn0 : 0<M.n := by omega_arith
   have hnw := iu.scr.nowrap
-  have hzi := hC.hz i hi
-  have hzV : ptbl+24*M.n*i+16*M.n∈cacheTableSlots M.n tbl i++V := List.mem_append_right _ hzi
-  have hzS := iu.sl _ hzV
-  have hzb := hL.le _ hzS
-  have hzv := hC.hv _ hzi
+  obtain hzi := hC.hz i hi
+  obtain hzV : ptbl+24*M.n*i+16*M.n∈cacheTableSlots M.n tbl i++V := List.mem_append_right _ hzi
+  obtain hzS := iu.sl _ hzV
+  obtain hzb := hL.le _ hzS
+  obtain hzv := hC.hv _ hzi
   have hes := hC.he
-  have heb := hL.le _ hes.2.2
-  have hci := hC.cache i hi
-  have hcb := hL.le _ hci.2
+  obtain heb := hL.le _ hes.2.2
+  obtain hci := hC.cache i hi
+  obtain hcb := hL.le _ hci.2
   have hEC := hC.ecache
-  have hzc : cacheTableEnv M.n ptbl tbl E i (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) :=
+  obtain hzc : cacheTableEnv M.n ptbl tbl E i (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) :=
     cacheTableEnv_other i fun j hj => by
       have := entry_end_le (16*M.n) (show j<8 by omega_arith)
       have := hzv.2
@@ -276,45 +276,45 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   apply WP.seq
   refine WP.mono (nafCacheLoad_ok iu.scr hc hn hC.hp hzb heb (by have := hzv.1; omega_arith))
     fun u1 ⟨w1,k1,o1⟩ => ?_
-  have s1 := iu.scr.of_keepRegs k1 (by decide)
-  have m1 : ModOkW M size m u1.mem base := iu.mod.unch o1.unch (by
+  obtain s1 := iu.scr.of_keepRegs k1 (by decide)
+  obtain m1 : ModOkW M size m u1.mem base := iu.mod.unch o1.unch (by
     intro w hw
     rw [List.mem_singleton.mp hw]
     exact (hL.mo _ hes.2.2).symm) hnw
-  have i1 : Inv M base size m Sl [e+16*M.n] (fun _ => E (ptbl+24*M.n*i+16*M.n)) u1 :=
+  obtain i1 : Inv M base size m Sl [e+16*M.n] (fun _ => E (ptbl+24*M.n*i+16*M.n)) u1 :=
     ⟨s1,m1,fun x hx => by rw [List.mem_singleton.mp hx]; exact hes.2.2,
       fun x hx => by rw [List.mem_singleton.mp hx,w1]; exact iu.lt _ hzV,
       fun x hx => by rw [List.mem_singleton.mp hx,w1,iu.val _ hzV,hzc]⟩
   apply WP.seq
   refine WP.mono (nafCacheMul_fields_ok hL hm i1 (List.mem_singleton_self _) hes.1 hes.2.1)
     fun u2 ⟨k2,i2⟩ => ?_
-  have he2 : e≠e+8*M.n := by omega_arith
-  have hez : e+16*M.n≠e := by omega_arith
-  have v2 := i2.val e (by simp [validAfter,Naf.cacheOps,FOp.out])
-  have v3 := i2.val (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
-  have l2 := i2.lt e (by simp [validAfter,Naf.cacheOps,FOp.out])
-  have l3 := i2.lt (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
+  obtain he2 : e≠e+8*M.n := by omega_arith
+  obtain hez : e+16*M.n≠e := by omega_arith
+  obtain v2 := i2.val e (by simp [validAfter,Naf.cacheOps,FOp.out])
+  obtain v3 := i2.val (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
+  obtain l2 := i2.lt e (by simp [validAfter,Naf.cacheOps,FOp.out])
+  obtain l3 := i2.lt (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
   simp only [Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self,
     Function.update_of_ne he2,Function.update_of_ne hez] at v2 v3
-  have s2 := k2.scr s1
+  obtain s2 := k2.scr s1
   rw [WP.block_append_iff]
   refine WP.mono (nafCacheStore_ok s2 ((k2.gpr _ (rbx_not_clob _)).trans
       ((k1.gpr _ (by decide)).trans hc)) hn hC.ht
       (by omega_arith) (by omega_arith) (by have := entry_end_le (16*M.n) (show i<8 by omega_arith); omega_arith))
     fun u3 ⟨w2,w3,k3,o3⟩ => ?_
-  have c3 : u3.gpr .rbx=BitVec.ofNat 64 i :=
+  obtain c3 : u3.gpr .rbx=BitVec.ofNat 64 i :=
     (k3.gpr _ (by decide)).trans ((k2.gpr _ (rbx_not_clob _)).trans ((k1.gpr _ (by decide)).trans hc))
   refine WP.mono (nafTable_advance_ok hi c3) fun t ⟨ct,ft,kt⟩ => ?_
-  have uw : Unch base (([(e+16*M.n,8*M.n)]++(((Naf.cacheOps M.n (e+16*M.n) e).map FOp.out).map
+  obtain uw : Unch base (([(e+16*M.n,8*M.n)]++(((Naf.cacheOps M.n (e+16*M.n) e).map FOp.out).map
       (·,8*M.n)++[(M.tmp,8*M.n)]))++[(tbl+16*M.n*i,8*M.n),(tbl+16*M.n*i+8*M.n,8*M.n)])
       u.mem t.mem := by
     rw [kt.2.1]
     refine (o1.unch.trans k2.unch).trans fun x hx => o3 x ?_
-    have a := hx _ (List.mem_cons_self ..)
-    have b := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+    obtain a := hx _ (List.mem_cons_self ..)
+    obtain b := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     dsimp only at a b
     omega_arith
-  have uwc : ∀ w∈([(e+16*M.n,8*M.n)]++(((Naf.cacheOps M.n (e+16*M.n) e).map FOp.out).map
+  obtain uwc : ∀ w∈([(e+16*M.n,8*M.n)]++(((Naf.cacheOps M.n (e+16*M.n) e).map FOp.out).map
       (·,8*M.n)++[(M.tmp,8*M.n)]))++[(tbl+16*M.n*i,8*M.n),(tbl+16*M.n*i+8*M.n,8*M.n)],
       w=(M.tmp,8*M.n) ∨ ∃ x∈cacheLoopSlots M.n tbl e,w=(x,8*M.n) := by
     intro w hw
@@ -327,36 +327,36 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · exact Or.inl rfl
     · exact Or.inr ⟨_,List.mem_append_left _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩),rfl⟩
     · exact Or.inr ⟨_,List.mem_append_left _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩),rfl⟩
-  have regs : KeepRegs (.rbx::clob M.n) u t := by
+  obtain regs : KeepRegs (.rbx::clob M.n) u t := by
     refine ⟨fun r hr => ?_,(kt.2.2.1.trans (k3.rd.trans (k2.rd.trans k1.rd))),
       (kt.2.2.2.trans (k3.wr.trans (k2.wr.trans k1.wr)))⟩
     simp only [List.mem_cons,not_or] at hr
-    have hc' : ∀ r',r'∈[Reg.rax,.rcx,.rdx] → r'∈clob M.n := by
+    obtain hc' : ∀ r',r'∈[Reg.rax,.rcx,.rdx] → r'∈clob M.n := by
       intro r' h'
       simp only [List.mem_cons,List.not_mem_nil,or_false] at h'
       rcases h' with rfl|rfl|rfl <;> simp [clob]
     rw [kt.1 r (by simpa using hr.1),k3.gpr r (fun h => hr.2 (hc' r h)),k2.gpr r hr.2,
       k1.gpr r (fun h => hr.2 (hc' r h))]
-  have keep : CacheLoopKeep M base tbl e s t := by
+  obtain keep : CacheLoopKeep M base tbl e s t := by
     refine ⟨ku.regs.trans regs,(ku.unch.trans uw).mono fun w hw => ?_⟩
     rcases List.mem_append.mp hw with hw|hw
     · exact hw
     · rcases uwc w hw with rfl|⟨x,hx,rfl⟩
       · exact List.mem_append_right _ (List.mem_singleton_self _)
       · exact List.mem_append_left _ (List.mem_map.mpr ⟨x,hx,rfl⟩)
-  have st : Scr t base size := iu.scr.of_keepRegs regs (by
+  obtain st : Scr t base size := iu.scr.of_keepRegs regs (by
     simp only [List.mem_cons,not_or]; exact ⟨by decide,rdi_not_clob _⟩)
-  have mt : ModOkW M size m t.mem base := iu.mod.unch uw (fun w hw => by
+  obtain mt : ModOkW M size m t.mem base := iu.mod.unch uw (fun w hw => by
     rcases uwc w hw with rfl|⟨x,hx,rfl⟩
     · exact iu.mod.sep
     · exact (hL.mo x (hC.slots x hx)).symm) hnw
-  have same : ∀ x∈cacheTableSlots M.n tbl i++V,
+  obtain same : ∀ x∈cacheTableSlots M.n tbl i++V,
       wordsVal t.mem base x M.n=wordsVal u.mem base x M.n := by
     intro x hx
-    have hxS := iu.sl x hx
-    have hxb := hL.le x hxS
-    have hxt := hL.tmp x hxS
-    have far : (x+8*M.n≤e ∨ e+24*M.n≤x) ∧
+    obtain hxS := iu.sl x hx
+    obtain hxb := hL.le x hxS
+    obtain hxt := hL.tmp x hxS
+    obtain far : (x+8*M.n≤e ∨ e+24*M.n≤x) ∧
         (x+8*M.n≤tbl+16*M.n*i ∨ tbl+16*M.n*i+16*M.n≤x) := by
       rcases List.mem_append.mp hx with hx|hx
       · obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx
@@ -374,7 +374,7 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     simp only [Naf.cacheOps,List.map_cons,List.map_nil,FOp.out,List.mem_append,List.mem_cons,
       List.not_mem_nil,or_false,or_assoc] at hw
     rcases hw with rfl|rfl|rfl|rfl|rfl|rfl <;> dsimp only <;> omega_arith
-  have hsl : ∀ x∈cacheTableSlots M.n tbl (i+1)++V,Sl x := by
+  obtain hsl : ∀ x∈cacheTableSlots M.n tbl (i+1)++V,Sl x := by
     intro x hx
     simp only [cacheTableSlots,List.append_assoc,List.mem_append,List.mem_cons,
       List.not_mem_nil,or_false] at hx
@@ -382,7 +382,7 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · exact hci.1
     · exact hci.2
     · exact iu.sl x (List.mem_append.mpr hx)
-  have n2 : ∀ x∈cacheTableSlots M.n tbl i++V,x≠tbl+16*M.n*i ∧ x≠tbl+16*M.n*i+8*M.n := by
+  obtain n2 : ∀ x∈cacheTableSlots M.n tbl i++V,x≠tbl+16*M.n*i ∧ x≠tbl+16*M.n*i+8*M.n := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
     · obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx <;>
@@ -391,28 +391,28 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · have := (hC.hv x hx).2
       have := entry_end_le (16*M.n) (show i<8 by omega_arith)
       exact ⟨by omega_arith,by omega_arith⟩
-  have e23 : tbl+16*M.n*i+8*M.n≠tbl+16*M.n*i := by omega_arith
-  have e3z : tbl+16*M.n*i≠ptbl+24*M.n*i+16*M.n := by
+  obtain e23 : tbl+16*M.n*i+8*M.n≠tbl+16*M.n*i := by omega_arith
+  obtain e3z : tbl+16*M.n*i≠ptbl+24*M.n*i+16*M.n := by
     have := entry_end_le (24*M.n) (show i<8 by omega_arith)
     have := entry_end_le (16*M.n) (show i<8 by omega_arith)
     have := hC.sep
     omega_arith
-  have env2 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i)=
+  obtain env2 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i)=
       E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) := by
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
       Function.update_self,Function.update_of_ne e23.symm,Function.update_of_ne e3z.symm,hzc]
-  have env3 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i+8*M.n)=
+  obtain env3 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i+8*M.n)=
       E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) := by
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
       Function.update_self,Function.update_of_ne e3z.symm,hzc]
-  have envo : ∀ x∈cacheTableSlots M.n tbl i++V,
+  obtain envo : ∀ x∈cacheTableSlots M.n tbl i++V,
       cacheTableEnv M.n ptbl tbl E (i+1) x=cacheTableEnv M.n ptbl tbl E i x := by
     intro x hx
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
       Function.update_of_ne (n2 x hx).1,Function.update_of_ne (n2 x hx).2]
-  have wt2 : wordsVal t.mem base (tbl+16*M.n*i) M.n=wordsVal u2.mem base e M.n := by
+  obtain wt2 : wordsVal t.mem base (tbl+16*M.n*i) M.n=wordsVal u2.mem base e M.n := by
     rw [kt.2.1,w2]
-  have wt3 : wordsVal t.mem base (tbl+16*M.n*i+8*M.n) M.n=wordsVal u2.mem base (e+8*M.n) M.n := by
+  obtain wt3 : wordsVal t.mem base (tbl+16*M.n*i+8*M.n) M.n=wordsVal u2.mem base (e+8*M.n) M.n := by
     rw [kt.2.1,w3]
   refine ⟨ct,ft,keep,st,mt,hsl,fun x hx => ?_,fun x hx => ?_⟩
   · simp only [cacheTableSlots,List.append_assoc,List.mem_append,List.mem_cons,
@@ -449,10 +449,10 @@ theorem nafCacheTable_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m
   simp only [Naf.cacheTable,Code.inline]
   apply WP.seq
   refine WP.mono (mov32_rbx_zero_ok s) fun u ⟨cu,ku⟩ => ?_
-  have k0 : CacheLoopKeep M base tbl e s u :=
+  obtain k0 : CacheLoopKeep M base tbl e s u :=
     ⟨⟨fun r hr => ku.1 r (fun h => hr (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp h)))),ku.2.2.1,ku.2.2.2⟩,
       by rw [ku.2.1]; exact Unch.refl _ _ _⟩
-  have i0 : Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u :=
+  obtain i0 : Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u :=
     ⟨hI.scr.of_keeps ku (by decide),by rw [ku.2.1]; exact hI.mod,hI.sl,
       fun x hx => by rw [ku.2.1]; exact hI.lt x hx,fun x hx => by rw [ku.2.1]; exact hI.val x hx⟩
   refine WP.loop (M:=isa)
@@ -480,16 +480,16 @@ theorem cacheTable_current {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weiers
         tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
           tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) := by
   refine ⟨it.to_tmv,fun i hi => ?_⟩
-  have hn0 : 0<M.n := by have := hC.hn; omega_arith
+  obtain hn0 : 0<M.n := by have := hC.hn; omega_arith
   have v (x : Nat) (hx : x∈cacheTableSlots M.n tbl 8++V) :
       tmv C M.n base t x=cacheTableEnv M.n ptbl tbl E 8 x := it.val x hx
-  have hz := hC.hz i hi
-  have ze : cacheTableEnv M.n ptbl tbl E 8 (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) :=
+  obtain hz := hC.hz i hi
+  obtain ze : cacheTableEnv M.n ptbl tbl E 8 (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) :=
     cacheTableEnv_other 8 fun j hj => by
       have := entry_end_le (16*M.n) hj
       have := (hC.hv _ hz).2
       omega_arith
-  have h := cacheTableEnv_entry (E:=E) hn0 hC.sep hi (Nat.le_refl 8)
+  obtain h := cacheTableEnv_entry (E:=E) hn0 hC.sep hi (Nat.le_refl 8)
   rw [v _ (List.mem_append_right _ hz),ze,
     v _ (List.mem_append_left _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩)),
     v _ (List.mem_append_left _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩))]
@@ -524,10 +524,10 @@ theorem nafCacheStaged_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero 
   simp only [Naf.cacheStaged,Code.inline]
   apply WP.seq
   refine WP.mono (mov32_rbx_zero_ok s) fun u ⟨cu,ku⟩ => ?_
-  have k0 : CacheLoopKeep M base tbl e s u :=
+  obtain k0 : CacheLoopKeep M base tbl e s u :=
     ⟨⟨fun r hr => ku.1 r (fun h => hr (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp h)))),ku.2.2.1,ku.2.2.2⟩,
       by rw [ku.2.1]; exact Unch.refl _ _ _⟩
-  have i0 : Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u :=
+  obtain i0 : Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u :=
     ⟨hI.scr.of_keeps ku (by decide),by rw [ku.2.1]; exact hI.mod,hI.sl,
       fun x hx => by rw [ku.2.1]; exact hI.lt x hx,fun x hx => by rw [ku.2.1]; exact hI.val x hx⟩
   exact WP.mono (nafCacheSteps_ok hL hm hC 8 (Nat.le_refl 8) cu k0 i0) fun _ ⟨_,k,i⟩ => ⟨k,i⟩
@@ -572,7 +572,7 @@ theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       ProgKeep M base ((Naf.cachePairOps M.n ptbl tbl i).map FOp.out) s t ∧
       Inv M base size m Sl (validAfter (Naf.cachePairOps M.n ptbl tbl i) V)
         (runOps (Naf.cachePairOps M.n ptbl tbl i) E) t := by
-  have hS : ∀ op∈Naf.cachePairOps M.n ptbl tbl i,∀ x∈op.out::op.ins,Sl x := by
+  obtain hS : ∀ op∈Naf.cachePairOps M.n ptbl tbl i,∀ x∈op.out::op.ins,Sl x := by
     intro op hop x hx
     simp only [Naf.cachePairOps,List.mem_cons,List.not_mem_nil,or_false] at hop
     rcases hop with rfl|rfl <;>
@@ -585,7 +585,7 @@ theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       · exact h3
       · exact h2
       · exact hI.sl _ hZ
-  have hR : readsOk (Naf.cachePairOps M.n ptbl tbl i) V=true := by
+  obtain hR : readsOk (Naf.cachePairOps M.n ptbl tbl i) V=true := by
     simp [Naf.cachePairOps,readsOk,FOp.ins,FOp.out,hZ]
   rw [Naf.cachePair]
   split
@@ -609,18 +609,18 @@ theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstra
       tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
         tmv C M.n base t (tbl+16*M.n*i)*E (ptbl+24*M.n*i+16*M.n) := by
   rw [Nat.mul_succ,Nat.mul_succ] at hSep
-  have hz2 : ptbl+24*M.n*i+16*M.n≠tbl+16*M.n*i := by omega_arith
-  have h23 : tbl+16*M.n*i≠tbl+16*M.n*i+8*M.n := by omega_arith
-  have hp := nafCachePair_fields_ok hL hm hI hZ h2 h3
+  obtain hz2 : ptbl+24*M.n*i+16*M.n≠tbl+16*M.n*i := by omega_arith
+  obtain h23 : tbl+16*M.n*i≠tbl+16*M.n*i+8*M.n := by omega_arith
+  obtain hp := nafCachePair_fields_ok hL hm hI hZ h2 h3
   refine WP.mono hp fun t ⟨kt,it⟩ => ?_
-  have iv : Inv M base size C.p Sl ([tbl+16*M.n*i,tbl+16*M.n*i+8*M.n]++V)
+  obtain iv : Inv M base size C.p Sl ([tbl+16*M.n*i,tbl+16*M.n*i+8*M.n]++V)
       (runOps (Naf.cachePairOps M.n ptbl tbl i) E) t := it.sub (by
     intro x hx
     simp only [Naf.cachePairOps,validAfter,FOp.out,List.mem_append,List.mem_cons,
       List.not_mem_nil,or_false] at hx ⊢
     grind)
-  have v2 := iv.val (tbl+16*M.n*i) (by simp)
-  have v3 := iv.val (tbl+16*M.n*i+8*M.n) (by simp)
+  obtain v2 := iv.val (tbl+16*M.n*i) (by simp)
+  obtain v3 := iv.val (tbl+16*M.n*i+8*M.n) (by simp)
   simp only [Naf.cachePairOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
     Function.update_self,Function.update_of_ne hz2,Function.update_of_ne h23] at v2 v3
   refine ⟨kt,iv.to_tmv,v2,?_⟩
@@ -643,18 +643,18 @@ theorem nafCacheUnrolled_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weier
   induction k with
   | zero => exact WP.block_nil ⟨ProgKeep.refl _ _ _ s,hI.to_tmv,fun _ h => by omega_arith⟩
   | succ k ih =>
-    have hk := entry_le (16*M.n) (show k≤k+1 by omega_arith)
-    have hk' := entry_le (24*M.n) (show k≤k+1 by omega_arith)
+    obtain hk := entry_le (16*M.n) (show k≤k+1 by omega_arith)
+    obtain hk' := entry_le (24*M.n) (show k≤k+1 by omega_arith)
     rw [Naf.cacheUnrolled]
     apply WP.seq
     refine WP.mono (ih (by omega_arith) (fun i hi => hZ i (by omega_arith))
       (fun i hi => hSl i (by omega_arith))) fun u ⟨ku,iu,hu⟩ => ?_
-    have hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
+    obtain hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
       intro x hx
       obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx
       · exact (hSl j (by omega_arith)).1
       · exact (hSl j (by omega_arith)).2
-    have zu : tmv C M.n base u (ptbl+24*M.n*k+16*M.n)=E (ptbl+24*M.n*k+16*M.n) := by
+    obtain zu : tmv C M.n base u (ptbl+24*M.n*k+16*M.n)=E (ptbl+24*M.n*k+16*M.n) := by
       unfold tmv
       rw [ku.slot hL hI.scr hW (hI.sl _ (hZ k (by omega_arith))) ?_,hI.val _ (hZ k (by omega_arith))]
       intro hz
@@ -665,7 +665,7 @@ theorem nafCacheUnrolled_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weier
     refine WP.mono (nafCachePair_ok hn hL hm hSep iu
       (List.mem_append_right _ (hZ k (by omega_arith)))
       (hSl k (by omega_arith)).1 (hSl k (by omega_arith)).2) fun t ⟨kt,it,h2,h3⟩ => ?_
-    have hWp : ∀ x∈[tbl+16*M.n*k,tbl+16*M.n*k+8*M.n],Sl x := by
+    obtain hWp : ∀ x∈[tbl+16*M.n*k,tbl+16*M.n*k+8*M.n],Sl x := by
       intro x hx
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with rfl|rfl
@@ -684,9 +684,9 @@ theorem nafCacheUnrolled_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weier
         exact ⟨h2,h3⟩
       · have hik : i<k := by omega_arith
         have := entry_end_le (16*M.n) hik
-        have e2 := old (tbl+16*M.n*i) (hSl i hi).1 (by
+        obtain e2 := old (tbl+16*M.n*i) (hSl i hi).1 (by
           simp only [List.mem_cons,List.not_mem_nil,or_false]; omega_arith)
-        have e3 := old (tbl+16*M.n*i+8*M.n) (hSl i hi).2 (by
+        obtain e3 := old (tbl+16*M.n*i+8*M.n) (hSl i hi).2 (by
           simp only [List.mem_cons,List.not_mem_nil,or_false]; omega_arith)
         rw [e2,e3]
         exact hu i hik
@@ -708,12 +708,12 @@ theorem nafCacheUnrolled_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Sp
           tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) := by
   refine WP.mono (nafCacheUnrolled_ok hn hL hm k hSep hI hZ hSl) fun t ⟨kt,it,ht⟩ =>
     ⟨kt,it,fun i hi => ?_⟩
-  have hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
+  obtain hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
     intro x hx
     obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx
     · exact (hSl j hj).1
     · exact (hSl j hj).2
-  have ze : tmv C M.n base t (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) := by
+  obtain ze : tmv C M.n base t (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) := by
     unfold tmv
     rw [kt.slot hL hI.scr hW (hI.sl _ (hZ i hi)) ?_,hI.val _ (hZ i hi)]
     intro hz

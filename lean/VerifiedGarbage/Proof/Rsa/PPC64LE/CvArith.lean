@@ -49,20 +49,20 @@ theorem arithAB_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (
       KeyWorkspace.Keep B w arithArrs arithSlots s.mem t.mem ∧ Keep arithRegs s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
-  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   rw [wp_seqs_append (by unfold partA; exact List.cons_ne_nil _ _) (by unfold partB; exact List.cons_ne_nil _ _)]
   refine WP.mono (partA_ok h hi h20 h22 hpL hpw hqw hP hQ) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
-  have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
+  obtain keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
-  have z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
+  obtain z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
     intro j hj
-    have hj' : j < 25 ∧ j ≠ aDQ ∧ j ≠ aP ∧ j ≠ aQ ∧ j ≠ aD ∧ j ∉ partAArrs := by
+    obtain hj' : j < 25 ∧ j ≠ aDQ ∧ j ≠ aP ∧ j ≠ aQ ∧ j ≠ aD ∧ j ∉ partAArrs := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     obtain ⟨a, b, c, d, e, f⟩ := hj'
     rw [keepA j a f, hi.zero j a b c d e]
-  have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
-  have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
+  obtain bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
+  obtain b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
   exact WP.mono (partB_ok (P := P) (Q := Q) h1 hw hwe (by rw [keepA _ (by decide) (by decide), hi.q])
     (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2 (by rw [r1.gpr _ (by decide), h20])
     (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, _, _, _, r2⟩ =>
@@ -89,52 +89,52 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
       Keep arithRegs s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
-  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   rw [arith_eq, wp_seqs_append (by unfold partA; exact List.cons_ne_nil _ _)
     (by unfold partB; exact List.cons_ne_nil _ _)]
-  have hpw' : pL < 2 ^ 32 := by have := h.wle; omega_arith
+  obtain hpw' : pL < 2 ^ 32 := by have := h.wle; omega_arith
   refine WP.mono (partA_ok h hi h20 h22 hpL hpw hqw hP hQ) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
-  have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
+  obtain keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
   rw [wp_seqs_append (by unfold partB; exact List.cons_ne_nil _ _)
     (by unfold partC; exact List.cons_ne_nil _ _)]
-  have z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
+  obtain z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
     intro j hj
-    have hj' : j < 25 ∧ j ≠ aDQ ∧ j ≠ aP ∧ j ≠ aQ ∧ j ≠ aD ∧ j ∉ partAArrs := by
+    obtain hj' : j < 25 ∧ j ≠ aDQ ∧ j ≠ aP ∧ j ≠ aQ ∧ j ≠ aD ∧ j ∉ partAArrs := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     obtain ⟨a, b, c, d, e, f⟩ := hj'
     rw [keepA j a f, hi.zero j a b c d e]
-  have bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
-  have b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
+  obtain bo : slot t1.mem B sPodd ≤ 1 := by rw [o1]; omega_arith
+  obtain b1 : slot t1.mem B sE1 ≤ 1 := by rw [e1]; split <;> omega_arith
   refine WP.mono (partB_ok (P := P) (Q := Q) h1 hw hwe (by rw [keepA _ (by decide) (by decide), hi.q])
     (by rw [keepA _ (by decide) (by decide), hi.p]) z1 bo b1 b2 (by rw [r1.gpr _ (by decide), h20])
     (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, m2, v2, e8, r2⟩ => ?_
-  have top2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
+  obtain top2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
     rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by decide) (by decide) (fit _ (by decide)), top1]
-  have p2' : num t2.mem B w aP = P := by
+  obtain p2' : num t2.mem B w aP = P := by
     rw [k2.num (by decide) (by decide) (fit _ (by decide)), keepA _ (by decide) (by decide), hi.p]
-  have q2' : num t2.mem B w aQ = Q := by
+  obtain q2' : num t2.mem B w aQ = Q := by
     rw [k2.num (by decide) (by decide) (fit _ (by decide)), keepA _ (by decide) (by decide), hi.q]
-  have hqw' : qL < 2 ^ 32 := by have := h.wle; omega_arith
+  obtain hqw' : qL < 2 ^ 32 := by have := h.wle; omega_arith
   refine WP.mono (partC_ok h2 top2 (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h20])
     (by rw [r2.gpr _ (by decide), r1.gpr _ (by decide), h22]) hpL hqL hpw' hqw' (by rw [p2']; exact hP)
     (by rw [q2']; exact hQ)) fun t ⟨h4, k4, y4, y4', v3, v4, r4⟩ => ?_
   -- What the later parts keep.
-  have n2 : ∀ j, j < nArr → j ∉ partBArrs → num t2.mem B w j = num t1.mem B w j := fun j hj hn =>
+  obtain n2 : ∀ j, j < nArr → j ∉ partBArrs → num t2.mem B w j = num t1.mem B w j := fun j hj hn =>
     k2.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
-  have n4' : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR2, aDT, aDR3, aDR, 3, 4, 5] → num t.mem B w j = num t2.mem B w j :=
+  obtain n4' : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR2, aDT, aDR3, aDR, 3, 4, 5] → num t.mem B w j = num t2.mem B w j :=
     fun j hj hn => k4.num (fun x hx e => hn (by subst e; exact hx)) (by simp) (fit _ hj)
-  have d2 : num t2.mem B w aD = Dd := by rw [n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.d]
+  obtain d2 : num t2.mem B w aD = Dd := by rw [n2 _ (by decide) (by decide), keepA _ (by decide) (by decide), hi.d]
   refine ⟨h4, ?_, ⟨Nv / P, Nv % P, num t2.mem B w 1, ?_, fun _ => ⟨rfl, rfl⟩, fun hm => ?_⟩, ?_, ?_,
     ((r1.trans r2).trans r4).mono⟩
   · exact k1.mono.trans (k2.mono.trans k4.mono)
   · have hqW : Q < 2 ^ (32 * w) := by rw [← hi.q]; exact val32_lt _ _ _ _
-    have hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
-    have key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
+    obtain hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
+    obtain key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
       (M := if slot t1.mem B sE2 = 1 then 0 else 1) (V := num t2.mem B w 1) (j := 32 * w) hQN hqW hnW rfl
       (fun podd p2 hL => by rw [← hM podd p2 hL]; exact ite_zero_one_eq_zero)
-    have iff : (slot t1.mem B sPodd = 1 ∧ slot t1.mem B sE1 = 1 ∧ slot t1.mem B sE2 = 1 ∧
+    obtain iff : (slot t1.mem B sPodd = 1 ∧ slot t1.mem B sE1 = 1 ∧ slot t1.mem B sE2 = 1 ∧
         num t2.mem B w 1 = 1) ↔ maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true := by
       simp only [maskOf, decide_eq_true_eq]
       rw [← key, o1, e1]
@@ -154,7 +154,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     by_cases hs : KeyCheck.Shape w pL qL
     · obtain ⟨dv, lt⟩ := vs hs
       refine ⟨num t2.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % modOf P, dv, Nat.mod_lt _ (by omega_using [hm]), fun hb => ?_⟩
-      have hmw : modOf P < 2 ^ (64 * (w / 4)) := by
+      obtain hmw : modOf P < 2 ^ (64 * (w / 4)) := by
         obtain ⟨p8, hpw2, -, -⟩ := hs
         exact modOf_lt (by omega_using [hw]) (by rw [show 64 * (w / 4) = 8 * pL by omega_using [p8, hpw2]]; exact hP)
       rw [← e8] at lt hmw ⊢

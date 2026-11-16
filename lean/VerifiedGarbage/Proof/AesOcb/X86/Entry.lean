@@ -113,45 +113,45 @@ structure Entered (s : State) (p : Prm) (s' : State) : Prop where
 
 /-- The entry. -/
 theorem entry_ok {s : State} (h : onePre s) : WP isa ocbEntry s (Entered s (prmOf s)) := by
-  have L := lay_of h
-  have P := perm_of h
-  have Ao := argsOk_of h
+  obtain L := lay_of h
+  obtain P := perm_of h
+  obtain Ao := argsOk_of h
   rw [ocbEntry_eq]
   generalize hSP : s.gpr .esp = SP at Ao
   have rA := Ao.rA
   have aw := Ao.aw
   have fa := Ao.fa
   rw [hSP] at rA aw fa
-  have fw : (arg s 10).toNat + 2560 ≤ 2 ^ 32 := by have := L.ww; simp only [prmOf] at this; omega_using [this]
+  obtain fw : (arg s 10).toNat + 2560 ≤ 2 ^ 32 := by have := L.ww; simp only [prmOf] at this; omega_using [this]
   have wW : Covers [⟨w64 (arg s 10), 2560⟩] s.wr := P.w2560
-  have i₀ : InRegions (s.rd ++ s.wr) (argA SP 10) 4 := rA _ _ ⟨_, List.mem_singleton_self _, argA_contains (by decide) fa⟩
+  obtain i₀ : InRegions (s.rd ++ s.wr) (argA SP 10) 4 := rA _ _ ⟨_, List.mem_singleton_self _, argA_contains (by decide) fa⟩
   refine WP.seq (WP.of_runBlock ⟨_, by grun [hSP, i₀], ?_⟩)
-  have hax : (s.setReg .eax (s.mem.readW (argA SP 10) 32)).gpr .eax = arg s 10 := by
+  obtain hax : (s.setReg .eax (s.mem.readW (argA SP 10) 32)).gpr .eax = arg s 10 := by
     rw [gpr_setReg_self, ← hSP]; rfl
   let s₀ := s.setReg .eax (s.mem.readW (argA SP 10) 32)
   try rewrite [show s.setReg .eax (s.mem.readW (argA SP 10) 32) = s₀ from rfl] at *
   have hs₀ : s₀ = s.setReg .eax (s.mem.readW (argA SP 10) 32) := rfl
   obtain ⟨s₁, run₁, bp₁, g₁, rd₁, wr₁, sv₁, f₁⟩ := save_ok s₀ hax (by rw [hs₀]; exact wW) fw
-  have sp₁ : s₁.gpr .esp = SP := by rw [g₁ _ (by decide), hs₀, gpr_setReg_of_ne _ _ (by decide), hSP]
-  have argW : ∀ {i}, i < 11 → ∀ {d k : Nat}, d + k ≤ 2560 →
+  obtain sp₁ : s₁.gpr .esp = SP := by rw [g₁ _ (by decide), hs₀, gpr_setReg_of_ne _ _ (by decide), hSP]
+  obtain argW : ∀ {i}, i < 11 → ∀ {d k : Nat}, d + k ≤ 2560 →
       ∀ r ∈ [(⟨w64 (arg s 10) + BitVec.ofNat 64 d, k⟩ : Region)], (⟨argA SP i, 4⟩ : Region).Disjoint r :=
     fun hi _ _ hk r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (aw.sub_left (argA_sub hi fa)).sub_right (Lay.wSub hk)
-  have hA₁ : ∀ i < 11, s₁.mem.readW (argA SP i) 32 = arg s i := fun i hi => by
+  obtain hA₁ : ∀ i < 11, s₁.mem.readW (argA SP i) 32 = arg s i := fun i hi => by
     rw [f₁.readW (r := ⟨argA SP i, 4⟩) (Region.contains_self _ _) (argW hi (by decide)) (by decide)]
     rw [arg, argAddr, hSP]
     exact rfl
-  have aw' : (argsR SP 11).Disjoint ⟨w64 (arg s 10), 2560⟩ := aw.sub_right (Region.sub_prefix (by decide))
-  have ke : KeepEnv (arg s 10) SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw', fa, fw⟩
+  obtain aw' : (argsR SP 11).Disjoint ⟨w64 (arg s 10), 2560⟩ := aw.sub_right (Region.sub_prefix (by decide))
+  obtain ke : KeepEnv (arg s 10) SP 11 s₁ := ⟨bp₁, sp₁, by rw [wr₁]; exact wW, by rw [rd₁, wr₁]; exact rA, aw', fa, fw⟩
   obtain ⟨s₃, run₃, sl₃, f₃, g₃, rd₃, wr₃⟩ := keeps_ok entryPs (fun p hp => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by decide) ke
-  have bp₃ : s₃.gpr .ebp = arg s 10 := by rw [g₃ _ (by decide), bp₁]
-  have sp₃ : s₃.gpr .esp = SP := by rw [g₃ _ (by decide), sp₁]
+  obtain bp₃ : s₃.gpr .ebp = arg s 10 := by rw [g₃ _ (by decide), bp₁]
+  obtain sp₃ : s₃.gpr .esp = SP := by rw [g₃ _ (by decide), sp₁]
   refine WP.of_runBlock ⟨_, runBlock_app_of run₁ run₃, ?_⟩
   -- What the entry wrote.
-  have f₃' : Frame [⟨w64 (arg s 10) + BitVec.ofNat 64 128, 88⟩] s.mem s₃.mem := by
+  obtain f₃' : Frame [⟨w64 (arg s 10) + BitVec.ofNat 64 128, 88⟩] s.mem s₃.mem := by
     refine (f₁.sub fun r hr => ?_).trans (f₃.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
@@ -160,7 +160,7 @@ theorem entry_ok {s : State} (h : onePre s) : WP isa ocbEntry s (Entered s (prmO
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
-  have hsv : SavedAt s₃.mem (arg s 10) s := by
+  obtain hsv : SavedAt s₃.mem (arg s 10) s := by
     have := sv₁.frame f₃ fun r hr => by
       simp only [List.mem_map] at hr
       obtain ⟨p, hp, rfl⟩ := hr
@@ -171,14 +171,14 @@ theorem entry_ok {s : State} (h : onePre s) : WP isa ocbEntry s (Entered s (prmO
     refine ⟨a.trans ?_, b.trans ?_, c.trans ?_, d.trans ?_⟩ <;>
       simp only [hs₀, gpr_setReg_of_ne _ _ (by decide : Reg.ebx ≠ .eax), gpr_setReg_of_ne _ _ (by decide : Reg.esi ≠ .eax),
         gpr_setReg_of_ne _ _ (by decide : Reg.edi ≠ .eax), gpr_setReg_of_ne _ _ (by decide : Reg.ebp ≠ .eax)]
-  have sl : ∀ q ∈ entryPs, slotv s₃.mem (arg s 10) q.2 = arg s q.1 := fun q hq => by
-    have e := sl₃ q hq
-    have hq1 : q.1 < 11 := by
+  obtain sl : ∀ q ∈ entryPs, slotv s₃.mem (arg s 10) q.2 = arg s q.1 := fun q hq => by
+    obtain e := sl₃ q hq
+    obtain hq1 : q.1 < 11 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [hA₁ q.1 hq1] at e
     exact e
-  have ofN : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => BitVec.eq_of_toNat_eq (by simp)
+  obtain ofN : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => BitVec.eq_of_toNat_eq (by simp)
   refine ⟨⟨bp₃, by rw [sp₃, ← hSP]; rfl, P.of_eq (by rw [rd₃, rd₁]; rfl) (by rw [wr₃, wr₁]; rfl),
     ⟨sl (0, ctxO) (by simp), by simp only [prmOf]; rw [sl (1, rndO) (by simp)]; exact (ofN _).symm,
       sl (2, nO) (by simp), by simp only [prmOf]; rw [sl (3, nlO) (by simp)]; exact (ofN _).symm,

@@ -43,11 +43,11 @@ theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
         val32 u.mem base (lo len (.slot .wide 19)) (2 * cwc len .wide) = mq + q * hc) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have pf := h.prod_fit
-  have bw := bc_eq_cwc len .wide
-  have g := bc_ge h.lower' .wide
+  obtain bw := bc_eq_cwc len .wide
+  obtain g := bc_ge h.lower' .wide
   have bl := h.bytes_lt
   have nw := h.scratch.nowrap
-  have f19 := h.slot_fit .wide (j := 19) (by decide)
+  obtain f19 := h.slot_fit .wide (j := 19) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e7 : lo len (.slot .wide 7) = numBase + 7 * st len .wide := rfl
   have e11 : lo len (.slot .wide 11) = numBase + 11 * st len .wide := rfl
@@ -57,12 +57,12 @@ theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
   have ma : mulAOff = 2312 := rfl
   have po : prodOff = 256 := rfl
   have mo : multOff = 48 := rfl
-  have cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
-  have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
-  have cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
-  have cw2 : cw len (two .wide) = 2 * cwc len .wide := by
+  obtain cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
+  obtain cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
+  obtain cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
+  obtain cw2 : cw len (two .wide) = 2 * cwc len .wide := by
     have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega_arith
-  have fitR : ∀ p ∈ reR len, p.1 + p.2 ≤ bytes := by
+  obtain fitR : ∀ p ∈ reR len, p.1 + p.2 ≤ bytes := by
     intro p hp; simp only [reR, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
   unfold recombine
@@ -72,14 +72,14 @@ theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   simp only [mulA, lo, cb1, cw1] at O₁ V₁
   rw [show numBase + 11 * st len .wide = lo len (.slot .wide 11) from rfl, hq] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (wideProduct_ok h₁ (b := .slot .wide 7) (by omega_arith) (by simp only [lo]; omega_arith))
     fun u₂ ⟨F₂, V₂, K₂⟩ => ?_)
   rw [V₁, O₁.val32 (d := lo len (.slot .wide 7)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hh] at V₂
-  have h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (prodR_fit h₁)
-  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  obtain h₂ := h₁.keepF K₂ (by decide) (by decide) F₂ (prodR_fit h₁)
+  obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   rw [sp₁] at F₂
-  have M₂ : val32 u₂.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq := by
+  obtain M₂ : val32 u₂.mem base (lo len (.slot .wide 17)) (2 * cwc len .wide) = mq := by
     rw [prodR_keep h₁ F₂ (sp₁ ▸ h₁.room) (by omega_arith) (by omega_arith),
       O₁.val32 (.inr (by omega_arith)) (by omega_arith), hmq]
   -- `m_q + q h`.
@@ -88,14 +88,14 @@ theorem recombine_ok (h : In Ex base bytes len args s) {q hc mq : Nat}
     (by rw [cb2]; simp only [prod, lo]; exact .inr (by omega_arith)) (by rw [cb2]; exact .inr (by omega_arith)))
     fun u ⟨O₃, _, ⟨c, _, V₃⟩, K₃⟩ => ⟨?_, fun fits => ?_, ?_⟩
   · rw [cb2] at O₃
-    have F₁ : Frame (frameR base (s.gpr .esp) (reR len)) s.mem u₁.mem := frameR_of_outside O₁ (by omega_arith) (by simp)
-    have F₂' : Frame (frameR base (s.gpr .esp) (reR len)) u₁.mem u₂.mem :=
+    obtain F₁ : Frame (frameR base (s.gpr .esp) (reR len)) s.mem u₁.mem := frameR_of_outside O₁ (by omega_arith) (by simp)
+    obtain F₂' : Frame (frameR base (s.gpr .esp) (reR len)) u₁.mem u₂.mem :=
       frameR_mono F₂ fun p hp => by
         simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp; rcases hp with rfl | rfl <;> simp
     exact (F₁.trans F₂').trans (frameR_of_outside O₃ (by omega_arith) (by simp))
   · rw [cw2, show lo len prod = prodOff from rfl] at V₃
     rw [M₂] at V₃
-    have pq : val32 u₂.mem base prodOff (2 * cwc len .wide) = q * hc :=
+    obtain pq : val32 u₂.mem base prodOff (2 * cwc len .wide) = q * hc :=
       val32_low (b := 1) V₂ (by omega_arith)
     rw [pq] at V₃
     cases c
@@ -140,25 +140,25 @@ theorem maskResult_ok (h : In Ex base bytes len args s) {c : Bool}
       Keeps [.eax, .ecx, .edx, .ebp] s u → WP isa P u Q) :
     WP isa (.seq (.block (ptrTo (.slot .wide 19) .ebp .edx ++ cntTo (one .wide) .edx ++
       ([.mov .ecx (.mem (sc accOff))] : List Instr))) (.seq maskLoop P)) s Q := by
-  have f19 := h.slot_fit .wide (j := 19) (by decide)
-  have bw := bc_eq_cwc len .wide
-  have g := bc_ge h.lower' .wide
+  obtain f19 := h.slot_fit .wide (j := 19) (by decide)
+  obtain bw := bc_eq_cwc len .wide
+  obtain g := bc_ge h.lower' .wide
   have bl := h.bytes_lt
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have e19 : lo len (.slot .wide 19) = numBase + 19 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
-  have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
+  obtain cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
   simp only [List.append_assoc]
   refine WP.seq (ptrTo_ok (r := .ebp) (t := .edx) (x := .slot .wide 19) (by decide) (by decide) h.edi h.width
     h.upper' (by omega_using [f19, bl]) fun u K m p => ?_)
-  have hu := h.regs K m
+  obtain hu := h.regs K m
   refine cntTo_ok (r := .edx) (n := one .wide) hu.width h.upper' (one_ok .wide).extra fun v Kv mv cv => ?_
-  have hv := hu.regs Kv mv
+  obtain hv := hu.regs Kv mv
   refine wp_movS (readSrc_sc hv.scratch (d := accOff) (by simp only [accOff]; omega_using [f19, est])) fun w uw _ =>
     WP.block_nil ?_
-  have Kw : Keeps [.ecx, .edx, .ebp] s w :=
+  obtain Kw : Keeps [.ecx, .edx, .ebp] s w :=
     ((K.mono (by decide)).trans (Kv.mono (by decide))).trans (uw.keeps.mono (by decide))
-  have mw : w.mem = s.mem := by rw [uw.mem, mv, m]
+  obtain mw : w.mem = s.mem := by rw [uw.mem, mv, m]
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.maskLoop_ok (h.ws.of_keeps Kw) (x := lo len (.slot .wide 19))
     (N := cwc len .wide) (c := c) (by omega) (by omega_using [f19, bw, est])
     (by rw [PtrAt, uw.other _ (by decide), Kv.1 _ (by decide)]; exact p)
@@ -180,10 +180,10 @@ theorem writeTo_ok (h : In Ex base bytes len args s) {p l : Nat} (hp : p < 18) (
           Spec.Rsa.i2osp (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide)) len) ∧
       t.gpr .eax = s.mem.readW (off base accOff) 32 &&& 1 ∧
       Frame [⟨byteAddr (args p), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
-  have f19 := h.slot_fit .wide (j := 19) (by decide)
-  have bw := bc_eq_cwc len .wide
-  have g := bc_ge h.lower' .wide
-  have lb := len_le_bc len
+  obtain f19 := h.slot_fit .wide (j := 19) (by decide)
+  obtain bw := bc_eq_cwc len .wide
+  obtain g := bc_ge h.lower' .wide
+  obtain lb := len_le_bc len
   have nw' := h.scratch.nowrap
   have hlow := h.lower'
   have hup := h.upper'
@@ -192,48 +192,48 @@ theorem writeTo_ok (h : In Ex base bytes len args s) {p l : Nat} (hp : p < 18) (
   have nb : numBase = 3336 := rfl
   simp only [List.cons_append, List.append_assoc]
   refine WP.seq (wp_movS (h.stack p hp).readSrc fun u₁ e₁ _ => ?_)
-  have h₁ := h.regs e₁.keeps e₁.mem
+  obtain h₁ := h.regs e₁.keeps e₁.mem
   refine wp_movS (h₁.stack l hl).readSrc fun u₂ e₂ _ => ?_
-  have h₂ := h₁.regs e₂.keeps e₂.mem
+  obtain h₂ := h₁.regs e₂.keeps e₂.mem
   refine ptrTo_ok (r := .esi) (t := .edx) (x := .slot .wide 19) (by decide) (by decide) h₂.edi h₂.width
     h.upper' (by omega_using [f19, nw', est]) fun v Kv mv pv => wp_addS rfl fun v₁ w₁ _ => wp_subS rfl fun v₂ w₂ _ => WP.block_nil ?_
-  have K₂ : Keeps [.ebx, .ecx, .edx, .esi] s v₂ :=
+  obtain K₂ : Keeps [.ebx, .ecx, .edx, .esi] s v₂ :=
     (((e₁.keeps.mono (by decide)).trans (e₂.keeps.mono (by decide))).trans (Kv.mono (by decide))).trans
       ((w₁.keeps.mono (by decide)).trans (w₂.keeps.mono (by decide)))
-  have m₂ : v₂.mem = s.mem := by rw [w₂.mem, w₁.mem, mv, e₂.mem, e₁.mem]
-  have srcAddr : byteAddr (v.gpr .esi) = off base (lo len (.slot .wide 19)) :=
+  obtain m₂ : v₂.mem = s.mem := by rw [w₂.mem, w₁.mem, mv, e₂.mem, e₁.mem]
+  obtain srcAddr : byteAddr (v.gpr .esi) = off base (lo len (.slot .wide 19)) :=
     VG.Proof.Bignum.X86.PublicRt.byteAddr_ptr pv (by omega_using [f19, nw', est])
-  have srcNat : (v.gpr .esi).toNat = base.toNat + lo len (.slot .wide 19) := by
+  obtain srcNat : (v.gpr .esi).toNat = base.toNat + lo len (.slot .wide 19) := by
     rw [pv, Nat.mod_eq_of_lt (by omega_using [f19, nw', est])]
-  have ecx₂ : v₂.gpr .ecx = BitVec.ofNat 32 len := by
+  obtain ecx₂ : v₂.gpr .ecx = BitVec.ofNat 32 len := by
     rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.gpr, lenArg]
-  have ebx₂ : v₂.gpr .ebx = args p := by
+  obtain ebx₂ : v₂.gpr .ebx = args p := by
     rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.other _ (by decide), e₁.gpr]
-  have esi₂ : v₂.gpr .esi = v.gpr .esi + BitVec.ofNat 32 (len - 1) := by
+  obtain esi₂ : v₂.gpr .esi = v.gpr .esi + BitVec.ofNat 32 (len - 1) := by
     rw [w₂.gpr, w₁.gpr, Kv.1 .ecx (by decide), e₂.gpr, lenArg]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hlow])]
-  have hsub : Region.Sub ⟨off base (lo len (.slot .wide 19)), len⟩ ⟨base, bytes⟩ := by
+  obtain hsub : Region.Sub ⟨off base (lo len (.slot .wide 19)), len⟩ ⟨base, bytes⟩ := by
     have := Offset.sub base (d := lo len (.slot .wide 19)) (n := len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [f19, lb, est])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   refine WP.seq (WP.mono (reverseBuffer_ok v₂ (src := v.gpr .esi) (dst := args p) (n := len) (by omega_using [hlow])
     (by omega_using [f19, lb, nw', est, srcNat]) outFit (by omega_using [hup]) (by rw [K₂.2.1, K₂.2.2, srcAddr]; exact h.scratch.read (by omega_using [f19, lb, est]))
     (by rw [K₂.2.2]; exact outWrite) (by rw [srcAddr]; exact outApart.sub_left hsub) ebx₂ esi₂ ecx₂)
     fun t ⟨V, F, _, T⟩ => ?_)
-  have Kt : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := (K₂.mono (by decide)).trans (T.mono (by decide))
-  have Ft : Frame [⟨byteAddr (args p), len⟩] s.mem t.mem := by rw [← m₂]; exact F
-  have ht := h.ws.of_keeps Kt
-  have st' : Scr t base bytes := ⟨by rw [← h.scratch.edi, Kt.1 _ (by decide)], ht.wr, ht.nowrap,
+  obtain Kt : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := (K₂.mono (by decide)).trans (T.mono (by decide))
+  obtain Ft : Frame [⟨byteAddr (args p), len⟩] s.mem t.mem := by rw [← m₂]; exact F
+  obtain ht := h.ws.of_keeps Kt
+  obtain st' : Scr t base bytes := ⟨by rw [← h.scratch.edi, Kt.1 _ (by decide)], ht.wr, ht.nowrap,
     by rw [Kt.1 _ (by decide)]; exact h.scratch.stk⟩
   refine wp_movS (readSrc_sc st' (d := accOff) (by simp only [accOff]; omega_using [f19, est])) fun t₁ u₁ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun t₂ u₂ => WP.block_nil ?_
-  have acc : t.mem.readW (off base accOff) 32 = s.mem.readW (off base accOff) 32 :=
+  obtain acc : t.mem.readW (off base accOff) 32 = s.mem.readW (off base accOff) 32 :=
     Ft.readW (r := ⟨base, bytes⟩) (Scr.contains nw' (by simp only [accOff]; omega_using [f19, est]))
       (by intro r hr; rw [List.mem_singleton.mp hr]; exact outApart) (by decide)
   refine ⟨?_, ?_, by rw [u₂.mem, u₁.mem]; exact Ft, (Kt.trans (u₁.keeps.mono (by decide))).trans (u₂.keeps.mono (by decide))⟩
   · intro fitv
     rw [u₂.mem, u₁.mem, V, srcAddr, m₂]
-    have eq : (s.mem.read (off base (lo len (.slot .wide 19))) (4 * cwc len .wide)).toNat =
+    obtain eq : (s.mem.read (off base (lo len (.slot .wide 19))) (4 * cwc len .wide)).toNat =
         val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) := read_eq_val32 _ _ _ _
     rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega_using [bw, lb] : len ≤ 4 * cwc len .wide) (by rw [eq]; exact fitv), eq]
   · rw [u₂.gpr, u₁.gpr, acc]; rfl

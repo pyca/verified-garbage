@@ -67,39 +67,39 @@ theorem descentChoose_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have h0 := hc.n0
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hW := sl_le c h7 (i := W0) (by decide)
-  have hT := sl_le c h7 (i := T3) (by decide)
-  have hC := sl_le c h7 (i := T1) (by decide)
-  have hB := sl_le c h7 (i := T4) (by decide)
-  have hO := sl_le c h7 (i := ONEP) (by decide)
-  have hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega_using [ht])
+  obtain hW := sl_le c h7 (i := W0) (by decide)
+  obtain hT := sl_le c h7 (i := T3) (by decide)
+  obtain hC := sl_le c h7 (i := T1) (by decide)
+  obtain hB := sl_le c h7 (i := T4) (by decide)
+  obtain hO := sl_le c h7 (i := ONEP) (by decide)
+  obtain hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega_using [ht])
   rw [Impl.EcKey.Compressed.Arm.descentChoose]
   refine WP.seq (WP.mono (slSub_ok hc.fp (MP'_n c) h7 hs hf (o := W0) (a := T3) (b := ONEP)
     (by decide) (by decide) (by decide) ht hOlt) fun s₁ ⟨k₁, e₁⟩ => ?_)
   change sv c base s₁ W0 = (sv c base s T3 + c.C.p - sv c base s ONEP) % c.C.p at e₁
-  have hs₁ := k₁.scr hs
-  have lt₁ : sv c base s₁ W0 < c.C.p := by
+  obtain hs₁ := k₁.scr hs
+  obtain lt₁ : sv c base s₁ W0 < c.C.p := by
     rw [e₁]; exact Nat.mod_lt _ (by omega_using [ht])
-  have v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ W0) =
+  obtain v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ W0) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) - 1 := by
     rw [e₁, toM_sub (by omega_using [hOlt]), hOne, toM_one (unitMod_pow_two hc.p_odd (64 * c.n))]
-  have z₁ : sv c base s₁ W0 = 0 ↔ toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1 := by
+  obtain z₁ : sv c base s₁ W0 = 0 ↔ toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1 := by
     rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) lt₁, v₁]
     constructor <;> intro h <;> grind
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (zero_ok hs₁ h0 hW) fun s₂ ⟨mask₂, k₂, m₂⟩ => ?_
   simp only [mask32, show wordsVal s₁.mem base (c.sl W0) c.n = sv c base s₁ W0 from rfl, z₁] at mask₂
   refine wp_mov (op2_reg _ _) fun s₃ u₃ => ?_
-  have hs₃ := (hs₁.of_rest k₂ (by decide)).of_rest (u₃.rest (ws := [.r10]) (by simp)) (by decide)
+  obtain hs₃ := (hs₁.of_rest k₂ (by decide)).of_rest (u₃.rest (ws := [.r10]) (by simp)) (by decide)
   refine WP.mono (sel_ok (decide (toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1)) (2 * c.n) hs₃
     (by rw [u₃.gpr, mask₂]; simp only [decide_eq_true_eq]) (by omega_using [hB]) (by omega_using [hC]) (by omega_using [hO])
     (by have := sl_apart c (i := T4) (j := T1) (by decide); omega_using [this])
     (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega_using [this]))
     fun t ⟨v₄, k₄, O₄⟩ => ?_
-  have mem₃ : s₃.mem = s₁.mem := u₃.mem.trans m₂
-  have C₃ : sv c base s₃ T1 = sv c base s T1 := by
+  obtain mem₃ : s₃.mem = s₁.mem := u₃.mem.trans m₂
+  obtain C₃ : sv c base s₃ T1 = sv c base s T1 := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  have O₃ : sv c base s₃ ONEP = sv c base s ONEP := by
+  obtain O₃ : sv c base s₃ ONEP = sv c base s ONEP := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₄
   simp only [← wordsVal_eq_val32] at v₄
@@ -183,14 +183,14 @@ theorem descentUpdate_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     WP isa (Impl.Weierstrass.Arm.fprog c.SP
       (Impl.EcKey.Compressed.Arm.descentOps c) c.umaal) s (DescentUpdatePost c base s) := by
   have h7 := hc.n10
-  have hL : Lay c.MP' size (· ∈ descentFields.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have hW : WkOk c.MP' size c.wk (· ∈ descentFields.map c.sl) := by
+  obtain hL : Lay c.MP' size (· ∈ descentFields.map c.sl) := lay_map hc rfl rfl rfl (by decide)
+  obtain hW : WkOk c.MP' size c.wk (· ∈ descentFields.map c.sl) := by
     refine ⟨wk_le c h7 rfl, ?_, sl_below_wk c h7 (by decide), sl_below_wk c h7 (by decide)⟩
     intro x hx
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have H : ∀ i ∈ descentFields, i < 45 := by decide
+    obtain H : ∀ i ∈ descentFields, i < 45 := by decide
     exact sl_below_wk c h7 (H i hi)
-  have I : Inv c.MP' base size c.C.p (· ∈ descentFields.map c.sl) (descentFields.map c.sl)
+  obtain I : Inv c.MP' base size c.C.p (· ∈ descentFields.map c.sl) (descentFields.map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
     refine ⟨hs, hM, fun _ h => h, ?_, fun _ _ => rfl, hf⟩
     intro x hx
@@ -201,7 +201,7 @@ theorem descentUpdate_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     (fun op hop x hx => ?_)
     (readsOk_rename c.sl descentN_reads)) fun t ⟨PK, IT⟩ => ?_
   · obtain ⟨op₀, h₀, rfl⟩ := List.mem_map.mp hop
-    have hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
+    obtain hx' : x ∈ (op₀.out :: op₀.ins).map c.sl := by
       cases op₀ <;> simpa [FOp.rename, FOp.out, FOp.ins] using hx
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     exact List.mem_map_of_mem (descentN_slots _ h₀ _ hi)
@@ -209,12 +209,12 @@ theorem descentUpdate_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
       c.sl i ∈ validAfter (descentN.map (FOp.rename c.sl)) (descentFields.map c.sl) := by
     apply (mem_validAfter _ _).mpr
     exact Or.inl (List.mem_map_of_mem (by
-      have sub : ∀ i ∈ [ACC, T0, T1], i ∈ descentFields := by decide
+      obtain sub : ∀ i ∈ [ACC, T0, T1], i ∈ descentFields := by decide
       exact sub i hi))
   have val {i : Nat} (hi : i ∈ [ACC, T0, T1]) := IT.val _ (hw hi)
-  have vr := val (i := ACC) (by simp)
-  have vt := val (i := T0) (by simp)
-  have vc := val (i := T1) (by simp)
+  obtain vr := val (i := ACC) (by simp)
+  obtain vt := val (i := T0) (by simp)
+  obtain vc := val (i := T1) (by simp)
   rw [congrFun (runOps_rename c.sl descentN _ fun _ _ _ h => sl_inj c hc.n0 h) ACC,
     (descentN_run _).1] at vr
   rw [congrFun (runOps_rename c.sl descentN _ fun _ _ _ h => sl_inj c hc.n0 h) T0,
@@ -281,39 +281,39 @@ theorem descentRound_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} {j : 
         (.block (Impl.EcKey.Compressed.Arm.descentCounter c))))) s _
   refine WP.seq (WP.mono (descentPower_ok hc hs hf hM (hlt _ (by simp)) hj hj' hword)
     fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  have hs₁ := hs.of_rest k₁ (by decide)
+  obtain hs₁ := hs.of_rest k₁ (by decide)
   have e₁ {i : Nat} (hi : i < 45) (hw : i ∉ [T3, TMP]) : sv c base s₁ i = sv c base s i :=
     sv_unch U₁ h7 hn hi (apart_slWk h7 hi hw)
-  have M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc (by
+  obtain M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc (by
     change sv c base s₁ MP = _
     rw [e₁ (by decide) (by decide)]; exact hM.val)
   refine WP.seq (WP.mono (descentChoose_ok hc hs₁ (hf.of_rest k₁) M₁ lt₁
     (by rw [e₁ (by decide) (by decide)]; exact hlt _ (by simp))
     (by rw [e₁ (by decide) (by decide)]; exact hOne)) fun s₂ ⟨k₂, U₂, lt₂, v₂⟩ => ?_)
-  have hs₂ := hs₁.of_rest k₂ (by decide)
+  obtain hs₂ := hs₁.of_rest k₂ (by decide)
   have e₂ {i : Nat} (hi : i < 45) (hw : i ∉ [W0, T4, TMP]) : sv c base s₂ i = sv c base s₁ i :=
     sv_unch U₂ h7 hn hi (apart_slWk h7 hi hw)
-  have M₂ : ModOkW c.MP' size c.C.p s₂.mem base := modP_of hc (by
+  obtain M₂ : ModOkW c.MP' size c.C.p s₂.mem base := modP_of hc (by
     change sv c base s₂ MP = _
     rw [e₂ (by decide) (by decide)]; exact M₁.val)
-  have b₂ : fieldAt c base s₂ T4 =
+  obtain b₂ : fieldAt c base s₂ T4 =
       if fieldAt c base s T0 ^ (2 ^ (j - 1)) = 1 then 1 else fieldAt c base s T1 := by
     unfold fieldAt
     rw [v₂, v₁, e₁ (by decide) (by decide)]
   refine WP.seq (WP.mono (descentUpdate_ok hc hs₂ ((hf.of_rest k₁).of_rest k₂) M₂ (by
     intro i hi
-    have sub : ∀ i ∈ descentFields, i ∈ [ACC, T0, T1] ∨ i = T4 := by decide
+    obtain sub : ∀ i ∈ descentFields, i ∈ [ACC, T0, T1] ∨ i = T4 := by decide
     rcases sub i hi with h | rfl
     · have hi45 : i < 45 := (by decide : ∀ i ∈ [ACC, T0, T1], i < 45) i h
-      have hn₁ : i ∉ [T3, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [T3, TMP]) i h
-      have hn₂ : i ∉ [W0, T4, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [W0, T4, TMP]) i h
+      obtain hn₁ : i ∉ [T3, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [T3, TMP]) i h
+      obtain hn₂ : i ∉ [W0, T4, TMP] := (by decide : ∀ i ∈ [ACC, T0, T1], i ∉ [W0, T4, TMP]) i h
       rw [e₂ hi45 hn₂, e₁ hi45 hn₁]; exact hlt i h
     · exact lt₂)) fun s₃ V => ?_)
-  have U₁₂ := unch_same (slotsWk_widen U₁ (by decide : ∀ i ∈ [T3, TMP], i ∈ roundSlots))
+  obtain U₁₂ := unch_same (slotsWk_widen U₁ (by decide : ∀ i ∈ [T3, TMP], i ∈ roundSlots))
     (slotsWk_widen U₂ (by decide : ∀ i ∈ [W0, T4, TMP], i ∈ roundSlots))
-  have U₁₂₃ := unch_same U₁₂ (slotsWk_widen V.unch (by decide : ∀ i ∈ descentWritten, i ∈ roundSlots))
-  have w₃ : s₃.mem.readW (off base (c.sl T2)) 32 = BitVec.ofNat 32 j := by
-    have U : Unch base (slWk c [T3, W0, T4, TMP, ACC, T0, T1]) s.mem s₃.mem :=
+  obtain U₁₂₃ := unch_same U₁₂ (slotsWk_widen V.unch (by decide : ∀ i ∈ descentWritten, i ∈ roundSlots))
+  obtain w₃ : s₃.mem.readW (off base (c.sl T2)) 32 = BitVec.ofNat 32 j := by
+    obtain U : Unch base (slWk c [T3, W0, T4, TMP, ACC, T0, T1]) s.mem s₃.mem :=
       unch_same (unch_same (slotsWk_widen U₁ (by decide)) (slotsWk_widen U₂ (by decide)))
         (slotsWk_widen V.unch (by decide))
     rw [Unch.readW32 U (fun w hw => by
@@ -329,14 +329,14 @@ theorem descentRound_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} {j : 
   · exact ((k₁.trans (k₂.mono (by decide))).trans
       (V.keep.mono (by decide))).trans (k₄.mono (by simp [powClob]))
   · intro i hi
-    have hi45 : i < 45 := (by decide : ∀ i ∈ [ACC, T0, T1], i < 45) i hi
-    have hn₂ : i ≠ T2 := (by decide : ∀ i ∈ [ACC, T0, T1], i ≠ T2) i hi
+    obtain hi45 : i < 45 := (by decide : ∀ i ∈ [ACC, T0, T1], i < 45) i hi
+    obtain hn₂ : i ≠ T2 := (by decide : ∀ i ∈ [ACC, T0, T1], i ≠ T2) i hi
     rw [e₄ hi45 hn₂]; exact V.lt i hi
   · have r₄ : fieldAt c base s₄ ACC = fieldAt c base s ACC * fieldAt c base s₂ T4 := by
       rw [fieldAt, e₄ (by decide) (by decide), V.r, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    have t₄ : fieldAt c base s₄ T0 = fieldAt c base s T0 * (fieldAt c base s₂ T4 * fieldAt c base s₂ T4) := by
+    obtain t₄ : fieldAt c base s₄ T0 = fieldAt c base s T0 * (fieldAt c base s₂ T4 * fieldAt c base s₂ T4) := by
       rw [fieldAt, e₄ (by decide) (by decide), V.t, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    have c₄ : fieldAt c base s₄ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
+    obtain c₄ : fieldAt c base s₄ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
       rw [fieldAt, e₄ (by decide) (by decide), V.c, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
     conv => rhs; rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
     simp only [pow_eq_npow]

@@ -40,21 +40,21 @@ theorem keyLoad_ok {s : State} (hkey : InRegions (s.rd ++ s.wr) (s.gpr .r8) 8) :
   let K := s.mem.readW kp 64
   let δ := s.gpr .r9
   let s₁ := s.setReg .rax K
-  have e₁ : exec (.mov .rax (.mem { base := .r8, disp := 0 })) s = some s₁ := by
-    have hea : s.ea { base := .r8, disp := 0 } = kp := by simp [State.ea, kp]
-    have hl : s.load64 kp = some K := by simp only [State.load64, hkey, ite_true, kp, K]
+  obtain e₁ : exec (.mov .rax (.mem { base := .r8, disp := 0 })) s = some s₁ := by
+    obtain hea : s.ea { base := .r8, disp := 0 } = kp := by simp [State.ea, kp]
+    obtain hl : s.load64 kp = some K := by simp only [State.load64, hkey, ite_true, kp, K]
     simp only [exec, readSrc, hea, hl, Option.map_some]
     rfl
   let v := kp + δ
   let s₂ := (arithFlags s₁ v (decide (2 ^ 64 ≤ kp.toNat + δ.toNat)) (addOverflow kp δ v)).setReg .r8 v
-  have e₂ : exec (.alu .add .r8 (.reg .r9)) s₁ = some s₂ := by
+  obtain e₂ : exec (.alu .add .r8 (.reg .r9)) s₁ = some s₂ := by
     simp only [exec, execAlu, readSrc, Option.bind_some]
-    have ha : s₁.gpr .r8 = kp := by simp [s₁, gpr_setReg, kp]
-    have hd : s₁.gpr .r9 = δ := by simp [s₁, gpr_setReg, δ]
+    obtain ha : s₁.gpr .r8 = kp := by simp [s₁, gpr_setReg, kp]
+    obtain hd : s₁.gpr .r9 = δ := by simp [s₁, gpr_setReg, δ]
     rw [ha, hd]
   let s₃ := (s₂.setFlags (some ((s₂.gpr .rax).rotateRight 48).msb) none s₂.zf s₂.sf).setReg .rax
     ((s₂.gpr .rax).rotateRight 48)
-  have e₃ : exec (.shift .ror .rax 48) s₂ = some s₃ := by
+  obtain e₃ : exec (.shift .ror .rax 48) s₂ = some s₃ := by
     simp only [exec, execShift]; rfl
   refine ⟨s₃, ?_, ?_, ?_, fun r h1 h2 => ?_, ?_, ?_, ?_⟩
   · rw [keyLoad, runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃,
@@ -80,10 +80,10 @@ bits of the S-boxes before it. -/
 theorem keyBits (K : BitVec 64) {j i : Nat} (hj : j < 8) (hi : i < 6) :
     (K.rotateRight 48 <<< (6 * j)).getLsbD (58 + i) = (K.setWidth 48).getLsbD (inBit j i) := by
   rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateRight, BitVec.getLsbD_setWidth]
-  have h1 : ¬ 58 + i < 6 * j := by omega_using [hj]
-  have h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega_using [hj]
-  have h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega_using [hj]
-  have h4 : inBit j i < 48 := by unfold inBit; omega_using [hi]
+  obtain h1 : ¬ 58 + i < 6 * j := by omega_using [hj]
+  obtain h2 : ¬ 58 + i - 6 * j < 64 - 48 % 64 := by omega_using [hj]
+  obtain h3 : 58 + i - 6 * j - (64 - 48 % 64) = inBit j i := by unfold inBit; omega_using [hj]
+  obtain h4 : inBit j i < 48 := by unfold inBit; omega_using [hi]
   simp only [h1, decide_false, Bool.not_false, Bool.true_and, h2, ite_false, h3, h4, decide_true,
     Bool.true_and, show 58 + i < 64 by omega_using [hi], show 58 + i - 6 * j < 64 by omega_using [hi]]
 
@@ -99,10 +99,10 @@ theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : S
       Frame.refl _ _⟩
   | succ n ih =>
     obtain ⟨s₁, run₁, w₁, r₁, g₁, rd₁, wr₁, f₁⟩ := ih (by omega_using [hn])
-    have c₁ := g₁ .rcx (by decide) (by decide)
-    have si₁ := g₁ .rsi (by decide) (by decide)
-    have h₁ := h.congr c₁ si₁ wr₁
-    have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
+    obtain c₁ := g₁ .rcx (by decide) (by decide)
+    obtain si₁ := g₁ .rsi (by decide) (by decide)
+    obtain h₁ := h.congr c₁ si₁ wr₁
+    obtain hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
     obtain ⟨s₂, run₂, w₂, r₂, g₂, rd₂, wr₂, f₂⟩ :=
       sboxStep_ok ρ (by omega_using [hn] : n < 8) h₁ hp₁ (K.setWidth 48)
         (fun i hi => by rw [r₁]; exact keyBits K (by omega_using [hn]) hi)
@@ -169,23 +169,23 @@ theorem round_ok (ρ : Role) {s : State} (h : Room s) (hp : Ptrs ρ s)
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [spillR s, stateR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, r₁, k₁, g₁, m₁, rd₁, wr₁⟩ := keyLoad_ok hkey
-  have c₁ := g₁ .rcx (by decide) (by decide)
-  have si₁ := g₁ .rsi (by decide) (by decide)
-  have h₁ := h.congr c₁ si₁ wr₁
-  have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
+  obtain c₁ := g₁ .rcx (by decide) (by decide)
+  obtain si₁ := g₁ .rsi (by decide) (by decide)
+  obtain h₁ := h.congr c₁ si₁ wr₁
+  obtain hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
   obtain ⟨s₂, run₂, w₂, -, g₂, rd₂, wr₂, f₂⟩ :=
     stepsCode_ok ρ _ (Nat.le_refl 8) h₁ hp₁ r₁
   obtain ⟨s₃, run₃, p12₃, p13₃, g₃, m₃, rd₃, wr₃⟩ := swapPtrs_run s₂
   obtain ⟨s₄, run₄, cnt₄, zf₄, g₄, m₄, rd₄, wr₄⟩ := sub1_run s₃ .r10
-  have g₂₁ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
+  obtain g₂₁ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [g₂ r h1 h2, g₁ r h1 h3]
-  have g₄₃ : ∀ r, r ≠ .rbx → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s₄.gpr r = s₂.gpr r := fun r a b c d => by
+  obtain g₄₃ : ∀ r, r ≠ .rbx → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s₄.gpr r = s₂.gpr r := fun r a b c d => by
     rw [g₄ r b, g₃ r a c d]
-  have r10₃ : s₃.gpr .r10 = s.gpr .r10 := by
+  obtain r10₃ : s₃.gpr .r10 = s.gpr .r10 := by
     rw [g₃ _ (by decide) (by decide) (by decide), g₂₁ _ (by decide) (by decide) (by decide)]
-  have si₄ : s₄.gpr .rsi = s.gpr .rsi := by
+  obtain si₄ : s₄.gpr .rsi = s.gpr .rsi := by
     rw [g₄₃ _ (by decide) (by decide) (by decide) (by decide), g₂₁ _ (by decide) (by decide) (by decide)]
-  have e₄ : ∀ y, words s₄ y = words s₂ y := fun y => by
+  obtain e₄ : ∀ y, words s₄ y = words s₂ y := fun y => by
     simp only [words, m₄, m₃, si₄, g₂₁ .rsi (by decide) (by decide) (by decide)]
   refine ⟨s₄, ?_, fun x hx => ?_, ?_, by rw [cnt₄, r10₃], by rw [zf₄, r10₃], ⟨?_, ?_⟩,
     fun r h1 h2 h3 h4 h5 h6 => ?_, rd₄.trans (rd₃.trans (rd₂.trans rd₁)),
@@ -193,7 +193,7 @@ theorem round_ok (ρ : Role) {s : State} (h : Room s) (hp : Ptrs ρ s)
   · rw [round_eq]
     exact runBlock_cat_some (runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃) run₄
   · rw [e₄ x, w₂ x hx]
-    have e : ∀ y, words s₁ y = words s y := fun y => by simp only [words, m₁, si₁]
+    obtain e : ∀ y, words s₁ y = words s y := fun y => by simp only [words, m₁, si₁]
     exact steps_congr ρ _ (Nat.le_refl 8) (fun y _ => e y) x hx
   · rw [g₄₃ _ (by decide) (by decide) (by decide) (by decide), g₂ _ (by decide) (by decide), k₁]
   · rw [g₄ _ (by decide), p12₃, si₄, g₂₁ _ (by decide) (by decide) (by decide), hp.wr, rdOff_flip]
@@ -290,34 +290,34 @@ theorem roundLoop_ok {s₀ : State} (hk : ∀ r < 16,
   let δ := s₀.gpr .r9
   have hpos := hs.pos
   have hle := hs.le
-  have hδ : s.gpr .r9 = δ := hs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hc : s.gpr .rcx = s₀.gpr .rcx :=
+  obtain hδ : s.gpr .r9 = δ := hs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain hc : s.gpr .rcx = s₀.gpr .rcx :=
     hs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hsi : s.gpr .rsi = s₀.gpr .rsi :=
+  obtain hsi : s.gpr .rsi = s₀.gpr .rsi :=
     hs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have a₁ : Apart s (s.gpr .r8) := by
+  obtain a₁ : Apart s (s.gpr .r8) := by
     rw [hs.key]; exact (hk (16 - m) (by omega_using [hpos])).congr hc hsi hs.rd hs.wr
   obtain ⟨s', run', w', key', cnt', zf', ptrs', g', rd', wr', f'⟩ :=
     round_ok (roleAt (16 - m)) hs.room hs.ptrs a₁.read
   refine WP.of_runBlock ⟨s', run', ?_⟩
-  have frame' : Frame [spillR s₀, stateR s₀] s₀.mem s'.mem := by
+  obtain frame' : Frame [spillR s₀, stateR s₀] s₀.mem s'.mem := by
     have := hs.frame
     rw [show spillR s = spillR s₀ by simp only [spillR, hc],
       show stateR s = stateR s₀ by simp only [stateR, hsi]] at f'
     exact this.trans f'
-  have k1 : (s.mem.readW (s.gpr .r8) 64).setWidth 48 = keyAt s₀.mem a₀ δ (16 - m) := by
+  obtain k1 : (s.mem.readW (s.gpr .r8) 64).setWidth 48 = keyAt s₀.mem a₀ δ (16 - m) := by
     rw [hs.key]; simp only [keyAt]
     rw [((hk (16 - m) (by omega_using [hpos])).readW hs.frame)]
-  have words' : ∀ x < 64, words s' x = rounds (keyAt s₀.mem a₀ δ) (16 - m + 1) (words s₀) x := by
+  obtain words' : ∀ x < 64, words s' x = rounds (keyAt s₀.mem a₀ δ) (16 - m + 1) (words s₀) x := by
     intro x hx
     rw [w' x hx, k1]
     simp only [rounds]
     exact roundW_congr _ _ hs.words x hx
-  have gpr' : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s₀.gpr r :=
+  obtain gpr' : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s₀.gpr r :=
     fun r a b c d e f => (g' r a b c d e f).trans (hs.gpr r a b c d e f)
-  have room' := hs.room.congr (g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
+  obtain room' := hs.room.congr (g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
     (g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) wr'
-  have cntv : s.gpr .r10 - 1 = BitVec.ofNat 64 (m - 1) := by
+  obtain cntv : s.gpr .r10 - 1 = BitVec.ofNat 64 (m - 1) := by
     rw [hs.cnt]
     exact cnt_sub m hs.pos
   rw [← roleAt_succ] at ptrs'
@@ -385,7 +385,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     (hc : s.gpr .r11 = BitVec.ofNat 64 p) :
     WP isa (passStart d) s (StartPost d p s) := by
   -- the code of a branch, and what follows it
-  have branch : ∀ (s₁ : State), s₁.gpr = s.gpr → s₁.mem = s.mem → s₁.rd = s.rd → s₁.wr = s.wr →
+  obtain branch : ∀ (s₁ : State), s₁.gpr = s.gpr → s₁.mem = s.mem → s₁.rd = s.rd → s₁.wr = s.wr →
       WP isa (.block (passKeyCode d p)) s₁ (fun s₂ =>
         WP isa (.block [.mov .r10 (.imm 16), .mov .r12 (.reg .rsi), .alu .add .r12 (.imm 64),
           .mov .r13 (.reg .rsi)]) s₂ (StartPost d p s)) := by
@@ -429,7 +429,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
   let t₁ := cmpState s .r11 3
   refine WP.of_runBlock ⟨t₁, cmp_run s .r11 3, ?_⟩
   apply WP.seq
-  have zf₁ : isa.eval .e t₁ = some (p == 3) := by
+  obtain zf₁ : isa.eval .e t₁ = some (p == 3) := by
     show t₁.zf = _
     simp only [t₁, cmpState, zf_arithFlags, hc]
     rcases hp with ⟨h1, h3⟩
@@ -441,19 +441,19 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     exact branch t₁ (by simp [t₁, cmpState]) (by simp [t₁, cmpState, mem_arithFlags])
       (by simp [t₁, cmpState, rd_arithFlags]) (by simp [t₁, cmpState, wr_arithFlags])
   · intro h3
-    have hp3 : p ≠ 3 := by simpa using h3
+    obtain hp3 : p ≠ 3 := by simpa using h3
     apply WP.seq
     let t₂ := cmpState t₁ .r11 2
     refine WP.of_runBlock ⟨t₂, cmp_run t₁ .r11 2, ?_⟩
-    have zf₂ : isa.eval .e t₂ = some (p == 2) := by
+    obtain zf₂ : isa.eval .e t₂ = some (p == 2) := by
       show t₂.zf = _
       simp only [t₂, t₁, cmpState, zf_arithFlags, gpr_arithFlags, hc]
       rcases hp with ⟨h1, h3⟩
       rcases p with _ | _ | _ | _ | p <;> first | omega | decide
-    have g₂ : t₂.gpr = s.gpr := by simp [t₂, t₁, cmpState]
-    have m₂ : t₂.mem = s.mem := by simp [t₂, t₁, cmpState, mem_arithFlags]
-    have rd₂ : t₂.rd = s.rd := by simp [t₂, t₁, cmpState, rd_arithFlags]
-    have wr₂ : t₂.wr = s.wr := by simp [t₂, t₁, cmpState, wr_arithFlags]
+    obtain g₂ : t₂.gpr = s.gpr := by simp [t₂, t₁, cmpState]
+    obtain m₂ : t₂.mem = s.mem := by simp [t₂, t₁, cmpState, mem_arithFlags]
+    obtain rd₂ : t₂.rd = s.rd := by simp [t₂, t₁, cmpState, rd_arithFlags]
+    obtain wr₂ : t₂.wr = s.wr := by simp [t₂, t₁, cmpState, wr_arithFlags]
     apply WP.ite (p == 2) zf₂
     · intro h2
       have : p = 2 := by simpa using h2
@@ -485,14 +485,14 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
   apply WP.seq
   apply WP.mono (passStart_ok d hp hc)
   intro s₁ p₁
-  have c₁ := p₁.gpr .rcx (by decide) (by decide) (by decide) (by decide) (by decide)
-  have si₁ := p₁.gpr .rsi (by decide) (by decide) (by decide) (by decide) (by decide)
-  have h₁ := h.congr c₁ si₁ p₁.wr
+  obtain c₁ := p₁.gpr .rcx (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain si₁ := p₁.gpr .rsi (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain h₁ := h.congr c₁ si₁ p₁.wr
   apply WP.seq
-  have hk₁ : ∀ r < 16, Apart s₁ (s₁.gpr .r8 + BitVec.ofNat 64 r * s₁.gpr .r9) := by
+  obtain hk₁ : ∀ r < 16, Apart s₁ (s₁.gpr .r8 + BitVec.ofNat 64 r * s₁.gpr .r9) := by
     intro r hr
     rw [p₁.key, p₁.step]; exact (hk r hr).congr c₁ si₁ p₁.rd p₁.wr
-  have inv : LoopInv s₁ 16 s₁ := by
+  obtain inv : LoopInv s₁ 16 s₁ := by
     refine ⟨h₁, rfl, rfl, by decide, by decide, fun _ _ => rfl, ?_, ?_, p₁.ptrs,
       fun _ _ _ _ _ _ _ => rfl, Frame.refl _ _⟩
     · simp
@@ -503,19 +503,19 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
   obtain ⟨s₃, run₃, sw₃, g₃, rd₃, wr₃, f₃⟩ := swapHalves_ok h₂
   obtain ⟨s₄, run₄, cnt₄, zf₄, g₄, m₄, rd₄, wr₄⟩ := sub1_run s₃ .r11
   refine WP.of_runBlock ⟨s₄, runBlock_cat_some run₃ run₄, ?_⟩
-  have keys : ∀ r < 16, keyAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9) r =
+  obtain keys : ∀ r < 16, keyAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9) r =
       keyAt s.mem (passA d p (s.gpr .rdi)) (passD d p) r := by
     intro r hr
     simp only [keyAt, p₁.key, p₁.step, p₁.mem]
     rfl
-  have state₁ : ∀ x < 64, words s₁ x = words s x := fun x _ => by simp only [words, p₁.mem, si₁]
-  have gs₂ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 →
+  obtain state₁ : ∀ x < 64, words s₁ x = words s x := fun x _ => by simp only [words, p₁.mem, si₁]
+  obtain gs₂ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 →
       s₂.gpr r = s.gpr r :=
     fun r a b c e f g h => (p₂.gpr r a b c f g h).trans (p₁.gpr r c e f g h)
-  have r11₃ : s₃.gpr .r11 = s.gpr .r11 := by
+  obtain r11₃ : s₃.gpr .r11 = s.gpr .r11 := by
     rw [g₃, gs₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
-  have c₂ := gs₂ .rcx (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have si₂ := gs₂ .rsi (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain c₂ := gs₂ .rcx (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain si₂ := gs₂ .rsi (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   refine ⟨h.congr (by rw [g₄ _ (by decide), g₃, c₂]) (by rw [g₄ _ (by decide), g₃, si₂])
       (wr₄.trans (wr₃.trans (p₂.wr.trans p₁.wr))),
     rd₄.trans (rd₃.trans (p₂.rd.trans p₁.rd)),

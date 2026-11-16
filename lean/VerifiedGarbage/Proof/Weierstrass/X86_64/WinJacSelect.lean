@@ -51,7 +51,7 @@ def selTc (K : JacWinCfg) : TCombCfg where
 
 theorem selPassAt_congr (o H st np : Nat) {po po' : Nat → Nat} (h : ∀ c < np, po c = po' c) :
     selPassAt o H st np po = selPassAt o H st np po' := by
-  have e1 : ∀ m : Nat, ((List.range np).flatMap fun c =>
+  obtain e1 : ∀ m : Nat, ((List.range np).flatMap fun c =>
       [Instr.movdquLoad .xmm14 (tblAt (st * (m - 1) + po c)), .xop (.bin .pand .xmm14 .xmm15),
         .xop (.bin .por (selAcc c) .xmm14)]) = ((List.range np).flatMap fun c =>
       [Instr.movdquLoad .xmm14 (tblAt (st * (m - 1) + po' c)), .xop (.bin .pand .xmm14 .xmm15),
@@ -59,7 +59,7 @@ theorem selPassAt_congr (o H st np : Nat) {po po' : Nat → Nat} (h : ∀ c < np
     simp only [List.flatMap_def]
     congr 1
     exact List.map_congr_left fun c hc => by rw [h c (List.mem_range.mp hc)]
-  have e2 : ((List.range np).map fun c => Instr.movdquStore (sc (o + po c)) (selAcc c)) =
+  obtain e2 : ((List.range np).map fun c => Instr.movdquStore (sc (o + po c)) (selAcc c)) =
       (List.range np).map fun c => Instr.movdquStore (sc (o + po' c)) (selAcc c) :=
     List.map_congr_left fun c hc => by rw [h c (List.mem_range.mp hc)]
   unfold selPassAt selEntryAt
@@ -96,17 +96,17 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨x₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
   have hT : K.T = jg K 80 := hL.T80
   have hTe : (selTc K).E.x = K.T := rfl
-  have hTl : K.T + 16 * K.np16 ≤ size := by rw [hT]; unfold jg; omega_arith
+  obtain hTl : K.T + 16 * K.np16 ≤ size := by rw [hT]; unfold jg; omega_arith
   have hTt : K.T = K.tbl + 16 * K.st := hL.T
   have hH : (selTc K).H = 16 := rfl
   have hnt : (selTc K).M.n = K.np16 := rfl
-  have hreg : InRegions (s₁.rd ++ s₁.wr) (base + BitVec.ofNat 64 K.tbl) (16 * K.np16 * 16) :=
+  obtain hreg : InRegions (s₁.rd ++ s₁.wr) (base + BitVec.ofNat 64 K.tbl) (16 * K.np16 * 16) :=
     ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (d := K.tbl) (by omega_arith) (by omega_arith)⟩
-  have hr : ∀ e < 16, ∀ c < K.np16, InRegions (s₁.rd ++ s₁.wr)
+  obtain hr : ∀ e < 16, ∀ c < K.np16, InRegions (s₁.rd ++ s₁.wr)
       (base + BitVec.ofNat 64 K.tbl + BitVec.ofNat 64 (K.st * e + 16 * c)) 16 := by
     intro e he c hc
     rw [Offset.add_add]
@@ -114,7 +114,7 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
     rw [Nat.mul_succ] at this
     exact ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩
   -- The pass, as the comb's.
-  have hpass : WP isa (.block (if K.avx2 then selPassY K.T 16 K.st K.np32 (qY K.np16)
+  obtain hpass : WP isa (.block (if K.avx2 then selPassY K.T 16 K.st K.np32 (qY K.np16)
       else if K.np16 ≤ 14 then selPassAt K.T 16 K.st K.np16 K.po
       else selPassAt K.T 16 K.st 8 (16 * ·) ++ selPassAt K.T 16 K.st (K.np16 - 8) (fun c => 16 * (8 + c)))) s₁
       fun t =>
@@ -136,12 +136,12 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
           (fun e he c hc => by have := hr e he c hc; rw [hst] at this; exact this) (by omega_arith)).mono
           fun t ⟨a₂, O₂, k₂⟩ => ⟨fun c hc => by rw [← a₂ c hc, Nat.add_zero], by rw [← Nat.add_zero K.T]; exact O₂, k₂⟩
       · next hle =>
-        have h15 : K.np16 = 15 := by omega_arith
+        obtain h15 : K.np16 = 15 := by omega_arith
         rw [WP.block_append_iff]
         refine WP.mono (selPassAt_ok (X := base + BitVec.ofNat 64 K.tbl) (a := a) (d := 0) (np := 8) (po := (16 * ·)) hs₁ (by decide) (by decide) (by omega_arith)
           h8₁ x₁ (fun c _ => by omega_arith) (fun e he c hc => hr e he c (by omega_arith)) (by omega_arith))
           fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
-        have hs₂ : Scr s₂ base size := hs₁.of_keepRegs k₂ (by decide)
+        obtain hs₂ : Scr s₂ base size := hs₁.of_keepRegs k₂ (by decide)
         refine WP.mono (selPassAt_ok (X := base + BitVec.ofNat 64 K.tbl) (a := a) (d := 128) (np := K.np16 - 8) (po := fun c => 16 * (8 + c)) hs₂ (by omega_arith)
           (by decide) (by omega_arith) (by rw [k₂.gpr _ (by decide), h8₁]) (by rw [k₂.gpr _ (by decide), x₁])
           (fun c _ => by omega_arith) (fun e he c hc => by
@@ -166,16 +166,16 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
         · refine (O₂.mono (Nat.le_refl _) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith))
   refine WP.mono hpass fun t ⟨a₂, O₂, k₂⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
   · have hw := accVal_word (mem := s₁.mem) (mem' := t.mem) (base := base) (n := K.np16) (o := K.T) a₂
-    have hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
+    obtain hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
       rw [k₁.2.1, Mont.word, Mont.word, off, off, Offset.add_add]
-    have hcn := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega_arith)
+    obtain hcn := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega_arith)
     rw [Nat.mul_succ] at hcn
-    have eT : ∀ i, jg K (80 + c) + 8 * i = K.T + 8 * (K.M.n * c + i) := fun i => by
+    obtain eT : ∀ i, jg K (80 + c) + 8 * i = K.T + 8 * (K.M.n * c + i) := fun i => by
       rw [hT]; unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega_arith
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
       refine wordsVal_congr₂ _ _ _ fun i hi => ?_
-      have e := hw (K.M.n * c + i) (by omega_arith)
+      obtain e := hw (K.M.n * c + i) (by omega_arith)
       rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), hX] at e
       rw [eT, e, ← hst]
       congr 1; unfold jg JacWinCfg.st
@@ -185,7 +185,7 @@ theorem jselect_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : Sta
       omega_arith
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       refine wordsVal_zeros fun i hi => ?_
-      have e := hw (K.M.n * c + i) (by omega_arith)
+      obtain e := hw (K.M.n * c + i) (by omega_arith)
       rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))] at e
       rw [eT, e]
   · refine ⟨fun r hr => ?_, by rw [k₂.rd, k₁.2.2.1], by rw [k₂.wr, k₁.2.2.2]⟩

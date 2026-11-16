@@ -55,45 +55,45 @@ theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss
     (ctx : Context p outA outB table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table) :
     WP isa (beginCode sha3 sb ss a b k oa ob w16) s
       (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s) := by
-  have combined := WP.mono_syms (start_ok (sha3 := sha3) (a := a) (b := b) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
+  obtain combined := WP.mono_syms (start_ok (sha3 := sha3) (a := a) (b := b) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s))
     (fun u ⟨ku,fu,svu,u19,_,pu,buA,buB⟩ sy => by
-      have cu : Context p outA outB table u := ctx.frame ku.rd ku.wr (fu.mono (by simp [stepWrites]))
+      obtain cu : Context p outA outB table u := ctx.frame ku.rd ku.wr (fu.mono (by simp [stepWrites]))
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by
         rw [u19]; exact Noise.inScratch cu.scratch (by decide) (by decide)))
         fun v ⟨kv,cv,mv,tv⟩ syv => ?_)
-      have fv : Frame [⟨p+1408,8⟩] u.mem v.mem := by
+      obtain fv : Frame [⟨p+1408,8⟩] u.mem v.mem := by
         rw [mv,u19]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 8)
-      have fvBig : Frame (stepWrites p outA outB) u.mem v.mem := fv.sub (by
+      obtain fvBig : Frame (stepWrites p outA outB) u.mem v.mem := fv.sub (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩)
-      have ctv := cu.frame kv.rd kv.wr fvBig
-      have v19 : v.gpr .x19=p := (kv.get .x19).trans u19
-      have v28 : v.gpr .x28=s.gpr .x28 := (kv.get .x28).trans (ku.get .x28)
-      have v16 : v.gpr .x16=table := by rw [tv,syv,sy,ht]
-      have streamA : ∀i<504,v.mem ((p+400)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed a k) i := by
+      obtain ctv := cu.frame kv.rd kv.wr fvBig
+      obtain v19 : v.gpr .x19=p := (kv.get .x19).trans u19
+      obtain v28 : v.gpr .x28=s.gpr .x28 := (kv.get .x28).trans (ku.get .x28)
+      obtain v16 : v.gpr .x16=table := by rw [tv,syv,sy,ht]
+      obtain streamA : ∀i<504,v.mem ((p+400)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed a k) i := by
         intro i hi
-        have hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+400) 504).Disjoint r := by
+        obtain hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+400) 504).Disjoint r := by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 400) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buA.byte hi)
-      have streamB : ∀i<504,v.mem ((p+904)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed b k) i := by
+      obtain streamB : ∀i<504,v.mem ((p+904)+BitVec.ofNat 64 i)=shakeStream (seedState s.mem seed b k) i := by
         intro i hi
-        have hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+904) 504).Disjoint r := by
+        obtain hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+904) 504).Disjoint r := by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 904) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-      have ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-      have eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
-      have pv := pair_frame pu fv (by
+      obtain ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+      obtain eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+      obtain pv := pair_frame pu fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.base_disjoint p (by decide) (by decide))
-      have svv := svu.frame fv (by
+      obtain svv := svu.frame fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.disjoint p (by decide) (by decide) (by decide))
-      have pars := initial_ok hoa hob
+      obtain pars := initial_ok hoa hob
         (by rw [v19,v28,houtA]; exact ea)
         (by rw [v19,v28,houtB]; exact eb) cv
         (by rw [v19]; exact ctv.scratch)
@@ -102,24 +102,24 @@ theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss
         (by rw [v28,houtA,houtB]; exact ctv.apart)
         (by intro mask hm; rw [v19,v16]; exact ctv.tableScratch.sub_left (Rej8.table_sub table hm))
       refine WP.mono pars fun t ht' => ?_
-      have ft : Frame (initialRegions p outA outB) v.mem t.mem := by
+      obtain ft : Frame (initialRegions p outA outB) v.mem t.mem := by
         simpa only [v19,v28,houtA,houtB] using ht'.frame
-      have ftBig : Frame (stepWrites p outA outB) v.mem t.mem := ft.sub (by
+      obtain ftBig : Frame (stepWrites p outA outB) v.mem t.mem := ft.sub (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ⟨_,by simp [stepWrites],fun _ h => h⟩
         · exact ⟨_,by simp [stepWrites],fun _ h => h⟩
         · exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩
         · exact ⟨⟨p,2048⟩,by simp [stepWrites],Offset.sub_base p (by decide)⟩)
-      have ctt := ctv.frame ht'.keep.rd ht'.keep.wr ftBig
-      have pt := pair_frame pv ft (by
+      obtain ctt := ctv.frame ht'.keep.rd ht'.keep.wr ftBig
+      obtain pt := pair_frame pv ft (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ctx.farA.sub_left (Region.sub_prefix (by decide : 400≤2048))
         · exact ctx.farB.sub_left (Region.sub_prefix (by decide : 400≤2048))
         · exact Offset.base_disjoint p (by decide) (by decide)
         · exact Offset.base_disjoint p (by decide) (by decide))
-      have svt := svv.frame ft (by
+      obtain svt := svv.frame ft (by
         intro r hr; simp only [initialRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact ctx.farA.sub_left (Offset.sub_base p (by decide))

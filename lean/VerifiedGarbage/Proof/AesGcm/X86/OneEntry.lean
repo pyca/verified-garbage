@@ -151,18 +151,18 @@ structure OL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 
 theorem OP.ol {nA w : Nat} (hw : nA = w + 1) (h9 : 9 ≤ w) {s : State} (h : OP nA w s)
     {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw nA 8 s = p) : OL p := by
-  have a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
-  have aW : arg s w = p.2 8 := pubSw_W hp (by omega_arith) hw
-  have esp : s.gpr .esp = p.1 := pubSw_esp hp
+  obtain a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain aW : arg s w = p.2 8 := pubSw_W hp (by omega_arith) hw
+  obtain esp : s.gpr .esp = p.1 := pubSw_esp hp
   obtain ⟨-, -, -, -, -, -, c_w, n_w, a_w, d_w, -, -, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa,
     fd, fw, sp, -, hR⟩ := h
-  have e := fun i hi => a i hi
+  obtain e := fun i hi => a i hi
   simp only [e 0 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith), e 5 (by omega_arith),
     e 6 (by omega_arith), e 7 (by omega_arith), aW, esp] at c_w n_w a_w d_w r_d r_w k_c k_n
   simp only [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith), e 5 (by omega_arith),
     e 6 (by omega_arith), e 7 (by omega_arith), aW, esp, roundsOk] at k_a k_d k_w fc fn fa fd fw sp hR
-  have hs := stOf_w64 fw
-  have sw : (⟨w64 (stOf (p.2 8)), 80⟩ : Region).Sub ⟨w64 (p.2 8), 2560⟩ := by
+  obtain hs := stOf_w64 fw
+  obtain sw : (⟨w64 (stOf (p.2 8)), 80⟩ : Region).Sub ⟨w64 (p.2 8), 2560⟩ := by
     rw [hs]; exact Lay.wSub (by decide)
   refine ⟨⟨fc, by rw [toNat_add32 (by omega_arith)]; omega_arith, fw, by decide, by decide, sp,
     c_w.sub_right sw, c_w, ?_, ?_, k_c, k_w.sub_right sw, k_w⟩, n_w, a_w, d_w,
@@ -179,7 +179,7 @@ structure OLD (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 
 theorem OPD.old {nA : Nat} (h9 : 8 < nA) {s : State} (h : OPD s) {p : BitVec 32 × (Nat → BitVec 32)}
     (hp : pubSw nA 8 s = p) : OLD p := by
-  have a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain a : ∀ i, i < 8 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
   obtain ⟨c_d, a_d⟩ := h
   rw [a 0 (by decide), a 6 (by decide), a 7 (by decide)] at c_d
   rw [a 4 (by decide), a 5 (by decide), a 6 (by decide), a 7 (by decide)] at a_d
@@ -284,7 +284,7 @@ theorem OEnv.frameG {rs : List Region}
     (hf : Frame rs s.mem s'.mem)
     (hbp : s'.gpr .ebp = s.gpr .ebp) (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : OEnv p s₀ s' := by
-  have sl : ∀ o, 128 ≤ o → (o + 4 ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + 4 ≤ rO) ∨ (rO + 16 ≤ o ∧ o + 4 ≤ 240)) →
+  obtain sl : ∀ o, 128 ≤ o → (o + 4 ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + 4 ≤ rO) ∨ (rO + 16 ≤ o ∧ o + 4 ≤ 240)) →
       slotv s'.mem (p.2 8) o = slotv s.mem (p.2 8) o := fun o h₁ h₂ => by
     rw [slotv_eq, slotv_eq]; exact slot_frame hf (hsl h₁ h₂)
   have hR := G.rounds
@@ -398,9 +398,9 @@ theorem oTail_ok {W : BitVec 32} {s : State} (hbp : s.gpr .ebp = W) (hw : Covers
     ∃ s', runBlock isa oTail s = some s' ∧ Frame [⟨w64 W + BitVec.ofNat 64 zO, 4⟩] s.mem s'.mem ∧
       slotv s'.mem W zO = 0 ∧ s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => w64_add (by omega_arith)
-  have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => in_off hw ho (by decide)
-  have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 zO, 4⟩] s.mem
+  obtain aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => w64_add (by omega_arith)
+  obtain wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => in_off hw ho (by decide)
+  obtain f₁ : Frame [⟨w64 W + BitVec.ofNat 64 zO, 4⟩] s.mem
       (s.mem.writeW (w64 W + BitVec.ofNat 64 zO) (BitVec.ofNat 32 0)) :=
     (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (Region.contains_self _ _)
   exact ⟨_, by xrun [hbp, aW, wIn], by mems []; exact f₁, by mems [slotv_eq]; rfl, by regs [], by regs [], by regs [],
@@ -433,19 +433,19 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h9 : 9 ≤ w) (ex : List (Na
   rw [oneEntry_eq]
   refine ⟨fun s₀ s ⟨hpre, hpub, hs⟩ => ?_, ?_⟩
   · subst s
-    have h := hPre _ hpre
-    have a : ∀ i, i < 8 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega_arith) (by omega_arith) (by omega_arith)
-    have aW : arg s₀ w = p.2 8 := pubSw_W hpub (by omega_arith) hw
-    have esp := pubSw_esp hpub
+    obtain h := hPre _ hpre
+    obtain a : ∀ i, i < 8 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega_arith) (by omega_arith) (by omega_arith)
+    obtain aW : arg s₀ w = p.2 8 := pubSw_W hpub (by omega_arith) hw
+    obtain esp := pubSw_esp hpub
     have fw := h.fw
     rw [aW] at fw
-    have wW : Covers [⟨w64 (p.2 8), 2560⟩] s₀.wr := by rw [← aW]; exact h.wW
-    have rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.argR
-    have aw : (argsR (s₀.gpr .esp) nA).Disjoint ⟨w64 (p.2 8), 2560⟩ := by
+    obtain wW : Covers [⟨w64 (p.2 8), 2560⟩] s₀.wr := by rw [← aW]; exact h.wW
+    obtain rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.argR
+    obtain aw : (argsR (s₀.gpr .esp) nA).Disjoint ⟨w64 (p.2 8), 2560⟩ := by
       rw [argsR_eq, ← aW]; exact h.w_a.symm
-    have hok : ∀ q ∈ oKeeps, q.1 < 8 ∧ 144 ≤ q.2 ∧ q.2 + 4 ≤ 2560 ∧ q.2 % 4 = 0 ∧
+    obtain hok : ∀ q ∈ oKeeps, q.1 < 8 ∧ 144 ≤ q.2 ∧ q.2 + 4 ≤ 2560 ∧ q.2 % 4 = 0 ∧
         (q.2 + 4 ≤ zO ∨ zO + 4 ≤ q.2) := by decide
-    have hps : ∀ q ∈ oKeeps ++ ex, q.1 < nA ∧ 144 ≤ q.2 ∧ q.2 + 4 ≤ 2560 ∧ q.2 % 4 = 0 := fun q hq => by
+    obtain hps : ∀ q ∈ oKeeps ++ ex, q.1 < nA ∧ 144 ≤ q.2 ∧ q.2 + 4 ≤ 2560 ∧ q.2 % 4 = 0 := fun q hq => by
       rcases List.mem_append.mp hq with hq | hq
       · have := hok q hq; exact ⟨by omega_arith, this.2.1, this.2.2.1, this.2.2.2.1⟩
       · have := hex q hq; exact ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.1⟩
@@ -455,30 +455,30 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h9 : 9 ≤ w) (ex : List (Na
     obtain ⟨s₃, run, f₃, z₃, bp₃, si₃, sp₃, rd₃, wr₃⟩ := oTail_ok (W := p.2 8) e.ebp (by rw [e.wr]; exact wW) fw
     have L := G.L
     -- What the tail writes.
-    have st : ∀ o, 128 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ zO ∨ zO + 4 ≤ o) →
+    obtain st : ∀ o, 128 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ zO ∨ zO + 4 ≤ o) →
         slotv s₃.mem (p.2 8) o = slotv s₂.mem (p.2 8) o := fun o h₁ h₂ h₃ => by
       rw [slotv_eq, slotv_eq]
       refine slot_frame f₃ fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
       simp only [zO] at h₃
       exact Lay.w_w (by simp only [zO]; omega_arith) (by omega_arith) (by decide)
-    have f₃' : Frame [⟨w64 (p.2 8) + BitVec.ofNat 64 128, 2432⟩] s₂.mem s₃.mem := f₃.sub fun r hr => by
+    obtain f₃' : Frame [⟨w64 (p.2 8) + BitVec.ofNat 64 128, 2432⟩] s₂.mem s₃.mem := f₃.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
-    have fE : Frame [⟨w64 (p.2 8) + BitVec.ofNat 64 128, 2432⟩] s₀.mem s₃.mem := e.frame.trans f₃'
-    have dE : ∀ {q : Addr} {n : Nat}, (⟨q, n⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩ →
+    obtain fE : Frame [⟨w64 (p.2 8) + BitVec.ofNat 64 128, 2432⟩] s₀.mem s₃.mem := e.frame.trans f₃'
+    obtain dE : ∀ {q : Addr} {n : Nat}, (⟨q, n⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩ →
         ∀ r ∈ [(⟨w64 (p.2 8) + BitVec.ofNat 64 128, 2432⟩ : Region)], (⟨q, n⟩ : Region).Disjoint r :=
       fun hq r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hq.sub_right (Lay.wSub (by decide))
-    have slR : ∀ q ∈ oKeeps ++ ex, slotv s₃.mem (p.2 8) q.2 = arg s₀ q.1 := fun q hq => by
-      have hz : q.2 + 4 ≤ zO ∨ zO + 4 ≤ q.2 := by
+    obtain slR : ∀ q ∈ oKeeps ++ ex, slotv s₃.mem (p.2 8) q.2 = arg s₀ q.1 := fun q hq => by
+      obtain hz : q.2 + 4 ≤ zO ∨ zO + 4 ≤ q.2 := by
         rcases List.mem_append.mp hq with hq | hq
         · exact (hok q hq).2.2.2.2
         · exact (hex q hq).2.2.2.2
       rw [st _ (by have := (hps q hq).2.1; omega_arith) (hps q hq).2.2.1 hz, e.slots q hq]
-    have sl : ∀ q ∈ oKeeps, slotv s₃.mem (p.2 8) q.2 = p.2 q.1 := fun q hq => by
+    obtain sl : ∀ q ∈ oKeeps, slotv s₃.mem (p.2 8) q.2 = p.2 q.1 := fun q hq => by
       rw [slR q (List.mem_append_left _ hq), a _ (hok q hq).1]
     have hR := G.rounds
-    have he : Env (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 s₃ := by
+    obtain he : Env (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 s₃ := by
       refine ⟨by rw [bp₃, e.ebp], by rw [si₃, e.esi], by rw [sp₃, e.esp, esp], ?_, ?_, by rw [wr₃, e.wr]; exact wW,
         by have := sl (0, ctxO) (by simp); rwa [slotv_eq] at this⟩
       · rw [rd₃, wr₃, e.rd, e.wr, ← a 0 (by omega_arith)]; exact h.cR
@@ -510,8 +510,8 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h9 : 9 ≤ w) (ex : List (Na
         · rw [h₁.1, h₂.1]
         · rw [h₁.2, h₂.2]) ht)
     subst s
-    have h := hPre _ hpre
-    have rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.argR
+    obtain h := hPre _ hpre
+    obtain rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.argR
     exact WP.mono (arg0_ok (argIn_of rA h.fg (by omega_arith))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubSw_W hpub (by omega_arith) hw, by rw [sp]; exact pubSw_esp hpub⟩
 

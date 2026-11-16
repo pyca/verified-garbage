@@ -70,7 +70,7 @@ theorem ce_arg {p : SearchPublic} {o t : State} {used : Nat} (h : SearchInput p 
   have A := h.abi
   have h1 : 216 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 60 := by
+  obtain hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 60 := by
     rw [he, SearchPublic.S2, h.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   rw [arg_withRegions, arg_callEntry (by omega_using [h1, hn]) (by omega_using [hj, hn]), ← ha j hj]
   congr 1
@@ -111,7 +111,7 @@ theorem esp_sub4 {p : SearchPublic} {o t : State} (h : SearchInput p o) (he : t.
 theorem ret_addr {p : SearchPublic} {o t : State} (h : SearchInput p o) (he : t.gpr .esp = p.S2) :
     (t.gpr .esp - 4).setWidth 64 = low o + BitVec.ofNat 64 152 := by
   rw [esp_sub4 h he]
-  have e := addr_sub h.abi (k := 64) (d := 0) (by decide) (by decide)
+  obtain e := addr_sub h.abi (k := 64) (d := 0) (by decide) (by decide)
   simpa only [addr, BitVec.add_zero] using e
 
 /-- The table, apart from every region the run may write. -/
@@ -130,72 +130,72 @@ theorem call_pre {p : SearchPublic} {o t : State} {used : Nat} (h : SearchInput 
   have A := h.abi
   have h1 : 216 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
-  have hpl : p.len = (arg o 1).toNat := by rw [← h.2]; rfl
-  have hpr : p.randLen = (arg o 8).toNat := by rw [← h.2]; rfl
+  obtain hpl : p.len = (arg o 1).toNat := by rw [← h.2]; rfl
+  obtain hpr : p.randLen = (arg o 8).toNat := by rw [← h.2]; rfl
   have hv := h.len_valid
-  have hu' : used < (arg o 8).toNat := by omega_using [hu, hpr, hv]
-  have hs4 := esp_sub4 h he
-  have hs4n : (o.gpr .esp - BitVec.ofNat 32 64).toNat = (o.gpr .esp).toNat - 64 := VG.X86.sub_toNat (by omega_using [h1])
-  have ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 156 := by
+  obtain hu' : used < (arg o 8).toNat := by omega_using [hu, hpr, hv]
+  obtain hs4 := esp_sub4 h he
+  obtain hs4n : (o.gpr .esp - BitVec.ofNat 32 64).toNat = (o.gpr .esp).toNat - 64 := VG.X86.sub_toNat (by omega_using [h1])
+  obtain ha0 : argAddr (t.callEntry.withRegions (callRd o used) (callWr o)) 0 = low o + BitVec.ofNat 64 156 := by
     rw [argAddr_withRegions, argAddr_callEntry, show 4 * 0 = 0 from rfl, BitVec.add_zero, he, SearchPublic.S2,
       h.sp_eq]
-    have e := addr_sub A (k := 60) (d := 0) (by decide) (by decide)
+    obtain e := addr_sub A (k := 60) (d := 0) (by decide) (by decide)
     simpa only [addr, BitVec.add_zero] using e
-  have hret : (o.gpr .esp - BitVec.ofNat 32 64).setWidth 64 = low o + BitVec.ofNat 64 152 := by
+  obtain hret : (o.gpr .esp - BitVec.ofNat 32 64).setWidth 64 = low o + BitVec.ofNat 64 152 := by
     rw [← hs4]; exact ret_addr h he
-  have hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
+  obtain hlen : (arg o 8 - BitVec.ofNat 32 used).toNat = (arg o 8).toNat - used := by
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by have := (arg o 8).isLt; omega_using [hu'])]
     have := (arg o 8).isLt; omega_using [hu']
-  have hT : Abi.constRegions (fun name => BitVec.setWidth 64 (t.syms name))
+  obtain hT : Abi.constRegions (fun name => BitVec.setWidth 64 (t.syms name))
       [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] = [tR o] := by
     rw [hsy, Abi.constRegions_cons, Abi.constRegions_nil, VG.Proof.RsaKeyGen.X86.Candidate.packed_length]
-  have TF := table_far A
-  have W := win_sub A hu'
-  have Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  have Rs : Region.Sub ⟨low o + BitVec.ofNat 64 152, 4⟩ (lowR o) := low_sub (by decide)
-  have Bs : Region.Sub ⟨low o, 152⟩ (lowR o) := Region.sub_prefix (by decide)
-  have oIn : oR o ∈ o.wr := by rw [A.wr]; simp
-  have uIn : uR o ∈ o.wr := by rw [A.wr]; simp
-  have bIn : bR o ∈ o.wr := by rw [A.wr]; simp
+  obtain TF := table_far A
+  obtain W := win_sub A hu'
+  obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
+  obtain Rs : Region.Sub ⟨low o + BitVec.ofNat 64 152, 4⟩ (lowR o) := low_sub (by decide)
+  obtain Bs : Region.Sub ⟨low o, 152⟩ (lowR o) := Region.sub_prefix (by decide)
+  obtain oIn : oR o ∈ o.wr := by rw [A.wr]; simp
+  obtain uIn : uR o ∈ o.wr := by rw [A.wr]; simp
+  obtain bIn : bR o ∈ o.wr := by rw [A.wr]; simp
   -- The callee's regions, apart.
   have dOU : (oR o).Disjoint (uR o) := A.ou
   have dOE : (oR o).Disjoint (eR o) := A.oe
   have dOP : (oR o).Disjoint (pR o) := A.op
-  have dOW : (oR o).Disjoint (winR o used) := A.or_.sub_right W
+  obtain dOW : (oR o).Disjoint (winR o used) := A.or_.sub_right W
   have dOB : (oR o).Disjoint (bR o) := A.ob
-  have dOF : (oR o).Disjoint (frR o) := A.lowO.symm.sub_right Fs
+  obtain dOF : (oR o).Disjoint (frR o) := A.lowO.symm.sub_right Fs
   have dUE : (uR o).Disjoint (eR o) := A.ue
   have dUP : (uR o).Disjoint (pR o) := A.up
-  have dUW : (uR o).Disjoint (winR o used) := A.ur.sub_right W
+  obtain dUW : (uR o).Disjoint (winR o used) := A.ur.sub_right W
   have dUB : (uR o).Disjoint (bR o) := A.ub
-  have dUF : (uR o).Disjoint (frR o) := A.lowU.symm.sub_right Fs
+  obtain dUF : (uR o).Disjoint (frR o) := A.lowU.symm.sub_right Fs
   have dEB : (eR o).Disjoint (bR o) := A.eb
-  have dEF : (eR o).Disjoint (frR o) := A.lowE.symm.sub_right Fs
+  obtain dEF : (eR o).Disjoint (frR o) := A.lowE.symm.sub_right Fs
   have dPB : (pR o).Disjoint (bR o) := A.pb
-  have dPF : (pR o).Disjoint (frR o) := A.lowP.symm.sub_right Fs
-  have dWB : (winR o used).Disjoint (bR o) := A.rb.sub_left W
-  have dWF : (winR o used).Disjoint (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
-  have dBF : (bR o).Disjoint (frR o) := A.lowB.symm.sub_right Fs
-  have rO : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (oR o) := A.lowO.sub_left Rs
-  have rU : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (uR o) := A.lowU.sub_left Rs
-  have rE : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (eR o) := A.lowE.sub_left Rs
-  have rP : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (pR o) := A.lowP.sub_left Rs
-  have rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
-  have rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (bR o) := A.lowB.sub_left Rs
-  have rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (frR o) :=
+  obtain dPF : (pR o).Disjoint (frR o) := A.lowP.symm.sub_right Fs
+  obtain dWB : (winR o used).Disjoint (bR o) := A.rb.sub_left W
+  obtain dWF : (winR o used).Disjoint (frR o) := (A.lowRand.symm.sub_left W).sub_right Fs
+  obtain dBF : (bR o).Disjoint (frR o) := A.lowB.symm.sub_right Fs
+  obtain rO : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (oR o) := A.lowO.sub_left Rs
+  obtain rU : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (uR o) := A.lowU.sub_left Rs
+  obtain rE : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (eR o) := A.lowE.sub_left Rs
+  obtain rP : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (pR o) := A.lowP.sub_left Rs
+  obtain rW : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (winR o used) := (A.lowRand.sub_left Rs).sub_right W
+  obtain rB : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (bR o) := A.lowB.sub_left Rs
+  obtain rF : Region.Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ (frR o) :=
     Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
-  have bO : Region.Disjoint ⟨low o, 152⟩ (oR o) := A.lowO.sub_left Bs
-  have bU : Region.Disjoint ⟨low o, 152⟩ (uR o) := A.lowU.sub_left Bs
-  have bE : Region.Disjoint ⟨low o, 152⟩ (eR o) := A.lowE.sub_left Bs
-  have bP : Region.Disjoint ⟨low o, 152⟩ (pR o) := A.lowP.sub_left Bs
-  have bW : Region.Disjoint ⟨low o, 152⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
-  have bB : Region.Disjoint ⟨low o, 152⟩ (bR o) := A.lowB.sub_left Bs
-  have bF : Region.Disjoint ⟨low o, 152⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
+  obtain bO : Region.Disjoint ⟨low o, 152⟩ (oR o) := A.lowO.sub_left Bs
+  obtain bU : Region.Disjoint ⟨low o, 152⟩ (uR o) := A.lowU.sub_left Bs
+  obtain bE : Region.Disjoint ⟨low o, 152⟩ (eR o) := A.lowE.sub_left Bs
+  obtain bP : Region.Disjoint ⟨low o, 152⟩ (pR o) := A.lowP.sub_left Bs
+  obtain bW : Region.Disjoint ⟨low o, 152⟩ (winR o used) := (A.lowRand.sub_left Bs).sub_right W
+  obtain bB : Region.Disjoint ⟨low o, 152⟩ (bR o) := A.lowB.sub_left Bs
+  obtain bF : Region.Disjoint ⟨low o, 152⟩ (frR o) := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
   have oB := A.oBound
   have uB := A.uBound
   have eB := A.eBound
   have pB := A.pBound
-  have wB : (arg o 7 + BitVec.ofNat 32 used).toNat + ((arg o 8).toNat - used) ≤ 2 ^ 32 := by
+  obtain wB : (arg o 7 + BitVec.ofNat 32 used).toNat + ((arg o 8).toNat - used) ≤ 2 ^ 32 := by
     rw [win_toNat A hu']; have := A.rBound; omega_using [hu', this]
   have sB := A.bBound
   have lV := A.lenValid
@@ -203,14 +203,14 @@ theorem call_pre {p : SearchPublic} {o t : State} {used : Nat} (h : SearchInput 
   have eH := A.eHigh
   have pL := A.pLen
   have sL := A.scratchLength
-  have st : 152 ≤ (o.gpr .esp - BitVec.ofNat 32 64).toNat := by rw [hs4n]; omega_using [h1]
-  have st' : (o.gpr .esp - BitVec.ofNat 32 64).toNat + 4 + 44 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
-  have held : Abi.constsHeld (t.mem.writeW (low o + BitVec.ofNat 64 152) (t.unknowns 0))
+  obtain st : 152 ≤ (o.gpr .esp - BitVec.ofNat 32 64).toNat := by rw [hs4n]; omega_using [h1]
+  obtain st' : (o.gpr .esp - BitVec.ofNat 32 64).toNat + 4 + 44 ≤ 2 ^ 32 := by rw [hs4n]; omega_using []
+  obtain held : Abi.constsHeld (t.mem.writeW (low o + BitVec.ofNat 64 152) (t.unknowns 0))
       (fun name => BitVec.setWidth 64 (t.syms name))
       [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)] := by
     have H := A.held
     rw [hsy]
-    have hb : ∀ c ∈ [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)],
+    obtain hb : ∀ c ∈ [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)],
         8 * c.2.length ≤ 2 ^ 64 := by
       intro c hc; simp only [List.mem_singleton] at hc; subst hc
       rw [VG.Proof.RsaKeyGen.X86.Candidate.packed_length]; decide
@@ -240,17 +240,17 @@ theorem call_pre {p : SearchPublic} {o t : State} {used : Nat} (h : SearchInput 
     ce_arg h he ha _ _ (show 8 < 11 by decide), ce_arg h he ha _ _ (show 9 < 11 by decide),
     ce_arg h he ha _ _ (show 10 < 11 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, hs4, ha0, hret,
     hlen, hT, BitVec.add_sub_cancel]
-  have hrd : callRd o used = [eR o, pR o, winR o used, tR o] := by rw [callRd, tableRs_eq]
+  obtain hrd : callRd o used = [eR o, pR o, winR o used, tR o] := by rw [callRd, tableRs_eq]
   have tW : ∀ r ∈ o.wr, (tR o).Disjoint r := TF.2.1
   have tL : (tR o).Disjoint (lowR o) := TF.2.2.2
-  have tO : (tR o).Disjoint (oR o) := tW _ oIn
-  have tU : (tR o).Disjoint (uR o) := tW _ uIn
-  have tB : (tR o).Disjoint (bR o) := tW _ bIn
-  have tF : (tR o).Disjoint (frR o) := tL.sub_right Fs
-  have tRet : (tR o).Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ := tL.sub_right Rs
-  have tBel : (tR o).Disjoint ⟨low o, 152⟩ := tL.sub_right Bs
+  obtain tO : (tR o).Disjoint (oR o) := tW _ oIn
+  obtain tU : (tR o).Disjoint (uR o) := tW _ uIn
+  obtain tB : (tR o).Disjoint (bR o) := tW _ bIn
+  obtain tF : (tR o).Disjoint (frR o) := tL.sub_right Fs
+  obtain tRet : (tR o).Disjoint ⟨low o + BitVec.ofNat 64 152, 4⟩ := tL.sub_right Rs
+  obtain tBel : (tR o).Disjoint ⟨low o, 152⟩ := tL.sub_right Bs
   have tBd := TF.1
-  have tAl : (tR o).base.toNat % 64 = 0 := A.tableAligned (tR o) (by
+  obtain tAl : (tR o).base.toNat % 64 = 0 := A.tableAligned (tR o) (by
     simp only [tableRegions, Abi.constRegions_cons, Abi.constRegions_nil,
       VG.Proof.RsaKeyGen.X86.Candidate.packed_length]
     exact List.mem_singleton_self _)

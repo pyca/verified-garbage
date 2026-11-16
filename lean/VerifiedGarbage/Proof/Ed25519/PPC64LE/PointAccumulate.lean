@@ -75,9 +75,9 @@ theorem cswapSlot_ok {s : State} (hc : Ctx8 b s) {sw : Nat} (hsw : sw ≤ 1) (h1
       Rest [.r5, .r7, .r8] s t ∧ Frame [FA b] s.mem t.mem ∧
       env t.mem b a = sel sw (env s.mem b a) (env s.mem b c) ∧ env t.mem b c = sel sw (env s.mem b c) (env s.mem b a) ∧
       ∀ i : Slot, i ≠ a → i ≠ c → env t.mem b i = env s.mem b i := by
-  have ha := slot_range a
-  have hc' := slot_range c
-  have hsep : offset a + 32 ≤ offset c ∨ offset c + 32 ≤ offset a := by
+  obtain ha := slot_range a
+  obtain hc' := slot_range c
+  obtain hsep : offset a + 32 ≤ offset c ∨ offset c + 32 ≤ offset a := by
     have : a.val ≠ c.val := fun e => hac (Fin.ext e)
     simp only [offset]; omega_arith
   refine WP.mono (cswap_ok (by omega_arith) (by omega_arith) hsep hc.ctx hsw h11) fun t ht => ⟨ht.rest, ?_, ?_, ?_, fun i hia hic => ?_⟩
@@ -89,8 +89,8 @@ theorem cswapSlot_ok {s : State} (hc : Ctx8 b s) {sw : Nat} (hsw : sw ≤ 1) (h1
   · unfold env FS; rw [sel_V hsw ht.lx, sel_toFe]
   · unfold env FS; rw [sel_V hsw ht.ly, sel_toFe]
   · have hi := slot_range i
-    have h1 : i.val ≠ a.val := fun e => hia (Fin.ext e)
-    have h2 : i.val ≠ c.val := fun e => hic (Fin.ext e)
+    obtain h1 : i.val ≠ a.val := fun e => hia (Fin.ext e)
+    obtain h2 : i.val ≠ c.val := fun e => hic (Fin.ext e)
     refine env_keep ht.frame i fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -106,26 +106,26 @@ theorem pointSelect_ok {s : State} (hc : Ctx8 b s) {sw : Nat} (hsw : sw ≤ 1)
       env t.mem b 16 = env s.mem b 16 := by
   unfold pointSelect swapFields pointSelectPairs
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-  have k11 : ∀ t : State, Rest [.r5, .r7, .r8] s t → t.gpr .r11 = 0 - BitVec.ofNat 64 sw := fun t h => by
+  obtain k11 : ∀ t : State, Rest [.r5, .r7, .r8] s t → t.gpr .r11 = 0 - BitVec.ofNat 64 sw := fun t h => by
     rw [h.gpr _ (by decide), h11]
   refine WP.append (cswapSlot_ok hc hsw h11 0 17 (by decide)) fun t1 ⟨r1, f1, a1, c1, k1⟩ => ?_
   refine WP.append (cswapSlot_ok (hc.of_rest r1 (by decide)) hsw (k11 t1 r1) 1 18 (by decide))
     fun t2 ⟨r2, f2, a2, c2, k2⟩ => ?_
-  have r12 := r1.trans r2
+  obtain r12 := r1.trans r2
   refine WP.append (cswapSlot_ok (hc.of_rest r12 (by decide)) hsw (k11 t2 r12) 2 19 (by decide))
     fun t3 ⟨r3, f3, a3, c3, k3⟩ => ?_
-  have r13 := r12.trans r3
+  obtain r13 := r12.trans r3
   refine WP.mono (cswapSlot_ok (hc.of_rest r13 (by decide)) hsw (k11 t3 r13) 3 20 (by decide))
     fun t4 ⟨r4, f4, a4, c4, k4⟩ => ⟨r13.trans r4, f1.trans (f2.trans (f3.trans f4)), ?_, ?_⟩
   · have e0 : env t4.mem b 0 = sel sw (env s.mem b 0) (env s.mem b 17) := by
       rw [k4 0 (by decide) (by decide), k3 0 (by decide) (by decide), k2 0 (by decide) (by decide), a1]
-    have e1 : env t4.mem b 1 = sel sw (env s.mem b 1) (env s.mem b 18) := by
+    obtain e1 : env t4.mem b 1 = sel sw (env s.mem b 1) (env s.mem b 18) := by
       rw [k4 1 (by decide) (by decide), k3 1 (by decide) (by decide), a2, k1 1 (by decide) (by decide),
         k1 18 (by decide) (by decide)]
-    have e2 : env t4.mem b 2 = sel sw (env s.mem b 2) (env s.mem b 19) := by
+    obtain e2 : env t4.mem b 2 = sel sw (env s.mem b 2) (env s.mem b 19) := by
       rw [k4 2 (by decide) (by decide), a3, k2 2 (by decide) (by decide), k2 19 (by decide) (by decide),
         k1 2 (by decide) (by decide), k1 19 (by decide) (by decide)]
-    have e3 : env t4.mem b 3 = sel sw (env s.mem b 3) (env s.mem b 20) := by
+    obtain e3 : env t4.mem b 3 = sel sw (env s.mem b 3) (env s.mem b 20) := by
       rw [a4, k3 3 (by decide) (by decide), k3 20 (by decide) (by decide), k2 3 (by decide) (by decide),
         k2 20 (by decide) (by decide), k1 3 (by decide) (by decide), k1 20 (by decide) (by decide)]
     simp only [point, e0, e1, e2, e3]
@@ -160,47 +160,47 @@ theorem pointAccumulate_ok {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 = Sp
   refine WP.seq (WP.seq (WP.mono (fieldCode_ok savePointOps hc.ctx) fun t1 ⟨k1, e1⟩ => ?_))
   obtain ⟨s17, s0, s16⟩ := env_savePoint (env s.mem b)
   rw [← e1] at s17 s0 s16
-  have hc1 : Ctx8 b t1 := hc.of_keep k1
+  obtain hc1 : Ctx8 b t1 := hc.of_keep k1
   refine WP.seq (tableAddr_ok hc1 (start := 5728) (n := i) (by decide) (by omega_arith) (by rw [k1.rest.gpr _ (by decide), h16])
     fun t2 r2 m2 e14 => ?_)
-  have hc2 : Ctx8 b t2 := hc1.of_rest r2 (by decide)
+  obtain hc2 : Ctx8 b t2 := hc1.of_rest r2 (by decide)
   refine WP.mono (pointFromTable_ok hc2 e14 (by omega_arith) (by omega_arith)) fun t3 ⟨r3, f3, p3, k3⟩ => ?_
   rw [m2] at p3 k3 f3
-  have hT : tableAt t1.mem b (5728 + 128 * i) = tableAt s.mem b (5728 + 128 * i) :=
+  obtain hT : tableAt t1.mem b (5728 + 128 * i) = tableAt s.mem b (5728 + 128 * i) :=
     table_FA k1.frame (by omega_arith) (by omega_arith)
   rw [hT] at p3
-  have hc3 : Ctx8 b t3 := hc2.of_rest r3 (by decide)
+  obtain hc3 : Ctx8 b t3 := hc2.of_rest r3 (by decide)
   refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps hc3.ctx) fun t4 ⟨k4, e4⟩ => ?_)
   obtain ⟨q4, q0, q17, q16⟩ := env_copyQ (env t3.mem b)
   rw [← e4] at q4 q0 q17 q16
-  have hc4 : Ctx8 b t4 := hc3.of_keep k4
+  obtain hc4 : Ctx8 b t4 := hc3.of_keep k4
   refine WP.mono (fieldCode_ok restorePointOps hc4.ctx) fun t5 ⟨k5, e5⟩ => ?_
   obtain ⟨w0, w17, w16, w4⟩ := env_restorePoint (env t4.mem b)
   rw [← e5] at w0 w17 w16 w4
-  have hc5 : Ctx8 b t5 := hc4.of_keep k5
+  obtain hc5 : Ctx8 b t5 := hc4.of_keep k5
   -- The saved point and `d`, kept through the table's read.
   have k3p : ∀ j : Slot, 4 ≤ j.val → env t3.mem b j = env t1.mem b j := k3
-  have hA3 : point (env t3.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
+  obtain hA3 : point (env t3.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
     rw [← s17]
     simp only [point, k3p 17 (by decide), k3p 18 (by decide), k3p 19 (by decide), k3p 20 (by decide)]
-  have hA17 : point (env t5.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by rw [w17, q17, hA3]
-  have hA0 : point (env t5.mem b) 0 1 2 3 = point (env s.mem b) 0 1 2 3 := by rw [w0, q17, hA3]
-  have hQ : point (env t5.mem b) 4 5 6 7 = tableAt s.mem b (5728 + 128 * i) := by rw [w4, q4, p3]
-  have hd5 : env t5.mem b 16 = Spec.Ed25519.d := by rw [w16, q16, k3p 16 (by decide), s16, hd]
+  obtain hA17 : point (env t5.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by rw [w17, q17, hA3]
+  obtain hA0 : point (env t5.mem b) 0 1 2 3 = point (env s.mem b) 0 1 2 3 := by rw [w0, q17, hA3]
+  obtain hQ : point (env t5.mem b) 4 5 6 7 = tableAt s.mem b (5728 + 128 * i) := by rw [w4, q4, p3]
+  obtain hd5 : env t5.mem b 16 = Spec.Ed25519.d := by rw [w16, q16, k3p 16 (by decide), s16, hd]
   refine WP.seq (WP.mono (addCall_ok hc5 hd5) fun t6 ⟨k6, p6, kk6⟩ => ?_)
-  have hc6 : Ctx8 b t6 := hc5.of_keep k6
-  have hA6 : point (env t6.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
+  obtain hc6 : Ctx8 b t6 := hc5.of_keep k6
+  obtain hA6 : point (env t6.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
     rw [← hA17]
     simp only [point, kk6 17 (by decide), kk6 18 (by decide), kk6 19 (by decide), kk6 20 (by decide)]
   -- The bit, kept below the field area.
-  have hFt : Frame [FA b] s.mem t6.mem := by
+  obtain hFt : Frame [FA b] s.mem t6.mem := by
     refine k1.frame.trans ((f3.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
       (k4.frame.trans (k5.frame.trans k6.frame)))
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  have hR6 : Rest (.r14 :: fclob) s t6 :=
+  obtain hR6 : Rest (.r14 :: fclob) s t6 :=
     (k1.rest.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       ((k4.rest.mono (by decide)).trans ((k5.rest.mono (by decide)).trans (k6.rest.mono (by decide))))))
-  have hb6 : (t6.mem (b + BitVec.ofNat 64 (BITSB + i))).toNat = w := by
+  obtain hb6 : (t6.mem (b + BitVec.ofNat 64 (BITSB + i))).toNat = w := by
     rw [byte_FA hFt (by simp only [BITSB]; omega_arith), hb]
   refine scalarBitMask_ok hc6 hi (by rw [hR6.gpr _ (by decide), h16]) hw hb6 fun t7 r7 m7 e11 => ?_
   refine WP.mono (pointSelect_ok (hc6.of_rest r7 (by decide)) (sw := 1 - w) (by omega_arith) e11)
@@ -235,25 +235,25 @@ theorem accumulate16_ok {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 = Spec.
     ⟨by decide, by decide, u1.rest (by decide), by rw [u1.mem]; exact Frame.refl _ _, u1.gpr, by rw [u1.mem],
       by rw [u1.mem]; exact hd⟩
   rintro m t ⟨h1, h2, hr, hf, h16, ha, hdt⟩
-  have hct : Ctx8 b t := hc.of_rest hr (by decide)
+  obtain hct : Ctx8 b t := hc.of_rest hr (by decide)
   unfold accumulateBody
   refine WP.seq (wp_subi (by decide) (by decide) fun t1 u1' => WP.block_nil ?_)
-  have e16 : t1.gpr .r16 = BitVec.ofNat 64 (m - 1) := by rw [u1'.gpr, h16, ofNat_sub_one h1 (by omega_arith)]
-  have hb1 : (t1.mem (b + BitVec.ofNat 64 (BITSB + (m - 1)))).toNat = W (m - 1) := by
+  obtain e16 : t1.gpr .r16 = BitVec.ofNat 64 (m - 1) := by rw [u1'.gpr, h16, ofNat_sub_one h1 (by omega_arith)]
+  obtain hb1 : (t1.mem (b + BitVec.ofNat 64 (BITSB + (m - 1)))).toNat = W (m - 1) := by
     rw [u1'.mem, byte_FA hf (by simp only [BITSB]; omega_arith)]
-  have hT1 : tableAt t1.mem b (5728 + 128 * (m - 1)) = T (m - 1) := by
+  obtain hT1 : tableAt t1.mem b (5728 + 128 * (m - 1)) = T (m - 1) := by
     rw [u1'.mem]; exact table_FA hf (by omega_arith) (by omega_arith)
   refine WP.mono (pointAccumulate_ok (hct.of_rest (u1'.rest (ws := [.r16]) (by decide)) (by decide))
     (by rw [u1'.mem]; exact hdt) (by omega_arith) e16 (hw (m - 1) (by omega_arith)) hb1) fun t2 ⟨r2, f2, p2, d2⟩ => ?_
   rw [hT1] at p2
-  have hR : Rest (.r16 :: .r14 :: fclob) s t2 := hr.trans ((u1'.rest (by decide)).trans (r2.mono (by decide)))
-  have hF : Frame [FA b] s.mem t2.mem := by rw [u1'.mem] at f2; exact hf.trans f2
-  have e16' : t2.gpr .r16 = BitVec.ofNat 64 (m - 1) := by rw [r2.gpr _ (by decide), e16]
-  have hA : accum T W (m - 1) (point (env t2.mem b) 0 1 2 3) = accum T W 16 (point (env s.mem b) 0 1 2 3) := by
+  obtain hR : Rest (.r16 :: .r14 :: fclob) s t2 := hr.trans ((u1'.rest (by decide)).trans (r2.mono (by decide)))
+  obtain hF : Frame [FA b] s.mem t2.mem := by rw [u1'.mem] at f2; exact hf.trans f2
+  obtain e16' : t2.gpr .r16 = BitVec.ofNat 64 (m - 1) := by rw [r2.gpr _ (by decide), e16]
+  obtain hA : accum T W (m - 1) (point (env t2.mem b) 0 1 2 3) = accum T W 16 (point (env s.mem b) 0 1 2 3) := by
     rw [← ha, p2, u1'.mem]
     obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_arith⟩
     rfl
-  have hz : (t2.gpr .r16 != 0) = decide (m - 1 ≠ 0) := by rw [e16', ofNat_ne_zero (by omega_arith)]
+  obtain hz : (t2.gpr .r16 != 0) = decide (m - 1 ≠ 0) := by rw [e16', ofNat_ne_zero (by omega_arith)]
   rw [eval_nonzero, hz]
   by_cases h0 : m - 1 = 0
   · refine .inl ⟨by simp [h0], hR, hF, ?_, d2⟩

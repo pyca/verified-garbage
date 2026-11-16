@@ -36,8 +36,8 @@ variable {s t : State} {g : Reg → BitVec 32} {m : Mem}
 
 theorem drop57 (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 114).drop 57 = Spec.Ed448.bytesAt m (p + BitVec.ofNat 64 57) 57 := by
-  have e := Proof.X25519.bytesAt_add m p 57 57
-  have l := Proof.X25519.length_bytesAt m p 57
+  obtain e := Proof.X25519.bytesAt_add m p 57 57
+  obtain l := Proof.X25519.length_bytesAt m p 57
   rw [Proof.Ed448.bytesAt_eq, Proof.Ed448.bytesAt_eq, show (114 : Nat) = 57 + 57 from rfl, e,
     List.drop_left' l]
 
@@ -154,18 +154,18 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
         (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) 57)
         (Spec.Ed448.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat)
         (Spec.Ed448.bytesAt m ((arg s 5).setWidth 64) (arg s 6).toNat) := by
-  have hk := kit h
-  have hcl : (arg s 4).toNat < 256 := by have := h.ctxlen; omega_using [this]
+  obtain hk := kit h
+  obtain hcl : (arg s 4).toNat < 256 := by have := h.ctxlen; omega_using [this]
   -- Disjointness of the values carried.
-  have lS := lo_fr (base s) (d := S) (l := 57) (by decide) (by decide)
-  have lK := lo_fr (base s) (d := K) (l := 57) (by decide) (by decide)
-  have sS : (fr (base s) S 57).Disjoint (SCR (arg s 7)) := hk.fr_scr (by decide)
-  have sK : (fr (base s) K 57).Disjoint (SCR (arg s 7)) := hk.fr_scr (by decide)
-  have o1W : ∀ {d : Nat}, d + 114 ≤ 256 → ∀ r ∈ W s d, (OUT1 s).Disjoint r := fun hd =>
+  obtain lS := lo_fr (base s) (d := S) (l := 57) (by decide) (by decide)
+  obtain lK := lo_fr (base s) (d := K) (l := 57) (by decide) (by decide)
+  obtain sS : (fr (base s) S 57).Disjoint (SCR (arg s 7)) := hk.fr_scr (by decide)
+  obtain sK : (fr (base s) K 57).Disjoint (SCR (arg s 7)) := hk.fr_scr (by decide)
+  obtain o1W : ∀ {d : Nat}, d + 114 ≤ 256 → ∀ r ∈ W s d, (OUT1 s).Disjoint r := fun hd =>
     dW h (out1_lo h) ((out_fr h hd).sub_left (out1_within s).sub) (out1_scr h)
-  have o2W : ∀ {d : Nat}, d + 114 ≤ 256 → ∀ r ∈ W s d, (OUT2 s).Disjoint r := fun hd =>
+  obtain o2W : ∀ {d : Nat}, d + 114 ≤ 256 → ∀ r ∈ W s d, (OUT2 s).Disjoint r := fun hd =>
     dW h (out2_lo h) ((out_fr h hd).sub_left (out2_within s).sub) (out2_scr h)
-  have n57 : (57 : Nat) ≤ 2 ^ 64 := by decide
+  obtain n57 : (57 : Nat) ≤ 2 ^ 64 := by decide
   unfold body
   -- `SHAKE256(seed, 114)` at `S`.
   refine WP.seq (WP.mono (seed_ok h hc ha) fun t1 ⟨hc1, _, hs1⟩ => ?_)
@@ -174,7 +174,7 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
   -- `s`, pruned in place; the prefix at `K`.
   refine WP.seq (WP.mono (hk.prune_ok hc1 (q := S) (by decide)) fun t2 ⟨hc2, hf2, hp2, _⟩ => ?_)
   rw [hs1'] at hp2
-  have pf2 : Spec.Ed448.bytesAt t2.mem ((base s).setWidth 64 + BitVec.ofNat 64 K) 57 =
+  obtain pf2 : Spec.Ed448.bytesAt t2.mem ((base s).setWidth 64 + BitVec.ofNat 64 K) 57 =
       (Spec.Sha3.shake256 (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) 57) 114).drop 57 := by
     rw [frame_bytes hf2 (D := fr (base s) K 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide))) n57,
       ← hs1', drop57, Offset.add_add]
@@ -182,50 +182,50 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
   -- The header.
   refine WP.seq (WP.mono (hk.hdr_ok hc2 ha (j := 4) (off := HASH) (by decide) hcl (by decide))
     fun t3 ⟨hc3, hf3, hh3, _⟩ => ?_)
-  have sp3 := (frame_bytes hf3 (D := fr (base s) S 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
+  obtain sp3 := (frame_bytes hf3 (D := fr (base s) S 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
     n57)
-  have pf3 := (frame_bytes hf3 (D := fr (base s) K 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
+  obtain pf3 := (frame_bytes hf3 (D := fr (base s) K 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
     n57).trans pf2
   -- The nonce's hash at `HASH`.
   refine WP.seq (WP.mono (nonce_ok h hc3 ha hh3 pf3) fun t4 ⟨hc4, hf4, hn4⟩ => ?_)
-  have sp4 := (frame_bytes hf4 (D := fr (base s) S 57)
+  obtain sp4 := (frame_bytes hf4 (D := fr (base s) S 57)
     (dW h lS (Offset.disjoint _ (by decide) (by decide) (by decide)) sS) n57).trans sp3
   -- `r` into the second half of `out`.
   refine WP.seq (WP.mono (r_step h hc4 ha) fun t5 ⟨hc5, hf5, hr5⟩ => ?_)
-  have sp5 := (frame_bytes hf5 (D := fr (base s) S 57) (d3 (fr_out2 h (by decide)) sS lS.symm) n57).trans sp4
+  obtain sp5 := (frame_bytes hf5 (D := fr (base s) S 57) (d3 (fr_out2 h (by decide)) sS lS.symm) n57).trans sp4
   -- `R` into the first half.
   refine WP.seq (WP.mono (b_step h hB hc5 ha) fun t6 ⟨hc6, hf6, hR6⟩ => ?_)
-  have sp6 := (frame_bytes hf6 (D := fr (base s) S 57) (d3 (fr_out1 h (by decide)) sS lS.symm) n57).trans sp5
-  have r6 := (frame_bytes hf6 (D := OUT2 s) (d3 (out12 s).symm (out2_scr h) (out2_lo h).symm) n57).trans hr5
+  obtain sp6 := (frame_bytes hf6 (D := fr (base s) S 57) (d3 (fr_out1 h (by decide)) sS lS.symm) n57).trans sp5
+  obtain r6 := (frame_bytes hf6 (D := OUT2 s) (d3 (out12 s).symm (out2_scr h) (out2_lo h).symm) n57).trans hr5
   -- The header again.
   refine WP.seq (WP.mono (hk.hdr_ok hc6 ha (j := 4) (off := HASH) (by decide) hcl (by decide))
     fun t7 ⟨hc7, hf7, hh7, _⟩ => ?_)
-  have sp7 := (frame_bytes hf7 (D := fr (base s) S 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
+  obtain sp7 := (frame_bytes hf7 (D := fr (base s) S 57) (d1 (Offset.disjoint _ (by decide) (by decide) (by decide)))
     n57).trans sp6
-  have r7 := (frame_bytes hf7 (D := OUT2 s) (d1 ((out_fr h (by decide)).sub_left (out2_within s).sub)) n57).trans r6
-  have R7 := (frame_bytes hf7 (D := OUT1 s) (d1 ((out_fr h (by decide)).sub_left (out1_within s).sub)) n57).trans hR6
+  obtain r7 := (frame_bytes hf7 (D := OUT2 s) (d1 ((out_fr h (by decide)).sub_left (out2_within s).sub)) n57).trans r6
+  obtain R7 := (frame_bytes hf7 (D := OUT1 s) (d1 ((out_fr h (by decide)).sub_left (out1_within s).sub)) n57).trans hR6
   -- The challenge's hash at `HASH`.
   refine WP.seq (WP.mono (chal_ok h hc7 ha hh7 R7) fun t8 ⟨hc8, hf8, hn8⟩ => ?_)
-  have sp8 := (frame_bytes hf8 (D := fr (base s) S 57)
+  obtain sp8 := (frame_bytes hf8 (D := fr (base s) S 57)
     (dW h lS (Offset.disjoint _ (by decide) (by decide) (by decide)) sS) n57).trans sp7
-  have r8 := (frame_bytes hf8 (D := OUT2 s) (o2W (by decide)) n57).trans r7
-  have R8 := (frame_bytes hf8 (D := OUT1 s) (o1W (by decide)) n57).trans R7
+  obtain r8 := (frame_bytes hf8 (D := OUT2 s) (o2W (by decide)) n57).trans r7
+  obtain R8 := (frame_bytes hf8 (D := OUT1 s) (o1W (by decide)) n57).trans R7
   -- `k` at `K`.
   refine WP.seq (WP.mono (k_step h hc8 ha) fun t9 ⟨hc9, hf9, hk9⟩ => ?_)
-  have sp9 := (frame_bytes hf9 (D := fr (base s) S 57)
+  obtain sp9 := (frame_bytes hf9 (D := fr (base s) S 57)
     (d3 (Offset.disjoint _ (by decide) (by decide) (by decide)) sS lS.symm) n57).trans sp8
-  have r9 := (frame_bytes hf9 (D := OUT2 s) (d3 (fr_out2 h (by decide)).symm (out2_scr h) (out2_lo h).symm) n57).trans r8
-  have R9 := (frame_bytes hf9 (D := OUT1 s) (d3 (fr_out1 h (by decide)).symm (out1_scr h) (out1_lo h).symm) n57).trans R8
+  obtain r9 := (frame_bytes hf9 (D := OUT2 s) (d3 (fr_out2 h (by decide)).symm (out2_scr h) (out2_lo h).symm) n57).trans r8
+  obtain R9 := (frame_bytes hf9 (D := OUT1 s) (d3 (fr_out1 h (by decide)).symm (out1_scr h) (out1_lo h).symm) n57).trans R8
   -- `S` over `r`.
   refine WP.seq (WP.mono (m_step h hc9 ha) fun t10 ⟨hc10, hf10, hS10⟩ => ?_)
-  have R10 := (frame_bytes hf10 (D := OUT1 s) (d3 (out12 s) (out1_scr h) (out1_lo h).symm) n57).trans R9
+  obtain R10 := (frame_bytes hf10 (D := OUT1 s) (d3 (out12 s) (out1_scr h) (out1_lo h).symm) n57).trans R9
   -- The frame cleared.
   refine WP.mono (Whole.Ctx.zeroWords hc10 (start := 6) (count := 58) hk.frame (by decide)) fun u ⟨hu, hf, _⟩ =>
     ⟨hu, ?_⟩
-  have keep := frame_bytes hf (D := OUT s) (d1 (out_fr h (d := 4 * 6) (l := 4 * 58) (by decide)))
+  obtain keep := frame_bytes hf (D := OUT s) (d1 (out_fr h (d := 4 * 6) (l := 4 * 58) (by decide)))
     (by show 114 ≤ 2 ^ 64; decide)
   rw [keep, split114, R10, hS10, r9, hk9, hr5]
-  have hn8' : Spec.Ed448.bytesAt t8.mem ((base s).setWidth 64 + BitVec.ofNat 64 HASH) 114 =
+  obtain hn8' : Spec.Ed448.bytesAt t8.mem ((base s).setWidth 64 + BitVec.ofNat 64 HASH) 114 =
       Spec.Ed448.hash (Spec.Ed448.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat)
         (Spec.Ed448.scalarBase (Spec.Ed448.scalarReduce (Spec.Ed448.bytesAt t4.mem
             ((base s).setWidth 64 + BitVec.ofNat 64 HASH) 114)) ++
@@ -243,40 +243,40 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
 end
 
 theorem body_nosp {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') : NoSp (body base') := by
-  have z : NoSp (Impl.Ed448.X86.Shake.zeroState SC) := NoSp.of_all (by decide +kernel)
-  have hdr : NoSp (.block (hdrAt 4 HASH)) := NoSp.of_all (by decide +kernel)
-  have pr : NoSp (.block (pruneAt S)) := NoSp.of_all (by decide +kernel)
-  have pd : NoSp (Impl.Ed448.X86.Shake.pad SC) := pad_nosp' (NoSp.of_all (by decide +kernel))
-  have sqS : NoSp (Impl.Ed448.X86.Shake.squeeze SC S) := squeeze_nosp' (NoSp.of_all (by decide +kernel))
-  have sqH : NoSp (Impl.Ed448.X86.Shake.squeeze SC HASH) := squeeze_nosp' (NoSp.of_all (by decide +kernel))
-  have sh : NoSp seedHash :=
+  obtain z : NoSp (Impl.Ed448.X86.Shake.zeroState SC) := NoSp.of_all (by decide +kernel)
+  obtain hdr : NoSp (.block (hdrAt 4 HASH)) := NoSp.of_all (by decide +kernel)
+  obtain pr : NoSp (.block (pruneAt S)) := NoSp.of_all (by decide +kernel)
+  obtain pd : NoSp (Impl.Ed448.X86.Shake.pad SC) := pad_nosp' (NoSp.of_all (by decide +kernel))
+  obtain sqS : NoSp (Impl.Ed448.X86.Shake.squeeze SC S) := squeeze_nosp' (NoSp.of_all (by decide +kernel))
+  obtain sqH : NoSp (Impl.Ed448.X86.Shake.squeeze SC HASH) := squeeze_nosp' (NoSp.of_all (by decide +kernel))
+  obtain sh : NoSp seedHash :=
     nosp_seq z (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel))) (nosp_seq pd sqS))
-  have nh : NoSp nonceHash :=
+  obtain nh : NoSp nonceHash :=
     nosp_seq z (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
       (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
         (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
           (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel))) (nosp_seq pd sqH)))))
-  have ch : NoSp chalHash :=
+  obtain ch : NoSp chalHash :=
     nosp_seq z (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
       (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
         (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
           (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel)))
             (nosp_seq (absorb_nosp' (NoSp.of_all (by decide +kernel))) (nosp_seq pd sqH))))))
-  have rr : NoSp (callWith reduceRArgs "vg_ed448_scalar_reduce" Impl.Ed448.X86.scalarReduce) :=
+  obtain rr : NoSp (callWith reduceRArgs "vg_ed448_scalar_reduce" Impl.Ed448.X86.scalarReduce) :=
     nosp_seq (NoSp.of_all (by decide +kernel)) reduce_nosp
-  have bb : NoSp (callWith baseArgs "vg_ed448_scalar_base" base') :=
+  obtain bb : NoSp (callWith baseArgs "vg_ed448_scalar_base" base') :=
     nosp_seq (NoSp.of_all (by decide +kernel)) hB.nosp
-  have rk : NoSp (callWith reduceKArgs "vg_ed448_scalar_reduce" Impl.Ed448.X86.scalarReduce) :=
+  obtain rk : NoSp (callWith reduceKArgs "vg_ed448_scalar_reduce" Impl.Ed448.X86.scalarReduce) :=
     nosp_seq (NoSp.of_all (by decide +kernel)) reduce_nosp
-  have ma : NoSp (callWith mulAddArgs "vg_ed448_scalar_mul_add" Impl.Ed448.X86.scalarMulAdd) :=
+  obtain ma : NoSp (callWith mulAddArgs "vg_ed448_scalar_mul_add" Impl.Ed448.X86.scalarMulAdd) :=
     nosp_seq (NoSp.of_all (by decide +kernel)) mulAdd_nosp
-  have wp : NoSp (.block wipe) := NoSp.of_all (by decide +kernel)
+  obtain wp : NoSp (.block wipe) := NoSp.of_all (by decide +kernel)
   exact nosp_seq sh (nosp_seq pr (nosp_seq hdr (nosp_seq nh (nosp_seq rr (nosp_seq bb (nosp_seq hdr
     (nosp_seq ch (nosp_seq rk (nosp_seq ma wp)))))))))
 
 theorem signCached_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') {s : State} (hp : scLocal.pre s) :
     WP isa (code base') s fun t => abiPreserved s t ∧ scLocal.post s t := by
-  have h := facts hp
+  obtain h := facts hp
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := h.below; omega_using [this]) (body_nosp hB)
     (WP.mono (body_ok h hB (push_ctx hp.1 hp.2.1 h.below) (args_val s 8) h.key) fun u ⟨hu, ho⟩ =>

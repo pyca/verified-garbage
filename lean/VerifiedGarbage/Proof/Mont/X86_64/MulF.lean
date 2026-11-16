@@ -49,7 +49,7 @@ theorem fU_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (r :
     refine ⟨BitVec.toNat_ofNat _ _, fun q hq => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hq.1, hq.2.1, hq.2.2, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.mono (storeReg_ok hs₁ .rcx ht) fun s₂ ⟨m₂, g₂, _, k₂⟩ => ⟨?_, ?_, ?_⟩
   · rw [g₂]; exact e₁
   · rw [m₂, g₂, k₁.2.1]
@@ -79,8 +79,8 @@ theorem fTerms_some (M : Mod) (a b c : Nat) : ∀ t ∈ fTerms M a b c, t.2.isSo
 
 theorem fTerms_length (M : Mod) (a b c : Nat) : (fTerms M a b c).length ≤ 2 * M.n := by
   simp only [fTerms, List.length_append, List.length_map]
-  have h1 := List.length_filter_le (fun i => decide (i ≤ c ∧ c - i < M.n)) (List.range M.n)
-  have h2 := List.length_filter_le (fun k => decide (k < c ∧ c - k < M.n)) (List.range M.n)
+  obtain h1 := List.length_filter_le (fun i => decide (i ≤ c ∧ c - i < M.n)) (List.range M.n)
+  obtain h2 := List.length_filter_le (fun k => decide (k < c ∧ c - k < M.n)) (List.range M.n)
   simp only [List.length_range] at h1 h2
   omega_using [h1, h2]
 
@@ -103,15 +103,15 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s s' ∧
       Outside base (M.tmp + 8 * (c % w)) 8 s.mem s'.mem := by
   have hnw := hs.nowrap
-  have hc9 := Nat.mod_lt c (show 0 < w by omega_arith)
-  have hok := pAccs_ok (c + w)
+  obtain hc9 := Nat.mod_lt c (show 0 < w by omega_arith)
+  obtain hok := pAccs_ok (c + w)
   have hsub := hok.2
-  have hrdi : Reg.rdi ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: pAccs (c + w) := by
+  obtain hrdi : Reg.rdi ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: pAccs (c + w) := by
     intro h
     simp only [List.mem_cons] at h
     rcases h with h | h | h | h
     all_goals first | exact absurd h (by decide) | exact absurd (hsub _ h) (by decide)
-  have hkeep : ∀ r, r ∉ [Reg.rax, .rcx, .rdx, .r9, .r10, .r11] → r ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: pAccs (c + w) :=
+  obtain hkeep : ∀ r, r ∉ [Reg.rax, .rcx, .rdx, .r9, .r10, .r11] → r ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: pAccs (c + w) :=
     fun r hr h => hr (by
       simp only [List.mem_cons] at h ⊢
       rcases h with h | h | h | h
@@ -121,11 +121,11 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       · have := hsub r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at this; grind)
   rw [fCol, hn, WP.block_append_iff]
   refine WP.mono (pTerms_ok (c + w) _ hs hin (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ hrdi
+  obtain hs₁ := hs.of_keeps k₁ hrdi
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   split
   · rename_i hc'
-    have hcm : c % w = c := Nat.mod_eq_of_lt hc'
+    obtain hcm : c % w = c := Nat.mod_eq_of_lt hc'
     rw [fRed, hn, show ([.mov .rax (.reg (pAcc (c + w) 0)), .movImm64 .rcx M.minv, .mul .rcx,
         .mov .rcx (.reg .rax), .store (sc (M.tmp + 8 * c)) .rcx, .mov .rax (.mem (sc M.mo)), .mul .rcx,
         .alu .add (pAcc (c + w) 0) (.reg .rax), .alu .adc (pAcc (c + w) 1) (.reg .rdx),
@@ -136,18 +136,18 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
         .alu .adc (pAcc (c + w) 2) (.imm 0)] from rfl, WP.block_append_iff]
     refine WP.mono (fU_ok hs₁ (pAcc (c + w) 0) M.minv (t := M.tmp + 8 * c) (by omega_arith))
       fun s₂ ⟨u₂, m₂, k₂⟩ => ?_
-    have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-    have O₂ : Outside base (M.tmp + 8 * c) 8 s₁.mem s₂.mem := by
+    obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+    obtain O₂ : Outside base (M.tmp + 8 * c) 8 s₁.mem s₂.mem := by
       rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
-    have hmo₂ : word s₂.mem base M.mo = word s.mem base M.mo := by
+    obtain hmo₂ : word s₂.mem base M.mo = word s.mem base M.mo := by
       rw [O₂.word (by omega_arith) (by omega_arith), hm₁]
-    have hacc₂ : regsVal s₂ (pAccs (c + w)) = regsVal s₁ (pAccs (c + w)) :=
+    obtain hacc₂ : regsVal s₂ (pAccs (c + w)) = regsVal s₁ (pAccs (c + w)) :=
       regsVal_congr fun r hr => k₂.gpr r (by
         have := hsub r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at this ⊢
         grind)
-    have hlow := regsVal_lt s₁ [pAcc (c + w) 1, pAcc (c + w) 2]
-    have hu₂ : (s₂.gpr .rcx).toNat < 2 ^ 64 := (s₂.gpr .rcx).isLt
+    obtain hlow := regsVal_lt s₁ [pAcc (c + w) 1, pAcc (c + w) 2]
+    obtain hu₂ : (s₂.gpr .rcx).toNat < 2 ^ 64 := (s₂.gpr .rcx).isLt
     refine WP.mono (pMulAcc_ok hs₂ hok.1 (dx := M.mo) (by omega_arith) (by
       rw [show [pAcc (c + w) 0, pAcc (c + w) 1, pAcc (c + w) 2] = pAccs (c + w) from rfl, hacc₂, e₁, hmo₂]
       have := Nat.mul_le_mul (Nat.le_of_lt (word s.mem base M.mo).isLt) (Nat.le_of_lt hu₂)
@@ -156,10 +156,10 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [show [pAcc (c + w) 0, pAcc (c + w) 1, pAcc (c + w) 2] = pAccs (c + w) from rfl, hacc₂, hmo₂] at e₃
     have hm₃ : s₃.mem = s₂.mem := k₃.2.1
     -- The low word is now zero.
-    have hz : (s₃.gpr (pAcc (c + w) 0)).toNat = 0 := by
-      have e0 : regsVal s₁ (pAccs (c + w)) % 2 ^ 64 = (s₁.gpr (pAcc (c + w) 0)).toNat := by
+    obtain hz : (s₃.gpr (pAcc (c + w) 0)).toNat = 0 := by
+      obtain e0 : regsVal s₁ (pAccs (c + w)) % 2 ^ 64 = (s₁.gpr (pAcc (c + w) 0)).toNat := by
         simp only [pAccs, regsVal]; omega_arith
-      have e3 : regsVal s₃ (pAccs (c + w)) % 2 ^ 64 = (s₃.gpr (pAcc (c + w) 0)).toNat := by
+      obtain e3 : regsVal s₃ (pAccs (c + w)) % 2 ^ 64 = (s₃.gpr (pAcc (c + w) 0)).toNat := by
         simp only [pAccs, regsVal]; omega_arith
       have hu : (s₂.gpr .rcx).toNat = (s₁.gpr (pAcc (c + w) 0)).toNat * M.minv.toNat % 2 ^ 64 := u₂
       rw [← e3, e₃, hu, Nat.add_mod, e0, Nat.mul_comm (word s.mem base M.mo).toNat]
@@ -167,20 +167,20 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       rwa [Nat.add_mod, Nat.mod_eq_of_lt (s₁.gpr (pAcc (c + w) 0)).isLt] at this
     refine ⟨?_, ?_, ?_⟩
     · rw [Nat.zero_add, hcm, hm₃, m₂, word_writeW_self, show c + 1 + w = c + w + 1 by omega_arith, pAccs_succ]
-      have h3 : regsVal s₃ (pAccs (c + w)) =
+      obtain h3 : regsVal s₃ (pAccs (c + w)) =
           2 ^ 64 * regsVal s₃ [pAcc (c + w) 1, pAcc (c + w) 2, pAcc (c + w) 0] := by
         simp only [pAccs, regsVal, hz]; omega_arith
       rw [← h3, e₃, e₁, Nat.mul_comm (word s.mem base M.mo).toNat]
     · refine ⟨fun r hr => ?_, k₃.2.2.1.trans (k₂.rd.trans k₁.2.2.1), k₃.2.2.2.trans (k₂.wr.trans k₁.2.2.2)⟩
-      have h1 := hkeep r hr
-      have h3 : r ∉ [Reg.rax, .rdx, pAcc (c + w) 0, pAcc (c + w) 1, pAcc (c + w) 2] := fun h => h1 (by
+      obtain h1 := hkeep r hr
+      obtain h3 : r ∉ [Reg.rax, .rdx, pAcc (c + w) 0, pAcc (c + w) 1, pAcc (c + w) 2] := fun h => h1 (by
         simp only [pAccs, List.mem_cons, List.not_mem_nil, or_false] at h ⊢; grind)
-      have h2 : r ∉ [Reg.rax, .rcx, .rdx] := fun h => h1 (by
+      obtain h2 : r ∉ [Reg.rax, .rcx, .rdx] := fun h => h1 (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; grind)
       rw [k₃.1 r h3, k₂.gpr r h2, k₁.1 r h1]
     · rw [hcm, hm₃]; exact fun x hx => by rw [O₂ x hx, hm₁]
   · rename_i hc'
-    have hcm : c % w = c - w := by
+    obtain hcm : c % w = c - w := by
       rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     refine WP.mono (pEnd_ok hs₁ (c + w) (t := M.tmp + 8 * (c - w)) (by omega_arith)) fun s₂ ⟨m₂, e₂, k₂⟩ => ?_
     refine ⟨?_, ?_, ?_⟩
@@ -188,7 +188,7 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
         show c + 1 + w = c + w + 1 by omega_arith]
       rfl
     · refine ⟨fun r hr => ?_, k₂.rd.trans k₁.2.2.1, k₂.wr.trans k₁.2.2.2⟩
-      have h1 := hkeep r hr
+      obtain h1 := hkeep r hr
       rw [k₂.gpr r (fun h => h1 (by simp only [List.mem_singleton] at h; simp [h, pAccs])), k₁.1 r h1]
     · rw [hcm, m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 
@@ -290,7 +290,7 @@ theorem hval_prodCol (w : Nat) (f g : Nat → Nat) :
 /-- All `2w` columns: `A B + U m`. -/
 theorem fColSum_total (hw : w = 8 ∨ w = 9) (A B Mw l : Nat → Nat) :
     hval (fColSum w A B Mw l) 0 (2 * w) = hval A 0 w * hval B 0 w + hval l 0 w * hval Mw 0 w := by
-  have hw0 : 0 < w := by omega_using [hw]
+  obtain hw0 : 0 < w := by omega_using [hw]
   have : fColSum w A B Mw l = fun c => prodCol w A B c + prodCol w l Mw c := by
     funext c
     rw [fColSum, Nat.add_assoc]
@@ -366,39 +366,39 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
     refine WP.mono (fCols_ok hs hn hw htmp hmo ha hb hsep haT hbT hinv h0 n (by omega_arith))
       fun s ⟨k, O, hacc, l, hl64, hlm, e⟩ => ?_
     have hnw := hs.nowrap
-    have hsS : Scr s base size := hs.of_keepRegs k (by decide)
-    have hA : ∀ i < w, (word s.mem base (a + 8 * i)).toNat = (word s₀.mem base (a + 8 * i)).toNat :=
+    obtain hsS : Scr s base size := hs.of_keepRegs k (by decide)
+    obtain hA : ∀ i < w, (word s.mem base (a + 8 * i)).toNat = (word s₀.mem base (a + 8 * i)).toNat :=
       fun i hi => by rw [O.word (by omega_arith) (by omega_arith)]
-    have hB : ∀ j < w, (word s.mem base (b + 8 * j)).toNat = (word s₀.mem base (b + 8 * j)).toNat :=
+    obtain hB : ∀ j < w, (word s.mem base (b + 8 * j)).toNat = (word s₀.mem base (b + 8 * j)).toNat :=
       fun j hj => by rw [O.word (by omega_arith) (by omega_arith)]
-    have hM : ∀ j < w, (word s.mem base (M.mo + 8 * j)).toNat = (word s₀.mem base (M.mo + 8 * j)).toNat :=
+    obtain hM : ∀ j < w, (word s.mem base (M.mo + 8 * j)).toNat = (word s₀.mem base (M.mo + 8 * j)).toNat :=
       fun j hj => by rw [O.word (by omega_arith) (by omega_arith)]
-    have hL : ∀ k < w, k < n → n - k < w → (word s.mem base (M.tmp + 8 * k)).toNat = l k :=
+    obtain hL : ∀ k < w, k < n → n - k < w → (word s.mem base (M.tmp + 8 * k)).toNat = l k :=
       fun k h9 hk hk' => by
       have := hlm k hk (by omega_arith)
       rwa [Nat.mod_eq_of_lt (show k < w by omega_arith)] at this
-    have hsum := pSum_fTerms (M := M) (c := n) hn hA hB hM hL
-    have hpl := pSum_le s.mem base (fTerms M a b n) (fTerms_some M a b n)
-    have hlen := fTerms_length M a b n
+    obtain hsum := pSum_fTerms (M := M) (c := n) hn hA hB hM hL
+    obtain hpl := pSum_le s.mem base (fTerms M a b n) (fTerms_some M a b n)
+    obtain hlen := fTerms_length M a b n
     rw [hn] at hlen
-    have hlen' := Nat.mul_le_mul_right (2 ^ 128) hlen
-    have hin : ∀ t ∈ fTerms M a b n, PIn size t := by
+    obtain hlen' := Nat.mul_le_mul_right (2 ^ 128) hlen
+    obtain hin : ∀ t ∈ fTerms M a b n, PIn size t := by
       intro t ht
       simp only [fTerms, hn, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
         decide_eq_true_eq] at ht
       rcases ht with ⟨i, ⟨hi, -, hj⟩, rfl⟩ | ⟨i, ⟨hi, -, hj⟩, rfl⟩
       · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
       · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
-    have hinv' : ((word s.mem base M.mo).toNat * M.minv.toNat + 1) % 2 ^ 64 = 0 := by
+    obtain hinv' : ((word s.mem base M.mo).toNat * M.minv.toNat + 1) % 2 ^ 64 = 0 := by
       rw [O.word (by omega_arith) (by omega_arith)]; exact hinv
-    have hn9 := Nat.mod_lt n (show 0 < w by omega_arith)
+    obtain hn9 := Nat.mod_lt n (show 0 < w by omega_arith)
     refine WP.mono (fCol_ok hsS hn hw.1 (by omega_arith) htmp hmo hsep hinv' hin (by omega_arith))
         fun s' ⟨e', k', O'⟩ => ?_
-    have hm0 := hM 0 hw.1
+    obtain hm0 := hM 0 hw.1
     simp only [Nat.mul_zero, Nat.add_zero] at hm0
     rw [hm0] at e'
-    have hword := (word s'.mem base (M.tmp + 8 * (n % w))).isLt
-    have hm64 := (word s₀.mem base M.mo).isLt
+    obtain hword := (word s'.mem base (M.tmp + 8 * (n % w))).isLt
+    obtain hm64 := (word s₀.mem base M.mo).isLt
     refine ⟨k.trans k', O.trans (O'.mono (by omega_arith) (by omega_arith)), ?_,
       fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % w))).toNat else l c, ?_, ?_, ?_⟩
     · have hp : (word s'.mem base (M.tmp + 8 * (n % w))).toNat * (word s₀.mem base M.mo).toNat ≤
@@ -413,8 +413,8 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
       by_cases h : c = n
       · subst h; simp
       · simp only [h, ite_false]
-        have hc9' := Nat.mod_lt c (show 0 < w by omega_arith)
-        have hne : c % w ≠ n % w := by
+        obtain hc9' := Nat.mod_lt c (show 0 < w by omega_arith)
+        obtain hne : c % w ≠ n % w := by
           rw [mod_two_pass (by omega_arith), mod_two_pass (by omega_arith)]
           by_cases hcW : c < w <;> by_cases hnW : n < w <;>
             simp only [hcW, hnW, ite_true, ite_false] <;> omega_arith
@@ -429,7 +429,7 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
           (g := fun c => if c < w then 0 else l c)
           (fun c _ hc => by simp only [show c ≠ n by omega_arith, ite_false]),
         e]
-      have hcol : fColSum w (fun i => (word s₀.mem base (a + 8 * i)).toNat)
+      obtain hcol : fColSum w (fun i => (word s₀.mem base (a + 8 * i)).toNat)
           (fun j => (word s₀.mem base (b + 8 * j)).toNat) (fun j => (word s₀.mem base (M.mo + 8 * j)).toNat)
           (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % w))).toNat else l c) n =
           pSum s.mem base (fTerms M a b n) +
@@ -455,10 +455,10 @@ X^w W + X^(2w) acc` (`X = 2⁶⁴`), `acc ≤ 1` and `W + X^w acc < 2m`. -/
 theorem mulF_arith {X A B U W m acc : Nat} (hm : m < X ^ w) (hA : A < X ^ w) (hB : B < m) (hU : U < X ^ w)
     (e : A * B + U * m = X ^ w * W + X ^ w * X ^ w * acc) :
     acc ≤ 1 ∧ W + X ^ w * acc < 2 * m ∧ X ^ w * (W + X ^ w * acc) = A * B + U * m := by
-  have eT : X ^ w * (W + X ^ w * acc) = A * B + U * m := by rw [Nat.mul_add, ← Nat.mul_assoc]; omega_using [e]
-  have hAB : A * B < X ^ w * m := Nat.mul_lt_mul'' hA hB
-  have hUm' : U * m < X ^ w * m := Nat.mul_lt_mul_of_pos_right hU (by omega_using [hB])
-  have hT : W + X ^ w * acc < 2 * m := by
+  obtain eT : X ^ w * (W + X ^ w * acc) = A * B + U * m := by rw [Nat.mul_add, ← Nat.mul_assoc]; omega_using [e]
+  obtain hAB : A * B < X ^ w * m := Nat.mul_lt_mul'' hA hB
+  obtain hUm' : U * m < X ^ w * m := Nat.mul_lt_mul_of_pos_right hU (by omega_using [hB])
+  obtain hT : W + X ^ w * acc < 2 * m := by
     have : X ^ w * (W + X ^ w * acc) < X ^ w * (2 * m) := by rw [eT, Nat.mul_left_comm]; omega_using [hAB, hUm']
     exact Nat.lt_of_mul_lt_mul_left this
   refine ⟨?_, hT, eT⟩
@@ -478,8 +478,8 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
-  have hw0 : 0 < w := by omega_arith
-  have hw9 : w ≤ 9 := by omega_arith
+  obtain hw0 : 0 < w := by omega_arith
+  obtain hw9 : w ≤ 9 := by omega_arith
   rw [Nat.pow_mul]
   have hnw := hs.nowrap
   have hmo := hM.mo
@@ -492,11 +492,11 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     show ([.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] : List Instr) =
       zeros [.r9, .r10, .r11] from rfl]
   refine WP.mono (zeros_ok s [.r9, .r10, .r11]) fun s₁ ⟨z₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have h0 : regsVal s₁ (pAccs w) = 0 :=
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain h0 : regsVal s₁ (pAccs w) = 0 :=
     regsVal_zero fun r hr => z₁ r ((pAccs_ok w).2 r hr)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  have hinv₁ : ((word s₁.mem base M.mo).toNat * M.minv.toNat + 1) % 2 ^ 64 = 0 := by
+  obtain hinv₁ : ((word s₁.mem base M.mo).toNat * M.minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [hm₁]
     rw [← hmv, show wordsVal s.mem base M.mo w = (word s.mem base M.mo).toNat +
       2 ^ 64 * wordsVal s.mem base (M.mo + 8) (w - 1) by
@@ -507,32 +507,32 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   refine WP.mono (fCols_ok hs₁ hn9 ⟨hw0, hw9⟩ (by omega_using [htmp]) (by omega_using [hmo]) (by omega_using [ha])
       (by omega_using [hb]) (by omega_using [hsep]) (by omega_using [haT])
     (by omega_using [hbT]) hinv₁ h0 (2 * w) (Nat.le_refl _)) fun s₂ ⟨k₂, O₂, _, l, hl64, hlm, e₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   -- The value of the columns.
   rw [fColSum_total hw, show 2 * w = w + w by omega_arith, hval_add _ 0 w w, Nat.zero_add,
     hval_congr (k := 0) (n := w) (g := fun _ => 0) (fun c _ hc => ite_eq_left_iff.mpr fun h => absurd (by omega_using [hc]) h), hval_zero,
     hval_congr (k := w) (n := w) (g := l) (fun c hc _ => ite_eq_right_iff.mpr fun h => absurd h (by omega_using [hc])), Nat.zero_add,
     show (2 ^ 64) ^ (w + w) = (2 ^ 64) ^ w * (2 ^ 64) ^ w by rw [Nat.pow_add]] at e₂
-  have hA : wordsVal s.mem base a w = hval (fun i => (word s₁.mem base (a + 8 * i)).toNat) 0 w := by
+  obtain hA : wordsVal s.mem base a w = hval (fun i => (word s₁.mem base (a + 8 * i)).toNat) 0 w := by
     rw [← wordsVal_hval s₁.mem base a 0 w, hm₁, Nat.mul_zero, Nat.add_zero]
-  have hBv : wordsVal s.mem base b w = hval (fun j => (word s₁.mem base (b + 8 * j)).toNat) 0 w := by
+  obtain hBv : wordsVal s.mem base b w = hval (fun j => (word s₁.mem base (b + 8 * j)).toNat) 0 w := by
     rw [← wordsVal_hval s₁.mem base b 0 w, hm₁, Nat.mul_zero, Nat.add_zero]
-  have hMv : m = hval (fun j => (word s₁.mem base (M.mo + 8 * j)).toNat) 0 w := by
+  obtain hMv : m = hval (fun j => (word s₁.mem base (M.mo + 8 * j)).toNat) 0 w := by
     rw [← wordsVal_hval s₁.mem base M.mo 0 w, hm₁, Nat.mul_zero, Nat.add_zero, hmv]
-  have hW : wordsVal s₂.mem base M.tmp w = hval l w w := by
+  obtain hW : wordsVal s₂.mem base M.tmp w = hval l w w := by
     rw [show M.tmp = M.tmp + 8 * 0 from rfl, wordsVal_hval s₂.mem base M.tmp 0 w,
       show hval l w w = hval (fun j => l (j + w)) 0 w by
         simpa only [Nat.zero_add] using hval_shift l w 0 w]
     exact hval_congr fun c _ hc => by
       have := hlm (c + w) (by omega_using [hc]) (by omega_using [])
       rwa [show (c + w) % w = c by rw [Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]] at this
-  have hU : hval l 0 w < (2 ^ 64) ^ w := hval_lt fun c _ hc => hl64 c (by omega_using [hc])
-  have hAlt : wordsVal s.mem base a w < (2 ^ 64) ^ w := by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ w
-  have hmlt : m < (2 ^ 64) ^ w := by rw [← hmv, ← Nat.pow_mul]; exact wordsVal_lt _ _ _ w
+  obtain hU : hval l 0 w < (2 ^ 64) ^ w := hval_lt fun c _ hc => hl64 c (by omega_using [hc])
+  obtain hAlt : wordsVal s.mem base a w < (2 ^ 64) ^ w := by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ w
+  obtain hmlt : m < (2 ^ 64) ^ w := by rw [← hmv, ← Nat.pow_mul]; exact wordsVal_lt _ _ _ w
   rw [← hA, ← hBv, ← hMv, ← hW, show pAccs (w + w + w) = [.r9, .r10, .r11] by rcases hw with rfl | rfl <;> rfl] at e₂
   obtain ⟨hacc1, hT2, eT⟩ := mulF_arith hmlt hAlt hB hU e₂
-  have hr9 : (s₂.gpr .r9).toNat = regsVal s₂ [.r9, .r10, .r11] := by simp only [regsVal] at hacc1 ⊢; omega_using [hacc1]
-  have hmo₂ : wordsVal s₂.mem base M.mo w = m := by
+  obtain hr9 : (s₂.gpr .r9).toNat = regsVal s₂ [.r9, .r10, .r11] := by simp only [regsVal] at hacc1 ⊢; omega_using [hacc1]
+  obtain hmo₂ : wordsVal s₂.mem base M.mo w = m := by
     rw [O₂.wordsVal (by omega_using [hsep]) (by omega_using [hnw, hmo]), hm₁, hmv]
   refine WP.mono (csubW_ok hs₂ (M := M) (o := o) (m := m) (by omega_using [hn9, hw0]) (by omega_using [hn9, hmo]) (by omega_using [hn9, htmp])
     (by omega_using [hn9, ho]) (by omega_using [hn9, hoT]) (by omega_using [hn9, hoM]) (by rw [hn9]; exact hmo₂)

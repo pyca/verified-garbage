@@ -60,71 +60,71 @@ theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat →
     (hB : val32 s.mem base (numAt len b) (nw len) < val32 s.mem base numOff (nw len)) :
     RtABI (calleeOf g base bytes) := by
   have low := R.low
-  have hsp := (s.gpr .esp).isLt
+  obtain hsp := (s.gpr .esp).isLt
   have nwr := h.scratch.nowrap
-  have hw := wb_le h.upper
+  obtain hw := wb_le h.upper
   have dims := h.dimensions
-  have f5 := (h.fits (j := 5) (by decide)).2
-  have wbe := wb_eq len
-  have gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, sub_toNat (by omega_arith)]
-  have argc : ∀ i < 9, arg (calleeOf g base bytes) i = mulArg len o a b (s.gpr .edi) (args 9) i := by
+  obtain f5 := (h.fits (j := 5) (by decide)).2
+  obtain wbe := wb_eq len
+  obtain gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, sub_toNat (by omega_arith)]
+  obtain argc : ∀ i < 9, arg (calleeOf g base bytes) i = mulArg len o a b (s.gpr .edi) (args 9) i := by
     intro i hi
     show arg g.callEntry i = _
     rw [arg_callEntry (by omega_arith) (by omega_arith)]
-    have e := addr_eq (x := g.gpr .esp) (k := 4 * i) (by omega_arith)
+    obtain e := addr_eq (x := g.gpr .esp) (k := 4 * i) (by omega_arith)
     simp only [addr] at e
     rw [e, hread i hi]
-  have v8 : ∀ j ≤ 8, numAt len j < 2 ^ 32 := fun j hj => by
+  obtain v8 : ∀ j ≤ 8, numAt len j < 2 ^ 32 := fun j hj => by
     have := Nat.mul_le_mul hj hw; simp only [numAt, numOff]; omega_arith
-  have v0 : (arg (calleeOf g base bytes) 0).toNat = base.toNat := by rw [argc 0 (by decide)]; exact h.edi
-  have v1 : (arg (calleeOf g base bytes) 1).toNat * 8 = bytes := by rw [argc 1 (by decide)]; exact hbytes.symm
-  have vn : ∀ {v : Nat}, v < 2 ^ 32 → (BitVec.ofNat 32 v).toNat = v := fun hv => by
+  obtain v0 : (arg (calleeOf g base bytes) 0).toNat = base.toNat := by rw [argc 0 (by decide)]; exact h.edi
+  obtain v1 : (arg (calleeOf g base bytes) 1).toNat * 8 = bytes := by rw [argc 1 (by decide)]; exact hbytes.symm
+  obtain vn : ∀ {v : Nat}, v < 2 ^ 32 → (BitVec.ofNat 32 v).toNat = v := fun hv => by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
-  have v2 : (arg (calleeOf g base bytes) 2).toNat = Spec.Rsa.modulusWords len := by
+  obtain v2 : (arg (calleeOf g base bytes) 2).toNat = Spec.Rsa.modulusWords len := by
     rw [argc 2 (by decide)]; exact vn (by simp only [Spec.Rsa.modulusWords]; omega_arith)
-  have v3 : (arg (calleeOf g base bytes) 3).toNat = numOff := by rw [argc 3 (by decide)]; exact vn (by decide)
-  have v4 : (arg (calleeOf g base bytes) 4).toNat = invOff := by rw [argc 4 (by decide)]; exact vn (by decide)
-  have v5 : (arg (calleeOf g base bytes) 5).toNat = numAt len 5 := by
+  obtain v3 : (arg (calleeOf g base bytes) 3).toNat = numOff := by rw [argc 3 (by decide)]; exact vn (by decide)
+  obtain v4 : (arg (calleeOf g base bytes) 4).toNat = invOff := by rw [argc 4 (by decide)]; exact vn (by decide)
+  obtain v5 : (arg (calleeOf g base bytes) 5).toNat = numAt len 5 := by
     rw [argc 5 (by decide)]; exact vn (v8 5 (by decide))
-  have v6 : (arg (calleeOf g base bytes) 6).toNat = numAt len o := by
+  obtain v6 : (arg (calleeOf g base bytes) 6).toNat = numAt len o := by
     rw [argc 6 (by decide)]; exact vn (v8 o (by omega_arith))
-  have v7 : (arg (calleeOf g base bytes) 7).toNat = numAt len a := by
+  obtain v7 : (arg (calleeOf g base bytes) 7).toNat = numAt len a := by
     rw [argc 7 (by decide)]; exact vn (v8 a (by omega_arith))
-  have v8' : (arg (calleeOf g base bytes) 8).toNat = numAt len b := by
+  obtain v8' : (arg (calleeOf g base bytes) 8).toNat = numAt len b := by
     rw [argc 8 (by decide)]; exact vn (v8 b (by omega_arith))
-  have ws : wsOf (calleeOf g base bytes) = base := by
+  obtain ws : wsOf (calleeOf g base bytes) = base := by
     show (arg (calleeOf g base bytes) 0).setWidth 64 = base
     rw [argc 0 (by decide)]; exact h.scratch.edi
   have ln : lenOf (calleeOf g base bytes) = bytes := v1
   -- The memory of the working space is the caller's.
-  have Fc : Frame [below (s.gpr .esp) 40] s.mem (calleeOf g base bytes).mem := by
-    have F₁ : Frame [below (g.gpr .esp) 4] g.mem g.callEntry.mem :=
+  obtain Fc : Frame [below (s.gpr .esp) 40] s.mem (calleeOf g base bytes).mem := by
+    obtain F₁ : Frame [below (g.gpr .esp) 4] g.mem g.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_top (Nat.le_refl 4) (by omega_arith) (by decide))
     refine (hFg.sub fun r hr => ?_).trans (F₁.sub fun r hr => ?_)
     · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, below_sub (by decide) (by omega_arith)⟩
     · rw [List.mem_singleton.mp hr, hesp]
       exact ⟨_, List.mem_singleton_self _, below_inner (by decide) (by omega_arith)⟩
-  have numc : ∀ d k, d + k ≤ bytes → Proof.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
+  obtain numc : ∀ d k, d + k ≤ bytes → Proof.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
       Proof.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
     unfold Proof.Rsa.MontMul.numAt
     rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega_arith))
       (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega_arith)]
-  have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
+  obtain argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
-  have retBase : ((calleeOf g base bytes).gpr .esp).setWidth 64 = (g.gpr .esp - 4).setWidth 64 := by
+  obtain retBase : ((calleeOf g base bytes).gpr .esp).setWidth 64 = (g.gpr .esp - 4).setWidth 64 := by
     simp [calleeOf]
   have W2 : 2 * Spec.Rsa.modulusWords len = nw len := rfl
-  have e04 : numAt len 4 + wb len ≤ numAt len 5 := by simp only [numAt]; omega_arith
-  have so : ∀ j ≤ 4, numAt len j + wb len ≤ numAt len 5 := fun j hj => by
+  obtain e04 : numAt len 4 + wb len ≤ numAt len 5 := by simp only [numAt]; omega_arith
+  obtain so : ∀ j ≤ 4, numAt len j + wb len ≤ numAt len 5 := fun j hj => by
     have := Nat.mul_le_mul_right (wb len) hj; simp only [numAt] at *; omega_arith
-  have fo := (h.fits (j := o) (by omega_arith)).1
-  have fa := (h.fits (j := a) (by omega_arith)).1
-  have fb := (h.fits (j := b) (by omega_arith)).1
-  have f0 := (h.fits (j := 0) (by decide)).1
+  obtain fo := (h.fits (j := o) (by omega_arith)).1
+  obtain fa := (h.fits (j := a) (by omega_arith)).1
+  obtain fb := (h.fits (j := b) (by omega_arith)).1
+  obtain f0 := (h.fits (j := 0) (by decide)).1
   have ewb : wb len = 8 * Spec.Rsa.modulusWords len := rfl
-  have n0 : numAt len 0 = numOff := by simp [numAt]
-  have no : numOff + wb len ≤ numAt len o := by
+  obtain n0 : numAt len 0 = numOff := by simp [numAt]
+  obtain no : numOff + wb len ≤ numAt len o := by
     have := Nat.mul_le_mul_right (wb len) (Nat.one_le_iff_ne_zero.mpr ho0); simp only [numAt] at *; omega_arith
   refine ⟨?_, rfl, by rw [ws, ln]; rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
@@ -163,30 +163,30 @@ theorem callee_pre {s g : State} {base : Addr} {bytes : Nat} (A : RtABI (calleeO
     (R : CallRoom (s.gpr .esp) base bytes) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36) :
     (Proof.Rsa.MontMul.mulContract abi 56).pre (calleeOf g base bytes) := by
   have low := R.low
-  have hsp := (s.gpr .esp).isLt
-  have eW : (⟨wsOf (calleeOf g base bytes), lenOf (calleeOf g base bytes)⟩ : Region) = ⟨base, bytes⟩ := by
+  obtain hsp := (s.gpr .esp).isLt
+  obtain eW : (⟨wsOf (calleeOf g base bytes), lenOf (calleeOf g base bytes)⟩ : Region) = ⟨base, bytes⟩ := by
     have h := A.wr
     simp only [calleeOf, State.withRegions_wr, List.cons.injEq, and_true] at h
     exact h.symm
-  have e : (calleeOf g base bytes).gpr .esp = s.gpr .esp - BitVec.ofNat 32 40 := by
+  obtain e : (calleeOf g base bytes).gpr .esp = s.gpr .esp - BitVec.ofNat 32 40 := by
     show g.callEntry.gpr .esp = _
     rw [State.callEntry_esp, hesp, BitVec.sub_sub]; rfl
-  have e40 : (s.gpr .esp - BitVec.ofNat 32 40).toNat = (s.gpr .esp).toNat - 40 := sub_toNat (by omega_using [low])
-  have e56 : ((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64 =
+  obtain e40 : (s.gpr .esp - BitVec.ofNat 32 40).toNat = (s.gpr .esp).toNat - 40 := sub_toNat (by omega_using [low])
+  obtain e56 : ((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64 =
       (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).setWidth 64 := by
     rw [e]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     omega_using [low]
-  have sub : Region.Sub ⟨((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64, 56⟩ (below (s.gpr .esp) 96) := by
+  obtain sub : Region.Sub ⟨((calleeOf g base bytes).gpr .esp).setWidth 64 - 56#64, 56⟩ (below (s.gpr .esp) 96) := by
     rw [e56]; exact below_inner (a := 56) (k := 40) (b := 96) (by decide) low
   refine rtPre_of A (by rw [e, e40]; omega_using [low]) (by rw [eW]; exact R.apart.sub_left sub) ?_
-  have argA : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
+  obtain argA : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
-  have e96 : (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).toNat = (s.gpr .esp).toNat - 96 := by
+  obtain e96 : (s.gpr .esp - BitVec.ofNat 32 40 - BitVec.ofNat 32 56).toNat = (s.gpr .esp).toNat - 96 := by
     rw [sub_toNat (by rw [e40]; omega_using [low]), e40]; omega_using []
-  have e36 : (s.gpr .esp - BitVec.ofNat 32 36).toNat = (s.gpr .esp).toNat - 36 := sub_toNat (by omega_using [low])
+  obtain e36 : (s.gpr .esp - BitVec.ofNat 32 36).toNat = (s.gpr .esp).toNat - 36 := sub_toNat (by omega_using [low])
   rw [argA, e56, hesp]
   refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat, e96, e36] <;> omega_arith
 

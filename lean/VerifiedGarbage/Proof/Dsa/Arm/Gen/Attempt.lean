@@ -115,7 +115,7 @@ theorem gWindow_vp {g : Geo} (hg : g.pLen = G.pLen) {c : Cfg} {w : Nat} (hU : fU
   by_cases l : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384
   swap
   · exact VP.of_false fun σ s h => l h.1.lens
-  have hb : 128 * G.pLen < 2 ^ 32 := by omega_arith
+  obtain hb : 128 * G.pLen < 2 ^ 32 := by omega_arith
   let c₁ : Cfg := c.setV fHs (G.wit + BitVec.ofNat 32 w)
   unfold Geo.gWindow
   rw [hg]
@@ -177,12 +177,12 @@ theorem gWindow_vp {g : Geo} (hg : g.pLen = G.pLen) {c : Cfg} {w : Nat} (hU : fU
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
   · refine st_vp (c := fun _ => c₁) (fun σ s h => h.1.1.1.1) (by decide) (varOk_of (by decide))
       fun σ s t ⟨⟨⟨⟨_, x⟩, r0, _⟩, e⟩, z⟩ h' _ => ⟨?_, x⟩
-    have hl : G.witLen - w < 128 * G.pLen := by rw [e] at z; simpa using z
+    obtain hl : G.witLen - w < 128 * G.pLen := by rw [e] at z; simpa using z
     rw [r0] at h'
     rw [Nat.min_eq_left (Nat.le_of_lt hl)]; exact h'
   · refine st_vp (c := fun _ => c₁) (fun σ s h => h.1.1.1.1) (by decide) (varOk_of (by decide))
       fun σ s t ⟨⟨⟨⟨_, x⟩, _, r1⟩, e⟩, z⟩ h' _ => ⟨?_, x⟩
-    have hl : ¬G.witLen - w < 128 * G.pLen := by rw [e] at z; simpa using z
+    obtain hl : ¬G.witLen - w < 128 * G.pLen := by rw [e] at z; simpa using z
     rw [r1] at h'
     rw [Nat.min_eq_right (by omega_arith)]; exact h'
 
@@ -218,7 +218,7 @@ theorem gShort_vp {g : Geo} (hg : g.pLen = G.pLen) {c : Cfg} {HL : Nat} (hL : fH
   by_cases l : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384
   swap
   · exact VP.of_false fun σ s h => l h.1.lens
-  have hb : 128 * G.pLen < 2 ^ 32 := by omega_arith
+  obtain hb : 128 * G.pLen < 2 ^ 32 := by omega_arith
   unfold Geo.gShort
   rw [hg]
   refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r0 = BitVec.ofNat 32 HL)
@@ -260,27 +260,27 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
     VP (St G (aPCfg G HO k n' p rest) X)
       (VG.Impl.Rsa.Arm.Keys.seqs [g.gWindow, g.gPart, Geo.gUsed, .block (cmpF fG 1), .ite .eq g.checkPart g.gShort])
       (St G (aOut G HO k n' (winResult G.pLen p (Spec.Dsa.decodeBE (qBytes G k)) rest)) X) := by
-  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
-  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  obtain hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  obtain hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
   have hlq1 : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := hpd.width
-  have hl384 : G.pLen ≤ 384 := by omega_arith
-  have hrl : rest.length ≤ G.witLen := by
+  obtain hl384 : G.pLen ≤ 384 := by omega_arith
+  obtain hrl : rest.length ≤ G.witLen := by
     have := congrArg List.length hrest; simp only [List.length_drop, hwl] at this; omega_arith
   generalize hqv : Spec.Dsa.decodeBE (qBytes G k) = qv at hqlo ⊢
-  have qpos : 0 < qv := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
+  obtain qpos : 0 < qv := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
   -- (p − 1) / q fits the exponent's words.
-  have hev : (p - 1) / qv < 2 ^ (32 * g.e) := by
+  obtain hev : (p - 1) / qv < 2 ^ (32 * g.e) := by
     have hp := hpd.upper
     refine (Nat.div_lt_iff_lt_mul qpos).mpr ?_
     calc p - 1 < 2 ^ (8 * G.pLen) := by omega_arith
       _ = 2 ^ (8 * G.pLen - 8 * G.qLen + 1) * 2 ^ (8 * G.qLen - 1) := by rw [← Nat.pow_add]; congr 1; omega_arith
       _ ≤ 2 ^ (32 * g.e) * qv := Nat.mul_le_mul (Nat.pow_le_pow_right (by decide) he) hqlo
-  have pl := padTail_length HO.md (n := G.qLen) (by omega_arith) hL
+  obtain pl := padTail_length HO.md (n := G.qLen) (by omega_arith) hL
   generalize hw : G.witLen - rest.length = w at hrest
   generalize hHL : min (G.witLen - w) (128 * G.pLen) = HL
   let c₁ : Cfg := ((aPCfg G HO k n' p rest).setV fHs (G.wit + BitVec.ofNat 32 w)).setV fHsLen (BitVec.ofNat 32 HL)
-  have hHL32 : HL < 2 ^ 32 := by omega_arith
-  have hwHL : w + HL ≤ G.witLen := by omega_arith
+  obtain hHL32 : HL < 2 ^ 32 := by omega_arith
+  obtain hwHL : w + HL ≤ G.witLen := by omega_arith
   refine VP.seq (G := St G c₁ X) ((gWindow_vp (w := w) hp (by simp) (by simp [upd, fP, fUsed, ← hw])
     (by omega_arith)).mono (fun _ _ h => h) fun σ s h => by rw [hHL] at h; exact h) ?_
   refine VP.seq (gPart_vp (c := c₁) (pv := p) (ev := (p - 1) / qv) (qv := qv) (w := w) (HL := HL) certs ok hp hlq1
@@ -299,7 +299,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
     · simp only [pl, sG]; omega_arith
     · simp only [hql, sQ, sG]; omega_arith
   -- The window's candidates are the spec's.
-  have hcand : gCands G w HL 0 = windowCandidates G.pLen Spec.Dsa.generatorAttempts rest := by
+  obtain hcand : gCands G w HL 0 = windowCandidates G.pLen Spec.Dsa.generatorAttempts rest := by
     simp only [gCands, hsW, Nat.zero_mul, List.drop_zero, hrest, windowCandidates]
     rw [← hHL, show G.witLen - w = rest.length by omega_arith, take_window,
       show 128 * G.pLen = Spec.Dsa.generatorAttempts * G.pLen from rfl]
@@ -307,7 +307,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
   rw [← hcand]
   rcases hgv : Spec.Dsa.generator p qv (gCands G w HL 0) with _ | gv
   · -- No g: a short window ran out.
-    have hfin : gFin c₁ G w HL p qv = (c₁.setV fG 2).setV fH
+    obtain hfin : gFin c₁ G w HL p qv = (c₁.setV fG 2).setV fH
         (G.wit + BitVec.ofNat 32 (w + gNum G w HL p qv 0 * G.pLen)) := by simp only [gFin, gRes, hgv]
     rw [hfin]
     refine VP.seq (gUsed_vp (x := w + gNum G w HL p qv 0 * G.pLen) (by simp) (by simp [upd])) ?_
@@ -321,7 +321,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
       (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp at z) ?_
     refine (gShort_vp hp (HL := HL) (by simp [c₁]) (by simp [c₁, upd, fHsLen, fG, fH, fUsed]) hHL32).mono
       (fun σ s h => h.1.1) fun σ s ⟨h, x⟩ => ⟨?_, x⟩
-    have hnum : gNum G w HL p qv 0 = (gCands G w HL 0).length := generatorCount_none hgv
+    obtain hnum : gNum G w HL p qv 0 = (gCands G w HL 0).length := generatorCount_none hgv
     by_cases hs : HL < 128 * G.pLen
     · have hshort : ¬Spec.Dsa.generatorAttempts * G.pLen ≤ rest.length := by
         simp only [Spec.Dsa.generatorAttempts]; omega_arith
@@ -336,7 +336,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
         rw [List.mem_singleton] at hy; subst hy; simp [c₁, pRest]
     · have hfull : Spec.Dsa.generatorAttempts * G.pLen ≤ rest.length := by
         simp only [Spec.Dsa.generatorAttempts]; omega_arith
-      have hlen : (gCands G w HL 0).length = 128 := by
+      obtain hlen : (gCands G w HL 0).length = 128 := by
         rw [hcand]
         simp only [windowCandidates, Spec.Dsa.generationChunks, List.length_map, List.length_range,
           List.length_take, Spec.Dsa.generatorAttempts]
@@ -355,17 +355,17 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
       · change y ∈ [(G.qLen, padTail HO.md G.qLen)] at hy
         rw [List.mem_singleton] at hy; subst hy; simp [c₁, pRest]
   · -- g: the check.
-    have hgb := VG.Proof.Dsa.Generation.generator_bounds (Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hpd.lower) _ hgv
-    have hpl8 : (256 : Nat) ^ G.pLen = 2 ^ (8 * G.pLen) := by rw [Nat.pow_mul]
-    have hql8 : (256 : Nat) ^ G.qLen = 2 ^ (8 * G.qLen) := by rw [Nat.pow_mul]
-    have qlt : qv < 2 ^ (8 * G.qLen) := by
+    obtain hgb := VG.Proof.Dsa.Generation.generator_bounds (Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hpd.lower) _ hgv
+    obtain hpl8 : (256 : Nat) ^ G.pLen = 2 ^ (8 * G.pLen) := by rw [Nat.pow_mul]
+    obtain hql8 : (256 : Nat) ^ G.qLen = 2 ^ (8 * G.qLen) := by rw [Nat.pow_mul]
+    obtain qlt : qv < 2 ^ (8 * G.qLen) := by
       rw [← hqv, ← hql8, ← hql]; exact VG.Proof.Dsa.decodeBE_lt _
-    have hpk : pkOf (Spec.Rsa.i2osp p G.pLen) (qBytes G k) (Spec.Rsa.i2osp gv G.pLen) =
+    obtain hpk : pkOf (Spec.Rsa.i2osp p G.pLen) (qBytes G k) (Spec.Rsa.i2osp gv G.pLen) =
         Spec.Dsa.encodeParams G.pLen G.qLen ⟨p, qv, gv⟩ := by
-      have hqb : qBytes G k = Spec.Rsa.i2osp qv G.qLen := by
+      obtain hqb : qBytes G k = Spec.Rsa.i2osp qv G.qLen := by
         rw [← hqv, ← VG.Proof.Dsa.encodeBE_i2osp, ← hql, VG.Proof.Dsa.encodeBE_decodeBE]
       simp only [pkOf, Spec.Dsa.encodeParams, VG.Proof.Dsa.encodeBE_i2osp, hqb]
-    have hok : Spec.Dsa.checkParametersBytes G.pLen G.qLen
+    obtain hok : Spec.Dsa.checkParametersBytes G.pLen G.qLen
         (pkOf (Spec.Rsa.i2osp p G.pLen) (qBytes G k) (Spec.Rsa.i2osp gv G.pLen)) =
         decide (Spec.Dsa.parametersValid ⟨p, qv, gv⟩) := by
       rw [hpk]
@@ -375,7 +375,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
     let xu := w + gNum G w HL p qv 0 * G.pLen
     let Dg : Cfg := ((({ c₁ with cl := (sG, Spec.Rsa.i2osp gv G.pLen) :: c₁.cl }).setV fG 1).setV fH
       (G.wit + BitVec.ofNat 32 xu)).setV fUsed (BitVec.ofNat 32 xu)
-    have hfin : gFin c₁ G w HL p qv = (({ c₁ with cl := (sG, Spec.Rsa.i2osp gv G.pLen) :: c₁.cl }).setV fG 1).setV
+    obtain hfin : gFin c₁ G w HL p qv = (({ c₁ with cl := (sG, Spec.Rsa.i2osp gv G.pLen) :: c₁.cl }).setV fG 1).setV
         fH (G.wit + BitVec.ofNat 32 xu) := by simp only [gFin, gRes, hgv, xu]
     rw [hfin]
     refine VP.seq (G := St G Dg X) (gUsed_vp (x := xu) (by simp) (by simp [upd])) ?_
@@ -395,14 +395,14 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
       · simp only [VG.Proof.Rsa.i2osp_length, sPBE, sPacked]; omega_arith
       · simp only [pl, sPacked]; omega_arith
       · simp only [hql, sQ, sPacked]; omega_arith
-    have hU : G.witLen - (rest.drop (G.pLen * gNum G w HL p qv 0)).length = xu := by
+    obtain hU : G.witLen - (rest.drop (G.pLen * gNum G w HL p qv 0)).length = xu := by
       simp only [List.length_drop, xu]; rw [Nat.mul_comm G.pLen]
-      have h1 := VG.Proof.Dsa.Generation.generatorCount_le p qv (gCands G w HL 0)
-      have h2 : (gCands G w HL 0).length * G.pLen ≤ rest.length := by
+      obtain h1 := VG.Proof.Dsa.Generation.generatorCount_le p qv (gCands G w HL 0)
+      obtain h2 : (gCands G w HL 0).length * G.pLen ≤ rest.length := by
         rw [hcand]
         simp only [windowCandidates, Spec.Dsa.generationChunks, List.length_map, List.length_range]
         exact Nat.le_trans (Nat.div_mul_le_self _ _) (by simp only [List.length_take]; exact Nat.min_le_right _ _)
-      have h3 := Nat.le_trans (Nat.mul_le_mul_right G.pLen h1) h2
+      obtain h3 := Nat.le_trans (Nat.mul_le_mul_right G.pLen h1) h2
       simp only [gNum] at h3 ⊢
       omega_arith
     rw [hok] at h
@@ -442,9 +442,9 @@ theorem pCand_spec (HO : HashOk Gh) {k : Nat}
     (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * G.qLen) bs).length = 8 * G.qLen) (j : Nat) :
     Spec.Dsa.pCandidate (8 * G.pLen) (8 * G.qLen) (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k)
       (1 + j * ((8 * G.pLen - 1) / (8 * G.qLen) + 1)) = pCand HO G k j := by
-  have hsl : (seedAt G k).length = G.qLen := by
+  obtain hsl : (seedAt G k).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
-  have hc : G.pLen ≤ (cnt G + 1) * G.qLen := by
+  obtain hc : G.pLen ≤ (cnt G + 1) * G.qLen := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
   refine VG.Proof.Dsa.Arm.Gen.pCandidate_xBytes HO (fun i => ?_) hH hsl hlen (by omega_arith) hc _
   rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega_arith), HO.md.digest_length, HO.hN, hk4]
@@ -474,8 +474,8 @@ theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.
               (.block [])])])
       (St G (aOut G HO k n' (primeRes G.pLen G.qLen (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k) r)) X) := by
   have hlq' : Spec.Dsa.generationLengthsValid G.pLen G.qLen := hlq
-  have hw : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega_arith
-  have pl := padTail_length HO.md (n := G.qLen) (by omega_arith) HO.hL
+  obtain hw : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega_arith
+  obtain pl := padTail_length HO.md (n := G.qLen) (by omega_arith) HO.hL
   refine VP.seq (pPart_vp (c := aBase G HO k n') (u0 := G.witLen - r.length) (d := aQCfg G HO k n' u r) HO okp certs hlq
     hp hq hk4 hsb hH hwl hsize (aBase_pnot G HO k n') hk (by simp) (by simp [upd, fSeed, fStatus, fSeedLeft])
     (by omega_arith) (pCand_spec HO hlq hk4 hsb hk hH hlen) (by simp [testCfg])
@@ -484,7 +484,7 @@ theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
       rcases ho with rfl | rfl | rfl | rfl <;> simp [testCfg, upd, fUsed, fRes, fStatus, fSeedLeft, fSeed, fC]⟩)
     (by simp [testCfg, qClaims]) (by simp [testCfg, qClaims])) ?_
-  have hS0 : pSpec HO G k (G.witLen - r.length) 0 = Spec.Dsa.primeFromSeed (8 * G.pLen) (8 * G.qLen)
+  obtain hS0 : pSpec HO G k (G.witLen - r.length) 0 = Spec.Dsa.primeFromSeed (8 * G.pLen) (8 * G.qLen)
       (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k) r := by
     rw [pSpec, VG.Proof.Dsa.Generation.primeSearch_start, pU, hr]
   rw [hS0]
@@ -527,7 +527,7 @@ theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.
     rcases ho with rfl | rfl | rfl | rfl | rfl <;>
       exact ⟨by simp, by simp [upd, fUsed, fP, fStatus, fSeedLeft, fSeed, fC]⟩
   · -- p: g and the check.
-    have hpd := VG.Proof.Dsa.Generation.primeSearch_domain hw hlen _ _ _ _ hR
+    obtain hpd := VG.Proof.Dsa.Generation.primeSearch_domain hw hlen _ _ _ _ hR
     refine VP.seq (G := fun σ s => St G (aPCfg G HO k n' p r') X σ s ∧ isa.eval .eq s = some false)
       (cmpF_vp (x := BitVec.ofNat 32 1) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.slotV (by simp [pFin])).trans (by simp [pFin, upd]))
@@ -563,15 +563,15 @@ theorem attempt_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okq : PrimeOk (8 * G.q
     {k u : Nat} {n' : BitVec 32} (hk : k + G.qLen ≤ G.seedsLen) (hu : u ≤ G.witLen) :
     VP (St G ((aBase G HO k n').setV fUsed (BitVec.ofNat 32 u)) X) g.attempt
       (St G (aOut G HO k n' (refillAttempt G.pLen G.qLen (seedAt G k) (G.witB.drop u))) X) := by
-  have hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k)).length = G.qLen := by have := hlen (seedAt G k); omega_arith
-  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega_arith
-  have ql : (qBytes G k).length = G.qLen := by
+  obtain hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k)).length = G.qLen := by have := hlen (seedAt G k); omega_arith
+  obtain hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega_arith
+  obtain ql : (qBytes G k).length = G.qLen := by
     rw [qBytes, VG.Proof.Ffdh.ParameterCandidate.shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
       (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega_arith),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHq]
-  have hqv : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
+  obtain hqv : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
     VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [hHq])
-  have hqlo : 2 ^ (8 * G.qLen - 1) ≤ Spec.Dsa.decodeBE (qBytes G k) := by
+  obtain hqlo : 2 ^ (8 * G.qLen - 1) ≤ Spec.Dsa.decodeBE (qBytes G k) := by
     rw [hqv]; exact (VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)).2.1
   unfold Geo.attempt
   refine VP.seq (qPart_vp (c := (aBase G HO k n').setV fUsed (BitVec.ofNat 32 u)) HO okq hlq hp hq hk4 hH hwl hsb
@@ -622,7 +622,7 @@ theorem attempt_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okq : PrimeOk (8 * G.q
     · change y ∈ [(G.qLen, padTail HO.md G.qLen)] at hy
       rw [List.mem_singleton] at hy; subst hy; simp [testCfg, qClaims]
   · -- q: p, g and the check.
-    have hr : G.witB.drop (G.witLen - r.length) = r := by
+    obtain hr : G.witB.drop (G.witLen - r.length) = r := by
       rw [← hwl]; exact VG.Proof.Dsa.Generation.probablePrime_cursor hpp
     refine VP.seq (G := fun σ s => St G (aQCfg G HO k n' u r) X σ s ∧ isa.eval .eq s = some false)
       (cmpF_vp (x := BitVec.ofNat 32 1) (fun σ s h => h.1) (by decide) (by decide) (by decide)

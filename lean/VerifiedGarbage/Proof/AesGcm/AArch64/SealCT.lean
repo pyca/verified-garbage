@@ -81,9 +81,9 @@ structure OneFacts (σ σ₀ : State) (n w : Nat) : Prop where
 theorem oneFacts {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore n w σ₁) (h₂ : oneCore n w σ₂)
     (hq : onePub n σ₁ σ₂) : OneFacts σ₁ σ₁ n w ∧ OneFacts σ₂ σ₁ n w := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qw : stackArg σ₁ w = stackArg σ₂ w := qa w hw
-  have o₁ := oneLay h₁
-  have o₂ := oneLay h₂
+  obtain qw : stackArg σ₁ w = stackArg σ₂ w := qa w hw
+  obtain o₁ := oneLay h₁
+  obtain o₂ := oneLay h₂
   refine ⟨⟨o₁, rfl, o₁.perm, o₁.hsp, o₁.nonceR, o₁.aadR, o₁.dataW, o₁.args⟩,
     ⟨o₁, qw.symm, ?_, o₂.hsp, ?_, ?_, ?_, ?_⟩⟩
   · have := o₂.perm; rw [← q0, ← qw] at this; exact this
@@ -117,7 +117,7 @@ theorem frontIn_of {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} (f : OneFac
     FrontIn (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ.sp τ.gpr (σ₀.gpr .x2)
       (σ₀.gpr .x4) (σ₀.gpr .x6) (σ₀.gpr .x3).toNat (σ₀.gpr .x5).toNat (σ₀.gpr .x7).toNat τ := by
   obtain ⟨he, _, x23, x24, x26, x27, _, s1, s2, s3, s4, _, _, _, rd, wr⟩ := a
-  have sub16 : Region.Sub ⟨stackArg σ₀ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₀ w)) := Lay.wSub (by decide)
+  obtain sub16 : Region.Sub ⟨stackArg σ₀ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₀ w)) := Lay.wSub (by decide)
   exact ⟨he, fun _ _ => rfl, by rw [x23, h2], by rw [x24, h3, ofNat_toNat'], by rw [x26, h3, ofNat_toNat'], x27,
     ⟨by rw [rd, wr]; exact f.nonceR, (σ₀.gpr .x3).isLt, f.ol.nw, f.ol.nonce.sub_right sub16, f.ol.nonce⟩,
     ⟨by rw [rd, wr]; exact f.aadR, (σ₀.gpr .x5).isLt, f.ol.aw, f.ol.aad.sub_right sub16, f.ol.aad⟩,
@@ -132,7 +132,7 @@ theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k =
   subst hkw
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
   have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := f₂.hW
-  have ts : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (stashArg j)) h).isSome = true := by
+  obtain ts : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (stashArg j)) h).isSome = true := by
     rcases hj with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine RelCT.block_split (rel_seq (entry_rel hk hW₁ hW₂ (f₁.hsp w hwn) (f₂.hsp w hwn) f₁.perm.w f₂.perm.w qsp hq)
     (oneEntry_ok (by rcases hk with h | h | h | h <;> rw [h] <;> decide) hW₁ (f₁.hsp w hwn) rfl f₁.perm)
@@ -161,8 +161,8 @@ theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW
   obtain ⟨f₁, f₂⟩ := oneFacts (by omega_using [] : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   have L := f₁.ol.lay
-  have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl a₁
-  have i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm a₂
+  obtain i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl a₁
+  obtain i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm a₂
   rw [← qsp] at i₂
   obtain ⟨_, x22₁, _, _, _, _, _, _, s2₁, _, s4₁, s5₁, _, _, rd₁, wr₁⟩ := a₁
   obtain ⟨_, x22₂, _, _, _, _, _, _, s2₂, _, s4₂, s5₂, _, _, rd₂, wr₂⟩ := a₂
@@ -170,12 +170,12 @@ theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW
   rw [← q5] at s2₂
   rw [← q7] at s4₂
   have ol := f₁.ol
-  have sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
+  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
   have hRb : (σ₁.gpr .x1).toNat = 10 ∨ (σ₁.gpr .x1).toNat = 12 ∨ (σ₁.gpr .x1).toNat = 14 := ol.rounds
-  have hal := (σ₁.gpr .x5).isLt
-  have hn := (σ₁.gpr .x7).isLt
+  obtain hal := (σ₁.gpr .x5).isLt
+  obtain hn := (σ₁.gpr .x7).isLt
   refine front_rel L v i₁ i₂ fun u₁ u₂ o₁ o₂ => ?_
-  have mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ (w + 1) w → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
+  obtain mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ (w + 1) w → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
       FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
       BodyIn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
@@ -185,11 +185,11 @@ theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW
       o.x26, o.x27, o.x28, rfl, by decide,
       ⟨⟨covers_left (by rw [o.wr, wr]; exact f.dataW), hn, ol.dw, ol.data.sub_right sub16, ol.data⟩,
         by rw [o.wr, wr]; exact f.dataW, ol.cd⟩, rfl⟩
-  have B₁ := mkB f₁ x22₁ wr₁ o₁
-  have B₂ := mkB f₂ x22₂ wr₂ o₂
+  obtain B₁ := mkB f₁ x22₁ wr₁ o₁
+  obtain B₂ := mkB f₂ x22₂ wr₂ o₂
   refine rel_seq (encBody_rel L v B₁ B₂ rfl) (WP.with_rdwr (encBody_ok L v B₁ 0))
     (WP.with_rdwr (encBody_ok L v B₂ 0)) fun w₁ w₂ ⟨b₁, _, _⟩ ⟨b₂, _, _⟩ => ?_
-  have sl : ∀ {σ τ u ω : State}, OneFacts σ σ₁ (w + 1) w →
+  obtain sl : ∀ {σ τ u ω : State}, OneFacts σ σ₁ (w + 1) w →
       FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
       Frame (bodyFrame (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
@@ -210,22 +210,22 @@ theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW
     (ldr28_ok (V := stackArg σ₁ 0) (b₁.env.of_regs r₁) (by rw [r₁.mem, sl f₁ o₁ b₁.frame 248 (by decide) (by decide), s5₁]))
     (ldr28_ok (V := stackArg σ₁ 0) (b₂.env.of_regs r₂) (by rw [r₂.mem, sl f₂ o₂ b₂.frame 248 (by decide) (by decide), s5₂]))
     fun z₁' z₂' ⟨x28₁, r₁'⟩ ⟨x28₂, r₂'⟩ => ?_
-  have y22₁ : z₁'.gpr .x22 = BitVec.ofNat 64 (σ₁.gpr .x1).toNat := by
+  obtain y22₁ : z₁'.gpr .x22 = BitVec.ofNat 64 (σ₁.gpr .x1).toNat := by
     rw [r₁'.others _ (by decide), r₁.others _ (by decide), b₁.kept .x22 (by decide), o₁.x22, x22₁, ofNat_toNat']
-  have y22₂ : z₂'.gpr .x22 = BitVec.ofNat 64 (σ₁.gpr .x1).toNat := by
+  obtain y22₂ : z₂'.gpr .x22 = BitVec.ofNat 64 (σ₁.gpr .x1).toNat := by
     rw [r₂'.others _ (by decide), r₂.others _ (by decide), b₂.kept .x22 (by decide), o₂.x22, x22₂, ofNat_toNat']
-  have e₁ := (b₁.env.of_regs r₁).of_regs r₁'
-  have e₂ := (b₂.env.of_regs r₂).of_regs r₂'
-  have y26₁ : z₁'.gpr .x26 = _ := (r₁'.others .x26 (by decide)).trans x26₁
-  have y26₂ : z₂'.gpr .x26 = _ := (r₂'.others .x26 (by decide)).trans x26₂
-  have y27₁ : z₁'.gpr .x27 = _ := (r₁'.others .x27 (by decide)).trans x27₁
-  have y27₂ : z₂'.gpr .x27 = _ := (r₂'.others .x27 (by decide)).trans x27₂
+  obtain e₁ := (b₁.env.of_regs r₁).of_regs r₁'
+  obtain e₂ := (b₂.env.of_regs r₂).of_regs r₂'
+  obtain y26₁ : z₁'.gpr .x26 = _ := (r₁'.others .x26 (by decide)).trans x26₁
+  obtain y26₂ : z₂'.gpr .x26 = _ := (r₂'.others .x26 (by decide)).trans x26₂
+  obtain y27₁ : z₁'.gpr .x27 = _ := (r₁'.others .x27 (by decide)).trans x27₁
+  obtain y27₂ : z₂'.gpr .x27 = _ := (r₂'.others .x27 (by decide)).trans x27₂
   refine rel_seq (finBody_rel L v (.inl rfl) e₁ e₂ (fun _ _ => rfl)
       (fun _ _ => rfl) y22₁ y22₂ hRb y26₁ y26₂ y27₁ y27₂ hal hn)
     (finBody_env v L (.inl rfl) e₁ (fun _ _ => rfl) y22₁ hRb y26₁ y27₁ hn)
     (finBody_env v L (.inl rfl) e₂ (fun _ _ => rfl) y22₂ hRb y26₂ y27₂ hn) fun g₁ g₂ h₁ h₂ => ?_
-  have c28₁ : g₁.gpr .x28 = stackArg σ₁ 0 := (h₁.2.1 .x28 (by decide)).trans x28₁
-  have c28₂ : g₂.gpr .x28 = stackArg σ₁ 0 := (h₂.2.1 .x28 (by decide)).trans x28₂
+  obtain c28₁ : g₁.gpr .x28 = stackArg σ₁ 0 := (h₁.2.1 .x28 (by decide)).trans x28₁
+  obtain c28₂ : g₂.gpr .x28 = stackArg σ₁ 0 := (h₂.2.1 .x28 (by decide)).trans x28₂
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
@@ -235,7 +235,7 @@ theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
   have hq₀ := hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by decide)
+  obtain qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by decide)
   have L := f₁.ol.lay
   have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
   have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := qt.symm

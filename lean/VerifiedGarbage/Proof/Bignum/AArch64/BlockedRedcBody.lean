@@ -43,8 +43,8 @@ theorem columnSetup_ok {s : State} {B : Addr} {Z eQ eN k : Nat}
       (t.gpr .x16 = off B (eQ + 64) ∧ t.gpr .x17 = off B (eN + 64) ∧
         t.gpr .x15 = BitVec.ofNat 64 (k - 1) ∧ t.mem = s.mem) ∧
       Keep [.x16, .x17, .x15] s t := by
-  have hd : 8 * k / 8 = k := by omega_using []
-  have hsub : BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) :=
+  obtain hd : 8 * k / 8 = k := by omega_using []
+  obtain hsub : BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) :=
     BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hk])
   refine WP.keep [.x16, .x17, .x15] ?_ rfl rfl rfl
   brun [columnSetup, h0, h8, h17, hw, hd, shr3_ofNat hk', hsub,
@@ -63,7 +63,7 @@ theorem redcInit_ok {s : State} {k : Nat}
     WP isa (.block [.lsr .x .x12 .x12 3, movi .x10 0]) s fun t =>
       (t.gpr .x12 = BitVec.ofNat 64 k ∧ t.gpr .x10 = 0 ∧ t.mem = s.mem) ∧
       Keep [.x12, .x10] s t := by
-  have hd : 8 * k / 8 = k := by omega_using []
+  obtain hd : 8 * k / 8 = k := by omega_using []
   refine WP.keep [.x12, .x10] ?_ rfl rfl rfl
   brun [h12, shr3_ofNat hk, hd]
 
@@ -123,38 +123,38 @@ theorem startBlock_ok {s : State} {B : Addr} {Z eQ eN : Nat} {inv : Word}
   apply WP.block_append
   refine WP.mono (startHeader_ok (hs.congr ka.wr) ((ka.gpr .x0 (by decide)).trans h0) hZ)
     fun b ⟨⟨hb17, hb15, hbm⟩, kb⟩ => ?_
-  have kab := ka.trans kb
+  obtain kab := ka.trans kb
   have h17 : b.gpr .x17 = off B eN := hb17.trans
     ((congrArg (fun m : Mem => word m B (8 * sArr Public.aN)) ham).trans hn)
   have h15 : b.gpr .x15 = inv := hb15.trans
     ((congrArg (fun m : Mem => word m B (8 * sMinv)) ham).trans hi)
   apply WP.block_append
   refine WP.mono (nsLoad_ok (hs.congr kab.wr) h17 hN) fun d ⟨⟨hdn, hdm, _⟩, kd⟩ => ?_
-  have kad := kab.trans kd
-  have dm := hdm.trans (hbm.trans ham)
-  have d17 := (kd.gpr .x17 (by decide)).trans h17
-  have d15 := (kd.gpr .x15 (by decide)).trans h15
+  obtain kad := kab.trans kd
+  obtain dm := hdm.trans (hbm.trans ham)
+  obtain d17 := (kd.gpr .x17 (by decide)).trans h17
+  obtain d15 := (kd.gpr .x15 (by decide)).trans h15
   refine WP.mono (cancelPrefix_ok (hs.congr kad.wr)
     ((kad.gpr .x8 (by decide)).trans h8) d17 ((kad.gpr .x7 (by decide)).trans h7)
     hQ (by omega_using [hN]) (by omega_using [hQN]) (Nat.le_refl 8)) fun t hI => ?_
-  have hA := (congrArg blockValue (keep_accumulator (kb.trans kd) (by decide))).trans
+  obtain hA := (congrArg blockValue (keep_accumulator (kb.trans kd) (by decide))).trans
     ((blockValue_congr hav).trans (blockValue_words s.mem B eQ))
-  have hn0 := congrArg (fun m : Mem => word m B eN) hdm
-  have hNV : blockValue (operand d (word d.mem B eN)) = wv s.mem B eN 8 :=
+  obtain hn0 := congrArg (fun m : Mem => word m B eN) hdm
+  obtain hNV : blockValue (operand d (word d.mem B eN)) = wv s.mem B eN 8 :=
     (congrArg (fun n => blockValue (operand d n)) hn0).trans
       ((blockValue_congr hdn).trans ((blockValue_words b.mem B eN).trans
         (congrArg (fun m : Mem => wv m B eN 8) (hbm.trans ham))))
   refine ⟨?_, ?_, (hI.keep.gpr .x17 (by decide)).trans d17,
     (kad.trans hI.keep).mono (by decide)⟩
   · intro hInv
-    have dN := congrArg BitVec.toNat (congrArg (fun m : Mem => word m B eN) dm)
-    have dI := congrArg BitVec.toNat d15
-    have hInvD : ((word d.mem B eN).toNat * (d.gpr .x15).toNat + 1) % 2 ^ 64 = 0 :=
+    obtain dN := congrArg BitVec.toNat (congrArg (fun m : Mem => word m B eN) dm)
+    obtain dI := congrArg BitVec.toNat d15
+    obtain hInvD : ((word d.mem B eN).toNat * (d.gpr .x15).toNat + 1) % 2 ^ 64 = 0 :=
       ((congrArg (fun n => (n * (d.gpr .x15).toNat + 1) % 2 ^ 64) dN).trans
         (congrArg (fun i => ((word s.mem B eN).toNat * i + 1) % 2 ^ 64) dI)).trans hInv
-    have hv := hI.value hInvD
-    have hr : 2 ^ (64 * 8) = (2 ^ 64) ^ 8 := Nat.pow_mul 2 64 8
-    have hp := congrArg (fun r : Nat => r * blockValue (accumulator t)) hr
+    obtain hv := hI.value hInvD
+    obtain hr : 2 ^ (64 * 8) = (2 ^ 64) ^ 8 := Nat.pow_mul 2 64 8
+    obtain hp := congrArg (fun r : Nat => r * blockValue (accumulator t)) hr
     exact hp.symm.trans (hv.trans ((congrArg (· + wv t.mem B eQ 8 *
       blockValue (operand d (word d.mem B eN))) hA).trans
         (congrArg (fun n => wv s.mem B eQ 8 + wv t.mem B eQ 8 * n) hNV)))
@@ -209,64 +209,64 @@ theorem rowBody_ok {s : State} {B : Addr} {Z eQ eN k : Nat} {inv : Word} {p : Bo
   apply WP.block_append
   refine WP.mono (startBlock_ok hs h0 h8 h7 (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) hn hi) fun a ⟨hav, hao, ha17, ka⟩ => ?_
-  have haW := (hao.word (d := 8 * sW) (by unfold sW; omega_arith) (by unfold sW; omega_arith)).trans hw
+  obtain haW := (hao.word (d := 8 * sW) (by unfold sW; omega_arith) (by unfold sW; omega_arith)).trans hw
   refine WP.mono (columnSetup_ok (hs.congr ka.wr) ((ka.gpr .x0 (by decide)).trans h0)
     ((ka.gpr .x8 (by decide)).trans h8) ha17 (by omega_arith) haW hk hk')
     fun b ⟨⟨hb16, hb17, hb15, hbm⟩, kb⟩ => ?_
-  have kab := ka.trans kb
+  obtain kab := ka.trans kb
   apply WP.seq
   refine WP.mono (columns_ok (hs.congr kab.wr) ((kab.gpr .x8 (by decide)).trans h8)
     ((kab.gpr .x7 (by decide)).trans h7) hb16 hb17 hb15
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun c hI => ?_
-  have kabc := kab.trans hI.keep
-  have hc16 : c.gpr .x16 = off B (eQ + 64 * k) :=
+  obtain kabc := kab.trans hI.keep
+  obtain hc16 : c.gpr .x16 = off B (eQ + 64 * k) :=
     hI.ptrT.trans (congrArg (off B) (by omega_arith))
   apply WP.block_append
   refine WP.mono (finishBlock_ok (hs.congr kabc.wr) hc16 (by omega_arith)
     ((kabc.gpr .x10 (by decide)).trans h10) ((kabc.gpr .x7 (by decide)).trans h7))
     fun d ⟨hdv, hd10, hdo, kd⟩ => ?_
-  have kabcd := kabc.trans kd
+  obtain kabcd := kabc.trans kd
   refine WP.mono (advanceRow_ok ((kabcd.gpr .x8 (by decide)).trans h8))
     fun t ⟨⟨ht8, ht12, htm⟩, kt⟩ => ?_
-  have hr : 2 ^ (64 * 8) = (2 ^ 64) ^ 8 := Nat.pow_mul 2 64 8
-  have hq := Nat.lt_of_lt_of_le (wv_lt a.mem B eQ 8) (Nat.le_of_eq hr)
-  have ht10 := congrArg BitVec.toNat (kt.gpr .x10 (by decide))
-  have hbmOut : Outside B eQ 64 s.mem b.mem := by
+  obtain hr : 2 ^ (64 * 8) = (2 ^ 64) ^ 8 := Nat.pow_mul 2 64 8
+  obtain hq := Nat.lt_of_lt_of_le (wv_lt a.mem B eQ 8) (Nat.le_of_eq hr)
+  obtain ht10 := congrArg BitVec.toNat (kt.gpr .x10 (by decide))
+  obtain hbmOut : Outside B eQ 64 s.mem b.mem := by
     intro x hx
     exact (congrArg (fun m : Mem => m x) hbm).trans (hao x hx)
-  have hcmOut : Outside B eQ (64 * k) s.mem c.mem :=
+  obtain hcmOut : Outside B eQ (64 * k) s.mem c.mem :=
     (hbmOut.mono (by omega_arith) (by omega_arith)).trans (hI.frame.mono (by omega_arith) (by omega_arith))
-  have hdmOut : Outside B eQ (64 * (k + 1)) s.mem d.mem :=
+  obtain hdmOut : Outside B eQ (64 * (k + 1)) s.mem d.mem :=
     (hcmOut.mono (by omega_arith) (by omega_arith)).trans (hdo.mono (by omega_arith) (by omega_arith))
   refine ⟨wv a.mem B eQ 8, hq, ?_, ?_, ?_, ht8,
     ht12.trans (congrArg (· - BitVec.ofNat 64 1) (kabcd.gpr .x12 (by decide))),
     (kabcd.trans kt).mono (by decide)⟩
   · intro hInv
-    have hC := hav hInv
-    have hbA := congrArg blockValue (keep_accumulator kb (by decide))
-    have hbQ := congrArg (fun m : Mem => wv m B eQ 8) hbm
-    have hbT := hbmOut.wv (d := eQ + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
-    have hbN := hbmOut.wv (d := eN + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
+    obtain hC := hav hInv
+    obtain hbA := congrArg blockValue (keep_accumulator kb (by decide))
+    obtain hbQ := congrArg (fun m : Mem => wv m B eQ 8) hbm
+    obtain hbT := hbmOut.wv (d := eQ + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
+    obtain hbN := hbmOut.wv (d := eN + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
     have hM := hI.value
     rewrite [hbA, hbT, hbQ, hbN] at hM
-    have hcT := hcmOut.wv (d := eQ + 64 * k) (k := 8) (by omega_arith) (by omega_arith)
-    have hF := hdv.trans (congrArg (fun x => blockValue (accumulator c) + x + p.toNat) hcT)
-    have he := block_row_value hC hM hF
-    have hdMid := hdo.wv (d := eQ + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
-    have hLast := wv_blocks_succ d.mem B (eQ + 64) (k - 1)
+    obtain hcT := hcmOut.wv (d := eQ + 64 * k) (k := 8) (by omega_arith) (by omega_arith)
+    obtain hF := hdv.trans (congrArg (fun x => blockValue (accumulator c) + x + p.toNat) hcT)
+    obtain he := block_row_value hC hM hF
+    obtain hdMid := hdo.wv (d := eQ + 64) (k := 8 * (k - 1)) (by omega_arith) (by omega_arith)
+    obtain hLast := wv_blocks_succ d.mem B (eQ + 64) (k - 1)
     rewrite [show k - 1 + 1 = k by omega_arith,
       show eQ + 64 + 64 * (k - 1) = eQ + 64 * k by omega_arith, hdMid] at hLast
-    have hOut := (congrArg (fun m : Mem => wv m B (eQ + 64) (8 * k)) htm).trans hLast
-    have hInput := wv_blocks_first s.mem B eQ k
-    have hLastInput := wv_blocks_succ s.mem B (eQ + 64) (k - 1)
+    obtain hOut := (congrArg (fun m : Mem => wv m B (eQ + 64) (8 * k)) htm).trans hLast
+    obtain hInput := wv_blocks_first s.mem B eQ k
+    obtain hLastInput := wv_blocks_succ s.mem B (eQ + 64) (k - 1)
     rewrite [show k - 1 + 1 = k by omega_arith,
       show eQ + 64 + 64 * (k - 1) = eQ + 64 * k by omega_arith] at hLastInput
-    have hMod := wv_blocks_first s.mem B eN (k - 1)
+    obtain hMod := wv_blocks_first s.mem B eN (k - 1)
     rewrite [show k - 1 + 1 = k by omega_arith] at hMod
-    have hPow := pow_blocks_succ (k - 1)
+    obtain hPow := pow_blocks_succ (k - 1)
     rewrite [show k - 1 + 1 = k by omega_arith] at hPow
-    have hPow' := hPow.trans (Nat.mul_comm _ _)
+    obtain hPow' := hPow.trans (Nat.mul_comm _ _)
     rewrite [hOut, ht10, hInput, hLastInput, hMod, hPow']
     exact he
   · intro x hx

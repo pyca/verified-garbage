@@ -72,23 +72,23 @@ theorem window_select_tail_ok {s : State} {base : Addr} {size : Nat}
   refine WP.mono (window_zero_ok hs (z:=1648) (by omega_arith) (by decide)) fun u ⟨maskU,ku⟩ => ?_
   rw [WP.block_append_iff]
   let d : Bool := decide (wordsVal s.mem base 1648 9≠0)
-  have mu : u.gpr .x3=if d then BitVec.allOnes 64 else 0 := by
+  obtain mu : u.gpr .x3=if d then BitVec.allOnes 64 else 0 := by
     rw [maskU]; dsimp only [d]
     by_cases h : wordsVal s.mem base 1648 9=0 <;> simp [h]
-  have hu := hs.of_keeps ku (by decide)
+  obtain hu := hs.of_keeps ku (by decide)
   refine WP.mono (window_select_words hu (a:=1072) (b:=1288) (o:=1288) (n:=27)
     (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
     (by right; left; decide) (by left; rfl) d mu 27 (by decide)) fun v ⟨ev,kv,ov⟩ => ?_
   rw [WP.block_append_iff]
-  have hv := hu.of_keepRegs kv (by decide)
+  obtain hv := hu.of_keepRegs kv (by decide)
   refine WP.mono (window_zero_ok hv (z:=1216) (by omega_arith) (by decide)) fun w ⟨maskW,kw⟩ => ?_
   let a : Bool := decide (wordsVal s.mem base 1216 9≠0)
-  have vz : wordsVal v.mem base 1216 9=wordsVal s.mem base 1216 9 := by
+  obtain vz : wordsVal v.mem base 1216 9=wordsVal s.mem base 1216 9 := by
     rw [ov.wordsVal (by omega_arith) (by have := hs.nowrap; omega_arith),ku.mem]
-  have mw : w.gpr .x3=if a then BitVec.allOnes 64 else 0 := by
+  obtain mw : w.gpr .x3=if a then BitVec.allOnes 64 else 0 := by
     rw [maskW,vz]; dsimp only [a]
     by_cases h : wordsVal s.mem base 1216 9=0 <;> simp [h]
-  have hw := hv.of_keeps kw (by decide)
+  obtain hw := hv.of_keeps kw (by decide)
   refine WP.mono (window_select_words hw (a:=1504) (b:=1288) (o:=1072) (n:=27)
     (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
     (by right; right; decide) (by right; right; decide) a mw 27 (by decide)) fun t ⟨et,kt,ot⟩ => ?_
@@ -96,7 +96,7 @@ theorem window_select_tail_ok {s : State} {base : Addr} {size : Nat}
     ((Keeps.regs kw).trans (kt.mono (by simp)))),?_⟩
   · have eE : word w.mem base (1504+8*i)=word s.mem base (1504+8*i) := by
       rw [kw.mem,ov.word (by omega_arith) (by have := hs.nowrap; omega_arith),ku.mem]
-    have eB : word w.mem base (1288+8*i)=
+    obtain eB : word w.mem base (1288+8*i)=
         if d then word s.mem base (1288+8*i) else word s.mem base (1072+8*i) := by
       rw [kw.mem,ev i hi,ku.mem]
     rw [et i hi,eE,eB]
@@ -117,7 +117,7 @@ open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass
 open VG.Proof.Mont.AArch64.P521Field
 
  theorem window_select_tail_novec : ∀i∈windowSelectTail,vdstOf i=none := by
-  have h : windowSelectTail.all (fun i => vdstOf i==none)=true := by lit_decide
+  obtain h : windowSelectTail.all (fun i => vdstOf i==none)=true := by lit_decide
   simpa only [List.all_eq_true,beq_iff_eq] using h
 
  theorem window_select_values_ok {s : State} {base : Addr} {size : Nat}
@@ -135,7 +135,7 @@ open VG.Proof.Mont.AArch64.P521Field
   · simp only [ha,ite_true]
     apply VG.Proof.Weierstrass.AArch64.wordsVal_of_words₂
     intro j hj
-    have e := words (9*c+j) (by omega_arith)
+    obtain e := words (9*c+j) (by omega_arith)
     simp only [ha,ite_true] at e
     rwa [show 1072+8*(9*c+j)=1072+72*c+8*j by omega_arith,
       show 1504+8*(9*c+j)=1504+72*c+8*j by omega_arith] at e
@@ -143,13 +143,13 @@ open VG.Proof.Mont.AArch64.P521Field
     · simp only [ha,hd,ite_false,ite_true]
       apply VG.Proof.Weierstrass.AArch64.wordsVal_of_words₂
       intro j hj
-      have e := words (9*c+j) (by omega_arith)
+      obtain e := words (9*c+j) (by omega_arith)
       simp only [ha,hd,ite_false,ite_true] at e
       rwa [show 1072+8*(9*c+j)=1072+72*c+8*j by omega_arith] at e
     · simp only [ha,hd,ite_false]
       apply VG.Proof.Weierstrass.AArch64.wordsVal_of_words₂
       intro j hj
-      have e := words (9*c+j) (by omega_arith)
+      obtain e := words (9*c+j) (by omega_arith)
       simp only [ha,hd,ite_false] at e
       rwa [show 1072+8*(9*c+j)=1072+72*c+8*j by omega_arith,
         show 1288+8*(9*c+j)=1288+72*c+8*j by omega_arith] at e
@@ -175,9 +175,9 @@ open VG.Proof.Mont.AArch64.P521Field
         else ordinaryPoint s.mem base 1288) ∧
       KeepRegs [.x1,.x2,.x3,.x7,.x16] s t ∧ Outside base 1072 432 s.mem t.mem ∧ t.v=s.v := by
   refine WP.mono (window_select_values_ok hs hsz) fun t ⟨values,k,frame,v⟩ => ?_
-  have x := values 0 (by decide)
-  have y := values 1 (by decide)
-  have z := values 2 (by decide)
+  obtain x := values 0 (by decide)
+  obtain y := values 1 (by decide)
+  obtain z := values 2 (by decide)
   simp only [Nat.mul_zero,Nat.add_zero,Nat.mul_one,Nat.reduceMul,Nat.reduceAdd] at x y z
   refine ⟨?_,?_,k,frame,v⟩
   · change wordsVal t.mem base 1072 9<_ ∧ wordsVal t.mem base 1144 9<_ ∧ wordsVal t.mem base 1216 9<_
@@ -203,7 +203,7 @@ open VG.Proof.Mont.AArch64.P521Field
 open VG.Impl.Weierstrass.AArch64.P521Native
 
  theorem window_tail_counter_source : outerBlock143.drop 364=[.subImm .x .x4 .x19 1] := by
-  have h := drop_flatten_prefix outerBlock143Chunks 11 352 12
+  obtain h := drop_flatten_prefix outerBlock143Chunks 11 352 12
     (by rw [List.length_flatten]; lit_decide)
   rw [outerBlock143,h]
   decide
@@ -291,29 +291,29 @@ open VG.Impl.Weierstrass.AArch64.P521Native
       WindowWorkFrame (s.gpr .x0) s.mem t.mem ∧ WindowStable s t ∧ t.gpr .x4=s.gpr .x19-1#64 := by
   rw [windowCompleteAdd,WP.seq_iff]
   refine WP.mono (window_mixed_step_ok hs (by omega_arith) ca ce) fun u ⟨bu,pu,fu,ku⟩ => ?_
-  have hu := ku.scr hs
+  obtain hu := ku.scr hs
   have same (d : Nat) (hd : d+72≤1288 ∨ 1504≤d) (lo : d+72≤4080) :
       wordsVal u.mem (s.gpr .x0) d 9=wordsVal s.mem (s.gpr .x0) d 9 :=
     WindowMixedFrame.wordsVal fu (Or.inl lo) hd (by have h:=hs.nowrap; omega_arith)
-  have ax := same 1072 (by decide) (by decide)
-  have ay := same 1144 (by decide) (by decide)
-  have az := same 1216 (by decide) (by decide)
-  have ex := same 1504 (by decide) (by decide)
-  have ey := same 1576 (by decide) (by decide)
-  have ez := same 1648 (by decide) (by decide)
-  have au : canonicalPoint u.mem (u.gpr .x0) 1072 := by
+  obtain ax := same 1072 (by decide) (by decide)
+  obtain ay := same 1144 (by decide) (by decide)
+  obtain az := same 1216 (by decide) (by decide)
+  obtain ex := same 1504 (by decide) (by decide)
+  obtain ey := same 1576 (by decide) (by decide)
+  obtain ez := same 1648 (by decide) (by decide)
+  obtain au : canonicalPoint u.mem (u.gpr .x0) 1072 := by
     rw [ku.base]; change wordsVal u.mem (s.gpr .x0) 1072 9<_ ∧ wordsVal u.mem (s.gpr .x0) 1144 9<_ ∧ wordsVal u.mem (s.gpr .x0) 1216 9<_
     rw [ax,ay,az]; exact ca
-  have eu : canonicalPoint u.mem (u.gpr .x0) 1504 := by
+  obtain eu : canonicalPoint u.mem (u.gpr .x0) 1504 := by
     rw [ku.base]; change wordsVal u.mem (s.gpr .x0) 1504 9<_ ∧ wordsVal u.mem (s.gpr .x0) 1576 9<_ ∧ wordsVal u.mem (s.gpr .x0) 1648 9<_
     rw [ex,ey,ez]; exact ce
-  have bU : canonicalPoint u.mem (u.gpr .x0) 1288 := by rw [ku.base]; exact bu
+  obtain bU : canonicalPoint u.mem (u.gpr .x0) 1288 := by rw [ku.base]; exact bu
   refine WP.mono (window_tail_ok hu (by omega_arith) au bU eu) fun t ⟨bt,pt,kt,ft,vt,e4⟩ => ?_
   rw [ku.base] at bt pt ft
   rw [ku.gp .x19 (by decide) (by decide)] at e4
-  have aa : ordinaryPoint u.mem (s.gpr .x0) 1072=ordinaryPoint s.mem (s.gpr .x0) 1072 := by
+  obtain aa : ordinaryPoint u.mem (s.gpr .x0) 1072=ordinaryPoint s.mem (s.gpr .x0) 1072 := by
     simp only [ordinaryPoint,Nat.reduceAdd,ax,ay,az]
-  have ee : ordinaryPoint u.mem (s.gpr .x0) 1504=ordinaryPoint s.mem (s.gpr .x0) 1504 := by
+  obtain ee : ordinaryPoint u.mem (s.gpr .x0) 1504=ordinaryPoint s.mem (s.gpr .x0) 1504 := by
     simp only [ordinaryPoint,Nat.reduceAdd,ex,ey,ez]
   refine ⟨bt,?_,?_,?_,e4⟩
   · rw [az,ez,aa,ee,pu] at pt

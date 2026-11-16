@@ -71,8 +71,8 @@ variable {any : Bool}
 theorem incJ_finI {Ctx W SP D : Addr} {R r : Nat} (s : State) (h : FinI Ctx W SP D R r s) :
     WP isa (.block incJ) s (FinI Ctx W SP D R r) := by
   obtain ⟨t, run, -, f, g, rd, wr, -⟩ := incJ_ok s h.env
-  have e28 : W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12 = W + BitVec.ofNat 64 28 := add_ofNat_ofNat W 16 12
-  have kp : ∀ d, 32 ≤ d → d + 8 ≤ 2560 →
+  obtain e28 : W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12 = W + BitVec.ofNat 64 28 := add_ofNat_ofNat W 16 12
+  obtain kp : ∀ d, 32 ≤ d → d + 8 ≤ 2560 →
       t.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
@@ -87,7 +87,7 @@ theorem incJ_finI {Ctx W SP D : Addr} {R r : Nat} (s : State) (h : FinI Ctx W SP
 theorem finI_keepG {Ctx W SP D : Addr} {R r : Nat} {s s' : State} (h : FinI Ctx W SP D R r s)
     (hg : ∀ g ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr g = s.gpr g) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hf : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s'.mem) : FinI Ctx W SP D R r s' := by
-  have kp : ∀ d, d + 8 ≤ 512 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+  obtain kp : ∀ d, d + 8 ≤ 512 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide))
       (by decide)
@@ -104,7 +104,7 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
       (tagP ks) fun _ _ => True := by
   -- What the code before the keystream keeps: `FinI`, and the bytes left readable.
   let FinC : State → Prop := fun s => FinI Ctx W SP D R r s ∧ Covers [⟨D, r⟩] (s.rd ++ s.wr)
-  have wPow : ∀ s, FinI Ctx W SP D R r s ∧ Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) ∧ Covers [⟨D, r⟩] (s.rd ++ s.wr) →
+  obtain wPow : ∀ s, FinI Ctx W SP D R r s ∧ Covers [⟨Ctx, 1024⟩] (s.rd ++ s.wr) ∧ Covers [⟨D, r⟩] (s.rd ++ s.wr) →
       WP isa (.block finPowP) s FinC := fun s h =>
     WP.mono (Fast.finPowP_run s h.1.env.r13 (in_off h.2.1 (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
       (in_off h.2.1 (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))) fun _ ⟨_, _, _, _, o⟩ =>
@@ -112,21 +112,21 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _),
         by rw [o.rd, o.wr]; exact h.2.2⟩
-  have p := rel_next (rel_env_regs [] (fun _ h => h.1.env) (fun _ h => h.1.env) (fun _ _ _ _ _ hr => by cases hr)
+  obtain p := rel_next (rel_env_regs [] (fun _ h => h.1.env) (fun _ h => h.1.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block finPowP) ⟨_, by taint_decide⟩) wPow wPow
-  have wTest : ∀ {F : State → Prop}, (∀ {s s' : State}, F s → FinI Ctx W SP D R r s' → s'.rd = s.rd → s'.wr = s.wr →
+  obtain wTest : ∀ {F : State → Prop}, (∀ {s s' : State}, F s → FinI Ctx W SP D R r s' → s'.rd = s.rd → s'.wr = s.wr →
       F s') → (∀ s, F s → FinI Ctx W SP D R r s) → ∀ s, F s → WP isa (.block lenTest) s fun t =>
         t.zf = some (decide (r = 0)) ∧ F t := fun hF hI s h =>
     WP.mono (finTest_ok (by omega_using [hr]) s (hI s h).env (hI s h).len) fun _ ⟨z, g, m, rd, wr, _⟩ => ⟨z, hF h
       ((hI s h).keep (fun g' hg => g _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) rd wr (by rw [m]; exact Frame.refl _ _)) rd wr⟩
-  have wTestC := wTest (F := FinC) (fun h I rd wr => ⟨I, by rw [rd, wr]; exact h.2⟩) fun _ h => h.1
-  have wTestI := wTest (F := FinI Ctx W SP D R r) (fun _ I _ _ => I) fun _ h => h
-  have t₁ := rel_next (rel_env_regs [] (fun _ h => h.1.env) (fun _ h => h.1.env) (fun _ _ _ _ _ hr => by cases hr)
+  obtain wTestC := wTest (F := FinC) (fun h I rd wr => ⟨I, by rw [rd, wr]; exact h.2⟩) fun _ h => h.1
+  obtain wTestI := wTest (F := FinI Ctx W SP D R r) (fun _ I _ _ => I) fun _ h => h
+  obtain t₁ := rel_next (rel_env_regs [] (fun _ h => h.1.env) (fun _ h => h.1.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block lenTest) ⟨_, by taint_decide⟩) wTestC wTestC
   -- The blocks `GHASH` reads: the lengths block, and with bytes left, them first.
-  have wLens : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finLens) s (FinI Ctx W SP D R r) := fun s h => by
+  obtain wLens : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finLens) s (FinI Ctx W SP D R r) := fun s h => by
     obtain ⟨t, run, f, -, g, rd, wr, -⟩ := Short.finLens_ok (al := (s.mem.readW (W + BitVec.ofNat 64 184) 64).toNat)
       (n := (s.mem.readW (W + BitVec.ofNat 64 192) 64).toNat) s h.env (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
@@ -136,38 +136,38 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
       (f.sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq
         exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩)⟩
-  have b₀ := rel_next (rel_env_regs [] (F₁ := FinC) (F₂ := FinC) (fun _ h => h.1.env) (fun _ h => h.1.env)
+  obtain b₀ := rel_next (rel_env_regs [] (F₁ := FinC) (F₂ := FinC) (fun _ h => h.1.env) (fun _ h => h.1.env)
     (fun _ _ _ _ _ hr => by cases hr) (c := .block finLens) ⟨_, by taint_decide⟩)
     (fun s h => wLens s h.1) (fun s h => wLens s h.1)
-  have wArgs : ∀ s, FinC s → WP isa (.block finTextArgs) s fun t =>
+  obtain wArgs : ∀ s, FinC s → WP isa (.block finTextArgs) s fun t =>
       t.gpr .rdi = W + BitVec.ofNat 64 512 ∧ t.gpr .rsi = D ∧ t.gpr .rdx = W + BitVec.ofNat 64 1040 ∧
         t.gpr .rcx = BitVec.ofNat 64 r := fun s h => by
     obtain ⟨t, run, -, di, si, dx, cx, -⟩ := finTextArgs_ok s h.1.env h.1.dat h.1.len
     exact WP.of_runBlock ⟨t, run, di, si, dx, cx⟩
-  have wTail : r ≠ 0 → ∀ s, FinC s →
+  obtain wTail : r ≠ 0 → ∀ s, FinC s →
       WP isa (.seq (.block finTextArgs) (.seq copyLoop (.block finLens))) s (FinI Ctx W SP D R r) := fun h0 s h => by
     have he := h.1.env
     obtain ⟨s₁, run₁, m₁, di₁, si₁, -, cx₁, g₁, rd₁, wr₁, -⟩ := finTextArgs_ok s he h.1.dat h.1.len
     refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-    have lp : LoopPre s₁ D (W + BitVec.ofNat 64 512) r :=
+    obtain lp : LoopPre s₁ D (W + BitVec.ofNat 64 512) r :=
       ⟨si₁, di₁, cx₁, by omega_using [h0], by omega_using [hr], by rw [rd₁, wr₁]; exact h.2, by rw [wr₁]; exact he.perm.wC (by omega_using [hr]),
         hDW.sub_right (Lay.wSub (by omega_using [hr]))⟩
     refine WP.seq (WP.mono (copyLoopX_ok s₁ lp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, _⟩ => ?_)
-    have f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
+    obtain f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
       rw [m₁]; exact writeBytes_frame' _ (List.length_replicate ..)
-    have f₂ : Frame [⟨W + BitVec.ofNat 64 512, r⟩] s₁.mem s₂.mem := by
+    obtain f₂ : Frame [⟨W + BitVec.ofNat 64 512, r⟩] s₁.mem s₂.mem := by
       rw [m₂]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-    have F₂ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₂.mem := by
+    obtain F₂ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₂.mem := by
       refine (f₁.sub fun q hq => ?_).trans (f₂.sub fun q hq => ?_) <;>
         simp only [List.mem_singleton] at hq <;> subst hq <;>
         exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
-    have I₂ : FinI Ctx W SP D R r s₂ := finI_keepG h.1 (fun g hg => by
+    obtain I₂ : FinI Ctx W SP D R r s₂ := finI_keepG h.1 (fun g hg => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
       rcases hg with rfl | rfl | rfl | rfl <;>
         rw [g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide) (by decide)])
       (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) F₂
     exact wLens s₂ I₂
-  have b₁p := rel_piece [.rdi, .rsi, .rdx, .rcx] (F₁ := FinC) (F₂ := FinC)
+  obtain b₁p := rel_piece [.rdi, .rsi, .rdx, .rcx] (F₁ := FinC) (F₂ := FinC)
       (fun _ h => h.1.env) (fun _ h => h.1.env) (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ wArgs wArgs
       (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -177,34 +177,34 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
         · rw [h₁.2.2.1, h₂.2.2.1]
         · rw [h₁.2.2.2, h₂.2.2.2])
       (c := .seq copyLoop (.block finLens)) ⟨_, by taint_decide⟩
-  have b₁ : r ≠ 0 → RelCT isa (fun s₁ s₂ => FinC s₁ ∧ FinC s₂)
+  obtain b₁ : r ≠ 0 → RelCT isa (fun s₁ s₂ => FinC s₁ ∧ FinC s₂)
       (.seq (.block finTextArgs) (.seq copyLoop (.block finLens)))
       fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂ := fun h0 =>
     rel_next b₁p (wTail h0) (wTail h0)
-  have prep : RelCT isa (fun s₁ s₂ => (s₁.zf = some (decide (r = 0)) ∧ FinC s₁) ∧
+  obtain prep : RelCT isa (fun s₁ s₂ => (s₁.zf = some (decide (r = 0)) ∧ FinC s₁) ∧
         (s₂.zf = some (decide (r = 0)) ∧ FinC s₂))
       (.ite .e (.block finLens) (.seq (.block finTextArgs) (.seq copyLoop (.block finLens))))
       fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂ := rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     (b₀.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
     (StreamTo.RelCT.of_imp (r ≠ 0) (fun _ _ h => by
-        have e := h.1.1.1.symm.trans h.2
+        obtain e := h.1.1.1.symm.trans h.2
         simp only [Option.some.injEq, decide_eq_false_iff_not] at e
         exact e) fun h0 => (b₁ h0).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h)
   -- The keystream, `J₀` incremented, and the test again.
-  have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa ks s (FinI Ctx W SP D R r) := fun s h =>
+  obtain wKs : ∀ s, FinI Ctx W SP D R r s → WP isa ks s (FinI Ctx W SP D R r) := fun s h =>
     WP.mono (hks s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr f
-  have k := rel_next (hkr hR) wKs wKs
-  have j := rel_next (rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r)
+  obtain k := rel_next (hkr hR) wKs wKs
+  obtain j := rel_next (rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r)
     (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr) (c := .block incJ) ⟨_, by taint_decide⟩)
     incJ_finI incJ_finI
-  have t₂ := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
+  obtain t₂ := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block lenTest) ⟨_, by taint_decide⟩) wTestI wTestI
   -- `GHASH` and the tag.
-  have e₀ := rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r) (fun _ h => h.env)
+  obtain e₀ := rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r) (fun _ h => h.env)
     (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr) (c := .block (finGh1 ++ tagK uO)) ⟨_, by taint_decide⟩
-  have e₁ := rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r) (fun _ h => h.env)
+  obtain e₁ := rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r) (fun _ h => h.env)
     (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr) (c := .block (finGh2 ++ tagK uO)) ⟨_, by taint_decide⟩
   unfold tagP
   exact RelCT.seq p (RelCT.seq t₁ (RelCT.seq prep (RelCT.seq k (RelCT.seq j (RelCT.seq t₂
@@ -224,10 +224,10 @@ theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel (C
 (public), then a loop over that many bytes. -/
 theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
   intro M Ctx W SP L R A al D n T hDW hn
-  have hL : ∀ s, OneS M Ctx W SP R A al D n T s → WP isa (.block [.mov .rcx (.mem (at_ .r15 lenO)),
+  obtain hL : ∀ s, OneS M Ctx W SP R A al D n T s → WP isa (.block [.mov .rcx (.mem (at_ .r15 lenO)),
       .alu .test .rcx (.reg .rcx)]) s fun s₁ => OneS M Ctx W SP R A al D n T s₁ ∧
         s₁.zf = some (decide (n = 0)) ∧ s₁.gpr .rcx = BitVec.ofNat 64 n := fun s h => by
-    have q₂ := h.env.perm.wR (show 208 + 8 ≤ 2560 by decide)
+    obtain q₂ := h.env.perm.wR (show 208 + 8 ≤ 2560 by decide)
     obtain ⟨s₁, run₁, hz₁, hcx₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .rcx (.mem (at_ .r15 lenO)),
         .alu .test .rcx (.reg .rcx)] s = some s₁ ∧ s₁.zf = some (decide (n = 0)) ∧
         s₁.gpr .rcx = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .rcx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
@@ -243,9 +243,9 @@ theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
   let F : State → Prop := fun s => OneS M Ctx W SP R A al D n T s ∧ s.gpr .rcx = BitVec.ofNat 64 n
   let K : State → Prop := fun s => OneS M Ctx W SP R A al D n T s ∧ s.gpr .rdi = D ∧
     s.gpr .rsi = W + BitVec.ofNat 64 1040 ∧ s.gpr .rcx = BitVec.ofNat 64 n
-  have hB : ∀ s, F s → WP isa (.block (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++
+  obtain hB : ∀ s, F s → WP isa (.block (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++
       ptr .rsi .r15 (Impl.AesGcm.X86_64.Short.kO + 16))) s K := fun s ⟨h, hcx⟩ => by
-    have q₁ := h.env.perm.wR (show 200 + 8 ≤ 2560 by decide)
+    obtain q₁ := h.env.perm.wR (show 200 + 8 ≤ 2560 by decide)
     obtain ⟨s₁, run₁, hdi₁, hsi₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
         (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rsi .r15 (Impl.AesGcm.X86_64.Short.kO + 16)) s =
           some s₁ ∧ s₁.gpr .rdi = D ∧ s₁.gpr .rsi = W + BitVec.ofNat 64 1040 ∧
@@ -259,14 +259,14 @@ theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hm₁ hrd₁ hwr₁, hdi₁, hsi₁,
       by rw [hg₁ _ (by decide) (by decide), hcx]⟩
-  have a := rel_wp (rel_taint (P := OneS₂ M Ctx W SP R A al D n T) [.r13, .r14, .r15, .rsp]
+  obtain a := rel_wp (rel_taint (P := OneS₂ M Ctx W SP R A al D n T) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => OneS₂.env h) ⟨_, by taint_decide⟩) (fun _ _ h => h) hL hL
-  have b := rel_wp (rel_taint (P := fun s₁ s₂ => (True ∧ (OneS M Ctx W SP R A al D n T s₁ ∧
+  obtain b := rel_wp (rel_taint (P := fun s₁ s₂ => (True ∧ (OneS M Ctx W SP R A al D n T s₁ ∧
         s₁.zf = some (decide (n = 0)) ∧ s₁.gpr .rcx = BitVec.ofNat 64 n) ∧ (OneS M Ctx W SP R A al D n T s₂ ∧
         s₂.zf = some (decide (n = 0)) ∧ s₂.gpr .rcx = BitVec.ofNat 64 n)) ∧ s₁.zf = some false)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => OneS₂.env ⟨h.1.2.1.1, h.1.2.2.1⟩) ⟨_, by taint_decide⟩)
     (F₁ := F) (F₂ := F) (fun _ _ h => ⟨⟨h.1.2.1.1, h.1.2.1.2.2⟩, ⟨h.1.2.2.1, h.1.2.2.2.2⟩⟩) hB hB
-  have c := rel_taint (P := fun s₁ s₂ => True ∧ K s₁ ∧ K s₂) (c := xorLoop)
+  obtain c := rel_taint (P := fun s₁ s₂ => True ∧ K s₁ ∧ K s₂) (c := xorLoop)
     [.rdi, .rsi, .rcx, .r13, .r14, .r15, .rsp]
     (fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -291,13 +291,13 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.prepared
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
-  have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
+  obtain hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
       (s₀.gpr .r9).toNat = al → ∀ s, OpenIn s₀ Ctx W SP A D n t s →
       WP isa (Impl.AesGcm.X86_64.Fast.cond any) s fun u => u.zf = some (decide ¬IsFast nl al n any) ∧
         OpenIn s₀ Ctx W SP A D n t u :=
     fun C hnl hal s h => WP.mono (Fast.condE_ok C h.1 hnl hal) fun _ ⟨z, E, K⟩ =>
       ⟨z, E, by rw [K.gpr _ (by decide) (by decide) (by decide), h.2.1], by rw [K.mem]; exact h.2.2⟩
-  have c := rel_next (Fast.cond_rel (F₁ := OpenIn s₀ Ctx W SP A D n t) (F₂ := OpenIn s₀' Ctx W SP A D n t)
+  obtain c := rel_next (Fast.cond_rel (F₁ := OpenIn s₀ Ctx W SP A D n t) (F₂ := OpenIn s₀' Ctx W SP A D n t)
       (fun _ h => condS_of h.1 hnl hal) (fun _ h => condS_of h.1 hnl' hal')
       (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_using [hlt]))
     (hw C hnl hal) (hw C' hnl' hal')

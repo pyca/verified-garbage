@@ -95,7 +95,7 @@ theorem caddOI_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
           jacAddF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) (E K.E.z)) ∧
       SI K.addOpsO.length t := by
   have hA := hL.ipApart
-  have hSl : ∀ x ∈ CachedJac.ipW K.S K.R ++ CachedJac.ipR K.M.n K.S K.E K.z2, x ∈ jwSlots K := by
+  obtain hSl : ∀ x ∈ CachedJac.ipW K.S K.R ++ CachedJac.ipR K.M.n K.S K.E K.z2, x ∈ jwSlots K := by
     intro x hx
     simp only [CachedJac.ipW, CachedJac.ipR, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hx
@@ -103,7 +103,7 @@ theorem caddOI_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h]
     all_goals first
       | exact jg_mem (by decide) | jw_mem
-  have hr : readsOk K.addOpsO V = true := by
+  obtain hr : readsOk K.addOpsO V = true := by
     rw [JacWinCfg.addOpsO, CachedJac.ip_eq]
     refine readsOk_mono (readsOk_rename (CachedJac.ipσ K.M.n K.S K.R K.E K.z2)
       (show readsOk (CachedJac.headIPN ++ CachedJac.tailIPN) [6, 7, 8, 11, 12, 13, 14, 15] = true by decide))
@@ -111,7 +111,7 @@ theorem caddOI_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
     rcases hx with h | h | h | h | h | h | h | h <;> rw [h] <;>
       simp [CachedJac.ipσ, CachedJac.ipW, CachedJac.ipR]
-  have hs : ∀ op ∈ K.addOpsO, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
+  obtain hs : ∀ op ∈ K.addOpsO, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
     rw [JacWinCfg.addOpsO, CachedJac.ip_eq]
     intro op hop x hx
     obtain ⟨op', _, rfl⟩ := List.mem_map.mp hop
@@ -149,23 +149,23 @@ theorem addO_post (hL : JacWinLay K size) (hC : Law C) (hM3 : AM3 C) (hO : Prime
       RStO K C base size P s₀ Q' t) ∧ Unch base (jwOthW K) u.mem t.mem := by
   have hn := F.scr.nowrap
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
-  have U₅' : Unch base (jwOthW K) u.mem t.mem := (ProgKeep.unch k₅).mono fun w hw => by
+  obtain U₅' : Unch base (jwOthW K) u.mem t.mem := (ProgKeep.unch k₅).mono fun w hw => by
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw
       exact List.mem_append_left _ (List.mem_map_of_mem (rcbW_other K x hx))
     · exact List.mem_append_right _ hw
-  have U₅ : Unch base (jwLoopW K) u.mem t.mem := U₅'.mono (jwOthW_loopW K)
-  have F₅ := F.next hL (k₅.scr F.scr) k₅.regs U₅ (jwLoopW_sub K)
-  have Rv : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = E₅ x ∧
+  obtain U₅ : Unch base (jwLoopW K) u.mem t.mem := U₅'.mono (jwOthW_loopW K)
+  obtain F₅ := F.next hL (k₅.scr F.scr) k₅.regs U₅ (jwLoopW_sub K)
+  obtain Rv : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = E₅ x ∧
       wordsVal t.mem base x K.M.n < C.p := fun x hx => by
-    have hm : x ∈ [K.R.x, K.R.y, K.R.z] ++ V := List.mem_append_left _ hx
+    obtain hm : x ∈ [K.R.x, K.R.y, K.R.z] ++ V := List.mem_append_left _ hx
     exact ⟨I₅.val x hm, I₅.lt x hm⟩
   obtain ⟨Q', hQ', hQe', hR⟩ := jstepO_pt hC hM3 hO hP hP0 hn2 hn64 hnb (k := k) (i := i) (J := K.J) hi hQ hQe hRep
     (Z2 := tmv C K.M.n base u K.E.z) (X2 := tmv C K.M.n base u K.E.x) (Y2 := tmv C K.M.n base u K.E.y)
     (by have J := hE.jac; rw [tx, ty, tz] at J; exact J) (by have J := hE.z; rw [tz] at J; exact J)
-  have vx := congrArg Prod.fst v₅
-  have vy := congrArg (fun p => p.2.1) v₅
-  have vz := congrArg (fun p => p.2.2) v₅
+  obtain vx := congrArg Prod.fst v₅
+  obtain vy := congrArg (fun p => p.2.1) v₅
+  obtain vz := congrArg (fun p => p.2.2) v₅
   dsimp only at vx vy vz
   refine ⟨⟨Q', hQ', hQe', F₅, hT.loopW hL U₅ hn (by decide), fun x hx => (Rv x hx).2, ?_⟩, U₅'⟩
   rw [(Rv _ (by simp)).1, (Rv _ (by simp)).1, (Rv _ (by simp)).1, vx, vy, vz]
@@ -180,8 +180,8 @@ theorem chunkO_last (K : JacWinCfg) (h : 0 < K.nAddO) : K.chunkO K.nAddO = 16 :=
 /-- `ZF` for `m = 1`, with `rbx = m`. -/
 theorem cmpRbx1_ok (s : State) {m : Nat} (hm : m < 2 ^ 63) (hb : s.gpr .rbx = BitVec.ofNat 64 m) :
     WP isa (.block [.alu .cmp .rbx (.imm 1)]) s fun t => t.zf = some (decide (m = 1)) ∧ Keeps [] s t := by
-  have e : (BitVec.ofNat 64 m - BitVec.signExtend 64 (1 : BitVec 32) == 0) = decide (m = 1) := by
-    have hse : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
+  obtain e : (BitVec.ofNat 64 m - BitVec.signExtend 64 (1 : BitVec 32) == 0) = decide (m = 1) := by
+    obtain hse : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
     rw [hse]
     by_cases h : m = 1
     · subst h; decide
@@ -205,16 +205,16 @@ theorem prepO_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) {base : Addr} {P : Po
   have hn := hs.nowrap
   have hJ := hL.J
   have hbl := hL.bits
-  have hbits := hf.bitsO hL hF
+  obtain hbits := hf.bitsO hL hF
   rw [JacWinCfg.prepO, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (decRbx_ok s hj1 (by omega_arith) hb) fun s₁ ⟨b₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (digitO_ok K hs₁ (k := OddWin.oq K.J k) (j := j - 1) (N := 5 * K.J) (by omega_arith) (by omega_arith) b₁
     (fun t ht => by rw [k₁.2.1]; exact hbits t ht)) fun s₂ ⟨_, r₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (incRbxJ_ok s₂ (j := j - 1) (by rw [k₂.1 _ (by decide), b₁])) fun s₃ ⟨b₃, k₃, _, _⟩ => ?_
-  have ha := magO_pos (Window5.nib_lt (OddWin.oq K.J k) (j - 1))
+  obtain ha := magO_pos (Window5.nib_lt (OddWin.oq K.J k) (j - 1))
   refine WP.mono (selSetP_ok hL hn4 s₃ (base := base) s.mem ha.2 (by rw [k₃.1 _ (by decide), r₂]))
     fun t ⟨S, k₄⟩ => ⟨⟨ha.2, S, ?_, ?_, ?_⟩, ?_⟩
   · intro b _; rw [k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
@@ -241,12 +241,12 @@ theorem RStO.unchW (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s₀ s
     (hR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ W, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x) :
     RStO K C base size P s₀ Q t := by
   have hn := h.fr.scr.nowrap
-  have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
+  obtain e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
     fun x hx => hU.wordsVal (hR x hx) (by
-      have hxo : x ∈ jwOther K := by
+      obtain hxo : x ∈ jwOther K := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
       have := hL.le (other_mem hxo); omega_arith)
-  have tv : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = tmv C K.M.n base s x := fun x hx => by
+  obtain tv : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = tmv C K.M.n base s x := fun x hx => by
     show toM _ _ _ = toM _ _ _; rw [e x hx]
   refine ⟨F, h.tbl.loopW hL (hU.mono hW) hn (by decide), fun x hx => by rw [e x hx]; exact h.lt x hx, ?_⟩
   rw [tv _ (by simp), tv _ (by simp), tv _ (by simp)]; exact h.rep
@@ -257,7 +257,7 @@ theorem R_T_apart (hL : JacWinLay K size) :
       x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
   intro x hx w hw
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-  have hxo : x ∈ jwOther K := by
+  obtain hxo : x ∈ jwOther K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
   exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega_arith)
 
@@ -266,7 +266,7 @@ theorem R_neg_apart (hL : JacWinLay K size) :
     ∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ w ∈ [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)],
       x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
   intro x hx w hw
-  have hxo : x ∈ jwOther K := by
+  obtain hxo : x ∈ jwOther K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl
@@ -307,25 +307,25 @@ theorem jstepOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p (
   rw [JacWinCfg.stepOP]
   simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s (by omega_arith) (by omega_arith) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  have R₁ := R₀.rbxKeeps hL k₁
-  have T₁ : JPt C K.M.n base s₁ (TS K) (OddWin.oddPt C P K.J k (j - 1)) := T₀.congr fun c _ => by rw [k₁.2.1]
+  obtain R₁ := R₀.rbxKeeps hL k₁
+  obtain T₁ : JPt C K.M.n base s₁ (TS K) (OddWin.oddPt C P K.J k (j - 1)) := T₀.congr fun c _ => by rw [k₁.2.1]
   rw [← mul_one_pt Q] at R₁
   refine WP.seq (WP.mono (dblsO_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, U₂⟩ => ?_)
-  have T₂ := T₁.othW hL U₂ hn
+  obtain T₂ := T₁.othW hL U₂ hn
   -- Digit `j - 2`'s selection set up.
   refine WP.seq (WP.mono (prepO_ok hL hn4 hF (j := j - 1) (by omega_arith) (by omega_arith) R₂.fr b₂) fun s₃ ⟨S₃, k₃⟩ => ?_)
-  have ha16 := magO_pos (Window5.nib_lt (OddWin.oq K.J k) (j - 1 - 1))
+  obtain ha16 := magO_pos (Window5.nib_lt (OddWin.oq K.J k) (j - 1 - 1))
   generalize ha : magO (Window5.nib (OddWin.oq K.J k) (j - 1 - 1)) = a at S₃ ha16
   have m₃ : s₃.mem = s₂.mem := k₃.2.1
-  have hs₃ := R₂.fr.scr.of_keeps k₃ (by decide)
-  have F₃ := R₂.fr.next hL hs₃ ((Keeps.regs k₃).mono (sub_powClob (by decide))) (W := [])
+  obtain hs₃ := R₂.fr.scr.of_keeps k₃ (by decide)
+  obtain F₃ := R₂.fr.next hL hs₃ ((Keeps.regs k₃).mono (sub_powClob (by decide))) (W := [])
     (by rw [m₃]; exact Unch.refl _ _ _) (by simp)
-  have tv₃ : ∀ x, tmv C K.M.n base s₃ x = tmv C K.M.n base s₂ x := fun x => by
+  obtain tv₃ : ∀ x, tmv C K.M.n base s₃ x = tmv C K.M.n base s₂ x := fun x => by
     show toM _ _ _ = toM _ _ _; rw [m₃]
-  have T₃ : JPt C K.M.n base s₃ (TS K) (OddWin.oddPt C P K.J k (j - 1)) := T₂.congr fun c _ => by rw [m₃]
-  have hT₃ : JTblOkO K C base P 16 s₃ := fun m h1 hm => (R₂.tbl m h1 hm).congr fun c _ => by rw [m₃]
+  obtain T₃ : JPt C K.M.n base s₃ (TS K) (OddWin.oddPt C P K.J k (j - 1)) := T₂.congr fun c _ => by rw [m₃]
+  obtain hT₃ : JTblOkO K C base P 16 s₃ := fun m h1 hm => (R₂.tbl m h1 hm).congr fun c _ => by rw [m₃]
   -- `R = R + T`, the selection woven in.
-  have V₃ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
+  obtain V₃ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
       x ∈ jwSlots K ∧ wordsVal s₃.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -338,12 +338,12 @@ theorem jstepOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p (
     · exact ⟨mz, by rw [← tz]; exact T₃.lt 2 (by decide)⟩
     · exact ⟨m2, by rw [← t2]; exact T₃.lt 3 (by decide)⟩
     · exact ⟨m3, by rw [← t3]; exact T₃.lt 4 (by decide)⟩
-  have I₃ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
+  obtain I₃ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
       K.z2 + 8 * K.M.n] (tmv C K.M.n base s₃) s₃ :=
     ⟨hs₃, F₃.mod, fun x hx => (V₃ x hx).1, fun x hx => (V₃ x hx).2, fun _ _ => rfl⟩
-  have h2 := T₃.z2; have h3 := T₃.z3
+  obtain h2 := T₃.z2; have h3 := T₃.z3
   rw [t2, tz] at h2; rw [t3, t2, tz] at h3
-  have hS₀ : SelP K base s₂.mem a (K.chunkO 0) s₃ := by rw [chunkO_zero]; exact S₃
+  obtain hS₀ : SelP K base s₂.mem a (K.chunkO 0) s₃ := by rw [chunkO_zero]; exact S₃
   refine WP.seq (WP.mono (caddOI_ok hL hp I₃ (fun x hx => hx) h2 h3
     (SI := fun i t => SelP K base s₂.mem a (K.chunkO i) t)
     (fun i t hi h => selChunkO_ok hL hn4 i hi h)
@@ -353,43 +353,43 @@ theorem jstepOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p (
     (hC.onCurve_mul hQ 32) (fun hk => by rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega_arith]) F₃ hT₃
     (by rw [tv₃, tv₃, tv₃]; exact R₂.rep) T₃ k₅ I₅ v₅
   have hs₅ := R₅.fr.scr
-  have hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+  obtain hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₅.gpr _ (rbx_not_clob _), k₃.1 _ (by decide), b₂]
-  have S₅' : SelS K base s₂.mem a 16 s₅ := by
+  obtain S₅' : SelS K base s₂.mem a 16 s₅ := by
     have := S₅.sel; rw [show K.addOpsO.length = K.nAddO from rfl, chunkO_last K (nAddO_pos K)] at this; exact this
   -- The entry stored to `T`.
   rw [JacWinCfg.finO, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (storeP_ok hL hn4 hs₅ S₅') fun s₆ ⟨a₆, O₆, g₆, r₆, w₆⟩ => ?_
-  have e₆ := jselOut hL hn4 (mem := s₂.mem) (mem' := s₆.mem) ⟨ha16.1, ha16.2⟩ a₆
-  have T₆ : JPt C K.M.n base s₆ (TS K) (mul (2 * a - 1) P) := (R₂.tbl a ha16.1 ha16.2).congr fun c hc => e₆ c hc
-  have hs₆ : Scr s₆ base size := ⟨by rw [g₆]; exact hs₅.rdi, by rw [w₆]; exact hs₅.wr, hs₅.nowrap⟩
-  have O₆' : Outside base (jg K 80) (40 * K.M.n) s₅.mem s₆.mem := by
+  obtain e₆ := jselOut hL hn4 (mem := s₂.mem) (mem' := s₆.mem) ⟨ha16.1, ha16.2⟩ a₆
+  obtain T₆ : JPt C K.M.n base s₆ (TS K) (mul (2 * a - 1) P) := (R₂.tbl a ha16.1 ha16.2).congr fun c hc => e₆ c hc
+  obtain hs₆ : Scr s₆ base size := ⟨by rw [g₆]; exact hs₅.rdi, by rw [w₆]; exact hs₅.wr, hs₅.nowrap⟩
+  obtain O₆' : Outside base (jg K 80) (40 * K.M.n) s₅.mem s₆.mem := by
     rw [← hL.T80, show 40 * K.M.n = 16 * K.np16 by rw [h10, hn4]]; exact O₆
-  have U₆ := outside_grid5 (b := 80) O₆'
-  have hU₆W : ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)), w ∈ jwLoopW K := by
+  obtain U₆ := outside_grid5 (b := 80) O₆'
+  obtain hU₆W : ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)), w ∈ jwLoopW K := by
     intro w hw; obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
-  have F₆ := R₅.fr.next hL hs₆ ⟨fun r _ => by rw [g₆], r₆, w₆⟩ U₆ (fun w hw => jwLoopW_sub K w (hU₆W w hw))
-  have R₆ := R₅.unchW hL F₆ U₆ hU₆W (R_T_apart hL)
+  obtain F₆ := R₅.fr.next hL hs₆ ⟨fun r _ => by rw [g₆], r₆, w₆⟩ U₆ (fun w hw => jwLoopW_sub K w (hU₆W w hw))
+  obtain R₆ := R₅.unchW hL F₆ U₆ hU₆W (R_T_apart hL)
   -- Its `Y` negated.
   rw [WP.block_append_iff]
   refine WP.mono (decRbx_ok s₆ (j := j - 1) (by omega_arith) (by omega_arith) (by rw [g₆, hb₅])) fun s₇ ⟨b₇, k₇⟩ => ?_
-  have hs₇ := hs₆.of_keeps k₇ (by decide)
+  obtain hs₇ := hs₆.of_keeps k₇ (by decide)
   have m₇ : s₇.mem = s₆.mem := k₇.2.1
-  have F₇ := F₆.next hL hs₇ ((Keeps.regs k₇).mono (sub_powClob (by decide))) (W := [])
+  obtain F₇ := F₆.next hL hs₇ ((Keeps.regs k₇).mono (sub_powClob (by decide))) (W := [])
     (by rw [m₇]; exact Unch.refl _ _ _) (by simp)
-  have R₇ := (R₆.rbxKeeps hL k₇)
-  have T₇ : JPt C K.M.n base s₇ (TS K) (mul (2 * magO (Window5.nib (OddWin.oq K.J k) (j - 1 - 1)) - 1) P) := by
+  obtain R₇ := (R₆.rbxKeeps hL k₇)
+  obtain T₇ : JPt C K.M.n base s₇ (TS K) (mul (2 * magO (Window5.nib (OddWin.oq K.J k) (j - 1 - 1)) - 1) P) := by
     rw [ha]; exact T₆.congr fun c _ => by rw [m₇]
   rw [WP.block_append_iff]
   refine WP.mono (jnegO_ok hL hF (j := j - 1 - 1) (by omega_arith) F₇ b₇ T₇) fun s₈ ⟨F₈, U₈, kk₈, P₈⟩ => ?_
-  have R₈ := R₇.unchW hL F₈ U₈ (neg_loopW K) (R_neg_apart hL)
-  have b₈ : s₈.gpr .rbx = BitVec.ofNat 64 (j - 1 - 1) := by rw [kk₈.gpr _ (rbx_not_clob _), b₇]
+  obtain R₈ := R₇.unchW hL F₈ U₈ (neg_loopW K) (R_neg_apart hL)
+  obtain b₈ : s₈.gpr .rbx = BitVec.ofNat 64 (j - 1 - 1) := by rw [kk₈.gpr _ (rbx_not_clob _), b₇]
   rw [show ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 1)] : List Instr) =
     [.alu .add .rbx (.imm 1)] ++ [.alu .cmp .rbx (.imm 1)] from rfl, WP.block_append_iff]
   refine WP.mono (incRbxJ_ok s₈ b₈) fun s₉ ⟨b₉, k₉, _, _⟩ => ?_
   refine WP.mono (cmpRbx1_ok s₉ (m := j - 1) (by omega_arith) (by rw [b₉, show j - 1 - 1 + 1 = j - 1 by omega_arith]))
     fun s₁₀ ⟨z₁₀, k₁₀⟩ => ?_
-  have R₁₀ := (R₈.rbxKeeps hL k₉).rbxKeeps hL (k₁₀.mono (by simp))
+  obtain R₁₀ := (R₈.rbxKeeps hL k₉).rbxKeeps hL (k₁₀.mono (by simp))
   refine ⟨⟨⟨⟨Q', hQ', hQe', R₁₀⟩, by rw [k₁₀.1 _ (by simp), b₉, show j - 1 - 1 + 1 = j - 1 by omega_arith]⟩, ?_⟩, z₁₀⟩
   exact P₈.congr fun c _ => by rw [k₁₀.2.1, k₉.2.1]
 
@@ -420,12 +420,12 @@ theorem jfirstOP_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} (hP : on
   obtain ⟨⟨Q, hQ, hQe, R₁⟩, b₁⟩ := I₁
   rw [WP.block_append_iff]
   refine WP.mono (decRbx_ok s₁ (j := K.J - 1) (by omega_arith) (by omega_arith) b₁) fun s₂ ⟨b₂, k₂⟩ => ?_
-  have R₂ := R₁.rbxKeeps hL k₂
+  obtain R₂ := R₁.rbxKeeps hL k₂
   rw [WP.block_append_iff]
   refine WP.mono (jentryO_ok hL hF (j := K.J - 1 - 1) (by omega_arith) R₂.fr R₂.tbl b₂) fun s₃ h₃ => ?_
   rw [WP.block_append_iff]
   refine WP.mono h₃ fun s₄ E₄ => ?_
-  have R₄ := R₂.unchW hL E₄.fr E₄.unch (jent_loopW K) (R_ent_apart hL)
+  obtain R₄ := R₂.unchW hL E₄.fr E₄.unch (jent_loopW K) (R_ent_apart hL)
   refine WP.mono (incRbxJ_ok s₄ (j := K.J - 1 - 1) (by rw [E₄.keep.gpr _ (rbx_not_clob _), b₂]))
     fun t ⟨b₅, k₅, _, _⟩ => ⟨⟨⟨Q, hQ, hQe, R₄.rbxKeeps hL k₅⟩, by rw [b₅, show K.J - 1 - 1 + 1 = K.J - 1 by omega_arith]⟩,
       E₄.ent.congr fun c _ => by rw [k₅.2.1]⟩
@@ -445,12 +445,12 @@ theorem jlastO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   rw [JacWinCfg.lastO]
   simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s (j := 1) (by omega_arith) (by omega_arith) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  have R₁ := R₀.rbxKeeps hL k₁
-  have T₁ : JPt C K.M.n base s₁ (TS K) (OddWin.oddPt C P K.J k (1 - 1)) := T₀.congr fun c _ => by rw [k₁.2.1]
+  obtain R₁ := R₀.rbxKeeps hL k₁
+  obtain T₁ : JPt C K.M.n base s₁ (TS K) (OddWin.oddPt C P K.J k (1 - 1)) := T₀.congr fun c _ => by rw [k₁.2.1]
   rw [← mul_one_pt Q] at R₁
   refine WP.seq (WP.mono (dblsO_ok hL hC hD hQ (j := 1 - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, U₂⟩ => ?_)
-  have T₂ := T₁.othW hL U₂ hn
-  have V₂ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
+  obtain T₂ := T₁.othW hL U₂ hn
+  obtain V₂ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
       x ∈ jwSlots K ∧ wordsVal s₂.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -463,10 +463,10 @@ theorem jlastO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     · exact ⟨mz, by rw [← tz]; exact T₂.lt 2 (by decide)⟩
     · exact ⟨m2, by rw [← t2]; exact T₂.lt 3 (by decide)⟩
     · exact ⟨m3, by rw [← t3]; exact T₂.lt 4 (by decide)⟩
-  have I₂ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
+  obtain I₂ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
       K.z2 + 8 * K.M.n] (tmv C K.M.n base s₂) s₂ :=
     ⟨R₂.fr.scr, R₂.fr.mod, fun x hx => (V₂ x hx).1, fun x hx => (V₂ x hx).2, fun _ _ => rfl⟩
-  have h2 := T₂.z2; have h3 := T₂.z3
+  obtain h2 := T₂.z2; have h3 := T₂.z3
   rw [t2, tz] at h2; rw [t3, t2, tz] at h3
   refine WP.mono (caddO_ok hL hp I₂ (fun x hx => hx) h2 h3) fun s₅ ⟨k₅, E₅, I₅, v₅⟩ => ?_
   obtain ⟨⟨Q', hQ', hQe', R₅⟩, -⟩ := addO_post hL hC hM3 hO hP hP0 hn2 hn64 hnb (k := k) (i := 0) (by omega_arith)
@@ -489,7 +489,7 @@ theorem winJacOP_ok (hL : JacWinLay K size) (hn4 : K.M.n = 4) (hp : UnitMod C.p 
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       (k % 2 = 1 ∧ k < C.n → Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y)
         (tmv C K.M.n base s' K.R.z) (mul k P)) := by
-  have hP0 := hF.ne_infinity hC
+  obtain hP0 := hF.ne_infinity hC
   rw [JacWinCfg.windowOP]
   simp only [Code.inline]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)

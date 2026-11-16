@@ -73,13 +73,13 @@ theorem strs_ok {s : State} {base : Addr} (hs : Base s base) :
       ∀ p ∈ l, word s'.mem base p.2 = s.gpr p.1
   | [], _, _ => WP.block_nil ⟨Rest.refl _ _, fun _ _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
   | p :: l, hl, hp => by
-    have h0 := hl p List.mem_cons_self
+    obtain h0 := hl p List.mem_cons_self
     rw [List.pairwise_cons] at hp
     rw [List.map_cons]
     refine wp_str (by omega_arith) (hs.ea (by omega_arith)) ⟨_, hs.wr, contains_sc (by omega_arith)⟩ fun s₁ m₁ => ?_
-    have hs₁ := hs.of_rest (m₁.rest []) (by decide)
+    obtain hs₁ := hs.of_rest (m₁.rest []) (by decide)
     refine WP.mono (strs_ok hs₁ l (fun q h => hl q (List.mem_cons_of_mem _ h)) hp.2) fun s' ⟨K, O, V⟩ => ?_
-    have O₁ : Outside base p.2 4 s.mem s₁.mem := by rw [m₁.mem]; exact writeW_outside _ _ _ (by omega_arith)
+    obtain O₁ : Outside base p.2 4 s.mem s₁.mem := by rw [m₁.mem]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨(m₁.rest _).trans K, fun x hx => ?_, fun q hq => ?_⟩
     · rw [O x fun q hq => hx q (List.mem_cons_of_mem _ hq), O₁ x (hx p List.mem_cons_self)]
     · rcases List.mem_cons.mp hq with rfl | hq
@@ -96,12 +96,12 @@ theorem ldrs_ok {s : State} {base : Addr} (hs : Base s base) :
       s'.mem = s.mem ∧ Rest (l.map Prod.fst) s s' ∧ ∀ p ∈ l, s'.gpr p.1 = word s.mem base p.2
   | [], _, _, _ => WP.block_nil ⟨rfl, Rest.refl _ _, fun _ h => absurd h List.not_mem_nil⟩
   | p :: l, hl, hnd, h0 => by
-    have hp0 := hl p List.mem_cons_self
+    obtain hp0 := hl p List.mem_cons_self
     rw [List.map_cons, List.nodup_cons] at hnd
     rw [List.map_cons]
     refine wp_ldr (by omega_arith) (hs.ea (by omega_arith)) (List.mem_append_right _ hs.wr |> fun h =>
       ⟨_, h, contains_sc (by omega_arith)⟩) fun s₁ u₁ => ?_
-    have hs₁ := hs.of_rest (u₁.rest (ws := [p.1]) (by simp)) (by simpa using (h0 p List.mem_cons_self).symm)
+    obtain hs₁ := hs.of_rest (u₁.rest (ws := [p.1]) (by simp)) (by simpa using (h0 p List.mem_cons_self).symm)
     refine WP.mono (ldrs_ok hs₁ l (fun q h => hl q (List.mem_cons_of_mem _ h)) hnd.2
       (fun q h => h0 q (List.mem_cons_of_mem _ h))) fun s' ⟨M, K, V⟩ => ?_
     refine ⟨by rw [M, u₁.mem], ((u₁.rest (by simp)).trans (K.mono fun r hr => by simp [hr])), fun q hq => ?_⟩
@@ -135,25 +135,25 @@ theorem entry_ok {hasB : Bool} {s : State} {base : Addr} {o a b : Nat} (h : Entr
   rw [entryFn, saveFn_eq, List.append_assoc, WP.block_append_iff]
   refine WP.mono (strs_ok h.base saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega_arith)
     (by decide)) fun s₁ ⟨K₁, O₁, V₁⟩ => ?_
-  have hb₁ := h.base.of_rest K₁ (by decide)
+  obtain hb₁ := h.base.of_rest K₁ (by decide)
   refine wp_movw fun s₂ u₂ => wp_dp (op2_reg _ _) fun s₃ u₃ => wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
-  have K₄ : Rest [.r6, .r9, .lr] s s₄ :=
+  obtain K₄ : Rest [.r6, .r9, .lr] s s₄ :=
     (K₁.mono (by simp)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans (u₄.rest (by decide))))
-  have m₄ : s₄.mem = s₁.mem := by rw [u₄.mem, u₃.mem, u₂.mem]
-  have g0 : s₄.gpr .r0 = s.gpr .r0 := K₄.gpr _ (by decide)
-  have hb₄ := h.base.of_rest K₄ (by decide)
-  have g6 : s₄.gpr .r6 = 65535 := by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]; rfl
-  have po : Ptr s₄ .r9 o := by
+  obtain m₄ : s₄.mem = s₁.mem := by rw [u₄.mem, u₃.mem, u₂.mem]
+  obtain g0 : s₄.gpr .r0 = s.gpr .r0 := K₄.gpr _ (by decide)
+  obtain hb₄ := h.base.of_rest K₄ (by decide)
+  obtain g6 : s₄.gpr .r6 = 65535 := by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]; rfl
+  obtain po : Ptr s₄ .r9 o := by
     refine ptr_of (v := s.gpr .r1) ?_ h.o
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₂.other _ (by decide), K₁.gpr _ (by simp),
       K₁.gpr _ (by simp), g0]
     rfl
-  have pa : Ptr s₄ .lr a := by
+  obtain pa : Ptr s₄ .lr a := by
     refine ptr_of (v := s.gpr .r2) ?_ h.a
     rw [u₄.gpr, u₃.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₂.other _ (by decide), K₁.gpr _ (by simp), K₁.gpr _ (by simp), g0]
     rfl
-  have ent : ∀ s', Rest [.r12] s₄ s' → s'.mem = s₁.mem → (hasB = true → Ptr s' .r12 b) →
+  obtain ent : ∀ s', Rest [.r12] s₄ s' → s'.mem = s₁.mem → (hasB = true → Ptr s' .r12 b) →
       Entered hasB s base o a b s' := fun s' K' M' pb =>
     { scr := ⟨by rw [K'.gpr _ (by decide)]; exact hb₄.r0, by rw [K'.gpr _ (by decide)]; exact g6,
         K'.wr ▸ hb₄.wr, by rw [K'.gpr _ (by decide)]; exact hb₄.nowrap⟩
@@ -200,24 +200,24 @@ theorem fn_ok {hasB : Bool} {op : Prog isa} {r : Nat → Nat → Nat → Prop} {
   rw [fn, WP.seq_iff]
   refine WP.mono (entry_ok h) fun s₁ E => ?_
   have O₁ : Outside base SAVE 24 s.mem s₁.mem := E.mem
-  have ea : ∀ {d : Nat}, d + 112 ≤ 3584 → ∀ i < 28, limbs s₁.mem base d i = limbs s.mem base d i :=
+  obtain ea : ∀ {d : Nat}, d + 112 ≤ 3584 → ∀ i < 28, limbs s₁.mem base d i = limbs s.mem base d i :=
     fun hd _ hi => O₁.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi
-  have fa : ∀ {d : Nat}, d + 112 ≤ 3584 → fe s₁.mem base d = fe s.mem base d :=
+  obtain fa : ∀ {d : Nat}, d + 112 ≤ 3584 → fe s₁.mem base d = fe s.mem base d :=
     fun hd => valN_congr fun _ hi => ea hd _ hi
   rw [WP.seq_iff]
   refine WP.mono (hop s₁ E.scr E.po E.pa E.pb (fun i hi => by rw [ea ha' i hi]; exact ab i hi)
     (fun i hi => by rw [ea hb' i hi]; exact bb i hi)) fun s₂ ⟨K₂, M₂, B₂, R₂⟩ => ?_
-  have hb₂ : Base s₂ base :=
+  obtain hb₂ : Base s₂ base :=
     let hs₂ := E.scr.of_keeps K₂ (by decide)
     ⟨hs₂.r0, hs₂.wr, hs₂.nowrap⟩
   rw [restoreFn_eq]
   refine WP.mono (ldrs_ok hb₂ saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega_arith)
     (by decide) (by decide)) fun s₃ ⟨M₃, K₃, V₃⟩ => ?_
-  have sv : ∀ p ∈ saves, s₃.gpr p.1 = s.gpr p.1 := fun p hp => by
+  obtain sv : ∀ p ∈ saves, s₃.gpr p.1 = s.gpr p.1 := fun p hp => by
     have := saves_bound p hp
     rw [V₃ p hp, M₂.word this.1 (by simp only [SAVE] at this ⊢; omega_arith) (by simp only [SAVE] at this; omega_arith),
       E.saved p hp]
-  have kept : ∀ q, q ∉ [.r4, .r5, .r6, .r7, .r9, .lr, .r12, .r1, .r2, .r3] → s₃.gpr q = s.gpr q :=
+  obtain kept : ∀ q, q ∉ [.r4, .r5, .r6, .r7, .r9, .lr, .r12, .r1, .r2, .r3] → s₃.gpr q = s.gpr q :=
     fun q hq => by
       rw [K₃.gpr _ (by simp only [saves, List.map]; simp_all), K₂.1 _ (by simp only [fclob]; simp_all),
         E.rest.gpr _ (by simp_all)]
@@ -368,15 +368,15 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
   let inv := fun n (t : State) =>
     (∀ i < n, limbs t.mem base TMP i = reduced f i) ∧
     Outside base TMP 112 s.mem t.mem ∧ Keeps [.r3, .r2] s t
-  have step : ∀ n t, n < 28 → inv n t → WP isa (.block (reduceCol n)) t (inv (n + 1)) := by
+  obtain step : ∀ n t, n < 28 → inv n t → WP isa (.block (reduceCol n)) t (inv (n + 1)) := by
     intro n t hn ⟨tf, tm, tk⟩
-    have ft : ∀ i < 56, limbs t.mem base ACC i = f i := by
+    obtain ft : ∀ i < 56, limbs t.mem base ACC i = f i := by
       intro i hi
       change (word t.mem base (ACC + 4 * i)).toNat = _
       rw [tm.word (Or.inl (by simp only [ACC, TMP]; omega_using [hi])) (by simp only [ACC]; omega_using [hi])]
       exact hf i hi
     refine WP.mono (reduceCol_ok (hs.of_keeps tk (by decide)) hn ft hb) fun u ⟨um, uk⟩ => ?_
-    have out : Outside base (TMP + 4 * n) 4 t.mem u.mem := by
+    obtain out : Outside base (TMP + 4 * n) 4 t.mem u.mem := by
       rw [um]; exact writeW_outside _ _ _ (by simp only [TMP]; omega_using [hn])
     refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     intro i hi
@@ -416,7 +416,7 @@ theorem frame_outside {base : Addr} {o n : Nat} {m m' : Mem}
   rw [List.mem_singleton.mp hr] at hc
   change (x - off base o).toNat + 1 ≤ n at hc
   simp only [off] at hc
-  have hi := (Offset.lt_iff x base (d := o) (n := n) (by omega_using [hn])).mp (by omega_using [hc])
+  obtain hi := (Offset.lt_iff x base (d := o) (n := n) (by omega_using [hn])).mp (by omega_using [hc])
   simp only [ofs] at hx
   omega_using [hx, hi]
 
@@ -429,32 +429,32 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
         fe t.mem base o % Spec.X448.P = fe s.mem base a * fe s.mem base b % Spec.X448.P := by
   let ptr := s.gpr .r0
   have pe : State.addr ptr = base := hs.r0
-  have ctx : RowCtx ptr s := ⟨rfl, by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
+  obtain ctx : RowCtx ptr s := ⟨rfl, by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
     by rw [pe]; exact hs.wr⟩
   rw [Impl.X448.Arm.mul, WP.seq_iff]
   refine WP.mono (mulPreF_ok (x := a) (y := b) ctx hs.mask hpa hpb) fun t ht => ?_
   rw [WP.seq_iff]
   refine WP.mono (mulLoopF_ok ha hb (by rw [pe]; exact ab) (by rw [pe]; exact bb) ht) fun u hu => ?_
-  have uk : Keeps (.lr :: fclob) s u := rest_keeps hu.rest
-  have us := hs.of_keeps uk (by decide)
+  obtain uk : Keeps (.lr :: fclob) s u := rest_keeps hu.rest
+  obtain us := hs.of_keeps uk (by decide)
   let f := limbs u.mem base ACC
-  have fb : ∀ i < 56, f i < radix := by
+  obtain fb : ∀ i < 56, f i < radix := by
     intro i hi
     have := hu.lt i hi
     rw [pe] at this
     exact this
-  have fv : valN f 56 = fe s.mem base a * fe s.mem base b := by
+  obtain fv : valN f 56 = fe s.mem base a * fe s.mem base b := by
     have := hu.val
     rw [pe] at this
     exact this
-  have um : Outside base ACC 224 s.mem u.mem := by
+  obtain um : Outside base ACC 224 s.mem u.mem := by
     have hf := hu.frame
     rw [pe] at hf
     exact frame_outside hf (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (reduce_ok us (fun _ _ => rfl) fb) fun v ⟨vf, vm, vk⟩ => ?_
-  have vs := us.of_keeps vk (by decide)
-  have vp : Ptr v .r9 o := (hpo.of_keeps uk (by decide) (by decide)).of_keeps vk (by decide) (by decide)
+  obtain vs := us.of_keeps vk (by decide)
+  obtain vp : Ptr v .r9 o := (hpo.of_keeps uk (by decide) (by decide)).of_keeps vk (by decide) (by decide)
   refine WP.mono (normalize_ok vs vp ho vf (reduced_bound fb)) fun w ⟨wf, wm, wk⟩ => ?_
   refine ⟨?_, ?_, ?_, ?_⟩
   · exact uk.trans ((vk.mono (by decide)).trans (wk.mono (by decide)))
@@ -495,9 +495,9 @@ theorem smallStep_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
       Keeps [.r3, .r2] s t := by
   have ha' : a + 112 ≤ 3584 := ha
   refine loadP_ok hs hpa (by omega_using [hi]) (by omega_using [hi, ha']) fun t ht => ?_
-  have ts := hs.of_upd ht (by decide) (by decide)
+  obtain ts := hs.of_upd ht (by decide) (by decide)
   refine wp_mul fun u hu => ?_
-  have us := ts.of_upd hu (by decide) (by decide)
+  obtain us := ts.of_upd hu (by decide) (by decide)
   refine store_ok us (by simp only [TMP]; omega_using [hi]) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, hu.mem, ht.mem, hu.gpr, ht.gpr, ht.other .r5 (by decide)]
     apply congrArg (s.mem.writeW _)
@@ -518,18 +518,18 @@ theorem mulSmall_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
       Keeps fclob s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
         fe t.mem base o % Spec.X448.P = 39081 * fe s.mem base a % Spec.X448.P := by
   let f := fun i => 39081 * limbs s.mem base a i
-  have fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := by
+  obtain fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := by
     intro i hi
-    have h := Nat.mul_le_mul_left 39081 (Nat.le_of_lt (ab i hi))
-    have hr : 39081 * radix ≤ 2 ^ 32 - radix := by decide
+    obtain h := Nat.mul_le_mul_left 39081 (Nat.le_of_lt (ab i hi))
+    obtain hr : 39081 * radix ≤ 2 ^ 32 - radix := by decide
     exact Nat.le_trans h hr
   refine WP.mono (columns_normalize hs hpo ho fb ?_) fun t ⟨tk, tm, tb, tv⟩ => ⟨tk, tm, tb, ?_⟩
   · rw [WP.block_append_iff]
     refine WP.mono (smallInit_ok s) fun t ⟨tc, tm, tk⟩ => ?_
-    have ts := hs.of_keeps tk (by decide)
+    obtain ts := hs.of_keeps tk (by decide)
     refine WP.mono (columns_ok ts (by decide : Reg.r0 ∉ [Reg.r3, Reg.r2] ∧ Reg.r6 ∉ [Reg.r3, Reg.r2]) fb ?_) fun u ⟨uf, um, uk⟩ => ?_
     · intro i hi u us um uk
-      have uc : (u.gpr .r5).toNat = 39081 := by rw [uk.1 _ (by decide), tc]
+      obtain uc : (u.gpr .r5).toNat = 39081 := by rw [uk.1 _ (by decide), tc]
       refine WP.mono (smallStep_ok us ((hpa.of_keeps tk (by decide) (by decide)).of_keeps uk
         (by decide) (by decide)) ha hi uc) fun v ⟨vm, vk⟩ => ⟨?_, vk⟩
       rw [input_limb um ha hi, tm] at vm
@@ -574,11 +574,11 @@ theorem addStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
   have ha' : a + 112 ≤ 3584 := ha
   have hb' : b + 112 ≤ 3584 := hb
   refine loadP_ok hs hpa (by omega_using [hi]) (by omega_using [hi, ha']) fun t ht => ?_
-  have ts := hs.of_upd ht (by decide) (by decide)
+  obtain ts := hs.of_upd ht (by decide) (by decide)
   refine loadP_ok ts (hpb.of_upd ht (by decide) (by decide)) (by omega_using [hi]) (by omega_using [hi, hb']) fun u hu => ?_
-  have us := ts.of_upd hu (by decide) (by decide)
+  obtain us := ts.of_upd hu (by decide) (by decide)
   refine wp_dp (op2_reg _ _) fun v hv => ?_
-  have vs := us.of_upd hv (by decide) (by decide)
+  obtain vs := us.of_upd hv (by decide) (by decide)
   refine store_ok vs (by simp only [TMP]; omega_using [hi]) fun w hw => WP.block_nil ⟨?_, ?_⟩
   · rw [hw.mem, hv.mem, hu.mem, ht.mem, hv.gpr]
     change s.mem.writeW _ (u.gpr .r3 + u.gpr .r2) = _
@@ -603,19 +603,19 @@ theorem subStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
   have ha' : a + 112 ≤ 3584 := ha
   have hb' : b + 112 ≤ 3584 := hb
   refine loadP_ok hs hpa (by omega) (by omega) fun s1 h1 => ?_
-  have hs1 := hs.of_upd h1 (by decide) (by decide)
+  obtain hs1 := hs.of_upd h1 (by decide) (by decide)
   refine wp_movw fun s2 h2 => ?_
-  have hs2 := hs1.of_upd h2 (by decide) (by decide)
+  obtain hs2 := hs1.of_upd h2 (by decide) (by decide)
   refine wp_dp (op2_imm (by decide)) fun s3 h3 => ?_
-  have hs3 := hs2.of_upd h3 (by decide) (by decide)
+  obtain hs3 := hs2.of_upd h3 (by decide) (by decide)
   refine wp_dp (op2_reg _ _) fun s4 h4 => ?_
-  have hs4 := hs3.of_upd h4 (by decide) (by decide)
-  have hpb4 : Ptr s4 .r12 b := (((hpb.of_upd h1 (by decide) (by decide)).of_upd h2 (by decide)
+  obtain hs4 := hs3.of_upd h4 (by decide) (by decide)
+  obtain hpb4 : Ptr s4 .r12 b := (((hpb.of_upd h1 (by decide) (by decide)).of_upd h2 (by decide)
     (by decide)).of_upd h3 (by decide) (by decide)).of_upd h4 (by decide) (by decide)
   refine loadP_ok hs4 hpb4 (by omega) (by omega) fun s5 h5 => ?_
-  have hs5 := hs4.of_upd h5 (by decide) (by decide)
+  obtain hs5 := hs4.of_upd h5 (by decide) (by decide)
   refine wp_dp (op2_reg _ _) fun s6 h6 => ?_
-  have hs6 := hs5.of_upd h6 (by decide) (by decide)
+  obtain hs6 := hs5.of_upd h6 (by decide) (by decide)
   refine store_ok hs6 (by simp only [TMP]; omega) fun s7 h7 => WP.block_nil ⟨?_, ?_⟩
   · rw [h7.mem, h6.mem, h5.mem, h4.mem, h3.mem, h2.mem, h1.mem, h6.gpr]
     change s.mem.writeW _ (s5.gpr .r3 - s5.gpr .r2) = _
@@ -629,7 +629,7 @@ theorem subStep_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
     rw [BitVec.toNat_sub, BitVec.toNat_add, subK_nat, BitVec.toNat_ofNat]
     change (2 ^ 32 - limbs s.mem base b i + (limbs s.mem base a i + bias i) % 2 ^ 32) % 2 ^ 32 =
       (limbs s.mem base a i + bias i - limbs s.mem base b i) % 2 ^ 32
-    have h := bias_bound i
+    obtain h := bias_bound i
     simp only [radix] at ab bb h
     omega
   · exact rest_keeps ((h1.rest (by decide)).trans ((h2.rest (by decide)).trans
@@ -643,10 +643,10 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
       Keeps fclob s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
         fe t.mem base o % Spec.X448.P = (fe s.mem base a + fe s.mem base b) % Spec.X448.P := by
   let f := fun i => limbs s.mem base a i + limbs s.mem base b i
-  have fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := by
+  obtain fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := by
     intro i hi
-    have h1 := ab i hi
-    have h2 := bb i hi
+    obtain h1 := ab i hi
+    obtain h2 := bb i hi
     change limbs s.mem base a i + limbs s.mem base b i ≤ _
     simp only [radix] at h1 h2 ⊢
     omega_using [h1, h2]
@@ -666,12 +666,12 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
       Keeps fclob s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
         (fe t.mem base o + fe s.mem base b) % Spec.X448.P = fe s.mem base a % Spec.X448.P := by
   let f := difference (limbs s.mem base a) (limbs s.mem base b)
-  have fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := fun i hi => Nat.le_of_lt (difference_bound ab i hi)
+  obtain fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := fun i hi => Nat.le_of_lt (difference_bound ab i hi)
   refine WP.mono (columns_normalize hs hpo ho fb (columns_ok hs (by decide : .r0 ∉ fclob ∧ .r6 ∉ fclob) fb ?_))
     fun t ⟨tk, tm, tb, tv⟩ => ⟨tk, tm, tb, ?_⟩
   · intro i hi t ts tm tk
-    have ea := input_limb tm ha hi
-    have eb := input_limb tm hb hi
+    obtain ea := input_limb tm ha hi
+    obtain eb := input_limb tm hb hi
     refine WP.mono (subStep_ok ts (hpa.of_keeps tk (by decide) (by decide))
       (hpb.of_keeps tk (by decide) (by decide)) ha hb hi (ea ▸ ab i hi) (eb ▸ bb i hi))
       fun u ⟨um, uk⟩ => ⟨?_, uk⟩
@@ -755,8 +755,8 @@ theorem call_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {s : S
     (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
     WP isa (.call f body) s₃ fun t => Op base o s t ∧ Bounded t.mem base o ∧
       r (fe t.mem base o) (fe s.mem base a) (fe s.mem base b) := by
-  have hs₃ : Scr s₃ base := hs.of_keeps ⟨k₃.gpr, k₃.rd, k₃.wr⟩ (by decide)
-  have g : ∀ q, q ∉ VG.Arm.linkRegs → (s₃.callEntry.withRegions [] [wsRegion base]).gpr q = s₃.gpr q :=
+  obtain hs₃ : Scr s₃ base := hs.of_keeps ⟨k₃.gpr, k₃.rd, k₃.wr⟩ (by decide)
+  obtain g : ∀ q, q ∉ VG.Arm.linkRegs → (s₃.callEntry.withRegions [] [wsRegion base]).gpr q = s₃.gpr q :=
     fun q hq => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
   refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [wsRegion base] ∧ Entry hasB t base o a b ∧
       Bounded t.mem base a ∧ Bounded t.mem base b,

@@ -69,13 +69,13 @@ theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     refine VG.Proof.X25519.Arm.WP.append (ors_ok hs k (by omega_arith)) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_
-    have hs₁ := hs.of_rest k₁ (by decide)
+    obtain hs₁ := hs.of_rest k₁ (by decide)
     rw [orStep]
     refine wp_ldr (hs.off_lt (by omega_arith)) (hs₁.ea (by omega_arith)) (hs₁.read (d := a + 4 * (k + 1)) (n := 4) (by omega_arith))
       fun s₂ u₂ => ?_
     refine wp_dp (op2_reg _ _) fun s₃ u₃ => WP.block_nil
       ⟨?_, k₁.trans ((u₂.rest (by simp)).trans (u₃.rest (by simp))), by rw [u₃.mem, u₂.mem, m₁]⟩
-    have hor : ∀ x y : BitVec 32, x ||| y = 0 ↔ x = 0 ∧ y = 0 := fun _ _ => BitVec.or_eq_zero_iff
+    obtain hor : ∀ x y : BitVec 32, x ||| y = 0 ↔ x = 0 ∧ y = 0 := fun _ _ => BitVec.or_eq_zero_iff
     rw [u₃.gpr, dpVal, hor, u₂.other _ (by decide), e₁, u₂.gpr, m₁, w32_eq_zero_iff]
     constructor
     · intro ⟨⟨h₀, h⟩, hw⟩
@@ -93,11 +93,11 @@ theorem negOr_shr (x : BitVec 32) : ((0 - x) ||| x) >>> 31 = if x = 0 then 0 els
   · subst hx; decide
   · rw [ite_eq_right hx]
     apply BitVec.eq_of_toNat_eq
-    have h0 : x.toNat ≠ 0 := fun e => hx (BitVec.eq_of_toNat_eq e)
-    have hlt := ((0 - x) ||| x).isLt
-    have h1 : (0 - x).toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.left_le_or
-    have h2 : x.toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.right_le_or
-    have h3 : (0 - x).toNat = 2 ^ 32 - x.toNat := by
+    obtain h0 : x.toNat ≠ 0 := fun e => hx (BitVec.eq_of_toNat_eq e)
+    obtain hlt := ((0 - x) ||| x).isLt
+    obtain h1 : (0 - x).toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.left_le_or
+    obtain h2 : x.toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.right_le_or
+    obtain h3 : (0 - x).toNat = 2 ^ 32 - x.toNat := by
       have h00 : (0 : BitVec 32).toNat = 0 := rfl
       rw [BitVec.toNat_sub, h00]; have := x.isLt; omega_arith
     rw [toNat_shr]
@@ -115,10 +115,10 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   rw [nonzero_eq]
   simp only [List.cons_append, List.nil_append]
   refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read (d := a) (n := 4) (by omega_arith)) fun s₁ u₁ => ?_
-  have hs₁ := hs.of_rest (u₁.rest (ws := [.r4, .r5]) (by simp)) (by decide)
+  obtain hs₁ := hs.of_rest (u₁.rest (ws := [.r4, .r5]) (by simp)) (by decide)
   refine VG.Proof.X25519.Arm.WP.append (ors_ok hs₁ (2 * c.n - 1) (by omega_arith)) fun s₂ ⟨e₂, k₂, m₂⟩ => ?_
   rw [u₁.gpr, u₁.mem] at e₂
-  have hz : s₂.gpr .r5 = 0 ↔ wordsVal s.mem base a c.n = 0 := by
+  obtain hz : s₂.gpr .r5 = 0 ↔ wordsVal s.mem base a c.n = 0 := by
     rw [e₂, wordsVal_eq_val32, val32_eq_zero_iff, w32_eq_zero_iff]
     constructor
     · intro ⟨h₀, h⟩ j hj
@@ -135,7 +135,7 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   refine wp_dp (op2_reg _ _) fun s₈ u₈ => WP.block_nil ⟨?_, ?_, ?_⟩
   · have r5₅ : s₅.gpr .r5 = s₂.gpr .r5 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide)]
-    have r4₆ : s₆.gpr .r4 = if s₂.gpr .r5 = 0 then 0 else 1 := by
+    obtain r4₆ : s₆.gpr .r4 = if s₂.gpr .r5 = 0 then 0 else 1 := by
       rw [u₆.gpr, u₅.gpr, dpVal, u₄.gpr, dpVal, u₃.gpr, u₄.other _ (by decide), u₃.other _ (by decide),
         r5₅.symm.trans r5₅, ← r5₅, negOr_shr, r5₅]
     rw [u₈.gpr, dpVal, u₇.gpr, u₇.other _ (by decide), r4₆]
@@ -158,9 +158,9 @@ theorem lt_word_step {P T c c1 c2 c0 a0 a1 n0 n1 A N d0 d1 : Nat} (hT : T < P) (
     T + P * (d0 + 2 ^ 16 * d1) < P * 2 ^ 32 ∧
     T + P * (d0 + 2 ^ 16 * d1) + P * 2 ^ 32 * c2 + (N + P * (n0 + 2 ^ 16 * n1)) + 1 =
       A + P * (a0 + 2 ^ 16 * a1) + P * 2 ^ 32 + c0 := by
-  have hw : d0 + 2 ^ 16 * d1 + 2 ^ 32 * c2 + (n0 + 2 ^ 16 * n1) + 1 = a0 + 2 ^ 16 * a1 + 2 ^ 32 + c := by omega_arith
-  have hb : d0 + 2 ^ 16 * d1 + 1 ≤ 2 ^ 32 := by omega_arith
-  have hb' := Nat.mul_le_mul_left P hb
+  obtain hw : d0 + 2 ^ 16 * d1 + 2 ^ 32 * c2 + (n0 + 2 ^ 16 * n1) + 1 = a0 + 2 ^ 16 * a1 + 2 ^ 32 + c := by omega_arith
+  obtain hb : d0 + 2 ^ 16 * d1 + 1 ≤ 2 ^ 32 := by omega_arith
+  obtain hb' := Nat.mul_le_mul_left P hb
   constructor
   · rw [Nat.mul_add, Nat.mul_one] at hb'; omega_arith
   · have := congrArg (P * ·) hw
@@ -181,22 +181,22 @@ theorem ltDigit_ok {s : State} {j : Nat} (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.m
   refine wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
   refine wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
   refine wp_mov (op2_lsr (by decide)) fun s₆ u₆ => ?_
-  have d0 := hdig_lt (s.gpr .r7).toNat (j % 2)
-  have d1 := hdig_lt (s.gpr .r8).toNat (j % 2)
-  have a1 : (s₁.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) := by rw [u₁.gpr, BitVec.toNat_ofNat]; omega_arith
-  have a2 : (s₂.gpr .r5).toNat = hdig (s.gpr .r8).toNat (j % 2) := by
+  obtain d0 := hdig_lt (s.gpr .r7).toNat (j % 2)
+  obtain d1 := hdig_lt (s.gpr .r8).toNat (j % 2)
+  obtain a1 : (s₁.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) := by rw [u₁.gpr, BitVec.toNat_ofNat]; omega_arith
+  obtain a2 : (s₂.gpr .r5).toNat = hdig (s.gpr .r8).toNat (j % 2) := by
     rw [u₂.gpr, u₁.other _ (by decide), BitVec.toNat_ofNat]; omega_arith
-  have h6₂ : s₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
+  obtain h6₂ : s₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
     rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact h6
-  have a3 : (s₃.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) + (2 ^ 16 - 1) := by
+  obtain a3 : (s₃.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) + (2 ^ 16 - 1) := by
     rw [u₃.gpr, dpVal, u₂.other _ (by decide), toNat_add_lt (by rw [a1, h6₂, toNat_mask16]; omega_arith), a1, h6₂,
       toNat_mask16]
-  have a3r5 : s₃.gpr .r5 = s₂.gpr .r5 := u₃.other _ (by decide)
-  have a4 : (s₄.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) + (2 ^ 16 - 1 - hdig (s.gpr .r8).toNat (j % 2)) := by
+  obtain a3r5 : s₃.gpr .r5 = s₂.gpr .r5 := u₃.other _ (by decide)
+  obtain a4 : (s₄.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) + (2 ^ 16 - 1 - hdig (s.gpr .r8).toNat (j % 2)) := by
     rw [u₄.gpr, dpVal, VG.Proof.X25519.Arm.toNat_sub_le (by rw [a3, a3r5, a2]; omega_arith), a3, a3r5, a2]; omega_arith
-  have a4r3 : s₄.gpr .r3 = s.gpr .r3 := by
+  obtain a4r3 : s₄.gpr .r3 = s.gpr .r3 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have a5 : (s₅.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) +
+  obtain a5 : (s₅.gpr .r4).toNat = hdig (s.gpr .r7).toNat (j % 2) +
       (2 ^ 16 - 1 - hdig (s.gpr .r8).toNat (j % 2)) + (s.gpr .r3).toNat := by
     rw [u₅.gpr, dpVal, toNat_add_lt (by rw [a4, a4r3]; omega_arith), a4, a4r3]
   refine k s₆ (by rw [u₆.gpr, toNat_shr, a5]) ?_
@@ -230,31 +230,31 @@ theorem ltK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
     refine VG.Proof.X25519.Arm.WP.append (ltK_ok hs h6 hc k (by omega_arith) (by omega_arith))
       fun s₁ ⟨C₁, ⟨T, hT, V₁⟩, K₁, m₁⟩ => ?_
-    have hs₁ := hs.of_rest K₁ (by decide)
+    obtain hs₁ := hs.of_rest K₁ (by decide)
     simp only [ltWord, List.cons_append, List.append_assoc]
     refine wp_ldr (hs.off_lt (by omega_arith)) (hs₁.ea (by omega_arith)) (hs₁.read (d := a + 4 * k) (n := 4) (by omega_arith))
       fun s₂ u₂ => ?_
-    have hs₂ := hs₁.of_rest (u₂.rest (ws := [.r7]) (by simp)) (by decide)
+    obtain hs₂ := hs₁.of_rest (u₂.rest (ws := [.r7]) (by simp)) (by decide)
     refine wp_ldr (hs.off_lt (by omega_arith)) (hs₂.ea (by omega_arith)) (hs₂.read (d := m + 4 * k) (n := 4) (by omega_arith))
       fun s₃ u₃ => ?_
-    have K₃ : Rest [.r3, .r4, .r5, .r7, .r8] s s₃ := K₁.trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
+    obtain K₃ : Rest [.r3, .r4, .r5, .r7, .r8] s s₃ := K₁.trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
     refine ltDigit_ok (j := 2 * k) (by rw [K₃.gpr _ (by decide)]; exact h6)
       (by rw [u₃.other _ (by decide), u₂.other _ (by decide)]; exact C₁) fun s₄ c₄ K₄ m₄ => ?_
-    have h6₄ : s₄.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
+    obtain h6₄ : s₄.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by
       rw [K₄.gpr _ (by decide), K₃.gpr _ (by decide)]; exact h6
-    have hwa : (s₂.gpr .r7).toNat = w32 s.mem base (a + 4 * k) := by rw [u₂.gpr, m₁]
-    have hwm : (s₃.gpr .r8).toNat = w32 s.mem base (m + 4 * k) := by rw [u₃.gpr, u₂.mem, m₁]
-    have r7₃ : s₃.gpr .r7 = s₂.gpr .r7 := u₃.other _ (by decide)
-    have r3₃ : s₃.gpr .r3 = s₁.gpr .r3 := by rw [u₃.other _ (by decide), u₂.other _ (by decide)]
+    obtain hwa : (s₂.gpr .r7).toNat = w32 s.mem base (a + 4 * k) := by rw [u₂.gpr, m₁]
+    obtain hwm : (s₃.gpr .r8).toNat = w32 s.mem base (m + 4 * k) := by rw [u₃.gpr, u₂.mem, m₁]
+    obtain r7₃ : s₃.gpr .r7 = s₂.gpr .r7 := u₃.other _ (by decide)
+    obtain r3₃ : s₃.gpr .r3 = s₁.gpr .r3 := by rw [u₃.other _ (by decide), u₂.other _ (by decide)]
     rw [r7₃, hwa, hwm, r3₃, show 2 * k % 2 = 0 by omega_arith] at c₄
-    have hd0 := hdig_lt (w32 s.mem base (a + 4 * k)) 0
-    have hn0 := hdig_lt (w32 s.mem base (m + 4 * k)) 0
+    obtain hd0 := hdig_lt (w32 s.mem base (a + 4 * k)) 0
+    obtain hn0 := hdig_lt (w32 s.mem base (m + 4 * k)) 0
     refine ltDigit_ok (j := 2 * k + 1) h6₄ (by rw [c₄]; omega_arith) fun u c₅ K₅ m₅ => WP.block_nil ?_
     rw [K₄.gpr _ (by decide), K₄.gpr _ (by decide), r7₃, hwa, hwm, show (2 * k + 1) % 2 = 1 by omega_arith] at c₅
-    have hd1 := hdig_lt (w32 s.mem base (a + 4 * k)) 1
-    have hn1 := hdig_lt (w32 s.mem base (m + 4 * k)) 1
-    have ea := word_digits (w32 s.mem base (a + 4 * k)) (BitVec.isLt _)
-    have em := word_digits (w32 s.mem base (m + 4 * k)) (BitVec.isLt _)
+    obtain hd1 := hdig_lt (w32 s.mem base (a + 4 * k)) 1
+    obtain hn1 := hdig_lt (w32 s.mem base (m + 4 * k)) 1
+    obtain ea := word_digits (w32 s.mem base (a + 4 * k)) (BitVec.isLt _)
+    obtain em := word_digits (w32 s.mem base (m + 4 * k)) (BitVec.isLt _)
     refine ⟨by rw [c₅]; omega_arith, ?_, K₃.trans ((K₄.mono (by simp)).trans (K₅.mono (by simp))),
       by rw [m₅, m₄, u₃.mem, u₂.mem, m₁]⟩
     generalize hdig (w32 s.mem base (a + 4 * k)) 0 = a0 at *
@@ -263,9 +263,9 @@ theorem ltK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
     generalize hdig (w32 s.mem base (m + 4 * k)) 1 = n1 at *
     generalize ex0 : a0 + (2 ^ 16 - 1 - n0) + (s₁.gpr .r3).toNat = x0 at c₄
     generalize ex1 : a1 + (2 ^ 16 - 1 - n1) + (s₄.gpr .r3).toNat = x1 at c₅
-    have h0 : x0 % 2 ^ 16 + 2 ^ 16 * (s₄.gpr .r3).toNat = a0 + (2 ^ 16 - 1 - n0) + (s₁.gpr .r3).toNat := by
+    obtain h0 : x0 % 2 ^ 16 + 2 ^ 16 * (s₄.gpr .r3).toNat = a0 + (2 ^ 16 - 1 - n0) + (s₁.gpr .r3).toNat := by
       rw [c₄, ex0]; omega_arith
-    have h1 : x1 % 2 ^ 16 + 2 ^ 16 * (u.gpr .r3).toNat = a1 + (2 ^ 16 - 1 - n1) + (s₄.gpr .r3).toNat := by
+    obtain h1 : x1 % 2 ^ 16 + 2 ^ 16 * (u.gpr .r3).toNat = a1 + (2 ^ 16 - 1 - n1) + (s₄.gpr .r3).toNat := by
       rw [c₅, ex1]; omega_arith
     obtain ⟨hlt, heq⟩ := lt_word_step (P := 2 ^ (32 * k)) hT (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide))
       hn0 hn1 V₁ h0 h1
@@ -285,21 +285,21 @@ theorem ltM_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   simp only [List.cons_append, List.nil_append]
   refine wp_movw fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
-  have K₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
-  have hs₂ := hs.of_rest K₂ (by decide)
-  have c₂ : (s₂.gpr .r3).toNat = 1 := by rw [u₂.gpr]; rfl
+  obtain K₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  obtain hs₂ := hs.of_rest K₂ (by decide)
+  obtain c₂ : (s₂.gpr .r3).toNat = 1 := by rw [u₂.gpr]; rfl
   refine VG.Proof.X25519.Arm.WP.append (ltK_ok hs₂ (a := a) (m := m)
     (by rw [u₂.other _ (by decide), u₁.gpr]) (by omega_arith) (2 * c.n) (by omega_arith) (by omega_arith))
     fun s₃ ⟨C₃, ⟨T, hT, V₃⟩, K₃, m₃⟩ => ?_
-  have mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   rw [c₂, mem₂] at V₃
   refine wp_dp (op2_imm (by decide)) fun s₄ u₄ => WP.block_nil ⟨?_, K₂.trans ((K₃.mono (by simp)).trans
     (u₄.rest (by simp))), by rw [u₄.mem, m₃, mem₂]⟩
-  have hA := val32_lt s.mem base a (2 * c.n)
-  have hN := val32_lt s.mem base m (2 * c.n)
+  obtain hA := val32_lt s.mem base a (2 * c.n)
+  obtain hN := val32_lt s.mem base m (2 * c.n)
   rw [u₄.gpr, dpVal, wordsVal_eq_val32, wordsVal_eq_val32]
   generalize 2 ^ (32 * (2 * c.n)) = P at *
-  have hr3 : s₃.gpr .r3 = if val32 s.mem base a (2 * c.n) < val32 s.mem base m (2 * c.n) then 0 else 1 := by
+  obtain hr3 : s₃.gpr .r3 = if val32 s.mem base a (2 * c.n) < val32 s.mem base m (2 * c.n) then 0 else 1 := by
     apply BitVec.eq_of_toNat_eq
     obtain h | h : (s₃.gpr .r3).toNat = 0 ∨ (s₃.gpr .r3).toNat = 1 := by omega_arith
     · rw [h, Nat.mul_zero] at V₃
@@ -328,8 +328,8 @@ theorem andFlag_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   simp only [Cfg.andFlag]
   refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read hf) fun s₁ u₁ => ?_
   refine wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
-  have k₂ : Rest [.r4] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
-  have hs₂ := hs.of_rest k₂ (by decide)
+  obtain k₂ : Rest [.r4] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  obtain hs₂ := hs.of_rest k₂ (by decide)
   refine wp_str (hs.off_lt (by omega_arith)) (hs₂.ea (d := c.sl FLAG) (by omega_arith)) (hs₂.write hf) fun s₃ m₃ =>
     WP.block_nil ⟨?_, k₂.trans (m₃.rest _), ?_⟩
   · rw [flagW, flagW, m₃.mem, Mem.readW_writeW_self32, u₂.gpr, dpVal, u₁.gpr, u₁.other _ (by decide)]
@@ -345,13 +345,13 @@ theorem checkRange_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr
   simp only [Cfg.checkRange, List.append_assoc, List.singleton_append]
   refine VG.Proof.X25519.Arm.WP.append (ltN_ok c hs ha hm) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_
   refine wp_mov (op2_reg _ _) fun s₂ u₂ => ?_
-  have k₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8, .r9] s s₂ := (k₁.mono (by simp)).trans (u₂.rest (by simp))
-  have hs₂ := hs.of_rest k₂ (by decide)
+  obtain k₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8, .r9] s s₂ := (k₁.mono (by simp)).trans (u₂.rest (by simp))
+  obtain hs₂ := hs.of_rest k₂ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (nonzero_ok c hs₂ hn ha) fun s₃ ⟨e₃, k₃, m₃⟩ => ?_
   refine wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
-  have k₄ : Rest [.r3, .r4, .r5, .r6, .r7, .r8, .r9] s s₄ := k₂.trans ((k₃.mono (by simp)).trans (u₄.rest (by simp)))
-  have hs₄ := hs.of_rest k₄ (by decide)
-  have mem₄ : s₄.mem = s.mem := by rw [u₄.mem, m₃, u₂.mem, m₁]
+  obtain k₄ : Rest [.r3, .r4, .r5, .r6, .r7, .r8, .r9] s s₄ := k₂.trans ((k₃.mono (by simp)).trans (u₄.rest (by simp)))
+  obtain hs₄ := hs.of_rest k₄ (by decide)
+  obtain mem₄ : s₄.mem = s.mem := by rw [u₄.mem, m₃, u₂.mem, m₁]
   refine WP.mono (andFlag_ok c hs₄ hf) fun s₅ ⟨e₅, k₅, O₅⟩ =>
     ⟨?_, k₄.trans (k₅.mono (by simp)), by rw [← mem₄]; exact O₅⟩
   rw [e₅, flagW, flagW, mem₄, u₄.gpr, dpVal, e₃, k₃.gpr _ (by decide), u₂.gpr, e₁,

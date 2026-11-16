@@ -145,41 +145,41 @@ theorem keyPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : 
   refine wp_seqs_append (by simp [qinvPart]) (by simp [crtPart, divisorOf]) (WP.mono (qinvPart_k hk L h.vP h.vQ hPw hQw hok)
     fun s₁ ⟨h₁, f₁, ok₁, hdv₁, hx₁⟩ => ?_)
   generalize hx : av I s₁.mem aX₂ = x at hdv₁ hx₁
-  have hokQ : csQ.all Rc.ok = true := by decide
+  obtain hokQ : csQ.all Rc.ok = true := by decide
   -- `dP`, `dQ`.
   refine wp_seqs_append (by simp [crtPart, divisorOf]) (by simp [nPart]) (WP.mono (crtPart_k h₁
     (d := av I s.mem aDd) (a := I.P - 1) (b := I.Q - 1) (by rw [f₁.av hokQ (by decide) (by decide) hZ])
     (by rw [f₁.av hokQ (by decide) (by decide) hZ, h.vPm]) (by rw [f₁.av hokQ (by decide) (by decide) hZ, h.vQm]))
     fun s₂ ⟨h₂, f₂, dP₂, dQ₂⟩ => ?_)
-  have hokC : csC.all Rc.ok = true := by decide
+  obtain hokC : csC.all Rc.ok = true := by decide
   -- `n`.
   refine wp_seqs_append (by simp [nPart, mulTo]) (by simp) (WP.mono (nPart_k h₂ hW
     (by rw [f₂.av hokC (by decide) (by decide) hZ, f₁.av hokQ (by decide) (by decide) hZ]; exact h.vP)
     (by rw [f₂.av hokC (by decide) (by decide) hZ, f₁.av hokQ (by decide) (by decide) hZ]; exact h.vQ) hPw hQw)
     fun s₃ ⟨h₃, f₃, n₃⟩ => ?_)
-  have hn : I.P * I.Q < 2 ^ (64 * I.W) := by
+  obtain hn : I.P * I.Q < 2 ^ (64 * I.W) := by
     rw [hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega_using [], Nat.pow_add]
     exact Nat.mul_lt_mul_of_lt_of_le hPw (by omega_using [hQw]) (Nat.two_pow_pos _)
-  have hokN : [Rc.arr aQt].all Rc.ok = true := by decide
-  have vN₃ : av I s₃.mem aQt = I.P * I.Q := av_of_full n₃ hn
-  have vP₃ : av I s₃.mem aPa = I.P := by
+  obtain hokN : [Rc.arr aQt].all Rc.ok = true := by decide
+  obtain vN₃ : av I s₃.mem aQt = I.P * I.Q := av_of_full n₃ hn
+  obtain vP₃ : av I s₃.mem aPa = I.P := by
     rw [f₃.av hokN (by decide) (by decide) hZ, f₂.av hokC (by decide) (by decide) hZ,
       f₁.av hokQ (by decide) (by decide) hZ, h.vP]
-  have vQ₃ : av I s₃.mem aQa = I.Q := by
+  obtain vQ₃ : av I s₃.mem aQa = I.Q := by
     rw [f₃.av hokN (by decide) (by decide) hZ, f₂.av hokC (by decide) (by decide) hZ,
       f₁.av hokQ (by decide) (by decide) hZ, h.vQ]
-  have ev₃ : word s₃.mem I.B (8 * kEv) = BitVec.ofNat 64 I.E := by
+  obtain ev₃ : word s₃.mem I.B (8 * kEv) = BitVec.ofNat 64 I.E := by
     rw [f₃.word hokN (by decide) (by decide), f₂.word hokC (by decide) (by decide),
       f₁.word hokQ (by decide) (by decide), h.ev]
-  have ok₃ : word s₃.mem I.B (8 * kOk) = mask (decide (Nat.gcd I.Q (qMod I.P) = 1) && ok) := by
+  obtain ok₃ : word s₃.mem I.B (8 * kOk) = mask (decide (Nat.gcd I.Q (qMod I.P) = 1) && ok) := by
     rw [f₃.word hokN (by decide) (by decide), f₂.word hokC (by decide) (by decide), ok₁]
   -- The final mask.
   refine wp_seqs_append (by simp) (by simp [storesK, storeL, storeA]) ?_
   simp only [seqs]
   refine WP.mono (finalMask_k h₃ vN₃ vP₃ vQ₃ L.E_lt ev₃ ok₃) fun s₄ ⟨h₄, f₄, ok₄⟩ => ?_
   generalize hc : finalOk I.W (I.P * I.Q) I.P I.Q I.E (decide (Nat.gcd I.Q (qMod I.P) = 1) && ok) = cv at ok₄
-  have hokO : [Rc.hdr kOk].all Rc.ok = true := by decide
-  have v4 : ∀ j, j < 16 → Rc.arr j ∉ [Rc.arr aQt] → Rc.arr j ∉ csC → Rc.arr j ∉ csQ →
+  obtain hokO : [Rc.hdr kOk].all Rc.ok = true := by decide
+  obtain v4 : ∀ j, j < 16 → Rc.arr j ∉ [Rc.arr aQt] → Rc.arr j ∉ csC → Rc.arr j ∉ csQ →
       av I s₄.mem j = av I s.mem j := fun j hj h1 h2 h3 => by
     rw [f₄.av hokO hj (by simp) hZ, f₃.av hokN hj h1 hZ, f₂.av hokC hj h2 hZ, f₁.av hokQ hj h3 hZ]
   -- The stores and the status.
@@ -188,27 +188,27 @@ theorem keyPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : 
   simp only [seqs]
   refine WP.mono (keyExit_ok ht (c := cv) (by rw [frm_word ft ht.h256 (by decide)]; exact ok₄))
     fun u ⟨⟨hax, hmu⟩, ku⟩ => ?_
-  have b := fun e he => (bt e he)
+  obtain b := fun e he => (bt e he)
   simp only [storeL, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at b
   obtain ⟨bN, bD, bP, bQ, bDp, bDq, bQi⟩ := b
-  have hlen : (I.pl + 7) / 8 = I.pl / 8 := by have := L.pl8; omega_using [this]
-  have hlen2 : (2 * I.pl + 7) / 8 = I.W := by have := L.pl8; simp only [KIn.W]; omega_using [this]
-  have hv : I.pl / 8 ≤ I.W := by omega_using [hlen2]
-  have hdvw : ∀ a, a ≤ I.P → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
+  obtain hlen : (I.pl + 7) / 8 = I.pl / 8 := by have := L.pl8; omega_using [this]
+  obtain hlen2 : (2 * I.pl + 7) / 8 = I.W := by have := L.pl8; simp only [KIn.W]; omega_using [this]
+  obtain hv : I.pl / 8 ≤ I.W := by omega_using [hlen2]
+  obtain hdvw : ∀ a, a ≤ I.P → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
     unfold dv; split
     · exact Nat.one_lt_two_pow (by have := L.pl1; omega_using [this])
     · omega_using [hPw, ha]
-  have hdvwq : ∀ a, a ≤ I.Q → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
+  obtain hdvwq : ∀ a, a ≤ I.Q → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
     unfold dv; split
     · exact Nat.one_lt_two_pow (by have := L.pl1; omega_using [this])
     · omega_using [hQw, ha]
-  have hdv0 : ∀ a, 0 < dv a := fun a => by unfold dv; split <;> omega_arith
-  have hqm : qMod I.P < 2 ^ (64 * (I.pl / 8)) := by
+  obtain hdv0 : ∀ a, 0 < dv a := fun a => by unfold dv; split <;> omega_arith
+  obtain hqm : qMod I.P < 2 ^ (64 * (I.pl / 8)) := by
     unfold qMod; split
     · exact hPw
     · exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (show 2 ≤ 64 * (I.pl / 8) by
         have := L.pl1; omega_using [this]))
-  have iv : ∀ {len v : Nat} {o : Addr} {w' : Nat},
+  obtain iv : ∀ {len v : Nat} {o : Addr} {w' : Nat},
       (List.range len).map (fun i => t.mem (o + BitVec.ofNat 64 i)) =
         Spec.Rsa.i2osp (if cv then w' else 0) len → w' = v →
       Spec.Rsa.bytesAt u.mem o len = Spec.Rsa.i2osp (if cv = true then v else 0) len := fun hb hw => by
@@ -319,9 +319,9 @@ theorem setWidth32_k (n : Nat) (h : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 
 theorem outsRes_zeros {I : KIn} {s t : State} {d : Nat}
     (hd : Spec.Rsa.inverse I.E I.L = some d) (hsm : d ≤ 2 ^ (8 * I.pl)) (Z : ZerosPost I s t) :
     OutsRes I t.mem (t.gpr .x0) := by
-  have hr : keyFromPrimes (16 * I.pl) I.E I.P₀ I.Q₀ = .inr () := by
+  obtain hr : keyFromPrimes (16 * I.pl) I.E I.P₀ I.Q₀ = .inr () := by
     unfold keyFromPrimes
-    have hswap : (if I.P₀ < I.Q₀ then (I.Q₀, I.P₀) else (I.P₀, I.Q₀)) = (I.P, I.Q) := by
+    obtain hswap : (if I.P₀ < I.Q₀ then (I.Q₀, I.P₀) else (I.P₀, I.Q₀)) = (I.P, I.Q) := by
       by_cases h : I.P₀ < I.Q₀ <;> simp [KIn.P, KIn.Q, h]
     rw [hswap]
     dsimp only
@@ -341,10 +341,10 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     (hb : (decide (av I s.mem aDd ≤ 2 ^ (8 * I.pl)) && ok) = false) (T : TailPost I s t ok) :
     OutsRes I t.mem (t.gpr .x0) := by
   obtain ⟨x, hx, hxl, ⟨hax, hN, hD, hP, hQ, hDp, hDq, hQi⟩, -⟩ := T
-  have hk := keyFromPrimes_code (x := x) L.pl1 L.pl2 (lt_of_os2ip_len L.pbl) (lt_of_os2ip_len L.qbl) L.E_lt hx hxl
-  have hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega_using [this]
+  obtain hk := keyFromPrimes_code (x := x) L.pl1 L.pl2 (lt_of_os2ip_len L.pbl) (lt_of_os2ip_len L.qbl) L.E_lt hx hxl
+  obtain hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega_using [this]
   simp only [finalOk, hW] at hax hN hD hP hQ hDp hDq hQi
-  have hstat : ∀ c : Bool, ((BitVec.ofNat 64 c.toNat).setWidth 32).toNat = c.toNat := fun c =>
+  obtain hstat : ∀ c : Bool, ((BitVec.ofNat 64 c.toNat).setWidth 32).toNat = c.toNat := fun c =>
     setWidth32_k _ (by cases c <;> decide)
   rcases hi : Spec.Rsa.inverse I.E I.L with _ | d
   · have hok' : ok = false := by
@@ -362,15 +362,15 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     exact ⟨hN, hD, hP, hQ, hDp, hDq, hQi⟩
   · have hok' : ok = true := hok.mp ⟨d, hi⟩
     subst hok'
-    have hd := hdd d hi
+    obtain hd := hdd d hi
     rw [hd, Bool.and_true, decide_eq_false_iff_not] at hb
-    have hd2 : 2 ≤ d := by
+    obtain hd2 : 2 ≤ d := by
       have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 1 ≤ 8 * I.pl by have := L.pl1; omega_using [this])
       omega_using [hb, this]
-    have hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega_arith
+    obtain hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega_arith
     obtain ⟨hP3, hQ2, -⟩ := primes_of_inverse hqp hi hd2
-    have hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hP3]
-    have hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hQ2]
+    obtain hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hP3]
+    obtain hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hQ2]
     simp only [Bool.and_true, KIn.L] at hax hN hD hP hQ hDp hDq hQi hi hk
     rw [hi] at hk
     simp only [ite_eq_right_iff.mpr (fun h => absurd h hb)] at hk
@@ -425,13 +425,13 @@ theorem front2_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : K
   have hk := h.ks
   have hZ := hk.hZ
   have hW := L.W
-  have hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega_using [this]
+  obtain hw8 : 8 * I.pl = 64 * (I.pl / 8) := by have := L.pl8; omega_using [this]
   -- `L`.
   refine wp_seqs_append (by simp [lcmPart, phi, mulTo]) (by simp) (WP.mono (lcm_k hk hW h.vPm h.vQm
     (Nat.lt_of_le_of_lt (Nat.sub_le _ _) L.P_lt) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) L.Q_lt))
     fun s₅ ⟨h₅, f₅, vL₅⟩ => ?_)
-  have hokL : csL.all Rc.ok = true := by decide
-  have ev₅ : word s₅.mem I.B (8 * kEv) = BitVec.ofNat 64 I.E := by
+  obtain hokL : csL.all Rc.ok = true := by decide
+  obtain ev₅ : word s₅.mem I.B (8 * kEv) = BitVec.ofNat 64 I.E := by
     rw [f₅.word hokL (by decide) (by decide), h.ev]
   -- `d`.
   refine wp_seqs_append (a := [dPart]) (by simp) (by simp [smallMask, constA]) ?_
@@ -439,13 +439,13 @@ theorem front2_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : K
   obtain ⟨ok, ok₆, iff₆, dd₆⟩ := d₆
   -- `x15`.
   refine WP.mono (smallMask_k h₆ hW ok₆) fun t ⟨ht, f₇, x15₇⟩ => ?_
-  have hokD : csD.all Rc.ok = true := by decide
-  have hok7 : [Rc.arr aC].all Rc.ok = true := by decide
-  have pres : ∀ j, j < 16 → Rc.arr j ∉ csD → Rc.arr j ∉ [Rc.arr aC] → Rc.arr j ∉ csL →
+  obtain hokD : csD.all Rc.ok = true := by decide
+  obtain hok7 : [Rc.arr aC].all Rc.ok = true := by decide
+  obtain pres : ∀ j, j < 16 → Rc.arr j ∉ csD → Rc.arr j ∉ [Rc.arr aC] → Rc.arr j ∉ csL →
       av I t.mem j = av I s.mem j := fun j hj h1 h2 h3 => by
     rw [f₇.av hok7 hj h2 hZ, f₆.av hokD hj h1 hZ, f₅.av hokL hj h3 hZ]
-  have okt : word t.mem I.B (8 * kOk) = mask ok := by rw [f₇.word hok7 (by decide) (by decide), ok₆]
-  have hD : av I t.mem aDd = av I s₆.mem aDd := f₇.av hok7 (by decide) (by decide) hZ
+  obtain okt : word t.mem I.B (8 * kOk) = mask ok := by rw [f₇.word hok7 (by decide) (by decide), ok₆]
+  obtain hD : av I t.mem aDd = av I s₆.mem aDd := f₇.av hok7 (by decide) (by decide) hZ
   refine ⟨ht, ?_, ?_, ?_, ?_, ?_, ⟨ok, okt, iff₆, fun d hd => by rw [hD]; exact dd₆ d hd⟩,
     ⟨ok, okt, iff₆, by rw [x15₇, hD, hw8]⟩⟩
   · rw [pres aPa (by decide) (by decide) (by decide) (by decide), h.vP]
@@ -485,7 +485,7 @@ theorem code_eq : code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.head)
 
 /-- The postcondition, from the results against `keyOp`. -/
 theorem keyPost_of {s t : State} (c : KCtx s) (R : OutsRes (keyIn s) t.mem (t.gpr .x0)) : keyPost s t := by
-  have ho : keyOuts s = outsL (keyIn s) := by simp only [keyOuts, outsL, keyIn, c.x1]
+  obtain ho : keyOuts s = outsL (keyIn s) := by simp only [keyOuts, outsL, keyIn, c.x1]
   unfold keyPost keyRes
   rw [ho]
   exact R
@@ -494,7 +494,7 @@ theorem mask_bne_k (b : Bool) : (mask b != 0) = b := by cases b <;> decide
 
 /-- `code` computes `keyOp`. -/
 theorem keyCode_wp [VG.Proof.Rsa.AArch64.InvLaw] (s : State) (h : keyPre s) : WP isa code s fun t => abiPreserved s t ∧ keyPost s t := by
-  have c := keyCtx_of h
+  obtain c := keyCtx_of h
   rw [code_eq]
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (keyStart_k c) fun t₁ k₁ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [lcmPart, phi, mulTo])
@@ -502,7 +502,7 @@ theorem keyCode_wp [VG.Proof.Rsa.AArch64.InvLaw] (s : State) (h : keyPre s) : WP
   refine wp_seqs_append (by simp [lcmPart, phi, mulTo]) (by simp) (WP.mono (front2_k P.1 c.L) fun t₃ F => ?_)
   obtain ⟨ok, hok, hiff, hx15⟩ := F.x15
   obtain ⟨ok', hok', -, hdd⟩ := F.d
-  have hoo : ok' = ok := by
+  obtain hoo : ok' = ok := by
     rw [hok] at hok'
     cases ok <;> cases ok' <;> first | rfl | exact absurd hok' (by decide)
   subst hoo
@@ -511,11 +511,11 @@ theorem keyCode_wp [VG.Proof.Rsa.AArch64.InvLaw] (s : State) (h : keyPre s) : WP
   · -- `d ≤ 2^(8 pl)`: zeros, the status 2.
     rw [Bool.and_eq_true, decide_eq_true_eq] at hb
     obtain ⟨d, hd⟩ := hiff.mpr hb.2
-    have hsm := hdd d hd ▸ hb.1
+    obtain hsm := hdd d hd ▸ hb.1
     exact WP.mono (zerosPart_k F.ks c.L c.O) fun t Z =>
       ⟨abiPreserved_of_keep ((F.ks.keep.trans Z.2.2.2).mono (by decide)), keyPost_of c (outsRes_zeros hd hsm Z)⟩
   · refine WP.mono (keyPart_k F c.L c.O hok) fun t T => ?_
-    have R := outsRes_tail c.L hiff hdd hb T
+    obtain R := outsRes_tail c.L hiff hdd hb T
     obtain ⟨_, _, _, _, _, kt⟩ := T
     exact ⟨abiPreserved_of_keep ((F.ks.keep.trans kt).mono (by decide)), keyPost_of c R⟩
 

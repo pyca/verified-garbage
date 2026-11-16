@@ -47,7 +47,7 @@ def clampL (kb : List Byte) : List Byte :=
 
 theorem decode_clamp {kb : List Byte} (hk : kb.length = 32) :
     Spec.X25519.decodeScalar25519 kb = Spec.Ed25519.decodeLE (clampL kb) := by
-  have hl : (clampL kb).length = 32 := by simp [clampL, hk]
+  obtain hl : (clampL kb).length = 32 := by simp [clampL, hk]
   rw [Proof.Ed25519.decodeLE_eq, ← Proof.X25519.take_32 hl, ← Proof.X25519.decodeLittleEndian_eq]
   rfl
 
@@ -81,8 +81,8 @@ private theorem clamp_facts : ∀ x : BitVec 8,
 theorem clamp_nib {kb : List Byte} (hk : kb.length = 32) {i : Nat} (hi : i < 64) :
     Proof.Ed25519.nib (Spec.X25519.decodeScalar25519 kb) i = clampN (nibL kb) i := by
   rw [decode_clamp hk, nib_decodeLE, clampL_getD hk (by omega_using [hi])]
-  have f0 := clamp_facts (kb.getD 0 0)
-  have f31 := clamp_facts (kb.getD 31 0)
+  obtain f0 := clamp_facts (kb.getD 0 0)
+  obtain f31 := clamp_facts (kb.getD 31 0)
   unfold clampN nibL
   by_cases h0 : i = 0
   · subst h0; simp only [show (0 : Nat) / 2 = 0 from rfl, show (0 : Nat) % 2 = 0 from rfl, ↓reduceIte]
@@ -110,7 +110,7 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
       ∀ i < 64, nibC t.mem b i = clampN (nibC s.mem b) i := by
   have hS : SCAL = 1152 := rfl
   let a : Nat → Addr := fun k => b + BitVec.ofNat 64 (SCAL + k)
-  have ne : ∀ i k, i < 64 → k < 64 → i ≠ k → a i ≠ a k := fun i k hi hk hik he =>
+  obtain ne : ∀ i k, i < 64 → k < 64 → i ≠ k → a i ≠ a k := fun i k hi hk hik he =>
     Offset.disjoint b (d := SCAL + i) (n := 1) (e := SCAL + k) (k := 1)
       (by omega_using [hik]) (by omega_using [hS, hi]) (by omega_using [hS, hk]) _ (Region.contains_self _ _)
       (by change Region.Contains ⟨a k, 1⟩ (a i) 1; rw [he]; exact Region.contains_self _ _)
@@ -120,15 +120,15 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
   refine wp_stb (a := a 0) (by decide) (by decide)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.r6]; rfl)
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hc.inW (by omega_using [hS])) fun s₄ u₄ => ?_
-  have c0 := clamp_regs (s.mem (a 0))
-  have m4 : s₄.mem = s.mem.writeW (a 0) (BitVec.ofNat 8 (nibC s.mem b 0 &&& 8)) := by
+  obtain c0 := clamp_regs (s.mem (a 0))
+  obtain m4 : s₄.mem = s.mem.writeW (a 0) (BitVec.ofNat 8 (nibC s.mem b 0 &&& 8)) := by
     rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     congr 1
     apply BitVec.eq_of_toNat_eq
     rw [u₃.gpr, u₂.gpr, u₂.other .r7 (by decide), u₁.gpr, c0.1, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_right (by decide))]
     rfl
-  have hc4 : Ctx8 b s₄ := hc.of_rest ((u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
+  obtain hc4 : Ctx8 b s₄ := hc.of_rest ((u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
     ((u₃.rest (by decide)).trans (u₄.rest [.r7, .r8])))) (by decide)
   refine wp_lbz (a := a 63) (by decide) (by decide) (by rw [hc4.r6]) (hc4.inR (by omega_using [hS])) fun s₅ u₅ => ?_
   refine wp_li (by decide) fun s₆ u₆ => wp_and fun s₇ u₇ => wp_ori fun s₈ u₈ => ?_
@@ -136,12 +136,12 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       hc4.r6])
     (by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr]; exact hc4.inW (by omega_using [hS])) fun t u₉ => WP.block_nil ?_
-  have v63 : s₄.mem (a 63) = s.mem (a 63) := by
+  obtain v63 : s₄.mem (a 63) = s.mem (a 63) := by
     rw [m4, VG.WriteBytes.writeW8_apply, ite_eq_right (ne 63 0 (by decide) (by decide) (by decide))]
-  have c63 := clamp_regs (s.mem (a 63))
-  have hb63 : ∀ x : Nat, (x &&& 7) ||| 4 < 2 ^ 8 := fun x =>
+  obtain c63 := clamp_regs (s.mem (a 63))
+  obtain hb63 : ∀ x : Nat, (x &&& 7) ||| 4 < 2 ^ 8 := fun x =>
     Nat.or_lt_two_pow (Nat.lt_of_le_of_lt Nat.and_le_right (by decide)) (by decide)
-  have mt : t.mem = (s.mem.writeW (a 0) (BitVec.ofNat 8 (nibC s.mem b 0 &&& 8))).writeW (a 63)
+  obtain mt : t.mem = (s.mem.writeW (a 0) (BitVec.ofNat 8 (nibC s.mem b 0 &&& 8))).writeW (a 63)
       (BitVec.ofNat 8 ((nibC s.mem b 63 &&& 7) ||| 4)) := by
     rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, ← m4]
     congr 1
@@ -180,48 +180,48 @@ theorem uOps_eval (e : Env) :
 
 theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519.basePoint) := by
   intro b s p T hc h14 hin hpd hT hsym apart
-  have hk : (Spec.Ed25519.bytesAt s.mem p 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
-  have sub : (scalR b).Sub ⟨b, 8192⟩ := Offset.sub_base _ (by decide)
+  obtain hk : (Spec.Ed25519.bytesAt s.mem p 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
+  obtain sub : (scalR b).Sub ⟨b, 8192⟩ := Offset.sub_base _ (by decide)
   have hF := FR_eq
   unfold engine
   refine WP.seq (WP.mono_syms (initFields_ok hc.ctx) fun s1 ⟨r1, f1⟩ sy1 => ?_)
-  have hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  have hb1 : Spec.Ed25519.bytesAt s1.mem p 32 = Spec.Ed25519.bytesAt s.mem p 32 := by
+  obtain hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
+  obtain hb1 : Spec.Ed25519.bytesAt s1.mem p 32 = Spec.Ed25519.bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
     exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])) hpd (by decide)
       (List.mem_range.mp hi)
-  have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
+  obtain hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
   rw [combClamped, WP.seq_iff]
   refine WP.seq (WP.mono_syms (combCopy_ok hc1 (by rw [r1.gpr _ (by decide), h14])
     (fun i hi => by rw [r1.rd, r1.wr]; exact hin i hi) (hpd.sub_right sub)) fun u ⟨ru, fu, cu⟩ syu => ?_)
-  have hcu : Ctx8 b u := hc1.of_rest ru (by decide)
+  obtain hcu : Ctx8 b u := hc1.of_rest ru (by decide)
   refine WP.seq (WP.mono_syms (clampCopy_ok hcu) fun v ⟨rv, fv, cv⟩ syv => ?_)
-  have hcv : Ctx8 b v := hcu.of_rest rv (by decide)
-  have tsc : ∀ r ∈ [scalR b], (TBL T).Disjoint r := fun r hr => by
+  obtain hcv : Ctx8 b v := hcu.of_rest rv (by decide)
+  obtain tsc : ∀ r ∈ [scalR b], (TBL T).Disjoint r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right sub
-  have hTv : TblAt v T := (hT1.of_frame (by rw [ru.rd, ru.wr]) fu tsc).of_frame (by rw [rv.rd, rv.wr]) fv tsc
+  obtain hTv : TblAt v T := (hT1.of_frame (by rw [ru.rd, ru.wr]) fu tsc).of_frame (by rw [rv.rd, rv.wr]) fv tsc
   -- The clamped nibbles are the clamped scalar's.
-  have hnu : ∀ j < 64, nibC u.mem b j = nibL (Spec.Ed25519.bytesAt s.mem p 32) j := fun j hj => by
+  obtain hnu : ∀ j < 64, nibC u.mem b j = nibL (Spec.Ed25519.bytesAt s.mem p 32) j := fun j hj => by
     rw [cu j hj, nibAt_eq _ _ hj, nib_decodeLE, hb1]; rfl
-  have hn : ∀ i < 64, nibC v.mem b i =
+  obtain hn : ∀ i < 64, nibC v.mem b i =
       Proof.Ed25519.nib (Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem p 32)) i := fun i hi => by
     rw [cv i hi, clamp_nib hk hi]
     unfold clampN
     rw [hnu 0 (by decide), hnu 63 (by decide), hnu i hi]
-  have hS : Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem p 32) < 2 ^ 256 := by
+  obtain hS : Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem p 32) < 2 ^ 256 := by
     rw [decode_clamp hk]
     have := Proof.Ed25519.decodeLE_lt (clampL (Spec.Ed25519.bytesAt s.mem p 32))
     rw [show (clampL (Spec.Ed25519.bytesAt s.mem p 32)).length = 32 by simp [clampL, hk]] at this
     exact Nat.lt_of_lt_of_le this (by decide)
   refine WP.mono (combRun_ok hcv hTv (by rw [syv, syu, sy1, hsym]) apart hS hn) fun x ⟨rx, fx, px⟩ => ?_
-  have hcx : Ctx8 b x := hcv.of_rest rx (by decide)
+  obtain hcx : Ctx8 b x := hcv.of_rest rx (by decide)
   unfold uEncode
   refine WP.seq (WP.mono (fieldCode_ok uOps hcx.ctx) fun y ⟨ky, ey⟩ => ?_)
-  have hcy : Ctx8 b y := hcx.of_keep ky
+  obtain hcy : Ctx8 b y := hcx.of_keep ky
   refine WP.seq (WP.mono (pointAffine_ok hcy) fun z ⟨kz, e0, _⟩ => ?_)
-  have hcz : Ctx8 b z := hcy.of_keep kz
+  obtain hcz : Ctx8 b z := hcy.of_keep kz
   refine WP.mono (freeze_ok hcz.ctx 0) fun t ⟨rt, ft, _, vt⟩ => ⟨?_, ?_, ?_⟩
   · exact (r1.mono (by decide)).trans ((ru.mono (by decide)).trans ((rv.mono (by decide)).trans
       ((rx.mono (by decide)).trans ((ky.rest.mono (by decide)).trans ((kz.rest.mono (by decide)).trans

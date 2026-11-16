@@ -76,11 +76,11 @@ theorem ktrue : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → (fun _
 
 theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : State}
     (h : KC p STK σ s) (h24 : s.gpr .r24 = 1) : WP isa (seeds p) s fun s' => K1 p STK σ s' ∧ s'.gpr .r24 = 1 := by
-  have hk := hF.k; have hl := hF.l
+  obtain hk := hF.k; have hl := hF.l
   have hs := h.site
   unfold seeds
   -- `k` and `ℓ`
-  have blk : WP isa (.block (setB (sc oKL) p.k ++ setB (sc (oKL + 1)) p.ℓ)) s fun s₂ =>
+  obtain blk : WP isa (.block (setB (sc oKL) p.k ++ setB (sc (oKL + 1)) p.ℓ)) s fun s₂ =>
       KC p STK σ s₂ ∧ s₂.gpr .r24 = 1 ∧
         bytesAt s₂.mem ((lay p STK σ).A 0 oKL) 2 = [BitVec.ofNat 8 p.k, BitVec.ofNat 8 p.ℓ] := by
     refine WP.block_append (WP.mono (setB_ok hs (q := sc oKL) ⟨sc_ok (by decide), by lsep hF⟩ (by decide)
@@ -106,9 +106,9 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : Stat
         (.inr rfl) fun h => absurd h (by decide)
     · exact pieceS hs₂ rfl (by decide) (by decide) (by decide) (by lsep hF [hashLay, Lay.size])
         (.inl rfl) fun h => absurd h (by decide)
-  have h₃ := h₂.keep k₃ (by lsep hF [kcChk])
+  obtain h₃ := h₂.keep k₃ (by lsep hF [kcChk])
   have hs₃ := h₃.site
-  have hx₃ : bytesAt s₃.mem ((lay p STK σ).A 0 oHX) 128 = hxOf p σ := by
+  obtain hx₃ : bytesAt s₃.mem ((lay p STK σ).A 0 oHX) 128 = hxOf p σ := by
     have o₃' : bytesAt s₃.mem ((lay p STK σ).A 0 oHX) 128 = _ := o₃
     rw [o₃', hx_eq]
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,
@@ -121,12 +121,12 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : Stat
   refine WP.seq (WP.mono (copyS hs₃ (sb := .r31) (so := oHX) (db := .r31) (dO := oSA) (len := 32)
     ⟨by decide, by lsep hF⟩ ⟨by decide, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide)
     (by lsep hF)) fun s₄ ⟨k₄, b₄⟩ => ?_)
-  have h₄ := h₃.keep k₄ (by lsep hF [kcChk])
-  have hx₄ := (bytes_keepW hs₃.ok k₄.frame (i := 0) (o := oHX) (l := 128) (by lsep hF) (by decide) (by decide)).trans hx₃
+  obtain h₄ := h₃.keep k₄ (by lsep hF [kcChk])
+  obtain hx₄ := (bytes_keepW hs₃.ok k₄.frame (i := 0) (o := oHX) (l := 128) (by lsep hF) (by decide) (by decide)).trans hx₃
   refine WP.seq (WP.mono (copyS h₄.site (sb := .r31) (so := oHX + 32) (db := .r31) (dO := oSB) (len := 64)
     ⟨by decide, by lsep hF⟩ ⟨by decide, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide)
     (by lsep hF)) fun s₅ ⟨k₅, b₅⟩ => ?_)
-  have h₅ := h₄.keep k₅ (by lsep hF [kcChk])
+  obtain h₅ := h₄.keep k₅ (by lsep hF [kcChk])
   refine WP.mono (setB_ok h₅.site (q := sc (oSB + 65)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide)
     (v := 0) (by decide)) fun s₆ ⟨k₆, b₆⟩ => ⟨⟨h₅.keep k₆ (by lsep hF [kcChk]), ?_, ?_, ?_, b₆⟩, ?_⟩
   · rw [bytes_keepW h₅.site.ok k₆.frame (i := 0) (o := oHX) (l := 128) (by lsep hF) (by decide) (by decide),

@@ -71,28 +71,28 @@ theorem search_finish {p : SearchPublic} {original s : State} {final : PrimeSear
       (t.gpr .a0 = BitVec.ofNat 64 final.status ∧ t.gpr .s0 = original.gpr .s0 ∧
         t.mem = finished p s.mem final) ∧ KeepS finishRegs s t := by
   have hi := h.input
-  have scr := hi.frame_scr h.wr
-  have hl : ∀ d, d + 8 ≤ 160 → InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 d) 8 := fun d hd =>
+  obtain scr := hi.frame_scr h.wr
+  obtain hl : ∀ d, d + 8 ≤ 160 → InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 d) 8 := fun d hd =>
     let ⟨r, hr, hc⟩ := scr.st hd; ⟨r, List.mem_append_right _ hr, hc⟩
-  have ha : ∀ d, d + 8 ≤ 160 → d % 8 = 0 → (p.F + BitVec.ofNat 64 d).toNat % 8 = 0 :=
+  obtain ha : ∀ d, d + 8 ≤ 160 → d % 8 = 0 → (p.F + BitVec.ofNat 64 d).toNat % 8 = 0 :=
     fun _ hd h8 => scr.al8 hd h8
-  have hst : inState original = ⟨p.stp, 32⟩ := by rw [← hi.2]; rfl
-  have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← hi.2]; rfl
-  have hsw : ∀ d, d + 8 ≤ 32 → InRegions s.wr (p.stp + BitVec.ofNat 64 d) 8 := fun d hd =>
+  obtain hst : inState original = ⟨p.stp, 32⟩ := by rw [← hi.2]; rfl
+  obtain hus : inUsed original = ⟨p.up, 8⟩ := by rw [← hi.2]; rfl
+  obtain hsw : ∀ d, d + 8 ≤ 32 → InRegions s.wr (p.stp + BitVec.ofNat 64 d) 8 := fun d hd =>
     ⟨inState original, by rw [h.wr, hi.wr_eq]; exact List.mem_cons_of_mem _ (by simp [inWrites]),
       by rw [hst]; exact Offset.contains_base _ hd (by omega_using [hd])⟩
-  have huw : InRegions s.wr (p.up + BitVec.ofNat 64 0) 8 :=
+  obtain huw : InRegions s.wr (p.up + BitVec.ofNat 64 0) 8 :=
     ⟨inUsed original, by rw [h.wr, hi.wr_eq]; exact List.mem_cons_of_mem _ (by simp [inWrites]),
       by rw [hus]; exact Offset.contains_base _ (by decide) (by decide)⟩
-  have hsa : p.stp.toNat % 8 = 0 := by rw [← hi.2]; exact hi.state_al
-  have hsn : p.stp.toNat + 32 ≤ 2 ^ 64 := by
+  obtain hsa : p.stp.toNat % 8 = 0 := by rw [← hi.2]; exact hi.state_al
+  obtain hsn : p.stp.toNat + 32 ≤ 2 ^ 64 := by
     have := hi.nowrap (r := inState original) (List.mem_append_left _ (by simp [inWrites]))
     rw [hst] at this; exact this
-  have hsal : ∀ d, d + 8 ≤ 32 → d % 8 = 0 → (p.stp + BitVec.ofNat 64 d).toNat % 8 = 0 := fun d hd h8 => by
+  obtain hsal : ∀ d, d + 8 ≤ 32 → d % 8 = 0 → (p.stp + BitVec.ofNat 64 d).toNat % 8 = 0 := fun d hd h8 => by
     have : (p.stp + BitVec.ofNat 64 d).toNat = p.stp.toNat + d := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hsn, hd]
     omega_using [hsa, h8, this]
-  have hua : (p.up + BitVec.ofNat 64 0).toNat % 8 = 0 := by
+  obtain hua : (p.up + BitVec.ofNat 64 0).toNat % 8 = 0 := by
     rw [BitVec.add_zero, ← hi.2]; exact hi.used_al
   have w0 := h.remaining
   have w1 := h.len
@@ -118,16 +118,16 @@ theorem search_finish {p : SearchPublic} {original s : State} {final : PrimeSear
 
 theorem finished_bytes {p : SearchPublic} {original : State} (h : SearchInput p original) (m : Mem)
     (r : PrimeSearchResult) : Spec.Rsa.bytesAt (finished p m r) p.op p.len = Spec.Rsa.bytesAt m p.op p.len := by
-  have hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
-  have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
-  have hot : inOut original = ⟨p.op, p.len⟩ := by rw [← h.2]; rfl
+  obtain hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
+  obtain hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
+  obtain hot : inOut original = ⟨p.op, p.len⟩ := by rw [← h.2]; rfl
   have hos := h.out_state
   have hou := h.out_used
   rw [hst, hot] at hos
   rw [hus, hot] at hou
-  have hn := h.nowrap (r := inOut original) (by simp [inWrites])
+  obtain hn := h.nowrap (r := inOut original) (by simp [inWrites])
   rw [hot] at hn
-  have hf : Frame [⟨p.stp, 32⟩, ⟨p.up, 8⟩] m (finished p m r) := by
+  obtain hf : Frame [⟨p.stp, 32⟩, ⟨p.up, 8⟩] m (finished p m r) := by
     unfold finished SearchInit.written
     refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
       (List.mem_cons_self ..) _ ?_) (List.mem_cons_self ..) _ ?_) (List.mem_cons_self ..) _ ?_)
@@ -153,8 +153,8 @@ theorem finished_state {p : SearchPublic} {original : State} (h : SearchInput p 
     (r : PrimeSearchResult) :
     Spec.Rsa.wordsAt (finished p m r) p.stp 4 = [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
       BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 (requested p.len r)] := by
-  have hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
-  have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
+  obtain hst : inState original = ⟨p.stp, 32⟩ := by rw [← h.2]; rfl
+  obtain hus : inUsed original = ⟨p.up, 8⟩ := by rw [← h.2]; rfl
   have hsu := h.state_used
   rw [hst, hus] at hsu
   have hpast (d : Nat) (hd : d + 8 ≤ 32) : word (finished p m r) p.stp d =
@@ -173,14 +173,14 @@ theorem finished_state {p : SearchPublic} {original : State} (h : SearchInput p 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by
   let p := searchOfState s
-  have hp : SearchInput p s := ⟨h, rfl⟩
-  have hroom : 160 ≤ s.sp.toNat := by have := hp.room; rw [hp.sp_eq] at this; exact Nat.le_trans (by decide) this
+  obtain hp : SearchInput p s := ⟨h, rfl⟩
+  obtain hroom : 160 ≤ s.sp.toNat := by have := hp.room; rw [hp.sp_eq] at this; exact Nat.le_trans (by decide) this
   unfold code
   refine WP.alloc (by decide) hroom ?_
   refine WP.seq (VG.RISCV64.WP.mono_syms (entry_ok hp) fun t ⟨⟨⟨hx, hm⟩, kt⟩, htsp⟩ hyt => ?_)
   refine WP.seq (WP.mono (search_body c hp hx hm kt htsp hyt) fun u ⟨hd, hra, hsp⟩ => ?_)
   refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_
-  have hst : (searchResult s).status < 4 := by
+  obtain hst : (searchResult s).status < 4 := by
     unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · change ((q.gpr .a0).setWidth 32).toNat = _

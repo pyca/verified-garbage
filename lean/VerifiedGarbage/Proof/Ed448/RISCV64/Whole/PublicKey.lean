@@ -68,19 +68,19 @@ theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s) :
     WP isa publicKey s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       bytesAt t.mem (s.gpr .a0) 57 = Spec.Ed448.publicKey (bytesAt s.mem (s.gpr .a1) 57) := by
-  have hFw : (⟨s.gpr .a3, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hCw : (⟨s.gpr .a2, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hOw : (⟨s.gpr .a0, 57⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hsS : Region.Sub (slotArea (s.gpr .a3) 120 pkRegs) ⟨s.gpr .a3, 160⟩ := Offset.sub_base _ (by decide)
-  have sl₁ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a0, 57⟩ := hp.oF.symm.sub_left hsS
-  have sl₂ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a2, 8192⟩ := hp.cF.symm.sub_left hsS
-  have sl₃ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint (below s.sp 1168) := hp.bF.symm.sub_left hsS
-  have sl₄ : ∀ d n, d + n ≤ 120 →
+  obtain hFw : (⟨s.gpr .a3, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hCw : (⟨s.gpr .a2, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hOw : (⟨s.gpr .a0, 57⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hsS : Region.Sub (slotArea (s.gpr .a3) 120 pkRegs) ⟨s.gpr .a3, 160⟩ := Offset.sub_base _ (by decide)
+  obtain sl₁ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a0, 57⟩ := hp.oF.symm.sub_left hsS
+  obtain sl₂ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a2, 8192⟩ := hp.cF.symm.sub_left hsS
+  obtain sl₃ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint (below s.sp 1168) := hp.bF.symm.sub_left hsS
+  obtain sl₄ : ∀ d n, d + n ≤ 120 →
       (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a3 + BitVec.ofNat 64 d, n⟩ := fun d n h =>
     Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
-  have F0 : s.gpr .a3 + BitVec.ofNat 64 0 = s.gpr .a3 := BitVec.add_zero _
-  have hF114 : Region.Sub ⟨s.gpr .a3, 114⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
-  have hF57 : Region.Sub ⟨s.gpr .a3, 57⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
+  obtain F0 : s.gpr .a3 + BitVec.ofNat 64 0 = s.gpr .a3 := BitVec.add_zero _
+  obtain hF114 : Region.Sub ⟨s.gpr .a3, 114⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
+  obtain hF57 : Region.Sub ⟨s.gpr .a3, 57⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
   unfold publicKey
   -- The setup.
   refine WP.seq (WP.mono (show WP isa (.block (saveRegs .a3 120 pkRegs ++
@@ -90,19 +90,19 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
         (by decide) (by decide) (fun p hp' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
           rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu _ => WP.block_nil hu) fun t₁ h₁ => ?_)
-  have g22x : t₁.gpr .s8 = s.gpr .a1 := h₁.regs _ (by decide)
-  have g23x : t₁.gpr .s9 = s.gpr .a2 := h₁.regs _ (by decide)
-  have g24x : t₁.gpr .s10 = s.gpr .a3 := h₁.regs _ (by decide)
-  have e₁ : KEnv (s.gpr .a2) t₁ := ⟨by rw [h₁.wr]; exact hCw, hp.alC, by rw [h₁.sp]; exact hp.spal,
+  obtain g22x : t₁.gpr .s8 = s.gpr .a1 := h₁.regs _ (by decide)
+  obtain g23x : t₁.gpr .s9 = s.gpr .a2 := h₁.regs _ (by decide)
+  obtain g24x : t₁.gpr .s10 = s.gpr .a3 := h₁.regs _ (by decide)
+  obtain e₁ : KEnv (s.gpr .a2) t₁ := ⟨by rw [h₁.wr]; exact hCw, hp.alC, by rw [h₁.sp]; exact hp.spal,
     by rw [h₁.sp]; exact hp.sp, by rw [h₁.sp]; exact hp.bC⟩
   -- The hash.
-  have pR : Piece.R t₁.gpr ⟨.s8, 0, .imm 57⟩ = ⟨s.gpr .a1, 57⟩ := by
+  obtain pR : Piece.R t₁.gpr ⟨.s8, 0, .imm 57⟩ = ⟨s.gpr .a1, 57⟩ := by
     simp only [Piece.R, Piece.addr, Len.val, g22x, BitVec.add_zero]
-  have pk : PieceOk (s.gpr .a2) t₁ ⟨.s8, 0, .imm 57⟩ :=
+  obtain pk : PieceOk (s.gpr .a2) t₁ ⟨.s8, 0, .imm 57⟩ :=
     ⟨by decide, by decide, show 57 < 2048 by decide, by
       rw [pR, h₁.rd, hp.rd]; exact fun a n ⟨r, hr, hc⟩ => ⟨r, List.mem_append_left _ hr, hc⟩,
       by rw [pR]; exact hp.sC, by rw [pR, h₁.sp]; exact hp.bS⟩
-  have hwF : Covers [⟨s.gpr .a3, 114⟩] t₁.wr := by
+  obtain hwF : Covers [⟨s.gpr .a3, 114⟩] t₁.wr := by
     rw [h₁.wr]
     refine Covers.of_sub fun r hr => ?_
     rw [List.mem_singleton.mp hr]
@@ -110,7 +110,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   refine WP.seq (WP.mono (hash_ok (sc := .s9) (f := .s10) (o := 0) (out := s.gpr .a3) (by decide) (by decide)
     (by decide) g23x (by rw [g24x, F0]) e₁ (by simp) (fun p hp' => by rw [List.mem_singleton.mp hp']; exact pk)
     hwF (hp.cF.symm.sub_left hF114) (by rw [h₁.sp]; exact hp.bF.sub_right hF114)) fun t₂ ⟨k₂, d₂⟩ => ?_)
-  have h₂ : PkInv s t₂ := Inv.kept h₁ pkRegs_pres k₂ (fun r hr => by
+  obtain h₂ : PkInv s t₂ := Inv.kept h₁ pkRegs_pres k₂ (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨⟨s.gpr .a3, 160⟩, by simp, hF114⟩
@@ -121,7 +121,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
       · simpa using sl₄ 0 114 (by decide)
       · exact sl₂
       · rw [h₁.sp]; exact sl₃
-  have seed₁ : Spec.Sha3.bytesAt t₁.mem (s.gpr .a1) 57 = bytesAt s.mem (s.gpr .a1) 57 :=
+  obtain seed₁ : Spec.Sha3.bytesAt t₁.mem (s.gpr .a1) 57 = bytesAt s.mem (s.gpr .a1) 57 :=
     bytes_keep h₁.frame (by decide) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -129,33 +129,33 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
       · exact hp.sC
       · exact hp.sF
       · exact hp.bS.symm
-  have hh : bytesAt t₂.mem (s.gpr .a3) 114 = Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .a1) 57) 114 := by
+  obtain hh : bytesAt t₂.mem (s.gpr .a3) 114 = Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .a1) 57) 114 := by
     have := d₂
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Piece.bytes,
       Piece.addr, Len.val, g22x, BitVec.add_zero, seed₁] at this
     exact this
   -- The pruning, and the arguments of `scalar_base`.
-  have hFw' : ∀ j < 57, InRegions t₂.wr (s.gpr .a3 + BitVec.ofNat 64 j) 1 := fun j hj => by
+  obtain hFw' : ∀ j < 57, InRegions t₂.wr (s.gpr .a3 + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [h₂.wr]; exact in_base hFw (by omega_using [hj]) (by omega_using [hj])
   refine WP.seq (prune_ok (f := .s10) (o := 0) (q := s.gpr .a3) (by decide) (by decide)
     (by rw [h₂.regs _ (by decide)]; exact F0) hFw' fun u um usp urd uwr ug => ?_)
   unfold mov
   refine wp_mv fun v₁ e₁ => wp_mv fun v₂ e₂ => wp_mv fun t₃ e₃ => WP.block_nil ?_
-  have m₃ : t₃.mem = pruned t₂.mem (s.gpr .a3) := by rw [e₃.mem, e₂.mem, e₁.mem, um]
-  have h₃ : PkInv s t₃ := by
+  obtain m₃ : t₃.mem = pruned t₂.mem (s.gpr .a3) := by rw [e₃.mem, e₂.mem, e₁.mem, um]
+  obtain h₃ : PkInv s t₃ := by
     refine h₂.step pkRegs_pres (by rw [e₃.rd, e₂.rd, e₁.rd, urd]) (by rw [e₃.wr, e₂.wr, e₁.wr, uwr])
       (by rw [e₃.sp, e₂.sp, e₁.sp, usp]) (fun r hr => ?_) (m₃ ▸ pruned_frame _ _)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨⟨s.gpr .a3, 160⟩, by simp, hF57⟩)
       fun r hr => by rw [List.mem_singleton.mp hr]; simpa using sl₄ 0 57 (by decide)
     obtain ⟨p3, p4, p5, p8⟩ := pres_a hr
     rw [e₃.other _ p5, e₂.other _ p4, e₁.other _ p3, ug _ p8]
-  have c3 : t₃.gpr .a0 = s.gpr .a0 := by
+  obtain c3 : t₃.gpr .a0 = s.gpr .a0 := by
     rw [e₃.other _ (by decide), e₂.other _ (by decide), e₁.gpr, ug _ (by decide),
       h₂.regs _ (by decide)]; rfl
-  have c4 : t₃.gpr .a1 = s.gpr .a3 := by
+  obtain c4 : t₃.gpr .a1 = s.gpr .a3 := by
     rw [e₃.other _ (by decide), e₂.gpr, e₁.other _ (by decide), ug _ (by decide),
       h₂.regs _ (by decide)]; rfl
-  have c5 : t₃.gpr .a2 = s.gpr .a2 := by
+  obtain c5 : t₃.gpr .a2 = s.gpr .a2 := by
     rw [e₃.gpr, e₂.other _ (by decide), e₁.other _ (by decide), ug _ (by decide),
       h₂.regs _ (by decide)]; rfl
   -- `scalar_base`.
@@ -175,7 +175,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
       rcases hr with rfl | rfl
       · exact ⟨_, hOw, hc⟩
       · exact ⟨_, hCw, hc⟩) fun t₄ a b c f g hb => ?_)
-  have h₄ : PkInv s t₄ := h₃.step pkRegs_pres a b c g f (fun r hr => by
+  obtain h₄ : PkInv s t₄ := h₃.step pkRegs_pres a b c g f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨s.gpr .a0, 57⟩, by simp, sub_refl _⟩
@@ -185,7 +185,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
       · exact sl₁
       · exact sl₂
   -- The restores.
-  have hrl : ∀ p ∈ restoreList 120 pkRegs, p.2 + 8 ≤ 160 := by decide
+  obtain hrl : ∀ p ∈ restoreList 120 pkRegs, p.2 + 8 ≤ 160 := by decide
   refine restore_ok h₄ hp.alF (h₄.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
     (fun p hp' => by rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ ra₅ m₅ _ => ⟨g₅, sp₅, ra₅, ?_⟩

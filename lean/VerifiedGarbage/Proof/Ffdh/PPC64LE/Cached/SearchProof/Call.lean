@@ -93,7 +93,7 @@ private theorem sub_tape {r : Addr} {n used len : Nat}
 
 private theorem nowrap_tape {r : Addr} {n used len : Nat} (hn : r.toNat + n ≤ 2 ^ 64)
     (hu : used + len ≤ n) : (r + BitVec.ofNat 64 used).toNat + len ≤ 2 ^ 64 := by
-  have hul : used < 2 ^ 64 ∨ len = 0 := by omega_using [hn, hu]
+  obtain hul : used < 2 ^ 64 ∨ len = 0 := by omega_using [hn, hu]
   rcases hul with hul | hz
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hul]
     have := Nat.mod_le (r.toNat + used) (2 ^ 64)
@@ -121,15 +121,15 @@ theorem KeyLive.callFacts {p : KeyPublic} {original s : State} {used keys scalar
   obtain ⟨⟨wxd, wxr, -, wxa⟩, ⟨wyd, wyr, -, wya⟩, -, ⟨wsd, wsr, -, wsa⟩, -⟩ := hwr
   obtain ⟨bx, by', -, bs, -, bd, br, -, -⟩ := hstk
   obtain ⟨nx, ny, -, ns, -, nd, nr, -, -⟩ := hnw
-  have hX : rX (keyOfState original) = inX original := by
+  obtain hX : rX (keyOfState original) = inX original := by
     simp only [rX, inX, keyOfState, hx1]
-  have hY : rY (keyOfState original) = inY original := by
+  obtain hY : rY (keyOfState original) = inY original := by
     simp only [rY, inY, keyOfState, hx3]
   have hD : rD (keyOfState original) = inDom original := rfl
   have hS : rS (keyOfState original) = inScr original := rfl
-  have hR : Region.Sub (rR (keyOfState original) used) (inRand original) :=
+  obtain hR : Region.Sub (rR (keyOfState original) used) (inRand original) :=
     sub_tape hroom
-  have hA := rA_sub (keyOfState original)
+  obtain hA := rA_sub (keyOfState original)
   have hsp' : (keyOfState original).sp = original.sp := rfl
   rw [hsp'] at hA
   rw [← hX] at pxy pxs wxd wxr bx nx
@@ -174,7 +174,7 @@ theorem writeController_word17 (m : Mem) (B : Addr) (values : List (Nat × BitVe
   induction values generalizing m with
   | nil => rfl
   | cons e values ih =>
-    have he := hvalues e (List.mem_cons_self ..)
+    obtain he := hvalues e (List.mem_cons_self ..)
     change word (writeController (m.writeW (off B (8 * e.1)) e.2) B values) B (8 * j) = _
     rw [ih _ (fun x hx => hvalues x (List.mem_cons_of_mem _ hx))]
     refine congrArg (controllerValue values j) ?_
@@ -210,14 +210,14 @@ theorem base_arguments_ok {p : KeyPublic} {original s : State} {used keys scalar
         u.gpr .r11 = callSp p + BitVec.ofNat 64 96) ∧
       Keep argRegsW (allocated 144 s) u := by
   have a := h.access
-  have hc := h.input.control_frame (alloc_frame h)
-  have e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
-  have hw : ∀ e, e + 8 ≤ 112 → InRegions (allocated 144 s).wr (callSp p + 32 + BitVec.ofNat 64 e) 8 := by
+  obtain hc := h.input.control_frame (alloc_frame h)
+  obtain e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
+  obtain hw : ∀ e, e + 8 ≤ 112 → InRegions (allocated 144 s).wr (callSp p + 32 + BitVec.ofNat 64 e) 8 := by
     intro e he
     refine ⟨frameR 144 s, List.mem_cons_self .., ?_⟩
     simp only [frameR, e0]
     exact Offset.contains_base _ he (by omega_using [he])
-  have hl : ∀ d, d + 8 ≤ 128 →
+  obtain hl : ∀ d, d + 8 ≤ 128 →
       InRegions ((allocated 144 s).rd ++ (allocated 144 s).wr) (p.control + BitVec.ofNat 64 d) 8 :=
     fun d hd => by
       obtain ⟨r, hr, hc⟩ := a.ld d hd
@@ -228,25 +228,25 @@ theorem base_arguments_ok {p : KeyPublic} {original s : State} {used keys scalar
   have hv (j : Nat) (hj : j < 16) {v : BitVec 64} (he : (j, v) ∈ p.headers used keys scalars) :
       (allocated 144 s).mem.readW (p.control + BitVec.ofNat 64 (8 * j)) 64 = v :=
     (hc j hj).trans (h.header he)
-  have hv2 := hv 2 (by decide) (v := BitVec.ofNat 64 p.len) (by simp [KeyPublic.headers])
-  have hv5 := hv 5 (by decide) (v := p.xp) (by simp [KeyPublic.headers])
-  have hv6 := hv 6 (by decide) (v := p.yp) (by simp [KeyPublic.headers])
-  have hv7 := hv 7 (by decide) (v := p.dp) (by simp [KeyPublic.headers])
-  have hv8 := hv 8 (by decide) (v := BitVec.ofNat 64 p.dlen) (by simp [KeyPublic.headers])
-  have hv9 := hv 9 (by decide) (v := p.rp + BitVec.ofNat 64 used) (by simp [KeyPublic.headers])
-  have hv12 := hv 12 (by decide) (v := p.B) (by simp [KeyPublic.headers])
-  have hv13 := hv 13 (by decide) (v := BitVec.ofNat 64 (p.Z / 8)) (by simp [KeyPublic.headers])
+  obtain hv2 := hv 2 (by decide) (v := BitVec.ofNat 64 p.len) (by simp [KeyPublic.headers])
+  obtain hv5 := hv 5 (by decide) (v := p.xp) (by simp [KeyPublic.headers])
+  obtain hv6 := hv 6 (by decide) (v := p.yp) (by simp [KeyPublic.headers])
+  obtain hv7 := hv 7 (by decide) (v := p.dp) (by simp [KeyPublic.headers])
+  obtain hv8 := hv 8 (by decide) (v := BitVec.ofNat 64 p.dlen) (by simp [KeyPublic.headers])
+  obtain hv9 := hv 9 (by decide) (v := p.rp + BitVec.ofNat 64 used) (by simp [KeyPublic.headers])
+  obtain hv12 := hv 12 (by decide) (v := p.B) (by simp [KeyPublic.headers])
+  obtain hv13 := hv 13 (by decide) (v := BitVec.ofNat 64 (p.Z / 8)) (by simp [KeyPublic.headers])
   simp only [Nat.reduceMul] at hv2 hv5 hv6 hv7 hv8 hv9 hv12 hv13
-  have ea : ∀ t : State, exec (.addSp .r11 96) t = some (t.write .r11 (t.sp + BitVec.ofNat 64 96)) := by
+  obtain ea : ∀ t : State, exec (.addSp .r11 96) t = some (t.write .r11 (t.sp + BitVec.ofNat 64 96)) := by
     intro t; simp [exec]
-  have hwo : ∀ e, e + 8 ≤ 112 → InRegions (allocated 144 s).wr (Mont.off (callSp p) (32 + e)) 8 := by
+  obtain hwo : ∀ e, e + 8 ≤ 112 → InRegions (allocated 144 s).wr (Mont.off (callSp p) (32 + e)) 8 := by
     intro e he
     have := hw e he
     rwa [BitVec.add_assoc, show (32 : Addr) + BitVec.ofNat 64 e = BitVec.ofNat 64 (32 + e) by
       rw [BitVec.ofNat_add]; rfl] at this
-  have hw96 := hwo 64 (by decide)
-  have hw104 := hwo 72 (by decide)
-  have hw112 := hwo 80 (by decide)
+  obtain hw96 := hwo 64 (by decide)
+  obtain hw104 := hwo 72 (by decide)
+  obtain hw112 := hwo 80 (by decide)
   have hw96' : InRegions (allocated 144 s).wr (callSp p + 96#64) 8 := hw96
   simp only [Nat.reduceAdd] at hw96 hw104 hw112
   refine WP.keep argRegsW ?_ (by decide)
@@ -299,47 +299,47 @@ theorem ctx_arguments_ok {p : KeyPublic} {original s : State} {used keys scalars
       v.mem = writeController u.mem (callSp p) (ctxValues p) ∧ Keep [.r0, .r12] u v := by
   have hi := h.input
   have hsp0 : p.sp = original.sp := hi.sp_eq
-  have hbase : ∀ e ∈ baseValues p, 8 * e.1 + 8 ≤ 144 := by
+  obtain hbase : ∀ e ∈ baseValues p, 8 * e.1 + 8 ≤ 144 := by
     simp only [baseValues, List.mem_cons, List.not_mem_nil, or_false]
     rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide
-  have hfu : Frame (KeyInput.changes original) original.mem u.mem := by
+  obtain hfu : Frame (KeyInput.changes original) original.mem u.mem := by
     rw [hm]; exact h.frame.trans (frame_of_callChanges original (base_frame h hbase))
-  have e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
-  have eA : callSp p + BitVec.ofNat 64 328 = original.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * 5) := by
+  obtain e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
+  obtain eA : callSp p + BitVec.ofNat 64 328 = original.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * 5) := by
     rw [callSp_eq, hsp0]; bv_omega
-  have eB : callSp p + BitVec.ofNat 64 336 = original.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * 6) := by
+  obtain eB : callSp p + BitVec.ofNat 64 336 = original.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * 6) := by
     rw [callSp_eq, hsp0]; bv_omega
-  have eC : callSp p + BitVec.ofNat 64 120 = s.sp - BitVec.ofNat 64 144 + 32 + BitVec.ofNat 64 88 := by
+  obtain eC : callSp p + BitVec.ofNat 64 120 = s.sp - BitVec.ofNat 64 144 + 32 + BitVec.ofNat 64 88 := by
     rw [e0]; bv_omega
-  have eD : callSp p + BitVec.ofNat 64 128 = s.sp - BitVec.ofNat 64 144 + 32 + BitVec.ofNat 64 96 := by
+  obtain eD : callSp p + BitVec.ofNat 64 128 = s.sp - BitVec.ofNat 64 144 + 32 + BitVec.ofNat 64 96 := by
     rw [e0]; bv_omega
-  have rA : InRegions (u.rd ++ u.wr) (callSp p + BitVec.ofNat 64 328) 8 := by
+  obtain rA : InRegions (u.rd ++ u.wr) (callSp p + BitVec.ofNat 64 328) 8 := by
     obtain ⟨r, hr, hc⟩ := hi.arg_in 5 (by decide)
     rw [eA]; exact ⟨r, List.mem_append_left _ (by rw [hrd, h.rd]; exact hr), hc⟩
-  have rB : InRegions (u.rd ++ u.wr) (callSp p + BitVec.ofNat 64 336) 8 := by
+  obtain rB : InRegions (u.rd ++ u.wr) (callSp p + BitVec.ofNat 64 336) 8 := by
     obtain ⟨r, hr, hc⟩ := hi.arg_in 6 (by decide)
     rw [eB]; exact ⟨r, List.mem_append_left _ (by rw [hrd, h.rd]; exact hr), hc⟩
-  have wC : InRegions u.wr (callSp p + BitVec.ofNat 64 120) 8 := by
+  obtain wC : InRegions u.wr (callSp p + BitVec.ofNat 64 120) 8 := by
     refine ⟨frameR 144 s, by rw [hwr]; exact List.mem_cons_self .., ?_⟩
     rw [eC]; exact Offset.contains_base _ (by decide) (by decide)
-  have wD : InRegions u.wr (callSp p + BitVec.ofNat 64 128) 8 := by
+  obtain wD : InRegions u.wr (callSp p + BitVec.ofNat 64 128) 8 := by
     refine ⟨frameR 144 s, by rw [hwr]; exact List.mem_cons_self .., ?_⟩
     rw [eD]; exact Offset.contains_base _ (by decide) (by decide)
-  have vA : u.mem.readW (callSp p + BitVec.ofNat 64 328) 64 = p.ctx := by
+  obtain vA : u.mem.readW (callSp p + BitVec.ofNat 64 328) 64 = p.ctx := by
     rw [eA, hi.arg_frame hfu 5 (by decide)]
     exact congrArg KeyPublic.ctx hi.2
-  have hC : (below original.sp stackUse).Contains (callSp p + BitVec.ofNat 64 120) (64 / 8) := by
+  obtain hC : (below original.sp stackUse).Contains (callSp p + BitVec.ofNat 64 120) (64 / 8) := by
     rw [show callSp p + BitVec.ofNat 64 120 = original.sp - BitVec.ofNat 64 72 by
       rw [callSp_eq, hsp0]; bv_omega]
     exact Offset.contains_below original.sp (a := 72) (b := 192) (by decide) (by decide) (by decide)
-  have vB : (u.mem.writeW (callSp p + BitVec.ofNat 64 120) p.ctx).readW
+  obtain vB : (u.mem.writeW (callSp p + BitVec.ofNat 64 120) p.ctx).readW
       (callSp p + BitVec.ofNat 64 336) 64 = BitVec.ofNat 64 p.ctxLen := by
     rw [eB, hi.arg_frame (hfu.writeW (r := below original.sp stackUse) (by simp [KeyInput.changes]) p.ctx hC)
       6 (by decide)]
-    have hc := congrArg KeyPublic.ctxLen hi.2
+    obtain hc := congrArg KeyPublic.ctxLen hi.2
     change (stackArg original 6).toNat = p.ctxLen at hc
     rw [← hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have ea : ∀ t : State, exec (.addSp .r12 328) t = some (t.write .r12 (t.sp + BitVec.ofNat 64 328)) := by
+  obtain ea : ∀ t : State, exec (.addSp .r12 328) t = some (t.write .r12 (t.sp + BitVec.ofNat 64 328)) := by
     intro t; simp [exec]
   refine WP.keep [.r0, .r12] ?_ (by decide)
   unfold writeController ctxValues
@@ -353,7 +353,7 @@ theorem key_arguments_ok {p : KeyPublic} {original s : State} {used keys scalars
       Keep argRegsW (allocated 144 s) u := by
   rw [cachedArguments_eq, WP.block_append_iff]
   refine WP.mono (base_arguments_ok h) fun u ⟨⟨ha, hm, h11⟩, k⟩ => ?_
-  have e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
+  obtain e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
   refine WP.mono (ctx_arguments_ok h (k.sp.trans e0) h11 k.rd k.wr hm) fun v ⟨hv, k'⟩ => ?_
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩, k.trans' (k'.mono (by decide))⟩
@@ -442,7 +442,7 @@ theorem call_covers_reads (h : KeyLive p original used keys scalars s) (hroom : 
   apply Covers.of_sub
   have hi := h.input
   obtain ⟨-, -, hrd', -⟩ := hi.1
-  have e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
+  obtain e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
   intro r hr
   simp only [callRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -473,7 +473,7 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
     Frame (KeyInput.callChanges original) s.mem t.mem := by
   have hi := h.input
   have hsp : p.sp = original.sp := hi.sp_eq
-  have h1 : Frame (KeyInput.callChanges original) (allocated 144 s).mem u.mem := by
+  obtain h1 : Frame (KeyInput.callChanges original) (allocated 144 s).mem u.mem := by
     rw [hm]
     apply (writeController_frame_size _ _ (callValues p) (size := 144) (by decide) (by
       simp only [callValues, baseValues, ctxValues, List.cons_append, List.nil_append, List.mem_cons,
@@ -484,7 +484,7 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
     refine ⟨below original.sp stackUse, by simp [KeyInput.callChanges], ?_⟩
     rw [← hsp, callSp_eq]
     exact Offset.sub_below p.sp (a := 192) (b := 192) (by decide) (by decide)
-  have h2 : Frame (KeyInput.callChanges original) u.mem t.mem := by
+  obtain h2 : Frame (KeyInput.callChanges original) u.mem t.mem := by
     apply hf.sub
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
@@ -511,13 +511,13 @@ theorem call_inputs (h : KeyLive p original used keys scalars s) (hroom : used +
       Spec.Rsa.bytesAt (callState p used u).mem ((callState p used u).gpr .r10)
         (stackArg (callState p used u) 0).toNat = ((keyRand original).drop used).take p.len ∧
       ((callState p used u).gpr .r9).toNat = p.len := by
-  have hfr : Frame (KeyInput.changes original) s.mem u.mem :=
+  obtain hfr : Frame (KeyInput.changes original) s.mem u.mem :=
     frame_of_callChanges original (attempt_frame (t := u) (d := 0) h hm (by
       intro x _; rfl) rfl)
   obtain ⟨h0, -, -, -, -⟩ := call_args hu hm
-  have hlen : (BitVec.ofNat 64 p.len).toNat = p.len := by
+  obtain hlen : (BitVec.ofNat 64 p.len).toNat = p.len := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
-  have hdl : (BitVec.ofNat 64 p.dlen).toNat = p.dlen := by
+  obtain hdl : (BitVec.ofNat 64 p.dlen).toNat = p.dlen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.dlen64]
   refine ⟨?_, ?_, by rw [call_gpr (by decide), ha.2.2.2.2.2.2.1, hlen]⟩
   · simp only [call_gpr (by decide : Reg.r7 ∉ linkRegs), call_gpr (by decide : Reg.r8 ∉ linkRegs),
@@ -525,7 +525,7 @@ theorem call_inputs (h : KeyLive p original used keys scalars s) (hroom : used +
     exact (h.input.domain_frame hfr).trans h.domain
   · simp only [call_gpr (by decide : Reg.r10 ∉ linkRegs), call_stackArg, ha.2.2.2.2.2.2.2, h0, hlen,
       State.withRegions_mem, State.callEntry_mem]
-    have hr := (h.input.random_frame hfr).trans h.random
+    obtain hr := (h.input.random_frame hfr).trans h.random
     rw [← VG.Proof.Dsa.bytesAt_slice _ _ hroom, ← hr]
 
 /-- The context is read only. -/
@@ -538,7 +538,7 @@ theorem KeyInput.context_frame {p : KeyPublic} {s : State} (h : KeyInput p s) {m
   intro i hi
   apply hf.readW (r := inContext s)
   · have inside : i < (stackArg s 6).toNat := List.mem_range.mp hi
-    have size := h.nowrap (r := inContext s) (by simp [inReads])
+    obtain size := h.nowrap (r := inContext s) (by simp [inReads])
     change (stackArg s 5).toNat + (stackArg s 6).toNat * 8 ≤ 2 ^ 64 at size
     exact Offset.contains_base _ (by omega_using [inside]) (by omega_using [inside, size])
   · exact h.read_disjoint (by simp [inReads])
@@ -603,18 +603,18 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     (hroom : used + p.len ≤ p.randLen) :
     WP isa (attemptRun a.call) s fun t =>
       KeyLive p original used keys scalars t ∧ AttemptPost p (keyRand original) used t := by
-  have hf := h.callFacts hroom
-  have e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
-  have hroom' : 144 ≤ s.sp.toNat := by
+  obtain hf := h.callFacts hroom
+  obtain e0 : s.sp - BitVec.ofNat 64 144 = callSp p := by rw [h.sp]
+  obtain hroom' : 144 ≤ s.sp.toNat := by
     have := hf.room
-    have h48 : (p.sp - 48).toNat = p.sp.toNat - 48 := by
+    obtain h48 : (p.sp - 48).toNat = p.sp.toNat - 48 := by
       rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def]; show 48 ≤ _; omega_using [this])]; rfl
     rw [h.sp, h48]
     omega_using [this]
   unfold attemptRun
   refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
-  have hu : u.sp = callSp p := k.sp.trans e0
+  obtain hu : u.sp = callSp p := k.sp.trans e0
   refine WP.callAny (k := cgContract) a.correct (call_attempt_pre h hroom hf hu ha hm)
     (call_covers_reads h hroom k.rd k.wr) (call_covers_writes h k.wr) ?_ (by rw [a.stack]; decide)
   intro t hrd hwr hsp hfr hcs hpost

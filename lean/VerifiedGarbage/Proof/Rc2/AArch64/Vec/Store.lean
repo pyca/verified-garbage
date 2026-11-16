@@ -124,22 +124,22 @@ theorem scatter_ok (t : State) {R : Nat → Spec.Rc2.State} (hS : Sets t R) :
     rw [runBlock_cons, exec_tbl4, runStep_some, runBlock_cons, exec_tbl4, runStep_some,
       runBlock_nil], ?_⟩
   -- The sets, kept until the end.
-  have ws : ∀ h < 2, ∀ i < 4, a.v (wreg h i) = t.v (wreg h i) ∧ c₁.v (wreg h i) = t.v (wreg h i) ∧
+  obtain ws : ∀ h < 2, ∀ i < 4, a.v (wreg h i) = t.v (wreg h i) ∧ c₁.v (wreg h i) = t.v (wreg h i) ∧
       b.v (wreg h i) = t.v (wreg h i) ∧ d₁.v (wreg h i) = t.v (wreg h i) := by
     intro h hh i hi
-    have wn := wreg_ne h i hh
-    have e₁ : a.v (wreg h i) = t.v (wreg h i) := av _ wn.2.2.2.2.1
-    have e₂ : c₁.v (wreg h i) = t.v (wreg h i) := by
+    obtain wn := wreg_ne h i hh
+    obtain e₁ : a.v (wreg h i) = t.v (wreg h i) := av _ wn.2.2.2.2.1
+    obtain e₂ : c₁.v (wreg h i) = t.v (wreg h i) := by
       simp only [c₁, v_setV_of_ne _ _ wn.1]; exact e₁
-    have e₃ : b.v (wreg h i) = t.v (wreg h i) := by
+    obtain e₃ : b.v (wreg h i) = t.v (wreg h i) := by
       rw [bv _ wn.2.2.2.2.1]; simp only [c₂, v_setV_of_ne _ _ wn.2.2.1]; exact e₂
     refine ⟨e₁, e₂, e₃, ?_⟩
     simp only [d₁, v_setV_of_ne _ _ wn.2.1]; exact e₃
-  have hw : ∀ (f : VReg → BitVec 128), (∀ h < 2, ∀ i < 4, f (wreg h i) = t.v (wreg h i)) →
+  obtain hw : ∀ (f : VReg → BitVec 128), (∀ h < 2, ∀ i < 4, f (wreg h i) = t.v (wreg h i)) →
       ∀ h < 2, ∀ i < 4, ∀ b < 4, lw (f (wreg h i)) b = (R (4 * h + b)).getD i 0 :=
     fun f hf h hh i hi b hb => by rw [hf h hh i hi]; exact hS h hh i hi b hb
-  have c4 : c₁.v .v4 = outIndex 0 := by simp only [c₁, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v0)]; exact a4
-  have d4 : d₁.v .v4 = outIndex 1 := by simp only [d₁, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v1)]; exact b4
+  obtain c4 : c₁.v .v4 = outIndex 0 := by simp only [c₁, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v0)]; exact a4
+  obtain d4 : d₁.v .v4 = outIndex 1 := by simp only [d₁, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v1)]; exact b4
   refine ⟨fun e he => ⟨?_, ?_, ?_, ?_⟩, fun w h0 h1 h2 h3 h4 => ?_, fun g h6 h7 => ?_, ?_, ?_, ?_, ?_⟩
   · have : d₂.v .v0 = c₁.v .v0 := by
       simp only [d₂, d₁, v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v3),
@@ -239,7 +239,7 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
   let q := t.gpr .x1
   let M := t.mem
   let X := t.gpr .x11
-  have rd : ∀ off, off + 16 ≤ 64 → InRegions (t.rd ++ t.wr) (q + BitVec.ofNat 64 off) 16 :=
+  obtain rd : ∀ off, off + 16 ≤ 64 → InRegions (t.rd ++ t.wr) (q + BitVec.ofNat 64 off) 16 :=
     fun off h => CallLay.inRegions_sub hrd h (by decide)
   let d₁ := t.write .x .x9 (t.mem.readW (t.gpr .x1 + BitVec.ofNat 64 0) 64)
   let d₂ := d₁.setV .v4 (setLane (d₁.v .v4) 64 0 (d₁.gpr .x11))
@@ -258,37 +258,37 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
   let d₁₅ : State := { d₁₄ with mem := d₁₄.mem.write (d₁₄.gpr .x1 + BitVec.ofNat 64 32) 16 (d₁₄.v .v2) }
   let d₁₆ : State := { d₁₅ with mem := d₁₅.mem.write (d₁₅.gpr .x1 + BitVec.ofNat 64 48) 16 (d₁₅.v .v3) }
   -- The general registers along the way.
-  have x1₄ : d₄.gpr .x1 = q := by
+  obtain x1₄ : d₄.gpr .x1 = q := by
     simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : ¬Reg.x1 = .x12), gpr_setV,
       gpr_write_of_ne _ _ _ (by decide : ¬Reg.x1 = .x9)]; rfl
-  have x12₄ : d₄.gpr .x12 = q + BitVec.ofNat 64 8 := by
+  obtain x12₄ : d₄.gpr .x12 = q + BitVec.ofNat 64 8 := by
     simp only [d₄, gpr_write_self, BitVec.setWidth_eq]
     rw [show d₃.gpr .x1 = d₄.gpr .x1 from (gpr_write_of_ne _ _ _ (by decide)).symm, x1₄]
-  have x1₁₂ : d₁₂.gpr .x1 = q := by
+  obtain x1₁₂ : d₁₂.gpr .x1 = q := by
     simp only [d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, gpr_write_of_ne _ _ _ (by decide : ¬Reg.x1 = .x11),
       gpr_setV]; exact x1₄
-  have x12₇ : d₇.gpr .x12 = q + BitVec.ofNat 64 8 := by
+  obtain x12₇ : d₇.gpr .x12 = q + BitVec.ofNat 64 8 := by
     simp only [d₇, d₆, d₅, gpr_setV]; exact x12₄
-  have e₁ : exec (.ldr .x .x9 .x1 0) t = some d₁ :=
+  obtain e₁ : exec (.ldr .x .x9 .x1 0) t = some d₁ :=
     exec_ldr_x ⟨by decide, by decide⟩ (CallLay.inRegions_sub hrd (by decide : 0 + 8 ≤ 64) (by decide))
-  have e₄ : exec (.addImm .x .x12 .x1 8) d₃ = some d₄ := exec_addImmx _ _ _ (by decide)
-  have e₅ : exec (.ldrq .v5 .x12 0) d₄ = some d₅ := exec_ldrq' d₄ _ _ 0 ⟨by decide, by decide⟩
+  obtain e₄ : exec (.addImm .x .x12 .x1 8) d₃ = some d₄ := exec_addImmx _ _ _ (by decide)
+  obtain e₅ : exec (.ldrq .v5 .x12 0) d₄ = some d₅ := exec_ldrq' d₄ _ _ 0 ⟨by decide, by decide⟩
     (by rw [x12₄, Offset.add_add]; exact rd _ (by decide))
-  have e₈ : exec (.ldrq .v4 .x12 16) d₇ = some d₈ := exec_ldrq' d₇ _ _ 16 ⟨by decide, by decide⟩
+  obtain e₈ : exec (.ldrq .v4 .x12 16) d₇ = some d₈ := exec_ldrq' d₇ _ _ 16 ⟨by decide, by decide⟩
     (by rw [x12₇, Offset.add_add]; exact rd _ (by decide))
-  have e₉ : exec (.ldrq .v5 .x12 32) d₈ = some d₉ := exec_ldrq' d₈ _ _ 32 ⟨by decide, by decide⟩
+  obtain e₉ : exec (.ldrq .v5 .x12 32) d₈ = some d₉ := exec_ldrq' d₈ _ _ 32 ⟨by decide, by decide⟩
     (by rw [show d₈.gpr .x12 = d₇.gpr .x12 from rfl, x12₇, Offset.add_add]; exact rd _ (by decide))
-  have e₁₂ : exec (.ldr .x .x11 .x1 56) d₁₁ = some d₁₂ := exec_ldr_x ⟨by decide, by decide⟩
+  obtain e₁₂ : exec (.ldr .x .x11 .x1 56) d₁₁ = some d₁₂ := exec_ldr_x ⟨by decide, by decide⟩
     (by
       rw [show d₁₁.gpr .x1 = d₁₂.gpr .x1 from (gpr_write_of_ne _ _ _ (by decide)).symm, x1₁₂]
       exact CallLay.inRegions_sub hrd (by decide : 56 + 8 ≤ 64) (by decide))
-  have wr : ∀ off, off + 16 ≤ 64 → InRegions d₁₂.wr (d₁₂.gpr .x1 + BitVec.ofNat 64 off) 16 :=
+  obtain wr : ∀ off, off + 16 ≤ 64 → InRegions d₁₂.wr (d₁₂.gpr .x1 + BitVec.ofNat 64 off) 16 :=
     fun off h => by rw [x1₁₂]; exact CallLay.inRegions_sub hwr h (by decide)
-  have e₁₃ : exec (.strq .v0 .x1 0) d₁₂ = some d₁₃ := exec_strq _ _ _ 0 ⟨by decide, by decide⟩ (wr 0 (by decide))
-  have e₁₄ : exec (.strq .v1 .x1 16) d₁₃ = some d₁₄ := exec_strq _ _ _ 16 ⟨by decide, by decide⟩ (wr 16 (by decide))
-  have e₁₅ : exec (.strq .v2 .x1 32) d₁₄ = some d₁₅ := exec_strq _ _ _ 32 ⟨by decide, by decide⟩ (wr 32 (by decide))
-  have e₁₆ : exec (.strq .v3 .x1 48) d₁₅ = some d₁₆ := exec_strq _ _ _ 48 ⟨by decide, by decide⟩ (wr 48 (by decide))
-  have run : runBlock isa xorCode t = some d₁₆ := by
+  obtain e₁₃ : exec (.strq .v0 .x1 0) d₁₂ = some d₁₃ := exec_strq _ _ _ 0 ⟨by decide, by decide⟩ (wr 0 (by decide))
+  obtain e₁₄ : exec (.strq .v1 .x1 16) d₁₃ = some d₁₄ := exec_strq _ _ _ 16 ⟨by decide, by decide⟩ (wr 16 (by decide))
+  obtain e₁₅ : exec (.strq .v2 .x1 32) d₁₄ = some d₁₅ := exec_strq _ _ _ 32 ⟨by decide, by decide⟩ (wr 32 (by decide))
+  obtain e₁₆ : exec (.strq .v3 .x1 48) d₁₅ = some d₁₆ := exec_strq _ _ _ 48 ⟨by decide, by decide⟩ (wr 48 (by decide))
+  obtain run : runBlock isa xorCode t = some d₁₆ := by
     rw [xorCode, runBlock_cons, e₁, runStep_some, runBlock_cons, exec_insd _ _ _ (by decide),
       runStep_some, runBlock_cons, exec_insd _ _ _ (by decide), runStep_some, runBlock_cons, e₄,
       runStep_some, runBlock_cons, e₅, runStep_some, runBlock_cons, exec_eorv, runStep_some,
@@ -297,16 +297,16 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
       runBlock_cons, e₁₂, runStep_some, runBlock_cons, e₁₃, runStep_some, runBlock_cons, e₁₄,
       runStep_some, runBlock_cons, e₁₅, runStep_some, runBlock_cons, e₁₆, runStep_some, runBlock_nil]
   -- The values stored.
-  have V0 : d₁₂.v .v0 = t.v .v0 ^^^ ofVDwords X (M.readW (q + BitVec.ofNat 64 0) 64) := by
+  obtain V0 : d₁₂.v .v0 = t.v .v0 ^^^ ofVDwords X (M.readW (q + BitVec.ofNat 64 0) 64) := by
     simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq,
       setLane_two] <;> rfl
-  have V1 : d₁₂.v .v1 = t.v .v1 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 0) 16 := by
+  obtain V1 : d₁₂.v .v1 = t.v .v1 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 0) 16 := by
     simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
-  have V2 : d₁₂.v .v2 = t.v .v2 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 16) 16 := by
+  obtain V2 : d₁₂.v .v2 = t.v .v2 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 16) 16 := by
     simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
-  have V3 : d₁₂.v .v3 = t.v .v3 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 32) 16 := by
+  obtain V3 : d₁₂.v .v3 = t.v .v3 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 32) 16 := by
     simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
-  have mem : d₁₆.mem = (((M.write (q + BitVec.ofNat 64 0) 16 (d₁₂.v .v0)).write
+  obtain mem : d₁₆.mem = (((M.write (q + BitVec.ofNat 64 0) 16 (d₁₂.v .v0)).write
       (q + BitVec.ofNat 64 16) 16 (d₁₂.v .v1)).write (q + BitVec.ofNat 64 32) 16 (d₁₂.v .v2)).write
       (q + BitVec.ofNat 64 48) 16 (d₁₂.v .v3) := by
     simp only [d₁₆, d₁₅, d₁₄, d₁₃, x1₁₂]
@@ -332,7 +332,7 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
         Offset.add_add, show o / 8 = 6 + o % 16 / 8 by omega_arith, show o % 8 = o % 16 % 8 by omega_arith,
         show 8 + (32 + o % 16) = o - 8 by omega_arith]
   · rw [mem]
-    have c : ∀ d, d + 16 ≤ 64 → (⟨q, 64⟩ : Region).Contains (q + BitVec.ofNat 64 d) 16 :=
+    obtain c : ∀ d, d + 16 ≤ 64 → (⟨q, 64⟩ : Region).Contains (q + BitVec.ofNat 64 d) 16 :=
       fun d h => Offset.contains_base q h (by omega_arith)
     exact (((((Frame.refl _ M).write (List.mem_singleton_self _) _ (c 0 (by decide))).write
       (List.mem_singleton_self _) _ (c 16 (by decide))).write (List.mem_singleton_self _) _

@@ -75,33 +75,33 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
   have hn := hI.ctx.scrT.nowrap
   let v := (eb[i]'(by omega_arith)).toNat
   let z := (fb[i]'(by omega_arith)).toNat
-  have hv : v < 256 := (eb[i]'(by omega_arith)).isLt
-  have hz : z < 256 := (fb[i]'(by omega_arith)).isLt
-  have er : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 i) 1 := by
+  obtain hv : v < 256 := (eb[i]'(by omega_arith)).isLt
+  obtain hz : z < 256 := (fb[i]'(by omega_arith)).isLt
+  obtain er : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.rd, hI.keep.wr]; exact hrd i hi
-  have fr : InRegions (t.rd ++ t.wr) (fp + BitVec.ofNat 64 i) 1 := by
+  obtain fr : InRegions (t.rd ++ t.wr) (fp + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.rd, hI.keep.wr]; exact frd i hi
-  have ev : t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_arith) := by
+  obtain ev : t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_arith) := by
     rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := hout i hi; omega_arith)]
     exact hbytes i hi
-  have fv : t.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega_arith) := by
+  obtain fv : t.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega_arith) := by
     rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := fout i hi; omega_arith)]
     exact fbytes i hi
   simp only [seqs]
   refine WP.seq (WP.mono (jointByteHead_ok hI.ctx hI.idx hI.e hI.f er fr ev fv)
     fun t₁ ⟨hm₁, k₁⟩ => ?_)
-  have o1 := writeW_outside t.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (256 * v + z)) (by decide)
-  have o2 := writeW_outside (t.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (256 * v + z))) P
+  obtain o1 := writeW_outside t.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (256 * v + z)) (by decide)
+  obtain o2 := writeW_outside (t.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (256 * v + z))) P
     (d := 8 * Crt.sBit) (BitVec.ofNat 64 4) (by decide)
   rw [← hm₁] at o2
-  have f₁ : Frm P (crtWinRanges w) t.mem t₁.mem :=
+  obtain f₁ : Frm P (crtWinRanges w) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [crtWinRanges])).trans (Frm.of_outside o2 (by simp [crtWinRanges]))
-  have hc₁ := hI.ctx.of_win f₁ k₁.wr (k₁.gpr .x0 (by decide))
-  have hY0 := slot_le (w := w) (show aY < 8 by decide)
-  have hYe : wv t₁.mem P (slot w aY) w = wv t.mem P (slot w aY) w := by
+  obtain hc₁ := hI.ctx.of_win f₁ k₁.wr (k₁.gpr .x0 (by decide))
+  obtain hY0 := slot_le (w := w) (show aY < 8 by decide)
+  obtain hYe : wv t₁.mem P (slot w aY) w = wv t.mem P (slot w aY) w := by
     rw [o2.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith),
       o1.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega_arith) (by omega_arith)]
-  have hB0 : JointWinInv t₁ P w minv n xc g y (pre eb i) (pre fb i) v z 0 t₁ := by
+  obtain hB0 : JointWinInv t₁ P w minv n xc g y (pre eb i) (pre fb i) v z 0 t₁ := by
     refine ⟨hc₁, hI.tab.of_win f₁ hn, hYe ▸ hI.ylt, ?_, ?_, ?_, Frm.refl _ _ _, Keep.refl _ _⟩
     · rw [hYe, hI.val, Nat.pow_zero, Nat.mul_one, Nat.mul_one, Nat.sub_zero,
         Nat.div_eq_of_lt (show v < 4 ^ 4 from hv), Nat.div_eq_of_lt (show z < 4 ^ 4 from hz),
@@ -111,17 +111,17 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
   refine WP.seq (WP.mono (jointWins_ok M hw hw' hR hv hz hB0) fun t₂ h₂ => ?_)
   -- The next byte.
   have hc₂ := h₂.ctx
-  have hh₂ : ∀ k < 32, k ≠ Crt.sV → k ≠ Crt.sBit → k ≠ Crt.sNib → k ≠ Crt.sEnt → k ≠ Crt.sJ →
+  obtain hh₂ : ∀ k < 32, k ≠ Crt.sV → k ≠ Crt.sBit → k ≠ Crt.sNib → k ≠ Crt.sEnt → k ≠ Crt.sJ →
       word t₂.mem P (8 * k) = word t.mem P (8 * k) := fun k hk h1 h2 h3 h4 h5 => by
     rw [h₂.frm.word_eq (crtWinRanges_hdr w hk h1 h2 h3 h4 h5) (by omega_arith), hm₁,
       hdrStore_hdr (i := Crt.sBit) _ _ _ (by decide) hk (Ne.symm h2),
       hdrStore_hdr (i := Crt.sV) _ _ _ (by decide) hk (Ne.symm h1)]
-  have hidx₂ := (hh₂ Crt.sI (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.idx
-  have he₂ := (hh₂ Crt.sExp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.e
-  have hf₂ := (hh₂ Joint.sExp2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.f
-  have hlen₂ := (hh₂ Crt.sExpLen (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans
+  obtain hidx₂ := (hh₂ Crt.sI (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.idx
+  obtain he₂ := (hh₂ Crt.sExp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.e
+  obtain hf₂ := (hh₂ Joint.sExp2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hI.f
+  obtain hlen₂ := (hh₂ Crt.sExpLen (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans
     hI.len
-  have hlen₂' : (t₂.mem.writeW (off P (8 * Crt.sI)) (BitVec.ofNat 64 (i + 1))).readW (off P (8 * Crt.sExpLen)) 64 =
+  obtain hlen₂' : (t₂.mem.writeW (off P (8 * Crt.sI)) (BitVec.ofNat 64 (i + 1))).readW (off P (8 * Crt.sExpLen)) 64 =
       BitVec.ofNat 64 L := by
     rw [← hlen₂]; exact hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide)
   refine WP.mono (WP.keep [.x3, .x4] (Q := fun t' => t'.mem = t₂.mem.writeW (off P (8 * Crt.sI))
@@ -133,8 +133,8 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
     fun t' ⟨⟨hm', h3'⟩, k'⟩ => ⟨?_, ?_⟩
   · have o' := writeW_outside t₂.mem P (d := 8 * Crt.sI) (BitVec.ofNat 64 (i + 1)) (by decide)
     rw [← hm'] at o'
-    have f' : Frm P (crtExpRanges w) t₂.mem t'.mem := Frm.of_outside o' (by simp [crtExpRanges])
-    have hYe : wv t'.mem P (slot w aY) w = wv t₂.mem P (slot w aY) w :=
+    obtain f' : Frm P (crtExpRanges w) t₂.mem t'.mem := Frm.of_outside o' (by simp [crtExpRanges])
+    obtain hYe : wv t'.mem P (slot w aY) w = wv t₂.mem P (slot w aY) w :=
       o'.wv (by have := hdr_lt_slot w aY (show Crt.sI < 32 by decide); omega_arith) (by omega_arith)
     refine ⟨hc₂.of_frm f' k'.wr (k'.gpr .x0 (by decide)), ?_, hYe ▸ h₂.ylt, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · exact ⟨by rw [o'.word (by decide) (by decide)]; exact h₂.tab.tab,

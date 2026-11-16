@@ -103,7 +103,7 @@ theorem bytes_frame {m m' : Mem} {D S : Addr} {L Z : Nat} (hf : Frame [savR S] m
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   rw [List.mem_singleton] at hr
   subst hr
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   exact h (D + BitVec.ofNat 64 i) (Offset.contains_base _ (show i + 1 ≤ L by omega_using [hi]) (by omega_using [hL, hi]))
     ((Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega_using [hZ])) _ hc)
 
@@ -132,64 +132,64 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   generalize hSd : s.gpr .r8 = S at hwr dDS dYS nwS
   generalize hZd : (s.gpr .r9).toNat * 8 = Z at hwr dDS dYS nwS
   rw [hyl] at hrd dYS nwY
-  have hLk : 2 * k ≤ L ∧ L ≤ 3 * k := by
+  obtain hLk : 2 * k ≤ L ∧ L ≤ 3 * k := by
     simp only [Spec.Ffdh.domainLenValid] at hL; omega_using [hL]
-  have hZ256 : 256 ≤ Z := by omega_using [hsl, hZd]
+  obtain hZ256 : 256 ≤ Z := by omega_using [hsl, hZd]
   generalize hwd : (k + 7) / 8 = w
-  have hw4 : 4 ≤ w := by omega_using [hk, hwd]
-  have hw' : w ≤ 128 := by omega_using [hk', hwd]
-  have hZw : slot w 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hwd, hk', hk]
-  have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
-  have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
+  obtain hw4 : 4 ≤ w := by omega_using [hk, hwd]
+  obtain hw' : w ≤ 128 := by omega_using [hk', hwd]
+  obtain hZw : slot w 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hwd, hk', hk]
+  obtain hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
+  obtain hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
     rw [off, Offset.add_add]; exact Offset.contains_base S (by omega_using [hZ256, hi]) (by omega_using [hi])⟩
-  have sepD := sep_of_disjoint dDS (by omega_using [hLd])
-  have sepY := sep_of_disjoint dYS (by omega_using [hkd])
-  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_using [hLd])
-  have rdY := rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega_using [hkd])
+  obtain sepD := sep_of_disjoint dDS (by omega_using [hLd])
+  obtain sepY := sep_of_disjoint dYS (by omega_using [hkd])
+  obtain rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_using [hLd])
+  obtain rdY := rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega_using [hkd])
   unfold checkPublic
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (save_ok (ws := .r8) (by decide) s (by rw [hSd]; exact hin)) fun s₁ hS => ?_
   have k1 := hS.keep
-  have h23₁ : s₁.gpr .r23 = S := hS.r23.trans hSd
-  have hfr₁ : Frame [savR S] s.mem s₁.mem := hSd ▸ hS.frame
+  obtain h23₁ : s₁.gpr .r23 = S := hS.r23.trans hSd
+  obtain hfr₁ : Frame [savR S] s.mem s₁.mem := hSd ▸ hS.frame
   refine WP.mono (setup_ok (D := D) (Y := Y) (L := L) (k := k) ((k1.gpr .r3 (by decide)).trans hDd)
     (by rw [k1.gpr .r4 (by decide), ← hLd, VG.Proof.Bignum.ofNat_toNat64]) (by rw [k1.gpr .r5 (by decide), ← hkd, VG.Proof.Bignum.ofNat_toNat64])
     ((k1.gpr .r6 (by decide)).trans hYd) h23₁ hk') fun s₂ ⟨⟨a21, a27, a28, a11, a29, a10, a31, a26, m2⟩, k2⟩ => ?_
   rw [hwd] at a11 a29 a10
-  have k12 := k1.trans k2
-  have e2 : Env s₂ S Z w := ⟨hs.congr k12.wr, a10, a29, a11, a31, hw4, hw', hZw⟩
-  have hbD : ∀ n ≤ L, Spec.Rsa.bytesAt s₂.mem D n = Spec.Rsa.bytesAt s.mem D n := fun n hn => by
+  obtain k12 := k1.trans k2
+  obtain e2 : Env s₂ S Z w := ⟨hs.congr k12.wr, a10, a29, a11, a31, hw4, hw', hZw⟩
+  obtain hbD : ∀ n ≤ L, Spec.Rsa.bytesAt s₂.mem D n = Spec.Rsa.bytesAt s.mem D n := fun n hn => by
     rw [m2]; exact bytes_frame hfr₁ (fun x h1 h2 => dDS x (by simp only [Region.Contains] at h1 ⊢; omega_using [hn, h1]) h2)
       (by omega_using [hLd, hn]) hZ256
-  have hbY : Spec.Rsa.bytesAt s₂.mem Y k = Spec.Rsa.bytesAt s.mem Y k := by
+  obtain hbY : Spec.Rsa.bytesAt s₂.mem Y k = Spec.Rsa.bytesAt s.mem Y k := by
     rw [m2]; exact bytes_frame hfr₁ dYS (by omega_using [hkd]) hZ256
-  have g23 : s₂.gpr .r23 = S := (k2.gpr .r23 (by decide)).trans h23₁
+  obtain g23 : s₂.gpr .r23 = S := (k2.gpr .r23 (by decide)).trans h23₁
   refine WP.seq (WP.mono (loadP_ok e2 a21 a28 hwd.symm hk hk' (fun i hi => by
       rw [k12.rd, k12.wr]; exact rdD i (by omega_using [hLk, hi])) (fun i hi => sepD i (by omega_using [hLk, hi])))
     fun s₃ ⟨⟨p3, c3, b3⟩, k3⟩ => ?_)
   rw [hbD k (by omega_using [hLk])] at p3 c3
   generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) = p at p3 c3
-  have e3 : Env s₃ S Z w := e2.keep k3 (by decide)
-  have k13 := k12.trans k3
-  have hbY₃ : Spec.Rsa.bytesAt s₃.mem Y k = Spec.Rsa.bytesAt s.mem Y k := by
+  obtain e3 : Env s₃ S Z w := e2.keep k3 (by decide)
+  obtain k13 := k12.trans k3
+  obtain hbY₃ : Spec.Rsa.bytesAt s₃.mem Y k = Spec.Rsa.bytesAt s.mem Y k := by
     rw [b3.bytesAt hZw sepY, hbY]
-  have hbQ₃ : L = 3 * k → Spec.Rsa.bytesAt s₃.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k :=
+  obtain hbQ₃ : L = 3 * k → Spec.Rsa.bytesAt s₃.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k :=
       fun h3k => by
-    have sq : ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun i hi => by
+    obtain sq : ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun i hi => by
       rw [off_off']; exact sepD _ (by omega_using [h3k, hi])
     rw [b3.bytesAt hZw sq]
     have := hbD (3 * k) (by omega_using [h3k])
     simp only [Spec.Rsa.bytesAt] at this ⊢
     refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
-    have e := congrArg (fun l => l[2 * k + i]?) this
+    obtain hi := List.mem_range.mp hi
+    obtain e := congrArg (fun l => l[2 * k + i]?) this
     simp only [List.getElem?_map, List.getElem?_range (show 2 * k + i < 3 * k by omega_using [hi]), Option.map_some,
       Option.some.injEq] at e
     simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact e
   -- The branch on p's validity.
-  have hite : WP isa (.ite (.zero .d .r0) checkY (.block [.li .r3 0])) s₃ fun t =>
+  obtain hite : WP isa (.ite (.zero .d .r0) checkY (.block [.li .r3 0])) s₃ fun t =>
       (Spec.Rsa.modulusValid p k = true → t.gpr .r3 = BitVec.ofNat 64 (if (1 < Spec.Rsa.os2ip
           (Spec.Rsa.bytesAt s.mem Y k) ∧ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) < p - 1) ∧
           (L = 3 * k → Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Y k) ^
@@ -217,11 +217,11 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
         (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ => ⟨fun hv => absurd (c3.mpr hv) (by simpa using hb),
           by rw [tm]; exact Outside.refl _ _ _ _, kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₄ ⟨t3, b4, k4⟩ => ?_)
-  have k14 := k13.trans k4
-  have hsav : ∀ i < 18, t₄.mem.readW (off (savW S) (8 * i)) 64 = s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i) :=
+  obtain k14 := k13.trans k4
+  obtain hsav : ∀ i < 18, t₄.mem.readW (off (savW S) (8 * i)) 64 = s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i) :=
       fun i hi => by
-    have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
-    have e0 : slot w 0 = 256 := by rw [slot_eq]; omega_using []
+    obtain ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
+    obtain e0 : slot w 0 = 256 := by rw [slot_eq]; omega_using []
     rw [← hS.saved i hi, hSd, ea]
     show Mont.word t₄.mem S (112 + 8 * i) = Mont.word s₁.mem S (112 + 8 * i)
     rw [Outside.word b4 (by omega_using [hi, e0]) (by omega_using [hi]), Outside.word b3 (by omega_using [hi, e0]) (by omega_using [hi]), m2]
@@ -234,7 +234,7 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
     · have hn : ∀ i < 18, r ≠ Impl.Ffdh.PPC64LE.Domain.saved i := fun i hi e => hs' ⟨i, hi, e⟩
       rw [uot r hn, k14.gpr r (pres_not_written r hr hn)]
   · rw [hDd, hLd, hkd] at hdv
-    have hmod := Proof.Ffdh.domainValid_mod hdv
+    obtain hmod := Proof.Ffdh.domainValid_mod hdv
     rw [Proof.Ffdh.domainOf_p _ _ hLk.1, hp] at hmod
     rw [uot .r3 (by decide), t3 hmod, ret_ofNat, hDd, hLd, hkd, hyl, hYd]
     refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)

@@ -61,8 +61,8 @@ theorem combineChunk_ok {s : State} {i : Nat} (hi : i < 8) {lo hi' : Nat → Nat
     WP isa (.block (combineChunk i)) s fun t =>
       LaneIs t (16 + i) (fun e => lo e + 2 ^ 28 * hi' e) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ (∀ r : VReg, r ≠ V (16 + i) → t.v r = s.v r) := by
-  have n1 : V (2 * i + 1) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n2 : V (2 * i) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n1 : V (2 * i + 1) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n2 : V (2 * i) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   simp only [combineChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr ⟨fun e he => ?_,
@@ -86,7 +86,7 @@ theorem combine_ok {s : State} (L : Nat → Nat → Nat) (hL : ∀ k < 16, LaneI
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, (∀ i < n, r ≠ V (16 + i)) → t.v r = s.v r)
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨ti, tm, tg, tr, tw, tv⟩ => ?_) 8 (by decide) s
     ⟨fun _ h => absurd h (by omega_arith), rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
-  have keep : ∀ k < 16, t.v (V k) = s.v (V k) := fun k hk =>
+  obtain keep : ∀ k < 16, t.v (V k) = s.v (V k) := fun k hk =>
     tv _ fun i hi => V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   refine WP.mono (combineChunk_ok hn (fun e he' => by rw [keep _ (by omega_arith)]; exact hL _ (by omega_arith) e he')
     (fun e he' => by rw [keep _ (by omega_arith)]; exact hL _ (by omega_arith) e he') (he n hn) (ho n hn))
@@ -102,7 +102,7 @@ theorem m56_ok {s : State} (hM : ∀ e < 2, (vdword (s.v (V 30)) e).toNat = 2 ^ 
     WP isa (.block m56) s fun t =>
       (∀ e < 2, (vdword (t.v (V 31)) e).toNat = 2 ^ 56 - 1) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.gpr = s.gpr ∧ (∀ r : VReg, r ≠ V 31 → t.v r = s.v r) := by
-  have n : V 30 ≠ V 31 := by decide
+  obtain n : V 30 ≠ V 31 := by decide
   simp only [m56]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr ⟨fun e he => ?_,
@@ -120,11 +120,11 @@ theorem carry56_ok {s : State} {i : Nat} (hi : i = 16 ∨ i = 20)
       LaneIs t i (fun e => x e % 2 ^ 56) ∧ LaneIs t (i + 1) (fun e => y e + x e / 2 ^ 56) ∧ t.mem = s.mem ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r : VReg, r ≠ V 28 → r ≠ V i → r ≠ V (i + 1) → t.v r = s.v r) := by
-  have n1 : V 28 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n2 : V 28 ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n3 : V i ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n4 : V 31 ≠ V 28 := by decide
-  have n5 : V 31 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n1 : V 28 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n2 : V 28 ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n3 : V i ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n4 : V 31 ≠ V 28 := by decide
+  obtain n5 : V 31 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   have n1' := n1.symm
   have n2' := n2.symm
   have n3' := n3.symm
@@ -150,12 +150,12 @@ theorem outChunk_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ k : N
       (∀ j < 2, word t.mem base (o₂ + 8 * (2 * k + j)) = vdword (s.v (V (16 + (2 * k + j)))) 1) ∧
       VG.Proof.X448.AArch64.Outside2 base (o₁ + 16 * k) 16 (o₂ + 16 * k) 16 s.mem t.mem ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, r ≠ V 8 → r ≠ V 9 → t.v r = s.v r) := by
-  have n89 : V 8 ≠ V 9 := by decide
+  obtain n89 : V 8 ≠ V 9 := by decide
   have n98 := n89.symm
-  have a8 : V (16 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have b8 : V (17 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have a9 : V (16 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have b9 : V (17 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain a8 : V (16 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain b8 : V (17 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain a9 : V (16 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain b9 : V (17 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   simp only [outChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
@@ -208,31 +208,31 @@ theorem finishN_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (m56_ok (fun e he' => by
     rw [tv _ (fun i _ => V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hM e he')) fun u ⟨uM, um, ur, uw, ug, uv⟩ => ?_
-  have hu : ∀ i < 8, LaneIs u (16 + i) (fun e => w56 (L e) i) := fun i hi e he' => by
+  obtain hu : ∀ i < 8, LaneIs u (16 + i) (fun e => w56 (L e) i) := fun i hi e he' => by
     rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact tw i hi e he'
   rw [WP.block_append_iff]
   -- the last carries
-  have b0 : ∀ e < 2, ∀ i < 8, w56 (L e) i < 2 ^ 57 := fun e he' i hi => by
+  obtain b0 : ∀ e < 2, ∀ i < 8, w56 (L e) i < 2 ^ 57 := fun e he' i hi => by
     have := he e he' i hi; have := ho e he' i hi; simp only [w56]; omega_arith
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [WP.block_append_iff]
   refine WP.mono (carry56_ok (i := 16) (Or.inl rfl) uM (hu 0 (by decide)) (hu 1 (by decide))
     (fun e he' => by have := b0 e he' 1 (by decide); have := b0 e he' 0 (by decide); omega_arith))
     fun v ⟨va, vb, vm, vg, vr, vw, vv⟩ => ?_
-  have vM : ∀ e < 2, (vdword (v.v (V 31)) e).toNat = 2 ^ 56 - 1 := fun e he' => by
+  obtain vM : ∀ e < 2, (vdword (v.v (V 31)) e).toNat = 2 ^ 56 - 1 := fun e he' => by
     rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
       (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact uM e he'
-  have v4 : LaneIs v 20 (fun e => w56 (L e) 4) := fun e he' => by
+  obtain v4 : LaneIs v 20 (fun e => w56 (L e) 4) := fun e he' => by
     rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
       (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hu 4 (by decide) e he'
-  have v5 : LaneIs v 21 (fun e => w56 (L e) 5) := fun e he' => by
+  obtain v5 : LaneIs v 21 (fun e => w56 (L e) 5) := fun e he' => by
     rw [vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
       (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hu 5 (by decide) e he'
   refine WP.mono (carry56_ok (i := 20) (Or.inr rfl) vM v4 v5
     (fun e he' => by have := b0 e he' 5 (by decide); have := b0 e he' 4 (by decide); omega_arith))
     fun w ⟨wa, wb, wm, wg, wr, ww, wv⟩ => ?_
   -- the results
-  have wl : ∀ i < 8, LaneIs w (16 + i) (fun e => out56 (L e) i) := by
+  obtain wl : ∀ i < 8, LaneIs w (16 + i) (fun e => out56 (L e) i) := by
     intro i hi e he'
     rcases (show i = 0 ∨ i = 1 ∨ i = 4 ∨ i = 5 ∨ (i ≠ 0 ∧ i ≠ 1 ∧ i ≠ 4 ∧ i ≠ 5) by omega_arith)
       with rfl | rfl | rfl | rfl | ⟨i0, i1, i4, i5⟩
@@ -247,8 +247,8 @@ theorem finishN_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ : Nat}
         vv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
         (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), hu i hi e he']
       simp [out56, i0, i1, i4, i5]
-  have gw : w.gpr = s.gpr := by rw [wg, vg, ug, tg]
-  have hw : Scr w base := scr_of hs gw (by rw [ww, vw, uw, twr])
+  obtain gw : w.gpr = s.gpr := by rw [wg, vg, ug, tg]
+  obtain hw : Scr w base := scr_of hs gw (by rw [ww, vw, uw, twr])
   let inv := fun n (x : State) =>
     (∀ i < 2 * n, (word x.mem base (o₁ + 8 * i)).toNat = out56 (L 0) i) ∧
     (∀ i < 2 * n, (word x.mem base (o₂ + 8 * i)).toNat = out56 (L 1) i) ∧

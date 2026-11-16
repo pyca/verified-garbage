@@ -71,18 +71,18 @@ theorem sumChunk_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
   have hNB : NB = 4224 := rfl
   have hNAS : NAS = 4352 := rfl
   have hNBS : NBS = 4416 := rfl
-  have n01 : V 0 ≠ V 1 := by decide
-  have n10 : V 1 ≠ V 0 := by decide
-  have n02 : V 0 ≠ V 2 := by decide
-  have n20 : V 2 ≠ V 0 := by decide
-  have n03 : V 0 ≠ V 3 := by decide
-  have n30 : V 3 ≠ V 0 := by decide
-  have n12 : V 1 ≠ V 2 := by decide
-  have n21 : V 2 ≠ V 1 := by decide
-  have n13 : V 1 ≠ V 3 := by decide
-  have n31 : V 3 ≠ V 1 := by decide
-  have n23 : V 2 ≠ V 3 := by decide
-  have n32 : V 3 ≠ V 2 := by decide
+  obtain n01 : V 0 ≠ V 1 := by decide
+  obtain n10 : V 1 ≠ V 0 := by decide
+  obtain n02 : V 0 ≠ V 2 := by decide
+  obtain n20 : V 2 ≠ V 0 := by decide
+  obtain n03 : V 0 ≠ V 3 := by decide
+  obtain n30 : V 3 ≠ V 0 := by decide
+  obtain n12 : V 1 ≠ V 2 := by decide
+  obtain n21 : V 2 ≠ V 1 := by decide
+  obtain n13 : V 1 ≠ V 3 := by decide
+  obtain n31 : V 3 ≠ V 1 := by decide
+  obtain n23 : V 2 ≠ V 3 := by decide
+  obtain n32 : V 3 ≠ V 2 := by decide
   simp only [sumChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq hs 0 (by omega_arith) (by omega_arith), ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq (base := base) ?g1 1 (by omega_arith) (by omega_arith), ?_⟩
@@ -104,8 +104,8 @@ theorem sumChunk_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
   vred
   simp only [setMem_gpr, setMem_rd, setMem_wr, RegUpd.gpr_setV, RegUpd.rd_setV, RegUpd.wr_setV]
   generalize hm1 : s.mem.write (off base (NAS + 16 * i)) 16 _ = m1
-  have o1 : Outside base (NAS + 16 * i) 16 s.mem m1 := hm1 ▸ st_outside _ _ _ (by omega_arith)
-  have r1 : ∀ d, d + 4 ≤ 8192 → (d + 4 ≤ NAS + 16 * i ∨ NAS + 16 * i + 16 ≤ d) → nw m1 base d = nw s.mem base d :=
+  obtain o1 : Outside base (NAS + 16 * i) 16 s.mem m1 := hm1 ▸ st_outside _ _ _ (by omega_arith)
+  obtain r1 : ∀ d, d + 4 ≤ 8192 → (d + 4 ≤ NAS + 16 * i ∨ NAS + 16 * i + 16 ≤ d) → nw m1 base d = nw s.mem base d :=
     fun d h1 h2 => Outside.nw o1 h2 h1
   refine ⟨fun c hc => ?_, fun c hc => ?_, ?_, fun d h1 h2 h3 => ?_, trivial, trivial, trivial, fun r hr => ?_⟩
   · rw [nw_st_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), ← hm1, nw_st _ _ _ _ hc, vword_add _ _ hc,
@@ -142,8 +142,8 @@ theorem sums_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (wp_range_flatMap (M := isa) (N := 4) inv (fun n t hn ⟨ta, tb, tO, tg, tr, tw, tv⟩ => ?_) 4
     (by decide) s ⟨fun _ h => absurd h (by omega_arith), fun _ h => absurd h (by omega_arith), Outside.refl _ _ _ _,
       rfl, rfl, rfl, fun _ _ => rfl⟩) fun t ht => ht
-  have ht : Scr t base := scr_of hs tg tw
-  have same : ∀ d, d + 4 ≤ 8192 → (d + 4 ≤ NAS ∨ NAS + 128 ≤ d) → nw t.mem base d = nw s.mem base d :=
+  obtain ht : Scr t base := scr_of hs tg tw
+  obtain same : ∀ d, d + 4 ≤ 8192 → (d + 4 ≤ NAS ∨ NAS + 128 ≤ d) → nw t.mem base d = nw s.mem base d :=
     fun d h1 h2 => Outside.nw tO h2 h1
   refine WP.mono (sumChunk_ok ht hn) fun u ⟨ua, ub, uO, uk, ug, ur, uw, uv⟩ =>
     ⟨fun i hi c hc => ?_, fun i hi c hc => ?_, tO.trans (uO.mono (by omega_arith) (by omega_arith)), ug.trans tg, ur.trans tr,
@@ -207,8 +207,8 @@ theorem shiftChunk_ok {s : State} {base : Addr} (hs : Scr s base) {h : Nat} (hh 
   have hNB : NB = 4224 := rfl
   have hNBS : NBS = 4416 := rfl
   have ne : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := V_ne
-  have n0_31 := ne 0 (by decide) 31 (by decide) (by decide)
-  have n31_0 := ne 31 (by decide) 0 (by decide) (by decide)
+  obtain n0_31 := ne 0 (by decide) 31 (by decide) (by decide)
+  obtain n31_0 := ne 31 (by decide) 0 (by decide) (by decide)
   simp only [shiftChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq hs 0 (by omega_arith) (by omega_arith), ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq (base := base) ?g1 1 (by omega_arith) (by omega_arith), ?_⟩
@@ -242,13 +242,13 @@ theorem shiftChunk_ok {s : State} {base : Addr} (hs : Scr s base) {h : Nat} (hh 
   simp (config := {decide := true}) only [RegUpd.v_setV, setMem_v, setMem_mem, RegUpd.mem_setV, ite_true,
     ite_false, setMem_gpr, setMem_rd, setMem_wr, RegUpd.gpr_setV, RegUpd.rd_setV, RegUpd.wr_setV,
     show ∀ x y : BitVec 128, BitVec.extractLsb' 0 128 ((y ++ x) >>> (8 * 8)) = extv x y from fun _ _ => rfl]
-  have w0 : ∀ c < 4, (vword (0 : BitVec 128) c).toNat = 0 := fun c _ => by simp [vword]
-  have wL : ∀ k < 4, ∀ c < 4, (vword (s.mem.read (off base (bHalf h + 16 * k)) 16) c).toNat =
+  obtain w0 : ∀ c < 4, (vword (0 : BitVec 128) c).toNat = 0 := fun c _ => by simp [vword]
+  obtain wL : ∀ k < 4, ∀ c < 4, (vword (s.mem.read (off base (bHalf h + 16 * k)) 16) c).toNat =
       nw s.mem base (bHalf h + 16 * k + 4 * c) := fun k _ c hc => vword_ld _ _ _ hc
   rw [← hL] at *
   rw [← hL1, ← hL2, ← hL3]
   generalize hm : s.mem.write (off base (NBP + 80 * h + 16 * 0)) 16 _ = m0
-  have E : ∀ (x y : BitVec 128) (c : Nat), c < 4 → (vword (extv x y) c).toNat =
+  obtain E : ∀ (x y : BitVec 128) (c : Nat), c < 4 → (vword (extv x y) c).toNat =
       if c < 2 then (vword x (c + 2)).toNat else (vword y (c - 2)).toNat := fun x y c hc => ext_words x y c hc
   refine ⟨fun j hj c hc => ?_, ?_, trivial, trivial, trivial, fun r hr => ?_⟩
   · rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl
@@ -302,8 +302,8 @@ theorem shifted_ok {s : State} {base : Addr} (hs : Scr s base) (h31 : s.v (V 31)
   refine WP.mono (wp_range_flatMap (M := isa) (N := 3) inv (fun n t hn ⟨ta, tO, tg, tr, tw, tv⟩ => ?_) 3
     (by decide) s ⟨fun _ h => absurd h (by omega_arith), Outside.refl _ _ _ _, rfl, rfl, rfl, fun _ _ => rfl⟩)
     fun t ht => ht
-  have ht : Scr t base := scr_of hs tg tw
-  have t31 : t.v (V 31) = 0 := by rw [tv _ (by decide)]; exact h31
+  obtain ht : Scr t base := scr_of hs tg tw
+  obtain t31 : t.v (V 31) = 0 := by rw [tv _ (by decide)]; exact h31
   refine WP.mono (shiftChunk_ok ht hn t31) fun u ⟨ua, uO, ug, ur, uw, uv⟩ =>
     ⟨fun h hh j hj c hc => ?_, tO.trans (uO.mono (by omega_arith) (by omega_arith)), ug.trans tg, ur.trans tr,
       uw.trans tw, fun r hr => (uv r hr).trans (tv r hr)⟩
@@ -311,7 +311,7 @@ theorem shifted_ok {s : State} {base : Addr} (hs : Scr s base) (h31 : s.v (V 31)
   · rw [Outside.nw uO (by omega_arith) (by omega_arith)]; exact ta h hl j hj c hc
   · rw [ua j hj c hc]
     obtain ⟨b1, b2, b3⟩ := bHalf_lt h
-    have same : ∀ d, d + 4 ≤ NBP → nw t.mem base d = nw s.mem base d := fun d hd =>
+    obtain same : ∀ d, d + 4 ≤ NBP → nw t.mem base d = nw s.mem base d := fun d hd =>
       Outside.nw tO (Or.inl hd) (by omega_arith)
     unfold shw
     split <;> split <;> first | rfl | exact same _ (by omega_arith)

@@ -44,7 +44,7 @@ structure EConsts (m : Mem) (base : Addr) : Prop extends CConsts m base where
 /-- The constants are kept by anything that changes only `OPL` and `OPV`. -/
 theorem EConsts.outside {m m' : Mem} {base : Addr} (hk : EConsts m base)
     (h : Outside base 1024 320 m m') : EConsts m' base := by
-  have w : ∀ d, 1344 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
+  obtain w : ∀ d, 1344 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
     rw [VG.Proof.X25519.X86_64.Ifma.mq_eq_word, VG.Proof.X25519.X86_64.Ifma.mq_eq_word]
     exact h.word (by omega_arith) (by omega_arith)
   refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
@@ -82,15 +82,15 @@ theorem vload_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pro
       ∀ l < 4, ∀ i < 5, lanes s' 0 l i =
         limbNat (fun k => (mq s.mem base (64 + 32 * l + 8 * k)).toNat) (2 ^ 51 - 1) i ∧
         lanes s' 0 l i < 2 ^ 52 := by
-  have hE := loadB_env ha
-  have e : Sym.init.run vload = some loadS := symOf_eq _ _
+  obtain hE := loadB_env ha
+  obtain e : Sym.init.run vload = some loadS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
-  have hmem : s'.mem = stores s base loadS.st s.mem := by rw [h.mem, hs]
-  have cst : ∀ d r l, (d, r) ∈ [(KM, Reg.rax), (K19, .rcx), (KB0, .rdx), (KB1, .rbp), (EK13, .r8),
+  obtain hmem : s'.mem = stores s base loadS.st s.mem := by rw [h.mem, hs]
+  obtain cst : ∀ d r l, (d, r) ∈ [(KM, Reg.rax), (K19, .rcx), (KB0, .rdx), (KB1, .rbp), (EK13, .r8),
       (EK26, .r9), (EK39, .r10)] → l < 4 → (mq s'.mem base (d + 8 * l)).toNat = (s.gpr r).toNat :=
     fun d r l hd hl => by
-      have t := loadT_const _ hd
-      have hm := loadT_mem d (by simp only [List.mem_cons] at hd ⊢; rcases hd with h | h | h | h | h | h | h | h <;>
+      obtain t := loadT_const _ hd
+      obtain hm := loadT_mem d (by simp only [List.mem_cons] at hd ⊢; rcases hd with h | h | h | h | h | h | h | h <;>
         simp_all)
       simp only at t
       rw [t] at hm
@@ -110,7 +110,7 @@ theorem vload_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pro
     simp only [lanes, Nat.zero_add] at e ⊢
     refine ⟨?_, by omega_arith⟩
     rw [e, loadS_regs _ i hi l hl]
-    have hw : (fun k => (envOf s).m (64 + 32 * l) k) = fun k => (mq s.mem base (64 + 32 * l + 8 * k)).toNat :=
+    obtain hw : (fun k => (envOf s).m (64 + 32 * l) k) = fun k => (mq s.mem base (64 + 32 * l + 8 * k)).toNat :=
       funext fun k => envOf_m hs _ _
     rw [hw]
     show limbNat _ (s.gpr .rax).toNat i = _
@@ -125,7 +125,7 @@ theorem dblA_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       (∀ l < 4, ∀ i < 5, slotv s'.mem base OPL l i = lanes s 0 (sel4 (ord 0 1 2 0).toNat l) i ∧
         lanes s' 5 l i = lanes s 0 (sel4 (ord 0 1 2 1).toNat l) i) ∧
       (∀ r < 16, (r < 5 ∨ 11 ≤ r) → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have e : Sym.init.run dblA = some dblAS := symOf_eq _ _
+  obtain e : Sym.init.run dblA = some dblAS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.gpr, h.rd, h.wr, ?_, fun l hl i hi => ⟨?_, ?_⟩, fun r hr h1 l hl => h.keep hr hl (dblAS_keep r hr h1)⟩
   · rw [h.mem, hs]
@@ -153,7 +153,7 @@ theorem mulLB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base)
     (hy : ∀ l < 4, ∀ i < 5, lanes s 5 l i < 2 ^ 52) :
     WP isa (.block (VG.Impl.X25519.X86_64.Ifma.mul4 OPL)) s fun s' =>
       VG.Proof.X25519.X86_64.Ifma.MulPost base OPL s s' ∧ ∀ l < 4, ∀ i < 5, lanes s' 0 l i < prodBound := by
-  have hE : EnvOK s (VG.Proof.X25519.X86_64.Ifma.mulB OPL) := by
+  obtain hE : EnvOK s (VG.Proof.X25519.X86_64.Ifma.mulB OPL) := by
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun _ _ _ => Nat.zero_le _)
     · simp only [VG.Proof.X25519.X86_64.Ifma.mulB]
       split
@@ -170,7 +170,7 @@ theorem mulLB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base)
         simp only [slotv] at this
         omega_arith
       · exact lt64 _
-  have e : Sym.init.run (VG.Impl.X25519.X86_64.Ifma.mul4 OPL) = some VG.Proof.X25519.X86_64.Ifma.mulL :=
+  obtain e : Sym.init.run (VG.Impl.X25519.X86_64.Ifma.mul4 OPL) = some VG.Proof.X25519.X86_64.Ifma.mulL :=
     VG.Proof.X25519.X86_64.Ifma.mulS_eq OPL _
   refine WP.mono (run_ok hc e) fun s' h => ⟨⟨h.eq, by rw [h.mem, VG.Proof.X25519.X86_64.Ifma.mulL_st]; rfl,
     fun l hl i hi => ?_, fun r hr h1 h2 l hl =>
@@ -179,9 +179,9 @@ theorem mulLB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base)
     obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
     simp only [lanes, Nat.zero_add] at e ⊢
     refine ⟨?_, by omega_arith⟩
-    have hf : (fun i => (envOf s).m (OPL + 32 * i) l) = slotv s.mem base OPL l :=
+    obtain hf : (fun i => (envOf s).m (OPL + 32 * i) l) = slotv s.mem base OPL l :=
       funext fun j => by rw [envOf_m hs, slotv]
-    have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
+    obtain hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
     rw [e, VG.Proof.X25519.X86_64.Ifma.mulL_nat _ _ i hi, hf, hg]
   · obtain ⟨o, b⟩ := mulL_bound i hi l hl
     obtain ⟨_, be⟩ := h.out hE (by omega_arith) hl o
@@ -213,7 +213,7 @@ theorem dblB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i = op1 (lanes s 0) l i ∧ lanes s' 0 l i < 2 ^ 63 ∧
         lanes s' 5 l i = op2 (lanes s 0) l i ∧ lanes s' 5 l i < 2 ^ 63) ∧
       (∀ r < 16, 14 ≤ r → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have hE : EnvOK s dblBB := by
+  obtain hE : EnvOK s dblBB := by
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun d l hl => ?_)
     · simp only [dblBB]
       split
@@ -231,7 +231,7 @@ theorem dblB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       · split
         · subst_vars; rw [hk.kb1 l hl]
         · exact Nat.zero_le _
-  have e : Sym.init.run dblB = some dblBS := symOf_eq _ _
+  obtain e : Sym.init.run dblB = some dblBS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, dblBS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (dblBS_keep r hr h1)⟩
@@ -255,7 +255,7 @@ theorem dblC_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
     WP isa (.block dblC) s fun s' => vm s s' = s' ∧ Outside base OPV 160 s.mem s'.mem ∧
       (∀ l < 4, ∀ i < 5, slotv s'.mem base OPV l i = lanes s 0 l i) ∧
       (∀ r < 16, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
-  have e : Sym.init.run dblC = some dblCS := symOf_eq _ _
+  obtain e : Sym.init.run dblC = some dblCS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, ?_, fun l hl i hi => ?_, fun r hr l hl => h.keep hr hl (dblCS_keep r hr)⟩
   · rw [h.mem, hs]
@@ -311,17 +311,17 @@ theorem ops_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < pro
     fe5 (op2 x 0) = fe5 (x 2) + fe5 (x 2) - (fe5 (x 1) - fe5 (x 0)) ∧
     fe5 (op2 x 1) = fe5 (x 0) + fe5 (x 1) ∧ fe5 (op2 x 2) = fe5 (x 1) - fe5 (x 0) ∧
     fe5 (op2 x 3) = fe5 (x 0) + fe5 (x 1) := by
-  have g : fe5 (fun i => kbv i + x 1 i - x 0 i) = fe5 (x 1) - fe5 (x 0) :=
+  obtain g : fe5 (fun i => kbv i + x 1 i - x 0 i) = fe5 (x 1) - fe5 (x 0) :=
     fe5_sub (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega_arith)
       (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega_arith)
-  have f : fe5 (fv x) = fe5 (x 2) + fe5 (x 2) - (fe5 (x 1) - fe5 (x 0)) := by
+  obtain f : fe5 (fv x) = fe5 (x 2) + fe5 (x 2) - (fe5 (x 1) - fe5 (x 0)) := by
     rw [fe5_add (z := fv x) (x := fun i => x 2 i + x 2 i) (y := fun i => kbv i + x 0 i - x 1 i)
       (fun i _ => rfl),
       fe5_add (z := fun i => x 2 i + x 2 i) (x := x 2) (y := x 2) (fun i _ => rfl),
       fe5_sub (z := fun i => kbv i + x 0 i - x 1 i) (x := x 0) (y := x 1) (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega_arith)
         (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega_arith), fe_add_sub]
-  have e : fe5 (fun i => x 3 i + x 3 i) = fe5 (x 3) + fe5 (x 3) := fe5_add fun _ _ => rfl
-  have h : fe5 (fun i => x 0 i + x 1 i) = fe5 (x 0) + fe5 (x 1) := fe5_add fun _ _ => rfl
+  obtain e : fe5 (fun i => x 3 i + x 3 i) = fe5 (x 3) + fe5 (x 3) := fe5_add fun _ _ => rfl
+  obtain h : fe5 (fun i => x 0 i + x 1 i) = fe5 (x 0) + fe5 (x 1) := fe5_add fun _ _ => rfl
   exact ⟨e, g, f, e, f, h, g, h⟩
 
 theorem lanes_keep {s t : State} {r : Nat} (hr : r + 5 ≤ 16)
@@ -340,23 +340,23 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs hc hcc fun l hl i hi => by have := hx l hl i hi; omega_arith)
     fun s₁ ⟨v₁, m₁, u₁, _⟩ => ?_
-  have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
-  have hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by
+  obtain hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
+  obtain hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by
     intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
-  have p₁ : ∀ l < 4, fe5 (lanes s₁ 0 l) = fe5 (lanes s 0 l) := fun l hl => by
+  obtain p₁ : ∀ l < 4, fe5 (lanes s₁ 0 l) = fe5 (lanes s 0 l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₁ l hl i hi).1), fe5_carry _ (by have := hx l hl 4 (by decide); omega_arith)]
   -- the first operands
   rw [WP.block_append_iff]
   refine WP.mono (dblA_wp hs₁ hc₁) fun s₂ ⟨g₂, rd₂, wr₂, o₂, u₂, k₂⟩ => ?_
-  have hs₂ : s₂.gpr .rdi = base := by rw [g₂]; exact hs₁
-  have hc₂ : VG.Proof.X25519.X86_64.Ifma.Ctx s₂ := by intro d hd; rw [g₂, wr₂]; exact hc₁ d hd
+  obtain hs₂ : s₂.gpr .rdi = base := by rw [g₂]; exact hs₁
+  obtain hc₂ : VG.Proof.X25519.X86_64.Ifma.Ctx s₂ := by intro d hd; rw [g₂, wr₂]; exact hc₁ d hd
   -- the first product: `(A, B, C', P)`
   rw [WP.block_append_iff]
   refine WP.mono (mulLB_wp hs₂ hc₂
     (fun l hl i hi => by rw [(u₂ l hl i hi).1]; exact (u₁ _ (sel4_lt _ _) i hi).2)
     (fun l hl i hi => by rw [(u₂ l hl i hi).2]; exact (u₁ _ (sel4_lt _ _) i hi).2))
     fun s₄ ⟨⟨v₄, m₄, u₃, _⟩, b₄⟩ => ?_
-  have p₄ : ∀ l < 4, fe5 (lanes s₄ 0 l) =
+  obtain p₄ : ∀ l < 4, fe5 (lanes s₄ 0 l) =
       fe5 (lanes s 0 (sel4 (ord 0 1 2 0).toNat l)) * fe5 (lanes s 0 (sel4 (ord 0 1 2 1).toNat l)) :=
     fun l hl => by
       rw [fe5_congr (fun i hi => (u₃ l hl i hi).1),
@@ -365,39 +365,39 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
         ← p₁ _ (sel4_lt _ _), ← p₁ _ (sel4_lt _ _)]
       exact congrArg₂ (· * ·) (fe5_congr fun i hi => (u₂ l hl i hi).1)
         (fe5_congr fun i hi => (u₂ l hl i hi).2)
-  have hs₄ : s₄.gpr .rdi = base := by rw [vm_gpr v₄]; exact hs₂
-  have hc₄ : VG.Proof.X25519.X86_64.Ifma.Ctx s₄ := by intro d hd; rw [vm_gpr v₄, vm_wr v₄]; exact hc₂ d hd
-  have mo₃ : Outside base 1024 320 s.mem s₄.mem := by
+  obtain hs₄ : s₄.gpr .rdi = base := by rw [vm_gpr v₄]; exact hs₂
+  obtain hc₄ : VG.Proof.X25519.X86_64.Ifma.Ctx s₄ := by intro d hd; rw [vm_gpr v₄, vm_wr v₄]; exact hc₂ d hd
+  obtain mo₃ : Outside base 1024 320 s.mem s₄.mem := by
     rw [m₄, ← m₁]; exact o₂.mono (by decide) (by decide)
-  have hk₄ : EConsts s₄.mem base := hk.outside mo₃
+  obtain hk₄ : EConsts s₄.mem base := hk.outside mo₃
   -- the second operands
   rw [WP.block_append_iff]
   refine WP.mono (dblB_wp hs₄ hc₄ hk₄.toCConsts b₄)
     fun s₅ ⟨v₅, m₅, u₅, k₅⟩ => ?_
-  have hs₅ : s₅.gpr .rdi = base := by rw [vm_gpr v₅]; exact hs₄
-  have hc₅ : VG.Proof.X25519.X86_64.Ifma.Ctx s₅ := by intro d hd; rw [vm_gpr v₅, vm_wr v₅]; exact hc₄ d hd
-  have hk₅ : EConsts s₅.mem base := by rw [m₅]; exact hk₄
+  obtain hs₅ : s₅.gpr .rdi = base := by rw [vm_gpr v₅]; exact hs₄
+  obtain hc₅ : VG.Proof.X25519.X86_64.Ifma.Ctx s₅ := by intro d hd; rw [vm_gpr v₅, vm_wr v₅]; exact hc₄ d hd
+  obtain hk₅ : EConsts s₅.mem base := by rw [m₅]; exact hk₄
   rw [WP.block_append_iff]
   refine WP.mono (carryF_wp hs₅ hc₅ hk₅.toCConsts fun l hl i hi => (u₅ l hl i hi).2.2.2)
     fun s₆ ⟨v₆, m₆, u₆, k₆⟩ => ?_
-  have hs₆ : s₆.gpr .rdi = base := by rw [vm_gpr v₆]; exact hs₅
-  have hc₆ : VG.Proof.X25519.X86_64.Ifma.Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
-  have hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
-  have l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₆ : s₆.gpr .rdi = base := by rw [vm_gpr v₆]; exact hs₅
+  obtain hc₆ : VG.Proof.X25519.X86_64.Ifma.Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
+  obtain hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
+  obtain l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
     k₆ q hq (by omega_arith) (by omega_arith) l hl
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₆ hc₆ hk₆.toCConsts fun l hl i hi => by
       rw [l₆ l hl i hi]; exact (u₅ l hl i hi).2.1) fun s₇ ⟨v₇, m₇, u₇, k₇⟩ => ?_
-  have hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
-  have hc₇ : VG.Proof.X25519.X86_64.Ifma.Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
-  have l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
+  obtain hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
+  obtain hc₇ : VG.Proof.X25519.X86_64.Ifma.Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
+  obtain l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
     k₇ q hq (by omega_arith) (by omega_arith) l hl
   -- the first operand to `OPV`
   rw [WP.block_append_iff]
   refine WP.mono (dblC_wp hs₇ hc₇) fun s₈ ⟨v₈, o₈, u₈, k₈⟩ => ?_
-  have hs₈ : s₈.gpr .rdi = base := by rw [vm_gpr v₈]; exact hs₇
-  have hc₈ : VG.Proof.X25519.X86_64.Ifma.Ctx s₈ := by intro d hd; rw [vm_gpr v₈, vm_wr v₈]; exact hc₇ d hd
-  have l₈ := lanes_keep (r := 5) (s := s₇) (t := s₈) (by decide) fun q hq _ _ l hl => k₈ q hq l hl
+  obtain hs₈ : s₈.gpr .rdi = base := by rw [vm_gpr v₈]; exact hs₇
+  obtain hc₈ : VG.Proof.X25519.X86_64.Ifma.Ctx s₈ := by intro d hd; rw [vm_gpr v₈, vm_wr v₈]; exact hc₇ d hd
+  obtain l₈ := lanes_keep (r := 5) (s := s₇) (t := s₈) (by decide) fun q hq _ _ l hl => k₈ q hq l hl
   -- the second product
   refine WP.mono (mul4_wp (by decide) (mulS_eq OPV _) (mulV_nat) mulV_ok mulV_keep mulV_st hs₈ hc₈
     (fun l hl i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
@@ -409,7 +409,7 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
     fun l hl i hi => (u₉ l hl i hi).2, ?_⟩
   · rw [m₇, m₆, m₅] at o₈
     rw [m₉]; exact mo₃.trans (o₈.mono (by decide) (by decide))
-  have p₉ : ∀ l < 4, fe5 (lanes s₉ 0 l) = fe5 (op1 (lanes s₄ 0) l) * fe5 (op2 (lanes s₄ 0) l) := fun l hl => by
+  obtain p₉ : ∀ l < 4, fe5 (lanes s₉ 0 l) = fe5 (op1 (lanes s₄ 0) l) * fe5 (op2 (lanes s₄ 0) l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₉ l hl i hi).1),
       fe5_mul (fun i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
         (fun i hi => by rw [l₈ l hl i hi, l₇ l hl i hi]; exact (u₆ l hl i hi).2),
@@ -421,13 +421,13 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       fe5_carry _ (by have := (u₅ l hl 4 (by decide)).2.2.2; omega_arith),
       fe5_congr (fun i hi => (u₅ l hl i hi).2.2.1)]
   obtain ⟨a0, a1, a2, a3, b0, b1, b2, b3⟩ := ops_fe (lanes s₄ 0) b₄
-  have hA : fe5 (lanes s₄ 0 0) = fe5 (lanes s 0 0) * fe5 (lanes s 0 0) := by
+  obtain hA : fe5 (lanes s₄ 0 0) = fe5 (lanes s 0 0) * fe5 (lanes s 0 0) := by
     rw [p₄ 0 (by decide)]; rfl
-  have hB : fe5 (lanes s₄ 0 1) = fe5 (lanes s 0 1) * fe5 (lanes s 0 1) := by
+  obtain hB : fe5 (lanes s₄ 0 1) = fe5 (lanes s 0 1) * fe5 (lanes s 0 1) := by
     rw [p₄ 1 (by decide)]; rfl
-  have hC : fe5 (lanes s₄ 0 2) = fe5 (lanes s 0 2) * fe5 (lanes s 0 2) := by
+  obtain hC : fe5 (lanes s₄ 0 2) = fe5 (lanes s 0 2) * fe5 (lanes s 0 2) := by
     rw [p₄ 2 (by decide)]; rfl
-  have hP : fe5 (lanes s₄ 0 3) = fe5 (lanes s 0 0) * fe5 (lanes s 0 1) := by
+  obtain hP : fe5 (lanes s₄ 0 3) = fe5 (lanes s 0 0) * fe5 (lanes s 0 1) := by
     rw [p₄ 3 (by decide)]; rfl
   simp only [lanePt, dblPoint]
   rw [p₉ 0 (by decide), p₉ 1 (by decide), p₉ 2 (by decide), p₉ 3 (by decide), a0, a1, a2, a3, b0, b1, b2, b3,
@@ -482,19 +482,19 @@ theorem vstore_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pr
   rw [vstore_eq, List.append_assoc, WP.block_append_iff]
   refine WP.mono (carryI_wp hs hc hk.toCConsts fun l hl i hi => by have := hy l hl i hi; omega_arith)
     fun s₁ ⟨v₁, m₁, u₁, _⟩ => ?_
-  have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
-  have hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
-  have hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
+  obtain hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
+  obtain hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
+  obtain hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₁ hc₁ hk₁.toCConsts fun l hl i hi => by have := (u₁ l hl i hi).2; omega_arith)
     fun s₂ ⟨v₂, m₂, u₂, _⟩ => ?_
-  have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
-  have hc₂ : VG.Proof.X25519.X86_64.Ifma.Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
-  have hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk₁
-  have b₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 0 l i ≤ 2 ^ 51 + 18 := fun l hl i hi => by
+  obtain hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
+  obtain hc₂ : VG.Proof.X25519.X86_64.Ifma.Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
+  obtain hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk₁
+  obtain b₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 0 l i ≤ 2 ^ 51 + 18 := fun l hl i hi => by
     rw [(u₂ l hl i hi).1]; exact carryNat_le _ (fun j hj => (u₁ l hl j hj).2) i hi
-  have hE := packB_env hs₂ hk₂ b₂
-  have e : Sym.init.run vpackE = some packS := symOf_eq _ _
+  obtain hE := packB_env hs₂ hk₂ b₂
+  obtain e : Sym.init.run vpackE = some packS := symOf_eq _ _
   refine WP.mono (run_ok hc₂ e) fun s₃ h => ?_
   have v₃ : vm s₂ s₃ = s₃ := h.eq
   refine ⟨(vm_gpr v₃).trans ((vm_gpr v₂).trans (vm_gpr v₁)), (vm_rd v₃).trans ((vm_rd v₂).trans (vm_rd v₁)),
@@ -507,10 +507,10 @@ theorem vstore_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pr
         (nat_ok hE _ hj (packT_ok m hm j hj)).1, packT_nat _ m hm j hj, envOf_m hs₂, envOf_m hs₂,
         envOf_m hs₂, envOf_m hs₂, hk₂.km m hm, hk₂.k13 m hm, hk₂.k26 m hm, hk₂.k39 m hm]
       rfl
-    have fe' : fe s₃.mem base (64 + 32 * m) = VG.Proof.X25519.X86_64.Ifma.lv (lanes s₂ 0 m) := by
+    obtain fe' : fe s₃.mem base (64 + 32 * m) = VG.Proof.X25519.X86_64.Ifma.lv (lanes s₂ 0 m) := by
       simp only [fe, val4]
-      have w0 := w 0 (by decide); have w1 := w 1 (by decide); have w2 := w 2 (by decide)
-      have w3 := w 3 (by decide)
+      obtain w0 := w 0 (by decide); have w1 := w 1 (by decide); have w2 := w 2 (by decide)
+      obtain w3 := w 3 (by decide)
       simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at w0 w1 w2 w3
       rw [w0, show 64 + 32 * m + 16 = 64 + 32 * m + 8 * 2 by rfl, w2, w1, w3]
       exact packW_val _ (b₂ m hm)
@@ -546,7 +546,7 @@ theorem dec_wp (s : State) (n : Nat) (hn : n < 16) (hc : s.gpr .rsi = BitVec.ofN
     WP isa (.block [.alu .sub .rsi (.imm 1)]) s fun t =>
       t.gpr .rsi = BitVec.ofNat 64 n ∧ t.zf = some (decide (n = 0)) ∧ Keeps [.rsi] s t ∧
       ∀ x l, qw t x l = qw s x l := by
-  have e : BitVec.ofNat 64 (n + 1) - (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 n := by
+  obtain e : BitVec.ofNat 64 (n + 1) - (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 n := by
     rw [show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl,
       BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock

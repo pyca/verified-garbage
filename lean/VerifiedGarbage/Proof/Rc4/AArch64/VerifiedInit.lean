@@ -60,16 +60,16 @@ theorem ident_ok {s : State} (hk : Consts s) :
     WP isa (.block identCode) s fun t =>
       (∀ q < 16, t.v (treg q) = laneNums q) ∧ (∀ v, NotTable v → t.v v = s.v v) ∧
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have l0 : s.v .v8 = laneNums 0 := hk.lns 0 (by decide)
-  have l1 : s.v .v9 = laneNums 1 := hk.lns 1 (by decide)
-  have l2 : s.v .v10 = laneNums 2 := hk.lns 2 (by decide)
-  have l3 : s.v .v11 = laneNums 3 := hk.lns 3 (by decide)
+  obtain l0 : s.v .v8 = laneNums 0 := hk.lns 0 (by decide)
+  obtain l1 : s.v .v9 = laneNums 1 := hk.lns 1 (by decide)
+  obtain l2 : s.v .v10 = laneNums 2 := hk.lns 2 (by decide)
+  obtain l3 : s.v .v11 = laneNums 3 := hk.lns 3 (by decide)
   have k64 : s.v .v12 = bc 64 := hk.c64
   have k128 : s.v .v13 = bc 128 := hk.c128
-  have x0 := ident_xor 0 (by decide)
-  have x1 := ident_xor 1 (by decide)
-  have x2 := ident_xor 2 (by decide)
-  have x3 := ident_xor 3 (by decide)
+  obtain x0 := ident_xor 0 (by decide)
+  obtain x1 := ident_xor 1 (by decide)
+  obtain x2 := ident_xor 2 (by decide)
+  obtain x3 := ident_xor 3 (by decide)
   simp only [Nat.reduceAdd] at x0 x1 x2 x3
   unfold identCode eorV
   rrun [l0, l1, l2, l3, k64, k128, x0.1, x0.2.1, x0.2.2, x1.1, x1.2.1, x1.2.2, x2.1, x2.2.1,
@@ -80,22 +80,22 @@ theorem ident_ok {s : State} (hk : Consts s) :
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [treg]
   · have ne (a : Nat) (ha : a < 16) : v ≠ treg a := (hv a ha).symm
-    have n0 : v ≠ .v16 := ne 0 (by decide)
-    have n1 : v ≠ .v17 := ne 1 (by decide)
-    have n2 : v ≠ .v18 := ne 2 (by decide)
-    have n3 : v ≠ .v19 := ne 3 (by decide)
-    have n4 : v ≠ .v20 := ne 4 (by decide)
-    have n5 : v ≠ .v21 := ne 5 (by decide)
-    have n6 : v ≠ .v22 := ne 6 (by decide)
-    have n7 : v ≠ .v23 := ne 7 (by decide)
-    have n8 : v ≠ .v24 := ne 8 (by decide)
-    have n9 : v ≠ .v25 := ne 9 (by decide)
-    have n10 : v ≠ .v26 := ne 10 (by decide)
-    have n11 : v ≠ .v27 := ne 11 (by decide)
-    have n12 : v ≠ .v28 := ne 12 (by decide)
-    have n13 : v ≠ .v29 := ne 13 (by decide)
-    have n14 : v ≠ .v30 := ne 14 (by decide)
-    have n15 : v ≠ .v31 := ne 15 (by decide)
+    obtain n0 : v ≠ .v16 := ne 0 (by decide)
+    obtain n1 : v ≠ .v17 := ne 1 (by decide)
+    obtain n2 : v ≠ .v18 := ne 2 (by decide)
+    obtain n3 : v ≠ .v19 := ne 3 (by decide)
+    obtain n4 : v ≠ .v20 := ne 4 (by decide)
+    obtain n5 : v ≠ .v21 := ne 5 (by decide)
+    obtain n6 : v ≠ .v22 := ne 6 (by decide)
+    obtain n7 : v ≠ .v23 := ne 7 (by decide)
+    obtain n8 : v ≠ .v24 := ne 8 (by decide)
+    obtain n9 : v ≠ .v25 := ne 9 (by decide)
+    obtain n10 : v ≠ .v26 := ne 10 (by decide)
+    obtain n11 : v ≠ .v27 := ne 11 (by decide)
+    obtain n12 : v ≠ .v28 := ne 12 (by decide)
+    obtain n13 : v ≠ .v29 := ne 13 (by decide)
+    obtain n14 : v ≠ .v30 := ne 14 (by decide)
+    obtain n15 : v ≠ .v31 := ne 15 (by decide)
     simp [n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15]
   · simp [State.setV]
 
@@ -162,27 +162,27 @@ theorem ksaSetup_ok {s : State} (hL : 0 < (s.gpr .x1).toNat ∧ (s.gpr .x1).toNa
   refine WP.mono (ident_ok bc') fun c ⟨ct, cv, cg, cm, crd, cwr, csp⟩ => ?_
   refine WP.mono (tailK_ok c) fun t ⟨tj, tsi, tv, t7, t5, t4, t8, tg, tm, trd, twr, tsp⟩ => ?_
   have hL1 := hL.1
-  have gk : ∀ r, r ∉ ksaRegs → t.gpr r = s.gpr r := fun r hr => by
-    have n : ∀ g ∈ ksaRegs, r ≠ g := fun g hg e => hr (e ▸ hg)
+  obtain gk : ∀ r, r ∉ ksaRegs → t.gpr r = s.gpr r := fun r hr => by
+    obtain n : ∀ g ∈ ksaRegs, r ≠ g := fun g hg e => hr (e ▸ hg)
     rw [tg r (n _ (by decide)) (n _ (by decide)) (n _ (by decide)) (n _ (by decide)), cg,
       bg r (n _ (by decide)) (n _ (by decide)),
       ag r (n _ (by decide)) (n _ (by decide)) (n _ (by decide)) (n _ (by decide)) (n _ (by decide))
         (n _ (by decide))]
-  have t0 : t.gpr .x0 = s.gpr .x0 := gk _ (by decide)
-  have t1 : t.gpr .x1 = s.gpr .x1 := gk _ (by decide)
-  have tvt : ∀ q < 16, t.v (treg q) = laneNums q := fun q hq => by
+  obtain t0 : t.gpr .x0 = s.gpr .x0 := gk _ (by decide)
+  obtain t1 : t.gpr .x1 = s.gpr .x1 := gk _ (by decide)
+  obtain tvt : ∀ q < 16, t.v (treg q) = laneNums q := fun q hq => by
     rw [tv _ ((show NotTable .v0 by decide) q hq) ((show NotTable .v4 by decide) q hq), ct q hq]
-  have tcon : Consts t := bc'.congr fun r hr => by
+  obtain tcon : Consts t := bc'.congr fun r hr => by
     rw [tv r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
       cv r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
-  have tb : ∀ k < 256, tbyte t.v k = BitVec.ofNat 8 k := fun k hk => by
+  obtain tb : ∀ k < 256, tbyte t.v k = BitVec.ofNat 8 k := fun k hk => by
     rw [tbyte, tvt _ (by omega_using [hk]), laneNums, vbyte_ofVBytes _ (by omega_using [])]
     congr 1; omega_using []
-  have keep : ∀ v, v ≠ .v0 → v ≠ .v4 → NotTable v → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 →
+  obtain keep : ∀ v, v ≠ .v0 → v ≠ .v4 → NotTable v → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 →
       v ≠ .v11 → v ≠ .v12 → v ≠ .v13 → t.v v = s.v v := fun v h0 h4 ht h7 h8 h9 h10 h11 h12 h13 => by
     rw [tv v h0 h4, cv v ht, bv v h7 h8 h9 h10 h11 h12 h13, av]
-  have hok : (kglob s t).Ok := by
+  obtain hok : (kglob s t).Ok := by
     refine ⟨hL.1, hL.2, t0, ?_, ?_⟩
     · show t.gpr .x1 = _
       rw [t1]; simp [kglob]
@@ -249,9 +249,9 @@ theorem zeros_ok {b : State} (hp : InRegions b.wr (b.gpr .x0) 258) :
       fun c => c.mem = (b.mem.write (b.gpr .x0 + 256#64) 1 0).write (b.gpr .x0 + 257#64) 1 0 ∧
         c.gpr .x0 = 0#64 ∧ (∀ r, r ≠ .x0 → r ≠ .x6 → c.gpr r = b.gpr r) ∧ c.v = b.v ∧
         c.rd = b.rd ∧ c.wr = b.wr ∧ c.sp = b.sp := by
-  have h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hp
-  have h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hp
-  have hz : BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 0#16))) =
+  obtain h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hp
+  obtain h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hp
+  obtain hz : BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 0#16))) =
     0#8 := by decide
   rrun [State.store, h256, h257]
   refine ⟨by rw [hz], fun r a b => by simp [a, b], by simp [State.write]⟩
@@ -268,18 +268,18 @@ theorem ksaFinish_ok {g : KGlob} {u : State} (h : KsaInv g 256 0 u)
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (ctxRegs_ok u) fun a ⟨a0, a9, ag, av, am, ard, awr, asp⟩ => ?_
   rw [WP.block_append_iff, storeTable_eq]
-  have a8 : a.gpr .x8 = BitVec.ofNat 64 256 := by rw [ag _ (by decide) (by decide)]; exact h.x8
-  have hpa : InRegions a.wr (a.gpr .x0) 258 := by rw [awr, a0]; exact hp
-  have hpa' : InRegions a.wr (a.gpr .x0) 256 := by
+  obtain a8 : a.gpr .x8 = BitVec.ofNat 64 256 := by rw [ag _ (by decide) (by decide)]; exact h.x8
+  obtain hpa : InRegions a.wr (a.gpr .x0) 258 := by rw [awr, a0]; exact hp
+  obtain hpa' : InRegions a.wr (a.gpr .x0) 256 := by
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
       region_offset _ _ _ 0 256 (by decide) (by decide) hpa
   refine WP.mono (storeN_ok (by decide) a8 a9 hpa' (Nat.le_refl 16))
     fun b ⟨brow, _, bv, bg, brd, bwr, bsp⟩ => ?_
   rw [WP.block_append_iff]
-  have b0 : b.gpr .x0 = a.gpr .x0 := bg _ (by decide) (by decide)
+  obtain b0 : b.gpr .x0 = a.gpr .x0 := bg _ (by decide) (by decide)
   refine WP.mono (zeros_ok (by rw [bwr, b0]; exact hpa)) fun c ⟨cm, c0, cg, cv, crd, cwr, csp⟩ => ?_
   refine WP.mono (restore_ok false c) fun t ⟨tsv, tv, tg, tm, trd, twr, tsp⟩ => ?_
-  have hT : TableIn a 256 (schedulePrefix g.key 256).1 := fun k hk => by
+  obtain hT : TableIn a 256 (schedulePrefix g.key 256).1 := fun k hk => by
     rw [show tbyte a.v = tbyte u.v by rw [av]]; exact h.table k hk
   refine ⟨?_, ?_, fun p hp => ?_, fun v hv => ?_, ?_, ?_, ?_⟩
   · rw [tg, c0]
@@ -307,10 +307,10 @@ theorem initValid_ok (s : State) (hL : 0 < (s.gpr .x1).toNat ∧ (s.gpr .x1).toN
   refine WP.seq (WP.mono (ksaSetup_ok hL hk)
     fun t ⟨hok, hi, tsv, tg, t14, t15, _, _, twr, _⟩ => ?_)
   refine WP.seq (WP.mono (ksaLoop_ok hok 16 ⟨0, rfl, rfl, by decide, hi⟩) fun u hu => ?_)
-  have u2 : u.gpr .x2 = s.gpr .x2 := by
+  obtain u2 : u.gpr .x2 = s.gpr .x2 := by
     rw [hu.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)]
     exact tg _ (by decide)
-  have hpu : InRegions u.wr (u.gpr .x2) 258 := by
+  obtain hpu : InRegions u.wr (u.gpr .x2) 258 := by
     rw [hu.wr, u2]; show InRegions t.wr _ _; rw [twr]; exact hp
   refine WP.mono (ksaFinish_ok hu hpu) fun w ⟨w0, wc, wsv, wv, _, _, _⟩ => ?_
   refine ⟨w0, ?_, fun r hr => ?_⟩
@@ -335,7 +335,7 @@ theorem init_ok (s : State)
       | .ok ctx => t.gpr .x0 = 0#64 ∧ contextAt t.mem (s.gpr .x2) = ctx
       | .error .invalidKeyLength => t.gpr .x0 = 1#64) ∧
       ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by
-  have hcheck : WP isa (.block [.subImm .x .x4 .x1 1, .lsr .x .x4 .x4 8]) s fun t =>
+  obtain hcheck : WP isa (.block [.subImm .x .x4 .x1 1, .lsr .x .x4 .x4 8]) s fun t =>
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.v = s.v ∧
       t.gpr .x0 = s.gpr .x0 ∧ t.gpr .x1 = s.gpr .x1 ∧ t.gpr .x2 = s.gpr .x2 ∧
       t.gpr .x4 = (s.gpr .x1 - 1#64) >>> 8 := by rrun
@@ -343,7 +343,7 @@ theorem init_ok (s : State)
   refine WP.seq (WP.mono hcheck fun t ht => ?_)
   obtain ⟨htm, htr, htw, htv, ht0, ht1, ht2, ht4⟩ := ht
   let good := 1 ≤ (s.gpr .x1).toNat ∧ (s.gpr .x1).toNat ≤ 256
-  have hcond : isa.eval (.nonzero .x .x4) t = some (decide (¬ good)) := by
+  obtain hcond : isa.eval (.nonzero .x .x4) t = some (decide (¬ good)) := by
     simp only [eval, State.read, BitVec.setWidth_eq, ht4, BitVec.ofNat_eq_ofNat, bne]
     apply congrArg some
     by_cases hg : good
@@ -360,14 +360,14 @@ theorem init_ok (s : State)
     rrun
     exact fun r _ => by rw [htv]
   · have hg : good := by
-      have hnn := of_decide_eq_false hy
+      obtain hnn := of_decide_eq_false hy
       exact Classical.not_not.mp hnn
     change 1 ≤ (s.gpr .x1).toNat ∧ (s.gpr .x1).toNat ≤ 256 at hg
     simp only [VG.Spec.Rc4.init, bytes_length, hg, and_self, ite_true]
-    have hpt : InRegions t.wr (t.gpr .x2) 258 := by rw [htw, ht2]; exact hp
-    have hkt : InRegions (t.rd ++ t.wr) (t.gpr .x0) (t.gpr .x1).toNat := by
+    obtain hpt : InRegions t.wr (t.gpr .x2) 258 := by rw [htw, ht2]; exact hp
+    obtain hkt : InRegions (t.rd ++ t.wr) (t.gpr .x0) (t.gpr .x1).toNat := by
       rw [htr, htw, ht0, ht1]; exact hk
-    have hlt : 0 < (t.gpr .x1).toNat ∧ (t.gpr .x1).toNat ≤ 256 := by rw [ht1]; omega_using [hg]
+    obtain hlt : 0 < (t.gpr .x1).toNat ∧ (t.gpr .x1).toNat ≤ 256 := by rw [ht1]; omega_using [hg]
     refine WP.mono (initValid_ok t hlt hpt hkt) fun u ⟨u0, uc, uv⟩ => ?_
     refine ⟨⟨u0, ?_⟩, fun r hr => by rw [uv r hr, htv]⟩
     rw [← ht2, uc, htm, ht0, ht1]
@@ -399,15 +399,15 @@ theorem init_verified : Verified AArch64.target VG.Impl.Rc4.AArch64.init
     sig_pre [Spec.Rc4.initContract, Spec.Rc4.initSig, Spec.Rc4.initPost, AArch64.abi,
       AArch64.argRegs] at hs
     obtain ⟨hrd, hwr, _⟩ := hs
-    have hp : InRegions s.wr (s.gpr .x2) 258 := by
+    obtain hp : InRegions s.wr (s.gpr .x2) 258 := by
       refine ⟨⟨s.gpr .x2, 258⟩, ?_, ?_⟩
       · rw [hwr]; exact List.mem_cons_self
       · simp only [Region.Contains, BitVec.sub_self]; decide
-    have hk : InRegions (s.rd ++ s.wr) (s.gpr .x0) (s.gpr .x1).toNat := by
+    obtain hk : InRegions (s.rd ++ s.wr) (s.gpr .x0) (s.gpr .x1).toNat := by
       refine ⟨⟨s.gpr .x0, (s.gpr .x1).toNat⟩, ?_, ?_⟩
       · rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _)
       · simp [Region.Contains]
-    have hw := WP.gprs (rs := preserved) (init_ok s hp hk) (by lit_decide) (by rfl)
+    obtain hw := WP.gprs (rs := preserved) (init_ok s hp hk) (by lit_decide) (by rfl)
     obtain ⟨tr, t, he, ⟨hpost, hv⟩, hregs⟩ := hw
     refine ⟨tr, t, he, ⟨hregs, Exec.sp he, hv⟩, ?_⟩
     sig_post [Spec.Rc4.initContract, Spec.Rc4.initSig, Spec.Rc4.initPost, AArch64.abi,
@@ -427,7 +427,7 @@ theorem init_verified : Verified AArch64.target VG.Impl.Rc4.AArch64.init
     sig_pub [Spec.Rc4.initContract, Spec.Rc4.initSig, Spec.Rc4.initPost, AArch64.abi,
       AArch64.argRegs] at hpub
     obtain ⟨hsp, h0, h1, h2⟩ := hpub
-    have hagree : VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
+    obtain hagree : VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
       refine ⟨hsp, fun r hr => ?_⟩
       simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> with_reducible assumption

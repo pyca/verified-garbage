@@ -34,9 +34,9 @@ theorem zero_bit (x : BitVec 32) : ((0 - x ||| x) >>> 31) ^^^ 1 = if x = 0 then 
   by_cases e : x = 0
   · subst e; decide
   · simp only [e, ↓reduceIte]
-    have hx : 0 < x.toNat := Nat.pos_of_ne_zero fun h => e (BitVec.eq_of_toNat_eq (by simpa using h))
+    obtain hx : 0 < x.toNat := Nat.pos_of_ne_zero fun h => e (BitVec.eq_of_toNat_eq (by simpa using h))
     have hlt := x.isLt
-    have top : 2 ^ 31 ≤ (0 - x ||| x).toNat := by
+    obtain top : 2 ^ 31 ≤ (0 - x ||| x).toNat := by
       rw [BitVec.toNat_or]
       rcases Nat.lt_or_ge x.toNat (2 ^ 31) with h | h
       · have : (0 - x).toNat = 2 ^ 32 - x.toNat := by
@@ -45,8 +45,8 @@ theorem zero_bit (x : BitVec 32) : ((0 - x ||| x) >>> 31) ^^^ 1 = if x = 0 then 
         omega_arith
       · have := Nat.right_le_or (n := (0 - x).toNat) (m := x.toNat)
         omega_using [h, this]
-    have hy := (0 - x ||| x).isLt
-    have sh : (0 - x ||| x) >>> 31 = 1 := by
+    obtain hy := (0 - x ||| x).isLt
+    obtain sh : (0 - x ||| x) >>> 31 = 1 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, show (1 : BitVec 32).toNat = 1 from rfl]
       omega_using [top]
@@ -58,8 +58,8 @@ theorem top_word_pos {mem : Mem} {base : Addr} {d k n M : Nat} (hkn : k + 1 ≤ 
     (hl : M < 2 ^ (32 * (k + 1))) (hg : 2 ^ (32 * k) ≤ M) : 0 < w32 mem base (d + 4 * k) := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hkn
   rw [Nat.add_assoc, val32_append, Nat.add_comm 1 e, val32] at hM
-  have hL := val32_lt mem base d k
-  have hP : (2 : Nat) ^ (32 * (k + 1)) = 2 ^ (32 * k) * 2 ^ 32 := by rw [Nat.mul_succ, Nat.pow_add]
+  obtain hL := val32_lt mem base d k
+  obtain hP : (2 : Nat) ^ (32 * (k + 1)) = 2 ^ (32 * k) * 2 ^ 32 := by rw [Nat.mul_succ, Nat.pow_add]
   rw [hP] at hl
   refine Nat.pos_of_ne_zero fun h0 => ?_
   rw [h0, Nat.zero_add] at hM
@@ -83,7 +83,7 @@ theorem Stg.mulLo_any {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (hn : KeyDiv.RowsOk n g.w := by trivial) :
     WP isa (KeyDiv.mulLo o x y n) s
       (Stg g s0 (upd A o (A x % 2 ^ (32 * KeyDiv.rowsN n g.w) * A y % 2 ^ (32 * g.w))) (o :: live) c) := by
-  have c16 : slot s.mem g.B 16 = g.w := by
+  obtain c16 : slot s.mem g.B 16 = g.w := by
     simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega_using [this])]
   refine WP.mono (KeyDiv.mulLo_ok h.ws ho (h.live_lt x hx) (h.live_lt y hy) (by decide) hox hoy ho0 c16 hw hw2
     (h.arrs.get hx) (h.arrs.get hy) hY (by have := h.arrs.get hz; rw [hA0] at this; exact this) hn)
@@ -128,16 +128,16 @@ theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hMg : 2 ^ (32 * (g.w / 2 - 1)) ≤ A m) (hlive : ∀ j ∈ live, j = r ∨ j ∉ [r, t, u, nm]) {top : Option Nat}
     (htop : KeyDiv.TopOk top g.w (A a) := by trivial) :
     WP isa (KeyDiv.divW a r m t nm u top) s (Stg g s0 (upd A r (A a % A m)) (r :: live) c) := by
-  have c16 : slot s.mem g.B 16 = g.w := by
+  obtain c16 : slot s.mem g.B 16 = g.w := by
     simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega_using [this])]
-  have hT0 : 0 < w32 s.mem (State.addr g.B) (arr g.w m + 4 * (g.w / 2 - 1)) :=
+  obtain hT0 : 0 < w32 s.mem (State.addr g.B) (arr g.w m + 4 * (g.w / 2 - 1)) :=
     top_word_pos (k := g.w / 2 - 1) (n := g.w) (by omega_using [hw6]) (h.arrs.get hm)
       (by rw [show g.w / 2 - 1 + 1 = g.w / 2 by omega_using [hw6]]; exact hMl) hMg
   refine WP.mono (KeyDiv.divW_ok h.ws (h.live_lt a ha) hr (h.live_lt m hm) ht hnm hu (by decide) hra hrt hru htu hmr
     hmt hmu hnr htn hnu hnm' hr0 ht0 hu0 hn0 hw6 c16 (h.arrs.get hm) hMl hT0
     (by have := h.arrs.get hz; rw [hA0] at this; exact this) (by rw [h.arrs.get ha]; exact htop))
     fun v ⟨hv, e, _, k, rr⟩ => ?_
-  have hjs : ∀ j ∈ [r, t, u, nm], j < nArr := by simp; exact ⟨hr, ht, hu, hnm⟩
+  obtain hjs : ∀ j ∈ [r, t, u, nm], j < nArr := by simp; exact ⟨hr, ht, hu, hnm⟩
   refine h.next hv k hjs (by decide) rr divRegs_body ?_ ?_ (h.vd_keep k (fun j hj e' => hV (e' ▸ hj)) (by decide))
     (h.mask_keep k (by decide))
   · rw [h.arrs.get ha] at e
@@ -153,9 +153,9 @@ theorem val32_top_word {mem : Mem} {base : Addr} {d k n : Nat} (hkn : k + 1 ≤ 
     val32 mem base d n = val32 mem base d k + 2 ^ (32 * k) * w32 mem base (d + 4 * k) := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hkn
   rw [Nat.add_assoc, val32_append, Nat.add_comm 1 e, val32] at hl ⊢
-  have hL := val32_lt mem base d k
-  have hw := (mem.readW (off base (d + 4 * k)) 32).isLt
-  have hP : (2 : Nat) ^ (32 * (k + 1)) = 2 ^ (32 * k) * 2 ^ 32 := by rw [Nat.mul_succ, Nat.pow_add]
+  obtain hL := val32_lt mem base d k
+  obtain hw := (mem.readW (off base (d + 4 * k)) 32).isLt
+  obtain hP : (2 : Nat) ^ (32 * (k + 1)) = 2 ^ (32 * k) * 2 ^ 32 := by rw [Nat.mul_succ, Nat.pow_add]
   rw [hP] at hl
   generalize val32 mem base (d + 4 * k + 4) e = R at hl ⊢
   generalize val32 mem base d k = L at hl hL ⊢
@@ -184,42 +184,42 @@ theorem fixTopW_ok {s : State} {B : BitVec 32} {Z w N m : Nat} (W : Ws s B Z w N
       w32 v.mem (State.addr B) (arr w m + 4 * w) = w32 s.mem (State.addr B) (arr w m + 4 * w) := by
   have := W.wle
   have nw := W.nowrap
-  have fm := W.arr_fit hmN
-  have gm := W.fit64 hmN
+  obtain fm := W.arr_fit hmN
+  obtain gm := W.fit64 hmN
   simp only [S] at fm gm
   rw [VG.Impl.Rsa.Arm.KeyDiv.fixTop]
   refine topPtr_ok W (r := .r0) (t := .r1) (by decide) (by decide) (by decide) (j := m) (i := 1)
     (by omega_using [hmN, hN]) (by omega_using [hw2]) (by decide) (by omega_using [fm])
     fun u p1 r1 m1 W1 => ?_
   generalize eX : arr w m + 4 * (w / 2 - 1) = X at p1
-  have aX : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := W.addr (by omega_using [fm, eX])
-  have rX : InRegions (u.rd ++ u.wr) (off (State.addr B) X) 4 := W1.read (by omega_using [fm, eX])
-  have wX : InRegions u.wr (off (State.addr B) X) 4 := W1.write (by omega_using [fm, eX])
+  obtain aX : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := W.addr (by omega_using [fm, eX])
+  obtain rX : InRegions (u.rd ++ u.wr) (off (State.addr B) X) 4 := W1.read (by omega_using [fm, eX])
+  obtain wX : InRegions u.wr (off (State.addr B) X) 4 := W1.write (by omega_using [fm, eX])
   generalize ex : u.mem.readW (off (State.addr B) X) 32 = x
   refine WP.mono (WP.keep [.r2, .r3] (Q := fun v =>
       v.mem = u.mem.writeW (off (State.addr B) X) (x + (((0 - x ||| x) >>> 31) ^^^ 1))) (by
     krun [p1, aX, rX, wX, ex]) (by decide)) fun v ⟨mv, kv⟩ => ?_
   rw [zero_bit] at mv
-  have hA : (State.addr B).toNat + Z ≤ 2 ^ 32 := by simp only [State.addr, BitVec.toNat_setWidth]; omega_using [nw]
+  obtain hA : (State.addr B).toNat + Z ≤ 2 ^ 32 := by simp only [State.addr, BitVec.toNat_setWidth]; omega_using [nw]
   have mu : u.mem = s.mem := m1
-  have K : Keep B w [m] [] s.mem v.mem := by
+  obtain K : Keep B w [m] [] s.mem v.mem := by
     rw [mv, mu, ← eX]
     exact Keep.of_arr (d := 4 * (w / 2 - 1)) (writeW32_outside _ _ _ (by omega_using [gm])) (by simp only [S]; omega_using [])
       (by simp)
   -- The value: the low words `L`, the top word, and none above it.
   simp only [num] at hnum
-  have split : ∀ mem : Mem, val32 mem (State.addr B) (arr w m) w =
+  obtain split : ∀ mem : Mem, val32 mem (State.addr B) (arr w m) w =
       val32 mem (State.addr B) (arr w m) (w / 2 - 1) + 2 ^ (32 * (w / 2 - 1)) *
         (w32 mem (State.addr B) X + 2 ^ 32 * val32 mem (State.addr B) (X + 4) (w - w / 2)) := fun mem => by
-    have e := val32_append mem (State.addr B) (arr w m) (w / 2 - 1) (w - w / 2 + 1)
+    obtain e := val32_append mem (State.addr B) (arr w m) (w / 2 - 1) (w - w / 2 + 1)
     rw [show w / 2 - 1 + (w - w / 2 + 1) = w by omega_using [hw2], val32] at e
     rw [e, eX]
-  have hL := val32_lt s.mem (State.addr B) (arr w m) (w / 2 - 1)
-  have hP : (2 : Nat) ^ (32 * (w / 2)) = 2 ^ (32 * (w / 2 - 1)) * 2 ^ 32 := by
+  obtain hL := val32_lt s.mem (State.addr B) (arr w m) (w / 2 - 1)
+  obtain hP : (2 : Nat) ^ (32 * (w / 2)) = 2 ^ (32 * (w / 2 - 1)) * 2 ^ 32 := by
     rw [← Nat.pow_add]; congr 1; omega_using [hw2]
-  have sS := split s.mem
+  obtain sS := split s.mem
   rw [hnum] at sS
-  have hH : val32 s.mem (State.addr B) (X + 4) (w - w / 2) = 0 := by
+  obtain hH : val32 s.mem (State.addr B) (X + 4) (w - w / 2) = 0 := by
     have hMl' := hMl
     rw [hP] at hMl'
     generalize val32 s.mem (State.addr B) (X + 4) (w - w / 2) = H at sS
@@ -230,15 +230,15 @@ theorem fixTopW_ok {s : State} {B : BitVec 32} {Z w N m : Nat} (W : Ws s B Z w N
       rw [Nat.mul_one] at this
       rw [Nat.mul_add, ← Nat.mul_assoc] at sS
       omega_using [sS, hMl', this]
-  have new : num v.mem B w m = fixT (w / 2) M := by
-    have oL : val32 v.mem (State.addr B) (arr w m) (w / 2 - 1) =
+  obtain new : num v.mem B w m = fixT (w / 2) M := by
+    obtain oL : val32 v.mem (State.addr B) (arr w m) (w / 2 - 1) =
         val32 s.mem (State.addr B) (arr w m) (w / 2 - 1) := by
       rw [mv, mu]; exact Outside.val32 (writeW32_outside _ _ _ (by omega_using [gm, eX])) (Or.inl (by omega_using [eX])) (by omega_using [gm])
-    have oH : val32 v.mem (State.addr B) (X + 4) (w - w / 2) =
+    obtain oH : val32 v.mem (State.addr B) (X + 4) (w - w / 2) =
         val32 s.mem (State.addr B) (X + 4) (w - w / 2) := by
       rw [mv, mu]; exact Outside.val32 (writeW32_outside _ _ _ (by omega_using [gm, eX])) (Or.inr (by omega_using [])) (by omega_using [gm, eX])
-    have hx' : x.toNat = w32 s.mem (State.addr B) X := by rw [← ex, mu]
-    have oW : w32 v.mem (State.addr B) X = x.toNat + if x.toNat = 0 then 1 else 0 := by
+    obtain hx' : x.toNat = w32 s.mem (State.addr B) X := by rw [← ex, mu]
+    obtain oW : w32 v.mem (State.addr B) X = x.toNat + if x.toNat = 0 then 1 else 0 := by
       rw [mv, w32_write_self]
       by_cases e : x = 0
       · subst e; rfl
@@ -250,7 +250,7 @@ theorem fixTopW_ok {s : State} {B : BitVec 32} {Z w N m : Nat} (W : Ws s B Z w N
     rw [hH, Nat.mul_zero, Nat.add_zero] at sS
     unfold fixT
     rw [sS]
-    have hdiv : (val32 s.mem (State.addr B) (arr w m) (w / 2 - 1) +
+    obtain hdiv : (val32 s.mem (State.addr B) (arr w m) (w / 2 - 1) +
         2 ^ (32 * (w / 2 - 1)) * w32 s.mem (State.addr B) X) / 2 ^ (32 * (w / 2 - 1)) =
         w32 s.mem (State.addr B) X := by
       rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hL, Nat.zero_add]
@@ -316,14 +316,14 @@ theorem divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c 
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (h.copy_ok (o := aVD) (a := d) (by decide) hd (Ne.symm hdV)) fun t1 h1 => ?_
   rw [wp_seqs_cons (by simp)]
-  have hD1 : upd A aVD (A d) aVD < 2 ^ (32 * (g.w / 2)) := by rw [upd_self]; exact hD
+  obtain hD1 : upd A aVD (A d) aVD < 2 ^ (32 * (g.w / 2)) := by rw [upd_self]; exact hD
   refine WP.mono (h1.fixTop_ok (m := aVD) (by simp) hD1 (by omega_using [hw6])) fun t2 h2 => ?_
   rw [upd_self] at h2
   simp only [seqs]
-  have ha' : a ∈ aVD :: live := List.mem_cons_of_mem _ ha
-  have hz' : aZ ∈ aVD :: live := List.mem_cons_of_mem _ hz
-  have hm' : aVD ∈ aVD :: live := by simp
-  have e1 : upd (upd A aVD (A d)) aVD (fixT (g.w / 2) (A d)) = upd A aVD (fixT (g.w / 2) (A d)) := by
+  obtain ha' : a ∈ aVD :: live := List.mem_cons_of_mem _ ha
+  obtain hz' : aZ ∈ aVD :: live := List.mem_cons_of_mem _ hz
+  obtain hm' : aVD ∈ aVD :: live := by simp
+  obtain e1 : upd (upd A aVD (A d)) aVD (fixT (g.w / 2) (A d)) = upd A aVD (fixT (g.w / 2) (A d)) := by
     funext j; simp only [upd]; split <;> rfl
   rw [e1] at h2
   have := h2.divW_ok (a := a) (r := aVR) (m := aVD) (t := aVT) (nm := aY) (u := aX) ha' hm' hz'
@@ -363,10 +363,10 @@ theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.
     (he : v.e < 2 ^ (32 * 2)) :
     WP isa keyBodyW s fun t => ∃ A live, Stg g s A live (cW g v) t := by
   have kb := h.kb
-  have hw6 : 6 ≤ g.w := by simp only [Geo.w]; omega_using [kb]
-  have wle : g.w ≤ 1024 := by simp only [Geo.w]; omega_using [kb]
-  have p2 : 2 * (v.p / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega_using []) hp
-  have q2 : 2 * (v.q / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega_using []) hq
+  obtain hw6 : 6 ≤ g.w := by simp only [Geo.w]; omega_using [kb]
+  obtain wle : g.w ≤ 1024 := by simp only [Geo.w]; omega_using [kb]
+  obtain p2 : 2 * (v.p / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega_using []) hp
+  obtain q2 : 2 * (v.q / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega_using []) hq
   unfold keyBodyW crtChecksW dChecksW
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_cons (by ne_nil)]

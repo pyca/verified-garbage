@@ -55,7 +55,7 @@ omit hp in
 theorem hat_byte {s₀ : State} {K h off count t : Nat} (hh : h < 2) (hspan : off + count ≤ 168) {s : State} (hI : HAt σ s₀ K h off count t s) {j : Nat}
     (hj : 3 * (off + t) + j < 3 * (off + count)) :
     s.mem (s.gpr .rsi + BitVec.ofNat 64 j) = (Xb σ K).getD (3 * (168 * h + off + t) + j) 0 := by
-  have e := hI.out (3 * (off + t) + j) hj
+  obtain e := hI.out (3 * (off + t) + j) hj
   rw [at'] at e
   rw [hI.rsi, at', Offset.add_add, Offset.add_add, e, Xb_getD σ K (by omega_using [hh, hspan, hj])]
   congr 1; omega_using []
@@ -73,9 +73,9 @@ theorem hat_step {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2
   refine WP.mono (rnBody_ok s (aP := Proof.MlKem.poly4 (aP σ) K) hI.rbp hI.rdi (Lt_length_le σ K _) (coeffsWr hp hK hI.env)
     hI.stored (by simpa using hat_regions hp hK hspan hI (j := 0) (by omega_using [ht])) (hat_regions hp hK hspan hI (by omega_using [ht]))
     (hat_regions hp hK hspan hI (by omega_using [ht]))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
-  have e0 := hat_byte hh hspan hI (j := 0) (by omega_using [ht])
+  obtain e0 := hat_byte hh hspan hI (j := 0) (by omega_using [ht])
   rw [add_ofNat_zero, Nat.add_zero] at e0
-  have ht3 : Lt σ K (168 * h + off + (t + 1)) = rnStep (Lt σ K (168 * h + off + t)) ((Xb σ K).getD (3 * (168 * h + off + t)) 0)
+  obtain ht3 : Lt σ K (168 * h + off + (t + 1)) = rnStep (Lt σ K (168 * h + off + t)) ((Xb σ K).getD (3 * (168 * h + off + t)) 0)
       ((Xb σ K).getD (3 * (168 * h + off + t) + 1) 0) ((Xb σ K).getD (3 * (168 * h + off + t) + 2) 0) := by
     simp only [Lt]
     rw [show 3 * (168 * h + off + (t + 1)) = 3 * (168 * h + off + t) + 3 by omega_using [],
@@ -185,7 +185,7 @@ theorem gb_of_hat {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 
     (hI : GB σ s₀ K h off count t s) (hm : s₁.mem = s.mem) (k : Keep [.rcx] s s₁)
     (hA' : HAt σ s₁ K h (off + t) 8 8 s₂) (hl : 248 < (Lt σ K (168 * h + off + t)).length) :
     GB σ s₀ K h off count (t + 8) s₂ ∧ s₂.gpr .r10 = s.gpr .r10 := by
-  have hkp : Keep [.rax, .rdx, .r8, .rdi, .rsi, .rcx, .rbp, .r10, .r11] s₀ s₂ :=
+  obtain hkp : Keep [.rax, .rdx, .r8, .rdi, .rsi, .rcx, .rbp, .r10, .r11] s₀ s₂ :=
     ((hI.kp.trans k).trans hA'.kp).mono (by simp)
   refine ⟨⟨hA'.env, by rw [hA'.rsi]; exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega_using []),
     by rw [hA'.rdi, show 168 * h + (off + t) + 8 = 168 * h + off + (t + 8) by omega_using []], hA'.rbp,
@@ -234,8 +234,8 @@ omit hp in
 theorem gb_cand {s₀ : State} {K h off count t : Nat} (hh : h < 2) (hspan : off + count ≤ 168)
     (ht : t + 8 ≤ count) {s : State} (hI : GB σ s₀ K h off count t s) :
     ∀ l < 2, Vec.CandOf (s.mem.readW (s.gpr .rsi) 256) (gOf σ K h off t) l := by
-  have hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * (off + t)) := by rw [hI.rsi, at', at', Offset.add_add]
-  have hbyte : ∀ i < 24, byteY (s.mem.readW (s.gpr .rsi) 256) i = (Xb σ K).getD (3 * (168 * h + off + t) + i) 0 :=
+  obtain hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * (off + t)) := by rw [hI.rsi, at', at', Offset.add_add]
+  obtain hbyte : ∀ i < 24, byteY (s.mem.readW (s.gpr .rsi) 256) i = (Xb σ K).getD (3 * (168 * h + off + t) + i) 0 :=
     fun i hi => by
       rw [byteY, byte_readW _ _ (by omega_using [hi]), hrsi, at', Offset.add_add, ← at',
         show oBuf + 504 * K + 3 * (off + t) + i = oBuf + 504 * K + (3 * (off + t) + i) by omega_using [],
@@ -250,8 +250,8 @@ theorem vec1_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hspan : off
     {s : State} (hI : GB σ s₀ K h off count t s) (hl : (Lt σ K (168 * h + off + t)).length ≤ 248) :
     WP isa (.block VG.Impl.MlDsa.X86_64.Sample.Rej5.vcand) s fun s₁ =>
       VI σ s₀ K h off count t s₁ ∧ s₁.gpr .r10 = s.gpr .r10 := by
-  have hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * (off + t)) := by rw [hI.rsi, at', at', Offset.add_add]
-  have hin : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 32 := by
+  obtain hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * (off + t)) := by rw [hI.rsi, at', at', Offset.add_add]
+  obtain hin : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 32 := by
     rw [hrsi]; exact in_scr' hp hI.env.rd hI.env.wr (by simp only [oBuf]; omega_using [hK, hspan, ht])
   exact WP.mono (Vec.vcand_ok (hI.vec hl).1 hin) fun s₁ h₁ => ⟨⟨s, hI, hl, h₁⟩, h₁.2.2.2.2.2.2.2 _ (by decide)⟩
 
@@ -266,10 +266,10 @@ theorem vec2a_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) {s₁ : Sta
     WP isa (.block VG.Impl.MlDsa.X86_64.Sample.Rej5.vputA) s₁ fun s₂ => VP σ s₀ K h off count t s₂ ∧ s₂.gpr .r10 = s₁.gpr .r10 := by
   obtain ⟨s, hI, hl, hf⟩ := hv
   obtain ⟨hax, h0, c₁, m₁, rd₁, wr₁, sy₁, g₁⟩ := id hf
-  have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
+  obtain hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
     rw [g₁ _ (by decide), hI.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
-  have hbp : s₁.gpr .rbp = Proof.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
-  have env₁ : EnvK σ s₁ := hI.env.keep m₁ (show Keep [.rax] s s₁ from ⟨fun r hr => g₁ r (by intro e; subst e; simp at hr), rd₁, wr₁⟩)
+  obtain hbp : s₁.gpr .rbp = Proof.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
+  obtain env₁ : EnvK σ s₁ := hI.env.keep m₁ (show Keep [.rax] s s₁ from ⟨fun r hr => g₁ r (by intro e; subst e; simp at hr), rd₁, wr₁⟩)
     (by decide)
   exact WP.mono (Vec.vputA_ok c₁ h0 hax (by rw [g₁ _ (by decide), sy₁]; exact (hI.vec hl).2) (by rw [hdi]; omega_using [hl])
     (by rw [hbp, hdi]; exact out_reg hp hK env₁ (by omega_using [hl])))
@@ -281,38 +281,38 @@ theorem vec2b_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2
     WP isa (.block VG.Impl.MlDsa.X86_64.Sample.Rej5.vputB) s₂ fun s' =>
       GB σ s₀ K h off count (t + 8) s' ∧ s'.gpr .r10 = s₂.gpr .r10 := by
   obtain ⟨s, s₁, hI, hl, ⟨hax, h0, c₁, m₁, rd₁, wr₁, sy₁, g₁⟩, hpa⟩ := hv
-  have hc := gb_cand hh hspan ht hI
+  obtain hc := gb_cand hh hspan ht hI
   generalize hX : s.mem.readW (s.gpr .rsi) 256 = X at hax h0 hc hpa
-  have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
+  obtain hdi : (s₁.gpr .rdi).toNat = (Lt σ K (168 * h + off + t)).length := by
     rw [g₁ _ (by decide), hI.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
-  have hbp : s₁.gpr .rbp = Proof.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
-  have e0 := Vec.cntL_eq (hc 0 (by decide))
-  have e1 := Vec.cntL_eq (hc 1 (by decide))
-  have hA0 : (Vec.accG (gOf σ K h off t) 0).length ≤ 4 := by rw [← e0]; exact Vec.cntL_le X 0
-  have hA1 : (Vec.accG (gOf σ K h off t) 1).length ≤ 4 := by rw [← e1]; exact Vec.cntL_le X 1
-  have env₁ : EnvK σ s₁ := hI.env.keep m₁ (show Keep [.rax] s s₁ from ⟨fun r hr => g₁ r (by intro e; subst e; simp at hr), rd₁, wr₁⟩)
+  obtain hbp : s₁.gpr .rbp = Proof.MlKem.poly4 (aP σ) K := by rw [g₁ _ (by decide), hI.rbp]
+  obtain e0 := Vec.cntL_eq (hc 0 (by decide))
+  obtain e1 := Vec.cntL_eq (hc 1 (by decide))
+  obtain hA0 : (Vec.accG (gOf σ K h off t) 0).length ≤ 4 := by rw [← e0]; exact Vec.cntL_le X 0
+  obtain hA1 : (Vec.accG (gOf σ K h off t) 1).length ≤ 4 := by rw [← e1]; exact Vec.cntL_le X 1
+  obtain env₁ : EnvK σ s₁ := hI.env.keep m₁ (show Keep [.rax] s s₁ from ⟨fun r hr => g₁ r (by intro e; subst e; simp at hr), rd₁, wr₁⟩)
     (by decide)
   refine WP.mono (Vec.vputB_ok hpa (by rw [g₁ _ (by decide), sy₁]; exact (hI.vec hl).2) (by rw [hdi]; omega_using [hl])
     (by rw [hbp, hdi]; exact out_reg hp hK env₁ (by have := Vec.cntL_le X 0; omega_using [hl, this])))
     fun s₂ ⟨hm₂, hdi₂, hsi₂, c₂, rd₂, wr₂, sy₂, g₂⟩ => ?_
   rw [hbp, hdi, m₁] at hm₂
   rw [hdi, e0, e1] at hdi₂
-  have hL8 : Lt σ K (168 * h + off + (t + 8)) = Lt σ K (168 * h + off + t) ++
+  obtain hL8 : Lt σ K (168 * h + off + (t + 8)) = Lt σ K (168 * h + off + t) ++
       Vec.accG (gOf σ K h off t) 0 ++ Vec.accG (gOf σ K h off t) 1 := by
     rw [← Nat.add_assoc, Lt_steps σ K _ 8 (by omega_using [hh, hspan, ht]), Vec.stepsG_eight (by simp only [Spec.MlDsa.n]; omega_using [hl])]
-  have st0 := Vec.stored_write4 hI.stored (by omega_using [hl]) hA0 (Vec.compD X 0)
+  obtain st0 := Vec.stored_write4 hI.stored (by omega_using [hl]) hA0 (Vec.compD X 0)
     (fun i hi => Vec.comp_dwords (by decide) (hc 0 (by decide)) i hi)
-  have st1 := Vec.stored_write4 st0 (by rw [List.length_append]; omega_using [hl, hA0]) hA1 (Vec.compD X 1)
+  obtain st1 := Vec.stored_write4 st0 (by rw [List.length_append]; omega_using [hl, hA0]) hA1 (Vec.compD X 1)
     (fun i hi => Vec.comp_dwords (by decide) (hc 1 (by decide)) i hi)
   rw [List.length_append, ← e0] at st1
-  have hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] s.mem s₂.mem := by
+  obtain hf : Frame [pR (Proof.MlKem.poly4 (aP σ) K)] s.mem s₂.mem := by
     rw [hm₂]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega_using [hl]) (by omega_using [hl]))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by have := Vec.cntL_le X 0; omega_using [hl, this]) (by omega_using [hl, e0, hA0]))
-  have gk : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → r ≠ .rsi → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+  obtain gk : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → r ≠ .rsi → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [g₂ r h1 h2 h3 h4, g₁ r h1]
-  have k₂ : Keep [.rax, .rdx, .rdi, .rsi] s s₂ := ⟨fun r hr => gk r (by intro e; subst e; simp at hr)
+  obtain k₂ : Keep [.rax, .rdx, .rdi, .rsi] s s₂ := ⟨fun r hr => gk r (by intro e; subst e; simp at hr)
     (by intro e; subst e; simp at hr) (by intro e; subst e; simp at hr) (by intro e; subst e; simp at hr),
     rd₂.trans rd₁, wr₂.trans wr₁⟩
   refine ⟨⟨env_poly hp hK hI.env hf (rd₂.trans rd₁) (wr₂.trans wr₁) (fun r hr => gk r ?_ ?_ ?_ ?_), ?_, ?_,
@@ -379,8 +379,8 @@ theorem vgrp_ok {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hh : h < 2)
     WP isa VG.Impl.MlDsa.X86_64.Sample.Rej5.vgrp s fun s' => GB σ s₀ K h off count (t + 8) s' ∧ s'.gpr .r10 = s.gpr .r10 - 1 ∧
       s'.zf = some (s.gpr .r10 - 1 == 0) := by
   refine WP.seq (WP.mono_syms (cmp249_ok s) fun s₁ ⟨hcf, hm, hg, hrd, hwr, hl⟩ sy => ?_)
-  have l₁ : GB σ s₀ K h off count t s₁ := hI.same hg hm hrd hwr sy hl
-  have hlen := Lt_length_le σ K (168 * h + off + t)
+  obtain l₁ : GB σ s₀ K h off count t s₁ := hI.same hg hm hrd hwr sy hl
+  obtain hlen := Lt_length_le σ K (168 * h + off + t)
   rw [hI.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen])] at hcf
   refine WP.seq (WP.mono (WP.ite _ hcf (fun hb => gvec_ok hp hK hh hspan ht l₁ (by have := of_decide_eq_true hb; omega_using [this]))
     fun hb => gsca_ok hp hK hh hspan ht l₁ (by have := of_decide_eq_false hb; omega_using [this]))
@@ -526,12 +526,12 @@ theorem hpre {n off count K : Nat} (hK : K < 4) (hbuf : 3 * (off + count) ≤ 16
 /-- Save the count after one segment, preserving the other polynomials and squeeze state. -/
 theorem segmentEnd_ok {n off count K : Nat} (hn : n ≤ 3) (hK : K < 4) {s s₁ : State} (h : Batch σ n off count K s) (hA : GB σ s K 1 off count count s₁) :
     WP isa (.block [.store (at_ .rbx (oJ + 8 * K)) .rdi]) s₁ (Batch σ n off count (K + 1)) := by
-  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
+  obtain hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
   refine WP.mono (WP.keep [] (Q := fun s' => s'.mem = s₁.mem.writeW (at' σ (oJ + 8 * K)) (s₁.gpr .rdi))
     (by xrun [hA.env.rbx, hin]) rfl) fun s₂ ⟨hm, k⟩ => ?_
-  have hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
+  obtain hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
     rw [hm]; exact jR_write hK (Frame.refl _ _) _
-  have k₁ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₁.gpr r = s.gpr r := fun r hr =>
+  obtain k₁ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₁.gpr r = s.gpr r := fun r hr =>
     hA.kp.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   refine ⟨sqT_frame hn (sqT_frame hn h.sq hA.fr (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_poly hp hK)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_poly hp hK) (sub_polyR hK) hA.kp.2.1 hA.kp.2.2 k₁)
@@ -602,12 +602,12 @@ theorem hpre0 {K : Nat} (hK : K < 4) {s : State} (h : P1 σ K s) : HPre σ K 0 0
 /-- `j` kept, after the first 168 candidates of seed `K`. -/
 theorem segment0End_ok {K : Nat} (hK : K < 4) {s s₁ : State} (h : P1 σ K s) (hA : GB σ s K 0 0 168 168 s₁) :
     WP isa (.block [.store (at_ .rbx (oJ + 8 * K)) .rdi]) s₁ (P1 σ (K + 1)) := by
-  have hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
+  obtain hin : InRegions s₁.wr (scr σ + BitVec.ofNat 64 (oJ + 8 * K)) 8 := in_scr hp hA.env.wr (by simp only [oJ]; omega_using [hK])
   refine WP.mono (WP.keep [] (Q := fun s' => s'.mem = s₁.mem.writeW (at' σ (oJ + 8 * K)) (s₁.gpr .rdi))
     (by xrun [hA.env.rbx, hin]) rfl) fun s₂ ⟨hm, k⟩ => ?_
-  have hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
+  obtain hf₂ : Frame [jR σ] s₁.mem s₂.mem := by
     rw [hm]; exact jR_write hK (Frame.refl _ _) _
-  have k₁ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₁.gpr r = s.gpr r := fun r hr =>
+  obtain k₁ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₁.gpr r = s.gpr r := fun r hr =>
     hA.kp.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   refine ⟨sqT_frame (by decide) (sqT_frame (by decide) h.sq hA.fr (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_poly hp hK)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_poly hp hK) (sub_polyR hK) hA.kp.2.1 hA.kp.2.2 k₁)

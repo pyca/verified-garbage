@@ -87,7 +87,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (scBase A s₀) s₁ ix.1 = ix.2 := P.consts
-  have fx : Fixed c (scBase A s₀) s₀.gpr s₁.mem :=
+  obtain fx : Fixed c (scBase A s₀) s₀.gpr s₁.mem :=
     ⟨hc' (MP, c.C.p) (by simp [Cfg.consts]), hc' (MN, c.C.n) (by simp [Cfg.consts]),
       hc' (ZERO, 0) (by simp [Cfg.consts]), hc' (ONE, 1) (by simp [Cfg.consts]),
       (hc' (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
@@ -98,31 +98,31 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   -- The table of `k`.
   refine WP.seq (WP.mono (tbl_bits_ok hc P.scr P.far (i := K) (j := 0) (by decide) (by decide))
     fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
-  have hs₂ := P.scr.of_rest k₂ (by decide)
-  have hf₂ := P.far.of_rest k₂
+  obtain hs₂ := P.scr.of_rest k₂ (by decide)
+  obtain hf₂ := P.far.of_rest k₂
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₂ i = sv c (scBase A s₀) s₁ i := fun hi =>
+  obtain v₂ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₂ i = sv c (scBase A s₀) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl h7 hi 0)
   -- The table of `p - 2`.
   refine WP.seq (WP.mono (tbl_bits_ok hc hs₂ hf₂ (i := EXPP) (j := 1) (by decide) (by decide))
     fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
-  have hs₃ := hs₂.of_rest k₃ (by decide)
-  have hf₃ := hf₂.of_rest k₃
+  obtain hs₃ := hs₂.of_rest k₃ (by decide)
+  obtain hf₃ := hf₂.of_rest k₃
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₃ i = sv c (scBase A s₀) s₁ i := fun hi =>
+  obtain v₃ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₃ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl h7 hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono (tbl_bits_ok hc hs₃ hf₃ (i := EXPN) (j := 2) (by decide) (by decide))
     fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₄ i = sv c (scBase A s₀) s₁ i := fun hi =>
+  obtain v₄ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₄ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl h7 hi 2)).trans (v₃ hi)
   have hk : (kv c A s₀) = sv c (scBase A s₀) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (scBase A s₀) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (scBase A s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
-  have K₂₄ : Rest work s₁ s₄ :=
+  obtain hp2 : c.C.p - 2 = sv c (scBase A s₀) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
+  obtain hn2 : c.C.n - 2 = sv c (scBase A s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
+  obtain K₂₄ : Rest work s₁ s₄ :=
     (k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))
-  have A₂₄ : Rest [.r4, .r5, .r7, .r11] s₁ s₄ := k₂.trans (k₃.trans k₄)
+  obtain A₂₄ : Rest [.r4, .r5, .r7, .r11] s₁ s₄ := k₂.trans (k₃.trans k₄)
   refine ⟨⟨hs₃.of_rest k₄ (by decide), hf₃.of_rest k₄, (P.keep.mono (by decide)).trans (K₂₄.mono (by simp)),
     by rw [K₂₄.gpr _ (by decide), P.lr], ?_, ?_⟩,
     by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
@@ -131,13 +131,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl h7 0) u₂ |>.unch h7 hn (fixedOk_tbl h7 1) u₃).unch h7 hn (fixedOk_tbl h7 2) u₄
   · intro x hx
-    have hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega_arith
+    obtain hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega_arith
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
       P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by dsimp only [size]; omega_arith)]
   · have hF := sl_le c h7 (i := FLAG) (by decide)
-    have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
+    obtain ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c hc.n10 (i := FLAG) (by decide) j 0
@@ -175,7 +175,7 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (hu : Unch base (slW c l ++ [(c.wk, 64 * c.n)]) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
   rcases List.mem_append.mp hw with hw | hw
   · rcases apart_slW (c := c) hl w hw with h | h
@@ -188,8 +188,8 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
 /-- A stage writes in `scratch` only. -/
 theorem whole_of' {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, 8192)] m₀ m)
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192) : Unch base [(0, 8192)] m₀ m' := fun x hx => by
-  have h := hx (0, 8192) (List.mem_singleton_self _)
-  have hx' : 8192 ≤ ofs base x := by dsimp only at h; omega_arith
+  obtain h := hx (0, 8192) (List.mem_singleton_self _)
+  obtain hx' : 8192 ≤ ofs base x := by dsimp only at h; omega_arith
   rw [hu x (fun w hw => Or.inr (by have := hW w hw; omega_arith)), h₀ x hx]
 
 /-- A stage writes in the working space only. -/

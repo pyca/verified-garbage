@@ -52,7 +52,7 @@ theorem CmbKeep.trans {s t u : State} {P : Addr} {wx : Nat} (h : CmbKeep s P wx 
 theorem CmbKeep.of_arrays {s t : State} {P : Addr} {wx : Nat} {js : List Nat}
     (ha : Arrays P wx js s.mem t.mem) (hjs : ∀ j ∈ js, j = aAcc ∨ j = aTmp ∨ j = aY ∨ j = Crt.aT ∨ j = aX)
     (hn : P.toNat + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64) (hk : Keep mmRegs s t) : CmbKeep s P wx t := by
-  have h8 : ∀ j ∈ js, j < 8 := fun j hj => by
+  obtain h8 : ∀ j ∈ js, j < 8 := fun j hj => by
     rcases hjs j hj with rfl | rfl | rfl | rfl | rfl <;> decide
   exact ⟨fun j hj => arr_ent ha h8 hn hj,
     fun j hj h1 h2 h3 h4 h5 => ha.wv_of_not_mem hj (fun hm => by
@@ -64,8 +64,8 @@ theorem CmbKeep.of_arrays {s t : State} {P : Addr} {wx : Nat} {js : List Nat}
 theorem CmbKeep.of_slot {s t : State} {P : Addr} {wx i : Nat} {v : BitVec 64}
     (hm : t.mem = s.mem.writeW (off P (8 * i)) v) (hi : i = Crt.sNib ∨ i = Crt.sBit)
     (hn : P.toNat + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64) (hk : Keep mmRegs s t) : CmbKeep s P wx t := by
-  have hi17 : 17 ≤ i ∧ i < 32 := by rcases hi with rfl | rfl <;> decide
-  have ho : Outside P 136 120 s.mem t.mem := by rw [hm]; exact fn_outside _ P _ hi17.1 hi17.2
+  obtain hi17 : 17 ≤ i ∧ i < 32 := by rcases hi with rfl | rfl <;> decide
+  obtain ho : Outside P 136 120 s.mem t.mem := by rw [hm]; exact fn_outside _ P _ hi17.1 hi17.2
   exact ⟨fun j hj => fn_ent ho hn hj, fun j hj _ _ _ _ _ => fn_arr ho hn hj,
     fun k hk h1 h2 => by
       rw [hm, hdrStore_hdr _ _ _ hi17.2 hk (by rcases hi with rfl | rfl <;> [exact Ne.symm h1; exact Ne.symm h2])],
@@ -76,7 +76,7 @@ theorem ctx_of_arrays {s t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {N 
     (hc : CExpCtx s P wx minv N Xc) (ha : Arrays P wx js s.mem t.mem) (hN : aN ∉ js) (hX : Crt.aXc ∉ js)
     (hwr : t.wr = s.wr) (h0 : t.gpr .x0 = s.gpr .x0) : CExpCtx t P wx minv N Xc := by
   have hn := hc.scrT.nowrap
-  have hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
   have hw := hc.good.scr.nowrap
   exact ⟨⟨hc.good.scr.congr hwr, h0.trans hc.good.x0, ha.hdr hc.good.hdr⟩, hc.scrT.congr hwr,
     (ha.wv_of_not_mem (by decide) hN hnZ).trans hc.n,
@@ -111,23 +111,23 @@ theorem pick_steps {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {N Xc b0
     WP isa (.block [movi .x3 (b0 + 7), sth .x3 Crt.sNib]) s fun u => FSel P wx (b0 + 7) u ∧
       WP isa VG.Impl.Dsa.AArch64.PublicPower.select u K := by
   have hn := hc.scrT.nowrap
-  have hv : b0 + 7 < 16 := by omega_using [hoff]
-  have hT := slot_le (w := wx) (show Crt.aT < 8 by decide)
+  obtain hv : b0 + 7 < 16 := by omega_using [hoff]
+  obtain hT := slot_le (w := wx) (show Crt.aT < 8 by decide)
   refine (WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off P (8 * Crt.sNib))
       (BitVec.ofNat 64 (b0 + 7))) (by
     rcases hoff with rfl | rfl <;>
     · brun [hc.good.x0, hdr_enc (show Crt.sNib < 32 by decide), hc.st (i := Crt.sNib) (by decide)]
       rfl) (by rcases hoff with rfl | rfl <;> rfl) rfl (by rcases hoff with rfl | rfl <;> rfl))
     fun s₁ ⟨hm₁, k₁⟩ => ?_)
-  have k₁' : Keep mmRegs s s₁ := k₁.mono (by decide)
-  have c₁ : CmbKeep s P wx s₁ := CmbKeep.of_slot hm₁ (Or.inl rfl) hn k₁'
-  have hc₁ := ctx_of_fn hc (by rw [hm₁]; exact fn_outside _ P _ (by decide) (by decide)) k₁.wr
+  obtain k₁' : Keep mmRegs s s₁ := k₁.mono (by decide)
+  obtain c₁ : CmbKeep s P wx s₁ := CmbKeep.of_slot hm₁ (Or.inl rfl) hn k₁'
+  obtain hc₁ := ctx_of_fn hc (by rw [hm₁]; exact fn_outside _ P _ (by decide) (by decide)) k₁.wr
     (k₁.gpr .x0 (by decide))
-  have ht₁ := (c₁.hdr _ (by decide) (by decide) (by decide)).trans ht
-  have hn₁ : word s₁.mem P (8 * Crt.sNib) = BitVec.ofNat 64 (b0 + 7) := by rw [hm₁, word_writeW_self]
+  obtain ht₁ := (c₁.hdr _ (by decide) (by decide) (by decide)).trans ht
+  obtain hn₁ : word s₁.mem P (8 * Crt.sNib) = BitVec.ofNat 64 (b0 + 7) := by rw [hm₁, word_writeW_self]
   refine ⟨⟨minv, N, Xc, hc₁, hw, hw', hv, ht₁, hn₁⟩, ?_⟩
   refine WP.mono (PublicPower.select_ok hc₁ hw hw' hv ht₁ hn₁) fun t ⟨hct, hT', o₂, k₂⟩ => hK t ?_
-  have a₂ : Arrays P wx [Crt.aT] s₁.mem t.mem :=
+  obtain a₂ : Arrays P wx [Crt.aT] s₁.mem t.mem :=
     Arrays.of_outside (List.mem_singleton_self _) o₂ (Nat.le_refl _) (by omega_arith)
   exact ⟨hct, by rw [hT', c₁.ent _ hv], c₁.trans (CmbKeep.of_arrays a₂ (by simp) hn k₂)⟩
 
@@ -170,9 +170,9 @@ theorem cmbStep_steps (M : Mont) {s t : State} {P : Addr} {wx : Nat} {minv : Bit
       FGood P wx s₃ ∧ WP isa (M.mm aX aX aY) s₃ fun s₄ =>
       FGood P wx s₄ ∧ WP isa (.block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]) s₄ K := by
   have hn := hI.ctx.scrT.nowrap
-  have hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
-  have hv : b0 + (6 - i) < 16 := by omega_using [hoff, hi]
-  have hT := slot_le (w := wx) (show Crt.aT < 8 by decide)
+  obtain hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hv : b0 + (6 - i) < 16 := by omega_using [hoff, hi]
+  obtain hT := slot_le (w := wx) (show Crt.aT < 8 by decide)
   have hc := hI.ctx
   -- The bucket's index.
   refine (WP.mono (WP.keep [.x3] (Q := fun u => u.mem = t.mem.writeW (off P (8 * Crt.sNib))
@@ -183,23 +183,23 @@ theorem cmbStep_steps (M : Mont) {s t : State} {P : Addr} {wx : Nat} {minv : Bit
       refine congrArg (t.mem.writeW _) (congrArg (BitVec.ofNat 64) ?_)
       omega_arith) (by rcases hoff with rfl | rfl <;> rfl) rfl (by rcases hoff with rfl | rfl <;> rfl))
     fun s₁ ⟨hm₁, k₁⟩ => ?_)
-  have o₁ : Outside P 136 120 t.mem s₁.mem := by rw [hm₁]; exact fn_outside _ P _ (by decide) (by decide)
-  have c₁ : CmbKeep t P wx s₁ := CmbKeep.of_slot hm₁ (Or.inl rfl) hn (k₁.mono (by decide))
-  have hc₁ := ctx_of_fn hc o₁ k₁.wr (k₁.gpr .x0 (by decide))
+  obtain o₁ : Outside P 136 120 t.mem s₁.mem := by rw [hm₁]; exact fn_outside _ P _ (by decide) (by decide)
+  obtain c₁ : CmbKeep t P wx s₁ := CmbKeep.of_slot hm₁ (Or.inl rfl) hn (k₁.mono (by decide))
+  obtain hc₁ := ctx_of_fn hc o₁ k₁.wr (k₁.gpr .x0 (by decide))
   -- The bucket.
-  have ht₁ := (c₁.hdr _ (by decide) (by decide) (by decide)).trans
+  obtain ht₁ := (c₁.hdr _ (by decide) (by decide) (by decide)).trans
     ((hI.kept.hdr _ (by decide) (by decide) (by decide)).trans ht)
-  have hn₁ : word s₁.mem P (8 * Crt.sNib) = BitVec.ofNat 64 (b0 + (6 - i)) := by rw [hm₁, word_writeW_self]
+  obtain hn₁ : word s₁.mem P (8 * Crt.sNib) = BitVec.ofNat 64 (b0 + (6 - i)) := by rw [hm₁, word_writeW_self]
   refine ⟨⟨minv, N, Xc, hc₁, hw, hw', hv, ht₁, hn₁⟩, ?_⟩
   refine (WP.mono (PublicPower.select_ok hc₁ hw hw' hv ht₁ hn₁) fun s₂ ⟨hc₂, hT₂, o₂, k₂⟩ => ⟨⟨minv, hc₂.good⟩, ?_⟩)
-  have a₂ : Arrays P wx [Crt.aT] s₁.mem s₂.mem :=
+  obtain a₂ : Arrays P wx [Crt.aT] s₁.mem s₂.mem :=
     Arrays.of_outside (List.mem_singleton_self _) o₂ (Nat.le_refl _) (by omega_arith)
-  have c₂ : CmbKeep s₁ P wx s₂ := CmbKeep.of_arrays a₂ (by simp) hn k₂
-  have hTv : wv s₂.mem P (slot wx Crt.aT) wx = wv s.mem P (slot wx (8 + (b0 + (6 - i)))) wx := by
+  obtain c₂ : CmbKeep s₁ P wx s₂ := CmbKeep.of_arrays a₂ (by simp) hn k₂
+  obtain hTv : wv s₂.mem P (slot wx Crt.aT) wx = wv s.mem P (slot wx (8 + (b0 + (6 - i)))) wx := by
     rw [hT₂, c₁.ent _ hv, hI.kept.ent _ hv]
-  have hY₂ : wv s₂.mem P (slot wx aY) wx = wv t.mem P (slot wx aY) wx := by
+  obtain hY₂ : wv s₂.mem P (slot wx aY) wx = wv t.mem P (slot wx aY) wx := by
     rw [a₂.wv_of_not_mem (by decide) (by decide) hnZ, fn_arr o₁ hn (by decide)]
-  have hX₂ : wv s₂.mem P (slot wx aX) wx = wv t.mem P (slot wx aX) wx := by
+  obtain hX₂ : wv s₂.mem P (slot wx aX) wx = wv t.mem P (slot wx aX) wx := by
     rw [a₂.wv_of_not_mem (by decide) (by decide) hnZ, fn_arr o₁ hn (by decide)]
   -- `Y := Y T`.
   refine (WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hc₂.good (Nat.le_refl _) hw (by omega_arith)
@@ -207,32 +207,32 @@ theorem cmbStep_steps (M : Mont) {s t : State} {P : Addr} {wx : Nat} {minv : Bit
     (by rw [hc₂.n, hTv]; exact hlt _ (by omega_arith) (by omega_arith)))
     fun s₃ ⟨hg₃, hlt₃, hm₃, a₃, k₃⟩ => ⟨⟨minv, hg₃⟩, ?_⟩)
   rw [hc₂.n] at hlt₃ hm₃
-  have c₃ : CmbKeep s₂ P wx s₃ := CmbKeep.of_arrays a₃ (by simp) hn k₃
-  have hc₃ := ctx_of_arrays hc₂ a₃ (by decide) (by decide) k₃.wr (k₃.gpr .x0 (by decide))
-  have hYv₃ : wv s₃.mem P (slot wx aY) wx % N = g ^ cy b (i + 1) * 2 ^ (64 * wx) % N :=
+  obtain c₃ : CmbKeep s₂ P wx s₃ := CmbKeep.of_arrays a₃ (by simp) hn k₃
+  obtain hc₃ := ctx_of_arrays hc₂ a₃ (by decide) (by decide) k₃.wr (k₃.gpr .x0 (by decide))
+  obtain hYv₃ : wv s₃.mem P (slot wx aY) wx % N = g ^ cy b (i + 1) * 2 ^ (64 * wx) % N :=
     mont_mulT hR (hY₂ ▸ hI.y) (hTv ▸ hb _ (by omega_arith) (by omega_arith)) hm₃
-  have hX₃ : wv s₃.mem P (slot wx aX) wx = wv t.mem P (slot wx aX) wx := by
+  obtain hX₃ : wv s₃.mem P (slot wx aX) wx = wv t.mem P (slot wx aX) wx := by
     rw [a₃.wv_of_not_mem (by decide) (by decide) hnZ, hX₂]
   -- `X := X Y`.
   refine (WP.mono (M.mm_ok (o := aX) (a := aX) (b := aY) hc₃.good (Nat.le_refl _) hw (by omega_arith)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc₃.inv
     (by rw [hc₃.n]; exact hlt₃)) fun s₄ ⟨hg₄, hlt₄, hm₄, a₄, k₄⟩ => ⟨⟨minv, hg₄⟩, ?_⟩)
   rw [hc₃.n] at hlt₄ hm₄
-  have c₄ : CmbKeep s₃ P wx s₄ := CmbKeep.of_arrays a₄ (by simp) hn k₄
-  have hc₄ := ctx_of_arrays hc₃ a₄ (by decide) (by decide) k₄.wr (k₄.gpr .x0 (by decide))
-  have hXv₄ : wv s₄.mem P (slot wx aX) wx % N = g ^ cx b (i + 1) * 2 ^ (64 * wx) % N :=
+  obtain c₄ : CmbKeep s₃ P wx s₄ := CmbKeep.of_arrays a₄ (by simp) hn k₄
+  obtain hc₄ := ctx_of_arrays hc₃ a₄ (by decide) (by decide) k₄.wr (k₄.gpr .x0 (by decide))
+  obtain hXv₄ : wv s₄.mem P (slot wx aX) wx % N = g ^ cx b (i + 1) * 2 ^ (64 * wx) % N :=
     mont_mulT hR (hX₃ ▸ hI.x) hYv₃ hm₄
-  have hY₄ : wv s₄.mem P (slot wx aY) wx = wv s₃.mem P (slot wx aY) wx :=
+  obtain hY₄ : wv s₄.mem P (slot wx aY) wx = wv s₃.mem P (slot wx aY) wx :=
     a₄.wv_of_not_mem (by decide) (by decide) hnZ
-  have c04 : CmbKeep t P wx s₄ := ((c₁.trans c₂).trans c₃).trans c₄
+  obtain c04 : CmbKeep t P wx s₄ := ((c₁.trans c₂).trans c₃).trans c₄
   -- The count.
   refine WP.mono (crtBitEnd_ok hc₄ (b := 6 - i)
     ((a₄.hslot (by decide)).trans ((a₃.hslot (by decide)).trans ((a₂.hslot (by decide)).trans
       ((by rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)] :
         word s₁.mem P (8 * Crt.sBit) = word t.mem P (8 * Crt.sBit)).trans hI.cnt)))) (by omega_arith))
     fun t' ⟨⟨hm', h3⟩, k'⟩ => hK t' ?_
-  have o' : Outside P 136 120 s₄.mem t'.mem := by rw [hm']; exact fn_outside _ P _ (by decide) (by decide)
-  have c' : CmbKeep s₄ P wx t' := CmbKeep.of_slot hm' (Or.inr rfl) hn (k'.mono (by decide))
+  obtain o' : Outside P 136 120 s₄.mem t'.mem := by rw [hm']; exact fn_outside _ P _ (by decide) (by decide)
+  obtain c' : CmbKeep s₄ P wx t' := CmbKeep.of_slot hm' (Or.inr rfl) hn (k'.mono (by decide))
   refine ⟨⟨ctx_of_fn hc₄ o' k'.wr (k'.gpr .x0 (by decide)), ?_, ?_, ?_, ?_, ?_,
     hI.kept.trans (c04.trans c')⟩, ?_⟩
   · rw [fn_arr o' hn (by decide), hY₄]; exact hlt₃
@@ -277,40 +277,40 @@ theorem combineHead_steps {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {
       WP isa (seqs (Crt.copyArr aX Crt.aT)) s₂ fun s₃ => FGood P wx s₃ ∧
       WP isa (.block [movi .x3 6, sth .x3 Crt.sBit]) s₃ K := by
   have hn := hc.scrT.nowrap
-  have hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
   refine pick_steps hc hw hw' hoff ht fun s₁ ⟨hc₁, hT₁, c₁⟩ => ⟨⟨minv, hc₁.good⟩, ?_⟩
   refine WP.mono (copyArr_ok hc₁.good (Nat.le_refl _)
     (by omega_arith) (by omega_arith) (o := aY) (a := Crt.aT) (by decide) (by decide) (by decide))
     fun s₂ ⟨hY₂, o₂, k₂⟩ => ?_
-  have a₂ : Arrays P wx [aY] s₁.mem s₂.mem :=
+  obtain a₂ : Arrays P wx [aY] s₁.mem s₂.mem :=
     Arrays.of_outside (List.mem_singleton_self _) o₂ (Nat.le_refl _) (by omega_arith)
-  have c₂ : CmbKeep s₁ P wx s₂ := CmbKeep.of_arrays a₂ (by simp) hn k₂
-  have hc₂ := ctx_of_arrays hc₁ a₂ (by decide) (by decide) k₂.wr (k₂.gpr .x0 (by decide))
+  obtain c₂ : CmbKeep s₁ P wx s₂ := CmbKeep.of_arrays a₂ (by simp) hn k₂
+  obtain hc₂ := ctx_of_arrays hc₁ a₂ (by decide) (by decide) k₂.wr (k₂.gpr .x0 (by decide))
   refine ⟨⟨minv, hc₂.good⟩, ?_⟩
   refine WP.mono (copyArr_ok hc₂.good (Nat.le_refl _)
     (by omega_arith) (by omega_arith) (o := aX) (a := Crt.aT) (by decide) (by decide) (by decide))
     fun s₃ ⟨hX₃, o₃, k₃⟩ => ?_
-  have a₃ : Arrays P wx [aX] s₂.mem s₃.mem :=
+  obtain a₃ : Arrays P wx [aX] s₂.mem s₃.mem :=
     Arrays.of_outside (List.mem_singleton_self _) o₃ (Nat.le_refl _) (by omega_arith)
-  have c₃ : CmbKeep s₂ P wx s₃ := CmbKeep.of_arrays a₃ (by simp) hn k₃
-  have hc₃ := ctx_of_arrays hc₂ a₃ (by decide) (by decide) k₃.wr (k₃.gpr .x0 (by decide))
+  obtain c₃ : CmbKeep s₂ P wx s₃ := CmbKeep.of_arrays a₃ (by simp) hn k₃
+  obtain hc₃ := ctx_of_arrays hc₂ a₃ (by decide) (by decide) k₃.wr (k₃.gpr .x0 (by decide))
   refine ⟨⟨minv, hc₃.good⟩, ?_⟩
   -- The count.
   refine WP.mono (WP.keep [.x3] (Q := fun v => v.mem = s₃.mem.writeW (off P (8 * Crt.sBit))
       (BitVec.ofNat 64 6)) (by
     brun [hc₃.good.x0, hdr_enc (show Crt.sBit < 32 by decide), hc₃.st (i := Crt.sBit) (by decide)]
     rfl) rfl rfl rfl) fun s₄ ⟨hm₄, k₄⟩ => hK s₄ ?_
-  have o₄ : Outside P 136 120 s₃.mem s₄.mem := by rw [hm₄]; exact fn_outside _ P _ (by decide) (by decide)
-  have c₄ : CmbKeep s₃ P wx s₄ := CmbKeep.of_slot hm₄ (Or.inr rfl) hn (k₄.mono (by decide))
-  have c04 : CmbKeep s P wx s₄ := ((c₁.trans c₂).trans c₃).trans c₄
-  have hTs : wv s₁.mem P (slot wx Crt.aT) wx % N = g ^ b 7 * 2 ^ (64 * wx) % N := by
+  obtain o₄ : Outside P 136 120 s₃.mem s₄.mem := by rw [hm₄]; exact fn_outside _ P _ (by decide) (by decide)
+  obtain c₄ : CmbKeep s₃ P wx s₄ := CmbKeep.of_slot hm₄ (Or.inr rfl) hn (k₄.mono (by decide))
+  obtain c04 : CmbKeep s P wx s₄ := ((c₁.trans c₂).trans c₃).trans c₄
+  obtain hTs : wv s₁.mem P (slot wx Crt.aT) wx % N = g ^ b 7 * 2 ^ (64 * wx) % N := by
     rw [hT₁]; exact hb 7 (by decide) (by decide)
-  have hTl : wv s₁.mem P (slot wx Crt.aT) wx < N := by rw [hT₁]; exact hlt 7 (by decide) (by decide)
-  have hT₂ : wv s₂.mem P (slot wx Crt.aT) wx = wv s₁.mem P (slot wx Crt.aT) wx :=
+  obtain hTl : wv s₁.mem P (slot wx Crt.aT) wx < N := by rw [hT₁]; exact hlt 7 (by decide) (by decide)
+  obtain hT₂ : wv s₂.mem P (slot wx Crt.aT) wx = wv s₁.mem P (slot wx Crt.aT) wx :=
     a₂.wv_of_not_mem (by decide) (by decide) hnZ
-  have hY₄ : wv s₄.mem P (slot wx aY) wx = wv s₁.mem P (slot wx Crt.aT) wx := by
+  obtain hY₄ : wv s₄.mem P (slot wx aY) wx = wv s₁.mem P (slot wx Crt.aT) wx := by
     rw [fn_arr o₄ hn (by decide), a₃.wv_of_not_mem (by decide) (by decide) hnZ, hY₂]
-  have hX₄ : wv s₄.mem P (slot wx aX) wx = wv s₁.mem P (slot wx Crt.aT) wx := by
+  obtain hX₄ : wv s₄.mem P (slot wx aX) wx = wv s₁.mem P (slot wx Crt.aT) wx := by
     rw [fn_arr o₄ hn (by decide), hX₃, hT₂]
   exact ⟨ctx_of_fn hc₃ o₄ k₄.wr (k₄.gpr .x0 (by decide)), by rw [hY₄]; exact hTl, by rw [hY₄]; exact hTs,
     by rw [hX₄]; exact hTl, by rw [hX₄]; exact hTs, by rw [hm₄, word_writeW_self], c04⟩
@@ -342,14 +342,14 @@ theorem combine_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitVec 6
   refine WP.seq (WP.mono (count_loop (cr := .x3) (n := 6) (by decide) (CmbInv s P wx minv N Xc g b)
     (fun i hi t hI => cmbStep_ok M hw hw' hR hoff hi ht hlt hb hI) I0) fun s₅ hI => ?_)
   -- Out of Montgomery form.
-  have hone₅ : wv s₅.mem P (slot wx aOne) wx = 1 :=
+  obtain hone₅ : wv s₅.mem P (slot wx aOne) wx = 1 :=
     (hI.kept.arr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hone
   refine WP.mono (M.mm_ok (o := Crt.aT) (a := aX) (b := aOne) hI.ctx.good (Nat.le_refl _) hw (by omega_arith)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hI.ctx.inv
     (by rw [hI.ctx.n, hone₅]; exact hN)) fun t ⟨_, hltt, hmt, at', kt⟩ => ?_
   rw [hI.ctx.n] at hltt hmt
   rw [hone₅] at hmt
-  have hres := VG.Proof.Dsa.mont_decode hR hI.x hmt
+  obtain hres := VG.Proof.Dsa.mont_decode hR hI.x hmt
   rw [Nat.mod_eq_of_lt hltt, cx_six] at hres
   exact ⟨ctx_of_arrays hI.ctx at' (by decide) (by decide) kt.wr (kt.gpr .x0 (by decide)), hres,
     hI.kept.trans (CmbKeep.of_arrays at' (by simp) hn kt)⟩

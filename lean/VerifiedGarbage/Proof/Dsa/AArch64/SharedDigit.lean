@@ -46,7 +46,7 @@ theorem baseSq_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64
       wv t.mem P (slot wx Crt.aXc) wx * 2 ^ (64 * wx) % N = Xc * Xc % N ∧
       Arrays P wx [aAcc, aTmp, Crt.aXc] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.scrT.nowrap
-  have hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
   refine WP.mono (M.mm_ok (o := Crt.aXc) (a := Crt.aXc) (b := Crt.aXc) hc.good (Nat.le_refl _) hw
     (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     hc.inv (by rw [hc.n, hc.x]; exact hA)) fun t ⟨hg, hlt, hm, ha, k⟩ => ?_
@@ -66,10 +66,10 @@ theorem digitEnd_ok {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {N Xc V
       (t.mem = ((s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (V / 8))).writeW
         (off P (8 * Crt.sMaskX)) (BitVec.ofNat 64 (Q / 8))).writeW (off P (8 * Crt.sBit))
           (BitVec.ofNat 64 (b - 1)) ∧ t.gpr .x3 = BitVec.ofNat 64 (b - 1)) ∧ Keep [.x3] s t := by
-  have hQ₁ : (s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (V / 8))).readW (off P (8 * Crt.sMaskX)) 64 =
+  obtain hQ₁ : (s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (V / 8))).readW (off P (8 * Crt.sMaskX)) 64 =
       BitVec.ofNat 64 Q := by
     rw [← hQ]; exact hdrStore_hdr (i := Crt.sV) _ _ _ (by decide) (by decide) (by decide)
-  have hb₂ : (((s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (V / 8))).writeW
+  obtain hb₂ : (((s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (V / 8))).writeW
       (off P (8 * Crt.sMaskX)) (BitVec.ofNat 64 (Q / 8))).readW (off P (8 * Crt.sBit)) 64) =
       BitVec.ofNat 64 b := by
     rw [← hb]
@@ -108,10 +108,10 @@ theorem digit_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64}
         word t.mem P (8 * i) = word s.mem P (8 * i)) ∧
       Frm P (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hI.ctx.scrT.nowrap
-  have hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
-  have hw2 : 2 ≤ wx := by omega_arith
-  have hdx : ex / 8 ^ k % 8 < 8 := Nat.mod_lt _ (by decide)
-  have hdq : eq / 8 ^ k % 8 < 8 := Nat.mod_lt _ (by decide)
+  obtain hnZ : P.toNat + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hw2 : 2 ≤ wx := by omega_arith
+  obtain hdx : ex / 8 ^ k % 8 < 8 := Nat.mod_lt _ (by decide)
+  obtain hdq : eq / 8 ^ k % 8 < 8 := Nat.mod_lt _ (by decide)
   rw [digit_eq]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (secretBucket_ok M hI.ctx hw hw' hd hI.tab hV hV' hI.alt)
     fun a ⟨hca, ltA, valA, othA, arrA, hdrA, frmA, kA⟩ => ?_)
@@ -125,30 +125,30 @@ theorem digit_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64}
   refine WP.seq (WP.mono (baseSq_ok M hcb hw2 hw' hI.alt) fun c₁ ⟨hc₁, lt₁, v₁, a₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (baseSq_ok M hc₁ hw2 hw' lt₁) fun c₂ ⟨hc₂, lt₂, v₂, a₂, k₂⟩ => ?_)
   refine WP.seq (WP.mono (baseSq_ok M hc₂ hw2 hw' lt₂) fun c₃ ⟨hc₃, lt₃, v₃, a₃, k₃⟩ => ?_)
-  have a13 : Arrays P wx [aAcc, aTmp, Crt.aXc] b'.mem c₃.mem := (a₁.trans a₂).trans a₃
-  have hdrC : ∀ i < 32, i ≠ Crt.sNib → i ≠ Crt.sEnt → i ≠ Crt.sJ →
+  obtain a13 : Arrays P wx [aAcc, aTmp, Crt.aXc] b'.mem c₃.mem := (a₁.trans a₂).trans a₃
+  obtain hdrC : ∀ i < 32, i ≠ Crt.sNib → i ≠ Crt.sEnt → i ≠ Crt.sJ →
       word c₃.mem P (8 * i) = word s.mem P (8 * i) := fun i hi h1 h2 h3 => by
     rw [a13.hslot hi, hdrB i hi h1 h2 h3, hdrA i hi h1 h2 h3]
   refine WP.mono (digitEnd_ok hc₃ (V := V) (Q := Q) (b := b)
     ((hdrC _ (by decide) (by decide) (by decide) (by decide)).trans hV) hV'
     ((hdrC _ (by decide) (by decide) (by decide) (by decide)).trans hQ) hQ'
     ((hdrC _ (by decide) (by decide) (by decide) (by decide)).trans hb) hb1) fun t ⟨⟨hm, h3⟩, kD⟩ => ?_
-  have oD : Outside P 136 120 c₃.mem t.mem := by
+  obtain oD : Outside P 136 120 c₃.mem t.mem := by
     rw [hm]
     exact ((fn_outside _ P _ (by decide) (by decide)).trans (fn_outside _ P _ (by decide) (by decide))).trans
       (fn_outside _ P _ (by decide) (by decide))
   -- The entries, in terms of the state after the buckets' updates.
-  have ent : ∀ j < 16, wv t.mem P (slot wx (8 + j)) wx = wv b'.mem P (slot wx (8 + j)) wx := fun j hj => by
+  obtain ent : ∀ j < 16, wv t.mem P (slot wx (8 + j)) wx = wv b'.mem P (slot wx (8 + j)) wx := fun j hj => by
     rw [fn_ent oD hn hj, arr_ent a13 (by decide) hn hj]
-  have entX : ∀ d < 8, wv b'.mem P (slot wx (8 + d)) wx = wv a.mem P (slot wx (8 + d)) wx := fun d hd' =>
+  obtain entX : ∀ d < 8, wv b'.mem P (slot wx (8 + d)) wx = wv a.mem P (slot wx (8 + d)) wx := fun d hd' =>
     othB d (by omega_arith) (Or.inl (by omega_arith))
-  have aX : wv t.mem P (slot wx Crt.aXc) wx = wv c₃.mem P (slot wx Crt.aXc) wx := fn_arr oD hn (by decide)
-  have aval : wv c₃.mem P (slot wx Crt.aXc) wx % N = g ^ 8 ^ (k + 1) * 2 ^ (64 * wx) % N := by
-    have e₁ := VG.Proof.Bignum.mont_sq hR hI.a v₁
-    have e₂ := VG.Proof.Bignum.mont_sq hR e₁ v₂
-    have e₃ := VG.Proof.Bignum.mont_sq hR e₂ v₃
+  obtain aX : wv t.mem P (slot wx Crt.aXc) wx = wv c₃.mem P (slot wx Crt.aXc) wx := fn_arr oD hn (by decide)
+  obtain aval : wv c₃.mem P (slot wx Crt.aXc) wx % N = g ^ 8 ^ (k + 1) * 2 ^ (64 * wx) % N := by
+    obtain e₁ := VG.Proof.Bignum.mont_sq hR hI.a v₁
+    obtain e₂ := VG.Proof.Bignum.mont_sq hR e₁ v₂
+    obtain e₃ := VG.Proof.Bignum.mont_sq hR e₂ v₃
     rw [e₃, show 2 * (2 * (2 * 8 ^ k)) = 8 ^ (k + 1) by rw [Nat.pow_succ]; omega_arith]
-  have xval : ∀ d < 8, wv a.mem P (slot wx (8 + d)) wx % N = g ^ bexp ex (k + 1) d * 2 ^ (64 * wx) % N := by
+  obtain xval : ∀ d < 8, wv a.mem P (slot wx (8 + d)) wx % N = g ^ bexp ex (k + 1) d * 2 ^ (64 * wx) % N := by
     intro d hd'
     by_cases he : ex / 8 ^ k % 8 = d
     · subst he
@@ -156,19 +156,19 @@ theorem digit_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64}
       exact mont_mulT hR (hI.xs _ hd') hI.a valA
     · rw [othA d (by omega_arith) (Ne.symm he), bexp_other he]
       exact hI.xs d hd'
-  have qval : ∀ d < 8, d ≠ 0 →
+  obtain qval : ∀ d < 8, d ≠ 0 →
       wv b'.mem P (slot wx (8 + (8 + d))) wx % N = g ^ bexp eq (k + 1) d * 2 ^ (64 * wx) % N := by
     intro d hd' hd0
     by_cases he : eq / 8 ^ k % 8 = d
     · subst he
-      have hv := (valB hd0).2
+      obtain hv := (valB hd0).2
       rw [othA _ (by omega_arith) (by omega_arith)] at hv
       rw [bexp_digit]
       exact mont_mulT hR (hI.qs _ hd' hd0) hI.a hv
     · rw [othB (8 + d) (by omega_arith) (Or.inl (by omega_arith)), othA _ (by omega_arith) (by omega_arith),
         bexp_other he]
       exact hI.qs d hd' hd0
-  have ltB : ∀ j < 16, wv b'.mem P (slot wx (8 + j)) wx < N := by
+  obtain ltB : ∀ j < 16, wv b'.mem P (slot wx (8 + j)) wx < N := by
     intro j hj
     by_cases hq : j = 8 + eq / 8 ^ k % 8 ∧ eq / 8 ^ k % 8 ≠ 0
     · rw [hq.1]; exact (valB hq.2).1

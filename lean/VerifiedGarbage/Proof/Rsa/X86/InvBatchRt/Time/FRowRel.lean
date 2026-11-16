@@ -65,8 +65,8 @@ variable {L : Lay} {B : Addr} {Z len N n : Nat} {args : Nat → BitVec 32} {sp :
 
 theorem agreeI {s t : State} (h : Rel L B Z len N n args sp s t) (he : s.gpr .esi = t.gpr .esi) :
     VG.X86.Taint.Agree (τI L) (view s B Z) (view t B Z) := by
-  have A := agreeS h
-  have w₁ := A.wf₁; have w₂ := A.wf₂
+  obtain A := agreeS h
+  obtain w₁ := A.wf₁; have w₂ := A.wf₂
   refine ⟨⟨fun r hr => ?_, A.rf.2⟩, A.wr,
     ⟨w₁.lens, w₁.bases, w₁.wbases, w₁.args, w₁.argBases, w₁.stk, w₁.frames, w₁.room⟩,
     ⟨w₂.lens, w₂.bases, w₂.wbases, w₂.args, w₂.argBases, w₂.stk, w₂.frames, w₂.room⟩, A.ok, A.slots, A.sp, A.argMem⟩
@@ -83,10 +83,10 @@ theorem leafT {E : (Reg → BitVec 32) → Mem → Prop} {Q : State → Prop} {c
     (hf : ∀ s, Pre L B Z len N n args sp E s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint τ c hc).isSome = true) :
     RelCT isa (fun s t => Pre L B Z len N n args sp E s ∧ Pre L B Z len N n args sp E t) c (fun s t => Q s ∧ Q t) := by
-  have ex : ∀ s, Pre L B Z len N n args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
+  obtain ex : ∀ s, Pre L B Z len N n args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
     let ⟨tr, z, e, _⟩ := hf _ ps.view
     ⟨tr, z, e⟩
-  have R := leaf (P := fun s t => Pre L B Z len N n args sp E s ∧ Pre L B Z len N n args sp E t) τ
+  obtain R := leaf (P := fun s t => Pre L B Z len N n args sp E s ∧ Pre L B Z len N n args sp E t) τ
     (fun _ _ ⟨ps, pt⟩ => hA _ _ ps pt)
     (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.ws.workspace.wr, pt.1.ws.ws.workspace.wr⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
@@ -126,13 +126,13 @@ theorem wordFr {s : State} {W : Addr} {bytes e sz o k y : Nat} {wide : Bool} (ws
     (hP : sP + 4 ≤ bytes) :
     WP isa (.block (wordI wide ts sz o k)) s fun u =>
       Unch W [(y, 4), (sP, 4)] s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
-  have ok : ∀ t ∈ ts.map (fun t => { t with x := t.x + k }), TermOk s.mem W bytes e t := by
+  obtain ok : ∀ t ∈ ts.map (fun t => { t with x := t.x + k }), TermOk s.mem W bytes e t := by
     intro t ht
     obtain ⟨t', ht', rfl⟩ := List.mem_map.mp ht
     obtain ⟨h1, h2, h3⟩ := hts t' ht'
     exact ⟨h1, h2, by simp only; omega_using [h3], hm t' ht'⟩
   have nw := ws.nowrap
-  have hb := (s.gpr .ebx).isLt; have hc := (s.gpr .ecx).isLt; have hp := (s.gpr .ebp).isLt
+  obtain hb := (s.gpr .ebx).isLt; have hc := (s.gpr .ecx).isLt; have hp := (s.gpr .ebp).isLt
   cases wide with
   | false =>
     refine WP.mono (wordN_ok ws di si ok hy hyb he (C := ((acc64 s : Int) + termSum s.mem W e (ts.map fun t => { t with x := t.x + k }) + 2 ^ 63) % 2 ^ 64 - 2 ^ 63 -
@@ -173,29 +173,29 @@ theorem rowStart_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms)
   obtain ⟨h, hp, hE⟩ := ps
   have hn := h.nowrap
   have hZ := h.halfZ
-  have hfit := H.fit; have harr := H.harr
-  have eE : sE = 180 := rfl; have eP : sP = 176 := rfl
-  have hA' : rv (kw len) { arr := arr, byte := sz } n = rv (kw len) { arr := arr } n + sz := by simp only [rv]; omega_using []
+  obtain hfit := H.fit; have harr := H.harr
+  obtain eE : sE = 180 := rfl; have eP : sP = 176 := rfl
+  obtain hA' : rv (kw len) { arr := arr, byte := sz } n = rv (kw len) { arr := arr } n + sz := by simp only [rv]; omega_using []
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
-  have m0 := mul_step (sz := sz) (show 0 < n + 2 by omega_using [])
-  have mfit := mul_step (sz := sz) (show n < n + 2 by omega_using [])
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain m0 := mul_step (sz := sz) (show 0 < n + 2 by omega_using [])
+  obtain mfit := mul_step (sz := sz) (show n < n + 2 by omega_using [])
   simp only [rowStart, List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .esi) (t := .edx) (x := { arr := arr, byte := sz }) (by decide)
     (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [hA']; omega_using [hn, hfit, m0]) fun u K₁ m₁ p₁ => ?_
   rw [hA'] at p₁
-  have wsu := ws.of_keeps K₁
-  have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
-  have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * n) := by
+  obtain wsu := ws.of_keeps K₁
+  obtain diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
+  obtain hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * n) := by
     rw [m₁, h.slots.halfW]
   simp only [← List.append_assoc]
   refine WP.mono (rowSetup_ok (wide := wide) wsu diu p₁ hh H.hsz (by omega_using [hfit, harr, eE, eP]) (by omega_using [hZ])
     (by omega_using [hn, hfit, mfit])) fun v ⟨_, _, _, F₀, E₀, _, K₀⟩ => ?_
   rw [m₁] at F₀
-  have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (K₁.mono (by decide)).trans (K₀.mono (by decide))
-  have U : Unch B [(sP, 8)] s.mem v.mem := fun x hx => F₀ x (hx _ (List.mem_singleton_self _))
-  have P := keepE (C := C) h hp K (by decide) (by decide) U (fun w hw => by
+  obtain K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v := (K₁.mono (by decide)).trans (K₀.mono (by decide))
+  obtain U : Unch B [(sP, 8)] s.mem v.mem := fun x hx => F₀ x (hx _ (List.mem_singleton_self _))
+  obtain P := keepE (C := C) h hp K (by decide) (by decide) U (fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega_using [hfit, harr, eP])
     (H.apart fun w hw => by simp only [List.mem_singleton] at hw; subst hw; exact .inr ⟨Nat.le_refl _, Nat.le_refl _⟩) hE
   exact ⟨P.1, P.2.1, P.2.2.1, P.2.2.2, by rw [K₀.1 _ (by decide)]; exact p₁, E₀⟩
@@ -209,36 +209,36 @@ theorem rowPair_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms) {i : N
         (RowE B C ms (rv (kw len) { arr := arr } n) sz n (rv (kw len) { arr := arr } n + sz + sz * (2 * i)))) := by
   obtain ⟨h, hp, hC, hm, si, hE⟩ := ps
   have hn := h.nowrap
-  have hfit := H.fit; have harr := H.harr; have ho := H.ho
-  have eE : sE = 180 := rfl; have eP : sP = 176 := rfl
+  obtain hfit := H.fit; have harr := H.harr; have ho := H.ho
+  obtain eE : sE = 180 := rfl; have eP : sP = 176 := rfl
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
-  have mi := mul_mono (sz := sz) hi
-  have mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
-  have mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain mi := mul_mono (sz := sz) hi
+  obtain mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
+  obtain mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
   have hsz := H.hsz
-  have e1 : sz * (2 * i + 2) = sz * (2 * i) + 2 * sz := by rw [Nat.mul_add]; omega_using []
+  obtain e1 : sz * (2 * i + 2) = sz * (2 * i) + 2 * sz := by rw [Nat.mul_add]; omega_using []
   rw [WP.block_append_iff]
   refine WP.mono (wordFr (k := 0) (y := (rv (kw len) { arr := arr } n) + o + sz * (2 * i)) ws di si (fun t ht => by
       have := H.hms t (H.hts t ht).1; have := (H.hts t ht).2; omega_arith) (H.mask hm)
     (by unfold neg; omega_using [hn, hfit, ho, mi, mn, mn', e1]) (by omega_using [hfit, ho, mi, mn, mn', e1]) (by omega_using [hfit, mi, mn, mn', e1]) (by omega_using [hfit, harr])) fun u ⟨U₁, K₁⟩ => ?_
-  have hB := keepE (C := C) h hp K₁ (by decide) (by decide) U₁
+  obtain hB := keepE (C := C) h hp K₁ (by decide) (by decide) U₁
     (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl <;> dsimp only <;> omega_arith)
     (H.apart fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact .inl (by dsimp only; omega_using [])
       · exact .inr ⟨Nat.le_refl _, by dsimp only; omega_using []⟩) ⟨hC, hm⟩
-  have siu : PtrAt u B .esi ((rv (kw len) { arr := arr } n) + sz + sz * (2 * i)) := by rw [PtrAt, K₁.1 _ (by decide)]; exact si
-  have wsu := ws.of_keeps K₁
-  have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
-  have hEu : u.mem.readW (off B sE) 32 = _ := (unch_readW U₁ (fun w hw => by
+  obtain siu : PtrAt u B .esi ((rv (kw len) { arr := arr } n) + sz + sz * (2 * i)) := by rw [PtrAt, K₁.1 _ (by decide)]; exact si
+  obtain wsu := ws.of_keeps K₁
+  obtain diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
+  obtain hEu : u.mem.readW (off B sE) 32 = _ := (unch_readW U₁ (fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_using [eE])).trans hE
   refine WP.mono (wordFr (k := sz) (y := (rv (kw len) { arr := arr } n) + o + sz * (2 * i) + sz) wsu diu siu (fun t ht => by
       have := H.hms t (H.hts t ht).1; have := (H.hts t ht).2; omega_arith) (H.mask hB.2.2.2)
     (by unfold neg; omega_using [hn, hfit, ho, mi, mn, mn', e1]) (by omega_using [hfit, ho, mi, mn, mn', e1]) (by omega_using [hfit, mi, mn, mn', e1]) (by omega_using [hfit, harr])) fun v ⟨U₂, K₂⟩ => ?_
-  have hB₂ := keepE (C := C) hB.1 hB.2.1 K₂ (by decide) (by decide) U₂
+  obtain hB₂ := keepE (C := C) hB.1 hB.2.1 K₂ (by decide) (by decide) U₂
     (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl <;> dsimp only <;> omega_arith)
     (H.apart fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -259,24 +259,24 @@ theorem rowAdv_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms) {i : Na
       isa.eval .ne v = some (!decide (2 * i + 2 = n)) := by
   obtain ⟨h, hp, hC, hm, si, hE⟩ := ps
   have hn := h.nowrap
-  have hfit := H.fit; have harr := H.harr
-  have eE : sE = 180 := rfl; have eP : sP = 176 := rfl
+  obtain hfit := H.fit; have harr := H.harr
+  obtain eE : sE = 180 := rfl; have eP : sP = 176 := rfl
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
-  have mi := mul_mono (sz := sz) hi
-  have mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
-  have mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
-  have e1 : sz * (2 * (i + 1)) = sz * (2 * i) + 2 * sz := by
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain mi := mul_mono (sz := sz) hi
+  obtain mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
+  obtain mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
+  obtain e1 : sz * (2 * (i + 1)) = sz * (2 * i) + 2 * sz := by
     rw [show 2 * (i + 1) = 2 * i + 2 by omega_using [], Nat.mul_add]; omega_using []
-  have e2 : sz * (2 * i + 2) = sz * (2 * i) + 2 * sz := by rw [Nat.mul_add]; omega_using []
+  obtain e2 : sz * (2 * i + 2) = sz * (2 * i) + 2 * sz := by rw [Nat.mul_add]; omega_using []
   refine WP.mono (advCmp_ok (d := 2 * sz) (E := rv (kw len) { arr := arr } n + sz + sz * n) ws di si hE
     (by omega_using [hfit, harr, eE, eP]) (by omega_using [hfit, mi, mn, mn', e2]) (by omega_using [hfit, mn, mn']))
     fun w ⟨siw, mw, kw₁, ew⟩ => ⟨⟨h.keep kw₁ (by decide) (by decide) (o := 160) (c := 0)
       (by rw [mw]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by have := h.fits16; omega_using [this]),
       hp.keep kw₁ (by decide) (by rw [mw]; exact Outside.refl _ _ _ _), by rw [mw]; exact hC, by rw [mw]; exact hm,
       by rw [siw, e1]; congr 1; omega_using [], by rw [mw]; exact hE⟩, ?_⟩
-  have key : rv (kw len) { arr := arr } n + sz + sz * (2 * i) + 2 * sz = rv (kw len) { arr := arr } n + sz + sz * n ↔
+  obtain key : rv (kw len) { arr := arr } n + sz + sz * (2 * i) + 2 * sz = rv (kw len) { arr := arr } n + sz + sz * n ↔
       2 * i + 2 = n :=
     ⟨fun e => Nat.eq_of_mul_eq_mul_left (show 0 < sz by have := H.hsz; omega_using [this]) (by omega_using [e2, e]), fun e => by rw [← e]; omega_using [e2]⟩
   refine (show isa.eval .ne w = _ from ew).trans ?_
@@ -294,21 +294,21 @@ theorem rowEnd_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms)
       (Pre L B Z len N n args sp (ME B C ms)) := by
   obtain ⟨h, hp, hC, hm, si, hE⟩ := ps
   have hn := h.nowrap
-  have hfit := H.fit; have harr := H.harr; have ho := H.ho
+  obtain hfit := H.fit; have harr := H.harr; have ho := H.ho
   have eP : sP = 176 := rfl
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
-  have mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
-  have mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
-  have apartW : ∀ w ∈ [((rv (kw len) { arr := arr } n), sz * (n + 2)), (sP, 4)],
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain mn := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
+  obtain mn' := mul_step (sz := sz) (show n < n + 1 by omega_using [])
+  obtain apartW : ∀ w ∈ [((rv (kw len) { arr := arr } n), sz * (n + 2)), (sP, 4)],
       rv (kw len) { arr := arr } n ≤ w.1 ∨ (sP ≤ w.1 ∧ w.1 + w.2 ≤ sP + 8) := by
     intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
     · exact .inl (Nat.le_refl _)
     · exact .inr ⟨Nat.le_refl _, by omega_using []⟩
   -- The outputs' range.
-  have cov : ∀ y, (rv (kw len) { arr := arr } n) ≤ y → y + 4 ≤ (rv (kw len) { arr := arr } n) + sz * (n + 2) →
+  obtain cov : ∀ y, (rv (kw len) { arr := arr } n) ≤ y → y + 4 ≤ (rv (kw len) { arr := arr } n) + sz * (n + 2) →
       ∀ w ∈ [(y, 4), (sP, 4)], ∃ w' ∈ [((rv (kw len) { arr := arr } n), sz * (n + 2)), (sP, 4)], w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
     intro y h1 h2 w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
@@ -319,29 +319,29 @@ theorem rowEnd_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms)
   refine WP.mono (wordFr (k := 0) (y := (rv (kw len) { arr := arr } n) + o + sz * n) ws di si (fun t ht => by
       have := H.hms t (H.hts t ht).1; have := (H.hts t ht).2; omega_arith) (H.mask hm)
     (by unfold neg; omega_using [hn, hfit, ho, mn, mn']) (by omega_using [hfit, ho, mn, mn']) (by omega_using [hfit, mn, mn']) (by omega_using [hfit, harr])) fun u₁ ⟨U₁, K₁⟩ => ?_
-  have si₁ : PtrAt u₁ B .esi ((rv (kw len) { arr := arr } n) + sz + sz * n) := by rw [PtrAt, K₁.1 _ (by decide)]; exact si
+  obtain si₁ : PtrAt u₁ B .esi ((rv (kw len) { arr := arr } n) + sz + sz * n) := by rw [PtrAt, K₁.1 _ (by decide)]; exact si
   rw [WP.block_append_iff]
   refine WP.mono (addEsi_ok (d := sz) si₁) fun u₂ ⟨si₂, mu₂, ku₂⟩ => ?_
-  have K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₂ := (K₁.mono (by decide)).trans (ku₂.mono (by decide))
-  have hb : (rv (kw len) { arr := arr } n) + sz + sz * n + sz = (rv (kw len) { arr := arr } n) + sz * (n + 1) + sz := by rw [Nat.mul_succ]; omega_using []
+  obtain K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₂ := (K₁.mono (by decide)).trans (ku₂.mono (by decide))
+  obtain hb : (rv (kw len) { arr := arr } n) + sz + sz * n + sz = (rv (kw len) { arr := arr } n) + sz * (n + 1) + sz := by rw [Nat.mul_succ]; omega_using []
   rw [hb] at si₂
-  have ws₂ := ws.of_keeps K₂
-  have di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, K₂.1 _ (by decide)]; exact di
+  obtain ws₂ := ws.of_keeps K₂
+  obtain di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, K₂.1 _ (by decide)]; exact di
   rw [WP.block_append_iff]
   refine WP.mono (topFixes_ok (wide := wide) (sz := sz) (b := (rv (kw len) { arr := arr } n) + sz * (n + 1)) (by omega_using [mn']) (by omega_using [hn, hfit, mn]) signed ws₂
     di₂ si₂ (fun t ht => by
       have := H.hms t (H.hts t (H.hsg t ht)).1; have := (H.hts t (H.hsg t ht)).2; omega_arith) (by omega_using [hfit, mn]))
     fun u₃ ⟨_, mu₃, ku₃, _⟩ => ?_
-  have K₃ := K₂.trans (ku₃.mono (by decide))
-  have ws₃ := ws.of_keeps K₃
-  have di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, K₃.1 _ (by decide)]; exact di
-  have si₃ : PtrAt u₃ B .esi ((rv (kw len) { arr := arr } n) + sz * (n + 1) + sz) := by rw [PtrAt, ku₃.1 _ (by decide)]; exact si₂
+  obtain K₃ := K₂.trans (ku₃.mono (by decide))
+  obtain ws₃ := ws.of_keeps K₃
+  obtain di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, K₃.1 _ (by decide)]; exact di
+  obtain si₃ : PtrAt u₃ B .esi ((rv (kw len) { arr := arr } n) + sz * (n + 1) + sz) := by rw [PtrAt, ku₃.1 _ (by decide)]; exact si₂
   rw [show ∀ (x y z w : List Instr), x ++ (y ++ (z ++ w)) = (x ++ y ++ z) ++ w by intros; simp, WP.block_append_iff]
   refine WP.mono (lastWord_ok (o := o) (y := (rv (kw len) { arr := arr } n) + o + sz * (n + 1)) ws₃ di₃ si₃ (by unfold neg; omega_using [hn, hfit, ho, mn])
     (by unfold neg; omega_using [hn, hfit, ho, mn]) (by omega_using [hfit, ho, mn]) (by omega_using [hfit, mn]) (fun _ => by omega_using [hfit, harr])) fun w ⟨mw, kw₁⟩ => ?_
-  have K₄ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w := K₃.trans (kw₁.mono (by decide))
-  have U : Unch B [((rv (kw len) { arr := arr } n), sz * (n + 2)), (sP, 4)] s.mem w.mem := by
-    have U₂ : Unch B [((rv (kw len) { arr := arr } n) + o + sz * (n + 1), 4)] u₃.mem w.mem := by
+  obtain K₄ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w := K₃.trans (kw₁.mono (by decide))
+  obtain U : Unch B [((rv (kw len) { arr := arr } n), sz * (n + 2)), (sP, 4)] s.mem w.mem := by
+    obtain U₂ : Unch B [((rv (kw len) { arr := arr } n) + o + sz * (n + 1), 4)] u₃.mem w.mem := by
       rw [mw]; exact (writeW32_outside _ _ _ (by omega_using [hn, hfit, ho, mn])).unch
     rw [mu₃, mu₂] at U₂
     refine ((U₁.cover (cov _ (by omega_using []) (by omega_using [ho, mn, mn']))).trans (U₂.cover (W' := [(rv (kw len) { arr := arr } n, sz * (n + 2)), (sP, 4)]) fun w hw => ?_)).cover fun w hw => ?_
@@ -349,11 +349,11 @@ theorem rowEnd_fr {s : State} (H : RowHyp len Z n arr sz o ts signed ms)
       exact ⟨_, (List.mem_cons_self ..), by omega_using [], by omega⟩
     · simp only [List.mem_append] at hw
       rcases hw with h | h <;> exact ⟨w, h, Nat.le_refl _, Nat.le_refl _⟩
-  have O0 : Outside B 0 Z s.mem w.mem := U.outside fun w hw => by
+  obtain O0 : Outside B 0 Z s.mem w.mem := U.outside fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; rcases hw with rfl | rfl <;> dsimp only <;> omega_arith
   unfold restoreEdi
   refine wp_movS (h.ws.wsArg.keep K₄ (by decide) O0).readSrc fun t₁ V _ => WP.block_nil ?_
-  have K' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t₁ :=
+  obtain K' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp, .esi])
       ((K₄.mono (by decide)).trans (V.keeps.mono (by decide))) (V.gpr.trans (RtWs.edi_eq h.ws).symm)
   rw [← V.mem] at U
@@ -381,10 +381,10 @@ theorem relRow (H : RowHyp len Z n arr sz o ts signed ms) (hk : RowChecks L wide
     RelCT isa (fun s t => Pre L B Z len N n args sp (ME B C ms) s ∧ Pre L B Z len N n args sp (ME B C ms) t)
       (row L wide arr sz o ts signed)
       (fun s t => Pre L B Z len N n args sp (ME B C ms) s ∧ Pre L B Z len N n args sp (ME B C ms) t) := by
-  have he := H.even; have h2 := H.n2
+  obtain he := H.even; have h2 := H.n2
   obtain ⟨⟨_, h₁⟩, ⟨_, h₂⟩, ⟨_, h₃⟩, ⟨_, h₄⟩⟩ := hk
   -- The runs agree on `esi` where each has it at the same place.
-  have hAI : ∀ e s t, Pre L B Z len N n args sp (RowE B C ms (rv (kw len) { arr := arr } n) sz n e) s →
+  obtain hAI : ∀ e s t, Pre L B Z len N n args sp (RowE B C ms (rv (kw len) { arr := arr } n) sz n e) s →
       Pre L B Z len N n args sp (RowE B C ms (rv (kw len) { arr := arr } n) sz n e) t →
       VG.X86.Taint.Agree (τI L) (view s B Z) (view t B Z) := fun _ _ _ ps pt =>
     agreeI ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩ (BitVec.eq_of_toNat_eq (ps.2.2.2.2.1.trans pt.2.2.2.2.1.symm))
@@ -405,14 +405,14 @@ theorem relRow (H : RowHyp len Z n arr sz o ts signed ms) (hk : RowChecks L wide
   by_cases hi : k = n / 2 - i ∧ 2 * i < n
   swap
   · exact RelCT.of_false fun _ _ h => hi h.1
-  have hi2 : 2 * i + 2 ≤ n := by omega_using [he, hi]
+  obtain hi2 : 2 * i + 2 ≤ n := by omega_using [he, hi]
   unfold rowStep
   refine (RelCT.block_append (RelCT.seq
       (leafT (τI L) (hAI _) (fun s ps => rowPair_fr (wide := wide) H hi2 ps) h₂)
       (leafT (τI L) (hAI _) (fun s ps => rowAdv_fr H hi2 ps) h₃))).mono (fun _ _ h => ⟨h.2.1, h.2.2⟩)
     fun s t ⟨⟨ps, es⟩, ⟨pt, et⟩⟩ => ⟨by rw [es, et], fun hx => ?_, fun hx => ⟨k - 1, by omega_using [he, hi], i + 1, ⟨by omega_using [hi], ?_⟩, ps, pt⟩⟩
   · rw [es] at hx
-    have hn : 2 * i + 2 = n := by simpa using hx
+    obtain hn : 2 * i + 2 = n := by simpa using hx
     rw [show 2 * (i + 1) = n by omega_using [hn]] at ps pt
     exact ⟨ps, pt⟩
   · rw [es] at hx

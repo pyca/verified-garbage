@@ -69,9 +69,9 @@ theorem Keep.ladArg {s₀ s : State} (K : Keep c s₀ (ptr s₀ A.sc) s) (hp : S
     (hd : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk], Region.Disjoint ⟨argAddr s₀ A.sc, 4⟩ r)
     (h28 : 28 ≤ c.stk) : Point.LadArg s (ptr s₀ A.sc) A.ao := by
   have hsc : A.sc ∈ A.idx := List.mem_cons_self
-  have hv : s.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
+  obtain hv : s.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
     K.whole.readW (Region.contains_self _ _) hd (by decide)
-  have he : s.gpr .edi = arg s₀ A.sc := by
+  obtain he : s.gpr .edi = arg s₀ A.sc := by
     have := congrArg (BitVec.setWidth 32) K.scr.edi
     simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
   refine Point.LadArg.of h28 (by rw [K.esp]; exact hp.sp_lo)
@@ -128,7 +128,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (ptr s₀ A.sc) s₁ ix.1 = ix.2 := P.consts
-  have fx : Fixed c (ptr s₀ A.sc) s₀.gpr s₁.mem :=
+  obtain fx : Fixed c (ptr s₀ A.sc) s₀.gpr s₁.mem :=
     ⟨hc' (MP, c.C.p) (by simp [Cfg.consts]), hc' (MN, c.C.n) (by simp [Cfg.consts]),
       hc' (ZERO, 0) (by simp [Cfg.consts]), hc' (ONE, 1) (by simp [Cfg.consts]),
       (hc' (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
@@ -136,35 +136,35 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       hc' (GX, c.mont c.C.gx) (by simp [Cfg.consts]), hc' (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved, P.table⟩
-  have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
+  obtain hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
     fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega_arith)
-  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
+  obtain hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
   refine WP.seq (WP.mono (bits_ok P.scr h0 (sl_le c h7 (i := K) (by decide)) (hsz (j := 0) (by decide))
     (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
-  have hs₂ := P.scr.of_keeps k₂ (by decide)
+  obtain hs₂ := P.scr.of_keeps k₂ (by decide)
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₂ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
+  obtain v₂ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₂ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
   -- The table of `p - 2`.
   refine WP.seq (WP.mono (bits_ok hs₂ h0 (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1) (by decide))
     (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₃ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
+  obtain v₃ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₃ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2) (by decide))
     (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₄ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
+  obtain v₄ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₄ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
   have hk : (kv c A s₀) = sv c (ptr s₀ A.sc) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (ptr s₀ A.sc) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (ptr s₀ A.sc) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
-  have K₄ : Keeps [.eax, .ebx, .edx, .esi, .edi] s₀ s₄ :=
+  obtain hp2 : c.C.p - 2 = sv c (ptr s₀ A.sc) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
+  obtain hn2 : c.C.n - 2 = sv c (ptr s₀ A.sc) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
+  obtain K₄ : Keeps [.eax, .ebx, .edx, .esi, .edi] s₀ s₄ :=
     (((P.keep.mono (by decide)).widen k₂).widen k₃).widen k₄
-  have hws : Outside (ptr s₀ A.sc) 0 size s₀.mem s₄.mem := fun x hx => by
+  obtain hws : Outside (ptr s₀ A.sc) 0 size s₀.mem s₄.mem := fun x hx => by
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
@@ -177,7 +177,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, K₄.1, hws, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · have hF := sl_le c h7 (i := FLAG) (by decide)
-    have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
+    obtain ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c (i := FLAG) (by decide) j 0
@@ -193,13 +193,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   · intro t ht
     rw [b₄ t ht, hn2, ← v₃ (by decide)]
   · intro h28
-    have esp₄ : s₄.gpr .esp = s₀.gpr .esp := K₄.1 _ (by decide)
+    obtain esp₄ : s₄.gpr .esp = s₀.gpr .esp := K₄.1 _ (by decide)
     have hsc : A.sc ∈ A.idx := List.mem_cons_self
-    have hs₄ := hs₃.of_keeps k₄ (by decide)
-    have hv : s₄.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
+    obtain hs₄ := hs₃.of_keeps k₄ (by decide)
+    obtain hv : s₄.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
       (frame_of_outside hws (List.mem_singleton_self _)).readW (Region.contains_self _ _) (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hp.arg_sc _ hsc) (by decide)
-    have he : s₄.gpr .edi = arg s₀ A.sc := by
+    obtain he : s₄.gpr .edi = arg s₀ A.sc := by
       have := congrArg (BitVec.setWidth 32) hs₄.edi
       simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
     refine Point.LadArg.of h28 (by rw [esp₄]; exact hp.sp_lo)
@@ -225,7 +225,7 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (hu : Unch base (slW c l ++ wkW c) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
   rcases List.mem_append.mp hw with hw | hw
   · rcases apart_slW (c := c) hl w hw with h | h
@@ -239,7 +239,7 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
 theorem frame_of_unch {L : List Region} {base : Addr} {W : List (Nat × Nat)} {m m' : Mem}
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) (hin : (⟨base, size⟩ : Region) ∈ L) :
     Frame L m m' := fun x hx => by
-  have hx' : size ≤ ofs base x := by
+  obtain hx' : size ≤ ofs base x := by
     have := hx _ hin; simp only [Region.Contains] at this; simp only [ofs]; omega_arith
   exact hu x (fun w hw => Or.inr (by have := hW w hw; omega_arith))
 

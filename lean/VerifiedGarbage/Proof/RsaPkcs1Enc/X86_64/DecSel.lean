@@ -30,7 +30,7 @@ theorem two_test (b : Byte) : decide ((BitVec.setWidth 64 b ^^^ 2).toNat < BitVe
     decide (b = 2) := by
   rw [one64_toNat]
   refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => by subst h; decide⟩
-  have h0 : BitVec.setWidth 64 b ^^^ 2 = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h])
+  obtain h0 : BitVec.setWidth 64 b ^^^ 2 = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h])
   have : BitVec.setWidth 64 b = 2 := by
     have := congrArg (· ^^^ (2 : BitVec 64)) h0
     simpa [BitVec.xor_assoc] using this
@@ -45,7 +45,7 @@ theorem ok_test (R : BitVec 64) :
     decide ((BitVec.setWidth 64 (BitVec.setWidth 32 R) ^^^ 1).toNat < BitVec.toNat (1 : BitVec 64)) = decide (R.setWidth 32 = 1) := by
   rw [one64_toNat]
   refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => by rw [h]; decide⟩
-  have h0 : BitVec.setWidth 64 (BitVec.setWidth 32 R) ^^^ 1 = 0 :=
+  obtain h0 : BitVec.setWidth 64 (BitVec.setWidth 32 R) ^^^ 1 = 0 :=
     BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h])
   have : BitVec.setWidth 64 (BitVec.setWidth 32 R) = 1 := by
     have := congrArg (· ^^^ (1 : BitVec 64)) h0
@@ -91,11 +91,11 @@ theorem validBlock_run {t : State} {p F : Addr} {b0 b1 : Byte} {f : Bool} {sep a
   refine WP.keep [.rax, .rsi, .rdx, .r10, .r11] (c := .block validBlock) (Q := VOut b0 b1 f sep al k R t) ?_ rfl
   xrun [VOut, validBlock, ea_atd (p := p), hdi, h0, h1, hi0, hi1, hdx, h10, h11, h9, ea_sp, hsp, hR, hiR, borrow_mask,
     zero_test, two_test, ten_test (show sep < 2 ^ 64 by omega_using [hsk, hk]), ok_test, bmask_not, bmask_and]
-  have e : BitVec.ofNat 64 k - BitVec.ofNat 64 sep - 1 = BitVec.ofNat 64 (k - sep - 1) := by
+  obtain e : BitVec.ofNat 64 k - BitVec.ofNat 64 sep - 1 = BitVec.ofNat 64 (k - sep - 1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
     omega_using [hsk]
-  have hv : (decide (b0 = 0) && decide (b1 = 2) && f && !decide (sep < 10)) = vOf b0 b1 f sep := by
+  obtain hv : (decide (b0 = 0) && decide (b1 = 2) && f && !decide (sep < 10)) = vOf b0 b1 f sep := by
     simp only [vOf]
     by_cases h₂ : sep < 10
     · simp [h₂, show ¬ 10 ≤ sep by omega_using [h₂]]
@@ -139,7 +139,7 @@ theorem selBody_run {t : State} {p q : Addr} {i k kl : Nat} {v ok : Bool} {e a :
   refine WP.keep [.rax, .r8, .rcx] (c := .block selBody) (Q := fun t' =>
     t'.mem = t.mem.writeW (off p i) (outByte v ok kl i e a) ∧ t'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧
       t'.zf = some (decide (i + 1 = k))) ?_ rfl |>.mono fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
-  have e1 : 0 + i = i := Nat.zero_add _
+  obtain e1 : 0 + i = i := Nat.zero_add _
   xrun [selBody, ea_bxd (p := p) (j := i), ea_bxd (p := q) (j := i), hdi, hsi, hcx, e1, hie, hia, hw, he, ha,
     hdx, h9, h10, h11, borrow_mask, bmask_not, bmask_and, ofNat_add_one,
     ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega_arith) (show k < 2 ^ 64 by omega_arith), sel_xor]
@@ -147,7 +147,7 @@ theorem selBody_run {t : State} {p q : Addr} {i k kl : Nat} {v ok : Bool} {e a :
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith),
     Nat.mod_eq_of_lt (show kl < 2 ^ 64 by omega_arith)]
   unfold outByte
-  have and255 : ∀ x : Byte, x &&& 255#8 = x := fun x => by
+  obtain and255 : ∀ x : Byte, x &&& 255#8 = x := fun x => by
     rw [show (255#8) = BitVec.allOnes 8 from rfl, BitVec.and_allOnes]
   by_cases h : kl ≤ i
   · cases ok <;> cases v <;> simp [h, Nat.not_lt.mpr h, bmask, and255, BitVec.xor_assoc]
@@ -166,9 +166,9 @@ theorem selLoop_ok {t₀ : State} {p q : Addr} {k kl : Nat} {v ok : Bool} (hk0 :
       (∀ i < j, byte u.mem p i = outByte v ok kl i (t₀.mem (off p i)) (t₀.mem (off q i))) ∧
       u.gpr .rcx = BitVec.ofNat 64 j) (fun j _ hj u ⟨ku, ho, hb, hcxu⟩ => ?_)
     (fun _ ⟨k, ho, hb, _⟩ => ⟨k, ho, hb⟩) ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith), hcx⟩
-  have g : ∀ r, r ∉ [Reg.rax, .r8, .rcx] → u.gpr r = t₀.gpr r := fun r hr => ku.gpr hr
-  have he : u.mem (off p j) = t₀.mem (off p j) := ho _ (.inr (by rw [ofs_off0 _ (by omega_arith)]; omega_arith))
-  have ha : u.mem (off q j) = t₀.mem (off q j) := ho _ (.inr (by have := hpq j hj; omega_arith))
+  obtain g : ∀ r, r ∉ [Reg.rax, .r8, .rcx] → u.gpr r = t₀.gpr r := fun r hr => ku.gpr hr
+  obtain he : u.mem (off p j) = t₀.mem (off p j) := ho _ (.inr (by rw [ofs_off0 _ (by omega_arith)]; omega_arith))
+  obtain ha : u.mem (off q j) = t₀.mem (off q j) := ho _ (.inr (by have := hpq j hj; omega_arith))
   refine WP.mono (selBody_run hj hk hkl ((g .rdi (by decide)).trans hdi) ((g .rsi (by decide)).trans hsi) hcxu
     ((g .rdx (by decide)).trans hdx) ((g .r9 (by decide)).trans h9) ((g .r10 (by decide)).trans h10)
     ((g .r11 (by decide)).trans h11) he ha (by rw [ku.2.1, ku.2.2]; exact hie j hj)

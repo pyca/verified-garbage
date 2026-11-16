@@ -82,7 +82,7 @@ theorem fixed_step {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) (offset size :
 
 omit hp in
 theorem callStk : Region.Sub (callR s₀) (stkR0 s₀) := by
-  have e : B s₀ = B s₀ + BitVec.ofNat 64 0 := by simp
+  obtain e : B s₀ = B s₀ + BitVec.ofNat 64 0 := by simp
   show Region.Sub ⟨B s₀, 48⟩ _
   rw [e]; exact stk_sub (by decide)
 
@@ -100,15 +100,15 @@ theorem fixed_rel (offset size : Nat) (ho : offset < 2 ^ 15) (lo : 768 ≤ offse
     RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (Impl.Argon2.PPC64LE.HPrime.absorbFixed offset size)
       fun _ _ => True := by
   unfold Impl.Argon2.PPC64LE.HPrime.absorbFixed
-  have args := (T.leaf (P := fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) [] []
+  obtain args := (T.leaf (P := fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) [] []
     (fun s₁ s₂ h => ⟨hF₁ _ h.1, hF₂ _ h.2, by simp, by simp⟩) hc).wpDep
     (F := fun s t => HPrime.FixedArgs s t offset size)
     fun s₁ s₂ _ => ⟨HPrime.fixedArgs_ok s₁ offset size ho (by omega_arith),
       HPrime.fixedArgs_ok s₂ offset size ho (by omega_arith)⟩
   refine args.seq (HPrime.update_rel fun s₁ s₂ ⟨_, σ₁, σ₂, hσ, h₁, h₂⟩ => ?_)
-  have i₁ := hF₁ _ hσ.1
-  have i₂ := hF₂ _ hσ.2
-  have base : σ₁.gpr .r31 = σ₂.gpr .r31 := by rw [i₁.r31, i₂.r31, T.pb.scrP_eq]
+  obtain i₁ := hF₁ _ hσ.1
+  obtain i₂ := hF₂ _ hσ.2
+  obtain base : σ₁.gpr .r31 = σ₂.gpr .r31 := by rw [i₁.r31, i₂.r31, T.pb.scrP_eq]
   exact ⟨HPrime.fixed_ready (finReady T.hp₁ i₁) h₁ lo hi, HPrime.fixed_ready (finReady T.hp₂ i₂) h₂ lo hi,
     by rw [h₁.keeps.r31, h₂.keeps.r31, base], by rw [h₁.count, h₂.count],
     by rw [h₁.data, h₂.data, base], by rw [h₁.size, h₂.size],
@@ -153,8 +153,8 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18) (hnp : pt
       (.block [ld .r4 countOff, lda .r3 len, .add .r4 .r4 .r3, st countOff .r4]) hc).isSome = true) :
     RelCT isa (fun s₁ s₂ => HI s₀₁ data₁ s₁ ∧ HI s₀₂ data₂ s₂) (Impl.Argon2.PPC64LE.Derive.absorb ptr len)
       fun _ _ => True := by
-  have ep := T.pb.arg_eq hptr hnp
-  have el := T.pb.arg_eq hlen hnl
+  obtain ep := T.pb.arg_eq hptr hnp
+  obtain el := T.pb.arg_eq hlen hnl
   -- What a run satisfies after each part.
   let GA (s₀ : State) (data : List Byte) (t : State) : Prop :=
     HI s₀ data t ∧ t.gpr .r4 = BitVec.ofNat 64 data.length ∧
@@ -170,17 +170,17 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18) (hnp : pt
       t.gpr .r5 = arg s₀ ptr ∧ t.gpr .r6 = arg s₀ len
   let GC (s₀ : State) (data : List Byte) (t : State) : Prop :=
     Inv s₀ t ∧ lw s₀ t countOff = BitVec.ofNat 64 (data.length + 4)
-  have wl : ∀ s₀ : State, (Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = 4 := fun _ => by
+  obtain wl : ∀ s₀ : State, (Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = 4 := fun _ => by
     simp [Spec.Blake2.wordBytes]
   -- The first `update`'s readiness and effect.
-  have rdyU : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GA s₀ data s → HPrime.UpdateReady s :=
+  obtain rdyU : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GA s₀ data s → HPrime.UpdateReady s :=
     fun {s₀ s data} hp ⟨h, _, r5, r6, _⟩ => updReady hp h.inv
       (by rw [r5, r6, h.inv.wr]
           exact Covers.right (Covers.one ⟨scrR s₀, scr_mem hp, Offset.contains_base _ (by decide) (by decide)⟩))
       (by rw [r5, r6]; exact Offset.disjoint_base _ (by decide) (by decide))
       (by rw [r5, r6]
           exact ((hp.stk_all (scrR s₀) (by simp)).sub_left callStk).sub_right (scr_sub (by decide)))
-  have wU : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → ∀ s, GA s₀ data s →
+  obtain wU : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → ∀ s, GA s₀ data s →
       WP isa Impl.Argon2.PPC64LE.HPrime.update s (GU s₀ data) :=
     fun {s₀ data} hp s ⟨h, r4, r5, r6, w⟩ => (absU_ok hp h r4 (by rw [r6]; decide)
       (by rw [r5, r6, h.inv.wr]
@@ -191,38 +191,38 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18) (hnp : pt
       fun t ⟨i, p, c, rp⟩ => ⟨i, p, c.trans h.cnt, by
         rw [r5, r6, show (BitVec.ofNat 64 4).toNat = 4 from rfl, w] at rp; exact rp⟩
   -- The second `update`'s readiness and effect.
-  have hR' : ∀ {s₀ : State}, (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
+  obtain hR' : ∀ {s₀ : State}, (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, argR s₀] :=
     fun {s₀} hR => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR ⊢
       rcases hR with h | h | h | h <;> simp [h]
-  have hS : ∀ {s₀ : State}, (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
+  obtain hS : ∀ {s₀ : State}, (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈
         [pwR s₀, saltR s₀, secR s₀, adR s₀, memR s₀, scrR s₀, outR s₀] := fun {s₀} hR => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR ⊢
     rcases hR with h | h | h | h <;> simp [h]
-  have cov₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
+  obtain cov₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
       Covers [⟨s.gpr .r5, (s.gpr .r6).toNat⟩] (s.rd ++ s.wr) := fun {s₀ s data} hp h hR => by
     rw [h.2.2.2.2.2.1, h.2.2.2.2.2.2, h.1.rd, hp.rd]
     exact Covers.left (Covers.one ⟨_, hR' hR, Region.contains_self _ _⟩)
-  have ds₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
+  obtain ds₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
       (⟨s.gpr .r5, (s.gpr .r6).toNat⟩ : Region).Disjoint ⟨scrP s₀, 768⟩ := fun {s₀ s data} hp h hR => by
     rw [h.2.2.2.2.2.1, h.2.2.2.2.2.2]
     exact (hp.ro_w _ (hR' hR) (scrR s₀) (by simp)).sub_right (Region.sub_prefix (by decide))
-  have sd₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
+  obtain sd₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
       (callR s₀).Disjoint ⟨s.gpr .r5, (s.gpr .r6).toNat⟩ := fun {s₀ s data} hp h hR => by
     rw [h.2.2.2.2.2.1, h.2.2.2.2.2.2]
     exact (hp.stk_all _ (hS hR)).sub_left callStk
-  have wU2 : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → (arg s₀ len).toNat < 2 ^ 32 →
+  obtain wU2 : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → (arg s₀ len).toNat < 2 ^ 32 →
       data.length + 4 + 2 ^ 32 < 2 ^ 36 →
       (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] → ∀ s, GB s₀ data s →
       WP isa Impl.Argon2.PPC64LE.HPrime.update s (GC s₀ data) :=
     fun {s₀ data} hp hl hd hR s h => by
       obtain ⟨i, p, rp, c, r4, r5, r6⟩ := h
-      have dl : (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = data.length + 4 := by
+      obtain dl : (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = data.length + 4 := by
         rw [List.length_append, wl]
       exact (absU_ok hp ⟨i, p, rp, by rw [c, dl], by rw [dl]; omega_arith⟩ (by rw [r4, dl]) (by rw [r6]; exact hl)
         (cov₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR) (ds₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR)
@@ -258,7 +258,7 @@ length. -/
 theorem finish_rel {data₁ data₂ : List Byte} (heq : data₁.length = data₂.length) :
     RelCT isa (fun s₁ s₂ => HI s₀₁ data₁ s₁ ∧ HI s₀₂ data₂ s₂) Impl.Argon2.PPC64LE.Derive.finish
       fun _ _ => True := by
-  have ld : ∀ {s₀ : State} {data : List Byte} (s : State), HI s₀ data s →
+  obtain ld : ∀ {s₀ : State} {data : List Byte} (s : State), HI s₀ data s →
       WP isa (.block [ld .r4 countOff]) s fun t =>
         Inv s₀ t ∧ Prm s₀ t ∧ t.gpr .r4 = BitVec.ofNat 64 data.length :=
     fun {s₀ data} s h => wp_ldloc h.inv (d := countOff) (by decide) fun t u => WP.block_nil
@@ -279,20 +279,20 @@ theorem finish_rel {data₁ data₂ : List Byte} (heq : data₁.length = data₂
 theorem code_rel :
     RelCT isa (fun s₁ s₂ => (Inv s₀₁ s₁ ∧ Prm s₀₁ s₁) ∧ (Inv s₀₂ s₂ ∧ Prm s₀₂ s₂))
       Impl.Argon2.PPC64LE.Derive.code fun _ _ => True := by
-  have l : ∀ {s₀ : State}, DPre s₀ → (arg s₀ 2).toNat < 2 ^ 32 ∧ (arg s₀ 4).toNat < 2 ^ 32 ∧
+  obtain l : ∀ {s₀ : State}, DPre s₀ → (arg s₀ 2).toNat < 2 ^ 32 ∧ (arg s₀ 4).toNat < 2 ^ 32 ∧
       (arg s₀ 10).toNat < 2 ^ 32 ∧ (arg s₀ 12).toNat < 2 ^ 32 := fun {s₀} hp =>
     ⟨hp.valid.2.2.2.2.2.2.2.2.1, hp.valid.2.2.2.2.2.2.2.2.2.1, hp.valid.2.2.2.2.2.2.2.2.2.2.1,
       hp.valid.2.2.2.2.2.2.2.2.2.2.2⟩
   obtain ⟨l1, l2, l3, l4⟩ := l T.hp₁
   obtain ⟨m1, m2, m3, m4⟩ := l T.hp₂
-  have e2 : (arg s₀₁ 2).toNat = (arg s₀₂ 2).toNat := by rw [T.pb.arg_eq (by decide)]
-  have e4 : (arg s₀₁ 4).toNat = (arg s₀₂ 4).toNat := by rw [T.pb.arg_eq (by decide)]
-  have e10 : (arg s₀₁ 10).toNat = (arg s₀₂ 10).toNat := by rw [T.pb.arg_eq (by decide)]
-  have len : ∀ (d : List Byte) (m : Mem) (p : Addr) (n : Nat),
+  obtain e2 : (arg s₀₁ 2).toNat = (arg s₀₂ 2).toNat := by rw [T.pb.arg_eq (by decide)]
+  obtain e4 : (arg s₀₁ 4).toNat = (arg s₀₂ 4).toNat := by rw [T.pb.arg_eq (by decide)]
+  obtain e10 : (arg s₀₁ 10).toNat = (arg s₀₂ 10).toNat := by rw [T.pb.arg_eq (by decide)]
+  obtain len : ∀ (d : List Byte) (m : Mem) (p : Addr) (n : Nat),
       (Proof.Argon2.appendInput d (bytesAt m p n)).length = d.length + 4 + n := fun d m p n => by
     simp only [Proof.Argon2.appendInput_length, bytesAt, List.length_map, List.length_range]
-  have h24 := Proof.Argon2.initialHeader_length (prm s₀₁)
-  have h24' := Proof.Argon2.initialHeader_length (prm s₀₂)
+  obtain h24 := Proof.Argon2.initialHeader_length (prm s₀₁)
+  obtain h24' := Proof.Argon2.initialHeader_length (prm s₀₂)
   unfold Impl.Argon2.PPC64LE.Derive.code
   refine RelCT.seqW T.start_rel (fun s h => start_ok T.hp₁ h.1 h.2) (fun s h => start_ok T.hp₂ h.1 h.2) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 1) (len := 2) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l1 m1

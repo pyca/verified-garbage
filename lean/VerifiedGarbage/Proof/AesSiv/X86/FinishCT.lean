@@ -63,20 +63,20 @@ theorem shortTail_ct {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
       fun s ⟨_, _, _, _, _, cx, _⟩ => cx) (fun s₁ ⟨s, hs, m₁, di₁, dx₁, cx₁, bp₁, sp₁, rd₁, wr₁⟩ => ?_) ?_
   · have h := hI s hs
     have B := h.buf
-    have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, h.env.perm.of_eq rd₁ wr₁⟩
+    obtain E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, h.env.perm.of_eq rd₁ wr₁⟩
     have hw := L.fw
     refine WP.mono (copyN_ok di₁ dx₁ cx₁ h.k32 B.wrap (by rw [L.nW (by decide)]; omega_arith)
       (by rw [rd₁, wr₁]; exact B.rd) (by rw [L.aW (by decide)]; exact E₁.perm.wC (by omega_arith))
       (by rw [L.aW (by decide)]; exact B.w.sub_right (Lay.wSub (by omega_arith)))) fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
-    have bp₂ : s₂.gpr .ebp = W := by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), bp₁]
+    obtain bp₂ : s₂.gpr .ebp = W := by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), bp₁]
     refine ⟨bp₂, ⟨bp₂, by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), sp₁], E₁.perm.of_eq rd₂ wr₂⟩, ?_⟩
-    have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s.mem s₁.mem := by
+    obtain f₁ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s.mem s₁.mem := by
       rw [m₁]
       exact ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by decide) (by decide)⟩).trans
         ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by decide) (by decide)⟩)
-    have f₂ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s₁.mem s₂.mem := by
+    obtain f₂ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s₁.mem s₂.mem := by
       rw [m₂, L.aW (by decide)]
       exact writeBytes_frame _ _ _ (by
         rw [length_bytesAt]; exact Offset.contains (w64 W) (d := 32) (n := k) (e := 32) (k := 32) (by omega_arith)
@@ -137,8 +137,8 @@ theorem kRound_ct {I : State → Prop} :
 theorem longTail_ct {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 32} {k : Nat}
     (h16 : 16 ≤ k) (hk32 : k < 2 ^ 32) {I : State → Prop} (hI : ∀ s, I s → CmacPre C W SP R P k s) :
     CT I longTail := by
-  have hT := kOf_tail h16
-  have hkk : 16 * kOf k ≤ k := by omega_arith
+  obtain hT := kOf_tail h16
+  obtain hkk : 16 * kOf k ≤ k := by omega_arith
   refine CT.block_seq [.ebp] (pin_ebp fun s h => (hI s h).env.ebp) (by taint_decide)
     (fun s hs => cmp17_ok L (hI s hs).env (hI s hs).slen hk32) ?_
   refine CT.seq (J := fun s₂ => ∃ s, I s ∧ s₂.gpr .eax = BitVec.ofNat 32 (16 * kOf k) ∧
@@ -158,22 +158,22 @@ theorem longTail_ct {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 
     (fun s₃ ⟨s₂, ⟨s, hs, ax₂, cx₂, bp₂, sp₂, m₂, rd₂, wr₂⟩, m₃, di₃, cx₃, dx₃, bp₃, sp₃, rd₃, wr₃⟩ => ?_) ?_
   · have h := hI s hs
     have B := h.buf
-    have E₃ : Env C W SP s₃ := ⟨bp₃, sp₃, h.env.perm.of_eq (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂])⟩
-    have hwk : P.toNat + 16 * kOf k < 2 ^ 32 := by have := B.wrap; omega_arith
-    have B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (16 * kOf k)) (k - 16 * kOf k) :=
+    obtain E₃ : Env C W SP s₃ := ⟨bp₃, sp₃, h.env.perm.of_eq (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂])⟩
+    obtain hwk : P.toNat + 16 * kOf k < 2 ^ 32 := by have := B.wrap; omega_arith
+    obtain B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (16 * kOf k)) (k - 16 * kOf k) :=
       (B.drop hkk hwk).of_eq (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂])
     have hW := L.fw
     refine WP.mono (copyLoop_ok s₃ ⟨di₃, dx₃, by rw [cx₃, Proof.AesGcm.X86.ofNat_sub32 hkk hk32],
       by omega_arith, by omega_arith, B₃.wrap, by rw [L.nW (o := 32) (by decide)]; omega_arith, B₃.rd,
       by rw [L.aW (by decide)]; exact E₃.perm.wC (by omega_arith),
       by rw [L.aW (by decide)]; exact B₃.w.sub_right (Lay.wSub (by omega_arith))⟩) fun s₄ c₄ => ?_
-    have bp₄ : s₄.gpr .ebp = W := by rw [c₄.other _ (by decide) (by decide) (by decide) (by decide), bp₃]
-    have f₃₄ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s₃.mem s₄.mem := by
+    obtain bp₄ : s₄.gpr .ebp = W := by rw [c₄.other _ (by decide) (by decide) (by decide) (by decide), bp₃]
+    obtain f₃₄ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s₃.mem s₄.mem := by
       rw [c₄.mem, L.aW (by decide)]
       exact writeBytes_frame _ _ _ (by
         rw [length_bytesAt]; exact Offset.contains (w64 W) (d := 32) (n := k - 16 * kOf k) (e := 32) (k := 32)
           (by omega_arith) (by omega_arith) (by omega_arith))
-    have k₄ : ∀ o, 64 ≤ o → o + 4 ≤ 2576 → slotv s₄.mem W o = slotv s₃.mem W o := fun o h₁ h₂ =>
+    obtain k₄ : ∀ o, 64 ≤ o → o + 4 ≤ 2576 → slotv s₄.mem W o = slotv s₃.mem W o := fun o h₁ h₂ =>
       f₃₄.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
         (by decide)
@@ -314,7 +314,7 @@ theorem finish_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
     (hout : out = 0 ∨ out = 112) : CT (CmacPre C W SP R P k) (finish v.callee v.suffix out) := by
   refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
     (fun s hs => cmp16_ok L hs.env hs.slen hk32) ?_
-  have pre : ∀ s₁, (∃ s, CmacPre C W SP R P k s ∧ s₁.cf = some (decide (k < 16)) ∧
+  obtain pre : ∀ s₁, (∃ s, CmacPre C W SP R P k s ∧ s₁.cf = some (decide (k < 16)) ∧
       (∀ r, r ≠ .ecx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) →
       CmacPre C W SP R P k s₁ := fun s₁ ⟨s, hs, _, g, m, rd, wr⟩ =>
     hs.of_eq (g _ (by decide)) (g _ (by decide)) m rd wr
@@ -324,8 +324,8 @@ theorem finish_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
         slotv s₂.mem W roundsO = BitVec.ofNat 32 R) (shortTail_ct L hk16 pre)
       (fun s₁ h₁ => WP.mono (shortTail_ok L (pre s₁ h₁) hk16) fun s₂ ⟨E₂, _, _, f₂, _⟩ => ?_)
       (shortMac_ct v L hR hout fun s h => h)
-    have h₁ := pre s₁ h₁
-    have k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 200 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
+    obtain h₁ := pre s₁ h₁
+    obtain k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 200 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
       f₂.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -337,8 +337,8 @@ theorem finish_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
       (longTail_ct L h16 hk32 pre)
       (fun s₁ h₁ => WP.mono (longTail_ok L (pre s₁ h₁) h16) fun s₂ ⟨E₂, rd₂, wr₂, f₂, nb₂, _⟩ => ?_)
       (longMac_ct v L hR h16 hk32 hout fun s h => h)
-    have h₁ := pre s₁ h₁
-    have k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
+    obtain h₁ := pre s₁ h₁
+    obtain k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
       f₂.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl

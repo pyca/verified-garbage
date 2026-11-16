@@ -34,10 +34,10 @@ theorem env_copyPointToQ (e : Env) : point (evalOps copyPointToQOps e) 4 5 6 7 =
     ∀ i : Slot, 8 ≤ i.val → evalOps copyPointToQOps e i = e i := by
   refine ⟨rfl, rfl, fun i hi => ?_⟩
   simp only [evalOps, copyPointToQOps, List.foldl, evalOp, Function.update_apply]
-  have h4 : i ≠ 4 := fun h => by subst h; exact absurd hi (by decide)
-  have h5 : i ≠ 5 := fun h => by subst h; exact absurd hi (by decide)
-  have h6 : i ≠ 6 := fun h => by subst h; exact absurd hi (by decide)
-  have h7 : i ≠ 7 := fun h => by subst h; exact absurd hi (by decide)
+  obtain h4 : i ≠ 4 := fun h => by subst h; exact absurd hi (by decide)
+  obtain h5 : i ≠ 5 := fun h => by subst h; exact absurd hi (by decide)
+  obtain h6 : i ≠ 6 := fun h => by subst h; exact absurd hi (by decide)
+  obtain h7 : i ≠ 7 := fun h => by subst h; exact absurd hi (by decide)
   simp only [h4, h5, h6, h7, ite_false]
 
 theorem doubleCall_ok (b : Addr) : PtSpec b fclob doubleCall fun p => Spec.Ed25519.pointAdd p p := by
@@ -59,25 +59,25 @@ theorem double16_ok (b : Addr) : PtSpec b (.r15 :: fclob) double16 fun p => powe
   intro s hc hd
   unfold double16
   refine WP.seq (wp_li (by decide) fun s1 u1 => WP.block_nil ?_)
-  have hc1 : Ctx8 b s1 := hc.of_rest (u1.rest (ws := [.r15]) (by decide)) (by decide)
+  obtain hc1 : Ctx8 b s1 := hc.of_rest (u1.rest (ws := [.r15]) (by decide)) (by decide)
   refine WP.loop (M := isa) (fun n t => 1 ≤ n ∧ n ≤ 16 ∧ Rest (.r15 :: fclob) s t ∧ Frame [FA b] s.mem t.mem ∧
       t.gpr .r15 = BitVec.ofNat 64 n ∧ point (env t.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (16 - n) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem b i = env s.mem b i) ?_ 16 s1
     ⟨by decide, by decide, u1.rest (by decide), by rw [u1.mem]; exact Frame.refl _ _, u1.gpr,
       by rw [u1.mem]; rfl, fun i _ => by rw [u1.mem]⟩
   rintro n t ⟨h1, h2, hr, hf, h15, hp, hk⟩
-  have hct : Ctx8 b t := hc.of_rest hr (by decide)
+  obtain hct : Ctx8 b t := hc.of_rest hr (by decide)
   unfold doubleBody
   refine WP.seq (WP.mono (doubleCall_ok b t hct (by rw [hk 16 (by decide), hd])) fun u ⟨ru, fu, pu, ku⟩ => ?_)
   refine wp_subi (by decide) (by decide) fun u1 v1 => WP.block_nil ?_
-  have e15 : u1.gpr .r15 = BitVec.ofNat 64 (n - 1) := by
+  obtain e15 : u1.gpr .r15 = BitVec.ofNat 64 (n - 1) := by
     rw [v1.gpr, ru.gpr _ (by decide), h15, ofNat_sub_one h1 (by omega_arith)]
-  have hz : (u1.gpr .r15 != 0) = decide (n - 1 ≠ 0) := by rw [e15, ofNat_ne_zero (by omega_arith)]
-  have hp' : point (env u1.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (16 - (n - 1)) := by
+  obtain hz : (u1.gpr .r15 != 0) = decide (n - 1 ≠ 0) := by rw [e15, ofNat_ne_zero (by omega_arith)]
+  obtain hp' : point (env u1.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (16 - (n - 1)) := by
     rw [v1.mem, pu, hp, show 16 - (n - 1) = 16 - n + 1 by omega_arith]; rfl
-  have hr' : Rest (.r15 :: fclob) s u1 := hr.trans ((ru.mono (by decide)).trans (v1.rest (by decide)))
-  have hf' : Frame [FA b] s.mem u1.mem := by rw [v1.mem]; exact hf.trans fu
-  have hk' : ∀ i : Slot, 16 ≤ i.val → env u1.mem b i = env s.mem b i := fun i hi => by
+  obtain hr' : Rest (.r15 :: fclob) s u1 := hr.trans ((ru.mono (by decide)).trans (v1.rest (by decide)))
+  obtain hf' : Frame [FA b] s.mem u1.mem := by rw [v1.mem]; exact hf.trans fu
+  obtain hk' : ∀ i : Slot, 16 ≤ i.val → env u1.mem b i = env s.mem b i := fun i hi => by
     rw [v1.mem, ku i hi, hk i hi]
   rw [eval_nonzero, hz]
   by_cases h0 : n - 1 = 0
@@ -88,7 +88,7 @@ theorem double16_ok (b : Addr) : PtSpec b (.r15 :: fclob) double16 fun p => powe
 /-- A table entry outside a frame's regions keeps its point. -/
 theorem tableAt_keep {b : Addr} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {o : Nat}
     (hd : ∀ r ∈ rs, (⟨b + BitVec.ofNat 64 o, 128⟩ : Region).Disjoint r) : tableAt m' b o = tableAt m b o := by
-  have h : ∀ c < 4, V m' b (o + 32 * c) = V m b (o + 32 * c) := fun c hc => by
+  obtain h : ∀ c < 4, V m' b (o + 32 * c) = V m b (o + 32 * c) := fun c hc => by
     unfold V
     exact val32_congr (limb_frame hf fun r hr k hk =>
       (hd r hr).sub_left (Offset.sub b (d := o + 32 * c + 4 * k) (n := 4) (e := o) (k := 128) (by omega_arith) (by omega_arith)))
@@ -128,7 +128,7 @@ theorem ofNat_sub_ne_zero {a c : Nat} (ha : a < 2 ^ 64) (hc : c < 2 ^ 64) :
   by_cases h : a = c
   · subst h; simp
   · have : BitVec.ofNat 64 a - BitVec.ofNat 64 c ≠ 0 := fun e => h (by
-      have e' : BitVec.ofNat 64 a = BitVec.ofNat 64 c := by
+      obtain e' : BitVec.ofNat 64 a = BitVec.ofNat 64 c := by
         rw [← BitVec.sub_add_cancel (BitVec.ofNat 64 a) (BitVec.ofNat 64 c), e]; simp
       have := congrArg BitVec.toNat e'
       rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hc] at this)
@@ -165,8 +165,8 @@ theorem pointPowers_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 
         powerPoint (point (env s.mem b) 0 1 2 3) (powerStride batch * j)) ∧
       point (env t.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (powerStride batch * count) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem b i = env s.mem b i := by
-  have hS : start < 2 ^ 15 := by omega_arith
-  have hC : count < 64 := by omega_arith
+  obtain hS : start < 2 ^ 15 := by omega_arith
+  obtain hC : count < 64 := by omega_arith
   unfold pointPowers
   refine WP.seq (wp_li (by decide) fun s1 u1 => WP.block_nil ?_)
   refine WP.loop (M := isa) (fun m t => ∃ n, m = count - n ∧
@@ -178,51 +178,51 @@ theorem pointPowers_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 
   have hn := h.lt
   unfold powersBody
   refine WP.seq (tableAddr_ok h.ctx hS (by omega_arith) h.r16 fun t1 r1 m1 e14 => ?_)
-  have hc1' : Ctx8 b t1 := h.ctx.of_rest r1 (by decide)
+  obtain hc1' : Ctx8 b t1 := h.ctx.of_rest r1 (by decide)
   refine WP.mono (pointToTable_ok hc1' e14 (by omega_arith) (by omega_arith)) fun t2 ⟨r2, f2, tb2⟩ => ?_
   rw [m1] at tb2 f2
-  have hc2 : Ctx8 b t2 := hc1'.of_rest r2 (by decide)
-  have hd2 : env t2.mem b 16 = Spec.Ed25519.d := by
+  obtain hc2 : Ctx8 b t2 := hc1'.of_rest r2 (by decide)
+  obtain hd2 : env t2.mem b 16 = Spec.Ed25519.d := by
     have := slot_range (16 : Slot)
     unfold env FS V
     rw [← hd, ← h.keep 16 (by decide)]
     refine congrArg _ (val32_congr (limb_frame f2 fun r hr k hk => ?_))
     rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by simp only [offset] at *; omega_arith)) (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (powerBatch_ok b batch t2 hc2 hd2) fun t3 ⟨r3, f3, p3, k3⟩ => ?_)
-  have hc3 : Ctx8 b t3 := hc2.of_rest r3 (by decide)
+  obtain hc3 : Ctx8 b t3 := hc2.of_rest r3 (by decide)
   unfold powersNext
   refine wp_addi (by decide) (by decide) fun t4 u4 => wp_subi (by decide) (by omega_arith) fun t5 u5 => WP.block_nil ?_
-  have e16 : t5.gpr .r16 = BitVec.ofNat 64 (n + 1) := by
+  obtain e16 : t5.gpr .r16 = BitVec.ofNat 64 (n + 1) := by
     rw [u5.other _ (by decide), u4.gpr, r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), h.r16,
       BitVec.ofNat_add]
-  have e7 : (t5.gpr .r7 != 0) = decide (n + 1 ≠ count) := by
+  obtain e7 : (t5.gpr .r7 != 0) = decide (n + 1 ≠ count) := by
     rw [u5.gpr, u4.gpr, r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide), h.r16,
       show BitVec.ofNat 64 n + BitVec.ofNat 64 1 = BitVec.ofNat 64 (n + 1) from (BitVec.ofNat_add _ _).symm,
       ofNat_sub_ne_zero (by omega_arith) (by omega_arith)]
-  have hm5 : t5.mem = t3.mem := by rw [u5.mem, u4.mem]
-  have hFA : ∀ o, start ≤ o → o + 128 ≤ start + 128 * count →
+  obtain hm5 : t5.mem = t3.mem := by rw [u5.mem, u4.mem]
+  obtain hFA : ∀ o, start ≤ o → o + 128 ≤ start + 128 * count →
       (⟨b + BitVec.ofNat 64 o, 128⟩ : Region).Disjoint (FA b) := fun o h1 h2 =>
     Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  have hpt : point (env t2.mem b) 0 1 2 3 = point (env t.mem b) 0 1 2 3 := by
-    have e : ∀ i : Slot, env t2.mem b i = env t.mem b i := fun i => by
+  obtain hpt : point (env t2.mem b) 0 1 2 3 = point (env t.mem b) 0 1 2 3 := by
+    obtain e : ∀ i : Slot, env t2.mem b i = env t.mem b i := fun i => by
       refine env_keep f2 i fun r hr => ?_
       rw [List.mem_singleton.mp hr]
       have := slot_range i
       exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     simp only [point, e]
-  have hR : Rest (.r7 :: .r14 :: .r15 :: .r16 :: fclob) s t5 :=
+  obtain hR : Rest (.r7 :: .r14 :: .r15 :: .r16 :: fclob) s t5 :=
     h.rest.trans ((r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       ((u4.rest (by decide)).trans (u5.rest (by decide))))))
-  have hF : Frame [FA b, ⟨b + BitVec.ofNat 64 start, 128 * count⟩] s.mem t5.mem := by
+  obtain hF : Frame [FA b, ⟨b + BitVec.ofNat 64 start, 128 * count⟩] s.mem t5.mem := by
     rw [hm5]
     refine h.frame.trans ((f2.sub fun r hr => ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩).trans
       (f3.mono fun r hr => by simp [List.mem_singleton.mp hr]))
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  have hP : point (env t5.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (powerStride batch * (n + 1)) := by
+  obtain hP : point (env t5.mem b) 0 1 2 3 = powerPoint (point (env s.mem b) 0 1 2 3) (powerStride batch * (n + 1)) := by
     rw [hm5, p3, hpt, h.point]
     dsimp only
     rw [← Proof.Ed25519.powerPoint_add, Nat.mul_succ]
-  have hT : ∀ j < n + 1, tableAt t5.mem b (start + 128 * j) =
+  obtain hT : ∀ j < n + 1, tableAt t5.mem b (start + 128 * j) =
       powerPoint (point (env s.mem b) 0 1 2 3) (powerStride batch * j) := by
     intro j hj
     rw [hm5, tableAt_keep f3 fun r hr => by
@@ -232,7 +232,7 @@ theorem pointPowers_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)]
       exact h.table j hj
     · rw [tb2, h.point]
-  have hK : ∀ i : Slot, 16 ≤ i.val → env t5.mem b i = env s.mem b i := fun i hi => by
+  obtain hK : ∀ i : Slot, 16 ≤ i.val → env t5.mem b i = env s.mem b i := fun i hi => by
     rw [hm5, k3 i hi, ← h.keep i hi]
     refine env_keep f2 i fun r hr => ?_
     rw [List.mem_singleton.mp hr]

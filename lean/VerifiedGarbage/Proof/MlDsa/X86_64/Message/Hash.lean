@@ -76,19 +76,19 @@ theorem k_mu (hL : L.Ok) : Region.Disjoint ⟨L.B, 40⟩ ⟨L.MU, 64⟩ := k32x 
 theorem zeroSt_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (zeroSt p) t fun t' => Ctx L g mx m₀ t' ∧ Frame [⟨L.ST, 200⟩] t.mem t'.mem ∧
       stateAt t'.mem L.ST = Spec.Sha3.zero := by
-  have hok : (aSt p).ok = true := by
+  obtain hok : (aSt p).ok = true := by
     simp only [Impl.MlDsa.X86_64.Message.aSt, Arg.ok, fScr, Bool.and_eq_true, decide_eq_true_eq]
     have := hL.hE; omega_arith
   refine WP.seq (WP.mono (Arg.mov_ok .rdi (aSt p) hok (by decide) t hc.frOk)
     fun t1 ⟨⟨h1, hm1, hx1⟩, k1⟩ => ?_)
-  have hc1 : Ctx L g mx m₀ t1 := hc.regs k1.2.1 k1.2.2 hm1 hx1 fun r hr => k1.gpr (by
+  obtain hc1 : Ctx L g mx m₀ t1 := hc.regs k1.2.1 k1.2.2 hm1 hx1 fun r hr => k1.gpr (by
     simp only [List.mem_singleton]; exact ne_cs hr (by decide))
   rw [hc.aSt p hE] at h1
   rw [← List.singleton_append, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax] (Q := fun s1 => s1.mem = t1.mem ∧ s1.gpr .rax = 0 ∧ s1.mxcsr = t1.mxcsr)
     (by xrun [RegUpd.mxcsr_setReg]) (by decide)) fun t2 ⟨⟨hm2, hax, hx2⟩, k2⟩ => ?_
-  have hdi : t2.gpr .rdi = L.ST := (k2.gpr (by decide)).trans h1
-  have hw2 : t2.wr = L.FR :: L.wr := k2.2.2.trans hc1.wr
+  obtain hdi : t2.gpr .rdi = L.ST := (k2.gpr (by decide)).trans h1
+  obtain hw2 : t2.wr = L.FR :: L.wr := k2.2.2.trans hc1.wr
   obtain ⟨R, hR, hXR⟩ := hL.inX
   refine WP.mono_mx (by decide) (Proof.MlDsa.X86_64.Sign.zeroSt_ok .rdi 0 t2 hax fun i hi => ?_)
     fun t3 ⟨hz, hf, k3⟩ hx3 => ?_
@@ -100,9 +100,9 @@ theorem zeroSt_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m�
     exact Offset.contains_base _ hl (by have := hL.lenW R hR; simp only at hl; omega_arith)
   · rw [hdi, x0] at hz hf
     rw [hm2] at hf
-    have hcs : ∀ r ∈ calleeSaved, t3.gpr r = t1.gpr r := fun r hr => by
+    obtain hcs : ∀ r ∈ calleeSaved, t3.gpr r = t1.gpr r := fun r hr => by
       rw [k3.gpr (by simp), k2.gpr (by simp only [List.mem_singleton]; exact ne_cs hr (by decide))]
-    have hf' : Frame ([⟨L.ST, 200⟩] ++ [⟨L.B, 40⟩]) t1.mem t3.mem := hf.mono fun r hr => by simp at hr ⊢; exact .inl hr
+    obtain hf' : Frame ([⟨L.ST, 200⟩] ++ [⟨L.B, 40⟩]) t1.mem t3.mem := hf.mono fun r hr => by simp at hr ⊢; exact .inl hr
     refine ⟨hc1.of_frame hL (k3.2.1.trans k2.2.1) (k3.2.2.trans k2.2.2) hcs
       (by rw [hx3, hx2]) hf' (by simpa using w_st), by rw [← hm1]; exact hf, hz⟩
 
@@ -123,14 +123,14 @@ theorem kabs_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ 
       (∀ msg, Repr t.mem L.ST 136 msg → q = msg.length % 136 →
         Repr t'.mem L.ST 136 (msg ++ bytesAt t.mem dp n)) ∧ (t'.gpr .rax).toNat = (q + n) % 136 := by
   refine WP.seq (WP.mono (setArgs_ok _ hok t hc.frOk) fun t1 ⟨⟨hA, hm, hx⟩, k⟩ => ?_)
-  have hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
+  obtain hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hA
   rw [hc.aSt p hE] at e1
   rw [hc.aKs p hE] at e6
   rw [hdp] at e4
   rw [hn] at e5
   rw [hq] at e3
-  have ha : AbsorbArgs t1 L.ST dp L.KS 136 q n :=
+  obtain ha : AbsorbArgs t1 L.ST dp L.KS 136 q n :=
     ⟨e1, e2, e3, e4, e5, e6, by decide, hql, hnl, st_ks, dS, dK, k16 hc1 (k_st hL), k16 hc1 kD,
       k16 hc1 (k_ks hL)⟩
   refine call_ok hL Proof.Sha3.X86_64.Stream.Absorb.absorb_correct absorb_nosp (by rw [absorb_depth]; decide)
@@ -139,8 +139,8 @@ theorem kabs_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ 
       rcases hr with rfl | rfl
       exacts [w_st, w_ks])
     fun s' hc' hf _ ⟨s₂, hm₂, hg₂, hpost, hrax⟩ => ?_
-  have hn' := ofNat_toNat' hnl
-  have hq' := ofNat_toNat' (show q < 2 ^ 64 by omega_arith)
+  obtain hn' := ofNat_toNat' hnl
+  obtain hq' := ofNat_toNat' (show q < 2 ^ 64 by omega_arith)
   simp only [State.withRegions_mem, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rcx ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.r8 ≠ .rsp),
@@ -162,12 +162,12 @@ theorem kpad_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ 
       (∀ msg, Repr t.mem L.ST 136 msg → q = msg.length % 136 →
         stateAt t'.mem L.ST = absorb 136 (pad 136 Spec.Sha3.shakeSuffix msg)) := by
   refine WP.seq (WP.mono (setArgs_ok _ hok t hc.frOk) fun t1 ⟨⟨hA, hm, hx⟩, k⟩ => ?_)
-  have hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
+  obtain hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
   obtain ⟨e1, e2, e3, e4, e5⟩ := argsIn5 hA
   rw [hc.aSt p hE] at e1
   rw [hc.aKs p hE] at e5
   rw [hq] at e3
-  have ha : PadArgs t1 L.ST L.KS 136 q :=
+  obtain ha : PadArgs t1 L.ST L.KS 136 q :=
     ⟨e1, e2, e3, e5, by decide, hql, st_ks, k16 hc1 (k_st hL), k16 hc1 (k_ks hL)⟩
   refine call_ok hL Proof.Sha3.X86_64.Stream.Pad.pad_correct pad_nosp (by rw [pad_depth]; decide)
     hc1 (pad_pre ha) (by simp) (fun r hr => by
@@ -175,7 +175,7 @@ theorem kpad_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ 
       rcases hr with rfl | rfl
       exacts [w_st, w_ks])
     fun s' hc' hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_
-  have hq' := ofNat_toNat' (show q < 2 ^ 64 by omega_arith)
+  obtain hq' := ofNat_toNat' (show q < 2 ^ 64 by omega_arith)
   simp only [Proof.Sha3.padX86_64, State.withRegions_mem, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rcx ≠ .rsp), e1, e2, e3, e4, hm₂, hq'] at hpost
@@ -193,18 +193,18 @@ theorem ksqz_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ 
     WP isa (ksqz p) t fun t' => Ctx L g mx m₀ t' ∧
       Frame [⟨L.ST, 200⟩, ⟨L.MU, 64⟩, ⟨L.KS, 640⟩, ⟨L.B, 40⟩] t.mem t'.mem ∧
       bytesAt t'.mem L.MU 64 = squeezeFrom 136 (stateAt t.mem L.ST) 0 64 := by
-  have hok : (sqzArgs p).all Arg.ok = true := by
+  obtain hok : (sqzArgs p).all Arg.ok = true := by
     simp only [sqzArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aMu,
       Impl.MlDsa.X86_64.Message.aKs, List.all_cons, List.all_nil, Arg.ok, fScr, Bool.and_true,
       Bool.and_eq_true, decide_eq_true_eq]
     have := hL.hE; omega_arith
   refine WP.seq (WP.mono (setArgs_ok _ hok t hc.frOk) fun t1 ⟨⟨hA, hm, hx⟩, k⟩ => ?_)
-  have hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
+  obtain hc1 : Ctx L g mx m₀ t1 := hc.regs k.2.1 k.2.2 hm hx fun r hr => k.gpr (argRegs_cs r hr)
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hA
   rw [hc.aSt p hE] at e1
   rw [hc.aKs p hE] at e6
   rw [hc.aMu p hE] at e4
-  have ha : SqueezeArgs t1 L.ST L.MU L.KS 136 0 64 :=
+  obtain ha : SqueezeArgs t1 L.ST L.MU L.KS 136 0 64 :=
     ⟨e1, e2, e3, e4, e5, e6, by decide, by decide, by decide, st_mu, st_ks, mu_ks, k16 hc1 (k_st hL),
       k16 hc1 (k_mu hL), k16 hc1 (k_ks hL)⟩
   refine call_ok hL Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct squeeze_nosp
@@ -259,29 +259,29 @@ theorem muHash_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m�
   have hctx := hL.ctxLt
   -- Zero the state.
   refine WP.seq (WP.mono (zeroSt_ok hL hE hc) fun t1 ⟨hc1, hf1, hz⟩ => ?_)
-  have etr : bytesAt t1.mem trp 64 = bytesAt t.mem trp 64 :=
+  obtain etr : bytesAt t1.mem trp 64 = bytesAt t.mem trp 64 :=
     Proof.MlKem.bytesAt_congr fun i hi => hf1.bytes (R := ⟨trp, 64⟩) (by simpa using dS) (by show 64 ≤ 2 ^ 64; decide) hi
-  have hR1 : Repr t1.mem L.ST 136 [] := Proof.MlKem.repr_nil hz
+  obtain hR1 : Repr t1.mem L.ST 136 [] := Proof.MlKem.repr_nil hz
   -- `tr`.
   refine WP.seq (WP.mono (kabs_ok hL hE hc1 (absOk hL hE hok rfl rfl) (htr t1 hc1) rfl rfl (by decide)
     (by decide) hin dS dK kD) fun t2 ⟨hc2, hf2, hR2, hx2⟩ => ?_)
-  have hR2 := hR2 [] hR1 rfl
+  obtain hR2 := hR2 [] hR1 rfl
   rw [List.nil_append, etr] at hR2
   -- `0 ‖ ctx_len`, from the frame.
   have hsp2 : Arg.sp.val t2 = L.SP := hc2.rsp
-  have wfr : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.SP, 2⟩ R := ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
-  have fS : Region.Disjoint ⟨L.SP, 2⟩ ⟨L.ST, 200⟩ := by
+  obtain wfr : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.SP, 2⟩ R := ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
+  obtain fS : Region.Disjoint ⟨L.SP, 2⟩ ⟨L.ST, 200⟩ := by
     have := hL.stk_x (d := 40) (n := 2) (e := 0) (k := 200) (by omega_arith) (by omega_arith); simpa only [x0] using this
-  have fK : Region.Disjoint ⟨L.SP, 2⟩ ⟨L.KS, 640⟩ := hL.stk_x (d := 40) (n := 2) (by omega_arith) (by omega_arith)
-  have kF : Region.Disjoint ⟨L.B, 40⟩ ⟨L.SP, 2⟩ := Offset.base_disjoint _ (by omega_arith) (by omega_arith)
+  obtain fK : Region.Disjoint ⟨L.SP, 2⟩ ⟨L.KS, 640⟩ := hL.stk_x (d := 40) (n := 2) (by omega_arith) (by omega_arith)
+  obtain kF : Region.Disjoint ⟨L.B, 40⟩ ⟨L.SP, 2⟩ := Offset.base_disjoint _ (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (kabs_ok hL hE hc2 (absOk hL hE rfl rfl rfl) hsp2 rfl rfl (by decide) (by decide)
     wfr fS fK kF) fun t3 ⟨hc3, hf3, hR3, hx3⟩ => ?_)
-  have hR3 := hR3 _ hR2 (by rw [Proof.MlKem.bytesAt_length])
+  obtain hR3 := hR3 _ hR2 (by rw [Proof.MlKem.bytesAt_length])
   rw [hc2.hdr] at hR3
   -- The context string.
-  have hcl : (Arg.slot fCtxLen).val t3 = BitVec.ofNat 64 L.ctxLen.toNat := by
+  obtain hcl : (Arg.slot fCtxLen).val t3 = BitVec.ofNat 64 L.ctxLen.toNat := by
     rw [hc3.slot, fCtxLen, hc3.pCtxLen, ofNat_toNat_self]
-  have wc : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.ctx, L.ctxLen.toNat⟩ R :=
+  obtain wc : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.ctx, L.ctxLen.toNat⟩ R :=
     ⟨L.CTX, List.mem_append_left _ hL.inCtx, within_self _⟩
   refine WP.seq (WP.mono (kabs_ok hL hE hc3 (absOk hL hE (by decide) (by decide) (by decide))
     (by rw [hc3.slot, fCtx, hc3.pCtx]) hcl rfl (by decide) (by omega_arith) wc
@@ -289,12 +289,12 @@ theorem muHash_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m�
     (hL.x_r hL.xCtx (e := 200) (k := 640) (by omega_arith)).symm
     (by have := hL.stk_r hL.kCtx (d := 0) (n := 40) (by omega_arith); simpa only [BitVec.add_zero] using this))
     fun t4 ⟨hc4, hf4, hR4, hx4⟩ => ?_)
-  have hR4 := hR4 _ hR3 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
+  obtain hR4 := hR4 _ hR3 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
   rw [hc3.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega_arith)] at hR4
   -- The message.
-  have hln : (Arg.slot fLen).val t4 = BitVec.ofNat 64 L.len.toNat := by
+  obtain hln : (Arg.slot fLen).val t4 = BitVec.ofNat 64 L.len.toNat := by
     rw [hc4.slot, fLen, hc4.pLen, ofNat_toNat_self]
-  have wm : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.msg, L.len.toNat⟩ R :=
+  obtain wm : ∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.msg, L.len.toNat⟩ R :=
     ⟨L.MSG, List.mem_append_left _ hL.inMsg, within_self _⟩
   refine WP.seq (WP.mono (kabs_ok hL hE hc4 (absOk hL hE (by decide) (by decide) rfl)
     (by rw [hc4.slot, fMsg, hc4.pMsg]) hln (ofNat_toNat_eq hx4) (Nat.mod_lt _ (by decide))
@@ -303,7 +303,7 @@ theorem muHash_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m�
     (hL.x_r hL.xMsg (e := 200) (k := 640) (by omega_arith)).symm
     (by have := hL.stk_r hL.kMsg (d := 0) (n := 40) (by omega_arith); simpa only [BitVec.add_zero] using this))
     fun t5 ⟨hc5, hf5, hR5, hx5⟩ => ?_)
-  have hR5 := hR5 _ hR4 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
+  obtain hR5 := hR5 _ hR4 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
   rw [hc4.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega_arith)] at hR5
   -- Pad and squeeze.
   refine WP.seq (WP.mono (kpad_ok hL hE hc5 (by
@@ -312,17 +312,17 @@ theorem muHash_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m�
         List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq, hE]
       omega_arith) (ofNat_toNat_eq hx5) (Nat.mod_lt _ (by decide)))
     fun t6 ⟨hc6, hf6, hS6⟩ => ?_)
-  have hS6 := hS6 _ hR5 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil]; omega_arith)
+  obtain hS6 := hS6 _ hR5 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil]; omega_arith)
   refine WP.mono (ksqz_ok hL hE hc6) fun t7 ⟨hc7, hf7, hm7⟩ => ⟨hc7, ?_, ?_⟩
   · have fx : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' →
         (∀ r ∈ rs, r = ⟨L.B, 40⟩ ∨ Within r L.XS) → Frame [L.XS, ⟨L.B, 40⟩] m m' := frameX
-    have a1 := fx hf1 (by simp [w_st])
-    have a2 := fx hf2 (by simp [w_st, w_ks])
-    have a3 := fx hf3 (by simp [w_st, w_ks])
-    have a4 := fx hf4 (by simp [w_st, w_ks])
-    have a5 := fx hf5 (by simp [w_st, w_ks])
-    have a6 := fx hf6 (by simp [w_st, w_ks])
-    have a7 := fx hf7 (by simp [w_st, w_ks, w_mu])
+    obtain a1 := fx hf1 (by simp [w_st])
+    obtain a2 := fx hf2 (by simp [w_st, w_ks])
+    obtain a3 := fx hf3 (by simp [w_st, w_ks])
+    obtain a4 := fx hf4 (by simp [w_st, w_ks])
+    obtain a5 := fx hf5 (by simp [w_st, w_ks])
+    obtain a6 := fx hf6 (by simp [w_st, w_ks])
+    obtain a7 := fx hf7 (by simp [w_st, w_ks, w_mu])
     exact a1.trans (a2.trans (a3.trans (a4.trans (a5.trans (a6.trans a7)))))
   · rw [hm7, hS6, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
 

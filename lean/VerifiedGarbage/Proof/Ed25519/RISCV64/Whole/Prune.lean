@@ -78,76 +78,76 @@ theorem prune_ok {t : State} {f : Reg} {F : Addr} {d o : Nat} {rest : List Instr
   simp only [List.cons_append, List.nil_append]
   obtain ⟨f8, f9⟩ := hf
   -- The words read are not those written.
-  have sep : ∀ i < 4, ∀ j < 4, Mem.Sep (F + BitVec.ofNat 64 (d + 8 * i)) 8 (F + BitVec.ofNat 64 (o + 8 * j)) 8 :=
+  obtain sep : ∀ i < 4, ∀ j < 4, Mem.Sep (F + BitVec.ofNat 64 (d + 8 * i)) 8 (F + BitVec.ofNat 64 (o + 8 * j)) 8 :=
     fun i hi j hj => Offset.sep F (by omega_arith) (by omega_arith) (by omega_arith)
-  have sep' : ∀ i < 4, ∀ j < 4, i ≠ j → Mem.Sep (F + BitVec.ofNat 64 (o + 8 * i)) 8 (F + BitVec.ofNat 64 (o + 8 * j)) 8 :=
+  obtain sep' : ∀ i < 4, ∀ j < 4, i ≠ j → Mem.Sep (F + BitVec.ofNat 64 (o + 8 * i)) 8 (F + BitVec.ofNat 64 (o + 8 * j)) 8 :=
     fun i hi j hj hij => Offset.sep F (by omega_arith) (by omega_arith) (by omega_arith)
   refine wp_ldd (a := F + BitVec.ofNat 64 (d + 8 * 0)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [hF]; simp) (hr 0 (by omega_arith))
     fun u₁ h₁ => wp_srl (by decide) fun u₂ h₂ => wp_sll (by decide) fun u₃ h₃ => ?_
-  have e₃ : u₃.gpr f = F := by rw [h₃.other _ f8, h₂.other _ f8, h₁.other _ f8, hF]
+  obtain e₃ : u₃.gpr f = F := by rw [h₃.other _ f8, h₂.other _ f8, h₁.other _ f8, hF]
   refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * 0)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₃]; simp)
     (by rw [h₃.wr, h₂.wr, h₁.wr]; exact hw 0 (by omega_arith)) fun u₄ h₄ => ?_
-  have e₄ : u₄.gpr f = F := by rw [h₄.gpr, e₃]
+  obtain e₄ : u₄.gpr f = F := by rw [h₄.gpr, e₃]
   refine wp_ldd (a := F + BitVec.ofNat 64 (d + 8 * 1)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₄])
     (by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact hr 1 (by omega_arith)) fun u₅ h₅ => ?_
-  have e₅ : u₅.gpr f = F := by rw [h₅.other _ f8, e₄]
+  obtain e₅ : u₅.gpr f = F := by rw [h₅.other _ f8, e₄]
   refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * 1)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₅])
     (by rw [h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact hw 1 (by omega_arith)) fun u₆ h₆ => ?_
-  have e₆ : u₆.gpr f = F := by rw [h₆.gpr, e₅]
+  obtain e₆ : u₆.gpr f = F := by rw [h₆.gpr, e₅]
   refine wp_ldd (a := F + BitVec.ofNat 64 (d + 8 * 2)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₆])
     (by rw [h₆.rd, h₆.wr, h₅.rd, h₅.wr, h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact hr 2 (by omega_arith))
     fun u₇ h₇ => ?_
-  have e₇ : u₇.gpr f = F := by rw [h₇.other _ f8, e₆]
+  obtain e₇ : u₇.gpr f = F := by rw [h₇.other _ f8, e₆]
   refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * 2)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₇])
     (by rw [h₇.wr, h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact hw 2 (by omega_arith)) fun u₈ h₈ => ?_
-  have e₈ : u₈.gpr f = F := by rw [h₈.gpr, e₇]
+  obtain e₈ : u₈.gpr f = F := by rw [h₈.gpr, e₇]
   refine wp_ldd (a := F + BitVec.ofNat 64 (d + 8 * 3)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₈])
     (by rw [h₈.rd, h₈.wr, h₇.rd, h₇.wr, h₆.rd, h₆.wr, h₅.rd, h₅.wr, h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr,
       h₁.rd, h₁.wr]; exact hr 3 (by omega_arith))
     fun u₉ h₉ => wp_sll (by decide) fun u₁₀ h₁₀ => wp_srl (by decide) fun u₁₁ h₁₁ =>
       wp_li (by decide) fun u₁₂ h₁₂ => wp_sll (by decide) fun u₁₃ h₁₃ => wp_or fun u₁₄ h₁₄ => ?_
-  have e₁₄ : u₁₄.gpr f = F := by
+  obtain e₁₄ : u₁₄.gpr f = F := by
     rw [h₁₄.other _ f8, h₁₃.other _ f9, h₁₂.other _ f9, h₁₁.other _ f8, h₁₀.other _ f8, h₉.other _ f8, e₈]
   refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * 3)) ⟨by omega_arith, Spill.al8 hal (by omega_arith)⟩ (by rw [e₁₄])
     (by rw [h₁₄.wr, h₁₃.wr, h₁₂.wr, h₁₁.wr, h₁₀.wr, h₉.wr, h₈.wr, h₇.wr, h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]
         exact hw 3 (by omega_arith)) fun u h => ?_
   -- The memories, and the words in them.
-  have m₄ : u₄.mem = t.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 0)) (u₃.gpr .a5) := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  have m₆ : u₆.mem = u₄.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 1)) (u₅.gpr .a5) := by rw [h₆.mem, h₅.mem]
-  have m₈ : u₈.mem = u₆.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 2)) (u₇.gpr .a5) := by rw [h₈.mem, h₇.mem]
-  have m : u.mem = u₈.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 3)) (u₁₄.gpr .a5) := by
+  obtain m₄ : u₄.mem = t.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 0)) (u₃.gpr .a5) := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+  obtain m₆ : u₆.mem = u₄.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 1)) (u₅.gpr .a5) := by rw [h₆.mem, h₅.mem]
+  obtain m₈ : u₈.mem = u₆.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 2)) (u₇.gpr .a5) := by rw [h₈.mem, h₇.mem]
+  obtain m : u.mem = u₈.mem.writeW (F + BitVec.ofNat 64 (o + 8 * 3)) (u₁₄.gpr .a5) := by
     rw [h.mem, h₁₄.mem, h₁₃.mem, h₁₂.mem, h₁₁.mem, h₁₀.mem, h₉.mem]
-  have rs : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 →
+  obtain rs : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 →
       (x.writeW (F + BitVec.ofNat 64 (o + 8 * j)) v).readW (F + BitVec.ofNat 64 (d + 8 * i)) 64 = x.readW (F + BitVec.ofNat 64 (d + 8 * i)) 64 :=
     fun x i j v hi hj => Mem.readW_writeW_sep (sep i hi j hj) (by decide)
-  have rs' : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 → i ≠ j →
+  obtain rs' : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 → i ≠ j →
       (x.writeW (F + BitVec.ofNat 64 (o + 8 * j)) v).readW (F + BitVec.ofNat 64 (o + 8 * i)) 64 = x.readW (F + BitVec.ofNat 64 (o + 8 * i)) 64 :=
     fun x i j v hi hj hij => Mem.readW_writeW_sep (sep' i hi j hj hij) (by decide)
-  have v₃ : u₃.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 0)) 64 &&& BitVec.ofNat 64 (2 ^ 64 - 8) := by
+  obtain v₃ : u₃.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 0)) 64 &&& BitVec.ofNat 64 (2 ^ 64 - 8) := by
     rw [h₃.gpr, h₂.gpr, h₁.gpr, shr_shl3]
-  have v₅ : u₅.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 1)) 64 := by
+  obtain v₅ : u₅.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 1)) 64 := by
     rw [h₅.gpr, m₄, rs _ 1 0 _ (by omega_arith) (by omega_arith)]
-  have v₇ : u₇.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 2)) 64 := by
+  obtain v₇ : u₇.gpr .a5 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 2)) 64 := by
     rw [h₇.gpr, h₆.mem, h₅.mem, m₄, rs _ 2 1 _ (by omega_arith) (by omega_arith), rs _ 2 0 _ (by omega_arith) (by omega_arith)]
-  have v₁₄ : u₁₄.gpr .a5 =
+  obtain v₁₄ : u₁₄.gpr .a5 =
       (t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 3)) 64 &&& BitVec.ofNat 64 (2 ^ 62 - 1)) ||| BitVec.ofNat 64 (2 ^ 62) := by
     rw [h₁₄.gpr, h₁₃.other _ (by decide), h₁₂.other _ (by decide), h₁₁.gpr, h₁₀.gpr, h₉.gpr, h₁₃.gpr, h₁₂.gpr,
       li_bit62, shl_shr2, h₈.mem, h₇.mem, m₆, m₄, rs _ 3 2 _ (by omega_arith) (by omega_arith),
       rs _ 3 1 _ (by omega_arith) (by omega_arith), rs _ 3 0 _ (by omega_arith) (by omega_arith)]
-  have w₀ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 0)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 0)) 64 &&& BitVec.ofNat 64 (2 ^ 64 - 8) := by
+  obtain w₀ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 0)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 0)) 64 &&& BitVec.ofNat 64 (2 ^ 64 - 8) := by
     rw [m, rs' _ 0 3 _ (by omega_arith) (by omega_arith) (by omega_arith), m₈, rs' _ 0 2 _ (by omega_arith) (by omega_arith) (by omega_arith),
       m₆, rs' _ 0 1 _ (by omega_arith) (by omega_arith) (by omega_arith), m₄, Mem.readW_writeW_self64, v₃]
-  have w₁ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 1)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 1)) 64 := by
+  obtain w₁ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 1)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 1)) 64 := by
     rw [m, rs' _ 1 3 _ (by omega_arith) (by omega_arith) (by omega_arith), m₈, rs' _ 1 2 _ (by omega_arith) (by omega_arith) (by omega_arith),
       m₆, Mem.readW_writeW_self64, v₅]
-  have w₂ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 2)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 2)) 64 := by
+  obtain w₂ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 2)) 64 = t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 2)) 64 := by
     rw [m, rs' _ 2 3 _ (by omega_arith) (by omega_arith) (by omega_arith), m₈, Mem.readW_writeW_self64, v₇]
-  have w₃ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 3)) 64 =
+  obtain w₃ : u.mem.readW (F + BitVec.ofNat 64 (o + 8 * 3)) 64 =
       (t.mem.readW (F + BitVec.ofNat 64 (d + 8 * 3)) 64 &&& BitVec.ofNat 64 (2 ^ 62 - 1)) ||| BitVec.ofNat 64 (2 ^ 62) := by
     rw [m, Mem.readW_writeW_self64, v₁₄]
-  have ad : ∀ (a b : Nat), F + BitVec.ofNat 64 a + BitVec.ofNat 64 b = F + BitVec.ofNat 64 (a + b) :=
+  obtain ad : ∀ (a b : Nat), F + BitVec.ofNat 64 a + BitVec.ofNat 64 b = F + BitVec.ofNat 64 (a + b) :=
     fun a b => by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have cont : ∀ j < 4, Region.Contains ⟨F + BitVec.ofNat 64 o, 32⟩ (F + BitVec.ofNat 64 (o + 8 * j)) (64 / 8) := fun j hj =>
+  obtain cont : ∀ j < 4, Region.Contains ⟨F + BitVec.ofNat 64 o, 32⟩ (F + BitVec.ofNat 64 (o + 8 * j)) (64 / 8) := fun j hj =>
     Offset.contains F (by omega_arith) (by omega_arith) (by omega_arith)
   refine k u ⟨fun r hr => ?_, ?_, ?_, ?_⟩ ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -176,14 +176,14 @@ theorem bytes32_of_words {m m' : Mem} {p q : Addr}
   simp only [Spec.Ed25519.bytesAt]
   apply List.map_congr_left
   intro i hi
-  have hi' := List.mem_range.mp hi
-  have ha : ∀ x : Addr, x + BitVec.ofNat 64 i = x + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
+  obtain hi' := List.mem_range.mp hi
+  obtain ha : ∀ x : Addr, x + BitVec.ofNat 64 i = x + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
     intro x
-    have e : BitVec.ofNat 64 i = BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
+    obtain e : BitVec.ofNat 64 i = BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
       rw [BitVec.ofNat_add_ofNat]; congr 1; omega_arith
     rw [e, BitVec.add_assoc]
-  have hk : i / 8 < 4 := by omega_arith
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
+  obtain hk : i / 8 < 4 := by omega_arith
+  obtain hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
   rw [ha q, ha p, Proof.Ed25519.readW_byte64 m' _ hj, Proof.Ed25519.readW_byte64 m _ hj, h _ hk]
 
 /-- Four words copied from `da k(a)` to `db k(b)`, through `a5`, into the region `R`. -/
@@ -205,45 +205,45 @@ theorem copy_ok {t : State} {a b : Reg} {A B : Addr} {da db : Nat → Nat} {R : 
     [.load .d .a5 a (da 0), .store .d .a5 b (db 0), .load .d .a5 a (da 1), .store .d .a5 b (db 1),
       .load .d .a5 a (da 2), .store .d .a5 b (db 2), .load .d .a5 a (da 3), .store .d .a5 b (db 3)] from rfl]
   simp only [List.cons_append, List.nil_append]
-  have rd : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 →
+  obtain rd : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 →
       (x.writeW (B + BitVec.ofNat 64 (db j)) v).readW (A + BitVec.ofNat 64 (da i)) 64 =
         x.readW (A + BitVec.ofNat 64 (da i)) 64 :=
     fun x i j v hi hj => Mem.readW_writeW_sep (hs i hi j hj) (by decide)
-  have rd' : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 → i ≠ j →
+  obtain rd' : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i < 4 → j < 4 → i ≠ j →
       (x.writeW (B + BitVec.ofNat 64 (db j)) v).readW (B + BitVec.ofNat 64 (db i)) 64 =
         x.readW (B + BitVec.ofNat 64 (db i)) 64 :=
     fun x i j v hi hj hij => Mem.readW_writeW_sep (hs' i hi j hj hij) (by decide)
   refine wp_ldd (hda 0 (by omega_arith)) (by rw [hA]) (hr 0 (by omega_arith)) fun u₁ h₁ => ?_
   refine wp_stdd (hdb 0 (by omega_arith)) (by rw [h₁.other _ hb8, hB]) (by rw [h₁.wr]; exact hw 0 (by omega_arith))
     fun u₂ h₂ => ?_
-  have g₂a : u₂.gpr a = A := by rw [h₂.gpr, h₁.other _ ha8, hA]
-  have g₂b : u₂.gpr b = B := by rw [h₂.gpr, h₁.other _ hb8, hB]
+  obtain g₂a : u₂.gpr a = A := by rw [h₂.gpr, h₁.other _ ha8, hA]
+  obtain g₂b : u₂.gpr b = B := by rw [h₂.gpr, h₁.other _ hb8, hB]
   refine wp_ldd (hda 1 (by omega_arith)) (by rw [g₂a]) (by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact hr 1 (by omega_arith))
     fun u₃ h₃ => ?_
   refine wp_stdd (hdb 1 (by omega_arith)) (by rw [h₃.other _ hb8, g₂b])
     (by rw [h₃.wr, h₂.wr, h₁.wr]; exact hw 1 (by omega_arith)) fun u₄ h₄ => ?_
-  have g₄a : u₄.gpr a = A := by rw [h₄.gpr, h₃.other _ ha8, g₂a]
-  have g₄b : u₄.gpr b = B := by rw [h₄.gpr, h₃.other _ hb8, g₂b]
+  obtain g₄a : u₄.gpr a = A := by rw [h₄.gpr, h₃.other _ ha8, g₂a]
+  obtain g₄b : u₄.gpr b = B := by rw [h₄.gpr, h₃.other _ hb8, g₂b]
   refine wp_ldd (hda 2 (by omega_arith)) (by rw [g₄a])
     (by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact hr 2 (by omega_arith)) fun u₅ h₅ => ?_
   refine wp_stdd (hdb 2 (by omega_arith)) (by rw [h₅.other _ hb8, g₄b])
     (by rw [h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact hw 2 (by omega_arith)) fun u₆ h₆ => ?_
-  have g₆a : u₆.gpr a = A := by rw [h₆.gpr, h₅.other _ ha8, g₄a]
-  have g₆b : u₆.gpr b = B := by rw [h₆.gpr, h₅.other _ hb8, g₄b]
+  obtain g₆a : u₆.gpr a = A := by rw [h₆.gpr, h₅.other _ ha8, g₄a]
+  obtain g₆b : u₆.gpr b = B := by rw [h₆.gpr, h₅.other _ hb8, g₄b]
   refine wp_ldd (hda 3 (by omega_arith)) (by rw [g₆a])
     (by rw [h₆.rd, h₆.wr, h₅.rd, h₅.wr, h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr]
         exact hr 3 (by omega_arith)) fun u₇ h₇ => ?_
   refine wp_stdd (hdb 3 (by omega_arith)) (by rw [h₇.other _ hb8, g₆b])
     (by rw [h₇.wr, h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact hw 3 (by omega_arith)) fun u h => ?_
   have v₁ : u₁.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 0)) 64 := h₁.gpr
-  have v₃ : u₃.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 1)) 64 := by
+  obtain v₃ : u₃.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 1)) 64 := by
     rw [h₃.gpr, h₂.mem, h₁.mem, rd _ 1 0 _ (by omega_arith) (by omega_arith)]
-  have v₅ : u₅.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 2)) 64 := by
+  obtain v₅ : u₅.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 2)) 64 := by
     rw [h₅.gpr, h₄.mem, h₃.mem, h₂.mem, h₁.mem, rd _ 2 1 _ (by omega_arith) (by omega_arith), rd _ 2 0 _ (by omega_arith) (by omega_arith)]
-  have v₇ : u₇.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 3)) 64 := by
+  obtain v₇ : u₇.gpr .a5 = t.mem.readW (A + BitVec.ofNat 64 (da 3)) 64 := by
     rw [h₇.gpr, h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem, rd _ 3 2 _ (by omega_arith) (by omega_arith),
       rd _ 3 1 _ (by omega_arith) (by omega_arith), rd _ 3 0 _ (by omega_arith) (by omega_arith)]
-  have m : u.mem = ((((t.mem.writeW (B + BitVec.ofNat 64 (db 0)) (u₁.gpr .a5)).writeW
+  obtain m : u.mem = ((((t.mem.writeW (B + BitVec.ofNat 64 (db 0)) (u₁.gpr .a5)).writeW
       (B + BitVec.ofNat 64 (db 1)) (u₃.gpr .a5)).writeW (B + BitVec.ofNat 64 (db 2)) (u₅.gpr .a5)).writeW
       (B + BitVec.ofNat 64 (db 3)) (u₇.gpr .a5)) := by
     rw [h.mem, h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
@@ -273,8 +273,8 @@ theorem bytes32_zero {m : Mem} {p : Addr} (h : ∀ k < 4, m.readW (p + BitVec.of
   simp only [Spec.Ed25519.bytesAt, Spec.Ed25519.encodeLE]
   apply List.map_congr_left
   intro i hi
-  have hi' := List.mem_range.mp hi
-  have e : p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
+  obtain hi' := List.mem_range.mp hi
+  obtain e : p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
     rw [Offset.add_add]; congr 2; omega_arith
   rw [e, Proof.Ed25519.readW_byte64 m _ (Nat.mod_lt _ (by decide)), h _ (by omega_arith)]
   simp
@@ -298,8 +298,8 @@ theorem copyIn_ok {t : State} {src f : Reg} {P F : Addr} {o n : Nat} {rest : Lis
   refine k u ⟨fun r hr => h.gpr r (by simpa using hr), h.rd, h.wr, h.sp⟩ (by rw [← hF]; exact h.frame) ?_
   simp only [Spec.Ed25519.bytesAt]
   refine List.map_congr_left fun i hi => ?_
-  have hi' := List.mem_range.mp hi
-  have e := h.copied i hi'
+  obtain hi' := List.mem_range.mp hi
+  obtain e := h.copied i hi'
   rw [hP, hF, Nat.zero_add] at e
   rw [Offset.add_add, e]
 

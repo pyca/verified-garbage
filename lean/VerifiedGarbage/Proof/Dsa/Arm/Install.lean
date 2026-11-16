@@ -104,28 +104,28 @@ theorem signEntry_ok {s : State} (h : signPre s) :
   obtain ⟨hsp, hrd, hwr, _, _, _, _, _, _, _, _, hsa, _, _, _, _, hsb, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 16384 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hs16 : 16384 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have hd : Region.Disjoint ⟨State.addr s.sp, 4 * 7⟩ ⟨State.addr (arg s 5), (arg s 6).toNat * 8⟩ := hsa.symm
   show WP isa (.block (((Entry.openScratch 5) ++ Entry.signArguments.flatMap Entry.saveArgument) ++
     Entry.keyPointers)) s _
   simp only [Entry.openScratch, List.append_assoc, List.singleton_append]
   refine wp_ldrSp (i := 5) (by decide) (args_read (n := 7) (by rw [hrd]; simp) hsp 5 (by decide)) fun u₁ v₁ => ?_
-  have w₁ := openScratch_ws v₁ ((arg s 6).toNat * 8) (by rw [hwr]; simp) hsb
+  obtain w₁ := openScratch_ws v₁ ((arg s 6).toNat * 8) (by rw [hwr]; simp) hsb
   have nw := w₁.nowrap
-  have aa : ArgsApart s (State.addr (arg s 5)) 7 := args_apart hd hsp (by omega_arith)
+  obtain aa : ArgsApart s (State.addr (arg s 5)) 7 := args_apart hd hsp (by omega_arith)
   refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega_arith)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
-  have w₂ := w₁.of_rest R₂ (by decide)
-  have hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
+  obtain w₂ := w₁.of_rest R₂ (by decide)
+  obtain hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
   rw [v₁.mem] at O₂
-  have A₂ : ∀ i < 7, stackArg u₂ i = stackArg s i := fun i hi =>
+  obtain A₂ : ∀ i < 7, stackArg u₂ i = stackArg s i := fun i hi =>
     stackArg_apart O₂ hsp₂ hd hi hsp (by omega_arith) (by omega_arith)
-  have r₂ : ArgsRead u₂ 7 := (args_read (n := 7) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
+  obtain r₂ : ArgsRead u₂ 7 := (args_read (n := 7) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
     (by rw [R₂.wr, v₁.wr]) hsp₂
   refine VG.Proof.X25519.Arm.WP.append (signArgs_ok w₂ (by omega_arith) r₂ (aa.sp hsp₂))
     fun u₃ ⟨F₁, F₂, F₃, F₄, F₅, F₆, F₇, R₃, O₃, A₃⟩ => ?_
-  have w₃ := w₂.of_rest R₃ (by decide)
-  have g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
-  have g2 : u₂.gpr .r2 = s.gpr .r2 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
+  obtain w₃ := w₂.of_rest R₃ (by decide)
+  obtain g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
+  obtain g2 : u₂.gpr .r2 = s.gpr .r2 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
   rw [g0] at F₁
   rw [g2] at F₂
   rw [A₂ 0 (by decide)] at F₃
@@ -135,7 +135,7 @@ theorem signEntry_ok {s : State} (h : signPre s) :
   rw [A₂ 4 (by decide)] at F₇
   refine WP.mono (keyPointers_ok w₃ (by omega_arith) F₂ F₃ F₅) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
   · intro f hf
-    have k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 5)) d) 32 = x →
+    obtain k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 5)) d) 32 = x →
         u.mem.readW (off (State.addr (arg s 5)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega_arith) h
     simp only [signFields, List.mem_cons, List.not_mem_nil, or_false] at hf
     rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -151,7 +151,7 @@ theorem signEntry_ok {s : State} (h : signPre s) :
     · exact K₃
     · exact K₄
   · intro i hi
-    have g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
+    obtain g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
       v₁.other _ (saved_ne i hi)
     rw [← g]
     exact keep_word O₄ (.inr (by omega_arith)) (by omega_arith) (keep_word O₃ (.inr (by omega_arith)) (by omega_arith) (S₂ i hi))
@@ -165,28 +165,28 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
   obtain ⟨hsp, hrd, hwr, _, _, _, hsa, _, _, _, hsb, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 16384 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hs16 : 16384 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have hd : Region.Disjoint ⟨State.addr s.sp, 4 * 6⟩ ⟨State.addr (arg s 4), (arg s 5).toNat * 8⟩ := hsa.symm
   show WP isa (.block (((Entry.openScratch 4) ++ Entry.verifyArguments.flatMap Entry.saveArgument) ++
     Entry.keyPointers)) s _
   simp only [Entry.openScratch, List.append_assoc, List.singleton_append]
   refine wp_ldrSp (i := 4) (by decide) (args_read (n := 6) (by rw [hrd]; simp) hsp 4 (by decide)) fun u₁ v₁ => ?_
-  have w₁ := openScratch_ws v₁ ((arg s 5).toNat * 8) (by rw [hwr]; simp) hsb
-  have aa : ArgsApart s (State.addr (arg s 4)) 6 := args_apart hd hsp (by omega_arith)
+  obtain w₁ := openScratch_ws v₁ ((arg s 5).toNat * 8) (by rw [hwr]; simp) hsb
+  obtain aa : ArgsApart s (State.addr (arg s 4)) 6 := args_apart hd hsp (by omega_arith)
   refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega_arith)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
-  have w₂ := w₁.of_rest R₂ (by decide)
-  have hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
+  obtain w₂ := w₁.of_rest R₂ (by decide)
+  obtain hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
   rw [v₁.mem] at O₂
-  have A₂ : ∀ i < 6, stackArg u₂ i = stackArg s i := fun i hi =>
+  obtain A₂ : ∀ i < 6, stackArg u₂ i = stackArg s i := fun i hi =>
     stackArg_apart O₂ hsp₂ hd hi hsp (by omega_arith) (by omega_arith)
-  have r₂ : ArgsRead u₂ 6 := (args_read (n := 6) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
+  obtain r₂ : ArgsRead u₂ 6 := (args_read (n := 6) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
     (by rw [R₂.wr, v₁.wr]) hsp₂
   refine VG.Proof.X25519.Arm.WP.append (verifyArgs_ok w₂ (by omega_arith) r₂ (aa.sp hsp₂))
     fun u₃ ⟨F₁, F₂, F₃, F₄, F₅, F₆, R₃, O₃, A₃⟩ => ?_
-  have w₃ := w₂.of_rest R₃ (by decide)
-  have g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
-  have g2 : u₂.gpr .r2 = s.gpr .r2 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
-  have g3 : u₂.gpr .r3 = s.gpr .r3 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
+  obtain w₃ := w₂.of_rest R₃ (by decide)
+  obtain g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
+  obtain g2 : u₂.gpr .r2 = s.gpr .r2 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
+  obtain g3 : u₂.gpr .r3 = s.gpr .r3 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
   rw [g0] at F₁
   rw [g2] at F₂
   rw [g3] at F₃
@@ -195,7 +195,7 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
   rw [A₂ 3 (by decide)] at F₆
   refine WP.mono (keyPointers_ok w₃ (by omega_arith) F₁ F₂ F₃) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
   · intro f hf
-    have k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 4)) d) 32 = x →
+    obtain k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 4)) d) 32 = x →
         u.mem.readW (off (State.addr (arg s 4)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega_arith) h
     simp only [verifyFields, List.mem_cons, List.not_mem_nil, or_false] at hf
     rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -210,7 +210,7 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
     · exact K₃
     · exact K₄
   · intro i hi
-    have g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
+    obtain g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
       v₁.other _ (saved_ne i hi)
     rw [← g]
     exact keep_word O₄ (.inr (by omega_arith)) (by omega_arith) (keep_word O₃ (.inr (by omega_arith)) (by omega_arith) (S₂ i hi))

@@ -86,7 +86,7 @@ theorem scr_wr {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH t
 theorem scr_frA {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH tsG K s) {o n : Nat} (h : o + n ≤ 8 * 1024) :
     (frA s).Disjoint ⟨off (scr s) o, n⟩ ∧ (frB s).Disjoint ⟨off (scr s) o, n⟩ := by
   have := hp.hs
-  have hs : Region.Sub ⟨off (scr s) o, n⟩ (sR s) := Offset.sub_base _ (by omega_using [h, this])
+  obtain hs : Region.Sub ⟨off (scr s) o, n⟩ (sR s) := Offset.sub_base _ (by omega_using [h, this])
   exact ⟨(hp.ks.sub_left (frame_sub K s (d := 96) (n := 152) (by decide))).sub_right hs,
     (hp.ks.sub_left (frame_sub K s (d := 288) (n := 16) (by decide))).sub_right hs⟩
 
@@ -94,40 +94,40 @@ theorem encArgsA_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS 
     (ha : AtPar K s eb el lo t) : WP isa (.block encArgsA) t (AtEnc0 K s eb el lo) := by
   unfold encArgsA
   have hk2 := hp.k2
-  have hin : ∀ {u : State} {d : Nat}, u.sp = fb s → u.rd = s.rd → u.wr = ⟨fb s, frameBytes⟩ :: s.wr →
+  obtain hin : ∀ {u : State} {d : Nat}, u.sp = fb s → u.rd = s.rd → u.wr = ⟨fb s, frameBytes⟩ :: s.wr →
       d + 8 ≤ frameBytes → InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 d) 8 := fun hsp hrd hwr hd => by
     rw [hsp, hrd, hwr]
     exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])))
   unfold ld
   refine wp_addImm (by decide) fun u₁ o₁ e₁ => wp_movz fun u₂ o₂ e₂ => ?_
-  have x0₂ : u₂.gpr .x0 = off (scr s) oEm := by rw [o₂.get .x0, e₁, ha.x20]
+  obtain x0₂ : u₂.gpr .x0 = off (scr s) oEm := by rw [o₂.get .x0, e₁, ha.x20]
   refine wp_strb (a := off (scr s) oEm) (by decide) (by rw [x0₂, BitVec.add_zero])
     (by rw [o₂.wr, o₁.wr]; exact scr_wr hp ha.wr (by unfold oEm; omega_using [])) fun u₃ m₃ => ?_
-  have O₂ : Only [.x0, .x9] t u₂ := (o₁.trans o₂).mono
-  have hm₃ : u₃.mem = t.mem.writeW (off (scr s) oEm) (0 : Byte) := by rw [m₃.mem, O₂.mem, e₂]; rfl
-  have f₃ : Frame [⟨off (scr s) oEm, 1⟩] t.mem u₃.mem := by
+  obtain O₂ : Only [.x0, .x9] t u₂ := (o₁.trans o₂).mono
+  obtain hm₃ : u₃.mem = t.mem.writeW (off (scr s) oEm) (0 : Byte) := by rw [m₃.mem, O₂.mem, e₂]; rfl
+  obtain f₃ : Frame [⟨off (scr s) oEm, 1⟩] t.mem u₃.mem := by
     rw [hm₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have fr₃ : Fr s u₃.mem := ha.fr.frame f₃
+  obtain fr₃ : Fr s u₃.mem := ha.fr.frame f₃
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact (scr_frA hp (by unfold oEm; omega_using [])).1)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact (scr_frA hp (by unfold oEm; omega_using [])).2)
-  have sp₃ : u₃.sp = fb s := by rw [m₃.sp, O₂.sp, ha.sp]
-  have rd₃ : u₃.rd = s.rd := by rw [m₃.rd, O₂.rd, ha.rd]
-  have wr₃ : u₃.wr = ⟨fb s, frameBytes⟩ :: s.wr := by rw [m₃.wr, O₂.wr, ha.wr]
+  obtain sp₃ : u₃.sp = fb s := by rw [m₃.sp, O₂.sp, ha.sp]
+  obtain rd₃ : u₃.rd = s.rd := by rw [m₃.rd, O₂.rd, ha.rd]
+  obtain wr₃ : u₃.wr = ⟨fb s, frameBytes⟩ :: s.wr := by rw [m₃.wr, O₂.wr, ha.wr]
   refine wp_add fun u₄ o₄ e₄ => wp_mov fun u₅ o₅ e₅ => ?_
-  have O₅ : Only [.x0, .x1] u₃ u₅ := (o₄.trans o₅).mono
+  obtain O₅ : Only [.x0, .x1] u₃ u₅ := (o₄.trans o₅).mono
   refine wp_ldrSp (by decide) (hin (by rw [O₅.sp, sp₃]) (by rw [O₅.rd, rd₃]) (by rw [O₅.wr, wr₃]) (by decide))
     fun u₆ o₆ e₆ => ?_
   refine wp_ldrSp (by decide) (hin (by rw [o₆.sp, O₅.sp, sp₃]) (by rw [o₆.rd, O₅.rd, rd₃])
     (by rw [o₆.wr, O₅.wr, wr₃]) (by decide)) fun u₇ o₇ e₇ => ?_
-  have O₇ : Only [.x0, .x1, .x2, .x3] u₃ u₇ := (O₅.trans (o₆.trans o₇)).mono
+  obtain O₇ : Only [.x0, .x1, .x2, .x3] u₃ u₇ := (O₅.trans (o₆.trans o₇)).mono
   refine wp_ldrSp (by decide) (hin (by rw [O₇.sp, sp₃]) (by rw [O₇.rd, rd₃]) (by rw [O₇.wr, wr₃]) (by decide))
     fun u₈ o₈ e₈ => wp_mov fun u₉ o₉ e₉ => wp_addImm (by unfold oEnc oY; omega_using []) fun u₁₀ o₁₀ e₁₀ => ?_
-  have O₁₀ : Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6] u₃ u₁₀ := (O₇.trans (o₈.trans (o₉.trans o₁₀))).mono
+  obtain O₁₀ : Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6] u₃ u₁₀ := (O₇.trans (o₈.trans (o₉.trans o₁₀))).mono
   refine wp_ldrSp (by decide) (hin (by rw [O₁₀.sp, sp₃]) (by rw [O₁₀.rd, rd₃]) (by rw [O₁₀.wr, wr₃]) (by decide))
     fun u₁₁ o₁₁ e₁₁ => wp_subImm (by unfold oEnc oY; omega_using []) fun u₁₂ o₁₂ e₁₂ => wp_nil ?_
-  have O : Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7] u₃ u₁₂ := (O₁₀.trans (o₁₁.trans o₁₂)).mono
-  have mem : ∀ {u : State}, Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7] u₃ u → u.mem = u₃.mem := fun o => o.mem
-  have g : ∀ r ∈ [Reg.x20, .x23, .x24, .x25, .x26, .x27], u₁₂.gpr r = t.gpr r := fun r hr => by
+  obtain O : Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7] u₃ u₁₂ := (O₁₀.trans (o₁₁.trans o₁₂)).mono
+  obtain mem : ∀ {u : State}, Only [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7] u₃ u → u.mem = u₃.mem := fun o => o.mem
+  obtain g : ∀ r ∈ [Reg.x20, .x23, .x24, .x25, .x26, .x27], u₁₂.gpr r = t.gpr r := fun r hr => by
     rw [O.gpr r (by revert r; decide), m₃.gpr, O₂.gpr r (by revert r; decide)]
   refine {
     sp := by rw [O.sp, sp₃]
@@ -175,7 +175,7 @@ theorem below_kR {K cK : Nat} (s : State) (hcK : cK ≤ K) :
     Region.Sub ⟨fb s - BitVec.ofNat 64 cK, cK⟩ (kR K s) := fun a h =>
   (Offset.sub_below (fb s) (a := cK) (b := K) (n := cK) (m := K) hcK (by omega_using [hcK]) a h) |>
     fun h' => by
-      have e : fb s - BitVec.ofNat 64 K = kb K s := by rw [fb_eq K, BitVec.add_sub_cancel]
+      obtain e : fb s - BitVec.ofNat 64 K = kb K s := by rw [fb_eq K, BitVec.add_sub_cancel]
       rw [e] at h'
       exact Region.sub_prefix (by unfold stk; omega_using []) a h'
 
@@ -190,7 +190,7 @@ theorem oEnc_toNat {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH
 /-- The tables' addresses to the stack arguments of `encode`. -/
 theorem tabArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) {eb el lo : Nat}
     (ha : AtEnc0 K s eb el lo t) : WP isa (.block tabArgs) t (AtEnc K s eb el lo) := by
-  have hA : ∀ {u : State} (j : Nat), j < 16 → u.sp = fb s → u.rd = s.rd →
+  obtain hA : ∀ {u : State} (j : Nat), j < 16 → u.sp = fb s → u.rd = s.rd →
       InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (frameBytes + 8 * j)) 8 := fun j hj hsp hrd => by
     rw [hsp, hrd, ← stackArgAddr_fb]; exact arg_in hp (Covers.left (Covers.refl _)) hj
   unfold tabArgs arg
@@ -203,26 +203,26 @@ theorem tabArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
     (by rw [o₂.wr, o₁.wr, ha.wr]; exact in_frame s _ (by decide)) fun u₃ m₃ => ?_
   refine wp_ldrSp (by decide) (hA 15 (by decide) (by rw [m₃.sp, o₂.sp, o₁.sp, ha.sp])
     (by rw [m₃.rd, o₂.rd, o₁.rd, ha.rd])) fun u₄ o₄ e₄ => ?_
-  have hm₃ : u₃.mem = t.mem.writeW (fb s + BitVec.ofNat 64 0) (stackArg s 14) := by
+  obtain hm₃ : u₃.mem = t.mem.writeW (fb s + BitVec.ofNat 64 0) (stackArg s 14) := by
     rw [m₃.mem, o₂.mem, o₁.mem, e₂]
-  have f₃ : Frame (wrS K s) s.mem u₃.mem := by
+  obtain f₃ : Frame (wrS K s) s.mem u₃.mem := by
     rw [hm₃]
     exact ha.mem.writeW (r := ⟨fb s, frameBytes⟩) (by simp [wrS]) _ (Offset.contains_base _ (by decide) (by decide))
   rw [m₃.sp, o₂.sp, o₁.sp, ha.sp, ← stackArgAddr_fb, arg_frameW hp f₃ (by decide)] at e₄
   refine wp_strx (a := fb s + BitVec.ofNat 64 8) (by decide) (by rw [o₄.get .x16, m₃.gpr, o₂.get .x16, e₁])
     (by rw [o₄.wr, m₃.wr, o₂.wr, o₁.wr, ha.wr]; exact in_frame s _ (by decide)) fun u₅ m₅ => wp_nil ?_
-  have hm₅ : u₅.mem = (t.mem.writeW (fb s + BitVec.ofNat 64 0) (stackArg s 14)).writeW (fb s + BitVec.ofNat 64 8)
+  obtain hm₅ : u₅.mem = (t.mem.writeW (fb s + BitVec.ofNat 64 0) (stackArg s 14)).writeW (fb s + BitVec.ofNat 64 8)
       (stackArg s 15) := by rw [m₅.mem, o₄.mem, hm₃, e₄]
-  have hf : Frame [⟨fb s + BitVec.ofNat 64 0, 16⟩] t.mem u₅.mem := by
+  obtain hf : Frame [⟨fb s + BitVec.ofNat 64 0, 16⟩] t.mem u₅.mem := by
     rw [hm₅]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))
-  have K₅ : Keep [.x16, .x9] t u₅ := (o₁.keep.trans (o₂.keep.trans (m₃.keep.trans (o₄.keep.trans m₅.keep)))).mono
-  have g : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x20, .x23, .x24, .x25, .x26, .x27],
+  obtain K₅ : Keep [.x16, .x9] t u₅ := (o₁.keep.trans (o₂.keep.trans (m₃.keep.trans (o₄.keep.trans m₅.keep)))).mono
+  obtain g : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x20, .x23, .x24, .x25, .x26, .x27],
       u₅.gpr r = t.gpr r := fun r hr => K₅.get r (by revert r; decide)
-  have sp₅ : u₅.sp = fb s := K₅.sp.trans ha.sp
-  have hS : Region.Sub ⟨off (scr s) oEm, 1⟩ (sR s) := Offset.sub_base _ (by have := hp.hs; unfold oEm; omega_using [this])
-  have hd16 : ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 0, 16⟩ : Region)], (frA s).Disjoint r ∧ (frB s).Disjoint r :=
+  obtain sp₅ : u₅.sp = fb s := K₅.sp.trans ha.sp
+  obtain hS : Region.Sub ⟨off (scr s) oEm, 1⟩ (sR s) := Offset.sub_base _ (by have := hp.hs; unfold oEm; omega_using [this])
+  obtain hd16 : ∀ r ∈ [(⟨fb s + BitVec.ofNat 64 0, 16⟩ : Region)], (frA s).Disjoint r ∧ (frB s).Disjoint r :=
       fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact ⟨Offset.disjoint _ (by decide) (by decide) (by decide), Offset.disjoint _ (by decide) (by decide) (by decide)⟩
@@ -337,32 +337,32 @@ theorem encPre_of {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG
     (ha : AtEnc K s eb el lo t) (hsy : t.syms = s.syms) (hlo : lo + el ≤ (s.gpr .x3).toNat)
     (hel : el = Spec.RsaPss.emLength eb) (hb1 : 1 ≤ eb) (hb2 : eb ≤ Proof.RsaPss.maxEmBits) :
     (Enc.encK T Hs Gs).pre (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)) := by
-  have hk1 := hp.k1; have hk2 := hp.k2
-  have hfb := fb_toNat hp
-  have hkb := kb_toNat hp
+  obtain hk1 := hp.k1; have hk2 := hp.k2
+  obtain hfb := fb_toNat hp
+  obtain hkb := kb_toNat hp
   have hsp1 := hp.sp1
   have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
   have hhs := hp.hs
-  have hsc := oEnc_toNat hp
-  have hK := below_kR (K := K) (cK := stk 288) s (by unfold stk frameBytes; omega_using [h624])
-  have hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) :=
+  obtain hsc := oEnc_toNat hp
+  obtain hK := below_kR (K := K) (cK := stk 288) s (by unfold stk frameBytes; omega_using [h624])
+  obtain hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) :=
     Offset.sub_base _ (by unfold oEm; omega_using [hlo, hhs])
-  have hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
+  obtain hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
     Offset.sub_base _ (by rw [hsc]; unfold oEnc oY at *; omega_using [hhs])
-  have hA : Region.Sub ⟨fb s + BitVec.ofNat 64 (8 * 0), 16⟩ (kR K s) := frame_sub K s (by decide)
-  have hwem : (off (scr s) (oEm + lo)).toNat + el ≤ 2 ^ 64 := by
+  obtain hA : Region.Sub ⟨fb s + BitVec.ofNat 64 (8 * 0), 16⟩ (kR K s) := frame_sub K s (by decide)
+  obtain hwem : (off (scr s) (oEm + lo)).toNat + el ≤ 2 ^ 64 := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm at *; omega_using [hlo, hws, hhs]
-  have hwsc : (off (scr s) oEnc).toNat + (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8 ≤ 2 ^ 64 := by
+  obtain hwsc : (off (scr s) oEnc).toNat + (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8 ≤ 2 ^ 64 := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [hsc]; unfold oEnc oY at *; omega_using [hws]
-  have he : (BitVec.ofNat 64 el).toNat = el := by
+  obtain he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega_using [hlo])]
-  have hb : (BitVec.ofNat 64 eb).toNat = eb := by
+  obtain hb : (BitVec.ofNat 64 eb).toNat = eb := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega_using [hb2])]
   have hD := E.hD
   obtain ⟨dH, dG⟩ := tabs_wrS hp
   have hsc0 : (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)).syms = s.syms := hsy
   have hm0 : (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)).mem = t.mem := rfl
-  have hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7],
+  obtain hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7],
       (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)).gpr r = t.gpr r := by
     intro r hr; simp only [State.withRegions_gpr, State.callEntry]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -370,9 +370,9 @@ theorem encPre_of {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG
   have a0 : stackArg (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)) 0 = stackArg s 14 := ha.a0
   have a1 : stackArg (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)) 1 = stackArg s 15 := ha.a1
   have sp0 : (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)).sp = fb s := ha.sp
-  have aA : stackArgAddr (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)) 0 = fb s + BitVec.ofNat 64 (8 * 0) := by
+  obtain aA : stackArgAddr (t.callEntry.withRegions (encRdT T.H.D t) (encWrT t)) 0 = fb s + BitVec.ofNat 64 (8 * 0) := by
     rw [stackArgAddr, sp0]
-  have hsy' : ∀ x : State, x.syms = s.syms → ∀ T' : FnTable, FnTable.words isa x T' = FnTable.words isa s T' :=
+  obtain hsy' : ∀ x : State, x.syms = s.syms → ∀ T' : FnTable, FnTable.words isa x T' = FnTable.words isa s T' :=
     fun x hx T' => VG.Proof.HashTable.AArch64.words_congr hx T'
   refine ⟨⟨?sp1, ?sp2, ?tabH, ?tabG, ?hsy, rfl, rfl, ?ed, ?esa, ?es, ?etH, ?etG, ?eA, ?ds, ?sas, ?stH, ?stG, ?sA,
     ?ke, ?kd, ?ksa, ?ks, ?ktH, ?ktG, ?kA, ?we, ?wd, ?wsa, ?ws, ?wtH, ?wtG, ?b1, ?b2, ?hel, ?hs⟩, ?tabs⟩
@@ -457,20 +457,20 @@ theorem enc_covers {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
   have hk2 := hp.k2
   have hhs := hp.hs
   have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
-  have hsc := oEnc_toNat hp
-  have he : (BitVec.ofNat 64 el).toNat = el := by
+  obtain hsc := oEnc_toNat hp
+  obtain he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega_using [hlo])]
-  have hcr : Covers (encRdT T.H.D t) (t.rd ++ t.wr) := by
+  obtain hcr : Covers (encRdT T.H.D t) (t.rd ++ t.wr) := by
     simp only [encRdT, ha.x2, ha.x3, ha.x4, ha.a0, ha.a1, E.hD]
     rw [ha.rd, ha.wr]
-    have hm : ∀ r ∈ [dgR s, slR s, tHR s, tGR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
+    obtain hm : ∀ r ∈ [dgR s, slR s, tHR s, tGR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
       fun r hr => Covers.left (Covers.trans (Covers.of_mem fun x hx => by
         rw [List.mem_singleton.mp hx]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
         rcases hr with h | h | h | h <;> simp [h]) hp.hrd)
     exact Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp))
       (Covers.cons (hm _ (by simp)) (Covers.right (Covers.one (by
         rw [stackArgAddr, ha.sp]; exact in_frame s s.wr (d := 8 * 0) (n := 16) (by decide)))))))
-  have hcw : Covers (encWrT t) t.wr := by
+  obtain hcw : Covers (encWrT t) t.wr := by
     simp only [encWrT, ha.x0, ha.x1, ha.x6, ha.x7, he]
     rw [ha.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -493,19 +493,19 @@ theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
   have hhs := hp.hs
   have hws : (scr s).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64 := hp.ws
   have hd := E.depth
-  have hsc := oEnc_toNat hp
-  have he : (BitVec.ofNat 64 el).toNat = el := by
+  obtain hsc := oEnc_toNat hp
+  obtain he : (BitVec.ofNat 64 el).toNat = el := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show el < 2 ^ 64 by omega_using [hlo])]
-  have hb : (BitVec.ofNat 64 eb).toNat = eb := by
+  obtain hb : (BitVec.ofNat 64 eb).toNat = eb := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show eb < 2 ^ 64 by unfold Proof.RsaPss.maxEmBits at hb2; omega_using [hb2])]
-  have hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) := Offset.sub_base _ (by unfold oEm; omega_using [hlo, hhs])
-  have hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
+  obtain hSem : Region.Sub ⟨off (scr s) (oEm + lo), el⟩ (sR s) := Offset.sub_base _ (by unfold oEm; omega_using [hlo, hhs])
+  obtain hSsc : Region.Sub ⟨off (scr s) oEnc, (stackArg s 13 - BitVec.ofNat 64 (oEnc / 8)).toNat * 8⟩ (sR s) :=
     Offset.sub_base _ (by rw [hsc]; unfold oEnc oY at *; omega_using [hhs])
   obtain ⟨hcr, hcw⟩ := enc_covers hp E ha hlo
   refine WP.callFV (k := Enc.encK T Hs Gs) E.ok (encPre_of hp h624 E ha hsy hlo hel hb1 hb2)
     (Covers.append_left hcr (Covers.right hcw)) hcw ?_ (by omega_using [hd])
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  have hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5], t.callEntry.gpr r = t.gpr r := by
+  obtain hg : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5], t.callEntry.gpr r = t.gpr r := by
     intro r hr; simp only [State.callEntry]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
@@ -514,9 +514,9 @@ theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
     ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, he, hb, E.hD] at hpost
   simp only [encWrT] at hf
   rw [ha.x0, ha.x1, ha.x6, ha.x7, ha.sp, he] at hf
-  have hl : ∀ {p : Addr} {len : Nat}, p.toNat + len ≤ 2 ^ 64 → len ≤ 2 ^ 64 := fun h => by omega_using [h]
+  obtain hl : ∀ {p : Addr} {len : Nat}, p.toNat + len ≤ 2 ^ 64 → len ≤ 2 ^ 64 := fun h => by omega_using [h]
   rw [bytes_wrS ha.mem hp.kdg hp.dgs (hl hp.wdg), bytes_wrS ha.mem hp.ksl hp.sls (hl hp.wsl)] at hpost
-  have hB : Region.Sub (below (fb s) (16 * (encode f (ofIdx i) g).aarch64Depth)) (below (fb s) K) :=
+  obtain hB : Region.Sub (below (fb s) (16 * (encode f (ofIdx i) g).aarch64Depth)) (below (fb s) K) :=
     Offset.sub_below _ (by omega_using [h624, hd]) (by omega_using [h624, hd])
   exact {
     sp := hsp'.trans ha.sp
@@ -546,7 +546,7 @@ theorem encCall_ok {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH ts
       rw [hf _ fun r hr hc => ?_]
       · exact ha.z
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have hc0 : (⟨off (scr s) oEm, 1⟩ : Region).Contains (off (scr s) oEm) 1 := Region.contains_self _ _
+      obtain hc0 : (⟨off (scr s) oEm, 1⟩ : Region).Contains (off (scr s) oEm) 1 := Region.contains_self _ _
       rcases hr with rfl | rfl | rfl
       · exact Offset.disjoint _ (Or.inl (by omega_using [])) (by unfold oEm; omega_using []) (by unfold oEm; omega_using [hk2, hlo]) _ hc0 hc
       · exact Offset.disjoint _ (Or.inl (by unfold oEm oEnc oY; omega_using [])) (by unfold oEm; omega_using [])

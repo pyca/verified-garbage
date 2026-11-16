@@ -51,15 +51,15 @@ theorem pubW_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) {V : Nat 
     WP isa (.block (scrRsa .x10 ++ ([.ldrSp .x11 sScrLen, .subImm .x .x11 .x11 1024, .addSp .x9 0,
       .str .x .x10 .x9 0, .str .x .x11 .x9 8] : List Instr))) t fun u =>
         Ctx L g vv m₀ u ∧ Rep u.mem L.Q L.scr V (pubW L W) := by
-  have Ly := hc.lay hL hP R hS.scr
+  obtain Ly := hc.lay hL hP R hS.scr
   have G' := Ly.geo
-  have h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
-  have h192 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 192) 8 := Ly.ld (d := 192) (by decide)
-  have w0 : InRegions t.wr L.Q 8 := by
+  obtain h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
+  obtain h192 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 192) 8 := Ly.ld (d := 192) (by decide)
+  obtain w0 : InRegions t.wr L.Q 8 := by
     have := Ly.st (d := 0) (n := 8) (by decide); rwa [off, BitVec.add_zero] at this
-  have w8 : InRegions t.wr (L.Q + BitVec.ofNat 64 8) 8 := Ly.st (d := 8) (by decide)
+  obtain w8 : InRegions t.wr (L.Q + BitVec.ofNat 64 8) 8 := Ly.st (d := 8) (by decide)
   have hs : t.mem.read (L.Q + BitVec.ofNat 64 96) 8 = L.scr := Ly.slot
-  have hsl := R.rd8 (d := 192) (k := 24) rfl (by decide) hS.sl
+  obtain hsl := R.rd8 (d := 192) (k := 24) rfl (by decide) hS.sl
   refine WP.mono (Q := fun (u : State) => u.mem = (t.mem.write L.Q 8 (L.scr + BitVec.ofNat 64 8192)).write
       (off L.Q 8) 8 (L.sl - BitVec.ofNat 64 1024) ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧
       (∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r)) ?_
@@ -67,12 +67,12 @@ theorem pubW_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) {V : Nat 
   · oaep_run [scrRsa, sScr, sScrLen, oRsa, h96, h192, w0, w8, Ly.sp, hs, hsl, BitVec.add_zero,
       imm16 (show 8192 < 65536 by decide)]
     oaep_fin
-  have R' : Rep u.mem L.Q L.scr V (pubW L W) := by
-    have R0 := R.wq G' (k := 0) (by decide) (L.scr + BitVec.ofNat 64 8192)
+  obtain R' : Rep u.mem L.Q L.scr V (pubW L W) := by
+    obtain R0 := R.wq G' (k := 0) (by decide) (L.scr + BitVec.ofNat 64 8192)
     rw [show off L.Q (8 * 0) = L.Q from BitVec.add_zero _] at R0
     rw [hm]; exact R0.wq G' (k := 1) (by decide) _
-  have S : Step L.Q L.scr [] t u := ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by
-    have c0 := cF L.Q (d := 0) (n := 8) (by decide)
+  obtain S : Step L.Q L.scr [] t u := ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by
+    obtain c0 := cF L.Q (d := 0) (n := 8) (by decide)
     rw [off, BitVec.add_zero] at c0
     rw [hm]
     exact Frame.write (Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ c0)
@@ -95,19 +95,19 @@ theorem pubR_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) {V : Nat 
     WP isa (.block (([.ldrSp .x0 sOut, .ldrSp .x1 sK, .ldrSp .x2 sN, .ldrSp .x3 sK, .ldrSp .x4 sE,
       .ldrSp .x5 sEl] : List Instr) ++ scr .x6 oEm ++ ([.ldrSp .x7 sK] : List Instr))) t fun u =>
         Ctx L g vv m₀ u ∧ u.mem = t.mem ∧ PReady L u := by
-  have Ly := hc.lay hL hP R hS.scr
-  have h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
-  have h152 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 152) 8 := Ly.ld (d := 152) (by decide)
-  have h160 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 160) 8 := Ly.ld (d := 160) (by decide)
-  have h168 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 168) 8 := Ly.ld (d := 168) (by decide)
-  have h176 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 176) 8 := Ly.ld (d := 176) (by decide)
-  have h184 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 184) 8 := Ly.ld (d := 184) (by decide)
+  obtain Ly := hc.lay hL hP R hS.scr
+  obtain h96 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 96) 8 := Ly.ld (d := 96) (by decide)
+  obtain h152 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 152) 8 := Ly.ld (d := 152) (by decide)
+  obtain h160 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 160) 8 := Ly.ld (d := 160) (by decide)
+  obtain h168 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 168) 8 := Ly.ld (d := 168) (by decide)
+  obtain h176 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 176) 8 := Ly.ld (d := 176) (by decide)
+  obtain h184 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 184) 8 := Ly.ld (d := 184) (by decide)
   have hs : t.mem.read (L.Q + BitVec.ofNat 64 96) 8 = L.scr := Ly.slot
-  have ro := R.rd8 (d := 152) (k := 19) rfl (by decide) hS.out
-  have rk := R.rd8 (d := 168) (k := 21) rfl (by decide) hS.k
-  have rn := R.rd8 (d := 160) (k := 20) rfl (by decide) hS.n
-  have re := R.rd8 (d := 176) (k := 22) rfl (by decide) hS.e
-  have rel := R.rd8 (d := 184) (k := 23) rfl (by decide) hS.el
+  obtain ro := R.rd8 (d := 152) (k := 19) rfl (by decide) hS.out
+  obtain rk := R.rd8 (d := 168) (k := 21) rfl (by decide) hS.k
+  obtain rn := R.rd8 (d := 160) (k := 20) rfl (by decide) hS.n
+  obtain re := R.rd8 (d := 176) (k := 22) rfl (by decide) hS.e
+  obtain rel := R.rd8 (d := 184) (k := 23) rfl (by decide) hS.el
   refine WP.mono (Q := fun (u : State) => u.mem = t.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ u.v = t.v ∧
       (∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r) ∧ PReady L u) ?_
     fun u ⟨hm, hrd, hwr, hsp, hv, hcs, hr⟩ =>
@@ -158,7 +158,7 @@ structure PreOk (L : ELay) (m₀ : Mem) : Prop where
 theorem pre_ok (hL : L.Ok) (hp : PreOk L m₀) :
     (PRE L m₀).Disjoint L.OUT ∧ (PRE L m₀).Disjoint L.SCR ∧ L.STK.Disjoint (PRE L m₀) ∧
       (preW L m₀).toNat + (prlW L m₀).toNat * 8 ≤ 2 ^ 64 := by
-  have h : PRE L m₀ ∈ L.X := by rw [hp.hx]; simp
+  obtain h : PRE L m₀ ∈ L.X := by rw [hp.hx]; simp
   exact ⟨hL.xO _ h, hL.xS _ h, hL.xK _ h, hL.xw _ h⟩
 
 /-- A word of the stack arguments, as on entry. -/
@@ -166,7 +166,7 @@ theorem arg_keep (hL : L.Ok) (hc : Ctx L g vv m₀ t) {d : Nat} (h₁ : 288 ≤ 
     t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = m₀.readW (L.Q + BitVec.ofNat 64 d) 64 := by
   have hnQ := hL.nQa
   have hpQ := hL.pQ
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega_arith) (by omega_arith)
+  obtain hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega_arith) (by omega_arith)
   refine hc.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -182,7 +182,7 @@ theorem pre_words (hL : L.Ok) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) :
   obtain ⟨pO, pS, pK, pw⟩ := pre_ok hL hp
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   refine hc.frame.readW (r := PRE L m₀) (Offset.contains_base _ (by omega_arith) (by omega_arith)) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -204,14 +204,14 @@ theorem loads_ok (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : 
       Ctx L g vv m₀ u ∧ u.mem = t.mem ∧ PReadyP L m₀ u := by
   have hA := hp.al
   have := hL.nQa
-  have i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
+  obtain i0 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 336) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
       Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al80; omega_arith)⟩
-  have i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 344) 8 := by
+  obtain i1 : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 344) 8 := by
     rw [hc.sp]; exact ⟨L.ARGS, by rw [hc.rd]; simp,
       Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.al80; omega_arith)⟩
-  have k0 := arg_keep hL hc (d := 336) (by omega_arith) (by omega_arith)
-  have k1 := arg_keep hL hc (d := 344) (by omega_arith) (by omega_arith)
+  obtain k0 := arg_keep hL hc (d := 336) (by omega_arith) (by omega_arith)
+  obtain k1 := arg_keep hL hc (d := 344) (by omega_arith) (by omega_arith)
   rw [← hc.sp] at k0 k1
   apply WP.of_runBlock
   simp only [arg, frameBytes, runBlock_cons, runStep_some, runBlock_nil, exec, State.load,
@@ -235,22 +235,22 @@ theorem pd_ok (hL : L.Ok) {K : Nat} (hK : K ≤ L.P) (hc : Ctx L g vv m₀ t) {m
   have hk := hL.k1024
   have hbS := hL.bS
   obtain ⟨pO, pS, pK, pw⟩ := pre_ok hL hp
-  have hlow : Region.Sub ⟨L.Q - BitVec.ofNat 64 K, K⟩ L.LOW := Offset.sub_below _ hK (by omega_arith)
-  have sa : ∀ i < 2, stackArg t i = W i := fun i hi => by
+  obtain hlow : Region.Sub ⟨L.Q - BitVec.ofNat 64 K, K⟩ L.LOW := Offset.sub_below _ hK (by omega_arith)
+  obtain sa : ∀ i < 2, stackArg t i = W i := fun i hi => by
     rw [stackArg, stackArgAddr, hc.sp]; exact R.fr i (by unfold nW frameBytes; omega_arith)
-  have a0 := (sa 0 (by decide)).trans hA.s0
-  have a1 := (sa 1 (by decide)).trans hA.s1
-  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 16⟩ L.STK := ELay.Ok.sub_stk (by omega_arith)
-  have arS' : Region.Sub ⟨L.Q, 16⟩ L.STK := by rwa [BitVec.add_zero] at arS
-  have lS := sub_trans hlow (ELay.Ok.low_stk (L := L))
-  have hsl := sl_sub hL
-  have hInp : Region.Sub ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩ L.SCR := Offset.sub_base _ (by omega_arith)
-  have hScr : Region.Sub ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ L.SCR :=
+  obtain a0 := (sa 0 (by decide)).trans hA.s0
+  obtain a1 := (sa 1 (by decide)).trans hA.s1
+  obtain arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 16⟩ L.STK := ELay.Ok.sub_stk (by omega_arith)
+  obtain arS' : Region.Sub ⟨L.Q, 16⟩ L.STK := by rwa [BitVec.add_zero] at arS
+  obtain lS := sub_trans hlow (ELay.Ok.low_stk (L := L))
+  obtain hsl := sl_sub hL
+  obtain hInp : Region.Sub ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩ L.SCR := Offset.sub_base _ (by omega_arith)
+  obtain hScr : Region.Sub ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ L.SCR :=
     Offset.sub_base _ (by rw [hsl]; omega_arith)
-  have dIS : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩
+  obtain dIS : Region.Disjoint ⟨L.scr + BitVec.ofNat 64 0, L.k.toNat⟩
       ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩ :=
     Offset.disjoint L.scr (.inl (by omega_arith)) (by omega_arith) (by rw [hsl]; omega_arith)
-  have fr0 := hL.fr_low (d := 0) (n := 16) (by omega_arith)
+  obtain fr0 := hL.fr_low (d := 0) (n := 16) (by omega_arith)
   rw [BitVec.add_zero] at fr0
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hr.x0, hr.x1, hr.x2, hr.x3, hr.x4, hr.x5, hr.x6, hr.x7, a0, a1, hc.sp]
@@ -262,7 +262,7 @@ theorem pd_ok (hL : L.Ok) {K : Nat} (hK : K ≤ L.P) (hc : Ctx L g vv m₀ t) {m
       by rw [scr8192 hL, hsl]; omega_arith⟩
   · simp only [RsaPkcs1Sig.AArch64.pdRd]
     rw [hr.x2, hr.x3, hr.x4, hr.x5, hr.x6, hr.x7, hc.sp, hc.rd, hc.wr, hp.hx]
-    have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
+    obtain z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -272,7 +272,7 @@ theorem pd_ok (hL : L.Ok) {K : Nat} (hK : K ≤ L.P) (hc : Ctx L g vv m₀ t) {m
     · exact ⟨L.FR, by simp, 0, z _, by show 0 + 16 ≤ frameBytes; decide⟩
   · simp only [RsaPkcs1Sig.AArch64.pubWr]
     rw [hr.x0, hr.x1, a0, a1, hc.wr]
-    have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
+    obtain z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -309,22 +309,22 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
   have hpQ := hL.pQ
   have hs8 := hL.s8192
   have hk := hL.k1024
-  have hsl := sl_sub hL
-  have hok := pd_ok hL hP hc hp hr R hA
-  have a0 : stackArg t 0 = L.scr + BitVec.ofNat 64 8192 := by
+  obtain hsl := sl_sub hL
+  obtain hok := pd_ok hL hP hc hp hr R hA
+  obtain a0 : stackArg t 0 = L.scr + BitVec.ofNat 64 8192 := by
     rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega_arith)).trans hA.s0
-  have a1 : stackArg t 1 = L.sl - BitVec.ofNat 64 1024 := by
+  obtain a1 : stackArg t 1 = L.sl - BitVec.ofNat 64 1024 := by
     rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 1 (by unfold nW frameBytes; omega_arith)).trans hA.s1
   refine pdCall c hok fun s' hrd hwr hsp hf hcs hvs hpost => ?_
-  have hpw : Proof.RsaPkcs1Sig.AArch64.pubWr t =
+  obtain hpw : Proof.RsaPkcs1Sig.AArch64.pubWr t =
       [L.OUT, ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩] := by
     simp only [Proof.RsaPkcs1Sig.AArch64.pubWr, hr.x0, hr.x1, a0, a1]
   rw [hpw] at hf
-  have hlow : Region.Sub (below t.sp (16 * c.code.aarch64Depth)) L.LOW := by
+  obtain hlow : Region.Sub (below t.sp (16 * c.code.aarch64Depth)) L.LOW := by
     rw [hc.sp]
     show Region.Sub _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
-  have hws : ∀ r ∈ ([L.OUT, ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩] :
+  obtain hws : ∀ r ∈ ([L.OUT, ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩] :
       List Region) ++ [below t.sp (16 * c.code.aarch64Depth)],
       Region.Sub r L.OUT ∨ Region.Sub r L.SCR ∨ Region.Sub r L.LOW := fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -332,7 +332,7 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
     · exact .inl fun _ h => h
     · exact .inr (.inl (Offset.sub_base _ (by rw [hsl]; omega_arith)))
     · exact .inr (.inr hlow)
-  have hfr : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  obtain hfr : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       ∀ X ∈ ([L.OUT, ⟨L.scr + BitVec.ofNat 64 8192, (L.sl - BitVec.ofNat 64 1024).toNat * 8⟩] : List Region) ++
         [below t.sp (16 * c.code.aarch64Depth)], Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ X :=
     fun d h₁ h₂ X hX => by
@@ -344,7 +344,7 @@ theorem pd_call (c : PdChecked) (hL : L.Ok) (hP : c.stack ≤ L.P) (hc : Ctx L g
         · exact hL.stk_buf h₂ (.inr hs)
         · exact hL.args_buf h₂ h₁ (.inr hs)
       · exact (hL.fr_low h₁).sub_right hs
-  have hk' : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
+  obtain hk' : ∀ d, d + 8 ≤ 328 → (d + 8 ≤ 288 ∨ 288 ≤ d) →
       s'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (hfr d h₁ h₂) (by decide)
   refine ⟨⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
@@ -368,16 +368,16 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
   have hA := hp.al
   have hnQ := hL.nQa
   have hpQ := hL.pQ
-  have hT : TABJ L m₀ j ∈ L.X := by rw [hp.hx]; rcases hj with rfl | rfl <;> simp
-  have cT : ∀ d, d + 8 ≤ 88 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
+  obtain hT : TABJ L m₀ j ∈ L.X := by rw [hp.hx]; rcases hj with rfl | rfl <;> simp
+  obtain cT : ∀ d, d + 8 ≤ 88 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
     show (⟨tabJ L m₀ j, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by have := hL.xw _ hT; simp only [Sig.tableRegion] at this; omega_using [hd])
-  have hj' : 288 ≤ arg j ∧ arg j + 8 ≤ 368 := by rcases hj with rfl | rfl <;> decide
-  have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg j)) 8 :=
+  obtain hj' : 288 ≤ arg j ∧ arg j + 8 ≤ 368 := by rcases hj with rfl | rfl <;> decide
+  obtain cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg j)) 8 :=
     Offset.contains _ hj'.1 (by omega_using [hA, hj']) (by omega_using [hA])
-  have mT : TABJ L m₀ j ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
-  have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
-  have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABJ L m₀ j).Disjoint r := by
+  obtain mT : TABJ L m₀ j ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp [hT])
+  obtain mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
+  obtain dT : ∀ r ∈ Table.mgfRs L.Q L.scr, (TABJ L m₀ j).Disjoint r := by
     intro r hr
     simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -386,7 +386,7 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
       exact (hL.xK _ hT).symm.sub_right hf
     · exact (hL.xS _ hT).sub_right hL.ours_scr
     · exact (hL.xK _ hT).symm.sub_right (sub_trans (ELay.Ok.ret_low (L := L) hP16) ELay.Ok.low_stk)
-  have dT0 : ∀ r ∈ [L.OUT, L.SCR, L.STK], (TABJ L m₀ j).Disjoint r := by
+  obtain dT0 : ∀ r ∈ [L.OUT, L.SCR, L.STK], (TABJ L m₀ j).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -394,13 +394,13 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
     · exact hL.xS _ hT
     · exact (hL.xK _ hT).symm
   refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega_using [hj])⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
-  have rt : ∀ d, d + 8 ≤ 88 →
+  obtain rt : ∀ d, d + 8 ≤ 88 →
       m.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 = m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
     (rt 48 (by decide)).trans hD, ?_⟩
-  have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ r := by
-    have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega_using [hA, hj'])
+  obtain ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ r := by
+    obtain hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega_using [hA, hj'])
     intro r hr
     simp only [Table.mgfRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

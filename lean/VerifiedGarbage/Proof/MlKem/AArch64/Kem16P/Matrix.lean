@@ -89,7 +89,7 @@ theorem prf_input {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {e
       (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) s := by
   have hw := hp.wf
   have bR : bufR (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) = R (kA s₀) L.sc (TP P + 168 * N₀) 504 := rfl
-  have tS : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint (R (kA s₀) L.sc 0 200) :=
+  obtain tS : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint (R (kA s₀) L.sc 0 200) :=
     tb.t.apart.sub_right (scratch_sub hp (by lom))
   refine ⟨⟨cov_s hp h (o := SS) (l := 2048) (by lom), by rw [stR_sc]; exact cov_s hp h (by lom),
     by rw [h.sp]; exact hk.sp, by rw [stR_sc]; exact sdisj hp (by lom) (by lom) (by lom),
@@ -137,8 +137,8 @@ theorem BInvW.pairedP {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) (hk : 
       (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) N₀ m s t) :
     BInvW w16 P L s₀ t.mem ρ (e + 2) t := by
   have hw := hp.wf
-  have fr : Frame (pairWritesM P L s₀ e N₀) s.mem t.mem := by
-    have f := ht.frame; rw [h.kb.sp] at f; exact f
+  obtain fr : Frame (pairWritesM P L s₀ e N₀) s.mem t.mem := by
+    obtain f := ht.frame; rw [h.kb.sp] at f; exact f
   have old {j : Nat} (hj : j < e) := pairP_far hp hk he (o := AH + 1024 * j) (l := 1024) (N₀ := N₀)
     (by lom) (by constructor <;> lom) (by lom) (.inl (by lom)) hN
   refine ⟨h.kb.frame ht.keep fr (by decide) ?_, Frame.refl _ _, ?_, ?_, ?_, ?_⟩
@@ -195,7 +195,7 @@ theorem _root_.VG.Proof.MlKem.AArch64.Kem.KB.callEntry {s₀ s : State} (h : KB 
     rw [State.callEntry_gpr s (preserved_not_link _ (slot_pres hk).1 (slot_pres hk).2)]
     exact h.ptr k hk
   · intro r hr ho
-    have h30 : r ≠ Reg.x30 := fun e => ho (by rw [e]; decide)
+    obtain h30 : r ≠ Reg.x30 := fun e => ho (by rw [e]; decide)
     rw [State.callEntry_gpr s (preserved_not_link r hr h30)]
     exact h.cs r hr ho
 
@@ -214,34 +214,34 @@ theorem paired_stepP_link {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L 
     WP isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
       PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t ∧ t.gpr .x30 = s.gpr .x30 := by
   have hw := hp.wf
-  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (N₀ + 2) < 65536 := by
+  obtain hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (N₀ + 2) < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   rw [pairP_iff]
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
-  have hoa : AH + 1024 * (2 * i) < 65536 := by simp only [KEM.AH]; omega_using [he, hkk]
-  have hob : AH + 1024 * (2 * i + 1) < 65536 := by simp only [KEM.AH]; omega_using [he, hkk]
+  obtain hoa : AH + 1024 * (2 * i) < 65536 := by simp only [KEM.AH]; omega_using [he, hkk]
+  obtain hob : AH + 1024 * (2 * i + 1) < 65536 := by simp only [KEM.AH]; omega_using [he, hkk]
   have hk1 : 0 < P.k := hf.1
-  have hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
-  have pin := pair_input (L := L) hp he h.b.kb tb.t
-  have hin := prf_input hp hk he hN h.b.kb tb
+  obtain hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
+  obtain pin := pair_input (L := L) hp he h.b.kb tb.t
+  obtain hin := prf_input hp hk he hN h.b.kb tb
   refine WP.mono_syms (pairPCode_ok (sha3 := sha3) P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo (by decide) (by decide) (by decide)
     hoa hob pin hin rfl (by decide) (by decide) rfl (Hybrid.x24_bit h.b)) fun t ht sy => ?_
-  have post := ht.outcome hk1 hk2
+  obtain post := ht.outcome hk1 hk2
   have seed {j : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) j P.k = matSeed ρ (j / P.k) (j % P.k) := by
     simp only [Paired.seedBytes, h.b.rho, matSeed]
   rw [seed, seed] at post
-  have fr : Frame (pairWritesM P L s₀ (2 * i) N₀) s.mem t.mem := by
-    have f := post.frame; rw [h.b.kb.sp] at f; exact f
+  obtain fr : Frame (pairWritesM P L s₀ (2 * i) N₀) s.mem t.mem := by
+    obtain f := post.frame; rw [h.b.kb.sp] at f; exact f
   refine ⟨⟨BInvW.pairedP hp hk he hN h.b post, h.fr.trans (fr.sub (pairM_sub he hN)), fun N hN' => ?_⟩, ?_, post.keep.get .x30⟩
   · by_cases hlt : N < N₀
     · refine (h.prf N hlt).frame fr (pairP_far hp hk he (o := TP P + 168 * N) (l := 128) (by lom) (by constructor <;> lom) (by lom)
         (.inl (by omega_arith)) hN)
     · have hk' : N - N₀ < min 3 m := by omega_arith
-      have pr := post.prf (N - N₀) hk'
+      obtain pr := post.prf (N - N₀) hk'
       rw [show N₀ + (N - N₀) = N by omega_arith, seed_mA hp hk h.fr] at pr
       show Rate128 t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) _
-      have e : sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N) =
+      obtain e : sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N) =
           bufAt (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) (N - N₀) := by
         simp only [bufAt, Impl.MlKem.AArch64.Kem16P.bufOff, sA, ptr_add]
         congr 2; omega_arith
@@ -271,7 +271,7 @@ theorem paired_stepP_call {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L 
     WP isa (Impl.MlKem.AArch64.Kem16P.pairPCall sha3 SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
       PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t := by
   obtain ⟨tr, t, he, hi, ht, h30⟩ := paired_stepP_link (sha3 := sha3) hp hk he hN hm h.callEntry tb.callEntry
-  have hr : isa.ret s.callEntry t = some t := by
+  obtain hr : isa.ret s.callEntry t = some t := by
     simp only [isa, ret, h30, ite_true]
   exact ⟨_, t, Exec.call (call_callEntry s) he hr, hi, ht⟩
 
@@ -378,21 +378,21 @@ theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s�
     WP isa (Impl.MlKem.AArch64.Kem16P.lastP sha3 P N₀) s fun t =>
       PInvW true P L s₀ mA ρ (P.k * P.k - 1 + 1) (N₀ + 3) t ∧ MT3 P L s₀ t := by
   have hw := hp.wf
-  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ < 65536 := by
+  obtain hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
   have hk1 : 0 < P.k := hf.1
-  have hn : 0 < P.k * P.k := Nat.mul_pos hk1 hk1
-  have he : P.k * P.k - 1 < P.k * P.k := by omega_arith
-  have hoff : AH + 1024 * (P.k * P.k - 1) < 65536 := by simp only [KEM.AH]; omega_using [hkk]
-  have bR := bufR_eq (L := L) (P := P) s₀ N₀
-  have lay : LayB (sA L s₀ SS) (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) s :=
+  obtain hn : 0 < P.k * P.k := Nat.mul_pos hk1 hk1
+  obtain he : P.k * P.k - 1 < P.k * P.k := by omega_arith
+  obtain hoff : AH + 1024 * (P.k * P.k - 1) < 65536 := by simp only [KEM.AH]; omega_using [hkk]
+  obtain bR := bufR_eq (L := L) (P := P) s₀ N₀
+  obtain lay : LayB (sA L s₀ SS) (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) s :=
     ⟨cov_s hp h.b.kb (o := SS) (l := 2048) (by lom), cov_sr hp h.b.kb (o := RB) (l := 32) (by lom),
       sdisj hp (by lom) (by lom) (by lom), by rw [bR]; exact cov_s hp h.b.kb (by lom),
       by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom),
       by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom)⟩
-  have ap : BufApart (sA L s₀ SS) (sA L s₀ SB) (aP L s₀ (P.k * P.k - 1)) (s.syms "VG_MLKEM_REJ_SHUFFLE")
+  obtain ap : BufApart (sA L s₀ SS) (sA L s₀ SB) (aP L s₀ (P.k * P.k - 1)) (s.syms "VG_MLKEM_REJ_SHUFFLE")
       (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) :=
     ⟨by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom), by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom),
       by rw [bR]; exact sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024) (by lom) (by lom) (by lom),
@@ -407,7 +407,7 @@ theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s�
   · rw [ptr_add]
     exact in_R (cov_sr hp h.b.kb (o := SB) (l := 32) (by lom)) (k := 8 * j) (by omega_arith) (by omega_arith)
   · have post := ht.outcome
-    have seed : Paired.seedBytes s.mem (sA L s₀ SB) (P.k * P.k - 1) P.k =
+    obtain seed : Paired.seedBytes s.mem (sA L s₀ SB) (P.k * P.k - 1) P.k =
         matSeed ρ ((P.k * P.k - 1) / P.k) ((P.k * P.k - 1) % P.k) := by
       simp only [Paired.seedBytes, h.b.rho, matSeed]
     rw [seed] at post
@@ -425,7 +425,7 @@ theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s�
       · have pr := post.prf (N - N₀) (by omega_arith)
         rw [show N₀ + (N - N₀) = N by omega_arith, seed_mA hp hk h.fr] at pr
         show Rate128 t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N)) _
-        have e : sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N) =
+        obtain e : sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N) =
             bufAt (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) (N - N₀) := by
           simp only [bufAt, Impl.MlKem.AArch64.Kem16P.bufOff, sA, ptr_add]
           congr 2; omega_arith
@@ -485,9 +485,9 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
       MT3 P L s₀ t := by
   have hw := hp.wf
   have hk' : 0 < P.k := hw.facts.1
-  have hn : 0 < P.k * P.k := Nat.mul_pos hk' hk'
+  obtain hn : 0 < P.k * P.k := Nat.mul_pos hk' hk'
   have hP := ho.pairs
-  have h9 := placed_le (P := P) (hp := Impl.MlKem.AArch64.Hybrid.hashPairs M.S) hw
+  obtain h9 := placed_le (P := P) (hp := Impl.MlKem.AArch64.Hybrid.hashPairs M.S) hw
   generalize hH : Impl.MlKem.AArch64.Hybrid.hashPairs M.S = H at hP h9 hb ⊢
   have hpairs : Impl.MlKem.AArch64.Kem16P.pairs P = P.k * P.k / 2 := rfl
   unfold Impl.MlKem.AArch64.Kem16P.matrixP
@@ -517,7 +517,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
     simp only [Function.comp]
     by_cases hc : Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) = 0
     · rw [ite_eq_left hc]
-      have hc' : Impl.MlKem.AArch64.Kem16P.placed P H ≤ 3 * j := by
+      obtain hc' : Impl.MlKem.AArch64.Kem16P.placed P H ≤ 3 * j := by
         simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
       refine WP.mono (paired_stepQ (sha3 := sha3) hp he (by omega_arith) ht.1 ht.2) fun v hv => ?_
       rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega_arith,
@@ -525,7 +525,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
           min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega_arith]
       exact hv
     · rw [ite_eq_right hc]
-      have hc' : 3 * j < Impl.MlKem.AArch64.Kem16P.placed P H := by
+      obtain hc' : 3 * j < Impl.MlKem.AArch64.Kem16P.placed P H := by
         simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
       have h0 := ht.1
       rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega_arith] at h0
@@ -540,9 +540,9 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
   rw [show Impl.MlKem.AArch64.Kem16P.pairs P - H + H = P.k * P.k / 2 by omega_arith] at ht
   by_cases hodd : Impl.MlKem.AArch64.Kem16P.single P = true
   · rw [ite_eq_left hodd]
-    have hodd' : P.k * P.k % 2 = 1 := by
+    obtain hodd' : P.k * P.k % 2 = 1 := by
       simpa [Impl.MlKem.AArch64.Kem16P.single] using hodd
-    have idx : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega_arith
+    obtain idx : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega_arith
     rw [idx] at ht
     apply WPs.single
     by_cases hl : Impl.MlKem.AArch64.Kem16P.placed P H ≥ 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) + 3
@@ -559,9 +559,9 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
       rw [Nat.sub_add_cancel hn] at hv
       simpa only [finalCount, hodd, hl, and_false, ite_false, Bool.false_eq_true] using hv.1
   · rw [ite_eq_right hodd]
-    have hev : P.k * P.k % 2 = 0 := by
+    obtain hev : P.k * P.k % 2 = 0 := by
       simp only [Impl.MlKem.AArch64.Kem16P.single, decide_eq_true_eq] at hodd; omega_arith
-    have idx : 2 * (P.k * P.k / 2) = P.k * P.k := by omega_arith
+    obtain idx : 2 * (P.k * P.k / 2) = P.k * P.k := by omega_arith
     rw [idx] at ht
     refine ⟨u.mem, gu, ?_, ht.2⟩
     simpa only [finalCount, hodd, Bool.false_eq_true, false_and, ite_false] using ht.1

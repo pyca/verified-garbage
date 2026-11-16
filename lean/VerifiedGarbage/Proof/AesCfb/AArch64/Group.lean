@@ -54,8 +54,8 @@ theorem inAt_ok {j i : Nat} (hi : i = j + 1) (hj : j < 3) {t : State} (x22 : t.g
     ∃ t', runBlock isa (inAt j) t = some t' ∧ (∀ r, r ≠ .x9 → t'.gpr r = t.gpr r) ∧ t'.sp = t.sp ∧
       t'.mem = copyMem t.mem (blk s₀ (k + i)) (sl s₀ j) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   subst hi
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact copy_ok t (dst := .x22) (src := .x24) (d := 16 * (j + 1)) (e := gOff + 16 * j)
     (by rw [x22, UPre.blk_add]) (by rw [x22, UPre.blk_add8]) (by rw [x24]) (by rw [x24, sl8])
     (by rw [hR]; exact in_rw (by simp) (cSl s₀ hj)) (by rw [hR]; exact in_rw (by simp) (cSl8 s₀ hj))
@@ -69,8 +69,8 @@ theorem chainIn_ok {t : State} (x21 : t.gpr .x21 = Iv s₀) (x22 : t.gpr .x22 = 
     (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa (copy .x22 0 .x21 0) t = some t' ∧ (∀ r, r ≠ .x9 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = copyMem t.mem (blk s₀ (k + 0)) (Iv s₀) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact copy_ok t (dst := .x22) (src := .x21) (d := 0) (e := 0) (P := blk s₀ (k + 0)) (Q := Iv s₀)
     ((congrArg (· + BitVec.ofNat 64 0) x22).trans (UPre.blk_add (j := 0)))
     ((congrArg (· + BitVec.ofNat 64 (0 + 8)) x22).trans (UPre.blk_add8 (j := 0)))
@@ -85,8 +85,8 @@ theorem cfbFix_ok {j : Nat} (hj : j < 3) {t : State} (x22 : t.gpr .x22 = blk s�
     (x24 : t.gpr .x24 = S s₀) (rd : t.rd = s₀.rd) (wr : t.wr = s₀.wr) :
     ∃ t', runBlock isa (fixAt j) t = some t' ∧ (∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = xorMem t.mem (blk s₀ (k + j)) (sl s₀ j) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact xorAt_ok t (dst := .x22) (src := .x24) (d := 16 * j) (e := gOff + 16 * j)
     (by rw [x22, UPre.blk_add]) (by rw [x22, UPre.blk_add8]) (by rw [x24]) (by rw [x24, sl8])
     (by rw [hR]; exact in_rw (by simp) (hp.cBlk0 (k := k + j) (by omega_using [hk, hj])))
@@ -104,8 +104,8 @@ theorem fixLast_ok {t : State} (x22 : t.gpr .x22 = blk s₀ k)
     ∃ t', runBlock isa (xorAt .x22 48 .x24 cOff) t = some t' ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = t.gpr r) ∧
       t'.sp = t.sp ∧ t'.mem = xorMem t.mem (blk s₀ (k + 3)) (Sv s₀) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
-  have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
+  obtain hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd, wr, hp.rd, hp.wr]; rfl
+  obtain hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr, hp.wr]
   exact xorAt_ok t (dst := .x22) (src := .x24) (d := 48) (e := cOff)
     (by rw [x22]; exact UPre.blk_add (j := 3)) (by rw [x22]; exact UPre.blk_add8 (j := 3))
     (by rw [x24]; rfl) (by rw [x24]; exact sv8 _)
@@ -141,11 +141,11 @@ theorem cfbA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
     WP isa (.block (decSave ++ decIn ++ callArgs4)) s (CfbA4 s₀ k s) := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (decSave_wp hp hk h.x22 h.x24 h.rd h.wr) fun t₄ sv => ?_
-  have x21₄ : t₄.gpr .x21 = Iv s₀ := by rw [sv.g _ (by decide), h.x21]
-  have x22₄ : t₄.gpr .x22 = blk s₀ k := by rw [sv.g _ (by decide), h.x22]
-  have x24₄ : t₄.gpr .x24 = S s₀ := by rw [sv.g _ (by decide), h.x24]
-  have rd₄ : t₄.rd = s₀.rd := by rw [sv.rd, h.rd]
-  have wr₄ : t₄.wr = s₀.wr := by rw [sv.wr, h.wr]
+  obtain x21₄ : t₄.gpr .x21 = Iv s₀ := by rw [sv.g _ (by decide), h.x21]
+  obtain x22₄ : t₄.gpr .x22 = blk s₀ k := by rw [sv.g _ (by decide), h.x22]
+  obtain x24₄ : t₄.gpr .x24 = S s₀ := by rw [sv.g _ (by decide), h.x24]
+  obtain rd₄ : t₄.rd = s₀.rd := by rw [sv.rd, h.rd]
+  obtain wr₄ : t₄.wr = s₀.wr := by rw [sv.wr, h.wr]
   obtain ⟨t₅, run₅, g₅, sp₅, m₅, rd₅, wr₅⟩ := inAt_ok hp hk (j := 0) (i := 1) rfl (by decide) x22₄ x24₄ rd₄ wr₄
   obtain ⟨t₆, run₆, g₆, sp₆, m₆, rd₆, wr₆⟩ := inAt_ok hp hk (j := 1) (i := 2) rfl (by decide)
     (by rw [g₅ _ (by decide), x22₄]) (by rw [g₅ _ (by decide), x24₄]) (by rw [rd₅, rd₄]) (by rw [wr₅, wr₄])
@@ -159,15 +159,15 @@ theorem cfbA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
   obtain ⟨t₉, run₉, x0₉, x1₉, x2₉, x3₉, x4₉, cs₉, sp₉, mem₉, rd₉, wr₉⟩ := callArgs4_ok t₈
   have g (r : Reg) (hr : r ≠ .x9) : t₈.gpr r = s.gpr r := by
     rw [g₈ r hr, g₇ r hr, g₆ r hr, g₅ r hr, sv.g r hr]
-  have rd₈' : t₈.rd = s.rd := by rw [rd₈, rd₇, rd₆, rd₅, sv.rd]
-  have wr₈' : t₈.wr = s.wr := by rw [wr₈, wr₇, wr₆, wr₅, sv.wr]
+  obtain rd₈' : t₈.rd = s.rd := by rw [rd₈, rd₇, rd₆, rd₅, sv.rd]
+  obtain wr₈' : t₈.wr = s.wr := by rw [wr₈, wr₇, wr₆, wr₅, sv.wr]
   show WP isa (.block (inAt 0 ++ inAt 1 ++ inAt 2 ++ copy .x22 0 .x21 0 ++ callArgs4)) t₄ _
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.of_runBlock ⟨t₅, run₅, WP.of_runBlock ⟨t₆, run₆, WP.of_runBlock ⟨t₇, run₇,
     WP.of_runBlock ⟨t₈, run₈, WP.of_runBlock ⟨t₉, run₉, ?_⟩⟩⟩⟩⟩
   have keep (r : Reg) (hr : r ∈ preserved) : t₉.gpr r = s.gpr r := by
     rw [cs₉ r hr, g r (preserved_ne hr).1]
-  have ivS : bytesAt t₄.mem (Iv s₀) 16 = bytesAt s.mem (Iv s₀) 16 :=
+  obtain ivS : bytesAt t₄.mem (Iv s₀) 16 = bytesAt s.mem (Iv s₀) 16 :=
     Proof.Cmac.bytesAt_frame sv.frame (all_cons hp.dIS' (all_cons hp.dIG all_nil)) (by decide)
   refine ⟨hp.callPre4 hk (by rw [x0₉, g _ (by decide), h.x19]) (by rw [x1₉, g _ (by decide), h.x20])
     (by rw [x2₉, g _ (by decide), h.x22]) x3₉ (by rw [x4₉, g _ (by decide), h.x24])
@@ -198,16 +198,16 @@ theorem cfbA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
 
 theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) := by
   intro s₀ hp k hk s h
-  have len : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
+  obtain len : (blks s₀).length = N s₀ := by simp [Spec.Cbc.blocksAt]
   refine WP.seq (WP.mono (cfbA4_wp hp hk h) fun t₉ a => ?_)
   refine WP.seq (WP.mono (blk_call4 v.encOk v.encNoFrames a.pre) fun t₁₀ c => ?_)
   have g₁₀ (r : Reg) (hr : r ∈ preserved) (h30 : r ≠ .x30) : t₁₀.gpr r = s.gpr r := by
     rw [c.saved r hr h30, a.saved r hr]
-  have rd₁₀ : t₁₀.rd = s₀.rd := by rw [c.rd, a.rd, h.rd]
-  have wr₁₀ : t₁₀.wr = s₀.wr := by rw [c.wr, a.wr, h.wr]
-  have x21₁₀ : t₁₀.gpr .x21 = Iv s₀ := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x21]
-  have x22₁₀ : t₁₀.gpr .x22 = blk s₀ k := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x22]
-  have x24₁₀ : t₁₀.gpr .x24 = S s₀ := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x24]
+  obtain rd₁₀ : t₁₀.rd = s₀.rd := by rw [c.rd, a.rd, h.rd]
+  obtain wr₁₀ : t₁₀.wr = s₀.wr := by rw [c.wr, a.wr, h.wr]
+  obtain x21₁₀ : t₁₀.gpr .x21 = Iv s₀ := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x21]
+  obtain x22₁₀ : t₁₀.gpr .x22 = blk s₀ k := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x22]
+  obtain x24₁₀ : t₁₀.gpr .x24 = S s₀ := by rw [g₁₀ _ (by simp [preserved]) (by decide), h.x24]
   obtain ⟨t₁₁, run₁₁, g₁₁, sp₁₁, m₁₁, rd₁₁, wr₁₁⟩ := cfbFix_ok hp hk (j := 0) (by decide) x22₁₀ x24₁₀ rd₁₀ wr₁₀
   obtain ⟨t₁₂, run₁₂, g₁₂, sp₁₂, m₁₂, rd₁₂, wr₁₂⟩ := cfbFix_ok hp hk (j := 1) (by decide)
     (by rw [g₁₁ _ (by decide) (by decide), x22₁₀]) (by rw [g₁₁ _ (by decide) (by decide), x24₁₀])
@@ -239,10 +239,10 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) 
     rw [keep₁₆ r h22 h23 (preserved_ne hr).1, g₁₅ r (preserved_ne hr).1,
       g₁₄' r (preserved_ne hr).1 (preserved_ne hr).2, g₁₀ r hr h30]
   -- Memory.
-  have fA : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₉.mem :=
+  obtain fA : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₉.mem :=
     a.frame.sub (all_cons ⟨_, by simp, fun _ h => h⟩ (all_cons ⟨⟨S s₀, 2064⟩, by simp, fun _ h => h⟩
       (all_cons ⟨gR s₀, by simp, fun _ h => h⟩ all_nil)))
-  have fAll : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₁₆.mem := by
+  obtain fAll : Frame [⟨blk s₀ k, 64⟩, ivR s₀, ⟨S s₀, 2064⟩, gR s₀] s.mem t₁₆.mem := by
     rw [m₁₆, m₁₅, m₁₄, m₁₃, m₁₂, m₁₁]
     refine fA.trans ((c.frame.sub ?_).trans (((xorMem_frameB _ (by decide) _).sub ?_).trans
       (((xorMem_frameB _ (by decide) _).sub ?_).trans (((xorMem_frameB _ (by decide) _).sub ?_).trans
@@ -252,12 +252,12 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) 
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨⟨S s₀, 2064⟩, by simp, Region.sub_prefix (by decide)⟩
     all_goals subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  have big₉ : Frame (Big s₀) s₀.mem t₉.mem :=
+  obtain big₉ : Frame (Big s₀) s₀.mem t₉.mem :=
     (UPre.big_of h.frame).trans (UPre.bigStep (stepFrame4 hk fA))
   have hb (j : Nat) (hj : j < 4) :
       bytesAt s.mem (blk s₀ (k + j)) 16 = (blks s₀)[k + j]'(by rw [len]; omega_using [hk, hj]) :=
     h.blockAt (by omega_using []) (by omega_using [hk, hj])
-  have chain : bytesAt s.mem (Iv s₀) 16 = Spec.Cbc.next (iv0 s₀) ((blks s₀).take k) := by
+  obtain chain : bytesAt s.mem (Iv s₀) 16 = Spec.Cbc.next (iv0 s₀) ((blks s₀).take k) := by
     rw [h.iv]; simp only [chainK, cfbMode_chain, cts, Bool.false_eq_true, ite_false]
   -- The enciphered blocks after the call, and the slots it left.
   have e (j : Nat) (hj : j < 4) : bytesAt t₁₀.mem (blk s₀ (k + j)) 16 =
@@ -269,43 +269,43 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) 
       bytesAt t₁₀.mem (sl s₀ j) 16 = (blks s₀)[k + j]'(by rw [len]; omega_using [hk, hj]) := by
     rw [Proof.Cmac.bytesAt_frame c.frame (all_cons (hp.dT64 hk hj) (all_cons (hp.dTS hj) all_nil)) (by decide),
       a.slot j hj, hb j (by omega_using [hj])]
-  have svL : bytesAt t₁₀.mem (Sv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
+  obtain svL : bytesAt t₁₀.mem (Sv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [Proof.Cmac.bytesAt_frame c.frame (all_cons (hp.dV64 hk) (all_cons hp.sv_scr all_nil)) (by decide),
       a.last, hb 3 (by decide)]
   -- The blocks and the chaining value after the group.
-  have o0 : bytesAt t₁₆.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))
+  obtain o0 : bytesAt t₁₆.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) (Spec.Cbc.next (iv0 s₀) ((blks s₀).take k))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_other, m₁₁,
       xorMem_bytes, e 0 (by decide), a.in0, chain, sv 0 (by decide)] <;> cbc_gd hp hk
-  have o1 : bytesAt t₁₆.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))
+  obtain o1 : bytesAt t₁₆.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_bytes, m₁₁,
       xorMem_other, xorMem_other, e 1 (by decide), a.in1, hb 0 (by decide), sv 1 (by decide)] <;> cbc_gd hp hk
-  have o2 : bytesAt t₁₆.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))
+  obtain o2 : bytesAt t₁₆.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_bytes, m₁₂, xorMem_other, xorMem_other,
       m₁₁, xorMem_other, xorMem_other, e 2 (by decide), a.in2, hb 1 (by decide), sv 2 (by decide)] <;> cbc_gd hp hk
-  have o3 : bytesAt t₁₆.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor ((blks s₀)[k + 3]'(by rw [len]; omega_using [hk]))
+  obtain o3 : bytesAt t₁₆.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor ((blks s₀)[k + 3]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_bytes, m₁₃, xorMem_other, xorMem_other, m₁₂, xorMem_other,
       xorMem_other, m₁₁, xorMem_other, xorMem_other, e 3 (by decide), a.in3, hb 2 (by decide), svL] <;> cbc_gd hp hk
-  have ivF : bytesAt t₁₆.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
+  obtain ivF : bytesAt t₁₆.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [m₁₆, m₁₅, copyMem_bytes, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_other, m₁₁, xorMem_other,
       svL] <;> cbc_gd hp hk
   -- The mode.
-  have take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
+  obtain take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] := by
-    have t₀ : (blks s₀).take (k + 1) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] :=
+    obtain t₀ : (blks s₀).take (k + 1) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₁ : (blks s₀).take (k + 2) = (blks s₀).take (k + 1) ++ [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] :=
+    obtain t₁ : (blks s₀).take (k + 2) = (blks s₀).take (k + 1) ++ [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₂ : (blks s₀).take (k + 3) = (blks s₀).take (k + 2) ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] :=
+    obtain t₂ : (blks s₀).take (k + 3) = (blks s₀).take (k + 2) ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
-    have t₃ : (blks s₀).take (k + 4) = (blks s₀).take (k + 3) ++ [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] :=
+    obtain t₃ : (blks s₀).take (k + 4) = (blks s₀).take (k + 3) ++ [(blks s₀)[k + 3]'(by rw [len]; omega_using [hk])] :=
       take_succ_blks s₀ (by omega_using [hk])
     rw [t₃, t₂, t₁, t₀]
-  have hl : (outK (cfbMode false) s₀ k).length = k := by
+  obtain hl : (outK (cfbMode false) s₀ k).length = k := by
     rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   obtain ⟨x19', x20', x21', x24', other'⟩ := h.next g
   refine ⟨⟨x19', x20', x21', x22₁₆, x23₁₆, x24', other', ?_, ?_, ?_, ?_, ?_, ?_⟩, few₁₆⟩

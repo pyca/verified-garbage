@@ -61,10 +61,10 @@ def TabRows (T : Addr) (N : Nat) (s : State) : Prop :=
 theorem tab_low {m : Mem} {T : Addr} {k : Nat} (hk : k < 1024)
     (h : m.readW (T + BitVec.ofNat 64 (8 * k)) 64 = BitVec.ofNat 64 (TrialTable32.entry k)) :
     (m.readW (T + BitVec.ofNat 64 (8 * k)) 32).toNat = tabEntry k := by
-  have e := word_eq_w32 m T (8 * k)
-  have hb := VG.Proof.RsaKeyGen.TrialTable32.entry_bound hk
-  have hl := VG.Proof.RsaKeyGen.TrialTable32.entry_low hk
-  have hx : w32 m T (8 * k) < 2 ^ 32 := (m.readW (VG.Proof.Mont.off T (8 * k)) 32).isLt
+  obtain e := word_eq_w32 m T (8 * k)
+  obtain hb := VG.Proof.RsaKeyGen.TrialTable32.entry_bound hk
+  obtain hl := VG.Proof.RsaKeyGen.TrialTable32.entry_low hk
+  obtain hx : w32 m T (8 * k) < 2 ^ 32 := (m.readW (VG.Proof.Mont.off T (8 * k)) 32).isLt
   simp only [VG.Proof.Mont.word, VG.Proof.Mont.off] at e hx
   rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hb] at e
   show w32 m T (8 * k) = tabEntry k
@@ -80,7 +80,7 @@ theorem prodLoad_ok {u : State} {T : Addr} {i N : Nat} (h23 : u.gpr .r23 = T + B
     (hi : 4 * i + 4 ≤ N) (hN : N ≤ 1024) (htab : TabRows T N u) :
     WP isa (.block prodLoad) u fun t => (t.gpr .r0 = BitVec.ofNat 64 (wordProd i) ∧ t.mem = u.mem) ∧
       Keep [.r0, .r9] u t := by
-  have row : ∀ j < 4, (u.mem.readW (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 32).toNat = tabEntry (4 * i + j) ∧
+  obtain row : ∀ j < 4, (u.mem.readW (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 32).toNat = tabEntry (4 * i + j) ∧
       InRegions (u.rd ++ u.wr) (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 4 := fun j hj => by
     rw [h23, tab_addr]
     obtain ⟨hv, hr⟩ := htab (4 * i + j) (by omega_using [hi, hj])
@@ -93,10 +93,10 @@ theorem prodLoad_ok {u : State} {T : Addr} {i N : Nat} (h23 : u.gpr .r23 = T + B
   obtain ⟨v3, r3⟩ := row 3 (by decide)
   simp only [Nat.mul_zero, BitVec.add_zero, Nat.add_zero] at v0 r0
   simp only [Nat.reduceMul] at v1 r1 v2 r2 v3 r3
-  have b0 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i) (by omega_using [hi, hN])).2.2
-  have b1 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 1) (by omega_using [hi, hN])).2.2
-  have b2 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 2) (by omega_using [hi, hN])).2.2
-  have b3 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 3) (by omega_using [hi, hN])).2.2
+  obtain b0 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i) (by omega_using [hi, hN])).2.2
+  obtain b1 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 1) (by omega_using [hi, hN])).2.2
+  obtain b2 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 2) (by omega_using [hi, hN])).2.2
+  obtain b3 := (VG.Proof.RsaKeyGen.tabEntry_facts (i := 4 * i + 3) (by omega_using [hi, hN])).2.2
   refine WP.keep _ ?_ (by decide)
   simp only [prodLoad]
   prun [r0, r1, r2, r3, BitVec.add_zero]
@@ -104,11 +104,11 @@ theorem prodLoad_ok {u : State} {T : Addr} {i N : Nat} (h23 : u.gpr .r23 = T + B
   rw [BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
     BitVec.toNat_setWidth, BitVec.toNat_setWidth, v0, v1, v2, v3, BitVec.toNat_ofNat]
   unfold wordProd
-  have h01 : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 26 :=
+  obtain h01 : tabEntry (4 * i) * tabEntry (4 * i + 1) < 2 ^ 26 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le b0 (Nat.le_of_lt b1) (by omega_using [])) (by decide)
-  have h012 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 39 :=
+  obtain h012 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) < 2 ^ 39 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h01 (Nat.le_of_lt b2) (by omega_using [])) (by decide)
-  have h0123 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3) < 2 ^ 52 :=
+  obtain h0123 : tabEntry (4 * i) * tabEntry (4 * i + 1) * tabEntry (4 * i + 2) * tabEntry (4 * i + 3) < 2 ^ 52 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le h012 (Nat.le_of_lt b3) (by omega_using [])) (by decide)
   rw [Nat.mod_eq_of_lt (by omega_using [v0] : tabEntry (4 * i) < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [v1] : tabEntry (4 * i + 1) < 2 ^ 64),
     Nat.mod_eq_of_lt (by omega_using [v2] : tabEntry (4 * i + 2) < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [v3] : tabEntry (4 * i + 3) < 2 ^ 64),
@@ -129,14 +129,14 @@ theorem prodInv_ok {u : State} {M : Nat} (h0 : u.gpr .r0 = BitVec.ofNat 64 M) (h
     WP isa (.block prodInv) u fun t =>
       (t.gpr .r8 = BitVec.ofNat 64 M ∧ t.gpr .r0 = BitVec.ofNat 64 M ∧ (M * (t.gpr .r12).toNat + 1) % 2 ^ 64 = 0 ∧
         t.mem = u.mem) ∧ Keep [.r3, .r4, .r8, .r12] u t := by
-  have hMv : (u.gpr .r0).toNat = M := by rw [h0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hM]
+  obtain hMv : (u.gpr .r0).toNat = M := by rw [h0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hM]
   rw [prodInv_split, WP.block_append_iff]
   refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = u.gpr .r0 ∧ t.gpr .r0 = u.gpr .r0 ∧ t.mem = u.mem)
     (by prun; exact BitVec.or_self) (by decide)) fun t₀ ⟨⟨h12, h0', hm₀⟩, k₀⟩ => ?_
-  have e₀ : (((t₀.gpr .r0).toNat : Int) * (t₀.gpr .r12).toNat - 1) % (2 ^ 3 : Int) = 0 := by
+  obtain e₀ : (((t₀.gpr .r0).toNat : Int) * (t₀.gpr .r12).toNat - 1) % (2 ^ 3 : Int) = 0 := by
     rw [h0', h12, hMv]
-    have h1 := VG.Proof.Bignum.odd_sq _ hodd
-    have h2 : ((M : Int) * M) % 8 = 1 := by
+    obtain h1 := VG.Proof.Bignum.odd_sq _ hodd
+    obtain h2 : ((M : Int) * M) % 8 = 1 := by
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show ((M : Int) * M - 1) % 8 = 0
@@ -152,10 +152,10 @@ theorem prodInv_ok {u : State} {M : Nat} (h0 : u.gpr .r0 = BitVec.ofNat 64 M) (h
   rw [WP.block_append_iff]
   refine WP.mono (Pub.nstep_ok t₄ (j := 32) (by decide) (VG.Proof.Bignum.emod_pow_weaken (by decide) e₄))
     fun t₅ ⟨⟨e₅, hb₅, hm₅⟩, k₅⟩ => ?_
-  have hb : t₅.gpr .r0 = u.gpr .r0 := hb₅.trans (hb₄.trans (hb₃.trans (hb₂.trans (hb₁.trans h0'))))
-  have kk := ((((k₀.trans k₁).trans k₂).trans k₃).trans k₄).trans k₅
+  obtain hb : t₅.gpr .r0 = u.gpr .r0 := hb₅.trans (hb₄.trans (hb₃.trans (hb₂.trans (hb₁.trans h0'))))
+  obtain kk := ((((k₀.trans k₁).trans k₂).trans k₃).trans k₄).trans k₅
   rw [hb, hMv] at e₅
-  have hm : t₅.mem = u.mem := by rw [hm₅, hm₄, hm₃, hm₂, hm₁, hm₀]
+  obtain hm : t₅.mem = u.mem := by rw [hm₅, hm₄, hm₃, hm₂, hm₁, hm₀]
   refine WP.mono (WP.keep [.r3, .r8, .r12] (Q := fun t => t.gpr .r12 = 0 - t₅.gpr .r12 ∧
       t.gpr .r8 = u.gpr .r0 ∧ t.gpr .r0 = u.gpr .r0 ∧ t.mem = u.mem) (by prun [hb, hm]; exact ⟨rfl, BitVec.or_self⟩) (by decide))
     fun t ⟨⟨t12, t8, t0, tm⟩, k⟩ => ⟨⟨by rw [t8, h0], by rw [t0, h0], ?_, tm⟩, (kk.trans k).mono (by decide)⟩
@@ -188,22 +188,22 @@ theorem redc_bv {acc x M : Nat} {mv : BitVec 64} (hacc : acc < 2 ^ 64) (hx : x <
       BitVec.ofNat 64 (redcVal acc x mv.toNat M) := by
   have e64 : (18446744073709551616 : Nat) = 2 ^ 64 := rfl
   have hmv := mv.isLt
-  have ea : (BitVec.ofNat 64 acc).toNat = acc := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hacc]
-  have eM : (BitVec.ofNat 64 M).toNat = M := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hM])]
+  obtain ea : (BitVec.ofNat 64 acc).toNat = acc := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hacc]
+  obtain eM : (BitVec.ofNat 64 M).toNat = M := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hM])]
   rw [ea, eM]
   generalize hX : acc + x = X
-  have hX2 : X < 2 * 18446744073709551616 := by omega_using [hacc, hx, hX]
-  have eq1 : (BitVec.ofNat 64 X * mv).toNat = X % 2 ^ 64 * mv.toNat % 2 ^ 64 := by
+  obtain hX2 : X < 2 * 18446744073709551616 := by omega_using [hacc, hx, hX]
+  obtain eq1 : (BitVec.ofNat 64 X * mv).toNat = X % 2 ^ 64 * mv.toNat % 2 ^ 64 := by
     rw [BitVec.toNat_mul, BitVec.toNat_ofNat]
-  have eq2 : (BitVec.ofNat 64 X * mv * BitVec.ofNat 64 M).toNat = X % 2 ^ 64 * mv.toNat % 2 ^ 64 * M % 2 ^ 64 := by
+  obtain eq2 : (BitVec.ofNat 64 X * mv * BitVec.ofNat 64 M).toNat = X % 2 ^ 64 * mv.toNat % 2 ^ 64 * M % 2 ^ 64 := by
     rw [BitVec.toNat_mul, eq1, eM]
-  have eq3 : (BitVec.ofNat 64 X).toNat = X % 2 ^ 64 := BitVec.toNat_ofNat _ _
+  obtain eq3 : (BitVec.ofNat 64 X).toNat = X % 2 ^ 64 := BitVec.toNat_ofNat _ _
   rw [eq1, eq2, eq3, show BitVec.toNat (0 : BitVec 64) = 0 from rfl, Nat.zero_add, carry_nat hX2]
   generalize hq : X % 2 ^ 64 * mv.toNat % 2 ^ 64 = q
-  have hq' : q < 2 ^ 64 := hq ▸ Nat.mod_lt _ (by decide)
-  have hqM : q * M < 2 ^ 64 * 2 ^ 52 := Nat.mul_lt_mul'' hq' hM
-  have hlo : X % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
-  have hqm : q * M % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
+  obtain hq' : q < 2 ^ 64 := hq ▸ Nat.mod_lt _ (by decide)
+  obtain hqM : q * M < 2 ^ 64 * 2 ^ 52 := Nat.mul_lt_mul'' hq' hM
+  obtain hlo : X % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
+  obtain hqm : q * M % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
   rw [carry_nat (by omega_using [])]
   unfold redcVal
   rw [hX, hq]
@@ -220,7 +220,7 @@ theorem prodWord_ok {u : State} {B : Addr} {Z d acc M : Nat} {mv : BitVec 64} (h
       (t.gpr .r7 = BitVec.ofNat 64 (redcVal acc (word u.mem B d).toNat mv.toNat M) ∧ t.gpr .r5 = off B (d + 8) ∧
         t.mem = u.mem) ∧ Keep [.r0, .r3, .r4, .r5, .r7, .r9] u t := by
   refine WP.keep _ ?_ (by decide)
-  have hld : InRegions (u.rd ++ u.wr) (off B d) 8 := hs.ld hZ
+  obtain hld : InRegions (u.rd ++ u.wr) (off B d) 8 := hs.ld hZ
   simp only [prodWord]
   prun [h5, h7, h8, h12, h14, hld, BitVec.add_zero, exec_addc, exec_addze, exec_adde, exec_mulhu,
     gpr_writeCarry, ca_writeCarry, mem_writeCarry]
@@ -255,21 +255,21 @@ theorem prodReduce_ok {u : State} {B : Addr} {Z o w M : Nat} {mv : BitVec 64} (h
       by rw [kv.gpr .r8 (by decide), h8], by rw [kv.gpr .r12 (by decide), h12], v14, vm⟩, kv.mono (by decide)⟩ v6)
     fun t ⟨⟨hacc, _, _, _, _, tm⟩, kt⟩ => ⟨⟨hacc, tm⟩, kt⟩
   rw [WP.block_append_iff]
-  have ht : Scr t B Z := hs.congr kt.wr
+  obtain ht : Scr t B Z := hs.congr kt.wr
   refine WP.mono (prodWord_ok ht t5 t7 t8 t12 t14 hacc hM (by omega_using [hZ, hj])) fun t₁ ⟨⟨a7, a5, am⟩, k1⟩ => ?_
   refine WP.mono (subi_ok t₁ .r6 (by decide)) fun t₂ e => ?_
   subst e
-  have hx : (word t.mem B (o + 8 * j)).toNat < 2 ^ 64 := BitVec.isLt _
+  obtain hx : (word t.mem B (o + 8 * j)).toNat < 2 ^ 64 := BitVec.isLt _
   obtain ⟨hlt, hmod⟩ := redc64_math (M := M) (mv := mv.toNat) (acc := acc) (x := (word t.mem B (o + 8 * j)).toNat)
     (by rw [Nat.mul_comm] at hinv ⊢; exact hinv) hacc hx
-  have hk := kt.trans (k1.trans (Keep.write t₁ .r6 (t₁.gpr .r6 - BitVec.ofNat 64 1)))
+  obtain hk := kt.trans (k1.trans (Keep.write t₁ .r6 (t₁.gpr .r6 - BitVec.ofNat 64 1)))
   rw [tm] at a7 hlt hmod
   refine ⟨⟨⟨⟨redcVal acc (word u.mem B (o + 8 * j)).toNat mv.toNat M, ?_, hlt, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩,
     hk.mono (by decide)⟩, ?_⟩
   · simp only [gpr_write, reduceCtorEq, ↓reduceIte]; exact a7
   · have hmod' : redcVal acc (word u.mem B (o + 8 * j)).toNat mv.toNat M * 2 ^ 64 % M =
         (acc + (word u.mem B (o + 8 * j)).toNat) % M := hmod
-    have key := prod_word_math (M := M) (j := j) (V := wv u.mem B o j) hmod' hv
+    obtain key := prod_word_math (M := M) (j := j) (V := wv u.mem B o j) hmod' hv
     rw [show wv u.mem B o (j + 1) = wv u.mem B o j + 2 ^ (64 * j) * (word u.mem B (o + 8 * j)).toNat from rfl]
     exact key
   · simp only [gpr_write, reduceCtorEq, ↓reduceIte]; rw [a5, show o + 8 * j + 8 = o + 8 * (j + 1) by omega_using []]
@@ -298,16 +298,16 @@ theorem prodEntry_ok {u : State} {B T : Addr} {Z i N j w acc c : Nat} {b : Bool}
     WP isa (prodEntry j) u fun t =>
       (t.gpr .r25 = BitVec.ofNat 64 (if (b || decide (c % tabEntry (4 * i + j) = 0)) then 1 else 0) ∧
         t.mem = u.mem) ∧ Keep [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r0, .r25] u t := by
-  have hk : 4 * i + j < 1024 := by omega_using [hi, hN, hj]
+  obtain hk : 4 * i + j < 1024 := by omega_using [hi, hN, hj]
   obtain ⟨hodd, h3, h8162⟩ := VG.Proof.RsaKeyGen.tabEntry_facts hk
-  have hinv := VG.Proof.RsaKeyGen.TrialTable32.inverse_entry hk
-  have hlo := VG.Proof.RsaKeyGen.TrialTable32.entry_low hk
-  have hhi := VG.Proof.RsaKeyGen.TrialTable32.entry_high hk
-  have heb := VG.Proof.RsaKeyGen.TrialTable32.entry_bound hk
-  have hsv := (TrialTable32.inverse (BitVec.ofNat 32 (tabEntry (4 * i + j)))).isLt
-  have hdvd : tabEntry (4 * i + j) ∣ wordProd i := dvd_wordProd hj
+  obtain hinv := VG.Proof.RsaKeyGen.TrialTable32.inverse_entry hk
+  obtain hlo := VG.Proof.RsaKeyGen.TrialTable32.entry_low hk
+  obtain hhi := VG.Proof.RsaKeyGen.TrialTable32.entry_high hk
+  obtain heb := VG.Proof.RsaKeyGen.TrialTable32.entry_bound hk
+  obtain hsv := (TrialTable32.inverse (BitVec.ofNat 32 (tabEntry (4 * i + j)))).isLt
+  obtain hdvd : tabEntry (4 * i + j) ∣ wordProd i := dvd_wordProd hj
   obtain ⟨hT, hTr⟩ := htab (4 * i + j) (by omega_using [hi, hj])
-  have ea : u.gpr .r23 + BitVec.ofNat 64 (8 * j) = T + BitVec.ofNat 64 (8 * (4 * i + j)) := by
+  obtain ea : u.gpr .r23 + BitVec.ofNat 64 (8 * j) = T + BitVec.ofNat 64 (8 * (4 * i + j)) := by
     rw [h23, tab_addr]
   generalize tabEntry (4 * i + j) = s at hodd h3 h8162 hinv hlo hhi hsv hdvd ⊢
   generalize (TrialTable32.inverse (BitVec.ofNat 32 s)).toNat = sv at hinv hhi hsv
@@ -317,8 +317,8 @@ theorem prodEntry_ok {u : State} {B T : Addr} {Z i N j w acc c : Nat} {b : Bool}
       v.gpr .r4 = BitVec.ofNat 64 (2 * 1) ∧ v.mem = u.mem) ?_ (by rfl)) fun v ⟨⟨v8, v9, v3, v5, v4, vm⟩, kv⟩ => ?_)
   · have hv8 : u.mem.readW (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 64 = BitVec.ofNat 64 (TrialTable32.entry (4 * i + j)) := by
       rw [ea]; exact hT
-    have hr8 : InRegions (u.rd ++ u.wr) (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 8 := by rw [ea]; exact hTr
-    have hs8 : BitVec.ofNat 64 (TrialTable32.entry (4 * i + j)) >>> 32 = BitVec.ofNat 64 sv ∧
+    obtain hr8 : InRegions (u.rd ++ u.wr) (u.gpr .r23 + BitVec.ofNat 64 (8 * j)) 8 := by rw [ea]; exact hTr
+    obtain hs8 : BitVec.ofNat 64 (TrialTable32.entry (4 * i + j)) >>> 32 = BitVec.ofNat 64 sv ∧
         BitVec.ofNat 64 (TrialTable32.entry (4 * i + j)) <<< 32 >>> 32 = BitVec.ofNat 64 s := by
       refine ⟨?_, ?_⟩
       · apply BitVec.eq_of_toNat_eq
@@ -333,20 +333,20 @@ theorem prodEntry_ok {u : State} {B T : Addr} {Z i N j w acc c : Nat} {b : Bool}
       simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul, BitVec.add_zero] at hv8 hr8 hs8 <;>
       simp only [hTrialN] <;>
       prun [hv8, hr8, h31, BitVec.add_zero, hs8.1, hs8.2]
-  have hv' : Scr v B Z := hs.congr kv.wr
+  obtain hv' : Scr v B Z := hs.congr kv.wr
   refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.PPC64LE.Trial.digits_ok hv' v5 v3 v4 v8 v9 (by omega_using [h3]) (by omega_using [h8162])
       hinv (by decide) (by decide) hZ)
     fun x ⟨⟨⟨acc2, x3, hacc2, hacv⟩, xm⟩, kx⟩ => ?_)
-  have hv32 : val32 v.mem B (8 * hTrialN) (2 * 1) = acc := by
+  obtain hv32 : val32 v.mem B (8 * hTrialN) (2 * 1) = acc := by
     rw [VG.Proof.Bignum.PPC64LE.Pre.val32_eq_wv, vm]
     show wv u.mem B (8 * hTrialN) 0 + 2 ^ (64 * 0) * (word u.mem B (8 * hTrialN + 8 * 0)).toNat = acc
     simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
     rw [hacc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hacc']
   rw [hv32] at hacv
-  have hc := acc_entry_math (w := w) hdvd hval (by rw [show 64 * 1 = 64 from rfl] at hacv; exact hacv)
-  have key : c % s = 0 ↔ acc2 = 0 ∨ acc2 = s := VG.Proof.RsaKeyGen.trial_div hodd hacc2 hc
-  have x8 : x.gpr .r8 = BitVec.ofNat 64 s := (kx.gpr .r8 (by decide)).trans v8
-  have x25 : x.gpr .r25 = BitVec.ofNat 64 (if b then 1 else 0) :=
+  obtain hc := acc_entry_math (w := w) hdvd hval (by rw [show 64 * 1 = 64 from rfl] at hacv; exact hacv)
+  obtain key : c % s = 0 ↔ acc2 = 0 ∨ acc2 = s := VG.Proof.RsaKeyGen.trial_div hodd hacc2 hc
+  obtain x8 : x.gpr .r8 = BitVec.ofNat 64 s := (kx.gpr .r8 (by decide)).trans v8
+  obtain x25 : x.gpr .r25 = BitVec.ofNat 64 (if b then 1 else 0) :=
     (kx.gpr .r25 (by decide)).trans ((kv.gpr .r25 (by decide)).trans h25)
   refine WP.mono (WP.keep [.r6, .r7, .r25] (Q := fun y =>
       y.gpr .r25 = BitVec.ofNat 64 (if (b || decide (acc2 = 0 ∨ acc2 = s)) then 1 else 0) ∧ y.mem = x.mem) ?_
@@ -397,23 +397,23 @@ theorem prodGroup_ok {v : State} {B T : Addr} {Z o w c i N n : Nat} (hs : Scr v 
         t.gpr .r23 = T + BitVec.ofNat 64 (8 * (4 * (i + 1))) ∧
         t.gpr .r24 = BitVec.ofNat 64 (if groupHit c i then 0 else n - 4) ∧
         Frm B [(8 * hTrialN, 8)] v.mem t.mem) ∧ Keep groupRegs v t := by
-  have hM := wordProd_facts (i := i) (by omega_using [hi, hN])
+  obtain hM := wordProd_facts (i := i) (by omega_using [hi, hN])
   unfold prodGroup
-  have hli : WP isa (.block (prodLoad ++ prodInv)) v fun b =>
+  obtain hli : WP isa (.block (prodLoad ++ prodInv)) v fun b =>
       (b.gpr .r8 = BitVec.ofNat 64 (wordProd i) ∧ (wordProd i * (b.gpr .r12).toNat + 1) % 2 ^ 64 = 0 ∧
         b.mem = v.mem) ∧ Keep [.r0, .r3, .r4, .r8, .r9, .r12] v b :=
     WP.block_append (WP.mono (prodLoad_ok h23 hi hN htab) fun a ⟨⟨a0, am⟩, ka⟩ =>
       WP.mono (prodInv_ok a0 (by omega_using [hM]) hM.1) fun b ⟨⟨b8, _, binv, bm⟩, kb⟩ =>
         ⟨⟨b8, binv, bm.trans am⟩, (ka.trans kb).mono (by decide)⟩)
   refine WP.seq (WP.mono hli fun b ⟨⟨b8, binv, bm⟩, kb⟩ => ?_)
-  have hsb : Scr b B Z := hs.congr kb.wr
+  obtain hsb : Scr b B Z := hs.congr kb.wr
   refine WP.seq (WP.mono (prodReduce_ok hsb ((kb.gpr .r10 (by decide)).trans h10)
       ((kb.gpr .r11 (by decide)).trans h11) b8 rfl binv hM.2 hw hw' hZ)
     fun d ⟨⟨⟨acc, d7, hacc, hval⟩, dm⟩, kd⟩ => ?_)
   rw [bm, hc] at hval
-  have kbd := kb.trans kd
-  have d31 : d.gpr .r31 = B := (kbd.gpr .r31 (by decide)).trans h31
-  have st208 : InRegions d.wr (B + BitVec.ofNat 64 208) 8 := by
+  obtain kbd := kb.trans kd
+  obtain d31 : d.gpr .r31 = B := (kbd.gpr .r31 (by decide)).trans h31
+  obtain st208 : InRegions d.wr (B + BitVec.ofNat 64 208) 8 := by
     rw [kbd.wr]; exact hs.st (d := 208) (by omega_using [hZ'])
   refine WP.seq (WP.mono (WP.keep [.r25] (Q := fun e => e.gpr .r25 = 0 ∧
       e.mem = v.mem.writeW (B + BitVec.ofNat 64 (8 * hTrialN)) (BitVec.ofNat 64 acc)) ?_ (by decide))
@@ -421,37 +421,37 @@ theorem prodGroup_ok {v : State} {B T : Addr} {Z o w c i N n : Nat} (hs : Scr v 
   · simp only [VG.Impl.MillerRabin.PPC64LE.Search.sth, hTrialN]
     prun [d31, st208, d7, dm, bm]
     rfl
-  have hacc' : acc < 2 ^ 64 := by omega_using [hM, hacc]
-  have ke' := kbd.trans ke
-  have fe : Frm B [(8 * hTrialN, 8)] v.mem e.mem := by
+  obtain hacc' : acc < 2 ^ 64 := by omega_using [hM, hacc]
+  obtain ke' := kbd.trans ke
+  obtain fe : Frm B [(8 * hTrialN, 8)] v.mem e.mem := by
     rw [em]; exact VG.Proof.MillerRabin.PPC64LE.Search.frm_writeW (a := 208) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩
       (by decide)
-  have tabE : ∀ {f : State}, f.mem = e.mem → f.rd = e.rd → f.wr = e.wr → TabRows T N f := fun fm frd fwr k hk => by
+  obtain tabE : ∀ {f : State}, f.mem = e.mem → f.rd = e.rd → f.wr = e.wr → TabRows T N f := fun fm frd fwr k hk => by
     obtain ⟨a, b'⟩ := htab k hk
     refine ⟨by rw [fm, hdj _ fe k hk]; exact a, ?_⟩
     rw [frd, fwr, ke.rd, ke.wr, kd.rd, kd.wr, kb.rd, kb.wr]; exact b'
-  have hw208 : ∀ {f : State}, f.mem = e.mem → word f.mem B (8 * hTrialN) = BitVec.ofNat 64 acc := fun fm => by
+  obtain hw208 : ∀ {f : State}, f.mem = e.mem → word f.mem B (8 * hTrialN) = BitVec.ofNat 64 acc := fun fm => by
     rw [fm, em]; exact VG.Proof.MillerRabin.PPC64LE.Search.rw_self _ _ _
-  have hse : Scr e B Z := hs.congr ke'.wr
-  have e23 : e.gpr .r23 = T + BitVec.ofNat 64 (8 * (4 * i)) := (ke'.gpr .r23 (by decide)).trans h23
-  have e31 : e.gpr .r31 = B := (ke'.gpr .r31 (by decide)).trans h31
+  obtain hse : Scr e B Z := hs.congr ke'.wr
+  obtain e23 : e.gpr .r23 = T + BitVec.ofNat 64 (8 * (4 * i)) := (ke'.gpr .r23 (by decide)).trans h23
+  obtain e31 : e.gpr .r31 = B := (ke'.gpr .r31 (by decide)).trans h31
   refine WP.seq (WP.mono (prodEntry_ok (j := 0) (b := false) hse e31 e23 (tabE rfl rfl rfl) hi hN (by decide)
       (hw208 rfl) hacc' hval (by rw [e25]; rfl) (by simp only [hTrialN]; omega_using [hZ'])) fun f₁ ⟨⟨f25, fm⟩, kf₁⟩ => ?_)
   refine WP.seq (WP.mono (prodEntry_ok (j := 1) (hse.congr kf₁.wr) ((kf₁.gpr .r31 (by decide)).trans e31)
       ((kf₁.gpr .r23 (by decide)).trans e23) (tabE fm kf₁.rd kf₁.wr) hi hN (by decide) (hw208 fm) hacc' hval f25
       (by simp only [hTrialN]; omega_using [hZ'])) fun f₂ ⟨⟨f25', fm'⟩, kf₂⟩ => ?_)
-  have k12 := kf₁.trans kf₂
+  obtain k12 := kf₁.trans kf₂
   refine WP.seq (WP.mono (prodEntry_ok (j := 2) (hse.congr k12.wr) ((k12.gpr .r31 (by decide)).trans e31)
       ((k12.gpr .r23 (by decide)).trans e23) (tabE (fm'.trans fm) k12.rd k12.wr) hi hN (by decide)
       (hw208 (fm'.trans fm)) hacc' hval f25' (by simp only [hTrialN]; omega_using [hZ'])) fun f₃ ⟨⟨f25'', fm''⟩, kf₃⟩ => ?_)
-  have k13 := k12.trans kf₃
+  obtain k13 := k12.trans kf₃
   refine WP.seq (WP.mono (prodEntry_ok (j := 3) (hse.congr k13.wr) ((k13.gpr .r31 (by decide)).trans e31)
       ((k13.gpr .r23 (by decide)).trans e23) (tabE (fm''.trans (fm'.trans fm)) k13.rd k13.wr) hi hN (by decide)
       (hw208 (fm''.trans (fm'.trans fm))) hacc' hval f25'' (by simp only [hTrialN]; omega_using [hZ']))
     fun f₄ ⟨⟨f25''', fm'''⟩, kf₄⟩ => ?_)
-  have k14 := k13.trans kf₄
-  have f23 : f₄.gpr .r23 = T + BitVec.ofNat 64 (8 * (4 * i)) := (k14.gpr .r23 (by decide)).trans e23
-  have f24 : f₄.gpr .r24 = BitVec.ofNat 64 n :=
+  obtain k14 := k13.trans kf₄
+  obtain f23 : f₄.gpr .r23 = T + BitVec.ofNat 64 (8 * (4 * i)) := (k14.gpr .r23 (by decide)).trans e23
+  obtain f24 : f₄.gpr .r24 = BitVec.ofNat 64 n :=
     (k14.gpr .r24 (by decide)).trans ((ke'.gpr .r24 (by decide)).trans h24)
   refine WP.mono (WP.keep [.r6, .r22, .r23, .r24] (Q := fun t =>
       t.gpr .r22 = BitVec.ofNat 64 (if groupHit c i then 1 else 0) ∧
@@ -510,7 +510,7 @@ theorem lstep_ok {u : State} {B T : Addr} {Z o w c N m : Nat} (ha : LArgs u B T 
           Frm B [(8 * hTrialN, 8)] u.mem t.mem) ∧ Keep groupRegs u t) ∧
         (lgo c N (N / 4 - m) = true → 0 < m ∧ LInv u B T c N (m - 1) t) := by
   obtain ⟨k, hm, hk, ⟨v23, v24, hpre, vf⟩, kv⟩ := hI
-  have hkm : N / 4 - m = k := by omega_using [hm, hk]
+  obtain hkm : N / 4 - m = k := by omega_using [hm, hk]
   rw [hkm]
   have hnw := ha.scr.nowrap
   have ho := ha.o
@@ -518,22 +518,22 @@ theorem lstep_ok {u : State} {B T : Addr} {Z o w c N m : Nat} (ha : LArgs u B T 
   have hn4 := ha.n4
   have hn2 := ha.n2
   have hn1 := ha.n1
-  have hsv : Scr v B Z := ha.scr.congr kv.wr
-  have hcv : wv v.mem B o w = c := by
+  obtain hsv : Scr v B Z := ha.scr.congr kv.wr
+  obtain hcv : wv v.mem B o w = c := by
     rw [vf.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [hTrialN]; omega_using [ho]) (by omega_using [hnw, hzw])]
     exact ha.c
-  have htv : TabRows T N v := fun j hj => by
+  obtain htv : TabRows T N v := fun j hj => by
     obtain ⟨a, b⟩ := ha.tab j hj
     exact ⟨by rw [ha.dj _ vf j hj]; exact a, by rw [kv.rd, kv.wr]; exact b⟩
-  have hdv : ∀ m', Frm B [(8 * hTrialN, 8)] v.mem m' →
+  obtain hdv : ∀ m', Frm B [(8 * hTrialN, 8)] v.mem m' →
       ∀ j < N, m'.readW (T + BitVec.ofNat 64 (8 * j)) 64 = v.mem.readW (T + BitVec.ofNat 64 (8 * j)) 64 :=
     fun m' hf j hj => by rw [ha.dj _ (vf.trans hf) j hj, ha.dj _ vf j hj]
   refine WP.mono (prodGroup_ok hsv ((kv.gpr .r10 (by decide)).trans ha.r10) ((kv.gpr .r11 (by decide)).trans ha.r11)
     ((kv.gpr .r31 (by decide)).trans ha.r31) hcv ha.w1 ha.w2 ha.z (by omega_using [ho, hzw]) v23 htv (by omega_using [hk]) ha.n2 hdv v24
     (by omega_using [hk])) fun t ⟨⟨t22, t23, t24, tf⟩, kt⟩ => ?_
-  have kut := kv.trans kt
-  have kut' : Keep groupRegs u t := kut.mono (by intro r hr; simp only [List.mem_append] at hr; rcases hr with hr | hr <;> exact hr)
-  have hpre' := trialPrefix_group c k
+  obtain kut := kv.trans kt
+  obtain kut' : Keep groupRegs u t := kut.mono (by intro r hr; simp only [List.mem_append] at hr; rcases hr with hr | hr <;> exact hr)
+  obtain hpre' := trialPrefix_group c k
   rw [hpre, Bool.false_or] at hpre'
   by_cases hit : groupHit c k
   · have hg : lgo c N k = false := by simp [lgo, hit]
@@ -547,7 +547,7 @@ theorem lstep_ok {u : State} {B T : Addr} {Z o w c N m : Nat} (ha : LArgs u B T 
     rw [hit'] at hpre'
     by_cases hl : k + 1 = N / 4
     · have hN : 4 * (k + 1) = N := by omega_using [hn4, hl]
-      have hg : lgo c N k = false := by simp [lgo, hit', hl]
+      obtain hg : lgo c N k = false := by simp [lgo, hit', hl]
       refine ⟨?_, fun _ => ⟨⟨?_, vf.trans tf⟩, kut'⟩, fun h => absurd (hg ▸ h) (by decide)⟩
       · rw [VG.PPC64LE.eval_nonzero_ofNat' _ _ (by omega_using [hn2]) t24, hg]
         simp only [Option.some.injEq, decide_eq_false_iff_not, Decidable.not_not]
@@ -589,8 +589,8 @@ theorem MB.prodA {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} (h : MB p 
   refine WP.cons (exec_adrSym (by decide)) ?_
   prun [h.tab.sym, exec_li hn]
   refine ⟨fun r hr => ?_, rfl⟩
-  have h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
-  have h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
+  obtain h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
+  obtain h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
   simp only [h1, h2, ↓reduceIte]
 
 /-- The table's address and the count for the requested width. -/
@@ -601,16 +601,16 @@ theorem MB.prodC {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} (h : MB p 
       (∀ r, r ∉ [Reg.r3, Reg.r4, Reg.r23, Reg.r24] → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧
       v.sp = u.sp ∧ v.syms = u.syms := by
   have hb2 := h.st.dims.b2
-  have l40 : InRegions (u.rd ++ u.wr) (p.B + BitVec.ofNat 64 40) 8 := h.st.ld (d := 40) (by decide)
+  obtain l40 : InRegions (u.rd ++ u.wr) (p.B + BitVec.ofNat 64 40) 8 := h.st.ld (d := 40) (by decide)
   have hbits : u.mem.readW (p.B + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 p.bits := h.st.args.bits'
   refine WP.cons (exec_adrSym (by decide)) ?_
   simp only [ldh, hBits]
   prun [h.tab.sym, h.st.r31, l40, hbits, trialCount_eq hb2]
   refine ⟨fun r hr => ?_, rfl⟩
-  have h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
-  have h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
-  have h3 : r ≠ .r3 := fun h => hr (by subst h; decide)
-  have h4 : r ≠ .r4 := fun h => hr (by subst h; decide)
+  obtain h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
+  obtain h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
+  obtain h3 : r ≠ .r3 := fun h => hr (by subst h; decide)
+  obtain h4 : r ≠ .r4 := fun h => hr (by subst h; decide)
   simp only [h1, h2, h3, h4, ↓reduceIte]
 
 /-- What `prodLoop` needs, once the table's address and the count are in
@@ -623,7 +623,7 @@ theorem MB.largs {p : PP} {x : Nat} {B : Prop} {T : Addr} {u v : State} {N : Nat
   have hb2 := h.st.dims.b2
   have hdn := h.st.dims.n
   have hLe : p.L = (p.bits + 7) / 8 := rfl
-  have hsl : slot (wOf p.bits) 0 = 256 := by simp [slot, hdrBytes]
+  obtain hsl : slot (wOf p.bits) 0 = 256 := by simp [slot, hdrBytes]
   have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
   have hZe : p.Z = 8 * p.n := rfl
   refine ⟨h.st.scr.congr vwr, by rw [vg _ (by decide)]; exact h.ph.r10, by rw [vg _ (by decide)]; exact h.ph.r11,
@@ -647,21 +647,21 @@ theorem MB.orBadP {p : PP} {x : Nat} {B : Prop} {T : Addr} {u w : State} {n : Na
     (wrd : w.rd = u.rd) (wwr : w.wr = u.wr) (wsp : w.sp = u.sp) (syw : w.syms = u.syms) :
     WP isa (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad]) w
       (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false)) := by
-  have l200 : InRegions (w.rd ++ w.wr) (p.B + BitVec.ofNat 64 200) 8 := by
+  obtain l200 : InRegions (w.rd ++ w.wr) (p.B + BitVec.ofNat 64 200) 8 := by
     rw [wrd, wwr]; exact h.st.ld (d := 200) (by decide)
-  have s200 : InRegions w.wr (p.B + BitVec.ofNat 64 200) 8 := by rw [wwr]; exact h.st.st (d := 200) (by decide)
-  have w31 : w.gpr .r31 = p.B := (wg _ (by decide)).trans h.st.r31
-  have hold : w.mem.readW (p.B + BitVec.ofNat 64 200) 64 = word u.mem p.B 200 :=
+  obtain s200 : InRegions w.wr (p.B + BitVec.ofNat 64 200) 8 := by rw [wwr]; exact h.st.st (d := 200) (by decide)
+  obtain w31 : w.gpr .r31 = p.B := (wg _ (by decide)).trans h.st.r31
+  obtain hold : w.mem.readW (p.B + BitVec.ofNat 64 200) 64 = word u.mem p.B 200 :=
     wf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [hTrialN]; omega_using []) (by omega_using [])
   refine WP.mono_syms (WP.mono (WP.keep [.r5] (Q := fun t => t.mem = w.mem.writeW (p.B + BitVec.ofNat 64 200)
       (word u.mem p.B 200 ||| w.gpr .r22))
     (by simp only [ldh, sth, hBad]; prun [w31, l200, s200, hold]) (by decide)) fun t h => h)
     fun t ⟨tm, kt⟩ syt => ?_
-  have fst : Frm p.B [(208, 8), (200, 8)] u.mem t.mem := by
+  obtain fst : Frm p.B [(208, 8), (200, 8)] u.mem t.mem := by
     rw [tm]
     exact VG.Proof.MillerRabin.PPC64LE.Search.frm_writeW (wf.mono fun r hr => by
       rw [List.mem_singleton.mp hr]; simp [hTrialN]) _ ⟨(200, 8), by simp, by decide, by decide⟩ (by decide)
-  have hbad : word t.mem p.B (8 * hBad) = 0#64 ↔ B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false := by
+  obtain hbad : word t.mem p.B (8 * hBad) = 0#64 ↔ B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false := by
     show t.mem.readW (p.B + BitVec.ofNat 64 200) 64 = 0#64 ↔ _
     rw [tm, VG.Proof.MillerRabin.PPC64LE.Search.rw_self, BitVec.or_eq_zero_iff, w22, ← h.bad]
     refine and_congr Iff.rfl ?_
@@ -678,7 +678,7 @@ theorem prodSieveN_ok {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} {n : 
     WP isa (prodSieveN n) s (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false)) := by
   unfold prodSieveN
   refine WP.seq (WP.mono (h.prodA n (by omega_using [hn2])) fun v ⟨⟨v23, v24, vm⟩, vg, vrd, vwr, vsp, syv⟩ => ?_)
-  have ha := h.largs vm (fun r hr => vg r fun h' => hr (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h'))) vrd vwr
+  obtain ha := h.largs vm (fun r hr => vg r fun h' => hr (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h'))) vrd vwr
     hn4 hn1 hn2
   refine WP.seq (WP.mono_syms (prodLoop_ok ha v23 v24) fun w ⟨⟨w22, wf⟩, kw⟩ syw => ?_)
   rw [vm] at wf
@@ -692,8 +692,8 @@ theorem prodSieve_ok {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : M
     WP isa prodSieve s (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x (trialN p.bits) = false)) := by
   unfold prodSieve
   refine WP.seq (WP.mono h.prodC fun v ⟨⟨v23, v24, vm⟩, vg, vrd, vwr, vsp, syv⟩ => ?_)
-  have hN : trialN p.bits % 4 = 0 ∧ 4 ≤ trialN p.bits ∧ trialN p.bits ≤ 1024 := by unfold trialN; split <;> decide
-  have ha := h.largs vm vg vrd vwr hN.1 hN.2.1 hN.2.2
+  obtain hN : trialN p.bits % 4 = 0 ∧ 4 ≤ trialN p.bits ∧ trialN p.bits ≤ 1024 := by unfold trialN; split <;> decide
+  obtain ha := h.largs vm vg vrd vwr hN.1 hN.2.1 hN.2.2
   refine WP.seq (WP.mono_syms (prodLoop_ok ha v23 v24) fun w ⟨⟨w22, wf⟩, kw⟩ syw => ?_)
   rw [vm] at wf
   exact h.orBadP w22 wf (fun r hr => (kw.gpr r fun h' => hr (List.mem_append_right _ h')).trans

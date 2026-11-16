@@ -58,9 +58,9 @@ theorem copy_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s c) {o a n : N
   simp only [Below, T] at ho ha
   have hfit := hc.fit4
   refine Wp.wp_ldm hc.edi (hc.inRW4 (by omega_using [ha, hn]) (by decide)) fun s₁ u₁ => ?_
-  have c₁ := (updKeep u₁).ctx hc
+  obtain c₁ := (updKeep u₁).ctx hc
   refine Wp.wp_stm c₁.edi (c₁.inW4 (by omega_using [ho, hn]) (by decide)) fun s₂ u₂ => WP.block_nil ?_
-  have hr : wd s.mem x (a + 4 * n) = wd s₀.mem x (a + 4 * n) :=
+  obtain hr : wd s.mem x (a + 4 * n) = wd s₀.mem x (a + 4 * n) :=
     wd_frame1 hf hfit (by omega_using [ho, hn]) (by omega_using [ha, hn])
       (apart_read hoa (Nat.le_refl _) hn)
   refine ⟨hk.trans ((updKeep u₁).trans ⟨by rw [u₂.gpr], by rw [u₂.gpr], by rw [u₂.gpr], u₂.rd, u₂.wr⟩),
@@ -133,41 +133,41 @@ theorem cswap_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s c) {X Y sw n
   simp only [Below, T] at hX hY
   have hfit := hc.fit4
   refine Wp.wp_ldm hc.edi (hc.inRW4 (by omega_using [hX, hn]) (by decide)) fun s₁ u₁ => ?_
-  have c₁ := (updKeep u₁).ctx hc
+  obtain c₁ := (updKeep u₁).ctx hc
   refine Wp.wp_ldm c₁.edi (c₁.inRW4 (by omega_using [hY, hn]) (by decide)) fun s₂ u₂ => ?_
   refine Wp.wp_mov fun s₃ u₃ => Wp.wp_xor fun s₄ u₄ => Wp.wp_and fun s₅ u₅ => Wp.wp_xor fun s₆ u₆ =>
     Wp.wp_xor fun s₇ u₇ => ?_
-  have k₇ : Keep s s₇ := (updKeep u₁).trans ((updKeep u₂).trans ((updKeep u₃).trans ((updKeep u₄).trans
+  obtain k₇ : Keep s s₇ := (updKeep u₁).trans ((updKeep u₂).trans ((updKeep u₃).trans ((updKeep u₄).trans
     ((updKeep u₅).trans ((updKeep u₆).trans (updKeep u₇))))))
-  have c₇ := k₇.ctx hc
+  obtain c₇ := k₇.ctx hc
   refine Wp.wp_stm c₇.edi (c₇.inW4 (by omega_using [hX, hn]) (by decide)) fun s₈ u₈ => ?_
-  have c₈ : Ctx W x s₈ c := c₇.keep (by rw [u₈.gpr]) u₈.wr (by rw [u₈.gpr])
+  obtain c₈ : Ctx W x s₈ c := c₇.keep (by rw [u₈.gpr]) u₈.wr (by rw [u₈.gpr])
   refine Wp.wp_stm c₈.edi (c₈.inW4 (by omega_using [hY, hn]) (by decide)) fun s₉ u₉ => WP.block_nil ?_
   -- The values.
-  have m₇ : s₇.mem = s.mem := by
+  obtain m₇ : s₇.mem = s.mem := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have ecx₇ : s₇.gpr .ecx = s.gpr .ecx := by
+  obtain ecx₇ : s₇.gpr .ecx = s.gpr .ecx := by
     rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   obtain ⟨tX, tY⟩ := h.todo n hn (Nat.le_refl _)
-  have eX : s₁.gpr .eax = wd s₀.mem x (X + 4 * n) := by rw [u₁.gpr]; exact tX
-  have eY : s₂.gpr .edx = wd s₀.mem x (Y + 4 * n) := by rw [u₂.gpr, u₁.mem]; exact tY
-  have ed : s₅.gpr .ebx = (wd s₀.mem x (X + 4 * n) ^^^ wd s₀.mem x (Y + 4 * n)) &&& mask sw := by
+  obtain eX : s₁.gpr .eax = wd s₀.mem x (X + 4 * n) := by rw [u₁.gpr]; exact tX
+  obtain eY : s₂.gpr .edx = wd s₀.mem x (Y + 4 * n) := by rw [u₂.gpr, u₁.mem]; exact tY
+  obtain ed : s₅.gpr .ebx = (wd s₀.mem x (X + 4 * n) ^^^ wd s₀.mem x (Y + 4 * n)) &&& mask sw := by
     rw [u₅.gpr, u₄.gpr, u₃.gpr, u₄.other .ecx (by decide), u₃.other .ecx (by decide),
       u₃.other .edx (by decide), u₂.other .eax (by decide), eX, eY, u₂.other .ecx (by decide),
       u₁.other .ecx (by decide), h.ecx, hm]
-  have v₆ : s₆.gpr .eax = if sw = 1 then wd s₀.mem x (Y + 4 * n) else wd s₀.mem x (X + 4 * n) := by
+  obtain v₆ : s₆.gpr .eax = if sw = 1 then wd s₀.mem x (Y + 4 * n) else wd s₀.mem x (X + 4 * n) := by
     rw [u₆.gpr, ed, u₅.other .eax (by decide), u₄.other .eax (by decide),
       u₃.other .eax (by decide), u₂.other .eax (by decide), eX]
     exact (sel_mask _ _ hsw).1
-  have v₇ : s₇.gpr .edx = if sw = 1 then wd s₀.mem x (X + 4 * n) else wd s₀.mem x (Y + 4 * n) := by
+  obtain v₇ : s₇.gpr .edx = if sw = 1 then wd s₀.mem x (X + 4 * n) else wd s₀.mem x (Y + 4 * n) := by
     rw [u₇.gpr, u₆.other .ebx (by decide), ed, u₆.other .edx (by decide),
       u₅.other .edx (by decide), u₄.other .edx (by decide), u₃.other .edx (by decide), eY]
     exact (sel_mask _ _ hsw).2
-  have eax₈ : s₇.gpr .eax = s₆.gpr .eax := u₇.other _ (by decide)
-  have hsep : ∀ j < 8, ∀ k < 8, X + 4 * j + 4 ≤ Y + 4 * k ∨ Y + 4 * k + 4 ≤ X + 4 * j := fun j hj k hk => by
+  obtain eax₈ : s₇.gpr .eax = s₆.gpr .eax := u₇.other _ (by decide)
+  obtain hsep : ∀ j < 8, ∀ k < 8, X + 4 * j + 4 ≤ Y + 4 * k ∨ Y + 4 * k + 4 ≤ X + 4 * j := fun j hj k hk => by
     omega_using [hXY, hj, hk]
-  have wX : ∀ j < 8, wd s₉.mem x (X + 4 * j) =
+  obtain wX : ∀ j < 8, wd s₉.mem x (X + 4 * j) =
       if j = n then (if sw = 1 then wd s₀.mem x (Y + 4 * n) else wd s₀.mem x (X + 4 * n))
       else wd s.mem x (X + 4 * j) := fun j hj => by
     rw [u₉.mem, u₈.mem, u₈.gpr, v₇, wd_write_ne _ _ (by omega_using [hfit, hX, hj])
@@ -176,7 +176,7 @@ theorem cswap_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s c) {X Y sw n
     · subst e; rw [wd_write_self]; simp only [↓reduceIte]
     · rw [wd_write_ne _ _ (by omega_using [hfit, hX, hj]) (by omega_using [hfit, hX, hn])
         (by omega_using [e]), ite_eq_right e]
-  have wY : ∀ j < 8, wd s₉.mem x (Y + 4 * j) =
+  obtain wY : ∀ j < 8, wd s₉.mem x (Y + 4 * j) =
       if j = n then (if sw = 1 then wd s₀.mem x (X + 4 * n) else wd s₀.mem x (Y + 4 * n))
       else wd s.mem x (Y + 4 * j) := fun j hj => by
     rw [u₉.mem, u₈.mem, u₈.gpr, v₇]
@@ -276,7 +276,7 @@ theorem run_congr (l : List Op) (hv : ∀ op ∈ l, opValid lo op = true) :
   | nil => exact fun h q hq => h q hq
   | cons op l ih =>
     intro E E' h q hq
-    have hvo := hv op List.mem_cons_self
+    obtain hvo := hv op List.mem_cons_self
     simp only [opValid, Bool.and_eq_true, List.all_eq_true] at hvo
     refine ih (fun o ho => hv o (List.mem_cons_of_mem _ ho)) (fun r hr => ?_) q hq
     by_cases e : r = opOut op
@@ -288,7 +288,7 @@ theorem run_congr (l : List Op) (hv : ∀ op ∈ l, opValid lo op = true) :
 theorem frame_wide {m m' : Mem} {x : BitVec 32} {o n : Nat} (hx : x.toNat + 4096 ≤ 2 ^ 32)
     (ho : isSlot lo o = true) (hn : n ≤ 64) (hf : Frame [sub x o 32, sub x T n] m m') :
     Frame [sub x lo (T + 64 - lo)] m m' := by
-  have hob := slot_below ho; have ho' := slot_ge ho
+  obtain hob := slot_below ho; have ho' := slot_ge ho
   simp only [Below, T] at hob
   exact hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -303,13 +303,13 @@ theorem op_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (op : Op) (hv : opV
   have hfit := hc.fit4
   simp only [opValid, Bool.and_eq_true, List.all_eq_true] at hv
   obtain ⟨ho, hi⟩ := hv
-  have hob := slot_below ho
+  obtain hob := slot_below ho
   simp only [Below, T] at hob
   -- An element outside the output's region (and `T`'s).
-  have other : ∀ {m m' : Mem}, Frame [sub x (opOut op) 32, sub x T 64] m m' → ∀ q, isSlot lo q = true →
+  obtain other : ∀ {m m' : Mem}, Frame [sub x (opOut op) 32, sub x T 64] m m' → ∀ q, isSlot lo q = true →
       q ≠ (opOut op) → F m' x q = F m x q := fun {m m'} hf q hq hne => by
-    have hqb := slot_below hq; simp only [Below, T] at hqb
-    have hs := slot_ne ho hq hne
+    obtain hqb := slot_below hq; simp only [Below, T] at hqb
+    obtain hs := slot_ne ho hq hne
     simp only [F]
     refine congrArg toFe (fe_frame fun k hk => wd_frame hf fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -317,9 +317,9 @@ theorem op_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (op : Op) (hv : opV
     · exact sub_disj (by omega_using [hfit, hqb, hk]) (by omega_using [hfit, hob]) (by omega_using [hs, hk])
     · exact sub_disj (by omega_using [hfit, hqb, hk]) (by simp only [T]; omega_using [hfit])
         (by simp only [T]; omega_using [hqb, hk])
-  have frame1 : ∀ {m m' : Mem}, Frame [sub x (opOut op) 32] m m' → Frame [sub x (opOut op) 32, sub x T 64] m m' :=
+  obtain frame1 : ∀ {m m' : Mem}, Frame [sub x (opOut op) 32] m m' → Frame [sub x (opOut op) 32, sub x T 64] m m' :=
     fun hf => hf.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]
-  have fin : ∀ s', Keep s s' → Frame [sub x (opOut op) 32, sub x T 64] s.mem s'.mem →
+  obtain fin : ∀ s', Keep s s' → Frame [sub x (opOut op) 32, sub x T 64] s.mem s'.mem →
       F s'.mem x (opOut op) = opVal op (F s.mem x) →
       Keep s s' ∧ Frame [sub x lo (T + 64 - lo)] s.mem s'.mem ∧
         ∀ q, isSlot lo q = true → F s'.mem x q = Function.update (F s.mem x) (opOut op) (opVal op (F s.mem x)) q :=

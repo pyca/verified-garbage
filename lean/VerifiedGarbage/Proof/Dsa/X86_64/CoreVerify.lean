@@ -66,85 +66,85 @@ theorem coreVerify_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State}
   let tt := Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) uu L.modulus
   let tt2 := Spec.Dsa.powMod (Spec.Dsa.decodeBE data.publicValue) vv L.modulus
   let prod := tt * tt2 % L.modulus
-  have hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hq])
-  have hzz : zz < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
-  have huu : uu < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
-  have hvv : vv < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
-  have hprod : prod < L.modulus := Nat.mod_lt _ (by omega_using [hp])
-  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_using [hpu]
-  have hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega_using [hqu]
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
-  have hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega_using [hqu]
-  have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega_using [hqu]
-  have hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
+  obtain hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hq])
+  obtain hzz : zz < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
+  obtain huu : uu < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
+  obtain hvv : vv < L.subgroup := Nat.mod_lt _ (by omega_using [hq])
+  obtain hprod : prod < L.modulus := Nat.mod_lt _ (by omega_using [hp])
+  obtain ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_using [hpu]
+  obtain hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega_using [hqu]
+  obtain hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
+  obtain hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega_using [hqu]
+  obtain hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega_using [hqu]
+  obtain hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
   unfold Core.verify
-  have step1 := readyPow_ok M Sq h0 .q (by change 1 < L.subgroup; omega_using [hq]) hoq
+  obtain step1 := readyPow_ok M Sq h0 .q (by change 1 < L.subgroup; omega_using [hq]) hoq
     Core.signatureS (Core.scalar qMinusTwo) (by trivial) (by change qMinusTwo < 2 ^ 31; decide)
     hs.active hqm (by rw [hsl]; omega_using [hql])
     (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqmLen]; omega_using [hql]) (by rw [hqmLen]; omega_using [hqu]) inverse (by decide) hi
-  have step1' : WP isa (Core.pow Sq.mm M.mm qWorkspace Core.signatureS (Core.scalar qMinusTwo) (Core.scalar inverse)) s0
+  obtain step1' : WP isa (Core.pow Sq.mm M.mm qWorkspace Core.signatureS (Core.scalar qMinusTwo) (Core.scalar inverse)) s0
       (CallResult L .q inverse ki s0) := by
     simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value,
       fitq (L.subgroup - 2) (by omega_using [hq])] using step1
   refine WP.seq (WP.mono step1' fun s1 h1 => ?_)
-  have hg1 := h1.external (by decide) hi hg
-  have hy1 := h1.external (by decide) hi hy
-  have hr1 := h1.external (by decide) hi hr
-  have hz1 := h1.external (by decide) hi hz
+  obtain hg1 := h1.external (by decide) hi hg
+  obtain hy1 := h1.external (by decide) hi hy
+  obtain hr1 := h1.external (by decide) hi hr
+  obtain hz1 := h1.external (by decide) hi hz
   refine WP.seq (WP.mono (readyReduce_ok M h1.ready hq hoq Core.digest (by trivial) hz1.active hzl z (by decide) hz') fun s2 h2 => ?_)
-  have hg2 := h2.external (by decide) hz' hg1
-  have hy2 := h2.external (by decide) hz' hy1
-  have hr2 := h2.external (by decide) hz' hr1
-  have hi2 := h2.local (by decide) hz' (h1.output (by decide) hi)
+  obtain hg2 := h2.external (by decide) hz' hg1
+  obtain hy2 := h2.external (by decide) hz' hy1
+  obtain hr2 := h2.external (by decide) hz' hr1
+  obtain hi2 := h2.local (by decide) hz' (h1.output (by decide) hi)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
     (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse z; omega_using [hqu]))
-  have step3 := readyProduct_ok M h2.ready .q (by change 1 < L.subgroup; omega_using [hq]) hoq
+  obtain step3 := readyProduct_ok M h2.ready .q (by change 1 < L.subgroup; omega_using [hq]) hoq
     (Core.scalar z) (Core.scalar inverse) (by change z < 2 ^ 31; decide) (by change inverse < 2 ^ 31; decide)
     (h2.output (by decide) hz') hi2
     (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
     (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) u (by decide) hu
-  have step3' : WP isa (Core.product M.mm qWorkspace (Core.scalar z) (Core.scalar inverse) (Core.scalar u)) s2
+  obtain step3' : WP isa (Core.product M.mm qWorkspace (Core.scalar z) (Core.scalar inverse) (Core.scalar u)) s2
       (CallResult L .q u uu s2) := by
     simpa only [Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value,
       show Spec.Dsa.decodeBE data.digest % L.subgroup = zz from rfl, fitq _ hzz, fitq _ hki, uu] using step3
   refine WP.seq (WP.mono step3' fun s3 h3 => ?_)
-  have hg3 := h3.external (by decide) hu hg2
-  have hy3 := h3.external (by decide) hu hy2
-  have hr3 := h3.external (by decide) hu hr2
-  have hi3 := h3.local (by decide) hu hi2
+  obtain hg3 := h3.external (by decide) hu hg2
+  obtain hy3 := h3.external (by decide) hu hy2
+  obtain hr3 := h3.external (by decide) hu hr2
+  obtain hi3 := h3.local (by decide) hu hi2
     (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
     (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse u; omega_using [hqu]))
-  have step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega_using [hq]) hoq
+  obtain step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega_using [hq]) hoq
     Core.signatureR (Core.scalar inverse) (by trivial) (by change inverse < 2 ^ 31; decide) hr3.active hi3
     (by rw [hrl]; omega_using [hql]) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) v (by decide) hv
-  have step4' : WP isa (Core.product M.mm qWorkspace Core.signatureR (Core.scalar inverse) (Core.scalar v)) s3
+  obtain step4' : WP isa (Core.product M.mm qWorkspace Core.signatureR (Core.scalar inverse) (Core.scalar v)) s3
       (CallResult L .q v vv s3) := by
     simpa only [Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value,
       fitq _ hki, vv] using step4
   refine WP.seq (WP.mono step4' fun s4 h4 => ?_)
-  have hg4 := h4.external (by decide) hv hg3
-  have hy4 := h4.external (by decide) hv hy3
-  have hu4 := h4.local (by decide) hv (h3.output (by decide) hu)
+  obtain hg4 := h4.external (by decide) hv hg3
+  obtain hy4 := h4.external (by decide) hv hy3
+  obtain hu4 := h4.local (by decide) hv (h3.output (by decide) hu)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hu)
     (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u v; omega_using [hqu]))
-  have step5 := readyJoint_ok M Sq h4.ready hp hop Core.generator Core.publicValue
+  obtain step5 := readyJoint_ok M Sq h4.ready hp hop Core.generator Core.publicValue
     (by trivial) (by trivial) hg4.active hy4.active
     (by rw [hgl]; omega_using [hql, hqp]) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hyl]; omega_using [hql, hqp]) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     hu4 (h4.output (by decide) hv) (encodeBE_length _ _) (encodeBE_length _ _) t (by decide) ht
-  have step5' : WP isa (Core.joint Sq.mm M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
+  obtain step5' : WP isa (Core.joint Sq.mm M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
       (CallResult L .p t prod s4) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value,
       fitq _ huu, fitq _ hvv, prod, tt, tt2] using step5
   refine WP.seq (WP.mono step5' fun s7 h7 => ?_)
-  have step8 := readyReduce_ok M h7.ready hq hoq (Core.element t) (by change t < 2 ^ 31; decide)
+  obtain step8 := readyReduce_ok M h7.ready hq hoq (Core.element t) (by change t < 2 ^ 31; decide)
     (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hpu]) u (by decide) hu
-  have step8' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar u)) s7
+  obtain step8' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar u)) s7
       (CallResult L .q u (data.value L) s7) := by
     simpa only [ModulusSide.length, fitp _ hprod, prod, tt, tt2, uu, vv, zz, ki, VerifyValues.value] using step8
   refine WP.mono step8' fun s8 h8 => ⟨h8.ready, h8.bytes, ?_, ?_, ?_⟩

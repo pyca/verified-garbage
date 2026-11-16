@@ -57,11 +57,11 @@ theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 32 + 1024 
   have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega_using [this]
 
 theorem DPre.geo {s : State} (hp : DPre s) : Geo (fb s) (stackArg s 15) := by
-  have hF := fb_toNatD hp
+  obtain hF := fb_toNatD hp
   have := hp.sp2
   have hsl := hp.hsl
   have wS := hp.wS
-  have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
+  obtain sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
   refine ⟨by unfold frameBytes at *; omega_using [hF, this], by unfold oRsa; omega_using [hsl, wS],
     ((hp.dKs.sub_left (frame_subD s)).sub_right sS), ((hp.dKs.sub_left (ret_subD s)).sub_right sS)⟩
 
@@ -136,10 +136,10 @@ theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s
     (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 19) (hd : d + 8 ≤ frameBytes) :
     WP isa (.block (argSlot j d)) u fun u' => Keep [.rax] u u' ∧
       u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j) ∧ Frame [frR s] s.mem u'.mem := by
-  have hF := fb_toNatD hp
+  obtain hF := fb_toNatD hp
   have := hp.sp2
-  have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
-  have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
+  obtain hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
+  obtain hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [argAddr]; exact hp.argIn hrd hj
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
@@ -148,7 +148,7 @@ theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s
 
 theorem frame_wD {s : State} (hp : DPre s) {m m' : Mem} (hf : Frame [frR s] m m') {d : Nat}
     (hd : d + 8 ≤ frameBytes) (v : BitVec 64) : Frame [frR s] m (m'.writeW (off (fb s) d) v) := by
-  have hF := fb_toNatD hp
+  obtain hF := fb_toNatD hp
   have := hp.sp2
   exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hd]) (by unfold frameBytes at *; omega_using [hd]))
 
@@ -171,17 +171,17 @@ theorem decPro_ok {s : State} (hp : DPre s) :
       Lay t (fb s) (stackArg s 15) ∧
       Rep t.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o)) (decW s) ∧
       Frame [frR s] s.mem t.mem := by
-  have hF := fb_toNatD hp
+  obtain hF := fb_toNatD hp
   have := hp.sp2
   have G' := hp.geo
   have hsp : (allocState frameBytes s).gpr .rsp = fb s := rfl
-  have hfr : frR s ∈ (allocState frameBytes s).wr := List.mem_cons_self ..
-  have hsc : Scr (allocState frameBytes s) (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
-  have R0 : Rep s.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o))
+  obtain hfr : frR s ∈ (allocState frameBytes s).wr := List.mem_cons_self ..
+  obtain hsc : Scr (allocState frameBytes s) (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega_using [hF])
+  obtain R0 : Rep s.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o))
       (fun k => word s.mem (fb s) (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   rw [decPrologue_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
     WP.block_append_iff]
-  have R1 := ((((R0.wf G' (k := 21) (by decide) (s.gpr .rdi)).wf G' (k := 29) (by decide) (s.gpr .rdx)).wf G'
+  obtain R1 := ((((R0.wf G' (k := 21) (by decide) (s.gpr .rdi)).wf G' (k := 29) (by decide) (s.gpr .rdx)).wf G'
     (k := 22) (by decide) (s.gpr .rcx)).wf G' (k := 23) (by decide) (s.gpr .r8)).wf G' (k := 24) (by decide)
     (s.gpr .r9)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = ((((s.mem.writeW (off (fb s) (8 * 21)) (s.gpr .rdi)).writeW
@@ -190,27 +190,27 @@ theorem decPro_ok {s : State} (hp : DPre s) :
   · xrun [ea_sp, hsp, hsc.st (d := sOut) (by decide), hsc.st (d := sMl) (by decide), hsc.st (d := sN) (by decide),
       hsc.st (d := sK) (by decide), hsc.st (d := sE) (by decide), allocState_gpr']
     rfl
-  have f1 : Frame [frR s] s.mem t1.mem := by
+  obtain f1 : Frame [frR s] s.mem t1.mem := by
     rw [hm1]
     exact frame_wD hp (frame_wD hp (frame_wD hp (frame_wD hp (frame_wD hp (Frame.refl _ _) (by decide) _)
       (by decide) _) (by decide) _) (by decide) _) (by decide) _
-  have sp1 : t1.gpr .rsp = fb s := k1.gpr (by decide)
-  have hfr1 : frR s ∈ t1.wr := k1.2.2 ▸ hfr
+  obtain sp1 : t1.gpr .rsp = fb s := k1.gpr (by decide)
+  obtain hfr1 : frR s ∈ t1.wr := k1.2.2 ▸ hfr
   refine WP.mono (copy1D_ok hp sp1 hfr1 k1.2.1 f1 (j := 0) (d := sEl) (by decide) (by decide))
     fun t2 ⟨k2, hm2, f2⟩ => ?_
   refine WP.mono (copy1D_ok hp ((k2.gpr (by decide)).trans sp1) (k2.2.2 ▸ hfr1) (k2.2.1.trans k1.2.1) f2
     (j := 11) (d := sLab) (by decide) (by decide)) fun t3 ⟨k3, hm3, f3⟩ => ?_
-  have k23 := k2.trans k3
+  obtain k23 := k2.trans k3
   refine WP.mono (copy1D_ok hp ((k23.gpr (by decide)).trans sp1) (k23.2.2 ▸ hfr1) (k23.2.1.trans k1.2.1) f3
     (j := 12) (d := sLabLen) (by decide) (by decide)) fun t4 ⟨k4, hm4, f4⟩ => ?_
-  have k24 := k23.trans k4
+  obtain k24 := k23.trans k4
   refine WP.mono (copy1D_ok hp ((k24.gpr (by decide)).trans sp1) (k24.2.2 ▸ hfr1) (k24.2.1.trans k1.2.1) f4
     (j := 15) (d := sScr) (by decide) (by decide)) fun t5 ⟨k5, hm5, f5⟩ => ?_
-  have k25 := k24.trans k5
+  obtain k25 := k24.trans k5
   refine WP.mono (copy1D_ok hp ((k25.gpr (by decide)).trans sp1) (k25.2.2 ▸ hfr1) (k25.2.1.trans k1.2.1) f5
     (j := 16) (d := sScrLen) (by decide) (by decide)) fun t6 ⟨k6, hm6, f6⟩ => ?_
-  have k16 : Keep [.rax] (allocState frameBytes s) t6 := (k1.trans (k25.trans k6)).mono (by decide)
-  have R6 : Rep t6.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o)) (decW s) := by
+  obtain k16 : Keep [.rax] (allocState frameBytes s) t6 := (k1.trans (k25.trans k6)).mono (by decide)
+  obtain R6 : Rep t6.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o)) (decW s) := by
     rw [hm6, hm5, hm4, hm3, hm2, hm1]
     exact ((((R1.wf G' (k := 25) (by decide) (stackArg s 0)).wf G' (k := 27) (by decide) (stackArg s 11)).wf G'
       (k := 28) (by decide) (stackArg s 12)).wf G' (k := 14) (by decide) (stackArg s 15)).wf G' (k := 26)
@@ -298,15 +298,15 @@ theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15
   refine WP.mono (copyRep_ok hp L R hrd hf hfr (j := 13) (k := 0) (by decide) (by decide))
     fun t1 ⟨k1, L1, R1, f1, rd1, fr1⟩ => ?_
   -- `k` to word 1.
-  have hs1 := R1.slot (d := sK) (k := 23) rfl (by decide) (v := s.gpr .r8) (by simp [upd, decW])
+  obtain hs1 := R1.slot (d := sK) (k := 23) rfl (by decide) (v := s.gpr .r8) (by simp [upd, decW])
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t1.mem.writeW (off (fb s) (8 * 1)) (s.gpr .r8)) ?_ rfl)
     fun t2 ⟨hm2, k2⟩ => ?_
   · xrun [ea_sp, L1.rsp, L1.ld (d := sK) (by decide), hs1, L1.st (d := 8) (by decide)]
-  have R2 : Rep t2.mem (fb s) (stackArg s 15) _ _ := hm2 ▸ R1.wf G' (k := 1) (by decide) (s.gpr .r8)
-  have L2 := L1.of_rep' R1 R2 (by simp [upd]) (k2.gpr (by decide)) k2.2.2
-  have f2 : Frame [frR s] s.mem t2.mem := hm2 ▸ frame_wD hp f1 (d := 8) (by decide) _
-  have rd2 : t2.rd = s.rd := k2.2.1.trans rd1
-  have fr2 : frR s ∈ t2.wr := k2.2.2 ▸ fr1
+  obtain R2 : Rep t2.mem (fb s) (stackArg s 15) _ _ := hm2 ▸ R1.wf G' (k := 1) (by decide) (s.gpr .r8)
+  obtain L2 := L1.of_rep' R1 R2 (by simp [upd]) (k2.gpr (by decide)) k2.2.2
+  obtain f2 : Frame [frR s] s.mem t2.mem := hm2 ▸ frame_wD hp f1 (d := 8) (by decide) _
+  obtain rd2 : t2.rd = s.rd := k2.2.1.trans rd1
+  obtain fr2 : frR s ∈ t2.wr := k2.2.2 ▸ fr1
   refine WP.mono (copyRep_ok hp L2 R2 rd2 f2 fr2 (j := 1) (k := 2) (by decide) (by decide))
     fun t3 ⟨k3, L3, R3, f3, rd3, fr3⟩ => ?_
   refine WP.mono (copyRep_ok hp L3 R3 rd3 f3 fr3 (j := 2) (k := 3) (by decide) (by decide))
@@ -330,22 +330,22 @@ theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15
   -- The working space's address and length, and the registers.
   have hs := L12.slot
   simp only [Bignum.word] at hs
-  have kk := (((((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans
+  obtain kk := (((((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans
     k10).trans k11).trans k12)
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem =
       t12.mem.writeW (off (fb s) (8 * 12)) (off (stackArg s 15) oRsa)) ?_ rfl) fun t13 ⟨hm13, k13⟩ => ?_
   · xrun [scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L12.rsp,
       L12.ld (d := sScr) (by decide), hs, L12.st (d := 96) (by decide),
       VG.Proof.MlKem.X86_64.sx_ofNat (show oRsa < 2 ^ 31 by decide)]
-  have R13 : Rep t13.mem (fb s) (stackArg s 15) V _ := hm13 ▸ R12.wf G' (k := 12) (by decide) (off (stackArg s 15) oRsa)
-  have L13 := L12.of_rep' R12 R13 (by simp [upd]) (k13.gpr (by decide)) k13.2.2
+  obtain R13 : Rep t13.mem (fb s) (stackArg s 15) V _ := hm13 ▸ R12.wf G' (k := 12) (by decide) (off (stackArg s 15) oRsa)
+  obtain L13 := L12.of_rep' R12 R13 (by simp [upd]) (k13.gpr (by decide)) k13.2.2
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem =
       t13.mem.writeW (off (fb s) (8 * 13)) (stackArg s 16 - 1024)) ?_ rfl) fun t14 ⟨hm14, k14⟩ => ?_
   · xrun [ea_sp, L13.rsp, L13.ld (d := sScrLen) (by decide), L13.st (d := 104) (by decide),
       R13.slot (d := sScrLen) (k := 26) rfl (by decide) (v := stackArg s 16) (by simp [upd, decW]),
       show BitVec.signExtend 64 (1024 : BitVec 32) = 1024 from by decide]
-  have R14 : Rep t14.mem (fb s) (stackArg s 15) V (privW s) := hm14 ▸ R13.wf G' (k := 13) (by decide) _
-  have L14 := L13.of_rep' R13 R14 (by simp [upd, privW]) (k14.gpr (by decide)) k14.2.2
+  obtain R14 : Rep t14.mem (fb s) (stackArg s 15) V (privW s) := hm14 ▸ R13.wf G' (k := 13) (by decide) _
+  obtain L14 := L13.of_rep' R13 R14 (by simp [upd, privW]) (k14.gpr (by decide)) k14.2.2
   have hs' := L14.slot
   simp only [Bignum.word] at hs'
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8, .r9] (Q := fun u' => u'.mem = t14.mem ∧
@@ -360,7 +360,7 @@ theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15
       R14.slot (d := sE) (k := 24) rfl (by decide) (v := s.gpr .r9) (by simp [upd, privW, decW]),
       R14.slot (d := sEl) (k := 25) rfl (by decide) (v := stackArg s 0) (by simp [upd, privW, decW]),
       VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide)]
-  have Ru : Rep u'.mem (fb s) (stackArg s 15) V (privW s) := by rw [hm]; exact R14
+  obtain Ru : Rep u'.mem (fb s) (stackArg s 15) V (privW s) := by rw [hm]; exact R14
   exact ⟨(kk.trans (k13.trans (k14.trans k'))).mono (by decide),
     L14.of_rep' R14 Ru rfl (k'.gpr (by decide)) k'.2.2, Ru,
     by rw [hm, hm14, hm13]; exact frame_wD hp (frame_wD hp f12 (d := 96) (by decide) _) (d := 104) (by decide) _,
@@ -370,7 +370,7 @@ theorem decHead_ok {s : State} (hp : DPre s) :
     WP isa (.block (decPrologue ++ privArgs)) (allocState frameBytes s) (DSet s) := by
   rw [WP.block_append_iff]
   refine WP.mono (wp_good (block_good _ rfl) (decPro_ok hp)) fun t0 ⟨⟨k0, L0, R0, f0⟩, sp0, mx0, _⟩ => ?_
-  have hfr0 : frR s ∈ t0.wr := by rw [k0.2.2]; exact List.mem_cons_self ..
+  obtain hfr0 : frR s ∈ t0.wr := by rw [k0.2.2]; exact List.mem_cons_self ..
   refine WP.mono (wp_good (block_good _ rfl) (privArgs_ok hp L0 R0 k0.2.1 f0 hfr0)) fun t ⟨⟨k, L, R, f, h1, h2, h3, h4, h5, h6⟩, sp, mx, _⟩ => ?_
   refine ⟨⟨L.rsp, k.2.1.trans k0.2.1, k.2.2.trans (k0.2.2.trans hp.wr), fun r hr h => ?_, by rw [mx, mx0]; rfl,
     f.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_subD s⟩⟩,

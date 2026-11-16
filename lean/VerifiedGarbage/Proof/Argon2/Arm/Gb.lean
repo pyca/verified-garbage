@@ -48,7 +48,7 @@ theorem wp_gb {a b c d : Nat} {V : BitVec 32} {N : Nat} (hN : N ≤ 4092)
     WP isa (.block (gb a b c d ++ rest)) s Q := by
   unfold gb
   simp only [List.append_assoc]
-  have iV : ∀ o, o + 8 ≤ N → InRegions (s.rd ++ s.wr) (A V o) 4 ∧
+  obtain iV : ∀ o, o + 8 ≤ N → InRegions (s.rd ++ s.wr) (A V o) 4 ∧
       InRegions (s.rd ++ s.wr) (A V (o + 4)) 4 := fun o ho => ⟨mem_rd (hRV o ho).1, mem_rd (hRV o ho).2⟩
   -- Load the four words.
   refine wp_ld64 (by decide) (by decide) (by omega_using [hN, ha]) h3 rfl (iV a ha).1 (iV a ha).2
@@ -56,22 +56,22 @@ theorem wp_gb {a b c d : Nat} {V : BitVec 32} {N : Nat} (hN : N ≤ 4092)
   refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hb]) (by rw [o₁.gpr _ (by decide), h3]) o₁.mem
     (by rw [o₁.rd, o₁.wr]; exact (iV b hb).1) (by rw [o₁.rd, o₁.wr]; exact (iV b hb).2)
     fun s₂ o₂ pb => ?_
-  have O₂ := o₁.trans o₂
+  obtain O₂ := o₁.trans o₂
   refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hc]) (by rw [O₂.gpr _ (by decide), h3]) O₂.mem
     (by rw [O₂.rd, O₂.wr]; exact (iV c hc).1) (by rw [O₂.rd, O₂.wr]; exact (iV c hc).2)
     fun s₃ o₃ pc => ?_
-  have O₃ := O₂.trans o₃
+  obtain O₃ := O₂.trans o₃
   refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hd]) (by rw [O₃.gpr _ (by decide), h3]) O₃.mem
     (by rw [O₃.rd, O₃.wr]; exact (iV d hd).1) (by rw [O₃.rd, O₃.wr]; exact (iV d hd).2)
     fun s₄ o₄ pd => ?_
-  have O₄ := O₃.trans o₄
+  obtain O₄ := O₃.trans o₄
   -- a := addMul(a, b)
   refine addMul_ok (by decide) (pa.of_only ((o₂.trans o₃).trans o₄) (by decide) (by decide))
     (pb.of_only (o₃.trans o₄) (by decide) (by decide)) fun s₅ o₅ pa₁ => ?_
   -- d := (d ⊕ a) >>> 32
   refine wp_xor64 (by decide) (by decide) (pd.of_only o₅ (by decide) (by decide)) pa₁
     fun s₆ o₆ p₆ => ?_
-  have pd₁ := pair_swap p₆
+  obtain pd₁ := pair_swap p₆
   -- c := addMul(c, d)
   refine addMul_ok (by decide) (pc.of_only ((o₄.trans o₅).trans o₆) (by decide) (by decide)) pd₁
     fun s₇ o₇ pc₁ => ?_
@@ -100,14 +100,14 @@ theorem wp_gb {a b c d : Nat} {V : BitVec 32} {N : Nat} (hN : N ≤ 4092)
     fun s₁₄ o₁₄ p₁₄ => ?_
   refine wp_rotr' (n := 63) (by decide) (by decide) (by decide) (by decide) (by decide) p₁₄
     fun s₁₅ o₁₅ pb₂ => ?_
-  have O₁₅ := ((((((((((O₄.trans o₅).trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀).trans
+  obtain O₁₅ := ((((((((((O₄.trans o₅).trans o₆).trans o₇).trans o₈).trans o₉).trans o₁₀).trans
     o₁₁).trans o₁₂).trans o₁₃).trans o₁₄).trans o₁₅
-  have pa₂' := pa₂.of_only ((((o₁₁.trans o₁₂).trans o₁₃).trans o₁₄).trans o₁₅) (by decide) (by decide)
-  have pc₂' := pc₂.of_only (o₁₄.trans o₁₅) (by decide) (by decide)
-  have pd₂' := pd₂.of_only ((o₁₃.trans o₁₄).trans o₁₅) (by decide) (by decide)
+  obtain pa₂' := pa₂.of_only ((((o₁₁.trans o₁₂).trans o₁₃).trans o₁₄).trans o₁₅) (by decide) (by decide)
+  obtain pc₂' := pc₂.of_only (o₁₄.trans o₁₅) (by decide) (by decide)
+  obtain pd₂' := pd₂.of_only ((o₁₃.trans o₁₄).trans o₁₅) (by decide) (by decide)
   -- Store them.
-  have w : Reg64 s₁₅.wr V N := by rw [O₁₅.wr]; exact hRV
-  have r3 : s₁₅.gpr .r3 = V := by rw [O₁₅.gpr _ (by decide), h3]
+  obtain w : Reg64 s₁₅.wr V N := by rw [O₁₅.wr]; exact hRV
+  obtain r3 : s₁₅.gpr .r3 = V := by rw [O₁₅.gpr _ (by decide), h3]
   refine wp_st (by omega_using [hN, ha]) r3 pa₂' (w a ha).1 (w a ha).2 fun s₁₆ u₁₆ => ?_
   refine wp_st (by omega_using [hN, hb]) (by rw [u₁₆.gpr, r3]) (by rw [Pair, u₁₆.gpr]; exact pb₂)
     (by rw [u₁₆.wr]; exact (w b hb).1) (by rw [u₁₆.wr]; exact (w b hb).2) fun s₁₇ u₁₇ => ?_
@@ -161,10 +161,10 @@ theorem working_write (m : Mem) (i : Fin 128) (v : Word) :
 /-- A write to a word of the permuted block stays in its region. -/
 theorem frame_write (m m' : Mem) (hf : Frame [permR B] m m') (i : Fin 128) (v : Word) :
     Frame [permR B] m (write64 m' B (wOff i.val) v) := by
-  have c : ∀ e, e + 4 ≤ 1024 → (permR B).Contains (A B (1024 + e)) 4 := fun e he => by
+  obtain c : ∀ e, e + 4 ≤ 1024 → (permR B).Contains (A B (1024 + e)) 4 := fun e he => by
     rw [VG.Proof.Sha512.Arm.A_eq (by omega_using [hfit, he]), ← Offset.add_ofNat_add_ofNat]
     exact Offset.contains_base _ he (by omega_using [he])
-  have m₁ := List.mem_singleton_self (permR B)
+  obtain m₁ := List.mem_singleton_self (permR B)
   have := i.isLt
   simp only [write64]
   exact (hf.writeW m₁ _ (c (8 * i.val) (by omega_using []))).writeW m₁ _

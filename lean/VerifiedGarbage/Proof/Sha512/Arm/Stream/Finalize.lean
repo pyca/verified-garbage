@@ -87,16 +87,16 @@ theorem len_ok (s : State) (hfit : (s.gpr .r0).toNat + (64 + 128) ≤ 2 ^ 32)
       s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = writeBytes s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16)))
         (Proof.Sha512.md.lenOf (s.gpr .r5 ++ s.gpr .r4)) := by
-  have a176 : State.addr (s.gpr .r0 + BitVec.ofNat 32 176) = State.addr (s.gpr .r0) + BitVec.ofNat 64 176 :=
+  obtain a176 : State.addr (s.gpr .r0 + BitVec.ofNat 32 176) = State.addr (s.gpr .r0) + BitVec.ofNat 64 176 :=
     addr_off (by omega_arith)
-  have a180 : State.addr (s.gpr .r0 + BitVec.ofNat 32 180) =
+  obtain a180 : State.addr (s.gpr .r0 + BitVec.ofNat 32 180) =
       State.addr (s.gpr .r0) + BitVec.ofNat 64 176 + BitVec.ofNat 64 4 := by
     rw [addr_off (by omega_arith), add_ofNat]
-  have o176 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 176) 4 := by
+  obtain o176 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 176) 4 := by
     simpa using InRegions.offset hout (off := 0) (m := 4) (by omega_arith) (by omega_arith)
-  have o180 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 176 + BitVec.ofNat 64 4) 4 :=
+  obtain o180 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 176 + BitVec.ofNat 64 4) 4 :=
     InRegions.offset hout (by omega_arith) (by omega_arith)
-  have o184 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 184) 8 := by
+  obtain o184 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 184) 8 := by
     have := InRegions.offset hout (off := 8) (m := 8) (by omega_arith) (by omega_arith)
     rwa [add_ofNat] at this
   show WP isa (.block (.mov .r9 (.imm 0) :: .str .r9 .r0 176 :: .mov .r9 (.shifted .r5 .lsr 29) ::
@@ -106,16 +106,16 @@ theorem len_ok (s : State) (hfit : (s.gpr .r0).toNat + (64 + 128) ≤ 2 ^ 32)
   refine wp_mov (op2_lsr (by decide)) fun s₃ u₃ => wp_rev fun s₄ u₄ => wp_str (by decide)
     (by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), a180])
     (by rw [u₄.wr, u₃.wr, g₂.wr, u₁.wr]; exact o180) fun s₅ g₅ => ?_
-  have k₅ : ∀ r, r ≠ .r9 → s₅.gpr r = s.gpr r := fun r h => by
+  obtain k₅ : ∀ r, r ≠ .r9 → s₅.gpr r = s.gpr r := fun r h => by
     rw [g₅.gpr, u₄.other r h, u₃.other r h, g₂.gpr, u₁.other r h]
   refine (len64_ok (d := 184) (be := true) (by decide) (by rw [k₅ _ (by decide)]; omega_arith)
     (by rw [g₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr, k₅ _ (by decide)]; exact o184)).mono
     fun s' ⟨g, rd, wr, sp, m⟩ => ⟨fun r h => by rw [g r h, k₅ r h], by rw [rd, g₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd],
       by rw [wr, g₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr], by rw [sp, g₅.sp, u₄.sp, u₃.sp, g₂.sp, u₁.sp], ?_⟩
-  have v₄ : s₄.gpr .r9 = rev (s.gpr .r5 >>> 29) := by
+  obtain v₄ : s₄.gpr .r9 = rev (s.gpr .r5 >>> 29) := by
     rw [u₄.gpr, u₃.gpr, g₂.gpr, u₁.other _ (by decide)]
-  have v₁ : s₁.gpr .r9 = rev 0 := by rw [u₁.gpr]; decide
-  have e184 : State.addr (s.gpr .r0) + BitVec.ofNat 64 184 = State.addr (s.gpr .r0) + BitVec.ofNat 64 176 +
+  obtain v₁ : s₁.gpr .r9 = rev 0 := by rw [u₁.gpr]; decide
+  obtain e184 : State.addr (s.gpr .r0) + BitVec.ofNat 64 184 = State.addr (s.gpr .r0) + BitVec.ofNat 64 176 +
       BitVec.ofNat 64 (Spec.Sha256.wordBytes 0 ++ Spec.Sha256.wordBytes (s.gpr .r5 >>> 29)).length := by
     rw [add_ofNat]; rfl
   have e176 : State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16)) =
@@ -146,20 +146,20 @@ theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64
     intro hn rest s Q h0 h6 hin hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
     refine ih (by omega_arith) _ s Q h0 h6 hin hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
-    have hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega_arith)
-    have hn8 : n < 8 := by omega_arith
+    obtain hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega_arith)
+    obtain hn8 : n < 8 := by omega_arith
     simp only [outW, List.cons_append, List.nil_append]
-    have i₀ : ∀ o, o + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 4 :=
+    obtain i₀ : ∀ o, o + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 4 :=
       fun o ho => by
         rw [rd₁, wr₁]; exact InRegions.offset hin (by omega_arith) (by omega_arith)
-    have o₀ : ∀ o, o + 4 ≤ 8 → InRegions s₁.wr (State.addr p6 + BitVec.ofNat 64 (8 * n + o)) 4 :=
+    obtain o₀ : ∀ o, o + 4 ≤ 8 → InRegions s₁.wr (State.addr p6 + BitVec.ofNat 64 (8 * n + o)) 4 :=
       fun o ho => by rw [wr₁]; exact InRegions.offset hout (by omega_arith) (by omega_arith)
     refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) (by omega_arith)
       (by rw [g₁ _ (by decide) (by decide), h0, addr_add (by omega_arith)]; rfl) (i₀ 0 (by omega_arith)) fun s₂ u₂ => ?_
     refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) (by omega_arith)
       (by rw [u₂.other _ (by decide), g₁ _ (by decide) (by decide), h0, addr_add (by omega_arith)])
       (by rw [u₂.rd, u₂.wr]; exact i₀ 4 (by omega_arith)) fun s₃ u₃ => wp_rev fun s₄ u₄ => wp_rev fun s₅ u₅ => ?_
-    have e6 : s₅.gpr .r6 = p6 := by
+    obtain e6 : s₅.gpr .r6 = p6 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
         g₁ _ (by decide) (by decide), h6]
     refine wp_str (a := State.addr p6 + BitVec.ofNat 64 (8 * n + 0)) (by omega_arith)
@@ -173,7 +173,7 @@ theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64
         (by rw [g₇.wr, g₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
         (by rw [g₇.sp, g₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, sp₁]) ?_
     -- The word's halves, as in `s`: the writes so far are to `p6`.
-    have hread : ∀ o, o + 4 ≤ 8 → s₁.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 32 =
+    obtain hread : ∀ o, o + 4 ≤ 8 → s₁.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 32 =
         s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 32 := by
       intro o ho
       rw [m₁]
@@ -185,23 +185,23 @@ theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
         exact hd.sub_left (Offset.sub_base _ (by omega_arith))
-    have hw : ((stateAt s.mem (State.addr p0))[n]'hn8) = s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n)) 64 := by
+    obtain hw : ((stateAt s.mem (State.addr p0))[n]'hn8) = s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n)) 64 := by
       simp [stateAt]
-    have wlo : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) 32 =
+    obtain wlo : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) 32 =
         lo ((stateAt s.mem (State.addr p0))[n]'hn8) := by
       rw [hw, readW_lo, Nat.add_zero]
-    have whi : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) 32 =
+    obtain whi : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) 32 =
         hi ((stateAt s.mem (State.addr p0))[n]'hn8) := by
       rw [hw, readW_hi, BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
-    have v10 : s₅.gpr .r10 = rev (hi ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
+    obtain v10 : s₅.gpr .r10 = rev (hi ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.mem, hread 4 (by omega_arith), whi]
-    have v9 : s₆.gpr .r9 = rev (lo ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
+    obtain v9 : s₆.gpr .r9 = rev (lo ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
       rw [g₆.gpr, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, hread 0 (by omega_arith), wlo]
-    have a4 : State.addr p6 + BitVec.ofNat 64 (8 * n + 4) =
+    obtain a4 : State.addr p6 + BitVec.ofNat 64 (8 * n + 4) =
         State.addr p6 + BitVec.ofNat 64 (8 * n + 0) +
           BitVec.ofNat 64 (Spec.Sha256.wordBytes (hi ((stateAt s.mem (State.addr p0))[n]'hn8))).length := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
-    have a8 : State.addr p6 + BitVec.ofNat 64 (8 * n + 0) = State.addr p6 +
+    obtain a8 : State.addr p6 + BitVec.ofNat 64 (8 * n + 0) = State.addr p6 +
         BitVec.ofNat 64 (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes).length := by
       rw [hP]; rfl
     rw [g₇.mem, v9, g₆.mem, v10, u₅.mem, u₄.mem, u₃.mem, u₂.mem, writeW_rev, writeW_rev, a4,

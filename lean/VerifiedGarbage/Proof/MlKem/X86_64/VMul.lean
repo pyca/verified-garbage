@@ -32,25 +32,25 @@ theorem mont_small {d z : BitVec 16} (hd1 : -(2 * 3329) < d.toInt) (hd2 : d.toIn
     (hz1 : -3329 < z.toInt) (hz2 : z.toInt < 3329) :
     -3329 < (montW d z).toInt ∧ (montW d z).toInt < 3329 ∧
       3329 ∣ (montW d z).toInt * 65536 - d.toInt * z.toInt := by
-  have hn : (d.toInt * z.toInt).natAbs ≤ 6657 * 3328 := by
+  obtain hn : (d.toInt * z.toInt).natAbs ≤ 6657 * 3328 := by
     rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by bdd_omega) (by bdd_omega)
-  have h1 := Int.le_natAbs (a := d.toInt * z.toInt)
-  have h2 := Int.le_natAbs (a := -(d.toInt * z.toInt))
+  obtain h1 := Int.le_natAbs (a := d.toInt * z.toInt)
+  obtain h2 := Int.le_natAbs (a := -(d.toInt * z.toInt))
   rw [Int.natAbs_neg] at h2
   obtain ⟨m1, m2, m3⟩ := montW_spec (d := d) (z := z) (by bdd_omega) (by bdd_omega)
   exact ⟨m1, m2, Int.dvd_of_emod_eq_zero m3⟩
 
 theorem toInt_lt_q {a : BitVec 16} {x : Zq} (h : a.toNat = x.val) : a.toInt = x.val ∧ 0 ≤ a.toInt ∧ a.toInt < 3329 := by
   have hx := x.isLt
-  have e := toInt_of_lt (a := a) (by rw [h]; exact hx)
+  obtain e := toInt_of_lt (a := a) (by rw [h]; exact hx)
   rw [h] at e
   exact ⟨e, by rw [e]; exact Int.natCast_nonneg _, by rw [e]; exact Int.ofNat_lt.mpr hx⟩
 
 /-- The value of a word in `[0, q)` from its value modulo `q`. -/
 theorem cadd_val {m : BitVec 16} (h1 : -3329 < m.toInt) (h2 : m.toInt < 3329) {T : Int} {v : Zq}
     (hd : 3329 ∣ m.toInt - T) (hv : (v.val : Int) = T % 3329) : (caddW m).toNat = v.val := by
-  have c := caddW_spec (Int.le_of_lt h1) h2
-  have n := toNat_of_toInt (a := caddW m) (by rw [c]; exact Int.emod_nonneg _ (by decide))
+  obtain c := caddW_spec (Int.le_of_lt h1) h2
+  obtain n := toNat_of_toInt (a := caddW m) (by rw [c]; exact Int.emod_nonneg _ (by decide))
   rw [c] at n
   obtain ⟨k, hk⟩ := hd
   omega_using [hv, n, hk]
@@ -71,16 +71,16 @@ theorem baseW {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat 
   obtain ⟨A1, A1l, A1h⟩ := toInt_lt_q ha1
   obtain ⟨B0, B0l, B0h⟩ := toInt_lt_q hb0
   obtain ⟨B1, B1l, B1h⟩ := toInt_lt_q hb1
-  have hgl : g.toNat < 3329 := by rw [hg]; exact Nat.mod_lt _ (by decide)
-  have G := toInt_of_lt hgl
+  obtain hgl : g.toNat < 3329 := by rw [hg]; exact Nat.mod_lt _ (by decide)
+  obtain G := toInt_of_lt hgl
   rw [hg] at G
-  have Gl : 0 ≤ g.toInt ∧ g.toInt < 3329 := by
+  obtain Gl : 0 ≤ g.toInt ∧ g.toInt < 3329 := by
     rw [G]; exact ⟨Int.natCast_nonneg _, Int.ofNat_lt.mpr (Nat.mod_lt _ (by decide))⟩
   have hγ := γ.isLt
-  have kG : ∃ k : Int, g.toInt - (γ.val : Int) * 65536 = 3329 * k :=
+  obtain kG : ∃ k : Int, g.toInt - (γ.val : Int) * 65536 = 3329 * k :=
     ⟨-((γ.val : Int) * 65536 / 3329), by rw [G]; omega_using []⟩
   obtain ⟨kG, hkG⟩ := kG
-  have r2l : -3329 < r2W.toInt ∧ r2W.toInt < 3329 := by rw [r2W_toInt]; decide
+  obtain r2l : -3329 < r2W.toInt ∧ r2W.toInt < 3329 := by rw [r2W_toInt]; decide
   -- the products
   obtain ⟨m1l, m1h, ⟨k1, d1⟩⟩ := mont_small (d := a1) (z := b1) (by omega_using [A1l]) (by omega_using [A1h])
     (by omega_using [B1l]) (by omega_using [B1h])
@@ -92,9 +92,9 @@ theorem baseW {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat 
     (by omega_using [B1l]) (by omega_using [B1h])
   obtain ⟨n2l, n2h, ⟨j2, e2⟩⟩ := mont_small (d := a1) (z := b0) (by omega_using [A1l]) (by omega_using [A1h])
     (by omega_using [B0l]) (by omega_using [B0h])
-  have S1 := toInt_add16 (a := montW a0 b0) (b := montW (montW a1 b1) g) (by omega_using [m3l, m2l])
+  obtain S1 := toInt_add16 (a := montW a0 b0) (b := montW (montW a1 b1) g) (by omega_using [m3l, m2l])
     (by omega_using [m3h, m2h])
-  have S2 := toInt_add16 (a := montW a0 b1) (b := montW a1 b0) (by omega_using [n1l, n2l])
+  obtain S2 := toInt_add16 (a := montW a0 b1) (b := montW a1 b0) (by omega_using [n1l, n2l])
     (by omega_using [n1h, n2h])
   obtain ⟨m4l, m4h, ⟨k4, d4⟩⟩ := mont_small (d := montW a0 b0 + montW (montW a1 b1) g) (z := r2W)
     (by rw [S1]; omega_using [m3l, m2l]) (by rw [S1]; omega_using [m3h, m2h]) r2l.1 r2l.2
@@ -171,58 +171,58 @@ theorem vbase_ok {s : State} (hc : VConsts s) (hr : s.xmm .xmm12 = r2V) {x0 x1 y
   rw [WP.block_append_iff]
   refine WP.mono (movmont_ok (d := .xmm1) (src := .xmm4) (z := .xmm10) (t := .xmm2) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hc) fun s1 ⟨l1, o1⟩ => ?_
-  have c1 := o1.consts hc (by decide) (by decide)
+  obtain c1 := o1.consts hc (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (vmont_ok (d := .xmm1) (z := .xmm13) (t := .xmm2) (by decide) (by decide) (by decide)
     (by decide) (by decide) c1) fun s2 ⟨l2, o2⟩ => ?_
-  have c2 := o2.consts c1 (by decide) (by decide)
+  obtain c2 := o2.consts c1 (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (movmont_ok (d := .xmm2) (src := .xmm0) (z := .xmm6) (t := .xmm3) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) c2) fun s3 ⟨l3, o3⟩ => ?_
-  have c3 := o3.consts c2 (by decide) (by decide)
+  obtain c3 := o3.consts c2 (by decide) (by decide)
   rw [WP.block_append_iff, block_cons_iff]
   refine WP.mono (paddw_ok (d := .xmm1) (e := .xmm2)) fun s4 ⟨l4, o4⟩ => ?_
-  have c4 := o4.consts c3 (by decide) (by decide)
+  obtain c4 := o4.consts c3 (by decide) (by decide)
   refine WP.mono (movmont_ok (d := .xmm2) (src := .xmm0) (z := .xmm10) (t := .xmm3) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) c4) fun s5 ⟨l5, o5⟩ => ?_
-  have c5 := o5.consts c4 (by decide) (by decide)
+  obtain c5 := o5.consts c4 (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (vmont_ok (d := .xmm4) (z := .xmm6) (t := .xmm3) (by decide) (by decide) (by decide)
     (by decide) (by decide) c5) fun s6 ⟨l6, o6⟩ => ?_
-  have c6 := o6.consts c5 (by decide) (by decide)
+  obtain c6 := o6.consts c5 (by decide) (by decide)
   rw [WP.block_append_iff, block_cons_iff]
   refine WP.mono (paddw_ok (d := .xmm2) (e := .xmm4)) fun s7 ⟨l7, o7⟩ => ?_
-  have c7 := o7.consts c6 (by decide) (by decide)
+  obtain c7 := o7.consts c6 (by decide) (by decide)
   refine WP.mono (vmont_ok (d := .xmm1) (z := .xmm12) (t := .xmm3) (by decide) (by decide) (by decide)
     (by decide) (by decide) c7) fun s8 ⟨l8, o8⟩ => ?_
-  have c8 := o8.consts c7 (by decide) (by decide)
+  obtain c8 := o8.consts c7 (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (vcadd_ok (d := .xmm1) (t := .xmm3) (by decide) (by decide) c8) fun s9 ⟨l9, o9⟩ => ?_
-  have c9 := o9.consts c8 (by decide) (by decide)
+  obtain c9 := o9.consts c8 (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (vmont_ok (d := .xmm2) (z := .xmm12) (t := .xmm3) (by decide) (by decide) (by decide)
     (by decide) (by decide) c9) fun s10 ⟨l10, o10⟩ => ?_
-  have c10 := o10.consts c9 (by decide) (by decide)
+  obtain c10 := o10.consts c9 (by decide) (by decide)
   refine WP.mono (vcadd_ok (d := .xmm2) (t := .xmm3) (by decide) (by decide) c10) fun s11 ⟨l11, o11⟩ => ?_
   -- the registers each step reads
-  have e0 : s4.xmm .xmm0 = s.xmm .xmm0 := by
+  obtain e0 : s4.xmm .xmm0 = s.xmm .xmm0 := by
     rw [o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide)]
-  have e6 : s5.xmm .xmm6 = s.xmm .xmm6 := by
+  obtain e6 : s5.xmm .xmm6 = s.xmm .xmm6 := by
     rw [o5.xmm _ (by decide), o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide),
       o1.xmm _ (by decide)]
-  have e10 : s4.xmm .xmm10 = s.xmm .xmm10 := by
+  obtain e10 : s4.xmm .xmm10 = s.xmm .xmm10 := by
     rw [o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide)]
-  have e12 : ∀ t, t = s7 ∨ t = s9 → t.xmm .xmm12 = r2V := by
+  obtain e12 : ∀ t, t = s7 ∨ t = s9 → t.xmm .xmm12 = r2V := by
     rintro t (rfl | rfl)
     · rw [o7.xmm _ (by decide), o6.xmm _ (by decide), o5.xmm _ (by decide), o4.xmm _ (by decide),
         o3.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide), hr]
     · rw [o9.xmm _ (by decide), o8.xmm _ (by decide), o7.xmm _ (by decide), o6.xmm _ (by decide),
         o5.xmm _ (by decide), o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide),
         o1.xmm _ (by decide), hr]
-  have e4 : s5.xmm .xmm4 = s.xmm .xmm4 := by
+  obtain e4 : s5.xmm .xmm4 = s.xmm .xmm4 := by
     rw [o5.xmm _ (by decide), o4.xmm _ (by decide), o3.xmm _ (by decide), o2.xmm _ (by decide),
       o1.xmm _ (by decide)]
-  have v1 : ∀ i < 8, word (s9.xmm .xmm1) i = W.caddW (W.montW (W.montW (word (s.xmm .xmm0) i)
+  obtain v1 : ∀ i < 8, word (s9.xmm .xmm1) i = W.caddW (W.montW (W.montW (word (s.xmm .xmm0) i)
       (word (s.xmm .xmm6) i) + W.montW (W.montW (word (s.xmm .xmm4) i) (word (s.xmm .xmm10) i))
         (word (s.xmm .xmm13) i)) W.r2W) := fun i hi => by
     rw [l9 i hi]; dsimp only; rw [l8 i hi]; dsimp only
@@ -232,7 +232,7 @@ theorem vbase_ok {s : State} (hc : VConsts s) (hr : s.xmm .xmm12 = r2V) {x0 x1 y
     rw [l1 i hi, o1.xmm _ (by decide), o2.xmm _ (by decide), o1.xmm _ (by decide), BitVec.add_comm]
     dsimp only
     rw [o2.xmm .xmm6 (by decide), o1.xmm .xmm6 (by decide)]
-  have v2 : ∀ i < 8, word (s11.xmm .xmm2) i = W.caddW (W.montW (W.montW (word (s.xmm .xmm0) i)
+  obtain v2 : ∀ i < 8, word (s11.xmm .xmm2) i = W.caddW (W.montW (W.montW (word (s.xmm .xmm0) i)
       (word (s.xmm .xmm10) i) + W.montW (word (s.xmm .xmm4) i) (word (s.xmm .xmm6) i)) W.r2W) :=
     fun i hi => by
       rw [l11 i hi]; dsimp only; rw [l10 i hi]; dsimp only
@@ -270,19 +270,19 @@ theorem deint_lanes {l0 l1 l2 l3 : BitVec 128} {c : Nat → Nat}
     (hs : ∀ k < 16, c k < 32768) :
     (∀ e < 8, (word (deE l0 l1 l2 l3) e).toNat = c (2 * e)) ∧
       (∀ e < 8, (word (deO l0 l1 l2 l3) e).toNat = c (2 * e + 1)) := by
-  have lo : ∀ a b : BitVec 128, XBinOp.eval .punpcklqdq (shufDwords a 0xD8) (shufDwords b 0xD8) =
+  obtain lo : ∀ a b : BitVec 128, XBinOp.eval .punpcklqdq (shufDwords a 0xD8) (shufDwords b 0xD8) =
       ofDwords (dword a 0) (dword a 2) (dword b 0) (dword b 2) := fun a b => by
     rw [punpcklqdq_eq, shuf_d8, shuf_d8]; simp
-  have hi : ∀ a b : BitVec 128, XBinOp.eval .punpckhqdq (shufDwords a 0xD8) (shufDwords b 0xD8) =
+  obtain hi : ∀ a b : BitVec 128, XBinOp.eval .punpckhqdq (shufDwords a 0xD8) (shufDwords b 0xD8) =
       ofDwords (dword a 1) (dword a 3) (dword b 1) (dword b 3) := fun a b => by
     rw [punpckhqdq_eq, shuf_d8, shuf_d8]; simp
-  have sm : ∀ a b c d : BitVec 32, a.toNat < 32768 → b.toNat < 32768 → c.toNat < 32768 → d.toNat < 32768 →
+  obtain sm : ∀ a b c d : BitVec 32, a.toNat < 32768 → b.toNat < 32768 → c.toNat < 32768 → d.toNat < 32768 →
       ∀ j < 4, (dword (ofDwords a b c d) j).toNat < 32768 := fun a b c d ha hb hc hd j hj => by
     rcases cases4 hj with rfl | rfl | rfl | rfl <;> simpa
-  have t0 : ∀ j < 4, (dword l0 j).toNat < 32768 := fun j hj => by rw [h0 j hj]; exact hs j (by bdd_omega)
-  have t1 : ∀ j < 4, (dword l1 j).toNat < 32768 := fun j hj => by rw [h1 j hj]; exact hs _ (by bdd_omega)
-  have t2 : ∀ j < 4, (dword l2 j).toNat < 32768 := fun j hj => by rw [h2 j hj]; exact hs _ (by bdd_omega)
-  have t3 : ∀ j < 4, (dword l3 j).toNat < 32768 := fun j hj => by rw [h3 j hj]; exact hs _ (by bdd_omega)
+  obtain t0 : ∀ j < 4, (dword l0 j).toNat < 32768 := fun j hj => by rw [h0 j hj]; exact hs j (by bdd_omega)
+  obtain t1 : ∀ j < 4, (dword l1 j).toNat < 32768 := fun j hj => by rw [h1 j hj]; exact hs _ (by bdd_omega)
+  obtain t2 : ∀ j < 4, (dword l2 j).toNat < 32768 := fun j hj => by rw [h2 j hj]; exact hs _ (by bdd_omega)
+  obtain t3 : ∀ j < 4, (dword l3 j).toNat < 32768 := fun j hj => by rw [h3 j hj]; exact hs _ (by bdd_omega)
   refine ⟨fun e he => ?_, fun e he => ?_⟩
   · rw [deE, lo, lo, word_packssdw_small _ _ he (sm _ _ _ _ (t0 0 (by decide)) (t0 2 (by decide))
       (t1 0 (by decide)) (t1 2 (by decide))) (sm _ _ _ _ (t2 0 (by decide)) (t2 2 (by decide))
@@ -340,9 +340,9 @@ theorem store4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 16 ≤ 256) (Y0 Y1 Y2 Y3
       (∀ k < 16, coeffAt m' H (j + k) = dword ([Y0, Y1, Y2, Y3][k / 4]!) (k % 4)) ∧
       Frame [pR H] m m' := by
   intro m'
-  have a1 := off16 H j 1
-  have a2 := off16 H j 2
-  have a3 := off16 H j 3
+  obtain a1 := off16 H j 1
+  obtain a2 := off16 H j 2
+  obtain a3 := off16 H j 3
   simp only [Nat.mul_one] at a1
   simp only [show 16 * 2 = 32 from rfl, show 16 * 3 = 48 from rfl, show 4 * 2 = 8 from rfl,
     show 4 * 3 = 12 from rfl] at a2 a3
@@ -402,9 +402,9 @@ theorem vinter_ok {s : State} {H : Addr} {j : Nat} (hj : j + 16 ≤ 256) (hdi : 
         (word (if k % 2 = 0 then s.xmm .xmm1 else s.xmm .xmm2) (k / 2)).toNat) ∧
       Frame [pR H] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr ∧
       ∀ r, r ∉ [XReg.xmm1, .xmm3, .xmm4, .xmm5, .xmm6] → s'.xmm r = s.xmm r := by
-  have w : ∀ t < 4, InRegions s.wr (coeffAddr H j + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
+  obtain w : ∀ t < 4, InRegions s.wr (coeffAddr H j + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
     rw [off16]; exact ⟨_, hw, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
-  have w0 : InRegions s.wr (coeffAddr H j) 16 := by
+  obtain w0 : InRegions s.wr (coeffAddr H j) 16 := by
     have := w 0 (by decide); rwa [Nat.mul_zero, add_ofNat_zero] at this
   simp only [vinter]
   vrunm [hdi, eval_movdqa, pxor_self, w0, w 1 (by decide), w 2 (by decide), w 3 (by decide)]

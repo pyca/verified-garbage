@@ -61,10 +61,10 @@ theorem shPreM16 (m : Nat) {oa oz : Nat} {s s1 : State} (h : SHH16 oa oz s)
 theorem sampleHAtM16_ok {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz : Nat} {s : State}
     (h : SHH16 oa oz s) : WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPostM16 m oa oz s) := by
   refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
-  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  have hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
+  obtain hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
+  obtain hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
     rw [k.2.1, k.2.2]; exact h.c
-  have hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
+  obtain hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
   refine WP.seq (WP.mono (WP.inline hb.ok (shPreM16 m h hv k) hc hw (Q := fun s2 => s2.rd = s1.rd ∧ s2.wr = s1.wr ∧
       abiPreserved s1 s2 ∧ Frame [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.mem s2.mem ∧
       (sampleHMKW true m).post (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩])
@@ -109,9 +109,9 @@ the seeds at `scratch`, to the polynomials from `sc oa`. -/
 theorem sampleHAtP16_ok {N₀ m : Nat} {b : Prog isa} (hb : BatchPOk16 N₀ m b) {oa oz : Nat} {s : State}
     (h : SHH16 oa oz s) : WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPostP16 N₀ m oa oz s) := by
   refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
-  have hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
+  obtain hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
     rw [k.2.1, k.2.2]; exact h.c
-  have hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
+  obtain hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
   refine WP.seq (WP.mono (WP.inline hb.ok (shPre16 h hv k) hc hw (Q := fun s2 => s2.rd = s1.rd ∧ s2.wr = s1.wr ∧
       abiPreserved s1 s2 ∧ Frame [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.mem s2.mem ∧
       (samplePNKW N₀ m).post (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩])
@@ -150,12 +150,12 @@ theorem habs_take (E : List Byte) (t : Nat) :
 /-- The first `i` rows of `ek`. -/
 theorem ekK_take (L : Kem) (σ : State) (hk : L.k = 3) {i : Nat} (hi : i ≤ 3) :
     (ekK L σ).take (384 * i) = KPke.catK (tRow L σ) i := by
-  have hl : ∀ j, (tRow L σ j).length = 384 := fun _ => encode12_length _
-  have e3 : KPke.catK (tRow L σ) L.p.k = KPke.catK (tRow L σ) i ++
+  obtain hl : ∀ j, (tRow L σ j).length = 384 := fun _ => encode12_length _
+  obtain e3 : KPke.catK (tRow L σ) L.p.k = KPke.catK (tRow L σ) i ++
       ((List.range (3 - i)).map (i + ·)).flatMap (tRow L σ) := by
     rw [show L.p.k = i + (3 - i) by rw [show L.p.k = 3 from hk]; omega_using [hi], KPke.catK_eq, KPke.catK_eq,
       List.range_add, List.flatMap_append]
-  have hli : (KPke.catK (tRow L σ) i).length = 384 * i := KPke.catK_length hl i
+  obtain hli : (KPke.catK (tRow L σ) i).length = 384 * i := KPke.catK_length hl i
   show (KPke.ekPKE L.p (aHat (rhoK L σ)) (kgD σ)).take (384 * i) = _
   rw [KPke.ekPKE, show (fun j => encode12 (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) j)) = tRow L σ from rfl, e3,
     List.append_assoc, List.take_left' hli]
@@ -179,16 +179,16 @@ theorem cp_ok {i : Nat} (hi : i < 3) {s : State} (h : KH K σ i (3 * i) s) :
   · rw [ite_eq_left h0]
     exact WP.block_nil ⟨h, fun _ => by rw [h0]; simp [bytesAt]⟩
   · rw [ite_eq_right h0]
-    have hc := W.cp i hi
+    obtain hc := W.cp i hi
     simp only [cpChk, Bool.or_eq_true, beq_iff_eq, h0, false_or, Bool.and_eq_true] at hc
     obtain ⟨hcc, hk⟩ := hc
     obtain ⟨hkc, hr⟩ := keepAll_spec hk
-    have L₀ := h.kc.lay W.toKgWfB hp
+    obtain L₀ := h.kc.lay W.toKgWfB hp
     refine WP.mono (copy_okL L₀ (show Reg.r12 ≠ .rdi by decide) hcc) fun s' ⟨hP, hb'⟩ =>
       ⟨h.keep W hp hP.b (hP.cs .r15 (by decide)) hkc (fun r hr' => hr r (List.mem_append_left _ hr'))
         (fun _ => hr (hsP K, 200) (List.mem_append_right _ (List.mem_singleton_self _))), fun ho => ?_⟩
     rw [hP.pa rbx_cs, hb']
-    have hcat : bytesAt s.mem (pa s (.r12, 0)) (384 * i) = KPke.catK (tRow K.L σ) i :=
+    obtain hcat : bytesAt s.mem (pa s (.r12, 0)) (384 * i) = KPke.catK (tRow K.L σ) i :=
       bytesAt_catK s.mem s .r12 0 384 _ i fun j hj => by rw [Nat.zero_add]; exact (h.ok ho).1 j hj
     rw [← ekK_take K.L σ W.k3 (by omega_using [hi])] at hcat
     have := bytesAt_slice s.mem (pa s (.r12, 0)) (k := 136 * (hm i).2) (c := 136 * (hm i).1) (len := 384 * i)
@@ -205,11 +205,11 @@ structure SI (K : Kem16) (σ : State) (i J : Nat) (s : State) : Prop where
 
 theorem seedI_ok {i : Nat} (hi : i < 3) {J : Nat} (hJ : J < 4) {s : State} (h : SI K σ i J s) :
     WP isa (seedAt J ((3 * i + J) / K.L.k) ((3 * i + J) % K.L.k)) s (SI K σ i (J + 1)) := by
-  have hsd := W.sd i hi
+  obtain hsd := W.sd i hi
   simp only [sdChk, List.all_eq_true, List.mem_range, Bool.and_eq_true] at hsd
   obtain ⟨hs, hk⟩ := hsd J hJ
   obtain ⟨hkc, hr⟩ := keepAll_spec hk
-  have L₀ := h.kh.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kh.kc.lay W.toKgWfB hp
   refine WP.mono (seed_step L₀ (kgB_bases K.L) (by omega_using [hi, hJ]) hs h.sd) fun s' ⟨hP, hS⟩ =>
     ⟨h.kh.keep W hp hP.b (hP.cs .r15 (by decide)) hkc (fun r hr' => hr r (List.mem_append_left _ hr'))
       (fun _ => hr (hsP K, 200) (List.mem_append_right _ (List.mem_cons_self ..))), hS, fun ho => ?_⟩
@@ -228,13 +228,13 @@ theorem sm_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 
     {s : State} (h : SI K σ i 4 s) :
     WP isa (Encaps.sampleHAt (b (hm i).1) (sc (K.oA + 512 * (3 * i))) (sc K.oW)) s (KH K σ i (3 * i + 3)) := by
   obtain ⟨e2, e21, hbd, hm3⟩ := hm_spec i hi
-  have hsm := W.sm i hi
+  obtain hsm := W.sm i hi
   simp only [smChk, Bool.and_eq_true] at hsm
   obtain ⟨hkc, hr⟩ := keepAll_spec hsm.2
-  have L₅ := h.kh.kc.lay W.toKgWfB hp
-  have hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, W.ek]
+  obtain L₅ := h.kh.kc.lay W.toKgWfB hp
+  obtain hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, W.ek]
   refine WP.mono (sampleHAtM16_ok (v.batchHM16 b hb _ hm3) (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
-  have ha : ∀ e' < 3 * i, keepB (kgR ++ kgW K.L) (smW K i) (aP K e') 512 = true := fun e' he' =>
+  obtain ha : ∀ e' < 3 * i, keepB (kgR ++ kgW K.L) (smW K i) (aP K e') 512 = true := fun e' he' =>
     hr (aP K e', 512) (List.mem_append_right _ (List.mem_map.2 ⟨e', List.mem_range.2 he', rfl⟩))
   refine KH.of (h.kh.ks.keep W hp (Nat.le_refl _) h₆.b hkc fun r hr' =>
     hr r (List.mem_append_left _ (List.mem_append_left _ hr'))) ?_ fun ho => ?_
@@ -250,12 +250,12 @@ theorem sm_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 
       exact (h.kh.ok ho').1 j hj
     · have eHS : ∀ t : State, pa t (hsP K) = pa t (sc K.oW) + BitVec.ofNat 64 Sample4.oHS := fun t => by
         rw [pa_off]; rfl
-      have e0 := (h.kh.ok ho').2
+      obtain e0 := (h.kh.ok ho').2
       rw [show 3 * i / 3 = i by omega_using [], eHS] at e0
       rw [h₆.b.pa rbx_bases, eHS, h₆.hs, e0, EkF.habs_congr _ (hm i).1
         (g := fun j => ((ekK K.L σ).drop (136 * ((hm i).2 + j))).take 136) fun j hj => ?_, ← e2,
         habs_take _ _ _ (by omega_using [hi, e21, hbd, hE]), e21, show (3 * i + 3) / 3 = i + 1 by omega_using []]
-      have hb := h.hb ho'
+      obtain hb := h.hb ho'
       have := bytesAt_slice s.mem (pa s (hbP K)) (k := 136 * j) (c := 136) (len := 136 * (hm i).1) (by omega_using [hj])
       rw [hb, List.drop_take, List.take_take, Nat.min_eq_left (by omega_using [hj]), List.drop_drop, pa_off,
         show Encaps16.oHB K + 136 * j = K.oW + (Sample4.oHB + 136 * j) by simp only [Encaps16.oHB]; omega_using [],
@@ -296,26 +296,26 @@ include W hp
 theorem row_ok (hK : KgRowsOk K.L) {i : Nat} (hi : i < 3) {s : State} (h : KH K σ i (3 * i + 3) s)
     (ho : allOk K.L.k (rhoK K.L σ) (3 * i + 3)) : WP isa (rowAt K i) s (KH K σ (i + 1) (3 * i + 3)) := by
   have k3 := W.k3
-  have hc := W.rw i hi
+  obtain hc := W.rw i hi
   simp only [rwChk, Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have hkr : krChk (kgB K.L) (kgW K.L) K.L.k (ekP i) (aP K (3 * i)) (sc oSH) (ehP i) (sc oZK) = true := by
+  obtain hkr : krChk (kgB K.L) (kgW K.L) K.L.k (ekP i) (aP K (3 * i)) (sc oSH) (ehP i) (sc oZK) = true := by
     rw [k3]; exact hc.1
-  have L₀ := h.kc.lay W.toKgWfB hp
-  have he : ∀ j < 3, sampleNTT minIterations (matSeed (rhoK K.L σ) i j) = some (aHat (rhoK K.L σ) i j) := by
+  obtain L₀ := h.kc.lay W.toKgWfB hp
+  obtain he : ∀ j < 3, sampleNTT minIterations (matSeed (rhoK K.L σ) i j) = some (aHat (rhoK K.L σ) i j) := by
     intro j hj
     have := aHat_part ho (e' := 3 * i + j) (by omega_using [hj])
     rwa [k3, show (3 * i + j) / 3 = i by omega_using [hj], show (3 * i + j) % 3 = j by omega_using [hj]] at this
-  have hA : ∀ j < 3, PolyIsW 16 s.mem (pa s (sc (K.oA + 512 * (3 * i) + 512 * j))) (aHat (rhoK K.L σ) i j) := by
+  obtain hA : ∀ j < 3, PolyIsW 16 s.mem (pa s (sc (K.oA + 512 * (3 * i) + 512 * j))) (aHat (rhoK K.L σ) i j) := by
     intro j hj
     have := h.mat.mat (3 * i + j) (by omega_using [hj]) _ (by
       rw [k3, show (3 * i + j) / 3 = i by omega_using [hj], show (3 * i + j) % 3 = j by omega_using [hj]]; exact he j hj)
     rwa [show K.oA + 512 * (3 * i + j) = K.oA + 512 * (3 * i) + 512 * j by omega_using []] at this
-  have redA : VecReducedW 16 s.mem (pa s (aP K (3 * i))) K.L.k := fun j hj => by
+  obtain redA : VecReducedW 16 s.mem (pa s (aP K (3 * i))) K.L.k := fun j hj => by
     rw [aP, sc_w16]; exact (hA j (by omega_using [k3, hj])).1
-  have redS : VecReduced s.mem (pa s (sc oSH)) K.L.k := fun j hj => by
+  obtain redS : VecReduced s.mem (pa s (sc oSH)) K.L.k := fun j hj => by
     rw [pa_off]; exact (h.sh j (by omega_using [k3, hj])).1
-  have ep : rowAt K i = K.L.kgRowAt (ekP i) (aP K (3 * i)) (sc oSH) (ehP i) (sc oZK) := by
+  obtain ep : rowAt K i = K.L.kgRowAt (ekP i) (aP K (3 * i)) (sc oSH) (ehP i) (sc oZK) := by
     rw [rowAt, k3]
   rw [ep]
   refine WP.mono (kgRowAt_okL hK L₀ rbx_na rbx_na rbx_na rbx_na hkr redA redS (h.eh i hi (Nat.le_refl _)).1)
@@ -324,11 +324,11 @@ theorem row_ok (hK : KgRowsOk K.L) {i : Nat} (hi : i < 3) {s : State} (h : KH K 
     (fun _ j hj hj' => ?_) (fun _ => hr (hsP K, 200) (List.mem_append_right _ (List.mem_singleton_self _)))
   obtain rfl : j = i := by omega_using [hj, hj']
   rw [hP.pa r12_cs, hb]
-  have eA : vecAtW 16 s.mem (pa s (aP K (3 * j))) K.L.k = (List.range 3).map (aHat (rhoK K.L σ) j) := by
+  obtain eA : vecAtW 16 s.mem (pa s (aP K (3 * j))) K.L.k = (List.range 3).map (aHat (rhoK K.L σ) j) := by
     rw [k3]; simp only [vecAtW]
     refine List.map_congr_left fun t ht => ?_
     rw [aP, sc_w16]; exact (hA t (List.mem_range.mp ht)).2
-  have eS : vecAt s.mem (pa s (sc oSH)) K.L.k = (List.range 3).map (KPke.kgS K.L.p (kgD σ)) := by
+  obtain eS : vecAt s.mem (pa s (sc oSH)) K.L.k = (List.range 3).map (KPke.kgS K.L.p (kgD σ)) := by
     rw [k3]; simp only [vecAt]
     refine List.map_congr_left fun t ht => ?_
     rw [pa_off]; exact (h.sh t (List.mem_range.mp ht)).2
@@ -337,7 +337,7 @@ theorem row_ok (hK : KgRowsOk K.L) {i : Nat} (hi : i < 3) {s : State} (h : KH K 
 /-- Row `i`, if every `SampleNTT` so far succeeded. -/
 theorem rowIf_ok (hK : KgRowsOk K.L) {i : Nat} (hi : i < 3) {s : State} (h : KH K σ i (3 * i + 3) s) :
     WP isa (ifOk (rowAt K i)) s (KH K σ (i + 1) (3 * i + 3)) := by
-  have hf := W.flg i hi
+  obtain hf := W.flg i hi
   simp only [Bool.and_eq_true] at hf
   obtain ⟨hkc, hr⟩ := keepAll_spec hf.1
   refine ifOk_ok (fun s₁ hP hne => ?_) fun s₁ hP he => ?_
@@ -356,21 +356,21 @@ of `ek` that the rows before it wrote absorbed. -/
 theorem frag_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {i : Nat} (hi : i < 3)
     {s : State} (h : KH K σ i (3 * i) s) : WP isa (frag K b i) s (KH K σ i (3 * i + 3)) := by
   have k3 := W.k3
-  have sd : ∀ J < 4, ∀ t, SI K σ i J t → WP isa (seedAt J ((3 * i + J) / 3) ((3 * i + J) % 3)) t (SI K σ i (J + 1)) :=
+  obtain sd : ∀ J < 4, ∀ t, SI K σ i J t → WP isa (seedAt J ((3 * i + J) / 3) ((3 * i + J) % 3)) t (SI K σ i (J + 1)) :=
     fun J hJ t ht => by have := seedI_ok W hp hi hJ ht; rwa [k3] at this
   unfold frag
   refine WP.seq (WP.mono (cp_ok W hp hi h) fun s₁ ⟨h₁, hb₁⟩ => ?_)
-  have i₁ : SI K σ i 0 s₁ := ⟨h₁, ⟨h₁.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩, hb₁⟩
-  have s0 := sd 0 (by decide) s₁ i₁
+  obtain i₁ : SI K σ i 0 s₁ := ⟨h₁, ⟨h₁.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩, hb₁⟩
+  obtain s0 := sd 0 (by decide) s₁ i₁
   rw [show (3 * i + 0) / 3 = i by omega_using [], show (3 * i + 0) % 3 = 0 by omega_using []] at s0
   refine WP.seq (WP.mono s0 fun s₂ i₂ => ?_)
-  have s1 := sd 1 (by decide) s₂ i₂
+  obtain s1 := sd 1 (by decide) s₂ i₂
   rw [show (3 * i + 1) / 3 = i by omega_using [], show (3 * i + 1) % 3 = 1 by omega_using []] at s1
   refine WP.seq (WP.mono s1 fun s₃ i₃ => ?_)
-  have s2 := sd 2 (by decide) s₃ i₃
+  obtain s2 := sd 2 (by decide) s₃ i₃
   rw [show (3 * i + 2) / 3 = i by omega_using [], show (3 * i + 2) % 3 = 2 by omega_using []] at s2
   refine WP.seq (WP.mono s2 fun s₄ i₄ => ?_)
-  have s3 := sd 3 (by decide) s₄ i₄
+  obtain s3 := sd 3 (by decide) s₄ i₄
   rw [show (3 * i + 3) / 3 = i + 1 by omega_using [], show (3 * i + 3) % 3 = 0 by omega_using []] at s3
   refine WP.seq (WP.mono s3 fun s₅ i₅ => ?_)
   rw [Top16.aP, k3]
@@ -394,15 +394,15 @@ theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 
     WP isa (tail K) s (KFin K.L σ) := by
   have k3 := W.k3
   have hek := W.ek
-  have L₀ := h.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kc.lay W.toKgWfB hp
   have Wb := W.toKgWfB
-  have hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, hek]
-  have rows : bytesAt s.mem (pa s (.r12, 0)) (384 * K.L.k) =
+  obtain hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, hek]
+  obtain rows : bytesAt s.mem (pa s (.r12, 0)) (384 * K.L.k) =
       KPke.catK (fun i => encode12 (KPke.kgT K.L.p (aHat (rhoK K.L σ)) (kgD σ) i)) K.L.k := by
     rw [k3]; exact bytesAt_catK s.mem s .r12 0 384 _ 3 fun j hj => by
       rw [Nat.zero_add]; exact (h.ok ho).1 j hj
-  have hs0 : stateAt s.mem (pa s (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := (h.ok ho).2
-  have h15 : s.gpr .r15 = 1 := by rw [h.mat.r15, ifp ho]
+  obtain hs0 : stateAt s.mem (pa s (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := (h.ok ho).2
+  obtain h15 : s.gpr .r15 = 1 := by rw [h.mat.r15, ifp ho]
   have tS := W.tS
   simp only [Bool.and_eq_true] at tS
   have tC := W.tC
@@ -413,68 +413,68 @@ theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 
   -- `ρ` to `ek`.
   refine WP.seq (WP.mono (copy_okL L₀ (dst := (.r12, 384 * K.L.k)) (src := sc oG) (n := 32) (by decide) Wb.f₁)
     fun s₁ ⟨hP₁, hb₁⟩ => ?_)
-  have k₁ := h.kc.step Wb hp hP₁.b Wb.f₁K
-  have L₁ := k₁.lay Wb hp
-  have hek₁ : bytesAt s₁.mem (pa s₁ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
+  obtain k₁ := h.kc.step Wb hp hP₁.b Wb.f₁K
+  obtain L₁ := k₁.lay Wb hp
+  obtain hek₁ : bytesAt s₁.mem (pa s₁ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
     rw [Kem.ekLen, Params.ekLen, bytesAt_split, show 0 + 384 * K.L.p.k = 384 * K.L.k from Nat.zero_add _,
       hP₁.pa (p := (.r12, 384 * K.L.k)) r12_cs, hb₁, h.rho, ekK, KPke.ekPKE, L₀.keepBytes hP₁.b Wb.f₁E]
     exact congrArg (· ++ _) rows
-  have hs₁ : stateAt s₁.mem (pa s₁ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
+  obtain hs₁ : stateAt s₁.mem (pa s₁ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
     rw [EkF.stateAt_keep L₀ hP₁.b tS.1]; exact hs0
   -- `ek` to `dk`.
   refine WP.seq (WP.mono (copy_okL L₁ (dst := (.r13, 384 * K.L.k)) (src := (.r12, 0)) (n := K.L.ekLen) (by decide) Wb.f₂)
     fun s₂ ⟨hP₂, hb₂⟩ => ?_)
-  have k₂ := k₁.step Wb hp hP₂.b Wb.f₂K
-  have L₂ := k₂.lay Wb hp
+  obtain k₂ := k₁.step Wb hp hP₂.b Wb.f₂K
+  obtain L₂ := k₂.lay Wb hp
   rw [hek₁] at hb₂
-  have hek₂ : bytesAt s₂.mem (pa s₂ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
+  obtain hek₂ : bytesAt s₂.mem (pa s₂ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
     rw [L₁.keepBytes hP₂.b Wb.f₂E]; exact hek₁
-  have hs₂ : stateAt s₂.mem (pa s₂ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
+  obtain hs₂ : stateAt s₂.mem (pa s₂ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
     rw [EkF.stateAt_keep L₁ hP₂.b tS.2]; exact hs₁
   -- the sponge's state to the sponge functions' state
   refine WP.seq (WP.mono (copy_okL L₂ (dst := sc 0) (src := hsP K) (n := 200) (show Reg.rbx ≠ .rdi by decide) tC.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_)
-  have k₃ := k₂.step Wb hp hP₃.b tCK
-  have L₃ := k₃.lay Wb hp
-  have hR₃ : Spec.Sha3.Repr s₃.mem (pa s₃ (sc 0)) 136 ((ekK K.L σ).take 680) := by
+  obtain k₃ := k₂.step Wb hp hP₃.b tCK
+  obtain L₃ := k₃.lay Wb hp
+  obtain hR₃ : Spec.Sha3.Repr s₃.mem (pa s₃ (sc 0)) 136 ((ekK K.L σ).take 680) := by
     show stateAt _ _ = _
     rw [hP₃.pa rbx_cs, stateAt_of_bytes hb₃, hs₂, HSponge.hstate, ite_eq_left (by rw [hE]; decide)]
     rfl
-  have ek₃ : bytesAt s₃.mem (pa s₃ (.r12, 0)) 1184 = ekK K.L σ := by
+  obtain ek₃ : bytesAt s₃.mem (pa s₃ (.r12, 0)) 1184 = ekK K.L σ := by
     rw [L₂.keepBytes hP₃.b (tCr ((.r12, 0), 1184) (by simp)), ← hek]; exact hek₂
   -- the rest of `ek`, the padding and the squeeze
   rw [show K.L.ekLen - 136 * hDone = 504 by rw [hek]; rfl, show 136 * hDone = 680 from rfl]
   refine WP.seq (WP.mono (absAll_ok (kgB_bases K.L) hrate [((.r12, 680), 504)] L₃ 0 _ hps (by decide)
     (by rw [List.length_take, hE]; rfl) hR₃) fun s₄ ⟨hP₄, hR₄⟩ => ?_)
-  have epc : (ekK K.L σ).take 680 ++ pieces s₃ [((.r12, 680), 504)] = ekK K.L σ := by
+  obtain epc : (ekK K.L σ).take 680 ++ pieces s₃ [((.r12, 680), 504)] = ekK K.L σ := by
     have := bytesAt_slice s₃.mem (pa s₃ (.r12, 0)) (k := 680) (c := 504) (len := 1184) (by omega_using [])
     rw [ek₃, pa_add, Nat.zero_add] at this
     simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, ← this,
       List.take_of_length_le (show (List.drop 680 (ekK K.L σ)).length ≤ 504 by rw [List.length_drop, hE]),
       List.take_append_drop]
   rw [epc] at hR₄
-  have L₄ := L₃.post hP₄.b (kgB_bases K.L)
+  obtain L₄ := L₃.post hP₄.b (kgB_bases K.L)
   refine WP.seq (WP.mono (kpad_ok (show 6 < 256 by decide) (KPadH.of L₄ hk hrate (pos := 504 % 136) (by decide)))
     fun s₅ ⟨hP₅, hS₅⟩ => ?_)
   have hP₅' : PPost s₄ s₅ [(sc 0, 200), (sc 200, 640)] := hP₅
-  have L₅ := L₄.post hP₅.b (kgB_bases K.L)
-  have e4 : pa s₄ (sc 0) = pa s₃ (sc 0) := hP₄.pa (by decide)
-  have hS := hS₅ (ekK K.L σ) (by rw [e4]; exact hR₄) (by rw [hE])
+  obtain L₅ := L₄.post hP₅.b (kgB_bases K.L)
+  obtain e4 : pa s₄ (sc 0) = pa s₃ (sc 0) := hP₄.pa (by decide)
+  obtain hS := hS₅ (ekK K.L σ) (by rw [e4]; exact hR₄) (by rw [hE])
   refine WP.seq (WP.mono (ksqz_ok hna (KSqzH.of L₅ hsq hrate)) fun s₆ ⟨hP₆, ho₆⟩ => ?_)
   have hP₆' : PPost s₅ s₆ [(sc 0, 200), ((.r13, 384 * K.L.k + K.L.ekLen), 32), (sc 200, 640)] := hP₆
-  have hP₃₆ : PPost s₃ s₆ (finW₃ K.L) :=
+  obtain hP₃₆ : PPost s₃ s₆ (finW₃ K.L) :=
     PPost.trans (PPost.trans hP₄ hP₅' (by decide)
       (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h <;> simp [h])
       (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h <;> simp [h]))
       hP₆' (cs3 (by decide) hocs (by decide)) (fun w hw => hw) sub_acb
-  have k₆ := k₃.step Wb hp hP₃₆.b Wb.f₃K
-  have L₆ := k₆.lay Wb hp
-  have e5 : pa s₅ (sc 0) = pa s₄ (sc 0) := hP₅.pa (by decide)
-  have hH : bytesAt s₆.mem (pa s₃ (.r13, 384 * K.L.k + K.L.ekLen)) 32 = H (ekK K.L σ) := by
+  obtain k₆ := k₃.step Wb hp hP₃₆.b Wb.f₃K
+  obtain L₆ := k₆.lay Wb hp
+  obtain e5 : pa s₅ (sc 0) = pa s₄ (sc 0) := hP₅.pa (by decide)
+  obtain hH : bytesAt s₆.mem (pa s₃ (.r13, 384 * K.L.k + K.L.ekLen)) 32 = H (ekK K.L σ) := by
     rw [← hP₄.pa hocs, ← hP₅.pa hocs, ho₆, e5, hS, sha3Suffix6, H_eq]
   -- `z`
   refine WP.mono (copy_okL L₆ (dst := (.r13, 384 * K.L.k + K.L.ekLen + 32)) (src := (.rbp, 32)) (n := 32) (by decide)
     Wb.f₄) fun s₇ ⟨hP₇, hb₇⟩ => ?_
-  have k₇ := k₆.step Wb hp hP₇.b Wb.f₄K
+  obtain k₇ := k₆.step Wb hp hP₇.b Wb.f₄K
   rw [k₆.z] at hb₇
   refine ⟨k₇, ?_, ?_, ?_⟩
   · rw [hP₇.cs .r15 (by decide), hP₃₆.cs .r15 (by decide), hP₃.cs .r15 (by decide), hP₂.cs .r15 (by decide),
@@ -482,7 +482,7 @@ theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 
   · rw [L₆.keepBytes hP₇.b Wb.f₄E, L₃.keepBytes hP₃₆.b Wb.f₃E, hek]; exact ek₃
   · have dS := Wb.dkS
     have dE := Wb.dkE
-    have hP' := PPost.app hP₃₆ hP₇ (by simp [calleeSaved])
+    obtain hP' := PPost.app hP₃₆ hP₇ (by simp [calleeSaved])
     rw [show K.L.dkLen = 384 * K.L.k + K.L.ekLen + 32 + 32 by
         simp only [Kem.k, Kem.dkLen, Kem.ekLen, Params.dkLen, Params.ekLen]; omega_using [],
       bytesAt_split, bytesAt_split, bytesAt_split, Nat.zero_add, Nat.zero_add, Nat.zero_add]
@@ -498,7 +498,7 @@ theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 
         List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hw))),
       L₀.keepBytes hP₁.b (keepB_sub dS fun w hw =>
         List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hw)))]
-    have hdk : bytesAt s.mem (pa s (.r13, 0)) (384 * K.L.k) = KPke.dkPKE K.L.p (kgD σ) := by rw [k3]; exact h.dk
+    obtain hdk : bytesAt s.mem (pa s (.r13, 0)) (384 * K.L.k) = KPke.dkPKE K.L.p (kgD σ) := by rw [k3]; exact h.dk
     rw [hdk]
 
 end
@@ -511,17 +511,17 @@ include W hp
 theorem last_ok (hK : KgRowsOk K.L) {s : State} (h₅ : KH K σ 2 9 s) :
     WP isa (ifOk (.seq (rowAt K 2) (tail K))) s (KEnd K.L σ) := by
   have k3 := W.k3
-  have hf := W.flg 2 (by decide)
+  obtain hf := W.flg 2 (by decide)
   simp only [Bool.and_eq_true] at hf
   obtain ⟨hkc, hr⟩ := keepAll_spec hf.1
-  have e9 : K.L.k * K.L.k = 9 := by rw [k3]
+  obtain e9 : K.L.k * K.L.k = 9 := by rw [k3]
   refine ifOk_ok (fun s₆ hP hne => ?_) fun s₆ hP he => ?_
   · have ho := r15_ok h₅.mat.r15 hne
-    have h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
+    obtain h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
     refine WP.seq (WP.mono (row_ok W hp hK (i := 2) (by decide) h₆ ho) fun s₇ h₇ => ?_)
     refine WP.mono (tail_ok W hp h₇ ho) fun s' hf' => ⟨hf'.kc, by rw [hf'.r15, e9, ifp ho], fun _ => hf'⟩
   · have h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
-    have ho := r15_no h₅.mat.r15 he
+    obtain ho := r15_no h₅.mat.r15 he
     exact ⟨h₆.kc, by rw [e9]; exact h₆.mat.r15, fun h => absurd (by rwa [e9] at h) ho⟩
 
 end
@@ -554,7 +554,7 @@ include W hp
 
 theorem KM.keep {s s' : State} (h : KM K σ s) {ws : List (Ptr × Nat)} (hP : PPostB s s' ws)
     (hkc : kcChk K.L ws = true) (hk : ∀ r ∈ baseR ++ rR K 6, keepB (kgB K.L) ws r.1 r.2 = true) : KM K σ s' := by
-  have L₀ := h.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kc.lay W.toKgWfB hp
   refine ⟨h.kc.step W.toKgWfB hp hP hkc, ?_, ?_, ?_, fun N hN h2 => ?_⟩
   · rw [L₀.keepBytes hP (hk (sc oG, 32) (by simp))]; exact h.rho
   · rw [L₀.keepBytes hP (hk (sigP, 32) (by simp))]; exact h.sig
@@ -575,7 +575,7 @@ theorem seed0_ok {J : Nat} (hJ : J < 4) {s : State} (h : S0 K σ J s) :
   simp only [List.all_eq_true, List.mem_range, Bool.and_eq_true] at hsd
   obtain ⟨hs, hk⟩ := hsd J hJ
   obtain ⟨hkc, hr⟩ := keepAll_spec hk
-  have L₀ := h.km.kc.lay W.toKgWfB hp
+  obtain L₀ := h.km.kc.lay W.toKgWfB hp
   refine WP.mono (seed_step L₀ (kgB_bases K.L) (by omega_using [hJ]) hs h.sd) fun s' ⟨hP, hS⟩ =>
     ⟨h.km.keep W hp hP.b hkc (fun r hr' => hr r (List.mem_append_left _ hr')), by rw [hP.cs .r15 (by decide)]; exact h.r15,
       hS, ?_⟩
@@ -590,29 +590,29 @@ theorem frag0_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hb : v.callee
   have hc0 := W.c0
   simp only [Bool.and_eq_true] at hc0
   obtain ⟨hkc0, hr0⟩ := keepAll_spec hc0.2
-  have L₀ := h.kc.lay W.toKgWfB hp
-  have sd : ∀ J < 4, ∀ t, S0 K σ J t → WP isa (seedAt J ((0 + J) / 3) ((0 + J) % 3)) t (S0 K σ (J + 1)) :=
+  obtain L₀ := h.kc.lay W.toKgWfB hp
+  obtain sd : ∀ J < 4, ∀ t, S0 K σ J t → WP isa (seedAt J ((0 + J) / 3) ((0 + J) % 3)) t (S0 K σ (J + 1)) :=
     fun J hJ t ht => by have := seed0_ok W hp hJ ht; rwa [k3] at this
   unfold frag0
   refine WP.seq (WP.mono (copy_okL L₀ (dst := psP K) (src := sigP) (n := 32) (by decide) hc0.1) fun s₁ ⟨hP₁, hb₁⟩ => ?_)
-  have i₁ : S0 K σ 0 s₁ := ⟨h.km.keep W hp hP₁.b hkc0 hr0, by rw [hP₁.cs .r15 (by decide)]; exact h.r15,
+  obtain i₁ : S0 K σ 0 s₁ := ⟨h.km.keep W hp hP₁.b hkc0 hr0, by rw [hP₁.cs .r15 (by decide)]; exact h.r15,
     ⟨by rw [L₀.keepBytes hP₁.b (hr0 (sc oSB, 32) (by simp))]; exact h.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
     by rw [hP₁.pa rbx_cs, hb₁, h.sig]⟩
-  have s0 := sd 0 (by decide) s₁ i₁
+  obtain s0 := sd 0 (by decide) s₁ i₁
   refine WP.seq (WP.mono s0 fun s₂ i₂ => ?_)
-  have s1 := sd 1 (by decide) s₂ i₂
+  obtain s1 := sd 1 (by decide) s₂ i₂
   refine WP.seq (WP.mono s1 fun s₃ i₃ => ?_)
-  have s2 := sd 2 (by decide) s₃ i₃
+  obtain s2 := sd 2 (by decide) s₃ i₃
   refine WP.seq (WP.mono s2 fun s₄ i₄ => ?_)
-  have s3 := sd 3 (by decide) s₄ i₄
+  obtain s3 := sd 3 (by decide) s₄ i₄
   refine WP.seq (WP.mono s3 fun s₅ i₅ => ?_)
   have hsm := W.sm0
   simp only [Bool.and_eq_true] at hsm
   obtain ⟨hkc, hr⟩ := keepAll_spec hsm.2
-  have L₅ := i₅.km.kc.lay W.toKgWfB hp
+  obtain L₅ := i₅.km.kc.lay W.toKgWfB hp
   rw [Top16.aP, Nat.mul_zero, Nat.add_zero]
   refine WP.mono (sampleHAtP16_ok (v.batchP16 p hb (0, 2) (by decide)) (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
-  have km₆ := i₅.km.keep W hp h₆.b hkc hr
+  obtain km₆ := i₅.km.keep W hp h₆.b hkc hr
   refine ⟨km₆, fun _ h => absurd h (Nat.not_lt_zero _), ?_, fun N hN => ?_, fun h => absurd h (by decide)⟩
   · have m₀ := MatB16.zero K.L.k K.oA (rhoK K.L σ) i₅.r15
     have := EkF16.MatB16.three (K := K) m₀ L₅ h₆.b (fun e' he' => absurd he' (Nat.not_lt_zero _)) ?_ fun t ht f hf => ?_
@@ -630,7 +630,7 @@ theorem hzG_ok {s : State} (h : KG K σ 0 false s) : WP isa (.block (Encaps16.hz
   have hc := W.hz
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have L₀ := h.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kc.lay W.toKgWfB hp
   refine WP.mono (EkF16.hzero16_ok L₀ hc.1) fun s' ⟨hP, hz⟩ => ?_
   refine ⟨h.toKM.keep W hp hP.b hkc fun r hr' => hr r (List.mem_append_left _ (List.mem_append_left _ hr')),
     fun _ h => absurd h (Nat.not_lt_zero _),
@@ -644,13 +644,13 @@ theorem hzG_ok {s : State} (h : KG K σ 0 false s) : WP isa (.block (Encaps16.hz
 /-- `s ‖ e`, polynomial `N < 2`, from row 0's outputs of `PRF₂`. -/
 theorem cbdP_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2) {s : State} (h : KG K σ N true s) :
     WP isa (cbdP K A N) s (KG K σ (N + 1) true) := by
-  have hc := W.cP N hN
+  obtain hc := W.cP N hN
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have L₀ := h.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kc.lay W.toKgWfB hp
   refine WP.mono (cbd2_16At_okL hA L₀ rbx_na hc.1) fun s₁ ⟨hP₁, hp₁⟩ => ?_
   rw [h.pout N hN, ← hP₁.pa rbx_cs] at hp₁
-  have mx : ∀ N' < 6, N' ≠ N → (rP K N', 512) ∈ rRx K N := fun N' h₁ h₂ =>
+  obtain mx : ∀ N' < 6, N' ≠ N → (rP K N', 512) ∈ rRx K N := fun N' h₁ h₂ =>
     List.mem_map.2 ⟨N', List.mem_filter.2 ⟨List.mem_range.2 h₁, by simpa using h₂⟩, rfl⟩
   refine ⟨⟨h.kc.step W.toKgWfB hp hP₁.b hkc, ?_, ?_, ?_, fun N' hN' h2 => ?_⟩, fun N' hN' => ?_,
     ⟨by rw [hP₁.cs .r15 (by decide)]; exact h.mat.r15, fun e' he' f hf => L₀.keepPoly16 hP₁.b
@@ -676,21 +676,21 @@ theorem nttG_ok (hK : KgRowsOk K.L) {s : State} (h : KG K σ 2 true s) : WP isa 
   have hc := W.nt
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
-  have L₀ := h.kc.lay W.toKgWfB hp
+  obtain L₀ := h.kc.lay W.toKgWfB hp
   have k3 := W.k3
-  have se : ∀ N < 6, PolyIsW 16 s.mem (pa s (rP K N)) (cbd (KPke.kgSigma K.L.p (kgD σ)) N) := fun N hN => by
+  obtain se : ∀ N < 6, PolyIsW 16 s.mem (pa s (rP K N)) (cbd (KPke.kgSigma K.L.p (kgD σ)) N) := fun N hN => by
     rcases (by omega_using [] : N < 2 ∨ 2 ≤ N) with h2 | h2
     exacts [h.se0 N h2, h.se N hN h2]
-  have red : VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun N hN => by
+  obtain red : VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun N hN => by
     rw [sc_w16]; exact (se N (by omega_using [k3, hN])).1
   rw [← k3] at hc
   refine WP.mono (kgNttAt_okL hK L₀ rbx_na rbx_na rbx_na rbx_na hc.1 red) fun s' ⟨hP, hS, hE, hD⟩ => ?_
-  have eS : (vecAtW 16 s.mem (pa s (sc K.oR)) K.L.k).map ntt = (List.range 3).map (KPke.kgS K.L.p (kgD σ)) := by
+  obtain eS : (vecAtW 16 s.mem (pa s (sc K.oR)) K.L.k).map ntt = (List.range 3).map (KPke.kgS K.L.p (kgD σ)) := by
     rw [k3]; simp only [vecAtW, List.map_map]
     refine List.map_congr_left fun j hj => ?_
     simp only [Function.comp, KPke.kgS]
     rw [sc_w16, (se j (by have := List.mem_range.mp hj; omega_using [this])).2]
-  have eE : (vecAtW 16 s.mem (pa s (sc K.oR) + BitVec.ofNat 64 (512 * K.L.k)) K.L.k).map ntt =
+  obtain eE : (vecAtW 16 s.mem (pa s (sc K.oR) + BitVec.ofNat 64 (512 * K.L.k)) K.L.k).map ntt =
       (List.range 3).map (KPke.kgE K.L.p (kgD σ)) := by
     rw [k3]; simp only [vecAtW, List.map_map]
     refine List.map_congr_left fun j hj => ?_
@@ -700,7 +700,7 @@ theorem nttG_ok (hK : KgRowsOk K.L) {s : State} (h : KG K σ 2 true s) : WP isa 
     rw [Top16.rP] at this
     rw [this, show K.L.p.k = 3 from k3]
   rw [eS, k3] at hS; rw [eE, k3] at hE; rw [eS, k3] at hD
-  have hA : ∀ e' < 3, keepB (kgB K.L) ntW (aP K e') 512 = true := fun e' he' =>
+  obtain hA : ∀ e' < 3, keepB (kgB K.L) ntW (aP K e') 512 = true := fun e' he' =>
     hr (aP K e', 512) (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.2 ⟨e', List.mem_range.2 he', rfl⟩)))
   refine ⟨h.kc.step W.toKgWfB hp hP.b (by rw [k3]; exact hkc), ?_, ?_, fun j hj => ?_, fun j hj _ => ?_, ?_,
     ⟨by rw [hP.cs .r15 (by decide)]; exact h.mat.r15, fun e' he' f hf => L₀.keepPoly16 hP.b

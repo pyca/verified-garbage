@@ -64,10 +64,10 @@ theorem ce5Math_ok {s : State} (hc : CConsts width5 s) (h20 : s.v .v20 = idxVec 
     ((Lanes.chg c1 (by decide) l7).congr fun i _ => by congr 1; omega_arith))
     fun s2 ⟨c2, m4, m5, m6, m7⟩ => ?_
   let Y : Nat → Nat := fun i => cf width5 (X i)
-  have hY : ∀ i, Y i < 2 ^ 5 := fun i => cf_lt width5 _
+  obtain hY : ∀ i, Y i < 2 ^ 5 := fun i => cf_lt width5 _
   -- level 1: pairs of values of five bits
   let Z : Nat → Nat := fun i => Y (2 * i) + Y (2 * i + 1) * 2 ^ 5
-  have hZ : ∀ i, Z i < 2 ^ 10 := fun i => by have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega_arith
+  obtain hZ : ∀ i, Z i < 2 ^ 10 := fun i => by have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (pairV_ok (b := 5) (f := Y) (by decide) (by decide) (by decide) (by decide)
     (Lanes.chg c2 (by decide) m0) (Lanes.chg c2 (by decide) m1) fun i _ => hY i)
@@ -90,21 +90,21 @@ theorem ce5Math_ok {s : State} (hc : CConsts width5 s) (h20 : s.v .v20 = idxVec 
     ((Lanes.chg c5 (by decide) (Lanes.chg c4 (by decide) (Lanes.chg c3 (by decide) m7))).congr
       fun i _ => by show Y (16 + (12 + i)) = Y (24 + (4 + i)); congr 1; omega_arith)
     fun i _ => hY _) fun s6 ⟨c6, p3⟩ => ?_
-  have q0 : Lanes (s6.v .v0) fun i => Z i := Lanes.chg c6 (by decide) (Lanes.chg c5 (by decide)
+  obtain q0 : Lanes (s6.v .v0) fun i => Z i := Lanes.chg c6 (by decide) (Lanes.chg c5 (by decide)
     (Lanes.chg c4 (by decide) p0))
-  have q1 : Lanes (s6.v .v1) fun i => Z (4 + i) := (Lanes.chg c6 (by decide) (Lanes.chg c5 (by decide)
+  obtain q1 : Lanes (s6.v .v1) fun i => Z (4 + i) := (Lanes.chg c6 (by decide) (Lanes.chg c5 (by decide)
     p1)).congr fun i _ => by
     show Y (8 + 2 * i) + Y (8 + (2 * i + 1)) * 2 ^ 5 = Y (2 * (4 + i)) + Y (2 * (4 + i) + 1) * 2 ^ 5
     rw [show 8 + 2 * i = 2 * (4 + i) by omega_arith, show 8 + (2 * i + 1) = 2 * (4 + i) + 1 by omega_arith]
-  have q2 : Lanes (s6.v .v2) fun i => Z (8 + i) := (Lanes.chg c6 (by decide) p2).congr fun i _ => by
+  obtain q2 : Lanes (s6.v .v2) fun i => Z (8 + i) := (Lanes.chg c6 (by decide) p2).congr fun i _ => by
     show Y (16 + 2 * i) + Y (16 + (2 * i + 1)) * 2 ^ 5 = Y (2 * (8 + i)) + Y (2 * (8 + i) + 1) * 2 ^ 5
     rw [show 16 + 2 * i = 2 * (8 + i) by omega_arith, show 16 + (2 * i + 1) = 2 * (8 + i) + 1 by omega_arith]
-  have q3 : Lanes (s6.v .v3) fun i => Z (12 + i) := p3.congr fun i _ => by
+  obtain q3 : Lanes (s6.v .v3) fun i => Z (12 + i) := p3.congr fun i _ => by
     show Y (24 + 2 * i) + Y (24 + (2 * i + 1)) * 2 ^ 5 = Y (2 * (12 + i)) + Y (2 * (12 + i) + 1) * 2 ^ 5
     rw [show 24 + 2 * i = 2 * (12 + i) by omega_arith, show 24 + (2 * i + 1) = 2 * (12 + i) + 1 by omega_arith]
   -- level 2: values of 20 bits
   let W : Nat → Nat := fun i => Z (2 * i) + Z (2 * i + 1) * 2 ^ 10
-  have hW : ∀ i, W i < 2 ^ 20 := fun i => by have := hZ (2 * i); have := hZ (2 * i + 1); simp only [W]; omega_arith
+  obtain hW : ∀ i, W i < 2 ^ 20 := fun i => by have := hZ (2 * i); have := hZ (2 * i + 1); simp only [W]; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (pairV_ok (b := 10) (f := Z) (by decide) (by decide) (by decide) (by decide)
     q0 q1 fun i _ => hZ i) fun s7 ⟨c7, r0⟩ => ?_
@@ -113,8 +113,8 @@ theorem ce5Math_ok {s : State} (hc : CConsts width5 s) (h20 : s.v .v20 = idxVec 
     (by decide) (Lanes.chg c7 (by decide) q2)
     ((Lanes.chg c7 (by decide) q3).congr fun i _ => by show Z (12 + i) = Z (8 + (4 + i)); congr 1; omega_arith)
     fun i _ => hZ _) fun s8 ⟨c8, r1⟩ => ?_
-  have u0 : Lanes (s8.v .v4) fun i => W i := Lanes.chg c8 (by decide) r0
-  have u1 : Lanes (s8.v .v5) fun i => W (4 + i) := r1.congr fun i _ => by
+  obtain u0 : Lanes (s8.v .v4) fun i => W i := Lanes.chg c8 (by decide) r0
+  obtain u1 : Lanes (s8.v .v5) fun i => W (4 + i) := r1.congr fun i _ => by
     show Z (8 + 2 * i) + Z (8 + (2 * i + 1)) * 2 ^ 10 = Z (2 * (4 + i)) + Z (2 * (4 + i) + 1) * 2 ^ 10
     rw [show 8 + 2 * i = 2 * (4 + i) by omega_arith, show 8 + (2 * i + 1) = 2 * (4 + i) + 1 by omega_arith]
   -- level 3: groups of 40 bits in doublewords
@@ -123,19 +123,19 @@ theorem ce5Math_ok {s : State} (hc : CConsts width5 s) (h20 : s.v .v20 = idxVec 
   rw [WP.block_append_iff]
   refine WP.mono (dpairV_ok (b := 20) (by decide) (by decide) (Lanes.chg c9 (by decide) u1)
     fun i _ => hW _) fun s10 ⟨c10, d1⟩ => ?_
-  have e0 : DLanes (s10.v .v4) fun l => grp5 Y l := fun l hl => by
+  obtain e0 : DLanes (s10.v .v4) fun l => grp5 Y l := fun l hl => by
     rw [c10.get .v4 (by decide), d0 l hl]
-  have e1 : DLanes (s10.v .v5) fun l => grp5 Y (2 + l) := fun l hl => by
+  obtain e1 : DLanes (s10.v .v5) fun l => grp5 Y (2 + l) := fun l hl => by
     rw [d1 l hl]
     show W (4 + 2 * l) + W (4 + (2 * l + 1)) * 2 ^ 20 = W (2 * (2 + l)) + W (2 * (2 + l) + 1) * 2 ^ 20
     rw [show 4 + 2 * l = 2 * (2 + l) by omega_arith, show 4 + (2 * l + 1) = 2 * (2 + l) + 1 by omega_arith]
-  have cA : VChg [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v19] s s10 :=
+  obtain cA : VChg [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v19] s s10 :=
     (((((((((c1.trans c2).trans c3).trans c4).trans c5).trans c6).trans c7).trans c8).trans c9).trans
       c10).mono
-  have g20 : s10.v .v20 = idxVec ce10Idx := by rw [cA.get .v20, h20]
-  have g21 : s10.v .v21 = idxVec ce10IdxHi := by rw [cA.get .v21, h21]
+  obtain g20 : s10.v .v20 = idxVec ce10Idx := by rw [cA.get .v20, h20]
+  obtain g21 : s10.v .v21 = idxVec ce10IdxHi := by rw [cA.get .v21, h21]
   -- byte `8 l + b` of the table: byte `b` of group `l`
-  have tb : ∀ l < 4, ∀ b < 8, (if 8 * l + b < 16 then vbyte (s10.v .v4) (8 * l + b)
+  obtain tb : ∀ l < 4, ∀ b < 8, (if 8 * l + b < 16 then vbyte (s10.v .v4) (8 * l + b)
       else vbyte (s10.v .v5) (8 * l + b - 16)).toNat = grp5 Y l / 2 ^ (8 * b) % 2 ^ 8 := by
     intro l hl b hb
     by_cases h : l < 2
@@ -149,13 +149,13 @@ theorem ce5Math_ok {s : State} (hc : CConsts width5 s) (h20 : s.v .v20 = idxVec 
   · exact (cA.trans (h11.chg.trans h12.chg)).mono
   · intro j hj
     rw [h12.get .v6 (by decide), h11.v]
-    have hk : (vbyte (s10.v .v20) j).toNat = 8 * (j / 5) + j % 5 := by
+    obtain hk : (vbyte (s10.v .v20) j).toNat = 8 * (j / 5) + j % 5 := by
       rw [g20, toNat_idxVec _ (by decide) hj, ce10Idx_eq j hj]
     rw [vbyte_tbl2 hj hk (by omega_arith), show VReg.v4.succ = .v5 from rfl]
     exact tb (j / 5) (by omega_arith) (j % 5) (by omega_arith)
   · intro j hj
     rw [h12.v]
-    have hk : (vbyte (s11.v .v21) j).toNat = 8 * 3 + (1 + j) := by
+    obtain hk : (vbyte (s11.v .v21) j).toNat = 8 * 3 + (1 + j) := by
       rw [h11.get .v21 (by decide), g21, toNat_idxVec _ (by decide) (by omega_arith), ce10IdxHi_eq j hj]; omega_arith
     rw [vbyte_tbl2 (by omega_arith) hk (by omega_arith), show VReg.v4.succ = .v5 from rfl, h11.get .v4 (by decide),
       h11.get .v5 (by decide)]
@@ -218,8 +218,8 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
     (h : VInv width5 4 K10 s₀ k s) :
     WP isa (.block ce5Body) s fun t =>
       VInv width5 4 K10 s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 8) := by
-  have src := h.src hp
-  have e0 : s.gpr .x0 = coeffAddr (fP s₀) (32 * k) := by rw [h.x0]; rfl
+  obtain src := h.src hp
+  obtain e0 : s.gpr .x0 = coeffAddr (fP s₀) (32 * k) := by rw [h.x0]; rfl
   let X : Nat → Nat := fun i => ((P s₀)[32 * k + i]!).val
   unfold ce5Body ld8
   simp only [List.append_assoc]
@@ -231,7 +231,7 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
     (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega_using [hk]))
     fun s2 ⟨c2, l4, l5, l6, l7⟩ => ?_
   rw [WP.block_append_iff]
-  have cs2 : CConsts width5 s2 := (h.cs.chg c1).chg c2
+  obtain cs2 : CConsts width5 s2 := (h.cs.chg c1).chg c2
   refine WP.mono (ce5Math_ok cs2 (by rw [c2.get .v20, c1.get .v20]; exact h.K.1)
     (by rw [c2.get .v21, c1.get .v21]; exact h.K.2) (X := X) (fun i _ => val_lt _)
     (Lanes.chg c2 (by decide) l0)
@@ -242,9 +242,9 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
     (l5.congr fun e _ => by show _ = X (20 + e); congr 2; omega_using [])
     (l6.congr fun e _ => by show _ = X (24 + e); congr 2; omega_using [])
     (l7.congr fun e _ => by show _ = X (28 + e); congr 2; omega_using [])) fun s3 ⟨c3, b6, b7⟩ => ?_
-  have g3 : s3.gpr = s.gpr := by rw [c3.gpr, c2.gpr, c1.gpr]
-  have m3 : s3.mem = s.mem := by rw [c3.mem, c2.mem, c1.mem]
-  have w3 : s3.wr = s.wr := by rw [c3.wr, c2.wr, c1.wr]
+  obtain g3 : s3.gpr = s.gpr := by rw [c3.gpr, c2.gpr, c1.gpr]
+  obtain m3 : s3.mem = s.mem := by rw [c3.mem, c2.mem, c1.mem]
+  obtain w3 : s3.wr = s.wr := by rw [c3.wr, c2.wr, c1.wr]
   refine wp_strq (a := oP s₀ + BitVec.ofNat 64 (20 * k)) (by decide) (by rw [g3, ptr_zero, h.x2]; rfl)
     (by rw [w3, h.wr, hp.wr]
         exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width5]; omega_using [hk]) (by decide)))
@@ -255,13 +255,13 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
     (by rw [o5.wr, h4.wr, w3, h.wr, hp.wr]
         exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width5]; omega_using [hk]) (by decide)))
     fun s6 h6 v6 => ?_
-  have k4 : k < 256 / (width5.c * 4) := by simp [width5]; omega_using [hk]
-  have gs : ∀ r, r ≠ .x9 → s6.gpr r = s.gpr r := fun r hr => by
+  obtain k4 : k < 256 / (width5.c * 4) := by simp [width5]; omega_using [hk]
+  obtain gs : ∀ r, r ≠ .x9 → s6.gpr r = s.gpr r := fun r hr => by
     rw [h6.gpr, o5.gpr r (by simpa using hr), h4.gpr, g3]
   refine WP.mono (tail_ok (w := width5) (G := 4) (s₀ := s₀) k4 (by rw [gs .x0 (by decide), h.x0])
     (by rw [gs .x2 (by decide), h.x2]) (by rw [gs .x11 (by decide), h.x11]) (by decide) (by decide))
     fun t ⟨o, v, t0, t2, t11, tc⟩ => ?_
-  have hv : t.v = s3.v := by rw [v, v6, v5, h4.v]
+  obtain hv : t.v = s3.v := by rw [v, v6, v5, h4.v]
   refine ⟨⟨by rw [o.rd, h6.rd, o5.rd, h4.rd, c3.rd, c2.rd, c1.rd, h.rd], by rw [o.wr, h6.wr, o5.wr, h4.wr, w3, h.wr],
     by rw [o.sp, h6.sp, o5.sp, h4.sp, c3.sp, c2.sp, c1.sp, h.sp], t0, t2, t11, ?_, ?_, ?_, ?_⟩,
     by rw [show 256 / (width5.c * 4) = 8 from rfl] at tc; exact tc⟩
@@ -271,10 +271,10 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
       by rw [hv, c3.get .v21, c2.get .v21, c1.get .v21]; exact h.K.2⟩
   · have out := h.out
     rw [show width5.nb * 4 * k = 20 * k by simp [width5]] at out
-    have hC : C width5 s₀ = fun i => cf width5 ((P s₀)[i]!).val := funext (C_cf width5_ok s₀)
-    have sh : ∀ l, grp5 (fun i => cf width5 (X i)) l = grp5 (C width5 s₀) (4 * k + l) := fun l => by
+    obtain hC : C width5 s₀ = fun i => cf width5 ((P s₀)[i]!).val := funext (C_cf width5_ok s₀)
+    obtain sh : ∀ l, grp5 (fun i => cf width5 (X i)) l = grp5 (C width5 s₀) (4 * k + l) := fun l => by
       rw [hC]; exact grp5_shift (fun i => cf width5 ((P s₀)[i]!).val) k l
-    have out1 := bytes_write (n := 16) out (by decide) (by simp [width5]; omega_using [hk]) (x := s3.v .v6)
+    obtain out1 := bytes_write (n := 16) out (by decide) (by simp [width5]; omega_using [hk]) (x := s3.v .v6)
       fun j hj => by
         change vbyte _ j = _
         rw [show 20 * k + j = 5 * (4 * k + j / 5) + j % 5 by omega_using [], L5 s₀ (by omega_using [hk, hj]) (by omega_using [])]
@@ -284,7 +284,7 @@ theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : 
       simp [width5]; omega_using []]
     refine bytes_write (n := 4) out1 (by decide) (by simp [width5]; omega_using [hk]) fun j hj => ?_
     rw [x9, h4.v]
-    have e : BitVec.extractLsb' (8 * j) 8 (((((s3.v .v7).extractLsb' 0 32).setWidth 64).setWidth 32).setWidth
+    obtain e : BitVec.extractLsb' (8 * j) 8 (((((s3.v .v7).extractLsb' 0 32).setWidth 64).setWidth 32).setWidth
         (8 * (32 / 8))) = vbyte (s3.v .v7) j := by
       apply BitVec.eq_of_getLsbD_eq; intro i hi
       simp [vbyte, hi, show 8 * j + i < 32 by omega_using [hj, hi]]

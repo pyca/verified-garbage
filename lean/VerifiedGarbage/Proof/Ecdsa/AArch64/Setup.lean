@@ -76,14 +76,14 @@ theorem setupLoad_ok {c : Cfg} (hc : BaseCfgOk c) {s t : State} {base p : Addr} 
     WP isa (.block (loadBytes c.C.len c.n (c.sl i) src)) t fun t' =>
       wordsVal t'.mem base (c.sl i) c.n = ofBytes (Spec.Ecdsa.bytesAt s.mem p c.C.len) ∧
       KeepRegs [.x5, .x17] t t' ∧ Outside base (c.sl i) (8 * c.n) t.mem t'.mem := by
-  have hl := sl_le c hc.n10 hi
+  obtain hl := sl_le c hc.n10 hi
   have h7 := hc.n10
   have := hc.len_hi
   have hsz : size = 8192 := rfl
   refine WP.mono (loadBytes_ok hs hsrc hsrc' hl (sl_mod8 c i) hc.len8 hc.len_lo hc.len_hi (by omega_arith)
     (by rw [hp]; exact hin) (by rw [hp]; exact hd.sub_right (Offset.sub_base base hl)))
     fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
-  have hb : Spec.Ecdsa.bytesAt t.mem p c.C.len = Spec.Ecdsa.bytesAt s.mem p c.C.len :=
+  obtain hb : Spec.Ecdsa.bytesAt t.mem p c.C.len = Spec.Ecdsa.bytesAt s.mem p c.C.len :=
     List.map_congr_left fun j hj =>
       keep_of_disjoint' ho hd (by decide) (List.mem_range.mp hj) (by omega_arith)
   rw [e, hp, hb]
@@ -102,12 +102,12 @@ theorem setupShift_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : Shif
   have hn := hs'.nowrap
   have h7 := hc.n10
   have hsz : size = 8192 := rfl
-  have hKl := sl_le c h7 (i := K) (by decide)
-  have hDl := sl_le c h7 (i := D) (by decide)
-  have hEl := sl_le c h7 (i := E) (by decide)
-  have hKD : c.sl D = c.sl K + 8 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 8 * c.n; simp only [D, K]; omega_arith
-  have hKE : c.sl E = c.sl K + 16 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 16 * c.n; simp only [E, K]; omega_arith
-  have nil : WP isa (.block ([] : List Instr)) t fun t' =>
+  obtain hKl := sl_le c h7 (i := K) (by decide)
+  obtain hDl := sl_le c h7 (i := D) (by decide)
+  obtain hEl := sl_le c h7 (i := E) (by decide)
+  obtain hKD : c.sl D = c.sl K + 8 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 8 * c.n; simp only [D, K]; omega_arith
+  obtain hKE : c.sl E = c.sl K + 16 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 16 * c.n; simp only [E, K]; omega_arith
+  obtain nil : WP isa (.block ([] : List Instr)) t fun t' =>
       wordsVal t'.mem base (c.sl K) c.n = wordsVal t.mem base (c.sl K) c.n >>> 0 ∧
       wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> 0 ∧
       wordsVal t'.mem base (c.sl E) c.n = wordsVal t.mem base (c.sl E) c.n >>> 0 ∧
@@ -148,11 +148,11 @@ theorem setupConsts_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} : ∀ (l : Lis
       Unch.refl _ _ _⟩
   | (i, x) :: l, t, hs, hb, hnd => by
     rw [List.flatMap_cons, WP.block_append_iff]
-    have hi := hb (i, x) List.mem_cons_self
-    have hl := sl_le c hc.n10 (i := i) (by omega_arith)
+    obtain hi := hb (i, x) List.mem_cons_self
+    obtain hl := sl_le c hc.n10 (i := i) (by omega_arith)
     have hsz : size = 8192 := rfl
     refine WP.mono (setConst_ok hs hl (sl_mod8 c i) hi.2) fun t₁ ⟨e₁, k₁, O₁⟩ => ?_
-    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    obtain hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [List.map_cons, List.nodup_cons] at hnd
     refine WP.mono (setupConsts_ok hc l hs₁ (fun ix h => hb ix (List.mem_cons_of_mem _ h)) hnd.2)
       fun t' ⟨e', k', U'⟩ => ⟨fun ix h => ?_, k₁.trans k',
@@ -161,7 +161,7 @@ theorem setupConsts_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} : ∀ (l : Lis
     rcases List.mem_cons.mp h with rfl | h
     · refine (U'.wordsVal (fun w hw => ?_) (by dsimp only; omega_arith)).trans e₁
       obtain ⟨jy, hjy, rfl⟩ := List.mem_map.mp hw
-      have hj17 := (hb _ (List.mem_cons_of_mem _ hjy)).1
+      obtain hj17 := (hb _ (List.mem_cons_of_mem _ hjy)).1
       exact sl_apart c (fun heq => hnd.1 (heq ▸ List.mem_map_of_mem hjy)) (.inr (by omega_arith))
         (.inr (by omega_arith))
     · exact e' ix h
@@ -187,11 +187,11 @@ theorem consts_bounds {c : Cfg} (hc : BaseCfgOk c) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at this
     omega_arith
   · have hp0 : 0 < c.C.p := by have := hc.p_ge; omega_arith
-    have hn0 : 0 < c.C.n := by have := hc.n_ge; omega_arith
-    have hR : 1 < 2 ^ (64 * c.n) := Nat.one_lt_two_pow (by have := hc.n0; omega_arith)
-    have hm : ∀ x, c.mont x < 2 ^ (64 * c.n) := fun x =>
+    obtain hn0 : 0 < c.C.n := by have := hc.n_ge; omega_arith
+    obtain hR : 1 < 2 ^ (64 * c.n) := Nat.one_lt_two_pow (by have := hc.n0; omega_arith)
+    obtain hm : ∀ x, c.mont x < 2 ^ (64 * c.n) := fun x =>
       Nat.lt_trans (Nat.mod_lt (x * c.R) hp0) hc.p_lt
-    have hn : ∀ x, x % c.C.n < 2 ^ (64 * c.n) := fun x => Nat.lt_trans (Nat.mod_lt x hn0) hc.n_lt
+    obtain hn : ∀ x, x % c.C.n < 2 ^ (64 * c.n) := fun x => Nat.lt_trans (Nat.mod_lt x hn0) hc.n_lt
     simp only [Cfg.consts, List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hc.p_lt
@@ -215,10 +215,10 @@ theorem setupFlag_ok {c : Cfg} (hc : BaseCfgOk c) {t : State} {base : Addr} (hs 
     WP isa (.block (setConst 1 (c.sl FLAG) (2 ^ 64 - 1))) t fun t' =>
       word t'.mem base (c.sl FLAG) = BitVec.allOnes 64 ∧ KeepRegs [.x1] t t' ∧
       Outside base (c.sl FLAG) (8 * 1) t.mem t'.mem := by
-  have hl := sl_le c hc.n10 (i := FLAG) (by decide)
+  obtain hl := sl_le c hc.n10 (i := FLAG) (by decide)
   have := hc.n0
   refine WP.mono (setConst_ok hs (by omega_arith) (sl_mod8 c FLAG) (by decide)) fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
-  have e' : (word t'.mem base (c.sl FLAG)).toNat = 2 ^ 64 - 1 := by
+  obtain e' : (word t'.mem base (c.sl FLAG)).toNat = 2 ^ 64 - 1 := by
     simp only [wordsVal, Nat.mul_zero, Nat.add_zero] at e
     exact e
   exact BitVec.eq_of_toNat_eq (by rw [e', BitVec.toNat_allOnes])
@@ -244,12 +244,12 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
   refine WP.mono (setupSaves_ok rfl hw) fun s₁ ⟨g₁, rd₁, wr₁, sp₁, O₁, sv₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (setupMovs_ok s₁) fun s₂ ⟨x20₂, x0₂, k₂, m₂⟩ => ?_
-  have hs₂ : Scr s₂ (s.gpr .x4) size :=
+  obtain hs₂ : Scr s₂ (s.gpr .x4) size :=
     ⟨by rw [x0₂, g₁], by rw [k₂.wr, wr₁]; exact hw, hp.sc_fit, by decide⟩
-  have G₂ : ∀ r, r ≠ .x20 → r ≠ .x0 → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
+  obtain G₂ : ∀ r, r ≠ .x20 → r ≠ .x0 → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by
     rw [k₂.gpr r (by simp [h₁, h₂]), g₁]
-  have RD₂ : s₂.rd ++ s₂.wr = s.rd ++ s.wr := by rw [k₂.rd, k₂.wr, rd₁, wr₁]
-  have O₂ : Outside (s.gpr .x4) 0 size s.mem s₂.mem := by
+  obtain RD₂ : s₂.rd ++ s₂.wr = s.rd ++ s.wr := by rw [k₂.rd, k₂.wr, rd₁, wr₁]
+  obtain O₂ : Outside (s.gpr .x4) 0 size s.mem s₂.mem := by
     rw [m₂]; exact O₁.mono (Nat.le_refl _) (by omega_arith)
   have hK : c.sl K = 64 + 8 * c.n * 31 := rfl
   have hD : c.sl D = 64 + 8 * c.n * 32 := rfl
@@ -261,14 +261,14 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
   refine WP.mono (setupLoad_ok hc (s := s) hs₂ (by decide) (by decide) (i := K) (by decide)
     (G₂ _ (by decide) (by decide)) (by rw [RD₂]; exact hp.k_in) hp.k_sc O₂)
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
   -- `d`
   rw [WP.block_append_iff]
   refine WP.mono (setupLoad_ok hc (s := s) hs₃ (by decide) (by decide) (i := D) (by decide)
     (by rw [k₃.gpr _ (by decide)]; exact G₂ _ (by decide) (by decide))
     (by rw [k₃.rd, k₃.wr, RD₂]; exact hp.d_in) hp.d_sc
     (O₂.trans (O₃.mono (Nat.zero_le _) (by omega_arith)))) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
   -- the hash
   rw [WP.block_append_iff]
   refine WP.mono (setupLoad_ok hc (s := s) hs₄ (by decide) (by decide) (i := E) (by decide)
@@ -276,30 +276,30 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
     (by rw [k₄.rd, k₄.wr, k₃.rd, k₃.wr, RD₂]; exact hp.digest_in) hp.digest_sc
     ((O₂.trans (O₃.mono (Nat.zero_le _) (by omega_arith))).trans (O₄.mono (Nat.zero_le _) (by omega_arith))))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
-  have hs₅ := hs₄.of_keepRegs k₅ (by decide)
+  obtain hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- the shift
   rw [WP.block_append_iff]
   refine WP.mono (setupShift_ok hc hhs hs₅) fun sS ⟨fK, fD, fE, kS, OS⟩ => ?_
-  have hsS := hs₅.of_keepRegs kS (by decide)
+  obtain hsS := hs₅.of_keepRegs kS (by decide)
   -- the constants
   rw [WP.block_append_iff]
   refine WP.mono (setupConsts_ok hc c.consts hsS (consts_bounds hc) (consts_nodup c))
     fun s₆ ⟨e₆, k₆, U₆⟩ => ?_
-  have hs₆ := hsS.of_keepRegs k₆ (by decide)
-  have O₆ : Outside (s.gpr .x4) (c.sl 0) (8 * c.n * 17) sS.mem s₆.mem := U₆.outside fun w hw => by
+  obtain hs₆ := hsS.of_keepRegs k₆ (by decide)
+  obtain O₆ : Outside (s.gpr .x4) (c.sl 0) (8 * c.n * 17) sS.mem s₆.mem := U₆.outside fun w hw => by
     obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
     have := sl_lt c (consts_bounds hc ix hix).1 (consts_ne_tmp c ix hix)
-    have h0' : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega_arith
+    obtain h0' : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega_arith
     have : c.sl 0 ≤ c.sl ix.1 := by rw [h0', sl_eq c ix.1 (consts_ne_tmp c ix hix)]; omega_arith
     exact ⟨this, by omega_arith⟩
-  have hsl0 : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega_arith
+  obtain hsl0 : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega_arith
   -- the flag
   refine WP.mono (setupFlag_ok hc hs₆) fun s' ⟨f', k', O'⟩ => ?_
-  have K₃ : KeepRegs [.x1, .x2, .x5, .x17] s₂ s' :=
+  obtain K₃ : KeepRegs [.x1, .x2, .x5, .x17] s₂ s' :=
     ((((k₃.mono (by sub_regs)).trans (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))).trans
       (kS.mono (by sub_regs))).trans ((k₆.mono (by sub_regs)).trans (k'.mono (by sub_regs)))
   -- Everything after the moves writes only in `[64, size)`.
-  have Ol : Outside (s.gpr .x4) 64 (size - 64) s₂.mem s'.mem :=
+  obtain Ol : Outside (s.gpr .x4) 64 (size - 64) s₂.mem s'.mem :=
     (((((O₃.mono (by omega_arith) (by omega_arith)).trans (O₄.mono (by omega_arith) (by omega_arith))).trans
       (O₅.mono (by omega_arith) (by omega_arith))).trans (OS.mono (by omega_arith) (by omega_arith))).trans
       (O₆.mono (by omega_arith) (by omega_arith))).trans (O'.mono (by omega_arith) (by omega_arith))

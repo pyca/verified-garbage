@@ -31,13 +31,11 @@ vg_aes_expand_key_aesni:
 	pxor xmm13, xmm9
 	movdqa xmm14, xmm13
 	paddd xmm14, xmm14
-	movabs rax, 868928702305472013
-	movq xmm0, rax
-	punpcklqdq xmm0, xmm0
 	movdqu xmm1, XMMWORD PTR [rdi]
 	movdqu XMMWORD PTR [rdx], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm5
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -47,8 +45,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+16], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm6
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -58,8 +57,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+32], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm7
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -69,8 +69,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+48], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm8
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -80,8 +81,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+64], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm9
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -91,8 +93,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+80], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm10
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -102,8 +105,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+96], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm11
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -113,8 +117,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+112], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm12
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -124,8 +129,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+128], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm13
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -135,8 +141,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm1, xmm4
 	pxor xmm1, xmm3
 	movdqu XMMWORD PTR [rdx+144], xmm1
-	movdqa xmm3, xmm1
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm1, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm14
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -148,16 +155,14 @@ vg_aes_expand_key_aesni:
 	movdqu XMMWORD PTR [rdx+160], xmm1
 	jmp 23f
 22:
-	movabs rax, 868928702305472013
-	movq xmm0, rax
-	punpcklqdq xmm0, xmm0
 	pxor xmm15, xmm15
 	movdqu xmm1, XMMWORD PTR [rdi]
 	movdqu xmm2, XMMWORD PTR [rdi+16]
 	movdqu XMMWORD PTR [rdx], xmm1
 	movdqu XMMWORD PTR [rdx+16], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm5
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -177,8 +182,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+48], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm6
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -198,8 +204,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+80], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm7
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -219,8 +226,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+112], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm8
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -240,8 +248,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+144], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm9
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -261,8 +270,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+176], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm10
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -282,8 +292,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+208], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 255
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm11
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -296,16 +307,14 @@ vg_aes_expand_key_aesni:
 23:
 	jmp 21f
 20:
-	movabs rax, 290207319600858629
-	movq xmm0, rax
-	punpcklqdq xmm0, xmm0
 	movdqu xmm1, XMMWORD PTR [rdi]
 	movdqu xmm2, XMMWORD PTR [rdi+8]
 	psrldq xmm2, 8
 	movdqu XMMWORD PTR [rdx], xmm1
 	movdqu XMMWORD PTR [rdx+16], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm5
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -321,8 +330,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+40], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm6
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -338,8 +348,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+64], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm7
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -355,8 +366,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+88], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm8
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -372,8 +384,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+112], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm9
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -389,8 +402,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+136], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm10
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -406,8 +420,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+160], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm11
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4
@@ -423,8 +438,9 @@ vg_aes_expand_key_aesni:
 	pxor xmm2, xmm4
 	pxor xmm2, xmm3
 	movdqu XMMWORD PTR [rdx+184], xmm2
-	movdqa xmm3, xmm2
-	pshufb xmm3, xmm0
+	pshufd xmm3, xmm2, 85
+	psrldq xmm3, 1
+	pshufd xmm3, xmm3, 0
 	aesenclast xmm3, xmm12
 	movdqa xmm4, xmm1
 	pslldq xmm4, 4

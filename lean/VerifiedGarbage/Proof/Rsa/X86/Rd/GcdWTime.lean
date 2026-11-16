@@ -105,12 +105,12 @@ theorem gwZeroW (F : GwFit g) {j : Nat} (hj : j < 22) {hc : VG.Taint.Hint VG.X86
       (VG.Impl.Rsa.X86.KeyRt.zeroWide wid j) hc).isSome = true) :
     RelCT isa (gwB g C) (VG.Impl.Rsa.X86.KeyRt.zeroWide wid j) (gwB g C) := by
   have fit := F.fit
-  have hjS : j * (4 * g.W + 8) + (4 * g.W + 8) ≤ 22 * (4 * g.W + 8) := by
+  obtain hjS : j * (4 * g.W + 8) + (4 * g.W + 8) ≤ 22 * (4 * g.W + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hj
   exact relOp (rs := [.eax, .ecx, .edx, .ebp]) (ws := [(160 + j * (4 * g.W + 8), 4 * g.W + 8)]) (by decide) (stable_true _)
     (ws1 (by omega_using []) (by omega_using [fit, hjS]))
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok hb.ws hj) fun t ⟨_, k, _, K⟩ => by
-      have O := G.keep_outside k
+      obtain O := G.keep_outside k
       simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_wid] at O
       rw [show 4 * (VG.Impl.Rsa.X86.Recover.wide g.n + 2) = 4 * g.W + 8 by simp only [Geo.W]; omega_using []] at O
       exact ⟨hb.keep K (by decide) (by decide) O (by omega_using []) (by omega_using [fit, hjS]), K, O.unch, trivial⟩) h
@@ -123,7 +123,7 @@ theorem gwCopyN (F : GwFit g) {o a : Nat} (ho : o < 44) (ha : a < 44) (hoa : o �
     RelCT isa (gwB g C) (VG.Impl.Rsa.X86.KeyRt.copy nar o a) (gwB g C) := by
   have fit := F.fit
   have hW : g.W = 2 * g.w + 2 := rfl
-  have hoS : o * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
+  obtain hoS : o * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ ho
   exact relOp (rs := [.eax, .ebx, .ecx, .edx, .ebp]) (ws := [(160 + o * (4 * g.w + 8), 4 * g.w)]) (by decide) (stable_true _)
     (ws1 (by omega_using []) (by omega_using [fit, hW, hoS]))
@@ -140,12 +140,12 @@ theorem gwZeroN (F : GwFit g) {j : Nat} (hj : j < 44) {hc : VG.Taint.Hint VG.X86
     RelCT isa (gwB g C) (VG.Impl.Rsa.X86.KeyRt.zeroWide nar j) (gwB g C) := by
   have fit := F.fit
   have hW : g.W = 2 * g.w + 2 := rfl
-  have hjS : j * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
+  obtain hjS : j * (4 * g.w + 8) + (4 * g.w + 8) ≤ 44 * (4 * g.w + 8) := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hj
   exact relOp (rs := [.eax, .ecx, .edx, .ebp]) (ws := [(160 + j * (4 * g.w + 8), 4 * g.w + 8)]) (by decide) (stable_true _)
     (ws1 (by omega_using []) (by omega_using [fit, hW, hjS]))
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok (G.rtNar hb.ws F.up) hj) fun t ⟨_, k, _, K⟩ => by
-      have O := G.keep_outside k
+      obtain O := G.keep_outside k
       simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw_nar] at O
       rw [show 4 * (VG.Impl.Rsa.X86.Recover.width g.n + 2) = 4 * g.w + 8 by simp only [Geo.w]; omega_using []] at O
       exact ⟨hb.keep K (by decide) (by decide) O (by omega_using []) (by omega_using [fit, hW, hjS]), K, O.unch, trivial⟩) h
@@ -166,7 +166,7 @@ theorem gwCount (F : GwFit g) {hc : VG.Taint.Hint VG.X86.Taint.T}
   have hn := ps.1.nowrap
   have hZ := ps.1.halfZ
   have e96 : halfSlot = 96 := rfl
-  have O : Outside g.B 100 4 s.mem t.mem := by rw [M]; exact writeW32_outside _ _ _ (by omega_using [])
+  obtain O : Outside g.B 100 4 s.mem t.mem := by rw [M]; exact writeW32_outside _ _ _ (by omega_using [])
   refine ⟨H, ps.2.1.keep K (by decide) (O.mono (Nat.zero_le _) (by omega_using [fit])), ?_, trivial, trivial⟩
   show w32 t.mem g.B 100 = (3 * g.w + 6) / 2
   rw [M, w32_write_self, BitVec.toNat_ofNat, kw_nar, show VG.Impl.Rsa.X86.Recover.width g.n = g.w from rfl]
@@ -189,7 +189,7 @@ theorem gw_eW (g : Geo) : g.W = 4 * g.n + 6 := by
 
 theorem gw_nw (F : GwFit g) : 160 + 16 * (8 * VG.Proof.Rsa.X86.InvBatchRt.nw (16 * g.n + 24) + 8) ≤ g.Z := by
   have fit := F.fit
-  have eW := gw_eW g
+  obtain eW := gw_eW g
   simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw_wid, show VG.Impl.Rsa.X86.Recover.wide g.n = g.W from rfl]
   omega_using [fit]
 
@@ -200,18 +200,18 @@ theorem gwBatchCode (F : GwFit g) {i o : Nat} (hio : i = 0 ∧ o = 8 ∨ i = 8 �
       row wid false fgArr fgSz (o + 4) [tQ i, tR i] [tQ i, tR i]]) (gwB g C) := by
   have fit := F.fit
   have lo := F.lo
-  have eW := gw_eW g
+  obtain eW := gw_eW g
   have hw : g.w = 2 * g.n + 2 := rfl
-  have r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
+  obtain r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
     rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega_using []
-  have hnw := gw_nw F
+  obtain hnw := gw_nw F
   have eP : VG.Impl.Rsa.X86.InvBatchRt.sP = 176 := rfl
   have eU : VG.Impl.Rsa.X86.InvBatchRt.sMu = 160 := rfl
   have e16 : win = 16 := rfl
   have efs : fgSz = 16 := rfl
-  have hi : i ≤ 8 := by omega_using [hio]
-  have ho : o ≤ 8 := by omega_using [hio]
-  have hm4 : ∀ t ∈ ms4 i,
+  obtain hi : i ≤ 8 := by omega_using [hio]
+  obtain ho : o ≤ 8 := by omega_using [hio]
+  obtain hm4 : ∀ t ∈ ms4 i,
       t.c + 4 ≤ rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) ∧
       t.m + 4 ≤ rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) ∧
       (t.c + 4 ≤ VG.Impl.Rsa.X86.InvBatchRt.sP ∨ VG.Impl.Rsa.X86.InvBatchRt.sP + 8 ≤ t.c) ∧
@@ -220,11 +220,11 @@ theorem gwBatchCode (F : GwFit g) {i o : Nat} (hio : i = 0 ∧ o = 8 ∨ i = 8 �
     simp only [ms4, List.mem_cons, List.not_mem_nil, or_false] at ht
     rw [r4]
     rcases ht with rfl | rfl | rfl | rfl <;> simp only [tU, tV, tQ, tR] <;> omega_using [eP, eU, e16]
-  have H₁ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz o [tU i, tV i] [tU i, tV i] (ms4 i) :=
+  obtain H₁ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz o [tU i, tV i] [tU i, tV i] (ms4 i) :=
     ⟨by omega_using [], by omega_using [hw], .inl rfl, by omega_using [hio, efs], by rw [r4, efs]; omega_using [fit, eW, hw], by rw [r4, eP]; omega_using [], hm4, fun t ht => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
       rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tU, tV]; omega_using [hio, efs]⟩, fun _ h => h⟩
-  have H₂ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz (o + 4) [tQ i, tR i] [tQ i, tR i] (ms4 i) :=
+  obtain H₂ : RowHyp (16 * g.n + 24) g.Z (g.w + 2) fgArr fgSz (o + 4) [tQ i, tR i] [tQ i, tR i] (ms4 i) :=
     ⟨by omega_using [], by omega_using [hw], .inl rfl, by omega_using [hio, efs], by rw [r4, efs]; omega_using [fit, eW, hw], by rw [r4, eP]; omega_using [], hm4, fun t ht => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
       rcases ht with rfl | rfl <;> exact ⟨by simp [ms4], by simp only [tQ, tR]; omega_using [hio, efs]⟩, fun _ h => h⟩
@@ -285,7 +285,7 @@ theorem gwLoop (F : GwFit g) (K : Nat) :
   have et : isa.eval .ne t = t.zf.map (!·) := rfl
   refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega_using [hk], hb, ?_, by omega_using [hk]⟩⟩
   · rw [es, zs] at hf
-    have h0 : k - 1 = 0 := by by_contra h0; simp_all
+    obtain h0 : k - 1 = 0 := by by_contra h0; simp_all
     rw [h0] at hb
     exact hb
   · rw [es, zs] at ht
@@ -301,17 +301,17 @@ theorem gwTrace (F : GwFit g) :
   have fit := F.fit
   have lo := F.lo
   have up := F.up
-  have eW := gw_eW g
+  obtain eW := gw_eW g
   have hw : g.w = 2 * g.n + 2 := rfl
   have eP : VG.Impl.Rsa.X86.InvBatchRt.sP = 176 := rfl
   have efs : fgSz = 16 := rfl
-  have hnw := gw_nw F
-  have rA : ∀ j h, rv (kw (16 * g.n + 24)) { arr := j, half := h } (g.w + 2) =
+  obtain hnw := gw_nw F
+  obtain rA : ∀ j h, rv (kw (16 * g.n + 24)) { arr := j, half := h } (g.w + 2) =
       160 + j * (4 * g.W + 8) + h * (4 * (g.w + 2)) := fun j h => by rw [gw_rv]; rfl
-  have r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
+  obtain r4 : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * g.W + 8) := by
     rw [gw_rv]; show 160 + 4 * _ + 0 * _ + 0 = _; omega_using []
-  have r7 := rA 7 0; have r8 := rA 8 0; have r9 := rA 9 0; have r12 := rA 12 0; have r14 := rA 14 0
-  have r14h := rA 14 1
+  obtain r7 := rA 7 0; have r8 := rA 8 0; have r9 := rA 9 0; have r12 := rA 12 0; have r14 := rA 14 0
+  obtain r14h := rA 14 1
   have f1 : fgSz * (g.w + 2 + 1) = 16 * (g.w + 3) := rfl
   have f2 : fgSz * (g.w + 2 + 2) = 16 * (g.w + 4) := rfl
   unfold VG.Impl.Rsa.X86.RecoverDetRt.gcdFused
@@ -375,8 +375,8 @@ theorem gw_fit {g : Geo} {n : Nat} {s : State} (hs : GW0 g n s) : GwFit g := by
 theorem gcdFused_relCT {g : Geo} (pg : PubG g) (n : Nat) :
     RelCT isa (RA (GW0 g n) (GW0 g n)) VG.Impl.Rsa.X86.RecoverDetRt.gcdFused (RA (GW1 g n) (GW1 g n)) := by
   intro s t tr ur sf tf ⟨_, hs, ht⟩ es et
-  have ps : P0 g s := let ⟨_, _, _, _, k, _⟩ := hs; k.pre0 pg
-  have pt : P0 g t := let ⟨_, _, _, _, k, _⟩ := ht; k.pre0 pg
+  obtain ps : P0 g s := let ⟨_, _, _, _, k, _⟩ := hs; k.pre0 pg
+  obtain pt : P0 g t := let ⟨_, _, _, _, k, _⟩ := ht; k.pre0 pg
   obtain ⟨e, -⟩ := gwTrace (gw_fit hs) s t tr ur sf tf ⟨ps, pt⟩ es et
   exact ⟨e, RA.of pg (fun _ h => let ⟨_, _, _, _, k, _⟩ := h; ⟨_, _, _, _, _, _, _, k⟩)
     (wpRes (gw_frame hs) es) (wpRes (gw_frame ht) et)⟩

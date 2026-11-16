@@ -82,7 +82,7 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
   refine WP.seq (WP.mono_syms (setup_ok hc hhs hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .r8) s₁ ix.1 = ix.2 := P.consts
-  have fx : Fixed c (s₀.gpr .r8) s₀.gpr s₁.mem :=
+  obtain fx : Fixed c (s₀.gpr .r8) s₀.gpr s₁.mem :=
     ⟨hc' (MP, c.C.p) (by simp [Cfg.consts]), hc' (MN, c.C.n) (by simp [Cfg.consts]),
       hc' (ZERO, 0) (by simp [Cfg.consts]), hc' (ONE, 1) (by simp [Cfg.consts]),
       (hc' (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
@@ -90,33 +90,33 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       hc' (GX, c.mont c.C.gx) (by simp [Cfg.consts]), hc' (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved⟩
-  have hsep : ∀ {i : Nat}, i < 45 → i ≠ TMP → ∀ j,
+  obtain hsep : ∀ {i : Nat}, i < 45 → i ≠ TMP → ∀ j,
       c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
     fun hi hit j => Or.inl (by have := sl_below_bits c hi j 0 (.inl hit); omega_arith)
-  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
+  obtain hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
   refine WP.seq (WP.mono_syms (kBitsIf_ok c skip P.scr h0 (by omega_arith) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
     (by decide)) (hsep (i := K) (by decide) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
-  have hs₂ := P.scr.of_keepRegs k₂ (by decide)
+  obtain hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+  obtain v₂ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0 (.inl hit))
   -- The table of `p - 2`.
   refine WP.seq (WP.mono_syms (bits_ok hs₂ h0 (by omega_arith) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
     (by decide)) (hsep (i := EXPP) (by decide) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ sy₃ => ?_)
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+  obtain v₃ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1 (.inl hit))).trans (v₂ hi hit)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono_syms (bits_ok hs₃ h0 (by omega_arith) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
     (by decide)) (hsep (i := EXPN) (by decide) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ sy₄ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+  obtain v₄ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2 (.inl hit))).trans (v₃ hi hit)
   have hk : (kv c s₀) = sv c (s₀.gpr .r8) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (s₀.gpr .r8) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (s₀.gpr .r8) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
+  obtain hp2 : c.C.p - 2 = sv c (s₀.gpr .r8) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
+  obtain hn2 : c.C.n - 2 = sv c (s₀.gpr .r8) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
   refine ⟨⟨hs₃.of_keepRegs k₄ (by decide), ?_, by rw [k₄.wr, k₃.wr, k₂.wr, P.keep.wr], ?_⟩,
     by rw [v₄ (by decide) (by decide), P.k], by rw [v₄ (by decide) (by decide), P.d], by rw [v₄ (by decide) (by decide), P.e],
     by rw [v₄ (by decide) (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
@@ -126,7 +126,7 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
   · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.rsi]
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · have hF := sl_le c h7 (i := FLAG) (by decide)
-    have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
+    obtain ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c (i := FLAG) (by decide) j 0
@@ -146,7 +146,7 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       k₃.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]), k₂.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
       P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1])]
   · intro x hx
-    have hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega_arith
+    obtain hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega_arith
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
@@ -171,7 +171,7 @@ theorem powWN_eq (c : Cfg) : powW c.powN = slW c [ACC, PT, TMP] := rfl
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega_arith)
   rcases apart_slW (c := c) hl w hw with h | h
   · exact Or.inl (by omega_arith)

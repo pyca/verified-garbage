@@ -68,14 +68,14 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
       Spec.Rsa.bytesAt t.mem (State.addr p.publicValue) p.k =
         (if sampleSuccess p (layout p) rb then Spec.Rsa.i2osp (keyPower p ((layout p).encode rb)) p.k else List.replicate p.k 0) ∧
       Frame (keyCallWrites p s) s.mem t.mem := by
-  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (keyCallWrites p s) m m' :=
     f.mono (by simp [keyCallWrites, keyWrites])
   rw [VG.Impl.Ffdh.Arm.SampleKeyGenerate.main, WP.seq_iff]
   refine WP.mono_syms (prep.correct s h environment calls stable h52 h0 h24 h32 large odd normalized) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩ symsU
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.sub (by
     intro r hr
     simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
@@ -83,8 +83,8 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
     · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
     · exact ⟨_, by simp [keyCallWrites], fun _ hx => hx⟩)
-  have environmentU := env.stable environment fullU restU symsU
-  have entropyU := entropy.after_frame frameU restU (by
+  obtain environmentU := env.stable environment fullU restU symsU
+  obtain entropyU := entropy.after_frame frameU restU (by
     intro r hr
     simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
@@ -96,29 +96,29 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
   refine WP.mono_syms (sampler.correct u contextU environmentU normalized odd stable special h52 h0 h24 h28 h32 h40 h48 h60 readyU modU r2U entropyU size
     (by rw [restU.sp]; exact entropyStack) (outputs.after restU) entropySep) ?_
   rintro v ⟨contextV, readyV, modV, r2V, scalarV, significantV, frameV, restV⟩ symsV
-  have scalarSize := (layout p).encode_length size
-  have count : p.slotValue 44 = BitVec.ofNat 32 ((layout p).encode rb).length := by
+  obtain scalarSize := (layout p).encode_length size
+  obtain count : p.slotValue 44 = BitVec.ofNat 32 ((layout p).encode rb).length := by
     change BitVec.ofNat 32 p.privateLength = _
     rw [privateLength, scalarSize]
   rw [WP.seq_iff]
   refine WP.mono_syms (importAt_ok v 1 40 44 contextV.toContext stable (by simp [h40]) (by simp [h44]) readyV (by decide) (by decide)
     scalarV (by rw [scalarSize]; have := p.minLength; omega_using [this]) (by rw [scalarSize]; exact p.width.2.2.2.1) count) ?_
   rintro w ⟨contextW0, readyW, x, keepsW, frameW, restW⟩ symsW
-  have contextW := contextV.after_workspace frameW restW contextW0.ptr (fun d hd => (stableSlots_at stable hd).1)
-  have fits : arrAt p.w 8 ≤ 8 * p.len := readyW.width ▸ readyW.layout.2.2.1
-  have modW := (keeps_array_num keepsW fits op0 (by decide)).trans modV
-  have r2W := (keeps_array_num keepsW fits op4 (by decide)).trans r2V
+  obtain contextW := contextV.after_workspace frameW restW contextW0.ptr (fun d hd => (stableSlots_at stable hd).1)
+  obtain fits : arrAt p.w 8 ≤ 8 * p.len := readyW.width ▸ readyW.layout.2.2.1
+  obtain modW := (keeps_array_num keepsW fits op0 (by decide)).trans modV
+  obtain r2W := (keeps_array_num keepsW fits op4 (by decide)).trans r2V
   rw [WP.seq_iff]
   refine WP.mono_syms (scalarRange_ok w contextW.toContext stable (by simp [h28]) (by simp [h32]) (by simp [h60]) readyW modW odd) ?_
   rintro a ⟨contextA0, readyA, flag, arraysA, frameA, restA⟩ symsA
-  have contextA := contextW.after_workspace frameA restA contextA0.ptr (fun d hd => (stableSlots_at stable hd).1)
+  obtain contextA := contextW.after_workspace frameA restA contextA0.ptr (fun d hd => (stableSlots_at stable hd).1)
   rw [x] at flag
-  have modA := (arraysA 0 (by simp)).trans modW
-  have r2A := (arraysA 4 (by simp)).trans r2W
-  have scalarA := (scalarV.after_workspace frameW restW).after_workspace frameA restA
-  have significantA := (significantV.after_workspace frameW restW).after_workspace frameA restA
-  have outA := (((outputs.after restU).after restV).after restW).after restA
-  have fullV : Frame (keyCallWrites p s) u.mem v.mem := frameV.sub (by
+  obtain modA := (arraysA 0 (by simp)).trans modW
+  obtain r2A := (arraysA 4 (by simp)).trans r2W
+  obtain scalarA := (scalarV.after_workspace frameW restW).after_workspace frameA restA
+  obtain significantA := (significantV.after_workspace frameW restW).after_workspace frameA restA
+  obtain outA := (((outputs.after restU).after restV).after restW).after restA
+  obtain fullV : Frame (keyCallWrites p s) u.mem v.mem := frameV.sub (by
     intro r hr
     simp only [keyScalarWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -126,19 +126,19 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
     · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], by rw [restU.sp]; exact Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], by rw [restU.sp]; exact Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨State.addr p.privateValue, p.k⟩, by simp [keyCallWrites, keyWrites], by intro a ha; exact ha⟩)
-  have fullA := ((fullU.trans fullV).trans (extend frameW)).trans (extend frameA)
+  obtain fullA := ((fullU.trans fullV).trans (extend frameW)).trans (extend frameA)
   rw [VG.Impl.Ffdh.Arm.Domain.ifFlag, WP.seq_iff]
   refine WP.mono_syms (testFlag_ok a) ?_
   rintro z ⟨⟨zeroZ, memZ⟩, restZ⟩ symsZ
-  have ptrZ := (restZ.gpr .r0 (by simp)).trans contextA.ptr
+  obtain ptrZ := (restZ.gpr .r0 (by simp)).trans contextA.ptr
 
-  have readyZ := readyA.of_mem memZ restZ ptrZ
-  have frameZ : Frame [⟨State.addr p.base, 8 * p.len⟩] a.mem z.mem := by rw [memZ]; exact Frame.refl _ _
-  have contextZ := contextA.after_workspace frameZ restZ ptrZ (fun d hd => (stableSlots_at stable hd).1)
-  have scalarZ := scalarA.after_workspace frameZ restZ
-  have significantZ := significantA.after_workspace frameZ restZ
-  have outZ := outA.after restZ
-  have environmentZ : env.holds p z := env.stable environment
+  obtain readyZ := readyA.of_mem memZ restZ ptrZ
+  obtain frameZ : Frame [⟨State.addr p.base, 8 * p.len⟩] a.mem z.mem := by rw [memZ]; exact Frame.refl _ _
+  obtain contextZ := contextA.after_workspace frameZ restZ ptrZ (fun d hd => (stableSlots_at stable hd).1)
+  obtain scalarZ := scalarA.after_workspace frameZ restZ
+  obtain significantZ := significantA.after_workspace frameZ restZ
+  obtain outZ := outA.after restZ
+  obtain environmentZ : env.holds p z := env.stable environment
     (fullA.trans (extend frameZ))
     ((((restU.trans restV).trans restW).trans restA).trans (restZ.mono (by simp [roundClobbers])))
     (symsZ.trans (symsA.trans (symsW.trans (symsV.trans symsU))))
@@ -154,7 +154,7 @@ theorem environmentKeyGenerateMain_ok (prepare sample tail : Prog isa) (env : Sa
     refine ⟨by rw [sampleMainFlag, ite_eq_left valid]; exact status,
       by simpa only [sampleSuccess, decide_eq_true valid, Bool.true_and] using privateT,
       by simpa only [sampleSuccess, decide_eq_true valid, Bool.true_and] using publicT, ?_⟩
-    have same : Frame (keyCallWrites p s) z.mem t.mem := by
+    obtain same : Frame (keyCallWrites p s) z.mem t.mem := by
       simpa only [keyCallWrites, keyWrites, restZ.sp, restA.sp, restW.sp, restV.sp, restU.sp] using frameT
     exact (fullA.trans (extend frameZ)).trans same
   · refine WP.ite false (by change some (!z.z) = some false; rw [zeroZ, flag, scalarValidFlag, ite_eq_right (show ¬(0 < Spec.Rsa.os2ip ((layout p).encode rb) ∧ Spec.Rsa.os2ip ((layout p).encode rb) < scalarBound p) from valid)]; rfl) (by intro ht; cases ht) ?_
@@ -208,11 +208,11 @@ theorem cachedKeyGenerateBody_ok (prepare sample tail : Prog isa) (env : SampleE
   rw [VG.Impl.Ffdh.Arm.CachedKeyGenerate.body, WP.seq_iff]
   refine WP.mono_syms (headPrefix_ok s h stable h0 h24 h32) ?_
   rintro u ⟨contextU, _, _, frameU, restU⟩ symsU
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
-  have environmentU := env.stable environment fullU restU symsU
-  have entropyU := entropy.after_frame frameU restU (by simpa only [List.mem_singleton, forall_eq, size] using entropyStack)
-  have facts := VG.Proof.Bignum.valid_facts valid p.minLength
-  have stableU : stableSlots (60 :: 56 :: slots) = true := by
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
+  obtain environmentU := env.stable environment fullU restU symsU
+  obtain entropyU := entropy.after_frame frameU restU (by simpa only [List.mem_singleton, forall_eq, size] using entropyStack)
+  obtain facts := VG.Proof.Bignum.valid_facts valid p.minLength
+  obtain stableU : stableSlots (60 :: 56 :: slots) = true := by
     change (true && (true && stableSlots slots)) = true
     simp only [Bool.true_and, stable]
   refine WP.mono (environmentKeyGenerateMain_ok prepare sample tail env layout prep sampler law layoutBound u
@@ -258,9 +258,9 @@ theorem cachedKeyGenerateEntered_ok (prepare sample tail : Prog isa) (env : Samp
   rw [WP.seq_iff]
   refine WP.mono_syms (withAllRest (cachedKeyGenerateEntry_ok s h incoming cache privateValue publicValue outputY privateLength)) ?_
   rintro u ⟨⟨contextU, frameU⟩, restU⟩ symsU
-  have fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
-  have environmentU := env.stable environment fullU (restU.mono (by simp [roundClobbers])) symsU
-  have entropyU := entropy.after_frame frameU restU (by simpa only [List.mem_singleton, forall_eq, size] using entropyStack)
+  obtain fullU : Frame (keyCallWrites p s) s.mem u.mem := frameU.mono (by simp [keyCallWrites, keyWrites])
+  obtain environmentU := env.stable environment fullU (restU.mono (by simp [roundClobbers])) symsU
+  obtain entropyU := entropy.after_frame frameU restU (by simpa only [List.mem_singleton, forall_eq, size] using entropyStack)
   refine WP.mono (cachedKeyGenerateBody_ok prepare sample tail env layout prep sampler law layoutBound u
     contextU environmentU (calls.after restU) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

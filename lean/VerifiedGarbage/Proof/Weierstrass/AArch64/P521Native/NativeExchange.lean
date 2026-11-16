@@ -78,19 +78,19 @@ theorem finalize_core_ok (hc : VG.Proof.Ecdsa.AArch64.BaseCfgOk config)
   rw [finalizeCore,WP.seq_iff]
   refine WP.mono (VG.Proof.Weierstrass.AArch64.Mont.WP.block_novec (by decide)
     (finish_copy_point_ok hs)) fun u ⟨⟨xu,yu,zu,ku,uc⟩,vu⟩ => ?_
-  have hu := hs.of_keepRegs ku (by decide)
-  have Mu : ModOkA config.MP' 8192 config.C.p u.mem base := {hM with val:=by rw [uc.wordsVal (by decide) (by decide)]; exact hM.val}
-  have bu : wordsVal u.mem base 1216 9<fieldPrime := by rw [zu]; exact bounds 1432 (by simp)
+  obtain hu := hs.of_keepRegs ku (by decide)
+  obtain Mu : ModOkA config.MP' 8192 config.C.p u.mem base := {hM with val:=by rw [uc.wordsVal (by decide) (by decide)]; exact hM.val}
+  obtain bu : wordsVal u.mem base 1216 9<fieldPrime := by rw [zu]; exact bounds 1432 (by simp)
   rw [WP.seq_iff]
   refine WP.mono (finish_inverse_phase_ok hc hu Mu bu)
     fun v ⟨invBound,invValue,uv,zero,rd,wr,sp,g20,g26,g30,v31,converted,gExtra⟩ => ?_
-  have hv : Scr v base 8192 := ⟨zero,by rw [wr]; exact hu.wr,hu.nowrap,hu.enc⟩
-  have xSame : wordsVal v.mem base 1072 9=wordsVal s.mem base 1288 9 := by
+  obtain hv : Scr v base 8192 := ⟨zero,by rw [wr]; exact hu.wr,hu.nowrap,hu.enc⟩
+  obtain xSame : wordsVal v.mem base 1072 9=wordsVal s.mem base 1288 9 := by
     rw [uv.wordsVal (by decide) (by decide),xu]
-  have oneSame : wordsVal v.mem base 352 9=wordsVal s.mem base 352 9 := by
+  obtain oneSame : wordsVal v.mem base 352 9=wordsVal s.mem base 352 9 := by
     rw [uv.wordsVal (by decide) (by decide),uc.wordsVal (by decide) (by decide)]
   let E : Nat → Fin fieldPrime := fun d => Fin.ofNat fieldPrime (wordsVal v.mem base d 9)
-  have live : OrdinaryInv base fieldPrime id [1072,2152,352] E (fun _ => 1) v := by
+  obtain live : OrdinaryInv base fieldPrime id [1072,2152,352] E (fun _ => 1) v := by
     constructor
     · intro d hd
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hd
@@ -100,10 +100,10 @@ theorem finalize_core_ok (hc : VG.Proof.Ecdsa.AArch64.BaseCfgOk config)
       · simpa only [id_eq,Nat.one_mul,oneSame] using bounds 352 (by simp)
     · intro d _; rfl
   refine WP.mono (finish_products_machine_ok hv live) fun t ⟨it,ht,kt,ft⟩ => ?_
-  have productsU := field_program_frame_unch ft
-  have allU : Unch base finalizeWrites s.mem t.mem := uc.trans (uv.trans productsU)
-  have outBound := it.bound 2584 (by decide)
-  have outValue := it.value 2584 (by decide)
+  obtain productsU := field_program_frame_unch ft
+  obtain allU : Unch base finalizeWrites s.mem t.mem := uc.trans (uv.trans productsU)
+  obtain outBound := it.bound 2584 (by decide)
+  obtain outValue := it.value 2584 (by decide)
   rw [finish_products_value] at outValue
   change Fin.ofNat fieldPrime (wordsVal t.mem base 2584 9)=
     Fin.ofNat fieldPrime (wordsVal v.mem base 1072 9)*
@@ -160,31 +160,31 @@ theorem finish_final_ok (hc : BaseCfgOk config) {base : Addr} {s : State}
   rw [finishFinal,WP.seq_iff]
   refine WP.mono (finalize_core_ok hc hs hM bounds)
     fun u ⟨hu,bound,value,converted,frame,zero,rd,wr,sp,g20,g26,g30,g27,g28,v31⟩ => ?_
-  have mnu : wordsVal u.mem base 136 9=config.C.n := by
+  obtain mnu : wordsVal u.mem base 136 9=config.C.n := by
     rw [frame.wordsVal (by decide) (by decide)]; exact mn
-  have savedU := Saved.unch saved (W:=finalizeWrites) (by decide) frame
-  have flagU : word u.mem base 3232=mask V := by
+  obtain savedU := Saved.unch saved (W:=finalizeWrites) (by decide) frame
+  obtain flagU : word u.mem base 3232=mask V := by
     rw [frame.word (by decide) (by decide)]; exact flag
-  have outU : u.gpr .x20=out := g20.trans outReg
-  have wrU : (⟨out,66⟩ : Region)∈u.wr := by rw [wr]; exact outW
-  have dSame : wordsVal u.mem base 2368 9=wordsVal s.mem base 2368 9 := frame.wordsVal (by decide) (by decide)
-  have accept : VG.Proof.Ecdh.AArch64.ok config base u V=finishAccept base s V := by
+  obtain outU : u.gpr .x20=out := g20.trans outReg
+  obtain wrU : (⟨out,66⟩ : Region)∈u.wr := by rw [wr]; exact outW
+  obtain dSame : wordsVal u.mem base 2368 9=wordsVal s.mem base 2368 9 := frame.wordsVal (by decide) (by decide)
+  obtain accept : VG.Proof.Ecdh.AArch64.ok config base u V=finishAccept base s V := by
     simp only [VG.Proof.Ecdh.AArch64.ok,sv,finishAccept,
       (show config.n=9 from rfl),(show config.sl D=2368 from rfl),(show config.sl RZ=1216 from rfl)]
     rw [dSame,converted]
     simp only [ne_eq,toMontValue_zero_iff (bounds 1432 (by simp))]
   obtain ⟨trace,t,exec,bytes,ret,restored⟩ := checked_finish_ok hc hu mnu savedU flagU outU outFit wrU outApart
   let code : List Instr := config.checkRange (config.sl D)++config.checkNonzero (config.sl RZ)++VG.Impl.Ecdh.AArch64.Cfg.finish config
-  have check27 : code.all (fun i => decide (clobbers i .x27=false))=true := by lit_decide
-  have check28 : code.all (fun i => decide (clobbers i .x28=false))=true := by lit_decide
-  have checkV : code.all (fun i => decide (vdstOf i≠some .v31))=true := by lit_decide
-  have hc27 : ∀i∈instrs (.block code : Prog isa),clobbers i .x27=false := by
+  obtain check27 : code.all (fun i => decide (clobbers i .x27=false))=true := by lit_decide
+  obtain check28 : code.all (fun i => decide (clobbers i .x28=false))=true := by lit_decide
+  obtain checkV : code.all (fun i => decide (vdstOf i≠some .v31))=true := by lit_decide
+  obtain hc27 : ∀i∈instrs (.block code : Prog isa),clobbers i .x27=false := by
     simpa only [instrs,List.all_eq_true,decide_eq_true_eq] using check27
-  have hc28 : ∀i∈instrs (.block code : Prog isa),clobbers i .x28=false := by
+  obtain hc28 : ∀i∈instrs (.block code : Prog isa),clobbers i .x28=false := by
     simpa only [instrs,List.all_eq_true,decide_eq_true_eq] using check28
-  have hcV : ∀i∈instrs (.block code : Prog isa),vdstOf i≠some .v31 := by
+  obtain hcV : ∀i∈instrs (.block code : Prog isa),vdstOf i≠some .v31 := by
     simpa only [instrs,List.all_eq_true,decide_eq_true_eq] using checkV
-  have regions := Exec.rdwr exec
+  obtain regions := Exec.rdwr exec
   refine ⟨trace,t,exec,_,bound,value,?_,?_,restored,regions.1.trans rd,regions.2.1.trans wr,regions.2.2.trans sp,
     (Exec.gpr hc27 exec).trans g27,(Exec.gpr hc28 exec).trans g28,(Exec.vec hcV exec).trans v31⟩
   · simpa only [(show config.C.len=66 from rfl),sv,(show config.n=9 from rfl),
@@ -254,10 +254,10 @@ theorem finish_ok (hc : BaseCfgOk config) {s : State} {table : Addr} {k : Nat}
   refine WP.mono (finish_front_ok pre.workspace pre.point pre.counter pre.zero pre.b pre.fieldOne
     pre.tableApart pre.tableRead pre.tableCanonical pre.bits)
     fun u ⟨bu,pu,hu,frame,rd,wr,sp,g20,g26,g27,g28,v31⟩ => ?_
-  have Mu : ModOkA config.MP' 8192 config.C.p u.mem (s.gpr .x0) :=
+  obtain Mu : ModOkA config.MP' 8192 config.C.p u.mem (s.gpr .x0) :=
     {pre.modulus with val:=by rw [frame.wordsVal (by decide) (by decide)]; exact pre.modulus.val}
-  have oneSame : wordsVal u.mem (s.gpr .x0) 352 9=wordsVal s.mem (s.gpr .x0) 352 9 := frame.wordsVal (by decide) (by decide)
-  have bounds : ∀d∈[1288,1360,1432,352],wordsVal u.mem (s.gpr .x0) d 9<fieldPrime := by
+  obtain oneSame : wordsVal u.mem (s.gpr .x0) 352 9=wordsVal s.mem (s.gpr .x0) 352 9 := frame.wordsVal (by decide) (by decide)
+  obtain bounds : ∀d∈[1288,1360,1432,352],wordsVal u.mem (s.gpr .x0) d 9<fieldPrime := by
     intro d hd
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hd
     rcases hd with rfl|rfl|rfl|rfl
@@ -265,16 +265,16 @@ theorem finish_ok (hc : BaseCfgOk config) {s : State} {table : Addr} {k : Nat}
     · exact bu.2.1
     · exact bu.2.2
     · rw [oneSame]; exact pre.oneBound
-  have savedU := Saved.unch pre.saved (W:=finishAllFrontWrites) (by decide) frame
-  have mnU : wordsVal u.mem (s.gpr .x0) 136 9=config.C.n := by rw [frame.wordsVal (by decide) (by decide)]; exact pre.order
-  have flagU : word u.mem (s.gpr .x0) 3232=mask V := by rw [frame.word (by decide) (by decide)]; exact pre.flag
-  have outU : u.gpr .x20=out := g20.trans pre.outReg
-  have wrU : (⟨out,66⟩ : Region)∈u.wr := by rw [wr]; exact pre.outW
-  have dSame : wordsVal u.mem (s.gpr .x0) 2368 9=wordsVal s.mem (s.gpr .x0) 2368 9 := frame.wordsVal (by decide) (by decide)
-  have px := congrArg Prod.fst pu
-  have pz := congrArg (fun P => P.2.2) pu
+  obtain savedU := Saved.unch pre.saved (W:=finishAllFrontWrites) (by decide) frame
+  obtain mnU : wordsVal u.mem (s.gpr .x0) 136 9=config.C.n := by rw [frame.wordsVal (by decide) (by decide)]; exact pre.order
+  obtain flagU : word u.mem (s.gpr .x0) 3232=mask V := by rw [frame.word (by decide) (by decide)]; exact pre.flag
+  obtain outU : u.gpr .x20=out := g20.trans pre.outReg
+  obtain wrU : (⟨out,66⟩ : Region)∈u.wr := by rw [wr]; exact pre.outW
+  obtain dSame : wordsVal u.mem (s.gpr .x0) 2368 9=wordsVal s.mem (s.gpr .x0) 2368 9 := frame.wordsVal (by decide) (by decide)
+  obtain px := congrArg Prod.fst pu
+  obtain pz := congrArg (fun P => P.2.2) pu
   dsimp only [ordinaryPoint] at px pz
-  have accept : finishAccept (s.gpr .x0) u V=finishFullAccept s table k V := by
+  obtain accept : finishAccept (s.gpr .x0) u V=finishFullAccept s table k V := by
     simp only [finishAccept,finishFullAccept,dSame]
     rw [decide_eq_decide]
     apply and_congr_right
@@ -299,7 +299,7 @@ theorem finish_ok_one (hc : BaseCfgOk config) {s : State} {table : Addr} {k : Na
       (∀r∈Cfg.saved.map Prod.fst,t.gpr r=g r) ∧
       t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp ∧ t.gpr .x27=s.gpr .x27 ∧ t.gpr .x28=s.gpr .x28 ∧ t.v .v31=s.v .v31 := by
   refine WP.mono (finish_ok hc pre) fun t ⟨xv,xb,value,bytes,ret,restore,rd,wr,sp,g27,g28,v31⟩ => ?_
-  have oneFin : Fin.ofNat fieldPrime (wordsVal s.mem (s.gpr .x0) 352 9)=(1 : Fin fieldPrime) := by
+  obtain oneFin : Fin.ofNat fieldPrime (wordsVal s.mem (s.gpr .x0) 352 9)=(1 : Fin fieldPrime) := by
     rw [one]
     exact finite_one
   rw [oneFin,Lean.Grind.Semiring.mul_one] at value
@@ -346,9 +346,9 @@ open VG VG.AArch64 VG.Proof.Mont VG.Proof.Weierstrass Spec.Weierstrass
       (windowAffineN C.p m table k j).2.2 (Window5.winPt C P k j) := by
   let v := combWin 5 k j
   let d := magH 16 v
-  have hv : v<32 := combWin_lt 5 k j
-  have hd : d≤16 := magH_le hv
-  have win : Window5.winPt C P k j=if 16≤v then mul (v-16) P else negPt (mul (16-v) P) := by
+  obtain hv : v<32 := combWin_lt 5 k j
+  obtain hd : d≤16 := magH_le hv
+  obtain win : Window5.winPt C P k j=if 16≤v then mul (v-16) P else negPt (mul (16-v) P) := by
     rw [Window5.winPt,←window_comb_five]
   by_cases hd0 : d=0
   · have v16 : v=16 := by
@@ -363,11 +363,11 @@ open VG VG.AArch64 VG.Proof.Mont VG.Proof.Weierstrass Spec.Weierstrass
     simp only [v16,Nat.lt_irrefl,ite_false,Nat.le_refl,ite_true,Nat.sub_self,Window5.mul_zero_pt]
     exact ⟨rfl,law.one_ne_zero,rfl⟩
   · have h1 : 1≤d := by omega_arith
-    have entry := entries d h1 hd
+    obtain entry := entries d h1 hd
     have zeroDigit : magH 16 (combWin 5 k j)≠0 := hd0
     by_cases negative : v<16
     · have dm : d=16-v := by dsimp only [d]; unfold magH; rw [ite_eq_right (by omega_arith)]
-      have nc := window_neg_cast (canonical d h1 hd)
+      obtain nc := window_neg_cast (canonical d h1 hd)
       have negEntry := entry.negY
       rw [windowAffineN,win]
       simp only [windowX,windowY,zeroDigit,ite_false]
@@ -429,9 +429,9 @@ open VG.Proof.Weierstrass Spec.Weierstrass
   induction n with
   | zero => simpa only [windowDoublesF,Nat.pow_zero,Nat.one_mul] using current
   | succ n ih =>
-    have doubled := InvJ.dbl law ha (law.onCurve_mul hP (2^n*e)) ih
+    obtain doubled := InvJ.dbl law ha (law.onCurve_mul hP (2^n*e)) ih
     rw [law.add_mul_mul hP] at doubled
-    have same : 2^n*e+2^n*e=2^(n+1)*e := by rw [Nat.pow_succ,Nat.mul_two,Nat.add_mul]
+    obtain same : 2^n*e+2^n*e=2^(n+1)*e := by rw [Nat.pow_succ,Nat.mul_two,Nat.add_mul]
     rw [same] at doubled
     exact doubled
 
@@ -448,22 +448,22 @@ open VG.Proof.Weierstrass Spec.Weierstrass
   | 0,A,_,current => current
   | n+1,A,top,current => by
     let e := Window5.winE (k+16*Window5.geom J) J (n+2)
-    have doubled := window_doubles_group law ha hP e 5 current
+    obtain doubled := window_doubles_group law ha hP e 5 current
     change InvJ C (windowDoublesF 5 A).1 (windowDoublesF 5 A).2.1 (windowDoublesF 5 A).2.2 (mul (32*e) P) at doubled
-    have hQ := law.onCurve_mul hP (32*e)
-    have hS := Window5.onCurve_winPt law hP (k+16*Window5.geom J) (n+1)
-    have different : mul (32*e) P≠.infinity → Window5.winPt C P (k+16*Window5.geom J) (n+1)≠.infinity →
+    obtain hQ := law.onCurve_mul hP (32*e)
+    obtain hS := Window5.onCurve_winPt law hP (k+16*Window5.geom J) (n+1)
+    obtain different : mul (32*e) P≠.infinity → Window5.winPt C P (k+16*Window5.geom J) (n+1)≠.infinity →
         mul (32*e) P≠Window5.winPt C P (k+16*Window5.geom J) (n+1) := by
       intro hQ0 _
-      have he : 1≤e := by
+      obtain he : 1≤e := by
         by_contra h
-        have e0 : e=0 := by omega_arith
+        obtain e0 : e=0 := by omega_arith
         rw [e0,Nat.mul_zero,Window5.mul_zero_pt] at hQ0
         exact hQ0 rfl
       exact (window_noexc_nonfinal law order hP nonzero hn hk top (by omega_arith) he).1
-    have step := window_select_group law ha (A:=windowDoublesF 5 A) (E:=E (n+1)) hQ hS doubled
+    obtain step := window_select_group law ha (A:=windowDoublesF 5 A) (E:=E (n+1)) hQ hS doubled
       (entries (n+1) (by omega_arith) top) (affine (n+1) (by omega_arith) top) different
-    have w := Window5.win_add law hP (k:=k+16*Window5.geom J) (J:=J) (j:=n+1) (Nat.le_add_left _ _) top
+    obtain w := Window5.win_add law hP (k:=k+16*Window5.geom J) (J:=J) (j:=n+1) (Nat.le_add_left _ _) top
     change Spec.Weierstrass.add (mul (32*e) P) (Window5.winPt C P (k+16*Window5.geom J) (n+1))=_ at w
     rw [w] at step
     exact window_nonfinal_group law ha order hP nonzero hn hk E entries affine n _ (by omega_arith) step
@@ -517,16 +517,16 @@ private theorem window_doubles_step (n : Nat) (A : Fin fieldPrime×Fin fieldPrim
   subst q
   let E := fun j => windowAffineN p m table (k+16*Window5.geom 105) j
   have reps (j : Nat) := window_affine_repA law m table (k+16*Window5.geom 105) j canonical entries
-  have invs : ∀j,1≤j → j<105 → InvJ _ (E j).1 (E j).2.1 (E j).2.2
+  obtain invs : ∀j,1≤j → j<105 → InvJ _ (E j).1 (E j).2.1 (E j).2.2
       (Window5.winPt _ P (k+16*Window5.geom 105) j) := by
     intro j _ _
     exact InvJ.of_rep01 (reps j).1 (reps j).2
-  have zs : ∀j,1≤j → j<105 → (E j).2.2=0 ∨ (E j).2.2=1 := by
+  obtain zs : ∀j,1≤j → j<105 → (E j).2.2=0 ∨ (E j).2.2=1 := by
     intro j _ _
     exact (reps j).2.symm
   change (Fin.ofNat p OX,Fin.ofNat p OY,Fin.ofNat p OZ)=
     windowNonfinalF E steps (Fin.ofNat p AX,Fin.ofNat p AY,Fin.ofNat p AZ) at value
-  have result := window_nonfinal_group law ha order hP nonzero hn hk E invs zs steps
+  obtain result := window_nonfinal_group law ha order hP nonzero hn hk E invs zs steps
     (Fin.ofNat p AX,Fin.ofNat p AY,Fin.ofNat p AZ) hSteps current
   rw [←value] at result
   exact result
@@ -574,42 +574,42 @@ theorem native_api_decode {s args loaded ready : State} {P : Point config.C}
       wordsVal ready.mem (s.gpr .x3) 2368 9=nativeScalar s ∧
       wordsVal ready.mem (s.gpr .x3) 3944 10=nativeScalar s%2^521+recodeOffset := by
   obtain ⟨peer,checked,_,_,fields,offset,_,original,_,_,_,_,flag,px,py,_,_,_,peerX,peerY⟩ := core
-  have loadedFrame : Outside (s.gpr .x3) 0 8192 s.mem loaded.mem := fun x hx =>
+  obtain loadedFrame : Outside (s.gpr .x3) 0 8192 s.mem loaded.mem := fun x hx =>
     (stage.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact hx).trans (congrFun keep.mem x)
-  have tagSame : loaded.mem (s.gpr .x2)=s.mem (s.gpr .x2) := by
-    have h := keep_of_disjoint' loadedFrame pre.args.peer_apart (by decide) (i:=0) (by decide) (by decide)
+  obtain tagSame : loaded.mem (s.gpr .x2)=s.mem (s.gpr .x2) := by
+    obtain h := keep_of_disjoint' loadedFrame pre.args.peer_apart (by decide) (i:=0) (by decide) (by decide)
     simpa only [BitVec.add_zero] using h
-  have xParsed : ofBytes (((nativePeerBytes s).drop 1).take config.C.len)=sv config (s.gpr .x3) peer E := by
+  obtain xParsed : ofBytes (((nativePeerBytes s).drop 1).take config.C.len)=sv config (s.gpr .x3) peer E := by
     change ofBytes (((Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1+2*config.C.len)).drop 1).take config.C.len)=_
     rw [VG.Proof.Ecdh.AArch64.peer_bytes,List.drop_one,List.tail_cons,List.take_left' (length_bytesAt _ _ _),
       peerX,stage.e,shAt_none,Nat.shiftRight_zero]
     simp only [ev,keep.mem,peerPlus]
     rfl
-  have yParsed : ofBytes ((nativePeerBytes s).drop (config.C.len+1))=sv config (s.gpr .x3) peer QY := by
+  obtain yParsed : ofBytes ((nativePeerBytes s).drop (config.C.len+1))=sv config (s.gpr .x3) peer QY := by
     change ofBytes ((Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1+2*config.C.len)).drop (config.C.len+1))=_
     rw [VG.Proof.Ecdh.AArch64.peer_bytes,List.drop_succ_cons,List.drop_left' (length_bytesAt _ _ _),peerY,
       bytesAt_keep loadedFrame (pre.args.peer_apart.sub_left (Offset.sub_base _ (by decide))) (by decide) (by decide)]
-  have guard : prepareCoreValid (s.gpr .x3) loaded peer (s.gpr .x2) ↔
+  obtain guard : prepareCoreValid (s.gpr .x3) loaded peer (s.gpr .x2) ↔
       VG.Proof.Ecdh.Valid config.C (s.mem (s.gpr .x2)) (sv config (s.gpr .x3) peer E) (sv config (s.gpr .x3) peer QY) := by
     simp only [prepareCoreValid,VG.Proof.Ecdh.AArch64.PeerOk,tagSame,VG.Proof.Ecdh.Valid]
     constructor
     · rintro ⟨⟨⟨tag,xb⟩,yb⟩,curve⟩; exact ⟨tag,xb,yb,curve⟩
     · rintro ⟨tag,xb,yb,curve⟩; exact ⟨⟨⟨tag,xb⟩,yb⟩,curve⟩
-  have xReady := (NativeApiDecode_field_relabel NativeApiDecode_native_prime NativeApiDecode_native_radix (fields 2800 (by decide)).2).trans px
-  have yReady := (NativeApiDecode_field_relabel NativeApiDecode_native_prime NativeApiDecode_native_radix (fields 3160 (by decide)).2).trans py
-  have dLoaded : wordsVal loaded.mem (s.gpr .x3) 2368 9=nativeScalar s := by
+  obtain xReady := (NativeApiDecode_field_relabel NativeApiDecode_native_prime NativeApiDecode_native_radix (fields 2800 (by decide)).2).trans px
+  obtain yReady := (NativeApiDecode_field_relabel NativeApiDecode_native_prime NativeApiDecode_native_radix (fields 3160 (by decide)).2).trans py
+  obtain dLoaded : wordsVal loaded.mem (s.gpr .x3) 2368 9=nativeScalar s := by
     have h := stage.d
     rw [shAt_none,Nat.shiftRight_zero] at h
     simp only [dv,keep.mem,keep.gpr .x1 (by decide)] at h
     exact h
-  have kLoaded : wordsVal loaded.mem (s.gpr .x3) 2296 9=nativeScalar s := by
+  obtain kLoaded : wordsVal loaded.mem (s.gpr .x3) 2296 9=nativeScalar s := by
     have h := stage.k
     simp only [kv,keep.mem,privateArg] at h
     exact h
   refine ⟨_,_,xParsed,yParsed,?_,?_,original.trans dLoaded,?_⟩
   · simpa only [mask,guard] using flag
   · intro valid
-    have hg := guard.mpr valid
+    obtain hg := guard.mpr valid
     rw [ite_eq_left hg] at xReady yReady
     rw [←selected]
     exact congrArg₂ (@Point.affine config.C) (VG.Proof.EcKey.fe_eq valid.2.1 xReady)
@@ -639,16 +639,16 @@ open VG.Proof.Mont.AArch64.P521Square (fieldPrime)
       (Fin.ofNat C.p (wordsVal m table (216*i+72) 9)) 1 (mul (i+1) P)) :
     Rep C (finishSumAt C m base table k).1 (finishSumAt C m base table k).2.1
       (finishSumAt C m base table k).2.2 (mul d P) := by
-  have yBound : ∀j,1≤j → j≤16 → wordsVal m table (lookupEntryOffset j+72) 9<C.p := by
+  obtain yBound : ∀j,1≤j → j≤16 → wordsVal m table (lookupEntryOffset j+72) 9<C.p := by
     intro j lo hi
     rw [hp]
     exact (canonical j lo hi).2
-  have entries : ∀j,1≤j → j≤16 → Rep C (Fin.ofNat C.p (wordsVal m table (lookupEntryOffset j) 9))
+  obtain entries : ∀j,1≤j → j≤16 → Rep C (Fin.ofNat C.p (wordsVal m table (lookupEntryOffset j) 9))
       (Fin.ofNat C.p (wordsVal m table (lookupEntryOffset j+72) 9)) 1 (mul j P) := by
     intro j lo hi
-    have row := rows (j-1) (by omega_using [hi])
+    obtain row := rows (j-1) (by omega_using [hi])
     simpa only [lookupEntryOffset,Nat.sub_add_cancel lo] using row
-  have digit := window_affine_repA law m table k 0 yBound entries
+  obtain digit := window_affine_repA law m table k 0 yBound entries
   rw [←window_affine_at_eq] at digit
   exact finish_sum_rep law ha offset hP b current digit
 
@@ -711,8 +711,8 @@ open VG.Impl.Weierstrass.AArch64.P521Native (config)
  theorem NativeConstants.finish_pre {base table out : Addr} {g : Reg → BitVec 64} {V : Prop} [Decidable V]
     {s t : State} {k : Nat} (h : NativeConstants base g V out s) (post : NativeAfterWindow base table k s t)
     (tableApart : TableWorkspaceApart base table 8192) : FinishPre t table k g V out := by
-  have c := h.of_low post.lowMemory post.flag post.outputPointer post.wr
-  have ws : Scr t (t.gpr .x0) 8192 := by rw [post.workspace]; exact post.data.scr
+  obtain c := h.of_low post.lowMemory post.flag post.outputPointer post.wr
+  obtain ws : Scr t (t.gpr .x0) 8192 := by rw [post.workspace]; exact post.data.scr
   refine {
     workspace:=ws
     point:=by rw [post.workspace]; exact post.point
@@ -762,9 +762,9 @@ open VG.Impl.Weierstrass.AArch64.P521Native (config windowLoop finishAndWrite)
       t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp ∧ t.gpr .x27=s.gpr .x27 ∧ t.gpr .x28=s.gpr .x28 ∧ t.v .v31=s.v .v31 := by
   rw [nativeContinuation,WP.seq_iff]
   refine WP.mono (native_window_ok data apart bound counter) fun mid post => ?_
-  have pre := constants.finish_pre post tableApart
-  have c := constants.of_low post.lowMemory post.flag post.outputPointer post.wr
-  have one : wordsVal mid.mem (mid.gpr .x0) 352 9=1 := by rw [post.workspace]; exact c.one
+  obtain pre := constants.finish_pre post tableApart
+  obtain c := constants.of_low post.lowMemory post.flag post.outputPointer post.wr
+  obtain one : wordsVal mid.mem (mid.gpr .x0) 352 9=1 := by rw [post.workspace]; exact c.one
   refine WP.mono (finish_ok_one hc pre one) fun t ⟨x,b,value,bytes,ret,saved,rd,wr,sp,g27,g28,v31⟩ => ?_
   rw [post.workspace] at value
   exact ⟨mid,x,post,b,value,bytes,ret,saved,rd.trans post.rd,wr.trans post.wr,sp.trans post.sp,
@@ -812,7 +812,7 @@ open VG VG.AArch64
 
  theorem native_body_pre {s : State}
     (h : (VG.Spec.Ecdh.Instance.exchangeContract VG.Spec.EcKey.P521.inst abi 3456).pre s) : NativeBodyPre s := by
-  have stack := prepare_stack_pre h
+  obtain stack := prepare_stack_pre h
   sig_pre [VG.Spec.Ecdh.Instance.exchangeContract,VG.Spec.Ecdh.Instance.exchangeSig,
     VG.Spec.EcKey.P521.inst,VG.Spec.P521.curve,VG.Spec.EcKey.scratchWords,VG.AArch64.abi,VG.AArch64.argRegs] at h
   obtain ⟨_,_,wr,_,_,apart,_,_,_,_,_,_,outFit,_,_,_⟩ := h
@@ -838,9 +838,9 @@ open VG.Proof.Ed25519.AArch64 (Keeps)
     NativeConstants (s.gpr .x3) args.gpr V (s.gpr .x0) ready := by
   obtain ⟨_,_,_,_,_,_,_,_,one,modulus,order,saved⟩ := prepare_selected_ready hc stage core
   obtain ⟨_,_,_,_,fields,_,_,_,_,_,g20,_,_,_,_,_,wr,_⟩ := core
-  have outReg : ready.gpr .x20=s.gpr .x0 :=
+  obtain outReg : ready.gpr .x20=s.gpr .x0 :=
     g20.trans (stage.x20.trans (keep.gpr .x0 (by decide)))
-  have outW : (⟨s.gpr .x0,66⟩ : Region)∈ready.wr := by
+  obtain outW : (⟨s.gpr .x0,66⟩ : Region)∈ready.wr := by
     rw [wr,stage.wr,keep.wr]
     exact List.mem_cons_of_mem _ pre.outW
   exact ⟨(fields 568 (by decide)).1,one,modulus,order,saved,flag,outReg,pre.outFit,outW,pre.outApart⟩
@@ -891,28 +891,28 @@ open VG.Proof.Ed25519.AArch64 (Keeps)
     spFront,v31Front,g27Front,g28Front,rdFront,wrFront,_,privateArg,peerPlus,selected⟩ := frontPost
   obtain ⟨x,y,parsedX,parsedY,flagReady,selectedP,originalD,offset⟩ :=
     native_api_decode pre.stack keep stage core privateArg peerPlus selected
-  have constantsReady := native_ready_constants hc pre keep stage core flagReady
-  have constants := constantsReady.of_low arith.lowMemory arith.flag arith.outputPointer arith.wr
-  have bound : canonicalPoint front.mem (s.gpr .x3) 1072 := by
+  obtain constantsReady := native_ready_constants hc pre keep stage core flagReady
+  obtain constants := constantsReady.of_low arith.lowMemory arith.flag arith.outputPointer arith.wr
+  obtain bound : canonicalPoint front.mem (s.gpr .x3) 1072 := by
     change wordsVal front.mem (s.gpr .x3) 1072 9<_ ∧ wordsVal front.mem (s.gpr .x3) 1144 9<_ ∧ wordsVal front.mem (s.gpr .x3) 1216 9<_
     rw [arith.accumulatorX,arith.accumulatorY,arith.accumulatorZ]
-    have hp : config.C.p=fieldPrime := by
+    obtain hp : config.C.p=fieldPrime := by
       dsimp only [config,VG.Impl.Ecdsa.AArch64.p521,VG.Spec.P521.curve,VG.Spec.P521.p,fieldPrime]
     have hge := hc.p_ge
     rw [hp] at hge
     omega_arith
   refine WP.mono (native_continuation_ok hc arith.data pre.stack.table_scratch.symm pre.stack.tableApart bound
     arith.counter constants) fun t ⟨mid,xv,window,xb,value,bytes,ret,saved,rd,wr,sp,g27,g28,v31⟩ => ?_
-  have dMid : wordsVal mid.mem (s.gpr .x3) 2368 9=nativeScalar s :=
+  obtain dMid : wordsVal mid.mem (s.gpr .x3) 2368 9=nativeScalar s :=
     window.originalD.trans (arith.originalD.trans originalD)
-  have bMid : Fin.ofNat config.C.p (wordsVal mid.mem (s.gpr .x3) 568 9)=Fin.ofNat config.C.p config.C.b := by
+  obtain bMid : Fin.ofNat config.C.p (wordsVal mid.mem (s.gpr .x3) 568 9)=Fin.ofNat config.C.p config.C.b := by
     rw [native_low_words window.lowMemory (by decide),native_low_words arith.lowMemory (by decide)]
     exact prepare_selected_b hc core
   refine ⟨ready,P,front,mid,xv,x,y,parsedX,parsedY,selectedP,hP,pne,kbound,offset,
     arith,window,dMid,bMid,xb,value,bytes,ret,?_,rd.trans rdFront,wr.trans wrFront,sp.trans spFront,
     g27.trans g27Front,g28.trans g28Front,v31.trans v31Front⟩
   intro r hr
-  have fresh : ∀r∈Cfg.saved.map Prod.fst,r∉[Reg.x2,Reg.x3,Reg.x4,Reg.x6,Reg.x26] := by decide
+  obtain fresh : ∀r∈Cfg.saved.map Prod.fst,r∉[Reg.x2,Reg.x3,Reg.x4,Reg.x6,Reg.x26] := by decide
   exact (saved r hr).trans (keep.gpr r (fresh r hr))
 
 end VG.Proof.Weierstrass.AArch64.P521Native
@@ -954,11 +954,11 @@ open VG.Impl.Weierstrass.AArch64.P521Native (windowLoop)
       t.gpr .x19=1#64 ∧ t.gpr .x4=0#64 := by
   refine WP.mono (window_loop_104 data apart bound counter) fun t ⟨b,p,d,f,pub,c19,c4⟩ => ?_
   rw [window_run_generic] at p
-  have canonical : ∀d,1≤d → d≤16 → wordsVal s.mem table (lookupEntryOffset d+72) 9<C.p := by
+  obtain canonical : ∀d,1≤d → d≤16 → wordsVal s.mem table (lookupEntryOffset d+72) 9<C.p := by
     intro d h1 hd
     rw [hp]
     exact (data.canonical d h1 hd).2
-  have group := window_run_group_transfer (steps:=104) hp law ha order hP nonzero hn hk (by decide)
+  obtain group := window_run_group_transfer (steps:=104) hp law ha order hP nonzero hn hk (by decide)
     s.mem table p canonical entries current
   exact ⟨b,group,d,f,pub,c19,c4⟩
 
@@ -1003,32 +1003,32 @@ private theorem output_post {r : Option (List Byte)} {z bytes : List Byte} {ret 
     original,b,xb,value,bytes,ret,saved,rd,wr,sp,g27,g28,v31⟩ := raw
   let d := nativeScalar s
   let k := wordsVal ready.mem (s.gpr .x3) 3944 10
-  have hn : 64≤config.C.n := by decide +kernel
-  have orderSize : config.C.n≤2^521 := by decide +kernel
+  obtain hn : 64≤config.C.n := by decide +kernel
+  obtain orderSize : config.C.n≤2^521 := by decide +kernel
   have goodOffset (hd : d<config.C.n) : k=d+16*Window5.geom 105 := by
-    have below : d<2^521 := Nat.lt_of_lt_of_le hd orderSize
+    obtain below : d<2^521 := Nat.lt_of_lt_of_le hd orderSize
     change k=d+recodeOffset
     exact offset.trans (congrArg (fun z => z+recodeOffset) (Nat.mod_eq_of_lt below))
-  have canonical : ∀j,1≤j → j≤16 → wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j+72) 9<config.C.p := by
+  obtain canonical : ∀j,1≤j → j≤16 → wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j+72) 9<config.C.p := by
     intro j lo hi
     rw [native_prime]
     exact (arith.data.canonical j lo hi).2
-  have entries : ∀j,1≤j → j≤16 → Rep config.C (Fin.ofNat config.C.p (wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j) 9))
+  obtain entries : ∀j,1≤j → j≤16 → Rep config.C (Fin.ofNat config.C.p (wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j) 9))
       (Fin.ofNat config.C.p (wordsVal front.mem (s.sp-3456#64) (lookupEntryOffset j+72) 9)) 1 (mul j P) := by
     intro j lo hi
-    have row := (arith.affine (j-1) (by omega_using [hi])).1
+    obtain row := (arith.affine (j-1) (by omega_using [hi])).1
     simpa only [lookupEntryOffset,Nat.sub_add_cancel lo] using row
   have current (hd : d<config.C.n) : InvJ config.C (pointAt config.C mid.mem (s.gpr .x3) 1072).1
       (pointAt config.C mid.mem (s.gpr .x3) 1072).2.1 (pointAt config.C mid.mem (s.gpr .x3) 1072).2.2
       (mul (Window5.winE k 105 1) P) := by
-    have initial := window_initial_group (C:=config.C) (P:=P) arith.accumulatorZ (show d+16*Window5.geom 105<32^105 by rw [←goodOffset hd]; exact kbound)
+    obtain initial := window_initial_group (C:=config.C) (P:=P) arith.accumulatorZ (show d+16*Window5.geom 105<32^105 by rw [←goodOffset hd]; exact kbound)
     have p := window.value
     rw [window_run_generic] at p
     change ordinaryPoint mid.mem (s.gpr .x3) 1072=windowNonfinalF (fun j => windowAffineN fieldPrime front.mem (s.sp-3456#64) k j) 104 (ordinaryPoint front.mem (s.gpr .x3) 1072) at p
     rw [goodOffset hd] at p ⊢
     exact window_run_group_transfer native_prime law ha order hP pne hn hd (by decide) front.mem (s.sp-3456#64)
       p canonical entries initial
-  have rows : ∀i,i<16 → Rep config.C (Fin.ofNat config.C.p (wordsVal mid.mem (s.sp-3456#64) (216*i) 9))
+  obtain rows : ∀i,i<16 → Rep config.C (Fin.ofNat config.C.p (wordsVal mid.mem (s.sp-3456#64) (216*i) 9))
       (Fin.ofNat config.C.p (wordsVal mid.mem (s.sp-3456#64) (216*i+72) 9)) 1 (mul (i+1) P) := by
     intro i hi
     rw [WindowPhaseFrame.table window.frame pre.table_scratch.symm _ (by omega_using [hi]),
@@ -1038,19 +1038,19 @@ private theorem output_post {r : Option (List Byte)} {z bytes : List Byte} {ret 
       (finishSumAt config.C mid.mem (s.gpr .x3) (s.sp-3456#64) k).2.1
       (finishSumAt config.C mid.mem (s.gpr .x3) (s.sp-3456#64) k).2.2 (mul d P) :=
     finish_sum_table_rep native_prime law ha (goodOffset hd) hP b (current hd) window.data.canonical rows
-  have val := finish_value_transfer native_prime value
-  have bound : xv<config.C.p := by rw [native_prime]; exact xb
-  have spec := VG.Proof.Ecdh.exchange_eq_of_lt law
+  obtain val := finish_value_transfer native_prime value
+  obtain bound : xv<config.C.p := by rw [native_prime]; exact xb
+  obtain spec := VG.Proof.Ecdh.exchange_eq_of_lt law
     (bs:=nativePeerBytes s) (by rw [length_bytesAt]; rfl)
     (b0:=s.mem (s.gpr .x2)) (by
       change (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1+2*config.C.len)).head?=_
       rw [peer_bytes]; rfl) parseX parseY selected result bound val
-  have accept : finishFullAccept mid (s.sp-3456#64) k (VG.Proof.Ecdh.Valid config.C (s.mem (s.gpr .x2)) x y)=
+  obtain accept : finishFullAccept mid (s.sp-3456#64) k (VG.Proof.Ecdh.Valid config.C (s.mem (s.gpr .x2)) x y)=
       decide ((1≤d ∧ d<config.C.n) ∧ VG.Proof.Ecdh.Valid config.C (s.mem (s.gpr .x2)) x y ∧ (finishSumAt config.C mid.mem (s.gpr .x3) (s.sp-3456#64) k).2.2≠0) := by
     unfold finishFullAccept
     rw [window.workspace,original]
     rw [decide_eq_decide]
-    have nz := not_congr (finish_zero_transfer native_prime mid.mem (s.gpr .x3) (s.sp-3456#64) k)
+    obtain nz := not_congr (finish_zero_transfer native_prime mid.mem (s.gpr .x3) (s.sp-3456#64) k)
     constructor
     · rintro ⟨⟨v,lo,hi⟩,z⟩; exact ⟨⟨lo,hi⟩,v,nz.mp z⟩
     · rintro ⟨⟨lo,hi⟩,v,z⟩; exact ⟨⟨v,lo,hi⟩,nz.mpr z⟩
@@ -1083,10 +1083,10 @@ open VG.Impl.Weierstrass.AArch64.P521Native (config body)
       (∀r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VG.Proof.Ecdh.AArch64.EPost config s t ∧
       t.rd=(allocated 3456 s).rd ∧ t.wr=(allocated 3456 s).wr ∧ t.sp=(allocated 3456 s).sp ∧
       t.gpr .x27=s.gpr .x27 ∧ t.gpr .x28=s.gpr .x28 ∧ t.v .v31=s.v .v31 := by
-  have bodyPre := native_body_pre pre
-  have orderBound : 17≤config.C.n := by decide +kernel
+  obtain bodyPre := native_body_pre pre
+  obtain orderBound : 17≤config.C.n := by decide +kernel
   refine WP.mono (native_body_raw_ok hc law ha order orderBound bodyPre) fun t raw => ?_
-  have correct := native_body_correctness hc law ha order bodyPre.stack raw
+  obtain correct := native_body_correctness hc law ha order bodyPre.stack raw
   obtain ⟨ready,P,front,mid,xv,x,y,parseX,parseY,selected,hP,pne,kbound,offset,arith,window,
     original,b,xb,value,bytes,ret,saved,rd,wr,sp,g27,g28,v31⟩ := raw
   exact ⟨saved,correct,rd,wr,sp,g27,g28,v31⟩
@@ -1112,8 +1112,8 @@ private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
     WP isa exchange s fun t => EPost config s t ∧
       (∀r∈[Reg.x19,Reg.x20,Reg.x21,Reg.x22,Reg.x23,Reg.x24,Reg.x25,Reg.x26,Reg.x27,Reg.x28,Reg.x30],t.gpr r=s.gpr r) ∧
       t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp := by
-  have entry := native_pre_saved pre
-  have stack := prepare_stack_pre entry
+  obtain entry := native_pre_saved pre
+  obtain stack := prepare_stack_pre entry
   change WP isa (.seq (.block outerBlock000) (.seq (.frame (.alloc 3456) body (.free 3456)) (.seq (.block outerBlock172) (.block [])))) s _
   apply WP.seq
   refine WP.mono (native_prologue_ok s) fun u hu => ?_
@@ -1129,7 +1129,7 @@ private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
   refine ⟨?_,?_,?_,?_,?_⟩
   · change EPost config s v
     change EPost config s t at api
-    have mem : v.mem=t.mem := by simpa only [freed] using keep.mem
+    obtain mem : v.mem=t.mem := by simpa only [freed] using keep.mem
     exact epost_keep api mem (reg .x0 (by decide))
   · intro r hr
     by_cases eq26 : r=Reg.x26
@@ -1138,7 +1138,7 @@ private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
       change (t.v .v31).extractLsb' 64 64=s.gpr .x26
       rw [v31,native_saved_high]
     · rw [reg r eq26]
-      have cases : r∈Cfg.saved.map Prod.fst ∨ r=Reg.x27 ∨ r=Reg.x28 := by
+      obtain cases : r∈Cfg.saved.map Prod.fst ∨ r=Reg.x27 ∨ r=Reg.x28 := by
         simp only [List.mem_cons,List.not_mem_nil,or_false,Cfg.saved,List.map_cons,List.map_nil] at hr ⊢
         rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|bad|rfl|rfl|rfl <;> simp_all
       rcases cases with h|rfl|rfl

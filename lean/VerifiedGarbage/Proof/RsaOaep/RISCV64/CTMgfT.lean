@@ -109,7 +109,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     (hv : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * k)) 64 = v a) :
     RelCT isa (Two Φ) (.block (tword d j k))
       (Two fun ac u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = v ac.1) := by
-  have hrs : ∀ r ∈ [d], r ∉ fixed := by
+  obtain hrs : ∀ r ∈ [d], r ∉ fixed := by
     intro r hr; rw [List.mem_singleton.mp hr]; rcases hd with rfl | rfl | rfl <;> decide
   let Ψ₁ := fun (ac : State × Nat) u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = stackArg ac.1 j
   show RelCT isa _ (.block ([.addSp d (frameBytes + 8 * j), .load .d d d 0] ++ [.load .d d d (8 * k)])) _
@@ -119,7 +119,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
       ⟨by rw [o₁.sp, o₂.sp]; exact ((hb ac t₁ h₁).b.spS X).trans ((hb ac t₂ h₂).b.spS X).symm, fun r hr => by
         rw [List.mem_singleton.mp hr, e₁, e₂]⟩) fun ac u ⟨t, h, o, sy, e⟩ => ?_))
   · obtain ⟨s, P, p, b, _⟩ := hb ac t h
-    have T := A.tab P
+    obtain T := A.tab P
     refine WP.of_syms (wp_addSp (h := T.jo) fun u₁ o₁ e₁ => wp_ld (a := stackArgAddr s j)
       (by rw [e₁, b.sp, ← stackArgAddr_fb]; simp) T.argA
       (by rw [o₁.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.argR; ⟨R, List.mem_append_left _ hR, hc⟩)
@@ -127,7 +127,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂, by
           rw [e₂, o₁.mem, b.readW_apart T.argK T.argS, ← A.arg p]; rfl⟩))
   · obtain ⟨s, P, p, b, sy₀⟩ := hb ac t h
-    have T := A.tab P
+    obtain T := A.tab P
     refine WP.of_syms (wp_ld (a := stackArg s j + BitVec.ofNat 64 (8 * k)) (by rw [e, A.arg p]) (T.wA hk)
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
@@ -158,7 +158,7 @@ theorem tcall_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     rintro u₁ u₂ ⟨ac, ⟨t₁, h₁, o₁, y₁, e₁⟩, ⟨t₂, h₂, o₂, y₂, e₂⟩⟩
     obtain ⟨s₁, P₁, p₁, -, z₁⟩ := hb ac t₁ h₁
     obtain ⟨s₂, P₂, p₂, -, z₂⟩ := hb ac t₂ h₂
-    have tg : ∀ {u t s : State}, u.syms = t.syms → t.syms = s.syms → Pre s → Pub ac.1 s → u.gpr .t1 = ac.1.syms n →
+    obtain tg : ∀ {u t s : State}, u.syms = t.syms → t.syms = s.syms → Pre s → Pub ac.1 s → u.gpr .t1 = ac.1.syms n →
         icallTarget isa u (ac.1.syms n) (q :: ts) = some (n, c) := fun {u t s} y z P p _ => by
       show (q :: ts).find? (fun q => u.syms q.1 == ac.1.syms n) = _
       rw [y, z, ← (hn P p).2.2]; exact (hn P p).1
@@ -172,18 +172,18 @@ include X hG hf in
 theorem xorOutT_base {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) {ac : State × Nat} {t : State}
     (h : MgfRT S vf Pre Pub G.D src srcLen dst dstLen ac t) :
     WP isa (xorOutT j) t (BT S vf Pre Pub ac.1) := by
-  have F := hfits hG
+  obtain F := hfits hG
   obtain ⟨_, _, _, _, _⟩ := offs
   have hD0 := hG.hD0
   have hD64 := hG.hD64
   have hfd := hf.fd
   obtain ⟨⟨s, P, p, b, sy⟩, -, -, h8, h9, -, h11, hc⟩ := h
-  have hdc := Nat.min_le_left G.D (dstLen - ac.2 * G.D)
-  have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega_using [hD0, hc]
+  obtain hdc := Nat.min_le_left G.D (dstLen - ac.2 * G.D)
+  obtain hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega_using [hD0, hc]
   refine WP.of_syms (WP.seq (WP.mono (xorHeadT_ok (A.tab P) b (G := G) (S := S s) (dst := dst) (dstLen := dstLen)
     (done := ac.2 * G.D) (by omega_using [F]) b.s0 (by rw [h8, (X.S p)]) h9 h11 hc (by omega_using [hfd]))
     fun t₁ ⟨k₁, x4, x5, x6⟩ => ?_))
-  have b₁ := b.only (X.fits P) k₁
+  obtain b₁ := b.only (X.fits P) k₁
   refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega_using [F]) x4 x5 x6
     (fun j hj => by
       rw [off_add, k₁.rd, k₁.wr, b.wr, b.rd]; exact sc_inR (X.fits P) (by omega_arith) _)
@@ -197,19 +197,19 @@ theorem xorOutT_base {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) {ac : State 
 include X cG hF hf in
 theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     RelCT isa (Two (MgfRT S vf Pre Pub G.D src srcLen dst dstLen)) (roundT f j) fun _ _ => True := by
-  have F := hfits hG
+  obtain F := hfits hG
   obtain ⟨_, _, _, _, _⟩ := offs
   have hfs := hf.fs
   have hfd := hf.fd
-  have p0 : ∀ {Φ : State × Nat → State → Prop},
+  obtain p0 : ∀ {Φ : State × Nat → State → Prop},
       (∀ ac t, Φ ac t → MgfRT S vf Pre Pub G.D src srcLen dst dstLen ac t) → Pins Φ [] :=
     fun h ac t₁ t₂ h₁ h₂ => ⟨((mgfRT_pins X h) ac t₁ t₂ h₁ h₂).1, fun _ h => nomatch h⟩
   let M := MgfRT S vf Pre Pub G.D src srcLen dst dstLen
-  have pres : ∀ {t t' : State}, (∀ r ∈ preserved, t'.gpr r = t.gpr r) →
+  obtain pres : ∀ {t t' : State}, (∀ r ∈ preserved, t'.gpr r = t.gpr r) →
       ∀ r ∈ [Reg.s6, .s7, .s8, .s9, .s10, .s11], t'.gpr r = t.gpr r :=
     fun h r hr => h r (by revert r; decide)
   -- A state after the load of a table's function's address keeps `M`'s `Base`.
-  have btT : ∀ {ac t u}, M ac t → Only [.t1] t u → u.syms = t.syms → BT S vf Pre Pub ac.1 u :=
+  obtain btT : ∀ {ac t u}, M ac t → Only [.t1] t u → u.syms = t.syms → BT S vf Pre Pub ac.1 u :=
     fun {ac t u} h o y => let ⟨s, P, p, b, sy⟩ := h.1; ⟨s, P, p, b.only (X.fits P) o, y.trans sy⟩
   -- `init`.
   refine two_seq (Ψ := fun ac t => M ac t ∧ t.gpr .a0 = off (S ac.1) oSt) (st_taint (p0 fun _ _ h => h))
@@ -236,7 +236,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   refine two_seq (Ψ := U₁) (upd1_taint (p0 fun _ _ h => h)) (fun ac t h => ?_) ?_
   · refine WP.of_syms (wp_addi (imm := oSt) fun t₁ o₁ e₁ => wp_li (imm := 0) (by decide) fun t₂ o₂ e₂ =>
       wp_mov fun t₃ o₃ e₃ => wp_mov fun t₄ o₄ e₄ => wp_nil fun sy => ?_)
-    have k : Only [.a0, .a1, .a2, .a3] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
+    obtain k : Only [.a0, .a1, .a2, .a3] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
     obtain ⟨s, P, p, b, y⟩ := h.1
     refine ⟨h.keep ⟨s, P, p, b.only (X.fits P) k, sy.trans y⟩ (fun r hr => k.gpr r (by revert r; decide)),
       ?_, ?_, ?_, ?_⟩
@@ -244,7 +244,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     · rw [o₄.get .a1, o₃.get .a1, e₂]; rfl
     · rw [o₄.get .a2, e₃, o₂.get .s6, o₁.get .s6, h.2.1]
     · rw [e₄, o₃.get .s7, o₂.get .s7, o₁.get .s7, h.2.2.1]
-  have uargs : ∀ {ac : State × Nat} {t : State}, U₁ ac t →
+  obtain uargs : ∀ {ac : State × Nat} {t : State}, U₁ ac t →
       ∃ s, Pre s ∧ UpdArgs S vf G s t (off (S s) src) srcLen ∧ Pub ac.1 s ∧ t.syms = s.syms := fun {ac t} h => by
     obtain ⟨hm, h0, -, h2, h3⟩ := h
     obtain ⟨s, P, p, b, y⟩ := hm.1
@@ -252,7 +252,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
       by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfs])],
       Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega_arith)),
       sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), cR_dis (X.fits P) (by omega_arith)⟩, p, y⟩
-  have uargsT : ∀ {U : State × Nat → State → Prop}, (∀ {ac t}, U ac t → ∃ s d l, Pre s ∧ UpdArgs S vf G s t d l ∧
+  obtain uargsT : ∀ {U : State × Nat → State → Prop}, (∀ {ac t}, U ac t → ∃ s d l, Pre s ∧ UpdArgs S vf G s t d l ∧
       Pub ac.1 s ∧ t.syms = s.syms) → ∀ {ac : State × Nat} {t u : State}, U ac t → Only [.t1] t u →
       ∃ s d l, UpdArgs S vf G s u d l ∧ Pub ac.1 s := fun {U} hU {ac t u} h o => by
     obtain ⟨s, d, l, P, A', p, -⟩ := hU h
@@ -281,12 +281,12 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   have hD0 := hG.hD0
   refine two_seq (Ψ := U₂) (ctr_taint (pins_monoT (mgfRT_pins X fun _ _ h => h))) (fun ac t h => ?_) ?_
   · obtain ⟨s, P, p, b, y⟩ := h.1
-    have hc : ac.2 < 2 ^ 32 := by
+    obtain hc : ac.2 < 2 ^ 32 := by
       have := h.2.2.2.2.2.2.2; have := Nat.le_mul_of_pos_right ac.2 hD0; omega_arith
     exact WP.mono_syms (ctr_ok (X.fits P) b h.2.2.2.2.2.1 hc) fun t' ⟨b', g', _, x0, x1, x2, x3⟩ y' =>
       ⟨h.keep ⟨s, P, p, b', y'.trans y⟩ (pres g'), by rw [x0, (X.S p)], by rw [x1, h.2.2.1], by rw [x2, (X.S p)],
         x3⟩
-  have cargs : ∀ {ac : State × Nat} {t : State}, U₂ ac t →
+  obtain cargs : ∀ {ac : State × Nat} {t : State}, U₂ ac t →
       ∃ s, Pre s ∧ UpdArgs S vf G s t (off (S s) oCtr) 4 ∧ Pub ac.1 s ∧ t.syms = s.syms := fun {ac t} h => by
     obtain ⟨hm, h0, -, h2, h3⟩ := h
     obtain ⟨s, P, p, b, y⟩ := hm.1
@@ -316,7 +316,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   refine two_seq (Ψ := U₃) (r4_taint (p0 fun _ _ h => h)) (fun ac t h => ?_) ?_
   · refine WP.of_syms (wp_addi (imm := oSt) fun t₁ o₁ e₁ => wp_addi (imm := 4) fun t₂ o₂ e₂ =>
       wp_addi (imm := oDig) fun t₃ o₃ e₃ => wp_nil fun sy => ?_)
-    have k : Only [.a0, .a1, .a2] t t₃ := (o₁.trans (o₂.trans o₃)).mono
+    obtain k : Only [.a0, .a1, .a2] t t₃ := (o₁.trans (o₂.trans o₃)).mono
     obtain ⟨s, P, p, b, y⟩ := h.1
     refine ⟨h.keep ⟨s, P, p, b.only (X.fits P) k, sy.trans y⟩ (fun r hr => k.gpr r (by revert r; decide)),
       ?_, ?_, ?_⟩
@@ -331,7 +331,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     have ⟨_, y0, y1, y2⟩ := h₂
     obtain ⟨s₁, P₁, p₁, b₁, -⟩ := btT h₁.1 o₁ y₁
     obtain ⟨s₂, P₂, p₂, b₂, -⟩ := btT h₂.1 o₂ y₂
-    have g : ∀ {t u : State}, Only [.t1] t u → ∀ r ∈ [Reg.a0, .a1, .a2], u.gpr r = t.gpr r :=
+    obtain g : ∀ {t u : State}, Only [.t1] t u → ∀ r ∈ [Reg.a0, .a1, .a2], u.gpr r = t.gpr r :=
       fun o r hr => o.gpr r (by revert r; decide)
     refine ⟨s₁, s₂, ⟨X.fits P₁, b₁, by rw [g o₁ _ (by decide), x0, (X.S p₁)],
         by rw [g o₁ _ (by decide), x2, (X.S p₁)]⟩,
@@ -346,9 +346,9 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     exact WP.mono (finT_ok (X.fits P) (A.tab P) hG hF b y (by rw [h0, (X.S p)]) (by rw [h2, (X.S p)]))
       fun t' ⟨⟨b', g', _⟩, y'⟩ => hm.keep ⟨s, P, p, b', y'⟩ (pres g')
   -- Into `dst`, and the next counter.
-  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 6)) 64 =
+  obtain bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 6)) 64 =
       BitVec.ofNat 64 G.D := fun P _ => (A.tab P).d
-  have xo : RelCT isa (Two M) (xorOutT j) fun _ _ => True := by
+  obtain xo : RelCT isa (Two M) (xorOutT j) fun _ _ => True := by
     show RelCT isa _ (.seq (.block (tword .a6 j 6 ++ xorRest)) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) _
     refine RelCT.seq_block_append (RelCT.seq (tword_two X A (Φ := M) (fun ac t h => h.1) (d := .a6) (.inl rfl)
       (k := 6) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
@@ -360,7 +360,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     rcases hr' with rfl | rfl | rfl | rfl | rfl
     · rw [e₁, e₂]
     all_goals rw [o₁.get _ (by decide), o₂.get _ (by decide)]; exact hr _ (by decide)
-  have nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
+  obtain nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
       fun _ _ => True := by
     show RelCT isa _ (.block (tword .t1 j 6 ++ nextRest)) _
     refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .t1) (.inr (.inl rfl)) (k := 6) (by decide)
@@ -402,11 +402,11 @@ theorem mgfXorT_ctS {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   have hpos := hf.pos
   let L := MgfLT S vf Pre Pub G Gs src srcLen dst dstLen
   let Ln := fun (n : Nat) (ac : State × Nat) (t : State) => L ac t ∧ n = dstLen - ac.2 * G.D
-  have step : ∀ n, RelCT isa (Two (Ln n)) (roundT f j) fun s₁ s₂ =>
+  obtain step : ∀ n, RelCT isa (Two (Ln n)) (roundT f j) fun s₁ s₂ =>
       isa.eval (.nonzero .t1) s₁ = isa.eval (.nonzero .t1) s₂ ∧
       (isa.eval (.nonzero .t1) s₁ = some false → True) ∧
       (isa.eval (.nonzero .t1) s₁ = some true → ∃ m < n, Two (Ln m) s₁ s₂) := fun n => by
-    have h := two_post (Φ := Ln n) (Ψ := fun ac t => (t.gpr .t1 != 0) = decide ((ac.2 + 1) * G.D < dstLen) ∧
+    obtain h := two_post (Φ := Ln n) (Ψ := fun ac t => (t.gpr .t1 != 0) = decide ((ac.2 + 1) * G.D < dstLen) ∧
         ∃ s V, Pre s ∧ Pub ac.1 s ∧
           MgfIT S vf s V (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) src srcLen dst dstLen G.D (ac.2 + 1) t ∧
           n = dstLen - ac.2 * G.D)
@@ -417,8 +417,8 @@ theorem mgfXorT_ctS {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     refine h.mono (fun _ _ h => h) fun s₁ s₂ ⟨ac, ⟨c₁, h₁⟩, ⟨c₂, h₂⟩⟩ => ?_
     refine ⟨by rw [eval_nonzero, eval_nonzero, c₁, c₂], fun _ => trivial, fun ht => ?_⟩
     rw [eval_nonzero, c₁] at ht
-    have hlt : (ac.2 + 1) * G.D < dstLen := by simpa using ht
-    have hs1 : (ac.2 + 1) * G.D = ac.2 * G.D + G.D := Nat.succ_mul _ _
+    obtain hlt : (ac.2 + 1) * G.D < dstLen := by simpa using ht
+    obtain hs1 : (ac.2 + 1) * G.D = ac.2 * G.D + G.D := Nat.succ_mul _ _
     obtain ⟨s, V, P, p, I, hn⟩ := h₁
     obtain ⟨s', V', P', p', I', -⟩ := h₂
     exact ⟨dstLen - (ac.2 + 1) * G.D, by omega_using [hD0, hlt, hs1, hn], (ac.1, ac.2 + 1), ⟨⟨s, V, P, p, I, hlt⟩, rfl⟩,
@@ -432,7 +432,7 @@ theorem mgfXorT_ctS {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   · obtain ⟨s, P, p, b, sy, h6, h7, h8, h9⟩ := h
     refine WP.of_syms (wp_li (imm := 0) (by decide) fun t₁ o₁ e₁ => wp_li (imm := 0) (by decide) fun t₂ o₂ e₂ =>
       wp_nil fun sy₂ => ?_)
-    have k₂ : Only [.s10, .s11] t t₂ := (o₁.trans o₂).mono
+    obtain k₂ : Only [.s10, .s11] t t₂ := (o₁.trans o₂).mono
     exact ⟨s, view t.mem (S s), P, p, ⟨b.only (X.fits P) k₂, by rw [k₂.get .s6, h6, (X.S p)],
       by rw [k₂.get .s7, h7], by rw [k₂.get .s8, h8, (X.S p)], by rw [k₂.get .s9, h9],
       by rw [o₂.get .s10, e₁], by rw [e₂, Nat.zero_mul],
@@ -477,12 +477,12 @@ theorem hashLabelT_ct {ua fa : List Instr} {R : State × Nat → State → Prop}
       t'.gpr .a0 = off (S ac.1) oSt ∧ t'.gpr .a1 = BitVec.ofNat 64 (N ac.1) ∧ t'.gpr .a2 = off (S ac.1) oDig) :
     RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t ∧ R ac t) (hashLabelT f j ua fa)
       fun _ _ => True := by
-  have F := hfits hH
+  obtain F := hfits hH
   obtain ⟨_, _, _, _, _⟩ := offs
   let M : State × Nat → State → Prop := fun ac t => BT S vf Pre Pub ac.1 t ∧ R ac t
-  have p0 : ∀ {Φ : State × Nat → State → Prop}, (∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) → Pins Φ [] :=
+  obtain p0 : ∀ {Φ : State × Nat → State → Prop}, (∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) → Pins Φ [] :=
     fun h ac t₁ t₂ h₁ h₂ => ⟨((h ac t₁ h₁).b.spS X).trans ((h ac t₂ h₂).b.spS X).symm, fun _ h => nomatch h⟩
-  have btT : ∀ {ac : State × Nat} {t u : State}, BT S vf Pre Pub ac.1 t → Only [.t1] t u → u.syms = t.syms →
+  obtain btT : ∀ {ac : State × Nat} {t u : State}, BT S vf Pre Pub ac.1 t → Only [.t1] t u → u.syms = t.syms →
       BT S vf Pre Pub ac.1 u :=
     fun {ac t u} h o y => let ⟨s, P, p, b, sy⟩ := h; ⟨s, P, p, b.only (X.fits P) o, y.trans sy⟩
   -- `init`.
@@ -508,7 +508,7 @@ theorem hashLabelT_ct {ua fa : List Instr} {R : State × Nat → State → Prop}
     t.gpr .a2 = L ac.1 ∧ t.gpr .a3 = BitVec.ofNat 64 (N ac.1)
   refine two_seq (Ψ := U) (cu (p0 fun _ _ h => h.1)) (fun ac t h => WP.mono (wu ac t h.1 h.2)
     fun t' ⟨b', r', h0, h1, h2, h3⟩ => ⟨⟨b', r'⟩, h0, h1, h2, h3⟩) ?_
-  have uargs : ∀ {ac : State × Nat} {t u : State}, U ac t → Only [.t1] t u → u.syms = t.syms →
+  obtain uargs : ∀ {ac : State × Nat} {t u : State}, U ac t → Only [.t1] t u → u.syms = t.syms →
       ∃ s, Pre s ∧ UpdArgs S vf H s u (L s) (N s) ∧ Pub ac.1 s ∧ u.syms = s.syms := fun {ac t u} h o y => by
     obtain ⟨⟨hm, _⟩, h0, -, h2, h3⟩ := h
     obtain ⟨s, P, p, b, sy⟩ := btT hm o y
@@ -544,7 +544,7 @@ theorem hashLabelT_ct {ua fa : List Instr} {R : State × Nat → State → Prop}
   have ⟨_, z0, z1, z2⟩ := h₂
   obtain ⟨s₁, P₁, p₁, b₁, -⟩ := btT h₁.1 o₁ y₁
   obtain ⟨s₂, P₂, p₂, b₂, -⟩ := btT h₂.1 o₂ y₂
-  have g : ∀ {t u : State}, Only [.t1] t u → ∀ r ∈ [Reg.a0, .a1, .a2], u.gpr r = t.gpr r :=
+  obtain g : ∀ {t u : State}, Only [.t1] t u → ∀ r ∈ [Reg.a0, .a1, .a2], u.gpr r = t.gpr r :=
     fun o r hr => o.gpr r (by revert r; decide)
   refine ⟨s₁, s₂, ⟨X.fits P₁, b₁, by rw [g o₁ _ (by decide), x0, (X.S p₁)], by rw [g o₁ _ (by decide), x2, (X.S p₁)]⟩,
     ⟨X.fits P₂, b₂, by rw [g o₂ _ (by decide), z0, (X.S p₂)], by rw [g o₂ _ (by decide), z2, (X.S p₂)]⟩,

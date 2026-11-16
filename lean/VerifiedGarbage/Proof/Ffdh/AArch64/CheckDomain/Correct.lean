@@ -106,13 +106,13 @@ theorem cr_regs (p : CdP) (s : State) (h : CR p s) : ∀ r ∈ [Reg.x0, .x1, .x2
   · exact hB
 
 theorem cr_e1 (p : CdP) (s : State) (h : CR p s) : WP isa (.block CheckDomain.entry) s fun t => E1 p.D t ∧ KX s t := by
-  have hb := cr_base p s h
+  obtain hb := cr_base p s h
   have hn : p.D.B.toNat + p.D.Z ≤ 2 ^ 64 := hb.scr.nowrap
   have hZ : 128 * p.D.k + 256 ≤ p.D.Z := hb.hZ
   have hk1 : 64 ≤ p.D.k := hb.k1
   obtain ⟨⟨-, hwr, -⟩, -, hB, hZ', hk, hdl, hdp, -⟩ := h
   have hs : Scr s p.D.B p.D.Z := hb.scr
-  have hw : ∀ i < 22, InRegions s.wr (off (s.gpr .x3) (8 * i)) 8 := fun i hi => by
+  obtain hw : ∀ i < 22, InRegions s.wr (off (s.gpr .x3) (8 * i)) 8 := fun i hi => by
     rw [hB]; exact hs.st (by omega_arith)
   refine WP.mono (cdEntry_ok rfl hw) fun t ⟨h0, hD, hL, hK, ho, k⟩ => ?_
   rw [hB] at h0 hD hL hK ho
@@ -191,7 +191,7 @@ theorem s4_q0 (p : CdP) (t : State) (h : S4 p t) (he : isa.eval (.zero .x .x3) t
   have he' := he
   rw [s4_eval h] at he'
   obtain ⟨mi, hP, -⟩ := h
-  have hq := hP.1.q (by simpa using he')
+  obtain hq := hP.1.q (by simpa using he')
   exact WP.mono hP.enter fun u ⟨hu, k⟩ => ⟨⟨mi, hu, hq⟩, k⟩
 
 /-- With q in `aXm`. -/
@@ -202,7 +202,7 @@ theorem q0_q1 (p : CdP) (t : State) (h : Q0 p t) : WP isa (seqs (Crt.loadArr aXm
   obtain ⟨mi, hI, hq⟩ := h
   have hb := hI.1
   have hs := hI.2.2.2.2.1
-  have hl := hb.qlen hq
+  obtain hl := hb.qlen hq
   exact WP.mono (hI.load (show aXm < 8 by decide) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := p.D.dp + BitVec.ofNat 64 (2 * p.D.k)) (by simp)) (by rw [hl]; exact hs.get (by simp))
     hb.qsrc (by rw [hl]; have := hb.k1; omega_arith) (by rw [hl])) fun u ⟨⟨hu, hv, _⟩, k⟩ => ⟨⟨mi, hu, hq, hv⟩, k⟩
@@ -212,7 +212,7 @@ theorem q0_lpre (p : CdP) (t : State) (h : Q0 p t) :
   obtain ⟨mi, hI, hq⟩ := h
   have hb := hI.1
   have hs := hI.2.2.2.2.1
-  have hl := hb.qlen hq
+  obtain hl := hb.qlen hq
   exact hI.lpre (show aXm < 8 by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := p.D.dp + BitVec.ofNat 64 (2 * p.D.k)) (by simp)) (by rw [hl]; exact hs.get (by simp))
     hb.qsrc (by rw [hl]; have := hb.k1; omega_arith) (by rw [hl])
@@ -245,7 +245,7 @@ def Q3 (p : CdP) (t : State) : Prop := ∃ mi, Pa p.D mi t ∧ p.D.dl = 3 * p.D.
 
 theorem q2_q3 (p : CdP) (t : State) (h : Q2 p t) (he : isa.eval (.zero .x .x9) t = some false) :
     WP isa (.block [leave]) t fun u => Q3 p u ∧ KX t u := by
-  have hr : p.qr := bit_ne (by rw [q2_eval h] at he; simpa using he)
+  obtain hr : p.qr := bit_ne (by rw [q2_eval h] at he; simpa using he)
   obtain ⟨mi, hI, hq, -⟩ := h
   exact WP.mono hI.leave fun u ⟨hu, k⟩ => ⟨⟨mi, hu, hq, hr⟩, k⟩
 
@@ -280,10 +280,10 @@ abbrev CdP.ep (p : CdP) : List (Nat × BitVec 64) :=
 theorem qe_facts {p : CdP} {t : State} (hb : Base p.D t) (hq : p.D.dl = 3 * p.D.k) :
     p.qe.length = p.D.k - lead p.D.qb ∧ 1 ≤ p.qe.length ∧ p.qe.length ≤ p.D.k ∧
       Spec.Rsa.os2ip p.qe = p.Q ∧ Src t p.D.B p.D.Z (off (p.D.dp + BitVec.ofNat 64 (2 * p.D.k)) (lead p.D.qb)) p.qe := by
-  have hl := hb.qlen hq
+  obtain hl := hb.qlen hq
   have := hb.k1
-  have hne : p.D.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
-  have hlead := lead_lt hne
+  obtain hne : p.D.qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
+  obtain hlead := lead_lt hne
   refine ⟨by rw [List.length_drop, hl], by rw [List.length_drop]; omega_arith, by rw [List.length_drop]; omega_arith,
     os2ip_drop_lead _, hb.qsrc.drop _⟩
 
@@ -298,14 +298,14 @@ theorem q5_q6 (p : CdP) (t : State) (h : Q5 p t) :
   obtain ⟨mi, ⟨hP, hEp, hEl⟩, hq, hr, hX⟩ := h
   have hb := hP.1
   obtain ⟨hl, h1, hk, hQ, hsrc⟩ := qe_facts hb hq
-  have hodd : Spec.Rsa.os2ip p.qe % 2 = 1 := by rw [hQ]; exact hr.1
+  obtain hodd : Spec.Rsa.os2ip p.qe % 2 = 1 := by rw [hQ]; exact hr.1
   have hroom := hb.room
   have hn := hb.scr.nowrap
-  have h8 := hdr_lt_slot p.D.w 8 (show 31 < 32 by decide)
-  have hi256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
-  have hiZ : inner p.D.w + slot p.D.w 8 ≤ p.D.Z := by unfold tabBytes32 at hroom; omega_arith
-  have hsX := slot_le (w := p.D.w) (show aX < 8 by decide)
-  have hX0 := hdr_lt_slot p.D.w aX (show 31 < 32 by decide)
+  obtain h8 := hdr_lt_slot p.D.w 8 (show 31 < 32 by decide)
+  obtain hi256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
+  obtain hiZ : inner p.D.w + slot p.D.w 8 ≤ p.D.Z := by unfold tabBytes32 at hroom; omega_arith
+  obtain hsX := slot_le (w := p.D.w) (show aX < 8 by decide)
+  obtain hX0 := hdr_lt_slot p.D.w aX (show 31 < 32 by decide)
   have ei : inner p.D.w = slot p.D.w 8 := rfl
   refine WP.mono (hP.ou.wsMod (show sEp < 32 by decide) (show sEl < 32 by decide) (by decide) (by decide) hEp
     (by rw [hl]; exact hEl) hsrc h1 hk hodd) fun u ⟨mq, hb', hc, hv, hWs, f, k⟩ => ?_
@@ -354,8 +354,8 @@ theorem q6_q7 (M : Mont) (p : CdP) (t : State) (h : Q6 p t) : WP isa (seqs (Crt.
   obtain ⟨mq, hb, hc, hv, hWs, hs, hm, hq, hr, hX⟩ := h
   have hw2 := hb.w2
   have hw28 := hb.w28
-  have hwq2 : 2 ≤ p.wq := by unfold CdP.wq wsWords; omega_arith
-  have hwq : p.wq ≤ p.D.w := by
+  obtain hwq2 : 2 ≤ p.wq := by unfold CdP.wq wsWords; omega_arith
+  obtain hwq : p.wq ≤ p.D.w := by
     have := hb.qlen hq
     have := hb.ew
     unfold CdP.wq wsWords; omega_arith
@@ -363,7 +363,7 @@ theorem q6_q7 (M : Mont) (p : CdP) (t : State) (h : Q6 p t) : WP isa (seqs (Crt.
   refine WP.mono (redc_ok M hc hv hwq2 hwq (show p.D.w < 2 ^ 30 by omega_arith) h1Q (show aX < 8 by decide))
     fun u ⟨hc', hv', hlt, hR, f, k⟩ => ?_
   obtain ⟨hbw, hi⟩ := child_frm' hc f (fun r hr' => by have := (redcRanges_ok p.wq r hr').2; omega_arith)
-  have h256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
+  obtain h256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
   refine ⟨⟨mq, hb.keep hi k, hc', by rw [hbw _ (show 8 * sWs + 8 ≤ inner p.D.w by simp only [sWs, sFn]; omega_arith)]; exact hWs,
     Slots.of_eq hs fun q hq' => hbw _ (by have := ep_lt p q hq'; omega_arith), hm, hq, hr, hlt, by rw [hR, hX], hv'.one⟩,
     k.mono (by decide)⟩
@@ -376,8 +376,8 @@ def Q8 (p : CdP) (t : State) : Prop :=
 
 theorem q7_q8 (p : CdP) (t : State) (h : Q7 p t) : WP isa (seqs (isZero Crt.aXc)) t fun u => Q8 p u ∧ KX t u := by
   obtain ⟨mq, hb, hc, hWs, hs, hm, hq, hr, hlt, hR, h1⟩ := h
-  have hwq2 : 2 ≤ p.wq := by unfold CdP.wq wsWords; omega_arith
-  have hwq : p.wq < 2 ^ 31 := by
+  obtain hwq2 : 2 ≤ p.wq := by unfold CdP.wq wsWords; omega_arith
+  obtain hwq : p.wq < 2 ^ 31 := by
     have := hb.qlen hq
     have := hb.k2
     unfold CdP.wq wsWords; omega_arith
@@ -386,7 +386,7 @@ theorem q7_q8 (p : CdP) (t : State) (h : Q7 p t) : WP isa (seqs (isZero Crt.aXc)
       (hc.toMem.congr hmu k.wr).ctx ((k.gpr .x0 (by decide)).trans hc.x0), by rw [hmu]; exact hWs,
       by rw [hmu]; exact hs, hm, hq, hr, ?_⟩, k.mono (by decide)⟩
   rw [h9, h1]
-  have e := redc_zero hr.1 hlt hR
+  obtain e := redc_zero hr.1 hlt hR
   by_cases h0 : (p.P - 1) % p.Q = 0
   · simp only [bit, h0, ↓reduceIte, show wv t.mem (off p.D.B (inner p.D.w)) (slot p.wq Crt.aXc) p.wq < 1 by
       have := e.mpr h0; omega_arith]
@@ -405,11 +405,11 @@ def Q9 (p : CdP) (t : State) : Prop :=
 
 theorem q8_q9 (p : CdP) (t : State) (h : Q8 p t) (he : isa.eval (.zero .x .x9) t = some false) :
     WP isa (.block [leave]) t fun u => Q9 p u ∧ KX t u := by
-  have hd : (p.P - 1) % p.Q = 0 := bit_ne (by rw [q8_eval h] at he; simpa using he)
+  obtain hd : (p.P - 1) % p.Q = 0 := bit_ne (by rw [q8_eval h] at he; simpa using he)
   obtain ⟨mq, hb, hc, hWs, hs, hm, hq, hr, -⟩ := h
   refine WP.mono (leave_ok hc) fun u ⟨⟨h0, hmu⟩, k⟩ => ?_
-  have hs' : Slots u.mem p.D.B (p.D.hdrQ ++ p.ep) := by rw [hmu]; exact hs
-  have hc' := hc.toMem.congr hmu k.wr
+  obtain hs' : Slots u.mem p.D.B (p.D.hdrQ ++ p.ep) := by rw [hmu]; exact hs
+  obtain hc' := hc.toMem.congr hmu k.wr
   exact ⟨⟨⟨hb.keep (by rw [hmu]; exact InScr.refl _ _ _) k, Outer.of_mem hc' h0 hb.room hb.w2 hb.w28,
     fun q hq => hs' q (List.mem_append_left _ hq), hm⟩, by rw [hmu]; exact hWs, hs', hq, hr, hd⟩, k.mono (by decide)⟩
 
@@ -427,13 +427,13 @@ theorem q9_q10 (p : CdP) (t : State) (h : Q9 p t) : WP isa (seqs pSetup) t fun u
   have hs' := hO.2.2.1
   have hn := hb.scr.nowrap
   have hroom := hb.room
-  have h256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
+  obtain h256 : 256 ≤ inner p.D.w := by simp only [inner, slot, hdrBytes]; omega_arith
   obtain ⟨hodd, -⟩ := valid_facts hO.2.2.2 hb.k1
   refine WP.mono (hO.wsMod (show sDom < 32 by decide) (show sK < 32 by decide) (by decide) (by decide)
     (hs'.get (i := sDom) (v := p.D.dp) (by simp)) (by rw [hb.plen]; exact hs'.get (by simp)) (hb.dom.take p.D.k)
     (by rw [hb.plen]; have := hb.k1; omega_arith) (by rw [hb.plen]) hodd) fun u ⟨mi, hb', hc, hv, hWs', f, k⟩ => ?_
   rw [hb.plen, wsWords_k (by have := hb.k1; omega_arith)] at hc hv
-  have hw : ∀ q ∈ p.D.hdrQ ++ p.ep, word u.mem p.D.B (8 * q.1) = word t.mem p.D.B (8 * q.1) := fun q hq' => by
+  obtain hw : ∀ q ∈ p.D.hdrQ ++ p.ep, word u.mem p.D.B (8 * q.1) = word t.mem p.D.B (8 * q.1) := fun q hq' => by
     have := ep_lt p q hq'
     refine f.word_eq (fun r hr' => ?_) (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -581,7 +581,7 @@ theorem dv_iff {p : CdP} {t : State} (hb : Base p.D t) :
       (p.D.dl = 3 * p.D.k → (p.Q % 2 = 1 ∧ 1 < p.Q ∧ p.Q < p.P - 1) ∧ (p.P - 1) % p.Q = 0 ∧
         p.G ^ p.Q % p.P = 1) := by
   rw [domainValid_iff]
-  have hq : (domainOf p.D.k p.D.dom).q = if p.D.dl = 3 * p.D.k then some p.Q else none := by
+  obtain hq : (domainOf p.D.k p.D.dom).q = if p.D.dl = 3 * p.D.k then some p.Q else none := by
     simp only [domainOf, hb.doml]
   constructor
   · rintro ⟨h1, h2, h3⟩
@@ -606,11 +606,11 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
       abiPreserved s s' ∧ cdContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
-  have hCR := cr_of s h
+  obtain hCR := cr_of s h
   have hval : domainValid (s.gpr .x2).toNat (cdDom s) = domainValid (cdOf s).D.k (cdOf s).D.dom := rfl
   generalize cdOf s = p at hCR hval
-  have hb₀ := cr_base p s hCR
-  have hdv := dv_iff hb₀
+  obtain hb₀ := cr_base p s hCR
+  obtain hdv := dv_iff hb₀
   unfold CheckDomain.code
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -619,11 +619,11 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
   refine WP.ite (BitVec.ofNat 64 p.D.mv.toNat == 0) (ce_eval ce) (fun hb => ?_) (fun hb => ?_)
   · -- p is not a valid modulus.
     refine ret_post (by decide) k₂ ?_
-    have hm : p.D.mv = false := by cases hm' : p.D.mv <;> simp_all
+    obtain hm : p.D.mv = false := by cases hm' : p.D.mv <;> simp_all
     rw [hval, ite_eq_right fun hv => absurd ((hdv.mp hv).1) (by rw [hm]; decide)]
-  have he : isa.eval (.zero .x .x9) t₂ = some false := by rw [ce_eval ce, hb]
-  have hm := ce_valid ce he
-  have hodd := (valid_facts hm hb₀.k1).1
+  obtain he : isa.eval (.zero .x .x9) t₂ = some false := by rw [ce_eval ce, hb]
+  obtain hm := ce_valid ce he
+  obtain hodd := (valid_facts hm hb₀.k1).1
   rw [main_eq]
   -- The workspaces, g and its range.
   refine wp_seqs_append (by simp [pSetup]) (by simp [Crt.loadArr]) (kstep k₂ (ce_in _ _ ce he) fun t₃ h₃ k₃ => ?_)
@@ -634,19 +634,19 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
   refine WP.ite (bit p.rg == 0) (s3_eval h₅) (fun hb => ?_) (fun hb => ?_)
   · -- g out of range.
     refine ret_post (by decide) k₅ ?_
-    have hr := bit_false hb
+    obtain hr := bit_false hb
     rw [hval, ite_eq_right fun hv => hr ⟨(hdv.mp hv).2.1.1, (lt_pm1 hodd _).mpr (hdv.mp hv).2.1.2⟩]
-  have hr : p.rg := bit_ne hb
-  have hg : 1 < p.G ∧ p.G < p.P - 1 := ⟨hr.1, (lt_pm1 hodd _).mp hr.2⟩
+  obtain hr : p.rg := bit_ne hb
+  obtain hg : 1 < p.G ∧ p.G < p.P - 1 := ⟨hr.1, (lt_pm1 hodd _).mp hr.2⟩
   refine WP.seq (kstep k₅ (s3_s4 p t₅ h₅) fun t₆ h₆ k₆ => ?_)
   refine WP.ite (BitVec.ofNat 64 (p.D.dl - 2 * p.D.k) == 0) (s4_eval h₆) (fun hb => ?_) (fun hb => ?_)
   · -- No q.
     refine ret_post (by decide) k₆ ?_
-    have h2 := hb₀.noq hb
+    obtain h2 := hb₀.noq hb
     have := hb₀.k1
     rw [hval, ite_eq_left (hdv.mpr ⟨hm, hg, fun e => absurd (e.symm.trans h2) (by omega_using [this])⟩)]
   -- With q.
-  have hq := hb₀.q hb
+  obtain hq := hb₀.q hb
   rw [withQ_eq]
   refine wp_seqs_cons (by simp [Crt.loadArr]) (kstep k₆ (s4_q0 p t₆ h₆ (by rw [s4_eval h₆, hb]))
     fun t₇ h₇ k₇ => ?_)
@@ -656,11 +656,11 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
   refine WP.ite (bit p.qr == 0) (q2_eval h₉) (fun hb => ?_) (fun hb => ?_)
   · -- q out of range.
     refine ret_post (by decide) k₉ ?_
-    have hr := bit_false hb
+    obtain hr := bit_false hb
     rw [hval, ite_eq_right fun hv => by
       obtain ⟨⟨o, l, u⟩, -⟩ := (hdv.mp hv).2.2 hq
       exact hr ⟨o, l, (lt_pm1 hodd _).mpr u⟩]
-  have hqr : p.qr := bit_ne hb
+  obtain hqr : p.qr := bit_ne hb
   rw [rest_eq]
   refine wp_seqs_cons (by simp [scan]) (kstep k₉ (q2_q3 p t₉ h₉ (by rw [q2_eval h₉, hb])) fun t₁₀ h₁₀ k₁₀ => ?_)
   refine wp_seqs_append (by simp [scan]) (by simp [CheckDomain.pMinus1]) (kstep k₁₀ (q3_q4 p t₁₀ h₁₀)
@@ -675,7 +675,7 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
   refine WP.ite (bit ((p.P - 1) % p.Q = 0) == 0) (q8_eval h₁₅) (fun hb => ?_) (fun hb => ?_)
   · -- q does not divide p − 1.
     refine ret_post (by decide) k₁₅ ?_
-    have hr := bit_false hb
+    obtain hr := bit_false hb
     rw [hval, ite_eq_right fun hv => hr ((hdv.mp hv).2.2 hq).2.1]
   rw [fin_eq]
   refine wp_seqs_cons (by simp [pSetup]) (kstep k₁₅ (q8_q9 p t₁₅ h₁₅ (by rw [q8_eval h₁₅, hb]))
@@ -693,7 +693,7 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
     (by decide) (by decide) (by decide +kernel)) fun t ⟨h0, k⟩ =>
       ⟨abiPreserved_of_keep (keep_trans k₂₀ (k.mono (by decide))), ?_⟩
   show ((t.gpr .x0).setWidth 32).toNat = _
-  have hd : (p.P - 1) % p.Q = 0 := bit_ne hb
+  obtain hd : (p.P - 1) % p.Q = 0 := bit_ne hb
   rw [h0, h₂₀, setWidth32_bit, hval]
   by_cases hgq : p.G ^ p.Q % p.P = 1
   · rw [ite_eq_left hgq, ite_eq_left (hdv.mpr ⟨hm, hg, fun _ => ⟨⟨hqr.1, hqr.2.1, (lt_pm1 hodd _).mp hqr.2.2⟩, hd, hgq⟩⟩)]

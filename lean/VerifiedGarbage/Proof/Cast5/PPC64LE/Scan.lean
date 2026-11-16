@@ -65,7 +65,7 @@ def lk (i : Nat) : Nat := [1, 0, 3, 2].getD (i / 4) 0
 
 theorem rep4_bit (b : Byte) {n : Nat} (hn : n < 64) :
     (rep4 (b.setWidth 64)).getLsbD n = (decide (n < 32) && b.getLsbD (n % 8)) := by
-  have z : ∀ m, 8 ≤ m → b.getLsbD m = false := fun m h => BitVec.getLsbD_of_ge b m h
+  obtain z : ∀ m, 8 ≤ m → b.getLsbD m = false := fun m h => BitVec.getLsbD_of_ge b m h
   simp only [rep4, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, hn, decide_true,
     Bool.true_and]
   by_cases h8 : n < 8
@@ -155,14 +155,14 @@ theorem body_run (u : State) {E : Addr} {M : BitVec 128} (h23 : u.gpr ep = E) (h
       t.vpr (bitV 1) = u.vpr (bitV 1) ∧ t.vpr (bitV 2) = u.vpr (bitV 2) ∧
       t.gpr ep = E + 64#64 + 64#64 ∧ t.gpr tmp = E + 64#64 + 64#64 - u.gpr tbl - 4096#64 ∧
       t.mem = u.mem := by
-  have r0 := r E (by simp)
-  have r1 := r (E + 16#64) (by simp)
-  have r2 := r (E + 32#64) (by simp)
-  have r3 := r (E + 48#64) (by simp)
-  have r4 := r (E + 64#64) (by simp)
-  have r5 := r (E + 64#64 + 16#64) (by simp)
-  have r6 := r (E + 64#64 + 32#64) (by simp)
-  have r7 := r (E + 64#64 + 48#64) (by simp)
+  obtain r0 := r E (by simp)
+  obtain r1 := r (E + 16#64) (by simp)
+  obtain r2 := r (E + 32#64) (by simp)
+  obtain r3 := r (E + 48#64) (by simp)
+  obtain r4 := r (E + 64#64) (by simp)
+  obtain r5 := r (E + 64#64 + 16#64) (by simp)
+  obtain r6 := r (E + 64#64 + 32#64) (by simp)
+  obtain r7 := r (E + 64#64 + 48#64) (by simp)
   unfold scanBody four pick
   c5run [reduceVOpEval, eV, bitV, mV, hotLo, hotHi, grpV, zV, accV, vpr_writeV, gpr_writeV, mem_writeV,
     rd_writeV, wr_writeV, ↓read_sixteen, h23, h0, h22, h19, h21, r0, r1, r2, r3, r4, r5, r6, r7, hM, vsel]
@@ -192,7 +192,7 @@ theorem vbyte_vsel (a b m : BitVec 128) {i : Nat} (hi : i < 16) {c : Bool}
 
 theorem vbyte_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 16) :
     vbyte (swapDwords (m.readW a 128)) k = m (a + BitVec.ofNat 64 (k ^^^ 7)) := by
-  have e : ∀ k < 16, 15 - (if k < 8 then k + 8 else k - 8) = k ^^^ 7 := by decide
+  obtain e : ∀ k < 16, 15 - (if k < 8 then k + 8 else k - 8) = k ^^^ 7 := by decide
   rw [vbyte_swapDwords _ hk, vbyte, Mem.readW, BitVec.setWidth_eq, ← e k hk]
   exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega_using [])
 
@@ -224,7 +224,7 @@ theorem tree_sel {α : Type} (e : Nat → α) (n : Nat) :
         (if n.testBit 0 then e 5 else e 4)) else
       (if n.testBit 1 then (if n.testBit 0 then e 3 else e 2) else (if n.testBit 0 then e 1 else e 0))) =
       e (n % 8) := by
-  have tb : ∀ b < 3, n.testBit b = (n % 8).testBit b := fun b hb => by
+  obtain tb : ∀ b < 3, n.testBit b = (n % 8).testBit b := fun b hb => by
     rw [show (8 : Nat) = 2 ^ 3 from rfl, Nat.testBit_mod_two_pow]; simp [hb]
   rw [tb 0 (by decide), tb 1 (by decide), tb 2 (by decide)]
   have : n % 8 < 8 := Nat.mod_lt _ (by decide)
@@ -238,9 +238,9 @@ theorem toNat_small {y : BitVec 64} (h : y.toNat < 256) : (y.setWidth 8).setWidt
 /-- A lane's bytes: the low three bits of its index, or its group. -/
 theorem vbyte_lanes (y : Nat → BitVec 64) (hy : ∀ k < 4, (y k).toNat < 256) {i : Nat} (hi : i < 16) :
     vbyte (pack y) i = BitVec.ofNat 8 (y (lk i)).toNat := by
-  have hl : lk i < 4 := by unfold lk; rcases (by omega_using [hi] : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with
+  obtain hl : lk i < 4 := by unfold lk; rcases (by omega_using [hi] : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with
     h | h | h | h <;> simp [h]
-  have e : pack y = pack fun k => (if k < 4 then (y k).setWidth 8 else (y k).setWidth 8).setWidth 64 := by
+  obtain e : pack y = pack fun k => (if k < 4 then (y k).setWidth 8 else (y k).setWidth 8).setWidth 64 := by
     unfold pack; simp only [show (0 : Nat) < 4 by decide, show (1 : Nat) < 4 by decide, show (2 : Nat) < 4 by decide,
       show (3 : Nat) < 4 by decide, ite_true]
     rw [toNat_small (hy 0 (by decide)), toNat_small (hy 1 (by decide)), toNat_small (hy 2 (by decide)),
@@ -257,7 +257,7 @@ def bitsWord : Nat → BitVec 64
 
 theorem vbyte_bits (u : BitVec 64) {b j : Nat} (hb : b < 3) (hj : j < 8) :
     vbyte (bitsWord b ++ u) j = if j.testBit b then 255#8 else 0#8 := by
-  have e : vbyte (bitsWord b ++ u) j = (bitsWord b).extractLsb' (8 * (7 - j)) 8 := by
+  obtain e : vbyte (bitsWord b ++ u) j = (bitsWord b).extractLsb' (8 * (7 - j)) 8 := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
       show ¬ 8 * (15 - j) + i < 64 by omega_using [hj], ite_false]
@@ -297,24 +297,24 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
     (hrT : (⟨T, 4096⟩ : Region) ∈ s₀.rd ++ s₀.wr) {g : Nat} (hg : g < 32) {u : State} (I : VScan s₀ T g u) :
     WP isa (.block scanBody) u fun t =>
       VScan s₀ T (g + 1) t ∧ t.gpr tmp = BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 := by
-  have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
-  have ad : ∀ o, o + 16 ≤ 128 → InRegions (u.rd ++ u.wr) (T + BitVec.ofNat 64 (128 * g + o)) 16 := fun o ho => by
+  obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
+  obtain ad : ∀ o, o + 16 ≤ 128 → InRegions (u.rd ++ u.wr) (T + BitVec.ofNat 64 (128 * g + o)) 16 := fun o ho => by
     rw [hrd]; exact ⟨_, hrT, Offset.contains_base T (by omega_using [hg, ho]) (by omega_using [hg, ho])⟩
-  have f1 : ∀ o, T + BitVec.ofNat 64 (128 * g) + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + o) :=
+  obtain f1 : ∀ o, T + BitVec.ofNat 64 (128 * g) + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + o) :=
     fun o => Offset.add_add _ _ _
-  have f2 : ∀ o, T + BitVec.ofNat 64 (128 * g) + 64#64 + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + (64 + o)) :=
+  obtain f2 : ∀ o, T + BitVec.ofNat 64 (128 * g) + 64#64 + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + (64 + o)) :=
     fun o => by rw [show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, Offset.add_add, Offset.add_add]
 
   -- The eight addresses, as the code makes them, and their bytes.
   have e0 : T + BitVec.ofNat 64 (128 * g) = T + BitVec.ofNat 64 (128 * g + 16 * 0) := rfl
-  have e1 : T + BitVec.ofNat 64 (128 * g) + 16#64 = T + BitVec.ofNat 64 (128 * g + 16 * 1) := f1 16
-  have e2 : T + BitVec.ofNat 64 (128 * g) + 32#64 = T + BitVec.ofNat 64 (128 * g + 16 * 2) := f1 32
-  have e3 : T + BitVec.ofNat 64 (128 * g) + 48#64 = T + BitVec.ofNat 64 (128 * g + 16 * 3) := f1 48
-  have e4 : T + BitVec.ofNat 64 (128 * g) + 64#64 = T + BitVec.ofNat 64 (128 * g + 16 * 4) := f1 64
-  have e5 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 16#64 = T + BitVec.ofNat 64 (128 * g + 16 * 5) := f2 16
-  have e6 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 32#64 = T + BitVec.ofNat 64 (128 * g + 16 * 6) := f2 32
-  have e7 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 48#64 = T + BitVec.ofNat 64 (128 * g + 16 * 7) := f2 48
-  have rin : ∀ a ∈ [T + BitVec.ofNat 64 (128 * g), T + BitVec.ofNat 64 (128 * g) + 16#64, T + BitVec.ofNat 64 (128 * g) + 32#64, T + BitVec.ofNat 64 (128 * g) + 48#64, T + BitVec.ofNat 64 (128 * g) + 64#64, T + BitVec.ofNat 64 (128 * g) + 64#64 + 16#64, T + BitVec.ofNat 64 (128 * g) + 64#64 + 32#64,
+  obtain e1 : T + BitVec.ofNat 64 (128 * g) + 16#64 = T + BitVec.ofNat 64 (128 * g + 16 * 1) := f1 16
+  obtain e2 : T + BitVec.ofNat 64 (128 * g) + 32#64 = T + BitVec.ofNat 64 (128 * g + 16 * 2) := f1 32
+  obtain e3 : T + BitVec.ofNat 64 (128 * g) + 48#64 = T + BitVec.ofNat 64 (128 * g + 16 * 3) := f1 48
+  obtain e4 : T + BitVec.ofNat 64 (128 * g) + 64#64 = T + BitVec.ofNat 64 (128 * g + 16 * 4) := f1 64
+  obtain e5 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 16#64 = T + BitVec.ofNat 64 (128 * g + 16 * 5) := f2 16
+  obtain e6 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 32#64 = T + BitVec.ofNat 64 (128 * g + 16 * 6) := f2 32
+  obtain e7 : T + BitVec.ofNat 64 (128 * g) + 64#64 + 48#64 = T + BitVec.ofNat 64 (128 * g + 16 * 7) := f2 48
+  obtain rin : ∀ a ∈ [T + BitVec.ofNat 64 (128 * g), T + BitVec.ofNat 64 (128 * g) + 16#64, T + BitVec.ofNat 64 (128 * g) + 32#64, T + BitVec.ofNat 64 (128 * g) + 48#64, T + BitVec.ofNat 64 (128 * g) + 64#64, T + BitVec.ofNat 64 (128 * g) + 64#64 + 16#64, T + BitVec.ofNat 64 (128 * g) + 64#64 + 32#64,
       T + BitVec.ofNat 64 (128 * g) + 64#64 + 48#64], InRegions (u.rd ++ u.wr) a 16 := by
     intro a ha
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
@@ -369,9 +369,9 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
         · rw [ite_eq_left e', ite_eq_left (by omega_using [hp16, e'])]
         · rw [ite_eq_right e', ite_eq_right (by omega_using [e'])]
   · -- The kept entries.
-    have hl := lk_lt hi
-    have hx := hidx _ hl
-    have hm : vbyte (ofVBytes fun i => if (vbyte (u.vpr .v2) i).toNat % 32 < 16 then
+    obtain hl := lk_lt hi
+    obtain hx := hidx _ hl
+    obtain hm : vbyte (ofVBytes fun i => if (vbyte (u.vpr .v2) i).toNat % 32 < 16 then
         vbyte (u.vpr .v6) ((vbyte (u.vpr .v2) i).toNat % 32)
       else vbyte (u.vpr .v7) ((vbyte (u.vpr .v2) i).toNat % 32 - 16)) i =
         if decide (ix s₀ (lk i) / 8 = g) then 255#8 else 0#8 := by
@@ -381,7 +381,7 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
       unfold hotByte at this
       rw [show VReg.v6 = hotLo from rfl, show VReg.v7 = hotHi from rfl, this]; simp
     rw [ta, vbyte_vsel _ _ _ hi hm]
-    have hb : ∀ b < 3, vbyte (u.vpr (bitV b)) i = if (ix s₀ (lk i)).testBit b then 255#8 else 0#8 :=
+    obtain hb : ∀ b < 3, vbyte (u.vpr (bitV b)) i = if (ix s₀ (lk i)).testBit b then 255#8 else 0#8 :=
       fun b hb => I.bits b hb i hi
     simp only [vbyte_vsel _ _ _ hi (hb 0 (by decide)), vbyte_vsel _ _ _ hi (hb 1 (by decide)),
       vbyte_vsel _ _ _ hi (hb 2 (by decide))]
@@ -403,12 +403,12 @@ theorem start_inv (s : State) (h : ScanPre s) :
   refine WP.mono (WP.keep [wd, tmp, .r18, .r19, .r20, .r21, ep, num] (start_ok s) (by decide) rfl)
     fun u ⟨⟨ul, ug, uz, ⟨u0, hu0⟩, ⟨u1, hu1⟩, ⟨u2, hu2⟩, ulo, uhi, uep, unum, u19, u21, um⟩, uk⟩ => ?_
   have hx : ∀ k < 4, ix s k < 256 := h.idx
-  have hlow : ∀ i < 16, vbyte (u.vpr lowV) i = BitVec.ofNat 8 (ix s (lk i) % 8) := fun i hi => by
+  obtain hlow : ∀ i < 16, vbyte (u.vpr lowV) i = BitVec.ofNat 8 (ix s (lk i) % 8) := fun i hi => by
     rw [ul, vbyte_lanes _ (fun k hk => by rw [BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)) hi,
       BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  have bit : ∀ b < 3, ∀ (w : BitVec 64), ∀ i < 16, vbyte (permSelf (bitsWord b ++ w) (u.vpr lowV)) i =
+  obtain bit : ∀ b < 3, ∀ (w : BitVec 64), ∀ i < 16, vbyte (permSelf (bitsWord b ++ w) (u.vpr lowV)) i =
       if (ix s (lk i)).testBit b then 255#8 else 0#8 := fun b hb w i hi => by
-    have hm : ix s (lk i) % 8 < 8 := Nat.mod_lt _ (by decide)
+    obtain hm : ix s (lk i) % 8 < 8 := Nat.mod_lt _ (by decide)
     rw [permSelf, vbyte_packed _ hi]
     simp only [hlow i hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 2 ^ 8 by omega_using []),
       Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 32 by omega_using []), show ix s (lk i) % 8 < 16 by omega_using [], ite_true,
@@ -437,7 +437,7 @@ theorem scanLoop_run {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 25
     (fun (n : Nat) (v : State) => ∃ g, g < 32 ∧ n = 32 - g ∧ VScan s₀ T g v) ?_ 32 u ⟨0, by decide, rfl, I⟩
   intro n v ⟨g, hg, hn, J⟩
   refine WP.mono (body_step hidx hrT hg J) fun v' ⟨J', hz⟩ => ?_
-  have hne : (BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 != 0#64) = !decide (g + 1 = 32) := by
+  obtain hne : (BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 != 0#64) = !decide (g + 1 = 32) := by
     by_cases e : g + 1 = 32
     · rw [e]; rfl
     · have : BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 ≠ 0#64 := fun h' => by
@@ -445,7 +445,7 @@ theorem scanLoop_run {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 25
         simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
         omega_using [hg, e, this]
       simp [this, e]
-  have ev : isa.eval (.nonzero .d tmp) v' = some (!decide (g + 1 = 32)) := by
+  obtain ev : isa.eval (.nonzero .d tmp) v' = some (!decide (g + 1 = 32)) := by
     simp only [eval, State.read, BitVec.setWidth_eq]; rw [hz]; exact congrArg some hne
   by_cases e : g + 1 = 32
   · left
@@ -511,18 +511,18 @@ theorem scan_ok (s : State) (h : ScanPre s) :
   refine WP.mono (scanLoop_run h.idx (h.trd) U) fun v V => ?_
   refine WP.mono (WP.keep [.r18, .r19, .r20, .r21] (end_run v) (by decide) rfl)
     fun t ⟨⟨t18, t19, t20, t21, tm⟩, tk⟩ => ⟨fun k hk => ?_, (V.keep.trans tk).mono (by decide), tm.trans V.mem⟩
-  have byte : ∀ i < 16, vbyte (v.vpr accV) i =
+  obtain byte : ∀ i < 16, vbyte (v.vpr accV) i =
       s.mem (s.gpr tbl + BitVec.ofNat 64 (16 * ix s (lk i) + (i ^^^ 7))) := fun i hi =>
     V.acc i hi (by have := h.idx _ (lk_lt hi); show (s.gpr (idxReg (lk i))).toNat / 8 < 32; omega_using [this])
   -- Byte `c` of word `k` is byte `i` of the vector, in lookup `lk i = k`'s lane.
-  have wb : ∀ k < 4, ∀ i c, i < 16 → c < 4 → lk i = k → i ^^^ 7 = 4 * k + c →
+  obtain wb : ∀ k < 4, ∀ i c, i < 16 → c < 4 → lk i = k → i ^^^ 7 = 4 * k + c →
       vbyte (v.vpr accV) i = (ent s.mem (s.gpr tbl) (ix s k) k).extractLsb' (8 * c) 8 := by
     intro k hk i c hi hc hl hx
     rw [byte i hi, ent, ← Mem.readW_byte _ _ hc, Offset.add_add, hl, hx, Nat.add_assoc]
-  have l7 : ∀ c < 4, lk (7 - c) = 0 ∧ (7 - c) ^^^ 7 = 4 * 0 + c := by decide
-  have l3 : ∀ c < 4, lk (3 - c) = 1 ∧ (3 - c) ^^^ 7 = 4 * 1 + c := by decide
-  have l15 : ∀ c < 4, lk (15 - c) = 2 ∧ (15 - c) ^^^ 7 = 4 * 2 + c := by decide
-  have l11 : ∀ c < 4, lk (11 - c) = 3 ∧ (11 - c) ^^^ 7 = 4 * 3 + c := by decide
+  obtain l7 : ∀ c < 4, lk (7 - c) = 0 ∧ (7 - c) ^^^ 7 = 4 * 0 + c := by decide
+  obtain l3 : ∀ c < 4, lk (3 - c) = 1 ∧ (3 - c) ^^^ 7 = 4 * 1 + c := by decide
+  obtain l15 : ∀ c < 4, lk (15 - c) = 2 ∧ (15 - c) ^^^ 7 = 4 * 2 + c := by decide
+  obtain l11 : ∀ c < 4, lk (11 - c) = 3 ∧ (11 - c) ^^^ 7 = 4 * 3 + c := by decide
   rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   · rw [show accReg 0 = .r18 from rfl, t18]
     exact lo_half _ _ (.inr rfl) fun c hc => wb 0 (by decide) _ c (by omega_using []) hc (l7 c hc).1 (l7 c hc).2

@@ -108,7 +108,7 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
   have hfB := hs.fit
   rw [total_eq] at hfB
-  have hsep : Region.Disjoint ⟨p, 384⟩ ⟨B, 904⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; decide))
+  obtain hsep : Region.Disjoint ⟨p, 384⟩ ⟨B, 904⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; decide))
   refine WP.mono (copyN_wp (k := 48) (u := .x7) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp,
     by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
     fun w hw => ⟨_, hs.wr, by
@@ -124,7 +124,7 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
 
 /-- No instruction of the block function writes `x2`. -/
 theorem block_keeps_x2 (d : Direction) : ∀ i ∈ instrs (dirBlock d), clobbers i .x2 = false := by
-  have h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x2 = false)) = true := by
+  obtain h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x2 = false)) = true := by
     cases d
     · change ((instrs encryptBlock).all _) = true
       rw [← Code.allInstrs_eq]; lit_decide
@@ -153,7 +153,7 @@ theorem blockCall_ok (d : Direction) {s : State} {B : Addr}
       s'.gpr .x2 = s.gpr .x2 ∧ s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧
       Spec.TripleDes.blockAt s'.mem (s.gpr .x1) =
         blockResult (Spec.TripleDes.scheduleAt s.mem (s.gpr .x0)) d (Spec.TripleDes.blockAt s.mem (s.gpr .x1)) := by
-  have sub : ∀ off len, off + len ≤ 1000 → ∃ r' ∈ s.wr, ∃ o,
+  obtain sub : ∀ off len, off + len ≤ 1000 → ∃ r' ∈ s.wr, ∃ o,
       (B + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + len ≤ r'.len :=
     fun off len h => ⟨_, hw, off, rfl, h⟩
   rw [blockCall_eq]
@@ -203,23 +203,23 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := addImm_ok s .x0 sb (v := 8 * schedSlot) (by decide)
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := addImm_ok s₁ .x1 sb (v := 8 * cbcBuf) (by decide)
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addImm_ok s₂ .x2 sb (v := 0) (by decide)
-  have g₃ : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → s₃.gpr x = s.gpr x := fun x h1 h2 h3 => by
+  obtain g₃ : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → s₃.gpr x = s.gpr x := fun x h1 h2 h3 => by
     rw [o₃ x h3, o₂ x h2, o₁ x h1]
-  have x0₃ : s₃.gpr .x0 = schedAddr B := by rw [o₃ _ (by decide), o₂ _ (by decide), r₁, hB]
-  have x1₃ : s₃.gpr .x1 = B + BitVec.ofNat 64 512 := by
+  obtain x0₃ : s₃.gpr .x0 = schedAddr B := by rw [o₃ _ (by decide), o₂ _ (by decide), r₁, hB]
+  obtain x1₃ : s₃.gpr .x1 = B + BitVec.ofNat 64 512 := by
     rw [o₃ _ (by decide), r₂, o₁ _ (by decide), hB]; rfl
-  have x2₃ : s₃.gpr .x2 = B := by
+  obtain x2₃ : s₃.gpr .x2 = B := by
     rw [r₃, o₂ _ (by decide), o₁ _ (by decide), hB]; exact BitVec.add_zero _
   -- `x26` keeps the return address across the call.
   obtain ⟨s₃', e₃', -, o₃', m₃', rd₃'', wr₃''⟩ := addImm_ok s₃ .x26 .x30 (v := 0) (by decide)
-  have g₃' : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → x ≠ .x26 → s₃'.gpr x = s.gpr x := fun x h1 h2 h3 h4 => by
+  obtain g₃' : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → x ≠ .x26 → s₃'.gpr x = s.gpr x := fun x h1 h2 h3 h4 => by
     rw [o₃' x h4, g₃ x h1 h2 h3]
   replace x0₃ : s₃'.gpr .x0 = schedAddr B := by rw [o₃' _ (by decide), x0₃]
   replace x1₃ : s₃'.gpr .x1 = B + BitVec.ofNat 64 512 := by rw [o₃' _ (by decide), x1₃]
   replace x2₃ : s₃'.gpr .x2 = B := by rw [o₃' _ (by decide), x2₃]
-  have mem₃ : s₃'.mem = s.mem := by rw [m₃', m₃, m₂, m₁]
-  have rd₃' : s₃'.rd = s.rd := by rw [rd₃'', rd₃, rd₂, rd₁]
-  have wr₃' : s₃'.wr = s.wr := by rw [wr₃'', wr₃, wr₂, wr₁]
+  obtain mem₃ : s₃'.mem = s.mem := by rw [m₃', m₃, m₂, m₁]
+  obtain rd₃' : s₃'.rd = s.rd := by rw [rd₃'', rd₃, rd₂, rd₁]
+  obtain wr₃' : s₃'.wr = s.wr := by rw [wr₃'', wr₃, wr₂, wr₁]
   rw [show (dirCore d).crypt = .seq (.block ([.addImm .x .x0 sb (8 * schedSlot)] ++
       ([.addImm .x .x1 sb (8 * cbcBuf)] ++ ([.addImm .x .x2 sb 0] ++ ([.addImm .x .x26 .x30 0] : List Instr)))))
       (.seq (blockCall d) (.block ([.addImm .x sb .x2 0] ++ ([.addImm .x .x30 .x26 0] : List Instr)))) by
@@ -232,14 +232,14 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
   obtain ⟨rd₄, wr₄, f₄, x2₄', x23₄, x24₄, res₄⟩ := h₄
   obtain ⟨s₅', e₅', r₅, o₅', m₅', rd₅', wr₅'⟩ := addImm_ok s₄ sb .x2 (v := 0) (by decide)
   obtain ⟨s₅, e₅, -, o₅'', m₅'', rd₅'', wr₅''⟩ := addImm_ok s₅' .x30 .x26 (v := 0) (by decide)
-  have o₅ : ∀ x, x ≠ sb → x ≠ .x30 → s₅.gpr x = s₄.gpr x := fun x h1 h2 => by rw [o₅'' x h2, o₅' x h1]
+  obtain o₅ : ∀ x, x ≠ sb → x ≠ .x30 → s₅.gpr x = s₄.gpr x := fun x h1 h2 => by rw [o₅'' x h2, o₅' x h1]
   replace r₅ : s₅.gpr sb = s₄.gpr .x2 + BitVec.ofNat 64 0 := by rw [o₅'' _ (by decide), r₅]
-  have m₅ : s₅.mem = s₄.mem := by rw [m₅'', m₅']
-  have rd₅ : s₅.rd = s₄.rd := by rw [rd₅'', rd₅']
-  have wr₅ : s₅.wr = s₄.wr := by rw [wr₅'', wr₅']
+  obtain m₅ : s₅.mem = s₄.mem := by rw [m₅'', m₅']
+  obtain rd₅ : s₅.rd = s₄.rd := by rw [rd₅'', rd₅']
+  obtain wr₅ : s₅.wr = s₄.wr := by rw [wr₅'', wr₅']
   refine WP.of_runBlock ⟨s₅, by rw [runBlock_app, e₅', Option.bind_some, e₅], ?_⟩
-  have x2₄ : s₄.gpr .x2 = B := by rw [x2₄', x2₃]
-  have fB : Frame [⟨B, 904⟩] s₃'.mem s₄.mem := f₄.sub fun r hr => by
+  obtain x2₄ : s₄.gpr .x2 = B := by rw [x2₄', x2₃]
+  obtain fB : Frame [⟨B, 904⟩] s₃'.mem s₄.mem := f₄.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by decide)⟩
@@ -254,9 +254,9 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
     · exact Offset.disjoint B (.inr (by decide)) (by decide) (by decide)
     · exact Offset.disjoint_base B (by decide) (by omega_using [hss])
   · have hG : (dirCore d).G = 1 := by cases d <;> rfl
-    have hj0 : j = 0 := by omega_using [hj, hG]
+    obtain hj0 : j = 0 := by omega_using [hj, hG]
     subst hj0
-    have ea : blkAddr (dirCore d) B 0 = s₃'.gpr .x1 := by rw [x1₃]; rfl
+    obtain ea : blkAddr (dirCore d) B 0 = s₃'.gpr .x1 := by rw [x1₃]; rfl
     rw [dirCore_bw, ea, dirCipher_bytes, bytesAt_eq, m₅, res₄, x0₃, mem₃, hr]
 
 /-- Triple DES's core for the direction `d` meets what the modes need. -/
@@ -350,24 +350,24 @@ theorem batchCrypt_wp {d : Direction} {s : State} {B : Addr} {k : Spec.TripleDes
   -- `sb` to `x16`, and `x4` to the buffer.
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.movR_ok s .x16 sb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := Modes.AArch64.movR_ok s₁ .x4 sb
-  have g₂ : ∀ r, r ≠ .x16 → r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h1 h2 => by rw [o₂ r h2, o₁ r h1]
-  have x16₂ : s₂.gpr .x16 = B := by rw [o₂ _ (by decide), r₁, hB]
-  have x4₂ : s₂.gpr .x4 = B := by rw [r₂, o₁ _ (by decide), hB]
-  have x0₂ : s₂.gpr .x0 = p := by rw [g₂ _ (by decide) (by decide), hp]
-  have mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
-  have rdE₂ : s₂.rd = s.rd := by rw [rd₂, rd₁]
-  have wrE₂ : s₂.wr = s.wr := by rw [wr₂, wr₁]
+  obtain g₂ : ∀ r, r ≠ .x16 → r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h1 h2 => by rw [o₂ r h2, o₁ r h1]
+  obtain x16₂ : s₂.gpr .x16 = B := by rw [o₂ _ (by decide), r₁, hB]
+  obtain x4₂ : s₂.gpr .x4 = B := by rw [r₂, o₁ _ (by decide), hB]
+  obtain x0₂ : s₂.gpr .x0 = p := by rw [g₂ _ (by decide) (by decide), hp]
+  obtain mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
+  obtain rdE₂ : s₂.rd = s.rd := by rw [rd₂, rd₁]
+  obtain wrE₂ : s₂.wr = s.wr := by rw [wr₂, wr₁]
   show WP isa (.seq (.block ([Impl.Aes.AArch64.movR .x16 sb] ++ ([Impl.Aes.AArch64.movR .x4 sb] : List Instr)))
     (.seq (BitsliceNeon.batch d) (.block [Impl.Aes.AArch64.movR sb .x16]))) s _
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_app, e₁, Option.bind_some, e₂], ?_⟩)
   -- The batch.
-  have hRoom : BitslicedNeon.Room s₂ := ⟨fun j hj => by
+  obtain hRoom : BitslicedNeon.Room s₂ := ⟨fun j hj => by
     show InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16
     rw [x4₂, wrE₂]
     have hj64 : j < 64 := hj
     exact ⟨_, hw, Offset.contains_base B (by omega_using [hj64]) (by omega_using [hj64])⟩,
     by decide⟩
-  have hSched : BitslicedNeon.Sched s₂ := ⟨fun i hi => by
+  obtain hSched : BitslicedNeon.Sched s₂ := ⟨fun i hi => by
       rw [x0₂, rdE₂]
       exact ⟨_, List.mem_append_left _ hS.rd, Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])⟩,
     by
@@ -378,15 +378,15 @@ theorem batchCrypt_wp {d : Direction} {s : State} {B : Addr} {k : Spec.TripleDes
   -- `sb` back.
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movR_ok s₃ sb .x16
   refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
-  have g₄ : ∀ r, r ≠ sb → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x16 → r ≠ .x4 → s₄.gpr r = s.gpr r :=
+  obtain g₄ : ∀ r, r ≠ sb → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x16 → r ≠ .x4 → s₄.gpr r = s.gpr r :=
     fun r h5 h7 h9 h10 h16 h4 => by rw [o₄ r h5, P.gpr r h5 h7 h9 h10, g₂ r h16 h4]
-  have rdE : s₄.rd = s.rd := by rw [rd₄, P.rd, rdE₂]
-  have wrE : s₄.wr = s.wr := by rw [wr₄, P.wr, wrE₂]
-  have fr : Frame [⟨B, 1024⟩] s.mem s₄.mem := by
+  obtain rdE : s₄.rd = s.rd := by rw [rd₄, P.rd, rdE₂]
+  obtain wrE : s₄.wr = s.wr := by rw [wr₄, P.wr, wrE₂]
+  obtain fr : Frame [⟨B, 1024⟩] s.mem s₄.mem := by
     have := P.frame
     rw [show BitslicedNeon.stateR s₂ = ⟨B, 1024⟩ by simp only [BitslicedNeon.stateR, x4₂], mem₂] at this
     rw [m₄]; exact this
-  have sch : ∀ r ∈ [(⟨B, 1024⟩ : Region)], Region.Disjoint ⟨p, 384⟩ r := fun r hr => by
+  obtain sch : ∀ r ∈ [(⟨B, 1024⟩ : Region)], Region.Disjoint ⟨p, 384⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
   refine ⟨by rw [r₄, P.gpr _ (by decide) (by decide) (by decide) (by decide), x16₂],
@@ -396,7 +396,7 @@ theorem batchCrypt_wp {d : Direction} {s : State} {B : Addr} {k : Spec.TripleDes
       hS.congr rdE wrE⟩, by rw [batchCore_eq]; exact fr, fun j hj => ?_, rdE, wrE⟩
   · rw [scheduleAt_eq_of_frame _ fr sch]; exact hK
   · have hj128 : j < 128 := hj
-    have ea : blkAddr (batchCore d) B j = VG.Proof.TripleDes.Bitslice.wAt (s₂.gpr .x4) j := by
+    obtain ea : blkAddr (batchCore d) B j = VG.Proof.TripleDes.Bitslice.wAt (s₂.gpr .x4) j := by
       rw [x4₂]; simp only [blkAddr, batchCore, Nat.mul_zero, Nat.zero_add, Nat.mul_one]
     rw [batchCore_bw, Nat.mul_one, ea, dirCipher_bytes, bytesAt_eq, m₄, P.out j hj128, x0₂, mem₂, hK, blockOut_eq]
 
@@ -462,25 +462,25 @@ theorem tableCrypt_wp {s : State} {B : Addr} {k : Spec.TripleDes.Schedule}
   obtain ⟨p, hp, hK, hS⟩ := hr
   have hw := hs.wr
   rw [tableTotal_eq] at hw
-  have hbuf : (⟨B, 8 * 70⟩ : Region).Contains (B + BitVec.ofNat 64 456) 8 :=
+  obtain hbuf : (⟨B, 8 * 70⟩ : Region).Contains (B + BitVec.ofNat 64 456) 8 :=
     Offset.contains_base B (by decide) (by decide)
   -- The schedule to `x14`, the scratch buffer to `x15`, and the buffer's
   -- block to `x5`, as a big-endian integer.
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.movR_ok s .x14 .x4
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := Modes.AArch64.movR_ok s₁ .x15 sb
-  have x15₂ : s₂.gpr .x15 = B := by rw [r₂, o₁ _ (by decide), hB]
+  obtain x15₂ : s₂.gpr .x15 = B := by rw [r₂, o₁ _ (by decide), hB]
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := Modes.AArch64.ldr_ok s₂ .x5 .x15 (off := 456) (by decide) (by
     rw [x15₂, wr₂, wr₁]
     exact ⟨_, List.mem_append_right _ hw, hbuf⟩)
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.rev_ok s₃ .x5 .x5
-  have g₄ : ∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x5 → s₄.gpr r = s.gpr r := fun r h14 h15 h5 => by
+  obtain g₄ : ∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x5 → s₄.gpr r = s.gpr r := fun r h14 h15 h5 => by
     rw [o₄ r h5, o₃ r h5, o₂ r h15, o₁ r h14]
-  have x14₄ : s₄.gpr .x14 = p := by rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁, hp]
-  have x15₄ : s₄.gpr .x15 = B := by rw [o₄ _ (by decide), o₃ _ (by decide), x15₂]
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
-  have rdE₄ : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
-  have wrE₄ : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
-  have x5₄ : s₄.gpr .x5 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 456) 64) := by
+  obtain x14₄ : s₄.gpr .x14 = p := by rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁, hp]
+  obtain x15₄ : s₄.gpr .x15 = B := by rw [o₄ _ (by decide), o₃ _ (by decide), x15₂]
+  obtain mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  obtain rdE₄ : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
+  obtain wrE₄ : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
+  obtain x5₄ : s₄.gpr .x5 = byteRev64 (s.mem.readW (B + BitVec.ofNat 64 456) 64) := by
     rw [r₄, r₃, x15₂, m₂, m₁]; rfl
   show WP isa (.seq (.block ([Impl.Aes.AArch64.movR .x14 .x4] ++ ([Impl.Aes.AArch64.movR .x15 sb] ++
       ([.ldr .x .x5 .x15 456] ++ ([.rev .x5 .x5] : List Instr)))))
@@ -490,8 +490,8 @@ theorem tableCrypt_wp {s : State} {B : Addr} {k : Spec.TripleDes.Schedule}
     rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, e₄], ?_⟩)
   -- The block.
-  have hsep : Region.Disjoint ⟨p, 384⟩ ⟨B, 464⟩ := (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
-  have hPre : VG.Proof.CmacTripleDes.AArch64.BlockPre s₄ :=
+  obtain hsep : Region.Disjoint ⟨p, 384⟩ ⟨B, 464⟩ := (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
+  obtain hPre : VG.Proof.CmacTripleDes.AArch64.BlockPre s₄ :=
     ⟨⟨⟨p, 384⟩, by rw [rdE₄]; exact List.mem_append_left _ hS.rd, x14₄.symm, Nat.le_refl _,
         (by decide : (384 : Nat) < 2 ^ 64)⟩,
       ⟨⟨B, 8 * 70⟩, by rw [wrE₄]; exact hw, x15₄.symm, (by decide : (456 : Nat) ≤ 8 * 70),
@@ -500,30 +500,30 @@ theorem tableCrypt_wp {s : State} {B : Addr} {k : Spec.TripleDes.Schedule}
       exact (hsep.sub_right (Region.sub_prefix (by decide))).symm⟩
   refine WP.seq (WP.mono (VG.Proof.CmacTripleDes.AArch64.block_ok hPre) fun s₅ h₅ => ?_)
   obtain ⟨P, -, x5₅, -⟩ := h₅
-  have x15₅ : s₅.gpr .x15 = B := by rw [P.x15, x15₄]
+  obtain x15₅ : s₅.gpr .x15 = B := by rw [P.x15, x15₄]
   -- The result back to the buffer, and `sb` back.
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := Modes.AArch64.rev_ok s₅ .x5 .x5
-  have x15₆ : s₆.gpr .x15 = B := by rw [o₆ _ (by decide), x15₅]
+  obtain x15₆ : s₆.gpr .x15 = B := by rw [o₆ _ (by decide), x15₅]
   obtain ⟨s₇, e₇, m₇, g₇, rd₇, wr₇⟩ := Modes.AArch64.str_ok s₆ .x5 .x15 (off := 456) (by decide) (by
     rw [x15₆, wr₆, P.wr, wrE₄]
     exact ⟨_, hw, hbuf⟩)
   obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈⟩ := Modes.AArch64.movR_ok s₇ sb .x15
   refine WP.of_runBlock ⟨s₈, by rw [runBlock_app, e₆, Option.bind_some, runBlock_app, e₇, Option.bind_some, e₈], ?_⟩
-  have g₈ : ∀ r ∈ VG.Proof.CmacTripleDes.AArch64.outer, s₈.gpr r = s.gpr r := fun r hr => by
-    have h5 : r ≠ .x5 := by rintro rfl; revert hr; decide
-    have h14 : r ≠ .x14 := by rintro rfl; revert hr; decide
-    have h15 : r ≠ .x15 := by rintro rfl; revert hr; decide
+  obtain g₈ : ∀ r ∈ VG.Proof.CmacTripleDes.AArch64.outer, s₈.gpr r = s.gpr r := fun r hr => by
+    obtain h5 : r ≠ .x5 := by rintro rfl; revert hr; decide
+    obtain h14 : r ≠ .x14 := by rintro rfl; revert hr; decide
+    obtain h15 : r ≠ .x15 := by rintro rfl; revert hr; decide
     rw [o₈ r h5, g₇, o₆ r h5, P.keep r hr, g₄ r h14 h15 h5]
-  have rdE : s₈.rd = s.rd := by rw [rd₈, rd₇, rd₆, P.rd, rdE₄]
-  have wrE : s₈.wr = s.wr := by rw [wr₈, wr₇, wr₆, P.wr, wrE₄]
-  have val : s₈.mem.readW (B + BitVec.ofNat 64 456) 64 =
+  obtain rdE : s₈.rd = s.rd := by rw [rd₈, rd₇, rd₆, P.rd, rdE₄]
+  obtain wrE : s₈.wr = s.wr := by rw [wr₈, wr₇, wr₆, P.wr, wrE₄]
+  obtain val : s₈.mem.readW (B + BitVec.ofNat 64 456) 64 =
       byteRev64 (VG.Proof.CmacTripleDes.tdes k (byteRev64 (s.mem.readW (B + BitVec.ofNat 64 456) 64))) := by
-    have hsch : VG.Proof.CmacTripleDes.AArch64.sch s₄ = k := by
+    obtain hsch : VG.Proof.CmacTripleDes.AArch64.sch s₄ = k := by
       show Spec.TripleDes.scheduleAt s₄.mem (s₄.gpr .x14) = k
       rw [mem₄, x14₄]; exact hK
     rw [m₈, m₇, x15₆, Mem.readW_writeW_self64, r₆, x5₅, hsch, x5₄]; rfl
-  have fr : Frame [⟨B, 464⟩] s.mem s₈.mem := by
-    have f₅ : Frame [⟨B, 464⟩] s.mem s₅.mem := by
+  obtain fr : Frame [⟨B, 464⟩] s.mem s₈.mem := by
+    obtain f₅ : Frame [⟨B, 464⟩] s.mem s₅.mem := by
       have := P.frame
       rw [x15₄, mem₄] at this
       exact this.sub fun r hr => by
@@ -538,7 +538,7 @@ theorem tableCrypt_wp {s : State} {B : Addr} {k : Spec.TripleDes.Schedule}
       simp only [List.mem_singleton] at hr; subst hr; exact hsep]
     exact hK
   · have hG : tableCore.G = 1 := rfl
-    have hj0 : j = 0 := by omega_using [hj, hG]
+    obtain hj0 : j = 0 := by omega_using [hj, hG]
     subst hj0
     have ea : blkAddr tableCore B 0 = B + BitVec.ofNat 64 456 := rfl
     rw [tableCore_bw, Nat.mul_one, ea, ← VG.Proof.Cmac.le8_readW s₈.mem, val,

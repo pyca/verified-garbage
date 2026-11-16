@@ -50,12 +50,12 @@ theorem addStep_ok {s : State} {a : Addr} (ha : s.gpr .r3 = a) (hw : InRegions s
       t.gpr .r4 = BitVec.ofNat 64 (((s.mem a).toNat + (s.gpr .r4).toNat) / 256) ∧
       t.gpr .r3 = s.gpr .r3 - 1 ∧ t.gpr .r6 = s.gpr .r6 - 1 ∧
       Keep [.r3, .r4, .r5, .r6] s t ∧ t.sp = s.sp := by
-  have hr : InRegions (s.rd ++ s.wr) a 1 := let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩
+  obtain hr : InRegions (s.rd ++ s.wr) a 1 := let ⟨r, hr, hc⟩ := hw; ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.sp_eq ?_
   unfold addStep
   refine wp_lbz (by decide) (by decide) (by rw [ha, BitVec.add_zero]) hr fun s₁ u₁ => ?_
   refine WP.wr exec_add fun s₂ u₂ _ _ => ?_
-  have v : s₂.gpr .r5 = BitVec.ofNat 64 ((s.mem a).toNat + (s.gpr .r4).toNat) := by
+  obtain v : s₂.gpr .r5 = BitVec.ofNat 64 ((s.mem a).toNat + (s.gpr .r4).toNat) := by
     rw [u₂.gpr, u₁.gpr, u₁.other .r4 (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -108,10 +108,10 @@ theorem encode_step (m : Mem) (p : Addr) {n k : Nat} (hk : k < n) (c : Nat) :
       Spec.Dsa.encodeBE k (Spec.Dsa.decodeBE ((Spec.Rsa.bytesAt m p n).take k) +
         ((m (p + BitVec.ofNat 64 k)).toNat + c) / 256) ++
         [BitVec.ofNat 8 ((m (p + BitVec.ofNat 64 k)).toNat + c)] := by
-  have e : (Spec.Rsa.bytesAt m p n).take (k + 1) = (Spec.Rsa.bytesAt m p n).take k ++ [m (p + BitVec.ofNat 64 k)] := by
+  obtain e : (Spec.Rsa.bytesAt m p n).take (k + 1) = (Spec.Rsa.bytesAt m p n).take k ++ [m (p + BitVec.ofNat 64 k)] := by
     rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Rsa.bytesAt]; exact hk)]
     simp [Spec.Rsa.bytesAt]
-  have l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by simp [Spec.Rsa.bytesAt]; omega_using [hk]
+  obtain l : ((Spec.Rsa.bytesAt m p n).take k).length = k := by simp [Spec.Rsa.bytesAt]; omega_using [hk]
   have := VG.Proof.Dsa.Generation.seedAdd_snoc ((Spec.Rsa.bytesAt m p n).take k) (m (p + BitVec.ofNat 64 k)) c
   rw [l] at this
   rw [e, this]
@@ -133,17 +133,17 @@ theorem addBody_ok {s₀ t : State} {base : Addr} {n add i c : Nat} (hn : n < 2 
     WP isa (.block addStep) t fun u =>
       AddInv s₀ base n add (i + 1) (((t.mem (base + BitVec.ofNat 64 (n - 1 - i))).toNat + c) / 256) u ∧
         (u.gpr .r6 != 0) = decide (i + 1 ≠ n) := by
-  have hj : n - 1 - i < n := by omega
-  have ea : t.gpr .r3 = base + BitVec.ofNat 64 (n - 1 - i) := by
+  obtain hj : n - 1 - i < n := by omega
+  obtain ea : t.gpr .r3 = base + BitVec.ofNat 64 (n - 1 - i) := by
     have e := h.r3
     rw [show n - 1 = (n - 1 - i) + i by omega, BitVec.ofNat_add, ← BitVec.add_assoc] at e
     have := congrArg (· - BitVec.ofNat 64 i) e
     simpa only [BitVec.add_sub_cancel] using this
-  have hw1 : InRegions t.wr (base + BitVec.ofNat 64 (n - 1 - i)) 1 := by
+  obtain hw1 : InRegions t.wr (base + BitVec.ofNat 64 (n - 1 - i)) 1 := by
     rw [h.keep.2.2]
     exact Covers.one hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
-  have bl := (t.mem (base + BitVec.ofNat 64 (n - 1 - i))).isLt
-  have c32 : c < 2 ^ 32 := by have := h.cle; omega
+  obtain bl := (t.mem (base + BitVec.ofNat 64 (n - 1 - i))).isLt
+  obtain c32 : c < 2 ^ 32 := by have := h.cle; omega
   refine WP.mono (addStep_ok ea hw1 (by rw [h.r4, BitVec.toNat_ofNat]; omega)) ?_
   rintro u ⟨mu, r4, r3, r6, Ku, spu⟩
   rw [h.r4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at mu r4
@@ -167,7 +167,7 @@ theorem addBody_ok {s₀ t : State} {base : Addr} {n add i c : Nat} (hn : n < 2 
     congr 2
     · rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_left rfl]
     · refine List.map_congr_left fun k hk => ?_
-      have hk := List.mem_range.mp hk
+      obtain hk := List.mem_range.mp hk
       rw [mu, VG.WriteBytes.writeW8_apply, ite_eq_right (fun e => by
         rw [Offset.add_add] at e
         exact Offset.add_ofNat_ne base (a := n - 1 - i + 1 + k) (b := n - 1 - i) (by omega) (by omega)
@@ -230,7 +230,7 @@ theorem seedAdd_vp {j off : Nat} (hq : G.qLen = 20 ∨ G.qLen = 32)
     VP (St G c X) (seedAdd G.qLen j)
       (St G { c with cl := (sMsg, seedPlus G sd (off + j)) :: cl' } X) := by
   unfold seedAdd
-  have hq0 : 0 < G.qLen := by omega_using [hq]
+  obtain hq0 : 0 < G.qLen := by omega_using [hq]
   let M : State → State → Prop := fun σ s => St G c X σ s ∧ s.gpr .r3 = G.sa (sMsg + G.qLen - 1) ∧
     s.gpr .r4 = BitVec.ofNat 64 (off + j) ∧ s.gpr .r6 = BitVec.ofNat 64 G.qLen
   refine VP.seq (G := M) (VP.pub (SS.pub (c := fun _ => c) fun σ s h => h.1) []
@@ -239,11 +239,11 @@ theorem seedAdd_vp {j off : Nat} (hq : G.qLen = 20 ∨ G.qLen = 32)
     (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨h, x⟩ => ?_) ?_
   · refine WP.sp_eq ?_
     refine WP.wr (exec_addi (by decide) (by simp only [sMsg]; omega_using [hq])) fun s₁ u₁ sp₁ _ => ?_
-    have h₁ := h.of_upd u₁ sp₁ (by decide)
+    obtain h₁ := h.of_upd u₁ sp₁ (by decide)
     refine h₁.ldK (o := fOffset) (by decide) (by decide) ((h₁.gi.slotV hO).trans hOv) (by decide)
       fun s₂ h₂ u₂ => ?_
     refine WP.wr (exec_addi (by decide) hj) fun s₃ u₃ sp₃ _ => ?_
-    have h₃ := h₂.of_upd u₃ sp₃ (by decide)
+    obtain h₃ := h₂.of_upd u₃ sp₃ (by decide)
     refine WP.wr (exec_li (by omega_using [hq])) fun t u sp _ => WP.block_nil fun _ => ⟨⟨h₃.of_upd u sp (by decide), x⟩, ?_, ?_, ?_⟩
     · rw [u.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.gi.r28]
     · rw [u.other _ (by decide), u₃.gpr, u₂.gpr, BitVec.ofNat_add]
@@ -262,13 +262,13 @@ theorem seedAdd_vp {j off : Nat} (hq : G.qLen = 20 ∨ G.qLen = 32)
   have kb := gi.kBig
   have nM : sMsg = 512 := rfl
   have nE : hEnd = 352 := rfl
-  have hkB : sMsg + 64 ≤ kB G.pLen := by rcases gi.lens3 with e | e | e <;> rw [e] <;> decide
-  have hw : InRegions s.wr (G.sa sMsg) G.qLen := gi.inScr (by omega_using [hq, big, kb, hkB]) (by omega_using [hq])
+  obtain hkB : sMsg + 64 ≤ kB G.pLen := by rcases gi.lens3 with e | e | e <;> rw [e] <;> decide
+  obtain hw : InRegions s.wr (G.sa sMsg) G.qLen := gi.inScr (by omega_using [hq, big, kb, hkB]) (by omega_using [hq])
   refine (addLoop_ok (base := G.sa sMsg) hq0 (by omega_using [hq]) (by
       have : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
       rw [GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := sMsg) (by omega_using [nM]),
         Nat.mod_eq_of_lt (by omega_using [big, fit, kb, hkB])]; omega_using [hq, big, fit, kb, hkB]) hoff hw (by rw [r3, GP.sa_add]; congr 2; omega_using [hq]) r4 r6).mono fun t ⟨e, f, K, sp⟩ => ⟨?_, x⟩
-  have b := h.sb (sMsg, sd) hsd
+  obtain b := h.sb (sMsg, sd) hsd
   rw [hsl] at b
   rw [b] at e
   refine h.of_scrs K sp (os := [(sMsg, G.qLen)]) (fun p hp => ?_) (f.mono fun r hr => List.mem_append_left _ (by
@@ -284,12 +284,12 @@ theorem SS.blk_bytes {STK : Nat} {σ s : State} (h : SS G STK σ c s) {B N L : N
     {m : List Byte} (hL : L = 8) (hq56 : G.qLen < 56) (hm : (sMsg, m) ∈ c.cl) (hml : m.length = G.qLen)
     (hpad : (sMsg + G.qLen, padTail md G.qLen) ∈ c.cl) :
     Spec.Rsa.bytesAt s.mem (G.sa sMsg) 64 = blk md m := by
-  have b1 := h.sb _ hm
-  have b2 := h.sb _ hpad
-  have pl := padTail_length md hq56 hL
+  obtain b1 := h.sb _ hm
+  obtain b2 := h.sb _ hpad
+  obtain pl := padTail_length md hq56 hL
   rw [show (64 : Nat) = m.length + (padTail md G.qLen).length by omega_using [hq56, hml, pl], VG.Proof.Dsa.Generation.bytesAt_append,
     b1]
-  have a : VG.Proof.Bignum.off (G.sa sMsg) m.length = G.sa (sMsg + G.qLen) := by
+  obtain a : VG.Proof.Bignum.off (G.sa sMsg) m.length = G.sa (sMsg + G.qLen) := by
     rw [VG.Proof.Bignum.off, GP.sa_add, hml]
   rw [a]
   simp only at b2
@@ -309,17 +309,17 @@ theorem pHash_vp {g : Geo} (HO : HashOk g.G) {j : Nat}
     VP (St G c X) (g.pHash j)
       (St G { c with cl := (sMsg + G.qLen, padTail HO.md G.qLen) :: (sX + G.pLen - (j + 1) * G.qLen,
         HO.H (seedPlus G (seedAt G k) (off + j))) :: cl' } X) := by
-  have hq0 : 0 < G.qLen := by omega_using [hlq]
-  have hq56 : G.qLen < 56 := by omega_using [hlq]
-  have pl := padTail_length HO.md hq56 HO.hL
-  have hsl : (seedAt G k).length = G.qLen := by
+  obtain hq0 : 0 < G.qLen := by omega_using [hlq]
+  obtain hq56 : G.qLen < 56 := by omega_using [hlq]
+  obtain pl := padTail_length HO.md hq56 HO.hL
+  obtain hsl : (seedAt G k).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_using [hk]
-  have spl : (seedPlus G (seedAt G k) (off + j)).length = G.qLen := VG.Proof.Dsa.encodeBE_length _ _
-  have hHl : (HO.H (seedPlus G (seedAt G k) (off + j))).length = G.qLen := by
+  obtain spl : (seedPlus G (seedAt G k) (off + j)).length = G.qLen := VG.Proof.Dsa.encodeBE_length _ _
+  obtain hHl : (HO.H (seedPlus G (seedAt G k) (off + j))).length = G.qLen := by
     rw [HO.hash _ (by omega_using [hlq, spl]), HO.md.digest_length, HO.hN, hk4]
-  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
-  have hkB : sMsg + 64 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-  have hWW : 1024 ≤ 8 * wWords G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
+  obtain hkB : sMsg + 64 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hWW : 1024 ≤ 8 * wWords G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have nM : sMsg = 512 := rfl
   have nS : sState = 576 := rfl
   have nE : hEnd = 352 := rfl
@@ -450,7 +450,7 @@ theorem SS.reclaim {STK : Nat} {σ s : State} {c : Cfg} (h : SS G STK σ c s) {c
 theorem SB.join {m : Mem} {cl : Claims} (h : SB G m cl) {o : Nat} {a b : List Byte} (ha : (o, a) ∈ cl)
     (hb : (o + a.length, b) ∈ cl) : Spec.Rsa.bytesAt m (G.sa o) (a ++ b).length = a ++ b := by
   rw [List.length_append, VG.Proof.Dsa.Generation.bytesAt_append, h _ ha]
-  have e : VG.Proof.Bignum.off (G.sa o) a.length = G.sa (o + a.length) := by
+  obtain e : VG.Proof.Bignum.off (G.sa o) a.length = G.sa (o + a.length) := by
     rw [VG.Proof.Bignum.off, GP.sa_add]
   rw [e, h _ hb]
 
@@ -470,20 +470,20 @@ theorem pHashes_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
     ∀ m ≤ n, VP (St G (pCfg c HO G k off 0 rest) X) (g.pHashes m) (St G (pCfg c HO G k off m rest) X)
   | 0, _ => VP.block_nil fun _ _ h => h
   | m + 1, hm => by
-    have ih := pHashes_vp (X := X) HO hlq hp hq hk4 hsb hk hS hSv hO hOv hn hoff hnq hrest m (by omega_using [hm])
+    obtain ih := pHashes_vp (X := X) HO hlq hp hq hk4 hsb hk hS hSv hO hOv hn hoff hnq hrest m (by omega_using [hm])
     refine VP.seq ih ?_
     have nX : sX = 672 := rfl
     have nS : sState = 576 := rfl
     have nM : sMsg = 512 := rfl
     have nE : hEnd = 352 := rfl
-    have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
-    have hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-    have hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
+    obtain hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
+    obtain hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+    obtain hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
       rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega_using [hlq]), HO.md.digest_length, HO.hN, hk4]
-    have al := accB_length HO hHl m
-    have hm1 : (m + 1) * G.qLen = m * G.qLen + G.qLen := Nat.succ_mul _ _
-    have hmn : (m + 1) * G.qLen ≤ n * G.qLen := Nat.mul_le_mul_right _ hm
-    have e1 : pStart G (m + 1) + G.qLen = pStart G m := by
+    obtain al := accB_length HO hHl m
+    obtain hm1 : (m + 1) * G.qLen = m * G.qLen + G.qLen := Nat.succ_mul _ _
+    obtain hmn : (m + 1) * G.qLen ≤ n * G.qLen := Nat.mul_le_mul_right _ hm
+    obtain e1 : pStart G (m + 1) + G.qLen = pStart G m := by
       simp only [pStart]; omega_using [hnq, nX, hm1, hmn]
     refine (pHash_vp (c := pCfg c HO G k off m rest) (j := m) HO hlq hp hq hk4 hsb hk hS hSv hO hOv (by omega_using [hn, hm])
       (by omega_using [hoff, hm]) (by omega_using [hnq, nX, nS, hmn]) (by omega_using [hkB]) (by simp) (cl' := (pStart G m, accB HO G k off m) :: rest)
@@ -510,13 +510,13 @@ theorem pHashes_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
 
 theorem top_memory {m : Mem} {op : Addr} {n : Nat} (hn : 1 ≤ n) (hn64 : n < 2 ^ 64) :
     Spec.Rsa.bytesAt (m.writeW op (m op ||| 128#8)) op n = topCut (Spec.Rsa.bytesAt m op n) 7 := by
-  have hne : Spec.Rsa.bytesAt m op n ≠ [] := by
+  obtain hne : Spec.Rsa.bytesAt m op n ≠ [] := by
     intro h; have := bytesAt_length' m op n; rw [h] at this; simp at this; omega_using [hn, this]
   apply List.ext_getElem
   · rw [bytesAt_length', VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, bytesAt_length']
   · intro i hi hi'
-    have hil : i < n := by simpa only [bytesAt_length'] using hi
-    have hget : (topCut (Spec.Rsa.bytesAt m op n) 7)[i] = (topCut (Spec.Rsa.bytesAt m op n) 7).getD i 0 := by
+    obtain hil : i < n := by simpa only [bytesAt_length'] using hi
+    obtain hget : (topCut (Spec.Rsa.bytesAt m op n) 7)[i] = (topCut (Spec.Rsa.bytesAt m op n) 7).getD i 0 := by
       simp [List.getD_eq_getElem?_getD, hi']
     rw [hget, VG.Proof.Ffdh.ParameterCandidate.topCut_getD, VG.Proof.Dsa.Generation.topByte_seven]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, VG.WriteBytes.writeW8_apply]
@@ -572,7 +572,7 @@ abbrev xBytes (HO : HashOk Gh) (G : GP) (k off : Nat) : List Byte :=
 
 theorem decodeBE_drop (bs : List Byte) (d : Nat) :
     Spec.Dsa.decodeBE (bs.drop d) = Spec.Dsa.decodeBE bs % 256 ^ (bs.length - d) := by
-  have e := VG.Proof.Dsa.decodeBE_append (bs.take d) (bs.drop d)
+  obtain e := VG.Proof.Dsa.decodeBE_append (bs.take d) (bs.drop d)
   rw [List.take_append_drop, List.length_drop] at e
   rw [e, Nat.add_comm, Nat.add_mul_mod_self_right,
     Nat.mod_eq_of_lt (by have := VG.Proof.Dsa.decodeBE_lt (bs.drop d); rwa [List.length_drop] at this)]
@@ -580,7 +580,7 @@ theorem decodeBE_drop (bs : List Byte) (d : Nat) :
 /-- X's value. -/
 theorem xBytes_value {A : List Byte} {d n : Nat} (hA : A.length = d + n) (hn : 1 ≤ n) :
     Spec.Dsa.decodeBE (topCut (A.drop d) 7) = Spec.Dsa.decodeBE A % 2 ^ (8 * n - 1) + 2 ^ (8 * n - 1) := by
-  have hne : A.drop d ≠ [] := by
+  obtain hne : A.drop d ≠ [] := by
     intro h; have := congrArg List.length h; rw [List.length_drop] at this; simp at this; omega_using [hA, hn, this]
   rw [VG.Proof.Dsa.decodeBE_os2ip, VG.Proof.Ffdh.ParameterCandidate.topCut_value hne (by decide),
     ← VG.Proof.Dsa.decodeBE_os2ip, decodeBE_drop, List.length_drop, hA,
@@ -611,18 +611,18 @@ theorem pX_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
       Apart (pStart G (cnt G + 1)) ((cnt G + 1) * G.qLen) x) :
     VP (St G (pCfg c HO G k off 0 rest) X) g.pX
       (St G { c with cl := (sMsg + G.qLen, padTail HO.md G.qLen) :: (sX, xBytes HO G k off) :: rest } X) := by
-  have hc : (cnt G + 1) * G.qLen ≤ G.pLen + 64 ∧ G.pLen ≤ (cnt G + 1) * G.qLen ∧ cnt G + 1 < 2 ^ 15 := by
+  obtain hc : (cnt G + 1) * G.qLen ≤ G.pLen + 64 ∧ G.pLen ≤ (cnt G + 1) * G.qLen ∧ cnt G + 1 < 2 ^ 15 := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
-  have hcount : g.count = cnt G := by simp only [Geo.count, hp, hq]
+  obtain hcount : g.count = cnt G := by simp only [Geo.count, hp, hq]
   have nX : sX = 672 := rfl
   have nE : hEnd = 352 := rfl
   have nM : sMsg = 512 := rfl
-  have hq56 : G.qLen < 56 := by omega_using [hlq]
-  have hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-  have hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
+  obtain hq56 : G.qLen < 56 := by omega_using [hlq]
+  obtain hkB : sX + G.pLen + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hHl : ∀ j, (hX HO G k off j).length = G.qLen := fun j => by
     rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega_using [hlq]), HO.md.digest_length, HO.hN, hk4]
-  have al := accB_length HO hHl (cnt G + 1)
-  have hd : pStart G (cnt G + 1) + ((cnt G + 1) * G.qLen - G.pLen) = sX := by simp only [pStart]; omega_using [hc, nX]
+  obtain al := accB_length HO hHl (cnt G + 1)
+  obtain hd : pStart G (cnt G + 1) + ((cnt G + 1) * G.qLen - G.pLen) = sX := by simp only [pStart]; omega_using [hc, nX]
   unfold Geo.pX
   rw [hcount]
   refine VP.seq (pHashes_vp HO hlq hp hq hk4 hsb hk hS hSv hO hOv hc.2.2 (by omega_using [hoff]) hc.1 hrest _ (Nat.le_refl _)) ?_
@@ -632,12 +632,12 @@ theorem pX_vp {g : Geo} (HO : HashOk g.G) {c : Cfg} {X : State → Prop}
   · have b := h.sb (pStart G (cnt G + 1), accB HO G k off (cnt G + 1)) (by simp)
     simp only at b
     rw [al] at b
-    have a : G.sa sX = G.sa (pStart G (cnt G + 1)) + BitVec.ofNat 64 ((cnt G + 1) * G.qLen - G.pLen) := by
+    obtain a : G.sa sX = G.sa (pStart G (cnt G + 1)) + BitVec.ofNat 64 ((cnt G + 1) * G.qLen - G.pLen) := by
       rw [GP.sa_add, hd]
     rw [a, bytesAt_slice' _ _ (len := (cnt G + 1) * G.qLen) (by omega_using [hc]), b, List.take_of_length_le (by
       rw [List.length_drop, al]; omega_using [])]
   have big := h.gi.wBig
-  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
+  obtain hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
   refine h.of_scrs K sp (os := [(sX, G.pLen)]) (fun p hp => ?_) (f.mono fun r hr => List.mem_append_left _ (by
     simpa [GP.rss] using hr)) fun y hy => ?_
   · simp only [List.mem_singleton] at hp; subst hp; simp only [ClOk, List.length_replicate]; omega_using [nX, nE, hkB, big, hkw]

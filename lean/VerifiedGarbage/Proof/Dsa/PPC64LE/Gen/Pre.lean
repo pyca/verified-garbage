@@ -77,9 +77,9 @@ theorem zeros_ok {s : State} {a : Addr} {o : Nat} (r0 : s.gpr .r0 = 0) (ho : o +
     show Mem.write (writeBytes s.mem a (List.replicate (8 * j) 0)) (a + BitVec.ofNat 64 (8 * j)) 8
       ((0 : BitVec 64).setWidth (8 * 8)) = _
     rw [write_eq_writeBytes]
-    have z8 : ((List.range 8).map fun i => ((0 : BitVec 64).setWidth (8 * 8)).extractLsb' (8 * i) 8) =
+    obtain z8 : ((List.range 8).map fun i => ((0 : BitVec 64).setWidth (8 * 8)).extractLsb' (8 * i) 8) =
         List.replicate 8 (0 : Byte) := by decide
-    have ap := writeBytes_append s.mem a (List.replicate (8 * j) (0 : Byte)) (List.replicate 8 0) (by simp; omega_using [hj])
+    obtain ap := writeBytes_append s.mem a (List.replicate (8 * j) (0 : Byte)) (List.replicate 8 0) (by simp; omega_using [hj])
     rw [List.length_replicate] at ap
     rw [z8, ap, List.replicate_append_replicate, Nat.mul_succ]
 
@@ -108,25 +108,25 @@ theorem pre_vp {V : Nat → BitVec 64} {LS : List Nat} {B N L : Nat} (md : MdStr
     (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨gi, x⟩ => ?_
   have big := gi.scrBig
   have fit := gi.scrFit
-  have hn : G.qLen = 20 ∨ G.qLen = 32 := by omega_using [hlq]
-  have hq32 : G.qLen ≤ 32 := by omega_using [hlq]
+  obtain hn : G.qLen = 20 ∨ G.qLen = 32 := by omega_using [hlq]
+  obtain hq32 : G.qLen ≤ 32 := by omega_using [hlq]
   have nM : sMsg = 512 := rfl
   have hE : hEnd = 352 := rfl
-  have kb : 576 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain kb : 576 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have kz := gi.kBig
   have wb := gi.wBig
-  have w : ∀ {o n : Nat}, 0 < n → o + n ≤ G.scrLen * 8 → InRegions s.wr (G.sa o) n := fun hn h => gi.inScr h hn
+  obtain w : ∀ {o n : Nat}, 0 < n → o + n ≤ G.scrLen * 8 → InRegions s.wr (G.sa o) n := fun hn h => gi.inScr h hn
   simp only [padInit, List.cons_append, List.nil_append]
   refine WP.sp_eq ?_
   refine WP.wr (exec_li (show 0 < 2 ^ 15 by decide)) fun s₁ u₁ sp₁ lr₁ => ?_
-  have hs : ∀ i < 8, s₁.gpr .r28 + BitVec.ofNat 64 (sMsg + 8 * i) = G.sa sMsg + BitVec.ofNat 64 (8 * i) :=
+  obtain hs : ∀ i < 8, s₁.gpr .r28 + BitVec.ofNat 64 (sMsg + 8 * i) = G.sa sMsg + BitVec.ofNat 64 (8 * i) :=
     fun i _ => by rw [u₁.other _ (by decide), gi.r28, GP.sa_add]
   refine zeros_ok (o := sMsg) (by rw [u₁.gpr]; rfl) (by decide) (by decide) hs
     (fun i hi => by rw [u₁.wr, GP.sa_add]; exact w (by decide) (by omega_using [big, nM, hi])) 8 (Nat.le_refl _) fun s₂ g₂ rd₂ wr₂ sp₂ lr₂ m₂ => ?_
   refine WP.wr (exec_li (show 0x80 < 2 ^ 15 by decide)) fun s₃ u₃ sp₃ lr₃ => ?_
-  have a28 : ∀ {t : State} (o : Nat), t.gpr .r28 = s.gpr .r28 → t.gpr .r28 + BitVec.ofNat 64 o = G.sa o :=
+  obtain a28 : ∀ {t : State} (o : Nat), t.gpr .r28 = s.gpr .r28 → t.gpr .r28 + BitVec.ofNat 64 o = G.sa o :=
     fun o e => by rw [e, gi.r28]
-  have e28 : ∀ {t : State}, t.gpr .r28 = s₂.gpr .r28 → t.gpr .r28 = s.gpr .r28 :=
+  obtain e28 : ∀ {t : State}, t.gpr .r28 = s₂.gpr .r28 → t.gpr .r28 = s.gpr .r28 :=
     fun e => by rw [e, g₂, u₁.other _ (by decide)]
   refine wp_stb (a := G.sa (sMsg + G.qLen)) (by decide) (by omega_using [hlq, nM]) (a28 _ (e28 (u₃.other _ (by decide))))
     (by rw [u₃.wr, wr₂, u₁.wr]; exact w (by decide) (by omega_using [hlq, big, nM])) fun s₄ m₄ => ?_
@@ -138,28 +138,28 @@ theorem pre_vp {V : Nat → BitVec 64} {LS : List Nat} {B N L : Nat} (md : MdStr
   refine wp_stb (a := G.sa (sMsg + 63)) (by decide) (by decide)
     (a28 _ (e28 (by rw [u₇.other _ (by decide), m₆.gpr, u₅.other _ (by decide), m₄.gpr, u₃.other _ (by decide)])))
     (by rw [u₇.wr, m₆.wr, u₅.wr, m₄.wr, u₃.wr, wr₂, u₁.wr]; exact w (by decide) (by omega_using [big, nM])) fun t m₈ => WP.block_nil fun sp => ?_
-  have sw8 : ∀ x : Nat, (BitVec.ofNat 64 x).setWidth 8 = BitVec.ofNat 8 x := fun x => by
+  obtain sw8 : ∀ x : Nat, (BitVec.ofNat 64 x).setWidth 8 = BitVec.ofNat 8 x := fun x => by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     exact Nat.mod_mod_of_dvd _ (by decide)
-  have hl64 : (List.replicate 64 (0 : Byte)).length < 2 ^ 64 := by simp
-  have mt : t.mem = writeBytes s.mem (G.sa sMsg) (padList G.qLen) := by
+  obtain hl64 : (List.replicate 64 (0 : Byte)).length < 2 ^ 64 := by simp
+  obtain mt : t.mem = writeBytes s.mem (G.sa sMsg) (padList G.qLen) := by
     rw [m₈.mem, u₇.gpr, u₇.mem, m₆.mem, u₅.gpr, u₅.mem, m₄.mem, u₃.gpr, u₃.mem, m₂, u₁.mem]
     simp only [sw8]
     rw [← GP.sa_add, ← GP.sa_add, ← GP.sa_add]
     rw [writeBytes_set _ _ _ (by simp; omega_using [hlq]) hl64, writeBytes_set _ _ _ (by simp) (by simp),
       writeBytes_set _ _ _ (by simp) (by simp)]
     rfl
-  have K : Keep [.r0] s t := ⟨fun r hr => by
-      have hr : r ≠ .r0 := by simpa using hr
+  obtain K : Keep [.r0] s t := ⟨fun r hr => by
+      obtain hr : r ≠ .r0 := by simpa using hr
       rw [m₈.gpr, u₇.other _ hr, m₆.gpr, u₅.other _ hr, m₄.gpr, u₃.other _ hr, g₂, u₁.other _ hr],
     by rw [m₈.rd, u₇.rd, m₆.rd, u₅.rd, m₄.rd, u₃.rd, rd₂, u₁.rd], by rw [m₈.wr, u₇.wr, m₆.wr, u₅.wr, m₄.wr, u₃.wr, wr₂, u₁.wr]⟩
-  have f : Frame [G.rs sMsg 64, rBelow σ 176] s.mem t.mem := by
+  obtain f : Frame [G.rs sMsg 64, rBelow σ 176] s.mem t.mem := by
     rw [mt]
     refine (writeBytes_frame _ _ _ (R := G.rs sMsg 64) ?_).mono (by simp)
     simp only [List.length_set, List.length_replicate]
     exact Region.contains_self _ _
-  have pl := padTail_length md (n := G.qLen) (by omega_using [hlq]) hL
+  obtain pl := padTail_length md (n := G.qLen) (by omega_using [hlq]) hL
   refine ⟨⟨gi.of_scr K sp (by omega_using [nM, hE]) (by omega_using [big, nM]) f, fun y hy => ?_, fun y hy => ?_, fun j hj => absurd hj (by simp),
     fun j hj => absurd hj (by simp), fun d hd => absurd hd (by simp), fun d hd => absurd hd (by simp)⟩, x⟩
   · simp only [List.mem_singleton] at hy; subst hy

@@ -124,25 +124,25 @@ theorem inputs_ok {s₀ s : State} (h : MulAddPre s₀) {base : Addr} (hbase : (
   refine WP.seq (WP.mono (reduceArg_ok (i := 2) hA hbase hsp hr hwr hm hs (by decide)
     (o := SK) ⟨by decide, by decide⟩ (h.input hbase (by decide) (by decide)))
     fun u ⟨ku, mu, lu, vu⟩ => ?_)
-  have mu' : MKeep base s u := MKeep.of2 ku (by decide) mu (by decide) (by decide) (by decide) (by decide)
+  obtain mu' : MKeep base s u := MKeep.of2 ku (by decide) mu (by decide) (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (reduceArg_ok (i := 3) hA hbase ((ku.1 _ (by decide)).trans hsp)
     (ku.2.1.trans hr) (ku.2.2.trans hwr) (hm.trans mu'.whole) (hs.of_keeps ku (by decide)) (by decide)
     (o := SS) ⟨by decide, by decide⟩ (h.input hbase (by decide) (by decide)))
     fun v ⟨kv, mv, lv, vv⟩ => ?_)
-  have mv' : MKeep base u v := MKeep.of2 kv (by decide) mv (by decide) (by decide) (by decide) (by decide)
+  obtain mv' : MKeep base u v := MKeep.of2 kv (by decide) mv (by decide) (by decide) (by decide) (by decide)
   refine WP.mono (reduceArg_ok (i := 1) hA hbase ((kv.1 _ (by decide)).trans ((ku.1 _ (by decide)).trans hsp))
     (kv.2.1.trans (ku.2.1.trans hr)) (kv.2.2.trans (ku.2.2.trans hwr))
     ((hm.trans mu'.whole).trans mv'.whole) ((hs.of_keeps ku (by decide)).of_keeps kv (by decide))
     (by decide) (o := SR) ⟨by decide, by decide⟩ (h.input hbase (by decide) (by decide)))
     fun t ⟨kt, mt, lt, vt⟩ => ?_
-  have mt' : MKeep base v t := MKeep.of2 kt (by decide) mt (by decide) (by decide) (by decide) (by decide)
-  have eK : ∀ j < 28, limbs t.mem base SK j = limbs u.mem base SK j := fun j hj => by
+  obtain mt' : MKeep base v t := MKeep.of2 kt (by decide) mt (by decide) (by decide) (by decide) (by decide)
+  obtain eK : ∀ j < 28, limbs t.mem base SK j = limbs u.mem base SK j := fun j hj => by
     show (word t.mem base (SK + 4 * j)).toNat = (word u.mem base (SK + 4 * j)).toNat
     rw [congrArg BitVec.toNat (mt.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega_using [hK]))
       (Or.inl (by omega_using [hK, hR, hj])) (by omega_using [hK, hj])),
       congrArg BitVec.toNat (mv.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega_using [hK]))
       (Or.inl (by omega_using [hK, hS, hj])) (by omega_using [hK, hj]))]
-  have eS : ∀ j < 28, limbs t.mem base SS j = limbs v.mem base SS j := fun j hj =>
+  obtain eS : ∀ j < 28, limbs t.mem base SS j = limbs v.mem base SS j := fun j hj =>
     congrArg BitVec.toNat (mt.word (d := SS + 4 * j) (Or.inr (by simp only [W]; omega_using [hS]))
       (Or.inl (by omega_using [hS, hR, hj])) (by omega_using [hS, hj]))
   exact ⟨mu'.trans (mv'.trans mt'), fun j hj => by rw [eK j hj]; exact lu j hj,
@@ -162,42 +162,42 @@ theorem scalarMulAdd_correct {s₀ : State} (h : MulAddPre s₀) :
   unfold scalarMulAdd
   refine WP.seq (WP.mono (save_ok hA) fun s1 ⟨hs1, sv1, o1, k1⟩ => ?_)
   rw [hbase] at hs1 sv1 o1
-  have o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega_using []) (by omega_using [])
+  obtain o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega_using []) (by omega_using [])
   -- the inputs
   refine WP.seq (WP.mono (inputs_ok h hbase (k1.1 _ (by decide)) k1.2.1 k1.2.2 o1' hs1)
     fun s2 ⟨k2, lK, lS, lR, vK, vS, vR⟩ => ?_)
-  have hs2 := hs1.of_keeps k2.regs (by decide)
+  obtain hs2 := hs1.of_keeps k2.regs (by decide)
   -- the product
   refine WP.seq (WP.mono (product_ok hs2 lK lS) fun s3 ⟨hs3, k3, m3, a3, v3⟩ => ?_)
-  have k3' : MKeep base s2 s3 := MKeep.of1 k3 (by decide) m3 (by decide) (by decide)
+  obtain k3' : MKeep base s2 s3 := MKeep.of1 k3 (by decide) m3 (by decide) (by decide)
   -- its reduction
   refine WP.seq (WP.mono (reduceProduct_ok hs3 a3) fun s4 ⟨k4, l4, v4⟩ => ?_)
-  have hs4 := hs3.of_keeps k4.regs (by decide)
-  have k4' : MKeep base s3 s4 := MKeep.of2 k4.regs (by decide) k4.mem (by decide) (by decide)
+  obtain hs4 := hs3.of_keeps k4.regs (by decide)
+  obtain k4' : MKeep base s3 s4 := MKeep.of2 k4.regs (by decide) k4.mem (by decide) (by decide)
     (by decide) (by decide)
   -- the reduced `r` survives the product and its reduction
-  have eR : ∀ j < 28, limbs s4.mem base SR j = limbs s2.mem base SR j := fun j hj => by
+  obtain eR : ∀ j < 28, limbs s4.mem base SR j = limbs s2.mem base SR j := fun j hj => by
     show (word s4.mem base (SR + 4 * j)).toNat = (word s2.mem base (SR + 4 * j)).toNat
     rw [congrArg BitVec.toNat (k4.mem.word (d := SR + 4 * j) (Or.inr (by simp only [W]; omega_using [hR]))
       (Or.inr (by omega_using [hR, hRA])) (by omega_using [hR, hj])),
       congrArg BitVec.toNat (m3.word (d := SR + 4 * j) (Or.inl (by omega_using [hR, hC, hj])) (by omega_using [hR, hj]))]
-  have lR4 : Bounded s4.mem base SR := fun j hj => by rw [eR j hj]; exact lR j hj
-  have vR4 : fe s4.mem base SR = fe s2.mem base SR := valN_congr eR
-  have hvR : fe s4.mem base SR < L := by rw [vR4, vR]; exact Nat.mod_lt _ Proof.Ed448.L_pos
-  have hvA : fe s4.mem base RA < L := by rw [v4]; exact Nat.mod_lt _ Proof.Ed448.L_pos
+  obtain lR4 : Bounded s4.mem base SR := fun j hj => by rw [eR j hj]; exact lR j hj
+  obtain vR4 : fe s4.mem base SR = fe s2.mem base SR := valN_congr eR
+  obtain hvR : fe s4.mem base SR < L := by rw [vR4, vR]; exact Nat.mod_lt _ Proof.Ed448.L_pos
+  obtain hvA : fe s4.mem base RA < L := by rw [v4]; exact Nat.mod_lt _ Proof.Ed448.L_pos
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (addPass_ok hs4 l4 lR4 hvA hvR) fun s5 ⟨k5, m5, l5, v5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
+  obtain hs5 := hs4.of_keeps k5 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (reduceT_ok RA_buf hs5 l5 (by rw [v5]; omega_using [hvR, hvA])) fun s6 ⟨k6, m6, l6, v6⟩ => ?_
-  have hs6 := hs5.of_keeps k6 (by decide)
-  have k5' : MKeep base s4 s5 := MKeep.of1 k5 (by decide) m5 (by decide) (by decide)
-  have k6' : MKeep base s5 s6 := MKeep.of1 k6 (by decide) m6 (by decide) (by decide)
-  have kall : MKeep base s1 s6 := k2.trans (k3'.trans (k4'.trans (k5'.trans k6')))
-  have m06 : Outside base 0 8192 s₀.mem s6.mem := o1'.trans kall.whole
-  have sv6 : Saved base s₀.gpr s6.mem := sv1.outside kall.mem (by decide)
-  have k06 : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s₀ s6 :=
+  obtain hs6 := hs5.of_keeps k6 (by decide)
+  obtain k5' : MKeep base s4 s5 := MKeep.of1 k5 (by decide) m5 (by decide) (by decide)
+  obtain k6' : MKeep base s5 s6 := MKeep.of1 k6 (by decide) m6 (by decide) (by decide)
+  obtain kall : MKeep base s1 s6 := k2.trans (k3'.trans (k4'.trans (k5'.trans k6')))
+  obtain m06 : Outside base 0 8192 s₀.mem s6.mem := o1'.trans kall.whole
+  obtain sv6 : Saved base s₀.gpr s6.mem := sv1.outside kall.mem (by decide)
+  obtain k06 : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s₀ s6 :=
     (k1.mono (by decide)).trans (kall.regs.mono (by decide))
   refine WP.mono (finish_ok hA (by decide) (k06.1 _ (by decide)) k06.2.1 k06.2.2 hbase m06 hs6
     (by decide) l6 (by rw [h.wr]; simp) h.out_fit (fun j hj => far_out (hbase ▸ h.out_sc) hj)

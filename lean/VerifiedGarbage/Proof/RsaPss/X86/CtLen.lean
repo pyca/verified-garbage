@@ -59,10 +59,10 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   have eB' : h.H.st.B = h.B := rfl
   have eL : h.H.L = h.L := rfl
   obtain ⟨σ', ok⟩ := hg.ok
-  have dLs : (sR scr oLen h.B).Disjoint (slotR L sL) := (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
-  have dLb : (sR scr oLen h.B).Disjoint (slotR L sLb) := (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
+  obtain dLs : (sR scr oLen h.B).Disjoint (slotR L sL) := (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
+  obtain dLb : (sR scr oLen h.B).Disjoint (slotR L sLb) := (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
   let I₁ : State → Mem → Prop := fun σ m => Inv σ m ∧ m.readW (L.fr sL) 32 = BitVec.ofNat 32 (ℓ σ)
-  have hI₁ : ∀ σ m m', I₁ σ m → Frame [⟨(scr + BitVec.ofNat 32 oLen).setWidth 64, h.B⟩] m m' → I₁ σ m' :=
+  obtain hI₁ : ∀ σ m m', I₁ σ m → Frame [⟨(scr + BitVec.ofNat 32 oLen).setWidth 64, h.B⟩] m m' → I₁ σ m' :=
     fun σ m m' ⟨hi, hs⟩ fr => by
       rw [hg.scrA (by decide)] at fr
       exact ⟨hI σ _ _ hi (fr.mono (by simp)), slot_keep fr (fun r hr => by
@@ -83,50 +83,50 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     (fun _ _ h => h) fun _ _ h => h) ?_
   -- The length field and the last block.
   refine VP.taint [.esp, .ebp] h.certs.lenSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, ⟨hi, hs⟩, hz⟩ => ?_
-  have hz' : ∀ j < h.B, s.mem (sa scr (oLen + j)) = 0 := fun j hj => by
+  obtain hz' : ∀ j < h.B, s.mem (sa scr (oLen + j)) = 0 := fun j hj => by
     rw [← hz j hj, hg.byteAt_scr (by pomega)]
   simp only [lenSet, atS, ld, mi, addi, Impl.RsaPkcs1Sig.X86.stk, List.cons_append, List.nil_append]
   refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => ?_
-  have c2 := (hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)
+  obtain c2 := (hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)
   refine c2.wp_slot hg (d := sL) (by decide) (by decide) (by decide) fun t3 c3 u3 => wp_movi fun t4 u4 => ?_
-  have c4 := c3.upd u4 (by decide) (by decide)
-  have bx4 : t4.gpr .ebx = scr + BitVec.ofNat 32 oLen := by
+  obtain c4 := c3.upd u4 (by decide) (by decide)
+  obtain bx4 : t4.gpr .ebx = scr + BitVec.ofNat 32 oLen := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, u1.gpr, hc.ebp]
-  have ax4 : t4.gpr .eax = BitVec.ofNat 32 (ℓ σ) := by
+  obtain ax4 : t4.gpr .eax = BitVec.ofNat 32 (ℓ σ) := by
     rw [u4.other _ (by decide), u3.gpr, u2.mem, u1.mem, hs]
-  have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  have hfit : (t4.gpr .ebx).toNat + (h.H.B - 8) + 8 ≤ 2 ^ 32 := by rw [bx4, hg.scr_lt (by decide)]; pomega
-  have e8 : (t4.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (h.H.B - 8) = sa scr (oLen + (h.B - 8)) := by
+  obtain m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain hfit : (t4.gpr .ebx).toNat + (h.H.B - 8) + 8 ≤ 2 ^ 32 := by rw [bx4, hg.scr_lt (by decide)]; pomega
+  obtain e8 : (t4.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (h.H.B - 8) = sa scr (oLen + (h.B - 8)) := by
     rw [bx4, hg.scrA (by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have hw1 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8)) 4 := by
+  obtain hw1 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8)) 4 := by
     rw [addr_eq (by omega_arith), e8]; exact hg.wr c4.st (by pomega)
-  have hw2 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8 + 4)) 4 := by
+  obtain hw2 : InRegions t4.wr (VG.X86.addr (t4.gpr .ebx) (h.H.B - 8 + 4)) 4 := by
     rw [addr_eq (by omega_arith), bx4, hg.scrA (by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact hg.wr c4.st (by pomega)
   refine WP.block_append ((Proof.MdStream.X86.len64Of_ok hfit ax4 u4.gpr hw1 hw2).mono fun t5 ⟨g5, rd5, wr5, m5⟩ => ?_)
-  have hl8 := Proof.MdStream.bytes64_length h.H.be (BitVec.ofNat 64 (8 * ((0 : BitVec 32) ++ BitVec.ofNat 32 (ℓ σ)).toNat))
-  have fr5 : Frame [sR scr (oLen + (h.B - 8)) 8] t4.mem t5.mem := by
+  obtain hl8 := Proof.MdStream.bytes64_length h.H.be (BitVec.ofNat 64 (8 * ((0 : BitVec 32) ++ BitVec.ofNat 32 (ℓ σ)).toNat))
+  obtain fr5 : Frame [sR scr (oLen + (h.B - 8)) 8] t4.mem t5.mem := by
     rw [m5, e8]
     have := VG.WriteBytes.writeBytes_frame t4.mem (sa scr (oLen + (h.B - 8)))
       (Proof.MdStream.bytes64 h.H.be (BitVec.ofNat 64 (8 * ((0 : BitVec 32) ++ BitVec.ofNat 32 (ℓ σ)).toNat)))
       (R := sR scr (oLen + (h.B - 8)) 8) (by rw [hl8]; exact Region.contains_self _ _)
     exact this
-  have sub8 : Region.Sub (sR scr (oLen + (h.B - 8)) 8) (sR scr oLen h.B) := Offset.sub _ (by omega_arith) (by omega_arith)
-  have c5 : Ctx L scr σ t5 := c4.write fr5 (fun r hr => by
+  obtain sub8 : Region.Sub (sR scr (oLen + (h.B - 8)) 8) (sR scr oLen h.B) := Offset.sub _ (by omega_arith) (by omega_arith)
+  obtain c5 : Ctx L scr σ t5 := c4.write fr5 (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by pomega))
     rd5 wr5 (g5 _ (by decide) (by decide) (by decide)) (g5 _ (by decide) (by decide) (by decide))
-  have dS8 : (sR scr (oLen + (h.B - 8)) 8).Disjoint (slotR L sL) := dLs.sub_left sub8
-  have sl5 : t5.mem.readW (L.fr sL) 32 = BitVec.ofNat 32 (ℓ σ) :=
+  obtain dS8 : (sR scr (oLen + (h.B - 8)) 8).Disjoint (slotR L sL) := dLs.sub_left sub8
+  obtain sl5 : t5.mem.readW (L.fr sL) 32 = BitVec.ofNat 32 (ℓ σ) :=
     slot_keep fr5 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dS8.symm)
       (by rw [m4]; exact hs)
   refine c5.wp_slot hg (d := sL) (by decide) (by decide) (by decide) fun t6 c6 u6 => wp_addi fun t7 u7 => ?_
   refine wp_shr h.lg_range fun t8 u8 _ => ?_
-  have c8 := (c6.upd u7 (by decide) (by decide)).upd u8 (by decide) (by decide)
+  obtain c8 := (c6.upd u7 (by decide) (by decide)).upd u8 (by decide) (by decide)
   refine c8.wp_st hg (d := sLb) (by decide) fun t9 c9 m9 => WP.block_nil ?_
-  have ax8 : t8.gpr .eax = BitVec.ofNat 32 ((ℓ σ + h.L) / h.B) := by
+  obtain ax8 : t8.gpr .eax = BitVec.ofNat 32 ((ℓ σ + h.L) / h.B) := by
     rw [u8.gpr, u7.gpr, u6.gpr, sl5, BitVec.ofNat_add_ofNat, ofNat_shr (by have := hℓ σ; omega_arith), h.pow_lg]
-  have m8 : t8.mem = t5.mem := by rw [u8.mem, u7.mem, u6.mem]
-  have fr9 : Frame [slotR L sLb] t5.mem t9.mem := by rw [m9.mem, m8]; exact slot_frame L _ _ _
+  obtain m8 : t8.mem = t5.mem := by rw [u8.mem, u7.mem, u6.mem]
+  obtain fr9 : Frame [slotR L sLb] t5.mem t9.mem := by rw [m9.mem, m8]; exact slot_frame L _ _ _
   refine ⟨c9, hI σ _ _ hi ?_, fun j hj => ?_, ?_, ?_⟩
   · have f1 : Frame [sR scr oLen h.B, slotR L sLb] s.mem t5.mem := by
       rw [← m4]; exact fr5.sub fun r hr => by
@@ -138,7 +138,7 @@ theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
         simp only [List.mem_singleton] at hr; subst hr
         exact dj _ (Region.contains_self _ _) hcon), m5, e8]
     simp only [VG.WriteBytes.writeBytes, Proof.MdStream.bytes64_length, lenBlk, h.len _ (hℓ σ), m4]
-    have e : sa scr (oLen + j) - sa scr (oLen + (h.B - 8)) =
+    obtain e : sa scr (oLen + j) - sa scr (oLen + (h.B - 8)) =
         BitVec.ofNat 64 (18446744073709551616 - (h.B - 8) + j) := by
       apply BitVec.eq_of_toNat_eq
       simp only [sa, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]

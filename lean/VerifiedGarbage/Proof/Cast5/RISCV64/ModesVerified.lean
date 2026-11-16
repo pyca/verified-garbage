@@ -117,10 +117,10 @@ theorem ready_frame {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Cast5
     {rs : List Region} (h : Ready s B ws k) (e : KeptBut s s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hsy : s'.syms = s.syms) (hf : Frame rs s.mem s'.mem) (hs : ∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r') :
     Ready s' B ws k := by
-  have hk : ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => by
+  obtain hk : ∀ r ∈ rs, (keyR s).Disjoint r := fun r hr => by
     obtain ⟨r', hr', hsub⟩ := hs r hr
     exact (h.args.keyOut r' hr').sub_right hsub
-  have ht : ∀ r ∈ rs, (tblR s).Disjoint r := fun r hr => by
+  obtain ht : ∀ r ∈ rs, (tblR s).Disjoint r := fun r hr => by
     obtain ⟨r', hr', hsub⟩ := hs r hr
     exact (h.args.tblOut r' hr').sub_right hsub
   refine ⟨h.args.congr e.a0 hrd ⟨[], by rw [hwr]; rfl⟩ hsy hf hk ht, by rw [keyR, e.a0]; exact h.keyScr,
@@ -183,10 +183,10 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
         dirCipher up k n (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up n) B j) (4 * (dirCore up n).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 128 ≤ 2 ^ 64 := hS.fit
-  have hW : (⟨B, 128⟩ : Region) ∈ s.wr := hS.whole (by show 8 * 16 ≤ 4064; decide)
-  have hal : B.toNat % 8 = 0 := by have := hS.al; omega_arith
+  obtain hW : (⟨B, 128⟩ : Region) ∈ s.wr := hS.whole (by show 8 * 16 ≤ 4064; decide)
+  obtain hal : B.toNat % 8 = 0 := by have := hS.al; omega_arith
   obtain ⟨hk, hkB, htB⟩ := hR
-  have hn11 : n < 2048 := by rcases hn with rfl | rfl <;> decide
+  obtain hn11 : n < 2048 := by rcases hn with rfl | rfl <;> decide
   refine WP.of_syms ?_
   show WP isa (modeCrypt up n) s _
   rw [modeCrypt_eq]
@@ -196,40 +196,40 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     exact ⟨_, hW, by rw [hB]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) ?_)
   rw [hB]
   generalize hM : Spill.saveMem s.mem B s.gpr modeSaved = M
-  have sv : Spill.Saved B s.gpr modeSaved M := by rw [← hM]; exact Spill.saveMem_saved modeSaved_fits _ _ _
-  have fM : Frame [⟨B + BitVec.ofNat 64 56, 72⟩] s.mem M := by
+  obtain sv : Spill.Saved B s.gpr modeSaved M := by rw [← hM]; exact Spill.saveMem_saved modeSaved_fits _ _ _
+  obtain fM : Frame [⟨B + BitVec.ofNat 64 56, 72⟩] s.mem M := by
     rw [← hM]; exact Spill.saveMem_frame modeSaved_lt (by decide) _ _ _
   -- The buffer's address, the mode's registers parked, the table's address and the rounds.
   refine WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide))
     (WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide)) (WP.cons exec_lla
     (WP.cons (exec_li (by unfold imm12; omega_arith)) (WP.block_nil ?_)))))))
   generalize hs₇ : State.write _ rnd _ = s₇
-  have g₇ : ∀ r, r ∉ setRegs → s₇.gpr r = s.gpr r := fun r hr => by
+  obtain g₇ : ∀ r, r ∉ setRegs → s₇.gpr r = s.gpr r := fun r hr => by
     simp only [setRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [← hs₇]; simp [State.write, hr]
-  have m₇ : s₇.mem = M := by rw [← hs₇]; rfl
-  have rd₇ : s₇.rd = s.rd := by rw [← hs₇]; rfl
-  have wr₇ : s₇.wr = s.wr := by rw [← hs₇]; rfl
-  have sy₇ : s₇.syms = s.syms := by rw [← hs₇]; rfl
-  have b₇ : s₇.gpr sb = B := by rw [g₇ _ (by decide), hB]
-  have a2₇ : s₇.gpr dat = B + BitVec.ofNat 64 48 := by
+  obtain m₇ : s₇.mem = M := by rw [← hs₇]; rfl
+  obtain rd₇ : s₇.rd = s.rd := by rw [← hs₇]; rfl
+  obtain wr₇ : s₇.wr = s.wr := by rw [← hs₇]; rfl
+  obtain sy₇ : s₇.syms = s.syms := by rw [← hs₇]; rfl
+  obtain b₇ : s₇.gpr sb = B := by rw [g₇ _ (by decide), hB]
+  obtain a2₇ : s₇.gpr dat = B + BitVec.ofNat 64 48 := by
     have hB' : s.gpr .s4 = B := hB
     rw [← hs₇]; simp [State.write, sb, hB']
-  have t₇ : s₇.gpr tbl = s.syms s1234Sym := by rw [← hs₇]; simp [State.write]
-  have n₇ : s₇.gpr rnd = BitVec.ofNat 64 n := by rw [← hs₇]; simp [State.write]
-  have pk₇ : s₇.gpr .a3 = s.gpr .s1 ∧ s₇.gpr .a4 = s.gpr .s2 ∧ s₇.gpr .s11 = s.gpr .s3 ∧
+  obtain t₇ : s₇.gpr tbl = s.syms s1234Sym := by rw [← hs₇]; simp [State.write]
+  obtain n₇ : s₇.gpr rnd = BitVec.ofNat 64 n := by rw [← hs₇]; simp [State.write]
+  obtain pk₇ : s₇.gpr .a3 = s.gpr .s1 ∧ s₇.gpr .a4 = s.gpr .s2 ∧ s₇.gpr .s11 = s.gpr .s3 ∧
       s₇.gpr .ra = s.gpr .s4 := by
     rw [← hs₇]; simp [State.write]
   clear hs₇
-  have a0₇ : s₇.gpr .a0 = s.gpr .a0 := g₇ _ (by decide)
+  obtain a0₇ : s₇.gpr .a0 = s.gpr .a0 := g₇ _ (by decide)
   -- Nothing the saves wrote is the subkeys, the table or the block.
-  have hkM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 56, 72⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
+  obtain hkM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 56, 72⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hkB.sub_right (Offset.sub_base _ (by decide))
-  have htM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 56, 72⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
+  obtain htM : ∀ r ∈ [(⟨B + BitVec.ofNat 64 56, 72⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact htB.sub_right (Offset.sub_base _ (by decide))
-  have pre : BPre s₇ dat (B + BitVec.ofNat 64 48) (s.gpr .a0) n :=
+  obtain pre : BPre s₇ dat (B + BitVec.ofNat 64 48) (s.gpr .a0) n :=
     { ptr := a2₇
       prOk := by decide
       sched := a0₇
@@ -243,8 +243,8 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       kfit := hk.kfit }
   -- The block function.
   refine WP.seq (WP.mono (crypt_ok pre up) fun v hv => ?_)
-  have gv : ∀ r, r ∉ roundRegs → v.gpr r = s₇.gpr r := fun r hr => hv.keep.gpr hr
-  have svv : Spill.Saved B s.gpr modeSaved v.mem := by
+  obtain gv : ∀ r, r ∉ roundRegs → v.gpr r = s₇.gpr r := fun r hr => hv.keep.gpr hr
+  obtain svv : Spill.Saved B s.gpr modeSaved v.mem := by
     rw [← m₇] at sv
     exact sv.frame hv.frame fun p hp r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -252,9 +252,9 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
         (by have := modeSaved_lt p hp; omega_arith) (by omega_arith)
   -- The mode's registers back, then our caller's.
   refine wp_mv fun x₁ e₁ => wp_mv fun x₂ e₂ => wp_mv fun x₃ e₃ => wp_mv fun x₄ e₄ => ?_
-  have gx : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → x₄.gpr r = v.gpr r := fun r h1 h2 h3 h4 => by
+  obtain gx : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → x₄.gpr r = v.gpr r := fun r h1 h2 h3 h4 => by
     rw [e₄.other r h4, e₃.other r h3, e₂.other r h2, e₁.other r h1]
-  have px : x₄.gpr .s1 = s.gpr .s1 ∧ x₄.gpr .s2 = s.gpr .s2 ∧ x₄.gpr .s3 = s.gpr .s3 ∧
+  obtain px : x₄.gpr .s1 = s.gpr .s1 ∧ x₄.gpr .s2 = s.gpr .s2 ∧ x₄.gpr .s3 = s.gpr .s3 ∧
       x₄.gpr .s4 = s.gpr .s4 := by
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [e₄.other _ (by decide), e₃.other _ (by decide), e₂.other _ (by decide), e₁.gpr, gv _ (by decide),
@@ -265,10 +265,10 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
         pk₇.2.2.1]
     · rw [e₄.gpr, e₃.other _ (by decide), e₂.other _ (by decide), e₁.other _ (by decide), gv _ (by decide),
         pk₇.2.2.2]
-  have bx : x₄.gpr sb = B := px.2.2.2.trans hB
-  have mx : x₄.mem = v.mem := by rw [e₄.mem, e₃.mem, e₂.mem, e₁.mem]
-  have rdx : x₄.rd = s.rd := by rw [e₄.rd, e₃.rd, e₂.rd, e₁.rd, hv.keep.2.1, rd₇]
-  have wrx : x₄.wr = s.wr := by rw [e₄.wr, e₃.wr, e₂.wr, e₁.wr, hv.keep.2.2, wr₇]
+  obtain bx : x₄.gpr sb = B := px.2.2.2.trans hB
+  obtain mx : x₄.mem = v.mem := by rw [e₄.mem, e₃.mem, e₂.mem, e₁.mem]
+  obtain rdx : x₄.rd = s.rd := by rw [e₄.rd, e₃.rd, e₂.rd, e₁.rd, hv.keep.2.1, rd₇]
+  obtain wrx : x₄.wr = s.wr := by rw [e₄.wr, e₃.wr, e₂.wr, e₁.wr, hv.keep.2.2, wr₇]
   rw [← List.append_nil (Spill.restoreCode sb modeSaved)]
   refine Spill.restore_ok (b := sb) hal bx modeSaved_ok modeSaved_restorable (fun p hp => by
     have := modeSaved_lt p hp
@@ -276,22 +276,22 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) (by rw [mx]; exact svv) fun w R => ?_
   refine WP.block_nil fun syF => ?_
   -- The memory: the saves and the block.
-  have memF : w.mem = v.mem := by rw [R.mem, mx]
-  have fF : Frame [⟨B + BitVec.ofNat 64 48, 80⟩] s.mem w.mem := by
+  obtain memF : w.mem = v.mem := by rw [R.mem, mx]
+  obtain fF : Frame [⟨B + BitVec.ofNat 64 48, 80⟩] s.mem w.mem := by
     rw [memF]
     refine (fM.sub fun r hr => ?_).trans ((m₇ ▸ hv.frame).sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-  have rdF : w.rd = s.rd := by rw [R.rd, rdx]
-  have wrF : w.wr = s.wr := by rw [R.wr, wrx]
-  have a0F : w.gpr .a0 = s.gpr .a0 := by
+  obtain rdF : w.rd = s.rd := by rw [R.rd, rdx]
+  obtain wrF : w.wr = s.wr := by rw [R.wr, wrx]
+  obtain a0F : w.gpr .a0 = s.gpr .a0 := by
     rw [R.other _ (by decide), gx _ (by decide) (by decide) (by decide) (by decide), gv _ (by decide), a0₇]
-  have hkF : ∀ r ∈ [(⟨B + BitVec.ofNat 64 48, 80⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
+  obtain hkF : ∀ r ∈ [(⟨B + BitVec.ofNat 64 48, 80⟩ : Region)], (keyR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hkB.sub_right (Offset.sub_base _ (by decide))
-  have htF : ∀ r ∈ [(⟨B + BitVec.ofNat 64 48, 80⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
+  obtain htF : ∀ r ∈ [(⟨B + BitVec.ofNat 64 48, 80⟩ : Region)], (tblR s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact htB.sub_right (Offset.sub_base _ (by decide))
   refine ⟨?_, fun r hr => ?_, ⟨hk.congr a0F rdF ⟨[], by rw [wrF]; rfl⟩ syF fF hkF htF,
@@ -314,13 +314,13 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     rw [gx r h1 h2 h3 h4, gv r hr1, g₇ r hr2]
   · -- The block.
     obtain rfl : j = 0 := by have : j < 1 := hj; omega_using [this]
-    have ea : blkAddr (dirCore up n) B 0 = B + BitVec.ofNat 64 48 := by
+    obtain ea : blkAddr (dirCore up n) B 0 = B + BitVec.ofNat 64 48 := by
       simp [blkAddr, slotA, dirCore, bufSlot]
-    have hb : Spec.Aes.bytesAt M (B + BitVec.ofNat 64 48) 8 = Spec.Aes.bytesAt s.mem (B + BitVec.ofNat 64 48) 8 :=
+    obtain hb : Spec.Aes.bytesAt M (B + BitVec.ofNat 64 48) 8 = Spec.Aes.bytesAt s.mem (B + BitVec.ofNat 64 48) 8 :=
       bytesAt_frame fM fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (.inl (by decide)) (by decide) (by omega_arith)
-    have hkk : Spec.Cast5.scheduleAt M (s.gpr .a0) = k := by rw [scheduleAt_frame fM hkM, hk.sched]
+    obtain hkk : Spec.Cast5.scheduleAt M (s.gpr .a0) = k := by rw [scheduleAt_frame fM hkM, hk.sched]
     rw [ea, show 4 * (dirCore up n).bw = 8 from rfl, memF, Proof.Cast5.bytesAt_eq, hv.blk, m₇, dirCipher_bytes, hkk,
       ← ofFn_bytesAt M (B + BitVec.ofNat 64 48), hb, ofFn_bytesAt]
 
@@ -409,7 +409,7 @@ theorem modeFn_wp {m : Nat → Prog isa} {s : State} {Q : State → Prop} (hn : 
   refine WP.seq (WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide))
     (WP.cons (exec_addi (by decide)) (WP.cons (exec_addi (by decide)) (WP.block_nil ?_))))))
   generalize hs₁ : State.write _ _ _ = s₁
-  have sh : Shifted s s₁ := by
+  obtain sh : Shifted s s₁ := by
     subst hs₁
     refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, ?_, rfl, rfl, rfl, rfl, rfl⟩
     · simp [State.write]
@@ -417,14 +417,14 @@ theorem modeFn_wp {m : Nat → Prog isa} {s : State} {Q : State → Prop} (hn : 
     · simp [State.write]
     · simp [State.write]
     · have h1 : r ≠ .a1 := by rintro rfl; simp [preserved] at hr
-      have h2 : r ≠ .a2 := by rintro rfl; simp [preserved] at hr
-      have h3 : r ≠ .a3 := by rintro rfl; simp [preserved] at hr
-      have h0 : r ≠ .t0 := by rintro rfl; simp [preserved] at hr
+      obtain h2 : r ≠ .a2 := by rintro rfl; simp [preserved] at hr
+      obtain h3 : r ≠ .a3 := by rintro rfl; simp [preserved] at hr
+      obtain h0 : r ≠ .t0 := by rintro rfl; simp [preserved] at hr
       simp [State.write, h1, h2, h3, h0]
     · simp [State.write]
-  have t0 : s₁.gpr .t0 = s.gpr .a1 + BitVec.ofInt 64 0 + BitVec.ofInt 64 (-12) := by
+  obtain t0 : s₁.gpr .t0 = s.gpr .a1 + BitVec.ofInt 64 0 + BitVec.ofInt 64 (-12) := by
     subst hs₁; simp only [State.write]; simp
-  have e1 : s.gpr .a1 = BitVec.ofNat 64 (rounds s) := by simp only [rounds, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  obtain e1 : s.gpr .a1 = BitVec.ofNat 64 (rounds s) := by simp only [rounds, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rcases hn with hn | hn
   · refine WP.ite true (by rw [eval_zero, t0, e1, hn]; decide) (fun _ => ?_) (fun h => absurd h (by decide))
     exact hn ▸ h s₁ sh
@@ -493,15 +493,15 @@ theorem seqPre_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
     SeqPre (dirCore up n) M s₁ := by
   obtain ⟨⟨-, hwr, -, -, dVD, -, fV, fD, al, sp, -, dSV, dSD, -⟩, -⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr, stripConsts_sp] at hwr dVD fV fD al sp dSV dSD
-  have eS : Proof.Modes.RISCV64.scrRegion (dirCore up n) (Proof.Modes.RISCV64.Fb s₁ (dirCore up n)) =
+  obtain eS : Proof.Modes.RISCV64.scrRegion (dirCore up n) (Proof.Modes.RISCV64.Fb s₁ (dirCore up n)) =
       ⟨s.sp - frameBytes, frameBytes⟩ := by
     simp only [Proof.Modes.RISCV64.scrRegion, Proof.Modes.RISCV64.Fb, h₁.sp]; rfl
-  have eV : Proof.Modes.RISCV64.ivR s₁ (dirCore up n) = ⟨s.gpr .a2, 8⟩ := by
+  obtain eV : Proof.Modes.RISCV64.ivR s₁ (dirCore up n) = ⟨s.gpr .a2, 8⟩ := by
     simp only [Proof.Modes.RISCV64.ivR, Proof.Modes.RISCV64.P, h₁.a1]; rfl
-  have eD : Proof.Modes.RISCV64.dataRegion (Proof.Modes.RISCV64.Dp s₁) M.step (Proof.Modes.RISCV64.N s₁) =
+  obtain eD : Proof.Modes.RISCV64.dataRegion (Proof.Modes.RISCV64.Dp s₁) M.step (Proof.Modes.RISCV64.N s₁) =
       ⟨s.gpr .a3, 8 * (s.gpr .a4).toNat⟩ := by
     simp only [Proof.Modes.RISCV64.dataRegion, Proof.Modes.RISCV64.Dp, Proof.Modes.RISCV64.N, h₁.a2, h₁.a3, hstep]
-  have hwr₁ : s₁.wr = [⟨s.gpr .a2, 8⟩, ⟨s.gpr .a3, 8 * (s.gpr .a4).toNat⟩] := by rw [h₁.wr, hwr]
+  obtain hwr₁ : s₁.wr = [⟨s.gpr .a2, 8⟩, ⟨s.gpr .a3, 8 * (s.gpr .a4).toNat⟩] := by rw [h₁.wr, hwr]
   refine ⟨by rw [h₁.sp]; exact al, by rw [h₁.sp]; exact sp, by rw [eV, hwr₁]; simp,
     fun _ => by rw [eV, hwr₁]; simp,
     by simp only [Proof.Modes.RISCV64.P, h₁.a1]; exact fV, by rw [eD, hwr₁]; simp,
@@ -514,13 +514,13 @@ theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
     KeyArgs s₁ (Proof.Modes.RISCV64.wrs0 (dirCore up n) M s₁) (keyOf s) := by
   obtain ⟨⟨hrd, hwr, -, dKD, -, fK, -, -, -, -, dSK, -, -, -⟩, hk⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr, stripConsts_sp] at hrd hwr dKD fK dSK
-  have trd : (⟨s.syms s1234Sym, 4096⟩ : Region) ∈ s.rd := s1234_len ▸ ConstsOk.rd1 hk
-  have twr : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ r := s1234_len ▸ ConstsOk.wr1 hk
-  have tst : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.sp - frameBytes, frameBytes⟩ := by
+  obtain trd : (⟨s.syms s1234Sym, 4096⟩ : Region) ∈ s.rd := s1234_len ▸ ConstsOk.rd1 hk
+  obtain twr : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ r := s1234_len ▸ ConstsOk.wr1 hk
+  obtain tst : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.sp - frameBytes, frameBytes⟩ := by
     have := (hk.2.2.1 _ List.mem_cons_self).2.2 ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (by
       simp [abi, stackBelow])
     simp only [s1234_len] at this; exact this
-  have ews : Proof.Modes.RISCV64.wrs0 (dirCore up n) M s₁ =
+  obtain ews : Proof.Modes.RISCV64.wrs0 (dirCore up n) M s₁ =
       [⟨s.gpr .a3, 8 * (s.gpr .a4).toNat⟩, ⟨s.sp - frameBytes, frameBytes⟩] := by
     simp only [Proof.Modes.RISCV64.wrs0, Proof.Modes.RISCV64.wrs, Proof.Modes.RISCV64.dataRegion,
       Proof.Modes.RISCV64.scrRegion, Proof.Modes.RISCV64.Dp, Proof.Modes.RISCV64.N, Proof.Modes.RISCV64.Fb,
@@ -651,7 +651,7 @@ theorem implies_consts (h : (modeP post).Implies (sig.contract abi pre post' tru
   post s s' hs hp := post_consts.mpr (post_stripConsts.mp (h.post (stripConsts ecbConsts s) s'
     (pre_consts.mp hs).1 (hpost s s' hp)))
   pub s₁ s₂ h₁ h₂ hp := by
-    have a := h.pub (stripConsts ecbConsts s₁) (stripConsts ecbConsts s₂) (pre_consts.mp h₁).1
+    obtain a := h.pub (stripConsts ecbConsts s₁) (stripConsts ecbConsts s₂) (pre_consts.mp h₁).1
       (pre_consts.mp h₂).1 (pub_stripConsts.mpr (pub_consts.mp hp).1)
     obtain ⟨hsp, e0, e1, e2, e3, e4⟩ := a
     exact ⟨hsp, by simp only [stripConsts_gpr] at e0 e1 e2 e3 e4; simp [e0, e1, e2, e3, e4],
@@ -675,7 +675,7 @@ local macro "mode_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =
       pub := by sig_implies_pub [$ls,*, abi, argRegs, argPub]
       sat := by sig_implies_sat [$ls,*, abi, argRegs, stackBelow] [modeSat] using modeSat }
     (fun _ _ h => h) ⟨modeSatC, ?_⟩
-  have hl : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
+  obtain hl : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
   have held := ecbSatMem_held
   rw [ecbConsts_eq]
   generalize s1234 = W at hl held ⊢

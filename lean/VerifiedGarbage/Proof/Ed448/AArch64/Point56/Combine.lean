@@ -81,15 +81,15 @@ theorem copy3_ok {s₀ s : State} {base : Addr} (h : MFrame s₀ base s) (o a : 
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs (o := slot o) (a := slot a) (by simp only [slot]; omega_arith)
     (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
     (Or.inr (by simp only [slot]; omega_arith))) fun t1 ⟨v1, o1, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
+  obtain hs1 := hs.of_keeps k1 (by decide)
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs1 (o := slot (o + 1)) (a := slot (a + 1))
     (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
     (by simp only [slot]; omega_arith) (Or.inr (by simp only [slot]; omega_arith))) fun t2 ⟨v2, o2, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  obtain hs2 := hs1.of_keeps k2 (by decide)
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs2 (o := slot (o + 2)) (a := slot (a + 2))
     (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
     (by simp only [slot]; omega_arith) (Or.inr (by simp only [slot]; omega_arith))) fun t ⟨v3, o3, k3⟩ => ?_
-  have hc : ∀ c < 3, ∀ j < 8, limbs t.mem base (slot (o + c)) j = limbs s.mem base (slot (a + c)) j := by
+  obtain hc : ∀ c < 3, ∀ j < 8, limbs t.mem base (slot (o + c)) j = limbs s.mem base (slot (a + c)) j := by
     intro c hc j hj
     rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega_arith) with rfl | rfl | rfl
     · rw [o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
@@ -99,14 +99,14 @@ theorem copy3_ok {s₀ s : State} {base : Addr} (h : MFrame s₀ base s) (o a : 
         o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
     · rw [v3 j hj, o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
         o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
-  have hk : ∀ i : Index, (i.val < o ∨ o + 3 ≤ i.val) → ∀ j < 8, limbs t.mem base (slot i.val) j =
+  obtain hk : ∀ i : Index, (i.val < o ∨ o + 3 ≤ i.val) → ∀ j < 8, limbs t.mem base (slot i.val) j =
       limbs s.mem base (slot i.val) j := fun i hi j hj => by
     have := i.isLt
     rw [o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
       o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
       o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
-  have k : Keeps VG.Proof.X448.AArch64.clob s t := (k1.trans k2).trans k3
-  have om : Outside base (slot o) 384 s.mem t.mem := by
+  obtain k : Keeps VG.Proof.X448.AArch64.clob s t := (k1.trans k2).trans k3
+  obtain om : Outside base (slot o) 384 s.mem t.mem := by
     intro x hx
     rw [o3 x (by simp only [slot] at hx ⊢; omega_arith), o2 x (by simp only [slot] at hx ⊢; omega_arith),
       o1 x (by simp only [slot] at hx ⊢; omega_arith)]
@@ -130,8 +130,8 @@ theorem addC_ok {s₀ s : State} {base : Addr} (h : MFrame s₀ base s) :
       pt (EV t.mem base) 3 4 5 = addPt (pt (EV s.mem base) 3 4 5) (pt (EV s.mem base) 6 7 8) ∧
       (∀ i : Index, i.val < 3 → EV t.mem base i = EV s.mem base i) := by
   refine WP.mono (addCall_ok h.scr h.env (zero_env h.zero).2) fun t ⟨k, b, sm, _, _, _, e, _⟩ => ?_
-  have n19 : (19 : Index) ∉ temps ++ [3, 4, 5] := by decide
-  have nt : ∀ i : Index, i.val < 3 → i ∉ temps ++ [3, 4, 5] := by decide
+  obtain n19 : (19 : Index) ∉ temps ++ [3, 4, 5] := by decide
+  obtain nt : ∀ i : Index, i.val < 3 → i ∉ temps ++ [3, 4, 5] := by decide
   refine ⟨⟨k.scr h.scr, b, fun w hw => by rw [sm 19 n19 w hw]; exact h.zero w hw,
     by rw [k.regs.1 _ (by decide)]; exact h.out, by rw [k.regs.2.1]; exact h.rd, by rw [k.regs.2.2]; exact h.wr,
     h.mem.trans k.mem⟩, k.regs, ?_, fun i hi => Same.env sm (nt i hi)⟩
@@ -173,14 +173,14 @@ theorem dbl_ok {s₀ s : State} {base : Addr} {v w : ℤ} {m : Nat} (hm : 1 ≤ 
       fun t => DInv s₀ base v w (m - 1) t ∧ (t.gpr .x1 != 0) = decide (m - 1 ≠ 0) := by
   refine WP.seq (WP.mono (copy3_ok h.frame 6 3 (by decide) (by decide) (by decide))
     fun t1 ⟨f1, p1, k1, g1⟩ => ?_)
-  have e1 : ∀ i : Index, i.val < 6 → EV t1.mem base i = EV s.mem base i := fun i hi =>
+  obtain e1 : ∀ i : Index, i.val < 6 → EV t1.mem base i = EV s.mem base i := fun i hi =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (k1 i (.inl hi)))
   refine WP.seq (WP.mono (addC_ok f1) fun t2 ⟨f2, kk2, q2, b2⟩ => ?_)
   refine WP.mono (decX1_ok (n := m - 1) t2 (by omega_arith) (by
       rw [kk2.1 _ (by decide), g1.1 _ (by decide), h.counter]; congr 1; omega_arith))
     fun u ⟨uc, uk, um, uz⟩ => ⟨⟨f2.keeps uk (by decide) (by decide) um, uc, ?_, ?_⟩, uz⟩
   · rw [um, q2]
-    have p3 : pt (EV t1.mem base) 3 4 5 = pt (EV s.mem base) 3 4 5 := by
+    obtain p3 : pt (EV t1.mem base) 3 4 5 = pt (EV s.mem base) 3 4 5 := by
       simp only [pt]; rw [e1 3 (by decide), e1 4 (by decide), e1 5 (by decide)]
     have p6 : pt (EV t1.mem base) 6 7 8 = pt (EV s.mem base) 3 4 5 := p1
     rw [p3, p6]
@@ -215,23 +215,23 @@ theorem combineMid_ok {s₀ s : State} {base : Addr} {v w : ℤ} (f0 : MFrame s�
   have p1' : pt (EV t1.mem base) 6 7 8 = pt (EV s.mem base) 0 1 2 := p1
   have p2' : pt (EV t2.mem base) 0 1 2 = pt (EV t1.mem base) 3 4 5 := p2
   have p3' : pt (EV t3.mem base) 3 4 5 = pt (EV t2.mem base) 6 7 8 := p3
-  have pA : pt (EV t3.mem base) 3 4 5 = pt (EV s.mem base) 0 1 2 := by
-    have q : pt (EV t2.mem base) 6 7 8 = pt (EV t1.mem base) 6 7 8 := by
+  obtain pA : pt (EV t3.mem base) 3 4 5 = pt (EV s.mem base) 0 1 2 := by
+    obtain q : pt (EV t2.mem base) 6 7 8 = pt (EV t1.mem base) 6 7 8 := by
       simp only [pt]
       rw [EV_of_keep (k2 6 (.inr (by decide))), EV_of_keep (k2 7 (.inr (by decide))),
         EV_of_keep (k2 8 (.inr (by decide)))]
     rw [p3', q, p1']
-  have pB : pt (EV t3.mem base) 0 1 2 = pt (EV s.mem base) 3 4 5 := by
-    have q : pt (EV t3.mem base) 0 1 2 = pt (EV t2.mem base) 0 1 2 := by
+  obtain pB : pt (EV t3.mem base) 0 1 2 = pt (EV s.mem base) 3 4 5 := by
+    obtain q : pt (EV t3.mem base) 0 1 2 = pt (EV t2.mem base) 0 1 2 := by
       simp only [pt]
       rw [EV_of_keep (k3 0 (.inl (by decide))), EV_of_keep (k3 1 (.inl (by decide))),
         EV_of_keep (k3 2 (.inl (by decide)))]
-    have q' : pt (EV t1.mem base) 3 4 5 = pt (EV s.mem base) 3 4 5 := by
+    obtain q' : pt (EV t1.mem base) 3 4 5 = pt (EV s.mem base) 3 4 5 := by
       simp only [pt]
       rw [EV_of_keep (k1 3 (.inl (by decide))), EV_of_keep (k1 4 (.inl (by decide))),
         EV_of_keep (k1 5 (.inl (by decide)))]
     rw [q, p2', q']
-  have d4 : DInv s₀ base v w 4 t4 :=
+  obtain d4 : DInv s₀ base v w 4 t4 :=
     ⟨f3.keeps kk4 (by decide) (by decide) m4, c4, by rw [m4, pA]; simpa using ha, by rw [m4, pB]; exact hb⟩
   refine WP.seq (WP.mono (WP.loop (M := isa) (Q := fun t => DInv s₀ base v w 0 t)
     (fun m (t : State) => 1 ≤ m ∧ m ≤ 4 ∧ DInv s₀ base v w m t) ?_ 4 t4 ⟨by decide, le_refl _, d4⟩) ?_)
@@ -249,12 +249,12 @@ theorem combineMid_ok {s₀ s : State} {base : Addr} {v w : ℤ} (f0 : MFrame s�
     refine WP.mono (copy3_ok f6 0 3 (by decide) (by decide) (by decide)) fun t7 ⟨f7, p7, _, _⟩ => ⟨f7, ?_⟩
     have p5' : pt (EV t5.mem base) 6 7 8 = pt (EV t.mem base) 0 1 2 := p5
     have p7' : pt (EV t7.mem base) 0 1 2 = pt (EV t6.mem base) 3 4 5 := p7
-    have a5 : pt (EV t5.mem base) 3 4 5 = pt (EV t.mem base) 3 4 5 := by
+    obtain a5 : pt (EV t5.mem base) 3 4 5 = pt (EV t.mem base) 3 4 5 := by
       simp only [pt]
       rw [EV_of_keep (k5 3 (.inl (by decide))), EV_of_keep (k5 4 (.inl (by decide))),
         EV_of_keep (k5 5 (.inl (by decide)))]
     rw [p7', q6, a5, p5']
-    have r := addPt_rep ht.a ht.b
+    obtain r := addPt_rep ht.a ht.b
     rw [← add_smul, show (2 : ℤ) ^ (4 - 0) * v + w = 16 * v + w by norm_num] at r
     exact r
 
@@ -266,19 +266,19 @@ theorem combineCall_frame {s₀ s : State} {base : Addr} {v w : ℤ} (h : VG.Pro
   unfold combineCall
   rw [WP.seq_iff]
   refine WP.mono (insOf_ok [(.x30, .v8, 0)] s (by decide) (by decide)) fun t₁ ⟨g₁, m₁, r₁, w₁, _, l₁, _⟩ => ?_
-  have f₁ : MFrame s₀ base t₁ :=
+  obtain f₁ : MFrame s₀ base t₁ :=
     ⟨h.scr.of_keeps (rs := []) ⟨fun r _ => by rw [g₁], r₁, w₁⟩ (by decide), m₁ ▸ h.env, m₁ ▸ h.zero,
       by rw [g₁]; exact h.out, by rw [r₁]; exact h.rd, by rw [w₁]; exact h.wr, m₁ ▸ h.mem⟩
   rw [WP.seq_iff]
   refine WP.mono (WP.preservedV (combineMid_ok f₁ (m₁ ▸ ha) (m₁ ▸ hb)) (by lit_decide))
     fun t₂ ⟨⟨f₂, r₂⟩, v₂⟩ => ?_
   refine WP.mono (umovOf_ok [(.x30, .v8, 0)] t₂ (by decide) (by decide)) fun u ⟨um, ur, uw, _, ul, uo⟩ => ?_
-  have l30 : u.gpr .x30 = s₀.gpr .x30 := by
+  obtain l30 : u.gpr .x30 = s₀.gpr .x30 := by
     rw [ul _ List.mem_cons_self]
     show (t₂.v .v8).extractLsb' (64 * 0) 64 = _
     rw [v₂ .v8 (by decide)]
     exact (l₁ _ List.mem_cons_self).trans h.lr
-  have ku : Keeps [.x30] t₂ u := ⟨fun r hr => uo r (by simpa using hr), ur, uw⟩
+  obtain ku : Keeps [.x30] t₂ u := ⟨fun r hr => uo r (by simpa using hr), ur, uw⟩
   refine ⟨⟨f₂.scr.of_keeps ku (by decide), um ▸ f₂.env, um ▸ f₂.zero, l30,
     by rw [ku.1 _ (by decide)]; exact f₂.out, by rw [ur]; exact f₂.rd, by rw [uw]; exact f₂.wr, um ▸ f₂.mem⟩, ?_⟩
   rw [um]

@@ -45,14 +45,14 @@ theorem memZeros_ok {s : State} (h : Inv s₀ s) (hx : s.gpr .r6 = memP s₀) (h
       ∀ i < n, md s₀ t.mem (8 * i) = 0
   | 0, _ => WP.block_nil ⟨h, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn => by
-    have b1 := blocks_pos hp
+    obtain b1 := blocks_pos hp
     have hm := hp.mem_fits
-    have b1k : 1024 ≤ blocksN s₀ * 1024 := Nat.le_mul_of_pos_left _ b1
+    obtain b1k : 1024 ≤ blocksN s₀ * 1024 := Nat.le_mul_of_pos_left _ b1
     rw [List.range_succ, List.map_append, List.map_singleton]
     refine WP.block_append ((memZeros_ok h hx ha n (by omega_arith)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
-    have hc : (memR s₀).Contains (memP s₀ + BitVec.ofNat 64 (8 * n)) 8 :=
+    obtain hc : (memR s₀).Contains (memP s₀ + BitVec.ofNat 64 (8 * n)) 8 :=
       Offset.contains_base _ (by omega_arith) (by omega_arith)
-    have hc' : (⟨matrixCell (memP s₀) 0, 1024⟩ : Region).Contains (memP s₀ + BitVec.ofNat 64 (8 * n)) 8 := by
+    obtain hc' : (⟨matrixCell (memP s₀) 0, 1024⟩ : Region).Contains (memP s₀ + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [show matrixCell (memP s₀) 0 = memP s₀ by simp [matrixCell]]
       exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine wp_std (a := memP s₀ + BitVec.ofNat 64 (8 * n)) ⟨by omega_arith, by omega_arith⟩ (by rw [gt, hx])
@@ -92,41 +92,41 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
       Impl.Argon2.PPC64LE.Derive.advanceBy laneOff
         (Impl.Argon2.PPC64LE.Derive.ldw .r4 Impl.Argon2.PPC64LE.Derive.lanesArg)))
       s fun t => RI s₀ M (l + 1) t ∧ VG.PPC64LE.eval (.nonzero .d .r4) t = some (!decide (l + 1 = lanesN s₀)) := by
-  have L8 := laneLen_ge hp
+  obtain L8 := laneLen_ge hp
   have hlt := hp.lanes_lt
   have hb : blocksN s₀ = (prm s₀).blocks := hp.blocks
-  have b1 := blocks_pos hp
+  obtain b1 := blocks_pos hp
   obtain ⟨cl, hc'⟩ := cell_fits hp hl (col := (prm s₀).laneLen - 1) (by omega_arith)
-  have last : Proof.Argon2.lastIndex (prm s₀) l = l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) := by
+  obtain last : Proof.Argon2.lastIndex (prm s₀) l = l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) := by
     unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega_arith
-  have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega_arith
+  obtain ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega_arith
   unfold Impl.Argon2.PPC64LE.Derive.reduceLane Impl.Argon2.PPC64LE.Derive.writeBlock
     Impl.Argon2.PPC64LE.HPrime.mov
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_ldloc h.inv (d := laneOff) (by decide) fun s₁ u₁ => ?_
-  have i₁ := h.inv.upd u₁
+  obtain i₁ := h.inv.upd u₁
   refine wp_ldloc i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => wp_subi (by decide) fun s₃ u₃ => ?_
-  have i₃ := (i₁.upd u₂).upd u₃
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain i₃ := (i₁.upd u₂).upd u₃
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega_arith)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.lane])
     (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, MdStream.PPC64LE.sub_ofNat (by omega_arith)])
     fun s₄ a₄ k₄ => ?_
-  have i₄ := i₃.only k₄
+  obtain i₄ := i₃.only k₄
   refine wp_addi (by decide) fun s₅ u₅ => ?_
-  have i₅ := i₄.upd u₅
+  obtain i₅ := i₄.upd u₅
   refine wp_lda hp i₅ (i := 13) (by decide) fun s₆ u₆ => ?_
-  have i₆ := i₅.upd u₆
-  have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, k₄.mem, m₃]
+  obtain i₆ := i₅.upd u₆
+  obtain m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, k₄.mem, m₃]
   generalize hc : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) = c at cl hc' a₄ ne0 last
-  have sx : s₆.gpr .r4 = matrixCell (memP s₀) c := by
+  obtain sx : s₆.gpr .r4 = matrixCell (memP s₀) c := by
     rw [u₆.other _ (by decide), u₅.gpr, a₄]; simp [matrixCell]
-  have dx : s₆.gpr .r6 = memP s₀ + BitVec.ofNat 64 (0 * 1024) := by
+  obtain dx : s₆.gpr .r6 = memP s₀ + BitVec.ofNat 64 (0 * 1024) := by
     rw [u₆.gpr]; simp
   refine WP.block_append ((writeWords_ok hp i₆ (cur := 0) b1 true sx
     ⟨memR s₀, by simp, c * 1024, rfl, hc'⟩ (cell_other hp cl b1 ne0) dx 128 (Nat.le_refl _)).mono
     fun t₇ ⟨i₇, _, f₇, w₇⟩ => ?_)
-  have lt₇ : ∀ d, 32 ≤ d → d + 8 ≤ 336 → lw s₀ t₇ d = lw s₀ s d := fun d h₁ h₂ => by
+  obtain lt₇ : ∀ d, 32 ≤ d → d + 8 ≤ 336 → lw s₀ t₇ d = lw s₀ s d := fun d h₁ h₂ => by
     rw [← lw_mem m₆ d]
     exact lw_keep hp f₇ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -135,9 +135,9 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   refine (advanceTail_ok i₇ (d := laneOff) (n := l) (by decide) (by decide)
     (by rw [lt₇ _ (by decide) (by decide)]; exact h.lane) (by omega_arith) (B := lanesN s₀) (by omega_arith)
     fun v iv _ av => argTail_ok hp iv (i := 7) (by decide) av).mono fun t ⟨it, mt, ot, ct⟩ => ⟨?_, ct⟩
-  have kt := loc_keep hp (m := t₇.mem) (d := laneOff) (by decide) (by decide) (BitVec.ofNat 64 (l + 1))
+  obtain kt := loc_keep hp (m := t₇.mem) (d := laneOff) (by decide) (by decide) (BitVec.ofNat 64 (l + 1))
   rw [← mt] at kt
-  have new : blockAt t₇.mem (matrixCell (memP s₀) 0) =
+  obtain new : blockAt t₇.mem (matrixCell (memP s₀) 0) =
       xorBlock (blockAt s.mem (matrixCell (memP s₀) c)) (blockAt s.mem (matrixCell (memP s₀) 0)) := by
     apply Vector.ext
     intro j hj
@@ -158,24 +158,24 @@ theorem reduceStart_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm 
     (hm : Represents s.mem (memP s₀) (prm s₀).blocks M) :
     WP isa (.block (Impl.Argon2.PPC64LE.Derive.reduceClear ++ Impl.Argon2.PPC64LE.Derive.setLocal laneOff 0)) s
       (RI s₀ M 0) := by
-  have b1 := blocks_pos hp
+  obtain b1 := blocks_pos hp
   have hb : blocksN s₀ = (prm s₀).blocks := hp.blocks
   unfold Impl.Argon2.PPC64LE.Derive.reduceClear Impl.Argon2.PPC64LE.Derive.setLocal
   simp only [List.cons_append, List.nil_append]
   refine wp_lda hp h (i := 13) (by decide) fun s₁ u₁ => wp_li (by decide) fun s₂ u₂ => ?_
-  have i₂ := (h.upd u₁).upd u₂
+  obtain i₂ := (h.upd u₁).upd u₂
   refine WP.block_append ((memZeros_ok hp i₂ (by rw [u₂.other _ (by decide), u₁.gpr]) u₂.gpr 128
     (Nat.le_refl _)).mono fun s₃ ⟨i₃, _, f₃, z₃⟩ => ?_)
-  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have lt₃ : ∀ d, 32 ≤ d → d + 8 ≤ 336 → lw s₀ s₃ d = lw s₀ s d := fun d h₁ h₂ => by
+  obtain m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain lt₃ : ∀ d, 32 ≤ d → d + 8 ≤ 336 → lw s₀ s₃ d = lw s₀ s d := fun d h₁ h₂ => by
     rw [← lw_mem m₂ d]
     exact lw_keep hp f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨memR s₀, by simp, Proof.Argon2.matrixCell_sub _ _ _ b1⟩) h₁ h₂
   refine wp_li (by decide) fun s₄ u₄ => ?_
-  have i₄ := i₃.upd u₄
+  obtain i₄ := i₃.upd u₄
   refine wp_stloc i₄ (d := laneOff) (by decide) fun s₅ i₅ v₅ o₅ _ m₅ => WP.block_nil ?_
-  have k₅ := loc_keep hp (m := s₄.mem) (d := laneOff) (by decide) (by decide) (s₄.gpr .r3)
+  obtain k₅ := loc_keep hp (m := s₄.mem) (d := laneOff) (by decide) (by decide) (s₄.gpr .r3)
   rw [← m₅] at k₅
   refine ⟨i₅, Prm.of_lw pr fun d h₁ h₂ => ?_, by rw [v₅, u₄.gpr], ?_, fun k hk k0 => ?_⟩
   · rw [o₅ d (by omega_arith) (.inl (by simp only [laneOff]; omega_arith)), lw_mem u₄.mem, lt₃ d (by omega_arith) (by omega_arith)]
@@ -211,31 +211,31 @@ theorem finalOutput_ok {s : State} (h : Inv s₀ s) :
     WP isa Impl.Argon2.PPC64LE.Derive.finalOutput s fun t => Inv s₀ t ∧
       bytesAt t.mem (outP s₀) (outL s₀) =
         Spec.Argon2.hPrime (outL s₀) (Spec.Argon2.serialize (blockAt s.mem (matrixCell (memP s₀) 0))) := by
-  have b1 := blocks_pos hp
+  obtain b1 := blocks_pos hp
   have tg := hp.tag_ge
   have tl := hp.tag_lt
-  have b1k : 1024 ≤ blocksN s₀ * 1024 := Nat.le_mul_of_pos_left _ b1
+  obtain b1k : 1024 ≤ blocksN s₀ * 1024 := Nat.le_mul_of_pos_left _ b1
   unfold Impl.Argon2.PPC64LE.Derive.finalOutput Impl.Argon2.PPC64LE.HPrime.mov
   refine WP.seq (wp_lda hp h (i := 13) (by decide) fun s₁ u₁ => ?_)
-  have i₁ := h.upd u₁
+  obtain i₁ := h.upd u₁
   refine wp_li (by decide) fun s₂ u₂ => ?_
-  have i₂ := i₁.upd u₂
+  obtain i₂ := i₁.upd u₂
   refine wp_lda hp i₂ (i := 16) (by decide) fun s₃ u₃ => ?_
-  have i₃ := i₂.upd u₃
+  obtain i₃ := i₂.upd u₃
   refine wp_lda hp i₃ (i := 17) (by decide) fun s₄ u₄ => ?_
-  have i₄ := i₃.upd u₄
+  obtain i₄ := i₃.upd u₄
   refine wp_addi (by decide) fun s₅ u₅ => WP.block_nil ?_
-  have i₅ := i₄.upd u₅
-  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have si : s₅.gpr .r3 = memP s₀ := by
+  obtain i₅ := i₄.upd u₅
+  obtain m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain si : s₅.gpr .r3 = memP s₀ := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
-  have ax : (s₅.gpr .r4).toNat = 1024 := by
+  obtain ax : (s₅.gpr .r4).toNat = 1024 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]; rfl
-  have di : s₅.gpr .r5 = outP s₀ := by
+  obtain di : s₅.gpr .r5 = outP s₀ := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]
-  have cx : (s₅.gpr .r6).toNat = outL s₀ := by
+  obtain cx : (s₅.gpr .r6).toNat = outL s₀ := by
     rw [u₅.other _ (by decide), u₄.gpr]
-  have r7 : s₅.gpr .r7 = scrP s₀ := by
+  obtain r7 : s₅.gpr .r7 = scrP s₀ := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
       h.r31]; simp
   refine hcall_ok hp i₅ r7

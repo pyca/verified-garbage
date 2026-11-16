@@ -31,8 +31,8 @@ theorem precomputeProducts_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  (h : ProductState p b 1 s) (positive : 0<b) :
  WP isa (.loop (Precompute.product M.mm) (.nonzero .x .x3)) s fun t =>
  ProductState p b (2^b) t ∧ BuildFrame p s.mem t.mem ∧ Keep mmRegs s t := by
- have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by have := h.tooth;omega_using [this] : b≤4)
- have atLeast : (2:Nat)^1≤2^b := Nat.pow_le_pow_right (by decide) (by omega_using [positive] : 1≤b)
+ obtain bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by have := h.tooth;omega_using [this] : b≤4)
+ obtain atLeast : (2:Nat)^1≤2^b := Nat.pow_le_pow_right (by decide) (by omega_using [positive] : 1≤b)
  let I := fun i t => ProductState p b (i+1) t ∧ BuildFrame p s.mem t.mem ∧ Keep mmRegs s t
  have step (i : Nat) (hi : i<2^b-1) (t : State) (inv : I i t) :
   WP isa (Precompute.product M.mm) t fun u => I (i+1) u ∧ ((u.gpr .x3).toNat≠0 ↔ i+1≠2^b-1) := by
@@ -45,7 +45,7 @@ theorem precomputeProducts_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  refine WP.mono (count_loop (by omega_using [atLeast] : 0<2^b-1) I step
   ⟨h,Frame.refl _ _,Keep.refl _ _⟩) ?_
  rintro t ⟨state,frame,rest⟩
- have final : 2^b-1+1=2^b := by omega_using [atLeast]
+ obtain final : 2^b-1+1=2^b := by omega_using [atLeast]
  rw [final] at state
  exact ⟨state,frame,rest⟩
 
@@ -105,7 +105,7 @@ theorem basisStore_ok {s : State} {p : Parameters} {d : Nat}
  refine WP.mono (WP.keep [.x3] (Q:=fun u =>u.gpr .x3=BitVec.ofNat 64 d ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
  · brun [good.x0,hdr_enc (show sD<32 by decide),header_read good p.room (show sD<32 by decide),index]
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
-   have goodU : Good u p.B p.Z p.w p.mi :=
+   obtain goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
    refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width (by decide : 5<8)
     (memU ▸ context) indexU (entry_fit p inside)
@@ -131,11 +131,11 @@ open VG.Impl.Ffdh.AArch64.Cached
 open VG.Proof.Bignum
 
 theorem basisSquareRanges_le (w : Nat) : ∀ r∈basisSquareRanges w,r.1+r.2≤slot w 8 := by
- have s2 := slot_le (w:=w) (by decide : 2<8)
- have s3 := slot_le (w:=w) (by decide : 3<8)
- have s5 := slot_le (w:=w) (by decide : 5<8)
- have s6 := slot_le (w:=w) (by decide : 6<8)
- have counter := hdr_lt_slot w 8 (show sI<32 by decide)
+ obtain s2 := slot_le (w:=w) (by decide : 2<8)
+ obtain s3 := slot_le (w:=w) (by decide : 3<8)
+ obtain s5 := slot_le (w:=w) (by decide : 5<8)
+ obtain s6 := slot_le (w:=w) (by decide : 6<8)
+ obtain counter := hdr_lt_slot w 8 (show sI<32 by decide)
  simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
  rintro _ ((rfl|rfl|rfl|rfl)|rfl) <;> omega_arith
 
@@ -144,10 +144,10 @@ theorem squareFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
  word m' B (8*i)=word m B (8*i) := by
  apply frame.word_eq ?_ (by omega_using [inside])
  intro r hr
- have s2 := hdr_lt_slot w 2 inside
- have s3 := hdr_lt_slot w 3 inside
- have s5 := hdr_lt_slot w 5 inside
- have s6 := hdr_lt_slot w 6 inside
+ obtain s2 := hdr_lt_slot w 2 inside
+ obtain s3 := hdr_lt_slot w 3 inside
+ obtain s5 := hdr_lt_slot w 5 inside
+ obtain s6 := hdr_lt_slot w 6 inside
  simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
  rcases hr with ((rfl|rfl|rfl|rfl)|rfl) <;> omega_arith
 
@@ -171,15 +171,15 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  WP isa (Precompute.basis M.mm) s fun t =>
  BasisState p (b+1) t ∧ t.gpr .x3=BitVec.ofNat 64 (2^(b+1))-32#64 ∧
  BuildFrame p s.mem t.mem ∧ Keep mmRegs s t := by
- have toothBound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega_using [more] : b≤4)
- have toothPositive : 0<2^b := Nat.two_pow_pos b
- have rowsPositive := VG.Proof.Rsa.FixedBaseComb.rows_pos h.bits.1
- have rowsBound := (VG.Proof.Rsa.FixedBaseComb.rows_small h.bits.2).1
+ obtain toothBound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega_using [more] : b≤4)
+ obtain toothPositive : 0<2^b := Nat.two_pow_pos b
+ obtain rowsPositive := VG.Proof.Rsa.FixedBaseComb.rows_pos h.bits.1
+ obtain rowsBound := (VG.Proof.Rsa.FixedBaseComb.rows_small h.bits.2).1
  unfold Precompute.basis
  rw [WP.seq_iff]
  refine WP.mono (precomputeSquares_ok M h.basis h.rows rowsPositive (by omega_using [rowsBound])) ?_
  rintro a ⟨basisA,_,frameA,restA⟩
- have exponent : 2^((b-1)*Spec.Rsa.FixedBaseComb.rows p.N)*2^(Spec.Rsa.FixedBaseComb.rows p.N)=
+ obtain exponent : 2^((b-1)*Spec.Rsa.FixedBaseComb.rows p.N)*2^(Spec.Rsa.FixedBaseComb.rows p.N)=
    2^(b*Spec.Rsa.FixedBaseComb.rows p.N) := by
   rw [←Nat.pow_add]
   congr 1
@@ -188,30 +188,30 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
     (b-1+1)*Spec.Rsa.FixedBaseComb.rows p.N := by ring
    _=b*Spec.Rsa.FixedBaseComb.rows p.N := by rw [Nat.sub_add_cancel h.tooth.1]
  rw [exponent] at basisA
- have spaceA := h.space.after restA
- have ctxA := (squareFrame_header frameA (by decide : sCtx<32) (by decide)).trans h.context
- have indexA := (squareFrame_header frameA (by decide : sD<32) (by decide)).trans h.index
- have rowsA := (squareFrame_header frameA (by decide : sRows<32) (by decide)).trans h.rows
- have inA := InScr.of_frm frameA (fun r hr => Nat.le_trans (basisSquareRanges_le p.w r hr) p.room)
- have tableA := h.table.after_inscr h.space (by omega) inA
+ obtain spaceA := h.space.after restA
+ obtain ctxA := (squareFrame_header frameA (by decide : sCtx<32) (by decide)).trans h.context
+ obtain indexA := (squareFrame_header frameA (by decide : sD<32) (by decide)).trans h.index
+ obtain rowsA := (squareFrame_header frameA (by decide : sRows<32) (by decide)).trans h.rows
+ obtain inA := InScr.of_frm frameA (fun r hr => Nat.le_trans (basisSquareRanges_le p.w r hr) p.room)
+ obtain tableA := h.table.after_inscr h.space (by omega) inA
  rw [regroup,WP.seq_iff]
  refine WP.mono (basisStore_ok basisA.good spaceA ctxA indexA (by omega)) ?_
  rintro c ⟨goodC,valueC,frameC,sameC,restC⟩
- have basisC := basisA.after_workspace goodC sameC
- have spaceC := spaceA.after restC
- have ctxC := (workspace_header basisA.good sameC (by decide : sCtx<32)).trans ctxA
- have indexC := (workspace_header basisA.good sameC (by decide : sD<32)).trans indexA
- have rowsC := (workspace_header basisA.good sameC (by decide : sRows<32)).trans rowsA
- have entryC : wv c.mem p.ctx (entryOffset p.w (2^b)) p.w=entryValue p (2^b) := by
+ obtain basisC := basisA.after_workspace goodC sameC
+ obtain spaceC := spaceA.after restC
+ obtain ctxC := (workspace_header basisA.good sameC (by decide : sCtx<32)).trans ctxA
+ obtain indexC := (workspace_header basisA.good sameC (by decide : sD<32)).trans indexA
+ obtain rowsC := (workspace_header basisA.good sameC (by decide : sRows<32)).trans rowsA
+ obtain entryC : wv c.mem p.ctx (entryOffset p.w (2^b)) p.w=entryValue p (2^b) := by
   unfold entryValue
   rw [valueC,basisA.value,VG.Proof.Rsa.FixedBaseComb.exponent_tooth p.N b more]
- have tableC := tableA.extend (by omega_using [toothBound] : 2^b<32) frameC entryC
+ obtain tableC := tableA.extend (by omega_using [toothBound] : 2^b<32) frameC entryC
  rw [WP.seq_iff]
  refine WP.mono (setControlOne_ok goodC p.room (by decide : 16≤sJ) (by decide : sJ<32)) ?_
  rintro d ⟨goodD,oneD,frameD,restD⟩
- have inD : InScr p.B p.Z c.mem d.mem := InScr.of_outside frameD (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega_arith)
- have tableD := tableC.after_inscr spaceC (by omega) inD
- have productD : ProductState p b 1 d :=
+ obtain inD : InScr p.B p.Z c.mem d.mem := InScr.of_outside frameD (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega_arith)
+ obtain tableD := tableC.after_inscr spaceC (by omega) inD
+ obtain productD : ProductState p b 1 d :=
   ⟨more,⟨by omega_using [],by omega⟩,basisC.after_header goodD frameD (by decide),spaceC.after restD,
    (header_other frameD (by decide) (by decide) (by decide)).trans ctxC,
    (header_other frameD (by decide) (by decide) (by decide)).trans indexC,oneD,tableD,
@@ -221,18 +221,18 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  rintro e ⟨stateE,frameE,restE⟩
  refine WP.mono (basisNext_ok stateE.basis.good p.room stateE.basisIndex) ?_
  rintro t ⟨goodT,indexT,testT,frameT,restT⟩
- have inT : InScr p.B p.Z e.mem t.mem := InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega_arith)
- have tableT := stateE.table.after_inscr stateE.space stateE.limit inT
- have nextPower : 2*2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
- have nextCount : 2^b+2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
- have stateT : BasisState p (b+1) t := by
+ obtain inT : InScr p.B p.Z e.mem t.mem := InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega_arith)
+ obtain tableT := stateE.table.after_inscr stateE.space stateE.limit inT
+ obtain nextPower : 2*2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
+ obtain nextCount : 2^b+2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
+ obtain stateT : BasisState p (b+1) t := by
   refine ⟨⟨by omega_using [],by omega_using [more]⟩,h.bits,?_,stateE.space.after restT,
    (header_other frameT (by decide) (by decide) (by decide)).trans stateE.context,?_,
    (header_other frameT (by decide) (by decide) (by decide)).trans stateE.rows,?_⟩
   · simpa only [Nat.add_sub_cancel] using stateE.basis.after_header goodT frameT (by decide : sD<32)
   · simpa only [nextPower] using indexT
   · simpa only [nextCount] using tableT
- have frames : BuildFrame p s.mem t.mem :=
+ obtain frames : BuildFrame p s.mem t.mem :=
   ((((BuildFrame.of_inscr inA).trans (BuildFrame.of_entry (by omega_using [toothBound] : 2^b<32) frameC)).trans
     (BuildFrame.of_inscr inD)).trans frameE).trans (BuildFrame.of_inscr inT)
  refine ⟨stateT,?_,frames,((((restA.trans restC).trans restD).trans restE).trans restT).mono (by decide)⟩

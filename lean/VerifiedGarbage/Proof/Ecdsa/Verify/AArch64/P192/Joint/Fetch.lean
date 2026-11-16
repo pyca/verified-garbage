@@ -21,7 +21,7 @@ theorem fetchHead_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
     (h1 : 1 ≤ d) (h15 : d ≤ 15) (h2 : s.gpr .x2 = BitVec.ofNat 64 d) :
     WP isa (.block fetchHead) s fun t =>
       t.gpr .x16 = off base (tablePt d).x ∧ Keeps [.x2,.x16,.x17] s t := by
-  have hsub : BitVec.ofNat 64 d - 1 = BitVec.ofNat 64 (d-1) := by
+  obtain hsub : BitVec.ofNat 64 d - 1 = BitVec.ofNat 64 (d-1) := by
     apply BitVec.eq_of_toNat_eq
     change (2^64-1+d%(2^64))%(2^64)=(d-1)%(2^64)
     omega
@@ -48,59 +48,59 @@ theorem fetch_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
     WP isa (.block fetch) s fun t =>
       Changes base entryWork s t ∧ PointAt base t entry P ∧ t.gpr .x19 = s.gpr .x19 := by
   have hn := hs.nowrap
-  have ex_bound : entry.x+32 ≤ 8192 := by decide
-  have ey_bound : entry.y+32 ≤ 8192 := by decide
-  have htab := table_coord_bounds h1 h15
-  have ha : (tablePt d).x+96 ≤ 8192 := by
-    have hb := (htab (tablePt d).z (by simp)).2.1
+  obtain ex_bound : entry.x+32 ≤ 8192 := by decide
+  obtain ey_bound : entry.y+32 ≤ 8192 := by decide
+  obtain htab := table_coord_bounds h1 h15
+  obtain ha : (tablePt d).x+96 ≤ 8192 := by
+    obtain hb := (htab (tablePt d).z (by simp)).2.1
     change _+32 ≤ 6720 at hb
     dsimp only [tablePt] at hb ⊢; omega_using [hb]
-  have hab : (tablePt d).x ≤ 8192 := by omega_using [ha]
-  have hsep : ∀ e ∈ coordinates entry,e+32 ≤ (tablePt d).x := by
-    have hh : ∀ e ∈ coordinates entry,e+32 ≤ tableAt := by decide
+  obtain hab : (tablePt d).x ≤ 8192 := by omega_using [ha]
+  obtain hsep : ∀ e ∈ coordinates entry,e+32 ≤ (tablePt d).x := by
+    obtain hh : ∀ e ∈ coordinates entry,e+32 ≤ tableAt := by decide
     intro e he; exact Nat.le_trans (hh e he) (htab _ (by simp)).1
-  have sepX := hsep entry.x (by decide)
-  have sepY := hsep entry.y (by decide)
-  have sepZ := hsep entry.z (by decide)
+  obtain sepX := hsep entry.x (by decide)
+  obtain sepY := hsep entry.y (by decide)
+  obtain sepZ := hsep entry.z (by decide)
   rw [fetch]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (fetchHead_ok hs h1 h15 h2) fun s₁ ⟨p₁,k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 4 hs₁ p₁ (a:=(tablePt d).x) (src:=0) (dst:=entry.x)
     (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by simpa using hsep _ (by simp))))
     fun s₂ ⟨x,k₂,u₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have p₂ := (k₂.gpr .x16 (by decide)).trans p₁
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain p₂ := (k₂.gpr .x16 (by decide)).trans p₁
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 4 hs₂ p₂ (a:=(tablePt d).x) (src:=32) (dst:=entry.y)
     (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepY])))
     fun s₃ ⟨y,k₃,u₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have p₃ := (k₃.gpr .x16 (by decide)).trans p₂
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain p₃ := (k₃.gpr .x16 (by decide)).trans p₂
   refine WP.mono (copyFrom_ok 4 hs₃ p₃ (a:=(tablePt d).x) (src:=64) (dst:=entry.z)
     (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepZ])))
     fun t ⟨z,k₄,u₄⟩ => ?_
-  have e_x : num base t entry.x = num base s (tablePt d).x := by
+  obtain e_x : num base t entry.x = num base s (tablePt d).x := by
     change wordsVal t.mem base entry.x 4 = wordsVal s.mem base (tablePt d).x 4
     rw [u₄.wordsVal (by decide) (by omega_using [ex_bound]),
       u₃.wordsVal (by decide) (by omega_using [ex_bound]),x,k₁.mem]
     rfl
-  have e_y : num base t entry.y = num base s (tablePt d).y := by
+  obtain e_y : num base t entry.y = num base s (tablePt d).y := by
     change wordsVal t.mem base entry.y 4 = wordsVal s.mem base (tablePt d).y 4
     rw [u₄.wordsVal (by decide) (by omega_using [ey_bound]),y]
     rw [u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
-  have e_z : num base t entry.z = num base s (tablePt d).z := by
+  obtain e_z : num base t entry.z = num base s (tablePt d).z := by
     change wordsVal t.mem base entry.z 4 = wordsVal s.mem base (tablePt d).z 4
     rw [z,u₃.wordsVal (Or.inr (by omega_using [sepY])) (by omega_using [ha]),
       u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
-  have kt : KeepRegs [.x2,.x4,.x16,.x17] s t :=
+  obtain kt : KeepRegs [.x2,.x4,.x16,.x17] s t :=
     ((((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))).trans
       (k₃.mono (by decide))).trans (k₄.mono (by decide))
-  have u : Unch base entryWork s.mem t.mem := by
+  obtain u : Unch base entryWork s.mem t.mem := by
     rw [←k₁.mem]
     exact (u₂.unch.trans (u₃.unch.trans u₄.unch)).mono (by
       intro w hw
@@ -114,8 +114,8 @@ theorem fetch_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
     · rw [e_y]; exact hp.1 _ (by simp)
     · rw [e_z]; exact hp.1 _ (by simp)
   · have ex := congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) e_x
-    have ey := congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) e_y
-    have ez := congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) e_z
+    obtain ey := congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) e_y
+    obtain ez := congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) e_z
     change val base t entry.x = val base s (tablePt d).x at ex
     change val base t entry.y = val base s (tablePt d).y at ey
     change val base t entry.z = val base s (tablePt d).z at ez

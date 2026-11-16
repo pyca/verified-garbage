@@ -132,14 +132,14 @@ theorem argMem_slot (s u : State) {j : Nat} (hj : j < 6) :
 theorem argMem_tape {P : Nat} {s u : State} (hp : RPre P s) (hx2 : u.gpr .x2 = s.gpr .x2) :
     (argMem s u).readW (s.gpr .x2) 64 = stackArg s 2 - u.gpr .x12 ∧
       (argMem s u).readW (s.gpr .x2 + BitVec.ofNat 64 8) 64 = 0 := by
-  have hQ := Q_toNat hp
+  obtain hQ := Q_toNat hp
   have hw := hp.wT
-  have hd : (tapeR s).Disjoint ⟨Q s, 48⟩ := fun x h₁ h₂ =>
+  obtain hd : (tapeR s).Disjoint ⟨Q s, 48⟩ := fun x h₁ h₂ =>
     hp.dKt x (frame_sub (P := P) s (d := 0) (n := 48) (by decide) x (by rw [off, add_zero']; exact h₂)) h₁
-  have hsep : ∀ {a : Nat}, a + 8 ≤ 16 → ∀ {d : Nat}, d + 8 ≤ 48 →
+  obtain hsep : ∀ {a : Nat}, a + 8 ≤ 16 → ∀ {d : Nat}, d + 8 ≤ 48 →
       Mem.Sep (s.gpr .x2 + BitVec.ofNat 64 a) 8 (Q s + BitVec.ofNat 64 d) 8 := fun ha _ hd' =>
     hd.sep (Offset.contains_base _ ha (by omega_using [ha])) (Offset.contains_base _ hd' (by omega_using [hd']))
-  have e0 : s.gpr .x2 = s.gpr .x2 + BitVec.ofNat 64 0 := (add_zero' _).symm
+  obtain e0 : s.gpr .x2 = s.gpr .x2 + BitVec.ofNat 64 0 := (add_zero' _).symm
   constructor
   · rw [e0]
     simp only [argMem, hx2]
@@ -156,36 +156,36 @@ theorem argMem_tape {P : Nat} {s u : State} (hp : RPre P s) (hx2 : u.gpr .x2 = s
 
 theorem args_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List Byte} (h : Ready s u i pad) :
     WP isa (.block callArgs) u (Args s · i pad) := by
-  have hQ := Q_toNat hp
+  obtain hQ := Q_toNat hp
   have hsp := h.sp
-  have hin : ∀ {j : Nat}, j < 7 → InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 (1104 + 8 * j)) 8 :=
+  obtain hin : ∀ {j : Nat}, j < 7 → InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 (1104 + 8 * j)) 8 :=
     fun hj => by rw [h.rd, h.wr, ← entered_rd]; exact args_in hp hj
-  have a0 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1104) 8 := hin (j := 0) (by decide)
-  have a2 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1120) 8 := hin (j := 2) (by decide)
-  have a3 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1128) 8 := hin (j := 3) (by decide)
-  have a4 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1136) 8 := hin (j := 4) (by decide)
-  have a5 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1144) 8 := hin (j := 5) (by decide)
-  have a6 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1152) 8 := hin (j := 6) (by decide)
-  have m0 : u.mem.read (Q s + BitVec.ofNat 64 1104) 8 = stackArg s 0 := arg_u hp h.toInFrame (j := 0) (by decide)
-  have m2 : u.mem.read (Q s + BitVec.ofNat 64 1120) 8 = stackArg s 2 := arg_u hp h.toInFrame (j := 2) (by decide)
-  have m3 : u.mem.read (Q s + BitVec.ofNat 64 1128) 8 = stackArg s 3 := arg_u hp h.toInFrame (j := 3) (by decide)
-  have m4 : u.mem.read (Q s + BitVec.ofNat 64 1136) 8 = stackArg s 4 := arg_u hp h.toInFrame (j := 4) (by decide)
-  have m5 : u.mem.read (Q s + BitVec.ofNat 64 1144) 8 = stackArg s 5 := arg_u hp h.toInFrame (j := 5) (by decide)
-  have m6 : u.mem.read (Q s + BitVec.ofNat 64 1152) 8 = stackArg s 6 := arg_u hp h.toInFrame (j := 6) (by decide)
-  have hx2 : u.gpr .x2 = s.gpr .x2 := h.keep _ (by decide)
-  have htw : (tapeR s) ∈ u.wr := by rw [h.wr, entered_wr, hp.hwr]; simp
-  have t0 : InRegions u.wr (u.gpr .x2 + 0#64) 8 :=
+  obtain a0 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1104) 8 := hin (j := 0) (by decide)
+  obtain a2 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1120) 8 := hin (j := 2) (by decide)
+  obtain a3 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1128) 8 := hin (j := 3) (by decide)
+  obtain a4 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1136) 8 := hin (j := 4) (by decide)
+  obtain a5 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1144) 8 := hin (j := 5) (by decide)
+  obtain a6 : InRegions (u.rd ++ u.wr) (Q s + BitVec.ofNat 64 1152) 8 := hin (j := 6) (by decide)
+  obtain m0 : u.mem.read (Q s + BitVec.ofNat 64 1104) 8 = stackArg s 0 := arg_u hp h.toInFrame (j := 0) (by decide)
+  obtain m2 : u.mem.read (Q s + BitVec.ofNat 64 1120) 8 = stackArg s 2 := arg_u hp h.toInFrame (j := 2) (by decide)
+  obtain m3 : u.mem.read (Q s + BitVec.ofNat 64 1128) 8 = stackArg s 3 := arg_u hp h.toInFrame (j := 3) (by decide)
+  obtain m4 : u.mem.read (Q s + BitVec.ofNat 64 1136) 8 = stackArg s 4 := arg_u hp h.toInFrame (j := 4) (by decide)
+  obtain m5 : u.mem.read (Q s + BitVec.ofNat 64 1144) 8 = stackArg s 5 := arg_u hp h.toInFrame (j := 5) (by decide)
+  obtain m6 : u.mem.read (Q s + BitVec.ofNat 64 1152) 8 = stackArg s 6 := arg_u hp h.toInFrame (j := 6) (by decide)
+  obtain hx2 : u.gpr .x2 = s.gpr .x2 := h.keep _ (by decide)
+  obtain htw : (tapeR s) ∈ u.wr := by rw [h.wr, entered_wr, hp.hwr]; simp
+  obtain t0 : InRegions u.wr (u.gpr .x2 + 0#64) 8 :=
     ⟨tapeR s, htw, by rw [hx2]; exact Offset.contains_base _ (by decide) (by decide)⟩
-  have t8 : InRegions u.wr (u.gpr .x2 + 8#64) 8 :=
+  obtain t8 : InRegions u.wr (u.gpr .x2 + 8#64) 8 :=
     ⟨tapeR s, htw, by rw [hx2]; exact Offset.contains_base _ (by decide) (by decide)⟩
-  have hfw : ∀ {d : Nat}, d + 8 ≤ frameBytes → InRegions u.wr (Q s + BitVec.ofNat 64 d) 8 :=
+  obtain hfw : ∀ {d : Nat}, d + 8 ≤ frameBytes → InRegions u.wr (Q s + BitVec.ofNat 64 d) 8 :=
     fun hd => by rw [h.wr]; exact frame_in hd
-  have s0 : InRegions u.wr (Q s + 0#64) 8 := hfw (d := 0) (by decide)
-  have s8 : InRegions u.wr (Q s + 8#64) 8 := hfw (d := 8) (by decide)
-  have s16 : InRegions u.wr (Q s + 16#64) 8 := hfw (d := 16) (by decide)
-  have s24 : InRegions u.wr (Q s + 24#64) 8 := hfw (d := 24) (by decide)
-  have s32 : InRegions u.wr (Q s + 32#64) 8 := hfw (d := 32) (by decide)
-  have s40 : InRegions u.wr (Q s + 40#64) 8 := hfw (d := 40) (by decide)
+  obtain s0 : InRegions u.wr (Q s + 0#64) 8 := hfw (d := 0) (by decide)
+  obtain s8 : InRegions u.wr (Q s + 8#64) 8 := hfw (d := 8) (by decide)
+  obtain s16 : InRegions u.wr (Q s + 16#64) 8 := hfw (d := 16) (by decide)
+  obtain s24 : InRegions u.wr (Q s + 24#64) 8 := hfw (d := 24) (by decide)
+  obtain s32 : InRegions u.wr (Q s + 32#64) 8 := hfw (d := 32) (by decide)
+  obtain s40 : InRegions u.wr (Q s + 40#64) 8 := hfw (d := 40) (by decide)
   apply WP.of_runBlock
   simp only [callArgs, Size.bytes, t0, t8, s0, s8, s16, s24, s32, s40, arg, frameBytes, oBuf, runBlock_cons, runStep_some, runBlock_nil, reduceExec, addr,
     State.load, State.store, State.read, Size.bits, BitVec.setWidth_eq, Option.map_some, Option.bind_some,
@@ -193,14 +193,14 @@ theorem args_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List By
     RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq,
     ite_false, a0, a2, a3, a4, a5, a6, m0, m2, m3, m4, m5, m6, Option.some.injEq, exists_eq_left']
   have hx12 := h.x12
-  have hl := (stackArg s 2).isLt
+  obtain hl := (stackArg s 2).isLt
   have hu := h.used
-  have hfa := argMem_frame hp hx2
+  obtain hfa := argMem_frame hp hx2
   have hQ' := hQ
   have hP := hp.ps
-  have dT : (tapeR s).Disjoint ⟨Q s, 1104⟩ := fun x h₁ h₂ =>
+  obtain dT : (tapeR s).Disjoint ⟨Q s, 1104⟩ := fun x h₁ h₂ =>
     hp.dKt x (frame_sub (P := P) s (d := 0) (n := 1104) (by decide) x (by rw [off, add_zero']; exact h₂)) h₁
-  have apart : ∀ {d n : Nat}, 48 ≤ d → d + n ≤ 1104 → ∀ r ∈ [tapeR s, (⟨Q s, 48⟩ : Region)],
+  obtain apart : ∀ {d n : Nat}, 48 ≤ d → d + n ≤ 1104 → ∀ r ∈ [tapeR s, (⟨Q s, 48⟩ : Region)],
       Region.Disjoint ⟨off (Q s) d, n⟩ r := fun h1 h2 r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

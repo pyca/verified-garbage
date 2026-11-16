@@ -29,37 +29,37 @@ theorem decTo_ok {s : State} {B : Addr} {Z n out a : Nat}
       Ws t B Z n 32 ∧ Keep B n [aT1, aT2, out] [sT, kFlag] s.mem t.mem ∧
       num t.mem B n out = num s.mem B n a - 1 ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have hFlag : kFlag + 4 ≤ hdr := by decide
-  have hT : sT + 4 ≤ hdr := by decide
-  have fa := h.fit64 ha
+  obtain hFlag : kFlag + 4 ≤ hdr := by decide
+  obtain hT : sT + 4 ≤ hdr := by decide
+  obtain fa := h.fit64 ha
   unfold decTo seqs
   refine WP.seq (WP.mono (eq_ok h (by decide) ha (by decide)
     (by unfold aT1; omega_using [aPersistent]) (by decide) hFlag) fun u ⟨hu, Ou, flag, Ku⟩ => ?_)
-  have A : num u.mem B n a = num s.mem B n a :=
+  obtain A : num u.mem B n a = num s.mem B n a :=
     Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega_using [aPersistent])
       (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       fa
-  have Zero : num u.mem B n aZero = 0 := by
+  obtain Zero : num u.mem B n aZero = 0 := by
     rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       (h.fit64 (by decide)), zero]
-  have One : num u.mem B n aOne = 1 := by
+  obtain One : num u.mem B n aOne = 1 := by
     rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       (h.fit64 (by decide)), one]
   rw [zero] at flag
-  have bit : slot u.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega_using []
+  obtain bit : slot u.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega_using []
   refine WP.seq (WP.mono (sel_ok hu (by decide) (by decide) (by decide) hFlag bit (by decide))
     fun v ⟨hv, Ov, selected, Kv⟩ => ?_)
-  have Av : num v.mem B n a = num s.mem B n a := by
+  obtain Av : num v.mem B n a = num s.mem B n a := by
     rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega_using [aPersistent]) (by simp) fa, A]
-  have amount : num v.mem B n aT2 = if num s.mem B n a = 0 then 0 else 1 := by
+  obtain amount : num v.mem B n aT2 = if num s.mem B n a = 0 then 0 else 1 := by
     rw [selected, flag, One, Zero]
     by_cases p : num s.mem B n a = 0 <;> simp only [p, ite_true, ite_false, Nat.one_ne_zero]
   refine WP.mono (sub_ok hv ho ha (by decide))
     fun t ⟨ht, Ot, value, borrow, Kt⟩ => ?_
   rw [Av, amount] at value
-  have fits : (if num s.mem B n a = 0 then 0 else 1) ≤ num s.mem B n a := by
+  obtain fits : (if num s.mem B n a = 0 then 0 else 1) ≤ num s.mem B n a := by
     split <;> omega_arith
-  have noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n out) n) borrow).mpr fits
+  obtain noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n out) n) borrow).mpr fits
   rw [noBorrow, Nat.mul_zero, Nat.add_zero] at value
   refine ⟨ht, (Ou.join Ov (js := [aT1, aT2, out]) (ds := [sT, kFlag])).join Ot
     (js := [aT1, aT2, out]) (ds := [sT, kFlag]), ?_, ?_⟩
@@ -96,39 +96,39 @@ theorem order_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
       num t.mem B n aPa = max (num s.mem B n aPa) (num s.mem B n aQa) ∧
       num t.mem B n aQa = min (num s.mem B n aPa) (num s.mem B n aQa) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have hf : kFlag + 4 ≤ hdr := by decide
-  have fp := h.fit64 (j := aPa) (by decide)
-  have fq := h.fit64 (j := aQa) (by decide)
-  have ft := h.fit64 (j := aT2) (by decide)
+  obtain hf : kFlag + 4 ≤ hdr := by decide
+  obtain fp := h.fit64 (j := aPa) (by decide)
+  obtain fq := h.fit64 (j := aQa) (by decide)
+  obtain ft := h.fit64 (j := aT2) (by decide)
   unfold order seqs
   refine WP.seq (WP.mono (sub_ok h (by decide) (by decide) (by decide))
     fun u ⟨hu, Ou, subtract, bit, Ku⟩ => ?_)
-  have borrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) bit
-  have pu : num u.mem B n aPa = num s.mem B n aPa := Ou.num (by decide) (by simp) fp
-  have qu : num u.mem B n aQa = num s.mem B n aQa := Ou.num (by decide) (by simp) fq
+  obtain borrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) bit
+  obtain pu : num u.mem B n aPa = num s.mem B n aPa := Ou.num (by decide) (by simp) fp
+  obtain qu : num u.mem B n aQa = num s.mem B n aQa := Ou.num (by decide) (by simp) fq
   refine WP.seq (WP.mono (store_slot hu hf .ebx) fun v ⟨hv, Ov, flag, Kv⟩ => ?_)
-  have pv : num v.mem B n aPa = num s.mem B n aPa := by
+  obtain pv : num v.mem B n aPa = num s.mem B n aPa := by
     rw [Ov.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fp, pu]
-  have qv : num v.mem B n aQa = num s.mem B n aQa := by
+  obtain qv : num v.mem B n aQa = num s.mem B n aQa := by
     rw [Ov.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fq, qu]
   refine WP.seq (WP.mono (copy_ok hv (by decide) (by decide) (by decide)) fun w ⟨hw, Ow, copied, Kw, _⟩ => ?_)
-  have pw : num w.mem B n aPa = num s.mem B n aPa := by rw [Ow.num (by decide) (by simp) fp, pv]
-  have qw : num w.mem B n aQa = num s.mem B n aQa := by rw [Ow.num (by decide) (by simp) fq, qv]
-  have tw : num w.mem B n aT2 = num s.mem B n aPa := copied.trans pv
-  have fw : slot w.mem B kFlag = (u.gpr .ebx).toNat := by rw [Ow.slot hf (by simp), flag]
-  have bw : slot w.mem B kFlag ≤ 1 := by rw [fw]; exact bit
+  obtain pw : num w.mem B n aPa = num s.mem B n aPa := by rw [Ow.num (by decide) (by simp) fp, pv]
+  obtain qw : num w.mem B n aQa = num s.mem B n aQa := by rw [Ow.num (by decide) (by simp) fq, qv]
+  obtain tw : num w.mem B n aT2 = num s.mem B n aPa := copied.trans pv
+  obtain fw : slot w.mem B kFlag = (u.gpr .ebx).toNat := by rw [Ow.slot hf (by simp), flag]
+  obtain bw : slot w.mem B kFlag ≤ 1 := by rw [fw]; exact bit
   refine WP.seq (WP.mono (sel_ok hw (by decide) (by decide) (by decide) hf bw (by decide))
     fun x ⟨hx, Ox, selectedP, Kx⟩ => ?_)
-  have qx : num x.mem B n aQa = num s.mem B n aQa := by rw [Ox.num (by decide) (by simp) fq, qw]
-  have tx : num x.mem B n aT2 = num s.mem B n aPa := by rw [Ox.num (by decide) (by simp) ft, tw]
-  have fx : slot x.mem B kFlag = (u.gpr .ebx).toNat := by rw [Ox.slot hf (by simp), fw]
-  have bx : slot x.mem B kFlag ≤ 1 := by rw [fx]; exact bit
+  obtain qx : num x.mem B n aQa = num s.mem B n aQa := by rw [Ox.num (by decide) (by simp) fq, qw]
+  obtain tx : num x.mem B n aT2 = num s.mem B n aPa := by rw [Ox.num (by decide) (by simp) ft, tw]
+  obtain fx : slot x.mem B kFlag = (u.gpr .ebx).toNat := by rw [Ox.slot hf (by simp), fw]
+  obtain bx : slot x.mem B kFlag ≤ 1 := by rw [fx]; exact bit
   refine WP.mono (sel_ok hx (by decide) (by decide) (by decide) hf bx (by decide))
     fun t ⟨ht, Ot, selectedQ, Kt⟩ => ?_
-  have finalP : num t.mem B n aPa =
+  obtain finalP : num t.mem B n aPa =
       if (u.gpr .ebx).toNat = 0 then num s.mem B n aPa else num s.mem B n aQa := by
     rw [Ot.num (by decide) (by simp) fp, selectedP, fw, pw, qw]
-  have finalQ : num t.mem B n aQa =
+  obtain finalQ : num t.mem B n aQa =
       if (u.gpr .ebx).toNat = 0 then num s.mem B n aQa else num s.mem B n aPa := by
     rw [selectedQ, fx, qx, tx]
   refine ⟨ht, (((Ou.join Ov (js := [aT1, aT2, aPa, aQa]) (ds := [kFlag])).join Ow
@@ -141,14 +141,14 @@ theorem order_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
     by_cases p : (u.gpr .ebx).toNat = 0
     · rw [ite_eq_left p, Nat.max_eq_left (borrow.mp p)]
     · have lt : num s.mem B n aPa < num s.mem B n aQa := by
-        have neg : ¬num s.mem B n aQa ≤ num s.mem B n aPa := fun le => p (borrow.mpr le)
+        obtain neg : ¬num s.mem B n aQa ≤ num s.mem B n aPa := fun le => p (borrow.mpr le)
         omega
       simp only [p, ite_false, Nat.max_eq_right (Nat.le_of_lt lt)]
   · rw [finalQ]
     by_cases p : (u.gpr .ebx).toNat = 0
     · rw [ite_eq_left p, Nat.min_eq_right (borrow.mp p)]
     · have lt : num s.mem B n aPa < num s.mem B n aQa := by
-        have neg : ¬num s.mem B n aQa ≤ num s.mem B n aPa := fun le => p (borrow.mpr le)
+        obtain neg : ¬num s.mem B n aQa ≤ num s.mem B n aPa := fun le => p (borrow.mpr le)
         omega
       simp only [p, ite_false, Nat.min_eq_left (Nat.le_of_lt lt)]
 
@@ -181,49 +181,49 @@ theorem primes_ok {s : State} {B : Addr} {Z n k : Nat}
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   let P := max (num s.mem B n aPa) (num s.mem B n aQa)
   let Q := min (num s.mem B n aPa) (num s.mem B n aQa)
-  have pBound : P < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
-  have qBound : Q < 2 ^ (32 * k) := Nat.lt_of_le_of_lt (Nat.min_le_left ..) boundP
+  obtain pBound : P < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
+  obtain qBound : Q < 2 ^ (32 * k) := Nat.lt_of_le_of_lt (Nat.min_le_left ..) boundP
   unfold primes seqs
   refine WP.seq (WP.mono (order_ok h) fun u ⟨hu, Ou, Pu, Qu, Ku⟩ => ?_)
-  have Zu : num u.mem B n aZero = 0 :=
+  obtain Zu : num u.mem B n aZero = 0 :=
     (Ou.num (by decide) (by decide) (h.fit64 (by decide))).trans zero
-  have oneU : num u.mem B n aOne = 1 :=
+  obtain oneU : num u.mem B n aOne = 1 :=
     (Ou.num (by decide) (by decide) (h.fit64 (by decide))).trans one
   refine WP.seq (WP.mono (decTo_ok hu (by decide) (by decide) (by decide) (by decide) (by decide) Zu oneU)
     fun v ⟨hv, Ov, Pm, Kv⟩ => ?_)
   rw [Pu] at Pm
-  have Pv : num v.mem B n aPa = P :=
+  obtain Pv : num v.mem B n aPa = P :=
     (Ov.num (by decide) (by decide) (h.fit64 (by decide))).trans Pu
-  have Qv : num v.mem B n aQa = Q :=
+  obtain Qv : num v.mem B n aQa = Q :=
     (Ov.num (by decide) (by decide) (h.fit64 (by decide))).trans Qu
-  have Zv : num v.mem B n aZero = 0 :=
+  obtain Zv : num v.mem B n aZero = 0 :=
     (Ov.num (by decide) (by decide) (h.fit64 (by decide))).trans Zu
-  have oneV : num v.mem B n aOne = 1 :=
+  obtain oneV : num v.mem B n aOne = 1 :=
     (Ov.num (by decide) (by decide) (h.fit64 (by decide))).trans oneU
   refine WP.seq (WP.mono (decTo_ok hv (by decide) (by decide) (by decide) (by decide) (by decide) Zv oneV)
     fun w ⟨hw, Ow, Qm, Kw⟩ => ?_)
   rw [Qv] at Qm
-  have Pw : num w.mem B n aPa = P :=
+  obtain Pw : num w.mem B n aPa = P :=
     (Ow.num (by decide) (by decide) (h.fit64 (by decide))).trans Pv
-  have Qw : num w.mem B n aQa = Q :=
+  obtain Qw : num w.mem B n aQa = Q :=
     (Ow.num (by decide) (by decide) (h.fit64 (by decide))).trans Qv
-  have Pmw : num w.mem B n aPm = P - 1 :=
+  obtain Pmw : num w.mem B n aPm = P - 1 :=
     (Ow.num (by decide) (by decide) (h.fit64 (by decide))).trans Pm
   refine WP.mono (primeProduct_ok hw width positive even (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [Pmw]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) pBound)
     (by rw [Qm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) qBound))
     fun t ⟨ht, Ot, product, Kt⟩ => ?_
-  have Pt : num t.mem B n aPa = P :=
+  obtain Pt : num t.mem B n aPa = P :=
     (Ot.num (by decide) (by decide) (h.fit64 (by decide))).trans Pw
-  have Qt : num t.mem B n aQa = Q :=
+  obtain Qt : num t.mem B n aQa = Q :=
     (Ot.num (by decide) (by decide) (h.fit64 (by decide))).trans Qw
-  have Pmt : num t.mem B n aPm = num w.mem B n aPm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
-  have Qmt : num t.mem B n aQm = num w.mem B n aQm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
+  obtain Pmt : num t.mem B n aPm = num w.mem B n aPm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
+  obtain Qmt : num t.mem B n aQm = num w.mem B n aQm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
   refine ⟨ht, ?_, Pt, Qt, Pmt.trans Pmw, Qmt.trans Qm, ?_, (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans ((Kw.mono (by decide)).trans (Kt.mono (by decide))))⟩
   · have first : Keep B n primesArrays primesScalars s.mem u.mem := Ou.mono (by decide) (by decide)
-    have second : Keep B n primesArrays primesScalars u.mem v.mem := Ov.mono (by decide) (by decide)
-    have third : Keep B n primesArrays primesScalars v.mem w.mem := Ow.mono (by decide) (by decide)
-    have last : Keep B n primesArrays primesScalars w.mem t.mem := Ot.mono (by decide) (by decide)
+    obtain second : Keep B n primesArrays primesScalars u.mem v.mem := Ov.mono (by decide) (by decide)
+    obtain third : Keep B n primesArrays primesScalars v.mem w.mem := Ow.mono (by decide) (by decide)
+    obtain last : Keep B n primesArrays primesScalars w.mem t.mem := Ot.mono (by decide) (by decide)
     exact ((first.trans second).trans third).trans last
   · rw [Pmt, Qmt]
     exact product

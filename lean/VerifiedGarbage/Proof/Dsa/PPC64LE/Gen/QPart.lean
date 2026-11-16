@@ -65,7 +65,7 @@ theorem GI.seeds_apart (h : GI G STK σ V LS s) : ∀ r ∈ [G.rScr, rBelow σ S
 theorem GI.seedBytes (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.seedsLen) :
     Spec.Rsa.bytesAt s.mem (G.seeds + BitVec.ofNat 64 k) G.qLen = seedAt G k := by
   have fit := h.seedsFit
-  have hw : Spec.Rsa.bytesAt s.mem G.seeds G.seedsLen = G.seedsB := by
+  obtain hw : Spec.Rsa.bytesAt s.mem G.seeds G.seedsLen = G.seedsB := by
     rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.seeds_apart (by dsimp only [GP.seedsLen, GP.seeds] at fit ⊢; omega_using [fit]), ← h.hG]; rfl
   obtain ⟨d, hd⟩ : ∃ d, G.seedsLen = k + G.qLen + d := ⟨G.seedsLen - k - G.qLen, by omega_using [hk]⟩
   show _ = (G.seedsB.drop k).take G.qLen
@@ -79,8 +79,8 @@ theorem GI.seedSrc (h : GI G STK σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.see
       (G.seeds + BitVec.ofNat 64 k).toNat + G.qLen ≤ 2 ^ 64 ∧
       Region.Disjoint ⟨G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rScr := by
   have fit := h.seedsFit
-  have sub : Region.Sub ⟨G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rSeeds := Offset.sub_base _ hk
-  have sC := h.pre.wC; rw [h.hG] at sC
+  obtain sub : Region.Sub ⟨G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rSeeds := Offset.sub_base _ hk
+  obtain sC := h.pre.wC; rw [h.hG] at sC
   refine ⟨⟨G.rSeeds, ?_, Offset.contains_base _ hk (by omega_using [hk, hq0, fit])⟩, ?_, sC.sub_left sub⟩
   · rw [h.rd, h.pre.rd, h.hG]; simp
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk, hq0, fit]),
@@ -205,28 +205,28 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
     VP (St G c X) g.qPart
       (St G (testCfg c (qClaims HO.md G k) G.witLen
         (Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k)) (G.witB.drop u))) X) := by
-  have hq0 : 0 < G.qLen := by omega_arith
-  have hq56 : G.qLen < 56 := by omega_arith
-  have hqk : G.qLen ≤ 32 := by omega_arith
-  have pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md hq56 HO.hL
-  have hsl : (seedAt G k).length = G.qLen := by
+  obtain hq0 : 0 < G.qLen := by omega_arith
+  obtain hq56 : G.qLen < 56 := by omega_arith
+  obtain hqk : G.qLen ≤ 32 := by omega_arith
+  obtain pl : (padTail HO.md G.qLen).length = 64 - G.qLen := padTail_length HO.md hq56 HO.hL
+  obtain hsl : (seedAt G k).length = G.qLen := by
     simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   -- The hash and q.
-  have hHl : (HO.H (seedAt G k)).length = G.qLen := by
+  obtain hHl : (HO.H (seedAt G k)).length = G.qLen := by
     rw [HO.hash _ (by omega_arith), HO.md.digest_length, HO.hN, hk4]
-  have hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega_arith
-  have qb : shapedOctets (HO.H (seedAt G k)) 7 = qBytes G k := by rw [hH]
-  have qbl : (qBytes G k).length = G.qLen := by
+  obtain hne : HO.H (seedAt G k) ≠ [] := fun e => by rw [e] at hHl; simp at hHl; omega_arith
+  obtain qb : shapedOctets (HO.H (seedAt G k)) 7 = qBytes G k := by rw [hH]
+  obtain qbl : (qBytes G k).length = G.qLen := by
     rw [← qb, shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
       (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega_arith),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHl]
-  have hqc : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
+  obtain hqc : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
     VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [← hH, hHl])
   rw [← hqc]
-  have hwB : sQ + 32 ≤ wB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-  have hkB : sQ + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
-  have hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
-  have hWW : 1024 ≤ 8 * wWords G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hwB : sQ + 32 ≤ wB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hkB : sQ + 32 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
+  obtain hkw : kB G.pLen ≤ wB G.pLen := by simp only [wB]; omega_using []
+  obtain hWW : 1024 ≤ 8 * wWords G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have nM : sMsg = 512 := rfl
   have nS : sState = 576 := rfl
   have nQ : sQ = 608 := rfl
@@ -257,9 +257,9 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
     refine hash_vp HO (c := fun _ => c1) (fun σ s h => h.1) (msg := fun _ => sd) (dst := sQ)
       (fun σ s ⟨h, _⟩ => ⟨by omega_using [hlq, hsl], ?_⟩) (by decide) hwB fun σ s t ⟨h, x⟩ K sp f e => ⟨?_, x⟩
     · have b1 := h.sb (sMsg, sd) (by simp [c1])
-      have b2 := h.sb (sMsg + G.qLen, pad) (by simp [c1])
+      obtain b2 := h.sb (sMsg + G.qLen, pad) (by simp [c1])
       rw [show (64 : Nat) = sd.length + pad.length by omega_using [hlq, pl, hsl], VG.Proof.Dsa.Generation.bytesAt_append, b1]
-      have a : VG.Proof.Bignum.off (G.sa sMsg) sd.length = G.sa (sMsg + G.qLen) := by
+      obtain a : VG.Proof.Bignum.off (G.sa sMsg) sd.length = G.sa (sMsg + G.qLen) := by
         rw [VG.Proof.Bignum.off, GP.sa_add, hsl]
       rw [a, b2, ← hpd]
       simp only [blk, padTail, hsl, List.append_assoc]
@@ -290,8 +290,8 @@ theorem qPart_vp {g : Geo} (HO : HashOk g.G) {L : Impl.Dsa.ProbablePrime.Layout}
       subst hp; simp only [Apart, pl]; omega_using [hlq, nM, nQ]
     · exact .inr ⟨by rw [qbl, ← qb]; exact e, by simp only [ClOk, qbl]; omega_using [hlq, hk4, hcand15, hk, hq0, hq56, hqk, hwB, hkB, hkw, nQ, nE, big]⟩
   · -- The test.
-    have hqs := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
-    have hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
+    obtain hqs := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
+    obtain hbl := VG.Proof.Dsa.Generation.qCandidate_bitLength (n := 8 * G.qLen) (by omega_arith) (seedAt G k)
     rw [← hqc] at hqs hbl
     have := test_vp (X := X) (c := c3) (cb := qBytes G k) (src := sQ) (cl' := qClaims HO.md G k)
       (name := g.qName) ok hu hU hUv hwl hsize hL hcand hcand15 (by simp [c3]) (by rw [qbl]; omega_using [hlq, hkB])

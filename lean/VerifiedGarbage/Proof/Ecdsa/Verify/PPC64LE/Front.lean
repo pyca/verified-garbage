@@ -132,12 +132,12 @@ theorem prefix_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre
   refine WP.seq (wp_append (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
     wp_step exec_mov (WP.block_nil ?_)))
   replace S₁ : St₀ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) s₁ := S₁
-  have kw : Kp [.r12] s₁ (s₁.write .r12 (s₁.gpr .r5)) := Kp.write _ _ (by decide)
-  have S₁' : St₀ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) (s₁.write .r12 (s₁.gpr .r5)) :=
+  obtain kw : Kp [.r12] s₁ (s₁.write .r12 (s₁.gpr .r5)) := Kp.write _ _ (by decide)
+  obtain S₁' : St₀ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) (s₁.write .r12 (s₁.gpr .r5)) :=
     ⟨S₁.toKeep.step h7 (kw.rk (rs' := [.r12])) (W := []) (hU := Unch.refl _ _ _)
       (hW := fun _ h => absurd h List.not_mem_nil) (hWs := fun _ h => absurd h List.not_mem_nil),
       S₁.k, S₁.d, S₁.e, S₁.rx, S₁.ry, S₁.rz, S₁.expp, S₁.expn, S₁.flag⟩
-  have r12₁ : (s₁.write .r12 (s₁.gpr .r5)).gpr .r12 = s₀.gpr .r5 := by
+  obtain r12₁ : (s₁.write .r12 (s₁.gpr .r5)).gpr .r12 = s₀.gpr .r5 := by
     simp only [write_gpr, ite_true]; exact kp₁.gpr _ (by decide)
   exact tables_ok hc S₁' fun s₂ S₂ kb => WP.block_nil ⟨S₂, by rw [kb.gpr _ (by decide), r12₁]⟩
 
@@ -151,19 +151,19 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
   have hl8 := hc.len8
   have hlhi := hc.len_hi
   have hsz : size = 8192 := rfl
-  have hPT := sl_le c h7 (i := PT) (by decide)
+  obtain hPT := sl_le c h7 (i := PT) (by decide)
   refine WP.seq (WP.mono (prefix_ok hc hp) fun s₂ ⟨S₂, r12₂⟩ => ?_)
   generalize hb : s₀.gpr .r6 = base at S₂ h
   have hn := S₂.ws.nowrap
-  have hsg : Region.Disjoint ⟨s₀.gpr .r5, 2 * c.C.len⟩ ⟨base, size⟩ := hb ▸ hp.sig_sc
-  have hpk : Region.Disjoint ⟨s₀.gpr .r3, 1 + 2 * c.C.len⟩ ⟨base, size⟩ := hb ▸ hp.pk_sc
-  have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rk.rd, S₂.rk.wr]
-  have W₂ : Outside base 0 size s₀.mem s₂.mem :=
+  obtain hsg : Region.Disjoint ⟨s₀.gpr .r5, 2 * c.C.len⟩ ⟨base, size⟩ := hb ▸ hp.sig_sc
+  obtain hpk : Region.Disjoint ⟨s₀.gpr .r3, 1 + 2 * c.C.len⟩ ⟨base, size⟩ := hb ▸ hp.pk_sc
+  obtain hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rk.rd, S₂.rk.wr]
+  obtain W₂ : Outside base 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
   rw [loadS_eq]
   refine WP.seq (wp_step (exec_addi (by decide) (show c.C.len < 2 ^ 15 by omega_arith)) ?_)
-  have kw₂ : Kp [.r6] s₂ (s₂.write .r6 (s₂.gpr .r12 + BitVec.ofNat 64 c.C.len)) := Kp.write _ _ (by decide)
-  have hfitS : (s₀.gpr .r5 + BitVec.ofNat 64 c.C.len).toNat + c.C.len ≤ 2 ^ 64 := by
+  obtain kw₂ : Kp [.r6] s₂ (s₂.write .r6 (s₂.gpr .r12 + BitVec.ofNat 64 c.C.len)) := Kp.write _ _ (by decide)
+  obtain hfitS : (s₀.gpr .r5 + BitVec.ofNat 64 c.C.len).toNat + c.C.len ≤ 2 ^ 64 := by
     have := hp.sig_fit
     rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show c.C.len < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
@@ -175,10 +175,10 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have U₃ : Unch base (slW c [PT]) s₂.mem s₃.mem := O₃.unch
   rw [bytesAt_keep W₂ (hsg.sub_left (Offset.sub_base _ (d := c.C.len) (n := c.C.len) (by omega_arith))) (by omega_arith) (by omega_arith)] at e₃
-  have K₃ := S₂.toKeep.step h7 (((kw₂.mono (rs' := [.r6, .r8, .r9]) (by decide)).trans
+  obtain K₃ := S₂.toKeep.step h7 (((kw₂.mono (rs' := [.r6, .r8, .r9]) (by decide)).trans
     (k₃.mono (by decide))).rk (rs' := [.r6, .r8, .r9])) (hU := U₃) (hW := fixedOk_slW (l := [PT]) (by decide))
     (hWs := slW_le h7 (by decide))
-  have v₃ : ∀ {i}, i < 45 → i ≠ PT → sv c base s₃ i = sv c base s₂ i := fun hi hl =>
+  obtain v₃ : ∀ {i}, i < 45 → i ≠ PT → sv c base s₃ i = sv c base s₂ i := fun hi hl =>
     sv_unch U₃ h7 hn hi (apart_slW (by simpa using hl))
   -- The key.
   have hq₃ : s₃.gpr .r14 = s₀.gpr .r3 := K₃.r14
@@ -186,42 +186,42 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
     (by rw [hq₃, K₃.rk.rd, K₃.rk.wr, hp.rd]; simp) (by rw [hq₃]; exact hpk) K₃.fixed.mp)
     fun s₄ ⟨hw₄, k₄, U₄, r2₄, bp₄, x₄, y₄, f₄⟩ => ?_)
   rw [hq₃] at x₄ y₄ f₄
-  have K₄ := K₃.step h7 (k₄.rk (rs' := peerClob)) (hU := U₄)
+  obtain K₄ := K₃.step h7 (k₄.rk (rs' := peerClob)) (hU := U₄)
     (hW := (fixedOk_slW (by decide)).append fixedOk_flag) (hWs := le_append (slW_le h7 (by decide)) (flag_le h7))
-  have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
+  obtain e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
     fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have W₃ : Outside base 0 size s₀.mem s₃.mem := W₂.trans (O₃.mono (Nat.zero_le _) (by omega_arith))
-  have x₄' : sv c base s₄ E = keyX c s₀ := by
+  obtain W₃ : Outside base 0 size s₀.mem s₃.mem := W₂.trans (O₃.mono (Nat.zero_le _) (by omega_arith))
+  obtain x₄' : sv c base s₄ E = keyX c s₀ := by
     rw [x₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
-  have y₄' : sv c base s₄ QY = keyY c s₀ := by
+  obtain y₄' : sv c base s₄ QY = keyY c s₀ := by
     rw [y₄, bytesAt_keep W₃ (hpk.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
-  have hq0 : s₃.mem (s₀.gpr .r3) = s₀.mem (s₀.gpr .r3) := by
+  obtain hq0 : s₃.mem (s₀.gpr .r3) = s₀.mem (s₀.gpr .r3) := by
     have := keep_of_disjoint' W₃ hpk (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
-  have fl₃ : flagW c base s₃ = BitVec.allOnes 64 := by
+  obtain fl₃ : flagW c base s₃ = BitVec.allOnes 64 := by
     rw [flagW, U₃.word (fun w hw => (apart_slW (c := c) (l := [PT])
       (i := FLAG) (by decide) w hw).imp (fun h => by omega_arith) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)]
     exact S₂.flag
-  have hf₄ : flagW c base s₄ = mask64 (((s₀.mem (s₀.gpr .r3) = 4 ∧
+  obtain hf₄ : flagW c base s₄ = mask64 (((s₀.mem (s₀.gpr .r3) = 4 ∧
       sv c base s₄ E < c.C.p) ∧ sv c base s₄ QY < c.C.p)) := by
     rw [f₄, hq0, fl₃, BitVec.allOnes_and, mask64_and, mask64_and]
   refine WP.seq (WP.mono (validate_ok hc K₄.ws K₄.fixed r2₄ bp₄ hf₄)
     fun s₅ ⟨hw₅, g₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₅ ?_)
-  have K₅ := K₄.step h7 g₅ (hU := U₅) (hW := fixedOk_valW h7) (hWs := valW_le h7)
-  have e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₅ i = sv c base s₄ i :=
+  obtain K₅ := K₄.step h7 g₅ (hU := U₅) (hW := fixedOk_valW h7) (hWs := valW_le h7)
+  obtain e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₅ i = sv c base s₄ i :=
     fun hi hl hf => sv_unch U₅ h7 hn hi (apart_append (apart_slW hl)
       (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
         apart_append (apart_own h7 hi) (apart_flag h0 hf)))
-  have a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
+  obtain a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
       i ≠ PT → sv c base s₅ i = sv c base s₂ i := fun hi h₁ h₂ hf hp =>
     ((e₅ hi h₁ hf).trans (e₄ hi h₂ hf)).trans (v₃ hi hp)
-  have t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
+  obtain t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₅.mem (off base (bitsAt c.n j + t)) = s₂.mem (off base (bitsAt c.n j + t)) :=
     fun hj t ht => by
       rw [tbl_unch U₅ h7 hj ht (tbl_apart_valW h7 h0 _ t),
         tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t)),
         tbl_unch U₃ h7 hj ht (tbl_apart_slW h7 (by decide) _ t)]
-  have hok : PeerOk c base s₄ ((s₀.mem (s₀.gpr .r3) = 4 ∧ sv c base s₄ E < c.C.p) ∧
+  obtain hok : PeerOk c base s₄ ((s₀.mem (s₀.gpr .r3) = 4 ∧ sv c base s₄ E < c.C.p) ∧
       sv c base s₄ QY < c.C.p) = KeyOk c s₀ := by
     rw [PeerOk, x₄', y₄']
   simp only [hok] at f₅ px py

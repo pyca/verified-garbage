@@ -65,7 +65,7 @@ theorem tagOut_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hT : Covers [�
 /-- `1 − ((d ||| −d) >>> 63)`: 1 if `d` is 0, else 0. -/
 theorem zero_test (d : BitVec 64) :
     BitVec.ofNat 64 1 - ((d ||| (BitVec.ofNat 64 0 - d)) >>> 63) = BitVec.ofNat 64 (if d = 0 then 1 else 0) := by
-  have h := Proof.AesCcm.neg_or_msb d
+  obtain h := Proof.AesCcm.neg_or_msb d
   rw [show BitVec.ofNat 64 0 = (0 : BitVec 64) from rfl, h]
   by_cases hd : d = 0 <;> simp only [hd, ite_true, ite_false] <;> decide
 
@@ -98,7 +98,7 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     (PK.ofUpd u₁₃)))))))))))),
     by rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem,
       u₂.mem, u₁.mem], ?_⟩
-  have hd : s₇.gpr .a0 =
+  obtain hd : s₇.gpr .a0 =
       (s.mem.readW (c.W + BitVec.ofNat 64 0) 64 ^^^ s.mem.readW (c.W + BitVec.ofNat 64 240) 64) |||
       (s.mem.readW (c.W + BitVec.ofNat 64 0 + BitVec.ofNat 64 8) 64 ^^^
         s.mem.readW (c.W + BitVec.ofNat 64 240 + BitVec.ofNat 64 8) 64) := by
@@ -107,7 +107,7 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
       u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   rw [u₁₃.gpr, u₁₂.gpr, u₁₂.other .a0 (by decide), u₁₁.gpr, u₁₀.gpr, u₉.gpr, u₉.other .a0 (by decide),
     u₈.gpr, u₈.other .a0 (by decide), hd, zero_test]
-  have hw := Proof.AesCcm.words_eq s.mem (c.W + BitVec.ofNat 64 0) (c.W + BitVec.ofNat 64 240)
+  obtain hw := Proof.AesCcm.words_eq s.mem (c.W + BitVec.ofNat 64 0) (c.W + BitVec.ofNat 64 240)
   rw [BitVec.add_zero] at hw ⊢
   congr 2
   exact propext hw
@@ -142,15 +142,15 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
   unfold mask
   refine WP.seq (wp_li (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ =>
     WP.block_nil ?_)
-  have pk₄ : PK s s₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have s11₄ : s₄.gpr .s11 = s.gpr .s11 := by
+  obtain pk₄ : PK s s₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain s11₄ : s₄.gpr .s11 = s.gpr .s11 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have a2₄ : s₄.gpr .a2 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0) := by
+  obtain a2₄ : s₄.gpr .a2 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if P then 1 else 0) := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), h25]
-  have a0₄ : s₄.gpr .a0 = c.D := by
+  obtain a0₄ : s₄.gpr .a0 = c.D := by
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.s6]
-  have a1₄ : s₄.gpr .a1 = BitVec.ofNat 64 c.n := by
+  obtain a1₄ : s₄.gpr .a1 = BitVec.ofNat 64 c.n := by
     rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), E.s7]
   let f : Byte → Byte := fun b => if P then b else 0
   refine WP.ite (decide (c.n = 0)) (eval_z a1₄ hn) (fun ht => ?_) (fun hf => ?_)
@@ -166,8 +166,8 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       ⟨0, rfl, by omega_arith, by rw [a0₄]; exact (BitVec.add_zero _).symm, by rw [a1₄, Nat.sub_zero], rfl, s11₄,
         by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
     rintro w t ⟨i, rfl, hi, a0, a1, a2, s11, mem, pk⟩
-    have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega_arith
+    obtain Et := E.of_pk pk
+    obtain hin : i + 1 ≤ c.n := by omega_arith
     have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
     unfold maskBody
     refine wp_lbu (a := c.D + BitVec.ofNat 64 i) (by decide) (by rw [a0]; exact BitVec.add_zero _)
@@ -177,31 +177,31 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       (by rw [u₂.wr, u₁.wr]; exact in_off hD hin hn) fun t₃ u₃ => ?_
     refine wp_addi (by decide) fun t₄ u₄ => wp_subi (imm := 1) (by decide) fun t₅ u₅ =>
       WP.block_nil ?_
-    have pk₅ : PK s t₅ := pk.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
+    obtain pk₅ : PK s t₅ := pk.trans ((PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans
       ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
-    have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
-    have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
+    obtain hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
+    obtain hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
       rw [mem]
       have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_arith)
       rwa [hlen] at this
-    have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
+    obtain hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .a2 (by decide), a2, a2₄, u₂.mem,
         u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, Proof.AesCcm.RISCV64.bytesAt_one,
         List.map_append, List.map_singleton]
       rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen]
-    have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
+    obtain hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    have a0' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
+    obtain a0' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), a0, hstep]
-    have a1' : t₅.gpr .a1 = BitVec.ofNat 64 (c.n - (i + 1)) := by
+    obtain a1' : t₅.gpr .a1 = BitVec.ofNat 64 (c.n - (i + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), a1,
         Proof.AesCcm.RISCV64.ofNat_sub_one (by omega_arith), Nat.sub_sub]
-    have a2' : t₅.gpr .a2 = s₄.gpr .a2 := by
+    obtain a2' : t₅.gpr .a2 = s₄.gpr .a2 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), a2]
-    have s11' : t₅.gpr .s11 = s.gpr .s11 := by
+    obtain s11' : t₅.gpr .s11 = s.gpr .s11 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
         s11]
-    have ev := eval_nz (r := .a1) (a := c.n - (i + 1)) a1' (by omega_arith)
+    obtain ev := eval_nz (r := .a1) (a := c.n - (i + 1)) a1' (by omega_arith)
     by_cases he : i + 1 = c.n
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, s11', by rw [hmem, he]⟩

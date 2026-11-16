@@ -91,49 +91,49 @@ theorem callPrepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × Lis
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := Modes.AArch64.movR_ok s₂ .x26 .x1
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movR_ok s₃ .x2 sb
   obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := Modes.AArch64.movz_ok s₄ .x3 (v := core.total) (by decide)
-  have e : runBlock isa [movR .x20 .x30, movR .x22 sb, movR .x26 .x1, movR .x2 sb,
+  obtain e : runBlock isa [movR .x20 .x30, movR .x22 sb, movR .x26 .x1, movR .x2 sb,
       .movz .x .x3 (BitVec.ofNat 16 core.total) 0] s = some s₅ := by
     rw [show [movR .x20 .x30, movR .x22 sb, movR .x26 .x1, movR .x2 sb,
         Instr.movz .x .x3 (BitVec.ofNat 16 core.total) 0] = [movR .x20 .x30] ++ ([movR .x22 sb] ++
         ([movR .x26 .x1] ++ ([movR .x2 sb] ++ [.movz .x .x3 (BitVec.ofNat 16 core.total) 0]))) from rfl,
       runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, runBlock_app, e₄, Option.bind_some, e₅]
-  have x0₅ : s₅.gpr .x0 = p := by
+  obtain x0₅ : s₅.gpr .x0 = p := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), hp]
-  have x1₅ : s₅.gpr .x1 = BitVec.ofNat 64 R := by
+  obtain x1₅ : s₅.gpr .x1 = BitVec.ofNat 64 R := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), hx1]
-  have x2₅ : s₅.gpr .x2 = B := by
+  obtain x2₅ : s₅.gpr .x2 = B := by
     rw [o₅ _ (by decide), r₄, o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), hB]
   have x3₅ : s₅.gpr .x3 = BitVec.ofNat 64 core.total := r₅
-  have x20₅ : s₅.gpr .x20 = s.gpr .x30 := by
+  obtain x20₅ : s₅.gpr .x20 = s.gpr .x30 := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁]
-  have x22₅ : s₅.gpr .x22 = B := by
+  obtain x22₅ : s₅.gpr .x22 = B := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide), hB]
-  have x26₅ : s₅.gpr .x26 = BitVec.ofNat 64 R := by
+  obtain x26₅ : s₅.gpr .x26 = BitVec.ofNat 64 R := by
     rw [o₅ _ (by decide), o₄ _ (by decide), r₃, o₂ _ (by decide), o₁ _ (by decide), hx1]
-  have x23₅ : s₅.gpr .x23 = s.gpr .x23 := by
+  obtain x23₅ : s₅.gpr .x23 = s.gpr .x23 := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide)]
-  have x24₅ : s₅.gpr .x24 = s.gpr .x24 := by
+  obtain x24₅ : s₅.gpr .x24 = s.gpr .x24 := by
     rw [o₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), o₁ _ (by decide)]
-  have mem₅ : s₅.mem = s.mem := by rw [m₅, m₄, m₃, m₂, m₁]
-  have rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃, rd₂, rd₁]
-  have wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃, wr₂, wr₁]
+  obtain mem₅ : s₅.mem = s.mem := by rw [m₅, m₄, m₃, m₂, m₁]
+  obtain rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃, rd₂, rd₁]
+  obtain wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃, wr₂, wr₁]
   show WP isa prepareCall s _
   refine WP.seq (WP.of_runBlock ⟨s₅, e, ?_⟩)
-  have hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * core.total⟩ := hdis _ hR
-  have g0 : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x0 = p := by
+  obtain hsep : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * core.total⟩ := hdis _ hR
+  obtain g0 : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x0 = p := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ VG.AArch64.linkRegs), x0₅]
-  have g1 : ((s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x1).toNat = R := by
+  obtain g1 : ((s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x1).toNat = R := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ VG.AArch64.linkRegs), x1₅,
       toNat_rounds hRr]
-  have g2 : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x2 = B := by
+  obtain g2 : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x2 = B := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ VG.AArch64.linkRegs), x2₅]
-  have g3 : ((s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x3).toNat = 418 := by
+  obtain g3 : ((s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).gpr .x3).toNat = 418 := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x3 ∉ VG.AArch64.linkRegs), x3₅,
       toNat_total]
-  have hm₀ : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).mem = s.mem := by
+  obtain hm₀ : (s₅.callEntry.withRegions [⟨p, 272⟩] [⟨B, 8 * core.total⟩]).mem = s.mem := by
     rw [State.withRegions_mem, State.callEntry_mem, mem₅]
-  have w : WP isa (.call "vg_camellia_prepare_encrypt_keys" prepareEncrypt) s₅ fun s' =>
+  obtain w : WP isa (.call "vg_camellia_prepare_encrypt_keys" prepareEncrypt) s₅ fun s' =>
       s'.rd = s₅.rd ∧ s'.wr = s₅.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₅.gpr r) ∧
       Frame [⟨B, 8 * core.total⟩] s₅.mem s'.mem ∧
       Holds layout s'.mem B R (schedWords s.mem p R) .encrypt ∧ Keeps B core.total [(0, 528)] s.mem s'.mem := by
@@ -159,15 +159,15 @@ theorem callPrepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × Lis
       exact ⟨hH, hK⟩
   obtain ⟨t₆, s₆, e₆, rd₆, wr₆, g₆, f₆, hH, hK⟩ := w
   refine WP.seq ⟨t₆, s₆, e₆, ?_⟩
-  have x22₆ : s₆.gpr .x22 = B := by rw [g₆ _ (by simp [preserved]) (by decide), x22₅]
-  have x20₆ : s₆.gpr .x20 = s.gpr .x30 := by rw [g₆ _ (by simp [preserved]) (by decide), x20₅]
+  obtain x22₆ : s₆.gpr .x22 = B := by rw [g₆ _ (by simp [preserved]) (by decide), x22₅]
+  obtain x20₆ : s₆.gpr .x20 = s.gpr .x30 := by rw [g₆ _ (by simp [preserved]) (by decide), x20₅]
   obtain ⟨s₇, e₇, r₇, o₇, m₇, rd₇, wr₇⟩ := Modes.AArch64.movR_ok s₆ sb .x22
   obtain ⟨s₈, e₈, -, o₈, m₈, rd₈, wr₈⟩ := Modes.AArch64.movR_ok s₇ .x30 .x20
-  have e' : runBlock isa [movR sb .x22, movR .x30 .x20] s₆ = some s₈ := by
+  obtain e' : runBlock isa [movR sb .x22, movR .x30 .x20] s₆ = some s₈ := by
     rw [show [movR sb .x22, movR .x30 .x20] = [movR sb .x22] ++ [movR .x30 .x20] from rfl, runBlock_app, e₇,
       Option.bind_some, e₈]
-  have g₈ : ∀ r, r ≠ sb → r ≠ .x30 → s₈.gpr r = s₆.gpr r := fun r h1 h2 => by rw [o₈ _ h2, o₇ _ h1]
-  have mem₈ : s₈.mem = s₆.mem := by rw [m₈, m₇]
+  obtain g₈ : ∀ r, r ≠ sb → r ≠ .x30 → s₈.gpr r = s₆.gpr r := fun r h1 h2 => by rw [o₈ _ h2, o₇ _ h1]
+  obtain mem₈ : s₈.mem = s₆.mem := by rw [m₈, m₇]
   refine WP.of_runBlock ⟨s₈, e', ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [mem₈, hws]; exact ready_of_holds hRr hH
   · rw [g₈ _ (by decide) (by decide), g₆ _ (by simp [preserved]) (by decide), x26₅]
@@ -198,37 +198,37 @@ theorem callCrypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : 
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := Modes.AArch64.movR_ok s₁ .x0 .x26
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := Modes.AArch64.movR_ok s₂ .x1 sb
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movz_ok s₃ .x2 (v := core.total) (by decide)
-  have e : runBlock isa [movR .x20 .x30, movR .x0 .x26, movR .x1 sb,
+  obtain e : runBlock isa [movR .x20 .x30, movR .x0 .x26, movR .x1 sb,
       .movz .x .x2 (BitVec.ofNat 16 core.total) 0] s = some s₄ := by
     rw [show [movR .x20 .x30, movR .x0 .x26, movR .x1 sb, Instr.movz .x .x2 (BitVec.ofNat 16 core.total) 0] =
         [movR .x20 .x30] ++ ([movR .x0 .x26] ++ ([movR .x1 sb] ++
         [.movz .x .x2 (BitVec.ofNat 16 core.total) 0])) from rfl,
       runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, e₄]
-  have g₄ : ∀ r, r ≠ .x20 → r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+  obtain g₄ : ∀ r, r ≠ .x20 → r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [o₄ _ h4, o₃ _ h3, o₂ _ h2, o₁ _ h1]
-  have x0₄ : s₄.gpr .x0 = BitVec.ofNat 64 R := by
+  obtain x0₄ : s₄.gpr .x0 = BitVec.ofNat 64 R := by
     rw [o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide), hx26]
-  have x1₄ : s₄.gpr .x1 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide), o₁ _ (by decide), hB]
+  obtain x1₄ : s₄.gpr .x1 = B := by rw [o₄ _ (by decide), r₃, o₂ _ (by decide), o₁ _ (by decide), hB]
   have x2₄ : s₄.gpr .x2 = BitVec.ofNat 64 core.total := r₄
-  have x20₄ : s₄.gpr .x20 = s.gpr .x30 := by rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁]
-  have mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
+  obtain x20₄ : s₄.gpr .x20 = s.gpr .x30 := by rw [o₄ _ (by decide), o₃ _ (by decide), o₂ _ (by decide), r₁]
+  obtain mem₄ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
   show WP isa cryptCall s _
   refine WP.seq (WP.of_runBlock ⟨s₄, e, ?_⟩)
-  have hH : Holds layout s.mem B R ws .encrypt := holds_of_ready hready .encrypt
-  have g0 : ((s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x0).toNat = R := by
+  obtain hH : Holds layout s.mem B R ws .encrypt := holds_of_ready hready .encrypt
+  obtain g0 : ((s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x0).toNat = R := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ VG.AArch64.linkRegs), x0₄,
       toNat_rounds hRr]
-  have g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x1 = B := by
+  obtain g1 : (s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x1 = B := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x1 ∉ VG.AArch64.linkRegs), x1₄]
-  have g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x2).toNat = 418 := by
+  obtain g2 : ((s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).gpr .x2).toNat = 418 := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x2 ∉ VG.AArch64.linkRegs), x2₄,
       toNat_total]
-  have hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).mem = s.mem := by
+  obtain hm₀ : (s₄.callEntry.withRegions [] [⟨B, 8 * core.total⟩]).mem = s.mem := by
     rw [State.withRegions_mem, State.callEntry_mem, mem₄]
-  have w : WP isa (.call "vg_camellia_encrypt_prepared" encryptPrepared) s₄ fun s' =>
+  obtain w : WP isa (.call "vg_camellia_encrypt_prepared" encryptPrepared) s₄ fun s' =>
       s'.rd = s₄.rd ∧ s'.wr = s₄.wr ∧ (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₄.gpr r) ∧
       Frame [⟨B, 8 * core.total⟩] s₄.mem s'.mem ∧
       Spec.Camellia.blocksAt s'.mem (B + BitVec.ofNat 64 layout.buf) layout.blocks =
@@ -253,23 +253,23 @@ theorem callCrypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : 
       exact ⟨hE ws hH, hK⟩
   obtain ⟨t₅, s₅, e₅, rd₅, wr₅, g₅, f₅, hE, hK⟩ := w
   refine WP.seq ⟨t₅, s₅, e₅, ?_⟩
-  have x22₅ : s₅.gpr .x22 = B := by
+  obtain x22₅ : s₅.gpr .x22 = B := by
     rw [g₅ _ (by simp [preserved]) (by decide), g₄ _ (by decide) (by decide) (by decide) (by decide), hx22]
-  have x20₅ : s₅.gpr .x20 = s.gpr .x30 := by rw [g₅ _ (by simp [preserved]) (by decide), x20₄]
+  obtain x20₅ : s₅.gpr .x20 = s.gpr .x30 := by rw [g₅ _ (by simp [preserved]) (by decide), x20₄]
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := Modes.AArch64.movR_ok s₅ sb .x22
   obtain ⟨s₇, e₇, -, o₇, m₇, rd₇, wr₇⟩ := Modes.AArch64.movR_ok s₆ .x30 .x20
-  have e' : runBlock isa [movR sb .x22, movR .x30 .x20] s₅ = some s₇ := by
+  obtain e' : runBlock isa [movR sb .x22, movR .x30 .x20] s₅ = some s₇ := by
     rw [show [movR sb .x22, movR .x30 .x20] = [movR sb .x22] ++ [movR .x30 .x20] from rfl, runBlock_app, e₆,
       Option.bind_some, e₇]
-  have g₇ : ∀ r, r ≠ sb → r ≠ .x30 → s₇.gpr r = s₅.gpr r := fun r h1 h2 => by rw [o₇ _ h2, o₆ _ h1]
-  have mem₇ : s₇.mem = s₅.mem := by rw [m₇, m₆]
-  have kept : ∀ r, r ∈ [Reg.x22, .x23, .x24, .x26] → s₇.gpr r = s.gpr r := fun r hr => by
+  obtain g₇ : ∀ r, r ≠ sb → r ≠ .x30 → s₇.gpr r = s₅.gpr r := fun r h1 h2 => by rw [o₇ _ h2, o₆ _ h1]
+  obtain mem₇ : s₇.mem = s₅.mem := by rw [m₇, m₆]
+  obtain kept : ∀ r, r ∈ [Reg.x22, .x23, .x24, .x26] → s₇.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
       rw [g₇ _ (by decide) (by decide), g₅ _ (by simp [preserved]) (by decide),
         g₄ _ (by decide) (by decide) (by decide) (by decide)]
   rw [← mem₄] at hK
-  have fbuf := frame_of_keeps f₅ hK (by decide) (by decide)
+  obtain fbuf := frame_of_keeps f₅ hK (by decide) (by decide)
   rw [mem₄] at fbuf
   refine WP.of_runBlock ⟨s₇, e', ?_, kept _ (by simp), kept _ (by simp), ⟨?_, ?_, ?_⟩, ?_, fun j hj => ?_, ?_, ?_⟩
   · rw [o₇ _ (by decide), r₆, x22₅]

@@ -66,11 +66,11 @@ theorem buffered_mod {al ah xl xh : BitVec 32} {a c : List Byte} (hl : ah ++ al 
     (ht : (xh ++ xl).toNat = c.length) :
     (ghashInput a c).length % 16 = (if (xl ||| xh == 0) = true then al else xl).toNat % 16 := by
   rw [ghashInput_mod]
-  have e := val64_eq xl xh
+  obtain e := val64_eq xl xh
   simp only [val64] at e
   by_cases hc : c = []
   · subst hc
-    have h0 : xl = 0 ∧ xh = 0 := by
+    obtain h0 : xl = 0 ∧ xh = 0 := by
       simp only [List.length_nil] at ht
       exact ⟨BitVec.eq_of_toNat_eq (by simp; omega_using [e, ht]), BitVec.eq_of_toNat_eq (by simp; omega_using [e, ht])⟩
     obtain ⟨rfl, rfl⟩ := h0
@@ -120,7 +120,7 @@ theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32}
     (Pc.taint [.ebp] (fun m₀ s ⟨h, hm⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.ebp, h₂.1.env.ebp]) (by taint_decide)) ?_
   · have he := h.env
-    have h1 := h.xl; have h2 := h.al; have h3 := h.xh
+    obtain h1 := h.xl; have h2 := h.al; have h3 := h.xh
     rw [slotv_eq] at h1 h2 h3
     refine WP.of_runBlock ⟨_, by xrun [he.ebp, L.aW, he.wIn', h1, h2, h3], ⟨h.keep (by regs []) (by regs [])
       (by regs []) (by mems []) (by mems []) (by mems []), by mems []; exact hm⟩, by regs [], by regs [], by mems []⟩
@@ -135,12 +135,12 @@ theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32}
     (Pc.taint [.ebp] (fun m₀ s ⟨⟨h, hm⟩, ha⟩ => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.1.env.ebp, h₂.1.1.env.ebp]) (by taint_decide)) ?_
   · have he := h.env
-    have hand := and15 v
+    obtain hand := and15 v
     refine WP.of_runBlock ⟨_, by xrun [he.ebp, L.aW, he.wIn, ha], ?_⟩
-    have fb : Frame [⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem
+    obtain fb : Frame [⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem
         (s.mem.writeW (w64 W + BitVec.ofNat 64 bO) (v &&& BitVec.ofNat 32 15)) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    have sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 240 → slotv (s.mem.writeW (w64 W + BitVec.ofNat 64 bO)
+    obtain sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 240 → slotv (s.mem.writeW (w64 W + BitVec.ofNat 64 bO)
         (v &&& BitVec.ofNat 32 15)) W q = slotv s.mem W q := fun h₁ h₂ =>
       slot_frame fb fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by simp only [bO]; omega_using [h₂])) (by omega_using [h₂]) (by decide)
@@ -166,39 +166,39 @@ theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32}
       exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩
     rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit] at hr
     obtain ⟨hj, ha, -⟩ := hr
-    have dS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)],
+    obtain dS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 bO, 4⟩ : Region)],
         (⟨w64 St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun hk r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-    have hHs : Hk s.mem Ctx = Hk m₀ Ctx := blockAt_frame fb fun r hr => by
+    obtain hHs : Hk s.mem Ctx = Hk m₀ Ctx := blockAt_frame fb fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
-    have hx := buffered_mod hl ht
+    obtain hx := buffered_mod hl ht
     rw [hv] at hx
-    have ha₁ : Absorbed s.mem (w64 St + BitVec.ofNat 64 16) (w64 St + BitVec.ofNat 64 32) (Hk s.mem Ctx)
+    obtain ha₁ : Absorbed s.mem (w64 St + BitVec.ofNat 64 16) (w64 St + BitVec.ofNat 64 32) (Hk s.mem Ctx)
         (ghashInput a c) := by
       rw [hHs]
       exact ha.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (d := 32)
         (k := (ghashInput a c).length % 16) (by omega_using [])) (by omega_using []))
-    have hab := fo.abs _ hx ha₁
+    obtain hab := fo.abs _ hx ha₁
     have acc := hab.1
     rw [show ghashInput a c ++ zeros (padLen (ghashInput a c).length) = padded a c from rfl,
       Proof.Gcm.whole_of_mod (Proof.Gcm.length_padded a c), List.take_of_length_le (Nat.le_refl _)] at acc
-    have hH' : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame fo.frame (ctx_tFrame L (.inr rfl))
-    have hC : ciphOf s'.mem Ctx R = ciphOf m₀ Ctx R := by
+    obtain hH' : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame fo.frame (ctx_tFrame L (.inr rfl))
+    obtain hC : ciphOf s'.mem Ctx R = ciphOf m₀ Ctx R := by
       rw [ciph_frame fo.frame (ctx_tFrame' L) h.rounds.2, ciph_frame fb (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.cw.sub_right (Lay.wSub (by decide))) h.rounds.2]
-    have hJ : blockAt s'.mem (w64 St) = blockAt m₀ (w64 St) := by
-      have e₁ := blockAt_frame fo.frame (p := w64 St + BitVec.ofNat 64 0) fun r hr => by
+    obtain hJ : blockAt s'.mem (w64 St) = blockAt m₀ (w64 St) := by
+      obtain e₁ := blockAt_frame fo.frame (p := w64 St + BitVec.ofNat 64 0) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact Lay.st_st (.inl (by decide)) (by decide) (by decide)
         · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
         · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
         · exact (L.stk_st (by decide)).symm
-      have e₂ := blockAt_frame fb (dS (d := 0) (k := 16) (by decide))
+      obtain e₂ := blockAt_frame fb (dS (d := 0) (k := 16) (by decide))
       simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at e₁ e₂
       rw [e₁, e₂]
-    have hva : val64 al ah = a.length % 2 ^ 64 := by rw [val64_eq, hl, BitVec.toNat_ofNat]
-    have hvx : val64 xl xh = c.length := by rw [val64_eq, ht]
+    obtain hva : val64 al ah = a.length % 2 ^ 64 := by rw [val64_eq, hl, BitVec.toNat_ofNat]
+    obtain hvx : val64 xl xh = c.length := by rw [val64_eq, ht]
     rw [tg.out, hH', hHs, acc, hC, hJ, hj, hva, hvx, lensBlock_mod, hHs, Proof.Gcm.fullTag_eq]
   · have sl : ∀ {q}, 112 ≤ q → q + 4 ≤ 240 → slotv s'.mem W q = slotv s.mem W q := fun h₁ h₂ =>
       slot_frame fo.frame (slot_tFrame L (.inr rfl) h₁ h₂)

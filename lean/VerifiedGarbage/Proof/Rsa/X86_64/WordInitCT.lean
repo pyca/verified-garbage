@@ -59,23 +59,23 @@ theorem stages_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     WP isa (VG.Impl.Rsa.X86_64.Keys.zeroA aR) s (SeedPre B Z W st j₀) := by
   have hn := h.scr.nowrap
   have hw := h.w2
-  have hz := window_bound h hZ
-  have hM := h.sl (j := aM) (by decide)
-  have hR := h.sl (j := aR) (by decide)
-  have sepRM := slot_far (w := W) (i := aR) (j := aM) (by decide)
+  obtain hz := window_bound h hZ
+  obtain hM := h.sl (j := aM) (by decide)
+  obtain hR := h.sl (j := aR) (by decide)
+  obtain sepRM := slot_far (w := W) (i := aR) (j := aM) (by decide)
   have hfit := hst.fit
   refine WP.mono (zeroA_ok h (by decide)) fun s₀ ⟨z₀, o₀, k₀⟩ => ?_
-  have f₀ : Frm B (allRanges W) s.mem s₀.mem := Frm.of_outside o₀ (by simp [allRanges])
-  have h₀ := h.congr f₀ (fun _ hr => all_mut hr) k₀ (by decide)
+  obtain f₀ : Frm B (allRanges W) s.mem s₀.mem := Frm.of_outside o₀ (by simp [allRanges])
+  obtain h₀ := h.congr f₀ (fun _ hr => all_mut hr) k₀ (by decide)
   refine ⟨h₀, ?_⟩
   refine WP.mono (seedWith_ok h₀ hW hst) fun s₁ ⟨_, oS, kS⟩ => ?_
-  have o₁ : Outside B (slot W aR) (8 * (W + 2)) s.mem s₁.mem :=
+  obtain o₁ : Outside B (slot W aR) (8 * (W + 2)) s.mem s₁.mem :=
     o₀.trans (oS.mono (Nat.le_refl _) (by omega_arith))
-  have f₁ : Frm B (allRanges W) s.mem s₁.mem := Frm.of_outside o₁ (by simp [allRanges])
-  have h₁ := h.congr f₁ (fun _ hr => all_mut hr) (k₀.trans kS) (by decide)
-  have top₁ : word s₁.mem B (slot W aM + 8 * (W / 2 - 1)) = word s.mem B (slot W aM + 8 * (W / 2 - 1)) :=
+  obtain f₁ : Frm B (allRanges W) s.mem s₁.mem := Frm.of_outside o₁ (by simp [allRanges])
+  obtain h₁ := h.congr f₁ (fun _ hr => all_mut hr) (k₀.trans kS) (by decide)
+  obtain top₁ : word s₁.mem B (slot W aM + 8 * (W / 2 - 1)) = word s.mem B (slot W aM + 8 * (W / 2 - 1)) :=
     o₁.word (by omega_arith) (by omega_arith)
-  have zS : ∀ i, W / 2 - 1 ≤ i → i < W + 2 → word s₁.mem B (slot W aR + 8 * i) = 0 := fun i h1 h2 => by
+  obtain zS : ∀ i, W / 2 - 1 ≤ i → i < W + 2 → word s₁.mem B (slot W aR + 8 * i) = 0 := fun i h1 h2 => by
     rw [oS.word (.inr (by omega_arith)) (by omega_arith)]
     exact (wv_eq_zero_iff _ _ _ _).mp z₀ i h2
   refine ⟨h₁, ?_⟩
@@ -84,19 +84,19 @@ theorem stages_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
   refine WP.mono (R2w.recip_ok (h₁.scr.congr k₂.2.2) h10 h12 h8
     (by omega_arith) (by omega_arith) (by omega_arith) (by rw [m₂, top₁]; exact hd))
     fun s₃ ⟨m₃, k₃⟩ => ?_
-  have o₃ : Outside B (slot W aV) 8 s₁.mem s₃.mem := by
+  obtain o₃ : Outside B (slot W aV) 8 s₁.mem s₃.mem := by
     rw [m₃, m₂]; exact writeW_outside _ _ _ (by omega_arith)
-  have f₃ : Frm B (allRanges W) s₁.mem s₃.mem := by
+  obtain f₃ : Frm B (allRanges W) s₁.mem s₃.mem := by
     apply cover (Frm.of_outside o₃ (by simp : (slot W aV, 8) ∈ [(slot W aV, 8)]))
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq, allRanges]
     exact ⟨(slot W aV, 24), by simp, (Nat.le_refl _), by omega_arith⟩
-  have h₃ := h₁.congr f₃ (fun _ hr => all_mut hr) (k₂.trans k₃) (by decide)
+  obtain h₃ := h₁.congr f₃ (fun _ hr => all_mut hr) (k₂.trans k₃) (by decide)
   refine ⟨h₃, ?_⟩
   refine WP.mono (countSetupWith_ok h₃ hZ hst)
     fun s₄ ⟨ha, m₄, k₄⟩ => ?_
-  have o₄ : Outside B (slot W aV + 16) 8 s₃.mem s₄.mem := by
+  obtain o₄ : Outside B (slot W aV + 16) 8 s₃.mem s₄.mem := by
     rw [m₄]; exact writeW_outside _ _ _ (by omega_arith)
-  have f₄ : Frm B (allRanges W) s₃.mem s₄.mem := by
+  obtain f₄ : Frm B (allRanges W) s₃.mem s₄.mem := by
     rw [m₄]
     apply cover (range_store (B := B) (W := W) _ (by omega_arith) (by omega_arith) (by omega_arith))
     intro r hr
@@ -105,22 +105,22 @@ theorem stages_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     · exact ⟨(slot W aR, 8 * (W + 2)), by simp [allRanges], (Nat.le_refl _), by omega_arith⟩
     · exact ⟨(slot W aT, 8 * (W / 2 + 1)), by simp [allRanges], (Nat.le_refl _), (Nat.le_refl _)⟩
     · exact ⟨(slot W aV, 24), by simp [allRanges], by omega_arith, by omega_arith⟩
-  have h₄ := h₃.congr f₄ (fun _ hr => all_mut hr) k₄ (by decide)
-  have eqTop : word s₄.mem B (slot W aM + 8 * (W / 2 - 1)) = word s.mem B (slot W aM + 8 * (W / 2 - 1)) := by
+  obtain h₄ := h₃.congr f₄ (fun _ hr => all_mut hr) k₄ (by decide)
+  obtain eqTop : word s₄.mem B (slot W aM + 8 * (W / 2 - 1)) = word s.mem B (slot W aM + 8 * (W / 2 - 1)) := by
     rw [o₄.word (by simp only [slot, aM, aV]; omega_arith) (by omega_arith),
       o₃.word (by simp only [slot, aM, aV]; omega_arith) (by omega_arith), top₁]
   -- the remainder: the seed's `W / 2 - 1` words, below the divisor
-  have Rlt : wv s₄.mem B (slot W aR) (W / 2) < 2 ^ (64 * (W / 2 - 1)) := by
-    have e := wv_add s₄.mem B (slot W aR) (W / 2 - 1) 1
+  obtain Rlt : wv s₄.mem B (slot W aR) (W / 2) < 2 ^ (64 * (W / 2 - 1)) := by
+    obtain e := wv_add s₄.mem B (slot W aR) (W / 2 - 1) 1
     rw [show W / 2 - 1 + 1 = W / 2 by omega_arith] at e
-    have z1 : wv s₄.mem B (slot W aR + 8 * (W / 2 - 1)) 1 = 0 := by
+    obtain z1 : wv s₄.mem B (slot W aR + 8 * (W / 2 - 1)) 1 = 0 := by
       rw [o₄.wv (by simp only [slot, aR, aV]; omega_arith) (by omega_arith),
         o₃.wv (by simp only [slot, aR, aV]; omega_arith) (by omega_arith)]
       exact wv_zero fun i hi => by
         rw [Nat.add_assoc, ← Nat.mul_add]; exact zS _ (by omega_arith) (by omega_arith)
     rw [e, z1, Nat.mul_zero, Nat.add_zero]; exact wv_lt _ _ _ _
-  have Mlo : 2 ^ (64 * (W / 2 - 1)) ≤ wv s₄.mem B (slot W aM) (W / 2) := by
-    have t := (R2w.top_half s₄.mem B (slot W aM) (W / 2 - 1)).mpr (by rw [eqTop]; exact hd)
+  obtain Mlo : 2 ^ (64 * (W / 2 - 1)) ≤ wv s₄.mem B (slot W aM) (W / 2) := by
+    obtain t := (R2w.top_half s₄.mem B (slot W aM) (W / 2 - 1)).mpr (by rw [eqTop]; exact hd)
     rw [show W / 2 - 1 + 1 = W / 2 by omega_arith] at t
     have : 2 ^ (64 * (W / 2 - 1)) ≤ 2 ^ (64 * (W / 2)) / 2 := by
       rw [show 64 * (W / 2) = 64 * (W / 2 - 1) + 63 + 1 by omega_arith, Nat.pow_succ, Nat.mul_div_cancel _ (by decide),

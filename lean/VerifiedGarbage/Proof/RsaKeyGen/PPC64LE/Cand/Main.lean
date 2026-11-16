@@ -64,37 +64,37 @@ theorem loadC_ok {s : State} {B R : Addr} {Z w : Nat} (h : Env s B Z w) (h26 : s
   have hw4 := h.hw
   have hw128 := h.hw'
   have hZ := h.hZ
-  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
-  have h0 : slot w 0 = 256 := by rw [es, Nat.zero_mul, Nat.add_zero]
-  have hZ' : 256 + 28 * (8 * (w + 2)) ≤ Z := by rw [← es]; exact hZ
+  obtain es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  obtain h0 : slot w 0 = 256 := by rw [es, Nat.zero_mul, Nat.add_zero]
+  obtain hZ' : 256 + 28 * (8 * (w + 2)) ≤ Z := by rw [← es]; exact hZ
   unfold loadC
   refine WP.seq ?_
-  have hpre : WP isa (.block [.addi .r12 .r26 0, .addi .r6 .r24 0]) s fun u =>
+  obtain hpre : WP isa (.block [.addi .r12 .r26 0, .addi .r6 .r24 0]) s fun u =>
       (u.gpr .r12 = off R 0 ∧ u.gpr .r6 = BitVec.ofNat 64 (8 * w) ∧ u.mem = s.mem) ∧ Keep [.r6, .r12] s u := by
     refine WP.keep _ ?_ (by decide)
     prun [h26, h24]
     exact BitVec.add_zero _
   refine WP.mono hpre fun u ⟨⟨u12, u6, um⟩, ku⟩ => ?_
-  have eu := h.keep ku (by decide)
+  obtain eu := h.keep ku (by decide)
   refine WP.seq (WP.mono (loadN_ok eu.hs eu.h10 u12 u6 eu.h11 (by omega_using [hw4]) (Nat.le_refl _) (by omega_using [hw128])
     (by rw [h0]; decide) (by rw [h0]; omega_using [hZ']) (fun i hi => by rw [ku.rd, ku.wr]; exact hR i hi) hsep)
     fun v ⟨vv, vout, kv⟩ => ?_)
   rw [um] at vv vout
-  have ev := eu.keep kv (by decide)
+  obtain ev := eu.keep kv (by decide)
   have hsv := ev.hs
   -- The candidate's bits.
-  have hw0 := hsv.ld (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
-  have hwt := hsv.ld (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
-  have hs0 := hsv.st (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
-  have hst := hsv.st (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
-  have e5 : (BitVec.ofNat 64 (2 * w) <<< 2) + off B (slot w 0) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 1)) := by
-    have e8 : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
+  obtain hw0 := hsv.ld (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
+  obtain hwt := hsv.ld (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
+  obtain hs0 := hsv.st (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
+  obtain hst := hsv.st (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
+  obtain e5 : (BitVec.ofNat 64 (2 * w) <<< 2) + off B (slot w 0) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 1)) := by
+    obtain e8 : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
       omega_using []
     rw [e8, BitVec.add_comm, off_add, Offset.add_ofNat_sub _ (show 8 ≤ slot w 0 + 8 * w by omega_using [hw4]),
       show slot w 0 + 8 * w - 8 = slot w 0 + 8 * (w - 1) by omega_using [hw4]]
-  have r24 : v.gpr .r24 = BitVec.ofNat 64 (8 * w) := by rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h24]
+  obtain r24 : v.gpr .r24 = BitVec.ofNat 64 (8 * w) := by rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h24]
   refine WP.mono (WP.keep [.r3, .r4, .r5, .r28] (Q := fun t =>
       t.mem = (v.mem.writeW (off B (slot w 0)) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1)).writeW
         (off B (slot w 0 + 8 * (w - 1))) (word v.mem B (slot w 0 + 8 * (w - 1)) ||| BitVec.ofNat 64 (3 * 2 ^ 62)) ∧
@@ -115,7 +115,7 @@ theorem loadC_ok {s : State} {B R : Addr} {Z w : Nat} (h : Env s B Z w) (h26 : s
       show t.mem.readW _ 64 = v.mem.readW _ 64
       rw [tm, sep _ _ (by omega_using [hj]) (by omega_using [h0, hZ', hj]) (by omega_using [h0, hZ']), sep _ _ (by omega_using [hj0]) (by omega_using [h0, hZ', hj]) (by omega_using [h0, hZ'])]
   · have o1 := writeW_outside v.mem B (d := slot w 0) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1) (by omega_using [h0])
-    have o2 := writeW_outside (v.mem.writeW (off B (slot w 0)) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1)) B
+    obtain o2 := writeW_outside (v.mem.writeW (off B (slot w 0)) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1)) B
       (d := slot w 0 + 8 * (w - 1)) (word v.mem B (slot w 0 + 8 * (w - 1)) ||| BitVec.ofNat 64 (3 * 2 ^ 62))
       (by omega_using [hw128, h0])
     rw [tm]
@@ -249,10 +249,10 @@ theorem setupS {s0 s : State} (h : MIn s0 s) : WP isa setup s (M1 s0) := by
   have eO : oL s0 = (s0.gpr .r4).toNat := rfl
   have eL : sL s0 = (PPC64LE.stackArg s0 2).toNat := rfl
   have eSB : (sB s0).toNat = (PPC64LE.stackArg s0 1).toNat := rfl
-  have hZ := scr_fit hp
-  have hS : Scr s (sB s0) (8 * sL s0) :=
+  obtain hZ := scr_fit hp
+  obtain hS : Scr s (sB s0) (8 * sL s0) :=
     Scr.of_mem (by rw [h.ctx.bx.wr, bodyWr, hp.wr, ← cS_eq]; simp) (by omega_using [hfS, eL, eSB])
-  have h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
+  obtain h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
   refine WP.mono_syms (setup_ok hS h.r31 (by rw [h.r11, eL, ofNat_toNat64]) h24 hw4 hw64 hZ)
     fun t₁ ⟨⟨e₁, lay₁, zs, o₁⟩, k₁⟩ sy₁ => ?_
   refine ⟨h.ctx.step k₁.sp k₁.rd k₁.wr (frame_outs o₁ (fun x hx => by
@@ -292,11 +292,11 @@ theorem loadCS {s0 s : State} (h : M1 s0 s) : WP isa loadC s (M2 s0) := by
   have hav := h.hav
   have eO : oL s0 = (s0.gpr .r4).toNat := rfl
   have eR : rL s0 = (PPC64LE.stackArg s0 0).toNat := rfl
-  have hZ := scr_fit hp
+  obtain hZ := scr_fit hp
   have hZ' := hZ
   simp only [nArr, slot_lin] at hZ'
-  have h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
-  have bR : Spec.Rsa.bytesAt s.mem (s0.gpr .r10) (8 * cw s0) =
+  obtain h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
+  obtain bR : Spec.Rsa.bytesAt s.mem (s0.gpr .r10) (8 * cw s0) =
       Spec.Rsa.bytesAt s0.mem (s0.gpr .r10) (8 * cw s0) :=
     in_bytes h.ctx.bx (ρ := cR s0) (hR_dj hp) (by show 8 * cw s0 ≤ (PPC64LE.stackArg s0 0).toNat; omega)
       (by omega_using [hw64])
@@ -341,14 +341,14 @@ theorem closeS {s0 s : State} (h : M2 s0 s) : WP isa closeCheck s (M3 s0) := by
   have hfS := hp.fS
   have hfp := hp.fp
   have hplv := hp.plv
-  have hZ := scr_fit hp
+  obtain hZ := scr_fit hp
   have hZ' := hZ
   simp only [nArr, slot_lin] at hZ'
   have eO : oL s0 = (s0.gpr .r4).toNat := rfl
-  have h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
-  have bP : Spec.Rsa.bytesAt s.mem (s0.gpr .r8) (s0.gpr .r9).toNat = pB s0 :=
+  obtain h24 : s.gpr .r24 = BitVec.ofNat 64 (8 * cw s0) := by rw [h.ctx.r24, ← hw, eO, ofNat_toNat64]
+  obtain bP : Spec.Rsa.bytesAt s.mem (s0.gpr .r8) (s0.gpr .r9).toNat = pB s0 :=
     in_bytes h.ctx.bx (ρ := cP s0) (hP_dj hp) (Nat.le_refl _) (by omega_using [])
-  have hcv : val32 s.mem (sB s0) (slot (cw s0) 0) (2 * cw s0) = candOf s0 := by
+  obtain hcv : val32 s.mem (sB s0) (slot (cw s0) 0) (2 * cw s0) = candOf s0 := by
     rw [Pre.val32_eq_wv]; exact h.v
   refine WP.mono_syms (closeCheck_ok h.env hZ hcv
     (w32_zero (by rw [slot0]; exact h.zs (cw s0) (by omega_using []) (by simp only [nArr]; omega_using [])))
@@ -363,7 +363,7 @@ theorem closeS {s0 s : State} (h : M2 s0 s) : WP isa closeCheck s (M3 s0) := by
     (fun hpl => sep_bytes (n := (s0.gpr .r9).toNat) (by rw [← cS_eq]; exact hp.pS) hfp (by omega_using [hpl])))
     fun t₃ ⟨⟨f₃, e₃, o₃⟩, k₃⟩ sy₃ => ?_
   rw [bP] at f₃
-  have ow : ∀ d, d + 8 ≤ 256 → word t₃.mem (sB s0) d = word s.mem (sB s0) d := fun d hd =>
+  obtain ow : ∀ d, d + 8 ≤ 256 → word t₃.mem (sB s0) d = word s.mem (sB s0) d := fun d hd =>
     o₃.word (by simp only [aP, slot_lin]; omega_using [hd]) (by omega_using [hd])
   refine ⟨h.ctx.step k₃.sp k₃.rd k₃.wr (frame_scr (frame_of_outside o₃ (by simp only [aP, slot_lin]; omega_using [hZ'])))
     (k₃.gpr _ (by decide)) (k₃.gpr _ (by decide)) (k₃.gpr _ (by decide)) (k₃.gpr _ (by decide)), e₃,
@@ -391,7 +391,7 @@ theorem closeFin {s0 s : State} (h : M3 s0 s)
   have hp := h.ctx.bx.pre
   obtain ⟨hw, hw4, _⟩ := cw_facts hp
   have hav := h.hav
-  have hop := cOp_cand hp hav
+  obtain hop := cOp_cand hp hav
   rw [VG.Proof.RsaKeyGen.afterDraw, hcl] at hop
   simp only [↓reduceIte] at hop
   refine fin_ok 2 (by decide) h.ctx (by rw [hop]; rfl) (by rw [outOf, hop]) ?_
@@ -423,21 +423,21 @@ theorem gcdS {s0 s : State} (h : M3 s0 s)
   have hfe := hp.fe
   have hel1 := hp.el1
   have hel2 := hp.el2
-  have hZ := scr_fit hp
+  obtain hZ := scr_fit hp
   have hZ' := hZ
   simp only [nArr, slot_lin] at hZ'
-  have hshape : PrimeShape (64 * cw s0) (candOf s0) := VG.Proof.RsaKeyGen.candidate_shape (by omega_using [hw4]) _
-  have bE : Spec.Rsa.bytesAt s.mem (s0.gpr .r6) (s0.gpr .r7).toNat = eB s0 :=
+  obtain hshape : PrimeShape (64 * cw s0) (candOf s0) := VG.Proof.RsaKeyGen.candidate_shape (by omega_using [hw4]) _
+  obtain bE : Spec.Rsa.bytesAt s.mem (s0.gpr .r6) (s0.gpr .r7).toNat = eB s0 :=
     in_bytes h.ctx.bx (ρ := cE s0) (hE_dj hp) (Nat.le_refl _) (by omega_using [])
-  have hc : VG.Proof.Bignum.wv s.mem (sB s0) (slot (cw s0) 0) (cw s0) = candOf s0 := by
+  obtain hc : VG.Proof.Bignum.wv s.mem (sB s0) (slot (cw s0) 0) (cw s0) = candOf s0 := by
     rw [← Pre.val32_eq_wv]; exact h.arr0
   refine WP.mono_syms (gcdCheck_ok h.env hZ hc hshape.1 (h.r21.trans (BitVec.add_zero _).symm)
     (h.r30.trans (ofNat_toNat64 _).symm) hel1 hel2
     (rd_bytes (n := (s0.gpr .r7).toNat) (by rw [h.ctx.bx.rd]; exact hp.rE) hfe (by omega_using [])))
     fun t₄ ⟨⟨g₄, o₄⟩, k₄⟩ sy₄ => ?_
   rw [bE] at g₄
-  have o₄ : Outside (sB s0) (slot (cw s0) aCm1) (8 * cw s0) s.mem t₄.mem := fun x hx => o₄ x hx
-  have ow : ∀ d, d + 8 ≤ 256 → word t₄.mem (sB s0) d = word s.mem (sB s0) d := fun d hd =>
+  obtain o₄ : Outside (sB s0) (slot (cw s0) aCm1) (8 * cw s0) s.mem t₄.mem := fun x hx => o₄ x hx
+  obtain ow : ∀ d, d + 8 ≤ 256 → word t₄.mem (sB s0) d = word s.mem (sB s0) d := fun d hd =>
     o₄.word (by simp only [aCm1, slot_lin]; omega_using [hd]) (by omega_using [hd])
   refine ⟨h.ctx.step k₄.sp k₄.rd k₄.wr (frame_scr (frame_of_outside o₄ (by simp only [aCm1, slot_lin]; omega_using [hZ'])))
     (k₄.gpr _ (by decide)) (k₄.gpr _ (by decide)) (k₄.gpr _ (by decide)) (k₄.gpr _ (by decide)),
@@ -453,8 +453,8 @@ theorem gcdFin {s0 s : State} (h : M4 s0 s) (hg : ¬ Nat.gcd (candOf s0 - 1) (Sp
   have hp := h.ctx.bx.pre
   obtain ⟨hw, hw4, _⟩ := cw_facts hp
   have hav := h.hav
-  have hop := cOp_cand hp hav
-  have hgb : (Nat.gcd (candOf s0 - 1) (Spec.Rsa.os2ip (eB s0)) == 1) = false := by simp [hg]
+  obtain hop := cOp_cand hp hav
+  obtain hgb : (Nat.gcd (candOf s0 - 1) (Spec.Rsa.os2ip (eB s0)) == 1) = false := by simp [hg]
   rw [VG.Proof.RsaKeyGen.afterDraw, h.ncl] at hop
   simp only [hgb, Bool.and_false, Bool.false_eq_true, ↓reduceIte] at hop
   refine fin_ok 3 (by decide) h.ctx (by rw [hop]; rfl) (by rw [outOf, hop]) ?_
@@ -467,8 +467,8 @@ theorem toTIn {s0 s : State} (h : M4 s0 s) (hg : Nat.gcd (candOf s0 - 1) (Spec.R
   have hp := h.ctx.bx.pre
   obtain ⟨hw, hw4, hw64⟩ := cw_facts hp
   have hav := h.hav
-  have hop := cOp_cand hp hav
-  have hgb : (Nat.gcd (candOf s0 - 1) (Spec.Rsa.os2ip (eB s0)) == 1) = true := by simp [hg]
+  obtain hop := cOp_cand hp hav
+  obtain hgb : (Nat.gcd (candOf s0 - 1) (Spec.Rsa.os2ip (eB s0)) == 1) = true := by simp [hg]
   rw [VG.Proof.RsaKeyGen.afterDraw, h.ncl] at hop
   simp only [hgb, Bool.and_true, Bool.false_eq_true, ↓reduceIte] at hop
   refine ⟨h.ctx, h.env, h.lay, scr_fit hp, h.arr0, VG.Proof.RsaKeyGen.candidate_shape (by omega_using [hw4]) _, hw, hw64,

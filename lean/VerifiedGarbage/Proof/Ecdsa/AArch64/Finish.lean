@@ -91,25 +91,25 @@ theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hl8 := hc.len8
   have hlo := hc.len_lo
   have hhi := hc.len_hi
-  have hRR := sl_le c h7 (i := RR) (by decide)
-  have hSS := sl_le c h7 (i := SS) (by decide)
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  have h0 : ∀ e, out + BitVec.ofNat 64 0 + BitVec.ofNat 64 e = out + BitVec.ofNat 64 e := fun e =>
+  obtain hRR := sl_le c h7 (i := RR) (by decide)
+  obtain hSS := sl_le c h7 (i := SS) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain h0 : ∀ e, out + BitVec.ofNat 64 0 + BitVec.ofNat 64 e = out + BitVec.ofNat 64 e := fun e =>
     congrArg (· + BitVec.ofNat 64 e) (BitVec.add_zero out)
-  have hL : ∀ e, out + BitVec.ofNat 64 c.C.len + BitVec.ofNat 64 e =
+  obtain hL : ∀ e, out + BitVec.ofNat 64 c.C.len + BitVec.ofNat 64 e =
       out + BitVec.ofNat 64 (c.C.len + e) := fun e => by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 2 * c.C.len →
+  obtain hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 2 * c.C.len →
       Region.Disjoint ⟨off base a, 8 * c.n⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun ha hd' =>
     (hd.symm.sub_left (Offset.sub_base base ha)).sub_right (Offset.sub_base out hd')
-  have hscd : ∀ {d : Nat}, d + c.C.len ≤ 2 * c.C.len →
+  obtain hscd : ∀ {d : Nat}, d + c.C.len ≤ 2 * c.C.len →
       Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun hd' =>
     hd.symm.sub_right (Offset.sub_base out hd')
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega_using [hn0, hF]) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.mem
-  have hx20₁ : s₁.gpr .x20 = out := by rw [k₁.gpr _ (by decide), hx20]
+  obtain hx20₁ : s₁.gpr .x20 = out := by rw [k₁.gpr _ (by decide), hx20]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₁ (dst := .x20) (d := 0) (a := c.sl RR) (by decide) (by decide) (by decide) b
     (by rw [e₁, hf]) hRR (sl_mod8 c RR) (by omega_using [hl8]) hlo hhi (by omega_using [h7, hhi])
@@ -118,12 +118,12 @@ theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
       rw [hx20₁, h0]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [hfit, he])⟩)
     (by rw [hx20₁]; exact hdsc hRR (by omega_using []))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   rw [hx20₁] at e₂ O₂
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have U₂ := O₂.unch_far (hscd (d := 0) (by omega_using []))
-  have hx20₂ : s₂.gpr .x20 = out := by rw [k₂.gpr _ (by decide), hx20₁]
-  have hx3₂ : s₂.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain U₂ := O₂.unch_far (hscd (d := 0) (by omega_using []))
+  obtain hx20₂ : s₂.gpr .x20 = out := by rw [k₂.gpr _ (by decide), hx20₁]
+  obtain hx3₂ : s₂.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂.gpr _ (by decide), e₁, hf]
-  have ss₂ : wordsVal s₂.mem base (c.sl SS) c.n = sv c base s SS := by
+  obtain ss₂ : wordsVal s₂.mem base (c.sl SS) c.n = sv c base s SS := by
     rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hSS]) (by omega_using [hn, hSS]), hm₁]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₂ (dst := .x20) (d := c.C.len) (a := c.sl SS) (by decide) (by decide)
@@ -134,18 +134,18 @@ theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
       rw [hx20₂, hL]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [h7, hhi, he])⟩)
     (by rw [hx20₂]; exact hdsc hSS (by omega_using []))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   rw [hx20₂] at e₃ O₃
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have U₃ := O₃.unch_far (hscd (d := c.C.len) (by omega_using []))
-  have hx3₃ : s₃.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain U₃ := O₃.unch_far (hscd (d := c.C.len) (by omega_using []))
+  obtain hx3₃ : s₃.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₃.gpr _ (by decide), hx3₂]
-  have first : Spec.Ecdsa.bytesAt s₃.mem out c.C.len =
+  obtain first : Spec.Ecdsa.bytesAt s₃.mem out c.C.len =
       if b then toBytes c.C.len (sv c base s RR) else List.replicate c.C.len 0 := by
     rw [bytesAt_keep O₃ (Offset.base_disjoint out (Nat.le_refl _) (by omega_using [hfit])) (by omega_using [hfit]) (by omega_using [hfit])]
     have e₂' := e₂
     rw [(BitVec.add_zero out : out + BitVec.ofNat 64 0 = out)] at e₂'
     rw [e₂', hm₁]
-  have hsv₃ : Spill.Saved base g Cfg.saved s₃.mem := by
-    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
+  obtain hsv₃ : Spill.Saved base g Cfg.saved s₃.mem := by
+    obtain h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; decide
     exact Saved.unch (Saved.unch (hm₁ ▸ hsv) h16 U₂) h16 U₃
   refine Spill.restore_ok hs₃.x0 (by decide) (by decide) (fun p hp => ?_) hsv₃ fun s₄ R₄ => ?_

@@ -134,7 +134,7 @@ theorem mulWord_wp {s : State} {w p : Reg} {off : Nat} {x y : BitVec 32} {Q : Ad
   unfold mulWord
   rw [List.append_assoc, List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_sll (by decide) fun s₁ u₁ => wp_srl (by decide) fun s₂ u₂ => wp_or fun s₃ u₃ => ?_
-  have v₃ : s₃.gpr .a6 = ((x.setWidth 64) <<< 1) ||| ((y.setWidth 64) >>> 31) := by
+  obtain v₃ : s₃.gpr .a6 = ((x.setWidth 64) <<< 1) ||| ((y.setWidth 64) >>> 31) := by
     rw [u₃.gpr, u₂.other .a6 (by decide), u₁.gpr, u₂.gpr, u₁.other _ hp6, hx, hy]
   have g₃ (r : Reg) (h6 : r ≠ .a6) (ht : r ≠ .t6) : s₃.gpr r = s.gpr r := by
     rw [u₃.other _ h6, u₂.other _ ht, u₁.other _ h6]
@@ -161,26 +161,26 @@ theorem mulA_wp {s : State} {Q : Addr} {rest : List Instr} {Φ : State → Prop}
   simp only [List.append_assoc]
   refine loadW_wp (by decide) (by decide) (by decide) (by decide) (by rw [h3]; exact inR 0 (by decide))
     fun s₁ v₁ g₁ m₁ rd₁ wr₁ sp₁ => ?_
-  have q₁ : s₁.gpr .s3 = Q := by rw [g₁ _ (by decide) (by decide), h3]
+  obtain q₁ : s₁.gpr .s3 = Q := by rw [g₁ _ (by decide) (by decide), h3]
   refine loadW_wp (by decide) (by decide) (by decide) (by decide)
     (by rw [q₁, rd₁, wr₁]; exact inR 4 (by decide)) fun s₂ v₂ g₂ m₂ rd₂ wr₂ sp₂ => ?_
-  have q₂ : s₂.gpr .s3 = Q := by rw [g₂ _ (by decide) (by decide), q₁]
+  obtain q₂ : s₂.gpr .s3 = Q := by rw [g₂ _ (by decide) (by decide), q₁]
   refine loadW_wp (by decide) (by decide) (by decide) (by decide)
     (by rw [q₂, rd₂, wr₂, rd₁, wr₁]; exact inR 8 (by decide)) fun s₃ v₃ g₃ m₃ rd₃ wr₃ sp₃ => ?_
-  have q₃ : s₃.gpr .s3 = Q := by rw [g₃ _ (by decide) (by decide), q₂]
+  obtain q₃ : s₃.gpr .s3 = Q := by rw [g₃ _ (by decide) (by decide), q₂]
   refine loadW_wp (by decide) (by decide) (by decide) (by decide)
     (by rw [q₃, rd₃, wr₃, rd₂, wr₂, rd₁, wr₁]; exact inR 12 (by decide)) fun s₄ v₄ g₄ m₄ rd₄ wr₄ sp₄ => ?_
   -- The words, zero-extended.
-  have e1 : s₄.gpr .t1 = (w 0).setWidth 64 := by
+  obtain e1 : s₄.gpr .t1 = (w 0).setWidth 64 := by
     rw [g₄ _ (by decide) (by decide), g₃ _ (by decide) (by decide), g₂ _ (by decide) (by decide), v₁, h3, hwd]
-  have e3 : s₄.gpr .t3 = (w 4).setWidth 64 := by
+  obtain e3 : s₄.gpr .t3 = (w 4).setWidth 64 := by
     rw [g₄ _ (by decide) (by decide), g₃ _ (by decide) (by decide), v₂, q₁, m₁, hwd]
-  have e4 : s₄.gpr .t4 = (w 8).setWidth 64 := by
+  obtain e4 : s₄.gpr .t4 = (w 8).setWidth 64 := by
     rw [g₄ _ (by decide) (by decide), v₃, q₂, m₂, m₁, hwd]
-  have e5 : s₄.gpr .t5 = (w 12).setWidth 64 := by rw [v₄, q₃, m₃, m₂, m₁, hwd]
-  have q₄ : s₄.gpr .s3 = Q := by rw [g₄ _ (by decide) (by decide), q₃]
-  have m₄' : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
+  obtain e5 : s₄.gpr .t5 = (w 12).setWidth 64 := by rw [v₄, q₃, m₃, m₂, m₁, hwd]
+  obtain q₄ : s₄.gpr .s3 = Q := by rw [g₄ _ (by decide) (by decide), q₃]
+  obtain m₄' : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
   have g₄' (r : Reg) (hr : r ∉ mulRegs) : s₄.gpr r = s.gpr r := by
     simp only [mulRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3', h4', h5, -, -⟩ := hr
@@ -190,7 +190,7 @@ theorem mulA_wp {s : State} {Q : Addr} {rest : List Instr} {Φ : State → Prop}
   refine wp_srl (by decide) fun s₅ u₅ => wp_li (imm := 0) (by decide) fun s₆ u₆ => wp_sub fun s₇ u₇ => ?_
   refine wp_li (imm := 0x87) (by decide) fun s₈ u₈ => wp_and fun s₉ u₉ => ?_
   refine wp_sll (by decide) fun s₁₀ u₁₀ => wp_xor fun s₁₁ u₁₁ => ?_
-  have v₁₁ : s₁₁.gpr .a6 = ((w 0).setWidth 64 <<< 1) ^^^
+  obtain v₁₁ : s₁₁.gpr .a6 = ((w 0).setWidth 64 <<< 1) ^^^
       ((BitVec.ofNat 64 0 - (w 12).setWidth 64 >>> 31) &&& BitVec.ofNat 64 0x87) := by
     rw [u₁₁.gpr, u₁₀.gpr, u₁₀.other .t6 (by decide), u₉.gpr, u₉.other .t1 (by decide), u₈.gpr,
       u₈.other .t6 (by decide), u₈.other .t1 (by decide), u₇.gpr, u₇.other .t1 (by decide), u₆.gpr,
@@ -198,9 +198,9 @@ theorem mulA_wp {s : State} {Q : Addr} {rest : List Instr} {Φ : State → Prop}
   have g₁₁ (r : Reg) (h6 : r ≠ .t6) (h2 : r ≠ .t2) (ha : r ≠ .a6) : s₁₁.gpr r = s₄.gpr r := by
     rw [u₁₁.other _ ha, u₁₀.other _ ha, u₉.other _ h6, u₈.other _ h2, u₇.other _ h6, u₆.other _ h2,
       u₅.other _ h6]
-  have m₁₁ : s₁₁.mem = s.mem := by
+  obtain m₁₁ : s₁₁.mem = s.mem := by
     rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, m₄']
-  have wr₁₁ : s₁₁.wr = s.wr := by
+  obtain wr₁₁ : s₁₁.wr = s.wr := by
     rw [u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, wr₄']
   refine storeW_wp (off := 0) (by decide)
     (by rw [g₁₁ _ (by decide) (by decide) (by decide), q₄, wr₁₁]; exact inW 0 (by decide))
@@ -224,7 +224,7 @@ theorem mulA_wp {s : State} {Q : Addr} {rest : List Instr} {Φ : State → Prop}
     (by rw [k₁₄ _ (by decide) (by decide) (by decide), q₄]) (by rw [k₁₄ _ (by decide) (by decide) (by decide), e5])
     (by rw [k₁₄ _ (by decide) (by decide) (by decide), e4])
     (by rw [wr₁₄, wr₁₃, wr₁₂, wr₁₁]; exact inW 12 (by decide)) fun s₁₅ g₁₅ m₁₅ rd₁₅ wr₁₅ sp₁₅ => ?_
-  have mem₁₅ : s₁₅.mem = (((s.mem.writeW Q ((w 0 <<< 1) ^^^ (if (w 12).msb then (0x87 : BitVec 32) else 0))).writeW
+  obtain mem₁₅ : s₁₅.mem = (((s.mem.writeW Q ((w 0 <<< 1) ^^^ (if (w 12).msb then (0x87 : BitVec 32) else 0))).writeW
       (Q + BitVec.ofNat 64 4) ((w 4 <<< 1) ||| (if (w 0).msb then (1 : BitVec 32) else 0))).writeW
       (Q + BitVec.ofNat 64 8) ((w 8 <<< 1) ||| (if (w 4).msb then (1 : BitVec 32) else 0))).writeW
       (Q + BitVec.ofNat 64 12) ((w 12 <<< 1) ||| (if (w 8).msb then (1 : BitVec 32) else 0)) := by

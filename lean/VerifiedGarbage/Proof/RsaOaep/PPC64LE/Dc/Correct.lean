@@ -81,7 +81,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   have hFD := hH.hFD64
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r7).toNat := rfl
-  have hrc := rcOf_le (privO s)
+  obtain hrc := rcOf_le (privO s)
   obtain ⟨hE, hSt, hDg, hW, hB, hRs⟩ := offs'
   generalize hD : H.D = D at *
   generalize hO : privO s = o at *
@@ -104,7 +104,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   obtain ⟨idx, hidx, hidx'⟩ := scan_idx (fun i => view t₃.mem (Sd s) (1 + 2 * D + i)) (t₃.gpr .r24)
     (kk s - (2 * D + 1))
   rw [hsc] at hidx
-  have h25 : t₆.gpr .r25 = BitVec.ofNat 64 idx := by
+  obtain h25 : t₆.gpr .r25 = BitVec.ofNat 64 idx := by
     rw [g₆ .r25 (by simp), g₅ .r25 (by simp), i₄, hidx]
   refine WP.seq (WP.mono (shift_ok P b₆ h25 (by omega_using [hk2, ek, hidx'])) fun t₇ ⟨b₇, k₇, v₇⟩ => ?_)
   -- `ok`, `out`, the length and the result.
@@ -115,35 +115,35 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
       Base.r20 b₇]) (by omega_using [hrc]) (by rw [g₉ .r25 (by simp), g₈ .r25 (by simp), k₇.get .r25, h25])) fun u ⟨svu, rdu, mu, ru⟩ =>
     ⟨svu, rdu.trans rd₉, ?_⟩
   -- The views.
-  have hS : ∀ {x}, x < oSt → ∀ p ∈ [(oSt, H.S), (oDig, H.FD), (oW, H.W)], x < p.1 ∨ p.1 + p.2 ≤ x :=
+  obtain hS : ∀ {x}, x < oSt → ∀ p ∈ [(oSt, H.S), (oDig, H.FD), (oW, H.W)], x < p.1 ∨ p.1 + p.2 ≤ x :=
     fun hx p hp => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl <;> exact .inl (by simp only; omega_arith)
-  have e2 : ∀ x < oSt, view t₂.mem (Sd s) x = view t₁.mem (Sd s) x := fun x hx => s₂ x (by omega_using [hSt, hRs, hx]) (hS hx)
-  have hlab : Spec.Rsa.bytesAt v.mem (stackArg s 9) (stackArg s 10).toNat = labB s := labB_eq P A.mem
+  obtain e2 : ∀ x < oSt, view t₂.mem (Sd s) x = view t₁.mem (Sd s) x := fun x hx => s₂ x (by omega_using [hSt, hRs, hx]) (hS hx)
+  obtain hlab : Spec.Rsa.bytesAt v.mem (stackArg s 9) (stackArg s 10).toNat = labB s := labB_eq P A.mem
   rw [hlab] at h₂
-  have hlh : ∀ i < D, view t₂.mem (Sd s) (oDig + i) = (Hs.hash (labB s)).getD i 0 := fun i hi => by
+  obtain hlh : ∀ i < D, view t₂.mem (Sd s) (oDig + i) = (Hs.hash (labB s)).getD i 0 := fun i hi => by
     have := congrArg (fun l => l.getD i 0) h₂
     rw [bytesAt_view, srcB, map_range_getD' _ (by omega_using [hDF, hi])] at this
     rw [this, hHh, hH.hashTake]
     simp [List.getD_eq_getElem?_getD, show i < H.D by omega_using [hD, hi]]
   -- `lHash'`, `lHash` and the scan, on the view after unmasking.
-  have hc0 : t₃.gpr .r24 = accG (view t₁.mem (Sd s) 0) (fun i => view t₁.mem (Sd s) (1 + D + i))
+  obtain hc0 : t₃.gpr .r24 = accG (view t₁.mem (Sd s) 0) (fun i => view t₁.mem (Sd s) (1 + D + i))
       (fun i => view t₂.mem (Sd s) (oDig + i)) D := by
     rw [a₃, e2 0 (by omega_using [hSt])]
     exact accG_congr _ D (fun i hi => e2 _ (by omega_using [hFD, hSt, hDF, hi])) (fun _ _ => rfl)
-  have hsc' : sc = scanS (fun i => view t₁.mem (Sd s) (1 + 2 * D + i)) (accG (view t₁.mem (Sd s) 0)
+  obtain hsc' : sc = scanS (fun i => view t₁.mem (Sd s) (1 + 2 * D + i)) (accG (view t₁.mem (Sd s) 0)
       (fun i => view t₁.mem (Sd s) (1 + D + i)) (fun i => view t₂.mem (Sd s) (oDig + i)) D) (kk s - (2 * D + 1)) := by
     rw [← hsc, hc0, m₃]
     exact scanS_congr _ _ fun i hi => e2 _ (by omega_using [hk2, ek, hSt, hi])
   rw [hsc'] at hidx
-  have r24 : t₇.gpr .r24 = sc.2.2 ||| sc.1 := by
+  obtain r24 : t₇.gpr .r24 = sc.2.2 ||| sc.1 := by
     rw [k₇.get .r24, g₆ .r24 (by simp), g₅ .r24 (by simp), a₄]
-  have hok : t₉.gpr .r26 = mk (rcOf o = 1 ∧ (sc.2.2 ||| sc.1) = 0) := by
+  obtain hok : t₉.gpr .r26 = mk (rcOf o = 1 ∧ (sc.2.2 ||| sc.1) = 0) := by
     rw [g₉ .r26 (by simp), o₈, r24, ← hRC]
   rw [hsc'] at hok
   -- The buffer.
-  have hT : ∀ y < 2048, view t₆.mem (Sd s) (oBuf + y) =
+  obtain hT : ∀ y < 2048, view t₆.mem (Sd s) (oBuf + y) =
       (srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD y 0 := by
     intro y hy
     rw [v₆ _ (by omega_using [hB, hRs, hy])]
@@ -152,7 +152,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
         e2 _ (by omega_using [hk2, ek, hSt, hyt]), srcB, map_range_getD' _ hyt]
     · rw [ifn (by omega_using [hyt]), v₅ _ (by omega_using [hB, hRs, hy]), ifp ⟨by omega_using [], by omega_using [hy]⟩]
       simp [srcB, List.getD_eq_getElem?_getD, hyt]
-  have hbuf : ∀ i < kk s, view t₇.mem (Sd s) (oBuf + i) =
+  obtain hbuf : ∀ i < kk s, view t₇.mem (Sd s) (oBuf + i) =
       (srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD (i + (idx + 1)) 0 := by
     intro i hi
     rw [v₇ _ (by omega_using [hk2, ek, hB, hRs, hi]), shV_eq _ (by omega_using [hk2, ek, hidx']) (fun x h₁ h₂ => by
@@ -161,13 +161,13 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
     · rw [ifp hl, hT _ (by omega_using [hk2, ek, hidx', hi])]
     · rw [ifn hl]; simp [srcB, List.getD_eq_getElem?_getD, show ¬ i + (idx + 1) < kk s - (2 * D + 1) by omega_using [hl]]
   -- `out`, `*msg_len` and the result.
-  have hu : ∀ x, ¬ (mlR s).Contains x 1 → u.mem x = t₉.mem x := fun x hx => by
+  obtain hu : ∀ x, ¬ (mlR s).Contains x 1 → u.mem x = t₉.mem x := fun x hx => by
     rw [mu]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self (mlR s)) _ (Region.contains_self _ _)) x
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hx)
-  have hlen : ((Spec.Rsa.bytesAt t₈.mem (off (Sd s) oBuf) (kk s)).map fun b => andB b (t₈.gpr .r26)).length =
+  obtain hlen : ((Spec.Rsa.bytesAt t₈.mem (off (Sd s) oBuf) (kk s)).map fun b => andB b (t₈.gpr .r26)).length =
       kk s := by simp [bytesAt_length]
-  have hout : ∀ i < kk s, u.mem (s.gpr .r3 + BitVec.ofNat 64 i) =
+  obtain hout : ∀ i < kk s, u.mem (s.gpr .r3 + BitVec.ofNat 64 i) =
       andB ((srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD (i + (idx + 1)) 0) (t₉.gpr .r26) := by
     intro i hi
     rw [hu _ (fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega_using [ek, hi, this]) (by omega_using [ek, hi])) hc), m₉]
@@ -177,7 +177,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
     rw [g₉ .r26 (by simp)]
     congr 1
     rw [m₈, ← hbuf i hi]; show t₇.mem (off (off (Sd s) oBuf) i) = _; rw [off_off]; rfl
-  have hml : u.mem.readW (s.gpr .r5) 64 = (BitVec.ofNat 64 (kk s) - BitVec.ofNat 64 (2 * D + 2) -
+  obtain hml : u.mem.readW (s.gpr .r5) 64 = (BitVec.ofNat 64 (kk s) - BitVec.ofNat 64 (2 * D + 2) -
       BitVec.ofNat 64 idx) &&& t₉.gpr .r26 := by
     rw [mu, Mem.readW_writeW_self64, show s.gpr .r7 = BitVec.ofNat 64 (kk s) from
       (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm]
@@ -264,29 +264,29 @@ include hH hG hHh hHl hHv hGh hGl hGv P T TL
 omit hH hG hHh hHv hGh hGl hGv T TL in
 theorem fail_done {v : State} (A : AfterPriv s v) (hk : kk s < 2 * H.D + 2) :
     WP isa decFail v (Done Hs Gs s) := by
-  have hrc := rcOf_le (privO s)
+  obtain hrc := rcOf_le (privO s)
   refine WP.mono (decFail_ok P A.base hrc) fun u ⟨sv, _, hm, h3⟩ => ⟨sv, ?_⟩
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r7).toNat := rfl
-  have hl : ∀ em, privO s = .ok em → em.length = kk s := fun em he => by
+  obtain hl : ∀ em, privO s = .ok em → em.length = kk s := fun em he => by
     have := A.em; rw [he] at this; simp only [emOf] at this; rw [← this, bytesAt_length]
   rw [decOut_short' hl (by rw [hHl]; exact hk)]
-  have hout : Spec.Rsa.bytesAt u.mem (s.gpr .r3) (kk s) = List.replicate (kk s) 0 := by
-    have e := bytesAt_writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0)
+  obtain hout : Spec.Rsa.bytesAt u.mem (s.gpr .r3) (kk s) = List.replicate (kk s) 0 := by
+    obtain e := bytesAt_writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0)
       (by rw [List.length_replicate]; omega_using [ek])
     rw [List.length_replicate] at e
     rw [← e, hm]
-    have f : Frame [mlR s] (writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0))
+    obtain f : Frame [mlR s] (writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0))
         ((writeBytes v.mem (s.gpr .r3) (List.replicate (kk s) 0)).writeW (s.gpr .r5) (0#64)) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
+    obtain hi := List.mem_range.mp hi
     exact f _ (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega_using [ek, hi, this]) (by omega_using [ek, hi])) hc)
-  have hml : u.mem.readW (s.gpr .r5) 64 = 0 := by rw [hm, Mem.readW_writeW_self64]; rfl
-  have hrc2 := rcOf_le (privO s)
+  obtain hml : u.mem.readW (s.gpr .r5) 64 = 0 := by rw [hm, Mem.readW_writeW_self64]; rfl
+  obtain hrc2 := rcOf_le (privO s)
   by_cases h2 : rcOf (privO s) = 2
   · rw [ifp h2]; exact ⟨by rw [h3, ifp h2]; decide, hout, hml⟩
   · rw [ifn h2]; exact ⟨by rw [h3, ifn h2]; decide, hout, hml⟩
@@ -297,9 +297,9 @@ theorem chk_ok (hD64 : H.D ≤ 64) {v : State} (A : AfterPriv s v) :
     WP isa (.block (Dec.chkK H)) v fun v' => AfterPriv s v' ∧ (v'.gpr .r3 != 0) = decide (kk s < 2 * H.D + 2) := by
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r7).toNat := rfl
-  have e7 : s.gpr .r7 = BitVec.ofNat 64 (kk s) := ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
+  obtain e7 : s.gpr .r7 = BitVec.ofNat 64 (kk s) := ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
   refine wp_li (by omega_using [hD64]) fun v₁ o₁ e₁ => wp_sub fun v₂ o₂ e₂ => wp_lsr fun v₃ o₃ e₃ => wp_nil ?_
-  have k₃ : Only [.r3] v v₃ := (o₁.trans (o₂.trans o₃)).mono
+  obtain k₃ : Only [.r3] v v₃ := (o₁.trans (o₂.trans o₃)).mono
   refine ⟨A.only P k₃, ?_⟩
   rw [e₃, e₂, e₁, o₁.get .r15, Base.r15 A.base, e7]
   exact ne_zero_ltBit (by omega_using [hk2, ek]) (by omega_using [hD64])
@@ -323,11 +323,11 @@ theorem code_ok (X : pc = true → PreXD s) (hl : H.D ∈ lens) : WP isa (decryp
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P X E) fun v A y₂ => ?_)
   -- The label's hash function's digest length to `r3`.
-  have TL' := tabS_wmL P TL A.mem
+  obtain TL' := tabS_wmL P TL A.mem
   refine WP.seq (WP.of_syms ?_)
   show WP isa (.block (tword .r3 15 6 ++ [])) v _
   refine wp_tword TL' A.base (k := 6) (by decide) (d := .r3) (by decide) fun v₁ o₁ e₁ => wp_nil fun y₃ => ?_
-  have e3 : v₁.gpr .r3 = BitVec.ofNat 64 H.D := e₁.trans TL'.d
+  obtain e3 : v₁.gpr .r3 = BitVec.ofNat 64 H.D := e₁.trans TL'.d
   -- The code for that length.
   refine WP.seq (byLen_ok (D := H.D) (by omega_using [hD64])
     (F := fun u => AfterPriv s u ∧ u.syms = s.syms ∧ u.gpr .r3 = BitVec.ofNat 64 H.D)
@@ -377,8 +377,8 @@ theorem tab_ofD {vs : List MVar} (hc : Coh vs) {s : State} (h : (decSpec (tables
   obtain ⟨⟨T₁, hT₁, hh₁⟩, ⟨T, hT, hh⟩, hpw⟩ := spec_tabD h
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  have hpw' := hpw.sublist (List.sublist_append_left _ _)
-  have P := preD_of h
+  obtain hpw' := hpw.sublist (List.sublist_append_left _ _)
+  obtain P := preD_of h
   exact ⟨w₁, hw₁, w, hw, Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hh₁).2.2.2,
     Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hh).2.2.2,
     tabS_entryDL hc P hpw' hw₁ hh₁, tabS_entryD hc P hpw' hw hh⟩
@@ -388,7 +388,7 @@ tables of `vs`. -/
 theorem code_correct {vs : List MVar} (hc : Coh vs) (s : State) (h : (decSpec (tables vs)).pre s) :
     ∃ t s', Exec isa (decrypt (fns3 vs)) s t s' ∧ abiPreserved s s' ∧ (decSpec (tables vs)).post s s' := by
   obtain ⟨w₁, -, w, -, hH, hG, TL, T⟩ := tab_ofD hc h
-  have P : PreD false s := preD_of h
+  obtain P : PreD false s := preD_of h
   obtain ⟨t, s', he, habi, hr⟩ := code_ok w₁.l.ok w.l.ok w₁.l.hash w₁.l.len w₁.l.valid w.l.hash w.l.len w.l.valid
     P T TL nofun w₁.l.lens_mem
   refine ⟨t, s', he, habi, ?_⟩

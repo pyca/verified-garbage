@@ -54,7 +54,7 @@ theorem r11_ok (s : State) :
     WP isa (.block [.mov .r11 (.reg .rdi), .alu .add .r11 (.imm 256)]) s fun s' =>
       s'.gpr .r11 = s.gpr .rdi + BitVec.ofNat 64 256 ∧ (∀ q, q ≠ .r11 → s'.gpr q = s.gpr q) ∧
       (∀ x l, s'.zlane x l = s.zlane x l) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e : BitVec.signExtend 64 (256 : BitVec 32) = BitVec.ofNat 64 256 := by decide
+  obtain e : BitVec.signExtend 64 (256 : BitVec 32) = BitVec.ofNat 64 256 := by decide
   apply WP.of_runBlock
   simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
     State.setFlags, isa, State.setReg, e, Option.map_some, Option.bind_some, Option.some.injEq,
@@ -68,13 +68,13 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
     WP isa prepare s₀ (PrepOk s₀) := by
   set C := s₀.gpr .rdi with hC
   set H := Spec.Gcm.ctxH s₀.mem C with hH
-  have hk : InRegions (s₀.rd ++ s₀.wr) C 256 := by
+  obtain hk : InRegions (s₀.rd ++ s₀.wr) C 256 := by
     obtain ⟨r, hr, hc⟩ := hw
     exact ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
   simp only [prepare, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (setupG_ok' hk) fun s₁ ⟨_, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
-  have r₁ : s₁.gpr .rdi = C := g₁ _ (by decide)
+  obtain r₁ : s₁.gpr .rdi = C := g₁ _ (by decide)
   -- Pairs 0–7.
   rw [WP.block_append_iff]
   refine WP.mono (storesK_ok .rdi pregs.reverse 8 s₁
@@ -82,16 +82,16 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
     (by rw [r₁, pregs_rev_length]; exact Nat.le_trans (by omega_arith) hwrap))
     fun s₂ ⟨sv₂, fr₂, g₂, rd₂, wr₂, ln₂⟩ => ?_
   rw [r₁] at sv₂ fr₂
-  have P0 := stored (H := H) (j := 8) (d := 0) rfl (by decide) sv₂ (fun k hk l hl => by
+  obtain P0 := stored (H := H) (j := 8) (d := 0) rfl (by decide) sv₂ (fun k hk l hl => by
     rw [pw k hk l hl, Nat.add_zero]; rfl)
-  have P0' : ∀ i < 8, ∀ l < 2, s₂.mem.readW (C + BitVec.ofNat 64 (256 + 32 * i + 16 * l)) 128 =
+  obtain P0' : ∀ i < 8, ∀ l < 2, s₂.mem.readW (C + BitVec.ofNat 64 (256 + 32 * i + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * i + 2 - l)) := fun i hi l hl => by
     have := P0 i hi l hl
     rwa [show 8 - 8 + i = i by omega_arith] at this
   -- The reduction constant in every lane of `zmm1`.
   rw [WP.block_append_iff]
   refine WP.mono (Proof.AesGcm.X86_64.Short.bcast_ok .xmm1 s₂) fun s₃ ⟨b₃, f₃⟩ => ?_
-  have h1₃ : ∀ l < 4, s₃.zlane .xmm1 l = poly := fun l hl => by
+  obtain h1₃ : ∀ l < 4, s₃.zlane .xmm1 l = poly := fun l hl => by
     rw [b₃ l hl]
     have := l1 0 (by decide)
     rw [← ln₂ .xmm1 0] at this
@@ -99,19 +99,19 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   -- `r11` at pair 0.
   rw [WP.block_append_iff]
   refine WP.mono (r11_ok s₃) fun s₄ ⟨e₄, g₄, z₄, m₄, rd₄, wr₄⟩ => ?_
-  have c₄ : s₄.gpr .rdi = C := by rw [g₄ _ (by decide), f₃.gpr, g₂, r₁]
-  have q₄ : s₄.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [e₄, f₃.gpr, g₂, r₁]
-  have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, f₃.wr, wr₂, wr₁]
-  have mem₄ : s₄.mem = s₂.mem := by rw [m₄, f₃.mem]
-  have hin₄ : InRegions s₄.wr (s₄.gpr .r11) 768 := by
+  obtain c₄ : s₄.gpr .rdi = C := by rw [g₄ _ (by decide), f₃.gpr, g₂, r₁]
+  obtain q₄ : s₄.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [e₄, f₃.gpr, g₂, r₁]
+  obtain wr₄' : s₄.wr = s₀.wr := by rw [wr₄, f₃.wr, wr₂, wr₁]
+  obtain mem₄ : s₄.mem = s₂.mem := by rw [m₄, f₃.mem]
+  obtain hin₄ : InRegions s₄.wr (s₄.gpr .r11) 768 := by
     rw [wr₄', q₄]; exact Stitch.in_sub hw (by decide)
-  have h1₄ : ∀ l < 4, s₄.zlane .xmm1 l = poly := fun l hl => by rw [z₄]; exact h1₃ l hl
+  obtain h1₄ : ∀ l < 4, s₄.zlane .xmm1 l = poly := fun l hl => by rw [z₄]; exact h1₃ l hl
   -- The address of pair `i`, lane `l`, from `r11`.
-  have addr : ∀ o i l : Nat, C + BitVec.ofNat 64 256 + BitVec.ofNat 64 (o + (32 * i + 16 * l)) =
+  obtain addr : ∀ o i l : Nat, C + BitVec.ofNat 64 256 + BitVec.ofNat 64 (o + (32 * i + 16 * l)) =
       C + BitVec.ofNat 64 (256 + o + 32 * i + 16 * l) := fun o i l => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
   -- The powers at `r11`, as `table_ok` reads them.
-  have src₄ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₄ k l =
+  obtain src₄ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₄ k l =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2)) := fun k hk l hl => by
     have := P0' (2 * k + l / 2) (by omega_arith) (l % 2) (by omega_arith)
     rw [StitchZ.pw16, q₄, mem₄, show 64 * k + 16 * l = 0 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr]
@@ -121,12 +121,12 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   rw [WP.block_append_iff]
   refine WP.mono (StitchZ.table_ok 256 224 (L := 768) (by decide) (by decide) (by decide) (by decide) s₄ hin₄ h1₄)
     fun s₅ ⟨g₅, rd₅, wr₅, f₅, e₅, x₅⟩ => ?_
-  have v16 : s₄.mem.readW (C + BitVec.ofNat 64 256 + BitVec.ofNat 64 224) 128 =
+  obtain v16 : s₄.mem.readW (C + BitVec.ofNat 64 256 + BitVec.ofNat 64 224) 128 =
       Spec.Gcm.preparedPower (hpow H 16) := by
     have := P0' 7 (by decide) 0 (by decide)
     rw [mem₄, show (224 : Nat) = 0 + (32 * 7 + 16 * 0) by rfl, addr]
     exact this
-  have T1 : ∀ k < 4, ∀ l < 4, s₅.mem.readW (C + BitVec.ofNat 64 (256 + 256 + 64 * k + 16 * l)) 128 =
+  obtain T1 : ∀ k < 4, ∀ l < 4, s₅.mem.readW (C + BitVec.ofNat 64 (256 + 256 + 64 * k + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2 + 16)) := fun k hk l hl => by
     have := e₅ k hk l hl
     rw [q₄, show 256 + 64 * k + 16 * l = 256 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr,
@@ -134,22 +134,22 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
     rw [show 256 + 256 + 64 * k + 16 * l = 256 + 256 + 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
     exact this
   -- Pairs 16–23.
-  have q₅ : s₅.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [g₅, q₄]
-  have h1₅ : ∀ l < 4, s₅.zlane .xmm1 l = poly := fun l hl => by
+  obtain q₅ : s₅.gpr .r11 = C + BitVec.ofNat 64 256 := by rw [g₅, q₄]
+  obtain h1₅ : ∀ l < 4, s₅.zlane .xmm1 l = poly := fun l hl => by
     rw [x₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl]; exact h1₄ l hl
   rw [WP.block_append_iff]
   refine WP.mono (StitchZ.table_ok 512 480 (L := 768) (by decide) (by decide) (by decide) (by decide) s₅
     (by rw [g₅, wr₅]; exact hin₄) h1₅) fun s₆ ⟨g₆, rd₆, wr₆, f₆, e₆, x₆⟩ => ?_
   -- The first table kept the powers at `r11`.
-  have src₅ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₅ k l = StitchZ.pw16 s₄ k l := fun k hk l hl => by
+  obtain src₅ : ∀ k < 4, ∀ l < 4, StitchZ.pw16 s₅ k l = StitchZ.pw16 s₄ k l := fun k hk l hl => by
     simp only [StitchZ.pw16, g₅]
     exact StitchZ.keep256 f₅ (by omega_arith) (by decide) (by omega_arith)
-  have v32 : s₅.mem.readW (C + BitVec.ofNat 64 256 + BitVec.ofNat 64 480) 128 =
+  obtain v32 : s₅.mem.readW (C + BitVec.ofNat 64 256 + BitVec.ofNat 64 480) 128 =
       Spec.Gcm.preparedPower (hpow H 32) := by
     have := T1 3 (by decide) 2 (by decide)
     rw [ show (480 : Nat) = 256 + (32 * 7 + 16 * 0) by rfl, addr]
     exact this
-  have T2 : ∀ k < 4, ∀ l < 4, s₆.mem.readW (C + BitVec.ofNat 64 (256 + 512 + 64 * k + 16 * l)) 128 =
+  obtain T2 : ∀ k < 4, ∀ l < 4, s₆.mem.readW (C + BitVec.ofNat 64 (256 + 512 + 64 * k + 16 * l)) 128 =
       Spec.Gcm.preparedPower (hpow H (2 * (2 * k + l / 2) + 2 - l % 2 + 32)) := fun k hk l hl => by
     have := e₆ k hk l hl
     rw [q₅, show 512 + 64 * k + 16 * l = 512 + (32 * (2 * k + l / 2) + 16 * (l % 2)) by omega_arith, addr,
@@ -159,7 +159,7 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
   refine WP.mono (vzu_ok s₆) fun s ⟨g, m, rd, wr⟩ => ⟨fun k hk l hl => ?_, ?_, fun r hr h11 => ?_, ?_, ?_⟩
   · -- Each pair from its table, kept by the later one.
     rw [m]
-    have keep : ∀ {t t' : State} {o : Nat}, Frame [⟨C + BitVec.ofNat 64 256 + BitVec.ofNat 64 o, 256⟩] t.mem t'.mem →
+    obtain keep : ∀ {t t' : State} {o : Nat}, Frame [⟨C + BitVec.ofNat 64 256 + BitVec.ofNat 64 o, 256⟩] t.mem t'.mem →
         256 + 32 * k + 16 * l + 16 ≤ 256 + o ∨ 256 + o + 256 ≤ 256 + 32 * k + 16 * l → o + 256 ≤ 768 →
         t'.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
           t.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 := fun {t t' o} f h ho => by
@@ -182,12 +182,12 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
           2 * k + 2 - l by omega_arith] at this
       exact this
   · rw [m]
-    have sub : ∀ {a : Nat}, a + 256 ≤ 1024 → 256 ≤ a → ∀ r ∈ [(⟨C + BitVec.ofNat 64 a, 256⟩ : Region)],
+    obtain sub : ∀ {a : Nat}, a + 256 ≤ 1024 → 256 ≤ a → ∀ r ∈ [(⟨C + BitVec.ofNat 64 a, 256⟩ : Region)],
         ∃ r' ∈ [(⟨C + BitVec.ofNat 64 256, 768⟩ : Region)], Region.Sub r r' := fun h h' r hr =>
       ⟨_, List.mem_singleton_self _, by obtain rfl := List.mem_singleton.mp hr; exact Offset.sub C h' (by omega_arith)⟩
-    have e5 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 256 = C + BitVec.ofNat 64 512 := by
+    obtain e5 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 256 = C + BitVec.ofNat 64 512 := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    have e6 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 512 = C + BitVec.ofNat 64 768 := by
+    obtain e6 : C + BitVec.ofNat 64 256 + BitVec.ofNat 64 512 = C + BitVec.ofNat 64 768 := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     rw [q₄, e5] at f₅
     rw [q₅, e6] at f₆

@@ -56,14 +56,14 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
   have fits := h.fits
   have kb := h.kb
   rw [entry_eq]
-  have hrd : rA s0 ∈ s0.rd := by rw [h.rd]; simp
+  obtain hrd : rA s0 ∈ s0.rd := by rw [h.rd]; simp
   refine wp_ldrSp hrd h.sp48 (by decide) fun s1 u1 => ?_
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) fits
+  obtain hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) fits
   refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; simp only [cvZ] at hz; omega_using [fS, hz])
     (fun d h1 h2 => ⟨rS s0, by rw [u1.wr, h.wr]; simp, by
       rw [u1.gpr]; exact Offset.contains_base _ (by simp only [cvZ] at hz; omega_using [hz, h2]) (by omega_using [h2])⟩) ?_
   -- The state after the stores.
-  have b2 : Base s0 { s1 with mem := saveMem s1.mem (State.addr (s1.gpr .r12)) s1.gpr saveL } := by
+  obtain b2 : Base s0 { s1 with mem := saveMem s1.mem (State.addr (s1.gpr .r12)) s1.gpr saveL } := by
     refine ⟨h, u1.sp, u1.rd, u1.wr, ?_, fun i hi => ?_⟩
     · rw [u1.gpr]
       refine Frame.sub (rs := [⟨State.addr (stackArg s0 10), 64⟩]) ?_ fun r hr => ⟨rS s0, by simp, ?_⟩
@@ -84,19 +84,19 @@ theorem entry_ok {s0 : State} (h : CvPre s0) :
       rw [u1.other _ this]
   refine wp_mov (op2_reg _ _) fun s3 u3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
-  have b4 := (b2.of_rest (u3.rest (ws := [.r8, .r3]) (by simp)) u3.mem).of_rest (u4.rest (ws := [.r3]) (by simp)) u4.mem
-  have sp4 : s4.sp.toNat + 48 ≤ 2 ^ 32 := by rw [b4.sp]; exact h.sp48
+  obtain b4 := (b2.of_rest (u3.rest (ws := [.r8, .r3]) (by simp)) u3.mem).of_rest (u4.rest (ws := [.r3]) (by simp)) u4.mem
+  obtain sp4 : s4.sp.toNat + 48 ≤ 2 ^ 32 := by rw [b4.sp]; exact h.sp48
   refine wp_ldrSp b4.rA_mem sp4 (by decide) fun s5 u5 => ?_
-  have b5 := b4.of_rest (u5.rest (ws := [.r4]) (by simp)) u5.mem
+  obtain b5 := b4.of_rest (u5.rest (ws := [.r4]) (by simp)) u5.mem
   refine wp_ldrSp b5.rA_mem (by rw [b5.sp]; exact h.sp48) (by decide) fun s6 u6 => ?_
-  have b6 := b5.of_rest (u6.rest (ws := [.r6]) (by simp)) u6.mem
+  obtain b6 := b5.of_rest (u6.rest (ws := [.r6]) (by simp)) u6.mem
   have nfit := h.fN
   refine WP.mono (modulusCheck_ok s6 (src := stackArg s0 2) (k := cvK s0) kb.1 kb.2 (by simp only [cvK]; omega_using [nfit])
     ?_ (by rw [u6.other _ (by decide), u5.gpr, b4.arg (by decide)])
     (by rw [u6.gpr, b5.arg (by decide)]; simp only [cvK, BitVec.ofNat_toNat, BitVec.setWidth_eq])) ?_
   · refine ⟨rN s0, List.mem_append_left _ (by rw [b6.rd, h.rd]; simp), Region.contains_self _ _⟩
   · rintro t ⟨z, m, r⟩
-    have bt := b6.of_rest r m
+    obtain bt := b6.of_rest r m
     refine ⟨bt, ?_, ?_, ?_, ?_, ?_⟩
     · rw [r.gpr _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr,
         u1.gpr]
@@ -141,7 +141,7 @@ alias val32_zero_part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part
 
 theorem val32_low2 {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2) < 2 ^ (32 * w)) :
     val32 m base d w = val32 m base d (w + 2) := by
-  have h1 : val32 m base d (w + 1) = val32 m base d (w + 2) :=
+  obtain h1 : val32 m base d (w + 1) = val32 m base d (w + 2) :=
     val32_low (Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega_using [])))
   rw [← h1] at h ⊢
   exact val32_low h
@@ -177,25 +177,25 @@ theorem load_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (State.addr src) k) ∧
       Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := by
   have pre := h.pre
-  have fit := hw.arr_fit hj
+  obtain fit := hw.arr_fit hj
   have nw := hw.nowrap
   have w16 := pre.w16
   have kb := pre.kb
   have hS : S (cvW s0) = 4 * (cvW s0 + 2) := rfl
-  have hkw : k ≤ 4 * cvW s0 := by have := hi.le; simp only [cvW] at *; omega_using [this]
+  obtain hkw : k ≤ 4 * cvW s0 := by have := hi.le; simp only [cvW] at *; omega_using [this]
   rw [load, WP.seq_iff]
   refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_using [hj]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u4 => WP.block_nil ?_
-  have rest : Rest [.r0, .r3, .r5, .lr] s u :=
+  obtain rest : Rest [.r0, .r3, .r5, .lr] s u :=
     (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  have mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
-  have bu := h.of_rest rest mu
-  have hu := hw.rest rest
-  have ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
+  obtain mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
+  obtain bu := h.of_rest rest mu
+  obtain hu := hw.rest rest
+  obtain ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
     hw.addr (by omega_using [fit, hS])
-  have p0 : u.gpr .r0 = cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j) := by
+  obtain p0 : u.gpr .r0 = cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j) := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p1]
   refine WP.mono (loadBE_ok u (src := src) (dst := cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) (n := cvW s0 + 2)
     hi.pos (by omega_using [hkw]) (by have := hi.fit; omega_using [w16, hkw]) hi.fit
@@ -214,7 +214,7 @@ theorem load_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW
     (by rw [u4.gpr])) ?_
   rintro t ⟨v, f, r⟩
   rw [ad] at f v
-  have k : Keep (cvB s0) (cvW s0) [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_using [fit, nw])
+  obtain k : Keep (cvB s0) (cvW s0) [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_using [fit, nw])
   refine ⟨bu.keep k (by simpa using hj) (by simp) (by simp) r.sp r.rd r.wr, hu.rest r, mu ▸ k, ?_,
     (rest.mono (by simp)).trans (r.mono (by simp))⟩
   rw [val32_off, Nat.add_zero] at v

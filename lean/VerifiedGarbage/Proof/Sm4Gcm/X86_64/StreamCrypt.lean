@@ -164,10 +164,10 @@ theorem CryptCtx.of {s : State} (hp : Proof.Sm4Gcm.streamCryptPre s) :
     Proof.Sm4Gcm.arg, Proof.Sm4Gcm.spOk] at hp
   obtain ⟨hrd, hwr, d_cs, d_cd, d_cw, d_sd, d_sw, d_sa, d_dw, d_da, d_wa, r_s, r_d, r_w, t_c, t_s, t_d, t_w,
     wc, ws, wd, ww, sp, wsp⟩ := hp
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd d_sa d_da d_wa
-  have L : Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) 768 := Lay4.of wc ws ww d_cs d_cw d_sw sp t_c t_s t_w
-  have pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩] (s.rd ++ s.wr) := by
+  obtain L : Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) 768 := Lay4.of wc ws ww d_cs d_cw d_sw sp t_c t_s t_w
+  obtain pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩] (s.rd ++ s.wr) := by
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine ⟨L, ⟨?_, ?_, ?_⟩, ?_, ⟨⟨⟨?_, by have := (s.gpr .r9).isLt; omega_using [], wd, d_sd.symm, d_dw,
@@ -201,7 +201,7 @@ theorem w_stFrame {D : Addr} {n d k : Nat} (hD : (⟨D, n⟩ : Region).Disjoint 
 theorem j0_stFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩) :
     ∀ r ∈ stFrame St W SP D n, (⟨St, 16⟩ : Region).Disjoint r := by
   intro r hr
-  have e : (⟨St, 16⟩ : Region) = ⟨St + BitVec.ofNat 64 0, 16⟩ := by rw [BitVec.add_zero]
+  obtain e : (⟨St, 16⟩ : Region) = ⟨St + BitVec.ofNat 64 0, 16⟩ := by rw [BitVec.add_zero]
   rw [e]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -240,8 +240,8 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.Sm4Gcm
           (c₀ ++ ctext enc ciph (inc32 (Spec.Gcm.j0 h iv)) c₀.length (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) ∧
         bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat =
           xorKs ciph (inc32 (Spec.Gcm.j0 h iv)) c₀.length (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) := by
-  have C := CryptCtx.of hp
-  have hP : c₀.length < 2 ^ 64 := hT ▸ (s.gpr .rcx).isLt
+  obtain C := CryptCtx.of hp
+  obtain hP : c₀.length < 2 ^ 64 := hT ▸ (s.gpr .rcx).isLt
   generalize hCtx : s.gpr .rdi = Ctx at *
   generalize hSt : s.gpr .rsi = St at *
   generalize hW : stackArg s 0 = W at *
@@ -253,35 +253,35 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.Sm4Gcm
   generalize hciph : ctxCiph s.mem Ctx = ciph
   generalize hicb : inc32 (Spec.Gcm.j0 H iv) = icb
   refine WP.seq (WP.mono (cryptEntry_ok hCtx hSt hD hSP hW hn C.perm C.args) fun s₁ E => ?_)
-  have dCE : ∀ r ∈ [entryR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
+  obtain dCE : ∀ r ∈ [entryR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact L.lay.cw'.sub_right (Lay.wSub (by decide))
-  have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = H := by
+  obtain hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame E.frame (fun r hr => (dCE r hr).sub_left (Lay.ctxSub (d := 240) (by decide))), ← hH, ctxH_eq]
-  have hc₁ : ciphOf s₁.mem Ctx = ciph := by rw [ciph_frame E.frame dCE, ← hciph]; rfl
-  have eS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [entryR W], (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
+  obtain hc₁ : ciphOf s₁.mem Ctx = ciph := by rw [ciph_frame E.frame dCE, ← hciph]; rfl
+  obtain eS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [entryR W], (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun hk r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.lay.st_w hk (.inr ⟨by decide, by decide⟩)
-  have hyA : StreamRepr s.mem St ciph H iv a c₀ → Absorbed s₁.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c₀) :=
+  obtain hyA : StreamRepr s.mem St ciph H iv a c₀ → Absorbed s₁.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c₀) :=
     fun hy => by
       rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit] at hy
       exact abs_frame E.frame (eS (by decide)) hy.2.1
-  have hyC : StreamRepr s.mem St ciph H iv a c₀ → Ctr s₁.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf s₁.mem Ctx) icb
+  obtain hyC : StreamRepr s.mem St ciph H iv a c₀ → Ctr s₁.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf s₁.mem Ctx) icb
       c₀.length := fun hy => by
     rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit, hicb] at hy
     rw [hc₁]
     exact ctr_frame E.frame (eS (by decide)) hy.2.2
-  have htl : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length := by
+  obtain htl : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length := by
     rw [E.tlen, ← hT, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.seq (WP.mono (streamText_ok v L enc E.env rfl (C.data.of_eq E.rd E.wr) E.rbp hP hH₁ (E.alen.trans hA)
     htl E.dat E.len hyA hyC) fun s₂ ⟨he₂, rd₂, wr₂, f₂, hq⟩ => ?_)
-  have hsv₂ : SavedAt s₂.mem W s := E.saved.frame f₂ (w_stFrame L C.data.dw.ok.w (by decide) (by decide))
-  have hret : s₂.mem.readW SP 64 = s.mem.readW SP 64 := by
+  obtain hsv₂ : SavedAt s₂.mem W s := E.saved.frame f₂ (w_stFrame L C.data.dw.ok.w (by decide) (by decide))
+  obtain hret : s₂.mem.readW SP 64 = s.mem.readW SP 64 := by
     rw [ret_kept f₂ (ret_stFrame C.rS C.rD C.rW), ret_kept E.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact C.rW.sub_right (Lay.wSub (by decide)))]
   refine WP.mono (exit_ok he₂.r15 (by rw [he₂.rsp, hSP]) (covers_left he₂.perm.w) hsv₂ (by rw [hSP, hret]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, fun hy => ?_⟩
   rw [hicb]
-  have hd₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame E.frame (fun r hr => by
+  obtain hd₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame E.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide)))
     (by have := C.data.dw.ok.lt; omega_using [hn])
   obtain ⟨qa, qc, qo⟩ := hq hy
@@ -292,14 +292,14 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.Sm4Gcm
   rw [ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit, hm, hicb, List.length_append, length_ctext, length_bytesAt]
   refine ⟨?_, qa, qc⟩
   rw [← hj.1]
-  have e : St = St + BitVec.ofNat 64 0 := (BitVec.add_zero St).symm
+  obtain e : St = St + BitVec.ofNat 64 0 := (BitVec.add_zero St).symm
   rw [blockAt_frame f₂ (j0_stFrame L C.data.dw.ok.st), e]
   exact blockAt_frame E.frame (eS (by decide))
 
 /-- `vg_sm4_gcm_stream_encrypt`. -/
 theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamEncryptX86_64.pre s) :
     WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.Sm4Gcm.streamEncryptX86_64.post s s' := by
-  have run : ∀ {iv a p : List Byte}, s.gpr .rdx = BitVec.ofNat 64 a.length → (s.gpr .rcx).toNat = p.length →
+  obtain run : ∀ {iv a p : List Byte}, s.gpr .rdx = BitVec.ofNat 64 a.length → (s.gpr .rcx).toNat = p.length →
       WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧
         let ciph := ctxCiph s.mem (s.gpr .rdi)
         let h := ctxH s.mem (s.gpr .rdi)
@@ -326,7 +326,7 @@ theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamEncr
 /-- `vg_sm4_gcm_stream_decrypt`. -/
 theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamDecryptX86_64.pre s) :
     WP isa (streamDecrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.Sm4Gcm.streamDecryptX86_64.post s s' := by
-  have run : ∀ {iv a c : List Byte}, s.gpr .rdx = BitVec.ofNat 64 a.length → (s.gpr .rcx).toNat = c.length →
+  obtain run : ∀ {iv a c : List Byte}, s.gpr .rdx = BitVec.ofNat 64 a.length → (s.gpr .rcx).toNat = c.length →
       WP isa (streamDecrypt v.callees) s fun s' => gprPreserved s s' ∧
         let ciph := ctxCiph s.mem (s.gpr .rdi)
         let h := ctxH s.mem (s.gpr .rdi)

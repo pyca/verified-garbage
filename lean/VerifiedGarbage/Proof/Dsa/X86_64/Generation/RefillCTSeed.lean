@@ -105,28 +105,28 @@ theorem ctGeneratorFinish_ok (M : Mont) (Sq : MontS)
       Impl.Dsa.X86_64.Generation.onSuccess
         (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm p.geo.pLen p.geo.qLen)]) s
       (CtFinished p W res (p.rand.window used (min (p.rand.bytes.length - used) (128 * p.geo.pLen)) (by omega_using [hu])) s) := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
-  have p0 : 0 < p.geo.pLen := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
-  have pfit : value < 256 ^ p.geo.pLen := by
+  obtain pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  obtain p0 : 0 < p.geo.pLen := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  obtain qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
+  obtain pfit : value < 256 ^ p.geo.pLen := by
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using domain.upper
-  have hp_b : VG.Impl.Dsa.Generation.Layout.p + p.geo.pLen ≤ usedBytes p.geo.pLen :=
+  obtain hp_b : VG.Impl.Dsa.Generation.Layout.p + p.geo.pLen ≤ usedBytes p.geo.pLen :=
     p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
-  have he_b : exponent + p.geo.pLen ≤ usedBytes p.geo.pLen :=
+  obtain he_b : exponent + p.geo.pLen ≤ usedBytes p.geo.pLen :=
     p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
-  have hq_b : q + p.geo.qLen ≤ usedBytes p.geo.pLen :=
+  obtain hq_b : q + p.geo.qLen ≤ usedBytes p.geo.pLen :=
     p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [qn])
-  have hg_b : g + p.geo.pLen ≤ usedBytes p.geo.pLen :=
+  obtain hg_b : g + p.geo.pLen ≤ usedBytes p.geo.pLen :=
     p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
   set n := min (p.rand.bytes.length - used) (128 * p.geo.pLen) with hn
   have rlen : (p.rand.bytes.drop used).length = p.rand.bytes.length - used := List.length_drop
-  have hwin : used + n ≤ p.rand.bytes.length := by omega_using [hu]
-  have hsub : Region.Sub ⟨(p.rand.window used n hwin).ptr, (p.rand.window used n hwin).bytes.length⟩
+  obtain hwin : used + n ≤ p.rand.bytes.length := by omega_using [hu]
+  obtain hsub : Region.Sub ⟨(p.rand.window used n hwin).ptr, (p.rand.window used n hwin).bytes.length⟩
       ⟨p.rand.ptr, p.rand.bytes.length⟩ := by
     rw [GenerationTape.window_length]
     exact Offset.sub_base p.rand.ptr hwin
   -- The window's candidates.
-  have hlen : (VG.Proof.Dsa.Generation.windowCandidates p.geo.pLen Spec.Dsa.generatorAttempts
+  obtain hlen : (VG.Proof.Dsa.Generation.windowCandidates p.geo.pLen Spec.Dsa.generatorAttempts
       (p.rand.bytes.drop used)).length = n / p.geo.pLen := by
     simp only [VG.Proof.Dsa.Generation.windowCandidates, List.length_map, Spec.Dsa.generationChunks,
       List.length_range, List.length_take, rlen, Spec.Dsa.generatorAttempts]
@@ -134,11 +134,11 @@ theorem ctGeneratorFinish_ok (M : Mont) (Sq : MontS)
   unfold VG.Impl.Bignum.X86_64.seqs VG.Impl.Bignum.X86_64.seqs VG.Impl.Bignum.X86_64.seqs
     VG.Impl.Bignum.X86_64.seqs VG.Impl.Bignum.X86_64.seqs
   refine WP.seq (WP.mono (refillWindow_ok h h16 hu hn) fun u ⟨mu, fu, ru, wu⟩ => ?_)
-  have hcand : (Spec.Dsa.generationChunks p.geo.pLen
+  obtain hcand : (Spec.Dsa.generationChunks p.geo.pLen
       (p.withHs (p.rand.window used n hwin)).hs.bytes).map Spec.Dsa.decodeBE =
       VG.Proof.Dsa.Generation.windowCandidates p.geo.pLen Spec.Dsa.generatorAttempts (p.rand.bytes.drop used) := by
     show (Spec.Dsa.generationChunks p.geo.pLen ((p.rand.bytes.drop used).take n)).map Spec.Dsa.decodeBE = _
-    have ht : (p.rand.bytes.drop used).take n =
+    obtain ht : (p.rand.bytes.drop used).take n =
         (p.rand.bytes.drop used).take (Spec.Dsa.generatorAttempts * p.geo.pLen) :=
       List.take_eq_take_iff.mpr (by rw [rlen]; unfold Spec.Dsa.generatorAttempts; omega_using [])
     unfold VG.Proof.Dsa.Generation.windowCandidates
@@ -151,34 +151,34 @@ theorem ctGeneratorFinish_ok (M : Mont) (Sq : MontS)
   rw [hcand] at h20 result
   generalize hhs : VG.Proof.Dsa.Generation.windowCandidates p.geo.pLen Spec.Dsa.generatorAttempts
     (p.rand.bytes.drop used) = hs at h20 result hnone hsome hlen
-  have hc : p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval hs ≤ n :=
+  obtain hc : p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval hs ≤ n :=
     Nat.le_trans (Nat.mul_le_mul_left _ (Nat.le_trans (VG.Proof.Dsa.Generation.generatorCount_le _ _ _) (Nat.le_of_eq hlen)))
       (Nat.mul_div_le n _)
-  have v16 : Wv 16 = BitVec.ofNat 64 used := by
+  obtain v16 : Wv 16 = BitVec.ofNat 64 used := by
     rw [slots 16 (by simp [generatorSlots])]; simpa [upd] using h16
-  have v12 : Wv 12 = BitVec.ofNat 64 n := by
+  obtain v12 : Wv 12 = BitVec.ofNat 64 n := by
     rw [slots 12 (by simp [generatorSlots])]; simp [upd]
   refine WP.seq (WP.mono (refillConsumed_ok mv) fun w ⟨mw, fw, rw', ww⟩ => ?_)
-  have w16 : upd Wv 16 (Wv 16 + Wv 20) 16 =
+  obtain w16 : upd Wv 16 (Wv 16 + Wv 20) 16 =
       BitVec.ofNat 64 (used + p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval hs) := by
     simp only [upd, ite_true, v16, h20, BitVec.ofNat_add]
-  have w12 : upd Wv 16 (Wv 16 + Wv 20) 12 = BitVec.ofNat 64 n := by simp [upd, v12]
-  have w19 : upd Wv 16 (Wv 16 + Wv 20) 19 = Wv 19 := by simp [upd]
-  have wslots : ∀ k ∈ refillSlots, upd Wv 16 (Wv 16 + Wv 20) k = W k := by
+  obtain w12 : upd Wv 16 (Wv 16 + Wv 20) 12 = BitVec.ofNat 64 n := by simp [upd, v12]
+  obtain w19 : upd Wv 16 (Wv 16 + Wv 20) 19 = Wv 19 := by simp [upd]
+  obtain wslots : ∀ k ∈ refillSlots, upd Wv 16 (Wv 16 + Wv 20) k = W k := by
     intro k hk
     obtain ⟨hg, n11, n12, n16, _⟩ := refillSlots_cases hk
     simp only [upd, n16, ite_false]
     rw [slots k hg]
     simp [upd, n11, n12]
   refine WP.seq (WP.mono (refillShort_ok mw w12 (by omega_using [pn])) fun x ⟨mx, fx, rx, wx⟩ => ?_)
-  have hbound : used + p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval hs ≤
+  obtain hbound : used + p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval hs ≤
       p.rand.bytes.length := by omega_using [hu, hc]
-  have fsx : Frame p.changed s.mem x.mem :=
+  obtain fsx : Frame p.changed s.mem x.mem :=
     (((GenerationContext.frame_single fu).trans fv).trans (GenerationContext.frame_single fw)).trans
       (GenerationContext.frame_single fx)
-  have rsx : x.rd = s.rd := rx.trans (rw'.trans (rv.trans ru))
-  have wsx : x.wr = s.wr := wx.trans (ww.trans (wv.trans wu))
-  have hdrop : ∀ k, (p.rand.bytes.drop used).drop k = p.rand.bytes.drop (used + k) := fun _ => List.drop_drop
+  obtain rsx : x.rd = s.rd := rx.trans (rw'.trans (rv.trans ru))
+  obtain wsx : x.wr = s.wr := wx.trans (ww.trans (wv.trans wu))
+  obtain hdrop : ∀ k, (p.rand.bytes.drop used).drop k = p.rand.bytes.drop (used + k) := fun _ => List.drop_drop
   rw [w19] at mx
   rcases result with ⟨h19, hr⟩ | ⟨gv, h19, hr, _, upper, bgv⟩
   · have hcount := generatorCount_of_none hr
@@ -188,22 +188,22 @@ theorem ctGeneratorFinish_ok (M : Mont) (Sq : MontS)
       · intro _ _ _ _ hs1
         exact absurd hs1 (by simp [upd])
       · intro t mt hm kt _
-        have hnot : ¬ (Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length) := by
+        obtain hnot : ¬ (Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length) := by
           simp only [rlen, Spec.Dsa.generatorAttempts]; omega_using [short]
         refine ⟨_, _, mt, hbound, by simpa [upd] using w16, fun k hk => ?_,
           Or.inl ⟨by simp [upd], by rw [hnone hr, ite_eq_right hnot]⟩,
           by rw [hm]; exact fsx, kt.2.1.trans rsx, kt.2.2.trans wsx⟩
         simpa [upd, (refillSlots_cases hk).2.2.2.2] using wslots k hk
     · rw [ite_eq_right (fun hh => short hh.2)] at mx
-      have hn128 : n = 128 * p.geo.pLen := by omega_using [short]
-      have hc128 : VG.Proof.Dsa.Generation.generatorCount value qval hs = 128 := by
+      obtain hn128 : n = 128 * p.geo.pLen := by omega_using [short]
+      obtain hc128 : VG.Proof.Dsa.Generation.generatorCount value qval hs = 128 := by
         rw [hcount, hlen, hn128, Nat.mul_div_cancel _ p0]
       apply onSuccess_generation_ok mx
       · intro _ _ _ _ hs1
-        have impossible : (3 : BitVec 64) = 1 := h19.symm.trans hs1
+        obtain impossible : (3 : BitVec 64) = 1 := h19.symm.trans hs1
         exact False.elim (by cases impossible)
       · intro t mt hm kt _
-        have hyes : Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length := by
+        obtain hyes : Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length := by
           simp only [rlen, Spec.Dsa.generatorAttempts]; omega_using [short]
         refine ⟨_, _, mt, hbound, w16, wslots, Or.inr (Or.inl ⟨h19, ?_⟩),
           by rw [hm]; exact fsx, kt.2.1.trans rsx, kt.2.2.trans wsx⟩
@@ -212,12 +212,12 @@ theorem ctGeneratorFinish_ok (M : Mont) (Sq : MontS)
   · rw [ite_eq_right (fun hh => hh.1 h19)] at mx
     apply onSuccess_generation_ok mx
     · intro y my hm ky _
-      have pbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
+      obtain pbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
           Spec.Dsa.encodeBE p.geo.pLen value := by
         rw [hm, p.geo.frame_bytes fx hp_b, p.geo.frame_bytes fw hp_b]; exact bpv
-      have qbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval := by
+      obtain qbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval := by
         rw [hm, p.geo.frame_bytes fx hq_b, p.geo.frame_bytes fw hq_b]; exact bqv
-      have gbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B g) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen gv := by
+      obtain gbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B g) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen gv := by
         rw [hm, p.geo.frame_bytes fx hg_b, p.geo.frame_bytes fw hg_b]; exact bgv
       refine WP.mono (finishDomain_ok (checkName := checkName) M Sq my ⟨value, qval, gv⟩ pfit qfit
         (Nat.lt_trans upper pfit) pbytes qbytes gbytes) fun t ⟨mt, bytes, ft, rt, wt⟩ => ?_
@@ -255,7 +255,7 @@ theorem ctPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
           (Impl.Dsa.X86_64.Generation.finishDomain (checkName := checkName) Sq.mm M.mm p.geo.pLen p.geo.qLen)]))) s
       (CtFinished p W (VG.Proof.Dsa.Generation.refillAttempt p.geo.pLen p.geo.qLen seed.bytes rest)
         (refillHs p seed.bytes rest) s) := by
-  have qfit : Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes < 256 ^ p.geo.qLen := by
+  obtain qfit : Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes < 256 ^ p.geo.qLen := by
     have shape := VG.Proof.Dsa.Generation.qCandidate_shape
       (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh] : 2 ≤ 8 * p.geo.qLen) seed.bytes
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using shape.2.2
@@ -264,7 +264,7 @@ theorem ctPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
   rcases result with ⟨h19, hr⟩ | ⟨h19, value, hr, domain, bp, be⟩ | ⟨h19, hr⟩
   · apply onSuccess_generation_ok mu
     · intro _ _ _ _ hs
-      have impossible : (0 : BitVec 64) = 1 := h19.symm.trans hs
+      obtain impossible : (0 : BitVec 64) = 1 := h19.symm.trans hs
       exact False.elim (by cases impossible)
     · intro t mt hm kt _
       refine ctFinished_of mt (by simp only [refillHs, hprime, hr]) huu u16 slots (Or.inl ⟨h19, ?_⟩) (by rw [hm]; exact fu)
@@ -272,13 +272,13 @@ theorem ctPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
       simp only [VG.Proof.Dsa.Generation.refillAttempt, hprime, hr]
   · apply onSuccess_generation_ok mu
     · intro v mv hm kv _
-      have bv : Spec.Rsa.bytesAt v.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
+      obtain bv : Spec.Rsa.bytesAt v.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
           Spec.Dsa.encodeBE p.geo.pLen value := hm ▸ bp
-      have ev : Spec.Rsa.bytesAt v.mem (off p.geo.B exponent) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen
+      obtain ev : Spec.Rsa.bytesAt v.mem (off p.geo.B exponent) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen
           ((value - 1) / Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ be
-      have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen
+      obtain qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen
           (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-      have call := ctGeneratorFinish_ok (checkName := checkName) M Sq mv value
+      obtain call := ctGeneratorFinish_ok (checkName := checkName) M Sq mv value
         (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) domain qfit bv ev qv u16 huu
         (res := VG.Proof.Dsa.Generation.refillAttempt p.geo.pLen p.geo.qLen seed.bytes rest)
         (fun hg => by simp only [VG.Proof.Dsa.Generation.refillAttempt, hprime, hr, hg])
@@ -290,7 +290,7 @@ theorem ctPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
       exact False.elim (hn h19)
   · apply onSuccess_generation_ok mu
     · intro _ _ _ _ hs
-      have impossible : (3 : BitVec 64) = 1 := h19.symm.trans hs
+      obtain impossible : (3 : BitVec 64) = 1 := h19.symm.trans hs
       exact False.elim (by cases impossible)
     · intro t mt hm kt _
       refine ctFinished_of mt (by simp only [refillHs, hprime, hr]) huu u16 slots (Or.inr (Or.inl ⟨h19, ?_⟩)) (by rw [hm]; exact fu)
@@ -314,23 +314,23 @@ theorem ctAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTe
   refine WP.seq (WP.mono (seedSubgroup_ok H T h seed hlen hseed h1 h16 hu)
     fun u ⟨usedu, status, huu, mu, bqu, fail, result, fu, ru, wu⟩ => ?_)
   let Wu := upd (upd (seedWords W p.geo.qLen) 16 (BitVec.ofNat 64 usedu)) 19 status
-  have u16 : Wu 16 = BitVec.ofNat 64 usedu := by simp [Wu, upd]
-  have u19 : Wu 19 = status := by simp [Wu, upd]
-  have slots : ∀ k ∈ searchSlots, Wu k = W k := by
+  obtain u16 : Wu 16 = BitVec.ofNat 64 usedu := by simp [Wu, upd]
+  obtain u19 : Wu 19 = status := by simp [Wu, upd]
+  obtain slots : ∀ k ∈ searchSlots, Wu k = W k := by
     intro k hk
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
     rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
       | rfl
       | simpa [Wu, seedWords, upd] using ((h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot).symm
-  have u1 : Wu 1 = seed.ptr := (slots 1 (by simp [searchSlots])).trans h1
-  have seedu := hseed.frame fu ru wu
+  obtain u1 : Wu 1 = seed.ptr := (slots 1 (by simp [searchSlots])).trans h1
+  obtain seedu := hseed.frame fu ru wu
   cases qr : Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) (p.rand.bytes.drop used) with
   | none =>
-    have hs : Wu 19 = 0 := u19.trans (fail qr)
+    obtain hs : Wu 19 = 0 := u19.trans (fail qr)
     apply onSuccess_generation_ok mu
     · intro _ _ _ _ accepted
-      have impossible : (0 : BitVec 64) = 1 := hs.symm.trans accepted
+      obtain impossible : (0 : BitVec 64) = 1 := hs.symm.trans accepted
       exact False.elim (by cases impossible)
     · intro t mt hm kt _
       refine ctFinished_of mt (by simp only [refillHs, qr]) huu u16 slots (Or.inl ⟨hs, ?_⟩) (by rw [hm]; exact fu)
@@ -339,28 +339,28 @@ theorem ctAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTe
   | some pair =>
     rcases pair with ⟨accepted, rest⟩
     obtain ⟨hs, cursor⟩ := result accepted rest qr
-    have suffix : p.rand.bytes.drop usedu = rest := by
+    obtain suffix : p.rand.bytes.drop usedu = rest := by
       rw [cursor]
       exact VG.Proof.Dsa.Generation.probablePrime_cursor qr
     cases accepted with
     | false =>
-      have hstatus : Wu 19 = 3 := u19.trans hs
+      obtain hstatus : Wu 19 = 3 := u19.trans hs
       apply onSuccess_generation_ok mu
       · intro _ _ _ _ accepted
-        have impossible : (3 : BitVec 64) = 1 := hstatus.symm.trans accepted
+        obtain impossible : (3 : BitVec 64) = 1 := hstatus.symm.trans accepted
         exact False.elim (by cases impossible)
       · intro t mt hm kt _
         refine ctFinished_of mt (by simp only [refillHs, qr]) huu u16 slots (Or.inr (Or.inl ⟨hstatus, ?_⟩)) (by rw [hm]; exact fu)
           (kt.2.1.trans ru) (kt.2.2.trans wu)
         simp only [VG.Proof.Dsa.Generation.refillAttempt, qr, suffix]
     | true =>
-      have hstatus : Wu 19 = 1 := u19.trans hs
+      obtain hstatus : Wu 19 = 1 := u19.trans hs
       apply onSuccess_generation_ok mu
       · intro v mv hm kv _
-        have seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.2.1 kv.2.2
-        have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen =
+        obtain seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.2.1 kv.2.2
+        obtain qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen =
             Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-        have call := ctPrimeFinish_ok (checkName := checkName) H M Sq T mv seed hlen seedv u1 qv u16 huu
+        obtain call := ctPrimeFinish_ok (checkName := checkName) H M Sq T mv seed hlen seedv u1 qv u16 huu
           (by rw [qr, suffix])
         exact WP.mono call fun t ht => ht.prepend slots (by rw [hm]; exact fu) (kv.2.1.trans ru) (kv.2.2.trans wu)
       · intro _ _ _ _ hn

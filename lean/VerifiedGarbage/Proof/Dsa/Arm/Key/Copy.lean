@@ -57,7 +57,7 @@ theorem copyByte_ok {s₀ t₀ t : State} {p : BitVec 32} {d : Nat} {bs : List B
   have hfit := hin.fit
   have hrf := I.ready.rf
   have hF : frameBytes = 112 := rfl
-  have hlt : bs.length < 2 ^ 32 := by omega_arith
+  obtain hlt : bs.length < 2 ^ 32 := by omega_arith
   unfold copyByte
   refine wp_ldrb (a := State.addr p + BitVec.ofNat 64 k) (by decide)
     (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega_arith)]) (hin.rd k hk) fun t₁ u₁ => ?_
@@ -66,14 +66,14 @@ theorem copyByte_ok {s₀ t₀ t : State} {p : BitVec 32} {d : Nat} {bs : List B
     (by rw [BitVec.add_zero, u₁.other _ (by decide), I.r4]; exact hrf.ea (by omega_arith))
     (by rw [u₁.wr]; exact hrf.write (by omega_arith)) fun t₂ u₂ => ?_
   refine wp_inc fun t₃ u₃ => wp_inc fun t₄ u₄ => wp_dec fun t₅ u₅ z₅ => WP.block_nil ?_
-  have m₅ : t₅.mem = t.mem.writeW (off (rBase s₀) (d + k)) bs[k] := by
+  obtain m₅ : t₅.mem = t.mem.writeW (off (rBase s₀) (d + k)) bs[k] := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, VG.Proof.Dsa.byte_setWidth, u₁.mem]
-  have R : Rest [.r0, .r1, .r2, .r4, .r7] t t₅ := (u₁.rest (by decide)).trans ((u₂.rest _).trans
+  obtain R : Rest [.r0, .r1, .r2, .r4, .r7] t t₅ := (u₁.rest (by decide)).trans ((u₂.rest _).trans
     ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans (u₅.rest (by decide)))))
-  have r2 : t₅.gpr .r2 = BitVec.ofNat 32 (bs.length - (k + 1)) := by
+  obtain r2 : t₅.gpr .r2 = BitVec.ofNat 32 (bs.length - (k + 1)) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), I.r2,
       ofNat_sub_one (by omega_arith), show bs.length - k - 1 = bs.length - (k + 1) by omega_arith]
-  have O : Outside (rBase s₀) d bs.length t.mem t₅.mem := by
+  obtain O : Outside (rBase s₀) d bs.length t.mem t₅.mem := by
     rw [m₅]; exact (writeW8_outside _ _ (d := d + k) _ (by omega_arith)).mono (by omega_arith) (by omega_arith)
   refine ⟨⟨I.ready.congr R (by rw [m₅]; exact frame_store s₀ _ (by omega_arith) _), ?_, ?_, r2, fun i hi => ?_,
     I.out.trans O, I.rest.trans R⟩, ?_⟩
@@ -121,18 +121,18 @@ theorem copyHeader_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {us
     WP isa (.block KeyRandom.copyHeader) t fun t₈ => RReady s₀ t₈ ∧ t₈.mem = t.mem ∧ Rest [.r0, .r1, .r2, .r4, .r7] t t₈ ∧
       t₈.gpr .r1 = stackArg s₀ 3 + BitVec.ofNat 32 used ∧ t₈.gpr .r2 = BitVec.ofNat 32 (rWidth s₀) ∧
       t₈.gpr .r4 = t₈.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀) := by
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
-  have hwq := rWidth_le s₀
+  obtain hql := rQBytes_le A
+  obtain hqn := rQBytes_length A
+  obtain hwq := rWidth_le s₀
   unfold KeyRandom.copyHeader
   refine wp_ldArg A h (j := 3) (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
     wp_dp (op2_reg _ _) fun t₃ u₃ => wp_ld ((h.upd u₁).upd u₂ |>.upd u₃) (by decide) fun t₄ u₄ =>
     wp_dp (op2_imm (by decide)) fun t₅ u₅ => wp_ldArg A ((((h.upd u₁).upd u₂).upd u₃).upd u₄ |>.upd u₅)
       (j := 2) (by decide) fun t₆ u₆ => wp_dp (op2_reg _ _) fun t₇ u₇ => wp_dp (op2_reg _ _) fun t₈ u₈ =>
       WP.block_nil ?_
-  have h₈ := (((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).upd u₈
-  have m₈ : t₈.mem = t.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have R₈ : Rest [.r0, .r1, .r2, .r4, .r7] t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
+  obtain h₈ := (((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).upd u₈
+  obtain m₈ : t₈.mem = t.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain R₈ : Rest [.r0, .r1, .r2, .r4, .r7] t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
     ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans
     ((u₇.rest (by decide)).trans (u₈.rest (by decide))))))))
   refine ⟨h₈, m₈, R₈, ?_, ?_, ?_⟩
@@ -163,19 +163,19 @@ theorem copyInit_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {used
     WP isa (.block KeyRandom.copyInit) t fun u => CopyInv s₀ t (stackArg s₀ 3 + BitVec.ofNat 32 used) (drawPlace s₀)
       (drawBytes s₀ used) (maskValue (rLead s₀).toNat) 1 u ∧ u.z = decide (rWidth s₀ - 1 = 0) := by
   have hF : frameBytes = 112 := rfl
-  have hql := rQBytes_le A
-  have hwq := rWidth_le s₀
-  have hdl := drawBytes_length hfull
-  have hdp := drawPlace_le A
+  obtain hql := rQBytes_le A
+  obtain hwq := rWidth_le s₀
+  obtain hdl := drawBytes_length hfull
+  obtain hdp := drawPlace_le A
   have hon : oNonce = 64 := rfl
-  have hin := h.draw A (used := used) (by omega_arith) (rWidth s₀)
+  obtain hin := h.draw A (used := used) (by omega_arith) (rWidth s₀)
   have hfit := hin.fit
   rw [hdl] at hfit
   unfold KeyRandom.copyInit
   refine VG.Proof.X25519.Arm.WP.append (copyHeader_ok A h hu hw) fun t₈ ⟨h₈, m₈, R₈, r1₈, r2₈, r4₈⟩ => ?_
   unfold copyFirst
   -- The first byte.
-  have hb0 : 0 < (drawBytes s₀ used).length := by omega_arith
+  obtain hb0 : 0 < (drawBytes s₀ used).length := by omega_arith
   refine wp_ldrb (a := State.addr (stackArg s₀ 3 + BitVec.ofNat 32 used) + BitVec.ofNat 64 0) (by decide)
     (by rw [BitVec.add_zero, BitVec.add_zero, r1₈]) (by rw [R₈.rd, R₈.wr]; exact hin.rd 0 hb0) fun t₉ u₉ => ?_
   rw [m₈, hin.val 0 hb0] at u₉
@@ -185,15 +185,15 @@ theorem copyInit_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {used
         exact h₈.rf.ea (by omega_arith))
     (by rw [u₁₁.wr, u₁₀.wr, u₉.wr]; exact h₈.rf.write (by omega_arith)) fun t₁₂ u₁₂ => ?_
   refine wp_inc fun t₁₃ u₁₃ => wp_inc fun t₁₄ u₁₄ => wp_dec fun t₁₅ u₁₅ z₁₅ => WP.block_nil ?_
-  have v₁₁ : t₁₁.gpr .r0 = (drawBytes s₀ used)[0].setWidth 32 &&& maskValue (rLead s₀).toNat := by
+  obtain v₁₁ : t₁₁.gpr .r0 = (drawBytes s₀ used)[0].setWidth 32 &&& maskValue (rLead s₀).toNat := by
     rw [u₁₁.gpr, u₁₀.other _ (by decide), u₁₀.gpr, u₉.gpr, u₉.mem, m₈, hm]; rfl
-  have m₁₅ : t₁₅.mem = t.mem.writeW (off (rBase s₀) (drawPlace s₀))
+  obtain m₁₅ : t₁₅.mem = t.mem.writeW (off (rBase s₀) (drawPlace s₀))
       (((drawBytes s₀ used)[0].setWidth 32 &&& maskValue (rLead s₀).toNat).setWidth 8) := by
     rw [u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, v₁₁, u₁₁.mem, u₁₀.mem, u₉.mem, m₈]
-  have R : Rest [.r0, .r1, .r2, .r4, .r7] t t₁₅ := R₈.trans ((u₉.rest (by decide)).trans ((u₁₀.rest (by decide)).trans
+  obtain R : Rest [.r0, .r1, .r2, .r4, .r7] t t₁₅ := R₈.trans ((u₉.rest (by decide)).trans ((u₁₀.rest (by decide)).trans
     ((u₁₁.rest (by decide)).trans ((u₁₂.rest _).trans ((u₁₃.rest (by decide)).trans ((u₁₄.rest (by decide)).trans
     (u₁₅.rest (by decide))))))))
-  have r2 : t₁₄.gpr .r2 = BitVec.ofNat 32 (rWidth s₀) := by
+  obtain r2 : t₁₄.gpr .r2 = BitVec.ofNat 32 (rWidth s₀) := by
     rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), r2₈]
   refine ⟨⟨h.congr R (by rw [m₁₅]; exact frame_store s₀ _ (by omega_arith) _), ?_, ?_, ?_, fun i hi => ?_, ?_, R⟩, ?_⟩
@@ -220,13 +220,13 @@ theorem copy_ok {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {used : N
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
       Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
       Rest [.r0, .r1, .r2, .r4, .r7] t u := by
-  have hdl := drawBytes_length hfull
-  have hdp := drawPlace_le A
+  obtain hdl := drawBytes_length hfull
+  obtain hdp := drawPlace_le A
   have hF : frameBytes = 112 := rfl
   have hon : oNonce = 64 := rfl
   unfold KeyRandom.copy copyRest
   refine WP.seq (WP.mono (copyInit_ok A h hu hw hm hfull hw1) fun u ⟨I, z⟩ => ?_)
-  have fin : ∀ v, CopyInv s₀ t (stackArg s₀ 3 + BitVec.ofNat 32 used) (drawPlace s₀) (drawBytes s₀ used)
+  obtain fin : ∀ v, CopyInv s₀ t (stackArg s₀ 3 + BitVec.ofNat 32 used) (drawPlace s₀) (drawBytes s₀ used)
       (maskValue (rLead s₀).toNat) (rWidth s₀) v →
       RReady s₀ v ∧ (∀ i < rWidth s₀, v.mem (off (rBase s₀) (drawPlace s₀ + i)) =
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧

@@ -140,9 +140,9 @@ theorem slot32_frame {m m' : Mem} {rs : List Region} {S : BitVec 32} (hfit : S.t
 theorem LInv.bpre {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Spec.Cast5.Schedule} {n N j : Nat}
     (hl : Lay s m0 S D K k n N) (h : LInv s m0 up S D k n N j u) (hj : j < N) :
     BPre u S K (D + BitVec.ofNat 32 (8 * j)) k n := by
-  have hd := loopMem_disjoint hl
-  have eD := setWidth_blk hl.fitD hj
-  have hsub : Region.Sub (blockR (D + BitVec.ofNat 32 (8 * j))) ⟨D.setWidth 64, 8 * N⟩ := by
+  obtain hd := loopMem_disjoint hl
+  obtain eD := setWidth_blk hl.fitD hj
+  obtain hsub : Region.Sub (blockR (D + BitVec.ofNat 32 (8 * j))) ⟨D.setWidth 64, 8 * N⟩ := by
     rw [blockR, eD]; exact sub_blk _ hj
   refine ⟨⟨h.si, hl.fitS, by rw [h.wr]; exact hl.wS, ?_, ?_, hl.nv, hl.fitK, by rw [h.rd, h.wr]; exact hl.inK,
     fun i hi => ?_, by rw [h.sp]; exact hl.sp, by rw [h.sp]; exact hl.dS, by rw [h.sp]; exact hl.dK, hl.dKS,
@@ -176,12 +176,12 @@ theorem advance_ok (v : State) {S : BitVec 32} (hsi : v.gpr .esi = S) (hfit : S.
       w.mem = (v.mem.writeW (addr S dataOff) (x + BitVec.ofNat 32 8)).writeW (addr S nOff) (y - BitVec.ofNat 32 1) ∧
       w.zf = some (y - BitVec.ofNat 32 1 == 0) ∧ w.gpr .esi = S ∧ w.gpr .esp = v.gpr .esp ∧ w.rd = v.rd ∧ w.wr = v.wr ∧
       w.syms = v.syms := by
-  have hy' : (v.mem.writeW (addr S dataOff) (x + BitVec.ofNat 32 8)).readW (addr S nOff) 32 = y := by
+  obtain hy' : (v.mem.writeW (addr S dataOff) (x + BitVec.ofNat 32 8)).readW (addr S nOff) 32 = y := by
     rw [rd_sep hfit _ _ (by decide) (by decide) (by decide)]; exact hy
-  have rD := slot_rd (s := v) hfit hw (d := dataOff) (n := 4) (by decide)
-  have rN := slot_rd (s := v) hfit hw (d := nOff) (n := 4) (by decide)
-  have wD := slot_wr (s := v) hfit hw (d := dataOff) (n := 4) (by decide)
-  have wN := slot_wr (s := v) hfit hw (d := nOff) (n := 4) (by decide)
+  obtain rD := slot_rd (s := v) hfit hw (d := dataOff) (n := 4) (by decide)
+  obtain rN := slot_rd (s := v) hfit hw (d := nOff) (n := 4) (by decide)
+  obtain wD := slot_wr (s := v) hfit hw (d := dataOff) (n := 4) (by decide)
+  obtain wN := slot_wr (s := v) hfit hw (d := nOff) (n := 4) (by decide)
   unfold advance
   crun [hsi, rD, rN, wD, wN, hx, hy']
 
@@ -200,15 +200,15 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Sp
     WP isa (.seq (crypt up) (.block advance)) u fun w => LInv s m0 up S D k n N (j + 1) w ∧
       w.zf = some (decide (j + 1 = N)) := by
   have hdf := hl.fitD
-  have eD := setWidth_blk hl.fitD hj
-  have hb := h.bpre hl hj
+  obtain eD := setWidth_blk hl.fitD hj
+  obtain hb := h.bpre hl hj
   refine WP.seq (WP.mono (crypt_ok hb up) fun v hv => ?_)
   have vb := hv.blk
   have vf := hv.frame
   rw [blockR, eD, h.sp] at vf
   rw [eD] at vb
-  have vsi : v.gpr .esi = S := (hv.same .esi (by decide)).trans h.si
-  have vsp : v.gpr .esp = s.gpr .esp := (hv.same .esp (by decide)).trans h.sp
+  obtain vsi : v.gpr .esi = S := (hv.same .esi (by decide)).trans h.si
+  obtain vsp : v.gpr .esp = s.gpr .esp := (hv.same .esp (by decide)).trans h.sp
   -- The regions `crypt` wrote, against the slots of the data and the count.
   have dSl (o : Nat) (h1 : dataOff ≤ o) (h2 : o + 4 ≤ dataOff + 8) :
       ∀ r ∈ (⟨D.setWidth 64 + BitVec.ofNat 64 (8 * j), 8⟩ : Region) :: blockMem S (s.gpr .esp),
@@ -227,12 +227,12 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Sp
     exact vf.readW (r := slotR S o 4)
       (Offset.contains _ (Nat.le_refl _) (Nat.le_refl _) (by simp only [dataOff] at h2; omega_arith)) (dSl o h1 h2)
       (by decide)
-  have hw : InRegions v.wr (S.setWidth 64) 256 := by rw [hv.wr, h.wr]; exact hl.wS
+  obtain hw : InRegions v.wr (S.setWidth 64) 256 := by rw [hv.wr, h.wr]; exact hl.wS
   refine WP.mono (advance_ok v vsi hl.fitS hw (x := D + BitVec.ofNat 32 (8 * j)) (y := BitVec.ofNat 32 (N - j))
     (by rw [vslot dataOff (by decide) (by decide)]; exact h.dslot)
     (by rw [vslot nOff (by decide) (by decide)]; exact h.nslot)) fun w ⟨wm, wz, wsi, wsp, wrd, wwr, wsy⟩ => ?_
   -- The writes of `advance`.
-  have fw : Frame [slotR S dataOff 16] v.mem w.mem := by
+  obtain fw : Frame [slotR S dataOff 16] v.mem w.mem := by
     rw [wm]
     exact ((Frame.refl _ _).writeW List.mem_cons_self _ (dslot_contains S hl.fitS (by decide) (by decide))).writeW
       List.mem_cons_self _ (dslot_contains S hl.fitS (by decide) (by decide))
@@ -286,7 +286,7 @@ theorem ecbLoop_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k :
     ?_ N u ⟨0, rfl, hN, h⟩
   rintro m v ⟨j, rfl, hj, hv⟩
   refine WP.mono (step_ok hl hv hj) fun w ⟨hw, wz⟩ => ?_
-  have hev : isa.eval .ne w = some (!decide (j + 1 = N)) := by
+  obtain hev : isa.eval .ne w = some (!decide (j + 1 = N)) := by
     simp only [eval, wz, Option.map_some]
   by_cases he : j + 1 = N
   · exact .inl ⟨by rw [hev, decide_eq_true he]; rfl, he ▸ hw⟩
@@ -349,7 +349,7 @@ theorem argAddr_eq (s : State) {i : Nat} (h : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
 
 theorem arg_in {s : State} (h : EPre s) {i : Nat} (hi : i < 5) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
-  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := argAddr_eq s (i := 0) h.spfit (by decide)
+  obtain e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := argAddr_eq s (i := 0) h.spfit (by decide)
   have hA := h.inA
   rw [e0] at hA
   rw [argAddr_eq s h.spfit hi, show 4 + 4 * i = 4 + 4 * i from rfl, ← Offset.add_add]
@@ -399,13 +399,13 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   obtain ⟨R, hR⟩ : ∃ R, arg s 1 = R := ⟨_, rfl⟩
   obtain ⟨D, hD⟩ : ∃ D, arg s 2 = D := ⟨_, rfl⟩
   obtain ⟨N, hN⟩ : ∃ N, arg s 3 = N := ⟨_, rfl⟩
-  have fitS : S.toNat + 256 ≤ 2 ^ 32 := hS ▸ h.fitS
-  have wS : InRegions s.wr (S.setWidth 64) 256 := hS ▸ h.wS
-  have a4 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 20) 4 := arg_in h (i := 4) (by decide)
-  have a0 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4 := arg_in h (i := 0) (by decide)
-  have a1 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := arg_in h (i := 1) (by decide)
-  have a2 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 12) 4 := arg_in h (i := 2) (by decide)
-  have a3 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 16) 4 := arg_in h (i := 3) (by decide)
+  obtain fitS : S.toNat + 256 ≤ 2 ^ 32 := hS ▸ h.fitS
+  obtain wS : InRegions s.wr (S.setWidth 64) 256 := hS ▸ h.wS
+  obtain a4 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 20) 4 := arg_in h (i := 4) (by decide)
+  obtain a0 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4 := arg_in h (i := 0) (by decide)
+  obtain a1 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := arg_in h (i := 1) (by decide)
+  obtain a2 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 12) 4 := arg_in h (i := 2) (by decide)
+  obtain a3 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 16) 4 := arg_in h (i := 3) (by decide)
   have v4 : s.mem.readW (addr (s.gpr .esp) 20) 32 = S := hS
   -- The saved registers' memory.
   let g := (s.setReg .eax S).gpr
@@ -418,19 +418,19 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
       rw [argAddr_eq s h.spfit (by omega_arith), e0, ← Offset.add_add]
       exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · rw [hS]; exact saved_in fitS p hp
-  have sK : SM.readW (addr (s.gpr .esp) 4) 32 = K := (argSM 0 (by decide)).trans hK
-  have sR : SM.readW (addr (s.gpr .esp) 8) 32 = R := (argSM 1 (by decide)).trans hR
-  have sD : SM.readW (addr (s.gpr .esp) 12) 32 = D := (argSM 2 (by decide)).trans hD
-  have sN : SM.readW (addr (s.gpr .esp) 16) 32 = N := (argSM 3 (by decide)).trans hN
-  have wK := slot_wr (s := s) fitS wS (d := schedOff) (n := 4) (by decide)
-  have wR := slot_wr (s := s) fitS wS (d := roundsOff) (n := 4) (by decide)
-  have wD := slot_wr (s := s) fitS wS (d := dataOff) (n := 4) (by decide)
-  have wN := slot_wr (s := s) fitS wS (d := nOff) (n := 4) (by decide)
+  obtain sK : SM.readW (addr (s.gpr .esp) 4) 32 = K := (argSM 0 (by decide)).trans hK
+  obtain sR : SM.readW (addr (s.gpr .esp) 8) 32 = R := (argSM 1 (by decide)).trans hR
+  obtain sD : SM.readW (addr (s.gpr .esp) 12) 32 = D := (argSM 2 (by decide)).trans hD
+  obtain sN : SM.readW (addr (s.gpr .esp) 16) 32 = N := (argSM 3 (by decide)).trans hN
+  obtain wK := slot_wr (s := s) fitS wS (d := schedOff) (n := 4) (by decide)
+  obtain wR := slot_wr (s := s) fitS wS (d := roundsOff) (n := 4) (by decide)
+  obtain wD := slot_wr (s := s) fitS wS (d := dataOff) (n := 4) (by decide)
+  obtain wN := slot_wr (s := s) fitS wS (d := nOff) (n := 4) (by decide)
   unfold ecb
   rw [List.append_assoc]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  have h1 : WP isa (.block [.mov .eax (.mem (at_ .esp 20))]) s fun s₁ => s₁ = s.setReg .eax S := by
+  obtain h1 : WP isa (.block [.mov .eax (.mem (at_ .esp 20))]) s fun s₁ => s₁ = s.setReg .eax S := by
     crun [a4, v4]
   refine WP.mono h1 fun s₁ e₁ => ?_
   subst e₁
@@ -439,13 +439,13 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   · rw [wr_setReg, gpr_setReg_self]
     exact slot_wr fitS wS (d := p.2) (n := 4) (by have := saved_fits.1 p hp; omega_arith)
   have g₂ : s₂.gpr = g := u₂.gpr
-  have m₂ : s₂.mem = SM := by rw [u₂.mem]; rfl
+  obtain m₂ : s₂.mem = SM := by rw [u₂.mem]; rfl
   have rd₂ : s₂.rd = s.rd := u₂.rd
   have wr₂ : s₂.wr = s.wr := u₂.wr
   have sy₂ : s₂.syms = s.syms := u₂.syms
-  have hge : g .eax = S := gpr_setReg_self _ _ _
-  have hgsp : g .esp = s.gpr .esp := gpr_setReg_of_ne _ _ (by decide)
-  have hsetup : WP isa (.block setup) s₂ fun s₃ => s₃.mem = argMem SM S K R D N ∧ s₃.gpr .esi = S ∧
+  obtain hge : g .eax = S := gpr_setReg_self _ _ _
+  obtain hgsp : g .esp = s.gpr .esp := gpr_setReg_of_ne _ _ (by decide)
+  obtain hsetup : WP isa (.block setup) s₂ fun s₃ => s₃.mem = argMem SM S K R D N ∧ s₃.gpr .esi = S ∧
       s₃.gpr .esp = s.gpr .esp ∧ s₃.zf = some (N - BitVec.ofNat 32 0 == 0) ∧ s₃.rd = s.rd ∧ s₃.wr = s.wr ∧
       s₃.syms = s.syms := by
     unfold setup
@@ -454,14 +454,14 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   refine WP.mono hsetup fun s₃ ⟨m₃, si₃, sp₃, z₃, rd₃, wr₃, sy₃⟩ => ?_
   -- The memory after the setup, and the layout.
   let m0 := argMem SM S K R D N
-  have F : Frame [⟨S.setWidth 64, 256⟩] s.mem m0 :=
+  obtain F : Frame [⟨S.setWidth 64, 256⟩] s.mem m0 :=
     (Spill.saveMem_frame (R := ⟨S.setWidth 64, 256⟩) List.mem_cons_self (addr S) g saved s.mem (saved_in fitS)).trans
       ((argMem_frame SM fitS K R D N).sub fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_self, slot_sub S (by decide)⟩)
   have dF (X : Region) (hX : X.Disjoint ⟨S.setWidth 64, 256⟩) : ∀ r ∈ [(⟨S.setWidth 64, 256⟩ : Region)], X.Disjoint r :=
     fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hX
-  have hl : Lay s m0 S D K (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat := by
+  obtain hl : Lay s m0 S D K (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat := by
     subst hS hK hR hD hN
     refine ⟨h.fitS, h.fitD, h.fitK, h.fitT, h.wS, h.wD, h.inK, h.inT, h.sp, h.dDS, h.dKS, h.dKD, h.dTS, h.dTD,
       h.dS, h.dD, h.dK, h.dT, h.nv, scheduleAt_frame F (dF _ h.dKS), held_frame h.held F (dF _ h.dTS), ?_, ?_⟩
@@ -471,7 +471,7 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
     · simp only [m0, argMem]
       rw [rd_sep h.fitS _ _ (by decide) (by decide) (by decide), rd_sep h.fitS _ _ (by decide) (by decide) (by decide),
         Mem.readW_writeW_self32, ofNat_toNat32]
-  have h0 : LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat 0 s₃ := by
+  obtain h0 : LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat 0 s₃ := by
     refine ⟨si₃, sp₃, by rw [m₃]; exact Frame.refl _ _, fun i hi => by rw [m₃, ite_eq_right (by omega_arith)], ?_, ?_, rd₃,
       wr₃, sy₃⟩
     · rw [m₃]
@@ -482,15 +482,15 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
       simp only [argMem]
       rw [Mem.readW_writeW_self32, Nat.sub_zero, ofNat_toNat32]
   -- The registers restored, and the blocks as the contract says.
-  have fin : ∀ u, LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat N.toNat u →
+  obtain fin : ∀ u, LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat N.toNat u →
       WP isa (.block restore) u fun s' => abiPreserved s s' ∧ (ecbX up).post s s' := by
     intro u hu
-    have hd := loopMem_disjoint hl
-    have hs0 : Spill.Saved SM (addr S) g saved := Spill.saveMem_saved_addr s.mem g saved_fits fitS
-    have hs1 : Spill.Saved m0 (addr S) g saved :=
+    obtain hd := loopMem_disjoint hl
+    obtain hs0 : Spill.Saved SM (addr S) g saved := Spill.saveMem_saved_addr s.mem g saved_fits fitS
+    obtain hs1 : Spill.Saved m0 (addr S) g saved :=
       hs0.of_frame (argMem_frame SM fitS K R D N) (saved_contains fitS) fun r hr => by
         rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by decide) (by decide) (by decide)
-    have hs2 : Spill.Saved u.mem (addr S) g saved :=
+    obtain hs2 : Spill.Saved u.mem (addr S) g saved :=
       hs1.of_frame hu.fr (saved_contains fitS) fun r hr =>
         ((hd r hr).2.2.symm).sub_left (Offset.sub _ (by decide) (by decide))
     rw [restore_eq, saved_eq, ← List.append_nil (Spill.restoreCode _ _)]
@@ -530,7 +530,7 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
           rw [← hD, ← hN, ← hS]; exact h.dDS).sub_left (sub_blk _ hi)]
   refine WP.seq (WP.mono (Q := LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat N.toNat)
     ?_ fin)
-  have hz : isa.eval .e s₃ = some (decide (N.toNat = 0)) := by
+  obtain hz : isa.eval .e s₃ = some (decide (N.toNat = 0)) := by
     simp only [eval, z₃, BitVec.sub_zero]
     congr 1
   refine WP.ite (decide (N.toNat = 0)) hz (fun hN0 => ?_) (fun hN0 => ?_)

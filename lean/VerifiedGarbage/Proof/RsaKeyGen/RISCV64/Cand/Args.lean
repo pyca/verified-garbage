@@ -41,9 +41,9 @@ theorem checksIf_ok {s : State} {w a k v : Nat} (h0 : s.gpr .t0 = BitVec.ofNat 6
     WP isa (.block (checksIf k v)) s fun t =>
       (t.gpr .s0 = BitVec.ofNat 64 (if k ≤ w then v else a) ∧ t.mem = s.mem) ∧ Keep [.t3, .t4, .s0] s t := by
   refine WP.keep _ ?_ rfl rfl
-  have ik : imm12 (k : Int) := by unfold imm12; omega_using [hk]
-  have iv : imm12 (v : Int) := by unfold imm12; omega_using [hv]
-  have lt := sltu_val (BitVec.ofNat 64 w) (BitVec.ofNat 64 k)
+  obtain ik : imm12 (k : Int) := by unfold imm12; omega_using [hk]
+  obtain iv : imm12 (v : Int) := by unfold imm12; omega_using [hv]
+  obtain lt := sltu_val (BitVec.ofNat 64 w) (BitVec.ofNat 64 k)
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw]), Nat.mod_eq_of_lt (by omega_using [hk])] at lt
   brun [checksIf, h0, h5, exec_li ik, exec_li iv, BitVec.ofInt_natCast, lt]
   by_cases hk' : k ≤ w
@@ -91,11 +91,11 @@ theorem testArgs_ok {s0 s : State} {w : Nat} (hf : Fr s0 s) (h : Env s (stackArg
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ 8 * sL s0 := h.hZ
   have hw4 := h.hw
   have hw128 := h.hw'
-  have al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hp h8
-  have inr : ∀ o, o + 8 ≤ 192 → InRegions (s.rd ++ s.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
+  obtain al : ∀ o, o % 8 = 0 → (fb s0 + BitVec.ofNat 64 o).toNat % 8 = 0 := fun o h8 => fw_al hp h8
+  obtain inr : ∀ o, o + 8 ≤ 192 → InRegions (s.rd ++ s.wr) (fb s0 + BitVec.ofNat 64 o) 8 := fun o ho =>
     ⟨kF s0, List.mem_append_right _ (by rw [hf.wr]; exact List.mem_cons_self), kF_contains ho⟩
   -- A store to the header keeps the frame's words.
-  have stF : ∀ (m : Mem) (d : Nat) (v : BitVec 64), d + 8 ≤ 256 →
+  obtain stF : ∀ (m : Mem) (d : Nat) (v : BitVec 64), d + 8 ≤ 256 →
       ∀ o, o + 8 ≤ 192 → (m.writeW (off B d) v).readW (fw s0 o) 64 = m.readW (fw s0 o) 64 := fun m d v hd o ho =>
     ((Frame.refl [cS s0] m).writeW (r := cS s0) List.mem_cons_self _ (by
       rw [← hB]
@@ -107,11 +107,11 @@ theorem testArgs_ok {s0 s : State} {w : Nat} (hf : Fr s0 s) (h : Env s (stackArg
   generalize hL : s.mem.readW (fw s0 oRandLen) 64 = vL
   generalize hU : s.mem.readW (fw s0 oRead) 64 = vU
   generalize hK' : s.mem.readW (fw s0 oOutLen) 64 = vK
-  have r1 : (s.mem.writeW (off B 136) vR).readW (fb s0 + 168#64) 64 = vL := by
+  obtain r1 : (s.mem.writeW (off B 136) vR).readW (fb s0 + 168#64) 64 = vL := by
     rw [← hL]; exact stF _ 136 _ (by decide) 168 (by decide)
-  have r2 : ((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).readW (fb s0 + 176#64) 64 = vU := by
+  obtain r2 : ((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).readW (fb s0 + 176#64) 64 = vU := by
     rw [← hU, stF _ 144 _ (by decide) 176 (by decide)]; exact stF _ 136 _ (by decide) 176 (by decide)
-  have r3 : (((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).writeW (off B 152) vU).readW
+  obtain r3 : (((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).writeW (off B 152) vU).readW
       (fb s0 + 112#64) 64 = vK := by
     rw [← hK', stF _ 152 _ (by decide) 112 (by decide), stF _ 144 _ (by decide) 112 (by decide)]
     exact stF _ 136 _ (by decide) 112 (by decide)
@@ -129,31 +129,31 @@ theorem testArgs_ok {s0 s : State} {w : Nat} (hf : Fr s0 s) (h : Env s (stackArg
       hs.st (d := 152) (n := 8) (by omega_using [hZ]), hs.al8 (d := 152) (by omega_using [hZ]) (by decide),
       hs.st (d := 216) (n := 8) (by omega_using [hZ]), hs.al8 (d := 216) (by omega_using [hZ]) (by decide),
       exec_li (show imm12 27 by decide)]) (by decide)) fun t₁ ⟨⟨m₁, a₁⟩, k₁⟩ => ?_
-  have e₁ := h.keep k₁ (by decide)
-  have hw63 : w < 2 ^ 63 := by omega_using [hw128]
+  obtain e₁ := h.keep k₁ (by decide)
+  obtain hw63 : w < 2 ^ 63 := by omega_using [hw128]
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₁.t0 a₁ hw63 (by decide) (by decide)) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
-  have e₂ := e₁.keep k₂ (by decide)
+  obtain e₂ := e₁.keep k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₂.t0 a₂ hw63 (by decide) (by decide)) fun t₃ ⟨⟨a₃, m₃⟩, k₃⟩ => ?_
-  have e₃ := e₂.keep k₃ (by decide)
+  obtain e₃ := e₂.keep k₃ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₃.t0 a₃ hw63 (by decide) (by decide)) fun t₄ ⟨⟨a₄, m₄⟩, k₄⟩ => ?_
-  have e₄ := e₃.keep k₄ (by decide)
+  obtain e₄ := e₃.keep k₄ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₄.t0 a₄ hw63 (by decide) (by decide)) fun t₅ ⟨⟨a₅, m₅⟩, k₅⟩ => ?_
-  have e₅ := e₄.keep k₅ (by decide)
+  obtain e₅ := e₄.keep k₅ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₅.t0 a₅ hw63 (by decide) (by decide)) fun t₆ ⟨⟨a₆, m₆⟩, k₆⟩ => ?_
-  have e₆ := e₅.keep k₆ (by decide)
+  obtain e₆ := e₅.keep k₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (checksIf_ok e₆.t0 a₆ hw63 (by decide) (by decide)) fun t₇ ⟨⟨a₇, m₇⟩, k₇⟩ => ?_
-  have e₇ := e₆.keep k₇ (by decide)
+  obtain e₇ := e₆.keep k₇ (by decide)
   have hs₇ := e₇.hs
   rw [checks_eq] at a₇
-  have lt := sltu_val (BitVec.ofNat 64 16) (BitVec.ofNat 64 w)
+  obtain lt := sltu_val (BitVec.ofNat 64 16) (BitVec.ofNat 64 w)
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hw128])] at lt
-  have m₇' : t₇.mem = (((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).writeW (off B 152) vU).writeW
+  obtain m₇' : t₇.mem = (((s.mem.writeW (off B 136) vR).writeW (off B 144) vL).writeW (off B 152) vU).writeW
       (off B 216) vK := by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁]
   refine WP.mono (WP.keep [.t2] (Q := fun t => t.mem = (t₇.mem.writeW (off B 168)
       (BitVec.ofNat 64 (VG.Proof.RsaKeyGen.checksW w))).writeW (off B 128) (BitVec.ofNat 64 (nTrial w))) (by
@@ -162,7 +162,7 @@ theorem testArgs_ok {s0 s : State} {w : Nat} (hf : Fr s0 s) (h : Env s (stackArg
       hs₇.st (d := 168) (n := 8) (by omega_using [hZ]), hs₇.al8 (d := 168) (by omega_using [hZ]) (by decide),
       hs₇.st (d := 128) (n := 8) (by omega_using [hZ]), hs₇.al8 (d := 128) (by omega_using [hZ]) (by decide)]) (by decide))
     fun t ⟨tm, kt⟩ => ?_
-  have K := ((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans kt
+  obtain K := ((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans kt
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩, K.mono (by decide)⟩
   all_goals rw [tm, m₇']
   all_goals try simp only [hRand, hRandLen, hUsed, hK, hChecks, hTrial]

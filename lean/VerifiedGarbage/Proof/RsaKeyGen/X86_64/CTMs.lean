@@ -110,8 +110,8 @@ theorem msMid_mm (M : Mont) {q : TPub} {s : State} {o a b : Nat} (hp : GW q s) {
       ((word t.mem q.B (slot q.w aN)).toNat * mi.toNat + 1) % 2 ^ 64 = 0 ∧ wv t.mem q.B (slot q.w aN) q.w = N ∧
       wv t.mem q.B (slot q.w o) q.w < N ∧ Arrays q.B q.w [aAcc, aTmp, o] s.mem t.mem := by
   obtain ⟨hk, hw, hd, -⟩ := hp
-  have hn' : q.B.toNat + slot q.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; have := hd.z; omega_arith
-  have hnm : aN ∉ [aAcc, aTmp, o] := by
+  obtain hn' : q.B.toNat + slot q.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; have := hd.z; omega_arith
+  obtain hnm : aN ∉ [aAcc, aTmp, o] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨by decide, by decide, fun h => d7 h.symm⟩
   refine WP.mono (M.mm_ok hg hd.z (by have := hd.w4; omega_arith) (by have := hd.w64; omega_arith) ho ha hb d1 d2 d3 d4 hinv
     (by rw [hn]; exact hB) d5 d6) fun t ⟨hg', hlt, _, ha', k⟩ => ⟨⟨hk, k.2.2.trans hw, hd, mi, hg'⟩, hg', ?_, ?_, ?_, ha'⟩
@@ -171,13 +171,13 @@ theorem doubles_ct' : RelCT isa (Two fun q s => MsMid q s ∧ s.gpr .rcx = BitVe
       (kt_ct (fun p : TPub × Nat => p.1.B) (fun p => p.1.wr) [] (fun _ => []) [] (by decide) (fun _ => rfl)
         (fun _ _ h => h) (pins_nil _) (by taint_decide))
     rintro ⟨q, j⟩ s ⟨hj, hk, hd, mi, s₀, O, N, hI, hw, hN1, -⟩
-    have hw' : q.w < 2 ^ 31 := by have := hd.w64; dsimp only at this; omega_arith
+    obtain hw' : q.w < 2 ^ 31 := by have := hd.w64; dsimp only at this; omega_arith
     exact WP.mono (double_ok hI.scr hI.rdi hI.hdr hd.z (by have := hd.w4; omega_arith) hw' (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by rw [hI.ov, hI.nv]; exact Nat.mod_lt _ (by omega_arith))) fun t ⟨_, _, k⟩ =>
         ⟨hk, (k.gpr (by decide)).trans hI.rdi, k.2.2.trans (hI.keep.2.2.trans hw), fun _ he => absurd he List.not_mem_nil⟩
   · rintro q j s hj ⟨hk, hd, mi, s₀, O, N, hI, hw, hN1, hinv, hone⟩
-    have hw' : q.w < 2 ^ 31 := by have := hd.w64; omega_arith
+    obtain hw' : q.w < 2 ^ 31 := by have := hd.w64; omega_arith
     exact WP.mono (dblIter_ok (c := q.w + 1) (O := O) (N := N) hd.z (by have := hd.w4; omega_arith) hw' (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (show q.w + 1 < 2 ^ 31 by have := hd.w64; omega_arith) (show 0 < N by omega_arith) hj hI) fun t ⟨hz, hI'⟩ => ⟨eval_ne_count' hj hz, fun _ => ⟨hk, hd, mi, s₀, O, N, hI', hw, hN1, hinv, hone⟩,
@@ -185,18 +185,18 @@ theorem doubles_ct' : RelCT isa (Two fun q s => MsMid q s ∧ s.gpr .rcx = BitVe
   · rintro q s ⟨hk, hd, mi, s₀, O, N, hI, hw, hN1, hinv, hone⟩
     have hn := hI.scr.nowrap
     have hz := hd.z
-    have harr : ∀ {j : Nat}, j < 8 → j ≠ aAcc → j ≠ aTmp → j ≠ aR2 → ∀ r ∈ [(slot q.w aAcc, 8 * (q.w + 2)),
+    obtain harr : ∀ {j : Nat}, j < 8 → j ≠ aAcc → j ≠ aTmp → j ≠ aR2 → ∀ r ∈ [(slot q.w aAcc, 8 * (q.w + 2)),
         (slot q.w aTmp, 8 * (q.w + 2)), (slot q.w aR2, 8 * (q.w + 2)), (8 * kT0, 8)],
         slot q.w j + 8 * (q.w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot q.w j := by
       intro j hj h1 h2 h3
       have := hdr_lt_slot q.w j (show kT0 < 32 by decide)
-      have s1 := slot_sep (w := q.w) h1
-      have s2 := slot_sep (w := q.w) h2
-      have s3 := slot_sep (w := q.w) h3
+      obtain s1 := slot_sep (w := q.w) h1
+      obtain s2 := slot_sep (w := q.w) h2
+      obtain s3 := slot_sep (w := q.w) h3
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl | rfl) <;> omega_arith
-    have sN := slot_le (w := q.w) (show aN < 8 by decide)
-    have sO := slot_le (w := q.w) (show aOne < 8 by decide)
+    obtain sN := slot_le (w := q.w) (show aN < 8 by decide)
+    obtain sO := slot_le (w := q.w) (show aOne < 8 by decide)
     refine ⟨⟨hk, hI.keep.2.2.trans hw, hd, mi, hI.scr, hI.rdi, hI.hdr⟩, mi, N, ⟨hI.scr, hI.rdi, hI.hdr⟩, ?_, hI.nv,
       hN1, ?_, by rw [hI.ov, ← hI.nv]; exact Nat.mod_lt _ (by rw [hI.nv]; omega_arith)⟩
     · rw [hI.frm.word_eq (fun r hr => by
@@ -287,9 +287,9 @@ theorem montSetup_ct (M : Mont) :
     rintro q s ⟨⟨hk, hw, hd, -⟩, -, mi, c, r, hg, hn, hsh, -⟩
     obtain ⟨hodd, hlo, hhi⟩ := hsh
     have hw4 := hd.w4
-    have e : 2 ^ (64 * q.w - 2) * 4 = 2 ^ 63 * 2 ^ (64 * (q.w - 1)) * 2 := by
+    obtain e : 2 ^ (64 * q.w - 2) * 4 = 2 ^ 63 * 2 ^ (64 * (q.w - 1)) * 2 := by
       rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add, ← Nat.pow_add, ← Nat.pow_succ]; congr 1; omega_arith
-    have hp : 0 < 2 ^ (64 * q.w - 2) := Nat.two_pow_pos _
+    obtain hp : 0 < 2 ^ (64 * q.w - 2) := Nat.two_pow_pos _
     exact WP.mono (msFront_ok hg hd.z hw4 hd.w64 hn hodd) fun t ⟨mi', hg', hinv, hn', hone, hr2, hcx, hwt⟩ =>
       ⟨⟨⟨hk, hwt.trans hw, hd, mi', hg'⟩, mi', c, hg', hinv, hn', by omega_arith, hone, by rw [hr2]; omega_arith⟩, hcx⟩
   · -- `R mod c`.
@@ -304,7 +304,7 @@ theorem montSetup_ct (M : Mont) :
       (fun q => gvs_fst _ _) (fun _ _ h => h.1.hp) (pins_nil _) (by taint_decide) ?_
     rintro q s ⟨⟨hk, hw, hd, -⟩, mi, N, hg, hn, hlt⟩
     have hnw := hg.scr.nowrap
-    have sN := slot_le (w := q.w) (show aN < 8 by decide)
+    obtain sN := slot_le (w := q.w) (show aN < 8 by decide)
     have hz := hd.z
     exact WP.mono (copyToExt_ok hg hd.z (by have := hd.w4; omega_arith) (by have := hd.w64; omega_arith) (a := aY) (d := aR1)
       (by decide) (by decide) (by have := hd.x; unfold slot aR1 aRm1 at *; omega_arith)) fun t ⟨hv, ho, k⟩ =>
@@ -326,23 +326,23 @@ theorem montSetup_ct (M : Mont) :
     obtain ⟨hodd, hlo, hhi⟩ := hsh
     have hw4 := hd.w4
     have hnw := hg.scr.nowrap
-    have htop : 2 ^ (64 * q.w - 1) ≤ c := by
+    obtain htop : 2 ^ (64 * q.w - 1) ≤ c := by
       have : 2 ^ (64 * q.w - 1) = 2 ^ (64 * q.w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
       omega_arith
     refine WP.mono (montSetup_ok M hg hd.z hd.x hw4 hd.w64 hn hodd htop)
       fun t ⟨mi', hg', hinv, hr2, hr1, hrm1, hchk, hf, k⟩ => ?_
-    have e : ∀ x, x = kOut ∨ x = kUsedP ∨ x = kRand ∨ x = kLen ∨ x = kRandLen ∨ x = kUsed →
+    obtain e : ∀ x, x = kOut ∨ x = kUsedP ∨ x = kRand ∨ x = kLen ∨ x = kRandLen ∨ x = kUsed →
         word t.mem q.B (8 * x) = word s.mem q.B (8 * x) := fun x hx => hf.word_eq (msRanges_hdr _ x (by
           simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hx)) (by
           rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-    have hn' : wv t.mem q.B (slot q.w aN) q.w = c := by
+    obtain hn' : wv t.mem q.B (slot q.w aN) q.w = c := by
       rw [hf.wv_eq (d := slot q.w aN) (k := q.w) (by simp only [msRanges]; rng_disj)
         (by have := slot_le (w := q.w) (show aN < 8 by decide); have := hd.z; omega_arith)]; exact hn
-    have hle : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := fun r hr => by
+    obtain hle : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := fun r hr => by
       have : r.1 + r.2 ≤ slot q.w aRm1 + 8 * (q.w + 2) := by revert r hr; simp only [msRanges]; rng_le
       have := hd.x; omega_arith
-    have hc1 : 1 < c := by have := Nat.two_pow_pos (64 * q.w - 2); omega_arith
-    have hch : Proof.RsaKeyGen.checksW q.w < 2 ^ 62 :=
+    obtain hc1 : 1 < c := by have := Nat.two_pow_pos (64 * q.w - 2); omega_arith
+    obtain hch : Proof.RsaKeyGen.checksW q.w < 2 ^ 62 :=
       Nat.lt_of_le_of_lt (Proof.RsaKeyGen.checksW_le q.w) (by decide)
     exact ⟨hk, ⟨hg'.rdi, k.2.2.trans hw, fun _ he => absurd he List.not_mem_nil⟩, hd.mr, hch, hrl, mi', c,
       wv t.mem q.B (slot q.w aB) q.w, r, ⟨hg', hinv, hn', rfl, hr1, hrm1⟩, hr2, hc1, ⟨hodd, hlo, hhi⟩,
@@ -359,15 +359,15 @@ theorem expSetup_pre {a : LPub} {s : State} (h : MrPre0 a s) : WP isa (seqs expS
   obtain ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1, hu2,
     hS⟩ := h
   have hn := hc.good.scr.nowrap
-  have hEZ := aE_fits hd
+  obtain hEZ := aE_fits hd
   refine WP.mono (expSetup_ok hc.good hd hc.n hsh.1 hc1) fun t ⟨hE, hf, hg, k⟩ => ?_
-  have hd8 : ∀ i, i < 32 → ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i :=
+  obtain hd8 : ∀ i, i < 32 → ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i :=
     fun i hi r hr => by
       simp only [List.mem_singleton] at hr; subst hr; left; dsimp only
       have := hdr_lt_slot a.p.w aE hi; omega_arith
-  have hw : ∀ {i}, i < 32 → word t.mem a.p.B (8 * i) = word s.mem a.p.B (8 * i) := fun hi =>
+  obtain hw : ∀ {i}, i < 32 → word t.mem a.p.B (8 * i) = word s.mem a.p.B (8 * i) := fun hi =>
     hf.word_eq (hd8 _ hi) (by omega_arith)
-  have hsl : ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], r.1 + r.2 ≤ a.p.Z := fun r hr => by
+  obtain hsl : ∀ r ∈ [(slot a.p.w aE, 8 * (a.p.w + 1))], r.1 + r.2 ≤ a.p.Z := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; dsimp only; omega_arith
   refine ⟨hk, ⟨hg.rdi, k.2.2.trans hp.wr, fun _ he => absurd he List.not_mem_nil⟩, hd, hch, hrl, mi, c, bm, r,
     hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj), hE, ?_, hc1, hsh,
@@ -405,7 +405,7 @@ theorem loopEnd_good {a : LPub} {s : State} (h : LoopEnd a s) : ∃ mi, Good s a
 
 theorem loopEnd_hp {a : LPub} {s : State} (h : LoopEnd a s) : KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr (endVs a) s := by
   obtain ⟨hk, hd, mi, c, r, s₀, res, ⟨⟨bm, hc⟩, -, -, hf, k⟩, -, -, ho, hu, hl, hw⟩ := h
-  have hg := good_hp hc.good (k.2.2.trans hw)
+  obtain hg := good_hp hc.good (k.2.2.trans hw)
   refine ⟨hk, hc.good.rdi, k.2.2.trans hw, fun e he => ?_⟩
   rcases List.mem_append.mp he with he | he
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
@@ -459,17 +459,17 @@ theorem mrResult_ct : RelCT isa (Two LoopEnd) mrResult fun _ _ => True := by
     obtain ⟨mi, hg⟩ := loopEnd_good h
     have hn := hg.scr.nowrap
     have hd : MrDims a.p.B a.p.Z a.p.w := h.2.1
-    have hl : InRegions (s.rd ++ s.wr) (off a.p.B (8 * kStat)) 8 :=
+    obtain hl : InRegions (s.rd ++ s.wr) (off a.p.B (8 * kStat)) 8 :=
       hg.scr.ld (by have := hdr_lt_slot a.p.w 8 (show kStat < 32 by decide); have := hd.z; omega_arith)
-    have hS := loopEnd_stat h
-    have hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
+    obtain hS := loopEnd_stat h
+    obtain hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (statOf a.S = 0)) ∧
         t.gpr .rax = BitVec.ofNat 64 (statOf a.S) ∧ t.mem = s.mem) (by
       xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hS, BitVec.and_self]
       rcases (show statOf a.S = 0 ∨ statOf a.S = 1 ∨ statOf a.S = 2 ∨ statOf a.S = 3 by omega_arith) with
         e | e | e | e <;> rw [e] <;> decide) rfl) fun t ⟨⟨hz, hax, hm⟩, k⟩ => ⟨h.congr hm k (by decide), hz, hax⟩
   · rintro a s ⟨⟨h, -, hax⟩, -⟩
-    have hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
+    obtain hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (statOf a.S = 1)) ∧ t.mem = s.mem) (by
       xrun [hax]
       rcases (show statOf a.S = 0 ∨ statOf a.S = 1 ∨ statOf a.S = 2 ∨ statOf a.S = 3 by omega_arith) with

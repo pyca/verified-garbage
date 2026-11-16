@@ -68,7 +68,7 @@ theorem copy_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
   have hc' := hc
   simp only [Bool.and_eq_true] at hc'
   obtain ⟨⟨hS, hD⟩, dSD⟩ := hc'
-  have hD₁ := (Lay.okW_iff.mp hD).1
+  obtain hD₁ := (Lay.okW_iff.mp hD).1
   let S : Buf := ⟨sa, so, 4 * n⟩
   let D : Buf := ⟨da, dO, 4 * n⟩
   refine Piece.seq (setup_es (fun s₀ s₁ => s₁.gpr .edi = S.ptr s₀ ∧ s₁.gpr .ebp = D.ptr s₀ ∧
@@ -77,47 +77,47 @@ theorem copy_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
         ptrTo_esOk (r := .ebp) (by decide) (by decide)]; rfl)) ?_
   · simp only [List.append_assoc]
     refine ptrTo_ok hp h hS fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine ptrTo_ok hp c₁ hD₁ fun s₂ o₂ v₂ => ?_
-    have c₂ := c₁.only o₂ (by decide) (by decide)
+    obtain c₂ := c₁.only o₂ (by decide) (by decide)
     refine wp_movi fun s₃ o₃ v₃ => WP.block_nil_iff.mpr ?_
     exact ⟨c₂.only o₃ (by decide) (by decide), o₃.mem.trans (o₂.mem.trans o₁.mem),
       by rw [o₃.gpr _ (by decide), o₂.gpr _ (by decide), v₁], by rw [o₃.gpr _ (by decide), v₂], v₃⟩
   refine Piece.taint [.edi, .ebp, .ecx] (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, e₁, e₂, e₃⟩ => ?_)
     (fun s₀ s₀' s s' hp hp' hq ⟨_, _, _, _, e₁, e₂, e₃⟩ ⟨_, _, _, _, e₁', e₂', e₃'⟩ r hr => ?_) (by native_taint_decide)
   · have fS : (S.ptr s₀).toNat + 4 * n ≤ 2 ^ 32 := Buf.fit hp hS
-    have fD : (D.ptr s₀).toNat + 4 * n ≤ 2 ^ 32 := Buf.fit hp hD₁
-    have dd := Buf.disj hp hS hD₁ dSD
+    obtain fD : (D.ptr s₀).toNat + 4 * n ≤ 2 ^ 32 := Buf.fit hp hD₁
+    obtain dd := Buf.disj hp hS hD₁ dSD
     let I : Nat → State → Prop := fun k u => Ctx (Y p) s₀ u ∧ u.gpr .edi = S.ptr s₀ + BitVec.ofNat 32 (4 * k) ∧
       u.gpr .ebp = D.ptr s₀ + BitVec.ofNat 32 (4 * k) ∧ u.gpr .ecx = BitVec.ofNat 32 (n - k) ∧
       Frame [D.rgn s₀] s.mem u.mem ∧ ∀ j < 4 * k, u.mem (D.addr s₀ + BitVec.ofNat 64 j) = s.mem (S.addr s₀ + BitVec.ofNat 64 j)
-    have i0 : I 0 s₁ := ⟨h₁, by rw [e₁]; simp, by rw [e₂]; simp, e₃, by rw [m₁]; exact Frame.refl _ _,
+    obtain i0 : I 0 s₁ := ⟨h₁, by rw [e₁]; simp, by rw [e₂]; simp, e₃, by rw [m₁]; exact Frame.refl _ _,
       fun j hj => absurd hj (by omega_arith)⟩
     refine (wp_count hn I i0 fun k hk u ⟨cu, du, bu, xu, fu, cpu⟩ => ?_).mono fun u ⟨cu, _, _, _, fu, cpu⟩ => ?_
     · have eS : u.ea (at_ .edi 0) = S.addr s₀ + BitVec.ofNat 64 (4 * k) := by
         simp only [State.ea, at_, du]; rw [ea_add (by omega_arith)]; rfl
-      have eD : u.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
+      obtain eD : u.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
         simp only [State.ea, at_, bu]; rw [ea_add (by omega_arith)]; rfl
-      have hinS : InRegions (u.rd ++ u.wr) (S.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
+      obtain hinS : InRegions (u.rd ++ u.wr) (S.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
         Buf.inRegR hp hS cu.rd cu.wr (show 4 * k + 4 ≤ 4 * n by omega_arith)
       refine wp_movm' (by rw [eS]; exact hinS) fun u₁ o₁ v₁ => ?_
-      have c₁ := cu.only o₁ (by decide) (by decide)
-      have eD₁ : u₁.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
+      obtain c₁ := cu.only o₁ (by decide) (by decide)
+      obtain eD₁ : u₁.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
         rw [← eD]; simp only [State.ea, at_, o₁.gpr _ (by decide : Reg.ebp ∉ [Reg.eax])]
-      have hinD : InRegions u₁.wr (D.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
+      obtain hinD : InRegions u₁.wr (D.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
         Buf.inRegW hp hD₁ (Lay.okW_iff.mp hD).2 c₁.wr (show 4 * k + 4 ≤ 4 * n by omega_arith)
       refine wp_store' (by rw [eD₁]; exact hinD) fun u₂ g₂ r₂ w₂ m₂ => ?_
       obtain ⟨r, hr, hcr⟩ := Buf.contains hp hD₁ (Lay.okW_iff.mp hD).2 (o := 4 * k) (n := 4)
         (show 4 * k + 4 ≤ 4 * n by omega_arith)
-      have c₂ : Ctx (Y p) s₀ u₂ := ⟨by rw [g₂]; exact c₁.esp, by rw [r₂]; exact c₁.rd, by rw [w₂]; exact c₁.wr,
+      obtain c₂ : Ctx (Y p) s₀ u₂ := ⟨by rw [g₂]; exact c₁.esp, by rw [r₂]; exact c₁.rd, by rw [w₂]; exact c₁.wr,
         by rw [g₂]; exact c₁.esi, by rw [m₂, eD₁]; exact c₁.frame.writeW hr _ hcr⟩
       refine wp_addi fun u₃ o₃ v₃ => wp_addi fun u₄ o₄ v₄ => wp_subi_last fun u₅ o₅ v₅ z₅ => ?_
-      have c₅ := ((c₂.only o₃ (by decide) (by decide)).only o₄ (by decide) (by decide)).only o₅ (by decide)
+      obtain c₅ := ((c₂.only o₃ (by decide) (by decide)).only o₄ (by decide) (by decide)).only o₅ (by decide)
         (by decide)
-      have m₅ : u₅.mem = u₁.mem.writeW (D.addr s₀ + BitVec.ofNat 64 (4 * k)) (u.mem.readW (S.addr s₀ +
+      obtain m₅ : u₅.mem = u₁.mem.writeW (D.addr s₀ + BitVec.ofNat 64 (4 * k)) (u.mem.readW (S.addr s₀ +
           BitVec.ofNat 64 (4 * k)) 32) := by
         rw [o₅.mem, o₄.mem, o₃.mem, m₂, eD₁, v₁, eS]
-      have ex : u₄.gpr .ecx = BitVec.ofNat 32 (n - k) := by
+      obtain ex : u₄.gpr .ecx = BitVec.ofNat 32 (n - k) := by
         rw [o₄.gpr _ (by decide), o₃.gpr _ (by decide), g₂, o₁.gpr _ (by decide), xu]
       refine ⟨⟨c₅, ?_, ?_, by rw [v₅, ex]; exact cnt_next hk, ?_, ?_⟩, ?_⟩
       · rw [o₅.gpr _ (by decide), o₄.gpr _ (by decide), v₃, g₂, o₁.gpr _ (by decide), du]
@@ -169,13 +169,13 @@ theorem absorbC_piece' (st wk rate pos : Nat) (b : Buf) (hr : rate ∈ rates) (h
       fun s₀ s₁ s' hp ⟨s, ha, _, m₁, _⟩ h' _ fr post => ?_))
   · simp only [List.append_assoc, List.cons_append, List.nil_append]
     refine ptrTo_ok hp h (Lay.okW_iff.mp h0).1 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine wp_movi fun s₂ o₂ v₂ => wp_movi fun s₃ o₃ v₃ => ?_
-    have c₃ := (c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)
+    obtain c₃ := (c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)
     refine ptrTo_ok hp c₃ h2 fun s₄ o₄ v₄ => ?_
-    have c₄ := c₃.only o₄ (by decide) (by decide)
+    obtain c₄ := c₃.only o₄ (by decide) (by decide)
     refine wp_movi fun s₅ o₅ v₅ => ?_
-    have c₅ := c₄.only o₅ (by decide) (by decide)
+    obtain c₅ := c₄.only o₅ (by decide) (by decide)
     rw [← List.append_nil (ptrTo SC .edi _)]
     refine ptrTo_ok hp c₅ (Lay.okW_iff.mp h1).1 fun s₆ o₆ v₆ => WP.block_nil_iff.mpr ?_
     refine ⟨c₅.only o₆ (by decide) (by decide),
@@ -208,9 +208,9 @@ theorem padC_piece' (st wk rate pos sfx : Nat) (hr : rate ∈ rates) (hpos : pos
       fun s₀ s₁ s' hp ⟨s, ha, _, m₁, _⟩ h' _ fr post => ?_))
   · simp only [List.append_assoc, List.cons_append, List.nil_append]
     refine ptrTo_ok hp h (Lay.okW_iff.mp h0).1 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine wp_movi fun s₂ o₂ v₂ => wp_movi fun s₃ o₃ v₃ => wp_movi fun s₄ o₄ v₄ => ?_
-    have c₄ := ((c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)).only o₄ (by decide)
+    obtain c₄ := ((c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)).only o₄ (by decide)
       (by decide)
     rw [← List.append_nil (ptrTo SC .edi _)]
     refine ptrTo_ok hp c₄ (Lay.okW_iff.mp h1).1 fun s₅ o₅ v₅ => WP.block_nil_iff.mpr ?_
@@ -242,13 +242,13 @@ theorem squeezeC_piece' (st wk rate : Nat) (o : Buf) (hr : rate ∈ rates)
       fun s₀ s₁ s' hp ⟨s, ha, _, m₁, _⟩ h' _ fr r₁ _ => ?_))
   · simp only [List.append_assoc, List.cons_append, List.nil_append]
     refine ptrTo_ok hp h (Lay.okW_iff.mp h0).1 fun s₁ o₁ v₁ => ?_
-    have c₁ := h.only o₁ (by decide) (by decide)
+    obtain c₁ := h.only o₁ (by decide) (by decide)
     refine wp_movi fun s₂ o₂ v₂ => wp_movi fun s₃ o₃ v₃ => ?_
-    have c₃ := (c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)
+    obtain c₃ := (c₁.only o₂ (by decide) (by decide)).only o₃ (by decide) (by decide)
     refine ptrTo_ok hp c₃ (Lay.okW_iff.mp h2).1 fun s₄ o₄ v₄ => ?_
-    have c₄ := c₃.only o₄ (by decide) (by decide)
+    obtain c₄ := c₃.only o₄ (by decide) (by decide)
     refine wp_movi fun s₅ o₅ v₅ => ?_
-    have c₅ := c₄.only o₅ (by decide) (by decide)
+    obtain c₅ := c₄.only o₅ (by decide) (by decide)
     rw [← List.append_nil (ptrTo SC .edi _)]
     refine ptrTo_ok hp c₅ (Lay.okW_iff.mp h1).1 fun s₆ o₆ v₆ => WP.block_nil_iff.mpr ?_
     refine ⟨c₅.only o₆ (by decide) (by decide),
@@ -278,8 +278,8 @@ theorem hash2_piece' (rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ rates)
   have hc' := hc
   simp only [Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hS, hW⟩, hb₁⟩, hb₂⟩, hO⟩, dSW⟩, d₁S⟩, d₁W⟩, d₂S⟩, d₂W⟩, dSO⟩, dOW⟩ := hc'
-  have hrate := (rate_lt hr)
-  have hr0 : 0 < rate := by simp [rates] at hr; omega_arith
+  obtain hrate := (rate_lt hr)
+  obtain hr0 : 0 < rate := by simp [rates] at hr; omega_arith
   -- after zeroing, absorbing `b₁`, absorbing `b₂`, padding
   let P : Nat → State → State → Prop := fun i s₀ u => ∃ s, A s₀ s ∧ Ctx (Y p) s₀ u ∧ Frame (kF oST oWK (Y p) s₀) s.mem u.mem ∧
     (i = 0 → stateAt u.mem (Buf.addr s₀ ⟨SC, oST, 200⟩) = Spec.Sha3.zero) ∧
@@ -288,7 +288,7 @@ theorem hash2_piece' (rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ rates)
       (bytesAt s.mem (b₁.addr s₀) b₁.len ++ bytesAt s.mem (b₂.addr s₀) b₂.len)) ∧
     (i = 3 → stateAt u.mem (Buf.addr s₀ ⟨SC, oST, 200⟩) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8)
       (bytesAt s.mem (b₁.addr s₀) b₁.len ++ bytesAt s.mem (b₂.addr s₀) b₂.len)))
-  have cS : ((Y p).okW ⟨SC, oST, 200⟩ && (Y p).okW ⟨SC, oWK, 640⟩ && (Y p).sep ⟨SC, oST, 200⟩ ⟨SC, oWK, 640⟩) = true := by
+  obtain cS : ((Y p).okW ⟨SC, oST, 200⟩ && (Y p).okW ⟨SC, oWK, 640⟩ && (Y p).sep ⟨SC, oST, 200⟩ ⟨SC, oWK, 640⟩) = true := by
     simp [hS, hW, dSW]
   refine Piece.seq (B := P 0) (lift (zeroTop_piece (Y := Y p) oST hS (by native_taint_decide) hA fun s₀ s s' hp ha h' fr z =>
     ⟨s, ha, h', kF_zero hp (show 56 ≤ 96 by decide) fr, fun _ => z, by simp, by simp, by simp⟩)) ?_

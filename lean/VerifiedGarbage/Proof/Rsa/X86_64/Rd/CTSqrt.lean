@@ -93,8 +93,8 @@ theorem GD.setH {p : RpP} {s t : State} (h : GD w F p s) {i : Nat} (hi : DOk (8 
     (hr : .rdi ∉ regs ∧ .rsp ∉ regs) (hF : Stab F fun y => 8 * i ≤ y ∧ y < 8 * i + 8) :
     GD w (fun I s => F I s ∧ HF i P I s) p t :=
   h.hdrW hm hi hi' k hr (fun e => absurd e hne) fun I e hFI => by
-    have eB : p.B = I.B := (congrArg RpP.B e).symm
-    have eZ : p.Z = I.Z := (congrArg RpP.Z e).symm
+    obtain eB : p.B = I.B := (congrArg RpP.B e).symm
+    obtain eZ : p.Z = I.Z := (congrArg RpP.Z e).symm
     have hZ := h.ws.h256
     rw [eB] at hm
     rw [eZ] at hZ
@@ -112,7 +112,7 @@ theorem GD.wkW {p : RpP} {s : State} (h : GD wW F p s) : wW p.k = 2 * wk p.k + 4
 /-! ## The normalization -/
 
 theorem topX_ct (hF : Arr F) : RelCT isa (Two (GD wW F)) (.block topX) (Two (GD wW F)) := by
-  have e : topX = ws ++ (base sqZ .rbx ++ ([.mov32 .rax (.imm 0), .store (ix .rbx .r12 (-32)) .rax,
+  obtain e : topX = ws ++ (base sqZ .rbx ++ ([.mov32 .rax (.imm 0), .store (ix .rbx .r12 (-32)) .rax,
       .store (ix .rbx .r12 (-24)) .rax, .store (ix .rbx .r12 (-16)) .rax, .store (ix .rbx .r12 (-8)) .rax] :
         List Instr)) := by simp only [topX, List.append_assoc]
   rw [e]
@@ -121,7 +121,7 @@ theorem topX_ct (hF : Arr F) : RelCT isa (Two (GD wW F)) (.block topX) (Two (GD 
   obtain ⟨hW, kb⟩ := h.wkW
   have hw := h.ws
   have hn := hw.scr.nowrap
-  have sl := slot_Z h (j := sqZ) (by decide)
+  obtain sl := slot_Z h (j := sqZ) (by decide)
   refine WP.mono (topX_ok hw hW) fun t ⟨hm, k⟩ => h.out (o := slot (wW p.k) sqZ + 8 * (2 * wk p.k)) (n := 32)
     (fun x hx => ?_) (by have := slot_256 (wW p.k) sqZ; omega_arith) (by omega_arith) k (by decide) hF
   rw [hm, writeW_outside _ _ _ (d := slot (wW p.k) sqZ + 8 * (2 * wk p.k + 3)) (by omega_arith) x (by omega_arith),
@@ -139,13 +139,13 @@ theorem orX_ct (hF : Arr F) :
   have hw := h.ws
   have hw2 := hw.w2
   have hw1 := hw.w1
-  have sl := slot_Z h (j := sqZ) (by decide)
+  obtain sl := slot_Z h (j := sqZ) (by decide)
   refine WP.seq (WP.mono (orXHd_ok hw) fun u ⟨hbx, _, h12, mu, ku⟩ =>
     WP.mono (or1_ok (hw.scr.congr ku.2.2) hbx h12 (by omega_arith) (by omega_arith) (by omega_arith))
       fun t ⟨_, mt, kt⟩ => h.same (by rw [mt, mu]) (ku.trans kt) (by decide) hF)
 
 theorem zeroX_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) : RelCT isa (Two (GD wW F)) (.block zeroX) (Two (GD wW fun I s => F I s ∧ MZ I s)) := by
-  have e : zeroX = ws ++ (base sqZ .rbx ++ ([.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .store (hdr sZ) .rbp,
+  obtain e : zeroX = ws ++ (base sqZ .rbx ++ ([.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .store (hdr sZ) .rbp,
       .mov .rax (.reg .rbp), .alu .and .rax (.imm 1), .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax,
       .mov32 .rax (.imm 0), .store (hdr sK2) .rax] : List Instr)) := by simp only [zeroX, List.append_assoc]
   rw [e]
@@ -154,12 +154,12 @@ theorem zeroX_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) : RelC
   have hw := h.ws
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  have sl := slot_Z h (j := sqZ) (by decide)
-  have s256 := slot_256 (wW p.k) sqZ
+  obtain sl := slot_Z h (j := sqZ) (by decide)
+  obtain s256 := slot_256 (wW p.k) sqZ
   refine WP.mono (zeroX_ok hw (z := s.gpr .rbp = 0) Iff.rfl) fun t ⟨hm, k⟩ => ?_
-  have hP : ∀ y, (232 ≤ y ∧ y < 240 ∨ slot (wW p.k) sqZ ≤ y ∧ y < slot (wW p.k) sqZ + 8 ∨ 248 ≤ y ∧ y < 256) →
+  obtain hP : ∀ y, (232 ≤ y ∧ y < 240 ∨ slot (wW p.k) sqZ ≤ y ∧ y < slot (wW p.k) sqZ + 8 ∨ 248 ≤ y ∧ y < 256) →
       (SqW y ∨ (232 ≤ y ∧ y < 240)) ∧ y < p.Z := fun y hy => ⟨by unfold SqW; omega_arith, by omega_arith⟩
-  have hf : FrmP p.B (fun y => 232 ≤ y ∧ y < 240 ∨ slot (wW p.k) sqZ ≤ y ∧ y < slot (wW p.k) sqZ + 8 ∨
+  obtain hf : FrmP p.B (fun y => 232 ≤ y ∧ y < 240 ∨ slot (wW p.k) sqZ ≤ y ∧ y < slot (wW p.k) sqZ + 8 ∨
       248 ≤ y ∧ y < 256) s.mem t.mem := by
     intro x hx
     simp only [not_or, not_and_or, Nat.not_le, Nat.not_lt] at hx
@@ -185,7 +185,7 @@ theorem zeroX_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) : RelC
 
 theorem clzX_ct (hFc : Stab F fun y => 8 * sC ≤ y ∧ y < 8 * sC + 8) :
     RelCT isa (Two (GD wW F)) (.block clzX) (Two (GD wW fun I s => F I s ∧ MC I s)) := by
-  have e : clzX = ws ++ (base sqZ .rbx ++ (([.mov .rdx (.mem (ix .rbx .r12 (-40))), .mov32 .r11 (.imm 0)] : List Instr) ++
+  obtain e : clzX = ws ++ (base sqZ .rbx ++ (([.mov .rdx (.mem (ix .rbx .r12 (-40))), .mov32 .r11 (.imm 0)] : List Instr) ++
       (([32, 16, 8, 4, 2, 1].map clzStage).flatten ++
       ([.alu .and .r11 (.imm (BitVec.ofInt 32 (-2))), .store (hdr sC) .r11] : List Instr)))) := by
     simp only [clzX, List.append_assoc]
@@ -204,7 +204,7 @@ theorem testX_ct {c : Nat} (hc1 : 1 ≤ c) (hc128 : c ≤ 128)
         .alu .add .rbx (.reg .rax), .mov32 .rbp (.imm 0), .mov32 .r12 (.imm (BitVec.ofNat 32 c))] : List Instr)))
       (.seq (wordLoop 0 or1Body) (.block keepOf))) hc).isSome = true) :
     RelCT isa (Two (GD wW F)) (seqs (testX c)) (Two (GD wW fun I s => F I s ∧ MB I s)) := by
-  have e : seqs (testX c) = .seq (.seq (.block (ws ++ (base sqZ .rbx ++
+  obtain e : seqs (testX c) = .seq (.seq (.block (ws ++ (base sqZ .rbx ++
       ([.mov .rax (.reg .r12), .alu .sub .rax (.imm (BitVec.ofNat 32 (c + 4))), .shift .shl .rax 3,
         .alu .add .rbx (.reg .rax), .mov32 .rbp (.imm 0), .mov32 .r12 (.imm (BitVec.ofNat 32 c))] : List Instr))))
       (wordLoop 0 or1Body)) (.block keepOf) := by
@@ -242,22 +242,22 @@ theorem stageX_ct {c : Nat} (hc1 : 1 ≤ c) (hc128 : c ≤ 128) (hF : ArrS F) {h
   refine stage_ct (cnd := fun p => decide (2 * wk p.k < c + 1)) hF.arr t₀ (fun p s h => WP.mono
     (stageXHd_ok h.ws (wW_eq p.k) hc128) fun t ⟨⟨hcf, hm⟩, k⟩ => ⟨by simp only [eval, hcf], hm, _, k, by decide⟩)
     (RelCT.block_nil fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1, h₂.1⟩) ?_
-  have hG : ArrS fun I s => F I s ∧ c + 1 ≤ 2 * wk I.k := hF.and (stab_const _)
-  have hGB := arr_mb hG.arr
+  obtain hG : ArrS fun I s => F I s ∧ c + 1 ≤ 2 * wk I.k := hF.and (stab_const _)
+  obtain hGB := arr_mb hG.arr
   refine ct_pre (Ψ := GD wW fun I s => F I s ∧ c + 1 ≤ 2 * wk I.k) ?_ fun p s ⟨h, hc⟩ => by
     obtain ⟨I, m₀, rfl, h', L, O, he, hm, hFI⟩ := h
     exact ⟨I, m₀, rfl, h', L, O, he, hm, hFI, by
       simp only [decide_eq_false_iff_not] at hc; change ¬ 2 * wk I.k < c + 1 at hc; show c + 1 ≤ 2 * wk I.k
       omega_arith⟩
-  have hwk : ∀ p s, GD wW (fun I s => (F I s ∧ c + 1 ≤ 2 * wk I.k) ∧ MB I s) p s → c + 1 ≤ 2 * wk p.k :=
+  obtain hwk : ∀ p s, GD wW (fun I s => (F I s ∧ c + 1 ≤ 2 * wk I.k) ∧ MB I s) p s → c + 1 ≤ 2 * wk p.k :=
     fun p s h => by obtain ⟨I, m₀, rfl, -, -, -, -, -, hI, -⟩ := h; exact hI.2
-  have hT := testX_ct (F := fun I s => F I s ∧ c + 1 ≤ 2 * wk I.k) hc1 hc128 (hG.hdr (by decide))
+  obtain hT := testX_ct (F := fun I s => F I s ∧ c + 1 ≤ 2 * wk I.k) hc1 hc128 (hG.hdr (by decide))
     (fun p s h => by obtain ⟨I, m₀, rfl, -, -, -, -, -, hI⟩ := h; have := hI.2; show c ≤ 2 * wk I.k; omega_arith) t₁
-  have hS := shlWordsF_ct (j := sqZ) (t := sqT) (w := wW) (by decide) (by decide) (by decide) hc128 hGB
+  obtain hS := shlWordsF_ct (j := sqZ) (t := sqT) (w := wW) (by decide) (by decide) (by decide) hc128 hGB
     (fun p s h => by have := hwk p s h; have := wW_eq p.k; omega_arith) (by taint_decide) t₂
-  have hK := selK_ct (w := wW) false (j := sqZ) (t := sqT) (by decide) (by decide) (sel_far sqZ sqT (by decide)) hGB
+  obtain hK := selK_ct (w := wW) false (j := sqZ) (t := sqT) (by decide) (by decide) (sel_far sqZ sqT (by decide)) hGB
     (fun _ _ h => h.mb) (by taint_decide)
-  have hA := addK_ct (F := fun I s => (F I s ∧ c + 1 ≤ 2 * wk I.k) ∧ MB I s) hc128
+  obtain hA := addK_ct (F := fun I s => (F I s ∧ c + 1 ≤ 2 * wk I.k) ∧ MB I s) hc128
     ((hG.hdr (by decide)).and (stab_MB fun y hy => by simp only [sK2, sFn] at hy; omega_arith)) (fun _ _ h => h.mb) t₃
   exact ct_post (ct_app (by simp [testX]) (List.cons_ne_nil _ _)
     (ct_app (by simp [testX]) (by simp [shlWords]) hT hS) (ct_cons (List.cons_ne_nil _ _) hK (ct_one hA)))
@@ -279,9 +279,9 @@ variable {F : RpIn → State → Prop}
 
 theorem normX_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) :
     RelCT isa (Two (GD wW F)) (seqs normX) (Two (GD wW fun I s => (F I s ∧ MZ I s) ∧ MC I s)) := by
-  have hS : ArrS F := stab_mono hF fun y hy => .inl hy
-  have hZ := arrS_mz hS
-  have hSt : ∀ c ∈ 128 :: wordStages, RelCT isa (Two (GD wW fun I s => F I s ∧ MZ I s)) (stageX c)
+  obtain hS : ArrS F := stab_mono hF fun y hy => .inl hy
+  obtain hZ := arrS_mz hS
+  obtain hSt : ∀ c ∈ 128 :: wordStages, RelCT isa (Two (GD wW fun I s => F I s ∧ MZ I s)) (stageX c)
       (Two (GD wW fun I s => F I s ∧ MZ I s)) := by
     intro c hc
     simp only [wordStages, List.mem_cons, List.not_mem_nil, or_false] at hc
@@ -357,7 +357,7 @@ theorem SM.lay {a : RpP × Nat} {s : State} (h : SM a s) :
     256 ≤ slot (wW a.1.k) sqD ∧ slot (wW a.1.k) sqZ + 8 * (wW a.1.k + 2) ≤ a.1.Z ∧
     slot (wW a.1.k) sqD + 8 * (wW a.1.k + 2) ≤ slot (wW a.1.k) sqZ := by
   obtain ⟨hw, hc, hc1, hch, hh⟩ := h
-  have hW := wW_eq a.1.k
+  obtain hW := wW_eq a.1.k
   have hZ := hw.hZ
   rw [slotE] at hZ
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [slotE, sqZ, sqD] <;> omega_arith
@@ -404,14 +404,14 @@ theorem updX_ct : RelCT isa (Two SM) (.block updX) (Two SM) :=
     fun _ ⟨lo, hi, hm, _, k⟩ => ⟨lo, hi, hm, k⟩
 
 theorem fixX_ct : RelCT isa (Two SM) fixX (Two SM) := by
-  have e : fixX = .seq (.seq (.block (winPtrs ++ ([.mov .rax (.mem (ix .rbx .r12 (-8))), .alu .add .rax (.reg .rax),
+  obtain e : fixX = .seq (.seq (.block (winPtrs ++ ([.mov .rax (.mem (ix .rbx .r12 (-8))), .alu .add .rax (.reg .rax),
       .alu .sbb .r15 (.reg .r15), .mov32 .rbp (.imm 0)] : List Instr))) (wordLoop 0 addMBody))
     (.block [.mov .r11 (.reg .r15), .alu .and .r11 (.imm 2), .mov .rax (.mem (at0 .r10)),
       .mov .rdx (.mem { base := .r10, disp := 8 }), .alu .sub .rax (.reg .r11), .alu .sbb .rdx (.imm 0),
       .store (at0 .r10) .rax, .store { base := .r10, disp := 8 } .rdx]) := rfl
   rw [e]
   refine RelCT.assoc' (RelCT.block_seq (win_ct (by taint_decide) fun a s h => ?_))
-  have hfix := fixX_ok h.1 (wW_eq _) h.2.1 h.2.2.1 h.2.2.2.1
+  obtain hfix := fixX_ok h.1 (wW_eq _) h.2.1 h.2.2.1 h.2.2.2.1
   rw [e] at hfix
   refine WP.block_seq_iff.mp (WP.assoc hfix) |> fun w => WP.mono w fun t ⟨m, _, lo, hi, _, o, hm, _, k⟩ => ?_
   obtain ⟨l1, l2, l3, l4, l5⟩ := h.lay
@@ -451,7 +451,7 @@ theorem estA_ok {a : RpP × Nat} {s : State} (h : SM a s) :
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (base2_ok sqU sqS (r₁ := .rsi) (r₂ := .r11) (w := wW a.1.k) (by decide) (by decide) (by decide)
     ((k₁.gpr (by decide)).trans hw.rdi) h9 (by decide)) fun s₂ ⟨hsi, h11, m₂, k₂⟩ => ?_
-  have hw₂ : Ws s₂ a.1.B a.1.Z (wW a.1.k) := hw.congrP (P := fun _ => False) (fun _ _ => by rw [m₂, m₁])
+  obtain hw₂ : Ws s₂ a.1.B a.1.Z (wW a.1.k) := hw.congrP (P := fun _ => False) (fun _ _ => by rw [m₂, m₁])
     (fun _ f => f.elim) (k₁.trans k₂) (by simp)
   refine WP.mono (winPtrs_ok hw₂ (wW_eq _) (by rw [m₂, m₁, hc]) hc1 hch) fun t ⟨hbx, h8, h10, h12', h9', _, k₃⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -466,7 +466,7 @@ theorem estA_ok {a : RpP × Nat} {s : State} (h : SM a s) :
   · exact (k₃.gpr (by decide)).trans h11
 
 theorem estX_ct : RelCT isa (Two SE) (.block estX) (Two SM) := by
-  have e : estX = (ws ++ base sqU .rsi ++ base sqS .r11 ++ winPtrs) ++
+  obtain e : estX = (ws ++ base sqU .rsi ++ base sqS .r11 ++ winPtrs) ++
       (half .rbx .rsi (-4) 0 ++ half .rbx .rsi (-3) 1 ++ half .rbx .rsi (-2) 2 ++ half .r10 .r11 (-4) 1 ++
       half .r10 .r11 (-3) 2 ++
       ([.mov .rbx (.reg .rsi), .mov .r10 (.reg .r11), .mov .rbp (.reg .r11), .mov32 .r12 (.imm 3)] : List Instr) ++
@@ -520,7 +520,7 @@ theorem sqLoop_ct {G : RpIn → State → Prop} (hG : ArrL G) :
     · have hn := hI'.ws.scr.nowrap
       have hZ := hI'.ws.hZ
       rw [slotE] at hZ
-      have hP : ∀ y, SqLP (wW p.k) y → (DOk y ∧ LW y ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < p.Z := fun y hy => by
+      obtain hP : ∀ y, SqLP (wW p.k) y → (DOk y ∧ LW y ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < p.Z := fun y hy => by
         unfold SqLP at hy; unfold DOk LW; simp only [slotE, sqS, sqD, sqU, sqZ, sCt, sU, sFn] at hy; omega_arith
       refine g.next hI'.frm (fun y hy => ⟨(hP y hy).1.1, (hP y hy).2⟩) hI'.keep (by simp [mmRegs])
         (fun c hc => ⟨c, ?_⟩) fun I e hFI => by
@@ -547,7 +547,7 @@ theorem GD.sqlp {p : RpP} {s t : State} (h : GD wW G p s) (hf : FrmP p.B (SqLP (
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
   rw [slotE] at hZ
-  have hP : ∀ y, SqLP (wW p.k) y → (DOk y ∧ LW y ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < p.Z := fun y hy => by
+  obtain hP : ∀ y, SqLP (wW p.k) y → (DOk y ∧ LW y ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < p.Z := fun y hy => by
     unfold SqLP at hy; unfold DOk LW; simp only [slotE, sqS, sqD, sqU, sqZ, sCt, sU, sFn] at hy; omega_arith
   refine h.next hf (fun y hy => ⟨(hP y hy).1.1, (hP y hy).2⟩) k hr (fun c hc => ⟨c, ?_⟩) fun I e hFI => by
     subst e; exact hG I s t _ hFI hf (fun y hy => ⟨(hP y hy).1.2.1, (hP y hy).2⟩) k.2.1 k.2.2
@@ -565,17 +565,17 @@ theorem isqP_ct (hG : Arr G) :
   refine wsG_ct (fun _ _ h => h) (by taint_decide) fun p s h => ?_
   rw [← List.append_assoc]
   have kb := h.kb
-  have hW := wW_eq p.k
+  obtain hW := wW_eq p.k
   refine WP.seq (WP.mono (firstHd_ok h.ws (by omega_arith)) fun t₄ ⟨h8, h9, h10, h11, h13, hcx, m₄, k₄⟩ => ?_)
   generalize hw5 : word s.mem p.B (slot (wW p.k) sqZ + 8 * (wW p.k - 5)) = w5 at h8
   generalize hw6 : word s.mem p.B (slot (wW p.k) sqZ + 8 * (wW p.k - 6)) = w6 at h9
   have l5 := w5.isLt
   have l6 := w6.isLt
-  have hT : w5.toNat * 2 ^ 64 + w6.toNat < 2 ^ 128 := by omega_arith
-  have h8' : t₄.gpr .r8 = BitVec.ofNat 64 ((w5.toNat * 2 ^ 64 + w6.toNat) / 2 ^ 64) := by
+  obtain hT : w5.toNat * 2 ^ 64 + w6.toNat < 2 ^ 128 := by omega_arith
+  obtain h8' : t₄.gpr .r8 = BitVec.ofNat 64 ((w5.toNat * 2 ^ 64 + w6.toNat) / 2 ^ 64) := by
     rw [h8, show (w5.toNat * 2 ^ 64 + w6.toNat) / 2 ^ 64 = w5.toNat by omega_arith, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
-  have h9' : t₄.gpr .r9 = BitVec.ofNat 64 ((w5.toNat * 2 ^ 64 + w6.toNat) % 2 ^ 64) := by
+  obtain h9' : t₄.gpr .r9 = BitVec.ofNat 64 ((w5.toNat * 2 ^ 64 + w6.toNat) % 2 ^ 64) := by
     rw [h9, show (w5.toNat * 2 ^ 64 + w6.toNat) % 2 ^ 64 = w6.toNat by omega_arith, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
   exact WP.mono (isq_ok hT (isqInv0 (t₀ := t₄) hT h10 h11 h13 h8' h9' hcx rfl (Keep.refl _ _)))
@@ -592,14 +592,14 @@ theorem firstSt_ct (hG : Arr G) :
   refine wsG_block_ct (fun _ _ h => h) (by taint_decide) fun p s h => ?_
   simp only [← List.append_assoc]
   have kb := h.kb
-  have hW := wW_eq p.k
+  obtain hW := wW_eq p.k
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
   rw [slotE] at hZ
-  have s1 := slotE (wW p.k) sqS
-  have s8 := slotE (wW p.k) 8
-  have sD := slotE (wW p.k) sqD
-  have sZ' := slotE (wW p.k) sqZ
+  obtain s1 := slotE (wW p.k) sqS
+  obtain s8 := slotE (wW p.k) 8
+  obtain sD := slotE (wW p.k) sqD
+  obtain sZ' := slotE (wW p.k) sqZ
   simp only [sqS, sqD, sqZ] at s1 sD sZ'
   refine WP.mono (firstSt_ok h.ws hW (by omega_arith)) fun t ⟨hm, k⟩ =>
     h.arr (P := fun y => slot (wW p.k) sqS ≤ y ∧ y < slot (wW p.k) 8) ?_
@@ -625,7 +625,7 @@ theorem recipS_ct (hG : Arr G) :
     RelCT isa (Two fun p s => GD wW G p s ∧ FSq p s)
       (.seq (.block (ws ++ base sqS .r10 ++ base sqS .r8 ++ ([.mov32 .r12 (.imm 3)] : List Instr))) R2Words.recip)
       (Two (GD wW G)) := by
-  have e : ws ++ base sqS .r10 ++ base sqS .r8 ++ ([.mov32 .r12 (.imm 3)] : List Instr) =
+  obtain e : ws ++ base sqS .r10 ++ base sqS .r8 ++ ([.mov32 .r12 (.imm 3)] : List Instr) =
       ws ++ (base sqS .r10 ++ (base sqS .r8 ++ ([.mov32 .r12 (.imm 3)] : List Instr))) := by simp only [List.append_assoc]
   rw [e]
   refine wsG_ct (w := wW) (F := G) (fun _ _ h => h.1) (by taint_decide) fun p s h => ?_
@@ -638,7 +638,7 @@ theorem recipS_ct (hG : Arr G) :
     WP.mono (R2w.recip_ok (hw.scr.congr ku.2.2) h10 h12 h8 (by decide) (by simp only [slotE, sqS]; omega_arith)
       (by simp only [slotE, sqS]; omega_arith) (by rw [mu]; exact h.2)) fun t ⟨m, k⟩ => ?_)
   rw [mu] at m
-  have o : Outside p.B (slot (wW p.k) sqS) 8 s.mem t.mem := by
+  obtain o : Outside p.B (slot (wW p.k) sqS) 8 s.mem t.mem := by
     rw [m]; exact writeW_outside _ _ _ (by simp only [slotE, sqS]; omega_arith)
   exact h.1.out o (slot_256 _ _) (by simp only [slotE, sqS]; omega_arith) (ku.trans k) (by decide) hG
 
@@ -657,7 +657,7 @@ theorem ctX_ct (hG : ArrL G) :
   have hZ := h.ws.hZ
   rw [slotE] at hZ
   have hct : 8 * sCt = 200 := rfl
-  have hf : FrmP (pubD I).B (fun y => 8 * sCt ≤ y ∧ y < 8 * sCt + 8) s.mem t.mem := by
+  obtain hf : FrmP (pubD I).B (fun y => 8 * sCt ≤ y ∧ y < 8 * sCt + 8) s.mem t.mem := by
     rw [hm]; exact FrmP.of_writeW _ (by omega_arith) fun _ h1 h2 => ⟨h1, h2⟩
   exact hG I s t _ hGI hf (fun y hy => ⟨by unfold LW; omega_arith, by show y < (pubD I).Z; omega_arith⟩) k.2.1 k.2.2
 
@@ -679,19 +679,19 @@ theorem firstX_ct (hG : ArrL G) (hGa : Arr G) :
   have e : firstX ++ [.block (ws ++ hOf ++ ([.alu .sub .r12 (.imm 1), .store (hdr sCt) .r12] : List Instr))] =
       firstX.take 5 ++ [.seq (.block (ws ++ base sqS .r10 ++ base sqS .r8 ++ ([.mov32 .r12 (.imm 3)] : List Instr)))
         R2Words.recip, .block (ws ++ hOf ++ ([.alu .sub .r12 (.imm 1), .store (hdr sCt) .r12] : List Instr))] := rfl
-  have weakA : RelCT isa (Two (GD wW G)) (seqs (firstX.take 5)) (Two (GD wW G)) :=
+  obtain weakA : RelCT isa (Two (GD wW G)) (seqs (firstX.take 5)) (Two (GD wW G)) :=
     ct_cons (List.cons_ne_nil _ _) (zeroA_ct (j := sqD) (by decide) hGa (by taint_decide))
       (ct_cons (List.cons_ne_nil _ _) (zeroA_ct (j := sqS) (by decide) hGa (by taint_decide))
       (ct_cons (List.cons_ne_nil _ _) (zeroA_ct (j := sqU) (by decide) hGa (by taint_decide))
       (ct_cons (List.cons_ne_nil _ _) (isqP_ct hGa) (ct_one (firstSt_ct hGa)))))
-  have inner : RelCT isa (Two (GD wW fun I s => G I s ∧ NXv I s)) (seqs (firstX.take 5))
+  obtain inner : RelCT isa (Two (GD wW fun I s => G I s ∧ NXv I s)) (seqs (firstX.take 5))
       (Two fun p s => GD wW G p s ∧ FSq p s) :=
     two_post ((ct_pre weakA fun p s h => h.mono fun _ _ h => h.1).mono (fun _ _ h => h) fun _ _ _ => trivial)
       fun p s h => by
         obtain ⟨I, m₀, e', h', L, O, he, hm, hGI, X, hX, hXt, hXh⟩ := id h
         subst e'
         have kb : 8 ≤ wk I.k := h.kb.1
-        have hW := wW_eq I.k
+        obtain hW := wW_eq I.k
         refine WP.mono (firstA_ok h'.ws hW (by omega_arith) (top_pair hW (by omega_arith) hX hXh)
           (top_pair_lo (by omega_arith) hXt)) fun t ⟨_, f, k, top⟩ =>
             ⟨(h.mono fun _ _ h => h.1).sqlp f k (by simp [mmRegs]) hG, top⟩
@@ -715,9 +715,9 @@ theorem shrTo_frm {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j o : Nat
     WP isa (.seq (.block (ws ++ base j .r8 ++ base o .rsi)) (wordLoop 0 shrBody)) s fun s' =>
       Outside B (slot w o) (8 * w) s.mem s'.mem ∧ Keep [.r12, .r9, .r8, .rsi, .rax, .rdx, .r14] s s' := by
   have hn := h.scr.nowrap
-  have sj := h.sl hj
-  have so := h.sl ho
-  have pj := slot_sep (w := w) hjo
+  obtain sj := h.sl hj
+  obtain so := h.sl ho
+  obtain pj := slot_sep (w := w) hjo
   have hw1 := h.w1
   have hw2 := h.w2
   simp only [List.append_assoc]
@@ -737,7 +737,7 @@ theorem halfA_ct {t j : Nat} (hj : j < 16) (ht : t < 16) (hjt : j ≠ t) (hG : A
     (htc : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .r8 ++ base t .rsi))
       (wordLoop 0 shrBody)) hc).isSome = true) :
     RelCT isa (Two (GD wW G)) (halfA t j) (Two (GD wW G)) := by
-  have e : halfA t j = .seq (.block (ws ++ (base j .r8 ++ base t .rsi))) (wordLoop 0 shrBody) := by
+  obtain e : halfA t j = .seq (.block (ws ++ (base j .r8 ++ base t .rsi))) (wordLoop 0 shrBody) := by
     simp only [halfA, List.append_assoc]
   rw [e]
   exact wsG_ct (fun _ _ h => h) htc fun p s h => by
@@ -775,7 +775,7 @@ theorem kBlk_ct {F : RpIn → State → Prop} (hF : ArrS F) :
     have e3 : 8 * sC = 240 := rfl
     refine WP.mono (kBlk_ok h.ws hK hz (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) hc) fun t ⟨hm, k⟩ => ?_
     generalize (word s.mem p.B (8 * sK2)).toNat = K at hK hm
-    have hf : FrmP p.B (fun y => 240 ≤ y ∧ y < 256) s.mem t.mem := by
+    obtain hf : FrmP p.B (fun y => 240 ≤ y ∧ y < 256) s.mem t.mem := by
       intro x hx
       simp only [not_and_or, Nat.not_le, Nat.not_lt] at hx
       rw [hm, writeW_outside _ _ _ (d := 8 * sC) (by omega_arith) x (by omega_arith),
@@ -823,26 +823,26 @@ theorem stageR_ct {c : Nat} (hc1 : 1 ≤ c) (hc64 : c ≤ 64) {F : RpIn → Stat
         base sqT .rbx)))) copyWords) h₂).isSome = true) :
     RelCT isa (Two (GD wW (G1 F))) (stageR c) (Two (GD wW (G1 F))) := by
   unfold stageR
-  have hA := G1.arr hF
+  obtain hA := G1.arr hF
   refine stage_ct (cnd := fun p => decide (wW p.k < c + 4)) hA t₀ (fun p s h => WP.mono
     (stageRHd_ok h.ws (by omega_arith)) fun t ⟨⟨hcf, hm⟩, k⟩ => ⟨by simp only [eval, hcf], hm, _, k, by decide⟩)
     (RelCT.block_nil fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1, h₂.1⟩) ?_
-  have hG : Arr fun I s => G1 F I s ∧ c + 4 ≤ wW I.k := hA.and (stab_const _)
-  have hGB := arr_mb hG
+  obtain hG : Arr fun I s => G1 F I s ∧ c + 4 ≤ wW I.k := hA.and (stab_const _)
+  obtain hGB := arr_mb hG
   refine ct_pre (Ψ := GD wW fun I s => G1 F I s ∧ c + 4 ≤ wW I.k) ?_ fun p s ⟨h, hc⟩ => by
     obtain ⟨I, m₀, rfl, h', L, O, he, hm, hFI⟩ := h
     exact ⟨I, m₀, rfl, h', L, O, he, hm, hFI, by
       simp only [decide_eq_false_iff_not] at hc; change ¬ wW I.k < c + 4 at hc; show c + 4 ≤ wW I.k; omega_arith⟩
-  have hK := kSel_ct (F := fun I s => G1 F I s ∧ c + 4 ≤ wW I.k) (c := c) (by omega_arith)
+  obtain hK := kSel_ct (F := fun I s => G1 F I s ∧ c + 4 ≤ wW I.k) (c := c) (by omega_arith)
     (((((stab_mono hF fun y hy => by unfold SqW; simp only [sB2, sFn] at hy; omega_arith).and
       (stab_mz fun y hy => by simp only [sB2, sFn] at hy; omega_arith)).and
       (stab_mk fun y hy => by simp only [sB2, sFn] at hy; omega_arith)).and
       (stab_MC fun y hy => by simp only [sB2, sFn] at hy; omega_arith)).and (stab_const _))
     (fun p s h => (g1_facts (GD.mono h fun _ _ h => h.1)).2.1) t₁
-  have hS := shrWords_ct (j := sqR) (t := sqT) (w := wW) (by decide) (by decide) (by decide) hc64 hGB
+  obtain hS := shrWords_ct (j := sqR) (t := sqT) (w := wW) (by decide) (by decide) (by decide) hc64 hGB
     (fun p s h => by obtain ⟨I, m₀, rfl, -, -, -, -, -, hI, -⟩ := h; have := hI.2; show c + 1 ≤ wW I.k; omega_arith)
     (by taint_decide) t₂
-  have hSel := selK_ct (w := wW) false (j := sqR) (t := sqT) (by decide) (by decide) (sel_far sqR sqT (by decide)) hGB
+  obtain hSel := selK_ct (w := wW) false (j := sqR) (t := sqT) (by decide) (by decide) (sel_far sqR sqT (by decide)) hGB
     (fun _ _ h => h.mb) (by taint_decide)
   exact ct_post (ct_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)
     (ct_app (List.cons_ne_nil _ _) (by simp [shrWords]) (ct_one hK) hS) (ct_one hSel))
@@ -862,20 +862,20 @@ theorem lastR_ct (hF : ArrS F) :
   rw [← List.append_assoc]
   obtain ⟨⟨b, hb⟩, -⟩ := g1_facts h
   have hn := h.ws.scr.nowrap
-  have sl := slot_Z h (j := sqR) (by decide)
+  obtain sl := slot_Z h (j := sqR) (by decide)
   refine WP.mono (lastR_ok h.ws hb) fun t ⟨hm, k⟩ => ?_
-  have o : Outside p.B (slot (wW p.k) sqR) 8 s.mem t.mem := by
+  obtain o : Outside p.B (slot (wW p.k) sqR) 8 s.mem t.mem := by
     rw [hm]; exact writeW_outside _ _ _ (by omega_arith)
   exact h.out o (slot_256 _ _) (by omega_arith) k (by decide) (G1.arr hF)
 
 theorem finishX_ct (hF : ArrS F) : RelCT isa (Two (GD wW (G1 F))) (seqs finishX) (Two (GD wW (G1 F))) := by
-  have hA := G1.arr hF
-  have hS : ∀ c ∈ wordStages, RelCT isa (Two (GD wW (G1 F))) (stageR c) (Two (GD wW (G1 F))) := by
+  obtain hA := G1.arr hF
+  obtain hS : ∀ c ∈ wordStages, RelCT isa (Two (GD wW (G1 F))) (stageR c) (Two (GD wW (G1 F))) := by
     intro c hc
     simp only [wordStages, List.mem_cons, List.not_mem_nil, or_false] at hc
     rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact stageR_ct (by decide) (by decide) hF (by taint_decide) (by taint_decide) (by taint_decide)
-  have hM : Stab (G1 F) fun y => 176 ≤ y ∧ y < 184 :=
+  obtain hM : Stab (G1 F) fun y => 176 ≤ y ∧ y < 184 :=
     (((stab_mono hF fun y hy => by unfold SqW; omega_arith).and (stab_mz fun y hy => by omega_arith)).and
       (stab_mk fun y hy => by omega_arith)).and (stab_MC fun y hy => by omega_arith)
   unfold finishX
@@ -909,7 +909,7 @@ theorem normXs_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) :
   rw [slotE] at hZ
   refine WP.mono (normX_ok h'.ws (wW_eq I.k) (by omega_arith) kb.2 rfl)
     fun t ⟨C, z, _, hz64, hC, hX, hlo, hhi, hK, hzC, hZm, f, k, hw⟩ => ?_
-  have hP : ∀ y, NxP (wW I.k) y → (DOk y ∧ (SqW y ∨ (232 ≤ y ∧ y < 240)) ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < I.Z :=
+  obtain hP : ∀ y, NxP (wW I.k) y → (DOk y ∧ (SqW y ∨ (232 ≤ y ∧ y < 240)) ∧ ¬ (176 ≤ y ∧ y < 184)) ∧ y < I.Z :=
     fun y hy => by unfold NxP at hy; unfold DOk SqW; simp only [slotE, sqT] at hy; omega_arith
   refine h.next (F' := fun I s => G1 F I s ∧ NXv I s) f (fun y hy => ⟨(hP y hy).1.1, (hP y hy).2⟩) k
     (by simp [mmRegs]) (fun c hc => ⟨c, ?_⟩) fun J e hFJ => ?_
@@ -920,8 +920,8 @@ theorem normXs_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) :
       (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)]
     exact hc
   · have eB : J.B = I.B := congrArg RpP.B e
-    have eK : J.k = I.k := congrArg RpP.k e
-    have eZ : J.Z = I.Z := congrArg RpP.Z e
+    obtain eK : J.k = I.k := congrArg RpP.k e
+    obtain eZ : J.Z = I.Z := congrArg RpP.Z e
     refine ⟨⟨⟨⟨hF J s t _ hFJ (by rw [eB]; exact f) (fun y hy => ⟨(hP y hy).1.2.1, by rw [eZ]; exact (hP y hy).2⟩)
       k.2.1 k.2.2, ?_⟩, ?_⟩, z, hz64, ?_⟩,
       Xn (wv s.mem I.B (slot (wW I.k) sqZ) (wW I.k)) (wk I.k) * 2 ^ (64 * C) * 2 ^ z, ?_, ?_, ?_⟩
@@ -938,8 +938,8 @@ end
 /-- The square root, at the wide width. -/
 theorem sqrt_ct {F : RpIn → State → Prop} (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) :
     RelCT isa (Two (GD wW F)) (seqs RecoverDet.sqrt) (Two (GD wW (G1 F))) := by
-  have hS : ArrS F := stab_mono hF fun y hy => .inl hy
-  have e : RecoverDet.sqrt = normX ++ ((firstX ++ [.block (ws ++ hOf ++ ([.alu .sub .r12 (.imm 1),
+  obtain hS : ArrS F := stab_mono hF fun y hy => .inl hy
+  obtain e : RecoverDet.sqrt = normX ++ ((firstX ++ [.block (ws ++ hOf ++ ([.alu .sub .r12 (.imm 1),
       .store (hdr sCt) .r12] : List Instr))]) ++ ([.loop stepX .ne] ++ finishX)) := by
     simp only [RecoverDet.sqrt, List.append_assoc, List.cons_append, List.nil_append]
   rw [e]

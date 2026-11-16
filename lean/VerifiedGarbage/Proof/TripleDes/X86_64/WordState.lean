@@ -90,32 +90,32 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     WP isa (.block (roundBody ++ roundAdvance)) s (fun s' =>
       (isa.eval .ne s' = some false ∧ LoopPost keys direction origin v s') ∨
       (isa.eval .ne s' = some true ∧ ∃ m < n, LoopInv keys direction base origin v m s')) := by
-  have hj : 16 - n < 16 := by omega_using [hs.positive]
-  have haddr : countAddr s = countAddr origin := by
+  obtain hj : 16 - n < 16 := by omega_using [hs.positive]
+  obtain haddr : countAddr s = countAddr origin := by
     simp only [countAddr, hs.regs .rdx (by decide)]
-  have hwork : roundRegion s = roundRegion origin := by
+  obtain hwork : roundRegion s = roundRegion origin := by
     simp only [roundRegion, hs.regs .rdx (by decide)]
-  have hstepAddr : stepAddr s = stepAddr origin := by
+  obtain hstepAddr : stepAddr s = stepAddr origin := by
     simp only [stepAddr, hs.regs .rdx (by decide)]
-  have hstepS : InRegions (s.rd ++ s.wr) (stepAddr s) 8 := by
+  obtain hstepS : InRegions (s.rd ++ s.wr) (stepAddr s) 8 := by
     rw [hs.rd, hs.wr, hstepAddr]; exact hstepRead
   have hokS : Ok sboxCfg s := hok.congr
     (hs.regs .rdx (by decide)) (hs.regs .rdx (by decide)) hs.rd hs.wr
-  have hreadS : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 8 := by
+  obtain hreadS : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 8 := by
     rw [hs.rd, hs.wr, hs.pointer]; exact hread _ hj
-  have hsepS : (⟨s.gpr .rdi, 8⟩ : Region).Disjoint (spillRegion s) := by
+  obtain hsepS : (⟨s.gpr .rdi, 8⟩ : Region).Disjoint (spillRegion s) := by
     rw [hs.pointer]
     intro a ha hb
     apply hsep _ hj a ha
     rw [← hwork]
     exact spill_sub_work s a hb
-  have hreadCountS : InRegions (s.rd ++ s.wr) (countAddr s) 8 := by
+  obtain hreadCountS : InRegions (s.rd ++ s.wr) (countAddr s) 8 := by
     rw [hs.rd, hs.wr, haddr]; exact hcountRead
-  have hwriteCountS : InRegions s.wr (countAddr s) 8 := by
+  obtain hwriteCountS : InRegions s.wr (countAddr s) 8 := by
     rw [hs.wr, haddr]; exact hcountWrite
-  have hk : (s.mem.readW (s.gpr .rdi) 64).setWidth 48 = roundKey keys direction (16 - n) := by
+  obtain hk : (s.mem.readW (s.gpr .rdi) 64).setWidth 48 = roundKey keys direction (16 - n) := by
     rw [hs.pointer]
-    have hmem := hs.frame.readW (a := keyAddr base direction (16 - n)) (w := 64)
+    obtain hmem := hs.frame.readW (a := keyAddr base direction (16 - n)) (w := 64)
       (r := ⟨keyAddr base direction (16 - n), 8⟩)
       (Region.contains_self _ _) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
@@ -125,31 +125,31 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     roundStep_ok s _ _ (s.mem.readW (s.gpr .rdi) 64) n hs.positive
       (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS hsepS
       hs.counter hreadCountS hwriteCountS hstepS
-  have hstep' : s'.mem.readW (stepAddr s') 64 = stepVal direction := by
-    have hsa : stepAddr s' = stepAddr s := by
+  obtain hstep' : s'.mem.readW (stepAddr s') 64 = stepVal direction := by
+    obtain hsa : stepAddr s' = stepAddr s := by
       simp only [stepAddr, regs .rdx (by decide)]
     rw [hsa]
     refine Eq.trans (frame.readW (r := ⟨stepAddr s, 8⟩) (Region.contains_self _ _) ?_ (by decide)) hs.step
     intro q hq
     obtain rfl := List.mem_singleton.mp hq
     exact step_round_disjoint s
-  have hidx : 16 - (n - 1) = 16 - n + 1 := by
+  obtain hidx : 16 - (n - 1) = 16 - n + 1 := by
     omega_using [hs.positive, hs.bounded]
-  have hleft : s'.gpr .r12 = (roundPrefix keys direction (16 - (n - 1)) v).1.setWidth 64 := by
+  obtain hleft : s'.gpr .r12 = (roundPrefix keys direction (16 - (n - 1)) v).1.setWidth 64 := by
     rw [hidx]
     exact left.trans (congrArg (fun pair => pair.1.setWidth 64)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hright : s'.gpr .r13 = (roundPrefix keys direction (16 - (n - 1)) v).2.setWidth 64 := by
+  obtain hright : s'.gpr .r13 = (roundPrefix keys direction (16 - (n - 1)) v).2.setWidth 64 := by
     rw [hidx]
-    have hval := congrArg (fun key =>
+    obtain hval := congrArg (fun key =>
       ((roundPrefix keys direction (16 - n) v).1 ^^^
         Spec.TripleDes.roundFunction (roundPrefix keys direction (16 - n) v).2 key).setWidth 64) hk
     exact (right.trans hval).trans (congrArg (fun pair => pair.2.setWidth 64)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hframe : Frame [roundRegion origin] origin.mem s'.mem := by
+  obtain hframe : Frame [roundRegion origin] origin.mem s'.mem := by
     rw [hwork] at frame
     exact hs.frame.trans frame
-  have hregs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s'.gpr q = origin.gpr q :=
+  obtain hregs : ∀ q ∈ [Reg.rsi, .rdx, .rsp], s'.gpr q = origin.gpr q :=
     fun q hq => (regs q hq).trans (hs.regs q hq)
   refine WP.of_runBlock ⟨s', run, ?_⟩
   by_cases hlast : n = 1
@@ -212,7 +212,7 @@ def passOffset (component : Nat) (direction : Direction) : Nat :=
 theorem passOffset_signExtend (component : Nat) (hc : component < 3) (direction : Direction) :
     (BitVec.ofNat 32 (passOffset component direction)).signExtend 64 =
       BitVec.ofNat 64 (passOffset component direction) := by
-  have h : ∀ c < 3,
+  obtain h : ∀ c < 3,
       ((BitVec.ofNat 32 (passOffset c .encrypt)).signExtend 64 =
         BitVec.ofNat 64 (passOffset c .encrypt)) ∧
       ((BitVec.ofNat 32 (passOffset c .decrypt)).signExtend 64 =
@@ -343,16 +343,16 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
     (hwrite : InRegions s.wr (countAddr s) 8) (hstep : InRegions s.wr (stepAddr s) 8) :
     WP isa (passSelect d) s (StartPost (passOf d p).1 (passOf d p).2 s) := by
   -- a branch, from a state that differs from `s` in `rax` and the flags only
-  have branch : ∀ (t : State) (q : Nat), q = p → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr →
+  obtain branch : ∀ (t : State) (q : Nat), q = p → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr →
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) →
       WP isa (.block (passStart (passOf d q).1 (passOf d q).2)) t
         (StartPost (passOf d p).1 (passOf d p).2 s) := by
     intro t q hq hm hrd hwr hg
     subst hq
-    have hdx : t.gpr .rdx = s.gpr .rdx := hg .rdx (by decide)
-    have hsaved : savedKeyAddr t = savedKeyAddr s := by simp only [savedKeyAddr, hdx]
-    have hcount : countAddr t = countAddr s := by simp only [countAddr, hdx]
-    have hstepA : stepAddr t = stepAddr s := by simp only [stepAddr, hdx]
+    obtain hdx : t.gpr .rdx = s.gpr .rdx := hg .rdx (by decide)
+    obtain hsaved : savedKeyAddr t = savedKeyAddr s := by simp only [savedKeyAddr, hdx]
+    obtain hcount : countAddr t = countAddr s := by simp only [countAddr, hdx]
+    obtain hstepA : stepAddr t = stepAddr s := by simp only [stepAddr, hdx]
     obtain ⟨u, run, ptr, mem, rd, wr, regs⟩ := passStart_ok (passOf d q).1 (passOf_lt d q)
       (passOf d q).2 t (by rw [hrd, hwr, hsaved]; exact hread) (by rw [hwr, hcount]; exact hwrite)
       (by rw [hwr, hstepA]; exact hstep)
@@ -363,23 +363,23 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
       exact (regs r hrax hrdi).trans (hg r hrax)
   let v := s.mem.readW (passesAddr s) 64
   let s₁ := s.setReg .rax v
-  have e₁ : exec (.mov .rax (.mem (memOp .rdx 456))) s = some s₁ := by
+  obtain e₁ : exec (.mov .rax (.mem (memOp .rdx 456))) s = some s₁ := by
     unfold passesAddr at hpRead
     have hoff : BitVec.ofInt 64 (Int.ofNat 456) = BitVec.ofNat 64 456 := rfl
     simp only [exec, readSrc, State.ea, memOp, hoff, State.load64, hpRead]
     rfl
   let t₁ := cmpState s₁ 3
-  have hrax₁ : t₁.gpr .rax = BitVec.ofNat 64 p := by
+  obtain hrax₁ : t₁.gpr .rax = BitVec.ofNat 64 p := by
     simp only [t₁, cmpState, gpr_arithFlags, s₁, gpr_setReg_self, v, hpasses]
-  have hg₁ : ∀ r, r ≠ .rax → t₁.gpr r = s.gpr r := by
+  obtain hg₁ : ∀ r, r ≠ .rax → t₁.gpr r = s.gpr r := by
     intro r hr
     simp only [t₁, cmpState, gpr_arithFlags, s₁, gpr_setReg_of_ne (s := s) v hr]
-  have hm₁ : t₁.mem = s.mem := by simp only [t₁, cmpState, mem_arithFlags, s₁, mem_setReg]
-  have hrd₁ : t₁.rd = s.rd := by simp only [t₁, cmpState, rd_arithFlags, s₁, rd_setReg]
-  have hwr₁ : t₁.wr = s.wr := by simp only [t₁, cmpState, wr_arithFlags, s₁, wr_setReg]
+  obtain hm₁ : t₁.mem = s.mem := by simp only [t₁, cmpState, mem_arithFlags, s₁, mem_setReg]
+  obtain hrd₁ : t₁.rd = s.rd := by simp only [t₁, cmpState, rd_arithFlags, s₁, rd_setReg]
+  obtain hwr₁ : t₁.wr = s.wr := by simp only [t₁, cmpState, wr_arithFlags, s₁, wr_setReg]
   apply WP.seq
   refine WP.of_runBlock ⟨t₁, by rw [runBlock_cons, e₁, runStep_some, cmp_run], ?_⟩
-  have zf₁ : isa.eval .e t₁ = some (p == 3) := by
+  obtain zf₁ : isa.eval .e t₁ = some (p == 3) := by
     change t₁.zf = _
     simp only [t₁, cmpState, zf_arithFlags, s₁, gpr_setReg_self, v, hpasses]
     rcases hp with ⟨h1, h3⟩
@@ -388,27 +388,27 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
   · intro h3
     exact branch t₁ 3 (by simpa using h3 : p = 3).symm hm₁ hrd₁ hwr₁ hg₁
   · intro h3
-    have hp3 : p ≠ 3 := by simpa using h3
+    obtain hp3 : p ≠ 3 := by simpa using h3
     apply WP.seq
     let t₂ := cmpState t₁ 2
     refine WP.of_runBlock ⟨t₂, cmp_run t₁ 2, ?_⟩
-    have zf₂ : isa.eval .e t₂ = some (p == 2) := by
+    obtain zf₂ : isa.eval .e t₂ = some (p == 2) := by
       change t₂.zf = _
       simp only [t₂, cmpState, zf_arithFlags, hrax₁]
       rcases hp with ⟨h1, h3⟩
       rcases p with _ | _ | _ | _ | p <;> first | omega | decide
-    have hg₂ : ∀ r, r ≠ .rax → t₂.gpr r = s.gpr r := by
+    obtain hg₂ : ∀ r, r ≠ .rax → t₂.gpr r = s.gpr r := by
       intro r hr
       simp only [t₂, cmpState, gpr_arithFlags]
       exact hg₁ r hr
-    have hm₂ : t₂.mem = s.mem := by simp only [t₂, cmpState, mem_arithFlags, hm₁]
-    have hrd₂ : t₂.rd = s.rd := by simp only [t₂, cmpState, rd_arithFlags, hrd₁]
-    have hwr₂ : t₂.wr = s.wr := by simp only [t₂, cmpState, wr_arithFlags, hwr₁]
+    obtain hm₂ : t₂.mem = s.mem := by simp only [t₂, cmpState, mem_arithFlags, hm₁]
+    obtain hrd₂ : t₂.rd = s.rd := by simp only [t₂, cmpState, rd_arithFlags, hrd₁]
+    obtain hwr₂ : t₂.wr = s.wr := by simp only [t₂, cmpState, wr_arithFlags, hwr₁]
     apply WP.ite (p == 2) zf₂
     · intro h2
       exact branch t₂ 2 (by simpa using h2 : p = 2).symm hm₂ hrd₂ hwr₂ hg₂
     · intro h2
-      have hp2 : p ≠ 2 := by simpa using h2
+      obtain hp2 : p ≠ 2 := by simpa using h2
       exact branch t₂ 1 (by omega_using [hp, hp3, hp2]) hm₂ hrd₂ hwr₂ hg₂
 
 structure PassPost (keys : DesSchedule) (direction : Direction)
@@ -446,17 +446,17 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   refine WP.mono (select_ok d hp origin hpasses hpRead hsavedRead hcountWrite hstepWrite)
     fun s hs => ?_
   generalize (passOf d p).2 = dir at hs hptr hread hsep hkeys ⊢
-  have hbase : s.gpr .rdx = origin.gpr .rdx := hs.regs .rdx (by decide) (by decide)
-  have hcountAddr : countAddr s = countAddr origin := by simp only [countAddr, hbase]
-  have hstepAddr : stepAddr s = stepAddr origin := by simp only [stepAddr, hbase]
-  have hpassesAddr : passesAddr s = passesAddr origin := by simp only [passesAddr, hbase]
-  have hroundR : roundRegion s = roundRegion origin := by simp only [roundRegion, hbase]
-  have hsepR : ∀ j < 16, (⟨keyAddr base dir j, 8⟩ : Region).Disjoint (roundRegion origin) :=
+  obtain hbase : s.gpr .rdx = origin.gpr .rdx := hs.regs .rdx (by decide) (by decide)
+  obtain hcountAddr : countAddr s = countAddr origin := by simp only [countAddr, hbase]
+  obtain hstepAddr : stepAddr s = stepAddr origin := by simp only [stepAddr, hbase]
+  obtain hpassesAddr : passesAddr s = passesAddr origin := by simp only [passesAddr, hbase]
+  obtain hroundR : roundRegion s = roundRegion origin := by simp only [roundRegion, hbase]
+  obtain hsepR : ∀ j < 16, (⟨keyAddr base dir j, 8⟩ : Region).Disjoint (roundRegion origin) :=
     fun j hj => (hsep j hj).sub_right (round_sub_work origin)
-  have hsepStep : ∀ j < 16, (⟨keyAddr base dir j, 8⟩ : Region).Disjoint ⟨stepAddr origin, 8⟩ :=
+  obtain hsepStep : ∀ j < 16, (⟨keyAddr base dir j, 8⟩ : Region).Disjoint ⟨stepAddr origin, 8⟩ :=
     fun j hj => (hsep j hj).sub_right (step_sub_work origin)
   -- what the start writes
-  have hframe : Frame [roundRegion origin, ⟨stepAddr origin, 8⟩] origin.mem s.mem := by
+  obtain hframe : Frame [roundRegion origin, ⟨stepAddr origin, 8⟩] origin.mem s.mem := by
     rw [hs.mem]
     refine Frame.trans ((countWrite_frame _ _ _).sub ?_) ((countWrite_frame _ _ _).sub ?_)
     · intro q hq
@@ -465,7 +465,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     · intro q hq
       obtain rfl := List.mem_singleton.mp hq
       exact ⟨_, by simp, fun _ h => h⟩
-  have hframeDisj : ∀ (r : Region), r.Disjoint (roundRegion origin) →
+  obtain hframeDisj : ∀ (r : Region), r.Disjoint (roundRegion origin) →
       r.Disjoint ⟨stepAddr origin, 8⟩ → ∀ r' ∈ [roundRegion origin, ⟨stepAddr origin, 8⟩],
       r.Disjoint r' := by
     intro r h1 h2 r' hr'
@@ -473,30 +473,30 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     rcases hr' with rfl | rfl
     · exact h1
     · exact h2
-  have hkeysS : ∀ j < 16, (s.mem.readW (keyAddr base dir j) 64).setWidth 48 =
+  obtain hkeysS : ∀ j < 16, (s.mem.readW (keyAddr base dir j) 64).setWidth 48 =
       roundKey keys dir j := by
     intro j hj
-    have hmem := hframe.readW (a := keyAddr base dir j) (w := 64)
+    obtain hmem := hframe.readW (a := keyAddr base dir j) (w := 64)
       (r := ⟨keyAddr base dir j, 8⟩) (Region.contains_self _ _)
       (hframeDisj _ (hsepR j hj) (hsepStep j hj)) (by decide)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys j hj)
-  have hcountS : s.mem.readW (countAddr s) 64 = BitVec.ofNat 64 16 := by
+  obtain hcountS : s.mem.readW (countAddr s) 64 = BitVec.ofNat 64 16 := by
     rw [hs.mem, hcountAddr]
-    have hsepCS : (⟨countAddr origin, 8⟩ : Region).Disjoint ⟨stepAddr origin, 8⟩ :=
+    obtain hsepCS : (⟨countAddr origin, 8⟩ : Region).Disjoint ⟨stepAddr origin, 8⟩ :=
       Offset.disjoint (origin.gpr .rdx) (by decide) (by decide) (by decide)
     rw [((countWrite_frame (origin.mem.writeW (countAddr origin) (BitVec.ofNat 64 16))
       (stepAddr origin) (stepVal dir)).readW (r := ⟨countAddr origin, 8⟩)
       (Region.contains_self _ _) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq; exact hsepCS) (by decide))]
     exact Mem.readW_writeW_self64 _ _ _
-  have hstepS : s.mem.readW (stepAddr s) 64 = stepVal dir := by
+  obtain hstepS : s.mem.readW (stepAddr s) 64 = stepVal dir := by
     rw [hs.mem, hstepAddr]
     exact Mem.readW_writeW_self64 _ _ _
-  have hpassesS : s.mem.readW (passesAddr s) 64 = BitVec.ofNat 64 p := by
+  obtain hpassesS : s.mem.readW (passesAddr s) 64 = BitVec.ofNat 64 p := by
     rw [hpassesAddr, hframe.readW (r := ⟨passesAddr origin, 8⟩) (Region.contains_self _ _)
       (hframeDisj _ (passes_round_disjoint origin) (passes_step_disjoint origin)) (by decide)]
     exact hpasses
-  have hloop := roundsLoop_ok keys dir base s v
+  obtain hloop := roundsLoop_ok keys dir base s v
     (hok.congr hbase hbase hs.rd hs.wr)
     ((hs.regs .r12 (by decide) (by decide)).trans hl)
     ((hs.regs .r13 (by decide) (by decide)).trans hr)
@@ -510,14 +510,14 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     (by rw [hroundR]; exact hsepR) hkeysS
   apply WP.seq
   refine WP.mono hloop fun s₂ hs₂ => ?_
-  have hbase₂ : s₂.gpr .rdx = origin.gpr .rdx := (hs₂.regs .rdx (by decide)).trans hbase
+  obtain hbase₂ : s₂.gpr .rdx = origin.gpr .rdx := (hs₂.regs .rdx (by decide)).trans hbase
   obtain ⟨s₃, run₃, left₃, right₃, rd₃, wr₃, mem₃, regs₃⟩ := swapHalves_ok s₂
-  have hbase₃ : s₃.gpr .rdx = origin.gpr .rdx := (regs₃ .rdx (by decide)).trans hbase₂
-  have hpassesAddr₃ : passesAddr s₃ = passesAddr origin := by simp only [passesAddr, hbase₃]
+  obtain hbase₃ : s₃.gpr .rdx = origin.gpr .rdx := (regs₃ .rdx (by decide)).trans hbase₂
+  obtain hpassesAddr₃ : passesAddr s₃ = passesAddr origin := by simp only [passesAddr, hbase₃]
   obtain ⟨s₄, run₄, mem₄, zf₄, rd₄, wr₄, regs₄⟩ := passCountAdvance_ok s₃
     (by rw [rd₃, wr₃, hs₂.rd, hs₂.wr, hs.rd, hs.wr, hpassesAddr₃]; exact hpRead)
     (by rw [wr₃, hs₂.wr, hs.wr, hpassesAddr₃]; exact hpWrite)
-  have hp₃ : s₃.mem.readW (passesAddr s₃) 64 = BitVec.ofNat 64 p := by
+  obtain hp₃ : s₃.mem.readW (passesAddr s₃) 64 = BitVec.ofNat 64 p := by
     rw [mem₃, hpassesAddr₃, ← hpassesAddr, hs₂.frame.readW (r := ⟨passesAddr s, 8⟩)
       (Region.contains_self _ _) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq; exact passes_round_disjoint s) (by decide)]
@@ -529,9 +529,9 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   · exact (regs₄ .r12 (by decide)).trans (left₃.trans hs₂.right)
   · exact (regs₄ .r13 (by decide)).trans (right₃.trans hs₂.left)
   · intro q hq
-    have hq' : q ∈ roundOuterKept := by revert hq; cases q <;> decide
-    have hrax : q ≠ .rax := by revert hq; cases q <;> decide
-    have hrdi : q ≠ .rdi := by revert hq; cases q <;> decide
+    obtain hq' : q ∈ roundOuterKept := by revert hq; cases q <;> decide
+    obtain hrax : q ≠ .rax := by revert hq; cases q <;> decide
+    obtain hrdi : q ≠ .rdi := by revert hq; cases q <;> decide
     exact (regs₄ q hrax).trans ((regs₃ q hq').trans ((hs₂.regs q hq).trans (hs.regs q hrax hrdi)))
   · have hf₁ : Frame [workRegion origin] origin.mem s.mem := hframe.sub (by
       intro q hq
@@ -539,11 +539,11 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
       rcases hq with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, round_sub_work origin⟩
       · exact ⟨_, List.mem_singleton_self _, step_sub_work origin⟩)
-    have hf₂ : Frame [workRegion origin] s.mem s₂.mem := hs₂.frame.sub (by
+    obtain hf₂ : Frame [workRegion origin] s.mem s₂.mem := hs₂.frame.sub (by
       intro q hq
       obtain rfl := List.mem_singleton.mp hq
       exact ⟨_, List.mem_singleton_self _, by rw [hroundR]; exact round_sub_work origin⟩)
-    have hf₄ : Frame [workRegion origin] s₃.mem s₄.mem := by
+    obtain hf₄ : Frame [workRegion origin] s₃.mem s₄.mem := by
       rw [mem₄]
       exact (countWrite_frame _ _ _).sub (by
         intro q hq
@@ -581,12 +581,12 @@ theorem PassPost.wordState {keys : Spec.TripleDes.DesSchedule}
     {direction : Spec.TripleDes.Direction} {origin s : State} {x : BitVec 64} {n : Nat}
     (hs : PassPost keys direction origin ((x >>> 32).setWidth 32, x.setWidth 32) n s) :
     WordState (desCore keys direction x) s := by
-  have hcore := VG.Proof.TripleDes.desCore_roundPrefix keys direction x
+  obtain hcore := VG.Proof.TripleDes.desCore_roundPrefix keys direction x
   let halves := roundPrefix keys direction 16 ((x >>> 32).setWidth 32, x.setWidth 32)
-  have hleft : ((desCore keys direction x >>> 32).setWidth 32).setWidth 64 = halves.2.setWidth 64 :=
+  obtain hleft : ((desCore keys direction x >>> 32).setWidth 32).setWidth 64 = halves.2.setWidth 64 :=
     (congrArg (fun v : BitVec 64 => ((v >>> 32).setWidth 32).setWidth 64) hcore).trans
       (congrArg (BitVec.setWidth 64) (VG.Proof.TripleDes.appended_left halves.2 halves.1))
-  have hright : ((desCore keys direction x).setWidth 32).setWidth 64 = halves.1.setWidth 64 :=
+  obtain hright : ((desCore keys direction x).setWidth 32).setWidth 64 = halves.1.setWidth 64 :=
     (congrArg (fun v : BitVec 64 => (v.setWidth 32).setWidth 64) hcore).trans
       (congrArg (BitVec.setWidth 64) (VG.Proof.TripleDes.appended_right halves.2 halves.1))
   exact ⟨hs.left.trans hleft.symm, hs.right.trans hright.symm⟩

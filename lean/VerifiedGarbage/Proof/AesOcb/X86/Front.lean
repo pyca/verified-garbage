@@ -106,41 +106,41 @@ theorem saved_mut {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (mutR p) m m') {
 theorem pre_ok (v : BlocksImpl) {s : State} (h : onePre s) :
     WP isa (.seq ocbEntry (.seq (.block setup) (.seq (nonce (callees v)) (hash (callees v))))) s
       (Pre (prmOf s) s) := by
-  have L := lay_of h
+  obtain L := lay_of h
   generalize hp : prmOf s = p at L
   refine WP.seq (WP.mono (hp ▸ entry_ok h) fun s₁ En => ?_)
-  have fr₁ := entry_front En.frame
+  obtain fr₁ := entry_front En.frame
   obtain ⟨c₁, i₁, l₁⟩ := front_ciph L fr₁
-  have hN₁ := bytes_front L.n_w L.bn L.n_d (by have := L.nl15; omega_using [this]) fr₁
-  have hA₁ := bytes_front L.a_w L.ba L.a_d (by have := L.aw; omega_using [this]) fr₁
-  have hD₁ := Proof.AesGcm.X86.bytesAt_frame En.frame (fun r hr => by
+  obtain hN₁ := bytes_front L.n_w L.bn L.n_d (by have := L.nl15; omega_using [this]) fr₁
+  obtain hA₁ := bytes_front L.a_w L.ba L.a_d (by have := L.aw; omega_using [this]) fr₁
+  obtain hD₁ := Proof.AesGcm.X86.bytesAt_frame En.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.dw; omega_using [this])
-  have hT₁ := bytes_front L.t_w L.bt L.t_d (by have := L.tl16; omega_using [this]) fr₁
+  obtain hT₁ := bytes_front L.t_w L.bt L.t_d (by have := L.tl16; omega_using [this]) fr₁
   -- `L_$`, `L_0` and the checksum
   obtain ⟨s₂, run₂, P₂⟩ := setup_ok L En.env
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  have f₂ : Frame (mutR p) s₁.mem s₂.mem := P₂.frame.mono fun r hr => by
+  obtain f₂ : Frame (mutR p) s₁.mem s₂.mem := P₂.frame.mono fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp
-  have E₂ : Env p s₂ := En.env.mut L (by rw [P₂.gpr _ (by decide) (by decide) (by decide) (by decide), En.env.ebp])
+  obtain E₂ : Env p s₂ := En.env.mut L (by rw [P₂.gpr _ (by decide) (by decide) (by decide) (by decide), En.env.ebp])
     (by rw [P₂.gpr _ (by decide) (by decide) (by decide) (by decide), En.env.esp]) P₂.rd P₂.wr f₂
   -- `Offset_0`
   refine WP.seq (WP.mono (nonce_ok v L E₂) fun s₃ P₃ => ?_)
-  have f₃ : Frame (mutR p) s₂.mem s₃.mem := wR_mut P₃.frame
-  have f₁₃ := f₂.trans f₃
+  obtain f₃ : Frame (mutR p) s₂.mem s₃.mem := wR_mut P₃.frame
+  obtain f₁₃ := f₂.trans f₃
   obtain ⟨c₂, -, l₂⟩ := front_ciph L (mut_front f₂)
-  have hN₂ := nonce_mut L f₂
+  obtain hN₂ := nonce_mut L f₂
   -- `HASH`
-  have C : HCtx p (ctxCiph s₃.mem (w64 p.K) p.R) (ctxLstar s₃.mem (w64 p.K)) (bytesAt s₃.mem (w64 p.A) p.al) s₃ :=
+  obtain C : HCtx p (ctxCiph s₃.mem (w64 p.K) p.R) (ctxLstar s₃.mem (w64 p.K)) (bytesAt s₃.mem (w64 p.A) p.al) s₃ :=
     ⟨L, rfl, rfl, rfl⟩
-  have hl0₃ : blockAtMem s₃.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt (ctxLstar s₃.mem (w64 p.K)) 0 := by
+  obtain hl0₃ : blockAtMem s₃.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt (ctxLstar s₃.mem (w64 p.K)) 0 := by
     rw [P₃.keep (by decide) (by decide), P₂.l0, (front_ciph L (mut_front f₃)).2.2, l₂]
   refine WP.mono (hash_ok v C P₃.env hl0₃) fun s₄ ⟨E₄, F₄, sum₄, rd₄, wr₄⟩ => ?_
-  have f₄ : Frame (mutR p) s₃.mem s₄.mem := wR_mut (hashR_wR F₄)
-  have f₁₄ := f₁₃.trans f₄
-  have fr := fr₁.trans (mut_front f₁₄)
+  obtain f₄ : Frame (mutR p) s₃.mem s₄.mem := wR_mut (hashR_wR F₄)
+  obtain f₁₄ := f₁₃.trans f₄
+  obtain fr := fr₁.trans (mut_front f₁₄)
   obtain ⟨c₄, i₄, l₄⟩ := front_ciph L fr
   obtain ⟨c₃, -, l₃⟩ := front_ciph L (mut_front f₁₃)
-  have k₄ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (176 ≤ d ∧ d + 16 ≤ 220) ∨
+  obtain k₄ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (176 ≤ d ∧ d + 16 ≤ 220) ∨
       (224 ≤ d ∧ d + 16 ≤ 264)) →
       blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 d) = blockAtMem s₃.mem (w64 p.W + BitVec.ofNat 64 d) :=
     fun {d} hd => Proof.Ocb.blockAtMem_frame F₄ fun r hr => by
@@ -153,7 +153,7 @@ theorem pre_ok (v : BlocksImpl) {s : State} (h : onePre s) :
       · exact Lay.w_w (by simp only [hlO]; omega_using [hd]) (by omega_using [hd]) (by decide)
       · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact (L.bw' (by omega_using [hd])).symm
-  have kS : ∀ {d : Nat}, d + 16 ≤ 128 → 32 ≤ d → d + 16 ≤ 112 →
+  obtain kS : ∀ {d : Nat}, d + 16 ≤ 128 → 32 ≤ d → d + 16 ≤ 112 →
       blockAtMem s₃.mem (w64 p.W + BitVec.ofNat 64 d) = blockAtMem s₂.mem (w64 p.W + BitVec.ofNat 64 d) :=
     fun _ h₁ h₂ => P₃.keep h₁ h₂
   refine ⟨E₄, fr, by rw [rd₄, P₃.rd, P₂.rd, En.rd], by rw [wr₄, P₃.wr, P₂.wr, En.wr], saved_mut L f₁₄ En.saved,
@@ -232,21 +232,21 @@ theorem sealFront_ok (v : BlocksImpl) {s : State} (h : onePre s) :
           (prmOf s).tl (bytesAt s.mem (w64 (prmOf s).N) (prmOf s).nl) (bytesAt s.mem (w64 (prmOf s).A) (prmOf s).al)
           (bytesAt s.mem (w64 (prmOf s).D) (prmOf s).n) =
         (bytesAt s'.mem (w64 (prmOf s).D) (prmOf s).n, bytesAt s'.mem (w64 (prmOf s).W) (prmOf s).tl) := by
-  have L := lay_of h
-  have Pp := pre_ok v h
+  obtain L := lay_of h
+  obtain Pp := pre_ok v h
   generalize prmOf s = p at L Pp ⊢
   unfold front
   refine seq_cont3 Pp fun s₃ P₃ => ?_
   refine WP.seq (WP.mono (bodySeal_ok v L P₃.env P₃.ofs P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar])) fun s₄ B => ?_)
-  have F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut B.frame
-  have cK₄ : ctxCiph s₄.mem (w64 p.K) p.R = ctxCiph s.mem (w64 p.K) p.R := (ctxCiph_mut L F₄).trans P₃.ciph
-  have ld₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 ldO) = lDollar (ctxLstar s.mem (w64 p.K)) := by
+  obtain F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut B.frame
+  obtain cK₄ : ctxCiph s₄.mem (w64 p.K) p.R = ctxCiph s.mem (w64 p.K) p.R := (ctxCiph_mut L F₄).trans P₃.ciph
+  obtain ld₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 ldO) = lDollar (ctxLstar s.mem (w64 p.K)) := by
     rw [body_keep L B.frame (d := ldO) (by decide), P₃.ld]
-  have sum₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 sumO) =
+  obtain sum₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 sumO) =
       Spec.Ocb.hash (ctxCiph s.mem (w64 p.K) p.R) (ctxLstar s.mem (w64 p.K)) (bytesAt s.mem (w64 p.A) p.al) := by
     rw [body_keep L B.frame (d := sumO) (by decide), P₃.sum]
   refine WP.mono (tag_ok v L B.env (d := tagO) (.inl rfl)) fun s₅ T₅ => ?_
-  have F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut (.inl rfl) T₅.frame
+  obtain F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut (.inl rfl) T₅.frame
   refine ⟨⟨T₅.env, P₃.frame.trans (mut_front (F₄.trans F₅)), by rw [T₅.rd, B.rd, P₃.rd],
     by rw [T₅.wr, B.wr, P₃.wr], saved_mut L (F₄.trans F₅) P₃.saved⟩, ?_⟩
   have hout := B.out
@@ -276,21 +276,21 @@ theorem openFront_ok (v : BlocksImpl) {s : State} (h : onePre s) (tag : List Byt
         if bytesAt s'.mem (w64 (prmOf s).W + BitVec.ofNat 64 t2O) (prmOf s).tl = tag then
           some (bytesAt s'.mem (w64 (prmOf s).D) (prmOf s).n)
         else none := by
-  have L := lay_of h
-  have Pp := pre_ok v h
+  obtain L := lay_of h
+  obtain Pp := pre_ok v h
   generalize prmOf s = p at L Pp ⊢
   unfold front
   refine seq_cont3 Pp fun s₃ P₃ => ?_
   refine WP.seq (WP.mono (bodyOpen_ok v L P₃.env P₃.ofs P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar])) fun s₄ B => ?_)
-  have F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut B.frame
-  have cK₄ : ctxCiph s₄.mem (w64 p.K) p.R = ctxCiph s.mem (w64 p.K) p.R := (ctxCiph_mut L F₄).trans P₃.ciph
-  have ld₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 ldO) = lDollar (ctxLstar s.mem (w64 p.K)) := by
+  obtain F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut B.frame
+  obtain cK₄ : ctxCiph s₄.mem (w64 p.K) p.R = ctxCiph s.mem (w64 p.K) p.R := (ctxCiph_mut L F₄).trans P₃.ciph
+  obtain ld₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 ldO) = lDollar (ctxLstar s.mem (w64 p.K)) := by
     rw [body_keep L B.frame (d := ldO) (by decide), P₃.ld]
-  have sum₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 sumO) =
+  obtain sum₄ : blockAtMem s₄.mem (w64 p.W + BitVec.ofNat 64 sumO) =
       Spec.Ocb.hash (ctxCiph s.mem (w64 p.K) p.R) (ctxLstar s.mem (w64 p.K)) (bytesAt s.mem (w64 p.A) p.al) := by
     rw [body_keep L B.frame (d := sumO) (by decide), P₃.sum]
   refine WP.mono (tag_ok v L B.env (d := t2O) (.inr rfl)) fun s₅ T₅ => ?_
-  have F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut (.inr rfl) T₅.frame
+  obtain F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut (.inr rfl) T₅.frame
   refine ⟨⟨T₅.env, P₃.frame.trans (mut_front (F₄.trans F₅)), by rw [T₅.rd, B.rd, P₃.rd],
     by rw [T₅.wr, B.wr, P₃.wr], saved_mut L (F₄.trans F₅) P₃.saved⟩, ?_⟩
   have hout := B.out

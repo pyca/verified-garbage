@@ -29,7 +29,7 @@ def clearMem (m : Mem) (B : Addr) : Nat → Mem
 
 theorem zeroWord_at (m : Mem) (B : Addr) (d i : Nat) (hi : i < 4) :
     (m.writeW (off B d) (0 : BitVec 32)) (off B (d + i)) = 0 := by
-  have he : off B (d + i) = off B d + BitVec.ofNat 64 i := by
+  obtain he : off B (d + i) = off B d + BitVec.ofNat 64 i := by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   rw [he]
   simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, Mem.sub_ofNat_toNat (off B d) (i := i) (by omega_using [hi]),
@@ -103,73 +103,73 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
       ((1 < Spec.Dsa.decodeBE (rQBytes s₀)) → Prepared s₀ u) ∧ Ready s₀ u ∧
       Outs (rBase s₀) [(oQ, 12), (oNonce, 32)] t.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] t u := by
-  have hfit := VG.Proof.Dsa.significant_fits (rQBytes s₀)
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
+  obtain hfit := VG.Proof.Dsa.significant_fits (rQBytes s₀)
+  obtain hql := rQBytes_le A
+  obtain hqn := rQBytes_length A
   unfold prepare
   refine WP.seq (clearNonce_ok h.rf fun t₁ f₁ m₁ k₁ _ => ?_)
-  have h₁ : Ready s₀ t₁ := h.congr k₁ (by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide))
+  obtain h₁ : Ready s₀ t₁ := h.congr k₁ (by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide))
   refine wp_movS (h₁.argSrc A (j := 3) (by decide)) fun t₂ u₂ _ => ?_
-  have h₂ := h₁.upd u₂ (by decide)
+  obtain h₂ := h₁.upd u₂ (by decide)
   refine wp_addS (h₂.argSrc A (j := 5) (by decide)) fun t₃ u₃ _ => ?_
-  have h₃ := h₂.upd u₃ (by decide)
+  obtain h₃ := h₂.upd u₃ (by decide)
   refine wp_movS (h₃.argSrc A (j := 6) (by decide)) fun t₄ u₄ _ => WP.block_nil ?_
-  have h₄ := h₃.upd u₄ (by decide)
-  have e6 : X86.arg s₀ 6 = BitVec.ofNat 32 (rQBytes s₀).length := by
+  obtain h₄ := h₃.upd u₄ (by decide)
+  obtain e6 : X86.arg s₀ 6 = BitVec.ofNat 32 (rQBytes s₀).length := by
     rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have esi₄ : t₄.gpr .esi = rQ s₀ := by rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr]; rfl
-  have ecx₄ : t₄.gpr .ecx = BitVec.ofNat 32 (rQBytes s₀).length := by rw [u₄.gpr, e6]
+  obtain esi₄ : t₄.gpr .esi = rQ s₀ := by rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr]; rfl
+  obtain ecx₄ : t₄.gpr .ecx = BitVec.ofNat 32 (rQBytes s₀).length := by rw [u₄.gpr, e6]
   refine WP.seq (WP.mono (significant_ok esi₄ ecx₄ (h₄.q A) (rQBytes_pos A) (by omega_using [hql]))
     fun t₅ ⟨bx₅, dx₅, m₅, k₅⟩ => ?_)
-  have h₅ : Ready s₀ t₅ := h₄.congr k₅ (by rw [m₅]; exact Frame.refl _ _)
+  obtain h₅ : Ready s₀ t₅ := h₄.congr k₅ (by rw [m₅]; exact Frame.refl _ _)
   refine WP.seq (wp_movS (h₅.argSrc A (j := 3) (by decide)) fun t₆ u₆ _ => ?_)
-  have h₆ := h₅.upd u₆ (by decide)
+  obtain h₆ := h₅.upd u₆ (by decide)
   refine wp_addS (h₆.argSrc A (j := 5) (by decide)) fun t₇ u₇ _ => ?_
-  have h₇ := h₆.upd u₇ (by decide)
+  obtain h₇ := h₆.upd u₇ (by decide)
   refine wp_addS (h₇.argSrc A (j := 6) (by decide)) fun t₈ u₈ _ => ?_
-  have h₈ := h₇.upd u₈ (by decide)
+  obtain h₈ := h₇.upd u₈ (by decide)
   refine wp_subS rfl fun t₉ u₉ _ => ?_
-  have h₉ := h₈.upd u₉ (by decide)
-  have ebx₉ : t₉.gpr .ebx = BitVec.ofNat 32 (rWidth s₀) := by
+  obtain h₉ := h₈.upd u₉ (by decide)
+  obtain ebx₉ : t₉.gpr .ebx = BitVec.ofNat 32 (rWidth s₀) := by
     rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), bx₅]
-  have esi₉ : t₉.gpr .esi = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀) := by
+  obtain esi₉ : t₉.gpr .esi = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀) := by
     rw [u₉.gpr, u₈.gpr, u₇.gpr, u₆.gpr, u₈.other .ebx (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), bx₅, e6, add_ofNat_sub32 _ hfit (by omega_using [hql])]
     rfl
   refine wp_slot h₉.rf (by decide) esi₉ fun t₁₀ f₁₀ m₁₀ g₁₀ r₁₀ w₁₀ _ _ => ?_
   refine wp_slot f₁₀ (by decide) (v := BitVec.ofNat 32 (rWidth s₀)) (by rw [g₁₀]; exact ebx₉)
     fun t₁₁ f₁₁ m₁₁ g₁₁ r₁₁ w₁₁ _ _ => WP.block_nil ?_
-  have edx₁₁ : t₁₁.gpr .edx = (rLead s₀).setWidth 32 := by
+  obtain edx₁₁ : t₁₁.gpr .edx = (rLead s₀).setWidth 32 := by
     rw [g₁₁, g₁₀, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), dx₅]
   refine WP.mono (prepareFinish_ok f₁₁ (w := rWidth s₀) (b := rLead s₀) (show (VG.Proof.Dsa.significant (rQBytes s₀)).1 < 2 ^ 32 by omega_using [hfit, hql])
     (by rw [g₁₁, g₁₀]; exact ebx₉) edx₁₁) fun u ⟨ax, mu, ku⟩ => ?_
   -- Memory.
-  have m₉ : t₉.mem = clearMem t.mem (rBase s₀) 8 := by
+  obtain m₉ : t₉.mem = clearMem t.mem (rBase s₀) 8 := by
     rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, m₅, u₄.mem, u₃.mem, u₂.mem, m₁]
-  have mu' : u.mem = (((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
+  obtain mu' : u.mem = (((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
       (rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))).writeW (off (rBase s₀) oWidth)
       (BitVec.ofNat 32 (rWidth s₀))).writeW (off (rBase s₀) oMask) (maskValue (rLead s₀).toNat) := by
     rw [mu, m₁₁, m₁₀, m₉]
-  have kregs : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] t u := by
+  obtain kregs : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] t u := by
     refine (((((k₁.mono (by decide)).trans (u₂.keeps.mono (by decide))).trans (u₃.keeps.mono (by decide))).trans
       (u₄.keeps.mono (by decide))).trans (k₅.mono (by decide))).trans ?_
     refine (((((u₆.keeps.mono (by decide)).trans (u₇.keeps.mono (by decide))).trans
       (u₈.keeps.mono (by decide))).trans (u₉.keeps.mono (by decide))).trans
       ⟨fun r _ => by rw [g₁₁, g₁₀], by rw [r₁₁, r₁₀], by rw [w₁₁, w₁₀]⟩).trans (ku.mono (by decide))
-  have hu : Ready s₀ u := h₉.congr (rs := [.eax, .ebp])
+  obtain hu : Ready s₀ u := h₉.congr (rs := [.eax, .ebp])
     ⟨fun r hr => by rw [ku.1 r hr, g₁₁, g₁₀], by rw [ku.2.1, r₁₁, r₁₀], by rw [ku.2.2, w₁₁, w₁₀]⟩
     (by rw [mu, m₁₁, m₁₀]
         exact ((frame_store s₀ _ (by decide) _).trans (frame_store s₀ _ (by decide) _)).trans
           (frame_store s₀ _ (by decide) _))
-  have e := VG.Proof.Dsa.random_valid_scan_ge (rQBytes s₀)
+  obtain e := VG.Proof.Dsa.random_valid_scan_ge (rQBytes s₀)
   refine ⟨by simp only [ax, e], fun _ => ⟨hu, ?_, ?_, ?_, ?_⟩, hu, ?_, kregs⟩
   · rw [mu', slot_write_ne _ _ _ (by unfold oQ oMask; omega_using []) (by decide) (by decide),
       slot_write_ne _ _ _ (by unfold oQ oWidth; omega_using []) (by decide) (by decide), slot_write_self]
   · rw [mu', slot_write_ne _ _ _ (by unfold oWidth oMask; omega_using []) (by decide) (by decide), slot_write_self]
   · rw [mu', slot_write_self]
   · intro i hi
-    have ho : ∀ d, d + 4 ≤ oNonce → ofs (rBase s₀) (off (rBase s₀) (oNonce + i)) < d ∨
+    obtain ho : ∀ d, d + 4 ≤ oNonce → ofs (rBase s₀) (off (rBase s₀) (oNonce + i)) < d ∨
         d + 4 ≤ ofs (rBase s₀) (off (rBase s₀) (oNonce + i)) := fun d hd => by
       rw [ofs_off0 _ (by unfold oNonce; omega_using [hi])]; omega_using [hd]
     rw [mu', writeW32_outside _ _ (d := oMask) _ (by decide) _ (ho _ (by decide)),
@@ -177,13 +177,13 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
       writeW32_outside _ _ (d := oQ) _ (by decide) _ (ho _ (by decide))]
     exact clearMem_zero _ _ 8 (by decide) i (by omega_using [hi])
   · rw [mu']
-    have o₀ := clearMem_outside t.mem (rBase s₀) 8 (by decide)
-    have o₁ := writeW32_outside (clearMem t.mem (rBase s₀) 8) (rBase s₀) (d := oQ)
+    obtain o₀ := clearMem_outside t.mem (rBase s₀) 8 (by decide)
+    obtain o₁ := writeW32_outside (clearMem t.mem (rBase s₀) 8) (rBase s₀) (d := oQ)
       (rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀)) (by decide)
-    have o₂ := writeW32_outside ((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
+    obtain o₂ := writeW32_outside ((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
       (rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))) (rBase s₀) (d := oWidth)
       (BitVec.ofNat 32 (rWidth s₀)) (by decide)
-    have o₃ := writeW32_outside (((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
+    obtain o₃ := writeW32_outside (((clearMem t.mem (rBase s₀) 8).writeW (off (rBase s₀) oQ)
       (rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))).writeW (off (rBase s₀) oWidth)
       (BitVec.ofNat 32 (rWidth s₀))) (rBase s₀) (d := oMask) (maskValue (rLead s₀).toNat) (by decide)
     exact (((Outs.of_outside o₀ (by decide)).trans

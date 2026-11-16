@@ -121,14 +121,14 @@ theorem zeroSt_ok (hL : L.Ok) {t : State} (hc : Ctx L m₁ t) :
       stateAt t'.mem L.ST = Spec.Sha3.zero := by
   rw [zeroSt]
   refine wp_movi fun t1 u1 => ?_
-  have e1 : t1.gpr .esi = L.X32 := by rw [u1.other _ (by decide), hc.esi]
+  obtain e1 : t1.gpr .esi = L.X32 := by rw [u1.other _ (by decide), hc.esi]
   let Inv : Nat → State → Prop := fun k s => s.gpr = t1.gpr ∧ s.rd = t1.rd ∧ s.wr = t1.wr ∧
     Frame [⟨L.ST, 200⟩] t1.mem s.mem ∧ ∀ j < k, s.mem.readW (L.X + BitVec.ofNat 64 (4 * j)) 32 = 0
   refine WP.mono (wp_range_flatMap (M := isa) Inv (fun k s hk h => ?_) 50 (Nat.le_refl _) t1
     ⟨rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩) fun t' ⟨g, rd, wr, fr, z⟩ => ?_
   · have hb : s.gpr .esi = L.X32 := by rw [h.1, e1]
-    have ea : addr L.X32 (4 * k) = L.X + BitVec.ofNat 64 (4 * k) := hL.xo (by omega_using [hk])
-    have hin : InRegions s.wr (addr L.X32 (4 * k)) 4 := by
+    obtain ea : addr L.X32 (4 * k) = L.X + BitVec.ofNat 64 (4 * k) := hL.xo (by omega_using [hk])
+    obtain hin : InRegions s.wr (addr L.X32 (4 * k)) 4 := by
       rw [ea, h.2.2.1, u1.wr, hc.wr]
       obtain ⟨R, hR, c⟩ := hL.inW (e := 4 * k) (k := 4) (by omega_using [hk])
       exact ⟨R, List.mem_cons_of_mem _ hR, c⟩
@@ -163,13 +163,13 @@ theorem absorb_eax {s s₂ : State} {E S D W : BitVec 32} {pos len : Nat} (hesp 
     (ha : AbsArgs s S D W 136 pos len) (hE : 40 ≤ E.toNat) (hlen : len < 2 ^ 32) (hpos : pos < 2 ^ 32)
     {rd wr : List Region} (post : Proof.Sha3.absorbX86.post ((pushed Proof.MlKem.X86.rs6 s).callEntry.withRegions rd wr) s₂) :
     (s₂.gpr .eax).toNat = (pos + len) % 136 := by
-  have fit : 4 * Proof.MlKem.X86.rs6.length + 4 ≤ (s.gpr .esp).toNat := by
+  obtain fit : 4 * Proof.MlKem.X86.rs6.length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_using [hE]
-  have a1 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 1 = BitVec.ofNat 32 136 := by
+  obtain a1 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 1 = BitVec.ofNat 32 136 := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
-  have a2 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
+  obtain a2 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.edx
-  have a4 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
+  obtain a4 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 4 = BitVec.ofNat 32 len := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
   have := post.2
   simp only [arg_withRegions, a1, a2, a4, toNat_ofNat32 hlen, toNat_ofNat32 hpos,
@@ -196,7 +196,7 @@ theorem zeroSt_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀
       stateAt s'.mem (lay s₀).ST = Spec.Sha3.zero → B s₀ s') :
     Piece Pre Pub A B (.block zeroSt) :=
   Piece.taint [.esi] (fun s₀ s h₀ ha => by
-      have h := hA s₀ s h₀ ha
+      obtain h := hA s₀ s h₀ ha
       exact (zeroSt_ok h.ok h.ctx).mono fun s' ⟨c, f, z⟩ => hQ s₀ s s' h₀ ha ⟨h.ok, c⟩ f z)
     (fun s₀ s₀' s s' h₀ h₀' hq ha ha' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -228,17 +228,17 @@ theorem kabs_piece (src len pos : Arg) (dp : State → BitVec 32) (n q : State �
         Repr s'.mem (lay s₀).ST 136 (msg ++ bytesAt s.mem ((dp s₀).setWidth 64) (n s₀))) →
       (s'.gpr .eax).toNat = (q s₀ + n s₀) % 136 → B s₀ s') :
     Piece Pre Pub A B (kabs src len pos) := by
-  have hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost (absArgs src len pos) s s₁ →
+  obtain hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost (absArgs src len pos) s s₁ →
       AbsArgs s₁ (lay s₀).X32 (dp s₀) ((lay s₀).X32 + BitVec.ofNat 32 200) 136 (q s₀) (n s₀) := by
     intro s₀ s s₁ h₀ ha hs
-    have hc := (hA s₀ s h₀ ha).ctx
+    obtain hc := (hA s₀ s h₀ ha).ctx
     obtain ⟨v₁, v₂, v₃⟩ := hv s₀ s h₀ ha
-    have e2 := hs.1 (.edx, pos) (by simp)
-    have e0 := hs.1 (.eax, .off oST) (by simp)
-    have e1 := hs.1 (.ecx, .imm 136) (by simp)
-    have e3 := hs.1 (.ebx, src) (by simp)
-    have e4 := hs.1 (.ebp, len) (by simp)
-    have e5 := hs.1 (.edi, .off oKS) (by simp)
+    obtain e2 := hs.1 (.edx, pos) (by simp)
+    obtain e0 := hs.1 (.eax, .off oST) (by simp)
+    obtain e1 := hs.1 (.ecx, .imm 136) (by simp)
+    obtain e3 := hs.1 (.ebx, src) (by simp)
+    obtain e4 := hs.1 (.ebp, len) (by simp)
+    obtain e5 := hs.1 (.edi, .off oKS) (by simp)
     simp only [Arg.val, hc.esi, oST, oKS, x0'] at e0 e1 e5
     rw [v₃] at e2
     rw [v₁] at e3
@@ -251,36 +251,36 @@ theorem kabs_piece (src len pos : Arg) (dp : State → BitVec 32) (n q : State �
     (fun s₀ s₀' h₀ h₀' hq => ?_) (fun s₀ s h₀ ha => ?_) (fun s₀ s s₁ h₀ ha hs => ?_)
     (fun s₀ s₀' s s' s₁ s₁' h₀ h₀' hq ha ha' hs hs' => ?_) (fun s₀ s s₁ s' h₀ ha hs e₁ e₂ e₃ fr post => ?_)
   · obtain ⟨d₁, d₂, -⟩ := hdn s₀ s₀' h₀ h₀' hq
-    have hp := hpub s₀ s₀' h₀ h₀' hq
+    obtain hp := hpub s₀ s₀' h₀ h₀' hq
     refine ⟨by rw [d₁, d₂], ?_⟩
     simp only [Lay.E1, hp.x, hp.sp]
   · have := e40 (hA s₀ s h₀ ha).ok
     rw [absorb_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     obtain ⟨hql, hnl, hfit, hin, dS, dK, kD⟩ := hb s₀ s h₀ ha
     exact absorb_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) hfit dS (by rw [regKS hL]; exact dK)
       (kD.sub_left (b40 hL)) (by decide) hql hnl (withinRW hc1 hin)
       (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega_using []); rwa [x0] at this))
       (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
-    have a' := hargs s₀' s' s₁' h₀' ha' hs'
+    obtain a' := hargs s₀' s' s₁' h₀' ha' hs'
     obtain ⟨d₁, d₂, d₃⟩ := hdn s₀ s₀' h₀ h₀' hq
-    have hp := hpub s₀ s₀' h₀ h₀' hq
+    obtain hp := hpub s₀ s₀' h₀ h₀' hq
     rw [← d₁, ← d₂, ← d₃, ← hp.x] at a'
-    have hsp : s₁.gpr .esp = s₁'.gpr .esp := by
+    obtain hsp : s₁.gpr .esp = s₁'.gpr .esp := by
       rw [hs.esp (hok s₀ h₀), hs'.esp (hok s₀' h₀'), (hA s₀ s h₀ ha).ctx.esp, (hA s₀' s' h₀' ha').ctx.esp,
         Lay.E1, Lay.E1, hp.sp]
-    have hE : 40 ≤ (s₁.gpr .esp).toNat := by
+    obtain hE : 40 ≤ (s₁.gpr .esp).toNat := by
       rw [hs.esp (hok s₀ h₀), (hA s₀ s h₀ ha).ctx.esp]; exact e40 (hA s₀ s h₀ ha).ok
     exact Proof.MlKem.X86.args6_eq hE hsp (Proof.MlKem.X86.absArgs_eq a a') _ _
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
-    have a := hargs s₀ s s₁ h₀ ha hs
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain a := hargs s₀ s s₁ h₀ ha hs
     obtain ⟨hql, hnl, -, -, -, -, kD⟩ := hb s₀ s h₀ ha
     have hsp : s₁.gpr .esp = (lay s₀).E1 := hc1.esp
-    have hE := e40 hL
-    have kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 24] ++
+    obtain hE := e40 hL
+    obtain kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 24] ++
         [below (s₁.gpr .esp) (4 * Proof.MlKem.X86.rs6.length + stackUse Impl.Sha3.X86.Stream.absorb + 4)],
         Within r (lay s₀).W ∨ Region.Sub r (lay s₀).STK := fun r hr => by
       rw [absorb_stack, hsp] at hr
@@ -329,15 +329,15 @@ theorem kpad_piece (pos : Arg) (q : State → Nat) {ht : Taint.Hint VG.X86.Taint
       (∀ msg, Repr s.mem (lay s₀).ST 136 msg → q s₀ = msg.length % 136 →
         stateAt s'.mem (lay s₀).ST = absorb 136 (pad 136 Spec.Sha3.shakeSuffix msg)) → B s₀ s') :
     Piece Pre Pub A B (kpad pos) := by
-  have hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost (padArgs pos) s s₁ →
+  obtain hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost (padArgs pos) s s₁ →
       PadArgs s₁ (lay s₀).X32 ((lay s₀).X32 + BitVec.ofNat 32 200) 136 (q s₀) 0x1f := by
     intro s₀ s s₁ h₀ ha hs
-    have hc := (hA s₀ s h₀ ha).ctx
-    have e2 := hs.1 (.edx, pos) (by simp)
-    have e0 := hs.1 (.eax, .off oST) (by simp)
-    have e1 := hs.1 (.ecx, .imm 136) (by simp)
-    have e3 := hs.1 (.ebx, .imm 0x1f) (by simp)
-    have e4 := hs.1 (.edi, .off oKS) (by simp)
+    obtain hc := (hA s₀ s h₀ ha).ctx
+    obtain e2 := hs.1 (.edx, pos) (by simp)
+    obtain e0 := hs.1 (.eax, .off oST) (by simp)
+    obtain e1 := hs.1 (.ecx, .imm 136) (by simp)
+    obtain e3 := hs.1 (.ebx, .imm 0x1f) (by simp)
+    obtain e4 := hs.1 (.edi, .off oKS) (by simp)
     simp only [Arg.val, hc.esi, oST, oKS, x0'] at e0 e1 e3 e4
     rw [hv s₀ s h₀ ha] at e2
     exact ⟨e0, e1, e2, e3, e4⟩
@@ -353,26 +353,26 @@ theorem kpad_piece (pos : Arg) (q : State → Nat) {ht : Taint.Hint VG.X86.Taint
   · have := e40 (hA s₀ s h₀ ha).ok
     rw [pad_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     exact pad_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) (by decide) (hb s₀ s h₀ ha)
       (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega_using []); rwa [x0] at this))
       (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
-    have a' := hargs s₀' s' s₁' h₀' ha' hs'
-    have hp := hpub s₀ s₀' h₀ h₀' hq
+    obtain a' := hargs s₀' s' s₁' h₀' ha' hs'
+    obtain hp := hpub s₀ s₀' h₀ h₀' hq
     rw [← hdn s₀ s₀' h₀ h₀' hq, ← hp.x] at a'
-    have hsp : s₁.gpr .esp = s₁'.gpr .esp := by
+    obtain hsp : s₁.gpr .esp = s₁'.gpr .esp := by
       rw [hs.esp (hok s₀ h₀), hs'.esp (hok s₀' h₀'), (hA s₀ s h₀ ha).ctx.esp, (hA s₀' s' h₀' ha').ctx.esp,
         Lay.E1, Lay.E1, hp.sp]
-    have hE : 40 ≤ (s₁.gpr .esp).toNat := by
+    obtain hE : 40 ≤ (s₁.gpr .esp).toNat := by
       rw [hs.esp (hok s₀ h₀), (hA s₀ s h₀ ha).ctx.esp]; exact e40 (hA s₀ s h₀ ha).ok
     exact Proof.MlKem.X86.args5_eq hE hsp (Proof.MlKem.X86.padArgs_eq a a') _ _
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
-    have a := hargs s₀ s s₁ h₀ ha hs
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain a := hargs s₀ s s₁ h₀ ha hs
     have hsp : s₁.gpr .esp = (lay s₀).E1 := hc1.esp
-    have hE := e40 hL
-    have kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 20] ++
+    obtain hE := e40 hL
+    obtain kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 20] ++
         [below (s₁.gpr .esp) (4 * Proof.MlKem.X86.rs5.length + stackUse Impl.Sha3.X86.Stream.pad + 4)],
         Within r (lay s₀).W ∨ Region.Sub r (lay s₀).STK := fun r hr => by
       rw [pad_stack, hsp] at hr
@@ -414,16 +414,16 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
       Frame [⟨(lay s₀).ST, 200⟩, ⟨(lay s₀).MU, 64⟩, ⟨(lay s₀).KS, 640⟩, (lay s₀).STK] s.mem s'.mem →
       bytesAt s'.mem (lay s₀).MU 64 = squeezeFrom 136 (stateAt s.mem (lay s₀).ST) 0 64 → B s₀ s') :
     Piece Pre Pub A B ksqz := by
-  have hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost sqzArgs s s₁ →
+  obtain hargs : ∀ s₀ s s₁, Pre s₀ → A s₀ s → SetPost sqzArgs s s₁ →
       AbsArgs s₁ (lay s₀).X32 ((lay s₀).X32 + BitVec.ofNat 32 840) ((lay s₀).X32 + BitVec.ofNat 32 200) 136 0 64 := by
     intro s₀ s s₁ h₀ ha hs
-    have hc := (hA s₀ s h₀ ha).ctx
-    have e0 := hs.1 (.eax, .off oST) (by simp)
-    have e1 := hs.1 (.ecx, .imm 136) (by simp)
-    have e2 := hs.1 (.edx, .imm 0) (by simp)
-    have e3 := hs.1 (.ebx, .off oMU) (by simp)
-    have e4 := hs.1 (.ebp, .imm 64) (by simp)
-    have e5 := hs.1 (.edi, .off oKS) (by simp)
+    obtain hc := (hA s₀ s h₀ ha).ctx
+    obtain e0 := hs.1 (.eax, .off oST) (by simp)
+    obtain e1 := hs.1 (.ecx, .imm 136) (by simp)
+    obtain e2 := hs.1 (.edx, .imm 0) (by simp)
+    obtain e3 := hs.1 (.ebx, .off oMU) (by simp)
+    obtain e4 := hs.1 (.ebp, .imm 64) (by simp)
+    obtain e5 := hs.1 (.edi, .off oKS) (by simp)
     simp only [Arg.val, hc.esi, oST, oKS, oMU, x0'] at e0 e1 e2 e3 e4 e5
     exact ⟨e0, e1, e2, e3, e4, e5⟩
   refine argsWith_piece Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.1
@@ -439,7 +439,7 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
   · have := e40 (hA s₀ s h₀ ha).ok
     rw [squeeze_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     have hX := hL.x32_lt
     exact squeeze_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) (by rw [hL.x32_toNat (by omega_using [])]; omega_using [hX])
       (by rw [regMU hL]; exact st_mu) (by rw [regMU hL, regKS hL]; exact mu_ks)
@@ -448,21 +448,21 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
       (withinW hc1 (by rw [regMU hL]; exact hL.covX (e := 840) (by omega_using [])))
       (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
-    have a' := hargs s₀' s' s₁' h₀' ha' hs'
-    have hp := hpub s₀ s₀' h₀ h₀' hq
+    obtain a' := hargs s₀' s' s₁' h₀' ha' hs'
+    obtain hp := hpub s₀ s₀' h₀ h₀' hq
     rw [← hp.x] at a'
-    have hsp : s₁.gpr .esp = s₁'.gpr .esp := by
+    obtain hsp : s₁.gpr .esp = s₁'.gpr .esp := by
       rw [hs.esp (hok s₀ h₀), hs'.esp (hok s₀' h₀'), (hA s₀ s h₀ ha).ctx.esp, (hA s₀' s' h₀' ha').ctx.esp,
         Lay.E1, Lay.E1, hp.sp]
-    have hE : 40 ≤ (s₁.gpr .esp).toNat := by
+    obtain hE : 40 ≤ (s₁.gpr .esp).toNat := by
       rw [hs.esp (hok s₀ h₀), (hA s₀ s h₀ ha).ctx.esp]; exact e40 (hA s₀ s h₀ ha).ok
     exact Proof.MlKem.X86.args6_eq hE hsp (Proof.MlKem.X86.absArgs_eq a a') _ _
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
-    have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
-    have a := hargs s₀ s s₁ h₀ ha hs
+    obtain hc1 := SetPost.ctx (hok s₀ h₀) hs hc
+    obtain a := hargs s₀ s s₁ h₀ ha hs
     have hsp : s₁.gpr .esp = (lay s₀).E1 := hc1.esp
-    have hE := e40 hL
-    have kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 840) 64,
+    obtain hE := e40 hL
+    obtain kb : ∀ r ∈ [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 840) 64,
         reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 24] ++
         [below (s₁.gpr .esp) (4 * Proof.MlKem.X86.rs6.length + stackUse Impl.Sha3.X86.Stream.squeeze + 4)],
         Within r (lay s₀).W ∨ Region.Sub r (lay s₀).STK := fun r hr => by

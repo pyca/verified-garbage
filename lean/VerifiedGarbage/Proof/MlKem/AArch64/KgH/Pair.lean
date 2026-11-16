@@ -64,8 +64,8 @@ theorem pairH_kb {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e :
     (h : KB P s₀ s) (ht : Keep Paired.pairRegs s t) (hf : Frame (pairWritesH s₀ e) s.mem t.mem) :
     KB P s₀ t := by
   have hw := hp.wf
-  have h1 := pairH_far hp hk he (b:=3) (o:=SV P) (l:=48) (by decide) hp.sv (.inr ⟨.inr (by lom), .inr (by lom), by lom⟩)
-  have h2 := pairH_far hp hk he (b:=0) (o:=0) (l:=64) (by decide) (by kl) (.inl (by decide))
+  obtain h1 := pairH_far hp hk he (b:=3) (o:=SV P) (l:=48) (by decide) hp.sv (.inr ⟨.inr (by lom), .inr (by lom), by lom⟩)
+  obtain h2 := pairH_far hp hk he (b:=0) (o:=0) (l:=64) (by decide) (by kl) (.inl (by decide))
   exact h.frame ht hf (by decide) fun r hr => ⟨h1 r hr, h2 r hr⟩
 
 theorem BInvW.pairedH {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e : Nat} (he : e+1<P.k*P.k)
@@ -76,8 +76,8 @@ theorem BInvW.pairedH {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀)
       (kA s₀ 3+BitVec.ofNat 64 (AH+1024*(e+1))) ea (kA s₀ 3) E j m s t) :
     BInvW true P s₀ (e+2) t := by
   have hw := hp.wf
-  have fr : Frame (pairWritesH s₀ e) s.mem t.mem := by
-    have f := ht.frame; rw [h.kb.sp] at f; exact f
+  obtain fr : Frame (pairWritesH s₀ e) s.mem t.mem := by
+    obtain f := ht.frame; rw [h.kb.sp] at f; exact f
   have old {i : Nat} (hi : i<e) := pairH_far hp hk he (b:=3) (o:=AH+1024*i) (l:=1024)
     (by decide) (by simp only [kL]; lom) (.inr ⟨.inr (by lom), .inl (by lom), by lom⟩)
   refine ⟨pairH_kb hp hk he h.kb ht.keep fr,?_,?_,?_,?_,?_⟩
@@ -117,17 +117,17 @@ theorem hash_inputK {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e 
       (kA s₀ 3+BitVec.ofNat 64 (AH+1024*e)) (kA s₀ 3+BitVec.ofNat 64 (AH+1024*(e+1)))
       (s.syms "VG_MLKEM_REJ_SHUFFLE") (kA s₀ 1) (kA s₀ 3) s := by
   have hw := hp.wf
-  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
-  have f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
-  have ek : (⟨kA s₀ 1, (Impl.MlKem.AArch64.Kem16.kgSrc P).len⟩ : Region) = R (kA s₀) 1 0 (kL P 1) := ekR s₀
+  obtain f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
+  obtain f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
+  obtain ek : (⟨kA s₀ 1, (Impl.MlKem.AArch64.Kem16.kgSrc P).len⟩ : Region) = R (kA s₀) 1 0 (kL P 1) := ekR s₀
   have pR : (⟨kA s₀ 3+BitVec.ofNat 64 SS, 2048⟩ : Region) = R (kA s₀) 3 SS 2048 := rfl
   have aR : polyRegion (kA s₀ 3+BitVec.ofNat 64 (AH+1024*e)) = R (kA s₀) 3 (AH+1024*e) 1024 := rfl
   have bR : polyRegion (kA s₀ 3+BitVec.ofNat 64 (AH+1024*(e+1))) = R (kA s₀) 3 (AH+1024*(e+1)) 1024 := rfl
-  have fS : 0 + 200 ≤ kL P 3 := by
+  obtain fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have fP : KG.SS + 2048 ≤ kL P 3 := by
+  obtain fP : KG.SS + 2048 ≤ kL P 3 := by
     show 1056 + 2048 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have fE : 0 + kL P 1 ≤ kL P 1 := by omega_arith
+  obtain fE : 0 + kL P 1 ≤ kL P 1 := by omega_arith
   refine ⟨⟨cov_w hp h (b := 3) (o := SS) (l := 2048) (by decide) fP, ?_, ?_,
     by rw [h.sp]; exact hk.sp, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, h.x28, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [stR_scratch]; exact cov_w hp h (b := 3) (o := 0) (l := 200) (by decide) fS
@@ -163,7 +163,7 @@ theorem hash_inputK {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {e 
 
 /-- The rejection table, from the constant tables. -/
 theorem matrixTable_of {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) (ta : Tables s) : MatrixTable P s₀ s := by
-  have scratch : Covers [⟨kA s₀ 3, P.scl⟩] s.wr := by
+  obtain scratch : Covers [⟨kA s₀ 3, P.scl⟩] s.wr := by
     simpa only [R, ptr_zero] using cov_w hp h (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
   exact ⟨ta.shuffle, ta.shuffleRead, apart_of_covers ta.shuffleApart scratch⟩
 
@@ -171,13 +171,13 @@ theorem matrixTable_of {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) (ta 
 theorem pairH_wr {s₀ s : State} (hp : Pre P s₀) (hk : KB P s₀ s) {e : Nat} (he : e+1<P.k*P.k) :
     ∀ q ∈ pairWritesH s₀ e, ∃ q' ∈ s.wr ++ [frame s.sp], Region.Sub q q' := by
   have hw := hp.wf
-  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
-  have f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
-  have fS : 0 + 200 ≤ kL P 3 := by
+  obtain f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw (by omega_arith)
+  obtain f2 : AH+1024*(e+1)+1024≤kL P 3 := matrixEntry_fit hw he
+  obtain fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have fP : KG.SS + 2048 ≤ kL P 3 := by
+  obtain fP : KG.SS + 2048 ≤ kL P 3 := by
     show 1056 + 2048 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have sc : (⟨kA s₀ 3, kL P 3⟩ : Region) ∈ s.wr ++ [frame s.sp] := by rw [hk.wr, hp.wr]; simp
+  obtain sc : (⟨kA s₀ 3, kL P 3⟩ : Region) ∈ s.wr ++ [frame s.sp] := by rw [hk.wr, hp.wr]; simp
   intro q hq
   simp only [pairWritesH, Hybrid.pairWrites3, Paired.stepWrites, List.mem_append, List.mem_cons,
     List.not_mem_nil, or_false] at hq
@@ -198,22 +198,22 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   have kb := H.b.kb
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
-  have hoa : AH+1024*(2*p)<65536 := by simp only [KG.AH]; omega_arith
-  have hob : AH+1024*(2*p+1)<65536 := by simp only [KG.AH]; omega_arith
-  have hk1 : 0 < P.k := by omega_arith
-  have hk2 : P.k ≤ 256 := by omega_arith
-  have mt := matrixTable_of hp kb H.tables
-  have pin := pair_input hp he kb mt
-  have hin := hash_inputK hp hk he kb H.tstk mt
+  obtain hoa : AH+1024*(2*p)<65536 := by simp only [KG.AH]; omega_arith
+  obtain hob : AH+1024*(2*p+1)<65536 := by simp only [KG.AH]; omega_arith
+  obtain hk1 : 0 < P.k := by omega_arith
+  obtain hk2 : P.k ≤ 256 := by omega_arith
+  obtain mt := matrixTable_of hp kb H.tables
+  obtain pin := pair_input hp he kb mt
+  obtain hin := hash_inputK hp hk he kb H.tstk mt
   rw [Hybrid.pairM_iff]
   refine WP.mono_syms (Hybrid.pairMCode_ok (sha3 := sha3) P (Impl.MlKem.AArch64.Kem16.kgSrc P) (a := 2*p) (j := h) (m := m)
     (srcOkK hw) (by decide) (by decide) (by decide) hoa hob pin hin (fun k hk _ => hb k hk) H.hash rfl
     (by rw [H.b.acc]; split; exacts [Or.inr rfl, Or.inl rfl])) fun t ht sy => ?_
-  have post := ht.outcome (p := kA s₀ 3+BitVec.ofNat 64 SS) hk1 hk2
+  obtain post := ht.outcome (p := kA s₀ 3+BitVec.ofNat 64 SS) hk1 hk2
   simp only [Paired.seedBytes, H.b.rho] at post
-  have fr : Frame (pairWritesH s₀ (2*p)) s.mem t.mem := by
-    have f := post.frame; rw [kb.sp] at f; exact f
-  have bt := BInvW.pairedH hp hk he H.b post
+  obtain fr : Frame (pairWritesH s₀ (2*p)) s.mem t.mem := by
+    obtain f := post.frame; rw [kb.sp] at f; exact f
+  obtain bt := BInvW.pairedH hp hk he H.b post
   have kbt := bt.kb
   have hrn := H.rn
   have hrk := H.rk
@@ -243,9 +243,9 @@ theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P
       BInvW true P s₀ (e+1) t ∧ Frame (lastWrites s₀ e) s.mem t.mem ∧ Keep Paired.pairRegs s t ∧
         t.syms = s.syms := by
   have hw := hp.wf
-  have f0 : SS+2048≤kL P 3 := by kl
-  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw he
-  have ctx := singleton_context hp he h.kb tb
+  obtain f0 : SS+2048≤kL P 3 := by kl
+  obtain f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw he
+  obtain ctx := singleton_context hp he h.kb tb
   refine WP.mono_syms (Paired.lastCode_ok (sha3 := sha3) (sb:=SB) (ss:=SS) (a:=e) (k:=P.k) (off:=AH+1024*e)
     (p:=kA s₀ 3+BitVec.ofNat 64 SS) (seed:=kA s₀ 3+BitVec.ofNat 64 SB)
     (out:=kA s₀ 3+BitVec.ofNat 64 (AH+1024*e))
@@ -275,8 +275,8 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
     WP isa (Paired.lastSample sha3 P true true) s (IL P s₀ (P.k * P.k) r h) := by
   have hw := hp.wf
   have kb := H.b.kb
-  have hk1 : 0 < P.k * P.k := by omega_arith
-  have he : P.k * P.k - 1 < P.k * P.k := by omega_arith
+  obtain hk1 : 0 < P.k * P.k := by omega_arith
+  obtain he : P.k * P.k - 1 < P.k * P.k := by omega_arith
   have hrn := H.rn
   have hrk := H.rk
   rw [Paired.lastSample_eq]
@@ -287,7 +287,7 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
   have kbt := bt.kb
   have far {o l : Nat} (hf : o+l≤kL P 3) (hs : AH + 1024 * (P.k * P.k) ≤ o) :=
     last_far hp he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega_arith)⟩)
-  have fS : 0 + 200 ≤ kL P 3 := by
+  obtain fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
   refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega_arith, Nat.le_refl _, H.rk, ?_, H.hr, ?_,
     H.tstk.of sy (by rw [kbt.sp, kb.sp])⟩

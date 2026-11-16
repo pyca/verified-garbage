@@ -49,17 +49,17 @@ theorem addChain_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
     WP isa (.block (addChain a b)) s fun t =>
       val4 (t.gpr .x3) (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) + 2 ^ 256 * t.c.toNat =
         fe s.mem base a + fe s.mem base b ∧ Keeps [.x3, .x4, .x5, .x6, .x7, .x8] s t := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
-  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
-  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
-  have w3 : Reg.x3 ≠ .x0 := by decide
-  have w4 : Reg.x4 ≠ .x0 := by decide
-  have w5 : Reg.x5 ≠ .x0 := by decide
-  have w6 : Reg.x6 ≠ .x0 := by decide
-  have w7 : Reg.x7 ≠ .x0 := by decide
-  have w8 : Reg.x8 ≠ .x0 := by decide
+  obtain a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  obtain b16 : (b + 16) % 8 = 0 := by omega_using [ba]
+  obtain w3 : Reg.x3 ≠ .x0 := by decide
+  obtain w4 : Reg.x4 ≠ .x0 := by decide
+  obtain w5 : Reg.x5 ≠ .x0 := by decide
+  obtain w6 : Reg.x6 ≠ .x0 := by decide
+  obtain w7 : Reg.x7 ≠ .x0 := by decide
+  obtain w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x3 ≠ .x4),
@@ -109,10 +109,10 @@ theorem addFold_ok (s : State) (hz : s.gpr .x17 = 0)
       cases s.c <;> rfl
     generalize (if s.c = true then BitVec.setWidth 64 (BitVec.setWidth 32 (38 : BitVec 16)) else
       (0 : BitVec 64)) = v at hv ⊢
-    have e0 := addCarry_value (s.gpr .x3) v false
-    have e1 := addCarry_value (s.gpr .x4) 0 (carryOut (s.gpr .x3) v false)
-    have e2 := addCarry_value (s.gpr .x5) 0 (carryOut (s.gpr .x4) 0 (carryOut (s.gpr .x3) v false))
-    have e3 := addCarry_value (s.gpr .x6) 0 (carryOut (s.gpr .x5) 0
+    obtain e0 := addCarry_value (s.gpr .x3) v false
+    obtain e1 := addCarry_value (s.gpr .x4) 0 (carryOut (s.gpr .x3) v false)
+    obtain e2 := addCarry_value (s.gpr .x5) 0 (carryOut (s.gpr .x4) 0 (carryOut (s.gpr .x3) v false))
+    obtain e3 := addCarry_value (s.gpr .x6) 0 (carryOut (s.gpr .x5) 0
       (carryOut (s.gpr .x4) 0 (carryOut (s.gpr .x3) v false)))
     dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
     have z : (0 : BitVec 64).toNat = 0 := rfl
@@ -131,19 +131,19 @@ theorem addTwice4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : 
     WP isa (.block (Impl.X25519.AArch64.Alt.addTwice4 o a b)) s fun t =>
       AltOp base o s t ∧ ∃ k ≤ 1, fe t.mem base o + (2 ^ 256 - 38) * k =
         fe s.mem base a + fe s.mem base b := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   rw [addTwice4_eq, WP.block_append_iff]
   refine WP.mono (addChain_ok hs ha hb) fun s₁ ⟨e1, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
+  obtain hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  have hc := Bool.toNat_le s₁.c
-  have _hv := val4_lt (s₁.gpr .x3) (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6)
+  obtain hc := Bool.toNat_le s₁.c
+  obtain _hv := val4_lt (s₁.gpr .x3) (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6)
   refine WP.mono (addFold_ok s₁ ((k1.gpr _ (by decide)).trans hz) (by omega_using [hsum, e1, _hv]))
     fun s₂ ⟨e2, k2⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
+  obtain hs₂ := hs₁.of_keeps k2 (by decide)
   refine WP.mono (store4_ok hs₂ ho.1 ho.2.1 ho.2.2 .x3 .x4 .x5 .x6) fun t ht => ?_
   subst t
-  have m2 : s₂.mem = s.mem := by rw [k2.mem, k1.mem]
+  obtain m2 : s₂.mem = s.mem := by rw [k2.mem, k1.mem]
   have _ho := ho.2.2
   refine ⟨⟨fun r hr => ?_, by rw [rd_withMem, k2.rd, k1.rd], by rw [wr_withMem, k2.wr, k1.wr],
     by rw [sp_withMem, k2.sp, k1.sp], ?_⟩, s₁.c.toNat, hc, ?_⟩
@@ -201,17 +201,17 @@ theorem subChain_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
       val4 (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) (t.gpr .x8) + fe s.mem base b =
         fe s.mem base a + 2 ^ 256 * (1 - t.c.toNat) ∧
       Keeps [.x3, .x4, .x5, .x6, .x7, .x8] s t := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
-  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
-  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
-  have w3 : Reg.x3 ≠ .x0 := by decide
-  have w4 : Reg.x4 ≠ .x0 := by decide
-  have w5 : Reg.x5 ≠ .x0 := by decide
-  have w6 : Reg.x6 ≠ .x0 := by decide
-  have w7 : Reg.x7 ≠ .x0 := by decide
-  have w8 : Reg.x8 ≠ .x0 := by decide
+  obtain a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  obtain b16 : (b + 16) % 8 = 0 := by omega_using [ba]
+  obtain w3 : Reg.x3 ≠ .x0 := by decide
+  obtain w4 : Reg.x4 ≠ .x0 := by decide
+  obtain w5 : Reg.x5 ≠ .x0 := by decide
+  obtain w6 : Reg.x6 ≠ .x0 := by decide
+  obtain w7 : Reg.x7 ≠ .x0 := by decide
+  obtain w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x5 ≠ .x6),
@@ -261,8 +261,8 @@ theorem subFold_ok (s : State) (hz : s.gpr .x17 = 0)
       cases s.c <;> rfl
     generalize (if (!s.c) = true then BitVec.setWidth 64 (BitVec.setWidth 32 (38 : BitVec 16)) else
       (0 : BitVec 64)) = v at hv ⊢
-    have h := sub4_value (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) v 0 0 0 true
-    have hl := val4_lt (addCarry (s.gpr .x5) (~~~v) true)
+    obtain h := sub4_value (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) v 0 0 0 true
+    obtain hl := val4_lt (addCarry (s.gpr .x5) (~~~v) true)
       (addCarry (s.gpr .x6) (~~~0) (carryOut (s.gpr .x5) (~~~v) true))
       (addCarry (s.gpr .x7) (~~~0) (carryOut (s.gpr .x6) (~~~0) (carryOut (s.gpr .x5) (~~~v) true)))
       (addCarry (s.gpr .x8) (~~~0) (carryOut (s.gpr .x7) (~~~0)
@@ -284,18 +284,18 @@ theorem subTwice4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : 
     WP isa (.block (Impl.X25519.AArch64.Alt.subTwice4 o a b)) s fun t =>
       AltOp base o s t ∧ ∃ k ≤ 1, fe t.mem base o + fe s.mem base b =
         fe s.mem base a + (2 ^ 256 - 38) * k := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   rw [subTwice4_eq, WP.block_append_iff]
   refine WP.mono (subChain_ok hs ha hb) fun s₁ ⟨e1, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
+  obtain hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  have hc := Bool.toNat_le s₁.c
+  obtain hc := Bool.toNat_le s₁.c
   refine WP.mono (subFold_ok s₁ ((k1.gpr _ (by decide)).trans hz) (by omega_using [hlt, e1]))
     fun s₂ ⟨e2, k2⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
+  obtain hs₂ := hs₁.of_keeps k2 (by decide)
   refine WP.mono (store4_ok hs₂ ho.1 ho.2.1 ho.2.2 .x5 .x6 .x7 .x8) fun t ht => ?_
   subst t
-  have m2 : s₂.mem = s.mem := by rw [k2.mem, k1.mem]
+  obtain m2 : s₂.mem = s.mem := by rw [k2.mem, k1.mem]
   have _ho := ho.2.2
   refine ⟨⟨fun r hr => ?_, by rw [rd_withMem, k2.rd, k1.rd], by rw [wr_withMem, k2.wr, k1.wr],
     by rw [sp_withMem, k2.sp, k1.sp], ?_⟩, 1 - s₁.c.toNat, by omega_using [], ?_⟩
@@ -372,14 +372,14 @@ theorem cross_arith {L01 H01 L02 H02 L03 H03 L12 H12 L13 H13 L23 H23
     (x6a : X6a < 2 ^ 64) (x6b : X6b < 2 ^ 64) (r5 : R5 < 2 ^ 64) :
     L01 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * (R4 + 2 ^ 64 * R5) =
       P01 + 2 ^ 64 * P02 + 2 ^ 128 * (P03 + P12) + 2 ^ 192 * P13 + 2 ^ 256 * P23 := by
-  have h02 := hi_le m02 p02
-  have h03 := hi_le m03 p03
-  have c2 := carry_le f2 l03 (by omega_arith) c1
-  have d3 := no_carry f3 (hi_le m12 p12) c2 x6a
-  have c4 := carry_le f5 (by omega_arith) x6a c3
-  have d6 := no_carry f6 (hi_le m13 p13) c4 x6b
-  have c6 := carry_le f8 l23 x6b c5
-  have d9 := no_carry f9 (hi_le m23 p23) c6 r5
+  obtain h02 := hi_le m02 p02
+  obtain h03 := hi_le m03 p03
+  obtain c2 := carry_le f2 l03 (by omega_arith) c1
+  obtain d3 := no_carry f3 (hi_le m12 p12) c2 x6a
+  obtain c4 := carry_le f5 (by omega_arith) x6a c3
+  obtain d6 := no_carry f6 (hi_le m13 p13) c4 x6b
+  obtain c6 := carry_le f8 l23 x6b c5
+  obtain d9 := no_carry f9 (hi_le m23 p23) c6 r5
   subst d3 d6 d9
   clear h02 h03 c1 c2 c3 c4 c5 c6 p02 p03 p12 p13 p23 l03 l23 x6a x6b r5
   omega_arith
@@ -430,13 +430,13 @@ theorem sqrCross_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat}
           2 ^ 192 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 24)).toNat) +
           2 ^ 256 * ((word s.mem base (a + 16)).toNat * (word s.mem base (a + 24)).toNat) ∧
       Keeps [.x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14] s t := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
-  have a16 : (a + 16) % 8 = 0 := by omega_arith
-  have w2 : Reg.x2 ≠ .x0 := by decide
-  have w3 : Reg.x3 ≠ .x0 := by decide
-  have w9 : Reg.x9 ≠ .x0 := by decide
-  have w10 : Reg.x10 ≠ .x0 := by decide
+  obtain a16 : (a + 16) % 8 = 0 := by omega_arith
+  obtain w2 : Reg.x2 ≠ .x0 := by decide
+  obtain w3 : Reg.x3 ≠ .x0 := by decide
+  obtain w9 : Reg.x9 ≠ .x0 := by decide
+  obtain w10 : Reg.x10 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs aa (by omega_arith) (by omega_arith) (by decide : Reg.x2 ≠ .x3),
@@ -481,7 +481,7 @@ theorem dbl_arith {D9 D10 D11 D12 D13 D14 G9 G10 G11 G12 G13 G14 G6 K1 K2 K3 K4 
     (f7 : G6 + 2 ^ 64 * K7 = 0 + 0 + K6) (k6 : K6 ≤ 1) :
     G9 + 2 ^ 64 * G10 + 2 ^ 128 * G11 + 2 ^ 192 * G12 + 2 ^ 256 * (G13 + 2 ^ 64 * G14 + 2 ^ 128 * G6) =
       2 * (D9 + 2 ^ 64 * D10 + 2 ^ 128 * D11 + 2 ^ 192 * D12 + 2 ^ 256 * (D13 + 2 ^ 64 * D14)) := by
-  have k7 : K7 = 0 := by omega_arith
+  obtain k7 : K7 = 0 := by omega_arith
   subst k7
   clear k6
   omega_arith
@@ -562,7 +562,7 @@ theorem sqrDiag_ok (s : State) (hz : s.gpr .x17 = 0) :
     exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
     reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
-  have h := diag_value (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x9) (s.gpr .x10)
+  obtain h := diag_value (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x9) (s.gpr .x10)
     (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14)
   dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
   obtain ⟨e, h⟩ := h
@@ -598,7 +598,7 @@ theorem sqrFold38_ok (s : State) (hz : s.gpr .x17 = 0) :
     exec_adds_x, exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
     reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
-  have h := fold38_value (BitVec.setWidth 64 (BitVec.setWidth 32 (38 : BitVec 16)))
+  obtain h := fold38_value (BitVec.setWidth 64 (BitVec.setWidth 32 (38 : BitVec 16)))
     (s.gpr .x8) (s.gpr .x9) (s.gpr .x10) (s.gpr .x11)
     (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x6) rfl
   dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
@@ -634,14 +634,14 @@ theorem sqrFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x12).toNat
   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
     reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
   dsimp only [Size.bits]
-  have h := add4_value (s.gpr .x8) (s.gpr .x9) (s.gpr .x10)
+  obtain h := add4_value (s.gpr .x8) (s.gpr .x9) (s.gpr .x10)
     ((s.gpr .x11 + s.gpr .x11 + BitVec.ofNat 64 false.toNat) >>> 1)
     (BitVec.setWidth 64 (BitVec.setWidth 32 (19 : BitVec 16)) * (s.gpr .x12 + s.gpr .x12 +
       BitVec.ofNat 64 (decide (2 ^ 64 ≤ (s.gpr .x11).toNat + (s.gpr .x11).toNat + false.toNat)).toNat))
     (s.gpr .x4) (s.gpr .x13) 0 false
   dsimp only [addCarry, carryOut] at h
-  have hU := fold_lo (s.gpr .x11)
-  have hM := fold_hi19 (s.gpr .x11) (s.gpr .x12) (by omega_arith)
+  obtain hU := fold_lo (s.gpr .x11)
+  obtain hM := fold_hi19 (s.gpr .x11) (s.gpr .x12) (by omega_arith)
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have := (s.gpr .x8).isLt
   have := (s.gpr .x9).isLt
@@ -678,32 +678,32 @@ theorem sqr4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
     WP isa (.block (Impl.X25519.AArch64.Alt.sqr4 o a)) s fun t =>
       AltOp base o s t ∧ fe t.mem base o < 2 ^ 256 - 38 ∧ ∃ q, fe t.mem base o + (2 ^ 255 - 19) * q =
         fe s.mem base a * fe s.mem base a := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   rw [sqr4_eq, WP.block_append_iff]
   refine WP.mono (sqrCross_ok hs ha hz) fun s₁ ⟨x2, x3, x4, x5, e1, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
-  have z1 : s₁.gpr .x17 = 0 := (k1.gpr _ (by decide)).trans hz
+  obtain hs₁ := hs.of_keeps k1 (by decide)
+  obtain z1 : s₁.gpr .x17 = 0 := (k1.gpr _ (by decide)).trans hz
   rw [WP.block_append_iff]
   refine WP.mono (sqrDiag_ok s₁ z1) fun s₂ ⟨e, e2, k2⟩ => ?_
-  have z2 : s₂.gpr .x17 = 0 := (k2.gpr _ (by decide)).trans z1
+  obtain z2 : s₂.gpr .x17 = 0 := (k2.gpr _ (by decide)).trans z1
   rw [WP.block_append_iff]
   refine WP.mono (sqrFold38_ok s₂ z2) fun s₃ ⟨e3, b4, b13, b12, k3⟩ => ?_
-  have z3 : s₃.gpr .x17 = 0 := (k3.gpr _ (by decide)).trans z2
+  obtain z3 : s₃.gpr .x17 = 0 := (k3.gpr _ (by decide)).trans z2
   rw [WP.block_append_iff]
   refine WP.mono (sqrFold19_ok s₃ z3 b12 b4 b13) fun s₄ ⟨q, e4, l4, k4⟩ => ?_
-  have hs₄ := ((hs₁.of_keeps k2 (by decide)).of_keeps k3 (by decide)).of_keeps k4 (by decide)
+  obtain hs₄ := ((hs₁.of_keeps k2 (by decide)).of_keeps k3 (by decide)).of_keeps k4 (by decide)
   refine WP.mono (store4_ok hs₄ ho.1 ho.2.1 ho.2.2 .x8 .x9 .x10 .x11) fun t ht => ?_
   subst t
-  have m4 : s₄.mem = s.mem := by rw [k4.mem, k3.mem, k2.mem, k1.mem]
+  obtain m4 : s₄.mem = s.mem := by rw [k4.mem, k3.mem, k2.mem, k1.mem]
   have _ho := ho.2.2
-  have hf := fe_st4 s₄.mem base (o := o) (by omega_arith) (s₄.gpr .x8) (s₄.gpr .x9) (s₄.gpr .x10)
+  obtain hf := fe_st4 s₄.mem base (o := o) (by omega_arith) (s₄.gpr .x8) (s₄.gpr .x9) (s₄.gpr .x10)
     (s₄.gpr .x11)
   rw [x2, x3, x4, x5] at e2
-  have hA : fe s.mem base a * fe s.mem base a = _ := sq_expand (word s.mem base a).toNat
+  obtain hA : fe s.mem base a * fe s.mem base a = _ := sq_expand (word s.mem base a).toNat
     (word s.mem base (a + 8)).toNat (word s.mem base (a + 16)).toNat (word s.mem base (a + 24)).toNat
-  have hlt := val4_lt (word s.mem base a) (word s.mem base (a + 8)) (word s.mem base (a + 16))
+  obtain hlt := val4_lt (word s.mem base a) (word s.mem base (a + 8)) (word s.mem base (a + 16))
     (word s.mem base (a + 24))
-  have hsq : fe s.mem base a * fe s.mem base a ≤ (2 ^ 256 - 1) * (2 ^ 256 - 1) :=
+  obtain hsq : fe s.mem base a * fe s.mem base a ≤ (2 ^ 256 - 1) * (2 ^ 256 - 1) :=
     Nat.mul_le_mul (by simp only [fe]; omega_arith) (by simp only [fe]; omega_arith)
   refine ⟨⟨fun r hr => ?_, by rw [rd_withMem, k4.rd, k3.rd, k2.rd, k1.rd],
     by rw [wr_withMem, k4.wr, k3.wr, k2.wr, k1.wr], by rw [sp_withMem, k4.sp, k3.sp, k2.sp, k1.sp],
@@ -776,11 +776,11 @@ theorem cmRow_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat}
       val4 (t.gpr .x3) (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) + 2 ^ 256 * (t.gpr .x10).toNat =
         (s.gpr .x1).toNat * fe s.mem base a ∧
       Keeps [.x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10] s t := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
-  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
-  have w7 : Reg.x7 ≠ .x0 := by decide
-  have w8 : Reg.x8 ≠ .x0 := by decide
+  obtain a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  obtain w7 : Reg.x7 ≠ .x0 := by decide
+  obtain w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x7 ≠ .x8),
@@ -812,13 +812,13 @@ theorem cmAdd_ok {s : State} {base : Addr} (hs : Scr s base large) {b : Nat}
         val4 (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) + 2 ^ 256 * (s.gpr .x10).toNat +
           fe s.mem base b ∧
       Keeps [.x3, .x4, .x5, .x6, .x7, .x8, .x10] s t := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨ba, bb, bc⟩ := hb
-  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
-  have w3 : Reg.x3 ≠ .x0 := by decide
-  have w4 : Reg.x4 ≠ .x0 := by decide
-  have w7 : Reg.x7 ≠ .x0 := by decide
-  have w8 : Reg.x8 ≠ .x0 := by decide
+  obtain b16 : (b + 16) % 8 = 0 := by omega_using [ba]
+  obtain w3 : Reg.x3 ≠ .x0 := by decide
+  obtain w4 : Reg.x4 ≠ .x0 := by decide
+  obtain w7 : Reg.x7 ≠ .x0 := by decide
+  obtain w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs ba (by omega_using [bb]) (by omega_using [bc]) (by decide : Reg.x7 ≠ .x8),
@@ -835,11 +835,11 @@ theorem cmAdd_ok {s : State} {base : Addr} (hs : Scr s base large) {b : Nat}
   · have h := add4_value (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6)
       (word s.mem base b) (word s.mem base (b + 8))
       (word s.mem base (b + 16)) (word s.mem base (b + 24)) false
-    have e := addCarry_value (s.gpr .x10) 0 (carryOut (s.gpr .x6) (word s.mem base (b + 24))
+    obtain e := addCarry_value (s.gpr .x10) 0 (carryOut (s.gpr .x6) (word s.mem base (b + 24))
       (carryOut (s.gpr .x5) (word s.mem base (b + 16)) (carryOut (s.gpr .x4) (word s.mem base (b + 8))
         (carryOut (s.gpr .x3) (word s.mem base b) false))))
-    have hl := val4_lt (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6)
-    have hx := (addCarry (s.gpr .x10) 0 (carryOut (s.gpr .x6) (word s.mem base (b + 24))
+    obtain hl := val4_lt (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6)
+    obtain hx := (addCarry (s.gpr .x10) 0 (carryOut (s.gpr .x6) (word s.mem base (b + 24))
       (carryOut (s.gpr .x5) (word s.mem base (b + 16)) (carryOut (s.gpr .x4) (word s.mem base (b + 8))
         (carryOut (s.gpr .x3) (word s.mem base b) false))))).isLt
     rw [show b + 16 + 8 = b + 24 by omega_using []]
@@ -879,15 +879,15 @@ theorem cmFold_ok (s : State) (hz : s.gpr .x17 = 0)
   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
     reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
   dsimp only [Size.bits]
-  have hx10 : (s.gpr .x10).toNat < 2 ^ 58 := by omega_using [hq]
-  have h := add4_value (s.gpr .x3) (s.gpr .x4) (s.gpr .x5)
+  obtain hx10 : (s.gpr .x10).toNat < 2 ^ 58 := by omega_using [hq]
+  obtain h := add4_value (s.gpr .x3) (s.gpr .x4) (s.gpr .x5)
     ((s.gpr .x6 + s.gpr .x6 + BitVec.ofNat 64 false.toNat) >>> 1)
     ((s.gpr .x10 + s.gpr .x10 +
       BitVec.ofNat 64 (decide (2 ^ 64 ≤ (s.gpr .x6).toNat + (s.gpr .x6).toNat + false.toNat)).toNat) *
       BitVec.setWidth 64 (BitVec.setWidth 32 (19 : BitVec 16))) 0 0 0 false
   dsimp only [addCarry, carryOut] at h
-  have hU := fold_lo (s.gpr .x6)
-  have hM := fold_hi (s.gpr .x6) (s.gpr .x10) hx10
+  obtain hU := fold_lo (s.gpr .x6)
+  obtain hM := fold_hi (s.gpr .x6) (s.gpr .x10) hx10
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have := (s.gpr .x3).isLt
   have := (s.gpr .x4).isLt
@@ -915,23 +915,23 @@ theorem cmadd4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat
     WP isa (.block (Impl.X25519.AArch64.Alt.cmadd4 o a b)) s fun t =>
       AltOp base o s t ∧ fe t.mem base o < 2 ^ 256 - 38 ∧ ∃ q, fe t.mem base o + (2 ^ 255 - 19) * q =
         (s.gpr .x1).toNat * fe s.mem base a + fe s.mem base b := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   rw [cmadd4_eq, WP.block_append_iff]
   refine WP.mono (cmRow_ok hs ha hz) fun s₁ ⟨e1, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
-  have hz1 : s₁.gpr .x17 = 0 := (k1.gpr _ (by decide)).trans hz
+  obtain hs₁ := hs.of_keeps k1 (by decide)
+  obtain hz1 : s₁.gpr .x17 = 0 := (k1.gpr _ (by decide)).trans hz
   rw [WP.block_append_iff]
   refine WP.mono (cmAdd_ok hs₁ hb hz1 (by rw [e1, k1.mem]; omega_using [hlt])) fun s₂ ⟨e2, k2⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
+  obtain hs₂ := hs₁.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (cmFold_ok s₂ ((k2.gpr _ (by decide)).trans hz1) (by rw [e2, e1, k1.mem]; omega_using [hlt]))
     fun s₃ ⟨q, e3, l3, k3⟩ => ?_
-  have hs₃ := hs₂.of_keeps k3 (by decide)
+  obtain hs₃ := hs₂.of_keeps k3 (by decide)
   refine WP.mono (store4_ok hs₃ ho.1 ho.2.1 ho.2.2 .x3 .x4 .x5 .x6) fun t ht => ?_
   subst t
-  have m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem]
+  obtain m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem]
   have _ho := ho.2.2
-  have hf := fe_st4 s₃.mem base (o := o) (by omega_using [_hcap, _ho]) (s₃.gpr .x3) (s₃.gpr .x4) (s₃.gpr .x5)
+  obtain hf := fe_st4 s₃.mem base (o := o) (by omega_using [_hcap, _ho]) (s₃.gpr .x3) (s₃.gpr .x4) (s₃.gpr .x5)
     (s₃.gpr .x6)
   refine ⟨⟨fun r hr => ?_, by rw [rd_withMem, k3.rd, k2.rd, k1.rd],
     by rw [wr_withMem, k3.wr, k2.wr, k1.wr], by rw [sp_withMem, k3.sp, k2.sp, k1.sp], ?_⟩,
@@ -972,18 +972,18 @@ theorem mux4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     WP isa (.block (Impl.X25519.AArch64.Alt.mux4 o a b)) s fun t =>
       AltOp base o s t ∧ t.zf = s.zf ∧
         fe t.mem base o = if s.zf then fe s.mem base b else fe s.mem base a := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   obtain ⟨oa, ob, oc⟩ := ho
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
   simp only [SameOrApart] at hoa hob
-  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
-  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
-  have o16 : (o + 16) % 8 = 0 := by omega_using [oa]
-  have w4 : Reg.x4 ≠ .x0 := by decide
-  have w5 : Reg.x5 ≠ .x0 := by decide
-  have w6 : Reg.x6 ≠ .x0 := by decide
-  have w7 : Reg.x7 ≠ .x0 := by decide
+  obtain a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  obtain b16 : (b + 16) % 8 = 0 := by omega_using [ba]
+  obtain o16 : (o + 16) % 8 = 0 := by omega_using [oa]
+  obtain w4 : Reg.x4 ≠ .x0 := by decide
+  obtain w5 : Reg.x5 ≠ .x0 := by decide
+  obtain w6 : Reg.x6 ≠ .x0 := by decide
+  obtain w7 : Reg.x7 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [Impl.X25519.AArch64.Alt.mux4, runBlock_cons, runStep_some, runBlock_nil,
     ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x4 ≠ .x5),
@@ -1002,13 +1002,13 @@ theorem mux4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   simp only [RegUpd.mem_write, RegUpd.gpr_write, RegUpd.zf_write, mem_withMem, gpr_withMem,
     zf_withMem, CondCode.holds, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq,
     Bool.not_eq_true']
-  have e1 : ∀ v w, word (st2 s.mem base o v w) base (a + 16) = word s.mem base (a + 16) :=
+  obtain e1 : ∀ v w, word (st2 s.mem base o v w) base (a + 16) = word s.mem base (a + 16) :=
     fun v w => word_st2 _ _ v w (by omega_using [hoa]) (by omega_using [ob]) (by omega_using [ab])
-  have e2 : ∀ v w, word (st2 s.mem base o v w) base (a + 16 + 8) = word s.mem base (a + 24) :=
+  obtain e2 : ∀ v w, word (st2 s.mem base o v w) base (a + 16 + 8) = word s.mem base (a + 24) :=
     fun v w => (word_st2 _ _ v w (by omega_using [hoa]) (by omega_using [ob]) (by omega_using [ab])).trans (by rw [Nat.add_assoc])
-  have e3 : ∀ v w, word (st2 s.mem base o v w) base (b + 16) = word s.mem base (b + 16) :=
+  obtain e3 : ∀ v w, word (st2 s.mem base o v w) base (b + 16) = word s.mem base (b + 16) :=
     fun v w => word_st2 _ _ v w (by omega_using [hob]) (by omega_using [ob]) (by omega_using [bb])
-  have e4 : ∀ v w, word (st2 s.mem base o v w) base (b + 16 + 8) = word s.mem base (b + 24) :=
+  obtain e4 : ∀ v w, word (st2 s.mem base o v w) base (b + 16 + 8) = word s.mem base (b + 24) :=
     fun v w => (word_st2 _ _ v w (by omega_using [hob]) (by omega_using [ob]) (by omega_using [bb])).trans (by rw [Nat.add_assoc])
   simp only [e1, e2, e3, e4]
   refine ⟨⟨fun r hr => ?_, rfl, rfl, rfl, ?_⟩, trivial, ?_⟩
@@ -1135,8 +1135,8 @@ theorem cmaddE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) 
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
       env t.mem base = Function.update (env s.mem base) o
         (toFe 121666 * env s.mem base a + env s.mem base b) := by
-  have la := fe_lt s.mem base (offset a)
-  have lb := fe_lt s.mem base (offset b)
+  obtain la := fe_lt s.mem base (offset a)
+  obtain lb := fe_lt s.mem base (offset b)
   refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega_using [la, lb]))
     fun t ⟨h, hl, q, e⟩ => ⟨h, hl, (env_upd h).trans (congrArg _ ?_)⟩
   rw [h1] at e
@@ -1150,8 +1150,8 @@ theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot)
       AltOp base (offset o) s t ∧ fe t.mem base (offset o) < P2 ∧
       env t.mem base = Function.update (env s.mem base) o
         (toFe 4 * env s.mem base a + env s.mem base b) := by
-  have la := fe_lt s.mem base (offset a)
-  have lb := fe_lt s.mem base (offset b)
+  obtain la := fe_lt s.mem base (offset a)
+  obtain lb := fe_lt s.mem base (offset b)
   refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega_using [la, lb]))
     fun t ⟨h, hl, q, e⟩ => ⟨h, hl, (env_upd h).trans (congrArg _ ?_)⟩
   rw [h1] at e

@@ -60,28 +60,28 @@ def mulAddV (x y z : BitVec 128) : BitVec 128 := csubV (XBinOp.eval .paddd (mulV
 
 theorem mul_lane {x y : BitVec 128} {a b : Nat → Zq} (hx : DLanes x a) (hy : DLanes y b) {i : Nat}
     (hi : i < 4) : (dword (mulV x y) i).toNat = (a i * b i).val := by
-  have hzo : ZOdd y (shufDwords y 0xF5) := fun j hj => by
+  obtain hzo : ZOdd y (shufDwords y 0xF5) := fun j hj => by
     rw [dword_shufDwords _ _ (by omega_arith)]
     rcases (by omega_arith : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
-  have hb1 : ∀ i < 4, (dword x i).toNat * (dword y i).toNat < q * 2 ^ 32 := fun i hi => by
+  obtain hb1 : ∀ i < 4, (dword x i).toNat * (dword y i).toNat < q * 2 ^ 32 := fun i hi => by
     rw [hx i hi, hy i hi]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (val_lt (a i)) (Nat.le_of_lt (val_lt (b i)))
       (by decide)) (by decide)
-  have m1 := fun i (hi : i < 4) => dword_montV hzo hb1 hi
-  have hb2 : ∀ i < 4, (dword (montV x y (shufDwords y 0xF5)) i).toNat * (dword r2V i).toNat < q * 2 ^ 32 :=
+  obtain m1 := fun i (hi : i < 4) => dword_montV hzo hb1 hi
+  obtain hb2 : ∀ i < 4, (dword (montV x y (shufDwords y 0xF5)) i).toNat * (dword r2V i).toNat < q * 2 ^ 32 :=
     fun i hi => by
       rw [m1 i hi, dword_r2V hi]
       have := mont_lt (hb1 i hi)
       rw [q_eq] at this ⊢
       exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le this (Nat.le_refl 2365951) (by decide)) (by decide)
-  have hzo2 : ZOdd r2V r2V := fun j hj => by rw [dword_r2V (by omega_arith), dword_r2V (by omega_arith)]
+  obtain hzo2 : ZOdd r2V r2V := fun j hj => by rw [dword_r2V (by omega_arith), dword_r2V (by omega_arith)]
   rw [mulV, dword_csubV _ hi, csubL_toNat (by rw [dword_montV hzo2 hb2 hi]; exact mont_lt (hb2 i hi)),
     dword_montV hzo2 hb2 hi, condSub_mont (hb2 i hi), m1 i hi, dword_r2V hi,
     show (2365951#32).toNat = 2 ^ 64 % q from rfl, mont_mont_R2, hx i hi, hy i hi, val_mul]
 
 theorem mulAdd_lane {x y z : BitVec 128} {a b c : Nat → Zq} (hx : DLanes x a) (hy : DLanes y b)
     (hz : DLanes z c) {i : Nat} (hi : i < 4) : (dword (mulAddV x y z) i).toNat = (c i + a i * b i).val := by
-  have hm := mul_lane hx hy hi
+  obtain hm := mul_lane hx hy hi
   rw [mulAddV, dword_csubV _ hi, dword_paddd _ _ hi, addD_toNat (by rw [hm]; exact val_lt _)
     (by rw [hz i hi]; exact val_lt _), hm, hz i hi, Nat.add_comm, ← val_add]
 
@@ -153,20 +153,20 @@ include hwh hrf hrg hdf hdg hF hG hcore hH hlane
 theorem step {i : Nat} (hi : i < 63) {s : State} (hI : Inv h f g s₀ R i s) :
     WP isa (.block (mulLoads ++ core ++ mulTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv h f g s₀ R (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 4 * i + 4 ≤ 256 := by omega_arith
-  have e1 : s.gpr .rdi = coeffAddr h (4 * i) := by rw [hI.rdi]; congr 2; omega_arith
-  have e2 : s.gpr .rsi = coeffAddr f (4 * i) := by rw [hI.rsi]; congr 2; omega_arith
-  have e3 : s.gpr .rdx = coeffAddr g (4 * i) := by rw [hI.rdx]; congr 2; omega_arith
-  have rf : InRegions (s.rd ++ s.wr) (coeffAddr f (4 * i)) 16 := by
+  obtain j0 : 4 * i + 4 ≤ 256 := by omega_arith
+  obtain e1 : s.gpr .rdi = coeffAddr h (4 * i) := by rw [hI.rdi]; congr 2; omega_arith
+  obtain e2 : s.gpr .rsi = coeffAddr f (4 * i) := by rw [hI.rsi]; congr 2; omega_arith
+  obtain e3 : s.gpr .rdx = coeffAddr g (4 * i) := by rw [hI.rdx]; congr 2; omega_arith
+  obtain rf : InRegions (s.rd ++ s.wr) (coeffAddr f (4 * i)) 16 := by
     rw [hI.rd, hI.wr]; exact ⟨_, hrf, pR_contains f j0⟩
-  have rg : InRegions (s.rd ++ s.wr) (coeffAddr g (4 * i)) 16 := by
+  obtain rg : InRegions (s.rd ++ s.wr) (coeffAddr g (4 * i)) 16 := by
     rw [hI.rd, hI.wr]; exact ⟨_, hrg, pR_contains g j0⟩
-  have rh : InRegions (s.rd ++ s.wr) (coeffAddr h (4 * i)) 16 := by
+  obtain rh : InRegions (s.rd ++ s.wr) (coeffAddr h (4 * i)) 16 := by
     rw [hI.rd, hI.wr]; exact f_in (List.mem_append_right _ hwh) j0
-  have wh : InRegions s.wr (coeffAddr h (4 * i)) 16 := by rw [hI.wr]; exact f_in hwh j0
-  have mf : ∀ k < 256, coeffAt s.mem f k = coeffAt s₀.mem f k := fun k hk =>
+  obtain wh : InRegions s.wr (coeffAddr h (4 * i)) 16 := by rw [hI.wr]; exact f_in hwh j0
+  obtain mf : ∀ k < 256, coeffAt s.mem f k = coeffAt s₀.mem f k := fun k hk =>
     coeffAt_frame hI.frame (by simpa using hdf.symm) (by rw [n_eq]; exact hk)
-  have mg : ∀ k < 256, coeffAt s.mem g k = coeffAt s₀.mem g k := fun k hk =>
+  obtain mg : ∀ k < 256, coeffAt s.mem g k = coeffAt s₀.mem g k := fun k hk =>
     coeffAt_frame hI.frame (by simpa using hdg.symm) (by rw [n_eq]; exact hk)
   rw [show mulLoads ++ core ++ mulTail ++ [.alu .sub .rcx (.imm 1)] =
     mulLoads ++ (core ++ (mulTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) by simp [List.append_assoc],
@@ -177,26 +177,26 @@ theorem step {i : Nat} (hi : i < 63) {s : State} (hI : Inv h f g s₀ R i s) :
   refine WP.mono (hcore _ (((hI.c.setXmm (by decide) (by decide) _).setXmm (by decide) (by decide) _).setXmm
     (by decide) (by decide) _) (by simp only [xmm_setXmm, reduceCtorEq, ite_false]; exact hI.r2))
     fun s2 ⟨h3, o2⟩ => ?_
-  have c2 := xonly_vconsts o2 (((hI.c.setXmm (by decide) (by decide) _).setXmm (by decide) (by decide) _).setXmm
+  obtain c2 := xonly_vconsts o2 (((hI.c.setXmm (by decide) (by decide) _).setXmm (by decide) (by decide) _).setXmm
     (by decide) (by decide) _) (by decide) (by decide)
   have g2 : s2.gpr = s.gpr := o2.gpr
   have m2 : s2.mem = s.mem := o2.mem
   have r2 : s2.rd = s.rd := o2.rd
   have w2 : s2.wr = s.wr := o2.wr
-  have x11 : s2.xmm .xmm11 = r2V := by rw [o2.xmm _ (by decide)]; simp only [xmm_setXmm, reduceCtorEq, ite_false]; exact hI.r2
+  obtain x11 : s2.xmm .xmm11 = r2V := by rw [o2.xmm _ (by decide)]; simp only [xmm_setXmm, reduceCtorEq, ite_false]; exact hI.r2
   simp only [xmm_setXmm, ite_true, reduceCtorEq, ite_false] at h3
   generalize hV : Fv (s.mem.readW (coeffAddr f (4 * i)) 128) (s.mem.readW (coeffAddr g (4 * i)) 128)
     (s.mem.readW (coeffAddr h (4 * i)) 128) = V at h3
   simp only [mulTail]
   vrund [g2, m2, r2, w2, e1, e2, e3, wh, h3]
-  have lx : ∀ e < 4, (dword (s.mem.readW (coeffAddr f (4 * i)) 128) e).toNat = (F[4 * i + e]!).val :=
+  obtain lx : ∀ e < 4, (dword (s.mem.readW (coeffAddr f (4 * i)) 128) e).toNat = (F[4 * i + e]!).val :=
     fun e he => by rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, mf _ (by omega_arith), hF _ (by omega_arith)]
-  have ly : ∀ e < 4, (dword (s.mem.readW (coeffAddr g (4 * i)) 128) e).toNat = (G[4 * i + e]!).val :=
+  obtain ly : ∀ e < 4, (dword (s.mem.readW (coeffAddr g (4 * i)) 128) e).toNat = (G[4 * i + e]!).val :=
     fun e he => by rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, mg _ (by omega_arith), hG _ (by omega_arith)]
-  have lz : ∀ e < 4, dword (s.mem.readW (coeffAddr h (4 * i)) 128) e = H (4 * i + e) :=
+  obtain lz : ∀ e < 4, dword (s.mem.readW (coeffAddr h (4 * i)) 128) e = H (4 * i + e) :=
     fun e he => by rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, hI.rest _ (by omega_arith) (by omega_arith),
       hH _ (by omega_arith)]
-  have hl := hlane i (by omega_arith) _ _ _ lx ly lz
+  obtain hl := hlane i (by omega_arith) _ _ _ lx ly lz
   rw [hV] at hl
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
@@ -237,16 +237,16 @@ omit hwh hH in
 theorem last {s : State} (hI : Inv h f g s₀ R 63 s) (hz : ∀ e < 4, dword (s₀.xmm .xmm6) e = H (252 + e)) :
     WP isa (.block (mulLast core)) s fun s' =>
       (∀ e < 4, (dword (s'.xmm .xmm3) e).toNat = (R[252 + e]!).val) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem := by
-  have j0 : 4 * 63 + 4 ≤ 256 := by decide
+  obtain j0 : 4 * 63 + 4 ≤ 256 := by decide
   have e2 : s.gpr .rsi = coeffAddr f (4 * 63) := hI.rsi
   have e3 : s.gpr .rdx = coeffAddr g (4 * 63) := hI.rdx
-  have rf : InRegions (s.rd ++ s.wr) (coeffAddr f (4 * 63)) 16 := by
+  obtain rf : InRegions (s.rd ++ s.wr) (coeffAddr f (4 * 63)) 16 := by
     rw [hI.rd, hI.wr]; exact ⟨_, hrf, pR_contains f j0⟩
-  have rg : InRegions (s.rd ++ s.wr) (coeffAddr g (4 * 63)) 16 := by
+  obtain rg : InRegions (s.rd ++ s.wr) (coeffAddr g (4 * 63)) 16 := by
     rw [hI.rd, hI.wr]; exact ⟨_, hrg, pR_contains g j0⟩
-  have mf : ∀ k < 256, coeffAt s.mem f k = coeffAt s₀.mem f k := fun k hk =>
+  obtain mf : ∀ k < 256, coeffAt s.mem f k = coeffAt s₀.mem f k := fun k hk =>
     coeffAt_frame hI.frame (by simpa using hdf.symm) (by rw [n_eq]; exact hk)
-  have mg : ∀ k < 256, coeffAt s.mem g k = coeffAt s₀.mem g k := fun k hk =>
+  obtain mg : ∀ k < 256, coeffAt s.mem g k = coeffAt s₀.mem g k := fun k hk =>
     coeffAt_frame hI.frame (by simpa using hdg.symm) (by rw [n_eq]; exact hk)
   rw [mulLast, WP.block_append_iff]
   vrund [e2, e3, rf, rg, eval_movdqa]
@@ -289,8 +289,8 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
   generalize ef : σ.gpr .rsi = f at *
   generalize eg : σ.gpr .rdx = g at *
   let R := t (polyAt σ.mem h) (polyAt σ.mem f) (polyAt σ.mem g)
-  have hwh : pR h ∈ σ.wr := by rw [hwr]; exact List.mem_singleton_self _
-  have r6 : InRegions (σ.rd ++ σ.wr) (coeffAddr h 252) 16 :=
+  obtain hwh : pR h ∈ σ.wr := by rw [hwr]; exact List.mem_singleton_self _
+  obtain r6 : InRegions (σ.rd ++ σ.wr) (coeffAddr h 252) 16 :=
     ⟨_, List.mem_append_right _ hwh, Offset.contains_base h (by omega_arith) (by omega_arith)⟩
   simp only [mulFn]
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .r8 = h ∧
@@ -299,7 +299,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     exact ⟨fun r hr => by
       simp only [List.mem_singleton] at hr
       simp only [RegUpd.gpr_setXmm, RegUpd.gpr_setReg, hr, ite_false], rfl, rfl⟩) fun s1 ⟨h8, h6, k1, m1⟩ => ?_)
-  have hw1 : pR h ∈ s1.wr := by rw [k1.2.2]; exact hwh
+  obtain hw1 : pR h ∈ s1.wr := by rw [k1.2.2]; exact hwh
   refine WP.seq (WP.mono (noMxH_ok (p := h) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
       s3.gpr .rdi = coeffAddr h 252 ∧ Frame [pR h] σ.mem s3.mem ∧
       (∀ k < 252, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
@@ -311,12 +311,12 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
         Frame [pR h] σ.mem s3.mem ∧ (∀ k < 252, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
         ∀ e < 4, (dword (s3.xmm .xmm3) e).toNat = (R[252 + e]!).val)) (writesOnly_of hk))
       fun s3 ⟨q3, kk⟩ => ⟨k2.trans kk, q3⟩
-    have gw : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r8 → w.gpr r = σ.gpr r := fun r h1 h2 h3 => by
+    obtain gw : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r8 → w.gpr r = σ.gpr r := fun r h1 h2 h3 => by
       rw [kw.gpr (by simpa using h1), k2.gpr (by simp [h1, h2]), k1.gpr (by simpa using h3)]
-    have rw' : w.rd = σ.rd ∧ w.wr = σ.wr :=
+    obtain rw' : w.rd = σ.rd ∧ w.wr = σ.wr :=
       ⟨kw.2.1.trans (k2.2.1.trans k1.2.1), kw.2.2.trans (k2.2.2.trans k1.2.2)⟩
-    have fσw : Frame [mxH h] σ.mem w.mem := by rw [mw]; exact fσ2
-    have fσw' : Frame [pR h] σ.mem w.mem :=
+    obtain fσw : Frame [mxH h] σ.mem w.mem := by rw [mw]; exact fσ2
+    obtain fσw' : Frame [pR h] σ.mem w.mem :=
       Frame.sub fσw fun r hr => ⟨pR h, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact mxH_sub h⟩
     refine WP.seq (WP.mono (loop_ok (s₀ := w) (h := h) (f := f) (g := g) (R := R) (F := polyAt σ.mem f)
@@ -346,11 +346,11 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     rw [m3]
     exact Frame.trans fσw' hI.frame
   · have k14 := (k1.trans kk).trans k4
-    have hdi4 : s4.gpr .rdi = coeffAddr h 252 := by rw [k4.gpr (by simp), hdi]
-    have wh4 : InRegions s4.wr (coeffAddr h 252) 16 := by
+    obtain hdi4 : s4.gpr .rdi = coeffAddr h 252 := by rw [k4.gpr (by simp), hdi]
+    obtain wh4 : InRegions s4.wr (coeffAddr h 252) 16 := by
       rw [k14.2.2]; exact ⟨_, hwh, Offset.contains_base h (by omega_arith) (by omega_arith)⟩
     vrund [hdi4, wh4]
-    have f4' : Frame [pR h] s3.mem s4.mem := Frame.sub f4 fun r hr => ⟨pR h, List.mem_singleton_self _, by
+    obtain f4' : Frame [pR h] s3.mem s4.mem := Frame.sub f4 fun r hr => ⟨pR h, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact mxH_sub h⟩
     refine ⟨k14.mono (by simp), (fr.trans f4').writeW (List.mem_singleton_self _) _
       (Offset.contains_base h (by omega_arith) (by omega_arith)), ?_⟩

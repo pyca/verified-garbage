@@ -137,8 +137,8 @@ theorem planes_run (s : State) (L : Nat → VReg) (hL : ∀ k < 4, L k ∉ plane
     ∃ s', runBlock isa (planes L) s = some s' ∧
       (∀ j < 4, ∀ n < 16, vbyte (s'.v (idxReg j)) n = vbyte (s.v (L (n / 4))) (4 * (n % 4) + (3 - j))) ∧
       VOnly planesRegs s s' := by
-  have h0 := hL 0 (by decide); have h1 := hL 1 (by decide)
-  have h2 := hL 2 (by decide); have h3 := hL 3 (by decide)
+  obtain h0 := hL 0 (by decide); have h1 := hL 1 (by decide)
+  obtain h2 := hL 2 (by decide); have h3 := hL 3 (by decide)
   simp only [planesRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h0 h1 h2 h3
   let p (o : Nat) (t : State) (d n m : VReg) := t.setV d (VPermOp.eval (uzp o) .b16 (t.v n) (t.v m))
   let s₁ := p 0 s .v0 (L 0) (L 1)
@@ -165,23 +165,23 @@ theorem planes_run (s : State) (L : Nat → VReg) (hL : ∀ k < 4, L k ∉ plane
       have := hL k hk
       simp only [planesRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at this
       exact ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.1⟩
-    have r1 : s₄.v .v0 = VPermOp.eval (uzp 0) .b16 (s.v (L 0)) (s.v (L 1)) ∧
+    obtain r1 : s₄.v .v0 = VPermOp.eval (uzp 0) .b16 (s.v (L 0)) (s.v (L 1)) ∧
         s₄.v .v1 = VPermOp.eval (uzp 1) .b16 (s.v (L 0)) (s.v (L 1)) ∧
         s₄.v .v20 = VPermOp.eval (uzp 0) .b16 (s.v (L 2)) (s.v (L 3)) ∧
         s₄.v .v21 = VPermOp.eval (uzp 1) .b16 (s.v (L 2)) (s.v (L 3)) := by
       simp only [s₄, s₃, s₂, s₁, p, v_setV, reduceCtorEq, ite_true, ite_false, h0, h1, h2, h3,
         and_self]
-    have i0 : s₈.v .v16 = VPermOp.eval (uzp 1) .b16 (s₄.v .v1) (s₄.v .v21) := by
+    obtain i0 : s₈.v .v16 = VPermOp.eval (uzp 1) .b16 (s₄.v .v1) (s₄.v .v21) := by
       simp only [s₈, s₇, s₆, s₅, p, v_setV, reduceCtorEq, ite_true, ite_false]
-    have i1 : s₈.v .v17 = VPermOp.eval (uzp 1) .b16 (s₄.v .v0) (s₄.v .v20) := by
+    obtain i1 : s₈.v .v17 = VPermOp.eval (uzp 1) .b16 (s₄.v .v0) (s₄.v .v20) := by
       simp only [s₈, s₇, s₆, s₅, p, v_setV, reduceCtorEq, ite_true, ite_false]
-    have i2 : s₈.v .v18 = VPermOp.eval (uzp 0) .b16 (s₄.v .v1) (s₄.v .v21) := by
+    obtain i2 : s₈.v .v18 = VPermOp.eval (uzp 0) .b16 (s₄.v .v1) (s₄.v .v21) := by
       simp only [s₈, s₇, s₆, s₅, p, v_setV, reduceCtorEq, ite_true, ite_false]
-    have i3 : s₈.v .v19 = VPermOp.eval (uzp 0) .b16 (s₄.v .v0) (s₄.v .v20) := by
+    obtain i3 : s₈.v .v19 = VPermOp.eval (uzp 0) .b16 (s₄.v .v0) (s₄.v .v20) := by
       simp only [s₈, s₇, s₆, s₅, p, v_setV, reduceCtorEq, ite_true, ite_false]
     simp only [r1.1, r1.2.1, r1.2.2.1, r1.2.2.2] at i0 i1 i2 i3
     intro j hj n hn
-    have key : ∀ (o₁ : Nat), o₁ < 2 → ∀ (o₂ : Nat), o₂ < 2 → ∀ x : BitVec 128, x = VPermOp.eval (uzp o₂) .b16
+    obtain key : ∀ (o₁ : Nat), o₁ < 2 → ∀ (o₂ : Nat), o₂ < 2 → ∀ x : BitVec 128, x = VPermOp.eval (uzp o₂) .b16
         (VPermOp.eval (uzp o₁) .b16 (s.v (L 0)) (s.v (L 1)))
         (VPermOp.eval (uzp o₁) .b16 (s.v (L 2)) (s.v (L 3))) →
         vbyte x n = vbyte (s.v (L (n / 4))) (4 * (n % 4) + (o₁ + 2 * o₂)) := by
@@ -228,26 +228,26 @@ theorem words_run (s : State) :
       runStep_some, runBlock_cons, e₄, runStep_some, runBlock_cons, e₅, runStep_some, runBlock_cons,
       e₆, runStep_some, runBlock_cons, e₇, runStep_some, runBlock_cons, e₈, runStep_some, runBlock_nil]
   · let P := fun b => s.v (outReg b)
-    have r : s₄.v .v0 = VPermOp.eval (zip 0) .b16 (P 0) (P 2) ∧
+    obtain r : s₄.v .v0 = VPermOp.eval (zip 0) .b16 (P 0) (P 2) ∧
         s₄.v .v1 = VPermOp.eval (zip 1) .b16 (P 0) (P 2) ∧
         s₄.v .v20 = VPermOp.eval (zip 0) .b16 (P 1) (P 3) ∧
         s₄.v .v22 = VPermOp.eval (zip 1) .b16 (P 1) (P 3) := by
       simp only [s₄, s₃, s₂, s₁, p, P, v_setV, reduceCtorEq, ite_true, ite_false, outReg,
         List.getD_cons_zero, List.getD_cons_succ, and_self]
-    have w0 : s₈.v (wordReg 0) = VPermOp.eval (zip 0) .b16 (s₄.v .v0) (s₄.v .v20) := by
+    obtain w0 : s₈.v (wordReg 0) = VPermOp.eval (zip 0) .b16 (s₄.v .v0) (s₄.v .v20) := by
       simp only [s₈, s₇, s₆, s₅, p, wordReg, outReg, List.getD_cons_zero, List.getD_cons_succ, v_setV,
         reduceCtorEq, ite_true, ite_false]
-    have w1 : s₈.v (wordReg 1) = VPermOp.eval (zip 1) .b16 (s₄.v .v0) (s₄.v .v20) := by
+    obtain w1 : s₈.v (wordReg 1) = VPermOp.eval (zip 1) .b16 (s₄.v .v0) (s₄.v .v20) := by
       simp only [s₈, s₇, s₆, s₅, p, wordReg, outReg, List.getD_cons_zero, List.getD_cons_succ, v_setV,
         reduceCtorEq, ite_true, ite_false]
-    have w2 : s₈.v (wordReg 2) = VPermOp.eval (zip 0) .b16 (s₄.v .v1) (s₄.v .v22) := by
+    obtain w2 : s₈.v (wordReg 2) = VPermOp.eval (zip 0) .b16 (s₄.v .v1) (s₄.v .v22) := by
       simp only [s₈, s₇, s₆, s₅, p, wordReg, outReg, List.getD_cons_zero, List.getD_cons_succ, v_setV,
         reduceCtorEq, ite_true, ite_false]
-    have w3 : s₈.v (wordReg 3) = VPermOp.eval (zip 1) .b16 (s₄.v .v1) (s₄.v .v22) := by
+    obtain w3 : s₈.v (wordReg 3) = VPermOp.eval (zip 1) .b16 (s₄.v .v1) (s₄.v .v22) := by
       simp only [s₈, s₇, s₆, s₅, p, wordReg, outReg, List.getD_cons_zero, List.getD_cons_succ, v_setV,
         reduceCtorEq, ite_true, ite_false]
     simp only [r.1, r.2.1, r.2.2.1, r.2.2.2] at w0 w1 w2 w3
-    have fourP : ∀ b < 4, four (P 0) (P 1) (P 2) (P 3) b = s.v (outReg b) := fun b hb =>
+    obtain fourP : ∀ b < 4, four (P 0) (P 1) (P 2) (P 3) b = s.v (outReg b) := fun b hb =>
       four_regs s.v outReg hb
     intro k hk l hl b hb
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
@@ -318,10 +318,10 @@ theorem combine_run (s : State) (j : Nat) :
   let s₂ := t 1 s₁
   let s₃ := t 2 s₂
   let s₄ := t 3 s₃
-  have e : ∀ (k : Nat) (u : State), k < 4 →
+  obtain e : ∀ (k : Nat) (u : State), k < 4 →
       exec ((combine j).getD k (.vop (.movi0 .v0))) u = some (t k u) := fun k u hk => by
     rw [exec_combine _ _ hk]
-  have hl : combine j = [(combine j).getD 0 (.vop (.movi0 .v0)), (combine j).getD 1 (.vop (.movi0 .v0)),
+  obtain hl : combine j = [(combine j).getD 0 (.vop (.movi0 .v0)), (combine j).getD 1 (.vop (.movi0 .v0)),
       (combine j).getD 2 (.vop (.movi0 .v0)), (combine j).getD 3 (.vop (.movi0 .v0))] := by
     simp only [combine, List.getD_eq_getElem?_getD]; rfl
   refine ⟨s₄, ?_, ?_, ?_⟩
@@ -330,7 +330,7 @@ theorem combine_run (s : State) (j : Nat) :
       e 3 s₃ (by decide), runStep_some, runBlock_nil]
   · have wk : ∀ k < 4, ∀ (u : State) (k' : Nat), k' < 4 → (t k' u).v (wordReg k) = u.v (wordReg k) :=
       fun k hk u k' hk' => v_setV_of_ne _ _ (wordReg_ne_fReg k hk k' hk')
-    have fk : ∀ k < 4, ∀ (u : State) (k' : Nat), k' < 4 → k ≠ k' → (t k' u).v (fReg k) = u.v (fReg k) :=
+    obtain fk : ∀ k < 4, ∀ (u : State) (k' : Nat), k' < 4 → k ≠ k' → (t k' u).v (fReg k) = u.v (fReg k) :=
       fun k hk u k' hk' hne => v_setV_of_ne _ _ (fReg_ne k hk k' hk' hne)
     intro k hk
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
@@ -372,15 +372,15 @@ theorem sbox_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s) {
   obtain ⟨s₃, r₃, v₃, o₃⟩ := combine_run s₂ j
   refine ⟨s₃, VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some r₁ r₂) r₃, ?_, ?_⟩
   · intro n hn
-    have hk : n / 4 < 4 := by omega_using [hn]
-    have hl : n % 4 < 4 := by omega_using []
+    obtain hk : n / 4 < 4 := by omega_using [hn]
+    obtain hl : n % 4 < 4 := by omega_using []
     -- the words of S-box `j`
-    have w : vword (s₂.v (wordReg (n / 4))) (n % 4) = sq K (x n) j := by
+    obtain w : vword (s₂.v (wordReg (n / 4))) (n % 4) = sq K (x n) j := by
       refine word_ext fun b hb => ?_
       rw [← vbyte_word _ hb, v₂ _ hk _ hl _ hb, show 4 * (n / 4) + n % 4 = n by omega_using [], v₁ _ hb _ hn, hx n hn,
         sq, sEntry_byte _ _ hj hb]
       rfl
-    have f₂ : s₂.v (fReg (n / 4)) = s.v (fReg (n / 4)) := by
+    obtain f₂ : s₂.v (fReg (n / 4)) = s.v (fReg (n / 4)) := by
       rw [o₂.2 _ (fReg_notin _ hk).2, o₁.2 _ (fReg_notin _ hk).1]
     simp only [lane]
     rw [v₃ _ hk, vword_cop _ _ _ hl, w, f₂]
@@ -400,7 +400,7 @@ theorem f_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s) (x :
     ∃ s', runBlock isa (f sch) s = some s' ∧
       (∀ n < 16, lane s'.v fReg n = Spec.Blowfish.f (scheduleAt s.mem (s.gpr sch)) (x n)) ∧
       VOnly stepRegs s s' := by
-  have keep : ∀ {t : State}, VOnly stepRegs s t →
+  obtain keep : ∀ {t : State}, VOnly stepRegs s t →
       Readable t sch ∧ Consts t ∧ (∀ j < 4, ∀ n < 16, vbyte (t.v (idxReg j)) n = quarter (x n) j) ∧
         t.mem = s.mem ∧ t.gpr = s.gpr := by
     intro t ht
@@ -410,18 +410,18 @@ theorem f_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s) (x :
     · rw [ht.2 _ const_notin_step.2]; exact hc.2 e he
     · rw [ht.2 _ (idx_notin_step j hj)]; exact hx j hj n hn
   obtain ⟨s₀, r₀, v₀, o₀⟩ := sbox_run hR hc (by decide : 0 < 4) x (hx 0 (by decide)) (by intro h; omega)
-  have k₀ := keep o₀
+  obtain k₀ := keep o₀
   obtain ⟨s₁, r₁, v₁, o₁⟩ := sbox_run k₀.1 k₀.2.1 (by decide : 1 < 4) x (k₀.2.2.1 1 (by decide))
     (fun _ n hn => by rw [v₀ n hn, k₀.2.2.2.1, k₀.2.2.2.2])
-  have p₁ := o₀.trans o₁
-  have k₁ := keep p₁
+  obtain p₁ := o₀.trans o₁
+  obtain k₁ := keep p₁
   obtain ⟨s₂, r₂, v₂, o₂⟩ := sbox_run k₁.1 k₁.2.1 (by decide : 2 < 4) x (k₁.2.2.1 2 (by decide))
     (fun _ n hn => by rw [v₁ n hn, k₀.2.2.2.1, k₀.2.2.2.2, k₁.2.2.2.1, k₁.2.2.2.2])
-  have p₂ := p₁.trans o₂
-  have k₂ := keep p₂
+  obtain p₂ := p₁.trans o₂
+  obtain k₂ := keep p₂
   obtain ⟨s₃, r₃, v₃, o₃⟩ := sbox_run k₂.1 k₂.2.1 (by decide : 3 < 4) x (k₂.2.2.1 3 (by decide))
     (fun _ n hn => by rw [v₂ n hn, k₁.2.2.2.1, k₁.2.2.2.2, k₂.2.2.2.1, k₂.2.2.2.2])
-  have p₃ := p₂.trans o₃
+  obtain p₃ := p₂.trans o₃
   refine ⟨s₃, ?_, fun n hn => ?_, p₃⟩
   · rw [f_eq]
     exact VG.AArch64.Tbl.runBlock_cat_some r₀ (VG.AArch64.Tbl.runBlock_cat_some r₁
@@ -526,7 +526,7 @@ theorem xorHalf_run (s : State) {H S : Nat → VReg} (hinj : ∀ k < 4, ∀ k' <
       runBlock_cons, e, runStep_some, runBlock_nil]
   · have hh : ∀ k < 4, ∀ k' < 4, k ≠ k' → ∀ u : State, (t k' u).v (H k) = u.v (H k) :=
       fun k hk k' hk' hne u => v_setV_of_ne _ _ (hinj k hk k' hk' hne)
-    have hs : ∀ k < 4, ∀ k' < 4, ∀ u : State, (t k' u).v (S k) = u.v (S k) :=
+    obtain hs : ∀ k < 4, ∀ k' < 4, ∀ u : State, (t k' u).v (S k) = u.v (S k) :=
       fun k hk k' hk' u => v_setV_of_ne _ _ (hS k hk k' hk')
     intro k hk
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
@@ -569,72 +569,72 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
   let K := scheduleAt s.mem (s.gpr sch)
   let p := pEntry K i
   -- the P-array entry
-  have hp : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 pOff) 4 := by
+  obtain hp : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 pOff) 4 := by
     rw [hx5, Offset.add_add]; exact hS _ _ (by simp only [pOff]; omega_using [hi])
-  have hread : s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 pOff) 32 = p := by
+  obtain hread : s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 pOff) 32 = p := by
     rw [hx5, Offset.add_add, show 4 * i + pOff = 4096 + 4 * i by simp only [pOff]; omega_using []]
     exact (pEntry_read _ _ hi).symm
   let s₁ := s.write .w .x6 (s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 pOff) 32)
   let s₂ := s₁.setV .v0 (let w := (s₁.gpr .x6).setWidth 32; ofVWords w w w w)
-  have r₂ : runBlock isa loadP s = some s₂ := by
+  obtain r₂ : runBlock isa loadP s = some s₂ := by
     rw [loadP, runBlock_cons, exec_ldr_w (by simp only [pOff]; decide) hp, runStep_some, runBlock_cons,
       exec_dup4, runStep_some, runBlock_nil]
-  have v0₂ : ∀ l < 4, vword (s₂.v .v0) l = p := by
+  obtain v0₂ : ∀ l < 4, vword (s₂.v .v0) l = p := by
     intro l hl
     simp only [s₂, v_setV_self]
     rw [vword_ofVWords _ _ _ _ hl]
     have : (s₁.gpr .x6).setWidth 32 = p := by
       simp only [s₁, gpr_write_self, ← hread]; exact BitVec.setWidth_setWidth_of_le _ (by omega_using []) |>.trans (by simp)
     rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> exact this
-  have o₂ : Only [.x6] [.v0] s s₂ := by
+  obtain o₂ : Only [.x6] [.v0] s s₂ := by
     refine ⟨rfl, fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_singleton] at hr
       simp only [s₂, s₁, gpr_setV, gpr_write_of_ne _ _ _ hr]
     · simp only [List.mem_singleton] at hr
       exact v_setV_of_ne _ _ hr
-  have hL := fun k hk => half_notin _ (H.inL k hk)
-  have hR := fun k hk => half_notin _ (H.inR k hk)
+  obtain hL := fun k hk => half_notin _ (H.inL k hk)
+  obtain hR := fun k hk => half_notin _ (H.inR k hk)
   -- L ^= P
   obtain ⟨s₃, r₃, v₃, o₃⟩ := xorHalf_run s₂ H.injL (S := fun _ => .v0) fun k _ k' hk' => (hL k' hk').2.2.symm
-  have L₃ : ∀ n < 16, lane s₃.v L n = lane s.v L n ^^^ p := by
+  obtain L₃ : ∀ n < 16, lane s₃.v L n = lane s.v L n ^^^ p := by
     intro n hn
     simp only [lane]
     rw [v₃ _ (by omega_using [hn]), vword_xor, v0₂ _ (by omega_using []), o₂.v _ (by simp; exact (hL _ (by omega_using [hn])).2.2)]
   -- the planes
   obtain ⟨s₄, r₄, v₄, o₄⟩ := planes_run s₃ L fun k hk => (hL k hk).1
   -- F
-  have o₂₄ : Only [.x6] roundRegs s s₄ := (o₂.mono (by simp) (by simp [roundRegs])).trans
+  obtain o₂₄ : Only [.x6] roundRegs s s₄ := (o₂.mono (by simp) (by simp [roundRegs])).trans
     ((o₃.mono (by simp) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with h | h | h | h <;> subst h <;>
           exact List.mem_append_right _ (H.inL _ (by decide))).trans
       ((Only.ofV o₄).mono (by simp) (fun r hr => by simp [roundRegs, hr])))
-  have hS₄ : Readable s₄ sch := fun off hoff => by
+  obtain hS₄ : Readable s₄ sch := fun off hoff => by
     rw [o₂₄.rd, o₂₄.wr, o₂₄.g _ (by simp; exact hsch.2)]; exact hS.readable off hoff
-  have hc₄ : Consts s₄ := by
-    have n64 : c64 ∉ roundRegs := by decide
-    have n128 : c128 ∉ roundRegs := by decide
+  obtain hc₄ : Consts s₄ := by
+    obtain n64 : c64 ∉ roundRegs := by decide
+    obtain n128 : c128 ∉ roundRegs := by decide
     exact ⟨fun e he => by rw [o₂₄.v _ n64]; exact hc.1 e he, fun e he => by rw [o₂₄.v _ n128]; exact hc.2 e he⟩
   obtain ⟨s₅, r₅, v₅, o₅⟩ := f_run hS₄ hc₄ (lane s₃.v L) fun j hj n hn => by
     rw [v₄ j hj n hn, quarter_lane _ hj]; rfl
-  have K₅ : scheduleAt s₄.mem (s₄.gpr sch) = K := by
+  obtain K₅ : scheduleAt s₄.mem (s₄.gpr sch) = K := by
     rw [o₂₄.mem, o₂₄.g _ (by simp; exact hsch.2)]
   -- R ^= F
   obtain ⟨s₆, r₆, v₆, o₆⟩ := xorHalf_run s₅ H.injR (S := fReg) fun k hk k' hk' =>
     fReg_ne_half k hk _ (H.inR k' hk')
   let s₇ := s₆.write .x .x5 (if up then s₆.read .x .x5 + BitVec.ofNat _ 4 else s₆.read .x .x5 - BitVec.ofNat _ 4)
-  have r₇ : runBlock isa [if up then .addImm .x .x5 .x5 4 else .subImm .x .x5 .x5 4] s₆ = some s₇ := by
+  obtain r₇ : runBlock isa [if up then .addImm .x .x5 .x5 4 else .subImm .x .x5 .x5 4] s₆ = some s₇ := by
     cases up
     · rw [runBlock_cons]; simp only [Bool.false_eq_true, ite_false]
       rw [exec_subImm_x (by decide), runStep_some, runBlock_nil]; rfl
     · rw [runBlock_cons]; simp only [ite_true]
       rw [exec_addImm_x (by decide), runStep_some, runBlock_nil]; rfl
-  have o₂₆ : Only [.x6] roundRegs s s₆ := o₂₄.trans (((Only.ofV o₅).mono (by simp) (fun r hr => by simp [roundRegs, hr])).trans
+  obtain o₂₆ : Only [.x6] roundRegs s s₆ := o₂₄.trans (((Only.ofV o₅).mono (by simp) (fun r hr => by simp [roundRegs, hr])).trans
     (o₆.mono (by simp) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with h | h | h | h <;> subst h <;>
           exact List.mem_append_right _ (H.inR _ (by decide))))
-  have o₇ : Only [.x5, .x6] roundRegs s s₇ := by
+  obtain o₇ : Only [.x5, .x6] roundRegs s s₇ := by
     refine (o₂₆.mono (by simp) (fun _ h => h)).trans ⟨rfl, fun r hr => ?_, fun _ _ => rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [s₇, gpr_write_of_ne _ _ _ hr.1]
@@ -644,22 +644,22 @@ theorem round_run {s : State} {sch : Reg} (hS : SchedIn s sch) (hc : Consts s) (
       (VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some
         (VG.AArch64.Tbl.runBlock_cat_some r₂ r₃) r₄) r₅) r₆) r₇
   · intro n hn
-    have hk : n / 4 < 4 := by omega_using [hn]
-    have nr : ∀ k < 4, L k ∉ [R 0, R 1, R 2, R 3] := fun k hk => by
+    obtain hk : n / 4 < 4 := by omega_using [hn]
+    obtain nr : ∀ k < 4, L k ∉ [R 0, R 1, R 2, R 3] := fun k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨H.ne k hk 0 (by decide), H.ne k hk 1 (by decide), H.ne k hk 2 (by decide), H.ne k hk 3 (by decide)⟩
     simp only [lane] at L₃ ⊢
     rw [show s₇.v = s₆.v from rfl, o₆.v _ (nr _ hk), o₅.2 _ (hL _ hk).2.1, o₄.2 _ (hL _ hk).1, L₃ n hn]
   · intro n hn
-    have hk : n / 4 < 4 := by omega_using [hn]
-    have nl : R (n / 4) ∉ [L 0, L 1, L 2, L 3] := by
+    obtain hk : n / 4 < 4 := by omega_using [hn]
+    obtain nl : R (n / 4) ∉ [L 0, L 1, L 2, L 3] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(H.ne 0 (by decide) _ hk).symm, (H.ne 1 (by decide) _ hk).symm,
         (H.ne 2 (by decide) _ hk).symm, (H.ne 3 (by decide) _ hk).symm⟩
-    have hRv : s₅.v (R (n / 4)) = s.v (R (n / 4)) := by
+    obtain hRv : s₅.v (R (n / 4)) = s.v (R (n / 4)) := by
       rw [o₅.2 _ (hR _ hk).2.1, o₄.2 _ (hR _ hk).1, o₃.v _ nl,
         o₂.v _ (by simp; exact (hR _ hk).2.2)]
-    have L₃n := L₃ n hn
+    obtain L₃n := L₃ n hn
     simp only [lane] at v₅ L₃n ⊢
     rw [show s₇.v = s₆.v from rfl, v₆ _ hk, vword_xor, v₅ n hn, K₅, L₃n, hRv]
   · simp only [s₇, gpr_write_self, State.read, BitVec.setWidth_eq]

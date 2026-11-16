@@ -230,19 +230,19 @@ theorem front_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E s) (
     widths.1 widths.2.1 L.pBound L.qBound L.zero L.one L.loaded)
     fun v ⟨Hv, Ov, result, Kv⟩ => ?_)
   rw [L.eValue, L.pValue, L.qValue] at result
-  have Iv := input_afterStage L.input Hu Hv.old Kv Ov
-  have Cu := C.keep Ku Fu
+  obtain Iv := input_afterStage L.input Hu Hv.old Kv Ov
+  obtain Cu := C.keep Ku Fu
   have spU : u.gpr .esp = p := Cu.sp
-  have Fv : Frame ([⟨E.base, E.size⟩] ++ [below p 52]) u.mem v.mem := by
+  obtain Fv : Frame ([⟨E.base, E.size⟩] ++ [below p 52]) u.mem v.mem := by
     rw [← spU]
     exact Ov.toFrame fun _ _ O =>
       stage_scratch_frame L.input.ws (by simp [deriveArrays, prepareArrays, keyPartArrays]; decide) O
-  have Cv := Cu.keepBelow Kv Fv
+  obtain Cv := Cu.keepBelow Kv Fv
   refine WP.mono (writeCore_front Iv Cv apart result) fun t ⟨ht, written, Ft, Kt⟩ => ?_
   refine ⟨ht, written, ?_, Ku.trans (Kv.trans Kt)⟩
-  have wsIn : E.workspaceRegion ∈ E.outputs.writes ++ [below p 52] :=
+  obtain wsIn : E.workspaceRegion ∈ E.outputs.writes ++ [below p 52] :=
     List.mem_append_left _ List.mem_cons_self
-  have prefixFrame : Frame (E.outputs.writes ++ [below p 52]) s.mem v.mem :=
+  obtain prefixFrame : Frame (E.outputs.writes ++ [below p 52]) s.mem v.mem :=
     (Fu.mono (by
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
@@ -276,16 +276,16 @@ theorem enter_input_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Vali
       VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size p E.argument t := by
   refine WP.mono (KeyArgs.enter_ok I.arguments) fun t ⟨C, header, O, K⟩ => ?_
   have dimensions := v.widths
-  have ws : VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 :=
+  obtain ws : VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 :=
     ⟨C.scratch, v.bankFit, by omega, by omega⟩
-  have input : Input E t := by
+  obtain input : Input E t := by
     refine ⟨v, ws, header, ?_, ?_⟩
     · intro i hi
       rw [K.2.2]
       exact I.outWrite i hi
     · rw [K.2.1, K.2.2]
       exact I.exponentRead
-  have frame : Frame [E.workspaceRegion] s.mem t.mem :=
+  obtain frame : Frame [E.workspaceRegion] s.mem t.mem :=
     outs_scratch_frame (by have := C.scratch.nowrap; omega)
       (Outs.of_outside (rs := [(0, 72)]) O (List.mem_singleton_self _))
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; change 0 + 72 ≤ E.size; exact I.arguments.header)
@@ -322,8 +322,8 @@ open VG.Proof.RsaKeyGen.X86.Key (contract call_layout entry_input call_valid cal
 /-- The registers the frame saves lie above the stack a call of the inverse uses. -/
 theorem saved_below {s : State} (h : contract.pre s) :
     (⟨(callSp s).setWidth 64, 20⟩ : Region).Disjoint (below (callSp s) 52) := by
-  have A := call_layout h
-  have low : 52 ≤ (callSp s).toNat := by rw [A.privateNat]; have := A.low; omega
+  obtain A := call_layout h
+  obtain low : 52 ≤ (callSp s).toNat := by rw [A.privateNat]; have := A.low; omega
   unfold below
   rw [Taint.sub_setWidth low]
   exact Offset.base_disjoint_below _ (by decide)
@@ -334,13 +334,13 @@ theorem saved_read {s t : State} (h : contract.pre s)
     {i : Nat} (hi : i < 4) :
     t.mem.readW (addr (callSp s) (4 * i)) 32 =
       s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega)) := by
-  have A := call_layout h
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
-  have pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
+  obtain A := call_layout h
+  obtain fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  obtain pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
     rw [A.privateNat]
     have := (s.gpr .esp).isLt
     omega
-  have same := F.readW (r := (⟨(callSp s).setWidth 64, 16⟩ : Region))
+  obtain same := F.readW (r := (⟨(callSp s).setWidth 64, 16⟩ : Region))
     (a := addr (callSp s) (4 * i)) (w := 32)
     (by rw [addr_eq (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
     (fun r hr => by
@@ -348,7 +348,7 @@ theorem saved_read {s t : State} (h : contract.pre s)
       · exact ((writes_reserved h r hr).sub_right A.savedSub).symm
       · obtain rfl := List.mem_singleton.mp hr
         exact (saved_below h).sub_left (Region.sub_prefix (by decide))) (by decide)
-  have word := pushed_word (rs := Compact.savedRegisters) (s := s) (by decide) fit hi
+  obtain word := pushed_word (rs := Compact.savedRegisters) (s := s) (by decide) fit hi
   change (Compact.entered s).mem.readW (addr ((Compact.entered s).gpr .esp) (4 * i)) 32 = _ at word
   rw [Compact.entered, pushed_esp] at word
   exact same.trans word
@@ -357,22 +357,22 @@ theorem saved_read {s t : State} (h : contract.pre s)
 theorem return_read {s t : State} (h : contract.pre s)
     (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-  have A := call_layout h
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
-  have ret : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Sub ⟨(callSp s).setWidth 64, 20⟩ := by
-    have e : (s.gpr .esp).setWidth 64 = (callSp s).setWidth 64 + BitVec.ofNat 64 16 := by
+  obtain A := call_layout h
+  obtain fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  obtain ret : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Sub ⟨(callSp s).setWidth 64, 20⟩ := by
+    obtain e : (s.gpr .esp).setWidth 64 = (callSp s).setWidth 64 + BitVec.ofNat 64 16 := by
       unfold callSp
       rw [Taint.sub_setWidth fit, BitVec.sub_add_cancel]
     rw [e]
     exact Offset.sub_base _ (by decide)
-  have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4)
+  obtain same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4)
     (fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact writes_return h r hr
       · obtain rfl := List.mem_singleton.mp hr
         exact (saved_below h).sub_left ret) (by decide)
-  have pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
-  have separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
+  obtain pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
+  obtain separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.base_disjoint_below _ (by decide)
@@ -382,22 +382,22 @@ theorem return_read {s t : State} (h : contract.pre s)
 theorem framed_ok {s : State} (h : contract.pre s) :
     WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s fun t =>
       abiPreserved s t ∧ BodyOutcome (callEnvironment s) (Compact.entered s).mem t := by
-  have A := call_layout h
-  have I := entry_input h
-  have savedFit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
-  have inner : NoSp (.seq VG.Impl.RsaKeyGen.X86.KeyRuntime.body (.block Compact.restoreRegs)) :=
+  obtain A := call_layout h
+  obtain I := entry_input h
+  obtain savedFit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  obtain inner : NoSp (.seq VG.Impl.RsaKeyGen.X86.KeyRuntime.body (.block Compact.restoreRegs)) :=
     VG.Proof.RsaKeyGen.X86.KeyNoSp.sequence body_noSp (NoSp.of_all (by rfl))
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.code
   refine WP.frame (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
   refine WP.seq (WP.mono (body_ok (call_valid h) I) fun t ⟨_, R, F, K⟩ => ?_)
-  have sp : t.gpr .esp = callSp s := (K.1 .esp (by unfold bodyClob; decide)).trans I.arguments.sp
-  have pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
+  obtain sp : t.gpr .esp = callSp s := (K.1 .esp (by unfold bodyClob; decide)).trans I.arguments.sp
+  obtain pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
     rw [A.privateNat]
     have := (s.gpr .esp).isLt
     omega
   have read (i : Nat) (hi : i < 4) : readSrc t (.mem (at_ .esp (4 * i))) = some
       (s.gpr (VG.Proof.Mont.X86.Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega))) := by
-    have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
+    obtain access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
       rw [K.2.1, K.2.2, sp]
       change InRegions (s.rd ++ (below (s.gpr .esp) 16 :: s.wr)) (addr (callSp s) (4 * i)) 4
       refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ List.mem_cons_self, ?_⟩
@@ -408,7 +408,7 @@ theorem framed_ok {s : State} (h : contract.pre s) :
     rw [State.load32, ite_eq_left access, sp, saved_read h F hi]
   refine WP.mono (VG.Proof.Mont.X86.Compact.restore_ok (read 0 (by decide)) (read 1 (by decide)) (read 2 (by decide))) ?_
   rintro u ⟨edi, esi, ebp, memory, keep⟩
-  have sp' : u.gpr .esp = callSp s := (keep.1 .esp (by decide)).trans sp
+  obtain sp' : u.gpr .esp = callSp s := (keep.1 .esp (by decide)).trans sp
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -457,7 +457,7 @@ open VG.Proof.RsaKeyGen.X86.KeyArgs (Context argsRegion)
 theorem zero_runs {E : Environment} {sp : BitVec 32} {s : State} (A : OutputArgs E sp s)
     (h : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32) :
     WP isa (zero .modulus (arr aZero)) (readonly s E.base E.size) fun _ => True := by
-  have fits := h.arr_fit (j := aZero) (by decide)
+  obtain fits := h.arr_fit (j := aZero) (by decide)
   exact WP.mono (zero_ok (context_workspace A.valid A.context h).readonly .modulus (arr aZero)
     (by change arr E.n aZero + _ ≤ E.size; exact fits)) fun _ _ => trivial
 
@@ -466,25 +466,25 @@ theorem setup_runs {E : Environment} {sp : BitVec 32} {s : State} {j pointer len
     (hj : j < 32) (nonzero : j ≠ aZero) (hp : pointer < 18) (hl : length < 18)
     (bit : slot s.mem E.base kOk ≤ 1) :
     WP isa (arraySetup j pointer length) (readonly s E.base E.size) fun _ => True := by
-  have H := (context_workspace A.valid A.context h).readonly
-  have C := context_readonly A.context
-  have fits := h.arr_fit hj
-  have fit64 := h.fit64 hj
+  obtain H := (context_workspace A.valid A.context h).readonly
+  obtain C := context_readonly A.context
+  obtain fits := h.arr_fit hj
+  obtain fit64 := h.fit64 hj
   have head := h.hdr_le
   have nowrap := h.workspace.nowrap
   unfold S at fits fit64
   unfold arraySetup
   refine WP.seq (WP.mono (sel_ok H hj (by decide) hj (by decide) bit (Or.inl nonzero))
     fun u ⟨Hu, Ou, _, Ku⟩ => ?_)
-  have raw : Outside E.base (arr E.n j) (S E.n) (readonly s E.base E.size).mem u.mem := by
+  obtain raw : Outside E.base (arr E.n j) (S E.n) (readonly s E.base E.size).mem u.mem := by
     intro a ha
     apply Ou a
     intro r hr
     change r ∈ [(arr E.n j, S E.n)] at hr
     obtain rfl := List.mem_singleton.mp hr
     exact ha
-  have ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
-  have Cu := C.keepFar Ku ownFrame (by
+  obtain ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
+  obtain Cu := C.keepFar Ku ownFrame (by
     intro r hr
     obtain rfl := List.mem_singleton.mp hr
     exact A.context.separate.sub_right (Offset.sub_base E.base (by unfold S; exact fits)))
@@ -492,7 +492,7 @@ theorem setup_runs {E : Environment} {sp : BitVec 32} {s : State} {j pointer len
   refine wp_movS (context_argument Cu (i := pointer) hp).readSrc fun a Aa _ => ?_
   refine wp_movS ((context_argument Cu (i := length) hl).keep Aa.keeps (by decide)
     (by rw [Aa.mem]; exact Outside.refl _ _ _ _)).readSrc fun b Bb _ => ?_
-  have Hb := Hu.keep ((Aa.keeps.mono (rs' := [.ebx, .ecx]) (by decide)).trans (Bb.keeps.mono (by decide)))
+  obtain Hb := Hu.keep ((Aa.keeps.mono (rs' := [.ebx, .ecx]) (by decide)).trans (Bb.keeps.mono (by decide)))
     (by rw [Bb.mem, Aa.mem]; exact Outside.refl _ _ _ _)
   refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
     (by change arr E.n j < _; omega_using [fits, nowrap]) fun c _ _ _ => ?_
@@ -506,25 +506,25 @@ structure RtExport (E : Environment) (sp : BitVec 32) (s : State) : Prop where
 theorem zeroExport_ok {E : Environment} {sp : BitVec 32} {s : State} (h : Input E s)
     (bit : slot s.mem E.base kOk ≤ 1) (A : OutputArgs E sp s) :
     WP isa (zero .modulus (arr aZero)) s fun t => RtExport E sp t ∧ Keeps [.eax, .ecx, .edx, .ebp] s t := by
-  have H := context_workspace A.valid A.context h.ws
-  have fits := h.ws.arr_fit (j := aZero) (by decide)
-  have fit64 := h.ws.fit64 (j := aZero) (by decide)
+  obtain H := context_workspace A.valid A.context h.ws
+  obtain fits := h.ws.arr_fit (j := aZero) (by decide)
+  obtain fit64 := h.ws.fit64 (j := aZero) (by decide)
   refine WP.mono (zero_ok H .modulus (arr aZero) (by change arr E.n aZero + _ ≤ E.size; exact fits))
     fun t ⟨Ht, O, zero, K⟩ => ?_
   change Outside E.base (arr E.n aZero) (S E.n) s.mem t.mem at O
   change val32 t.mem E.base (arr E.n aZero) (E.n + 2) = 0 at zero
-  have clear : Keep E.base E.n [aZero] [] s.mem t.mem :=
+  obtain clear : Keep E.base E.n [aZero] [] s.mem t.mem :=
     Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by unfold S; omega_using []) (by simp)
-  have header : ∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d :=
+  obtain header : ∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d :=
     fun d hd => clear.slot hd (by simp)
-  have input : Input E t := h.keep Ht.old K (by
+  obtain input : Input E t := h.keep Ht.old K (by
     intro d hd
     apply BitVec.eq_of_toNat_eq
     exact header d (by unfold hdr; omega_using [hd]))
-  have lowZero : num t.mem E.base E.n aZero = 0 := by
-    have Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega_using [])
+  obtain lowZero : num t.mem E.base E.n aZero = 0 := by
+    obtain Z := VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 0) (c := E.n) (by omega_using [])
     simpa only [Nat.mul_zero, Nat.add_zero] using Z
-  have ownFrame := VG.Proof.Bignum.outside_frame O fit64
+  obtain ownFrame := VG.Proof.Bignum.outside_frame O fit64
   refine ⟨⟨⟨input, lowZero, by rw [header kOk (by decide)]; exact bit⟩,
     ⟨A.valid, A.context.keepFar K ownFrame ?_, A.apart⟩⟩, K⟩
   intro r hr
@@ -535,7 +535,7 @@ theorem RtExport.port_ok {E : Environment} {sp : BitVec 32} {s : State} (h : RtE
     {i : Nat} (hi : i < 7) :
     WP isa (writePort i) s fun t => RtExport E sp t ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   let accept := decide (slot s.mem E.base kOk = 1)
-  have mask : slot s.mem E.base kOk = if accept then 1 else 0 := by
+  obtain mask : slot s.mem E.base kOk = if accept then 1 else 0 := by
     unfold accept
     split <;> have := h.state.bit <;> simp_all <;> omega_arith
   have g := h.state.input.outputs
@@ -546,7 +546,7 @@ theorem RtExport.port_ok {E : Environment} {sp : BitVec 32} {s : State} (h : RtE
     (g.valid.lengthPositive i hi) (g.valid.lengthBound i hi) (g.valid.fit i hi)
     (g.writable i hi) (g.valid.scratchApart i hi) (h.args.apart i hi) h.state.zero accept mask)
     fun t ⟨ht, Ct, _, _, header, other, K⟩ => ?_
-  have input : Input E t := h.state.input.keep ht K (by
+  obtain input : Input E t := h.state.input.keep ht K (by
     intro d hd
     apply BitVec.eq_of_toNat_eq
     exact header d (by unfold hdr; omega_using [hd]))
@@ -568,7 +568,7 @@ theorem zeroOutputs_trace (E : Environment) (sp : BitVec 32) :
     RelCT isa (OutputStart E sp) (zero .modulus (arr aZero)) (RtExportPair E sp) := by
   intro s t tr ur u v P A C
   obtain ⟨⟨inputs, agree, leftBit, rightBit⟩, leftArgs, rightArgs⟩ := P
-  have trace := (readonly_trace zeroOutputs_public
+  obtain trace := (readonly_trace zeroOutputs_public
     (context_workspace leftArgs.valid leftArgs.context inputs.left.ws)
     (context_workspace rightArgs.valid rightArgs.context inputs.right.ws) leftArgs.context rightArgs.context
     (zero_runs leftArgs inputs.left.ws) (zero_runs rightArgs inputs.right.ws) A C).1
@@ -597,7 +597,7 @@ theorem port_trace (E : Environment) (sp : BitVec 32) {i : Nat} (hi : i < 7) :
   intro s t tr ur u v P A C
   obtain ⟨left, KS⟩ := wp_result (P.left.port_ok hi) A
   obtain ⟨right, KT⟩ := wp_result (P.right.port_ok hi) C
-  have stack : u.gpr .esp = v.gpr .esp := by
+  obtain stack : u.gpr .esp = v.gpr .esp := by
     rw [KS.1 .esp (by decide), KT.1 .esp (by decide)]
     exact P.stack
   unfold writePort writeArray at A C
@@ -613,13 +613,13 @@ theorem port_trace (E : Environment) (sp : BitVec 32) {i : Nat} (hi : i < 7) :
       (by omega_using [hi]) (by omega_using [hi]) P.left.state.bit)
     (setup_runs (pointer := 2 * i) (length := 2 * i + 1) P.right.args P.right.state.input.ws (outputIndex_bound hi) (Ne.symm (outputIndex_zero hi))
       (by omega_using [hi]) (by omega_using [hi]) P.right.state.bit) A1 C1
-  have start : VG.X86.Taint.Agree (τr [.edi, .esp, .ebx, .ecx, .esi]) _ _ := agree_regs (by
+  obtain start : VG.X86.Taint.Agree (τr [.edi, .esp, .ebx, .ecx, .esi]) _ _ := agree_regs (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact regs _ rfl)
   obtain ⟨hint, out, checked, lower⟩ := reverse_public
   obtain ⟨copyTrace, copied⟩ := VG.Taint.check_sound checked start A2 C2
-  have final := sseTaint.le_sound lower copied
+  obtain final := sseTaint.le_sound lower copied
   refine ⟨by rw [setupTrace, copyTrace], left, right, stack, final.reg (by rfl)⟩
 
 theorem ports_trace (E : Environment) (sp : BitVec 32) (i count : Nat) (bound : i + count ≤ 7) :
@@ -632,7 +632,7 @@ theorem ports_trace (E : Environment) (sp : BitVec 32) (i count : Nat) (bound : 
 theorem status_trace (E : Environment) (sp : BitVec 32) :
     RelCT isa (RtExportPair E sp) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))])
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
-  have checked : VG.Proof.Rsa.X86.Keys.KeyPublic (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))]) :=
+  obtain checked : VG.Proof.Rsa.X86.Keys.KeyPublic (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc kStatus))]) :=
     ⟨.block [], workspaceTaint true, rfl, rfl⟩
   refine (VG.Proof.RsaKeyGen.X86.Key.key_public_trace checked).mono (fun s t P => ?_) (fun _ _ P => P)
   change VG.X86.Taint.Agree (τr [.edi, .esi]) s t
@@ -720,12 +720,12 @@ theorem PublicInputs.environment {s t : State} (P : PublicInputs s t) : callEnvi
   · simp only [hi, ite_false]
 
 theorem PublicInputs.exponent {s t : State} (P : PublicInputs s t) : callEBytes s = callEBytes t := by
-  have lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
+  obtain lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
     simp only [List.length_map, callEBytes, VG.Proof.Bignum.bytesAt_length, P.environment]
   exact VG.Proof.RsaKeyGen.map_toNat_inj (List.append_inj P.observations lengths).1
 
 theorem PublicInputs.status {s t : State} (P : PublicInputs s t) : callKeyStatus s = callKeyStatus t := by
-  have lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
+  obtain lengths : ((callEBytes s).map (·.toNat)).length = ((callEBytes t).map (·.toNat)).length := by
     rw [P.exponent]
   exact List.singleton_inj.mp (List.append_inj P.observations lengths).2
 
@@ -750,7 +750,7 @@ theorem status_retry_iff {E : Environment} (v : E.Valid) (m : Mem) :
     Proof.RsaKeyGen.keyStatus (encodedOperation E m) = 2 ↔
       Spec.RsaKeyGen.keyFromPrimes (32 * E.n) (inputExponent E m) (inputPrime E m 2) (inputPrime E m 3) = .inr () := by
   have widths := v.widths
-  have bits : 16 * E.primeLength = 32 * E.n := by omega
+  obtain bits : 16 * E.primeLength = 32 * E.n := by omega
   unfold encodedOperation Proof.RsaKeyGen.keyOp inputExponent inputPrime
   rw [bits]
   generalize result : Spec.RsaKeyGen.keyFromPrimes (32 * E.n)
@@ -784,13 +784,13 @@ theorem PublicInputs.release {s t : State} (P : PublicInputs s t) (h : contract.
     (Spec.RsaKeyGen.keyFromPrimes (32 * (callEnvironment s).n)
       (inputExponent (callEnvironment s) s.mem) (inputPrime (callEnvironment s) t.mem 2)
       (inputPrime (callEnvironment s) t.mem 3) = .inr ()) := by
-  have v := call_valid h
+  obtain v := call_valid h
   have status := P.status
   unfold callKeyStatus at status
   rw [← P.environment] at status
-  have right := status_retry_iff v t.mem
+  obtain right := status_retry_iff v t.mem
   rw [← P.exponentValue] at right
-  have same : (Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem) = 2) ↔
+  obtain same : (Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem) = 2) ↔
       (Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) t.mem) = 2) := by rw [status]
   exact (status_retry_iff v s.mem).symm.trans (same.trans right)
 
@@ -812,15 +812,15 @@ open VG VG.X86 VG.Proof.Mont.X86
 
 theorem entered_exponent {s : State} (h : contract.pre s) :
     inputExponent (callEnvironment s) (Compact.entered s).mem = inputExponent (callEnvironment s) s.mem := by
-  have D := call_separation h
+  obtain D := call_separation h
   unfold inputExponent
   congr 1
   exact pushed_bytes h D.stackExponent (by change (arg s 15).toNat < 2 ^ 64; have := (arg s 15).isLt; omega_using [])
 
 theorem entered_prime {s : State} (h : contract.pre s) {i : Nat} (hi : i < 7) :
     inputPrime (callEnvironment s) (Compact.entered s).mem i = inputPrime (callEnvironment s) s.mem i := by
-  have Z := call_sizes h
-  have D := call_separation h
+  obtain Z := call_sizes h
+  obtain D := call_separation h
   unfold inputPrime
   rw [Z.outputRegion hi]
   congr 1
@@ -849,11 +849,11 @@ open VG.Proof.RsaKeyGen.X86.Key (contract call_layout call_valid call_separation
 theorem framed_result_ok {s : State} (h : contract.pre s) :
     WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s fun t =>
       abiPreserved s t ∧ EncodedResult (callEnvironment s) s.mem t := by
-  have v := call_valid h
-  have A := call_layout h
-  have D := call_separation h
-  have Z := call_sizes h
-  have eBytes : Spec.Rsa.bytesAt (Compact.entered s).mem (callEnvironment s).exponentRegion.base
+  obtain v := call_valid h
+  obtain A := call_layout h
+  obtain D := call_separation h
+  obtain Z := call_sizes h
+  obtain eBytes : Spec.Rsa.bytesAt (Compact.entered s).mem (callEnvironment s).exponentRegion.base
       (callEnvironment s).exponentRegion.len =
       Spec.Rsa.bytesAt s.mem (callEnvironment s).exponentRegion.base (callEnvironment s).exponentRegion.len :=
     pushed_bytes h D.stackExponent (by change (arg s 15).toNat < 2 ^ 64; have := (arg s 15).isLt; omega)
@@ -889,7 +889,7 @@ open VG.Proof.RsaKeyGen.X86.Key (contract call_sizes keyStack EncodedResult enco
 theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s trace t ∧
       abiPreserved s t ∧ contract.post s t := by
-  have Z := call_sizes h
+  obtain Z := call_sizes h
   obtain ⟨trace, t, run, preserved, R⟩ := framed_result_ok h
   refine ⟨trace, t, run, preserved, ?_⟩
   sig_post [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
@@ -935,7 +935,7 @@ theorem deriveArgs_trace (E : Environment) (sp : BitVec 32) (e p q p' q' : Nat)
   obtain ⟨trace, out⟩ := deriveOutput_trace E sp e p q p' q' release _ _ _ _ _ _ P A C
   have valid := P.imported.inputs.left.valid
   have widths := valid.widths
-  have apart' : ∀ i < 7, (argsRegion sp).Disjoint (E.outputs.region i) := fun i hi => by
+  obtain apart' : ∀ i < 7, (argsRegion sp).Disjoint (E.outputs.region i) := fun i hi => by
     rw [valid.outputRegion hi]
     exact apart i hi
   have frame {a b : State} {tr' : List Leak} (H : Ws a E.base E.size E.n 32)
@@ -1001,7 +1001,7 @@ theorem body_trace (E : Environment) (valid : E.Valid) (sp : BitVec 32) (e p q p
     RelCT isa (BodyPair E sp e p q p' q') VG.Impl.RsaKeyGen.X86.KeyRuntime.body
       (VG.X86.Taint.Agree (τr [.esp])) := by
   intro s t tr ur u v P A C
-  have raw := RelCT.seq (enterInput_trace E valid sp e p q p' q')
+  obtain raw := RelCT.seq (enterInput_trace E valid sp e p q p' q')
     (front_trace E sp e p q p' q' P.left.argsOutput release)
   refine ⟨(raw _ _ _ _ _ _ P A C).1, agree_regs ?_⟩
   intro r hr
@@ -1028,7 +1028,7 @@ theorem framed_trace (E : Environment) (v : E.Valid) (sp : BitVec 32) (e p q p' 
     (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔
       (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p' q' = .inr ())) :
     RelCT isa (FramedPair E sp e p q p' q') VG.Impl.RsaKeyGen.X86.KeyRuntime.code (fun _ _ => True) := by
-  have restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.Mont.X86.Compact.restoreRegs)
+  obtain restore : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.Mont.X86.Compact.restoreRegs)
       (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.code
   apply VG.X86.RelCT.frame (rs := Compact.savedRegisters) (R := VG.X86.Taint.Agree (τr [.esp])) (fun _ _ P => P.2)
@@ -1054,14 +1054,14 @@ open VG.Proof.RsaKeyGen.X86.Key (contract public_inputs entry_input callSp enter
 theorem constantTime : ConstantTime isa contract.pre contract.pub VG.Impl.RsaKeyGen.X86.KeyRuntime.code := by
   apply RelCT.constantTime
   intro s t tr ur u z ⟨HS, HT, HP⟩ A B
-  have P := public_inputs HP
-  have I := entry_input HS
-  have J := entry_input HT
-  have stack : callSp s = callSp t := by unfold callSp; rw [P.stack]
+  obtain P := public_inputs HP
+  obtain I := entry_input HS
+  obtain J := entry_input HT
+  obtain stack : callSp s = callSp t := by unfold callSp; rw [P.stack]
   rw [← P.environment, ← stack] at J
-  have rightExponent := entered_exponent HT
-  have rightP := entered_prime HT (by decide : 2 < 7)
-  have rightQ := entered_prime HT (by decide : 3 < 7)
+  obtain rightExponent := entered_exponent HT
+  obtain rightP := entered_prime HT (by decide : 2 < 7)
+  obtain rightQ := entered_prime HT (by decide : 3 < 7)
   rw [← P.environment] at rightExponent rightP rightQ
   exact framed_trace (callEnvironment s) (call_valid HS) (callSp s)
     (inputExponent (callEnvironment s) s.mem)
@@ -1190,7 +1190,7 @@ theorem AtPoint.keyStatus (h : AtPoint q original st)
     (hpos : 0 < (rOf q.inputs original q.used st).used) (hph : st.phase = .q pB) :
     keyResultStatus (keyFromPrimes (16 * q.inputs.L) (Spec.Rsa.os2ip q.inputs.eB) (Spec.Rsa.os2ip pB)
       (Spec.Rsa.os2ip (Spec.Rsa.i2osp c q.inputs.L))) = q.key := by
-  have hrest : (rOf q.inputs original q.used st).used ≤ ((genRand original).drop q.used).length := by
+  obtain hrest : (rOf q.inputs original q.used st).used ≤ ((genRand original).drop q.used).length := by
     rw [List.length_drop, hrl]; omega_using [hle]
   obtain ⟨rest, hr⟩ := keySearch_trace_key (L := q.inputs.L) (eB := q.inputs.eB) ho (drop_lt hpos hrest) hph
   rw [GenPoint.key, ← h.2.2.2, tailOf, hr, primeEntry_key]
@@ -1210,14 +1210,14 @@ theorem continues_iff (h : AtPoint q original st) (hl : GenFrame q.inputs origin
   | entropy k a => simp [rOf_status, ho, Spec.Entropy.Outcome.status]
   | exhausted => simp [rOf_status, ho, Spec.Entropy.Outcome.status]
   | accepted c =>
-    have hs1 : (rOf q.inputs original q.used st).status = 1 := by rw [rOf_status, ho]; rfl
+    obtain hs1 : (rOf q.inputs original q.used st).status = 1 := by rw [rOf_status, ho]; rfl
     rw [hs1]
     by_cases h0 : (rOf q.inputs original q.used st).used = 0
     · simp [h0]
     · cases hp : st.phase with
       | p => simp [h0, phaseWord]
       | q pB =>
-        have hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega_using [h0]) hp
+        obtain hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega_using [h0]) hp
         rw [← hk]
         simp [h0, phaseWord, keyResultStatus_two]
 
@@ -1254,7 +1254,7 @@ theorem next_point {q : GenPoint} {original t : State} {st : KeyProgress} {final
 theorem gen_ct_step (srch : Srch) (key : KeyImpl) (q : GenPoint) (s : State) (h : GenCTL q s) :
     WP isa (iteration srch.call key.call) s (GenCTStep q) := by
   obtain ⟨o, st, ha, hl, -⟩ := h
-  have hi : GenIter q.inputs o ((tailOf q.inputs o q.used st).consume q.used []) q.used st s := ⟨hl, [], rfl⟩
+  obtain hi : GenIter q.inputs o ((tailOf q.inputs o q.used st).consume q.used []) q.used st s := ⟨hl, [], rfl⟩
   unfold iteration
   refine WP.seq (WP.mono (search_run srch hl) fun t hs => ?_)
   refine WP.seq (WP.mono (classify_ok key hi hs) fun u hc => ?_)
@@ -1322,12 +1322,12 @@ theorem no_pins {α : Type} (Φ : α → State → Prop) : Pins Φ [] := fun _ _
 
 theorem ev_false {c : Cond} {s : State} {b : Prop} [Decidable b] (he : eval c s = some (decide b))
     (hf : isa.eval c s = some false) : ¬b := fun h => by
-  have hx : some (decide b) = some false := he.symm.trans hf
+  obtain hx : some (decide b) = some false := he.symm.trans hf
   simp [h] at hx
 
 theorem ev_true {c : Cond} {s : State} {b : Prop} [Decidable b] (he : eval c s = some (decide b))
     (ht : isa.eval c s = some true) : b := by
-  have hx : some (decide b) = some true := he.symm.trans ht
+  obtain hx : some (decide b) = some true := he.symm.trans ht
   simpa using hx
 
 end VG.Proof.RsaKeyGen.X86.Generate
@@ -1365,10 +1365,10 @@ theorem entry_state {p : GenPublic} {o s₀ t : State} {used : Nat} {st : KeyPro
         [BitVec.ofNat 64 st.remaining, BitVec.ofNat 64 p.L, BitVec.ofNat 64 (primeEntropy p.L), word t.mem p.stp 24] := by
   have hi := F.input
   have A := hi.abi
-  have sT : Region.Sub ⟨low o + BitVec.ofNat 64 216, 4⟩ (lowR o) := low_sub (by decide)
-  have fe : Frame [⟨low o + BitVec.ofNat 64 216, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 216) v) :=
+  obtain sT : Region.Sub ⟨low o + BitVec.ofNat 64 216, 4⟩ (lowR o) := low_sub (by decide)
+  obtain fe : Frame [⟨low o + BitVec.ofNat 64 216, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 216) v) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have sS : (lowR o).Disjoint ⟨p.stp.setWidth 64, 56⟩ := by rw [← hi.sR_eq]; exact A.lowS
+  obtain sS : (lowR o).Disjoint ⟨p.stp.setWidth 64, 56⟩ := by rw [← hi.sR_eq]; exact A.lowS
   have far {R : Region} (hR : Region.Sub R ⟨p.stp.setWidth 64, 56⟩) :
       ∀ r ∈ [(⟨low o + BitVec.ofNat 64 216, 4⟩ : Region)], R.Disjoint r := fun r hr => by
     obtain rfl := List.mem_singleton.mp hr; exact ((sS.sub_right hR).sub_left sT).symm
@@ -1390,19 +1390,19 @@ theorem search_pub {q : GenPoint} {t₁ t₂ : State} (h₁ : CallS q t₁) (h�
   obtain ⟨o₂, st₂, s₂, a₂, L₂, w₂, F₂, g₂, m₂⟩ := h₂
   have i₁ := F₁.input
   have i₂ := F₂.input
-  have S₁ : StateOk q.inputs st₁ t₁.mem := L₁.state.frame (R := fR o₁ 48)
+  obtain S₁ : StateOk q.inputs st₁ t₁.mem := L₁.state.frame (R := fR o₁ 48)
     (by rw [← i₁.sR_eq]; exact i₁.abi.lowS.sub_left (low_sub (by decide))) m₁
-  have S₂ : StateOk q.inputs st₂ t₂.mem := L₂.state.frame (R := fR o₂ 48)
+  obtain S₂ : StateOk q.inputs st₂ t₂.mem := L₂.state.frame (R := fR o₂ 48)
     (by rw [← i₂.sR_eq]; exact i₂.abi.lowS.sub_left (low_sub (by decide))) m₂
-  have K₁ : KeyOk q.inputs st₁ t₁.mem := L₁.key.frame i₁.kBound'
+  obtain K₁ : KeyOk q.inputs st₁ t₁.mem := L₁.key.frame i₁.kBound'
     (by rw [← i₁.kR_eq]; exact i₁.abi.lowK.sub_left (low_sub (by decide))) m₁
-  have K₂ : KeyOk q.inputs st₂ t₂.mem := L₂.key.frame i₂.kBound'
+  obtain K₂ : KeyOk q.inputs st₂ t₂.mem := L₂.key.frame i₂.kBound'
     (by rw [← i₂.kR_eq]; exact i₂.abi.lowK.sub_left (low_sub (by decide))) m₂
-  have r24₁ : word t₁.mem q.inputs.stp 24 = q.req := by
+  obtain r24₁ : word t₁.mem q.inputs.stp 24 = q.req := by
     rw [← w₁]; exact word_keep m₁ fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (i₁.abi.lowS.sub_left (low_sub (by decide))).symm.sub_left (by rw [i₁.sR_eq]; exact Offset.sub_base _ (by decide))
-  have r24₂ : word t₂.mem q.inputs.stp 24 = q.req := by
+  obtain r24₂ : word t₂.mem q.inputs.stp 24 = q.req := by
     rw [← w₂]; exact word_keep m₂ fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (i₂.abi.lowS.sub_left (low_sub (by decide))).symm.sub_left (by rw [i₂.sR_eq]; exact Offset.sub_base _ (by decide))
@@ -1441,13 +1441,13 @@ theorem sWr_eq {q : GenPoint} {o : State} {st : KeyProgress} (h : GenInput q.inp
 theorem search_call_ct (srch : Srch) (q : GenPoint) :
     RelCT isa (fun t₁ t₂ => CallS q t₁ ∧ CallS q t₂) srch.call fun _ _ => True := by
   refine RelCT.call srch.verified.1 srch.verified.2.1 (sRdK q) (sWrK q) fun t₁ t₂ ⟨h₁, h₂⟩ => ?_
-  have pub := search_pub h₁ h₂ (sRdK q) (sWrK q)
+  obtain pub := search_pub h₁ h₂ (sRdK q) (sWrK q)
   have side {t : State} (h : CallS q t) :
       VG.Proof.RsaKeyGen.X86.Search.contract.pre (t.callEntry.withRegions (sRdK q) (sWrK q)) ∧
         Covers (sRdK q ++ sWrK q) (t.rd ++ t.wr) ∧ Covers (sWrK q) t.wr := by
     obtain ⟨o, st, s, a, L, -, F, g, m⟩ := h
     have i := F.input
-    have hst : StateOk q.inputs st t.mem := L.state.frame (R := fR o 48)
+    obtain hst : StateOk q.inputs st t.mem := L.state.frame (R := fR o 48)
       (by rw [← i.sR_eq]; exact i.abi.lowS.sub_left (low_sub (by decide))) m
     rw [← sRd_eq i a, ← sWr_eq i a]
     exact ⟨search_pre F g hst L.used_le, search_covers _ F L.used_le⟩
@@ -1480,7 +1480,7 @@ theorem search_run_ct (srch : Srch) : RelCT isa (Two GenCTL) (searchRun srch.cal
     obtain rfl := List.mem_singleton.mp hr
     rw [allocFrame_esp, allocFrame_esp, L₁.sp, L₂.sp]
   · rintro q f ⟨s, ⟨o, st, a, L, w⟩, rfl⟩
-    have F0 := L.toGenBase.alloc (n := 48) (by decide)
+    obtain F0 := L.toGenBase.alloc (n := 48) (by decide)
     have hst : q.inputs.stp = arg o 7 := F0.input.stp_eq
     show WP isa _ _ fun f => f.gpr .eax = q.inputs.stp ∧ f.gpr .esp = q.inputs.S1 - BitVec.ofNat 32 48
     simp only [param_eq, pushWords, searchWords, Nat.reduceMul, Nat.reduceAdd]
@@ -1493,9 +1493,9 @@ theorem search_run_ct (srch : Srch) : RelCT isa (Two GenCTL) (searchRun srch.cal
     · rw [e₁, e₂]
     · rw [s₁, s₂]
   · rintro q f ⟨s, ⟨o, st, a, L, w⟩, rfl⟩
-    have F0 := L.toGenBase.alloc (n := 48) (by decide)
-    have hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega_using []
-    have hph : (allocFrame 48 s).mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 =
+    obtain F0 := L.toGenBase.alloc (n := 48) (by decide)
+    obtain hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega_using []
+    obtain hph : (allocFrame 48 s).mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 =
         BitVec.ofNat 32 (phaseWord st.phase) := by
       show s.mem.readW _ 32 = _
       rw [← F0.input.stp_eq]; exact low_half L.state.phase
@@ -1708,29 +1708,29 @@ theorem key_inputs {p : GenPublic} {o s t : State} {used : Nat} {st : KeyProgres
   have hi := F.input
   have A := hi.abi
   have hv := hi.len_valid
-  have l5 : (keyArg p 5).toNat = p.L := by rw [show keyArg p 5 = BitVec.ofNat 32 p.L from rfl, kL1 hi]; omega_using []
-  have b4 : (keyArg p 4).setWidth 64 = p.slot 4 := congrArg Region.base (kE2 hi)
-  have b6 : (keyArg p 6).setWidth 64 = p.slot 5 := congrArg Region.base (kE3 hi)
-  have b14 : (keyArg p 14).setWidth 64 = p.stp.setWidth 64 + 48 := by
+  obtain l5 : (keyArg p 5).toNat = p.L := by rw [show keyArg p 5 = BitVec.ofNat 32 p.L from rfl, kL1 hi]; omega_using []
+  obtain b4 : (keyArg p 4).setWidth 64 = p.slot 4 := congrArg Region.base (kE2 hi)
+  obtain b6 : (keyArg p 6).setWidth 64 = p.slot 5 := congrArg Region.base (kE3 hi)
+  obtain b14 : (keyArg p 14).setWidth 64 = p.stp.setWidth 64 + 48 := by
     have := hi.sBound'
     exact VG.Proof.MlKem.X86.ea_off (x := p.stp) (d := 48) (by omega_using [this])
-  have Fs : Region.Sub (fR o 72) (lowR o) := low_sub (by decide)
-  have sT : Region.Sub ⟨low o + BitVec.ofNat 64 192, 4⟩ (lowR o) := low_sub (by decide)
-  have sK : (lowR o).Disjoint ⟨p.kp.setWidth 64, 9 * p.L⟩ := by rw [← hi.kR_eq]; exact A.lowK
-  have sS : (lowR o).Disjoint ⟨p.stp.setWidth 64, 56⟩ := by rw [← hi.sR_eq]; exact A.lowS
-  have hst : StateOk p st t.mem := g.state.frame (R := fR o 72) (sS.sub_left Fs) hfr
-  have fe : Frame [⟨low o + BitVec.ofNat 64 192, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 192) v) :=
+  obtain Fs : Region.Sub (fR o 72) (lowR o) := low_sub (by decide)
+  obtain sT : Region.Sub ⟨low o + BitVec.ofNat 64 192, 4⟩ (lowR o) := low_sub (by decide)
+  obtain sK : (lowR o).Disjoint ⟨p.kp.setWidth 64, 9 * p.L⟩ := by rw [← hi.kR_eq]; exact A.lowK
+  obtain sS : (lowR o).Disjoint ⟨p.stp.setWidth 64, 56⟩ := by rw [← hi.sR_eq]; exact A.lowS
+  obtain hst : StateOk p st t.mem := g.state.frame (R := fR o 72) (sS.sub_left Fs) hfr
+  obtain fe : Frame [⟨low o + BitVec.ofNat 64 192, 4⟩] t.mem (t.mem.writeW (low o + BitVec.ofNat 64 192) v) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have slotIn (j : Nat) (hj : j + 1 ≤ 9) :
       Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 192) v) (p.slot j) p.L =
         Spec.Rsa.bytesAt s.mem (p.slot j) p.L := by
-    have hsub : Region.Sub ⟨p.slot j, p.L⟩ ⟨p.kp.setWidth 64, 9 * p.L⟩ := Offset.sub_base _ (by
+    obtain hsub : Region.Sub ⟨p.slot j, p.L⟩ ⟨p.kp.setWidth 64, 9 * p.L⟩ := Offset.sub_base _ (by
       have := Nat.mul_le_mul_right p.L hj; rw [Nat.add_mul] at this; omega_using [this])
     rw [bytes_keep (R := ⟨p.slot j, p.L⟩) fe (fun q hq => by
       obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left sT).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega_using [hv])]
     exact bytes_keep (R := ⟨p.slot j, p.L⟩) hfr (fun q hq => by
       obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left Fs).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega_using [hv])
-  have eIn : Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 192) v) (p.stp.setWidth 64 + 48) 8 = p.eB := by
+  obtain eIn : Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 192) v) (p.stp.setWidth 64 + 48) 8 = p.eB := by
     rw [← hst.e]
     exact bytes_keep (R := ⟨p.stp.setWidth 64 + 48, 8⟩) fe (fun q hq => by
       obtain rfl := List.mem_singleton.mp hq
@@ -1756,7 +1756,7 @@ theorem key_pub {q : GenPoint} {t₁ t₂ : State} (h₁ : CallK q t₁) (h₂ :
 theorem key_call_ct (key : KeyImpl) (q : GenPoint) :
     RelCT isa (fun t₁ t₂ => CallK q t₁ ∧ CallK q t₂) key.call fun _ _ => True := by
   refine RelCT.call key.verified.1 key.verified.2.1 (kRd q.inputs) (kWrK q) fun t₁ t₂ ⟨h₁, h₂⟩ => ?_
-  have pub := key_pub h₁ h₂ (kRd q.inputs) (kWrK q)
+  obtain pub := key_pub h₁ h₂ (kRd q.inputs) (kWrK q)
   have side {t : State} (h : CallK q t) :
       VG.Proof.RsaKeyGen.X86.Key.contract.pre (t.callEntry.withRegions (kRd q.inputs) (kWrK q)) ∧
         Covers (kRd q.inputs ++ kWrK q) (t.rd ++ t.wr) ∧ Covers (kWrK q) t.wr := by
@@ -1788,7 +1788,7 @@ theorem key_run_ct (key : KeyImpl) : RelCT isa (Two KeyIn) (keyRun key.call) fun
     obtain rfl := List.mem_singleton.mp hr
     rw [allocFrame_esp, allocFrame_esp, g₁.sp, g₂.sp]
   · rintro q f ⟨s, ⟨o, used, st, g, hk⟩, rfl⟩
-    have F0 := g.toGenBase.alloc (n := 72) (by decide)
+    obtain F0 := g.toGenBase.alloc (n := 72) (by decide)
     exact WP.of_syms (WP.mono (keyArgs_ok F0 (by rw [allocFrame_gpr _ _ (by decide)]; exact g.ebp))
       fun u ⟨⟨ha, hfr⟩, k⟩ sy => ⟨o, used, st, s, g, hk, F0.stores (by decide) (k.mono (by decide)) sy hfr, ha, hfr⟩)
 
@@ -1963,7 +1963,7 @@ theorem accepted_ct (key : KeyImpl) :
   · exact two_map id (fun _ _ ⟨⟨⟨o, _, _, _, _, _, _, g, _⟩, _⟩, _⟩ => ⟨o, _, _, g⟩) nextPrime1_ct
   · have hk : ∀ q x, (PhCT q x ∧ eval .e x = some false) → KeyCT q x := by
       rintro q x ⟨⟨⟨o, st, u, ha, hm, h1, h0, g, hmem⟩, he⟩, hf⟩
-      have hph : q.ph ≠ 0 := ev_false he hf
+      obtain hph : q.ph ≠ 0 := ev_false he hf
       obtain ⟨left, phase, remaining⟩ := st
       cases phase with
       | p => exact absurd (ha.2.1.symm.trans rfl) hph
@@ -2009,9 +2009,9 @@ theorem classify_ct (key : KeyImpl) : RelCT isa (Two AfterCT) (classify key.call
     · refine RelCT.seq (two_post (Ψ := Mid4CT) (two_taint [] (no_pins _) (by taint_decide))
         fun q u ⟨⟨⟨o, st, ha, hm⟩, h0, he⟩, hf⟩ => ?_) ?_
       · have h3 : q.status ≠ 3 := ev_false he hf
-        have hs := status_cases (rOf q.inputs o q.used st)
+        obtain hs := status_cases (rOf q.inputs o q.used st)
         rw [ha.status] at hs
-        have hu32 : (rOf q.inputs o q.used st).used < 2 ^ 32 := by
+        obtain hu32 : (rOf q.inputs o q.used st).used < 2 ^ 32 := by
           have := hm.frame.used_le; have := hm.frame.input.randLen_lt; omega_arith
         exact WP.mono (cmp_ok (r := .ecx) rfl 0) fun v ⟨⟨he4, hmem⟩, k, sy⟩ =>
           ⟨⟨o, st, ha, hm.same k sy hmem⟩, by omega_using [h0, h3, hs], by
@@ -2077,12 +2077,12 @@ theorem next_measure {q : GenPoint} {t : State} (hc : q.continues) (h : GenCTL q
   simp only [GenPoint.next] at hle hlt ⊢
   rcases hc with ⟨h3, hl2⟩ | ⟨h1, hc0, -⟩
   · simp only [h3, ↓reduceIte] at hlt ⊢
-    have hmul : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
+    obtain hmul : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
       Nat.mul_le_mul_right _ (by omega_using [])
     omega_using [hl2]
   · have h3 : ¬q.status = 3 := by omega_using [h1]
     simp only [h3, ↓reduceIte] at hlt ⊢
-    have hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
+    obtain hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
       Nat.mul_le_mul_right _ (by omega_using [hle, hc0])
     rw [Nat.add_mul, Nat.one_mul] at hmul
     omega_using [hle, hc0]
@@ -2097,7 +2097,7 @@ theorem iteration_pair (srch : Srch) (key : KeyImpl) (n : Nat) :
   have hw (q : GenPoint) (s : State) (h : n = q.measure ∧ GenCTL q s) :
       WP isa (iteration srch.call key.call) s fun t => n = q.measure ∧ GenCTStep q t :=
     WP.mono (gen_ct_step srch key q s h.2) fun _ ht => ⟨h.1, ht⟩
-  have hc := two_post ((iteration_ct srch key).mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.2, h₂.2⟩) (fun _ _ h => h)) hw
+  obtain hc := two_post ((iteration_ct srch key).mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, h₁.2, h₂.2⟩) (fun _ _ h => h)) hw
   refine hc.mono (fun _ _ ⟨q, hn, h₁, h₂⟩ => ⟨q, ⟨hn, h₁⟩, hn, h₂⟩) ?_
   rintro s t ⟨q, ⟨hn, h₁⟩, _, h₂⟩
   rcases h₁ with ⟨hb, e₁, c₁⟩ | ⟨hb, e₁⟩ <;> rcases h₂ with ⟨hb', e₂, c₂⟩ | ⟨hb', e₂⟩
@@ -2239,7 +2239,7 @@ theorem entry_pins (q : GenPoint) (a : State) (h : PushCT q a) :
     WP isa (.block [.mov .eax (.mem (param 0 7))]) a (EntryPins q) := by
   obtain ⟨s, hs, rfl⟩ := h
   have hi := hs.input
-  have hb := push_base hi
+  obtain hb := push_base hi
   refine WP.mono (WP.blockKeep [.eax] (Q := fun t => t.gpr .eax = arg s 7) ?_ (by rfl))
     fun t ⟨e, k, _⟩ => ⟨by rw [e, hi.stp_eq], (k.gpr (by decide)).trans hb.sp⟩
   simp only [param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd]
@@ -2266,7 +2266,7 @@ theorem entry_post (q : GenPoint) (a : State) (h : PushCT q a) : WP isa (.block 
 theorem start_point (q : GenPoint) (t : State) (h : ClrCT q t) : WP isa clearAround t (GenCTL q) := by
   obtain ⟨o, ⟨hpre, e⟩, g, hbx, hm⟩ := h
   subst e
-  have hp : GenInput (genOfState o) o := ⟨hpre, rfl⟩
+  obtain hp : GenInput (genOfState o) o := ⟨hpre, rfl⟩
   have A := hp.abi
   have hv := hp.len_valid
   have h1 : 284 ≤ (o.gpr .esp).toNat := A.stackLow
@@ -2280,9 +2280,9 @@ theorem start_point (q : GenPoint) (t : State) (h : ClrCT q t) : WP isa clearAro
     · injection hph with hph'
       subst hph'
       rw [hm]
-      have hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
+      obtain hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
         (by simp only [List.length_cons, List.length_nil]; omega_using [h1])
-      have hk : Region.Sub ⟨(genOfState o).slot 4, (genOfState o).L⟩ (kR o) := by
+      obtain hk : Region.Sub ⟨(genOfState o).slot 4, (genOfState o).L⟩ (kR o) := by
         rw [hp.kR_eq]; exact Offset.sub_base _ (by omega_using [])
       exact bytes_keep (R := ⟨(genOfState o).slot 4, (genOfState o).L⟩) hf (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
@@ -2322,41 +2322,41 @@ theorem initial_point_eq {s t : State} (H : contract.pub s t) : initialPoint s =
   obtain ⟨hsp, sy, L, a0, -, a2, a3, a4, a5, a6, a7⟩ := H
   obtain ⟨L₁, htr⟩ := List.append_inj L (by simp [Spec.Rsa.wordsAt])
   obtain ⟨hw, -⟩ := List.append_inj L₁ (by simp [Spec.Rsa.wordsAt])
-  have hj : ∀ j < 7, s.mem.readW ((arg s 7).setWidth 64 + BitVec.ofNat 64 (8 * j)) 64 =
+  obtain hj : ∀ j < 7, s.mem.readW ((arg s 7).setWidth 64 + BitVec.ofNat 64 (8 * j)) 64 =
       t.mem.readW ((arg t 7).setWidth 64 + BitVec.ofNat 64 (8 * j)) 64 := fun j hj' => by
     have := congrArg (fun l => l[j]?) hw
     simp only [Spec.Rsa.wordsAt, List.getElem?_map, List.getElem?_range hj', Option.map_some,
       Option.some.injEq] at this
     exact BitVec.eq_of_toNat_eq this
-  have w0 := hj 0 (by decide)
-  have w1 := hj 1 (by decide)
-  have w3 := hj 3 (by decide)
-  have w4 := hj 4 (by decide)
-  have w5 := hj 5 (by decide)
-  have w6 := hj 6 (by decide)
+  obtain w0 := hj 0 (by decide)
+  obtain w1 := hj 1 (by decide)
+  obtain w3 := hj 3 (by decide)
+  obtain w4 := hj 4 (by decide)
+  obtain w5 := hj 5 (by decide)
+  obtain w6 := hj 6 (by decide)
   simp only [Nat.reduceMul] at w0 w1 w3 w4 w5 w6
   rw [a7] at w0 w1 w3 w4 w5 w6
-  have he : genE s = genE t := by
+  obtain he : genE s = genE t := by
     simp only [genE, Spec.Rsa.bytesAt, a7]
     refine List.map_congr_left fun i hi => ?_
     exact word_bytes (m₁ := s.mem) (m₂ := t.mem) (a := (arg t 7).setWidth 64 + BitVec.ofNat 64 48) w6
       (List.mem_range.mp hi)
-  have hL : genLen s = genLen t := by
+  obtain hL : genLen s = genLen t := by
     simp only [genLen, a7]
     exact congrArg BitVec.toNat w1
-  have hG : genOfState s = genOfState t := by
+  obtain hG : genOfState s = genOfState t := by
     simp only [genOfState, a0, a2, a3, a4, a5, a6, a7, hsp, hL, he, sy]
-  have hpw : phaseWord (genProgress s).phase = phaseWord (genProgress t).phase := by
-    have e4 : (s.mem.readW ((arg t 7).setWidth 64 + 32) 64).toNat =
+  obtain hpw : phaseWord (genProgress s).phase = phaseWord (genProgress t).phase := by
+    obtain e4 : (s.mem.readW ((arg t 7).setWidth 64 + 32) 64).toNat =
         (t.mem.readW ((arg t 7).setWidth 64 + 32) 64).toNat := congrArg BitVec.toNat w4
     simp only [genProgress, keyProgressAt, a7, e4]
     split <;> rfl
-  have hl : (genProgress s).left = (genProgress t).left := by
-    have e5 : (s.mem.readW ((arg t 7).setWidth 64 + 40) 64).toNat =
+  obtain hl : (genProgress s).left = (genProgress t).left := by
+    obtain e5 : (s.mem.readW ((arg t 7).setWidth 64 + 40) 64).toNat =
         (t.mem.readW ((arg t 7).setWidth 64 + 40) 64).toNat := congrArg BitVec.toNat w5
     simp only [genProgress, keyProgressAt, a7, e5]
-  have hr : (genProgress s).remaining = (genProgress t).remaining := by
-    have e0 : (s.mem.readW ((arg t 7).setWidth 64) 64).toNat = (t.mem.readW ((arg t 7).setWidth 64) 64).toNat := by
+  obtain hr : (genProgress s).remaining = (genProgress t).remaining := by
+    obtain e0 : (s.mem.readW ((arg t 7).setWidth 64) 64).toNat = (t.mem.readW ((arg t 7).setWidth 64) 64).toNat := by
       simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using congrArg BitVec.toNat w0
     simp only [genProgress, keyProgressAt, a7, e0]
   have htr' : (genResult s).trace = (genResult t).trace := htr
@@ -2396,8 +2396,8 @@ theorem search_noSp (v : RoundImpl) : NoSp (Search.searchCode v) :=
   frame_noSp (Search.body_noSp' (Search.Cand.ofRound v))
 
 theorem search_stack (v : RoundImpl) : stackUse (Search.searchCode v) ≤ 216 := by
-  have h := (Search.Cand.ofRound v).stack
-  have hb : stackUse (Impl.RsaKeyGen.X86.Search.body (Search.Cand.ofRound v).call) ≤ 200 := by
+  obtain h := (Search.Cand.ofRound v).stack
+  obtain hb : stackUse (Impl.RsaKeyGen.X86.Search.body (Search.Cand.ofRound v).call) ≤ 200 := by
     simp only [Search.Cand.call, Impl.RsaKeyGen.X86.Search.body, Impl.RsaKeyGen.X86.Search.iteration,
       Impl.RsaKeyGen.X86.Search.candidateStep, Impl.RsaKeyGen.X86.Search.candidateRun,
       Impl.RsaKeyGen.X86.Search.classify, Impl.RsaKeyGen.X86.Search.reject, Impl.RsaKeyGen.X86.Search.short,
@@ -2436,7 +2436,7 @@ theorem gen_noSp (v : RoundImpl) : NoSp (genCode v) := frame_noSp (body_noSp' (s
 /-- No instruction of the controller, its callees' included, writes `esp`. -/
 theorem genCode_sp (v : RoundImpl) : (genCode v).all (fun i => !isa.writesSp i) = true := by
   apply Code.all_of_allInstrs
-  have equal : (fun i => !isa.writesSp i) = (fun i => !VG.X86.Taint.clobbers i .esp) := by
+  obtain equal : (fun i => !isa.writesSp i) = (fun i => !VG.X86.Taint.clobbers i .esp) := by
     funext i
     cases i <;> rfl
   rw [equal, Code.allInstrs_eq, List.all_eq_true]
@@ -2477,7 +2477,7 @@ def satState : State where
   syms _ := 0x30000
 
 theorem sat_arguments (i : Nat) (index : i < 8) : arg satState i = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [index]
+  obtain cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem sat_single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
@@ -2496,21 +2496,21 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
     VG.Impl.RsaKeyGen.TrialTable32.consts := by
   apply sat_single_held
   intro i index
-  have fit : 8 * VG.Impl.RsaKeyGen.TrialTable32.packed.length ≤ 2 ^ 64 := by
+  obtain fit : 8 * VG.Impl.RsaKeyGen.TrialTable32.packed.length ≤ 2 ^ 64 := by
     rw [VG.Proof.RsaKeyGen.X86.Candidate.packed_length]; decide
-  have small : i < 1024 := by simpa only [VG.Proof.RsaKeyGen.X86.Candidate.packed_length] using index
-  have ix : i < VG.Impl.RsaKeyGen.TrialTable32.packed.length := by
+  obtain small : i < 1024 := by simpa only [VG.Proof.RsaKeyGen.X86.Candidate.packed_length] using index
+  obtain ix : i < VG.Impl.RsaKeyGen.TrialTable32.packed.length := by
     rw [VG.Proof.RsaKeyGen.X86.Candidate.packed_length]; exact small
   change satMemory.readW (0x30000#64 + BitVec.ofNat 64 (8 * i)) 64 = VG.Impl.RsaKeyGen.TrialTable32.packed.getD i 0
-  have held := constMem_held 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed fit i ix
+  obtain held := constMem_held 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed fit i ix
   refine Eq.trans (Mem.readW_congr (m := satMemory) (m' := constMem 0x30000 VG.Impl.RsaKeyGen.TrialTable32.packed) ?_)
     held
   intro j bound
-  have address : ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat =
+  obtain address : ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat =
       65532 + 8 * i + j := by
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     omega_using [small, bound]
-  have far : ∀ c : Addr, c.toNat < 0x10000 →
+  obtain far : ∀ c : Addr, c.toNat < 0x10000 →
       0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j ≠ c := by
     intro c hc e
     have := congrArg BitVec.toNat e

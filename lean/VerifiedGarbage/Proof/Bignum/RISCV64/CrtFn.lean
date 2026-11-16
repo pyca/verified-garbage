@@ -176,8 +176,8 @@ theorem pre_factsG {s₀ : State} {ex : List Region} (h : preCore (baseRd s₀ +
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl, alS, alsp⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
-  have wp := wordsOf_le (l := (s₀.gpr .a7).toNat)
-  have wq := wordsOf_le (l := (stackArg s₀ 1).toNat)
+  obtain wp := wordsOf_le (l := (s₀.gpr .a7).toNat)
+  obtain wq := wordsOf_le (l := (stackArg s₀ 1).toNat)
   refine ⟨hk, hk', hp1, hpk, hq1, hqk, ?_, nwS, alS,
     fun i hi => ⟨⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩, by rw [hwr]; simp,
       Offset.contains_base _ (by change i < (s₀.gpr .a3).toNat at hi; omega_arith)
@@ -258,29 +258,29 @@ theorem ofNat_toNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := (VG.Proof.B
 theorem front_okG {pc : Bool} {ex : List Region} (s₀ : State) (h : preCore (baseRd s₀ ++ ex) s₀) :
     WP isa (.block (Crt.save ++ argsG pc ++ setupX)) s₀ fun s =>
       Front s₀ s ∧ (pc = true → Mont.word s.mem (cS s₀) oR2 = s₀.gpr .s1) := by
-  have hP := pre_factsG h
+  obtain hP := pre_factsG h
   obtain ⟨hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl, alS, alsp⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
-  have hscr : Scr s₀ (cS s₀) (cZ s₀) := Scr.of_mem (by rw [hwr]; simp) nwS alS
+  obtain hscr : Scr s₀ (cS s₀) (cZ s₀) := Scr.of_mem (by rw [hwr]; simp) nwS alS
   have hn := hscr.nowrap
   have alS' : (cS s₀).toNat % 8 = 0 := alS
   have dk : ck s₀ = (s₀.gpr .a3).toNat := rfl
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
-  have hZ : 128 * ck s₀ + 256 ≤ cZ s₀ := by
+  obtain hZ : 128 * ck s₀ + 256 ≤ cZ s₀ := by
     show 128 * (s₀.gpr .a3).toNat + 256 ≤ (stackArg s₀ 9).toNat * 8; omega_arith
-  have hargs : stackArgs s₀ ∈ s₀.rd := by rw [hrd]; simp
+  obtain hargs : stackArgs s₀ ∈ s₀.rd := by rw [hrd]; simp
   -- The stack arguments' region does not wrap (it is apart from the scratch).
-  have sa : ∀ i, stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := fun i => by
+  obtain sa : ∀ i, stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := fun i => by
     simp only [stackArgAddr]; rw [BitVec.add_assoc]; congr 1
     apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
-  have hst : ∀ i < 10, InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ i) 8 := fun i hi =>
+  obtain hst : ∀ i < 10, InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ i) 8 := fun i hi =>
     ⟨_, List.mem_append_left _ hargs, by rw [sa i]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have hsavR : ∀ i < 13, (⟨cS s₀, cZ s₀⟩ : Region).Contains (Mont.off (savW (cS s₀)) (8 * i)) 8 := fun i hi => by
+  obtain hsavR : ∀ i < 13, (⟨cS s₀, cZ s₀⟩ : Region).Contains (Mont.off (savW (cS s₀)) (8 * i)) 8 := fun i hi => by
     show Region.Contains _ (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 8
     rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have hsal : ∀ i < 13, (Mont.off (savW (cS s₀)) (8 * i)).toNat % 8 = 0 := fun i hi => by
+  obtain hsal : ∀ i < 13, (Mont.off (savW (cS s₀)) (8 * i)).toNat % 8 = 0 := fun i hi => by
     show (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)).toNat % 8 = 0
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   simp only [List.append_assoc]
@@ -289,23 +289,23 @@ theorem front_okG {pc : Bool} {ex : List Region} (s₀ : State) (h : preCore (ba
     (fun i hi => ⟨_, by rw [hwr]; simp, hsavR i hi⟩) hsal) fun t hSv => ?_
   have kt := hSv.keep
   have t6 : t.gpr .s6 = cS s₀ := hSv.s6
-  have tsp : ∀ i, stackArgAddr t i = stackArgAddr s₀ i := fun i => by simp only [stackArgAddr, hSv.sp]
-  have savSub : Region.Sub (savR (savW (cS s₀))) ⟨cS s₀, cZ s₀⟩ := by
+  obtain tsp : ∀ i, stackArgAddr t i = stackArgAddr s₀ i := fun i => by simp only [stackArgAddr, hSv.sp]
+  obtain savSub : Region.Sub (savR (savW (cS s₀))) ⟨cS s₀, cZ s₀⟩ := by
     show Region.Sub ⟨cS s₀ + BitVec.ofNat 64 112, 104⟩ _
     exact Offset.sub_base _ (by omega_arith)
-  have tst : ∀ i < 10, stackArg t i = stackArg s₀ i := fun i hi => by
+  obtain tst : ∀ i < 10, stackArg t i = stackArg s₀ i := fun i hi => by
     simp only [stackArg, tsp]
     refine hSv.frame.readW (r := ⟨stackArgAddr s₀ i, 8⟩) (by simp [Region.Contains]) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr
     subst hr
-    have argSub : Region.Sub ⟨stackArgAddr s₀ i, 8⟩ (stackArgs s₀) := by
+    obtain argSub : Region.Sub ⟨stackArgAddr s₀ i, 8⟩ (stackArgs s₀) := by
       rw [sa i]; exact Offset.sub_base _ (by omega_arith)
     exact (dSA.symm.sub_left argSub).sub_right savSub
-  have hsep : ∀ j < 56, ∀ d < 88, Mem.Sep (t.sp + BitVec.ofNat 64 j) 8 (Mont.off (cS s₀) d) 8 :=
+  obtain hsep : ∀ j < 56, ∀ d < 88, Mem.Sep (t.sp + BitVec.ofNat 64 j) 8 (Mont.off (cS s₀) d) 8 :=
     fun j hj d hd x hx hy => by
       rw [hSv.sp] at hx
-      have h1 := (Offset.lt_iff x s₀.sp (d := j) (n := 8) (by omega_arith)).mp hx
-      have h2 := (Offset.lt_iff x (cS s₀) (d := d) (n := 8) (by omega_arith)).mp hy
+      obtain h1 := (Offset.lt_iff x s₀.sp (d := j) (n := 8) (by omega_arith)).mp hx
+      obtain h2 := (Offset.lt_iff x (cS s₀) (d := d) (n := 8) (by omega_arith)).mp hy
       refine dSA x ?_ ?_
       · show (x - cS s₀).toNat + 1 ≤ (stackArg s₀ 9).toNat * 8; omega_arith
       · show (x - (s₀.sp + BitVec.ofNat 64 (8 * 0))).toNat + 1 ≤ 80
@@ -314,14 +314,14 @@ theorem front_okG {pc : Bool} {ex : List Region} (s₀ : State) (h : preCore (ba
   refine WP.mono (argsG_ok (pc := pc) (hscr.congr kt.2.2) (by omega_arith) (by rw [t6]; exact z0 _)
     (by rw [hSv.sp]; omega_arith) (fun i hi => by rw [tsp, kt.2.1, kt.2.2]; exact hst i (by omega_arith)) hsep)
     fun u ⟨⟨A, ⟨m₁, Ou, Oc⟩, hR2⟩, ku⟩ => ?_
-  have ktu := kt.trans ku
-  have u6 : u.gpr .s6 = cS s₀ := (ku.gpr (by decide)).trans t6
+  obtain ktu := kt.trans ku
+  obtain u6 : u.gpr .s6 = cS s₀ := (ku.gpr (by decide)).trans t6
   refine WP.mono (setupX_ok (k := ck s₀) (pl := cpL s₀) (hscr.congr ktu.2.2) (by omega_arith)
     (by rw [u6]; exact z0 _) (by rw [ktu.gpr (by decide)]; exact ofNat_toNat _) (by rw [dk]; omega_arith) hk'
     (by rw [A.pLen, kt.gpr (by decide)]; exact ofNat_toNat _) hp1 (by show (s₀.gpr .a7).toNat ≤ 1024; omega_arith))
     fun v ⟨⟨v7, vra, v5, v11, v0, vBP, vBQ, Ov⟩, kv⟩ => ?_
-  have k := ktu.trans kv
-  have hw : ∀ d, d + 8 ≤ 96 → Mont.word v.mem (cS s₀) d = Mont.word u.mem (cS s₀) d := fun d hd =>
+  obtain k := ktu.trans kv
+  obtain hw : ∀ d, d + 8 ≤ 96 → Mont.word v.mem (cS s₀) d = Mont.word u.mem (cS s₀) d := fun d hd =>
     Ov.word (Or.inl hd) (by omega_arith)
   refine ⟨⟨hscr.congr k.2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, ?_,
     (kv.gpr (by decide)).trans u6, v7, vra, v5, v11, v0, k.mono (by decide), fun i hi => ?_, ?_⟩, fun hp => ?_⟩
@@ -341,9 +341,9 @@ theorem front_okG {pc : Bool} {ex : List Region} (s₀ : State) (h : preCore (ba
     change t.mem.readW (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 64 = _ at hs1
     change v.mem.readW (cS s₀ + BitVec.ofNat 64 112 + BitVec.ofNat 64 (8 * i)) 64 = _
     rw [Offset.add_add] at hs1 ⊢
-    have h1 := Ov.word (d := 112 + 8 * i) (Or.inr (by unfold oBP; omega_arith)) (by omega_arith)
-    have h2 := Ou.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
-    have h3 := Oc.word (d := 112 + 8 * i) (Or.inl (by omega_arith)) (by omega_arith)
+    obtain h1 := Ov.word (d := 112 + 8 * i) (Or.inr (by unfold oBP; omega_arith)) (by omega_arith)
+    obtain h2 := Ou.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
+    obtain h3 := Oc.word (d := 112 + 8 * i) (Or.inl (by omega_arith)) (by omega_arith)
     simp only [Mont.word, Mont.off] at h1 h2 h3
     rw [h1, h3, h2]; exact hs1
   · have fr : Frame [⟨Mont.off (cS s₀) 112, 104⟩] s₀.mem t.mem := hSv.frame

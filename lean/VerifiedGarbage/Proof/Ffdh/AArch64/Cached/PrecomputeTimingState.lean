@@ -72,8 +72,8 @@ theorem wordsAt_of_wv {m : Mem} {a : Addr} {d w x : Nat} (value : wv m a d w=x) 
  apply List.ext_getElem
  · simp only [Spec.Rsa.wordsAt,Spec.Rsa.toWords,List.length_map,List.length_range]
  · intro i hi _
-   have bound : i<w := by simpa only [Spec.Rsa.wordsAt,List.length_map,List.length_range] using hi
-   have word := word_eq_ofNat m a d w bound
+   obtain bound : i<w := by simpa only [Spec.Rsa.wordsAt,List.length_map,List.length_range] using hi
+   obtain word := word_eq_ofNat m a d w bound
    rw [value] at word
    simpa only [Spec.Rsa.wordsAt,Spec.Rsa.toWords,List.getElem_map,List.getElem_range,VG.Proof.Bignum.word,
     off,BitVec.add_assoc,BitVec.ofNat_add] using word
@@ -88,7 +88,7 @@ theorem table_words {p : Parameters} {s : State} (table : TablePrefix p 32 s) (n
    rw [wordsAt_add,ih (by omega_using [hn]),List.range_succ,List.flatMap_append]
    simp only [List.flatMap_singleton]
    congr 1
-   have addr : off (off p.ctx (tableStart p.w)) (8*(n*p.w))=off p.ctx (entryOffset p.w n) := by
+   obtain addr : off (off p.ctx (tableStart p.w)) (8*(n*p.w))=off p.ctx (entryOffset p.w n) := by
     unfold off
     rw [BitVec.add_assoc,←BitVec.ofNat_add]
     congr 2
@@ -105,22 +105,22 @@ theorem canonical_words {p : Parameters} {s : State} {dom : List Byte}
  (first : wv s.mem p.ctx 24 p.w=p.P) (second : wv s.mem p.ctx (24+8*p.w) p.w=2^(128*p.w)%p.P)
  (table : TablePrefix p 32 s) :
  Spec.Rsa.wordsAt s.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom := by
- have length : Spec.Ffdh.generationPrecomputedWords p.k=3+(2*p.w+32*p.w) := by
+ obtain length : Spec.Ffdh.generationPrecomputedWords p.k=3+(2*p.w+32*p.w) := by
   simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
    Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,←words]
  rw [length,wordsAt_add]
  change Spec.Rsa.wordsAt s.mem p.ctx 3++Spec.Rsa.wordsAt s.mem (off p.ctx 24) (2*p.w+32*p.w)=_
  rw [wordsAt_add,header]
- have addr : off (off p.ctx 24) (8*(2*p.w))=off p.ctx (tableStart p.w) := by
+ obtain addr : off (off p.ctx 24) (8*(2*p.w))=off p.ctx (tableStart p.w) := by
   unfold off tableStart
   rw [BitVec.add_assoc,←BitVec.ofNat_add]
   congr 2
   omega_using []
  rw [addr,table_words table 32 (by omega_using [])]
- have mont : Spec.Rsa.wordsAt s.mem (off p.ctx 24) (2*p.w)=
+ obtain mont : Spec.Rsa.wordsAt s.mem (off p.ctx 24) (2*p.w)=
    Spec.Rsa.toWords p.P p.w++Spec.Rsa.toWords (2^(128*p.w)%p.P) p.w := by
   rw [show 2*p.w=p.w+p.w by omega_using [],wordsAt_add,wordsAt_of_wv first]
-  have addr2 : off (off p.ctx 24) (8*p.w)=off p.ctx (24+8*p.w) := by
+  obtain addr2 : off (off p.ctx 24) (8*p.w)=off p.ctx (24+8*p.w) := by
    simp only [off,BitVec.add_assoc,BitVec.ofNat_add]
   rw [addr2,wordsAt_of_wv second]
  rw [mont]
@@ -145,7 +145,7 @@ theorem prefixWords_unchanged {p : Parameters} {s t : State} {n : Nat}
  apply List.ext_getElem
  · simp only [Spec.Rsa.wordsAt,List.length_map,List.length_range]
  · intro i hi _
-   have index : i<n := by simpa only [Spec.Rsa.wordsAt,List.length_map,List.length_range] using hi
+   obtain index : i<n := by simpa only [Spec.Rsa.wordsAt,List.length_map,List.length_range] using hi
    simp only [Spec.Rsa.wordsAt,List.getElem_map,List.getElem_range]
    apply Mem.readW_congr
    intro b hb
@@ -170,12 +170,12 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  rw [WP.seq_iff]
  refine WP.mono (storePrefix_ok field space context) ?_
  rintro a ⟨fieldA,firstA,secondA,frameA,sameA,restA⟩
- have spaceA := space.after restA
- have headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
+ obtain spaceA := space.after restA
+ obtain headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
   apply prefixWords_unchanged space
   intro i hi
   exact frameA _ (Or.inl (by rw [show ofs p.ctx (p.ctx+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega_using [hi])];omega_using [hi]))
- have sourceA : GeneratorSource p (domPtr+BitVec.ofNat 64 p.k) bs a := by
+ obtain sourceA : GeneratorSource p (domPtr+BitVec.ofNat 64 p.k) bs a := by
   refine ⟨⟨?_,?_,source.source.out⟩,source.length,source.value,source.separate⟩
   · intro i hi;rw [restA.rd,restA.wr];exact source.source.rd i hi
   · intro i hi
@@ -187,7 +187,7 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
   ((sameHeader sCtx (by decide)).trans context) ((sameHeader sDom (by decide)).trans domain)
   ((sameHeader sLen (by decide)).trans length) ((sameHeader sRows (by decide)).trans rows)) ?_
  rintro b ⟨basisB,frameB,restB⟩
- have canonical : Spec.Rsa.wordsAt b.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom := by
+ obtain canonical : Spec.Rsa.wordsAt b.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom := by
   apply canonical_words (by simpa only [Spec.Rsa.modulusWords] using words) modulus generator policy
   · rw [prefixWords_unchanged spaceA (fun i hi => frameB.prefix spaceA (by unfold tableStart;omega_using [hi])),headerA,header]
   · apply Eq.trans _ firstA
@@ -195,14 +195,14 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
     intro i hi
     apply Mem.readW_congr
     intro j hj
-    have same := frameB.prefix spaceA (i:=24+8*i+j) (by unfold tableStart;omega_using [hi, hj])
+    obtain same := frameB.prefix spaceA (i:=24+8*i+j) (by unfold tableStart;omega_using [hi, hj])
     simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using same
   · apply Eq.trans _ secondA
     apply wv_congr
     intro i hi
     apply Mem.readW_congr
     intro j hj
-    have same := frameB.prefix spaceA (i:=24+8*p.w+8*i+j) (by unfold tableStart;omega_using [hi, hj])
+    obtain same := frameB.prefix spaceA (i:=24+8*p.w+8*i+j) (by unfold tableStart;omega_using [hi, hj])
     simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using same
   · exact basisB.table
  refine WP.mono (WP.keep [.x0] (Q:=fun t =>t.gpr .x0=1#64 ∧ t.mem=b.mem) ?_ rfl rfl rfl) ?_
@@ -249,27 +249,27 @@ theorem precomputeArithmetic_ok (M : Mont) {s : State} {p : Parameters} {domPtr 
  Spec.Rsa.wordsAt t.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom ∧
  PublicFrame p s.mem t.mem ∧ Keep (.x0::mmRegs) s t := by
  rw [WP.seq_iff]
- have room : slot ((p.k+7)/8) 8≤p.Z := by rw [←words];exact p.room
+ obtain room : slot ((p.k+7)/8) 8≤p.Z := by rw [←words];exact p.room
  refine WP.mono (precomputeField_ok M scratch base room positive size length domain modulusSource modulusSpan nbLength
   (by rw [nbValue];exact odd) (by rw [nbValue,←words];exact normalized)) ?_
  rintro a ⟨mi,goodA,modulusA,inverseA,r2A,frameA,restA⟩
  let q : Parameters := {p with mi:=mi}
- have fieldA : FieldInitial q a := by
+ obtain fieldA : FieldInitial q a := by
   refine ⟨?_,?_,?_,?_⟩
   · simpa only [q,words] using goodA
   · simpa only [q,words,nbValue] using modulusA
   · simpa only [q,words] using inverseA
   · simpa only [q,words,nbValue] using r2A
- have inscr : InScr p.B p.Z s.mem a.mem := by
+ obtain inscr : InScr p.B p.Z s.mem a.mem := by
   apply precomputeField_inscr (w:=p.w) _ p.room
   simpa only [words] using frameA
  have frame (i : Nat) (hi : 16≤i) (hi' : i<32) (counter : i≠Public.sCnt) :
   word a.mem p.B (8*i)=word s.mem p.B (8*i) := precomputeField_header frameA hi hi' counter
- have spaceA : ContextSpace q a := ⟨(space.after restA).writable,space.outside⟩
- have sourceAP := source.after_inscr inscr restA
- have sourceA : GeneratorSource q (domPtr+BitVec.ofNat 64 q.k) gb a :=
+ obtain spaceA : ContextSpace q a := ⟨(space.after restA).writable,space.outside⟩
+ obtain sourceAP := source.after_inscr inscr restA
+ obtain sourceA : GeneratorSource q (domPtr+BitVec.ofNat 64 q.k) gb a :=
   ⟨sourceAP.source,source.length,source.value,source.separate⟩
- have headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
+ obtain headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
   apply prefixWords_unchanged (n:=3) space
   intro i hi
   exact inscr _ (space.outside i (by omega_using [hi]))
@@ -349,13 +349,13 @@ theorem entryMemory_range (m : Mem) (B ctx dom dl k : Addr) :
 
 theorem entryMemory_frame (m : Mem) (B ctx dom dl k : Addr) (Z : Nat) (room : 256≤Z) :
  InScr B Z m (entryMemory m B ctx dom dl k) := by
- have frame := (Frame.refl [⟨B,Z⟩] m).writeW (r:=⟨B,Z⟩) (b:=off B (8*sCtx)) (by simp) ctx
+ obtain frame := (Frame.refl [⟨B,Z⟩] m).writeW (r:=⟨B,Z⟩) (b:=off B (8*sCtx)) (by simp) ctx
   (Offset.contains_base _ (by unfold sCtx;omega_using [room]) (by decide))
- have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDom)) (by simp) dom
+ obtain frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDom)) (by simp) dom
   (Offset.contains_base _ (by unfold sDom;omega_using [room]) (by decide))
- have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDL)) (by simp) dl
+ obtain frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sDL)) (by simp) dl
   (Offset.contains_base _ (by unfold sDL;omega_using [room]) (by decide))
- have frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sLen)) (by simp) k
+ obtain frame := frame.writeW (r:=⟨B,Z⟩) (b:=off B (8*sLen)) (by simp) k
   (Offset.contains_base _ (by unfold sLen;omega_using [room]) (by decide))
  intro x hx
  exact frame x (by intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr;subst r;change ¬ofs B x+1≤Z;omega_using [hx])
@@ -399,13 +399,13 @@ theorem metadataMemory_header (m : Mem) (B ctx : Addr) (N : Nat) :
    (off B (8*sRows)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N))) ctx N ((N+7)/8) (Spec.Rsa.FixedBaseComb.rows N)
 
 theorem metadataMemory_frame (m : Mem) (p : Parameters) (N : Nat) : PublicFrame p m (metadataMemory m p.B p.ctx N) := by
- have bytes := (Frame.refl (publicWrites p) m).writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sBytes)) (by simp [publicWrites])
+ obtain bytes := (Frame.refl (publicWrites p) m).writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sBytes)) (by simp [publicWrites])
   (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sBytes<32 by decide);omega_arith) (by decide))
- have rows := bytes.writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sRows)) (by simp [publicWrites])
+ obtain rows := bytes.writeW (r:=⟨p.B,p.Z⟩) (b:=off p.B (8*sRows)) (by simp [publicWrites])
   (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by have := p.room;have := VG.Proof.Bignum.hdr_lt_slot p.w 8 (show sRows<32 by decide);omega_arith) (by decide))
- have bitHeader := rows.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=p.ctx) (by simp [publicWrites])
+ obtain bitHeader := rows.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=p.ctx) (by simp [publicWrites])
   (BitVec.ofNat 64 N) (by change (p.ctx-p.ctx).toNat+8≤8*(3+34*p.w);simp;omega_using [])
- have byteHeader := bitHeader.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=off p.ctx 8) (by simp [publicWrites])
+ obtain byteHeader := bitHeader.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=off p.ctx 8) (by simp [publicWrites])
   (BitVec.ofNat 64 ((N+7)/8)) (Offset.contains_base _ (by omega_using []) (by decide))
  exact byteHeader.writeW (r:=⟨p.ctx,8*(3+34*p.w)⟩) (b:=off p.ctx 16) (by simp [publicWrites])
   (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N)) (Offset.contains_base _ (by omega_using []) (by decide))
@@ -429,7 +429,7 @@ private theorem contextStore_workspace {p : Parameters} {s : State} (space : Con
  (m : Mem) {d : Nat} (inside : d+8≤8*(3+34*p.w)) (value : Addr) :
  ∀ x,ofs p.B x<p.Z→(m.writeW (off p.ctx d) value) x=m x := by
  intro x hx
- have fit : d+8≤2^64 := by have := p.width;omega_using [inside, this]
+ obtain fit : d+8≤2^64 := by have := p.width;omega_using [inside, this]
  have outside (i : Nat) (hi : i<8) : p.Z≤ofs p.B (off p.ctx d+BitVec.ofNat 64 i) := by
   simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using space.outside (d+i) (by omega_using [inside, hi])
  apply writeW_outside m p.ctx value fit x
@@ -527,7 +527,7 @@ theorem PublicSource.generator {p : Parameters} {ptr : Addr} {dom : List Byte} {
  (source : PublicSource p ptr dom s) (length : 2*p.k≤dom.length)
  (value : p.G=(Spec.Ffdh.domainOf p.k dom).g) :
  GeneratorSource p (ptr+BitVec.ofNat 64 p.k) ((dom.drop p.k).take p.k) s := by
- have bytes := (source.drop p.k).take p.k
+ obtain bytes := (source.drop p.k).take p.k
  refine ⟨bytes.toSrc,?_,?_,bytes.contextOutside⟩
  · simp only [List.length_take,List.length_drop];omega_using [length]
  · exact value.symm
@@ -559,29 +559,29 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  t.gpr .x0=1#64 ∧
  Spec.Rsa.wordsAt t.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom ∧
  PublicFrame p s.mem t.mem ∧ Keep (.x0::mmRegs) s t := by
- have room : 256≤p.Z := by have := p.room;unfold slot at this;omega_using [words, small, this]
- have positive : 0<p.k := by omega_using [small]
- have shapeDom : dom.length=2*p.k ∨ dom.length=3*p.k := by omega_using [shape, domLength]
- have bits : 0<p.N ∧ p.N≤8192 := by
+ obtain room : 256≤p.Z := by have := p.room;unfold slot at this;omega_using [words, small, this]
+ obtain positive : 0<p.k := by omega_using [small]
+ obtain shapeDom : dom.length=2*p.k ∨ dom.length=3*p.k := by omega_using [shape, domLength]
+ obtain bits : 0<p.N ∧ p.N≤8192 := by
   rw [policy]
   exact ⟨generation_bits_positive valid,generation_bits_bound positive large⟩
- have facts := (VG.Proof.Ffdh.domainValid_iff p.k dom).mp valid
+ obtain facts := (VG.Proof.Ffdh.domainValid_iff p.k dom).mp valid
  have modFacts := facts.1
  simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at modFacts
  unfold Precompute.code
  rw [WP.seq_iff]
  refine WP.mono_syms (precomputeEntry_ok scratch room base) ?_
  rintro a ⟨⟨baseA,memA⟩,restA⟩ symsA
- have entry : a.mem=entryMemory s.mem p.B p.ctx domPtr (BitVec.ofNat 64 dl) (BitVec.ofNat 64 p.k) := by
+ obtain entry : a.mem=entryMemory s.mem p.B p.ctx domPtr (BitVec.ofNat 64 dl) (BitVec.ofNat 64 p.k) := by
   rw [memA,context,domain,domainLength,length]
- have headers := entryMemory_header s.mem p.B p.ctx domPtr (BitVec.ofNat 64 dl) (BitVec.ofNat 64 p.k)
+ obtain headers := entryMemory_header s.mem p.B p.ctx domPtr (BitVec.ofNat 64 dl) (BitVec.ofNat 64 p.k)
  rw [←entry] at headers
- have inscrA : InScr p.B p.Z s.mem a.mem := by
+ obtain inscrA : InScr p.B p.Z s.mem a.mem := by
   rw [entry];exact entryMemory_frame _ _ _ _ _ _ _ room
- have frameA : PublicFrame p s.mem a.mem := PublicFrame.of_inscr inscrA
- have sourceA := source.after frameA restA
- have recordFrame : Outside p.B 128 32 s.mem a.mem := by rw [entry];exact entryMemory_range _ _ _ _ _ _
- have recordsA : PolicyTableAt p.B (a.syms Policy.tableSym) Policy.groups a := by
+ obtain frameA : PublicFrame p s.mem a.mem := PublicFrame.of_inscr inscrA
+ obtain sourceA := source.after frameA restA
+ obtain recordFrame : Outside p.B 128 32 s.mem a.mem := by rw [entry];exact entryMemory_range _ _ _ _ _ _
+ obtain recordsA : PolicyTableAt p.B (a.syms Policy.tableSym) Policy.groups a := by
   rw [symsA]
   exact records.after_belowBits recordFrame restA (by decide)
  rw [WP.seq_iff]
@@ -589,35 +589,35 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
   headers.2.1 headers.2.2.2 headers.2.2.1 sourceA.toSource
   (fun i hi => Nat.le_trans (by unfold sBits;omega_using [room] : 8*sBits+8≤p.Z) (source.scratchOutside i hi)) recordsA) ?_
  rintro b ⟨bitsB,frameB,restB⟩
- have inscrB : InScr p.B p.Z a.mem b.mem :=
+ obtain inscrB : InScr p.B p.Z a.mem b.mem :=
   InScr.of_outside frameB (by unfold sBits;omega_using [room])
- have publicB := PublicFrame.of_inscr (p:=p) inscrB
- have sourceB := sourceA.after publicB restB
+ obtain publicB := PublicFrame.of_inscr (p:=p) inscrB
+ obtain sourceB := sourceA.after publicB restB
  have headersB (i : Nat) (hi : i<32) (different : i≠sBits) : word b.mem p.B (8*i)=word a.mem p.B (8*i) :=
   header_other frameB (by decide) hi different
  rw [WP.seq_iff]
- have before := restA.trans restB
+ obtain before := restA.trans restB
  refine WP.mono (metadata_ok (scratch.congr before.wr) room (output.congr before.wr)
   ((restB.gpr .x0 (by decide)).trans baseA)
   ((headersB sCtx (by decide) (by decide)).trans headers.1)
   (by rw [policy];exact bitsB) bits.1 bits.2) ?_
  rintro c ⟨memC,restC⟩
- have spaceB := space.after before
- have publicC : PublicFrame p b.mem c.mem := by rw [memC];exact metadataMemory_frame _ p _
- have sourceC := sourceB.after publicC restC
- have total := before.trans restC
- have controls := metadataMemory_controls spaceB (scratch.congr before.wr) p.N
+ obtain spaceB := space.after before
+ obtain publicC : PublicFrame p b.mem c.mem := by rw [memC];exact metadataMemory_frame _ p _
+ obtain sourceC := sourceB.after publicC restC
+ obtain total := before.trans restC
+ obtain controls := metadataMemory_controls spaceB (scratch.congr before.wr) p.N
  rw [←memC] at controls
- have headerC := metadataMemory_header b.mem p.B p.ctx p.N
+ obtain headerC := metadataMemory_header b.mem p.B p.ctx p.N
  rw [←memC] at headerC
  have sameHeader (i : Nat) (hi : i<32) (different : i≠sBits) (notBytes : i≠sBytes) (notRows : i≠sRows) :
   word c.mem p.B (8*i)=word a.mem p.B (8*i) :=
   (controls.2.2 i hi notBytes notRows).trans (headersB i hi different)
- have odd : p.P%2=1 := by rw [modulus];exact modFacts.1.1.1
- have normalized : 2^(64*(p.w-1))≤p.P := by rw [modulus,words];exact domain_normalized positive valid
- have nbLength : (dom.take p.k).length=p.k := by simp only [List.length_take];omega_using [shape, domLength]
- have sourceMod := (sourceC.take p.k).toSrc
- have spanC : InRegions (c.rd++c.wr) domPtr p.k := by rw [total.rd,total.wr];exact span
+ obtain odd : p.P%2=1 := by rw [modulus];exact modFacts.1.1.1
+ obtain normalized : 2^(64*(p.w-1))≤p.P := by rw [modulus,words];exact domain_normalized positive valid
+ obtain nbLength : (dom.take p.k).length=p.k := by simp only [List.length_take];omega_using [shape, domLength]
+ obtain sourceMod := (sourceC.take p.k).toSrc
+ obtain spanC : InRegions (c.rd++c.wr) domPtr p.k := by rw [total.rd,total.wr];exact span
  refine WP.mono (precomputeArithmetic_ok M (scratch.congr total.wr)
   (((restB.trans restC).gpr .x0 (by simp [recordClobbers])).trans baseA)
   (space.after total) sourceMod spanC nbLength modulus.symm odd normalized
@@ -678,7 +678,7 @@ structure DomainPolicyReady (q : DomainPolicyPublic) (s : State) : Prop where
  symbol : s.syms Policy.tableSym=q.table
 
 def domainRecognize (q : DomainPolicyPublic) : RecognizePublic := by
- have shape : q.dom.length=2*q.k ∨ q.dom.length=3*q.k :=by have :=q.domLength;have :=q.shape;omega_arith
+ obtain shape : q.dom.length=2*q.k ∨ q.dom.length=3*q.k :=by have :=q.domLength;have :=q.shape;omega_arith
  have leadFacts:=checked_bound_lead q.positive shape q.checked
  exact {
   B:=q.B,Z:=q.Z,dom:=q.src,k:=q.k,dl:=q.dl,bs:=bnd q.k q.dom,L:=lead (bnd q.k q.dom),room:=q.room,
@@ -760,17 +760,17 @@ theorem arithmeticField_done (M : Mont) {q : ArithmeticPublic} {s : State} (h : 
  WP isa (seqs (VG.Impl.Rsa.AArch64.pcLoadW++VG.Impl.Rsa.AArch64.r2StepsPub M.mm)) s (ArithmeticDone q) := by
  obtain ⟨scratch,base,room,small,large,ctx,len,dom,source,nbLength,valid,_,_,span⟩:=h.pc
  dsimp only [arithmeticPc,PcPub.w,PcPub.N] at *
- have normalized :=(valid_facts valid small).2.2
+ obtain normalized :=(valid_facts valid small).2.2
  refine WP.mono (precomputeField_ok M scratch base room (by change 9≤q.table.p.k;change 64≤q.table.p.k at small;omega_using [small])
   q.table.size len dom source span nbLength (by rw [q.value];exact q.odd) normalized) ?_
  rintro t ⟨mi,good,modulus,inverse,r2,frame,rest⟩
- have field : FieldInitial (arithmeticTable q mi).p t :=by
+ obtain field : FieldInitial (arithmeticTable q mi).p t :=by
   refine ⟨?_,?_,?_,?_⟩
   · simpa only [arithmeticTable,q.table.words] using good
   · simpa only [arithmeticTable,q.table.words,q.value] using modulus
   · simpa only [arithmeticTable,q.table.words] using inverse
   · simpa only [arithmeticTable,q.table.words,q.value] using r2
- have inscr : InScr q.table.p.B q.table.p.Z s.mem t.mem :=by
+ obtain inscr : InScr q.table.p.B q.table.p.Z s.mem t.mem :=by
   apply precomputeField_inscr (w:=q.table.p.w) _ q.table.p.room
   simpa only [q.table.words] using frame
  have sourceT:=h.generator.after_inscr inscr rest
@@ -784,7 +784,7 @@ theorem arithmeticField_done (M : Mont) {q : ArithmeticPublic} {s : State} (h : 
 
 theorem arithmeticDone_two {s t : State} (h : Two ArithmeticDone s t) : Two TableReady s t := by
  obtain ⟨q,⟨a,hs⟩,⟨b,ht⟩,sp⟩:=h
- have same : a=b := imported_inverse_unique (p:=q.table.p) hs.field ht.field q.odd
+ obtain same : a=b := imported_inverse_unique (p:=q.table.p) hs.field ht.field q.odd
  subst b
  exact ⟨arithmeticTable q a,hs,ht,sp⟩
 
@@ -849,9 +849,9 @@ def precomputeMetadata (q : PrecomputePublic) : MetadataPublic :=
  ⟨q.p.B,q.p.Z,q.p.ctx,q.p.N,(precomputeDomainPolicy q).room,(precomputeBits q).1,(precomputeBits q).2⟩
 
 def precomputeArithmetic (q : PrecomputePublic) : ArithmeticPublic :=by
- have facts :=(VG.Proof.Ffdh.domainValid_iff q.p.k q.dom).mp q.checked
- have reduced : q.p.G<q.p.P :=by rw [q.generator,q.modulus];have :=facts.2.1;omega_using [this]
- have odd : q.p.P%2=1 :=by
+ obtain facts :=(VG.Proof.Ffdh.domainValid_iff q.p.k q.dom).mp q.checked
+ obtain reduced : q.p.G<q.p.P :=by rw [q.generator,q.modulus];have :=facts.2.1;omega_using [this]
+ obtain odd : q.p.P%2=1 :=by
   have mod:=VG.Proof.Ffdh.domainValid_mod q.checked
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at mod
   rw [q.modulus];exact mod.1.1.1

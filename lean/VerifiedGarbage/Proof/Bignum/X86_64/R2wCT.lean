@@ -95,7 +95,7 @@ theorem steps_ct : RelCT isa (Two StepsPre) steps (Two fun p s => StepsAt p p.c 
   refine RelCT.seq (two_piece (Ψ := fun p s => 0 < p.c ∧ StepsAt p 0 s) _
     (fun p s₁ s₂ h₁ h₂ => pins_good p.L s₁ s₂ h₁.1 h₂.1) (by taint_decide) ?_) ?_
   · rintro p s ⟨hg, hw, hw', hc1, hc', hcx, hT, hv, hO⟩
-    have hM : 0 < wv s.mem p.L.B (slot p.L.w aN) p.L.w := Nat.lt_of_le_of_lt (Nat.zero_le _) hO
+    obtain hM : 0 < wv s.mem p.L.B (slot p.L.w aN) p.L.w := Nat.lt_of_le_of_lt (Nat.zero_le _) hO
     exact WP.mono (stepsStart_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 hcx hO hv)
       fun t hI => ⟨by omega_arith, s, _, _, _, hI, hg.2, hw, hw', hc', hM, hT⟩
   refine two_loop (Φ := StepsAt) (fun p => p.c) ?_ ?_
@@ -103,7 +103,7 @@ theorem steps_ct : RelCT isa (Two StepsPre) steps (Two fun p s => StepsAt p p.c 
       (two_map (·.1.L) (fun _ _ h => stepsAt_good h.2) step_ct) ?_)
       (two_taint _ (fun q s₁ s₂ h₁ h₂ => pins_good q.1.L s₁ s₂ h₁ h₂) (by taint_decide))
     rintro ⟨p, j⟩ s ⟨hj, σ, X, M, T, hI, hZ, hw, hw', hc', hM, hT⟩
-    have hlt : wv s.mem p.L.B (slot p.L.w aR2) p.L.w < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by
+    obtain hlt : wv s.mem p.L.B (slot p.L.w aR2) p.L.w < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by
       rw [hI.xv, hI.nv]; exact Nat.mod_lt _ hM
     exact WP.mono (step_ok (L := p.L) ⟨⟨hI.scr, hI.rdi, hI.hdr⟩, hZ⟩ hw hw' (by rw [hI.top]; exact hT)
       (by rw [hI.rcp, hI.top]) hlt)
@@ -166,7 +166,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
   refine RelCT.seq (two_piece (Ψ := F1) _ (pins_rdi_of (·.L) fun _ _ h => h.1.1) (by taint_decide) ?_) ?_
   · intro p s h
     have hg := h.1.1
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
+    obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
       hg.1.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := hg.2; omega_arith)
     refine WP.mono (WP.keep [.rbx, .r10, .r12, .r8, .rbp] (Q := fun t =>
         t.gpr .rbx = off p.L.B (slot p.L.w aR2) ∧ t.gpr .r10 = off p.L.B (slot p.L.w aN) ∧
@@ -186,25 +186,25 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
     have hs := hg.1.scr
     have hnw := hs.nowrap
     have hZ := hg.2
-    have hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
-    have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
-    have sXM := slot_sep (w := p.L.w) (show aR2 ≠ aN by decide)
-    have hN0 : 0 < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by rw [hN]; omega_arith
-    have hng := neg_ok hs hbx h10 h12 hbp (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hN0
+    obtain hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
+    obtain hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
+    obtain sXM := slot_sep (w := p.L.w) (show aR2 ≠ aN by decide)
+    obtain hN0 : 0 < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by rw [hN]; omega_arith
+    obtain hng := neg_ok hs hbx h10 h12 hbp (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hN0
     refine WP.mono hng fun t ⟨hx, ho, k⟩ => ?_
-    have ha : Arrays p.L.B p.L.w [aR2] s.mem t.mem :=
+    obtain ha : Arrays p.L.B p.L.w [aR2] s.mem t.mem :=
       Arrays.of_outside (List.mem_singleton_self _) ho (Nat.le_refl _) (by omega_arith)
-    have hn' : p.L.B.toNat + slot p.L.w 8 ≤ 2 ^ 64 := by omega_arith
+    obtain hn' : p.L.B.toNat + slot p.L.w 8 ≤ 2 ^ 64 := by omega_arith
     -- `m > R / 2`.
-    have hhalf : 2 ^ (64 * p.L.w) < 2 * p.N := by
-      have e : p.N = wv s.mem p.L.B (slot p.L.w aN) (p.L.w - 1) +
+    obtain hhalf : 2 ^ (64 * p.L.w) < 2 * p.N := by
+      obtain e : p.N = wv s.mem p.L.B (slot p.L.w aN) (p.L.w - 1) +
           2 ^ (64 * (p.L.w - 1)) * (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat := by
         rw [← hN, show p.L.w = (p.L.w - 1) + 1 by omega_arith, wv_succ, show p.L.w - 1 + 1 - 1 = p.L.w - 1 by omega_arith]
-      have hp : 2 ^ (64 * p.L.w) = 2 * (2 ^ (64 * (p.L.w - 1)) * 2 ^ 63) := by
+      obtain hp : 2 ^ (64 * p.L.w) = 2 * (2 ^ (64 * (p.L.w - 1)) * 2 ^ 63) := by
         rw [← Nat.pow_add, show 64 * p.L.w = 1 + (64 * (p.L.w - 1) + 63) by omega_arith, Nat.pow_add, Nat.pow_one]
       rw [hT'] at e
-      have hle := Nat.mul_le_mul_left (2 ^ (64 * (p.L.w - 1))) hT
-      have hev : 2 ^ (64 * (p.L.w - 1)) * 2 ^ 63 % 2 = 0 := by
+      obtain hle := Nat.mul_le_mul_left (2 ^ (64 * (p.L.w - 1))) hT
+      obtain hev : 2 ^ (64 * (p.L.w - 1)) * 2 ^ 63 % 2 = 0 := by
         rw [Nat.mul_mod, show 2 ^ 63 % 2 = 0 by decide, Nat.mul_zero, Nat.zero_mod]
       omega_arith
     refine ⟨⟨⟨⟨hs.congr k.2.2, (k.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, hZ⟩, hw, hw', h4,
@@ -219,20 +219,20 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
     have hs := hg.1.scr
     have hnw := hs.nowrap
     have hZ := hg.2
-    have hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
-    have hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
-    have hsv := slot_le (w := p.L.w) (show aTmp < 8 by decide)
-    have sXV := slot_sep (w := p.L.w) (show aR2 ≠ aTmp by decide)
-    have sMV := slot_sep (w := p.L.w) (show aN ≠ aTmp by decide)
+    obtain hsx := slot_le (w := p.L.w) (show aR2 < 8 by decide)
+    obtain hsm := slot_le (w := p.L.w) (show aN < 8 by decide)
+    obtain hsv := slot_le (w := p.L.w) (show aTmp < 8 by decide)
+    obtain sXV := slot_sep (w := p.L.w) (show aR2 ≠ aTmp by decide)
+    obtain sMV := slot_sep (w := p.L.w) (show aN ≠ aTmp by decide)
     refine WP.mono (recip_ok hs h10 h12 h8 (by omega_arith) (by omega_arith) (by omega_arith) hT) fun t ⟨hm, k⟩ => ?_
-    have o : Outside p.L.B (slot p.L.w aTmp) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by omega_arith)
-    have ha : Arrays p.L.B p.L.w [aTmp] s.mem t.mem :=
+    obtain o : Outside p.L.B (slot p.L.w aTmp) 8 s.mem t.mem := by rw [hm]; exact writeW_outside _ _ _ (by omega_arith)
+    obtain ha : Arrays p.L.B p.L.w [aTmp] s.mem t.mem :=
       Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega_arith)
-    have hvlt : (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
+    obtain hvlt : (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
       have : (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat < 2 ^ 65 := by
         rw [Nat.div_lt_iff_lt_mul (by omega_arith)]; omega_arith
       omega_arith
-    have hT₁ : word t.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) =
+    obtain hT₁ : word t.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) =
         word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) := o.word (by omega_arith) (by omega_arith)
     refine ⟨⟨⟨⟨hs.congr k.2.2, (k.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, hZ⟩, hw, hw', h4,
       by rw [o.wv (by omega_arith) (by omega_arith)]; exact hN, by rw [o.word (by omega_arith) (by omega_arith)]; exact hinv,
@@ -242,7 +242,7 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
   refine RelCT.seq (two_piece (Ψ := F3) _ (pins_rdi_of (·.L) fun _ _ h => h.1.1) (by taint_decide) ?_) ?_
   · intro p s h
     have hg := h.1.1
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
+    obtain hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
       hg.1.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := hg.2; omega_arith)
     refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 (p.L.w / 4) ∧ t.mem = s.mem)
       (by xrun [State.ea, hdr, hg.1.rdi, hdrOff, hl sW (by decide), hg.1.hdr.hw,
@@ -254,17 +254,17 @@ theorem fast_ct (M : Mont) : RelCT isa (Two FPre) (fast M.mm) fun _ _ => True :=
   refine RelCT.seq (two_post (Ψ := fun p s => SqPre p.L s) ((two_map (fun p => (⟨p.L, p.L.w / 4⟩ : StPub))
     (fun p s h => ?_) steps_ct).mono (fun _ _ h => h) fun _ _ _ => trivial) ?_) ?_
   · obtain ⟨⟨⟨hg, hw, hw', h4, hN, -, hT, hx⟩, hv⟩, hcx⟩ := h
-    have hc1 : 1 ≤ p.L.w / 4 := by omega_arith
-    have hc2 : p.L.w / 4 < 2 ^ 31 := by omega_arith
+    obtain hc1 : 1 ≤ p.L.w / 4 := by omega_arith
+    obtain hc2 : p.L.w / 4 < 2 ^ 31 := by omega_arith
     exact ⟨hg, show 3 ≤ p.L.w by omega_using [hw, h4], hw', hc1, hc2, hcx, hT, hv, by rw [hN]; exact hx⟩
   · intro p s h
     obtain ⟨⟨⟨hg, hw, hw', h4, hN, hinv, hT, hx⟩, hv⟩, hcx⟩ := h
-    have hc1 : 1 ≤ p.L.w / 4 := by omega_arith
-    have hc2 : p.L.w / 4 < 2 ^ 31 := by omega_arith
-    have hw31 : p.L.w < 2 ^ 31 := by omega_arith
-    have hx2 : wv s.mem p.L.B (slot p.L.w aR2) p.L.w < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by
+    obtain hc1 : 1 ≤ p.L.w / 4 := by omega_arith
+    obtain hc2 : p.L.w / 4 < 2 ^ 31 := by omega_arith
+    obtain hw31 : p.L.w < 2 ^ 31 := by omega_arith
+    obtain hx2 : wv s.mem p.L.B (slot p.L.w aR2) p.L.w < wv s.mem p.L.B (slot p.L.w aN) p.L.w := by
       rw [hN]; exact hx
-    have hsk := steps_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 (by omega_using [hw, h4]) hw' (c := p.L.w / 4) hc1 hc2 hcx hT hv hx2
+    obtain hsk := steps_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 (by omega_using [hw, h4]) hw' (c := p.L.w / 4) hc1 hc2 hcx hT hv hx2
     refine WP.mono hsk fun t ht => ?_
     obtain ⟨hx', hn', hw0, -, hg', k⟩ := ht
     refine ⟨⟨hg', hg.2⟩, hw, hw31, ?_, ?_⟩

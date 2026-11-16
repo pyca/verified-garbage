@@ -65,75 +65,75 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
     (hq : ∀ t, Stage n D (k + 1) t → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (bit ++ is)) s Q := by
   obtain ⟨hc, hq6, ha⟩ := h
-  have hm : k + (31 - k) = 31 := by omega_arith
-  have pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
-  have e32 : 32 - k = 31 - k + 1 := by omega_arith
-  have p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
-  have hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
-  have hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
-  have hb1 : n % 2 ^ (32 - k) / 2 ^ (31 - k) ≤ 1 := by
-    have h' : 2 ^ (32 - k) = 2 ^ (31 - k) * 2 := by rw [e32, Nat.pow_succ]
+  obtain hm : k + (31 - k) = 31 := by omega_arith
+  obtain pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
+  obtain e32 : 32 - k = 31 - k + 1 := by omega_arith
+  obtain p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
+  obtain hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
+  obtain hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
+  obtain hb1 : n % 2 ^ (32 - k) / 2 ^ (31 - k) ≤ 1 := by
+    obtain h' : 2 ^ (32 - k) = 2 ^ (31 - k) * 2 := by rw [e32, Nat.pow_succ]
     exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [h', hRlt]))
-  have hR'lt : n % 2 ^ (32 - k) % 2 ^ (31 - k) < 2 ^ (31 - k) := Nat.mod_lt _ (pos _)
-  have hqlt : n / 2 ^ (32 - k) / D < 2 ^ 32 := by
+  obtain hR'lt : n % 2 ^ (32 - k) % 2 ^ (31 - k) < 2 ^ (31 - k) := Nat.mod_lt _ (pos _)
+  obtain hqlt : n / 2 ^ (32 - k) / D < 2 ^ 32 := by
     refine Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hn)
-  have hrlt : n / 2 ^ (32 - k) % D < D := Nat.mod_lt _ hD
+  obtain hrlt : n / 2 ^ (32 - k) % D < D := Nat.mod_lt _ hD
   generalize hN : n / 2 ^ (32 - k) = N at hq6 ha hqlt hrlt
   generalize hRR : n % 2 ^ (32 - k) = R at hc hRlt hRb hb1 hR'lt
   generalize hbb : R / 2 ^ (31 - k) = b at hRb hb1
   generalize hR' : R % 2 ^ (31 - k) = R' at hRb hR'lt
-  have N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
+  obtain N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
     rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega_arith, e32, Nat.pow_succ,
       Nat.mod_mul_right_div_self, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (n / 2 ^ (31 - k)) 2
     omega_using [this]
-  have R'' : n % 2 ^ (32 - (k + 1)) = R' := by
+  obtain R'' : n % 2 ^ (32 - (k + 1)) = R' := by
     rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega_arith, e32, Nat.pow_succ, Nat.mod_mul_right_mod]
-  have step := Proof.Argon2.divide_step (n := N) (d := D) (q := N / D) (r := N % D)
+  obtain step := Proof.Argon2.divide_step (n := N) (d := D) (q := N / D) (r := N % D)
     (bit := b) (Nat.div_add_mod' N _).symm hrlt hb1
   dsimp only at step
   obtain ⟨st₁, st₂⟩ := step
-  have res := Proof.Argon2.divide_result hD st₁ st₂
-  have pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
-  have hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
+  obtain res := Proof.Argon2.divide_result hD st₁ st₂
+  obtain pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
+  obtain hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
     have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega_arith)
     rw [Nat.add_mul, Nat.one_mul, p31] at this
     exact this
-  have hL : ((s.gpr .r4).setWidth 32).toNat = b * 2 ^ 31 + R' * 2 ^ k := by
+  obtain hL : ((s.gpr .r4).setWidth 32).toNat = b * 2 ^ 31 + R' * 2 ^ k := by
     rw [hc, hRb, Nat.add_mul, Nat.mul_assoc, p31]
-  have hP : R' * 2 ^ (k + 1) = 2 * (R' * 2 ^ k) := by rw [pk, Nat.mul_left_comm]
+  obtain hP : R' * 2 ^ (k + 1) = 2 * (R' * 2 ^ k) := by rw [pk, Nat.mul_left_comm]
   generalize hPP : R' * 2 ^ k = P at hP hPb hL
   generalize hKK : 2 ^ k = K at hPb pk
-  have hK : 0 < K := hKK ▸ pos k
+  obtain hK : 0 < K := hKK ▸ pos k
   simp only [bit, List.cons_append, List.nil_append]
   refine wp_lsrw (by decide) fun s₁ u₁ => ?_
-  have v₁ : (s₁.gpr .r8).toNat = b := by
+  obtain v₁ : (s₁.gpr .r8).toNat = b := by
     rw [u₁.gpr, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hL,
       Nat.mod_eq_of_lt (by
         rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;>
           exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith))]
     rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;> omega_arith
   refine wp_lsl (by decide) fun s₂ u₂ => ?_
-  have v₂ : ((s₂.gpr .r4).setWidth 32).toNat = 2 * P := by
+  obtain v₂ : ((s₂.gpr .r4).setWidth 32).toNat = 2 * P := by
     rw [u₂.gpr, u₁.other _ (by decide), BitVec.toNat_setWidth, toNat_lsl1]
-    have hx : (s.gpr .r4).toNat % 2 ^ 32 = b * 2 ^ 31 + P := by
+    obtain hx : (s.gpr .r4).toNat % 2 ^ 32 = b * 2 ^ 31 + P := by
       rw [← BitVec.toNat_setWidth, hL]
     rw [Nat.mod_mod_of_dvd _ (by decide), Nat.mul_mod, hx]
     rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;> omega_arith
   refine wp_lsl (by decide) fun s₃ u₃ => ?_
   refine wp_add fun s₄ u₄ => ?_
-  have v₄ : (s₄.gpr .r7).toNat = 2 * (N % D) + b := by
+  obtain v₄ : (s₄.gpr .r7).toNat = 2 * (N % D) + b := by
     rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), BitVec.toNat_add, toNat_lsl1,
       u₂.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ha, v₁]
     omega_arith
   refine wp_sub fun s₅ u₅ => ?_
-  have d₄ : (s₄.gpr .r5).toNat = D := by
+  obtain d₄ : (s₄.gpr .r5).toNat = D := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), hb]
   refine wp_lsr (by decide) fun s₆ u₆ => ?_
   generalize ht : (if 2 * (N % D) + b < D then 0 else 1) = t
-  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_arith
-  have v₆ : (s₆.gpr .r8).toNat = 1 - t := by
+  obtain ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_arith
+  obtain v₆ : (s₆.gpr .r8).toNat = 1 - t := by
     rw [u₆.gpr, toNat_lsr, u₅.gpr, BitVec.toNat_sub, v₄, d₄, ← ht]
     split
     · rw [show 2 ^ 64 - D + (2 * (N % D) + b) = 2 ^ 64 - (D - (2 * (N % D) + b)) by omega_arith,
@@ -143,8 +143,8 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
         Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
       omega_arith
   refine wp_sub fun s₇ u₇ => ?_
-  have v₇ : (s₇.gpr .r8).toNat = t := by
-    have e9 : (s₆.gpr .r9).toNat = 1 := by
+  obtain v₇ : (s₇.gpr .r8).toNat = t := by
+    obtain e9 : (s₆.gpr .r9).toNat = 1 := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
         u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h9]
     rw [u₇.gpr, BitVec.toNat_sub, v₆, e9]
@@ -164,13 +164,13 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
   · have d₉ : (s₉.gpr .r5).toNat = D := by
       rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
         u₆.other _ (by decide), u₅.other _ (by decide), d₄]
-    have r₉ : (s₉.gpr .r7).toNat = 2 * (N % D) + b := by
+    obtain r₉ : (s₉.gpr .r7).toNat = 2 * (N % D) + b := by
       rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
         u₆.other _ (by decide), u₅.other _ (by decide), v₄]
-    have e₉ : (s₉.gpr .r8).toNat = t := by rw [u₉.other _ (by decide), u₈.other _ (by decide), v₇]
+    obtain e₉ : (s₉.gpr .r8).toNat = t := by rw [u₉.other _ (by decide), u₈.other _ (by decide), v₇]
     rw [u₁₁.gpr, u₁₀.other _ (by decide), u₁₀.gpr, BitVec.toNat_sub, BitVec.toNat_mul, e₉, d₉, r₉,
       N', ← res.2, ← ht]
-    have sub : ∀ x v : Nat, x ≤ v → v < 2 ^ 64 → (2 ^ 64 - x % 2 ^ 64 + v) % 2 ^ 64 = v - x :=
+    obtain sub : ∀ x v : Nat, x ≤ v → v < 2 ^ 64 → (2 ^ 64 - x % 2 ^ 64 + v) % 2 ^ 64 = v - x :=
       fun x v h₁ h₂ => by
         rw [Nat.mod_eq_of_lt (a := x) (by omega_arith), show 2 ^ 64 - x + v = (v - x) + 2 ^ 64 by omega_arith,
           Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
@@ -208,10 +208,10 @@ theorem code_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
       (t.gpr .r7).toNat = ((s.gpr .r4).setWidth 32).toNat % D → KeepD s t →
       WP isa (.block is) t Q) :
     WP isa (.block (code ++ is)) s Q := by
-  have hn := ((s.gpr .r4).setWidth 32).isLt
+  obtain hn := ((s.gpr .r4).setWidth 32).isLt
   simp only [code, List.cons_append, List.nil_append]
   refine wp_li (by decide) fun s₁ u₁ => wp_li (by decide) fun s₂ u₂ => wp_li (by decide) fun s₃ u₃ => ?_
-  have e4 : s₃.gpr .r4 = s.gpr .r4 := by
+  obtain e4 : s₃.gpr .r4 = s.gpr .r4 := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   refine bits_ok hD hD2 hn 32 (Nat.le_refl _) s₃
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hb])
