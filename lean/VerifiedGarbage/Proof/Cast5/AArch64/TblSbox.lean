@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Cast5.AArch64.Tbl
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
@@ -39,30 +40,175 @@ open VG.Proof.Blowfish.AArch64 (vbyte_xor tbx_chain regs_ne repeat_succ_v28 exec
 
 /-! ## The table -/
 
-theorem planeWords_length : planeWords.length = 512 := by
-  simp only [planeWords, List.length_map, List.length_range]
+def sbox (j : Nat) (x : Byte) : Spec.Cast5.Word :=
+  match j with
+  | 0 => Spec.Cast5.S1 x
+  | 1 => Spec.Cast5.S2 x
+  | 2 => Spec.Cast5.S3 x
+  | _ => Spec.Cast5.S4 x
+def planeByte (o : Nat) : Byte :=
+  (sbox (o / 1024) (BitVec.ofNat 8 o)).extractLsb' (8 * (o / 256 % 4)) 8
 
-theorem planeWords_getD (i : Nat) (hi : i < 512) :
-    planeWords.getD i 0 = (planeVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := by
-  simp only [planeWords, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
-    Option.map_some, Option.getD_some]
+theorem getD_flatMap {α β : Type} (f : α → List β) (n : Nat) (d : β) (a0 : α) :
+    ∀ (l : List α), (∀ a ∈ l, (f a).length = n) → ∀ i r, i < l.length → r < n →
+      (l.flatMap f).getD (n * i + r) d = (f (l.getD i a0)).getD r d
+  | [], _, i, _, hi, _ => absurd hi (Nat.not_lt_zero _)
+  | a :: l, hl, i, r, hi, hr => by
+    rw [List.flatMap_cons, Proof.Cast5.getD_append', hl a List.mem_cons_self]
+    cases i with
+    | zero => rw [ite_eq_left (by omega), Nat.mul_zero, Nat.zero_add]; rfl
+    | succ i =>
+      rw [ite_eq_right (by rw [Nat.mul_succ]; omega), show n * (i + 1) + r - n = n * i + r by rw [Nat.mul_succ]; omega]
+      exact getD_flatMap f n d a0 l (fun a ha => hl a (List.mem_cons_of_mem _ ha)) i r
+        (by simpa using hi) hr
+
+theorem getD_map {α β : Type} (g : α → β) (l : List α) (d : β) (a0 : α) {x : Nat} (hx : x < l.length) :
+    (l.map g).getD x d = g (l.getD x a0) := by
+  simp [List.getD_eq_getElem?_getD, hx]
+
+theorem sbox_getD {j : Nat} (hj : j < 4) (o : Nat) :
+    (sboxes.getD j []).getD (o % 256) 0 = sbox j (BitVec.ofNat 8 o) := by
+  have hx : o % 256 < 256 := Nat.mod_lt _ (by decide)
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+    simp [sboxes, sbox, Spec.Cast5.S1, Spec.Cast5.S2, Spec.Cast5.S3, Spec.Cast5.S4, List.getD_eq_getElem?_getD, hx]
+
+theorem sboxes_len : ∀ s ∈ sboxes, s.length = 256 := by
+  intro s hs
+  simp only [sboxes, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl | rfl | rfl <;> exact Vector.length_toList
+
+theorem planeBytes_getD {o : Nat} (ho : o < 4096) : planeBytes.getD o 0 = planeByte o := by
+  have e : o = 1024 * (o / 1024) + (256 * (o / 256 % 4) + o % 256) := by omega
+  have hs : (sboxes.getD (o / 1024) []).length = 256 := by
+    have hj : o / 1024 < 4 := by omega
+    rcases (by omega : o / 1024 = 0 ∨ o / 1024 = 1 ∨ o / 1024 = 2 ∨ o / 1024 = 3) with h | h | h | h <;> rw [h] <;>
+      exact Vector.length_toList
+  rw [planeBytes]
+  conv => lhs; rw [e]
+  rw [getD_flatMap _ 1024 0 [] sboxes (fun s hs => by
+      rw [List.length_flatMap]; simp [sboxes_len s hs]; rfl) _ _ (by show o / 1024 < 4; omega) (by omega),
+    getD_flatMap _ 256 0 0 (List.range 4) (fun b _ => by rw [List.length_map, hs]) _ _ (by simp; omega)
+      (Nat.mod_lt _ (by decide)),
+    getD_map _ _ 0 0 (by rw [hs]; exact Nat.mod_lt _ (by decide)), sbox_getD (by omega), planeByte]
+  simp [List.getD_eq_getElem?_getD, show o / 256 % 4 < 4 by omega]
+
+theorem app_zero {w : Nat} (x : BitVec w) (b : BitVec 8) : (x ++ b).extractLsb' 0 8 = b := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
+  simp [hi]
+
+theorem app_succ {w : Nat} (x : BitVec w) (b : BitVec 8) (n : Nat) :
+    (x ++ b).extractLsb' (n + 8) 8 = x.extractLsb' n 8 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
+  simp [hi, show ¬ n + 8 + i < 8 by omega, show n + 8 + i - 8 = n + i by omega]
+
+theorem ext8 (x : BitVec 8) : x.extractLsb' 0 8 = x := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [hi]
+
+theorem w8_byte (f : Nat → Byte) {k : Nat} (hk : k < 8) :
+    (f 7 ++ f 6 ++ f 5 ++ f 4 ++ f 3 ++ f 2 ++ f 1 ++ f 0 : BitVec 64).extractLsb' (8 * k) 8 = f k := by
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact app_zero _ _
+  · exact (app_succ _ _ 0).trans (app_zero _ _)
+  · exact (app_succ _ _ 8).trans ((app_succ _ _ 0).trans (app_zero _ _))
+  · exact (app_succ _ _ 16).trans ((app_succ _ _ 8).trans ((app_succ _ _ 0).trans (app_zero _ _)))
+  · exact (app_succ _ _ 24).trans ((app_succ _ _ 16).trans ((app_succ _ _ 8).trans ((app_succ _ _ 0).trans
+      (app_zero _ _))))
+  · exact (app_succ _ _ 32).trans ((app_succ _ _ 24).trans ((app_succ _ _ 16).trans ((app_succ _ _ 8).trans
+      ((app_succ _ _ 0).trans (app_zero _ _)))))
+  · exact (app_succ _ _ 40).trans ((app_succ _ _ 32).trans ((app_succ _ _ 24).trans ((app_succ _ _ 16).trans
+      ((app_succ _ _ 8).trans ((app_succ _ _ 0).trans (app_zero _ _))))))
+  · exact (app_succ _ _ 48).trans ((app_succ _ _ 40).trans ((app_succ _ _ 32).trans ((app_succ _ _ 24).trans
+      ((app_succ _ _ 16).trans ((app_succ _ _ 8).trans ((app_succ _ _ 0).trans (ext8 _)))))))
+
+theorem pack_getD : ∀ (i : Nat) (l : List Byte), 8 * (i + 1) ≤ l.length →
+    (pack l).getD i 0 = (l.getD (8 * i + 7) 0 ++ l.getD (8 * i + 6) 0 ++ l.getD (8 * i + 5) 0 ++
+      l.getD (8 * i + 4) 0 ++ l.getD (8 * i + 3) 0 ++ l.getD (8 * i + 2) 0 ++ l.getD (8 * i + 1) 0 ++
+      l.getD (8 * i) 0 : BitVec 64)
+  | i, b0 :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest, h => by
+    cases i with
+    | zero => rfl
+    | succ i =>
+      have := pack_getD i rest (by simp at h; omega)
+      rw [pack, List.getD_cons_succ, this]
+      have e : ∀ k, (b0 :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest).getD (8 * (i + 1) + k) 0 =
+          rest.getD (8 * i + k) 0 := fun k => by
+        rw [show 8 * (i + 1) + k = (8 * i + k) + 8 by omega]; rfl
+      rw [e 7, e 6, e 5, e 4, e 3, e 2, e 1, show 8 * (i + 1) = 8 * (i + 1) + 0 from rfl, e 0]
+      rfl
+  | _, [], h => by simp at h
+  | _, [_], h => by simp at h; omega
+  | _, [_, _], h => by simp at h; omega
+  | _, [_, _, _], h => by simp at h; omega
+  | _, [_, _, _, _], h => by simp at h; omega
+  | _, [_, _, _, _, _], h => by simp at h; omega
+  | _, [_, _, _, _, _, _], h => by simp at h; omega
+  | _, [_, _, _, _, _, _, _], h => by simp at h; omega
+
+theorem planeBytes_length : planeBytes.length = 4096 := by
+  rw [planeBytes, List.length_flatMap]
+  have : ∀ s ∈ sboxes, ((List.range 4).flatMap fun b => s.map fun w => w.extractLsb' (8 * b) 8).length = 1024 := by
+    intro s hs; rw [List.length_flatMap]; simp [sboxes_len s hs]; rfl
+  rw [List.map_congr_left this]; rfl
+
+theorem vbyte_app (hi lo : BitVec 64) {e : Nat} (he : e < 16) :
+    vbyte (hi ++ lo) e = if e < 8 then lo.extractLsb' (8 * e) 8 else hi.extractLsb' (8 * (e - 8)) 8 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi'
+  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi', decide_true, Bool.true_and]
+  by_cases h : e < 8
+  · simp [h, hi', show 8 * e + i < 64 by omega]
+  · simp [h, hi', show ¬ 8 * e + i < 64 by omega, show 8 * e + i - 64 = 8 * (e - 8) + i by omega]
+
+theorem vbyte_pld {o : Nat} (ho : o % 16 = 0 ∧ o + 16 ≤ 4096) {e : Nat} (he : e < 16) :
+    vbyte (planeWords.getD (o / 8 + 1) 0 ++ planeWords.getD (o / 8) 0) e = planeByte (o + e) := by
+  rw [vbyte_app _ _ he, planeWords, pack_getD _ _ (by rw [planeBytes_length]; omega),
+    pack_getD _ _ (by rw [planeBytes_length]; omega)]
+  by_cases h : e < 8
+  · have w := w8_byte (fun k => planeBytes.getD (8 * (o / 8) + k) 0) h
+    simp only [Nat.add_zero] at w
+    rw [ite_eq_left h, w, planeBytes_getD (by omega)]
+    exact congrArg planeByte (by omega)
+  · have w := w8_byte (fun k => planeBytes.getD (8 * (o / 8 + 1) + k) 0) (show e - 8 < 8 by omega)
+    simp only [Nat.add_zero] at w
+    rw [ite_eq_right h, w, planeBytes_getD (by omega)]
+    exact congrArg planeByte (by omega)
+
+theorem pack_length : ∀ l : List Byte, (pack l).length = l.length / 8
+  | b0 :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest => by
+    rw [pack, List.length_cons, pack_length rest]
+    simp only [List.length_cons]
+    omega
+  | [] => rfl
+  | [_] => by simp [pack]
+  | [_, _] => by simp [pack]
+  | [_, _, _] => by simp [pack]
+  | [_, _, _, _] => by simp [pack]
+  | [_, _, _, _, _] => by simp [pack]
+  | [_, _, _, _, _, _] => by simp [pack]
+  | [_, _, _, _, _, _, _] => by simp [pack]
+
+theorem planeWords_length : planeWords.length = 512 := by
+  rw [planeWords, pack_length, planeBytes_length]
+
+/-- What a load of the table's sixteen bytes at `o` leaves. -/
+def pldV (o : Nat) : BitVec 128 := planeWords.getD (o / 8 + 1) 0 ++ planeWords.getD (o / 8) 0
 
 /-- A load of the table's sixteen bytes at `off`. -/
 theorem exec_pld (s : State) (t : VReg) {off : Nat} (ho : off % 16 = 0 ∧ off + 16 ≤ 4096)
     (h9 : s.gpr .x9 = s.syms planesSym) :
-    exec (.ldrqTbl t .x9 off planesSym planeWords) s = some (s.setV t (planeVec (off / 16))) := by
+    exec (.ldrqTbl t .x9 off planesSym planeWords) s = some (s.setV t (pldV off)) := by
   have hc : s.gpr .x9 = s.syms planesSym ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ planeWords.length := by
     rw [planeWords_length]; exact ⟨h9, ho.1, by omega_using [ho], by omega_using [ho]⟩
-  have hv : planeWords.getD (off / 8 + 1) 0 ++ planeWords.getD (off / 8) 0 = planeVec (off / 16) := by
-    rw [planeWords_getD _ (by omega_using [ho]), planeWords_getD _ (by omega_using [ho]),
-      show (off / 8 + 1) / 2 = off / 16 by omega_using [ho], show (off / 8 + 1) % 2 = 1 by omega_using [ho],
-      show off / 8 / 2 = off / 16 by omega_using [], show off / 8 % 2 = 0 by omega_using [ho]]
-    exact VG.AArch64.Tbl.ofVDwords_halves (planeVec (off / 16))
   change (if _ then _ else _) = _
-  rw [ite_eq_left hc, hv]
-
-theorem vbyte_planeVec (r : Nat) {e : Nat} (he : e < 16) : vbyte (planeVec r) e = planeByte (16 * r + e) := by
-  rw [planeVec, vbyte_ofVBytes _ he]
+  rw [ite_eq_left hc]
+  rfl
 
 /-- Byte `b` of S-box `j` at `x`. -/
 theorem planeByte_eq {j b : Nat} (hj : j < 4) (hb : b < 4) (x : Byte) :
@@ -95,7 +241,7 @@ theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat
       VOnly [.v28, .v29, .v30, .v31, d] s s' := by
   let base := planeOff j b + 64 * q
   have hbase : base % 16 = 0 ∧ base + 64 ≤ 4096 := by simp only [base, planeOff]; omega_arith
-  let ld (r : Nat) := planeVec ((base + 16 * r) / 16)
+  let ld (r : Nat) := pldV (base + 16 * r)
   let s₁ := s.setV .v28 (ld 0)
   let s₂ := s₁.setV .v29 (ld 1)
   let s₃ := s₂.setV .v30 (ld 2)
@@ -135,8 +281,9 @@ theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat
     rw [vbyte_ofVBytes _ he, hv' m hm, hv' d hd]
     split
     · rename_i h
-      rw [tableByte, repeat_succ_v28 _ (by omega_arith), hv _ (by omega_arith), vbyte_planeVec _ (by omega_arith)]
-      exact congrArg planeByte (by omega_using [hbase, h])
+      rw [tableByte, repeat_succ_v28 _ (by omega_arith), hv _ (by omega_arith)]
+      exact (vbyte_pld (ho _ (by omega_arith)) (Nat.mod_lt _ (by decide))).trans
+        (congrArg planeByte (by omega_using [hbase, h]))
     · rfl
   · refine ((((VOnly.setV s (by simp) _).trans (VOnly.setV _ (by simp) _)).trans
       (VOnly.setV _ (by simp) _)).trans (VOnly.setV _ (by simp) _)).trans (VOnly.setV _ (by simp) _)

@@ -16,7 +16,7 @@ per byte lane, and no S-box lookup reads memory at a secret address:
 * The S-boxes `S1`–`S4` are public constants. They are a table the code
   carries (`ldrqTbl`, the static `VG_CAST5_PLANES`, at a public address), in
   byte planes: byte `b` of `S_{j+1}[x]` at `1024 j + 256 b + x`
-  (`Impl.Blowfish.AArch64.planeOff`).
+  (`Impl.Blowfish.AArch64.planeOff`, `planeBytes`).
 * A round (`round`): `I = Kmᵢ ± R` or `Kmᵢ ^ R` for the sixteen words, in
   `fReg` (`v12`–`v15`); its rotation left by `Krᵢ mod 32`, the same secret
   amount in every lane, is a multiplication by `2 ^ (Krᵢ mod 32)`
@@ -48,24 +48,25 @@ open VG.Impl.Blowfish.AArch64 (aReg bReg fReg idxReg outReg qReg tReg c64 c128 v
 
 def planesSym : String := "VG_CAST5_PLANES"
 
-/-- `S1`–`S4` for `j` = 0–3. -/
-def sbox (j : Nat) (x : Byte) : Spec.Cast5.Word :=
-  match j with
-  | 0 => Spec.Cast5.S1 x
-  | 1 => Spec.Cast5.S2 x
-  | 2 => Spec.Cast5.S3 x
-  | _ => Spec.Cast5.S4 x
+/-- `S1`–`S4`, each as the list of its 256 entries. -/
+def sboxes : List (List Spec.Cast5.Word) :=
+  [Spec.Cast5.s1.toList, Spec.Cast5.s2.toList, Spec.Cast5.s3.toList, Spec.Cast5.s4.toList]
 
-/-- Byte `o` of the table: byte `o / 256 % 4` of S-box `o / 1024` at `o % 256`. -/
-def planeByte (o : Nat) : Byte :=
-  (sbox (o / 1024) (BitVec.ofNat 8 o)).extractLsb' (8 * (o / 256 % 4)) 8
+/-- The table's 4096 bytes: for each S-box, its four byte planes, each the
+256 entries' bytes in order. -/
+def planeBytes : List Byte :=
+  sboxes.flatMap fun s => (List.range 4).flatMap fun b => s.map fun w => w.extractLsb' (8 * b) 8
 
-/-- The sixteen bytes of the table from `16 r`. -/
-def planeVec (r : Nat) : BitVec 128 := ofVBytes fun e => planeByte (16 * r + e)
+/-- Bytes as little-endian quadwords, eight at a time. -/
+def pack : List Byte → List (BitVec 64)
+  | b0 :: b1 :: b2 :: b3 :: b4 :: b5 :: b6 :: b7 :: rest =>
+    (b7 ++ b6 ++ b5 ++ b4 ++ b3 ++ b2 ++ b1 ++ b0) :: pack rest
+  | _ => []
 
-/-- The table's 4096 bytes, as 512 little-endian quadwords. -/
-def planeWords : List (BitVec 64) :=
-  (List.range 512).map fun i => (planeVec (i / 2)).extractLsb' (64 * (i % 2)) 64
+/-- The table, as 512 little-endian quadwords. It is built by passes over
+the S-boxes' entries in order, never by indexing them, which the kernel,
+evaluating the code that carries the table, would do one step at a time. -/
+def planeWords : List (BitVec 64) := pack planeBytes
 
 /-! ## The round function -/
 
