@@ -22,7 +22,9 @@ of frames its callers' calls need evaluate.
 
 namespace VG
 
-materialize_code Impl.Ecdsa.RISCV64.Comb.mulGSecp256k1
+-- The entry's selection is appends nested to the left (`Comb.Cfg.select`,
+-- `scanWord` and `tree`): flattened, the kernel checks it in half the time.
+materialize_flat_code Impl.Ecdsa.RISCV64.Comb.mulGSecp256k1
 
 /-- `vg_secp256k1_mul_g`'s code has no frame, which its callers' calls need. -/
 theorem Impl.Ecdsa.RISCV64.Comb.mulGSecp256k1_noFrames : Impl.Ecdsa.RISCV64.Comb.mulGSecp256k1.noFrames = true := by

@@ -33,6 +33,11 @@ here instead.
 
 namespace VG.Proof.Rsa.X86_64
 
+-- The vector code of the layouts for 3072-bit and 4096-bit keys, which both
+-- functions contain (`ifmaAny`): evaluated once here, and read by both below.
+materialize_code crtIfma3072 := Impl.Bignum.X86_64.seqs (Impl.Rsa.X86_64.CrtIfma.ifma Impl.Rsa.X86_64.CrtIfma.lay3072)
+materialize_code crtIfma4096 := Impl.Bignum.X86_64.seqs (Impl.Rsa.X86_64.CrtIfma.ifma Impl.Rsa.X86_64.CrtIfma.lay4096)
+
 materialize_code crtIfmaP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
 
 materialize_code crtIfma512P := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm

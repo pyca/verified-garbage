@@ -10,6 +10,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 namespace VG.Impl.Sha3.AArch64.Scalar.Lazy
+-- The rounds, which `permute` wraps and `bulk`'s loop contains: evaluated
+-- once here, and read by both.
+materialize_code permutationCoreCode := (.block permutationCore : Prog VG.AArch64.isa)
 materialize_code permute
 materialize_code bulk
 end VG.Impl.Sha3.AArch64.Scalar.Lazy
