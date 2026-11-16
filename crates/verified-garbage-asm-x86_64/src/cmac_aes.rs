@@ -78,6 +78,8 @@ jmp 212f
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -133,7 +135,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
+.base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8Pb///MPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAJAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
@@ -165,7 +167,7 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_cmac_aes_subkeys_vaes}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCSoAAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::cmac_aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }
@@ -230,7 +232,7 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_cmac_aes_subkeys_aesni}
 .base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCSoAAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJEj////zD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJLgAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::cmac_aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -273,6 +275,8 @@ call {vg_cmac_aes_finalize_aesni}
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -287,9 +291,9 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key
 call {vg_aes_expand_key_scratch}
 .base64 "SInfTInmSInaSIHC8AAAAEiJ6Q=="
 call {vg_cmac_aes_subkeys}
-.base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAww=="
+.base64 "uAAAAABIiYMQAQAASImDGAEAAEiLnYAIAABMi6WQCAAASIutiAgAAEiNpCQICQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPD2///zD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQCQAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::cmac_aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
@@ -297,6 +301,8 @@ call {vg_cmac_aes_subkeys}
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -316,11 +322,31 @@ jmp 21f
 20:
 21:
 call {vg_cmac_aes_finalize}
-.base64 "SI2kJAgJAADD"
+.base64 "SI2kJAgJAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8Pb///MPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAJAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_vaes.rs"]
+pub(crate) mod vg_aes_ctr32_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
+pub(crate) mod vg_aes_expand_key_scratch_aesni;
 
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_finalize.rs"]

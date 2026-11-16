@@ -91,6 +91,17 @@ def scrubRegMC {api : Api} (r : Registration api target) (v : VecLevel) (ks cs :
   notWith := r.notWith
   residue := some ⟨scrubCodeMC_noResidue r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hne⟩
 
+/-- `resOk_all`, for any chunks `cs` summing to the stack. -/
+theorem resOk_allC (c : Prog isa) (k : Contract isa) {stack : Nat} (cs : List Nat) (hs : cs.sum = stack)
+    (h8 : ∀ b ∈ cs, b % 8 = 0) : ResOk c k stack (allKs cs) cs := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ x hx hn
+  subst hs
+  exact absurd (wcov_all h8 hx) hn
+
+/-- Chunks summing to `stack` (of 8 bytes or more), the first of 8 bytes:
+the 16-byte granules of the others are 16 bytes aligned. -/
+def alignedChunks (stack : Nat) : List Nat := 8 :: chunks (stack - 8)
+
 end VG.X86_64.Scrub
 
 namespace VG.X86_64.RScrub
@@ -115,5 +126,18 @@ def withScrubResC {api : Api} (r : Registration api target)
     scrubRegMC r v ks cs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
       ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost hres hw (levelFor_ne _)
   else r else r else r else r else r else r else r else r
+
+/-- `Scrub.withScrubAll`, below the level `evex`, with the stack wiped whole
+in `alignedChunks`, whose 16-byte stores are aligned: for code the residue
+analysis does not follow, whose frame holds secrets throughout. -/
+def withScrubAllC {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
+    Registration api target :=
+  let cs := alignedChunks r.stack
+  if hs : cs.sum = r.stack then
+  if h8 : cs.all (fun b => decide (b % 8 = 0)) = true then
+    withScrubResC r hpost (allKs cs) cs
+      (resOk_allC _ _ cs hs fun b hb => of_decide_eq_true (List.all_eq_true.mp h8 b hb))
+  else r else r
 
 end VG.X86_64.RScrub

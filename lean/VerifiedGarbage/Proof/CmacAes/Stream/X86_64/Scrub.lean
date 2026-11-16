@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
@@ -126,12 +127,14 @@ def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86_64.targe
       verified := Proof.CmacAes.Stream.X86_64.finishF_framed v f
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finishF_spSafe v) }
       (finishOut _) [] (pubOk_nil _) v.cmacFinishRes
-  | none => {
+  | none =>
+    withScrubAllC {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8 (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
       stack := 2328
       verified := Proof.CmacAes.Stream.X86_64.finish_framed v
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }
+      (finishOut _)
 
 /-- `vg_cmac_aes_init` over `v`: with no working space for an implementation
 that needs none, then without secret residue, its frame of 184 bytes wiped
@@ -147,13 +150,15 @@ def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86_64.target :=
       verified := Proof.CmacAes.Stream.X86_64.initF_framed v f
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.initF_spSafe v) }
       (initOut _)
-  | none => {
+  | none =>
+    withScrubAllC {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
         (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
       stack := 2328
       verified := Proof.CmacAes.Stream.X86_64.init_framed v
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) }
+      (initOut _)
 
 /-- `vg_cmac_aes_absorb` over `v`. Over an implementation that needs no
 working space (`v.free`), in a frame of only the 48 bytes of the registers
@@ -170,11 +175,13 @@ def absorbReg (v : UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi X86_64.targ
       verified := Proof.CmacAes.Stream.X86_64.absorbF_framed v f
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorbF_spSafe v) }
       (absorbOut _)
-  | none => {
+  | none =>
+    withScrubAllC {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
       stack := 2328
       verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }
+      (absorbOut _)
 
 end VG.Proof.CmacAes.Stream.X86_64.Scrub
