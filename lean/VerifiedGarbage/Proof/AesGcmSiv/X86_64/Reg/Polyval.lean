@@ -222,4 +222,130 @@ theorem body1_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {n
   · rw [x₃, y₂, x7, o₁.xmm _ (by decide), I.y, I.r12, Nat.mul_zero, BitVec.add_zero, I.mem, readW_xel,
       List.range_succ, List.map_append, List.map_cons, List.map_nil, ghashFrom_snoc]
 
+/-! ## Four blocks -/
+
+/-- `H'²`–`H'⁴` in `xmm4`–`xmm6`. -/
+structure PW (H : Spec.Gcm.Block) (t : State) : Prop where
+  p2 : x * φ (t.xmm .xmm4) = φ H ^ 2
+  p3 : x * φ (t.xmm .xmm5) = φ H ^ 3
+  p4 : x * φ (t.xmm .xmm6) = φ H ^ 4
+
+/-- The block at `r12 + 16 k` added to the product with the power in `b`. -/
+theorem ldAcc_ok (k : Nat) (b : XReg) (s : State)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .r12 + BitVec.ofNat 64 (16 * k)) 16)
+    (hb7 : b ≠ .xmm7) (hb8 : b ≠ .xmm8) (hb9 : b ≠ .xmm9) (hb10 : b ≠ .xmm10) (hb11 : b ≠ .xmm11) :
+    WP isa (.block (ld k ++ Impl.Gcm.X86_64.Pclmul.acc .xmm7 b)) s fun s' =>
+      prod s' = (prod s).acc (s.mem.readW (s.gpr .r12 + BitVec.ofNat 64 (16 * k)) 128) (s.xmm b) ∧
+      Only [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11] s s' := by
+  obtain ⟨s₁, run₁, x7, o₁⟩ := ld_run k s hin
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  refine WP.mono (acc_ok .xmm7 b s₁ (by decide) (by decide) (by decide) (by decide) hb8 hb9 hb10 hb11)
+    fun s' ⟨p', o'⟩ => ⟨?_, o₁.trans o'⟩
+  rw [p', o₁.prod (by decide) (by decide) (by decide), x7, o₁.xmm b (by simp [hb7])]
+
+/-- The first block of a group: `Y` added to it. -/
+theorem ldAccY_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .r12 + BitVec.ofNat 64 (16 * 0)) 16) :
+    WP isa (.block (ld 0 ++ (([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) ++
+      Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm6))) s fun s' =>
+      prod s' = (prod s).acc (s.xmm .xmm2 ^^^ s.mem.readW (s.gpr .r12 + BitVec.ofNat 64 (16 * 0)) 128)
+        (s.xmm .xmm6) ∧
+      Only [.xmm7, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] s s' := by
+  obtain ⟨s₁, run₁, x7, o₁⟩ := ld_run 0 s hin
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (pxor72_ok s₁) fun s₂ ⟨e₂, o₂⟩ => ?_
+  refine WP.mono (acc_ok .xmm7 .xmm6 s₂ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s' ⟨p', o'⟩ => ⟨?_, o₁.trans (o₂.trans o')⟩
+  rw [p', o₂.prod (by decide) (by decide) (by decide), o₁.prod (by decide) (by decide) (by decide), e₂, x7,
+    o₁.xmm .xmm2 (by decide), o₂.xmm .xmm6 (by decide), o₁.xmm .xmm6 (by decide)]
+
+theorem PW.keep {H : Spec.Gcm.Block} {rs : List XReg} {t t' : State} (p : PW H t) (o : Only rs t t')
+    (h4 : .xmm4 ∉ rs) (h5 : .xmm5 ∉ rs) (h6 : .xmm6 ∉ rs) : PW H t' :=
+  ⟨by rw [o.xmm _ h4]; exact p.p2, by rw [o.xmm _ h5]; exact p.p3, by rw [o.xmm _ h6]; exact p.p4⟩
+
+theorem ghashFrom_snoc4 (H Y : Spec.Gcm.Block) (f : Nat → Spec.Gcm.Block) (j : Nat) :
+    ghashFrom H Y ((List.range (j + 4)).map f) =
+      Spec.Gcm.mul (Spec.Gcm.mul (Spec.Gcm.mul (Spec.Gcm.mul (ghashFrom H Y ((List.range j).map f) ^^^ f j) H ^^^
+        f (j + 1)) H ^^^ f (j + 2)) H ^^^ f (j + 3)) H := by
+  simp only [show j + 4 = j + 1 + 1 + 1 + 1 from rfl, List.range_succ, List.map_append, List.map_cons, List.map_nil,
+    ghashFrom, List.foldl_append, List.foldl_cons, List.foldl_nil]
+
+/-- Four blocks absorbed. -/
+theorem body4_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat}
+    (hP : Buf K W SP σ P (16 * nb)) (hj : j + 4 ≤ nb) {t : State} (I : AInv K W SP H σ P nb j t) (pw : PW H t) :
+    WP isa (.block body4) t fun t' => AInv K W SP H σ P nb (j + 4) t' ∧ PW H t' ∧
+      t'.cf = some (decide (nb - (j + 4) < 4)) := by
+  have hlt := hP.lt
+  have inb : ∀ k < 4, InRegions (t.rd ++ t.wr) (t.gpr .r12 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk => by
+    rw [I.r12, I.rd, I.wr, add_ofNat_assoc]
+    exact in_off hP.rd (by omega_arith) hlt
+  rw [show body4 = Impl.Gcm.X86_64.Pclmul.zero ++ ((ld 0 ++ (([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) ++
+      Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm6)) ++ ((ld 1 ++ Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm5) ++
+      ((ld 2 ++ Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm4) ++ ((ld 3 ++ Impl.Gcm.X86_64.Pclmul.acc .xmm7 .xmm3) ++
+      (Impl.Gcm.X86_64.Pclmul.reduce .xmm2 ++ ([.alu .add .r12 (imm 64), .alu .sub .rbx (imm 4),
+        .alu .cmp .rbx (imm 4)] : List Instr)))))) from by simp only [body4, List.append_assoc]]
+  rw [WP.block_append_iff]
+  refine WP.mono (zero_ok t) fun s₁ ⟨p₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (ldAccY_ok s₁ (by rw [o₁.gpr _ (by decide), o₁.rd, o₁.wr]; exact inb 0 (by decide)))
+    fun s₂ ⟨p₂, o₂⟩ => ?_
+  have O₂ := o₁.trans o₂
+  rw [WP.block_append_iff]
+  refine WP.mono (ldAcc_ok 1 .xmm5 s₂ (by rw [O₂.gpr _ (by decide), O₂.rd, O₂.wr]; exact inb 1 (by decide))
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₃ ⟨p₃, o₃⟩ => ?_
+  have O₃ := O₂.trans o₃
+  rw [WP.block_append_iff]
+  refine WP.mono (ldAcc_ok 2 .xmm4 s₃ (by rw [O₃.gpr _ (by decide), O₃.rd, O₃.wr]; exact inb 2 (by decide))
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨p₄, o₄⟩ => ?_
+  have O₄ := O₃.trans o₄
+  rw [WP.block_append_iff]
+  refine WP.mono (ldAcc_ok 3 .xmm3 s₄ (by rw [O₄.gpr _ (by decide), O₄.rd, O₄.wr]; exact inb 3 (by decide))
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₅ ⟨p₅, o₅⟩ => ?_
+  have O₅ := O₄.trans o₅
+  rw [WP.block_append_iff]
+  refine WP.mono (reduce_ok .xmm2 s₅ (by decide) (by decide) (by decide) (by decide)
+    (by rw [O₅.xmm _ (by decide), I.g.c])) fun s₆ ⟨e₆, o₆⟩ => ?_
+  have O₆ := O₅.trans o₆
+  have h12 : s₆.gpr .r12 = P + BitVec.ofNat 64 (16 * j) := by rw [O₆.gpr _ (by decide), I.r12]
+  have hbx : s₆.gpr .rbx = BitVec.ofNat 64 (nb - j) := by rw [O₆.gpr _ (by decide), I.rbx]
+  obtain ⟨t₇, run₇, r12₇, rbx₇, cf₇, g₇, x₇, m₇, rd₇, wr₇⟩ : ∃ t₇ : State, runBlock isa
+      [.alu .add .r12 (imm 64), .alu .sub .rbx (imm 4), .alu .cmp .rbx (imm 4)] s₆ = some t₇ ∧
+      t₇.gpr .r12 = P + BitVec.ofNat 64 (16 * (j + 4)) ∧ t₇.gpr .rbx = BitVec.ofNat 64 (nb - (j + 4)) ∧
+      t₇.cf = some (decide (nb - (j + 4) < 4)) ∧ (∀ r, r ≠ .r12 → r ≠ .rbx → t₇.gpr r = s₆.gpr r) ∧
+      t₇.xmm = s₆.xmm ∧ t₇.mem = s₆.mem ∧ t₇.rd = s₆.rd ∧ t₇.wr = s₆.wr := by
+    refine ⟨_, by srun [h12, hbx], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h12, add_ofNat_assoc]
+      rw [show 16 * j + 64 = 16 * (j + 4) by omega_arith]
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hbx]
+      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), Nat.sub_sub]
+    · simp only [cf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx]
+      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), Nat.sub_sub]
+      simp only [Proof.AesGcm.X86_64.toNat_ofNat_of_lt (show nb - (j + 4) < 2 ^ 64 by omega_arith)]
+      rfl
+    · intro r h₁ h₂
+      simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, ite_false]
+    all_goals rfl
+  refine WP.of_runBlock ⟨t₇, run₇, ⟨?_, ?_, ?_, ?_, ?_, r12₇, rbx₇, ?_, ?_⟩, ?_, cf₇⟩
+  · exact I.env.keep (fun r hr => by
+      have hne : r ≠ .r12 ∧ r ≠ .rbx ∧ r ≠ .rax := by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide
+      rw [g₇ r hne.1 hne.2.1, O₆.gpr r hne.2.2]) (by rw [rd₇, O₆.rd]) (by rw [wr₇, O₆.wr])
+  · rw [rd₇, O₆.rd, I.rd]
+  · rw [wr₇, O₆.wr, I.wr]
+  · rw [m₇, O₆.mem, I.mem]
+  · exact ⟨by rw [x₇, O₆.xmm _ (by decide), I.g.c], by rw [x₇, O₆.xmm _ (by decide)]; exact I.g.h⟩
+  · rw [g₇ _ (by decide) (by decide), O₆.gpr _ (by decide), I.rbp]
+  · have rd : ∀ k, t.mem.readW (P + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 (16 * k)) 128 = xel σ.mem P (j + k) :=
+      fun k => by rw [add_ofNat_assoc, ← Nat.mul_add, I.mem, readW_xel]
+    rw [x₇, e₆, p₅, p₄, p₃, p₂, p₁, O₄.gpr _ (by decide), O₄.mem, O₄.xmm .xmm3 (by decide),
+      O₃.gpr _ (by decide), O₃.mem, O₃.xmm .xmm4 (by decide), O₂.gpr _ (by decide), O₂.mem,
+      O₂.xmm .xmm5 (by decide), o₁.gpr _ (by decide), o₁.mem, o₁.xmm .xmm6 (by decide), o₁.xmm .xmm2 (by decide),
+      I.r12, rd 0, rd 1, rd 2, rd 3, I.y, ghashFrom_snoc4,
+      step4 H _ _ _ _ _ _ _ _ _ I.g.h pw.p2 pw.p3 pw.p4]
+    rfl
+  · exact ⟨by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p2, by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p3,
+      by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p4⟩
+
 end VG.Proof.AesGcmSivReg.X86_64
