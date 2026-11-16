@@ -4460,7 +4460,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -8348,7 +8348,7 @@ jmp 238f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
