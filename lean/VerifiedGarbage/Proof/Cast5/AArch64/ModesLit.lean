@@ -24,9 +24,7 @@ materialize_value Impl.Cast5.AArch64.decryptBlock
 /-! The functions. -/
 
 materialize_code Impl.Cast5.AArch64.cbcEncryptChained
-materialize_code Impl.Cast5.AArch64.cbcDecryptChained
 materialize_code Impl.Cast5.AArch64.ofb
 materialize_code Impl.Cast5.AArch64.cfbEncrypt
-materialize_code Impl.Cast5.AArch64.cfbDecrypt
 
 end VG

@@ -6,9 +6,10 @@ public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 /-!
 # CAST5-CBC, -OFB and -CFB64 on AArch64
 
-`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
-(schedule = x0, rounds = x1, iv = x2, data = x3, n = x4, scratch = x5): the
-modes' generic CBC that updates the chaining value, OFB and CFB
+`cbcEncryptChained`, `ofb` and `cfbEncrypt` (schedule = x0, rounds = x1,
+iv = x2, data = x3, n = x4, scratch = x5; CBC and CFB64 decryption are in
+`AArch64/TblModes.lean`): the modes' generic CBC encryption that updates the
+chaining value, OFB and CFB
 (`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over the block code of
 `vg_cast5_ecb_{en,de}crypt` (`encryptBlock`, `decryptBlock`), one 8-byte
 block at a time, with the working space in the scratch buffer, which the
@@ -61,16 +62,10 @@ def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x2, .x3, .x4, .x5⟩
 /-- `vg_cast5_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore true).cbcEncryptChained modeRegs .x25
 
-/-- `vg_cast5_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (dirCore false).cbcDecryptChained modeRegs
-
 /-- `vg_cast5_ofb`. -/
 def ofb : Prog isa := (dirCore true).fb .ofb modeRegs .x25
 
 /-- `vg_cast5_cfb64_encrypt`. -/
 def cfbEncrypt : Prog isa := (dirCore true).fb .cfbEnc modeRegs .x25
-
-/-- `vg_cast5_cfb64_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore true).fb .cfbDec modeRegs .x25
 
 end VG.Impl.Cast5.AArch64

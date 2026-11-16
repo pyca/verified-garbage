@@ -31,9 +31,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
-# CAST5-OFB and -CFB64 on AArch64 meet their contracts
+# CAST5-OFB and -CFB64 encryption on AArch64 meet their contracts
 
-`ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
+`ofb_wp`, `cfbEncrypt_wp`: the modes' OFB and CFB encryption
 (`Proof.Modes.AArch64.fb_wp`) over CAST5's core (`Mode.dirCoreSpec true`),
 with the IV's address in `x25`, which the core never writes
 (`Mode.crypt_keeps`), the specification's results (`Proof.Modes.ofb_of`, …),
@@ -44,7 +44,7 @@ each is correct and constant time, by the taint analysis: the pointers,
 is everything the code computes from them, which it keeps in registers; the
 subkeys, the IV and the data are secret. `ofb_framed`, … run them with their
 working space on the stack, zeroed on return: 112 bytes, the 13 words of the
-scratch buffer and 8 more.
+scratch buffer and 8 more. CFB64 decryption is in `TblModesVerified.lean`.
 -/
 
 @[expose] public section
@@ -125,12 +125,6 @@ def cfbEncX : Contract isa where
       Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (dataOf s s.mem))
   pub := cbcPub
 
-def cfbDecX : Contract isa where
-  pre := FPre blkLen
-  post s s' := dataOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
-    Spec.Aes.bytesAt s'.mem (s.gpr .x2) 8 = Spec.Cbc.next (ivOf s) (dataOf s s.mem)
-  pub := cbcPub
-
 /-- The table, as the core needs it. -/
 theorem FPre.tabAt {len : State → Nat} {s : State} (h : FPre len s) : TabAt s :=
   ⟨by rw [h.rd]; simp, h.fitT, fun i hi => h.held i (by rw [s1234_length] at hi; exact hi), fun w hw => by
@@ -197,17 +191,6 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncX.pre s₀) :
     · change _ = Spec.Cbc.next _ (Spec.Cfb.encrypt _ _ (Spec.Cast5.cbcBlocksAt _ _ _))
       rw [hv, h2, blocksOf_eq]
 
-theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX.pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecX.post s₀ s' :=
-  WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
-    obtain ⟨h1, h2⟩ := Modes.cfbDec_of 8 (ciphOf s₀) s₀.mem (s₀.gpr .x3) (ivOf s₀) (s₀.gpr .x4).toNat
-    refine ⟨hg, ?_, ?_⟩
-    · change Spec.Cast5.cbcBlocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.Cast5.cbcBlocksAt _ _ _)
-      rw [← blocksOf_eq, ← blocksOf_eq, hd, h1]
-    · change _ = Spec.Cbc.next _ (Spec.Cast5.cbcBlocksAt _ _ _)
-      rw [hv, h2, blocksOf_eq]
-
 /-! ## Constant time -/
 
 theorem fbTaint_agree {len : State → Nat} (s₁ s₂ : State) (_ : FPre len s₁) (_ : FPre len s₂)
@@ -226,9 +209,6 @@ theorem ofb_ct : ConstantTime isa ofbX.pre ofbX.pub ofb :=
   VG.Taint.constantTime (A := taintS [s1234Sym]) (Taint.ofRegs modePub) fbTaint_agree (by taint_decide)
 
 theorem cfbEncrypt_ct : ConstantTime isa cfbEncX.pre cfbEncX.pub cfbEncrypt :=
-  VG.Taint.constantTime (A := taintS [s1234Sym]) (Taint.ofRegs modePub) fbTaint_agree (by taint_decide)
-
-theorem cfbDecrypt_ct : ConstantTime isa cfbDecX.pre cfbDecX.pub cfbDecrypt :=
   VG.Taint.constantTime (A := taintS [s1234Sym]) (Taint.ofRegs modePub) fbTaint_agree (by taint_decide)
 
 /-! ## The contracts -/
@@ -305,19 +285,6 @@ theorem cfbEncrypt_verified :
         Proof.Cast5.cfbEncPost, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
       exact h)
 
-theorem cfbDecrypt_verified :
-    Verified AArch64.target cfbDecrypt
-      (Proof.Cast5.modeScratchContract (AArch64.abi.withConsts ecbConsts) Spec.Cast5.cfbSig 13
-        (Spec.Cast5.cfbPre AArch64.abi.ptrBits) (Proof.Cast5.cfbDecPost AArch64.abi.ptrBits)) :=
-  Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    cfbDecrypt_ct (fb_implies (post := Proof.Cast5.cfbDecPost AArch64.abi.ptrBits) fun s s' h => by
-      sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig,
-        Proof.Cast5.cfbDecPost, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
-      exact h)
-
 /-! ## The functions with their working space on the stack -/
 
 /-- A state satisfying the functions' precondition, with 112 bytes of stack. -/
@@ -363,14 +330,5 @@ theorem cfbEncrypt_framed :
     (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.cfbPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
     cfbEncrypt_verified (by decide) (by decide) (by decide) (Proof.Cast5.cfbEncPostOut_local _) (fbFrame_sat _)
-
-/-- CFB64 decryption with its working space on the stack. -/
-theorem cfbDecrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 cfbDecrypt)
-      (Proof.Cast5.cfbDecryptRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
-  AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
-    (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.cfbPre AArch64.abi.ptrBits)
-    (post := Proof.Cast5.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (Proof.Cast5.cfbDecPostOut_local _) (fbFrame_sat _)
 
 end VG.Proof.Cast5.AArch64
