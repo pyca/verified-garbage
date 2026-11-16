@@ -35,12 +35,13 @@ meta import VerifiedGarbage.Proof.Gcm.Spec
 `setup` loads the S-box into the table registers, for the key expansion
 (`setup_ok`, `Consts`).
 
-`vg_aes_encrypt_blocks` (`encryptBlocksN`) encrypts one to four blocks one at
-a time by vector permutations (`Vperm.core_ok`, `few_wp`) and runs the
-bitsliced code otherwise (`fewOr_wp`, `encryptBlocksN_correct`), against the
-contract of the bitsliced code, `blocksAArch64`; so does `vg_aes_ctr32`
+`vg_aes_encrypt_blocks` (`encryptBlocksN`) encrypts every block one at a
+time by vector permutations (`Vperm.core_ok`, `few_wp`, `fewAll_wp`,
+`encryptBlocksN_correct`), against `blocksAArch64`; so does `vg_aes_ctr32`
 (`ctr32N`, `ctrFew_wp`, `ctr32N_correct`, against `ctr32AArch64`), on the
-counter block, whose `inc₃₂` it writes back (`ctrOneLoad_ok`).
+counter block, whose `inc₃₂` it writes back (`ctrOneLoad_ok`). The functions
+with AdvSIMD take one to four blocks so, and any other number bitsliced
+(`fewOr_wp`).
 -/
 
 @[expose] public section

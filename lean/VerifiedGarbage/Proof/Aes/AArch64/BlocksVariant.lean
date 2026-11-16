@@ -77,8 +77,8 @@ structure BlocksImpl where
 namespace BlocksImpl
 
 /-- The implementation in the baseline ISA, `vg_aes_encrypt_blocks` and
-`vg_aes_decrypt_blocks`: bitsliced, but one block encrypted by table
-lookups (`OneBlock.lean`). -/
+`vg_aes_decrypt_blocks`: each block by vector permutations
+(`OneBlock.lean`). -/
 def scalar : BlocksImpl where
   enc := .encScalar
   encNoFrames := by lit_decide

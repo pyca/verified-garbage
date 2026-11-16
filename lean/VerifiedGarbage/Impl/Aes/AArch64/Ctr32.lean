@@ -33,12 +33,12 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   left), `x5` and the loop tests (`t0`) hold
   public values; no address and no branch depends on anything else.
 
-`vg_aes_ctr32` is `ctr32N`: one to four blocks (one, as the functions that
-encrypt a block alone give it) are encrypted one at a time by vector
-permutations (`Vperm.lean`), with no round key bitsliced and nothing written
-to `scratch`; no block (`n = 0`, as AES-GCM gives it for a text with no whole
-block, or with no bytes after them) returns at once; any other `n` runs the
-bitsliced code. `vg_aes_ctr32_to` is `ctr32ToN`, the same out of place.
+`vg_aes_ctr32` is `ctr32N`, and `vg_aes_ctr32_to` is `ctr32ToN`, the same
+out of place: they do not run the bitsliced code above, but return at once
+for no block (`n = 0`, as AES-GCM gives it for a text with no whole block,
+or with no bytes after them) and take every block one at a time by vector
+permutations (`Vperm.lean`, `ctrFew`), with no round key bitsliced and
+nothing written to `scratch`, which costs less at every size (measured).
 -/
 
 @[expose] public section

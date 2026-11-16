@@ -27,11 +27,11 @@ Only `x0` (the first round key), `x1`, `x2` during the key loop, `x3` (the
 data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold public
 values; no address and no branch depends on anything else.
 
-`vg_aes_encrypt_blocks` is `encryptBlocksN`: one to four blocks (one, as the
-modes whose blocks each need the one before give it) are encrypted one at a
-time by vector permutations (`Vperm.lean`), with no round key bitsliced and
-nothing written to `scratch`; any other `n` runs the bitsliced code. `vg_aes_decrypt_blocks`
-is `decryptBlocksN`, the same for decryption.
+`vg_aes_encrypt_blocks` is `encryptBlocksN`, and `vg_aes_decrypt_blocks` is
+`decryptBlocksN`: they do not run the bitsliced code above, but take every
+block one at a time by vector permutations (`Vperm.lean`, `few`), with no
+round key bitsliced and nothing written to `scratch`, which costs less at
+every size (measured).
 -/
 
 @[expose] public section

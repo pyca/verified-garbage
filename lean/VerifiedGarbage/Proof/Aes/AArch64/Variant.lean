@@ -66,8 +66,8 @@ structure Ctr32Impl where
 
 namespace Ctr32Impl
 
-/-- The implementation in the baseline ISA, `vg_aes_ctr32`: bitsliced, but
-one block encrypted by vector permutations (`OneBlock.lean`). -/
+/-- The implementation in the baseline ISA, `vg_aes_ctr32`: each
+block encrypted by vector permutations (`OneBlock.lean`). -/
 def scalar : Ctr32Impl where
   callee := .scalar
   noFrames := by lit_decide
