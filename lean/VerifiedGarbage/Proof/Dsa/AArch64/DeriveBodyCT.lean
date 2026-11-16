@@ -5,6 +5,11 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
+import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -13,11 +18,16 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
-/-! # Constant time of derivation's computation: x's range, g^x, y's copy and the key checks
+/-! # Constant time of derivation's computation: x's range, g^x with g^q, y's copy and the key checks
 
 The operands' bytes may differ between two calls, x's among them: the
 schedule relates two runs by their public layout alone. The subgroup order's
@@ -155,17 +165,66 @@ theorem deriveCopy_ct : RelCT isa (Two DeriveSched) Generate.copyY (Two DeriveSc
     (deriveInputs_stable p a ha).2, valid, (hf.word (Or.inl (by decide)) (by decide)).trans hm⟩,
     hscr.congr hk.wr, qb, hqb.frame hs.1 ht hf' hk (by decide) (by change Field.q ≠ .mask; decide), hql, hqv⟩
 
+/-- y = g^x and whether `g^q = 1`, in one pass: q's bytes are the public
+subgroup order's. -/
+theorem deriveSharedPow_ct (M : Mont) : RelCT isa (Two DeriveSched)
+    (SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t2)) (Two DeriveSched) := by
+  have hend (p : SchedulePublic) : t2 + ModulusSide.p.length p.layout ≤ usedBytes := element_space (by decide) p
+  have qsrc {p : SchedulePublic} {s : State} (h : DeriveSched p s) :
+      Src s p.layout.base activeBytes (p.layout.fields .q)
+        (Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup) := by
+    obtain ⟨hs, _, qb, hqb, hql, hqv⟩ := h
+    rw [← hs.1.fields .q (by decide), ← hql, ← hqv, VG.Proof.Dsa.encodeBE_decodeBE]
+    exact ((hqb.shrink (by decide)).active).source
+  refine two_post (two_map (fun p : SchedulePublic => (⟨⟨p.layout, p.layout.pLen, p.layout.qLen, p.greater .p,
+      p.odd .p, by have := p.layout.widths; omega_using [this], Nat.le_refl _, p.layout.widths.1,
+      by have := p.layout.widths; omega_using [this], by decide, hend p⟩,
+      Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup, VG.Proof.Dsa.encodeBE_length _ _⟩ :
+        SharedPower.ReadySharedPublic t2)) (fun p s h => ?_)
+    (SharedPower.readySharedPow_ct M t2 Core.generator Core.privateScalar (by trivial) (by trivial)
+      (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.privateScalar]) (by decide)
+      (by taint_decide))) ?_
+  · obtain ⟨ga, hga, hgl⟩ := h.1.2.1 _ (show (Core.generator, p.layout.pLen) ∈ deriveInputs p by
+      simp [deriveInputs])
+    obtain ⟨xa, hxa, hxl⟩ := h.1.2.1 _ (show (Core.privateScalar, p.layout.qLen) ∈ deriveInputs p by
+      simp [deriveInputs])
+    exact ⟨⟨h.1.1, ga, xa, hga.active, hxa.active, hgl, hxl⟩, qsrc h⟩
+  intro p s h
+  have hq := qsrc h
+  obtain ⟨hs, hscr, qb, hqb, hql, hqv⟩ := h
+  obtain ⟨ga, hga, hgl⟩ := hs.2.1 _ (show (Core.generator, p.layout.pLen) ∈ deriveInputs p by
+    simp [deriveInputs])
+  obtain ⟨xa, hxa, hxl⟩ := hs.2.1 _ (show (Core.privateScalar, p.layout.qLen) ∈ deriveInputs p by
+    simp [deriveInputs])
+  obtain ⟨valid, hm⟩ := hs.2.2
+  have hq' : Src s p.layout.base activeBytes (word s.mem p.layout.base Field.q.offset)
+      (Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup) := by
+    rw [hs.1.fields .q (by decide)]; exact hq
+  refine WP.mono (SharedPower.readySharedPow_ok M hs.1 (p.greater .p) (p.odd .p) Core.generator
+    Core.privateScalar (by trivial) (by trivial) hga.active hxa.active
+    hq' ((VG.Proof.Dsa.encodeBE_length _ _).trans hxl.symm)
+    (by rw [hgl]; have := p.layout.widths; omega_using [this]) (by rw [hgl])
+    (by rw [hxl]; exact p.layout.widths.1) (by rw [hxl]; have := p.layout.widths; omega_using [this])
+    t2 (by decide) (hend p) hm) fun t ⟨u, h2, h2c⟩ => ?_
+  have hfu : Outside p.layout.base 128 (deriveExtent - 128) s.mem u.mem :=
+    (h2.scheduleFrame (by decide) (hend p)).mono (by decide) (by decide)
+  have hf2 : Outside p.layout.base 128 (deriveExtent - 128) u.mem t.mem :=
+    h2c.frame.mono (by decide) (by decide)
+  have stable := fun a ha => deriveInputs_stable p a ha
+  exact ⟨h2c.schedule (h2.schedule hs (by decide) (hend p) stable) stable,
+    hscr.congr (h2.keep.trans h2c.keep).wr, qb,
+    (hqb.frame hs.1 h2.ready hfu h2.keep (by decide) (by change Field.q ≠ .mask; decide)).frame h2.ready
+      h2c.ready hf2 h2c.keep (by decide) (by change Field.q ≠ .mask; decide), hql, hqv⟩
+
 theorem deriveBodySched_ct (M : Mont) : RelCT isa (Two DeriveSched)
     (seqs [Checks.range qWorkspace Core.privateScalar,
-      Core.pow M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2),
-      Generate.copyY, Checks.signingKey M.mm]) (fun _ _ => True) := by
-  have h4 := signingKey_ct M deriveInputs (fun p => deriveInputs_stable p)
-    (by intro p; simp [deriveInputs]) (by intro p; simp [deriveInputs]) (by intro p; simp [deriveInputs])
+      SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t2),
+      Generate.copyY, seqs (Checks.publicPrefix M.mm)]) (fun _ _ => True) := by
+  have h4 := publicPrefix_ct M deriveInputs (fun p => deriveInputs_stable p)
+    (by intro p; simp [deriveInputs]) (by intro p; simp [deriveInputs])
   unfold seqs
-  refine RelCT.seq deriveRange_ct (RelCT.seq (derivePow_ct M) (RelCT.seq deriveCopy_ct ?_))
-  refine (two_map (Φ := DeriveSched) (fun p => p) (fun p s h => ⟨h.1, ?_⟩) h4).mono
+  refine RelCT.seq deriveRange_ct (RelCT.seq (deriveSharedPow_ct M) (RelCT.seq deriveCopy_ct ?_))
+  exact (two_map (Φ := DeriveSched) (fun p => p) (fun p s h => h.1) h4).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
-  obtain ⟨qb, hqb, hql, hqv⟩ := h.2.2
-  exact ⟨qb, hqb.shrink (by decide), hql, hqv⟩
 
 end VG.Proof.Dsa.AArch64

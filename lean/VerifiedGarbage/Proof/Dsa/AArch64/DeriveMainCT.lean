@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveBodyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveBodyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
 meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
@@ -261,8 +263,8 @@ theorem DeriveComputed.key {reference : DeriveCall} {s : State} (h : DeriveCompu
 theorem deriveComputed_ok (M : Mont) {reference : AcceptedDeriveCall} {s : State}
     (h : DeriveReady reference.val s) :
     WP isa (seqs [Checks.range qWorkspace Core.privateScalar,
-      Core.pow M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2),
-      Generate.copyY, Checks.signingKey M.mm]) s (DeriveComputed reference.val) := by
+      SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t2),
+      Generate.copyY, seqs (Checks.publicPrefix M.mm)]) s (DeriveComputed reference.val) := by
   obtain ⟨c, hag, pi, qi, hr, ho, hm, hframe, hk⟩ := h
   have hac : c.input.accepted = true := hag.accepted.trans reference.property
   obtain ⟨hsize, hpo, hqo⟩ := c.input.shapeFacts hac
@@ -273,20 +275,20 @@ theorem deriveComputed_ok (M : Mont) {reference : AcceptedDeriveCall} {s : State
     have hh := VG.Proof.Dsa.decodeBE_lt c.input.qb; rw [c.input.qbLength] at hh; exact Nat.le_of_lt hh
   refine WP.mono (deriveBody_ok (L := c.layout.withInverses pi qi) M hr (c.pre.scratch.congr hk.wr)
     hp1 hq255 hpo hqo hpf hqf ho.generator ho.subgroup ho.scalar c.input.gbLength c.input.qbLength
-    c.input.xLength rfl rfl hm) fun t ⟨ht, hmt, _, hft, hkt⟩ => ?_
+    c.input.xLength rfl hm) fun t ⟨ht, hmt, _, hft, hkt⟩ => ?_
   exact ⟨c, hag, pi, qi, _, ht, hmt, hframe.trans (InScr.of_outside hft (by decide)),
     (hk.trans hkt).mono (by decide)⟩
 
 theorem deriveSuccess_ct (M : Mont) :
     RelCT isa (Two (fun c : AcceptedDeriveCall => DeriveShaped c.val))
       (seqs [SignVerify.workspaces, Checks.range qWorkspace Core.privateScalar,
-        Core.pow M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2),
-        Generate.copyY, Checks.signingKey M.mm, Generate.writeKey, .block SignVerify.result])
+        SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t2),
+        Generate.copyY, seqs (Checks.publicPrefix M.mm), Generate.writeKey, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq deriveWorkspaces_ct ?_
   apply RelCT.seqs_append (a := [Checks.range qWorkspace Core.privateScalar,
-    Core.pow M.mm pWorkspace Core.generator Core.privateScalar (Core.element t2),
-    Generate.copyY, Checks.signingKey M.mm]) (b := [Generate.writeKey, .block SignVerify.result])
+    SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t2),
+    Generate.copyY, seqs (Checks.publicPrefix M.mm)]) (b := [Generate.writeKey, .block SignVerify.result])
     (by simp) (by simp)
   refine RelCT.seq (R := Two (fun c : AcceptedDeriveCall => DeriveComputed c.val))
     (two_post ((deriveBodySched_ct M).mono (fun _ _ h => deriveReady_related h) (fun _ _ h => h))
