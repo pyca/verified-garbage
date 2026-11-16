@@ -58,7 +58,8 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
 /-- The precondition, by name: the state `St`, the key `Kp` of `KL` bytes,
 the scratch buffer `S`, and the part `Z` of it the code may write: all of it
-(`initX86_64`), or only the 152 bytes at `S + 2048` (`initF_wp`). -/
+(`initX86_64`), only the 152 bytes at `S + 2048` (`initF_wp`), or all but its
+first 512 bytes (`initS_wp`). -/
 structure IPre (s₀ : State) (St Kp S : Addr) (KL : Nat) (Z : Region) : Prop where
   rdi : s₀.gpr .rdi = St
   rsi : s₀.gpr .rsi = Kp

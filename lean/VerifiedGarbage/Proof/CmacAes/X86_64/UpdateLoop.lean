@@ -32,6 +32,9 @@ section
 block `C`, one data block `D` holding zeros, and working space `S`, from its
 contract (with `WP.call`): `D` then holds `CIPH_K(C)`, as bytes
 (`Cmac.aesWith`), and only `C`, `D`, `S` and the return address change.
+The functions here make that call through `ctrCall`, which gives the
+implementation its working space where it takes it in the scratch buffer
+(`ctrCall_ok`, `AesCall`).
 -/
 
 namespace VG.Proof.CmacAes.X86_64

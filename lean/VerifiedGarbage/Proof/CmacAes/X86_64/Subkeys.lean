@@ -168,9 +168,10 @@ def subkeysX86_64S : Contract isa where
 
 /-- The precondition, by name: the schedule `W`, the subkeys `K`, the scratch
 buffer `S`, the rounds `R`, and the writable part `Z` of the scratch buffer:
-all of it (`subkeysX86_64`), or only the 32 bytes at `S + 2048`, the counter
+all of it (`subkeysX86_64`), only the 32 bytes at `S + 2048`, the counter
 block and the registers saved, when `vg_aes_ctr32` needs no working space
-(`subkeysX86_64F`). -/
+(`subkeysX86_64F`), or all but its first 512 bytes when `vg_aes_ctr32` uses
+1480 bytes of working space (`subkeysX86_64S`). -/
 structure SPre (s₀ : State) (W K S : Addr) (R : Nat) (Z : Region) : Prop where
   rdi : s₀.gpr .rdi = W
   rdx : s₀.gpr .rdx = K
