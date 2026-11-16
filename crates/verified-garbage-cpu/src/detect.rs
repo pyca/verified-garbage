@@ -103,10 +103,15 @@ pub const REPORTED_WITH: [(u32, u32); 5] = [
 ];
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known,
-/// and in the upper half the features `VG_CPU_FEATURES` names (`named`): one
-/// word, so that a thread that sees the one sees the other.
+/// [`DETECTED_DIT`] if the CPU has FEAT_DIT (whatever `VG_CPU_FEATURES`
+/// says: see `dit`), and in the upper half the features `VG_CPU_FEATURES`
+/// names (`named`): one word, so that a thread that sees the one sees the
+/// others, and so that one load answers each of them.
 static DETECTED: AtomicU64 = AtomicU64::new(0);
 const DETECTED_INIT: u64 = 1 << 30;
+const DETECTED_DIT: u64 = 1 << 31;
+/// The bits of the lower half of `DETECTED` that are no feature.
+const DETECTED_FLAGS: u32 = (DETECTED_INIT | DETECTED_DIT) as u32;
 
 /// The features of this CPU, restricted by `VG_CPU_FEATURES` (see the
 /// comment at the top of this file). (Detection is idempotent, so threads
@@ -116,7 +121,7 @@ const DETECTED_INIT: u64 = 1 << 30;
 /// itself is out of line (`detect`), so callers keep no registers for it.
 #[inline]
 pub fn detected() -> Features {
-    Features(state() as u32 & !(DETECTED_INIT as u32))
+    Features(state() as u32 & !DETECTED_FLAGS)
 }
 
 /// Whether `VG_CPU_FEATURES` names every feature of `f`, which is not empty:
@@ -215,7 +220,10 @@ fn detect() -> u64 {
     // A microarchitecture `VG_CPU_FEATURES` names is reported on any CPU
     // (see the comment at the top of this file).
     let features = runtime & allowed(runtime) | named & TUNING.0 | COMPILED.0;
-    let s = u64::from(features) | DETECTED_INIT | (u64::from(named) << 32);
+    let s = u64::from(features)
+        | DETECTED_INIT
+        | (u64::from(runtime & feature::DIT != 0) * DETECTED_DIT)
+        | (u64::from(named) << 32);
     DETECTED.store(s, Ordering::Relaxed);
     s
 }
@@ -534,15 +542,23 @@ fn aarch64_sve2() -> bool {
     cfg!(target_feature = "sve2")
 }
 
-/// Whether the CPU has FEAT_DIT, whatever `VG_CPU_FEATURES` says: data
-/// independent timing chooses no implementation but is the mode every one
-/// runs in (the library's `src/dit.rs`), so the tests and benchmarks of every
+/// What `detected` reports, if the CPU has FEAT_DIT, whatever
+/// `VG_CPU_FEATURES` says, and `None` if it has not: data independent timing
+/// chooses no implementation but is the mode every one runs in (the
+/// library's `src/dit.rs`), so the tests and benchmarks of every
 /// configuration run with it wherever the CPU has it. (`detected` reports it
 /// as any other feature, so that `VG_CPU_FEATURES=none` reports none, and
 /// the dispatchers choose the base implementations.)
+///
+/// As `detected`, it is a load and tests once detection has run: every
+/// operation on secret data asks it, and the features only matter to the
+/// ones that then turn the mode on, so both come from the one load.
 #[cfg(target_arch = "aarch64")]
-pub fn dit() -> bool {
-    aarch64_dit()
+#[inline]
+pub fn dit() -> Option<Features> {
+    let s = state();
+    let has = cfg!(target_feature = "dit") || s & DETECTED_DIT != 0;
+    has.then_some(Features(s as u32 & !DETECTED_FLAGS))
 }
 
 /// Whether the CPU has FEAT_DIT, asked of the operating system.

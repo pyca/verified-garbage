@@ -234,6 +234,16 @@ mod tests {
         );
     }
 
+    /// `dit` says whether the CPU has FEAT_DIT, whatever `VG_CPU_FEATURES`
+    /// says, and where it has, what `detected` reports.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn dit_is_runtime_and_detected() {
+        let dit = verified_garbage_cpu::detect::dit();
+        assert_eq!(dit.is_some(), runtime() & feature::DIT != 0);
+        assert!(dit.is_none_or(|features| features == detected()));
+    }
+
     /// The microarchitectures are no instruction set feature: the
     /// compilation target enables none.
     #[test]
