@@ -39,8 +39,15 @@ def mixKey (b c d : Reg) (i : Nat) : List Instr :=
 
 def wordReg (i : Nat) : Reg := (#[.x6,.x7,.x8,.x9] : Array Reg)[i]!
 
-def roundInput (i : Nat) : List Instr :=
-  mixKey (wordReg ((i+1)%4)) (wordReg ((i+2)%4)) (wordReg ((i+3)%4)) i
+/-- The round key of round `i` (from 0): encryption's from the first,
+decryption's from the last (GB/T 32907-2016 §7.2). -/
+def rkIdx : Spec.Sm4.Direction → Nat → Nat
+  | .encrypt, i => i
+  | .decrypt, i => 31 - i
+
+/-- Round `i`'s input, with round key `k`. -/
+def roundInput (k i : Nat) : List Instr :=
+  mixKey (wordReg ((i+1)%4)) (wordReg ((i+2)%4)) (wordReg ((i+3)%4)) k
 
 /-- `x11 := L(x10)`, `L(B) = B ⊕ (B ⋘ 2) ⊕ (B ⋘ 10) ⊕ (B ⋘ 18) ⊕ (B ⋘ 24)`, as
 `(B ⊕ (B ⋙ 30)) ⊕ ((B ⋙ 8) ⊕ ((B ⊕ (B ⋙ 8)) ⋙ 14))` (rotations): the two
@@ -54,7 +61,8 @@ def roundOutput (i : Nat) : List Instr :=
   [.logic .eor .w (wordReg (i%4))
     (wordReg (i%4)) .x11]
 
-def round (i : Nat) : List Instr := roundInput i ++ substitute ++ linear ++ roundOutput i
+def round (d : Spec.Sm4.Direction) (i : Nat) : List Instr :=
+  roundInput (rkIdx d i) i ++ substitute ++ linear ++ roundOutput i
 
 def tableWord (h : Nat) : BitVec 64 := BitVec.ofNat 64 <| (List.range 8).foldl
   (fun a j => a + (Spec.Sm4.sbox.getD (8*h+j) 0).toNat * 2^(8*j)) 0
@@ -80,9 +88,14 @@ def storeBlock : List Instr :=
     let r := wordReg (3-i)
     [.rev32 r r,.str .w r .x5 (768+4*i)]
 
+/-- The buffer's block enciphered or deciphered in place: the same rounds,
+with the round keys in the direction's order. -/
+def crypt (d : Spec.Sm4.Direction) : List Instr :=
+  loadSbox ++ quarterConstants ++ loadBlock ++ (List.range 32).flatMap (round d) ++ storeBlock
+
 def core : VG.Impl.Modes.AArch64.Core where
  prepare := .seq (.block preparedTable) copySchedule
- crypt := .block (loadSbox ++ quarterConstants ++ loadBlock ++ (List.range 32).flatMap round ++ storeBlock)
+ crypt := .block (crypt .encrypt)
  slots := 396
  total := 408
  buf := 96
@@ -90,6 +103,9 @@ def core : VG.Impl.Modes.AArch64.Core where
  keyRegs := [.x0]
  dataReg := .x23
  leftReg := .x24
+
+/-- The core for decryption: `core` with the round keys from the last. -/
+def decCore : VG.Impl.Modes.AArch64.Core := { core with crypt := .block (crypt .decrypt) }
 
 def cbcEncryptChained : Prog isa := core.cbcEncryptChained ⟨.x1,.x2,.x3,.x4⟩ .x19
 

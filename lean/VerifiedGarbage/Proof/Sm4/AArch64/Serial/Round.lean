@@ -130,14 +130,22 @@ theorem wordReg_nl : ∀ j < 4, wordReg j ∉ [.x11,.x12,.x13] := by decide
 
 theorem wordReg_inj : ∀ a < 4, ∀ b < 4, wordReg a = wordReg b → a = b := by decide
 
-theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Constants s) (ht : Table s)
-    (hr : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (256+4*i)) 4) :
-    ∃ t, runBlock isa (round i) s = some t ∧
+theorem rkIdx_lt (d : Spec.Sm4.Direction) {i : Nat} (hi : i < 32) : rkIdx d i < 32 := by
+  cases d
+  · exact hi
+  · exact Nat.lt_of_le_of_lt (Nat.sub_le 31 i) (by decide)
+
+theorem round_run (d : Spec.Sm4.Direction) {s : State} {i : Nat} (hc : Constants s) (ht : Table s)
+    (hi : rkIdx d i < 32)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (256+4*rkIdx d i)) 4) :
+    ∃ t, runBlock isa (round d i) s = some t ∧
       (∀ w < 4, words t w = VG.Proof.Sm4.sround .enc
-        (s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*i)) 32) (i%4) (words s) w) ∧
+        (s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*rkIdx d i)) 32) (i%4) (words s) w) ∧
       Constants t ∧ Table t ∧
       (∀ r, r ≠ wordReg (i%4) → r ≠ .x10 → r ∉ [.x11,.x12,.x13] → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  rw [round]
+  generalize rkIdx d i = kk at hi hr ⊢
   let ra := wordReg (i%4)
   have ha10 : ra ≠ .x10 := (wordReg_ne _ (Nat.mod_lt _ (by decide))).1
   have ha11 : ra ∉ [.x11,.x12,.x13] := wordReg_nl _ (Nat.mod_lt _ (by decide))
@@ -155,7 +163,7 @@ theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Constants s) (ht : T
     simp only [State.read,Size.bits,cg _ ha11,bg _ ha10,ag _ ha10]
   have val : c.read .w .x11 = Spec.Sm4.t
       (words s ((i+1)%4) ^^^ words s ((i+2)%4) ^^^ words s ((i+3)%4) ^^^
-        s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*i)) 32) := by
+        s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*kk)) 32) := by
     simp only [State.read,Size.bits,cv,bv,av,
       BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),BitVec.setWidth_eq]
     unfold Spec.Sm4.t words
@@ -168,7 +176,7 @@ theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Constants s) (ht : T
     intro v hv
     rw [show t.v v = c.v v from rfl,cvec,bvec _ hv,avec]
   refine ⟨t,?_,?_,hc.of_preserved tv,ht.of_preserved tv,other,?_,?_,?_,?_⟩
-  · rw [round,VG.Interleave.runBlock_append,VG.Interleave.runBlock_append,
+  · rw [VG.Interleave.runBlock_append,VG.Interleave.runBlock_append,
       VG.Interleave.runBlock_append,roundInput,ae,Option.bind_some,be,Option.bind_some,ce,Option.bind_some]
     simp only [roundOutput,runBlock_cons,exec_logic,runStep_some,runBlock_nil]
     rfl

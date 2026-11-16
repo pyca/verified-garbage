@@ -231,12 +231,12 @@ theorem steps_congr (K L : Nat → BitVec 32) (n : Nat) (x y : Nat → BitVec 32
 
 theorem wordReg_mem : ∀ j < 4, wordReg j ∈ written := by decide
 
-theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32)
+theorem rounds_run (d : Spec.Sm4.Direction) (s : State) (n : Nat) (hn : n ≤ 32)
     (hc : Constants s) (ht : Table s)
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (256+4*i)) 4) :
-    ∃ t, runBlock isa ((List.range n).flatMap round) s = some t ∧
+    ∃ t, runBlock isa ((List.range n).flatMap (round d)) s = some t ∧
       (∀ w < 4, words t w = steps
-        (fun i => s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*i)) 32) n (words s) w) ∧
+        (fun i => s.mem.readW (s.gpr .x5 + BitVec.ofNat 64 (256+4*rkIdx d i)) 32) n (words s) w) ∧
       Constants t ∧ Table t ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
@@ -245,10 +245,11 @@ theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32)
   | succ n ih =>
     obtain ⟨a,ae,aw,ac,atab,ag,am,ard,awr,asp⟩ := ih (by omega_using [hn])
     have ab : a.gpr .x5 = s.gpr .x5 := ag _ (by decide)
-    have ar : InRegions (a.rd ++ a.wr) (a.gpr .x5 + BitVec.ofNat 64 (256+4*n)) 4 := by
+    have hk : rkIdx d n < 32 := rkIdx_lt d (by omega_using [hn])
+    have ar : InRegions (a.rd ++ a.wr) (a.gpr .x5 + BitVec.ofNat 64 (256+4*rkIdx d n)) 4 := by
       rw [ard,awr,ab]
-      exact hr n (by omega_using [hn])
-    obtain ⟨b,be,bw,bc,bt,bg,bm,brd,bwr,bsp⟩ := round_run (by omega_using [hn]) ac atab ar
+      exact hr _ hk
+    obtain ⟨b,be,bw,bc,bt,bg,bm,brd,bwr,bsp⟩ := round_run d ac atab hk ar
     refine ⟨b,?_,?_,bc,bt,?_,bm.trans am,brd.trans ard,bwr.trans awr,bsp.trans asp⟩
     · rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
         VG.Interleave.runBlock_append,ae,Option.bind_some,be]
@@ -293,13 +294,28 @@ namespace VG.Proof.Sm4.AArch64.Serial
 open VG VG.AArch64 VG.Impl.Sm4.AArch64.Serial
 open VG.Proof.Modes.AArch64 (ScrIn coreRegion bufRegion)
 
-theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
+/-- The direction's cipher on a block's bytes. -/
+def dirCipher : Spec.Sm4.Direction → Spec.Sm4.Schedule → Spec.Cbc.Cipher
+  | .encrypt => Spec.Sm4.cipher
+  | .decrypt => Spec.Sm4.invCipher
+
+theorem dirCipher_bytes (d : Spec.Sm4.Direction) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
+    dirCipher d k (Spec.Aes.bytesAt m p 16) =
+      (VG.Proof.Sm4.outBlock (VG.Proof.Sm4.quads .enc (fun i => k.getD (rkIdx d i) 0) 8
+        (VG.Proof.Sm4.ofBlock (Spec.Sm4.blockAt m p)))).toList := by
+  cases d
+  · exact VG.Proof.Sm4.cipher_bytes k m p
+  · rw [dirCipher, Spec.Sm4.invCipher, VG.Proof.Sm4.bytesAt_eq_blockAt, VG.Proof.Sm4.ofFn_toList,
+      Spec.Sm4.decryptBlock, VG.Proof.Sm4.crypt_eq]
+    rfl
+
+theorem crypt_wp (dir : Spec.Sm4.Direction) {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
     (hB : s.gpr .x5 = B) (hs : ScrIn s B core.total) (ready : Ready s.mem B k) :
-    WP isa core.crypt s fun t => t.gpr .x5 = B ∧
+    WP isa (.block (crypt dir)) s fun t => t.gpr .x5 = B ∧
       t.gpr .x23 = s.gpr .x23 ∧ t.gpr .x24 = s.gpr .x24 ∧ Ready t.mem B k ∧
       Frame [coreRegion core B] s.mem t.mem ∧
       Spec.Aes.bytesAt t.mem (B+BitVec.ofNat 64 768) 16 =
-        Spec.Sm4.cipher k (Spec.Aes.bytesAt s.mem (B+BitVec.ofNat 64 768) 16) ∧
+        dirCipher dir k (Spec.Aes.bytesAt s.mem (B+BitVec.ofNat 64 768) 16) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
   have readable : InRegions (s.rd ++ s.wr) (s.gpr .x5) 256 := by
     rw [hB]
@@ -308,7 +324,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
       simp [Region.Contains]⟩
   have bytes : ∀ j < 256, s.mem (s.gpr .x5+BitVec.ofNat 64 j) = Spec.Sm4.sbox.getD j 0 := by
     rw [hB]; exact ready.sbox
-  change WP isa (.block (loadSbox ++ quarterConstants ++ loadBlock ++ (List.range 32).flatMap round ++ storeBlock)) s _
+  change WP isa (.block (loadSbox ++ quarterConstants ++ loadBlock ++ (List.range 32).flatMap (round dir) ++ storeBlock)) s _
   rw [WP.block_append_iff,WP.block_append_iff,WP.block_append_iff,WP.block_append_iff]
   refine WP.mono (loadSbox_ok s readable bytes) fun a ⟨atab,ae⟩ => ?_
   obtain ⟨b,be,bc,bg,bm,brd,bwr,_,bvec⟩ := quarterConstants_run a
@@ -342,12 +358,12 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
     exact ⟨_,List.mem_append_right _ hs.wr,VG.Offset.contains_base B
       (by omega_using [hi] : 256+4*i+4 ≤ 3264) (by omega_using [hi])⟩
   obtain ⟨d,de,dw,dc,dt,dg,dm,drd,dwr,_⟩ :=
-    rounds_run c 32 (by decide) cc ct cr
+    rounds_run dir c 32 (by decide) cc ct cr
   refine WP.of_runBlock ⟨d,de,?_⟩
   have dbase : d.gpr .x5 = B := (dg _ (by decide)).trans cbase
   have dmem : d.mem = s.mem := dm.trans cmem
   let init := VG.Proof.Sm4.ofBlock (Spec.Sm4.blockAt s.mem (B+BitVec.ofNat 64 768))
-  let z := VG.Proof.Sm4.quads .enc (fun i => k.getD i 0) 8 init
+  let z := VG.Proof.Sm4.quads .enc (fun i => k.getD (rkIdx dir i) 0) 8 init
   have initial : ∀ w < 4, words c w = init w := by
     intro w hw
     rw [cw w hw,bmem,bbase,← VG.Offset.add_add B 768 (4*w),readBE_word _ _ w hw]
@@ -356,11 +372,11 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
     intro w hw
     rw [dw w hw]
     have h := steps_congr
-      (fun i => c.mem.readW (c.gpr .x5+BitVec.ofNat 64 (256+4*i)) 32)
-      (fun i => k.getD i 0) 32 (words c) init
-      (fun i hi => by rw [cmem,cbase]; exact ready.keys i hi) initial w hw
+      (fun i => c.mem.readW (c.gpr .x5+BitVec.ofNat 64 (256+4*rkIdx dir i)) 32)
+      (fun i => k.getD (rkIdx dir i) 0) 32 (words c) init
+      (fun i hi => by rw [cmem,cbase]; exact ready.keys _ (rkIdx_lt dir hi)) initial w hw
     rw [h]
-    change steps (fun i => k.getD i 0) (4*8) init w = z w
+    change steps (fun i => k.getD (rkIdx dir i) 0) (4*8) init w = z w
     rw [steps_quads]
   have dr : ∀ i < 4, InRegions d.wr (d.gpr .x5+BitVec.ofNat 64 (768+4*i)) 4 := by
     intro i hi
@@ -388,7 +404,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule}
   · exact frame.sub (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r
       exact ⟨_,List.mem_cons_self,VG.Offset.sub_base B (by decide : 768+16 ≤ 3168)⟩)
-  · rw [output,VG.Proof.Sm4.cipher_bytes]
+  · rw [output,dirCipher_bytes]
   · exact erd.trans (drd.trans (crd.trans (brd.trans ard)))
   · exact ewr.trans (dwr.trans (cwr.trans (bwr.trans awr)))
 
@@ -424,7 +440,7 @@ def coreSpec : CoreSpec core where
   prepare_wp := prepare_wp
   crypt_wp := by
     intro s B k hb hs hr
-    refine WP.mono (crypt_wp hb hs hr) fun t ⟨tb,td,tl,tr,tf,to,rd,wr⟩ =>
+    refine WP.mono (crypt_wp .encrypt hb hs hr) fun t ⟨tb,td,tl,tr,tf,to,rd,wr⟩ =>
       ⟨tb,td,tl,tr,tf,?_,rd,wr⟩
     intro j hj
     have hj' : j < 1 := hj
@@ -435,6 +451,38 @@ def coreSpec : CoreSpec core where
     exact to
 
 abbrev blockSpec : BlockSpec core := coreSpec.toBlock rfl
+
+@[simp] theorem decCore_bw : decCore.bw = 2 := rfl
+
+/-- The decrypting core meets the mode interface. -/
+def decCoreSpec : CoreSpec decCore where
+  Key := Spec.Sm4.Schedule
+  cipher := Spec.Sm4.invCipher
+  KeyArgs := VG.Proof.Sm4.AArch64.KeyArgs
+  Ready s B k := Ready s.mem B k
+  cipher_len _ _ := by simp [Spec.Sm4.invCipher]
+  layout := ⟨by decide,by decide,by decide,by decide,by decide⟩
+  keyRegs_ok := by decide
+  regs_ok := by decide
+  keyArgs_congr h hr hrd hwr _ hf := VG.Proof.Sm4.AArch64.keyArgs_congr h hr hrd hwr hf
+  ready_frame h hf hd _ _ := h.frame hf hd
+  prepare_wp := prepare_wp
+  crypt_wp := by
+    intro s B k hb hs hr
+    refine WP.mono (crypt_wp .decrypt hb hs hr) fun t ⟨tb,td,tl,tr,tf,to,rd,wr⟩ =>
+      ⟨tb,td,tl,tr,tf,?_,rd,wr⟩
+    intro j hj
+    have hj' : j < 1 := hj
+    have hj0 : j = 0 := by omega_using [hj']
+    subst j
+    change Spec.Aes.bytesAt t.mem (B+BitVec.ofNat 64 (768+16*0)) 16 =
+      Spec.Sm4.invCipher k (Spec.Aes.bytesAt s.mem (B+BitVec.ofNat 64 (768+16*0)) 16)
+    exact to
+
+abbrev decBlockSpec : BlockSpec decCore := decCoreSpec.toBlock rfl
+
+attribute [local irreducible] Spec.Sm4.invCipher in
+theorem invCipher_eq (k : Spec.Sm4.Schedule) : decBlockSpec.cipher k = Spec.Sm4.invCipher k := rfl
 
 theorem prepare_regSafe_x19 : VG.Proof.Modes.AArch64.regSafe .x19 core.prepare = true := by
   show VG.Proof.Modes.AArch64.regSafe .x19 (.seq (.block preparedTable) copySchedule) = true

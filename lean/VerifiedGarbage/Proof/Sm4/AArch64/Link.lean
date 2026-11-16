@@ -88,11 +88,18 @@ theorem serial_prepare_keeps_x30 : KeepsReg .x30 Serial.core.prepare :=
 theorem serial_crypt_keeps_x30 : KeepsReg .x30 Serial.core.crypt :=
   Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 
+theorem serial_decCrypt_keeps_x30 : KeepsReg .x30 Serial.decCore.crypt :=
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+
+theorem serial_decPrepare_keeps_x30 : KeepsReg .x30 Serial.decCore.prepare := serial_prepare_keeps_x30
+
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/
 tactic_template "sm4_keeps_x30" : tactic => `(tactic| repeat (first
   | with_reducible exact serial_prepare_keeps_x30
   | with_reducible exact serial_crypt_keeps_x30
+  | with_reducible exact serial_decCrypt_keeps_x30
+  | with_reducible exact serial_decPrepare_keeps_x30
   | with_reducible exact crypt_keeps_x30 _
   | with_reducible exact prepare_keeps_x30 _
   | apply KeepsReg.seq
