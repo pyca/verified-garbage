@@ -230,7 +230,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid3.lean": 6,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid4.lean": 7,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid5.lean": 5,
-    "VerifiedGarbage/Proof/Sha1/AArch64/Compress.lean": 5,
+    "VerifiedGarbage/Proof/Sha1/AArch64/Compress.lean": 3,
     "VerifiedGarbage/Proof/Sha1/AArch64/Sha2/Compress.lean": 1,
     "VerifiedGarbage/Proof/Sha1/Arm/Compress.lean": 4,
     "VerifiedGarbage/Proof/Sha1/StateMem.lean": 1,

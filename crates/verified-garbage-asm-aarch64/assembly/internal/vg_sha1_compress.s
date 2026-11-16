@@ -6,7 +6,41 @@
 
 vg_sha1_compress:
 	cbz x2, 20f
+	mov v18.d[0], x19
+	mov v18.d[1], x20
+	mov v19.d[0], x21
+	mov v19.d[1], x22
+	mov v20.d[0], x23
+	mov v20.d[1], x24
+	mov v21.d[0], x25
+	mov v21.d[1], x26
+	mov v22.d[0], x27
+	mov v22.d[1], x28
 22:
+	ldr x13, [x1, #0]
+	rev x13, x13
+	lsr x12, x13, #32
+	ldr x15, [x1, #8]
+	rev x15, x15
+	lsr x14, x15, #32
+	ldr x17, [x1, #16]
+	rev x17, x17
+	lsr x16, x17, #32
+	ldr x20, [x1, #24]
+	rev x20, x20
+	lsr x19, x20, #32
+	ldr x22, [x1, #32]
+	rev x22, x22
+	lsr x21, x22, #32
+	ldr x24, [x1, #40]
+	rev x24, x24
+	lsr x23, x24, #32
+	ldr x26, [x1, #48]
+	rev x26, x26
+	lsr x25, x26, #32
+	ldr x28, [x1, #56]
+	rev x28, x28
+	lsr x27, x28, #32
 	ldr w4, [x0, #0]
 	ldr w5, [x0, #4]
 	ldr w6, [x0, #8]
@@ -14,9 +48,6 @@ vg_sha1_compress:
 	ldr w8, [x0, #16]
 	movz w9, #31129, lsl #0
 	movk w9, #23170, lsl #16
-	ldr w12, [x1, #0]
-	rev w12, w12
-	str w12, [x3, #0]
 	eor w11, w6, w7
 	and w11, w11, w5
 	eor w11, w11, w7
@@ -26,9 +57,6 @@ vg_sha1_compress:
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w13, [x1, #4]
-	rev w13, w13
-	str w13, [x3, #4]
 	eor w11, w5, w6
 	and w11, w11, w4
 	eor w11, w11, w6
@@ -38,9 +66,6 @@ vg_sha1_compress:
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w14, [x1, #8]
-	rev w14, w14
-	str w14, [x3, #8]
 	eor w11, w4, w5
 	and w11, w11, w8
 	eor w11, w11, w5
@@ -50,45 +75,127 @@ vg_sha1_compress:
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w12, [x1, #12]
-	rev w12, w12
-	str w12, [x3, #12]
 	eor w11, w8, w4
 	and w11, w11, w7
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w12
+	add w5, w5, w15
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w13, [x1, #16]
-	rev w13, w13
-	str w13, [x3, #16]
 	eor w11, w7, w8
 	and w11, w11, w6
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w13
+	add w4, w4, w16
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w14, [x1, #20]
-	rev w14, w14
-	str w14, [x3, #20]
 	eor w11, w6, w7
 	and w11, w11, w5
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w14
+	add w8, w8, w17
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w12, [x1, #24]
-	rev w12, w12
-	str w12, [x3, #24]
+	eor w11, w5, w6
+	and w11, w11, w4
+	eor w11, w11, w6
+	ror w10, w8, #27
+	add w7, w7, w19
+	add w7, w7, w9
+	add w7, w7, w11
+	add w7, w7, w10
+	ror w4, w4, #2
+	eor w11, w4, w5
+	and w11, w11, w8
+	eor w11, w11, w5
+	ror w10, w7, #27
+	add w6, w6, w20
+	add w6, w6, w9
+	add w6, w6, w11
+	add w6, w6, w10
+	ror w8, w8, #2
+	eor w11, w8, w4
+	and w11, w11, w7
+	eor w11, w11, w4
+	ror w10, w6, #27
+	add w5, w5, w21
+	add w5, w5, w9
+	add w5, w5, w11
+	add w5, w5, w10
+	ror w7, w7, #2
+	eor w11, w7, w8
+	and w11, w11, w6
+	eor w11, w11, w8
+	ror w10, w5, #27
+	add w4, w4, w22
+	add w4, w4, w9
+	add w4, w4, w11
+	add w4, w4, w10
+	ror w6, w6, #2
+	eor w11, w6, w7
+	and w11, w11, w5
+	eor w11, w11, w7
+	ror w10, w4, #27
+	add w8, w8, w23
+	add w8, w8, w9
+	add w8, w8, w11
+	add w8, w8, w10
+	ror w5, w5, #2
+	eor w11, w5, w6
+	and w11, w11, w4
+	eor w11, w11, w6
+	ror w10, w8, #27
+	add w7, w7, w24
+	add w7, w7, w9
+	add w7, w7, w11
+	add w7, w7, w10
+	ror w4, w4, #2
+	eor w11, w4, w5
+	and w11, w11, w8
+	eor w11, w11, w5
+	ror w10, w7, #27
+	add w6, w6, w25
+	add w6, w6, w9
+	add w6, w6, w11
+	add w6, w6, w10
+	ror w8, w8, #2
+	eor w11, w8, w4
+	and w11, w11, w7
+	eor w11, w11, w4
+	ror w10, w6, #27
+	add w5, w5, w26
+	add w5, w5, w9
+	add w5, w5, w11
+	add w5, w5, w10
+	ror w7, w7, #2
+	eor w11, w7, w8
+	and w11, w11, w6
+	eor w11, w11, w8
+	ror w10, w5, #27
+	add w4, w4, w27
+	add w4, w4, w9
+	add w4, w4, w11
+	add w4, w4, w10
+	ror w6, w6, #2
+	eor w11, w6, w7
+	and w11, w11, w5
+	eor w11, w11, w7
+	ror w10, w4, #27
+	add w8, w8, w28
+	add w8, w8, w9
+	add w8, w8, w11
+	add w8, w8, w10
+	ror w5, w5, #2
+	eor w12, w12, w14
+	eor w12, w12, w21
+	eor w12, w12, w26
+	ror w12, w12, #31
 	eor w11, w5, w6
 	and w11, w11, w4
 	eor w11, w11, w6
@@ -98,9 +205,10 @@ vg_sha1_compress:
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w13, [x1, #28]
-	rev w13, w13
-	str w13, [x3, #28]
+	eor w13, w13, w15
+	eor w13, w13, w22
+	eor w13, w13, w27
+	ror w13, w13, #31
 	eor w11, w4, w5
 	and w11, w11, w8
 	eor w11, w11, w5
@@ -110,9 +218,10 @@ vg_sha1_compress:
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w14, [x1, #32]
-	rev w14, w14
-	str w14, [x3, #32]
+	eor w14, w14, w16
+	eor w14, w14, w23
+	eor w14, w14, w28
+	ror w14, w14, #31
 	eor w11, w8, w4
 	and w11, w11, w7
 	eor w11, w11, w4
@@ -122,280 +231,169 @@ vg_sha1_compress:
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w12, [x1, #36]
-	rev w12, w12
-	str w12, [x3, #36]
+	eor w15, w15, w17
+	eor w15, w15, w24
+	eor w15, w15, w12
+	ror w15, w15, #31
 	eor w11, w7, w8
 	and w11, w11, w6
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w12
-	add w4, w4, w9
-	add w4, w4, w11
-	add w4, w4, w10
-	ror w6, w6, #2
-	ldr w13, [x1, #40]
-	rev w13, w13
-	str w13, [x3, #40]
-	eor w11, w6, w7
-	and w11, w11, w5
-	eor w11, w11, w7
-	ror w10, w4, #27
-	add w8, w8, w13
-	add w8, w8, w9
-	add w8, w8, w11
-	add w8, w8, w10
-	ror w5, w5, #2
-	ldr w14, [x1, #44]
-	rev w14, w14
-	str w14, [x3, #44]
-	eor w11, w5, w6
-	and w11, w11, w4
-	eor w11, w11, w6
-	ror w10, w8, #27
-	add w7, w7, w14
-	add w7, w7, w9
-	add w7, w7, w11
-	add w7, w7, w10
-	ror w4, w4, #2
-	ldr w12, [x1, #48]
-	rev w12, w12
-	str w12, [x3, #48]
-	eor w11, w4, w5
-	and w11, w11, w8
-	eor w11, w11, w5
-	ror w10, w7, #27
-	add w6, w6, w12
-	add w6, w6, w9
-	add w6, w6, w11
-	add w6, w6, w10
-	ror w8, w8, #2
-	ldr w13, [x1, #52]
-	rev w13, w13
-	str w13, [x3, #52]
-	eor w11, w8, w4
-	and w11, w11, w7
-	eor w11, w11, w4
-	ror w10, w6, #27
-	add w5, w5, w13
-	add w5, w5, w9
-	add w5, w5, w11
-	add w5, w5, w10
-	ror w7, w7, #2
-	ldr w14, [x1, #56]
-	rev w14, w14
-	str w14, [x3, #56]
-	eor w11, w7, w8
-	and w11, w11, w6
-	eor w11, w11, w8
-	ror w10, w5, #27
-	add w4, w4, w14
-	add w4, w4, w9
-	add w4, w4, w11
-	add w4, w4, w10
-	ror w6, w6, #2
-	ldr w12, [x1, #60]
-	rev w12, w12
-	str w12, [x3, #60]
-	eor w11, w6, w7
-	and w11, w11, w5
-	eor w11, w11, w7
-	ror w10, w4, #27
-	add w8, w8, w12
-	add w8, w8, w9
-	add w8, w8, w11
-	add w8, w8, w10
-	ror w5, w5, #2
-	ldr w11, [x3, #32]
-	eor w13, w13, w11
-	ldr w11, [x3, #8]
-	eor w13, w13, w11
-	ldr w11, [x3, #0]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #0]
-	eor w11, w5, w6
-	and w11, w11, w4
-	eor w11, w11, w6
-	ror w10, w8, #27
-	add w7, w7, w13
-	add w7, w7, w9
-	add w7, w7, w11
-	add w7, w7, w10
-	ror w4, w4, #2
-	ldr w11, [x3, #36]
-	eor w14, w14, w11
-	ldr w11, [x3, #12]
-	eor w14, w14, w11
-	ldr w11, [x3, #4]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #4]
-	eor w11, w4, w5
-	and w11, w11, w8
-	eor w11, w11, w5
-	ror w10, w7, #27
-	add w6, w6, w14
-	add w6, w6, w9
-	add w6, w6, w11
-	add w6, w6, w10
-	ror w8, w8, #2
-	ldr w11, [x3, #40]
-	eor w12, w12, w11
-	ldr w11, [x3, #16]
-	eor w12, w12, w11
-	ldr w11, [x3, #8]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #8]
-	eor w11, w8, w4
-	and w11, w11, w7
-	eor w11, w11, w4
-	ror w10, w6, #27
-	add w5, w5, w12
-	add w5, w5, w9
-	add w5, w5, w11
-	add w5, w5, w10
-	ror w7, w7, #2
-	ldr w11, [x3, #44]
-	eor w13, w13, w11
-	ldr w11, [x3, #20]
-	eor w13, w13, w11
-	ldr w11, [x3, #12]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #12]
-	eor w11, w7, w8
-	and w11, w11, w6
-	eor w11, w11, w8
-	ror w10, w5, #27
-	add w4, w4, w13
+	add w4, w4, w15
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
 	movz w9, #60321, lsl #0
 	movk w9, #28377, lsl #16
-	ldr w11, [x3, #48]
-	eor w14, w14, w11
-	ldr w11, [x3, #24]
-	eor w14, w14, w11
-	ldr w11, [x3, #16]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #16]
+	eor w16, w16, w19
+	eor w16, w16, w25
+	eor w16, w16, w13
+	ror w16, w16, #31
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w14
+	add w8, w8, w16
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #52]
-	eor w12, w12, w11
-	ldr w11, [x3, #28]
-	eor w12, w12, w11
-	ldr w11, [x3, #20]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #20]
+	eor w17, w17, w20
+	eor w17, w17, w26
+	eor w17, w17, w14
+	ror w17, w17, #31
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
-	add w7, w7, w12
+	add w7, w7, w17
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #56]
-	eor w13, w13, w11
-	ldr w11, [x3, #32]
-	eor w13, w13, w11
-	ldr w11, [x3, #24]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #24]
+	eor w19, w19, w21
+	eor w19, w19, w27
+	eor w19, w19, w15
+	ror w19, w19, #31
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
-	add w6, w6, w13
+	add w6, w6, w19
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #60]
-	eor w14, w14, w11
-	ldr w11, [x3, #36]
-	eor w14, w14, w11
-	ldr w11, [x3, #28]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #28]
+	eor w20, w20, w22
+	eor w20, w20, w28
+	eor w20, w20, w16
+	ror w20, w20, #31
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w14
+	add w5, w5, w20
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #0]
-	eor w12, w12, w11
-	ldr w11, [x3, #40]
-	eor w12, w12, w11
-	ldr w11, [x3, #32]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #32]
+	eor w21, w21, w23
+	eor w21, w21, w12
+	eor w21, w21, w17
+	ror w21, w21, #31
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w12
+	add w4, w4, w21
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #4]
-	eor w13, w13, w11
-	ldr w11, [x3, #44]
-	eor w13, w13, w11
-	ldr w11, [x3, #36]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #36]
+	eor w22, w22, w24
+	eor w22, w22, w13
+	eor w22, w22, w19
+	ror w22, w22, #31
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w13
+	add w8, w8, w22
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #8]
-	eor w14, w14, w11
-	ldr w11, [x3, #48]
-	eor w14, w14, w11
-	ldr w11, [x3, #40]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #40]
+	eor w23, w23, w25
+	eor w23, w23, w14
+	eor w23, w23, w20
+	ror w23, w23, #31
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
-	add w7, w7, w14
+	add w7, w7, w23
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #12]
-	eor w12, w12, w11
-	ldr w11, [x3, #52]
-	eor w12, w12, w11
-	ldr w11, [x3, #44]
-	eor w12, w12, w11
+	eor w24, w24, w26
+	eor w24, w24, w15
+	eor w24, w24, w21
+	ror w24, w24, #31
+	eor w11, w8, w4
+	eor w11, w11, w5
+	ror w10, w7, #27
+	add w6, w6, w24
+	add w6, w6, w9
+	add w6, w6, w11
+	add w6, w6, w10
+	ror w8, w8, #2
+	eor w25, w25, w27
+	eor w25, w25, w16
+	eor w25, w25, w22
+	ror w25, w25, #31
+	eor w11, w7, w8
+	eor w11, w11, w4
+	ror w10, w6, #27
+	add w5, w5, w25
+	add w5, w5, w9
+	add w5, w5, w11
+	add w5, w5, w10
+	ror w7, w7, #2
+	eor w26, w26, w28
+	eor w26, w26, w17
+	eor w26, w26, w23
+	ror w26, w26, #31
+	eor w11, w6, w7
+	eor w11, w11, w8
+	ror w10, w5, #27
+	add w4, w4, w26
+	add w4, w4, w9
+	add w4, w4, w11
+	add w4, w4, w10
+	ror w6, w6, #2
+	eor w27, w27, w12
+	eor w27, w27, w19
+	eor w27, w27, w24
+	ror w27, w27, #31
+	eor w11, w5, w6
+	eor w11, w11, w7
+	ror w10, w4, #27
+	add w8, w8, w27
+	add w8, w8, w9
+	add w8, w8, w11
+	add w8, w8, w10
+	ror w5, w5, #2
+	eor w28, w28, w13
+	eor w28, w28, w20
+	eor w28, w28, w25
+	ror w28, w28, #31
+	eor w11, w4, w5
+	eor w11, w11, w6
+	ror w10, w8, #27
+	add w7, w7, w28
+	add w7, w7, w9
+	add w7, w7, w11
+	add w7, w7, w10
+	ror w4, w4, #2
+	eor w12, w12, w14
+	eor w12, w12, w21
+	eor w12, w12, w26
 	ror w12, w12, #31
-	str w12, [x3, #44]
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
@@ -404,14 +402,10 @@ vg_sha1_compress:
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #16]
-	eor w13, w13, w11
-	ldr w11, [x3, #56]
-	eor w13, w13, w11
-	ldr w11, [x3, #48]
-	eor w13, w13, w11
+	eor w13, w13, w15
+	eor w13, w13, w22
+	eor w13, w13, w27
 	ror w13, w13, #31
-	str w13, [x3, #48]
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
@@ -420,14 +414,10 @@ vg_sha1_compress:
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #20]
-	eor w14, w14, w11
-	ldr w11, [x3, #60]
-	eor w14, w14, w11
-	ldr w11, [x3, #52]
-	eor w14, w14, w11
+	eor w14, w14, w16
+	eor w14, w14, w23
+	eor w14, w14, w28
 	ror w14, w14, #31
-	str w14, [x3, #52]
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
@@ -436,320 +426,184 @@ vg_sha1_compress:
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #24]
-	eor w12, w12, w11
-	ldr w11, [x3, #0]
-	eor w12, w12, w11
-	ldr w11, [x3, #56]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #56]
+	eor w15, w15, w17
+	eor w15, w15, w24
+	eor w15, w15, w12
+	ror w15, w15, #31
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w12
+	add w8, w8, w15
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #28]
-	eor w13, w13, w11
-	ldr w11, [x3, #4]
-	eor w13, w13, w11
-	ldr w11, [x3, #60]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #60]
+	eor w16, w16, w19
+	eor w16, w16, w25
+	eor w16, w16, w13
+	ror w16, w16, #31
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
-	add w7, w7, w13
+	add w7, w7, w16
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #32]
-	eor w14, w14, w11
-	ldr w11, [x3, #8]
-	eor w14, w14, w11
-	ldr w11, [x3, #0]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #0]
+	eor w17, w17, w20
+	eor w17, w17, w26
+	eor w17, w17, w14
+	ror w17, w17, #31
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
-	add w6, w6, w14
+	add w6, w6, w17
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #36]
-	eor w12, w12, w11
-	ldr w11, [x3, #12]
-	eor w12, w12, w11
-	ldr w11, [x3, #4]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #4]
+	eor w19, w19, w21
+	eor w19, w19, w27
+	eor w19, w19, w15
+	ror w19, w19, #31
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w12
+	add w5, w5, w19
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #40]
-	eor w13, w13, w11
-	ldr w11, [x3, #16]
-	eor w13, w13, w11
-	ldr w11, [x3, #8]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #8]
+	eor w20, w20, w22
+	eor w20, w20, w28
+	eor w20, w20, w16
+	ror w20, w20, #31
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w13
-	add w4, w4, w9
-	add w4, w4, w11
-	add w4, w4, w10
-	ror w6, w6, #2
-	ldr w11, [x3, #44]
-	eor w14, w14, w11
-	ldr w11, [x3, #20]
-	eor w14, w14, w11
-	ldr w11, [x3, #12]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #12]
-	eor w11, w5, w6
-	eor w11, w11, w7
-	ror w10, w4, #27
-	add w8, w8, w14
-	add w8, w8, w9
-	add w8, w8, w11
-	add w8, w8, w10
-	ror w5, w5, #2
-	ldr w11, [x3, #48]
-	eor w12, w12, w11
-	ldr w11, [x3, #24]
-	eor w12, w12, w11
-	ldr w11, [x3, #16]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #16]
-	eor w11, w4, w5
-	eor w11, w11, w6
-	ror w10, w8, #27
-	add w7, w7, w12
-	add w7, w7, w9
-	add w7, w7, w11
-	add w7, w7, w10
-	ror w4, w4, #2
-	ldr w11, [x3, #52]
-	eor w13, w13, w11
-	ldr w11, [x3, #28]
-	eor w13, w13, w11
-	ldr w11, [x3, #20]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #20]
-	eor w11, w8, w4
-	eor w11, w11, w5
-	ror w10, w7, #27
-	add w6, w6, w13
-	add w6, w6, w9
-	add w6, w6, w11
-	add w6, w6, w10
-	ror w8, w8, #2
-	ldr w11, [x3, #56]
-	eor w14, w14, w11
-	ldr w11, [x3, #32]
-	eor w14, w14, w11
-	ldr w11, [x3, #24]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #24]
-	eor w11, w7, w8
-	eor w11, w11, w4
-	ror w10, w6, #27
-	add w5, w5, w14
-	add w5, w5, w9
-	add w5, w5, w11
-	add w5, w5, w10
-	ror w7, w7, #2
-	ldr w11, [x3, #60]
-	eor w12, w12, w11
-	ldr w11, [x3, #36]
-	eor w12, w12, w11
-	ldr w11, [x3, #28]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #28]
-	eor w11, w6, w7
-	eor w11, w11, w8
-	ror w10, w5, #27
-	add w4, w4, w12
+	add w4, w4, w20
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
 	movz w9, #48348, lsl #0
 	movk w9, #36635, lsl #16
-	ldr w11, [x3, #0]
-	eor w13, w13, w11
-	ldr w11, [x3, #40]
-	eor w13, w13, w11
-	ldr w11, [x3, #32]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #32]
+	eor w21, w21, w23
+	eor w21, w21, w12
+	eor w21, w21, w17
+	ror w21, w21, #31
 	orr w11, w5, w6
 	and w11, w11, w7
 	and w10, w5, w6
 	orr w11, w11, w10
 	ror w10, w4, #27
-	add w8, w8, w13
+	add w8, w8, w21
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #4]
-	eor w14, w14, w11
-	ldr w11, [x3, #44]
-	eor w14, w14, w11
-	ldr w11, [x3, #36]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #36]
+	eor w22, w22, w24
+	eor w22, w22, w13
+	eor w22, w22, w19
+	ror w22, w22, #31
 	orr w11, w4, w5
 	and w11, w11, w6
 	and w10, w4, w5
 	orr w11, w11, w10
 	ror w10, w8, #27
-	add w7, w7, w14
+	add w7, w7, w22
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #8]
-	eor w12, w12, w11
-	ldr w11, [x3, #48]
-	eor w12, w12, w11
-	ldr w11, [x3, #40]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #40]
+	eor w23, w23, w25
+	eor w23, w23, w14
+	eor w23, w23, w20
+	ror w23, w23, #31
 	orr w11, w8, w4
 	and w11, w11, w5
 	and w10, w8, w4
 	orr w11, w11, w10
 	ror w10, w7, #27
-	add w6, w6, w12
+	add w6, w6, w23
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #12]
-	eor w13, w13, w11
-	ldr w11, [x3, #52]
-	eor w13, w13, w11
-	ldr w11, [x3, #44]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #44]
+	eor w24, w24, w26
+	eor w24, w24, w15
+	eor w24, w24, w21
+	ror w24, w24, #31
 	orr w11, w7, w8
 	and w11, w11, w4
 	and w10, w7, w8
 	orr w11, w11, w10
 	ror w10, w6, #27
-	add w5, w5, w13
+	add w5, w5, w24
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #16]
-	eor w14, w14, w11
-	ldr w11, [x3, #56]
-	eor w14, w14, w11
-	ldr w11, [x3, #48]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #48]
+	eor w25, w25, w27
+	eor w25, w25, w16
+	eor w25, w25, w22
+	ror w25, w25, #31
 	orr w11, w6, w7
 	and w11, w11, w8
 	and w10, w6, w7
 	orr w11, w11, w10
 	ror w10, w5, #27
-	add w4, w4, w14
+	add w4, w4, w25
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #20]
-	eor w12, w12, w11
-	ldr w11, [x3, #60]
-	eor w12, w12, w11
-	ldr w11, [x3, #52]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #52]
+	eor w26, w26, w28
+	eor w26, w26, w17
+	eor w26, w26, w23
+	ror w26, w26, #31
 	orr w11, w5, w6
 	and w11, w11, w7
 	and w10, w5, w6
 	orr w11, w11, w10
 	ror w10, w4, #27
-	add w8, w8, w12
+	add w8, w8, w26
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #24]
-	eor w13, w13, w11
-	ldr w11, [x3, #0]
-	eor w13, w13, w11
-	ldr w11, [x3, #56]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #56]
+	eor w27, w27, w12
+	eor w27, w27, w19
+	eor w27, w27, w24
+	ror w27, w27, #31
 	orr w11, w4, w5
 	and w11, w11, w6
 	and w10, w4, w5
 	orr w11, w11, w10
 	ror w10, w8, #27
-	add w7, w7, w13
+	add w7, w7, w27
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #28]
-	eor w14, w14, w11
-	ldr w11, [x3, #4]
-	eor w14, w14, w11
-	ldr w11, [x3, #60]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #60]
+	eor w28, w28, w13
+	eor w28, w28, w20
+	eor w28, w28, w25
+	ror w28, w28, #31
 	orr w11, w8, w4
 	and w11, w11, w5
 	and w10, w8, w4
 	orr w11, w11, w10
 	ror w10, w7, #27
-	add w6, w6, w14
+	add w6, w6, w28
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #32]
-	eor w12, w12, w11
-	ldr w11, [x3, #8]
-	eor w12, w12, w11
-	ldr w11, [x3, #0]
-	eor w12, w12, w11
+	eor w12, w12, w14
+	eor w12, w12, w21
+	eor w12, w12, w26
 	ror w12, w12, #31
-	str w12, [x3, #0]
 	orr w11, w7, w8
 	and w11, w11, w4
 	and w10, w7, w8
@@ -760,14 +614,10 @@ vg_sha1_compress:
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #36]
-	eor w13, w13, w11
-	ldr w11, [x3, #12]
-	eor w13, w13, w11
-	ldr w11, [x3, #4]
-	eor w13, w13, w11
+	eor w13, w13, w15
+	eor w13, w13, w22
+	eor w13, w13, w27
 	ror w13, w13, #31
-	str w13, [x3, #4]
 	orr w11, w6, w7
 	and w11, w11, w8
 	and w10, w6, w7
@@ -778,14 +628,10 @@ vg_sha1_compress:
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #40]
-	eor w14, w14, w11
-	ldr w11, [x3, #16]
-	eor w14, w14, w11
-	ldr w11, [x3, #8]
-	eor w14, w14, w11
+	eor w14, w14, w16
+	eor w14, w14, w23
+	eor w14, w14, w28
 	ror w14, w14, #31
-	str w14, [x3, #8]
 	orr w11, w5, w6
 	and w11, w11, w7
 	and w10, w5, w6
@@ -796,322 +642,186 @@ vg_sha1_compress:
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #44]
-	eor w12, w12, w11
-	ldr w11, [x3, #20]
-	eor w12, w12, w11
-	ldr w11, [x3, #12]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #12]
+	eor w15, w15, w17
+	eor w15, w15, w24
+	eor w15, w15, w12
+	ror w15, w15, #31
 	orr w11, w4, w5
 	and w11, w11, w6
 	and w10, w4, w5
 	orr w11, w11, w10
 	ror w10, w8, #27
-	add w7, w7, w12
+	add w7, w7, w15
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #48]
-	eor w13, w13, w11
-	ldr w11, [x3, #24]
-	eor w13, w13, w11
-	ldr w11, [x3, #16]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #16]
+	eor w16, w16, w19
+	eor w16, w16, w25
+	eor w16, w16, w13
+	ror w16, w16, #31
 	orr w11, w8, w4
 	and w11, w11, w5
 	and w10, w8, w4
 	orr w11, w11, w10
 	ror w10, w7, #27
-	add w6, w6, w13
+	add w6, w6, w16
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #52]
-	eor w14, w14, w11
-	ldr w11, [x3, #28]
-	eor w14, w14, w11
-	ldr w11, [x3, #20]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #20]
+	eor w17, w17, w20
+	eor w17, w17, w26
+	eor w17, w17, w14
+	ror w17, w17, #31
 	orr w11, w7, w8
 	and w11, w11, w4
 	and w10, w7, w8
 	orr w11, w11, w10
 	ror w10, w6, #27
-	add w5, w5, w14
+	add w5, w5, w17
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #56]
-	eor w12, w12, w11
-	ldr w11, [x3, #32]
-	eor w12, w12, w11
-	ldr w11, [x3, #24]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #24]
+	eor w19, w19, w21
+	eor w19, w19, w27
+	eor w19, w19, w15
+	ror w19, w19, #31
 	orr w11, w6, w7
 	and w11, w11, w8
 	and w10, w6, w7
 	orr w11, w11, w10
 	ror w10, w5, #27
-	add w4, w4, w12
+	add w4, w4, w19
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #60]
-	eor w13, w13, w11
-	ldr w11, [x3, #36]
-	eor w13, w13, w11
-	ldr w11, [x3, #28]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #28]
+	eor w20, w20, w22
+	eor w20, w20, w28
+	eor w20, w20, w16
+	ror w20, w20, #31
 	orr w11, w5, w6
 	and w11, w11, w7
 	and w10, w5, w6
 	orr w11, w11, w10
 	ror w10, w4, #27
-	add w8, w8, w13
+	add w8, w8, w20
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #0]
-	eor w14, w14, w11
-	ldr w11, [x3, #40]
-	eor w14, w14, w11
-	ldr w11, [x3, #32]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #32]
+	eor w21, w21, w23
+	eor w21, w21, w12
+	eor w21, w21, w17
+	ror w21, w21, #31
 	orr w11, w4, w5
 	and w11, w11, w6
 	and w10, w4, w5
 	orr w11, w11, w10
 	ror w10, w8, #27
-	add w7, w7, w14
+	add w7, w7, w21
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #4]
-	eor w12, w12, w11
-	ldr w11, [x3, #44]
-	eor w12, w12, w11
-	ldr w11, [x3, #36]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #36]
+	eor w22, w22, w24
+	eor w22, w22, w13
+	eor w22, w22, w19
+	ror w22, w22, #31
 	orr w11, w8, w4
 	and w11, w11, w5
 	and w10, w8, w4
 	orr w11, w11, w10
 	ror w10, w7, #27
-	add w6, w6, w12
+	add w6, w6, w22
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #8]
-	eor w13, w13, w11
-	ldr w11, [x3, #48]
-	eor w13, w13, w11
-	ldr w11, [x3, #40]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #40]
+	eor w23, w23, w25
+	eor w23, w23, w14
+	eor w23, w23, w20
+	ror w23, w23, #31
 	orr w11, w7, w8
 	and w11, w11, w4
 	and w10, w7, w8
 	orr w11, w11, w10
 	ror w10, w6, #27
-	add w5, w5, w13
+	add w5, w5, w23
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #12]
-	eor w14, w14, w11
-	ldr w11, [x3, #52]
-	eor w14, w14, w11
-	ldr w11, [x3, #44]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #44]
+	eor w24, w24, w26
+	eor w24, w24, w15
+	eor w24, w24, w21
+	ror w24, w24, #31
 	orr w11, w6, w7
 	and w11, w11, w8
 	and w10, w6, w7
 	orr w11, w11, w10
 	ror w10, w5, #27
-	add w4, w4, w14
+	add w4, w4, w24
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
 	movz w9, #49622, lsl #0
 	movk w9, #51810, lsl #16
-	ldr w11, [x3, #16]
-	eor w12, w12, w11
-	ldr w11, [x3, #56]
-	eor w12, w12, w11
-	ldr w11, [x3, #48]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #48]
+	eor w25, w25, w27
+	eor w25, w25, w16
+	eor w25, w25, w22
+	ror w25, w25, #31
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w12
+	add w8, w8, w25
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #20]
-	eor w13, w13, w11
-	ldr w11, [x3, #60]
-	eor w13, w13, w11
-	ldr w11, [x3, #52]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #52]
+	eor w26, w26, w28
+	eor w26, w26, w17
+	eor w26, w26, w23
+	ror w26, w26, #31
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
-	add w7, w7, w13
+	add w7, w7, w26
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #24]
-	eor w14, w14, w11
-	ldr w11, [x3, #0]
-	eor w14, w14, w11
-	ldr w11, [x3, #56]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #56]
+	eor w27, w27, w12
+	eor w27, w27, w19
+	eor w27, w27, w24
+	ror w27, w27, #31
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
-	add w6, w6, w14
+	add w6, w6, w27
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #28]
-	eor w12, w12, w11
-	ldr w11, [x3, #4]
-	eor w12, w12, w11
-	ldr w11, [x3, #60]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #60]
+	eor w28, w28, w13
+	eor w28, w28, w20
+	eor w28, w28, w25
+	ror w28, w28, #31
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w12
+	add w5, w5, w28
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #32]
-	eor w13, w13, w11
-	ldr w11, [x3, #8]
-	eor w13, w13, w11
-	ldr w11, [x3, #0]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #0]
-	eor w11, w6, w7
-	eor w11, w11, w8
-	ror w10, w5, #27
-	add w4, w4, w13
-	add w4, w4, w9
-	add w4, w4, w11
-	add w4, w4, w10
-	ror w6, w6, #2
-	ldr w11, [x3, #36]
-	eor w14, w14, w11
-	ldr w11, [x3, #12]
-	eor w14, w14, w11
-	ldr w11, [x3, #4]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #4]
-	eor w11, w5, w6
-	eor w11, w11, w7
-	ror w10, w4, #27
-	add w8, w8, w14
-	add w8, w8, w9
-	add w8, w8, w11
-	add w8, w8, w10
-	ror w5, w5, #2
-	ldr w11, [x3, #40]
-	eor w12, w12, w11
-	ldr w11, [x3, #16]
-	eor w12, w12, w11
-	ldr w11, [x3, #8]
-	eor w12, w12, w11
+	eor w12, w12, w14
+	eor w12, w12, w21
+	eor w12, w12, w26
 	ror w12, w12, #31
-	str w12, [x3, #8]
-	eor w11, w4, w5
-	eor w11, w11, w6
-	ror w10, w8, #27
-	add w7, w7, w12
-	add w7, w7, w9
-	add w7, w7, w11
-	add w7, w7, w10
-	ror w4, w4, #2
-	ldr w11, [x3, #44]
-	eor w13, w13, w11
-	ldr w11, [x3, #20]
-	eor w13, w13, w11
-	ldr w11, [x3, #12]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #12]
-	eor w11, w8, w4
-	eor w11, w11, w5
-	ror w10, w7, #27
-	add w6, w6, w13
-	add w6, w6, w9
-	add w6, w6, w11
-	add w6, w6, w10
-	ror w8, w8, #2
-	ldr w11, [x3, #48]
-	eor w14, w14, w11
-	ldr w11, [x3, #24]
-	eor w14, w14, w11
-	ldr w11, [x3, #16]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #16]
-	eor w11, w7, w8
-	eor w11, w11, w4
-	ror w10, w6, #27
-	add w5, w5, w14
-	add w5, w5, w9
-	add w5, w5, w11
-	add w5, w5, w10
-	ror w7, w7, #2
-	ldr w11, [x3, #52]
-	eor w12, w12, w11
-	ldr w11, [x3, #28]
-	eor w12, w12, w11
-	ldr w11, [x3, #20]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #20]
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
@@ -1120,14 +830,10 @@ vg_sha1_compress:
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #56]
-	eor w13, w13, w11
-	ldr w11, [x3, #32]
-	eor w13, w13, w11
-	ldr w11, [x3, #24]
-	eor w13, w13, w11
+	eor w13, w13, w15
+	eor w13, w13, w22
+	eor w13, w13, w27
 	ror w13, w13, #31
-	str w13, [x3, #24]
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
@@ -1136,14 +842,10 @@ vg_sha1_compress:
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #60]
-	eor w14, w14, w11
-	ldr w11, [x3, #36]
-	eor w14, w14, w11
-	ldr w11, [x3, #28]
-	eor w14, w14, w11
+	eor w14, w14, w16
+	eor w14, w14, w23
+	eor w14, w14, w28
 	ror w14, w14, #31
-	str w14, [x3, #28]
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
@@ -1152,130 +854,158 @@ vg_sha1_compress:
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #0]
-	eor w12, w12, w11
-	ldr w11, [x3, #40]
-	eor w12, w12, w11
-	ldr w11, [x3, #32]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #32]
+	eor w15, w15, w17
+	eor w15, w15, w24
+	eor w15, w15, w12
+	ror w15, w15, #31
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
-	add w6, w6, w12
+	add w6, w6, w15
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #4]
-	eor w13, w13, w11
-	ldr w11, [x3, #44]
-	eor w13, w13, w11
-	ldr w11, [x3, #36]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #36]
+	eor w16, w16, w19
+	eor w16, w16, w25
+	eor w16, w16, w13
+	ror w16, w16, #31
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w13
+	add w5, w5, w16
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #8]
-	eor w14, w14, w11
-	ldr w11, [x3, #48]
-	eor w14, w14, w11
-	ldr w11, [x3, #40]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #40]
+	eor w17, w17, w20
+	eor w17, w17, w26
+	eor w17, w17, w14
+	ror w17, w17, #31
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w14
+	add w4, w4, w17
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
 	ror w6, w6, #2
-	ldr w11, [x3, #12]
-	eor w12, w12, w11
-	ldr w11, [x3, #52]
-	eor w12, w12, w11
-	ldr w11, [x3, #44]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #44]
+	eor w19, w19, w21
+	eor w19, w19, w27
+	eor w19, w19, w15
+	ror w19, w19, #31
 	eor w11, w5, w6
 	eor w11, w11, w7
 	ror w10, w4, #27
-	add w8, w8, w12
+	add w8, w8, w19
 	add w8, w8, w9
 	add w8, w8, w11
 	add w8, w8, w10
 	ror w5, w5, #2
-	ldr w11, [x3, #16]
-	eor w13, w13, w11
-	ldr w11, [x3, #56]
-	eor w13, w13, w11
-	ldr w11, [x3, #48]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #48]
+	eor w20, w20, w22
+	eor w20, w20, w28
+	eor w20, w20, w16
+	ror w20, w20, #31
 	eor w11, w4, w5
 	eor w11, w11, w6
 	ror w10, w8, #27
-	add w7, w7, w13
+	add w7, w7, w20
 	add w7, w7, w9
 	add w7, w7, w11
 	add w7, w7, w10
 	ror w4, w4, #2
-	ldr w11, [x3, #20]
-	eor w14, w14, w11
-	ldr w11, [x3, #60]
-	eor w14, w14, w11
-	ldr w11, [x3, #52]
-	eor w14, w14, w11
-	ror w14, w14, #31
-	str w14, [x3, #52]
+	eor w21, w21, w23
+	eor w21, w21, w12
+	eor w21, w21, w17
+	ror w21, w21, #31
 	eor w11, w8, w4
 	eor w11, w11, w5
 	ror w10, w7, #27
-	add w6, w6, w14
+	add w6, w6, w21
 	add w6, w6, w9
 	add w6, w6, w11
 	add w6, w6, w10
 	ror w8, w8, #2
-	ldr w11, [x3, #24]
-	eor w12, w12, w11
-	ldr w11, [x3, #0]
-	eor w12, w12, w11
-	ldr w11, [x3, #56]
-	eor w12, w12, w11
-	ror w12, w12, #31
-	str w12, [x3, #56]
+	eor w22, w22, w24
+	eor w22, w22, w13
+	eor w22, w22, w19
+	ror w22, w22, #31
 	eor w11, w7, w8
 	eor w11, w11, w4
 	ror w10, w6, #27
-	add w5, w5, w12
+	add w5, w5, w22
 	add w5, w5, w9
 	add w5, w5, w11
 	add w5, w5, w10
 	ror w7, w7, #2
-	ldr w11, [x3, #28]
-	eor w13, w13, w11
-	ldr w11, [x3, #4]
-	eor w13, w13, w11
-	ldr w11, [x3, #60]
-	eor w13, w13, w11
-	ror w13, w13, #31
-	str w13, [x3, #60]
+	eor w23, w23, w25
+	eor w23, w23, w14
+	eor w23, w23, w20
+	ror w23, w23, #31
 	eor w11, w6, w7
 	eor w11, w11, w8
 	ror w10, w5, #27
-	add w4, w4, w13
+	add w4, w4, w23
+	add w4, w4, w9
+	add w4, w4, w11
+	add w4, w4, w10
+	ror w6, w6, #2
+	eor w24, w24, w26
+	eor w24, w24, w15
+	eor w24, w24, w21
+	ror w24, w24, #31
+	eor w11, w5, w6
+	eor w11, w11, w7
+	ror w10, w4, #27
+	add w8, w8, w24
+	add w8, w8, w9
+	add w8, w8, w11
+	add w8, w8, w10
+	ror w5, w5, #2
+	eor w25, w25, w27
+	eor w25, w25, w16
+	eor w25, w25, w22
+	ror w25, w25, #31
+	eor w11, w4, w5
+	eor w11, w11, w6
+	ror w10, w8, #27
+	add w7, w7, w25
+	add w7, w7, w9
+	add w7, w7, w11
+	add w7, w7, w10
+	ror w4, w4, #2
+	eor w26, w26, w28
+	eor w26, w26, w17
+	eor w26, w26, w23
+	ror w26, w26, #31
+	eor w11, w8, w4
+	eor w11, w11, w5
+	ror w10, w7, #27
+	add w6, w6, w26
+	add w6, w6, w9
+	add w6, w6, w11
+	add w6, w6, w10
+	ror w8, w8, #2
+	eor w27, w27, w12
+	eor w27, w27, w19
+	eor w27, w27, w24
+	ror w27, w27, #31
+	eor w11, w7, w8
+	eor w11, w11, w4
+	ror w10, w6, #27
+	add w5, w5, w27
+	add w5, w5, w9
+	add w5, w5, w11
+	add w5, w5, w10
+	ror w7, w7, #2
+	eor w28, w28, w13
+	eor w28, w28, w20
+	eor w28, w28, w25
+	ror w28, w28, #31
+	eor w11, w6, w7
+	eor w11, w11, w8
+	ror w10, w5, #27
+	add w4, w4, w28
 	add w4, w4, w9
 	add w4, w4, w11
 	add w4, w4, w10
@@ -1298,6 +1028,16 @@ vg_sha1_compress:
 	add x1, x1, #64
 	sub x2, x2, #1
 	cbnz x2, 22b
+	umov x19, v18.d[0]
+	umov x20, v18.d[1]
+	umov x21, v19.d[0]
+	umov x22, v19.d[1]
+	umov x23, v20.d[0]
+	umov x24, v20.d[1]
+	umov x25, v21.d[0]
+	umov x26, v21.d[1]
+	umov x27, v22.d[0]
+	umov x28, v22.d[1]
 	b 21f
 20:
 21:
