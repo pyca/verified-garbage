@@ -145,8 +145,9 @@ jobs:
                 for target in armv7-unknown-linux-gnueabihf thumbv7neon-unknown-linux-gnueabihf; do
                   qemu-arm "target/$target/debug/hello"
                 done
-                # The armhf OpenSSL's legacy provider, which the benchmarks
-                # of the legacy ciphers load.
+                # The legacy provider of the armhf OpenSSL, which the
+                # benchmarks of the legacy ciphers load (no apostrophe here:
+                # the script is in single quotes).
                 test -e /usr/lib/arm-linux-gnueabihf/ossl-modules/legacy.so
               fi
               rustup component list --installed | xargs rustup component remove
