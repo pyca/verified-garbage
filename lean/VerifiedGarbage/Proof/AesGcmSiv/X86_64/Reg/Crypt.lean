@@ -11,8 +11,10 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
@@ -532,5 +534,213 @@ theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : Stat
   · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+
+/-- The loop of single blocks, from any block before the last. -/
+theorem cones_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {n : Nat}
+    {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {d : BitVec 128} {σ : State}
+    (hD : Buf K W SP σ D n) (hDw : Covers [⟨D, n⟩] σ.wr)
+    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4) {j₀ : Nat} (hj₀ : j₀ < n / 16)
+    {t : State} (I₀ : CInv K W SP R D n ciph icb x d σ j₀ t) :
+    WP isa (.loop crypt1 .ne) t (CInv K W SP R D n ciph icb x d σ (n / 16)) := by
+  refine WP.loop (M := isa) (body := crypt1) (c := .ne)
+    (fun (m : Nat) (t : State) => ∃ j, m = n / 16 - j ∧ j < n / 16 ∧ CInv K W SP R D n ciph icb x d σ j t) ?_
+    (n / 16 - j₀) t ⟨j₀, rfl, hj₀, I₀⟩
+  rintro m t ⟨j, rfl, hj, I⟩
+  refine WP.mono (crypt1_ok hR hxl hD hDw hrest hj I) fun t' ⟨I', hz⟩ => ?_
+  have ev : isa.eval .ne t' = some !(decide (n / 16 - j = 1)) := by
+    show t'.zf.map (!·) = _; rw [hz]; rfl
+  by_cases h1 : n / 16 - j = 1
+  · left
+    refine ⟨by rw [ev, decide_eq_true h1]; rfl, ?_⟩
+    rw [show n / 16 = j + 1 by omega_arith]; exact I'
+  · right
+    exact ⟨by rw [ev, decide_eq_false h1]; rfl, n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
+
+/-- The whole blocks enciphered. -/
+theorem cblocks_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {n : Nat}
+    {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {d : BitVec 128} {σ : State}
+    (hD : Buf K W SP σ D n) (hDw : Covers [⟨D, n⟩] σ.wr)
+    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4)
+    {t : State} (I : CInv K W SP R D n ciph icb x d σ 0 t) (hz : t.zf = some (decide (n / 16 = 0))) :
+    WP isa (.ite .e (.block [])
+        (.seq (.block [.alu .cmp .rbx (imm 4)])
+          (.seq (.ite .b (.block []) (.loop crypt4 .ae))
+            (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop crypt1 .ne)))))) t
+      (CInv K W SP R D n ciph icb x d σ (n / 16)) := by
+  have hlt := hD.lt
+  refine WP.ite (decide (n / 16 = 0)) hz (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have : n / 16 = 0 := by simpa using h0
+    rw [this]; exact I
+  obtain ⟨v, o, run₁⟩ := cmpbx_run t (k := n / 16) (by omega_arith) (by rw [I.rbx, Nat.sub_zero])
+  refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
+  have I₁ := I.flags v (decide (n / 16 < 4)) o
+  have mid : WP isa (.ite .b (.block []) (.loop crypt4 .ae)) (arithFlags t v (decide (n / 16 < 4)) o)
+      fun u => ∃ k, k ≤ n / 16 ∧ CInv K W SP R D n ciph icb x d σ k u := by
+    refine WP.ite (decide (n / 16 < 4)) rfl (fun _ => WP.block_nil ⟨0, Nat.zero_le _, I₁⟩) (fun h4 => ?_)
+    have h4' : ¬ n / 16 < 4 := by simpa using h4
+    refine WP.loop (M := isa) (body := crypt4) (c := .ae)
+      (fun (m : Nat) (u : State) => ∃ k, m = n / 16 - k ∧ k + 4 ≤ n / 16 ∧ CInv K W SP R D n ciph icb x d σ k u) ?_
+      (n / 16 - 0) _ ⟨0, rfl, by omega_arith, I₁⟩
+    rintro m u ⟨k, rfl, hk, Iu⟩
+    refine WP.mono (crypt4_ok hR hxl hD hDw hrest hk Iu) fun u' ⟨Iu', hcf'⟩ => ?_
+    have ev : isa.eval .ae u' = some !(decide (n / 16 - (k + 4) < 4)) := by
+      show u'.cf.map (!·) = _; rw [hcf']; rfl
+    by_cases hlt4 : n / 16 - (k + 4) < 4
+    · left
+      exact ⟨by rw [ev, decide_eq_true hlt4]; rfl, k + 4, hk, Iu'⟩
+    · right
+      exact ⟨by rw [ev, decide_eq_false hlt4]; rfl, n / 16 - (k + 4), by omega_arith, k + 4, rfl, by omega_arith,
+        Iu'⟩
+  refine WP.seq (WP.mono mid fun u ⟨k, hk, Iu⟩ => ?_)
+  obtain ⟨run₂, hy⟩ := test_run .rbx u (k := n / 16 - k) (by omega_arith) Iu.rbx
+  refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
+  have I₃ := Iu.flags (BitVec.ofNat 64 (n / 16 - k)) false false
+  refine WP.ite (decide (n / 16 - k = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have e : k = n / 16 := by simp at h0; omega_arith
+    have cast : ∀ s, CInv K W SP R D n ciph icb x d σ k s → CInv K W SP R D n ciph icb x d σ (n / 16) s :=
+      fun s h => by rw [← e]; exact h
+    exact cast _ I₃
+  · exact cones_ok hR hxl hD hDw hrest (by simp at h0; omega_arith) I₃
+
+theorem bytesAt_writeBytes_self (m : Mem) (p : Addr) (xs : List Byte) (h : xs.length < 2 ^ 64) :
+    bytesAt (VG.WriteBytes.writeBytes m p xs) p xs.length = xs := by
+  apply List.ext_getElem (by simp [bytesAt])
+  intro i h₁ h₂
+  simp only [bytesAt, List.length_map, List.length_range] at h₁
+  simp only [bytesAt, List.getElem_map, List.getElem_range, VG.WriteBytes.writeBytes, Offset.add_sub_cancel_left,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₁]), h₁, ite_true,
+    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁, Option.getD_some]
+
+/-- The last bytes enciphered, with a keystream block at `W + 128`. -/
+theorem cryptTail_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {n : Nat}
+    {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {d : BitVec 128} {σ : State}
+    (hD : Buf K W SP σ D n) (hDw : Covers [⟨D, n⟩] σ.wr)
+    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4) (hr1 : 1 ≤ n % 16)
+    {t : State} (I : CInv K W SP R D n ciph icb x d σ (n / 16) t) :
+    WP isa cryptTail t fun t' => Env K W SP t' ∧ t'.rd = σ.rd ∧ t'.wr = σ.wr ∧
+      bytesAt t'.mem D n = GcmSiv.ctrPart ciph icb x n ∧
+      Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] σ.mem t'.mem := by
+  have hn := hD.lt
+  have hw := L.ww
+  obtain ⟨t₁, run₁, xb, x9₁, xo₁, g₁, m₁, rd₁, wr₁⟩ := ctrs1_run .xmm0 (by decide) (by decide) t
+  have E₁ : Env K W SP t₁ := I.env.keep (fun r _ => by rw [g₁]) rd₁ wr₁
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq ?_⟩)
+  have K₁ := keysW hR E₁ (by rw [g₁]; exact I.rdi)
+  refine WP.mono (aes_ok [.xmm0] (by decide) (by decide) (by omega_arith) t₁ K₁ (by rw [g₁]; exact I.rsi)
+    (by rw [g₁, I.r10, I.rdi])) fun t₂ ⟨hc, hf⟩ => ?_
+  have hks := ks_of I hrest m₁ (xb.trans I.x9) (hc .xmm0 (List.mem_singleton_self _))
+  have rd₂ : t₂.rd = σ.rd := by rw [hf.rd, rd₁, I.rd]
+  have wr₂ : t₂.wr = σ.wr := by rw [hf.wr, wr₁, I.wr]
+  have E₂ : Env K W SP t₂ := E₁.keep (fun r _ => by rw [hf.gpr]) hf.rd hf.wr
+  have h15 := E₂.r15
+  have h12 : t₂.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) := by rw [hf.gpr, g₁]; exact I.r12
+  have hbp : t₂.gpr .rbp = BitVec.ofNat 64 (n % 16) := by rw [hf.gpr, g₁]; exact I.rbp
+  have ww := E₂.perm.wW (show 128 + 16 ≤ 488 by decide)
+  obtain ⟨t₃, run₃, hm₃, rsi₃, rdi₃, rcx₃, hg₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa
+      (ptr .rsi .r15 bO ++ ([.movdquStore (at_ .rsi 0) .xmm0, .mov .rdi (.reg .r12),
+        .mov .rcx (.reg .rbp)] : List Instr)) t₂ = some t₃ ∧
+      t₃.mem = t₂.mem.writeW (W + BitVec.ofNat 64 128) (t₂.xmm .xmm0) ∧
+      t₃.gpr .rsi = W + BitVec.ofNat 64 128 ∧ t₃.gpr .rdi = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
+      t₃.gpr .rcx = BitVec.ofNat 64 (n % 16) ∧ (∀ r ∈ [Reg.r13, .r15, .rsp], t₃.gpr r = t₂.gpr r) ∧
+      t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr := by
+    refine ⟨_, by xrun [bO, h15, ww], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [mem_setReg, mem_arithFlags, mem_setXmm, gpr_setReg, gpr_arithFlags, xmm_setReg, xmm_arithFlags,
+        ite_true, ite_false, reduceCtorEq, h15, bO, BitVec.add_zero]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15, bO]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h12]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbp]
+    · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
+  have fB : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] t₂.mem t₃.mem := by
+    rw [hm₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hblk : 16 * (n / 16) + n % 16 = n := by omega_arith
+  have dD : (⟨D, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 128, 16⟩ := hD.w.sub_right (Lay.wSub (by decide))
+  obtain lp : Proof.AesGcm.X86_64.LoopPre t₃ (W + BitVec.ofNat 64 128) (D + BitVec.ofNat 64 (16 * (n / 16)))
+      (n % 16) :=
+    ⟨rsi₃, rdi₃, rcx₃, hr1, by omega_arith, by rw [hrd₃, hwr₃]; exact E₂.perm.wCR (by omega_arith),
+      by rw [hwr₃, wr₂]; exact Proof.AesGcm.X86_64.covers_off hDw (by omega_arith) hn,
+      ((dD.sub_left (Offset.sub_base D (show 16 * (n / 16) + n % 16 ≤ n by omega_arith))).sub_right
+        (Region.sub_prefix (by omega_arith))).symm⟩
+  refine WP.mono (Proof.AesGcm.X86_64.xorLoop_ok t₃ lp) fun t₄ ⟨hm₄, hg₄, hrd₄, hwr₄⟩ => ?_
+  obtain hl : (Proof.AesGcm.X86_64.xorBytes t₃.mem (D + BitVec.ofNat 64 (16 * (n / 16)))
+      (W + BitVec.ofNat 64 128) (n % 16)).length = n % 16 := by
+    simp [Proof.AesGcm.X86_64.xorBytes, Proof.Cmac.bytesAt_length]
+  obtain fw : Frame [⟨D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩] t₃.mem t₄.mem := by
+    rw [hm₄]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by rw [hl]; exact Region.contains_self _ _)
+  have hk : (GcmSiv.ksBlock ciph icb (n / 16)).length = 16 := by rw [← I.key]; exact GcmSiv.ctxCiph_length _ _ _ _
+  have hd₃ : bytesAt t₃.mem D n = GcmSiv.ctrPart ciph icb x (16 * (n / 16)) := by
+    rw [bytesAt_frame fB (fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact dD)
+      (Nat.le_of_lt hn), hf.mem, m₁]
+    exact I.data
+  have hks₃ : bytesAt t₃.mem (W + BitVec.ofNat 64 128) 16 = GcmSiv.ksBlock ciph icb (n / 16) := by
+    rw [hm₃, bytesAt_writeW128, hks]
+  refine ⟨E₂.keep (fun q hq => ?_) (by rw [hrd₄, hrd₃]) (by rw [hwr₄, hwr₃]), by rw [hrd₄, hrd₃, rd₂],
+    by rw [hwr₄, hwr₃, wr₂], ?_, ?_⟩
+  · rw [hg₄ q (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; rcases hq with rfl | rfl | rfl <;> decide)
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; rcases hq with rfl | rfl | rfl <;> decide)
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; rcases hq with rfl | rfl | rfl <;> decide),
+      hg₃ q hq]
+  · have hb' : bytesAt t₄.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) = Spec.Cmac.xor
+        (bytesAt t₃.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16))
+        ((GcmSiv.ksBlock ciph icb (n / 16)).take (n % 16)) := by
+      obtain e := bytesAt_writeBytes_self t₃.mem (D + BitVec.ofNat 64 (16 * (n / 16)))
+        (Proof.AesGcm.X86_64.xorBytes t₃.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (W + BitVec.ofNat 64 128) (n % 16))
+        (by omega_arith)
+      rw [hl] at e
+      obtain hs := Proof.Cmac.bytesAt_add t₃.mem (W + BitVec.ofNat 64 128) (n % 16) (16 - n % 16)
+      rw [show n % 16 + (16 - n % 16) = 16 by omega_arith, hks₃] at hs
+      rw [hm₄, e, Proof.AesGcm.X86_64.xorBytes, hs, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
+      rfl
+    have := GcmSiv.ctrPart_step ciph icb x D (m' := t₄.mem) (i := n / 16) (n := n % 16) (by omega_arith) hk
+      (by rw [hxl]; exact hd₃)
+      (frame_outside fw (fun q hq => by simp only [List.mem_singleton] at hq; exact .inl hq)
+        (by rw [hxl]; exact hn) (by rw [hxl]; omega_arith)) hb'
+    rw [hxl, hblk] at this
+    exact this
+  · refine I.frame.sub (fun q hq => ⟨q, List.mem_cons_of_mem _ hq, fun _ h => h⟩) |>.trans ?_
+    rw [← m₁, ← hf.mem]
+    exact (fB.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self ..,
+      fun _ h => h⟩).trans (fw.sub fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq
+        exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩)
+
+/-- What `crypt` leaves: the data in counter mode from the tag at `W`. -/
+structure CryptPost (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (t t' : State) : Prop where
+  env : Env K W SP t'
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+  frame : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] t.mem t'.mem
+  data : bytesAt t'.mem D n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
+    (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n)
+
+theorem crypt_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+    (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n)
+    (hDw : Covers [⟨D, n⟩] t.wr) : WP isa crypt t (CryptPost K W SP R D n t) := by
+  have hn := hD.lt
+  obtain ⟨t₁, run₁, h9, h10, rdi, rsi, r10, r12, rbp, rbx, zf, m₁, rd₁, wr₁, g₁⟩ := ctrInit_run hR E S hn
+  obtain ⟨hrest, hc0⟩ := ctr_of_le16 h9
+  have hxl : (bytesAt t.mem D n).length = n := Proof.Cmac.bytesAt_length _ _ _
+  have hcl : ∀ y, (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R y).length = 16 :=
+    fun y => GcmSiv.ctxCiph_length _ _ _ _
+  have I₁ : CInv K W SP R D n (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
+      (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n) (t₁.xmm .xmm9) t 0 t₁ :=
+    ⟨E.keep g₁ rd₁ wr₁, rd₁, wr₁, rdi, rsi, r10, by rw [m₁], hc0.symm, h10,
+      by rw [r12, Nat.mul_zero, BitVec.add_zero], by rw [rbx, Nat.sub_zero], rbp,
+      by rw [m₁, Nat.mul_zero, GcmSiv.ctrPart_zero], by rw [m₁]; exact Frame.refl _ _⟩
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  refine WP.seq (WP.mono (cblocks_ok hR hxl hD hDw hrest I₁ zf) fun t₂ I₂ => ?_)
+  obtain ⟨run₂, hy⟩ := test_run .rbp t₂ (k := n % 16) (by omega_arith) I₂.rbp
+  refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
+  have I₃ := I₂.flags (BitVec.ofNat 64 (n % 16)) false false
+  refine WP.ite (decide (n % 16 = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have h0' : n % 16 = 0 := by simpa using h0
+    refine ⟨I₃.env, I₃.rd, I₃.wr, I₃.frame.sub fun q hq => ⟨q, List.mem_cons_of_mem _ hq, fun _ h => h⟩, ?_⟩
+    rw [I₃.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl]; omega_arith)]
+  · have h0' : n % 16 ≠ 0 := by simpa using h0
+    refine WP.mono (cryptTail_ok L hR hxl hD hDw hrest (by omega_arith) I₃) fun t₄ ⟨E₄, rd₄, wr₄, d₄, f₄⟩ => ?_
+    refine ⟨E₄, rd₄, wr₄, f₄, ?_⟩
+    rw [d₄, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
 
 end VG.Proof.AesGcmSivReg.X86_64
