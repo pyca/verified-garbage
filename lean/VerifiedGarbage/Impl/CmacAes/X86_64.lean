@@ -16,7 +16,11 @@ is emitted once for each implementation (e.g. `vg_cmac_aes_update` calls
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of
 `vg_aes_ctr32`, `[2048, 2064)` the counter block, and `[2064, 2112)` our
-caller's callee-saved registers.
+caller's callee-saved registers. `vg_aes_ctr32` is given its working space
+`c.scrOff` bytes into the buffer (`ctrCall`): the bitsliced implementation,
+which uses 1480 bytes, is given `scratch + 512`, so that the first 512 bytes
+of the buffer are never touched, and a caller of that implementation alone
+need not set them aside.
 
 * `subkeys` computes `L = CIPH_K(0)` into the first block of `subkeys`, and
   doubles it there (`K1`) and into the second block (`K2`): the block as a
@@ -50,10 +54,17 @@ def cOff : Nat := 2048
 
 /-- The arguments of `vg_aes_ctr32` for one block, other than the schedule
 and the rounds: the counter block at `scr + cOff`, the data block at `out`,
-`n = 1`, and the working space at `scr`. -/
+`n = 1`, and the scratch buffer `scr`, in which `ctrCall` gives it its
+working space. -/
 def ctrArgs (scr out : Reg) : List Instr :=
   [.mov .r9 (.reg scr), .mov .rdx (.reg scr), .alu .add .rdx (.imm (BitVec.ofNat 32 cOff)),
    .mov .rcx (.reg out), .mov32 .r8 (.imm 1)]
+
+/-- The call of `vg_aes_ctr32`, from the arguments `ctrArgs` leaves, with its
+working space `c.scrOff` bytes into the scratch buffer in `r9`. -/
+def ctrCall (c : Ctr32) : Prog isa :=
+  if c.scrOff = 0 then .call c.name c.code
+  else .seq (.block [.alu .add .r9 (.imm (BitVec.ofNat 32 c.scrOff))]) (.call c.name c.code)
 
 /-! ## `vg_cmac_aes_subkeys` -/
 
@@ -80,7 +91,7 @@ def subkeysPost : List Instr :=
   dbl 0 0 ++ dbl 0 16 ++ [.mov .rbx (.mem (at_ .rbp 2064)), .mov .rbp (.mem (at_ .rbp 2072))]
 
 def subkeys (c : Ctr32) : Prog isa :=
-  .seq (.block subkeysPre) (.seq (.call c.name c.code) (.block subkeysPost))
+  .seq (.block subkeysPre) (.seq (ctrCall c) (.block subkeysPost))
 
 /-! ## `vg_cmac_aes_update` -/
 
@@ -112,7 +123,7 @@ def advance : List Instr := [.alu .add .r13 (.imm 16), .alu .sub .r14 (.imm 1)]
 
 /-- One block. -/
 def body (c : Ctr32) : Prog isa :=
-  .seq (.block (chainIn ++ updArgs)) (.seq (.call c.name c.code) (.block advance))
+  .seq (.block (chainIn ++ updArgs)) (.seq (ctrCall c) (.block advance))
 
 def update (c : Ctr32) : Prog isa :=
   .seq (.block (save ++ setup))
@@ -152,8 +163,8 @@ def partialBlock : Prog isa :=
   .seq (.block zero) (.seq (.ite .e (.block []) copy) (.block padK2))
 
 /-- The counter block `C ⊕ Mₙ` (the state at `rdx`), the state zeroed, and
-the arguments of `vg_aes_ctr32` but the schedule (`rdi`) and the rounds
-(`rsi`), which are ours. -/
+the arguments of `vg_aes_ctr32` but the schedule (`rdi`), the rounds
+(`rsi`) and the scratch buffer (`r9`), which are ours. -/
 def finArgs : List Instr :=
   [.mov .rax (.mem (at_ .r9 cOff)), .alu .xor .rax (.mem (at_ .rdx 0)), .store (at_ .r9 cOff) .rax,
    .mov .rax (.mem (at_ .r9 (cOff + 8))), .alu .xor .rax (.mem (at_ .rdx 8)),
@@ -166,6 +177,6 @@ def finArgs : List Instr :=
 def finPre : Prog isa :=
   .seq (.block [.alu .cmp .r8 (.imm 16)]) (.seq (.ite .e (.block full) partialBlock) (.block finArgs))
 
-def finalize (c : Ctr32) : Prog isa := .seq finPre (.call c.name c.code)
+def finalize (c : Ctr32) : Prog isa := .seq finPre (ctrCall c)
 
 end VG.Impl.CmacAes.X86_64

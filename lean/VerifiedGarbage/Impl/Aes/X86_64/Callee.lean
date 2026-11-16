@@ -23,23 +23,31 @@ namespace VG.Impl.Aes.X86_64
 
 open VG.X86_64
 
-/-- An implementation of `vg_aes_ctr32` to call: its symbol and its code. -/
+/-- An implementation of `vg_aes_ctr32` to call: its symbol and its code,
+and how far into their scratch buffer the functions that keep it for one
+(AES-CMAC's, which call it on one block at a time) give it its working space
+(`scrOff`): 0, or for an implementation that uses less than the 2048 bytes
+set aside for it, enough that the bytes it leaves unused are the first of
+their buffer, which a caller of those functions then need not set aside. -/
 structure Ctr32 where
   name : String
   code : Prog isa
+  scrOff : Nat := 0
 
-def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
-def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_aesni", AesNi.ctr32⟩
-def Ctr32.vaes : Ctr32 := ⟨"vg_aes_ctr32_vaes", Vaes.ctr32⟩
+/-- The bitsliced implementation uses the first 1480 bytes of its scratch
+buffer: 512 bytes into a buffer of 2048, it leaves the first 512 unused. -/
+def Ctr32.scalar : Ctr32 := { name := "vg_aes_ctr32", code := ctr32, scrOff := 512 }
+def Ctr32.aesni : Ctr32 := { name := "vg_aes_ctr32_aesni", code := AesNi.ctr32 }
+def Ctr32.vaes : Ctr32 := { name := "vg_aes_ctr32_vaes", code := Vaes.ctr32 }
 
 /-- `vg_aes_ctr32_aesni` out of place (`AesNi.ctr32To`). -/
-def Ctr32.aesniTo : Ctr32 := ⟨"vg_aes_ctr32_to_aesni", AesNi.ctr32To⟩
+def Ctr32.aesniTo : Ctr32 := { name := "vg_aes_ctr32_to_aesni", code := AesNi.ctr32To }
 
 /-- `vg_aes_ctr32_vaes` out of place (`Vaes.ctr32To`). -/
-def Ctr32.vaesTo : Ctr32 := ⟨"vg_aes_ctr32_to_vaes", Vaes.ctr32To⟩
+def Ctr32.vaesTo : Ctr32 := { name := "vg_aes_ctr32_to_vaes", code := Vaes.ctr32To }
 
 /-- `vg_aes_ctr32` out of place (`ctr32To`). -/
-def Ctr32.scalarTo : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32To⟩
+def Ctr32.scalarTo : Ctr32 := { name := "vg_aes_ctr32_to", code := ctr32To }
 
 /-- An implementation of `vg_aes_expand_key_scratch` to call: its symbol and its code. -/
 structure ExpandKey where

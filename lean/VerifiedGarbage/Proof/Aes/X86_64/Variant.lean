@@ -32,7 +32,9 @@ against `Proof.Aes.expandKeyX86_64`. One that never touches its scratch
 buffer also gives its contract without one (`free`), so that a caller of
 it alone needs no working space for it; the bitsliced one, which uses 1480
 bytes of the 2048, gives its contract with those (`small`), so that a caller
-of it alone sets aside no more; and the residue analyses of the
+of it alone sets aside no more, and is given them 512 bytes into the scratch
+buffer of the functions that keep one for it (`Ctr32.scrOff`, `scr`), which
+then never touch its first 512 bytes; and the residue analyses of the
 functions over it that the analysis handles (`gcmInitRes`, `cmacFinishRes`): those instances
 then return without secret residue (`X86_64.RScrub.withScrub`).
 -/
@@ -73,11 +75,14 @@ structure Ctr32Free (callee : Impl.Aes.X86_64.Ctr32) : Type where
 /-- What an implementation of `vg_aes_ctr32` that uses only the first 1480
 bytes of its scratch buffer gives: its contract with a scratch buffer of
 those (`Proof.Aes.ctr32X86_64S`), so that its callers need not set aside
-more. -/
+more; and the functions that keep a scratch buffer of 2048 bytes for it give
+it those 512 bytes into it (`off`), so that it is the first 512 bytes of
+their buffer that are never touched. -/
 structure Ctr32Small (callee : Impl.Aes.X86_64.Ctr32) : Type where
   ok : ∀ s, Proof.Aes.ctr32X86_64S.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32X86_64S.post s s'
   ct : ConstantTime isa Proof.Aes.ctr32X86_64S.pre Proof.Aes.ctr32X86_64S.pub callee.code
+  off : callee.scrOff = 512 := by rfl
 
 /-- `vg_aes_gcm_init`'s code over `callee` and `vg_aes_expand_key_scratch_aesni`
 when neither needs working space (`Ctr32Free`): a frame of only the 176
@@ -128,6 +133,9 @@ structure Ctr32Impl where
   free : Option (Ctr32Free callee) := none
   /-- Its contract with a scratch buffer of 1480 bytes, if it uses no more. -/
   small : Option (Ctr32Small callee) := none
+  /-- Only an implementation that gives `small` is given its working space
+  anywhere but at the start of a scratch buffer. -/
+  scr : small = none → callee.scrOff = 0 := by first | exact fun _ => rfl | exact nofun
   /-- The residue analysis of `vg_aes_gcm_init` over it, without working
   space for it (`free`), if the analysis handles it. -/
   gcmInitRes : Option (RScrub.Analysed Spec.Gcm.initApi.sig 192 [] (gcmInitCodeF callee)) := none
@@ -177,7 +185,7 @@ def scalar : Ctr32Impl where
   suffix := ""
   features := []
   ctrTo := scalarTo
-  small := some ⟨ctr32S_correct, ctr32S_ct⟩
+  small := some { ok := ctr32S_correct, ct := ctr32S_ct }
   expand := .scalar
   expandDepth := by lit_decide
   expandOk := expandKey_correct
