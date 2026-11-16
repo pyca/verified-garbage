@@ -7,12 +7,12 @@ import all Init.Data.Nat.Bitwise.Basic
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: the schedule woven into the rounds
 
-Each schedule step writes only vector registers and its own slot of the
-scratch space, which the two rounds it is woven into (`groupR`) neither read
-nor write; the rounds write only general-purpose registers and the flags,
-which the schedule step does not read. So the woven group runs as the
-schedule step and then the rounds (`Interleave.WP.weave`), checked once on
-the steps' footprints, memory at `[rcx + rdx * 2 + disp]`.
+Each schedule step writes only vector registers; the two rounds it is woven
+into (`groupR`) write only general-purpose registers and the flags, which
+the schedule step does not read, and read the ring of the scratch space,
+which it does not write. So the woven group runs as the schedule step and
+then the rounds (`Interleave.WP.weave`), checked once on the steps'
+footprints, memory at `[rcx + disp]`.
 -/
 
 @[expose] public section
@@ -21,8 +21,8 @@ namespace VG.Proof.Sha512.X86_64.Avx2.Rolled
 
 open VG VG.X86_64 VG.Impl.Sha512.X86_64.Avx2Rolled
 
-/-- The footprints of the iterations' code, memory at `[rcx + rdx * 2 + disp]`. -/
-abbrev fps : VG.Interleave.Footprints isa := VG.X86_64.Interleave.footprints .rcx (some .rdx) 2
+/-- The footprints of the iterations' code, memory at `[rcx + disp]`. -/
+abbrev fps : VG.Interleave.Footprints isa := VG.X86_64.Interleave.footprints .rcx none 1
 
 theorem group_check : ∀ n < 8,
     ((fps.blockFp (scheduleR (n + 8))).bind fun A =>
