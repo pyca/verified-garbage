@@ -43,7 +43,7 @@ theorem primeBytesLoad_ready {len drawBytes : Nat} {p : PrimeBytesPublic} {s : S
     WP isa (seqs (Impl.Rsa.AArch64.Keys.loadA 0 20 kUsedP)) s (PrimeCallBefore len drawBytes p.call) :=
   WP.mono (loadPrimeBytes_ok h.1 h.2.1 p.length p.value h.2.2.1) (fun _ ⟨ht, _, _⟩ => ⟨ht, h.2.2.2⟩)
 
-theorem primeBytes_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem primeBytes_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0])
       (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.x1])

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicRoundCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
@@ -101,6 +102,22 @@ theorem publicCall_ct (M : Mont) (name : String) (hnf : (publicRound M.mm).noFra
       (fun _ _ h => call_restore_pre (publicRound_correct M) name hnf h.ready))
       (two_map (fun p : CPub => p.1) (fun _ _ h => h) restore_ct)
 
+/-- The round for public candidates has no frames where the shared round has none:
+they differ in the selection, which is blocks and a loop. -/
+theorem publicRound_noFrames {mul : Nat → Nat → Nat → Prog isa}
+    (h : (VG.Impl.MillerRabin.AArch64.round mul).noFrames = true) : (publicRound mul).noFrames = true := by
+  simp only [VG.Impl.MillerRabin.AArch64.round, roundW, preparedRoundW, mrExpLoopW, mrWin, mrWinS, mrSq, mrLast,
+    tabBuild, toEnt, eqMask, VG.Impl.Rsa.AArch64.Keys.eqA, mrSel, VG.Impl.Rsa.AArch64.Keys.copyA, copyWords,
+    countLoop, VG.Impl.Rsa.AArch64.Crt.selLoop,
+    List.cons_append, List.nil_append, List.append_assoc, seqs, Code.noFrames, Bool.and_eq_true, true_and,
+    and_true, and_self] at h
+  simp only [publicRound, publicWin, roundW, preparedRoundW, mrExpLoopW, mrWinS, mrSq, mrLast,
+    tabBuild, toEnt, eqMask, VG.Impl.Rsa.AArch64.Keys.eqA, publicSel, VG.Impl.Rsa.AArch64.Keys.copyA, copyWords,
+    countLoop,
+    List.cons_append, List.nil_append, List.append_assoc, seqs, Code.noFrames, Bool.and_eq_true, true_and,
+    and_true, and_self]
+  exact h
+
 /-- A prepared round for a public candidate: `Kernel`, but its runs agree on
 the candidate too. -/
 structure PublicKernel where
@@ -123,5 +140,13 @@ def PublicKernel.called (M : Mont) (name : String) (hnf : (publicRound M.mm).noF
   nonempty := by simp
   ok := by exact Caller.call_result_ok (publicRound_correct M) name hnf
   ct := by exact publicCall_ct M name hnf
+
+/-- The name of the round for public candidates that goes with a shared round. -/
+def publicRoundName (v : RoundImpl) : String := "vg_dsa_miller_rabin_round" ++ v.suffix
+
+/-- The kernel of DSA's parameter search for an implementation of the shared
+round: the round for public candidates over the same multiplication. -/
+def publicKernel (v : RoundImpl) : PublicKernel :=
+  PublicKernel.called v.roundMont (publicRoundName v) (publicRound_noFrames v.noFrames)
 
 end VG.Proof.Dsa.AArch64.Generation

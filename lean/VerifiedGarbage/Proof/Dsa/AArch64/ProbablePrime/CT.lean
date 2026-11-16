@@ -211,7 +211,7 @@ theorem entry_ct {bits : Nat} (hb : Supported bits) :
       (fun d hd => ⟨_, List.mem_cons_self, frame_contains s hd⟩))
       fun t ⟨m, x, k⟩ => ⟨s, A, hv, prepared hb A m x k⟩
 
-theorem test_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
+theorem test_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {bits : Nat} (hb : Supported bits) :
     RelCT isa (Two (PreparedAt hb)) (test bits M.mm K.run) (Two (TestedAt hb)) := by
   have hct : RelCT isa (Two (CheckPrimeBefore (words bits) (candidate bits) (len bits) (draw bits) (checks bits)))
       (test bits M.mm K.run) fun _ _ => True := by
@@ -272,7 +272,7 @@ theorem exit_ct {bits : Nat} (hb : Supported bits) :
     · rw [a4, b4]
   exact two_taint [.x0, .x4] pl (by taint_decide) _ _ _ _ _ _ hp es et
 
-theorem code_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
+theorem code_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {bits : Nat} (hb : Supported bits) :
     ConstantTime isa (contract bits).pre (contract bits).pub (code bits M.mm K.run) := by
   intro s t xs ys u v hs ht hp es et
   have ct : RelCT isa (fun s t => (contract bits).pre s ∧ (contract bits).pre t ∧ (contract bits).pub s t)

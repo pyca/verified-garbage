@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
@@ -76,7 +78,7 @@ theorem primeCall_ready (M : Mont) {len drawBytes : Nat} {p : PrimeCallPublic} {
       (fun t => DrawBefore len drawBytes p.draw t ∧ p.draw.used ≤ p.draw.prime.rand.length) :=
   WP.mono (primeInputSetup_ok M h.1 p.width) fun _ ⟨ht, _, _⟩ => ⟨⟨ht, h.2.2⟩, h.2.1⟩
 
-theorem probablePrime_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem probablePrime_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0])
       (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.x1])

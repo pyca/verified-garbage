@@ -10,7 +10,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 open VG.Impl.Dsa.AArch64.Generation
 
-theorem primeFromFrame_ct (M : Mont) (K : Kernel) (candidate len draw checks : Nat)
+theorem primeFromFrame_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (candidate len draw checks : Nat)
     (hwidth : PrimeWidths len draw) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.x0])
       (.block (headerArguments (primeArguments candidate len draw checks))) hc).isSome = true) :

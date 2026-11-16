@@ -27,7 +27,7 @@ theorem checkPrime_workspace {w candidate len draw checks : Nat} {p : PrimeFrame
   rw [h.2.2.2.1] at hw
   exact WP.mono hw fun _ ht => ⟨ht, h.2.2.2.2⟩
 
-theorem checkPrime_ct (M : Mont) (K : Kernel) (w candidate len draw checks : Nat)
+theorem checkPrime_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (w candidate len draw checks : Nat)
     (hwidth : PrimeWidths len draw) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0]) (workspace w) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.x0])

@@ -68,7 +68,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MillerRabin.AArch64
 
-theorem millerRabin_ok (M : Mont) (K : Kernel) {P : PrimeParams} {used : Nat} {s : State}
+theorem millerRabin_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {used : Nat} {s : State}
     (h : PrimeState P used s) (hu : used ≤ P.rand.length) :
     WP isa (Impl.Dsa.AArch64.Generation.millerRabin M.mm K.run P.len P.drawBytes) s
       (PrimeLoopEnd P s (primeRest P 1 0 used)) := by
@@ -107,7 +107,7 @@ def PrimeEnd (P : PrimeParams) (s₀ : State) (res : Option (Bool × List Byte))
       used = P.rand.length - rest.length) ∧
     WorkFrame P.B (primeRanges P.w) (primeExtras P) s₀.mem s.mem ∧ Keep mmRegs s₀ s
 
-theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {used : Nat} {s : State}
+theorem probablePrime_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {used : Nat} {s : State}
     (h : PrimeInput P used s) (hu : used ≤ P.rand.length)
     (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z) (hn : 8161 < P.N)
     (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)

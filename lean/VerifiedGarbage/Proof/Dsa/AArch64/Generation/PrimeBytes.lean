@@ -64,7 +64,7 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {used : Nat} {s : State}
 
 /-- Trial division and Miller–Rabin operate on the saved candidate bytes;
 all candidate-loading writes are included in the returned memory frame. -/
-theorem primeBytes_ok (M : Mont) (K : Kernel) {P : PrimeParams} {used : Nat} {s : State}
+theorem primeBytes_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {used : Nat} {s : State}
     (h : PrimeArguments P used s) {cp : Addr} {bs : List Byte}
     (hptr : word s.mem P.B 160 = cp) (hlen : bs.length = P.len)
     (hvalue : Spec.Rsa.os2ip bs = P.N) (hsrc : Src s P.B P.Z cp bs)

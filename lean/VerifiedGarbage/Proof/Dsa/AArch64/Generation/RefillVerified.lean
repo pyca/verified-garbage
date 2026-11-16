@@ -67,7 +67,7 @@ theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : Prime
   · exact (A.stackWs.sub_left (frame_sub s)) _ hx hc
   · exact A.wsUsed _ hc hx
 
-theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) (s : State)
+theorem correct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {bits : Nat} (hb : Supported bits) (s : State)
     (pre : (contract bits).pre s) :
     ∃ trace t, Exec isa (code bits M.mm K.run) s trace t ∧ abiPreserved s t ∧ (contract bits).post s t := by
   have A := primeABI_of pre
@@ -200,11 +200,11 @@ open VG VG.AArch64 VG.Proof.MillerRabin.AArch64
 
 /-- The test's code with the round implementation `v`. -/
 abbrev testCode (v : RoundImpl) (bits : Nat) : Prog isa :=
-  Impl.Dsa.AArch64.ProbablePrime.code bits v.mont.mm v.kernel.run
+  Impl.Dsa.AArch64.ProbablePrime.code bits v.mont.mm (VG.Proof.Dsa.AArch64.Generation.publicKernel v).run
 
 theorem verified (v : RoundImpl) {bits : Nat} (hb : Supported bits) :
     Verified target (testCode v bits) (contract bits) :=
-  ⟨correct v.mont v.kernel hb, code_ct v.mont v.kernel hb, satisfiable hb⟩
+  ⟨correct v.mont (VG.Proof.Dsa.AArch64.Generation.publicKernel v) hb, code_ct v.mont (VG.Proof.Dsa.AArch64.Generation.publicKernel v) hb, satisfiable hb⟩
 
 /-- Its frames: its own 272 bytes. -/
 theorem testCode_depth (v : RoundImpl) (bits : Nat) : 16 * (testCode v bits).aarch64Depth ≤ stack := by

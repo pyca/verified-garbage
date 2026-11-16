@@ -96,7 +96,7 @@ open VG.Proof.MlKem.AArch64 VG.Proof.MillerRabin.AArch64
 def sampleRoundRanges (w : Nat) : List (Nat × Nat) :=
   testRanges w ++ witnessRoundRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
-theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Nat}
+theorem sampleRound_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {B p : Addr} {Z w N i uni ch : Nat}
     {bs : List Byte} {s : State}
     (h : SampleState B p Z w N bs s) (h4 : 4 ≤ w) (h128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hout : Region.Disjoint ⟨B, Z⟩ ⟨p, bs.length⟩)
@@ -216,7 +216,7 @@ open VG.Proof.Dsa.Generation
 
 def drawRoundRanges (w : Nat) : List (Nat × Nat) := [(8 * kUsed, 8)] ++ sampleRoundRanges w
 
-theorem drawRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {used i uni : Nat} {s : State}
+theorem drawRound_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {used i uni : Nat} {s : State}
     (h : PrimeState P used s) (hroom : used + P.drawBytes ≤ P.rand.length)
     (hI : word s.mem P.B (8 * kI) = BitVec.ofNat 64 i)
     (hUni : word s.mem P.B (8 * kUni) = BitVec.ofNat 64 uni)

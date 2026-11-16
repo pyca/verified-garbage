@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Rsa.MontContract
@@ -132,7 +133,7 @@ open VG.Proof.MlKem.AArch64 VG.Proof.MillerRabin.AArch64
 
 def witnessRoundRanges (w : Nat) : List (Nat × Nat) := witnessMontRanges w ++ Caller.callRanges w
 
-theorem witnessRound_ok (M : Mont) (K : Kernel) {s : State} {B : Addr} {Z w N b : Nat}
+theorem witnessRound_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {s : State} {B : Addr} {Z w N b : Nat}
     (h : ModulusReady s B Z w N) (h4 : 4 ≤ w) (h128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : N % 2 = 1) (h3 : 3 ≤ N)
     (hx : wv s.mem B (slot w aX) w = b) :
