@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.CT
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Template
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-!
 # FFDH's exponentiation with AVX512_IFMA on x86-64
@@ -52,12 +56,56 @@ def LOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) : Prop :=
     ctlOk (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits l sl) : Prog isa) = true ∧
     ctlOk (seqs (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl)) = true
 
-theorem lok2048X : LOk PubIfma.pay2048 sX sXl := by unfold LOk; decide +kernel
-theorem lok3072X : LOk PubIfma.pay3072 sX sXl := by unfold LOk; decide +kernel
-theorem lok4096X : LOk PubIfma.pay4096 sX sXl := by unfold LOk; decide +kernel
-theorem lok2048E : LOk PubIfma.pay2048 sEp sEl := by unfold LOk; decide +kernel
-theorem lok3072E : LOk PubIfma.pay3072 sEp sEl := by unfold LOk; decide +kernel
-theorem lok4096E : LOk PubIfma.pay4096 sEp sEl := by unfold LOk; decide +kernel
+/-- `Ifma.exp l sp sl`, unfolded: a statement the kernel evaluates names the
+vector code `vec l`, so that it is read from its literal
+(`Proof/Ffdh/X86_64/Ifma/Lit.lean`). -/
+local macro "expU% " l:term:max sp:term:max sl:term:max : term =>
+  `((([Code.block (VG.Impl.Ffdh.X86_64.Ifma.head $l $sl)] : List (Prog isa)) ++ CrtIfma.region $l 0 $sp $sl ++
+    ([Code.block (VG.Impl.Ffdh.X86_64.Ifma.bases $l), VG.Impl.Ffdh.X86_64.Ifma.vec $l] : List (Prog isa)) ++
+    CrtIfma.result $l 0 ++ ([Code.block (VG.Impl.Ffdh.X86_64.Ifma.tail $l)] : List (Prog isa))))
+
+/-- `LOk`, from what the kernel evaluates of a layout's code: the tests of its
+instructions in one walk, with one match for each instruction
+(`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem LOk.of_bits {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat}
+    (h : (expU% l sp sl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits l sl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% l sp sl)).InlineOkB (bMx + bSp) = true) : LOk l sp sl :=
+  ⟨h.1, Code.inlineOk_of_B h.2.1, Code.inlineOk_of_B h.2.2,
+    Code.sp_of_bits rfl (Code.allInstrs_of_inlineOkB h.2.1), Code.sp_of_bits rfl (Code.allInstrs_of_inlineOkB h.2.2),
+    ctlOk_of_noLoad (Code.noMx_of_bits rfl (Code.allInstrs_of_inlineOkB h.2.1)),
+    ctlOk_of_noLoad (Code.noMx_of_bits rfl (Code.allInstrs_of_inlineOkB h.2.2))⟩
+
+/-- The tests of the three layouts' code, for the slots of both exponents:
+in one declaration, so that the kernel evaluates each layout's vector code,
+which is the same for both, once. -/
+theorem loks :
+    ((expU% PubIfma.pay2048 sX sXl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay2048 sXl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay2048 sX sXl)).InlineOkB (bMx + bSp) = true) ∧
+    ((expU% PubIfma.pay3072 sX sXl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay3072 sXl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay3072 sX sXl)).InlineOkB (bMx + bSp) = true) ∧
+    ((expU% PubIfma.pay4096 sX sXl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay4096 sXl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay4096 sX sXl)).InlineOkB (bMx + bSp) = true) ∧
+    ((expU% PubIfma.pay2048 sEp sEl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay2048 sEl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay2048 sEp sEl)).InlineOkB (bMx + bSp) = true) ∧
+    ((expU% PubIfma.pay3072 sEp sEl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay3072 sEl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay3072 sEp sEl)).InlineOkB (bMx + bSp) = true) ∧
+    ((expU% PubIfma.pay4096 sEp sEl).all Code.noCalls = true ∧
+      (Code.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay4096 sEl) : Prog isa).InlineOkB (bMx + bSp) = true ∧
+      (seqs (expU% PubIfma.pay4096 sEp sEl)).InlineOkB (bMx + bSp) = true) := by
+  lit_decide
+
+theorem lok2048X : LOk PubIfma.pay2048 sX sXl := .of_bits loks.1
+theorem lok3072X : LOk PubIfma.pay3072 sX sXl := .of_bits loks.2.1
+theorem lok4096X : LOk PubIfma.pay4096 sX sXl := .of_bits loks.2.2.1
+theorem lok2048E : LOk PubIfma.pay2048 sEp sEl := .of_bits loks.2.2.2.1
+theorem lok3072E : LOk PubIfma.pay3072 sEp sEl := .of_bits loks.2.2.2.2.1
+theorem lok4096E : LOk PubIfma.pay4096 sEp sEl := .of_bits loks.2.2.2.2.2
 
 theorem lok {sp sl : Nat} (hs : ExpSlots sp sl) :
     LOk PubIfma.pay2048 sp sl ∧ LOk PubIfma.pay3072 sp sl ∧ LOk PubIfma.pay4096 sp sl := by

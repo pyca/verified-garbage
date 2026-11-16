@@ -67,6 +67,16 @@ theorem prepared_bytes (s : State) (hs : scratchContract.pre s) (r : Region)
     omega_using [hf]
 
 
+/-- A stack argument does not depend on the regions: stated of any state, so
+that the kernel compares the two sides without evaluating the state they
+are used at (`prepared s`, whose memory is the prologue's stores). -/
+theorem stackArg_withRegions (t : State) (rd wr : List Region) (i : Nat) :
+    stackArg (t.withRegions rd wr) i=stackArg t i := rfl
+
+theorem args_withRegions (t : State) (rd wr : List Region) (i : Nat) :
+    args (t.withRegions rd wr) i=args t i := rfl
+
+
 theorem entry_access (s : State) (hs : scratchContract.pre s) : SealAccess (prepared s) := by
   have lay := layout_pre s hs
   have hg := prepared_gpr s
@@ -74,9 +84,12 @@ theorem entry_access (s : State) (hs : scratchContract.pre s) : SealAccess (prep
   have h10 := prepared_length s hs
   have ht := prepared_tag s hs
   have hw := prepared_work s
-  have hargs0 : ∀ rd wr, stackArg ((prepared s).withRegions rd wr) 0=stackArg s 2 := fun _ _ => ht
-  have hargs1 : ∀ rd wr, stackArg ((prepared s).withRegions rd wr) 1=stackArg s 3 := fun _ _ => hw
-  have hargs : ∀ rd wr, args ((prepared s).withRegions rd wr) 2=args (prepared s) 2 := fun _ _ => rfl
+  have hargs0 : ∀ rd wr, stackArg ((prepared s).withRegions rd wr) 0=stackArg s 2 :=
+    fun _ _ => (stackArg_withRegions _ _ _ _).trans ht
+  have hargs1 : ∀ rd wr, stackArg ((prepared s).withRegions rd wr) 1=stackArg s 3 :=
+    fun _ _ => (stackArg_withRegions _ _ _ _).trans hw
+  have hargs : ∀ rd wr, args ((prepared s).withRegions rd wr) 2=args (prepared s) 2 :=
+    fun _ _ => args_withRegions _ _ _ _
   have hreads : sealReads (prepared s)=[contextR s,nonceR s,aadR s,args (prepared s) 2] := by
     simp only [sealReads,hg .r3 (by decide),hg .r5 (by decide),hg .r6 (by decide),hg .r7 (by decide),hg .r8 (by decide)]
     rfl

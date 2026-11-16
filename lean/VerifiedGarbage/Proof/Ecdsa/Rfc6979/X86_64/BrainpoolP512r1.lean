@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Lit
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-!
 # Deterministic ECDSA on x86-64: brainpoolP512r1
@@ -68,6 +70,12 @@ theorem brainpoolp512r1SatMem_held : ∀ i < brainpoolp512r1W.length,
 theorem brainpoolp512r1_blk : RfcT (cfgC Impl.Ecdsa.X86_64.brainpoolp512r1S false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `sign_k`'s code: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem brainpoolp512r1_bits :
+    Impl.Ecdsa.X86_64.signBrainpoolP512r1.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- brainpoolp512r1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
@@ -84,9 +92,9 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP512r1
   coreX := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.X86_64.BrainpoolP512r1.sign_call_x86 hL hI
   coreCT := by rw [coreK_brainpoolp512r1]; exact Proof.Ecdsa.X86_64.BrainpoolP512r1.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl brainpoolp512r1_bits
+  coreSp := Code.sp_of_bits rfl brainpoolp512r1_bits
+  coreMx := Code.noMx_of_bits rfl brainpoolp512r1_bits
   coreD := by lit_decide
   blk := brainpoolp512r1_blk
 

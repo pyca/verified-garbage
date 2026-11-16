@@ -4,10 +4,12 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Exp
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Exp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
 
 /-!
 # FFDH's exponentiation with AVX512_IFMA on x86-64: constant time
