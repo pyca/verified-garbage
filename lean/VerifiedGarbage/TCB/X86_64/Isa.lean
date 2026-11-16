@@ -143,7 +143,7 @@ Modelling choices:
   `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
   (`evLoad`, `evStore`), the quadword source of `evBroadcastLoad` (`m64`),
   the 256-bit source of `e5InsertLoad` and destination of `e5ExtractStore`
-  (`m256`), the quadword source of the
+  (`m256`), the 128-bit destination of `vextractStore` (`m128`), the quadword source of the
   embedded-broadcast forms `zbcst` (`m64bcst`), the doubleword source of
   `vpbroadcastdZ` (`m32`) and of the embedded-broadcast forms `zbcstd`
   (`m32bcst`), the second source of
@@ -314,6 +314,11 @@ inductive Instr
   /-- `vmovdqu XMMWORD PTR [dst], xmm` (`VEX.128.F3.0F.WIG 7F /r`) or
   `vmovdqu YMMWORD PTR [dst], ymm` (`VEX.256.F3.0F.WIG 7F /r`) -/
   | vmovdquStore (len : VLen) (dst : MemOp) (src : XReg)
+  /-- `vextracti128 XMMWORD PTR [dst], ymm, imm8` (`VEX.256.66.0F3A.W0 39 /r
+  ib`), AVX2: the low (`imm8[0] = 0`) or high 128 bits of `src` to the 16
+  bytes at `dst`, the form of `VOp.vextracti128` whose destination is
+  memory. -/
+  | vextractStore (dst : MemOp) (src : XReg) (imm : BitVec 8)
   /-- `vmovdqu ymm, YMMWORD PTR [m]` (`VEX.256.F3.0F.WIG 6F /r`), whose base
   register holds the address of the `static` `name`, whose words are
   `words`: the emitter writes that static from this instruction
@@ -598,7 +603,7 @@ def Instr.requires : Instr → List String
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. => ["avx"]
   | .vop (.vpblendd ..) | .vop (.vvar ..) | .vop (.vpbroadcastd ..) | .vop (.vpbroadcastq ..)
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
-  | .vbroadcasti128 .. | .vpmovmskb .l256 .. => ["avx2"]
+  | .vbroadcasti128 .. | .vpmovmskb .l256 .. | .vextractStore .. => ["avx2"]
   | .vpmovmskb .l128 .. => ["avx"]
   | .rorx32 .. | .rorx .. | .mulx .. | .shiftx .. => ["bmi2"]
   | .adcx .. | .adox .. => ["adx"]
@@ -743,6 +748,14 @@ def exec : Instr → State → Option State
       some (s.setV .l256 d (w 1 ++ w 0) (w 3 ++ w 2))
     else none
   | .vmovdquStore .l256 m r, s => s.store256 (s.ea m) (s.ymm r)
+  -- SDM Vol. 2, "VEXTRACTI128/VEXTRACTI32x4/VEXTRACTI64x2/VEXTRACTI32x8/
+  -- VEXTRACTI64x4—Extract Packed Integer Values", "VEXTRACTI128 (memory
+  -- destination form)": `CASE (imm8[0]) OF 0: DEST[127:0] := SRC1[127:0];
+  -- 1: DEST[127:0] := SRC1[255:128]; ESAC`, the 16 bytes stored in
+  -- little-endian byte order; no alignment is required and no flags are
+  -- affected. As the register form (`VOp.vextracti128`), with the bytes
+  -- at the address in place of the destination register.
+  | .vextractStore m r n, s => s.store128 (s.ea m) (s.lane r (if n.getLsbD 0 then 1 else 0))
   -- SDM Vol. 2, "VBROADCAST": `DEST[127:0] := SRC[127:0]; DEST[255:128] :=
   -- SRC[127:0]`; no alignment is required.
   | .vbroadcasti128 d m, s => (s.load128 (s.ea m)).map fun v => s.setV .l256 d v v
@@ -930,6 +943,7 @@ def addrs : Instr → State → List Addr
   | .vop _, _ => []
   | .vmovdquLoad _ _ m, s => [s.ea m]
   | .vmovdquStore _ m _, s => [s.ea m]
+  | .vextractStore m _ _, s => [s.ea m]
   | .vbroadcasti128 _ m, s => [s.ea m]
   | .vbinLoad _ _ _ _ m, s => [s.ea m]
   | .vpmovmskb .., _ => []
@@ -1068,7 +1082,7 @@ def Instr.dst : Instr → Option Reg
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
   | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
-  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vextractStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
   | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..

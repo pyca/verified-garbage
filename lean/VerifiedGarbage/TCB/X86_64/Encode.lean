@@ -583,6 +583,9 @@ def Instr.encode : Instr → Option (List (List Nat))
   -- (`VEX.66.0F.WIG D7 /r`).
   | .vmovdquLoad l d m => (vex 2 1 false (len l) 0 0x6F (xreg d) (.mem m)).map ([·])
   | .vmovdquStore l m r => (vex 2 1 false (len l) 0 0x7F (xreg r) (.mem m)).map ([·])
+  -- "VEXTRACTI128" (`VEX.256.66.0F3A.W0 39 /r ib`), the register in
+  -- `ModRM.reg`, as its register form (`VOp.encode`).
+  | .vextractStore m r n => (vex 1 3 false 1 0 0x39 (xreg r) (.mem m) [n.toNat]).map ([·])
   | .vmovdquTbl d m .. => (vex 2 1 false 1 0 0x6F (xreg d) (.mem m)).map ([·])
   | .vbroadcasti128 d m => (vex 1 2 false 1 0 0x5A (xreg d) (.mem m)).map ([·])
   | .vbinLoad op l d a m =>

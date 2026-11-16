@@ -257,7 +257,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     obtain ⟨v, hv, rfl⟩ := h
     simp only [reduceExec]
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load128_widen hc hv]; rfl
-  | movdquStore m r => exact store128_widen hw h
+  | movdquStore m r | vextractStore m r _ => exact store128_widen hw h
   | xop op => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; cases op <;> rfl
   | vop op =>
     simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
@@ -471,6 +471,8 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     cases len
     · simp only [reduceExec, State.store128] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
     · simp only [reduceExec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | vextractStore m r n =>
+    simp only [reduceExec, State.store128] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
   | eop op =>
@@ -544,6 +546,9 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
       rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
     · simp only [reduceExec, State.store256] at h; split at h <;> cases h
       rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
+  | vextractStore m r n =>
+    simp only [reduceExec, State.store128] at h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact Frame.refl _ _
   | eop op =>
@@ -753,6 +758,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · rename_i len _ _; cases len
       · simp only [reduceExec, State.store128] at h; split at h <;> cases h; rfl
       · simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
+    · simp only [reduceExec, State.store128] at h; split at h <;> cases h; rfl
     · simp only [reduceExec] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · rename_i len _ _ _; cases len <;> simp only [reduceExec, Option.map_eq_some_iff] at h <;>

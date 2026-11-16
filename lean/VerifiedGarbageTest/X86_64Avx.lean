@@ -357,6 +357,30 @@ def binM (op : VBinOp) (len : VLen := .l256) (disp : Int := 0) : Option (BitVec 
 #guard (exec (.vmovdquStore .l256 { base := .rdi, disp := 0x101 } .xmm0) s).isNone
 #guard (exec (.vmovdquStore .l128 { base := .rdi, disp := 0x111 } .xmm0) s).isNone
 
+/-! `vextracti128` with a memory destination stores the low or the high lane
+of its source, 16 bytes, and changes nothing else; it faults unless all 16
+are writable. -/
+#guard ((exec (.vextractStore { base := .rdi, disp := 0x110 } .xmm0 0) s).map
+  (·.mem.readW 0x210 128)) == some (A.extractLsb' 0 128)
+#guard ((exec (.vextractStore { base := .rdi, disp := 0x110 } .xmm0 1) s).map
+  (·.mem.readW 0x210 128)) == some (A.extractLsb' 128 128)
+#guard ((exec (.vextractStore { base := .rdi, disp := 0x110 } .xmm0 1) s).map
+  (fun t => (t.ymm .xmm0, t.ymm .xmm1, t.gpr .rdi, t.mem.readW 0x200 128, t.cf))) ==
+  some (A, B, 0x100, s.mem.readW 0x200 128, none)
+#guard (exec (.vextractStore { base := .rdi, disp := 0x111 } .xmm0 1) s).isNone
+#guard addrs (.vextractStore { base := .rdi, disp := 0x110 } .xmm0 1) s == [0x210]
+#guard isa.requires (.vextractStore { base := .rdi } .xmm0 1) == ["avx2"]
+#guard Instr.asm (.vextractStore { base := .rcx, index := some .rdx, scale := 1, disp := 256 } .xmm7 1) ==
+  ["vextracti128 XMMWORD PTR [rcx+rdx*1+256], ymm7, 1"]
+-- The bytes GNU `as` assembles these to.
+#guard Instr.encode (.vextractStore { base := .rdi, disp := 272 } .xmm0 1) ==
+  some [[0xc4, 0xe3, 0x7d, 0x39, 0x87, 0x10, 0x01, 0x00, 0x00, 0x01]]
+#guard Instr.encode (.vextractStore { base := .rcx, index := some .rdx, scale := 1, disp := 256 } .xmm7 1) ==
+  some [[0xc4, 0xe3, 0x7d, 0x39, 0xbc, 0x11, 0x00, 0x01, 0x00, 0x00, 0x01]]
+#guard Instr.encode (.vextractStore { base := .r11, disp := 8 } .xmm13 0) ==
+  some [[0xc4, 0x43, 0x7d, 0x39, 0x6b, 0x08, 0x00]]
+#guard Instr.encode (.vextractStore { base := .rsi } .xmm2 1) == some [[0xc4, 0xe3, 0x7d, 0x39, 0x16, 0x01]]
+
 /-! `vpmadd52luq` and `vpmadd52huq` with a `YMMWORD PTR` second source
 (`vpmadd52Load`), run as the printed instructions in inline assembly on a
 Sapphire Rapids (or later) Xeon, with `M` in memory: into the all-ones

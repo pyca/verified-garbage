@@ -291,7 +291,7 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | rorx d r n => simp only [exec, execRorx]; split <;> rfl
   | movdquLoad d m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
-  | movdquStore m r => exact store128_patch hc _ _
+  | movdquStore m r | vextractStore m r _ => exact store128_patch hc _ _
   | xop op => simp only [exec, Option.map_some]; congr 1; cases op <;> rfl
   | vop op => simp only [exec, Option.map_some]; congr 1; cases op <;> simp only [VOp.exec] <;> (try split) <;> rfl
   | vmovdquLoad len d m =>

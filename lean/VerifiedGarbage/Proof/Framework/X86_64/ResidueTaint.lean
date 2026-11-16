@@ -704,7 +704,7 @@ into a register (`pbPost`, `post`, `argPost`), no bound (`ubNew`) or flags
 (`flOf`), no zeroing idiom, and no write of registers other than
 `Taint.dstOf`'s. -/
 def isPlain : Instr → Bool
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquStore .. | .vmovdquStore ..
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquStore .. | .vmovdquStore .. | .vextractStore ..
   | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _ | .kStore .. | .kStore8 .. => false
   | .mov _ (.mem _) | .mov _ (.imm _) | .mov32 _ (.imm _) | .mov32 _ (.mem _) => false
   | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) => false
@@ -962,6 +962,7 @@ def stepFn (i : Instr) : RStep :=
     | .store16 m r => bif m.index.isNone then fastStore m 2 (pub · r) none else ⟨(step · i)⟩
     | .movdquStore m x => bif m.index.isNone then fastStore m 16 (xpub · x) none else ⟨(step · i)⟩
     | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
+    | .vextractStore m _ _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
     | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
     | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else fastStoreI m 64
     | .evStore m _ | .e5ExtractStore m _ _ =>
@@ -1037,6 +1038,7 @@ def stepFn1 (i : Instr) : RStep :=
     else fastG (Taint.stepKeepFn i) id none fun _ ub => ub
   | .movdquStore m x => bif m.index.isNone then fastStore m 16 (xpub · x) none else slowFn i
   | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
+  | .vextractStore m _ _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
   | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
   | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else fastStoreI m 64
   | .evStore m _ | .e5ExtractStore m _ _ =>

@@ -340,6 +340,7 @@ def step (τ : T) : Instr → Option T
   | .vmovdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
   | .movdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
+  | .vextractStore m _ _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some (noX τ)
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m =>
@@ -1581,6 +1582,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       split at e₁ <;> [cases e₁; cases e₁]
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
+  | vextractStore m r n =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [reduceExec, State.store128] at e₁ e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 16) hok (by decide) fun hp => by cases hp⟩
   | kLoad k d m | kLoad8 k d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2492,6 +2501,7 @@ def stepK (τ : T) : Instr → Option T
   | .vmovdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
   | .movdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
+  | .vextractStore m _ _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some (noX τ)
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m =>
@@ -2785,6 +2795,7 @@ def stepKDFn : Instr → Step
   | .vmovdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
   | .movdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
   | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
+  | .vextractStore m _ _ => ⟨fun τ => storeStepKD τ m 16 false⟩
   | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .zop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
@@ -2876,6 +2887,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case store16 m r => exact st m 2 _
   case movdquStore m _ => exact st m 16 _
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
+  case vextractStore m _ _ => exact st m 16 _
   case vmovdqu32Store m _ => exact st m 64 _
   case evStore m _ => exact st m 32 _
   case e5ExtractStore m _ _ => exact st m 32 _

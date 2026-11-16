@@ -321,6 +321,7 @@ def Instr.asm : Instr → List String
   | .vmovdquTbl d m .. => [s!"vmovdqu {d.vname .l256}, {m.strV .l256}"]
   | .movdquTbl d m .. => [s!"movdqu {d.name}, {m.str128}"]
   | .vmovdquStore l m r => [s!"vmovdqu {m.strV l}, {r.vname l}"]
+  | .vextractStore m r n => [s!"vextracti128 {m.str128}, {r.yname}, {n.toNat}"]
   | .vbroadcasti128 d m => [s!"vbroadcasti128 {d.yname}, {m.str128}"]
   | .vbinLoad op l d a m => [s!"{op.name} {d.vname l}, {a.vname l}, {m.strV l}"]
   | .vpmovmskb l d r => [s!"vpmovmskb {d.name32}, {r.vname l}"]
@@ -389,7 +390,7 @@ def Instr.memOps : Instr → List MemOp
   | .aluTbl _ _ m .. => [m]
   | .store m _ | .store32 m _ | .movzx8 _ m | .movzx16 _ m | .store8 m _ | .store16 m _ | .movdquLoad _ m
   | .movdquStore m _ | .movdquTbl _ m ..
-  | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
+  | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vextractStore m _ _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _

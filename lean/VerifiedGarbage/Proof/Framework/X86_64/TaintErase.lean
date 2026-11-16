@@ -187,7 +187,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | vpcmpltuw d _ _ => cases hs; exact k d
   | movqR d _ => cases hs; exact k d
   | movdquLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | movdquStore m _ => exact storeStepKD_nil h hs
+  | movdquStore m _ | vextractStore m _ _ => exact storeStepKD_nil h hs
   | xop op => cases op <;> (cases hs; exact h)
   | vop _ => cases hs; exact nx
   | vmovdquLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx

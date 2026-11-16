@@ -563,7 +563,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t (hw.pubM hk)]
     exact h.store m (by decide) id hs
   | evStore m _ | e5ExtractStore m _ _ => exact h.store m (by decide) id hs
-  | movdquStore m _ => exact h.store m (by decide) id hs
+  | movdquStore m _ | vextractStore m _ _ => exact h.store m (by decide) id hs
   | vmovdquStore l m _ => cases l <;> exact h.store m (by decide) id hs
   | vmovdqu32Store m _ => exact h.store m (by decide) id hs
   | stmxcsr m => exact h.store m (by decide) id hs
@@ -868,7 +868,7 @@ theorem ne_of_clobbers {i : Instr} {d : Reg} {j : Nat} (hd : clobbers i d = true
 theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat} (hc : NoWrite i j)
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
-  case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore | e5ExtractStore =>
+  case store | store32 | store8 | store16 | movdquStore | vextractStore | vmovdqu32Store | stmxcsr | evStore | e5ExtractStore =>
     rw [storeStep_regs hs]; exact hr
   case kStore | kStore8 =>
     simp only [step] at hs

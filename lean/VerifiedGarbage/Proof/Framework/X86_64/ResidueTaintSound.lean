@@ -2599,7 +2599,7 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
                (fun _ => rfl) (fun τ => ?_) rfl (pbStore_eq rfl hx fun _ => rfl) τ
              · simp only [special]
              · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl)
-      case vmovdqu32Store m x | evStore m x | e5ExtractStore m x k | stmxcsr m =>
+      case vmovdqu32Store m x | evStore m x | e5ExtractStore m x k | vextractStore m x k | stmxcsr m =>
         cases hx : m.index
         · simp only [hx, Option.isNone_none, Bool.cond_true]
           refine fastStore_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl

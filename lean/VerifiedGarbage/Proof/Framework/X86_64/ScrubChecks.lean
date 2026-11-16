@@ -62,7 +62,7 @@ def dstOf : Instr → Option Reg
   | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _
-  | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .vmovdquLoad .. | .vmovdquStore .. | .vextractStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
@@ -121,6 +121,7 @@ def storeW : Instr → Option (MemOp × Nat)
   | .store16 m _ => some (m, 2)
   | .movdquStore m _ => some (m, 16)
   | .vmovdquStore .l128 m _ => some (m, 16)
+  | .vextractStore m _ _ => some (m, 16)
   | .vmovdquStore .l256 m _ => some (m, 32)
   | .vmovdqu32Store m _ => some (m, 64)
   | .evStore m _ | .e5ExtractStore m _ _ => some (m, 32)
