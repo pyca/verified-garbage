@@ -32,28 +32,34 @@ open VG.Proof.AesCcm.X86_64 (word_byte add_ofNat_assoc runBlock_append)
 /-- The taint: the registers `rs`, `r14`, `r15` and `rsp` public, `r15` the
 base of the working space (the second writable region), the slots of the
 public arguments `[208, 248)` and `[288, 304)` and the words at `ex` public. -/
-def ocbT (rs : List Reg) (ex : List Nat) : X86_64.Taint.T :=
-  { regs := .ofList (rs ++ [.r14, .r15, .rsp]), flags := false, lens := [0, 3584], bases := [(.r15, 1, 0)],
+def ocbTN (rs : List Reg) (ex : List Nat) (wn : Nat) : X86_64.Taint.T :=
+  { regs := .ofList (rs ++ [.r14, .r15, .rsp]), flags := false, lens := [0, wn], bases := [(.r15, 1, 0)],
     slots := [(1, 208, 40), (1, 288, 16)] ++ ex.map fun d => (1, d, 8) }
+
+abbrev ocbT (rs : List Reg) (ex : List Nat) : X86_64.Taint.T := ocbTN rs ex 3584
 
 /-- Two runs with the same public arguments: both in the environment, with
 the same slots and writable regions, agreeing on the registers `rs` and the
 words of `W` at `ex`. -/
-structure Both (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (rs : List Reg) (ex : List Nat)
-    (s₁ s₂ : State) : Prop where
-  e₁ : Env K W SP s₁
-  e₂ : Env K W SP s₂
+structure BothN (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (rs : List Reg) (ex : List Nat)
+    (wn : Nat) (s₁ s₂ : State) : Prop where
+  e₁ : EnvN K W SP wn s₁
+  e₂ : EnvN K W SP wn s₂
   sl₁ : Slots W R N A D nl n tl s₁.mem
   sl₂ : Slots W R N A D nl n tl s₂.mem
-  wr₁ : s₁.wr = [⟨D, n⟩, ⟨W, 3584⟩]
-  wr₂ : s₂.wr = [⟨D, n⟩, ⟨W, 3584⟩]
+  wr₁ : s₁.wr = [⟨D, n⟩, ⟨W, wn⟩]
+  wr₂ : s₂.wr = [⟨D, n⟩, ⟨W, wn⟩]
   agree : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
-  ex : ∀ d ∈ ex, d + 8 ≤ 3584 ∧ s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s₂.mem.readW (W + BitVec.ofNat 64 d) 64
+  ex : ∀ d ∈ ex, d + 8 ≤ wn ∧ s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s₂.mem.readW (W + BitVec.ofNat 64 d) 64
 
-theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs : List Reg} {ex : List Nat}
-    {s₁ s₂ : State} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
-    (h : Both K W SP R N A D nl n tl rs ex s₁ s₂) : X86_64.Taint.Agree (ocbT rs ex) s₁ s₂ := by
-  have wf : ∀ {s : State}, Env K W SP s → s.wr = [⟨D, n⟩, ⟨W, 3584⟩] → X86_64.Taint.Wf (ocbT rs ex) s :=
+abbrev Both (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (rs : List Reg) (ex : List Nat)
+    (s₁ s₂ : State) : Prop := BothN K W SP R N A D nl n tl rs ex 3584 s₁ s₂
+
+theorem both_agreeN {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs : List Reg} {ex : List Nat}
+    {wn : Nat} {s₁ s₂ : State} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, wn⟩) (hn : n ≤ 2 ^ 64)
+    (h : BothN K W SP R N A D nl n tl rs ex wn s₁ s₂) (hwn : 304 ≤ wn := by decide) (hwlt : wn ≤ 2 ^ 64 := by decide) :
+    X86_64.Taint.Agree (ocbTN rs ex wn) s₁ s₂ := by
+  have wf : ∀ {s : State}, EnvN K W SP wn s → s.wr = [⟨D, n⟩, ⟨W, wn⟩] → X86_64.Taint.Wf (ocbTN rs ex wn) s :=
     fun E hw => by
     refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp => ?_⟩
     · rw [hw]; exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
@@ -62,11 +68,11 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hn
-      · show 3584 ≤ 2 ^ 64; decide
-    · simp only [ocbT, List.mem_singleton] at hp; subst hp
+      · exact hwlt
+    · simp only [ocbTN, List.mem_singleton] at hp; subst hp
       simp only [X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
       rw [E.r15, BitVec.add_zero]
-  have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 3584⟩] → ∀ k, X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
+  have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, wn⟩] → ∀ k, X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
     fun s hw k => by
       simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
   have hw : ∀ {k : Nat} (d : Nat), d ≤ k → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
@@ -80,12 +86,12 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
       · rw [h.e₁.r14, h.e₂.r14]
       · rw [h.e₁.r15, h.e₂.r15]
       · rw [h.e₁.rsp, h.e₂.rsp]
-  · simp only [ocbT, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
+  · simp only [ocbTN, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
     rcases hsl with (rfl | rfl) | ⟨d, hd, rfl⟩
-    · simp [ocbT]
-    · simp [ocbT]
-    · simp only [ocbT, List.getD_cons_succ, List.getD_cons_zero]; exact (h.ex d hd).1
-  · simp only [ocbT, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
+    · simp only [ocbTN, List.getD_cons_succ, List.getD_cons_zero]; omega_arith
+    · simp only [ocbTN, List.getD_cons_succ, List.getD_cons_zero]; omega_arith
+    · simp only [ocbTN, List.getD_cons_succ, List.getD_cons_zero]; exact (h.ex d hd).1
+  · simp only [ocbTN, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
     have S₁ := h.sl₁
     have S₂ := h.sl₂
     rcases hsl with (rfl | rfl) | ⟨d, hd, rfl⟩ <;> rw [hb s₁ h.wr₁, hb s₂ h.wr₂]
@@ -111,13 +117,26 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
     · simp only at hk₁ hk₂
       rw [hw d hk₁]; exact word_byte (h.ex d hd).2 rfl (by omega_using [hk₂])
 
+theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs : List Reg} {ex : List Nat}
+    {s₁ s₂ : State} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
+    (h : Both K W SP R N A D nl n tl rs ex s₁ s₂) : X86_64.Taint.Agree (ocbT rs ex) s₁ s₂ :=
+  both_agreeN hDW hn h
+
+/-- Code the taint analysis checks from `ocbTN rs ex wn`. -/
+theorem rel_taintCN {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl wn : Nat} {P : State → State → Prop}
+    {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, wn⟩) (hn : n ≤ 2 ^ 64)
+    (hP : ∀ s₁ s₂, P s₁ s₂ → BothN K W SP R N A D nl n tl rs ex wn s₁ s₂)
+    (hc : ∃ hc, (taint.check (ocbTN rs ex wn) c hc).isSome = true) (hwn : 304 ≤ wn := by decide)
+    (hwlt : wn ≤ 2 ^ 64 := by decide) : RelCT isa P c fun _ _ => True := by
+  obtain ⟨_, hc⟩ := hc
+  exact RelCT.taint (A := taint) (ocbTN rs ex wn) (fun s₁ s₂ h => both_agreeN hDW hn (hP _ _ h) hwn hwlt) hc
+
 /-- Code the taint analysis checks from `ocbT rs ex`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : State → State → Prop}
     {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl n tl rs ex s₁ s₂)
-    (hc : ∃ hc, (taint.check (ocbT rs ex) c hc).isSome = true) : RelCT isa P c fun _ _ => True := by
-  obtain ⟨_, hc⟩ := hc
-  exact RelCT.taint (A := taint) (ocbT rs ex) (fun s₁ s₂ h => both_agree hDW hn (hP _ _ h)) hc
+    (hc : ∃ hc, (taint.check (ocbT rs ex) c hc).isSome = true) : RelCT isa P c fun _ _ => True :=
+  rel_taintCN rs ex hDW hn hP hc
 
 /-- Code the taint analysis checks from `ocbT rs ex`, leaving the flags public. -/
 theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : State → State → Prop}
@@ -138,15 +157,22 @@ theorem rel_of_pt {P Q : State → State → Prop} {c : Prog isa}
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
 
 /-- One run with the public arguments. -/
-structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop where
-  env : Env K W SP s
+structure OneN (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (wn : Nat) (s : State) : Prop where
+  env : EnvN K W SP wn s
   sl : Slots W R N A D nl n tl s.mem
-  wr : s.wr = [⟨D, n⟩, ⟨W, 3584⟩]
+  wr : s.wr = [⟨D, n⟩, ⟨W, wn⟩]
+
+abbrev One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop :=
+  OneN K W SP R N A D nl n tl 3584 s
+
+theorem BothN.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl wn : Nat} {s₁ s₂ : State}
+    (o₁ : OneN K W SP R N A D nl n tl wn s₁) (o₂ : OneN K W SP R N A D nl n tl wn s₂) :
+    BothN K W SP R N A D nl n tl [] [] wn s₁ s₂ :=
+  ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, fun _ h => (nomatch h), fun _ h => (nomatch h)⟩
 
 theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s₁ s₂ : State}
     (o₁ : One K W SP R N A D nl n tl s₁) (o₂ : One K W SP R N A D nl n tl s₂) :
-    Both K W SP R N A D nl n tl [] [] s₁ s₂ :=
-  ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, fun _ h => (nomatch h), fun _ h => (nomatch h)⟩
+    Both K W SP R N A D nl n tl [] [] s₁ s₂ := BothN.of o₁ o₂
 
 /-- One run, after a frame within the parts the pieces write. -/
 theorem One.step {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} (L : Lay K W SP)
@@ -156,9 +182,9 @@ theorem One.step {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} (L : L
   ⟨E, Slots.of_mut L hDW f o.sl, hw.trans o.wr⟩
 
 /-- The data, in a run with the public arguments. -/
-theorem DBuf.of_one {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s s' : State}
+theorem DBufN.of_one {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s s' : State}
     (h : DBuf K W SP s D n) (o : One K W SP R N A D nl n tl s') : DBuf K W SP s' D n where
-  toBuf := { h.toBuf with rd := Covers.right (by rw [o.wr]; exact Covers.of_mem fun r hr => by simp_all) }
+  toBufN := { h.toBufN with rd := Covers.right (by rw [o.wr]; exact Covers.of_mem fun r hr => by simp_all) }
   wr := by rw [o.wr]; exact Covers.of_mem fun r hr => by simp_all
   k := h.k
 

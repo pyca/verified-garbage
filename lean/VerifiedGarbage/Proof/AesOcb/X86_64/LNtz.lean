@@ -226,7 +226,7 @@ theorem TblL.frame {W : Addr} {l : Block} {len : Nat} {m m' : Mem} {rs : List Re
   ⟨M, T.frame h hd, hM⟩
 
 /-- The table misses the rest of `W`. -/
-theorem Lay.wT_w {K W SP : Addr} (L : Lay K W SP) {a k : Nat} (h : a + k ≤ 2560) :
+theorem LayN.wT_w {K W SP : Addr} (L : Lay K W SP) {a k : Nat} (h : a + k ≤ 2560) :
     (wT W).Disjoint ⟨W + BitVec.ofNat 64 a, k⟩ :=
   L.w_w (.inr h) (by decide) (by omega_arith)
 

@@ -79,8 +79,9 @@ theorem xorStep_ok (s : State) {P T : Addr} {j r : Nat} (h3 : s.gpr .rbx = P) (h
 
 /-- `xorPad`: the `r` bytes at `P` (in `rbx`), `0 < r < 16`, XORed with the
 first `r` bytes at `W + tmpO`. -/
-theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r : Nat} (hr : 0 < r) (hr' : r < 16)
-    (h3 : s.gpr .rbx = P) (h12 : s.gpr .r12 = BitVec.ofNat 64 r) (hP : DBuf K W SP s P r) :
+theorem xorPad_ok {K W SP : Addr} {s : State} {wn : Nat} (E : EnvN K W SP wn s) {P : Addr} {r : Nat} (hr : 0 < r) (hr' : r < 16)
+    (h3 : s.gpr .rbx = P) (h12 : s.gpr .r12 = BitVec.ofNat 64 r) (hP : DBufN K W SP wn s P r)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     WP isa xorPad s fun t => t.mem = writeBytes s.mem P
         (Spec.Ocb.xor (bytesAt s.mem P r) (bytesAt s.mem (W + BitVec.ofNat 64 112) r)) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -94,7 +95,7 @@ theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r :
   unfold xorPad
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have hT : ∀ j < r, InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j) 1 := fun j hj => by
-    rw [Offset.add_add]; exact E.perm.wR (by omega_using [hr', hj])
+    rw [Offset.add_add]; exact E.perm.wR6 hwn hwlt (by omega_using [hr', hj])
   refine WP.loop (M := isa) (c := .ne)
     (fun (k : Nat) (u : State) => ∃ j, k = r - j ∧ j < r ∧ u.gpr .rcx = BitVec.ofNat 64 j ∧
       u.mem = writeBytes s.mem P (Spec.Ocb.xor (bytesAt s.mem P j) (bytesAt s.mem (W + BitVec.ofNat 64 112) j)) ∧
@@ -116,7 +117,7 @@ theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r :
     fr _ fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
       have hdis : (⟨P, r⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112 + BitVec.ofNat 64 j, 1⟩ := by
-        rw [Offset.add_add]; exact hP.w.sub_right (Lay.wSub (by omega_using [hr', hj]))
+        rw [Offset.add_add]; exact hP.w.sub_right (LayN.wSub6 hwn (by omega_using [hr', hj]))
       exact hdis.sub_left (Region.sub_prefix (by omega_using [hj])) _ hc (Region.contains_self _ _)
   have hmem : u'.mem = writeBytes s.mem P (Spec.Ocb.xor (bytesAt s.mem P (j + 1)) (bytesAt s.mem (W + BitVec.ofNat 64 112) (j + 1))) := by
     rw [mem', hq, hqT, mem, bytesAt_succ, bytesAt_succ, xor_snoc _ _ (by simp [length_bytesAt]),

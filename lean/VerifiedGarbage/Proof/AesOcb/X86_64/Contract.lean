@@ -54,38 +54,39 @@ abbrev aData (s : State) : Region := ⟨arg s 0, (arg s 1).toNat⟩
 /-- The tag. -/
 abbrev aTag (s : State) : Region := ⟨arg s 2, (arg s 3).toNat⟩
 
-/-- The working space. -/
-abbrev aWork (s : State) : Region := ⟨arg s 4, 3584⟩
+/-- The working space, of `wn` bytes (3584 for the functions over the AES
+block functions). -/
+abbrev aWork (s : State) (wn : Nat := 3584) : Region := ⟨arg s 4, wn⟩
 
 /-- What `vg_aes_ocb_seal` and `vg_aes_ocb_open` need of their arguments
 `(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8,
 aad_len = r9, data = [rsp + 8], len = [rsp + 16], tag = [rsp + 24],
 tag_len = [rsp + 32], work = [rsp + 40])`, but for what they may access. -/
-def oneFacts (s : State) : Prop :=
-  (aCtx s).Disjoint (aData s) ∧ (aCtx s).Disjoint (aWork s) ∧ (aNonce s).Disjoint (aData s) ∧
-    (aNonce s).Disjoint (aWork s) ∧ (aAad s).Disjoint (aData s) ∧ (aAad s).Disjoint (aWork s) ∧
-    (aTag s).Disjoint (aData s) ∧ (aTag s).Disjoint (aWork s) ∧
-    (aData s).Disjoint (aWork s) ∧ (aData s).Disjoint (args s 5) ∧ (aWork s).Disjoint (args s 5) ∧
-    (ret s).Disjoint (aData s) ∧ (ret s).Disjoint (aWork s) ∧ (ret s).Disjoint (aTag s) ∧
+def oneFacts (s : State) (wn : Nat := 3584) : Prop :=
+  (aCtx s).Disjoint (aData s) ∧ (aCtx s).Disjoint (aWork s wn) ∧ (aNonce s).Disjoint (aData s) ∧
+    (aNonce s).Disjoint (aWork s wn) ∧ (aAad s).Disjoint (aData s) ∧ (aAad s).Disjoint (aWork s wn) ∧
+    (aTag s).Disjoint (aData s) ∧ (aTag s).Disjoint (aWork s wn) ∧
+    (aData s).Disjoint (aWork s wn) ∧ (aData s).Disjoint (args s 5) ∧ (aWork s wn).Disjoint (args s 5) ∧
+    (ret s).Disjoint (aData s) ∧ (ret s).Disjoint (aWork s wn) ∧ (ret s).Disjoint (aTag s) ∧
     (stk8 s).Disjoint (aCtx s) ∧ (stk8 s).Disjoint (aNonce s) ∧ (stk8 s).Disjoint (aAad s) ∧
-    (stk8 s).Disjoint (aData s) ∧ (stk8 s).Disjoint (aWork s) ∧ (stk8 s).Disjoint (aTag s) ∧
+    (stk8 s).Disjoint (aData s) ∧ (stk8 s).Disjoint (aWork s wn) ∧ (stk8 s).Disjoint (aTag s) ∧
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
     (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧
-    (arg s 4).toNat + 3584 ≤ 2 ^ 64 ∧ 8 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧
+    (arg s 4).toNat + wn ≤ 2 ^ 64 ∧ 8 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧
     rounds s ∧ lengthsOk (arg s 3).toNat (s.gpr .rcx).toNat = true
 
 /-- What `vg_aes_ocb_seal` needs: it may write the data, the tag and the
 working space. -/
-def sealPreX (s : State) : Prop :=
-  s.rd = [aCtx s, aNonce s, aAad s, args s 5] ∧ s.wr = [aData s, aTag s, aWork s] ∧
+def sealPreX (s : State) (wn : Nat := 3584) : Prop :=
+  s.rd = [aCtx s, aNonce s, aAad s, args s 5] ∧ s.wr = [aData s, aTag s, aWork s wn] ∧
     (aTag s).Disjoint (args s 5) ∧ (aCtx s).Disjoint (aTag s) ∧ (aNonce s).Disjoint (aTag s) ∧
-    (aAad s).Disjoint (aTag s) ∧ oneFacts s
+    (aAad s).Disjoint (aTag s) ∧ oneFacts s wn
 
 /-- What `vg_aes_ocb_open` needs: it may write the data and the working
 space, and read the tag. -/
-def openPreX (s : State) : Prop :=
-  s.rd = [aCtx s, aNonce s, aAad s, aTag s, args s 5] ∧ s.wr = [aData s, aWork s] ∧ oneFacts s
+def openPreX (s : State) (wn : Nat := 3584) : Prop :=
+  s.rd = [aCtx s, aNonce s, aAad s, aTag s, args s 5] ∧ s.wr = [aData s, aWork s wn] ∧ oneFacts s wn
 
 def onePub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧

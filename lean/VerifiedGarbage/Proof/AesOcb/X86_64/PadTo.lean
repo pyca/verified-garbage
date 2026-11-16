@@ -115,14 +115,15 @@ theorem bytesAt_of_zero {m : Mem} {p : Addr} (h : blockAtMem m p = 0) : bytesAt 
   rw [← Proof.Ocb.toBytes_ofBytes (length_bytesAt m p 16), ← toBytes_zero, ← h]; rfl
 
 /-- `padTo d`: `W + d ← pad(S)`, for the `n` bytes `S` at `rbx`, `0 < n < 16`. -/
-theorem padTo_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {S : Addr} {n d : Nat} (hn : 0 < n)
-    (hn' : n < 16) (hd : d + 16 ≤ 3584) (h3 : s.gpr .rbx = S) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
-    (hS : Covers [⟨S, n⟩] (s.rd ++ s.wr)) (hSD : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 16⟩) :
+theorem padTo_ok {K W SP : Addr} {s : State} {wn : Nat} (E : EnvN K W SP wn s) {S : Addr} {n d : Nat} (hn : 0 < n)
+    (hn' : n < 16) (hd : d + 16 ≤ 640) (h3 : s.gpr .rbx = S) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
+    (hS : Covers [⟨S, n⟩] (s.rd ++ s.wr)) (hSD : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 16⟩)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     WP isa (padTo d) s fun t => Frame [⟨W + BitVec.ofNat 64 d, 16⟩] s.mem t.mem ∧
       blockAtMem t.mem (W + BitVec.ofNat 64 d) = pad (bytesAt s.mem S n) ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have h15 := E.r15
-  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := d) h15 (E.perm.wW (by omega_using [hd])) (E.perm.wW (by omega_using [hd]))
+  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := d) h15 (E.perm.wW6 hwn hwlt (by omega_using [hd])) (E.perm.wW6 hwn hwlt (by omega_using [hd]))
   obtain ⟨s₂, run₂, rsi₂, rcx₂, g₂, m₂, rd₂, wr₂⟩ : ∃ s₂,
       runBlock isa [mvr .rsi .r15, addi .rsi d, .mov .rcx (.imm 0)] s₁ = some s₂ ∧
       s₂.gpr .rsi = W + BitVec.ofNat 64 d ∧ s₂.gpr .rcx = BitVec.ofNat 64 0 ∧
@@ -135,7 +136,7 @@ theorem padTo_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {S : Addr} {n d 
     all_goals rfl
   have hS₂ : Covers [⟨S, n⟩] (s₂.rd ++ s₂.wr) := by rw [rd₂, wr₂, B₁.rd, B₁.wr]; exact hS
   have hD₂ : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s₂.wr := by
-    rw [wr₂, B₁.wr]; exact E.perm.wC (by omega_using [hn', hd])
+    rw [wr₂, B₁.wr]; exact E.perm.wC6 hwn hwlt (by omega_using [hn', hd])
   have hSD' : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ := hSD.sub_right (Region.sub_prefix (by omega_using [hn']))
   have eS : bytesAt s₂.mem S n = bytesAt s.mem S n := by
     rw [m₂]
@@ -151,7 +152,7 @@ theorem padTo_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {S : Addr} {n d 
   have rsi₃ : s₃.gpr .rsi = W + BitVec.ofNat 64 d := by rw [g₃ _ (by decide) (by decide), rsi₂]
   have ea := ea_index s₃ rsi₃ rcx₃
   have w₃ : InRegions s₃.wr (W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) 1 := by
-    rw [wr₃, wr₂, B₁.wr, Offset.add_add]; exact E.perm.wW (by omega_using [hn', hd])
+    rw [wr₃, wr₂, B₁.wr, Offset.add_add]; exact E.perm.wW6 hwn hwlt (by omega_using [hn', hd])
   refine WP.of_runBlock ⟨_, by orun [ea, w₃], ?_⟩
   have hlen : (bytesAt s.mem S n).length = n := length_bytesAt _ _ _
   have e80 : ((BitVec.signExtend 64 (128 : BitVec 32)).setWidth 8 : Byte) = 0x80 := by decide

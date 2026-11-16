@@ -37,13 +37,14 @@ open VG.Proof.Aes.X86_64 (BlocksImpl)
 open VG.Proof.AesCcm.X86_64 (runBlock_append length_bytesAt bytesAt_frame)
 
 /-- `recv`: the `tl` bytes of the tag at `T` copied to `W`. -/
-theorem recv_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {T : Addr} {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
+theorem recv_ok {K W SP : Addr} {s : State} {wn : Nat} (E : EnvN K W SP wn s) {T : Addr} {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
     (htg : s.mem.readW (W + BitVec.ofNat 64 tgO) 64 = T)
     (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (hT : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, 3584⟩) :
+    (hT : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, wn⟩)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem T tl) ∧
       (∀ r ∈ [Reg.r14, .r15, .rsp], t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  obtain ⟨s₁, run₁, rbx₁, rsi₁, r12₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ := recvArgs_ok E htg htl
+  obtain ⟨s₁, run₁, rbx₁, rsi₁, r12₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ := recvArgs_ok E htg htl (hwn := hwn) (hwlt := hwlt)
   unfold recv
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.mono (copyLoop_ok s₁ (S := T) (Dd := W) (n := tl) (by omega_arith) (by omega_arith) rbx₁ rsi₁ rcx₁ r12₁

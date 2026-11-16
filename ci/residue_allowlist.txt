@@ -60,10 +60,6 @@ x86_64 vg_aes_gcm_stream_finish
 x86_64 vg_aes_gcm_stream_finish_pclmul
 x86_64 vg_aes_gcm_stream_verify
 x86_64 vg_aes_gcm_stream_verify_pclmul
-x86_64 vg_aes_ocb_open_aesni
-x86_64 vg_aes_ocb_open_vaes
-x86_64 vg_aes_ocb_seal_aesni
-x86_64 vg_aes_ocb_seal_vaes
 x86_64 vg_hmac_sha384_finalize_avx2
 x86_64 vg_hmac_sha512_224_finalize_avx2
 x86_64 vg_hmac_sha512_256_finalize_avx2

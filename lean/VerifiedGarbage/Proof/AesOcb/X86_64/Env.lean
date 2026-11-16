@@ -9,7 +9,8 @@ import VerifiedGarbage.Spec.Aes
 # AES-OCB on x86-64: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (256 bytes
-at `K`), the working space (3584 bytes at `W`) and the 8 bytes of stack
+at `K`), the working space (`wn` bytes at `W`, 3584 for the functions over
+the AES block functions) and the 8 bytes of stack
 below `SP` that the calls use (`Lay`); what a state may access (`Perm`); the
 registers holding `K` and `W` and the stack pointer (`Env`); and the public
 values the entry keeps in `W` (`Slots`). The pieces write the parts of `W`
@@ -29,43 +30,83 @@ open VG.Proof.AesCcm.X86_64 (covers_off in_off in_left covers_left)
 
 /-! ## The regions -/
 
-/-- The key context, `W` and the stack below `SP` used by the calls. -/
-structure Lay (K W SP : Addr) : Prop where
+/-- The key context, `W` (of `wn` bytes) and the stack below `SP` used by
+the calls. -/
+structure LayN (K W SP : Addr) (wn : Nat) : Prop where
   kw : K.toNat + 256 ≤ 2 ^ 64
-  ww : W.toNat + 3584 ≤ 2 ^ 64
-  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, 3584⟩
+  ww : W.toNat + wn ≤ 2 ^ 64
+  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, wn⟩
   stk_k : (below SP 8).Disjoint ⟨K, 256⟩
-  stk_w : (below SP 8).Disjoint ⟨W, 3584⟩
+  stk_w : (below SP 8).Disjoint ⟨W, wn⟩
   sp : 8 ≤ SP.toNat
 
+/-- `LayN` with the 3584 bytes of `W` of the functions over the AES block
+functions. -/
+abbrev Lay (K W SP : Addr) : Prop := LayN K W SP 3584
+
 /-- What a state may access. -/
-structure Perm (K W : Addr) (s : State) : Prop where
+structure PermN (K W : Addr) (wn : Nat) (s : State) : Prop where
   k : Covers [⟨K, 256⟩] (s.rd ++ s.wr)
-  w : Covers [⟨W, 3584⟩] s.wr
+  w : Covers [⟨W, wn⟩] s.wr
+
+abbrev Perm (K W : Addr) (s : State) : Prop := PermN K W 3584 s
 
 /-- The registers holding the key context, `W` and the stack pointer, and
 what the state may access. -/
-structure Env (K W SP : Addr) (s : State) : Prop where
+structure EnvN (K W SP : Addr) (wn : Nat) (s : State) : Prop where
   r14 : s.gpr .r14 = K
   r15 : s.gpr .r15 = W
   rsp : s.gpr .rsp = SP
-  perm : Perm K W s
+  perm : PermN K W wn s
 
-theorem Perm.of_eq {K W : Addr} {s s' : State} (h : Perm K W s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    Perm K W s' := ⟨by rw [hrd, hwr]; exact h.k, by rw [hwr]; exact h.w⟩
+abbrev Env (K W SP : Addr) (s : State) : Prop := EnvN K W SP 3584 s
+
+theorem PermN.of_eq {K W : Addr} {wn : Nat} {s s' : State} (h : PermN K W wn s) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : PermN K W wn s' := ⟨by rw [hrd, hwr]; exact h.k, by rw [hwr]; exact h.w⟩
 
 /-- An environment, after code that keeps `r14`, `r15`, `rsp` and the permissions. -/
-theorem Env.keep {K W SP : Addr} {s s' : State} (h : Env K W SP s)
+theorem EnvN.keep {K W SP : Addr} {wn : Nat} {s s' : State} (h : EnvN K W SP wn s)
     (hg : ∀ r ∈ [Reg.r14, .r15, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    Env K W SP s' :=
+    EnvN K W SP wn s' :=
   ⟨by rw [hg _ (by simp), h.r14], by rw [hg _ (by simp), h.r15], by rw [hg _ (by simp), h.rsp],
     h.perm.of_eq hrd hwr⟩
 
-theorem Env.of_saved {K W SP : Addr} {s s' : State} (h : Env K W SP s)
-    (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env K W SP s' :=
+theorem EnvN.of_saved {K W SP : Addr} {wn : Nat} {s s' : State} (h : EnvN K W SP wn s)
+    (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : EnvN K W SP wn s' :=
   h.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg _ (by decide)) hrd hwr
+
+namespace LayN
+
+theorem wSub {W : Addr} {wn d n : Nat} (h : d + n ≤ wn) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, wn⟩ :=
+  Offset.sub_base _ h
+
+variable {K W SP : Addr} {wn : Nat} (L : LayN K W SP wn)
+include L
+
+/-- Parts of `W` are disjoint. -/
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ wn) (hd : d + k ≤ wn) :
+    (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha, this]) (by have := L.ww; omega_using [hd, this])
+
+theorem stk_w' {a n : Nat} (ha : a + n ≤ wn) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
+  L.stk_w.sub_right (wSub ha)
+
+/-- `w_w` below byte 640. -/
+theorem w_w6 (hwn : 640 ≤ wn) {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 640) (hd : d + k ≤ 640) :
+    (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  L.w_w h (Nat.le_trans ha hwn) (Nat.le_trans hd hwn)
+
+theorem stk_w6 (hwn : 640 ≤ wn) {a n : Nat} (ha : a + n ≤ 640) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
+  L.stk_w' (Nat.le_trans ha hwn)
+
+end LayN
+
+/-- `LayN.wSub` below byte 640. -/
+theorem LayN.wSub6 {W : Addr} {wn : Nat} (hwn : 640 ≤ wn) {d n : Nat} (h : d + n ≤ 640) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, wn⟩ :=
+  LayN.wSub (Nat.le_trans h hwn)
 
 namespace Lay
 
@@ -81,53 +122,73 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3584) (hd : d + k ≤ 3584) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
+  LayN.w_w L h ha hd
 
 theorem stk_w' {a n : Nat} (ha : a + n ≤ 3584) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
-  L.stk_w.sub_right (wSub ha)
+  LayN.stk_w' L ha
 
 end Lay
 
-namespace Perm
+namespace PermN
 
-variable {K W : Addr} {s : State} (P : Perm K W s)
+variable {K W : Addr} {wn : Nat} {s : State} (P : PermN K W wn s)
 include P
 
 theorem kR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 d) n :=
   in_off P.k h (by decide)
 
-theorem wW {d n : Nat} (h : d + n ≤ 3584) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
-  in_off P.w h (by decide)
+theorem wW {d n : Nat} (h : d + n ≤ wn) (hw : wn < 2 ^ 64 := by decide) :
+    InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  in_off P.w h hw
 
-theorem wR {d n : Nat} (h : d + n ≤ 3584) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
-  in_left (P.wW h)
+theorem wR {d n : Nat} (h : d + n ≤ wn) (hw : wn < 2 ^ 64 := by decide) :
+    InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+  in_left (P.wW h hw)
 
-theorem wC {d n : Nat} (h : d + n ≤ 3584) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off P.w h (by decide)
+theorem wC {d n : Nat} (h : d + n ≤ wn) (hw : wn < 2 ^ 64 := by decide) :
+    Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off P.w h hw
 
-end Perm
+/-! Below byte 640 of a working space of at least 640 bytes: the offsets of
+the slots and blocks of `Impl/AesOcb/X86_64.lean`. -/
+
+theorem wW6 (hwn : 640 ≤ wn) (hw : wn < 2 ^ 64) {d n : Nat} (h : d + n ≤ 640) :
+    InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  P.wW (Nat.le_trans h hwn) hw
+
+theorem wR6 (hwn : 640 ≤ wn) (hw : wn < 2 ^ 64) {d n : Nat} (h : d + n ≤ 640) :
+    InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+  P.wR (Nat.le_trans h hwn) hw
+
+theorem wC6 (hwn : 640 ≤ wn) (hw : wn < 2 ^ 64) {d n : Nat} (h : d + n ≤ 640) :
+    Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  P.wC (Nat.le_trans h hwn) hw
+
+end PermN
 
 /-! ## Buffers -/
 
 /-- A buffer of `n` bytes at `D` that the code may read, apart from `W` and
 the stack below `SP`. -/
-structure Buf (W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
+structure BufN (W SP : Addr) (wn : Nat) (s : State) (D : Addr) (n : Nat) : Prop where
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   lt : n < 2 ^ 64
   wrap : D.toNat + n ≤ 2 ^ 64
-  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨W, wn⟩
   stk : (below SP 8).Disjoint ⟨D, n⟩
 
-namespace Buf
+abbrev Buf (W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop := BufN W SP 3584 s D n
 
-variable {W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : Buf W SP s D n)
+namespace BufN
+
+variable {W SP : Addr} {wn : Nat} {s : State} {D : Addr} {n : Nat} (h : BufN W SP wn s D n)
 include h
 
-theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf W SP s' D n :=
+theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : BufN W SP wn s' D n :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
 /-- The bytes from `k` on. -/
-theorem drop {k : Nat} (hk : k ≤ n) : Buf W SP s (D + BitVec.ofNat 64 k) (n - k) where
+theorem drop {k : Nat} (hk : k ≤ n) : BufN W SP wn s (D + BitVec.ofNat 64 k) (n - k) where
   rd := covers_off h.rd (by omega_using [hk]) h.lt
   lt := by have := h.lt; omega_using [this]
   wrap := by
@@ -139,7 +200,7 @@ theorem drop {k : Nat} (hk : k ≤ n) : Buf W SP s (D + BitVec.ofNat 64 k) (n - 
   stk := h.stk.sub_right (Offset.sub_base D (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
-theorem take {k : Nat} (hk : k ≤ n) : Buf W SP s D k where
+theorem take {k : Nat} (hk : k ≤ n) : BufN W SP wn s D k where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
     exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩
@@ -149,34 +210,36 @@ theorem take {k : Nat} (hk : k ≤ n) : Buf W SP s D k where
   stk := h.stk.sub_right (Region.sub_prefix hk)
 
 /-- Bytes `[a, a + k)`. -/
-theorem slice {a k : Nat} (hk : a + k ≤ n) : Buf W SP s (D + BitVec.ofNat 64 a) k :=
+theorem slice {a k : Nat} (hk : a + k ≤ n) : BufN W SP wn s (D + BitVec.ofNat 64 a) k :=
   (h.drop (k := a) (by omega_using [hk])).take (by omega_using [hk])
 
-end Buf
+end BufN
 
 /-- The data: a buffer that the code may also write, apart from the key
 context. -/
-structure DBuf (K W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop extends Buf W SP s D n where
+structure DBufN (K W SP : Addr) (wn : Nat) (s : State) (D : Addr) (n : Nat) : Prop extends BufN W SP wn s D n where
   wr : Covers [⟨D, n⟩] s.wr
   k : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩
 
-namespace DBuf
+abbrev DBuf (K W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop := DBufN K W SP 3584 s D n
 
-variable {K W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf K W SP s D n)
+namespace DBufN
+
+variable {K W SP : Addr} {wn : Nat} {s : State} {D : Addr} {n : Nat} (h : DBufN K W SP wn s D n)
 include h
 
-theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DBuf K W SP s' D n :=
-  { h.toBuf.of_eq hrd hwr with wr := by rw [hwr]; exact h.wr, k := h.k }
+theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DBufN K W SP wn s' D n :=
+  { h.toBufN.of_eq hrd hwr with wr := by rw [hwr]; exact h.wr, k := h.k }
 
 /-- Bytes `[a, a + k)`. -/
-theorem slice {a k : Nat} (hk : a + k ≤ n) : DBuf K W SP s (D + BitVec.ofNat 64 a) k where
-  toBuf := h.toBuf.slice hk
+theorem slice {a k : Nat} (hk : a + k ≤ n) : DBufN K W SP wn s (D + BitVec.ofNat 64 a) k where
+  toBufN := h.toBufN.slice hk
   wr := by
-    have := (h.toBuf.drop (k := a) (by omega_using [hk]))
+    have := (h.toBufN.drop (k := a) (by omega_using [hk]))
     exact fun x m hx => covers_off h.wr (d := a) (n := k) hk h.lt x m hx
   k := h.k.sub_right ((Offset.sub_base D (by omega_using [hk])))
 
-end DBuf
+end DBufN
 
 /-! ## The slots -/
 

@@ -151,4 +151,40 @@ theorem dbl_ok {W B : Addr} {s : State} {b o : Reg} {a d : Nat} (h15 : s.gpr o =
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
+/-- `dbl_ok`, and the SSE registers are kept. -/
+theorem dbl_okX {W B : Addr} {s : State} {b o : Reg} {a d : Nat} (h15 : s.gpr o = W) (hb : s.gpr b = B)
+    (hba : b ≠ .rax) (hoa : o ≠ .rax) (hod : o ≠ .rdx) (hoc : o ≠ .rcx) (ho8 : o ≠ .r8)
+    (r₀ : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 a) 8)
+    (r₁ : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (a + 8)) 8)
+    (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
+    ∃ s', runBlock isa (dbl b a o d) s = some s' ∧
+      BlkStep W d (double (blockAtMem s.mem (B + BitVec.ofNat 64 a))) [.rax, .rdx, .rcx, .r8] s s' ∧
+      s'.xmm = s.xmm := by
+  refine ⟨_, by orun [dbl, h15, hb, hba, hoa, hod, hoc, ho8, r₀, r₁, w₀, w₁], ?_, ?_⟩
+  rotate_left
+  · simp only [xmm_setReg, xmm_arithFlags, xmm_setFlags]
+  refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags]; rw [← addr8 W d]; exact frame_store2 _ _ _ _
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, BitVec.xor_self]
+    rw [← addr8 W d, blockAtMem_store2, ← addr8 B a]
+    exact dbl_mem _ _
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- `copy16_ok`, and the SSE registers are kept. -/
+theorem copy16_okX {W : Addr} {s : State} {a d : Nat} (h15 : s.gpr .r15 = W)
+    (r₀ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 a) 8)
+    (r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 (a + 8)) 8)
+    (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
+    ∃ s', runBlock isa (copy16 a d) s = some s' ∧
+      BlkStep W d (blockAtMem s.mem (W + BitVec.ofNat 64 a)) [.rax, .rdx] s s' ∧ s'.xmm = s.xmm := by
+  refine ⟨_, by orun [copy16, h15, r₀, r₁, w₀, w₁], ?_, ?_⟩
+  rotate_left
+  · simp only [xmm_setReg]
+  refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl⟩
+  · simp only [mem_setReg]; rw [← addr8 W d]; exact frame_store2 _ _ _ _
+  · simp only [mem_setReg]; rw [← addr8 W d, blockAtMem_store2, ← addr8 W a, blockAtMem_words]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [gpr_setReg, hr.1, hr.2, ite_false]
+
 end VG.Proof.AesOcb.X86_64

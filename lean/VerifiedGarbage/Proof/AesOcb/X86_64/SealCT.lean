@@ -77,7 +77,7 @@ structure TRun (K W SP N A D : Addr) (R nl al n tl : Nat) (s₀ s : State) : Pro
 theorem table_trun {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
     (Ar : Args s K W SP N A D R nl al n tl T) {s₁ : State} (P₁ : EntryPost K W SP R N A D nl al n tl T s s₁) :
     WP isa table s₁ (TRun K W SP N A D R nl al n tl s) := by
-  have L := Ar.lay
+  have L : Lay _ _ _ := Ar.lay
   refine WP.mono (table_ok P₁.env Ar.data.lt Ar.aad.lt P₁.slots.len P₁.alen P₁.l0) fun s₂ Q => ?_
   exact
     { env := Q.env
@@ -103,7 +103,7 @@ theorem nonce_nrun (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n
     (Ar : Args s K W SP N A D R nl al n tl T) (hw : s.wr = [⟨D, n⟩, ⟨W, 3584⟩]) {s₁ : State}
     (P₁ : TRun K W SP N A D R nl al n tl s s₁) :
     WP isa (nonce (callees v)) s₁ (NRun K W SP N A D R nl al n tl s) := by
-  have L := Ar.lay
+  have L : Lay _ _ _ := Ar.lay
   have hRb : 16 * (R + 1) ≤ 256 := by rcases Ar.rounds with h | h | h <;> subst h <;> decide
   have dK : ∀ r ∈ entryR W :: mutR W SP D n, (⟨K, 256⟩ : Region).Disjoint r := fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
@@ -148,9 +148,9 @@ theorem nonce_nrun (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n
       alen := by rw [P₂.alen, P₁.alen, length_bytesAt] }
 
 /-- Two runs of the same public arguments: `seal`'s and `open`'s inputs. -/
-structure Two (s₀ s₀' : State) (K W SP N A D : Addr) (R nl al n tl : Nat) (T : Addr) : Prop where
-  ar : Args s₀ K W SP N A D R nl al n tl T
-  ar' : Args s₀' K W SP N A D R nl al n tl T
+structure TwoN (s₀ s₀' : State) (K W SP N A D : Addr) (R nl al n tl : Nat) (T : Addr) (wn : Nat) : Prop where
+  ar : ArgsN s₀ K W SP N A D R nl al n tl T wn
+  ar' : ArgsN s₀' K W SP N A D R nl al n tl T wn
   sp : s₀.gpr .rsp = SP
   sp' : s₀'.gpr .rsp = SP
   dd : s₀.mem.readW (SP + BitVec.ofNat 64 8) 64 = D
@@ -176,20 +176,25 @@ structure Two (s₀ s₀' : State) (K W SP N A D : Addr) (R nl al n tl : Nat) (T
   r9 : s₀.gpr .r9 = BitVec.ofNat 64 al
   r9' : s₀'.gpr .r9 = BitVec.ofNat 64 al
 
+abbrev Two (s₀ s₀' : State) (K W SP N A D : Addr) (R nl al n tl : Nat) (T : Addr) : Prop :=
+  TwoN s₀ s₀' K W SP N A D R nl al n tl T 3584
+
 section
-variable {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-  (Tw : Two s₀ s₀' K W SP N A D R nl al n tl T)
+variable {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr} {wn : Nat}
+  (Tw : TwoN s₀ s₀' K W SP N A D R nl al n tl T wn)
 include Tw
 
 /-- What `entry` leaves, in each run. -/
-theorem Two.entry₁ : WP isa (.block entry) s₀ (EntryPost K W SP R N A D nl al n tl T s₀) := by
+theorem TwoN.entry₁ (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
+    WP isa (.block entry) s₀ (EntryPostN K W SP wn R N A D nl al n tl T s₀) := by
   obtain ⟨s₁, run₁, P₁⟩ := entry_ok Tw.ar.lay Tw.ar.perm Tw.sp Tw.ar.args Tw.ar.argsW Tw.dd Tw.nn Tw.tg Tw.tt Tw.ww
-    Tw.di Tw.si Tw.dx Tw.cx Tw.r8 Tw.r9
+    Tw.di Tw.si Tw.dx Tw.cx Tw.r8 Tw.r9 hwn hwlt
   exact WP.of_runBlock ⟨s₁, run₁, P₁⟩
 
-theorem Two.entry₂ : WP isa (.block entry) s₀' (EntryPost K W SP R N A D nl al n tl T s₀') := by
+theorem TwoN.entry₂ (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
+    WP isa (.block entry) s₀' (EntryPostN K W SP wn R N A D nl al n tl T s₀') := by
   obtain ⟨s₁, run₁, P₁⟩ := entry_ok Tw.ar'.lay Tw.ar'.perm Tw.sp' Tw.ar'.args Tw.ar'.argsW Tw.dd' Tw.nn' Tw.tg'
-    Tw.tt' Tw.ww' Tw.di' Tw.si' Tw.dx' Tw.cx' Tw.r8' Tw.r9'
+    Tw.tt' Tw.ww' Tw.di' Tw.si' Tw.dx' Tw.cx' Tw.r8' Tw.r9' hwn hwlt
   exact WP.of_runBlock ⟨s₁, run₁, P₁⟩
 
 /-- `entry` in two runs: the first instruction loads `W` from the stack, the
@@ -243,6 +248,13 @@ theorem entry_rel : RelCT isa (fun a b => a = s₀ ∧ b = s₀') (.block entry)
       · rw [ha.2 _ (by decide), hb.2 _ (by decide), Tw.sp, Tw.sp']) hB
   exact RelCT.seq a b
 
+end
+
+section
+variable {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
+  (Tw : Two s₀ s₀' K W SP N A D R nl al n tl T)
+include Tw
+
 variable (hw : s₀.wr = [⟨D, n⟩, ⟨W, 3584⟩]) (hw' : s₀'.wr = [⟨D, n⟩, ⟨W, 3584⟩])
 include hw hw'
 
@@ -250,12 +262,12 @@ include hw hw'
 theorem pre_rel (v : BlocksImpl) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀')
       (.seq (.block entry) (.seq table (.seq (nonce (callees v)) (hash (callees v))))) fun _ _ => True := by
-  have L := Tw.ar.lay
+  have L : Lay _ _ _ := Tw.ar.lay
   have hDW := Tw.ar.data.w
   have hn : n ≤ 2 ^ 64 := Nat.le_of_lt Tw.ar.data.lt
   have e := (entry_rel Tw).wp (F₁ := EntryPost K W SP R N A D nl al n tl T s₀)
     (F₂ := EntryPost K W SP R N A D nl al n tl T s₀') fun a b h => by
-      obtain ⟨rfl, rfl⟩ := h; exact ⟨Tw.entry₁, Tw.entry₂⟩
+      obtain ⟨rfl, rfl⟩ := h; exact ⟨TwoN.entry₁ Tw, TwoN.entry₂ Tw⟩
   have tb := (rel_taintC [] [alenO] hDW hn (P := fun a b => True ∧ EntryPost K W SP R N A D nl al n tl T s₀ a ∧
       EntryPost K W SP R N A D nl al n tl T s₀' b)
     (fun a b h => ⟨h.2.1.env, h.2.2.env, h.2.1.slots, h.2.2.slots, h.2.1.wr.trans hw, h.2.2.wr.trans hw',
@@ -295,7 +307,7 @@ theorem body_oneT (v : BlocksImpl) (enc : Bool) {σ s : State} {K W SP N A D : A
     (Ar : Args σ K W SP N A D R nl al n tl T) (hw : σ.wr = [⟨D, n⟩, ⟨W, 3584⟩])
     (P : Pre K W SP N A D R nl al n tl T σ s) :
     WP isa (body (callees v) enc) s (OneT K W SP R N A D nl n tl T) := by
-  have L := Ar.lay
+  have L : Lay _ _ _ := Ar.lay
   have k : ∀ {t : State}, Env K W SP t → t.rd = s.rd → t.wr = s.wr → Frame (bodyR W SP D n) s.mem t.mem →
       OneT K W SP R N A D nl n tl T t := fun E hr' hw' f =>
     ⟨(brun_of Ar hw P).1.step L Ar.data.w E hw' (bodyR_mut f),
@@ -324,7 +336,7 @@ theorem front_rel {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat
     (hw' : s₀'.wr = [⟨D, n⟩, ⟨W, 3584⟩]) (v : BlocksImpl) (enc : Bool) {d : Nat} (hd : d = tagO ∨ d = t2O) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (front (callees v) enc d) fun a b =>
       True ∧ OneT K W SP R N A D nl n tl T a ∧ OneT K W SP R N A D nl n tl T b := by
-  have L := Tw.ar.lay
+  have L : Lay _ _ _ := Tw.ar.lay
   have hDW := Tw.ar.data.w
   have hn : n ≤ 2 ^ 64 := Nat.le_of_lt Tw.ar.data.lt
   have pre := (pre_rel Tw hw hw' v).wp (F₁ := Pre K W SP N A D R nl al n tl T s₀)
@@ -375,8 +387,11 @@ theorem rel_narrow {P Q : State → State → Prop} {c : Prog isa} (ex w : List 
 
 /-- `s` with the tag `⟨T, tl⟩` read only, and the data and `W` its writable
 regions. -/
+abbrev narrowTN (D : Addr) (n : Nat) (T : Addr) (tl : Nat) (W : Addr) (wn : Nat) (s : State) : State :=
+  s.withRegions (s.rd ++ [⟨T, tl⟩]) [⟨D, n⟩, ⟨W, wn⟩]
+
 abbrev narrowT (D : Addr) (n : Nat) (T : Addr) (tl : Nat) (W : Addr) (s : State) : State :=
-  s.withRegions (s.rd ++ [⟨T, tl⟩]) [⟨D, n⟩, ⟨W, 3584⟩]
+  narrowTN D n T tl W 3584 s
 
 theorem covers_narrowT (rd : List Region) (d t w : Region) :
     Covers (rd ++ [d, t, w]) ((rd ++ [t]) ++ [d, w]) :=
@@ -385,50 +400,53 @@ theorem covers_narrowT (rd : List Region) (d t w : Region) :
     rcases hr with h | h | h | h <;> simp [h]
 
 /-- The arguments, in the state with the tag read only. -/
-theorem Args.narrow {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (Ar : Args s K W SP N A D R nl al n tl T) (hw : s.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, 3584⟩]) :
-    Args (narrowT D n T tl W s) K W SP N A D R nl al n tl T := by
-  have c : Covers (s.rd ++ s.wr) ((narrowT D n T tl W s).rd ++ (narrowT D n T tl W s).wr) := by
+theorem ArgsN.narrow {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr} {wn : Nat}
+    (Ar : ArgsN s K W SP N A D R nl al n tl T wn) (hw : s.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, wn⟩]) :
+    ArgsN (narrowTN D n T tl W wn s) K W SP N A D R nl al n tl T wn := by
+  have c : Covers (s.rd ++ s.wr) ((narrowTN D n T tl W wn s).rd ++ (narrowTN D n T tl W wn s).wr) := by
     rw [hw]; exact covers_narrowT _ _ _ _
-  have b : ∀ {P : Addr} {k : Nat}, Buf W SP s P k → Buf W SP (narrowT D n T tl W s) P k := fun h =>
+  have b : ∀ {P : Addr} {k : Nat}, BufN W SP wn s P k → BufN W SP wn (narrowTN D n T tl W wn s) P k := fun h =>
     ⟨h.rd.trans c, h.lt, h.wrap, h.w, h.stk⟩
-  have w : Covers [⟨W, 3584⟩] (narrowT D n T tl W s).wr := Covers.of_mem fun r hr => by
+  have w : Covers [⟨W, wn⟩] (narrowTN D n T tl W wn s).wr := Covers.of_mem fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp
-  have d : Covers [⟨D, n⟩] (narrowT D n T tl W s).wr := Covers.of_mem fun r hr => by
+  have d : Covers [⟨D, n⟩] (narrowTN D n T tl W wn s).wr := Covers.of_mem fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp
   exact {
     lay := Ar.lay, perm := ⟨Ar.perm.k.trans c, w⟩
     rounds := Ar.rounds, nonce := b Ar.nonce, aad := b Ar.aad
-    data := ⟨b Ar.data.toBuf, d, Ar.data.k⟩, tag := b Ar.tag
+    data := ⟨b Ar.data.toBufN, d, Ar.data.k⟩, tag := b Ar.tag
     nd := Ar.nd, ad := Ar.ad, td := Ar.td, n1 := Ar.n1, n15 := Ar.n15, t1 := Ar.t1, t16 := Ar.t16
     retW := Ar.retW, retD := Ar.retD, retT := Ar.retT, args := Ar.args.trans c, argsW := Ar.argsW }
 
 /-- Two runs, from the states with the tag read only. -/
-theorem Two.narrow {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (Tw : Two s₀ s₀' K W SP N A D R nl al n tl T) (hw : s₀.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, 3584⟩])
-    (hw' : s₀'.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, 3584⟩]) :
-    Two (narrowT D n T tl W s₀) (narrowT D n T tl W s₀') K W SP N A D R nl al n tl T :=
+theorem TwoN.narrow {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr} {wn : Nat}
+    (Tw : TwoN s₀ s₀' K W SP N A D R nl al n tl T wn) (hw : s₀.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, wn⟩])
+    (hw' : s₀'.wr = [⟨D, n⟩, ⟨T, tl⟩, ⟨W, wn⟩]) :
+    TwoN (narrowTN D n T tl W wn s₀) (narrowTN D n T tl W wn s₀') K W SP N A D R nl al n tl T wn :=
   { Tw with ar := Tw.ar.narrow hw, ar' := Tw.ar'.narrow hw' }
 
 /-! ## The copy of the tag and the exit -/
 
 /-- What the copy of the tag needs of a run: the environment, the tag
 length in its slot and the address of the tag at `W + tgO`. -/
-def SealOut (K W SP T : Addr) (tl : Nat) (s : State) : Prop :=
-  Env K W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl ∧
+def SealOutN (K W SP T : Addr) (tl wn : Nat) (s : State) : Prop :=
+  EnvN K W SP wn s ∧ s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl ∧
     s.mem.readW (W + BitVec.ofNat 64 tgO) 64 = T
+
+abbrev SealOut (K W SP T : Addr) (tl : Nat) (s : State) : Prop := SealOutN K W SP T tl 3584 s
 
 /-- The copy of the tag and the exit, in two runs with the same `W`, tag
 length and tag. -/
-theorem sealTail_rel {K W SP T : Addr} {tl : Nat} {P : State → State → Prop}
-    (hP : ∀ s₁ s₂, P s₁ s₂ → SealOut K W SP T tl s₁ ∧ SealOut K W SP T tl s₂) :
+theorem sealTail_relN {K W SP T : Addr} {tl wn : Nat} {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → SealOutN K W SP T tl wn s₁ ∧ SealOutN K W SP T tl wn s₂)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     RelCT isa P (.seq tagOut (.block restore)) fun _ _ => True := by
   let F : State → Prop := fun s => s.gpr .rbx = W ∧ s.gpr .rsi = T ∧ s.gpr .r12 = BitVec.ofNat 64 tl ∧
     s.gpr .rcx = BitVec.ofNat 64 0 ∧ s.gpr .r15 = W
-  have args : ∀ {s : State}, SealOut K W SP T tl s →
+  have args : ∀ {s : State}, SealOutN K W SP T tl wn s →
       WP isa (.block [mvr .rbx .r15, ld .rsi .r15 tgO, ld .r12 .r15 tlO, .mov .rcx (.imm 0)]) s F :=
     fun ⟨E, htl, htg⟩ => by
-      obtain ⟨s', run, h1, h2, h3, h4, g, -⟩ := tagOutArgs_ok E htg htl
+      obtain ⟨s', run, h1, h2, h3, h4, g, -⟩ := tagOutArgs_ok E htg htl hwn hwlt
       exact WP.of_runBlock ⟨s', run, h1, h2, h3, h4, by rw [g _ (by decide) (by decide) (by decide) (by decide), E.r15]⟩
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r15])
       (.block [mvr .rbx .r15, ld .rsi .r15 tgO, ld .r12 .r15 tlO, .mov .rcx (.imm 0)]) hc).isSome = true :=
@@ -455,6 +473,11 @@ theorem sealTail_rel {K W SP T : Addr} {tl : Nat} {P : State → State → Prop}
   obtain ⟨ht, hq⟩ := RelCT.seq a b _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
   simp only [List.append_assoc] at ht ⊢
   exact ⟨ht, hq⟩
+
+theorem sealTail_rel {K W SP T : Addr} {tl : Nat} {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → SealOut K W SP T tl s₁ ∧ SealOut K W SP T tl s₂) :
+    RelCT isa P (.seq tagOut (.block restore)) fun _ _ => True :=
+  sealTail_relN hP
 
 /-- `vg_aes_ocb_seal` in two runs. -/
 theorem seal_rel {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {T : Addr}
@@ -489,13 +512,13 @@ theorem seal_rel {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
     ⟨h.2.2.env, h.2.2.slots.tl, h.2.2.tg⟩⟩)
 
 /-- Two runs of `seal` or `open` with the same public arguments. -/
-theorem Two.of {s₁ s₂ : State} (hq : onePub s₁ s₂)
-    (ar₁ : Args s₁ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
-      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2))
-    (ar₂ : Args s₂ (s₂.gpr .rdi) (arg s₂ 4) (s₂.gpr .rsp) (s₂.gpr .rdx) (s₂.gpr .r8) (arg s₂ 0) (s₂.gpr .rsi).toNat
-      (s₂.gpr .rcx).toNat (s₂.gpr .r9).toNat (arg s₂ 1).toNat (arg s₂ 3).toNat (arg s₂ 2)) :
-    Two s₁ s₂ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
-      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2) := by
+theorem TwoN.of {s₁ s₂ : State} {wn : Nat} (hq : onePub s₁ s₂)
+    (ar₁ : ArgsN s₁ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
+      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2) wn)
+    (ar₂ : ArgsN s₂ (s₂.gpr .rdi) (arg s₂ 4) (s₂.gpr .rsp) (s₂.gpr .rdx) (s₂.gpr .r8) (arg s₂ 0) (s₂.gpr .rsi).toNat
+      (s₂.gpr .rcx).toNat (s₂.gpr .r9).toNat (arg s₂ 1).toNat (arg s₂ 3).toNat (arg s₂ 2) wn) :
+    TwoN s₁ s₂ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
+      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2) wn := by
   obtain ⟨q1, q2, q3, q4, q5, q6, q7, q8⟩ := hq
   have a0 := q8 0 (by decide)
   have a1 := q8 1 (by decide)
@@ -517,6 +540,15 @@ theorem Two.of {s₁ s₂ : State} (hq : onePub s₁ s₂)
     cx := (ofNat_toNat64 _).symm, cx' := by rw [← q4]; exact (ofNat_toNat64 _).symm
     r8 := rfl, r8' := q5.symm
     r9 := (ofNat_toNat64 _).symm, r9' := by rw [← q6]; exact (ofNat_toNat64 _).symm }
+
+theorem Two.of {s₁ s₂ : State} (hq : onePub s₁ s₂)
+    (ar₁ : Args s₁ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
+      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2))
+    (ar₂ : Args s₂ (s₂.gpr .rdi) (arg s₂ 4) (s₂.gpr .rsp) (s₂.gpr .rdx) (s₂.gpr .r8) (arg s₂ 0) (s₂.gpr .rsi).toNat
+      (s₂.gpr .rcx).toNat (s₂.gpr .r9).toNat (arg s₂ 1).toNat (arg s₂ 3).toNat (arg s₂ 2)) :
+    Two s₁ s₂ (s₁.gpr .rdi) (arg s₁ 4) (s₁.gpr .rsp) (s₁.gpr .rdx) (s₁.gpr .r8) (arg s₁ 0) (s₁.gpr .rsi).toNat
+      (s₁.gpr .rcx).toNat (s₁.gpr .r9).toNat (arg s₁ 1).toNat (arg s₁ 3).toNat (arg s₁ 2) :=
+  TwoN.of hq ar₁ ar₂
 
 /-- `vg_aes_ocb_seal` is constant time. -/
 theorem seal_ct (v : BlocksImpl) : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» (callees v)) :=

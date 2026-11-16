@@ -59,6 +59,7 @@ public import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
+public import VerifiedGarbage.Proof.Variants.AesOcb.X86_64
 
 /-! # AES-OCB (RFC 7253) on x86-64 -/
 
@@ -69,9 +70,10 @@ namespace VG.Artifacts.AesOcb.X86_64
 open VG.Proof.AesOcb.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) => [
-    Spec.Ocb.initApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.ocbInitReg v),
-    Spec.Ocb.sealApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.sealReg v),
-    Spec.Ocb.openApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.openReg v)]
+  VG.Proof.Variants.AesBlocks.X86_64.variants.map (fun (v : Proof.Aes.X86_64.BlocksImpl) =>
+    Spec.Ocb.initApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.ocbInitReg v)) ++
+  VG.Proof.Variants.AesOcb.X86_64.variants.flatMap fun (o : Proof.AesOcb.X86_64.OcbImpl) => [
+    Spec.Ocb.sealApi.artifact X86_64.target o.sealReg,
+    Spec.Ocb.openApi.artifact X86_64.target o.openReg]
 
 end VG.Artifacts.AesOcb.X86_64

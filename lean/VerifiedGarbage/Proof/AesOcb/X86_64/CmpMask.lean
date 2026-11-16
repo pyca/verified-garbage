@@ -107,13 +107,14 @@ theorem cmpStep_ok (s : State) {W : Addr} {j T : Nat} (h15 : s.gpr .r15 = W)
   all_goals rfl
 
 /-- `cmp`: 1 at `W` if the first `tl` bytes at `W` and `W + t2O` are equal, else 0. -/
-theorem cmp_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
-    (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) :
+theorem cmp_ok {K W SP : Addr} {s : State} {wn : Nat} (E : EnvN K W SP wn s) {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
+    (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     WP isa cmp s fun t => t.mem = s.mem.writeW (W + BitVec.ofNat 64 tagO)
         (if bytesAt s.mem W tl = bytesAt s.mem (W + BitVec.ofNat 64 t2O) tl then 1#64 else 0#64) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r12 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
       t.wr = s.wr := by
-  have r₀ := E.perm.wR (show 224 + 8 ≤ 3584 by decide)
+  have r₀ := E.perm.wR6 hwn hwlt (show 224 + 8 ≤ 640 by decide)
   simp only [tlO] at htl
   obtain ⟨s₁, run₁, rdx₁, rcx₁, r12₁, m₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
       [.alu .xor .rdx (.reg .rdx), .mov .rcx (.imm 0), ld .r12 .r15 tlO] s = some s₁ ∧
@@ -129,8 +130,8 @@ theorem cmp_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {tl : Nat} (h1 : 1
   have h15₁ : s₁.gpr .r15 = W := by rw [g₁ _ (by decide) (by decide) (by decide), E.r15]
   unfold cmp
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have hR : ∀ {d j : Nat}, d + j < 3584 → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d + BitVec.ofNat 64 j) 1 :=
-    fun h => by rw [Offset.add_add]; exact E.perm.wR (by omega_arith)
+  have hR : ∀ {d j : Nat}, d + j < 640 → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d + BitVec.ofNat 64 j) 1 :=
+    fun h => by rw [Offset.add_add]; exact E.perm.wR6 hwn hwlt (by omega_arith)
   -- The loop: the OR of the XORs of the first `j` bytes in `rdx`.
   refine WP.seq (WP.mono (WP.loop (M := isa) (c := .ne)
     (Q := fun u => (u.gpr .rdx).toNat < 256 ∧
@@ -176,7 +177,7 @@ theorem cmp_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {tl : Nat} (h1 : 1
         by rw [rd', rd], by rw [wr', wr]⟩
   · obtain ⟨lt, iff, mem, g, rd, wr⟩ := hu
     have h15 : u.gpr .r15 = W := by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), E.r15]
-    have w₀ : InRegions u.wr (W + BitVec.ofNat 64 0) 8 := by rw [wr]; exact E.perm.wW (by decide)
+    have w₀ : InRegions u.wr (W + BitVec.ofNat 64 0) 8 := by rw [wr]; exact E.perm.wW6 hwn hwlt (by decide)
     refine WP.of_runBlock ⟨_, by orun [h15, w₀], ?_, fun r h₁ h₂ h₃ h₄ h₅ => ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_setFlags, mem_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
         ite_false, reduceCtorEq, sext1, mem]
@@ -388,16 +389,17 @@ theorem ofNat_shr4 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVe
 
 /-- Every byte of the data ANDed with `0 − ok`: its whole blocks, then the
 rest. -/
-theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {D : Addr} {n : Nat}
+theorem mask_ok {K W SP : Addr} {s : State} {wn : Nat} (E : EnvN K W SP wn s) {D : Addr} {n : Nat}
     (hdata : s.mem.readW (W + BitVec.ofNat 64 208) 64 = D)
-    (hlen : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n) (hD : DBuf K W SP s D n) {c : Bool}
-    (hok : s.mem.readW (W + BitVec.ofNat 64 tagO) 64 = if c then 1#64 else 0#64) :
-    WP isa mask s fun t => Env K W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n) (hD : DBufN K W SP wn s D n) {c : Bool}
+    (hok : s.mem.readW (W + BitVec.ofNat 64 tagO) 64 = if c then 1#64 else 0#64)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
+    WP isa mask s fun t => EnvN K W SP wn t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.mem = writeBytes s.mem D (if c then bytesAt s.mem D n else zeros n) := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 208 + 8 ≤ 3584 by decide)
-  have r₂ := E.perm.wR (show 216 + 8 ≤ 3584 by decide)
-  have r₃ := E.perm.wR (show 0 + 8 ≤ 3584 by decide)
+  have r₁ := E.perm.wR6 hwn hwlt (show 208 + 8 ≤ 640 by decide)
+  have r₂ := E.perm.wR6 hwn hwlt (show 216 + 8 ≤ 640 by decide)
+  have r₃ := E.perm.wR6 hwn hwlt (show 0 + 8 ≤ 640 by decide)
   simp only [tagO] at hok
   have hn := hD.lt
   obtain ⟨s₁, run₁, m₁, h3₁, h12₁, hdx₁, h1₁, h8₁, zf₁, x6₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
@@ -428,7 +430,7 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {D : Addr} {n : N
       rcases hr with rfl | rfl | rfl <;>
         simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
-  have E₁ : Env K W SP s₁ := E.keep g₁ rd₁ wr₁
+  have E₁ : EnvN K W SP wn s₁ := E.keep g₁ rd₁ wr₁
   have inv₀ : MInv s s₁ s₁ D c 0 :=
     ⟨h1₁, by rw [m₁]; cases c <;> simp [bytesAt, zeros, writeBytes_nil], fun _ _ _ _ => rfl, rfl, rd₁, wr₁⟩
   -- The blocks.
@@ -442,7 +444,7 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {D : Addr} {n : N
   refine WP.seq (WP.mono words fun t ht => ?_)
   -- The rest.
   have fin {t : State} (ht : MInv s s₁ t D c n) :
-      Env K W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      EnvN K W SP wn t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.mem = writeBytes s.mem D (if c then bytesAt s.mem D n else zeros n) :=
     ⟨E₁.keep (fun r hr => ht.keep r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)

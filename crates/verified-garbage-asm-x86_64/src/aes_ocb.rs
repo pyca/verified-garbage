@@ -34,306 +34,6 @@ call {vg_aes_encrypt_blocks_vaes}
     )
 }
 
-/// The CPU features `vg_aes_ocb_seal_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
-
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
-je 20f
-22:
-.base64 "TQHbTInYSPfmSMHoOkjByDxMAfhIicdJiwJID8hJi1IISA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISImHAAoAAEgPykiJlwgKAABJifpJgcIACgAASdHpTYXJ"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
-23:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 23b
-.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MifpIg8JwSMfBAQAAAEyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABIMcBJiUcwSYlHOEgxwEmJh5AAAABJiYeYAAAASYuf8AAAAEmLh/gAAABIicFIg+EPSYlPcEjB6ARJiYf4AAAASMfFAQAAAEiFwA=="
-je 24f
-26:
-.base64 "TYun+AAAAEmD/Ag="
-jb 27f
-.base64 "ScfECAAAAA=="
-jmp 28f
-27:
-28:
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-29:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwUmLh5AAAABJi5eYAAAASDOBAAoAAEgzkQgKAABJiYeQAAAASYmXmAAAAEiLA0iLUwhJM4eQAAAASTOXmAAAAEiJBkiJVghIg8YQSIPDEEiDxQFJg8UBTTnl"
-jne 29b
-.base64 "TIn6SIHCgAEAAEyJ4UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-210:
-.base64 "SYtHMEmLVzhIMwZIM1YISYlHMEmJVzhIg8YQSYPFAU055Q=="
-jne 210b
-.base64 "SYuH+AAAAEwp4EmJh/gAAAA="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "TYtncE2F5A=="
-je 211f
-.base64 "SYuHkAAAAEmLl5gAAABJM4bwAAAASTOW+AAAAEmJh5AAAABJiZeYAAAASDHASYmHgAEAAEmJh4gBAABMif5IgcaAAQAASMfBAAAAAA=="
-213:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 213b
-.base64 "SMfAgAAAAIgEDkmLh4ABAABJi5eIAQAASTOHkAAAAEkzl5gAAABJiYeAAQAASYmXiAEAAEyJ+kiBwoABAABIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHMEmLVzhJM4eAAQAASTOXiAEAAEmJRzBJiVc4"
-jmp 212f
-211:
-212:
-.base64 "TYuv2AAAAEnB7QRNhe0="
-je 214f
-.base64 "SYuf0AAAAE2J7EjHxQEAAADzQQ9vRxDzQQ9vTyDzQQ9vpwAKAADzQQ9vrxAKAABJg/wE"
-jb 216f
-218:
-.base64 "Zg/vxPMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAWYP78XzD28bZg/vy2YP79jzD38bSIPDEEiDxQFmD+/E8w9vG2YP78tmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAUmD7ARJg/wE"
-jae 218b
-jmp 217f
-216:
-217:
-.base64 "TYXk"
-je 219f
-221:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAUmD7AE="
-jne 221b
-jmp 220f
-219:
-220:
-.base64 "80EPf0cQ80EPf08gSYuX0AAAAEyJ6UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYuHEAEAAEmLlxgBAABJiUcQSYlXGEmLn9AAAABNiexIx8UBAAAA80EPb0cQ80EPb08g80EPb6cACgAA80EPb68QCgAASYP8BA=="
-jb 222f
-224:
-.base64 "Zg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxfMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsBEmD/AQ="
-jae 224b
-jmp 223f
-222:
-223:
-.base64 "TYXk"
-je 225f
-227:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsAQ=="
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "80EPf0cQ80EPf08g"
-jmp 215f
-214:
-215:
-.base64 "SYuf0AAAAEmLh9gAAABJicRJg+QPTCngSAHDTYXk"
-je 228f
-.base64 "SYtHEEmLVxhJM4bwAAAASTOW+AAAAEmJRxBJiVcYSYtHEEmLVxhJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
-230:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 230b
-.base64 "SMfAgAAAAIgEDkmLRyBJi1coSTOHgAAAAEkzl4gAAABJiUcgSYlXKEjHwQAAAAA="
-231:
-.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
-jne 231b
-jmp 229f
-228:
-229:
-.base64 "SYtHIEmLVyhJiUdwSYlXeEmLR3BJi1d4STNHEEkzVxhJiUdwSYlXeEmLR3BJi1d4STNHQEkzV0hJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHcEmLV3hJiQdJiVcISYsHSYtXCEkzRzBJM1c4SYkHSYlXCEyJ+0mLtzABAABNi6fgAAAASMfBAAAAAA=="
-232:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 232b
-.base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
-    )
-}
-
-/// The CPU features `vg_aes_ocb_open_vaes` requires (`Artifact.features`).
-pub const VG_AES_OCB_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
-
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
-je 20f
-22:
-.base64 "TQHbTInYSPfmSMHoOkjByDxMAfhIicdJiwJID8hJi1IISA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISImHAAoAAEgPykiJlwgKAABJifpJgcIACgAASdHpTYXJ"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
-23:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 23b
-.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MifpIg8JwSMfBAQAAAEyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABIMcBJiUcwSYlHOEgxwEmJh5AAAABJiYeYAAAASYuf8AAAAEmLh/gAAABIicFIg+EPSYlPcEjB6ARJiYf4AAAASMfFAQAAAEiFwA=="
-je 24f
-26:
-.base64 "TYun+AAAAEmD/Ag="
-jb 27f
-.base64 "ScfECAAAAA=="
-jmp 28f
-27:
-28:
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-29:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwUmLh5AAAABJi5eYAAAASDOBAAoAAEgzkQgKAABJiYeQAAAASYmXmAAAAEiLA0iLUwhJM4eQAAAASTOXmAAAAEiJBkiJVghIg8YQSIPDEEiDxQFJg8UBTTnl"
-jne 29b
-.base64 "TIn6SIHCgAEAAEyJ4UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-210:
-.base64 "SYtHMEmLVzhIMwZIM1YISYlHMEmJVzhIg8YQSYPFAU055Q=="
-jne 210b
-.base64 "SYuH+AAAAEwp4EmJh/gAAAA="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "TYtncE2F5A=="
-je 211f
-.base64 "SYuHkAAAAEmLl5gAAABJM4bwAAAASTOW+AAAAEmJh5AAAABJiZeYAAAASDHASYmHgAEAAEmJh4gBAABMif5IgcaAAQAASMfBAAAAAA=="
-213:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 213b
-.base64 "SMfAgAAAAIgEDkmLh4ABAABJi5eIAQAASTOHkAAAAEkzl5gAAABJiYeAAQAASYmXiAEAAEyJ+kiBwoABAABIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHMEmLVzhJM4eAAQAASTOXiAEAAEmJRzBJiVc4"
-jmp 212f
-211:
-212:
-.base64 "TYuv2AAAAEnB7QRNhe0="
-je 214f
-.base64 "SYuf0AAAAE2J7EjHxQEAAADzQQ9vRxDzQQ9vTyDzQQ9vpwAKAADzQQ9vrxAKAABJg/wE"
-jb 216f
-218:
-.base64 "Zg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxfMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsBEmD/AQ="
-jae 218b
-jmp 217f
-216:
-217:
-.base64 "TYXk"
-je 219f
-221:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsAQ=="
-jne 221b
-jmp 220f
-219:
-220:
-.base64 "80EPf0cQ80EPf08gSYuX0AAAAEyJ6UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_decrypt_blocks_vaes}
-.base64 "SYuHEAEAAEmLlxgBAABJiUcQSYlXGEmLn9AAAABNiexIx8UBAAAA80EPb0cQ80EPb08g80EPb6cACgAA80EPb68QCgAASYP8BA=="
-jb 222f
-224:
-.base64 "Zg/vxPMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAWYP78XzD28bZg/v2GYP78vzD38bSIPDEEiDxQFmD+/E8w9vG2YP79hmD+/L8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAUmD7ARJg/wE"
-jae 224b
-jmp 223f
-222:
-223:
-.base64 "TYXk"
-je 225f
-227:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAUmD7AE="
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "80EPf0cQ80EPf08g"
-jmp 215f
-214:
-215:
-.base64 "SYuf0AAAAEmLh9gAAABJicRJg+QPTCngSAHDTYXk"
-je 228f
-.base64 "SYtHEEmLVxhJM4bwAAAASTOW+AAAAEmJRxBJiVcYSYtHEEmLVxhJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SMfBAAAAAA=="
-230:
-.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
-jne 230b
-.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
-231:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 231b
-.base64 "SMfAgAAAAIgEDkmLRyBJi1coSTOHgAAAAEkzl4gAAABJiUcgSYlXKA=="
-jmp 229f
-228:
-229:
-.base64 "SYtHIEmLVyhJiUdwSYlXeEmLR3BJi1d4STNHEEkzVxhJiUdwSYlXeEmLR3BJi1d4STNHQEkzV0hJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYtHcEmLV3hJiYeAAAAASYmXiAAAAEmLh4AAAABJi5eIAAAASTNHMEkzVzhJiYeAAAAASYmXiAAAAEmLnzABAABMif5Ni6fgAAAASMfBAAAAAA=="
-232:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 232b
-.base64 "SDHSSMfBAAAAAE2Lp+AAAAA="
-233:
-.base64 "QQ+2BA9FD7aED4AAAABMMcBICcJIg8EBTDnh"
-jne 233b
-.base64 "SIPqAUjB6j9JiRdJi5/QAAAATYun2AAAAEgx0kkrF2ZID27yZg9s9kjHwQAAAABNieBJwegETYXA"
-je 234f
-236:
-.base64 "8w9vPAtmD9v+8w9/PAtIg8EQSYPoAQ=="
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "TDnh"
-je 237f
-239:
-.base64 "D7YEC0gh0IgEC0iDwQFMOeE="
-jne 239b
-jmp 238f
-237:
-238:
-.base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes::vg_aes_decrypt_blocks_vaes,
-    )
-}
-
 /// The CPU features `vg_aes_ocb_init_aesni` requires (`Artifact.features`).
 pub const VG_AES_OCB_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -365,306 +65,6 @@ call {vg_aes_encrypt_blocks_aesni}
     )
 }
 
-/// The CPU features `vg_aes_ocb_seal_aesni` requires (`Artifact.features`).
-pub const VG_AES_OCB_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
-je 20f
-22:
-.base64 "TQHbTInYSPfmSMHoOkjByDxMAfhIicdJiwJID8hJi1IISA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISImHAAoAAEgPykiJlwgKAABJifpJgcIACgAASdHpTYXJ"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
-23:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 23b
-.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MifpIg8JwSMfBAQAAAEyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABIMcBJiUcwSYlHOEgxwEmJh5AAAABJiYeYAAAASYuf8AAAAEmLh/gAAABIicFIg+EPSYlPcEjB6ARJiYf4AAAASMfFAQAAAEiFwA=="
-je 24f
-26:
-.base64 "TYun+AAAAEmD/Ag="
-jb 27f
-.base64 "ScfECAAAAA=="
-jmp 28f
-27:
-28:
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-29:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwUmLh5AAAABJi5eYAAAASDOBAAoAAEgzkQgKAABJiYeQAAAASYmXmAAAAEiLA0iLUwhJM4eQAAAASTOXmAAAAEiJBkiJVghIg8YQSIPDEEiDxQFJg8UBTTnl"
-jne 29b
-.base64 "TIn6SIHCgAEAAEyJ4UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-210:
-.base64 "SYtHMEmLVzhIMwZIM1YISYlHMEmJVzhIg8YQSYPFAU055Q=="
-jne 210b
-.base64 "SYuH+AAAAEwp4EmJh/gAAAA="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "TYtncE2F5A=="
-je 211f
-.base64 "SYuHkAAAAEmLl5gAAABJM4bwAAAASTOW+AAAAEmJh5AAAABJiZeYAAAASDHASYmHgAEAAEmJh4gBAABMif5IgcaAAQAASMfBAAAAAA=="
-213:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 213b
-.base64 "SMfAgAAAAIgEDkmLh4ABAABJi5eIAQAASTOHkAAAAEkzl5gAAABJiYeAAQAASYmXiAEAAEyJ+kiBwoABAABIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHMEmLVzhJM4eAAQAASTOXiAEAAEmJRzBJiVc4"
-jmp 212f
-211:
-212:
-.base64 "TYuv2AAAAEnB7QRNhe0="
-je 214f
-.base64 "SYuf0AAAAE2J7EjHxQEAAADzQQ9vRxDzQQ9vTyDzQQ9vpwAKAADzQQ9vrxAKAABJg/wE"
-jb 216f
-218:
-.base64 "Zg/vxPMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAWYP78XzD28bZg/vy2YP79jzD38bSIPDEEiDxQFmD+/E8w9vG2YP78tmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAUmD7ARJg/wE"
-jae 218b
-jmp 217f
-216:
-217:
-.base64 "TYXk"
-je 219f
-221:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/LZg/v2PMPfxtIg8MQSIPFAUmD7AE="
-jne 221b
-jmp 220f
-219:
-220:
-.base64 "80EPf0cQ80EPf08gSYuX0AAAAEyJ6UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYuHEAEAAEmLlxgBAABJiUcQSYlXGEmLn9AAAABNiexIx8UBAAAA80EPb0cQ80EPb08g80EPb6cACgAA80EPb68QCgAASYP8BA=="
-jb 222f
-224:
-.base64 "Zg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxfMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsBEmD/AQ="
-jae 224b
-jmp 223f
-222:
-223:
-.base64 "TYXk"
-je 225f
-227:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsAQ=="
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "80EPf0cQ80EPf08g"
-jmp 215f
-214:
-215:
-.base64 "SYuf0AAAAEmLh9gAAABJicRJg+QPTCngSAHDTYXk"
-je 228f
-.base64 "SYtHEEmLVxhJM4bwAAAASTOW+AAAAEmJRxBJiVcYSYtHEEmLVxhJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
-230:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 230b
-.base64 "SMfAgAAAAIgEDkmLRyBJi1coSTOHgAAAAEkzl4gAAABJiUcgSYlXKEjHwQAAAAA="
-231:
-.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
-jne 231b
-jmp 229f
-228:
-229:
-.base64 "SYtHIEmLVyhJiUdwSYlXeEmLR3BJi1d4STNHEEkzVxhJiUdwSYlXeEmLR3BJi1d4STNHQEkzV0hJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHcEmLV3hJiQdJiVcISYsHSYtXCEkzRzBJM1c4SYkHSYlXCEyJ+0mLtzABAABNi6fgAAAASMfBAAAAAA=="
-232:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 232b
-.base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-    )
-}
-
-/// The CPU features `vg_aes_ocb_open_aesni` requires (`Artifact.features`).
-pub const VG_AES_OCB_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNDx//9Ii4QkOA4AAEiJRCQISIuEJEAOAABIiUQkEEiLhCRIDgAASIlEJBhIi4QkUA4AAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi0dQSYtXWEmJhwAKAABJiZcICgAATYuP2AAAAEmLh/gAAABJCcFJwekFTYn6SYHCAAoAAEnHwwEAAABIvm04lcxj3S8CTYXJ"
-je 20f
-22:
-.base64 "TQHbTInYSPfmSMHoOkjByDxMAfhIicdJiwJID8hJi1IISA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISImHAAoAAEgPykiJlwgKAABJifpJgcIACgAASdHpTYXJ"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
-23:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 23b
-.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MifpIg8JwSMfBAQAAAEyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABIMcBJiUcwSYlHOEgxwEmJh5AAAABJiYeYAAAASYuf8AAAAEmLh/gAAABIicFIg+EPSYlPcEjB6ARJiYf4AAAASMfFAQAAAEiFwA=="
-je 24f
-26:
-.base64 "TYun+AAAAEmD/Ag="
-jb 27f
-.base64 "ScfECAAAAA=="
-jmp 28f
-27:
-28:
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-29:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwUmLh5AAAABJi5eYAAAASDOBAAoAAEgzkQgKAABJiYeQAAAASYmXmAAAAEiLA0iLUwhJM4eQAAAASTOXmAAAAEiJBkiJVghIg8YQSIPDEEiDxQFJg8UBTTnl"
-jne 29b
-.base64 "TIn6SIHCgAEAAEyJ4UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "ScfFAAAAAEyJ/kiBxoABAAA="
-210:
-.base64 "SYtHMEmLVzhIMwZIM1YISYlHMEmJVzhIg8YQSYPFAU055Q=="
-jne 210b
-.base64 "SYuH+AAAAEwp4EmJh/gAAAA="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "TYtncE2F5A=="
-je 211f
-.base64 "SYuHkAAAAEmLl5gAAABJM4bwAAAASTOW+AAAAEmJh5AAAABJiZeYAAAASDHASYmHgAEAAEmJh4gBAABMif5IgcaAAQAASMfBAAAAAA=="
-213:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 213b
-.base64 "SMfAgAAAAIgEDkmLh4ABAABJi5eIAQAASTOHkAAAAEkzl5gAAABJiYeAAQAASYmXiAEAAEyJ+kiBwoABAABIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHMEmLVzhJM4eAAQAASTOXiAEAAEmJRzBJiVc4"
-jmp 212f
-211:
-212:
-.base64 "TYuv2AAAAEnB7QRNhe0="
-je 214f
-.base64 "SYuf0AAAAE2J7EjHxQEAAADzQQ9vRxDzQQ9vTyDzQQ9vpwAKAADzQQ9vrxAKAABJg/wE"
-jb 216f
-218:
-.base64 "Zg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxfMPbxtmD+/Y8w9/G0iDwxBIg8UBZg/vxPMPbxtmD+/Y8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsBEmD/AQ="
-jae 218b
-jmp 217f
-216:
-217:
-.base64 "TYXk"
-je 219f
-221:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/Y8w9/G0iDwxBIg8UBSYPsAQ=="
-jne 221b
-jmp 220f
-219:
-220:
-.base64 "80EPf0cQ80EPf08gSYuX0AAAAEyJ6UyJ90mLt+gAAABNifhJgcAAAgAA"
-call {vg_aes_decrypt_blocks_aesni}
-.base64 "SYuHEAEAAEmLlxgBAABJiUcQSYlXGEmLn9AAAABNiexIx8UBAAAA80EPb0cQ80EPb08g80EPb6cACgAA80EPb68QCgAASYP8BA=="
-jb 222f
-224:
-.base64 "Zg/vxPMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAWYP78XzD28bZg/v2GYP78vzD38bSIPDEEiDxQFmD+/E8w9vG2YP79hmD+/L8w9/G0iDwxBIg8UBSInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAUmD7ARJg/wE"
-jae 224b
-jmp 223f
-222:
-223:
-.base64 "TYXk"
-je 225f
-227:
-.base64 "SInoSMfBAAAAAEgp6UghyEi5bTiVzGPdLwJI9+FIweg6SMHIPEyJ+UgBwfMPb5EACgAAZg/vwvMPbxtmD+/YZg/vy/MPfxtIg8MQSIPFAUmD7AE="
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "80EPf0cQ80EPf08g"
-jmp 215f
-214:
-215:
-.base64 "SYuf0AAAAEmLh9gAAABJicRJg+QPTCngSAHDTYXk"
-je 228f
-.base64 "SYtHEEmLVxhJM4bwAAAASTOW+AAAAEmJRxBJiVcYSYtHEEmLVxhJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SMfBAAAAAA=="
-230:
-.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
-jne 230b
-.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
-231:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 231b
-.base64 "SMfAgAAAAIgEDkmLRyBJi1coSTOHgAAAAEkzl4gAAABJiUcgSYlXKA=="
-jmp 229f
-228:
-229:
-.base64 "SYtHIEmLVyhJiUdwSYlXeEmLR3BJi1d4STNHEEkzVxhJiUdwSYlXeEmLR3BJi1d4STNHQEkzV0hJiUdwSYlXeEyJ+kiDwnBIx8EBAAAATIn3SYu36AAAAE2J+EmBwAACAAA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYtHcEmLV3hJiYeAAAAASYmXiAAAAEmLh4AAAABJi5eIAAAASTNHMEkzVzhJiYeAAAAASYmXiAAAAEmLnzABAABMif5Ni6fgAAAASMfBAAAAAA=="
-232:
-.base64 "D7YEC4gEDkiDwQFMOeE="
-jne 232b
-.base64 "SDHSSMfBAAAAAE2Lp+AAAAA="
-233:
-.base64 "QQ+2BA9FD7aED4AAAABMMcBICcJIg8EBTDnh"
-jne 233b
-.base64 "SIPqAUjB6j9JiRdJi5/QAAAATYun2AAAAEgx0kkrF2ZID27yZg9s9kjHwQAAAABNieBJwegETYXA"
-je 234f
-236:
-.base64 "8w9vPAtmD9v+8w9/PAtIg8EQSYPoAQ=="
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "TDnh"
-je 237f
-239:
-.base64 "D7YEC0gh0IgEC0iDwQFMOeE="
-jne 239b
-jmp 238f
-237:
-238:
-.base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
-    )
-}
-
 /// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -689,6 +89,838 @@ call {vg_aes_encrypt_blocks}
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+    )
+}
+
+/// The CPU features `vg_aes_ocb_seal_aesni` requires (`Artifact.features`).
+pub const VG_AES_OCB_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJFD9//9Ii4QkuAIAAEiJRCQISIuEJMACAABIiUQkEEiLhCTIAgAASIlEJBhIi4Qk0AIAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi7foAAAASYnyTQHSTQHSTQHSTQHSSQH6SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
+20:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 20b
+.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MidZIKf5Iwe4E80EPb0dw80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 21f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 23f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 24f
+23:
+24:
+jmp 22f
+21:
+22:
+.base64 "80UPbwJmQQ843cDzQQ9/R3BJi0dQSA/ISYtXWEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR2BID8pJiVdoSYtHYEgPyEmLV2hID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYeQAAAASA/KSYmXmAAAAEmLh5AAAABID8hJi5eYAAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYmHQAEAAEgPykmJl0gBAABJi0dQSYtXWGZMD27gZkwPbtpmRQ9s40mLR2BJi1doZkwPbuhmTA9u2mZFD2zrSYuHkAAAAEmLl5gAAABmTA9u8GZMD27aZkUPbPPzRQ9/p4ABAADzRQ9/r6ABAADzRQ9/t+ABAABmRQ9v3GZFD+/d80UPf5+QAQAAZkUP797zRQ9/n8ABAABmRQ9v3WZFD+/e80UPf5+wAQAAZkUPb9xmRQ/v3vNFD3+f0AEAAEmLt+gAAABJifJNAdJNAdJNAdJNAdJJAfpNi5/wAAAATYun+AAAAEnB7ARmRQ/v5GZFD+/SScfFAAAAAEmD/Ag="
+jb 25f
+27:
+.base64 "SYuHQAEAAEmLl0gBAABJiYdQAQAASYmXWAEAAE2J6UmDwQFJ98EBAAAA"
+jne 28f
+210:
+.base64 "SYuHUAEAAEgPyEmLl1gBAABID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYdQAQAASA/KSYmXWAEAAEnR6Un3wQEAAAA="
+je 210b
+jmp 29f
+28:
+29:
+.base64 "SYuHUAEAAEmLl1gBAABJM4eQAAAASTOXmAAAAGZMD27YZkwPbupmRQ9s3fNFD3+f8AEAAPNBD28D80UPb5+AAQAAZkUP79zzRQ9/nwACAABmQQ/vw/NBD29LEPNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyDzRQ9vn6ABAABmRQ/v3PNFD3+fIAIAAGZBD+/T80EPb1sw80UPb5+wAQAAZkUP79zzRQ9/nzACAABmQQ/v2/NBD29jQPNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzQQ9va1DzRQ9vn9ABAABmRQ/v3PNFD3+fUAIAAGZBD+/r80EPb3Ng80UPb5/gAQAAZkUP79zzRQ9/n2ACAABmQQ/v8/NBD297cPNFD2+f8AEAAGZFD+/c80UPf59wAgAAZkEP7/vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6GZBD+/wZkEP7/jzRA9vRxBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vRyBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vRzBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR0BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR1BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR2BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR3BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vh4AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vh5AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PhIg/4K"
+je 211f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+DA=="
+je 213f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4"
+jmp 214f
+213:
+214:
+jmp 212f
+211:
+212:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmQQ843fhmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79VmRA/v1mZED+/X80UPb6dwAgAASYHDgAAAAEmDxQFJg+wISYP8CA=="
+jae 27b
+jmp 26f
+25:
+26:
+.base64 "TYXk"
+je 215f
+.base64 "SYP8AQ=="
+je 217f
+.base64 "SYP8Ag=="
+je 219f
+.base64 "SYP8Aw=="
+je 221f
+.base64 "SYP8BA=="
+je 223f
+.base64 "SYP8BQ=="
+je 225f
+.base64 "SYP8Bg=="
+je 227f
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzQQ9vc2DzRQ9vn+ABAABmRQ/v3PNFD3+fYAIAAGZBD+/z80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8EiD/go="
+je 229f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwSIP+DA=="
+je 231f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw"
+jmp 232f
+231:
+232:
+jmp 230f
+229:
+230:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79VmRA/v1vNFD2+nYAIAAEmDw3A="
+jmp 228f
+227:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6EiD/go="
+je 233f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoSIP+DA=="
+je 235f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo"
+jmp 236f
+235:
+236:
+jmp 234f
+233:
+234:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79XzRQ9vp1ACAABJg8Ng"
+228:
+jmp 226f
+225:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NED28HZkEP78BmQQ/vyGZBD+/QZkEP79hmQQ/v4PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4EiD/go="
+je 237f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgSIP+DA=="
+je 239f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg"
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmRA/v0GZED+/RZkQP79JmRA/v02ZED+/U80UPb6dAAgAASYPDUA=="
+226:
+jmp 224f
+223:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2EiD/go="
+je 241f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYSIP+DA=="
+je 243f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY"
+jmp 244f
+243:
+244:
+jmp 242f
+241:
+242:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmRA/v0GZED+/RZkQP79JmRA/v0/NFD2+nMAIAAEmDw0A="
+224:
+jmp 222f
+221:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzRA9vB2ZBD+/AZkEP78hmQQ/v0PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0EiD/go="
+je 245f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQSIP+DA=="
+je 247f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQ"
+jmp 248f
+247:
+248:
+jmp 246f
+245:
+246:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmRA/v0GZED+/RZkQP79LzRQ9vpyACAABJg8Mw"
+222:
+jmp 220f
+219:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
+je 249f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzI80QPb4ewAAAAZkEPONzAZkEPONzISIP+DA=="
+je 251f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzI80QPb4fQAAAAZkEPONzAZkEPONzI"
+jmp 252f
+251:
+252:
+jmp 250f
+249:
+250:
+.base64 "80UPbwJmQQ843cBmQQ843chmRA/v0GZED+/R80UPb6cQAgAASYPDIA=="
+220:
+jmp 218f
+217:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 253f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 255f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 256f
+255:
+256:
+jmp 254f
+253:
+254:
+.base64 "80UPbwJmQQ843cBmRA/v0PNFD2+nAAIAAEmDwxA="
+218:
+jmp 216f
+215:
+216:
+.base64 "TInbTYun+AAAAEmD5A8="
+je 257f
+.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
+259:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 259b
+.base64 "SMfAgAAAAIgEDvNED2+f8AAAAGZFD+/j80EPb4eAAAAAZkEP78RMidZIKf5Iwe4E80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 260f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 262f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 263f
+262:
+263:
+jmp 261f
+260:
+261:
+.base64 "80UPbwJmQQ843cBmRA/v0A=="
+jmp 258f
+257:
+258:
+.base64 "80UPf1cwSYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABJifJNAdJNAdJNAdJNAdJJAfpJi0cQSYtXGGZMD27gZkwPbtpmRQ9s42ZFD+/STYuf0AAAAE2Lp9gAAABMieVJwewEScfFAAAAAEmD/Ag="
+jb 264f
+266:
+.base64 "SYuHQAEAAEmLl0gBAABJiYdQAQAASYmXWAEAAE2J6UmDwQFJ98EBAAAA"
+jne 267f
+269:
+.base64 "SYuHUAEAAEgPyEmLl1gBAABID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYdQAQAASA/KSYmXWAEAAEnR6Un3wQEAAAA="
+je 269b
+jmp 268f
+267:
+268:
+.base64 "SYuHUAEAAEmLl1gBAABJM4eQAAAASTOXmAAAAGZMD27YZkwPbupmRQ9s3fNFD3+f8AEAAPNBD28DZkQP79DzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQZkQP79HzRQ9vn5ABAABmRQ/v3PNFD3+fEAIAAGZBD+/L80EPb1MgZkQP79LzRQ9vn6ABAABmRQ/v3PNFD3+fIAIAAGZBD+/T80EPb1swZkQP79PzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NAZkQP79TzRQ9vn8ABAABmRQ/v3PNFD3+fQAIAAGZBD+/j80EPb2tQZkQP79XzRQ9vn9ABAABmRQ/v3PNFD3+fUAIAAGZBD+/r80EPb3NgZkQP79bzRQ9vn+ABAABmRQ/v3PNFD3+fYAIAAGZBD+/z80EPb3twZkQP79fzRQ9vn/ABAABmRQ/v3PNFD3+fcAIAAGZBD+/780QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8GZBD+/480QPb0cQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+Cg=="
+je 270f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+DA=="
+je 272f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4"
+jmp 273f
+272:
+273:
+jmp 271f
+270:
+271:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmQQ843fjzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+fMAIAAGZBD+/b80EPf1sw80UPb59AAgAAZkEP7+PzQQ9/Y0DzRQ9vn1ACAABmQQ/v6/NBD39rUPNFD2+fYAIAAGZBD+/z80EPf3Ng80UPb59wAgAAZkEP7/vzQQ9/e3DzRQ9vp3ACAABJgcOAAAAASYPFAUmD7AhJg/wI"
+jae 266b
+jmp 265f
+264:
+265:
+.base64 "TYXk"
+je 274f
+.base64 "SYP8AQ=="
+je 276f
+.base64 "SYP8Ag=="
+je 278f
+.base64 "SYP8Aw=="
+je 280f
+.base64 "SYP8BA=="
+je 282f
+.base64 "SYP8BQ=="
+je 284f
+.base64 "SYP8Bg=="
+je 286f
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyBmRA/v0vNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzBmRA/v0/NFD2+fsAEAAGZFD+/c80UPf58wAgAAZkEP79vzQQ9vY0BmRA/v1PNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzQQ9va1BmRA/v1fNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzQQ9vc2BmRA/v1vNFD2+f4AEAAGZFD+/c80UPf59gAgAAZkEP7/PzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6GZBD+/w80QPb0cQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0cgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0cwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0dAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0dQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0dgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb0dwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4eAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4eQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwSIP+Cg=="
+je 288f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwSIP+DA=="
+je 290f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw"
+jmp 291f
+290:
+291:
+jmp 289f
+288:
+289:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fDzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+fMAIAAGZBD+/b80EPf1sw80UPb59AAgAAZkEP7+PzQQ9/Y0DzRQ9vn1ACAABmQQ/v6/NBD39rUPNFD2+fYAIAAGZBD+/z80EPf3Ng80UPb6dgAgAASYPDcA=="
+jmp 287f
+286:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyBmRA/v0vNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzBmRA/v0/NFD2+fsAEAAGZFD+/c80UPf58wAgAAZkEP79vzQQ9vY0BmRA/v1PNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzQQ9va1BmRA/v1fNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6EiD/go="
+je 292f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoSIP+DA=="
+je 294f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo"
+jmp 295f
+294:
+295:
+jmp 293f
+292:
+293:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ejzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+fMAIAAGZBD+/b80EPf1sw80UPb59AAgAAZkEP7+PzQQ9/Y0DzRQ9vn1ACAABmQQ/v6/NBD39rUPNFD2+nUAIAAEmDw2A="
+287:
+jmp 285f
+284:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyBmRA/v0vNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzBmRA/v0/NFD2+fsAEAAGZFD+/c80UPf58wAgAAZkEP79vzQQ9vY0BmRA/v1PNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+DzRA9vRxBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vRyBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vRzBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vR0BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vR1BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vR2BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vR3BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vh4AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843ODzRA9vh5AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBIg/4K"
+je 296f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgSIP+DA=="
+je 298f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg"
+jmp 299f
+298:
+299:
+jmp 297f
+296:
+297:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eDzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+fMAIAAGZBD+/b80EPf1sw80UPb59AAgAAZkEP7+PzQQ9/Y0DzRQ9vp0ACAABJg8NQ"
+285:
+jmp 283f
+282:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyBmRA/v0vNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzBmRA/v0/NFD2+fsAEAAGZFD+/c80UPf58wAgAAZkEP79vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/Y80QPb0cQZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0cgZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0cwZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0dAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0dQZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0dgZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb0dwZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4eAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4eQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYSIP+Cg=="
+je 2100f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYSIP+DA=="
+je 2102f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY"
+jmp 2103f
+2102:
+2103:
+jmp 2101f
+2100:
+2101:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843djzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+fMAIAAGZBD+/b80EPf1sw80UPb6cwAgAASYPDQA=="
+283:
+jmp 281f
+280:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyBmRA/v0vNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzRA9vB2ZBD+/AZkEP78hmQQ/v0PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0EiD/go="
+je 2104f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQSIP+DA=="
+je 2106f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQ"
+jmp 2107f
+2106:
+2107:
+jmp 2105f
+2104:
+2105:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dDzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vnyACAABmQQ/v0/NBD39TIPNFD2+nIAIAAEmDwzA="
+281:
+jmp 279f
+278:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzQQ9vSxBmRA/v0fNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzRA9vB2ZBD+/AZkEP78jzRA9vRxBmQQ843MBmQQ843MjzRA9vRyBmQQ843MBmQQ843MjzRA9vRzBmQQ843MBmQQ843MjzRA9vR0BmQQ843MBmQQ843MjzRA9vR1BmQQ843MBmQQ843MjzRA9vR2BmQQ843MBmQQ843MjzRA9vR3BmQQ843MBmQQ843MjzRA9vh4AAAABmQQ843MBmQQ843MjzRA9vh5AAAABmQQ843MBmQQ843MhIg/4K"
+je 2108f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzI80QPb4ewAAAAZkEPONzAZkEPONzISIP+DA=="
+je 2110f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzI80QPb4fQAAAAZkEPONzAZkEPONzI"
+jmp 2111f
+2110:
+2111:
+jmp 2109f
+2108:
+2109:
+.base64 "80UPbwJmQQ843cBmQQ843cjzRQ9vnwACAABmQQ/vw/NBD38D80UPb58QAgAAZkEP78vzQQ9/SxDzRQ9vpxACAABJg8Mg"
+279:
+jmp 277f
+276:
+.base64 "80EPbwNmRA/v0PNFD2+fgAEAAGZFD+/c80UPf58AAgAAZkEP78PzRA9vB2ZBD+/A80QPb0cQZkEPONzA80QPb0cgZkEPONzA80QPb0cwZkEPONzA80QPb0dAZkEPONzA80QPb0dQZkEPONzA80QPb0dgZkEPONzA80QPb0dwZkEPONzA80QPb4eAAAAAZkEPONzA80QPb4eQAAAAZkEPONzASIP+Cg=="
+je 2112f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 2114f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 2115f
+2114:
+2115:
+jmp 2113f
+2112:
+2113:
+.base64 "80UPbwJmQQ843cDzRQ9vnwACAABmQQ/vw/NBD38D80UPb6cAAgAASYPDEA=="
+277:
+jmp 275f
+274:
+275:
+.base64 "TInbSYnsSYPkDw=="
+je 2116f
+.base64 "80QPb5/wAAAAZkUP7+NmQQ9vxPNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
+je 2118f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 2120f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 2121f
+2120:
+2121:
+jmp 2119f
+2118:
+2119:
+.base64 "80UPbwJmQQ843cDzQQ9/R3BIMcBJiYeAAAAASYmHiAAAAEyJ/kiBxoAAAABIx8EAAAAA"
+2122:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 2122b
+.base64 "SMfAgAAAAIgEDvNFD2+fgAAAAGZFD+/TSMfBAAAAAA=="
+2123:
+.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
+jne 2123b
+jmp 2117f
+2116:
+2117:
+.base64 "ZkEPb8JmQQ/vxPNFD29fQGZBD+/DTInWSCn+SMHuBPNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
+je 2124f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 2126f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 2127f
+2126:
+2127:
+jmp 2125f
+2124:
+2125:
+.base64 "80UPbwJmQQ843cDzRQ9vXzBmQQ/vw/NBD38HTIn7SYu3MAEAAE2Lp+AAAABIx8EAAAAA"
+2128:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 2128b
+.base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJLACAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkUP3///MPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJLACAABIjWQkCDHAMckx0jH2RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_aes_ocb_open_aesni` requires (`Artifact.features`).
+pub const VG_AES_OCB_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 904 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJID8//9Ii4QkiAMAAEiJRCQISIuEJJADAABIiUQkEEiLhCSYAwAASIlEJBhIi4QkoAMAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABJicdJif5JibfoAAAASYmXIAEAAEmJjygBAABNiYfwAAAATYmP+AAAAEiLRCQISYmH0AAAAEiLRCQQSYmH2AAAAEiLRCQgSYmH4AAAAEiLRCQYSYmHMAEAAEmLhvAAAABID8hJi5b4AAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYlHQEgPykmJV0hJi0dASA/ISYtXSEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR1BID8pJiVdYSDHASYlHIEmJRyhJi7foAAAASYnyTQHSTQHSTQHSTQHSSQH6SDHASYlHcEmJR3hJi58gAQAATYunKAEAAEyJ/kiBxoAAAABMKeZIx8EAAAAA"
+20:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 20b
+.base64 "SMfAAQAAAIhG/0mLh+AAAABIg+APSAHASAHASAHASAHAQQ+2T3BICcFBiE9wQQ+2R39IicFIg+E/SYmPAAEAAEglwAAAAEGIR39MidZIKf5Iwe4E80EPb0dw80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 21f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 23f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 24f
+23:
+24:
+jmp 22f
+21:
+22:
+.base64 "80UPbwJmQQ843cDzQQ9/R3BJi0dQSA/ISYtXWEgPykiJwUjB6T9NMcBJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEmJR2BID8pJiVdoSYtHYEgPyEmLV2hID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYeQAAAASA/KSYmXmAAAAEmLh5AAAABID8hJi5eYAAAASA/KSInBSMHpP00xwEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISYmHQAEAAEgPykmJl0gBAABJi0dQSYtXWGZMD27gZkwPbtpmRQ9s40mLR2BJi1doZkwPbuhmTA9u2mZFD2zrSYuHkAAAAEmLl5gAAABmTA9u8GZMD27aZkUPbPPzRQ9/p4ABAADzRQ9/r6ABAADzRQ9/t+ABAABmRQ9v3GZFD+/d80UPf5+QAQAAZkUP797zRQ9/n8ABAABmRQ9v3WZFD+/e80UPf5+wAQAAZkUPb9xmRQ/v3vNFD3+f0AEAAEmLt+gAAABJifJNAdJNAdJNAdJNAdJJAfpNi5/wAAAATYun+AAAAEnB7ARmRQ/v5GZFD+/SScfFAAAAAEmD/Ag="
+jb 25f
+27:
+.base64 "SYuHQAEAAEmLl0gBAABJiYdQAQAASYmXWAEAAE2J6UmDwQFJ98EBAAAA"
+jne 28f
+210:
+.base64 "SYuHUAEAAEgPyEmLl1gBAABID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYdQAQAASA/KSYmXWAEAAEnR6Un3wQEAAAA="
+je 210b
+jmp 29f
+28:
+29:
+.base64 "SYuHUAEAAEmLl1gBAABJM4eQAAAASTOXmAAAAGZMD27YZkwPbupmRQ9s3fNFD3+f8AEAAPNBD28D80UPb5+AAQAAZkUP79zzRQ9/nwACAABmQQ/vw/NBD29LEPNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyDzRQ9vn6ABAABmRQ/v3PNFD3+fIAIAAGZBD+/T80EPb1sw80UPb5+wAQAAZkUP79zzRQ9/nzACAABmQQ/v2/NBD29jQPNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzQQ9va1DzRQ9vn9ABAABmRQ/v3PNFD3+fUAIAAGZBD+/r80EPb3Ng80UPb5/gAQAAZkUP79zzRQ9/n2ACAABmQQ/v8/NBD297cPNFD2+f8AEAAGZFD+/c80UPf59wAgAAZkEP7/vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6GZBD+/wZkEP7/jzRA9vRxBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vRyBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vRzBmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR0BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR1BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR2BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vR3BmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vh4AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PjzRA9vh5AAAABmQQ843MBmQQ843MhmQQ843NBmQQ843NhmQQ843OBmQQ843OhmQQ843PBmQQ843PhIg/4K"
+je 211f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+DA=="
+je 213f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4"
+jmp 214f
+213:
+214:
+jmp 212f
+211:
+212:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmQQ843fhmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79VmRA/v1mZED+/X80UPb6dwAgAASYHDgAAAAEmDxQFJg+wISYP8CA=="
+jae 27b
+jmp 26f
+25:
+26:
+.base64 "TYXk"
+je 215f
+.base64 "SYP8AQ=="
+je 217f
+.base64 "SYP8Ag=="
+je 219f
+.base64 "SYP8Aw=="
+je 221f
+.base64 "SYP8BA=="
+je 223f
+.base64 "SYP8BQ=="
+je 225f
+.base64 "SYP8Bg=="
+je 227f
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzQQ9vc2DzRQ9vn+ABAABmRQ/v3PNFD3+fYAIAAGZBD+/z80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6GZBDzjc8EiD/go="
+je 229f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwSIP+DA=="
+je 231f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzw"
+jmp 232f
+231:
+232:
+jmp 230f
+229:
+230:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79VmRA/v1vNFD2+nYAIAAEmDw3A="
+jmp 228f
+227:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzRA9vB2ZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BmQQ/v6PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4GZBDzjc6EiD/go="
+je 233f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoSIP+DA=="
+je 235f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzo"
+jmp 236f
+235:
+236:
+jmp 234f
+233:
+234:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmRA/v0GZED+/RZkQP79JmRA/v02ZED+/UZkQP79XzRQ9vp1ACAABJg8Ng"
+228:
+jmp 226f
+225:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NED28HZkEP78BmQQ/vyGZBD+/QZkEP79hmQQ/v4PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2GZBDzjc4EiD/go="
+je 237f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgSIP+DA=="
+je 239f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzg"
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmRA/v0GZED+/RZkQP79JmRA/v02ZED+/U80UPb6dAAgAASYPDUA=="
+226:
+jmp 224f
+223:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0GZBDzjc2EiD/go="
+je 241f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYSIP+DA=="
+je 243f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzY"
+jmp 244f
+243:
+244:
+jmp 242f
+241:
+242:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmRA/v0GZED+/RZkQP79JmRA/v0/NFD2+nMAIAAEmDw0A="
+224:
+jmp 222f
+221:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzRA9vB2ZBD+/AZkEP78hmQQ/v0PNED29HEGZBDzjcwGZBDzjcyGZBDzjc0PNED29HIGZBDzjcwGZBDzjcyGZBDzjc0PNED29HMGZBDzjcwGZBDzjcyGZBDzjc0PNED29HQGZBDzjcwGZBDzjcyGZBDzjc0PNED29HUGZBDzjcwGZBDzjcyGZBDzjc0PNED29HYGZBDzjcwGZBDzjcyGZBDzjc0PNED29HcGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HgAAAAGZBDzjcwGZBDzjcyGZBDzjc0PNED2+HkAAAAGZBDzjcwGZBDzjcyGZBDzjc0EiD/go="
+je 245f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQSIP+DA=="
+je 247f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQ80QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQ"
+jmp 248f
+247:
+248:
+jmp 246f
+245:
+246:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmRA/v0GZED+/RZkQP79LzRQ9vpyACAABJg8Mw"
+222:
+jmp 220f
+219:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
+je 249f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzI80QPb4ewAAAAZkEPONzAZkEPONzISIP+DA=="
+je 251f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzI80QPb4fQAAAAZkEPONzAZkEPONzI"
+jmp 252f
+251:
+252:
+jmp 250f
+249:
+250:
+.base64 "80UPbwJmQQ843cBmQQ843chmRA/v0GZED+/R80UPb6cQAgAASYPDIA=="
+220:
+jmp 218f
+217:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 253f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 255f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 256f
+255:
+256:
+jmp 254f
+253:
+254:
+.base64 "80UPbwJmQQ843cBmRA/v0PNFD2+nAAIAAEmDwxA="
+218:
+jmp 216f
+215:
+216:
+.base64 "TInbTYun+AAAAEmD5A8="
+je 257f
+.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
+259:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 259b
+.base64 "SMfAgAAAAIgEDvNED2+f8AAAAGZFD+/j80EPb4eAAAAAZkEP78RMidZIKf5Iwe4E80QPbwdmQQ/vwPNED29HEGZBDzjcwPNED29HIGZBDzjcwPNED29HMGZBDzjcwPNED29HQGZBDzjcwPNED29HUGZBDzjcwPNED29HYGZBDzjcwPNED29HcGZBDzjcwPNED2+HgAAAAGZBDzjcwPNED2+HkAAAAGZBDzjcwEiD/go="
+je 260f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 262f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 263f
+262:
+263:
+jmp 261f
+260:
+261:
+.base64 "80UPbwJmQQ843cBmRA/v0A=="
+jmp 258f
+257:
+258:
+.base64 "80UPf1cwSYtHcEgPyEmLV3hID8pIicFIwck4SbgA/////////0whwUmJ0EnB6DhMCcFIMcFJi58AAQAASYnZSYPhAU0x0k0pykm7/v////////9JicBJwcg/TSHYSYnRScHpP00JyEkxwE0h0EwxwEmJ0EnByD9NIdhJiclJwek/TQnISTHQTSHQTDHCSYnIScHIP00h2EkxyE0h0EwxwUmJ2UnR6UmD4QFNMdJNKcpJu/z/////////SYnAScHIPk0h2EmJ0UnB6T5NCchJMcBNIdBMMcBJidBJwcg+TSHYSYnJScHpPk0JyEkx0E0h0EwxwkmJyEnByD5NIdhJMchNIdBMMcFJidlJwekCSYPhAU0x0k0pykm78P////////9JicBJwcg8TSHYSYnRScHpPE0JyEkxwE0h0EwxwEmJ0EnByDxNIdhJiclJwek8TQnISTHQTSHQTDHCSYnIScHIPE0h2EkxyE0h0EwxwUmJ2UnB6QNJg+EBTTHSTSnKSbsA/////////0mJwEnByDhNIdhJidFJwek4TQnISTHATSHQTDHASYnQScHIOE0h2EmJyUnB6ThNCchJMdBNIdBMMcJJichJwcg4TSHYSTHITSHQTDHBSYnZScHpBEmD4QFNMdJNKcpJuwAA////////SYnAScHIME0h2EmJ0UnB6TBNCchJMcBNIdBMMcBJidBJwcgwTSHYSYnJScHpME0JyEkx0E0h0EwxwkmJyEnByDBNIdhJMchNIdBMMcFJidlJwekFSYPhAU0x0k0pykm7AAAAAP////9JicBJwcggTSHYSYnRScHpIE0JyEkxwE0h0EwxwEmJ0EnByCBNIdhJiclJwekgTQnISTHQTSHQTDHCSYnIScHIIE0h2EkxyE0h0EwxwUgPyEgPykmJRxBJiVcYSYmHEAEAAEmJlxgBAABJifJNAdJNAdJNAdJNAdJJAfpJi0cQSYtXGGZMD27gZkwPbtpmRQ9s42ZFD+/STYn4SYHAcAIAAPNED29HEGZFDzjbwPNFD39AEPNED29HIGZFDzjbwPNFD39AIPNED29HMGZFDzjbwPNFD39AMPNED29HQGZFDzjbwPNFD39AQPNED29HUGZFDzjbwPNFD39AUPNED29HYGZFDzjbwPNFD39AYPNED29HcGZFDzjbwPNFD39AcPNED2+HgAAAAGZFDzjbwPNFD3+AgAAAAPNED2+HkAAAAGZFDzjbwPNFD3+AkAAAAEiD/go="
+je 264f
+.base64 "80QPb4egAAAAZkUPONvA80UPf4CgAAAA80QPb4ewAAAAZkUPONvA80UPf4CwAAAASIP+DA=="
+je 266f
+.base64 "80QPb4fAAAAAZkUPONvA80UPf4DAAAAA80QPb4fQAAAAZkUPONvA80UPf4DQAAAA"
+jmp 267f
+266:
+267:
+jmp 265f
+264:
+265:
+.base64 "TYuf0AAAAE2Lp9gAAABMieVJwewEScfFAAAAAEmD/Ag="
+jb 268f
+270:
+.base64 "SYuHQAEAAEmLl0gBAABJiYdQAQAASYmXWAEAAE2J6UmDwQFJ98EBAAAA"
+jne 271f
+273:
+.base64 "SYuHUAEAAEgPyEmLl1gBAABID8pIicFIwek/TTHASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hJiYdQAQAASA/KSYmXWAEAAEnR6Un3wQEAAAA="
+je 273b
+jmp 272f
+271:
+272:
+.base64 "SYuHUAEAAEmLl1gBAABJM4eQAAAASTOXmAAAAGZMD27YZkwPbupmRQ9s3fNFD3+f8AEAAPNBD28D80UPb5+AAQAAZkUP79zzRQ9/nwACAABmQQ/vw/NBD29LEPNFD2+fkAEAAGZFD+/c80UPf58QAgAAZkEP78vzQQ9vUyDzRQ9vn6ABAABmRQ/v3PNFD3+fIAIAAGZBD+/T80EPb1sw80UPb5+wAQAAZkUP79zzRQ9/nzACAABmQQ/v2/NBD29jQPNFD2+fwAEAAGZFD+/c80UPf59AAgAAZkEP7+PzQQ9va1DzRQ9vn9ABAABmRQ/v3PNFD3+fUAIAAGZBD+/r80EPb3Ng80UPb5/gAQAAZkUP79zzRQ9/n2ACAABmQQ/v8/NBD297cPNFD2+f8AEAAGZFD+/c80UPf59wAgAAZkEP7/tNifhJgcBwAgAA80UPbwJmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8GZBD+/4SIP+Cg=="
+je 274f
+.base64 "SIP+DA=="
+je 276f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON74"
+jmp 277f
+276:
+277:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON74"
+jmp 275f
+274:
+275:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0BwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0BgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0BQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0BAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0AwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0AgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480UPb0AQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7wZkEPON7480QPbwdmQQ8438BmQQ8438hmQQ8439BmQQ8439hmQQ843+BmQQ843+hmQQ843/BmQQ843/jzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+fMAIAAGZBD+/b80EPf1swZkQP79PzRQ9vn0ACAABmQQ/v4/NBD39jQGZED+/U80UPb59QAgAAZkEP7+vzQQ9/a1BmRA/v1fNFD2+fYAIAAGZBD+/z80EPf3NgZkQP79bzRQ9vn3ACAABmQQ/v+/NBD397cGZED+/X80UPb6dwAgAASYHDgAAAAEmDxQFJg+wISYP8CA=="
+jae 270b
+jmp 269f
+268:
+269:
+.base64 "TYXk"
+je 278f
+.base64 "SYP8AQ=="
+je 280f
+.base64 "SYP8Ag=="
+je 282f
+.base64 "SYP8Aw=="
+je 284f
+.base64 "SYP8BA=="
+je 286f
+.base64 "SYP8BQ=="
+je 288f
+.base64 "SYP8Bg=="
+je 290f
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+vzQQ9vc2DzRQ9vn+ABAABmRQ/v3PNFD3+fYAIAAGZBD+/zTYn4SYHAcAIAAPNFD28CZkEP78BmQQ/vyGZBD+/QZkEP79hmQQ/v4GZBD+/oZkEP7/BIg/4K"
+je 292f
+.base64 "SIP+DA=="
+je 294f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w"
+jmp 295f
+294:
+295:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w"
+jmp 293f
+292:
+293:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0BwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0BgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0BQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0BAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0AwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0AgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80UPb0AQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7oZkEPON7w80QPbwdmQQ8438BmQQ8438hmQQ8439BmQQ8439hmQQ843+BmQQ843+hmQQ843/DzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+fMAIAAGZBD+/b80EPf1swZkQP79PzRQ9vn0ACAABmQQ/v4/NBD39jQGZED+/U80UPb59QAgAAZkEP7+vzQQ9/a1BmRA/v1fNFD2+fYAIAAGZBD+/z80EPf3NgZkQP79bzRQ9vp2ACAABJg8Nw"
+jmp 291f
+290:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v4/NBD29rUPNFD2+f0AEAAGZFD+/c80UPf59QAgAAZkEP7+tNifhJgcBwAgAA80UPbwJmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hIg/4K"
+je 296f
+.base64 "SIP+DA=="
+je 298f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o"
+jmp 299f
+298:
+299:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o"
+jmp 297f
+296:
+297:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0BwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0BgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0BQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0BAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0AwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0AgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80UPb0AQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7gZkEPON7o80QPbwdmQQ8438BmQQ8438hmQQ8439BmQQ8439hmQQ843+BmQQ843+jzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+fMAIAAGZBD+/b80EPf1swZkQP79PzRQ9vn0ACAABmQQ/v4/NBD39jQGZED+/U80UPb59QAgAAZkEP7+vzQQ9/a1BmRA/v1fNFD2+nUAIAAEmDw2A="
+291:
+jmp 289f
+288:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/b80EPb2NA80UPb5/AAQAAZkUP79zzRQ9/n0ACAABmQQ/v402J+EmBwHACAADzRQ9vAmZBD+/AZkEP78hmQQ/v0GZBD+/YZkEP7+BIg/4K"
+je 2100f
+.base64 "SIP+DA=="
+je 2102f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g"
+jmp 2103f
+2102:
+2103:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g"
+jmp 2101f
+2100:
+2101:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0BwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0BgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0BQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0BAZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0AwZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0AgZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80UPb0AQZkEPON7AZkEPON7IZkEPON7QZkEPON7YZkEPON7g80QPbwdmQQ8438BmQQ8438hmQQ8439BmQQ8439hmQQ843+DzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+fMAIAAGZBD+/b80EPf1swZkQP79PzRQ9vn0ACAABmQQ/v4/NBD39jQGZED+/U80UPb6dAAgAASYPDUA=="
+289:
+jmp 287f
+286:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79PzQQ9vWzDzRQ9vn7ABAABmRQ/v3PNFD3+fMAIAAGZBD+/bTYn4SYHAcAIAAPNFD28CZkEP78BmQQ/vyGZBD+/QZkEP79hIg/4K"
+je 2104f
+.base64 "SIP+DA=="
+je 2106f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y"
+jmp 2107f
+2106:
+2107:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y"
+jmp 2105f
+2104:
+2105:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0BwZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0BgZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0BQZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0BAZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0AwZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0AgZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80UPb0AQZkEPON7AZkEPON7IZkEPON7QZkEPON7Y80QPbwdmQQ8438BmQQ8438hmQQ8439BmQQ8439jzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+fMAIAAGZBD+/b80EPf1swZkQP79PzRQ9vpzACAABJg8NA"
+287:
+jmp 285f
+284:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy/NBD29TIPNFD2+foAEAAGZFD+/c80UPf58gAgAAZkEP79NNifhJgcBwAgAA80UPbwJmQQ/vwGZBD+/IZkEP79BIg/4K"
+je 2108f
+.base64 "SIP+DA=="
+je 2110f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7IZkEPON7Q80UPb4DAAAAAZkEPON7AZkEPON7IZkEPON7Q"
+jmp 2111f
+2110:
+2111:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7IZkEPON7Q80UPb4CgAAAAZkEPON7AZkEPON7IZkEPON7Q"
+jmp 2109f
+2108:
+2109:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7IZkEPON7Q80UPb4CAAAAAZkEPON7AZkEPON7IZkEPON7Q80UPb0BwZkEPON7AZkEPON7IZkEPON7Q80UPb0BgZkEPON7AZkEPON7IZkEPON7Q80UPb0BQZkEPON7AZkEPON7IZkEPON7Q80UPb0BAZkEPON7AZkEPON7IZkEPON7Q80UPb0AwZkEPON7AZkEPON7IZkEPON7Q80UPb0AgZkEPON7AZkEPON7IZkEPON7Q80UPb0AQZkEPON7AZkEPON7IZkEPON7Q80QPbwdmQQ8438BmQQ8438hmQQ8439DzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb58gAgAAZkEP79PzQQ9/UyBmRA/v0vNFD2+nIAIAAEmDwzA="
+285:
+jmp 283f
+282:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/D80EPb0sQ80UPb5+QAQAAZkUP79zzRQ9/nxACAABmQQ/vy02J+EmBwHACAADzRQ9vAmZBD+/AZkEP78hIg/4K"
+je 2112f
+.base64 "SIP+DA=="
+je 2114f
+.base64 "80UPb4DQAAAAZkEPON7AZkEPON7I80UPb4DAAAAAZkEPON7AZkEPON7I"
+jmp 2115f
+2114:
+2115:
+.base64 "80UPb4CwAAAAZkEPON7AZkEPON7I80UPb4CgAAAAZkEPON7AZkEPON7I"
+jmp 2113f
+2112:
+2113:
+.base64 "80UPb4CQAAAAZkEPON7AZkEPON7I80UPb4CAAAAAZkEPON7AZkEPON7I80UPb0BwZkEPON7AZkEPON7I80UPb0BgZkEPON7AZkEPON7I80UPb0BQZkEPON7AZkEPON7I80UPb0BAZkEPON7AZkEPON7I80UPb0AwZkEPON7AZkEPON7I80UPb0AgZkEPON7AZkEPON7I80UPb0AQZkEPON7AZkEPON7I80QPbwdmQQ8438BmQQ8438jzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vnxACAABmQQ/vy/NBD39LEGZED+/R80UPb6cQAgAASYPDIA=="
+283:
+jmp 281f
+280:
+.base64 "80EPbwPzRQ9vn4ABAABmRQ/v3PNFD3+fAAIAAGZBD+/DTYn4SYHAcAIAAPNFD28CZkEP78BIg/4K"
+je 2116f
+.base64 "SIP+DA=="
+je 2118f
+.base64 "80UPb4DQAAAAZkEPON7A80UPb4DAAAAAZkEPON7A"
+jmp 2119f
+2118:
+2119:
+.base64 "80UPb4CwAAAAZkEPON7A80UPb4CgAAAAZkEPON7A"
+jmp 2117f
+2116:
+2117:
+.base64 "80UPb4CQAAAAZkEPON7A80UPb4CAAAAAZkEPON7A80UPb0BwZkEPON7A80UPb0BgZkEPON7A80UPb0BQZkEPON7A80UPb0BAZkEPON7A80UPb0AwZkEPON7A80UPb0AgZkEPON7A80UPb0AQZkEPON7A80QPbwdmQQ8438DzRQ9vnwACAABmQQ/vw/NBD38DZkQP79DzRQ9vpwACAABJg8MQ"
+281:
+jmp 279f
+278:
+279:
+.base64 "TInbSYnsSYPkDw=="
+je 2120f
+.base64 "80QPb5/wAAAAZkUP7+NmQQ9vxPNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
+je 2122f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 2124f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 2125f
+2124:
+2125:
+jmp 2123f
+2122:
+2123:
+.base64 "80UPbwJmQQ843cDzQQ9/R3BIx8EAAAAA"
+2126:
+.base64 "D7YEC0EPtlQPcEgx0IgEC0iDwQFMOeE="
+jne 2126b
+.base64 "SDHASYmHgAAAAEmJh4gAAABMif5IgcaAAAAASMfBAAAAAA=="
+2127:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 2127b
+.base64 "SMfAgAAAAIgEDvNFD2+fgAAAAGZFD+/T"
+jmp 2121f
+2120:
+2121:
+.base64 "ZkEPb8JmQQ/vxPNFD29fQGZBD+/DTInWSCn+SMHuBPNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
+je 2128f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 2130f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 2131f
+2130:
+2131:
+jmp 2129f
+2128:
+2129:
+.base64 "80UPbwJmQQ843cDzRQ9vXzBmQQ/vw/NBD3+HgAAAAEmLnzABAABMif5Ni6fgAAAASMfBAAAAAA=="
+2132:
+.base64 "D7YEC4gEDkiDwQFMOeE="
+jne 2132b
+.base64 "SDHSSMfBAAAAAE2Lp+AAAAA="
+2133:
+.base64 "QQ+2BA9FD7aED4AAAABMMcBICcJIg8EBTDnh"
+jne 2133b
+.base64 "SIPqAUjB6j9JiRdJi5/QAAAATYun2AAAAEgx0kkrF2ZID27yZg9s9kjHwQAAAABNieBJwegETYXA"
+je 2134f
+2136:
+.base64 "8w9vPAtmD9v+8w9/PAtIg8EQSYPoAQ=="
+jne 2136b
+jmp 2135f
+2134:
+2135:
+.base64 "TDnh"
+je 2137f
+2139:
+.base64 "D7YEC0gh0IgEC0iDwQFMOeE="
+jne 2139b
+jmp 2138f
+2137:
+2138:
+.base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJIADAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkgPz///MPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJIADAABIjWQkCInAMckx0jH2RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
     )
 }
 

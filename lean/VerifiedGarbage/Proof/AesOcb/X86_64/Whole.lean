@@ -50,7 +50,7 @@ theorem wholeR_mut {W SP D : Addr} {n : Nat} {m m' : Mem} (h : Frame (wholeR W S
   · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The first `k` bytes of a buffer, as a buffer at the same place. -/
-theorem DBuf.take' {K W SP : Addr} {s : State} {D : Addr} {n k : Nat} (h : DBuf K W SP s D n) (hk : k ≤ n) :
+theorem DBufN.take' {K W SP : Addr} {s : State} {D : Addr} {n k : Nat} (h : DBuf K W SP s D n) (hk : k ≤ n) :
     DBuf K W SP s D k := by
   have := h.slice (a := 0) (k := k) (by omega_arith)
   rwa [BitVec.add_zero] at this

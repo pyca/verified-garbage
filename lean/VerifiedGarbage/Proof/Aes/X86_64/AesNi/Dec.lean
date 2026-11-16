@@ -256,8 +256,9 @@ theorem ImcInv.refl (s₀ : State) : ImcInv s₀ [] s₀ :=
   ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ h => absurd h List.not_mem_nil,
     fun _ h => absurd h List.not_mem_nil, Frame.refl _ _⟩
 
-/-- A round key's slot in a region containing the 2048 bytes at `r8`. -/
-theorem scr_offset {X : List Region} {p : Addr} (h : InRegions X p 2048) {j : Nat} (hj : 16 * j + 16 ≤ 2048) :
+/-- A round key's slot in a region containing the `n` bytes at `r8`. -/
+theorem scr_offset {X : List Region} {p : Addr} {n : Nat} (h : InRegions X p n) {j : Nat} (hj : 16 * j + 16 ≤ n)
+    (hn' : n < 2 ^ 64 := by decide) :
     InRegions X (p + BitVec.ofNat 64 (16 * j)) 16 := by
   obtain ⟨r, hr, hc⟩ := h
   refine ⟨r, hr, ?_⟩
@@ -266,25 +267,26 @@ theorem scr_offset {X : List Region} {p : Addr} (h : InRegions X p 2048) {j : Na
   have := Nat.mod_le ((p - r.base).toNat + 16 * j) (2 ^ 64)
   omega_arith
 
-theorem imcKey_ok {s₀ : State} (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
-    (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
-    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) {S : List Nat} {s : State}
-    (hI : ImcInv s₀ S s) {j : Nat} (hj : j ≤ 13) :
+theorem imcKey_ok {s₀ : State} {n : Nat} (hscr : InRegions s₀.wr (s₀.gpr .r8) n)
+    (hsch : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi) 240)
+    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, n⟩) {S : List Nat} {s : State}
+    (hI : ImcInv s₀ S s) {j : Nat} (hj : j ≤ 13) (hn : 224 ≤ n := by decide) (hn' : n < 2 ^ 64 := by decide) :
     WP isa (.block (imcKey j)) s (ImcInv s₀ (j :: S)) := by
   have ofs : ∀ (p : Addr) (a : Nat), p + BitVec.ofInt 64 (a : Int) = p + BitVec.ofNat 64 a :=
     fun p a => by rw [ofInt_natCast]
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 16 := by
     rw [hI.rd, hI.wr, hI.gpr, ofs]
-    exact ⟨_, hsch, contains_offset (by omega_arith) (by omega_arith)⟩
+    exact scr_offset hsch (by omega_arith) (by decide)
   have hout : InRegions s.wr (s.gpr .r8 + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 16 := by
     rw [hI.wr, hI.gpr, ofs]
-    exact scr_offset hscr (by omega_arith)
+    exact scr_offset hscr (by omega_arith) hn'
   -- The schedule's block is still `s₀`'s.
   have hk : s.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 =
       s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * j : Nat) : Int)) 128 := by
     rw [ofs]
-    exact hI.frame.readW (contains_offset (base := s₀.gpr .rdi) (len := 240) (by omega_arith) (by omega_arith))
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by decide)
+    exact hI.lo.readW (contains_offset (base := s₀.gpr .rdi) (len := 240) (by omega_arith) (by omega_arith))
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep.sub_right (Region.sub_prefix hn))
+      (by decide)
   apply WP.of_runBlock
   simp only [imcKey, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, State.setXmm, State.load128, State.store128, ea_at, hin, hout, XBinOp.eval,
@@ -320,16 +322,17 @@ theorem ImcInv.of_frame {s₀ s s' : State} {S : List Nat} (h : ImcInv s₀ S s)
     by rw [hf.mem]; exact h.keys, by rw [hf.mem]; exact h.lo⟩
 
 /-- Some round keys through `aesimc`, those of `js`. -/
-theorem imcRun_ok {s₀ : State} (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
-    (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
-    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) (js : List Nat)
-    (hjs : ∀ j ∈ js, j ≤ 13) {S : List Nat} {s : State} (hI : ImcInv s₀ S s) :
+theorem imcRun_ok {s₀ : State} {n : Nat} (hscr : InRegions s₀.wr (s₀.gpr .r8) n)
+    (hsch : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi) 240)
+    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, n⟩) (js : List Nat)
+    (hjs : ∀ j ∈ js, j ≤ 13) {S : List Nat} {s : State} (hI : ImcInv s₀ S s) (hn : 224 ≤ n := by decide)
+    (hn' : n < 2 ^ 64 := by decide) :
     WP isa (.block (js.flatMap imcKey)) s fun s' => ∃ S', ImcInv s₀ S' s' ∧ ∀ j, j ∈ js ∨ j ∈ S → j ∈ S' := by
   induction js generalizing S s with
   | nil => exact WP.block_nil ⟨S, hI, fun j h => by simpa using h⟩
   | cons j js ih =>
     rw [List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (imcKey_ok hscr hsch hsep hI (hjs j (by simp))) fun s₁ hI₁ => ?_
+    refine WP.mono (imcKey_ok hscr hsch hsep hI (hjs j (by simp)) hn hn') fun s₁ hI₁ => ?_
     refine WP.mono (ih (fun j' hj' => hjs j' (by simp [hj'])) hI₁) fun s' ⟨S', hI', hS'⟩ =>
       ⟨S', hI', fun j' hj' => hS' j' ?_⟩
     rcases hj' with hj' | hj'
@@ -344,12 +347,13 @@ theorem cmpRsi_imc {s₀ s : State} {S : List Nat} (hI : ImcInv s₀ S s) (c : B
       s'.zf = some (BitVec.ofNat 64 nr - c.signExtend 64 == 0) ∧ ImcInv s₀ S s' :=
   WP.mono (cmpRsi_ok s c nr (by rw [hI.gpr, hrsi])) fun _ ⟨hz, hf⟩ => ⟨hz, hI.of_frame hf⟩
 
-theorem imcKeys_ok {s₀ : State} {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
-    (hrsi : s₀.gpr .rsi = BitVec.ofNat 64 nr) (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
-    (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
-    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) :
+theorem imcKeys_okR {s₀ : State} {nr n : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
+    (hrsi : s₀.gpr .rsi = BitVec.ofNat 64 nr) (hscr : InRegions s₀.wr (s₀.gpr .r8) n)
+    (hsch : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi) 240)
+    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, n⟩) (hn : 224 ≤ n := by decide)
+    (hn' : n < 2 ^ 64 := by decide) :
     WP isa imcKeys s₀ fun s => ∃ S, ImcInv s₀ S s ∧ ∀ j, 1 ≤ j → j < nr → j ∈ S := by
-  have run := fun js hjs {S s} (hI : ImcInv s₀ S s) => imcRun_ok hscr hsch hsep js hjs hI
+  have run := fun js hjs {S s} (hI : ImcInv s₀ S s) => imcRun_ok hscr hsch hsep js hjs hI hn hn'
   refine WP.seq ?_
   rw [WP.block_append_iff, show ((List.range 9).flatMap fun j => imcKey (j + 1)) =
     ((List.range 9).map (· + 1)).flatMap imcKey by simp [List.flatMap_map]]
@@ -379,11 +383,22 @@ theorem imcKeys_ok {s₀ : State} {nr : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr =
     · exact .inr (h11 j h1 h)
     · exact .inl (by simp; omega_arith)
 
+/-- `imcKeys_okR`, with the key schedule one of the regions the state may
+read. -/
+theorem imcKeys_ok {s₀ : State} {nr n : Nat} (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
+    (hrsi : s₀.gpr .rsi = BitVec.ofNat 64 nr) (hscr : InRegions s₀.wr (s₀.gpr .r8) n)
+    (hsch : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr)
+    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, n⟩) (hn : 224 ≤ n := by decide)
+    (hn' : n < 2 ^ 64 := by decide) :
+    WP isa imcKeys s₀ fun s => ∃ S, ImcInv s₀ S s ∧ ∀ j, 1 ≤ j → j < nr → j ∈ S :=
+  imcKeys_okR hnr hrsi hscr ⟨_, hsch, Region.contains_self _ _⟩ hsep hn hn'
+
 /-- The round keys through `aesimc`, as decryption needs them. -/
-theorem dKeys_of_imc {s₀ s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w s₀)
-    (hscr : InRegions s₀.wr (s₀.gpr .r8) 2048)
-    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, 2048⟩) {S : List Nat}
-    (hI : ImcInv s₀ S s) (hS : ∀ j, 1 ≤ j → j < nr → j ∈ S) : DKeys nr w s := by
+theorem dKeys_of_imc {s₀ s : State} {nr n : Nat} {w : List Byte} (hK : Keys nr w s₀)
+    (hscr : InRegions s₀.wr (s₀.gpr .r8) n)
+    (hsep : Region.Disjoint ⟨s₀.gpr .rdi, 240⟩ ⟨s₀.gpr .r8, n⟩) {S : List Nat}
+    (hI : ImcInv s₀ S s) (hS : ∀ j, 1 ≤ j → j < nr → j ∈ S) (hn : 224 ≤ n := by decide)
+    (hn' : n < 2 ^ 64 := by decide) : DKeys nr w s := by
   have ofs : ∀ (p : Addr) (a : Nat), p + BitVec.ofInt 64 (a : Int) = p + BitVec.ofNat 64 a :=
     fun p a => by rw [ofInt_natCast]
   have hle := hK.le
@@ -392,13 +407,14 @@ theorem dKeys_of_imc {s₀ s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     simp only [List.mem_range] at hi
-    exact hI.frame.bytes (R := ⟨s₀.gpr .rdi, 16 * (nr + 1)⟩) (fun r hr => by
+    exact hI.lo.bytes (R := ⟨s₀.gpr .rdi, 16 * (nr + 1)⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hsep.sub_left (Region.sub_prefix (by omega_arith))) (by show 16 * (nr + 1) ≤ 2 ^ 64; omega_arith) hi
+      exact (hsep.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix hn))
+      (by show 16 * (nr + 1) ≤ 2 ^ 64; omega_arith) hi
   refine ⟨⟨by rw [hsched]; exact hK.sched, hle, by rw [hI.rd, hI.wr, hI.gpr]; exact hK.keys⟩,
     fun j h1 h2 => ⟨?_, ?_⟩⟩
   · rw [hI.rd, hI.wr, hI.gpr, ofs]
-    obtain ⟨r, hr, hc⟩ := scr_offset hscr (j := j) (by omega_arith)
+    obtain ⟨r, hr, hc⟩ := scr_offset hscr (j := j) (by omega_arith) hn'
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · rw [hI.gpr, hI.keys j (hS j h1 h2), st_aesimc]
     refine congrArg invMixColumns ?_

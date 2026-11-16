@@ -102,21 +102,22 @@ structure NoncePost (W : Addr) (t : Nat) (nonce : List Byte) (s s' : State) : Pr
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {N : Addr} {nl t : Nat}
+theorem nonceBlock_ok {K W SP : Addr} {wn : Nat} (L : LayN K W SP wn) {s : State} (E : EnvN K W SP wn s) {N : Addr} {nl t : Nat}
     (hN : s.mem.readW (W + BitVec.ofNat 64 nO) 64 = N) (hnl : s.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl)
     (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 t) (h1 : 1 ≤ nl) (h15 : nl ≤ 15) (ht : t < 2 ^ 64)
-    (hB : Buf W SP s N nl) :
+    (hB : BufN W SP wn s N nl)
+    (hwn : 640 ≤ wn := by decide) (hwlt : wn < 2 ^ 64 := by decide) :
     WP isa nonceBlock s (NoncePost W t (bytesAt s.mem N nl) s) := by
   have h15r := E.r15
   simp only [nO, nlO, tlO] at hN hnl htl
   -- `zero16 tmpO`
-  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := tmpO) h15r (E.perm.wW (by decide)) (E.perm.wW (by decide))
+  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := tmpO) h15r (E.perm.wW6 hwn hwlt (by decide)) (E.perm.wW6 hwn hwlt (by decide))
   obtain h15₁ : s₁.gpr .r15 = W := by rw [B₁.gpr _ (by decide), h15r]
-  obtain kept₁ : ∀ {d}, (d + 8 ≤ tmpO ∨ tmpO + 16 ≤ d) → d + 8 ≤ 3584 →
+  obtain kept₁ : ∀ {d}, (d + 8 ≤ tmpO ∨ tmpO + 16 ≤ d) → d + 8 ≤ 640 →
       s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ =>
     B₁.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (by simp only [tmpO] at h₁ ⊢; omega_arith) h₂ (by decide)) (by decide)
+      exact L.w_w6 hwn (by simp only [tmpO] at h₁ ⊢; omega_arith) h₂ (by decide)) (by decide)
   -- the pointers and the count
   obtain ⟨s₂, run₂, rbx₂, r12₂, rsi₂, rcx₂, g₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [ld .rbx .r15 nO, ld .r12 .r15 nlO, mvr .rsi .r15, addi .rsi (tmpO + 16), .alu .sub .rsi (.reg .r12),
@@ -125,8 +126,8 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
       s₂.gpr .rcx = BitVec.ofNat 64 0 ∧
       (∀ r, r ≠ .rbx → r ≠ .r12 → r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧
       s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
-    obtain r₁ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nO) 8 := by rw [B₁.rd, B₁.wr]; exact E.perm.wR (by decide)
-    obtain r₂ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nlO) 8 := by rw [B₁.rd, B₁.wr]; exact E.perm.wR (by decide)
+    obtain r₁ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nO) 8 := by rw [B₁.rd, B₁.wr]; exact E.perm.wR6 hwn hwlt (by decide)
+    obtain r₂ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nlO) 8 := by rw [B₁.rd, B₁.wr]; exact E.perm.wR6 hwn hwlt (by decide)
     obtain hN₁ := kept₁ (d := nO) (by decide) (by decide)
     obtain hnl₁ := kept₁ (d := nlO) (by decide) (by decide)
     simp only [nO, nlO] at r₁ r₂ hN₁ hnl₁
@@ -141,11 +142,11 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   obtain eN : bytesAt s₂.mem N nl = bytesAt s.mem N nl := by
     rw [m₂]
     exact Proof.AesCcm.X86_64.bytesAt_frame B₁.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (Lay.wSub (by decide))) (by omega_arith)
+      simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (LayN.wSub6 hwn (by decide))) (by omega_arith)
   obtain hS₂ : Covers [⟨N, nl⟩] (s₂.rd ++ s₂.wr) := by rw [rd₂, wr₂, B₁.rd, B₁.wr]; exact hB.rd
   obtain hD₂ : Covers [⟨W + BitVec.ofNat 64 (128 - nl), nl⟩] s₂.wr := by
-    rw [wr₂, B₁.wr]; exact E.perm.wC (by omega_arith)
-  obtain hSD : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (128 - nl), nl⟩ := hB.w.sub_right (Lay.wSub (by omega_arith))
+    rw [wr₂, B₁.wr]; exact E.perm.wC6 hwn hwlt (by omega_arith)
+  obtain hSD : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (128 - nl), nl⟩ := hB.w.sub_right (LayN.wSub6 hwn (by omega_arith))
   unfold nonceBlock
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], ?_⟩)
   refine WP.seq (WP.mono (copyLoop_ok s₂ (by omega_arith) (by omega_arith) rbx₂ rsi₂ rcx₂ r12₂ hS₂ hD₂ hSD) fun s₃ h₃ => ?_)
@@ -158,13 +159,13 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
     rw [rsi₃, sub_one_addr W (by omega_arith) (by omega_arith), show 128 - nl - 1 = 127 - nl by omega_arith]
   obtain wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂, B₁.wr]
   obtain rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂, B₁.rd]
-  obtain w127n : InRegions s₃.wr (W + BitVec.ofNat 64 (127 - nl)) 1 := by rw [wr₃']; exact E.perm.wW (by omega_arith)
-  obtain rtl : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 224) 8 := by rw [rd₃', wr₃']; exact E.perm.wR (by decide)
-  obtain r112 : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 112) 1 := by rw [rd₃', wr₃']; exact E.perm.wR (by decide)
-  obtain w112 : InRegions s₃.wr (W + BitVec.ofNat 64 112) 1 := by rw [wr₃']; exact E.perm.wW (by decide)
-  obtain r127 : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 127) 1 := by rw [rd₃', wr₃']; exact E.perm.wR (by decide)
-  obtain w127 : InRegions s₃.wr (W + BitVec.ofNat 64 127) 1 := by rw [wr₃']; exact E.perm.wW (by decide)
-  obtain w256 : InRegions s₃.wr (W + BitVec.ofNat 64 256) 8 := by rw [wr₃']; exact E.perm.wW (by decide)
+  obtain w127n : InRegions s₃.wr (W + BitVec.ofNat 64 (127 - nl)) 1 := by rw [wr₃']; exact E.perm.wW6 hwn hwlt (by omega_arith)
+  obtain rtl : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 224) 8 := by rw [rd₃', wr₃']; exact E.perm.wR6 hwn hwlt (by decide)
+  obtain r112 : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 112) 1 := by rw [rd₃', wr₃']; exact E.perm.wR6 hwn hwlt (by decide)
+  obtain w112 : InRegions s₃.wr (W + BitVec.ofNat 64 112) 1 := by rw [wr₃']; exact E.perm.wW6 hwn hwlt (by decide)
+  obtain r127 : InRegions (s₃.rd ++ s₃.wr) (W + BitVec.ofNat 64 127) 1 := by rw [rd₃', wr₃']; exact E.perm.wR6 hwn hwlt (by decide)
+  obtain w127 : InRegions s₃.wr (W + BitVec.ofNat 64 127) 1 := by rw [wr₃']; exact E.perm.wW6 hwn hwlt (by decide)
+  obtain w256 : InRegions s₃.wr (W + BitVec.ofNat 64 256) 8 := by rw [wr₃']; exact E.perm.wW6 hwn hwlt (by decide)
   -- the 1 before the nonce
   obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa [.mov .rax (.imm 1),
       .store8 { base := .rsi, disp := -1 } .rax] s₃ = some s₄ ∧
@@ -180,7 +181,7 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   obtain htl₄ : s₄.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t := by
     rw [m₄, Mem.readW_writeW_sep (Offset.sep W (by omega_arith) (by decide) (by omega_arith)) (by decide),
       fr₃.readW (r := ⟨W + BitVec.ofNat 64 224, 8⟩) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith))
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w6 hwn (.inr (by omega_arith)) (by decide) (by omega_arith))
         (by decide), m₂]
     exact (kept₁ (d := 224) (by decide) (by decide)).trans htl
   obtain h15₄ : s₄.gpr .r15 = W := by rw [g₄ _ (by decide), h15₃]
@@ -277,7 +278,7 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
     rw [m₇, e127', bytesAt_writeW8_at _ _ (o := 15) (n := 16) _ (by decide) (by decide),
       Proof.AesCcm.X86_64.bytesAt_frame (fr256 _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (a := 112) (n := 16) (d := 256) (k := 8) (.inl (by decide)) (by decide) (by decide))
+        exact L.w_w6 hwn (a := 112) (n := 16) (d := 256) (k := 8) (.inl (by decide)) (by decide) (by decide))
         (by decide),
       getD_set16 _ (length_bytesAt _ _ _) (by decide) _ hk, b15e]
     split
