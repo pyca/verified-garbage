@@ -60,7 +60,7 @@ theorem sboxLiteral_eq : ∀ j < 8, sboxLiteral j = .block (sboxCode j)
   | n + 8, h => by omega
 
 /-- The registers the circuits leave alone. -/
-def sboxKept : List Reg := [.s0, .a1, .a2, .a3, .a4, .a5, .a6]
+def sboxKept : List Reg := [.s0, .a1, .a2, .a3, .a4, .a5, .a6, .s11, .ra]
 
 theorem sbox_keeps : ∀ j < 8,
     sboxKept.all (fun r => (instrs (sboxLiteral j)).all fun op => dst op != some r) = true := by

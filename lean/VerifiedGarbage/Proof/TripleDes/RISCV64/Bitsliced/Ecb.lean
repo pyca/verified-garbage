@@ -289,7 +289,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
       exact ⟨r, List.mem_append_right _ hr, hc⟩)
     (fun i hi => by
       rw [s0₁, wr₁]
-      exact ⟨_, h.room.frame, Offset.contains_base _ (by unfold frameBytes; omega_using [hk64, hi]) (by omega_using [hk64, hi])⟩)
+      exact h.room.frame i 1 (by unfold frameBytes; omega_using [hk64, hi]))
     (by
       rw [s0₁, a1₁]
       exact sep_of_disjoint ((hdisj.sub_right (Region.sub_prefix (by omega_using [hk64]))).symm))) fun s₂ ⟨c₂, f₂, g₂, wr₂⟩ => ?_
@@ -311,7 +311,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [Offset.add_add, e, ← Offset.add_add]
   -- the transposition
   apply WP.seq
-  obtain ⟨s₃, run₃, w₃, -, wr₃, -, s0₃, a1₃, a2₃, f₃⟩ :=
+  obtain ⟨s₃, run₃, w₃, -, wr₃, -, s0₃, a1₃, a2₃, -, -, f₃⟩ :=
     transpose_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks)
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have s0₃' : s₃.gpr .s0 = s.gpr .s0 := s0₃.trans s0₂
@@ -329,7 +329,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [show schedA s₃ = schedA s by simp only [schedA, s0₃']]; exact sched_frame h.room fs₃
   -- the transposition back
   apply WP.seq
-  obtain ⟨s₅, run₅, w₅, -, wr₅, -, s0₅, a1₅, a2₅, f₅⟩ :=
+  obtain ⟨s₅, run₅, w₅, -, wr₅, -, s0₅, a1₅, a2₅, -, -, f₅⟩ :=
     transpose_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks)
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   have s0₅' : s₅.gpr .s0 = s.gpr .s0 := s0₅.trans s0₄
@@ -351,8 +351,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   refine WP.mono (copyBytes_ok (src := .s0) (dst := .a1) (by decide) s₆ (N := 8 * k) (by omega_using [hk1]) (by omega_using [hk64]) b₆
     (fun i hi => by
       rw [s0₆]
-      exact ⟨_, List.mem_append_right _ (wr₆' ▸ h.room.frame),
-        Offset.contains_base _ (by unfold frameBytes; omega_using [hk64, hi]) (by omega_using [hk64, hi])⟩)
+      obtain ⟨r, hr, hc⟩ := h.room.frame i 1 (by unfold frameBytes; omega_using [hk64, hi])
+      exact ⟨r, List.mem_append_right _ (wr₆' ▸ hr), hc⟩)
     (fun i hi => by rw [a1₆, wr₆']; exact h.data.byte (by omega_using [hkn, hi]))
     (by
       rw [s0₆, a1₆]
@@ -424,7 +424,7 @@ def maskR (s : State) : Region := ⟨wordAddr (s.gpr .s0) 112, 48⟩
 theorem maskCode_ok {s : State} (h : Room s) {k : Nat} (hk : k < 6) :
     WP isa (.block (maskCode k)) s fun s' =>
       s'.mem = s.mem.writeW (wordAddr (s.gpr .s0) (112 + k)) (swapMask (maskShifts.getD k 1)) ∧
-      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr := by
+      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ s'.rd = s.rd := by
   unfold maskCode
   rw [WP.block_append_iff]
   refine WP.mono (ByteLoad.li64_ok (s := s) (by decide) _) fun s₁ e => ?_
@@ -441,23 +441,24 @@ theorem maskCode_ok {s : State} (h : Room s) {k : Nat} (hk : k < 6) :
   let A := wordAddr (s.gpr .s0) (112 + k)
   let v := swapMask (maskShifts.getD k 1)
   refine WP.of_runBlock ⟨{ s₁ with mem := s₁.mem.writeW A v }, by rw [runBlock_cons, e, runStep_some, runBlock_nil, ea, t0₁], rfl,
-    fun r a b => ?_, rfl⟩
+    fun r a b => ?_, rfl, rfl⟩
   show s₁.gpr r = s.gpr r
   simp only [s₁, RegUpd.gpr_write, a, b, ite_false]
 
 theorem masks_ok {s : State} (h : Room s) : ∀ n ≤ 6,
     WP isa (.block ((List.range n).flatMap maskCode)) s fun s' =>
       (∀ k < n, s'.mem.readW (wordAddr (s.gpr .s0) (112 + k)) 64 = swapMask (maskShifts.getD k 1)) ∧
-      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ Frame [maskR s] s.mem s'.mem
-  | 0, _ => WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), fun _ _ _ => rfl, rfl, Frame.refl _ _⟩
+      (∀ r, r ≠ .t0 → r ≠ .t1 → s'.gpr r = s.gpr r) ∧ s'.wr = s.wr ∧ Frame [maskR s] s.mem s'.mem ∧
+      s'.rd = s.rd
+  | 0, _ => WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), fun _ _ _ => rfl, rfl, Frame.refl _ _, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (masks_ok h n (by omega_using [hn])) fun s₁ ⟨m₁, g₁, w₁, f₁⟩ => ?_
+    refine WP.mono (masks_ok h n (by omega_using [hn])) fun s₁ ⟨m₁, g₁, w₁, f₁, r₁⟩ => ?_
     have b₁ : s₁.gpr .s0 = s.gpr .s0 := g₁ _ (by decide) (by decide)
     have h₁ : Room s₁ := h.congr b₁ w₁
-    refine WP.mono (maskCode_ok h₁ (k := n) (by omega_using [hn])) fun s₂ ⟨m₂, g₂, w₂⟩ =>
-      ⟨fun k hk => ?_, fun r a b => (g₂ r a b).trans (g₁ r a b), w₂.trans w₁, ?_⟩
+    refine WP.mono (maskCode_ok h₁ (k := n) (by omega_using [hn])) fun s₂ ⟨m₂, g₂, w₂, r₂⟩ =>
+      ⟨fun k hk => ?_, fun r a b => (g₂ r a b).trans (g₁ r a b), w₂.trans w₁, ?_, r₂.trans r₁⟩
     · rw [m₂, b₁]
       by_cases e : k = n
       · subst e; exact Mem.readW_writeW_self64 _ _ _
@@ -573,11 +574,14 @@ theorem setup_ok {u : State} (h : SetupPre u) : WP isa setup u (SetupPost u) := 
   have s0₆ : u₆.gpr .s0 = u.sp := (k₆.1 _ (by decide)).trans s0₅
   have wr₆ : u₆.wr = u.wr := k₆.2.2
   have h₆ : Room u₆ :=
-    ⟨by simp only [frameR, s0₆, wr₆, frameBytes]; exact h.wr, by rw [s0₆]; exact h.al,
+    ⟨fun o n hn => by
+        rw [s0₆, wr₆]
+        exact ⟨_, h.wr, Offset.contains_base _ (by unfold frameBytes at hn; omega_using [hn])
+          (by unfold frameBytes at hn; omega_using [hn])⟩, by rw [s0₆]; exact h.al,
       by rw [s0₆]; unfold frameBytes; omega_using [fit]⟩
   -- the masks
   rw [storeMasks_eq]
-  refine WP.mono (masks_ok h₆ 6 (Nat.le_refl _)) fun v ⟨m₇, g₇, w₇, f₇⟩ => ?_
+  refine WP.mono (masks_ok h₆ 6 (Nat.le_refl _)) fun v ⟨m₇, g₇, w₇, f₇, _⟩ => ?_
   have s0₇ : v.gpr .s0 = u.sp := (g₇ _ (by decide) (by decide)).trans s0₆
   have hm₇ : maskR u₆ = ⟨u.sp + BitVec.ofNat 64 896, 48⟩ := by simp only [maskR, s0₆]
   rw [hm₇] at f₇
@@ -741,9 +745,8 @@ theorem finish_ok {d : Direction} {s : State} {B D : Addr} {n : Nat} {K : Schedu
   have fit := E.fit
   have al : B.toNat % 8 = 0 := by rw [← I.s0]; exact I.room.al
   have bfit : B.toNat + 1056 ≤ 2 ^ 64 := by rw [← I.s0]; exact I.room.fit
-  have inF : ∀ o m, o + m ≤ 1056 → InRegions v.wr (B + BitVec.ofNat 64 o) m := fun o m hm =>
-    ⟨_, by have := I.room.frame; rwa [frameR, I.s0] at this, Offset.contains_base _ (by unfold frameBytes; omega_using [hm])
-      (by omega_using [hm])⟩
+  have inF : ∀ o m, o + m ≤ 1056 → InRegions v.wr (B + BitVec.ofNat 64 o) m := fun o m hm => by
+    have := I.room.frame o m hm; rwa [I.s0] at this
   unfold finish
   have e₁ := exec_li (s := v) (d := .t1) (imm := 0) (by decide)
   let w₁ := v.write .t1 (BitVec.ofInt 64 0)

@@ -23,6 +23,11 @@ all on the same core (`2 ^ lg ≤ G`). A core whose code costs as much on one
 block as on its `G` then takes one call of its code for each power of two
 in the number of blocks a message leaves after its groups of `G`, rather
 than one a block. `seq2` is the case of one level.
+
+`seqLevelsWith one wide lgs narrow`: `seqLevels`, with the narrow steps on
+the core `c.withOne one` (`c` with `one` as its code, which enciphers only
+the buffer's first block), for a core whose code costs more on one block
+than code of its own for one would.
 -/
 
 @[expose] public section
@@ -63,6 +68,13 @@ def levels (w : Bool) (wide : Nat → Mode) : List Nat → Prog isa → Prog isa
 /-- `seq2`, with a wide loop for each of `lgs`. -/
 def seqLevels (wide : Nat → Mode) (lgs : List Nat) (narrow : Mode) : Prog isa :=
   c.seqWith (aligned narrow.step fun w => c.levels w wide lgs (c.steps w narrow)) narrow.ivOut
+
+/-- The core `c` with the code `one` on the first block of its buffer. -/
+def withOne (one : Prog isa) : Core := { c with crypt := one, G := 1 }
+
+/-- `seqLevels`, with the narrow steps on `c.withOne one`. -/
+def seqLevelsWith (one : Prog isa) (wide : Nat → Mode) (lgs : List Nat) (narrow : Mode) : Prog isa :=
+  c.seqWith (aligned narrow.step fun w => c.levels w wide lgs ((c.withOne one).steps w narrow)) narrow.ivOut
 
 end Core
 

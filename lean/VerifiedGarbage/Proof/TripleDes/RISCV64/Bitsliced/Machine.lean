@@ -32,24 +32,23 @@ def words (s : State) : Nat → BitVec 64 := sl s
 /-- The frame. -/
 def frameR (s : State) : Region := ⟨s.gpr .s0, frameBytes⟩
 
-/-- The frame is writable and 8-byte aligned, and does not wrap around. -/
+/-- The frame is writable (within a writable region, as a stack frame of
+its own or part of a caller's) and 8-byte aligned, and does not wrap around. -/
 structure Room (s : State) : Prop where
-  frame : frameR s ∈ s.wr
+  frame : ∀ o n, o + n ≤ frameBytes → InRegions s.wr (s.gpr .s0 + BitVec.ofNat 64 o) n
   al : (s.gpr .s0).toNat % 8 = 0
   fit : (s.gpr .s0).toNat + frameBytes ≤ 2 ^ 64
 
 theorem Room.congr {s s' : State} (h : Room s) (hb : s'.gpr .s0 = s.gpr .s0) (hw : s'.wr = s.wr) :
     Room s' where
-  frame := by simp only [frameR, hb, hw]; exact h.frame
+  frame := by rw [hb, hw]; exact h.frame
   al := by rw [hb]; exact h.al
   fit := by rw [hb]; exact h.fit
 
 /-- A word of the frame, at slot `k < 132`. -/
 theorem slot_in {s : State} (h : Room s) {k : Nat} (hk : k < 132) :
     InRegions s.wr (wordAddr (s.gpr .s0) k) 8 := by
-  refine ⟨frameR s, h.frame, ?_⟩
-  have := slot_contains (s.gpr .s0) (n := 132) hk (by decide)
-  exact this
+  exact h.frame (8 * k) 8 (by unfold frameBytes; omega_using [hk])
 
 /-! ## Blocks over the variable domain -/
 

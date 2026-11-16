@@ -210,7 +210,7 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
 /-! ## One S-box -/
 
 /-- The registers an S-box step leaves alone. -/
-def stepKept : List Reg := [.s0, .a1, .a2, .a3, .a4, .a5]
+def stepKept : List Reg := [.s0, .a1, .a2, .a3, .a4, .a5, .s11, .ra]
 
 theorem stepKept_in : ∀ r ∈ stepKept, r ∈ sboxKept ∧ r ≠ .a6 ∧ ∀ m < 6, r ≠ inReg m := by decide
 

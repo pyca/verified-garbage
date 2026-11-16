@@ -5,11 +5,14 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
 -- `roundConsts`'s literal: `FunctionsLit` imports it privately, and without it
 -- the kernel rebuilds the round's constants in each mode (seconds each).
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FeistelLit
+-- The S-boxes' literals, for the wide core's passes.
+import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.SboxLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.TripleDes.RISCV64.Modes
 meta import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
 meta import VerifiedGarbage.Proof.TripleDes.RISCV64.FeistelLit
+meta import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit

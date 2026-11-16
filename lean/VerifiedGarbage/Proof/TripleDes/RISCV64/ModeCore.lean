@@ -85,17 +85,15 @@ theorem layout (d : Direction) : Layout (dirCore d) :=
   ⟨by cases d <;> decide, .inl rfl, by cases d <;> decide, by cases d <;> decide,
     by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
 
-theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore d).total)
-    (hm : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
+/-- `modePrepare` copies the schedule at `a0` into the frame at `B`. -/
+theorem copy_wp {s : State} {B : Addr} {k : Schedule} (hB : s.gpr sb = B)
+    (hlow : ∀ o w, o + w ≤ 944 → InRegions s.wr (B + BitVec.ofNat 64 o) w)
+    (hkk : Spec.TripleDes.scheduleAt s.mem (s.gpr .a0) = k) (hin : keyR s ∈ s.rd ++ s.wr)
+    (dK : Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ (keyR s)) :
+    WP isa modePrepare s fun s' => Spec.TripleDes.scheduleAt s'.mem (B + BitVec.ofNat 64 keyOff) = k ∧
+      (∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .t4 → s'.gpr r = s.gpr r) ∧
+      Frame [⟨B + BitVec.ofNat 64 keyOff, 384⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hko : keyOff = 560 := rfl
-  obtain ⟨hkk, hin, hd⟩ := hk
-  have dK : (keyR s).Disjoint ⟨B, 8 * 118⟩ := hd _ hm
-  show WP isa modePrepare s _
   unfold modePrepare
   apply WP.seq
   refine wp_addi (by decide) fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_li (imm := 384) (by decide)
@@ -117,25 +115,37 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
       exact ⟨_, hin, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi => by
       rw [a0, awr, Offset.add_add]
-      exact hS.low _ _ (by simp only [dirCore, keyOff]; omega_using [hi]))
+      exact hlow _ _ (by simp only [keyOff]; omega_using [hi]))
     (by
       rw [a0, a2]
-      have hs : Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B, 8 * 118⟩ :=
-        Offset.sub_base _ (by simp only [keyOff]; omega_using [])
-      have h : Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨s.gpr .a0, 384⟩ :=
-        Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
-      exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])))
+      exact dK x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])))
     fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
-  have gt : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .t4 → t.gpr r = s.gpr r := fun r h0 h1 h2 h4 => by
-    rw [tk.gpr (by simp [h0, h1, h2, h4]), ak r h0 h2 h4]
-  refine ⟨⟨by rw [scheduleAt_copy tc, hkk], hfit⟩,
+  exact ⟨by rw [scheduleAt_copy tc, hkk], fun r h0 h1 h2 h4 => by
+      rw [tk.gpr (by simp [h0, h1, h2, h4]), ak r h0 h2 h4],
+    tf, by rw [tk.2.1, ard], by rw [tk.2.2, awr]⟩
+
+theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k : Schedule}
+    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore d).total)
+    (hm : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (dirCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
+  obtain ⟨hkk, hin, hd⟩ := hk
+  have dK : (keyR s).Disjoint ⟨B, 8 * 118⟩ := hd _ hm
+  have hmin : min (8 * (dirCore d).total) 2032 = 944 := by cases d <;> rfl
+  show WP isa modePrepare s _
+  refine WP.mono (copy_wp hB (fun o w h => hS.low o w (hmin ▸ h)) hkk hin
+    (Region.Disjoint.sub_left (Region.Disjoint.symm dK) (Offset.sub_base _ (by decide))))
+    fun t ⟨tc, gt, tf, trd, twr⟩ => ?_
+  refine ⟨⟨tc, hfit⟩,
     by rw [gt _ (by decide) (by decide) (by decide) (by decide)]; exact hB,
     fun r hr => gt r (by revert hr; decide +revert) (by revert hr; decide +revert)
       (by revert hr; decide +revert) (by revert hr; decide +revert),
-    tf.sub fun r hr => ?_, by rw [tk.2.1, ard], by rw [tk.2.2, awr]⟩
+    tf.sub fun r hr => ?_, trd, twr⟩
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨_, List.mem_singleton_self _, copy_sub d B⟩
 

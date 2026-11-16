@@ -129,7 +129,7 @@ theorem stepsCode_ok (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {s : S
 theorem round_eq (d : Direction) (ρ : Role) : round d ρ = keyLoad d ++ stepsCode ρ 8 := rfl
 
 /-- The registers a round leaves alone. -/
-def roundKept : List Reg := [.s0, .a1, .a2, .a4]
+def roundKept : List Reg := [.s0, .a1, .a2, .a4, .s11, .ra]
 
 theorem round_ok (d : Direction) (ρ : Role) {s : State} (h : Room s) {A : Addr} (hA : s.gpr .a3 = A)
     (hk : KeyAt s A) :
@@ -148,9 +148,8 @@ theorem round_ok (d : Direction) (ρ : Role) {s : State} (h : Room s) {A : Addr}
     exact VG.Proof.TripleDes.Bitslice.steps_congr ρ _ (Nat.le_refl 8)
       (fun y _ => by simp only [words, sl, m₁, g0]) x hx
   · rw [k₂ _ (by decide), p₁]
-  · have hs : r ∈ stepKept ∧ r ≠ .a5 ∧ r ≠ .a3 := by
-      simp only [roundKept, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> decide
+  · have hs : r ∈ stepKept ∧ r ≠ .a5 ∧ r ≠ .a3 :=
+      (by decide : ∀ r ∈ roundKept, r ∈ stepKept ∧ r ≠ .a5 ∧ r ≠ .a3) r hr
     rw [k₂ r hs.1, o₁ r hs.2.1 hs.2.2]
   · rw [stR_congr g0, m₁] at f₂; exact f₂
 
@@ -170,7 +169,7 @@ theorem roundPair_ok (d : Direction) {s : State} (h : Room s) {A : Addr} (hA : s
       (∀ x < 64, words s' x = roundW .ab ((s.mem.readW (A + δ d) 64).setWidth 48)
         (roundW .ba ((s.mem.readW A 64).setWidth 48) (words s)) x) ∧
       s'.gpr .a3 = A + δ d + δ d ∧ s'.gpr .a4 = s.gpr .a4 + BitVec.ofInt 64 (-1) ∧
-      (∀ r ∈ [Reg.s0, .a1, .a2], s'.gpr r = s.gpr r) ∧
+      (∀ r ∈ [Reg.s0, .a1, .a2, .s11, .ra], s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [stR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, w₁, p₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := round_ok d .ba h hA hk₁
   have g0 : s₁.gpr .s0 = s.gpr .s0 := k₁ _ (by decide)
@@ -191,7 +190,7 @@ theorem roundPair_ok (d : Direction) {s : State} (h : Room s) {A : Addr} (hA : s
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, p₂]
   · simp only [RegUpd.gpr_write, ite_true, g4]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;>
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;>
       simp only [RegUpd.gpr_write, reduceCtorEq, ite_false] <;>
       rw [k₂ _ (by decide), k₁ _ (by decide)]
   · simp only [RegUpd.mem_write]
@@ -244,6 +243,8 @@ structure PairInv (s₀ : State) (c : Nat) (d : Direction) (m : Nat) (s : State)
   s0 : s.gpr .s0 = s₀.gpr .s0
   a1 : s.gpr .a1 = s₀.gpr .a1
   a2 : s.gpr .a2 = s₀.gpr .a2
+  s11 : s.gpr .s11 = s₀.gpr .s11
+  ra : s.gpr .ra = s₀.gpr .ra
   ptr : s.gpr .a3 = passP s₀ c d + BitVec.ofNat 64 (2 * m) * δ d
   cnt : s.gpr .a4 = BitVec.ofNat 64 (8 - m)
   wds : ∀ x < 64, words s x = VG.Proof.TripleDes.Bitslice.pairs (keyOf s₀.mem (passP s₀ c d) (δ d)) m (words s₀) x
@@ -265,7 +266,8 @@ theorem pair_step {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) {d : 
     have := Frame.readKey h₀ (passKeyAt (s := s₀) hc d hr) I.frame
     exact this
   refine ⟨s', run, ⟨by omega_using [hm], (k _ (by decide)).trans I.s0, (k _ (by decide)).trans I.a1,
-    (k _ (by decide)).trans I.a2, ?_, ?_, fun x hx => ?_, rd.trans I.rd, wr.trans I.wr, sp.trans I.sp, ?_⟩⟩
+    (k _ (by decide)).trans I.a2, (k _ (by decide)).trans I.s11, (k _ (by decide)).trans I.ra, ?_, ?_,
+    fun x hx => ?_, rd.trans I.rd, wr.trans I.wr, sp.trans I.sp, ?_⟩⟩
   · rw [p3, kptr_succ, kptr_succ]; congr 3
   · rw [p4, I.cnt]
     exact (by decide : ∀ m < 8, BitVec.ofNat 64 (8 - m) + BitVec.ofInt 64 (-1) =
@@ -293,7 +295,7 @@ theorem pairLoop_ok {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) (d 
   · right; exact ⟨by simp; omega_using [hm, e], 8 - (m + 1), by omega_using [hm, hn], m + 1, by omega_using [hm, e], rfl, J'⟩
 
 /-- The registers a pass leaves alone. -/
-def passKept : List Reg := [.s0, .a1, .a2]
+def passKept : List Reg := [.s0, .a1, .a2, .s11, .ra]
 
 theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) :
     WP isa (pass c d) s fun s' =>
@@ -323,7 +325,8 @@ theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) 
   have z : BitVec.ofNat 64 (2 * 0) * δ d = 0#64 := by cases d <;> decide
   have I0 : PairInv s c d 0 (s₁.write .a4 (BitVec.ofInt 64 8)) := by
     refine ⟨by decide, by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write],
-      by simp [s₁, RegUpd.gpr_write], ?_, by simp [RegUpd.gpr_write], fun x hx => rfl, rfl, rfl, rfl,
+      by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write], ?_,
+      by simp [RegUpd.gpr_write], fun x hx => rfl, rfl, rfl, rfl,
       Frame.refl _ _⟩
     simp only [s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, passP, schedA, z]
     rw [hI, BitVec.add_zero]
@@ -338,10 +341,12 @@ theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) 
     refine VG.Proof.TripleDes.Bitslice.swapW_congr (fun y hy => ?_) x hx
     rw [J.wds y hy, VG.Proof.TripleDes.Bitslice.pairs_keys_congr 8 (fun r hr => keyOf_pass _ _ hc d hr)]
   · simp only [passKept, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [k _ (by decide) (by decide), J.s0]
     · rw [k _ (by decide) (by decide), J.a1]
     · rw [k _ (by decide) (by decide), J.a2]
+    · rw [k _ (by decide) (by decide), J.s11]
+    · rw [k _ (by decide) (by decide), J.ra]
   · rw [stR_congr J.s0] at f; exact J.frame.trans f
 
 /-! ## The three passes -/

@@ -247,3 +247,15 @@ j 21f
 #[rustfmt::skip]
 #[path = "internal/vg_triple_des_ecb_encrypt_serial.rs"]
 pub(crate) mod vg_triple_des_ecb_encrypt_serial;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_modes_crypt_decrypt.rs"]
+pub(crate) mod vg_triple_des_modes_crypt_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_modes_crypt_encrypt.rs"]
+pub(crate) mod vg_triple_des_modes_crypt_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_modes_prepare.rs"]
+pub(crate) mod vg_triple_des_modes_prepare;
