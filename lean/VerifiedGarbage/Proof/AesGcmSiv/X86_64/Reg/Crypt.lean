@@ -464,4 +464,73 @@ theorem crypt4_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} 
   · rw [m₇]
     exact I.frame.trans (by rw [← m₁, ← hf.mem]; exact ((f₀.trans f₁).trans f₂).trans f₃)
 
+/-! ## Counter mode: the whole data -/
+
+theorem CInv.flags {K W SP : Addr} {R : Nat} {D : Addr} {n : Nat} {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte}
+    {d : BitVec 128} {σ : State} {j : Nat} {t : State} (I : CInv K W SP R D n ciph icb x d σ j t) (v : BitVec 64)
+    (c o : Bool) : CInv K W SP R D n ciph icb x d σ j (arithFlags t v c o) :=
+  ⟨I.env.keep (fun _ _ => rfl) rfl rfl, I.rd, I.wr, I.rdi, I.rsi, I.r10, I.key, I.x9, I.x10, I.r12, I.rbx, I.rbp,
+    I.data, I.frame⟩
+
+/-- The start of `crypt`: the counter block from the tag, `aes`'s arguments,
+and the data's whole blocks and last bytes. -/
+theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t)
+    {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hn : n < 2 ^ 64) :
+    ∃ t₁ : State, runBlock isa ctrInit t = some t₁ ∧
+      le16 (t₁.xmm .xmm9) = Spec.GcmSiv.initialCounter (bytesAt t.mem W 16) ∧
+      t₁.xmm .xmm10 = (0 : BitVec 64) ++ BitVec.ofNat 64 1 ∧
+      t₁.gpr .rdi = W + BitVec.ofNat 64 248 ∧ t₁.gpr .rsi = BitVec.ofNat 64 R ∧
+      t₁.gpr .r10 = W + BitVec.ofNat 64 248 + BitVec.ofNat 64 (16 * R) ∧
+      t₁.gpr .r12 = D ∧ t₁.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧ t₁.gpr .rbx = BitVec.ofNat 64 (n / 16) ∧
+      t₁.zf = some (decide (n / 16 = 0)) ∧
+      t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ ∀ r ∈ [Reg.r13, .r15, .rsp], t₁.gpr r = t.gpr r := by
+  have h15 := E.r15
+  have rR := S.rounds
+  have sD := S.data
+  have sL := S.len
+  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
+  have rD := E.perm.wR (show 232 + 8 ≤ 488 by decide)
+  have rL := E.perm.wR (show 240 + 8 ≤ 488 by decide)
+  have rT := E.perm.wR (show 0 + 16 ≤ 488 by decide)
+  obtain rT' : InRegions (t.rd ++ t.wr) W 16 := by simpa using rT
+  obtain hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 n)
+  rw [Proof.AesGcm.X86_64.toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
+  refine ⟨_, by xrun [ctrInit, aesArgs, lastKey, skO, roundsO, tagO, dataO, lenO, h15, rR, sD, sL, rr, rD, rL, rT,
+    rT'], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
+      ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
+      mem_setReg, mem_arithFlags, mem_setXmm, mem_setFlags, h15, tagO, BitVec.add_zero, ne_eq, not_false_eq_true]
+    have e : XShiftOp.eval .pslldq ((0 : BitVec 64) ++ (9223372036854775808 : BitVec 64)) 8 =
+        (9223372036854775808 : BitVec 64) ++ (0 : BitVec 64) := by decide
+    rw [e]
+    show le16 (((9223372036854775808 : BitVec 64) ++ (0 : BitVec 64)) ||| t.mem.readW W 128) = _
+    rw [readW128_app, BitVec.or_append, le16_app, show (0 : BitVec 64) ||| t.mem.readW W 64 = t.mem.readW W 64 from
+      BitVec.zero_or, BitVec.or_comm, Proof.Cmac.bytesAt_split, ← Proof.Cmac.le8_readW, ← Proof.Cmac.le8_readW,
+      GcmSiv.initialCounter_words]
+    rfl
+  · simp (config := {decide := true}) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags,
+      xmm_setFlags, gpr_setXmm, gpr_setReg, ite_true, ite_false, reduceCtorEq, ne_eq, not_false_eq_true]
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, skO]
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,
+      mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, rR, roundsO]
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,
+      mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, rR, roundsO, skO, execShift]
+    rw [BitVec.add_comm]; congr 1; rcases hR with rfl | rfl <;> decide
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,
+      mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, sD, dataO]
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,
+      mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, sL, lenO, hand]
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,
+      mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, sL, lenO, Proof.AesGcm.X86_64.shr4 _ hn]
+  · simp only [zf_setReg, zf_setXmm, zf_arithFlags, gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags,
+      mem_setXmm, mem_setReg, mem_arithFlags, mem_setFlags, ite_true, ite_false, reduceCtorEq, h15, sL, lenO,
+      Proof.AesGcm.X86_64.shr4 _ hn]
+    rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
+  · rfl
+  · rfl
+  · rfl
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;>
+      simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+
 end VG.Proof.AesGcmSivReg.X86_64
