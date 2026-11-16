@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+meta import VerifiedGarbage.Proof.Mcdt.X86_64.Op
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
@@ -77,9 +79,26 @@ theorem APre.avx2 {s₀ : State} (hp : APre s₀) : Avx2.APre s₀ :=
   ⟨hp.rd, hp.wr, hp.st_bl, hp.ret_st, hp.stk_st.sub_left (below8_16 _), hp.stk_bl.sub_left (below8_16 _),
     hp.nowrap⟩
 
+theorem APre.g16 {s₀ : State} (hp : APre s₀) (hS : 16 ≤ (s₀.gpr .rsp).toNat) : Avx2.G16 s₀ :=
+  ⟨hp.stk_st, hp.stk_bl, hS⟩
+
+/-- `APre`, of a state with the arguments, `rsp` and the regions of `s₀`. -/
+theorem APre.congr {s₀ v : State} (hp : APre s₀) (hv : Avx2.Like s₀ v) : APre v := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hp
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [st, blR, bp, nb, retR, hv.rdi, hv.rsi, hv.rdx, hv.rsp, hv.rd, hv.wr] <;>
+    with_reducible assumption
+
 /-! ## The call of `vg_poly1305_blocks_avx2` -/
 
 theorem avx2_depth : Impl.Poly1305.X86_64.Avx2.blocksAvx2.depth = 1 := by lit_decide
+
+theorem avx2_keeps : ((instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2).all fun i =>
+    !Taint.clobbers i .rsp) = true := by
+  rw [← Code.allInstrs_eq]; lit_decide
+
+theorem avx2_nosp : NoSp Impl.Poly1305.X86_64.Avx2.blocksAvx2 :=
+  fun i hi => by simpa using List.all_eq_true.mp avx2_keeps i hi
 
 theorem ret_below16 (s₀ : State) : (retR s₀).Disjoint (below (s₀.gpr .rsp) 16) := by
   have := Offset.disjoint_base (s₀.gpr .rsp - BitVec.ofNat 64 16) (d := 16) (n := 8) (k := 16)
@@ -94,7 +113,7 @@ theorem avx2_ok {s₀ : State} (hp : APre s₀) {s : State} (h : TailPre s₀ 0 
   obtain hsi : s.gpr .rsi = bp s₀ := by rw [h.rsi]; simp [blkAddr]
   obtain stS : (below (s.gpr .rsp) 16).Disjoint (sR (st s₀)) := by rw [hsp]; exact hp.stk_st
   obtain stB : (below (s.gpr .rsp) 16).Disjoint (blR s₀) := by rw [hsp]; exact hp.stk_bl
-  refine WP.call_mx (k := Avx2.blocksAvx2X86_64) Avx2.blocksAvx2_ok BlocksImpl.avx2_nosp
+  refine WP.call_mx (k := Avx2.blocksAvx2X86_64) Avx2.blocksAvx2_ok avx2_nosp
     (by rw [avx2_depth]; decide) (rd := [blR s₀]) (wr := [sR (st s₀)]) ?_ ?_ ?_ ?_
   · simp only [Avx2.blocksAvx2X86_64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, State.callEntry_rsp, hne _ (by decide : Reg.rdi ≠ .rsp),
@@ -534,6 +553,60 @@ theorem blocksAvx512_ct : ConstantTime isa blocksAvx512X86_64.pre blocksAvx512X8
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+/-! ## With its own call of `vg_mcdt_enter` -/
+
+/-- The vector code, from at least 40 blocks. -/
+theorem big_ok {s₀ : State} (hp : APre s₀) (hge : 40 ≤ nb s₀) : WP isa big s₀ (Post s₀) := by
+  have hb := hp.avx2.bpre.nb_lt
+  refine WP.seq (WP.mono (body_ok hp hge rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (Avx2.test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
+  have h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
+  refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)
+    (fun _ => tail_ok hp.avx2 h₃)
+  have e : 8 * (nb s₀ / 8) = nb s₀ := by
+    have := h₃.rdx
+    simp only [BitVec.and_self, beq_iff_eq] at h
+    rw [h] at this
+    have := congrArg BitVec.toNat this
+    rw [toNat_ofNat_lt (by omega_arith)] at this
+    rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
+    simp only [nb] at this ⊢
+    omega_arith
+  exact WP.block_nil (M := isa) (done_ok hp.avx2 (e ▸ h₃))
+
+theorem correctM {s₀ : State} (hp : APre s₀) (hS : 16 ≤ (s₀.gpr .rsp).toNat) :
+    WP isa blocksAvx512M s₀ (Post s₀) := by
+  refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
+  have k₁' : Avx2.VKeep s₀ s₁ := ⟨k₁.xmm, k₁.ymmHi, k₁.mxcsr, k₁.rd, k₁.wr⟩
+  refine WP.ite (decide (nb s₀ < 40)) (by simp [eval, cf₁]) (fun _ => ?_) (fun hge => ?_)
+  · -- The code of `vg_poly1305_blocks_avx2`, from `s₁`, which has the registers and memory of `s₀`.
+    have l₁ : Avx2.Like s₀ s₁ := ⟨k₁.rd, k₁.wr, by rw [g₁], by rw [g₁], by rw [g₁], by rw [g₁]⟩
+    have hp₁ := hp.congr l₁
+    refine WP.mono (Avx2.correctM hp₁.avx2 (hp₁.g16 (by rw [l₁.rsp]; exact hS))) fun s' h => ?_
+    exact Avx2.post_congr (hp.g16 hS) hp.avx2 (fun r _ => by rw [g₁]) l₁.rdi l₁.rsi l₁.rdx
+      (by rw [m₁]; exact Frame.refl _ _) (by rw [k₁.mxcsr]) h
+  · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
+    exact Avx2.guard_ok hp.avx2 (hp.g16 hS) g₁ m₁ k₁' fun u hu =>
+      big_ok (hp.congr hu) (by simp only [nb, hu.rdx]; omega_arith)
+
+/-- The contract of `blocksAvx512M` (and `blocksIfmaM`). -/
+def blocksAvx512MX86_64 : Contract X86_64.isa := Proof.Poly1305.blocksStackM 16
+
+theorem blocksAvx512M_ok (s : State) (hs : blocksAvx512MX86_64.pre s) :
+    ∃ t s', Exec isa blocksAvx512M s t s' ∧ abiPreserved s s' ∧ blocksAvx512MX86_64.post s s' := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := hs
+  exact correctM ⟨h1, h2, h3, h4, h5, h6, h7⟩ h8
+
+/-! ## Constant time -/
+
+theorem blocksAvx512M_ct : ConstantTime isa blocksAvx512MX86_64.pre blocksAvx512MX86_64.pub blocksAvx512M := by
+  refine VG.Taint.constantTime_of_sem (A := taintMx) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_
+    (by taint_decide_ops [Mcdt.X86_64.enterOpMx_ok])
+  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4, h5⟩
+  refine ⟨Taint.agree_ofRegs fun r hr => ?_, h5⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 

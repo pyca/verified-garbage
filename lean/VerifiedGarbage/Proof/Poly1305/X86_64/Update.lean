@@ -45,13 +45,13 @@ def updateX86_64 : Contract X86_64.isa where
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
     ret.Disjoint state ∧ ret.Disjoint scratch ∧
     stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch ∧
-    (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64
+    (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ 24 ≤ (s.gpr .rsp).toNat
   post s s' := ∀ key msg, Buffered s.mem (s.gpr .rdi) key msg →
     (s.gpr .rsi).toNat % 16 = msg.length % 16 →
     Buffered s'.mem (s.gpr .rdi) key (msg ++ bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 end VG.Proof.Poly1305
 
@@ -92,10 +92,11 @@ structure UPre (s₀ : State) : Prop where
   stk_d : (stkR s₀).Disjoint (dR s₀)
   stk_sc : (stkR s₀).Disjoint (scR s₀)
   nowrap : (dp s₀).toNat + dl s₀ ≤ 2 ^ 64
+  sp : 24 ≤ (s₀.gpr .rsp).toNat
 
 theorem UPre.of (s₀ : State) (h : Proof.Poly1305.updateX86_64.pre s₀) : UPre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
 theorem dl_lt (s₀ : State) : dl s₀ < 2 ^ 64 := (s₀.gpr .rcx).isLt
 

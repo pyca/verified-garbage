@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
 import VerifiedGarbage.Proof.Framework.Offset
@@ -31,6 +31,11 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Poly1305.Contract
+import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+import VerifiedGarbage.Proof.Framework.TaintOps
+meta import VerifiedGarbage.Proof.Framework.TaintOps
 
 /-!
 # Poly1305 on x86-64 with AVX2: `vg_poly1305_blocks_avx2`
@@ -71,6 +76,13 @@ def blocksAvx2X86_64 : Contract X86_64.isa where
   post := Proof.Poly1305.blocksX86_64.post
   pub s₁ s₂ := Proof.Poly1305.blocksX86_64.pub s₁ s₂ ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+/-- The contract of `blocksAvx2M`: with 16 bytes of stack below the return
+address that its calls use (the return address of its call of
+`vg_poly1305_blocks`, or of `vg_mcdt_enter` and its frame), and MXCSR
+public. -/
+def blocksAvx2MX86_64 : Contract X86_64.isa := Proof.Poly1305.blocksStackM 16
+
+
 structure APre (s₀ : State) : Prop where
   rd : s₀.rd = [blR s₀]
   wr : s₀.wr = [sR (st s₀)]
@@ -80,9 +92,21 @@ structure APre (s₀ : State) : Prop where
   stk_bl : (below (s₀.gpr .rsp) 8).Disjoint (blR s₀)
   nowrap : (bp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
 
+theorem below8_16 (sp : Addr) : Region.Sub (below sp 8) (below sp 16) :=
+  below_sub (by omega_arith) (by omega_arith)
+
+/-- What the 16 bytes of stack the call of `vg_mcdt_enter` uses need. -/
+def G16 (s₀ : State) : Prop :=
+  (below (s₀.gpr .rsp) 16).Disjoint (sR (st s₀)) ∧ (below (s₀.gpr .rsp) 16).Disjoint (blR s₀) ∧
+    16 ≤ (s₀.gpr .rsp).toNat
+
 theorem APre.of (s₀ : State) (h : blocksAvx2X86_64.pre s₀) : APre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+
+theorem APre.ofM (s₀ : State) (h : blocksAvx2MX86_64.pre s₀) : APre s₀ ∧ G16 s₀ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
+  exact ⟨⟨h1, h2, h3, h4, h5.sub_left (below8_16 _), h6.sub_left (below8_16 _), h7⟩, h5, h6, h8⟩
 
 theorem APre.bpre {s₀ : State} (hp : APre s₀) : BPre s₀ :=
   ⟨hp.rd, hp.wr, hp.st_bl, hp.ret_st, hp.nowrap⟩
@@ -133,6 +157,11 @@ theorem blks_split (s₀ : State) {i : Nat} (hi : i ≤ nb s₀) :
     blks s₀ i ++ bytesAt s₀.mem (blkAddr s₀ i) (16 * (nb s₀ - i)) = blks s₀ (nb s₀) := by
   simp only [blks, blkAddr]
   rw [← Poly1305.bytesAt_add, show 16 * i + 16 * (nb s₀ - i) = 16 * nb s₀ by omega_arith]
+
+theorem ret_below16 (s₀ : State) : (retR s₀).Disjoint (below (s₀.gpr .rsp) 16) := by
+  have := Offset.disjoint_base (s₀.gpr .rsp - BitVec.ofNat 64 16) (d := 16) (n := 8) (k := 16)
+    (by decide) (by decide)
+  rwa [BitVec.sub_add_cancel] at this
 
 theorem ret_stk (s₀ : State) : (retR s₀).Disjoint (below (s₀.gpr .rsp) 8) := by
   have := Offset.disjoint_base (s₀.gpr .rsp - BitVec.ofNat 64 8) (d := 8) (n := 8) (k := 8)
@@ -548,6 +577,130 @@ theorem TailPre.congr {s₀ s s' : State} {i : Nat} (h : TailPre s₀ i s) (hg :
     by rw [hrd, h.rd], by rw [hwr, h.wr], by rw [hm]; exact h.frame, by rw [hx]; exact h.mxcsr,
     fun key msg hr => by rw [hm]; exact h.repr key msg hr⟩
 
+/-- The vector code, from at least 32 blocks. -/
+theorem big_ok {s₀ : State} (hp : APre s₀) (hge : 32 ≤ nb s₀) : WP isa big s₀ (Post s₀) := by
+  have hb := hp.bpre.nb_lt
+  refine WP.seq (WP.mono (body_ok hp hge rfl rfl ⟨rfl, rfl, rfl, rfl, rfl⟩) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
+  have h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
+  refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)
+    (fun _ => tail_ok hp h₃)
+  have e : 4 * (nb s₀ / 4) = nb s₀ := by
+    have := h₃.rdx
+    simp only [BitVec.and_self, beq_iff_eq] at h
+    rw [h] at this
+    have := congrArg BitVec.toNat this
+    rw [toNat_ofNat_lt (by omega_arith)] at this
+    rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
+    simp only [nb] at this ⊢
+    omega_arith
+  exact WP.block_nil (M := isa) (done_ok hp (e ▸ h₃))
+
+/-! ## The call of `vg_mcdt_enter` -/
+
+theorem mov_ok (s : State) (d r : Reg) :
+    WP isa (.block [.mov d (.reg r)]) s fun t => t = s.setReg d (s.gpr r) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some, Option.some.injEq,
+    exists_eq_left']
+
+theorem testEax_ok (s : State) :
+    WP isa (.block [.alu32 .test .rax (.reg .rax)]) s fun t =>
+      (∃ z, t.zf = some z) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, exec, readSrc32, execAlu32, arithFlags, State.setFlags, Option.bind_some,
+    runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
+  exact ⟨⟨_, rfl⟩, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- A state that differs from `s₀` but for `rax`, `rcx`, `r9`, the flags and
+the 16 bytes of stack below `rsp` satisfies `APre` as `s₀` does. -/
+theorem APre.congr {s₀ v : State} (hp : APre s₀) (hrd : v.rd = s₀.rd) (hwr : v.wr = s₀.wr)
+    (hdi : v.gpr .rdi = s₀.gpr .rdi) (hsi : v.gpr .rsi = s₀.gpr .rsi) (hdx : v.gpr .rdx = s₀.gpr .rdx)
+    (hsp : v.gpr .rsp = s₀.gpr .rsp) : APre v := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hp
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [st, blR, bp, nb, retR, hdi, hsi, hdx, hsp, hrd, hwr] <;>
+    with_reducible assumption
+
+/-- `Post` of a state `v` as `APre.congr` relates it to `s₀` is `Post s₀`. -/
+theorem post_congr {s₀ v s' : State} (h16 : G16 s₀) (hp : APre s₀) (hcs : ∀ r ∈ calleeSaved, v.gpr r = s₀.gpr r)
+    (hdi : v.gpr .rdi = s₀.gpr .rdi) (hsi : v.gpr .rsi = s₀.gpr .rsi) (hdx : v.gpr .rdx = s₀.gpr .rdx)
+    (hm : Frame [below (s₀.gpr .rsp) 16] s₀.mem v.mem)
+    (hmx : v.mxcsr.extractLsb' 6 10 = s₀.mxcsr.extractLsb' 6 10) (h : Post v s') : Post s₀ s' := by
+  have hsp : v.gpr .rsp = s₀.gpr .rsp := hcs .rsp (by simp [calleeSaved])
+  obtain ⟨⟨g, r, x⟩, q⟩ := h
+  refine ⟨⟨fun r' hr' => by rw [g r' hr', hcs r' hr'], ?_, by rw [x, hmx]⟩, fun key msg hr => ?_⟩
+  · rw [← hsp, r, hsp]
+    exact hm.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact (ret_below16 s₀)) (by decide)
+  · have hr' := repr_frame hm (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact h16.1.symm) hr
+    rw [← hdi] at hr'
+    have := q key msg hr'
+    rw [hdi, hsi, hdx, bytesAt_frame hm (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact h16.2.1.symm) (by have := hp.bpre.nb_lt; simp only [nb] at this; omega_arith)] at this
+    exact this
+
+/-- A state with the arguments, `rsp` and the regions of `s₀`. -/
+structure Like (s₀ u : State) : Prop where
+  rd : u.rd = s₀.rd
+  wr : u.wr = s₀.wr
+  rdi : u.gpr .rdi = s₀.gpr .rdi
+  rsi : u.gpr .rsi = s₀.gpr .rsi
+  rdx : u.gpr .rdx = s₀.gpr .rdx
+  rsp : u.gpr .rsp = s₀.gpr .rsp
+
+/-- `inner` run only once `vg_mcdt_enter` has returned 1, else
+`vg_poly1305_blocks` for every block (`guard`): from a state with the
+registers and memory of `s₀`, as `inner` from any state as `s₀` but for the
+registers `guard` writes and the stack below `rsp` (`Like`). -/
+theorem guard_ok {s₀ : State} (hp : APre s₀) (h16 : G16 s₀) {inner : Prog isa} {s : State}
+    (hg : s.gpr = s₀.gpr) (hm : s.mem = s₀.mem) (hk : VKeep s₀ s)
+    (hin : ∀ u, Like s₀ u → WP isa inner u (Post u)) :
+    WP isa (Impl.Poly1305.X86_64.Avx2.guard inner) s (Post s₀) := by
+  refine WP.seq (WP.mono (mov_ok s .r9 .rdx) fun s₁ e₁ => ?_)
+  subst e₁
+  have sp₁ : (s.setReg .r9 (s.gpr .rdx)).gpr .rsp = s₀.gpr .rsp := by
+    rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), hg]
+  refine WP.seq (WP.mono (Mcdt.X86_64.call_enter_wp _ (by rw [sp₁]; exact h16.2.2)) fun s₂ ⟨sp₂, g₂, mx₂, rd₂, wr₂, m₂⟩ => ?_)
+  refine WP.seq (WP.mono (testEax_ok s₂) fun s₃ ⟨⟨z, hz⟩, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
+  -- Both branches restore `rdx` and go on from `v`, which `APre.congr` relates to `s₀`.
+  have go : ∀ {c : Prog isa}, (∀ v, Like s₀ v → WP isa c v (Post v)) →
+      WP isa (.seq (.block [.mov .rdx (.reg .r9)]) c) s₃ (Post s₀) := by
+    intro c hc
+    refine WP.seq (WP.mono (mov_ok s₃ .rdx .r9) fun v e => ?_)
+    subst e
+    have gv : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r11 → r ≠ .r9 →
+        (s₃.setReg .rdx (s₃.gpr .r9)).gpr r = s₀.gpr r := fun r h1 h2 h3 h4 h5 => by
+      rw [RegUpd.gpr_setReg_of_ne _ _ h3, g₃, g₂ r h1 h2 h3 h4, RegUpd.gpr_setReg_of_ne _ _ h5, hg]
+    have dx : (s₃.setReg .rdx (s₃.gpr .r9)).gpr .rdx = s₀.gpr .rdx := by
+      rw [RegUpd.gpr_setReg_self, g₃, g₂ .r9 (by decide) (by decide) (by decide) (by decide),
+        RegUpd.gpr_setReg_self, hg]
+    have rdv : (s₃.setReg .rdx (s₃.gpr .r9)).rd = s₀.rd := by
+      rw [RegUpd.rd_setReg, rd₃, rd₂, RegUpd.rd_setReg, hk.rd]
+    have wrv : (s₃.setReg .rdx (s₃.gpr .r9)).wr = s₀.wr := by
+      rw [RegUpd.wr_setReg, wr₃, wr₂, RegUpd.wr_setReg, hk.wr]
+    refine WP.mono (hc _ ⟨rdv, wrv, gv _ (by decide) (by decide) (by decide) (by decide) (by decide),
+      gv _ (by decide) (by decide) (by decide) (by decide) (by decide), dx,
+      gv _ (by decide) (by decide) (by decide) (by decide) (by decide)⟩) fun s' h => ?_
+    refine post_congr h16 hp (fun r hr => gv r ?_ ?_ ?_ ?_ ?_) (gv _ (by decide) (by decide) (by decide) (by decide) (by decide))
+      (gv _ (by decide) (by decide) (by decide) (by decide) (by decide)) dx ?_ ?_ h
+    · intro e; subst e; simp [calleeSaved] at hr
+    · intro e; subst e; simp [calleeSaved] at hr
+    · intro e; subst e; simp [calleeSaved] at hr
+    · intro e; subst e; simp [calleeSaved] at hr
+    · intro e; subst e; simp [calleeSaved] at hr
+    · intro y hy
+      rw [RegUpd.mem_setReg, m₃, m₂ y ?_, RegUpd.mem_setReg, hm]
+      rw [sp₁]
+      have := hy _ (List.mem_singleton_self _)
+      exact fun h => this (show (y - (s₀.gpr .rsp - 16)).toNat + 1 ≤ 16 by omega)
+    · rw [RegUpd.mxcsr_setReg, mx₃, mx₂, Mcdt.X86_64.flagged_ctl, RegUpd.mxcsr_setReg, hk.mxcsr]
+  refine WP.ite z (by simp only [eval, hz]) (fun _ => go fun v hv => ?_) (fun _ => go hin)
+  have hv := hp.congr hv.rd hv.wr hv.rdi hv.rsi hv.rdx hv.rsp
+  exact tail_ok hv (i := 0) ⟨by omega_arith, rfl, by simp [blkAddr], by rw [Nat.sub_zero, BitVec.ofNat_toNat,
+    BitVec.setWidth_eq], fun _ _ => rfl, rfl, rfl, Frame.refl _ _, rfl,
+    fun key msg hr => by rw [blks_zero, List.append_nil]; exact hr⟩
+
 theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksAvx2 s₀ (Post s₀) := by
   have hb := hp.bpre.nb_lt
   refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
@@ -583,6 +736,34 @@ theorem blocksAvx2_ct : ConstantTime isa blocksAvx2X86_64.pre blocksAvx2X86_64.p
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+/-! ## With its own call of `vg_mcdt_enter` -/
+
+theorem correctM {s₀ : State} (hp : APre s₀) (h16 : G16 s₀) : WP isa blocksAvx2M s₀ (Post s₀) := by
+  have hb := hp.bpre.nb_lt
+  refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
+  refine WP.ite (decide (nb s₀ < 32)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
+  · refine tail_ok hp (i := 0) ⟨by omega_arith, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
+      fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
+      fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩
+    rw [g₁, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
+    exact guard_ok hp h16 g₁ m₁ k₁ fun u hu =>
+      big_ok (hp.congr hu.rd hu.wr hu.rdi hu.rsi hu.rdx hu.rsp) (by simp only [nb, hu.rdx]; omega_arith)
+
+theorem blocksAvx2M_ok (s : State) (hs : blocksAvx2MX86_64.pre s) :
+    ∃ t s', Exec isa blocksAvx2M s t s' ∧ abiPreserved s s' ∧ blocksAvx2MX86_64.post s s' :=
+  correctM (APre.ofM s hs).1 (APre.ofM s hs).2
+
+/-! ## Constant time -/
+
+theorem blocksAvx2M_ct : ConstantTime isa blocksAvx2MX86_64.pre blocksAvx2MX86_64.pub blocksAvx2M := by
+  refine VG.Taint.constantTime_of_sem (A := taintMx) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_
+    (by taint_decide_ops [Mcdt.X86_64.enterOpMx_ok])
+  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4, h5⟩
+  refine ⟨Taint.agree_ofRegs fun r hr => ?_, h5⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 

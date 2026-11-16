@@ -272,7 +272,7 @@ vg_poly1305_update_ifma:
 	shr rdx, 4
 	cmp rcx, 16
 	jb 29f
-	call {vg_poly1305_blocks_ifma}
+	call {vg_poly1305_blocks_ifma_mcdt}
 	jmp 210f
 29:
 210:
@@ -464,7 +464,7 @@ vg_poly1305_update_avx512:
 	shr rdx, 4
 	cmp rcx, 16
 	jb 29f
-	call {vg_poly1305_blocks_avx512}
+	call {vg_poly1305_blocks_avx512_mcdt}
 	jmp 210f
 29:
 210:
@@ -656,7 +656,7 @@ vg_poly1305_update_avx2:
 	shr rdx, 4
 	cmp rcx, 16
 	jb 29f
-	call {vg_poly1305_blocks_avx2}
+	call {vg_poly1305_blocks_avx2_mcdt}
 	jmp 210f
 29:
 210:

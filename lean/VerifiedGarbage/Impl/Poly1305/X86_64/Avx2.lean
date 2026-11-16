@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Poly1305.X86_64
+public import VerifiedGarbage.Impl.Mcdt.X86_64
 
 /-!
 # Poly1305 blocks: x86-64 implementation with AVX2
@@ -34,8 +35,15 @@ the first `4 ⌊n / 4⌋` blocks are absorbed four at a time, as in OpenSSL's
   scratch, and the mask `2²⁶ - 1` and the pad bit `2²⁴` are broadcast from
   `r8` and `r9` when needed.
 * `vpmuludq` has MXCSR-configuration-dependent timing on some processors
-  (see "MCDT" in `TCB/X86_64/Isa.lean`): the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
-  whole call, so the code sets none of its own.
+  (see "MCDT" in `TCB/X86_64/Isa.lean`): in `blocksAvx2`, the dispatcher of
+  its caller runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
+  whole call. `blocksAvx2M` (`vg_poly1305_blocks_avx2_mcdt`) instead calls
+  `vg_mcdt_enter` (`Spec/Mcdt.lean`) itself, with at least `minBlocks`
+  blocks only, keeping `n` in `r9`, and runs the vector code only if it
+  returned 1, which leaves MXCSR `0x1FBF` until the function returns
+  (`guard`, `Rust.mcdtOpen`); if it returned 0, `vg_poly1305_blocks` absorbs
+  every block. So the dispatchers of its callers run none, and fewer blocks
+  pay nothing for it.
 * At the end the lanes of `H` are summed, carried, reduced fully (`h + 5 - 2¹³⁰`
   if that is not negative), put back into three 64-bit words and stored,
   all in vector registers.
@@ -225,10 +233,27 @@ def body : Prog isa :=
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks
 
+/-- `inner` (which reads `n` from `rdx`) only once `vg_mcdt_enter` has
+returned 1, and otherwise `vg_poly1305_blocks` for every block: `n` kept in
+`r9` across the call, which writes `rdx`, and the branch on its result
+right after it and `test eax, eax`, as `Rust.mcdtOpen` reads it. -/
+def guard (inner : Prog isa) : Prog isa :=
+  .seq (.block [.mov .r9 (.reg .rdx)])
+    (.seq (.call "vg_mcdt_enter" Impl.Mcdt.X86_64.enterCall)
+      (.seq (.block [.alu32 .test .rax (.reg .rax)])
+        (.ite .e (.seq (.block [.mov .rdx (.reg .r9)]) scalar) (.seq (.block [.mov .rdx (.reg .r9)]) inner))))
+
+/-- The vector code, from at least `minBlocks` blocks: the first `4 ⌊n / 4⌋`,
+then the rest by `vg_poly1305_blocks`. -/
+def big : Prog isa :=
+  .seq body (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))
+
 def blocksAvx2 : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))])
-    (.ite .b scalar
-      (.seq body
-        (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))))
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b scalar big)
+
+/-- `blocksAvx2`, with the vector code run only once `vg_mcdt_enter` has
+returned 1 (`guard`). -/
+def blocksAvx2M : Prog isa :=
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b scalar (guard big))
 
 end VG.Impl.Poly1305.X86_64.Avx2

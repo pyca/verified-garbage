@@ -53,7 +53,7 @@ def τ₀ : X86_64.Taint.T :=
 theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateX86_64.pre s₁)
     (h₂ : Proof.Poly1305.updateX86_64.pre s₂) (hpub : Proof.Poly1305.updateX86_64.pub s₁ s₂) :
     X86_64.Taint.Agree τ₀ s₁ s₂ := by
-  obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hpub
+  obtain ⟨p1, p2, p3, p4, p5, p6, -⟩ := hpub
   have wf : ∀ s, Proof.Poly1305.updateX86_64.pre s → X86_64.Taint.Wf τ₀ s := by
     intro s hs
     obtain ⟨-, hw, d, -⟩ := hs
@@ -105,7 +105,8 @@ include h₀ h₀' hq
 
 /-- Before the call, in two runs. -/
 def Mid (s₀ s₀' : State) (s₁ s₂ : State) : Prop :=
-  ((∀ r ∈ preRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.cf = s₂.cf) ∧ (∃ c, Ready s₀ c s₁) ∧ (∃ c, Ready s₀' c s₂)
+  ((∀ r ∈ preRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.cf = s₂.cf) ∧ (∃ c, Ready s₀ c s₁) ∧ (∃ c, Ready s₀' c s₂) ∧
+    s₁.mxcsr = s₂.mxcsr
 
 omit hq in
 /-- The call, or none. -/
@@ -117,16 +118,16 @@ theorem mid_rel : RelCT isa (Mid s₀ s₀') (.ite .b (.block []) (.call v.name 
   refine RelCT.ite (fun s₁ s₂ h => by simp only [eval, h.1.2]) ?_ ?_
   · obtain ⟨_, hn⟩ := none_taint
     exact RelCT.taintRegs (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => h.1.1.1 r (sub r hr)) postRegs hn
-  · have ct := RelCT.callEx (n := v.name) (k := blocksStack v.stack)
+  · have ct := RelCT.callEx (n := v.name) (k := blocksStackM v.stack)
       (P := fun s₁ s₂ => Mid s₀ s₀' s₁ s₂ ∧ eval .b s₁ = some false) v.ok v.ct
-      fun s₁ s₂ ⟨⟨⟨hr, _⟩, ⟨c₁, r₁⟩, ⟨c₂, r₂⟩⟩, _⟩ => by
+      fun s₁ s₂ ⟨⟨⟨hr, _⟩, ⟨c₁, r₁⟩, ⟨c₂, r₂⟩, hmx⟩, _⟩ => by
         obtain ⟨p₁, cv₁, w₁⟩ := call_pre v hp r₁
         obtain ⟨p₂, cv₂, w₂⟩ := call_pre v hp' r₂
         refine ⟨_, _, _, _, p₁, p₂, ?_, cv₁, w₁, cv₂, w₂, hr .rsp (by simp)⟩
-        simp only [blocksStack, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.callEntry_rsp,
+        simp only [blocksStackM, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.callEntry_rsp,
           State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
           State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp)]
-        exact ⟨⟨hr .rdi (by simp), hr .rsi (by simp), hr .rdx (by simp)⟩, by rw [hr .rsp (by simp)]⟩
+        exact ⟨⟨hr .rdi (by simp), hr .rsi (by simp), hr .rdx (by simp)⟩, by rw [hr .rsp (by simp)], hmx⟩
     have keep : ∀ {σ₀ s : State}, UPre σ₀ → (∃ c, Ready σ₀ c s) → eval .b s = some false →
         WP isa (.call v.name v.code) s fun s' => ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r := by
       intro σ₀ s hp ⟨c, h⟩ he
@@ -134,7 +135,7 @@ theorem mid_rel : RelCT isa (Mid s₀ s₀') (.ite .b (.block []) (.call v.name 
       simp only [Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] at he
       exact WP.mono (call_ok v hp h he) fun _ h' => h'.2.1
     refine (ct.wpDep (F := fun (σ s' : State) => ∀ r ∈ calleeSaved, s'.gpr r = σ.gpr r) fun s₁ s₂ h =>
-      ⟨keep hp h.1.2.1 h.2, keep hp' h.1.2.2 (by simp only [eval] at h ⊢; rw [← h.1.1.2]; exact h.2)⟩).mono
+      ⟨keep hp h.1.2.1 h.2, keep hp' h.1.2.2.1 (by simp only [eval] at h ⊢; rw [← h.1.1.2]; exact h.2)⟩).mono
       (fun _ _ h => h) ?_
     rintro s₁' s₂' ⟨_, σ₁, σ₂, ⟨⟨⟨hr, _⟩, _⟩, _⟩, k₁, k₂⟩ r hr'
     have hc : r ∈ calleeSaved := by
@@ -148,10 +149,13 @@ theorem update_rel :
   have hp' := UPre.of _ h₀'
   obtain ⟨_, hpre⟩ := updatePre_taint
   obtain ⟨_, hpost⟩ := updatePost_taint
-  have pre := ((RelCT.taintFlags (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
+  have pre₀ := (RelCT.taintFlags (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
     (fun _ _ h => h.1 ▸ h.2 ▸ agree₀ h₀ h₀' hq) preRegs hpre).wp
     (F₁ := fun s => ∃ c, Ready s₀ c s) (F₂ := fun s => ∃ c, Ready s₀' c s) fun _ _ h =>
-      ⟨by rw [h.1]; exact updatePre_ok hp, by rw [h.2]; exact updatePre_ok hp'⟩)
+      ⟨by rw [h.1]; exact updatePre_ok hp, by rw [h.2]; exact updatePre_ok hp'⟩
+  have pre := (X86_64.RelCT.and_mx (MxDet.of_noLoad (by lit_decide))
+    (fun _ _ h => by rw [h.1, h.2]; exact hq.2.2.2.2.2.2) pre₀).mono (Q' := Mid s₀ s₀')
+    (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩
   have post := RelCT.taint (A := taint) (P := fun s₁ s₂ => ∀ r ∈ postRegs, s₁.gpr r = s₂.gpr r)
     (Taint.ofRegs postRegs) (fun _ _ h => Taint.agree_ofRegs h) hpost
   exact pre.seq ((mid_rel v h₀ h₀').seq post)

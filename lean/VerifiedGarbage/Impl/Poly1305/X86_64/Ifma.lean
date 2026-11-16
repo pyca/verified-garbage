@@ -9,7 +9,8 @@ public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 contract of `vg_poly1305_blocks`, for CPUs with AVX-512F and AVX512_IFMA
 (and AVX2, whose implementation it calls).
 
-Fewer than `minBlocks` blocks are left to `vg_poly1305_blocks_avx2`.
+Fewer than `minBlocks` blocks are left to `vg_poly1305_blocks_avx2`
+(`blocksIfma`), or to `vg_poly1305_blocks` (`blocksIfmaM`).
 Otherwise the first `8 ⌊n / 8⌋` blocks are absorbed eight at a time, in the
 eight quadwords of `zmm` registers as `vg_poly1305_blocks_avx512` absorbs
 them, and the rest (fewer than eight) by calling `vg_poly1305_blocks`.
@@ -39,9 +40,11 @@ them, and the rest (fewer than eight) by calling `vg_poly1305_blocks`.
   lanes 0 and 2 (`C₀ = r B₀ + B₁`, `C₁ = r B₂ + B₃`); lane 0 is multiplied
   by `r²` and lane 2 added to it, and the result by `r`:
   `r (r² (r B₀ + B₁) + r B₂ + B₃) = Σ_j B_j r^(4 - j)`.
-* `vpmadd52luq` and `vpmadd52huq` take secret operands: the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
-  whole call, so the code sets none of its own, as in
-  `vg_poly1305_blocks_avx2`.
+* `vpmadd52luq` and `vpmadd52huq` take secret operands: as in
+  `vg_poly1305_blocks_avx2`, the dispatcher of its caller runs
+  `vg_mcdt_enter` first (`blocksIfma`), or the vector code runs only once
+  its own call of `vg_mcdt_enter` has returned 1 (`Avx2.guard`,
+  `blocksIfmaM`).
 * The accumulator then goes to general-purpose registers as the three words
   of `vg_poly1305_blocks`, its bits from `2¹³⁰` on folded back (times 5),
   and is reduced and stored by `vg_poly1305_blocks`'s code, which uses (and
@@ -262,12 +265,18 @@ def body : Prog isa :=
       ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr))))
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks
+
+/-- The vector code, from at least `minBlocks` blocks. -/
+def big : Prog isa :=
+  .seq body (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))
+
 def avx2 : Prog isa := .call "vg_poly1305_blocks_avx2" Avx2.blocksAvx2
 
 def blocksIfma : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))])
-    (.ite .b avx2
-      (.seq body
-        (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))))
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b avx2 big)
+
+/-- `blocksIfma`, with its own call of `vg_mcdt_enter` (`Avx2.guard`). -/
+def blocksIfmaM : Prog isa :=
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b scalar (Avx2.guard big))
 
 end VG.Impl.Poly1305.X86_64.Ifma
