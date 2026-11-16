@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -32,7 +34,7 @@ open VG.Impl.AesGcmSiv.X86_64 (akO ekO skO roundsO nonceO)
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Impl.Aes.X86_64.AesNi (aes)
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcmSiv.X86_64 (add_ofNat_assoc punpck_movq writeW128_app shr1)
+open VG.Proof.AesGcmSiv.X86_64 (add_ofNat_assoc punpck_movq writeW128_app shr1 eval_ne)
 open VG.Proof.AesGcm.X86_64 (in_off ofNat_add_ofNat bytesAt_frame)
 
 /-- What `derive` writes: the keys at `W + 16`. -/
@@ -260,5 +262,100 @@ theorem derStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith),
       hf.mem, m₁, I.out, GcmSiv.halves_succ, GcmSiv.halves_succ, a0, a1, List.append_assoc]
+
+/-- `derive`: the halves of `derive_keys` at `W + 16`. -/
+theorem derive_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat}
+    {σ : State} (E : Env K W SP σ) (S : Slots W R N A D al n σ.mem) (hN : Buf K W SP σ N 12) :
+    WP isa derive σ (DInv K W SP σ R N (R / 2 - 1)) := by
+  refine WP.seq (WP.mono (derInit_ok E hR S) fun t₀ I₀ => ?_)
+  refine WP.loop (M := isa) (c := .ne) (fun m t => ∃ j, m = (R / 2 - 1) - j ∧ j < R / 2 - 1 ∧ j % 2 = 0 ∧
+    DInv K W SP σ R N j t) ?_ ((R / 2 - 1) - 0) t₀ ⟨0, rfl, by omega_arith, rfl, I₀⟩
+  rintro m t ⟨j, rfl, hj, hj2, I⟩
+  have hev : (R / 2 - 1) % 2 = 0 := by rcases hR with h | h <;> subst h <;> decide
+  refine WP.mono (derStep_ok L hR hN (by omega_arith) hj2 I) fun t' ⟨I', hz⟩ => ?_
+  by_cases he : j + 2 = R / 2 - 1
+  · left
+    refine ⟨(eval_ne hz).trans (by simp [he]), ?_⟩
+    rw [he] at I'
+    exact I'
+  · right; exact ⟨(eval_ne hz).trans (by simp [he]), (R / 2 - 1) - (j + 2), by omega_arith, j + 2, rfl, by omega_arith,
+      by omega_arith, I'⟩
+
+/-- After `derive`, the message keys: the authentication key at `W + 16`, the
+encryption key at `W + 32`. -/
+theorem DInv.keys {K W SP : Addr} {σ : State} {R : Nat} (hR : R = 10 ∨ R = 14) {N : Addr} {t : State}
+    (I : DInv K W SP σ R N (R / 2 - 1) t) :
+    Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12) =
+      (bytesAt t.mem (W + BitVec.ofNat 64 16) 16, bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R)) := by
+  have hk : Spec.GcmSiv.keyLen R / 8 + 2 = R / 2 - 1 := by unfold Spec.GcmSiv.keyLen; omega_arith
+  have hl : 8 * (R / 2 - 1) = 16 + Spec.GcmSiv.keyLen R := by unfold Spec.GcmSiv.keyLen; omega_arith
+  have e := I.out
+  rw [hl, Proof.Cmac.bytesAt_add, add_ofNat_assoc] at e
+  rw [GcmSiv.deriveKeys_eq (GcmSiv.ctxCiph_length σ.mem K R), hk, ← e,
+    List.take_left' (Proof.Cmac.bytesAt_length _ _ _), List.drop_left' (Proof.Cmac.bytesAt_length _ _ _)]
+
+/-! ## The schedule -/
+
+/-- What `expand` leaves: the schedule of the encryption key at `W + 248`. -/
+structure ExpPost (K W SP : Addr) (R : Nat) (t t' : State) : Prop where
+  env : Env K W SP t'
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+  saved : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r
+  frame : Frame [⟨W + BitVec.ofNat 64 248, 240⟩] t.mem t'.mem
+  ciph : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 248) R =
+    Spec.GcmSiv.aes (bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R))
+
+theorem expand_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14)
+    (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩) {N A D : Addr} {al n : Nat} {t : State} (E : Env K W SP t)
+    (S : Slots W R N A D al n t.mem) : WP isa expand t (ExpPost K W SP R t) := by
+  have h15 := E.r15
+  have rR := S.rounds
+  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
+  have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega_arith
+  obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
+      (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6), .alu .add .rsi (.reg .rsi),
+        .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO) t = some t₁ ∧
+      t₁.mem = t.mem ∧ t₁.gpr .rdi = W + BitVec.ofNat 64 32 ∧
+      t₁.gpr .rsi = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 248 ∧
+      (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by srun [h15, rR, rr], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rfl
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), ofNat_add_ofNat, ofNat_add_ofNat]
+      congr 1; unfold Spec.GcmSiv.keyLen; omega_arith
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
+    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+    all_goals rfl
+  have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  have hK := Proof.AesGcm.X86_64.toNat_ofNat_of_lt (n := Spec.GcmSiv.keyLen R) (by omega_arith)
+  refine WP.inline (k := Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64) Proof.Aes.X86_64.AesNi.Key.expandKey3_correct
+    (rd := [⟨W + BitVec.ofNat 64 32, Spec.GcmSiv.keyLen R⟩]) (wr := [⟨W + BitVec.ofNat 64 248, 240⟩]) ?_ ?_ ?_ ?_
+  · simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, rdi, rsi, rdx, hK, E₁.rsp]
+    exact ⟨trivial, trivial, hret.sub_right (Lay.wSub (by decide)), by omega_arith⟩
+  · rw [hrd₁, hwr₁]
+    intro a m ⟨r, hr, hc⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact Proof.AesGcm.X86_64.covers_left (E.perm.wC (d := 32) (n := Spec.GcmSiv.keyLen R) (by omega_arith)) a m
+        ⟨_, List.mem_singleton_self _, hc⟩
+    · exact Proof.AesGcm.X86_64.covers_left (E.perm.wC (d := 248) (n := 240) (by decide)) a m
+        ⟨_, List.mem_singleton_self _, hc⟩
+  · rw [hwr₁]; exact E.perm.wC (by decide)
+  · intro t₂ hrd₂ hwr₂ habi hfr hgp hpost
+    have sv : ∀ r ∈ calleeSaved, t₂.gpr r = t₁.gpr r := habi.1
+    refine ⟨E₁.of_saved sv hrd₂ hwr₂, by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁],
+      fun r hr => by rw [sv r hr, hg₁ r hr], by rw [← hm₁]; exact hfr, ?_⟩
+    have hr : Spec.Aes.rounds (Spec.GcmSiv.keyLen R / 4) = R := by
+      unfold Spec.Aes.rounds Spec.GcmSiv.keyLen; omega_arith
+    have out := hpost
+    simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, Proof.Aes.X86_64.AesNi.expandKeyX86_64,
+      State.withRegions_gpr, State.withRegions_mem, rdi, rsi, rdx, hK, hr] at out
+    rw [Spec.GcmSiv.ctxCiph, out, Spec.GcmSiv.aes, Proof.Cmac.bytesAt_length, hr, hm₁]
 
 end VG.Proof.AesGcmSivReg.X86_64
