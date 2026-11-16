@@ -27,10 +27,10 @@ Only `x0` (the first round key), `x1`, `x2` during the key loop, `x3` (the
 data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold public
 values; no address and no branch depends on anything else.
 
-`vg_aes_encrypt_blocks` is `encryptBlocksN`: one block (`n = 1`, as the
-modes whose blocks each need the one before give it) is encrypted by vector
-permutations (`Vperm.lean`), with no round key bitsliced and nothing written
-to `scratch`; any other `n` runs the bitsliced code. `vg_aes_decrypt_blocks`
+`vg_aes_encrypt_blocks` is `encryptBlocksN`: one to four blocks (one, as the
+modes whose blocks each need the one before give it) are encrypted one at a
+time by vector permutations (`Vperm.lean`), with no round key bitsliced and
+nothing written to `scratch`; any other `n` runs the bitsliced code. `vg_aes_decrypt_blocks`
 is `decryptBlocksN`, the same for decryption.
 -/
 
@@ -106,22 +106,32 @@ def decrypt4 : Prog isa :=
 def encryptBlocks : Prog isa := blocks encrypt4
 def decryptBlocks : Prog isa := blocks decrypt4
 
-/-- The block at `x2`, encrypted in place by vector permutations. -/
-def encryptOne : Prog isa :=
-  .seq (.block [.ldrq .v0 .x2 0]) (.seq Vperm.core (.block [.strq .v0 .x2 0]))
+/-- One block of `few`: the block at `x2` through `core` in place, on to
+the next, and `x0` and `x1`, which `core` writes, back from `x9` and
+`x10`. -/
+def fewBody (core : Prog isa) : Prog isa :=
+  .seq (.block [.ldrq .v0 .x2 0])
+    (.seq core (.block [.strq .v0 .x2 0, .addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1,
+      movR .x0 .x9, movR .x1 .x10]))
 
-/-- `vg_aes_encrypt_blocks`: one block by vector permutations, any other
-number of blocks bitsliced. -/
+/-- The `x3` blocks at `x2` (one at least), each through `core` (`v0 :=
+core(v0)`, the schedule at `x0`, the rounds in `x1`) in place: a few blocks
+one at a time, which costs less than a bitsliced batch. -/
+def few (core : Prog isa) : Prog isa :=
+  .seq (.block [movR .x9 .x0, movR .x10 .x1]) (.loop (fewBody core) (.nonzero .x .x3))
+
+/-- `x6 := 0` for one to four blocks (`x3`), which go one at a time: a batch
+costs more than five blocks do (measured). -/
+def isFew : List Instr := [.subImm .x .x6 .x3 1, .lsr .x .x6 .x6 2]
+
+/-- `vg_aes_encrypt_blocks`: one to four blocks by vector permutations, one
+at a time, any other number of blocks bitsliced. -/
 def encryptBlocksN : Prog isa :=
-  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne encryptBlocks)
+  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.core) encryptBlocks)
 
-/-- The block at `x2`, decrypted in place by vector permutations. -/
-def decryptOne : Prog isa :=
-  .seq (.block [.ldrq .v0 .x2 0]) (.seq Vperm.Dec.core (.block [.strq .v0 .x2 0]))
-
-/-- `vg_aes_decrypt_blocks`: one block by vector permutations, any other
-number of blocks bitsliced. -/
+/-- `vg_aes_decrypt_blocks`: one to four blocks by vector permutations, one
+at a time, any other number of blocks bitsliced. -/
 def decryptBlocksN : Prog isa :=
-  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) decryptOne decryptBlocks)
+  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.Dec.core) decryptBlocks)
 
 end VG.Impl.Aes.AArch64

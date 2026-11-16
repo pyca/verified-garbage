@@ -876,27 +876,13 @@ theorem blocks_correct {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   obtain ⟨t, s', he, h₂, h₃⟩ := WP.gprs (rs := preserved) (correct_blocks hcr hs) hregs hnc
   exact ⟨t, s', he, ⟨h₃, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
 
-/-- `encryptBlocks`: one block by the tables (`OneBlock.encryptOne_ok`), any
+/-- `encryptBlocks`: one to four blocks one at a time (`OneBlock.few_wp`), any
 other number of blocks bitsliced. -/
 theorem encryptBlocks_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s₀) :
     WP isa encryptBlocks s₀ fun s' => (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s₀ s' := by
   unfold encryptBlocks
-  let s₁ := s₀.write .x .x6 (s₀.read .x .x3 - BitVec.ofNat 64 1)
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hp₁ : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s₁ := hp
-  refine WP.ite (s₀.gpr .x3 - BitVec.ofNat 64 1 == 0)
-    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
-  · have x3 : s₀.gpr .x3 = BitVec.ofNat 64 1 := by
-      have h := BitVec.sub_add_cancel (s₀.gpr .x3) (BitVec.ofNat 64 1)
-      rw [eq_of_beq hb] at h
-      exact h.symm.trans (by decide)
-    have h3 : (s₁.gpr .x3).toNat = 1 := by
-      show (s₀.gpr .x3).toNat = 1
-      rw [x3]; rfl
-    exact WP.mono (OneBlock.encryptOne_ok hp₁ h3) fun s' h => h.2
-  · exact correct_blocks encrypt8_cryptOk hp₁
+  refine OneBlock.fewOr_wp OneBlock.enc_coreOk hp (fun s' _ hq => hq) fun s₁ hp₁ _ hpost => ?_
+  exact WP.mono (correct_blocks encrypt8_cryptOk hp₁) fun s' hq => by rw [← hpost s']; exact hq
 
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
@@ -905,27 +891,13 @@ theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Ae
     WP.gprs (rs := preserved) (encryptBlocks_wp hs) (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
-/-- `decryptBlocks`: one block by the tables (`OneBlock.decryptOne_ok`), any
+/-- `decryptBlocks`: one to four blocks one at a time (`OneBlock.few_wp`), any
 other number of blocks bitsliced. -/
 theorem decryptBlocks_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s₀) :
     WP isa decryptBlocks s₀ fun s' => (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s₀ s' := by
   unfold decryptBlocks
-  let s₁ := s₀.write .x .x6 (s₀.read .x .x3 - BitVec.ofNat 64 1)
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  have hp₁ : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s₁ := hp
-  refine WP.ite (s₀.gpr .x3 - BitVec.ofNat 64 1 == 0)
-    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
-  · have x3 : s₀.gpr .x3 = BitVec.ofNat 64 1 := by
-      have h := BitVec.sub_add_cancel (s₀.gpr .x3) (BitVec.ofNat 64 1)
-      rw [eq_of_beq hb] at h
-      exact h.symm.trans (by decide)
-    have h3 : (s₁.gpr .x3).toNat = 1 := by
-      show (s₀.gpr .x3).toNat = 1
-      rw [x3]; rfl
-    exact WP.mono (OneBlock.decryptOne_ok hp₁ h3) fun s' h => h.2
-  · exact correct_blocks decrypt8_cryptOk hp₁
+  refine OneBlock.fewOr_wp OneBlock.dec_coreOk hp (fun s' _ hq => hq) fun s₁ hp₁ _ hpost => ?_
+  exact WP.mono (correct_blocks decrypt8_cryptOk hp₁) fun s' hq => by rw [← hpost s']; exact hq
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧

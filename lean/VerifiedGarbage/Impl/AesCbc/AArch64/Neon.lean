@@ -16,7 +16,8 @@ Each group of eight blocks, or the last one to seven: the `Cⱼ` are loaded and
 deciphered into `v16`–`v23`; then, with the chaining value in `v31` (loaded
 from `iv`), each block in turn is XORed with it, its `Cⱼ`, still in the
 data, is loaded into `v31`, and the block is stored (`chainFrom`); and `v31`,
-the last `Cⱼ`, is stored to `iv`.
+the last `Cⱼ`, is stored to `iv`. One block alone (`n = 1`) is decrypted by
+vector permutations, with nothing bitsliced (`decOne`).
 
 Only the first 2048 bytes of the scratch buffer are written, and no
 callee-saved register. Only the pointers, `rounds` and `n` can affect
@@ -57,7 +58,17 @@ def whole (group : Prog isa) : Prog isa :=
     (.seq (.block keySetup)
       (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop group (.nonzero .x .x4))))
 
-/-- The code `vg_aes_cbc_decrypt_neon` runs before it wipes `scratch`. -/
-def decrypt : Prog isa := whole decGroup
+/-- One block: deciphered by vector permutations (`Vperm.Dec.core`), XORed
+with the block at `iv` into the data, and its ciphertext stored to `iv`. -/
+def decOne : Prog isa :=
+  .seq (.block [.ldrq .v0 .x3 0])
+    (.seq Impl.Aes.AArch64.Vperm.Dec.core
+      (.block [.ldrq .v1 .x2 0, veor .v0 .v0 .v1, .ldrq .v1 .x3 0, .strq .v0 .x3 0,
+        .strq .v1 .x2 0]))
+
+/-- The code `vg_aes_cbc_decrypt_neon` runs before it wipes `scratch`: one
+block by vector permutations, any other number of blocks bitsliced. -/
+def decrypt : Prog isa :=
+  .seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) decOne (whole decGroup))
 
 end VG.Impl.AesCbc.AArch64.Neon

@@ -468,9 +468,128 @@ theorem whole_wp {ch : Nat → BitVec 128} {out : Nat → Spec.Aes.State} {G : P
         wr := hk₅.wr.trans wr₂ }
     exact nGroups_ok hG hi
 
+/-- One block, by vector permutations. -/
+theorem decOne_wp {s : State} (hp : UPre s) (hN : (s.gpr .x4).toNat = 1) :
+    WP isa decOne s (NDone (chaining s) (output s) s) := by
+  have hivw : ivR s ∈ s.wr := by rw [hp.wr]; simp
+  have hdat : (⟨Dp s, 16 * 1⟩ : Region) ∈ s.wr := by
+    have : (⟨Dp s, 16 * (s.gpr .x4).toNat⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+    rwa [hN] at this
+  have dID : Region.Disjoint (ivR s) ⟨Dp s, 16 * 1⟩ := by
+    have : Region.Disjoint (ivR s) ⟨Dp s, 16 * (s.gpr .x4).toNat⟩ := hp.iv_data
+    rwa [hN] at this
+  have cD : (⟨Dp s, 16 * 1⟩ : Region).Contains (Dp s) 16 := by
+    have := Offset.contains_base (Dp s) (d := 0) (n := 16) (k := 16 * 1) (by decide) (by decide)
+    rwa [BitVec.add_zero] at this
+  unfold decOne
+  -- The block.
+  let a := s.setV .v0 (s.mem.readW (s.gpr .x3 + BitVec.ofNat 64 0) 128)
+  refine WP.seq (WP.of_runBlock ⟨a, by
+    rw [runBlock_cons, Proof.Aes.AArch64.Aese.exec_ldrq (off := 0) (by decide)
+      ⟨_, List.mem_append_right _ hdat, by rw [BitVec.add_zero]; exact cD⟩, runStep_some,
+      runBlock_nil], ?_⟩)
+  have av : a.v .v0 = s.mem.readW (Dp s) 128 := by
+    show (s.setV _ _).v .v0 = _
+    rw [v_setV_self, BitVec.add_zero]
+  -- The cipher.
+  refine WP.seq (WP.mono (Proof.Aes.AArch64.Vperm.Dec.core_ok (s := a) (K := W s) (R := R s)
+    (by show _ ∈ s.rd; rw [hp.rd]; simp) rfl (by
+      show s.gpr .x1 = _
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) hp.rounds) fun b ⟨bst, bg, bm, brd, bwr, _⟩ => ?_)
+  have b2 : b.gpr .x2 + BitVec.ofNat 64 0 = Iv s := by
+    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide)
+  have b3 : b.gpr .x3 + BitVec.ofNat 64 0 = Dp s := by
+    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide)
+  have hm : b.mem = s.mem := bm
+  have hinD : InRegions b.wr (b.gpr .x3 + BitVec.ofNat 64 0) 16 := by
+    rw [b3, bwr]; exact ⟨_, hdat, cD⟩
+  have hinI : InRegions b.wr (b.gpr .x2 + BitVec.ofNat 64 0) 16 := by
+    rw [b2, bwr]
+    exact ⟨ivR s, hivw, Region.contains_self _ _⟩
+  -- The chaining value, the data, and the block to continue from.
+  let c₁ := b.setV .v1 (b.mem.readW (b.gpr .x2 + BitVec.ofNat 64 0) 128)
+  let c₂ := c₁.setV .v0 (c₁.v .v0 ^^^ c₁.v .v1)
+  let c₃ := c₂.setV .v1 (c₂.mem.readW (c₂.gpr .x3 + BitVec.ofNat 64 0) 128)
+  let c₄ : State := { c₃ with mem := c₃.mem.write (c₃.gpr .x3 + BitVec.ofNat 64 0) 16 (c₃.v .v0) }
+  let c₅ : State := { c₄ with mem := c₄.mem.write (c₄.gpr .x2 + BitVec.ofNat 64 0) 16 (c₄.v .v1) }
+  refine WP.of_runBlock ⟨c₅, by
+    rw [runBlock_cons, Proof.Aes.AArch64.Aese.exec_ldrq (off := 0) (by decide)
+      (Proof.Aes.AArch64.Aese.inRegions_wr hinI), runStep_some, runBlock_cons,
+      show exec (veor .v0 .v0 .v1) c₁ = some c₂ from rfl, runStep_some, runBlock_cons,
+      Proof.Aes.AArch64.Aese.exec_ldrq (s := c₂) (off := 0) (by decide)
+        (Proof.Aes.AArch64.Aese.inRegions_wr hinD), runStep_some, runBlock_cons,
+      Proof.Aes.AArch64.Aese.exec_strq (s := c₃) (off := 0) (by decide) hinD, runStep_some,
+      runBlock_cons, Proof.Aes.AArch64.Aese.exec_strq (s := c₄) (off := 0) (by decide) hinI,
+      runStep_some, runBlock_nil], ?_⟩
+  have v0₂ : c₂.v .v0 = b.v .v0 ^^^ s.mem.readW (Iv s) 128 := by
+    show (c₁.setV _ _).v .v0 = _
+    rw [v_setV_self]
+    show (b.setV _ _).v .v0 ^^^ (b.setV _ _).v .v1 = _
+    rw [v_setV_of_ne _ _ (by decide), v_setV_self, b2, hm]
+  have v0₃ : c₃.v .v0 = b.v .v0 ^^^ s.mem.readW (Iv s) 128 := by
+    show (c₂.setV _ _).v .v0 = _
+    rw [v_setV_of_ne _ _ (by decide)]; exact v0₂
+  have v1₃ : c₃.v .v1 = s.mem.readW (Dp s) 128 := by
+    show (c₂.setV _ _).v .v1 = _
+    rw [v_setV_self]
+    show b.mem.readW (b.gpr .x3 + BitVec.ofNat 64 0) 128 = _
+    rw [b3, hm]
+  have m₅ : c₅.mem = (s.mem.write (Dp s) 16 (b.v .v0 ^^^ s.mem.readW (Iv s) 128)).write (Iv s) 16
+      (s.mem.readW (Dp s) 128) := by
+    show (b.mem.write (b.gpr .x3 + BitVec.ofNat 64 0) 16 (c₃.v .v0)).write
+      (b.gpr .x2 + BitVec.ofNat 64 0) 16 (c₃.v .v1) = _
+    rw [b2, b3, hm, v0₃, v1₃]
+  -- What was stored.
+  have e0 : Dp s + BitVec.ofNat 64 (16 * 0) = Dp s := by rw [Nat.mul_zero]; exact BitVec.add_zero _
+  have e0' : blk s 0 = Dp s := e0
+  have hinv : EcbInv s.mem s.mem (Dp s) 1 0 (output s) := fun i _ => by simp
+  have hs := Proof.Aes.AArch64.Aese.ecbInv_write (m₀ := s.mem) (m := s.mem) (D := Dp s) (n := 1)
+    (k := 0) (F := output s) (v := b.v .v0 ^^^ s.mem.readW (Iv s) 128) (by decide) (by decide)
+    hinv fun t ht => by
+      rw [vbyte_xor, ← VG.Proof.Aes.Vector.getD_st _ ht, bst, av,
+        show a.mem = s.mem from rfl, output, getD_ofFn ht, e0',
+        ← VG.Proof.Aes.AArch64.Neon.st_readW, show chaining s 0 = s.mem.readW (Iv s) 128 from rfl]
+  rw [e0] at hs
+  have hf : Frame [ivR s] (s.mem.write (Dp s) 16 (b.v .v0 ^^^ s.mem.readW (Iv s) 128)) c₅.mem := by
+    rw [m₅]
+    exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hc : c₅.mem.readW (Iv s) 128 = s.mem.readW (Dp s) 128 := by
+    have h : ((s.mem.write (Dp s) 16 (b.v .v0 ^^^ s.mem.readW (Iv s) 128)).write (Iv s) 16
+        (s.mem.readW (Dp s) 128)).readW (Iv s) 128 = s.mem.readW (Dp s) 128 :=
+      Mem.readW_writeW_self _ (Iv s) 16 _ (by decide)
+    rw [m₅]; exact h
+  refine ⟨?_, ?_⟩
+  · show c₅.mem.readW (Iv s) 128 = chaining s (s.gpr .x4).toNat
+    rw [hN, hc]
+    show _ = s.mem.readW (Dp s + BitVec.ofNat 64 (16 * 0)) 128
+    rw [e0]
+  · show EcbInv s.mem c₅.mem (Dp s) (s.gpr .x4).toNat (s.gpr .x4).toNat (output s)
+    rw [hN]
+    exact ecbInv_frame hf (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dID.symm) (by decide) hs.1
+
 theorem decrypt_wp {s₀ : State} (hp : UPre s₀) :
-    WP isa decrypt s₀ fun t => (cbcAArch64 false).post s₀ t :=
-  WP.mono (whole_wp hp rfl fun _ _ hi => nGroup_ok hp hi) fun _ hd => post_of_done hd
+    WP isa decrypt s₀ fun t => (cbcAArch64 false).post s₀ t := by
+  unfold decrypt
+  let s₁ := s₀.write .x .x6 (s₀.read .x .x4 - BitVec.ofNat 64 1)
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  have hp₁ : UPre s₁ := ⟨hp.rd, hp.wr, hp.sch_iv, hp.sch_data, hp.sch_scr, hp.iv_data, hp.iv_scr,
+    hp.data_scr, hp.iv_wrap, hp.data_wrap, hp.scr_wrap, hp.rounds⟩
+  have hpost : ∀ t, (cbcAArch64 false).post s₁ t = (cbcAArch64 false).post s₀ t := fun _ => rfl
+  refine WP.ite (s₀.gpr .x4 - BitVec.ofNat 64 1 == 0)
+    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
+  · have x4 : s₀.gpr .x4 = BitVec.ofNat 64 1 := by
+      have h := BitVec.sub_add_cancel (s₀.gpr .x4) (BitVec.ofNat 64 1)
+      rw [eq_of_beq hb] at h
+      exact h.symm.trans (by decide)
+    have h4 : (s₁.gpr .x4).toNat = 1 := by
+      show (s₀.gpr .x4).toNat = 1
+      rw [x4]; rfl
+    exact WP.mono (decOne_wp hp₁ h4) fun t hd => by rw [← hpost t]; exact post_of_done hd
+  · exact WP.mono (whole_wp hp₁ rfl fun _ _ hi => nGroup_ok hp₁ hi) fun t hd => by
+      rw [← hpost t]; exact post_of_done hd
 
 theorem correct (s : State) (hp : (cbcAArch64 false).pre s) :
     ∃ tr t, Exec isa decrypt s tr t ∧ abiPreserved s t ∧ (cbcAArch64 false).post s t := by

@@ -28,8 +28,9 @@ no address or branch depends on anything else.
 
 `vg_aes_ctr32_neon` is `ctr32N`, and `vg_aes_ctr32_to_neon` is `ctr32ToN`:
 as `vg_aes_ctr32` and `vg_aes_ctr32_to` do, they return at once for no block
-(`n = 0`), and encrypt one block (`n = 1`) by vector permutations (`ctr32One`,
-`ctr32OneTo`), with nothing bitsliced; `ctr32Gen` is for two blocks or more.
+(`n = 0`), and encrypt one to four blocks one at a time by vector
+permutations (`ctrFew`), with nothing bitsliced; `ctr32Gen` is for five
+blocks or more.
 -/
 
 @[expose] public section
@@ -73,15 +74,17 @@ def ctr32Gen (to : Bool) : Prog isa :=
         (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (ctrGroup to) (.nonzero .x .x4))))
       (.block ctrStore))
 
-/-- `vg_aes_ctr32_neon`: nothing for no block, one block by vector permutations,
-any other number of blocks bitsliced. -/
+/-- `vg_aes_ctr32_neon`: nothing for no block, one to four blocks by vector
+permutations, one at a time, any other number of blocks bitsliced. -/
 def ctr32N : Prog isa :=
   .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One (ctr32Gen false)))
+    (.seq (.block [.subImm .x .x6 .x4 1, .lsr .x .x6 .x6 2])
+      (.ite (.zero .x .x6) (ctrFew false) (ctr32Gen false)))
 
 /-- `vg_aes_ctr32_to_neon`: as `ctr32N`, out of place. -/
 def ctr32ToN : Prog isa :=
   .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x7 .x4 1]) (.ite (.zero .x .x7) ctr32OneTo (ctr32Gen true)))
+    (.seq (.block [.subImm .x .x7 .x4 1, .lsr .x .x7 .x7 2])
+      (.ite (.zero .x .x7) (ctrFew true) (ctr32Gen true)))
 
 end VG.Impl.Aes.AArch64.Neon

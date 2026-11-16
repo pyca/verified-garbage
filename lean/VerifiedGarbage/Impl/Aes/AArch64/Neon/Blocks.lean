@@ -41,10 +41,10 @@ Only `x0`, `x3`–`x9`, `v0`–`v7` and `v16`–`v31` are written. `x0`, `x1`,
 `x3`, `x4`, `x5`, `x7`, `kp` and `cnt` hold public values, and no address or
 branch depends on anything else.
 
-`vg_aes_encrypt_blocks_neon` is `encryptBlocks`: one block (`n = 1`) is
-encrypted by vector permutations (`Vperm.lean`), as `vg_aes_encrypt_blocks`
-does it, with nothing bitsliced; `vg_aes_decrypt_blocks_neon`
-(`decryptBlocks`) decrypts one block so.
+`vg_aes_encrypt_blocks_neon` is `encryptBlocks`: one to four blocks are
+encrypted one at a time by vector permutations (`Vperm.lean`), as
+`vg_aes_encrypt_blocks` does it, with nothing bitsliced;
+`vg_aes_decrypt_blocks_neon` (`decryptBlocks`) decrypts one to four blocks so.
 -/
 
 @[expose] public section
@@ -232,14 +232,14 @@ def blocks (crypt8 : Prog isa) : Prog isa :=
       (.seq (.block keySetup)
         (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (group crypt8) (.nonzero .x .x4)))))
 
-/-- `vg_aes_encrypt_blocks_neon`: one block by vector permutations, any
-other number of blocks bitsliced. -/
+/-- `vg_aes_encrypt_blocks_neon`: one to four blocks by vector permutations,
+one at a time, any other number of blocks bitsliced. -/
 def encryptBlocks : Prog isa :=
-  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne (blocks encrypt8))
+  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.core) (blocks encrypt8))
 
-/-- `vg_aes_decrypt_blocks_neon`: one block by vector permutations, any
-other number of blocks bitsliced. -/
+/-- `vg_aes_decrypt_blocks_neon`: one to four blocks by vector permutations,
+one at a time, any other number of blocks bitsliced. -/
 def decryptBlocks : Prog isa :=
-  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) decryptOne (blocks decrypt8))
+  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.Dec.core) (blocks decrypt8))
 
 end VG.Impl.Aes.AArch64.Neon

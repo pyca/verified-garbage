@@ -57,7 +57,7 @@ them (`encrypt8_ok`) and XORs those of the blocks left into the data
 namespace VG.Proof.Aes.AArch64.Neon
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Bitslice VG.Impl.Aes.AArch64.Neon VG.Proof.Aes
-open VG.Impl.Aes.AArch64 (ctr32One ctr32OneTo)
+open VG.Impl.Aes.AArch64 (ctrFew)
 open VG.Proof.Aes.Vector (st vbyte_readW vbyte_xor)
 open VG.Impl.Aes.AArch64.Aese (ctrs regs8 xor1 advO ctrStore outR)
 open VG.Proof.Aes.AArch64.Aese (Pre nb nr cp dp dR sch cb c0 kst op oR Post ctrVec)
@@ -629,8 +629,8 @@ theorem correct {to : Bool} {s₀ : State} (hp : PreS to s₀) (hn0 : nb s₀ �
       wr := hk₅.wr.trans wr₄ }
   exact ctrGroups_ok hp hi
 
-/-- `ctr32N`: nothing for no block, one block by the tables
-(`OneBlock.ctr32One_ok`), any other number of blocks bitsliced. -/
+/-- `ctr32N`: nothing for no block, one to four blocks one at a time by the
+tables (`OneBlock.ctrFew_wp`), any other number of blocks bitsliced. -/
 theorem ctr32N_wp {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
     WP isa ctr32N s₀ fun s' => Proof.Aes.ctr32AArch64.post s₀ s' := by
   unfold ctr32N
@@ -639,24 +639,19 @@ theorem ctr32N_wp {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
   have hn0 : (s₀.gpr .x4).toNat ≠ 0 := fun h => by
     have : s₀.gpr .x4 = 0 := BitVec.eq_of_toNat_eq h
     simp [this] at hz
-  let s₁ := s₀.write .x .x6 (s₀.read .x .x4 - BitVec.ofNat 64 1)
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  let u := s₀.write .x .x6 (s₀.read .x .x4 - BitVec.ofNat 64 1)
+  let s₁ := u.write .x .x6 (u.read .x .x6 >>> 2)
+  refine WP.seq (WP.of_runBlock ⟨s₁, by
+    rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons,
+      exec_lsr_x (by decide), runStep_some, runBlock_nil], ?_⟩)
   have hp₁ : Proof.Aes.ctr32AArch64.pre s₁ := hp
-  refine WP.ite (s₀.gpr .x4 - BitVec.ofNat 64 1 == 0)
-    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
-  · have x4 : s₀.gpr .x4 = BitVec.ofNat 64 1 := by
-      have h := BitVec.sub_add_cancel (s₀.gpr .x4) (BitVec.ofNat 64 1)
-      rw [eq_of_beq hb] at h
-      exact h.symm.trans (by decide)
-    have h4 : (s₁.gpr .x4).toNat = 1 := by
-      show (s₀.gpr .x4).toNat = 1
-      rw [x4]; rfl
-    exact WP.mono (OneBlock.ctr32One_ok hp₁ h4) fun s' h => h.2
+  have g₁ : ∀ r, r ≠ .x6 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, u, State.write, hr]
+  refine WP.ite ((s₀.gpr .x4 - BitVec.ofNat 64 1) >>> 2 == 0)
+    (by simp [AArch64.eval, State.read, s₁, u, State.write]) (fun _ => ?_) (fun _ => ?_)
+  · exact WP.mono (OneBlock.ctrFew_wp (OneBlock.prec_of hp₁) hn0) fun s' h => h.2
   · exact WP.mono (correct (preS_of hp₁) hn0) fun s' h => h
 
-/-- `ctr32ToN`: as `ctr32N`, out of place (`OneBlock.ctr32OneTo_ok`). -/
+/-- `ctr32ToN`: as `ctr32N`, out of place. -/
 theorem ctr32ToN_wp {s₀ : State} (hp : Proof.Aes.ctr32ToAArch64.pre s₀) :
     WP isa ctr32ToN s₀ fun s' => Proof.Aes.ctr32ToAArch64.post s₀ s' := by
   unfold ctr32ToN
@@ -665,21 +660,16 @@ theorem ctr32ToN_wp {s₀ : State} (hp : Proof.Aes.ctr32ToAArch64.pre s₀) :
   have hn0 : (s₀.gpr .x4).toNat ≠ 0 := fun h => by
     have : s₀.gpr .x4 = 0 := BitVec.eq_of_toNat_eq h
     simp [this] at hz
-  let s₁ := s₀.write .x .x7 (s₀.read .x .x4 - BitVec.ofNat 64 1)
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  let u := s₀.write .x .x7 (s₀.read .x .x4 - BitVec.ofNat 64 1)
+  let s₁ := u.write .x .x7 (u.read .x .x7 >>> 2)
+  refine WP.seq (WP.of_runBlock ⟨s₁, by
+    rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons,
+      exec_lsr_x (by decide), runStep_some, runBlock_nil], ?_⟩)
   have hp₁ : Proof.Aes.ctr32ToAArch64.pre s₁ := hp
-  refine WP.ite (s₀.gpr .x4 - BitVec.ofNat 64 1 == 0)
-    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
-  · have x4 : s₀.gpr .x4 = BitVec.ofNat 64 1 := by
-      have h := BitVec.sub_add_cancel (s₀.gpr .x4) (BitVec.ofNat 64 1)
-      rw [eq_of_beq hb] at h
-      exact h.symm.trans (by decide)
-    have h4 : (s₁.gpr .x4).toNat = 1 := by
-      show (s₀.gpr .x4).toNat = 1
-      rw [x4]; rfl
-    exact WP.mono (OneBlock.ctr32OneTo_ok hp₁ h4) fun s' h => h.2
+  have g₁ : ∀ r, r ≠ .x7 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, u, State.write, hr]
+  refine WP.ite ((s₀.gpr .x4 - BitVec.ofNat 64 1) >>> 2 == 0)
+    (by simp [AArch64.eval, State.read, s₁, u, State.write]) (fun _ => ?_) (fun _ => ?_)
+  · exact WP.mono (OneBlock.ctrFew_wp (OneBlock.precTo_of hp₁) hn0) fun s' h => h.2
   · exact WP.mono (correct (preSTo_of hp₁) hn0) fun s' h => h
 
 theorem ctr32N_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :

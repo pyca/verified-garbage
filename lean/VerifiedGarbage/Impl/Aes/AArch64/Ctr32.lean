@@ -33,10 +33,10 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   left), `x5` and the loop tests (`t0`) hold
   public values; no address and no branch depends on anything else.
 
-`vg_aes_ctr32` is `ctr32N`: one block (`n = 1`, as the functions that
-encrypt a block alone give it) is encrypted by vector permutations
-(`Vperm.lean`), with no round key bitsliced and nothing written to
-`scratch`; no block (`n = 0`, as AES-GCM gives it for a text with no whole
+`vg_aes_ctr32` is `ctr32N`: one to four blocks (one, as the functions that
+encrypt a block alone give it) are encrypted one at a time by vector
+permutations (`Vperm.lean`), with no round key bitsliced and nothing written
+to `scratch`; no block (`n = 0`, as AES-GCM gives it for a text with no whole
 block, or with no bytes after them) returns at once; any other `n` runs the
 bitsliced code. `vg_aes_ctr32_to` is `ctr32ToN`, the same out of place.
 -/
@@ -174,29 +174,36 @@ def ctrOneLoad : List Instr :=
   [.ldrq .v0 .x2 0, .ldr .w .x6 .x2 12, .rev32 .x6 .x6, .addImm .w .x6 .x6 1, .rev32 .x6 .x6,
     .str .w .x6 .x2 12]
 
-/-- One block: the counter block, encrypted by vector permutations, XORed
-into the block at `x3`. -/
-def ctr32One : Prog isa :=
+/-- One block of `ctrFew`: the counter block, incremented where it is,
+enciphered and XORed with the block at `x3` into the block at `x8`; on to
+the next, and `x0` and `x1`, which the cipher writes, back from `x9` and
+`x10`. -/
+def ctrFewBody : Prog isa :=
   .seq (.block ctrOneLoad)
-    (.seq Vperm.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x3 0]))
+    (.seq Vperm.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x8 0,
+      .addImm .x .x3 .x3 16, .addImm .x .x8 .x8 16, .subImm .x .x4 .x4 1, movR .x0 .x9,
+      movR .x1 .x10]))
 
-/-- One block out of place: `ctr32One` with the block at `x3` only read,
-and the result stored at the destination, kept in `x8` (the tables are
-loaded through `x6`). -/
-def ctr32OneTo : Prog isa :=
-  .seq (.block ([movR .x8 .x6] ++ ctrOneLoad))
-    (.seq Vperm.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x8 0]))
+/-- The `x4` blocks at `x3` (one at least) in counter mode, one at a time,
+into the blocks where they are, or out of place (`to`) into those at `x6`:
+a few blocks cost less so than a bitsliced batch. -/
+def ctrFew (to : Bool) : Prog isa :=
+  .seq (.block [movR .x8 (cond to .x6 .x3), movR .x9 .x0, movR .x10 .x1])
+    (.loop ctrFewBody (.nonzero .x .x4))
 
 /-- `vg_aes_ctr32`: nothing for no block (some callers have none, and the
-bitsliced code would bitslice the round keys first), one block by vector
-permutations, any other number of blocks bitsliced. -/
+bitsliced code would bitslice the round keys first), one to four blocks by
+vector permutations, one at a time (a batch costs more than five blocks do,
+measured), any other number of blocks bitsliced. -/
 def ctr32N : Prog isa :=
   .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One ctr32))
+    (.seq (.block [.subImm .x .x6 .x4 1, .lsr .x .x6 .x6 2])
+      (.ite (.zero .x .x6) (ctrFew false) ctr32))
 
 /-- `vg_aes_ctr32_to`: as `ctr32N`, out of place. -/
 def ctr32ToN : Prog isa :=
   .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x7 .x4 1]) (.ite (.zero .x .x7) ctr32OneTo ctr32To))
+    (.seq (.block [.subImm .x .x7 .x4 1, .lsr .x .x7 .x7 2])
+      (.ite (.zero .x .x7) (ctrFew true) ctr32To))
 
 end VG.Impl.Aes.AArch64
