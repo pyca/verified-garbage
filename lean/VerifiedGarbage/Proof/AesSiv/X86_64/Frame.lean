@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -41,7 +42,9 @@ Over the bitsliced AES (`Ctr32Impl.free` is `none`), the frames of `init`,
 `encrypt` and `decrypt` are mostly the working space of the functions they
 call, which AES writes, and are wiped whole on return
 (`X86_64.Scrub.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`); the
-frames of 312 bytes (`encryptRegF`, `decryptRegF`) are not wiped yet; their
+frames of 312 bytes (`encryptRegF`, `decryptRegF`) are wiped whole too, in
+the chunks `[8, 320]`, whose 16-byte stores are aligned
+(`X86_64.RScrub.withScrubAllC`); their
 postconditions read the memory on return only within the key context, or
 the data and the synthetic IV (`initOut`, `encryptOut`, `decryptOut`).
 -/
@@ -295,7 +298,8 @@ theorem decryptOut (stack : Nat) :
 
 /-- `vg_aes_siv_encrypt` over implementations of `vg_cmac_aes_update` and
 `vg_aes_ctr32` that never touch their scratch buffers: in a frame of 312
-bytes, its working space the 288 of `Lay.free`. -/
+bytes, its working space the 288 of `Lay.free`, its 328 bytes of stack wiped
+whole on return (`withScrubAllC`). -/
 def encryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : Registration Spec.Siv.encryptApi X86_64.target :=
   let r : Registration Spec.Siv.encryptApi X86_64.target := {
@@ -305,7 +309,7 @@ def encryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     stack := 328
     verified := Proof.AesSiv.encrypt_keyed (encryptF_framed v f fc)
     spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe (.inr rfl) v) }
-  r
+  VG.X86_64.RScrub.withScrubAllC r (encryptOut _) [8, 320]
 
 /-- `vg_aes_siv_encrypt` over `v`. Over implementations that need no working
 space (`v.free` and `v.ctr.free`), in the frame of 312 bytes of `encryptRegF`.
@@ -335,7 +339,7 @@ def decryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     stack := 328
     verified := Proof.AesSiv.decrypt_keyed (decryptF_framed v f fc)
     spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe (.inr rfl) v) }
-  r
+  VG.X86_64.RScrub.withScrubAllC r (decryptOut _) [8, 320]
 
 /-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
 def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target :=
