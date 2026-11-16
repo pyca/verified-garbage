@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cipher
 public import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified

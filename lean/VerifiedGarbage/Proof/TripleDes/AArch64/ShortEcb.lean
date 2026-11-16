@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -24,6 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Short
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 
 /-!
 # Triple DES-ECB on AArch64: a few blocks through the table block
