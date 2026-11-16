@@ -15,6 +15,10 @@ mod vg_aes_vperm;
 pub use vg_aes_vperm::VG_AES_VPERM;
 
 #[rustfmt::skip]
+mod vg_aes_vperm_dec;
+pub use vg_aes_vperm_dec::VG_AES_VPERM_DEC;
+
+#[rustfmt::skip]
 mod vg_blowfish_init;
 pub use vg_blowfish_init::VG_BLOWFISH_INIT;
 
