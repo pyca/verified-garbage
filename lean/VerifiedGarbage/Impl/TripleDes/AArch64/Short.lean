@@ -14,6 +14,11 @@ block on each, and any other call the batch.
 `ecb d` (schedule = x0, data = x1, n = x2, scratch = x3): the table block on
 each block of the data, in place. Its working space is the first 57 words of
 the scratch buffer, as CBC encryption's (`TablesCbc.encrypt`).
+
+`cbcDecrypt` (schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the
+decrypting table block on each ciphertext block, XORed with the chaining
+value, which is kept in the IV: the ciphertext block goes there before the
+plaintext replaces it.
 -/
 
 @[expose] public section
@@ -54,5 +59,25 @@ def ecbEncrypt : Prog isa := few .x2 (ecb .encrypt) BitsliceNeon.encrypt
 
 /-- `vg_triple_des_ecb_decrypt`. -/
 def ecbDecrypt : Prog isa := few .x2 (ecb .decrypt) BitsliceNeon.decrypt
+
+/-- The ciphertext block at `x2`, as a big-endian integer, into `x5`. -/
+def cbcLoad : List Instr := [.ldr .x .x5 .x2 0, .rev .x5 .x5]
+
+/-- `x5` XORed with the chaining value at `x1`, which the ciphertext block at
+`x2` replaces before the plaintext replaces it, and on to the next block. -/
+def cbcStore : List Instr :=
+  [.rev .x5 .x5, .ldr .x .x6 .x1 0, .logic .eor .x .x5 .x5 .x6, .ldr .x .x6 .x2 0,
+   .str .x .x6 .x1 0, .str .x .x5 .x2 0, .addImm .x .x2 .x2 8, .subImm .x .x3 .x3 1]
+
+/-- CBC decryption over the table block (schedule = x0, iv = x1, data = x2,
+n = x3, scratch = x4), the chaining value kept in the IV. -/
+def cbcDecrypt : Prog isa :=
+  .seq (.block [mov .x14 .x0, mov .x15 .x4]) <|
+  .ite (.zero .x .x3) (.block []) <|
+  .seq prep <| .seq (.loop (.seq (.block cbcLoad) (.seq dec (.block cbcStore))) (.nonzero .x .x3))
+    (.block VG.Impl.CmacTripleDes.AArch64.blockRestore)
+
+/-- `vg_triple_des_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := few .x3 cbcDecrypt VG.Impl.TripleDes.AArch64.cbcDecryptChained
 
 end VG.Impl.TripleDes.AArch64.Short

@@ -37,11 +37,8 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 value (`Proof.Modes.AArch64.cbcDecryptChained_wp`) over Triple DES's batched
 core for decryption (`batchCoreSpec`, the bitsliced batch on 128 blocks),
 with the batched modes' precondition (`batchPre`, as the IV is written too).
-`cbcDecryptChained_verified`: it is correct and constant time, by the taint
-analysis: the pointers, `n` and the stack pointer are public, and so is
-everything the code computes from them; the IV is secret.
-`cbcDecryptChained_framed` runs it with its working space on the stack,
-zeroed on return: 1120 bytes, the 140 words of the scratch buffer.
+`vg_triple_des_cbc_decrypt_chained` runs it for eleven blocks or more
+(`ShortCbc.lean`, which has its `Verified`).
 -/
 
 @[expose] public section
@@ -92,30 +89,9 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   · change _ = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
     rw [cbcBlocksAt_eq]; exact hiv
 
-theorem cbcDecryptChained_verified :
-    Verified AArch64.target cbcDecryptChained (Proof.TripleDes.cbcDecChainedScratchContract AArch64.abi 140) :=
-  Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) batchTaint_agree
-      (by taint_decide)) (by
-    sig_implies [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig,
-      Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, cbcDecAArch64, batchPre, fbPub, AArch64.abi,
-      AArch64.argRegs] [batchSat] using batchSat)
-
 theorem cbcDecFrameSat_pre : ∃ s, (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1120).pre s := by
   implies_sat [Spec.TripleDes.cbcDecryptChainedContract, Spec.TripleDes.cbcChainedSig, AArch64.abi,
     AArch64.argRegs] [fbFrameSat] using fbFrameSat
-
-/-- CBC decryption with its working space on the stack. -/
-theorem cbcDecryptChained_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 cbcDecryptChained)
-      (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1120) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 140) (post := Proof.TripleDes.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1120) cbcDecryptChained_verified
-    (by decide) (by decide) (by decide) (Proof.TripleDes.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
 /-! ## Encryption -/
 
