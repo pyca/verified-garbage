@@ -81,7 +81,7 @@ open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH)
 
 def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       extra := c.extra
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (HH h) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c)
