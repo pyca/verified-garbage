@@ -944,6 +944,40 @@ theorem blkBD_aesniPclmul_leaves : BlkLeavesD aesNiPclmulV.impl.blkB :=
     exact Blocks.decryptN_leaves (Blocks.BP.ofM hpre) _ (aesNiPclmulV.impl.ctr.free.get rfl) _
       (aesNiPclmulV.impl.gh.free.get rfl)
 
+/-- The key-context `vg_aes_gcm_decrypt_blocks_vaes_vpclmul` leaves in
+`scratch` what `blkB_vaes_leaves` says of the encryption: the arguments kept,
+the 256 bytes of its loops' copy of the powers cleared if it had at least 16
+blocks (`Stitch.dec_okL`), and nothing else written. -/
+theorem blkBD_vaes_leaves : BlkLeavesD VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.blkB :=
+  blkLeavesD_of (fun n => n - n % 16) (fun n _ d => decide (16 ≤ n) && decide (64 ≤ d) && decide (d < 320))
+    fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.name,
+          VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.code⟩
+        VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.fn (some Impl.Gcm.X86_64.Stitch.dec) false false)
+        s _
+      exact Blocks.decryptB_leaves (Blocks.BP.ofM hpre) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.free.get rfl) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.free.get rfl)
+        fun s₃ h₃ hm => Gcm.X86_64.Stitch.dec_okL h₃.base hm
+
+/-- The prepared-16 `vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul`
+leaves in `scratch` what `blkR16_vaes_leaves` says of the encryption
+(`StitchR.decR_okL`). -/
+theorem blkR16D_vaes_leaves : BlkLeavesD (blkR16 VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant) :=
+  blkLeavesD_of (fun _ => 0) (fun n S d => decide (2 ≤ n) && (decide (AlignedScratch.offset true S ≤ d) &&
+      decide (d < AlignedScratch.offset true S + 512) && Gcm.X86_64.StitchR.zeroR n (d - AlignedScratch.offset true S)))
+    fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.name,
+          VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.code⟩
+        VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchR.decR) true true
+        true false (some Impl.Gcm.X86_64.StitchR.decR)) s _
+      exact Blocks.decryptR_leaves (Blocks.BP.ofM hpre) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.free.get rfl) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.free.get rfl) (ℓ := 512) (by decide)
+        fun s₃ h₃ => Gcm.X86_64.StitchR.decR_okL h₃.toPrepared (by decide)
+
 /-! ## `vg_aes_gcm_stream_{en,de}crypt_prepared_aesni_pclmul`, without secret residue -/
 
 section
