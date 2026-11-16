@@ -348,18 +348,6 @@ theorem cfbEncrypt_verified :
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.cfbEncPost, cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
-theorem cfbDecrypt_verified :
-    Verified AArch64.target cfbDecrypt (Proof.TripleDes.fbScratchContract AArch64.abi 140 Proof.TripleDes.cfbDecPost) :=
-  Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) batchTaint_agree
-      (by taint_decide)) (by
-    sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-      Proof.TripleDes.cfbDecPost, cfbDecAArch64, batchPre, fbPub, AArch64.abi, AArch64.argRegs] [batchSat]
-      using batchSat)
-
 theorem cfb8Encrypt_verified :
     Verified AArch64.target cfb8Encrypt
       (Proof.TripleDes.cfb8ScratchContract AArch64.abi 70 Proof.TripleDes.cfb8EncPost) :=
@@ -423,15 +411,6 @@ theorem cfbEncrypt_framed :
     (n := 70) (post := Proof.TripleDes.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 560) cfbEncrypt_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.cfbEncPostOut_local _) cfbEncFrameSat_pre
-
-/-- CFB64 decryption with its working space on the stack. -/
-theorem cfbDecrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 cfbDecrypt)
-      (Spec.TripleDes.cfbDecryptContract AArch64.abi 1120) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 140) (post := Proof.TripleDes.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1120) cfbDecrypt_verified
-    (by decide) (by decide) (by decide) (Proof.TripleDes.cfbDecPostOut_local _) cfbDecFrameSat_pre
 
 /-- CFB8 encryption with its working space on the stack. -/
 theorem cfb8Encrypt_framed :

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
 
 /-!
 # Triple DES on AArch64: a few blocks, one at a time
@@ -19,6 +20,9 @@ the scratch buffer, as CBC encryption's (`TablesCbc.encrypt`).
 decrypting table block on each ciphertext block, XORed with the chaining
 value, which is kept in the IV: the ciphertext block goes there before the
 plaintext replaces it.
+
+`cfbDecrypt`, with the same arguments: the table block on the chaining
+value, XORed with the ciphertext block, which becomes the chaining value.
 -/
 
 @[expose] public section
@@ -79,5 +83,25 @@ def cbcDecrypt : Prog isa :=
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa := few .x3 cbcDecrypt VG.Impl.TripleDes.AArch64.cbcDecryptChained
+
+/-- The chaining value at `x1`, as a big-endian integer, into `x5`. -/
+def cfbLoad : List Instr := [.ldr .x .x5 .x1 0, .rev .x5 .x5]
+
+/-- The ciphertext block at `x2` to the chaining value at `x1`, and XORed
+with `x5` back to `x2`; and on to the next block. -/
+def cfbStore : List Instr :=
+  [.rev .x5 .x5, .ldr .x .x6 .x2 0, .str .x .x6 .x1 0, .logic .eor .x .x5 .x5 .x6,
+   .str .x .x5 .x2 0, .addImm .x .x2 .x2 8, .subImm .x .x3 .x3 1]
+
+/-- CFB64 decryption over the table block (schedule = x0, iv = x1, data = x2,
+n = x3, scratch = x4), the chaining value kept in the IV. -/
+def cfbDecrypt : Prog isa :=
+  .seq (.block [mov .x14 .x0, mov .x15 .x4]) <|
+  .ite (.zero .x .x3) (.block []) <|
+  .seq prep <| .seq (.loop (.seq (.block cfbLoad) (.seq enc (.block cfbStore))) (.nonzero .x .x3))
+    (.block VG.Impl.CmacTripleDes.AArch64.blockRestore)
+
+/-- `vg_triple_des_cfb64_decrypt`. -/
+def cfb64Decrypt : Prog isa := few .x3 cfbDecrypt VG.Impl.TripleDes.AArch64.cfbDecrypt
 
 end VG.Impl.TripleDes.AArch64.Short
