@@ -623,10 +623,6 @@ b 216f
 .inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0x9116c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_seed_decrypt_blocks = sym super::seed_cbc::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
+        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_seed_decrypt_blocks.rs"]
-pub(crate) mod vg_seed_decrypt_blocks;
