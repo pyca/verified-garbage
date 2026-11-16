@@ -18,12 +18,55 @@ import VerifiedGarbage.Proof.Framework.Omega
 8161 (`tabEntry_facts`), and trial division by its first 512 (or all 1024)
 entries is `obviouslyComposite` for primes of up to 1024 (or more) bits
 (`trialAny_eq`). The primes are evaluated once, as a literal
-(`primes.lit_eq`).
+(`primes.lit_eq`), from the literal of the sieve (`compMask.lit_eq`): its
+33,000 steps `m ||| 2 ^ (d * k)` are a fold over a list of the `k`, through
+the classes of `|||`, `^` and `*`, which the kernel unfolds at every step;
+`orMults` is the same fold (`multMask_eq`) by recursion on the number of
+steps, from the second multiple on, on the functions of `Nat` the kernel
+computes directly.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.RsaKeyGen
+
+/-- `multMask`'s fold over the `n` numbers from `k ≥ 2`, from the mask `m`. -/
+def orMults (d : Nat) : Nat → Nat → Nat → Nat
+  | 0, _, m => m
+  | n + 1, k, m => orMults d n (k + 1) (Nat.lor m (Nat.pow 2 (Nat.mul d k)))
+
+theorem foldl_range'_eq_orMults (d n k m : Nat) (hk : 2 ≤ k) :
+    (List.range' k n).foldl (fun m k => if 2 ≤ k then m ||| 2 ^ (d * k) else m) m = orMults d n k m := by
+  induction n generalizing k m with
+  | zero => rfl
+  | succ n ih =>
+    rw [List.range'_succ, List.foldl_cons, ih _ _ (Nat.le_succ_of_le hk), orMults]
+    exact congrArg _ (ite_eq_left hk)
+
+/-- `multMask`, by `orMults`: the multiples from the second on. -/
+def multMaskF (d : Nat) : Nat := orMults d (8162 / d - 1) 2 0
+
+theorem multMask_eq (d : Nat) : multMask d = multMaskF d := by
+  rw [multMask, List.range_eq_range', multMaskF]
+  rcases Nat.eq_zero_or_pos (8162 / d) with h | h
+  · rw [h]
+    rfl
+  · obtain ⟨K, hK⟩ : ∃ K, 8162 / d = K + 1 := ⟨_, (Nat.succ_pred_eq_of_pos h).symm⟩
+    rw [hK, List.range'_succ, List.range'_succ, List.foldl_cons, List.foldl_cons,
+      foldl_range'_eq_orMults d K 2 _ (Nat.le_refl 2)]
+    rfl
+
+/-- `compMask`, its masks by `orMults`. -/
+def compMaskF : Nat := (List.range 91).foldl (fun m d => if 2 ≤ d then m ||| multMaskF d else m) 0
+
+theorem compMask_eq : compMask = compMaskF := by
+  rw [compMask, show multMask = multMaskF from funext multMask_eq, compMaskF]
+
+materialize_value compMaskF
+
+noncomputable abbrev compMask.lit : Nat := compMaskF.lit
+
+theorem compMask.lit_eq : compMask = compMask.lit := compMask_eq.trans compMaskF.lit_eq
 
 materialize_value primes
 
