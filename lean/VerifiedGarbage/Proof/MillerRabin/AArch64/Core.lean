@@ -25,7 +25,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 def coreRanges (w : Nat) : List (Nat × Nat) :=
   tabRanges w ++ VG.Proof.RsaKeyGen.AArch64.expRanges w
 
-private theorem tab_below_exp (w : Nat) :
+theorem tab_below_exp (w : Nat) :
     ∀ r ∈ tabRanges w, r.1 + r.2 ≤ slot w aE := by
   intro r hr
   simp only [tabRanges, List.mem_cons, List.not_mem_nil, or_false] at hr

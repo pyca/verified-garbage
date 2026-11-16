@@ -316,6 +316,24 @@ theorem mrSq_ct (M : Mont) : RelCT isa (Two WW) (seqs (mrSq M.mm)) (Two WW) := b
   exact ct_app' (by simp) (by simp [eqMask, eqA]) (mmY_ct M)
     (ct_app' (by simp [eqMask, eqA]) (by simp) (eqW_ct (by decide) (by taint_decide)) flagOr_ct)
 
+/-- A window's four squarings. -/
+theorem sq4_ct (M : Mont) :
+    RelCT isa (Two WW) (seqs (mrSq M.mm ++ (mrSq M.mm ++ (mrSq M.mm ++ mrSq M.mm)))) (Two WW) :=
+  ct_app' (by simp [mrSq]) (by simp [mrSq]) (mrSq_ct M)
+    (ct_app' (by simp [mrSq]) (by simp [mrSq]) (mrSq_ct M) (ct_app' (by simp [mrSq]) (by simp [mrSq]) (mrSq_ct M)
+      (mrSq_ct M)))
+
+/-- A window after its selection: the multiplication by `[aXm]`, the
+comparisons and the flag. -/
+theorem winRest_ct (M : Mont) : RelCT isa (Two WWX)
+    (seqs (([M.mm aY aY aXm] : List (Prog isa)) ++ (eqMask aRm1 ++
+      (([.block [sth .x15 kG]] : List (Prog isa)) ++ (eqMask aR1 ++
+        ([.block winTail] : List (Prog isa))))))) fun _ _ => True := by
+  refine ct_app' (by simp) (by simp [eqMask, eqA]) (mmX_ct M) ?_
+  refine ct_app' (by simp [eqMask, eqA]) (by simp) (eqW_ct (by decide) (by taint_decide)) ?_
+  refine ct_app' (by simp) (by simp [eqMask, eqA]) kGst_ct ?_
+  exact ct_app' (by simp [eqMask, eqA]) (by simp) (eqW_ct (by decide) (by taint_decide)) winTail_ct
+
 /-- A window leaks the same in runs that agree on the working space. -/
 theorem mrWin_ct (M : Mont) : RelCT isa (Two WW) (seqs (mrWin M.mm)) fun _ _ => True := by
   rw [mrWin_eq]
