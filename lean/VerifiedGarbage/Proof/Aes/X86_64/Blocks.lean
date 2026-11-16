@@ -117,7 +117,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     WP isa (blocks crypt4) s₀ fun s' => gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 f).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, dRD, dRS, hwrap, hR⟩ := hp
   have hwD : (⟨s₀.gpr .rdx, 16 * (s₀.gpr .rcx).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : ScrIn (s₀.gpr .r8) s₀.wr := by rw [hwr]; simp
   have hrS : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   let n := (s₀.gpr .rcx).toNat
   have n16 : 16 * n < 2 ^ 64 := by
@@ -142,9 +142,9 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     fun r h1 h2 h3 h4 h5 => by rw [o₃ r h3 h4 h5, g₂, o₁ r h1 h2]
   have hb₃ : s₃.gpr sb = b := by
     rw [o₃ sb (by decide) (by decide) (by decide), g₂]; exact r9₁
-  have f₀₃ : Frame [⟨b, 2048⟩] s₀.mem s₃.mem := by
+  have f₀₃ : Frame [⟨b, 1472⟩] s₀.mem s₃.mem := by
     rw [m₃, ← m₁]
-    exact f₂.sub fun r hr => ⟨⟨b, 2048⟩, by simp, by
+    exact f₂.sub fun r hr => ⟨⟨b, 1472⟩, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
   let R := (s₀.gpr .rsi).toNat
   let w := Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) (16 * (R + 1))
@@ -185,9 +185,9 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   have rsp₅ : s₅.gpr .rsp = s₀.gpr .rsp := by
     rw [g₅ _ (by simp), g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   have hb₅ : s₅.gpr sb = b := by rw [show sb = .r9 from rfl, g₅ _ (by simp)]; exact hb₃
-  have hK0 : s₅.gpr .rdi = b + BitVec.ofNat 64 (1920 - 64 * R) := by
+  have hK0 : s₅.gpr .rdi = b + BitVec.ofNat 64 (lastKey - 64 * R) := by
     rw [rdi₅, d₄.rsi]; simp only [keyAddr, Nat.sub_zero, BitVec.sub_add_cancel]
-  have fK : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 1024, 1024⟩] s₃.mem s₅.mem :=
+  have fK : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 512, 960⟩] s₃.mem s₅.mem :=
     m₅ ▸ d₄.frame
   have hs : ESetup s₅ b D n R w :=
     { scr := by rw [wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwS
@@ -196,8 +196,8 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       sep := dDS
       rounds := hR
       keys := fun j hj => keyRel_congr (d₄.keys j hj) fun k hk => by
-        rw [m₅, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
-          1920 - 64 * (R - j) by omega_arith] }
+        rw [m₅, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show lastKey - 64 * R + 64 * j =
+          lastKey - 64 * (R - j) by omega_arith] }
   have data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) := by
     refine ecbInv_frame fK (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -255,17 +255,17 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     · exact rg₇ 4 (by omega_arith)
     · exact rg₇ 5 (by omega_arith)
   · -- The return address is untouched.
-    have fG : Frame [⟨b, 2048⟩, ⟨D, 16 * n⟩] s₀.mem s₇.mem := by
+    have fG : Frame [⟨b, 1472⟩, ⟨D, 16 * n⟩] s₀.mem s₇.mem := by
       refine ((f₀₃.mono fun r hr => by simp at hr; simp [hr]).trans ((fK.sub fun r hr => ?_).trans
         ((gd.frame.sub fun r hr => ?_).trans (fR.sub fun r hr => ?_))))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact ⟨_, by simp, scr_sub _ (by omega_arith)⟩
       · simp only [eRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact ⟨⟨b, 2048⟩, by simp, Region.sub_prefix (by omega_arith)⟩
+        · exact ⟨⟨b, 1472⟩, by simp, Region.sub_prefix (by omega_arith)⟩
         · exact ⟨⟨D, 16 * n⟩, by simp, sub_refl _⟩
       · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨b, 2048⟩, by simp, Region.sub_prefix (by omega_arith)⟩
+        exact ⟨⟨b, 1472⟩, by simp, Region.sub_prefix (by omega_arith)⟩
     refine fG.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

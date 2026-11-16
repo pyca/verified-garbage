@@ -438,12 +438,12 @@ end Store
 /-- What the group loop runs with: `s₂` is the state after the round keys
 are bitsliced, `b` the scratch buffer, `D` the data (`n` blocks). -/
 structure ESetup (s₂ : State) (b D : Addr) (n R : Nat) (w : List Byte) : Prop where
-  scr : (⟨b, 2048⟩ : Region) ∈ s₂.wr
+  scr : ScrIn b s₂.wr
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₂.wr
   hn : 16 * n < 2 ^ 64
-  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 2048⟩
+  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 1472⟩
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
+  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (lastKey - 64 * R)) R w
 
 /-- The memory a group writes: slots 0–47 and the data. -/
 abbrev eRegions (b D : Addr) (n : Nat) : List Region := [⟨b, 384⟩, ⟨D, 16 * n⟩]
@@ -460,7 +460,7 @@ structure EInv (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (m�
   rdx : s.gpr .rdx = D + BitVec.ofNat 64 (64 * g)
   r8 : s.gpr .r8 = BitVec.ofNat 64 (n - 4 * g)
   base : s.gpr sb = b
-  rdi : s.gpr .rdi = b + BitVec.ofNat 64 (1920 - 64 * R)
+  rdi : s.gpr .rdi = b + BitVec.ofNat 64 (lastKey - 64 * R)
   rsp : s.gpr .rsp = s₂.gpr .rsp
   rd : s.rd = s₂.rd
   wr : s.wr = s₂.wr
@@ -478,7 +478,7 @@ structure EDone (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (m
   data : EcbInv m₀ s.mem D n n (ecbOut f m₀ D R w)
 
 theorem ESetup.keys_disj {s₂ : State} {b D : Addr} {n R : Nat} {w : List Byte}
-    (hs : ESetup s₂ b D n R w) : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + 1024, 1024⟩ r := by
+    (hs : ESetup s₂ b D n R w) : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + 512, 960⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

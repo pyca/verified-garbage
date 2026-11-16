@@ -145,15 +145,15 @@ theorem base_sub (b : Addr) {lx ly : Nat} (h : lx ≤ ly) (hy : ly < 2 ^ 64) :
 /-- Where the loop runs: the scratch buffer at `b`, the key schedule `w`
 at `sc` (as the bytes there). -/
 structure KSetup (s₀ : State) (b sc : Addr) (R : Nat) (w : List Byte) : Prop where
-  scr : (⟨b, 2048⟩ : Region) ∈ s₀.wr
+  scr : ScrIn b s₀.wr
   base : s₀.gpr sb = b
   sch : (⟨sc, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr
-  sep : Region.Disjoint ⟨sc, 240⟩ ⟨b, 2048⟩
+  sep : Region.Disjoint ⟨sc, 240⟩ ⟨b, 1472⟩
   rounds : R ≤ 14
   w : ∀ i < 16 * (R + 1), w.getD i 0 = s₀.mem (sc + BitVec.ofNat 64 i)
 
 /-- The address of bitsliced round key `i`. -/
-abbrev keyAddr (b : Addr) (R i : Nat) : Addr := b + BitVec.ofNat 64 (1920 - 64 * (R - i))
+abbrev keyAddr (b : Addr) (R i : Nat) : Addr := b + BitVec.ofNat 64 (lastKey - 64 * (R - i))
 
 /-- Before bitslicing round key `j`. -/
 structure KInv (s₀ : State) (b sc : Addr) (R : Nat) (w : List Byte) (j : Nat) (s : State) : Prop where
@@ -164,7 +164,7 @@ structure KInv (s₀ : State) (b sc : Addr) (R : Nat) (w : List Byte) (j : Nat) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   keep : ∀ r, r ∉ keyWrites → s.gpr r = s₀.gpr r
-  frame : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 1024, 1024⟩] s₀.mem s.mem
+  frame : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 512, 960⟩] s₀.mem s.mem
   done : ∀ i, j < i → i ≤ R →
     KeyRel (fun k => s.mem.readW (wordAddr (keyAddr b R i) k) 64) (roundKey w i)
 
@@ -174,7 +174,7 @@ structure KDone (s₀ : State) (b : Addr) (R : Nat) (w : List Byte) (s : State) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   keep : ∀ r, r ∉ keyWrites → s.gpr r = s₀.gpr r
-  frame : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 1024, 1024⟩] s₀.mem s.mem
+  frame : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 512, 960⟩] s₀.mem s.mem
   keys : ∀ i ≤ R, KeyRel (fun k => s.mem.readW (wordAddr (keyAddr b R i) k) 64) (roundKey w i)
 
 theorem roundKey_getD {w : List Byte} {j i : Nat} (hi : i < 16) :
@@ -183,7 +183,7 @@ theorem roundKey_getD {w : List Byte} {j i : Nat} (hi : i < 16) :
     List.getElem?_drop]
 
 theorem frame_regions (b : Addr) : ∀ r ∈ [(⟨b + BitVec.ofNat 64 0, 384⟩ : Region),
-    ⟨b + BitVec.ofNat 64 1024, 1024⟩], Region.Sub r ⟨b + BitVec.ofNat 64 0, 2048⟩ := by
+    ⟨b + BitVec.ofNat 64 512, 960⟩], Region.Sub r ⟨b + BitVec.ofNat 64 0, 1472⟩ := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -240,7 +240,7 @@ theorem keyAddr_pred (b : Addr) {R j : Nat} (hR : R ≤ 14) (hj : 0 < j) (hjR : 
   simp only [keyAddr]
   have T := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp (show (List.range 15).all (fun R =>
       (List.range 15).all fun j => decide (j ≤ R → 0 < j →
-        1920 - 64 * (R - j) = (1920 - 64 * (R - (j - 1))) + 64)) = true by decide +kernel) R
+        lastKey - 64 * (R - j) = (lastKey - 64 * (R - (j - 1))) + 64)) = true by decide +kernel) R
       (List.mem_range.mpr (by omega_using [hR]))) j (List.mem_range.mpr (by omega_using [hR, hjR])))
   rw [T hjR hj, BitVec.ofNat_add,
     ← BitVec.add_assoc]
@@ -275,17 +275,19 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
       congr 2; rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
       congr 2; omega_arith
   -- Bitslice it.
-  have hok₁ : Ok linCfg s₁ := Ok.of_region (r := ⟨b, 2048⟩) (by rw [hwr₁, hi.wr]; exact hk.scr)
-    (by simp only [linCfg]; rw [hoth₁ sb (.inl (by decide)), hsb]) (by simp [linCfg]) (by simp [linCfg]) rfl
+  obtain ⟨sz, hsz, hsz', hscr⟩ := hk.scr
+  have hok₁ : Ok linCfg s₁ := Ok.of_region (r := ⟨b, sz⟩) (by rw [hwr₁, hi.wr]; exact hscr)
+    (by simp only [linCfg]; rw [hoth₁ sb (.inl (by decide)), hsb]) (Nat.le_trans (by simp [linCfg]) hsz)
+    (by simp [linCfg]) rfl
   obtain ⟨s₂, hs₂, hq₂, hrd₂, hwr₂, hoth₂, hfr₂⟩ := toBs_ok hok₁
   refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
   have hbs₂ := bs_of_in hq₂ hin
   -- Store it.
   have hrsi₂ : s₂.gpr .rsi = keyAddr b R j := by
     rw [hoth₂ .rsi (by decide), hoth₁ .rsi (.inl (by decide)), hi.rsi]
-  obtain ⟨s₃, hs₃, hst₃, hrd₃, hwr₃, hg₃, hfr₃⟩ := keyStore_ok (r := ⟨b, 2048⟩)
-    (off := 1920 - 64 * (R - j)) (by rw [hwr₂, hwr₁, hi.wr]; exact hk.scr) hrsi₂
-    (by simp only; omega_arith) (by simp only; omega_arith)
+  obtain ⟨s₃, hs₃, hst₃, hrd₃, hwr₃, hg₃, hfr₃⟩ := keyStore_ok (r := ⟨b, sz⟩)
+    (off := lastKey - 64 * (R - j)) (by rw [hwr₂, hwr₁, hi.wr]; exact hscr) hrsi₂
+    (by simp only [lastKey]; omega_arith) (by simp only; omega_arith)
   refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
   -- Step back.
   obtain ⟨s₄, hs₄, hrdi₄, hrsi₄, hr15₄, hcf₄, hoth₄, hm₄, hrd₄, hwr₄⟩ := keyStep_ok s₃
@@ -296,7 +298,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
     intro r hr
     obtain ⟨h1, h2, h3, h4⟩ := keyWrites_not r hr
     rw [hoth₄ r h2 h3 h4, hg₃, hoth₂ r h1.1, hoth₁ r (.inl h1.1), hi.keep r hr]
-  have hfr : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 1024, 1024⟩] s₀.mem s₄.mem := by
+  have hfr : Frame [⟨b + BitVec.ofNat 64 0, 384⟩, ⟨b + BitVec.ofNat 64 512, 960⟩] s₀.mem s₄.mem := by
     rw [hm₄]
     refine hi.frame.trans ?_
     rw [← hm₁]
@@ -307,7 +309,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
       exact base_sub b (by decide) (by decide)
     · simp only [List.mem_singleton] at hr; subst hr
       rw [hrsi₂]
-      exact Offset.sub b (by omega_arith) (by omega_arith)
+      exact Offset.sub b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
   -- The keys stored before.
   have hold : ∀ i, j < i → i ≤ R →
       KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R i) k) 64) (roundKey w i) := by
@@ -317,10 +319,10 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
     rw [hm₄, readW_off_frame hfr₃ fun r hr => ?_, readW_off_frame hfr₂ fun r hr => ?_, hm₁]
     · simp only [List.mem_singleton] at hr; subst hr
       simp only [slotRegion, linCfg, hsb₁]
-      exact Offset.disjoint_base b (by omega_arith) (by omega_arith)
+      exact Offset.disjoint_base b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
     · simp only [List.mem_singleton] at hr; subst hr
       rw [hrsi₂]
-      exact Offset.disjoint b (by omega_arith) (by omega_arith) (by omega_arith)
+      exact Offset.disjoint b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
   -- The key stored now.
   have hnew : KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R j) k) 64) (roundKey w j) :=
     keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [hm₄, ← hrsi₂, hst₃ k hk]
@@ -399,16 +401,16 @@ def hiWord (hi : BitVec 64) (c : BitVec 32) (i : Nat) : BitVec 64 :=
   hi ^^^ ((bswap32 (c + BitVec.ofNat 32 i)).setWidth 64).rotateRight 32
 
 theorem ctrBlock_ok {s : State} {b : Addr} {c : Nat} (hc : c < 4) (hb : s.gpr sb = b)
-    (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+    (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa (ctrBlock c) s = some s' ∧
       s'.gpr (q c) = cloW s.mem b ∧ s'.gpr (q (c + 4)) = hiWord (chiW s.mem b) (numW s.mem b) c ∧
       (∀ r, r ≠ q c → r ≠ q (c + 4) → r ≠ t0 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := q_ctr c hc
-  have hw' : (⟨b, 2048⟩ : Region) ∈ s.rd ++ s.wr := List.mem_append_right _ hw
-  have i432 := in_off hw' (off := 8 * 54) (n := 8) (by omega_arith) (by omega_arith)
-  have i440 := in_off hw' (off := 8 * 55) (n := 8) (by omega_arith) (by omega_arith)
-  have i448 := in_off hw' (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
+  have hw' : ScrIn b (s.rd ++ s.wr) := hw.append_right _
+  have i432 := hw'.off (off := 8 * 54) (n := 8) (by omega_arith)
+  have i440 := hw'.off (off := 8 * 55) (n := 8) (by omega_arith)
+  have i448 := hw'.off (off := 8 * 56) (n := 4) (by omega_arith)
   refine ⟨_, by
     simp (config := {decide := true}) only [ctrBlock, movS, xorR, rorI, slotAt, cLo, cHi, cNum,
       runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execAlu32, execShift, readSrc,
@@ -421,7 +423,7 @@ theorem ctrBlock_ok {s : State} {b : Addr} {c : Nat} (hc : c < 4) (hb : s.gpr sb
   simp [hiWord, chiW, numW]
 
 theorem ctrBlock_wp {s : State} {b : Addr} {c : Nat} (hc : c < 4) (hb : s.gpr sb = b)
-    (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) {P : State → Prop}
+    (hw : ScrIn b s.wr) {P : State → Prop}
     (h : ∀ s', s'.gpr (q c) = cloW s.mem b → s'.gpr (q (c + 4)) = hiWord (chiW s.mem b) (numW s.mem b) c →
       (∀ r, r ≠ q c → r ≠ q (c + 4) → r ≠ t0 → s'.gpr r = s.gpr r) →
       s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → P s') :
@@ -430,13 +432,13 @@ theorem ctrBlock_wp {s : State} {b : Addr} {c : Nat} (hc : c < 4) (hb : s.gpr sb
   WP.of_runBlock ⟨s', hs, h s' h1 h2 h3 h4 h5 h6⟩
 
 /-- `c := c + 4`. -/
-theorem ctrNext_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem ctrNext_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa [.mov32 t0 (.mem (slotAt sb cNum)), .alu32 .add t0 (.imm 4),
         .store32 (slotAt sb cNum) t0] s = some s' ∧
       s'.mem = s.mem.writeW (b + BitVec.ofNat 64 (8 * 56)) (numW s.mem b + 4) ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have i448 := in_off (List.mem_append_right s.rd hw) (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
-  have o448 := in_off hw (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
+  have i448 := (hw.append_right s.rd).off (off := 8 * 56) (n := 4) (by omega_arith)
+  have o448 := hw.off (off := 8 * 56) (n := 4) (by omega_arith)
   refine ⟨_, by
     simp (config := {decide := true}) only [slotAt, cNum, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu32, readSrc32, State.load32, State.store32, State.ea, ofInt_nat, State.setReg32,
@@ -450,7 +452,7 @@ theorem q_distinct : ∀ c < 4, ∀ d < 4, c ≠ d →
   decide
 
 /-- The four counter blocks. -/
-theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : ScrIn b s.wr) :
     WP isa (.block ctrBlocks) s fun s' =>
       (∀ c < 4, s'.gpr (q c) = cloW s.mem b ∧
         s'.gpr (q (c + 4)) = hiWord (chiW s.mem b) (numW s.mem b) c) ∧
@@ -860,11 +862,11 @@ abbrev dAddr (b : Addr) : Addr := b + BitVec.ofNat 64 (8 * dSlot)
 /-- The output pointer's slot, as a region. -/
 abbrev dRegion (b : Addr) : Region := ⟨dAddr b, 8⟩
 
-theorem dSlot_in {s : State} {b : Addr} (hscr : (⟨b, 2048⟩ : Region) ∈ s.wr) : InRegions s.wr (dAddr b) 8 :=
-  in_off hscr (by decide) (by decide)
+theorem dSlot_in {s : State} {b : Addr} (hscr : ScrIn b s.wr) : InRegions s.wr (dAddr b) 8 :=
+  hscr.off (by decide)
 
 theorem dstLoad_wp (to : Bool) {s : State} {b : Addr} (hb : s.gpr sb = b)
-    (hscr : (⟨b, 2048⟩ : Region) ∈ s.wr) {P : State → Prop}
+    (hscr : ScrIn b s.wr) {P : State → Prop}
     (h : ∀ s', (to = true → s'.gpr t1 = s.mem.readW (dAddr b) 64) → (∀ r, r ≠ t1 → s'.gpr r = s.gpr r) →
       s'.mem = s.mem → s'.xmm = s.xmm → s'.rd = s.rd → s'.wr = s.wr → P s') :
     WP isa (.block (dstLoad to)) s P := by
@@ -896,7 +898,7 @@ theorem dstAdv_wp (to : Bool) (k : Nat) {s : State} {P : State → Prop}
 
 /-- Out of place, store the output pointer to its slot. -/
 theorem dstSave_wp (to : Bool) {s : State} {b : Addr} (hb : s.gpr sb = b)
-    (hscr : (⟨b, 2048⟩ : Region) ∈ s.wr) {P : State → Prop}
+    (hscr : ScrIn b s.wr) {P : State → Prop}
     (h : ∀ s', (to = true → s'.mem.readW (dAddr b) 64 = s.gpr t1) → s'.gpr = s.gpr →
       Frame [dRegion b] s.mem s'.mem → s'.rd = s.rd → s'.wr = s.wr → P s') :
     WP isa (.block (dstSave to)) s P := by
@@ -956,7 +958,7 @@ structure XPre (to : Bool) (m₀ : Mem) (S D b : Addr) (n g : Nat) (ks : Nat →
   mode : Mode to S D n
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₃.wr
   src : (⟨S, 16 * n⟩ : Region) ∈ s₃.rd ++ s₃.wr
-  scr : (⟨b, 2048⟩ : Region) ∈ s₃.wr
+  scr : ScrIn b s₃.wr
   base : s₃.gpr sb = b
   rdx : s₃.gpr .rdx = S + BitVec.ofNat 64 (64 * g)
   slot : to = true → s₃.mem.readW (dAddr b) 64 = D + BitVec.ofNat 64 (64 * g)
@@ -1069,7 +1071,7 @@ theorem xorPhase_wp {b : Addr} {s₃ : State} (hp : XPre to m₀ S D b n g ks s�
         rw [k₄ _ (q_ne_t1 _ (by omega_arith))]; exact hp.ks c hc t ht }
   have x₀ := xs_zero (by rw [mm₄]; exact hp.data) (by rw [mm₄]; exact hp.srcInv) rfl rfl rfl rfl
   have hb₄ : s₄.gpr sb = b := (k₄ sb (by decide)).trans hp.base
-  have hscr₄ : (⟨b, 2048⟩ : Region) ∈ s₄.wr := by rw [wr₄, wr₄']; exact hp.scr
+  have hscr₄ : ScrIn b s₄.wr := by rw [wr₄, wr₄']; exact hp.scr
   -- The frame and the registers kept, from `s₃` to a state after the blocks.
   have fin : ∀ {k : Nat} {s s' : State}, XS m₀ S D n g ks s₄ k s → Frame [dRegion b] s.mem s'.mem →
       Frame [⟨D, 16 * n⟩, dRegion b] s₃.mem s'.mem := fun x f => by
@@ -1085,7 +1087,7 @@ theorem xorPhase_wp {b : Addr} {s₃ : State} (hp : XPre to m₀ S D b n g ks s�
     refine xs_step hr (k := 2) (by omega_arith) (by omega_arith) x₆ fun s₇ x₇ => ?_
     refine xs_step hr (k := 3) (by omega_arith) (by omega_arith) x₇ fun s₈ x₈ => ?_
     have hb₈ : s₈.gpr sb = b := (x₈.keep sb (by decide)).trans hb₄
-    have hscr₈ : (⟨b, 2048⟩ : Region) ∈ s₈.wr := x₈.wr ▸ hscr₄
+    have hscr₈ : ScrIn b s₈.wr := x₈.wr ▸ hscr₄
     rw [WP.block_append_iff (M := isa)]
     refine dstAdv_wp to 64 (by decide) fun s₉ a₉ o₉ m₉ rd₉ wr₉ => ?_
     refine dstSave_wp to (s := s₉) ((o₉ sb (by decide)).trans hb₈) (wr₉ ▸ hscr₈)
@@ -1163,15 +1165,15 @@ destination of the `n` blocks (`m₀`'s), the same in place, `icb` the first
 counter block. -/
 structure GSetup (to : Bool) (s₂ : State) (b S D : Addr) (n R : Nat) (w : List Byte)
     (icb : Spec.Gcm.Block) : Prop where
-  scr : (⟨b, 2048⟩ : Region) ∈ s₂.wr
+  scr : ScrIn b s₂.wr
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₂.wr
   src : (⟨S, 16 * n⟩ : Region) ∈ s₂.rd ++ s₂.wr
   hn : 16 * n < 2 ^ 64
   mode : Mode to S D n
-  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 2048⟩
-  ssep : Region.Disjoint ⟨S, 16 * n⟩ ⟨b, 2048⟩
+  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 1472⟩
+  ssep : Region.Disjoint ⟨S, 16 * n⟩ ⟨b, 1472⟩
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
+  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (lastKey - 64 * R)) R w
   lo : ∀ i < 8, ∀ j < 8, (cloW s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (15 - i) + j)
   hi : ∀ i < 4, ∀ j < 8, (chiW s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (7 - i) + j)
   hi' : ∀ p, 32 ≤ p → (chiW s₂.mem b).getLsbD p = false
@@ -1189,7 +1191,7 @@ structure GInv (to : Bool) (m₀ : Mem) (s₂ : State) (b S D : Addr) (n R : Nat
   slot : to = true → s.mem.readW (dAddr b) 64 = D + BitVec.ofNat 64 (64 * g)
   r8 : s.gpr .r8 = BitVec.ofNat 64 (n - 4 * g)
   base : s.gpr sb = b
-  rdi : s.gpr .rdi = b + BitVec.ofNat 64 (1920 - 64 * R)
+  rdi : s.gpr .rdi = b + BitVec.ofNat 64 (lastKey - 64 * R)
   rsp : s.gpr .rsp = s₂.gpr .rsp
   rd : s.rd = s₂.rd
   wr : s.wr = s₂.wr
@@ -1208,16 +1210,16 @@ structure GDone (m₀ : Mem) (s₂ : State) (b S D : Addr) (n R : Nat) (w : List
   frame : Frame (gRegions b D n) s₂.mem s.mem
   data : DataInv m₀ s.mem S D n n (keyStream R w icb)
 
-theorem scr_disj (b : Addr) {lx y ly : Nat} (h : lx ≤ y) (hy : y + ly ≤ 2048) :
+theorem scr_disj (b : Addr) {lx y ly : Nat} (h : lx ≤ y) (hy : y + ly ≤ 1472) :
     Region.Disjoint ⟨b, lx⟩ ⟨b + BitVec.ofNat 64 y, ly⟩ := Offset.base_disjoint b h (by omega_arith)
 
-theorem scr_sub (b : Addr) {x lx : Nat} (h : x + lx ≤ 2048) :
-    Region.Sub ⟨b + BitVec.ofNat 64 x, lx⟩ ⟨b, 2048⟩ := Offset.sub_base b h
+theorem scr_sub (b : Addr) {x lx : Nat} (h : x + lx ≤ 1472) :
+    Region.Sub ⟨b + BitVec.ofNat 64 x, lx⟩ ⟨b, 1472⟩ := Offset.sub_base b h
 
 theorem keysAt_frame {m m' : Mem} {b : Addr} {R : Nat} {w : List Byte} {rs : List Region}
-    (hR : R ≤ 14) (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + 1024, 1024⟩ r)
-    (h : KeysAt m (b + BitVec.ofNat 64 (1920 - 64 * R)) R w) :
-    KeysAt m' (b + BitVec.ofNat 64 (1920 - 64 * R)) R w :=
+    (hR : R ≤ 14) (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + 512, 960⟩ r)
+    (h : KeysAt m (b + BitVec.ofNat 64 (lastKey - 64 * R)) R w) :
+    KeysAt m' (b + BitVec.ofNat 64 (lastKey - 64 * R)) R w :=
   fun j hj => keyRel_congr (h j hj) fun k hk => hf.readW (key_contains _ hR hj hk) hd (by decide)
 
 theorem dataInv_frame {m₀ m m' : Mem} {S D : Addr} {n k : Nat} {ks : Nat → Byte} {rs : List Region}
@@ -1236,16 +1238,16 @@ section GSetup
 
 variable {to : Bool} {s₂ : State} {b S D : Addr} {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
 
-theorem GSetup.dat_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h : x + lx ≤ 2048) :
+theorem GSetup.dat_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h : x + lx ≤ 1472) :
     Region.Disjoint ⟨D, 16 * n⟩ ⟨b + BitVec.ofNat 64 x, lx⟩ :=
   hs.sep.sub_right (scr_sub b h)
 
-theorem GSetup.src_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h : x + lx ≤ 2048) :
+theorem GSetup.src_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h : x + lx ≤ 1472) :
     Region.Disjoint ⟨S, 16 * n⟩ ⟨b + BitVec.ofNat 64 x, lx⟩ :=
   hs.ssep.sub_right (scr_sub b h)
 
 theorem GSetup.keys_disj (hs : GSetup to s₂ b S D n R w icb) :
-    ∀ r ∈ gRegions b D n, Region.Disjoint ⟨b + 1024, 1024⟩ r := by
+    ∀ r ∈ gRegions b D n, Region.Disjoint ⟨b + 512, 960⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -1263,7 +1265,7 @@ theorem GSetup.keys_disj (hs : GSetup to s₂ b S D n R w icb) :
     bv_omega
 
 theorem GSetup.slot_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h1 : 384 ≤ x)
-    (h2 : x + lx ≤ 448 ∨ 464 ≤ x) (h3 : x + lx ≤ 2048) :
+    (h2 : x + lx ≤ 448 ∨ 464 ≤ x) (h3 : x + lx ≤ 1472) :
     ∀ r ∈ gRegions b D n, Region.Disjoint ⟨b + BitVec.ofNat 64 x, lx⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1275,7 +1277,7 @@ theorem GSetup.slot_disj (hs : GSetup to s₂ b S D n R w icb) {x lx : Nat} (h1 
 
 /-- The data invariants through a frame of the scratch buffer. -/
 theorem GSetup.inv_frame (hs : GSetup to s₂ b S D n R w icb) {m₀ m m' : Mem} {k : Nat}
-    {ks : Nat → Byte} {x lx : Nat} (h : x + lx ≤ 2048) (hf : Frame [⟨b + BitVec.ofNat 64 x, lx⟩] m m')
+    {ks : Nat → Byte} {x lx : Nat} (h : x + lx ≤ 1472) (hf : Frame [⟨b + BitVec.ofNat 64 x, lx⟩] m m')
     (hd : DataInv m₀ m S D n k ks) (hsr : SrcInv m₀ m S n k) :
     DataInv m₀ m' S D n k ks ∧ SrcInv m₀ m' S n k :=
   ⟨dataInv_frame hf (by simpa using hs.dat_disj h) hs.hn hd,
@@ -1284,7 +1286,7 @@ theorem GSetup.inv_frame (hs : GSetup to s₂ b S D n R w icb) {m₀ m m' : Mem}
 end GSetup
 
 theorem slot_read_frame {m m' : Mem} {b : Addr} {x lx : Nat} (hf : Frame [⟨b + BitVec.ofNat 64 x, lx⟩] m m')
-    (h : x + lx ≤ 456 ∨ 464 ≤ x) (h3 : x + lx ≤ 2048) : m'.readW (dAddr b) 64 = m.readW (dAddr b) 64 :=
+    (h : x + lx ≤ 456 ∨ 464 ≤ x) (h3 : x + lx ≤ 1472) : m'.readW (dAddr b) 64 = m.readW (dAddr b) 64 :=
   hf.readW (Region.contains_self _ _) (by
     simp only [List.mem_singleton, forall_eq]
     exact Offset.disjoint b (by (try simp only [dSlot]); omega_arith) (by (try simp only [dSlot]); omega_arith) (by (try simp only [dSlot]); omega_arith)) (by decide)
@@ -1298,7 +1300,7 @@ theorem group_ok {to : Bool} {m₀ : Mem} {s₂ : State} {b S D : Addr} {n R : N
       (s'.zf = some false ∧ GInv to m₀ s₂ b S D n R w icb (g + 1) s') := by
   have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
   have hn := hs.hn
-  have hscr : (⟨b, 2048⟩ : Region) ∈ s.wr := hi.wr ▸ hs.scr
+  have hscr : ScrIn b s.wr := hi.wr ▸ hs.scr
   unfold groupG
   refine WP.seq (WP.mono (ctrBlocks_wp hi.base hscr) fun s₁ ⟨hq₁, o₁, m₁, rd₁, wr₁⟩ => ?_)
   have hb₁ : s₁.gpr sb = b := (o₁ sb (by decide)).trans hi.base

@@ -289,12 +289,33 @@ open VG.Spec.Aes (roundKey subBytes shiftRows mixColumns addRoundKey cipher)
 def KeysAt (m : Mem) (K0 : Addr) (R : Nat) (w : List Byte) : Prop :=
   ∀ j ≤ R, KeyRel (fun k => m.readW (wordAddr (K0 + BitVec.ofNat 64 (64 * j)) k) 64) (roundKey w j)
 
-/-- What encryption needs: the scratch buffer (2048 bytes at `r9`) is
-writable, and the round keys are in it, the last at byte `lastKey`. -/
+/-- The scratch buffer at `b` is one of the regions `rs`: of the 1472 bytes the
+code uses (the temporaries, then the round keys, the last at byte `lastKey`),
+or more. The contracts say how many (`Proof.Aes.ctr32X86_64`, of 2048 bytes,
+and `Proof.Aes.ctr32X86_64S`, of 1472); the proofs below hold for any. -/
+def ScrIn (b : Addr) (rs : List Region) : Prop :=
+  ∃ n, 1472 ≤ n ∧ n < 2 ^ 64 ∧ (⟨b, n⟩ : Region) ∈ rs
+
+theorem ScrIn.of_mem {b : Addr} {rs : List Region} {n : Nat} (h : (⟨b, n⟩ : Region) ∈ rs)
+    (hn : 1472 ≤ n) (hl : n < 2 ^ 64) : ScrIn b rs := ⟨n, hn, hl, h⟩
+
+theorem ScrIn.append_right {b : Addr} {rs : List Region} (h : ScrIn b rs) (rd : List Region) :
+    ScrIn b (rd ++ rs) :=
+  let ⟨n, hn, hl, h⟩ := h
+  ⟨n, hn, hl, List.mem_append_right _ h⟩
+
+/-- Bytes of the scratch buffer are within the regions. -/
+theorem ScrIn.off {b : Addr} {rs : List Region} (h : ScrIn b rs) {off n : Nat} (ho : off + n ≤ 1472) :
+    InRegions rs (b + BitVec.ofNat 64 off) n :=
+  let ⟨_, hn, _, h⟩ := h
+  ⟨_, h, Offset.contains_base b (by omega_arith) (by omega_arith)⟩
+
+/-- What encryption needs: the scratch buffer (at `r9`) is writable, and
+the round keys are in it, the last at byte `lastKey`. -/
 structure EncPre (s₀ : State) (R : Nat) (w : List Byte) : Prop where
-  scr : (⟨s₀.gpr sb, 2048⟩ : Region) ∈ s₀.wr
+  scr : ScrIn (s₀.gpr sb) s₀.wr
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  k0 : s₀.gpr .rdi = s₀.gpr sb + BitVec.ofNat 64 (1920 - 64 * R)
+  k0 : s₀.gpr .rdi = s₀.gpr sb + BitVec.ofNat 64 (lastKey - 64 * R)
   keys : KeysAt s₀.mem (s₀.gpr .rdi) R w
 
 /-- What stays the same during encryption. -/
@@ -317,14 +338,15 @@ theorem Ctx.step {s₀ s s' : State} (hc : Ctx s₀ s) (hrd : s'.rd = s.rd) (hwr
   ⟨hrd.trans hc.rd, hwr.trans hc.wr, fun r h1 h2 => (hoth r h1 h2).trans (hc.keep r h1 h2),
     hc.frame.trans (by rw [← hc.base]; exact hfr)⟩
 
-theorem Ctx.linOk {s₀ s : State} (hp : (⟨s₀.gpr sb, 2048⟩ : Region) ∈ s₀.wr) (hc : Ctx s₀ s) :
+theorem Ctx.linOk {s₀ s : State} (hp : ScrIn (s₀.gpr sb) s₀.wr) (hc : Ctx s₀ s) :
     Ok linCfg s :=
-  Ok.of_region (r := ⟨s₀.gpr sb, 2048⟩) (by rw [hc.wr]; exact hp) (by simp [linCfg, hc.base])
-    (by simp [linCfg]) (by simp [linCfg]) rfl
+  let ⟨n, hn, _, hp⟩ := hp
+  Ok.of_region (r := ⟨s₀.gpr sb, n⟩) (by rw [hc.wr]; exact hp) (by simp [linCfg, hc.base])
+    (Nat.le_trans (by simp [linCfg]) hn) (by simp [linCfg]) rfl
 
 /-- The key area is outside what the layers write. -/
-theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 1024, 1024⟩ ⟨b, 384⟩ :=
-  Offset.disjoint_base (d := 1024) b (by omega_arith) (by omega_arith)
+theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 512, 960⟩ ⟨b, 384⟩ :=
+  Offset.disjoint_base (d := 512) b (by omega_arith) (by omega_arith)
 
 theorem addr3 (b : Addr) (x y z : Nat) :
     b + BitVec.ofNat 64 x + BitVec.ofNat 64 y + BitVec.ofNat 64 z = b + BitVec.ofNat 64 (x + y + z) := by
@@ -335,11 +357,11 @@ theorem off_contains (b : Addr) {base n len k : Nat} (h1 : base ≤ n) (h2 : n +
     (⟨b + BitVec.ofNat 64 base, len⟩ : Region).Contains (b + BitVec.ofNat 64 n) k := Offset.contains b h1 h2 h3
 
 theorem key_contains (b : Addr) {R j k : Nat} (hR : R ≤ 14) (hj : j ≤ R) (hk : k < 8) :
-    (⟨b + 1024, 1024⟩ : Region).Contains
-      (wordAddr (b + BitVec.ofNat 64 (1920 - 64 * R) + BitVec.ofNat 64 (64 * j)) k) (64 / 8) := by
+    (⟨b + 512, 960⟩ : Region).Contains
+      (wordAddr (b + BitVec.ofNat 64 (lastKey - 64 * R) + BitVec.ofNat 64 (64 * j)) k) (64 / 8) := by
   simp only [wordAddr]
   rw [addr3]
-  exact off_contains (base := 1024) b (by omega_arith) (by omega_arith) (by omega_arith)
+  exact off_contains (base := 512) b (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith) (by omega_arith)
 
 theorem keyRel_congr {K K' : Nat → BitVec 64} {rk : List Byte} (h : KeyRel K rk)
     (he : ∀ k < 8, K' k = K k) : KeyRel K' rk := by
@@ -356,13 +378,14 @@ theorem EncPre.keysAt {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s�
   exact hc.frame.readW (key_contains _ hR hj hk)
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact keys_disjoint _) (by decide)
 
-theorem ark_cfg_ok {s : State} {b : Addr} {n : Nat} (hscr : (⟨b, 2048⟩ : Region) ∈ s.wr)
-    (hk : s.gpr kp = b + BitVec.ofNat 64 n) (hn : n + 64 ≤ 2048) : Ok arkCfg s where
+theorem ark_cfg_ok {s : State} {b : Addr} {n : Nat} (hscr : ScrIn b s.wr)
+    (hk : s.gpr kp = b + BitVec.ofNat 64 n) (hn : n + 64 ≤ 1472) : Ok arkCfg s where
   slotIn k hk := by simp [arkCfg] at hk
   extIn k hk' := by
     simp only [arkCfg] at hk'
-    refine ⟨⟨b, 2048⟩, List.mem_append_right _ hscr, ?_⟩
-    have h := off_contains (base := 0) (n := n + 8 * k) (len := 2048) (k := 8) b (by omega_arith) (by omega_arith)
+    obtain ⟨sz, hsz, hsz', hscr⟩ := hscr
+    refine ⟨⟨b, sz⟩, List.mem_append_right _ hscr, ?_⟩
+    have h := off_contains (base := 0) (n := n + 8 * k) (len := sz) (k := 8) b (by omega_arith) (by omega_arith)
       (by omega_arith)
     simp only [BitVec.add_zero] at h
     simpa [arkCfg, wordAddr, hk, BitVec.ofNat_add, BitVec.add_assoc] using h
@@ -446,15 +469,16 @@ theorem sub_eq_zero_iff (b : Addr) {n k : Nat} (hn : n < 2 ^ 64) (hk : k < 2 ^ 6
     simpa [h] using this
 
 theorem zf_last (b : Addr) {R m : Nat} (hR : R ≤ 14) (hm : m + 1 < R) :
-    (b + BitVec.ofNat 64 (1920 - 64 * R + 64 * (m + 1)) -
+    (b + BitVec.ofNat 64 (lastKey - 64 * R + 64 * (m + 1)) -
       (b + (BitVec.ofNat 32 (lastKey - 64)).signExtend 64) == 0) = decide (m + 2 = R) := by
-  rw [show (BitVec.ofNat 32 (lastKey - 64)).signExtend 64 = BitVec.ofNat 64 1856 by decide,
-    sub_eq_zero_iff b (by omega_arith) (by omega_arith)]
+  rw [show (BitVec.ofNat 32 (lastKey - 64)).signExtend 64 = BitVec.ofNat 64 (lastKey - 64) by decide,
+    sub_eq_zero_iff b (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith)]
   simp only [decide_eq_decide]
+  unfold lastKey
   omega_arith
 
-theorem kp_off (K0 b : Addr) {R j : Nat} (hk : K0 = b + BitVec.ofNat 64 (1920 - 64 * R)) :
-    K0 + BitVec.ofNat 64 (64 * j) = b + BitVec.ofNat 64 (1920 - 64 * R + 64 * j) := by
+theorem kp_off (K0 b : Addr) {R j : Nat} (hk : K0 = b + BitVec.ofNat 64 (lastKey - 64 * R)) :
+    K0 + BitVec.ofNat 64 (64 * j) = b + BitVec.ofNat 64 (lastKey - 64 * R + 64 * j) := by
   rw [hk, BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-- A middle round. -/
@@ -480,7 +504,7 @@ theorem round_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.
   have hbs₄ := bs_mixColumns h₄ hbs₃
   have hk₄' : s₄.gpr kp = s₀.gpr .rdi + BitVec.ofNat 64 (64 * (m + 1)) := by rw [hk₄, hk₃, hk₂, hk₁]
   have hok : Ok arkCfg s₄ := ark_cfg_ok (b := s₀.gpr sb) (by rw [hc₄.wr]; exact hp.scr)
-    (by rw [hk₄', kp_off _ _ hp.k0]) (by omega_arith)
+    (by rw [hk₄', kp_off _ _ hp.k0]) (by simp only [lastKey]; omega_arith)
   have hkey : KeyRel (keyWord s₄) (roundKey w (m + 1)) := by
     have := hp.keysAt hc₄ (m + 1) (by omega_arith)
     unfold keyWord; rw [hk₄']; exact this
@@ -516,7 +540,7 @@ theorem ark_step {s₀ s : State} {R j : Nat} {w : List Byte} {T : Nat → Spec.
     (h : ∀ s', Ctx s₀ s' → s'.gpr kp = s.gpr kp → BsRel (Q s') (fun b => addRoundKey (T b) (roundKey w j)) →
       P s') : WP isa (.block addRoundKey) s P := by
   have hok : Ok arkCfg s := ark_cfg_ok (b := s₀.gpr sb) (by rw [hc.wr]; exact hp.scr)
-    (by rw [hk, kp_off _ _ hp.k0]) (by rcases hp.rounds with h | h | h <;> omega_arith)
+    (by rw [hk, kp_off _ _ hp.k0]) (by rcases hp.rounds with h | h | h <;> (simp only [lastKey]; omega_arith))
   have hkey : KeyRel (keyWord s) (roundKey w j) := by
     have := hp.keysAt hc j hj
     unfold keyWord; rw [hk]; exact this

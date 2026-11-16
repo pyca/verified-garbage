@@ -18,8 +18,10 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   buffer, the counter block in slots 54–56: bytes 0–7, bytes 8–11 (the
   high half zero) and the 32-bit counter as an integer (in the low half).
 * The final counter `inc₃₂ⁿ(CB₁)` is written first.
-* The round keys are bitsliced once, into slots `128 + 8 (j + 14 - rounds)`
-  for round `j`, so that the last is always at slot 240 (byte 1920). The
+* The round keys are bitsliced once, into slots `64 + 8 (j + 14 - rounds)`
+  for round `j`, so that the last is always at slot 176 (byte `lastKey`,
+  1408): they follow the slots below, and the code writes nothing past the
+  last, the first 1472 bytes of the scratch buffer. The
   loop runs from the last round key down, with `rounds` counting down in
   `r15`.
 * Each group of four blocks: build the counter blocks, bitslice them,
@@ -69,7 +71,7 @@ def ctrSetup : List Instr :=
    movR .rdx .rcx]
 
 /-- The byte offset of the last round key in the scratch buffer. -/
-def lastKey : Nat := 1920
+def lastKey : Nat := 1408
 
 /-- Set up the key loop: `r15 := rounds`, `rdi := schedule + 16 rounds`,
 `rsi := r9 + lastKey`. -/

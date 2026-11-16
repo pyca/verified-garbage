@@ -161,7 +161,7 @@ section
 variable {s₀ : State} {R : Nat} {w : List Byte}
 
 /-- The scratch buffer. -/
-abbrev scr (s₀ : State) : Region := ⟨s₀.gpr .r9, 2048⟩
+abbrev scr (s₀ : State) : Region := ⟨s₀.gpr .r9, 1472⟩
 
 theorem Ctx.scr {s : State} (hp : EncPre s₀ R w) (hc : Ctx s₀ s) : scr s₀ ∈ s.wr := by
   rw [hc.wr]; exact hp.scr
@@ -410,13 +410,13 @@ open VG.X86_64.RegUpd (xmm_setXmm_self xmm_setXmm_of_ne)
 /-! ## The counter words -/
 
 theorem ctrWord_ok {s : State} {b : Addr} {r : Reg} (i : Nat) (hr : r ≠ sb) (hb : s.gpr sb = b)
-    (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+    (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa (ctrWord r i) s = some s' ∧
       s'.gpr r = hiWord (chiW s.mem b) (numW s.mem b) i ∧ (∀ r', r' ≠ r → s'.gpr r' = s.gpr r') ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm := by
-  have hw' : (⟨b, 2048⟩ : Region) ∈ s.rd ++ s.wr := List.mem_append_right _ hw
-  have i440 := in_off hw' (off := 8 * 55) (n := 8) (by omega_arith) (by omega_arith)
-  have i448 := in_off hw' (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
+  have hw' : ScrIn b (s.rd ++ s.wr) := hw.append_right _
+  have i440 := hw'.off (off := 8 * 55) (n := 8) (by omega_arith)
+  have i448 := hw'.off (off := 8 * 56) (n := 4) (by omega_arith)
   refine ⟨_, by
     simp only [ctrWord, show 1 ≤ 32 ∧ 32 ≤ 63 by decide, and_self, ↓reduceIte, Nat.reduceMul, slotAt, cHi, cNum,
       runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execAlu32, execShift, readSrc,
@@ -452,10 +452,10 @@ theorem qword_dup (v : BitVec 64) {l : Nat} (hl : l < 2) :
     qword (qword ((0 : BitVec 64) ++ v) 0 ++ qword ((0 : BitVec 64) ++ v) 0) l = v := by
   rw [qword_app _ _ hl, qword_app _ _ (by decide)]; split <;> rfl
 
-theorem ctrLo_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem ctrLo_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa ctrLo s = some s' ∧ (∀ c < 4, ∀ l < 2, QX s' l c = cloW s.mem b) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have i432 := in_off (List.mem_append_right s.rd hw) (off := 8 * 54) (n := 8) (by omega_arith) (by omega_arith)
+  have i432 := (hw.append_right s.rd).off (off := 8 * 54) (n := 8) (by omega_arith)
   refine ⟨_, by
     simp only [ctrLo, slotAt, cLo, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
       State.load64, State.ea, ofInt_nat, hb, i432, ite_true, Option.map_some, XOp.exec, bin, mova]
@@ -480,7 +480,7 @@ theorem q_ne_ta' : ∀ i < 8, q i ≠ ta := by decide
 theorem q_inj' : ∀ i < 8, ∀ j < 8, q i = q j → i = j := by decide
 
 theorem ctrPair_wp {s : State} {b : Addr} {i : Nat} (hi : i < 4) (hb : s.gpr sb = b)
-    (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) {P : State → Prop}
+    (hw : ScrIn b s.wr) {P : State → Prop}
     (h : ∀ s', (∀ l < 2, QX s' l (i + 4) = hiWord (chiW s.mem b) (numW s.mem b) (i + 4 * l)) →
       (∀ j < 8, j ≠ i + 4 → ∀ l, QX s' l j = QX s l j) →
       (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
@@ -518,12 +518,12 @@ theorem ctrPair_wp {s : State} {b : Addr} {i : Nat} (hi : i < 4) (hb : s.gpr sb 
 
 
 /-- `c := c + 8`. -/
-theorem ctrNext_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem ctrNext_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa ctrNext s = some s' ∧
       s'.mem = s.mem.writeW (b + BitVec.ofNat 64 (8 * 56)) (numW s.mem b + 8) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm := by
-  have i448 := in_off (List.mem_append_right s.rd hw) (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
-  have o448 := in_off hw (off := 8 * 56) (n := 4) (by omega_arith) (by omega_arith)
+  have i448 := (hw.append_right s.rd).off (off := 8 * 56) (n := 4) (by omega_arith)
+  have o448 := hw.off (off := 8 * 56) (n := 4) (by omega_arith)
   refine ⟨_, by
     simp only [ctrNext, show ¬ (sb = Reg.rax) by decide, ↓reduceIte, Nat.reduceMul, slotAt, cNum, runBlock_cons, runStep_some, runBlock_nil,
       reduceExec, execAlu32, readSrc32, State.load32, State.store32, State.ea, ofInt_nat, State.setReg32,
@@ -533,7 +533,7 @@ theorem ctrNext_ok {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048�
   exact ⟨rfl, fun r hr => by simp [hr], rfl, rfl, rfl⟩
 
 /-- The eight counter blocks. -/
-theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : ScrIn b s.wr) :
     WP isa (.block ctrBlocks) s fun s' =>
       (∀ c < 4, ∀ l < 2, QX s' l c = cloW s.mem b ∧
         QX s' l (c + 4) = hiWord (chiW s.mem b) (numW s.mem b) (c + 4 * l)) ∧
@@ -747,7 +747,7 @@ structure XPre8 (to : Bool) (m₀ : Mem) (S D b : Addr) (n g : Nat) (ks : Nat �
   mode : Mode to S D n
   dat : (⟨D, 16 * n⟩ : Region) ∈ s₃.wr
   src : (⟨S, 16 * n⟩ : Region) ∈ s₃.rd ++ s₃.wr
-  scr : (⟨b, 2048⟩ : Region) ∈ s₃.wr
+  scr : ScrIn b s₃.wr
   base : s₃.gpr sb = b
   rdx : s₃.gpr .rdx = S + BitVec.ofNat 64 (64 * g)
   slot : to = true → s₃.mem.readW (dAddr b) 64 = D + BitVec.ofNat 64 (64 * g)
@@ -880,7 +880,7 @@ theorem xorPhase8_wp {b : Addr} {s₃ : State} (hp : XPre8 to m₀ S D b n g ks 
     ⟨by rw [mm₄, Nat.add_zero]; exact hp.data, by rw [mm₄, Nat.add_zero]; exact hp.srcInv,
       Frame.refl _ _, rfl, fun _ _ _ => rfl, rfl, rfl⟩
   have hb₄ : s₄.gpr sb = b := (k₄ sb (by decide)).trans hp.base
-  have hscr₄ : (⟨b, 2048⟩ : Region) ∈ s₄.wr := by rw [wr₄, wr₄']; exact hp.scr
+  have hscr₄ : ScrIn b s₄.wr := by rw [wr₄, wr₄']; exact hp.scr
   have fin : ∀ {k : Nat} {s s' : State}, XS8 m₀ S D n g ks s₄ k s → Frame [dRegion b] s.mem s'.mem →
       Frame [⟨D, 16 * n⟩, dRegion b] s₃.mem s'.mem := fun x f => by
     rw [← mm₄]
@@ -1034,7 +1034,7 @@ theorem sseGroup_ok {to : Bool} {m₀ : Mem} {s₂ : State} {b S D : Addr} {n R 
       (s'.zf = some false ∧ GInv to m₀ s₂ b S D n R w icb (g + 2) s') := by
   have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
   have hn := hs.hn
-  have hscr : (⟨b, 2048⟩ : Region) ∈ s.wr := hi.wr ▸ hs.scr
+  have hscr : ScrIn b s.wr := hi.wr ▸ hs.scr
   unfold sseGroupG
   refine WP.seq ?_
   rw [WP.block_append_iff (M := isa)]
@@ -1168,12 +1168,12 @@ theorem srSetup_eq : srSetup =
     (mkMask t0 0xFFFF0000FFFF0000 ++ ([.movdquStore (at_ .r9 (srOff + 16 * 0)) t0] : List Instr)) ++
     (mkMask t0 0xFFFFFFFF00000000 ++ ([.movdquStore (at_ .r9 (srOff + 16 * 1)) t0] : List Instr)) := rfl
 
-theorem srSetup_ok {s : State} {b : Addr} (hb : s.gpr .r9 = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
+theorem srSetup_ok {s : State} {b : Addr} (hb : s.gpr .r9 = b) (hw : ScrIn b s.wr) :
     ∃ s', runBlock isa srSetup s = some s' ∧ MasksAt s'.mem b ∧
       Frame [⟨b + BitVec.ofNat 64 srOff, 32⟩] s.mem s'.mem ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have o0 := in_off hw (off := srOff + 16 * 0) (n := 16) (by simp [srOff]) (by omega_arith)
-  have o1 := in_off hw (off := srOff + 16 * 1) (n := 16) (by simp [srOff]) (by omega_arith)
+  have o0 := hw.off (off := srOff + 16 * 0) (n := 16) (by simp [srOff])
+  have o1 := hw.off (off := srOff + 16 * 1) (n := 16) (by simp [srOff])
   obtain ⟨s₁, h₁, m₁, g₁, rd₁, wr₁⟩ := maskStore_ok 0 0xFFFF0000FFFF0000 hb o0
   obtain ⟨s₂, h₂, m₂, g₂, rd₂, wr₂⟩ := maskStore_ok (s := s₁) 1 0xFFFFFFFF00000000
     ((g₁ _ (by decide)).trans hb) (wr₁ ▸ o1)
