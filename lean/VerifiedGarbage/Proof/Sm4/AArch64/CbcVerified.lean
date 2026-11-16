@@ -77,19 +77,19 @@ theorem invCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .decrypt).toBlock r
 /-- `few7` runs one of its two programs, from a state that differs in `x13`. -/
 theorem few7_wp {n : Reg} {short long : Prog isa} {s₀ : State} {Q : State → Prop}
     (h : ∀ s₁, (∀ r, r ≠ .x13 → s₁.gpr r = s₀.gpr r) → s₁.mem = s₀.mem → s₁.rd = s₀.rd → s₁.wr = s₀.wr →
-      s₁.sp = s₀.sp → WP isa short s₁ Q ∧ WP isa long s₁ Q) : WP isa (few7 n short long) s₀ Q := by
+      s₁.sp = s₀.sp → (∀ r ∈ VG.AArch64.preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) →
+      WP isa short s₁ Q ∧ WP isa long s₁ Q) : WP isa (few7 n short long) s₀ Q := by
   obtain ⟨sₐ, eₐ, _, gₐ, mₐ, rdₐ, wrₐ⟩ := Modes.AArch64.addImm_ok s₀ .x13 n (v := 1) (by decide)
   obtain ⟨s₁, e', _, g', m', rd', wr'⟩ := Modes.AArch64.lsr_ok sₐ .x13 .x13 (sh := 3) (by decide)
   have e₁ : runBlock isa [.addImm .x .x13 n 1, .lsr .x .x13 .x13 3] s₀ = some s₁ := by
     rw [show ([.addImm .x .x13 n 1, .lsr .x .x13 .x13 3] : List Instr) =
       [.addImm .x .x13 n 1] ++ [.lsr .x .x13 .x13 3] from rfl, Modes.AArch64.runBlock_app, eₐ,
       Option.bind_some, e']
-  have sp₁ : s₁.sp = s₀.sp := by
-    obtain ⟨t, s'', he, rfl⟩ := (WP.of_runBlock ⟨s₁, e₁, rfl⟩ :
-      WP isa (.block [.addImm .x .x13 n 1, .lsr .x .x13 .x13 3]) s₀ fun s' => s' = s₁)
-    exact Exec.sp he
+  obtain ⟨t, s'', he, h''⟩ := (WP.of_runBlock ⟨s₁, e₁, rfl⟩ :
+    WP isa (.block [.addImm .x .x13 n 1, .lsr .x .x13 .x13 3]) s₀ fun s' => s' = s₁)
+  rw [h''] at he
   obtain ⟨hs, hl⟩ := h s₁ (fun r hr => (g' r hr).trans (gₐ r hr)) (m'.trans mₐ) (rd'.trans rdₐ)
-    (wr'.trans wrₐ) sp₁
+    (wr'.trans wrₐ) (Exec.sp he) (Exec.preservedV he rfl)
   unfold few7
   exact WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.ite _ rfl (fun _ => hs) (fun _ => hl)⟩)
 
@@ -137,7 +137,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
   have hsv : ∀ i < 10, Impl.Modes.AArch64.Core.savedRegs.getD i .x19 ≠ .x13 := by decide
-  refine few7_wp fun s₁ g₁ m₁ rd₁ wr₁ _ => ?_
+  refine few7_wp fun s₁ g₁ m₁ rd₁ wr₁ _ _ => ?_
   have hp₁ : cbcDecAArch64.pre s₁ := by
     simpa only [cbcDecAArch64, fbPre, blkLen, m₁, rd₁, wr₁, g₁ .x0 (by decide), g₁ .x1 (by decide),
       g₁ .x2 (by decide), g₁ .x3 (by decide), g₁ .x4 (by decide)] using hp

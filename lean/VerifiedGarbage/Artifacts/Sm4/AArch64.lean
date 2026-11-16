@@ -32,10 +32,10 @@ def artifacts : List Artifact := [
     code := Impl.Sm4.AArch64.Sm4e.ecb .decrypt
     verified := Proof.Sm4.AArch64.Sm4e.ecb_verified .decrypt },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.Sm4.AArch64.ecbCall .encrypt Proof.Sm4.AArch64.ecbAnyFramed
-    verified := Proof.Sm4.AArch64.ecbCall_verified .encrypt },
+    code := Impl.Sm4.AArch64.ecbFew .encrypt Proof.Sm4.AArch64.ecbAnyFramed
+    verified := Proof.Sm4.AArch64.ecbFew_verified .encrypt },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.Sm4.AArch64.ecbCall .decrypt Proof.Sm4.AArch64.ecbAnyFramed
-    verified := Proof.Sm4.AArch64.ecbCall_verified .decrypt }]
+    code := Impl.Sm4.AArch64.ecbFew .decrypt Proof.Sm4.AArch64.ecbAnyFramed
+    verified := Proof.Sm4.AArch64.ecbFew_verified .decrypt }]
 
 end VG.Artifacts.Sm4.AArch64
