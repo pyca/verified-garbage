@@ -56,6 +56,7 @@ theorem p224u_ok : CfgOk (p224With true) where
   fp := p224_ok.fp
   fn := p224_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP224U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP224U_noFrames
 
 /-- Either configuration. -/
 theorem p224With_ok (u : Bool) : CfgOk (p224With u) := by

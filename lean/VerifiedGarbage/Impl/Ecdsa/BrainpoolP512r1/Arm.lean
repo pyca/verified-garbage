@@ -31,4 +31,13 @@ def mulBrainpoolP512r1 : Prog isa := mulBrainpoolP512r1With false
 /-- `vg_brainpoolp512r1_mul_umaal`. -/
 def mulBrainpoolP512r1U : Prog isa := mulBrainpoolP512r1With true
 
+/-- `vg_brainpoolp512r1_mul_public`, or with `u` `vg_brainpoolp512r1_mul_public_umaal`. -/
+def mulPubBrainpoolP512r1With (u : Bool) : Prog isa := (brainpoolp512r1With u).pubFn
+
+/-- `vg_brainpoolp512r1_mul_public`. -/
+def mulPubBrainpoolP512r1 : Prog isa := mulPubBrainpoolP512r1With false
+
+/-- `vg_brainpoolp512r1_mul_public_umaal`. -/
+def mulPubBrainpoolP512r1U : Prog isa := mulPubBrainpoolP512r1With true
+
 end VG.Impl.Ecdsa.Arm

@@ -4664,7 +4664,7 @@ ldr r4, [r12, #2876]
 str r4, [r12, #1084]
 mov r10, lr
 mov r0, r12
-bl {vg_brainpoolp512r1_mul}
+bl {vg_brainpoolp512r1_mul_public}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -5322,7 +5322,7 @@ bx lr",
         vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
         vg_brainpoolp512r1_sub_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p::vg_brainpoolp512r1_sub_mod_p,
         vg_brainpoolp512r1_mul_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,
-        vg_brainpoolp512r1_mul = sym super::ecdh_brainpoolp512r1::vg_brainpoolp512r1_mul::vg_brainpoolp512r1_mul,
+        vg_brainpoolp512r1_mul_public = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_public::vg_brainpoolp512r1_mul_public,
         vg_brainpoolp512r1_sub_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_n::vg_brainpoolp512r1_sub_mod_n,
         VG_BRAINPOOLP512R1_COMB = sym super::consts::VG_BRAINPOOLP512R1_COMB,
     )
@@ -9995,7 +9995,7 @@ ldr r4, [r12, #2876]
 str r4, [r12, #1084]
 mov r10, lr
 mov r0, r12
-bl {vg_brainpoolp512r1_mul_umaal}
+bl {vg_brainpoolp512r1_mul_public_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10653,7 +10653,7 @@ bx lr",
         vg_brainpoolp512r1_add_mod_p_umaal = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p_umaal::vg_brainpoolp512r1_add_mod_p_umaal,
         vg_brainpoolp512r1_sub_mod_p_umaal = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p_umaal::vg_brainpoolp512r1_sub_mod_p_umaal,
         vg_brainpoolp512r1_mul_mod_n_umaal = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n_umaal::vg_brainpoolp512r1_mul_mod_n_umaal,
-        vg_brainpoolp512r1_mul_umaal = sym super::ecdh_brainpoolp512r1::vg_brainpoolp512r1_mul_umaal::vg_brainpoolp512r1_mul_umaal,
+        vg_brainpoolp512r1_mul_public_umaal = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_public_umaal::vg_brainpoolp512r1_mul_public_umaal,
         vg_brainpoolp512r1_sub_mod_n_umaal = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_n_umaal::vg_brainpoolp512r1_sub_mod_n_umaal,
         VG_BRAINPOOLP512R1_COMB = sym super::consts::VG_BRAINPOOLP512R1_COMB,
     )
@@ -12870,6 +12870,14 @@ pub(crate) mod vg_brainpoolp512r1_mul_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_mul_mod_n_umaal.rs"]
 pub(crate) mod vg_brainpoolp512r1_mul_mod_n_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_mul_public.rs"]
+pub(crate) mod vg_brainpoolp512r1_mul_public;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_mul_public_umaal.rs"]
+pub(crate) mod vg_brainpoolp512r1_mul_public_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_sub_mod_n.rs"]

@@ -30,4 +30,13 @@ def mulP256 : Prog isa := mulP256With false
 /-- `vg_p256_mul_umaal`. -/
 def mulP256U : Prog isa := mulP256With true
 
+/-- `vg_p256_mul_public`, or with `u` `vg_p256_mul_public_umaal`. -/
+def mulPubP256With (u : Bool) : Prog isa := (p256With u).pubFn
+
+/-- `vg_p256_mul_public`. -/
+def mulPubP256 : Prog isa := mulPubP256With false
+
+/-- `vg_p256_mul_public_umaal`. -/
+def mulPubP256U : Prog isa := mulPubP256With true
+
 end VG.Impl.Ecdsa.Arm

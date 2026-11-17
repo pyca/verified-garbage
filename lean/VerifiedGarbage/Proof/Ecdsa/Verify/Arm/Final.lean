@@ -630,6 +630,112 @@ theorem acc_pt_ptsW {i : Nat} (hl : i ∉ ptsW) : i ∉ [ACC, PT] := fun h => hl
 
 theorem k_ptsW {i : Nat} (hl : i ∉ ptsW) : i ≠ K := fun h => hl (by rw [h]; decide)
 
+/-- What `[v]Q`'s multiplication finds, after `pointsWith`'s start from `s`:
+the key's point `P` at `PX`, `PY`, below `p`, and `v` at `K`'s slot. -/
+structure PtsCall (c : Cfg) (s₀ : State) (base : Addr) (P : Point c.C) (s s₄ : State) : Prop where
+  scr : Scr s₄ base size
+  far : Far s₄ base 8192
+  fixed : Fixed c base s₀.gpr s₄.mem
+  px_lt : sv c base s₄ PX < c.C.p
+  py_lt : sv c base s₄ PY < c.C.p
+  rep : Rep c.C (tmv c.C c.n base s₄ (c.sl PX)) (tmv c.C c.n base s₄ (c.sl PY)) 1 P
+  k : c.mul.isSome → sv c base s₄ K = sv c base s V
+
+/-- `pointsWith` up to `[v]Q`'s multiplication, as `pointsWith_ok` has it:
+what follows finds `PtsCall`. -/
+theorem pointsHead_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
+    (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    {a0₁ : Bool} (hMul : GeneratorWP c generator s₀ base (sv c base s U) Q₁ s.syms a0₁)
+    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁ a0₁) (hO₁ : Q₁ (8 * c.C.len) 0 1 0)
+    {P : Point c.C} (hQP : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s₄, PtsCall c s₀ base P s s₄ → WP isa rest s₄ Q) :
+    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.scalarAt c U) (.seq generator
+      (.seq (.block (Impl.Ecdsa.Verify.Arm.Cfg.save c))
+        (.seq (Impl.Ecdsa.Verify.Arm.Cfg.scalarAt c V) rest)))) s Q := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hM.scr.nowrap
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have F := hM.fixed
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  -- `u` to where `[u]G` reads it.
+  refine WP.seq (WP.mono_syms (scalarAt_ok hc hM.scr hM.far (i := U) (by decide) (by decide))
+    fun s₁ ⟨k₁, U₁, kk₁, b₁⟩ syms₁ => ?_)
+  obtain hs₁ := hM.scr.of_rest k₁ (by decide)
+  obtain hf₁ := hM.far.of_rest k₁
+  obtain F₁ := F.unch h7 hn (fixedOk_scW h7) U₁
+  obtain v₁ : ∀ {i}, i < 45 → i ≠ K → sv c base s₁ i = sv c base s i := fun hi hiK =>
+    sv_unch U₁ h7 hn hi (apart_scW h7 hi hiK)
+  -- `[u]G`.
+  obtain hlt₁ : ∀ x ∈ ladR c.ladderCfg, wordsVal s₁.mem base x c.MP'.n < c.C.p := by
+    intro x hx
+    have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    show sv c base s₁ i < c.C.p
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact lt_of_eq_of_lt F₁.ap (hmont _)
+    · exact lt_of_eq_of_lt F₁.b3p (hmont _)
+    · exact lt_of_eq_of_lt F₁.gx (hmont _)
+    · exact lt_of_eq_of_lt F₁.gy (hmont _)
+    · exact lt_of_eq_of_lt F₁.onep (Nat.mod_lt _ (by omega_arith))
+    · rw [v₁ (by decide) (by decide), hM.rx]; omega_arith
+    · rw [v₁ (by decide) (by decide), hM.ry]; exact hmont _
+    · rw [v₁ (by decide) (by decide), hM.rz]; omega_arith
+  obtain tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+    fun hi hiK => by
+      show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _)
+      rw [v₁ hi hiK]
+  obtain hR₁ : Q₁ c.ladderCfg.nbits (tmv c.C c.n base s₁ (c.sl RX)) (tmv c.C c.n base s₁ (c.sl RY))
+      (tmv c.C c.n base s₁ (c.sl RZ)) := by
+    show Q₁ (8 * c.C.len) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
+    rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide), hM.rx, hM.ry,
+      hM.rz, toM_cmont hc, toM_zero]
+    exact hO₁
+  refine WP.seq (WP.mono (hMul s₁ hs₁ hf₁ F₁ hlt₁
+    (Step.congr hstep₁ (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide))
+      (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide))) hR₁
+    (by rw [v₁ (by decide) (by decide), hM.rx]) (by rw [v₁ (by decide) (by decide), hM.ry])
+    (by rw [v₁ (by decide) (by decide), hM.rz]) b₁ kk₁
+    (hM.rest.trans (k₁.mono (by simp [work])))
+    (whole_of' hM.unch U₁ (scW_le h7))
+    syms₁)
+    fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₂
+  obtain hs₂ := hs₁.of_rest K₂ (by decide)
+  obtain F₂ := F₁.unch h7 hn ((fixedOk_slWkP h7 (by decide)).append (fixedOk_genX h7)) U₂
+  -- `U = [u]G`, `R = O`.
+  refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
+  obtain F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
+  obtain sub₂ : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ,
+      TMP], i ∈ ptsW := by decide
+  obtain sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
+  obtain W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun {i} hi hl =>
+    ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
+      (sv_unch U₂ h7 hn hi (apart_append (apart_slWkP h7 hi (fun h => hl (sub₂ _ h)))
+        (apart_genX h7 hi (acc_pt_ptsW hl))))).trans (v₁ hi (k_ptsW hl))
+  obtain hf₃ := (hf₁.of_rest K₂).of_rest k₃
+  -- `v` to where `[v]Q` reads it.
+  refine WP.seq (WP.mono (scalarAt_ok hc hs₃ hf₃ (i := V) (by decide) (by decide))
+    fun s₄ ⟨k₄, U₄, kk₄, b₄⟩ => ?_)
+  obtain hs₄ := hs₃.of_rest k₄ (by decide)
+  obtain hf₄ := hf₃.of_rest k₄
+  obtain F₄ := F₃.unch h7 hn (fixedOk_scW h7) U₄
+  obtain v₄ : ∀ {i}, i < 45 → i ≠ K → sv c base s₄ i = sv c base s₃ i := fun hi hiK =>
+    sv_unch U₄ h7 hn hi (apart_scW h7 hi hiK)
+  obtain hV : sv c base s₃ V = sv c base s V := W₃ (by decide) (by decide)
+  -- `[v]Q`.
+  obtain tv₄ : ∀ {i}, i < 45 → i ∉ ptsW → tmv c.C c.n base s₄ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+    fun hi hl => by
+      show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
+      rw [v₄ hi (k_ptsW hl), W₃ hi hl]
+  exact h s₄ ⟨hs₄, hf₄, F₄,
+    by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt,
+    by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt,
+    by rw [tv₄ (by decide) (by decide), tv₄ (by decide) (by decide)]; exact hQP,
+    fun hm => by rw [kk₄ hm, hV]⟩
+
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
@@ -721,7 +827,7 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     fun hi hl => by
       show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
       rw [v₄ hi (k_ptsW hl), W₃ hi hl]
-  refine WP.seq (WP.mono (qMul_ok hc hC hs₄ hf₄ F₄ (px := PX) (py := PY) (by decide)
+  refine WP.seq (WP.mono (qMulPub_ok hc hC hs₄ hf₄ F₄ (px := PX) (py := PY) (by decide)
     (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [v₄ (by decide) (by decide), rx₃]) (by rw [v₄ (by decide) (by decide), ry₃])

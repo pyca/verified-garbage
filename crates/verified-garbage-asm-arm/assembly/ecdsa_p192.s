@@ -2086,7 +2086,7 @@ vg_ecdsa_p192_verify:
 	str r4, [r12, #444]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_p192_mul}
+	bl {vg_p192_mul_public}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -4643,7 +4643,7 @@ vg_ecdsa_p192_verify_umaal:
 	str r4, [r12, #444]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_p192_mul_umaal}
+	bl {vg_p192_mul_public_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

@@ -48,13 +48,18 @@ theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : comb
   rw [← List.take_append_drop (s.rd.length-secp256k1CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs secp256k1CombConsts s) p.rd
 
-theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
-    WP isa (verifySecp256k1CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (secp256k1With um) s₀ t := by
+/-- Verification's `[u]G` by the comb, as `verifyWith_ok` and `verifyHead_ok` ask. -/
+theorem comb_generatorWP (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    ∀ s, Mid (secp256k1With um) s₀ (ptr s₀ .r3) s → s.syms = s₀.syms →
+      GeneratorWP (secp256k1With um) (verifyGeneratorSecp256k1With um) s₀ (ptr s₀ .r3)
+        (sv (secp256k1With um) (ptr s₀ .r3) s U)
+        (fun j X Y Z => Rep (secp256k1With um).C X Y Z
+          (Spec.Weierstrass.mul (sv (secp256k1With um) (ptr s₀ .r3) s U >>> j) (Spec.Weierstrass.G (secp256k1With um).C)))
+        s.syms false := by
   have member : (secp256k1Comb.tsym,secp256k1CombWords)∈secp256k1CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
-  apply verifyWith_ok (secp256k1With_ok um) hC hp.1 (a0₁ := false) nofun
   intro s M syms
   intro u hs hf F _ _ _ _ _ _ _ kv keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
@@ -85,5 +90,9 @@ theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State}
   · rw [List.mem_singleton.mp h]
     exact List.mem_append_right _ (by simp [genX])
   · exact h
+
+theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    WP isa (verifySecp256k1CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (secp256k1With um) s₀ t :=
+  verifyWith_ok (secp256k1With_ok um) hC hp.1 (a0₁ := false) nofun (comb_generatorWP hC hp)
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

@@ -28,15 +28,25 @@ time, properties of every instruction): the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulP192
+materialize_code Impl.Ecdsa.Arm.mulPubP192
 
 materialize_code Impl.Ecdsa.Arm.mulP192U
+materialize_code Impl.Ecdsa.Arm.mulPubP192U
 
 /-- `vg_p192_mul`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulP192_noFrames : Impl.Ecdsa.Arm.p192.mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulP192.noFrames = true; lit_decide
 
+/-- `vg_p192_mul_public`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubP192_noFrames : Impl.Ecdsa.Arm.p192.pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubP192.noFrames = true; lit_decide
+
 /-- `vg_p192_mul_umaal`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulP192U_noFrames : (Impl.Ecdsa.Arm.p192With true).mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulP192U.noFrames = true; lit_decide
+
+/-- `vg_p192_mul_public_umaal`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubP192U_noFrames : (Impl.Ecdsa.Arm.p192With true).pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubP192U.noFrames = true; lit_decide
 
 end VG
