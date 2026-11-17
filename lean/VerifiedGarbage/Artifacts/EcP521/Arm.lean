@@ -1,42 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.EcKey.P521.Arm
-public import VerifiedGarbage.Proof.EcKey.Arm.P521.Verified
+public import VerifiedGarbage.Proof.EcKey.Arm.P521.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.EcKey.P521
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.EcKey.Arm.Finish
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
-public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P521.Arm.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P521
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P521Decompress
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
@@ -54,8 +24,8 @@ def artifacts : List Artifact := [
     code := Proof.EcKey.Compressed.Arm.P521Decompress.code
     verified := Proof.EcKey.Compressed.Arm.P521Decompress.verified hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
-    code := Impl.EcKey.Arm.publicKeyP521
-    verified := Proof.EcKey.Arm.P521.pk_verified hasLaw.law },
+    code := Impl.Ecdsa.Arm.publicKeyP521Comb
+    verified := Proof.EcKey.Arm.P521.combPk_verified hasLaw.law },
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.P521.codeU
@@ -66,7 +36,7 @@ def artifacts : List Artifact := [
     verified := Proof.EcKey.Compressed.Arm.P521Decompress.verifiedU hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.EcKey.Arm.publicKeyP521U
-    verified := Proof.EcKey.Arm.P521.pkU_verified hasLaw.law }]
+    code := Impl.Ecdsa.Arm.publicKeyP521CombU
+    verified := Proof.EcKey.Arm.P521.combPkU_verified hasLaw.law }]
 
 end VG.Artifacts.EcP521.Arm

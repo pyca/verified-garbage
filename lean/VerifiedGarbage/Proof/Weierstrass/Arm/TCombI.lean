@@ -51,6 +51,18 @@ structure LayoutI (K : TCombCfg) : Prop where
   zeroW : ∀ w ∈ ladWx K.L (own K.L.M.n), K.zero + 8 * K.L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.zero
   apart : RcbApart K.L.S K.L.R K.L.T K.L.D
 
+/-- The ladder's layout with another number of bits in its table. -/
+theorem ladLay_nbits {L : LadderCfg} {size bsize : Nat} (h : LadLay L size bsize) {nb : Nat}
+    (h1 : 1 ≤ nb) (h16 : nb < 2 ^ 16) (hb : L.bits + nb ≤ bsize)
+    (hw : ∀ w ∈ ladW L, L.bits + nb ≤ w.1 ∨ w.1 + w.2 ≤ L.bits) :
+    LadLay { L with nbits := nb } size bsize :=
+  ⟨h.lay, h.a1, h.a2, h.ro, h.rne, h.rdt, ⟨h1, h16⟩, hb, hw⟩
+
+/-- The functions' own working space does not depend on the number of bits in the table. -/
+theorem ladWk_nbits {L : LadderCfg} {size wk : Nat} (h : LadWk L size wk) (nb : Nat) :
+    LadWk { L with nbits := nb } size wk :=
+  ⟨h.le, h.sl, h.mo, h.tmp, h.bits⟩
+
 theorem mem_ladWx {L : LadderCfg} {wk x : Nat} (h : x ∈ ladWs L) : (x, 8 * L.M.n) ∈ ladWx L wk := by
   simp only [ladWx, ladW, List.mem_append, List.mem_map, List.mem_singleton]
   exact .inl (.inl ⟨x, h, rfl⟩)

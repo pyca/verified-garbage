@@ -18,14 +18,8 @@ def p521With (u : Bool) : Cfg :=
 /-- P-521 as the code has it. -/
 def p521 : Cfg := p521With false
 
-/-- `vg_ecdsa_p521_sign`, or with `u` `vg_ecdsa_p521_sign_umaal`. -/
-def signP521With (u : Bool) : Prog isa := (p521With u).sign
-
 /-- `vg_ecdsa_p521_sign`. -/
-def signP521 : Prog isa := signP521With false
-
-/-- `vg_ecdsa_p521_sign_umaal`. -/
-def signP521U : Prog isa := signP521With true
+def signP521 : Prog isa := p521.sign
 
 /-- `vg_p521_mul`, or with `u` `vg_p521_mul_umaal`. -/
 def mulP521With (u : Bool) : Prog isa := (p521With u).mulFn

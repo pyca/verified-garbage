@@ -55,6 +55,10 @@ mod vg_p384_comb;
 pub use vg_p384_comb::VG_P384_COMB;
 
 #[rustfmt::skip]
+mod vg_p521_comb;
+pub use vg_p521_comb::VG_P521_COMB;
+
+#[rustfmt::skip]
 mod vg_rc2_pitable;
 pub use vg_rc2_pitable::VG_RC2_PITABLE;
 

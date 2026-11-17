@@ -95,15 +95,14 @@ theorem p521_ok : CfgOk p521 where
   fn := ⟨rfl, rfl, Mont.p521n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP521_noFrames
 
-theorem pre_of {u : Bool} {s : State} (h : signArm.pre s) : Pre (p521With u) s := by
+theorem pre_of {s : State} (h : signArm.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
 
-theorem sign_arm (hL : Weierstrass.Law Spec.P521.curve) (u : Bool) (hok : CfgOk (p521With u)) (s : State)
-    (hs : signArm.pre s) :
-    ∃ t s', Exec isa (signP521With u) s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of (u := u) hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok hok hL hp
+theorem sign_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : signArm.pre s) :
+    ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
+  have hp := pre_of hs
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p521_ok hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
   swap
   · simp only [signArm, BitVec.setWidth_append_eq_right]
@@ -126,8 +125,8 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [132, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of (u := false) h
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (p521With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
   refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, p521With, show Spec.P521.curve.len = 66 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
@@ -192,10 +191,11 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
     fun _ h => (List.not_mem_nil h).elim⟩ h
 
 /-- The taint analysis's start agrees in the two states. -/
-theorem agree_τ₁ {s t : State} (hs : signArm.pre s) (ht : signArm.pre t) (h : signArm.pub s t) :
-    VG.Arm.Taint.Agree τ₁ s t := by
-  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := h
-  refine agree₁ ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (p521With u) s extraS) (ht : Pre (p521With u) t extraT) (pub : signArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -204,12 +204,12 @@ theorem agree_τ₁ {s t : State} (hs : signArm.pre s) (ht : signArm.pre t) (h :
     · exact h1
     · exact h2
     · exact h3
-  · rw [(pre_of (u := false) hs).wr, (pre_of (u := false) ht).wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
+  · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₁ (fun _ _ hs ht h => agree_τ₁ hs ht h)
-    (by taint_decide_sum [mulPSum, mulSum])
+  VG.Taint.constantTime_of_exists (A := taintS) τ₁
+    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by taint_decide_sum [mulPSum, mulSum])
 
 end VG.Proof.Ecdsa.Arm.P521

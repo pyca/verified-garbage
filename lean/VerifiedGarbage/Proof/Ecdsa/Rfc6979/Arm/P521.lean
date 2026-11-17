@@ -1,9 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
-public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Umaal
@@ -64,7 +60,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
     have pre : Proof.Ecdsa.Arm.P521.signArm.pre s := by
       simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p521,Impl.Ecdsa.Arm.p521With,Spec.P521.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.P521.signArm] using hs
-    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P521.sign_arm hL false Proof.Ecdsa.Arm.P521.p521_ok s pre
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P521.sign_arm hL s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.P521.signArm.post s t
     exact post
@@ -73,45 +69,5 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
       Proof.Ecdsa.Arm.P521.signArm] using Proof.Ecdsa.Arm.P521.sign_ct
   coreStack := by lit_decide
   blk := by rfcT_decide
-
-/-- `p521`, calling `vg_ecdsa_p521_sign_umaal`. -/
-def p521U (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
-  E := Impl.Ecdsa.Arm.p521
-  inst := Spec.Ecdsa.P521.inst
-  curve := rfl
-  big := true
-  sizes := ⟨rfl, rfl, Proof.Ecdsa.Arm.P521.p521_nBits⟩
-  n_lt := by decide +kernel
-  sh := 7
-  sh_eq := Proof.Ecdsa.Arm.P521.p521_sh
-  coreN := "vg_ecdsa_p521_sign_k" ++ "_umaal"
-  coreC := Impl.Ecdsa.Arm.signP521U
-  coreConsts := []
-  coreX := by
-    intro s hs
-    have pre : Proof.Ecdsa.Arm.P521.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p521,Impl.Ecdsa.Arm.p521With,Spec.P521.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
-        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.P521.signArm] using hs
-    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P521.sign_arm hL true Proof.Ecdsa.Arm.P521.p521u_ok s pre
-    refine ⟨tr,t,exec,abi,?_⟩
-    change Proof.Ecdsa.Arm.P521.signArm.post s t
-    exact post
-  coreCT := by
-    simpa only [coreK,coreSigOf,Spec.P521.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p521,Impl.Ecdsa.Arm.p521With,Proof.Ecdsa.Arm.P521.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
-      Proof.Ecdsa.Arm.P521.signArm] using Proof.Ecdsa.Arm.P521.signU_ct
-  coreStack := by lit_decide
-  blk := by rfcT_decide
-
-/-! ## With the tables of every hash function with HMAC -/
-
-theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified Arm.target (signCodeT (p521 hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries HmacTable.Arm.vars)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 (p521 hL).coreConsts HmacTable.Arm.vars) :=
-  nilT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl
-
-theorem p521UT_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified Arm.target (signCodeT (p521U hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries HmacTable.Arm.vars)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 (p521U hL).coreConsts HmacTable.Arm.vars) :=
-  nilT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
