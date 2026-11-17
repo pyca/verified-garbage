@@ -489,7 +489,8 @@ lemmas and tactics to use; read it before writing a proof:
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to
-  unification. In a long proof, `obtain x : T := proof` rather than `have`
+  unification, a rewrite or `linarith` of every hypothesis (`at *`), a
+  tactic for a discharger on a goal with binders. In a long proof, `obtain x : T := proof` rather than `have`
   for a fact with a proof of its own: `have` keeps the proof in the
   context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
