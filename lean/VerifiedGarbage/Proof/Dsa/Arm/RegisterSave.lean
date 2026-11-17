@@ -95,7 +95,7 @@ theorem slots_nodup : (slots.map (·.1)).Nodup := by decide
 /-- Every slot's register is kept by the calling convention. -/
 theorem slots_regs : slots.map (·.1) = preserved := rfl
 
-/-- The saved words lie in the header, past `m'` and the mask. -/
+/-- The saved words lie in the header, from its byte 8 on, past `m'`. -/
 theorem slots_words : ∀ r ∈ words slots, 8 ≤ r.1 ∧ r.1 + r.2 ≤ 44 := by decide
 
 /-- Ranges each within one of others. -/
@@ -120,7 +120,7 @@ structure Entry (s : State) (base : Addr) (size : Nat) : Prop where
   wr : ∃ len, size ≤ len ∧ len ≤ 2 ^ 32 ∧ (⟨base, len⟩ : Region) ∈ s.wr
   nowrap : base.toNat + size ≤ 2 ^ 32
 
-theorem contextBytes_bounds {n : Nat} (hn : n ≤ 48) : 44 ≤ contextBytes n ∧ contextBytes n ≤ 4960 := by
+theorem contextBytes_bounds {n : Nat} (hn : n ≤ 48) : 44 ≤ contextBytes n ∧ contextBytes n ≤ 11232 := by
   simp only [contextBytes, slot, stride]; omega_using [hn]
 
 /-- Ranges in the header's first 64 bytes or past the modulus's slot are the

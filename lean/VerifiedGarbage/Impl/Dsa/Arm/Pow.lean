@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Context
 modulus in slot 0 of the working space and raises the base in slot 8 to the
 exponent of `e` words in slot 11, into slot 9 (`contextSetup`,
 `exponentiate`). The working space is in `r0`, which it keeps in `r12`; it
-saves `r4`–`r11` and `lr` in the header, past `m'` and the mask, and
+saves `r4`–`r11` and `lr` in the header, from its byte 8 on, past `m'`, and
 restores them on return.
 
 A caller (`call`) keeps its working space's base, in `r12`, in `r11` across
@@ -24,7 +24,7 @@ variable (umaal : Bool)
 /-- The registers the function saves. -/
 def savedRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 
-/-- Each saved register and its offset in the header, past `m'` and the mask. -/
+/-- Each saved register and its offset in the header, from its byte 8 on, past `m'`. -/
 def slots : List (Reg × Nat) := savedRegs.zipIdx.map fun (r, i) => (r, 8 + 4 * i)
 
 def save : List Instr := .mov .r12 (.reg .r0) :: slots.map fun (r, o) => .str r .r12 o

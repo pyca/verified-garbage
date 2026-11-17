@@ -159,7 +159,7 @@ theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.oper
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 6).toNat * 8 := by omega_arith
+  obtain hz : 11232 ≤ (arg s₁ 6).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -, -⟩ := signKeyIn h₂ hb₂ hz₂ F₂
   obtain Rp₂ : Ready t₂ (State.addr (arg s₁ 5)) (.input .p) (arg s₁ 0).toNat := by rw [a0]; exact Ip₂.toReady

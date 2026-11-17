@@ -123,7 +123,7 @@ theorem subgroup_gen_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
+  have ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   have pt : PtrOk (.local Impl.Dsa.Layout.t) := (by decide : Impl.Dsa.Layout.t < 2 ^ 16)
   unfold Generate.subgroup
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
@@ -158,7 +158,7 @@ theorem keyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have L2 : Impl.Dsa.Layout.t2 = 15328 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by omega_arith
+  have ho : 11232 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by omega_arith
   simp only [Generate.keyCompute, Core.sequence, List.foldr]
   refine SameTrace.seq (range_trace X.C₁.S.ws X.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
       (X.C₁.inp mq).toReady (X.C₂.inp mq).toReady (X.C₁.inp mx).toReady (X.E _ mq) (X.E _ mx) false)

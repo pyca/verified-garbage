@@ -55,7 +55,7 @@ theorem domain_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
     (by omega_arith) (by decide) (by decide) (by simp only [Impl.Dsa.Layout.t]; omega_arith) (by decide))
     fun v₃ ⟨B₃, St₃⟩ => ?_)
   have S₃ := S₁.stage St₃
-  have ho₃ : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho₃ : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have Iq₃ := Iq₁.next S₁ St₃ (.inr ho₃)
   have L₃ : localVal base v₃ Impl.Dsa.Layout.t pLen = P - 1 := localVal_of_bytes B₃ (by
@@ -67,7 +67,7 @@ theorem domain_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
     Iq₃.value hQ hQo (by decide) (by simp only [Impl.Dsa.Layout.u]; omega_arith) (by decide)) fun v₄ ⟨B₄, St₄⟩ => ?_)
   rw [countValue, local_operand S₃.ws (by simp only [Impl.Dsa.Layout.t]; omega_arith), L₃] at B₄
   have S₄ := S₃.stage St₄
-  have ho₄ : 4960 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
+  have ho₄ : 11232 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.u]; omega_arith
   have L₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = (P - 1) % Q :=
     localVal_of_bytes B₄ (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (Nat.le_of_lt Qlt))
@@ -90,7 +90,7 @@ theorem subgroup_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : 
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have ht : Impl.Dsa.Layout.t + pLen < size := by omega_arith
   unfold Generate.subgroup
@@ -132,7 +132,7 @@ theorem keyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : 
   have big := S.big
   have fits := S.fits
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by
+  have ho : 11232 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t2]; omega_arith
   have ht : Impl.Dsa.Layout.t2 + pLen < size := by omega_arith
   simp only [Generate.keyCompute, Core.sequence, List.foldr]

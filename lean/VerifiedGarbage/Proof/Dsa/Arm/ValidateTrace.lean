@@ -90,7 +90,7 @@ theorem load_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n len dst 
 /-- What one run of an operation needs: its correctness's hypotheses. -/
 structure OpPre (s : State) (base : Addr) (size len n m : Nat) (modulus : Field) : Prop where
   ws : Ws s base size
-  hz : 4960 ≤ size
+  hz : 11232 ≤ size
   w : Width len n
   R : Ready s base (.input modulus) len
   hm : operand base s (.input modulus) len = m
@@ -130,8 +130,8 @@ theorem ptrEq_setup {s₁ s₂ u₁ u₂ : State} {base : Addr} {p : Pointer} (h
 
 /-- An operation's two loads, followed by code from `r12` public. -/
 theorem twoLoads_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLen n : Nat}
-    {a b : Pointer} {rest : Prog isa} (w₁ : Ws s₁ base size₁) (w₂ : Ws s₂ base size₂) (z₁ : 4960 ≤ size₁)
-    (z₂ : 4960 ≤ size₂) (w : Width len n)
+    {a b : Pointer} {rest : Prog isa} (w₁ : Ws s₁ base size₁) (w₂ : Ws s₂ base size₂) (z₁ : 11232 ≤ size₁)
+    (z₂ : 11232 ≤ size₂) (w : Width len n)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b expLen)
     (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
     (H : RelCT isa (VG.Arm.Taint.Agree T0) rest (fun _ _ => True)) :
@@ -394,7 +394,7 @@ theorem relCT_T10 {c : Prog isa} {Q : State → State → Prop} (H : RelCT isa (
   H.mono (fun _ _ A => agree_weaken rfl A) fun _ _ h => h
 
 theorem ptrEq_slot {s₁ s₂ u₁ u₂ : State} {base : Addr} {n i : Nat} {p : Pointer} (hp : PtrOk p)
-    (he : PtrEq base s₁ s₂ p) (hi : i < 12) (hn : n ≤ 48)
+    (he : PtrEq base s₁ s₂ p) (hi : i < 28) (hn : n ≤ 48)
     (R₁ : Rest coreClob s₁ u₁) (O₁ : Outside base (slot n i) (8 * n) s₁.mem u₁.mem)
     (R₂ : Rest coreClob s₂ u₂) (O₂ : Outside base (slot n i) (8 * n) s₂.mem u₂.mem) : PtrEq base u₁ u₂ p := by
   unfold PtrEq
@@ -403,7 +403,7 @@ theorem ptrEq_slot {s₁ s₂ u₁ u₂ : State} {base : Addr} {n i : Nat} {p : 
   exact he
 
 theorem range_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n : Nat} {modulus : Field} {input : Pointer}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (w : Width len n)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (w : Width len n)
     (Rq₁ : Ready s₁ base (.input modulus) len) (Rq₂ : Ready s₂ base (.input modulus) len)
     (Ri₁ : Ready s₁ base input len) (hem : PtrEq base s₁ s₂ (.input modulus)) (hei : PtrEq base s₁ s₂ input)
     (aboveOne : Bool) :
@@ -422,7 +422,7 @@ theorem range_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n : N
   · exact lowerTwo_relCT n
 
 theorem zero_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat} {input : Pointer}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂)
     (hp : PtrOk input) (hei : PtrEq base s₁ s₂ input) (want : Bool) :
     SameTrace isa (Validate.zero len input want) s₁ s₂ := by
   unfold Validate.zero
@@ -430,7 +430,7 @@ theorem zero_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat}
     (relCT_T10 ((checkZero_relCT _ _ _ want).mono (fun _ _ h => h) fun _ _ _ => trivial))
 
 theorem isOne_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat} {input : Pointer}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂)
     (hp : PtrOk input) (hei : PtrEq base s₁ s₂ input) :
     SameTrace isa (Validate.isOne len input) s₁ s₂ := by
   unfold Validate.isOne
@@ -439,7 +439,7 @@ theorem isOne_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len : Nat
       (fun _ _ h => h) fun _ _ _ => trivial))
 
 theorem equalValues_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n : Nat} {a b : Pointer}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (w : Width len n)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (w : Width len n)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b len)
     (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b) :
     SameTrace isa (Validate.equalValues len a b) s₁ s₂ := by

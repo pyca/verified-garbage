@@ -693,7 +693,7 @@ vg_dsa_check_parameters:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14816
@@ -812,7 +812,7 @@ vg_dsa_check_parameters:
 	bne 251b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_5}
 	mov r12, r11
 	movw r11, #14944
@@ -1755,7 +1755,7 @@ vg_dsa_check_parameters:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14816
@@ -1872,7 +1872,7 @@ vg_dsa_check_parameters:
 	bne 298b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #620
+	movw r1, #1404
 	bl {vg_dsa_pow_48_8}
 	mov r12, r11
 	movw r11, #14944
@@ -2725,7 +2725,7 @@ vg_dsa_check_parameters:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14816
@@ -2842,7 +2842,7 @@ vg_dsa_check_parameters:
 	bne 2141b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_8}
 	mov r12, r11
 	movw r11, #14944
@@ -3699,7 +3699,7 @@ vg_dsa_check_parameters:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14816
@@ -3818,7 +3818,7 @@ vg_dsa_check_parameters:
 	bne 2184b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_7}
 	mov r12, r11
 	movw r11, #14944
@@ -4448,7 +4448,7 @@ vg_dsa_check_parameters:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14816
@@ -4567,7 +4567,7 @@ vg_dsa_check_parameters:
 	bne 2217b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #236
+	movw r1, #508
 	bl {vg_dsa_pow_16_5}
 	mov r12, r11
 	movw r11, #14944

@@ -700,7 +700,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -819,7 +819,7 @@ cmp r10, r9
 bne 251b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -1762,7 +1762,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -1879,7 +1879,7 @@ cmp r10, r9
 bne 298b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -2732,7 +2732,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -2849,7 +2849,7 @@ cmp r10, r9
 bne 2141b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -3706,7 +3706,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -3825,7 +3825,7 @@ cmp r10, r9
 bne 2184b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #14944
@@ -4455,7 +4455,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -4574,7 +4574,7 @@ cmp r10, r9
 bne 2217b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #14944

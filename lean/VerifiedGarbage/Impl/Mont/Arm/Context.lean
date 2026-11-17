@@ -6,14 +6,15 @@ public import VerifiedGarbage.Impl.Mont.Arm.Dynamic
 # A runtime Montgomery workspace and exponentiation on 32-bit ARM
 
 The working space (base `r12`) holds a header of 256 bytes, `m'` at `[0]`
-and the exponentiation's selection mask at `[4]` (the rest is its user's),
-then slots of `8n + 8`
+(the rest is its user's), then slots of `8n + 8`
 bytes: the modulus, the subtraction temporary, the accumulator (four slots,
-for its `2D + 2` digits), one, `R²`, the base, the result, the conditional
-product and the exponent. All offsets depend only on the public width.
+for its `2D + 2` digits), one, `R²`, the base, the result, a product (the
+exponentiation's chosen power), the exponent, and the sixteen powers of the
+exponentiation's table. All offsets depend only on the public width.
 
-The counts of the doublings and of the exponent's bits are in `lr`, which
-the arithmetic leaves alone.
+The counts of the doublings and of the exponent's windows are in `lr`, and
+the table's next entry and the count of a window's squarings in `r11`: the
+arithmetic leaves both alone.
 -/
 
 @[expose] public section
@@ -39,11 +40,13 @@ def resS (n : Nat) : Nat := slot n 9
 def prodS (n : Nat) : Nat := slot n 10
 def expS (n : Nat) : Nat := slot n 11
 
-def contextBytes (n : Nat) : Nat := slot n 12
+/-- Entry `j` of the exponentiation's table: the base to the power `j`. -/
+def tabS (n j : Nat) : Nat := slot n (12 + j)
 
-/-- `m'` and the selection mask, in the header. -/
+def contextBytes (n : Nat) : Nat := slot n 28
+
+/-- `m'`, in the header. -/
 def invO : Nat := 0
-def maskO : Nat := 4
 
 def contextMod (n : Nat) : Mod := { n, mo := modS n, tmp := tmpS n, minv := 0 }
 
@@ -86,44 +89,79 @@ def rSquared (n : Nat) : Prog isa :=
 def contextSetup (n : Nat) : Prog isa :=
   .seq (.block (setupInverse (modS n))) <| .seq (one n (oneS n)) (rSquared umaal n)
 
-/-! ## Exponentiation -/
+/-! ## Exponentiation
 
-/-- `[mask]` all ones if the exponent's low bit is set, else zero. -/
-def exponentMask (n : Nat) : List Instr :=
-  ptr .r1 (expS n) ++ [.ldr .r3 .r1 0, .dp .and .r3 .r3 (.imm 1), .mov .r4 (.imm 0),
-    .dp .sub .r3 .r4 (.reg .r3), .str .r3 .r12 maskO]
+By windows of four bits, from the exponent's top: a table of the base's
+sixteen powers, then for each window four squarings and a multiplication by
+the window's power, which a scan of the whole table chooses under masks. -/
 
-/-- The exponent's `k` words shifted down a bit, word `j` through `r1`. -/
-def shiftWords : Nat → Nat → List Instr
+/-- `r3` all ones if `x = j`, else zero, for `x` and `j` below `2³¹`; and `r4 = 0`. -/
+def maskEq (x : Reg) (j : Nat) : List Instr :=
+  [.dp .eor .r3 x (.imm (BitVec.ofNat 32 j)), .dp .sub .r3 .r3 (.imm 1), .mov .r3 (.shifted .r3 .lsr 31),
+    .mov .r4 (.imm 0), .dp .sub .r3 .r4 (.reg .r3)]
+
+/-- `[prodS]` becomes the table's entry `j` if `r2 = j`. -/
+def pick (n j : Nat) : Prog isa :=
+  .seq (.block (maskEq .r2 j)) (selectW (2 * n) (prodS n) (tabS n j) (prodS n))
+
+/-- `pick` for the `k` entries from `j`. -/
+def scanFrom (n : Nat) : Nat → Nat → Prog isa
+  | 0, _ => .block []
+  | k + 1, j => .seq (pick n j) (scanFrom n k (j + 1))
+
+/-- `[prodS]` becomes the table's entry `r2`, below 16: every entry is read. -/
+def scan (n : Nat) : Prog isa := scanFrom n 16 0
+
+/-- The `k` words from word `j` at `[r1]` shifted up four bits: the bits that
+come in, and then those that go out, in `r2`. -/
+def shiftUp : Nat → Nat → List Instr
   | 0, _ => []
   | k + 1, j =>
-    [.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] ++
-    (if k = 0 then [] else [.ldr .r5 .r1 (4 * j + 4), .mov .r5 (.shifted .r5 .lsl 31),
-      .dp .orr .r4 .r4 (.reg .r5)]) ++
-    [.str .r4 .r1 (4 * j)] ++ shiftWords k (j + 1)
+    [.ldr .r4 .r1 (4 * j), .dp .orr .r5 .r2 (.shifted .r4 .lsl 4), .mov .r2 (.shifted .r4 .lsr 28),
+      .str .r5 .r1 (4 * j)] ++ shiftUp k (j + 1)
 
-def shiftExponent (n expWords : Nat) : List Instr := ptr .r1 (expS n) ++ shiftWords expWords 0
+/-- The exponent's top four bits into `r2`, and the exponent shifted up by them. -/
+def window (n expWords : Nat) : List Instr :=
+  ptr .r1 (expS n) ++ (.mov .r2 (.imm 0) :: shiftUp expWords 0)
 
-/-- The result times the base, kept where the mask is all ones. -/
-def exponentProduct (n : Nat) : Prog isa :=
-  .seq (.block (exponentMask n)) <|
-  .seq (mul umaal (contextMod n) invO (accS n) (prodS n) (resS n) (baseS n))
-    (.seq (.block [.ldr .r3 .r12 maskO]) (selectW (2 * n) (resS n) (prodS n) (resS n)))
+/-- The `k` words at `[src]` to `[r11]`, which moves past them. -/
+def copyOut (k src : Nat) : Prog isa :=
+  .seq (.block (ptr .r10 src ++ ptr .r9 (src + 4 * k)))
+    (ptrLoop .r10 [.ldr .r5 .r10 0, .str .r5 .r11 0, bump .r10 4, bump .r11 4])
 
-def exponentBody (n expWords : Nat) : Prog isa :=
-  .seq (exponentProduct umaal n) <|
-  .seq (mul umaal (contextMod n) invO (accS n) (baseS n) (baseS n) (baseS n)) (.block (shiftExponent n expWords))
+/-- An entry of the table, the power in `[prodS]`, and the next power. -/
+def tableStep (n : Nat) : Prog isa :=
+  .seq (copyOut (2 * n) (prodS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (prodS n) (prodS n) (baseS n))
+    (.block [bump .r11 8, .subs .lr .lr (.imm 1)])
 
-def exponentStep (n expWords : Nat) : Prog isa :=
-  .seq (exponentBody umaal n expWords) (.block [.subs .lr .lr (.imm 1)])
+/-- The table: the sixteen powers of the base, which is encoded. -/
+def table (n : Nat) : Prog isa :=
+  .seq (mul umaal (contextMod n) invO (accS n) (prodS n) (rrS n) (oneS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (baseS n) (baseS n) (rrS n)) <|
+  .seq (.block (ptr .r11 (tabS n 0) ++ [.mov .lr (.imm 16)])) (.loop (tableStep umaal n) .ne)
+
+/-- The result squared four times, counted in `r11`. -/
+def squareFour (n : Nat) : Prog isa :=
+  .seq (.block [.mov .r11 (.imm 4)])
+    (.loop (.seq (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (resS n))
+      (.block [.subs .r11 .r11 (.imm 1)])) .ne)
+
+/-- A window: the result to the sixteenth power, times the window's power. -/
+def windowStep (n expWords : Nat) : Prog isa :=
+  .seq (squareFour umaal n) <|
+  .seq (.block (window n expWords)) <|
+  .seq (scan n) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (prodS n))
+    (.block [.subs .lr .lr (.imm 1)])
 
 /-- `[resS] = [baseS]^[expS] mod m`, the exponent `expWords` words, with a
 public number of iterations; the base and the exponent are consumed. -/
 def exponentiate (n expWords : Nat) : Prog isa :=
+  .seq (table umaal n) <|
   .seq (mul umaal (contextMod n) invO (accS n) (resS n) (rrS n) (oneS n)) <|
-  .seq (mul umaal (contextMod n) invO (accS n) (baseS n) (baseS n) (rrS n)) <|
-  .seq (.block [.movw .lr (BitVec.ofNat 16 (32 * expWords))]) <|
-  .seq (.loop (exponentStep umaal n expWords) .ne)
+  .seq (.block [.movw .lr (BitVec.ofNat 16 (8 * expWords))]) <|
+  .seq (.loop (windowStep umaal n expWords) .ne)
     (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (oneS n))
 
 end VG.Impl.Mont.Arm.Dynamic

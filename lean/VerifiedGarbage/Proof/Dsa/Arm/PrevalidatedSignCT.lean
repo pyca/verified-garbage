@@ -105,7 +105,7 @@ theorem signPrevCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  obtain ho : 11232 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   simp only [PrevalidatedSign.compute, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
     Iq.value (by omega_using [hQ]) hQo (by omega_using [hQ]) (by decide) (by decide) (by omega_using [q32, big, L2]) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_)
@@ -211,7 +211,7 @@ theorem prevSign_correct {s : State} (h : prevSignPre s) :
   refine WP.seq (signPrevDispatch_ok _ E₀.ws (by omega_arith) (widths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)]) fun t₁ R₁ M₁ => ?_)
   obtain E₁ := E₀.of_mem R₁ (by decide) M₁
-  obtain hz : 4960 ≤ (arg s 6).toNat * 8 := by omega_arith
+  obtain hz : 11232 ≤ (arg s 6).toNat * 8 := by omega_arith
   obtain kr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h rfl rfl E₁
   unfold PrevalidatedSign.sized
@@ -311,7 +311,7 @@ theorem signPrevCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c :
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  obtain ho : 11232 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   obtain Q₁ := operand_lt_of (X.C₁.inp mq)
   obtain Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
@@ -521,7 +521,7 @@ theorem prevSign_constantTime : ConstantTime isa prevSignArm.pre prevSignArm.pub
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 6).toNat * 8 := by omega_arith
+  obtain hz : 11232 ≤ (arg s₁ 6).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -, -⟩ := signKeyIn h₂ hb₂ hz₂ F₂
   obtain Rp₂ : Ready t₂ (State.addr (arg s₁ 5)) (.input .p) (arg s₁ 0).toNat := by rw [a0]; exact Ip₂.toReady

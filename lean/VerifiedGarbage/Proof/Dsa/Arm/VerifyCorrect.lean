@@ -71,7 +71,7 @@ theorem verifyKeyIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (
   obtain ⟨_, hrd, _, dKS, _, _, _, fK, _, _, _, hv, hr1, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat)
@@ -100,7 +100,7 @@ theorem verifySigIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) (
   obtain ⟨_, hrd, _, _, dSS, _, _, _, fS, _, _, hv, _, hs1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have sr : (⟨State.addr (arg s 0), (arg s 1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have Ir := input_of E (p := .input .signature) (by decide : Impl.Dsa.Layout.Field.signature ≠ .mask) (o := 0)
     (len := (s.gpr .r3).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 84) (v := arg s 0) (by simp))
@@ -116,7 +116,7 @@ theorem verifySigSIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s) 
   obtain ⟨_, hrd, _, _, dSS, _, _, _, fS, _, _, hv, _, hs1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have sr : (⟨State.addr (arg s 0), (arg s 1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   exact input_of E (p := .signatureS) trivial (o := (s.gpr .r3).toNat) (len := (s.gpr .r3).toNat)
     (by
@@ -134,7 +134,7 @@ theorem verifyDigestIn {s t : State} {base : Addr} {size : Nat} (h : verifyPre s
   obtain ⟨_, hrd, _, _, _, dDS, _, _, _, fD, _, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have dr : (⟨State.addr (arg s 2), (arg s 3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have Id := input_of E (p := .input .digest) (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (o := 0)
     (len := c) (by rw [BitVec.add_zero]; exact E.field (d := 92) (v := arg s 2) (by simp))

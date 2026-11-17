@@ -92,7 +92,7 @@ theorem widthDispatch_ok (signing : Bool) (widths : List (Nat × Nat))
 /-! ## The domain's shape -/
 
 theorem sized_ok (signing : Bool) {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat}
-    {post : State → Prop} (hs : Ws s base size) (hz : 4960 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
+    {post : State → Prop} (hs : Ws s base size) (hz : 11232 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
     (Rp : Ready s base (.input .p) pLen) (Rq : Ready s base (.input .q) qLen)
     (hP : operand base s (.input .p) pLen = P) (hQ : operand base s (.input .q) qLen = Q)
     (failure : ∀ t, ¬ shapeValid P Q → Rest coreClob s t → Outs base shapeRanges s.mem t.mem →

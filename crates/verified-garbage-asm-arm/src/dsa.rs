@@ -1307,7 +1307,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -1533,7 +1533,7 @@ cmp r10, r9
 bne 261b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -1874,7 +1874,7 @@ cmp r10, r9
 bne 278b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -2946,7 +2946,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -3168,7 +3168,7 @@ cmp r10, r9
 bne 2135b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -3501,7 +3501,7 @@ cmp r10, r9
 bne 2152b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -4483,7 +4483,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -4705,7 +4705,7 @@ cmp r10, r9
 bne 2205b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -5038,7 +5038,7 @@ cmp r10, r9
 bne 2222b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -6024,7 +6024,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -6250,7 +6250,7 @@ cmp r10, r9
 bne 2275b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #14944
@@ -6591,7 +6591,7 @@ cmp r10, r9
 bne 2292b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #14944
@@ -7350,7 +7350,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -7576,7 +7576,7 @@ cmp r10, r9
 bne 2335b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -7917,7 +7917,7 @@ cmp r10, r9
 bne 2352b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -8785,7 +8785,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -8904,7 +8904,7 @@ cmp r10, r9
 bne 251b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -9161,7 +9161,7 @@ cmp r10, r9
 bne 264b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #15328
@@ -10182,7 +10182,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -10299,7 +10299,7 @@ cmp r10, r9
 bne 2117b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -10552,7 +10552,7 @@ cmp r10, r9
 bne 2130b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -11483,7 +11483,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -11600,7 +11600,7 @@ cmp r10, r9
 bne 2179b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -11853,7 +11853,7 @@ cmp r10, r9
 bne 2192b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -12788,7 +12788,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -12907,7 +12907,7 @@ cmp r10, r9
 bne 2241b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #14944
@@ -13164,7 +13164,7 @@ cmp r10, r9
 bne 2254b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #15328
@@ -13872,7 +13872,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -13991,7 +13991,7 @@ cmp r10, r9
 bne 2293b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -14248,7 +14248,7 @@ cmp r10, r9
 bne 2306b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #15328
@@ -17923,7 +17923,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_pow_3_5_umaal}
 mov r12, r11
 movw r11, #14784
@@ -17970,7 +17970,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -18048,7 +18048,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3_umaal}
 mov r12, r11
 movw r11, #14816
@@ -18125,7 +18125,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3_umaal}
 mov r12, r11
 movw r11, #14848
@@ -18204,7 +18204,7 @@ cmp r10, r9
 bne 263b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -18283,7 +18283,7 @@ cmp r10, r9
 bne 268b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #15328
@@ -18355,7 +18355,7 @@ cmp r10, r9
 bne 272b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32_umaal}
 mov r12, r11
 movw r11, #14944
@@ -18403,7 +18403,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -19410,7 +19410,7 @@ cmp r10, r9
 bne 2118b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_8_umaal}
 mov r12, r11
 movw r11, #14784
@@ -19455,7 +19455,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -19527,7 +19527,7 @@ cmp r10, r9
 bne 2124b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14816
@@ -19598,7 +19598,7 @@ cmp r10, r9
 bne 2128b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14848
@@ -19677,7 +19677,7 @@ cmp r10, r9
 bne 2133b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -19756,7 +19756,7 @@ cmp r10, r9
 bne 2138b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -19828,7 +19828,7 @@ cmp r10, r9
 bne 2142b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_mulmod_48_umaal}
 mov r12, r11
 movw r11, #14944
@@ -19874,7 +19874,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -20787,7 +20787,7 @@ cmp r10, r9
 bne 2184b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_8_umaal}
 mov r12, r11
 movw r11, #14784
@@ -20832,7 +20832,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -20904,7 +20904,7 @@ cmp r10, r9
 bne 2190b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14816
@@ -20975,7 +20975,7 @@ cmp r10, r9
 bne 2194b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14848
@@ -21054,7 +21054,7 @@ cmp r10, r9
 bne 2199b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #14944
@@ -21133,7 +21133,7 @@ cmp r10, r9
 bne 2204b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -21205,7 +21205,7 @@ cmp r10, r9
 bne 2208b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32_umaal}
 mov r12, r11
 movw r11, #14944
@@ -21251,7 +21251,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -22182,7 +22182,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_7_umaal}
 mov r12, r11
 movw r11, #14784
@@ -22229,7 +22229,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -22307,7 +22307,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14816
@@ -22384,7 +22384,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4_umaal}
 mov r12, r11
 movw r11, #14848
@@ -22463,7 +22463,7 @@ cmp r10, r9
 bne 2265b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #14944
@@ -22542,7 +22542,7 @@ cmp r10, r9
 bne 2270b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #15328
@@ -22614,7 +22614,7 @@ cmp r10, r9
 bne 2274b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32_umaal}
 mov r12, r11
 movw r11, #14944
@@ -22662,7 +22662,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -23370,7 +23370,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_pow_3_5_umaal}
 mov r12, r11
 movw r11, #14784
@@ -23417,7 +23417,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -23495,7 +23495,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3_umaal}
 mov r12, r11
 movw r11, #14816
@@ -23572,7 +23572,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3_umaal}
 mov r12, r11
 movw r11, #14848
@@ -23651,7 +23651,7 @@ cmp r10, r9
 bne 2321b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #14944
@@ -23730,7 +23730,7 @@ cmp r10, r9
 bne 2326b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #15328
@@ -23802,7 +23802,7 @@ cmp r10, r9
 bne 2330b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_mulmod_16_umaal}
 mov r12, r11
 movw r11, #14944
@@ -23850,7 +23850,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -25215,7 +25215,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -25441,7 +25441,7 @@ cmp r10, r9
 bne 261b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #14944
@@ -25782,7 +25782,7 @@ cmp r10, r9
 bne 278b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #14944
@@ -26854,7 +26854,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -27076,7 +27076,7 @@ cmp r10, r9
 bne 2135b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #14944
@@ -27409,7 +27409,7 @@ cmp r10, r9
 bne 2152b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #14944
@@ -28391,7 +28391,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -28613,7 +28613,7 @@ cmp r10, r9
 bne 2205b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #14944
@@ -28946,7 +28946,7 @@ cmp r10, r9
 bne 2222b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #14944
@@ -29932,7 +29932,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -30158,7 +30158,7 @@ cmp r10, r9
 bne 2275b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #14944
@@ -30499,7 +30499,7 @@ cmp r10, r9
 bne 2292b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #14944
@@ -31258,7 +31258,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -31484,7 +31484,7 @@ cmp r10, r9
 bne 2335b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #14944
@@ -31825,7 +31825,7 @@ cmp r10, r9
 bne 2352b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #14944
@@ -32687,7 +32687,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -32806,7 +32806,7 @@ cmp r10, r9
 bne 251b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #14944
@@ -33063,7 +33063,7 @@ cmp r10, r9
 bne 264b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #15328
@@ -34084,7 +34084,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -34201,7 +34201,7 @@ cmp r10, r9
 bne 2117b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #14944
@@ -34454,7 +34454,7 @@ cmp r10, r9
 bne 2130b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #15328
@@ -35385,7 +35385,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -35502,7 +35502,7 @@ cmp r10, r9
 bne 2179b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #14944
@@ -35755,7 +35755,7 @@ cmp r10, r9
 bne 2192b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #15328
@@ -36690,7 +36690,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -36809,7 +36809,7 @@ cmp r10, r9
 bne 2241b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #14944
@@ -37066,7 +37066,7 @@ cmp r10, r9
 bne 2254b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #15328
@@ -37774,7 +37774,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -37893,7 +37893,7 @@ cmp r10, r9
 bne 2293b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #14944
@@ -38150,7 +38150,7 @@ cmp r10, r9
 bne 2306b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #15328
@@ -41807,7 +41807,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_pow_3_5}
 mov r12, r11
 movw r11, #14784
@@ -41854,7 +41854,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -41932,7 +41932,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14816
@@ -42009,7 +42009,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14848
@@ -42088,7 +42088,7 @@ cmp r10, r9
 bne 263b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #14944
@@ -42167,7 +42167,7 @@ cmp r10, r9
 bne 268b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #15328
@@ -42239,7 +42239,7 @@ cmp r10, r9
 bne 272b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32}
 mov r12, r11
 movw r11, #14944
@@ -42287,7 +42287,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816
@@ -43294,7 +43294,7 @@ cmp r10, r9
 bne 2118b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_8}
 mov r12, r11
 movw r11, #14784
@@ -43339,7 +43339,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -43411,7 +43411,7 @@ cmp r10, r9
 bne 2124b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -43482,7 +43482,7 @@ cmp r10, r9
 bne 2128b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14848
@@ -43561,7 +43561,7 @@ cmp r10, r9
 bne 2133b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #14944
@@ -43640,7 +43640,7 @@ cmp r10, r9
 bne 2138b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #15328
@@ -43712,7 +43712,7 @@ cmp r10, r9
 bne 2142b
 mov r11, r12
 mov r0, r12
-movw r1, #620
+movw r1, #1404
 bl {vg_dsa_mulmod_48}
 mov r12, r11
 movw r11, #14944
@@ -43758,7 +43758,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -44671,7 +44671,7 @@ cmp r10, r9
 bne 2184b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_8}
 mov r12, r11
 movw r11, #14784
@@ -44716,7 +44716,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -44788,7 +44788,7 @@ cmp r10, r9
 bne 2190b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -44859,7 +44859,7 @@ cmp r10, r9
 bne 2194b
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14848
@@ -44938,7 +44938,7 @@ cmp r10, r9
 bne 2199b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #14944
@@ -45017,7 +45017,7 @@ cmp r10, r9
 bne 2204b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #15328
@@ -45089,7 +45089,7 @@ cmp r10, r9
 bne 2208b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32}
 mov r12, r11
 movw r11, #14944
@@ -45135,7 +45135,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -46066,7 +46066,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_pow_4_7}
 mov r12, r11
 movw r11, #14784
@@ -46113,7 +46113,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -46191,7 +46191,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -46268,7 +46268,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14848
@@ -46347,7 +46347,7 @@ cmp r10, r9
 bne 2265b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #14944
@@ -46426,7 +46426,7 @@ cmp r10, r9
 bne 2270b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #15328
@@ -46498,7 +46498,7 @@ cmp r10, r9
 bne 2274b
 mov r11, r12
 mov r0, r12
-movw r1, #428
+movw r1, #956
 bl {vg_dsa_mulmod_32}
 mov r12, r11
 movw r11, #14944
@@ -46546,7 +46546,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #92
+movw r1, #172
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14816
@@ -47254,7 +47254,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_pow_3_5}
 mov r12, r11
 movw r11, #14784
@@ -47301,7 +47301,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -47379,7 +47379,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14816
@@ -47456,7 +47456,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14848
@@ -47535,7 +47535,7 @@ cmp r10, r9
 bne 2321b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #14944
@@ -47614,7 +47614,7 @@ cmp r10, r9
 bne 2326b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #15328
@@ -47686,7 +47686,7 @@ cmp r10, r9
 bne 2330b
 mov r11, r12
 mov r0, r12
-movw r1, #236
+movw r1, #508
 bl {vg_dsa_mulmod_16}
 mov r12, r11
 movw r11, #14944
@@ -47734,7 +47734,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #80
+movw r1, #144
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14816

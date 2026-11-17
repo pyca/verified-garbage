@@ -364,8 +364,8 @@ section
 An operand is the caller's bytes at a pointer saved in the header of the
 working space, or computed bytes in the working space past the arithmetic
 (`pointerValue`). `Ready` says an operand's bytes can be read and lie apart
-from the arithmetic's 4960 bytes, which every operation may change (with the
-header's first 64 bytes, where the exponentiation keeps `m'`, its mask and the
+from the arithmetic's 11232 bytes, which every operation may change (with the
+header's first 64 bytes, where the exponentiation keeps `m'` and the
 registers it saves: `arithRanges`); the saved pointers, at offsets 64
 to 120, are kept (`pointerValue_keep`). `pointer_ok`, `load_ok`,
 `store_ok` and `setup_ok` are the steps of every operation of
@@ -392,23 +392,23 @@ def coreClob : List Reg := .r11 :: .lr :: dclob
 
 /-- The memory the arithmetic may change: the header's first 64 bytes,
 and the slots of a context of up to 48 words. -/
-def arithRanges : List (Nat × Nat) := [(0, 64), (256, 4704)]
+def arithRanges : List (Nat × Nat) := [(0, 64), (256, 10976)]
 
-theorem contextBytes_le {n : Nat} (hn : n ≤ 48) : contextBytes n ≤ 4960 := by
+theorem contextBytes_le {n : Nat} (hn : n ≤ 48) : contextBytes n ≤ 11232 := by
   simp only [contextBytes, slot, stride]; omega_using [hn]
 
 /-- Ranges within the arithmetic's. -/
 theorem Outs.arith {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m')
-    (h : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960)) : Outs base arithRanges m m' :=
+    (h : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 11232)) : Outs base arithRanges m m' :=
   fun x hx => O x fun r hr => by
     obtain h1 := hx (0, 64) (by simp [arithRanges])
-    obtain h2 := hx (256, 4704) (by simp [arithRanges])
+    obtain h2 := hx (256, 10976) (by simp [arithRanges])
     have := h r hr
     simp only at h1 h2
     omega_using [h1, h2, this]
 
 theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (slot n i) (8 * n) m m')
-    (hi : i < 12) (hn : n ≤ 48) : Outs base arithRanges m m' :=
+    (hi : i < 28) (hn : n ≤ 48) : Outs base arithRanges m m' :=
   Outs.arith (Outs.of_outside O (List.mem_singleton_self _)) fun r hr => by
     have := slot_bound (n := n) hi
     have := contextBytes_le hn
@@ -419,19 +419,19 @@ theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (s
     omega_arith
 
 theorem setupRanges_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 11232) := by
   have := contextBytes_le hn
   simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega_arith
 
 theorem streamRanges_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 11232) := by
   have := contextBytes_le hn
   simp only [streamRanges, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> omega_using [hn]
 
 theorem scratch_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ Impl.Dsa.Arm.Pow.scratch n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ Impl.Dsa.Arm.Pow.scratch n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 11232) := by
   have := contextBytes_le hn
   simp only [Impl.Dsa.Arm.Pow.scratch, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil,
     or_false] at *
@@ -457,7 +457,7 @@ structure Ready (s : State) (base : Addr) (p : Pointer) (len : Nat) : Prop where
   ok : PtrOk p
   fits : (pointerValue base s p).toNat + len ≤ 2 ^ 32
   reads : ∀ e k, e + k ≤ len → InRegions (s.rd ++ s.wr) (State.addr (pointerValue base s p) + BitVec.ofNat 64 e) k
-  apart : Region.Disjoint ⟨State.addr (pointerValue base s p), len⟩ ⟨base, 4960⟩
+  apart : Region.Disjoint ⟨State.addr (pointerValue base s p), len⟩ ⟨base, 11232⟩
 
 /-- An operand's bytes. -/
 abbrev operand (base : Addr) (s : State) (p : Pointer) (len : Nat) : Nat :=
@@ -498,7 +498,7 @@ theorem Ready.keep_rest {base : Addr} {rs : List (Nat × Nat)} {ws : List Reg} {
 
 /-- An operand's bytes are kept by stores apart from them. -/
 theorem Ready.bytes {base : Addr} {rs : List (Nat × Nat)} {s t : State} {p : Pointer} {len : Nat}
-    (R : Ready s base p len) (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 4960) :
+    (R : Ready s base p len) (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 11232) :
     Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s p)) len =
       Spec.Rsa.bytesAt s.mem (State.addr (pointerValue base s p)) len :=
   outs_bytes O (by have := R.fits; omega_using [this]) (fun r hr => by have := hO r hr; omega_using [this])
@@ -539,7 +539,7 @@ theorem pointer_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
 theorem load_ok {s : State} {base : Addr} {size n len dst : Nat} {p : Pointer} (hs : Ws s base size)
     (hz : 120 ≤ size) (R : Ready s base p len) (ho : dst + 8 * n ≤ size) (h16 : dst + len < 2 ^ 16)
     (hpad : 8 * n ≤ len + 4096) (h4 : 4 ≤ len) (hlen : len ≤ 8 * n) (hw4 : len % 4 = 0)
-    (hd : dst + 8 * n ≤ 4960) :
+    (hd : dst + 8 * n ≤ 11232) :
     WP isa (Core.load n len dst p) s fun t => Ws t base size ∧
       val32 t.mem base dst (2 * n) = operand base s p len ∧
       Rest [.r4, .r8, .r9, .r10, .r11] s t ∧ Outside base dst (8 * n) s.mem t.mem := by
@@ -647,7 +647,7 @@ structure Width (len n : Nat) : Prop where
 theorem Width.bounds {len n : Nat} (w : Width len n) : 0 < n ∧ n ≤ 48 ∧ len ≤ 8 * n ∧ 8 * n ≤ len + 7 := by
   have := w.n_eq; have := w.four; have := w.max; omega_arith
 
-theorem slot_lt {n i : Nat} (hn : n ≤ 48) (hi : i < 12) : 256 ≤ slot n i ∧ slot n i + 8 * n + 8 ≤ 4960 := by
+theorem slot_lt {n i : Nat} (hn : n ≤ 48) (hi : i < 28) : 256 ≤ slot n i ∧ slot n i + 8 * n + 8 ≤ 11232 := by
   have := slot_bound (n := n) hi
   have := contextBytes_le hn
   have := slot_header n i
@@ -666,7 +666,7 @@ theorem pow256_words {len : Nat} (hw : len % 4 = 0) : 256 ^ len = 2 ^ (32 * (len
 
 /-- The context of the modulus at a saved pointer, without unused constants. -/
 theorem setup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : Field} (hs : Ws s base size)
-    (hz : 4960 ≤ size) (w : Width len n) (R : Ready s base (.input modulus) len)
+    (hz : 11232 ≤ size) (w : Width len n) (R : Ready s base (.input modulus) len)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
     WP isa (Core.setup len modulus) s fun t => Context n m base size t ∧
       Outs base arithRanges s.mem t.mem ∧ Rest coreClob s t := by
@@ -689,11 +689,11 @@ theorem result_bytes {mem : Mem} {base : Addr} {n len m : Nat} (hw : len % 4 = 0
   val32_prefix_of_lt (by omega_arith) (by rw [← pow256_words hw]; omega_arith)
 
 theorem power_ok {s : State} {base : Addr} {size len expLen n m output : Nat} {a b : Pointer} {modulus : Field}
-    (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n)
+    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n)
     (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
     (Rq : Ready s base (.input modulus) len) (Ra : Ready s base a len) (Rb : Ready s base b expLen)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1)
-    (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
+    (ho : 11232 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
     WP isa (Core.power umaal len expLen modulus a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len (operand base s a len ^ operand base s b expLen % m) ∧
@@ -751,10 +751,10 @@ theorem power_ok {s : State} {base : Addr} {size len expLen n m output : Nat} {a
   rw [Vt, result_bytes w.word hl mlt lt₃, V₃, A₂, E₂]
 
 theorem productMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer} {modulus : Field}
-    (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n)
+    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n)
     (Rq : Ready s base (.input modulus) len) (Ra : Ready s base a len) (Rb : Ready s base b len)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1)
-    (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
+    (ho : 11232 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
     WP isa (Core.productMod umaal len modulus a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len (operand base s a len * operand base s b len % m) ∧
@@ -807,11 +807,11 @@ theorem productMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b
   rw [Vt, result_bytes w.word hl mlt lt₃, V₃, A₂, B₂']
 
 theorem sum_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer}
-    (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n)
+    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n)
     (Rq : Ready s base (.input .q) len) (Ra : Ready s base a len) (Rb : Ready s base b len)
     (hm : operand base s (.input .q) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1)
     (hA : operand base s a len < m) (hB : operand base s b len < m)
-    (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
+    (ho : 11232 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
     WP isa (Core.sum len a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len ((operand base s a len + operand base s b len) % m) ∧
@@ -896,10 +896,10 @@ theorem countEnd_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
 
 /-- `count` bytes at `input` reduced modulo `q`. -/
 theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count : Core.Count} {input : Pointer}
-    (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n) (Rq : Ready s base (.input .q) len)
+    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Rq : Ready s base (.input .q) len)
     (hc : CountOk count) (Ri : Ready s base input (countValue base s count))
     (hm : operand base s (.input .q) len = m) (hm255 : 255 < m) (hodd : m % 2 = 1)
-    (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
+    (ho : 11232 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
     WP isa (Core.reduce len count input output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len (operand base s input (countValue base s count) % m) ∧

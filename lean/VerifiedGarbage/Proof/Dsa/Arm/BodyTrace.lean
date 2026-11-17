@@ -383,7 +383,7 @@ theorem signingSubgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : N
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
+  have ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   have pt : PtrOk (.local Impl.Dsa.Layout.t) := (by decide : Impl.Dsa.Layout.t < 2 ^ 16)
   unfold Validate.signingSubgroup
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
@@ -584,8 +584,8 @@ theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base 
         by rw [u₄.mem, u₃.mem, u₂.mem, M₁]⟩
 
 theorem writeScalar_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ qLen nQ input : Nat}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (wq : Width qLen nQ)
-    (q32 : qLen ≤ 32) (hin : 4960 ≤ input) (hin₁ : input + qLen < size₁) (hin₂ : input + qLen < size₂)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (wq : Width qLen nQ)
+    (q32 : qLen ≤ 32) (hin : 11232 ≤ input) (hin₁ : input + qLen < size₁) (hin₂ : input + qLen < size₂)
     (h16 : input < 2 ^ 16) (heo : PtrEq base s₁ s₂ (.input .out)) (second : Bool) :
     SameTrace isa (SignVerify.writeScalar qLen input second) s₁ s₂ := by
   obtain ⟨n0, n48, hl, hl'⟩ := wq.bounds

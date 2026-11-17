@@ -214,7 +214,7 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
+  obtain hz : 11232 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
   obtain C₁ := deriveCtx h₁ rfl rfl F₁
   obtain C₂ := deriveCtx h₂ hb₂ hz₂ F₂
   rw [← a0, ← a2] at C₂

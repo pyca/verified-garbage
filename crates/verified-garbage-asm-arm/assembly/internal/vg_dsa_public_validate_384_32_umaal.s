@@ -401,7 +401,7 @@ vg_dsa_public_validate_384_32_umaal:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14816
@@ -623,7 +623,7 @@ vg_dsa_public_validate_384_32_umaal:
 	bne 227b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #620
+	movw r1, #1404
 	bl {vg_dsa_pow_48_8_umaal}
 	mov r12, r11
 	movw r11, #14944
@@ -796,7 +796,7 @@ vg_dsa_public_validate_384_32_umaal:
 	bne 236b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #620
+	movw r1, #1404
 	bl {vg_dsa_pow_48_8_umaal}
 	mov r12, r11
 	movw r11, #14944

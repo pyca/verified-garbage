@@ -732,7 +732,7 @@ theorem input_of {s₀ t : State} {base : Addr} {size : Nat} {fields : Fields} (
     {p : Impl.Dsa.Layout.Pointer} (hp : PtrOk p) {P₀ : BitVec 32} {L₀ o len : Nat}
     (hv : pointerValue base t p = P₀ + BitVec.ofNat 32 o)
     (hr : ⟨State.addr P₀, L₀⟩ ∈ s₀.rd ++ s₀.wr) (hfit : P₀.toNat + L₀ ≤ 2 ^ 32) (ho : o + len ≤ L₀) (hl : 0 < len ∨ o = 0)
-    (hd : Region.Disjoint ⟨State.addr P₀, L₀⟩ ⟨base, size⟩) (hz : 4960 ≤ size) :
+    (hd : Region.Disjoint ⟨State.addr P₀, L₀⟩ ⟨base, size⟩) (hz : 11232 ≤ size) :
     Input t base size p len (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s₀.mem (State.addr P₀ + BitVec.ofNat 64 o) len)) := by
   have nw := E.ws.nowrap
   have P₀lt := P₀.isLt

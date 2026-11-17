@@ -48,7 +48,7 @@ theorem width_iff {v bits : Nat} (hb : 0 < bits) :
 
 /-- `[offset] = ` whether `[slot 0]` has `bits` bits. -/
 theorem saveWidth_ok {s : State} {base : Addr} {size n bits offset : Nat} (hs : Ws s base size)
-    (hz : 4960 ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (hb : 0 < bits) (ho : 8 ≤ offset) (ho' : offset + 4 ≤ 36) :
+    (hz : 11232 ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (hb : 0 < bits) (ho : 8 ≤ offset) (ho' : offset + 4 ≤ 36) :
     WP isa (Shape.saveWidth n bits offset) s fun t =>
       hdr base t offset = mask32 (Spec.Dsa.bitLength (val32 s.mem base (slot n 0) (2 * n)) = bits) ∧
       Rest (.r11 :: dclob) s t ∧ Outs base [(offset, 4), (slot n 11, 8 * n)] s.mem t.mem := by
@@ -69,7 +69,7 @@ theorem saveWidth_ok {s : State} {base : Addr} {size n bits offset : Nat} (hs : 
     exact (Outs.of_outside Ou (by simp [expS])).trans (Outs.of_outside (writeW32_outside _ _ _ (by omega_arith)) (by simp))
 
 theorem threeWidths_ok {s : State} {base : Addr} {size n a b c offset : Nat} (hs : Ws s base size)
-    (hz : 4960 ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (ho : 8 ≤ offset)
+    (hz : 11232 ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (ho : 8 ≤ offset)
     (ho' : offset + 12 ≤ 36) :
     WP isa (Shape.threeWidths n a b c offset) s fun t =>
       hdr base t offset = mask32 (Spec.Dsa.bitLength (val32 s.mem base (slot n 0) (2 * n)) = a) ∧
@@ -123,7 +123,7 @@ theorem Outs.within {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (O :
 
 /-- The masks of a modulus's widths. -/
 theorem loadWidths_ok {s : State} {base : Addr} {size len n a b c offset m : Nat} {modulus : Impl.Dsa.Layout.Field}
-    (hs : Ws s base size) (hz : 4960 ≤ size) (w : Width len n) (R : Ready s base (.input modulus) len)
+    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (R : Ready s base (.input modulus) len)
     (hm : operand base s (.input modulus) len = m) (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (ho : 8 ≤ offset)
     (ho' : offset + 12 ≤ 36) :
     WP isa (Shape.loadWidths len modulus a b c offset) s fun t =>
@@ -131,7 +131,7 @@ theorem loadWidths_ok {s : State} {base : Addr} {size len n a b c offset m : Nat
       hdr base t (offset + 4) = mask32 (Spec.Dsa.bitLength m = b) ∧
       hdr base t (offset + 8) = mask32 (Spec.Dsa.bitLength m = c) ∧
       val32 t.mem base (slot n 0) (2 * n) = m ∧
-      Rest coreClob s t ∧ Outs base [(offset, 12), (256, 4704)] s.mem t.mem := by
+      Rest coreClob s t ∧ Outs base [(offset, 12), (256, 10976)] s.mem t.mem := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
   have nw := hs.nowrap
   obtain s0 := slot_lt (i := 0) n48 (by decide)
@@ -153,25 +153,25 @@ theorem loadWidths_ok {s : State} {base : Addr} {size len n a b c offset m : Nat
     · intro r hr
       simp only [List.mem_singleton] at hr
       subst hr
-      exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+      exact ⟨(256, 10976), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨(offset, 12), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
-      · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 10976), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
 
 theorem wp_ldr12 {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t : Reg} {d : Nat}
     (hd : d < 4096) (hd' : d + 4 ≤ size) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', Upd s s' t (hdr base s d) → WP isa (.block is) s' Q) : WP isa (.block (.ldr t .r12 d :: is)) s Q :=
   wp_ldr hd (hs.ea12 (by omega_arith)) (hs.read hd') k
 
-theorem inspectP_ok {s : State} {base : Addr} {size pLen nP P : Nat} (hs : Ws s base size) (hz : 4960 ≤ size)
+theorem inspectP_ok {s : State} {base : Addr} {size pLen nP P : Nat} (hs : Ws s base size) (hz : 11232 ≤ size)
     (w : Width pLen nP) (R : Ready s base (.input .p) pLen) (hm : operand base s (.input .p) pLen = P) :
     WP isa (Shape.inspectP pLen) s fun t =>
       hdr base t 8 = mask32 (Spec.Dsa.bitLength P = 1024) ∧
       hdr base t 12 = mask32 (Spec.Dsa.bitLength P = 2048) ∧
       hdr base t 16 = mask32 (Spec.Dsa.bitLength P = 3072) ∧ (hdr base t 32).toNat % 2 = P % 2 ∧
-      Rest coreClob s t ∧ Outs base [(8, 12), (32, 4), (256, 4704)] s.mem t.mem := by
+      Rest coreClob s t ∧ Outs base [(8, 12), (32, 4), (256, 10976)] s.mem t.mem := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
   have nw := hs.nowrap
   obtain s0 := slot_lt (i := 0) n48 (by decide)
@@ -200,7 +200,7 @@ theorem inspectP_ok {s : State} {base : Addr} {size pLen nP P : Nat} (hs : Ws s 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨(8, 12), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
-    · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+    · exact ⟨(256, 10976), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
 
 /-- Both low bits set, as a mask. -/
 theorem odd_mask (x y : BitVec 32) : 0 - (x &&& y &&& 1) = mask32 (x.toNat % 2 = 1 ∧ y.toNat % 2 = 1) := by
@@ -276,7 +276,7 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
     exact writeW32_outside _ _ _ (by omega_arith)
 
 /-- `[32]` = whether `[slot 0]` and `[32]` are both odd. -/
-theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : 4960 ≤ size) (_hn : 0 < n)
+theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : 11232 ≤ size) (_hn : 0 < n)
     (hn48 : n ≤ 48) :
     WP isa (.block (Shape.parity n)) s fun t =>
       hdr base t 32 = mask32 (w32 s.mem base (slot n 0) % 2 = 1 ∧ (hdr base s 32).toNat % 2 = 1) ∧
@@ -314,7 +314,7 @@ theorem shape_iff (P Q : Nat) :
   simp only [shapeValid, Spec.Dsa.supportedSizes]
   omega_arith
 
-theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws s base size) (hz : 4960 ≤ size)
+theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws s base size) (hz : 11232 ≤ size)
     (w : Width qLen nQ) (R : Ready s base (.input .q) qLen) (hm : operand base s (.input .q) qLen = Q)
     (h8 : hdr base s 8 = mask32 (Spec.Dsa.bitLength P = 1024))
     (h12 : hdr base s 12 = mask32 (Spec.Dsa.bitLength P = 2048))
@@ -324,7 +324,7 @@ theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws 
       hdr base t 20 = mask32 (Spec.Dsa.bitLength Q = 160) ∧
       hdr base t 24 = mask32 (Spec.Dsa.bitLength Q = 224) ∧
       hdr base t 28 = mask32 (Spec.Dsa.bitLength Q = 256) ∧
-      Rest coreClob s t ∧ Outs base [(20, 16), (116, 4), (256, 4704)] s.mem t.mem := by
+      Rest coreClob s t ∧ Outs base [(20, 16), (116, 4), (256, 10976)] s.mem t.mem := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
   have nw := hs.nowrap
   unfold Shape.inspectQ
@@ -367,7 +367,7 @@ theorem inspectQ_ok {s : State} {base : Addr} {size qLen nQ P Q : Nat} (hs : Ws 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨(20, 16), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
-      · exact ⟨(256, 4704), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 10976), by simp, by simp only; omega_arith, by simp only; omega_arith⟩
     · intro r hr
       simp only [List.mem_singleton] at hr
       subst hr
@@ -497,10 +497,10 @@ theorem digestPrefix_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base
     fun t ⟨Vt, Rt, Ot⟩ => ⟨by rw [Vt, hdr, hdr, Mu], (Ru.mono (by decide)).trans Rt, by rw [← Mu]; exact Ot⟩
 
 /-- The memory the shape's checks change. -/
-def shapeRanges : List (Nat × Nat) := [(8, 28), (112, 8), (256, 4704)]
+def shapeRanges : List (Nat × Nat) := [(8, 28), (112, 8), (256, 10976)]
 
 theorem check_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat} (hs : Ws s base size)
-    (hz : 4960 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
+    (hz : 11232 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
     (Rp : Ready s base (.input .p) pLen) (Rq : Ready s base (.input .q) qLen)
     (hP : operand base s (.input .p) pLen = P) (hQ : operand base s (.input .q) qLen = Q) :
     WP isa (Shape.check pLen qLen) s fun t =>
@@ -549,11 +549,11 @@ theorem check_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat} (hs 
     · rcases hr with rfl | rfl | rfl
       · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
       · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
-      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 10976), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
     · rcases hr with rfl | rfl | rfl
       · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
       · exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
-      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
+      · exact ⟨(256, 10976), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
     · subst hr
       exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega_arith, by simp only; omega_arith⟩
 

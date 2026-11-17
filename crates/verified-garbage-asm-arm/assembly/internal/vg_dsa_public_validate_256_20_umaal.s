@@ -403,7 +403,7 @@ vg_dsa_public_validate_256_20_umaal:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14816
@@ -629,7 +629,7 @@ vg_dsa_public_validate_256_20_umaal:
 	bne 227b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_5_umaal}
 	mov r12, r11
 	movw r11, #14944
@@ -802,7 +802,7 @@ vg_dsa_public_validate_256_20_umaal:
 	bne 236b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_5_umaal}
 	mov r12, r11
 	movw r11, #14944

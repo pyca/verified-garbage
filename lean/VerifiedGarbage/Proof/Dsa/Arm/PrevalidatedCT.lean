@@ -142,7 +142,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
+  obtain hz : 11232 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
   obtain C₁ := validateCtx h₁ rfl rfl F₁
   obtain C₂ := validateCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
@@ -230,7 +230,7 @@ theorem prevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  obtain ho : 11232 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   obtain Q₁ := operand_lt_of (X.C₁.inp mq)
   obtain Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
@@ -299,7 +299,7 @@ theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub (Pr
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 5).toNat * 8 := by omega_arith
+  obtain hz : 11232 ≤ (arg s₁ 5).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -⟩ := verifyKeyIn h₂ hb₂ hz₂ F₂
   obtain Rp₂ : Ready t₂ (State.addr (arg s₁ 4)) (.input .p) (s₁.gpr .r2).toNat := by rw [hr2]; exact Ip₂.toReady

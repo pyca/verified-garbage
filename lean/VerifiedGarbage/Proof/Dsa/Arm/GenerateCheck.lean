@@ -502,7 +502,7 @@ theorem checkIn {s t : State} {base : Addr} {size : Nat} (h : checkPre s) (hb : 
   obtain ⟨_, hrd, _, dPS, _, fP, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have pr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r0) (by simp))
@@ -533,7 +533,7 @@ theorem check_correct {s : State} (h : checkPre s) :
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 11232 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, Ig₁⟩ := checkIn h rfl rfl E₁
   -- The specification's components.
   have hpl : (checkParams s).length = 2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat := by

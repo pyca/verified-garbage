@@ -49,7 +49,7 @@ theorem signingSubgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have ht : Impl.Dsa.Layout.t + pLen < size := by omega_arith
   unfold Validate.signingSubgroup

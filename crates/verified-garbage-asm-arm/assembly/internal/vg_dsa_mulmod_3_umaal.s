@@ -17,7 +17,7 @@ vg_dsa_mulmod_3_umaal:
 	str lr, [r12, #40]
 	mov r4, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_context_3_umaal}
 	mov r12, r4
 	movw r10, #320

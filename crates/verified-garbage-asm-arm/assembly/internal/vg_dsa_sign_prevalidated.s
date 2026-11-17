@@ -698,7 +698,7 @@ vg_dsa_sign_prevalidated:
 	bne 246b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_5}
 	mov r12, r11
 	movw r11, #14944
@@ -746,7 +746,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14720
@@ -823,7 +823,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_pow_3_5}
 	mov r12, r11
 	movw r11, #14784
@@ -900,7 +900,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_mulmod_3}
 	mov r12, r11
 	movw r11, #14816
@@ -947,7 +947,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14880
@@ -1211,7 +1211,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_mulmod_3}
 	mov r12, r11
 	movw r11, #14752
@@ -2200,7 +2200,7 @@ vg_dsa_sign_prevalidated:
 	bne 2115b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #620
+	movw r1, #1404
 	bl {vg_dsa_pow_48_8}
 	mov r12, r11
 	movw r11, #14944
@@ -2246,7 +2246,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14720
@@ -2317,7 +2317,7 @@ vg_dsa_sign_prevalidated:
 	bne 2121b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_pow_4_8}
 	mov r12, r11
 	movw r11, #14784
@@ -2388,7 +2388,7 @@ vg_dsa_sign_prevalidated:
 	bne 2125b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14816
@@ -2433,7 +2433,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14880
@@ -2685,7 +2685,7 @@ vg_dsa_sign_prevalidated:
 	bne 2138b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14752
@@ -3576,7 +3576,7 @@ vg_dsa_sign_prevalidated:
 	bne 2180b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_8}
 	mov r12, r11
 	movw r11, #14944
@@ -3622,7 +3622,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14720
@@ -3693,7 +3693,7 @@ vg_dsa_sign_prevalidated:
 	bne 2186b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_pow_4_8}
 	mov r12, r11
 	movw r11, #14784
@@ -3764,7 +3764,7 @@ vg_dsa_sign_prevalidated:
 	bne 2190b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14816
@@ -3809,7 +3809,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14880
@@ -4061,7 +4061,7 @@ vg_dsa_sign_prevalidated:
 	bne 2203b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14752
@@ -4960,7 +4960,7 @@ vg_dsa_sign_prevalidated:
 	bne 2245b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #428
+	movw r1, #956
 	bl {vg_dsa_pow_32_7}
 	mov r12, r11
 	movw r11, #14944
@@ -5008,7 +5008,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14720
@@ -5085,7 +5085,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_pow_4_7}
 	mov r12, r11
 	movw r11, #14784
@@ -5162,7 +5162,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14816
@@ -5209,7 +5209,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14880
@@ -5473,7 +5473,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #172
 	bl {vg_dsa_mulmod_4}
 	mov r12, r11
 	movw r11, #14752
@@ -6153,7 +6153,7 @@ vg_dsa_sign_prevalidated:
 	bne 2300b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #236
+	movw r1, #508
 	bl {vg_dsa_pow_16_5}
 	mov r12, r11
 	movw r11, #14944
@@ -6201,7 +6201,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14720
@@ -6278,7 +6278,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_pow_3_5}
 	mov r12, r11
 	movw r11, #14784
@@ -6355,7 +6355,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_mulmod_3}
 	mov r12, r11
 	movw r11, #14816
@@ -6402,7 +6402,7 @@ vg_dsa_sign_prevalidated:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_reduce_3}
 	mov r12, r11
 	movw r11, #14880
@@ -6666,7 +6666,7 @@ vg_dsa_sign_prevalidated:
 	str r4, [r10, #0]
 	mov r11, r12
 	mov r0, r12
-	movw r1, #80
+	movw r1, #144
 	bl {vg_dsa_mulmod_3}
 	mov r12, r11
 	movw r11, #14752

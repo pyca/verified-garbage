@@ -59,7 +59,7 @@ structure PowInv (n m : Nat) (base : Addr) (size o bits : Nat) (s : State) (j : 
 
 /-- `[slot o] = 2^bits mod m`, for `0 < bits < 2¹⁶`, doubling one. -/
 theorem powerTwo_ok {n m size o bits : Nat} {base : Addr} {s : State} (h : Context n m base size s)
-    (ho : 6 ≤ o ∧ o < 12) (hb : 0 < bits) (hb16 : bits < 2 ^ 16) :
+    (ho : 6 ≤ o ∧ o < 28) (hb : 0 < bits) (hb16 : bits < 2 ^ 16) :
     WP isa (powerTwo (contextMod n) (accS n) (slot n o) bits) s fun t => Context n m base size t ∧
       val32 t.mem base (slot n o) (2 * n) = 2 ^ bits % m ∧ Outs base (opRanges n o) s.mem t.mem ∧
       Rest (.lr :: dclob) s t := by

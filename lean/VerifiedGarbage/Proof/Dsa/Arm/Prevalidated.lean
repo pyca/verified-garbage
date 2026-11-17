@@ -105,7 +105,7 @@ theorem validateIn {s t : State} {base : Addr} {size : Nat} (h : validatePre s) 
   obtain ⟨_, hrd, _, dKS, _, fK, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 11232 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat)
@@ -161,7 +161,7 @@ theorem validate_correct {s : State} (h : validatePre s) :
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 11232 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := validateIn h rfl rfl E₁
   unfold Prevalidated.validateSized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
@@ -220,7 +220,7 @@ theorem prevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S 
   have fits := Sc.fits
   have Qlt := operand_lt_of Iq
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  have ho : 11232 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   unfold Prevalidated.body Prevalidated.compute Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
@@ -278,7 +278,7 @@ theorem prevalidated_correct {s : State} (h : prevPre s) :
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by omega_arith
+  have hz : 11232 ≤ (arg s 5).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h rfl rfl E₁
   unfold Prevalidated.sized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)

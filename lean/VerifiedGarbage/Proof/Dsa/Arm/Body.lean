@@ -93,7 +93,7 @@ theorem Body.of_out {base P : Addr} {L e l : Nat} {s t : State} (R : Rest coreCl
     omega_arith))⟩
 
 theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (hs : Ws s base size)
-    (hz : 15712 < size) (wq : Width qLen nQ) (q32 : qLen ≤ 32) (hin : 4960 ≤ input) (hin' : input + qLen ≤ 15712)
+    (hz : 15712 < size) (wq : Width qLen nQ) (q32 : qLen ≤ 32) (hin : 11232 ≤ input) (hin' : input + qLen ≤ 15712)
     (hv : localVal base s input qLen = v) (hvl : v < 256 ^ qLen)
     (acc : Prop) [Decidable acc] (hm : maskW base s = mask32 acc) (O : Output s base size (2 * qLen)) (second : Bool) :
     WP isa (SignVerify.writeScalar qLen input second) s fun t =>
@@ -102,7 +102,7 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (h
         (if acc then Spec.Dsa.encodeBE qLen v else List.replicate qLen 0) ∧
       maskW base t = maskW base s ∧
       pointerValue base t (.input .out) = pointerValue base s (.input .out) ∧ t.wr = s.wr ∧
-      KeepsLocals base s t 4960 15712 ∧
+      KeepsLocals base s t 11232 15712 ∧
       (∀ e k, e + k ≤ 2 * qLen → (e + k ≤ (if second then qLen else 0) ∨ (if second then qLen else 0) + qLen ≤ e) →
         Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 e) k =
           Spec.Rsa.bytesAt s.mem (State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 e) k) ∧
