@@ -143,7 +143,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
     WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
   unfold codeG
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)
@@ -155,15 +155,25 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
   refine WP.seq (WP.mono (maskPart_ok h h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (alPart_ok h h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (scanPart_ok h h₉) fun t₁₀ h₁₀ => ?_)
-  refine WP.mono (selPart_ok h h₁₀ (rOf_lt _)) fun u hu => ?_
+  refine WP.mono (selPart_ok h h₁₀ (rOf_lt _)) fun u hu mL _ fl => ?_
   have hAM : (amOf s (Spec.RsaPkcs1Enc.kdk (s.gpr .r7).toNat (dOf s) (cOf s))).length = (s.gpr .r7).toNat := by
     show (Spec.RsaPkcs1Enc.irprf _ _ _).length = _
     rw [← h₇.am]; exact Proof.Rsa.bytesAt_length' _ _ _
-  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨abiPreserved_lost ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · rw [freed_gpr]; exact hu.hi r hr
   · rw [freed_sp, hu.sp]; exact BitVec.sub_add_cancel _ _
   · rw [freed_lr]; exact hu.lr
-  · refine result_ok h rfl ?_ hu.r3 hu.out hu.ml hAM
+  · -- The `free` loses the frame's bytes, which lie apart from the outputs.
+    have hfb : frameBytes ≤ stackBytes := by unfold stackBytes; omega_using []
+    have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (kR s) :=
+      Offset.sub_below _ hfb (by omega_using [hfb])
+    have hoR : (⟨s.gpr .r3, (s.gpr .r7).toNat⟩ : Region) = oR s := by simp only [oR, h.h4]
+    refine result_ok h rfl ?_ hu.r3
+      (fun i hi => (lost_byte fl (R := ⟨s.gpr .r3, (s.gpr .r7).toNat⟩)
+        (by rw [hoR]; exact (h.ko.sub_left hsub).symm) hi).trans (hu.out i hi))
+      ((fl.readW (r := mlR s) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide)
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (h.km.sub_left hsub).symm)
+        (by decide)).trans hu.ml) hAM
     have e : rsadpOf s (cOf s) = Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .r7).toNat)

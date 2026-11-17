@@ -21,6 +21,33 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Random VG.Proof.RsaPkcs1Sig.PPC64
 theorem post_congr {s x y : State} (hm : x.mem = y.mem) (h3 : x.gpr .r3 = y.gpr .r3) (h : post s y) : post s x := by
   unfold post at *; rw [hm, h3]; exact h
 
+/-- `post` holds whatever the bytes of the frame hold once it is freed: the
+tape and the output lie apart from it. -/
+theorem post_lost {s u : State} (hp : RPre s) {m : Mem} {x : Nat → BitVec 64}
+    (fl : Frame [⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩] u.mem m) (h : post s u) :
+    post s { u with mem := m, unknowns := x } := by
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (kR s) :=
+    Offset.sub_below _ (by unfold rndStack; omega_using []) (by unfold rndStack; omega_using [])
+  have hT : ∀ r ∈ [(⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ : Region)], (tapeR s).Disjoint r :=
+    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (hp.dKt.sub_left hsub).symm
+  have hb : Spec.Rsa.bytesAt m (s.gpr .r3) (kOf s) = Spec.Rsa.bytesAt u.mem (s.gpr .r3) (kOf s) :=
+    List.map_congr_left fun i hi => lost_byte fl (R := outR s) (hp.dKo.sub_left hsub).symm
+      (by show i < (s.gpr .r4).toNat; have h₁ := List.mem_range.mp hi; have h₂ := hp.hok; simp only [kOf] at h₁; omega_using [h₁, h₂])
+  obtain ⟨⟨req, h1, h2, h3⟩, h4⟩ := h
+  refine ⟨⟨req, ?_, ?_, h3⟩, ?_⟩
+  · show m.readW (s.gpr .r5) 64 = _
+    rw [fl.readW (r := tapeR s) (a := s.gpr .r5) (w := 64) (Region.contains_self' (by decide)) hT (by decide)]; exact h1
+  · show m.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = _
+    rw [fl.readW (r := tapeR s) (w := 64) (Offset.contains_base _ (by decide) (by decide)) hT (by decide)]; exact h2
+  · revert h4
+    generalize (Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)).outcome = o
+    cases o
+    case accepted ps =>
+      intro h hq; have h := h hq
+      generalize Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) ps = c at h ⊢
+      cases c <;> simp only [Spec.RsaPkcs1Enc.writtenRandom, hb] at h ⊢ <;> exact h
+    all_goals (intro h; rw [hb]; exact h)
+
 theorem freed_mem' (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
 
 theorem freed_gpr' (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
@@ -58,6 +85,8 @@ theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptRandomContract ab
   have hp := pre_of h
   show WP isa code s fun t => abiPreserved s t ∧ post s t
   unfold code
-  exact WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega_using [this]) (body_ok hp)
+  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega_using [this])
+    (WP.mono (body_ok hp) fun w ⟨ha, h⟩ _ _ fl => ⟨abiPreserved_lost ha,
+      post_lost (u := freed frameBytes w) hp (by rw [freed_mem_eq]; exact fl) h⟩)
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd
