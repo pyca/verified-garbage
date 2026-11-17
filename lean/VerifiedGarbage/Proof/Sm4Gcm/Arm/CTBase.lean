@@ -62,7 +62,7 @@ theorem taint {I : State → Prop} {c : Prog isa} (rs : List Reg)
 theorem skip {I : State → Prop} : CT I (.block []) :=
   taint [] (fun _ _ _ _ _ h => by simp at h) (h := .block []) rfl
 
-theorem gh {I : State → Prop}
+theorem gh [VG.Proof.Gcm.Arm.GhashLaw] {I : State → Prop}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ H Y D S : BitVec 32, ∃ n : Nat,
       GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) : CT I ghFrame :=
   gh_rel fun _ _ hh => h _ _ hh.1 hh.2

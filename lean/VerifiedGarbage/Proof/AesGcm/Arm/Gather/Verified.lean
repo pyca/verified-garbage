@@ -136,7 +136,7 @@ theorem seal_stack : armStack (Impl.StackScratch.Arm.withStackScratch 2592 5 «s
   decide +kernel
 
 /-- `vg_aes_gcm_seal`, by its shared contract. -/
-def sealFn : SealFn :=
+def sealFn [VG.Proof.Gcm.Arm.GhashLaw] : SealFn :=
   ⟨Spec.Gcm.sealApi.name, Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal», seal_framed, seal_stack⟩
 
 end VG.Proof.AesGcm.Arm.Gather

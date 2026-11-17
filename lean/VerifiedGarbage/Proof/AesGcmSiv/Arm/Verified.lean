@@ -55,14 +55,14 @@ def openSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 16⟩, ⟨0x8000, 20⟩],
                  wr := [⟨0, 0⟩, ⟨0x5000, 3760⟩] }
 
-theorem seal_verified : Verified Arm.target «seal» (Proof.AesGcmSiv.sealScratchContract Arm.abi 470 8) :=
+theorem seal_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «seal» (Proof.AesGcmSiv.sealScratchContract Arm.abi 470 8) :=
   Verified.of_correct (fun _ hs => seal_wp tagInput_eq hs) seal_ct (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
       Proof.AesGcmSiv.sealRoundsPost, sealArm, sealPre, oneLay, onePub, rounds, bel, arg, args, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
-theorem open_verified : Verified Arm.target «open» (Proof.AesGcmSiv.openScratchContract Arm.abi 470 8) :=
+theorem open_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «open» (Proof.AesGcmSiv.openScratchContract Arm.abi 470 8) :=
   Verified.of_correct (fun _ hs => open_wp tagInput_eq hs) open_ct
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
         Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openArm, openResult, openPost,
@@ -119,7 +119,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract Arm.abi 38
     [sealFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed :
+theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal»)
       (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3800) :=
   Arm.Verified.stackScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
@@ -140,7 +140,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract Arm.abi 38
     [openFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
-theorem open_framed :
+theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «open»)
       (Proof.AesGcmSiv.openRoundsContract Arm.abi 3800) :=
   Arm.Verified.stackScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)

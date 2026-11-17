@@ -363,7 +363,7 @@ theorem wholeLeft_ok {t : State} {r : Nat} (hr : r < 2 ^ 32) (h5 : t.gpr .r5 = B
   simp only [z_subFlags, gpr_setReg, ite_true, ofNat_lsr32 hr]
   rw [z_cmp (by omega_arith) (by decide)]
 
-theorem chunk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
+theorem chunk_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
     (hm : m < 2 ^ 32) (h16 : 16 ≤ m) (hQ : Src p t Q (16 * (m / 16))) (h4 : t.gpr .r4 = Q)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 m) :
     WP isa chunk t (ChunkPost p Q m (min (m / 16) 64) t) := by
@@ -518,7 +518,7 @@ theorem CInv.step {p : Prm} (L : Lay p) {σ t t' : State} {Q : BitVec 32} {m d :
     by rw [C.r5]; congr 1; omega_arith⟩, by rw [C.z]; congr 1; apply propext; omega_arith⟩
 
 /-- The whole blocks: chunks until fewer than 16 bytes are left. -/
-theorem chunks_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
+theorem chunks_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
     (hm : m < 2 ^ 32) (h16 : 16 ≤ m) (hQ : Src p t Q (16 * (m / 16))) (h4 : t.gpr .r4 = Q)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 m) :
     WP isa (.loop chunk .ne) t fun t' =>

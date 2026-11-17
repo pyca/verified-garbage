@@ -125,7 +125,7 @@ structure OpenMid (to : Bool) (s₀ s : State) : Prop where
   z : s.z = decide (¬ openTagOk to s₀)
 
 /-- `open` up to the comparison of the tags, followed by any `T`. -/
-theorem open_head {to : Bool} {s₀ s₂ : State} (ho : OPre to s₀) (h2 : SO1 (oNa to) (oWi to) s₀ s₂)
+theorem open_head [VG.Proof.Gcm.Arm.GhashLaw] {to : Bool} {s₀ s₂ : State} (ho : OPre to s₀) (h2 : SO1 (oNa to) (oWi to) s₀ s₂)
     (hok : Spec.Gcm.tagLenOk (arg s₀ (oLi to)).toNat = true) {T : Prog isa} {Q : State → Prop}
     (k : ∀ s₈, OpenMid to s₀ s₈ → WP isa T s₈ Q) :
     WP isa (.seq oneAad (.seq (oneTag uO) (.seq (.block [.ldrSp .r6 (tagLenOff to)]) (.seq (recvAt (tagOff to))
@@ -478,7 +478,7 @@ structure OB (to : Bool) (s₀ s : State) : Prop where
   args : ArgsKeep (oNa to) s₀ s
   post : OpenPostG to s₀ s
 
-theorem open_good {to : Bool} {s₀ s₂ : State} (ho : OPre to s₀) (h2 : SO1 (oNa to) (oWi to) s₀ s₂)
+theorem open_good [VG.Proof.Gcm.Arm.GhashLaw] {to : Bool} {s₀ s₂ : State} (ho : OPre to s₀) (h2 : SO1 (oNa to) (oWi to) s₀ s₂)
     (hok : Spec.Gcm.tagLenOk (arg s₀ (oLi to)).toNat = true) : WP isa (openGood to) s₂ (OB to s₀) := by
   have h := ho.one
   obtain L := oneLay h
@@ -534,7 +534,7 @@ theorem open_good {to : Bool} {s₀ s₂ : State} (ho : OPre to s₀) (h2 : SO1 
     exact ⟨r0.trans (ite_eq_right_iff.mpr (fun h => absurd h e)), hd₂ e⟩
 
 /-- The branch on the tag length. -/
-theorem openMid_wp {to : Bool} {s₀ s₃ : State} (ho : OPre to s₀) (h3 : SO1 (oNa to) (oWi to) s₀ s₃)
+theorem openMid_wp [VG.Proof.Gcm.Arm.GhashLaw] {to : Bool} {s₀ s₃ : State} (ho : OPre to s₀) (h3 : SO1 (oNa to) (oWi to) s₀ s₃)
     (hz₃ : s₃.z = !Spec.Gcm.tagLenOk (arg s₀ (oLi to)).toNat) :
     WP isa (.ite .eq (.block [.mov .r0 (imm 0)]) (openGood to)) s₃ (OB to s₀) := by
   have h' := ho.one
@@ -565,7 +565,7 @@ theorem openEntry_wp {to : Bool} {s₀ : State} (h : onePre (oNa to) (oWi to) s�
   exact ⟨h1.keep (fun r _ b => by simp [gpr_setReg, b]) ⟨rfl, rfl, rfl, rfl⟩, by simp [gpr_setReg, v5]⟩
 
 /-- The body of `open` (`to = false`) and `open_to`, up to their ends. -/
-theorem openBody_wp {to : Bool} {s₀ : State} (ho : OPre to s₀) {Q : State → Prop}
+theorem openBody_wp [VG.Proof.Gcm.Arm.GhashLaw] {to : Bool} {s₀ : State} (ho : OPre to s₀) {Q : State → Prop}
     (k : ∀ s, OB to s₀ s → WP isa (openEnd to) s Q) : WP isa (openG to) s₀ Q := by
   have h' := ho.one
   obtain L := oneLay h'
@@ -589,7 +589,7 @@ theorem openBody_wp {to : Bool} {s₀ : State} (ho : OPre to s₀) {Q : State �
   obtain h3 : SO1 (oNa to) (oWi to) s₀ s₃ := (h1.keep (fun r a b => g₂ r b) k₂).keep (fun r a b => g₃ r a) k₃
   exact WP.seq (WP.mono (openMid_wp ho h3 hz₃) k)
 
-theorem open_wp {s₀ : State} (h : openArm.pre s₀) :
+theorem open_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : openArm.pre s₀) :
     WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openArm.post s₀ s' := by
   obtain ho := openPreArm.oPre h
   have h' := ho.one

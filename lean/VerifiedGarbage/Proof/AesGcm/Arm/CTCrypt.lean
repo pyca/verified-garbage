@@ -324,7 +324,7 @@ theorem crypt_ct {k8 : BitVec 32} {R : Nat} {D : BitVec 32} {n q : Nat} :
       ⟨k7, icb, P, m₀, hP, by rw [hj] at hm; exact hm⟩) (cryptTail_ct L)
 
 /-- `tag o`, from an environment with the number of rounds in `r8`. -/
-theorem tag_ct {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+theorem tag_ct [VG.Proof.Gcm.Arm.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     CT (fun s => ∃ k7, Env c st w sp k7 (BitVec.ofNat 32 R) s) (tag o) := by
   refine CT.seq (J := fun s => ∃ k7, Env c st w sp k7 (BitVec.ofNat 32 R) s)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨k7, he⟩ => ⟨k7, _, he⟩)

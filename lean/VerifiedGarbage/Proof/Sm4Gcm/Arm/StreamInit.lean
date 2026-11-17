@@ -98,7 +98,7 @@ theorem si_fin {s₀ s₂ : State} (h : streamInitArm.pre s₀) (h2 : SI2 s₀ s
   rw [Proof.Gcm.streamRepr_iff, hm, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit]
   exact ⟨hj, Proof.Gcm.absorbed_nil _ hy, Proof.Gcm.ctr_zero _ _ _ _ hcb⟩
 
-theorem streamInit_wp {s₀ : State} (h : streamInitArm.pre s₀) :
+theorem streamInit_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamInitArm.pre s₀) :
     WP isa streamInit s₀ fun s' => abiPreserved s₀ s' ∧ streamInitArm.post s₀ s' :=
   WP.seq (WP.mono (si1_wp h) fun s₁ h1 => WP.seq (WP.mono (j0_ok (siLay h) (si_j0In h h1)) fun _ ho =>
     si_fin h ⟨s₁, h1, ho⟩))

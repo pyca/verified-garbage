@@ -456,7 +456,7 @@ theorem WP.rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
   exact ⟨t, s', e, hq, (Exec.rdwr e).1, (Exec.rdwr e).2.1⟩
 
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (hti : TagInputEq) {s : State} (h : sealPre s) :
+theorem seal_wp [VG.Proof.Gcm.Arm.GhashLaw] (hti : TagInputEq) {s : State} (h : sealPre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealArm.post s s' := by
   obtain ⟨L, P, hTw⟩ := args_of_seal h
   have hRb := L.rounds_le
@@ -568,7 +568,7 @@ theorem ite_ofNat (c : Prop) [Decidable c] :
   split <;> rfl
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (hti : TagInputEq) {s : State} (h : openPre s) :
+theorem open_wp [VG.Proof.Gcm.Arm.GhashLaw] (hti : TagInputEq) {s : State} (h : openPre s) :
     WP isa «open» s fun s' => abiPreserved s s' ∧ openArm.post s s' := by
   obtain ⟨L, P⟩ := args_of_open h
   have hRb := L.rounds_le

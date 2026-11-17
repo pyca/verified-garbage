@@ -72,7 +72,7 @@ theorem srcB {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s (p.W + B
   · exact L.bw' (by decide)
 
 /-- One chunk of the 16 bytes at `W + 176`: their field element absorbed. -/
-theorem chunkB_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+theorem chunkB_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t)
     (h4 : t.gpr .r4 = p.W + BitVec.ofNat 32 176) (h5 : t.gpr .r5 = BitVec.ofNat 32 16) :
     WP isa chunk t (Absorbed p (absR (State.addr p.W) p.SP)
       [Spec.GcmSiv.ofBytes (bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 176) 16)] t) :=
@@ -164,7 +164,7 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
     by simp only [mem_setReg]; exact f₂, by simp only [mem_setReg]; exact hb₂⟩
 
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
-theorem absTail_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
+theorem absTail_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨State.addr P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
     (hd : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩) (h4 : t.gpr .r4 = P)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 r) :
@@ -198,7 +198,7 @@ theorem elems_pad16_bytesAt (m : Mem) (Q : Addr) (n : Nat) :
   rw [GcmSiv.elems_pad16, length_bytesAt, hs, List.take_left' hl, List.drop_left' hl, GcmSiv.elems_bytesAt]
 
 /-- The whole blocks of `absorb`, once `Z` says whether there are any. -/
-theorem absMid_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
+theorem absMid_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
     (hm : m < 2 ^ 32) (hQ : Src p t Q m) (h4 : t.gpr .r4 = Q) (h5 : t.gpr .r5 = BitVec.ofNat 32 m)
     (hz : t.z = decide (m / 16 = 0)) :
     WP isa (.ite .eq (.block []) (.loop chunk .ne)) t fun t₂ =>
@@ -211,7 +211,7 @@ theorem absMid_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32
   · have h0 : m / 16 ≠ 0 := by simpa using hf
     exact chunks_ok L E hm (by omega_arith) (hQ.take (by omega_arith)) h4 h5
 
-theorem absorb_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
+theorem absorb_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
     (hQ : Src p t Q m) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩) (h4 : t.gpr .r4 = Q)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 m) :
     WP isa absorb t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem (State.addr Q) m))) t) := by
@@ -268,7 +268,7 @@ theorem absorbR_args {p : Prm} (L : Lay p) : ∀ r ∈ absorbR (State.addr p.W) 
   · exact L.args_below
 
 /-- `lensBlock` and its chunk: the lengths block absorbed. -/
-theorem lens_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) :
+theorem lens_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) :
     WP isa lens t (AbsPost p
       [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n))] t) := by
   obtain w₀ := E.perm.wW (show 176 + 4 ≤ 3760 by decide)
@@ -376,7 +376,7 @@ theorem srcA {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s p.A p.al
 theorem srcD {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s p.D p.n :=
   ⟨covers_left P.d, L.dw, L.d_w' (by decide), L.d_w' (by decide), L.bd⟩
 
-theorem polyval_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem)
+theorem polyval_ok [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem)
     (hG : Spec.Gcm.blockAt t.mem (State.addr p.W + BitVec.ofNat 64 64) =
       hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (State.addr p.W + BitVec.ofNat 64 80) = 0) :

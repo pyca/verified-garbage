@@ -221,7 +221,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn c st w sp k7 k8
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 /-- The padded buffer absorbed. -/
-theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
+theorem flushGh_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     (h : FlMid c st w sp k7 k8 yo H (x.length % 16) m₀ s) (h0 : x.length % 16 ≠ 0) :
     WP isa (ghash1 yo .r11 tO) s (FlOut c st w sp k7 k8 yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
@@ -247,7 +247,7 @@ theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
 
 /-- `flush yo`. -/
-theorem flush_ok {H : Block} {x : List Byte} {s : State} (h : FlIn c st w sp k7 k8 H s)
+theorem flush_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {s : State} (h : FlIn c st w sp k7 k8 H s)
     (h6 : s.gpr .r6 = BitVec.ofNat 32 (x.length % 16)) :
     WP isa (flush yo) s (FlOut c st w sp k7 k8 yo H x (x ++ zeros (padLen x.length)) s.mem) := by
   have he := h.env
@@ -317,7 +317,7 @@ variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo 
 include L hyo
 
 /-- The lengths block of `r5:r4` and `r7:r6` bytes, absorbed. -/
-theorem lens_ok {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
+theorem lens_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {s : State} (he : Env c st w sp k7 k8 s)
     (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) :
     WP isa (lens yo) s fun s' => Env c st w sp k7 k8 s' ∧
       blockAt s'.mem (State.addr c + BitVec.ofNat 64 240) = H ∧

@@ -75,7 +75,7 @@ theorem t_taFrame {m m' : Mem} (h : Frame (tFrame st w sp 16) m m') : Frame (taF
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp
 
-theorem textAbsorb_ok {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env c st w sp k7 k8 s)
+theorem textAbsorb_ok [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env c st w sp k7 k8 s)
     (hk : ArgsKeep 5 s₀ s) (hf : s₀.sp.toNat + 4 * 5 ≤ 2 ^ 32) (hin : args s₀ 5 ∈ s₀.rd)
     (hA : ∀ r ∈ taFrame st w sp, (args s₀ 5).Disjoint r)
     (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H)

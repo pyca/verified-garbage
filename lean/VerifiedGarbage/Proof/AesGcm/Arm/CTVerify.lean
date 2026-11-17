@@ -168,7 +168,7 @@ theorem recv_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args 
     (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (h : P6 c st w sp R tl t₀ s) : WP isa recv s (P6 c st w sp R tl t₀) :=
   recvn_wp L (by decide) (by decide) rfl hf hin hD hTr hTf hTd h1 h16 h
 
-theorem ft_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
+theorem ft_wp [VG.Proof.Gcm.Arm.GhashLaw] {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
     (hA : ∀ r ∈ tagFrame st w sp 0, (args t₀ 7).Disjoint r) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h : FT 7 t₀ c st w sp R s) : WP isa (finTag 0) s (FT 7 t₀ c st w sp R) := by
   obtain ⟨k7, he, hk⟩ := h
@@ -195,7 +195,7 @@ theorem cmp_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) {o : Nat} (ho
 
 end
 
-theorem streamVerify_rel {s₀ s₀' : State} (h0 : streamVerifyArm.pre s₀) (h0' : streamVerifyArm.pre s₀')
+theorem streamVerify_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamVerifyArm.pre s₀) (h0' : streamVerifyArm.pre s₀')
     (hq : streamVerifyArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamVerify fun _ _ => True := by
   have h0₇ : finPre 7 6 s₀ := streamVerifyPreArm.fin h0
@@ -299,7 +299,7 @@ theorem streamVerify_rel {s₀ s₀' : State} (h0 : streamVerifyArm.pre s₀) (h
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1, h.2]) hB
   exact a.seq (b.seq (mid.seq d))
 
-theorem streamVerify_ct : ConstantTime isa streamVerifyArm.pre streamVerifyArm.pub streamVerify :=
+theorem streamVerify_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamVerifyArm.pre streamVerifyArm.pub streamVerify :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamVerify_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesGcm.Arm

@@ -77,7 +77,7 @@ variable {c st w sp : BitVec 32} (L : Lay c st w sp)
 include L
 
 /-- `flush 16`, for one run, kept to what `textAbsorb` needs. -/
-theorem ta_flush {s₀ s : State} (h : TA s₀ c st w sp s) {q : Nat} (hq : q < 16) (h6 : s.gpr .r6 = BitVec.ofNat 32 q)
+theorem ta_flush [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s : State} (h : TA s₀ c st w sp s) {q : Nat} (hq : q < 16) (h6 : s.gpr .r6 = BitVec.ofNat 32 q)
     (hf : s₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hA : ∀ r ∈ taFrame st w sp, (args s₀ 7).Disjoint r) :
     WP isa (flush 16) s (TA s₀ c st w sp) := by
   obtain ⟨k7, k8, he, hk, hd⟩ := h
@@ -87,7 +87,7 @@ theorem ta_flush {s₀ s : State} (h : TA s₀ c st w sp s) {q : Nat} (hq : q < 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp)) sp' rd wr, hd.of_eq rd wr⟩
 
-theorem textAbsorb_rel {s₀ s₀' : State} (hf : s₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hsp : s₀.sp = s₀'.sp)
+theorem textAbsorb_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (hf : s₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hsp : s₀.sp = s₀'.sp)
     (ha : ∀ i < 7, arg s₀ i = arg s₀' i) (hw : ∀ r ∈ s₀.wr, (args s₀ 7).Disjoint r)
     (hw' : ∀ r ∈ s₀'.wr, (args s₀' 7).Disjoint r) (hin : args s₀ 7 ∈ s₀.rd) (hin' : args s₀' 7 ∈ s₀'.rd)
     (hA : ∀ r ∈ taFrame st w sp, (args s₀ 7).Disjoint r) (hA' : ∀ r ∈ taFrame st w sp, (args s₀' 7).Disjoint r) :

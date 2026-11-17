@@ -4,9 +4,11 @@ public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Data.ZMod.Defs
 public import VerifiedGarbage.Proof.Gcm.Holes
-import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Tactic.LinearCombination
 import VerifiedGarbage.Proof.Framework.Omega
+
+-- separate module: the mathematics is of no instruction set (as `Proof/Gcm/Holes.lean`), and a module of a
+-- target may not be imported by another target's.
 
 /-!
 # GHASH by 32-bit integer multiplications with holes

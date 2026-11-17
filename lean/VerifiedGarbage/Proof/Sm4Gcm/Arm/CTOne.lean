@@ -102,7 +102,7 @@ theorem so1_FT {s : State} (h1 : SO1 na wi t₀ s) (ec : t₀.gpr .r0 = c) (ew :
   subst ec ew esp e8
   exact ⟨_, h1.env, h1.args⟩
 
-theorem j0_wpI (h : onePre na wi t₀) (ec : t₀.gpr .r0 = c) (ew : arg t₀ wi = w) (esp : t₀.sp = sp) {s : State}
+theorem j0_wpI [VG.Proof.Gcm.Arm.GhashLaw] (h : onePre na wi t₀) (ec : t₀.gpr .r0 = c) (ew : arg t₀ wi = w) (esp : t₀.sp = sp) {s : State}
     (hs : FT na t₀ c (w + BitVec.ofNat 32 16) w sp k8 s) (h4 : s.gpr .r4 = t₀.gpr .r1)
     (h5 : s.gpr .r5 = t₀.gpr .r2) :
     J0I c (w + BitVec.ofNat 32 16) w sp (t₀.gpr .r1) (t₀.gpr .r2).toNat s ∧
@@ -188,7 +188,7 @@ theorem da_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hin : args t₀ na ∈ 
 variable (L : Lay c st w sp)
 include L
 
-theorem abs_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame st w sp, (args t₀ na).Disjoint r)
+theorem abs_wpI [VG.Proof.Gcm.Arm.GhashLaw] (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame st w sp, (args t₀ na).Disjoint r)
     {D : BitVec 32} {n : Nat} (hd : DataOk st w sp t₀ D n) {s : State} (hs : FT na t₀ c st w sp k8 s)
     (h4 : s.gpr .r4 = D) (h5 : s.gpr .r5 = BitVec.ofNat 32 n) (h6 : s.gpr .r6 = BitVec.ofNat 32 0) :
     AbsI c st w sp 16 D n 0 s ∧ WP isa (absorb 16) s (FT na t₀ c st w sp k8) := by
@@ -198,7 +198,7 @@ theorem abs_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame
   exact ⟨⟨_, _, _, _, rfl, ai⟩, WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) ai)) fun s' ⟨ab, rd', wr', sp'⟩ =>
     ⟨k7, ab.env, hk.frame hf ab.frame (disj_sub hJ abs16_sub) sp' rd' wr'⟩⟩
 
-theorem fl_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame st w sp, (args t₀ na).Disjoint r)
+theorem fl_wpI [VG.Proof.Gcm.Arm.GhashLaw] (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hJ : ∀ r ∈ j0Frame st w sp, (args t₀ na).Disjoint r)
     {q : Nat} (hq : q < 16) {s : State} (hs : FT na t₀ c st w sp k8 s) (h6 : s.gpr .r6 = BitVec.ofNat 32 q) :
     WP isa (flush 16) s (FT na t₀ c st w sp k8) := by
   obtain ⟨k7, he, hk⟩ := hs
@@ -218,7 +218,7 @@ theorem cr_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {D : BitVec 32} {n : Nat
   exact ⟨⟨_, _, _, rfl, ci⟩, WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s' ⟨co, rd', wr', sp'⟩ =>
     ⟨k7, co.env, hk.frame hf co.frame hA sp' rd' wr'⟩⟩
 
-theorem tg_wpI (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {o : Nat} (ho : o = 0 ∨ o = 112)
+theorem tg_wpI [VG.Proof.Gcm.Arm.GhashLaw] (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {o : Nat} (ho : o = 0 ∨ o = 112)
     (hT : ∀ r ∈ tagFrame st w sp o, (args t₀ na).Disjoint r) {s : State}
     (hs : FT na t₀ c st w sp k8 s) : WP isa (tag o) s (FT na t₀ c st w sp k8) := by
   obtain ⟨k7, he, hk⟩ := hs
@@ -257,7 +257,7 @@ variable {na wi : Nat} {s₀ s₀' : State} (h0 : onePre na wi s₀) (h0' : oneP
   (hn : 5 ≤ na) (hwi : wi < na)
 include h0 h0' hq hn hwi
 
-theorem oneAad_rel :
+theorem oneAad_rel [VG.Proof.Gcm.Arm.GhashLaw] :
     RelCT isa (fun a b => SO1 na wi s₀ a ∧ SO1 na wi s₀' b) oneAad fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
   have L := oneLay h0
@@ -354,7 +354,7 @@ theorem oneCrypt_rel :
     (fun s h => (cr_wpI L spf' hd' hwD' hcD' hA' h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).2)
   exact x1.seq x2
 
-theorem oneTag_rel {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem oneTag_rel [VG.Proof.Gcm.Arm.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) :
     RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) (oneTag o)
       fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq

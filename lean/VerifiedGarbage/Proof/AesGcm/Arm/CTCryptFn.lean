@@ -100,7 +100,7 @@ theorem ec1_crypt {s₀ s : State} (h : streamCryptPre s₀) (he : EC1 s₀ s) :
   have hk' := hk.frame spf co.frame (sc_argsCr h) sp rd wr
   exact ⟨⟨_, _, co.env, hk', (sc_dataW (k7 := k7) h hk').ok⟩, _, co.env⟩
 
-theorem streamEncrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' : streamCryptPre s₀')
+theorem streamEncrypt_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' : streamCryptPre s₀')
     (hq : streamCryptPub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamEncrypt fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, qa⟩ := sc_pubs hq
@@ -157,7 +157,7 @@ theorem streamEncrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' :
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r11, h₂.r11]) hB
   exact a.seq (b.seq (d.seq e))
 
-theorem streamDecrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' : streamCryptPre s₀')
+theorem streamDecrypt_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' : streamCryptPre s₀')
     (hq : streamCryptPub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamDecrypt fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, qa⟩ := sc_pubs hq
@@ -236,10 +236,10 @@ theorem streamDecrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' :
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r11, h₂.r11]) hB
   exact a.seq (d.seq (f.seq (g.seq e)))
 
-theorem streamEncrypt_ct : ConstantTime isa streamEncryptArm.pre streamEncryptArm.pub streamEncrypt :=
+theorem streamEncrypt_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamEncryptArm.pre streamEncryptArm.pub streamEncrypt :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamEncrypt_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem streamDecrypt_ct : ConstantTime isa streamDecryptArm.pre streamDecryptArm.pub streamDecrypt :=
+theorem streamDecrypt_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamDecryptArm.pre streamDecryptArm.pub streamDecrypt :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamDecrypt_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesGcm.Arm

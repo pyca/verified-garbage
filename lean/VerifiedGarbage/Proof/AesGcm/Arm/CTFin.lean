@@ -49,7 +49,7 @@ section
 variable {c st w sp : BitVec 32} (L : Lay c st w sp)
 include L
 
-theorem finTag_rel {na : Nat} (hna : 4 ≤ na) {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem finTag_rel [VG.Proof.Gcm.Arm.GhashLaw] {na : Nat} (hna : 4 ≤ na) {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {s₀ s₀' : State} (hf : s₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hsp : s₀.sp = s₀'.sp)
     (ha : ∀ i < na, arg s₀ i = arg s₀' i) (hw : ∀ r ∈ s₀.wr, (args s₀ na).Disjoint r)
     (hw' : ∀ r ∈ s₀'.wr, (args s₀' na).Disjoint r) (hin : args s₀ na ∈ s₀.rd) (hin' : args s₀' na ∈ s₀'.rd)
@@ -192,7 +192,7 @@ theorem fin_entry_agree {n wi : Nat} {s₀ s₀' : State} (h0 : finPre n wi s₀
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
-theorem streamFinish_rel {s₀ s₀' : State} (h0 : streamFinishArm.pre s₀) (h0' : streamFinishArm.pre s₀')
+theorem streamFinish_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamFinishArm.pre s₀) (h0' : streamFinishArm.pre s₀')
     (hq : streamFinishArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamFinish fun _ _ => True := by
   have h0₆ : finPre 6 5 s₀ := streamFinishPreArm.fin h0
@@ -241,7 +241,7 @@ theorem streamFinish_rel {s₀ s₀' : State} (h0 : streamFinishArm.pre s₀) (h
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) hB
   exact a.seq (b.seq (c.seq d))
 
-theorem streamFinish_ct : ConstantTime isa streamFinishArm.pre streamFinishArm.pub streamFinish :=
+theorem streamFinish_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamFinishArm.pre streamFinishArm.pub streamFinish :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamFinish_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesGcm.Arm

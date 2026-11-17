@@ -1,9 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.Arm.Law
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Verified
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+
+import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on ARMv7 -/
 

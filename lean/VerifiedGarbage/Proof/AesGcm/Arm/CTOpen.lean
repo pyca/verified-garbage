@@ -82,7 +82,7 @@ theorem one_entry_agree {n wi : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r
     h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 qa (one_hw h0) (one_hw h0') fun r hr => ?_
   rcases hrs r hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
+theorem seal_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «seal» fun _ _ => True := by
   obtain h6 : onePre 6 5 s₀ := sealPreArm.one h0
   obtain h6' : onePre 6 5 s₀' := sealPreArm.one h0'
@@ -117,7 +117,7 @@ theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre
     (by rw [hwr]; simp) (by rw [hwr']; simp)).seq
     ((oneTag_rel h6 h6' hq6 (by decide) (by decide) (.inl rfl)).seq (c.seq d))))
 
-theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» :=
+theorem seal_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa sealArm.pre sealArm.pub «seal» :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `open` -/
@@ -204,7 +204,7 @@ theorem oneCryptTo_rel {s₀ s₀' : State} (ho : OPre true s₀) (ho' : OPre tr
 
 /-- The body of `open` (`to = false`) and `open_to`, up to their ends, in
 both runs: whether the tags are equal is public. -/
-theorem openBody_rel {to : Bool} {s₀ s₀' : State} (ho : OPre to s₀) (ho' : OPre to s₀')
+theorem openBody_rel [VG.Proof.Gcm.Arm.GhashLaw] {to : Bool} {s₀ s₀' : State} (ho : OPre to s₀) (ho' : OPre to s₀')
     (hq6 : onePub (oNa to) s₀ s₀') (hres : (openResG to s₀).isSome = (openResG to s₀').isSome)
     {Q : State → State → Prop} (hend : RelCT isa (fun a b => OB to s₀ a ∧ OB to s₀' b) (openEnd to) Q) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (openG to) Q := by
@@ -351,7 +351,7 @@ theorem openBody_rel {to : Bool} {s₀ s₀' : State} (ho : OPre to s₀) (ho' :
   · exact WP.seq (WP.mono (openMid_wp ho h.1.1 h.1.2) fun _ h => WP.block_nil h)
   · exact WP.seq (WP.mono (openMid_wp ho' h.2.1 (by rw [h.2.2, h5'])) fun _ h => WP.block_nil h)
 
-theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre s₀') (hq : openArm.pub s₀ s₀') :
+theorem open_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre s₀') (hq : openArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «open» fun _ _ => True := by
   obtain ho := openPreArm.oPre h0
   obtain ho' := openPreArm.oPre h0'
@@ -364,7 +364,7 @@ theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre
       rw [h.1.env.choose_spec.r11, h.2.env.choose_spec.r11]; exact e4.symm) hB
   exact openBody_rel ho ho' hq.1 (hq.2 hR) d
 
-theorem open_ct : ConstantTime isa openArm.pre openArm.pub «open» :=
+theorem open_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa openArm.pre openArm.pub «open» :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesGcm.Arm

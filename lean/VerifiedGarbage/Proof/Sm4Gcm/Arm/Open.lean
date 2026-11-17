@@ -82,7 +82,7 @@ structure OpenMid (s₀ s : State) : Prop where
   z : s.z = decide (¬ openTagOk s₀)
 
 /-- `open` up to the comparison of the tags, followed by any `T`. -/
-theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ s₂)
+theorem open_head [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ s₂)
     (hok : Spec.Gcm.tagLenOk (arg s₀ 4).toNat = true) {T : Prog isa} {Q : State → Prop}
     (k : ∀ s₈, OpenMid s₀ s₈ → WP isa T s₈ Q) :
     WP isa (.seq oneAad (.seq (oneTag uO) (.seq (.block [.ldrSp .r6 16]) (.seq (recv 12) (.seq (cmp uO)
@@ -307,7 +307,7 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
   · rw [h7₈, h0₇]; exact ite_congr (propext hX) (fun _ => rfl) (fun _ => rfl)
   · rw [hz₈]; exact decide_eq_decide.mpr (hX0.trans (not_congr hX))
 
-theorem open_good {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ s₂)
+theorem open_good [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ s₂)
     (hok : Spec.Gcm.tagLenOk (arg s₀ 4).toNat = true) :
     WP isa openGood s₂ fun s => (∃ k7, Env (s₀.gpr .r0) (oSt s₀ 5) (arg s₀ 5) s₀.sp k7 (s₀.gpr .r3) s) ∧
       SavedAt s.mem (arg s₀ 5) s₀ ∧ OpenPost s₀ s := by
@@ -348,7 +348,7 @@ theorem open_good {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
   · exact openPost_none (hres.trans (ite_eq_right_of_eq_false _ _ (eq_false e)))
       (r0.trans (ite_eq_right_of_eq_false _ _ (eq_false e))) (hd₂ e)
 
-theorem open_wp {s₀ : State} (h : openArm.pre s₀) :
+theorem open_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : openArm.pre s₀) :
     WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openArm.post s₀ s' := by
   obtain h' : onePre 6 5 s₀ := openPreArm.one h
   obtain L := oneLay h'

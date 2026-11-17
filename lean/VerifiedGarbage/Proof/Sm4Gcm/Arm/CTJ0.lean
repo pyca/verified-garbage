@@ -55,7 +55,7 @@ section
 variable {c st w sp : BitVec 32} (L : Lay c st w sp)
 include L
 
-theorem j0hash_ct {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w sp Np n) j0hash := by
+theorem j0hash_ct [VG.Proof.Gcm.Arm.GhashLaw] {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w sp Np n) j0hash := by
   -- the accumulator zeroed, then the nonce absorbed
   let A : State → Prop := fun s => ∃ k8 H, AbsIn c st w sp (BitVec.ofNat 32 n) k8 0 H [] Np n s ∧
     blockAt s.mem (State.addr st + BitVec.ofNat 64 0) = 0
@@ -101,7 +101,7 @@ theorem j0hash_ct {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl⟩
 
-theorem j0_ct {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w sp Np n) j0 := by
+theorem j0_ct [VG.Proof.Gcm.Arm.GhashLaw] {Np : BitVec 32} {n : Nat} (hlt : n < 2 ^ 32) : CT (J0I c st w sp Np n) j0 := by
   refine CT.seq (J := fun s => J0I c st w sp Np n s ∧ s.z = decide (n = 12)) ?_ (fun s ⟨k7, k8, H, hs⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r5]) (.block [.cmp .r5 (imm 12)])
         h).isSome = true := ⟨_, by taint_decide⟩

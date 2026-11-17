@@ -214,7 +214,7 @@ theorem entry_rel {σ₁ σ₂ : State} (L₁ : Lay (prmOf σ₁)) (P₁ : Perm 
 theorem PR.entry {s s₁ : State} (L : Lay (prmOf s)) (En : Entered s s₁) : PR (prmOf s) s₁ :=
   ⟨En.env, (args_of s).frame L En.frame (by disj_tac L)⟩
 
-theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» := by
+theorem seal_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa sealArm.pre sealArm.pub «seal» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
   obtain ⟨L, P₁, -⟩ := args_of_seal h₁
   obtain ⟨L₂, P₂, -⟩ := args_of_seal h₂
@@ -238,7 +238,7 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» := by
     fun d₁ d₂ C₁ C₂ => rel_envArg16 L C₁.env C₂.env (V₁.args.frame L C₁.frame (by disj_tac L))
       (V₂.args.frame L C₂.frame (by disj_tac L)) [] (by simp) sealEnd_check
 
-theorem open_ct : ConstantTime isa openArm.pre openArm.pub «open» := by
+theorem open_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa openArm.pre openArm.pub «open» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
   obtain ⟨L, P₁⟩ := args_of_open h₁
   obtain ⟨L₂, P₂⟩ := args_of_open h₂

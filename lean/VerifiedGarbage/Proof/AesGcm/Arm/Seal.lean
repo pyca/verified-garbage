@@ -168,7 +168,7 @@ structure OA (n wi : Nat) (s₀ : State) (m₁ : Mem) (s : State) : Prop where
   hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0))
   frame : Frame (j0Frame (oSt s₀ wi) (arg s₀ wi) s₀.sp) m₁ s.mem
 
-theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 : SO1 n wi s₀ s₁) :
+theorem oneAad_ok [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 : SO1 n wi s₀ s₁) :
     WP isa oneAad s₁ (OA n wi s₀ s₁.mem) := by
   obtain L := oneLay h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
@@ -417,7 +417,7 @@ theorem one_argsOt {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 0 �
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (below_args s₀ spf).symm
 
-theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Nat} (ho : o = 0 ∨ o = 112) {k7 : BitVec 32}
+theorem oneTag_ok [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Nat} (ho : o = 0 ∨ o = 112) {k7 : BitVec 32}
     (he : Env (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r1) s) (hk : ArgsKeep n s₀ s)
     (hH : blockAt s.mem (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 240) = ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     {a : List Byte} (hl : (arg s₀ 1).toNat = a.length)
@@ -657,7 +657,7 @@ theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀)
 
 end
 
-theorem seal_wp {s₀ : State} (h : sealArm.pre s₀) :
+theorem seal_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : sealArm.pre s₀) :
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealArm.post s₀ s' := by
   have h' : onePre 6 5 s₀ := sealPreArm.one h
   have L := oneLay h'

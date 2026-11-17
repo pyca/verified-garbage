@@ -1,10 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.Arm.Law
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+
+import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 /-! # AES-GCM (NIST SP 800-38D) on ARMv7 -/
 

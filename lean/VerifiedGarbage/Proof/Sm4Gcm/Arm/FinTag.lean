@@ -60,7 +60,7 @@ section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
 include L
 
-theorem finTag_ok {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
+theorem finTag_ok [VG.Proof.Gcm.Arm.GhashLaw] {na : Nat} (hna : 2 ≤ na) {s₀ s : State} {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
     {a ct : List Byte} (he : Env c st w sp k7 k8 s) (hk : ArgsKeep na s₀ s) (hf : s₀.sp.toNat + 4 * na ≤ 2 ^ 32)
     (hin : args s₀ na ∈ s₀.rd) (hA : ∀ r ∈ tagFrame st w sp o, (args s₀ na).Disjoint r)
     (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H)

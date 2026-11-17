@@ -168,7 +168,7 @@ theorem crypt_ct {k8 : BitVec 32} {D : BitVec 32} {n q : Nat} :
       ⟨k7, icb, P, m₀, hP, by rw [hj] at hm; exact hm⟩) (cryptTail_ct L)
 
 /-- `tag o`. -/
-theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) {k8 : BitVec 32} :
+theorem tag_ct [VG.Proof.Gcm.Arm.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {k8 : BitVec 32} :
     CT (fun s => ∃ k7, Env c st w sp k7 k8 s) (tag o) := by
   refine CT.seq (J := fun s => ∃ k7, Env c st w sp k7 k8 s)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨k7, he⟩ => ⟨k7, _, he⟩)

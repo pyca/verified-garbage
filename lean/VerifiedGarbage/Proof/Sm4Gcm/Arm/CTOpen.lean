@@ -66,7 +66,7 @@ theorem one_entry_agree {n wi : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r
     h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 qa (one_hw h0) (one_hw h0') fun r hr => ?_
   rcases hrs r hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
+theorem seal_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «seal» fun _ _ => True := by
   obtain h5 : onePre 5 4 s₀ := sealPreArm.one h0
   obtain h5' : onePre 5 4 s₀' := sealPreArm.one h0'
@@ -100,7 +100,7 @@ theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre
   exact a.seq ((oneAad_rel h5 h5' hq6 (by decide) (by decide)).seq ((oneCrypt_rel h5 h5' hq6 (by decide) (by decide)).seq
     ((oneTag_rel h5 h5' hq6 (by decide) (by decide) (.inl rfl)).seq (c.seq d))))
 
-theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» :=
+theorem seal_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa sealArm.pre sealArm.pub «seal» :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `open` -/
@@ -145,7 +145,7 @@ theorem mov07_wp {s : State} (h : s.gpr .r11 = w) :
 
 end
 
-theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre s₀') (hq : openArm.pub s₀ s₀') :
+theorem open_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre s₀') (hq : openArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «open» fun _ _ => True := by
   obtain h6 : onePre 6 5 s₀ := openPreArm.one h0
   obtain h6' : onePre 6 5 s₀' := openPreArm.one h0'
@@ -288,7 +288,7 @@ theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1, h.2]) hB
   exact a.seq (b.seq (mid.seq d))
 
-theorem open_ct : ConstantTime isa openArm.pre openArm.pub «open» :=
+theorem open_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa openArm.pre openArm.pub «open» :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.Sm4Gcm.Arm

@@ -449,7 +449,7 @@ theorem covW : Covers (ghWr Y S) (pushed [.r12, .lr] s).wr := cover_pushed h.wri
 
 end GhCall
 
-theorem gh_call {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
+theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa ghFrame s (GhPost s H Y D S n) := by
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Gcm.ghashArm) Proof.Gcm.Arm.ghash_correct
@@ -491,7 +491,7 @@ theorem gh_call {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D 
       (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
   · rw [popped_mem]; exact hpost
 
-theorem gh_rel {P : State → State → Prop}
+theorem gh_rel [VG.Proof.Gcm.Arm.GhashLaw] {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : BitVec 32, ∃ n : Nat,
       GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) :
     RelCT isa P ghFrame fun _ _ => True := by

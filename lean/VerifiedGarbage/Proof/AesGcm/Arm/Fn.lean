@@ -236,7 +236,7 @@ variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {yo : Nat} (hyo : yo 
 include L hyo
 
 /-- After `headPre`: the buffer absorbed if full. -/
-theorem headPost_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ : Mem} {k : Nat} {s : State}
+theorem headPost_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ : Mem} {k : Nat} {s : State}
     (h : HeadMid c st w sp k7 k8 yo H x D n m₀ k s) :
     WP isa (.ite .eq (ghash1 yo .r10 32) (.block [])) s
       (fun s' => ∃ j, j = k ∧ AbsMid c st w sp k7 k8 yo H x D n m₀ j s') := by
@@ -273,7 +273,7 @@ theorem headPost_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ 
     exact Proof.Gcm.absorb_fill ha (by rw [hdk]; exact h16) h.hY (by rw [hdk]; exact h.buf)
 
 /-- Filling the buffer. -/
-theorem head_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
+theorem head_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
     (h : AbsIn c st w sp k7 k8 yo H x D n s) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) :
     WP isa (absorbHead yo) s (fun s' => ∃ j, j = min (16 - x.length % 16) n ∧
       AbsMid c st w sp k7 k8 yo H x D n s.mem j s') :=
@@ -312,7 +312,7 @@ theorem split_ok {s : State} {D : BitVec 32} {n j : Nat} (hj : j ≤ n) (hn : n 
   · exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- The whole blocks. -/
-theorem whole_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
+theorem whole_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
     (h : AbsMid c st w sp k7 k8 yo H x D n m₀ j s) (hm₀ : bytesAt s.mem (State.addr D) n = bytesAt m₀ (State.addr D) n) :
     WP isa (absorbWhole yo) s (fun s' => ∃ j', j' = j + 16 * ((n - j) / 16) ∧
       AbsMid c st w sp k7 k8 yo H x D n m₀ j' s' ∧ n - j' < 16) := by
@@ -477,7 +477,7 @@ theorem AbsMid.data_eq {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {m�
   bytesAt_frame h.frame (data_absFrame hyo h.data) (by have := h.data.lt; omega_arith)
 
 /-- After the first test: the buffer filled if it holds bytes. -/
-theorem absorbFill_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
+theorem absorbFill_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
     (h : AbsIn c st w sp k7 k8 yo H x D n s) (h0 : n ≠ 0) :
     WP isa (absorbFill yo) s (fun s' => ∃ j, j = (if x.length % 16 = 0 then 0 else min (16 - x.length % 16) n) ∧
       AbsMid c st w sp k7 k8 yo H x D n s.mem j s') := by
@@ -495,7 +495,7 @@ theorem absorbFill_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s :
     exact WP.mono this fun _ ⟨j, hj, hm⟩ => ⟨j, by simp only [ho, ite_false]; exact hj, hm⟩
 
 /-- `absorb yo`. -/
-theorem absorb_ok {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
+theorem absorb_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {x : List Byte} {D : BitVec 32} {n : Nat} {s : State}
     (h : AbsIn c st w sp k7 k8 yo H x D n s) :
     WP isa (absorb yo) s (AbsOut c st w sp k7 k8 yo H x (x ++ bytesAt s.mem (State.addr D) n) s.mem) := by
   have hn' := h.data.lt32
@@ -803,7 +803,7 @@ theorem j0zero_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c
 
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
 the lengths block. -/
-theorem j0hash_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c st w sp k7 k8 H Np n s)
+theorem j0hash_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c st w sp k7 k8 H Np n s)
     (hn : n ≠ 12) :
     WP isa j0hash s (J0Mid c st w sp k8 H (bytesAt s.mem (State.addr Np) n) s.mem) := by
   have hd := h.data
@@ -866,7 +866,7 @@ theorem j0hash_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c
     exact ((g₁.trans (abs_j0Frame ho.frame)).trans g₄).trans g₆
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
-theorem j0_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c st w sp k7 k8 H Np n s) :
+theorem j0_ok [VG.Proof.Gcm.Arm.GhashLaw] {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c st w sp k7 k8 H Np n s) :
     WP isa j0 s (J0Out c st w sp k8 H (bytesAt s.mem (State.addr Np) n) s.mem) := by
   have hlt := h.data.lt32
   obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmpk_ok s .r5 h.r5 hlt (k := 12) (by decide) (by decide)

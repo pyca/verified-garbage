@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.InitCT
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTStream
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCryptFn
@@ -203,7 +204,7 @@ def siSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0 | .r3 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x8000, 4⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
-theorem streamInit_verified :
+theorem streamInit_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamInit (Proof.Sm4Gcm.Arm.streamInitScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamInit_wp hs) streamInit_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.streamInitScratchContract, Proof.Sm4Gcm.Arm.streamInitScratchSig,
@@ -216,7 +217,7 @@ def saSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
-theorem streamAad_verified :
+theorem streamAad_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamAad (Proof.Sm4Gcm.Arm.streamAadScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamAad_wp hs) streamAad_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.streamAadScratchContract, Proof.Sm4Gcm.Arm.streamAadScratchSig,
@@ -230,7 +231,7 @@ def scSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 768⟩]
 
-theorem streamEncrypt_verified :
+theorem streamEncrypt_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamEncrypt (Proof.Sm4Gcm.Arm.streamEncryptScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamEncrypt_wp hs) streamEncrypt_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.streamEncryptScratchContract, Proof.Sm4Gcm.Arm.streamCryptScratchSig,
@@ -239,7 +240,7 @@ theorem streamEncrypt_verified :
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
 
-theorem streamDecrypt_verified :
+theorem streamDecrypt_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamDecrypt (Proof.Sm4Gcm.Arm.streamDecryptScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamDecrypt_wp hs) streamDecrypt_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.streamDecryptScratchContract, Proof.Sm4Gcm.Arm.streamCryptScratchSig,
@@ -262,7 +263,7 @@ def fSat : State :=
   mkSat2 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 16⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
-theorem streamFinish_verified :
+theorem streamFinish_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamFinish (Proof.Sm4Gcm.Arm.streamFinishScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamFinish_wp hs) streamFinish_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.streamFinishScratchContract, Proof.Sm4Gcm.Arm.streamFinishScratchSig,
@@ -276,7 +277,7 @@ def vSat : State :=
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 /-- The postconditions match; the result is the low word of `r1:r0`. -/
-theorem streamVerify_verified :
+theorem streamVerify_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamVerify (Proof.Sm4Gcm.Arm.streamVerifyScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => streamVerify_wp hs) streamVerify_ct
     { pre := by
@@ -309,7 +310,7 @@ def oSat : State :=
   mkSat3 (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩, ⟨0, 768⟩]
 
-theorem seal_verified : Verified Arm.target «seal» (Proof.Sm4Gcm.Arm.sealScratchContract Arm.abi 1520) :=
+theorem seal_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «seal» (Proof.Sm4Gcm.Arm.sealScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
     sig_implies [Proof.Sm4Gcm.Arm.sealScratchContract, Proof.Sm4Gcm.Arm.sealScratchSig, Spec.Sm4.Gcm.sealSig,
       Spec.Sm4.Gcm.sealPost, sealArm, sealPreArm, onePub, bel, arg, args, arg64, Arm.abi, Arm.argRegs,
@@ -328,7 +329,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- The postconditions match on `openResult`; the result is the low word of
 `r1:r0`; and `open`'s public data include its leak, whether it succeeds. -/
-theorem open_verified : Verified Arm.target «open» (Proof.Sm4Gcm.Arm.openScratchContract Arm.abi 1520) :=
+theorem open_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «open» (Proof.Sm4Gcm.Arm.openScratchContract Arm.abi 1520) :=
   Verified.of_correct (fun _ hs => open_wp hs) open_ct
     { pre := by
         sig_implies_pre [Proof.Sm4Gcm.Arm.openScratchContract, Proof.Sm4Gcm.Arm.openScratchSig,
@@ -423,7 +424,7 @@ theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract Arm.abi 230
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [streamInitFrameSat, mkSat] using streamInitFrameSat
 
-theorem streamInit_framed :
+theorem streamInit_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 784 0 streamInit)
       (Spec.Gcm.streamInitContract Arm.abi 2304) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
@@ -444,7 +445,7 @@ theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract Arm.abi 2304)
     [streamAadFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using streamAadFrameSat
 
-theorem streamAad_framed :
+theorem streamAad_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 784 2 streamAad)
       (Spec.Gcm.streamAadContract Arm.abi 2304) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
@@ -466,7 +467,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract A
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
-theorem streamEncrypt_framed :
+theorem streamEncrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 4 streamEncrypt)
       (Spec.Sm4.Gcm.streamEncryptContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -481,7 +482,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract A
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
-theorem streamDecrypt_framed :
+theorem streamDecrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 4 streamDecrypt)
       (Spec.Sm4.Gcm.streamDecryptContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -502,7 +503,7 @@ theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract Arm.abi 2320
     [finFrameSat, mkSat2, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using finFrameSat
 
-theorem streamFinish_framed :
+theorem streamFinish_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 3 streamFinish)
       (Spec.Sm4.Gcm.streamFinishContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
@@ -522,7 +523,7 @@ theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract Arm.abi 2320
     [verFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using verFrameSat
 
-theorem streamVerify_framed :
+theorem streamVerify_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 4 streamVerify)
       (Spec.Sm4.Gcm.streamVerifyContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
@@ -542,7 +543,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract Arm.abi 2320).pre s
     [sealFrameSat, mkSat3, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed :
+theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 4 «seal»)
       (Spec.Sm4.Gcm.sealContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
@@ -562,7 +563,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract Arm.abi 2320).pre s
     [openFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
-theorem open_framed :
+theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 800 5 «open»)
       (Spec.Sm4.Gcm.openContract Arm.abi 2320) :=
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)

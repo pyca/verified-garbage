@@ -139,7 +139,7 @@ theorem sa_fin {s₀ s₂ : State} (h : streamAadArm.pre s₀) {x : List Byte} (
         (by have := Nat.mod_lt (Spec.Gcm.ghashInput x []).length (show 16 > 0 by decide); omega_using [])]
   · exact hc.congr (keep (.inr (.inl rfl))) (keep (.inr (.inr rfl)))
 
-theorem sa_run {s₀ : State} (h : streamAadArm.pre s₀) {x : List Byte} (hx : x.length % 16 = (s₀.gpr .r2).toNat % 16) :
+theorem sa_run [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamAadArm.pre s₀) {x : List Byte} (hx : x.length % 16 = (s₀.gpr .r2).toNat % 16) :
     WP isa streamAad s₀ fun s' => abiPreserved s₀ s' ∧ ∀ ciph iv,
       StreamRepr s₀.mem (State.addr (s₀.gpr .r1)) ciph (ctxH s₀.mem (State.addr (s₀.gpr .r0))) iv x [] →
       StreamRepr s'.mem (State.addr (s₀.gpr .r1)) ciph (ctxH s₀.mem (State.addr (s₀.gpr .r0))) iv
@@ -147,7 +147,7 @@ theorem sa_run {s₀ : State} (h : streamAadArm.pre s₀) {x : List Byte} (hx : 
   WP.seq (WP.mono (sa1_wp h) fun s₁ h1 => WP.seq (WP.mono (absorb_ok (saLay h) (.inr rfl) (sa_absIn h h1 hx))
     fun _ ho => sa_fin h ⟨s₁, h1, ho⟩))
 
-theorem streamAad_wp {s₀ : State} (h : streamAadArm.pre s₀) :
+theorem streamAad_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamAadArm.pre s₀) :
     WP isa streamAad s₀ fun s' => abiPreserved s₀ s' ∧ streamAadArm.post s₀ s' := by
   have h₀ := sa_run h (x := List.replicate ((s₀.gpr .r2).toNat % 16) 0) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)

@@ -255,7 +255,7 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
           (bytesAt s₀.mem (State.addr (arg s₀ 4)) (arg s₀ 5).toNat)))
   j : blockAt s.mem (State.addr (s₀.gpr .r2)) = blockAt s₀.mem (State.addr (s₀.gpr .r2))
 
-theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem enc_run [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (arg s₀ 0).toNat % 16) (hP : (arg s₀ 3 ++ arg s₀ 2).toNat = ct.length) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
   have L := scLay h
@@ -329,7 +329,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
       blockAt_frame co.frame (by simpa using stp_crFrame L hd₂ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₂ (by simpa using stp_saved L (d := 0) (k := 16) (by decide))]
 
-theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem dec_run [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (arg s₀ 0).toNat % 16) (hP : (arg s₀ 3 ++ arg s₀ 2).toNat = ct.length) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
   have L := scLay h
@@ -396,7 +396,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
       blockAt_frame f₃ (by simpa using stp_taFrame L (d := 0) (k := 16) (.inl (by decide))),
       blockAt_frame h1.frame (by simpa using stp_saved L (d := 0) (k := 16) (by decide))]
 
-theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptArm.pre s₀) :
+theorem streamEncrypt_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamEncryptArm.pre s₀) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptArm.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := enc_run h' 0 (a := List.replicate ((arg s₀ 0).toNat % 16) 0)
@@ -431,7 +431,7 @@ theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptArm.pre s₀) :
     rw [Proof.Gcm.length_gctr, List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' hl']
 
-theorem streamDecrypt_wp {s₀ : State} (h : streamDecryptArm.pre s₀) :
+theorem streamDecrypt_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamDecryptArm.pre s₀) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptArm.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := dec_run h' 0 (a := List.replicate ((arg s₀ 0).toNat % 16) 0)

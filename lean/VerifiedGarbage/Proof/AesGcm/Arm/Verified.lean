@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
 import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
@@ -61,7 +62,7 @@ def siSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0 | .r3 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x8000, 4⟩] [⟨0x3000, 80⟩, ⟨0, 2560⟩]
 
-theorem streamInit_verified :
+theorem streamInit_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamInit (Proof.AesGcm.streamInitScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamInit_wp hs) streamInit_ct (by
     sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, streamInitArm, bel, arg, args, arg64,
@@ -73,7 +74,7 @@ def saSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 12⟩] [⟨0x3000, 80⟩, ⟨0, 2560⟩]
 
-theorem streamAad_verified :
+theorem streamAad_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamAad (Proof.AesGcm.streamAadScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamAad_wp hs) streamAad_ct (by
     sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, streamAadArm, bel, arg, args, arg64,
@@ -86,7 +87,7 @@ def scSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 28⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 2560⟩]
 
-theorem streamEncrypt_verified :
+theorem streamEncrypt_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamEncrypt_wp hs) streamEncrypt_ct (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptArm, streamCryptPre,
@@ -94,7 +95,7 @@ theorem streamEncrypt_verified :
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
 
-theorem streamDecrypt_verified :
+theorem streamDecrypt_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamDecrypt_wp hs) streamDecrypt_ct (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptArm, streamCryptPre,
@@ -112,7 +113,7 @@ def fSat : State :=
   mkSat4 (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x8000, 24⟩] [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0, 2560⟩]
 
-theorem streamFinish_verified :
+theorem streamFinish_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamFinish (Proof.AesGcm.streamFinishScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamFinish_wp hs) streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
@@ -126,7 +127,7 @@ def vSat : State :=
     [⟨0x1000, 256⟩, ⟨0, 0⟩, ⟨0x8000, 28⟩] [⟨0x3000, 80⟩, ⟨0, 2560⟩]
 
 /-- The postconditions match; the result is the low word of `r1:r0`. -/
-theorem streamVerify_verified :
+theorem streamVerify_verified [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target streamVerify (Proof.AesGcm.streamVerifyScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamVerify_wp hs) streamVerify_ct
     { pre := by
@@ -158,7 +159,7 @@ def oSat : State :=
   mkSat4 (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0, 0⟩, ⟨0x4000, 16⟩, ⟨0, 2560⟩]
 
-theorem seal_verified : Verified Arm.target «seal» (Proof.AesGcm.sealScratchContract Arm.abi 8) :=
+theorem seal_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «seal» (Proof.AesGcm.sealScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealArm, sealPreArm, onePub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs,
@@ -178,7 +179,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 /-- The postconditions match on `openResult`; the result is the low word of
 `r1:r0`; and `open`'s public data include its leak, whether it succeeds (for
 `rounds` of 10, 12 or 14). -/
-theorem open_verified : Verified Arm.target «open» (Proof.AesGcm.openScratchContract Arm.abi 8) :=
+theorem open_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «open» (Proof.AesGcm.openScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => open_wp hs) open_ct
     { pre := by
         sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, openArm,

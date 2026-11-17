@@ -22,7 +22,16 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 # GHASH on ARMv7 meets its contract
 
 Untrusted: everything here is checked by Lean. What the blocks of
-`Impl/Gcm/Arm.lean` compute, as the functions of `Proof/Gcm/Holes16.lean`.
+`Impl/Gcm/Arm.lean` compute, as the functions of `Proof/Gcm/Holes16.lean`: a
+product of 16-bit values (`m32Lo_ok`, `m32Mid_ok`, `m32Hi_ok`), a 64-bit one
+(`m32_ok`), a 128-bit one (`group_ok`) and a block (`block_ok`). What a
+block keeps, its registers and the memory outside the slots it stores to, is
+read off its code (`WP.step`), and what it computes by running it
+(`grun`). Then the blocks (`blocks_ok`, from `block_ok` and
+`Holes16.mulW_eq`) and the function (`correct`): the registers saved, the
+key prepared (`prep_ok`), the blocks, `Y` out and the registers restored.
+That is `GhashLaw` (`Ghash.lean`), which the registration files import for
+the callers' proofs.
 -/
 
 @[expose] public section

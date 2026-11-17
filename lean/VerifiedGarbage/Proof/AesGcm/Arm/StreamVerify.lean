@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -48,7 +49,7 @@ def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
         (arg s₀ 5).toNat then s.gpr .r0 = 1
     else s.gpr .r0 = 0
 
-theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} (ha : a.length % 16 = (arg s₀ 0).toNat % 16)
+theorem ver_run [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} (ha : a.length % 16 = (arg s₀ 0).toNat % 16)
     (hP : (arg s₀ 3 ++ arg s₀ 2).toNat = ct.length) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
   obtain h' : finPre 7 6 s₀ := streamVerifyPreArm.fin h
@@ -193,7 +194,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
   have := vp iv hs hl
   rw [hh.2.2.1]; exact this
 
-theorem streamVerify_wp {s₀ : State} (h : streamVerifyArm.pre s₀) :
+theorem streamVerify_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamVerifyArm.pre s₀) :
     WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyArm.post s₀ s' := by
   obtain h₀ := ver_run h (a := List.replicate ((arg s₀ 0).toNat % 16) 0)
     (ct := List.replicate (arg s₀ 3 ++ arg s₀ 2).toNat 0) (by simp) (by simp)

@@ -102,7 +102,7 @@ theorem rel_arg {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg) (n : Nat) (
   exact RelCT.taint (A := VG.Arm.taint) _ (fun a b hab => by
     obtain ⟨rfl, rfl⟩ := hab; exact agree_argTaint hr hsp hw₁ hw₂ hm) hc
 
-theorem rel_gh {σ₁ σ₂ : State} {H Y D S : BitVec 32} {n : Nat} (h₁ : GhCall σ₁ H Y D S n)
+theorem rel_gh [VG.Proof.Gcm.Arm.GhashLaw] {σ₁ σ₂ : State} {H Y D S : BitVec 32} {n : Nat} (h₁ : GhCall σ₁ H Y D S n)
     (h₂ : GhCall σ₂ H Y D S n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.Arm.ghFrame TT :=
   gh_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, S, n, h₁, h₂, hsp⟩
 
@@ -360,7 +360,7 @@ theorem chunkEnd_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofReg
     (.block wholeLeft) h).isSome = true := ⟨_, by taint_decide⟩
 
 /-- A chunk, in two runs with the same public arguments, pointer and count. -/
-theorem chunk_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+theorem chunk_rel [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
     {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) (hQ₁ : Src p τ₁ Q (16 * (m / 16)))
     (hQ₂ : Src p τ₂ Q (16 * (m / 16))) (a4 : τ₁.gpr .r4 = Q) (b4 : τ₂.gpr .r4 = Q)
     (a5 : τ₁.gpr .r5 = BitVec.ofNat 32 m) (b5 : τ₂.gpr .r5 = BitVec.ofNat 32 m) :
@@ -377,7 +377,7 @@ theorem chunk_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ�
     fun w₁ w₂ G₁ G₂ => rel_env G₁.1 G₂.1 [.r5] (by simp [G₁.2, G₂.2]) chunkEnd_check
 
 /-- The chunks, in two runs from `σ₁` and `σ₂` with the same public arguments. -/
-theorem chunks_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
+theorem chunks_rel [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {σ₁ σ₂ : State} {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
     (hQ₁ : Src p σ₁ Q (16 * (m / 16))) (hQ₂ : Src p σ₂ Q (16 * (m / 16))) {d : Nat}
     (hd : d < m / 16) {τ₁ τ₂ : State} (I₁ : CInv p σ₁ Q m d τ₁) (I₂ : CInv p σ₂ Q m d τ₂) :
     RelCT isa (Eq2 τ₁ τ₂) (.loop chunk .ne) TT := by
@@ -406,7 +406,7 @@ theorem absTailPre_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofR
     h).isSome = true := ⟨_, by taint_decide⟩
 
 /-- `chunk` on the block at `W + 176`. -/
-theorem chunkB_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+theorem chunkB_rel [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
     (a4 : τ₁.gpr .r4 = p.W + BitVec.ofNat 32 176) (b4 : τ₂.gpr .r4 = p.W + BitVec.ofNat 32 176)
     (a5 : τ₁.gpr .r5 = BitVec.ofNat 32 16) (b5 : τ₂.gpr .r5 = BitVec.ofNat 32 16) :
     RelCT isa (Eq2 τ₁ τ₂) chunk TT :=
@@ -423,7 +423,7 @@ theorem cmp5_ok {t : State} {r : Nat} (hr : r < 2 ^ 32) (h5 : t.gpr .r5 = BitVec
     rw [z_cmp hr (by decide)]
 
 /-- `absorb`, in two runs with the same public arguments, pointer and count. -/
-theorem absorb_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+theorem absorb_rel [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
     {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩)
     (hQ₁ : Src p τ₁ Q m) (hQ₂ : Src p τ₂ Q m)
     (a4 : τ₁.gpr .r4 = Q) (b4 : τ₂.gpr .r4 = Q) (a5 : τ₁.gpr .r5 = BitVec.ofNat 32 m)
@@ -493,7 +493,7 @@ theorem PR.of_abs {p : Prm} (L : Lay p) {xs : List Spec.GcmSiv.Elem} {t t' : Sta
   ⟨P.env, h.args.frame L P.frame (absorbR_args L)⟩
 
 /-- `polyval`, in two runs with the same public arguments. -/
-theorem polyval_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (R₁ : PR p σ₁) (R₂ : PR p σ₂) :
+theorem polyval_rel [VG.Proof.Gcm.Arm.GhashLaw] {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (R₁ : PR p σ₁) (R₂ : PR p σ₂) :
     RelCT isa (Eq2 σ₁ σ₂) polyval TT := by
   have wA : ∀ {σ : State}, PR p σ → WP isa (.block [.mov .r4 (.reg .r7), .ldrSp .r5 0]) σ fun t =>
       PR p t ∧ t.gpr .r4 = p.A ∧ t.gpr .r5 = BitVec.ofNat 32 p.al := fun R => by

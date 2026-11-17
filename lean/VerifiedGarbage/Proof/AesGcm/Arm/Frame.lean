@@ -57,7 +57,7 @@ theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract Arm.abi 258
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [streamInitFrameSat, mkSat] using streamInitFrameSat
 
-theorem streamInit_framed :
+theorem streamInit_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit)
       (Spec.Gcm.streamInitContract Arm.abi 2584) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
@@ -78,7 +78,7 @@ theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract Arm.abi 2584)
     [streamAadFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using streamAadFrameSat
 
-theorem streamAad_framed :
+theorem streamAad_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad)
       (Spec.Gcm.streamAadContract Arm.abi 2584) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
@@ -100,7 +100,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsCont
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
-theorem streamEncrypt_framed :
+theorem streamEncrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt)
       (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -115,7 +115,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsCont
     [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using crFrameSat
 
-theorem streamDecrypt_framed :
+theorem streamDecrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt)
       (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
@@ -136,7 +136,7 @@ theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract Arm.ab
     [finFrameSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using finFrameSat
 
-theorem streamFinish_framed :
+theorem streamFinish_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish)
       (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
@@ -157,7 +157,7 @@ theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract Arm.ab
     [verFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using verFrameSat
 
-theorem streamVerify_framed :
+theorem streamVerify_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify)
       (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
@@ -178,7 +178,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract Arm.abi 2600)
     [sealFrameSat, mkSat4, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed :
+theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal»)
       (Proof.AesGcm.sealRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
@@ -199,7 +199,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract Arm.abi 2600)
     [openFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
-theorem open_framed :
+theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
       (Proof.AesGcm.openRoundsContract Arm.abi 2600) :=
   Arm.Verified.stackScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)

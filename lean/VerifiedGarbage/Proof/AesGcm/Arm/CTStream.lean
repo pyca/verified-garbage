@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -65,7 +66,7 @@ namespace VG.Proof.AesGcm.Arm
 
 open VG VG.Arm VG.Impl.AesGcm.Arm
 
-theorem streamInit_rel {s₀ s₀' : State} (h0 : streamInitArm.pre s₀) (h0' : streamInitArm.pre s₀')
+theorem streamInit_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamInitArm.pre s₀) (h0' : streamInitArm.pre s₀')
     (hq : streamInitArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamInit fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, q₅⟩ := hq
@@ -107,10 +108,10 @@ theorem streamInit_rel {s₀ s₀' : State} (h0 : streamInitArm.pre s₀) (h0' :
       rw [e₁.r11, e₂.r11, q₅]) hB
   exact a.seq (b.seq c)
 
-theorem streamInit_ct : ConstantTime isa streamInitArm.pre streamInitArm.pub streamInit :=
+theorem streamInit_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamInitArm.pre streamInitArm.pub streamInit :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamInit_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem streamAad_rel {s₀ s₀' : State} (h0 : streamAadArm.pre s₀) (h0' : streamAadArm.pre s₀')
+theorem streamAad_rel [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₀' : State} (h0 : streamAadArm.pre s₀) (h0' : streamAadArm.pre s₀')
     (hq : streamAadArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamAad fun _ _ => True := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, q₅, q₆, q₇⟩ := hq
@@ -157,7 +158,7 @@ theorem streamAad_rel {s₀ s₀' : State} (h0 : streamAadArm.pre s₀) (h0' : s
         rw [h₁.env.r11, h₂.env.r11, q₇]) hB
   exact a.seq (b.seq c)
 
-theorem streamAad_ct : ConstantTime isa streamAadArm.pre streamAadArm.pub streamAad :=
+theorem streamAad_ct [VG.Proof.Gcm.Arm.GhashLaw] : ConstantTime isa streamAadArm.pre streamAadArm.pub streamAad :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamAad_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesGcm.Arm

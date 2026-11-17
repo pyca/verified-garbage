@@ -143,7 +143,7 @@ theorem fin_argsTag {s₀ : State} (h : finPre n wi s₀) {o : Nat} (ho : o = 0 
   · exact (below_args s₀ spf).symm
 
 /-- The tag, from the entry. -/
-theorem fin_tag {s₀ s₁ : State} (h : finPre n wi s₀) (hn : 4 ≤ n) (h1 : SF1 n wi s₀ s₁) {o : Nat}
+theorem fin_tag [VG.Proof.Gcm.Arm.GhashLaw] {s₀ s₁ : State} (h : finPre n wi s₀) (hn : 4 ≤ n) (h1 : SF1 n wi s₀ s₁) {o : Nat}
     (ho : o = 0 ∨ o = 112) {a ct : List Byte} (ha : a.length % 16 = (arg s₀ 0).toNat % 16)
     (hP : (arg s₀ 3 ++ arg s₀ 2).toNat = ct.length) :
     WP isa (finTag o) s₁ (FinOut (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ wi) s₀.sp (s₀.gpr .r1) n s₀ o (s₀.gpr .r1).toNat
@@ -181,7 +181,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} (h : finPre n wi s₀) {rs : List 
 
 end
 
-theorem streamFinish_wp {s₀ : State} (h : streamFinishArm.pre s₀) :
+theorem streamFinish_wp [VG.Proof.Gcm.Arm.GhashLaw] {s₀ : State} (h : streamFinishArm.pre s₀) :
     WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishArm.post s₀ s' := by
   have h' : finPre 6 5 s₀ := streamFinishPreArm.fin h
   have L := finLay h'
