@@ -720,26 +720,6 @@ vg_sha384_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1392]
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
-	vmovdqu YMMWORD PTR [rsp+432], ymm0
-	vmovdqu YMMWORD PTR [rsp+400], ymm0
-	vmovdqu YMMWORD PTR [rsp+368], ymm0
-	vmovdqu YMMWORD PTR [rsp+336], ymm0
-	vmovdqu YMMWORD PTR [rsp+304], ymm0
-	vmovdqu YMMWORD PTR [rsp+272], ymm0
 	vmovdqu YMMWORD PTR [rsp+240], ymm0
 	vmovdqu YMMWORD PTR [rsp+208], ymm0
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
@@ -1017,26 +997,6 @@ vg_sha384_digest_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	vmovdqu YMMWORD PTR [rsp+1072], ymm0
-	vmovdqu YMMWORD PTR [rsp+1040], ymm0
-	vmovdqu YMMWORD PTR [rsp+1008], ymm0
-	vmovdqu YMMWORD PTR [rsp+976], ymm0
-	vmovdqu YMMWORD PTR [rsp+944], ymm0
-	vmovdqu YMMWORD PTR [rsp+912], ymm0
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
 	vmovdqu YMMWORD PTR [rsp+432], ymm0
 	vmovdqu YMMWORD PTR [rsp+400], ymm0
 	vmovdqu YMMWORD PTR [rsp+368], ymm0
@@ -2353,26 +2313,6 @@ vg_sha512_update_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1392]
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
-	vmovdqu YMMWORD PTR [rsp+432], ymm0
-	vmovdqu YMMWORD PTR [rsp+400], ymm0
-	vmovdqu YMMWORD PTR [rsp+368], ymm0
-	vmovdqu YMMWORD PTR [rsp+336], ymm0
-	vmovdqu YMMWORD PTR [rsp+304], ymm0
-	vmovdqu YMMWORD PTR [rsp+272], ymm0
 	vmovdqu YMMWORD PTR [rsp+240], ymm0
 	vmovdqu YMMWORD PTR [rsp+208], ymm0
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
@@ -2575,26 +2515,6 @@ vg_sha512_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1392]
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
-	vmovdqu YMMWORD PTR [rsp+432], ymm0
-	vmovdqu YMMWORD PTR [rsp+400], ymm0
-	vmovdqu YMMWORD PTR [rsp+368], ymm0
-	vmovdqu YMMWORD PTR [rsp+336], ymm0
-	vmovdqu YMMWORD PTR [rsp+304], ymm0
-	vmovdqu YMMWORD PTR [rsp+272], ymm0
 	vmovdqu YMMWORD PTR [rsp+240], ymm0
 	vmovdqu YMMWORD PTR [rsp+208], ymm0
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
@@ -2878,26 +2798,6 @@ vg_sha512_digest_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	vmovdqu YMMWORD PTR [rsp+1072], ymm0
-	vmovdqu YMMWORD PTR [rsp+1040], ymm0
-	vmovdqu YMMWORD PTR [rsp+1008], ymm0
-	vmovdqu YMMWORD PTR [rsp+976], ymm0
-	vmovdqu YMMWORD PTR [rsp+944], ymm0
-	vmovdqu YMMWORD PTR [rsp+912], ymm0
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
 	vmovdqu YMMWORD PTR [rsp+432], ymm0
 	vmovdqu YMMWORD PTR [rsp+400], ymm0
 	vmovdqu YMMWORD PTR [rsp+368], ymm0
@@ -4193,26 +4093,6 @@ vg_sha512_224_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1392]
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
-	vmovdqu YMMWORD PTR [rsp+432], ymm0
-	vmovdqu YMMWORD PTR [rsp+400], ymm0
-	vmovdqu YMMWORD PTR [rsp+368], ymm0
-	vmovdqu YMMWORD PTR [rsp+336], ymm0
-	vmovdqu YMMWORD PTR [rsp+304], ymm0
-	vmovdqu YMMWORD PTR [rsp+272], ymm0
 	vmovdqu YMMWORD PTR [rsp+240], ymm0
 	vmovdqu YMMWORD PTR [rsp+208], ymm0
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
@@ -4484,26 +4364,6 @@ vg_sha512_224_digest_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	vmovdqu YMMWORD PTR [rsp+1072], ymm0
-	vmovdqu YMMWORD PTR [rsp+1040], ymm0
-	vmovdqu YMMWORD PTR [rsp+1008], ymm0
-	vmovdqu YMMWORD PTR [rsp+976], ymm0
-	vmovdqu YMMWORD PTR [rsp+944], ymm0
-	vmovdqu YMMWORD PTR [rsp+912], ymm0
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
 	vmovdqu YMMWORD PTR [rsp+432], ymm0
 	vmovdqu YMMWORD PTR [rsp+400], ymm0
 	vmovdqu YMMWORD PTR [rsp+368], ymm0
@@ -5596,26 +5456,6 @@ vg_sha512_256_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1392]
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
-	vmovdqu YMMWORD PTR [rsp+432], ymm0
-	vmovdqu YMMWORD PTR [rsp+400], ymm0
-	vmovdqu YMMWORD PTR [rsp+368], ymm0
-	vmovdqu YMMWORD PTR [rsp+336], ymm0
-	vmovdqu YMMWORD PTR [rsp+304], ymm0
-	vmovdqu YMMWORD PTR [rsp+272], ymm0
 	vmovdqu YMMWORD PTR [rsp+240], ymm0
 	vmovdqu YMMWORD PTR [rsp+208], ymm0
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
@@ -5887,26 +5727,6 @@ vg_sha512_256_digest_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1600]
-	vmovdqu YMMWORD PTR [rsp+1072], ymm0
-	vmovdqu YMMWORD PTR [rsp+1040], ymm0
-	vmovdqu YMMWORD PTR [rsp+1008], ymm0
-	vmovdqu YMMWORD PTR [rsp+976], ymm0
-	vmovdqu YMMWORD PTR [rsp+944], ymm0
-	vmovdqu YMMWORD PTR [rsp+912], ymm0
-	vmovdqu YMMWORD PTR [rsp+880], ymm0
-	vmovdqu YMMWORD PTR [rsp+848], ymm0
-	vmovdqu YMMWORD PTR [rsp+816], ymm0
-	vmovdqu YMMWORD PTR [rsp+784], ymm0
-	vmovdqu YMMWORD PTR [rsp+752], ymm0
-	vmovdqu YMMWORD PTR [rsp+720], ymm0
-	vmovdqu YMMWORD PTR [rsp+688], ymm0
-	vmovdqu YMMWORD PTR [rsp+656], ymm0
-	vmovdqu YMMWORD PTR [rsp+624], ymm0
-	vmovdqu YMMWORD PTR [rsp+592], ymm0
-	vmovdqu YMMWORD PTR [rsp+560], ymm0
-	vmovdqu YMMWORD PTR [rsp+528], ymm0
-	vmovdqu YMMWORD PTR [rsp+496], ymm0
-	vmovdqu YMMWORD PTR [rsp+464], ymm0
 	vmovdqu YMMWORD PTR [rsp+432], ymm0
 	vmovdqu YMMWORD PTR [rsp+400], ymm0
 	vmovdqu YMMWORD PTR [rsp+368], ymm0

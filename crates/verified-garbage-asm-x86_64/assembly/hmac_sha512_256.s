@@ -2891,26 +2891,6 @@ vg_hmac_sha512_256_finalize_avx2:
 	lea rsp, [rsp-1592]
 	vmovdqu YMMWORD PTR [rsp+1480], ymm0
 	vmovdqu YMMWORD PTR [rsp+1448], ymm0
-	vmovdqu YMMWORD PTR [rsp+888], ymm0
-	vmovdqu YMMWORD PTR [rsp+856], ymm0
-	vmovdqu YMMWORD PTR [rsp+824], ymm0
-	vmovdqu YMMWORD PTR [rsp+792], ymm0
-	vmovdqu YMMWORD PTR [rsp+760], ymm0
-	vmovdqu YMMWORD PTR [rsp+728], ymm0
-	vmovdqu YMMWORD PTR [rsp+696], ymm0
-	vmovdqu YMMWORD PTR [rsp+664], ymm0
-	vmovdqu YMMWORD PTR [rsp+632], ymm0
-	vmovdqu YMMWORD PTR [rsp+600], ymm0
-	vmovdqu YMMWORD PTR [rsp+568], ymm0
-	vmovdqu YMMWORD PTR [rsp+536], ymm0
-	vmovdqu YMMWORD PTR [rsp+504], ymm0
-	vmovdqu YMMWORD PTR [rsp+472], ymm0
-	vmovdqu YMMWORD PTR [rsp+440], ymm0
-	vmovdqu YMMWORD PTR [rsp+408], ymm0
-	vmovdqu YMMWORD PTR [rsp+376], ymm0
-	vmovdqu YMMWORD PTR [rsp+344], ymm0
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
 	vmovdqu YMMWORD PTR [rsp+248], ymm0
 	vmovdqu YMMWORD PTR [rsp+216], ymm0
 	vmovdqu YMMWORD PTR [rsp+184], ymm0
