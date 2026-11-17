@@ -655,7 +655,15 @@ theorem mid_ok {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) (hT : TabOk 
 theorem code_correct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) (h : CIn s0) (hT : TabOk s0) :
     WP isa (VG.Impl.RsaKeyGen.RISCV64.Candidate.code trial R.name R.code) s0
       fun t => abiPreserved s0 t ∧ CQ s0 (t.gpr .a0) t.mem :=
-  code_ok h fun _ hf h6 _ sy => mid_ok D R hT hf h6 sy
+  code_ok h (fun _ hf h6 _ sy => mid_ok D R hT hf h6 sy) fun r m m' fl ⟨hr, hb, hw⟩ => by
+    obtain fs : Region.Sub ⟨s0.sp - BitVec.ofNat 64 192, 192⟩ (cF s0) :=
+      Offset.sub_below s0.sp (a := 192) (b := 288) (n := 192) (m := 288) (by decide) (by decide)
+    refine ⟨hr, ?_, ?_⟩
+    · rw [← hb]
+      exact List.map_congr_left fun i hi => lost_byte fl (R := cO s0) (h.Fo.sub_left fs).symm (List.mem_range.mp hi)
+    · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero] at hw ⊢
+      rw [← hw, fl.readW (r := cU s0) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide)
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (h.Fu.sub_left fs).symm) (by decide)]
 end
 
 end VG.Proof.RsaKeyGen.RISCV64.Cand

@@ -425,19 +425,23 @@ theorem wp_seq3 {a b c d : Prog isa} {s : State} {P Q : State → Prop} (h : WP 
 restore does. -/
 theorem code_ok (h : CIn s0) {trial round : Prog isa} {name : String} {Q : BitVec 64 → Mem → Prop}
     (hm : ∀ s, Fr s0 s → s.gpr .s6 = stackArg s0 1 → s.mem.readW (fw s0 oRead) 64 = 0 → s.syms = s0.syms →
-      WP isa (mid trial name round) s fun u => Fr s0 u ∧ Q (u.gpr .a0) u.mem) :
+      WP isa (mid trial name round) s fun u => Fr s0 u ∧ Q (u.gpr .a0) u.mem)
+    (hQ : ∀ r m m', Frame [⟨s0.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩] m m' → Q r m → Q r m') :
     WP isa (VG.Impl.RsaKeyGen.RISCV64.Candidate.code trial name round) s0
       fun t => abiPreserved s0 t ∧ Q (t.gpr .a0) t.mem := by
   unfold VG.Impl.RsaKeyGen.RISCV64.Candidate.code VG.Impl.RsaKeyGen.RISCV64.Candidate.body
-  refine WP.allocKept (by decide) (by have := h.spLo; show 192 ≤ s0.sp.toNat; omega_arith) ?_
+  refine WP.allocLe (by decide) (by have := h.spLo; show 192 ≤ s0.sp.toNat; omega_arith) ?_
   simp only [VG.Impl.RsaKeyGen.RISCV64.Candidate.seqs]
   refine WP.seq (WP.mono (entry_ok h) fun s ⟨fs, s6, r0, sy⟩ => ?_)
   refine wp_seq3 (hm s fs s6 r0 sy) fun u ⟨fu, qu⟩ => ?_
-  refine WP.mono (restore_ok fu) fun v ⟨sv, ra, a0, vm, vsp, _, vwr⟩ => ?_
+  refine WP.mono (restore_ok fu) fun v ⟨sv, ra, a0, vm, vsp, _, vwr⟩ m x fl => ?_
   obtain hfr : freed frameBytes v = { v with sp := s0.sp, wr := s0.wr } :=
     freed_eq (by rw [vwr, fu.wr]; rfl) (by rw [vsp, fu.sp]; rfl)
   rw [hfr]
-  exact ⟨⟨sv, rfl, ra⟩, by show Q (v.gpr .a0) v.mem; rw [a0, vm]; exact qu⟩
+  exact ⟨⟨sv, rfl, ra⟩, by
+    show Q (v.gpr .a0) m
+    refine hQ _ _ _ fl ?_
+    rw [a0, vm]; exact qu⟩
 
 end
 
