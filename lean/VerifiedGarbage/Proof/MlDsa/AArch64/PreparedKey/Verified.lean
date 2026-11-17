@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Frame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.FrameTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
@@ -37,7 +39,13 @@ theorem public_correct {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = ml
     WP.mono (public_body hp s L) fun t ⟨ht, hc⟩ =>
       ⟨ht.post, ht.x24, by rw [← ht.post.pa (p := (.x26, 0)) (by decide)]; exact ht.encoded,
         by rw [← ht.post.pa (p := (.x26, 0)) (by decide)]; exact hc⟩)
-    (public_pre hpre) sizes.1 sizes.2
+    (public_pre hpre) sizes.1 sizes.2 (fun _ _ f hk => preparedPublicKey_frame f
+      (fun R hR => by
+        simp only [List.mem_singleton] at hR; subst hR
+        have := (public_pre hpre).so
+        simp only [preparedPublicKeyBytes, n] at this ⊢
+        exact (this.sub_left (below_sub (by decide) (by decide))).symm)
+      (by simp only [preparedPublicKeyBytes, n]; omega_using [sizes.2]) hk)
   obtain ⟨tr, t, he, habi, hout, hc⟩ := hw
   refine ⟨tr, t, he, habi, ?_⟩
   sig_post [preparePublicKeyContract, preparePublicKeySig, AArch64.abi, VG.AArch64.argRegs]
@@ -55,7 +63,13 @@ theorem secret_correct {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = ml
     WP.mono (secret_body hp s L) fun t ⟨ht, hc⟩ =>
       ⟨ht.post, ht.x24, by rw [← ht.post.pa (p := (.x26, 0)) (by decide)]; exact ht.encoded,
         by rw [← ht.post.pa (p := (.x26, 0)) (by decide)]; exact hc⟩)
-    (secret_pre hpre) sizes.1 sizes.2
+    (secret_pre hpre) sizes.1 sizes.2 (fun _ _ f hk => preparedSecretKey_frame f
+      (fun R hR => by
+        simp only [List.mem_singleton] at hR; subst hR
+        have := (secret_pre hpre).so
+        simp only [preparedSecretKeyBytes, n] at this ⊢
+        exact (this.sub_left (below_sub (by decide) (by decide))).symm)
+      (by simp only [preparedSecretKeyBytes, n]; omega_using [sizes.2]) hk)
   obtain ⟨tr, t, he, habi, hout, hc⟩ := hw
   refine ⟨tr, t, he, habi, ?_⟩
   sig_post [prepareSecretKeyContract, prepareSecretKeySig, AArch64.abi, VG.AArch64.argRegs]
