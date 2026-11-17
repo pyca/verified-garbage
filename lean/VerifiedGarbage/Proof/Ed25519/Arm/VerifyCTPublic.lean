@@ -23,6 +23,8 @@ import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
+public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-! ### `Ed25519.Arm.VerifyHeaders`, which only this module used -/
 
@@ -206,6 +208,52 @@ theorem VerifyContext.keep {b pk sig challenge : BitVec 32} {s t : State}
     (hk.header _ (by decide) (by decide)).trans h.challengeHeader,
     by rw [h.challengeInput.bytes hk]; exact h.challengeTop⟩
 
+/-- The comb's tables at `T`, the static's address, outside the working space. -/
+structure VerifyTbl (b T : BitVec 32) (s : State) : Prop where
+  tbl : TblAt s T
+  apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩
+  sym : s.syms combSym = T
+
+theorem VerifyTbl.keep {b T : BitVec 32} {s t : State} (h : VerifyTbl b T s) (hk : VerifyKeep b s t)
+    (hsy : t.syms = s.syms) : VerifyTbl b T t :=
+  ⟨h.tbl.of_frame (by rw [hk.rest.rd, hk.rest.wr]) hk.frame fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact h.apart.sub_right (Offset.sub_base _ (by decide)),
+    h.apart, (congrFun hsy _).trans h.sym⟩
+
+/-- The projective comparison's first test reads only what `p` represents. -/
+theorem rep_cross_x {p q : Spec.Ed25519.Point} {a : Edwards.EPoint Proof.Ed25519.dZ} (hp : Proof.Ed25519.Rep p a) :
+    p.X * q.Z = q.X * p.Z ↔ a.x * Proof.Ed25519.toZ q.Z = Proof.Ed25519.toZ q.X := by
+  constructor
+  · intro h
+    have e : Proof.Ed25519.toZ (p.X * q.Z) = Proof.Ed25519.toZ (q.X * p.Z) := congrArg Proof.Ed25519.toZ h
+    rw [Proof.Ed25519.toZ_mul, Proof.Ed25519.toZ_mul, hp.x] at e
+    exact mul_right_cancel₀ hp.z (by linear_combination e)
+  · intro h
+    exact Proof.Ed25519.toZ_inj.mp (by
+      rw [Proof.Ed25519.toZ_mul, Proof.Ed25519.toZ_mul, hp.x]; linear_combination Proof.Ed25519.toZ p.Z * h)
+
+/-- Its second test, likewise. -/
+theorem rep_cross_y {p q : Spec.Ed25519.Point} {a : Edwards.EPoint Proof.Ed25519.dZ} (hp : Proof.Ed25519.Rep p a) :
+    p.Y * q.Z = q.Y * p.Z ↔ a.y * Proof.Ed25519.toZ q.Z = Proof.Ed25519.toZ q.Y := by
+  constructor
+  · intro h
+    have e : Proof.Ed25519.toZ (p.Y * q.Z) = Proof.Ed25519.toZ (q.Y * p.Z) := congrArg Proof.Ed25519.toZ h
+    rw [Proof.Ed25519.toZ_mul, Proof.Ed25519.toZ_mul, hp.y] at e
+    exact mul_right_cancel₀ hp.z (by linear_combination e)
+  · intro h
+    exact Proof.Ed25519.toZ_inj.mp (by
+      rw [Proof.Ed25519.toZ_mul, Proof.Ed25519.toZ_mul, hp.y]; linear_combination Proof.Ed25519.toZ p.Z * h)
+
+/-- The comparison is the same for two representatives of a point on its left. -/
+theorem pointEqual_rep_left {p p' q : Spec.Ed25519.Point} {a : Edwards.EPoint Proof.Ed25519.dZ}
+    (hp : Proof.Ed25519.Rep p a) (hp' : Proof.Ed25519.Rep p' a) :
+    Spec.Ed25519.pointEqual p q = Spec.Ed25519.pointEqual p' q := by
+  have ex : (p.X * q.Z == q.X * p.Z) = (p'.X * q.Z == q.X * p'.Z) := by
+    rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, rep_cross_x hp, rep_cross_x hp']
+  have ey : (p.Y * q.Z == q.Y * p.Z) = (p'.Y * q.Z == q.Y * p'.Z) := by
+    rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, rep_cross_y hp, rep_cross_y hp']
+  rw [Spec.Ed25519.pointEqual, Spec.Ed25519.pointEqual, ex, ey]
+
 /-- A challenge below `2²⁵⁶` is its first 32 bytes. -/
 theorem decodeLE_low {m : Mem} {p : Addr}
     (h : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 64) < 2 ^ 256) :
@@ -355,38 +403,32 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-theorem verifyLhs_ok {b pk sig challenge : BitVec 32} {s : State}
-    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
+theorem verifyLhs_ok {b pk sig challenge T : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s) :
     WP isa verifyLhs s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
-      tablePoint t.mem b 8032 = Spec.Ed25519.pointMul
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32)) Spec.Ed25519.basePoint ∧
+      Proof.Ed25519.Rep (tablePoint t.mem b 8032)
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) ∧
       tablePoint t.mem b 7776 = tablePoint s.mem b 7776 ∧
       tablePoint t.mem b 7904 = tablePoint s.mem b 7904 := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadHeader_ok hc.ctx 8164 (by decide)) fun a ⟨ar, am, ap⟩ => ?_
-  refine WP.mono (addInput32_ok a) fun c ⟨cr, cm, cp⟩ => ?_
+  refine WP.mono_syms (loadHeader_ok hc.ctx 8164 (by decide)) fun a ⟨ar, am, ap⟩ sya => ?_
+  refine WP.mono_syms (addInput32_ok a) fun c ⟨cr, cm, cp⟩ syc => ?_
   obtain kc : PointKeep b s c := ⟨(ar.mono (by decide)).trans (cr.mono (by decide)), by
     rw [cm, am]; exact Frame.refl _ _⟩
-  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (kc.ctx hc.ctx)
-    (by rw [cm, am]; exact hl)) fun d ⟨dk, dr, _, dl, de⟩ => ?_)
-  obtain kd := kc.trans (PointKeep.of_keep dk)
-  obtain dc := hc.keep (VerifyKeep.of_point kd)
-  have di := dc.sigInput.suffix32
-  obtain dp : d.gpr .r12 = sig + 32 := by rw [dr.gpr _ (by decide), cp, ap, hc.sigHeader]
-  obtain dpoint : point (env d.mem b) 0 1 2 3 = Spec.Ed25519.basePoint :=
-    (congrArg (fun e => point e 0 1 2 3) de).trans (constPoint_eval _ _)
-  refine WP.seq (WP.mono (pointFromScalar_ok dc.ctx dl dp 16 (by decide) (by decide)
-    di.fit di.readable di.separate) fun e ⟨ek, el, _, ep⟩ => ?_)
-  obtain ke := kd.trans ek
-  obtain ep' : point (env e.mem b) 0 1 2 3 = Spec.Ed25519.pointMul
-      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32)) Spec.Ed25519.basePoint := by
-    rw [(hc.sigInput.suffix32).bytes (VerifyKeep.of_point kd), dpoint] at ep
-    exact ep
+  obtain cc := hc.keep (VerifyKeep.of_point kc)
+  have ci := cc.sigInput.suffix32
+  obtain cp' : c.gpr .r12 = sig + 32 := by rw [cp, ap, hc.sigHeader]
+  obtain cT : TblAt c T := ht.tbl.of_frame (L := []) (by rw [kc.rest.rd, kc.rest.wr])
+    (by rw [cm, am]; exact Frame.refl _ _) (fun _ hr => absurd hr List.not_mem_nil)
+  refine WP.seq (WP.mono (combMultiply_ok cc.ctx (by rw [cm, am]; exact hl) cp' ci.fit ci.readable ci.separate
+    cT ((congrFun (syc.trans sya) _).trans ht.sym) ht.apart) fun e ⟨ek, el, ep⟩ => ?_)
+  obtain ke := kc.trans ek
+  rw [(hc.sigInput.suffix32).bytes (VerifyKeep.of_point kc)] at ep
   refine WP.mono (pointTableWrite_ok (ke.ctx hc.ctx) el 8032 (by decide) (by decide))
     fun t ⟨tk, tl, _, tp⟩ => ?_
   refine ⟨(VerifyKeep.of_point ke).trans (VerifyKeep.of_powers tk (by decide) (by decide)), tl,
-    tp.trans ep', ?_, ?_⟩
+    tp ▸ ep, ?_, ?_⟩
   · exact (tk.frame.point (by decide) (.inl (by decide)) (by decide) (by decide)).trans
       (ke.table (by decide) (by decide))
   · exact (tk.frame.point (by decide) (.inl (by decide)) (by decide) (by decide)).trans
@@ -405,15 +447,16 @@ def equationResult (m : Mem) (sig challenge : BitVec 32) (a r : Spec.Ed25519.Poi
     (Spec.Ed25519.pointAdd r (Spec.Ed25519.pointMul
       (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr challenge) 64)) a))
 
-theorem verifyEquationPoints_ok {b pk sig challenge : BitVec 32} {s : State}
-    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
+theorem verifyEquationPoints_ok {b pk sig challenge T : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s) :
     WP isa verifyEquationPoints s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
       t.gpr .r9 = BitVec.ofNat 32 (equationResult s.mem sig challenge
         (tablePoint s.mem b 7776) (tablePoint s.mem b 7904)).toNat := by
-  refine WP.seq (WP.mono (verifyLhs_ok hc hl) fun u ⟨uk, ul, up, ua, ur⟩ => ?_)
+  refine WP.seq (WP.mono (verifyLhs_ok hc hl ht) fun u ⟨uk, ul, up, ua, ur⟩ => ?_)
   refine WP.mono (verifyRhs_ok (hc.keep uk) ul) fun t ⟨tk, tl, tv⟩ => ?_
   refine ⟨uk.trans tk, tl, ?_⟩
-  rw [up, ua, ur, hc.challengeInput.bytes uk] at tv
+  rw [ua, ur, hc.challengeInput.bytes uk,
+    pointEqual_rep_left up (Proof.Ed25519.pointMul_rep _ Proof.Ed25519.basePoint_rep)] at tv
   exact tv
 
 end VG.Proof.Ed25519.Arm
@@ -774,29 +817,31 @@ theorem decodeBoth_ok {b pk sig challenge : BitVec 32} {s : State}
   · exact .inl ⟨by show some (!t.z) = _; rw [zt]; rfl, ht⟩
 
 /-- Both decoded, and the equation if both are points. -/
-theorem verifyDecode_ok {b pk sig challenge : BitVec 32} {s : State}
-    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
+theorem verifyDecode_ok {b pk sig challenge T : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s) :
     WP isa verifyDecode s fun t => VerifyKeep b s t ∧
       t.gpr .r9 = BitVec.ofNat 32 (decodedEquation s.mem pk sig challenge).toNat := by
-  refine WP.seq (WP.mono (decodeBoth_ok hc hl) fun a ha => ?_)
+  refine WP.seq (WP.mono_syms (decodeBoth_ok hc hl) fun a ha sya => ?_)
   obtain ca := (hc.keep ha.keep).ctx
-  refine WP.seq (ldrLow_ok ca (d := DOK) (by decide) .r9 fun c hc' => wp_cmp (op2_imm (by decide)) fun d hd hz =>
-    WP.block_nil ?_)
-  obtain kd : VerifyKeep b s d := ha.keep.trans (VerifyKeep.of_rest ((hc'.rest (ws := [.r9]) (by decide)).trans
-    (hd.rest _)) (by decide) (by rw [hd.mem, hc'.mem]))
-  obtain md : d.mem = a.mem := by rw [hd.mem, hc'.mem]
-  apply WP.ite (decOk s.mem pk sig 2) (by
-    show some (!d.z) = _
-    rw [hz]
-    rw [hc'.gpr, ha.ok]
-    cases decOk s.mem pk sig 2 <;> rfl)
+  have test : WP isa (.block [.ldr .r9 .r0 DOK, .cmp .r9 (.imm 0)]) a fun d =>
+      VerifyKeep b s d ∧ d.mem = a.mem ∧ isa.eval .ne d = some (decOk s.mem pk sig 2) :=
+    ldrLow_ok ca (d := DOK) (by decide) .r9 fun c hc' => wp_cmp (op2_imm (by decide)) fun d hd hz =>
+      WP.block_nil ⟨ha.keep.trans (VerifyKeep.of_rest ((hc'.rest (ws := [.r9]) (by decide)).trans
+        (hd.rest _)) (by decide) (by rw [hd.mem, hc'.mem])), by rw [hd.mem, hc'.mem], by
+        show some (!d.z) = _
+        rw [hz]
+        rw [hc'.gpr, ha.ok]
+        cases decOk s.mem pk sig 2 <;> rfl⟩
+  refine WP.seq (WP.mono_syms test fun d ⟨kd, md, hz⟩ syd => ?_)
+  apply WP.ite (decOk s.mem pk sig 2) hz
   · intro hok
     rw [decOk_two, Bool.and_eq_true] at hok
     obtain ⟨a0, ha0⟩ := Option.isSome_iff_exists.mp hok.1
     obtain ⟨r0, hr0⟩ := Option.isSome_iff_exists.mp hok.2
     obtain tA : tablePoint d.mem b 7776 = a0 := by rw [md]; exact ha.pts 0 (by decide) a0 ha0
     obtain tR : tablePoint d.mem b 7904 = r0 := by rw [md]; exact ha.pts 1 (by decide) r0 hr0
-    refine WP.mono (verifyEquationPoints_ok (hc.keep kd) (by rw [md]; exact ha.lim)) fun t ⟨tk, _, tv⟩ =>
+    refine WP.mono (verifyEquationPoints_ok (hc.keep kd) (by rw [md]; exact ha.lim)
+      (ht.keep kd (syd.trans sya))) fun t ⟨tk, _, tv⟩ =>
       ⟨kd.trans tk, ?_⟩
     rw [tv, tA, tR, equationResult_keep hc kd]
     have h0 : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32) = some a0 := ha0
@@ -886,17 +931,17 @@ theorem verifyEquation_bytes (m : Mem) (pk sig challenge : BitVec 32) (hs : sig.
     cases Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr sig) 32) <;>
     simp only [Bool.and_false]
 
-theorem verifyBody_ok {b pk sig challenge : BitVec 32} {s : State}
-    (hc : VerifyContext b pk sig challenge s) :
+theorem verifyBody_ok {b pk sig challenge T : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (ht : VerifyTbl b T s) :
     WP isa verifyBody s fun t => VerifyKeep b s t ∧ t.gpr .r9 = BitVec.ofNat 32
       (Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32)
         (Spec.Ed25519.bytesAt s.mem (State.addr sig) 64) (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64)).toNat := by
-  refine WP.seq (WP.mono (verifyScalar_ok hc) fun u ⟨uk, uz⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifyScalar_ok hc) fun u ⟨uk, uz⟩ syu => ?_)
   apply WP.ite _ (congrArg some uz)
   · intro hy
-    refine WP.seq (WP.mono (initFields_ok (uk.ctx hc.ctx)) fun v ⟨vk, vl, _⟩ => ?_)
+    refine WP.seq (WP.mono_syms (initFields_ok (uk.ctx hc.ctx)) fun v ⟨vk, vl, _⟩ syv => ?_)
     obtain kv := uk.trans (VerifyKeep.of_keep vk)
-    refine WP.mono (verifyDecode_ok (hc.keep kv) vl) fun t ⟨tk, tv⟩ => ?_
+    refine WP.mono (verifyDecode_ok (hc.keep kv) vl (ht.keep kv (syv.trans syu))) fun t ⟨tk, tv⟩ => ?_
     refine ⟨kv.trans tk, ?_⟩
     rw [decodedEquation_keep hc kv] at tv
     rw [verifyEquation_bytes _ _ _ _ hc.sigInput.fit, hy, Bool.true_and]
@@ -978,17 +1023,20 @@ def verifyLocal : Contract Arm.isa where
     let sig : Region := ⟨State.addr (s.gpr .r1), 64⟩
     let challenge : Region := ⟨State.addr (s.gpr .r2), 64⟩
     let ws : Region := ⟨State.addr (s.gpr .r3), 8192⟩
-    s.rd = [pk, sig, challenge] ∧ s.wr = [ws] ∧ pk.Disjoint ws ∧ sig.Disjoint ws ∧
+    s.rd = [pk, sig, challenge, TBL (s.syms combSym)] ∧ s.wr = [ws] ∧ pk.Disjoint ws ∧ sig.Disjoint ws ∧
       challenge.Disjoint ws ∧ (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧
       (s.gpr .r1).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 64 ≤ 2 ^ 32 ∧
       (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32 ∧
-      Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 64) < 2 ^ 256
+      Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 64) < 2 ^ 256 ∧
+      (s.syms combSym).toNat + 98304 ≤ 2 ^ 32 ∧
+      (∀ j < 64 * 192, s.mem.readW (State.addr (s.syms combSym) + BitVec.ofNat 64 (8 * j)) 64 = combWord j) ∧
+      (TBL (s.syms combSym)).Disjoint ws
   post s t := (t.gpr .r0).toNat = if Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r0)) 32)
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 64)
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 64) then 1 else 0
   pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
-    s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧
+    s.gpr .r2 = t.gpr .r2 ∧ s.gpr .r3 = t.gpr .r3 ∧ s.syms combSym = t.syms combSym ∧
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r0)) 32 ++
       Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 64 ++
       Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 64).map (·.toNat) =
@@ -997,7 +1045,8 @@ def verifyLocal : Contract Arm.isa where
       Spec.Ed25519.bytesAt t.mem (State.addr (t.gpr .r2)) 64).map (·.toNat)
 
 structure VerifyPre (s : State) : Prop where
-  rd : s.rd = [⟨State.addr (s.gpr .r0), 32⟩, ⟨State.addr (s.gpr .r1), 64⟩, ⟨State.addr (s.gpr .r2), 64⟩]
+  rd : s.rd = [⟨State.addr (s.gpr .r0), 32⟩, ⟨State.addr (s.gpr .r1), 64⟩, ⟨State.addr (s.gpr .r2), 64⟩,
+    TBL (s.syms combSym)]
   wr : s.wr = [⟨State.addr (s.gpr .r3), 8192⟩]
   pk_ws : (⟨State.addr (s.gpr .r0), 32⟩ : Region).Disjoint ⟨State.addr (s.gpr .r3), 8192⟩
   sig_ws : (⟨State.addr (s.gpr .r1), 64⟩ : Region).Disjoint ⟨State.addr (s.gpr .r3), 8192⟩
@@ -1007,10 +1056,17 @@ structure VerifyPre (s : State) : Prop where
   f2 : (s.gpr .r2).toNat + 64 ≤ 2 ^ 32
   f3 : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
   top : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 64) < 2 ^ 256
+  tfit : (s.syms combSym).toNat + 98304 ≤ 2 ^ 32
+  words : ∀ j < 64 * 192, s.mem.readW (State.addr (s.syms combSym) + BitVec.ofNat 64 (8 * j)) 64 = combWord j
+  tbl_ws : (TBL (s.syms combSym)).Disjoint ⟨State.addr (s.gpr .r3), 8192⟩
 
 theorem VerifyPre.of {s : State} (h : verifyLocal.pre s) : VerifyPre s :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1,
-    h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2⟩
+    h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.1,
+    h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2.2⟩
+
+theorem VerifyPre.tbl {s : State} (h : VerifyPre s) : TblAt s (s.syms combSym) :=
+  ⟨h.tfit, ⟨_, by rw [h.rd]; simp, Region.contains_self _ _⟩, h.words⟩
 
 end VG.Proof.Ed25519.Arm
 end
@@ -1132,8 +1188,11 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 theorem verifyEquation_correct {s : State} (h : VerifyPre s) :
     WP isa verifyEquation s fun t => abiPreserved s t ∧ verifyLocal.post s t := by
-  refine WP.seq (WP.mono (verifySetup_ok h) fun u ⟨uc, us, ul, uk, uf⟩ => ?_)
-  refine WP.seq (WP.mono (verifyBody_ok uc) fun v ⟨vk, vv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifySetup_ok h) fun u ⟨uc, us, ul, uk, uf⟩ syu => ?_)
+  obtain ut : VerifyTbl (s.gpr .r3) (s.syms combSym) u :=
+    ⟨h.tbl.of_frame (by rw [uk.rd, uk.wr]) uf fun r hr => by rw [List.mem_singleton.mp hr]; exact h.tbl_ws,
+      h.tbl_ws, congrFun syu _⟩
+  refine WP.seq (WP.mono (verifyBody_ok uc ut) fun v ⟨vk, vv⟩ => ?_)
   obtain vs : ScalarSaved (State.addr (s.gpr .r3)) s.gpr v.mem := us.frame vk.frame fun r hr i hi => by
     rw [List.mem_singleton.mp hr]
     exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
@@ -1177,25 +1236,27 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-structure VerifyPublic (m : Mem) (b pk sig challenge : BitVec 32) (s : State) : Prop where
+structure VerifyPublic (m : Mem) (T b pk sig challenge : BitVec 32) (s : State) : Prop where
   ctx : VerifyContext b pk sig challenge s
+  tbl : VerifyTbl b T s
   pkBytes : Spec.Ed25519.bytesAt s.mem (State.addr pk) 32 = Spec.Ed25519.bytesAt m (State.addr pk) 32
   sigBytes : Spec.Ed25519.bytesAt s.mem (State.addr sig) 64 = Spec.Ed25519.bytesAt m (State.addr sig) 64
   challengeBytes : Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64 = Spec.Ed25519.bytesAt m (State.addr challenge) 64
 
-theorem VerifyPublic.keep {m : Mem} {b pk sig challenge : BitVec 32} {s t : State}
-    (h : VerifyPublic m b pk sig challenge s) (hk : VerifyKeep b s t) : VerifyPublic m b pk sig challenge t :=
-  ⟨h.ctx.keep hk, (h.ctx.pkInput.bytes hk).trans h.pkBytes,
+theorem VerifyPublic.keep {m : Mem} {T b pk sig challenge : BitVec 32} {s t : State}
+    (h : VerifyPublic m T b pk sig challenge s) (hk : VerifyKeep b s t) (hsy : t.syms = s.syms) :
+    VerifyPublic m T b pk sig challenge t :=
+  ⟨h.ctx.keep hk, h.tbl.keep hk hsy, (h.ctx.pkInput.bytes hk).trans h.pkBytes,
     (h.ctx.sigInput.bytes hk).trans h.sigBytes, (h.ctx.challengeInput.bytes hk).trans h.challengeBytes⟩
 
-theorem VerifyPublic.rBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) :
+theorem VerifyPublic.rBytes {m : Mem} {T b pk sig challenge : BitVec 32} {s : State}
+    (h : VerifyPublic m T b pk sig challenge s) :
     Spec.Ed25519.bytesAt s.mem (State.addr sig) 32 = Spec.Ed25519.bytesAt m (State.addr sig) 32 := by
   obtain he := congrArg (List.take 32) h.sigBytes
   simpa only [signatureBytes_take] using he
 
-theorem VerifyPublic.sBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) :
+theorem VerifyPublic.sBytes {m : Mem} {T b pk sig challenge : BitVec 32} {s : State}
+    (h : VerifyPublic m T b pk sig challenge s) :
     Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32 = Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32 := by
   obtain ep : State.addr (sig + (32 : BitVec 32)) = State.addr sig + BitVec.ofNat 64 32 :=
     addr_add (k := 32) (by have := h.ctx.sigInput.fit; omega_arith)

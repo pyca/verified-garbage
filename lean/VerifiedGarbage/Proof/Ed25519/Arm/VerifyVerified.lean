@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -40,27 +42,26 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
-def EquationCTPre (m : Mem) (b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a ∧ tablePoint s.mem b 7904 = r
+def EquationCTPre (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
+  VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a ∧ tablePoint s.mem b 7904 = r
 
-theorem verifyLhs_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
-    CT (fun s t => EquationCTPre m b pk sig challenge a r s ∧ EquationCTPre m b pk sig challenge a r t)
-      verifyLhs (fun s t => RhsCTPre m b pk sig challenge a r
-        (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32)) Spec.Ed25519.basePoint) s ∧
-        RhsCTPre m b pk sig challenge a r
-        (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32)) Spec.Ed25519.basePoint) t) := by
+theorem verifyLhs_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
+    CT (fun s t => EquationCTPre m T b pk sig challenge a r s ∧ EquationCTPre m T b pk sig challenge a r t)
+      verifyLhs (fun s t => RhsCTPre m T b pk sig challenge a r
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) s ∧
+        RhsCTPre m T b pk sig challenge a r
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) t) := by
   apply ctBoth
-  · exact (verifyLhs_ct b pk sig challenge).mono (fun _ _ h =>
-      ⟨⟨h.1.1.ctx, h.1.2.1⟩, ⟨h.2.1.ctx, h.2.2.1⟩⟩) (fun _ _ h => h)
+  · exact (verifyLhs_ct T b pk sig challenge).mono (fun _ _ h =>
+      ⟨⟨h.1.1.ctx, h.1.2.1, h.1.1.tbl⟩, ⟨h.2.1.ctx, h.2.2.1, h.2.1.tbl⟩⟩) (fun _ _ h => h)
   · intro s ⟨hp, hl, ha, hr⟩
-    refine WP.mono (verifyLhs_ok hp.ctx hl) fun t ⟨tk, tl, tp, ta, tr⟩ => ?_
-    exact ⟨hp.keep tk, tl, ta.trans ha, tr.trans hr,
-      tp.trans (congrArg (fun bs => Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE bs) Spec.Ed25519.basePoint) hp.sBytes)⟩
+    refine WP.mono_syms (verifyLhs_ok hp.ctx hl hp.tbl) fun t ⟨tk, tl, tp, ta, tr⟩ syt => ?_
+    exact ⟨hp.keep tk syt, tl, ta.trans ha, tr.trans hr, by rw [← hp.sBytes]; exact tp⟩
 
-theorem verifyEquationPoints_ct (m : Mem) (b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
-    CT (fun s t => EquationCTPre m b pk sig challenge a r s ∧ EquationCTPre m b pk sig challenge a r t)
+theorem verifyEquationPoints_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
+    CT (fun s t => EquationCTPre m T b pk sig challenge a r s ∧ EquationCTPre m T b pk sig challenge a r t)
       verifyEquationPoints (fun _ _ => True) :=
-  RelCT.seq (verifyLhs_public_ct m b pk sig challenge a r) (verifyRhs_ct m b pk sig challenge a r _)
+  RelCT.seq (verifyLhs_public_ct m T b pk sig challenge a r) (verifyRhs_ct m T b pk sig challenge a r _)
 
 end VG.Proof.Ed25519.Arm
 end
@@ -114,50 +115,50 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-theorem VerifyPublic.inBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) {j : Nat} (hj : j < 2) :
+theorem VerifyPublic.inBytes {m : Mem} {T b pk sig challenge : BitVec 32} {s : State}
+    (h : VerifyPublic m T b pk sig challenge s) {j : Nat} (hj : j < 2) :
     Spec.Ed25519.bytesAt s.mem (State.addr (inPtr pk sig j)) 32 =
       Spec.Ed25519.bytesAt m (State.addr (inPtr pk sig j)) 32 := by
   rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
   · exact h.pkBytes
   · exact h.rBytes
 
-theorem VerifyPublic.decOk_eq {m : Mem} {b pk sig challenge : BitVec 32} {s : State}
-    (h : VerifyPublic m b pk sig challenge s) : decOk s.mem pk sig 2 = decOk m pk sig 2 := by
+theorem VerifyPublic.decOk_eq {m : Mem} {T b pk sig challenge : BitVec 32} {s : State}
+    (h : VerifyPublic m T b pk sig challenge s) : decOk s.mem pk sig 2 = decOk m pk sig 2 := by
   rw [decOk_two, decOk_two]
   unfold inPoint
   rw [h.inBytes (j := 0) (by decide), h.inBytes (j := 1) (by decide)]
 
 /-- Before the decoding `k`, from some state before the loop with the public inputs. -/
-def DecCT (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
-  ∃ s₀, VerifyPublic m b pk sig challenge s₀ ∧ DecAt s₀ b pk sig k s
+def DecCT (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
+  ∃ s₀, VerifyPublic m T b pk sig challenge s₀ ∧ DecAt s₀ b pk sig k s ∧ s.syms = s₀.syms
 
-theorem DecCT.r0 {m : Mem} {b pk sig challenge : BitVec 32} {k : Nat} {s : State}
-    (h : DecCT m b pk sig challenge k s) : s.gpr .r0 = b := by
-  obtain ⟨_, hp, hd⟩ := h
+theorem DecCT.r0 {m : Mem} {T b pk sig challenge : BitVec 32} {k : Nat} {s : State}
+    (h : DecCT m T b pk sig challenge k s) : s.gpr .r0 = b := by
+  obtain ⟨_, hp, hd, _⟩ := h
   exact (hp.ctx.keep hd.keep).ctx.r0
 
 /-- What the iteration `k` needs public, after the pointer's load, and after the decoding. -/
-def BodyCT (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ lw s.mem b DPTR = inPtr pk sig k ∧
+def BodyCT (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
+  VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ lw s.mem b DPTR = inPtr pk sig k ∧
     lw s.mem b DTAB = BitVec.ofNat 32 (7776 + 128 * k)
 
-def LoadedCT (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ s.gpr .r12 = inPtr pk sig k ∧
+def LoadedCT (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
+  VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ s.gpr .r12 = inPtr pk sig k ∧
     lw s.mem b DTAB = BitVec.ofNat 32 (7776 + 128 * k)
 
-def DecodedCT (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ lw s.mem b DTAB = BitVec.ofNat 32 (7776 + 128 * k)
+def DecodedCT (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) (s : State) : Prop :=
+  VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ lw s.mem b DTAB = BitVec.ofNat 32 (7776 + 128 * k)
 
-theorem DecCT.body {m : Mem} {b pk sig challenge : BitVec 32} {k : Nat} {s : State}
-    (h : DecCT m b pk sig challenge k s) (hk : k < 2) : BodyCT m b pk sig challenge k s := by
-  obtain ⟨_, hp, hd⟩ := h
-  exact ⟨hp.keep hd.keep, hd.lim, hd.ptr hk, hd.tab⟩
+theorem DecCT.body {m : Mem} {T b pk sig challenge : BitVec 32} {k : Nat} {s : State}
+    (h : DecCT m T b pk sig challenge k s) (hk : k < 2) : BodyCT m T b pk sig challenge k s := by
+  obtain ⟨_, hp, hd, hsy⟩ := h
+  exact ⟨hp.keep hd.keep hsy, hd.lim, hd.ptr hk, hd.tab⟩
 
-theorem decodeLoad_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) :
-    CT (fun x y => BodyCT m b pk sig challenge k x ∧ BodyCT m b pk sig challenge k y)
+theorem decodeLoad_ct (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) :
+    CT (fun x y => BodyCT m T b pk sig challenge k x ∧ BodyCT m T b pk sig challenge k y)
       (.block [.ldr .r12 .r0 DPTR])
-      (fun x y => LoadedCT m b pk sig challenge k x ∧ LoadedCT m b pk sig challenge k y) := by
+      (fun x y => LoadedCT m T b pk sig challenge k x ∧ LoadedCT m T b pk sig challenge k y) := by
   apply ctBoth
   · apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
@@ -165,14 +166,14 @@ theorem decodeLoad_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) :
     subst r
     exact h.1.1.ctx.ctx.r0.trans h.2.1.ctx.ctx.r0.symm
   · intro s ⟨hp, hl, hptr, htab⟩
-    refine ldrLow_ok hp.ctx.ctx (d := DPTR) (by decide) .r12 fun t ht => WP.block_nil ?_
+    refine WP.of_syms (ldrLow_ok hp.ctx.ctx (d := DPTR) (by decide) .r12 fun t ht => WP.block_nil fun syt => ?_)
     have kt : VerifyKeep b s t := VerifyKeep.of_rest (ht.rest (ws := [.r12]) (by decide)) (by decide) ht.mem
-    exact ⟨hp.keep kt, by rw [ht.mem]; exact hl, by rw [ht.gpr]; exact hptr, by rw [ht.mem]; exact htab⟩
+    exact ⟨hp.keep kt syt, by rw [ht.mem]; exact hl, by rw [ht.gpr]; exact hptr, by rw [ht.mem]; exact htab⟩
 
-theorem pointDecode_public_ct (m : Mem) (b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
-    CT (fun x y => LoadedCT m b pk sig challenge k x ∧ LoadedCT m b pk sig challenge k y) pointDecode
-      (fun x y => DecodedCT m b pk sig challenge k x ∧ DecodedCT m b pk sig challenge k y) := by
-  have pre (x : State) (h : LoadedCT m b pk sig challenge k x) :
+theorem pointDecode_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
+    CT (fun x y => LoadedCT m T b pk sig challenge k x ∧ LoadedCT m T b pk sig challenge k y) pointDecode
+      (fun x y => DecodedCT m T b pk sig challenge k x ∧ DecodedCT m T b pk sig challenge k y) := by
+  have pre (x : State) (h : LoadedCT m T b pk sig challenge k x) :
       DecodeCTPre b (inPtr pk sig k) (Spec.Ed25519.bytesAt m (State.addr (inPtr pk sig k)) 32) x := by
     have hi := h.1.ctx.input hk
     exact ⟨h.1.ctx.ctx, h.2.1, h.2.2.1, hi.fit, hi.readable, hi.separate, h.1.inBytes hk⟩
@@ -180,18 +181,18 @@ theorem pointDecode_public_ct (m : Mem) (b pk sig challenge : BitVec 32) {k : Na
   · exact (pointDecode_ct b (inPtr pk sig k) _).mono (fun x y h => ⟨pre x h.1, pre y h.2⟩) (fun _ _ h => h)
   · intro s ⟨hp, hl, hr, htab⟩
     have hi := hp.ctx.input hk
-    refine WP.mono (pointDecode_ok hp.ctx.ctx hl hr hi.fit hi.readable hi.separate) fun t ht => ?_
-    refine ⟨hp.keep (VerifyKeep.of_decode ht.1), ht.2.1, ?_⟩
+    refine WP.mono_syms (pointDecode_ok hp.ctx.ctx hl hr hi.fit hi.readable hi.separate) fun t ht syt => ?_
+    refine ⟨hp.keep (VerifyKeep.of_decode ht.1) syt, ht.2.1, ?_⟩
     rw [← htab]
     exact ht.1.frame.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) (by decide)
 
-theorem decodeNext_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) :
-    CT (fun x y => DecodedCT m b pk sig challenge k x ∧ DecodedCT m b pk sig challenge k y)
+theorem decodeNext_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) :
+    CT (fun x y => DecodedCT m T b pk sig challenge k x ∧ DecodedCT m T b pk sig challenge k y)
       (.block decodeNext) (fun _ _ => True) := by
   rw [decodeNext_eq]
-  have head : CT (fun x y => DecodedCT m b pk sig challenge k x ∧ DecodedCT m b pk sig challenge k y)
+  have head : CT (fun x y => DecodedCT m T b pk sig challenge k x ∧ DecodedCT m T b pk sig challenge k y)
       (.block ([.ldr .r3 .r0 DOK, .dp .and .r3 .r3 (.reg .r9), .str .r3 .r0 DOK, .ldr .r12 .r0 DTAB,
         .dp .add .r12 .r0 (.reg .r12)] : List Instr))
       (fun x y => (x.gpr .r0 = b ∧ x.gpr .r12 = b + BitVec.ofNat 32 (7776 + 128 * k)) ∧
@@ -226,27 +227,27 @@ theorem decodeNext_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat
   · exact h.1.1.trans h.2.1.symm
   · exact h.1.2.trans h.2.2.symm
 
-theorem decodeBody_public_ct (m : Mem) (b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
-    CT (fun x y => BodyCT m b pk sig challenge k x ∧ BodyCT m b pk sig challenge k y) decodeBody
+theorem decodeBody_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
+    CT (fun x y => BodyCT m T b pk sig challenge k x ∧ BodyCT m T b pk sig challenge k y) decodeBody
       (fun _ _ => True) := by
   rw [decodeBody]
-  exact RelCT.seq (decodeLoad_ct m b pk sig challenge k)
-    (RelCT.seq (pointDecode_public_ct m b pk sig challenge hk) (decodeNext_public_ct m b pk sig challenge k))
+  exact RelCT.seq (decodeLoad_ct m T b pk sig challenge k)
+    (RelCT.seq (pointDecode_public_ct m T b pk sig challenge hk) (decodeNext_public_ct m T b pk sig challenge k))
 
-theorem decodeBody_dec {m : Mem} {b pk sig challenge : BitVec 32} {k : Nat} (hk : k < 2) {s : State}
-    (h : DecCT m b pk sig challenge k s) :
-    WP isa decodeBody s fun t => DecCT m b pk sig challenge (k + 1) t ∧ t.z = decide (k = 1) := by
-  obtain ⟨s₀, hp, hd⟩ := h
-  exact WP.mono (decodeBody_ok hp.ctx hk hd) fun t ⟨ht, zt⟩ => ⟨⟨s₀, hp, ht⟩, zt⟩
+theorem decodeBody_dec {m : Mem} {T b pk sig challenge : BitVec 32} {k : Nat} (hk : k < 2) {s : State}
+    (h : DecCT m T b pk sig challenge k s) :
+    WP isa decodeBody s fun t => DecCT m T b pk sig challenge (k + 1) t ∧ t.z = decide (k = 1) := by
+  obtain ⟨s₀, hp, hd, hsy⟩ := h
+  exact WP.mono_syms (decodeBody_ok hp.ctx hk hd) fun t ⟨ht, zt⟩ syt => ⟨⟨s₀, hp, ht, syt.trans hsy⟩, zt⟩
 
-theorem decodeLoop_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun x y => DecCT m b pk sig challenge 0 x ∧ DecCT m b pk sig challenge 0 y) (.loop decodeBody .ne)
-      (fun x y => DecCT m b pk sig challenge 2 x ∧ DecCT m b pk sig challenge 2 y) := by
-  refine (RelCT.loop (M := isa) (I := fun n x y => ∃ k, k + n = 2 ∧ k < 2 ∧ DecCT m b pk sig challenge k x ∧
-      DecCT m b pk sig challenge k y) ?_ 2).mono (fun x y h => ⟨0, rfl, by decide, h.1, h.2⟩) (fun _ _ h => h)
+theorem decodeLoop_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun x y => DecCT m T b pk sig challenge 0 x ∧ DecCT m T b pk sig challenge 0 y) (.loop decodeBody .ne)
+      (fun x y => DecCT m T b pk sig challenge 2 x ∧ DecCT m T b pk sig challenge 2 y) := by
+  refine (RelCT.loop (M := isa) (I := fun n x y => ∃ k, k + n = 2 ∧ k < 2 ∧ DecCT m T b pk sig challenge k x ∧
+      DecCT m T b pk sig challenge k y) ?_ 2).mono (fun x y h => ⟨0, rfl, by decide, h.1, h.2⟩) (fun _ _ h => h)
   intro n
-  have step (k : Nat) (hk : k < 2) := ((decodeBody_public_ct m b pk sig challenge hk).mono
-    (fun x y (h : DecCT m b pk sig challenge k x ∧ DecCT m b pk sig challenge k y) => ⟨h.1.body hk, h.2.body hk⟩)
+  have step (k : Nat) (hk : k < 2) := ((decodeBody_public_ct m T b pk sig challenge hk).mono
+    (fun x y (h : DecCT m T b pk sig challenge k x ∧ DecCT m T b pk sig challenge k y) => ⟨h.1.body hk, h.2.body hk⟩)
     (fun _ _ h => h)).wp fun x y h => ⟨decodeBody_dec hk h.1, decodeBody_dec hk h.2⟩
   rcases n with _ | _ | _ | n
   · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega_using [hkn, hk]
@@ -273,19 +274,19 @@ theorem decodeLoop_ct (m : Mem) (b pk sig challenge : BitVec 32) :
   · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega_using [hkn]
 
 /-- After the test of `DOK`: the branch, and the decoded points. -/
-def TestedCT (m : Mem) (b pk sig challenge : BitVec 32) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ VG.Arm.eval .ne s = some (decOk m pk sig 2) ∧
+def TestedCT (m : Mem) (T b pk sig challenge : BitVec 32) (s : State) : Prop :=
+  VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ VG.Arm.eval .ne s = some (decOk m pk sig 2) ∧
     ∀ j < 2, ∀ p, inPoint m pk sig j = some p → tablePoint s.mem b (7776 + 128 * j) = p
 
-theorem okTest_dec {m : Mem} {b pk sig challenge : BitVec 32} {s : State} (h : DecCT m b pk sig challenge 2 s) :
-    WP isa (.block [.ldr .r9 .r0 DOK, .cmp .r9 (.imm 0)]) s (TestedCT m b pk sig challenge) := by
-  obtain ⟨s₀, hp, ha⟩ := h
-  refine ldrLow_ok (hp.ctx.keep ha.keep).ctx (d := DOK) (by decide) .r9 fun c hc =>
-    wp_cmp (op2_imm (by decide)) fun d hd hz => WP.block_nil ?_
+theorem okTest_dec {m : Mem} {T b pk sig challenge : BitVec 32} {s : State} (h : DecCT m T b pk sig challenge 2 s) :
+    WP isa (.block [.ldr .r9 .r0 DOK, .cmp .r9 (.imm 0)]) s (TestedCT m T b pk sig challenge) := by
+  obtain ⟨s₀, hp, ha, hsy⟩ := h
+  refine WP.of_syms (ldrLow_ok (hp.ctx.keep ha.keep).ctx (d := DOK) (by decide) .r9 fun c hc =>
+    wp_cmp (op2_imm (by decide)) fun d hd hz => WP.block_nil fun syd => ?_)
   have md : d.mem = s.mem := by rw [hd.mem, hc.mem]
   have kd : VerifyKeep b s₀ d := ha.keep.trans (VerifyKeep.of_rest ((hc.rest (ws := [.r9]) (by decide)).trans
     (hd.rest _)) (by decide) md)
-  refine ⟨hp.keep kd, by rw [md]; exact ha.lim, ?_, fun j hj p hj' => ?_⟩
+  refine ⟨hp.keep kd (syd.trans hsy), by rw [md]; exact ha.lim, ?_, fun j hj p hj' => ?_⟩
   · show some (!d.z) = _
     rw [hz, hc.gpr, ha.ok, hp.decOk_eq]
     cases decOk m pk sig 2 <;> rfl
@@ -295,12 +296,12 @@ theorem okTest_dec {m : Mem} {b pk sig challenge : BitVec 32} {s : State} (h : D
     rw [hp.inBytes hj]
     exact hj'
 
-theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun s t => (VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b) ∧
-      (VerifyPublic m b pk sig challenge t ∧ AllLim t.mem b)) verifyDecode (fun _ _ => True) := by
-  have start : CT (fun s t => (VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b) ∧
-      (VerifyPublic m b pk sig challenge t ∧ AllLim t.mem b)) (.block decodeStart)
-      (fun x y => DecCT m b pk sig challenge 0 x ∧ DecCT m b pk sig challenge 0 y) := by
+theorem verifyDecode_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
+      (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) verifyDecode (fun _ _ => True) := by
+  have start : CT (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
+      (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) (.block decodeStart)
+      (fun x y => DecCT m T b pk sig challenge 0 x ∧ DecCT m T b pk sig challenge 0 y) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
@@ -308,10 +309,10 @@ theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       subst r
       exact h.1.1.ctx.ctx.r0.trans h.2.1.ctx.ctx.r0.symm
     · intro s ⟨hp, hl⟩
-      exact WP.mono (decodeStart_ok hp.ctx hl) fun t ht => ⟨s, hp, ht⟩
-  have test : CT (fun x y => DecCT m b pk sig challenge 2 x ∧ DecCT m b pk sig challenge 2 y)
+      exact WP.mono_syms (decodeStart_ok hp.ctx hl) fun t ht syt => ⟨s, hp, ht, syt⟩
+  have test : CT (fun x y => DecCT m T b pk sig challenge 2 x ∧ DecCT m T b pk sig challenge 2 y)
       (.block [.ldr .r9 .r0 DOK, .cmp .r9 (.imm 0)])
-      (fun x y => TestedCT m b pk sig challenge x ∧ TestedCT m b pk sig challenge y) := by
+      (fun x y => TestedCT m T b pk sig challenge x ∧ TestedCT m T b pk sig challenge y) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
@@ -320,7 +321,7 @@ theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       exact h.1.r0.trans h.2.r0.symm
     · exact fun s h => okTest_dec h
   rw [verifyDecode, decodeBoth]
-  refine RelCT.seq (RelCT.seq start (decodeLoop_ct m b pk sig challenge)) (RelCT.seq test (RelCT.ite ?_ ?_ ?_))
+  refine RelCT.seq (RelCT.seq start (decodeLoop_ct m T b pk sig challenge)) (RelCT.seq test (RelCT.ite ?_ ?_ ?_))
   · exact fun _ _ h => h.1.2.2.1.trans h.2.2.2.1.symm
   · cases ha : inPoint m pk sig 0 with
     | none =>
@@ -336,7 +337,7 @@ theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
           rw [decOk_two, ha, hr] at e
           cases e
       | some r =>
-        refine (verifyEquationPoints_ct m b pk sig challenge a r).mono ?_ (fun _ _ h => h)
+        refine (verifyEquationPoints_ct m T b pk sig challenge a r).mono ?_ (fun _ _ h => h)
         intro x y ⟨⟨hx, hy⟩, _⟩
         exact ⟨⟨hx.1, hx.2.1, hx.2.2.2 0 (by decide) a ha, hx.2.2.2 1 (by decide) r hr⟩,
           ⟨hy.1, hy.2.1, hy.2.2.2 0 (by decide) a ha, hy.2.2.2 1 (by decide) r hr⟩⟩
@@ -381,18 +382,18 @@ theorem verifyScalar_ct (b pk sig challenge : BitVec 32) :
     · exact h.1.2.trans h.2.2.symm
   simpa only [verifyScalar, List.append_assoc] using ctBlockAppend head tail
 
-theorem verifyScalar_public_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun s t => VerifyPublic m b pk sig challenge s ∧ VerifyPublic m b pk sig challenge t)
+theorem verifyScalar_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
       (.block verifyScalar) (fun s t =>
-        (VerifyPublic m b pk sig challenge s ∧ s.z = decide (Spec.Ed25519.decodeLE
+        (VerifyPublic m T b pk sig challenge s ∧ s.z = decide (Spec.Ed25519.decodeLE
           (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) < Spec.Ed25519.L)) ∧
-        (VerifyPublic m b pk sig challenge t ∧ t.z = decide (Spec.Ed25519.decodeLE
+        (VerifyPublic m T b pk sig challenge t ∧ t.z = decide (Spec.Ed25519.decodeLE
           (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) < Spec.Ed25519.L))) := by
   apply ctBoth
   · exact (verifyScalar_ct b pk sig challenge).mono (fun _ _ h => ⟨h.1.ctx, h.2.ctx⟩) (fun _ _ h => h)
   · intro s hs
-    refine WP.mono (verifyScalar_ok hs.ctx) fun t ⟨tk, tz⟩ => ?_
-    exact ⟨hs.keep tk, tz.trans (congrArg (fun bs => decide (Spec.Ed25519.decodeLE bs < Spec.Ed25519.L)) hs.sBytes)⟩
+    refine WP.mono_syms (verifyScalar_ok hs.ctx) fun t ⟨tk, tz⟩ syt => ?_
+    exact ⟨hs.keep tk syt, tz.trans (congrArg (fun bs => decide (Spec.Ed25519.decodeLE bs < Spec.Ed25519.L)) hs.sBytes)⟩
 
 end VG.Proof.Ed25519.Arm
 end
@@ -401,10 +402,10 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
-theorem verifyInit_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun s t => VerifyPublic m b pk sig challenge s ∧ VerifyPublic m b pk sig challenge t)
-      (.block initFields) (fun s t => (VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b) ∧
-        (VerifyPublic m b pk sig challenge t ∧ AllLim t.mem b)) := by
+theorem verifyInit_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
+      (.block initFields) (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
+        (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) := by
   apply ctBoth
   · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
@@ -412,15 +413,15 @@ theorem verifyInit_ct (m : Mem) (b pk sig challenge : BitVec 32) :
     subst r
     exact h.1.ctx.ctx.r0.trans h.2.ctx.ctx.r0.symm
   · intro s hs
-    refine WP.mono (initFields_ok hs.ctx.ctx) fun t ⟨tk, tl, _⟩ => ?_
-    exact ⟨hs.keep (VerifyKeep.of_keep tk), tl⟩
+    refine WP.mono_syms (initFields_ok hs.ctx.ctx) fun t ⟨tk, tl, _⟩ syt => ?_
+    exact ⟨hs.keep (VerifyKeep.of_keep tk) syt, tl⟩
 
-theorem verifyBody_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun s t => VerifyPublic m b pk sig challenge s ∧ VerifyPublic m b pk sig challenge t)
+theorem verifyBody_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
       verifyBody (fun _ _ => True) := by
-  refine RelCT.seq (verifyScalar_public_ct m b pk sig challenge) (RelCT.ite ?_ ?_ ?_)
+  refine RelCT.seq (verifyScalar_public_ct m T b pk sig challenge) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
-  · exact (RelCT.seq (verifyInit_ct m b pk sig challenge) (verifyDecode_ct m b pk sig challenge)).mono
+  · exact (RelCT.seq (verifyInit_ct m T b pk sig challenge) (verifyDecode_ct m T b pk sig challenge)).mono
       (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
@@ -437,19 +438,20 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
     simp only [List.map_cons, List.cons.injEq] at h
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
-structure VerifyWrapPublic (m : Mem) (b pk sig challenge : BitVec 32) (s : State) : Prop where
+structure VerifyWrapPublic (m : Mem) (T b pk sig challenge : BitVec 32) (s : State) : Prop where
   pre : verifyLocal.pre s
   r0 : s.gpr .r0 = pk
   r1 : s.gpr .r1 = sig
   r2 : s.gpr .r2 = challenge
   r3 : s.gpr .r3 = b
+  sym : s.syms combSym = T
   pkBytes : Spec.Ed25519.bytesAt s.mem (State.addr pk) 32 = Spec.Ed25519.bytesAt m (State.addr pk) 32
   sigBytes : Spec.Ed25519.bytesAt s.mem (State.addr sig) 64 = Spec.Ed25519.bytesAt m (State.addr sig) 64
   challengeBytes : Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64 = Spec.Ed25519.bytesAt m (State.addr challenge) 64
 
-theorem verifySetup_ct (m : Mem) (b pk sig challenge : BitVec 32) :
-    CT (fun x y => VerifyWrapPublic m b pk sig challenge x ∧ VerifyWrapPublic m b pk sig challenge y)
-      (.block verifySetup) (fun x y => VerifyPublic m b pk sig challenge x ∧ VerifyPublic m b pk sig challenge y) := by
+theorem verifySetup_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
+    CT (fun x y => VerifyWrapPublic m T b pk sig challenge x ∧ VerifyWrapPublic m T b pk sig challenge y)
+      (.block verifySetup) (fun x y => VerifyPublic m T b pk sig challenge x ∧ VerifyPublic m T b pk sig challenge y) := by
   apply ctBoth
   · apply ctRegs [.r0, .r1, .r2, .r3] _ (by native_taint_decide)
     intro x y h r hr
@@ -461,8 +463,12 @@ theorem verifySetup_ct (m : Mem) (b pk sig challenge : BitVec 32) :
     · exact h.1.r3.trans h.2.r3.symm
   · intro s h
     have hp := VerifyPre.of h.pre
-    refine WP.mono (verifySetup_ok hp) fun t ⟨tc, _, _, _, tf⟩ => ?_
+    refine WP.mono_syms (verifySetup_ok hp) fun t ⟨tc, _, _, tk, tf⟩ syt => ?_
     have tc' : VerifyContext b pk sig challenge t := by rw [h.r0, h.r1, h.r2, h.r3] at tc; exact tc
+    have tt : VerifyTbl (s.gpr .r3) (s.syms combSym) t :=
+      ⟨hp.tbl.of_frame (by rw [tk.rd, tk.wr]) tf fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.tbl_ws,
+        hp.tbl_ws, congrFun syt _⟩
+    rw [h.r3, h.sym] at tt
     have bytes (p : BitVec 32) (n : Nat) (hn : n ≤ 64)
         (hd : (⟨State.addr p, n⟩ : Region).Disjoint ⟨State.addr b, 8192⟩) :
         Spec.Ed25519.bytesAt t.mem (State.addr p) n = Spec.Ed25519.bytesAt s.mem (State.addr p) n := by
@@ -471,37 +477,37 @@ theorem verifySetup_ct (m : Mem) (b pk sig challenge : BitVec 32) :
         (fun r hr => ?_) (by omega_using [hn] : n ≤ 2 ^ 64) (List.mem_range.mp hi)
       rw [List.mem_singleton.mp hr, h.r3]
       exact hd
-    exact ⟨tc', (bytes pk 32 (by decide) tc'.pkInput.separate).trans h.pkBytes,
+    exact ⟨tc', tt, (bytes pk 32 (by decide) tc'.pkInput.separate).trans h.pkBytes,
       (bytes sig 64 (by decide) tc'.sigInput.separate).trans h.sigBytes,
       (bytes challenge 64 (by decide) tc'.challengeInput.separate).trans h.challengeBytes⟩
 
 theorem verify_ct_of_body
-    (bodyCT : ∀ (m : Mem) (b pk sig challenge : BitVec 32),
-      CT (fun s t => VerifyPublic m b pk sig challenge s ∧ VerifyPublic m b pk sig challenge t)
+    (bodyCT : ∀ (m : Mem) (T b pk sig challenge : BitVec 32),
+      CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
         verifyBody (fun _ _ => True)) :
     ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation := by
-  have hct (m : Mem) (b pk sig challenge : BitVec 32) :
-      CT (fun x y => VerifyWrapPublic m b pk sig challenge x ∧ VerifyWrapPublic m b pk sig challenge y)
+  have hct (m : Mem) (T b pk sig challenge : BitVec 32) :
+      CT (fun x y => VerifyWrapPublic m T b pk sig challenge x ∧ VerifyWrapPublic m T b pk sig challenge y)
         verifyEquation (fun _ _ => True) := by
-    have hb := (bodyCT m b pk sig challenge).wpDep (fun x y h => ⟨verifyBody_ok h.1.ctx, verifyBody_ok h.2.ctx⟩)
+    have hb := (bodyCT m T b pk sig challenge).wpDep (fun x y h => ⟨verifyBody_ok h.1.ctx h.1.tbl, verifyBody_ok h.2.ctx h.2.tbl⟩)
     have hb' := hb.mono (fun _ _ h => h) (fun x y ⟨_, a, c, h, hx, hy⟩ =>
       And.intro (hx.1.ctx h.1.ctx.ctx).r0 (hy.1.ctx h.2.ctx.ctx).r0)
-    refine RelCT.seq (verifySetup_ct m b pk sig challenge) (RelCT.seq hb' ?_)
+    refine RelCT.seq (verifySetup_ct m T b pk sig challenge) (RelCT.seq hb' ?_)
     apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
     exact h.1.trans h.2.symm
-  intro s t tx ty u v hs ht ⟨_, h0, h1, h2, h3, hbytes⟩ ex ey
+  intro s t tx ty u v hs ht ⟨_, h0, h1, h2, h3, hsym, hbytes⟩ ex ey
   have hb := byteMap_inj hbytes
   obtain ⟨first, last⟩ := List.append_inj' hb (by simp only [bytesAt_length])
   obtain ⟨first, middle⟩ := List.append_inj' first (by simp only [bytesAt_length])
   rw [← h0] at first
   rw [← h1] at middle
   rw [← h2] at last
-  exact (hct s.mem (s.gpr .r3) (s.gpr .r0) (s.gpr .r1) (s.gpr .r2) _ _ _ _ _ _
-    ⟨⟨hs, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩,
-      ⟨ht, h0.symm, h1.symm, h2.symm, h3.symm, first.symm, middle.symm, last.symm⟩⟩ ex ey).1
+  exact (hct s.mem (s.syms combSym) (s.gpr .r3) (s.gpr .r0) (s.gpr .r1) (s.gpr .r2) _ _ _ _ _ _
+    ⟨⟨hs, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+      ⟨ht, h0.symm, h1.symm, h2.symm, h3.symm, hsym.symm, first.symm, middle.symm, last.symm⟩⟩ ex ey).1
 
 theorem verify_ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation :=
   verify_ct_of_body verifyBody_ct

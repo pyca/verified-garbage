@@ -43,6 +43,7 @@ import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-! ### `Ed25519.Arm.VerifyMessage.Calls`, which only this module used -/
 
@@ -64,6 +65,8 @@ structure Lay where
   sig : BitVec 32
   scr : BitVec 32
   E : BitVec 32
+  /-- The address of the comb's tables (`VG_ED25519_COMB`). -/
+  T : BitVec 32
 
 namespace Lay
 variable (L : Lay)
@@ -74,7 +77,9 @@ abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
 abbrev ARGS : Region := ⟨State.addr L.E + BitVec.ofNat 64 248, 24⟩
 abbrev FR : Region := Whole.FR L.E
 abbrev ORIGINALARGS : Region := ⟨State.addr L.E + 280, 4⟩
-def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ORIGINALARGS, L.ARGS]
+/-- The comb's tables. -/
+abbrev TB : Region := ⟨State.addr L.T, 98304⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ORIGINALARGS, L.TB, L.ARGS]
 def outputs : List Region := [L.SCR]
 def value (j : Nat) : BitVec 32 :=
   match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
@@ -88,6 +93,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
   ns : L.sig.toNat + 64 ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  tfit : L.T.toNat + 98304 ≤ 2 ^ 32
 end Lay
 
 /-- The scratch allocation leaves enough address space for either hash prefix. -/
@@ -315,7 +321,7 @@ variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 def signWord (b : Bool) : BitVec 32 := if b then 1 else 0
 
 def challenge (L : Lay) : Region := ⟨State.addr L.E+120,64⟩
-def equationRd (L : Lay) : List Region := [L.PK,L.SIG,challenge L]
+def equationRd (L : Lay) : List Region := [L.PK,L.SIG,challenge L,L.TB]
 def equationWr (L : Lay) : List Region := [L.SCR]
 def EqArgs (L : Lay) (s : State) : Prop := s.gpr .r0 = L.pk ∧
   s.gpr .r1 = L.sig ∧ s.gpr .r2 = L.E+120 ∧ s.gpr .r3 = L.scr
@@ -325,26 +331,47 @@ theorem equation_noFrames : verifyEquation.noFrames = true := by lit_decide
 theorem challengeWithin (L : Lay) : Whole.Within (challenge L) L.FR :=
   ⟨120,rfl,by change 120+64≤248; decide⟩
 
+/-- The comb's tables at `L.T` in `m`. -/
+def Tbl (L : Lay) (m : Mem) : Prop :=
+  ∀ j < 64 * 192, m.readW (State.addr L.T + BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j
+
+theorem tb_input (L : Lay) : L.TB ∈ L.inputs := by simp [Lay.inputs]
+
+/-- The tables in a memory the body leaves them in. -/
+theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (hw : Tbl L m₀) : Tbl L s.mem := fun j hj => by
+  rw [← hw j hj]
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
+  intro R hR
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl
+  · exact hL.sc _ (tb_input L)
+  · exact (hL.ks _ (tb_input L)).symm
+
 theorem equation_pre (hL : L.Ok) (ha : EqArgs L s)
-    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
+    (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L s.mem) :
     verifyLocal.pre (s.callEntry.withRegions (equationRd L) (equationWr L)) := by
   have ac : State.addr (L.E+120) = State.addr L.E+120 := frame_addr hL (d := 120) (by decide)
-  simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+  have sy : (s.callEntry.withRegions (equationRd L) (equationWr L)).syms VG.Impl.Ed25519.Arm.combSym = L.T := hsy
+  simp only [verifyLocal, sy, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
     State.callEntry_mem,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), ha.1,ha.2.1,ha.2.2.1,ha.2.2.2,ac]
   exact ⟨rfl,rfl,hL.sc _ (by simp [Lay.inputs]),hL.sc _ (by simp [Lay.inputs]),
-    hL.kc.sub_left (challengeWithin L).sub,hL.np,hL.ns,frame_fit hL (by decide),hL.nc,hz⟩
+    hL.kc.sub_left (challengeWithin L).sub,hL.np,hL.ns,frame_fit hL (by decide),hL.nc,hz,
+    hL.tfit,hw,hL.sc _ (tb_input L)⟩
 
 theorem equation_covers : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
   apply covers
   simp only [equationRd,equationWr,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false]
-  rintro r (rfl | rfl | rfl | rfl)
+  rintro r (rfl | rfl | rfl | rfl | rfl)
   · exact .inr ⟨L.PK,by simp [Lay.inputs],0,by simp,by simp⟩
   · exact .inr ⟨L.SIG,by simp [Lay.inputs],0,by simp,by simp⟩
   · exact .inl (challengeWithin L)
+  · exact .inr ⟨L.TB,List.mem_append_left _ (tb_input L),0,by simp⟩
   · exact .inr (scratch_covered L)
 
 theorem equation_writes : ∀ r ∈ equationWr L,
@@ -354,12 +381,13 @@ theorem equation_writes : ∀ r ∈ equationWr L,
   exact .inr ⟨L.SCR,by simp [Lay.outputs],scratchWithin L⟩
 
 theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s)
-    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
+    (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L s.mem) :
     WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => Ctx L g m₀ t ∧
       t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
         (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
-  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha hz)
+  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha hz hsy hw)
     equation_covers equation_writes fun t ht _ hp => ⟨ht,?_⟩
   change (t.gpr .r0).toNat = (if Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r0)) 32)
@@ -375,15 +403,16 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s)
   cases Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64) (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) <;> rfl
 
 theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
-    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
+    (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation) s
       fun t => Ctx L g m₀ t ∧ t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
         (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
-  refine WP.seq (WP.mono (args_regs_ok hc hL ha
+  refine WP.seq (WP.mono_syms (args_regs_ok hc hL ha
     (args := [(.r0,.caller 0 0),(.r1,.caller 3 0),(.r2,.frame 120),(.r3,.caller 4 0)])
     (by simp) (by simp [valid]) (by simp [preserved]))
-    fun u ⟨hu,hm,hav⟩ => ?_)
+    fun u ⟨hu,hm,hav⟩ syu => ?_)
   have a0 := hav (.r0,.caller 0 0) (by simp)
   have a1 := hav (.r1,.caller 3 0) (by simp)
   have a2 := hav (.r2,.frame 120) (by simp)
@@ -392,7 +421,8 @@ theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   change u.gpr .r1 = L.sig+0#32 at a1
   change u.gpr .r3 = L.scr+0#32 at a3
   rw [BitVec.add_zero] at a0 a1 a3
-  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩ (by rw [hm]; exact hz)) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
+  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩ (by rw [hm]; exact hz) (by rw [syu]; exact hsy)
+    (hu.tbl hL hw)) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
   rw [hm] at hp
   exact hp
 
@@ -951,16 +981,17 @@ theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
   rfl
 
 theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok)
-    (ha : Arguments L m₀) :
+    (ha : Arguments L m₀) (htb : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa body s fun t => Ctx L g m₀ t ∧
       t.gpr .r0 = signWord (Spec.Ed25519.verify (Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32)
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) (Spec.Ed25519.bytesAt m₀ (State.addr L.sig) 64)) := by
-  refine WP.seq (WP.mono (hash_ok hc hL ha) fun t ⟨ht,hh⟩ => ?_)
-  refine WP.seq (WP.mono (reduce_step ht hL ha) fun u ⟨hu,_,hr⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok hc hL ha) fun t ⟨ht,hh⟩ syt => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step ht hL ha) fun u ⟨hu,_,hr⟩ syu => ?_)
   rw [hh] at hr
-  refine WP.seq (WP.mono (extend_step hu hL hr) fun w ⟨hw,he⟩ => ?_)
+  refine WP.seq (WP.mono_syms (extend_step hu hL hr) fun w ⟨hw,he⟩ syw => ?_)
   rw [hashInput_eq] at he
-  refine WP.mono (equation_step hw hL ha (by rw [he]; exact reduced_lt _)) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
+  refine WP.mono (equation_step hw hL ha (by rw [he]; exact reduced_lt _) htb
+    (by rw [syw, syu, syt]; exact hsy)) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
   rw [hw.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32≤2^64; decide),
     hw.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64≤2^64; decide),he] at eq
   exact eq
@@ -1098,9 +1129,10 @@ def finalize_ready (hL : L.Ok) (he : s.sp = L.E) {count : BitVec 32} (ha : Final
     finalize_covers hL, final_writes hL⟩
 
 def equation_ready (hL : L.Ok) (ha : EqArgs L s)
-    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
+    (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L s.mem) :
     Whole.CallReady verifyLocal L.E L.inputs L.outputs s :=
-  ⟨equationRd L,equationWr L,equation_pre hL ha hz,equation_covers,equation_writes⟩
+  ⟨equationRd L,equationWr L,equation_pre hL ha hz hsy hw,equation_covers,equation_writes⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1327,20 +1359,24 @@ theorem equation_call_ct (hL : L.Ok) {challenge : List Byte}
     (hch : Spec.Ed25519.decodeLE challenge < 2 ^ 256)
     (hpk : Spec.Ed25519.bytesAt m₁ (State.addr L.pk) 32 = Spec.Ed25519.bytesAt m₂ (State.addr L.pk) 32)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64 = Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => EqArgs L t ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => (EqArgs L t ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge) ∧
+      t.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ Tbl L t.mem)
       (.call "vg_ed25519_verify_equation" verifyEquation)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  apply call_ct verify_ok verify_ct equation_noFrames (fun _ h => equation_ready hL h.1 (by rw [h.2]; exact hch))
+  apply call_ct verify_ok verify_ct equation_noFrames
+    (fun _ h => equation_ready hL h.1.1 (by rw [h.1.2]; exact hch) h.2.1 h.2.2)
   intro a b ar aw br bw h
   have hsp := two_sp h
-  have aa := h.2.2.1.1
-  have ab := h.2.2.2.1
+  have aa := h.2.2.1.1.1
+  have ab := h.2.2.2.1.1
+  have sya : (a.callEntry.withRegions ar aw).syms VG.Impl.Ed25519.Arm.combSym = L.T := h.2.2.1.2.1
+  have syb : (b.callEntry.withRegions br bw).syms VG.Impl.Ed25519.Arm.combSym = L.T := h.2.2.2.2.1
   have pk₁ := Ctx.input_bytes h.1 hL (r := L.PK) (by simp [Lay.inputs]) (by change 32 ≤ 2 ^ 64; decide)
   have pk₂ := Ctx.input_bytes h.2.1 hL (r := L.PK) (by simp [Lay.inputs]) (by change 32 ≤ 2 ^ 64; decide)
   have sig₁ := Ctx.input_bytes h.1 hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64 ≤ 2 ^ 64; decide)
   have sig₂ := Ctx.input_bytes h.2.1 hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64 ≤ 2 ^ 64; decide)
-  simp only [verifyLocal, State.withRegions_gpr, State.withRegions_mem, State.withRegions_sp,
+  simp only [verifyLocal, sya, syb, State.withRegions_gpr, State.withRegions_mem, State.withRegions_sp,
     State.callEntry_mem, State.callEntry_sp,
     State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
@@ -1349,19 +1385,22 @@ theorem equation_call_ct (hL : L.Ok) {challenge : List Byte}
     aa.1, aa.2.1, aa.2.2.1, aa.2.2.2, ab.1, ab.2.1, ab.2.2.1, ab.2.2.2]
   have ac : State.addr (L.E+120) = State.addr L.E+120 := frame_addr hL (d := 120) (by decide)
   rw [ac]
-  refine ⟨hsp,trivial,trivial,trivial,trivial,?_⟩
+  refine ⟨hsp,trivial,trivial,trivial,trivial,trivial,?_⟩
   have kp := pk₁.trans (hpk.trans pk₂.symm)
   have ks := sig₁.trans (hsig.trans sig₂.symm)
-  have kh := h.2.2.1.2.trans h.2.2.2.2.symm
+  have kh := h.2.2.1.1.2.trans h.2.2.2.1.2.symm
   change Spec.Ed25519.bytesAt a.mem (State.addr L.pk) 32 = Spec.Ed25519.bytesAt b.mem (State.addr L.pk) 32 at kp
   change Spec.Ed25519.bytesAt a.mem (State.addr L.sig) 64 = Spec.Ed25519.bytesAt b.mem (State.addr L.sig) 64 at ks
   rw [kp,ks,kh]
 
 theorem equation_step_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂)
     {challenge : List Byte} (hch : Spec.Ed25519.decodeLE challenge < 2 ^ 256)
     (hpk : Spec.Ed25519.bytesAt m₁ (State.addr L.pk) 32 = Spec.Ed25519.bytesAt m₂ (State.addr L.pk) 32)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64 = Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
+    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂
+        (fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge) a b ∧
+        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
       (Whole.callWith VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs : RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
@@ -1374,7 +1413,9 @@ theorem equation_step_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m
       exact equation_setup_wp hc hL ha hh
     · intro t hc hh
       exact equation_setup_wp hc hL hb hh
-  exact hs.seq (equation_call_ct hL hch hpk hsig)
+  exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T hs).seq
+    ((equation_call_ct hL hch hpk hsig).mono (fun a b ⟨⟨hca, hcb, hsa, hsb⟩, ya, yb⟩ =>
+      ⟨hca, hcb, ⟨hsa, ya, hca.tbl hL hw₁⟩, ⟨hsb, yb, hcb.tbl hL hw₂⟩⟩) fun _ _ h => h)
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1397,15 +1438,19 @@ theorem hash_result_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m�
     exact hh
 
 theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂)
     (hpk : Spec.Ed25519.bytesAt m₁ (State.addr L.pk) 32=Spec.Ed25519.bytesAt m₂ (State.addr L.pk) 32)
     (hmsg : Spec.Ed25519.bytesAt m₁ (State.addr L.msg) L.len.toNat=Spec.Ed25519.bytesAt m₂ (State.addr L.msg) L.len.toNat)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64=Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) body
+    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
+        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) body
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hm : hashInput L m₁=hashInput L m₂ := by
     rw [hashInput_eq,hashInput_eq,hpk,hmsg,hsig]
-  exact (hash_result_ct hL ha hb hm).seq
-    ((reduce_ct hL ha hb _).seq ((extend_ct hL _).seq (equation_step_ct hL ha hb (reduced_lt _) hpk hsig)))
+  exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (hash_result_ct hL ha hb hm)).seq
+    ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (reduce_ct hL ha hb _)).seq
+      ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (extend_ct hL _)).seq
+        (equation_step_ct hL ha hb hw₁ hw₂ (reduced_lt _) hpk hsig)))
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1423,12 +1468,17 @@ def verifyMessageLocal : Contract isa where
     let scr : Region := ⟨State.addr (stackArg s 0),8192⟩
     let args : Region := ⟨State.addr s.sp,4⟩
     let stk : Region := ⟨State.addr s.sp - 280,280⟩
-    s.rd = [pk,msg,sig,args] ∧ s.wr = [scr] ∧
+    let tb : Region := TBL (s.syms VG.Impl.Ed25519.Arm.combSym)
+    s.rd = [pk,msg,sig,args,tb] ∧ s.wr = [scr] ∧
     pk.Disjoint scr ∧ msg.Disjoint scr ∧ sig.Disjoint scr ∧ args.Disjoint scr ∧
     stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint sig ∧ stk.Disjoint scr ∧
     (s.gpr .r0).toNat+32≤2^32 ∧ (s.gpr .r1).toNat+(s.gpr .r2).toNat≤2^32 ∧
     (s.gpr .r3).toNat+64≤2^32 ∧ (stackArg s 0).toNat+8192≤2^32 ∧
-    280≤s.sp.toNat ∧ s.sp.toNat+4≤2^32
+    280≤s.sp.toNat ∧ s.sp.toNat+4≤2^32 ∧
+    (s.syms VG.Impl.Ed25519.Arm.combSym).toNat + 98304 ≤ 2 ^ 32 ∧
+    (∀ j < 64 * 192, s.mem.readW (State.addr (s.syms VG.Impl.Ed25519.Arm.combSym) +
+      BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j) ∧
+    tb.Disjoint scr ∧ tb.Disjoint stk
   post s t := t.gpr .r0 = if Spec.Ed25519.verify (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r0)) 32)
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) 64) then 1 else 0
@@ -1437,16 +1487,18 @@ def verifyMessageLocal : Contract isa where
     Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r0)) 32 = Spec.Ed25519.bytesAt t.mem (State.addr (t.gpr .r0)) 32 ∧
     Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat =
       Spec.Ed25519.bytesAt t.mem (State.addr (t.gpr .r1)) (t.gpr .r2).toNat ∧
-    Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) 64 = Spec.Ed25519.bytesAt t.mem (State.addr (t.gpr .r3)) 64
+    Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r3)) 64 = Spec.Ed25519.bytesAt t.mem (State.addr (t.gpr .r3)) 64 ∧
+    s.syms VG.Impl.Ed25519.Arm.combSym = t.syms VG.Impl.Ed25519.Arm.combSym
 
-def lay (s : State) : Lay := ⟨s.gpr .r0,s.gpr .r1,s.gpr .r2,s.gpr .r3,stackArg s 0,Whole.base s⟩
+def lay (s : State) : Lay :=
+  ⟨s.gpr .r0,s.gpr .r1,s.gpr .r2,s.gpr .r3,stackArg s 0,Whole.base s,s.syms VG.Impl.Ed25519.Arm.combSym⟩
 
 theorem entry_below {s : State} (h : verifyMessageLocal.pre s) : 280≤s.sp.toNat := by
   obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,hb,_⟩ := h
   exact hb
 
 theorem entry_top {s : State} (h : verifyMessageLocal.pre s) : s.sp.toNat+4≤2^32 := by
-  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,ht⟩ := h
+  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,ht,_⟩ := h
   exact ht
 
 theorem original_args {s : State} (hb : 280 ≤ s.sp.toNat) :
@@ -1470,28 +1522,30 @@ theorem entry_writes {s : State} (h : verifyMessageLocal.pre s) :
   exact hc
 
 theorem lay_ok {s : State} (h : verifyMessageLocal.pre s) : (lay s).Ok := by
-  obtain ⟨_,_,pc,mc,sc,ac,kp,km,ks,kc,np,nm,ns,nc,hb,_⟩ := h
+  obtain ⟨_,_,pc,mc,sc,ac,kp,km,ks,kc,np,nm,ns,nc,hb,_,tf,_,tscr,tstk⟩ := h
   have fr : Region.Sub (Whole.FR (Whole.base s)) (Whole.stack s) := Region.sub_prefix (by decide)
   have ar : Region.Sub (Whole.ARGS (Whole.base s)) (Whole.stack s) := Offset.sub_base _ (by decide)
-  rw [← stack_eq hb] at kp km ks kc
-  refine ⟨?_,?_,?_,kc.sub_left fr,np,nm,ns,nc⟩
+  rw [← stack_eq hb] at kp km ks kc tstk
+  refine ⟨?_,?_,?_,kc.sub_left fr,np,nm,ns,nc,tf⟩
   · have he := Whole.base_top (s := s) hb
     have hs := s.sp.isLt
     change (Whole.base s).toNat+272≤2^32
     omega_using [he]
   · simp only [Lay.inputs,List.mem_cons,List.not_mem_nil,or_false]
-    rintro r (rfl | rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
     · exact pc
     · exact mc
     · exact sc
     · rw [original_args hb]; exact ac
+    · exact tscr
     · exact kc.sub_left ar
   · simp only [Lay.inputs,List.mem_cons,List.not_mem_nil,or_false]
-    rintro r (rfl | rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
     · exact kp.sub_left fr
     · exact km.sub_left fr
     · exact ks.sub_left fr
     · exact Offset.base_disjoint _ (by decide) (by decide)
+    · exact tstk.symm.sub_left fr
     · exact Offset.base_disjoint _ (by decide) (by decide)
 
 theorem entry_ctx {s p : State} (h : verifyMessageLocal.pre s) (hp : Whole.Saved (Whole.entered s) 5 p) :
@@ -1500,13 +1554,13 @@ theorem entry_ctx {s p : State} (h : verifyMessageLocal.pre s) (hp : Whole.Saved
   change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs _
   simp only [Lay.inputs, original_args (entry_below h)]
   simpa only [Whole.bodyRd,h.1,Whole.bodyWr,h.2.1,Lay.outputs,
-    Lay.PK,Lay.MSG,Lay.SIG,Lay.SCR,Lay.ARGS,Whole.ARGS,show BitVec.ofNat 64 248 = (248 : Addr) from rfl,lay,List.cons_append,List.nil_append] using hc
+    Lay.PK,Lay.MSG,Lay.SIG,Lay.SCR,Lay.ARGS,Lay.TB,Whole.ARGS,show BitVec.ofNat 64 248 = (248 : Addr) from rfl,lay,List.cons_append,List.nil_append] using hc
 
 theorem entry_regions {s : State} (h : verifyMessageLocal.pre s) :
     (lay s).inputs = Whole.bodyRd s ∧ (lay s).outputs = s.wr := by
   simp only [Lay.inputs, original_args (entry_below h)]
   simp only [Whole.bodyRd, h.1, Lay.outputs, h.2.1,
-    Lay.SIG, Lay.PK, Lay.MSG, Lay.SCR, Lay.ARGS, Whole.ARGS,
+    Lay.SIG, Lay.PK, Lay.MSG, Lay.SCR, Lay.ARGS, Lay.TB, Whole.ARGS,
     show BitVec.ofNat 64 248 = (248 : Addr) from rfl, lay, List.cons_append, List.nil_append]
   exact ⟨trivial, trivial⟩
 
@@ -1536,16 +1590,30 @@ theorem entry_input {s : State} (h : verifyMessageLocal.pre s) {m : Mem}
   rintro R hR
   rw [List.mem_singleton.mp hR]
   have hb := entry_below h
-  obtain ⟨hrd,_,_,_,_,_,kp,km,ks,_⟩ := h
+  obtain ⟨hrd,_,_,_,_,_,kp,km,ks,_,_,_,_,_,_,_,_,_,_,tstk⟩ := h
   rw [hrd] at hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rw [← stack_eq hb] at kp km ks
-  rcases hr with rfl | rfl | rfl | rfl
+  rw [← stack_eq hb] at kp km ks tstk
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact kp.symm
   · exact km.symm
   · exact ks.symm
   · rw [← original_args hb]
     exact (Offset.base_disjoint _ (by decide) (by decide)).symm
+  · exact tstk
+
+/-- The tables at the body's entry. -/
+theorem entry_tbl {s p : State} (h : verifyMessageLocal.pre s) (hp : Whole.Saved (Whole.entered s) 5 p) :
+    Tbl (lay s) p.mem := fun j hj => by
+  have hb := entry_below h
+  have hf := Whole.saved_frame hb hp
+  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,hw,_,tstk⟩ := h
+  rw [← hw j hj]
+  refine hf.readW (r := TBL (s.syms VG.Impl.Ed25519.Arm.combSym))
+    (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
+  intro r hr
+  rw [List.mem_singleton.mp hr, stack_eq hb]
+  exact tstk
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1564,7 +1632,8 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r0)) 32)
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r3)) 64)))
-    (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args h hp))
+    (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_tbl h hp)
+      (congrFun hp.step.syms _))
       fun u ⟨hu,ho⟩ => ⟨by
         change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs u at hu
         rw [(entry_regions h).1, (entry_regions h).2] at hu
@@ -1584,8 +1653,8 @@ namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
 theorem lay_eq {s t : State} (h : verifyMessageLocal.pub s t) : lay s=lay t := by
-  obtain ⟨sp,h0,h1,h2,h3,h4,_⟩ := h
-  simp only [lay,Whole.base,sp,h0,h1,h2,h3,h4]
+  obtain ⟨sp,h0,h1,h2,h3,h4,_,_,_,hy⟩ := h
+  simp only [lay,Whole.base,sp,h0,h1,h2,h3,h4,hy]
 
 theorem saved_inputs_eq {s t p q : State} (hs : verifyMessageLocal.pre s) (ht : verifyMessageLocal.pre t)
     (hp : verifyMessageLocal.pub s t) (hpa : Whole.Saved (Whole.entered s) 5 p)
@@ -1596,7 +1665,7 @@ theorem saved_inputs_eq {s t p q : State} (hs : verifyMessageLocal.pre s) (ht : 
     Spec.Ed25519.bytesAt p.mem (State.addr (lay s).sig) 64 = Spec.Ed25519.bytesAt q.mem (State.addr (lay s).sig) 64 := by
   have fp := Whole.saved_frame (entry_below hs) hpa
   have fq := Whole.saved_frame (entry_below ht) hqb
-  obtain ⟨_,h0,h1,h2,h3,_,pk,msg,sig⟩ := hp
+  obtain ⟨_,h0,h1,h2,h3,_,pk,msg,sig,_⟩ := hp
   have epk := entry_input hs fp (r := ⟨State.addr (s.gpr .r0),32⟩) (by rw [hs.1]; simp) (by change 32≤2^64; decide)
   have fpk := entry_input ht fq (r := ⟨State.addr (t.gpr .r0),32⟩) (by rw [ht.1]; simp) (by change 32≤2^64; decide)
   have emsg := entry_input hs fp (r := ⟨State.addr (s.gpr .r1),(s.gpr .r2).toNat⟩) (by rw [hs.1]; simp)
@@ -1619,16 +1688,20 @@ theorem verifyMessage_ct :
   refine Whole.wrap_ct (by decide : 5 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) (fun _ hs => entry_top hs) (fun _ hs => entry_read hs) ?_ ?_
   · intro s hs p hp
-    exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp)) fun _ _ => trivial
+    exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_tbl hs hp)
+      (congrFun hp.step.syms _)) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p,q,hpa,hqb,rfl,rfl⟩ ea eb
     have he := lay_eq hp
     have hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
     have hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
+    have hqw : Tbl (lay s) q.mem := he ▸ entry_tbl ht hqb
+    have hqy : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms VG.Impl.Ed25519.Arm.combSym =
+        (lay s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.2.2.2.2.2.symm
     obtain ⟨pk,msg,sig⟩ := saved_inputs_eq hs ht hp hpa hqb
-    exact ⟨(body_ct (lay_ok hs) (entry_args hs hpa) hqa pk msg sig _ _ _ _ _ _
-      ⟨entry_ctx hs hpa,hq,trivial,trivial⟩ ea eb).1,trivial⟩
+    exact ⟨(body_ct (lay_ok hs) (entry_args hs hpa) hqa (entry_tbl hs hpa) hqw pk msg sig _ _ _ _ _ _
+      ⟨⟨entry_ctx hs hpa,hq,trivial,trivial⟩,congrFun hpa.step.syms _,hqy⟩ ea eb).1,trivial⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1638,6 +1711,10 @@ section
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm
 
+/-- The scratch pointer on the stack, and the comb's tables from `0x100000`. -/
+def verifySatMem : Mem := fun a =>
+  if a.toNat < 0x100000 then (if a = 0x9001 then 0x40 else 0) else baseSatMem a
+
 def verifySatState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 64 | .r3 => 0x3000 | _ => 0
@@ -1646,9 +1723,10 @@ def verifySatState : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x9001 then 0x40 else 0
-  rd := [⟨0x1000,32⟩,⟨0x2000,64⟩,⟨0x3000,64⟩,⟨0x9000,4⟩]
+  mem := verifySatMem
+  rd := [⟨0x1000,32⟩,⟨0x2000,64⟩,⟨0x3000,64⟩,⟨0x9000,4⟩,⟨0x100000,98304⟩]
   wr := [⟨0x4000,8192⟩]
+  syms _ := 0x100000
 
 private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
   | [], [], _ => rfl
@@ -1659,42 +1737,123 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
 private theorem argAddr_zero (s : State) : stackArgAddr s 0 = State.addr s.sp := by
   simp [stackArgAddr]
 
+/-- The precondition under the plain calling convention, without the tables. -/
+def abiPre (s : State) : Prop :=
+  let pk : Region := ⟨State.addr (s.gpr .r0),32⟩
+  let msg : Region := ⟨State.addr (s.gpr .r1),(s.gpr .r2).toNat⟩
+  let sig : Region := ⟨State.addr (s.gpr .r3),64⟩
+  let scr : Region := ⟨State.addr (stackArg s 0),8192⟩
+  let args : Region := ⟨State.addr s.sp,4⟩
+  let stk : Region := ⟨State.addr s.sp - 280,280⟩
+  s.rd = [pk,msg,sig,args] ∧ s.wr = [scr] ∧
+  pk.Disjoint scr ∧ msg.Disjoint scr ∧ sig.Disjoint scr ∧ args.Disjoint scr ∧
+  stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint sig ∧ stk.Disjoint scr ∧
+  (s.gpr .r0).toNat+32≤2^32 ∧ (s.gpr .r1).toNat+(s.gpr .r2).toNat≤2^32 ∧
+  (s.gpr .r3).toNat+64≤2^32 ∧ (stackArg s 0).toNat+8192≤2^32 ∧
+  280≤s.sp.toNat ∧ s.sp.toNat+4≤2^32
+
 private theorem pre_bridge (s : State) (h : (Spec.Ed25519.verifyContract Arm.abi 280).pre s) :
-    verifyMessageLocal.pre s := by
+    abiPre s := by
   sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
   sig_split h
-  sig_reduce [verifyMessageLocal, Arm.State.addr]
+  sig_reduce [abiPre, Arm.State.addr]
   sig_simp [argAddr_zero, Arm.State.addr] [] at *
   simp only [Arm.State.addr, show (280#64) = (280 : Addr) from rfl] at *
   sig_and_intros
   all_goals first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›
 
-theorem verifyMessage_implies : verifyMessageLocal.Implies (Spec.Ed25519.verifyContract Arm.abi 280) where
-  pre := pre_bridge
+abbrev verifySpec : Contract isa :=
+  Spec.Ed25519.verifyContract (Arm.abi.withConsts VG.Impl.Ed25519.Arm.combConsts) 280
+
+theorem verify_pre {s : State} (h : verifySpec.pre s) : verifyMessageLocal.pre s := by
+  have hp : (Spec.Ed25519.verifyContract Arm.abi 280).pre (stripConsts VG.Impl.Ed25519.Arm.combConsts s) ∧
+      ConstsOk VG.Impl.Ed25519.Arm.combConsts 280 s := pre_consts.mp h
+  obtain ⟨rd, wr, pc, mc, sc, ac, kp, km, ks, kc, np, nm, ns, nc, hb, ht⟩ := pre_bridge _ hp.1
+  have hk' := hp.2
+  have mem : (VG.Impl.Ed25519.Arm.combSym, VG.Impl.Ed25519.Arm.combWords) ∈
+      VG.Impl.Ed25519.Arm.combConsts := List.mem_singleton_self _
+  have fit := hk'.fit mem
+  rw [combWords_length] at fit
+  have tr := hk'.2.2.1 _ (by rw [combConsts_regs]; exact List.mem_singleton_self _)
+  refine ⟨?_, wr, pc, mc, sc, ac, kp, km, ks, kc, np, nm, ns, nc, hb, ht,
+    fit, fun j hj => ?_, tr.2.1 _ (by rw [show s.wr = _ from wr]; exact List.mem_cons_self),
+    tr.2.2 _ (by simp [Arm.abi, stackBelow])⟩
+  · have e1 := hk'.1
+    rw [combConsts_regs] at e1
+    have hl : VG.Impl.Ed25519.Arm.combConsts.length = 1 := rfl
+    rw [hl] at e1
+    change List.take (s.rd.length - VG.Impl.Ed25519.Arm.combConsts.length) s.rd = _ at rd
+    rw [hl] at rd
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, e1, rd]
+    rfl
+  · have hw := hk'.2.1 _ mem j (by rw [combWords_length]; exact hj)
+    dsimp only at hw
+    rw [combWords_getD hj] at hw
+    exact hw
+
+theorem verifySat_frame : Frame [⟨0, 0x100000⟩] baseSatMem verifySatMem := by
+  intro x hx
+  have hn := hx _ (List.mem_singleton_self _)
+  simp only [Region.Contains] at hn
+  rw [show (x - 0 : Addr) = x from by simp] at hn
+  simp only [verifySatMem, show ¬ x.toNat < 0x100000 by omega_using [hn], ↓reduceIte]
+
+theorem verifySat_held : ∀ i < 64 * 192,
+    verifySatState.mem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
+      VG.Impl.Ed25519.Arm.combWords.getD i 0 := by
+  intro i hi
+  rw [← baseSatMem_held i (by rw [combWords_length]; exact hi)]
+  refine verifySat_frame.readW (r := ⟨0x100000 + BitVec.ofNat 64 (8 * i), 8⟩) (Region.contains_self _ _)
+    ?_ (by decide)
+  intro r hr
+  rw [List.mem_singleton.mp hr]
+  have e : (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat = 0x100000 + 8 * i := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+    change (0x100000 + 8 * i % 2 ^ 64) % 2 ^ 64 = _
+    omega_using [hi]
+  refine (Offset.disjoint_of_le (r₁ := ⟨0, 0x100000⟩) ?_ ?_).symm
+  · change 0 + 0x100000 ≤ (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat
+    omega_using [e]
+  · change (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat + 8 ≤ 2 ^ 64
+    omega_using [e]
+
+theorem verify_sat : verifySpec.pre verifySatState := by
+  have held := verifySat_held
+  generalize eqs : verifySatState = s
+  sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
+    Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
+    Arm.stackArg, Arm.stackArgAddr, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  rw [combWords_length]
+  refine ⟨by decide, by decide, by decide, held, by decide, ?_, Region.disjoint_of_sep (by decide), by decide, ?_⟩
+  · intro r hr
+    change r ∈ [⟨0x4000, 8192⟩] at hr
+    rw [List.mem_singleton.mp hr]
+    exact Region.disjoint_of_sep (by decide)
+  · sig_and_intros
+    all_goals first | exact Region.disjoint_of_sep (by decide +kernel) | decide +kernel
+
+theorem verifyMessage_implies : verifyMessageLocal.Implies verifySpec where
+  pre _ h := verify_pre h
   post s t _ h := by
     sig_post [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, Arm.abi,Arm.argRegs,Arm.reduceClassify,Arm.Loc.val,Arm.State.addr]
+      Spec.Ed25519.scratchWords, Arm.abi,Arm.argRegs,Arm.reduceClassify,Arm.Loc.val,Arm.State.addr,
+      combConsts_eq, Abi.withConsts]
     rw [BitVec.setWidth_append_eq_right]
     exact h
   pub s t _ _ h := by
     sig_pub [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, Arm.abi,Arm.argRegs,Arm.reduceClassify,Arm.Loc.val,Arm.State.addr] at h
-    obtain ⟨sp, bytes, pk, msg, len, sig, base⟩ := h
+      Spec.Ed25519.scratchWords, Arm.abi,Arm.argRegs,Arm.reduceClassify,Arm.Loc.val,Arm.State.addr,
+      combConsts_eq, Abi.withConsts] at h
+    obtain ⟨sp, hsy, bytes, pk, msg, len, sig, base⟩ := h
     have hb := byteMap_inj bytes
     obtain ⟨first, last⟩ := List.append_inj' hb (by
       simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range])
     obtain ⟨first, middle⟩ := List.append_inj' first (by
       simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range, len])
-    exact ⟨sp, pk, msg, len, sig, base, first, middle, last⟩
-  sat := by
-    refine ⟨verifySatState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-        Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, verifySatState]
-      decide +kernel
-
+    exact ⟨sp, pk, msg, len, sig, base, first, middle, last, hsy⟩
+  sat := ⟨verifySatState, verify_sat⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1702,8 +1861,7 @@ end
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
-theorem verifyMessage_verified :
-    Verified Arm.target code (Spec.Ed25519.verifyContract Arm.abi 280) :=
+theorem verifyMessage_verified : Verified Arm.target code verifySpec :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => verifyMessage_ok h) verifyMessage_ct
       (.refl verifyMessage_implies.sat_left)) verifyMessage_implies

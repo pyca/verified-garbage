@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Impl.Ed25519.Arm.Comb
 
 /-! Strict Ed25519 verification. The challenge is 64 bytes whose last 32 are zero (the caller
 reduces it modulo `L`), so `A` is multiplied by its first 256 bits only. -/
@@ -19,10 +20,10 @@ def verifyScalar : List Instr :=
   loadHeader 8164 ++ [.dp .add .r12 .r12 (.imm 32)] ++
     unpackField SR 0 ++ scalarCompare ++ [.cmp .r5 (.imm 0)]
 
+/-- `[S]B` by the comb (`combMultiply`), into the table at 8032. -/
 def verifyLhs : Prog isa :=
   .seq (.block (loadHeader 8164 ++ [.dp .add .r12 .r12 (.imm 32)]))
-    (.seq (constPoint Spec.Ed25519.basePoint)
-      (.seq (pointFromScalar 16) (.block (pointTableWrite 8032))))
+    (.seq combMultiply (.block (pointTableWrite 8032)))
 
 def verifyCombine : Prog isa :=
   .seq copyPointToQ (.seq (.block (pointTableRead 7904))
