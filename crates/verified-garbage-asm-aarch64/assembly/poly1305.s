@@ -17,6 +17,9 @@ vg_poly1305_init:
 	str x2, [x0, #0]
 	str x2, [x0, #8]
 	str x2, [x0, #16]
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
 	ret
 	.p2align 6
 

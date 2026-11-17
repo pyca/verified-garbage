@@ -11,6 +11,7 @@ vg_sha224_init:
 	ldr q1, [x9, #16]
 	str q0, [x0, #0]
 	str q1, [x0, #16]
+	movz x9, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -21,6 +22,7 @@ vg_sha256_init:
 	ldr q1, [x9, #16]
 	str q0, [x0, #0]
 	str q1, [x0, #16]
+	movz x9, #0, lsl #0
 	ret
 	.p2align 6
 
