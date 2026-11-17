@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ed25519.Arm.Point16
@@ -28,6 +30,15 @@ theorem ctRegs {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
   RelCT.taint (A := VG.Arm.taint) (VG.Arm.Taint.ofRegs rs)
     (fun x y h => VG.Arm.Taint.agree_ofRegs (hp x y h)) hc
 
+/-- `ctRegs`, by the analysis of code with `umaal` (`taintU`). -/
+theorem ctRegsU {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
+    (hp : ∀ x y, P x y → ∀ r ∈ rs, x.gpr r = y.gpr r)
+    {hint : VG.Taint.Hint VG.Arm.taintU.T}
+    (hc : (VG.Arm.taintU.check (VG.Arm.Taint.ofRegs rs) c hint).isSome = true) :
+    CT P c (fun _ _ => True) :=
+  RelCT.taint (A := VG.Arm.taintU) (VG.Arm.Taint.ofRegs rs)
+    (fun x y h => VG.Arm.Taint.agree_ofRegs (hp x y h)) hc
+
 /-- `ctRegs` by the analysis with summaries (`taintS`, `taint_decide_sum`). -/
 theorem ctRegsS {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
     (hp : ∀ x y, P x y → ∀ r ∈ rs, x.gpr r = y.gpr r)
@@ -41,9 +52,9 @@ theorem ctRegsS {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
 `vg_ed25519_r16_point_add` from `ws`, each done once for the checks of the code that calls them
 (`ctRegsS`, `taint_decide_sum`). They keep what is public of the callers' counters `r10` and
 `r11`, which the functions do not write. -/
-taint_summary doubleSum : taintS (Taint.ofRegs [.r0]) Impl.Ed25519.Arm.Point16.doubleCall
+taint_summary doubleSum : taintS (Taint.ofRegs [.r0]) (Impl.Ed25519.Arm.Point16.doubleCall false)
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addSum : taintS (Taint.ofRegs [.r0]) Impl.Ed25519.Arm.Point16.addCall
+taint_summary addSum : taintS (Taint.ofRegs [.r0]) (Impl.Ed25519.Arm.Point16.addCall false)
   keeping (Taint.ofRegs [.r10, .r11])
 
 theorem ctRegsKeeping {P : State → State → Prop} {c : Prog isa} (rs out : List Reg)
@@ -56,6 +67,19 @@ theorem ctRegsKeeping {P : State → State → Prop} {c : Prog isa} (rs out : Li
   obtain ⟨tau, ht, ho⟩ := Option.map_eq_some_iff.mp hc
   have ha : VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs rs) x y := VG.Arm.Taint.agree_ofRegs (hp x y h)
   obtain ⟨he, hf⟩ := VG.Taint.check_sound ht ha ex ey
+  exact ⟨he, fun r hr => hf.rf.1 r (RegSet.mem_of_subset ho (RegSet.mem_ofList.mpr hr))⟩
+
+/-- `ctRegsKeeping`, by the analysis of code with `umaal` (`taintU`). -/
+theorem ctRegsKeepingU {P : State → State → Prop} {c : Prog isa} (rs out : List Reg)
+    (hp : ∀ x y, P x y → ∀ r ∈ rs, x.gpr r = y.gpr r)
+    {hint : VG.Taint.Hint VG.Arm.taintU.T}
+    (hc : ((VG.Arm.taintU.check (VG.Arm.Taint.ofRegs rs) c hint).map
+      fun t => (RegSet.ofList out).subset t.regs) = some true) :
+    CT P c (fun x y => ∀ r ∈ out, x.gpr r = y.gpr r) := by
+  intro x y tx ty u v h ex ey
+  obtain ⟨tau, ht, ho⟩ := Option.map_eq_some_iff.mp hc
+  have ha : VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs rs) x y := VG.Arm.Taint.agree_ofRegs (hp x y h)
+  obtain ⟨he, hf⟩ := VG.Taint.check_sound (A := VG.Arm.taintU) ht ha ex ey
   exact ⟨he, fun r hr => hf.rf.1 r (RegSet.mem_of_subset ho (RegSet.mem_ofList.mpr hr))⟩
 
 theorem ctBoth {P F : State → Prop} {c : Prog isa}

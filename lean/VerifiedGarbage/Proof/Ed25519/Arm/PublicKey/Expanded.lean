@@ -30,6 +30,8 @@ namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519 (sha512_length)
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 /-- The digest at `seed`, read only and outside what the derivation writes. -/
@@ -98,14 +100,14 @@ def pkLocalE : Contract isa := pkLocalWith 64 fun s t => ∀ seed : List Byte, s
   Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 64 = Spec.Sha512.sha512 seed →
   Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 32 = Spec.Ed25519.publicKey seed
 
-theorem bodyE_noFrames : (bodyFrom copyExpanded).noFrames = true := by
+theorem bodyE_noFrames : (bodyFrom umaal copyExpanded).noFrames = true := by
   simp only [bodyFrom, copyExpanded, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames, Bool.and_self]
   rw [base_noFrames]
   rfl
 
 theorem pkE_ok {s : State} (h : pkLocalE.pre s) :
-    WP isa codeExpanded s fun u => abiPreserved s u ∧ pkLocalE.post s u := by
-  have hw := Whole.wrap_ok bodyE_noFrames (by decide : 3 ≤ 6) (entry_below h)
+    WP isa (codeExpanded umaal) s fun u => abiPreserved s u ∧ pkLocalE.post s u := by
+  have hw := Whole.wrap_ok (bodyE_noFrames (umaal := umaal)) (by decide : 3 ≤ 6) (entry_below h)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt)
     (by intro j hj h4; omega) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (State.addr (s.gpr .r0)) 32 = Spec.Ed25519.encodePoint
@@ -133,7 +135,7 @@ theorem pkE_ok {s : State} (h : pkLocalE.pre s) :
   rw [hp, hd, hs]
   rfl
 
-theorem pkE_ct : ConstantTime isa pkLocalE.pre pkLocalE.pub codeExpanded := by
+theorem pkE_ct : ConstantTime isa pkLocalE.pre pkLocalE.pub (codeExpanded umaal) := by
   refine Whole.wrap_ct (by decide : 3 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) ?_ (by intro s hs j hj h4; omega) ?_ ?_
   · intro s _
@@ -296,7 +298,7 @@ theorem pkE_implies : pkLocalE.Implies pkSpecE where
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨satStateE, pkE_sat⟩
 
-theorem publicKeyExpanded_verified : Verified Arm.target codeExpanded pkSpecE :=
+theorem publicKeyExpanded_verified : Verified Arm.target (codeExpanded umaal) pkSpecE :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => pkE_ok h) pkE_ct (.refl pkE_implies.sat_left))
     pkE_implies

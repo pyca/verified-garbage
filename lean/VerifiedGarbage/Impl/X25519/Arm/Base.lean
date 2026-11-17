@@ -35,12 +35,12 @@ def clampBytes : List Instr :=
 def uOps : List FieldOp := [.add 0 2 1, .sub 2 2 1]
 
 /-- The u-coordinate `(Z + Y) / (Z - Y)`, frozen into `FR`. -/
-def uEncode : Prog isa := .seq (fieldCode uOps) (.seq pointAffine (.block (VG.Impl.Ed25519.Arm.freeze 0)))
+def uEncode : Prog isa := .seq (fieldCode false uOps) (.seq (pointAffine false) (.block (VG.Impl.Ed25519.Arm.freeze 0)))
 
 /-- The slots cleared, the scalar copied and clamped, the comb, and the u-coordinate. -/
 def engine : Prog isa :=
   .seq (.block (initFields ++ combCopy ++ clampBytes))
-    (.seq combInit (.seq (.loop combStep .ne) uEncode))
+    (.seq combInit (.seq (.loop (combStep false) .ne) uEncode))
 
 def x25519Base : Prog isa :=
   .seq (.block scalarBaseSetup) (.seq engine (.block scalarBaseFinish))

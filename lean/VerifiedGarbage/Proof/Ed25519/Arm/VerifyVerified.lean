@@ -42,12 +42,14 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 def EquationCTPre (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
   VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a ∧ tablePoint s.mem b 7904 = r
 
 theorem verifyLhs_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
     CT (fun s t => EquationCTPre m T b pk sig challenge a r s ∧ EquationCTPre m T b pk sig challenge a r t)
-      verifyLhs (fun s t => RhsCTPre m T b pk sig challenge a r
+      (verifyLhs umaal) (fun s t => RhsCTPre m T b pk sig challenge a r
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) s ∧
         RhsCTPre m T b pk sig challenge a r
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) t) := by
@@ -60,7 +62,7 @@ theorem verifyLhs_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : 
 
 theorem verifyEquationPoints_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) :
     CT (fun s t => EquationCTPre m T b pk sig challenge a r s ∧ EquationCTPre m T b pk sig challenge a r t)
-      verifyEquationPoints (fun _ _ => True) :=
+      (verifyEquationPoints umaal) (fun _ _ => True) :=
   RelCT.seq (verifyLhs_public_ct m T b pk sig challenge a r) (verifyRhs_ct m T b pk sig challenge a r _)
 
 end VG.Proof.Ed25519.Arm
@@ -75,6 +77,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 def DecodeCTPre (base ptr : BitVec 32) (bs : List Byte) (s : State) : Prop :=
   Ctx base s ∧ AllLim s.mem base ∧ s.gpr .r12 = ptr ∧ ptr.toNat + 32 ≤ 2 ^ 32 ∧
     (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1) ∧
@@ -82,7 +86,7 @@ def DecodeCTPre (base ptr : BitVec 32) (bs : List Byte) (s : State) : Prop :=
     Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32 = bs
 
 theorem pointDecode_ct (base ptr : BitVec 32) (bs : List Byte) :
-    CT (fun s t => DecodeCTPre base ptr bs s ∧ DecodeCTPre base ptr bs t) pointDecode (fun _ _ => True) := by
+    CT (fun s t => DecodeCTPre base ptr bs s ∧ DecodeCTPre base ptr bs t) (pointDecode umaal) (fun _ _ => True) := by
   let b := Spec.Ed25519.decodeLE bs / 2 ^ 255 == 1
   let y := VG.Proof.X25519.toFe (Spec.Ed25519.decodeLE bs % 2 ^ 255)
   have ht : CT (fun s t => DecodeCTPre base ptr bs s ∧ DecodeCTPre base ptr bs t)
@@ -114,6 +118,8 @@ end
 /-! Untrusted: the loop decoding `A` and `R` is determined by public inputs. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 theorem VerifyPublic.inBytes {m : Mem} {T b pk sig challenge : BitVec 32} {s : State}
     (h : VerifyPublic m T b pk sig challenge s) {j : Nat} (hj : j < 2) :
@@ -171,7 +177,7 @@ theorem decodeLoad_ct (m : Mem) (T b pk sig challenge : BitVec 32) (k : Nat) :
     exact ⟨hp.keep kt syt, by rw [ht.mem]; exact hl, by rw [ht.gpr]; exact hptr, by rw [ht.mem]; exact htab⟩
 
 theorem pointDecode_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
-    CT (fun x y => LoadedCT m T b pk sig challenge k x ∧ LoadedCT m T b pk sig challenge k y) pointDecode
+    CT (fun x y => LoadedCT m T b pk sig challenge k x ∧ LoadedCT m T b pk sig challenge k y) (pointDecode umaal)
       (fun x y => DecodedCT m T b pk sig challenge k x ∧ DecodedCT m T b pk sig challenge k y) := by
   have pre (x : State) (h : LoadedCT m T b pk sig challenge k x) :
       DecodeCTPre b (inPtr pk sig k) (Spec.Ed25519.bytesAt m (State.addr (inPtr pk sig k)) 32) x := by
@@ -228,7 +234,7 @@ theorem decodeNext_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (k : N
   · exact h.1.2.trans h.2.2.symm
 
 theorem decodeBody_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) {k : Nat} (hk : k < 2) :
-    CT (fun x y => BodyCT m T b pk sig challenge k x ∧ BodyCT m T b pk sig challenge k y) decodeBody
+    CT (fun x y => BodyCT m T b pk sig challenge k x ∧ BodyCT m T b pk sig challenge k y) (decodeBody umaal)
       (fun _ _ => True) := by
   rw [decodeBody]
   exact RelCT.seq (decodeLoad_ct m T b pk sig challenge k)
@@ -236,17 +242,17 @@ theorem decodeBody_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) {k : N
 
 theorem decodeBody_dec {m : Mem} {T b pk sig challenge : BitVec 32} {k : Nat} (hk : k < 2) {s : State}
     (h : DecCT m T b pk sig challenge k s) :
-    WP isa decodeBody s fun t => DecCT m T b pk sig challenge (k + 1) t ∧ t.z = decide (k = 1) := by
+    WP isa (decodeBody umaal) s fun t => DecCT m T b pk sig challenge (k + 1) t ∧ t.z = decide (k = 1) := by
   obtain ⟨s₀, hp, hd, hsy⟩ := h
   exact WP.mono_syms (decodeBody_ok hp.ctx hk hd) fun t ⟨ht, zt⟩ syt => ⟨⟨s₀, hp, ht, syt.trans hsy⟩, zt⟩
 
 theorem decodeLoop_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
-    CT (fun x y => DecCT m T b pk sig challenge 0 x ∧ DecCT m T b pk sig challenge 0 y) (.loop decodeBody .ne)
+    CT (fun x y => DecCT m T b pk sig challenge 0 x ∧ DecCT m T b pk sig challenge 0 y) (.loop (decodeBody umaal) .ne)
       (fun x y => DecCT m T b pk sig challenge 2 x ∧ DecCT m T b pk sig challenge 2 y) := by
   refine (RelCT.loop (M := isa) (I := fun n x y => ∃ k, k + n = 2 ∧ k < 2 ∧ DecCT m T b pk sig challenge k x ∧
       DecCT m T b pk sig challenge k y) ?_ 2).mono (fun x y h => ⟨0, rfl, by decide, h.1, h.2⟩) (fun _ _ h => h)
   intro n
-  have step (k : Nat) (hk : k < 2) := ((decodeBody_public_ct m T b pk sig challenge hk).mono
+  have step (k : Nat) (hk : k < 2) := ((decodeBody_public_ct (umaal := umaal) m T b pk sig challenge hk).mono
     (fun x y (h : DecCT m T b pk sig challenge k x ∧ DecCT m T b pk sig challenge k y) => ⟨h.1.body hk, h.2.body hk⟩)
     (fun _ _ h => h)).wp fun x y h => ⟨decodeBody_dec hk h.1, decodeBody_dec hk h.2⟩
   rcases n with _ | _ | _ | n
@@ -298,7 +304,7 @@ theorem okTest_dec {m : Mem} {T b pk sig challenge : BitVec 32} {s : State} (h :
 
 theorem verifyDecode_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
-      (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) verifyDecode (fun _ _ => True) := by
+      (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) (verifyDecode umaal) (fun _ _ => True) := by
   have start : CT (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
       (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b)) (.block decodeStart)
       (fun x y => DecCT m T b pk sig challenge 0 x ∧ DecCT m T b pk sig challenge 0 y) := by
@@ -402,6 +408,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyInit_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
     CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
       (.block initFields) (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b) ∧
@@ -418,7 +426,7 @@ theorem verifyInit_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
 
 theorem verifyBody_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
     CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
-      verifyBody (fun _ _ => True) := by
+      (verifyBody umaal) (fun _ _ => True) := by
   refine RelCT.seq (verifyScalar_public_ct m T b pk sig challenge) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
   · exact (RelCT.seq (verifyInit_ct m T b pk sig challenge) (verifyDecode_ct m T b pk sig challenge)).mono
@@ -431,6 +439,8 @@ end
 /-! The verifier's ABI wrapper preserves the public input relation. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
   | [], [], _ => rfl
@@ -484,11 +494,11 @@ theorem verifySetup_ct (m : Mem) (T b pk sig challenge : BitVec 32) :
 theorem verify_ct_of_body
     (bodyCT : ∀ (m : Mem) (T b pk sig challenge : BitVec 32),
       CT (fun s t => VerifyPublic m T b pk sig challenge s ∧ VerifyPublic m T b pk sig challenge t)
-        verifyBody (fun _ _ => True)) :
-    ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation := by
+        (verifyBody umaal) (fun _ _ => True)) :
+    ConstantTime isa verifyLocal.pre verifyLocal.pub (verifyEquation umaal) := by
   have hct (m : Mem) (T b pk sig challenge : BitVec 32) :
       CT (fun x y => VerifyWrapPublic m T b pk sig challenge x ∧ VerifyWrapPublic m T b pk sig challenge y)
-        verifyEquation (fun _ _ => True) := by
+        (verifyEquation umaal) (fun _ _ => True) := by
     have hb := (bodyCT m T b pk sig challenge).wpDep (fun x y h => ⟨verifyBody_ok h.1.ctx h.1.tbl, verifyBody_ok h.2.ctx h.2.tbl⟩)
     have hb' := hb.mono (fun _ _ h => h) (fun x y ⟨_, a, c, h, hx, hy⟩ =>
       And.intro (hx.1.ctx h.1.ctx.ctx).r0 (hy.1.ctx h.2.ctx.ctx).r0)
@@ -509,7 +519,7 @@ theorem verify_ct_of_body
     ⟨⟨hs, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩,
       ⟨ht, h0.symm, h1.symm, h2.symm, h3.symm, hsym.symm, first.symm, middle.symm, last.symm⟩⟩ ex ey).1
 
-theorem verify_ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation :=
+theorem verify_ct : ConstantTime isa verifyLocal.pre verifyLocal.pub (verifyEquation umaal) :=
   verify_ct_of_body verifyBody_ct
 
 end VG.Proof.Ed25519.Arm
@@ -518,7 +528,8 @@ end
 /-! Merged from `Proof.Ed25519.Arm.VerifyLit`. -/
 section
 namespace VG.Impl.Ed25519.Arm
-materialize_code verifyEquation
+materialize_code verifyEquationPlain := verifyEquation false
+materialize_code verifyEquationUmaal := verifyEquation true
 end VG.Impl.Ed25519.Arm
 end
 
@@ -526,8 +537,10 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem verify_ok (s : State) (hs : verifyLocal.pre s) :
-    ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyLocal.post s s' :=
+    ∃ t s', Exec isa (verifyEquation umaal) s t s' ∧ abiPreserved s s' ∧ verifyLocal.post s s' :=
   verifyEquation_correct (VerifyPre.of hs)
 
 end VG.Proof.Ed25519.Arm

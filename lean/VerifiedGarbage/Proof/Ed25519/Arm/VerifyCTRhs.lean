@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
@@ -8,6 +9,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
@@ -35,12 +37,14 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 /-- The comparison's operands: the left one any representative of `P`. -/
 def EqualCTPre (base : BitVec 32) (P : Edwards.EPoint dZ) (q : Spec.Ed25519.Point) (s : State) : Prop :=
   Ctx base s ∧ AllLim s.mem base ∧ Rep (point (env s.mem base) 0 1 2 3) P ∧ point (env s.mem base) 4 5 6 7 = q
 
 theorem equalFirstCT_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa (.seq (fieldCode pointEqualOps) (fieldEqual 8 9)) s fun t =>
+    WP isa (.seq (fieldCode umaal pointEqualOps) (fieldEqual 8 9)) s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧
       t.z = decide (env s.mem base 0 * env s.mem base 6 = env s.mem base 4 * env s.mem base 2) ∧
       env t.mem base 10 = env s.mem base 1 * env s.mem base 6 ∧
@@ -72,13 +76,13 @@ theorem equalSecond_ct (base : BitVec 32) (e : Bool) :
 
 theorem pointEqual_ct (base : BitVec 32) (P : Edwards.EPoint dZ) (q : Spec.Ed25519.Point) :
     CT (fun s t => EqualCTPre base P q s ∧ EqualCTPre base P q t)
-      Impl.Ed25519.Arm.pointEqual (fun _ _ => True) := by
+      (Impl.Ed25519.Arm.pointEqual umaal) (fun _ _ => True) := by
   have ht : CT (fun s t => EqualCTPre base P q s ∧ EqualCTPre base P q t)
-      (.seq (fieldCode pointEqualOps) (fieldEqual 8 9)) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by native_taint_decide)
-    exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
+      (.seq (fieldCode umaal pointEqualOps) (fieldEqual 8 9)) (fun _ _ => True) := by
+    cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : EqualCTPre base P q s) :
-      WP isa (.seq (fieldCode pointEqualOps) (fieldEqual 8 9)) s fun t =>
+      WP isa (.seq (fieldCode umaal pointEqualOps) (fieldEqual 8 9)) s fun t =>
         Ctx base t ∧ AllLim t.mem base ∧ t.z = decide (P.x * toZ q.Z = toZ q.X) ∧
           decide (env t.mem base 10 = env t.mem base 11) = decide (P.y * toZ q.Z = toZ q.Y) := by
     refine WP.mono (equalFirstCT_ok h.1 h.2.1) fun t ⟨kt, lt, tz, tu, tv⟩ => ?_
@@ -109,6 +113,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyLoadScalar_ct (T b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b ∧ VerifyTbl b T s) ∧
       (VerifyContext b pk sig challenge t ∧ AllLim t.mem b ∧ VerifyTbl b T t))
@@ -133,7 +139,7 @@ theorem verifyLoadScalar_ct (T b pk sig challenge : BitVec 32) :
 
 theorem verifyLhs_ct (T b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b ∧ VerifyTbl b T s) ∧
-      (VerifyContext b pk sig challenge t ∧ AllLim t.mem b ∧ VerifyTbl b T t)) verifyLhs (fun _ _ => True) := by
+      (VerifyContext b pk sig challenge t ∧ AllLim t.mem b ∧ VerifyTbl b T t)) (verifyLhs umaal) (fun _ _ => True) := by
   refine RelCT.seq (verifyLoadScalar_ct T b pk sig challenge)
     (RelCT.seq (combMultiply_ct b (sig + 32) T) ?_)
   apply ctRegs [.r0] _ (by native_taint_decide)
@@ -149,8 +155,10 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-def verifyRhsMul : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ loadHeader 8168)) publicMul
+variable {umaal : Bool}
+
+def verifyRhsMul (umaal : Bool) : Prog isa :=
+  .seq (.block (pointTableRead 7776 ++ loadHeader 8168)) (publicMul umaal)
 
 /-- What `publicMul` needs in each run: the same bytes of `k`, which are public, and the same `A`. -/
 def PubMulPre (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) (s : State) : Prop :=
@@ -164,7 +172,7 @@ def PubRun (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) (m : Na
 
 theorem pubRun_step {ks : List Byte} {a : Spec.Ed25519.Point} {b ptr : BitVec 32} {m : Nat} {s : State}
     (h : PubRun ks a b ptr (m + 1) s) (hm : m < 32) :
-    WP isa byteStep s fun t => PubRun ks a b ptr m t ∧ t.z = decide (m = 0) :=
+    WP isa (byteStep umaal) s fun t => PubRun ks a b ptr m t ∧ t.z = decide (m = 0) :=
   WP.mono (byteStep_ok h.1 hm h.2.1 (congrArg Spec.Ed25519.decodeLE h.2.2)) fun _ ⟨tk, tb, tz⟩ =>
     ⟨⟨tb, h.2.1.keep (VerifyKeep.of_point tk), (h.2.1.bytes (VerifyKeep.of_point tk)).trans h.2.2⟩, tz⟩
 
@@ -202,23 +210,25 @@ theorem bitsLoad_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32
 /-- The byte's eight bits: the branches are on `r10`, the same in both runs. -/
 theorem bitsRun_ct (K : Nat) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) (m : Nat) :
     CT (fun x y => BitAt K b ptr a m 0 x ∧ BitAt K b ptr a m 0 y)
-      (repeatThen 8 bitStep (.block [.cmp .r11 (.imm 0)])) (fun _ _ => True) := by
-  apply ctRegsS [.r0, .r10, .r11] _ (by taint_decide_sum [addSum, doubleSum])
-  intro x y h r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h.1.ctx.r0.trans h.2.ctx.r0.symm
-  · exact h.1.r10.trans h.2.r10.symm
-  · exact h.1.r11.trans h.2.r11.symm
+      (repeatThen 8 (bitStep umaal) (.block [.cmp .r11 (.imm 0)])) (fun _ _ => True) := by
+  cases umaal <;> [apply ctRegsS [.r0, .r10, .r11] _ (by taint_decide_sum [addSum, doubleSum]);
+    apply ctRegsU [.r0, .r10, .r11] _ (by taint_decide)]
+  all_goals
+    intro x y h r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.1.ctx.r0.trans h.2.ctx.r0.symm
+    · exact h.1.r10.trans h.2.r10.symm
+    · exact h.1.r11.trans h.2.r11.symm
 
 theorem byteStep_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) {m : Nat} (hm : m < 32) :
-    CT (fun x y => PubRun ks a b ptr (m + 1) x ∧ PubRun ks a b ptr (m + 1) y) byteStep
+    CT (fun x y => PubRun ks a b ptr (m + 1) x ∧ PubRun ks a b ptr (m + 1) y) (byteStep umaal)
       (fun x y => (PubRun ks a b ptr m x ∧ x.z = decide (m = 0)) ∧
         (PubRun ks a b ptr m y ∧ y.z = decide (m = 0))) :=
   ctBoth (RelCT.seq (bitsLoad_ct ks a b ptr hm) (bitsRun_ct _ a b ptr m)) fun _ h => pubRun_step h hm
 
 theorem publicLoop_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) :
-    CT (fun x y => PubRun ks a b ptr 32 x ∧ PubRun ks a b ptr 32 y) (.loop byteStep .ne)
+    CT (fun x y => PubRun ks a b ptr 32 x ∧ PubRun ks a b ptr 32 y) (.loop (byteStep umaal) .ne)
       (fun _ _ => True) := by
   refine (RelCT.loop (M := isa) (Q := fun _ _ => True)
     (fun n x y => 0 < n ∧ n ≤ 32 ∧ PubRun ks a b ptr n x ∧ PubRun ks a b ptr n y)
@@ -239,7 +249,7 @@ theorem publicLoop_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 
   · exact RelCT.of_false fun x y h => hn ⟨h.1, h.2.1⟩
 
 theorem publicMul_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) :
-    CT (fun x y => PubMulPre ks a b ptr x ∧ PubMulPre ks a b ptr y) publicMul (fun _ _ => True) := by
+    CT (fun x y => PubMulPre ks a b ptr x ∧ PubMulPre ks a b ptr y) (publicMul umaal) (fun _ _ => True) := by
   have hi : CT (fun x y => PubMulPre ks a b ptr x ∧ PubMulPre ks a b ptr y) publicMulInit
       (fun x y => PubRun ks a b ptr 32 x ∧ PubRun ks a b ptr 32 y) := by
     apply ctBoth
@@ -288,12 +298,12 @@ theorem verifyLoadChallenge_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a :
 theorem verifyRhsMul_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a : Spec.Ed25519.Point) :
     CT (fun s t => (VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a) ∧
       (VerifyPublic m T b pk sig challenge t ∧ AllLim t.mem b ∧ tablePoint t.mem b 7776 = a))
-      verifyRhsMul (fun _ _ => True) :=
+      (verifyRhsMul umaal) (fun _ _ => True) :=
   RelCT.seq (verifyLoadChallenge_ct m T b pk sig challenge a) (publicMul_ct _ a b challenge)
 
 theorem verifyRhsMul_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
-    WP isa verifyRhsMul s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
+    WP isa (verifyRhsMul umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       point (env t.mem b) 0 1 2 3 = ladder (tablePoint s.mem b 7776)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 32)) 256 := by
   refine WP.seq ?_
@@ -319,6 +329,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def RhsCTPre (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) (lhs : Edwards.EPoint dZ)
     (s : State) : Prop :=
   VerifyPublic m T b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a ∧
@@ -331,7 +343,7 @@ def CombineCTPre (b : BitVec 32) (ka r : Spec.Ed25519.Point) (lhs : Edwards.EPoi
 theorem verifyMul_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point)
     (lhs : Edwards.EPoint dZ) :
     CT (fun s t => RhsCTPre m T b pk sig challenge a r lhs s ∧ RhsCTPre m T b pk sig challenge a r lhs t)
-      verifyRhsMul (fun s t =>
+      (verifyRhsMul umaal) (fun s t =>
         CombineCTPre b (ladder a (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr challenge) 32)) 256) r lhs s ∧
         CombineCTPre b (ladder a (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr challenge) 32)) 256) r lhs t) := by
   apply ctBoth
@@ -345,14 +357,15 @@ theorem verifyMul_public_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : 
 
 theorem verifyCombine_ct (b : BitVec 32) (ka r : Spec.Ed25519.Point) (lhs : Edwards.EPoint dZ) :
     CT (fun s t => CombineCTPre b ka r lhs s ∧ CombineCTPre b ka r lhs t)
-      verifyCombine (fun s t => EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) s ∧
+      (verifyCombine umaal) (fun s t => EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) s ∧
         EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) t) := by
   apply ctBoth
-  · apply ctRegsS [.r0] _ (by taint_decide_sum [addSum])
-    intro s t h reg hr
-    rw [List.mem_singleton] at hr
-    subst reg
-    exact h.1.1.r0.trans h.2.1.r0.symm
+  · cases umaal <;> [apply ctRegsS [.r0] _ (by taint_decide_sum [addSum]); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals
+      intro s t h reg hr
+      rw [List.mem_singleton] at hr
+      subst reg
+      exact h.1.1.r0.trans h.2.1.r0.symm
   · intro s ⟨hc, hl, hd, hp, hr, hh⟩
     refine WP.mono (verifyCombine_ok hc hl hd) fun t ⟨tk, tl, tp, tq⟩ => ?_
     exact ⟨tk.ctx hc, tl, by rw [tp]; exact hh, tq.trans (congrArg₂ Spec.Ed25519.pointAdd hr hp)⟩
@@ -360,7 +373,7 @@ theorem verifyCombine_ct (b : BitVec 32) (ka r : Spec.Ed25519.Point) (lhs : Edwa
 theorem verifyRhs_ct (m : Mem) (T b pk sig challenge : BitVec 32) (a r : Spec.Ed25519.Point)
     (lhs : Edwards.EPoint dZ) :
     CT (fun s t => RhsCTPre m T b pk sig challenge a r lhs s ∧ RhsCTPre m T b pk sig challenge a r lhs t)
-      verifyRhs (fun _ _ => True) := by
+      (verifyRhs umaal) (fun _ _ => True) := by
   apply ctSeqAssoc
   exact RelCT.seq (verifyMul_public_ct m T b pk sig challenge a r lhs)
     (RelCT.seq (verifyCombine_ct b _ r lhs) (pointEqual_ct b lhs _))

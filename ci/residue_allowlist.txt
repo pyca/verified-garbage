@@ -846,9 +846,6 @@ arm vg_ecdsa_secp256k1_sign
 arm vg_ecdsa_secp256k1_sign_umaal
 arm vg_ecdsa_secp256k1_verify
 arm vg_ecdsa_secp256k1_verify_umaal
-arm vg_ed25519_key_pair
-arm vg_ed25519_sign_expanded
-arm vg_ed25519_verify
 arm vg_ffdh_check_domain
 arm vg_ffdh_check_domain_umaal
 arm vg_ffdh_check_private

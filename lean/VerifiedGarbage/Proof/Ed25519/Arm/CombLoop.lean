@@ -470,6 +470,8 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519 VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm VG.Proof.Ed25519 Edwards
 
+variable {umaal : Bool}
+
 theorem maskB_eq (b : Bool) : maskB b = 0 - BitVec.ofNat 32 b.toNat := by cases b <;> decide
 
 theorem magOf_eq (n : Nat) : magOf n = mag n := rfl
@@ -604,9 +606,9 @@ theorem swapNeg_vals (sw : Bool) (e : Env) :
 
 theorem combStep_ok {s₀ s : State} {b p T : BitVec 32} {S j : Nat} (E : CombEnv s₀ b p T)
     (h : CombInv s₀ b p T S j s) (hj : j < 64) :
-    WP isa combStep s fun t => isa.eval .ne t = some (decide (j + 1 ≠ 64)) ∧
+    WP isa (combStep umaal) s fun t => isa.eval .ne t = some (decide (j + 1 ≠ 64)) ∧
       CombInv s₀ b p T S (j + 1) t := by
-  suffices H : WP isa combStep s fun t => t.syms = s.syms →
+  suffices H : WP isa (combStep umaal) s fun t => t.syms = s.syms →
       isa.eval .ne t = some (decide (j + 1 ≠ 64)) ∧ CombInv s₀ b p T S (j + 1) t from
     WP.mono_syms H fun t k hs => k hs
   obtain nf := next_fact j hj
@@ -763,7 +765,7 @@ theorem combStep_ok {s₀ s : State} {b p T : BitVec 32} {S j : Nat} (E : CombEn
 /-- The loop, from step `j₀ < 64` to the end. -/
 theorem combSteps_ok {s₀ s : State} {b p T : BitVec 32} {S j₀ : Nat} (E : CombEnv s₀ b p T)
     (h : CombInv s₀ b p T S j₀ s) (hj₀ : j₀ < 64) :
-    WP isa (.loop combStep .ne) s fun t => CombInv s₀ b p T S 64 t := by
+    WP isa (.loop (combStep umaal) .ne) s fun t => CombInv s₀ b p T S 64 t := by
   apply WP.loop (fun n t => CombInv s₀ b p T S (64 - n) t ∧ 0 < n ∧ n ≤ 64) (n := 64 - j₀)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn0]⟩
@@ -927,7 +929,7 @@ theorem combPrepare_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllL
 /-- The loop from its start: `[S]B` for the scalar `S` of the start's copy. -/
 theorem combFrom_ok {w : State} {b p T : BitVec 32} {S : Nat} (E : CombEnv w b p T)
     (I : CombInv w b p T S 0 w) (hS : S < 2 ^ 256) :
-    WP isa (.loop combStep .ne) w fun t => PointKeep b w t ∧ AllLim t.mem b ∧
+    WP isa (.loop (combStep umaal) .ne) w fun t => PointKeep b w t ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3) (S • baseAff) := by
   refine WP.mono (combSteps_ok E I (by decide)) fun t ht => ⟨ht.keep, ht.lim, ?_⟩
   have := ht.acc
@@ -939,7 +941,7 @@ theorem combMultiply_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : All
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
     (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
-    WP isa combMultiply s fun t => PointKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (combMultiply umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32) • baseAff) := by
   rw [combMultiply]

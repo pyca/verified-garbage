@@ -313,6 +313,8 @@ end
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 def signWord (b : Bool) : BitVec 32 := if b then 1 else 0
@@ -323,7 +325,7 @@ def equationWr (L : Lay) : List Region := [L.SCR]
 def EqArgs (L : Lay) (s : State) : Prop := s.gpr .r0 = L.pk ∧
   s.gpr .r1 = L.sig ∧ s.gpr .r2 = L.E+120 ∧ s.gpr .r3 = L.scr
 
-theorem equation_noFrames : verifyEquation.noFrames = true := by lit_decide
+theorem equation_noFrames : (verifyEquation umaal).noFrames = true := by cases umaal <;> lit_decide
 
 theorem challengeWithin (L : Lay) : Whole.Within (challenge L) L.FR :=
   ⟨120,rfl,by change 120+64≤248; decide⟩
@@ -380,7 +382,8 @@ theorem equation_writes : ∀ r ∈ equationWr L,
 theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s)
     (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
     (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L s.mem) :
-    WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => Ctx L g m₀ t ∧
+    WP isa (.call ("vg_ed25519_verify_equation" ++ VG.Impl.Ed25519.Arm.suffix umaal) (verifyEquation umaal)) s
+      fun t => Ctx L g m₀ t ∧
       t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
         (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
@@ -402,7 +405,8 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s)
 theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256)
     (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation) s
+    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.equationArgs
+      ("vg_ed25519_verify_equation" ++ VG.Impl.Ed25519.Arm.suffix umaal) (verifyEquation umaal)) s
       fun t => Ctx L g m₀ t ∧ t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
         (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
@@ -963,6 +967,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+
+variable {umaal : Bool}
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
@@ -979,7 +985,7 @@ theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
 
 theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok)
     (ha : Arguments L m₀) (htb : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa body s fun t => Ctx L g m₀ t ∧
+    WP isa (body umaal) s fun t => Ctx L g m₀ t ∧
       t.gpr .r0 = signWord (Spec.Ed25519.verify (Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32)
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) (Spec.Ed25519.bytesAt m₀ (State.addr L.sig) 64)) := by
   refine WP.seq (WP.mono_syms (hash_ok hc hL ha) fun t ⟨ht,hh⟩ syt => ?_)
@@ -993,7 +999,7 @@ theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok)
     hw.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64≤2^64; decide),he] at eq
   exact eq
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body umaal).noFrames = true := by
   have hu := Whole.update_noFrames
   have hf := Whole.finalize_noFrames
   simp only [body,Impl.Ed25519.Arm.VerifyMessage.hash,init,update,finalize,Impl.Ed25519.Arm.Whole.callWith,
@@ -1332,6 +1338,8 @@ end
 section
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {umaal : Bool}
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem equation_setup_wp {g m t} (hc : Ctx L g m t) (hL : L.Ok) (ha : Arguments L m)
@@ -1359,7 +1367,7 @@ theorem equation_call_ct (hL : L.Ok) {challenge : List Byte}
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => (EqArgs L t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge) ∧
       t.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ Tbl L t.mem)
-      (.call "vg_ed25519_verify_equation" verifyEquation)
+      (.call ("vg_ed25519_verify_equation" ++ VG.Impl.Ed25519.Arm.suffix umaal) (verifyEquation umaal))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct verify_ok verify_ct equation_noFrames
     (fun _ h => equation_ready hL h.1.1 (by rw [h.1.2]; exact hch) h.2.1 h.2.2)
@@ -1398,7 +1406,8 @@ theorem equation_step_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂
         (fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge) a b ∧
         a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (Whole.callWith VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation)
+      (Whole.callWith VerifyMessage.equationArgs ("vg_ed25519_verify_equation" ++ VG.Impl.Ed25519.Arm.suffix umaal)
+        (verifyEquation umaal))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs : RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
       (.block VerifyMessage.equationArgs)
@@ -1419,6 +1428,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+
+variable {umaal : Bool}
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem hash_result_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
@@ -1440,7 +1451,7 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (hmsg : Spec.Ed25519.bytesAt m₁ (State.addr L.msg) L.len.toNat=Spec.Ed25519.bytesAt m₂ (State.addr L.msg) L.len.toNat)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64=Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
-        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) body
+        a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T) (body umaal)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hm : hashInput L m₁=hashInput L m₂ := by
     rw [hashInput_eq,hashInput_eq,hpk,hmsg,hsig]
@@ -1622,9 +1633,12 @@ section
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
+variable {umaal : Bool}
+
 theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ verifyMessageLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 5 ≤ 6) (entry_below h) (entry_top h) (entry_read h) (entry_writes h)
+    WP isa (code umaal) s fun u => abiPreserved s u ∧ verifyMessageLocal.post s u := by
+  have hw := Whole.wrap_ok (body_noFrames (umaal := umaal)) (by decide : 5 ≤ 6) (entry_below h) (entry_top h)
+    (entry_read h) (entry_writes h)
     (P := fun m _ r => r = signWord (Spec.Ed25519.verify
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r0)) 32)
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
@@ -1648,6 +1662,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+
+variable {umaal : Bool}
 
 theorem lay_eq {s t : State} (h : verifyMessageLocal.pub s t) : lay s=lay t := by
   obtain ⟨sp,h0,h1,h2,h3,h4,_,_,_,hy⟩ := h
@@ -1681,7 +1697,7 @@ theorem saved_inputs_eq {s t p q : State} (hs : verifyMessageLocal.pre s) (ht : 
   exact ⟨pk,msg,sig⟩
 
 theorem verifyMessage_ct :
-    ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub code := by
+    ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub (code umaal) := by
   refine Whole.wrap_ct (by decide : 5 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) (fun _ hs => entry_top hs) (fun _ hs => entry_read hs) ?_ ?_
   · intro s hs p hp
@@ -1858,7 +1874,9 @@ end
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
-theorem verifyMessage_verified : Verified Arm.target code verifySpec :=
+variable {umaal : Bool}
+
+theorem verifyMessage_verified : Verified Arm.target (code umaal) verifySpec :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => verifyMessage_ok h) verifyMessage_ct
       (.refl verifyMessage_implies.sat_left)) verifyMessage_implies

@@ -432,16 +432,16 @@ none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job
-# runs them): `none` takes RSA, FFDH, DSA's, X25519's, X448's, Ed448's,
-# P-192's, P-224's, P-256's, P-384's, P-521's, secp256k1's and the brainpool
-# curves' baseline code, which a CPU with `umaal` (every runner's) never
-# chooses.
+# runs them): `none` takes RSA, FFDH, DSA's, X25519's, X448's, Ed25519's,
+# Ed448's, P-192's, P-224's, P-256's, P-384's, P-521's, secp256k1's and the
+# brainpool curves' baseline code, which a CPU with `umaal` (every runner's)
+# never chooses.
 [[cpu]]
 chip = "native"
 arch = "arm"
 os = "ubuntu-26.04-arm"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 runs = """
-none | rsa ffdh dsa x25519 x448 ed448 p192 p224 p256 p384 p521 secp256k1 brainpoolp256r1 brainpoolp384r1 brainpoolp512r1 cpu
+none | rsa ffdh dsa x25519 x448 ed25519 ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs p192 p224 p256 p384 p521 secp256k1 brainpoolp256r1 brainpoolp384r1 brainpoolp512r1 cpu
 """
 

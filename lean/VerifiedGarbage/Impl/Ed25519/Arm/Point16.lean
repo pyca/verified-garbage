@@ -37,17 +37,17 @@ def asFn (counter : Bool) (body : Prog isa) : Prog isa :=
 
 namespace Point16
 
-/-- `vg_ed25519_r16_point_add`. -/
-def addFn : Prog isa := asFn false pointAdd
+/-- `vg_ed25519_r16_point_add` (with `umaal`, `vg_ed25519_r16_point_add_umaal`). -/
+def addFn (umaal : Bool) : Prog isa := asFn false (pointAdd umaal)
 
-/-- `vg_ed25519_r16_point_double`. -/
-def doubleFn : Prog isa := asFn false pointDouble
+/-- `vg_ed25519_r16_point_double` (with `umaal`, `vg_ed25519_r16_point_double_umaal`). -/
+def doubleFn (umaal : Bool) : Prog isa := asFn false (pointDouble umaal)
 
 /-- A call of `vg_ed25519_r16_point_add`. -/
-def addCall : Prog isa := .call "vg_ed25519_r16_point_add" addFn
+def addCall (umaal : Bool) : Prog isa := .call ("vg_ed25519_r16_point_add" ++ suffix umaal) (addFn umaal)
 
 /-- A call of `vg_ed25519_r16_point_double`. -/
-def doubleCall : Prog isa := .call "vg_ed25519_r16_point_double" doubleFn
+def doubleCall (umaal : Bool) : Prog isa := .call ("vg_ed25519_r16_point_double" ++ suffix umaal) (doubleFn umaal)
 
 end Point16
 

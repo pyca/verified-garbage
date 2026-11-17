@@ -343,12 +343,14 @@ namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm
 open VG.Impl.Ed25519.Arm (scalarBase)
 
+variable {umaal : Bool}
+
 def baseRd (L : Lay) : List Region := [field L 88, L.TB]
 def baseWr (L : Lay) : List Region := [baseOut L, L.SCR]
 def BaseArgs (L : Lay) (s : State) : Prop :=
   s.gpr .r0 = L.out ∧ s.gpr .r1 = L.E + 88 ∧ s.gpr .r2 = L.scr
 
-theorem base_noFrames : scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : (scalarBase umaal).noFrames = true := by cases umaal <;> lit_decide
 
 /-- The comb's tables at `L.T` in `m`. -/
 def Tbl (L : Lay) (m : Mem) : Prop :=
@@ -386,7 +388,8 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms VG.Impl.Ed25519.A
 
 theorem base_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
     (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L s.mem) :
-    WP isa (.call "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g m₀ t ∧
+    WP isa (.call ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal) (scalarBase umaal)) s fun t =>
+      Ctx L g m₀ t ∧
       Frame (baseWr L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem (State.addr L.E + 88) 32) := by
@@ -1111,6 +1114,8 @@ end
 section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
+
+variable {umaal : Bool}
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
@@ -1132,7 +1137,8 @@ theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
 
 theorem base_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
     (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith baseArgs "vg_ed25519_scalar_base" VG.Impl.Ed25519.Arm.scalarBase) s
+    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith baseArgs
+      ("vg_ed25519_scalar_base" ++ VG.Impl.Ed25519.Arm.suffix umaal) (VG.Impl.Ed25519.Arm.scalarBase umaal)) s
       fun t => Ctx L g m₀ t ∧ Frame (baseWr L) s.mem t.mem ∧
         Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 =
           Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem (State.addr L.E + 88) 32) := by
@@ -1187,6 +1193,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached
+
+variable {umaal : Bool}
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem mul_step_out_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (mulStepWr L) m n) :
@@ -1206,7 +1214,7 @@ structure NonceReady (L : Lay) (E : List Byte) (m : Mem) (t : State) : Prop wher
 theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) {E : List Byte}
     (hs : SecretReady L E s)
     (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (nonceCode) s fun t => Ctx L g m₀ t ∧ NonceReady L E m₀ t := by
+    WP isa (nonceCode umaal) s fun t => Ctx L g m₀ t ∧ NonceReady L E m₀ t := by
   refine WP.seq (WP.mono_syms (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 24) (by decide) (by decide)).trans hs.scalar
@@ -1263,7 +1271,7 @@ theorem bodyFrom_ok {first : Prog isa} {E : List Byte}
     (hL : L.Ok) (ha : Arguments L m₀) {seed : List Byte} (hE : E = Spec.Sha512.sha512 seed)
     (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 = Spec.Ed25519.publicKey seed)
     (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (bodyFrom first) s fun t => Ctx L g m₀ t ∧
+    WP isa (bodyFrom umaal first) s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
   have hsec : WP isa (.seq first (.block saveSecret)) s fun t => Ctx L g m₀ t ∧ SecretReady L E t :=

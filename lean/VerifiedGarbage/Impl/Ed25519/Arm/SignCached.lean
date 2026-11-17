@@ -52,16 +52,16 @@ def mulAddArgs : List Instr :=
   setup [(.r0, .caller 0 32), (.r1, .frame 88), (.r2, .frame 120), (.r3, .frame 24)] [.caller 5 0]
 def wipe : List Instr := zeroWords 6 56
 
-def nonceCode : Prog isa := .seq hashNonce (.seq (reduce 88)
-  (callWith baseArgs "vg_ed25519_scalar_base" scalarBase))
+def nonceCode (umaal : Bool) : Prog isa := .seq hashNonce (.seq (reduce 88)
+  (callWith baseArgs ("vg_ed25519_scalar_base" ++ suffix umaal) (scalarBase umaal)))
 def challengeCode : Prog isa := .seq hashChallenge (.seq (reduce 120)
   (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
 /-- Signing after `secret`, which leaves the seed's SHA-512 digest at `frame 184`. -/
-def bodyFrom (secret : Prog isa) : Prog isa :=
-  .seq (.seq secret (.block saveSecret)) (.seq nonceCode (.seq challengeCode (.block wipe)))
+def bodyFrom (umaal : Bool) (secret : Prog isa) : Prog isa :=
+  .seq (.seq secret (.block saveSecret)) (.seq (nonceCode umaal) (.seq challengeCode (.block wipe)))
 
 /-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`), copied to
 `frame 184` (`PublicKey.copyExpanded`). -/
-def codeExpanded : Prog isa := wrap 6 (bodyFrom PublicKey.copyExpanded)
+def codeExpanded (umaal : Bool) : Prog isa := wrap 6 (bodyFrom umaal PublicKey.copyExpanded)
 
 end VG.Impl.Ed25519.Arm.SignCached

@@ -13,13 +13,15 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem equalOps_eval (e : Env) :
     evalOps pointEqualOps e 8 = e 0 * e 6 ∧ evalOps pointEqualOps e 9 = e 4 * e 2 ∧
     evalOps pointEqualOps e 10 = e 1 * e 6 ∧ evalOps pointEqualOps e 11 = e 5 * e 2 :=
   ⟨rfl, rfl, rfl, rfl⟩
 
 theorem pointEqual_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa Impl.Ed25519.Arm.pointEqual s fun t => Keep base s t ∧ AllLim t.mem base ∧
+    WP isa (Impl.Ed25519.Arm.pointEqual umaal) s fun t => Keep base s t ∧ AllLim t.mem base ∧
       t.gpr .r9 = BitVec.ofNat 32 (Spec.Ed25519.pointEqual (point (env s.mem base) 0 1 2 3)
         (point (env s.mem base) 4 5 6 7)).toNat := by
   refine WP.seq (WP.mono (fieldCode_ok pointEqualOps hc hl) fun a ⟨ka, la, va⟩ => ?_)

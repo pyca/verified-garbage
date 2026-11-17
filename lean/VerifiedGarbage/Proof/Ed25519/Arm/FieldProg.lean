@@ -13,6 +13,7 @@ public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Ed25519.Arm.MulU
 
 /-! ### `Ed25519.Arm.MulFnFn`, which only this module used -/
 
@@ -22,6 +23,7 @@ section
 # `vg_gf25519_r16_mul` on ARMv7: the function
 
 Untrusted: everything here is checked by Lean. `mulFn_ok`: `mulBody_ok`
+(with `umaal`, `mulBodyU_ok`: `mulBodyFn_ok`, `Proof/Ed25519/Arm/MulU.lean`)
 between saving the callee-saved registers the body changes (`r4`–`r11`) at
 `SAVE` and restoring them (`Spill`): the function changes no register but
 `r1`–`r3` and no memory but the result's and its own working space (`ACC`
@@ -34,6 +36,8 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 open VG.Spec.X25519 (P)
+
+variable {umaal : Bool}
 
 theorem SAVE_eq : SAVE = 1600 := rfl
 
@@ -53,7 +57,7 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
     (hy : y + 64 ≤ ACC) {s : State} (hc : CtxN e b s) (h1 : s.gpr .r1 = BitVec.ofNat 32 o)
     (h2 : s.gpr .r2 = BitVec.ofNat 32 x) (h3 : s.gpr .r3 = BitVec.ofNat 32 y)
     (hlx : Lim s.mem (State.addr b) x) (hly : Lim s.mem (State.addr b) y) :
-    WP isa mulFn s fun t =>
+    WP isa (mulFn umaal) s fun t =>
       Rest mulFnClob s t ∧
       Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] s.mem t.mem ∧
       Lim t.mem (State.addr b) o ∧
@@ -87,7 +91,7 @@ theorem mulFn_ok {e : Nat} {b : BitVec 32} {o x y : Nat} (ho : o + 64 ≤ ACC) (
   have hly₁ : Lim s₁.mem (State.addr b) y := fun k hk => by rw [hm₁, hlimb y hy k hk]; exact hly k hk
   have hV : ∀ z : Nat, z + 64 ≤ ACC → V s₁.mem (State.addr b) z = V s.mem (State.addr b) z :=
     fun z hz => by rw [hm₁]; exact val16_congr (hlimb z hz)
-  refine WP.seq (WP.mono (mulBody_ok ho hx hy hc₁ (by rw [hg₁, h1]) (by rw [hg₁, h2])
+  refine WP.seq (WP.mono (mulBodyFn_ok ho hx hy hc₁ (by rw [hg₁, h1]) (by rw [hg₁, h2])
     (by rw [hg₁, h3]) hlx₁ hly₁) fun t ⟨hrt, hf, hlt, hvt⟩ => ?_)
   rw [hm₁] at hf
   have hct : CtxN e b t := hc₁.of_rest hrt (by decide)
@@ -129,6 +133,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 abbrev Env := Slot → Spec.X25519.Fe
 
@@ -253,13 +259,13 @@ theorem movw_offset (o : Slot) : ((BitVec.ofNat 16 (offset o)).setWidth 32) = Bi
 
 /-- **A call of `vg_gf25519_r16_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) (o a c : Slot) :
-    WP isa (mulCall (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+    WP isa (mulCall umaal (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
       env t.mem b = Function.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
   have ho := slot_range o
   have ha := slot_range a
   have hc' := slot_range c
   have hA := ACC_eq
-  unfold mulCall
+  unfold mulCall mulArgs
   rw [WP.seq_iff]
   refine wp_movw fun s1 u1 => wp_movw fun s2 u2 => wp_movw fun s3 u3 => WP.block_nil ?_
   have hr3 : Rest [.r1, .r2, .r3] s s3 :=
@@ -272,7 +278,7 @@ theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
   have e2 : s3.gpr .r2 = BitVec.ofNat 32 (offset a) := by
     rw [u3.other _ (by decide), u2.gpr, movw_offset]
   have e3 : s3.gpr .r3 = BitVec.ofNat 32 (offset c) := by rw [u3.gpr, movw_offset]
-  have hv : ∀ t, (mulK b o a c).pre t → ∃ tr t', Exec isa mulFn t tr t' ∧ abiPreserved t t' ∧
+  have hv : ∀ t, (mulK b o a c).pre t → ∃ tr t', Exec isa (mulFn umaal) t tr t' ∧ abiPreserved t t' ∧
       (mulK b o a c).post t t' := fun t ⟨_, _, ht, hlt, t1, t2, t3⟩ => by
     obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := mulFn_ok (by omega_arith) (by omega_arith) (by omega_arith) ht t1 t2 t3
       (hlt a) (hlt c)
@@ -288,7 +294,7 @@ theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
       by rw [State.withRegions_mem, State.callEntry_mem]; exact hl3,
       by rw [g _ (by decide)]; exact e1, by rw [g _ (by decide)]; exact e2,
       by rw [g _ (by decide)]; exact e3⟩
-    (Covers.right hcov) hcov ?_ (by decide +kernel)
+    (Covers.right hcov) hcov ?_ (mulFn_noCalls umaal)
   intro t hrd hwr hsp _ _ _ ⟨hR, hF, hL, hV⟩
   simp only [State.withRegions_mem, State.callEntry_mem] at hF hL hV
   rw [hm3] at hF hV
@@ -300,7 +306,7 @@ theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
 
 theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
     (op : FieldOp) :
-    WP isa op.code s fun t => Keep b s t ∧ AllLim t.mem b ∧
+    WP isa (op.code umaal) s fun t => Keep b s t ∧ AllLim t.mem b ∧
       env t.mem b = evalOp op (env s.mem b) := by
   cases op with
   | copy o a =>
@@ -310,7 +316,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     refine WP.mono (constField_op hc o v) fun t ⟨hr, hf, ho, hv⟩ => ?_
     exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
   | mul o a c =>
-    refine WP.mono (mul_ok (by decide) (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
+    refine WP.mono (mulIn_ok (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
       fun t ⟨hr, hf, ho, hv⟩ => ?_
     exact field_finish o hl (hr.mono (by decide)) (frame_acc16 hf) ho (VG.Proof.X25519.toFe_mul hv)
   | mulc o a c => exact mulCall_ok hc hl o a c
@@ -333,7 +339,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
 
 theorem fieldCode_ok (ops : List FieldOp) {s : State} {b : BitVec 32} (hc : Ctx b s)
     (hl : AllLim s.mem b) :
-    WP isa (fieldCode ops) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+    WP isa (fieldCode umaal ops) s fun t => Keep b s t ∧ AllLim t.mem b ∧
       env t.mem b = evalOps ops (env s.mem b) := by
   induction ops generalizing s with
   | nil => exact WP.block_nil ⟨Keep.refl _ _, hl, rfl⟩
@@ -351,7 +357,7 @@ abbrev FA0 (b : BitVec 32) : Region := Proof.X25519.Arm.FA ACC b
 memory but `FA0`: an operation calls nothing. -/
 theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
     (op : FieldOp) (hi : op.inline = true) :
-    WP isa op.code s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧ AllLim t.mem b ∧
+    WP isa (op.code umaal) s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧ AllLim t.mem b ∧
       env t.mem b = evalOp op (env s.mem b) := by
   have hs (o : Slot) := slot_range o
   cases op with
@@ -364,7 +370,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
     obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
     exact ⟨k, hr.mono (by decide), frame_FA (by decide) (hs o) (frame_o hf), l, e⟩
   | mul o a c =>
-    refine WP.mono (mul_ok (by decide) (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
+    refine WP.mono (mulIn_ok (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
       fun t ⟨hr, hf, ho, hv⟩ => ?_
     obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_acc16 hf) ho (VG.Proof.X25519.toFe_mul hv)
     exact ⟨k, hr, frame_FA (by decide) (hs o) hf, l, e⟩
@@ -392,7 +398,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
 memory but `FA0`. -/
 theorem fieldCodeFree_ok (ops : List FieldOp) (hi : ops.all FieldOp.inline = true) {s : State}
     {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b) :
-    WP isa (fieldCode ops) s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧
+    WP isa (fieldCode umaal ops) s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧
       AllLim t.mem b ∧ env t.mem b = evalOps ops (env s.mem b) := by
   induction ops generalizing s with
   | nil => exact WP.block_nil ⟨Keep.refl _ _, Rest.refl _ _, Frame.refl _ _, hl, rfl⟩

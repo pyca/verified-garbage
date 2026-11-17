@@ -37,6 +37,8 @@ namespace VG.Proof.Ed25519.Arm.KeyPair
 
 open VG VG.Arm VG.Arm.FrameStack VG.Impl.Ed25519.Arm VG.Impl.Ed25519.Arm.KeyPair
 
+variable {umaal : Bool}
+
 /-- The contract. -/
 abbrev spec : Contract isa :=
   Spec.Ed25519.keyPairContract (Arm.abi.withConsts combConsts) 600
@@ -399,7 +401,7 @@ abbrev pkK : Contract isa := Proof.Ed25519.Arm.PublicKey.pkSpecE
 abbrev pkRd (s : State) : List Region := [EXP s, TB s]
 abbrev pkWr (s : State) : List Region := [OUT s, SCR s]
 
-theorem pk_stack : armStack PublicKey.codeExpanded ≤ 280 := by decide +kernel
+theorem pk_stack : armStack (PublicKey.codeExpanded umaal) ≤ 280 := by cases umaal <;> decide +kernel
 
 theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx0 : t.gpr .r0 = s.gpr .r0)
     (hx1 : t.gpr .r1 = s.gpr .r1) (hx2 : t.gpr .r2 = s.gpr .r3)
@@ -442,12 +444,12 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (hx0 : t.gp
     (hx1 : t.gpr .r1 = s.gpr .r1) (hx2 : t.gpr .r2 = s.gpr .r3)
     (hE : Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r1)) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32)) :
-    WP isa (.call pn PublicKey.codeExpanded) t fun t' => Ctx s t' ∧
+    WP isa (.call pn (PublicKey.codeExpanded umaal)) t fun t' => Ctx s t' ∧
       Spec.Ed25519.bytesAt t'.mem (State.addr (s.gpr .r1)) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32) ∧
       Spec.Ed25519.bytesAt t'.mem (State.addr (s.gpr .r0)) 32 =
         Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32) := by
-  have hd := pk_stack
+  have hd := pk_stack (umaal := umaal)
   refine WP.of_syms (WP.callF Proof.Ed25519.Arm.PublicKey.publicKeyExpanded_verified.1
     (pk_pre h hc hx0 hx1 hx2 hE) (pk_cov h hc).1 (pk_cov h hc).2
     (by rw [hc.sp_toNat h]; have := h.sp; omega_using [hd, this])
@@ -471,7 +473,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (hx0 : t.gp
 
 /-- The body, from the pushes. -/
 theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
-    WP isa (.seq (.block digestArgs) (.seq (.call dn dgCode) (.seq (.block pkArgs) (.call pn PublicKey.codeExpanded))))
+    WP isa (.seq (.block digestArgs) (.seq (.call dn dgCode) (.seq (.block pkArgs) (.call pn (PublicKey.codeExpanded umaal)))))
       (entered s) fun t => Ctx s t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r1)) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32) ∧
@@ -490,7 +492,7 @@ theorem sub16_add12 (x : BitVec 32) : x - BitVec.ofNat 32 16 + BitVec.ofNat 32 1
   rw [show (16 : Nat) = 4 + 12 from rfl, ← sub_sub', BitVec.sub_add_cancel]
 
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
-    WP isa (keyPair dn dgCode pn PublicKey.codeExpanded) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
+    WP isa (keyPair dn dgCode pn (PublicKey.codeExpanded umaal)) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hsp := h.sp
   refine WP.frame (rs := [.lr]) (r := .lr) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [hsp])
@@ -568,7 +570,7 @@ abbrev Entered (a b : State) : Prop :=
 
 theorem body_ct {dn pn : String} :
     RelCT isa Entered (.seq (.block digestArgs) (.seq (.call dn dgCode) (.seq (.block pkArgs)
-      (.call pn PublicKey.codeExpanded)))) fun _ _ => True := by
+      (.call pn (PublicKey.codeExpanded umaal))))) fun _ _ => True := by
   have b₁ : RelCT isa Entered (.block digestArgs) (Rel Φ₁) := by
     intro a b ta tb a' b' hp e₁ e₂
     obtain ⟨ht, -⟩ := digestArgs_sp _ _ _ _ _ _ (by
@@ -593,7 +595,7 @@ theorem body_ct {dn pn : String} :
   have b₃ : RelCT isa (Rel Φ₂) (.block pkArgs) (Rel Φ₃) :=
     rel_wp (pkArgs_sp.mono (fun _ _ hr => rel_sp hr) fun _ _ _ => trivial) fun _ _ h hc hE =>
       WP.mono (pkArgs_ok h hc) fun _ ⟨hc', hm, a, b, d⟩ => ⟨hc', by rw [Φ₂, hm]; exact hE, a, b, d⟩
-  have b₄ : RelCT isa (Rel Φ₃) (.call pn PublicKey.codeExpanded) fun _ _ => True := by
+  have b₄ : RelCT isa (Rel Φ₃) (.call pn (PublicKey.codeExpanded umaal)) fun _ _ => True := by
     refine Whole.callEx Proof.Ed25519.Arm.PublicKey.publicKeyExpanded_verified.1
       Proof.Ed25519.Arm.PublicKey.publicKeyExpanded_verified.2.1 fun a b hr => ?_
     obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩⟩ := hr
@@ -607,7 +609,7 @@ theorem body_ct {dn pn : String} :
   exact b₁.seq (b₂.seq (b₃.seq b₄))
 
 theorem keyPair_ct {dn pn : String} :
-    ConstantTime isa spec.pre spec.pub (keyPair dn dgCode pn PublicKey.codeExpanded) := by
+    ConstantTime isa spec.pre spec.pub (keyPair dn dgCode pn (PublicKey.codeExpanded umaal)) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => (pub_of h.2.2).sp) ?_)
   refine RelCT.frame (fun a b ⟨s₁, s₂, hp, pa, pb⟩ => ?_) ?_
   · rw [Argon2.Arm.push_eq (by decide) pa, Argon2.Arm.push_eq (by decide) pb, pushed_sp, pushed_sp,
@@ -652,7 +654,7 @@ theorem sat_pre : Pre satState := by
     Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩
 
 theorem verified {dn pn : String} :
-    Verified Arm.target (keyPair dn dgCode pn PublicKey.codeExpanded) spec :=
+    Verified Arm.target (keyPair dn dgCode pn (PublicKey.codeExpanded umaal)) spec :=
   ⟨fun _ h => keyPair_ok h, keyPair_ct, ⟨_, spec_of sat_pre⟩⟩
 
 end VG.Proof.Ed25519.Arm.KeyPair

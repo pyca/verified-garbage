@@ -286,11 +286,13 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem pointDecode_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (hp : s.gpr .r12 = ptr) (hfit : ptr.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa pointDecode s fun t => DecodeKeep base s t ∧ AllLim t.mem base ∧
+    WP isa (pointDecode umaal) s fun t => DecodeKeep base s t ∧ AllLim t.mem base ∧
       DecodeResult base (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) t := by
   have hlen : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).length = 32 := by
     simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range]

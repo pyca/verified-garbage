@@ -342,6 +342,8 @@ end
 section
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole VG.Impl.Ed25519.Arm.SignCached
+
+variable {umaal : Bool}
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem reduce_call_ct (hL : L.Ok) (d : Nat) (hd : d + 32 ≤ 184) :
@@ -370,7 +372,7 @@ def BaseReady (L : Lay) (t : State) : Prop :=
 
 theorem base_call_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (BaseReady L))
-      (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase)
+      (.call ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal) (Impl.Ed25519.Arm.scalarBase umaal))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct scalarBase_ok scalarBase_ct base_noFrames
   · intro g m t hc hs
@@ -454,6 +456,8 @@ end
 
 namespace VG.Proof.Ed25519.Arm.SignCached
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole VG.Impl.Ed25519.Arm.SignCached
+
+variable {umaal : Bool}
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
@@ -474,7 +478,8 @@ theorem base_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw�
     (hw₂ : Tbl L m₂) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
         a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase)
+      (callWith baseArgs ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal)
+        (Impl.Ed25519.Arm.scalarBase umaal))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
   (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (setup_ct hL ha hb
     [(.r0, .caller 0 0), (.r1, .frame 88), (.r2, .caller 5 0)] []
@@ -498,7 +503,7 @@ theorem bodyFrom_ct {first : Prog isa}
     (hw₂ : Tbl L m₂) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
         a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (bodyFrom first) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+      (bodyFrom umaal first) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
   (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (hfirst.seq (saveSecret_ct hL))).seq
     (((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (hashNonce_ct hL ha hb)).seq
       ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (reduce_ct hL ha hb 88 (by decide))).seq

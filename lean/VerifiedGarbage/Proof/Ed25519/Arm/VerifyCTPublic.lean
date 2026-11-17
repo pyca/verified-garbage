@@ -324,9 +324,11 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyCombine_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hd : env s.mem b 16 = Spec.Ed25519.d) :
-    WP isa verifyCombine s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (verifyCombine umaal) s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 = tablePoint s.mem b 8032 ∧
       point (env t.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd (tablePoint s.mem b 7904)
         (point (env s.mem b) 0 1 2 3) := by
@@ -359,6 +361,8 @@ section
 one is set. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 /-- A word of the working space. -/
 abbrev lw (m : Mem) (b : BitVec 32) (d : Nat) : BitVec 32 := m.readW (State.addr b + BitVec.ofNat 64 d) 32
@@ -487,7 +491,7 @@ theorem keep_lw {b : BitVec 32} {s t : State} (h : Keep b s t) {d : Nat} (hd : d
 
 theorem bitStep_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {j i : Nat} {s : State}
     (h : BitAt K b ptr a j i s) (hj : j < 32) (hi : i < 8) :
-    WP isa bitStep s fun t => PointKeep b s t ∧ BitAt K b ptr a j (i + 1) t := by
+    WP isa (bitStep umaal) s fun t => PointKeep b s t ∧ BitAt K b ptr a j (i + 1) t := by
   refine WP.seq (WP.mono (doubleCall_ok h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
   obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, pointDouble_high _ _ (by decide)]; exact h.d
   obtain uq : point (env u.mem b) 4 5 6 7 = a := by rw [ue, pointDouble_q]; exact h.q
@@ -505,7 +509,7 @@ theorem bitStep_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {j i :
   obtain eb : K / 2 ^ (255 - (8 * (31 - j) + i)) % 2 = K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 := by
     rw [show 255 - (8 * (31 - j) + i) = 8 * j + (7 - i) by omega_using [hj, hi]]
     exact byte_bit K j (by omega_using [hi])
-  have mid : WP isa (.ite .ne Point16.addCall (.block [])) w fun x => Keep b w x ∧ AllLim x.mem b ∧
+  have mid : WP isa (.ite .ne (Point16.addCall umaal) (.block [])) w fun x => Keep b w x ∧ AllLim x.mem b ∧
       env x.mem b 16 = Spec.Ed25519.d ∧ point (env x.mem b) 4 5 6 7 = a ∧
       point (env x.mem b) 0 1 2 3 = ladder a K (8 * (31 - j) + i + 1) := by
     apply WP.ite (!decide (K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 0)) (by
@@ -616,7 +620,7 @@ theorem bitsLoad_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {m : 
 theorem byteStep_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {m : Nat} {s : State}
     (h : ByteAt K b ptr a (m + 1) s) (hm : m < 32) (hi : VerifyInput b ptr 32 s)
     (hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K) :
-    WP isa byteStep s fun t => PointKeep b s t ∧ ByteAt K b ptr a m t ∧ t.z = decide (m = 0) := by
+    WP isa (byteStep umaal) s fun t => PointKeep b s t ∧ ByteAt K b ptr a m t ∧ t.z = decide (m = 0) := by
   refine WP.seq (WP.mono (bitsLoad_ok h hm hi hK) fun u ⟨uk, ub⟩ => ?_)
   refine repeatThen_wp (I := fun i t => PointKeep b s t ∧ BitAt K b ptr a m i t) 8 0 u ⟨uk, ub⟩
     (fun i' s' _ h2 hs' => WP.mono (bitStep_ok hs'.2 hm (by omega_using [h2])) fun t ⟨tk, tb⟩ =>
@@ -666,7 +670,7 @@ theorem publicMulInit_ok {s : State} {b ptr : BitVec 32} (hc : Ctx b s) (hl : Al
 
 theorem publicMul_ok {s : State} {b ptr : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = ptr) (hi : VerifyInput b ptr 32 s) :
-    WP isa publicMul s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
+    WP isa (publicMul umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       point (env t.mem b) 0 1 2 3 = ladder (point (env s.mem b) 0 1 2 3)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) 256 := by
   rw [publicMul]
@@ -695,9 +699,11 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyRhs_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
-    WP isa verifyRhs s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (verifyRhs umaal) s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
       t.gpr .r9 = BitVec.ofNat 32 (Spec.Ed25519.pointEqual (tablePoint s.mem b 8032)
         (Spec.Ed25519.pointAdd (tablePoint s.mem b 7904)
           (ladder (tablePoint s.mem b 7776)
@@ -736,9 +742,11 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyLhs_ok {b pk sig challenge T : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s) :
-    WP isa verifyLhs s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (verifyLhs umaal) s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
       Proof.Ed25519.Rep (tablePoint t.mem b 8032)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32) • Proof.Ed25519.baseAff) ∧
       tablePoint t.mem b 7776 = tablePoint s.mem b 7776 ∧
@@ -774,6 +782,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def equationResult (m : Mem) (sig challenge : BitVec 32) (a r : Spec.Ed25519.Point) : Bool :=
   Spec.Ed25519.pointEqual
     (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32)) Spec.Ed25519.basePoint)
@@ -784,7 +794,7 @@ theorem verifyEquationPoints_ok {b pk sig challenge T : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s)
     (hA : ∃ A, Proof.Ed25519.Rep (tablePoint s.mem b 7776) A)
     (hR : ∃ R, Proof.Ed25519.Rep (tablePoint s.mem b 7904) R) :
-    WP isa verifyEquationPoints s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
+    WP isa (verifyEquationPoints umaal) s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
       t.gpr .r9 = BitVec.ofNat 32 (equationResult s.mem sig challenge
         (tablePoint s.mem b 7776) (tablePoint s.mem b 7904)).toNat := by
   refine WP.seq (WP.mono (verifyLhs_ok hc hl ht) fun u ⟨uk, ul, up, ua, ur⟩ => ?_)
@@ -833,6 +843,8 @@ section
 /-! Both public points use the strict decoder. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 def decodedEquation (m : Mem) (pk sig challenge : BitVec 32) : Bool :=
   match Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr pk) 32) with
@@ -1076,7 +1088,7 @@ table. -/
 theorem decodeBody_ok {s₀ : State} {b pk sig challenge : BitVec 32}
     (hc : VerifyContext b pk sig challenge s₀) {k : Nat} (hk : k < 2) {s : State}
     (hs : DecAt s₀ b pk sig k s) :
-    WP isa decodeBody s fun t => DecAt s₀ b pk sig (k + 1) t ∧ t.z = decide (k = 1) := by
+    WP isa (decodeBody umaal) s fun t => DecAt s₀ b pk sig (k + 1) t ∧ t.z = decide (k = 1) := by
   obtain cs := (hc.keep hs.keep).ctx
   refine WP.seq (ldrLow_ok cs (d := DPTR) (by decide) .r12 fun u hu => WP.block_nil ?_)
   obtain ku : VerifyKeep b s₀ u := hs.keep.trans (VerifyKeep.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide) hu.mem)
@@ -1117,7 +1129,7 @@ theorem decodeBody_ok {s₀ : State} {b pk sig challenge : BitVec 32}
 /-- `A` and `R` decoded, by the loop. -/
 theorem decodeBoth_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
-    WP isa decodeBoth s (DecAt s b pk sig 2) := by
+    WP isa (decodeBoth umaal) s (DecAt s b pk sig 2) := by
   refine WP.seq (WP.mono (decodeStart_ok hc hl) fun a ha => ?_)
   refine WP.loop (M := isa) (Inv := fun m t => ∃ k, k + m = 2 ∧ k < 2 ∧ DecAt s b pk sig k t) ?_ 2 a
     ⟨0, rfl, by decide, ha⟩
@@ -1130,7 +1142,7 @@ theorem decodeBoth_ok {b pk sig challenge : BitVec 32} {s : State}
 /-- Both decoded, and the equation if both are points. -/
 theorem verifyDecode_ok {b pk sig challenge T : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) (ht : VerifyTbl b T s) :
-    WP isa verifyDecode s fun t => VerifyKeep b s t ∧
+    WP isa (verifyDecode umaal) s fun t => VerifyKeep b s t ∧
       t.gpr .r9 = BitVec.ofNat 32 (decodedEquation s.mem pk sig challenge).toNat := by
   refine WP.seq (WP.mono_syms (decodeBoth_ok hc hl) fun a ha sya => ?_)
   obtain ca := (hc.keep ha.keep).ctx
@@ -1229,6 +1241,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Ed25519.bytesAt m p n).length = n := by
   simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range]
 
@@ -1248,7 +1262,7 @@ theorem verifyEquation_bytes (m : Mem) (pk sig challenge : BitVec 32) (hs : sig.
 
 theorem verifyBody_ok {b pk sig challenge T : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (ht : VerifyTbl b T s) :
-    WP isa verifyBody s fun t => VerifyKeep b s t ∧ t.gpr .r9 = BitVec.ofNat 32
+    WP isa (verifyBody umaal) s fun t => VerifyKeep b s t ∧ t.gpr .r9 = BitVec.ofNat 32
       (Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32)
         (Spec.Ed25519.bytesAt s.mem (State.addr sig) 64) (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64)).toNat := by
   refine WP.seq (WP.mono_syms (verifyScalar_ok hc) fun u ⟨uk, uz⟩ syu => ?_)
@@ -1501,8 +1515,10 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem verifyEquation_correct {s : State} (h : VerifyPre s) :
-    WP isa verifyEquation s fun t => abiPreserved s t ∧ verifyLocal.post s t := by
+    WP isa (verifyEquation umaal) s fun t => abiPreserved s t ∧ verifyLocal.post s t := by
   refine WP.seq (WP.mono_syms (verifySetup_ok h) fun u ⟨uc, us, ul, uk, uf⟩ syu => ?_)
   obtain ut : VerifyTbl (s.gpr .r3) (s.syms combSym) u :=
     ⟨h.tbl.of_frame (by rw [uk.rd, uk.wr]) uf fun r hr => by rw [List.mem_singleton.mp hr]; exact h.tbl_ws,
