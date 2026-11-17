@@ -72,9 +72,10 @@ theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hd : f.code.x86_64Depth ≤ f.stack) (hst : f.stack + 8 < 2 ^ 64) (h8 : f.stack % 8 = 0)
     (hlv : f.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : f.retBits ≤ 32 ∨ f.retBits = 64) (hpost : PostOut f.contract f.retBits)
-    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide) :
+    (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide)
+    (hic : tablesCall f.code [] = true := by lit_decide) :
     NoResidue (f.scrub v ks hd hst h8 hlv hrb hpost hres hne).code f.contract f.retBits :=
-  scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne
+  scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne hic
 
 /-- HMAC's `finalize`'s postcondition reads the memory on return only within
 `out`, the HMAC's bytes. -/
@@ -132,12 +133,13 @@ theorem scrubAllCode_ok {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
     Verified target (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (scrubAllCode v (sig.retBits A.ptrBits) stack c) (sig.contract A pre post wa stack leak)
-        (sig.retBits A.ptrBits) :=
+      (UpperLock.inames c = [] → NoResidue (scrubAllCode v (sig.retBits A.ptrBits) stack c)
+        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :=
   have he := evexReg_of_ne (c := c) (ks := allKs (chunks stack)) (stack := stack) hne
-  Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
+  have h := Verified.scrub hA h (SpSafe.of_all hsp) hd (chunks_sum stack) hst (chunks_valid h8)
     (fun i hi => by simpa using Code.all_instrs hlv i hi) hrb hpost (resOk_all _ _ h8) (tailOk_of _ _ _)
     (xs_of _ _) he.1 he.2 (gs_of _ _)
+  ⟨h.1, fun hic => h.2 fun _ _ _ n hn => by rw [hic] at hn; cases hn⟩
 
 theorem scrubAllCode_spSafe (v : VecLevel) (rb stack : Nat) {c : Prog isa}
     (h : c.all (fun i => !isa.writesSp i) = true) :
@@ -166,6 +168,13 @@ def initCodeS (lv : VecLevel) (H : Impl.Pbkdf2.Md.X86_64.Hash) (I : Spec.Hmac.In
     (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (24 + anyFrame H)
       (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame H) .r8 (anyWords H) H.hmacInitAny))
 
+/-- The two branches of `initCode` call nothing indirectly, as `scrub`'s
+residue needs (`Scrub.Exec.unknowns_agree`). -/
+def initIcallFree (H : Impl.Pbkdf2.Md.X86_64.Hash) : Bool :=
+  (UpperLock.inames (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)).isEmpty &&
+    (UpperLock.inames (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame H) .r8 (anyWords H)
+      H.hmacInitAny)).isEmpty
+
 /-- `initCodeS` is verified, and returns without secret residue, if `scrub`'s
 side conditions hold of its two branches. -/
 theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I.S.stateBytes < 2 ^ 64)
@@ -181,16 +190,17 @@ theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I
       v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
     (hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64) :
     Verified target (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.H)) ∧
-      NoResidue (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.H))
-        ((Spec.Hmac.initSig v.I.S).retBits 64) := by
+      (initIcallFree v.H = true → NoResidue (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.H))
+        ((Spec.Hmac.initSig v.I.S).retBits 64)) := by
   have s := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (pre := Spec.Hmac.initPre v.I.S abi.ptrBits) (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
     (leak := none) hne v.hmacShortF v.hmacShortFSp hd₁ (by omega_using [hst, hn]) h8₁ hl₁ hrb (hmacInitOut v.I v.reprLocal hS _)
   have l := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
     (leak := none) hne v.hmacAnyF v.hmacAnyFSp hd₂ hst h8₂ hl₂ hrb (hmacInitAnyOut v.I v.reprLocal hS _)
-  exact ⟨initEntry_verified s.1 l.1 (by omega_using []) hn v.hBlock v.hmacInitF.2.2,
-    initEntry_noResidue s.2 l.2 (by omega_using []) hn v.hBlock⟩
+  refine ⟨initEntry_verified s.1 l.1 (by omega_using []) hn v.hBlock v.hmacInitF.2.2, fun hic => ?_⟩
+  simp only [initIcallFree, Bool.and_eq_true, List.isEmpty_iff] at hic
+  exact initEntry_noResidue (s.2 hic.1) (l.2 hic.2) (by omega_using []) hn v.hBlock
 
 theorem initCodeS_spSafe (v : MdHash) (lv : VecLevel) :
     (initCodeS lv v.H v.I).all (fun i => !isa.writesSp i) = true := by
@@ -247,7 +257,9 @@ def MdHash.initScrubbed (v : MdHash) (lv : VecLevel) (extra : List String) (hne 
   stack := 24 + anyFrame v.H
   verified := (initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).1
   spSafe := initCodeS_spSafe v lv
-  residue := some ⟨(initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2⟩
+  -- Without residue for branches that call nothing indirectly; the emitter refuses any other.
+  residue := if hic : initIcallFree v.H = true then
+    some ⟨(initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2 hic⟩ else none
 
 /-- HMAC's `init` over the variant `v`, chosen only with the features `extra`
 too: `MdHash.initScrubbed` at the lowest level that covers its code
