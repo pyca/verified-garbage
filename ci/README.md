@@ -18,6 +18,7 @@ CI runs each of these, and fails if it does:
 | `check_lean_imports.py` | The import discipline between `TCB/`, `Spec/`, `Impl/` and `Proof/` |
 | `check_lean_modules.py` | Every file under `lean/VerifiedGarbage/` is a Lean module |
 | `check_lean_single_importer.py` | No new proof module has only one importer without saying why |
+| `lean_unique_decls.lean` | Every module of the build can be imported with every other (as `lake check` does) |
 | `check_lean_speed.py` | The rules of "Keeping proofs fast" that need no build (allowances in `lean_speed_allowed.py`) |
 | `check_mcdt.py` | Intel's MCDT instructions run only inside the MXCSR prologue and epilogue |
 | `check_registrations.py` | Registration and variant files only bind |

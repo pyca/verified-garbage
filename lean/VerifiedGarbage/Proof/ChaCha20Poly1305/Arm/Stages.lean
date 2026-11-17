@@ -156,7 +156,7 @@ def pubToArm (s₁ s₂ : Arm.State) : Prop :=
 
 open VG.Arm in
 /-- `open_to`'s result: `decrypt` of the source, with the tag at `[sp + 16]`. -/
-def openToRes (s : Arm.State) : Option (List Byte) :=
+def openToResArm (s : Arm.State) : Option (List Byte) :=
   decrypt (bytesAt s.mem (State.addr (s.gpr .r0)) 32) (bytesAt s.mem (State.addr (s.gpr .r1)) 12)
     (bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
     (bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
@@ -165,7 +165,7 @@ def openToRes (s : Arm.State) : Option (List Byte) :=
 /-- What `open_to` may leak (`Spec.ChaCha20Poly1305.openToLeak`): whether the
 message is authenticated. -/
 def openToLeakArm (s : Arm.State) : List Nat :=
-  [if (openToRes s).isSome then 1 else 0]
+  [if (openToResArm s).isSome then 1 else 0]
 
 open VG.Arm in
 /-- `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag, work) -> u32`:
@@ -174,7 +174,7 @@ it is (`openToLeakArm`). -/
 def openToArm : Contract Arm.isa where
   pre := preToArm
   post s s' :=
-    match openToRes s with
+    match openToResArm s with
     | some pt => s'.gpr .r0 = 1 ∧ bytesAt s'.mem (State.addr (stackArg s 2)) (stackArg s 1).toNat = pt
     | none => s'.gpr .r0 = 0 ∧
         bytesAt s'.mem (State.addr (stackArg s 2)) (stackArg s 1).toNat = List.replicate (stackArg s 1).toNat 0

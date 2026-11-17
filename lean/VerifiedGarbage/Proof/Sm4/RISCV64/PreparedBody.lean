@@ -25,7 +25,7 @@ namespace VG.Proof.Sm4.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Impl.Sm4.RISCV64
 open VG.Impl.Aes.RISCV64 (sb t0 t1 movR stS)
-open VG.Proof.Sm4 (WordRel specDirA)
+open VG.Proof.Sm4 (WordRel specDirRISCV64)
 
 /-! ## The encoding -/
 
@@ -38,9 +38,9 @@ theorem entryW_eq (m : Mem) (B : Addr) (e j : Nat) :
 /-- The rounds with the round keys in the order of `d` are its cipher. -/
 theorem quads_spec (d : Dir) (sch : Spec.Sm4.Schedule) (blk : Spec.Sm4.Block) :
     Proof.Sm4.outBlock (Proof.Sm4.quads .enc (dirKeys d sch) 8 (Proof.Sm4.ofBlock blk)) =
-      Proof.Sm4.blockFn sch (specDirA d) blk := by
+      Proof.Sm4.blockFn sch (specDirRISCV64 d) blk := by
   cases d
-  · simp only [Proof.Sm4.blockFn, specDirA, Spec.Sm4.encryptBlock, Proof.Sm4.crypt_eq]; rfl
-  · simp only [Proof.Sm4.blockFn, specDirA, Spec.Sm4.decryptBlock, Proof.Sm4.crypt_eq]; rfl
+  · simp only [Proof.Sm4.blockFn, specDirRISCV64, Spec.Sm4.encryptBlock, Proof.Sm4.crypt_eq]; rfl
+  · simp only [Proof.Sm4.blockFn, specDirRISCV64, Spec.Sm4.decryptBlock, Proof.Sm4.crypt_eq]; rfl
 
 end VG.Proof.Sm4.RISCV64

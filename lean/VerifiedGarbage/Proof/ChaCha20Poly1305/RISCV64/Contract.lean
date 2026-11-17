@@ -101,7 +101,7 @@ is aligned. -/
 
 open VG.RISCV64 in
 /-- The two arguments on the stack. -/
-abbrev toArgs (s : RISCV64.State) : Region := ⟨stackArgAddr s 0, 16⟩
+abbrev toArgsRISCV64 (s : RISCV64.State) : Region := ⟨stackArgAddr s 0, 16⟩
 
 open VG.RISCV64 in
 /-- `open_to`'s precondition: the regions, apart but for those read, the
@@ -114,11 +114,11 @@ def openToPreRISCV64 (s : RISCV64.State) : Prop :=
   let dst : Region := ⟨s.gpr .a6, (s.gpr .a7).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
   let work : Region := ⟨stackArg s 1, 624⟩
-  s.rd = [key, nonce, aad, src, tag, toArgs s] ∧ s.wr = [dst, work] ∧
+  s.rd = [key, nonce, aad, src, tag, toArgsRISCV64 s] ∧ s.wr = [dst, work] ∧
   dst.Disjoint key ∧ dst.Disjoint nonce ∧ dst.Disjoint aad ∧ dst.Disjoint src ∧ dst.Disjoint tag ∧
-  dst.Disjoint work ∧ dst.Disjoint (toArgs s) ∧
+  dst.Disjoint work ∧ dst.Disjoint (toArgsRISCV64 s) ∧
   work.Disjoint key ∧ work.Disjoint nonce ∧ work.Disjoint aad ∧ work.Disjoint src ∧ work.Disjoint tag ∧
-  work.Disjoint (toArgs s) ∧
+  work.Disjoint (toArgsRISCV64 s) ∧
   (s.gpr .a0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 12 ≤ 2 ^ 64 ∧
   (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧ (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧
   (s.gpr .a6).toNat + (s.gpr .a7).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧
@@ -127,7 +127,7 @@ def openToPreRISCV64 (s : RISCV64.State) : Prop :=
 
 open VG.RISCV64 in
 /-- `open_to`'s result: `decrypt` of the source, with the tag at `[sp]`. -/
-def openToRes (s : RISCV64.State) : Option (List Byte) :=
+def openToResRISCV64 (s : RISCV64.State) : Option (List Byte) :=
   decrypt (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 12)
     (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
     (bytesAt s.mem (stackArg s 0) 16)
@@ -136,14 +136,14 @@ open VG.RISCV64 in
 /-- What `open_to` may leak (`Spec.ChaCha20Poly1305.openToLeak`): whether the
 tag is right. -/
 def openToLeakRISCV64 (s : RISCV64.State) : List Nat :=
-  [if (openToRes s).isSome then 1 else 0]
+  [if (openToResRISCV64 s).isSome then 1 else 0]
 
 open VG.RISCV64 in
 /-- `open_to`: the plaintext or zeros at `dst`. -/
 def openToRISCV64 : Contract RISCV64.isa where
   pre := openToPreRISCV64
   post s s' :=
-    match openToRes s with
+    match openToResRISCV64 s with
     | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (s.gpr .a6) (s.gpr .a5).toNat = pt
     | none => s'.gpr .a0 = 0 ∧
         bytesAt s'.mem (s.gpr .a6) (s.gpr .a5).toNat = List.replicate (s.gpr .a5).toNat 0

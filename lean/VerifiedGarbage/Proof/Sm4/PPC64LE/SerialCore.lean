@@ -62,7 +62,7 @@ namespace VG.Proof.Sm4.PPC64LE
 open VG VG.PPC64LE VG.Impl.Sm4.PPC64LE
 open VG.Impl.Modes.PPC64LE (sb)
 open VG.Proof.Modes.PPC64LE (ScrIn coreRegion blkRegion blkAddr slotA Layout CoreSpec kept)
-open VG.Proof.Sm4 (specDirA)
+open VG.Proof.Sm4 (specDirPPC64LE)
 open VG.Spec.Aes (bytesAt)
 
 /-- The schedule at `r3`, outside the regions `rs`. -/
@@ -76,7 +76,7 @@ def dirCipher : Dir → Spec.Sm4.Schedule → Spec.Cbc.Cipher
   | .decrypt => Spec.Sm4.invCipher
 
 theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
-    dirCipher d k (bytesAt m p 16) = (Proof.Sm4.blockFn k (specDirA d) (Spec.Sm4.blockAt m p)).toList := by
+    dirCipher d k (bytesAt m p 16) = (Proof.Sm4.blockFn k (specDirPPC64LE d) (Spec.Sm4.blockAt m p)).toList := by
   cases d
   · rw [dirCipher, Spec.Sm4.cipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
   · rw [dirCipher, Spec.Sm4.invCipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
@@ -165,7 +165,7 @@ theorem slots_lt : slots < 2 ^ 15 := by rw [slots_eq]; decide
 
 theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toNat_ofNat, slots_eq]
 
-theorem directionOf_dirBit (d : Dir) : Proof.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirA d := by
+theorem directionOf_dirBit (d : Dir) : Proof.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirPPC64LE d := by
   cases d <;> rfl
 
 /-- What the modes keep, kept through a head that writes `r4`, `r6` and `r7`
@@ -188,7 +188,7 @@ theorem kept_of {s s₁ s₂ s₃ : State} (h₁ : ∀ r, r ≠ .r3 → r ≠ .r
 
 theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B (dirCore d).total) (hR : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
+    WP isa (dirCore d).prepare s fun s' => Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirPPC64LE d) ∧
       s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
@@ -254,9 +254,9 @@ theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : 
   simpa [Spec.Sm4.blocksAt, hj] using this
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (dirCore d).total) (hr : Proof.Sm4.Prepared.Holds layout s.mem B k (specDirA d)) :
+    (hs : ScrIn s B (dirCore d).total) (hr : Proof.Sm4.Prepared.Holds layout s.mem B k (specDirPPC64LE d)) :
     WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirA d) ∧
+      Proof.Sm4.Prepared.Holds layout s'.mem B k (specDirPPC64LE d) ∧
       Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
       (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
         dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
@@ -288,12 +288,12 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     · rw [State.withRegions_wr, c3, c4, Nat.mul_comm]
     · rw [c3, c4]; have := core_total d; omega_using [hfB, this]
     · rw [c4, size_eq]
-    · rw [c3, hm₀]; exact ⟨k, specDirA d, hr⟩
+    · rw [c3, hm₀]; exact ⟨k, specDirPPC64LE d, hr⟩
   · obtain ⟨hE, hK⟩ := hpost
     have hm : (s'.withRegions [] [⟨B, 8 * slots⟩]).mem = s'.mem := rfl
     rw [hm, hm₀, c3] at hE
     rw [hm, hm₀, c3, c4] at hK
-    have hE' := hE k (specDirA d) hr
+    have hE' := hE k (specDirPPC64LE d) hr
     have r5' : s'.gpr .r5 = B := by
       rw [hnw .r5 (by decide) fun i hi => (crypt_keeps i hi).1, r5₃]
     have r7' : s'.gpr .r7 = s.gpr .r3 := by
@@ -312,7 +312,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Spec.Sm4.Schedule
   cipher := dirCipher d
   KeyArgs := KeyArgs
-  Ready s B _ k := Proof.Sm4.Prepared.Holds layout s.mem B k (specDirA d)
+  Ready s B _ k := Proof.Sm4.Prepared.Holds layout s.mem B k (specDirPPC64LE d)
   cipher_len _ _ := by
     show _ = 16
     cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]

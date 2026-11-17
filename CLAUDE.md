@@ -374,6 +374,12 @@ namespace VG.Proof.Md5.X86_64
 * `lake build` turns off Mathlib's style and tactic-analysis linters (the
   lakefile's `weak.` options), 5–8% of the build: never turn them back on
   in a module.
+* No two modules declare the same name, unless as the same theorem (same
+  statement): no module may import both, and `lake check` imports every
+  module together (`ci/lean_unique_decls.lean`, which CI runs on the whole
+  build). A target's declaration in a namespace that every target shares
+  ends in the target's name (`openToResRISCV64`); one only its own file
+  uses is `private`.
 * An exposed definition may not refer to a private declaration of its file,
   and the auxiliary declarations of a theorem's proof are private to it:
   a lemma another file uses is a top-level theorem, not a `where` lemma.

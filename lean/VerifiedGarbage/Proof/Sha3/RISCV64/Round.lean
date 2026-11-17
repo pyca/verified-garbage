@@ -5,12 +5,14 @@ public import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.RISCV64
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.ComplLit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Straight
 meta import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Impl.Sha3.RISCV64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Sha3.ComplLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -215,14 +217,6 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   · have h0 : r ≠ .t6 := fun h => by subst h; simp [kept] at hr
     have h11 : r ≠ .t0 := fun h => by subst h; simp [kept] at hr
     rw [p₄.other r (by rw [(hk' r hr).2]; decide), p₂'.other r h11, p₂.other r h0, k₁ r hr]
-
-deriving instance Lean.ToExpr for Poly
-
-/- `specP` reads the tables of `sD` and `sB`, so that the kernel evaluates each of their
-values once, not once for each lane that uses it. -/
-materialize_table Compl.sD 5
-materialize_table Compl.sB 5 5
-materialize_table specP 25
 
 theorem check₀ : check .a0 .a1 = true := by lit_decide
 theorem check₁ : check .a1 .a0 = true := by lit_decide

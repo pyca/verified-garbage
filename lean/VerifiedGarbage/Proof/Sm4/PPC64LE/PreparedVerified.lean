@@ -51,7 +51,7 @@ gives (`Exec.det`).
 namespace VG.Proof.Sm4.PPC64LE
 
 open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.Sm4.PPC64LE
-open VG.Proof.Sm4 (specDirA)
+open VG.Proof.Sm4 (specDirPPC64LE)
 open VG.Proof.Sm4.Prepared (Holds Keeps)
 
 /-! ## Narrowing the working space -/
@@ -174,7 +174,7 @@ def cryptPPC64LE : Contract PPC64LE.isa where
       Keeps (s.gpr .r3) (s.gpr .r4).toNat layout.cryptScratch s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.sp = s₂.sp
 
-theorem specDirA_ofSpecDir (d : Spec.Sm4.Direction) : specDirA (ofSpecDir d) = d := by cases d <;> rfl
+theorem specDirA_ofSpecDir (d : Spec.Sm4.Direction) : specDirPPC64LE (ofSpecDir d) = d := by cases d <;> rfl
 
 theorem blocks_of (B : Addr) {m m' : Mem} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
     (h : ∀ j < 16, Spec.Sm4.blockAt m' (B + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =

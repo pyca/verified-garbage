@@ -2195,7 +2195,7 @@ structure ToEntered (s s₄ : State) : Prop where
 theorem toEntry_ok {s : State} (hs : openToPreRISCV64 s) : WP isa (.block toEntry) s (ToEntered s) := by
   obtain ⟨hrd, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hfa, hal, _, _⟩ := hs
   obtain hin : ∀ j, j < 2 → InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := fun j hj => by
-    refine ⟨toArgs s, by rw [hrd]; simp, ?_⟩
+    refine ⟨toArgsRISCV64 s, by rw [hrd]; simp, ?_⟩
     show (⟨s.sp + BitVec.ofNat 64 (8 * 0), 16⟩ : Region).Contains (s.sp + BitVec.ofNat 64 (8 * j)) 8
     exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by simp only [stackArgAddr] at hfa; omega_using [])
   obtain hal8 : ∀ j, (stackArgAddr s j).toNat % 8 = 0 := fun j =>
@@ -2248,8 +2248,8 @@ theorem abi_openTo {s s₄ s' : State} (h : ToEntered s s₄) (ha : abiPreserved
       (by revert r; decide)], by rw [ha.2.1, h.sp],
     by rw [ha.2.2, h.gpr _ (by decide) (by decide) (by decide) (by decide)]⟩
 
-theorem ok_openTo {s s₄ : State} (h : ToEntered s s₄) : okRISCV64 s₄ = (openToRes s).isSome := by
-  simp only [okRISCV64, openToRes, h.mem, h.a6, h.gpr .a0 (by decide) (by decide) (by decide) (by decide),
+theorem ok_openTo {s s₄ : State} (h : ToEntered s s₄) : okRISCV64 s₄ = (openToResRISCV64 s).isSome := by
+  simp only [okRISCV64, openToResRISCV64, h.mem, h.a6, h.gpr .a0 (by decide) (by decide) (by decide) (by decide),
     h.gpr .a1 (by decide) (by decide) (by decide) (by decide),
     h.gpr .a2 (by decide) (by decide) (by decide) (by decide),
     h.gpr .a3 (by decide) (by decide) (by decide) (by decide),
@@ -2261,8 +2261,8 @@ theorem openTo_ok (s : State) (hs : openToRISCV64.pre s) :
       openToRISCV64.post s s' :=
   WP.seq (WP.mono (toEntry_ok hs) fun s₄ h₄ => WP.mono (open_correct (apre_openTo hs h₄))
     fun s' ⟨ha, hpost⟩ => ⟨abi_openTo h₄ ha, by
-      obtain ed : Spec.ChaCha20Poly1305.decrypt (K s₄) (N s₄) (A s₄) (D s₄) (T0 s₄) = openToRes s := by
-        simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, openToRes, h₄.mem, h₄.a6,
+      obtain ed : Spec.ChaCha20Poly1305.decrypt (K s₄) (N s₄) (A s₄) (D s₄) (T0 s₄) = openToResRISCV64 s := by
+        simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, openToResRISCV64, h₄.mem, h₄.a6,
           h₄.gpr .a0 (by decide) (by decide) (by decide) (by decide),
           h₄.gpr .a1 (by decide) (by decide) (by decide) (by decide),
           h₄.gpr .a2 (by decide) (by decide) (by decide) (by decide),
@@ -2276,23 +2276,23 @@ theorem openTo_ok (s : State) (hs : openToRISCV64.pre s) :
       rw [ed] at hpost
       rw [openToRISCV64, Contract.post_mk]
       -- The decryption as a variable: the kernel would evaluate it to reduce a `match` on it.
-      obtain ⟨res, er⟩ : ∃ res, openToRes s = res := ⟨_, rfl⟩
+      obtain ⟨res, er⟩ : ∃ res, openToResRISCV64 s = res := ⟨_, rfl⟩
       rw [er] at hpost ⊢
       cases res <;> (simp only [CorePostOf, eo, eL] at hpost; exact hpost)⟩)
 
 theorem openTo_ct : ConstantTime isa openToRISCV64.pre openToRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.openTo := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩, qa, ql⟩ := hq
-  obtain qok : (openToRes σ₁).isSome = (openToRes σ₂).isSome := leak_bool ql
+  obtain qok : (openToResRISCV64 σ₁).isSome = (openToResRISCV64 σ₂).isSome := leak_bool ql
   let v : Reg → BitVec 64 := fun r =>
     if r = .t6 then σ₁.gpr .a6 else if r = .a6 then stackArg σ₁ 0 else if r = .a7 then stackArg σ₁ 1
     else σ₁.gpr r
   let I₀ : State → Prop := fun s => openToPreRISCV64 s ∧ (∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7],
     s.gpr r = σ₁.gpr r) ∧ s.sp = σ₁.sp ∧ (∀ i < 2, stackArg s i = stackArg σ₁ i) ∧
-    (openToRes s).isSome = (openToRes σ₁).isSome
+    (openToResRISCV64 s).isSome = (openToResRISCV64 σ₁).isSome
   obtain hc : RelCT isa (Both I₀) Impl.ChaCha20Poly1305.RISCV64.openTo fun _ _ => True := by
     unfold Impl.ChaCha20Poly1305.RISCV64.openTo
-    refine ct_seq (J := Core v σ₁.sp (openToRes σ₁).isSome) ?_ ?_ (open_rel v σ₁.sp _)
+    refine ct_seq (J := Core v σ₁.sp (openToResRISCV64 σ₁).isSome) ?_ ?_ (open_rel v σ₁.sp _)
     · obtain ⟨_, hc⟩ := toEntry_taint
       exact ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
     · intro s ⟨hpre, e, esp, ea, eok⟩
@@ -2347,15 +2347,15 @@ theorem openTo_verified :
         sig_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            Proof.ChaCha20Poly1305.openToResRISCV64, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgsRISCV64, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
             RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop] at h
         sig_split h
         sig_reduce [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            Proof.ChaCha20Poly1305.openToResRISCV64, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgsRISCV64, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
             RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_and_intros
         sig_close
@@ -2370,7 +2370,7 @@ theorem openTo_verified :
         refine (openToScratch_post _ _ _ s s').mpr ?_
         refine (Spec.ChaCha20Poly1305.openToPost.eq_1 ..).mpr ?_
         rw [Proof.ChaCha20Poly1305.openToRISCV64, Contract.post_mk] at h
-        simp only [Proof.ChaCha20Poly1305.openToRes] at h
+        simp only [Proof.ChaCha20Poly1305.openToResRISCV64] at h
         split at h
         next _ pt e₁ =>
           split
@@ -2386,15 +2386,15 @@ theorem openTo_verified :
         sig_implies_pub [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            Proof.ChaCha20Poly1305.openToResRISCV64, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgsRISCV64, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
             RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := by
         sig_implies_sat [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            Proof.ChaCha20Poly1305.openToResRISCV64, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgsRISCV64, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
             RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
           [Proof.ChaCha20Poly1305.RISCV64.openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
           using Proof.ChaCha20Poly1305.RISCV64.openToSat }

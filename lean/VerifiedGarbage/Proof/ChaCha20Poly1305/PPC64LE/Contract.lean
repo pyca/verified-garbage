@@ -107,7 +107,7 @@ Area), which it may only read. -/
 
 open VG.PPC64LE in
 /-- The two arguments on the stack. -/
-abbrev toArgs (s : PPC64LE.State) : Region := ⟨stackArgAddr s 0, 16⟩
+abbrev toArgsPPC64LE (s : PPC64LE.State) : Region := ⟨stackArgAddr s 0, 16⟩
 
 open VG.PPC64LE in
 /-- `open_to`'s precondition: the regions, apart but for those read, apart
@@ -123,11 +123,11 @@ def openToPrePPC64LE (s : PPC64LE.State) : Prop :=
   let work : Region := ⟨stackArg s 1, 656⟩
   let below : Region := ⟨s.sp - 160, 160⟩
   160 ≤ s.sp.toNat ∧
-  s.rd = [key, nonce, aad, src, tag, toArgs s] ∧ s.wr = [dst, work] ∧
+  s.rd = [key, nonce, aad, src, tag, toArgsPPC64LE s] ∧ s.wr = [dst, work] ∧
   dst.Disjoint key ∧ dst.Disjoint nonce ∧ dst.Disjoint aad ∧ dst.Disjoint src ∧ dst.Disjoint tag ∧
-  dst.Disjoint work ∧ dst.Disjoint (toArgs s) ∧
+  dst.Disjoint work ∧ dst.Disjoint (toArgsPPC64LE s) ∧
   work.Disjoint key ∧ work.Disjoint nonce ∧ work.Disjoint aad ∧ work.Disjoint src ∧ work.Disjoint tag ∧
-  work.Disjoint (toArgs s) ∧
+  work.Disjoint (toArgsPPC64LE s) ∧
   below.Disjoint key ∧ below.Disjoint nonce ∧ below.Disjoint aad ∧ below.Disjoint src ∧
   below.Disjoint dst ∧ below.Disjoint tag ∧ below.Disjoint work ∧
   (s.gpr .r3).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 12 ≤ 2 ^ 64 ∧
@@ -138,7 +138,7 @@ def openToPrePPC64LE (s : PPC64LE.State) : Prop :=
 
 open VG.PPC64LE in
 /-- `open_to`'s result: `decrypt` of the source, with the tag at `[sp + 96]`. -/
-def openToRes (s : PPC64LE.State) : Option (List Byte) :=
+def openToResPPC64LE (s : PPC64LE.State) : Option (List Byte) :=
   decrypt (bytesAt s.mem (s.gpr .r3) 32) (bytesAt s.mem (s.gpr .r4) 12)
     (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
     (bytesAt s.mem (stackArg s 0) 16)
@@ -147,14 +147,14 @@ open VG.PPC64LE in
 /-- What `open_to` may leak (`Spec.ChaCha20Poly1305.openToLeak`): whether the
 tag is right. -/
 def openToLeakPPC64LE (s : PPC64LE.State) : List Nat :=
-  [if (openToRes s).isSome then 1 else 0]
+  [if (openToResPPC64LE s).isSome then 1 else 0]
 
 open VG.PPC64LE in
 /-- `open_to`: the plaintext or zeros at `dst`. -/
 def openToPPC64LE : Contract PPC64LE.isa where
   pre := openToPrePPC64LE
   post s s' :=
-    match openToRes s with
+    match openToResPPC64LE s with
     | some pt => s'.gpr .r3 = 1 ∧ bytesAt s'.mem (s.gpr .r9) (s.gpr .r8).toNat = pt
     | none => s'.gpr .r3 = 0 ∧
         bytesAt s'.mem (s.gpr .r9) (s.gpr .r8).toNat = List.replicate (s.gpr .r8).toNat 0

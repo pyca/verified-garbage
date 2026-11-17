@@ -223,6 +223,6 @@ instance (L : List String) : LeFrame (taintSym L) where
 end RISCV64
 
 /-- Equality of RISC-V code, for summaries of code that is not a call. -/
-instance : VG.Taint.CodeEq RISCV64.isa := ⟨@VG.Taint.codeBeq RISCV64.Instr RISCV64.Cond _ _⟩
+instance instCodeEqRISCV64 : VG.Taint.CodeEq RISCV64.isa := ⟨@VG.Taint.codeBeq RISCV64.Instr RISCV64.Cond _ _⟩
 
 end VG

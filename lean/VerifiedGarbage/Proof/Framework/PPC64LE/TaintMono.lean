@@ -223,6 +223,6 @@ instance (L : List String) : LeFrame (taintSym L) where
 end PPC64LE
 
 /-- Equality of PPC64LE code, for summaries of code that is not a call. -/
-instance : VG.Taint.CodeEq PPC64LE.isa := ⟨@VG.Taint.codeBeq PPC64LE.Instr PPC64LE.Cond _ _⟩
+instance instCodeEqPPC64LE : VG.Taint.CodeEq PPC64LE.isa := ⟨@VG.Taint.codeBeq PPC64LE.Instr PPC64LE.Cond _ _⟩
 
 end VG

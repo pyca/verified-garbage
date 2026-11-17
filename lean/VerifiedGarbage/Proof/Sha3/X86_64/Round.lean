@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 public import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.X86_64
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.ComplLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Straight
 meta import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Impl.Sha3.X86_64
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Sha3.ComplLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -194,14 +196,6 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
     simp only [slotRegion, cfg, hb₂, hd] at f₁ f₃
     exact f₁.trans f₃
   · rw [p₃.other r (by rw [(hk' r hr).2]; decide), p₂.other r (fun h => by subst h; simp [kept] at hr), k₁ r hr]
-
-deriving instance Lean.ToExpr for Poly
-
-/- `specP` reads the tables of `sD` and `sB`, so that the kernel evaluates each of their
-values once, not once for each lane that uses it. -/
-materialize_table Compl.sD 5
-materialize_table Compl.sB 5 5
-materialize_table specP 25
 
 theorem check₀ : check .rdi .rsi = true := by lit_decide
 theorem check₁ : check .rsi .rdi = true := by lit_decide

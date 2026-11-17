@@ -145,14 +145,14 @@ def pubToX86 (s₁ s₂ : X86.State) : Prop := s₁.gpr .esp = s₂.gpr .esp ∧
 
 open VG.X86 in
 /-- `open_to`'s result: `decrypt` of the source, with the tag at `tag`. -/
-def openToRes (s : X86.State) : Option (List Byte) :=
+def openToResX86 (s : X86.State) : Option (List Byte) :=
   decrypt (bytesAt s.mem ((arg s 0).setWidth 64) 32) (bytesAt s.mem ((arg s 1).setWidth 64) 12)
     (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
     (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat) (bytesAt s.mem ((arg s 8).setWidth 64) 16)
 
 /-- What `open_to` may leak (`Spec.ChaCha20Poly1305.openToLeak`): whether the
 message is authenticated. -/
-def openToLeakX86 (s : X86.State) : List Nat := [if (openToRes s).isSome then 1 else 0]
+def openToLeakX86 (s : X86.State) : List Nat := [if (openToResX86 s).isSome then 1 else 0]
 
 open VG.X86 in
 /-- `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag, work) -> u32`:
@@ -161,7 +161,7 @@ it is (`openToLeakX86`). -/
 def openToX86 : Contract X86.isa where
   pre := preToX86
   post s s' :=
-    match openToRes s with
+    match openToResX86 s with
     | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 5).toNat = pt
     | none => s'.gpr .eax = 0 ∧
         bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 5).toNat = List.replicate (arg s 5).toNat 0

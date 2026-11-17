@@ -151,6 +151,11 @@ runs:
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
+    # `lake check` imports every module together, which no module does.
+    - name: Check that every module can be imported with every other
+      shell: bash
+      working-directory: lean
+      run: lake env lean --run ../ci/lean_unique_decls.lean .lake/build/lib/lean
     # Last, after the build is saved: it plants an axiom, an axiom behind a
     # private import, an `@[implemented_by]` and an `initialize` in the
     # self-test (editing two files and adding a module), checks that the

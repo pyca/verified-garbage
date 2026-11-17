@@ -44,7 +44,7 @@ return: 3248 bytes, for the 402 words of the scratch buffer.
 namespace VG.Proof.Sm4.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Sm4.PPC64LE
-open VG.Proof.Sm4 (specDirA ecbPPC64LE)
+open VG.Proof.Sm4 (specDirPPC64LE ecbPPC64LE)
 
 theorem ecbTaint_agree (dir : Dir) (s₁ s₂ : State) (_ : (ecbPPC64LE dir).pre s₁) (_ : (ecbPPC64LE dir).pre s₂)
     (hp : (ecbPPC64LE dir).pub s₁ s₂) : taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
@@ -104,10 +104,10 @@ def ecbSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 402⟩]
 
 theorem ecb_verified (dir : Dir) :
-    Verified target (ecb dir) (Proof.Sm4.ecbScratchContract abi (specDirA dir) slots) :=
+    Verified target (ecb dir) (Proof.Sm4.ecbScratchContract abi (specDirPPC64LE dir) slots) :=
   Verified.of_correct (ecb_correct dir) (ecb_ct dir) (by
     cases dir <;>
-    sig_implies [Proof.Sm4.ecbScratchContract, Proof.Sm4.ecbScratchSig, Spec.Sm4.ecbPost, ecbPPC64LE, specDirA,
+    sig_implies [Proof.Sm4.ecbScratchContract, Proof.Sm4.ecbScratchSig, Spec.Sm4.ecbPost, ecbPPC64LE, specDirPPC64LE,
       abi, argRegs, slots, savedSlot, tableEnd, tableSlot] [ecbSat] using ecbSat)
 
 /-- A state satisfying the ECB functions' precondition: the schedule at
@@ -129,9 +129,9 @@ theorem ecbFrameSat_pre (d : Spec.Sm4.Direction) :
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
     Verified target (Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (ecb dir))
-      (Spec.Sm4.ecbContract abi (specDirA dir) 3248) :=
+      (Spec.Sm4.ecbContract abi (specDirPPC64LE dir) 3248) :=
   Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 402) (post := Spec.Sm4.ecbPost (specDirA dir) abi.ptrBits) (wa := true) (stack := 0)
+    (n := 402) (post := Spec.Sm4.ecbPost (specDirPPC64LE dir) abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3248) (words := 402) (ecb_verified dir) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ecbPost_local _ _)
     (Proof.Sm4.ecbPostOut_local _ _) (ecbFrameSat_pre _)

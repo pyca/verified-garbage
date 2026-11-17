@@ -1350,14 +1350,14 @@ theorem openTo_verified :
         sig_implies_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToArm, Proof.ChaCha20Poly1305.openToLeakArm,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToArm,
+          Proof.ChaCha20Poly1305.openToResArm, Proof.ChaCha20Poly1305.preToArm,
           Proof.ChaCha20Poly1305.pubToArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
         sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
-        simp only [Proof.ChaCha20Poly1305.openToArm, Proof.ChaCha20Poly1305.openToRes, Arm.State.addr] at h
+        simp only [Proof.ChaCha20Poly1305.openToArm, Proof.ChaCha20Poly1305.openToResArm, Arm.State.addr] at h
         obtain e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
         split at h
         next _ pt e₁ =>
@@ -1374,13 +1374,13 @@ theorem openTo_verified :
         sig_implies_pub [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToArm, Proof.ChaCha20Poly1305.openToLeakArm,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToArm,
+          Proof.ChaCha20Poly1305.openToResArm, Proof.ChaCha20Poly1305.preToArm,
           Proof.ChaCha20Poly1305.pubToArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
         sig_implies_sat [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToArm, Proof.ChaCha20Poly1305.openToLeakArm,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToArm,
+          Proof.ChaCha20Poly1305.openToResArm, Proof.ChaCha20Poly1305.preToArm,
           Proof.ChaCha20Poly1305.pubToArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [Proof.ChaCha20Poly1305.Arm.openToSat, Proof.ChaCha20Poly1305.Arm.sealSat, Arm.stackArg,
             Arm.stackArgAddr, Mem.readW, Mem.read, Spec.ChaCha20Poly1305.pMax]

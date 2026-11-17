@@ -176,7 +176,7 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
   · exact .inr ⟨by simp [hm0], m - 1, by omega_using [hm1], by omega_using [hm0], by omega_using [hm], h2'⟩
 
 /-- The chain's slots: `z` at `Z2`, `x2` at `X2` and `t0`–`t3` at `A`–`D`. -/
-def cv (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=
+private def cv (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=
   if q = Z2 then z else if q = X2 then x2 else if q = A then t0 else if q = B then t1 else if q = C then t2
   else t3
 

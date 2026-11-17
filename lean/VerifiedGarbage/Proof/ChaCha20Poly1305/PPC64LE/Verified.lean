@@ -902,7 +902,7 @@ theorem toEntry_ok {s : State} (hs : openToPrePPC64LE s) : WP isa (.block toEntr
   obtain ⟨-, hrd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hfa,
     -, -⟩ := hs
   obtain hin : ∀ j, j < 2 → InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := fun j hj => by
-    refine ⟨toArgs s, List.mem_append_left _ (by rw [hrd]; simp), ?_⟩
+    refine ⟨toArgsPPC64LE s, List.mem_append_left _ (by rw [hrd]; simp), ?_⟩
     show (⟨stackArgAddr s 0, 16⟩ : Region).Contains (stackArgAddr s j) 8
     rw [stackArgAddr_eq, stackArgAddr_eq]
     exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [])
@@ -954,8 +954,8 @@ theorem abi_openTo {s s₄ s' : State} (h : ToEntered s s₄) (ha : abiPreserved
     rw [ha.1 r hr, h.gpr r (ne_of_pres hr) (ne_of_pres hr) (ne_of_pres hr) (ne_of_pres hr)],
     by rw [ha.2.1, h.sp], by rw [ha.2.2, h.lr]⟩
 
-theorem ok_openTo {s s₄ : State} (h : ToEntered s s₄) : okPPC64LE s₄ = (openToRes s).isSome := by
-  simp only [okPPC64LE, openToRes, h.mem, h.r9, h.gpr .r3 (by decide) (by decide) (by decide) (by decide),
+theorem ok_openTo {s s₄ : State} (h : ToEntered s s₄) : okPPC64LE s₄ = (openToResPPC64LE s).isSome := by
+  simp only [okPPC64LE, openToResPPC64LE, h.mem, h.r9, h.gpr .r3 (by decide) (by decide) (by decide) (by decide),
     h.gpr .r4 (by decide) (by decide) (by decide) (by decide),
     h.gpr .r5 (by decide) (by decide) (by decide) (by decide),
     h.gpr .r6 (by decide) (by decide) (by decide) (by decide),
@@ -967,8 +967,8 @@ theorem openTo_ok (s : State) (hs : openToPPC64LE.pre s) :
       openToPPC64LE.post s s' :=
   WP.seq (WP.mono (toEntry_ok hs) fun s₄ h₄ => WP.mono (open_correct (apre_openTo hs h₄))
     fun s' ⟨ha, hpost⟩ => ⟨abi_openTo h₄ ha, by
-      obtain ed : Spec.ChaCha20Poly1305.decrypt (K s₄) (N s₄) (A s₄) (D s₄) (T0 s₄) = openToRes s := by
-        simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, openToRes, h₄.mem, h₄.r9,
+      obtain ed : Spec.ChaCha20Poly1305.decrypt (K s₄) (N s₄) (A s₄) (D s₄) (T0 s₄) = openToResPPC64LE s := by
+        simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, openToResPPC64LE, h₄.mem, h₄.r9,
           h₄.gpr .r3 (by decide) (by decide) (by decide) (by decide),
           h₄.gpr .r4 (by decide) (by decide) (by decide) (by decide),
           h₄.gpr .r5 (by decide) (by decide) (by decide) (by decide),
@@ -986,16 +986,16 @@ theorem openTo_ok (s : State) (hs : openToPPC64LE.pre s) :
 theorem openTo_ct : ConstantTime isa openToPPC64LE.pre openToPPC64LE.pub Impl.ChaCha20Poly1305.PPC64LE.openTo := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩, qa, ql⟩ := hq
-  obtain qok : (openToRes σ₁).isSome = (openToRes σ₂).isSome := leak_bool ql
+  obtain qok : (openToResPPC64LE σ₁).isSome = (openToResPPC64LE σ₂).isSome := leak_bool ql
   let v : Reg → BitVec 64 := fun r =>
     if r = .r11 then σ₁.gpr .r9 else if r = .r9 then stackArg σ₁ 0 else if r = .r10 then stackArg σ₁ 1
     else σ₁.gpr r
   let I₀ : State → Prop := fun s => openToPrePPC64LE s ∧
     (∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10], s.gpr r = σ₁.gpr r) ∧ s.sp = σ₁.sp ∧
-    (∀ i < 2, stackArg s i = stackArg σ₁ i) ∧ (openToRes s).isSome = (openToRes σ₁).isSome
+    (∀ i < 2, stackArg s i = stackArg σ₁ i) ∧ (openToResPPC64LE s).isSome = (openToResPPC64LE σ₁).isSome
   obtain hc : RelCT isa (Both I₀) Impl.ChaCha20Poly1305.PPC64LE.openTo fun _ _ => True := by
     unfold Impl.ChaCha20Poly1305.PPC64LE.openTo
-    refine ct_seq (J := Core v σ₁.sp (openToRes σ₁).isSome) ?_ ?_ (open_rel v σ₁.sp _)
+    refine ct_seq (J := Core v σ₁.sp (openToResPPC64LE σ₁).isSome) ?_ ?_ (open_rel v σ₁.sp _)
     · obtain ⟨_, hc⟩ := toEntry_taint
       exact ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
     · intro s ⟨hpre, e, esp, ea, eok⟩
@@ -1044,15 +1044,15 @@ theorem openTo_verified :
         sig_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToPrePPC64LE,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.ChaCha20Poly1305.openToResPPC64LE, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
+            Proof.ChaCha20Poly1305.toArgsPPC64LE, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop] at h
         sig_split h
         sig_reduce [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToPrePPC64LE,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.ChaCha20Poly1305.openToResPPC64LE, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
+            Proof.ChaCha20Poly1305.toArgsPPC64LE, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
         sig_and_intros
         sig_close
@@ -1064,7 +1064,7 @@ theorem openTo_verified :
         sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPost, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg,
           PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
-        simp only [Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToRes] at h
+        simp only [Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToResPPC64LE] at h
         split at h
         next _ pt e₁ =>
           split
@@ -1080,15 +1080,15 @@ theorem openTo_verified :
         sig_implies_pub [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToPrePPC64LE,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.ChaCha20Poly1305.openToResPPC64LE, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
+            Proof.ChaCha20Poly1305.toArgsPPC64LE, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
       sat := by
         sig_implies_sat [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
             Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
             Proof.ChaCha20Poly1305.openToPPC64LE, Proof.ChaCha20Poly1305.openToPrePPC64LE,
-            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
-            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
+            Proof.ChaCha20Poly1305.openToResPPC64LE, Proof.ChaCha20Poly1305.openToLeakPPC64LE,
+            Proof.ChaCha20Poly1305.toArgsPPC64LE, Proof.ChaCha20Poly1305.pubPPC64LE, PPC64LE.abi, PPC64LE.argRegs,
             PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range, List.range.loop]
           [Proof.ChaCha20Poly1305.PPC64LE.openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
           using Proof.ChaCha20Poly1305.PPC64LE.openToSat }

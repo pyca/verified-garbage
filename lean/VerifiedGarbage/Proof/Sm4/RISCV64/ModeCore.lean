@@ -47,7 +47,7 @@ namespace VG.Proof.Sm4.RISCV64.Mode
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Straight VG.Impl.Sm4.RISCV64 VG.Proof.Sm4.RISCV64
 open VG.Impl.Aes.RISCV64 (sb movR t0 t1)
 open VG.Proof.Modes.RISCV64 (coreRegion blkRegion blkAddr slotA CoreSpec Layout ScrIn kept KeptBut)
-open VG.Proof.Sm4 (specDirA)
+open VG.Proof.Sm4 (specDirRISCV64)
 open VG.Spec.Aes (bytesAt)
 
 /-! ## Running ECB's code with its scratch buffer one region -/
@@ -197,7 +197,7 @@ def dirCipher : Dir → Spec.Sm4.Schedule → Spec.Cbc.Cipher
   | .decrypt => Spec.Sm4.invCipher
 
 theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
-    dirCipher d k (bytesAt m p 16) = (Proof.Sm4.blockFn k (specDirA d) (Spec.Sm4.blockAt m p)).toList := by
+    dirCipher d k (bytesAt m p 16) = (Proof.Sm4.blockFn k (specDirRISCV64 d) (Spec.Sm4.blockAt m p)).toList := by
   cases d
   · rw [dirCipher, Spec.Sm4.cipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
   · rw [dirCipher, Spec.Sm4.invCipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl

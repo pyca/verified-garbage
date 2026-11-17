@@ -1563,13 +1563,13 @@ theorem openTo_verified (v : XorImpl) :
         sig_implies_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToX86, Proof.ChaCha20Poly1305.openToLeakX86,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToX86,
+          Proof.ChaCha20Poly1305.openToResX86, Proof.ChaCha20Poly1305.preToX86,
           Proof.ChaCha20Poly1305.pubToX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       post := by
         intro s s' _ h
         sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-        simp only [Proof.ChaCha20Poly1305.openToX86, Proof.ChaCha20Poly1305.openToRes] at h
+        simp only [Proof.ChaCha20Poly1305.openToX86, Proof.ChaCha20Poly1305.openToResX86] at h
         split at h
         next _ pt e₁ =>
           split
@@ -1585,7 +1585,7 @@ theorem openTo_verified (v : XorImpl) :
         sig_implies_pub [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToX86, Proof.ChaCha20Poly1305.openToLeakX86,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToX86,
+          Proof.ChaCha20Poly1305.openToResX86, Proof.ChaCha20Poly1305.preToX86,
           Proof.ChaCha20Poly1305.pubToX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         obtain a0 : arg openToSat 0 = 0x1000 := by decide
@@ -1603,7 +1603,7 @@ theorem openTo_verified (v : XorImpl) :
         sig_implies_sat [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
           Proof.ChaCha20Poly1305.openToX86, Proof.ChaCha20Poly1305.openToLeakX86,
-          Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.preToX86,
+          Proof.ChaCha20Poly1305.openToResX86, Proof.ChaCha20Poly1305.preToX86,
           Proof.ChaCha20Poly1305.pubToX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using openToSat }
 

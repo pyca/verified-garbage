@@ -22,7 +22,7 @@ namespace VG.Proof.Sm4
 open VG VG.PPC64LE VG.Impl.Sm4.PPC64LE
 
 /-- The specification's direction. -/
-def specDirA : Dir → Spec.Sm4.Direction
+def specDirPPC64LE : Dir → Spec.Sm4.Direction
   | .encrypt => .encrypt
   | .decrypt => .decrypt
 
@@ -38,7 +38,7 @@ def ecbPPC64LE (dir : Dir) : Contract PPC64LE.isa where
       (s.gpr .r6).toNat + 8 * slots ≤ 2 ^ 64
   post s s' :=
     Spec.Sm4.blocksAt s'.mem (s.gpr .r4) (s.gpr .r5).toNat =
-      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .r3)) (specDirA dir)
+      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .r3)) (specDirPPC64LE dir)
         (Spec.Sm4.blocksAt s.mem (s.gpr .r4) (s.gpr .r5).toNat)
   pub s₁ s₂ :=
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
@@ -50,7 +50,7 @@ namespace VG.Proof.Sm4.PPC64LE
 
 open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.Sm4.PPC64LE
 open VG.Impl.Aes.PPC64LE (q sb t0 t1 movR ldS stS)
-open VG.Proof.Sm4 (DInv blocksAt_of_dinv ecb_eq blockFn specDirA ecbPPC64LE crypt_eq quads ofBlock outBlock)
+open VG.Proof.Sm4 (DInv blocksAt_of_dinv ecb_eq blockFn specDirPPC64LE ecbPPC64LE crypt_eq quads ofBlock outBlock)
 
 theorem dataLoop_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
     {s : State} (hi : GInv s₀ b D n E 0 s) :
@@ -94,10 +94,10 @@ theorem prologue_ok {sr : Reg} {s₀ : State} {b : Addr} (hb : s₀.gpr sr = b)
     exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])
 
 theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j : Nat) :
-    outF m D (dirKeys dir sch) j = blockFn sch (specDirA dir) (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
+    outF m D (dirKeys dir sch) j = blockFn sch (specDirPPC64LE dir) (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
   cases dir
-  · simp only [outF, blockFn, specDirA, Spec.Sm4.encryptBlock, crypt_eq]; rfl
-  · simp only [outF, blockFn, specDirA, Spec.Sm4.decryptBlock, crypt_eq]; rfl
+  · simp only [outF, blockFn, specDirPPC64LE, Spec.Sm4.encryptBlock, crypt_eq]; rfl
+  · simp only [outF, blockFn, specDirPPC64LE, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
 /-- `ecbWith sr k`, from the arguments' regions with the working space at
 `sr`, for code `k` that builds the table of `dir` from the prologue's state. -/
@@ -112,7 +112,7 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
       WP isa k s₁ (KeysPost s₁ (s₀.gpr sr) (s₀.gpr .r3) dir)) :
     WP isa (ecbWith sr k) s₀ fun s' => (∀ i < 18, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
       Spec.Sm4.blocksAt s'.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat =
-        Spec.Sm4.ecb (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .r3)) (specDirA dir)
+        Spec.Sm4.ecb (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .r3)) (specDirPPC64LE dir)
           (Spec.Sm4.blocksAt s₀.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat) := by
   let b := s₀.gpr sr
   let D := s₀.gpr .r4
@@ -199,7 +199,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
 theorem specDirA_dirOf (decrypt : BitVec 64) :
-    specDirA (dirOf decrypt) = Proof.Sm4.directionOf decrypt.toNat := by
+    specDirPPC64LE (dirOf decrypt) = Proof.Sm4.directionOf decrypt.toNat := by
   unfold dirOf Proof.Sm4.directionOf
   by_cases h : decrypt = 0
   · subst h; rfl

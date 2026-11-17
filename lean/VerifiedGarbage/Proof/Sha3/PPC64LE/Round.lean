@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.ComplLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 meta import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Impl.Sha3.PPC64LE
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Sha3.ComplLit
 
 /-!
 # Keccak-f[1600] on PPC64LE: a round, by evaluation
@@ -86,14 +88,6 @@ def post (e : Straight.Env Poly) : Bool :=
   e.slot 3 == some one
 
 def check : Bool := Straight.check anf cfg (fun _ => none) core env₀ post
-
-deriving instance Lean.ToExpr for Poly
-
-/- `specP` reads the tables of `sD` and `sB`, so that the kernel evaluates each of their
-values once, not once for each lane that uses it. -/
-materialize_table Compl.sD 5
-materialize_table Compl.sB 5 5
-materialize_table specP 25
 
 theorem check_eq : check = true := by lit_decide
 

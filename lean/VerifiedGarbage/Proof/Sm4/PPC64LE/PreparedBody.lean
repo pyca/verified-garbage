@@ -29,7 +29,7 @@ namespace VG.Proof.Sm4.PPC64LE
 
 open VG VG.PPC64LE VG.PPC64LE.StraightK VG.Impl.Sm4.PPC64LE
 open VG.Impl.Aes.PPC64LE (sb t0 movR stS)
-open VG.Proof.Sm4 (WordRel specDirA)
+open VG.Proof.Sm4 (WordRel specDirPPC64LE)
 
 /-- The masks' slots and the table's, as byte ranges. -/
 def layout : Prepared.Layout where
@@ -57,7 +57,7 @@ theorem wordRel_eq {Q : Nat → BitVec 64} {x : Spec.Sm4.Word} (h : WordRel Q fu
 theorem keyEntry_eq (k : Spec.Sm4.Schedule) (d : Dir) (e : Nat) : keyEntry k d e = dirKeys d k e := by
   cases d <;> rfl
 
-theorem ofSpecDir_specDirA (d : Dir) : ofSpecDir (specDirA d) = d := by cases d <;> rfl
+theorem ofSpecDir_specDirA (d : Dir) : ofSpecDir (specDirPPC64LE d) = d := by cases d <;> rfl
 
 /-- The masks and the table of round keys in the order of `d`: what ECB's
 rounds read. -/
@@ -211,10 +211,10 @@ theorem prepareBody_wp {s₀ : State} (hrd : s₀.rd = [⟨s₀.gpr .r3, 128⟩]
 /-- The rounds with the round keys in the order of `d` are its cipher. -/
 theorem quads_spec (d : Dir) (sch : Spec.Sm4.Schedule) (blk : Spec.Sm4.Block) :
     Proof.Sm4.outBlock (Proof.Sm4.quads .enc (dirKeys d sch) 8 (Proof.Sm4.ofBlock blk)) =
-      Proof.Sm4.blockFn sch (specDirA d) blk := by
+      Proof.Sm4.blockFn sch (specDirPPC64LE d) blk := by
   cases d
-  · simp only [Proof.Sm4.blockFn, specDirA, Spec.Sm4.encryptBlock, Proof.Sm4.crypt_eq]; rfl
-  · simp only [Proof.Sm4.blockFn, specDirA, Spec.Sm4.decryptBlock, Proof.Sm4.crypt_eq]; rfl
+  · simp only [Proof.Sm4.blockFn, specDirPPC64LE, Spec.Sm4.encryptBlock, Proof.Sm4.crypt_eq]; rfl
+  · simp only [Proof.Sm4.blockFn, specDirPPC64LE, Spec.Sm4.decryptBlock, Proof.Sm4.crypt_eq]; rfl
 
 /-- The registers' saves write their slots alone. -/
 theorem save_saved {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b) :
@@ -252,7 +252,7 @@ theorem cryptBody_wp {s₀ : State} (hwr : (⟨s₀.gpr .r3, 8 * slots⟩ : Regi
       Frame [⟨s₀.gpr .r3, 8 * tableSlot⟩, ⟨s₀.gpr .r3 + BitVec.ofNat 64 (8 * savedSlot), 144⟩] s₀.mem s'.mem ∧
       s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
       ∀ j < 16, Spec.Sm4.blockAt s'.mem (s₀.gpr .r3 + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
-        Proof.Sm4.blockFn k (specDirA d) (Spec.Sm4.blockAt s₀.mem (s₀.gpr .r3 + BitVec.ofNat 64 (8 * tailSlot + 16 * j))) := by
+        Proof.Sm4.blockFn k (specDirPPC64LE d) (Spec.Sm4.blockAt s₀.mem (s₀.gpr .r3 + BitVec.ofNat 64 (8 * tailSlot + 16 * j))) := by
   generalize hb : s₀.gpr .r3 = b at hwr fitB hr ⊢
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb .r3
   have b₁ : s₁.gpr sb = b := r₁.trans hb

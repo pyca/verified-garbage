@@ -45,7 +45,7 @@ is everything the code computes from them, which it keeps in registers
 namespace VG.Proof.Sm4.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4.RISCV64
-open VG.Proof.Sm4 (specDirA ecbRISCV64)
+open VG.Proof.Sm4 (specDirRISCV64 ecbRISCV64)
 
 theorem ecbTaint_agree (dir : Dir) (s₁ s₂ : State) (_ : (ecbRISCV64 dir).pre s₁) (_ : (ecbRISCV64 dir).pre s₂)
     (hp : (ecbRISCV64 dir).pub s₁ s₂) : taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3]) s₁ s₂ := by
@@ -97,10 +97,10 @@ def ecbSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 396⟩]
 
 theorem ecb_verified (dir : Dir) :
-    Verified target (ecb dir) (Proof.Sm4.ecbScratchContract abi (specDirA dir) slots) :=
+    Verified target (ecb dir) (Proof.Sm4.ecbScratchContract abi (specDirRISCV64 dir) slots) :=
   Verified.of_correct (ecb_correct dir) (ecb_ct dir) (by
     cases dir <;>
-    sig_implies [Proof.Sm4.ecbScratchContract, Proof.Sm4.ecbScratchSig, Spec.Sm4.ecbPost, ecbRISCV64, specDirA,
+    sig_implies [Proof.Sm4.ecbScratchContract, Proof.Sm4.ecbScratchSig, Spec.Sm4.ecbPost, ecbRISCV64, specDirRISCV64,
       abi, argRegs, slots, savedSlot, tableEnd, tableSlot] [ecbSat] using ecbSat)
 
 /-- A state satisfying the ECB functions' precondition: the schedule at
@@ -121,9 +121,9 @@ theorem ecbFrameSat_pre (d : Spec.Sm4.Direction) :
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
     Verified target (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (ecb dir))
-      (Spec.Sm4.ecbContract abi (specDirA dir) 3168) :=
+      (Spec.Sm4.ecbContract abi (specDirRISCV64 dir) 3168) :=
   RISCV64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Spec.Sm4.ecbPost (specDirA dir) abi.ptrBits) (wa := true) (stack := 0)
+    (n := 396) (post := Spec.Sm4.ecbPost (specDirRISCV64 dir) abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3168) (words := 396) (ecb_verified dir) (by decide) (by decide) (by decide)
     (Proof.Sm4.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
