@@ -23,6 +23,10 @@ def artifacts : List Artifact := [
     verified := Proof.X25519.Arm.Exchange.exchange_umaal },
   Spec.X25519.x25519BaseApi.artifact Arm.target {
     code := Impl.X25519.Arm.Base.x25519Base
-    verified := Proof.X25519.Arm.Base.x25519Base_verified }]
+    verified := Proof.X25519.Arm.Base.x25519Base_verified },
+  Spec.X25519.x25519BaseApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.X25519.Arm.Words.x25519BaseUmaal
+    verified := Proof.X25519.Arm.Exchange.BaseU.x25519BaseUmaal_verified }]
 
 end VG.Artifacts.X25519.Arm

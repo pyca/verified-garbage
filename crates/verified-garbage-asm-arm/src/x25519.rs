@@ -7926,6 +7926,52 @@ bx lr",
     )
 }
 
+/// The CPU features `vg_x25519_base_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_X25519_BASE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_x25519_base_umaal(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"add r3, r2, #4096
+str r4, [r3, #36]
+str lr, [r3, #32]
+mov r4, r3
+mov r12, #9
+str r12, [r3, #0]
+mov r12, #0
+str r12, [r3, #4]
+str r12, [r3, #8]
+str r12, [r3, #12]
+str r12, [r3, #16]
+str r12, [r3, #20]
+str r12, [r3, #24]
+str r12, [r3, #28]
+mov r12, r2
+mov r2, r3
+mov r3, r12
+bl {vg_x25519_umaal}
+ldr lr, [r4, #32]
+ldr r4, [r4, #36]
+bx lr",
+        vg_x25519_umaal = sym super::x25519::vg_x25519_umaal::vg_x25519_umaal,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_x25519.rs"]
 pub(crate) mod vg_x25519;

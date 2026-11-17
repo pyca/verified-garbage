@@ -7865,3 +7865,26 @@ vg_x25519_base:
 	ldr r10, [r0, #24]
 	ldr r11, [r0, #28]
 	bx lr
+
+vg_x25519_base_umaal:
+	add r3, r2, #4096
+	str r4, [r3, #36]
+	str lr, [r3, #32]
+	mov r4, r3
+	mov r12, #9
+	str r12, [r3, #0]
+	mov r12, #0
+	str r12, [r3, #4]
+	str r12, [r3, #8]
+	str r12, [r3, #12]
+	str r12, [r3, #16]
+	str r12, [r3, #20]
+	str r12, [r3, #24]
+	str r12, [r3, #28]
+	mov r12, r2
+	mov r2, r3
+	mov r3, r12
+	bl {vg_x25519_umaal}
+	ldr lr, [r4, #32]
+	ldr r4, [r4, #36]
+	bx lr
