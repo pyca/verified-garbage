@@ -1834,14 +1834,19 @@ theorem correct {s : State} (hp : (pbkR hF.hH.SH (F.itB + F.frB + F.X)).pre s) :
     VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega_using [hsp]) (by omega_using [hib])
   have p := pre_alloc hF hp
   unfold Fns.pbkdf2
-  refine WP.allocKept ⟨by have := hF.itW0; omega_using [hl, this], hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega_using [hsp])
-    (WP.allocKept ⟨by omega_using [hl], hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega_using [hsp])
-      (WP.mono (main_ok (hF := hF) p) fun s' ⟨hk, hra, hsp', hwr, hb⟩ => ?_))
-  rw [freed_eq hwr hsp']
-  rw [freed_eq (s₂ := { s' with sp := (allocd F.itB s).sp, wr := (allocd F.itB s).wr }) rfl rfl]
-  refine ⟨⟨fun r hr => hk r hr, rfl, hra⟩, ?_⟩
-  show _ = some (bytesAt s'.mem (out s) (ol s))
-  rw [show out s = out (allocd F.frB (allocd F.itB s)) from rfl, show ol s = ol (allocd F.frB (allocd F.itB s)) from rfl,
+  refine WP.alloc ⟨by have := hF.itW0; omega_using [hl, this], hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega_using [hsp])
+    (WP.alloc ⟨by omega_using [hl], hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega_using [hsp])
+      (WP.mono (main_ok (hF := hF) p) fun s' ⟨hk, hra, hsp', hwr, hb⟩ m₁ _ f₁ m₂ _ f₂ => ?_))
+  refine ⟨⟨fun r hr => hk r hr, ?_, hra⟩, ?_⟩
+  · show s'.sp + BitVec.ofNat 64 F.frB + BitVec.ofNat 64 F.itB = s.sp
+    rw [hsp']; simp only [allocd, BitVec.sub_add_cancel]
+  show _ = some (bytesAt m₂ (out s) (ol s))
+  -- The two `free`s lose the frames' bytes, which lie apart from the output.
+  have e : bytesAt m₂ (out s) (ol s) = bytesAt s'.mem (out s) (ol s) := List.map_congr_left fun i hi =>
+    (lost_byte f₂ (R := outR s) ((hp.2.2.2.2.2.2.2.2.1).symm.sub_right
+      (Offset.sub_below _ (by omega_using []) (by omega_using []))) (List.mem_range.mp hi)).trans
+    (lost_byte f₁ (R := outR s) p.f_o.symm (List.mem_range.mp hi))
+  rw [e, show out s = out (allocd F.frB (allocd F.itB s)) from rfl, show ol s = ol (allocd F.frB (allocd F.itB s)) from rfl,
     hb]
   refine Whole.pbkdf2_eq _ _ (by rw [hF.hH.hD]; exact p.olD) ?_
   rw [hF.hH.hD]
