@@ -167,20 +167,24 @@ theorem leakAdd_all :
         addRetContract ∧
       NoResidue (Impl.Scrub.X86_64.scrub .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
         addRetContract 64 :=
-  Scrub.Verified.scrub (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified (SpSafe.of_all (by decide))
+  have h := Scrub.Verified.scrub (A := X86_64.abi) (v := .sse) (xs := Impl.Scrub.X86_64.xregs) (ps := [])
+    (gs := [.rcx, .r11]) (ks := []) (cs := []) Scrub.ScrubAbi.plain leakAdd_verified (SpSafe.of_all (by decide))
     (by decide) rfl (by decide) (by simp) (by decide) (by decide)
     (fun s u u' hs hq _ hr => by
       revert hq; simp only [Sig.contract, X86_64.abi] at hr ⊢; rw [hr]; exact id)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains]))
     ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     (.inl Scrub.mem_xregs) (fun _ => Scrub.mem_xregs) (fun _ _ e => nomatch e) (by decide)
+  -- It calls nothing indirectly.
+  ⟨h.1, h.2 fun _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn⟩
 
 /-- `leakAdd`, then the clearing of `r11` alone. -/
 def leakAddScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] leakAdd
 
 theorem leakAddScrubbed_ok :
     Verified X86_64.target leakAddScrubbed addRetContract ∧ NoResidue leakAddScrubbed addRetContract 64 :=
-  Scrub.Verified.scrubPart (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified (Nat.le_refl _) (by simp)
+  have h := Scrub.Verified.scrubPart (Q := True) (v := .sse) (f := .sse) (rb := 64) (xs := []) (ps := [])
+    (gs := [.r11]) (xs' := Impl.Scrub.X86_64.xregs) (gs' := [.rcx, .r11]) (ks := []) (cs := []) (cs' := []) (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified (Nat.le_refl _) (by simp)
     (fun _ _ e => nomatch e) (Nat.le_refl _) (by simp) (fun _ _ e => nomatch e) (.inl rfl) ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     (Scrub.regsOk_of_leaves leakAdd_verified.2.1 (G := fun _ _ r => if r = .rcx then some 0 else none)
@@ -195,6 +199,12 @@ theorem leakAddScrubbed_ok :
         · rw [hx]; by_cases h : x = .xmm1 <;> simp [h]
         · rw [hy, hz]; rfl)
       (fun _ _ _ _ _ _ _ _ => ⟨rfl, rfl, rfl⟩))
-    leakAdd_all
+    (fun s u u' hs hq _ hr => by
+      have hr' : u'.gpr .rax = u.gpr .rax := by simpa only [BitVec.setWidth_eq] using hr
+      revert hq; simp only [Sig.contract, X86_64.abi, hr']; exact id)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains])) (by decide)
+    (fun _ _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn)
+    ⟨leakAdd_all.1, fun _ => leakAdd_all.2⟩
+  ⟨h.1, h.2 trivial⟩
 
 end VG.Proof.Selftest.X86_64
