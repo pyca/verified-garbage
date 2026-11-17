@@ -24,6 +24,5 @@ checked once here, rather than rebuilt in every check that evaluates it.
 namespace VG
 
 materialize_code Impl.EcKey.Arm.publicKeyBrainpoolP512r1
-materialize_code Impl.EcKey.Arm.publicKeyBrainpoolP512r1U
 
 end VG

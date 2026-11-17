@@ -24,12 +24,16 @@ structure TCombCfg where
  neg : Nat
  /-- Whether the point functions called are the `_umaal` variants. -/
  u : Bool := false
+ /-- Where the entry is selected to: the point functions' `Q`, for curves
+ whose coordinates fit them, else three slots of the inlined addition
+ (`Impl/Weierstrass/Arm/TCombI.lean`). -/
+ qBase : Nat := Impl.Weierstrass.Point.qAt L.M.n
 
 namespace TCombCfg
 variable (K : TCombCfg)
 def H : Nat := 2^(K.w-1)
 def P : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.pAt K.L.M.n)
-def Q : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.qAt K.L.M.n)
+def Q : Pt := ptAt K.L.M.n K.qBase
 def O : Pt := ptAt K.L.M.n (Impl.Weierstrass.Point.oAt K.L.M.n)
 /-- The same Horner decoding used by the other comb backends. -/
 def hornerAt : Nat → Nat → List Instr
