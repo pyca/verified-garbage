@@ -255,8 +255,8 @@ theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = so
     ∃ n, s₁.wr.head? = some ⟨s₁.sp, n⟩ ∧ Frame [⟨s₁.sp, n⟩] s₂.mem s'.mem := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
   all_goals split at h <;> cases h
-  · next hc => exact ⟨_, hc.2.2.2.2.2, hc.2.2.2.1 ▸ lose_frame _ _ _ _⟩
   · next hc => exact ⟨16, hc.2.2, hc.1 ▸ lose_frame _ _ _ _⟩
+  · next hc => exact ⟨_, hc.2.2.2.2.2, hc.2.2.2.1 ▸ lose_frame _ _ _ _⟩
 
 /-- Code changes memory only within the regions it may write and within
 `16 * aarch64Depth` bytes below the stack pointer (its frames). -/
