@@ -82,6 +82,13 @@ theorem ctrArgs_check : ∃ hc, (taint.check (sivT []) (.block ctrArgs) hc).isSo
 theorem decArgs_check : ∃ hc, (taint.check (sivT []) (.block (putYH ++ ctrArgs)) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
+theorem ctrTailZ_check : ∃ hc, (taint.check (sivT [])
+    (.seq (.seq (.block ctrBack) cryptRest) (.block zeroL)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem lensZ_check : ∃ hc, (taint.check (sivT []) (.seq (.block lens) (.block zeroL)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
 theorem ctrTail_check : ∃ hc, (taint.check (sivT []) (.seq (.block ctrBack) cryptRest) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
@@ -295,6 +302,13 @@ theorem cryptL_st {lp : Loops} (hlp : Stitch.LoopsOk lp) (L : Lay K W SP) (hR : 
     (h : St K W SP R N A D al n T t) : WP isa (cryptL lp) t (St K W SP R N A D al n T) :=
   WP.seq (WP.mono (lenCmp_st h) fun _ h₁ => cryptIte_st hlp L hR h₁)
 
+theorem zeroL_st (L : Lay K W SP) {t : State} (h : St K W SP R N A D al n T t) :
+    WP isa (.block zeroL) t (St K W SP R N A D al n T) := by
+  obtain ⟨u, run, mu, gu, -, rdu, wru⟩ := zeroL_run h.bufs.one.env
+  have fz : Frame (lR W) t.mem u.mem := mu ▸ zm_lR W t.mem
+  exact WP.of_runBlock ⟨u, run, h.frame (h.bufs.one.env.keep (fun r _ => by rw [gu]) rdu wru) fz (slots_lR L)
+    (frL fz) rdu wru⟩
+
 theorem decL_st (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (L : Lay K W SP) (hR : R = 10 ∨ R = 14)
     (h256 : 256 ≤ n) {t : State} (h : St K W SP R N A D al n T t) :
     WP isa (decL lp) t (St K W SP R N A D al n T) :=
@@ -302,7 +316,7 @@ theorem decL_st (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (L : Lay K
     fun _ h₂ => WP.seq (WP.mono (decFront_st F hlp L hR h256 h₂.1) fun _ h₃ => WP.seq (WP.mono (back_pr F h₃)
       fun _ h₄ => WP.seq (WP.mono
         (absorb_st true L (h₄.1.1.bufs.data.slice (a := 256 * (n / 256)) (k := n % 256) (by omega_arith)) h₄)
-        fun _ h₅ => lens_st h₅)))))
+        fun _ h₅ => WP.seq (WP.mono (lens_st h₅) fun _ h₆ => zeroL_st L h₆))))))
 
 theorem openIte_st (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (L : Lay K W SP) (hR : R = 10 ∨ R = 14)
     {t : State} (h : St K W SP R N A D al n T t ∧ t.cf = some (decide (n < 256))) :
@@ -435,7 +449,7 @@ theorem ctrFront_rel {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : LoopsCT lp) (
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨ctr_st hlp L hR h256 h.2.1, ctr_st hlp L hR h256 h.2.2⟩
   have r₃ := rel_taintC [] (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂)
-    hDW hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) ctrTail_check
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) ctrTailZ_check
   exact RelCT.seq r₁ (RelCT.seq r₂ r₃)
 
 theorem decFront_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : LoopsCT lp) (L : Lay K W SP)
@@ -517,7 +531,7 @@ theorem decL_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : Lo
         (by omega_arith)) h.2.1,
       absorb_st true L (h.2.2.1.1.bufs.data.slice (a := 256 * (n / 256)) (k := n % 256) (by omega_arith)) h.2.2⟩
   have r₆ := rel_taintC [] (P := fun t₁ t₂ => True ∧ PG F K W SP R N A D al n T t₁ ∧ PG F K W SP R N A D al n T t₂)
-      hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) lens_check
+      hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) lensZ_check
   exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ r₆))))
 
 theorem openIte_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : LoopsCT lp) (L : Lay K W SP)
