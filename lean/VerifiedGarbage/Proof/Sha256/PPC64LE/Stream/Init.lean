@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-!
 # Streaming SHA-256 on PPC64LE: `init`
@@ -125,5 +127,13 @@ theorem init224_verified :
     refine ⟨h.2, fun r hr => ?_⟩
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
+
+/-- `vg_sha256_init` returns without secret residue: it reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+/-- `vg_sha224_init` returns without secret residue: it reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init224_noResidue (k : Contract isa) (r : Nat) : NoResidue init224 k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Sha256.PPC64LE.Stream

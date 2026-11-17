@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.EntropyRequest
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-! # Native FFDH parameter-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -284,5 +286,10 @@ theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract ab
     exact (init_relCT p (s₁.gpr .r4).isLt ((s₁.gpr .r5).setWidth 32).isLt _ _ _ _ _ _ ⟨i₁, i₂⟩ e₁ e₂).1
   · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, StateWr, abi, argRegs] [initSat] using initSat
+
+/-- `vg_ffdh_parameter_generation_init` returns without secret residue: it
+reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Ffdh.PPC64LE.Generation

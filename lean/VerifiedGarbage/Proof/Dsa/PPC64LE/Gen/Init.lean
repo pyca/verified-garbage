@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-! # Starting the DSA parameter search on PPC64LE: correctness, constant time
 
@@ -179,5 +181,10 @@ theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi
       e₁ e₂).1
   · sig_implies [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig,
       initContract, initPre, initPost, initPub, InitWr, abi, argRegs] [initSat] using initSat
+
+/-- `vg_dsa_parameter_search_init` returns without secret residue: it
+reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Dsa.PPC64LE.Gen

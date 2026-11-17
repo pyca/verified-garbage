@@ -1147,7 +1147,6 @@ powerpc64le vg_ct_eq
 powerpc64le vg_dsa_derive_key
 powerpc64le vg_dsa_generate_key
 powerpc64le vg_dsa_parameter_search
-powerpc64le vg_dsa_parameter_search_init
 powerpc64le vg_dsa_sign_random_prevalidated
 powerpc64le vg_dsa_validate_private_key
 powerpc64le vg_dsa_validate_public_key
@@ -1220,8 +1219,6 @@ powerpc64le vg_ffdh_exchange
 powerpc64le vg_ffdh_generate_key_precompute
 powerpc64le vg_ffdh_generate_key_search_cached
 powerpc64le vg_ffdh_generate_parameters
-powerpc64le vg_ffdh_key_generation_init
-powerpc64le vg_ffdh_parameter_generation_init
 powerpc64le vg_hmac_md5_finalize
 powerpc64le vg_hmac_md5_init
 powerpc64le vg_hmac_sha1_finalize
@@ -1250,7 +1247,6 @@ powerpc64le vg_idea_invert_key
 powerpc64le vg_idea_ofb
 powerpc64le vg_idea_ofb_final
 powerpc64le vg_md5_finalize
-powerpc64le vg_md5_init
 powerpc64le vg_md5_update
 powerpc64le vg_mldsa44_keygen
 powerpc64le vg_mldsa44_pk_tr
@@ -1344,18 +1340,14 @@ powerpc64le vg_seed_ofb
 powerpc64le vg_seed_ofb_final
 powerpc64le vg_sha1_digest
 powerpc64le vg_sha1_finalize
-powerpc64le vg_sha1_init
 powerpc64le vg_sha1_update
 powerpc64le vg_sha224_digest
 powerpc64le vg_sha224_finalize
-powerpc64le vg_sha224_init
 powerpc64le vg_sha256_digest
 powerpc64le vg_sha256_finalize
-powerpc64le vg_sha256_init
 powerpc64le vg_sha256_update
 powerpc64le vg_sha384_digest
 powerpc64le vg_sha384_finalize
-powerpc64le vg_sha384_init
 powerpc64le vg_sha3_224_finalize
 powerpc64le vg_sha3_224_update
 powerpc64le vg_sha3_256_finalize
@@ -1366,13 +1358,10 @@ powerpc64le vg_sha3_512_finalize
 powerpc64le vg_sha3_512_update
 powerpc64le vg_sha512_224_digest
 powerpc64le vg_sha512_224_finalize
-powerpc64le vg_sha512_224_init
 powerpc64le vg_sha512_256_digest
 powerpc64le vg_sha512_256_finalize
-powerpc64le vg_sha512_256_init
 powerpc64le vg_sha512_digest
 powerpc64le vg_sha512_finalize
-powerpc64le vg_sha512_init
 powerpc64le vg_sha512_update
 powerpc64le vg_shake128_finalize
 powerpc64le vg_shake128_squeeze
@@ -1380,7 +1369,6 @@ powerpc64le vg_shake128_update
 powerpc64le vg_shake256_finalize
 powerpc64le vg_shake256_squeeze
 powerpc64le vg_sm3_finalize
-powerpc64le vg_sm3_init
 powerpc64le vg_sm3_update
 powerpc64le vg_sm4_cbc_decrypt_chained
 powerpc64le vg_sm4_cbc_encrypt_chained
@@ -1421,7 +1409,6 @@ powerpc64le vg_x25519_base
 powerpc64le vg_x25519_exchange
 powerpc64le vg_x448_base
 powerpc64le vg_x448_exchange
-powerpc64le vg_zeroize
 riscv64 vg_aes_cbc_decrypt
 riscv64 vg_aes_cbc_encrypt
 riscv64 vg_aes_ccm_open

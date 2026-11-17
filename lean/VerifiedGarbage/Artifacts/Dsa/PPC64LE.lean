@@ -42,7 +42,8 @@ def artifacts : List Artifact := [
     verified := Proof.Dsa.PPC64LE.prevalidated_verified },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
-    verified := Proof.Dsa.PPC64LE.Gen.init_verified }] ++
+    verified := Proof.Dsa.PPC64LE.Gen.init_verified
+    residue := some ⟨Proof.Dsa.PPC64LE.Gen.init_noResidue _ _⟩ }] ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
     Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
       suffix := v.suffix

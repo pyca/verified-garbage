@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha384
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
@@ -18,16 +19,20 @@ namespace VG.Artifacts.Sha512.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha512.init384Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_384
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_384 },
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_384
+    residue := some ⟨Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
   Spec.Sha512.init512Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512 },
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512
+    residue := some ⟨Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
   Spec.Sha512.init512_224Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_224 },
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_224
+    residue := some ⟨Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
   Spec.Sha512.init512_256Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256 },
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256
+    residue := some ⟨Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
   Spec.Sha512.updateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r7 Impl.Sha512.PPC64LE.Stream.update
     verified := Proof.Sha512.PPC64LE.Shared.update },

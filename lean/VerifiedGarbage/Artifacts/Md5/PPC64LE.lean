@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -13,7 +14,8 @@ namespace VG.Artifacts.Md5.PPC64LE
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Stream.init
-    verified := Proof.Md5.PPC64LE.Shared.init },
+    verified := Proof.Md5.PPC64LE.Shared.init
+    residue := some ⟨Proof.Md5.PPC64LE.Stream.init_noResidue _ _⟩ },
   Spec.Md5.updateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r7 Impl.Md5.PPC64LE.Stream.update
     verified := Proof.Md5.PPC64LE.Shared.update },

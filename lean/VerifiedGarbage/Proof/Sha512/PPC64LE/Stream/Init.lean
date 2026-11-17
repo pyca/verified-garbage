@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-!
 # Streaming SHA-512 on PPC64LE: `init`
@@ -134,5 +136,12 @@ theorem init_verified (iv : HashValue) :
     refine ⟨h.2, fun r hr => ?_⟩
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
+
+/-- The SHA-384 and SHA-512 initializations return without secret residue:
+they read no memory, so what they leave is a function of their arguments
+(`Residue.noResidue_of_blind`). Whether an instruction is blind does not
+depend on its immediates, so `rfl` decides it for every `iv`. -/
+theorem init_noResidue (iv : HashValue) (k : Contract isa) (r : Nat) : NoResidue (init iv) k r :=
+  Residue.noResidue_of_blind rfl k r
 
 end VG.Proof.Sha512.PPC64LE.Stream

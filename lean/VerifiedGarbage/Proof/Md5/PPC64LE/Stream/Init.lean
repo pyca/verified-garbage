@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Residue
 
 /-!
 # Streaming MD5 on PPC64LE: `init`
@@ -99,5 +101,9 @@ theorem init_verified : Verified PPC64LE.target init Proof.Md5.initPPC64LE := by
     refine ⟨h.2, fun r hr => ?_⟩
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1
+
+/-- `vg_md5_init` returns without secret residue: it reads no memory, so what it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Md5.PPC64LE.Stream
