@@ -108,13 +108,13 @@ theorem mulY_ok {H : Spec.Gcm.Block} {t : State} (g : GReg F H t) :
 
 /-- `hkey`: GHASH's registers for the key of the authentication key, and
 `Y = 0`. -/
-theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
+theorem hkey_ok7 {K W SP : Addr} {t : State} (E : Env K W SP t) :
     WP isa (.block hkey) t fun t' =>
       GReg F (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
-      ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r := by
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.xmm .xmm7 = hOf t.mem W := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 16 + 8 ≤ 488 by decide)
-  have r₂ := E.perm.wR (show 24 + 8 ≤ 488 by decide)
+  have r₁ := E.perm.wR (show 16 + 8 ≤ 744 by decide)
+  have r₂ := E.perm.wR (show 24 + 8 ≤ 744 by decide)
   simp only [hkey, List.append_assoc]
   rw [WP.block_append_iff]
   obtain ⟨t₁, run₁, x7, m₁, rd₁, wr₁, g₁⟩ : ∃ t₁ : State, runBlock isa
@@ -146,7 +146,10 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
     Option.some.injEq, exists_eq_left']
-  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  rotate_right
+  · show s₃.xmm .xmm7 = _
+    rw [o₃.xmm _ (by decide), o₂.xmm _ (by decide), x7]
   · show s₃.xmm .xmm1 = _
     rw [o₃.xmm _ (by decide), c₂]
   · show F.G _ (s₃.xmm .xmm3)
@@ -164,6 +167,12 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
     have hne : r ≠ .rax := by rintro rfl; exact absurd hr (by decide)
     show s₃.gpr r = _
     rw [o₃.gpr r hne, o₂.gpr r hne, g₁ r hr]
+
+theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
+    WP isa (.block hkey) t fun t' =>
+      GReg F (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r :=
+  WP.mono (hkey_ok7 (F := F) E) fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨a, b, c, d, e, f⟩
 
 /-! ## Whole blocks -/
 
@@ -511,7 +520,7 @@ theorem tail_ok {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State
       (APost F K W SP H [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
   have h15 := E.r15
   have hw := L.ww
-  obtain w₀ := E.perm.wW (show 128 + 16 ≤ 488 by decide)
+  obtain w₀ := E.perm.wW (show 128 + 16 ≤ 744 by decide)
   obtain ⟨t₁, run₁, hm₁, hdi₁, hg₁, hx₁, hrd₁, hwr₁⟩ : ∃ t₁ : State,
       runBlock isa (ptr .rdi .r15 bO ++ ([.xop (.bin .pxor .xmm7 .xmm7), .movdquStore (at_ .rdi 0) .xmm7] : List Instr)) t =
         some t₁ ∧
@@ -666,8 +675,8 @@ theorem lens_ok {K W SP : Addr} {H : Spec.Gcm.Block} {t : State} (E : Env K W SP
         Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n))) H ∧
       t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧ ∀ r ∈ [Reg.r13, .r15, .rsp], t'.gpr r = t.gpr r := by
   have h15 := E.r15
-  obtain r₁ := E.perm.wR (show 240 + 8 ≤ 488 by decide)
-  obtain r₂ := E.perm.wR (show 224 + 8 ≤ 488 by decide)
+  obtain r₁ := E.perm.wR (show 240 + 8 ≤ 744 by decide)
+  obtain r₂ := E.perm.wR (show 224 + 8 ≤ 744 by decide)
   obtain ⟨t₁, run₁, x7, x2, x1, x3, m₁, rd₁, wr₁, g₁⟩ : ∃ t₁ : State, runBlock isa
       [.mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax),
@@ -733,8 +742,8 @@ theorem polyval_ok (F : MulFacts) {K W SP : Addr} (L : Lay K W SP) {t : State} (
         u'.xmm = u.xmm ∧ u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
     intro u o P k Eu h₁ h₂ hP hk
     have h15 := Eu.r15
-    obtain r₁ := Eu.perm.wR (show o + 8 ≤ 488 by omega_arith)
-    obtain r₂ := Eu.perm.wR (show o + 8 + 8 ≤ 488 by omega_arith)
+    obtain r₁ := Eu.perm.wR (show o + 8 ≤ 744 by omega_arith)
+    obtain r₂ := Eu.perm.wR (show o + 8 + 8 ≤ 744 by omega_arith)
     refine ⟨_, by srun [h15, r₁, r₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, hP]
     · simp only [gpr_setReg, mem_setReg, ite_true, ite_false, reduceCtorEq, h15, hk]

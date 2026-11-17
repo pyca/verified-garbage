@@ -50,6 +50,10 @@ open VG.Proof.P521.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P521.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeP521
-    verified := Proof.Ecdh.Arm.P521.ecdh_verified hasLaw.law }]
+    verified := Proof.Ecdh.Arm.P521.ecdh_verified hasLaw.law },
+  Spec.Ecdh.P521.exchangeApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdh.Arm.exchangeP521U
+    verified := Proof.Ecdh.Arm.P521.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhP521.Arm

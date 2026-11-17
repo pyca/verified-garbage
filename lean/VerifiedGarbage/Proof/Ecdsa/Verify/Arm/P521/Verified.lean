@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Spec.Ecdsa.P521
@@ -24,6 +26,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.P521
@@ -54,19 +57,19 @@ namespace VG.Proof.Ecdsa.Verify.Arm.P521
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdsa.Verify.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P521 Spec.Weierstrass
 
-theorem pre_of {s : State} (h : verifyArm.pre s) : VPre p521 s := by
+theorem pre_of {u : Bool} {s : State} (h : verifyArm.pre s) : VPre (p521With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-theorem post_of {s s' : State} (h : VPost p521 s s') : verifyArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : VPost (p521With u) s s') : verifyArm.post s s' := by
   show BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = _
   rw [BitVec.setWidth_append_eq_right]
   exact h
 
-theorem verify_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : verifyArm.pre s) :
-    ∃ t s', Exec isa verifyP521 s t s' ∧ abiPreserved s s' ∧ verifyArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p521_ok hL hp
+theorem verify_arm (hL : Weierstrass.Law Spec.P521.curve) (u : Bool) (s : State) (hs : verifyArm.pre s) :
+    ∃ t s', Exec isa (verifyP521With u) s t s' ∧ abiPreserved s s' ∧ verifyArm.post s s' := by
+  have hp := pre_of (u := u) hs
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok (p521With_ok u) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -83,9 +86,9 @@ theorem verify_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : veri
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
 
-theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyP521 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2, h3⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (h : verifyArm.pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2, h3⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -100,6 +103,12 @@ theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyP521 := b
   · exact h2
   · exact h3
 
+theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyP521 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
+
+theorem verifyU_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyP521U :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
 /-- A state satisfying the precondition. -/
 def satState : State where
   gpr r := match r with
@@ -113,9 +122,10 @@ def satState : State where
   rd := [⟨0x1000, 133⟩, ⟨0x2000, 66⟩, ⟨0x3000, 132⟩]
   wr := [⟨0x8000, 8192⟩]
 
-theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified Arm.target verifyP521 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi) :=
-  Verified.of_correct (verify_arm hL) verify_ct
+theorem verifyWith_verified (hL : Weierstrass.Law Spec.P521.curve) (u : Bool)
+    (hct : ConstantTime isa verifyArm.pre verifyArm.pub (verifyP521With u)) :
+    Verified Arm.target (verifyP521With u) (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi) :=
+  Verified.of_correct (verify_arm hL u) hct
     { pre := by
         sig_implies_pre [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract,
           Proof.Ecdsa.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
@@ -136,6 +146,14 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
+theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
+    Verified Arm.target verifyP521 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi) :=
+  verifyWith_verified hL false verify_ct
+
+theorem verifyU_verified (hL : Weierstrass.Law Spec.P521.curve) :
+    Verified Arm.target verifyP521U (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi) :=
+  verifyWith_verified hL true verifyU_ct
+
 /-- `satState` satisfies the precondition. -/
 theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi).pre satState := by
   sig_pre [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
@@ -155,6 +173,14 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P521.curve) :
     Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true verifyP521)
       (Spec.Ecdsa.P521.inst.verifyHashContract Arm.abi 96) :=
   VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.p521_len (by decide) (verify_verified hL)
+    ⟨_, by taint_decide⟩ hash_sat
+
+/-- `vg_ecdsa_p521_verify_umaal`, taking the hash function's output: the
+verification above, run on the `len` bytes of the hash (`verifyHash_verified_nil`). -/
+theorem verifyHashU_verified (hL : Weierstrass.Law Spec.P521.curve) :
+    Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true verifyP521U)
+      (Spec.Ecdsa.P521.inst.verifyHashContract Arm.abi 96) :=
+  VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.p521_len (by decide) (verifyU_verified hL)
     ⟨_, by taint_decide⟩ hash_sat
 
 end VG.Proof.Ecdsa.Verify.Arm.P521

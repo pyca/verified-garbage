@@ -108,8 +108,8 @@ theorem tagIn_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
   have h15 := E.r15
   have rR := S.rounds
   have rN := S.nonce
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
-  have rn := E.perm.wR (show 208 + 8 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
+  have rn := E.perm.wR (show 208 + 8 ≤ 744 by decide)
   obtain n₀ : InRegions (t.rd ++ t.wr) N 8 := by
     simpa using in_off (d := 0) (n := 8) hN.rd (by decide) (by decide)
   obtain n₈ := in_off (d := 8) (n := 4) hN.rd (by decide) (by decide)
@@ -500,10 +500,10 @@ theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : Stat
   have rR := S.rounds
   have sD := S.data
   have sL := S.len
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
-  have rD := E.perm.wR (show 232 + 8 ≤ 488 by decide)
-  have rL := E.perm.wR (show 240 + 8 ≤ 488 by decide)
-  have rT := E.perm.wR (show 0 + 16 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
+  have rD := E.perm.wR (show 232 + 8 ≤ 744 by decide)
+  have rL := E.perm.wR (show 240 + 8 ≤ 744 by decide)
+  have rT := E.perm.wR (show 0 + 16 ≤ 744 by decide)
   obtain rT' : InRegions (t.rd ++ t.wr) W 16 := by simpa using rT
   obtain hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 n)
   rw [Proof.AesGcm.X86_64.toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
@@ -566,31 +566,31 @@ theorem cones_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {
   · right
     exact ⟨by rw [ev, decide_eq_false h1]; rfl, n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
 
-/-- The whole blocks enciphered. -/
+/-- The whole blocks enciphered, from block `j₀`. -/
 theorem cblocks_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {n : Nat}
     {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {d : BitVec 128} {σ : State}
     (hD : Buf K W SP σ D n) (hDw : Covers [⟨D, n⟩] σ.wr)
-    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4)
-    {t : State} (I : CInv K W SP R D n ciph icb x d σ 0 t) (hz : t.zf = some (decide (n / 16 = 0))) :
+    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4) {j₀ : Nat} (hj₀ : j₀ ≤ n / 16)
+    {t : State} (I : CInv K W SP R D n ciph icb x d σ j₀ t) (hz : t.zf = some (decide (n / 16 - j₀ = 0))) :
     WP isa (.ite .e (.block [])
         (.seq (.block [.alu .cmp .rbx (imm 4)])
           (.seq (.ite .b (.block []) (.loop crypt4 .ae))
             (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop crypt1 .ne)))))) t
       (CInv K W SP R D n ciph icb x d σ (n / 16)) := by
   have hlt := hD.lt
-  refine WP.ite (decide (n / 16 = 0)) hz (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
-  · have : n / 16 = 0 := by simpa using h0
-    rw [this]; exact I
-  obtain ⟨v, o, run₁⟩ := cmpbx_run t (k := n / 16) (by omega_arith) (by rw [I.rbx, Nat.sub_zero])
+  refine WP.ite (decide (n / 16 - j₀ = 0)) hz (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have : j₀ = n / 16 := by simp at h0; omega_arith
+    rw [← this]; exact I
+  obtain ⟨v, o, run₁⟩ := cmpbx_run t (k := n / 16 - j₀) (by omega_arith) I.rbx
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
-  have I₁ := I.flags v (decide (n / 16 < 4)) o
-  have mid : WP isa (.ite .b (.block []) (.loop crypt4 .ae)) (arithFlags t v (decide (n / 16 < 4)) o)
+  have I₁ := I.flags v (decide (n / 16 - j₀ < 4)) o
+  have mid : WP isa (.ite .b (.block []) (.loop crypt4 .ae)) (arithFlags t v (decide (n / 16 - j₀ < 4)) o)
       fun u => ∃ k, k ≤ n / 16 ∧ CInv K W SP R D n ciph icb x d σ k u := by
-    refine WP.ite (decide (n / 16 < 4)) rfl (fun _ => WP.block_nil ⟨0, Nat.zero_le _, I₁⟩) (fun h4 => ?_)
-    have h4' : ¬ n / 16 < 4 := by simpa using h4
+    refine WP.ite (decide (n / 16 - j₀ < 4)) rfl (fun _ => WP.block_nil ⟨j₀, hj₀, I₁⟩) (fun h4 => ?_)
+    have h4' : ¬ n / 16 - j₀ < 4 := by simpa using h4
     refine WP.loop (M := isa) (body := crypt4) (c := .ae)
       (fun (m : Nat) (u : State) => ∃ k, m = n / 16 - k ∧ k + 4 ≤ n / 16 ∧ CInv K W SP R D n ciph icb x d σ k u) ?_
-      (n / 16 - 0) _ ⟨0, rfl, by omega_arith, I₁⟩
+      (n / 16 - j₀) _ ⟨j₀, rfl, by omega_arith, I₁⟩
     rintro m u ⟨k, rfl, hk, Iu⟩
     refine WP.mono (crypt4_ok hR hxl hD hDw hrest hk Iu) fun u' ⟨Iu', hcf'⟩ => ?_
     have ev : isa.eval .ae u' = some !(decide (n / 16 - (k + 4) < 4)) := by
@@ -645,7 +645,7 @@ theorem cryptTail_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
   have h15 := E₂.r15
   have h12 : t₂.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) := by rw [hf.gpr, g₁]; exact I.r12
   have hbp : t₂.gpr .rbp = BitVec.ofNat 64 (n % 16) := by rw [hf.gpr, g₁]; exact I.rbp
-  have ww := E₂.perm.wW (show 128 + 16 ≤ 488 by decide)
+  have ww := E₂.perm.wW (show 128 + 16 ≤ 744 by decide)
   obtain ⟨t₃, run₃, hm₃, rsi₃, rdi₃, rcx₃, hg₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa
       (ptr .rsi .r15 bO ++ ([.movdquStore (at_ .rsi 0) .xmm0, .mov .rdi (.reg .r12),
         .mov .rcx (.reg .rbp)] : List Instr)) t₂ = some t₃ ∧
@@ -716,6 +716,31 @@ theorem cryptTail_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
         simp only [List.mem_singleton] at hq; subst hq
         exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩)
 
+/-- The data from block `j₀` on enciphered: its whole blocks and its last
+bytes. -/
+theorem cryptRest_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {D : Addr} {n : Nat}
+    {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = n) {d : BitVec 128} {σ : State}
+    (hD : Buf K W SP σ D n) (hDw : Covers [⟨D, n⟩] σ.wr)
+    (hrest : le4 (dword d 1) ++ le4 (dword d 2) ++ le4 (dword d 3) = icb.drop 4)
+    (hcl : ∀ y, (ciph y).length = 16) {j₀ : Nat} (hj₀ : j₀ ≤ n / 16)
+    {t : State} (I : CInv K W SP R D n ciph icb x d σ j₀ t) (hz : t.zf = some (decide (n / 16 - j₀ = 0))) :
+    WP isa cryptRest t fun t' => Env K W SP t' ∧ t'.rd = σ.rd ∧ t'.wr = σ.wr ∧
+      Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] σ.mem t'.mem ∧
+      bytesAt t'.mem D n = Spec.GcmSiv.ctr ciph icb x := by
+  have hn := hD.lt
+  refine WP.seq (WP.mono (cblocks_ok hR hxl hD hDw hrest hj₀ I hz) fun t₂ I₂ => ?_)
+  obtain ⟨run₂, hy⟩ := test_run .rbp t₂ (k := n % 16) (by omega_arith) I₂.rbp
+  refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
+  have I₃ := I₂.flags (BitVec.ofNat 64 (n % 16)) false false
+  refine WP.ite (decide (n % 16 = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have h0' : n % 16 = 0 := by simpa using h0
+    refine ⟨I₃.env, I₃.rd, I₃.wr, I₃.frame.sub fun q hq => ⟨q, List.mem_cons_of_mem _ hq, fun _ h => h⟩, ?_⟩
+    rw [I₃.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl]; omega_arith)]
+  · have h0' : n % 16 ≠ 0 := by simpa using h0
+    refine WP.mono (cryptTail_ok L hR hxl hD hDw hrest (by omega_arith) I₃) fun t₄ ⟨E₄, rd₄, wr₄, d₄, f₄⟩ => ?_
+    refine ⟨E₄, rd₄, wr₄, f₄, ?_⟩
+    rw [d₄, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
+
 /-- What `crypt` leaves: the data in counter mode from the tag at `W`. -/
 structure CryptPost (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (t t' : State) : Prop where
   env : Env K W SP t'
@@ -740,17 +765,7 @@ theorem crypt_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R =
       by rw [r12, Nat.mul_zero, BitVec.add_zero], by rw [rbx, Nat.sub_zero], rbp,
       by rw [m₁, Nat.mul_zero, GcmSiv.ctrPart_zero], by rw [m₁]; exact Frame.refl _ _⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (cblocks_ok hR hxl hD hDw hrest I₁ zf) fun t₂ I₂ => ?_)
-  obtain ⟨run₂, hy⟩ := test_run .rbp t₂ (k := n % 16) (by omega_arith) I₂.rbp
-  refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
-  have I₃ := I₂.flags (BitVec.ofNat 64 (n % 16)) false false
-  refine WP.ite (decide (n % 16 = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
-  · have h0' : n % 16 = 0 := by simpa using h0
-    refine ⟨I₃.env, I₃.rd, I₃.wr, I₃.frame.sub fun q hq => ⟨q, List.mem_cons_of_mem _ hq, fun _ h => h⟩, ?_⟩
-    rw [I₃.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl]; omega_arith)]
-  · have h0' : n % 16 ≠ 0 := by simpa using h0
-    refine WP.mono (cryptTail_ok L hR hxl hD hDw hrest (by omega_arith) I₃) fun t₄ ⟨E₄, rd₄, wr₄, d₄, f₄⟩ => ?_
-    refine ⟨E₄, rd₄, wr₄, f₄, ?_⟩
-    rw [d₄, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
+  exact WP.mono (cryptRest_ok L hR hxl hD hDw hrest hcl (Nat.zero_le _) I₁ (by rw [Nat.sub_zero]; exact zf))
+    fun t' ⟨E', rd', wr', f', d'⟩ => ⟨E', rd', wr', f', d'⟩
 
 end VG.Proof.AesGcmSivReg.X86_64

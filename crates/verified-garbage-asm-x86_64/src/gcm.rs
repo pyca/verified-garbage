@@ -48,7 +48,7 @@ call {vg_ghash_vpclmul}
 call {vg_aes_ctr32_vaes}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkGP///8X+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
@@ -136,7 +136,7 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk0P7//8X+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJDABAACJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
@@ -1373,7 +1373,7 @@ jmp 2168f
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
@@ -2169,7 +2169,7 @@ jne 2136b
 2134:
 jmp 2131b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
@@ -2672,7 +2672,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512_w = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512_w::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512_w,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512_w = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512_w::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512_w,
@@ -3042,7 +3042,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512_w = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512_w::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512_w,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512_w = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512_w::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512_w,
@@ -3716,7 +3716,7 @@ call {vg_aes_ctr32_vaes}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
@@ -4167,7 +4167,7 @@ jmp 247f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
@@ -4670,7 +4670,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
@@ -5040,7 +5040,7 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
@@ -5616,7 +5616,7 @@ jmp 21b
         vg_aes_gcm_stream_finish_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_stream_finish_vaes_vpclmul_core::vg_aes_gcm_stream_finish_vaes_vpclmul_core,
         vg_aes_gcm_seal_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul::vg_aes_gcm_seal_split_vaes_vpclmul,
         vg_aes_gcm_seal_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul::vg_aes_gcm_seal_vaes_vpclmul,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_seal_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul,
@@ -11672,7 +11672,7 @@ jmp 21f
 21:
 .base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkEP///8X+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJPAAAAAxwDHJMdIx9jH/RTHARTHSww=="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
 }
 
@@ -11741,7 +11741,7 @@ jmp 21f
 21:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkQP///8X+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
 }
 
@@ -12134,3 +12134,7 @@ jmp 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_vpclmul.rs"]
+pub(crate) mod vg_ghash_vpclmul;

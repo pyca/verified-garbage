@@ -34,7 +34,7 @@ call {vg_ghash_vpclmul}
 call {vg_aes_ctr32_vaes}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
 .p2align 6"#,
-        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }

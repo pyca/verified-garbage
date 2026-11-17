@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
 public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 
 /-!
 # AES-GCM-SIV with AES-NI and PCLMULQDQ: the keys, POLYVAL and the counters in registers
@@ -13,7 +14,7 @@ there), for CPUs with AES-NI, PCLMULQDQ and SSSE3, with no calls: what that
 code passes between the functions it calls through `W` (the message keys'
 blocks, POLYVAL's key and accumulator, the reversed blocks, the counter
 blocks and the keystream) stays in registers here, and `W` ends with the
-encryption key's schedule: 488 bytes.
+encryption key's schedule: 744 bytes.
 
 * The message keys (RFC 8452 §4): the blocks
   `little_endian_uint32(i) ‖ nonce` are encrypted two at a time
@@ -61,7 +62,7 @@ open VG.Impl.AesGcmSiv.X86_64 (tagO akO ekO bO okO roundsO nonceO aadO alenO dat
   restore cmp mask)
 
 /-- The size of the working space. -/
-def workLen : Nat := 488
+def workLen : Nat := 744
 
 /-- The last round key's address for `aes`, from the schedule in `rdi` and
 `rounds` in `rsi`. -/
@@ -236,15 +237,18 @@ def cryptTail : Prog isa :=
           .mov .rcx (.reg .rbp)] : List Instr)))
         xorLoop))
 
+/-- The `rbx` whole blocks at `r12` and the `rbp` (below 16) bytes after
+them enciphered, after `test rbx, rbx`, from the counter block in `xmm9`. -/
+def cryptRest : Prog isa :=
+  .seq (.ite .e (.block [])
+      (.seq (.block [.alu .cmp .rbx (imm 4)])
+        (.seq (.ite .b (.block []) (.loop crypt4 .ae))
+          (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop crypt1 .ne))))))
+    (.seq (.block [.alu .test .rbp (.reg .rbp)])
+      (.ite .e (.block []) cryptTail))
+
 /-- The data enciphered (or deciphered) in place, from the tag at `W`. -/
-def crypt : Prog isa :=
-  .seq (.block ctrInit)
-    (.seq (.ite .e (.block [])
-        (.seq (.block [.alu .cmp .rbx (imm 4)])
-          (.seq (.ite .b (.block []) (.loop crypt4 .ae))
-            (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop crypt1 .ne))))))
-      (.seq (.block [.alu .test .rbp (.reg .rbp)])
-        (.ite .e (.block []) cryptTail)))
+def crypt : Prog isa := .seq (.block ctrInit) cryptRest
 
 /-! ## The functions -/
 
@@ -252,9 +256,140 @@ def crypt : Prog isa :=
 def «seal» : Prog isa :=
   .seq (.block entry) (.seq keys (.seq polyval (.seq (tag tagO) (.seq crypt (.block (tagOut ++ restore))))))
 
+/-- `ok`, the comparison's outcome, in `rax`, and ZF set if it is 0. -/
+def okTest : List Instr := [.mov .rax (.mem (at_ .r15 okO)), .alu .test .rax (.reg .rax)]
+
+/-- The data zeroed (`mask`, with `ok = 0`) if the tags differ, out of the
+way of the other case, which leaves the plaintext as it is: `open` may leak
+which it is (`Spec.GcmSiv.openLeak`). -/
+def wipeBad : Prog isa := .seq (.block okTest) (Code.iteCold .e mask (.block []))
+
+/-- `open` up to the comparison of the tags, with `mid` deciphering the data
+and absorbing the plaintext. -/
+def openHead (mid : Prog isa) : Prog isa :=
+  .seq (.block entry) (.seq (.block recv) (.seq keys (.seq mid (.seq (tag bO) (.block cmp)))))
+
+/-- `open` after the comparison: the data zeroed if the tags differ, and
+`ok` returned. -/
+def openTail : Prog isa :=
+  .seq wipeBad (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))
+
 /-- `vg_aes_gcm_siv_open`. -/
-def «open» : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq keys (.seq crypt (.seq polyval (.seq (tag bO)
-    (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
+def «open» : Prog isa := .seq (openHead (.seq crypt polyval)) openTail
+
+/-! ## With loops on the data's 256-byte groups
+
+From 256 bytes of data, `sealL` and `openL` run the loops `L` of
+`Impl/AesGcmSiv/X86_64Stitch.lean` on the data's groups of sixteen blocks,
+and the code above on the rest. The loops take their arguments in memory:
+`H` and `Y`, in GHASH's order, at `W + 64` and `W + 80`, the counter block
+at `W + 96`, and 256 bytes for the powers of `H` at `W + 488`, after the
+encryption key's schedule. -/
+
+open VG.Impl.AesGcmSiv.X86_64 (hO yO cmO)
+open VG.Impl.Gcm.X86_64.Pclmul (revMask)
+open VG.Impl.AesGcmSiv.X86_64Stitch (Loops)
+
+/-- The powers' working space, in `W`. -/
+def pO : Nat := 488
+
+/-- `Y`, from `xmm2`, and `H` stored for the loops, in GHASH's order. -/
+def putYH : List Instr :=
+  constImm .xmm0 revMask ++
+  ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r15 yO) .xmm2] : List Instr) ++ hkey ++
+  constImm .xmm0 revMask ++
+  ([.xop (.bin .pshufb .xmm7 .xmm0), .movdquStore (at_ .r15 hO) .xmm7] : List Instr)
+
+/-- The data after its 256-byte groups: its address (`r12`) and length
+(`rbp`). -/
+def restLoad : List Instr :=
+  [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rax (.reg .rbp),
+    .shift .shr .rax 8, .shift .shl .rax 8, .alu .add .r12 (.reg .rax), .alu .and .rbp (imm 255)]
+
+/-- POLYVAL's registers again after a loop, `Y` from where the loop left
+it, and the rest of the data. -/
+def back : List Instr :=
+  hkey ++ constImm .xmm0 revMask ++
+  ([.movdquLoad .xmm2 (at_ .r15 yO), .xop (.bin .pshufb .xmm2 .xmm0)] : List Instr) ++ restLoad
+
+/-- The groups' blocks, counted in `r9`. -/
+def groups : List Instr := [.mov .r9 (.mem (at_ .r15 lenO)), .shift .shr .r9 8, .shift .shl .r9 4]
+
+/-- `hash`'s arguments, but `Y` and `H`. -/
+def hashPtrs : List Instr :=
+  ptr .rcx .r15 yO ++ ptr .r8 .r15 hO ++ ptr .r11 .r15 pO ++
+  ([.mov .rdx (.mem (at_ .r15 dataO))] : List Instr) ++ groups
+
+/-- `hash`'s arguments. -/
+def hashArgs : List Instr := putYH ++ hashPtrs
+
+/-- The data's length compared with 256. -/
+def lenCmp : List Instr := [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 256)]
+
+/-- The data's groups absorbed by `L.hash`. -/
+def hashFront (L : Loops) : Prog isa := .seq (.block hashArgs) (.seq L.hash (.block back))
+
+/-- POLYVAL, as `polyval`, the data's 256-byte groups with `L.hash`. -/
+def polyvalL (L : Loops) : Prog isa :=
+  .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
+    (.seq (absorb false)
+      (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
+        (.seq (.block lenCmp)
+          (.seq (.ite .b (.block []) (hashFront L))
+            (.seq (absorb true) (.block lens))))))
+
+/-- The groups' count, the counter block, from `xmm9`, at `W + 96`, and the
+loops' pointers. -/
+def ctrPtrs : List Instr :=
+  groups ++ (([.movdquStore (at_ .r15 cmO) .xmm9] : List Instr) ++ ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++
+    ptr .r8 .r15 hO ++ ptr .r11 .r15 pO)
+
+/-- `ctr`'s and `dec`'s arguments, but `Y` and `H`: the counter block, from
+the tag at `W`, at `W + 96`. -/
+def ctrArgs : List Instr := ctrInit ++ ctrPtrs
+
+/-- The counter block from `W + 96`, its increment, and `aes`'s arguments. -/
+def ctrLoad : List Instr :=
+  ([.movdquLoad .xmm9 (at_ .r15 cmO), .mov32 .rax (imm 1), .xop (.movq .xmm10 .rax)] : List Instr) ++
+  aesArgs (ptr .rdi .r15 skO)
+
+/-- The whole blocks of the `rbp` bytes counted in `rbx`, the last bytes in
+`rbp`. -/
+def split16 : List Instr :=
+  [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]
+
+/-- Counter mode's registers again after a loop, the counter block from
+where the loop left it, and the rest of the data, as `ctrInit` leaves them. -/
+def ctrBack : List Instr := ctrLoad ++ (restLoad ++ split16)
+
+/-- The data's groups enciphered by `L.ctr`, then the rest. -/
+def ctrFront (L : Loops) : Prog isa :=
+  .seq (.block ctrArgs) (.seq L.ctr (.seq (.block ctrBack) cryptRest))
+
+/-- Counter mode, as `crypt`, the data's 256-byte groups with `L.ctr`. -/
+def cryptL (L : Loops) : Prog isa :=
+  .seq (.block lenCmp)
+    (.ite .b crypt (ctrFront L))
+
+/-- `vg_aes_gcm_siv_seal`, with the loops `L` from 256 bytes of data. -/
+def sealL (L : Loops) : Prog isa :=
+  .seq (.block entry) (.seq keys (.seq (polyvalL L) (.seq (tag tagO) (.seq (cryptL L) (.block (tagOut ++ restore))))))
+
+/-- The data's groups deciphered and absorbed by `L.dec`, then the rest
+deciphered. -/
+def decFront (L : Loops) : Prog isa :=
+  .seq (.block (putYH ++ ctrArgs)) (.seq L.dec (.seq (.block ctrBack) cryptRest))
+
+/-- With 256 bytes of data or more: POLYVAL of the additional data, the
+data deciphered and its groups absorbed (`decFront`), then the rest of the
+plaintext absorbed, and the lengths. -/
+def decL (L : Loops) : Prog isa :=
+  .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
+    (.seq (absorb false)
+      (.seq (decFront L) (.seq (.block back) (.seq (absorb true) (.block lens)))))
+
+/-- `vg_aes_gcm_siv_open`, with the loops `L` from 256 bytes of data. -/
+def openL (L : Loops) : Prog isa :=
+  .seq (openHead (.seq (.block lenCmp) (.ite .b (.seq crypt polyval) (decL L)))) openTail
 
 end VG.Impl.AesGcmSiv.X86_64Reg

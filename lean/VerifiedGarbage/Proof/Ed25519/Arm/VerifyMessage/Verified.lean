@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -155,16 +156,18 @@ theorem equation_noFrames : verifyEquation.noFrames = true := by lit_decide
 theorem challengeWithin (L : Lay) : Whole.Within (challenge L) L.FR :=
   ⟨120,rfl,by change 120+64≤248; decide⟩
 
-theorem equation_pre (hL : L.Ok) (ha : EqArgs L s) :
+theorem equation_pre (hL : L.Ok) (ha : EqArgs L s)
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
     verifyLocal.pre (s.callEntry.withRegions (equationRd L) (equationWr L)) := by
   have ac : State.addr (L.E+120) = State.addr L.E+120 := frame_addr hL (d := 120) (by decide)
-  simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr,
+  simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.callEntry_mem,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), ha.1,ha.2.1,ha.2.2.1,ha.2.2.2,ac]
   exact ⟨rfl,rfl,hL.sc _ (by simp [Lay.inputs]),hL.sc _ (by simp [Lay.inputs]),
-    hL.kc.sub_left (challengeWithin L).sub,hL.np,hL.ns,frame_fit hL (by decide),hL.nc⟩
+    hL.kc.sub_left (challengeWithin L).sub,hL.np,hL.ns,frame_fit hL (by decide),hL.nc,hz⟩
 
 theorem equation_covers : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
   apply covers
@@ -181,12 +184,13 @@ theorem equation_writes : ∀ r ∈ equationWr L,
   rw [List.mem_singleton.mp hr]
   exact .inr ⟨L.SCR,by simp [Lay.outputs],scratchWithin L⟩
 
-theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
+theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s)
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
     WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => Ctx L g m₀ t ∧
       t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
         (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
-  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha)
+  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha hz)
     equation_covers equation_writes fun t ht _ hp => ⟨ht,?_⟩
   change (t.gpr .r0).toNat = (if Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r0)) 32)
@@ -201,7 +205,8 @@ theorem equation_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
   rw [hp]
   cases Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64) (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) <;> rfl
 
-theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
     WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation) s
       fun t => Ctx L g m₀ t ∧ t.gpr .r0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
@@ -218,7 +223,7 @@ theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
   change u.gpr .r1 = L.sig+0#32 at a1
   change u.gpr .r3 = L.scr+0#32 at a3
   rw [BitVec.add_zero] at a0 a1 a3
-  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
+  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩ (by rw [hm]; exact hz)) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
   rw [hm] at hp
   exact hp
 
@@ -716,6 +721,15 @@ theorem reduced_challenge (digest : List Byte) :
   have hpos : 0 < Spec.Ed25519.L := by decide
   rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hpos) hL)]
 
+/-- The reduced challenge, in 64 bytes, is below `2²⁵⁶`: the equation multiplies `A` by its
+first 32 bytes only. -/
+theorem reduced_lt (x : Nat) :
+    Spec.Ed25519.decodeLE (Spec.Ed25519.encodeLE 64 (x % Spec.Ed25519.L)) < 2 ^ 256 := by
+  rw [Proof.Ed25519.decodeLE_encodeLE]
+  have h₁ : x % Spec.Ed25519.L < Spec.Ed25519.L := Nat.mod_lt _ (by decide)
+  have h₂ : Spec.Ed25519.L < 2 ^ 256 := by decide
+  exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.lt_trans h₁ h₂)
+
 theorem extend_step (hc : Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
     (hd : Spec.Ed25519.bytesAt s.mem (State.addr L.E + 120) 32 = Spec.Ed25519.scalarReduce digest) :
     WP isa (.block extendChallenge) s fun t => Ctx L g m₀ t ∧
@@ -777,7 +791,7 @@ theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok)
   rw [hh] at hr
   refine WP.seq (WP.mono (extend_step hu hL hr) fun w ⟨hw,he⟩ => ?_)
   rw [hashInput_eq] at he
-  refine WP.mono (equation_step hw hL ha) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
+  refine WP.mono (equation_step hw hL ha (by rw [he]; exact reduced_lt _)) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
   rw [hw.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32≤2^64; decide),
     hw.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64≤2^64; decide),he] at eq
   exact eq
@@ -914,8 +928,10 @@ def finalize_ready (hL : L.Ok) (he : s.sp = L.E) {count : BitVec 32} (ha : Final
   ⟨Whole.finalizeRd L.E, Whole.finalizeWr L.scr (L.E + 184), finalize_pre hL he ha,
     finalize_covers hL, final_writes hL⟩
 
-def equation_ready (hL : L.Ok) (ha : EqArgs L s) : Whole.CallReady verifyLocal L.E L.inputs L.outputs s :=
-  ⟨equationRd L,equationWr L,equation_pre hL ha,equation_covers,equation_writes⟩
+def equation_ready (hL : L.Ok) (ha : EqArgs L s)
+    (hz : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) < 2 ^ 256) :
+    Whole.CallReady verifyLocal L.E L.inputs L.outputs s :=
+  ⟨equationRd L,equationWr L,equation_pre hL ha hz,equation_covers,equation_writes⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1139,13 +1155,14 @@ theorem equation_setup_wp {g m t} (hc : Ctx L g m t) (hL : L.Ok) (ha : Arguments
   exact ⟨hu,⟨a0,a1,a2,a3⟩,hm ▸ hh⟩
 
 theorem equation_call_ct (hL : L.Ok) {challenge : List Byte}
+    (hch : Spec.Ed25519.decodeLE challenge < 2 ^ 256)
     (hpk : Spec.Ed25519.bytesAt m₁ (State.addr L.pk) 32 = Spec.Ed25519.bytesAt m₂ (State.addr L.pk) 32)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64 = Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => EqArgs L t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
       (.call "vg_ed25519_verify_equation" verifyEquation)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  apply call_ct verify_ok verify_ct equation_noFrames (fun _ h => equation_ready hL h.1)
+  apply call_ct verify_ok verify_ct equation_noFrames (fun _ h => equation_ready hL h.1 (by rw [h.2]; exact hch))
   intro a b ar aw br bw h
   have hsp := two_sp h
   have aa := h.2.2.1.1
@@ -1172,7 +1189,7 @@ theorem equation_call_ct (hL : L.Ok) {challenge : List Byte}
   rw [kp,ks,kh]
 
 theorem equation_step_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
-    {challenge : List Byte}
+    {challenge : List Byte} (hch : Spec.Ed25519.decodeLE challenge < 2 ^ 256)
     (hpk : Spec.Ed25519.bytesAt m₁ (State.addr L.pk) 32 = Spec.Ed25519.bytesAt m₂ (State.addr L.pk) 32)
     (hsig : Spec.Ed25519.bytesAt m₁ (State.addr L.sig) 64 = Spec.Ed25519.bytesAt m₂ (State.addr L.sig) 64) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 = challenge)
@@ -1188,7 +1205,7 @@ theorem equation_step_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m
       exact equation_setup_wp hc hL ha hh
     · intro t hc hh
       exact equation_setup_wp hc hL hb hh
-  exact hs.seq (equation_call_ct hL hpk hsig)
+  exact hs.seq (equation_call_ct hL hch hpk hsig)
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -1219,7 +1236,7 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
   have hm : hashInput L m₁=hashInput L m₂ := by
     rw [hashInput_eq,hashInput_eq,hpk,hmsg,hsig]
   exact (hash_result_ct hL ha hb hm).seq
-    ((reduce_ct hL ha hb _).seq ((extend_ct hL _).seq (equation_step_ct hL ha hb hpk hsig)))
+    ((reduce_ct hL ha hb _).seq ((extend_ct hL _).seq (equation_step_ct hL ha hb (reduced_lt _) hpk hsig)))
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end

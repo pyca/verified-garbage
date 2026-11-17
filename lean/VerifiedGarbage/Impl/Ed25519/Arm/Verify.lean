@@ -6,7 +6,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 
-/-! Strict Ed25519 verification with the entire 512-bit challenge. -/
+/-! Strict Ed25519 verification. The challenge is 64 bytes whose last 32 are zero (the caller
+reduces it modulo `L`), so `A` is multiplied by its first 256 bits only. -/
 
 @[expose] public section
 
@@ -29,7 +30,7 @@ def verifyCombine : Prog isa :=
 
 def verifyRhs : Prog isa :=
   .seq (.block (pointTableRead 7776 ++ loadHeader 8168))
-    (.seq (pointFromScalar 32) (.seq verifyCombine pointEqual))
+    (.seq (pointFromScalar 16) (.seq verifyCombine pointEqual))
 
 def verifyEquationPoints : Prog isa := .seq verifyLhs verifyRhs
 /-! ## Decoding `A` and `R` -/
