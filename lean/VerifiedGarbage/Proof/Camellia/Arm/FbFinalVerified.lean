@@ -43,7 +43,7 @@ namespace VG.Proof.Camellia.Arm
 open VG VG.Arm VG.Impl.Camellia.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
 
 theorem cfbEncryptFinalTaint : FinalTaint (ecbCore .encrypt) cfbEnc :=
-  ⟨cfbEncryptTaint.pro, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, cfbEncryptTaint.epi⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbEncryptFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEnc).Implies
     (Proof.Camellia.cfbEncFinalScratchContract Arm.abi 9 2816) where
@@ -149,7 +149,7 @@ theorem cfbDecryptFinal_framed :
 /-! ## OFB of a message's last piece -/
 
 theorem ofbFinalTaint : FinalTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ofb :=
-  ⟨ofbTaint.pro, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ofbTaint.epi⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem ofbFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ofb).Implies
     (Proof.Camellia.ofbFinalScratchContract Arm.abi 9 2816) where

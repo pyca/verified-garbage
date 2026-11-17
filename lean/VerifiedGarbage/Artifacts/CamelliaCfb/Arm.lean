@@ -14,7 +14,7 @@ namespace VG.Artifacts.CamelliaCfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncrypt
+    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt
     verified := Proof.Camellia.Arm.cfbEncrypt_framed },
   Spec.Camellia.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
