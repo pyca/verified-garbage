@@ -105,7 +105,10 @@ instructions in an ISA model) go in their own PR before either.
    result. On ARM, a function without frames (`Code.noFrames`: it writes
    memory only in its buffers) is scrubbed with `Arm.Scrub.scrubReg`
    (`Proof/Framework/Arm/Scrub.lean`), which sets the registers a callee may
-   change, but the result, and the flags to constants. Only functions `ci/residue_allowlist.txt` already lists may go
+   change, but the result, and the flags to constants; one with frames
+   with `Arm.Scrub.scrubRegF`, which first zeroes the stack its contract
+   reserves, given that its postcondition reads the memory on return only
+   within its buffers (`Arm.Scrub.PostOut`, by `postOut_of_local`). Only functions `ci/residue_allowlist.txt` already lists may go
    without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
    emitter refuses a listed function that has a proof, so converting one
    removes its line. Where the analysis fails, its trace says at which

@@ -24,15 +24,10 @@ namespace VG.Artifacts.Dsa.Arm
 open VG Proof.Dsa.Arm.Gen
 
 def artifacts : List Artifact := [
-  Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.RandomSign.code "vg_dsa_sign_prevalidated" Impl.Dsa.Arm.PrevalidatedSign.sign
-    verified := Proof.Dsa.Arm.randomSigningPrevalidated_verified },
+  Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target Proof.Dsa.Arm.Scrub.randomSignPrevalidatedReg,
   Spec.Dsa.validatePrivateKeyApi.artifact Arm.target Proof.Dsa.Arm.Scrub.validatePrivateKeyReg,
   Spec.Dsa.deriveKeyApi.artifact Arm.target Proof.Dsa.Arm.Scrub.deriveKeyReg,
-  Spec.Dsa.generateKeyApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.GenerateKey.code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
-      Impl.Dsa.Arm.Generate.checkParameters Impl.Dsa.Arm.Generate.deriveChecked
-    verified := Proof.Dsa.Arm.Key.generating_verified },
+  Spec.Dsa.generateKeyApi.artifact Arm.target Proof.Dsa.Arm.Scrub.generateKeyReg,
   Spec.Dsa.validatePublicKeyApi.artifact Arm.target Proof.Dsa.Arm.Scrub.validatePublicKeyReg,
   Spec.Dsa.verifyPrevalidatedApi.artifact Arm.target Proof.Dsa.Arm.Scrub.verifyPrevalidatedReg,
   Spec.Dsa.parameterInitApi.artifact Arm.target Proof.Dsa.Arm.Scrub.parameterInitReg] ++
