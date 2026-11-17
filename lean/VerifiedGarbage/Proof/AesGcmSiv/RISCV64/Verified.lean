@@ -23,7 +23,7 @@ precondition, and the shared contracts of `Spec/GcmSiv/Contract.lean` with
 the working space as a last argument (`Proof/AesGcmSiv/Scratch.lean`, 480
 doublewords) and the 2048 bytes of stack `vg_ghash`'s frame takes. Then the
 code in a frame that allocates the working space
-(`Verified.stackScratchArgsKept`): it is the one stack argument, so the frame of
+(`Verified.stackScratchArgs`): it is the one stack argument, so the frame of
 3856 bytes holds its address and the working space.
 -/
 
@@ -166,10 +166,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract RISCV64.ab
 theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «seal»)
       (Proof.AesGcmSiv.sealRoundsContract RISCV64.abi 5904) :=
-  RISCV64.Verified.stackScratchArgsKept (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 480) (pre := Spec.GcmSiv.sealPre RISCV64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
     (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -186,12 +187,13 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract RISCV64.ab
 theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 «open»)
       (Proof.AesGcmSiv.openRoundsContract RISCV64.abi 5904) :=
-  RISCV64.Verified.stackScratchArgsKept (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  RISCV64.Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 480) (pre := Spec.GcmSiv.openPre RISCV64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048) (bytes := 3856) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak RISCV64.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.RISCV64

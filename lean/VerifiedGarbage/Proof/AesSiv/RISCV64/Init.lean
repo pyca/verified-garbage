@@ -631,8 +631,10 @@ theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract RISCV64.abi 2560).pre s
 theorem init_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 init)
       (Spec.Siv.initContract RISCV64.abi 2560) :=
-  RISCV64.Verified.stackScratchLKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  RISCV64.Verified.stackScratchL (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre RISCV64.abi.ptrBits) (post := Spec.Siv.initPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2560) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2560) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl)
+    initFrameSat_pre
 
 end VG.Proof.AesSiv.RISCV64
