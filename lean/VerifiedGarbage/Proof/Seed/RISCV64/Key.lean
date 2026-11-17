@@ -686,10 +686,9 @@ open VG.Impl.Aes.RISCV64 (sb)
 theorem be64_bytes (b0 b1 b2 b3 b4 b5 b6 b7 : Byte) :
     (b0 ++ b1 ++ b2 ++ b3 ++ b4 ++ b5 ++ b6 ++ b7 : BitVec 64) =
       ((b0 ++ b1 ++ b2 ++ b3 : BitVec 32) ++ (b4 ++ b5 ++ b6 ++ b7 : BitVec 32)) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_append]
-  (repeat' split) <;> first | rfl | omega | (congr 1; omega)
+  apply BitVec.eq_of_toNat_eq
+  repeat rw [BitVec.toNat_append]
+  simp only [Nat.shiftLeft_or_distrib, ← Nat.shiftLeft_add, Nat.reduceAdd, Nat.or_assoc]
 
 /-- The big-endian doubleword of a block's bytes `off … off + 7`: two of its words. -/
 theorem be64_key (m : Mem) (p : Addr) {off : Nat} (ho : off ≤ 8) :

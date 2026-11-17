@@ -194,9 +194,15 @@ theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract abi stackByte
     stackArgs_fifteen, List.append_eq] at h
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
     Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, om, on, ⟨oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp, mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa⟩,
-    ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks, ka,
-    wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12, h10, hs⟩ := h
+  -- `sig_split`, not one `obtain`, which does a `cases` for each of the ninety names.
+  sig_split h
+  rename_i sp1 sp2 hrd hwr om on dj ko km kn ke kd ki kp kq kdp kdq kqi ks ka wo wm wn we wd wi wp wq wdp wdq wqi
+    ws kk h4 hi e1 e2 d1 d2 p1 p2 q1 q2 h8 h12 h10
+  sig_split dj
+  rename_i oe od oi op oq odp odq oqi os oa mn me md mi mp mq mdp mdq mqi ms ma ns es ds is ps qs dps dqs qis
+  obtain ⟨k1, k2⟩ := kk
+  have sa := dj
+  have hs := h
   exact ⟨sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp, mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12, h10, hs⟩
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

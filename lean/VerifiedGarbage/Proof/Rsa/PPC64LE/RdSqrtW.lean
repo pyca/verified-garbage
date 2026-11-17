@@ -1314,8 +1314,8 @@ theorem estimate_ok {s : State} {B : Addr} {Z w N h j dX dS dT : Nat} (hW : Ws s
       Nat.div_eq_of_lt hx, Nat.zero_add]
   obtain red2 : ((Mont.word s3.mem B (arr w 3 + 32)).toNat + 2 ^ 64 * U) * 2 ^ 0 / 2 ^ (64 * (4 - 2)) =
       u2 * 2 ^ 64 + u1 := by
-    rw [show 64 * (4 - 2) = 64 + 64 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul,
-      show 2 ^ (64 * (4 - 3)) = 2 ^ 64 from rfl] at *
+    rw [show 64 * (4 - 2) = 64 + 64 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul]
+    rw [show 2 ^ (64 * (4 - 3)) = 2 ^ 64 from rfl] at red
     rw [red]
     have := (f1 (T (j - 1)) (T j)).isLt
     simp only [U]

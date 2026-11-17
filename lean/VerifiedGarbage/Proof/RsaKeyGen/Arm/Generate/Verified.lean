@@ -330,6 +330,19 @@ theorem callS_words {p : GenPublic} {o s u : State} {used : Nat} {st : KeyProgre
   simp only [off] at h0 h1 h2
   rw [h0, h1, h2]
 
+/-- A word that one of the stores writes is the same over any word: stated once, since `rfl` on
+`slotValue l j x = slotValue l j y` first compares `x` and `y`, the words of two states' memories. -/
+private theorem slotValue_any {values : List (Nat × BitVec 32)} {j : Nat} (h : j ∈ values.map Prod.fst)
+    (x y : BitVec 32) : slotValue values j x = slotValue values j y := by
+  induction values generalizing x y with
+  | nil => exact absurd h List.not_mem_nil
+  | cons e t ih =>
+    show slotValue t j (if j = e.1 then e.2 else x) = slotValue t j (if j = e.1 then e.2 else y)
+    by_cases hj : j = e.1
+    · simp only [hj, ↓reduceIte]
+    · simp only [hj, ↓reduceIte]
+      exact ih ((List.mem_cons.mp h).resolve_left hj) _ _
+
 theorem search_call_ct (name : String) (c : Search.Cand) :
     RelCT isa (Two CallSCT) (.call name (Impl.RsaKeyGen.Arm.Search.code c.call)) (fun _ _ => True) := by
   intro u₁ u₂ t₁ t₂ v₁ v₂ ⟨q, h₁, h₂, hsp⟩ e₁ e₂
@@ -368,15 +381,8 @@ theorem search_call_ct (name : String) (c : Search.Cand) :
     · rw [g₁.stArg r₁ hj, g₂.stArg r₂ hj]
       unfold callArgs
       rw [plenOf_ph p₁₂]
-      match j, hj with
-      | 0, _ => rfl
-      | 1, _ => rfl
-      | 2, _ => rfl
-      | 3, _ => rfl
-      | 4, _ => rfl
-      | 5, _ => rfl
-      | 6, _ => rfl
-      | 7, _ => rfl
+      exact slotValue_any (show j ∈ ([0, 3, 4, 5, 6, 7, 1, 2] : List Nat) from
+        (by decide : ∀ j < 8, j ∈ ([0, 3, 4, 5, 6, 7, 1, 2] : List Nat)) j hj) _ _
     · rw [callS_words g₁ r₁, callS_words g₂ r₂, a₁.2.2.1, a₂.2.2.1, w₁, w₂]
     · rw [hres₁, hres₂, a₁.status, a₂.status]
     · rw [hres₁, hres₂, a₁.cand, a₂.cand]
@@ -517,22 +523,7 @@ theorem key_call_ct (name : String) {kc : Prog isa}
     have st₂ := k₂.status
     have arg (j : Nat) (hj : j < 14) : stackArg (callK q.inputs a) j = stackArg (callK q.inputs b) j := by
       rw [g₁.kArg r₁ hj, g₂.kArg r₂ hj]
-      unfold keyVals keyVals1 keyVals2 keyVals3
-      match j, hj with
-      | 0, _ => rfl
-      | 1, _ => rfl
-      | 2, _ => rfl
-      | 3, _ => rfl
-      | 4, _ => rfl
-      | 5, _ => rfl
-      | 6, _ => rfl
-      | 7, _ => rfl
-      | 8, _ => rfl
-      | 9, _ => rfl
-      | 10, _ => rfl
-      | 11, _ => rfl
-      | 12, _ => rfl
-      | 13, _ => rfl
+      exact slotValue_any (show j ∈ List.range 14 from List.mem_range.mpr hj) _ _
     refine ⟨sp, ?_, by rw [r₁.r0, r₂.r0], by rw [r₁.r1, r₂.r1], by rw [r₁.r2, r₂.r2], by rw [r₁.r3, r₂.r3], ?_⟩
     · rw [l₁, e₁, p₁, q₁, l₂, e₂, p₂, q₂]
       simp only [keyOf] at st₁ st₂

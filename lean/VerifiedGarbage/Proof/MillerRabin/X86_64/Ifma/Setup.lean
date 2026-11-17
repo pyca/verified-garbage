@@ -451,6 +451,11 @@ theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
   obtain o6₄ := o6 4
   obtain e1₀ := e1 0 (by decide)
   obtain e1₁ := e1 1 (by decide)
+  -- Each offset as a multiple of `l.NB`: all that the regions' separation needs.
+  obtain Q : oY l = l.NB + 32 ∧ oS l = 2 * l.NB + 32 ∧ oT l 0 = 3 * l.NB + 32 ∧ oT l 1 = 4 * l.NB + 32 ∧
+      oP1c l = 7 * l.NB + 32 ∧ oM1 l = 8 * l.NB + 32 ∧ oM1c l = 9 * l.NB + 32 ∧ oV l = 10 * l.NB + 32 ∧
+      oV l + 8 ≤ size l ∧ size l < 2 ^ 31 := by
+    omega_using [o2, o3, o4, o5, o6₁, o6₄, o7, o8, o9, o10, e3]
   obtain hN31 : l.NB + 32 < 2 ^ 31 := by omega_arith
   obtain h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega_using []
   obtain hs : Scr s H (8 * n) := Scr.of_mem hwr hn
@@ -472,21 +477,24 @@ theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
   rw [hr1] at S₁ T0₁
   -- `K` at `S`.
   refine WP.seq (WP.mono (dbls_ok hl b₁ r12₁ (hsB.congr k₁.2.2) m₁ (x := oS l) (tmp := oY l) (n := l.dbls)
-    (by omega_arith) (by omega_arith) o2 (.inr (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith))
+    (by omega_using [Q]) (by omega_using [Q]) o2 (.inr (by omega_using [Q])) (.inr (by omega_using [Q]))
+      (.inr (by omega_using [Q]))
     o15 o16 S₁.1 (by rw [S₁.2]; exact hR)) fun t₂ ⟨S₂, vS₂, F₂, k₂, x₂⟩ => ?_)
   rw [S₁.2, pow_mod_shift (show l.dbls + 64 * l.W = 104 * l.S - 64 * l.W by
     simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.dbls, hl.z, Bool.false_eq_true, ↓reduceIte]; omega_arith)] at vS₂
-  obtain m₂ := mod_frm hl m₁ F₂ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith)) hN31
+  obtain m₂ := mod_frm hl m₁ F₂ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by dsimp only; omega_using [Q])
+    (by dsimp only; omega_using [Q])) hN31
   obtain T0₂ := num_frm hl F₂ T0₁ (two_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0)
-    (.inr (by omega_arith)) (.inr (by omega_arith))) (by omega_arith)
+    (.inr (by dsimp only; omega_using [Q])) (.inr (by dsimp only; omega_using [Q]))) (by omega_using [Q])
   obtain b₂ := (k₂.gpr (by decide)).trans b₁
   obtain r12₂ := (k₂.gpr (by decide)).trans r12₁
   -- `T_0`.
   refine WP.seq (WP.mono (dbls_ok hl b₂ r12₂ ((hsB.congr k₁.2.2).congr k₂.2.2) m₂ (x := oT l 0) (tmp := oY l)
-    (n := shifts l) (by omega_arith) (by omega_arith) o2 (.inr (by omega_arith)) (.inr (by omega_arith))
-    (.inr (by omega_arith)) o17 o18 T0₂.1 (by rw [T0₂.2]; exact hR)) fun t₃ ⟨T0₃, vT0₃, F₃, k₃, x₃⟩ => ?_)
+    (n := shifts l) (by omega_using [Q]) (by omega_using [Q]) o2 (.inr (by omega_using [Q])) (.inr (by omega_using [Q]))
+    (.inr (by omega_using [Q])) o17 o18 T0₂.1 (by rw [T0₂.2]; exact hR)) fun t₃ ⟨T0₃, vT0₃, F₃, k₃, x₃⟩ => ?_)
   rw [T0₂.2, pow_mod_shift (show shifts l + 64 * l.W = 52 * l.S by unfold shifts; omega_arith)] at vT0₃
-  obtain m₃ := mod_frm hl m₂ F₃ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith)) hN31
+  obtain m₃ := mod_frm hl m₂ F₃ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by dsimp only; omega_using [Q])
+    (by dsimp only; omega_using [Q])) hN31
   obtain b₃ := (k₃.gpr (by decide)).trans b₂
   obtain r12₃ := (k₃.gpr (by decide)).trans r12₂
   -- `c − T_0` and the sums.
@@ -494,26 +502,35 @@ theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
     (Nat.mod_lt _ hc0)) fun t ⟨M1, P1c, M1c, F₄, k₄, x₄⟩ => ?_
   obtain kk := ((k₁.trans k₂).trans k₃).trans k₄
   obtain hT1 := num_frm hl F₄ (num_frm hl F₃ (num_frm hl F₂ T1₁
-    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by omega_arith)) (.inr (by omega_arith)))
-      (by omega_arith))
-    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by omega_arith)) (.inr (by omega_arith)))
-      (by omega_arith))
-    (three_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inl (by omega_arith)) (.inl (by omega_arith))
-      (.inl (by omega_arith))) (by omega_arith)
+    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by dsimp only; omega_using [Q]))
+      (.inr (by dsimp only; omega_using [Q])))
+      (by omega_using [Q]))
+    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by dsimp only; omega_using [Q]))
+      (.inr (by dsimp only; omega_using [Q])))
+      (by omega_using [Q]))
+    (three_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))) (by omega_using [Q])
   obtain hS := num_frm hl F₄ (num_frm hl F₃ ⟨S₂, vS₂⟩
-    (two_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by omega_arith)) (.inr (by omega_arith)))
-      (by omega_arith))
-    (three_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by omega_arith)) (.inl (by omega_arith))
-      (.inl (by omega_arith))) (by omega_arith)
+    (two_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by dsimp only; omega_using [Q]))
+      (.inr (by dsimp only; omega_using [Q])))
+      (by omega_using [Q]))
+    (three_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))) (by omega_using [Q])
   obtain hT0 := num_frm hl F₄ ⟨T0₃, vT0₃⟩
-    (three_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0) (.inl (by omega_arith)) (.inl (by omega_arith))
-      (.inl (by omega_arith))) (by omega_arith)
+    (three_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0) (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))
+      (.inl (by dsimp only; omega_using [Q]))) (by omega_using [Q])
   refine ⟨(k₄.gpr (by decide)).trans b₃, (k₄.gpr (by decide)).trans r12₃, (kk.gpr (by decide)).trans hdi,
-    ⟨mod_frm hl m₃ F₄ (three_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith) (by omega_arith))
+    ⟨mod_frm hl m₃ F₄ (three_r (p := fun r => l.NB + 32 ≤ r.1) (by dsimp only; omega_using [Q])
+      (by dsimp only; omega_using [Q]) (by dsimp only; omega_using [Q]))
       hN31, hT0, hT1, hS, M1, P1c, M1c⟩, ?_, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => kk.gpr (by simp [h1, h2, h3, h4, h5, h6, h7, h8, h9]),
     kk.2.1, kk.2.2, by rw [x₄, x₃, x₂, x₁]⟩
-  exact ((F₁.trans (fa F₂ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)))).trans
-    (fa F₃ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)))).trans
-    (fa F₄ (three_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith) (by omega_arith)))
+  exact ((F₁.trans (fa F₂ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by dsimp only; omega_using [Q])
+    (by dsimp only; omega_using [Q])))).trans
+    (fa F₃ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by dsimp only; omega_using [Q]) (by dsimp only; omega_using [Q])))).trans
+    (fa F₄ (three_r (p := fun r => r.1 + r.2 ≤ size l) (by dsimp only; omega_using [Q])
+      (by dsimp only; omega_using [Q]) (by dsimp only; omega_using [Q])))
 
 end VG.Proof.MillerRabin.X86_64.Ifma

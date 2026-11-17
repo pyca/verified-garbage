@@ -661,6 +661,9 @@ theorem abFirst_ok {t : State} {B : Addr} {Z w N n dA dB dM : Nat} (h : Ctx t B 
   have := h.wbig
   have := arr_al w aW
   refine WP.keep _ ?_ (by rfl) (by rfl)
+  -- The postcondition's words unfolded first, by `dsimp`: inside `simp`, an `if` whose condition they
+  -- change by `rfl` fails its congruence lemma slowly, twice for each.
+  dsimp only [hi2, lo2, macC, macS, word, wIv]
   brun [abFirst, abHead, termR, macW, abShift, term, hi2, lo2, macS, macC, ldW, word, BitVec.add_zero, List.append_assoc,
     runBlock_ptr B w, h.ws.s10, h.ws.s11, (show aW < 2048 by decide), wIv, p0, p1, p2, m3, m4, m5, off_add,
     hs.ld (show dA + 8 ≤ Z by omega_using [hA]), hs.ld (show dB + 8 ≤ Z by omega_using [hB]),

@@ -497,28 +497,29 @@ theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs)
   have e : stackArgAddr (withTable (satState D) vs w) 0 = 0x8000 := rfl
   obtain hha' := hha (satState D)
   simp only [Impl.RsaOaep.Arm.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
-  rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val]
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
-      a12, a13, e]
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val]
-    sig_and_intros
-    all_goals first
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
-      | rfl
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | (intro H' hH'
-         obtain rfl := Option.some.inj (hha'.symm.trans hH')
-         rw [hDd]; rfl)
-      | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
-      | (simp only [Spec.Rsa.lenValid]; decide)
+  -- The precondition is evaluated once, for any `D`: only the conjuncts that mention `D` are split by it.
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argRegs, reduceClassify, Loc.val]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+    a12, a13, e]
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argRegs, reduceClassify, Loc.val]
+  sig_and_intros
+  all_goals first
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
+    | with_reducible rfl
+    | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
+    | (rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl <;> first
+        | rfl
+        | decide
+        | exact Region.disjoint_of_sep (by decide)
+        | (intro H' hH'
+           obtain rfl := Option.some.inj (hha'.symm.trans hH')
+           rw [hDd]; rfl)
+        | (simp only [Spec.Rsa.lenValid]; decide))
 
 end VG.Proof.RsaOaep.Arm.Enc
 

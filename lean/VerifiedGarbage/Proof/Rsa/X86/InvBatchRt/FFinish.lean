@@ -87,27 +87,29 @@ theorem addIfNegF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {p 
   unfold addIfNegF
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   refine WP.seq (WP.mono (chainAdd_ok h (o := tmp) (a := a 7) (b := mo) (e := 1) (by decide) rfl
-    (by omega) (by omega) (by omega) (.inr (by omega)) (.inr (by omega))) fun s₁ ⟨H₁, O₁, ⟨c, _, V₁⟩, K₁⟩ => ?_)
-  refine WP.seq (maskAt_ok H₁ (x := { (a 7) with half := 1 }) (by omega)
+    (by omega_using [hf16, ke, r12, rtmp]) (by omega_using [hf16, ke, r7]) (by omega_using [hf16, ke, r2, rmo])
+    (.inr (by omega_using [ke, r7, r12, rtmp])) (.inr (by omega_using [ke, r2, r12, rmo, rtmp]))) fun s₁ ⟨H₁, O₁, ⟨c, _, V₁⟩, K₁⟩ => ?_)
+  refine WP.seq (maskAt_ok H₁ (x := { (a 7) with half := 1 }) (by omega_using [hf16, r7, h71])
     fun s₂ K₂ m₂ c₂ => WP.block_nil ?_)
   obtain top : VG.Proof.Mont.w32 s₁.mem B (rv (kw len) { (a 7) with half := 1 }) =
       VG.Proof.Mont.w32 s.mem B (rv (kw len) (a 7) + 4 * nw len) := by
-    rw [h71, O₁.w32 (.inl (by omega)) (by omega)]
+    rw [h71, O₁.w32 (.inl (by omega_using [ke, r7, r12, rtmp])) (by omega_using [hn, hf16, r7])]
   rw [top] at c₂
   obtain H₂ : Bx L s₂ B Z len N := H₁.keep K₂ (by decide) (by decide) (o := 160) (c := 0)
-    (by rw [m₂]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
+    (by rw [m₂]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega_using [hn2, hf16])
   obtain mask : s₂.gpr .ecx = cmask (decide (X < 0)) := by
     rw [c₂]; simp only [cmask]
     by_cases hx : X < 0
     · simp only [(top_sign hX).mpr hx, ↓reduceIte, hx, decide_true]
     · simp only [show ¬ 2 ^ 31 ≤ VG.Proof.Mont.w32 s.mem B (rv (kw len) (a 7) + 4 * nw len) from
         fun e => hx ((top_sign hX).mp e), ↓reduceIte, hx, decide_false, Bool.false_eq_true]
-  refine WP.mono (selIn_ok H₂ (o := a 7) (a := tmp) (e := 1) mask (by decide) (by omega) (by omega) (by omega))
+  refine WP.mono (selIn_ok H₂ (o := a 7) (a := tmp) (e := 1) mask (by decide) (by omega_using [hf16, ke, r7])
+    (by omega_using [hf16, ke, r12, rtmp]) (by omega_using [ke, r7, r12, rtmp]))
     fun t ⟨Ht, Ot, Vt, Kt⟩ => ⟨Ht, ?_, ?_, ?_⟩
   · have a7₁ : val32 s₁.mem B (rv (kw len) (a 7)) (nw len + 1) = val32 s.mem B (rv (kw len) (a 7)) (nw len + 1) :=
-      O₁.val32 (by omega) (by omega)
+      O₁.val32 (by omega_using [ke, r7, r12, rtmp]) (by omega_using [hn, hf16, r7])
     obtain mo₁ : val32 s₁.mem B (rv (kw len) mo) (nw len + 1) = val32 s.mem B (rv (kw len) mo) (nw len + 1) :=
-      O₁.val32 (by omega) (by omega)
+      O₁.val32 (by omega_using [ke, r2, r12, rmo, rtmp]) (by omega_using [hn, hf16, r2, rmo])
     rw [Vt, m₂, a7₁]
     by_cases hx : X < 0
     · simp only [hx, decide_true, ↓reduceIte]
@@ -121,7 +123,7 @@ theorem addIfNegF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {p 
         obtain V : (val32 s₁.mem B (rv (kw len) tmp) (nw len + 1) : Int) + 2 ^ (32 * (nw len + 1)) * (c.toNat : Int) =
             val32 s.mem B (rv (kw len) (a 7)) (nw len + 1) + val32 s.mem B (rv (kw len) mo) (nw len + 1) := by
           exact_mod_cast V₁
-        rw [M2, ← hp]; push_cast; linarith
+        rw [M2, ← hp]; push_cast; linarith only [V]
       obtain hx : ((val32 s.mem B (rv (kw len) (a 7)) (nw len + 1) : Nat) : Int) ≡ X
           [ZMOD ((2 * (2 ^ (32 * nw len) * 2 ^ 31) : Nat) : Int)] := by
         have := hX.2.1; unfold Int.ModEq; push_cast at this ⊢; exact this
@@ -359,7 +361,7 @@ theorem finishF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {p : 
         obtain V' : (val32 s₄.mem B (rv (kw len) tmp) (nw len + 1) : Int) +
             val32 s₂.mem B (rv (kw len) (a 7)) (nw len + 1) = 0 + 2 ^ (32 * (nw len + 1)) * (c₄.toNat : Int) := by
           exact_mod_cast V₄
-        rw [M2]; push_cast; linarith
+        rw [M2]; push_cast; linarith only [V']
       obtain hx' : ((val32 s₂.mem B (rv (kw len) (a 7)) (nw len + 1) : Nat) : Int) ≡ D
           [ZMOD ((2 * (2 ^ (32 * nw len) * 2 ^ 31) : Nat) : Int)] := by
         have := RD.2.1; unfold Int.ModEq; push_cast at this ⊢; exact this
@@ -434,7 +436,6 @@ theorem finishF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {p : 
     intro w hw
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hw
     simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left]
-    rw [hb0, r11, rtmp] at *
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
 
 end VG.Proof.Rsa.X86.InvBatchRt.F

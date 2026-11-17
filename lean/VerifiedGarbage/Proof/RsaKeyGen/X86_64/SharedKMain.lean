@@ -173,8 +173,7 @@ theorem sharedKTail_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc :
   obtain hres : mrRest c (checksW w) r 1 0 (8 * w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabinWith]) (by simp) ?_
-  refine WP.mono (sharedMillerRabin_ok M hmc R hd hZ28 hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
-      (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide) (henv.kept k₁ (by decide)) hc₁ hE₁ hr2₁
+  refine WP.mono (sharedMillerRabin_ok M hmc R hd hZ28 hc1 ⟨hodd, hlo, hhi⟩ hrl (Nat.lt_of_le_of_lt (checksW_le w) (by decide)) (henv.kept k₁ (by decide)) hc₁ hE₁ hr2₁
     (by rw [hw₁ (Or.inl rfl)]; exact hrp) (by rw [hw₁ (Or.inr (Or.inl rfl))]; exact hK)
     (by rw [hw₁ (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen) hch₁ hsrc₁
     (by rw [hw₁ (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; exact hus) (Nat.le_refl _) hrk)

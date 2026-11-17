@@ -557,12 +557,9 @@ theorem generatorPower_depth (sq : Prog isa) (mul : Nat → Nat → Nat → Prog
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
     Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
-  repeat' first
-    | rw [generation_depth_seqs]
-    | rw [Code.x86_64Depth]
-    | rw [List.foldr_append]
-    | rw [List.foldr_cons]
-  simp only [List.foldr_nil, Nat.max_le]
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generation_depth_seqs, Code.x86_64Depth, List.foldr_append, List.foldr_cons, List.foldr_nil,
+    Nat.max_le]
   and_intros
   all_goals first | exact hs | apply hm | exact (show 0 ≤ 128 by decide)
 
@@ -615,12 +612,9 @@ theorem checkParameters_depth_bound (sq : Prog isa) (mul : Nat → Nat → Nat �
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
     Crt.tabBuild Crt.tabBuildN Crt.toEnt Crt.copyArr R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
-  repeat' first
-    | rw [generation_depth_seqs]
-    | rw [Code.x86_64Depth]
-    | rw [List.foldr_append]
-    | rw [List.foldr_cons]
-  simp only [List.foldr_nil, Nat.max_le]
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generation_depth_seqs, Code.x86_64Depth, List.foldr_append, List.foldr_cons, List.foldr_nil,
+    Nat.max_le]
   and_intros
   all_goals first | exact hs | apply hm | exact (Nat.zero_le n)
 
@@ -776,12 +770,8 @@ theorem generatorPower_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog 
     PublicPower.applyWindow Arithmetic.encodePower Arithmetic.constants
     Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
-  repeat' first
-    | rw [generationOk_seqs]
-    | rw [generationOk]
-    | rw [List.all_append]
-    | rw [List.all_cons]
-  simp only [hs, hm]
+  -- one pass: a `rw` for each node of the code read the whole goal again
+  simp only [generationOk_seqs, generationOk, List.all_append, List.all_cons, hs, hm]
   rfl
 
 theorem generatorPowerFresh_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)

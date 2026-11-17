@@ -88,6 +88,12 @@ theorem satisfiablePre : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi
 
 abbrev specP : Contract isa := Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stackBytes
 
+/-- The elements of a list that is a function's values at `0 … n - 1`. -/
+private theorem getD_of_eq_map_range {α : Type} (f : Nat → α) (d : α) {l : List α} {n : Nat}
+    (h : l = (List.range n).map f) {i : Nat} (hi : i < n) : f i = l.getD i d := by
+  subst h
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]; rfl
+
 theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, reduceClassify, Loc.val] at h
@@ -200,11 +206,12 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
     · rfl
     · rfl
   · intro i hi
-    have : i < 21 := hi
-    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-        i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl <;> simp [ep, a6, a12, a14, a16]
+    -- The stack arguments are the list's elements from the fifth: one equation between lists, not a case each.
+    simp only [ep, EP.argv, BitVec.ofNat_eq_ofNat, BitVec.ofNat_toNat, BitVec.setWidth_eq, List.cons_append,
+      List.nil_append, List.getD_cons_succ]
+    refine getD_of_eq_map_range (stackArg s) 0 ?_ (show i < 21 from hi)
+    simp only [List.range, List.range.loop, List.map_cons, List.map_nil, a6, a12, a14, a16, ↓reduceIte,
+      BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-! ## The code -/
 
