@@ -11,7 +11,13 @@ namespace VG.Impl.Ecdsa.Verify.Arm
 
 open VG.Arm
 
+/-- `vg_ecdsa_p521_verify`, or with `u` `vg_ecdsa_p521_verify_umaal`. -/
+def verifyP521With (u : Bool) : Prog isa := Cfg.verify (Impl.Ecdsa.Arm.p521With u)
+
 /-- `vg_ecdsa_p521_verify`. -/
-def verifyP521 : Prog isa := Cfg.verify Impl.Ecdsa.Arm.p521
+def verifyP521 : Prog isa := verifyP521With false
+
+/-- `vg_ecdsa_p521_verify_umaal`. -/
+def verifyP521U : Prog isa := verifyP521With true
 
 end VG.Impl.Ecdsa.Verify.Arm
