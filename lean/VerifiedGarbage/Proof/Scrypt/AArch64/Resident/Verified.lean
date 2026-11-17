@@ -68,7 +68,8 @@ theorem correct
       GprAbi s₀ s' ∧ Proof.Scrypt.blockMixAArch64.post s₀ s' := by
   have hpi : BlockMix.Pre (BlockMix.inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
     hp.x3, hp.pos⟩
-  refine WP.frameRegKept hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hd
+  refine WP.frameReg hs.sp16 (fun R hR => ?_)
+    (WP.mono (correctMain hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_) hd
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -84,9 +85,11 @@ theorem correct
           have hi' : i < 128 * rr s₀ := hi
           exact write_frame_bytes (R := BlockMix.bR s₀) hs.b (by have := r_lt hp; simp only; omega_arith)
             (by simp only; omega_arith)
-      show bytesAt s'.mem (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (bytesAt s₀.mem (bP s₀) (128 * rr s₀))
+      -- The output lies apart from the frame, whose bytes the pop loses.
+      show bytesAt mm (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (bytesAt s₀.mem (bP s₀) (128 * rr s₀))
       rw [← e]
-      exact hpost
+      exact (bytesAt_congr fun i hi => lost_byte (R := BlockMix.yR s₀) f hs.y.symm
+        (show i < rr s₀ * 128 by omega_using [hi])).trans hpost
 
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixAArch64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.AArch64.blockMix s t s' ∧ abiPreserved s s' ∧
