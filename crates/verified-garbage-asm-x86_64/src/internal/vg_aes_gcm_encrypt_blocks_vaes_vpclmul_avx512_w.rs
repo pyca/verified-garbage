@@ -130,7 +130,7 @@ jmp 237f
 .base64 "TItcJAhJg8M/SYPjwMX578Bi0X5If0MQYtF+SH9DD2LRfkh/Qw5i0X5If0MNYtF+SH9DDGLRfkh/Qwti0X5If0MKYtF+SH9DCWLRfkh/Qwhi0X5If0MHYtF+SH9DBmLRfkh/QwVi0X5If0MEYtF+SH9DA2LRfkh/QwJi0X5If0MBYtF+SH8Dxfh3YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//ww=="
 .p2align 6"#,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }
