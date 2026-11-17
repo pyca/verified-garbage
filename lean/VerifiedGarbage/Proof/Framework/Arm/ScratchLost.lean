@@ -6,12 +6,11 @@ public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 /-!
 # Scratch-buffer wrappers that assume nothing of a released frame (ARMv7)
 
-Temporary: `Verified.stackScratchL`, `Verified.stackScratch` and
-`Verified.regScratch` restated with `hpostOut`, as the wiped variants
-already have it: the postcondition reads the memory on return only within
-the function's buffers (when the precondition holds), so that it holds
-whatever the frame's released bytes hold. They replace the rules of
-`StackScratch.lean` and `RegScratch.lean` once the proofs use them.
+Temporary aliases: `Verified.stackScratchL`, `Verified.stackScratch` and
+`Verified.regScratch` now take `hpostOut` themselves (the postcondition
+reads the memory on return only within the function's buffers, when the
+precondition holds, so that it holds whatever the frame's released bytes
+hold); the `…Lost` names pass it through until the proofs use those.
 -/
 
 @[expose] public section
@@ -40,7 +39,7 @@ theorem Verified.stackScratchLLost {c : Prog isa}
       (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (_hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
       Curry.apply (sig.words abi.ptrBits) pre vs mm →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
@@ -48,7 +47,7 @@ theorem Verified.stackScratchLLost {c : Prog isa}
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
     Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes) leak) :=
-  Verified.stackScratchL h hcl hN hloc hb hpre hpost hsat hleak
+  Verified.stackScratchL h hcl hN hloc hb hpre hpost hpostOut hsat hleak
 
 /-- `Verified.stackScratch`, if the postcondition also reads the memory on
 return only within the function's buffers (`hpostOut`). -/
@@ -63,7 +62,7 @@ theorem Verified.stackScratchLost {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (_hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
       Curry.apply (sig.words abi.ptrBits) pre vs mm →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
@@ -71,14 +70,14 @@ theorem Verified.stackScratchLost {c : Prog isa}
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
     Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes) leak) :=
-  Verified.stackScratch h hcl hN hloc hb hpre hpost hsat hleak
+  Verified.stackScratch h hcl hN hloc hb hpre hpost hpostOut hsat hleak
 
 /-- `Verified.regScratch`, if the postcondition reads the memory on return
 only within the function's buffers (`hpostOut`). -/
 theorem Verified.regScratchLost {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoids r) = true) (hb : FitsR bytes e n)
-    (_hpostOut : ∀ vs mm m₁ m₂ ret, vs.length = (sig.words abi.ptrBits).length →
+    (hpostOut : ∀ vs mm m₁ m₂ ret, vs.length = (sig.words abi.ptrBits).length →
       Curry.apply (sig.words abi.ptrBits) pre vs mm →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ ret →
@@ -87,7 +86,7 @@ theorem Verified.regScratchLost {c : Prog isa}
     (hl : Sig.noLists sig.params = true := by decide) :
     Verified target (withRegScratch bytes r c)
       (sig.contract abi pre post wa (stack + bytes) leak) :=
-  Verified.regScratch h hcl hloc hb hsat hl
+  Verified.regScratch h hcl hloc hb hpostOut hsat hl
 
 end
 

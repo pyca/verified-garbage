@@ -1293,9 +1293,8 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (
 
 /-- `Verified.stackScratchLLost` under `abi.withConsts (c₀ :: cs)`, for a
 signature without lists of slices: as `Verified.stackScratchWipedC`, without
-the wipe. `_hpostOut` (the postcondition reads the memory on return only
-within the buffers) is what it will need once a released frame loses its
-bytes (`Verified.stackScratchLLost`). -/
+the wipe, if the postcondition reads the memory on return only within the
+buffers (`hpostOut`): the frame's `free` loses its bytes. -/
 theorem Verified.stackScratchC {c : Prog isa}
     (h : Verified target c (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
@@ -1308,7 +1307,7 @@ theorem Verified.stackScratchC {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (_hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
       Curry.apply (sig.words abi.ptrBits) pre vs mm →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
@@ -1326,7 +1325,8 @@ theorem Verified.stackScratchC {c : Prog isa}
         (narrowC sig e n bytes m (c₀ :: cs) s) s₃ ∧
       Exec isa (Impl.StackScratch.Arm.withStackScratch bytes m c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowC_pre hcl hN hloc hb hpre hs)
@@ -1341,12 +1341,24 @@ theorem Verified.stackScratchC {c : Prog isa}
     obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb (pre_consts.mp hs).1
     simp only [armArgs_stripConsts, stripConsts_sp] at hargs
     rw [armArgs_narrowC, hargs, narrowC_mem] at hq'
-    rw [hm, hg]
+    rw [hg]
     obtain h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
     obtain hag := narrow_agree hcl hN hloc hb (pre_consts.mp hs).1
     simp only [armArgs_stripConsts, stripConsts_mem] at hag
-    exact hpost _ _ _ _ _ (hlen s) hag h₃
+    have h₄ := hpost _ _ _ _ _ (hlen s) hag h₃
+    -- The memory on return: after the `free`, which loses only the frame.
+    have hpr : Curry.apply (sig.words abi.ptrBits) pre (armArgs sig s) s.mem := by
+      have hs' := (pre_consts.mp hs).1
+      rw [pre_arm hl] at hs'
+      simpa only [armArgs_stripConsts, stripConsts_mem] using hs'.2.2.2.2.2.2
+    refine hpostOut _ _ _ _ _ (hlen s) hpr (fun b hb' a ha' => ?_) h₄
+    have hF := frame_disj hb (pre_consts.mp hs).1 b
+      (List.mem_append_left _ (by rw [armArgs_stripConsts]; exact hb'))
+    simp only [stripConsts_sp] at hF
+    exact (hm a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hF a ha').symm
   · obtain ⟨u₁, _, f₁, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, f₂, _, x₂, _⟩ := hrun s₂ h₂
     obtain ⟨hp', hsy⟩ := pub_consts.mp hp
