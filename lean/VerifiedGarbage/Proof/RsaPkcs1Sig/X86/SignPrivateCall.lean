@@ -79,6 +79,20 @@ section
 namespace VG.Proof.RsaPkcs1Sig.X86.Sgn
 open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Sign VG.Proof.Bignum.X86 VG.Proof.Mont.X86
 
+/-- The private call's arguments, each by evaluation: `simp only [Geometry.argument]` took half a
+second to unfold the twenty. -/
+theorem Geometry.argument_lits (g : Geometry) :
+    g.argument 0 = g.output ∧ g.argument 1 = BitVec.ofNat 32 g.length ∧ g.argument 2 = g.sources 0 ∧
+    g.argument 3 = BitVec.ofNat 32 g.length ∧ g.argument 4 = g.sources 1 ∧
+    g.argument 5 = BitVec.ofNat 32 g.exponentLength ∧ g.argument 9 = g.sources 3 ∧
+    g.argument 10 = BitVec.ofNat 32 g.pLength ∧ g.argument 11 = g.sources 4 ∧
+    g.argument 12 = BitVec.ofNat 32 g.qLength ∧ g.argument 13 = g.sources 5 ∧
+    g.argument 14 = BitVec.ofNat 32 g.pLength ∧ g.argument 15 = g.sources 6 ∧
+    g.argument 16 = BitVec.ofNat 32 g.qLength ∧ g.argument 17 = g.sources 7 ∧
+    g.argument 18 = BitVec.ofNat 32 g.pLength ∧ g.argument 19 = g.workspace ∧
+    g.argument 20 = BitVec.ofNat 32 g.scratchLength :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
 def privateArgument (g : Geometry) (j : Nat) : BitVec 32 :=
   if j < 6 then g.argument j else if j = 6 then g.temporary else if j = 7 then g.argument 3 else g.argument (j + 1)
 
@@ -175,7 +189,7 @@ theorem privateCall_pre {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     sa (by decide : 12 < 20), sa (by decide : 13 < 20), sa (by decide : 14 < 20),
     sa (by decide : 15 < 20), sa (by decide : 16 < 20), sa (by decide : 17 < 20),
     sa (by decide : 18 < 20), sa (by decide : 19 < 20),
-    privateArgument, Geometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false,
+    privateArgument, g.argument_lits, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit,
     Nat.mod_eq_of_lt qfit, Nat.mod_eq_of_lt wfit,
     argAddr_withRegions, argAddr_callEntry, h.sp,
@@ -407,7 +421,7 @@ theorem private_call (v : CrtImpl) {g : Geometry} {bs : Fin 8 → List Byte} {s 
     sa (by decide : 4 < 20), sa (by decide : 5 < 20), sa (by decide : 6 < 20),
     sa (by decide : 8 < 20), sa (by decide : 9 < 20), sa (by decide : 10 < 20), sa (by decide : 11 < 20),
     sa (by decide : 12 < 20), sa (by decide : 14 < 20),
-    sa (by decide : 16 < 20), privateArgument, Geometry.argument,
+    sa (by decide : 16 < 20), privateArgument, g.argument_lits,
     Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit, Nat.mod_eq_of_lt qfit] at post
   rw [BitVec.setWidth_append_eq_right, M, G .eax (by decide)] at post

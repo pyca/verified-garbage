@@ -49,15 +49,15 @@ bnez t5, 20b
 .base64 "g0IHACOAVQAFB4UF/Rc="
 bnez a5, 21b
 .base64 "IoU="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "IoWBRRMGBGGmhg=="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "IoWmhRMGBA0="
-call {vg_sha256_finalize}
+call {vg_sha256_finalize_core}
 .base64 "IoWTBQQGEwYEDZMGAAI="
 call {vg_hmac_sha256_init}
 .base64 "IoWTBQAEWoamhg=="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "IoWTBQQGE4YEBJMGBA8="
 call {vg_hmac_sha256_finalize}
 .base64 "AUyTjPQBk9xcAA=="
@@ -65,7 +65,7 @@ call {vg_hmac_sha256_finalize}
 .base64 "EwMEDIFDIwBzAKMAgwGTA8AGIwFzAJMDUAajAXMAkwPgBiMCcwCTA3AGowJzAJMDQAcjA3MAkwOABqMDcwChQyMEcwCBQ6MEcwAihZMFBAYTBgQPkwYAAg=="
 call {vg_hmac_sha256_init}
 .base64 "IoWTBQAEEwYEDKlG"
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "IoWTBQQGEwagBJMWXACilpOGBhE="
 call {vg_hmac_sha256_finalize}
 .base64 "BQwhQzMDg0E="
@@ -75,7 +75,7 @@ bnez t1, 22b
 .base64 "EwMEDIFDIwBzAKMAgwGTA9AGIwFzAJMDUAajAXMAkwMwByMCcwCTAzAHowJzAJMDEAYjA3MAkwNwBqMDcwCTA1AGIwRzAJOTNAAjBXMAk9ODAKMEcwAihZMFBAYTBgQPkwYAAg=="
 call {vg_hmac_sha256_init}
 .base64 "IoWTBQAEEwYEDK1G"
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "IoWTBQQGEwawBJMWXACilpOGBiE="
 call {vg_hmac_sha256_finalize}
 .base64 "BQxmgzMDg0E="
@@ -99,9 +99,9 @@ bnez t2, 27b
 .base64 "XoWKggO0AgeDtIIHA7kCCIO5gggDugIJg7qCCQO7AgqDu4IKA7wCC4O8gguDsAIMaWGCgA=="
 .option pop"#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
         vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
         vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
     )

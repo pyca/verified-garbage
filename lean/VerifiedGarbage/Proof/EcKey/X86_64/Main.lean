@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

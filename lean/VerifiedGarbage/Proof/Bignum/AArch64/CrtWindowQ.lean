@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
-public import VerifiedGarbage.Proof.Bignum.CrtWindowFrameWide
-
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 
 /-!

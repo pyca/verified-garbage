@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Middle
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
+import VerifiedGarbage.Proof.EcKey.PPC64LE.Finish
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
@@ -13,12 +13,11 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
+public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFprog
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
@@ -27,7 +26,6 @@ import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Joint
-public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 public import VerifiedGarbage.Impl.Ecdsa.Verify.PPC64LE
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

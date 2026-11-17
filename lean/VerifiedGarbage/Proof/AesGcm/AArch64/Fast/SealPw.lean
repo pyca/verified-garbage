@@ -280,6 +280,7 @@ theorem sealPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64
     (n := 320) (pre := Spec.Gcm.sealWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
-    (Proof.AesGcm.sealWithPowersPost_local _) sealFrameSatPw_pre
+    (Proof.AesGcm.sealWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealWithPowersPostOut_local _ vs m m₁ m₂ r hl) sealFrameSatPw_pre
 
 end VG.Proof.AesGcm.AArch64.Fast

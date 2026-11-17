@@ -10,9 +10,10 @@ public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 and `vg_aes_cbc_decrypt` with the same arguments (see
 `VG.Spec.Cbc.aesEncryptContract` and `aesDecryptContract`), composed of calls
 of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks`, in place:
-encryption on one block at a time, and decryption (`decryptG`,
-`Arm/Groups.lean`) on groups of blocks, then on the blocks left one at a
-time (`decBody`).
+encryption on one block at a time, from round keys bitsliced once
+(`wholeK`: `vg_aes_blocks_keys`, then `vg_aes_encrypt_blocks_keyed` on each
+block), and decryption (`decryptG`, `Arm/Groups.lean`) on groups of blocks,
+then on the blocks left one at a time (`decBody`).
 
 They are built from AES-CMAC's pieces (`Impl/CmacAes/Arm.lean`), whose
 arguments are in the same places: `save` saves our caller's `r4`–`r10` and
@@ -48,6 +49,7 @@ namespace VG.Impl.AesCbc.Arm
 
 open VG.Arm
 open VG.Impl.CmacAes.Arm (mov save setup restore advance xor4)
+open VG.Impl.Aes.Arm (keyedFrame keysCall)
 
 /-- The offset of the saved ciphertext block in the scratch buffer. -/
 def cOff : Nat := 2048
@@ -74,6 +76,13 @@ block, and the registers restored. -/
 def whole (body : Prog isa) : Prog isa :=
   .seq (.block (save ++ setup)) (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))
 
+/-- As `whole`, for a `body` that enciphers its block from the round keys in
+the working space (`keyedFrame`): if there are blocks, the round keys are
+bitsliced there first, once (`keysCall`). -/
+def wholeK (body : Prog isa) : Prog isa :=
+  .seq (.block (save ++ setup))
+    (.seq (.ite .eq (.block []) (.seq keysCall (.loop body .ne))) (.block restore))
+
 /-! ## `vg_aes_cbc_encrypt` -/
 
 /-- `Pⱼ ⊕ Cⱼ₋₁` in place, and the arguments of the call. -/
@@ -83,9 +92,9 @@ def encPre : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ callArgs
 def encPost : List Instr := zero4 .r6 0 ++ xor4 .r6 .r7 .r6 0 0 0 ++ advance
 
 /-- One block: `Pⱼ ⊕ Cⱼ₋₁`, enciphered, and the result the chaining value. -/
-def encBody : Prog isa := .seq (.block encPre) (.seq encFrame (.block encPost))
+def encBody : Prog isa := .seq (.block encPre) (.seq keyedFrame (.block encPost))
 
-def encrypt : Prog isa := whole encBody
+def encrypt : Prog isa := wholeK encBody
 
 /-! ## `vg_aes_cbc_decrypt`, one block at a time -/
 

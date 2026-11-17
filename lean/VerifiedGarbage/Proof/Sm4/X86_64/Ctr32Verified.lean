@@ -203,7 +203,7 @@ theorem ctr32_verified :
 theorem ctr32_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 3208 .r8 ctr32)
       (Proof.Sm4.ctr32Contract X86_64.abi 3216) :=
-  X86_64.Verified.stackScratch (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Sm4.ctr32PostOut_local _) (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 400) (post := Proof.Sm4.ctr32Post X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3208) ctr32_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)

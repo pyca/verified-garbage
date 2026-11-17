@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 meta import VerifiedGarbage.Proof.AesGcm.Rounds
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 
@@ -228,6 +229,7 @@ theorem sealPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     (n := 320) (pre := Spec.Gcm.sealWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
-    (Proof.AesGcm.sealWithPowersPost_local _) sealFrameSatPw_pre
+    (Proof.AesGcm.sealWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealWithPowersPostOut_local _ vs m m₁ m₂ r hl) sealFrameSatPw_pre
 
 end VG.Proof.AesGcm.AArch64.Fast

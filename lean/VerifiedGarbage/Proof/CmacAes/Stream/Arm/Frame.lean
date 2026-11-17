@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
@@ -60,20 +61,23 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
     (Spec.Cmac.aesInitContract Arm.abi 2312) :=
   Arm.Verified.regScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesInitPre Arm.abi.ptrBits) (post := Spec.Cmac.aesInitPost Arm.abi.ptrBits)
-    (wa := false) (stack := 8) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := false) (stack := 8) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => initPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2320 2 absorb)
     (Spec.Cmac.aesAbsorbContract Arm.abi 2336) :=
   Arm.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesAbsorbPre Arm.abi.ptrBits) (post := Spec.Cmac.aesAbsorbPost Arm.abi.ptrBits)
     (wa := false) (stack := 16) (m := 2) absorb_verified (by decide) (by decide) (by decide)
-    (by decide) (absorbPre_local _) (absorbPost_local _) absorbFrameSat_pre
+    (by decide) (absorbPre_local _) (absorbPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => absorbPostOut_local _ vs mm m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2320 1 finish)
     (Spec.Cmac.aesFinishContract Arm.abi 2336) :=
   Arm.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesFinishPre Arm.abi.ptrBits) (post := Spec.Cmac.aesFinishPost Arm.abi.ptrBits)
     (wa := false) (stack := 16) (m := 1) finish_verified (by decide) (by decide) (by decide)
-    (by decide) (finishPre_local _) (finishPost_local _) finishFrameSat_pre
+    (by decide) (finishPre_local _) (finishPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => finishPostOut_local _ vs mm m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.Arm

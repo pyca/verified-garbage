@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Residue.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Blake2.Scratch
 
 @[expose] public section
 
@@ -388,7 +389,8 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameReg hs.sp16 (fun R hR => ?_)
+    (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (noFrames_finalizeMain hf)]; decide)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -401,7 +403,9 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
       · subst h30; simp [State.write]
       · simp only [State.write, h30, ite_false]
         exact hk r hr h30
-    · exact hpost h0 d (repr_congr hP (fun i hi => write_frame_bytes (R := stR s₀ w) hs.st
+    · -- The output lies apart from the frame, whose bytes the pop loses.
+      refine Eq.trans (Proof.Blake2.bytesAt_congr fun i hi => lost_byte (R := outR s₀ w) f hs.out.symm hi) ?_
+      exact hpost h0 d (repr_congr hP (fun i hi => write_frame_bytes (R := stR s₀ w) hs.st
         (by show bufOff w + blockBytes w < 2 ^ 64; omega_arith) hi) hm) hlt hc
 
 end
@@ -554,6 +558,7 @@ theorem updateB_framed : Verified AArch64.target
     (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateB_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified AArch64.target
@@ -561,6 +566,7 @@ theorem finalizeB_framed : Verified AArch64.target
     (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeB_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified AArch64.target
@@ -568,6 +574,7 @@ theorem updateS_framed : Verified AArch64.target
     (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateS_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified AArch64.target
@@ -575,13 +582,28 @@ theorem finalizeS_framed : Verified AArch64.target
     (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeS_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## Returning without secret residue
 
-BLAKE2s's `init` leaves a word of its parameters in `x9`: the cleared `init`
-zeroes it before returning (`CT.lean` proves it then leaves nothing secret).
-BLAKE2b's is not cleared yet: Argon2 calls it by name, with its code. -/
+BLAKE2's `init` leaves a byte of the key or a word of its parameters in
+`x9`: the cleared `init` zeroes it before returning (`CT.lean` proves it then
+leaves nothing secret). Argon2 calls BLAKE2b's cleared `init` by name, with
+its code, its correctness (`initB_post`) and its constant time. -/
+
+/-- `init`'s postcondition looks at the final state only through its memory. -/
+theorem initB_post {s₀ u u' : State} (h : (Proof.Blake2.initAArch64 b).post s₀ u)
+    (hm : u'.mem = u.mem) (_ : u'.gpr .x0 = u.gpr .x0) : (Proof.Blake2.initAArch64 b).post s₀ u' := by
+  show Spec.Blake2.Repr _ _ u'.mem _ _
+  rw [hm]
+  exact h
+
+theorem initBCleared_verified :
+    Verified AArch64.target
+      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b))
+      (Spec.Blake2.initBContract AArch64.abi) :=
+  Clears.Verified.withClears initB_verified (by decide)
 
 theorem initSCleared_verified :
     Verified AArch64.target

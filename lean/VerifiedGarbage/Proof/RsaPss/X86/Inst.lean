@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPos
 import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3

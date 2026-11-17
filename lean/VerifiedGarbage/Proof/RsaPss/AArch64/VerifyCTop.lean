@@ -138,8 +138,8 @@ theorem code_ok {s : State} (hp : PreV tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs 
   refine WP.seq (WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_)
   refine WP.seq (WP.mono (body_ok c h624 hcK hp E hu (by rw [sy]; simp [allocated])) fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, _⟩ =>
-    ⟨habi, fun hc => by rw [hx0]; exact r hc⟩
+  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, _⟩ _ _ _ =>
+    ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => by dsimp only; rw [hx0]; exact r hc⟩
 
 end
 

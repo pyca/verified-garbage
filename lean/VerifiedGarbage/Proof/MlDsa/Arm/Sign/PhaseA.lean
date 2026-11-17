@@ -407,11 +407,16 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
   have eb := En.bytes (p := sc oCT) i1
   clear_value E
   sig_post [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
-  simp only [g0, g1, g2, g3, hm₂, er, setWidth_append32, toNat32 l1, toNat32 l2,
+  simp only [g0, g1, g2, g3, er, setWidth_append32, toNat32 l1, toNat32 l2,
     L.w (p := sc oCT) i1 (by omega_using [l0]), L.w i2 (by decide), eb] at hq
   simp only [State.withRegions_gpr, g0, g1, g2, er, toNat32 l1, toNat32 l2, State.addr,
     L.w (p := sc oCT) i1 (by omega_using [l0]), eb] at hx
-  exact ⟨hq.1, hq.2, hx⟩
+  -- The polynomial is apart from the released frame.
+  obtain hd : ∀ r ∈ [belowA s.sp D], (pR (pa s c)).Disjoint r := fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact (L.stkD i2).symm
+  refine ⟨fun h => reduced_frame hm₂ hd (hq.1 h), ?_, hx⟩
+  rw [polyAt_congr (Proof.MlKem.bytes_frame hm₂ hd (by decide))]
+  exact hq.2
 
 theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams)
     (hc : ballChk (rbs ++ wbs) wbs len c = true) :

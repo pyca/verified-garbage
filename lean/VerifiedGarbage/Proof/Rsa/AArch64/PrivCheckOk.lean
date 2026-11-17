@@ -1,11 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

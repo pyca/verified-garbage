@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
@@ -16,6 +15,102 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Constant`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Small`, which this module and modules that import it used -/
+
+section
+
+/-! # Small constants need one store after a shared runtime zero loop -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.Mont.X86.Rt (PtrAt)
+
+theorem write_zero {m : Mem} {B : Addr} {Z o k : Nat} (nw : B.toNat + Z ≤ 2 ^ 32)
+    (fit : o + 4 * (k + 1) ≤ Z) (zero : val32 m B o (k + 1) = 0) (x : BitVec 32) :
+    val32 (m.writeW (off B o) x) B o (k + 1) = x.toNat := by
+  rw [val32] at zero ⊢
+  have above : val32 m B (o + 4) k = 0 := by omega_using [zero]
+  rw [w32_write_self]
+  have O := writeW32_outside m B (d := o) x (by omega_using [nw, fit])
+  rw [O.val32 (by omega_using []) (by omega_using [nw, fit]), above, Nat.mul_zero, Nat.add_zero]
+
+theorem small_ok {s : State} {B : Addr} {Z n N j : Nat} (h : Ws s B Z n N)
+    (w : Width) (x : BitVec 32)
+    (fit : (Loc.array w j).offset n + 4 * (w.words n + 2) ≤ Z) :
+    WP isa (small w j x) s fun t => Ws t B Z n N ∧
+      Outside B (Loc.offset n (.array w j)) (4 * (w.words n + 2)) s.mem t.mem ∧
+      val32 t.mem B (Loc.offset n (.array w j)) (w.words n + 2) = x.toNat ∧
+      Keeps [.eax, .ecx, .edx, .ebp] s t := by
+  have nowrap := h.old.workspace.nowrap
+  unfold small
+  refine WP.seq (WP.mono (zero_ok h w (.array w j) fit) fun a ⟨ha, Oa, V, Ka⟩ => ?_)
+  refine ha.ptr_ok (.array w j) (by decide) (by decide) (by omega_using [fit, nowrap]) fun b Kb mb P => ?_
+  refine wp_movS rfl fun c C _ => ?_
+  have Kac : Keeps [.eax, .ecx, .edx, .ebp] a c := (Kb.mono (by decide)).trans
+    (C.keeps.mono (by decide))
+  have hw := ha.full.rt.of_keeps Kac
+  have pc : PtrAt c B .ebp (Loc.offset n (.array w j)) := by
+    rw [PtrAt, C.other _ (by decide)]; exact P
+  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr hw pc (d := 0) (by omega_using [fit]))
+    (VG.Proof.Mont.X86.Rt.ws_write hw (y := Loc.offset n (.array w j) + 0) (n := 4)
+      (by omega_using [fit])) fun t T => WP.block_nil ?_
+  have memory : t.mem = a.mem.writeW (off B (Loc.offset n (.array w j))) x := by
+    rw [T.mem, C.mem, mb, C.gpr, Nat.add_zero]
+  have Ot : Outside B (Loc.offset n (.array w j)) 4 a.mem t.mem := by
+    rw [memory]; exact writeW32_outside _ _ _ (by omega_using [fit, nowrap])
+  have Kall : Keeps [.eax, .ecx, .edx, .ebp] s t := Ka.trans
+    (Kac.trans (T.keeps _))
+  have Oall := Oa.trans (Ot.mono (Nat.le_refl _) (by omega_using []))
+  refine ⟨h.keep Kall (Oall.mono (Nat.zero_le _) (by omega_using [fit])), Oall, ?_, Kall⟩
+  rw [memory]
+  exact write_zero nowrap fit V x
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! # Small constants in the persistent runtime-width bank -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Rsa.X86.Keys (num Keep arr S)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
+
+theorem constant_ok {s : State} {B : Addr} {Z n N j : Nat}
+    (h : Ws s B Z n N) (hj : j < N) (x : BitVec 32) :
+    WP isa (cn j x) s fun t => Ws t B Z n N ∧ Keep B n [j] [] s.mem t.mem ∧
+      num t.mem B n j = x.toNat ∧ Keeps [.eax, .ecx, .edx, .ebp] s t := by
+  have fit := h.arr_fit hj
+  refine WP.mono (small_ok h .modulus x (by
+    simpa only [offset_array, Width.words, S] using fit)) fun t ⟨ht, O, V, K⟩ => ?_
+  simp only [offset_array, Width.words] at O V
+  have bound : val32 t.mem B (arr n j) (n + 2) < 2 ^ (32 * n) := by
+    rw [V]
+    exact Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by have := h.wpos; omega_using [this]))
+  exact ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O)
+      (by simp only [S]; omega_using []) (by simp),
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : n ≤ n + 2) bound).trans V, K⟩
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyOddFlag`, which only this module used -/
 

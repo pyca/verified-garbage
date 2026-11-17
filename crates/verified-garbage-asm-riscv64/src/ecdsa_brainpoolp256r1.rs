@@ -993,3 +993,11 @@ pub(crate) mod vg_brainpoolp256r1_sub_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_ecdsa_brainpoolp256r1_sign_k.rs"]
 pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha224_finalize_core.rs"]
+pub(crate) mod vg_sha224_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha224_init_core.rs"]
+pub(crate) mod vg_sha224_init_core;

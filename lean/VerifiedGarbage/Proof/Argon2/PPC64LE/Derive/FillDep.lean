@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

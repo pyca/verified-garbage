@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc

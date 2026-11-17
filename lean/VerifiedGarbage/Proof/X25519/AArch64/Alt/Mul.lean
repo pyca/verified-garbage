@@ -46,7 +46,7 @@ theorem rowAlt_arith {T0 T1 T2 T3 L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3
     S0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       T0 + 2 ^ 64 * T1 + 2 ^ 128 * T2 + 2 ^ 192 * T3 +
         (P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3) := by
-  omega_arith
+  grind
 
 /-- What `mulRow` computes, word by word. -/
 theorem rowAlt_value (a b0 b1 b2 b3 t0 t1 t2 t3 : Word) :
@@ -85,8 +85,8 @@ theorem rowB_ok (s : State) (hz : s.gpr .x17 = 0) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mul_x, exec_umulh_x, exec_adds_x,
     exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
+  simp only [↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
@@ -109,8 +109,8 @@ theorem rowC_ok (s : State) (hz : s.gpr .x17 = 0) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mul_x, exec_umulh_x, exec_adds_x,
     exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
+  simp only [↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
@@ -133,8 +133,8 @@ theorem rowD_ok (s : State) (hz : s.gpr .x17 = 0) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mul_x, exec_umulh_x, exec_adds_x,
     exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
+  simp only [↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
@@ -168,7 +168,7 @@ theorem firstAlt_arith {L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3 R1 R2 R3 R4 D1 D2 D3
     (p2 : P2 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (p3 : P3 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
     L0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3 := by
-  omega_arith
+  grind
 
 /-- What the row of `mulFirst` computes, word by word. -/
 theorem firstAlt_value (a b0 b1 b2 b3 : Word) :
@@ -227,9 +227,8 @@ theorem mulFirst_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
       |>.write w16 _) a16 (by omega_arith) (by omega_arith) (by decide : Reg.x5 ≠ .x6),
     exec_mul_x, exec_umulh_x, exec_adds_x, exec_adcs_x, exec_adc_x,
     Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry, RegUpd.gpr_write, RegUpd.gpr_addWithCarry,
-    RegUpd.c_addWithCarry, RegUpd.c_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq,
-    hz]
+  simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry, ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry,
+    RegUpd.c_addWithCarry, RegUpd.c_write, reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   rw [show a + 16 + 8 = a + 24 by omega_arith, show b + 16 + 8 = b + 24 by omega_arith]
   refine ⟨trivial, trivial, trivial, trivial, ?_, ⟨?_, by simp only [RegUpd.mem_write,
       RegUpd.mem_addWithCarry],
@@ -291,10 +290,10 @@ theorem fold38_value (k t0 t1 t2 t3 h0 h1 h2 h3 : Word) (hk : k.toNat = 38) :
   dsimp only [c0, c1, c2, c3, s3, u, d] at *
   simp only [val4, Bool.toNat_false, z] at *
   refine ⟨?_, ?_, ?_, ?_⟩
+  · grind
   · omega_arith
   · omega_arith
-  · omega_arith
-  · omega_arith
+  · grind
 
 theorem mulFold38_ok (s : State) (hz : s.gpr .x17 = 0) :
     WP isa (.block mulFold38) s fun t =>
@@ -307,8 +306,8 @@ theorem mulFold38_ok (s : State) (hz : s.gpr .x17 = 0) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_movz_w, exec_mul_x, exec_umulh_x,
     exec_adds_x, exec_adcs_x, exec_adc_x, Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
+  simp only [↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   have h := fold38_value (BitVec.setWidth 64 (BitVec.setWidth 32 (38 : BitVec 16)))
     (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15)
     (s.gpr .x16) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) rfl
@@ -355,8 +354,8 @@ theorem mulFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x16).toNat
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_adds_x, exec_lsr1_x, exec_adc_x,
     exec_movz_w, exec_mul_x, exec_adcs_x, Option.some.injEq, exists_eq_left']
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, hz]
+  simp only [↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    reduceCtorEq, ↓reduceIte, BitVec.setWidth_eq, hz]
   dsimp only [Size.bits]
   have h := add4_value (s.gpr .x12) (s.gpr .x13) (s.gpr .x14)
     ((s.gpr .x15 + s.gpr .x15 + BitVec.ofNat 64 false.toNat) >>> 1)

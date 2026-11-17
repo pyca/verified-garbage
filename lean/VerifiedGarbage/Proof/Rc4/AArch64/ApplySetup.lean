@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 
 /-! ### `Rc4.AArch64.Consts`, which this module and modules that import it used -/

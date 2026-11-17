@@ -49,6 +49,31 @@ The only branches are on the block count, the lengths and the number of
 bytes buffered (`count mod 16`), and every address is `state`, a pointer or
 a pointer plus a constant or a count, so only the pointers, `count` and the
 lengths can affect timing.
+
+## With `umaal`
+
+`blocks`, `update` and `finalize` take a flag, `umaal`: with it they are for
+CPUs with `umaal` (`hi:lo := n m + hi + lo`, which cannot overflow), and the
+arithmetic is in radix `2³²`. During a call the accumulator is five words
+`h0 + 2³² h1 + … + 2¹²⁸ h4` in `r3`, `r5`, `r7`, `r10` and `r11`, the top one
+below `2³²` and not reduced. A block is added to it in a chain of `umaal`s,
+together with five times its bits from 130 up (`2¹³⁰ ≡ 5`), into `a0`–`a4`
+in `r4`, `r6`, `r8`, `r9` and `r12`, `a4 ≤ 6`. With `r` the words `r0`–`r3`
+of the clamped key and `sj = rj + rj / 4 = 5 rj / 4` (`rj` is a multiple of
+4 for `j ≥ 1`, so `2¹²⁸ rj ≡ sj`), the product `a r` is the columns
+
+  `h0 = a0 r0 + a1 s3 + a2 s2 + a3 s1`
+  `h1 = a0 r1 + a1 r0 + a2 s3 + a3 s2 + a4 s1`
+  `h2 = a0 r2 + a1 r1 + a2 r0 + a3 s3 + a4 s2`
+  `h3 = a0 r3 + a1 r2 + a2 r1 + a3 r0 + a4 s3`
+  `h4 = a4 r0`,
+
+summed with their carries in four chains of four `umaal`s, one for each of
+`r0` and the pairs `(s1, r1)`, `(s2, r2)`, `(s3, r3)`, whose multiplier is in
+`r2` and carry in `r1`; the products of `a4`, which fit a word, are what the
+columns start from. The state's working space holds `r0`–`r3` at `[88, 104)`
+and `s1`–`s3` at `[104, 116)`. The final reduction folds the top word once
+more, and adds `5 ⌊(h + 5) / 2¹³⁰⌋`, in chains of `umaal`s of zero.
 -/
 
 @[expose] public section
@@ -230,6 +255,110 @@ def toWords : List Instr := [
   .dp .add .r10 .r10 (.shifted .r1 .lsl 21),
   .mov .r1 (.shifted .r1 .lsr 11)]
 
+/-! ## With `umaal`: radix `2³²` -/
+
+/-- `s1`–`s3`, `rj + rj / 4`, at `[104, 116)`, from the clamped words at `[92, 104)`. -/
+def setupS : List Instr :=
+  (List.range 3).flatMap fun i =>
+    [.ldr .r1 .r0 (92 + 4 * i), .dp .add .r1 .r1 (.shifted .r1 .lsr 2), .str .r1 .r0 (104 + 4 * i)]
+
+/-- The words of the clamped `r` and `s1`–`s3`. -/
+def setupU : List Instr := clampWords ++ setupS
+
+/-- The stored accumulator's words into `r3`, `r5`, `r7`, `r10` and `r11`:
+of its word 4, only the low two bits (the accumulator is below `2¹³⁰`). -/
+def loadAccU : List Instr :=
+  [.ldr .r3 .r0 0, .ldr .r5 .r0 4, .ldr .r7 .r0 8, .ldr .r10 .r0 12, .ldr .r11 .r0 16,
+   .dp .and .r11 .r11 (.imm 3)]
+
+/-- `h`'s bits from 130 up, times 5, into `r1`. -/
+def top5 : List Instr := [.mov .r1 (.shifted .r11 .lsr 2), .dp .add .r1 .r1 (.shifted .r1 .lsl 2)]
+
+/-- `a = h + m + 2¹²⁸ pad`, with `h`'s bits from 130 up folded in: the block's
+words `m` are the 16 bytes at `r1`. -/
+def addBlock (pad : Bool) : List Instr :=
+  ([.ldr .r4 .r1 0, .ldr .r6 .r1 4, .ldr .r8 .r1 8, .ldr .r9 .r1 12] : List Instr) ++ top5 ++
+  ([.dp .and .r12 .r11 (.imm 3), .mov .r2 (.imm 1),
+    .umaal .r4 .r1 .r3 .r2, .umaal .r6 .r1 .r5 .r2, .umaal .r8 .r1 .r7 .r2, .umaal .r9 .r1 .r10 .r2,
+    .dp .add .r12 .r12 (.reg .r1)] : List Instr) ++
+  if pad then [.dp .add .r12 .r12 (.imm 1)] else []
+
+/-- The columns' starts, the products of `a4`: `a4 s1`, `a4 s2` and `a4 s3`
+in `h1`–`h3`'s places of the first chain (the high word of each of its
+`umaal`s), then that chain, of `r0`, and `a4 r0` added to `h4`. -/
+def mulR0 : List Instr :=
+  [.ldr .r2 .r0 104, .mul .r7 .r12 .r2, .ldr .r2 .r0 108, .mul .r10 .r12 .r2,
+   .ldr .r2 .r0 112, .mul .r11 .r12 .r2, .mov .r3 (.imm 0), .mov .r5 (.imm 0), .ldr .r2 .r0 88,
+   .umaal .r3 .r5 .r4 .r2, .umaal .r5 .r7 .r6 .r2, .umaal .r7 .r10 .r8 .r2, .umaal .r10 .r11 .r9 .r2,
+   .mla .r11 .r12 .r2 .r11]
+
+/-- The chain of `s1` and `r1`: `a3 s1`, then `a0 r1`, `a1 r1` and `a2 r1`; its
+carry is added to `h4`. -/
+def mul1 : List Instr :=
+  [.mov .r1 (.imm 0), .ldr .r2 .r0 104, .umaal .r3 .r1 .r9 .r2, .ldr .r2 .r0 92, .umaal .r5 .r1 .r4 .r2,
+   .umaal .r7 .r1 .r6 .r2, .umaal .r10 .r1 .r8 .r2, .dp .add .r11 .r11 (.reg .r1)]
+
+/-- The chain of `s2` and `r2`: `a2 s2` and `a3 s2`, then `a0 r2` and `a1 r2`. -/
+def mul2 : List Instr :=
+  [.mov .r1 (.imm 0), .ldr .r2 .r0 108, .umaal .r3 .r1 .r8 .r2, .umaal .r5 .r1 .r9 .r2, .ldr .r2 .r0 96,
+   .umaal .r7 .r1 .r4 .r2, .umaal .r10 .r1 .r6 .r2, .dp .add .r11 .r11 (.reg .r1)]
+
+/-- The chain of `s3` and `r3`: `a1 s3`, `a2 s3` and `a3 s3`, then `a0 r3`. -/
+def mul3 : List Instr :=
+  [.mov .r1 (.imm 0), .ldr .r2 .r0 112, .umaal .r3 .r1 .r6 .r2, .umaal .r5 .r1 .r8 .r2, .umaal .r7 .r1 .r9 .r2,
+   .ldr .r2 .r0 100, .umaal .r10 .r1 .r4 .r2, .dp .add .r11 .r11 (.reg .r1)]
+
+/-- `h = a r`, as five words, the top one not reduced. -/
+def mulU : List Instr := mulR0 ++ mul1 ++ mul2 ++ mul3
+
+/-- Absorbing the 16 bytes at `r1` (plus `2¹²⁸` if `pad`): `h` in `r3`, `r5`,
+`r7`, `r10` and `r11`, before and after. -/
+def absorbU (pad : Bool) : List Instr := addBlock pad ++ mulU
+
+/-- `r1` (below `2³²`) added to `h`'s low four words, and its carry to `h4`,
+with `r2` zero. -/
+def addLow : List Instr :=
+  [.umaal .r3 .r1 .r2 .r2, .umaal .r5 .r1 .r2 .r2, .umaal .r7 .r1 .r2 .r2, .umaal .r10 .r1 .r2 .r2,
+   .dp .add .r11 .r11 (.reg .r1)]
+
+/-- The carry of `h + 5` out of its low four words, into `r1` (through `r4`). -/
+def carry5 : List Instr :=
+  [.mov .r1 (.imm 5), .mov .r4 (.reg .r3), .umaal .r4 .r1 .r2 .r2, .mov .r4 (.reg .r5), .umaal .r4 .r1 .r2 .r2,
+   .mov .r4 (.reg .r7), .umaal .r4 .r1 .r2 .r2, .mov .r4 (.reg .r10), .umaal .r4 .r1 .r2 .r2]
+
+/-- `h` reduced fully, its words in `r3`, `r5`, `r7`, `r10` and `r1`: its
+bits from 130 up folded in, leaving `h < 2¹³⁰ + 2³²`; then
+`c = ⌊(h + 5) / 2¹³⁰⌋`, 1 if `h ≥ p` (else 0), and `h + 5 c` without its bit
+130 is `h mod p`. -/
+def reduceU : List Instr :=
+  top5 ++ ([.dp .and .r11 .r11 (.imm 3), .mov .r2 (.imm 0)] : List Instr) ++ addLow ++ carry5 ++
+  ([.dp .add .r1 .r1 (.reg .r11), .mov .r1 (.shifted .r1 .lsr 2), .dp .add .r1 .r1 (.shifted .r1 .lsl 2)] : List Instr) ++
+  addLow ++ ([.dp .and .r1 .r11 (.imm 3)] : List Instr)
+
+/-- `s`, the key's words at `[40, 56)`, added to `h`'s low four words. -/
+def addKey : List Instr :=
+  ([.mov .r1 (.imm 0), .mov .r2 (.imm 1)] : List Instr) ++
+  [.ldr .r4 .r0 40, .umaal .r3 .r1 .r4 .r2, .ldr .r4 .r0 44, .umaal .r5 .r1 .r4 .r2,
+   .ldr .r4 .r0 48, .umaal .r7 .r1 .r4 .r2, .ldr .r4 .r0 52, .umaal .r10 .r1 .r4 .r2]
+
+/-! ## The arithmetic of either kind -/
+
+/-- The multipliers computed and the stored accumulator loaded. -/
+def setup (umaal : Bool) : List Instr := if umaal then setupU ++ loadAccU else setupR ++ loadAcc
+
+/-- Absorbing the 16 bytes at `r1` (plus `2¹²⁸` if `pad`). -/
+def absorbV (umaal pad : Bool) : List Instr := if umaal then absorbU pad else absorb pad
+
+/-- The accumulator reduced fully, its words in `r3`, `r5`, `r7`, `r10` and `r1`. -/
+def reduceV (umaal : Bool) : List Instr := if umaal then reduceU else reduce ++ toWords
+
+/-- The tag, the accumulator reduced fully plus `s`, modulo `2¹²⁸`: its words
+in `r3`, `r5`, `r7` and `r10`. -/
+def tagV (umaal : Bool) : List Instr :=
+  if umaal then reduceU ++ addKey
+  else reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++ addTop false ++
+    mask :: (List.range 9).flatMap carryStep ++ toWords
+
 /-! ## `init(state = r0, key = r1)` -/
 
 def init : Prog isa := .block (
@@ -238,17 +367,20 @@ def init : Prog isa := .block (
 
 /-! ## `blocks(state = r0, blocks = r1, n = r2)` -/
 
-def body : Prog isa := .block (
-  ([.ldr .r1 .r0 ptrOff, .dp .add .r2 .r1 (.imm 16), .str .r2 .r0 ptrOff] : List Instr) ++ absorb true ++
+def body (umaal : Bool) : Prog isa := .block (
+  ([.ldr .r1 .r0 ptrOff, .dp .add .r2 .r1 (.imm 16), .str .r2 .r0 ptrOff] : List Instr) ++ absorbV umaal true ++
   ([.ldr .r1 .r0 cntOff, .subs .r1 .r1 (.imm 1), .str .r1 .r0 cntOff] : List Instr))
 
-def blocks : Prog isa :=
-  .seq (.block (saveRegs ++ ([.str .r1 .r0 ptrOff, .str .r2 .r0 cntOff] : List Instr) ++ setupR ++ loadAcc ++
+/-- The accumulator stored, from its words in `r3`, `r5`, `r7`, `r10` and `r1`. -/
+def storeAcc : List Instr :=
+  [.str .r3 .r0 0, .str .r5 .r0 4, .str .r7 .r0 8, .str .r10 .r0 12, .str .r1 .r0 16,
+   .mov .r2 (.imm 0), .str .r2 .r0 20]
+
+def blocks (umaal : Bool) : Prog isa :=
+  .seq (.block (saveRegs ++ ([.str .r1 .r0 ptrOff, .str .r2 .r0 cntOff] : List Instr) ++ setup umaal ++
     ([.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)] : List Instr)))
-  (.seq (.ite .eq (.block []) (.loop body .ne))
-    (.block (reduce ++ toWords ++
-      ([.str .r3 .r0 0, .str .r5 .r0 4, .str .r7 .r0 8, .str .r10 .r0 12, .str .r1 .r0 16,
-       .mov .r2 (.imm 0), .str .r2 .r0 20] : List Instr) ++ restoreRegs)))
+  (.seq (.ite .eq (.block []) (.loop (body umaal) .ne))
+    (.block (reduceV umaal ++ storeAcc ++ restoreRegs)))
 
 /-! ## `update(state = r0, count = r2:r3, data = [sp], len = [sp, #4], scratch = [sp, #8])`
 
@@ -297,22 +429,17 @@ def fill : Prog isa :=
       .cmp .r8 (.imm 0)])
     (.ite .eq (.block []) copyIn))
 
-/-- The accumulator stored, from its words in `r3`, `r5`, `r7`, `r10` and `r1`. -/
-def storeAcc : List Instr :=
-  [.str .r3 .r0 0, .str .r5 .r0 4, .str .r7 .r0 8, .str .r10 .r0 12, .str .r1 .r0 16,
-   .mov .r2 (.imm 0), .str .r2 .r0 20]
-
-def update : Prog isa :=
+def update (umaal : Bool) : Prog isa :=
   .seq (.block (([.ldrSp .r12 8] : List Instr) ++ saveScr ++
       ([.dp .and .r4 .r2 (.imm 15), .ldrSp .r5 0, .ldrSp .r6 4, .cmp .r4 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) fill)
   (.seq (.block (([.mov .r1 (.shifted .r6 .lsr 4), .str .r5 .r0 ptrOff, .str .r6 .r0 lenOff,
-      .str .r1 .r0 cntOff, .str .r4 .r0 fillOff] : List Instr) ++ setupR ++ loadAcc ++
+      .str .r1 .r0 cntOff, .str .r4 .r0 fillOff] : List Instr) ++ setup umaal ++
       ([.ldr .r1 .r0 fillOff, .cmp .r1 (.imm 16)] : List Instr)))
-  (.seq (.ite .eq (.block (.dp .add .r1 .r0 (.imm 56) :: absorb true)) (.block []))
+  (.seq (.ite .eq (.block (.dp .add .r1 .r0 (.imm 56) :: absorbV umaal true)) (.block []))
   (.seq (.block [.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)])
-  (.seq (.ite .eq (.block []) (.loop body .ne))
-  (.seq (.block (reduce ++ toWords ++ storeAcc ++
+  (.seq (.ite .eq (.block []) (.loop (body umaal) .ne))
+  (.seq (.block (reduceV umaal ++ storeAcc ++
       ([.ldr .r8 .r0 lenOff, .dp .and .r8 .r8 (.imm 15), .ldr .r5 .r0 ptrOff, .mov .r1 (.reg .r0),
        .cmp .r8 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) copyIn)
@@ -333,13 +460,12 @@ def padBuf : Prog isa :=
   (.seq (.loop (.block [.strb .r12 .r1 56, .dp .add .r1 .r1 (.imm 1), .subs .r5 .r5 (.imm 1)]) .ne)
     (.block [.mov .r12 (.imm 1), .dp .add .r1 .r0 (.reg .r4), .strb .r12 .r1 56]))
 
-def finalize : Prog isa :=
+def finalize (umaal : Bool) : Prog isa :=
   .seq (.block (([.ldrSp .r12 4] : List Instr) ++ saveScr ++ ([.dp .and .r4 .r2 (.imm 15), .cmp .r4 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) padBuf)
-  (.seq (.block (.str .r4 .r0 ptrOff :: setupR ++ loadAcc ++ ([.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)] : List Instr)))
-  (.seq (.ite .eq (.block []) (.block (.dp .add .r1 .r0 (.imm 56) :: absorb false)))
-    (.block (reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++ addTop false ++
-      mask :: (List.range 9).flatMap carryStep ++ toWords ++
+  (.seq (.block (.str .r4 .r0 ptrOff :: setup umaal ++ ([.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)] : List Instr)))
+  (.seq (.ite .eq (.block []) (.block (.dp .add .r1 .r0 (.imm 56) :: absorbV umaal false)))
+    (.block (tagV umaal ++
       ([.ldrSp .r2 0, .str .r3 .r2 0, .str .r5 .r2 4, .str .r7 .r2 8, .str .r10 .r2 12, .ldrSp .r12 4] : List Instr) ++
       restoreScr)))))
 

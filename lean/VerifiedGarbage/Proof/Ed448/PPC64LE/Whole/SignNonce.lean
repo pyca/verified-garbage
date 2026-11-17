@@ -13,7 +13,7 @@ public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 public import VerifiedGarbage.TCB.PPC64LE.Target

@@ -550,6 +550,11 @@ theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [stR s₀] m m')
     (c 3 ?_)).writeW ?_ _ (c 4 ?_)).writeW ?_ _ (c 5 ?_)).writeW ?_ _ (c 6 ?_)).writeW ?_ _ (c 7 ?_) <;>
   simp
 
+/-- The registers kept are none of those `update ++ advance` writes. -/
+theorem preserved_ne_update : ∀ r ∈ preserved, ¬r = .x1 ∧ ¬r = .x2 ∧ ¬r = .x4 ∧ ¬r = .x5 ∧ ¬r = .x6 ∧
+    ¬r = .x7 ∧ ¬r = .x8 ∧ ¬r = .x9 ∧ ¬r = .x10 ∧ ¬r = .x11 ∧ ¬r = .x12 ∧ ¬r = .x13 ∧ ¬r = .x14 ∧ ¬r = .x15 := by
+  decide
+
 set_option simprocs false in
 theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
     (hx0 : s.gpr .x0 = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
@@ -591,9 +596,9 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
     | trivial
     | rfl
     | (intro r hr
-       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-       simp (disch := decide) only [RegUpd.gpr_write_of_ne])
+       obtain ⟨n1, n2, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15⟩ := preserved_ne_update r hr
+       simp only [RegUpd.gpr_write_of_ne, n1, n2, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15,
+         not_false_eq_true])
 
 theorem compressBlocks_succ (H : HashValue) (m : Mem) (p : Addr) (i : Nat) :
     compressBlocks H m p (i + 1) =

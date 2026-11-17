@@ -16,7 +16,33 @@ namespace VG.X86_64
 def freeState (bytes : Nat) (s : State) : State :=
   { s.setReg .rsp (s.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s.wr.tail }
 
+/-- A frame of `bytes` bytes: its body runs from `allocState bytes s`, ends
+with the frame's `rsp` and permissions, and the `free` leads to
+`freeState bytes t`, of which the postcondition may rely on nothing the
+frame's bytes hold, nor on the unknowns (as `WP.frame`'s, `Frame.lean`): it
+holds whatever memory `m` that differs from the body's only in the frame,
+and whatever unknowns `u`, the state then has. -/
 theorem alloc_frame_ok {bytes : Nat} (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
+    {s : State} (hl : bytes ≤ (s.gpr .rsp).toNat) {body : Prog isa} {Q : State → Prop}
+    (run : WP isa body (allocState bytes s) fun t =>
+      t.gpr .rsp = (allocState bytes s).gpr .rsp ∧ t.wr = (allocState bytes s).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] t.mem m →
+        Q { freeState bytes t with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
+  obtain ⟨trace, t, he, hsp, hwr, hq⟩ := run
+  have ha : isa.push (.alloc bytes) s = some (allocState bytes s) := by
+    simp only [isa, push, allocState]
+    exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hl⟩
+  have hf : isa.pop (.free bytes) (allocState bytes s) t = some (freeState bytes t) := by
+    simp only [isa, pop]
+    exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hsp, hwr, rfl⟩
+  exact ⟨_, _, Exec.frame ha he hf, hq _ t.unknowns (Frame.refl _ _)⟩
+
+/-- `alloc_frame_ok` with the memory of the body's run: the `free` leads to
+`freeState bytes t` itself. Only the residue lemmas use it, which state per
+run what a released frame holds (MCDT's exit); every other proof uses
+`alloc_frame_ok`. -/
+theorem alloc_frame_okMem {bytes : Nat} (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
     {s : State} (hl : bytes ≤ (s.gpr .rsp).toNat) {body : Prog isa} {Q : State → Prop}
     (run : WP isa body (allocState bytes s) fun t =>
       t.gpr .rsp = (allocState bytes s).gpr .rsp ∧ t.wr = (allocState bytes s).wr ∧ Q (freeState bytes t)) :

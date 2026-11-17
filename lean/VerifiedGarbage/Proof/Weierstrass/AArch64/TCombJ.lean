@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJOut
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry

@@ -131,8 +131,8 @@ theorem top_ok (s : State) (hz : s.gpr .x30=0) (ht : (s.gpr .x28).toNat<512) :
  Keeps [.x1,.x28,.x10,.x20,.x21,.x22,.x23,.x24,.x25,.x26,.x27] s t := by
  apply WP.of_runBlock
  simp only [topCode,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
- RegUpd.gpr_write,RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,RegUpd.c_write,
- BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,hz,Option.some.injEq,exists_eq_left']
+ ↓RegUpd.gpr_write,↓RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,RegUpd.c_write,
+ BitVec.setWidth_eq,↓reduceIte,reduceCtorEq,hz,Option.some.injEq,exists_eq_left']
  have h := top_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x20) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x25) (s.gpr .x26) (s.gpr .x27) (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9) (s.gpr .x28) ht
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
  refine ⟨_,h,⟨?_,by simp only [RegUpd.mem_write,RegUpd.mem_addWithCarry],by simp only [RegUpd.rd_write,RegUpd.rd_addWithCarry],by simp only [RegUpd.wr_write,RegUpd.wr_addWithCarry],by simp only [RegUpd.sp_write,RegUpd.sp_addWithCarry]⟩⟩

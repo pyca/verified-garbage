@@ -150,7 +150,7 @@ theorem correct {s : State} (hp : PreE s) :
   refine WP.mono (wp_saving [.r4] _ (W := [])
     (fun s₂ => (∀ r ∈ fixedR, s₂.gpr r = s.gpr r) ∧
       s₂.gpr .r0 = if normRq [polyAt s.mem (P s .r0)] < (s.gpr .r1).toNat then 1 else 0)
-    s hp.sp (fun _ h => (List.not_mem_nil h).elim) fun s₁ hE => ?_)
+    s hp.sp (fun _ h => (List.not_mem_nil h).elim) (fun _ _ _ _ q => q) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, h0⟩, _, _, hsp, _, hg⟩ =>
       ⟨preserved_of_saving hg fun r hr hn => hk r (by revert r; decide), hsp, by rw [hg .r0]; exact h0⟩
   refine WP.seq (WP.of_runBlock ⟨_, runBlock_cons.trans (by rfl), ?_⟩)

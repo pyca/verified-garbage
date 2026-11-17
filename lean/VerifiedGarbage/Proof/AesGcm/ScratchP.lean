@@ -221,6 +221,46 @@ theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gc
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
+/-- `sealRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Proof.Gcm.sealPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2 i (by omega_using [hi])]
+  exact h hr
+
 theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openRoundsPost pb) vs m₁ m' r →
@@ -266,6 +306,46 @@ theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gc
   rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega_using [hi])) hN hA hD hT,
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hD i (by
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
+/-- `openRoundsPost` reads the memory on return only within the buffers. -/
+theorem openPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openRoundsPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tgl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
@@ -348,6 +428,41 @@ theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
+/-- `streamEncryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamEncryptPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamEncryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamEncryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamEncryptRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
 theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m₁ m' r →
@@ -385,5 +500,76 @@ theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
+
+/-- `streamDecryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamDecryptPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamDecryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamDecryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamDecryptRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
+
+/-- `Proof.Gcm.initPrecomputedPost` reads the memory on return only within the
+key context, for a key of a length the precondition allows. -/
+theorem initPrecomputedPostOut_local : ∀ vs m m₁ m₂ r,
+    vs.length = (Proof.Gcm.initPrecomputedSig.words pb).length →
+    Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (initPre pb) vs m →
+    (∀ b ∈ Sig.bufs Proof.Gcm.initPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (Proof.Gcm.initPrecomputedPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (Proof.Gcm.initPrecomputedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.initPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (Proof.Gcm.initPrecomputedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (Proof.Gcm.initPrecomputedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, initPre, ArgWord.ofRaw] at hpre
+  dsimp only [Curry.apply, Proof.Gcm.initPrecomputedPost, ArgWord.ofRaw] at h ⊢
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  have hc : ∀ i < 128 * 8, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i) := agree_of hb.2
+  have hK : (Spec.Aes.bytesAt m key (kl.setWidth pb).toNat).length = (kl.setWidth pb).toNat := by
+    simp [Spec.Aes.bytesAt]
+  refine ⟨⟨Eq.trans (bytesAt_congr fun i hi => hc i ?_) h1,
+    (ctxH_congr fun i hi => hc i (by omega_using [hi])).trans h2⟩, powersRepr_congr hc h3⟩
+  rw [hK] at hi
+  simp only [Spec.Aes.rounds] at hi
+  rcases hpre with e | e | e <;> rw [e] at hi <;> omega_using [hi]
 
 end VG.Proof.AesGcm

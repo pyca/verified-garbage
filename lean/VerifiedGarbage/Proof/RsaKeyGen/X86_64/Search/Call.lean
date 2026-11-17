@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The search's call of the candidate
 
@@ -648,6 +649,30 @@ theorem CandPost.keep {p : SearchPublic} {pB rand : List Byte} {used : Nat} {s t
   rw [hm, hr]
   exact h
 
+/-- `CandPost` holds whatever the bytes of a frame on the search's stack hold
+once released: the output and the used count lie apart from it. -/
+theorem CandPost.lost {p : SearchPublic} {original : State} {pB rand : List Byte} {used : Nat} {t t' : State}
+    (hi : SearchInput p original) (h : CandPost p pB rand used t) (hr : t'.gpr .rax = t.gpr .rax)
+    {R : Region} (fm : Frame [R] t.mem t'.mem) (hR : R.Sub (below (original.gpr .rsp) stackUse)) :
+    CandPost p pB rand used t' := by
+  have hd := hi.1.2.2.2.2.2.2.2.1
+  have sep : ∀ {B : Region}, (below (original.gpr .rsp) stackUse).Disjoint B → ∀ q ∈ [R], B.Disjoint q :=
+    fun hB q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact fun x h₁ h₂ => hB x (hR x h₂) h₁
+  have hO : (below (original.gpr .rsp) stackUse).Disjoint ⟨p.op, p.len⟩ := by
+    have := (hd (inOut original) (by simp [inWrites])).2
+    cases hi.2
+    exact this
+  have hU : (below (original.gpr .rsp) stackUse).Disjoint ⟨p.up, 8 * 1⟩ := by
+    have := (hd (inUsed original) (by simp [inWrites])).2
+    cases hi.2
+    exact this
+  have fit : p.len < 2 ^ 64 := by cases hi.2; exact (original.gpr .rsi).isLt
+  unfold CandPost at h ⊢
+  rw [hr, Proof.Rsa.rsa_bytes_frame fm fit (sep hO), Proof.Rsa.wordsAt_frame fm (by decide) (sep hU)]
+  exact h
+
 theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) :
     WP isa (candidateRun (candidateCall v)) s fun t =>
@@ -670,8 +695,12 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
     (call_covers_reads h k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
   intro t hrd hwr hcs hfr ⟨s₂, hm₂, hg₂, hpost⟩ _
   obtain htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
-  refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, ?_, ?_⟩
-  · apply h.restore (show (freed 40 t).rd = s.rd from hrd.trans k.2.1)
+  have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 40, 40⟩ (below (original.gpr .rsp) stackUse) := by
+    rw [show s.gpr .rsp - BitVec.ofNat 64 40 = p.sp - BitVec.ofNat 64 200 by
+      rw [← hu, k.gpr (by decide), allocated_rsp], ← h.input.sp_eq]
+    exact Offset.sub_below _ (by decide) (by decide)
+  refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, fun m uu fm => ⟨?_, ?_⟩⟩
+  · apply h.restore (t := { freed 40 t with mem := m, unknowns := uu }) (show (freed 40 t).rd = s.rd from hrd.trans k.2.1)
       (show (freed 40 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
     · intro r hr
       by_cases he : r = .rsp
@@ -682,8 +711,14 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
           simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
           allocated_reg _ _ _ he]
-    · exact call_frame h hm hu hd hfr
-  · obtain ⟨he, hpb, hrand⟩ := call_inputs h hm hu
+    · exact (call_frame h hm hu hd hfr).trans (fm.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        refine ⟨⟨original.gpr .rsp - BitVec.ofNat 64 stackUse, 176⟩, by simp [SearchInput.callChanges], ?_⟩
+        rw [show s.gpr .rsp - BitVec.ofNat 64 40 = p.sp - BitVec.ofNat 64 200 by
+          rw [← hu, k.gpr (by decide), allocated_rsp], ← h.input.sp_eq]
+        exact Offset.sub_below _ (by decide) (by decide))
+  · refine CandPost.lost (t := freed 40 t) h.input ?_ (freed_reg 40 t .rax (by decide)) fm hR
+    obtain ⟨he, hpb, hrand⟩ := call_inputs h hm hu
     obtain ⟨a0, a1, a2, -, -⟩ := call_args (used := used) hu hm
     obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha
     obtain t8 : (BitVec.ofNat 64 p.elen).toNat = p.elen := by

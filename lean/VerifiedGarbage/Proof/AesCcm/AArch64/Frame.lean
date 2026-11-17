@@ -137,7 +137,8 @@ theorem seal_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
   AArch64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+    (sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
@@ -159,7 +160,8 @@ theorem open_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     (n := 320) (pre := Spec.Ccm.openPre AArch64.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
+    (open_verified v) (by decide) (by decide) (openPre_local _) (openPost_local _)
+    (openPostOut_local _) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesCcm.AArch64

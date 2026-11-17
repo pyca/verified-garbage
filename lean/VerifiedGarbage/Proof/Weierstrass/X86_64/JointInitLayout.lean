@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 import VerifiedGarbage.Proof.Weierstrass.PointContract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch

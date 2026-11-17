@@ -11,12 +11,10 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
-import VerifiedGarbage.Proof.Bignum.X86.ExponentByte
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ### `Bignum.X86.ExponentLoopTiming`, which this module and modules that import it used -/

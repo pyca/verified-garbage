@@ -517,7 +517,8 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
       abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hsp := h.sp
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ (WP.mono (body_ok v h) fun u ⟨hu, hE, hO⟩ => ⟨?_, ?_⟩))
+  refine WP.frameAlloc (by omega_using [hsp]) (by decide) ?_
+    (WP.mono (body_ok v h) fun u ⟨hu, hE, hO⟩ m uu f => ⟨?_, ?_⟩)
   · show 32 ≤ (s.sp - 16).toNat
     rw [sp16, K_toNat h (by decide)]; omega_using []
   · have hsp' : (freed 32 u).sp = K s + BitVec.ofNat 64 928 := by
@@ -533,7 +534,16 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
       rw [hsp', sp_eq s]; exact add_add _ _ _
   · sig_post [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
-    exact ⟨hE, hO⟩
+    have hb : VG.AArch64.below s.sp 48 = ⟨K s + BitVec.ofNat 64 896, 48⟩ := by
+      show (⟨s.sp - BitVec.ofNat 64 48, 48⟩ : Region) = _
+      rw [sp_eq s, off_sub _ (by decide) (by decide)]
+    have hl : ∀ {R : Region} {n : Nat}, Region.Disjoint ⟨K s + BitVec.ofNat 64 896, 48⟩ R → R.len = n →
+        Spec.Ed25519.bytesAt m R.base n = Spec.Ed25519.bytesAt u.mem R.base n := by
+      intro R n hd hn
+      subst hn
+      rw [← hb] at hd
+      exact List.map_congr_left fun i hi => VG.AArch64.lost_byte f hd.symm (List.mem_range.mp hi)
+    exact ⟨(hl (h.kE (by decide)) rfl).trans hE, (hl (h.kO (by decide)) rfl).trans hO⟩
 
 end
 

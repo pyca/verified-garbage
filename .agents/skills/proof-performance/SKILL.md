@@ -356,6 +356,36 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     unfolds the writes themselves (`State.write`) re-simplifies every
     earlier register function at each instruction: keep them folded and
     read through them (`crunw`, `MlKem1024/RISCV64/`).
+  * *A tactic for a discharger, on a goal with binders.* With
+    `(disch := tac)`, `simp` cannot keep its cache when it goes under a
+    binder (the tactic may read the new hypotheses), so it simplifies again
+    whatever it meets again there, whether or not `tac` ever runs: a run
+    whose postcondition has `∀ r ∈ […]` over eight nested `if`s took 1.09 s
+    with `(disch := decide)` and 0.27 s with the same lemmas and none
+    (`restore_ok`); another 1.01 s and 0.21 s. Where a run's side conditions
+    are closed facts, let `simp` discharge them itself: give it the
+    simprocs and lemmas that decide them (`reduceCtorEq`, `Nat.reduceLeDiff`,
+    `Nat.reduceEqDiff`, `ne_eq`, `not_false_eq_true`). Taking the
+    discharger out of a shared run tactic is not a local change: of the 41
+    modules that use `prun`, 38 fail without it, and with `simp`'s own
+    `decide` in its place 36 compile and take 6% less.
+  * *A rewrite of every hypothesis.* `rw [h] at *`, `simp only [l] at *`
+    and `linarith` visit each of a hundred hypotheses, in every goal they
+    run in; `rw [show a = b by omega_arith] at *` elaborates the `show`
+    again for each. Name the hypotheses (`at h₁ h₂ ⊢`, `linarith only [h]`),
+    and state the equation once (`obtain e : a = b := by …`) before
+    rewriting with it. `contradiction` likewise compares every pair of
+    hypotheses: `cases h`, or the two facts by name.
+  * *`simp` lemmas that make it search.* A permutation lemma
+    (`a + x + b = a + b + x`) in `simp only` is applied only where it
+    orders the terms, a comparison that unfolded `State.xmm` 98,074 times
+    in one proof (1.35 s): `rw` with the lemma instantiated. A read through
+    `n` updates by a lemma whose right side is an `if` visits the branches
+    about 2ⁿ times through `ite_congr` (0.54 s for eight): `rw` once for
+    each update, with the side condition by `decide`.
+  * *Destructuring after the goal has grown.* An `obtain ⟨a₀, …, a₁₆⟩ := h`
+    after `refine ⟨witness, ?_⟩` reduces the goal the witness made at every
+    `cases` (0.5 s): take the hypothesis apart first.
   * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an
@@ -564,6 +594,19 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   use `lit_decide`. `python3 ci/lit_imports.py` lists the checks that
   evaluate code without a literal they could import (see the
   `lean-profiling` skill).
+* **Code behind a structure with proofs:** `rw_lit` does not rewrite
+  inside a structure that has proofs about its code among its fields (a
+  registration's `r.code`, the functions of a variant): a check stated of
+  such code has the kernel build it from the functions that generate it
+  and walk their terms, in which two instructions that are the same after
+  evaluation are different terms, each met for the first time. For a check
+  of the x86-64 residue analysis of such code (`RScrub.resOk_reg0`,
+  `Analysed.ok_of` over a hash variant's functions), write
+  `taint_decide_lit` (`Proof/Framework/X86_64/ResidueScrub.lean`), which
+  states the check of the code's literal first: the module of SHA-256
+  with AVX2, seven such checks, went from 30 s to 13 s. It pays for long code (a compression
+  function unrolled) and not for short (the SHA-NI variants), and where
+  `rw_lit` finds the literals it is `taint_decide`.
 * **Equations between code:** prove that two programs, or two lists of
   programs, are the same with `kernel_rfl`, not `decide +kernel`. `decide`
   evaluates both sides to their last operand and compares them with

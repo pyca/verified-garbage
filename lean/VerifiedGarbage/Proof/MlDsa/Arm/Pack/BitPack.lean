@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.MlKem.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -117,7 +119,9 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
   have ab := mem_bitPackParams hp.ab
   have go : ∀ {d c nb B : Nat}, Shape d c nb → (s₀.gpr .r2).toNat = B → B ≤ 2 ^ 19 →
       encodable (BitVec.ofNat 32 B) = true → bitlen ((s₀.gpr .r1).toNat + B) = d → ∀ s : State, Same s₁ s →
-      WP isa (packLoop (bpLd B) d c nb) s fun s₂ => BpPost s₀ (popped .r4 4 s₂) := by
+      WP isa (packLoop (bpLd B) d c nb) s fun s₂ => ∀ m u,
+        Frame [⟨State.addr (s₀.sp - BitVec.ofNat 32 (4 * [Reg.r4].length)), 4 * [Reg.r4].length⟩] s₂.mem m →
+          BpPost s₀ { popped .r4 (4 * [Reg.r4].length) s₂ with mem := m, unknowns := u } := by
     intro d c nb B hs hB hB19 hBe hd s hS
     have hlen := hp.len
     rw [hB, hd] at hlen
@@ -129,18 +133,25 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
       (by rw [← hlen]; exact hp.disj) hp.fitF (by rw [← hlen]; exact hp.fitO) (fun i hi => ?_)
       (by rw [hS.1, k₁.gpr (by decide), pushed_gpr]) (by rw [hS.1, g2, pushed_gpr])
       (by rw [hS.2.2.1, k₁.2.1, pushed_rd]) (by rw [hS.2.2.2.1, k₁.2.2.1]) (by rw [hS.2.1, gm]))
-      fun s₂ ⟨hbytes, hf, hk⟩ => ⟨?_, ⟨fun r hr => ?_, ?_⟩⟩
+      fun s₂ ⟨hbytes, hf, hk⟩ mL uL hfl => ⟨?_, ⟨fun r hr => ?_, ?_⟩⟩
     · obtain ⟨h₁, h₂⟩ := hp.bnd i hi
       rw [hB] at h₂
       have hx := hp.red i hi
       rw [hco i hi, bpVal, bm_toNat (by omega_arith) hx, hBq, ← sub_modPm hx (by rw [q_eq]; omega_arith) h₂, ← hd, ← hB]
       exact lt_bitlen (sub_modPm_le h₁ (by rw [hB]; exact h₂))
-    · rw [popped_mem, hlen, hbytes, bitPack_eq, ← hB, ← hd, hB]
+    · have e4 : State.addr (s₀.sp - BitVec.ofNat 32 (4 * [Reg.r4].length)) = State.addr s₀.sp - 4 := addr_sub hsp
+      rw [e4] at hfl
+      dsimp only
+      rw [Proof.MlKem.bytesAt_frame (rs := [below4 s₀]) hfl (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hp.bO.symm)
+        (by have := (stackArg s₀ 0).isLt; omega_arith)]
+      rw [hlen, hbytes, bitPack_eq, ← hB, ← hd, hB]
       rw [bitPack_vals hp.red hB19 (fun i hi => by rw [← hB]; exact (hp.bnd i hi).2)]
       refine congrArg (fun L => bitsToBytes (fieldBits _ L)) (List.map_congr_left fun i hi => ?_)
       rw [hco i (List.mem_range.mp hi)]
     · -- The registers: `r4` from the frame, the others kept.
       have hsp₂ : s₂.sp = s₀.sp - 4 := by rw [hk.2.2.2, hS.2.2.2.2, k₁.2.2.2, pushed4_sp]
+      dsimp only
       by_cases h4 : r = .r4
       · subst h4
         refine (popped4 hsp hsp₂ ?_).1
@@ -153,6 +164,7 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
         rw [popped_gpr h4, hk.gpr (fun h => hr' (List.mem_append_left _ h)), hS.1,
           k₁.gpr (fun h => hr' (List.mem_append_right _ h)), pushed_gpr]
     · have hsp₂ : s₂.sp = s₀.sp - 4 := by rw [hk.2.2.2, hS.2.2.2.2, k₁.2.2.2, pushed4_sp]
+      dsimp only
       rw [popped_sp, hsp₂]; exact BitVec.sub_add_cancel _ _
   have e12 : ∀ s, Same s₁ s → (s.gpr .r12).toNat = (s₀.gpr .r2).toNat := fun s h => by
     rw [h.1, g12, pushed_gpr]

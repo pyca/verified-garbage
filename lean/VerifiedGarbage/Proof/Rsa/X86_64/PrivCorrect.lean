@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
@@ -30,19 +31,20 @@ def freed (bytes : Nat) (s₂ : State) : State :=
   { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
 
 /-- The frame: its body runs from `allocState frameBytes s` and ends with
-`rsp` and the writable regions as the push left them. -/
+`rsp` and the writable regions as the push left them; the frame's bytes then
+hold whatever they hold once released (`alloc_frame_ok`). -/
 theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
-      s₂.wr = (allocState frameBytes s).wr ∧ Q (freed frameBytes s₂)) :
-    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  have ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
-  have hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freed frameBytes s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+        Q { freed frameBytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q :=
+  alloc_frame_ok (by decide) hsp hb
+
+/-- The frame lies in the stack the function uses. -/
+theorem frame_stk (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (stkR s) := by
+  have hs := frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+  simp only [off, BitVec.add_zero] at hs
+  exact hs
 
 /-- The return address is outside everything the function writes. -/
 theorem ret_frame {s : State} (hp : PreF X s) {m : Mem} (h : Frame [stkR s, outR s, scrR s] s.mem m) :

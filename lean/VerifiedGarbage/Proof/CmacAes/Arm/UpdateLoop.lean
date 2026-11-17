@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.Arm.KeyedCall
+import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -204,7 +206,8 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
   refine WP.frame (rs := [ra, rb]) (r := ra) h.regs (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
     (rd := ctrRd s W) (wr := ctrWr C D S) h.pre h.cov h.covW ?_ ctr_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s] s₂.mem ml := by rw [e8, h.hA] at hfl; exact hfl
   obtain hR := toNat_rounds h.rounds
   obtain hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   -- The memory of the frame.
@@ -245,7 +248,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
     rw [this, h.amem, Mem.readW_writeW_sep
       (Offset.sep_base (State.addr s.sp - 8) (n := 4) (e := 4) (k := 4) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self32]
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp, e8]; exact BitVec.sub_add_cancel _ _
@@ -254,10 +257,12 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
       show (s₂.setReg r (s₂.mem.readW (State.addr s₂.sp) 32)).gpr r = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot, h.hra]
     · rw [popped_gpr hra, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fBelow.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem, Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, bytesW, bytesC,
+  · refine ((h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fBelow.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [Proof.Cmac.bytesAt_frame16 hfl' (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm),
+      Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, bytesW, bytesC,
       Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _)]
 
 /-- Calls of `vg_aes_ctr32` on one block, with the same arguments and stack
@@ -624,15 +629,21 @@ end
 /-!
 # AES-CMAC on ARMv7: the loop of `vg_cmac_aes_update`
 
-One block keeps the loop invariant (`body_ok`): the counter block is `C ⊕ Mᵢ`
-and the state is zeroed (`Cmac.chainMem4`), and the call of `vg_aes_ctr32`
-leaves `CIPH_K(C ⊕ Mᵢ)` in the state.
+One block keeps the loop invariant, with the round keys in the working space
+(`body_ok`, `KInv`): the state becomes `C ⊕ Mᵢ` (`Cmac.xor4Mem`), and the
+call of `vg_aes_encrypt_blocks_keyed` leaves `CIPH_K(C ⊕ Mᵢ)` there, and the
+round keys where `vg_aes_blocks_keys` put them before the first block
+(`keysCall_wp`).
 -/
 
 namespace VG.Proof.CmacAes.Arm
 
 open VG VG.Arm VG.Impl.CmacAes.Arm
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg wp_mov wp_add wp_subs eval_ne ofNat_beq_zero sub_ofNat)
+open VG.Impl.Aes.Arm (keyedFrame keysCall)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (schedAt KeysArgs kblk_call)
+open VG.Proof.AesOcb.Arm (BlkCall BlkPost encF)
 
 theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
     (blks s₀).take (k + 1) =
@@ -686,25 +697,95 @@ theorem UPre.big_of {m : Mem} (hf : Frame [stR s₀, ⟨State.addr (S s₀), 206
 
 end
 
+/-! ## The round keys bitsliced once -/
+
+/-- The round keys of the key schedule on entry are in the working space. -/
+abbrev Keys (s₀ : State) (m : Mem) : Prop := KeysIn m (S s₀) (R s₀) (schedAt s₀.mem (W s₀) (R s₀))
+
+/-- The loop invariant, with the round keys in the working space. -/
+def KInv (s₀ : State) (k : Nat) (s : State) : Prop := LInv s₀ k s ∧ Keys s₀ s.mem
+
+section
+variable {s₀ : State} (hp : UPre s₀)
+include hp
+
+theorem UPre.rounds_le : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
+
+theorem UPre.work_fit : (S s₀).toNat + 2048 ≤ 2 ^ 32 := by have := hp.scr_fit; omega_arith
+
+/-- The round keys stay where the memory changes only apart from the working
+space. -/
+theorem keys_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨State.addr (S s₀), 2048⟩ : Region).Disjoint r) (h : Keys s₀ m) : Keys s₀ m' :=
+  Proof.Aes.Arm.Ecb.keysIn_frame hp.work_fit hp.rounds_le hf hd h
+
+/-- The round keys at a call: those of the key schedule as the memory then
+holds it, which is as on entry. -/
+theorem keys_call {m : Mem} (hf : Frame (Big s₀) s₀.mem m) (h : Keys s₀ m) :
+    KeysIn m (S s₀) (R s₀) (schedAt m (W s₀) (R s₀)) := by
+  rw [show schedAt m (W s₀) (R s₀) = schedAt s₀.mem (W s₀) (R s₀) from hp.sched_bytes hf]; exact h
+
+/-- The round keys a call leaves are those of the key schedule on entry. -/
+theorem keys_of_call {m m' : Mem} (hf : Frame (Big s₀) s₀.mem m)
+    (h : KeysIn m' (S s₀) (R s₀) (schedAt m (W s₀) (R s₀))) : Keys s₀ m' := by
+  rw [show schedAt m (W s₀) (R s₀) = schedAt s₀.mem (W s₀) (R s₀) from hp.sched_bytes hf] at h; exact h
+
+/-- The arguments of the call that bitslices the round keys, from the
+invariant. -/
+theorem LInv.keysArgs {k : Nat} {s : State} (h : LInv s₀ k s) : KeysArgs s (W s₀) (S s₀) (R s₀) := by
+  refine ⟨h.r4, by rw [h.r5]; simp [R], h.r10, hp.rounds, hp.sch_fit, hp.work_fit,
+    hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
+  · rw [h.rd, h.wr, hp.rd, hp.wr]
+    exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
+  · rw [h.wr, hp.wr]
+    exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
+
+/-- The call that bitslices the round keys keeps the invariant, and leaves
+them in the working space. -/
+theorem keysCall_wp {k : Nat} {s : State} (h : LInv s₀ k s) : WP isa keysCall s (KInv s₀ k) := by
+  refine WP.mono (Proof.Aes.Arm.keysCall_wp (h.keysArgs hp)) fun s₂ c => ?_
+  obtain g : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = s.gpr r := c.saved
+  refine ⟨⟨by rw [g _ (by simp [preserved]) (by decide), h.r4], by rw [g _ (by simp [preserved]) (by decide), h.r5],
+    by rw [g _ (by simp [preserved]) (by decide), h.r6], by rw [g _ (by simp [preserved]) (by decide), h.r7],
+    by rw [g _ (by simp [preserved]) (by decide), h.r8], by rw [g _ (by simp [preserved]) (by decide), h.r10],
+    by rw [g _ (by simp [preserved]) (by decide), h.r11],
+    by rw [c.sp, h.sp], by rw [c.rd, h.rd], by rw [c.wr, h.wr], ?_, ?_⟩, ?_⟩
+  · exact h.frame.trans (c.frame.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨State.addr (S s₀), 2064⟩, by simp, Region.sub_prefix (by decide)⟩)
+  · rw [Proof.Cmac.bytesAt_frame c.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hp.st_scr.sub_right (Region.sub_prefix (by decide))) (by decide), h.state]
+  · exact keys_of_call hp (UPre.big_of h.frame) c.keys
+
+end
+
 /-! ## One block -/
 
-/-- The counter block's address. -/
-abbrev Cb (s₀ : State) : BitVec 32 := S s₀ + BitVec.ofNat 32 2048
+/-- `CIPH_K` of a block in memory, from AES on its state. -/
+theorem aesWith_state (nr : Nat) (w : List Byte) (m : Mem) (p : Addr) :
+    Spec.Cmac.aesWith nr w (Spec.Aes.bytesAt m p 16) = (Spec.Aes.cipher nr w (Spec.Aes.stateAt m p)).toList := by
+  rw [Spec.Cmac.aesWith, Proof.AesCbc.ofFn_bytesAt]
+
+/-- The address of block `k` of the data. -/
+abbrev blk (s₀ : State) (k : Nat) : Addr := State.addr (Dp s₀) + BitVec.ofNat 64 (16 * k)
 
 /-- What the code before the call leaves. -/
 structure BodyA (s₀ : State) (k : Nat) (s s₁ : State) : Prop where
-  pre : CallPre s₁ (W s₀) (Cb s₀) (St s₀) (S s₀) (R s₀) .r9 .r10
-  keep : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r9 → s₁.gpr r = s.gpr r
+  pre : BlkCall s₁ (W s₀) (St s₀) (S s₀) (R s₀) 1
+  keep : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₁.gpr r = s.gpr r
   sp : s₁.sp = s.sp
-  mem : s₁.mem = Proof.Cmac.chainMem4 s.mem (State.addr (S s₀) + BitVec.ofNat 64 2048) (State.addr (St s₀))
-    (State.addr (Dp s₀) + BitVec.ofNat 64 (16 * k))
+  mem : s₁.mem = Proof.Cmac.xor4Mem s.mem (State.addr (St s₀)) (State.addr (St s₀)) (blk s₀ k)
   rd : s₁.rd = s.rd
   wr : s₁.wr = s.wr
 
-theorem chainIn_eq : chainIn ++ updArgs = xorBlk .r0 .r1 .r6 .r7 .r10 0 0 2048 ++
-    (.mov .r0 (.imm 0) :: (zeroBlk .r0 .r6 0 ++
-      ([.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .dp .add .r2 .r10 (.imm (BitVec.ofNat 32 2048)),
-       .mov .r3 (.reg .r6), .mov .r9 (.imm 1)] : List Instr))) := rfl
+theorem chainIn_eq : chainIn ++ updArgs = xorBlk .r12 .lr .r6 .r7 .r6 0 0 0 ++
+    ([.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .mov .r3 (.imm 1),
+      .mov .r12 (.reg .r10)] : List Instr) := rfl
 
 theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv s₀ k s) :
     WP isa (.block (chainIn ++ updArgs)) s (BodyA s₀ k s) := by
@@ -715,10 +796,13 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
   have hst := hp.st_fit
   have hdf := hp.data_fit
   obtain qN := hp.dataN hk
+  obtain cSt : Covers [stR s₀] [stR s₀, scrR s₀] := Covers.of_sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
   rw [chainIn_eq]
   refine xorBlk_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by rw [h.r6]; omega_arith) (by rw [h.r7, qN]; omega_arith)
-    (by rw [h.r10]; omega_arith) ?_ ?_ ?_ fun s₁ g₁ => ?_
+    (by rw [h.r6]; omega_arith) ?_ ?_ ?_ fun s₁ g₁ => ?_
   · rw [h.r6, add0, hRegs]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -727,143 +811,122 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega_arith⟩
-  · rw [h.r10, hW]
-    exact Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scrR s₀, by simp, 2048, rfl, by simp⟩
-  have e₁ : ∀ r, r ≠ .r0 → r ≠ .r1 → s₁.gpr r = s.gpr r := g₁.gpr
-  refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
-  obtain r6₂ : s₂.gpr .r6 = St s₀ := by rw [u₂.other _ (by decide), e₁ _ (by decide) (by decide), h.r6]
-  refine Proof.CmacAes.Arm.zeroBlk_ok u₂.gpr (by decide) (by rw [r6₂]; omega_arith) ?_ fun s₃ G₃ m₃ rd₃ wr₃ sp₃ => ?_
-  · rw [r6₂, add0, u₂.wr, g₁.wr, hW]
-    exact Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
-  refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ =>
-    wp_add (op2_imm (by decide)) fun s₆ u₆ => wp_mov (op2_reg _ _) fun s₇ u₇ =>
-    wp_mov (op2_imm (by decide)) fun s₈ u₈ => WP.block_nil ?_
-  obtain keep : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r9 → s₈.gpr r = s.gpr r :=
-    fun r h0 h1 h2 h3 h9 => by
-      rw [u₈.other _ h9, u₇.other _ h3, u₆.other _ h2, u₅.other _ h1, u₄.other _ h0, G₃, u₂.other _ h0,
-        e₁ _ h0 h1]
-  obtain sp₈ : s₈.sp = s₀.sp := by
-    rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, sp₃, u₂.sp, g₁.sp, h.sp]
-  obtain rd₈ : s₈.rd = s.rd := by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, g₁.rd]
-  obtain wr₈ : s₈.wr = s.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, g₁.wr]
-  obtain mem₈ : s₈.mem = Proof.Cmac.chainMem4 s.mem (State.addr (S s₀) + BitVec.ofNat 64 2048)
-      (State.addr (St s₀)) (State.addr (Dp s₀) + BitVec.ofNat 64 (16 * k)) := by
-    rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, r6₂, u₂.mem, g₁.mem, h.r6, h.r7, h.r10, add0, add0,
-      hp.dataA hk]
-    rfl
-  obtain hb : below s₈ = belowR s₀ := by rw [below, sp₈]; rfl
-  obtain cA : State.addr (Cb s₀) = State.addr (S s₀) + BitVec.ofNat 64 2048 := hp.scrA (by decide)
-  obtain cSt : (⟨State.addr (Cb s₀), 16⟩ : Region).Disjoint (stR s₀) := by
-    rw [cA]; exact hp.st_scr.symm.sub_left (UPre.scr_sub (by decide))
-  refine ⟨⟨?_, ?_, ?_, ?_, u₈.gpr, ?_, by decide, hp.rounds, by rw [sp₈]; exact hp.sp8, ?_, hp.sch_st, ?_, cSt,
-    ?_, ?_, by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_st, ?_, hp.sch_fit, ?_, hp.st_fit, ?_, ?_, ?_,
-    ?_⟩, keep, by rw [sp₈, h.sp], mem₈, rd₈, wr₈⟩
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
-      G₃, u₂.other _ (by decide), e₁ _ (by decide) (by decide), h.r4]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide),
-      G₃, u₂.other _ (by decide), e₁ _ (by decide) (by decide), h.r5]
+  · rw [h.r6, add0, hW]; exact cSt
+  have e₁ : ∀ r, r ≠ .r12 → r ≠ .lr → s₁.gpr r = s.gpr r := g₁.gpr
+  refine wp_mov (op2_reg _ _) fun s₂ u₂ => wp_mov (op2_reg _ _) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ =>
+    wp_mov (op2_imm (by decide)) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ => WP.block_nil ?_
+  obtain keep : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₆.gpr r = s.gpr r :=
+    fun r h0 h1 h2 h3 h12 hlr => by
+      rw [u₆.other _ h12, u₅.other _ h3, u₄.other _ h2, u₃.other _ h1, u₂.other _ h0, e₁ _ h12 hlr]
+  obtain sp₆ : s₆.sp = s₀.sp := by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, g₁.sp, h.sp]
+  obtain rd₆ : s₆.rd = s.rd := by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, g₁.rd]
+  obtain wr₆ : s₆.wr = s.wr := by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, g₁.wr]
+  obtain mem₆ : s₆.mem = Proof.Cmac.xor4Mem s.mem (State.addr (St s₀)) (State.addr (St s₀)) (blk s₀ k) := by
+    rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, g₁.mem, h.r6, h.r7, add0, add0, hp.dataA hk]
+  obtain hb : Proof.AesGcm.Arm.below s₆.sp = belowR s₀ := by rw [sp₆]; rfl
+  refine ⟨⟨?_, ?_, ?_, by rw [u₆.other _ (by decide), u₅.gpr]; rfl, ?_, hp.rounds, by rw [sp₆]; exact hp.sp8,
+    hp.sch_fit, by omega_arith, hp.work_fit, hp.sch_st,
+    hp.sch_scr.sub_right (Region.sub_prefix (by decide)), hp.st_scr.sub_right (Region.sub_prefix (by decide)),
+    by rw [hb]; exact hp.b_sch, by rw [hb]; exact hp.b_st,
+    by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩, keep, by rw [sp₆, h.sp], mem₆,
+    rd₆, wr₆⟩
+  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
+      e₁ _ (by decide) (by decide), h.r4]
+  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
+      e₁ _ (by decide) (by decide), h.r5]
     simp [R]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
-      G₃, u₂.other _ (by decide), e₁ _ (by decide) (by decide), h.r10]
-  · rw [u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
-      G₃, r6₂]
-  · rw [keep _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r10]
-  · rw [cA]; exact hp.sch_scr.sub_right (UPre.scr_sub (by decide))
-  · exact hp.sch_scr.sub_right (Region.sub_prefix (by decide))
-  · rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega_arith)
-  · exact hp.st_scr.sub_right (Region.sub_prefix (by decide))
-  · rw [hb, cA]; exact hp.b_scr.sub_right (UPre.scr_sub (by decide))
-  · rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide))
-  · rw [hp.scrN (by decide)]; omega_arith
-  · omega_arith
-  · rw [rd₈, wr₈, hRegs]
+  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
+      e₁ _ (by decide) (by decide), h.r6]
+  · rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      e₁ _ (by decide) (by decide), h.r10]
+  · rw [rd₆, wr₆, hRegs]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
-  · rw [wr₈, hW, cA]
+  · rw [wr₆, hW]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨scrR s₀, by simp, 2048, rfl, by simp⟩
+    rcases hr with rfl | rfl
     · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
-  · rw [mem₈]; exact Proof.Cmac.chainMem4_state _ _ _ _
 
-theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv s₀ k s) :
-    WP isa body s fun s' => LInv s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0) := by
+/-- The memory before the call, and the round keys there: the state is apart
+from the working space. -/
+theorem BodyA.keys {s₀ : State} (hp : UPre s₀) {k : Nat} {s s₁ : State} (h : LInv s₀ k s)
+    (a : BodyA s₀ k s s₁) (hkeys : Keys s₀ s.mem) :
+    Frame (Big s₀) s₀.mem s₁.mem ∧ KeysIn s₁.mem (S s₀) (R s₀) (schedAt s₁.mem (W s₀) (R s₀)) := by
+  obtain f₁ : Frame [stR s₀] s.mem s₁.mem := by rw [a.mem]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  obtain big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨stR s₀, by simp, fun _ h => h⟩)
+  exact ⟨big₁, keys_call hp big₁ (keys_frame hp f₁ (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hp.st_scr.sub_right (Region.sub_prefix (by decide))).symm) hkeys)⟩
+
+theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : KInv s₀ k s) :
+    WP isa body s fun s' => KInv s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0) := by
+  obtain ⟨h, hkeys⟩ := h
   have hdf := hp.data_fit
   obtain hN := (stackArg s₀ 0).isLt
   refine WP.seq (WP.mono (bodyA_wp hp hk h) fun s₁ a => ?_)
-  refine WP.seq (WP.mono (ctr_call a.pre) fun s₂ h₂ => ?_)
+  obtain ⟨big₁, k₁⟩ := a.keys hp h hkeys
+  refine WP.seq (WP.mono (kblk_call a.pre k₁) fun s₂ ⟨h₂, k₂⟩ => ?_)
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => wp_subs (op2_imm (by decide)) fun s₄ u₄ z₄ => WP.block_nil ?_
-  have g (r : Reg) (hr : r ∈ preserved) (hlr : r ≠ .lr) (h7 : r ≠ .r7) (h8 : r ≠ .r8) (h9 : r ≠ .r9) :
+  have g (r : Reg) (hr : r ∈ preserved) (hlr : r ≠ .lr) (h7 : r ≠ .r7) (h8 : r ≠ .r8) :
       s₄.gpr r = s.gpr r := by
-    have : r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r2 ∧ r ≠ .r3 := by
+    have : r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r2 ∧ r ≠ .r3 ∧ r ≠ .r12 := by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [u₄.other _ h8, u₃.other _ h7, h₂.saved r hr hlr, a.keep r this.1 this.2.1 this.2.2.1 this.2.2.2 h9]
+    rw [u₄.other _ h8, u₃.other _ h7, h₂.saved r hr hlr,
+      a.keep r this.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2 hlr]
   obtain r7₂ : s₂.gpr .r7 = Dp s₀ + BitVec.ofNat 32 (16 * k) := by
     rw [h₂.saved .r7 (by simp [preserved]) (by decide), a.keep _ (by decide) (by decide) (by decide) (by decide)
-      (by decide), h.r7]
+      (by decide) (by decide), h.r7]
   obtain r8₃ : s₃.gpr .r8 = BitVec.ofNat 32 (N s₀ - k) := by
     rw [u₃.other _ (by decide), h₂.saved .r8 (by simp [preserved]) (by decide),
-      a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r8]
+      a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r8]
   obtain dec : BitVec.ofNat 32 (N s₀ - k) - 1 = BitVec.ofNat 32 (N s₀ - (k + 1)) := by
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_arith)]; rfl
   -- Memory.
   obtain bigS := UPre.big_of h.frame
-  obtain cA : State.addr (Cb s₀) = State.addr (S s₀) + BitVec.ofNat 64 2048 := hp.scrA (by decide)
-  obtain f₁ : Frame [⟨State.addr (S s₀) + BitVec.ofNat 64 2048, 16⟩, stR s₀] s.mem s₁.mem := by
-    rw [a.mem]; exact Proof.Cmac.chainMem4_frame _ _ _ _
-  obtain big₁ : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
-    · exact ⟨stR s₀, by simp, fun _ h => h⟩)
-  obtain cst : (⟨State.addr (S s₀) + BitVec.ofNat 64 2048, 16⟩ : Region).Disjoint (stR s₀) :=
-    hp.st_scr.symm.sub_left (UPre.scr_sub (by decide))
-  obtain cq : (⟨State.addr (S s₀) + BitVec.ofNat 64 2048, 16⟩ : Region).Disjoint
-      ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (16 * k), 16⟩ :=
-    (hp.data_scr.symm.sub_left (UPre.scr_sub (by decide))).sub_right (UPre.data_sub hk)
-  have out := h₂.out
-  rw [UPre.sched_bytes hp big₁, cA, a.mem, Proof.Cmac.chainMem4_counter _ cst cq, h.state,
-    UPre.block_bytes hp bigS hk] at out
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [g .r4 (by simp [preserved]) (by decide) (by decide) (by decide) (by decide), h.r4]
-  · rw [g .r5 (by simp [preserved]) (by decide) (by decide) (by decide) (by decide), h.r5]
-  · rw [g .r6 (by simp [preserved]) (by decide) (by decide) (by decide) (by decide), h.r6]
+  obtain f₁ : Frame [stR s₀] s.mem s₁.mem := by rw [a.mem]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  obtain stq : (stR s₀).Disjoint ⟨blk s₀ k, 16⟩ := hp.data_st.symm.sub_right (UPre.data_sub hk)
+  obtain out : Spec.Aes.bytesAt s₂.mem (State.addr (St s₀)) 16 =
+      ciph s₀ (Spec.Cmac.xor (Spec.Cmac.chain (ciph s₀) (Spec.Aes.bytesAt s₀.mem (State.addr (St s₀)) 16)
+        ((blks s₀).take k)) (Spec.Aes.bytesAt s₀.mem (blk s₀ k) 16)) := by
+    rw [Proof.AesCbc.bytesAt_of_statesAt h₂.out, show encF.f = Spec.Aes.cipher from rfl, ← aesWith_state,
+      UPre.sched_bytes hp big₁, a.mem,
+      Proof.Cmac.xor4Mem_bytes _ (Proof.Cmac.Sep4.self _) (Proof.Cmac.Sep4.of_disjoint stq), h.state,
+      UPre.block_bytes hp bigS hk]
+  refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩, ?_⟩
+  · rw [g .r4 (by simp [preserved]) (by decide) (by decide) (by decide), h.r4]
+  · rw [g .r5 (by simp [preserved]) (by decide) (by decide) (by decide), h.r5]
+  · rw [g .r6 (by simp [preserved]) (by decide) (by decide) (by decide), h.r6]
   · rw [u₄.other _ (by decide), u₃.gpr, r7₂, show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl,
       Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_arith)]
   · rw [u₄.gpr, r8₃, dec]
-  · rw [g .r10 (by simp [preserved]) (by decide) (by decide) (by decide) (by decide), h.r10]
-  · rw [g .r11 (by simp [preserved]) (by decide) (by decide) (by decide) (by decide), h.r11]
+  · rw [g .r10 (by simp [preserved]) (by decide) (by decide) (by decide), h.r10]
+  · rw [g .r11 (by simp [preserved]) (by decide) (by decide) (by decide), h.r11]
   · rw [u₄.sp, u₃.sp, h₂.sp, a.sp, h.sp]
   · rw [u₄.rd, u₃.rd, h₂.rd, a.rd, h.rd]
   · rw [u₄.wr, u₃.wr, h₂.wr, a.wr, h.wr]
-  · have hb : below s₁ = belowR s₀ := by rw [below, a.sp, h.sp]; rfl
+  · have hb : Proof.AesGcm.Arm.below s₁.sp = belowR s₀ := by rw [a.sp, h.sp]; rfl
     rw [u₄.mem, u₃.mem]
     refine h.frame.trans ((f₁.sub fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stR s₀, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨⟨State.addr (S s₀), 2064⟩, by simp, Offset.sub_base _ (by decide)⟩
-      · exact ⟨stR s₀, by simp, fun _ h => h⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨⟨State.addr (S s₀), 2064⟩, by simp, by rw [cA]; exact Offset.sub_base _ (by decide)⟩
+      rcases hr with rfl | rfl | rfl
       · exact ⟨stR s₀, by simp, fun _ h => h⟩
       · exact ⟨⟨State.addr (S s₀), 2064⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨belowR s₀, by simp, by rw [hb]; exact fun _ h => h⟩
   · rw [u₄.mem, u₃.mem, out, take_succ_blks s₀ hk, Proof.Cmac.chain_append, Proof.Cmac.chain_single]
+  · rw [u₄.mem, u₃.mem]; exact keys_of_call hp big₁ k₂
   · rw [z₄, r8₃, dec]; exact ofNat_beq_zero (by omega_arith)
 
-theorem loop_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv s₀ k s) :
-    WP isa (.loop body .ne) s (LInv s₀ (N s₀)) := by
-  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv s₀ j t) ?_ (N s₀ - k) s
+theorem loop_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : KInv s₀ k s) :
+    WP isa (.loop body .ne) s (KInv s₀ (N s₀)) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := KInv s₀ (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ KInv s₀ j t) ?_ (N s₀ - k) s
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (body_ok hp hk h) fun s' ⟨h', hz⟩ => ?_

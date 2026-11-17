@@ -14,9 +14,10 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # AES-CBC on ARMv7: one block
 
 `encBody_ok` and `decBody_ok`: one run of `encBody` or `decBody` takes the
-loop invariant from `k` blocks to `k + 1` (`BodyOk`). The block functions are
-called as AES-OCB calls them (`Proof.AesOcb.Arm.blk_call`), in a frame that
-pushes the working space.
+loop invariant from `k` blocks to `k + 1` (`BodyOkK`, with the round keys in
+the working space, and `BodyOk`). The block functions are called as AES-OCB
+calls them (`Proof.AesOcb.Arm.blk_call`), in a frame that pushes the working
+space; encryption's, from the round keys there (`Proof.Aes.Arm.kblk_call`).
 -/
 
 @[expose] public section
@@ -28,6 +29,8 @@ open VG.Impl.CmacAes.Arm (advance xor4)
 open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem xorBlk zeroBlk xorBlk_ok zeroBlk_ok
   add0)
 open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call encF decF)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (schedAt kblk_call)
 open VG.Proof.AesGcm.Arm (below)
 open VG.Proof.MdStream.Arm (Upd op2_imm op2_reg wp_mov wp_add wp_subs ofNat_beq_zero sub_ofNat)
 open VG.Spec.Aes (bytesAt)
@@ -214,14 +217,15 @@ theorem post_regs {s₀ : State} {k : Nat} {s s₁ s₂ : State} {m : Mem} (F : 
     by rw [g .r10 (by simp [preserved]) (by decide), h.r10], by rw [c.sp, a.sp, h.sp], by rw [c.rd, a.rd, h.rd],
     by rw [c.wr, a.wr, h.wr]⟩
 
-/-- What `advance` leaves after block `k`. -/
-theorem advance_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
+/-- What `advance` leaves after block `k`, and that it keeps the memory. -/
+theorem advance_mem {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : Regs s₀ k s) (h8 : s.gpr .r8 = BitVec.ofNat 32 (N s₀ - k))
     (h11 : s.gpr .r11 = s₀.gpr .r11)
     (hf : Frame [ivR s₀, dataR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] (savedMem s₀) s.mem)
     (hd : Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀) = outK M s₀ (k + 1) ++ (blks s₀).drop (k + 1))
     (hi : bytesAt s.mem (State.addr (Iv s₀)) 16 = chainK M s₀ (k + 1)) :
-    WP isa (.block advance) s fun s' => LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0) := by
+    WP isa (.block advance) s fun s' =>
+      (LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)) ∧ s'.mem = s.mem := by
   have hdf := hp.data_fit
   obtain hN := (stackArg s₀ 0).isLt
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => wp_subs (op2_imm (by decide)) fun s₄ u₄ z₄ => WP.block_nil ?_
@@ -230,14 +234,36 @@ theorem advance_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k 
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_using [hk])]; rfl
   obtain g : ∀ r, r ≠ .r7 → r ≠ .r8 → s₄.gpr r = s.gpr r := fun r h7 h8' => by
     rw [u₄.other _ h8', u₃.other _ h7]
-  refine ⟨⟨by rw [g _ (by decide) (by decide), h.r4], by rw [g _ (by decide) (by decide), h.r5],
+  refine ⟨⟨⟨by rw [g _ (by decide) (by decide), h.r4], by rw [g _ (by decide) (by decide), h.r5],
     by rw [g _ (by decide) (by decide), h.r6], ?_, by rw [u₄.gpr, r8₃, dec],
     by rw [g _ (by decide) (by decide), h.r10], by rw [g _ (by decide) (by decide), h11],
     by rw [u₄.sp, u₃.sp, h.sp], by rw [u₄.rd, u₃.rd, h.rd], by rw [u₄.wr, u₃.wr, h.wr],
-    by rw [u₄.mem, u₃.mem]; exact hf, by rw [u₄.mem, u₃.mem]; exact hd, by rw [u₄.mem, u₃.mem]; exact hi⟩, ?_⟩
+    by rw [u₄.mem, u₃.mem]; exact hf, by rw [u₄.mem, u₃.mem]; exact hd, by rw [u₄.mem, u₃.mem]; exact hi⟩, ?_⟩,
+    by rw [u₄.mem, u₃.mem]⟩
   · rw [u₄.other _ (by decide), u₃.gpr, h.r7, show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl,
       Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_using [])]
   · rw [z₄, r8₃, dec]; exact ofNat_beq_zero (by omega_using [hdf])
+
+/-- What `advance` leaves after block `k`. -/
+theorem advance_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
+    (h : Regs s₀ k s) (h8 : s.gpr .r8 = BitVec.ofNat 32 (N s₀ - k))
+    (h11 : s.gpr .r11 = s₀.gpr .r11)
+    (hf : Frame [ivR s₀, dataR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] (savedMem s₀) s.mem)
+    (hd : Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀) = outK M s₀ (k + 1) ++ (blks s₀).drop (k + 1))
+    (hi : bytesAt s.mem (State.addr (Iv s₀)) 16 = chainK M s₀ (k + 1)) :
+    WP isa (.block advance) s fun s' => LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0) :=
+  WP.mono (advance_mem hp hk h h8 h11 hf hd hi) fun _ h' => h'.1
+
+/-- What `advance` leaves after block `k`, with the round keys. -/
+theorem advance_wpK {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
+    (h : Regs s₀ k s) (h8 : s.gpr .r8 = BitVec.ofNat 32 (N s₀ - k))
+    (h11 : s.gpr .r11 = s₀.gpr .r11)
+    (hf : Frame [ivR s₀, dataR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] (savedMem s₀) s.mem)
+    (hd : Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀) = outK M s₀ (k + 1) ++ (blks s₀).drop (k + 1))
+    (hi : bytesAt s.mem (State.addr (Iv s₀)) 16 = chainK M s₀ (k + 1)) (hkeys : Keys s₀ s.mem) :
+    WP isa (.block advance) s fun s' =>
+      (LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)) ∧ Keys s₀ s'.mem :=
+  WP.mono (advance_mem hp hk h h8 h11 hf hd hi) fun _ h' => ⟨h'.1, by rw [h'.2]; exact hkeys⟩
 
 /-! ## Moving blocks -/
 
@@ -324,15 +350,24 @@ theorem kept {s₀ : State} {k : Nat} {s s₁ s₂ : State} {m : Mem} {F : BlkFn
   · rw [c.saved _ (by simp [preserved]) (by decide), a.keep _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)]
 
-theorem encBody_ok : BodyOk (cbcMode true) encBody := by
-  intro s₀ hp k hk s h
+/-- The round keys at the call, after `Pⱼ ⊕ Cⱼ₋₁` in place. -/
+theorem encA_keys {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ : State}
+    (h : LInv (cbcMode true) s₀ k s)
+    (a : PreA s₀ k s (Proof.Cmac.xor4Mem s.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀))) s₁)
+    (hkeys : Keys s₀ s.mem) : KeysIn s₁.mem (S s₀) (R s₀) (schedAt s₁.mem (W s₀) (R s₀)) := by
+  obtain f₁ : Frame [⟨blk s₀ k, 16⟩] s.mem s₁.mem := by rw [a.mem]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  exact Keys.call hp (bigOf hp hk h.frame (f₁.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact stepIn (.inl rfl)))
+    (Keys.frame hp f₁ (hp.work_blk hk) hkeys)
+
+theorem encBody_ok : BodyOkK (cbcMode true) encBody := by
+  intro s₀ hp k hk s h hkeys
   obtain hd := hp.dataA hk
   obtain qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   refine WP.seq (WP.mono (encA_wp hp hk h) fun s₁ a => ?_)
-  rw [encFrame_eq]
-  refine WP.seq (WP.mono (blk_call encF a.pre) fun s₂ c => ?_)
+  refine WP.seq (WP.mono (kblk_call a.pre (encA_keys hp hk h a hkeys)) fun s₂ ⟨c, k₂⟩ => ?_)
   obtain rg₂ := post_regs encF h.regs a c
   obtain hb : below s₁.sp = belowR s₀ := by rw [a.sp, h.sp]; rfl
   -- Memory so far.
@@ -381,10 +416,10 @@ theorem encBody_ok : BodyOk (cbcMode true) encBody := by
       outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₃.mem (blk s₀ k) 16] := by
     rw [newBlk]
     simp only [outK, cbcMode_out, cbc, ciphOf, ite_true, take_succ_blks s₀ hk, encrypt_snoc]
-  refine advance_wp hp hk (rg₂.of g₃.gpr g₃.sp g₃.rd g₃.wr)
+  refine advance_wpK hp hk (rg₂.of g₃.gpr g₃.sp g₃.rd g₃.wr)
     (by rw [g₃.gpr _ (by decide) (by decide), kept a c (.inl rfl), h.r8])
     (by rw [g₃.gpr _ (by decide) (by decide), kept a c (.inr rfl), h.r11])
-    (h.frame.trans (stepFrame hk fStep)) ?_ ?_
+    (h.frame.trans (stepFrame hk fStep)) ?_ ?_ (Keys.frame hp f₃ hp.work_iv (Keys.of_call hp big₁ k₂))
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]

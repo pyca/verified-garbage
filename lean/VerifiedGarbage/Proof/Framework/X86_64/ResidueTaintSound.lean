@@ -2258,6 +2258,12 @@ theorem slowFn_run (i : Instr) (τ : FT) : (slowFn i).run τ = step τ i := by
 theorem slowFn_eq (i : Instr) : slowFn i = ⟨(step · i)⟩ :=
   congrArg RStep.mk (funext (slowFn_run i))
 
+theorem runF_eq (b : Taint.Step) (t : Taint.T) : runF b t = b.run t := by
+  unfold runF
+  cases b.run t with
+  | none => rfl
+  | some t' => exact Taint.forceT_eq t' some
+
 theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = false) (τ : FT) :
     (fastFn (Taint.stepKDFn i) (Taint.dstOf i)).run τ = step τ i := by
   obtain ⟨hs, hp, hu, hf, hm, hc, hwm⟩ := plain_facts h τ
@@ -2269,10 +2275,10 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
   obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastFn, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
+  · simp only [fastFn, runF_eq, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Option.toList, List.nil_append, ubDrop_eq hc, Taint.forceT_eq, forceList_eq]
+    | some t' => simp only [Option.toList, List.nil_append, ubDrop_eq hc, forceList_eq]
 
 theorem pbMod_self (f : Nat → Nat) : ∀ (l : List Nat) (i : Nat), f (pbGet l i) = pbGet l i → pbMod f l i = l
   | [], _, _ => rfl
@@ -2498,10 +2504,10 @@ theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)} {τ :
   obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   cases ok
   · rfl
-  · simp only [fastU, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
+  · simp only [fastU, runF_eq, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, Bool.false_eq_true]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Taint.forceT_eq, forceList_eq]
+    | some t' => simp only [forceList_eq]
 
 theorem ubDrop2_eq {i : Instr} {a b : Reg} (hc : ∀ r, Taint.clobbers i r = (r == a || r == b))
     (ub : List (Reg × Nat)) : ubDrop2 a b ub = ubKill ub i := by

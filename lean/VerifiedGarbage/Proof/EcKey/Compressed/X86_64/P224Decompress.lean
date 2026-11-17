@@ -24,9 +24,9 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

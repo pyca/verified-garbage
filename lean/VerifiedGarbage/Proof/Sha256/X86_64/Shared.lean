@@ -29,6 +29,7 @@ meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Scratch
 
 /-!
 # Streaming SHA-256 on x86-64: `init`
@@ -247,6 +248,7 @@ theorem update {f : Callee} (hf : f.Ok)
       (Spec.Sha256.updateContract X86_64.abi (8 + 616)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
+    (Proof.Sha256.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 open VG.Impl.Sha256.X86_64.Stream (Callee) in
@@ -259,6 +261,7 @@ theorem finalize {f : Callee} (hf : f.Ok)
       (Spec.Sha256.finalizeContract X86_64.abi (8 + 616)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
+    (Proof.Sha256.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## SHA-224's digest
@@ -309,6 +312,7 @@ theorem finalize224Stack {f : Callee} (hf : f.Ok)
       (Spec.Sha256.finalize224Contract X86_64.abi (8 + 616)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalize224Scratch hf hm) (by decide) (by decide) (by decide) (finalize224_spSafe hs) (finalize224_depth hd)
+    (Proof.Sha256.finalize224PostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## With the working space the compression function uses
@@ -441,6 +445,7 @@ theorem updateS :
   rcases h with rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
+    (Proof.Sha256.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize` made with `so` bytes for the compression function, likewise. -/
@@ -454,6 +459,7 @@ theorem finalizeS :
   rcases h with rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
+    (Proof.Sha256.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize224` made with `so` bytes for the compression function, likewise. -/
@@ -467,6 +473,7 @@ theorem finalize224S :
   rcases h with rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
+    (Proof.Sha256.finalize224PostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end S

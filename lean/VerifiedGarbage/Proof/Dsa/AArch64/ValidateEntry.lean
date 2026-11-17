@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.Block
 

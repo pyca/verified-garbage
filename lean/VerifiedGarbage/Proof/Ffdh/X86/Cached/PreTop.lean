@@ -44,7 +44,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 
 /-! # `vg_ffdh_generate_key_precompute` on i686 against its contract -/
 

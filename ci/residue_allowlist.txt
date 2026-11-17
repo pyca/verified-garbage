@@ -3,33 +3,22 @@
 # The emitter fails if a function without a proof is not listed here, or if a listed one is
 # gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
-x86_64 vg_aes_ccm_open_aesni
-x86_64 vg_aes_ccm_seal_aesni
-x86_64 vg_aes_gcm_init
-x86_64 vg_aes_gcm_open_prepared
 x86_64 vg_aes_gcm_open_prepared_aesni
 x86_64 vg_aes_gcm_open_prepared_aesni_pclmul_avx
-x86_64 vg_aes_gcm_open_prepared_pclmul
 x86_64 vg_aes_gcm_open_prepared_vaes_vpclmul
 x86_64 vg_aes_gcm_open_prepared_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_open_to_prepared
 x86_64 vg_aes_gcm_open_to_prepared_aesni
 x86_64 vg_aes_gcm_open_to_prepared_aesni_pclmul
 x86_64 vg_aes_gcm_open_to_prepared_aesni_pclmul_avx
-x86_64 vg_aes_gcm_open_to_prepared_pclmul
 x86_64 vg_aes_gcm_open_to_prepared_vaes_vpclmul
 x86_64 vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_seal_gather_prepared
 x86_64 vg_aes_gcm_seal_gather_prepared_aesni
 x86_64 vg_aes_gcm_seal_gather_prepared_aesni_pclmul
 x86_64 vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx
-x86_64 vg_aes_gcm_seal_gather_prepared_pclmul
 x86_64 vg_aes_gcm_seal_gather_prepared_vaes_vpclmul
 x86_64 vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_seal_prepared
 x86_64 vg_aes_gcm_seal_prepared_aesni
 x86_64 vg_aes_gcm_seal_prepared_aesni_pclmul_avx
-x86_64 vg_aes_gcm_seal_prepared_pclmul
 x86_64 vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512
 aarch64 vg_aes_cbc_decrypt
 aarch64 vg_aes_cbc_decrypt_aes
@@ -163,7 +152,6 @@ aarch64 vg_aes_xts_encrypt_unit_aes
 aarch64 vg_aes_xts_encrypt_unit_neon
 aarch64 vg_argon2
 aarch64 vg_blake2b_finalize
-aarch64 vg_blake2b_init
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
 aarch64 vg_blake2s_update
@@ -457,14 +445,12 @@ aarch64 vg_pbkdf2_hmac_sha512_256
 aarch64 vg_pbkdf2_hmac_sha512_256_sha512
 aarch64 vg_pbkdf2_hmac_sha512_sha512
 aarch64 vg_poly1305_finalize
-aarch64 vg_poly1305_init
 aarch64 vg_poly1305_update
 aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
 aarch64 vg_rc2_cbc_encrypt_chained
 aarch64 vg_rc2_cbc_init
 aarch64 vg_rc4_apply
-aarch64 vg_rc4_init
 aarch64 vg_rsa_check_key
 aarch64 vg_rsa_crt_values
 aarch64 vg_rsa_generate
@@ -505,12 +491,10 @@ aarch64 vg_sha224_digest
 aarch64 vg_sha224_digest_sha2
 aarch64 vg_sha224_finalize
 aarch64 vg_sha224_finalize_sha2
-aarch64 vg_sha224_init
 aarch64 vg_sha256_digest
 aarch64 vg_sha256_digest_sha2
 aarch64 vg_sha256_finalize
 aarch64 vg_sha256_finalize_sha2
-aarch64 vg_sha256_init
 aarch64 vg_sha256_update
 aarch64 vg_sha256_update_sha2
 aarch64 vg_sha384_digest
@@ -582,7 +566,6 @@ aarch64 vg_sm4_ecb_decrypt_sm4
 aarch64 vg_sm4_ecb_encrypt
 aarch64 vg_sm4_ecb_encrypt_sm4
 aarch64 vg_sm4_expand_key
-aarch64 vg_sm4_expand_key_sm4
 aarch64 vg_sm4_gcm_init
 aarch64 vg_sm4_gcm_init_ctr32_sm4
 aarch64 vg_sm4_gcm_open
@@ -724,10 +707,6 @@ arm vg_cast5_ofb
 arm vg_cast5_ofb_final
 arm vg_chacha20_apply
 arm vg_chacha20_init
-arm vg_chacha20_poly1305_open
-arm vg_chacha20_poly1305_open_to
-arm vg_chacha20_poly1305_seal
-arm vg_chacha20_poly1305_seal_gather
 arm vg_chacha20_set_nonce
 arm vg_cmac_aes_absorb
 arm vg_cmac_aes_finish
@@ -948,9 +927,7 @@ arm vg_pbkdf2_hmac_sha384
 arm vg_pbkdf2_hmac_sha512
 arm vg_pbkdf2_hmac_sha512_224
 arm vg_pbkdf2_hmac_sha512_256
-arm vg_poly1305_finalize
 arm vg_poly1305_init
-arm vg_poly1305_update
 arm vg_rc2_cbc_decrypt_chained
 arm vg_rc2_cbc_encrypt_chained
 arm vg_rc2_cbc_init
@@ -1074,8 +1051,6 @@ arm vg_triple_des_ecb_encrypt
 arm vg_triple_des_expand_key
 arm vg_triple_des_ofb
 arm vg_triple_des_ofb_final
-arm vg_x25519_base
-arm vg_x25519_base_umaal
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
 arm vg_zeroize
@@ -1737,13 +1712,6 @@ riscv64 vg_sha1_digest
 riscv64 vg_sha1_finalize
 riscv64 vg_sha1_init
 riscv64 vg_sha1_update
-riscv64 vg_sha224_digest
-riscv64 vg_sha224_finalize
-riscv64 vg_sha224_init
-riscv64 vg_sha256_digest
-riscv64 vg_sha256_finalize
-riscv64 vg_sha256_init
-riscv64 vg_sha256_update
 riscv64 vg_sha384_digest
 riscv64 vg_sha384_finalize
 riscv64 vg_sha384_init

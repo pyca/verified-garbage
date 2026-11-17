@@ -1717,8 +1717,11 @@ theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {D
   refine WP.seq (WP.mono (init_ok hF hi hiw hin h₁) fun t₂ ⟨m₂, g27, hiv⟩ => ?_)
   refine WP.seq (WP.mono (whole_ok hF hd hf hp m₂ g27 hiv) fun t₃ ⟨m₃, h27, hw⟩ => ?_)
   refine WP.seq (WP.mono (tail_ok hF hd hs hf hp m₃ h27 hw) fun t₄ ⟨m₄, hh⟩ => ?_)
-  refine WP.mono (finish_ok hF hd hs hp m₄ hh) fun t₅ ⟨_, _, hsp, hg, hb⟩ => ?_
-  exact ⟨⟨fun r hr => hg r hr, by simp only [freed, hsp, fb, BitVec.sub_add_cancel]⟩, hb⟩
+  refine WP.mono (finish_ok hF hd hs hp m₄ hh) fun t₅ ⟨_, _, hsp, hg, hb⟩ mm u f => ?_
+  -- The output lies apart from the frame, whose bytes the `free` loses.
+  have hf : Frame [fR P s] t₅.mem mm := f
+  exact ⟨⟨fun r hr => hg r hr, by simp only [freed, hsp, fb, BitVec.sub_add_cancel]⟩, fun hl =>
+    (bytesAt_congr fun i hi => lost_byte (R := oR s D) hf hp.f_o.symm hi).trans (hb hl)⟩
 
 /-- The one-shot digest writes no vector register if `init` and the
 compression function do not. -/

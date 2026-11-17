@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.QPart
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
@@ -15,10 +15,8 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckCall
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
-import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain

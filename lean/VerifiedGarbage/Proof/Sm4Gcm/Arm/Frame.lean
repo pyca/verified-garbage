@@ -20,6 +20,7 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-! ### `Sm4Gcm.Arm.Verified`, which only this module used -/
 
@@ -411,7 +412,8 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
     (Spec.Sm4.Gcm.initContract Arm.abi 2288) :=
   Arm.Verified.regScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.initPost Arm.abi.ptrBits)
-    (wa := true) (stack := 1520) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 1520) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => initPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_init`'s precondition, without the
 working space. -/
@@ -431,6 +433,7 @@ theorem streamInit_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 96) (post := Spec.Gcm.streamInitPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 0) streamInit_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamInitPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesGcm.streamInitPostOut_local _ vs mm m₁ m₂ r hl)
     streamInitFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_aad`'s precondition, without the
@@ -452,6 +455,7 @@ theorem streamAad_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 96) (post := Spec.Gcm.streamAadPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 2) streamAad_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamAadPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesGcm.streamAadPostOut_local _ vs mm m₁ m₂ r hl)
     streamAadFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
@@ -474,6 +478,7 @@ theorem streamEncrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 96) (post := Spec.Sm4.Gcm.streamEncryptPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 4) streamEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamEncryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamEncryptPostOut_local _ vs mm m₁ m₂ r hl)
     streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract Arm.abi 2320).pre s := by
@@ -489,6 +494,7 @@ theorem streamDecrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 96) (post := Spec.Sm4.Gcm.streamDecryptPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 4) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamDecryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamDecryptPostOut_local _ vs mm m₁ m₂ r hl)
     streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without the
@@ -509,7 +515,8 @@ theorem streamFinish_framed [VG.Proof.Gcm.Arm.GhashLaw] :
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamFinishPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 3) streamFinish_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamFinishPost_local _) finFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamFinishPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamFinishPostOut_local _ vs mm m₁ m₂ r hl) finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without the
 working space: its four words of stack arguments at `0x8000`. -/
@@ -529,7 +536,8 @@ theorem streamVerify_framed [VG.Proof.Gcm.Arm.GhashLaw] :
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamVerifyPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 4) streamVerify_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamVerifyPost_local _) verFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamVerifyPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamVerifyPostOut_local _ vs mm m₁ m₂ r hl) verFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
 space: its four words of stack arguments at `0x8000`. -/
@@ -549,7 +557,8 @@ theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
   Arm.Verified.stackScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.sealPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (m := 4) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _) sealFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => sealPostOut_local _ vs mm m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
 space: its five words of stack arguments at `0x8000`. -/
@@ -570,7 +579,8 @@ theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 96) (post := Spec.Sm4.Gcm.openPost Arm.abi.ptrBits) (wa := true) (stack := 1520)
     (leak := some (Spec.Sm4.Gcm.openLeak Arm.abi.ptrBits))
     (m := 5) open_verified (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _) openFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => openPostOut_local _ vs mm m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.Sm4Gcm.Arm

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
-import VerifiedGarbage.Proof.Dsa.X86_64.Return
+import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands

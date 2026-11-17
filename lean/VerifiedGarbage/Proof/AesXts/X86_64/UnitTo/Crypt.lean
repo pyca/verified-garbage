@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Contract
+public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Run
 public import VerifiedGarbage.Proof.AesXts.X86_64.To.Contract
 public import VerifiedGarbage.Impl.AesXts.X86_64UnitTo
 public import VerifiedGarbage.Spec.Xts.OutOfPlace
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Run
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Cmac.Frame

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinInit
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MillerRabinLoop
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 
 /-! # Complete blinded witness iteration meets the reviewed primality-test result -/
 

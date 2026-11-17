@@ -191,7 +191,7 @@ theorem init_framed (v : BlocksImpl) :
   AArch64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Ocb.initPre AArch64.abi.ptrBits) (post := Spec.Ocb.initPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide)
-    initFrameSat_pre
+    (Proof.AesOcb.initPostOut_local _) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_ocb_seal`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
@@ -213,7 +213,7 @@ theorem seal_framed (v : BlocksImpl) :
     (n := 320) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (seal_verified v) (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
-    sealFrameSat_pre
+    (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ocb_open`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
@@ -236,6 +236,7 @@ theorem open_framed (v : BlocksImpl) :
     (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))
     (open_verified v) (by decide) (by decide) (Proof.AesOcb.openPre_local _)
-    (Proof.AesOcb.openPost_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
+    (Proof.AesOcb.openPost_local _)
+    (Proof.AesOcb.openPostOut_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
 
 end VG.Proof.AesOcb.AArch64

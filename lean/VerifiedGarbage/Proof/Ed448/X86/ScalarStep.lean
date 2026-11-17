@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed448.ScalarWords
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
 public import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.X86.Freeze
-import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 public import VerifiedGarbage.Proof.X448.X86.Swap

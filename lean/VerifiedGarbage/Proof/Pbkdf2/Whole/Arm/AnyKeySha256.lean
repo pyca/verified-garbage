@@ -68,7 +68,8 @@ theorem sha224_anyFramed :
 theorem sha224_initF :
     Verified Arm.target (initCode Spec.Hmac.sha224I Md.Arm.sha224Md.hmacInit Whole.Arm.sha224F)
       (Spec.Hmac.sha224I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha224I)) :=
-  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha224_init Md.Arm.sha224_initFrameSat) sha224_anyFramed
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha224_init Proof.Hmac.sha224_local
+    Md.Arm.sha224_initFrameSat) sha224_anyFramed
     (by decide) (by decide) (by decide) sha224_anyFrameSat
 
 /-! ## sha256 -/
@@ -103,7 +104,8 @@ theorem sha256_anyFramed :
 theorem sha256_initF :
     Verified Arm.target (initCode Spec.Hmac.sha256I Md.Arm.sha256Md.hmacInit Whole.Arm.sha256F)
       (Spec.Hmac.sha256I.initAnyKeyContract Arm.abi (24 + anyFrame Spec.Hmac.sha256I)) :=
-  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha256_init Md.Arm.sha256_initFrameSat) sha256_anyFramed
+  initCode_verified (Md.Arm.initFramed Md.Arm.Instances.sha256_init Proof.Hmac.sha256_local
+    Md.Arm.sha256_initFrameSat) sha256_anyFramed
     (by decide) (by decide) (by decide) sha256_anyFrameSat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Any

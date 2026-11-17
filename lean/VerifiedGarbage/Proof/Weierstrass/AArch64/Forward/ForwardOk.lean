@@ -389,19 +389,22 @@ theorem eval_single {α : Type} (D : Dom α) (j : Instr) (e : Env α) :
 
 theorem step_copy {e : Env CVal} {d r : Reg} {y : CVal} (hd : d≠.x0) (hr : e.reg r=some y) :
     step concDom size e (.logic .orr .x d r r)=some (e.setReg d (y.1,false)) := by
-  simp only [step,decode,decodedStep,bind,Option.bind,arg,carryArg,Op.useA,Op.useB,Op.useC,Op.useD,
+  have hdec : decode (.logic .orr .x d r r)=some ⟨.scalar (.logic .orr) d r r .x0,rfl⟩ := rfl
+  simp only [step,hdec,decodedStep,bind,Option.bind,arg,carryArg,Op.useA,Op.useB,Op.useC,Op.useD,
     Op.useCarry,Op.valid,Op.flags,hr,concDom]
   simp [hd,eval_copy,Env.setReg]
 
 theorem step_load {e : Env CVal} {d : Reg} {off : Nat} (hd : d≠.x0) (ho : off%8=0 ∧ off+8≤size ∧ off<32768) :
     step concDom size e (.ldr .x d .x0 off)=some (e.setReg d (e.slot off)) := by
-  simp only [step,decode,decodedStep,bind,Option.bind]
+  have hdec : decode (.ldr .x d .x0 off)=some ⟨.load d off,rfl⟩ := rfl
+  simp only [step,hdec,decodedStep,bind,Option.bind]
   simp [hd,ho.1,ho.2.1,ho.2.2]
 
 theorem step_store {e : Env CVal} {r : Reg} {off : Nat} {y : CVal} (ho : off%8=0 ∧ off+8≤size ∧ off<32768)
     (hr : e.reg r=some y) :
     step concDom size e (.str .x r .x0 off)=some (e.setSlot off y) := by
-  simp only [step,decode,decodedStep,bind,Option.bind]
+  have hdec : decode (.str .x r .x0 off)=some ⟨.store r off,rfl⟩ := rfl
+  simp only [step,hdec,decodedStep,bind,Option.bind]
   simp [ho.1,ho.2.1,ho.2.2,hr]
 
 theorem fwdStep_scalar (s : FState) {op : Op} (hop : ∀ n,op≠.movz 0 n) (d a b c : Reg) :

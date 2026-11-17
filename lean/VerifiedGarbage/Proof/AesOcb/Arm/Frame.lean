@@ -598,7 +598,8 @@ theorem seal_framed :
     (n := 320) (pre := Spec.Ocb.sealPre Arm.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _) sealFrameSat_pre
+    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
+    (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ocb_open`'s precondition, without the working
 space: its six words of stack arguments at `0x8000`. -/
@@ -620,7 +621,8 @@ theorem open_framed :
     (post := Proof.AesOcb.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Ocb.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _) openFrameSat_pre
+    (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _)
+    (Proof.AesOcb.openPostOut_local _) openFrameSat_pre
     (hleak := Proof.AesOcb.openLeak_local _)
 
 end VG.Proof.AesOcb.Arm

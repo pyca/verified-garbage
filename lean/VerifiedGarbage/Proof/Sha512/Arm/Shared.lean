@@ -169,6 +169,7 @@ theorem update : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.updateContract, Spec.Sha512.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, Proof.Sha512.Arm.Stream.Update.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -184,6 +185,7 @@ theorem finalize : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeContract, Spec.Sha512.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -301,6 +303,7 @@ theorem finalizeDigestStack48 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -314,6 +317,7 @@ theorem finalizeDigestStack32 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -327,6 +331,7 @@ theorem finalizeDigestStack28 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

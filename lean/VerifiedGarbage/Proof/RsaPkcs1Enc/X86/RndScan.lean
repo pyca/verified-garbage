@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndCount
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Vp
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndTaint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset

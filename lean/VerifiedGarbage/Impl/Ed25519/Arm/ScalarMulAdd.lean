@@ -13,14 +13,9 @@ def scalarWideAdd (r : Nat) : List Instr :=
   [.movw .r6 65535, .mov .r5 (.imm 0)] ++ pass .r0 ACC (addSrc ACC r) ++
     pass .r0 (ACC + 64) (ldSrc (ACC + 64))
 
-/-- The packed 512-bit product occupies bytes 512–575. -/
-def scalarPackWide : List Instr :=
-  [.dp .add .r12 .r0 (.imm 512)] ++ packField ACC 0 ++ packField (ACC + 64) 32
-
 def scalarMulAddEngine : Prog isa :=
   .seq (scalarWideMul 128 192) <|
-    .seq (.block (scalarWideAdd 64 ++ scalarPackWide))
-      (.seq (.block [.mov .r8 (.reg .r10)]) scalarReduceEngine)
+    .seq (.block (scalarWideAdd 64)) (.seq (.block [.mov .r8 (.reg .r10)]) scalarFold)
 
 def scalarArgReg : Nat → Reg
   | 0 => .r0 | 1 => .r1 | 2 => .r2 | _ => .r3
@@ -37,11 +32,8 @@ def scalarLoadInput (o ptrOff : Nat) : List Instr :=
 def scalarMulAddInputs : List Instr :=
   (List.range 3).flatMap (fun i => scalarLoadInput (64 + 64 * i) (36 + 4 * i)) ++ [.ldr .r10 .r0 32]
 
-def scalarMulAddFinish : List Instr :=
-  [.mov .r12 (.reg .r8)] ++ packField SR 0 ++ scalarRestore
-
 def scalarMulAdd : Prog isa :=
   .seq (.block (scalarMulAddArgs ++ scalarMulAddInputs))
-    (.seq scalarMulAddEngine (.block scalarMulAddFinish))
+    (.seq scalarMulAddEngine (.block scalarFinish))
 
 end VG.Impl.Ed25519.Arm

@@ -176,6 +176,7 @@ theorem update : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha256.updateContract, Spec.Sha256.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, MdStream.Arm.Update.sat, Impl.Sha256.Arm.Stream.params, Arm.stackArg,
@@ -191,6 +192,7 @@ theorem finalize : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -279,6 +281,7 @@ theorem finalize224 : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
     finalize224Scratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalize224Post_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.finalize224PostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha256.finalize224Contract, Spec.Sha256.finalize224Sig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalize224FrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

@@ -76,7 +76,8 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
     (Spec.Siv.initContract Arm.abi 2568) :=
   Arm.Verified.regScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre Arm.abi.ptrBits) (post := Spec.Siv.initPost Arm.abi.ptrBits)
-    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 

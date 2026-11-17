@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The search's results, and the whole search's correctness, stack and calling convention -/
 
@@ -174,7 +175,14 @@ theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
   refine WP.mono (search_finish hw) fun t ⟨⟨hra, hr12, hm⟩, kt⟩ => ?_
   have hsp : t.gpr .rsp = (allocated 160 s).gpr .rsp := by
     rw [kt.gpr (by decide), hw.rsp, alloc_rsp hi]
-  refine ⟨hsp, kt.2.2.trans (hw.wr.trans (alloc_wr hi).symm), ?_, ?_⟩
+  refine ⟨hsp, kt.2.2.trans (hw.wr.trans (alloc_wr hi).symm), fun m uu fm => ?_⟩
+  have hd := h.2.2.2.2.2.2.2.1
+  have sep : ∀ {B : Region}, (below (s.gpr .rsp) stackUse).Disjoint B →
+      ∀ q ∈ [(⟨s.gpr .rsp - BitVec.ofNat 64 160, 160⟩ : Region)], B.Disjoint q := fun hB q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact fun x h₁ h₂ => hB x (Offset.sub_below _ (by decide) (by decide) x h₂) h₁
+  dsimp only
+  refine ⟨?_, ?_⟩
   · -- The results.
     have hlen : searchLen s = (searchOfState s).len := rfl
     have hst : (searchResult s).status < 4 := by
@@ -182,15 +190,18 @@ theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [freed_reg _ _ _ (by decide), hra, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
-    · change Spec.Rsa.bytesAt t.mem (searchOfState s).op (searchOfState s).len = _
-      rw [hm, finished_bytes hi]
+    · change Spec.Rsa.bytesAt m (searchOfState s).op (searchOfState s).len = _
+      rw [Proof.Rsa.rsa_bytes_frame (src := (searchOfState s).op) (k := (searchOfState s).len) fm (s.gpr .rsi).isLt (sep (hd (inOut s) (by simp [inWrites])).2),
+        hm, finished_bytes hi]
       exact hw.output
-    · change Spec.Rsa.wordsAt t.mem (searchOfState s).up 1 = _
-      rw [hm, finished_used]
+    · change Spec.Rsa.wordsAt m (searchOfState s).up 1 = _
+      rw [Proof.Rsa.wordsAt_frame (p := (searchOfState s).up) (n := 1) fm (by decide) (sep (hd (inUsed s) (by simp [inWrites])).2),
+        hm, finished_used]
     · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
         (searchRemaining s) (searchRand s)⟩
-      change Spec.Rsa.wordsAt t.mem (searchOfState s).stp 4 = _
-      rw [hm, finished_state hi]
+      change Spec.Rsa.wordsAt m (searchOfState s).stp 4 = _
+      rw [Proof.Rsa.wordsAt_frame (p := (searchOfState s).stp) (n := 4) fm (by decide) (sep (hd (inState s) (by simp [inWrites])).2),
+        hm, finished_state hi]
       rfl
   · -- The callee-saved registers.
     intro r hr

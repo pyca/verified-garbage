@@ -437,7 +437,9 @@ lemmas and tactics to use; read it before writing a proof:
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
-  that cost the build). Arithmetic it evaluates is in a closed term: with
+  that cost the build). A residue check of long code that `rw_lit` cannot
+  see, behind a structure with proofs (a registration's `r.code`, a
+  variant's functions), is `taint_decide_lit`'s. Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
   environment is a list, not a function updated at every write. An equation
   between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
@@ -487,7 +489,8 @@ lemmas and tactics to use; read it before writing a proof:
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to
-  unification. In a long proof, `obtain x : T := proof` rather than `have`
+  unification, a rewrite or `linarith` of every hypothesis (`at *`), a
+  tactic for a discharger on a goal with binders. In a long proof, `obtain x : T := proof` rather than `have`
   for a fact with a proof of its own: `have` keeps the proof in the
   context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep

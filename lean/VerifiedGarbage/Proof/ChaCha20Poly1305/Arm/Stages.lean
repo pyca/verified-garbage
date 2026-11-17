@@ -276,7 +276,7 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
   fit_n : (nP s₀).toNat + 12 ≤ 2 ^ 32
   sp8 : 8 ≤ s₀.sp.toNat
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-- `seal` runs in place. -/
 theorem APre.inPlace {s₀ : State} (hp : APre true s₀) : oP s₀ = dP s₀ := by
@@ -557,7 +557,7 @@ open VG VG.Arm
 open VG.Spec.Poly1305 (Repr Buffered bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-! ## Memory -/
 
@@ -598,12 +598,15 @@ theorem keeps {c : Prog isa} {r : Reg} (h : ((instrs c).all fun i => !clobbers i
 theorem init_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.init, clobbers i .r0 = false :=
   keeps (by rw [← Code.allInstrs_eq]; lit_decide)
 
-theorem blocks_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.blocks, clobbers i .r0 = false :=
-  keeps (by rw [← Code.allInstrs_eq]; lit_decide)
+theorem blocks_keeps_r0 (umaal : Bool) :
+    ∀ i ∈ instrs (Impl.Poly1305.Arm.blocks umaal), clobbers i .r0 = false := by
+  cases umaal <;> exact keeps (by rw [← Code.allInstrs_eq]; lit_decide)
 
 theorem init_noCalls : Impl.Poly1305.Arm.init.noCalls = true := by lit_decide
-theorem blocks_noCalls : Impl.Poly1305.Arm.blocks.noCalls = true := by lit_decide
-theorem finalize_noCalls : Impl.Poly1305.Arm.finalize.noCalls = true := by lit_decide
+theorem blocks_noCalls (umaal : Bool) : (Impl.Poly1305.Arm.blocks umaal).noCalls = true := by
+  cases umaal <;> lit_decide
+theorem finalize_noCalls (umaal : Bool) : (Impl.Poly1305.Arm.finalize umaal).noCalls = true := by
+  cases umaal <;> lit_decide
 theorem block_noCalls : Impl.ChaCha20.Arm.block.noCalls = true := by lit_decide
 
 /-! ## `vg_chacha20_block` -/
@@ -683,18 +686,18 @@ theorem blocks_call {s : State} {P p : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = P)
     (hQ : ∀ s', Kept [⟨State.addr P, 128⟩] s s' → s'.gpr .r0 = P →
       (∀ key msg, Repr s.mem (State.addr P) key msg →
         Repr s'.mem (State.addr P) key (msg ++ bytesAt s.mem (State.addr p) (16 * n))) → Q s') :
-    WP isa (.call "vg_poly1305_blocks" Impl.Poly1305.Arm.blocks) s Q := by
+    WP isa (.call (Impl.ChaCha20Poly1305.Arm.blocksName umaal) (Impl.Poly1305.Arm.blocks umaal)) s Q := by
   obtain hn' : (BitVec.ofNat 32 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
   refine WP.call (k := Proof.Poly1305.blocksArm) Proof.Poly1305.Arm.blocks_ok
-    (rd := [⟨State.addr p, 16 * n⟩]) (wr := [⟨State.addr P, 128⟩]) ?_ hc hw ?_ blocks_noCalls
+    (rd := [⟨State.addr p, 16 * n⟩]) (wr := [⟨State.addr P, 128⟩]) ?_ hc hw ?_ (blocks_noCalls umaal)
   · simp only [Proof.Poly1305.blocksArm, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
       State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
       h0, h1, h2, hn']
     exact ⟨trivial, trivial, hdj, hP, hp⟩
   · intro s' hrd hwr hsp hf hcs hkeep hpost
-    refine hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ (by rw [hkeep .r0 blocks_keeps_r0 (by decide), h0])
+    refine hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ (by rw [hkeep .r0 (blocks_keeps_r0 umaal) (by decide), h0])
       fun key msg hr => ?_
     simp only [Proof.Poly1305.blocksArm, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_mem, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
@@ -832,28 +835,30 @@ theorem finalize_ok {s : State} {P O Sc : BitVec 32} (h : FinArgs s P O Sc) {Q :
       (∀ key msg, Repr s.mem (State.addr P) key msg →
         Proof.Poly1305.countArm s = BitVec.ofNat 64 msg.length →
         bytesAt s'.mem (State.addr O) 16 = mac key msg) → Q s') :
-    WP isa Impl.ChaCha20Poly1305.Arm.finalize s Q := by
+    WP isa (Impl.ChaCha20Poly1305.Arm.finalize umaal) s Q := by
   refine WP.frame (rs := [.r1, .r12]) (r := .r1) rfl (by simpa using h.hsp) (by decide) ?_
   obtain hbw : ∀ r ∈ [⟨State.addr s.sp - 8, 8⟩], (⟨State.addr P, 128⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.hbP.symm
   refine WP.call (k := Proof.Poly1305.finalizeArm) Proof.Poly1305.Arm.Fin.finalize_ok
-    (rd := finRd s) (wr := finWr P O Sc) h.pre h.cov h.covW ?_ finalize_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+    (rd := finRd s) (wr := finWr P O Sc) h.pre h.cov h.covW ?_ (finalize_noCalls umaal)
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [⟨State.addr s.sp - 8, 8⟩] s₂.mem ml := by rw [e8, h.hA] at hfl; exact hfl
   obtain hcnt : Proof.Poly1305.countArm (finView s P O Sc) = Proof.Poly1305.countArm s := by
     simp only [Proof.Poly1305.countArm, fin_ng s P O Sc .r2 (by decide), fin_ng s P O Sc .r3 (by decide)]
   simp only [Proof.Poly1305.finalizeArm, fin_ng s P O Sc .r0 (by decide), h.h0, hcnt, h.arg0 _ (fin_nsp s P O Sc) rfl,
     State.withRegions_mem] at hpost
-  refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ fun key msg hr hc => ?_
+  refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ (fun key msg hr hc => ?_) <;> dsimp only
   · have hr1 : r ≠ .r1 := by rintro rfl; simp [preserved] at hr
     rw [popped_gpr hr1, hcs r hr hl, pushed_gpr]
   · rw [popped_sp, hsp₂, fin_asp s, e8]
     exact BitVec.sub_add_cancel _ _
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_mem]
-    refine (h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]
+  · refine ((h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.hbO.symm) (by decide)]
     exact hpost key msg (Proof.Poly1305.Repr.buffered (Repr.frame h.fA hbw hr)) hc
 
 end VG.Proof.ChaCha20Poly1305.Arm
@@ -876,7 +881,7 @@ open VG.Proof.ChaCha20.Arm (toNat_ofNat_lt)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-! ## More instructions -/
 
@@ -1458,7 +1463,7 @@ open VG.Proof.ChaCha20.Arm (toNat_ofNat_lt)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20Poly1305 (pad16)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-- The Poly1305 state and the padded block. -/
 abbrev macR (s₀ : State) : List Region := [sub s₀ 0 128, sub s₀ padOff 16]
@@ -1479,7 +1484,7 @@ theorem absorb_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (h1 : s.gpr .r1 = p) (h2 : s.gpr .r2 = BitVec.ofNat 32 n) (hn : 16 * n < 2 ^ 32)
     (hdj : (sub s₀ 0 128).Disjoint ⟨State.addr p, 16 * n⟩) (hfit : p.toNat + 16 * n ≤ 2 ^ 32)
     (hc : Covers [⟨State.addr p, 16 * n⟩] (s₀.rd ++ s₀.wr)) :
-    WP isa absorb s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 128] s s' ∧
+    WP isa (absorb umaal) s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 128] s s' ∧
       ∀ key msg, Repr s.mem (cx s₀) key msg →
         Repr s'.mem (cx s₀) key (msg ++ bytesAt s.mem (State.addr p) (16 * n)) := by
   unfold absorb
@@ -1683,12 +1688,12 @@ theorem padded_bytes {s₀ : State} {m mz : Mem} {Q : Addr} {t : Nat} (ht : t < 
     · rw [List.getElem_append_right (by simp; omega_using [hk])]
       simp [hk]
 
-theorem padTail_eq : padTail =
+theorem padTail_eq (umaal : Bool) : padTail umaal =
     .seq (.block [.mov .r12 (.imm 0), .str .r12 .r7 padOff, .str .r12 .r7 (padOff + 4),
       .str .r12 .r7 (padOff + 8), .str .r12 .r7 (padOff + 12),
       .dp .add .r2 .r7 (.imm (BitVec.ofNat 32 padOff))])
     (.seq (.loop (.block copyBody) .ne)
-    (.seq (.block [.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 padOff)), .mov .r2 (.imm 1)]) absorb)) := rfl
+    (.seq (.block [.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 padOff)), .mov .r2 (.imm 1)]) (absorb umaal))) := rfl
 
 theorem ptA_ok {s₀ : State} {s : State} (h : Inv s₀ s) :
     WP isa (.block [.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 padOff)), .mov .r2 (.imm 1)]) s fun s' =>
@@ -1707,7 +1712,7 @@ theorem padTail_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     (hQ : Q.toNat + t ≤ 2 ^ 32)
     (hsrc : ∀ j < t, InRegions (s.rd ++ s.wr) (State.addr Q + BitVec.ofNat 64 j) 1)
     (hdisj : ∀ j < t, (⟨State.addr Q + BitVec.ofNat 64 j, 1⟩ : Region).Disjoint (sub s₀ padOff 16)) :
-    WP isa padTail s fun s' => Inv s₀ s' ∧ Kept (macR s₀) s s' ∧
+    WP isa (padTail umaal) s fun s' => Inv s₀ s' ∧ Kept (macR s₀) s s' ∧
       ∀ key msg, Repr s.mem (cx s₀) key msg →
         Repr s'.mem (cx s₀) key (msg ++ (bytesAt s.mem (State.addr Q) t ++ List.replicate (16 - t) 0)) := by
   rw [padTail_eq]
@@ -1836,17 +1841,17 @@ theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   exact WP.mono (WP.kept core rfl)
     fun s' ⟨⟨h1, hg', hrd, hwr, hm⟩, hg, hsp⟩ => ⟨h1, hg', Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
-theorem macPad_eq (p n : Reg) : macPad p n =
+theorem macPad_eq (umaal : Bool) (p n : Reg) : macPad umaal p n =
     .seq (.block [.mov .r1 (.reg p), .mov .r2 (.shifted n .lsr 4)])
-    (.seq absorb
+    (.seq (absorb umaal)
     (.seq (.block [.dp .and .r3 n (.imm 15), .cmp .r3 (.imm 0)])
       (.ite .eq (.block [])
-        (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) padTail)))) := rfl
+        (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) (padTail umaal))))) := rfl
 
 /-- The `len` bytes at `P` (in `p` and `n`), padded with zeros, absorbed. -/
 theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p n) {P : BitVec 32} {len : Nat}
     (hs : Src s₀ P len) {s : State} (h : Inv s₀ s) (hP : s.gpr p = P) (hn : s.gpr n = BitVec.ofNat 32 len) :
-    WP isa (macPad p n) s fun s' => Inv s₀ s' ∧ Kept (macR s₀) s s' ∧
+    WP isa (macPad umaal p n) s fun s' => Inv s₀ s' ∧ Kept (macR s₀) s s' ∧
       ∀ key msg, Repr s.mem (cx s₀) key msg →
         Repr s'.mem (cx s₀) key (msg ++ (bytesAt s.mem (State.addr P) len ++
           pad16 (bytesAt s.mem (State.addr P) len))) := by
@@ -1946,7 +1951,7 @@ open VG.Proof.ChaCha20.Arm (toNat_ofNat_lt)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-! ## Encrypting -/
 
@@ -2163,7 +2168,7 @@ theorem lengthsA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ 
       · rw [off_add, show lenOff + 8 + 4 = lenOff + 4 * 3 from rfl, Mem.readW_writeW_self32]
 
 theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
-    WP isa lengths s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 128, sub s₀ lenOff 16] s s' ∧
+    WP isa (lengths umaal) s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 128, sub s₀ lenOff 16] s s' ∧
       ∀ key msg, Repr s.mem (cx s₀) key msg →
         Repr s'.mem (cx s₀) key (msg ++ (leBytes 8 (AL s₀) ++ leBytes 8 (L s₀))) := by
   unfold lengths
@@ -2385,7 +2390,7 @@ theorem fin_args {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
 
 theorem fin_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) {O : BitVec 32} (ho : OutOk s₀ O)
     (h0 : s.gpr .r0 = cP s₀) (h1 : s.gpr .r1 = O) (h12 : s.gpr .r12 = ptr s₀ scrOff) :
-    WP isa finalize s fun s' =>
+    WP isa (finalize umaal) s fun s' =>
       Kept [sub s₀ 0 128, ⟨State.addr O, 16⟩, sub s₀ scrOff 128, belR s₀] s s' ∧ Regs s₀ s' ∧
       Saved s₀ s'.mem ∧
       ∀ key msg, Repr s.mem (cx s₀) key msg → Proof.Poly1305.countArm s = BitVec.ofNat 64 msg.length →

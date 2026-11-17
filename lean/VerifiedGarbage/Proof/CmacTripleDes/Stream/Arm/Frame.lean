@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
 
@@ -61,7 +62,8 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
     (Spec.Cmac.tdesStreamInitContract Arm.abi 640) :=
   Arm.Verified.regScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre Arm.abi.ptrBits) (post := Spec.Cmac.tdesStreamInitPost Arm.abi.ptrBits)
-    (wa := false) (stack := 0) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := false) (stack := 0) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => streamInitPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 704 2 absorb)
     (Spec.Cmac.tdesAbsorbContract Arm.abi 708) :=
@@ -69,6 +71,7 @@ theorem absorb_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScra
     (post := Spec.Cmac.tdesAbsorbPost Arm.abi.ptrBits)
     (wa := false) (stack := 4) (m := 2) absorb_verified (by decide) (by decide) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => absorbPostOut_local _ vs mm m₁ m₂ r hl)
     absorbFrameSat_pre
 
 theorem finish_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 656 1 finish)
@@ -77,6 +80,7 @@ theorem finish_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScra
     (post := Spec.Cmac.tdesFinishPost Arm.abi.ptrBits)
     (wa := false) (stack := 4) (m := 1) finish_verified (by decide) (by decide) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => finishPostOut_local _ vs mm m₁ m₂ r hl)
     finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.Arm

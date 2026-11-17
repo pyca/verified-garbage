@@ -77,13 +77,22 @@ def keyPairCode (umaal : Bool) : Prog isa :=
   Impl.Ed25519.Arm.KeyPair.keyPair Spec.Sha512.digest512Api.name Proof.Ed25519.Arm.KeyPair.dgCode
     ("vg_ed25519_public_key_expanded" ++ suffix umaal) (PublicKey.codeExpanded umaal)
 
+theorem keyPair_noIcall (umaal : Bool) : noIcall (keyPairCode umaal) = true := by
+  cases umaal <;> lit_decide
+
 theorem keyPair_armStack (umaal : Bool) : armStack (keyPairCode umaal) ≤ 600 := by
   have h := Proof.Ed25519.Arm.KeyPair.pk_stack (umaal := umaal)
   simp only [keyPairCode, Impl.Ed25519.Arm.KeyPair.keyPair, armStack, Proof.Ed25519.Arm.KeyPair.dg_stack,
     List.length_cons, List.length_nil]
   omega_using [h]
 
+theorem signExpanded_noIcall (umaal : Bool) : noIcall (SignCached.codeExpanded umaal) = true := by
+  cases umaal <;> lit_decide
+
 theorem signExpanded_armStack (umaal : Bool) : armStack (SignCached.codeExpanded umaal) ≤ 280 := by
+  cases umaal <;> lit_decide
+
+theorem verify_noIcall (umaal : Bool) : noIcall (VerifyMessage.code umaal) = true := by
   cases umaal <;> lit_decide
 
 theorem verify_armStack (umaal : Bool) : armStack (VerifyMessage.code umaal) ≤ 280 := by
@@ -94,20 +103,20 @@ def keyPairReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.keyP
       suffix := suffix
       code := keyPairCode umaal
       verified := Proof.Ed25519.Arm.KeyPair.verified }
-    (keyPair_armStack umaal) frameOk_600 (keyPairOut combConsts 600) rfl
+    (keyPair_armStack umaal) (keyPair_noIcall umaal) frameOk_600 (keyPairOut combConsts 600) rfl
 
 def signExpandedReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.signExpandedApi target :=
   Arm.Scrub.scrubRegF {
       suffix := suffix
       code := SignCached.codeExpanded umaal
       verified := Proof.Ed25519.Arm.SignCached.signExpanded_verified }
-    (signExpanded_armStack umaal) frameOk_280 (signExpandedOut combConsts 280) rfl
+    (signExpanded_armStack umaal) (signExpanded_noIcall umaal) frameOk_280 (signExpandedOut combConsts 280) rfl
 
 def verifyReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.verifyApi target :=
   Arm.Scrub.scrubRegF {
       suffix := suffix
       code := VerifyMessage.code umaal
       verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }
-    (verify_armStack umaal) frameOk_280 (verifyOut combConsts 280) rfl
+    (verify_armStack umaal) (verify_noIcall umaal) frameOk_280 (verifyOut combConsts 280) rfl
 
 end VG.Proof.Ed25519.Arm.Scrub

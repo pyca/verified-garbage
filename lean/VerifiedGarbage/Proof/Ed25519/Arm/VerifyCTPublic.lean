@@ -26,6 +26,8 @@ import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-! ### `Ed25519.Arm.VerifyHeaders`, which only this module used -/
@@ -357,8 +359,10 @@ end VG.Proof.Ed25519.Arm
 end
 
 section
-/-! `[k]A` on the bits of `k`, which are public: the sum doubled for each, and `A` added where
-one is set. -/
+/-! `[k]A` with a sliding window on `k`, which is public: `k`'s digits (`recode`), the table of
+`A`'s odd multiples (`oddTable`), and the sum, from the top digit's multiple (`topDigit`,
+`slideStart`), doubled for each digit below it, with the digit's multiple added where the digit
+is not zero (`slideStep`). -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
@@ -396,64 +400,10 @@ theorem lw_frame {m m' : Mem} {b : BitVec 32} {o n d : Nat}
   hf.readW (Region.contains_self _ _) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega_arith) (by omega_arith)) (by decide)
 
-/-- Double-and-add over the top `n` bits of the 256-bit `k`, as `publicMul` computes it. -/
-def ladder (a : Spec.Ed25519.Point) (k : Nat) : Nat → Spec.Ed25519.Point
-  | 0 => Spec.Ed25519.identity
-  | n + 1 =>
-    if k / 2 ^ (255 - n) % 2 = 1 then
-      Spec.Ed25519.pointAdd (Spec.Ed25519.pointAdd (ladder a k n) (ladder a k n)) a
-    else Spec.Ed25519.pointAdd (ladder a k n) (ladder a k n)
-
-/-- The ladder's sum represents the multiple by the bits taken. -/
-theorem ladder_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
-    {k : Nat} (hk : k < 2 ^ 256) :
-    ∀ n ≤ 256, Proof.Ed25519.Rep (ladder a k n) ((k / 2 ^ (256 - n)) • A)
-  | 0, _ => by
-    rw [ladder, Nat.div_eq_of_lt hk, zero_nsmul]
-    exact Proof.Ed25519.identity_rep
-  | n + 1, hn => by
-    have ih := ladder_rep ha hk n (by omega_using [hn])
-    have e : 2 ^ (256 - n) = 2 ^ (255 - n) * 2 := by
-      rw [← Nat.pow_succ]; congr 1; omega_using [hn]
-    have hx : k / 2 ^ (256 - n) = k / 2 ^ (255 - n) / 2 := by rw [e, Nat.div_div_eq_div_mul]
-    rw [hx] at ih
-    rw [ladder, show 256 - (n + 1) = 255 - n by omega_using [hn]]
-    have hd := Proof.Ed25519.pointAdd_rep ih ih
-    generalize k / 2 ^ (255 - n) = y at ih hd ⊢
-    by_cases hb : y % 2 = 1
-    · rw [ite_eq_left hb]
-      have ey : y = y / 2 + y / 2 + 1 := by omega_using [hb]
-      rw [ey, add_nsmul, add_nsmul, one_nsmul]
-      exact Proof.Ed25519.pointAdd_rep hd ha
-    · rw [ite_eq_right hb]
-      have ey : y = y / 2 + y / 2 := by omega_using [hb]
-      rw [ey, add_nsmul]
-      exact hd
-
-/-- The top bit of a byte held in a word's top byte and shifted left `i` times is its bit `7 - i`. -/
-theorem bit_test {B i : Nat} (hB : B < 256) (hi : i < 8) :
-    ((BitVec.ofNat 32 (B * 2 ^ (24 + i)) >>> 31) - 0#32 == 0#32) = decide (B / 2 ^ (7 - i) % 2 = 0) := by
-  have e : (BitVec.ofNat 32 (B * 2 ^ (24 + i)) >>> 31).toNat = B / 2 ^ (7 - i) % 2 := by
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-        i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi]
-    all_goals omega_using [hB]
-  rw [BitVec.sub_zero]
-  by_cases h0 : B / 2 ^ (7 - i) % 2 = 0
-  · rw [decide_eq_true h0]
-    exact beq_iff_eq.mpr (BitVec.eq_of_toNat_eq (e.trans h0))
-  · rw [decide_eq_false h0]
-    exact beq_eq_false_iff_ne.mpr fun h => h0 (e.symm.trans (congrArg BitVec.toNat h))
-
 theorem ofNat_succ_sub_one (m : Nat) : BitVec.ofNat 32 (m + 1) - 1#32 = BitVec.ofNat 32 m := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   omega_arith
-
-/-- The whole ladder's sum represents `[k]A`. -/
-theorem ladder_full {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
-    {k : Nat} (hk : k < 2 ^ 256) : Proof.Ed25519.Rep (ladder a k 256) (k • A) := by
-  simpa using ladder_rep ha hk 256 le_rfl
 
 /-- Bit `8 j + t` of `K` is bit `t` of its byte `j`. -/
 theorem byte_bit (K j : Nat) {t : Nat} (ht : t < 8) :
@@ -465,89 +415,9 @@ theorem byte_bit (K j : Nat) {t : Nat} (ht : t < 8) :
       t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 := by omega_using [ht]
   all_goals omega_arith
 
-theorem pointDouble_q (e : Env) : point (evalOps pointDoubleOps e) 4 5 6 7 = point e 4 5 6 7 :=
-  point_congr _ _ _ _ (evalOps_unchanged _ _ _ (by decide)) (evalOps_unchanged _ _ _ (by decide))
-    (evalOps_unchanged _ _ _ (by decide)) (evalOps_unchanged _ _ _ (by decide))
-
 theorem pointAdd_q (e : Env) : point (evalOps pointAddOps e) 4 5 6 7 = point e 4 5 6 7 :=
   point_congr _ _ _ _ (evalOps_unchanged _ _ _ (by decide)) (evalOps_unchanged _ _ _ (by decide))
     (evalOps_unchanged _ _ _ (by decide)) (evalOps_unchanged _ _ _ (by decide))
-
-/-- Before bit `i` of byte `j` from the top: the sum over the bits above, `A` in slots 4–7, the
-byte shifted in `r10` and its index in `r11`. -/
-structure BitAt (K : Nat) (b ptr : BitVec 32) (a : Spec.Ed25519.Point) (j i : Nat) (s : State) : Prop where
-  ctx : Ctx b s
-  lim : AllLim s.mem b
-  d : env s.mem b 16 = Spec.Ed25519.d
-  q : point (env s.mem b) 4 5 6 7 = a
-  acc : point (env s.mem b) 0 1 2 3 = ladder a K (8 * (31 - j) + i)
-  ptr : lw s.mem b 52 = ptr
-  r11 : s.gpr .r11 = BitVec.ofNat 32 j
-  r10 : s.gpr .r10 = BitVec.ofNat 32 (K / 256 ^ j % 256 * 2 ^ (24 + i))
-
-theorem keep_lw {b : BitVec 32} {s t : State} (h : Keep b s t) {d : Nat} (hd : d + 4 ≤ 64) :
-    lw t.mem b d = lw s.mem b d :=
-  lw_frame h.frame (.inl hd) (by decide) (by omega_using [hd])
-
-theorem bitStep_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {j i : Nat} {s : State}
-    (h : BitAt K b ptr a j i s) (hj : j < 32) (hi : i < 8) :
-    WP isa (bitStep umaal) s fun t => PointKeep b s t ∧ BitAt K b ptr a j (i + 1) t := by
-  refine WP.seq (WP.mono (doubleCall_ok h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
-  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, pointDouble_high _ _ (by decide)]; exact h.d
-  obtain uq : point (env u.mem b) 4 5 6 7 = a := by rw [ue, pointDouble_q]; exact h.q
-  obtain up : point (env u.mem b) 0 1 2 3 = Spec.Ed25519.pointAdd (ladder a K (8 * (31 - j) + i))
-      (ladder a K (8 * (31 - j) + i)) := by rw [ue, pointDouble_eval _ h.d, h.acc]
-  obtain cu := uk.ctx h.ctx
-  refine WP.seq (wp_mov (op2_lsr (by decide)) fun v hv => wp_cmp (op2_imm (by decide)) fun w hw hz =>
-    WP.block_nil ?_)
-  obtain rw' : Rest [.r9] u w := (hv.rest (by decide)).trans (hw.rest _)
-  obtain mw : w.mem = u.mem := by rw [hw.mem, hv.mem]
-  obtain cw : Ctx b w := cu.of_rest rw' (by decide)
-  obtain zb : w.z = decide (K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 0) := by
-    rw [hz, hv.gpr, uk.rest.gpr _ (by decide), h.r10]
-    exact bit_test (Nat.mod_lt _ (by decide)) hi
-  obtain eb : K / 2 ^ (255 - (8 * (31 - j) + i)) % 2 = K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 := by
-    rw [show 255 - (8 * (31 - j) + i) = 8 * j + (7 - i) by omega_using [hj, hi]]
-    exact byte_bit K j (by omega_using [hi])
-  have mid : WP isa (.ite .ne (Point16.addCall umaal) (.block [])) w fun x => Keep b w x ∧ AllLim x.mem b ∧
-      env x.mem b 16 = Spec.Ed25519.d ∧ point (env x.mem b) 4 5 6 7 = a ∧
-      point (env x.mem b) 0 1 2 3 = ladder a K (8 * (31 - j) + i + 1) := by
-    apply WP.ite (!decide (K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 0)) (by
-      show some (!w.z) = _
-      rw [zb])
-    · intro hb
-      have hb1 : K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 1 := by simpa using hb
-      refine WP.mono (addCall_ok cw (by rw [mw]; exact ul)) fun x ⟨xk, xl, xe⟩ => ?_
-      have wd : env w.mem b 16 = Spec.Ed25519.d := by rw [mw]; exact ud
-      refine ⟨xk, xl, by rw [xe, pointAdd_high _ _ (by decide)]; exact wd,
-        by rw [xe, pointAdd_q, mw]; exact uq, ?_⟩
-      rw [xe, pointAdd_eval _ wd, mw, up, uq, ladder, ite_eq_left (eb.trans hb1)]
-    · intro hb
-      have hb0 : ¬ K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 1 := by
-        have h0 : K / 256 ^ j % 256 / 2 ^ (7 - i) % 2 = 0 := by simpa using hb
-        omega_using [h0]
-      refine WP.block_nil ⟨Keep.refl _ _, by rw [mw]; exact ul, by rw [mw]; exact ud, by rw [mw]; exact uq, ?_⟩
-      rw [mw, up, ladder, ite_eq_right (fun e => hb0 (eb.symm.trans e))]
-  refine WP.seq (WP.mono mid fun x ⟨xk, xl, xd, xq, xa⟩ => ?_)
-  refine wp_mov (op2_lsl (by decide)) fun t ht => WP.block_nil ?_
-  obtain kx : PointKeep b s x := ((PointKeep.of_keep uk).trans (PointKeep.of_small rw' (by decide)
-    (o := 52) (n := 4) (by rw [mw]; exact Frame.refl _ _) (by decide) (by decide))).trans (PointKeep.of_keep xk)
-  obtain kt : PointKeep b s t := kx.trans (PointKeep.of_small (ht.rest (ws := [.r10]) (by decide)) (by decide)
-    (o := 52) (n := 4) (by rw [ht.mem]; exact Frame.refl _ _) (by decide) (by decide))
-  obtain g10 : x.gpr .r10 = s.gpr .r10 := by
-    rw [xk.rest.gpr _ (by decide), rw'.gpr _ (by decide), uk.rest.gpr _ (by decide)]
-  obtain g11 : x.gpr .r11 = s.gpr .r11 := by
-    rw [xk.rest.gpr _ (by decide), rw'.gpr _ (by decide), uk.rest.gpr _ (by decide)]
-  refine ⟨kt, ⟨kt.ctx h.ctx, by rw [ht.mem]; exact xl, by rw [ht.mem]; exact xd, by rw [ht.mem]; exact xq,
-    by rw [ht.mem]; exact xa, ?_, by rw [ht.other _ (by decide), g11]; exact h.r11, ?_⟩⟩
-  · rw [ht.mem, keep_lw xk (by decide), mw, keep_lw uk (by decide)]
-    exact h.ptr
-  · rw [ht.gpr, g10, h.r10]
-    apply BitVec.eq_of_toNat_eq
-    rw [show 24 + (i + 1) = (24 + i) + 1 by omega_arith, Nat.pow_succ, ← Nat.mul_assoc]
-    generalize K / 256 ^ j % 256 * 2 ^ (24 + i) = n
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega_arith
 
 /-- `c`, `n` times from step `i`, each step keeping the invariant. -/
 theorem repeatThen_wp {c k : Prog isa} {I : Nat → State → Prop} {Q : State → Prop} :
@@ -560,137 +430,953 @@ theorem repeatThen_wp {c k : Prog isa} {I : Nat → State → Prop} {Q : State �
     exact repeatThen_wp n (i + 1) u hu (fun i' s' h1 h2 => hc i' s' (by omega_using [h1]) (by omega_using [h2]))
       (fun t ht => hk t (by rw [show i + (n + 1) = i + 1 + n by omega_arith]; exact ht))
 
-/-- Before a byte of `k`: `m` bytes left. -/
-structure ByteAt (K : Nat) (b ptr : BitVec 32) (a : Spec.Ed25519.Point) (m : Nat) (s : State) : Prop where
+/-! ### What the code computes -/
+
+/-- `[2m + 1]a`, as the table's entries are computed: `a`, and `[2]a` added to the entry before. -/
+def oddMul (a : Spec.Ed25519.Point) : Nat → Spec.Ed25519.Point
+  | 0 => a
+  | m + 1 => Spec.Ed25519.pointAdd (oddMul a m) (Spec.Ed25519.pointAdd a a)
+
+theorem oddMul_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A) :
+    ∀ m, Proof.Ed25519.Rep (oddMul a m) ((2 * m + 1) • A)
+  | 0 => by simpa only [oddMul, Nat.mul_zero, Nat.zero_add, one_nsmul] using ha
+  | m + 1 => by
+    have h := Proof.Ed25519.pointAdd_rep (oddMul_rep ha m) (Proof.Ed25519.pointAdd_rep ha ha)
+    rw [show 2 * (m + 1) + 1 = (2 * m + 1) + 1 + 1 by omega_arith, add_nsmul, add_nsmul, one_nsmul, add_assoc]
+    exact h
+
+/-- The sum over the digits `D` from position `p₀ - n` up to the top one's, `p₀`, as the code
+computes it: the top digit's entry (the identity if that digit is zero), and then, for each digit
+below, the sum doubled and the digit's entry added to it where the digit is not zero. -/
+def slideVal (a : Spec.Ed25519.Point) (D : Nat → Nat) (p₀ : Nat) : Nat → Spec.Ed25519.Point
+  | 0 => if D p₀ = 0 then Spec.Ed25519.identity else oddMul a ((D p₀ - 1) / 2)
+  | n + 1 =>
+    if D (p₀ - 1 - n) = 0 then Spec.Ed25519.pointAdd (slideVal a D p₀ n) (slideVal a D p₀ n)
+    else Spec.Ed25519.pointAdd (oddMul a ((D (p₀ - 1 - n) - 1) / 2))
+      (Spec.Ed25519.pointAdd (slideVal a D p₀ n) (slideVal a D p₀ n))
+
+theorem slideVal_zero (a : Spec.Ed25519.Point) (D : Nat → Nat) (p₀ : Nat) :
+    slideVal a D p₀ 0 = if D p₀ = 0 then Spec.Ed25519.identity else oddMul a ((D p₀ - 1) / 2) := rfl
+
+/-- The sum at position `p` below the top, from the sum at the position above. -/
+theorem slideVal_at (a : Spec.Ed25519.Point) (D : Nat → Nat) {p₀ p : Nat} (hp : p < p₀) :
+    slideVal a D p₀ (p₀ - p) =
+      if D p = 0 then
+        Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))
+      else Spec.Ed25519.pointAdd (oddMul a ((D p - 1) / 2))
+        (Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))) := by
+  obtain ⟨n, hn⟩ : ∃ n, p₀ - (p + 1) = n := ⟨_, rfl⟩
+  rw [show p₀ - p = n + 1 by omega_using [hp, hn], hn, slideVal, show p₀ - 1 - n = p by omega_using [hp, hn]]
+
+/-- The sum represents the multiple by the digits taken, if those above the top one's position
+`p₀` are zero. -/
+theorem slideVal_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
+    {D : Nat → Nat} (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) {p₀ : Nat} (hp : p₀ < 256)
+    (hz : ∀ q, p₀ < q → q < 256 → D q = 0) :
+    ∀ n ≤ p₀, Proof.Ed25519.Rep (slideVal a D p₀ n)
+      (Proof.Ed25519.Slide.wsum D (p₀ - n) (256 - (p₀ - n)) • A)
+  | 0, _ => by
+    rw [slideVal, Nat.sub_zero, show 256 - p₀ = (255 - p₀) + 1 by omega_using [hp],
+      Proof.Ed25519.Slide.wsum_succ,
+      Proof.Ed25519.Slide.wsum_eq_zero (fun j h1 h2 => hz j (by omega_using [h1]) (by omega_using [h2, hp])),
+      Nat.mul_zero, Nat.add_zero]
+    rcases hD p₀ with h0 | ⟨h1, _⟩
+    · rw [ite_eq_left h0, h0, zero_nsmul]
+      exact Proof.Ed25519.identity_rep
+    · rw [ite_eq_right (by omega_using [h1])]
+      have hm := oddMul_rep ha ((D p₀ - 1) / 2)
+      rwa [show 2 * ((D p₀ - 1) / 2) + 1 = D p₀ by omega_using [h1]] at hm
+  | n + 1, hn => by
+    have ih := slideVal_rep ha hD hp hz n (by omega_using [hn])
+    have hd := Proof.Ed25519.pointAdd_rep ih ih
+    obtain ⟨p, hpe⟩ : ∃ p, p₀ - 1 - n = p := ⟨_, rfl⟩
+    rw [show p₀ - n = p + 1 by omega_using [hn, hpe], show 256 - (p + 1) = 255 - p by omega_using []] at ih hd
+    rw [show p₀ - (n + 1) = p by omega_using [hn, hpe], show 256 - p = (255 - p) + 1 by omega_using [hn, hpe, hp],
+      Proof.Ed25519.Slide.wsum_succ]
+    generalize Proof.Ed25519.Slide.wsum D (p + 1) (255 - p) = x at ih hd ⊢
+    rw [slideVal, hpe]
+    rcases hD p with h0 | ⟨h1, _⟩
+    · rw [ite_eq_left h0, h0, Nat.zero_add, two_mul, add_nsmul]
+      exact hd
+    · rw [ite_eq_right (by omega_using [h1])]
+      have hm := oddMul_rep ha ((D p - 1) / 2)
+      rw [show 2 * ((D p - 1) / 2) + 1 = D p by omega_using [h1]] at hm
+      rw [add_nsmul, two_mul, add_nsmul]
+      exact Proof.Ed25519.pointAdd_rep hm hd
+
+/-- `[K]a` as `publicMul` computes it, on the digits of `K` from the top one that is not zero. -/
+def slide (a : Spec.Ed25519.Point) (K : Nat) : Spec.Ed25519.Point :=
+  slideVal a (Proof.Ed25519.Slide.digits K) (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
+    (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
+
+/-- The whole sum represents `[K]A`. -/
+theorem slide_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
+    {K : Nat} (hK : K < 2 ^ 256) : Proof.Ed25519.Rep (slide a K) (K • A) := by
+  have h := slideVal_rep ha (Proof.Ed25519.Slide.digits_odd K)
+    (Proof.Ed25519.Slide.topPos_lt _ (by decide : 0 < 256))
+    (fun q h1 h2 => Proof.Ed25519.Slide.topPos_zero _ _ _ h1 h2) _ (Nat.le_refl _)
+  rwa [Nat.sub_self, Nat.sub_zero, Proof.Ed25519.Slide.digits_sum hK] at h
+
+/-! ### The digits -/
+
+/-- The digits' bytes in the working space. -/
+abbrev digR (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 DIG, 256⟩
+
+/-- A digit's byte, outside a frame apart from the digits. -/
+theorem dig_frame {rs : List Region} {m m' : Mem} {b : BitVec 32} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (digR b).Disjoint r) {q : Nat} (hq : q < 256) :
+    m' (State.addr b + BitVec.ofNat 64 (DIG + q)) = m (State.addr b + BitVec.ofNat 64 (DIG + q)) := by
+  rw [← Offset.add_add]
+  exact hf.bytes (R := digR b) hd (show (256 : Nat) ≤ 2 ^ 64 by decide) hq
+
+theorem ofNat_add_one (n : Nat) : BitVec.ofNat 32 n + 1 = BitVec.ofNat 32 (n + 1) :=
+  (BitVec.ofNat_add n 1).symm
+
+private theorem rec_bit_fact : ∀ v < 256,
+    (BitVec.ofNat 32 v &&& (1 : BitVec 32)) = BitVec.ofNat 32 (v % 2) ∧
+      BitVec.ofNat 32 v >>> 1 = BitVec.ofNat 32 (v / 2) := by decide +kernel
+
+private theorem rec_open_fact : ∀ v < 2, BitVec.ofNat 32 v <<< 1 = BitVec.ofNat 32 (2 * v) := by decide
+
+private theorem rec_grow_fact : ∀ v < 2, ∀ m < 16,
+    ((0 : BitVec 32) - BitVec.ofNat 32 v) &&& BitVec.ofNat 32 m = BitVec.ofNat 32 (m * v) ∧
+      (BitVec.ofNat 32 m <<< 1) &&& (15 : BitVec 32) = BitVec.ofNat 32 (2 * m % 16) ∧
+      (BitVec.ofNat 32 m - (0 : BitVec 32) == 0) = decide (m = 0) := by decide
+
+private theorem rec_byte_fact : ∀ j < 32, BitVec.ofNat 32 (8 * j) >>> 3 = BitVec.ofNat 32 j := by decide
+
+/-- The registers the recoding changes. -/
+abbrev recClob : List Reg := [.r1, .r2, .r3, .r6, .r7, .r8, .r9, .r10]
+
+/-- After bit `i` of `K`: the automaton's state (`Slide.run`) in `r6`–`r9`, and the digits of the
+bits read. -/
+structure RecAt (K : Nat) (b ptr : BitVec 32) (i : Nat) (s : State) : Prop where
+  ctx : Ctx b s
+  ptr : lw s.mem b 52 = ptr
+  r9 : s.gpr .r9 = BitVec.ofNat 32 i
+  r8 : s.gpr .r8 = BitVec.ofNat 32 (Proof.Ed25519.Slide.run K i).m
+  r7 : s.gpr .r7 = BitVec.ofNat 32 (Proof.Ed25519.Slide.run K i).w
+  r6 : s.gpr .r6 = b + BitVec.ofNat 32 (Proof.Ed25519.Slide.run K i).p
+  dig : ∀ q < i, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) =
+    BitVec.ofNat 8 ((Proof.Ed25519.Slide.run K i).u q)
+
+theorem recOpen_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {i v : Nat} (hi : i < 256) (hv : v < 2)
+    (h3 : s.gpr .r3 = b + BitVec.ofNat 32 i) (h1 : s.gpr .r1 = BitVec.ofNat 32 v) :
+    WP isa (.block recOpen) s fun t => Rest [.r6, .r7, .r8] s t ∧
+      t.mem = s.mem.writeW (State.addr b + BitVec.ofNat 64 (DIG + i)) (BitVec.ofNat 8 v) ∧
+      t.gpr .r8 = BitVec.ofNat 32 (2 * v) ∧ t.gpr .r7 = BitVec.ofNat 32 v ∧
+      t.gpr .r6 = b + BitVec.ofNat 32 i := by
+  have hfb := hc.fit
+  refine wp_mov (op2_reg _ _) fun s₁ u₁ => wp_mov (op2_lsl (by decide)) fun s₂ u₂ =>
+    wp_mov (op2_reg _ _) fun s₃ u₃ => ?_
+  obtain g6 : s₃.gpr .r6 = b + BitVec.ofNat 32 i := by
+    rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h3]
+  obtain g7 : s₃.gpr .r7 = BitVec.ofNat 32 v := by
+    rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h1]
+  obtain g8 : s₃.gpr .r8 = BitVec.ofNat 32 (2 * v) := by
+    rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h1]
+    exact rec_open_fact v hv
+  obtain r3 : Rest [.r6, .r7, .r8] s s₃ :=
+    (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (DIG + i)) (by decide)
+    (by rw [g6, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm i DIG]
+        exact addr_add (by simp only [DIG]; omega_using [hfb, hi]))
+    (by rw [r3.wr]; exact in_base hc.wr (by simp only [DIG]; omega_using [hi]) (by simp only [DIG]; omega_using [hi]))
+    fun t ut => WP.block_nil ⟨r3.trans (ut.rest _), ?_, by rw [ut.gpr]; exact g8, by rw [ut.gpr]; exact g7,
+      by rw [ut.gpr]; exact g6⟩
+  rw [ut.mem, g7, byte_eq (toNat_imm (by omega_using [hv])), u₃.mem, u₂.mem, u₁.mem]
+
+theorem recGrow_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {i p v m w : Nat} (hi : i < 256) (hp : p < 256)
+    (hv : v < 2) (hm : m < 16) (hw : w < 16)
+    (h3 : s.gpr .r3 = b + BitVec.ofNat 32 i) (h1 : s.gpr .r1 = BitVec.ofNat 32 v)
+    (h6 : s.gpr .r6 = b + BitVec.ofNat 32 p) (h7 : s.gpr .r7 = BitVec.ofNat 32 w)
+    (h8 : s.gpr .r8 = BitVec.ofNat 32 m) :
+    WP isa (.block recGrow) s fun t => Rest [.r2, .r7, .r8] s t ∧
+      t.mem = (s.mem.writeW (State.addr b + BitVec.ofNat 64 (DIG + i)) (0 : BitVec 8)).writeW
+        (State.addr b + BitVec.ofNat 64 (DIG + p)) (BitVec.ofNat 8 (w + m * v)) ∧
+      t.gpr .r8 = BitVec.ofNat 32 (2 * m % 16) ∧ t.gpr .r7 = BitVec.ofNat 32 (w + m * v) := by
+  have hfb := hc.fit
+  obtain gf := rec_grow_fact v hv m hm
+  refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (DIG + i)) (by decide)
+    (by rw [u₁.other _ (by decide), h3, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm i DIG]
+        exact addr_add (by simp only [DIG]; omega_using [hfb, hi]))
+    (by rw [u₁.wr]; exact in_base hc.wr (by simp only [DIG]; omega_using [hi]) (by simp only [DIG]; omega_using [hi]))
+    fun s₂ u₂ => ?_
+  refine wp_dp (op2_reg _ _) fun s₃ u₃ => wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
+  obtain g7 : s₅.gpr .r7 = BitVec.ofNat 32 (w + m * v) := by
+    simp (disch := decide) only [u₅.gpr, dpVal, u₄.gpr, u₄.other, u₃.gpr, u₃.other, u₂.gpr, u₁.gpr, u₁.other,
+      h1, h7, h8]
+    rw [gf.1, ← BitVec.ofNat_add]
+  obtain g6 : s₅.gpr .r6 = b + BitVec.ofNat 32 p := by
+    simp (disch := decide) only [u₅.other, u₄.other, u₃.other, u₂.gpr, u₁.other, h6]
+  obtain g8 : s₅.gpr .r8 = BitVec.ofNat 32 m := by
+    simp (disch := decide) only [u₅.other, u₄.other, u₃.other, u₂.gpr, u₁.other, h8]
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (DIG + p)) (by decide)
+    (by rw [g6, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm p DIG]
+        exact addr_add (by simp only [DIG]; omega_using [hfb, hp]))
+    (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+        exact in_base hc.wr (by simp only [DIG]; omega_using [hp]) (by simp only [DIG]; omega_using [hp]))
+    fun s₆ u₆ => wp_mov (op2_lsl (by decide)) fun s₇ u₇ => wp_dp (op2_imm (by decide)) fun t ut =>
+      WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+  · exact (u₁.rest (by decide)).trans ((u₂.rest _).trans ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans
+      ((u₅.rest (by decide)).trans ((u₆.rest _).trans ((u₇.rest (by decide)).trans (ut.rest (by decide))))))))
+  · rw [ut.mem, u₇.mem, u₆.mem, g7, byte_eq (toNat_imm (by
+      have : m * v ≤ m := by rcases (by omega_using [hv] : v = 0 ∨ v = 1) with rfl | rfl <;> omega_arith
+      omega_using [hm, hw, this])), u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]
+    rfl
+  · rw [ut.gpr, dpVal, u₇.gpr, u₆.gpr, g8]
+    exact gf.2.1
+  · rw [ut.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g7]
+
+/-- One bit: bit `t` of byte `j` of `K`, the low bit of `r10`. -/
+theorem recBit_ok {K : Nat} {b ptr : BitVec 32} {j t : Nat} {s : State} (h : RecAt K b ptr (8 * j + t) s)
+    (hj : j < 32) (ht : t < 8) (h10 : s.gpr .r10 = BitVec.ofNat 32 (K / 256 ^ j % 256 / 2 ^ t)) :
+    WP isa recBit s fun u => Rest recClob s u ∧ Frame [digR b] s.mem u.mem ∧
+      RecAt K b ptr (8 * j + t + 1) u ∧ u.gpr .r10 = BitVec.ofNat 32 (K / 256 ^ j % 256 / 2 ^ (t + 1)) := by
+  obtain hbit : Proof.Ed25519.Slide.bit K (8 * j + t) = K / 256 ^ j % 256 / 2 ^ t % 2 := byte_bit K j ht
+  obtain hB : K / 256 ^ j % 256 / 2 ^ t < 256 :=
+    Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.mod_lt _ (by decide))
+  rw [show K / 256 ^ j % 256 / 2 ^ (t + 1) = K / 256 ^ j % 256 / 2 ^ t / 2 by
+    rw [Nat.pow_succ, Nat.div_div_eq_div_mul]]
+  generalize K / 256 ^ j % 256 / 2 ^ t = v at h10 hbit hB ⊢
+  obtain hi : 8 * j + t < 256 := by omega_using [hj, ht]
+  generalize 8 * j + t = i at h hi hbit ⊢
+  obtain G := Proof.Ed25519.Slide.run_good K i
+  obtain Si := Proof.Ed25519.Slide.run_i K i
+  obtain hS := Proof.Ed25519.Slide.run_succ K i
+  obtain ⟨hc, hptr, h9, h8, h7, h6, hdig⟩ := h
+  generalize Proof.Ed25519.Slide.run K i = S at G Si hS h8 h7 h6 hdig
+  obtain bf := rec_bit_fact v hB
+  obtain hm16 : S.m < 16 := by rcases G.m_cases with e | e | e | e <;> rw [e] <;> decide
+  obtain hv2 : v % 2 < 2 := Nat.mod_lt _ (by decide)
+  rw [recBit]
+  refine WP.seq (wp_dp (op2_reg _ _) fun s₁ u₁ => wp_dp (op2_imm (by decide)) fun s₂ u₂ =>
+    wp_cmp (op2_imm (by decide)) fun s₃ f₃ z₃ => WP.block_nil ?_)
+  obtain r3 : Rest [.r1, .r3] s s₃ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (f₃.rest _))
+  obtain m3 : s₃.mem = s.mem := by rw [f₃.mem, u₂.mem, u₁.mem]
+  obtain c3 : Ctx b s₃ := hc.of_rest r3 (by decide)
+  obtain g3 : s₃.gpr .r3 = b + BitVec.ofNat 32 i := by
+    rw [f₃.gpr, u₂.other _ (by decide), u₁.gpr, dpVal, hc.r0, h9]
+  obtain g1 : s₃.gpr .r1 = BitVec.ofNat 32 (v % 2) := by
+    rw [f₃.gpr, u₂.gpr, dpVal, u₁.other _ (by decide), h10]
+    exact bf.1
+  obtain g6 : s₃.gpr .r6 = b + BitVec.ofNat 32 S.p := (r3.gpr _ (by decide)).trans h6
+  obtain g7 : s₃.gpr .r7 = BitVec.ofNat 32 S.w := (r3.gpr _ (by decide)).trans h7
+  obtain g8 : s₃.gpr .r8 = BitVec.ofNat 32 S.m := (r3.gpr _ (by decide)).trans h8
+  obtain hz : isa.eval .eq s₃ = some (decide (S.m = 0)) := by
+    rw [eval_eq, z₃, u₂.other _ (by decide), u₁.other _ (by decide), h8]
+    exact congrArg some (rec_grow_fact 0 (by decide) S.m hm16).2.2
+  have mid : WP isa (.ite .eq (.block recOpen) (.block recGrow)) s₃ fun x =>
+      Rest [.r2, .r6, .r7, .r8] s₃ x ∧ Frame [digR b] s₃.mem x.mem ∧
+      x.gpr .r8 = BitVec.ofNat 32 (Proof.Ed25519.Slide.step K S).m ∧
+      x.gpr .r7 = BitVec.ofNat 32 (Proof.Ed25519.Slide.step K S).w ∧
+      x.gpr .r6 = b + BitVec.ofNat 32 (Proof.Ed25519.Slide.step K S).p ∧
+      ∀ q < i + 1, x.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) =
+        BitVec.ofNat 8 ((Proof.Ed25519.Slide.step K S).u q) := by
+    apply WP.ite (decide (S.m = 0)) hz
+    · intro h0
+      obtain h0 : S.m = 0 := of_decide_eq_true h0
+      obtain ⟨em, ew, ep, eu⟩ := Proof.Ed25519.Slide.step_idle (K := K) h0
+      rw [Si, hbit] at em ew eu
+      rw [Si] at ep
+      refine WP.mono (recOpen_ok c3 hi hv2 g3 g1) fun x ⟨rx, mx, x8, x7, x6⟩ => ?_
+      refine ⟨rx.mono (by decide), ?_, by rw [x8, em], by rw [x7, ew], by rw [x6, ep], fun q hq => ?_⟩
+      · rw [mx]
+        exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+          (Offset.contains _ (by omega_using []) (by omega_using [hi]) (by simp only [DIG]; omega_using []))
+      · rw [mx, VG.WriteBytes.writeW8_apply, eu]
+        by_cases hqi : q = i
+        · rw [hqi, ite_eq_left rfl, Proof.Ed25519.Slide.upd_self]
+        · rw [ite_eq_right (Offset.add_ofNat_ne _ (by simp only [DIG]; omega_using [hq, hi])
+            (by simp only [DIG]; omega_using [hi]) (by omega_using [hqi])), Proof.Ed25519.Slide.upd_ne _ _ hqi, m3]
+          exact hdig q (by omega_using [hq, hqi])
+    · intro h0
+      obtain h0 : S.m ≠ 0 := of_decide_eq_false h0
+      obtain ⟨em, ew, ep, eu⟩ := Proof.Ed25519.Slide.step_grow (K := K) h0
+      rw [Si, hbit] at ew eu
+      obtain ⟨hp1, -⟩ := G.m.resolve_left h0
+      rw [Si] at hp1
+      refine WP.mono (recGrow_ok c3 hi (by omega_using [hp1, hi]) hv2 hm16 G.w g3 g1 g6 g7 g8)
+        fun x ⟨rx, mx, x8, x7⟩ => ?_
+      refine ⟨rx.mono (by decide), ?_, by rw [x8, em], by rw [x7, ew],
+        by rw [rx.gpr _ (by decide), g6, ep], fun q hq => ?_⟩
+      · rw [mx]
+        exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+          (Offset.contains _ (by omega_using []) (by omega_using [hi]) (by simp only [DIG]; omega_using []))).writeW
+          (List.mem_singleton_self _) _
+          (Offset.contains _ (by omega_using []) (by omega_using [hp1, hi]) (by simp only [DIG]; omega_using []))
+      · rw [mx, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply, eu]
+        by_cases hqp : q = S.p
+        · rw [hqp, ite_eq_left rfl, Proof.Ed25519.Slide.upd_self]
+        · rw [ite_eq_right (Offset.add_ofNat_ne _ (by simp only [DIG]; omega_using [hq, hi])
+            (by simp only [DIG]; omega_using [hp1, hi]) (by omega_using [hqp])), Proof.Ed25519.Slide.upd_ne _ _ hqp]
+          by_cases hqi : q = i
+          · rw [hqi, ite_eq_left rfl, Proof.Ed25519.Slide.upd_self]
+            rfl
+          · rw [ite_eq_right (Offset.add_ofNat_ne _ (by simp only [DIG]; omega_using [hq, hi])
+              (by simp only [DIG]; omega_using [hi]) (by omega_using [hqi])), Proof.Ed25519.Slide.upd_ne _ _ hqi, m3]
+            exact hdig q (by omega_using [hq, hqi])
+  refine WP.seq (WP.mono mid fun x ⟨rx, fx, x8, x7, x6, xd⟩ => ?_)
+  refine wp_mov (op2_lsr (by decide)) fun y uy => wp_dp (op2_imm (by decide)) fun u uu => WP.block_nil ?_
+  obtain ru : Rest recClob s u :=
+    (r3.mono (by decide)).trans ((rx.mono (by decide)).trans ((uy.rest (by decide)).trans (uu.rest (by decide))))
+  obtain mu : u.mem = x.mem := by rw [uu.mem, uy.mem]
+  rw [← m3]
+  refine ⟨ru, by rw [mu]; exact fx, ⟨hc.of_rest ru (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [mu, lw_frame fx (.inl (by decide)) (by decide) (by decide), m3]
+    exact hptr
+  · rw [uu.gpr, dpVal, uy.other _ (by decide), rx.gpr _ (by decide), r3.gpr _ (by decide), h9]
+    exact ofNat_add_one i
+  · rw [uu.other _ (by decide), uy.other _ (by decide), x8, hS]
+  · rw [uu.other _ (by decide), uy.other _ (by decide), x7, hS]
+  · rw [uu.other _ (by decide), uy.other _ (by decide), x6, hS]
+  · intro q hq
+    rw [mu, hS]
+    exact xd q hq
+  · rw [uu.other _ (by decide), uy.gpr, rx.gpr _ (by decide), r3.gpr _ (by decide), h10]
+    exact bf.2
+
+/-- The address of the byte of `k` that holds the bits from `8 j`. -/
+theorem recAddr_ok {K : Nat} {b ptr : BitVec 32} {j : Nat} {s : State} (h : RecAt K b ptr (8 * j) s)
+    (hj : j < 32) :
+    WP isa (.block recAddr) s fun t => (t.gpr .r0 = b ∧ t.gpr .r3 = ptr + BitVec.ofNat 32 j) ∧
+      Rest [.r2, .r3] s t ∧ t.mem = s.mem := by
+  refine ldrLow_ok h.ctx (d := 52) (by decide) .r3 fun s₁ u₁ => wp_mov (op2_lsr (by decide)) fun s₂ u₂ =>
+    wp_dp (op2_reg _ _) fun s₃ u₃ => WP.block_nil ?_
+  obtain r3 : Rest [.r2, .r3] s s₃ :=
+    (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
+  refine ⟨⟨(r3.gpr _ (by decide)).trans h.ctx.r0, ?_⟩, r3, by rw [u₃.mem, u₂.mem, u₁.mem]⟩
+  rw [u₃.gpr, dpVal, u₂.other _ (by decide), u₁.gpr, h.ptr, u₂.gpr, u₁.other _ (by decide), h.r9]
+  exact congrArg (ptr + ·) (rec_byte_fact j hj)
+
+/-- The byte of `k` that holds the bits from `8 j`. -/
+theorem recLoad_ok {K : Nat} {b ptr : BitVec 32} {j : Nat} {s : State} (h : RecAt K b ptr (8 * j) s)
+    (hj : j < 32) (hin : VerifyInput b ptr 32 s)
+    (hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K) :
+    WP isa (.block recLoad) s fun t => Rest [.r2, .r3, .r10] s t ∧ t.mem = s.mem ∧
+      t.gpr .r10 = BitVec.ofNat 32 (K / 256 ^ j % 256) := by
+  rw [recLoad, WP.block_append_iff]
+  refine WP.mono (recAddr_ok h hj) fun s₃ ⟨⟨_, g3⟩, r3, m3⟩ => ?_
+  refine wp_ldrb (a := State.addr ptr + BitVec.ofNat 64 j) (by decide)
+    (by rw [g3, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero]
+        exact addr_add (by have := hin.fit; omega_using [hj, this]))
+    (by rw [r3.rd, r3.wr]; exact hin.readable j hj) fun t ut => WP.block_nil ?_
+  refine ⟨(r3.mono (by decide)).trans (ut.rest (by decide)), by rw [ut.mem, m3], ?_⟩
+  rw [ut.gpr, m3, ← hK, Proof.Ed25519.decodeLE_byte]
+  have hg : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).getD j 0 =
+      s.mem (State.addr ptr + BitVec.ofNat 64 j) := by
+    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, hj]
+  rw [hg]
+  apply BitVec.eq_of_toNat_eq
+  rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans (BitVec.isLt _) (by decide))]
+
+/-- A byte of `k`: its eight bits. -/
+theorem recByte_ok {K : Nat} {b ptr : BitVec 32} {j : Nat} {s : State} (h : RecAt K b ptr (8 * j) s)
+    (hj : j < 32) (hin : VerifyInput b ptr 32 s)
+    (hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K) :
+    WP isa recByte s fun t => Rest recClob s t ∧ Frame [digR b] s.mem t.mem ∧
+      RecAt K b ptr (8 * (j + 1)) t ∧ t.z = decide (j + 1 = 32) := by
+  rw [recByte]
+  refine WP.seq (WP.mono (recLoad_ok h hj hin hK) fun u ⟨ru, mu, u10⟩ => ?_)
+  refine repeatThen_wp (I := fun t x => Rest recClob s x ∧ Frame [digR b] s.mem x.mem ∧
+      RecAt K b ptr (8 * j + t) x ∧ x.gpr .r10 = BitVec.ofNat 32 (K / 256 ^ j % 256 / 2 ^ t)) 8 0 u
+    ⟨ru.mono (by decide), by rw [mu]; exact Frame.refl _ _,
+      ⟨h.ctx.of_rest ru (by decide), by rw [mu]; exact h.ptr, (ru.gpr _ (by decide)).trans h.r9,
+        (ru.gpr _ (by decide)).trans h.r8, (ru.gpr _ (by decide)).trans h.r7, (ru.gpr _ (by decide)).trans h.r6,
+        fun q hq => by rw [mu]; exact h.dig q hq⟩,
+      by rw [u10, Nat.pow_zero, Nat.div_one]⟩
+    (fun t x _ h2 ⟨rx, fx, ax, x10⟩ => WP.mono (recBit_ok ax hj (by omega_using [h2]) x10)
+      fun y ⟨ry, fy, ay, y10⟩ => ⟨rx.trans ry, fx.trans fy, ay, y10⟩) fun v ⟨rv, fv, av, _⟩ => ?_
+  rw [show 8 * j + (0 + 8) = 8 * (j + 1) by omega_arith] at av
+  refine wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil
+    ⟨rv.trans (ft.rest _), by rw [ft.mem]; exact fv,
+      ⟨av.ctx.of_rest (ft.rest []) (by decide), by rw [ft.mem]; exact av.ptr, by rw [ft.gpr]; exact av.r9,
+        by rw [ft.gpr]; exact av.r8, by rw [ft.gpr]; exact av.r7, by rw [ft.gpr]; exact av.r6,
+        fun q hq => by rw [ft.mem]; exact av.dig q hq⟩, ?_⟩
+  rw [zt, av.r9]
+  show (BitVec.ofNat 32 (8 * (j + 1)) - BitVec.ofNat 32 256 == 0) = _
+  rw [sub_beq_zero_nat (by omega_using [hj]) (by decide)]
+  exact decide_eq_decide.mpr (by omega_arith)
+
+/-- `k`'s digits, for `k`'s pointer at word 52. -/
+theorem recode_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hp : lw s.mem b 52 = ptr)
+    (hin : VerifyInput b ptr 32 s) :
+    WP isa recode s fun t => Rest recClob s t ∧ Frame [digR b] s.mem t.mem ∧
+      ∀ q < 256, t.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8
+        (Proof.Ed25519.Slide.digits (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) q) := by
+  generalize hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K
+  rw [recode]
+  refine WP.seq (wp_mov (op2_imm (by decide)) fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ =>
+    wp_mov (op2_imm (by decide)) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ => WP.block_nil ?_)
+  obtain r4 : Rest recClob s s₄ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
+    ((u₃.rest (by decide)).trans (u₄.rest (by decide))))
+  obtain m4 : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain a4 : RecAt K b ptr (8 * (32 - 32)) s₄ :=
+    ⟨hc.of_rest r4 (by decide), by rw [m4]; exact hp,
+      by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]; rfl,
+      by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]; rfl,
+      by rw [u₄.other _ (by decide), u₃.gpr]; rfl,
+      by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.r0]
+         exact (BitVec.add_zero b).symm,
+      fun q hq => absurd hq (Nat.not_lt_zero _)⟩
+  refine WP.loop (M := isa) (Inv := fun n t => 0 < n ∧ n ≤ 32 ∧ Rest recClob s t ∧ Frame [digR b] s.mem t.mem ∧
+    RecAt K b ptr (8 * (32 - n)) t) ?_ 32 s₄ ⟨by decide, le_rfl, r4, by rw [m4]; exact Frame.refl _ _, a4⟩
+  intro n x ⟨n0, n32, rx, fx, ax⟩
+  obtain kx : VerifyKeep b s x := VerifyKeep.of_small rx (by decide) fx (by decide) (by decide)
+  refine WP.mono (recByte_ok ax (by omega_using [n0]) (hin.keep kx) (by rw [hin.bytes kx]; exact hK))
+    fun t ⟨rt, ft, at', zt⟩ => ?_
+  by_cases h1 : n = 1
+  · subst h1
+    rw [show 8 * (32 - 1 + 1) = 256 from rfl] at at'
+    exact .inl ⟨by show some (!t.z) = _; rw [zt]; rfl, rx.trans rt, fx.trans ft, fun q hq => by
+      rw [Proof.Ed25519.Slide.digits_eq]; exact at'.dig q hq⟩
+  · refine .inr ⟨by show some (!t.z) = _; rw [zt, decide_eq_false (by omega_using [h1, n0])]; rfl, n - 1,
+      by omega_using [n0], by omega_using [h1, n0], by omega_using [n32], rx.trans rt, fx.trans ft, ?_⟩
+    rw [show 32 - (n - 1) = 32 - n + 1 by omega_using [n0, n32]]
+    exact at'
+
+/-! ### The table -/
+
+private theorem entry_fact : ∀ m < 8,
+    (BitVec.ofNat 16 TBA).setWidth 32 + (BitVec.ofNat 32 m <<< 7) = BitVec.ofNat 32 (TBA + 128 * m) := by decide
+
+private theorem digit_fact : ∀ d < 16, d % 2 = 1 →
+    (BitVec.ofNat 16 (TBA - 64)).setWidth 32 + (BitVec.ofNat 32 d <<< 6) =
+      BitVec.ofNat 32 (TBA + 128 * ((d - 1) / 2)) := by decide
+
+theorem entryAddr_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {m : Nat} (hm : m < 8)
+    (h11 : s.gpr .r11 = BitVec.ofNat 32 m) :
+    WP isa (.block entryAddr) s fun t => Rest [.r12] s t ∧ t.mem = s.mem ∧
+      t.gpr .r12 = b + BitVec.ofNat 32 (TBA + 128 * m) := by
+  refine wp_movw fun s₁ u₁ => wp_dp (op2_lsl (by decide)) fun s₂ u₂ => wp_dp (op2_reg _ _) fun t ut =>
+    WP.block_nil ?_
+  refine ⟨(u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (ut.rest (by decide))),
+    by rw [ut.mem, u₂.mem, u₁.mem], ?_⟩
+  simp (disch := decide) only [ut.gpr, dpVal, u₂.gpr, u₂.other, u₁.gpr, u₁.other, hc.r0, h11]
+  exact congrArg (b + ·) (entry_fact m hm)
+
+theorem digitAddr_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {d : Nat} (hd : d < 16) (ho : d % 2 = 1)
+    (h10 : s.gpr .r10 = BitVec.ofNat 32 d) :
+    WP isa (.block digitAddr) s fun t => Rest [.r12] s t ∧ t.mem = s.mem ∧
+      t.gpr .r12 = b + BitVec.ofNat 32 (TBA + 128 * ((d - 1) / 2)) := by
+  refine wp_movw fun s₁ u₁ => wp_dp (op2_lsl (by decide)) fun s₂ u₂ => wp_dp (op2_reg _ _) fun t ut =>
+    WP.block_nil ?_
+  refine ⟨(u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (ut.rest (by decide))),
+    by rw [ut.mem, u₂.mem, u₁.mem], ?_⟩
+  simp (disch := decide) only [ut.gpr, dpVal, u₂.gpr, u₂.other, u₁.gpr, u₁.other, hc.r0, h10]
+  exact congrArg (b + ·) (digit_fact d hd ho)
+
+/-- What is written above the field area and below the verification's points, as `MulKeep`. -/
+theorem MulKeep.of_high {b : BitVec 32} {s t : State} {o n : Nat} {ws : List Reg} (hr : Rest ws s t)
+    (hw : ∀ r ∈ ws, r ∈ powersClob) (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] s.mem t.mem)
+    (ho : 1632 ≤ o) (hn : o + n ≤ 7776) : MulKeep b 1632 6144 s t :=
+  ⟨hr.mono hw, hf.sub fun r hm => ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+    (List.mem_singleton_self _))), by rw [List.mem_singleton.mp hm]; exact Offset.sub _ ho hn⟩⟩
+
+/-- A table entry, outside a frame of the field area. -/
+theorem tab_keep {b : BitVec 32} {m m' : Mem} (h : Frame [FA b] m m') {j : Nat} (hj : j < 8) :
+    tablePoint m' b (TBA + 128 * j) = tablePoint m b (TBA + 128 * j) :=
+  workspace_tablePoint h (by simp only [TBA]; omega_using []) (by simp only [TBA]; omega_using [hj])
+
+/-- A digit's byte, outside a frame of the field area. -/
+theorem dig_keep {b : BitVec 32} {m m' : Mem} (h : Frame [FA b] m m') {q : Nat} (hq : q < 256) :
+    m' (State.addr b + BitVec.ofNat 64 (DIG + q)) = m (State.addr b + BitVec.ofNat 64 (DIG + q)) :=
+  dig_frame h (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) hq
+
+/-- The table, and what the additions need of the field's slots. -/
+def TabDone (a : Spec.Ed25519.Point) (b : BitVec 32) (m : Mem) : Prop :=
+  AllLim m b ∧ env m b 16 = Spec.Ed25519.d ∧ ∀ j < 8, tablePoint m b (TBA + 128 * j) = oddMul a j
+
+/-- The digits are apart from the table and from the field's slots. -/
+theorem TabDone.digits {a : Spec.Ed25519.Point} {b : BitVec 32} {m m' : Mem} (h : TabDone a b m)
+    (hf : Frame [digR b] m m') : TabDone a b m' := by
+  obtain apart : ∀ sl : Slot, ∀ k < 16,
+      (⟨State.addr b + BitVec.ofNat 64 (offset sl + 4 * k), 4⟩ : Region).Disjoint (digR b) := fun sl =>
+    slot_apart sl (.inr (by simp only [offset, DIG]; have := sl.isLt; omega_using [this])) (by decide)
+  refine ⟨fun sl => (env_frame hf sl (apart sl)).2 (h.1 sl), by rw [(env_frame hf 16 (apart 16)).1]; exact h.2.1,
+    fun j hj => ?_⟩
+  rw [tablePoint_frame hf fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact Offset.disjoint _ (.inr (by simp only [TBA, DIG]; omega_using [])) (by simp only [TBA]; omega_using [hj])
+      (by decide)]
+  exact h.2.2 j hj
+
+/-- Before entry `m` of the table: the entries below it, the entry before it in slots 0–3 and
+`[2]A` in slots 4–7. -/
+structure TabAt (a : Spec.Ed25519.Point) (b : BitVec 32) (m : Nat) (s : State) : Prop where
   ctx : Ctx b s
   lim : AllLim s.mem b
   d : env s.mem b 16 = Spec.Ed25519.d
-  q : point (env s.mem b) 4 5 6 7 = a
-  acc : point (env s.mem b) 0 1 2 3 = ladder a K (8 * (32 - m))
-  ptr : lw s.mem b 52 = ptr
+  q : point (env s.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd a a
+  acc : point (env s.mem b) 0 1 2 3 = oddMul a (m - 1)
   r11 : s.gpr .r11 = BitVec.ofNat 32 m
+  tab : ∀ j < m, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
 
-theorem bitsAddr_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {m : Nat} {s : State}
-    (h : ByteAt K b ptr a (m + 1) s) :
-    WP isa (.block bitsAddr) s fun t => Rest [.r3, .r11] s t ∧ t.mem = s.mem ∧
-      t.gpr .r11 = BitVec.ofNat 32 m ∧ t.gpr .r3 = ptr + BitVec.ofNat 32 m := by
-  refine wp_dp (op2_imm (by decide)) fun u hu => ?_
-  have cu : Ctx b u := h.ctx.of_rest (hu.rest (ws := [.r11]) (by decide)) (by decide)
-  have u11 : u.gpr .r11 = BitVec.ofNat 32 m := by
-    rw [hu.gpr, h.r11]; exact ofNat_succ_sub_one m
-  refine ldrLow_ok cu (d := 52) (by decide) .r3 fun v hv => ?_
-  refine wp_dp (op2_reg _ _) fun w hw => WP.block_nil ?_
-  refine ⟨((hu.rest (by decide)).trans (hv.rest (by decide))).trans (hw.rest (by decide)),
-    by rw [hw.mem, hv.mem, hu.mem], by rw [hw.other _ (by decide), hv.other _ (by decide), u11], ?_⟩
-  rw [hw.gpr]
-  show v.gpr .r3 + v.gpr .r11 = _
-  rw [hv.gpr, hv.other _ (by decide), u11, hu.mem, h.ptr]
+theorem oddTableInit_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
+    WP isa (oddTableInit umaal) s fun t => MulKeep b 1632 6144 s t ∧
+      TabAt (point (env s.mem b) 0 1 2 3) b 1 t := by
+  rw [oddTableInit]
+  refine WP.seq (WP.mono (fieldCode_ok _ hc hl) fun u ⟨uk, ul, ue⟩ => ?_)
+  obtain cu := uk.ctx hc
+  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue]; rfl
+  obtain up : point (env u.mem b) 0 1 2 3 = point (env s.mem b) 0 1 2 3 := by rw [ue]; rfl
+  refine WP.seq (WP.mono (pointTableWrite_ok cu ul TBA (by decide) (by decide)) fun v ⟨vk, vl, ve, vt⟩ => ?_)
+  obtain cv := vk.ctx cu
+  obtain vd : env v.mem b 16 = Spec.Ed25519.d := by rw [ve]; exact ud
+  refine WP.seq (WP.mono (doubleCall_ok cv vl) fun w ⟨wk, wl, we⟩ => ?_)
+  obtain cw := wk.ctx cv
+  obtain wp : point (env w.mem b) 0 1 2 3 =
+      Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3) (point (env s.mem b) 0 1 2 3) := by
+    rw [we, pointDouble_eval _ vd, ve, up]
+  obtain wd : env w.mem b 16 = Spec.Ed25519.d := by rw [we, pointDouble_high _ _ (by decide)]; exact vd
+  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps cw wl) fun x ⟨xk, xl, xe⟩ => ?_)
+  obtain cx := xk.ctx cw
+  obtain xq := ((congrArg (fun e => point e 4 5 6 7) xe).trans (copyPointToQ_eval _)).trans wp
+  obtain xd : env x.mem b 16 = Spec.Ed25519.d := by rw [xe, copyPointToQ_d]; exact wd
+  obtain xt : tablePoint x.mem b TBA = point (env s.mem b) 0 1 2 3 := by
+    rw [workspace_tablePoint xk.frame (by decide) (by decide), workspace_tablePoint wk.frame (by decide) (by decide),
+      vt, up]
+  rw [WP.block_append_iff]
+  refine WP.mono (pointTableRead_ok cx xl TBA (by decide) (by decide)) fun y ⟨yk, yl, yp, yh⟩ => ?_
+  refine wp_mov (op2_imm (by decide)) fun t ut => WP.block_nil ?_
+  obtain kt : MulKeep b 1632 6144 y t := MulKeep.of_rest (ut.rest (ws := [.r11]) (by decide)) (by decide) ut.mem
+  refine ⟨(MulKeep.of_powers (PowersKeep.of_keep uk)).trans ((MulKeep.of_powers (vk.mono (by decide) (by decide))).trans
+    ((MulKeep.of_powers (PowersKeep.of_keep wk)).trans ((MulKeep.of_powers (PowersKeep.of_keep xk)).trans
+    ((MulKeep.of_powers (PowersKeep.of_acc yk)).trans kt)))),
+    ⟨kt.ctx (yk.ctx cx), by rw [ut.mem]; exact yl, by rw [ut.mem, yh 16 (by decide)]; exact xd, ?_, ?_, ut.gpr,
+      fun j hj => ?_⟩⟩
+  · rw [ut.mem, point_congr _ _ _ _ (yh 4 (by decide)) (yh 5 (by decide)) (yh 6 (by decide)) (yh 7 (by decide))]
+    exact xq
+  · rw [ut.mem, yp]
+    exact xt
+  · obtain rfl : j = 0 := by omega_using [hj]
+    rw [ut.mem]
+    exact (workspace_tablePoint yk.frame (by decide) (by decide)).trans xt
 
-theorem bitsLoad_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {m : Nat} {s : State}
-    (h : ByteAt K b ptr a (m + 1) s) (hm : m < 32) (hi : VerifyInput b ptr 32 s)
-    (hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K) :
-    WP isa (.block bitsLoad) s fun t => PointKeep b s t ∧ BitAt K b ptr a m 0 t := by
-  rw [bitsLoad, WP.block_append_iff]
-  refine WP.mono (bitsAddr_ok h) fun w ⟨rw', mw, g11, g3⟩ => ?_
-  have aw : State.addr (w.gpr .r3 + BitVec.ofNat 32 0) = State.addr ptr + BitVec.ofNat 64 m := by
-    rw [g3, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.add_zero]
-    exact addr_add (by have := hi.fit; omega_using [hm, this])
-  refine wp_ldrb (by decide) aw (by rw [rw'.rd, rw'.wr]; exact hi.readable m hm) fun x hx => ?_
-  refine wp_mov (op2_lsl (by decide)) fun t ht => WP.block_nil ?_
-  have rt : Rest [.r3, .r10, .r11] s t := ((rw'.mono (by decide)).trans (hx.rest (by decide))).trans
-    (ht.rest (by decide))
-  have mt : t.mem = s.mem := by rw [ht.mem, hx.mem, mw]
-  have kt : PointKeep b s t := PointKeep.of_small rt (by decide) (o := 52) (n := 4)
-    (by rw [mt]; exact Frame.refl _ _) (by decide) (by decide)
-  refine ⟨kt, ⟨kt.ctx h.ctx, by rw [mt]; exact h.lim, by rw [mt]; exact h.d, by rw [mt]; exact h.q, ?_,
-    by rw [mt]; exact h.ptr, by rw [ht.other _ (by decide), hx.other _ (by decide)]; exact g11, ?_⟩⟩
-  · rw [mt, h.acc]
-    exact congrArg (ladder a K) (by omega_using [hm])
-  · rw [ht.gpr, hx.gpr, mw, ← hK, Proof.Ed25519.decodeLE_byte]
-    have hg : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).getD m 0 =
-        s.mem (State.addr ptr + BitVec.ofNat 64 m) := by
-      simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, hm]
-    rw [hg]
+theorem oddTableStep_ok {a : Spec.Ed25519.Point} {b : BitVec 32} {m : Nat} {s : State} (h : TabAt a b m s)
+    (h1 : 1 ≤ m) (h8 : m < 8) :
+    WP isa (oddTableStep umaal) s fun t => MulKeep b 1632 6144 s t ∧ TabAt a b (m + 1) t ∧
+      t.z = decide (m + 1 = 8) := by
+  rw [oddTableStep]
+  refine WP.seq (WP.mono (addCall_ok h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
+  obtain cu := uk.ctx h.ctx
+  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, pointAdd_high _ _ (by decide)]; exact h.d
+  obtain uq : point (env u.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd a a := by rw [ue, pointAdd_q]; exact h.q
+  obtain up : point (env u.mem b) 0 1 2 3 = oddMul a m := by
+    rw [ue, pointAdd_eval _ h.d, h.acc, h.q]
+    obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [h1]⟩
+    rfl
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (entryAddr_ok cu h8 ((uk.rest.gpr _ (by decide)).trans h.r11)) fun v ⟨vr, vm, vp⟩ => ?_
+  obtain cv := cu.of_rest vr (by decide)
+  obtain ho : 1632 ≤ TBA + 128 * m := by simp only [TBA]; omega_using []
+  obtain hn : TBA + 128 * m + 128 ≤ 7776 := by simp only [TBA]; omega_using [h8]
+  refine WP.mono (pointToTable_ok cv (by rw [vm]; exact ul) vp ho (by omega_using [hn])) fun w ⟨wt, wk⟩ => ?_
+  obtain cw := wk.ctx cv
+  obtain we : env w.mem b = env u.mem b :=
+    (wk.env ho (by omega_using [hn])).trans (congrArg (fun m => env m b) vm)
+  refine wp_dp (op2_imm (by decide)) fun x ux => wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil ?_
+  obtain mt : t.mem = w.mem := by rw [ft.mem, ux.mem]
+  obtain rt : Rest [.r11] w t := (ux.rest (by decide)).trans (ft.rest _)
+  obtain g11 : x.gpr .r11 = BitVec.ofNat 32 (m + 1) := by
+    rw [ux.gpr, dpVal, wk.rest.gpr _ (by decide), vr.gpr _ (by decide), uk.rest.gpr _ (by decide), h.r11]
+    exact ofNat_add_one m
+  refine ⟨(MulKeep.of_powers (PowersKeep.of_keep uk)).trans ((MulKeep.of_rest vr (by decide) vm).trans
+      ((MulKeep.of_high wk.rest (by decide) wk.frame ho hn).trans (MulKeep.of_rest rt (by decide) mt))),
+    ⟨cw.of_rest rt (by decide), by rw [mt]; exact wk.lim ho (by omega_using [hn]) (by rw [vm]; exact ul),
+      by rw [mt, we]; exact ud, by rw [mt, we]; exact uq, by rw [mt, we, Nat.add_sub_cancel]; exact up,
+      by rw [ft.gpr]; exact g11, fun j hj => ?_⟩, ?_⟩
+  · rw [mt]
+    rcases (by omega_using [hj] : j = m ∨ j < m) with rfl | hj'
+    · rw [wt, vm]
+      exact up
+    · rw [tablePoint_frame wk.frame (fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        exact Offset.disjoint _ (.inl (by omega_using [hj'])) (by simp only [TBA]; omega_using [hj', h8])
+          (by omega_using [hn])), vm, tab_keep uk.frame (by omega_using [hj', h8])]
+      exact h.tab j hj'
+  · rw [zt, g11]
+    show (BitVec.ofNat 32 (m + 1) - BitVec.ofNat 32 8 == 0) = _
+    exact sub_beq_zero_nat (by omega_using [h8]) (by decide)
+
+/-- Entries `j < 8` of the table are `[2 j + 1]A`, for `A` in slots 0–3. -/
+theorem oddTable_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
+    WP isa (oddTable umaal) s fun t => MulKeep b 1632 6144 s t ∧ TabAt (point (env s.mem b) 0 1 2 3) b 8 t := by
+  rw [oddTable]
+  refine WP.seq (WP.mono (oddTableInit_ok hc hl) fun u ⟨uk, ut⟩ => ?_)
+  refine WP.loop (M := isa) (Inv := fun n t => 0 < n ∧ n ≤ 7 ∧ MulKeep b 1632 6144 u t ∧
+    TabAt (point (env s.mem b) 0 1 2 3) b (8 - n) t) ?_ 7 u
+    ⟨by decide, le_rfl, MulKeep.refl _ _ _ _, (show TabAt _ b (8 - 7) u from ut)⟩
+  intro n x ⟨n0, n7, xk, xt⟩
+  refine WP.mono (oddTableStep_ok xt (by omega_using [n7]) (by omega_using [n0])) fun t ⟨tk, tt, tz⟩ => ?_
+  by_cases h1 : n = 1
+  · subst h1
+    exact .inl ⟨by show some (!t.z) = _; rw [tz]; rfl, uk.trans (xk.trans tk), tt⟩
+  · refine .inr ⟨by show some (!t.z) = _; rw [tz, decide_eq_false (by omega_using [h1, n0])]; rfl, n - 1,
+      by omega_using [n0], by omega_using [h1, n0], by omega_using [n7], xk.trans tk, ?_⟩
+    rw [show 8 - (n - 1) = 8 - n + 1 by omega_using [n0, n7]]
+    exact tt
+
+/-! ### The sum -/
+
+/-- Before the digit below `p`: the sum over the digits from `p` up to the top one's at `p₀`, the
+table and the digits. -/
+structure SlideAt (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) (s : State) : Prop where
+  ctx : Ctx b s
+  lim : AllLim s.mem b
+  d : env s.mem b 16 = Spec.Ed25519.d
+  acc : point (env s.mem b) 0 1 2 3 = slideVal a D p₀ (p₀ - p)
+  r11 : s.gpr .r11 = BitVec.ofNat 32 p
+  tab : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
+  dig : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q)
+
+/-- After the doubling for digit `p`, which is in `r10`. -/
+structure HeadAt (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) (s : State) : Prop where
+  ctx : Ctx b s
+  lim : AllLim s.mem b
+  d : env s.mem b 16 = Spec.Ed25519.d
+  acc : point (env s.mem b) 0 1 2 3 =
+    Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))
+  r11 : s.gpr .r11 = BitVec.ofNat 32 p
+  r10 : s.gpr .r10 = BitVec.ofNat 32 (D p)
+  tab : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
+  dig : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q)
+
+/-- The digit at position `r11`, of value `d`, into `r10`; Z is set if it is zero. -/
+theorem digitLoad_ok {b : BitVec 32} {p d : Nat} {s : State} (hc : Ctx b s) (hp : p < 256)
+    (h11 : s.gpr .r11 = BitVec.ofNat 32 p)
+    (hg : s.mem (State.addr b + BitVec.ofNat 64 (DIG + p)) = BitVec.ofNat 8 d) (hd : d < 16) :
+    WP isa (.block digitLoad) s fun t => Rest [.r3, .r10] s t ∧ t.mem = s.mem ∧
+      t.gpr .r10 = BitVec.ofNat 32 d ∧ t.z = decide (d = 0) := by
+  have hfb := hc.fit
+  refine wp_dp (op2_reg _ _) fun w uw => ?_
+  obtain g3 : w.gpr .r3 = b + BitVec.ofNat 32 p := by rw [uw.gpr, dpVal, hc.r0, h11]
+  refine wp_ldrb (a := State.addr b + BitVec.ofNat 64 (DIG + p)) (by decide)
+    (by rw [g3, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm p DIG]
+        exact addr_add (by simp only [DIG]; omega_using [hfb, hp]))
+    (by rw [uw.rd, uw.wr]
+        exact in_base (List.mem_append_right _ hc.wr) (by simp only [DIG]; omega_using [hp])
+          (by simp only [DIG]; omega_using [hp]))
+    fun x ux => wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil ?_
+  obtain g10 : x.gpr .r10 = BitVec.ofNat 32 d := by
+    rw [ux.gpr, uw.mem, hg]
     apply BitVec.eq_of_toNat_eq
-    have hb := (s.mem (State.addr ptr + BitVec.ofNat 64 m)).isLt
-    rw [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.add_zero]
-    generalize (s.mem (State.addr ptr + BitVec.ofNat 64 m)).toNat = B at hb ⊢
-    omega_using [hb]
+    rw [toNat_setWidth8, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd]),
+      Nat.mod_eq_of_lt (by omega_using [hd])]
+  refine ⟨(uw.rest (by decide)).trans ((ux.rest (by decide)).trans (ft.rest _)), by rw [ft.mem, ux.mem, uw.mem],
+    by rw [ft.gpr]; exact g10, ?_⟩
+  rw [zt, g10]
+  show (BitVec.ofNat 32 d - 0#32 == 0#32) = _
+  rw [BitVec.sub_zero]
+  exact ofNat_beq_zero (by omega_using [hd])
 
-theorem byteStep_ok {K : Nat} {b ptr : BitVec 32} {a : Spec.Ed25519.Point} {m : Nat} {s : State}
-    (h : ByteAt K b ptr a (m + 1) s) (hm : m < 32) (hi : VerifyInput b ptr 32 s)
-    (hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K) :
-    WP isa (byteStep umaal) s fun t => PointKeep b s t ∧ ByteAt K b ptr a m t ∧ t.z = decide (m = 0) := by
-  refine WP.seq (WP.mono (bitsLoad_ok h hm hi hK) fun u ⟨uk, ub⟩ => ?_)
-  refine repeatThen_wp (I := fun i t => PointKeep b s t ∧ BitAt K b ptr a m i t) 8 0 u ⟨uk, ub⟩
-    (fun i' s' _ h2 hs' => WP.mono (bitStep_ok hs'.2 hm (by omega_using [h2])) fun t ⟨tk, tb⟩ =>
-      ⟨hs'.1.trans tk, tb⟩) fun v ⟨vk, vb⟩ => ?_
-  refine wp_cmp (op2_imm (by decide)) fun t ht hz => WP.block_nil ?_
-  have kt : PointKeep b s t := vk.trans (PointKeep.of_small (ht.rest []) (by decide) (o := 52) (n := 4)
-    (by rw [ht.mem]; exact Frame.refl _ _) (by decide) (by decide))
-  refine ⟨kt, ⟨kt.ctx h.ctx, by rw [ht.mem]; exact vb.lim, by rw [ht.mem]; exact vb.d,
-    by rw [ht.mem]; exact vb.q, ?_, by rw [ht.mem]; exact vb.ptr, by rw [ht.gpr]; exact vb.r11⟩, ?_⟩
-  · rw [ht.mem, vb.acc]
-    exact congrArg (ladder a K) (by omega_using [hm])
-  · rw [hz, vb.r11]
-    show (BitVec.ofNat 32 m - 0#32 == 0#32) = _
+theorem slideHead_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
+    (h : SlideAt a D b p₀ (p + 1) s) (hp : p < 256) (hD : D p < 16) :
+    WP isa (slideHead umaal) s fun t => MulKeep b 1632 6144 s t ∧ HeadAt a D b p₀ p t ∧
+      t.z = decide (D p = 0) := by
+  rw [slideHead]
+  refine WP.seq (wp_dp (op2_imm (by decide)) fun u uu => WP.block_nil ?_)
+  obtain ru : Rest [.r11] s u := uu.rest (by decide)
+  obtain cu : Ctx b u := h.ctx.of_rest ru (by decide)
+  obtain u11 : u.gpr .r11 = BitVec.ofNat 32 p := by
+    rw [uu.gpr, dpVal, h.r11]
+    exact ofNat_succ_sub_one p
+  refine WP.seq (WP.mono (doubleCall_ok cu (by rw [uu.mem]; exact h.lim)) fun v ⟨vk, vl, ve⟩ => ?_)
+  obtain cv := vk.ctx cu
+  obtain fv : Frame [FA b] s.mem v.mem := by
+    have := vk.frame
+    rwa [uu.mem] at this
+  obtain vd : env v.mem b 16 = Spec.Ed25519.d := by
+    rw [ve, pointDouble_high _ _ (by decide), uu.mem]
+    exact h.d
+  obtain vp : point (env v.mem b) 0 1 2 3 =
+      Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1))) := by
+    rw [ve, pointDouble_eval _ (by rw [uu.mem]; exact h.d), uu.mem, h.acc]
+  refine WP.mono (digitLoad_ok cv hp ((vk.rest.gpr _ (by decide)).trans u11)
+    ((dig_keep fv hp).trans (h.dig p hp)) hD) fun t ⟨rt, mt, t10, tz⟩ => ?_
+  refine ⟨(MulKeep.of_rest ru (by decide) uu.mem).trans ((MulKeep.of_powers (PowersKeep.of_keep vk)).trans
+      (MulKeep.of_rest rt (by decide) mt)),
+    ⟨cv.of_rest rt (by decide), by rw [mt]; exact vl, by rw [mt]; exact vd, by rw [mt]; exact vp, ?_, t10,
+      fun j hj => by rw [mt, tab_keep fv hj]; exact h.tab j hj,
+      fun q hq => by rw [mt, dig_keep fv hq]; exact h.dig q hq⟩, tz⟩
+  rw [rt.gpr _ (by decide), vk.rest.gpr _ (by decide)]
+  exact u11
+
+theorem addEntry_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
+    (h : HeadAt a D b p₀ p s) (ho : D p % 2 = 1) (hD : D p < 16) :
+    WP isa (addEntry umaal) s fun t => AccKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
+      point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointAdd (oddMul a ((D p - 1) / 2))
+        (Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))) := by
+  rw [addEntry]
+  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
+  obtain cu := uk.ctx h.ctx
+  obtain uq := ((congrArg (fun e => point e 4 5 6 7) ue).trans (copyPointToQ_eval _)).trans h.acc
+  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, copyPointToQ_d]; exact h.d
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (digitAddr_ok cu hD ho ((uk.rest.gpr _ (by decide)).trans h.r10)) fun v ⟨vr, vm, vp⟩ => ?_
+  obtain cv := cu.of_rest vr (by decide)
+  obtain hj : (D p - 1) / 2 < 8 := by omega_using [hD]
+  refine WP.mono (pointFromTable_ok cv (by rw [vm]; exact ul) vp (by simp only [TBA]; omega_using [])
+    (by simp only [TBA]; omega_using [hj])) fun w ⟨wp, wl, wk⟩ => ?_
+  obtain cw := wk.ctx cv
+  obtain wp' : point (env w.mem b) 0 1 2 3 = oddMul a ((D p - 1) / 2) := by
+    rw [wp, vm, tab_keep uk.frame hj]
+    exact h.tab _ hj
+  obtain wq : point (env w.mem b) 4 5 6 7 =
+      Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1))) := by
+    rw [point_congr _ _ _ _ (wk.high 4 (by decide)) (wk.high 5 (by decide)) (wk.high 6 (by decide))
+      (wk.high 7 (by decide)), vm]
+    exact uq
+  obtain wd : env w.mem b 16 = Spec.Ed25519.d := by rw [wk.high 16 (by decide), vm]; exact ud
+  refine WP.mono (addCall_ok cw wl) fun t ⟨tk, tl, te⟩ => ?_
+  refine ⟨(AccKeep.of_keep uk).trans ((AccKeep.of_rest vr (by decide) vm).trans
+      ((AccKeep.of_table wk (by decide) (by decide)).trans (AccKeep.of_keep tk))), tl,
+    by rw [te, pointAdd_high _ _ (by decide)]; exact wd, ?_⟩
+  rw [te, pointAdd_eval _ wd, wp', wq]
+
+theorem slideStep_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
+    (h : SlideAt a D b p₀ (p + 1) s) (hp₀ : p < p₀) (hp : p < 256)
+    (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
+    WP isa (slideStep umaal) s fun t => MulKeep b 1632 6144 s t ∧ SlideAt a D b p₀ p t ∧
+      t.z = decide (p = 0) := by
+  obtain hDp : D p < 16 := by rcases hD p with e | e <;> omega_using [e]
+  rw [slideStep]
+  refine WP.seq (WP.mono (slideHead_ok h hp hDp) fun u ⟨uk, uh, uz⟩ => ?_)
+  have mid : WP isa (.ite .ne (addEntry umaal) (.block [])) u fun x => AccKeep b u x ∧ AllLim x.mem b ∧
+      env x.mem b 16 = Spec.Ed25519.d ∧ point (env x.mem b) 0 1 2 3 = slideVal a D p₀ (p₀ - p) := by
+    apply WP.ite (!decide (D p = 0)) (by show some (!u.z) = _; rw [uz])
+    · intro hb
+      obtain hne : D p ≠ 0 := by simpa using hb
+      obtain ⟨ho, _⟩ := (hD p).resolve_left hne
+      refine WP.mono (addEntry_ok uh ho hDp) fun x ⟨xk, xl, xd, xp⟩ => ⟨xk, xl, xd, ?_⟩
+      rw [xp, slideVal_at a D hp₀, ite_eq_right hne]
+    · intro hb
+      obtain h0 : D p = 0 := by simpa using hb
+      refine WP.block_nil ⟨⟨Rest.refl _ _, Frame.refl _ _⟩, uh.lim, uh.d, ?_⟩
+      rw [uh.acc, slideVal_at a D hp₀, ite_eq_left h0]
+  refine WP.seq (WP.mono mid fun x ⟨xk, xl, xd, xp⟩ => ?_)
+  obtain x11 : x.gpr .r11 = BitVec.ofNat 32 p := (xk.rest.gpr _ (by decide)).trans uh.r11
+  refine wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil
+    ⟨uk.trans ((MulKeep.of_powers (PowersKeep.of_acc xk)).trans (MulKeep.of_rest (ft.rest []) (by decide) ft.mem)),
+      ⟨(xk.ctx uh.ctx).of_rest (ft.rest []) (by decide), by rw [ft.mem]; exact xl, by rw [ft.mem]; exact xd,
+        by rw [ft.mem]; exact xp, by rw [ft.gpr]; exact x11,
+        fun j hj => by rw [ft.mem, tab_keep xk.frame hj]; exact uh.tab j hj,
+        fun q hq => by rw [ft.mem, dig_keep xk.frame hq]; exact uh.dig q hq⟩, ?_⟩
+  rw [zt, x11]
+  show (BitVec.ofNat 32 p - 0#32 == 0#32) = _
+  rw [BitVec.sub_zero]
+  exact ofNat_beq_zero (by omega_using [hp])
+
+/-- The digits below the top one's position `p₀ ≥ 1`. -/
+theorem slideLoop_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ : Nat} {s : State}
+    (h : SlideAt a D b p₀ p₀ s) (h0 : 0 < p₀) (h256 : p₀ ≤ 256)
+    (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
+    WP isa (.loop (slideStep umaal) .ne) s fun t => MulKeep b 1632 6144 s t ∧ SlideAt a D b p₀ 0 t := by
+  refine WP.loop (M := isa) (Inv := fun n t => 0 < n ∧ n ≤ p₀ ∧ MulKeep b 1632 6144 s t ∧ SlideAt a D b p₀ n t)
+    ?_ p₀ s ⟨h0, le_rfl, MulKeep.refl _ _ _ _, h⟩
+  intro n x ⟨n0, np, xk, xa⟩
+  obtain ⟨p, rfl⟩ : ∃ p, n = p + 1 := ⟨n - 1, by omega_using [n0]⟩
+  refine WP.mono (slideStep_ok xa (by omega_using [np]) (by omega_using [np, h256]) hD) fun t ⟨tk, ta, tz⟩ => ?_
+  by_cases hp0 : p = 0
+  · subst hp0
+    exact .inl ⟨by show some (!t.z) = _; rw [tz]; rfl, xk.trans tk, ta⟩
+  · exact .inr ⟨by show some (!t.z) = _; rw [tz, decide_eq_false hp0]; rfl, p, by omega_using [],
+      by omega_using [hp0], by omega_using [np], xk.trans tk, ta⟩
+
+/-! ### The top digit -/
+
+/-- Z after a position of the search for the top digit: set if its digit `d` is not zero, or at
+position 0. -/
+def topZ (d p : Nat) : Bool := if d = 0 then decide (p = 0) else true
+
+/-- The position below `p + 1`, and its digit. -/
+theorem topHead_ok {D : Nat → Nat} {b : BitVec 32} {p : Nat} {s : State} (hc : Ctx b s) (hp : p < 256)
+    (h11 : s.gpr .r11 = BitVec.ofNat 32 (p + 1))
+    (hg : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q)) (hD : D p < 16) :
+    WP isa (.block (([.dp .sub .r11 .r11 (.imm 1)] : List Instr) ++ digitLoad)) s fun t =>
+      Rest [.r3, .r10, .r11] s t ∧ t.mem = s.mem ∧ t.gpr .r11 = BitVec.ofNat 32 p ∧
+      t.gpr .r10 = BitVec.ofNat 32 (D p) ∧ t.z = decide (D p = 0) := by
+  rw [WP.block_append_iff]
+  refine wp_dp (op2_imm (by decide)) fun u uu => WP.block_nil ?_
+  obtain ru : Rest [.r11] s u := uu.rest (by decide)
+  obtain u11 : u.gpr .r11 = BitVec.ofNat 32 p := by
+    rw [uu.gpr, dpVal, h11]
+    exact ofNat_succ_sub_one p
+  refine WP.mono (digitLoad_ok (hc.of_rest ru (by decide)) hp u11 (by rw [uu.mem]; exact hg p hp) hD)
+    fun t ⟨rt, mt, t10, tz⟩ => ⟨(ru.mono (by decide)).trans (rt.mono (by decide)), mt.trans uu.mem,
+      (rt.gpr _ (by decide)).trans u11, t10, tz⟩
+
+theorem topStep_ok {D : Nat → Nat} {b : BitVec 32} {p : Nat} {s : State} (hc : Ctx b s) (hp : p < 256)
+    (h11 : s.gpr .r11 = BitVec.ofNat 32 (p + 1))
+    (hg : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q)) (hD : D p < 16) :
+    WP isa topStep s fun t => Rest [.r3, .r10, .r11] s t ∧ t.mem = s.mem ∧
+      t.gpr .r11 = BitVec.ofNat 32 p ∧ t.gpr .r10 = BitVec.ofNat 32 (D p) ∧ t.z = topZ (D p) p := by
+  rw [topStep]
+  refine WP.seq (WP.mono (topHead_ok hc hp h11 hg hD) fun u ⟨ru, mu, u11, u10, uz⟩ => ?_)
+  apply WP.ite (decide (D p = 0)) (by rw [eval_eq, uz])
+  · intro hb
+    obtain h0 : D p = 0 := of_decide_eq_true hb
+    refine wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil
+      ⟨ru.trans (ft.rest _), ft.mem.trans mu, by rw [ft.gpr]; exact u11, by rw [ft.gpr]; exact u10, ?_⟩
+    rw [zt, u11, topZ, ite_eq_left h0]
+    show (BitVec.ofNat 32 p - 0#32 == 0#32) = _
     rw [BitVec.sub_zero]
-    by_cases h0 : m = 0
-    · subst h0; rfl
-    · rw [decide_eq_false h0]
-      refine beq_eq_false_iff_ne.mpr fun e => h0 ?_
-      have := congrArg BitVec.toNat e
-      simp only [BitVec.toNat_ofNat] at this
-      omega_using [hm, this]
+    exact ofNat_beq_zero (by omega_using [hp])
+  · intro hb
+    obtain h0 : D p ≠ 0 := of_decide_eq_false hb
+    refine wp_cmp (op2_reg _ _) fun t ft zt => WP.block_nil
+      ⟨ru.trans (ft.rest _), ft.mem.trans mu, by rw [ft.gpr]; exact u11, by rw [ft.gpr]; exact u10, ?_⟩
+    rw [zt, BitVec.sub_self, topZ, ite_eq_right h0]
+    rfl
 
-theorem publicMulInit_ok {s : State} {b ptr : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (hp : s.gpr .r12 = ptr) :
-    WP isa publicMulInit s fun w => PointKeep b s w ∧
-      ByteAt (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) b ptr
-        (point (env s.mem b) 0 1 2 3) 32 w := by
-  rw [publicMulInit]
-  refine WP.seq (strLow_ok hc (d := 52) (by decide) .r12 fun u hu => WP.block_nil ?_)
-  have uf : Frame [⟨State.addr b + BitVec.ofNat 64 52, 4⟩] s.mem u.mem := by
-    rw [hu.mem]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have uk : PointKeep b s u := PointKeep.of_small (hu.rest []) (by decide) uf (by decide) (by decide)
-  have ue := smallFrame_env uf (by decide)
-  have up : lw u.mem b 52 = ptr := by rw [hu.mem]; exact (Mem.readW_writeW_self32 _ _ _).trans hp
-  refine WP.seq (WP.mono (fieldCode_ok _ (uk.ctx hc) (smallFrame_lim uf (by decide) hl))
-    fun v ⟨vk, vl, ve⟩ => ?_)
-  refine wp_mov (op2_imm (by decide)) fun w hw => WP.block_nil ?_
-  have kw : PointKeep b s w := (uk.trans (PointKeep.of_keep vk)).trans (PointKeep.of_small
-    (hw.rest (ws := [.r11]) (by decide)) (by decide) (o := 52) (n := 4)
-    (by rw [hw.mem]; exact Frame.refl _ _) (by decide) (by decide))
-  refine ⟨kw, kw.ctx hc, by rw [hw.mem]; exact vl, ?_, ?_, ?_, ?_, hw.gpr⟩
-  · rw [hw.mem, ve]; rfl
-  · rw [hw.mem, ve, ue]; rfl
-  · rw [hw.mem, ve]; rfl
-  · rw [hw.mem, keep_lw vk (by decide)]; exact up
+/-- The top digit: its position (`Slide.topPos`) in `r11`, and the digit in `r10`. -/
+theorem topDigit_ok {D : Nat → Nat} {b : BitVec 32} {s : State} (hc : Ctx b s)
+    (hg : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q))
+    (hD : ∀ q, D q < 16) :
+    WP isa topDigit s fun t => Rest [.r3, .r10, .r11] s t ∧ t.mem = s.mem ∧
+      t.gpr .r11 = BitVec.ofNat 32 (Proof.Ed25519.Slide.topPos D 256) ∧
+      t.gpr .r10 = BitVec.ofNat 32 (D (Proof.Ed25519.Slide.topPos D 256)) := by
+  rw [topDigit]
+  refine WP.seq (wp_mov (op2_imm (by decide)) fun u uu => WP.block_nil ?_)
+  refine WP.loop (M := isa) (Inv := fun n t => 0 < n ∧ n ≤ 256 ∧ Rest [.r3, .r10, .r11] s t ∧ t.mem = s.mem ∧
+    t.gpr .r11 = BitVec.ofNat 32 n ∧ Proof.Ed25519.Slide.topPos D 256 = Proof.Ed25519.Slide.topPos D n)
+    ?_ 256 u ⟨by decide, le_rfl, uu.rest (by decide), uu.mem, uu.gpr, rfl⟩
+  intro n x ⟨n0, n256, rx, mx, x11, xt⟩
+  obtain ⟨p, rfl⟩ : ∃ p, n = p + 1 := ⟨n - 1, by omega_using [n0]⟩
+  refine WP.mono (topStep_ok (hc.of_rest rx (by decide)) (by omega_using [n256]) x11
+    (fun q hq => by rw [mx]; exact hg q hq) (hD p)) fun t ⟨rt, mt, t11, t10, tz⟩ => ?_
+  rw [topZ] at tz
+  by_cases h0 : D p = 0
+  · rw [ite_eq_left h0] at tz
+    rw [Proof.Ed25519.Slide.topPos_succ_zero h0] at xt
+    by_cases hp0 : p = 0
+    · subst hp0
+      refine .inl ⟨by show some (!t.z) = _; rw [tz]; rfl, rx.trans rt, mt.trans mx, ?_, ?_⟩
+      · rw [t11, xt]; rfl
+      · rw [t10, xt]; rfl
+    · exact .inr ⟨by show some (!t.z) = _; rw [tz, decide_eq_false hp0]; rfl, p, by omega_using [],
+        by omega_using [hp0], by omega_using [n256], rx.trans rt, mt.trans mx, t11, xt⟩
+  · rw [ite_eq_right h0] at tz
+    rw [Proof.Ed25519.Slide.topPos_succ_ne h0] at xt
+    exact .inl ⟨by show some (!t.z) = _; rw [tz]; rfl, rx.trans rt, mt.trans mx, by rw [t11, xt],
+      by rw [t10, xt]⟩
 
+/-- The sum's start: the top digit's entry, or the identity. -/
+theorem slideStart_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ : Nat} {s : State}
+    (hc : Ctx b s) (hl : AllLim s.mem b) (hd : env s.mem b 16 = Spec.Ed25519.d)
+    (ht : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j)
+    (hg : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q))
+    (h11 : s.gpr .r11 = BitVec.ofNat 32 p₀) (h10 : s.gpr .r10 = BitVec.ofNat 32 (D p₀))
+    (hD : D p₀ = 0 ∨ (D p₀ % 2 = 1 ∧ D p₀ < 16)) :
+    WP isa slideStart s fun t => AccKeep b s t ∧ SlideAt a D b p₀ p₀ t := by
+  obtain hlt : D p₀ < 16 := by rcases hD with e | e <;> omega_using [e]
+  rw [slideStart]
+  refine WP.seq (wp_cmp (op2_imm (by decide)) fun u fu zu => WP.block_nil ?_)
+  obtain ku : AccKeep b s u := AccKeep.of_rest (fu.rest []) (by decide) fu.mem
+  obtain cu := ku.ctx hc
+  obtain hz : isa.eval .ne u = some (!decide (D p₀ = 0)) := by
+    show some (!u.z) = _
+    rw [zu, h10]
+    show some (!(BitVec.ofNat 32 (D p₀) - 0#32 == 0#32)) = _
+    rw [BitVec.sub_zero]
+    exact congrArg (fun z => some (!z)) (ofNat_beq_zero (by omega_using [hlt]))
+  apply WP.ite (!decide (D p₀ = 0)) hz
+  · intro hb
+    obtain hne : D p₀ ≠ 0 := by simpa using hb
+    obtain ⟨ho, _⟩ := hD.resolve_left hne
+    obtain hj : (D p₀ - 1) / 2 < 8 := by omega_using [hlt]
+    rw [WP.block_append_iff]
+    refine WP.mono (digitAddr_ok cu hlt ho (by rw [fu.gpr]; exact h10)) fun v ⟨vr, vm, vp⟩ => ?_
+    obtain cv := cu.of_rest vr (by decide)
+    refine WP.mono (pointFromTable_ok cv (by rw [vm, fu.mem]; exact hl) vp (by simp only [TBA]; omega_using [])
+      (by simp only [TBA]; omega_using [hj])) fun t ⟨tp, tl, tk⟩ => ?_
+    obtain kt : AccKeep b s t :=
+      ku.trans ((AccKeep.of_rest vr (by decide) vm).trans (AccKeep.of_table tk (by decide) (by decide)))
+    refine ⟨kt, kt.ctx hc, tl, by rw [tk.high 16 (by decide), vm, fu.mem]; exact hd, ?_,
+      (kt.rest.gpr _ (by decide)).trans h11, fun j hj => by rw [tab_keep kt.frame hj]; exact ht j hj,
+      fun q hq => by rw [dig_keep kt.frame hq]; exact hg q hq⟩
+    rw [tp, vm, fu.mem, ht _ hj, Nat.sub_self, slideVal_zero, ite_eq_right hne]
+  · intro hb
+    obtain h0 : D p₀ = 0 := by simpa using hb
+    refine WP.mono (fieldCode_ok _ cu (by rw [fu.mem]; exact hl)) fun t ⟨tk, tl, te⟩ => ?_
+    obtain kt : AccKeep b s t := ku.trans (AccKeep.of_keep tk)
+    refine ⟨kt, kt.ctx hc, tl, ?_, ?_, (kt.rest.gpr _ (by decide)).trans h11,
+      fun j hj => by rw [tab_keep kt.frame hj]; exact ht j hj,
+      fun q hq => by rw [dig_keep kt.frame hq]; exact hg q hq⟩
+    · rw [te, fu.mem]
+      exact hd
+    · rw [te, constPoint_eval, Nat.sub_self, slideVal_zero, ite_eq_left h0]
+
+/-- The test of the top digit's position. -/
+theorem slideTest_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ : Nat} {s : State}
+    (h : SlideAt a D b p₀ p₀ s) (hp₀ : p₀ < 256) :
+    WP isa (.block [.cmp .r11 (.imm 0)]) s fun u => MulKeep b 1632 6144 s u ∧ SlideAt a D b p₀ p₀ u ∧
+      u.z = decide (p₀ = 0) := by
+  refine wp_cmp (op2_imm (by decide)) fun u fu zu => WP.block_nil ?_
+  obtain ku : MulKeep b 1632 6144 s u := MulKeep.of_rest (fu.rest []) (by decide) fu.mem
+  refine ⟨ku, ⟨ku.ctx h.ctx, by rw [fu.mem]; exact h.lim, by rw [fu.mem]; exact h.d, by rw [fu.mem]; exact h.acc,
+    by rw [fu.gpr]; exact h.r11, fun j hj => by rw [fu.mem]; exact h.tab j hj,
+    fun q hq => by rw [fu.mem]; exact h.dig q hq⟩, ?_⟩
+  rw [zu, h.r11]
+  show (BitVec.ofNat 32 p₀ - 0#32 == 0#32) = _
+  rw [BitVec.sub_zero]
+  exact ofNat_beq_zero (by omega_using [hp₀])
+
+/-- The digits below the top one's, if its position is not 0. -/
+theorem slideRest_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ : Nat} {s : State}
+    (h : SlideAt a D b p₀ p₀ s) (hp₀ : p₀ < 256) (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
+    WP isa (slideRest umaal) s fun t => MulKeep b 1632 6144 s t ∧ SlideAt a D b p₀ 0 t := by
+  rw [slideRest]
+  refine WP.seq (WP.mono (slideTest_ok h hp₀) fun u ⟨ku, hu, zu⟩ => ?_)
+  apply WP.ite (!decide (p₀ = 0)) (by show some (!u.z) = _; rw [zu])
+  · intro hb
+    obtain hne : p₀ ≠ 0 := by simpa using hb
+    exact WP.mono (slideLoop_ok hu (by omega_using [hne]) (by omega_using [hp₀]) hD) fun t ⟨tk, ta⟩ =>
+      ⟨ku.trans tk, ta⟩
+  · intro hb
+    obtain h0 : p₀ = 0 := by simpa using hb
+    subst h0
+    exact WP.block_nil ⟨ku, hu⟩
+
+/-- `[k]A` into slots 0–3, for `A` in slots 0–3 and the 32 bytes of `k` at `r12`. -/
 theorem publicMul_ok {s : State} {b ptr : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = ptr) (hi : VerifyInput b ptr 32 s) :
     WP isa (publicMul umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
-      point (env t.mem b) 0 1 2 3 = ladder (point (env s.mem b) 0 1 2 3)
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) 256 := by
+      point (env t.mem b) 0 1 2 3 = slide (point (env s.mem b) 0 1 2 3)
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) := by
   rw [publicMul]
-  refine WP.seq (WP.mono (publicMulInit_ok hc hl hp) fun w ⟨kw, hw0⟩ => ?_)
-  have iw : VerifyInput b ptr 32 w := hi.keep (VerifyKeep.of_point kw)
-  have bw : Spec.Ed25519.bytesAt w.mem (State.addr ptr) 32 = Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32 :=
-    hi.bytes (VerifyKeep.of_point kw)
-  refine WP.loop (M := isa) (Inv := fun m t => 0 < m ∧ m ≤ 32 ∧ PointKeep b w t ∧
-    ByteAt (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) b ptr
-      (point (env s.mem b) 0 1 2 3) m t) ?_ 32 w ⟨by decide, le_rfl, PointKeep.refl _ _, hw0⟩
-  intro m x ⟨m0, m32, xk, xb⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [m0]⟩
-  have ix := iw.keep (VerifyKeep.of_point xk)
-  refine WP.mono (byteStep_ok xb (by omega_using [m32]) ix
-    ((iw.bytes (VerifyKeep.of_point xk)).trans bw ▸ rfl)) fun t ⟨tk, tb, tz⟩ => ?_
-  by_cases h0 : m = 0
-  · subst h0
-    refine .inl ⟨by show some (!t.z) = _; rw [tz]; rfl, kw.trans (xk.trans tk), tb.lim, tb.d, tb.acc⟩
-  · exact .inr ⟨by show some (!t.z) = _; rw [tz, decide_eq_false h0]; rfl, m, by omega_arith,
-      by omega_using [h0], by omega_using [m32], xk.trans tk, tb⟩
+  refine WP.seq (strLow_ok hc (d := 52) (by decide) .r12 fun u hu => WP.block_nil ?_)
+  obtain uf : Frame [⟨State.addr b + BitVec.ofNat 64 52, 4⟩] s.mem u.mem := by
+    rw [hu.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  obtain uk : PointKeep b s u := PointKeep.of_small (hu.rest []) (by decide) uf (by decide) (by decide)
+  obtain ue := smallFrame_env uf (by decide)
+  obtain up : lw u.mem b 52 = ptr := by rw [hu.mem]; exact (Mem.readW_writeW_self32 _ _ _).trans hp
+  refine WP.seq (WP.mono (oddTable_ok (uk.ctx hc) (smallFrame_lim uf (by decide) hl)) fun v ⟨vk, vt⟩ => ?_)
+  rw [ue] at vt
+  obtain kv : PointKeep b u v := PointKeep.of_mul vk
+  obtain iu := hi.keep (VerifyKeep.of_point uk)
+  obtain pv : lw v.mem b 52 = ptr := (vk.word (by decide) (by decide) 52 (.inr rfl)).trans up
+  refine WP.seq (WP.mono (recode_ok vt.ctx pv (iu.keep (VerifyKeep.of_point kv))) fun w ⟨wr, wf, wd⟩ => ?_)
+  rw [(iu.bytes (VerifyKeep.of_point kv)).trans (hi.bytes (VerifyKeep.of_point uk))] at wd
+  obtain kw : PointKeep b v w := PointKeep.of_small wr (by decide) wf (by decide) (by decide)
+  obtain cw := kw.ctx vt.ctx
+  obtain tw : TabDone (point (env s.mem b) 0 1 2 3) b w.mem := TabDone.digits ⟨vt.lim, vt.d, vt.tab⟩ wf
+  obtain hD := Proof.Ed25519.Slide.digits_odd
+    (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32))
+  refine WP.seq (WP.mono (topDigit_ok cw wd fun q => by rcases hD q with e | e <;> omega_using [e])
+    fun x ⟨xr, xm, x11, x10⟩ => ?_)
+  obtain kx : PointKeep b w x := PointKeep.of_mul (MulKeep.of_rest xr (by decide) xm)
+  rw [← xm] at tw wd
+  refine WP.seq (WP.mono (slideStart_ok (kx.ctx cw) tw.1 tw.2.1 tw.2.2 wd x11 x10 (hD _)) fun y ⟨yk, ya⟩ => ?_)
+  refine WP.mono (slideRest_ok ya (Proof.Ed25519.Slide.topPos_lt _ (by decide)) hD) fun t ⟨tk, ta⟩ => ?_
+  refine ⟨uk.trans (kv.trans (kw.trans (kx.trans ((PointKeep.of_mul (MulKeep.of_powers (PowersKeep.of_acc yk))).trans
+    (PointKeep.of_mul tk))))), ta.lim, ta.d, ?_⟩
+  rw [ta.acc, Nat.sub_zero]
+  rfl
 
 end VG.Proof.Ed25519.Arm
 end
@@ -706,8 +1392,8 @@ theorem verifyRhs_ok {b pk sig challenge : BitVec 32} {s : State}
     WP isa (verifyRhs umaal) s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
       t.gpr .r9 = BitVec.ofNat 32 (Spec.Ed25519.pointEqual (tablePoint s.mem b 8032)
         (Spec.Ed25519.pointAdd (tablePoint s.mem b 7904)
-          (ladder (tablePoint s.mem b 7776)
-            (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 32)) 256))).toNat := by
+          (slide (tablePoint s.mem b 7776)
+            (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 32))))).toNat := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (pointTableRead_ok hc.ctx hl 7776 (by decide) (by decide)) fun a ⟨ak, al, ap, _⟩ => ?_
@@ -721,8 +1407,8 @@ theorem verifyRhs_ok {b pk sig challenge : BitVec 32} {s : State}
   obtain ci := cc.challengeInput.prefix (n := 32) (by decide)
   refine WP.seq (WP.mono (publicMul_ok cc.ctx (cm ▸ al) cp' ci) fun d ⟨dk, dl, dd, dp⟩ => ?_)
   obtain kd := cpk.trans dk
-  obtain dp' : point (env d.mem b) 0 1 2 3 = ladder (tablePoint s.mem b 7776)
-      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 32)) 256 := by
+  obtain dp' : point (env d.mem b) 0 1 2 3 = slide (tablePoint s.mem b 7776)
+      (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 32)) := by
     rw [(hc.challengeInput.prefix (n := 32) (by decide)).bytes (VerifyKeep.of_acc kc), capp] at dp
     exact dp
   refine WP.seq (WP.mono (verifyCombine_ok (kd.ctx hc.ctx) dl dd) fun e ⟨ek, el, ep, eqp⟩ => ?_)
@@ -808,7 +1494,7 @@ theorem verifyEquationPoints_ok {b pk sig challenge T : BitVec 32} {s : State}
   rw [← decodeLE_low hk] at hk
   exact congrArg (fun v : Bool => BitVec.ofNat 32 v.toNat) (pointEqual_rep_both up
     (Proof.Ed25519.pointMul_rep _ Proof.Ed25519.basePoint_rep)
-    (Proof.Ed25519.pointAdd_rep hR (ladder_full hA hk))
+    (Proof.Ed25519.pointAdd_rep hR (slide_rep hA hk))
     (Proof.Ed25519.pointAdd_rep hR (Proof.Ed25519.pointMul_rep _ hA)))
 
 end VG.Proof.Ed25519.Arm

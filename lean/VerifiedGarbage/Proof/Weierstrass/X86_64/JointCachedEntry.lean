@@ -29,11 +29,32 @@ public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCachePoint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
+
+/-! ### `Weierstrass.X86_64.NafCachePoint`, which only this module used -/
+
+section
+
+/-! A public cache lookup preserves the point and its Z²/Z³ relationships. -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64
+open VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
+
+def cachedSlots (n : Nat) (p : Pt) (dst : Nat) : List Nat := jacCoords p++[dst,dst+8*n]
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
 
 /-! ### `Weierstrass.X86_64.NafCacheEntryPoint`, which this module and modules that import it used -/
 

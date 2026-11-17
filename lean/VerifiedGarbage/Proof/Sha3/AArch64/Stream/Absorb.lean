@@ -564,7 +564,8 @@ abbrev inner (s₀ : State) : State :=
 theorem correct (v : Permutation) {s₀ : State} (hp : Pre s₀) (hs : Stack s₀) :
     WP isa (absorbGenericWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha3.absorbAArch64.post s₀ s' := by
   obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr, hp.rate, hp.pos_lt⟩
-  refine WP.frameReg (hn := by rw [v.absorbMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
+  refine WP.frameReg (hn := by rw [v.absorbMain_depth]; decide) hs.sp16 (fun R hR => ?_) 
+    (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ mm u f => ?_)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -581,7 +582,10 @@ theorem correct (v : Permutation) {s₀ : State} (hp : Pre s₀) (hs : Stack s�
         show stateAt (inner s₀).mem (st s₀) = _
         rw [write_frame_state hs.st]; exact hm) hc
       rw [e] at this
-      exact this
+      -- The state lies apart from the frame, whose bytes the pop loses.
+      unfold Spec.Sha3.Repr at this ⊢
+      exact (Proof.Sha3.stateAt_congr (p := s₀.gpr .x0) fun i hi =>
+        lost_byte (R := stR s₀) f hs.st.symm hi).trans this
 
 /-! ## Constant time -/
 

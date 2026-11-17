@@ -2,15 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Seed.PPC64LE.ExpandKey
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Steps
-import VerifiedGarbage.Proof.Seed.PPC64LE.Round
+import VerifiedGarbage.Proof.Seed.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Seed.PPC64LE.Batch
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Seed.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Taint
@@ -18,7 +16,6 @@ import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Seed
-import VerifiedGarbage.Proof.Seed.PPC64LE.Setup
 
 /-! ### `Seed.PPC64LE.KeyRound`, which only this module used -/
 

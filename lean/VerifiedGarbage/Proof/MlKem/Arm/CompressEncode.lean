@@ -138,7 +138,7 @@ theorem body4_ok (h0 : s.gpr .r0 = x) (h2 : s.gpr .r2 = y) (h3 : s.gpr .r3 = c)
         (addB (((cmpV m4 (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32) <<< 28) >>> 28).setWidth 8)
           ((cmpV m4 (s.mem.readW (State.addr (x + BitVec.ofNat 32 4)) 32) <<< 28) >>> 24)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
-  run_block [ce4Body, compressAt, cmpV, m4, addB, writeW8_apply, h0, h2, h3, i0, i1, ib, ob, hsep, preserved,
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, ce4Body, compressAt, cmpV, m4, addB, writeW8_apply, h0, h2, h3, i0, i1, ib, ob, hsep, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
 
 /-- `Compress₁₀` of a coefficient, as `ce10Coeff` computes it. -/
@@ -185,7 +185,7 @@ theorem body10_ok (h0 : s.gpr .r0 = x) (h2 : s.gpr .r2 = y) (h3 : s.gpr .r3 = c)
   have o2 := o 2 (by omega_arith)
   have o3 := o 3 (by omega_arith)
   have o4 := o 4 (by omega_arith)
-  run_block [ce10Body, ce10Coeff, ce10Mid, compressAt, c10, cmpV, m10, addB, writeW8_apply, h0, h2, h3,
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, ce10Body, ce10Coeff, ce10Mid, compressAt, c10, cmpV, m10, addB, writeW8_apply, h0, h2, h3,
     i0, i1, i2, i3, b1, b2, b3, o0, o1, o2, o3, o4, hsep, preserved, List.forall_mem_cons,
     List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
 

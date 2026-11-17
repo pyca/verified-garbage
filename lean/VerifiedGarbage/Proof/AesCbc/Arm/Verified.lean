@@ -57,7 +57,7 @@ def sat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0, 2176⟩]
 
 theorem encrypt_verified : Verified Arm.target encrypt (Proof.AesCbc.encryptRoundsContract Arm.abi 8) :=
-  Verified.of_correct (fun _ hs => whole_wp encBody_ok hs) (whole_ct encBody_ok encBody_ct) (by
+  Verified.of_correct (fun _ hs => wholeK_wp encBody_ok hs) (wholeK_ct encBody_ok encBody_ct) (by
     sig_implies [Proof.AesCbc.encryptRoundsContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
       ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]

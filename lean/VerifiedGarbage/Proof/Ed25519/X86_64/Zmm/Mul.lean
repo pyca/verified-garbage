@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -23,7 +20,908 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+
+/-! ### `Ed25519.X86_64.Zmm.Digits`, which only this module used -/
+
+section
+
+/-!
+# The `zmm` comb: the digits and their signs
+
+`zdigits` reads the even chunk `2j` (as `combIndex` counts it, through
+`rbx = j + 26`) and the odd chunk `2j + 1`, as `combStep` does: their
+magnitudes into `r10` and `r8`, the masks of their signs to `SGB` and `SGA`
+(from `rdx`, which `combSign` leaves holding the mask), and the table `j`
+into `r9`. `zsign` puts the two masks into the halves of `zmm15`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Zmm
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Zmm VG.Proof.Ed25519.X86_64
+open VG.Impl.X25519.X86_64 (sc)
+open VG.Impl.X25519.X86_64.Ifma (y)
+open VG.Proof.X25519.X86_64 (off ofs Keeps Outside)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr qw qword_app0 qword_app1)
+
+/-- Memory kept but at the offsets of `P` from `b`. -/
+def MemOff (b : Addr) (P : Nat → Prop) (m m' : Mem) : Prop := ∀ a, ¬ P (ofs b a) → m' a = m a
+
+private theorem sign_fact : ∀ n < 32,
+    ((BitVec.ofNat 64 n - (16 : BitVec 32).signExtend 64 ^^^
+        0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
+          ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64) -
+      (0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
+        ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64) = BitVec.ofNat 64 (mag n)) ∧
+    0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
+      ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64 = signMask n := by
+  decide +kernel
+
+/-- From the chunk `n` in `rax`: its magnitude into `g`, and the mask of its sign to the
+quadword at `d` (and to `combSignMask`). -/
+theorem zsignDig_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat} (hn : n < 32)
+    (hax : s.gpr .rax = BitVec.ofNat 64 n) (g : Reg) (hg : g ≠ .rax ∧ g ≠ .rdx ∧ g ≠ .rdi) {d : Nat}
+    (hd : 1160 ≤ d ∧ d + 8 ≤ 8192) :
+    WP isa (.block (combSign ++ ([.mov g (.reg .rax), .store (sc d) .rdx] : List Instr))) s fun t =>
+      t.gpr g = BitVec.ofNat 64 (mag n) ∧ t.mem.readW (off base d) 64 = signMask n ∧
+      (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ g → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      MemOff base (fun q => (combSignMask ≤ q ∧ q < combSignMask + 8) ∨ (d ≤ q ∧ q < d + 8)) s.mem t.mem ∧
+      t.syms = s.syms := by
+  have hw : InRegions s.wr (off base combSignMask) 8 :=
+    ⟨_, hs.wr, Offset.contains_base _ (by simp only [combSignMask]; omega_arith) (by simp only [combSignMask]; omega_arith)⟩
+  have hw' : InRegions s.wr (off base d) 8 :=
+    ⟨_, hs.wr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  apply WP.of_runBlock
+  simp only [combSign, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, execAlu, State.store64, Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
+    RegUpd.mem_setReg, RegUpd.mem_arithFlags, hs.rdi, hax, hw, ite_true, ite_false, reduceCtorEq,
+    BitVec.sub_self, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', Ne.symm hg.2.2, Ne.symm hg.2.1, hw']
+  refine ⟨(sign_fact n hn).1, ?_, fun r h1 h2 h3 => ?_, ?_⟩
+  · rw [Mem.readW_writeW_self64]; exact (sign_fact n hn).2
+  · simp only [h1, h2, h3, ite_false]
+  refine ⟨rfl, trivial, fun a ha => ?_, rfl⟩
+  simp only [not_or, not_and, Nat.not_lt] at ha
+  have hx := (a - base).isLt
+  show ((s.mem.writeW (off base combSignMask) _).writeW (off base d) _) a = s.mem a
+  simp only [Mem.writeW, Mem.write, off, sub_off]
+  simp only [ofs, combSignMask] at ha
+  rw [ite_eq_right ?_, ite_eq_right ?_]
+  · simp only [combSignMask]; omega_arith
+  · omega_arith
+
+
+/-- `rbx += k`. -/
+theorem rbxAdd_ok (s : State) {c k : Nat} (hk : k < 64) (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
+    WP isa (.block [.alu .add .rbx (.imm (BitVec.ofNat 32 k))]) s fun t =>
+      t.gpr .rbx = BitVec.ofNat 64 (c + k) ∧ Keeps [.rbx] s t ∧ t.syms = s.syms := by
+  have he : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+    have : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by decide
+    exact this k hk
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_setReg,
+    RegUpd.gpr_arithFlags, hb, he, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true]
+  refine ⟨by rw [BitVec.ofNat_add], ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- `rbx -= k`. -/
+theorem rbxSub_ok (s : State) {c k : Nat} (hc : k < 64) (hk : k ≤ c) (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
+    WP isa (.block [.alu .sub .rbx (.imm (BitVec.ofNat 32 k))]) s fun t =>
+      t.gpr .rbx = BitVec.ofNat 64 (c - k) ∧ Keeps [.rbx] s t ∧ t.syms = s.syms := by
+  have he : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+    have : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by decide
+    exact this k hc
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_setReg,
+    RegUpd.gpr_arithFlags, hb, he, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true]
+  refine ⟨by rw [Offset.ofNat_sub_ofNat hk], ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+theorem combIdx_even {j : Nat} (hj : j < 26) : combIdx (j + 26) = 2 * j ∧ combTblIdx (j + 26) = j := by
+  unfold combIdx combTblIdx; constructor <;> split <;> omega_arith
+
+theorem combIdx_odd {j : Nat} (hj : j < 26) : combIdx j = 2 * j + 1 ∧ combTblIdx j = j := by
+  unfold combIdx combTblIdx; constructor <;> split <;> omega_arith
+
+/-- The offsets `zdigits` writes: the sign's mask and the slots `SGA` and `SGB`. -/
+def DigOff (q : Nat) : Prop :=
+  (combSignMask ≤ q ∧ q < combSignMask + 8) ∨ (SGA ≤ q ∧ q < SGA + 8) ∨ (SGB ≤ q ∧ q < SGB + 8)
+
+theorem zdigits_scal : scalCode zdigits = true := by decide
+
+/-- The two chunks of step `j`: their magnitudes into `r8` (odd) and `r10` (even), the masks of
+their signs to `SGA` and `SGB`, and the table `j` into `r9`. -/
+theorem zdigits_ok {s : State} {base : Addr} (hs : Scratch s base) {S j : Nat} (hj : j < 26)
+    (hS : S < 2 ^ 256) (hb : s.gpr .rbx = BitVec.ofNat 64 j)
+    (hbits : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
+    WP isa zdigits s fun t =>
+      t.gpr .r8 = BitVec.ofNat 64 (mag (nib S (2 * j + 1))) ∧
+      t.gpr .r10 = BitVec.ofNat 64 (mag (nib S (2 * j))) ∧ t.gpr .r9 = BitVec.ofNat 64 j ∧
+      t.gpr .rbx = BitVec.ofNat 64 j ∧
+      t.mem.readW (off base SGA) 64 = signMask (nib S (2 * j + 1)) ∧
+      t.mem.readW (off base SGB) 64 = signMask (nib S (2 * j)) ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ MemOff base DigOff s.mem t.mem := by
+  obtain ⟨e1, e2⟩ := combIdx_even hj
+  obtain ⟨o1, o2⟩ := combIdx_odd hj
+  rw [zdigits]
+  refine WP.seq (WP.mono (rbxAdd_ok s (k := 26) (by decide) hb) fun s₁ ⟨b₁, k₁, _⟩ => ?_)
+  have hs₁ : Scratch s₁ base := hs.of_keeps k₁ (by decide)
+  refine WP.seq (WP.mono (combIndex_ok s₁ (c := j + 26) (by omega_arith) b₁) fun s₂ ⟨c₂, r₂, k₂⟩ => ?_)
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.seq (WP.mono (combChunk_ok (S := S) hs₂ (c := j + 26) (by omega_arith) hS
+    (by rw [k₂.1 _ (by decide)]; exact b₁) c₂ (fun q hq => by rw [k₂.2.1, k₁.2.1]; exact hbits q hq))
+    fun s₃ ⟨a₃, k₃⟩ => ?_)
+  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  rw [e1] at a₃
+  refine WP.seq ?_
+  · rw [List.append_assoc, WP.block_append_iff]
+    refine WP.mono (rbxSub_ok s₃ (c := j + 26) (k := 26) (by decide) (by omega_arith)
+      (by rw [k₃.1 _ (by decide), k₂.1 _ (by decide)]; exact b₁)) fun s₄ ⟨b₄, k₄, _⟩ => ?_
+    have hs₄ := hs₃.of_keeps k₄ (by decide)
+    refine WP.mono (zsignDig_ok hs₄ (n := nib S (2 * j)) (Nat.mod_lt _ (by decide))
+      (by rw [k₄.1 _ (by decide)]; exact a₃) .r10 (by decide) (d := SGB) (by unfold SGB; omega_arith))
+      fun s₅ ⟨g₅, m₅, k₅, rd₅, wr₅, o₅, _⟩ => ?_
+    have hs₅ : Scratch s₅ base := ⟨by rw [k₅ _ (by decide) (by decide) (by decide)]; exact hs₄.rdi,
+      by rw [wr₅]; exact hs₄.wr, hs.nowrap⟩
+    have bits₅ : ∀ q < 256, s₅.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) := fun q hq => by
+      rw [o₅ _ (by simp only [ofs, off]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; unfold SGB combSignMask; omega_arith),
+        k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
+      exact hbits q hq
+    have b₅ : s₅.gpr .rbx = BitVec.ofNat 64 j := by
+      rw [k₅ _ (by decide) (by decide) (by decide), b₄]; rfl
+    refine WP.seq (WP.mono (combIndex_ok s₅ (c := j) (by omega_arith) b₅) fun s₆ ⟨c₆, r₆, k₆⟩ => ?_)
+    have hs₆ := hs₅.of_keeps k₆ (by decide)
+    refine WP.seq (WP.mono (combChunk_ok (S := S) hs₆ (c := j) (by omega_arith) hS
+      (by rw [k₆.1 _ (by decide)]; exact b₅) c₆ (fun q hq => by rw [k₆.2.1]; exact bits₅ q hq))
+      fun s₇ ⟨a₇, k₇⟩ => ?_)
+    have hs₇ := hs₆.of_keeps k₇ (by decide)
+    rw [o1] at a₇
+    refine WP.mono (zsignDig_ok hs₇ (n := nib S (2 * j + 1)) (Nat.mod_lt _ (by decide)) a₇ .r8 (by decide)
+      (d := SGA) (by unfold SGA; omega_arith)) fun t ⟨g₈, m₈, k₈, rd₈, wr₈, o₈, _⟩ => ?_
+    have gk : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → r ≠ .r9 → t.gpr r = s₅.gpr r :=
+      fun r h1 h2 h3 h4 h5 => by
+        rw [k₈ r h1 h3 h4, k₇.1 r (by simp [h1, h3]), k₆.1 r (by simp [h2, h5])]
+    refine ⟨g₈, ?_, ?_, ?_, m₈, ?_, fun r h1 h2 h3 h4 h5 h6 => ?_, ?_, ?_, ?_⟩
+    · rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide), g₅]
+    · rw [k₈ _ (by decide) (by decide) (by decide), k₇.1 _ (by decide), r₆, o2]
+    · rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide), b₅]
+    · rw [← m₅]
+      refine Mem.readW_congr fun i hi => ?_
+      rw [o₈ _ ?_, k₇.2.1, k₆.2.1]
+      simp only [ofs, off, Offset.add_ofNat_add_ofNat]
+      rw [Mem.sub_ofNat_toNat _ (by unfold SGB; omega_arith)]; unfold SGB SGA combSignMask; omega_arith
+    · by_cases hr : r = .rbx
+      · subst hr
+        rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide), b₅, hb]
+      · rw [gk r h1 h2 h3 h4 h5, k₅ r h1 h3 h6, k₄.1 r (by simp [hr]), k₃.1 r (by simp [h1, h3]),
+          k₂.1 r (by simp [h2, h5]), k₁.1 r (by simp [hr])]
+    · rw [rd₈, k₇.2.2.1, k₆.2.2.1, rd₅, k₄.2.2.1, k₃.2.2.1, k₂.2.2.1, k₁.2.2.1]
+    · rw [wr₈, k₇.2.2.2, k₆.2.2.2, wr₅, k₄.2.2.2, k₃.2.2.2, k₂.2.2.2, k₁.2.2.2]
+    · intro a ha
+      rw [o₈ a (fun h => ha (by unfold DigOff; omega)), k₇.2.1, k₆.2.1, o₅ a (fun h => ha (by unfold DigOff; omega)),
+        k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
+
+/-- `rcx` = the quadword at `d`. -/
+theorem loadQ_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d + 8 ≤ 8192) :
+    WP isa (.block [.mov .rcx (.mem (sc d))]) s fun t =>
+      t.gpr .rcx = s.mem.readW (off base d) 64 ∧ Keeps [.rcx] s t ∧ (∀ r i, t.zlane r i = s.zlane r i) ∧
+        t.syms = s.syms := by
+  have hr : InRegions (s.rd ++ s.wr) (off base d) 8 :=
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_arith)⟩
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
+    Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, hs.rdi, hr, ite_true, Option.map_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, fun _ _ => rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, hr, ite_false]
+
+/-- The masks of the signs: `SGA` in half 0 and `SGB` in half 1 of `zmm15`. -/
+theorem zsign_ok {s : State} {base : Addr} (hs : Scratch s base) {mA mB : BitVec 64}
+    (ha : s.mem.readW (off base SGA) 64 = mA) (hb : s.mem.readW (off base SGB) 64 = mB) :
+    WP isa (.block zsign) s fun t =>
+      (∀ h < 2, ∀ k < 4, zq t (xr 15) h k = if h = 0 then mA else mB) ∧
+      ZVKeep [.rcx] (fun r => r = xr 14 ∨ r = xr 15) s t := by
+  rw [zsign, show ([.mov .rcx (.mem (sc SGA)), .vop (.vmovq (y 14) .rcx), .zop (.vpbroadcastq (y 14) (y 14)),
+      .mov .rcx (.mem (sc SGB)), .vop (.vmovq (y 15) .rcx), .zop (.vpbroadcastq (y 15) (y 15)), zlo 15 14 15] :
+      List Instr) = [.mov .rcx (.mem (sc SGA))] ++ ([.vop (.vmovq (y 14) .rcx), .zop (.vpbroadcastq (y 14) (y 14))] ++
+      ([.mov .rcx (.mem (sc SGB))] ++ [.vop (.vmovq (y 15) .rcx), .zop (.vpbroadcastq (y 15) (y 15)),
+        zlo 15 14 15])) from rfl, WP.block_append_iff]
+  refine WP.mono (loadQ_ok hs (d := SGA) (by unfold SGA; omega_arith)) fun s₁ ⟨c₁, k₁, z₁, y₁⟩ => ?_
+  let s₂ := (ZOp.vpbroadcastq (y 14) (y 14)).exec ((VOp.vmovq (y 14) .rcx).exec s₁)
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₂, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec]; rfl, ?_⟩
+  have hs₂ : Scratch s₂ base := hs.of_keeps k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (loadQ_ok hs₂ (d := SGB) (by unfold SGB; omega_arith)) fun s₃ ⟨c₃, k₃, z₃, y₃⟩ => ?_
+  let s₄ := (ZOp.vshufi32x4 (y 15) (y 14) (y 15) 0x44).exec
+    ((ZOp.vpbroadcastq (y 15) (y 15)).exec ((VOp.vmovq (y 15) .rcx).exec s₃))
+  refine WP.of_runBlock ⟨s₄, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec, zlo]; rfl, ?_⟩
+  have m₂ : s₂.mem = s.mem := k₁.2.1
+  have l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y 15 then (if i < 2 then mA ++ mA else mB ++ mB)
+      else if r = y 14 then mA ++ mA else s.zlane r i := by
+    intro r i hi
+    simp only [s₄, zlane_zlo _ _ _ _ _ hi, zlane_dup _ _ _ _ hi, zlane_dup _ _ _ _ (show i - 2 < 4 by omega_arith), z₃,
+      s₂, c₃, c₁, ha]
+    rw [show s₂.mem = s.mem from m₂, hb]
+    have n1514 : y 15 ≠ y 14 := by decide
+    by_cases h15 : r = y 15
+    · subst h15; simp [n1514.symm]
+    · by_cases h14 : r = y 14
+      · subst h14; simp [n1514.symm]
+      · simp [h15, h14, z₁]
+  refine ⟨fun h hh k hk => ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr i hi => ?_, ?_⟩⟩
+  · simp only [zq, show xr 15 = y 15 from rfl, l₄ _ _ (show 2 * h + k / 2 < 4 by omega_arith), ite_true]
+    rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+      rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp
+  · show s₃.gpr r = s.gpr r
+    rw [k₃.1 r hr]; exact k₁.1 r hr
+  · show s₃.mem = s.mem; rw [k₃.2.1]; exact m₂
+  · show s₃.rd = s.rd; rw [k₃.2.2.1]; exact k₁.2.2.1
+  · show s₃.wr = s.wr; rw [k₃.2.2.2]; exact k₁.2.2.2
+  · simp only [not_or, show xr 14 = y 14 from rfl, show xr 15 = y 15 from rfl] at hr
+    rw [l₄ _ _ hi, ite_eq_right hr.2, ite_eq_right hr.1]
+  · show s₃.syms = s.syms; rw [y₃]; exact y₁
+
+end VG.Proof.Ed25519.X86_64.Zmm
+
+end
+
+end
+
+/-! ### `Ed25519.X86_64.Zmm.Consts`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.X86_64.Zmm.Halves`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The `zmm` comb: what the `ymm` lemmas say of the halves
+
+A `ymm` state related to half `h` of a `zmm` state (`Rel`) agrees with the
+half itself on the registers outside the junk and on the memory below the
+rows of the window: its lanes, its point (`lanePt`), the bounds of its limbs
+(`Small`) and its constants (`EConsts`) are the half's. `sim_wp2` runs two
+translated blocks, the second from the junk of the first.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Zmm
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Zmm VG.Proof.Ed25519.X86_64.Ifma
+open VG.Impl.X25519.X86_64.Ifma (KM K19 KB0 KB1)
+open VG.Impl.Ed25519.X86_64.Ifma (EK13 EK26 EK39)
+open VG.Proof.X25519.X86_64.Ifma (lanes fe5 fe5_congr mq)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr xi qw)
+
+theorem _root_.VG.Proof.Ed25519.X86_64.Ifma.EConsts.of_mq {m m' : Mem} {base : Addr} (hk : EConsts m base)
+    (w : ∀ d, 1344 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d) : EConsts m' base := by
+  refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
+    fun l hl => ?_, fun l hl => ?_⟩
+  · rw [w _ (by simp only [KM]; omega_using []) (by simp only [KM]; omega_using [hl])]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_using []) (by simp only [K19]; omega_using [hl])]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_using []) (by simp only [KB0]; omega_using [hl])]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_using []) (by simp only [KB1]; omega_using [hl])]; exact hk.kb1 l hl
+  · rw [w _ (by simp only [EK13]; omega_using []) (by simp only [EK13]; omega_using [hl])]; exact hk.k13 l hl
+  · rw [w _ (by simp only [EK26]; omega_using []) (by simp only [EK26]; omega_using [hl])]; exact hk.k26 l hl
+  · rw [w _ (by simp only [EK39]; omega_using []) (by simp only [EK39]; omega_using [hl])]; exact hk.k39 l hl
+
+/-! ## Registers -/
+
+theorem qw_half (b : Addr) {h : Nat} (z : State) (r : XReg) {k : Nat} (hk : k < 4) :
+    qw (Zmm.half b h z) r k = zq z r h k := by
+  simp only [qw, zq, half, State.lane]
+  rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
+
+theorem Rel.qw_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) {r : XReg}
+    (hj : xi r ∉ J) {k : Nat} (hk : k < 4) : qw y r k = qw (Zmm.half b h z) r k := by
+  rw [qw_half b z r hk]
+  simp only [qw, zq]
+  rw [hr.lane hj (show k / 2 < 2 by omega_using [hk])]
+
+theorem Rel.lanes_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) {r : Nat}
+    (hr16 : r + 5 ≤ 16) (hj : ∀ q, r ≤ q → q < r + 5 → q ∉ J) :
+    ∀ l < 4, ∀ i < 5, lanes y r l i = lanes (Zmm.half b h z) r l i := fun l hl i hi => by
+  simp only [lanes]
+  rw [hr.qw_eq (by rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_using [hr16, hi])]; exact hj _ (by omega_using []) (by omega_using [hi])) hl]
+
+theorem Rel.lanePt_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
+    (hj : ∀ q < 5, q ∉ J) : lanePt y = lanePt (Zmm.half b h z) := by
+  have e := hr.lanes_eq (r := 0) (by decide) fun q _ hq => hj q hq
+  simp only [lanePt]
+  rw [fe5_congr (e 0 (by decide)), fe5_congr (e 1 (by decide)), fe5_congr (e 2 (by decide)),
+    fe5_congr (e 3 (by decide))]
+
+theorem Rel.small {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
+    (hj : ∀ q < 5, q ∉ J) (hs : Small y) : Small (Zmm.half b h z) := fun l hl i hi => by
+  rw [← hr.lanes_eq (r := 0) (by decide) (fun q _ hq => hj q hq) l hl i hi]; exact hs l hl i hi
+
+/-! ## Memory -/
+
+theorem Rel.mq_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) {d : Nat}
+    (hd : d + 8 ≤ 4096) : mq y.mem b d = mq (Zmm.half b h z).mem b d := by
+  simp only [mq]
+  refine Mem.readW_congr fun i hi => ?_
+  rw [Offset.add_ofNat_add_ofNat]
+  exact hr.mem _ (by rw [off_ofNat _ (by omega_using [hd, hi])]; unfold InZ ZB; omega_using [hd, hi])
+
+theorem Rel.econsts {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
+    (hk : EConsts y.mem b) : EConsts (Zmm.half b h z).mem b :=
+  hk.of_mq fun _ _ hd => (hr.mq_eq hd).symm
+
+theorem half_econsts {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
+    {s : State} (hk : EConsts s.mem b) (ho : VG.Proof.X25519.X86_64.Outside b 1024 320 s.mem y.mem) :
+    EConsts (Zmm.half b h z).mem b :=
+  hr.econsts (hk.outside ho)
+
+/-! ## Two blocks -/
+
+/-- Two translated blocks, the second from the junk the first leaves. -/
+theorem sim_wp2 {b : Addr} {t₁ t₂ : Nat} {is₁ is₂ : List Instr} {J₁ J₂ : List Nat}
+    (hj₁ : junk t₁ [] is₁ = some J₁) (hj₂ : junk t₂ J₁ is₂ = some J₂) {z : State} (hz : ZOK b z)
+    {Q : Nat → State → Prop} (hy : ∀ h < 2, WP isa (.block (is₁ ++ is₂)) (Zmm.half b h z) (Q h)) :
+    WP isa (.block (tzs t₁ is₁ ++ tzs t₂ is₂)) z fun z' => ZOK b z' ∧ ZKeep b z z' ∧
+      ∀ h < 2, ∃ y, Rel b h J₂ z' y ∧ Q h y := by
+  rw [WP.block_append_iff]
+  refine WP.mono (sim_wp (Q := fun h y => WP isa (.block is₂) y (Q h)) hj₁ hz
+    fun h hh => WP.block_append_iff.1 (hy h hh)) fun z₁ ⟨o₁, k₁, r₁⟩ => ?_
+  exact WP.mono (sim_run is₂ hj₂ o₁ r₁) fun z' ⟨o, k, r⟩ => ⟨o, k₁.trans k, r⟩
+
+end VG.Proof.Ed25519.X86_64.Zmm
+
+end
+
+end
+
+/-!
+# The `zmm` comb: the rows of the `zmm` code
+
+`zconsts` doubles the window's constant rows and slot 15's `2` into the rows
+of the `zmm` code (`zrow`, `ZK2`), builds the blends' masks (`vpblendd` of
+zero and all ones, the masks themselves), and copies the lanes of the point
+to both halves.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Zmm
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Zmm VG.Proof.Ed25519.X86_64.Ifma
+  VG.Proof.Ed25519.X86_64
+open VG.Impl.X25519.X86_64 (sc)
+open VG.Impl.X25519.X86_64.Ifma (y ld v zero blend KM K19 KB0 KB1)
+open VG.Impl.Ed25519.X86_64.Ifma (EK13 EK26 EK39)
+open VG.Proof.X25519.X86_64.Ifma (lanes fe5 fe5_congr mq)
+open VG.Proof.X25519.X86_64 (off ofs Outside Keeps clob)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr xi qw)
+
+theorem cat_extract (x : BitVec 256) : x.extractLsb' 128 128 ++ x.extractLsb' 0 128 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  rw [BitVec.getLsbD_append]
+  by_cases h : j < 128
+  · rw [ite_eq_left h, BitVec.getLsbD_extractLsb', decide_eq_true h, Bool.true_and, Nat.zero_add]
+  · rw [ite_eq_right h, BitVec.getLsbD_extractLsb', decide_eq_true (show j - 128 < 128 by omega_arith), Bool.true_and,
+      show 128 + (j - 128) = j by omega_arith]
+
+/-- The 32-byte row at `o` copied to both halves of the 64-byte row at `d`, through `ymm9`. -/
+theorem rowCopy_ok {s : State} {b : Addr} (hs : Scratch s b) {o d : Nat} (ho : o + 32 ≤ 8192)
+    (hd : d + 64 ≤ 8192) :
+    WP isa (.block (ld 9 o :: dupStore d)) s fun t =>
+      (∀ i < 64, t.mem (b + BitVec.ofNat 64 (d + i)) = s.mem (b + BitVec.ofNat 64 (o + i % 32))) ∧
+      (∀ a, ¬ (d ≤ ofs b a ∧ ofs b a < d + 64) → t.mem a = s.mem a) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
+      (∀ r, r ≠ y 9 → ∀ i < 4, t.zlane r i = s.zlane r i) := by
+  let w := s.mem.readW (b + BitVec.ofNat 64 o) 256
+  let s₁ := s.setV .l256 (y 9) (w.extractLsb' 0 128) (w.extractLsb' 128 128)
+  let s₂ := (ZOp.vshufi32x4 (y 9) (y 9) (y 9) 0x44).exec s₁
+  have hin : InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 o) 32 :=
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base b ho (by omega_arith)⟩
+  have hw : InRegions s₂.wr (b + BitVec.ofNat 64 d) 64 := ⟨_, hs.wr, Offset.contains_base b hd (by omega_arith)⟩
+  have l₂ : ∀ i < 4, s₂.zlane (y 9) i = w.extractLsb' (128 * (i % 2)) 128 := fun i hi => by
+    simp only [s₂, zlane_zlo _ _ _ _ _ hi, ite_true, s₁, zlane_setV256 _ _ _ _ _ hi,
+      zlane_setV256 _ _ _ _ _ (show i - 2 < 4 by omega_arith)]
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+  have e₁ : exec (ld 9 o) s = some s₁ := by
+    simp only [exec, ld, ea_sc' hs.rdi, State.load256, hin, ite_true, Option.map_some]; rfl
+  have e₃ : exec (.vmovdqu32Store (sc d) (y 9)) s₂ =
+      some (s₂.setMem (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9)))) := by
+    simp only [exec, ea_sc' (show s₂.gpr .rdi = b from hs.rdi), State.store512_eq, hw, ite_true]
+  refine WP.of_runBlock ⟨_, runBlock_three e₁ rfl e₃, ?_⟩
+  refine ⟨fun i hi => ?_, fun a ha => ?_, by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_⟩
+  · simp only [State.setMem]
+    rw [← Offset.add_ofNat_add_ofNat, writeW_byte _ _ _ (by omega_arith) (by decide)]
+    rw [show i = 32 * (i / 32) + i % 32 by omega_arith, zmm_byte s₂ (y 9) (by omega_arith) (by omega_arith),
+      l₂ _ (by omega_arith), l₂ _ (by omega_arith), show (2 * (i / 32) + 1) % 2 = 1 by omega_arith,
+      show 2 * (i / 32) % 2 = 0 by omega_arith, Nat.mul_one, Nat.mul_zero, cat_extract,
+      byte_readW _ _ (by omega_arith), Offset.add_ofNat_add_ofNat]
+    congr 3; omega_arith
+  · simp only [State.setMem]
+    refine (writeW_byte_off _ _ _ _ ?_).trans rfl
+    simp only [ofs] at ha
+    rw [sub_off]; have := (a - b).isLt; omega_arith
+  · simp only [State.setMem_zlane, s₂, zlane_zlo _ _ _ _ _ hi, hr, ite_false, s₁, zlane_setV256 _ _ _ _ _ hi]
+
+
+/-- Rows copied, each `(source, destination)` of `L`: sources below 4096, destinations from 4096
+up, apart. -/
+theorem rowsCopy_ok {b : Addr} : ∀ (L : List (Nat × Nat)) (s : State), Scratch s b →
+    (∀ e ∈ L, e.1 + 32 ≤ 4096 ∧ 4096 ≤ e.2 ∧ e.2 + 64 ≤ 8192) →
+    L.Pairwise (fun e f => e.2 + 64 ≤ f.2 ∨ f.2 + 64 ≤ e.2) →
+    WP isa (.block (L.flatMap fun e => ld 9 e.1 :: dupStore e.2)) s fun t =>
+      (∀ e ∈ L, ∀ i < 64, t.mem (b + BitVec.ofNat 64 (e.2 + i)) = s.mem (b + BitVec.ofNat 64 (e.1 + i % 32))) ∧
+      (∀ a, (∀ e ∈ L, ¬ (e.2 ≤ ofs b a ∧ ofs b a < e.2 + 64)) → t.mem a = s.mem a) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
+      (∀ r, r ≠ y 9 → ∀ i < 4, t.zlane r i = s.zlane r i)
+  | [], s, _, _, _ => WP.block_nil ⟨fun _ h => absurd h List.not_mem_nil, fun _ _ => rfl, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩
+  | e :: L, s, hs, hL, hp => by
+    rw [List.flatMap_cons, WP.block_append_iff]
+    have he := hL e List.mem_cons_self
+    refine WP.mono (rowCopy_ok hs (o := e.1) (d := e.2) (by omega_arith) he.2.2) fun s₁ ⟨c₁, f₁, g₁, rd₁, wr₁, sy₁, z₁⟩ => ?_
+    have hs₁ : Scratch s₁ b := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+    have hp' := List.pairwise_cons.1 hp
+    refine WP.mono (rowsCopy_ok L s₁ hs₁ (fun f hf => hL f (List.mem_cons_of_mem _ hf)) hp'.2)
+      fun t ⟨c, f, g, rd, wr, sy, z⟩ => ⟨fun e' he' i hi => ?_, fun a ha => ?_, by rw [g, g₁], by rw [rd, rd₁],
+        by rw [wr, wr₁], by rw [sy, sy₁], fun r hr i hi => by rw [z r hr i hi, z₁ r hr i hi]⟩
+    · rcases List.mem_cons.1 he' with rfl | he'
+      · rw [f _ (fun f hf => by
+          have := hp'.1 f hf
+          simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; omega_arith), c₁ i hi]
+      · have hf := hL e' (List.mem_cons_of_mem _ he')
+        rw [c e' he' i hi, f₁ _ (by simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; omega_arith)]
+    · rw [f a (fun f hf => ha f (List.mem_cons_of_mem _ hf)), f₁ a (ha e List.mem_cons_self)]
+
+/-- Lane `i` of a `zmm` register. -/
+theorem zmm_lane (s : State) (r : XReg) {i : Nat} (hi : i < 4) :
+    (s.zmm r).extractLsb' (128 * i) 128 = s.zlane r i := by
+  have e := zmm_half s r (h := i / 2) (by omega_arith)
+  rw [show 128 * i = 256 * (i / 2) + 128 * (i % 2) by omega_arith,
+    ← extract_extract _ (256 * (i / 2)) 256 (128 * (i % 2)) 128 (by omega_arith), e]
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hj, Bool.true_and]
+  rcases (by omega_arith : i % 2 = 0 ∨ i % 2 = 1) with h | h
+  · rw [h, ite_eq_left (by omega_arith), show 2 * (i / 2) = i by omega_arith, Nat.mul_zero, Nat.zero_add]
+  · rw [h, ite_eq_right (by omega_arith), show 2 * (i / 2) + 1 = i by omega_arith, Nat.mul_one, Nat.add_sub_cancel_left]
+
+
+/-- All ones, as `vpcmpeqd` of a register with itself leaves it. -/
+abbrev ones128 : BitVec 128 := ofDwords 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF 0xFFFFFFFF
+
+theorem pcmpeqd_self (x : BitVec 128) : XBinOp.eval .pcmpeqd x x = ones128 := by
+  simp only [XBinOp.eval, ite_true]
+
+theorem blend_ones (n : BitVec 4) : blendDwords 0 ones128 n = maskLane n := by
+  have d0 : ∀ k < 4, dword (0 : BitVec 128) k = 0 := fun k hk => by
+    apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [dword]
+  simp only [blendDwords, maskLane, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
+    d0 0 (by decide), d0 1 (by decide), d0 2 (by decide), d0 3 (by decide)]
+  rfl
+
+/-- The masks of `sel` (from zero in `ymm10` and all ones in `ymm11`) to both halves of the
+64-byte row at `d`. -/
+theorem maskCopy_ok {s : State} {b : Addr} (hs : Scratch s b) {d : Nat} (hd : d + 64 ≤ 8192) (sel : BitVec 8)
+    (h10 : ∀ k < 2, s.lane (y 10) k = 0) (h11 : ∀ k < 2, s.lane (y 11) k = ones128) :
+    WP isa (.block (blend 9 10 11 sel :: dupStore d)) s fun t =>
+      (∀ i < 4, (t.mem.readW (b + BitVec.ofNat 64 d) 512).extractLsb' (128 * i) 128 =
+        maskLane (sel.extractLsb' (4 * (i % 2)) 4)) ∧
+      (∀ a, ¬ (d ≤ ofs b a ∧ ofs b a < d + 64) → t.mem a = s.mem a) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
+      (∀ r, r ≠ y 9 → ∀ i < 4, t.zlane r i = s.zlane r i) := by
+  let s₁ := (VOp.vpblendd .l256 (y 9) (y 10) (y 11) sel).exec s
+  let s₂ := (ZOp.vshufi32x4 (y 9) (y 9) (y 9) 0x44).exec s₁
+  have hw : InRegions s₂.wr (b + BitVec.ofNat 64 d) 64 := ⟨_, hs.wr, Offset.contains_base b hd (by omega_arith)⟩
+  have e₃ : exec (.vmovdqu32Store (sc d) (y 9)) s₂ =
+      some (s₂.setMem (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9)))) := by
+    simp only [exec, ea_sc' (show s₂.gpr .rdi = b from hs.rdi), State.store512_eq, hw, ite_true]
+  refine WP.of_runBlock ⟨_, runBlock_three rfl rfl e₃, ?_⟩
+  refine ⟨fun i hi => ?_, fun a ha => ?_, by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_⟩
+  · simp only [State.setMem]
+    have e : (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9))).readW (b + BitVec.ofNat 64 d) 512 =
+        s₂.zmm (y 9) := Mem.readW_writeW_self _ _ 64 _ (by decide)
+    rw [e, zmm_lane _ _ hi]
+    simp only [s₂, zlane_zlo _ _ _ _ _ hi, ite_true, s₁, VOp.exec]
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+      simp only [zlane_setV256 _ _ _ _ _ (show (0 : Nat) < 4 by decide),
+        zlane_setV256 _ _ _ _ _ (show (1 : Nat) < 4 by decide), ite_true, h10 0 (by decide), h10 1 (by decide),
+        h11 0 (by decide), h11 1 (by decide), blend_ones] <;> simp
+  · simp only [State.setMem]
+    refine (writeW_byte_off _ _ _ _ ?_).trans rfl
+    simp only [ofs] at ha
+    rw [sub_off]; have := (a - b).isLt; omega_arith
+  · simp only [State.setMem_zlane, s₂, zlane_zlo _ _ _ _ _ hi, hr, ite_false, s₁, VOp.exec,
+      zlane_setV256 _ _ _ _ _ hi]
+
+/-- The masks of the selectors `k < n` of `blendSels`, to their rows. -/
+theorem masksCopy_ok {b : Addr} : ∀ n ≤ 4, ∀ (s : State), Scratch s b →
+    (∀ k < 2, s.lane (y 10) k = 0) → (∀ k < 2, s.lane (y 11) k = ones128) →
+    WP isa (.block ((List.range n).flatMap fun k =>
+        blend 9 10 11 (blendSels.getD k 0) :: dupStore (ZMASK + 64 * k))) s fun t =>
+      (∀ k < n, ∀ i < 4, (t.mem.readW (b + BitVec.ofNat 64 (ZMASK + 64 * k)) 512).extractLsb' (128 * i) 128 =
+        maskLane ((blendSels.getD k 0).extractLsb' (4 * (i % 2)) 4)) ∧
+      (∀ a, ¬ (ZMASK ≤ ofs b a ∧ ofs b a < ZMASK + 64 * n) → t.mem a = s.mem a) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms ∧
+      (∀ r, r ≠ y 9 → ∀ i < 4, t.zlane r i = s.zlane r i)
+  | 0, _, s, _, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl, rfl, rfl, rfl,
+      rfl, fun _ _ _ _ => rfl⟩
+  | n + 1, hn, s, hs, h10, h11 => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (masksCopy_ok n (by omega_arith) s hs h10 h11) fun s₁ ⟨c₁, f₁, g₁, rd₁, wr₁, sy₁, z₁⟩ => ?_
+    have hs₁ : Scratch s₁ b := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+    have l : ∀ r, r ≠ y 9 → ∀ k < 2, s₁.lane r k = s.lane r k := fun r hr k hk => by
+      have := z₁ r hr k (by omega_arith)
+      simp only [State.zlane, show k < 2 from hk, ite_true] at this
+      exact this
+    refine WP.mono (maskCopy_ok hs₁ (d := ZMASK + 64 * n) (by unfold ZMASK; omega_arith) (blendSels.getD n 0)
+      (fun k hk => by rw [l _ (by decide) k hk]; exact h10 k hk)
+      (fun k hk => by rw [l _ (by decide) k hk]; exact h11 k hk))
+      fun t ⟨c, f, g, rd, wr, sy, z⟩ => ⟨fun k hk i hi => ?_, fun a ha => ?_, by rw [g, g₁], by rw [rd, rd₁],
+        by rw [wr, wr₁], by rw [sy, sy₁], fun r hr i hi => by rw [z r hr i hi, z₁ r hr i hi]⟩
+    · by_cases hkn : k = n
+      · subst hkn; exact c i hi
+      · rw [← c₁ k (by omega_arith) i hi]
+        refine congrArg (BitVec.extractLsb' (128 * i) 128) ?_
+        refine Mem.readW_congr fun q hq => f _ ?_
+        simp only [ofs, Offset.add_ofNat_add_ofNat]
+        rw [off_ofNat _ (by unfold ZMASK; omega_arith)]; unfold ZMASK at *; omega_arith
+    · rw [f a (fun h => ha (by unfold ZMASK at *; omega_arith)), f₁ a (fun h => ha (by unfold ZMASK at *; omega_arith))]
+
+/-- The lanes of `ymm0–ymm(n-1)` copied to both halves. -/
+theorem dups_ok : ∀ n ≤ 5, ∀ (s : State),
+    WP isa (.block ((List.range n).map fun j => zlo j j j)) s fun t =>
+      (∀ j < n, ∀ i < 4, t.zlane (y j) i = s.zlane (y j) (i % 2)) ∧
+      (∀ r, (∀ j < n, r ≠ y j) → ∀ i < 4, t.zlane r i = s.zlane r i) ∧
+      t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms
+  | 0, _, s => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
+  | n + 1, hn, s => by
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (dups_ok n (by omega_arith) s) fun s₁ ⟨c₁, f₁, m₁, g₁, rd₁, wr₁, sy₁⟩ => ?_
+    refine WP.of_runBlock ⟨_, runBlock_one rfl, fun j hj i hi => ?_, fun r hr i hi => ?_, m₁, g₁, rd₁, wr₁, sy₁⟩
+    · have hne : ∀ j < n, y n ≠ y j := fun j hj => by
+        have : ∀ a < 5, ∀ c < 5, a ≠ c → y a ≠ y c := by decide
+        exact this n (by omega_arith) j (by omega_arith) (by omega_arith)
+      rw [zlane_zlo _ _ _ _ _ hi]
+      by_cases hjn : j = n
+      · subst hjn
+        rw [ite_eq_left rfl, f₁ _ hne _ (by omega_arith)]
+        split
+        · rw [Nat.mod_eq_of_lt (by omega_arith)]
+        · rw [f₁ _ hne _ (by omega_arith), show i - 2 = i % 2 by omega_arith]
+      · have hne' : y j ≠ y n := by
+          have : ∀ a < 5, ∀ c < 5, a ≠ c → y a ≠ y c := by decide
+          exact this j (by omega_arith) n (by omega_arith) hjn
+        rw [ite_eq_right hne', c₁ j (by omega_arith) i hi]
+    · rw [zlane_zlo _ _ _ _ _ hi, ite_eq_right (hr n (by omega_arith)), f₁ r (fun j hj => hr j (by omega_arith)) i hi]
+
+/-- The rows `zconsts` copies. -/
+abbrev zrowList : List (Nat × Nat) :=
+  [(KM, zrow KM), (K19, zrow K19), (KB0, zrow KB0), (KB1, zrow KB1), (offset 15, ZK2)]
+
+theorem zconsts_split : zconsts = zrowList.flatMap (fun e => ld 9 e.1 :: dupStore e.2) ++
+    ([zero 10, v .vpcmpeqd 11 11 11] : List Instr) ++
+    ((List.range 4).flatMap fun k => blend 9 10 11 (blendSels.getD k 0) :: dupStore (ZMASK + 64 * k)) ++
+    (List.range 5).map (fun j => zlo j j j) := rfl
+
+theorem _root_.VG.Proof.Ed25519.X86_64.Ifma.EConsts.of_rows {m m' : Mem} {base : Addr} (hk : EConsts m base)
+    (w : ∀ x, 1664 ≤ x → x < 1888 → m' (base + BitVec.ofNat 64 x) = m (base + BitVec.ofNat 64 x)) :
+    EConsts m' base := by
+  have e : ∀ d l, 1664 ≤ d → d + 8 * l + 8 ≤ 1888 → mq m' base (d + 8 * l) = mq m base (d + 8 * l) :=
+    fun d l h1 h2 => Mem.readW_congr fun i hi => by
+      try simp only [Offset.add_ofNat_add_ofNat]
+      exact w _ (by omega_arith) (by omega_arith)
+  exact ⟨⟨fun l hl => by rw [e _ _ (by decide) (by simp only [KM]; omega_arith)]; exact hk.km l hl,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl⟩,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [EK13]; omega_arith)]; exact hk.k13 l hl,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [EK26]; omega_arith)]; exact hk.k26 l hl,
+    fun l hl => by rw [e _ _ (by decide) (by simp only [EK39]; omega_arith)]; exact hk.k39 l hl⟩
+
+/-- The rows of the `zmm` code, and the point in both halves. -/
+theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem b) :
+    WP isa (.block zconsts) s fun t =>
+      (∀ h < 2, EConsts (Zmm.half b h t).mem b) ∧
+      (∀ sel ∈ blendSels, ∀ i < 4, (t.mem.readW (b + BitVec.ofNat 64 (maskRow sel)) 512).extractLsb' (128 * i) 128 =
+        maskLane (sel.extractLsb' (4 * (i % 2)) 4)) ∧
+      (∀ h < 2, VG.Proof.X25519.X86_64.F t.mem b (ZK2 + 32 * h) = VG.Proof.X25519.X86_64.F s.mem b (offset 15)) ∧
+      (∀ a, ¬ (ZB ≤ ofs b a ∧ ofs b a < 6080) → t.mem a = s.mem a) ∧
+      (∀ h < 2, ∀ r < 5, ∀ k < 4, qw (Zmm.half b h t) (xr r) k = qw s (xr r) k) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms := by
+  rw [zconsts_split, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (rowsCopy_ok (b := b) zrowList s hs (by decide +kernel) (by decide +kernel))
+    fun s₁ ⟨c₁, f₁, g₁, rd₁, wr₁, sy₁, z₁⟩ => ?_
+  have hs₁ : Scratch s₁ b := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  let s₂ := (VOp.vbin .vpcmpeqd .l256 (y 11) (y 11) (y 11)).exec ((VOp.vbin .vpxor .l256 (y 10) (y 10) (y 10)).exec s₁)
+  refine WP.of_runBlock ⟨s₂, by simp only [zero, v, runBlock_cons, runStep_some, runBlock_nil, exec]; rfl, ?_⟩
+  have hs₂ : Scratch s₂ b := ⟨hs₁.rdi, hs₁.wr, hs₁.nowrap⟩
+  have h10 : ∀ k < 2, s₂.lane (y 10) k = 0 := fun k hk => by
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;>
+      simp [s₂, VOp.exec, State.lane, State.setV, VBinOp.sse, XBinOp.eval, show y 10 ≠ y 11 by decide]
+  have h11 : ∀ k < 2, s₂.lane (y 11) k = ones128 := fun k hk => by
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;>
+      simp only [s₂, VOp.exec, State.lane, State.setV, VBinOp.sse, pcmpeqd_self, ↓reduceIte,
+        show (1 : Nat) ≠ 0 by decide]
+  have zl₂ : ∀ r, r ≠ y 10 → r ≠ y 11 → ∀ i < 4, s₂.zlane r i = s₁.zlane r i := fun r h1 h2 i hi => by
+    simp only [s₂, VOp.exec, zlane_setV256 _ _ _ _ _ hi, h1, h2, ite_false]
+  refine WP.mono (masksCopy_ok 4 (Nat.le_refl _) s₂ hs₂ h10 h11) fun s₃ ⟨c₃, f₃, g₃, rd₃, wr₃, sy₃, z₃⟩ => ?_
+  refine WP.mono (dups_ok 5 (Nat.le_refl _) s₃) fun t ⟨c, f, m, g, rd, wr, sy⟩ => ?_
+  -- the memory: the rows copied, then the masks
+  have mt : ∀ a, ¬ (ZMASK ≤ ofs b a ∧ ofs b a < ZMASK + 64 * 4) → t.mem a = s₁.mem a := fun a ha => by
+    rw [m, f₃ a ha]; rfl
+  have row : ∀ e ∈ zrowList, ∀ i < 64,
+      t.mem (b + BitVec.ofNat 64 (e.2 + i)) = s.mem (b + BitVec.ofNat 64 (e.1 + i % 32)) := fun e he i hi => by
+    have := (show ∀ e ∈ zrowList, (e.2 + 64 ≤ ZMASK ∨ ZMASK + 64 * 4 ≤ e.2) ∧ e.2 + 64 ≤ 8192 by decide +kernel) e he
+    rw [mt _ (by simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; omega_arith), c₁ e he i hi]
+  have frame : ∀ a, ¬ (ZB ≤ ofs b a ∧ ofs b a < 6080) → t.mem a = s.mem a := fun a ha => by
+    rw [mt a (fun h => ha (by unfold ZMASK ZB at *; omega_arith)), f₁ a (fun e he => by
+      have := (show ∀ e ∈ zrowList, ZB ≤ e.2 ∧ e.2 + 64 ≤ 6080 by decide +kernel) e he
+      omega_arith)]
+  refine ⟨fun h hh => ?_, fun sel hsel i hi => ?_, fun h hh => ?_, frame, fun h hh r hr k hk => ?_,
+    by rw [g, g₃]; exact g₁, by rw [rd, rd₃]; exact rd₁, by rw [wr, wr₃]; exact wr₁, by rw [sy, sy₃]; exact sy₁⟩
+  · refine hk.of_rows fun x h1 h2 => ?_
+    show hmem b h t.mem (b + BitVec.ofNat 64 x) = _
+    simp only [hmem]
+    rw [off_ofNat _ (by omega_arith)]
+    by_cases hw : InWin x
+    · rw [ite_eq_left hw]
+      unfold InWin at hw
+      -- the row of `x` among the window's constants
+      obtain ⟨e, he, h3, h4, h5⟩ : ∃ e ∈ zrowList, e.1 ≤ x ∧ x < e.1 + 32 ∧ e.2 = zrow e.1 := by
+        have : ∀ x, 1664 ≤ x → x < 1792 → ∃ e ∈ zrowList, e.1 ≤ x ∧ x < e.1 + 32 ∧ e.2 = zrow e.1 := by
+          intro x h1 h2
+          rcases (by omega_arith : x < 1696 ∨ (1696 ≤ x ∧ x < 1728) ∨ (1728 ≤ x ∧ x < 1760) ∨ 1760 ≤ x) with h | h | h | h
+          · exact ⟨(KM, zrow KM), by decide +kernel, by simp only [KM]; omega_arith, by simp only [KM]; omega_arith, rfl⟩
+          · exact ⟨(K19, zrow K19), by decide +kernel, by simp only [K19]; omega_arith, by simp only [K19]; omega_arith, rfl⟩
+          · exact ⟨(KB0, zrow KB0), by decide +kernel, by simp only [KB0]; omega_arith, by simp only [KB0]; omega_arith, rfl⟩
+          · exact ⟨(KB1, zrow KB1), by decide +kernel, by simp only [KB1]; omega_arith, by simp only [KB1]; omega_arith, rfl⟩
+        exact this x h1 (by omega_arith)
+      have hrow := (show ∀ e ∈ zrowList, 1024 ≤ e.1 → (e.1 - 1024) % 32 = 0 by decide +kernel) e he
+      have := row e he (32 * h + (x - e.1)) (by omega_arith)
+      rw [h5] at this
+      rw [show zoff h x = zrow e.1 + (32 * h + (x - e.1)) by
+          have := hrow (by omega_arith); unfold zoff zrow; omega_arith, this]
+      congr 3; omega_arith
+    · rw [ite_eq_right hw, frame _ (by simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; unfold ZB; omega_arith)]
+  · obtain ⟨k, hk4, e1, e2⟩ : ∃ k < 4, blendSels.getD k 0 = sel ∧ maskRow sel = ZMASK + 64 * k := by
+      have : ∀ sel ∈ blendSels, ∃ k < 4, blendSels.getD k 0 = sel ∧ maskRow sel = ZMASK + 64 * k := by decide +kernel
+      exact this sel hsel
+    rw [m, e2, ← e1]
+    exact c₃ k hk4 i hi
+  · have w : ∀ d, d + 8 ≤ 32 → t.mem.readW (b + BitVec.ofNat 64 (ZK2 + 32 * h + d)) 64 =
+        s.mem.readW (b + BitVec.ofNat 64 (offset 15 + d)) 64 := fun d hd =>
+      readW_congr2 fun i hi => by
+        rw [Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]
+        have := row (offset 15, ZK2) (by decide +kernel) (32 * h + d + i) (by omega_arith)
+        rw [show ZK2 + 32 * h + d + i = ZK2 + (32 * h + d + i) by omega_arith, this]
+        congr 3; omega_arith
+    have w0 := w 0 (by decide)
+    simp only [Nat.add_zero] at w0
+    simp only [VG.Proof.X25519.X86_64.F, VG.Proof.X25519.X86_64.fe, VG.Proof.X25519.X86_64.word, off]
+    rw [w0, w 8 (by decide), w 16 (by decide), w 24 (by decide)]
+  · have hn : ∀ r < 5, y r ≠ y 9 ∧ y r ≠ y 10 ∧ y r ≠ y 11 := by decide
+    obtain ⟨n9, n10, n11⟩ := hn r hr
+    rw [qw_half b t _ hk]
+    simp only [zq]
+    rw [← y_xr r (by omega_arith), c r hr _ (by omega_arith), show (2 * h + k / 2) % 2 = k / 2 by omega_arith,
+      z₃ _ n9 _ (by omega_arith), zl₂ _ n10 n11 _ (by omega_arith), z₁ _ n9 _ (by omega_arith)]
+    simp only [qw, State.zlane, show k / 2 < 2 by omega_arith, ite_true]
+
+end VG.Proof.Ed25519.X86_64.Zmm
+
+end
+
+end
+
+/-! ### `Ed25519.X86_64.Zmm.Entry`, which only this module used -/
+
+section
+
+/-!
+# The `zmm` comb: the `ymm` blocks of an entry, alone
+
+The `zmm` comb's selection leaves each half's rows of the entry in
+`ymm11–ymm14` and its sign's mask in `ymm15` itself, so its translated blocks
+are `esplit` (the rows split into the limbs of the lanes, `esplit_wp`) and
+`vnegBody` (the entry negated under that mask, `vnegBody_wp`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Zmm
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64.Ifma VG.Proof.Ed25519.X86_64.Ifma
+open VG.Impl.X25519.X86_64.Ifma (KM kb ord)
+open VG.Proof.X25519.X86_64.Ifma (Sym T Env Bnds EnvOK symOf symOf_eq slotv CConsts envOK_of envOf envOf_m
+  envOf_v lt64 run_ok limbNat Ctx xor_mask pick2_tt pick2_ff vm kb_m kbv lanes)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr qw sel4)
+open VG.Proof.X25519.X86_64.Ifma (fe5 fe5_congr fe5_carry fe5_sub carryF_wp vm_gpr vm_rd vm_wr)
+open VG.Proof.X25519.X86_64 (Outside)
+
+/-! ## The entry's limbs -/
+
+def esplitS : Sym := symOf esplit
+
+/-- Word `k` of row `l` of the entry: quadword `k` of `ymm (11 + l)`. -/
+def srow (E : VG.Proof.X25519.X86_64.Ifma.Env) (l k : Nat) : Nat := E.v (11 + l) k
+
+theorem esplitS_regs (E : VG.Proof.X25519.X86_64.Ifma.Env) : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).nat E l =
+    limbNat (srow E l) (E.m KM l) j := by
+  intro j hj l hl
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
+
+def esplitB : Bnds :=
+  ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else 2 ^ 64 - 1,
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
+
+theorem esplitS_ok : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).ok esplitB l = true ∧
+    (esplitS.reg (5 + j)).bnd esplitB l < 2 ^ 52 := by
+  decide +kernel
+
+theorem esplitS_keep : ∀ r < 5, esplitS.reg r = .reg r := by decide +kernel
+theorem esplitS_st : esplitS.st = [] := by decide +kernel
+
+theorem esplit_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
+    (hk : CConsts s.mem base) :
+    WP isa (.block esplit) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
+      (∀ l < 4, ∀ i < 5, lanes s' 5 l i = limbNat (srow (envOf s) l) (2 ^ 51 - 1) i ∧
+        lanes s' 5 l i < 2 ^ 52) ∧
+      (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
+  have hE : EnvOK s esplitB := envOK_of hs (fun _ _ _ => lt64 _) (fun _ => rfl) (fun d l hl => by
+      simp only [esplitB]
+      split
+      · subst_vars; rw [hk.km l hl]
+      · exact lt64 _) (fun _ _ _ => Nat.zero_le _)
+  have e : Sym.init.run esplit = some esplitS := symOf_eq _ _
+  refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, esplitS_st]; rfl, fun l hl i hi => ?_,
+    fun r hr l hl => h.keep (by omega_arith) hl (esplitS_keep r hr)⟩
+  obtain ⟨o, b⟩ := esplitS_ok i hi l hl
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
+  simp only [lanes] at e ⊢
+  refine ⟨?_, by omega_arith⟩
+  rw [e, esplitS_regs _ i hi l hl, envOf_m hs, hk.km l hl]
+
+/-! ## The negation -/
+
+def vnegBodyS : Sym := symOf vnegBody
+
+theorem vnegBodyS_regs : ∀ j < 5, vnegBodyS.reg (5 + j) = .xor (.reg (5 + j))
+    (.and (.xor (.blend (.perm (.reg (5 + j)) (ord 1 0 2 3).toNat) (.sub (.ld (kb j)) (.reg (5 + j)))
+      (Impl.X25519.X86_64.Ifma.lanes false false true false).toNat) (.reg (5 + j))) (.reg 15)) := by
+  decide +kernel
+
+theorem vnegBodyS_keep : ∀ r < 5, vnegBodyS.reg r = .reg r := by decide +kernel
+theorem vnegBodyS_st : vnegBodyS.st = [] := by decide +kernel
+
+theorem vnegBody_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
+    (hk : CConsts s.mem base) {b : Bool} (hm : ∀ k < 4, qw s (xr 15) k = VG.Proof.X25519.X86_64.mask b)
+    (hx : ∀ l < 4, ∀ i < 5, lanes s 5 l i ≤ kbv i) :
+    WP isa (.block vnegBody) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
+      (∀ l < 4, ∀ i < 5, lanes s' 5 l i = if b then negL (lanes s 5) l i else lanes s 5 l i) ∧
+      (∀ r < 5, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
+  have e : Sym.init.run vnegBody = some vnegBodyS := symOf_eq _ _
+  refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, vnegBodyS_st]; rfl, fun l hl i hi => ?_,
+    fun r hr l hl => h.keep (by omega_arith) hl (vnegBodyS_keep r hr)⟩
+  have hq := h.reg (xr (5 + i)) l hl
+  rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_arith), vnegBodyS_regs i hi] at hq
+  simp only [lanes]
+  rw [hq]
+  simp only [T.eval]
+  rw [hm l hl, xor_mask]
+  cases b
+  · rfl
+  · have hkb : ∀ q < 4, (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (kb i + 8 * q)) 64).toNat = kbv i :=
+      fun q hq' => by rw [hs]; exact kb_m hk hq'
+    simp only [↓reduceIte]
+    have hb : ∀ q < 4, ((Impl.X25519.X86_64.Ifma.lanes false false true false).toNat.testBit (2 * q),
+        (Impl.X25519.X86_64.Ifma.lanes false false true false).toNat.testBit (2 * q + 1)) =
+        (decide (q = 2), decide (q = 2)) := by decide
+    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
+      have b := hb _ hl <;> simp only [Prod.mk.injEq] at b <;> rw [b.1, b.2] <;>
+      simp only [decide_true, decide_false, Nat.reduceEqDiff]
+    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 0 = 1 from by decide]; rfl
+    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 1 = 0 from by decide]; rfl
+    · rw [pick2_tt, BitVec.toNat_sub_of_le, hkb 2 (by decide)]
+      · rfl
+      · rw [BitVec.le_def, hkb 2 (by decide)]; exact hx 2 (by decide) i hi
+    · rw [pick2_ff, show sel4 (ord 1 0 2 3).toNat 3 = 3 from by decide]; rfl
+
+
+/-! ## The addition of an entry from its limbs -/
+
+/-- `vnegBody`, the carry and `vadd`: the entry in the lanes of `ymm5–ymm9`, negated if the
+mask in `ymm15` is all ones, added to the point in those of `ymm0–ymm4`. -/
+theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
+    (hk : EConsts s.mem base) (hx : Small s) {b : Bool}
+    (hm : ∀ k < 4, qw s (xr 15) k = VG.Proof.X25519.X86_64.mask b)
+    (hy : ∀ l < 4, ∀ i < 5, lanes s 5 l i < 2 ^ 52) :
+    WP isa (.block (vnegBody ++ VG.Impl.X25519.X86_64.Ifma.carry (5 + ·) ++ vadd)) s fun s' =>
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Outside base 1024 320 s.mem s'.mem ∧ Small s' ∧
+      lanePt s' = vAddPt (lanePt s) (negIf b (lanePt5 s)) := by
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (vnegBody_wp hs hc hk.toCConsts hm
+    fun l hl i hi => by have := hy l hl i hi; have := kbv_ge i; omega_arith) fun s₂ ⟨v₂, m₂, u₂, k₂⟩ => ?_
+  have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs
+  have hc₂ : Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc d hd
+  have hk₂ : EConsts s₂.mem base := by rw [m₂]; exact hk
+  have b₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 5 l i < 2 ^ 63 := fun l hl i hi => by
+    rw [u₂ l hl i hi]
+    have h0 := hy 0 (by decide) i hi; have h1 := hy 1 (by decide) i hi
+    have h3 := hy 3 (by decide) i hi; have := hy l hl i hi
+    have := kbv_ge i
+    have : kbv i < 2 ^ 63 := by simp only [kbv]; split <;> omega_arith
+    split
+    · rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp only [negL] <;> omega_arith
+    · omega_arith
+  have f₂ : ∀ l < 4, fe5 (lanes s₂ 5 l) = [(negIf b (lanePt5 s)).X, (negIf b (lanePt5 s)).Y,
+      (negIf b (lanePt5 s)).Z, (negIf b (lanePt5 s)).T].getD l 0 := fun l hl => by
+    rw [fe5_congr (fun i hi => u₂ l hl i hi)]
+    cases b
+    · simp only [Bool.false_eq_true, ↓reduceIte, negIf, lanePt5]
+      rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
+    · simp only [↓reduceIte, negIf, lanePt5]
+      rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl
+      · rfl
+      · rfl
+      · rw [show fe5 (fun i => negL (lanes s 5) 2 i) = fe5 (fun _ => 0) - fe5 (lanes s 5 2) from
+          fe5_sub (fun i _ => (Nat.zero_add _).symm)
+            (fun i hi => by have := hy 2 (by decide) i hi; have := kbv_ge i; omega_arith)]
+        rfl
+      · rfl
+  rw [WP.block_append_iff]
+  refine WP.mono (carryF_wp hs₂ hc₂ hk₂.toCConsts b₂) fun s₃ ⟨v₃, m₃, u₃, k₃⟩ => ?_
+  have hs₃ : s₃.gpr .rdi = base := by rw [vm_gpr v₃]; exact hs₂
+  have hc₃ : Ctx s₃ := by intro d hd; rw [vm_gpr v₃, vm_wr v₃]; exact hc₂ d hd
+  have hk₃ : EConsts s₃.mem base := by rw [m₃]; exact hk₂
+  have l₃ : ∀ l < 4, ∀ i < 5, lanes s₃ 0 l i = lanes s 0 l i := fun l hl i hi => by
+    simp only [lanes, Nat.zero_add]
+    rw [k₃ i (by omega_arith) (by omega_arith) (by omega_arith) l hl, k₂ i (by omega_arith) l hl]
+  refine WP.mono (vadd_wp hs₃ hc₃ hk₃ (fun l hl i hi => by rw [l₃ l hl i hi]; exact hx l hl i hi)
+    (fun l hl i hi => (u₃ l hl i hi).2)) fun t ⟨tg, trd, twr, ho, tsm, tp⟩ => ?_
+  refine ⟨by rw [tg, vm_gpr v₃, vm_gpr v₂], by rw [trd, vm_rd v₃, vm_rd v₂],
+    by rw [twr, vm_wr v₃, vm_wr v₂], by rw [m₃, m₂] at ho; exact ho, tsm, ?_⟩
+  rw [tp]
+  have p₃ : lanePt s₃ = lanePt s := by
+    simp only [lanePt]; rw [fe5_congr (l₃ 0 (by decide)), fe5_congr (l₃ 1 (by decide)),
+      fe5_congr (l₃ 2 (by decide)), fe5_congr (l₃ 3 (by decide))]
+  have e₃ : ∀ l < 4, fe5 (lanes s₃ 5 l) = fe5 (lanes s₂ 5 l) := fun l hl => by
+    rw [fe5_congr (fun i hi => (u₃ l hl i hi).1), fe5_carry _ (b₂ l hl 4 (by decide))]
+  have q₃ : lanePt5 s₃ = negIf b (lanePt5 s) := by
+    conv => lhs; simp only [lanePt5]
+    rw [e₃ 0 (by decide), e₃ 1 (by decide), e₃ 2 (by decide), e₃ 3 (by decide), f₂ 0 (by decide),
+      f₂ 1 (by decide), f₂ 2 (by decide), f₂ 3 (by decide)]
+    rfl
+  rw [p₃, q₃]
+
+end VG.Proof.Ed25519.X86_64.Zmm
+
+end
+
+end
 
 /-! ### `Ed25519.X86_64.Zmm.Loop`, which only this module used -/
 

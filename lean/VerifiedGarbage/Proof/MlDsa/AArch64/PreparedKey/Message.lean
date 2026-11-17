@@ -17,8 +17,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 public import VerifiedGarbage.Proof.Framework.Sig

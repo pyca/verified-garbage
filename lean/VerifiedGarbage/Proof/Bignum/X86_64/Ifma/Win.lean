@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ZCore
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 
 /-! ### `Bignum.X86_64.Ifma.Tab`, which this module and modules that import it used -/
 

@@ -19,7 +19,8 @@ def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Sm4e.expandKey
-    verified := Proof.Sm4.AArch64.Sm4e.expandKey_verified },
+    verified := Proof.Sm4.AArch64.Sm4e.expandKey_verified
+    residue := some ⟨Proof.Sm4.AArch64.Sm4e.expandKey_noResidue _⟩ },
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Serial.expandKey
     verified := Proof.Sm4.AArch64.Serial.expandKey_verified },

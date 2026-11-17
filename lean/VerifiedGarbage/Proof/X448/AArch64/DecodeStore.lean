@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.X448.AArch64
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import VerifiedGarbage.Proof.X448.Pairs
-
-import VerifiedGarbage.Proof.X448.AArch64.Decode
+public import VerifiedGarbage.Proof.X448.AArch64.Decode
 import VerifiedGarbage.Proof.X448.AArch64.Swap
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

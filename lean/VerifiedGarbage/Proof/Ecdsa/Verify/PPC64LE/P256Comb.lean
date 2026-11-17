@@ -8,10 +8,10 @@ import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombJ
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.Window
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 
 /-!
 # ECDSA verification over P-256 on PPC64LE, by the comb and windows: `[u]G + [v]Q`

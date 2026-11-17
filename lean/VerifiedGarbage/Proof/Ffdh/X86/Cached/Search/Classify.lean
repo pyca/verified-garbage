@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Call
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Steps
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! ### `Ffdh.X86.Cached.Search.Exits`, which this module and modules that import it used -/

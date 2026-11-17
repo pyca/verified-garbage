@@ -2,7 +2,7 @@ module
 
 -- separate module: the precomputation's constant-time proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoadX
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPrePQ
 import VerifiedGarbage.Proof.Bignum.Octets

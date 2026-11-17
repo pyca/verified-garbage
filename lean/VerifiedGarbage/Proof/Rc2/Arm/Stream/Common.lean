@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Rc2.Arm.Lit
+import VerifiedGarbage.Proof.Rc2.Memory
 
 @[expose] public section
 
@@ -256,7 +257,8 @@ theorem key_call {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) 
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := keyContractC) key_correct (rd := keyRdC s K KL) (wr := keyWr O S) h.pre
     (covC h) (covW h.writes) ?_ key_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s] s₂.mem ml := by rw [e8, hA h.hsp] at hfl; exact hfl
   have bytesK : Spec.Rc2.bytesAt (pushed [.r12, .lr] s).mem (State.addr K) KL.toNat =
       Spec.Rc2.bytesAt s.mem (State.addr K) KL.toNat :=
     VG.Proof.Rc2.bytesAt_frame (fA h.hsp) _ _ (by omega_arith) (fun r hr => by
@@ -265,16 +267,18 @@ theorem key_call {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) 
   simp only [State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide),
     h.r0, h.r1, h.r2, h.r3, bytesK] at hpost
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp, e8]; exact BitVec.sub_add_cancel _ _
   · have : r ≠ .r12 := by intro e; subst e; simp [preserved] at hr
     rw [popped_gpr this, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine ((fA h.hsp).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hpost
+  · refine (((fA h.hsp).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [Proof.Rc2.scheduleAt_frame hfl' _ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bo.symm]
+    exact hpost
 
 theorem key_rel {K KL E O S sp₀ T₀ : BitVec 32} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → KeyPre s₁ K KL E O S ∧ KeyPre s₂ K KL E O S ∧ s₁.sp = sp₀ ∧ s₂.sp = sp₀ ∧

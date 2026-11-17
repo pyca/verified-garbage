@@ -242,6 +242,13 @@ theorem spec_sp {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec ts P).pr
   dec_pre at h
   exact h.1
 
+/-- `writtenDecrypt` reads the memory only in the output and its length. -/
+theorem writtenDecrypt_congr {m m' : Mem} {out len : Addr} {k : Nat} {r : BitVec 32}
+    {o} (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k)
+    (hl : m'.readW len 64 = m.readW len 64) (h : Spec.RsaOaep.writtenDecrypt m out len k r o) :
+    Spec.RsaOaep.writtenDecrypt m' out len k r o := by
+  cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hb, hl] at h ⊢ <;> exact h
+
 /-- The postcondition, from what the body wrote with `Hs` and `Gs`, the hash
 functions the tables name. -/
 theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} {t : State}
@@ -279,7 +286,7 @@ theorem dec_ok {vs : List MdHash} (hc : Coh vs) (pv : PrivImpl) {s : State}
   have ok := tabOK_of hc hpw hw
   have hHa := hashAt_tableOf hixL
   have hGa := hashAt_tableOf hix
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_arith) (by decide) ?_ ?_
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
@@ -293,22 +300,32 @@ theorem dec_ok {vs : List MdHash} (hc : Coh vs) (pv : PrivImpl) {s : State}
     refine WP.mono (rest_ok w₁.ok.stream w.ok.stream w₁.mgf.hash w₁.mgf.len (mgf_valid w₁.mgf) w₁.mgf.mem
       w.mgf.hash w.mgf.len (mgf_valid w.mgf) pv hL rfl hc h9 hpw (sy' ▸ okL) (sy' ▸ hmL) hDL
       (sy' ▸ ok) (sy' ▸ hm) hD) fun u hu => ?_
-    refine WP.mono hu fun u' ⟨hc', hw'⟩ => ?_
+    refine WP.mono hu fun u' ⟨hc', hw'⟩ mm uu fl => ?_
     have hsp' : (freed frameBytes u').sp = (lay (pv.S + 1) s).Q + BitVec.ofNat 64 272 := by
       rw [freed_sp, hc'.sp]; rfl
+    -- The output and its length lie apart from the stack, whose frames' bytes are lost.
+    obtain hS : Region.Sub (below s.sp (272 + 16)) (lay (pv.S + 1) s).STK := by
+      obtain h288 := DLay.Ok.sub_stk (L := lay (pv.S + 1) s) (d := 0) (n := 288) (by omega_arith)
+      rw [show (lay (pv.S + 1) s).Q + BitVec.ofNat 64 0 = (lay (pv.S + 1) s).Q from BitVec.add_zero _] at h288
+      exact h288
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
-    · by_cases h30 : r = .x30
+    · show (popped .x30 (freed frameBytes u')).gpr r = s.gpr r
+      by_cases h30 : r = .x30
       · subst r
         rw [popped_gpr_self, freed_mem, hsp']; exact hc'.lr
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc'.cs r hr h30
-    · rw [popped_sp, hsp']
+    · show (popped .x30 (freed frameBytes u')).sp = s.sp
+      rw [popped_sp, hsp']
       show (lay (pv.S + 1) s).Q + BitVec.ofNat 64 272 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q _ s
-    · rw [popped_v, freed_v]
-      exact hc'.vs r hr
-    · refine result_ok hHa hGa ?_
-      rw [popped_mem, freed_mem, popped_gpr_ne _ (by decide), freed_gpr]
+    · exact hc'.vs r hr
+    · refine result_ok hHa hGa (writtenDecrypt_congr (m := u'.mem)
+        (List.map_congr_left fun i hi => lost_byte fl (hL.kO.symm.sub_right hS) (List.mem_range.mp hi))
+        (fl.readW (r := (lay (pv.S + 1) s).ML) (Region.contains_self _ _) (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR; exact hL.kM.symm.sub_right hS) (by decide)) ?_)
+      show Spec.RsaOaep.writtenDecrypt u'.mem _ _ _ (((popped .x30 (freed frameBytes u')).gpr .x0).setWidth 32) _
+      rw [popped_gpr_ne _ (by decide), freed_gpr]
       exact hw'
 
 end VG.Proof.RsaOaep.AArch64.Dec

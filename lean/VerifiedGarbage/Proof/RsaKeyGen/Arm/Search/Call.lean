@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
@@ -234,8 +238,12 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   obtain ⟨cov, covW⟩ := call_covers h rfl hd (by omega_using [hroom, hl])
   have hS2 : 112 ≤ u.sp.toNat := by rw [hd.1.sp, ← addr_toNat, S2_toNat hi]; omega_using [room]
   refine FrameStack.WP.callF c.verified.1 (call_pre hd hu) cov covW (Nat.le_trans c.stack hS2)
-    fun t hrd hwr hspt hfr hpres hpost => ?_
+    fun t hrd hwr hspt hfr hpres hpost ml ul hfl => ?_
   rw [hd.1.sp] at hfr
+  have eS2 : s.sp - BitVec.ofNat 32 32 = p.S2 := by
+    rw [h.sp, SearchPublic.S1, SearchPublic.S2, BitVec.sub_sub, ← BitVec.ofNat_add]
+  change Frame [⟨State.addr (s.sp - BitVec.ofNat 32 32), 32⟩] t.mem ml at hfl
+  rw [eS2] at hfl
   -- memory
   have hargs : Frame [⟨State.addr p.S2, 32⟩] s.mem u.mem := by
     rw [hd.1.mem]
@@ -243,6 +251,9 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have hcall : Frame ((⟨State.addr p.S2, 32⟩ :: callWr p) ++ [FrameStack.belowA p.S2 (FrameStack.armStack c.code)])
       s.mem t.mem :=
     (hargs.mono fun r hr => by simp at hr; simp [hr]).trans (hfr.mono fun r hr => by simp at hr ⊢; exact Or.inr hr)
+  have hcallL : Frame ((⟨State.addr p.S2, 32⟩ :: callWr p) ++ [FrameStack.belowA p.S2 (FrameStack.armStack c.code)])
+      s.mem ml :=
+    hcall.trans (hfl.mono fun r hr => by simp at hr; simp [hr])
   have hfu : Frame (changes o) o.mem u.mem := h.frame.trans (hargs.sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr; exact ⟨_, by simp [changes], S2_sub hi⟩)
   have hreg (r : Reg) (hr : r ∈ preserved) (hlr : r ≠ .lr) (hk : r ∉ [.r0, .r1, .r2, .r3, .r12, .lr]) :
@@ -256,8 +267,8 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   · exact (hreg .r5 (by decide) (by decide) (by decide)).trans h.r5
   · exact (hreg .r6 (by decide) (by decide) (by decide)).trans h.r6
   · exact (hreg .r7 (by decide) (by decide) (by decide)).trans h.r7
-  · exact Spill.Saved.frame h.saved (lo := 0) (hi := 40) (by decide) hcall (saved_apart hi c.stack)
-  · exact h.frame.trans (hcall.sub (call_changes hi c.stack))
+  · exact Spill.Saved.frame h.saved (lo := 0) (hi := 40) (by decide) hcallL (saved_apart hi c.stack)
+  · exact h.frame.trans (hcallL.sub (call_changes hi c.stack))
   · exact (hreg .r8 (by decide) (by decide) (by decide)).trans h.r8
   · exact (hreg .r9 (by decide) (by decide) (by decide)).trans h.r9
   · exact (hreg .r11 (by decide) (by decide) (by decide)).trans h.r11
@@ -271,6 +282,22 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
         (searchRand o).drop used := by
       change Spec.Rsa.bytesAt u.mem (State.addr (p.rp + BitVec.ofNat 32 used)) (p.randLen - used) = _
       rw [VG.Arm.addr_add (by have := f.nR; omega_using [hroom, hl, this]), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
+    obtain ⟨eO, eU, -, -, -, -, -⟩ := hi.regions
+    have dO : Region.Disjoint ⟨State.addr p.S2, 32⟩ (rO p) := SearchInput.disj_sub
+      (eO ▸ hi.stack_disjoint (r := inOut o) (by simp [inWrites])) (S2_sub hi)
+    have dU : Region.Disjoint ⟨State.addr p.S2, 32⟩ (rU p) := SearchInput.disj_sub
+      (eU ▸ hi.stack_disjoint (r := inUsed o) (by simp [inWrites])) (S2_sub hi)
+    have hop : Spec.Rsa.bytesAt ml (State.addr p.op) p.len = Spec.Rsa.bytesAt t.mem (State.addr p.op) p.len :=
+      VG.Proof.Rsa.rsa_bytes_frame hfl (by omega_using [hl]) (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r; exact dO.symm)
+    have hup : Spec.Rsa.wordsAt ml (State.addr p.up) 1 = Spec.Rsa.wordsAt t.mem (State.addr p.up) 1 := by
+      simp only [Spec.Rsa.wordsAt]
+      refine List.map_congr_left fun i hi => ?_
+      have hi := List.mem_range.mp hi
+      refine Mem.readW_congr fun j hj => ?_
+      rw [Offset.add_add]
+      exact lost_byte hfl (R := rU p) dU.symm (by change 8 * i + j < 8; omega_using [hi, hj])
+    refine (show CandPost p (searchP o) (searchRand o) used t → _ from fun ⟨a, b, c⟩ => ⟨a, hop.trans b, hup.trans c⟩) ?_
     change CandPost p (searchP o) (searchRand o) used t
     sig_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
       Loc.val] at hpost

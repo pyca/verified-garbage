@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
+public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
 public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
 import VerifiedGarbage.Proof.Framework.KernelRfl

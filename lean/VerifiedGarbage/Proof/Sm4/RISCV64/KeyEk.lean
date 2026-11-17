@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.RISCV64.ExpandKey
-public import VerifiedGarbage.Proof.Sm4.RISCV64.Group
+public import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Round
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesSiv.X86.Ctr
-public import VerifiedGarbage.Proof.AesSiv.X86.FinishShort
+public import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
 public import VerifiedGarbage.Proof.AesSiv.X86.S2v
 import VerifiedGarbage.Proof.AesSiv.X86.Finish
 import VerifiedGarbage.Proof.AesGcm.X86.Top

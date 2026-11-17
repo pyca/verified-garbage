@@ -741,7 +741,8 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameReg hs.sp16 (fun R hR => ?_)
+    (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (noFrames_updateMain hf)]; decide)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -758,6 +759,7 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
       have := hpost h0 d (repr_congr hP (fun i hi => write_frame_bytes (R := stR s₀ w) hs.st
         (by show bufOff w + blockBytes w < 2 ^ 64; omega_using [hl]) hi) hm) hc hlt
       rw [e] at this
-      exact this
+      -- The state lies apart from the frame, whose bytes the pop loses.
+      exact repr_congr hP (fun i hi => lost_byte (R := stR s₀ w) f hs.st.symm hi) this
 
 end VG.Proof.Blake2.AArch64.Stream.Update

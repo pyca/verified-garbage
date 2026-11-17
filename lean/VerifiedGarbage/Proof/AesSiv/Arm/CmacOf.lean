@@ -133,7 +133,8 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
   obtain eSt := keep h.bst (by decide)
   obtain eP := keep h.bp (by have := h.len; omega_using [hL])
   rw [eK, eK1, eK2, eSt, eP] at hpost
-  rw [hm]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact h.bst.symm) (by decide)]
   exact hpost
 
 theorem fin_rel {K St P S sp₀ : BitVec 32} {L R : Nat} {Pr : State → State → Prop}

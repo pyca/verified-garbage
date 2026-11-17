@@ -139,16 +139,10 @@ theorem random_incoming_read {extra : Nat} {s : State} (h : RandomSignABI extra 
 theorem random_frame_ok {extra : Nat} {s : State} (h : RandomSignABI extra s)
     {body : Prog isa} {Q : State → Prop}
     (hb : WP isa body (allocated Random.frameBytes s) fun t =>
-      t.sp = randomBase s ∧ t.wr = (allocated Random.frameBytes s).wr ∧ Q (randomFreed t)) :
+      ∀ m u, Frame [⟨randomBase s, Random.frameBytes⟩] t.mem m →
+        Q { randomFreed t with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc Random.frameBytes) body (.free Random.frameBytes)) s Q := by
-  obtain ⟨trace, t, he, htsp, htwr, hq⟩ := hb
   have hl := h.stackLower
-  have ha : isa.push (.alloc Random.frameBytes) s = some (allocated Random.frameBytes s) := by
-    simp only [isa, push, allocated]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
-  have hf : isa.pop (.free Random.frameBytes) (allocated Random.frameBytes s) t = some (randomFreed t) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by unfold Random.frameBytes; omega_using [hl]) hb
 
 end VG.Proof.Dsa.AArch64

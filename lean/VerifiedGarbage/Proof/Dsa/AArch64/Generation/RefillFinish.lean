@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillEntry
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputArgs

@@ -147,7 +147,7 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
   have hpQ := hL.pQ
   have hsp : P + 240 ≤ s.sp.toNat := spec_sp (s := s.withRegions R₀ s.wr) h
   have hP16 : 16 ≤ (layW P s X pre prl).P := hP
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_using [hsp]) (by decide) ?_ ?_
   · show 224 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hsp])]
     show 224 ≤ s.sp.toNat - 16
@@ -167,27 +167,35 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
     refine WP.seq (WP.mono (maskPart_ok hL h₆) fun t₇ h₇ => ?_)
     refine WP.seq (WP.mono (alPart_ok hL h₇) fun t₈ h₈ => ?_)
     refine WP.seq (WP.mono (scanPart_ok hL h₈) fun t₉ h₉ => ?_)
-    refine WP.mono (selPart_ok hL h₉) fun u hu => ?_
+    refine WP.mono (selPart_ok hL h₉) fun u hu mm uu fl => ?_
     have hc := hu.ctx
     have hsp' : (freed frameBytes u).sp = (layW P s X pre prl).Q + BitVec.ofNat 64 224 := by
       rw [freed_sp, hc.sp]; rfl
+    -- What the postcondition reads lies apart from the stack, whose frames' bytes are lost.
+    obtain hS : Region.Sub (below s.sp (224 + 16)) (layW P s X pre prl).STK := by
+      obtain h0 := Lay.Ok.sub_stk (L := layW P s X pre prl) (d := 0) (n := 240) (by decide)
+      rw [show (layW P s X pre prl).Q + BitVec.ofNat 64 0 = (layW P s X pre prl).Q from BitVec.add_zero _] at h0
+      exact h0
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
-    · by_cases h30 : r = .x30
+    · show (popped .x30 (freed frameBytes u)).gpr r = s.gpr r
+      by_cases h30 : r = .x30
       · subst r
         rw [popped_gpr_self, freed_mem, hsp']; exact hc.kept.lr
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc.cs r hr h30
-    · rw [popped_sp, hsp']
+    · show (popped .x30 (freed frameBytes u)).sp = s.sp
+      rw [popped_sp, hsp']
       show (layW P s X pre prl).Q + BitVec.ofNat 64 224 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q P s
-    · rw [popped_v, freed_v]
-      exact hc.vs r hr
+    · exact hc.vs r hr
     · refine result_ok h rfl h₁.out ?_ (fun i hi => ?_) ?_ (by
         have := bytesAt_length t₆.mem (scA (layW P s X pre prl) sAM) (layW P s X pre prl).k.toNat
         rw [hAM] at this; exact this)
-      · rw [popped_gpr_ne _ (by decide), freed_gpr]; exact hu.x0
-      · rw [popped_mem, freed_mem]; exact hu.out i hi
-      · rw [popped_mem, freed_mem]; exact hu.ml
+      · show (popped .x30 (freed frameBytes u)).gpr .x0 = _
+        rw [popped_gpr_ne _ (by decide), freed_gpr]; exact hu.x0
+      · exact (lost_byte (R := (layW P s X pre prl).OUT) fl (hL.kO.symm.sub_right hS) hi).trans (hu.out i hi)
+      · exact (fl.readW (r := (layW P s X pre prl).ML) (Region.contains_self _ _) (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR; exact hL.kM.symm.sub_right hS) (by decide)).trans hu.ml
 
 /-- `vg_rsa_pkcs1_decrypt` meets the shared contract and the calling convention. -/
 theorem dec_ok (v : Compress) (pv : PrivImpl) {s : State} (h : (decSpec (pv.S + 1)).pre s) :

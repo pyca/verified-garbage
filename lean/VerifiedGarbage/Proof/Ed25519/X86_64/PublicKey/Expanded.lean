@@ -156,6 +156,13 @@ theorem expanded_seed {s : State} (h : pkLocalE.pre s) :
   rcases h with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩
   exact hk
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : Spec.Ed25519.bytesAt m' p n = Spec.Ed25519.bytesAt m p n := by
+  simp only [Spec.Ed25519.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
     WP isa (publicKeyExpanded bs fs) s fun s' => abiPreserved s s' ∧ pkLocalE.post s s' := by
   have hL := lay_ok h (by decide)
@@ -163,14 +170,21 @@ theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
   obtain ⟨seed, -, hE⟩ := expanded_seed h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok hL (copy_ok hL rfl hc) hE)
-      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
+      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 56 bytes, in the stack below `rsp`.
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * pushRs.length), 8 * pushRs.length⟩ (lay 64 s).STK :=
+    Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 7 from rfl, pop_rsp, lay_ret]
     refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+    · rw [fm.readW (r := (lay 64 s).RET) (by rw [Lay.RET, lay_ret]; exact Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr, Lay.RET, lay_ret]
+        exact (Offset.base_disjoint_below (s.gpr .rsp) (n := 72) (k := 8) (by decide)).sub_right hF) (by decide)]
       refine hu.frame.readW (r := (lay 64 s).RET) ?_ ?_ (by decide)
       · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
       · intro r hr
@@ -180,8 +194,8 @@ theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
         · exact hL.rc
         · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   · intro seed' _ hE'
-    show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 64 s).out 32 = _
-    rw [popped_mem, ho]
+    show Spec.Ed25519.bytesAt m (lay 64 s).out 32 = _
+    rw [bytes_lost fm (hL.ko.symm.sub_right hF), ho]
     exact publicKey_of_sha512_eq (hE.symm.trans hE')
 
 theorem copy_ct : RelCT isa (Two fun L _ => L.seedLen = 64) pkCopyExpanded (Two fun _ _ => True) := by

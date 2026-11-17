@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableH
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedField
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac

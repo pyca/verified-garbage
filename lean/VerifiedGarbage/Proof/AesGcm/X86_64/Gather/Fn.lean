@@ -621,17 +621,29 @@ theorem sealCall_ok (S : SealFn M) {st : State} (h : SBase s st) (g : SealRegs s
       · exact ⟨dR s, by simp, fun _ h => h⟩
       · exact ⟨tgR s, by simp, fun _ h => h⟩
       · exact ⟨tR s, by simp, b4888⟩
-  refine ⟨r₃, hwr', ⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · by_cases hr' : r = .rsp
+  -- The `pop` loses the frame's 24 bytes, in the stack below `SP`, apart from
+  -- the outputs.
+  refine ⟨r₃, hwr', fun m u fm => ?_⟩
+  obtain fm' : Frame [tR s] s'.mem m := by
+    rw [hsp] at fm
+    exact fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s, List.mem_singleton_self _, stk_sub (s := s) (by decide) (by decide)⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · dsimp only
+    by_cases hr' : r = .rsp
     · subst hr'; rw [popped_rsp, r₃, hP]
       show SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 24 = SP s
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr',
         h.saved r hr]
-  · rw [popped_mem]
-    exact (h.frame.trans fC).readW (Region.contains_self _ _) (ret_disj hp) (by decide)
-  · show Spec.Gcm.encryptWith (ciph s) (hk s) 16 (iv s) (pt s (Cnt s)) (ad s) = _
-    rw [popped_mem]
+  · exact ((h.frame.trans fC).trans (fm'.mono fun r hr => by simp at hr ⊢; simp [hr])).readW
+      (Region.contains_self _ _) (ret_disj hp) (by decide)
+  · show Spec.Gcm.encryptWith (ciph s) (hk s) 16 (iv s) (pt s (Cnt s)) (ad s) =
+      (bytesAt m (Dst s) (L s), bytesAt m (Tg s) 16)
+    rw [bytesAt_frame fm' (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.b_d.symm)
+        (Nat.le_of_lt hL),
+      bytesAt_frame fm' (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.b_t.symm) (by decide)]
     exact hpost
 
 end

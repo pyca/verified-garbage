@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortSeal
 
 /-!

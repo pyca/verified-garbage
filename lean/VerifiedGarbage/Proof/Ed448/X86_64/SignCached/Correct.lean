@@ -658,6 +658,13 @@ theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 
 /-! ## The function -/
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : Spec.Ed448.bytesAt m' p n = Spec.Ed448.bytesAt m p n := by
+  simp only [Spec.Ed448.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCachedContract X86_64.abi 464).pre s) :
     WP isa (signCachedFor v) s fun s' =>
       abiPreserved s s' ∧ (Spec.Ed448.signCachedContract X86_64.abi 464).post s s' := by
@@ -675,7 +682,16 @@ theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCached
   obtain hpk : Spec.Ed448.bytesAt s2.mem (slay s).pk 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt s2.mem (slay s).seed 57) := by
     rw [hm2]; exact h.pk
-  refine WP.mono (body_ok hb hL hc hpk) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr], ?_, ?_⟩
+  refine WP.mono (body_ok hb hL hc hpk) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr],
+    fun m uk fm => ?_⟩
+  -- The pop loses the frame's 448 bytes, in the stack below `rsp`, apart from
+  -- the signature and the return address.
+  rw [hg2 .rsp (by decide), regs_length] at fm
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * 56), 8 * 56⟩ (sStk s) :=
+    Offset.sub_below _ (by decide) (by decide)
+  replace hr := (bytes_lost fm (h.stkOut.symm.sub_right hF)).trans hr
+  dsimp only
+  refine ⟨?_, ?_⟩
   · -- The calling convention.
     refine ⟨fun r hr => ?_, ?_, ?_⟩
     · by_cases hr' : r = .rsp
@@ -683,7 +699,10 @@ theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCached
         rw [popped_rsp, hc'.rsp, Lay.SP, add_add, regs_length, slay_B]
       · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hc'.cs r hr hr', hg2 r (cs_tmp r hr)]
     · have eR : sRet s = ⟨(slay s).B + BitVec.ofNat 64 464, 8⟩ := by rw [slay_B]
-      rw [popped_mem, hc'.frame.readW (r := sRet s) (Region.contains_self _ _) (fun r hr => by
+      rw [fm.readW (r := sRet s) (Region.contains_self _ _) (fun r hr => by
+          rw [List.mem_singleton.mp hr]
+          exact Offset.base_disjoint_below (s.gpr .rsp) (n := 448) (k := 8) (by decide)) (by decide),
+        hc'.frame.readW (r := sRet s) (Region.contains_self _ _) (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact h.retScr

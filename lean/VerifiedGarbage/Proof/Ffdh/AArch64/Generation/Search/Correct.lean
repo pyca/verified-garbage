@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Call
 
 /-! # The parameter search's correctness (AArch64)
 
@@ -135,6 +137,24 @@ theorem SDone.popped {p : SPub} {original s : State} {r : ParameterSearchResult}
   · show (s.write .x .x30 v).gpr reg = _
     rw [RegUpd.gpr_write, ite_eq_right h30]; exact h.saved reg hr h19 h30
 
+/-- After the frame, whose slot is lost: a finished search, with `x30` and the
+stack pointer back. -/
+theorem SDone.released {p : SPub} {original s : State} {r : ParameterSearchResult}
+    (h : SDone p original r s) (v sp : BitVec 64) {m : Mem} (u : Nat → BitVec 64)
+    (hf : Frame [below original.sp stackUse] s.mem m) :
+    SDone p original r { s.write .x .x30 v with sp := sp, mem := m, unknowns := u } := by
+  have h' := h.popped v sp
+  have hc := h.input.control_frame (hf.sub fun R hR => ⟨R, by
+    obtain rfl := List.mem_singleton.mp hR; simp [SInput.callChanges], fun _ hi => hi⟩)
+  rw [← h.input.sp_eq] at hf
+  have ho := fun {i} (hi : i < p.len) => lost_byte (i := i) hf h.input.outStack.1 hi
+  refine ⟨h'.input, h'.rd, h'.wr, h'.x19, h'.saved, h'.vcs, (hc 4 (by decide)).trans h.savedX19,
+    (hc 7 (by decide)).trans h.usedPtr, (hc 12 (by decide)).trans h.used,
+    (hc 14 (by decide)).trans h.status,
+    (List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega_using [this])).trans
+      h.policy, ?_⟩
+  exact (List.map_congr_left fun i hi => ho (List.mem_range.mp hi)).trans h.output
+
 theorem SInput.tail_eq {p : SPub} {s : State} (h : SInput p s) : searchResult s = p.tail 0 p.attempts := by
   cases h.2
   simp only [searchResult, SPub.tail, sOfState, List.drop_zero, Proof.Ffdh.Generation.consume_zero]
@@ -156,8 +176,11 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     rw [k.sp]
     exact Offset.sub_below s.sp (a := 16) (b := 32) (by decide) (by decide)
   · refine WP.mono (search_loop c (expected := searchResult s) (n := p.attempts + 1)
-      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu => ?_
-    refine ⟨hu.popped _ _, ?_, k.sp⟩
+      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu m uu f => ?_
+    refine ⟨hu.released _ _ uu (f.sub fun R hR => ⟨_, List.mem_singleton_self _, ?_⟩), ?_, k.sp⟩
+    · obtain rfl := List.mem_singleton.mp hR
+      rw [k.sp]
+      exact Offset.sub_below s.sp (a := 16) (b := 32) (by decide) (by decide)
     show (u.write .x .x30 (t.gpr .x30)).gpr .x30 = _
     rw [RegUpd.gpr_write, ite_eq_left rfl]
     exact k.gpr .x30 (by decide)

@@ -147,6 +147,16 @@ theorem signE_ok {s : State} (h : signLocalE.pre s) :
           change Whole.Ctx (Whole.base s) s.gpr p.mem (lay 64 s).inputs (lay 64 s).outputs u at hu
           rw [(entry_regions h).1, (entry_regions h).2] at hu
           exact hu, ho⟩)
+    (hP := fun _ m₁ m₂ _ hf hp => by
+      have e : Spec.Ed25519.bytesAt m₂ (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.bytesAt m₁ (State.addr (s.gpr .r0)) 64 := by
+        unfold Spec.Ed25519.bytesAt
+        refine List.map_congr_left fun i hi => hf.bytes (R := ⟨State.addr (s.gpr .r0), 64⟩) ?_
+          (by change 64 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+        rintro r hr
+        rw [List.mem_singleton.mp hr]
+        exact (entry_writes h _ (by rw [h.2.1]; simp)).symm
+      show Spec.Ed25519.bytesAt m₂ _ _ = _
+      rw [e]; exact hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, fun seed' _ hs' => ?_⟩
   have hm := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
     (by have := (stackArg s 0).isLt; change (stackArg s 0).toNat ≤ 2 ^ 64; omega_using [])

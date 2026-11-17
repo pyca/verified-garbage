@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
@@ -156,12 +155,20 @@ theorem correct (M : Mont) (K : Kernel)
   have hwl : witness + len (s.gpr .r9).toNat ≤ domainCheck := by
     rcases hb with h | h | h | h | h <;> rw [h] <;> decide
   have hl : 56 ≤ (s.gpr .rsp).toNat := by have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower; omega_using [this]
+  have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
+  simp only [off, BitVec.add_zero] at hs
   obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_ok (bytes := 56) (by decide) hl
     (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost (s.gpr .r9).toNat s f)
-    (WP.mono (body_ok M K hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, freeState_rsp h1, by
+    (WP.mono (body_ok M K hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, fun m u fm => ⟨freeState_rsp h1, by
       obtain ⟨hr, hu, hm, hg⟩ := hp
-      exact ⟨hr, hu, hm, fun r hr' => by
-        have : r ≠ .rsp := by revert r; decide
+      refine ⟨hr, fun b rest h => ?_, hm.trans (fm.sub fun r hr => ?_), fun r hr' => ?_⟩
+      · refine (fm.readW (r := ⟨s.gpr .r8, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)).trans
+          (hu b rest h)
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (A.stackUsed.sub_left hs).symm
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨⟨frameSp s, 56⟩, by simp [changed], fun _ h => h⟩
+      · have : r ≠ .rsp := by revert r; decide
         simp only [freeState, State.setReg, this, ite_false]
         exact hg r hr'⟩⟩)
   obtain ⟨hrax, hused, hframe, hgpr⟩ := hpost

@@ -8,10 +8,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
 import VerifiedGarbage.Proof.Dsa.X86_64.OneScanCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Return
+import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.X86_64.MinusCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 

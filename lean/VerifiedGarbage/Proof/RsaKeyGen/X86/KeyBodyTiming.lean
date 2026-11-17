@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
@@ -18,7 +17,7 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePort
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 
 /-! ### `RsaKeyGen.X86.KeyExportState`, which this module and modules that import it used -/

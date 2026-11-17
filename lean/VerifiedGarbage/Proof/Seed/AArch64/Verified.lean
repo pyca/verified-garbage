@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Seed.AArch64.Lit
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Seed.AArch64.Steps
 public import VerifiedGarbage.Proof.Seed.AArch64.Round
 public import VerifiedGarbage.Proof.Seed.Rounds
 import VerifiedGarbage.Proof.Framework.PlainSimp

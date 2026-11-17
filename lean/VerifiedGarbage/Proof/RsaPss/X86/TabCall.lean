@@ -7,7 +7,7 @@ meta import VerifiedGarbage.Impl.RsaPss.X86.Table
 public meta import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 
 /-!
 # RSASSA-PSS on x86: a call through the table in the slot `sTab`

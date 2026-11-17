@@ -80,7 +80,8 @@ theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
-    (sealCode_verified v hMK) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealCode_verified v hMK) (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 open VG.Proof.AesGcm.AArch64.Gather in
 /-- `sealWithE` has no frames of its own. -/

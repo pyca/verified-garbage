@@ -11,6 +11,15 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+import VerifiedGarbage.Proof.Framework.X86_64.Leaves
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Spec.Ccm.Contract
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
@@ -209,7 +218,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee))
       (Proof.AesCcm.sealRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := sealPostOut_local _) (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2608) (seal_verified v) (by decide) (by decide) (by decide)
@@ -228,7 +237,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee))
       (Proof.AesCcm.openRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := openPostOut_local _) (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre X86_64.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Ccm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) (open_verified v)
@@ -283,10 +292,247 @@ theorem openOut (stack : Nat) :
       rw [bytesAt_of hb.2.2.2.1 (by simp)]
       exact h key hk
 
+section Selective
+
+open VG.X86_64 VG.X86_64.Scrub VG.X86_64.RScrub VG.X86_64.RTaint
+
+theorem setup_resOk_check {A : Abi isa} {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
+    {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+    {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Nat × Nat)} (hA : ScrubAbi A)
+    (hspSafe : SpSafe c) (hcs : cs.sum = stack)
+    {h : VG.Taint.Hint FT}
+    (hfit : pubsFit sig pubs = true) (hpub : PubOk (sig.contract A pre post wa stack leak) pubs)
+    (hc : (VG.Taint.check rtaint (init sig stack pubs) c h).any (resOkB · stack ks cs) = true) :
+    ResOk c (sig.contract A pre post wa stack leak) stack ks cs := by
+  obtain ⟨τf, hτ, hb⟩ : ∃ τf, VG.Taint.check rtaint (init sig stack pubs) c h = some τf ∧
+      resOkB τf stack ks cs = true := by
+    cases h' : VG.Taint.check rtaint (init sig stack pubs) c h with
+    | none => rw [h'] at hc; cases hc
+    | some τf => rw [h'] at hc; exact ⟨τf, rfl, hc⟩
+  simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
+    Bool.not_eq_true'] at hb
+  obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
+  have inv := ha hok
+  have hsp : u₁.gpr .rsp = s₁.gpr .rsp := Exec.rsp hspSafe e₁
+  have hwr : u₁.wr = s₁.wr := (Exec.rdwr e₁).2
+  obtain ⟨hst, hdis⟩ := contract_pre_scrub hA h₁
+  have hj : (x - (s₁.gpr .rsp - BitVec.ofNat 64 stack)).toNat < stack := by
+    simp only [Region.Contains] at hx; omega_using [hx]
+  generalize hJ : (x - (s₁.gpr .rsp - BitVec.ofNat 64 stack)).toNat = j at hj
+  have hxe : x = RTaint.wa u₁ τf j := by
+    simp only [RTaint.wa, wb, hroom, hsp, ← hJ, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    rw [BitVec.add_comm, BitVec.sub_add_cancel]
+  have hcj : cov ks cs j = false := by
+    cases h' : cov ks cs j
+    · rfl
+    · exact absurd ⟨hcs ▸ hx, by rw [hcs, hJ]; exact h'⟩ hw
+  have hns : ¬ InSec τf.sec j := by
+    intro hin
+    rcases hcov j hj with h | h
+    · rw [hcj] at h; cases h
+    · rw [show τf.sec.testBit j = true from hin] at h; cases h
+  have hfree : ∀ r ∈ u₁.wr, ¬ r.Contains (RTaint.wa u₁ τf j) 1 := by
+    intro r hr hc
+    rw [hwr] at hr
+    rw [← hxe] at hc
+    exact (hdis r (List.mem_append_right _ hr)).2 (by omega_using [hj]) x hx hc
+  have := inv.dead j (by rw [hroom, hdep]; omega_using [hj]) hns hfree
+  have e2 : RTaint.wa u₂ τf j = RTaint.wa u₁ τf j := by simp only [RTaint.wa, wb, inv.rsp]
+  rw [e2, ← hxe] at this
+  exact this
+
+
+/-- The small regions the tight functional frame permits to change. -/
+def tightChunks : List Nat := [2624]
+def tightKs : List Nat := [0, 64, 80, 96, 112, 128, 144, 160, 272, 288, 304, 320]
+
+def setupFramed : Prog isa := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 entryRestore
+
+theorem setup_sp : setupFramed.all (fun i => !isa.writesSp i) = true :=
+  X86_64.withStackArgScratch_spSafe (by decide +kernel)
+
+/-- The public setup has no secret-dependent stack writes. -/
+theorem setup_seal_res : ResOk setupFramed (Spec.Ccm.sealContract abi 2624) 2624 [] [2624] := by
+  apply setup_resOk_check (sig := Spec.Ccm.sealSig) (ks := []) (cs := [2624]) ScrubAbi.plain (SpSafe.of_all setup_sp) rfl rfl (pubOk_nil _)
+  apply any_resOkB
+  taint_decide
+
+theorem setup_open_res : ResOk setupFramed (Spec.Ccm.openContract abi 2624) 2624 [] [2624] := by
+  apply setup_resOk_check (sig := Spec.Ccm.openSig) (ks := []) (cs := [2624]) ScrubAbi.plain (SpSafe.of_all setup_sp) rfl rfl (pubOk_nil _)
+  apply any_resOkB
+  taint_decide
+
+local instance tightFootprint : Footprint := ⟨true⟩
+
+/-- Every mutable workspace byte in the tight frame is wiped. -/
+theorem tight_cov {p x : Addr} (hx : (⟨p - 2624, 2624⟩ : Region).Contains x 1)
+    (hn : ¬ WCov tightKs tightChunks p x) {D T : Addr} {n tl : Nat}
+    (hD : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨D, n⟩)
+    (hT : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨T, tl⟩) :
+    ∀ r ∈ mutR (p - 2560) (p - 2608) D n ++ [⟨T, tl⟩], ¬ r.Contains x 1 := by
+  have hchk : ∀ j < 2624, (j < 16 ∨ (64 ≤ j ∧ j < 176) ∨ (280 ≤ j ∧ j < 296) ∨ (304 ≤ j ∧ j < 336)) →
+      cov tightKs tightChunks j = true := by decide +kernel
+  have hj : (x - (p - 2624)).toNat < 2624 := by have := hx; simp only [Region.Contains] at this; omega
+  have hc {d k : Nat} (hfit : d + k ≤ 2624)
+      (hc : d = 0 ∧ k = 16 ∨ d = 64 ∧ k = 112 ∨ d = 280 ∧ k = 16 ∨ d = 304 ∧ k = 32)
+      (hr : (⟨p - 2624 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1) : False := by
+    have hr' : (x - (p - 2624 + BitVec.ofNat 64 d)).toNat < k := by
+      simp only [Region.Contains] at hr; omega
+    obtain ⟨hl, hu⟩ := (Offset.lt_iff x (p - 2624) (by omega_using [hfit])).mp hr'
+    apply hn
+    change (⟨p - 2624, 2624⟩ : Region).Contains x 1 ∧ cov tightKs tightChunks (x - (p - 2624)).toNat = true
+    exact ⟨hx, hchk _ hj (by rcases hc with ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ <;> omega)⟩
+  intro r hr hx'
+  simp only [mutR, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
+  · apply hc (d := 64) (k := 112) (by decide) (by simp)
+    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 64, 112⟩ : Region).Contains x 1
+    rw [X86_64.sub_add_ofNat p (show 64 ≤ 2624 by decide)]
+    exact hx'
+  · apply hc (d := 280) (k := 16) (by decide) (by simp)
+    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 280, 16⟩ : Region).Contains x 1
+    change (⟨p - BitVec.ofNat 64 2560 + BitVec.ofNat 64 216, 16⟩ : Region).Contains x 1 at hx'
+    rw [X86_64.sub_add_ofNat p (show 280 ≤ 2624 by decide)]
+    rw [X86_64.sub_add_ofNat p (show 216 ≤ 2560 by decide)] at hx'
+    exact hx'
+  · apply hc (d := 304) (k := 32) (by decide) (by simp)
+    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 304, 32⟩ : Region).Contains x 1
+    change (⟨p - BitVec.ofNat 64 2560 + BitVec.ofNat 64 240, 32⟩ : Region).Contains x 1 at hx'
+    rw [X86_64.sub_add_ofNat p (show 304 ≤ 2624 by decide)]
+    rw [X86_64.sub_add_ofNat p (show 240 ≤ 2560 by decide)] at hx'
+    exact hx'
+  · exact hc (d := 0) (k := 16) (by decide) (by simp)
+      (by simpa [below, BitVec.sub_sub] using hx')
+  · exact hD x hx hx'
+  · exact hT x hx hx'
+
+/-- Lift the body's footprint into its allocated stack frame. -/
+theorem frame_entry {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length) (hns : X86_64.nStack sig = 4)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hbody : ∀ s, (Sig.scratchContract abi sig "work" .u64 320 pre post true 16 leak).pre s →
+      ∃ t u, Exec isa c s t u ∧ abiPreserved s u ∧
+        EntryFrame s u (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 1).toNat
+          (stackArg s 2) (stackArg s 3).toNat)
+    (hc : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 16)
+    (hb : ∀ s, ∃ wd wt, (⟨stackArg s 0, (stackArg s 1).toNat⟩, wd) ∈ allRegions sig s ∧
+      (⟨stackArg s 2, (stackArg s 3).toNat⟩, wt) ∈ allRegions sig s)
+    {s u : State} {t : List Leak} (hs : (sig.contract abi pre post true 2624 leak).pre s)
+    (he : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c) s t u) :
+    ∃ tp p, Exec isa setupFramed s tp p ∧ ∀ x, (⟨s.gpr .rsp - 2624, 2624⟩ : Region).Contains x 1 →
+      ¬ WCov tightKs tightChunks (s.gpr .rsp) x → u.mem x = p.mem x := by
+  have hb' : 16 + 8 * X86_64.nStack sig + 320 * Elem.size .u64 ≤ 2608 := by rw [hns]; decide
+  have hp := narrowS_pre (nm := "work") (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide)
+    (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
+  obtain ⟨tb, ub, eb, ab, tp, p, ep, ap, hf⟩ := hbody _ hp
+  obtain ⟨e, _, hm, _⟩ := withStackArgScratch_runMem hk ⟨hb', by decide, by decide⟩ (by decide)
+    (SpSafe.of_all hc) hd hs eb ab
+  rw [hns] at e
+  obtain ⟨_, rfl⟩ := Exec.det he e
+  obtain ⟨ep', _, hmp, _⟩ := withStackArgScratch_runMem hk ⟨hb', by decide, by decide⟩ (by decide)
+    (SpSafe.of_all (by decide +kernel : entryRestore.all (fun i => !isa.writesSp i) = true))
+    (by decide : entryRestore.x86_64Depth ≤ 16) hs ep ap
+  rw [hns] at ep'
+  refine ⟨_, _, ep', fun x hx hn => ?_⟩
+  rw [hm, hmp]
+  have ha := narrowS_args (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide) hs
+  have hsp := (narrowS_facts (nm := "work") (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide) hs).1
+  have ha' := ha.2.1
+  rw [hns] at ha'
+  have hwork := ha.2.2.1
+  rw [hns] at hwork
+  simp only [show 16 + 8 * 4 = 48 from rfl, X86_64.sub_add_ofNat _ (show 48 ≤ 2608 by decide)] at hwork
+  rw [hwork, hsp, ha' 0 (by decide), ha' 1 (by decide), ha' 2 (by decide), ha' 3 (by decide)] at hf
+  have hr := (pre_args hk).mp hs
+  obtain ⟨wd, wt, hD, hT⟩ := hb s
+  have hd' := hr.2.2.2.2.1 ⟨s.gpr .rsp - 2624, 2624⟩ (by simp [stackBelow]) _ hD
+  have ht' := hr.2.2.2.2.1 ⟨s.gpr .rsp - 2624, 2624⟩ (by simp [stackBelow]) _ hT
+  exact hf x (tight_cov hx hn hd' ht')
+
+theorem seal_scratch_pre : ∀ s, (Proof.AesCcm.sealScratchContract abi 16).pre s → sealX86_64.pre s := by
+  sig_implies_pre [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
+        Proof.AesCcm.sealRoundsPost, Proof.AesCcm.sealX86_64, Proof.AesCcm.sealPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+        List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+
+theorem seal_bufs (s : State) : ∃ wd wt,
+    (⟨stackArg s 0, (stackArg s 1).toNat⟩, wd) ∈ allRegions Spec.Ccm.sealSig s ∧
+    (⟨stackArg s 2, (stackArg s 3).toNat⟩, wt) ∈ allRegions Spec.Ccm.sealSig s := by
+  refine ⟨true, true, ?_, ?_⟩ <;>
+    simp [allRegions, bufRegions, allArgs, Spec.Ccm.sealSig, Sig.bufs, Sig.words, Param.words,
+      argRegs, abi, List.range, List.range.loop, Elem.size]
+
+theorem seal_res (v : UpdateImpl) (fu : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    ResOk (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee))
+      (Spec.Ccm.sealContract abi 2624) 2624 tightKs tightChunks := by
+  letI : UpdateFits v := ⟨fun _ => fu, ⟨fun _ => fc⟩⟩
+  have body : ∀ s, (Proof.AesCcm.sealScratchContract abi 16).pre s →
+      ∃ t u, Exec isa («seal» v.callee v.ctr.callee) s t u ∧ abiPreserved s u ∧
+        EntryFrame s u (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 1).toNat
+          (stackArg s 2) (stackArg s 3).toNat := by
+    intro s hs
+    obtain ⟨t, u, he, ⟨hg, _⟩, hf⟩ := seal_wp_frame v (seal_scratch_pre s hs)
+    exact ⟨t, u, he, abiPreserved_of_exec (seal_mx v) he hg, hf⟩
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hn
+  obtain ⟨tp₁, p₁, ep₁, hf₁⟩ := frame_entry (by decide) (by decide) (sealPre_local _) body
+    (seal_spSafe v) (seal_xdepth v) seal_bufs h₁ e₁
+  obtain ⟨tp₂, p₂, ep₂, hf₂⟩ := frame_entry (by decide) (by decide) (sealPre_local _) body
+    (seal_spSafe v) (seal_xdepth v) seal_bufs h₂ e₂
+  have hsp := ho.2.2.1 .rsp (by decide)
+  rw [hf₁ x hx hn, hf₂ x (by rw [← hsp]; exact hx) (by rw [← hsp]; exact hn)]
+  apply setup_seal_res s₁ s₂ tp₁ tp₂ p₁ p₂ h₁ h₂ hp ho hu ep₁ ep₂ x hx
+  simp [WCov, cov, covC]
+
+theorem open_scratch_pre : ∀ s, (Proof.AesCcm.openScratchContract abi 16).pre s → openX86_64.pre s := by
+  sig_implies_pre [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Proof.AesCcm.openRoundsPost, Proof.AesCcm.openX86_64, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+        List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs, Spec.Ccm.openLeak, Proof.AesCcm.openLeak]
+
+theorem open_bufs (s : State) : ∃ wd wt,
+    (⟨stackArg s 0, (stackArg s 1).toNat⟩, wd) ∈ allRegions Spec.Ccm.openSig s ∧
+    (⟨stackArg s 2, (stackArg s 3).toNat⟩, wt) ∈ allRegions Spec.Ccm.openSig s := by
+  refine ⟨true, false, ?_, ?_⟩ <;>
+    simp [allRegions, bufRegions, allArgs, Spec.Ccm.openSig, Sig.bufs, Sig.words, Param.words,
+      argRegs, abi, List.range, List.range.loop, Elem.size]
+
+theorem open_res (v : UpdateImpl) (fu : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    ResOk (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee))
+      (Spec.Ccm.openContract abi 2624) 2624 tightKs tightChunks := by
+  letI : UpdateFits v := ⟨fun _ => fu, ⟨fun _ => fc⟩⟩
+  have body : ∀ s, (Proof.AesCcm.openScratchContract abi 16).pre s →
+      ∃ t u, Exec isa («open» v.callee v.ctr.callee) s t u ∧ abiPreserved s u ∧
+        EntryFrame s u (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 1).toNat
+          (stackArg s 2) (stackArg s 3).toNat := by
+    intro s hs
+    obtain ⟨t, u, he, ⟨hg, _⟩, hf⟩ := open_wp_frame v (open_scratch_pre s hs)
+    exact ⟨t, u, he, abiPreserved_of_exec (open_mx v) he hg, hf⟩
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hn
+  obtain ⟨tp₁, p₁, ep₁, hf₁⟩ := frame_entry (by decide) (by decide) (openPre_local _) body
+    (open_spSafe v) (open_xdepth v) open_bufs h₁ e₁
+  obtain ⟨tp₂, p₂, ep₂, hf₂⟩ := frame_entry (by decide) (by decide) (openPre_local _) body
+    (open_spSafe v) (open_xdepth v) open_bufs h₂ e₂
+  have hsp := ho.2.2.1 .rsp (by decide)
+  rw [hf₁ x hx hn, hf₂ x (by rw [← hsp]; exact hx) (by rw [← hsp]; exact hn)]
+  apply setup_open_res s₁ s₂ tp₁ tp₂ p₁ p₂ h₁ h₂ hp ho hu ep₁ ep₂ x hx
+  simp [WCov, cov, covC]
+
+end Selective
+
 /-- `vg_aes_ccm_seal` over `v`. Over an implementation of AES that needs
-working space (`v.ctr.free` is `none`), its frame of 2.6 KB is mostly that
-working space, wiped whole on return (`withScrubAll`); over the others, as
-before. -/
+working space, its frame of 2.6 KB is wiped whole on return
+(`withScrubAll`). Scratch-free callees permit selective wiping with the
+functional frame and public setup proofs above. -/
 def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
   let r : Registration Spec.Ccm.sealApi X86_64.target := {
     suffix := v.suffix
@@ -294,9 +540,9 @@ def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
     stack := 2624
     verified := Proof.AesCcm.seal_keyed (seal_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) }
-  match v.ctr.free with
-  | some _ => r
-  | none => withScrubAll r (sealOut _)
+  match v.free, v.ctr.free with
+  | some fu, some fc => RScrub.withScrubResC r (sealOut _) tightKs tightChunks (seal_res v fu fc)
+  | _, _ => withScrubAll r (sealOut _)
 
 /-- `vg_aes_ccm_open` over `v`, as `sealReg`. -/
 def openReg (v : UpdateImpl) : Registration Spec.Ccm.openApi X86_64.target :=
@@ -306,9 +552,9 @@ def openReg (v : UpdateImpl) : Registration Spec.Ccm.openApi X86_64.target :=
     stack := 2624
     verified := Proof.AesCcm.open_keyed (open_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }
-  match v.ctr.free with
-  | some _ => r
-  | none => withScrubAll r (openOut _)
+  match v.free, v.ctr.free with
+  | some fu, some fc => RScrub.withScrubResC r (openOut _) tightKs tightChunks (open_res v fu fc)
+  | _, _ => withScrubAll r (openOut _)
 
 end
 

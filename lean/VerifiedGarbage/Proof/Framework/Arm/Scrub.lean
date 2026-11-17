@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.CallWipe
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Returning without secret residue (ARMv7)
@@ -39,6 +40,182 @@ residue.
 -/
 
 @[expose] public section
+
+namespace VG.Arm
+
+/-! ### Runs with the same trace use the same unknowns
+The trace of a run records each branch it takes, and each instruction
+leaks a number of addresses fixed by the instruction, so two runs of code
+without indirect calls that leak the same trace take the same path: they
+make the same calls and release the same frames, and so use the same
+number of the state's unknowns (`Exec.path`). Two runs that start with the
+same unknowns therefore end with the same unknowns, which a proof that a
+function returns without secret residue needs when what a release leaves
+in a frame depends on them.
+-/
+
+/-- `c`, and the functions it calls, make no indirect call. -/
+def noIcall : Prog isa → Bool
+  | .block _ => true
+  | .seq a b => noIcall a && noIcall b
+  | .ite _ t e => noIcall t && noIcall e
+  | .loop b _ => noIcall b
+  | .call _ b => noIcall b
+  | .frame _ b _ => noIcall b
+  | .icall .. => false
+
+theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns := by
+  cases i <;> simp only [reduceExec, State.load32, State.load8, State.store32, State.store8,
+      Option.map_eq_some_iff, reduceCtorEq] at h <;> (repeat' split at h) <;>
+    (try simp only [Option.some.injEq, reduceCtorEq, Option.map_some, Option.map_none] at h) <;>
+    first
+    | (subst h; rfl)
+    | (obtain ⟨_, _, rfl⟩ := h; rfl)
+    | cases h
+
+/-- How many addresses an instruction leaks depends on the instruction alone. -/
+theorem addrs_length (i : Instr) (s s' : State) : (addrs i s).length = (addrs i s').length := by
+  cases i <;> simp [addrs, words]
+
+theorem push_unknowns {i : Instr} {s s' : State} (h : push i s = some s') : s'.unknowns = s.unknowns := by
+  cases i <;> simp only [push, reduceCtorEq] at h <;> (repeat' split at h) <;>
+    first | (cases h; rfl) | cases h
+
+/-- Two releases of a frame by the same instruction, from states with the same
+unknowns, leave the same unknowns. -/
+theorem pop_unknowns {j : Instr} {a₁ b₁ c₁ a₂ b₂ c₂ : State} (h₁ : isa.pop j a₁ b₁ = some c₁)
+    (h₂ : isa.pop j a₂ b₂ = some c₂) (hu : b₁.unknowns = b₂.unknowns) : c₁.unknowns = c₂.unknowns := by
+  cases j <;> simp only [isa, pop, reduceCtorEq] at h₁ h₂ <;> split at h₁ <;> split at h₂ <;>
+    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;> (dsimp only; rw [hu])
+
+/-- Two releases of a frame by the same instruction leave the same byte at
+`x` if it was the same before them, in states with the same stack pointer
+and unknowns. -/
+theorem pop_mem_congr {j : Instr} {a₁ b₁ c₁ a₂ b₂ c₂ : State} (h₁ : isa.pop j a₁ b₁ = some c₁)
+    (h₂ : isa.pop j a₂ b₂ = some c₂) (hsp : b₁.sp = b₂.sp) (hu : b₁.unknowns = b₂.unknowns) {x : Addr}
+    (hx : b₁.mem x = b₂.mem x) : c₁.mem x = c₂.mem x := by
+  cases j <;> simp only [isa, pop, reduceCtorEq] at h₁ h₂ <;> split at h₁ <;> split at h₂ <;>
+    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;>
+    (dsimp only; simp only [lose, hsp, hu, hx])
+
+theorem execBlock_path : ∀ {is : List Instr} {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak},
+    execBlock isa is s₁ = some (s₁', t₁) → execBlock isa is s₂ = some (s₂', t₂) →
+    t₁.length = t₂.length ∧ (s₁.unknowns = s₂.unknowns → s₁'.unknowns = s₂'.unknowns)
+  | [], _, _, _, _, _, _, h₁, h₂ => by
+    simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+    obtain ⟨rfl, rfl⟩ := h₁; obtain ⟨rfl, rfl⟩ := h₂
+    exact ⟨rfl, id⟩
+  | i :: is, s₁, s₂, s₁', s₂', t₁, t₂, h₁, h₂ => by
+    simp only [execBlock] at h₁ h₂
+    split at h₁
+    · cases h₁
+    · rename_i u₁ e₁
+      split at h₂
+      · cases h₂
+      · rename_i u₂ e₂
+        obtain ⟨⟨v₁, r₁⟩, k₁, q₁⟩ := Option.map_eq_some_iff.mp h₁
+        obtain ⟨⟨v₂, r₂⟩, k₂, q₂⟩ := Option.map_eq_some_iff.mp h₂
+        cases q₁; cases q₂
+        obtain ⟨hl, hu⟩ := execBlock_path k₁ k₂
+        refine ⟨?_, fun h => hu ?_⟩
+        · simp only [List.length_append, List.length_map, hl, addrs_length i s₁ s₂]
+        · rw [exec_unknowns e₁, exec_unknowns e₂, h]
+
+/-- Two runs of code without indirect calls from states with the same
+unknowns, whose traces agree up to what follows them, have the same trace
+and end with the same unknowns. -/
+theorem Exec.path {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
+    noIcall c = true → ∀ {s₂ s₂' : State} {t₂ r₁ r₂ : List Leak}, Exec isa c s₂ t₂ s₂' →
+      t₁ ++ r₁ = t₂ ++ r₂ → s₁.unknowns = s₂.unknowns → t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns := by
+  induction e₁ with
+  | block h =>
+    intro _ s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    cases e₂ with
+    | block h' =>
+      obtain ⟨hl, hk⟩ := execBlock_path h h'
+      exact ⟨(List.append_inj ht hl).1, hk hu⟩
+  | seq _ _ ih₁ ih₂ =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall, Bool.and_eq_true] at hc
+    cases e₂ with
+    | seq a b =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨rfl, hm⟩ := ih₁ hc.1 a ht hu
+      obtain ⟨rfl, he⟩ := ih₂ hc.2 b (List.append_cancel_left ht) hm
+      exact ⟨rfl, he⟩
+  | iteT _ _ ih =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall, Bool.and_eq_true] at hc
+    cases e₂ with
+    | iteT _ b =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih hc.1 b ht hu
+      exact ⟨rfl, he⟩
+    | iteF _ b => simp at ht
+  | iteF _ _ ih =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall, Bool.and_eq_true] at hc
+    cases e₂ with
+    | iteT _ b => simp at ht
+    | iteF _ b =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih hc.2 b ht hu
+      exact ⟨rfl, he⟩
+  | loopExit _ _ ih =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall] at hc
+    cases e₂ with
+    | loopExit b _ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨rfl, he⟩ := ih hc b ht hu
+      exact ⟨rfl, he⟩
+    | loopNext b _ _ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, -⟩ := ih hc b ht hu
+      simp at ht
+  | loopNext _ _ _ ih₁ ih₂ =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    cases e₂ with
+    | loopExit b _ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, -⟩ := ih₁ hc b ht hu
+      simp at ht
+    | loopNext b _ l =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, hm⟩ := ih₁ hc b ht hu
+      simp only [List.append_cancel_left_eq, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih₂ hc l ht hm
+      exact ⟨rfl, he⟩
+  | call k _ q ih =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall] at hc
+    cases e₂ with
+    | call k' b q' =>
+      simp only [isa, call, Option.some.injEq] at k k'
+      simp only [isa, ret] at q q'
+      split at q <;> [cases q; cases q]
+      split at q' <;> [cases q'; cases q']
+      subst k k'
+      simp only [List.map_nil, List.nil_append, List.append_nil] at ht ⊢
+      exact ih hc b ht (by simp only [hu])
+  | frame p _ q ih =>
+    intro hc s₂ s₂' t₂ r₁ r₂ e₂ ht hu
+    simp only [noIcall] at hc
+    cases e₂ with
+    | frame p' b q' =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨ha, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      obtain ⟨rfl, hm⟩ := ih hc b ht (by
+        rw [show isa.push = push from rfl] at p p'
+        rw [push_unknowns p, push_unknowns p', hu])
+      have ht' := List.append_cancel_left ht
+      obtain ⟨hb, -⟩ := List.append_inj ht' (by simp only [List.length_map]; exact addrs_length _ _ _)
+      rw [ha, hb]
+      exact ⟨rfl, pop_unknowns q q' hm⟩
+  | icall => intro hc; simp [noIcall] at hc
+  | icallNext => intro hc; simp [noIcall] at hc
+
+end VG.Arm
 
 namespace VG.Arm.Scrub
 
@@ -264,10 +441,18 @@ Code with frames also writes the stack below the stack pointer: at most
 `armStack c` bytes of it (`Exec.frameSp`), which hold what its frames held.
 `scrubF rb n c` is `c`, then a frame of the `n` bytes below the stack pointer
 whose every word is zeroed (`wipeBelow`), then `tail rb`: so those bytes are
-zero on return, and every other byte outside the buffers is what it was. The
-frame is apart from the buffers (the contract reserves it), so a
-postcondition that reads the memory on return only within the buffers
-(`PostOut`) still holds. -/
+zero when that frame is released, and every other byte outside the buffers
+is what it was. The frame is apart from the buffers (the contract reserves
+it), so a postcondition that reads the memory on return only within the
+buffers (`PostOut`) still holds.
+
+What the release then leaves in those bytes is the model's (`pop`), which a
+proof may not read back: two releases leave the same bytes where they held
+the same bytes, at the same stack pointer and with the same unknowns
+(`pop_mem_congr`). Two runs of `c` without indirect calls (`noIcall`) whose
+traces agree, as constant time makes them, end with the same unknowns
+(`Exec.path`), so two runs of `scrubF rb n c` agree on those bytes on
+return. -/
 
 open VG.Impl.StackScratch.Arm VG.Arm.FrameStack
 
@@ -411,14 +596,17 @@ theorem wipeStores_zero (R : Region) (u : State) (hR : R ∈ u.wr) (h2 : u.gpr .
           fun h => hx'' ((Offset.lt_iff x (State.addr (u.gpr .r12)) (d := 4 * w) (n := 4) (by omega)).mpr h)
         omega
 
-/-- `wipeBelow n` zeroes the `n` bytes below the stack pointer and changes
-no other byte, with a trace of their addresses alone; it keeps the regions,
-the stack pointer and every register but `r2` and `r12`. -/
+/-- `wipeBelow n` zeroes the `n` bytes below the stack pointer, in a frame
+it then releases (`v`, the state before the release), and changes no other
+byte, with a trace of their addresses alone; it keeps the regions, the stack
+pointer and every register but `r2` and `r12`. -/
 theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.toNat) :
-    ∃ u, Exec isa (wipeBelow n) w (wipeTr (w.sp - BitVec.ofNat 32 n) (n / 4)) u ∧
+    ∃ u v, Exec isa (wipeBelow n) w (wipeTr (w.sp - BitVec.ofNat 32 n) (n / 4)) u ∧
       u.rd = w.rd ∧ u.wr = w.wr ∧ u.sp = w.sp ∧
       (∀ r, r ≠ .r12 → r ≠ .r2 → u.gpr r = w.gpr r) ∧
-      Frame [belowA w.sp n] w.mem u.mem ∧ ∀ x, (belowA w.sp n).Contains x 1 → u.mem x = 0 := by
+      Frame [belowA w.sp n] w.mem u.mem ∧
+      isa.pop (.free n) (allocated n w) v = some u ∧ v.sp = w.sp - BitVec.ofNat 32 n ∧
+      v.unknowns = w.unknowns ∧ ∀ x, (belowA w.sp n).Contains x 1 → v.mem x = 0 := by
   obtain ⟨h0, h1, h8, henc⟩ := hn
   have h4 : 4 * (n / 4) = n := by omega
   have hsub : (w.sp - BitVec.ofNat 32 n).toNat = w.sp.toNat - n := sub_toNat' hsp
@@ -439,14 +627,19 @@ theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.t
   have ha : isa.push (.alloc n) w = some a := by
     simp only [isa, push, h0, h1, h8, henc, hsp, and_self, ite_true]
     rfl
-  have hfr : isa.pop (.free n) a { v with mem := m' } = some (freed n { v with mem := m' }) := by
+  have hfr : isa.pop (.free n) a { v with mem := m' } = some { freed n { v with mem := m' } with
+      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) } := by
     simp only [freed, isa, pop, h0, h1, h8, henc, v, a, allocated, State.setReg,
       List.head?_cons, and_self, ite_true]
-  refine ⟨freed n { v with mem := m' }, by simpa [addrs, wipeBelow] using Exec.frame ha (Exec.block hblk) hfr,
-    rfl, rfl, ?_, fun r hr12 hr2 => ?_, ?_, fun x hx => ?_⟩
+  refine ⟨{ freed n { v with mem := m' } with
+      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) },
+    { v with mem := m' },
+    by simpa [addrs, wipeBelow] using Exec.frame ha (Exec.block hblk) hfr,
+    rfl, rfl, ?_, fun r hr12 hr2 => ?_, ?_, hfr, rfl, rfl, fun x hx => ?_⟩
   · simp [freed, v, a, allocated, State.setReg, BitVec.sub_add_cancel]
   · simp [freed, v, a, allocated, State.setReg, hr12, hr2]
-  · simpa [freed, v, a, allocated, State.setReg] using hf
+  · have hf' : Frame [belowA w.sp n] w.mem m' := by simpa [v, a, allocated, State.setReg] using hf
+    exact hf'.trans (lose_frame _ _ _ _)
   · refine hz x ?_
     rw [h12, h4]
     simp only [Region.Contains] at hx
@@ -454,8 +647,9 @@ theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.t
 
 /-- A run of `scrubF rb n c` from `s`, after `c`'s run to `w`: what it leaks
 after `c`'s trace are the addresses of the wiped words, and it leaves what
-`tail rb` leaves, the `n` bytes below the stack pointer zero, and every other
-byte as `c` left it. -/
+`tail rb` leaves, the `n` bytes below the stack pointer what the release of
+a frame of them, all zero, leaves (`v`, the state before the release, with
+`w`'s unknowns), and every other byte as `c` left it. -/
 theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : FrameOk n) {c : Prog isa}
     (hd : armStack c ≤ n) {s w : State} {t : List Leak} (hsp : n ≤ s.sp.toNat) (he : Exec isa c s t w) :
     ∃ u, Exec isa (scrubF rb n c) s (t ++ (wipeTr (s.sp - BitVec.ofNat 32 n) (n / 4) ++ [])) u ∧
@@ -464,33 +658,35 @@ theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : Fra
       u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
       (u.gpr .r1 ++ u.gpr .r0) >>> rb = 0 ∧
       (u.gpr .r1 ++ u.gpr .r0).setWidth rb = (w.gpr .r1 ++ w.gpr .r0).setWidth rb ∧
-      (∀ x, (belowA s.sp n).Contains x 1 → u.mem x = 0) ∧
+      (∃ v a u', v.sp = s.sp - BitVec.ofNat 32 n ∧ v.unknowns = w.unknowns ∧
+        (∀ x, (belowA s.sp n).Contains x 1 → v.mem x = 0) ∧
+        isa.pop (.free n) a v = some u' ∧ u.mem = u'.mem) ∧
       (∀ x, ¬ (belowA s.sp n).Contains x 1 → u.mem x = w.mem x) ∧
       Frame (s.wr ++ [belowA s.sp n]) s.mem w.mem := by
   obtain ⟨hrd, hwr, hp⟩ := Exec.rdwr he
   have hfs := Frame.belowA_mono (Exec.frameSp he (Nat.le_trans hd hsp)) hd hsp
-  obtain ⟨v, hv, vrd, vwr, vsp, vreg, vf, vz⟩ := wipeBelow_run hn w (hp ▸ hsp)
+  obtain ⟨v, v₀, hv, vrd, vwr, vsp, vreg, vf, vpop, v₀sp, v₀u, vz⟩ := wipeBelow_run hn w (hp ▸ hsp)
   obtain ⟨u, hb, hm, urd, uwr, usp, upres, h2, h3, h12, fn, fz, fc, fv, hsh, hret⟩ := tail_run hrb v
-  rw [hp] at hv vf vz
+  rw [hp] at hv vf vz v₀sp
   refine ⟨u, .seq he (.seq hv (.block hb)), urd.trans (vrd.trans hrd), uwr.trans (vwr.trans hwr),
-    usp.trans (vsp.trans hp), fun r hr => ?_, h2, h3, h12, fn, fz, fc, fv, hsh, ?_, fun x hx => ?_,
+    usp.trans (vsp.trans hp), fun r hr => ?_, h2, h3, h12, fn, fz, fc, fv, hsh, ?_, ?_,
     fun x hx => ?_, hfs⟩
   · rw [upres r hr]
     exact vreg r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
   · rw [hret, vreg .r1 (by decide) (by decide), vreg .r0 (by decide) (by decide)]
-  · rw [hm]; exact vz x hx
+  · exact ⟨v₀, _, v, v₀sp, v₀u, vz, vpop, hm⟩
   · rw [hm]; exact vf x fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
 
 /-- `scrubF rb stack c` meets the contract of `c`, whose frames use at most
-the `stack` bytes the contract reserves and whose postcondition reads the
-memory on return only within the buffers, and returns without secret
-residue. -/
+the `stack` bytes the contract reserves, which makes no indirect call, and
+whose postcondition reads the memory on return only within the buffers, and
+returns without secret residue. -/
 theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hv : Verified target c (sig.contract A pre post wa stack leak)) (hd : armStack c ≤ stack)
-    (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
+    (hni : noIcall c = true) (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
     (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
     Verified target (scrubF rb stack c) (sig.contract A pre post wa stack leak) ∧
       NoResidue (scrubF rb stack c) (sig.contract A pre post wa stack leak) rb := by
@@ -505,7 +701,9 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
         u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
         (u.gpr .r1 ++ u.gpr .r0) >>> rb = 0 ∧
         (u.gpr .r1 ++ u.gpr .r0).setWidth rb = (w.gpr .r1 ++ w.gpr .r0).setWidth rb ∧
-        (∀ x, (belowA s.sp stack).Contains x 1 → u.mem x = 0) ∧
+        (∃ v a u', v.sp = s.sp - BitVec.ofNat 32 stack ∧ v.unknowns = w.unknowns ∧
+          (∀ x, (belowA s.sp stack).Contains x 1 → v.mem x = 0) ∧
+          isa.pop (.free stack) a v = some u' ∧ u.mem = u'.mem) ∧
         (∀ x, ¬ (belowA s.sp stack).Contains x 1 → u.mem x = w.mem x) ∧
         Frame (s.wr ++ [belowA s.sp stack]) s.mem w.mem := by
     intro s u T hs h
@@ -524,10 +722,14 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   · obtain ⟨a₁, w₁, x₁, rfl, -⟩ := run p₁ e₁
     obtain ⟨a₂, w₂, x₂, rfl, -⟩ := run p₂ e₂
     rw [hv.2.1 s₁ s₂ a₁ a₂ w₁ w₂ p₁ p₂ hp x₁ x₂, contract_pub_sp hA hp]
-  · intro s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ _ ho _ e₁ e₂
+  · intro s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp ho hu e₁ e₂
     obtain ⟨a₁, w₁, x₁, -, rd₁, wr₁, sp₁, pr₁, x2, x3, x12, n₁, z₁, c₁, v₁, r₁, -, zero₁, keep₁, f₁⟩ := run p₁ e₁
     obtain ⟨a₂, w₂, x₂, -, rd₂, wr₂, sp₂, pr₂, y2, y3, y12, n₂, z₂, c₂, v₂, r₂, -, zero₂, keep₂, f₂⟩ := run p₂ e₂
     obtain ⟨ord, owr, oreg, -, osp, -, -, -, -, omem⟩ := ho
+    -- The two runs of `c` leak the same trace, so end with the same unknowns.
+    have hw : w₁.unknowns = w₂.unknowns :=
+      (Exec.path x₁ hni (r₁ := []) (r₂ := []) x₂
+        (by rw [hv.2.1 s₁ s₂ a₁ a₂ w₁ w₂ p₁ p₂ hp x₁ x₂]) hu).2
     -- Each run keeps what the calling convention preserves.
     have abi₁ : ∀ r ∈ preserved, w₁.gpr r = s₁.gpr r := by
       obtain ⟨t', w', a', habi, -⟩ := hv.1 s₁ p₁
@@ -545,7 +747,11 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
       · cases r <;> simp_all [preserved]
     · rw [rd₁, wr₁] at hx
       by_cases hb : (belowA s₁.sp stack).Contains x 1
-      · rw [zero₁ x hb, zero₂ x (osp ▸ hb)]
+      · obtain ⟨v₁, _, u₁', vsp₁, vu₁, vz₁, vp₁, vm₁⟩ := zero₁
+        obtain ⟨v₂, _, u₂', vsp₂, vu₂, vz₂, vp₂, vm₂⟩ := zero₂
+        rw [vm₁, vm₂]
+        exact pop_mem_congr vp₁ vp₂ (by rw [vsp₁, vsp₂, osp]) (by rw [vu₁, vu₂, hw])
+          ((vz₁ x hb).trans (vz₂ x (osp ▸ hb)).symm)
       · rw [keep₁ x hb, keep₂ x (osp ▸ hb),
           f₁ x fun r hr => by
             rcases List.mem_append.mp hr with hr | hr
@@ -620,11 +826,11 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
       (by rw [withMode_ptrBits])).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
-its contract reserves, scrubbed: its code, then those bytes zeroed, then
-`tail`, which returns without secret residue, if its postcondition reads the
-memory on return only within the buffers. -/
+its contract reserves and which makes no indirect call, scrubbed: its code,
+then those bytes zeroed, then `tail`, which returns without secret residue,
+if its postcondition reads the memory on return only within the buffers. -/
 def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
-    (hn : FrameOk r.stack)
+    (hni : noIcall r.code = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hw : r.written = []) : Registration api target where
@@ -640,7 +846,7 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hn
+    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hni hn
       (by rw [withMode_ptrBits]) hp).1
   ofApi := r.ofApi
   ofSig := r.ofSig
@@ -656,7 +862,7 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hn
+    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hni hn
       (by rw [withMode_ptrBits]) hp).2⟩
 
 end VG.Arm.Scrub

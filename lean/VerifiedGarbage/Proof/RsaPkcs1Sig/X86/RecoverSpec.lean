@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -421,7 +421,8 @@ theorem init_framed (v : Ctr32Impl) :
       (Spec.Siv.initContract AArch64.abi 2560) :=
   AArch64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre AArch64.abi.ptrBits) (post := Spec.Siv.initPost AArch64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_siv_encrypt`'s precondition, without the
 working space. -/
@@ -437,7 +438,8 @@ theorem encrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Proof.AesSiv.encryptRoundsContract AArch64.abi 2576) :=
   AArch64.Verified.stackScratch (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost AArch64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2576) (encrypt_verified v) (by decide) (by decide) encFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2576) (encrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs m m₁ m₂ r hl) encFrameSat_pre
 
 /-- A state satisfying `vg_aes_siv_decrypt`'s precondition, without the
 working space. -/
@@ -454,6 +456,7 @@ theorem decrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
   AArch64.Verified.stackScratch (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak AArch64.abi.ptrBits))
-    (decrypt_verified v) (by decide) (by decide) decFrameSat_pre
+    (decrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs m m₁ m₂ r hl) decFrameSat_pre
 
 end VG.Proof.AesSiv.AArch64

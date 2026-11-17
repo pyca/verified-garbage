@@ -39,7 +39,11 @@ buffers) is taken as given: a secret the caller passed in a register, or
 left in one, is the caller's. So are the return addresses the code's calls
 leave in `ra`, and what a PLT entry may leave in `t0`–`t6`
 (`State.unknowns`), which the two runs share: they are where the code is,
-not data.
+not data. So is what replaces the bytes of a frame the function released
+(`lose`, `TCB/RISCV64/Isa.lean`): the unknowns say which bytes are replaced
+and by what, the same in both runs, so a byte that is not replaced is
+compared as the function left it, and a frame that held a secret must
+still be wiped.
 
 Not covered, because the model does not have them: `gp` and `tp` (which no
 modelled instruction changes), the floating-point and vector registers and

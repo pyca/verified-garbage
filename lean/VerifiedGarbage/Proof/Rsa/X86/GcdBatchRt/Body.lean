@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
 public import VerifiedGarbage.Proof.Mont.Words32
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Order.Ring.Int
-import VerifiedGarbage.Proof.Divstep.Tc32Words
+import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith

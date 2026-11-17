@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

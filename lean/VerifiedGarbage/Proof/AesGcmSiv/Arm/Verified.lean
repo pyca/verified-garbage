@@ -126,7 +126,8 @@ theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 470) (pre := Spec.GcmSiv.sealPre Arm.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 4) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealPre_local _) (sealPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => sealPostOut_local _ vs mm m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
 working space: its four words of stack arguments at `0x8000`. -/
@@ -148,7 +149,8 @@ theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (post := Proof.AesGcmSiv.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak Arm.abi.ptrBits))
     (m := 4) (Proof.AesGcmSiv.Verified.of_openScratch open_verified) (by decide) (by decide) (by decide) (by decide)
-    (openPre_local _) (openPost_local _) openFrameSat_pre
+    (openPre_local _) (openPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => openPostOut_local _ vs mm m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcmSiv.Arm

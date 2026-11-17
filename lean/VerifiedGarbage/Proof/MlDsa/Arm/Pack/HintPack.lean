@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, correct
@@ -513,10 +514,17 @@ theorem correct {s₀ : State} (hp : PPre s₀) :
     rw [hp.rd]; exact ⟨argR s₀, by simp, Region.contains_self _ _⟩)) fun s₁ e₁ => ?_)
   subst e₁
   refine WP.frame (rs := [.r4, .r5]) (r := .r4) rfl (hsp8 hp) (by decide)
-    (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel))) fun s₂ ⟨⟨hsp, h5, h4, hy⟩, hlr⟩ => ?_)
-  refine ⟨?_, by rw [popped_gpr (by decide), h5], by rw [popped_gpr (by decide), hlr]; rfl, ?_, hy⟩
+    (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel)))
+      fun s₂ ⟨⟨hsp, h5, h4, hy⟩, hlr⟩ mL uL hfl => ?_)
+  replace hfl : Frame [⟨State.addr s₀.sp - BitVec.ofNat 64 8, 8⟩] s₂.mem mL := by rw [← hfr hp]; exact hfl
+  dsimp only
+  refine ⟨?_, by rw [popped_gpr (by decide), h5], by rw [popped_gpr (by decide), hlr]; rfl, ?_, ?_⟩
   · simp only [popped, State.setReg, ite_true]; exact h4
   · simp only [popped_sp, hsp, P1, pushed_sp]
     exact BitVec.sub_add_cancel _ _
+  · rw [Proof.MlKem.bytesAt_frame hfl (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hp.b_y.symm)
+      (by have := hp.fitY; omega_arith)]
+    exact hy
 
 end VG.Proof.MlDsa.Arm.Pack.Hint

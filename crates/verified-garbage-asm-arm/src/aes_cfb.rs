@@ -37,6 +37,10 @@ ldr r8, [sp, #0]
 mov r10, r12
 cmp r8, #0
 beq 20f
+mov r0, r4
+mov r1, r5
+mov r2, r10
+bl {vg_aes_blocks_keys}
 22:
 mov r0, r4
 mov r1, r5
@@ -44,7 +48,7 @@ mov r2, r6
 mov r3, #1
 mov r12, r10
 push {{r12, lr}}
-bl {vg_aes_encrypt_blocks}
+bl {vg_aes_encrypt_blocks_keyed}
 ldr r12, [sp], #8
 ldr r12, [r7, #0]
 ldr lr, [r6, #0]
@@ -98,7 +102,8 @@ ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_blocks_keys = sym super::aes::vg_aes_blocks_keys::vg_aes_blocks_keys,
+        vg_aes_encrypt_blocks_keyed = sym super::aes::vg_aes_encrypt_blocks_keyed::vg_aes_encrypt_blocks_keyed,
     )
 }
 

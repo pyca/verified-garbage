@@ -273,7 +273,8 @@ theorem openPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64
     (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))
     (openPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.openWithPowersPre_local _)
-    (Proof.AesGcm.openWithPowersPost_local _) openFrameSatPw_pre
+    (Proof.AesGcm.openWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openWithPowersPostOut_local _ vs m m₁ m₂ r hl) openFrameSatPw_pre
     (hleak := Proof.AesGcm.openWithPowersLeak_local _)
 
 end VG.Proof.AesGcm.AArch64.Fast

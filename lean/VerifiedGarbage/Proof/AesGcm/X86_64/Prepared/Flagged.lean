@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -187,6 +187,52 @@ theorem streamEncryptToFlaggedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (s
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
+/-- `streamEncryptToPost` reads the memory on return only within the buffers,
+for a precondition `P` that makes the output as long as the input (`hP`). -/
+theorem streamEncryptToFlaggedPostOut_local (P : Curry (streamEncryptToFlaggedSig.words pb) (Mem → Prop))
+    (hP : ∀ ctx rd st al tl src len dst dl m,
+      Curry.apply (streamEncryptToFlaggedSig.words pb) P [ctx, rd, st, al, tl, src, len, dst, dl] m →
+      dl.setWidth pb = len.setWidth pb) :
+    ∀ vs m m₁ m₂ r, vs.length = (streamEncryptToFlaggedSig.words pb).length →
+    Curry.apply (streamEncryptToFlaggedSig.words pb) P vs m →
+    (∀ b ∈ Sig.bufs streamEncryptToFlaggedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamEncryptToFlaggedSig.words pb) (Proof.Gcm.streamEncryptToPost pb) vs m m₁ r →
+      Curry.apply (streamEncryptToFlaggedSig.words pb) (Proof.Gcm.streamEncryptToPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hp hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  have hdl := congrArg BitVec.toNat (hP _ _ _ _ _ _ _ _ _ _ hp)
+  have hdl' : (dl.setWidth pb).toNat ≤ dl.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+  simp only [streamEncryptToFlaggedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Proof.Gcm.streamEncryptToPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Proof.Gcm.streamEncryptToPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Proof.Gcm.streamEncryptToPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  refine ⟨AesGcm.streamRepr_congr (fun i hi => AesGcm.agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact AesGcm.bytesAt_congr fun i hi => AesGcm.agree_of hb.2.2.2 i (by omega_using [hi, hdl, hdl'])
+
+
 theorem sealGatherFlaggedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ sealGatherPreparedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
@@ -262,6 +308,42 @@ theorem sealGatherFlaggedPost_local : ∀ vs m₁ m₂ m' r,
     (AesGcm.sealGatherRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, AesGcm.sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
   exact AesGcm.post_local pb (by decide) (AesGcm.agree_of hb.1) (AesGcm.agree_of hb.2.1) (AesGcm.agree_of hb.2.2.1) hl h
+
+/-- `sealGatherRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealGatherFlaggedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealGatherPreparedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealGatherPreparedSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealGatherPreparedSig.words pb) (AesGcm.sealGatherRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 7
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealGatherPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (AesGcm.sealGatherRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (AesGcm.sealGatherRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, AesGcm.sealGatherRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr hle
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+      AesGcm.agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      AesGcm.agree_of hb.2.2.2.2 i (by omega_using [hi])]
+  exact h hr hle
+
 
 end VG.Proof.AesGcm.Flag
 
@@ -588,7 +670,7 @@ theorem streamToFrameSatFlagged_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.Ae
 theorem streamEncryptToFlagged_framed {t : Nat} (ht : t ≤ 48) (T : BlkToFn (CtxMode.flaggedT t)) (E : EncFn (CtxMode.flaggedT t)) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.AesGcm.Flag.streamEncryptToFlaggedContract t X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.AesGcm.Flag.streamEncryptToFlaggedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.Flag.streamEncryptToFlaggedPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.AesGcm.Flag.streamEncryptToFlaggedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.AesGcm.Flag.streamEncryptToFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToFlagged_core ht T E) (by decide) (by decide) (by decide)
@@ -708,7 +790,7 @@ theorem sealGatherFlagged_framed {t : Nat} (ht : t ≤ 48) (Sh : ShortFn (CtxMod
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)))
       (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.Flag.sealGatherFlaggedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.AesGcm.Flag.sealGatherFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherFlagged_core ht Sh I A T F Sp long inl) (by decide) (by decide) (by decide)

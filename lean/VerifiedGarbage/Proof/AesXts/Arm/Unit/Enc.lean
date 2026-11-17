@@ -878,7 +878,12 @@ theorem xts_call (enc : Bool) {s : State} {W T D S : BitVec 32} {N R : Nat} (h :
   have hN := toNat_n h.n
   refine Argon2.Arm.frameCall_ok (rs := [.r12, .lr]) (t := .r12) (by decide) (by decide) (by decide)
     (n := xname enc) (c := xcode enc) (xts_ok enc) (K := 16) (by have := xts_stack enc; simp; omega_using [this]) h.sp16 (h.pre enc) h.cov h.covW ?_
-  intro s₂ a hpost
+  intro s₂ mL uL hfl a hpost
+  have hfl' : Frame [stk16 s.sp] s₂.mem mL :=
+    hfl.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Argon2.Arm.stkR_sub (a := 4 * [Reg.r12, .lr].length) (b := 16)
+        (by decide) (by have := h.sp16; omega_using [this])⟩
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have eW : bytesAt (pushed [.r12, .lr] s).mem (State.addr W) (16 * (R + 1)) =
       bytesAt s.mem (State.addr W) (16 * (R + 1)) :=
@@ -902,8 +907,14 @@ theorem xts_call (enc : Bool) {s : State} {W T D S : BitVec 32} {N R : Nat} (h :
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-  · simpa using hpost.1
-  · simpa using hpost.2
+  · dsimp only
+    rw [blocksAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.stkD.symm) (by have := h.fitD; omega_using [hN])]
+    simpa using hpost.1
+  · dsimp only
+    rw [Proof.Cmac.bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.stkT.symm) (by decide)]
+    simpa using hpost.2
 
 /-- Calls of a whole-block function, with the same arguments and stack
 pointer in both runs, are constant time. -/

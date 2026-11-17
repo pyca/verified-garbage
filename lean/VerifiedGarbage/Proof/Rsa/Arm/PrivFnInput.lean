@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 
-theorem freed_mem_eq (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
-
 def entered (s : State) : State := allocated frameBytes (pcPushed s)
 
 structure PrivFnInput (g : PrivGeometry) (bs : Fin 8 → List Byte) (s : State) : Prop where

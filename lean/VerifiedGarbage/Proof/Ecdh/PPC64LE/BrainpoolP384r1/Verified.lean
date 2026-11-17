@@ -56,6 +56,12 @@ theorem post_of {s s' : State} (h : EPost brainpoolp384r1 s s') : ecdhPPC.post s
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .r5) (1 + 2 * brainpoolp384r1.C.len)) = ex s.mem (s.gpr .r4) (s.gpr .r5) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+open VG.Impl.Mont VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass
+  VG.Proof.Weierstrass.PPC64LE in
+/-- A slot the ladder does not use is outside the chain's: the forty-five slots, one by one. -/
+private theorem ladIx_apart : ∀ i, i < 45 → i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → i < DX ∨ T2 < i := by
+  decide
+
 set_option exponentiation.threshold 512 in
 open VG.Impl.Mont VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass
   VG.Proof.Weierstrass.PPC64LE in
@@ -122,10 +128,7 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s₀ : S
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
-      simp only [List.mem_cons, Proof.Ecdsa.PPC64LE.ladIx, not_or] at hl
-      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
-      omega), e₅ hi hl]
+  · rw [e₆ hi (by intro h; subst h; simp at hl) (ladIx_apart _ hi hl), e₅ hi hl]
   · rw [flagW, (U₅.trans U₆).word apF (by decide), ← flagW]
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),

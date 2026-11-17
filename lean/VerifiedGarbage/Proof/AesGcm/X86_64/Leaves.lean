@@ -258,7 +258,7 @@ theorem framed_leavesQ {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat
       u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
   have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
+  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
   rw [hm]
@@ -913,13 +913,6 @@ without secret residue (`sealW_resOk`). -/
 def sealWAesniPclmul : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   RScrub.withScrubResC (sealWPlain aesNiPclmulV) (sealPreparedOut _) sealKsA [8, 2616]
     (sealW_resOk aesNiPclmulV sealCode_aesniPclmul seal_aesniPclmul_leaves)
-
-/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
-context: `sealWAesniPclmul` for the function of the variant on AES-NI and
-PCLMULQDQ, which returns without secret residue, and `sealWPlain` for the
-others. -/
-def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
-  if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul else sealWPlain v
 
 /-! ## `vg_aes_gcm_stream_encrypt_prepared` and `_decrypt_prepared`, clearing by path -/
 
@@ -3371,7 +3364,7 @@ theorem openCode_framedA {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (withStackArgScratch 2616 4 c) (Proof.AesGcm.openRoundsContract X86_64.abi 2640) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := openPostOut_local _) (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2616) hv
@@ -3743,11 +3736,112 @@ def openWAesniPclmul : Registration Spec.Gcm.openPreparedApi X86_64.target :=
   RScrub.withScrubResC openWPlainA (openPreparedOut _) openKs openCs
     (openW_resOk aesNiPclmulV openCode_aesniPclmul open_aesniPclmul_leaves)
 
+/-! ## The one-shot functions over the bitsliced `vg_aes_ctr32`, wiped whole
+
+The variant on the baseline instruction set and the one on PCLMULQDQ alone
+(`scalarV`, `pclmulV`) run on CPUs without AES-NI, where the bitsliced
+`vg_aes_ctr32` and its working space, most of the frame, dominate: each of
+their one-shot functions is followed by the clearing of its whole frame, in
+chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`), which
+asks no proof of what the code leaves. -/
+
+/-- Whether `v` is `scalarV` or `pclmulV`, whose one-shot functions are wiped
+whole. -/
+def wipedWhole (v : GcmVariant) : Prop :=
+  v.impl.suffix = scalarV.impl.suffix ∨ v.impl.suffix = pclmulV.impl.suffix
+
+instance (v : GcmVariant) : Decidable (wipedWhole v) := inferInstanceAs (Decidable (_ ∨ _))
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
+context: `sealWAesniPclmul` for the function of the variant on AES-NI and
+PCLMULQDQ, which returns without secret residue, `sealWPlain` followed by the
+clearing of its whole frame of 2624 bytes for those `wipedWhole`, and
+`sealWPlain` for the others. -/
+def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul
+  else if wipedWhole v then RScrub.withScrubAllC (sealWPlain v) (sealPreparedOut _) [8, 2616]
+  else sealWPlain v
+
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read only the key
 context: `openWAesniPclmul` for the variant on AES-NI and PCLMULQDQ, which
-returns without secret residue, and `openWPlain` for the others. -/
+returns without secret residue, `openWPlain` followed by the clearing of its
+whole frame of 2632 bytes for those `wipedWhole`, and `openWPlain` for the
+others. -/
 def openWReg (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target :=
-  if v.impl.suffix = aesNiPclmulV.impl.suffix then openWAesniPclmul else openWPlain v
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then openWAesniPclmul
+  else if wipedWhole v then RScrub.withScrubAllC (openWPlain v) (openPreparedOut _) [8, 2624]
+  else openWPlain v
+
+/-- `vg_aes_gcm_open_to_prepared`'s postcondition reads the memory on return
+only within the buffers: the output, as long as the input by the
+precondition. -/
+theorem openToPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.openToPreparedContract X86_64.abi stack) (Spec.Gcm.openToPreparedSig.retBits 64) :=
+  postOut_of_local_pre ScrubAbi.plain fun vs m m₁ m₂ r hlen hpre hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, src, len, dst, dl, tag, tl], _ =>
+      simp only [Spec.Gcm.openToPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      have hdl : dl.toNat = len.toNat := hpre.2.1
+      intro key hk
+      show (match Spec.Gcm.openResult (Spec.Gcm.aes key) (Spec.Gcm.aes key 0) tl.toNat
+          (Spec.Aes.bytesAt m nonce nl.toNat) (Spec.Aes.bytesAt m src len.toNat)
+          (Spec.Aes.bytesAt m aad al.toNat) (Spec.Aes.bytesAt m tag tl.toNat) with
+        | some pt => r = 1 ∧ Spec.Aes.bytesAt m₂ dst len.toNat = pt
+        | none => r = 0 ∧ Spec.Aes.bytesAt m₂ dst len.toNat = List.replicate len.toNat 0)
+      rw [Scrub.bytesAt_of0 hb.2.2.2.2.1 (by omega_arith)]
+      exact h key hk
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read only the key
+context. -/
+def openToWPlain (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := openToCode v
+  verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
+  spSafe := openToCode_spAll v
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read only the key
+context: followed by the clearing of its whole frame of 2776 bytes for those
+`wipedWhole`. -/
+def openToWReg (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target :=
+  if wipedWhole v then RScrub.withScrubAllC (openToWPlain v) (openToPreparedOut _) [8, 2768]
+  else openToWPlain v
+
+/-- `vg_aes_gcm_seal_gather_prepared`'s postcondition reads the memory on
+return only within the buffers: the output and the tag. -/
+theorem sealGatherPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealGatherPreparedContract X86_64.abi stack)
+      (Spec.Gcm.sealGatherPreparedSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, src, sc, dst, len, tag], _ =>
+      simp only [Spec.Gcm.sealGatherPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro key hk hg
+      show _ = (Spec.Aes.bytesAt m₂ dst len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [Scrub.bytesAt_of0 hb.2.2.2.1 (by omega_arith), Scrub.bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk hg
+
+/-- `vg_aes_gcm_seal_gather_prepared` of a variant whose loops read only the
+key context. -/
+def sealGatherWPlain (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
+      (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
+        (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
+  verified := VG.Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_of_base
+    (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
+  spSafe := X86_64.withStackArgScratch_spSafe
+      (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
+
+/-- `vg_aes_gcm_seal_gather_prepared` of a variant whose loops read only the
+key context: followed by the clearing of its whole frame of 5128 bytes, in
+two chunks below the top 8 bytes as each must be under a page, for those
+`wipedWhole`. -/
+def sealGatherWReg (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target :=
+  if wipedWhole v then
+    RScrub.withScrubAllC (sealGatherWPlain v) (sealGatherPreparedOut _) [8, 2560, 2560]
+  else sealGatherWPlain v
 
 end
 

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # AES-OCB on ARMv7: the functions called
@@ -155,12 +156,59 @@ theorem covW : Covers (blkWr D S n) (pushed [.r12, .lr] s).wr := cover_pushed h.
 
 end BlkCall
 
-theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n) :
-    WP isa (blkFrame F) s (BlkPost F s K D S R n) := by
+/-- The frame of a call of a function on whole blocks, whatever its contract
+`k`, whose precondition holds at the function's entry (`hpre`): what the
+frame leaves, with the function's postcondition between its entry and the
+state `s₂` it returns in, whose memory differs from what the frame's pop
+leaves only in the frame. -/
+theorem blk_frame {name : String} {code : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hn : code.noCalls = true) {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n)
+    (hpre : k.pre ((pushed [.r12, .lr] s).callEntry.withRegions (blkRd s.sp K) (blkWr D S n)))
+    {Q : State → Prop}
+    (hQ : ∀ s' s₂ : State, s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
+      Frame [⟨State.addr D, 16 * n⟩, ⟨State.addr S, 2048⟩, below s.sp] s.mem s'.mem →
+      Frame [below s.sp] s₂.mem s'.mem →
+      k.post ((pushed [.r12, .lr] s).callEntry.withRegions (blkRd s.sp K) (blkWr D S n))
+        (s₂.withRegions (blkRd s.sp K) (blkWr D S n)) → Q s') :
+    WP isa (.frame (.push [.r12, .lr]) (.call name code) (.pop .r12 8)) s Q := by
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
-  refine WP.call (k := Proof.Aes.blocksArm F.f) F.correct
-    (rd := blkRd s.sp K) (wr := blkWr D S n) (h.pre F.f) h.cov h.covW ?_ F.noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  refine WP.call (k := k) hv (rd := blkRd s.sp K) (wr := blkWr D S n) hpre h.cov h.covW ?_ hn
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s.sp] s₂.mem ml := by
+    rw [Proof.AesGcm.Arm.e8, Proof.AesGcm.Arm.hA h.hsp] at hfl; exact hfl
+  have fA' := fA (s := s) h.hsp
+  have fB : Frame (blkWr D S n) (pushed [.r12, .lr] s).mem s₂.mem := hf
+  have slot : s₂.mem.readW (State.addr (pushed [.r12, .lr] s).sp) 32 = s.gpr .r12 :=
+    popSlot h.hsp fB (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.bd.sub_left (Region.sub_prefix (by decide)))
+      · exact (h.bs.sub_left (Region.sub_prefix (by decide))))
+  refine hQ _ s₂ ?_ ?_ ?_ (fun r hr hlr => ?_) ?_ hfl' hpost <;> dsimp only
+  · rw [popped_rd, hrd₂, pushed_rd]
+  · rw [popped_wr, hwr₂, pushed_wr]; rfl
+  · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
+  · by_cases h12 : r = .r12
+    · subst h12
+      show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
+      rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
+    · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
+  · refine ((fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+
+/-- What `blocksArm f`'s postcondition, between the function's entry in the
+frame and its return, says of the caller's memory. -/
+theorem BlkCall.out {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n)
+    {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₂ : State}
+    (hpost : (Proof.Aes.blocksArm f).post
+      ((pushed [.r12, .lr] s).callEntry.withRegions (blkRd s.sp K) (blkWr D S n))
+      (s₂.withRegions (blkRd s.sp K) (blkWr D S n))) :
+    Spec.Aes.statesAt s₂.mem (State.addr D) n =
+      (Spec.Aes.statesAt s.mem (State.addr D) n).map
+        (f R (Spec.Aes.bytesAt s.mem (State.addr K) (16 * (R + 1)))) := by
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have fA' := fA (s := s) h.hsp
@@ -176,49 +224,64 @@ theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : Bl
   simp only [Proof.Aes.blocksArm, State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1,
     h.r2, h.r3, hn, h.toNat_R, bytesK, statesD] at hpost
-  have fB : Frame (blkWr D S n) (pushed [.r12, .lr] s).mem s₂.mem := hf
-  have slot : s₂.mem.readW (State.addr (pushed [.r12, .lr] s).sp) 32 = s.gpr .r12 :=
-    popSlot h.hsp fB (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact (h.bd.sub_left (Region.sub_prefix (by decide)))
-      · exact (h.bs.sub_left (Region.sub_prefix (by decide))))
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
-  · rw [popped_rd, hrd₂, pushed_rd]
-  · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
-  · by_cases h12 : r = .r12
-    · subst h12
-      show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
-      rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
-    · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hpost
+  exact hpost
 
-theorem blk_rel (F : BlkFn) {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D S : BitVec 32, ∃ R n : Nat,
-      BlkCall s₁ K D S R n ∧ BlkCall s₂ K D S R n ∧ s₁.sp = s₂.sp) :
-    RelCT isa P (blkFrame F) fun _ _ => True := by
-  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, e⟩ := h _ _ hp; exact e) ?_
-  intro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, pa, pb⟩ e₁ e₂
-  obtain ⟨K, D, S, R, n, h₁, h₂, hsp⟩ := h _ _ hp
-  rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₁.hsp), Option.some.injEq] at pa
-  rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp), Option.some.injEq] at pb
-  subst pa pb
-  refine RelCT.call (k := Proof.Aes.blocksArm F.f) F.correct F.ct
-    (blkRd s₁.sp K) (blkWr D S n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
-    (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
-  subst ex ey
-  have p₁ := h₁.pre F.f
-  have p₂ := h₂.pre F.f
-  rw [← hsp] at p₂
-  refine ⟨p₁, p₂, ?_, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
+theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n) :
+    WP isa (blkFrame F) s (BlkPost F s K D S R n) :=
+  blk_frame F.correct F.noCalls h (h.pre F.f) fun _ _ hrd hwr hsp hsv hfr hm hpost =>
+    ⟨hrd, hwr, hsp, hsv, hfr, by
+      rw [statesAt_frame hm (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm)
+        (by have h₁ := h.fitD; have h₂ := toNat_ofNat32 h.n_lt; omega_using [h₁, h₂])]
+      exact h.out hpost⟩
+
+/-- Two calls with the same public arguments agree on what `blocksArm f`
+makes public, at the function's entry in the frame. -/
+theorem BlkCall.pub {s₁ s₂ : State} {K D S : BitVec 32} {R n : Nat} (h₁ : BlkCall s₁ K D S R n)
+    (h₂ : BlkCall s₂ K D S R n) (hsp : s₁.sp = s₂.sp)
+    (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) :
+    (Proof.Aes.blocksArm f).pub
+      ((pushed [.r12, .lr] s₁).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n))
+      ((pushed [.r12, .lr] s₂).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n)) := by
   simp only [Proof.Aes.blocksArm, stackArg_withRegions, Proof.AesGcm.Arm.stackArg_callEntry, arg0 h₁.hsp,
     arg0 h₂.hsp, view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide),
     view_gpr _ _ _ .r3 (by decide), view_sp, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.r12, h₂.r0, h₂.r1, h₂.r2,
     h₂.r3, h₂.r12, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- The frame of a call of a function on whole blocks is constant time, if
+the function is for its contract `k`, whose precondition and public data
+hold at its entry in two runs with the same public arguments. -/
+theorem blk_frame_rel {name : String} {code : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub code) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D S : BitVec 32, ∃ R n : Nat,
+      BlkCall s₁ K D S R n ∧ BlkCall s₂ K D S R n ∧ s₁.sp = s₂.sp ∧
+      k.pre ((pushed [.r12, .lr] s₁).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n)) ∧
+      k.pre ((pushed [.r12, .lr] s₂).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n)) ∧
+      k.pub ((pushed [.r12, .lr] s₁).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n))
+        ((pushed [.r12, .lr] s₂).callEntry.withRegions (blkRd s₁.sp K) (blkWr D S n))) :
+    RelCT isa P (.frame (.push [.r12, .lr]) (.call name code) (.pop .r12 8)) fun _ _ => True := by
+  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, e, _⟩ := h _ _ hp; exact e) ?_
+  intro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, pa, pb⟩ e₁ e₂
+  obtain ⟨K, D, S, R, n, h₁, h₂, hsp, p₁, p₂, hpub⟩ := h _ _ hp
+  rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₁.hsp), Option.some.injEq] at pa
+  rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp), Option.some.injEq] at pb
+  subst pa pb
+  refine RelCT.call (k := k) hv hct
+    (blkRd s₁.sp K) (blkWr D S n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
+    (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  subst ex ey
+  exact ⟨p₁, p₂, hpub, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
+
+theorem blk_rel (F : BlkFn) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D S : BitVec 32, ∃ R n : Nat,
+      BlkCall s₁ K D S R n ∧ BlkCall s₂ K D S R n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (blkFrame F) fun _ _ => True :=
+  blk_frame_rel F.correct F.ct fun s₁ s₂ hp => by
+    obtain ⟨K, D, S, R, n, h₁, h₂, hsp⟩ := h _ _ hp
+    have p₂ := h₂.pre F.f
+    rw [← hsp] at p₂
+    exact ⟨K, D, S, R, n, h₁, h₂, hsp, h₁.pre F.f, p₂, h₁.pub h₂ hsp F.f⟩
 
 end VG.Proof.AesOcb.Arm

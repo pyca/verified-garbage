@@ -414,11 +414,27 @@ structure Popped (n : Nat) (f : List Byte → List Byte → List Byte) (s u : St
   mxcsr : u.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
   rdx : u.gpr .rdx = s.gpr .rdi
 
-theorem popped_of {n : Nat} {f : List Byte → List Byte → List Byte} {s z : State} (hz : Called n f s z) :
-    Popped n f s (popped .rdx 1 z) := by
-  refine ⟨by rw [popped_mem]; exact hz.out, by rw [popped_mem]; exact hz.ret, fun r hr => ?_, by
-    rw [popped_rd, hz.rd], by rw [popped_wr, hz.wr]; rfl, by rw [popped_mxcsr]; exact hz.mxcsr, ?_⟩
-  · by_cases h : r = .rsp
+theorem popped_of {n w : Nat} {f : List Byte → List Byte → List Byte} {s z : State} (h : Pre n w 24 s)
+    (hz : Called n f s z) {m : Mem} {u : Nat → BitVec 64}
+    (fm : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩] z.mem m) :
+    Popped n f s { popped .rdx 1 z with mem := m, unknowns := u } := by
+  have hS := slot_toNat h
+  have hstk := h.stk
+  -- The released slot is in the stack below `rsp`, apart from `out` and the
+  -- return address.
+  have sP : (⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩ : Region).Sub (stkR s 24) :=
+    in_stk h (show _ ≤ (s.gpr .rsp - BitVec.ofNat 64 8).toNat by rw [hS]; omega_using [])
+      (show (s.gpr .rsp - BitVec.ofNat 64 8).toNat + 8 ≤ _ by rw [hS]; omega_using [hstk])
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, k1, -, -, -, b0, -⟩ := h
+  have retB : (retR s).Disjoint (stkR s 24) := Offset.base_disjoint_below _ (by decide)
+  refine ⟨?_, ?_, fun r hr => ?_, by dsimp only; rw [popped_rd, hz.rd], by dsimp only; rw [popped_wr, hz.wr]; rfl,
+    by dsimp only; rw [popped_mxcsr]; exact hz.mxcsr, ?_⟩
+  · rw [bytes_keep fm (k1.sub_left sP) b0, ← hz.out]
+  · rw [Frame.readW fm (r := retR s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact retB.sub_right sP) (by decide)]
+    exact hz.ret
+  · dsimp only
+    by_cases h : r = .rsp
     · subst h; rw [popped_rsp, hz.rsp]; exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ h (by rintro rfl; simp [calleeSaved] at hr), hz.saved r hr h]
   · show (popReg z .rdx 1).gpr .rdx = _
@@ -496,7 +512,7 @@ theorem frame_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Pr
   have hstk := h.stk
   refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_using [hstk]) ?_
   exact WP.mono (called_wp hk h) fun z hz =>
-    ⟨by rw [hz.rsp, pushed_rsp'], by rw [hz.wr, pushed_wr]; rfl, popped_of hz⟩
+    ⟨by rw [hz.rsp, pushed_rsp'], by rw [hz.wr, pushed_wr]; rfl, fun _ _ fm => popped_of h hz fm⟩
 
 theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
     (hk : Callee n w f c k) {name : String} (hn : n < 2 ^ 31) {s : State} (h : Pre n w 24 s) :

@@ -635,17 +635,17 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) :
     WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ Proof.Scrypt.scryptAArch64.post s s' := by
   have hL := lay_ok h
   have h96 := h.1
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_arith) (by decide) ?_ ?_
   · show 64 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 64 ≤ s.sp.toNat - 16
     omega_arith
   · show WP isa (scryptBody name pbk) (entered s) _
     refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, he⟩ => ?_)
-    refine WP.mono (rest_ok hv hd name hL hc he) fun u ⟨hu, ho⟩ => ?_
+    refine WP.mono (rest_ok hv hd name hL hc he) fun u ⟨hu, ho⟩ mm uu fl => ?_
     have lr : u.mem.read (u.sp + BitVec.ofNat 64 64) 8 = s.gpr .x30 := by
       rw [hu.sp, add_add, read8]; exact hu.kept.lr
-    refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ho⟩
+    refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
     · show ((freed 64 u).write .x .x30 (u.mem.read (u.sp + BitVec.ofNat 64 64) 8)).gpr r = _
       rw [lr, RegUpd.gpr_write]
       by_cases h30 : r = .x30
@@ -658,6 +658,15 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) :
     · show (((freed 64 u).write .x .x30 (u.mem.read (u.sp + BitVec.ofNat 64 64) 8)).v r).extractLsb' 0 64 = _
       rw [RegUpd.v_write]
       exact hu.vs r hr
+    · -- The output lies apart from the stack, whose frames' bytes are lost.
+      have hS : Region.Sub (below s.sp (64 + 16)) (lay s).STK :=
+        Offset.sub_below s.sp (a := 80) (n := 80) (b := 96) (m := 96) (by decide) (by decide)
+      have hb : Spec.Scrypt.bytesAt mm (stackArg s 3) (stackArg s 4).toNat =
+          Spec.Scrypt.bytesAt u.mem (stackArg s 3) (stackArg s 4).toNat :=
+        List.map_congr_left fun i hi => lost_byte (R := (lay s).OUT) fl (hL.ko.symm.sub_right hS)
+          (List.mem_range.mp hi)
+      show _ = some (Spec.Scrypt.bytesAt mm (stackArg s 3) (stackArg s 4).toNat)
+      rw [hb]; exact ho
 
 end
 

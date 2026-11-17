@@ -2,7 +2,6 @@ module
 
 -- separate module: its proofs (the candidate loop) build in parallel with `Core`'s, which `Loop` also imports
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Prep
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

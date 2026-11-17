@@ -81,7 +81,8 @@ theorem openCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     (n := 320) (pre := Spec.Gcm.openPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
-    (openCode_verified v hMK) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
+    (openCode_verified v hMK) (by decide) (by decide) (openPre_local _) (openPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 open VG.Proof.AesGcm.AArch64.Gather in

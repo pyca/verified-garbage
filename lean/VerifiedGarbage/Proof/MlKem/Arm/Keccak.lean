@@ -64,6 +64,17 @@ theorem addr_sub {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
   have := sp.isLt
   simp only [State.addr]; bv_omega_arith
 
+/-- The words a pop releases lie below the stack pointer, in `below s 8`. -/
+theorem lost_below {s : State} {n : Nat} {m m' : Mem} (hn : n ≤ 8) (hsp : 8 ≤ s.sp.toNat)
+    (h : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 n), n⟩] m m') : Frame [below s 8] m m' := by
+  refine h.sub fun r hr => ⟨below s 8, List.mem_singleton_self _, ?_⟩
+  rw [List.mem_singleton.mp hr, addr_sub (by omega_using [hn, hsp])]
+  intro a ha
+  have := s.sp.isLt
+  have e : (State.addr s.sp).toNat = s.sp.toNat := addr_toNat _
+  simp only [Region.Contains] at ha ⊢
+  bv_omega_arith
+
 theorem e8 : BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length) = BitVec.ofNat 32 8 := rfl
 
 theorem e4 : BitVec.ofNat 32 (4 * [Reg.lr].length) = BitVec.ofNat 32 4 := rfl
@@ -195,7 +206,8 @@ theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     (fun x n hi => by
       obtain ⟨r', hr', hc'⟩ := h.cw x n hi
       exact ⟨r', by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr', hc'⟩) ?_ absorb_noFrames
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost mL uL hfl
+  have hflB := lost_below (by decide) h.sp hfl
   simp only [Proof.Sha3.absorbArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem, State.withRegions_gpr,
@@ -207,19 +219,26 @@ theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_data.symm
   refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ (fun msg hm hp => ?_) ?_
   · have hr12 : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
+    dsimp only
     rw [popped_gpr hr12, hcs r hr hl, pushed_gpr]
-  · rw [popped_sp, hsp₂, push2_sp]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_rd, hrd₂, pushed_rd]
-  · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_mem]
-    refine (fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]
-    have e := hpost.1 msg (by
+  · dsimp only
+    rw [popped_sp, hsp₂, push2_sp]; exact BitVec.sub_add_cancel _ _
+  · dsimp only
+    rw [popped_rd, hrd₂, pushed_rd]
+  · dsimp only
+    rw [popped_wr, hwr₂, pushed_wr]; rfl
+  · refine ((fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hflB.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · have e := hpost.1 msg (by
       unfold Spec.Sha3.Repr at hm ⊢
       rw [Proof.Sha3.stateAt_congr (bytes_frame fA hst (by decide))]; exact hm) hp
-    rwa [bytesAt_frame fA hdat (by omega_using [hl])] at e
-  · rw [popped_gpr (by decide), hpost.2]
+    rw [bytesAt_frame fA hdat (by omega_using [hl])] at e
+    dsimp only
+    unfold Spec.Sha3.Repr at e ⊢
+    rw [Proof.Sha3.stateAt_congr (bytes_frame hflB hst (by decide))]; exact e
+  · dsimp only
+    rw [popped_gpr (by decide), hpost.2]
 
 theorem push_eq {rs : List Reg} {s a : State} (h : isa.push (.push rs) s = some a) : a = pushed rs s := by
   simp only [isa, push] at h
@@ -367,7 +386,8 @@ theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVe
     (fun x n hi => by
       obtain ⟨r', hr', hc'⟩ := h.cw x n hi
       exact ⟨r', by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr', hc'⟩) ?_ pad_noFrames
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost mL uL hfl
+  have hflB := lost_below (by decide) h.sp hfl
   simp only [Proof.Sha3.padArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem,
@@ -377,14 +397,19 @@ theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVe
     intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_st.symm
   refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ (fun msg hm hp => ?_)
   · have hr12 : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
+    dsimp only
     rw [popped_gpr hr12, hcs r hr hl, pushed_gpr]
-  · rw [popped_sp, hsp₂, push1_sp]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_rd, hrd₂, pushed_rd]
-  · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_mem]
-    refine (fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]
+  · dsimp only
+    rw [popped_sp, hsp₂, push1_sp]; exact BitVec.sub_add_cancel _ _
+  · dsimp only
+    rw [popped_rd, hrd₂, pushed_rd]
+  · dsimp only
+    rw [popped_wr, hwr₂, pushed_wr]; rfl
+  · refine ((fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hflB.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · dsimp only
+    rw [Proof.Sha3.stateAt_congr (bytes_frame hflB hst (by decide))]
     exact hpost msg (by
       unfold Spec.Sha3.Repr at hm ⊢
       rw [Proof.Sha3.stateAt_congr (bytes_frame fA hst (by decide))]; exact hm) hp
@@ -498,7 +523,8 @@ theorem squeeze_ok {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
     (fun x n hi => by
       obtain ⟨r', hr', hc'⟩ := h.cw x n hi
       exact ⟨r', by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr', hc'⟩) ?_ squeeze_noFrames
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost mL uL hfl
+  have hflB := lost_below (by decide) h.sp hfl
   simp only [Proof.Sha3.squeezeArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem, State.withRegions_gpr,
@@ -510,18 +536,27 @@ theorem squeeze_ok {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
     Proof.Sha3.stateAt_congr (bytes_frame fA hst (by decide))
   rw [est] at hpost
   obtain ⟨p1, p2, p3⟩ := hpost
+  have hout : ∀ r ∈ [below s 8], (regA out len).Disjoint r := by
+    intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_out.symm
   refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ ?_ ?_ ?_
   · have hr12 : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
+    dsimp only
     rw [popped_gpr hr12, hcs r hr hl, pushed_gpr]
-  · rw [popped_sp, hsp₂, push2_sp]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_rd, hrd₂, pushed_rd]
-  · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_mem]
-    refine (fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact p1
-  · rw [popped_gpr (by decide)]; exact p2
-  · rw [popped_gpr (by decide), popped_mem]; exact p3
+  · dsimp only
+    rw [popped_sp, hsp₂, push2_sp]; exact BitVec.sub_add_cancel _ _
+  · dsimp only
+    rw [popped_rd, hrd₂, pushed_rd]
+  · dsimp only
+    rw [popped_wr, hwr₂, pushed_wr]; rfl
+  · refine ((fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hflB.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · dsimp only
+    rw [bytesAt_frame hflB hout (by omega_using [hl])]; exact p1
+  · dsimp only
+    rw [popped_gpr (by decide)]; exact p2
+  · dsimp only
+    rw [popped_gpr (by decide), Proof.Sha3.stateAt_congr (bytes_frame hflB hst (by decide))]; exact p3
 
 theorem squeeze_ct {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → s₁.sp = s₂.sp ∧ ∃ st scr out rate pos len,

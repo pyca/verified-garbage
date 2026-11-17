@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
 
 /-! ### `Ecdsa.Rfc6979.X86.Loop`, which only this module used -/

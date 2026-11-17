@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
-import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

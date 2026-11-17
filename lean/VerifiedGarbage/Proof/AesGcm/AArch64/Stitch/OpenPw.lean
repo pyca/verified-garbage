@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
+import VerifiedGarbage.Proof.AesGcm.ScratchOpenTo
 meta import VerifiedGarbage.Proof.AesGcm.Rounds
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 
@@ -183,7 +185,8 @@ theorem openPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))
     (openPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.openWithPowersPre_local _)
-    (Proof.AesGcm.openWithPowersPost_local _) openFrameSatPw_pre
+    (Proof.AesGcm.openWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openWithPowersPostOut_local _ vs m m₁ m₂ r hl) openFrameSatPw_pre
     (hleak := Proof.AesGcm.openWithPowersLeak_local _)
 
 /-! ## `vg_aes_gcm_open_to_with_powers`, in one pass
@@ -412,7 +415,8 @@ theorem openToPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArc
     (post := Proof.AesGcm.openToWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2608) (leak := some (Spec.Gcm.openToWithPowersLeak AArch64.abi.ptrBits))
     (openToPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.openToWithPowersPre_local _)
-    (Proof.AesGcm.openToWithPowersPost_local _) openToFrameSatPw_pre
+    (Proof.AesGcm.openToWithPowersPost_local _)
+    (Proof.AesGcm.openToWithPowersPostOut_local _) openToFrameSatPw_pre
     (hleak := Proof.AesGcm.openToWithPowersLeak_local _)
 
 end VG.Proof.AesGcm.AArch64.Fast

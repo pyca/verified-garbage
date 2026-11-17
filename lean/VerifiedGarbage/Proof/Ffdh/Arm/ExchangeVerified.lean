@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFn
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered

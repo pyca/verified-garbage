@@ -26,6 +26,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.CrtGiven
 import VerifiedGarbage.Proof.Bignum.Arm.CrtGivenCT
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -530,8 +532,12 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by decide)
+  have outEq : Spec.Rsa.bytesAt ml (State.addr g.output) g.length =
+      Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length :=
+    rsa_bytes_frame hfl (by have := h.outputFits; omega_using [this]) (by
+      intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackOutput.symm)
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -549,8 +555,10 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
     · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, spV]
     exact BitVec.sub_add_cancel _ _
-  · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]
-    exact result
+  · dsimp only
+    revert result
+    cases Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) <;>
+      simp only [Spec.Rsa.written, popped_gpr (by decide : Reg.r0 ≠ .r12), outEq, memT, ret] <;> exact id
 
 end VG.Proof.Bignum.Arm
 end

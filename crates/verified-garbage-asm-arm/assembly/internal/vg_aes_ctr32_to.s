@@ -28,7 +28,7 @@ vg_aes_ctr32_to:
 	add r10, r10, r11
 	rev r10, r10
 	str r10, [r2, #12]
-	add r9, r12, #2016
+	add r9, r12, #672
 	add r12, r0, r1, lsl #4
 	add lr, r1, #1
 	mov r8, r3
@@ -575,7 +575,7 @@ vg_aes_ctr32_to:
 	ldr r10, [r9, #28]
 	eor r7, r7, r10
 	sub r10, r9, r8
-	cmp r10, #1984
+	cmp r10, #640
 	bne 24b
 	add r9, r9, #32
 	mov r10, #0

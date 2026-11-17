@@ -198,20 +198,20 @@ theorem Ctx.linOk {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s₀ R
     (by simp [sboxCfg]) rfl
 
 /-- The key area is outside what the layers write. -/
-theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 1024, 1024⟩ ⟨b, 128⟩ := by
+theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 224, 480⟩ ⟨b, 128⟩ := by
   intro a h₁ h₂
   simp only [Region.Contains] at h₁ h₂
   bv_omega
 
 theorem key_contains {b : BitVec 32} (hfit : b.toNat + 2048 ≤ 2 ^ 32) {R j k : Nat} (hR : R ≤ 14)
     (hj : j ≤ R) (hk : k < 8) :
-    (⟨State.addr b + 1024, 1024⟩ : Region).Contains
+    (⟨State.addr b + 224, 480⟩ : Region).Contains
       (wordAddr (b + BitVec.ofNat 32 (lastKey - 32 * R) + BitVec.ofNat 32 (32 * j)) k) (32 / 8) := by
   simp only [wordAddr, lastKey]
   rw [add_ofNat_ofNat, add_ofNat_ofNat, addr_add (by omega_using [hfit, hR, hj, hk])]
   simp only [Region.Contains]
-  rw [show State.addr b + BitVec.ofNat 64 (2016 - 32 * R + (32 * j + 4 * k)) - (State.addr b + 1024) =
-    BitVec.ofNat 64 (2016 - 32 * R + (32 * j + 4 * k) - 1024) by bv_omega, BitVec.toNat_ofNat,
+  rw [show State.addr b + BitVec.ofNat 64 (672 - 32 * R + (32 * j + 4 * k)) - (State.addr b + 224) =
+    BitVec.ofNat 64 (672 - 32 * R + (32 * j + 4 * k) - 224) by bv_omega, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega_using [hR, hj, hk])]
   omega_using [hR, hj, hk]
 
@@ -308,10 +308,10 @@ theorem t0_last (b : BitVec 32) {R m : Nat} (hR : R ≤ 14) (hm : m + 1 < R) :
       !decide (m + 2 = R) := by
   simp only [lastKey]
   by_cases h : m + 2 = R
-  · have e : b + BitVec.ofNat 32 (2016 - 32 * R + 32 * (m + 1)) - b - BitVec.ofNat 32 (2016 - 32) = 0 := by
+  · have e : b + BitVec.ofNat 32 (672 - 32 * R + 32 * (m + 1)) - b - BitVec.ofNat 32 (672 - 32) = 0 := by
       bv_omega
     rw [e]; simp [h]
-  · have e : b + BitVec.ofNat 32 (2016 - 32 * R + 32 * (m + 1)) - b - BitVec.ofNat 32 (2016 - 32) ≠ 0 := by
+  · have e : b + BitVec.ofNat 32 (672 - 32 * R + 32 * (m + 1)) - b - BitVec.ofNat 32 (672 - 32) ≠ 0 := by
       intro h'; apply h; bv_omega
     simpa [h] using e
 

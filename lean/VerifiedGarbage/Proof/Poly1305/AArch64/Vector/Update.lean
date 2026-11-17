@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Poly1305.Pair
+import VerifiedGarbage.Proof.Poly1305.Scratch
 meta import VerifiedGarbage.Proof.Poly1305.Pair
 
 /-!
@@ -256,6 +257,7 @@ theorem update_framed :
       (Spec.Poly1305.updateContract AArch64.abi 128) :=
   AArch64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 128) update_verified (by decide) (by decide) Radix64.updateFrameSat_pre
+    (bytes := 128) update_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Poly1305.updatePostOut_local _ vs m m₁ m₂ r hl) Radix64.updateFrameSat_pre
 
 end VG.Proof.Poly1305.AArch64.Vector

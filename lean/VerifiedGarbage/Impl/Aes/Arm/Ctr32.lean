@@ -68,8 +68,13 @@ def fkSlot : Nat := 47
 /-- Out of place: the slot of the destination pointer. -/
 def dstSlot : Nat := 48
 
-/-- The byte offset of the last round key in the scratch buffer. -/
-def lastKey : Nat := 2016
+/-- The byte offset of the last round key in the scratch buffer: the round
+keys follow the slots, the first of the 15 of AES-256 at byte 224. -/
+def lastKey : Nat := 672
+
+/-- The bytes of the scratch buffer the functions use: the slots, and the
+round keys after them, to the end of the last. They write no byte beyond. -/
+def scratchUsed : Nat := lastKey + 32
 
 /-- Load the scratch buffer's base (to `r12`), save the registers, load the
 counter block (`r2`) into its slots, and write the final counter

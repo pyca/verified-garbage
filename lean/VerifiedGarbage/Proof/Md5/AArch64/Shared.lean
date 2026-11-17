@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Md5.Scratch
 
 /-!
 # Md5 on AArch64: the shared contracts
@@ -54,6 +55,7 @@ theorem update : Verified AArch64.target
     (Spec.Md5.updateContract AArch64.abi (16 + 112)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     updateScratch (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Md5.updatePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified AArch64.target
@@ -61,6 +63,7 @@ theorem finalize : Verified AArch64.target
     (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     finalizeScratch (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Md5.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Md5.AArch64.Shared

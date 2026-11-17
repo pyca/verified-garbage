@@ -130,6 +130,9 @@ theorem signE_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s
     (P := fun m m' _ => Spec.Ed25519.bytesAt m (s.gpr .x1) 64 = Spec.Sha512.sha512 seed ∧
       Spec.Ed25519.bytesAt m' (s.gpr .x0) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m (s.gpr .x3) (s.gpr .x4).toNat))
+    (hP := fun _ _ _ _ f hq => ⟨hq.1, (List.map_congr_left fun i hi => VG.AArch64.lost_byte f
+      ((entry_writes h ⟨s.gpr .x0, 64⟩ (by rw [h.2.1]; simp)).symm.sub_right
+        (VG.AArch64.below_sub (by decide) (by decide))) (List.mem_range.mp hi)).trans hq.2⟩)
     (fun p hp => by
       have hf := Whole.saved_frame hp
       have hE' := (entry_input h hf (r := ⟨s.gpr .x1, 64⟩) (by rw [h.1]; simp)

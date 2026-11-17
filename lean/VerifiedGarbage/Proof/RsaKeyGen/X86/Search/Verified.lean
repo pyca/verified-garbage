@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABIValid
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Spec.RsaKeyGen.Contract

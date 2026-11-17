@@ -436,13 +436,16 @@ theorem called_wp (F : SealFn C) {s c : State} (h : Lay C s) (hi : C.inv s.mem (
 
 /-- The return address back in `x30`, and the frame freed. -/
 theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
-    WP isa (.block [.ldrSp .x30 8]) s' fun z => abiPreserved s (freed 16 z) ∧ gatherPost s (freed 16 z) := by
+    WP isa (.block [.ldrSp .x30 8]) s' fun z => ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 16, 16⟩] z.mem m →
+      abiPreserved s { freed 16 z with mem := m, unknowns := u } ∧
+        gatherPost s { freed 16 z with mem := m, unknowns := u } := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   refine WP.mono (ldrSp_ok (t := .x30) (k := 8) s' (by decide) ?_) fun z ⟨x30z, gz, mz, spz, rdz, wrz, vz⟩ => ?_
   · rw [hc.sp, hc.rd, hc.wr, Offset.add_ofNat_add_ofNat]
     exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), contains_off _ (by decide) (by decide) (by decide)⟩
   rw [hc.sp, Offset.add_ofNat_add_ofNat, hc.ra] at x30z
+  intro m u fl
   refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
   · -- The callee-saved registers.
     show z.gpr r = s.gpr r
@@ -456,8 +459,21 @@ theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
     show (z.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
     rw [vz]; exact hc.v r hr
   · -- The ciphertext and the tag.
-    show encryptWith _ _ 16 _ _ _ = (bytesAt z.mem (Dst s) (L s), bytesAt z.mem (Tg s) 16)
-    rw [mz]
+    show encryptWith _ _ 16 _ _ _ = (bytesAt m (Dst s) (L s), bytesAt m (Tg s) 16)
+    -- The `free` loses the frame's bytes, which lie apart from the data and the tag.
+    have e : s.sp - BitVec.ofNat 64 16 = Bs s + BitVec.ofNat 64 2576 := by
+      rw [h.hB]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega_using []
+    rw [e] at fl
+    have hD : bytesAt m (Dst s) (L s) = bytesAt z.mem (Dst s) (L s) :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := dR s) (h.bd.symm.sub_right (stk_sub s 2576 16 (by decide))) (List.mem_range.mp hi)
+    have hT : bytesAt m (Tg s) 16 = bytesAt z.mem (Tg s) 16 :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := tgR s) (h.bt.symm.sub_right (stk_sub s 2576 16 (by decide))) (List.mem_range.mp hi)
+    rw [hD, hT, mz]
     have hfc : Frame [FR s, dR s] s.mem (gMem s) := frame_gMem' h
     have apart {r : Region} (h₁ : (⟨Bs s, 2592⟩ : Region).Disjoint r) (h₂ : r.Disjoint (dR s)) :
         ∀ r' ∈ [FR s, dR s], r.Disjoint r' := by

@@ -495,21 +495,52 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn (PublicKey.codeExpanded umaal)) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hsp := h.sp
-  refine WP.frame (rs := [.lr]) (r := .lr) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [hsp])
-    (by decide) ?_
+  obtain outerR : (⟨State.addr (s.sp - BitVec.ofNat 32 (4 * [Reg.lr].length)), 4 * [Reg.lr].length⟩ : Region) =
+      ⟨K s + BitVec.ofNat 64 596, 4⟩ := by
+    rw [show 4 * [Reg.lr].length = 4 from rfl, addrK h (by decide)]
+  obtain innerR : (⟨State.addr (s.sp - BitVec.ofNat 32 (4 * [Reg.lr].length) -
+      BitVec.ofNat 32 (4 * [Reg.r0, .r1, .r3].length)), 4 * [Reg.r0, .r1, .r3].length⟩ : Region) =
+      ⟨K s + BitVec.ofNat 64 584, 12⟩ := by
+    rw [show 4 * [Reg.lr].length = 4 from rfl, show 4 * [Reg.r0, .r1, .r3].length = 12 from rfl, sub_sub',
+      addrK h (by decide)]
+  refine WP.frame (rs := [.lr]) (r := .lr) (by decide)
+    (by simp only [List.length_cons, List.length_nil]; omega_using [hsp]) (by decide) ?_
   refine WP.frame (rs := [.r0, .r1, .r3]) (r := .r3) (by decide)
     (by show 12 ≤ (s.sp - BitVec.ofNat 32 4).toNat; rw [sub_toNat' (by omega_using [hsp])]; omega_using [hsp]) (by decide)
-    (WP.mono (body_ok h) fun u ⟨hu, hE, hO⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩)
+    (WP.mono (body_ok h) fun u ⟨hu, hE, hO⟩ m₁ u₁ h₁ m₂ u₂ h₂ => ?_)
+  rw [pushed_sp, innerR] at h₁
+  rw [outerR] at h₂
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases hl : r = .lr
     · subst hl
-      rw [popped_gpr_self, popped_mem, popped_sp, show 4 * [Reg.r0, .r1, .r3].length = 12 from rfl, hu.sp,
-        sub16_add12, addrK h (by decide)]
+      dsimp only
+      rw [popped_gpr_self]
+      dsimp only
+      rw [popped_sp, show 4 * [Reg.r0, .r1, .r3].length = 12 from rfl, hu.sp, sub16_add12, addrK h (by decide),
+        h₁.readW (r := ⟨K s + BitVec.ofNat 64 596, 4⟩) (Region.contains_self _ _) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr
+          exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) (by decide)]
       exact hu.lr
     · have h3 : r ≠ .r3 := by rintro rfl; revert hr; decide
-      rw [popped_gpr hl, popped_gpr h3]; exact hu.cs r hr hl
+      dsimp only
+      rw [popped_gpr hl]
+      dsimp only
+      rw [popped_gpr h3]; exact hu.cs r hr hl
   · show u.sp + BitVec.ofNat 32 12 + BitVec.ofNat 32 4 = s.sp
     simp only [hu.sp, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.reduceAdd, BitVec.sub_add_cancel]
-  · sig_post [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords, Arm.abi,
+  · have hf : Frame [⟨K s + BitVec.ofNat 64 584, 12⟩, ⟨K s + BitVec.ofNat 64 596, 4⟩] u.mem m₂ :=
+      (h₁.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp).trans
+        (h₂.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp)
+    have apart : ∀ R : Region, (∀ {d n : Nat}, d + n ≤ 600 → R.Disjoint ⟨K s + BitVec.ofNat 64 d, n⟩) →
+        ∀ r ∈ [(⟨K s + BitVec.ofNat 64 584, 12⟩ : Region), ⟨K s + BitVec.ofNat 64 596, 4⟩], R.Disjoint r := by
+      intro R hR r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hR (by decide)
+      · exact hR (by decide)
+    rw [← bytesAt_frame hf (apart _ fun hd => (h.kE hd).symm) (by decide)] at hE
+    rw [← bytesAt_frame hf (apart _ fun hd => (h.kO hd).symm) (by decide)] at hO
+    sig_post [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts]
     exact ⟨hE, hO⟩
 

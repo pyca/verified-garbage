@@ -13,13 +13,11 @@ public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Dsa.X86.StageMinus
 public import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
 public import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
-import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
@@ -32,7 +30,7 @@ import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.Proof.Dsa.X86.StageValues
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 /-! ### `Dsa.X86.CallReduceTiming`, which this module and modules that import it used -/

@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Idea.KeyBits32
 import VerifiedGarbage.Proof.Idea.Arith32
 import VerifiedGarbage.Proof.Idea.KeyBits
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Idea.Local
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Idea.Memory32
@@ -1336,7 +1337,8 @@ theorem ecb_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 3
     (Spec.Idea.ecbContract Arm.abi 32) :=
   Arm.Verified.regScratch (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u32) (n := 8)
     (post := Spec.Idea.ecbPost Arm.abi.ptrBits) (wa := false) (stack := 0) ecb_verified
-    (by decide) (by decide) (by decide) ecbFrameSat_pre
+    (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Idea.ecbPostOut_local _ vs mm m₁ m₂ r hl) ecbFrameSat_pre
 
 /-- A state satisfying the inversion's precondition without the buffer. -/
 def invertFrameSat : State := { invertSat with wr := [⟨0x2000, 104⟩] }
@@ -1350,6 +1352,7 @@ theorem invertKey_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScr
     (Spec.Idea.invertKeyContract Arm.abi 24) :=
   Arm.Verified.regScratch (sig := Spec.Idea.invertKeySig) (nm := "scratch") (e := .u32) (n := 6)
     (post := Spec.Idea.invertKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0) invertKey_verified
-    (by decide) (by decide) (by decide) invertFrameSat_pre
+    (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Idea.invertKeyPostOut_local _ vs mm m₁ m₂ r hl) invertFrameSat_pre
 
 end VG.Proof.Idea.Arm

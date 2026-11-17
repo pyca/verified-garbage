@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 
 /-!
 # DSA domain checks on 32-bit ARM: constant time

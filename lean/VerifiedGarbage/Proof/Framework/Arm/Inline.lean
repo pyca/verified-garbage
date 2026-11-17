@@ -5,6 +5,9 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Inlining verified code (ARMv7)
@@ -379,5 +382,24 @@ theorem Verified.widen {c : Prog isa} {k k' : Contract isa} (h : Verified target
       k.pub (s₁.withRegions s₁.rd (wr s₁)) (s₂.withRegions s₂.rd (wr s₂)))
     (hsat : ∃ s, k'.pre s) : Verified target c k' :=
   regionModel.verified_widen (T := target) (fun _ _ _ _ h => h) h wr hpre hwr hpost hpub hsat
+
+/-- The bytes a frame loses when it is released differ only within the frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) :
+    Frame [⟨a, n⟩] m (lose m a n u) := fun x hx => by
+  have h : ¬ (x - a).toNat < n := fun h =>
+    hx ⟨a, n⟩ (List.mem_singleton_self _) (by simp only [Region.Contains]; omega_using [h])
+  simp only [lose, h, ite_false]
+
+/-- A byte of a region apart from a frame is what it was once the frame's
+bytes are lost. -/
+theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
+    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hd _ ?_ hc
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
 
 end VG.Arm

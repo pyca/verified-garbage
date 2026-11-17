@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialDigit
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStart
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialOctets

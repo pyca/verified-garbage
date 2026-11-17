@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -20,6 +19,178 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Framework.Arm.Call
+
+/-! ### `Ffdh.Arm.KeySearch.CallPre`, which only this module used -/
+
+section
+
+/-! The selected backend's shared precondition at the actual ARM call boundary. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
+open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
+
+theorem call_pre_legacy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {m : Mem}
+    (notcached : sampling.cachedContext = false) (facts : CallFacts p used) (h : ArgumentContext p used keys scalars s)
+    (sp : s.sp = callSp p) (mem : s.mem = callMem p used m (callSp p)) :
+    (GenerationPolicy.attemptContract sampling abi 176).pre (plainCallState p used s) := by
+  have size : sampling.argumentBytes = 32 := by simp only [GenerationPolicy.argumentBytes, notcached, Bool.false_eq_true, ite_false]
+  have plain : callRdPlain p used = [rDomain p, rTape p used, rCallArgs p] := by simp [callRdPlain, contextRegions, notcached]
+  have selected : sampling.attemptContract abi 176 = sampling.legacyAttemptContract abi 176 := by cases sampling <;> simp_all only [GenerationPolicy.cachedContext, Bool.true_eq_false] <;> rfl
+  have a0 := call_stackArg (j := 0) facts sp mem (by cases sampling <;> decide)
+  have a1 := call_stackArg (j := 1) facts sp mem (by cases sampling <;> decide)
+  have a2 := call_stackArg (j := 2) facts sp mem (by cases sampling <;> decide)
+  have a3 := call_stackArg (j := 3) facts sp mem (by cases sampling <;> decide)
+  have a4 := call_stackArg (j := 4) facts sp mem (by cases sampling <;> decide)
+  have a5 := call_stackArg (j := 5) facts sp mem (by cases sampling <;> decide)
+  have a6 := call_stackArg (j := 6) facts sp mem (by cases sampling <;> decide)
+  change stackArg (plainCallState p used s) 0 = callValue p used 0 at a0
+  change stackArg (plainCallState p used s) 1 = callValue p used 1 at a1
+  change stackArg (plainCallState p used s) 2 = callValue p used 2 at a2
+  change stackArg (plainCallState p used s) 3 = callValue p used 3 at a3
+  change stackArg (plainCallState p used s) 4 = callValue p used 4 at a4
+  change stackArg (plainCallState p used s) 5 = callValue p used 5 at a5
+  change stackArg (plainCallState p used s) 6 = callValue p used 6 at a6
+  simp only [callValue] at a0 a1 a2 a3 a4 a5 a6
+  have argAddr : stackArgAddr (plainCallState p used s) 0 = State.addr (callSp p) := by
+    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+    exact congrArg State.addr sp
+  have nativeLen : (BitVec.ofNat 32 p.len).toNat = p.len :=
+    Nat.mod_eq_of_lt facts.lenFits
+  have domainLen : (BitVec.ofNat 32 p.dlen).toNat = p.dlen :=
+    Nat.mod_eq_of_lt facts.domainLenFits
+  have capacity : (BitVec.ofNat 32 p.capacity).toNat = p.capacity :=
+    Nat.mod_eq_of_lt facts.capacityFits
+  rw [selected]
+  sig_pre [GenerationPolicy.legacyAttemptContract, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  simp only [h.x, h.xlen, h.y, h.ylen,
+    a0, a1, a2, a3, a4, a5, a6, nativeLen, domainLen, capacity, argAddr, sp, plain]
+  have stack (r : Region) (member : r ∈ [rX p, rY p, rDomain p, rTape p used, rScratch p, rCallArgs p]) :
+      (⟨State.addr (callSp p) - 176#64, 176⟩ : Region).Disjoint r := by
+    rw [← FrameStack.addr_sub' facts.stackFits]
+    exact facts.stack r member
+  have xa : (rX p).Disjoint ⟨State.addr (callSp p), 28⟩ := by simpa only [rCallArgs, size, Nat.reduceSub] using facts.xa
+  have ya : (rY p).Disjoint ⟨State.addr (callSp p), 28⟩ := by simpa only [rCallArgs, size, Nat.reduceSub] using facts.ya
+  have sa : (rScratch p).Disjoint ⟨State.addr (callSp p), 28⟩ := by simpa only [rCallArgs, size, Nat.reduceSub] using facts.sa
+  refine ⟨facts.stackFits, ?_, ?_, ?_, facts.xy, facts.xd, facts.xr, facts.xs, xa,
+    facts.yd, facts.yr, facts.ys, ya, facts.ds, facts.rs, sa,
+    stack (rX p) (by simp), stack (rY p) (by simp), stack (rDomain p) (by simp),
+    stack (rTape p used) (by simp), stack (rScratch p) (by simp), ?_, facts.xFit, facts.yFit, facts.domainFit, facts.tapeFit,
+    facts.scratchFit, facts.length, facts.domainLength, trivial, trivial, trivial, facts.scratch⟩
+  · have argsFit := facts.argsFit; simp only [GenerationPolicy.argumentBytes, notcached, Bool.false_eq_true, ite_false, Nat.reduceSub] at argsFit; omega_using [argsFit]
+  · simp only [rCallArgs, size, Nat.reduceSub]; rfl
+  · rfl
+  · simpa only [rCallArgs, size, Nat.reduceSub, State.addr] using stack (rCallArgs p) (by simp)
+
+
+theorem call_pre_cached {p : KeyPublic .cached} {used keys scalars : Nat} {original v s : State}
+    (live : KeyLive p original used keys scalars v) (room : used + p.len ≤ p.randLen)
+    (h : ArgumentContext p used keys scalars s)
+    (sp : s.sp = callSp p) (mem : s.mem = callMem p used v.mem (callSp p)) :
+    (GenerationPolicy.attemptContract .cached abi 176).pre (plainCallState p used s) := by
+  have facts := live.input.callFacts room
+  have a0 := call_stackArg (j := 0) facts sp mem (by decide)
+  have a1 := call_stackArg (j := 1) facts sp mem (by decide)
+  have a2 := call_stackArg (j := 2) facts sp mem (by decide)
+  have a3 := call_stackArg (j := 3) facts sp mem (by decide)
+  have a4 := call_stackArg (j := 4) facts sp mem (by decide)
+  have a5 := call_stackArg (j := 5) facts sp mem (by decide)
+  have a6 := call_stackArg (j := 6) facts sp mem (by decide)
+  have a7 := call_stackArg (j := 7) facts sp mem (by decide)
+  have a8 := call_stackArg (j := 8) facts sp mem (by decide)
+  change stackArg (plainCallState p used s) 0 = callValue p used 0 at a0
+  change stackArg (plainCallState p used s) 1 = callValue p used 1 at a1
+  change stackArg (plainCallState p used s) 2 = callValue p used 2 at a2
+  change stackArg (plainCallState p used s) 3 = callValue p used 3 at a3
+  change stackArg (plainCallState p used s) 4 = callValue p used 4 at a4
+  change stackArg (plainCallState p used s) 5 = callValue p used 5 at a5
+  change stackArg (plainCallState p used s) 6 = callValue p used 6 at a6
+  change stackArg (plainCallState p used s) 7 = callValue p used 7 at a7
+  change stackArg (plainCallState p used s) 8 = callValue p used 8 at a8
+  simp only [callValue] at a0 a1 a2 a3 a4 a5 a6 a7 a8
+  have argAddr : stackArgAddr (plainCallState p used s) 0 = State.addr (callSp p) := by
+    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+    exact congrArg State.addr sp
+  have nativeLen : (BitVec.ofNat 32 p.len).toNat = p.len := Nat.mod_eq_of_lt facts.lenFits
+  have domainLen : (BitVec.ofNat 32 p.dlen).toNat = p.dlen := Nat.mod_eq_of_lt facts.domainLenFits
+  have capacity : (BitVec.ofNat 32 p.capacity).toNat = p.capacity := Nat.mod_eq_of_lt facts.capacityFits
+  have ctxFit := live.input.context_fit rfl
+  have ctxLen : (BitVec.ofNat 32 p.contextWords).toNat = p.contextWords := Nat.mod_eq_of_lt (by omega_using [ctxFit])
+  have read : rContext p ∈ original.rd := by rw [live.input.read_regions]; simp [contextRegions, GenerationPolicy.cachedContext]
+  have sep := live.input.call_read read
+  have frame : Frame (callChanges p) v.mem s.mem := by
+    rw [mem]; exact (callMem_frame _ _ _ _).mono (by simp [callChanges, rArguments])
+  have held := live.cachedHeld.after_frame frame (by intro _; omega_using [ctxFit]) (by intro _; exact sep)
+  have canonical := held rfl
+  have dom := (live.input.call_domain_frame frame).trans live.domain
+  have valid := live.input.bounds.domainValid
+  have xy := facts.xy
+  have xd := facts.xd
+  have xr := facts.xr
+  have xs := facts.xs
+  have xa := facts.xa
+  have yd := facts.yd
+  have yr := facts.yr
+  have ys := facts.ys
+  have ya := facts.ya
+  have ds := facts.ds
+  have rs := facts.rs
+  have sa := facts.sa
+  have xc := (sep (rX p) (by simp [callChanges])).symm
+  have yc := (sep (rY p) (by simp [callChanges])).symm
+  have sc := (sep (rScratch p) (by simp [callChanges])).symm
+  have cs := (sep (rCallStack p) (by simp [callChanges])).symm
+  have sx := facts.stack (rX p) (by simp)
+  have sy := facts.stack (rY p) (by simp)
+  have sd := facts.stack (rDomain p) (by simp)
+  have sr := facts.stack (rTape p used) (by simp)
+  have ss := facts.stack (rScratch p) (by simp)
+  have saa := facts.stack (rCallArgs p) (by simp)
+  have stackFit := facts.stackFits
+  have argFit := facts.argsFit
+  have xFit := facts.xFit
+  have yFit := facts.yFit
+  have dFit := facts.domainFit
+  have rFit := facts.tapeFit
+  have sFit := facts.scratchFit
+  have length := facts.length
+  have domainLength := facts.domainLength
+  have scratch := facts.scratch
+  sig_pre [GenerationPolicy.attemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig,
+    generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  simp only [h.x, h.xlen, h.y, h.ylen, a0, a1, a2, a3, a4, a5, a6, a7, a8,
+    nativeLen, domainLen, capacity, ctxLen, argAddr, sp]
+  simp only [rX, rY, rDomain, rTape, rScratch, rCallArgs, rContext, rCallStack,
+    GenerationPolicy.argumentBytes, GenerationPolicy.cachedContext, ite_true, Nat.reduceSub,
+    FrameStack.belowA, State.addr,
+    callRdPlain, callWr, contextRegions, List.cons_append, List.nil_append] at *
+  have subAddr := FrameStack.addr_sub' stackFit
+  simp only [State.addr] at subAddr
+  rw [subAddr] at cs sx sy sd sr ss saa
+  simp only [Nat.mul_comm] at *
+  simp only [dom]
+  sig_and_intros
+  sig_close
+  all_goals exact True.intro
+
+ theorem call_pre_plain {p : KeyPublic sampling} {used keys scalars : Nat} {original v s : State}
+    (live : KeyLive p original used keys scalars v) (room : used + p.len ≤ p.randLen)
+    (h : ArgumentContext p used keys scalars s)
+    (sp : s.sp = callSp p) (mem : s.mem = callMem p used v.mem (callSp p)) :
+    (GenerationPolicy.attemptContract sampling abi 176).pre (plainCallState p used s) := by
+  cases sampling with
+  | full => exact call_pre_legacy rfl (live.input.callFacts room) h sp mem
+  | vetted => exact call_pre_legacy rfl (live.input.callFacts room) h sp mem
+  | cached => exact call_pre_cached live room h sp mem
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.KeySearch.CallConsts`, which this module and modules that import it used -/
 
@@ -317,8 +488,23 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
   refine FrameStack.WP.callF backend.generateKey_verified.1 (call_pre h room args spU memU symsU)
     (h.covers_reads room rest.rd rest.wr) (h.covers_writes rest.wr)
     (by rw [spU]; exact Nat.le_trans backend.keyStack facts.stackFits) ?_
-  intro t rd wr sp frame kept post symsT
-  refine ⟨h.restore ?_ ?_ ?_ ?_ (symsT.trans symsU) (h.attempt_frame memU spU frame backend.keyStack), ?_⟩
+  intro t rd wr sp frame kept post symsT m₀ u₀ hfl
+  change Frame [⟨State.addr (allocated sampling.argumentBytes s).sp, sampling.argumentBytes⟩] t.mem m₀ at hfl
+  rw [h.call_sp] at hfl
+  have argSep : ∀ r ∈ [rX p, rY p], r.Disjoint (rArguments p) := by
+    intro r hr
+    have hw : r ∈ original.wr ++ original.rd := by
+      rw [h.input.write_regions]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp
+    exact ((h.input.stack_separate hw).sub_left (arguments_sub h.input.bounds.stackFits)).symm
+  have fitLen : p.len ≤ 2 ^ 64 := by have := h.input.bounds.maxLength; omega_using [this]
+  have xeq : Spec.Rsa.bytesAt m₀ (State.addr p.xp) p.len = Spec.Rsa.bytesAt t.mem (State.addr p.xp) p.len :=
+    bytesAt_frame (r := rX p) hfl (by simpa using argSep _ (by simp)) fitLen
+  have yeq : Spec.Rsa.bytesAt m₀ (State.addr p.yp) p.len = Spec.Rsa.bytesAt t.mem (State.addr p.yp) p.len :=
+    bytesAt_frame (r := rY p) hfl (by simpa using argSep _ (by simp)) fitLen
+  refine ⟨h.restore ?_ ?_ ?_ ?_ (symsT.trans symsU) ((h.attempt_frame memU spU frame backend.keyStack).trans
+    (hfl.sub fun r hr => ⟨rArguments p, by simp only [List.mem_singleton] at hr; subst hr; simp [callChanges],
+      by simp only [List.mem_singleton] at hr; subst hr; exact fun _ hc => hc⟩)), ?_⟩
   · exact rd.trans rest.rd
   · change t.wr.tail = s.wr
     rw [wr, rest.wr]
@@ -331,6 +517,8 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
     rw [kept r (by revert r hr; decide) (by revert r hr; decide)]
     exact rest.gpr r (by revert r hr; decide)
   · have result := call_post h room args spU memU (selected_attempt_post.mp post)
-    exact ⟨result.status, result.output⟩
+    have out := result.output
+    rw [← xeq, ← yeq] at out
+    exact ⟨result.status, out⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

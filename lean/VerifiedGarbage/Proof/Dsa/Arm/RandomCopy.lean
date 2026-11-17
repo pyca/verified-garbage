@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
-public import VerifiedGarbage.Proof.Dsa.RandomBytes
 
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+public import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
-import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 

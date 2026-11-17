@@ -37,13 +37,14 @@ theorem updateFrameSat_pre : ∃ s, (Spec.Poly1305.updateContract Arm.abi 144).p
     [updateFrameSat, Update.updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using updateFrameSat
 
-theorem update_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 2 Impl.Poly1305.Arm.update)
+theorem update_framed {umaal : Bool} :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal))
       (Spec.Poly1305.updateContract Arm.abi 144) :=
   Arm.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (m := 2) Update.update_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ => updatePostOut_local _ vs mm m₁ m₂ r hl)
     updateFrameSat_pre
 
 /-- A state satisfying `vg_poly1305_finalize`'s precondition, without the
@@ -58,13 +59,14 @@ theorem finalizeFrameSat_pre : ∃ s, (Spec.Poly1305.finalizeContract Arm.abi 14
     [finalizeFrameSat, Fin.finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using finalizeFrameSat
 
-theorem finalize_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 1 Impl.Poly1305.Arm.finalize)
+theorem finalize_framed {umaal : Bool} :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal))
       (Spec.Poly1305.finalizeContract Arm.abi 144) :=
   Arm.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (m := 1) Fin.finalize_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ => finalizePostOut_local _ vs mm m₁ m₂ r hl)
     finalizeFrameSat_pre
 
 end VG.Proof.Poly1305.Arm

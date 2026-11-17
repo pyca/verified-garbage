@@ -24,12 +24,10 @@ import VerifiedGarbage.Proof.Dsa.X86.PrivateKey
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.Failure
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
-import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
-import VerifiedGarbage.Proof.Dsa.X86.HeaderFrame
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.Words32

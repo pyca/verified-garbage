@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 @[expose] public section
 
@@ -218,7 +219,8 @@ end
 pushes its two stack arguments `ra` and `rb`, from its contract `k`: it
 runs from `view`, and changes memory only within the regions it may write
 and the 16 bytes below the stack pointer; the pop loads `ra` back, so it
-changes no callee-saved register but `lr`. -/
+changes no callee-saved register but `lr`. Once the frame is released, memory
+is the callee's but in those 16 bytes. -/
 theorem WP.frameCallF {ra rb : Reg} {name : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hsu : stackUse c = 8) (hregs : regList [ra, rb] = true) {s : State} (hsp : 16 ≤ s.sp.toNat)
@@ -227,13 +229,18 @@ theorem WP.frameCallF {ra rb : Reg} {name : String} {c : Prog isa} {k : Contract
     (hw : Covers wr (pushed [ra, rb] s).wr) (hb : ∀ r ∈ wr, (blw16 s).Disjoint r) {Q : State → Prop}
     (hQ : ∀ s' s₂ : State, s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame (wr ++ [blw16 s]) s.mem s'.mem → (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
-      s'.mem = s₂.mem → k.post (view ra rb s rd wr) (s₂.withRegions rd wr) → Q s') :
+      Frame [blw16 s] s₂.mem s'.mem → k.post (view ra rb s rd wr) (s₂.withRegions rd wr) → Q s') :
     WP isa (.frame (.push [ra, rb]) (.call name c) (.pop ra 8)) s Q := by
   have hspA := spA hsp
   refine WP.frame (rs := [ra, rb]) (r := ra) hregs (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by simp) ?_
   refine WP.callF hv hpre hc hw (by rw [hsu, pushed_sp, e8, hspA]; omega_arith)
-    fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost => ?_
+    fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl => ?_
+  have hfl' : Frame [blw16 s] s₂.mem ml := by
+    rw [e8, hA hsp] at hfl
+    exact hfl.sub fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, slot_sub⟩
   rw [pushed_sp, e8, hsu] at hf
   rw [pushed_sp, e8] at hsp₂
   have hbA : belowA (s.sp - 8) 8 = ⟨State.addr s.sp - 16, 8⟩ := by
@@ -248,12 +255,12 @@ theorem WP.frameCallF {ra rb : Reg} {name : String} {c : Prog isa} {k : Contract
       · rw [List.mem_singleton] at hr; subst hr
         have := Offset.below_disjoint (State.addr s.sp - 8) (m := 8) (l := 4) (by decide)
         exact (Offset.sub_sub_ofNat (State.addr s.sp) 8 8 ▸ this).symm) (by decide), push_slot hsp]
-  refine hQ _ s₂ ?_ ?_ ?_ ?_ (fun r hr hlr => ?_) (popped_mem _ _ _) hpost
+  refine hQ _ s₂ ?_ ?_ ?_ ?_ (fun r hr hlr => ?_) hfl' hpost <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem]
-    refine ((push_frame hsp ra rb).sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+  · refine (((push_frame hsp ra rb).sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)).trans
+      (hfl'.mono fun r hr => List.mem_append_right _ hr)
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), slot_sub⟩
     · rcases List.mem_append.mp hr with hr | hr
@@ -407,7 +414,9 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
   simp only [Proof.CmacAes.Arm.updateArm, Proof.CmacAes.Arm.ciphAt, view_arg0 h.hsp,
     view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide), view_gpr .r3 (by decide),
     h.r0, h.r1, h.r2, h.r3, h.r9, hR, hN, State.withRegions_mem, State.callEntry_mem] at hpost
-  rw [hm, hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega_arith), keep h.bc (by decide)]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact h.bc.symm) (by decide),
+    hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega_arith), keep h.bc (by decide)]
   congr 1
   simp only [Spec.Cmac.blocksAt]
   refine List.map_congr_left fun i hi => keep (h.bd.sub_right (Offset.sub_base _ ?_)) (by decide)
@@ -539,7 +548,8 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
   have eP := keep h.bp (by have := h.len; omega_arith)
   intro _ _ hk msg hmod hne hst
   rw [eK, eK2, eSt, eP] at hpost
-  rw [hm]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact h.bst.symm) (by decide)]
   exact hpost hk msg hmod hne hst
 
 theorem fin_rel {K St P S sp₀ : BitVec 32} {L R : Nat} {Pr : State → State → Prop}

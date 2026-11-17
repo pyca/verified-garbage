@@ -6,11 +6,10 @@ import Batteries.Logic
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
-public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
 import VerifiedGarbage.Proof.Dsa.Layout
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.Minus
-public import VerifiedGarbage.Proof.Dsa.X86_64.Return
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
@@ -29,7 +28,6 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
 public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 
 /-! ### `Dsa.X86_64.CheckEffects`, which this module and modules that import it used -/
 

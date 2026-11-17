@@ -717,18 +717,22 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
   obtain belowY : FrameStack.belowA y.sp 56 = ⟨B, 56⟩ := by
     unfold FrameStack.belowA; rw [hy.sp, L.a3]
   refine WP.mono (pp_crtFrame_ok y hy.input hy.call) ?_
-  rintro z ⟨r0z, wordsz, spz, wrz, _, frameZ⟩
+  rintro z ⟨r0z, wordsz, spz, wrz, _, frameZ⟩ m₁ u₁ h₁
   rw [L.hPw] at wordsz frameZ
+  change Frame [⟨State.addr (x.sp - BitVec.ofNat 32 56), 56⟩] z.mem m₁ at h₁
+  rw [spX, L.a2] at h₁
   -- The CRT's arguments popped, and the caller's registers restored.
-  obtain zsp : (popped .r12 56 z).sp = s.sp - BitVec.ofNat 32 56 := by
+  obtain zsp : ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp = s.sp - BitVec.ofNat 32 56 := by
+    show (popped .r12 56 z).sp = _
     rw [popped_sp, spz, hy.sp]; exact BitVec.sub_add_cancel _ _
-  obtain saved : Spill.Saved (popped .r12 56 z).mem (State.addr (popped .r12 56 z).sp) s.gpr pcCalleeSaved := by
-    rw [popped_mem, zsp]
+  obtain saved : Spill.Saved ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).mem (State.addr ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp) s.gpr pcCalleeSaved := by
+    rw [zsp]
+    show Spill.Saved m₁ _ _ _
     obtain base := pc_push_callee_saved s (by omega_using [stackFit])
     obtain outer : (⟨State.addr (s.sp - 56) + BitVec.ofNat 64 0, 56 - 0⟩ : Region) = ⟨B + BitVec.ofNat 64 112, 56⟩ := by
       rw [BitVec.add_zero]; exact congrArg (Region.mk · 56) L.a1
     obtain f1 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
-        ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] (pcPushed s).mem z.mem := by
+        ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] (pcPushed s).mem m₁ := by
       obtain g1 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
           ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] (pcPushed s).mem y.mem := hy.frame.mono (by simp)
       obtain g3 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
@@ -741,7 +745,8 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
         · simp
         · simp [ppGeometry]
         · simp [ppGeometry]
-      exact g1.trans g3
+      exact (g1.trans g3).trans (h₁.mono fun r hr => by
+        simp only [List.mem_singleton] at hr; subst r; exact List.mem_cons_of_mem _ List.mem_cons_self)
     refine base.frame (lo := 0) (hi := 56) (by decide) f1 ?_
     rw [outer]
     intro r hr
@@ -751,14 +756,18 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     · exact Offset.disjoint _ (Or.inr (by omega_using [])) (by omega_using []) (by omega_using [])
     · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
     · exact wsD.sub_left (stackSub 112 (by decide))
-  obtain fitR : (popped .r12 56 z).sp.toNat + 56 ≤ 2 ^ 32 := by
+  obtain fitR : ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [zsp, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using []
-  obtain readR : InRegions ((popped .r12 56 z).rd ++ (popped .r12 56 z).wr) (State.addr (popped .r12 56 z).sp) 56 := by
-    refine ⟨⟨State.addr (popped .r12 56 z).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
-    rw [popped_wr, wrz, hy.wr, zsp]; exact List.mem_cons_self
-  refine WP.mono (pc_restore_ok (popped .r12 56 z) s.gpr fitR readR saved) ?_
-  rintro t ⟨restored, memT, restT⟩
-  obtain ret : t.gpr .r0 = z.gpr .r0 := by rw [restT.gpr .r0 (by decide), popped_gpr (by decide)]
+  obtain readR : InRegions (({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).rd ++ ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).wr) (State.addr ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp) 56 := by
+    refine ⟨⟨State.addr ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
+    rw [zsp]; show _ ∈ (popped .r12 56 z).wr
+    rw [popped_wr, wrz, hy.wr]; exact List.mem_cons_self
+  refine WP.mono (pc_restore_ok ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State) s.gpr fitR readR saved) ?_
+  rintro t ⟨restored, memT, restT⟩ m₂ u₂ h₂
+  change Frame [⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩] t.mem m₂ at h₂
+  rw [L.a1] at h₂
+  obtain ret : t.gpr .r0 = z.gpr .r0 := by
+    rw [restT.gpr .r0 (by decide)]; exact popped_gpr (r := .r12) (q := .r0) (by decide) 56 z
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · intro r hr
     obtain ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -776,7 +785,14 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, zsp]; exact BitVec.sub_add_cancel _ _
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r12), ret, r0z]
-  · rw [popped_mem, memT, popped_mem]; exact wordsz
+  · dsimp only
+    rw [Proof.Rsa.wordsAt_frame h₂ (by omega_using [L.preFit])
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact (preD.sub_left (stackSub 112 (by decide))).symm),
+      memT]
+    show Spec.Rsa.wordsAt m₁ _ _ = _
+    rw [Proof.Rsa.wordsAt_frame h₁ (by omega_using [L.preFit])
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact (preD.sub_left (stackSub 56 (by decide))).symm)]
+    exact wordsz
 
 /-! ## Against the specification -/
 

@@ -37,7 +37,7 @@ code (`X86_64.RTaint`) finds may hold secrets. -/
 def updateKs : List Nat := keep_for% Spec.Sha1.updateApi.sig (updFn compress).stack (updFn compress).code
 
 theorem updateRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updateKs (chunks (updFn compress).stack) :=
-  RScrub.resOk_reg0 (updFn compress).reg updateKs (by taint_decide)
+  RScrub.resOk_reg0 (updFn compress).reg updateKs (by taint_decide_lit)
 
 def update : StreamFn := (updFn compress).scrub .sse updateKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (updOut compress) updateRes
@@ -48,7 +48,7 @@ theorem update_noResidue : NoResidue update.code (updFn compress).contract (updF
 def finalizeKs : List Nat := keep_for% Spec.Sha1.finalizeApi.sig (finFn compress).stack (finFn compress).code
 
 theorem finalizeRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finalizeKs (chunks (finFn compress).stack) :=
-  RScrub.resOk_reg0 (finFn compress).reg finalizeKs (by taint_decide)
+  RScrub.resOk_reg0 (finFn compress).reg finalizeKs (by taint_decide_lit)
 
 def finalize : StreamFn := (finFn compress).scrub .sse finalizeKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (finOut compress) finalizeRes
@@ -59,7 +59,7 @@ theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (
 def digestKs : List Nat := keep_for% Spec.Sha1.digestApi.sig (digFn compress).stack (digFn compress).code
 
 theorem digestRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digestKs (chunks (digFn compress).stack) :=
-  RScrub.resOk_reg0 (digFn compress).reg digestKs (by taint_decide)
+  RScrub.resOk_reg0 (digFn compress).reg digestKs (by taint_decide_lit)
 
 def digest : StreamFn := (digFn compress).scrub .sse digestKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (digOut compress) digestRes
@@ -85,7 +85,7 @@ theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
       (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) h).any
       (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
+  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide_lit)
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }

@@ -38,8 +38,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
 
 /-! ### `Dsa.AArch64.PrevalidatedVerified`, which only this module used -/
 

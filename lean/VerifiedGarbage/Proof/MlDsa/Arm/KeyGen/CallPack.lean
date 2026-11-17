@@ -326,7 +326,10 @@ theorem bp_ok {c : Prog isa} (hc : Callee c (fun stk => bitPackContract Arm.abi 
   obtain ⟨s₃, hm₃, -, hp⟩ := h3
   obtain ⟨g0, g1, g2, g3, ga⟩ := bpG hs m (sbpRd L f ++ [argR s]) (sbpWr L o l)
   have := bp_post hp
-  rwa [State.withRegions_mem, hm₃, g0, g1, g2, g3, ga, hs.addrE m.pf (by decide), hs.addrE m.po l0,
+  rw [Proof.MlKem.bytesAt_frame hm₃ (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (hs.kE m.po (by have := hc.stack; omega_arith) rfl).symm)
+    (by omega_arith)]
+  rwa [State.withRegions_mem, g0, g1, g2, g3, ga, hs.addrE m.pf (by decide), hs.addrE m.po l0,
     push_polyAt hs e1 hm _ _ m.pf, imm_toNat la, imm_toNat lb, imm_toNat ll] at this
 
 theorem bp_tr {c : Prog isa} (hc : Callee c (fun stk => bitPackContract Arm.abi stk) S) (hS : 4 + S ≤ STK)

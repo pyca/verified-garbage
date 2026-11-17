@@ -27,8 +27,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.RsaKeyGen.X86.TimingSeg
-import VerifiedGarbage.Proof.RsaKeyGen.X86.OrLoopRt
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.R2Timing
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Loop
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.FrontRt.Load
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
@@ -39,21 +39,17 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCoreTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.FrameOutside
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentImport
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCoreTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedResult
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultTiming

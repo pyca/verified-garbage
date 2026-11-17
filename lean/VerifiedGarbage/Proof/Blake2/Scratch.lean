@@ -110,15 +110,12 @@ theorem finalizeSPost_local (pb : Nat) :
     exact h h0 d (repr_congr' (by decide)
       (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hl hc
 
-/-! ## What the postconditions read of the memory on return -/
-
-/-- `updateBPost` reads the memory on return only within the buffers (the
-state). -/
-theorem updateBPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateBSig.words pb).length →
+/-- `updateBPost` reads the memory on return only within the state. -/
+theorem updateBPost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateBSig.words pb).length →
     (∀ b ∈ Sig.bufs updateBSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateBSig.words pb) (updateBPost pb) vs m m₁ r →
       Curry.apply (updateBSig.words pb) (updateBPost pb) vs m m₂ r
-  | [st, _, _, _], m, m₁, m₂, r, _, hb, h => by
+  | [st, ct, dt, ln], m, m₁, m₂, r, _, hb, h => by
     simp only [updateBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
@@ -127,27 +124,26 @@ theorem updateBPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upd
     exact repr_congr' (by decide)
       (fun i hi => hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)) (h h0 d hr hc hl)
 
-/-- `finalizeBPost` reads the memory on return only within the buffers (the
-digest). -/
-theorem finalizeBPostOut_local (pb : Nat) :
+theorem finalizeBPost_out (pb : Nat) :
     ∀ vs m m₁ m₂ r, vs.length = (finalizeBSig.words pb).length →
       (∀ b ∈ Sig.bufs finalizeBSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (finalizeBSig.words pb) (finalizeBPost pb) vs m m₁ r →
         Curry.apply (finalizeBSig.words pb) (finalizeBPost pb) vs m m₂ r
-  | [_, _, ot], m, m₁, m₂, r, _, hb, h => by
+  | [st, ct, ot], m, m₁, m₂, r, _, hb, h => by
     simp only [finalizeBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
+    have ho : ∀ i < 64, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+      (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hl hc
-    refine Eq.trans (bytesAt_congr fun i hi => ?_) (h h0 d hr hl hc)
-    exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
+    show bytesAt m₂ ot 64 = _
+    rw [bytesAt_congr ho]
+    exact h h0 d hr hl hc
 
-/-- `updateSPost` reads the memory on return only within the buffers (the
-state). -/
-theorem updateSPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSSig.words pb).length →
+theorem updateSPost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateSSig.words pb) (updateSPost pb) vs m m₁ r →
       Curry.apply (updateSSig.words pb) (updateSPost pb) vs m m₂ r
-  | [st, _, _, _], m, m₁, m₂, r, _, hb, h => by
+  | [st, ct, dt, ln], m, m₁, m₂, r, _, hb, h => by
     simp only [updateSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
@@ -156,18 +152,20 @@ theorem updateSPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upd
     exact repr_congr' (by decide)
       (fun i hi => hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)) (h h0 d hr hc hl)
 
-/-- `finalizeSPost` reads the memory on return only within the buffers (the
-digest). -/
-theorem finalizeSPostOut_local (pb : Nat) :
+theorem finalizeSPost_out (pb : Nat) :
     ∀ vs m m₁ m₂ r, vs.length = (finalizeSSig.words pb).length →
       (∀ b ∈ Sig.bufs finalizeSSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (finalizeSSig.words pb) (finalizeSPost pb) vs m m₁ r →
         Curry.apply (finalizeSSig.words pb) (finalizeSPost pb) vs m m₂ r
-  | [_, _, ot], m, m₁, m₂, r, _, hb, h => by
+  | [st, ct, ot], m, m₁, m₂, r, _, hb, h => by
     simp only [finalizeSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
+    have ho : ∀ i < 32, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+      (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hl hc
-    refine Eq.trans (bytesAt_congr fun i hi => ?_) (h h0 d hr hl hc)
-    exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
+    show bytesAt m₂ ot 32 = _
+    rw [bytesAt_congr ho]
+    exact h h0 d hr hl hc
+
 
 end VG.Proof.Blake2

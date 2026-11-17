@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset

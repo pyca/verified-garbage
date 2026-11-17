@@ -28,52 +28,145 @@ def verifyCombine (umaal : Bool) : Prog isa :=
   .seq copyPointToQ (.seq (.block (pointTableRead 7904))
     (.seq (Point16.addCall umaal) (.seq copyPointToQ (.block (pointTableRead 8032)))))
 
-/-! ## `[k]A` on `k`'s bits, which are public
+/-! ## `[k]A` with a sliding window on `k`, which is public
 
-Double-and-add from the top bit: the sum (slots 0–3) is doubled for every bit, and `A`
-(slots 4–7) is added only where the bit is set. The bits are the challenge's, which
-verification may leak, so the branch is on public data. `r11` counts the bytes of `k` left and
-`r10` holds the byte in hand in its top byte, shifted left once a bit: neither is written by the point
-functions. -/
+`k`'s 256 bits are first recoded, from the lowest, into 256 digits, each zero or odd and below
+16, a byte each from byte `DIG` of the working space (`recode`), that sum to `k` weighted by
+the powers of two: a set bit that no window covers opens a window of four bits there, whose
+digit is those bits' value, and the other three digits of the window are zero. A table at
+byte `TBA` holds the odd multiples `[1]A, [3]A, …, [15]A` (`oddTable`), packed as the
+verification's other points are. The sum (slots 0–3) starts at the entry of the top digit that
+is not zero (`topDigit`, `slideStart`), and for each digit below it the sum is doubled and the
+digit's entry is added where the digit is not zero (`slideStep`). The digits are the
+challenge's, which verification may leak, so the branches and the table's addresses are on
+public data.
 
-/-- The address of the next byte of `k` down (`k`'s pointer at word 52, the byte's index in
-`r11`) into `r3`. -/
-def bitsAddr : List Instr :=
-  [.dp .sub .r11 .r11 (.imm 1), .ldr .r3 .r0 52, .dp .add .r3 .r3 (.reg .r11)]
+The recoding reads one bit a step (`recBit`), a byte of `k` at a time (`recByte`): `r9` counts
+the bits read, `r10` holds the byte in hand, shifted right once a bit, `r8` the weight of the
+next bit in the window in hand (zero with none: 2, 4, 8 and then none again), `r7` that
+window's digit so far and `r6` the address of its byte, less `DIG`. With no window, the bit is
+the digit, and opens a window if it is set; with one, the digit is zero and the bit, at its
+weight, is added to the window's digit, which is stored again: the digits stored are those of
+the bits read so far, and nothing is left to do after the last. -/
 
-/-- The byte at `r3` into the top byte of `r10`. -/
-def bitsByte : List Instr := [.ldrb .r10 .r3 0, .mov .r10 (.shifted .r10 .lsl 24)]
+/-- The digits' bytes in the working space: 256 from here. -/
+def DIG : Nat := 2304
 
-/-- The next byte of `k` down into the top byte of `r10`. -/
-def bitsLoad : List Instr := bitsAddr ++ bitsByte
+/-- The table of `[1]A, [3]A, …, [15]A` in the working space: 128 bytes an entry. -/
+def TBA : Nat := 4096
 
-/-- Z clear if the top bit of `r10` is set. -/
-def bitTest : List Instr := [.mov .r9 (.shifted .r10 .lsr 31), .cmp .r9 (.imm 0)]
+/-- The address of the byte of `k` (its pointer at word 52) that holds bit `r9` into `r3`. -/
+def recAddr : List Instr :=
+  [.ldr .r3 .r0 52, .mov .r2 (.shifted .r9 .lsr 3), .dp .add .r3 .r3 (.reg .r2)]
 
-/-- One bit, the top one of the byte in `r10`: the sum doubled, `A` added if the bit is set,
-and `r10` shifted. -/
-def bitStep (umaal : Bool) : Prog isa :=
-  .seq (Point16.doubleCall umaal) (.seq (.block bitTest)
-    (.seq (.ite .ne (Point16.addCall umaal) (.block [])) (.block [.mov .r10 (.shifted .r10 .lsl 1)])))
+/-- The byte of `k` that holds bit `r9` into `r10`. -/
+def recLoad : List Instr := recAddr ++ [.ldrb .r10 .r3 0]
+
+/-- The address of digit `r9`, less `DIG`, into `r3`, the bit into `r1`, and Z set with no
+window in hand. -/
+def recHead : List Instr :=
+  [.dp .add .r3 .r0 (.reg .r9), .dp .and .r1 .r10 (.imm 1), .cmp .r8 (.imm 0)]
+
+/-- No window in hand: the bit is the digit, and a window's first. -/
+def recOpen : List Instr :=
+  [.mov .r7 (.reg .r1), .mov .r8 (.shifted .r1 .lsl 1), .mov .r6 (.reg .r3), .strb .r7 .r6 DIG]
+
+/-- A window in hand: the digit is zero, and the bit is added to the window's digit at the
+weight `r8`, which doubles, and is none after 8. -/
+def recGrow : List Instr :=
+  [.mov .r2 (.imm 0), .strb .r2 .r3 DIG, .dp .sub .r2 .r2 (.reg .r1), .dp .and .r2 .r2 (.reg .r8),
+    .dp .add .r7 .r7 (.reg .r2), .strb .r7 .r6 DIG, .mov .r8 (.shifted .r8 .lsl 1),
+    .dp .and .r8 .r8 (.imm 15)]
+
+/-- The next bit. -/
+def recNext : List Instr := [.mov .r10 (.shifted .r10 .lsr 1), .dp .add .r9 .r9 (.imm 1)]
+
+/-- One bit, the low one of `r10`. -/
+def recBit : Prog isa :=
+  .seq (.block recHead) (.seq (.ite .eq (.block recOpen) (.block recGrow)) (.block recNext))
 
 /-- `c`, `n` times, then `k`. -/
 def repeatThen : Nat → Prog isa → Prog isa → Prog isa
   | 0, _, k => k
   | n + 1, c, k => .seq c (repeatThen n c k)
 
-/-- A byte of `k`: its eight bits from the top. Z is set after byte 0. -/
-def byteStep (umaal : Bool) : Prog isa :=
-  .seq (.block bitsLoad) (repeatThen 8 (bitStep umaal) (.block [.cmp .r11 (.imm 0)]))
+/-- A byte of `k`: its eight bits from the lowest. Z is set after bit 255. -/
+def recByte : Prog isa :=
+  .seq (.block recLoad) (repeatThen 8 recBit (.block [.cmp .r9 (.imm 256)]))
 
-/-- `k`'s pointer (`r12`) saved, `A` from slots 0–3 to slots 4–7, `d` in slot 16, the sum at
-the identity, and 32 bytes to go. -/
-def publicMulInit : Prog isa :=
-  .seq (.block [.str .r12 .r0 52])
-    (.seq (fieldCode false (copyPointToQOps ++ [.const 16 Spec.Ed25519.d] ++ constPointOps Spec.Ed25519.identity))
-      (.block [.mov .r11 (.imm 32)]))
+/-- No bit read, no window, and a window's address that is in the digits. -/
+def recInit : List Instr :=
+  [.mov .r9 (.imm 0), .mov .r8 (.imm 0), .mov .r7 (.imm 0), .mov .r6 (.reg .r0)]
 
-/-- `[k]A` into slots 0–3, for `A` in slots 0–3 and the 32 bytes of `k` at `r12`. -/
-def publicMul (umaal : Bool) : Prog isa := .seq publicMulInit (.loop (byteStep umaal) .ne)
+/-- `k`'s digits to the bytes from `DIG`, for `k`'s pointer at word 52. -/
+def recode : Prog isa := .seq (.block recInit) (.loop recByte .ne)
+
+/-- `r12` = the address of entry `r11` of the table. -/
+def entryAddr : List Instr :=
+  [.movw .r12 (BitVec.ofNat 16 TBA), .dp .add .r12 .r12 (.shifted .r11 .lsl 7), .dp .add .r12 .r0 (.reg .r12)]
+
+/-- `d` in slot 16, `A` (slots 0–3) to entry 0, `[2]A` in slots 4–7, `A` in slots 0–3 again,
+and the next entry's index. -/
+def oddTableInit (umaal : Bool) : Prog isa :=
+  .seq (fieldCode false [.const 16 Spec.Ed25519.d]) <| .seq (.block (pointTableWrite TBA)) <|
+  .seq (Point16.doubleCall umaal) <| .seq copyPointToQ (.block (pointTableRead TBA ++ [.mov .r11 (.imm 1)]))
+
+/-- Entry `r11` = entry `r11 - 1` (in slots 0–3) + `[2]A` (in slots 4–7). Z is set after
+entry 7. -/
+def oddTableStep (umaal : Bool) : Prog isa :=
+  .seq (Point16.addCall umaal)
+    (.block (entryAddr ++ pointToTable ++ [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 8)]))
+
+/-- Entries `m < 8` of the table at `TBA` are `[2m + 1]A`, for `A` in slots 0–3. -/
+def oddTable (umaal : Bool) : Prog isa := .seq (oddTableInit umaal) (.loop (oddTableStep umaal) .ne)
+
+/-- The digit below `r11` into `r10`, Z set if it is zero. -/
+def digitLoad : List Instr := [.dp .add .r3 .r0 (.reg .r11), .ldrb .r10 .r3 DIG, .cmp .r10 (.imm 0)]
+
+/-- The position `r11` moved down, the sum doubled, and that position's digit loaded. -/
+def slideHead (umaal : Bool) : Prog isa :=
+  .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) (.seq (Point16.doubleCall umaal) (.block digitLoad))
+
+/-- `r12` = the address of the entry of the odd digit `r10`, entry `(r10 - 1) / 2`: 64 bytes a
+unit of the digit, from `TBA - 64`. -/
+def digitAddr : List Instr :=
+  [.movw .r12 (BitVec.ofNat 16 (TBA - 64)), .dp .add .r12 .r12 (.shifted .r10 .lsl 6),
+    .dp .add .r12 .r0 (.reg .r12)]
+
+/-- The entry of the digit `r10` added to the sum: the sum to slots 4–7, the entry to slots
+0–3, and their sum. -/
+def addEntry (umaal : Bool) : Prog isa :=
+  .seq copyPointToQ (.seq (.block (digitAddr ++ pointFromTable)) (Point16.addCall umaal))
+
+/-- One digit: the sum doubled, and the digit's entry added unless the digit is zero. Z is set
+after digit 0. -/
+def slideStep (umaal : Bool) : Prog isa :=
+  .seq (slideHead umaal) (.seq (.ite .ne (addEntry umaal) (.block [])) (.block [.cmp .r11 (.imm 0)]))
+
+/-- One position of the search for the top digit: the position `r11` moved down and its digit
+loaded. Z is clear while the digit is zero and a position is left. -/
+def topStep : Prog isa :=
+  .seq (.block ([.dp .sub .r11 .r11 (.imm 1)] ++ digitLoad))
+    (.ite .eq (.block [.cmp .r11 (.imm 0)]) (.block [.cmp .r10 (.reg .r10)]))
+
+/-- `r11` = the highest position whose digit is not zero (0 if every digit is zero), and `r10` =
+its digit. -/
+def topDigit : Prog isa := .seq (.block [.mov .r11 (.imm 256)]) (.loop topStep .ne)
+
+/-- The sum's start: the entry of the top digit `r10`, or the identity if it is zero. -/
+def slideStart : Prog isa :=
+  .seq (.block [.cmp .r10 (.imm 0)])
+    (.ite .ne (.block (digitAddr ++ pointFromTable)) (constPoint Spec.Ed25519.identity))
+
+/-- The digits below the top one, at `r11`, if any. -/
+def slideRest (umaal : Bool) : Prog isa :=
+  .seq (.block [.cmp .r11 (.imm 0)]) (.ite .ne (.loop (slideStep umaal) .ne) (.block []))
+
+/-- `[k]A` into slots 0–3, for `A` in slots 0–3 and the 32 bytes of `k` at `r12`: `k`'s pointer
+saved, the table, `k`'s digits, and the sum over them from the top one. -/
+def publicMul (umaal : Bool) : Prog isa :=
+  .seq (.block [.str .r12 .r0 52]) <| .seq (oddTable umaal) <| .seq recode <| .seq topDigit <|
+  .seq slideStart (slideRest umaal)
 
 def verifyRhs (umaal : Bool) : Prog isa :=
   .seq (.block (pointTableRead 7776 ++ loadHeader 8168))

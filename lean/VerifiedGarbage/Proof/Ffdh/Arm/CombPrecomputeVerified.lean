@@ -21,12 +21,11 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOut
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -680,8 +679,17 @@ theorem combPrecomputeFn_ok (backend : MontBackend) (s : State) {p : Inputs}
   unfold VG.Impl.Ffdh.Arm.CombPrecompute.code
   refine framed_of_separate _ s (by have := h.stackFits;omega) (combPrecomputeWrites p (entered s))
     (fun mem status => status=1 ∧ Spec.Ffdh.generationPrecompute p.k p.dom=
-      some (Spec.Rsa.wordsAt mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k))) h.saved ?_
-  exact combPrecomputeEntered_ok backend s h
+      some (Spec.Rsa.wordsAt mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k))) h.saved ?_ ?_
+  · exact combPrecomputeEntered_ok backend s h
+  · intro m₁ m₂ v hf ⟨hv, he⟩
+    refine ⟨hv, ?_⟩
+    rw [VG.Proof.Rsa.wordsAt_frame hf (by have := h.output.fits; change bytes p < 2 ^ 64; omega_using [this]) ?_]
+    · exact he
+    · intro r hr
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (List.mem_cons_of_mem _ List.mem_cons_self)).symm
+      · exact h.localSeparate.symm
 
 end VG.Proof.Ffdh.Arm
 end

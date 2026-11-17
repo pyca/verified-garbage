@@ -606,8 +606,10 @@ theorem forward_run {name : String} {body : Prog isa} (hk : 6 ≤ (sig.words abi
 function whose arguments fill the six argument registers and `nStack sig`
 more on the stack, is verified against the same contract with
 `stack + bytes + 8` bytes when called by `forward` with its stack arguments
-forwarded, if its precondition, postcondition and leak read memory only
-within the function's buffers and its lists of slices. -/
+forwarded, if its precondition, postcondition and leak read memory on entry
+only within the function's buffers and its lists of slices, and its
+postcondition reads the memory on return only within them (`hpostOut`): the
+frame's `free` loses only the frame's bytes. -/
 theorem Verified.forward {name : String} {body : Prog isa}
     (h : Verified target body (sig.contract abi pre post wa stack leak))
     (hk : 6 ≤ (sig.words abi.ptrBits).length) (hm : 0 < nStack sig)
@@ -623,6 +625,12 @@ theorem Verified.forward {name : String} {body : Prog isa}
       (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s)
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
     Verified target (Impl.ForwardCall.X86_64.forward bytes (nStack sig) name body)
@@ -637,11 +645,13 @@ theorem Verified.forward {name : String} {body : Prog isa}
       (sig.contract abi pre post wa stack leak).post (narrowF sig bytes s) s₃ ∧
       Exec isa (Impl.ForwardCall.X86_64.forward bytes (nStack sig) name body) s (fwdTrace bytes (nStack sig) (s.gpr .rsp) t)
         (fwdFinal bytes s s₃) ∧
-      abiPreserved s (fwdFinal bytes s s₃) ∧ (fwdFinal bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (fwdFinal bytes s s₃) ∧
+      Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (fwdFinal bytes s s₃).mem ∧
       (fwdFinal bytes s s₃).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowF_pre hk hm hb0 hb1 hpre hs)
-    exact ⟨t, s₃, he, hq, forward_run hk hm hb hst hsafe hd hs he ha⟩
+    obtain ⟨hex, ha', hm', hr⟩ := forward_run hk hm hb hst hsafe hd hs he ha
+    exact ⟨t, s₃, he, hq, hex, ha', by rw [hm']; exact Frame.refl _ _, hr⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, -, hq, hex, ha, hmem, hrax⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
@@ -649,9 +659,20 @@ theorem Verified.forward {name : String} {body : Prog isa}
     rw [post_args hk] at hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowF_facts hk hb0 hb1 hs
     rw [hargs] at hq
-    rw [hmem, hrax]
-    exact hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowF_agree hk hb0 hb1 hs)
+    rw [hrax]
+    have h₄ := hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowF_agree hk hb0 hb1 hs)
       (fun r hr x hx => narrowF_agreeLists hk hb0 hb1 hs r ((narrowF_lists hk hb0 hb1 hs) ▸ hr) x hx) hq
+    -- The memory on return: after the `free`, which loses only the frame.
+    have hF : ∀ a ∈ bufRegions sig s, a.1.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :=
+      fun a ha => fwd_out hk hs a ha (by omega_using []) (by omega_using [])
+    refine hpostOut _ _ _ _ _ (allArgs_length sig s hk) ((pre_args hk).mp hs).2.2.2.2.2.2
+      (fun b hb' a ha' => ?_) (fun r hr a ha' => ?_) h₄
+    · exact (hmem a fun r' hr' => by
+        simp only [List.mem_singleton] at hr'; subst hr'
+        exact hF b (List.mem_append_left _ hb') a ha').symm
+    · exact (hmem a fun r' hr' => by
+        simp only [List.mem_singleton] at hr'; subst hr'
+        exact hF (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr, rfl⟩)) a ha').symm
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1.1,

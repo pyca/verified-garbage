@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
@@ -37,7 +36,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

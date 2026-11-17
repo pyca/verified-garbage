@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.AesCtr.Arm.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.Spec
@@ -505,7 +506,8 @@ theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C 
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
   refine FrameStack.WP.callF (k := modeArm AesCtr.ctrMode) crypt_correct (rd := wRd s.sp W)
     (wr := wWr C D S n) h.pre h.cov h.covW (by rw [crypt_stack, pushed_sp8, hspA hs8]; have := h.hsp; omega_using [this]) ?_
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl
+  obtain hfl' : Frame [below s.sp] s₂.mem ml := by rw [Proof.AesGcm.Arm.e8, hA hs8] at hfl; exact hfl
   obtain hn := toNat_ofNat32 h.n_lt
   obtain hR' : 16 * (R.toNat + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   obtain fA' := fA (s := s) hs8
@@ -530,13 +532,12 @@ theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C 
   have fB : Frame (wWr C D S n ++ [belowA (pushed [.r12, .lr] s).sp (armStack Impl.AesCtr.Arm.crypt)])
       (pushed [.r12, .lr] s).mem s₂.mem := hf
   rw [crypt_stack, pushed_sp8] at fB
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
   · rw [popped_gpr (by rintro rfl; simp [preserved] at hr), hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)
+  · refine ((fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)).trans (hfl'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨stk16 s.sp, by simp, b8⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -545,8 +546,14 @@ theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C 
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨stk16 s.sp, by simp, belowA16_stk h.hsp⟩
-  · rw [popped_mem]; exact hdata
-  · rw [popped_mem]; exact hctr
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stk16 s.sp, by simp, b8⟩
+  · rw [blocksAt_frame' hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left b8).symm]
+    exact hdata
+  · rw [Proof.Cmac.bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bc.sub_left b8).symm) (by decide)]
+    exact hctr
 
 /-- Calls of `vg_aes_ctr` with the same arguments and stack pointer in both
 runs are constant time. -/

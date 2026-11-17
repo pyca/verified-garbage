@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.PublicSaved
 import VerifiedGarbage.Proof.Bignum.Arm.PdBody
 import VerifiedGarbage.Proof.Bignum.Arm.PdEntryReady
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # Callable ARMv7 checked public RSA preserves AAPCS and implements the shared result -/
 
@@ -43,7 +45,7 @@ theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Na
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by decide)
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
@@ -62,8 +64,13 @@ theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Na
     · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, spV]
     exact BitVec.sub_add_cancel _ _
-  · unfold PdOutput at result ⊢
-    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]
+  · have kFit : k < 2 ^ 64 := by have := h.maxLength; omega_using [this]
+    have outEq : Spec.Rsa.bytesAt ml (State.addr dst) k = Spec.Rsa.bytesAt t.mem (State.addr dst) k :=
+      rsa_bytes_frame hfl kFit (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackOutput.symm)
+    unfold PdOutput at result ⊢
+    dsimp only
+    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), outEq, memT, ret]
     exact result
 
 end VG.Proof.Bignum.Arm

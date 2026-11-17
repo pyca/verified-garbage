@@ -23,7 +23,11 @@ piece (`RelCT`): the taint analysis covers the code between the calls, from
 the public arguments for the prologue and from the registers the correctness
 proof pins to them (`LInv`) afterwards, and each call of a block function, in
 its frame, is constant time by its own proof (`Proof.AesOcb.Arm.blk_rel`).
-`whole_ct`: if one run of `body` is (`BodyCt`), `whole body` is.
+`loop_ct`: if one run of `body` is (`BodyCt`), the loop over the blocks is,
+and with it the prologue and the epilogue around it (`ends_rel`).
+`wholeK_ct`: `wholeK body` is, for a `body` that enciphers its block from
+the round keys in the working space (`BodyCtK`, `Proof.Aes.Arm.kblk_rel`),
+which both runs have there.
 -/
 
 @[expose] public section
@@ -35,6 +39,9 @@ open VG.Impl.CmacAes.Arm (save setup restore advance)
 open VG.Proof.CmacAes.Arm (W R Dp N S argsR)
 open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call blk_rel encF decF)
 open VG.Proof.MdStream.Arm (eval_eq eval_ne)
+open VG.Impl.Aes.Arm (keyedFrame keysCall)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (schedAt kblk_call kblk_rel)
 
 /-- The registers holding our variables in the loop. -/
 abbrev vars : List Reg := [.r4, .r5, .r6, .r7, .r8, .r10]
@@ -111,6 +118,22 @@ theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {D : BitVec 32} {s s' : St
     by rw [c.saved .r8 (by simp [preserved]) (by decide), h.after.r8],
     by rw [c.saved .r10 (by simp [preserved]) (by decide), h.after.r10], by rw [c.sp, h.after.sp]⟩
 
+/-- The code after the call is constant time when its addresses and branches
+depend only on `r6`, `r7`, `r8` and `r10`. -/
+theorem post_rel {M : Mode} {post : List Instr}
+    (hB : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h).isSome = true)
+    {s₀ s₀' : State} (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
+    RelCT isa (fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) (.block post) fun _ _ => True := by
+  obtain ⟨_, hB⟩ := hB
+  exact RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) (Taint.ofRegs postVars)
+    (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
+      simp only [postVars, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · rw [h.1.r6, h.2.r6, pub_Iv hq]
+      · rw [h.1.r7, h.2.r7, pub_D32 hq]
+      · rw [h.1.r8, h.2.r8, pub_N hq]
+      · rw [h.1.r10, h.2.r10, pub_S hq]) hB
+
 /-- A body: code before the call (`pre`), the call of `F` in its frame on the
 block at `D s₀ k` (public), and code after it (`post`), constant time when
 `pre`'s addresses and branches depend only on the registers the invariant
@@ -123,7 +146,6 @@ theorem body_ct {M : Mode} (F : BlkFn) {pre post : List Instr} {D : State → Na
       WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
     RelCT isa (BRel M s₀ s₀' k) (.seq (.block pre) (.seq (blkFrame F) (.block post))) fun _ _ => True := by
-  obtain ⟨_, hB⟩ := hB
   have a := rel_agree (F := fun s => k < N s₀ ∧ LInv M s₀ k s) (F' := fun s => k < N s₀' ∧ LInv M s₀' k s)
     (G := Mid s₀ k (D s₀ k)) (G' := Mid s₀' k (D s₀' k)) (Taint.ofRegs vars)
     (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2 h'.2)) hA
@@ -134,16 +156,49 @@ theorem body_ct {M : Mode} (F : BlkFn) {pre post : List Instr} {D : State → Na
       by rw [h.1.after.sp, h.2.after.sp, pub_sp hq]⟩)
     (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
     (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
-  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) (Taint.ofRegs postVars)
-    (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
-      simp only [postVars, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · rw [h.1.r6, h.2.r6, pub_Iv hq]
-      · rw [h.1.r7, h.2.r7, pub_D32 hq]
-      · rw [h.1.r8, h.2.r8, pub_N hq]
-      · rw [h.1.r10, h.2.r10, pub_S hq]) hB
   exact a.seq ((c.mono (fun _ _ h => ⟨h.1, h.2⟩) fun _ _ h => ⟨h.1, h.2⟩).seq
-    (b.mono (fun _ _ h => h) fun _ _ h => h))
+    ((post_rel hB hq k).mono (fun _ _ h => h) fun _ _ h => h))
+
+/-- The relation before a block, in two runs, with the round keys in the
+working space. -/
+def BRelK (M : Mode) (s₀ s₀' : State) (k : Nat) (s₁ s₂ : State) : Prop :=
+  (k < N s₀ ∧ LInv M s₀ k s₁ ∧ Keys s₀ s₁.mem) ∧ (k < N s₀' ∧ LInv M s₀' k s₂ ∧ Keys s₀' s₂.mem)
+
+/-- One run of `body` from `k` blocks is constant time, with the round keys
+in the working space. -/
+def BodyCtK (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (modeArm M).pub s₀ s₀' → ∀ k : Nat,
+    RelCT isa (BRelK M s₀ s₀' k) body fun _ _ => True
+
+/-- `Mid`, with the round keys of the key schedule in the working space. -/
+structure MidK (s₀ : State) (k : Nat) (D : BitVec 32) (s : State) : Prop where
+  mid : Mid s₀ k D s
+  keys : KeysIn s.mem (S s₀) (R s₀) (schedAt s.mem (W s₀) (R s₀))
+
+/-- `body_ct`, for a body that calls `vg_aes_encrypt_blocks_keyed` in its
+frame, with the round keys in the working space at the call. -/
+theorem body_ctK {M : Mode} {pre post : List Instr} {D : State → Nat → BitVec 32}
+    (pubD : ∀ {s₀ s₀' : State}, (modeArm M).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
+    (hA : ∃ h, (taint.check (Taint.ofRegs vars) (.block pre) h).isSome = true)
+    (hB : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h).isSome = true)
+    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s → Keys s₀ s.mem →
+      WP isa (.block pre) s (MidK s₀ k (D s₀ k)))
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
+    RelCT isa (BRelK M s₀ s₀' k) (.seq (.block pre) (.seq keyedFrame (.block post))) fun _ _ => True := by
+  have a := rel_agree (F := fun s => k < N s₀ ∧ LInv M s₀ k s ∧ Keys s₀ s.mem)
+    (F' := fun s => k < N s₀' ∧ LInv M s₀' k s ∧ Keys s₀' s.mem)
+    (G := MidK s₀ k (D s₀ k)) (G' := MidK s₀' k (D s₀' k)) (Taint.ofRegs vars)
+    (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2.1 h'.2.1)) hA
+    (fun _ h => wpA hp h.1 h.2.1 h.2.2) (fun _ h => wpA hp' h.1 h.2.1 h.2.2)
+  have c := rel_wp (F := MidK s₀ k (D s₀ k)) (F' := MidK s₀' k (D s₀' k)) (G := After s₀ k) (G' := After s₀' k)
+    (kblk_rel fun s₁ s₂ h => ⟨W s₀, D s₀ k, S s₀, R s₀, 1, h.1.mid.pre,
+      by rw [pub_W hq, pubD hq k, pub_S hq, pub_R hq]; exact h.2.mid.pre,
+      by rw [h.1.mid.after.sp, h.2.mid.after.sp, pub_sp hq], h.1.keys,
+      by rw [pub_W hq, pub_S hq, pub_R hq]; exact h.2.keys⟩)
+    (fun _ h => WP.mono (kblk_call h.mid.pre h.keys) fun _ hc => After.of h.mid hc.1)
+    (fun _ h => WP.mono (kblk_call h.mid.pre h.keys) fun _ hc => After.of h.mid hc.1)
+  exact a.seq ((c.mono (fun _ _ h => ⟨h.1, h.2⟩) fun _ _ h => ⟨h.1, h.2⟩).seq
+    ((post_rel hB hq k).mono (fun _ _ h => h) fun _ _ h => h))
 
 theorem encPre_taint : ∃ h, (taint.check (Taint.ofRegs vars) (.block encPre) h).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -157,10 +212,11 @@ theorem decPre_taint : ∃ h, (taint.check (Taint.ofRegs vars) (.block decPre) h
 theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block decPost) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem encBody_ct : BodyCt (cbcMode true) encBody := fun hp hp' hq k => by
-  rw [encBody, encFrame_eq]
-  exact body_ct encF (fun hq k => pub_D32 hq k) encPre_taint encPost_taint
-    (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
+theorem encBody_ct : BodyCtK (cbcMode true) encBody := fun hp hp' hq k => by
+  rw [encBody]
+  exact body_ctK (fun hq k => pub_D32 hq k) encPre_taint encPost_taint
+    (@fun _ hp _ hk _ h hkeys => WP.mono (encA_wp hp hk h) fun _ a =>
+      ⟨Mid.of h a, encA_keys hp hk h a hkeys⟩) hp hp' hq k
 
 theorem decBody_ct : BodyCt (cbcMode false) decBody := fun hp hp' hq k => by
   rw [decBody, decFrame_eq]
@@ -173,35 +229,70 @@ theorem decBody_ct : BodyCt (cbcMode false) decBody := fun hp hp' hq k => by
 def LRel (M : Mode) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
   ∃ k, n = N s₀ - k ∧ BRel M s₀ s₀' k s₁ s₂
 
+/-- The loop over `n` blocks in two runs, for invariants `J₁` and `J₂` that
+one run of `body` takes from `k` blocks to `k + 1`, setting Z if none are
+left, and from which that run is constant time. -/
+theorem loop_ct_of {J₁ J₂ : Nat → State → Prop} {body : Prog isa} {n : Nat}
+    (hc : ∀ k, RelCT isa (fun s₁ s₂ => (k < n ∧ J₁ k s₁) ∧ (k < n ∧ J₂ k s₂)) body fun _ _ => True)
+    (hb₁ : ∀ (k : Nat) (s : State), k < n → J₁ k s →
+      WP isa body s fun s' => J₁ (k + 1) s' ∧ s'.z = decide (n - (k + 1) = 0))
+    (hb₂ : ∀ (k : Nat) (s : State), k < n → J₂ k s →
+      WP isa body s fun s' => J₂ (k + 1) s' ∧ s'.z = decide (n - (k + 1) = 0))
+    (m : Nat) :
+    RelCT isa (fun s₁ s₂ => ∃ k, m = n - k ∧ (k < n ∧ J₁ k s₁) ∧ (k < n ∧ J₂ k s₂)) (.loop body .ne)
+      fun s₁ s₂ => J₁ n s₁ ∧ J₂ n s₂ := by
+  refine RelCT.loop (M := isa)
+    (fun m s₁ s₂ => ∃ k, m = n - k ∧ (k < n ∧ J₁ k s₁) ∧ (k < n ∧ J₂ k s₂)) (fun m => ?_) m
+  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ h => h) fun _ _ h => h
+  by_cases hn : m = n - k
+  swap
+  · exact RelCT.of_false fun _ _ h => hn h.1
+  subst hn
+  have ct := (hc k).wp
+    (F₁ := fun (s : State) => (J₁ (k + 1) s ∧ s.z = decide (n - (k + 1) = 0)) ∧ k < n)
+    (F₂ := fun (s : State) => J₂ (k + 1) s ∧ s.z = decide (n - (k + 1) = 0))
+    fun _ _ h => ⟨WP.mono (hb₁ _ _ h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, hb₂ _ _ h.2.1 h.2.2⟩
+  refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
+  have e₁ : isa.eval .ne s₁ = some !decide (n - (k + 1) = 0) := by
+    show VG.Arm.eval .ne s₁ = _; rw [eval_ne, z₁]
+  have e₂ : isa.eval .ne s₂ = some !decide (n - (k + 1) = 0) := by
+    show VG.Arm.eval .ne s₂ = _; rw [eval_ne, z₂]
+  refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
+  · rw [e₁] at hf
+    have h0 : n = k + 1 := by
+      have : n - (k + 1) = 0 := by simpa using hf
+      omega_using [hk, this]
+    exact ⟨h0 ▸ l₁, h0 ▸ l₂⟩
+  · rw [e₁] at ht
+    have h0 : n - (k + 1) ≠ 0 := by simpa using ht
+    exact ⟨n - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [h0], l₁⟩, ⟨by omega_using [h0], l₂⟩⟩
+
 theorem loop_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (n : Nat) :
     RelCT isa (LRel M s₀ s₀' n) (.loop body .ne)
       fun s₁ s₂ => LInv M s₀ (N s₀) s₁ ∧ LInv M s₀' (N s₀') s₂ := by
-  refine RelCT.loop (M := isa) (LRel M s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel M s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
-  by_cases hn : n = N s₀ - k
-  swap
-  · exact RelCT.of_false fun _ _ h => hn h.1
-  subst hn
-  have ct := (hc hp hp' hq k).wp
-    (F₁ := fun (s : State) => (LInv M s₀ (k + 1) s ∧ s.z = decide (N s₀ - (k + 1) = 0)) ∧ k < N s₀)
-    (F₂ := fun (s : State) => LInv M s₀' (k + 1) s ∧ s.z = decide (N s₀' - (k + 1) = 0))
-    fun _ _ h => ⟨WP.mono (hb hp h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, hb hp' h.2.1 h.2.2⟩
-  refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
-  have e₁ : isa.eval .ne s₁ = some !decide (N s₀ - (k + 1) = 0) := by
-    show VG.Arm.eval .ne s₁ = _; rw [eval_ne, z₁]
-  have e₂ : isa.eval .ne s₂ = some !decide (N s₀ - (k + 1) = 0) := by
-    show VG.Arm.eval .ne s₂ = _; rw [eval_ne, z₂, ← hN]
-  refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
-  · rw [e₁] at hf
-    have h0 : N s₀ = k + 1 := by
-      have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega_using [hk, this]
-    exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
-  · rw [e₁] at ht
-    have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [h0], l₁⟩, ⟨by omega_using [hN, h0], l₂⟩⟩
+  refine (loop_ct_of (J₁ := LInv M s₀) (J₂ := LInv M s₀') (n := N s₀)
+    (fun k => (hc hp hp' hq k).mono (fun _ _ h => ⟨h.1, hN ▸ h.2.1, h.2.2⟩) fun _ _ h => h)
+    (fun _ _ hk h => hb hp hk h) (fun k _ hk h => by rw [hN] at hk ⊢; exact hb hp' hk h) n).mono
+    (fun _ _ ⟨k, e, h₁, h₂⟩ => ⟨k, e, h₁, hN ▸ h₂.1, h₂.2⟩) fun _ _ h => ⟨h.1, hN ▸ h.2⟩
+
+/-- The keyed loop's relation, with the number of iterations left. -/
+def LRelK (M : Mode) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
+  ∃ k, n = N s₀ - k ∧ BRelK M s₀ s₀' k s₁ s₂
+
+theorem loopK_ct {M : Mode} {body : Prog isa} (hb : BodyOkK M body) (hc : BodyCtK M body)
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (n : Nat) :
+    RelCT isa (LRelK M s₀ s₀' n) (.loop body .ne)
+      fun s₁ s₂ => LInv M s₀ (N s₀) s₁ ∧ LInv M s₀' (N s₀') s₂ := by
+  have hN := pub_N hq
+  refine (loop_ct_of (J₁ := fun k s => LInv M s₀ k s ∧ Keys s₀ s.mem)
+    (J₂ := fun k s => LInv M s₀' k s ∧ Keys s₀' s.mem) (n := N s₀)
+    (fun k => (hc hp hp' hq k).mono (fun _ _ h => ⟨h.1, hN ▸ h.2.1, h.2.2⟩) fun _ _ h => h)
+    (fun _ _ hk h => WP.mono (hb hp hk h.1 h.2) fun _ h' => ⟨⟨h'.1.1, h'.2⟩, h'.1.2⟩)
+    (fun k _ hk h => by
+      rw [hN] at hk ⊢; exact WP.mono (hb hp' hk h.1 h.2) fun _ h' => ⟨⟨h'.1.1, h'.2⟩, h'.1.2⟩) n).mono
+    (fun _ _ ⟨k, e, h₁, h₂⟩ => ⟨k, e, h₁, hN ▸ h₂.1, h₂.2⟩) fun _ _ h => ⟨h.1.1, hN ▸ h.2.1⟩
 
 /-! ## The whole function -/
 
@@ -251,16 +342,17 @@ theorem prologue_rel {M : Mode} {s₀ s₀' : State} (h0 : (modeArm M).pre s₀)
         · exact hq.2.2.2.2.2.2) prologue_taint
     (fun s e => by rw [e]; exact prologue_wp hp) (fun s e => by rw [e]; exact prologue_wp hp')
 
-/-- The whole function, in two runs, from its loop's: the prologue and the
-epilogue are constant time, and the loop is entered in both runs or in
-neither. -/
-theorem ends_rel {M : Mode} {body : Prog isa}
+/-- The whole function, in two runs, from its loop's (`L`, which may be more
+than the loop): the prologue and the epilogue are constant time, and the
+loop is entered in both runs or in neither. -/
+theorem ends_rel {M : Mode} {L : Prog isa}
     {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
     (hq : (modeArm M).pub s₀ s₀')
     (hl : UPre s₀ → UPre s₀' → 0 < N s₀ →
-      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) (.loop body .ne)
+      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) L
         fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀')
+      (.seq (.block (save ++ setup)) (.seq (.ite .eq (.block []) L) (.block restore))) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
   obtain ⟨_, hepi⟩ := epilogue_taint
@@ -277,7 +369,7 @@ theorem ends_rel {M : Mode} {body : Prog isa}
     (Taint.ofRegs []) (fun _ _ _ => Taint.agree_ofRegs fun r hr => by simp at hr) hnil
   have mid : RelCT isa (fun a b => (LInv M s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
       (LInv M s₀' 0 b ∧ b.z = decide (N s₀' = 0)))
-      (.ite .eq (.block []) (.loop body .ne)) (fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) := by
+      (.ite .eq (.block []) L) (fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) := by
     refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev' h.2.2]) ?_ ?_
     · refine (nil.wp (F₁ := LInv M s₀ (N s₀)) (F₂ := LInv M s₀' (N s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
@@ -296,16 +388,28 @@ theorem ends_rel {M : Mode} {body : Prog isa}
       subst hr; rw [h.1.r10, h.2.r10, pub_S hq]) hepi
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h).seq (mid.seq epi)
 
-theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+/-! ## The whole function, with the round keys bitsliced once -/
+
+/-- The call that bitslices the round keys, in two runs. -/
+theorem keysCall_rel {M : Mode} {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀')
+    (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
+    RelCT isa (fun a b => LInv M s₀ k a ∧ LInv M s₀' k b) keysCall
+      fun a b => (LInv M s₀ k a ∧ Keys s₀ a.mem) ∧ (LInv M s₀' k b ∧ Keys s₀' b.mem) :=
+  rel_wp (Proof.Aes.Arm.keysCall_rel fun _ _ h => ⟨W s₀, S s₀, R s₀, h.1.keysArgs hp,
+      by rw [pub_W hq, pub_S hq, pub_R hq]; exact h.2.keysArgs hp'⟩)
+    (fun _ h => keysCall_wp hp h) (fun _ h => keysCall_wp hp' h)
+
+theorem wholeK_rel {M : Mode} {body : Prog isa} (hb : BodyOkK M body) (hc : BodyCtK M body)
     {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
     (hq : (modeArm M).pub s₀ s₀') :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True :=
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (wholeK body) fun _ _ => True :=
   ends_rel h0 h0' hq fun hp hp' hn =>
-    (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono
-      (fun _ _ h => ⟨0, rfl, ⟨hn, h.1⟩, ⟨by rw [← pub_N hq]; exact hn, h.2⟩⟩) fun _ _ h => h
+    (keysCall_rel hp hp' hq 0).seq ((loopK_ct hb hc hp hp' hq (N s₀ - 0)).mono
+      (fun _ _ h => ⟨0, rfl, ⟨hn, h.1.1, h.1.2⟩, ⟨by rw [← pub_N hq]; exact hn, h.2.1, h.2.2⟩⟩)
+      fun _ _ h => h)
 
-theorem whole_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
-    ConstantTime isa (modeArm M).pre (modeArm M).pub (whole body) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem wholeK_ct {M : Mode} {body : Prog isa} (hb : BodyOkK M body) (hc : BodyCtK M body) :
+    ConstantTime isa (modeArm M).pre (modeArm M).pub (wholeK body) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (wholeK_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCbc.Arm

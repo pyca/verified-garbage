@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # PBKDF2 with its working space on the stack: locality
@@ -99,8 +100,8 @@ theorem pbkdf2Post_local : ∀ vs m₁ m₂ m' r, vs.length = (pbkdf2Sig.words p
       rw [BitVec.toNat_setWidth] at hi; omega_using [h₂, hi])]
   exact h
 
-/-- `pbkdf2Post` reads the memory on return only within the buffers (the
-derived key). -/
+
+/-- `pbkdf2Post` reads the memory on return only within `out`. -/
 theorem pbkdf2PostOut_local : ∀ vs m m₁ m₂ r, vs.length = (pbkdf2Sig.words pb).length →
     (∀ b ∈ Sig.bufs pbkdf2Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (pbkdf2Sig.words pb) (pbkdf2Post S pb) vs m m₁ r →
@@ -108,30 +109,30 @@ theorem pbkdf2PostOut_local : ∀ vs m m₁ m₂ r, vs.length = (pbkdf2Sig.words
   intro vs m m₁ m₂ r hlen hb h
   obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
-  obtain ⟨pwLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨salt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨saltLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨c, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
+  iterate 4
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
   obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [pbkdf2Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-    forall_eq, Elem.size, Nat.mul_one] at hb
-  have ho := agree_of hb.2.2
+  simp only [pbkdf2Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have ho : ∀ i < (outLen.setWidth pb).toNat, m₂ (out + BitVec.ofNat 64 i) = m₁ (out + BitVec.ofNat 64 i) :=
+    fun i hi => (hb.2.2 _ (by
+      simp only [Region.Contains]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+      have := Nat.mod_le i (2 ^ 64)
+      have : (outLen.setWidth pb).toNat ≤ outLen.toNat := by
+        rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+      omega_using [hi, this])).symm
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.int 32,
     ArgWord.addr, ArgWord.int pb] (pbkdf2Post S pb) _ m m₁ r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.int 32,
     ArgWord.addr, ArgWord.int pb] (pbkdf2Post S pb) _ m m₂ r
   dsimp only [Curry.apply, pbkdf2Post, ArgWord.ofRaw] at h ⊢
-  have h₃ := Nat.mod_le outLen.toNat (2 ^ pb)
-  rw [bytesAt_congr (n := (outLen.setWidth pb).toNat) fun i hi => ho i (by
-      rw [BitVec.toNat_setWidth] at hi; omega_using [h₃, hi])]
+  rw [bytesAt_congr ho]
   exact h
 
 end VG.Proof.Pbkdf2

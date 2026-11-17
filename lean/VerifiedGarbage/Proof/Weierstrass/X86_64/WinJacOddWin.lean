@@ -30,7 +30,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Mont.X86_64.Ops

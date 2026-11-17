@@ -15,7 +15,7 @@ vg_aes_encrypt_blocks:
 	str r10, [r12, #152]
 	str r11, [r12, #156]
 	str lr, [r12, #160]
-	add r9, r12, #2016
+	add r9, r12, #672
 	add r12, r0, r1, lsl #4
 	lsl lr, r3, #4
 	add lr, lr, r1
@@ -567,7 +567,7 @@ vg_aes_encrypt_blocks:
 	ldr r10, [r9, #28]
 	eor r7, r7, r10
 	sub r10, r9, r8
-	cmp r10, #1984
+	cmp r10, #640
 	bne 26b
 	add r9, r9, #32
 	mov r10, #0

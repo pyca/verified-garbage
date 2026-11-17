@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
-
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48

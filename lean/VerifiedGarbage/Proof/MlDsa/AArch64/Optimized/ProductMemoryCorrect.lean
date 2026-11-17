@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
@@ -26,7 +24,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
 /-! ### `MlDsa.AArch64.Optimized.InverseRawFinalLoop`, which this module and modules that import it used -/

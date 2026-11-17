@@ -3,12 +3,13 @@ module
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 
 /-! ### `MillerRabin.Arm.Top`, which this module and modules that import it used -/
@@ -190,7 +191,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
       (by rw [State.withRegions_wr, pushed_wr]; exact List.mem_cons_self), ?_⟩
     rw [State.withRegions_sp, vsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, vsp]; exact saved)) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ m u hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · intro r hr
@@ -244,7 +245,10 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
   · -- What changed.
     have eσ := h.pushedWs
     intro i hi hk hj
-    rw [popped_mem, memT, State.withRegions_mem]
+    dsimp only
+    rw [show m (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) = t.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i)
+      from lost_byte hfl (R := ⟨State.addr (s.gpr .r0), 8 * (s.gpr .r1).toNat⟩) h.2.2.2.2.1.symm hi,
+      memT, State.withRegions_mem]
     exact (ks.keepsLite i hi hk hj).trans (eσ i hi)
 
 end

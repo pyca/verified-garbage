@@ -735,7 +735,7 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
   apply WP.withPreservedV (hc := finalize_keepsVD hs hf.keepsV)
   obtain hpi : PreD P D (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
   refine WP.frameReg hst.sp16 (fun R hR => ?_)
-    (WP.mono (correctMain hd hs hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hn
+    (WP.mono (correctMain hd hs hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_) hn
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl
@@ -747,7 +747,9 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
       · subst h30; simp [State.write]
       · simp only [State.write, h30, ite_false]
         exact hk r hr h30
-    · exact hpost iv m (H.repr_congr hd.pos (fun i hi => write_frame_bytes (R := stR P s₀) hst.st
+    · -- The output lies apart from the frame, whose bytes the pop loses.
+      refine Eq.trans (bytesAt_congr fun i hi => lost_byte (R := outR s₀ D) f hst.out.symm hi) ?_
+      exact hpost iv m (H.repr_congr hd.pos (fun i hi => write_frame_bytes (R := stR P s₀) hst.st
         (by have := hd.N; have := hd.B; show P.N + P.B < 2 ^ 64; omega_arith) hi) hm) hok hc
 
 /-- A state satisfying the precondition of `finKD H D`. -/

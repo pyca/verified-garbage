@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Carry
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 

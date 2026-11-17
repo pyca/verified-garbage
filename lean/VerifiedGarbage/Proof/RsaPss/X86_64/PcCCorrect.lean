@@ -1,17 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
 import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.Params
@@ -24,6 +20,59 @@ public import VerifiedGarbage.Impl.Rsa.X86_64
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 public import VerifiedGarbage.Impl.RsaPss.X86_64
+public import VerifiedGarbage.Spec.RsaPss.MdTable
+
+/-! ### `RsaPss.X86_64.PrecomputedCtx`, which only this module used -/
+
+section
+
+/-!
+# RSASSA-PSS verification with a precomputed public key on x86-64: the
+precondition
+
+`Pre` is `VPre`, which names the facts of `verifyK.pre`, the cache `pre` of
+the public key's values among them; `preR` and `argsR` are its region and the
+stack arguments'.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64.Pc
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+variable (tsH tsG : List FnTable)
+
+/-- The precomputed values, in bytes. -/
+def preR (s : State) : Region := ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
+
+/-- All ten stack arguments. -/
+def argsR (s : State) : Region := ⟨stackArgAddr s 0, 80⟩
+
+/-- The precondition, by name. -/
+abbrev Pre (s : State) : Prop := VPre tsH tsG s
+
+variable {tsH tsG}
+
+theorem Pre.toVPre {s : State} (h : Pre tsH tsG s) : VPre tsH tsG s := h
+
+theorem pre_of {s : State} (h : (verifyK tsH tsG).pre s) : Pre tsH tsG s := VPre.of tsH tsG h
+
+theorem Pre.argsScr {s : State} (h : Pre tsH tsG s) :
+    (argsR s).Disjoint (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region) := h.dsa.symm
+
+theorem Pre.argsStack {s : State} (h : Pre tsH tsG s) : (argsR s).Disjoint (vstkR s) := h.dKa.symm
+
+theorem Pre.preScr {s : State} (h : Pre tsH tsG s) :
+    (preR s).Disjoint (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region) := h.dsp.symm
+
+theorem Pre.preStack {s : State} (h : Pre tsH tsG s) : (preR s).Disjoint (vstkR s) := h.dKp.symm
+
+end VG.Proof.RsaPss.X86_64.Pc
+
+end
+
+end
 
 /-! ### `RsaPss.X86_64.PcChk`, which this module and modules that import it used -/
 
@@ -884,14 +933,16 @@ structure CDone (s t : State) : Prop where
 
 theorem restoreC_ok {s t : State} (D : CDone s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (verifyK tsH tsG).post s (freedF t') := by
+      ∀ m u, Frame [⟨fb s, frameBytes⟩] t'.mem m →
+        (∀ r ∈ calleeSaved, ({ freedF t' with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧ (verifyK tsH tsG).post s ({ freedF t' with mem := m, unknowns := u } : State) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   obtain hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_⟩
-  · simp only [freedF, State.setReg]
+  refine ⟨hsp, k.2.2.trans D.wr, fun _ _ _ => ⟨fun r hr => ?_, ?_⟩⟩
+  · show (freedF t').gpr r = s.gpr r
+    simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
     · simp only [hr', ite_false]
@@ -1061,8 +1112,10 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
     rw [k3.gpr (by decide), k2'.gpr (by decide), hax2]
   refine WP.seq (WP.mono (Q := fun (t3 : State) => CDone s t3 ∧
       t3.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) ?_
-    fun t3 ⟨D, hm⟩ => WP.mono_mx (by decide) (restoreC_ok D) fun t' ⟨a, b, c, d⟩ hm' =>
-      ⟨a, b, c, d, by rw [show (freedF t').mxcsr = t'.mxcsr from rfl, hm']; exact hm⟩)
+    fun t3 ⟨D, hm⟩ => WP.mono_mx (by decide) (restoreC_ok D) fun t' ⟨a, b, c⟩ hm' =>
+      ⟨a, b, fun m u fm => ⟨(c m u fm).1, (c m u fm).2,
+        by rw [show ({ freedF t' with mem := m, unknowns := u } : State).mxcsr = t'.mxcsr from rfl, hm']
+           exact hm⟩⟩)
   -- The modulus as `n₀ ‖ rest`.
   set n₀ := s.mem (s.gpr .rdi) with hn₀
   set rest := Spec.Rsa.bytesAt s.mem (s.gpr .rdi + 1) ((s.gpr .rsi).toNat - 1) with hrest

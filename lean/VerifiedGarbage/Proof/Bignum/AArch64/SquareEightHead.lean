@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

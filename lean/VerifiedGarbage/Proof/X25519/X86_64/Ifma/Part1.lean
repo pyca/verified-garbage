@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Mul
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith

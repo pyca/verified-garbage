@@ -12,7 +12,7 @@ public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.X448.X86.ByteMem
 import VerifiedGarbage.Proof.X448.X86.Iter
-import VerifiedGarbage.Proof.X448.X86.Args
+import VerifiedGarbage.Proof.X448.X86.Columns
 import VerifiedGarbage.Proof.Framework.Range
 
 /-! ### `X448.X86.BitWrite`, which this module and modules that import it used -/

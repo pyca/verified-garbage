@@ -27,9 +27,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.GhBits
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
 import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops

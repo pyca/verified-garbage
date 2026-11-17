@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.X448.Pairs
+public import VerifiedGarbage.Proof.X448.AArch64.Decode
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block

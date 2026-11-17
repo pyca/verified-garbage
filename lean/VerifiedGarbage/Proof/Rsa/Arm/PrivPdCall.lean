@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
-import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rsa.Contract

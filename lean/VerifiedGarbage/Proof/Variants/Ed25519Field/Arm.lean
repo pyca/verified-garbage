@@ -4,7 +4,8 @@ module
 
 Its multiplication is by 16 × 16-bit products of its limbs, or by `umaal` on the limbs packed in
 words (CPU feature `umaal`): `mulIn umaal` and `mulFn umaal`, proven for both
-(`Proof/Ed25519/Arm/MulU.lean`). A function that multiplies in the field is emitted with each.
+(`Proof/Ed25519/Arm/MulU.lean`). A function that multiplies in the field is emitted with each:
+Ed25519's, and X25519's multiplication of the base point, which is by Ed25519's comb.
 -/
 
 @[expose] public section

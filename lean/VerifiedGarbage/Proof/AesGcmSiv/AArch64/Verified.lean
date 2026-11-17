@@ -149,7 +149,8 @@ theorem seal_framed (v : GcmImpl) :
   AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
-    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
 working space. -/
@@ -170,7 +171,7 @@ theorem open_framed (v : GcmImpl) :
     (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v)) (by decide) (by decide) (openPre_local _)
-    (openPost_local _) openFrameSat_pre
+    (openPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcmSiv.AArch64

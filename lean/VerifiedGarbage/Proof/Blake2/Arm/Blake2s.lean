@@ -60,6 +60,7 @@ theorem updateS_framed : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 2)
     updateS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.updateSPost_out _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.updateSContract, Spec.Blake2.updateSSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, Proof.Blake2.Arm.Stream.updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -75,6 +76,7 @@ theorem finalizeS_framed : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 1)
     finalizeS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeSPost_out _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.finalizeSContract, Spec.Blake2.finalizeSSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, Proof.Blake2.Arm.Stream.finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldProg
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.VerifyWindow
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyPoints

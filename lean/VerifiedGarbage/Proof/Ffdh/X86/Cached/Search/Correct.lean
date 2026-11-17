@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Steps
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 

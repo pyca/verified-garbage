@@ -1033,6 +1033,9 @@ abbrev K0 (hF : FnsOK F) (s₀ : State) : List Byte :=
 
 abbrev saltB (s₀ : State) : List Byte := bytesAt s₀.mem (State.addr (salt s₀)) (sl s₀)
 
+theorem FnsOK.reprOK (hF : FnsOK F) : ReprOK hF.hH.SH := fun m m' p q msg hb =>
+  hF.hH.repr m m' p q msg (fun i hi => hb i (by rw [hF.hH.hS]; exact hi))
+
 /-- The key's states, and the inner one after the salt. -/
 structure States (hF : FnsOK F) (s₀ : State) (m : Mem) : Prop where
   st0 : hF.hH.SH.Repr m (A s₀ F.st0O) (xorPad (K0 hF s₀) ipad)
@@ -1181,7 +1184,7 @@ theorem su2_ok {s : State} (h : Keyed hF s₀ s) (h0 : s.gpr .r0 = dO s₀ F.st0
   obtain hF_hWi := hF.hWi; have hS := hF.hH.hS
   obtain e0 := dO_addr hp (o := F.st0O) hz.st0O_lt
   obtain e1 := dO_addr hp (o := F.st1O) hz.st1O_lt
-  refine hi_frame hF.hi hF.hiSt (su2_args hp hz hF h h0 h1 h12) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
+  refine hi_frame (FnsOK.reprOK hF) (by rw [hS]; omega_using [hz_S]) hF.hi hF.hiSt (su2_args hp hz hF h h0 h1 h12) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
   · refine h.kr.call hp hz a fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -1648,10 +1651,6 @@ theorem b3_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO s
     rwa [ea, ei, Whole.bytes_rev_int h.intW] at this
 
 /-! ## A step: `U₁` -/
-
-omit hp hz in
-theorem FnsOK.reprOK (hF : FnsOK F) : ReprOK hF.hH.SH := fun m m' p q msg hb =>
-  hF.hH.repr m m' p q msg (fun i hi => hb i (by rw [hF.hH.hS]; exact hi))
 
 /-- HMAC's `finalize`'s arguments. -/
 theorem b4_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :

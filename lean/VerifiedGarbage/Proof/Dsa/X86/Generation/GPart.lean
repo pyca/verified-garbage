@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.OutsFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo

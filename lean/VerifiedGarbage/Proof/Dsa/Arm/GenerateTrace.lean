@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace

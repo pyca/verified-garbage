@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86.TabCall
 public import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 public import VerifiedGarbage.Proof.RsaPss.X86.CtComp
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 public import VerifiedGarbage.Proof.MdHashTable.X86
 meta import VerifiedGarbage.Proof.RsaPss.X86.TabCall
 meta import VerifiedGarbage.Proof.RsaPss.X86.CtHash

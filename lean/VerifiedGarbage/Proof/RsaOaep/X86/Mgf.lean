@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 import VerifiedGarbage.Proof.RsaPss.X86.CtXor
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86.Base
 public import VerifiedGarbage.Proof.RsaOaep.X86.Base

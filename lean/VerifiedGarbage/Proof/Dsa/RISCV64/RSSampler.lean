@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # Randomized DSA signing on RISC-V: the sampler's data
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Sampler.lean`). q's octets
+As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Call.lean`). q's octets
 `qbOf` (on entry); the sampler's data `seOf` for them, which are `SE.Ok`
 and `SE.Q` when `q > 1`; `prepareQ_ok`: the scan of q keeps `Ctx` and
 leaves its data in `s7`–`s9` (`Scanned`), from which `SEnv` follows

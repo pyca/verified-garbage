@@ -4,32 +4,76 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyFinal
-import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
+public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
-import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent
 import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInputPair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLcmFrame
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Spec.RsaKeyGen
 import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
+
+/-! ### `RsaKeyGen.X86.KeyInputPair`, which only this module used -/
+
+section
+
+/-! # Retained public key arguments determine the register state used by imports and exports -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
+
+structure InputPair (E : Environment) (s t : State) : Prop where
+  left : Input E s
+  right : Input E t
+  stack : s.gpr .esp = t.gpr .esp
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyDSelectTiming`, which this module and modules that import it used -/
+
+section
+
+/-! # Public exponent branches compose with secret native arithmetic -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem key_public_trace {c : Prog isa} (H : KeyPublic c) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) c
+      (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  obtain ⟨hint, out, checked, lower⟩ := H
+  exact checkedProgramChange checked lower
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyRetryFlag`, which this module and modules that import it used -/
 

@@ -853,6 +853,10 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_blocks_keys.rs"]
+pub(crate) mod vg_aes_blocks_keys;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]
 pub(crate) mod vg_aes_ctr32;
 
@@ -867,6 +871,10 @@ pub(crate) mod vg_aes_decrypt_blocks;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_encrypt_blocks.rs"]
 pub(crate) mod vg_aes_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_keyed.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_keyed;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]

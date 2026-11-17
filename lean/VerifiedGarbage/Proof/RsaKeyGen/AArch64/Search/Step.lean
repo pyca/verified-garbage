@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! # The search's loop (AArch64)
 
@@ -964,6 +965,30 @@ theorem SearchDone.popped {p : SearchPublic} {original s : State} {r : PrimeSear
   · show (s.write .x .x30 v).gpr reg = _
     rw [RegUpd.gpr_write, ite_eq_right h30]; exact h.saved reg hr h19 h30
 
+/-- After the frame saving `x30`, whose slot is lost: a finished search, with
+`x30` and the stack pointer back. -/
+theorem SearchDone.released {p : SearchPublic} {original s : State} {r : PrimeSearchResult}
+    (h : SearchDone p original r s) (v sp : BitVec 64) {m : Mem} (u : Nat → BitVec 64)
+    (hf : Frame [⟨p.F - 16, 16⟩] s.mem m) :
+    SearchDone p original r { s.write .x .x30 v with sp := sp, mem := m, unknowns := u } := by
+  have h' := h.popped v sp
+  have hslot : Region.Sub ⟨p.F - 16, 16⟩ ⟨original.sp - BitVec.ofNat 64 stackUse, 48⟩ := by
+    rw [F_16, h.input.sp_eq]
+    exact Offset.sub_below _ (a := 176) (b := 208) (by decide) (by decide)
+  have hc := h.input.frame_words (hf.sub fun R hR => ⟨⟨original.sp - BitVec.ofNat 64 stackUse, 48⟩,
+    by simp [SearchInput.callChanges], by obtain rfl := List.mem_singleton.mp hR; exact hslot⟩)
+  have hO : inOut original = ⟨p.op, p.len⟩ := by rw [← h.input.2]; rfl
+  have hd : Region.Disjoint ⟨p.op, p.len⟩ ⟨p.F - 16, 16⟩ :=
+    hO ▸ (h.input.stack_disjoint (r := inOut original) (by simp [inWrites])).symm.sub_right
+      fun x hx => Offset.sub_below original.sp (a := stackUse) (n := 48) (b := stackUse) (m := stackUse)
+        (by decide) (by decide) x (hslot x hx)
+  refine ⟨h'.input, h'.rd, h'.wr, h'.x19, h'.saved, h'.vcs, (hc 4 (by decide)).trans h.savedX19,
+    (hc 7 (by decide)).trans h.usedPtr, (hc 18 (by decide)).trans h.stp, (hc 1 (by decide)).trans h.len,
+    (hc 2 (by decide)).trans h.cap, (hc 0 (by decide)).trans h.remaining,
+    (hc 3 (by decide)).trans h.request, (hc 16 (by decide)).trans h.used,
+    (hc 17 (by decide)).trans h.status, ?_⟩
+  exact (List.map_congr_left fun i hi => lost_byte hf hd (List.mem_range.mp hi)).trans h.output
+
 theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput p s)
     (hx : t.gpr .x19 = p.F) (hm : t.mem = writeFrame s.mem p.F (entryValues s))
     (k : Keep entryRegs (allocated 160 s) t) :
@@ -991,8 +1016,9 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
       refine hd.sub_left ?_
       rw [F_16, h.sp_eq]
       exact Offset.sub_below s.sp (a := 176) (b := 208) (by decide) (by decide)
-  · refine WP.mono (search_loop c (search_initial h hl)) fun u hu => ?_
-    refine ⟨hu.popped _ _, ?_, htsp⟩
+  · refine WP.mono (search_loop c (search_initial h hl)) fun u hu m uu f => ?_
+    rw [htsp] at f
+    refine ⟨hu.released _ _ uu f, ?_, htsp⟩
     show (u.write .x .x30 (t.gpr .x30)).gpr .x30 = _
     rw [RegUpd.gpr_write, ite_eq_left rfl]
     exact k.gpr .x30 (by decide)

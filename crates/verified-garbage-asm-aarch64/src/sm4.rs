@@ -10,6 +10,8 @@ pub const VG_SM4_EXPAND_KEY_SM4_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -26,7 +28,7 @@ pub(crate) unsafe extern "C" fn vg_sm4_expand_key_sm4(key: *const [u8; 16], sche
         r".inst 0x3dc00121,0x6e211c00,0x3dc00521,0xce61c800,0x3d800020,0x3dc00921,0xce61c800,0x3d800420
 .inst 0x3dc00d21,0xce61c800,0x3d800820,0x3dc01121,0xce61c800,0x3d800c20,0x3dc01521,0xce61c800
 .inst 0x3d801020,0x3dc01921,0xce61c800,0x3d801420,0x3dc01d21,0xce61c800,0x3d801820,0x3dc02121
-.inst 0xce61c800,0x3d801c20,0xd65f03c0
+.inst 0xce61c800,0x3d801c20,0xd2800009,0x6f00e400,0xd65f03c0
 .p2align 6",
         VG_SM4_FK_CK = sym super::consts::VG_SM4_FK_CK,
     )

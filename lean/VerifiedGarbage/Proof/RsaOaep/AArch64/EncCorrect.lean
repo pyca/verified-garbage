@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-!
 # RSAES-OAEP encryption on AArch64: correctness
@@ -416,7 +417,7 @@ theorem enc_ok {vs : List MdHash} (hc : Coh vs) (c : PdChecked) {P : Nat} (hP : 
   obtain ok := tabOK_of hc hpw hw
   obtain hHa := hashAt_tableOf hixL
   obtain hGa := hashAt_tableOf hix
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_arith) (by decide) ?_ ?_
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
@@ -425,22 +426,33 @@ theorem enc_ok {vs : List MdHash} (hc : Coh vs) (c : PdChecked) {P : Nat} (hP : 
       (entered s) _
     refine WP.mono (body_ok w₁.ok.stream w.ok.stream w₁.mgf.hash w₁.mgf.len (mgf_valid w₁.mgf) w₁.mgf.mem
       w.mgf.hash w.mgf.len (mgf_valid w.mgf) c hP hP16 h hHa okL hmL hDL ok hm hDm)
-      fun u' ⟨hc', hw'⟩ => ?_
+      fun u' ⟨hc', hw'⟩ mm uu fl => ?_
     obtain hsp' : (freed frameBytes u').sp = (lay w₁.mgf.G.len P s).Q + BitVec.ofNat 64 272 := by
       rw [freed_sp, hc'.sp]; rfl
+    -- The output lies apart from the stack, whose frames' bytes are lost.
+    obtain hL := lay_ok h hHa
+    obtain hS : Region.Sub (below s.sp (272 + 16)) (lay w₁.mgf.G.len P s).STK := by
+      obtain h288 := ELay.Ok.sub_stk (L := lay w₁.mgf.G.len P s) (d := 0) (n := 288) (by omega_arith)
+      rw [show (lay w₁.mgf.G.len P s).Q + BitVec.ofNat 64 0 = (lay w₁.mgf.G.len P s).Q from BitVec.add_zero _]
+        at h288
+      exact h288
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
-    · by_cases h30 : r = .x30
+    · show (popped .x30 (freed frameBytes u')).gpr r = s.gpr r
+      by_cases h30 : r = .x30
       · subst r
         rw [popped_gpr_self, freed_mem, hsp']; exact hc'.lr
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc'.cs r hr h30
-    · rw [popped_sp, hsp']
+    · show (popped .x30 (freed frameBytes u')).sp = s.sp
+      rw [popped_sp, hsp']
       show (lay w₁.mgf.G.len P s).Q + BitVec.ofNat 64 272 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q _ _ s
-    · rw [popped_v, freed_v]
-      exact hc'.vs r hr
+    · exact hc'.vs r hr
     · refine result_ok hHa hGa fun hq => ?_
-      rw [popped_mem, freed_mem, popped_gpr_ne _ (by decide), freed_gpr]
+      refine Proof.Rsa.written_of_bytesAt (m := u'.mem) (List.map_congr_left fun i hi =>
+        lost_byte fl (hL.kO.symm.sub_right hS) (List.mem_range.mp hi)) ?_
+      show Spec.Rsa.written u'.mem _ _ (((popped .x30 (freed frameBytes u')).gpr .x0).setWidth 32) _
+      rw [popped_gpr_ne _ (by decide), freed_gpr]
       exact hw' hq
 
 end VG.Proof.RsaOaep.AArch64.Enc

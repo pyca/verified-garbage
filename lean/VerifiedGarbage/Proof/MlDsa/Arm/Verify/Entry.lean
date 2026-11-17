@@ -370,8 +370,10 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     (withCache_correct prims_ok hF (STK := kernStack) (by decide)) (K := 44) (by
       have := withCache_stack h3; simp only [List.length_cons, List.length_nil, kernStack] at this ⊢; omega_using [this])
     (by rw [hm.sp, FrameStack.sub_toNat' (by omega_using [h16])]; simp only [entryStack] at hσ; omega_arith)
-    (kE_pre hpre' hm hc) cov.1 cov.2 fun s₂ hA hpost => ?_)
+    (kE_pre hpre' hm hc) cov.1 cov.2 fun s₂ _ _ _ hA hpost => ?_)
   refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
+  intro _ _ _
+  dsimp only
   have r4' : σ₄.gpr .lr = σ.gpr .lr := by rw [u₄.gpr, hA.cs .r4 (by decide) (by decide), hm.r4]
   have sp4 : σ₄.sp = σ.sp - BitVec.ofNat 32 8 := by rw [u₄.sp, hA.sp, hm.sp]
   have hw4 : σ₄.mem.readW (State.addr σ₄.sp) 32 = σ.gpr .r4 := by

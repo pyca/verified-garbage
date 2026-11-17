@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-!
@@ -295,7 +296,7 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
       k.pre ((pushed [.r12, .lr] s1).callEntry.withRegions (rd ++ [argR s]) wr))
     (hc : Covers rd (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
     WP isa (callS n c as) s fun s' => PostB D s s' wr ∧ CS s s' ∧
-      ∃ s1, ArgsIn as s s1 ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
+      ∃ s1, ArgsIn as s s1 ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, Frame [belowA s.sp D] s₂.mem s'.mem ∧
         (∀ r, r ≠ .r12 → s₂.gpr r = s'.gpr r) ∧
         k.post ((pushed [.r12, .lr] s1).callEntry.withRegions (rd ++ [argR s]) wr)
           (s₂.withRegions (rd ++ [argR s]) wr) := by
@@ -305,7 +306,7 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8') (by decide) ?_
   have hwp : (pushed [.r12, .lr] s1).wr = belowA s.sp 8 :: s.wr := by
     rw [VG.Arm.pushed_wr, frame8 h8', k1.wr, k1.sp]
-  refine WP.callF hv (hpre s1 hA k1) (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost => ?_
+  refine WP.callF hv (hpre s1 hA k1) (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost mL uL hfl => ?_
   · rw [VG.Arm.pushed_rd, hwp, k1.rd]
     rcases (by simpa only [InRegions, List.mem_append, or_assoc] using hx : ∃ r, (r ∈ rd ∨ r ∈ [argR s] ∨ r ∈ wr) ∧
       r.Contains x m) with ⟨r, (hr | hr | hr), hcr⟩
@@ -327,12 +328,16 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
     have f₁ := push2_frame h8'
     rw [k1.mem] at f₁
     have hsu' : 8 + stackUse c ≤ s.sp.toNat := by omega_using [hsu, hsp]
+    rw [frame8 h8', k1.sp] at hfl
+    have hflD : Frame [belowA s.sp D] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact belowA_sub (by omega_using [hsu])⟩
     refine ⟨⟨by simp only [popped_rd, hrd, VG.Arm.pushed_rd, k1.rd], by simp only [popped_wr, hwr, hwp, List.tail_cons],
-      fun r hr => (popped_gpr (ne12_pres r (bases_cs r hr).1 (bases_cs r hr).2) _ _).trans
+      fun r hr => (popped_gpr (ne12_pres r (bases_cs r hr).1 (bases_cs r hr).2) 8 s₂).trans
         (hcs₂ r (bases_cs r hr).1 (bases_cs r hr).2), by rw [popped_sp, hsp₂']; exact BitVec.sub_add_cancel _ _, ?_⟩,
       fun r hr hl => by rw [popped_gpr (ne12_pres r hr hl)]; exact hcs₂ r hr hl,
-      s1, hA, k1, s₂, rfl, fun r hr => (popped_gpr hr _ _).symm, hpost⟩
-    rw [popped_mem]
+      s1, hA, k1, s₂, hflD, fun r hr => (popped_gpr hr 8 s₂).symm, hpost⟩
+    dsimp only
+    refine Frame.trans ?_ (hflD.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
     rw [VG.Arm.pushed_sp, k1.sp] at hf
     refine (f₁.sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr

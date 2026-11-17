@@ -114,7 +114,12 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       fun t₂ ⟨hc₂, _, hμ⟩ => ?_)
     refine WP.mono (verifyCall_ok hV hp hL F hc₂ (by rw [hm2]; exact h.prepK)) fun s' ⟨hrd', hwr', hsp', hcs', hx', hf', hq⟩ => ?_
     have hm₀ : s2.mem = s.mem := hm2
-    refine ⟨by rw [hsp', hc₂.rsp, ← htsp, hc.rsp], by rw [hwr', hc₂.wr, ← htw, hc.wr], ?_, ?_⟩
+    refine ⟨by rw [hsp', hc₂.rsp, ← htsp, hc.rsp], by rw [hwr', hc₂.wr, ← htw, hc.wr], fun m uk fm => ?_⟩
+    -- The pop loses the frame's bytes, below `rsp`, apart from the return
+    -- address.
+    rw [hg2 .rsp (by decide)] at fm
+    dsimp only
+    refine ⟨?_, ?_⟩
     · -- The calling convention.
       refine ⟨fun r hr => ?_, ?_, ?_⟩
       · by_cases hr' : r = .rsp
@@ -124,7 +129,9 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       · have eR : rRet s = ⟨(vlay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [vlay_B]
         have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(vlay p prep s).B, k⟩ := fun k hk => by
           rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
-        rw [popped_mem, hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+        rw [fm.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+            rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below (s.gpr .rsp) (by decide)) (by decide),
+          hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr.sub_right (scrV_sub p _)

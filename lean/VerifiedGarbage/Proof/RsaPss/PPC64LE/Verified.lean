@@ -44,7 +44,6 @@ import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Spec
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTHash
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

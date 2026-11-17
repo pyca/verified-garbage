@@ -46,6 +46,11 @@ def callArgs : Prog isa := .seq (.block setFp) (.block argWords)
 /-- Our return address back from the frame. -/
 def ret : Prog isa := .seq (.block setFp) (.block [.ldr .lr .r12 12])
 
+/-- `vg_chacha20_poly1305_seal`'s name, with either arithmetic of Poly1305
+(`umaal`, or the baseline's): `seal_gather` is emitted calling each. -/
+def sealName (umaal : Bool) : String :=
+  if umaal then "vg_chacha20_poly1305_seal_umaal" else "vg_chacha20_poly1305_seal"
+
 /-- `vg_chacha20_poly1305_seal_gather`, calling `vg_chacha20_poly1305_seal`
 (`name`, `code`). -/
 def sealGather (name : String) (code : Prog isa) : Prog isa :=

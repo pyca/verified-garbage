@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
@@ -1475,7 +1475,7 @@ theorem sealSplitPrepared16_framed (hF : ShortFacts) (hz : ∀ n, v.onePass = so
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitPrepared16Contract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := Proof.AesGcm.sealSplitPrecomputedPostOut_local _) (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitPrepared16_core v B T hF hz) (by decide) (by decide) (by decide)
@@ -1560,7 +1560,7 @@ theorem streamToFrameSatPrepared16_pre : ∃ s, (Proof.Gcm.streamEncryptToPrepar
 theorem streamEncryptToPrepared16_framed (T : BlkToFn CtxMode.prepared16) (E : EncFn CtxMode.prepared16) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.streamEncryptToPrecomputedPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToPrepared16_core T E) (by decide) (by decide) (by decide)
@@ -1672,7 +1672,7 @@ theorem sealGatherPrepared16_framed (Sh : ShortFn CtxMode.prepared16) (I : InitF
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn true)))
       (Proof.AesGcm.sealGatherPrepared16RoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPrecomputedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherPrepared16_core Sh I A T F Sp long) (by decide) (by decide) (by decide)

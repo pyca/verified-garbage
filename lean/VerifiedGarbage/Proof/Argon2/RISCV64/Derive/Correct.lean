@@ -6,11 +6,10 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Iterations
 import VerifiedGarbage.Proof.Argon2.FinalReduction
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
 
 /-!
 # Argon2 on RISC-V: the derivation is correct

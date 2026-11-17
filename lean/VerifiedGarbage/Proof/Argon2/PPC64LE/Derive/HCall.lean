@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Stream
 
 /-!

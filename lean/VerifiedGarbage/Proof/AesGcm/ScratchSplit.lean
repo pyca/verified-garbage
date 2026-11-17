@@ -213,6 +213,42 @@ theorem sealSplitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSplitSig.w
   exact post_local pb (Nat.le_refl _) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
 
+/-- `sealSplitPost` reads the memory on return only within the buffers. -/
+theorem sealSplitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSplitSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealSplitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m m₁ r →
+      Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 7
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSplitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
+  intro hr hle
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2.2 i (by omega_using [hi])]
+  exact h hr hle
+
+
 theorem sealSplitPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
     vs.length = (sealSplitPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -254,29 +290,17 @@ theorem sealSplitPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
   exact post_local pb (by decide) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
 
-/-- `sealSplitPost` reads the memory on return only within the buffers (the
-output and the tag). -/
-theorem sealSplitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSplitSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealSplitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m m₁ r →
-      Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m m₂ r := by
+/-- `sealSplitPost` reads the memory on return only within the buffers. -/
+theorem sealSplitPrecomputedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSplitPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealSplitPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPost pb) vs m m₁ r →
+      Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPost pb) vs m m₂ r := by
   intro vs m m₁ m₂ r hlen hb h
-  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
-  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨sl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
+  iterate 7
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
   obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
@@ -284,7 +308,7 @@ theorem sealSplitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSplitSig
   obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealSplitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
@@ -293,11 +317,13 @@ theorem sealSplitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSplitSig
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
     (sealSplitPost pb) _ m m₂ r
   dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
-  intro hr hl
+  intro hr hle
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
       agree_of hb.2.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
-    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi => agree_of hb.2.2.2.2.2 i hi]
-  exact h hr hl
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2.2 i (by omega_using [hi])]
+  exact h hr hle
+
 
 end VG.Proof.AesGcm

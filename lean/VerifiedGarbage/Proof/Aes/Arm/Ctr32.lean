@@ -864,7 +864,7 @@ theorem correct {to : Bool} {s₀ : State} (hp : Pre to s₀) :
       keys := fun j hj => keyRel_congr (d₈.keys j hj) fun k hk => by
         rw [fD.readW (key_contains hfit hR14 hj hk) (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact off_disjoint (x := 1024) (lx := 1024) (y := 192) (ly := 4) _ (by omega_arith)
+            exact off_disjoint (x := 224) (lx := 480) (y := 192) (ly := 4) _ (by omega_arith)
               (by omega_arith) (by omega_arith)) (by decide), keyAddr, add_ofNat_ofNat, show lastKey - 32 * R + 32 * j = lastKey - 32 * (R - j) by
           simp only [lastKey]; omega_arith]
       words := fun k hk t ht j hj => by

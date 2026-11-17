@@ -53,6 +53,9 @@ theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
 theorem x448Base_noFrames (u : Bool) : (Impl.X448.Arm.x448Base u).noFrames = true := by
   cases u <;> lit_decide
 
+theorem exchange_noIcall (u : Bool) : noIcall (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) = true := by
+  cases u <;> lit_decide
+
 theorem exchange_armStack (u : Bool) :
     armStack (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) ≤ 8 := by
   cases u <;> lit_decide
@@ -77,7 +80,7 @@ def exchangeReg (u : Bool) (suffix : String) : Registration Spec.X448.exchangeAp
       suffix := suffix
       code := Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56
       verified := Exchange.exchange_variant u }
-    (exchange_armStack u) frameOk_8 (exchangeOut _) rfl
+    (exchange_armStack u) (exchange_noIcall u) frameOk_8 (exchangeOut _) rfl
 
 /-- `vg_x448_base` with the field's multiplication `u`, as `suffix`, given the reference comb's
 agreement with the specification. -/

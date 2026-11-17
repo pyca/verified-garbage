@@ -418,6 +418,7 @@ theorem inner_ok (hv : EqOk fv) {s : State} (h : verifyLocal.pre s) (hl : (s.gpr
         change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs u at hu
         rw [(entry_regions h).1, (entry_regions h).2] at hu
         exact hu, ho⟩)
+    (hP := fun _ _ _ _ _ hp => hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have e0 := entry_input h hf (r := ⟨State.addr (s.gpr .r0), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
   have e1 := entry_input h hf (r := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩) (by rw [h.1]; simp)

@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 
 /-! # Private outgoing stack frames for generation controllers -/
@@ -35,20 +36,19 @@ theorem freed_reg (bytes : Nat) (s : State) (r : Reg) (hr : r ≠ .rsp) :
 
 theorem freed_mem (bytes : Nat) (s : State) : (freed bytes s).mem = s.mem := rfl
 
+/-- A private frame of `bytes` bytes (`alloc_frame_ok`): the postcondition
+holds whatever the frame's bytes hold once released, and whatever the
+unknowns. -/
 theorem frame_alloc {bytes : Nat} {s : State} {body : Prog isa} {Q : State → Prop}
     (hpos : 0 < bytes) (hsmall : bytes < 4096) (halign : bytes % 8 = 0)
     (hroom : bytes ≤ (s.gpr .rsp).toNat)
     (hbody : WP isa body (allocated bytes s) fun t =>
       t.gpr .rsp = (allocated bytes s).gpr .rsp ∧
-      t.wr = (allocated bytes s).wr ∧ Q (freed bytes t)) :
-    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
-  obtain ⟨tr, t, he, hsp, hw, hq⟩ := hbody
-  have hpush : isa.push (.alloc bytes) s = some (allocated bytes s) := by
-    simp only [isa, push, hpos, hsmall, halign, hroom, and_self, ite_true, allocated]
-  have hpop : isa.pop (.free bytes) (allocated bytes s) t = some (freed bytes t) := by
-    simp only [isa, pop, hpos, hsmall, halign, hsp, hw, allocated, State.setReg,
-      List.head?_cons, and_self, ite_true, freed]
-  exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
+      t.wr = (allocated bytes s).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] t.mem m →
+        Q { freed bytes t with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
+  alloc_frame_ok ⟨hpos, hsmall, halign⟩ hroom hbody
 
 private theorem allocated_some {bytes : Nat} {s t : State}
     (h : isa.push (.alloc bytes) s = some t) : t = allocated bytes s := by

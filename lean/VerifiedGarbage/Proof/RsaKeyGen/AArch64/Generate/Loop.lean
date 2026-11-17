@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
@@ -353,7 +354,7 @@ theorem entry_ok {p : GenPublic} {s : State} (h : GenInput p s) :
   simp only [List.foldl_cons, List.foldl_nil]
   obtain hag : ∀ r, (allocated 160 s).gpr r = s.gpr r := fun _ => rfl
   by_cases he : s.mem.readW (s.gpr .x7 + BitVec.ofNat 64 48) 64 = 0x0300000000000000 <;>
-  brun [ldf, stf, exec_addSp (show 0 < 4096 by decide), exec_movz3, three56, imm64 (show 0 < 65536 by decide),
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, exec_addSp (show 0 < 4096 by decide), exec_movz3, three56, imm64 (show 0 < 65536 by decide),
     hsp, hmem, hag, hw8, hw48, subs0_carry, BitVec.xor_eq_zero_iff, he, hs0, hs 0 (by decide), hs 8 (by decide),
     hs 16 (by decide), hs 24 (by decide), hs 32 (by decide), hs 40 (by decide), hs 48 (by decide),
     hs 56 (by decide), hs 64 (by decide), hs 72 (by decide), hs 88 (by decide), BitVec.add_zero]
@@ -756,9 +757,11 @@ theorem slots_kept (h : GenFrame p original used st s) (values : List (Nat × Bi
   rw [writeFrame_word _ _ _ hb e.1 hj, frameValue_unchanged _ _ _ ?_]
   · exact h.headers e he
   · intro x hx heq
-    have := hnot x hx
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h11⟩ := hnot x hx
     simp only [GenPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h0 heq.symm, h1 heq.symm, h2 heq.symm, h3 heq.symm, h4 heq.symm, h5 heq.symm, h6 heq.symm, h7 heq.symm,
+      h8 heq.symm, h11 heq.symm]
 
 theorem key_nowrap (h : GenFrame p original used st s) : p.kp.toNat + 9 * p.L ≤ 2 ^ 64 := by
   have := h.input.nowrap (r := inKey original) (by simp [inWrites])
@@ -808,7 +811,7 @@ theorem clear_ok {p : GenPublic} {original s : State} {used : Nat} {st : KeyProg
   unfold clear
   refine WP.seq (WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = op + BitVec.ofNat 64 0 ∧
       t.gpr .x2 = BitVec.ofNat 64 len ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
-    brun [ldf, h.x19, imm64 (show 0 < 65536 by decide), hl 96 (by decide), hl 104 (by decide), h12, h13])
+    brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, h.x19, imm64 (show 0 < 65536 by decide), hl 96 (by decide), hl 104 (by decide), h12, h13])
       (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨hx1, hx2, hx3, hm₁⟩, k₁⟩ => ?_)
   refine WP.mono (wp_countdown (N := len) (by omega_using [hlt]) (by omega_using [h1]) (BInv s₁ op)
     (fun i hi t hI _ => bStep_ok hlt hx3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hi hI)
@@ -874,7 +877,7 @@ theorem setLow_ok (h : GenFrame p original used st s) :
   refine WP.keep [.x9, .x10] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
 
 theorem setHigh_ok (h : GenFrame p original used st s) :
     WP isa (.block [ldf .x10 1, .lsl .x .x11 .x10 2, .add .x .x11 .x11 .x10, ldf .x9 0, .add .x .x9 .x9 .x11,
@@ -889,7 +892,7 @@ theorem setHigh_ok (h : GenFrame p original used st s) :
   refine WP.keep [.x9, .x10, .x11] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
 
 theorem store_region (h : GenFrame p original used st s) {t : State} {a b : BitVec 64}
     (hm : t.mem = writeFrame s.mem p.F [(12, a), (13, b)]) {rs : List Reg} (k : Keep rs s t)
@@ -1090,14 +1093,14 @@ theorem search_args_ok {p : GenPublic} {original s : State} {used : Nat} {st : K
   unfold searchArgs SearchRegs writeFrame callValues outOf plenOf
   simp only [List.foldl_cons, List.foldl_nil]
   obtain hph1 := phaseWord_le st.phase
-  rcases (by omega_using [hph1] : phaseWord st.phase = 0 ∨ phaseWord st.phase = 1) with hp | hp <;>
-  rw [hp] at hph <;>
-  brun [ldf, hsp, hmem, hx19, exec_addSp (show 0 < 4096 by decide), imm64 (show 0 < 65536 by decide),
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, hsp, hmem, hx19, exec_addSp (show 0 < 4096 by decide), imm64 (show 0 < 65536 by decide),
     imm64 (show 8 < 65536 by decide), subs0_carry, hl 0 (by decide), hl 8 (by decide), hl 16 (by decide),
     hl 24 (by decide), hl 32 (by decide), hl 40 (by decide), hl 48 (by decide), hl 56 (by decide),
-    hl 64 (by decide), hsl 32 (by decide), hv0, hv1, hv2, hv3, hv4, hv5, hv6, hv7, hv8, hph, hsub, h4, h5, hp,
+    hl 64 (by decide), hsl 32 (by decide), hv0, hv1, hv2, hv3, hv4, hv5, hv6, hv7, hv8, hph, hsub, h4, h5,
     hw0, hw 0 (by decide), hw 8 (by decide), hw 16 (by decide), hw 24 (by decide)]
-  all_goals simp only [off, Nat.mul_zero, BitVec.add_zero]
+  simp only [off, Nat.mul_zero, BitVec.add_zero, and_true]
+  rcases (by omega_using [hph1] : phaseWord st.phase = 0 ∨ phaseWord st.phase = 1) with hp | hp <;> rw [hp] <;>
+  exact ⟨rfl, rfl⟩
 
 /-! ### The search's regions -/
 
@@ -1635,7 +1638,7 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
   obtain hd : 16 * (Search.searchCode v).aarch64Depth < 2 ^ 64 := by rw [searchCode_depth]; decide
   refine WP.callFV (k := Search.searchContract) (Search.search_correct _) (callS_pre h hu ha hm)
     (search_covers_reads h.toGenFrame k.rd k.wr) (search_covers_writes h.toGenFrame k.wr) ?_ hd
-  intro t htr htw htsp hfr hg hvs hpost
+  intro t htr htw htsp hfr hg hvs hpost m uu f
   obtain hres := callS_result h hu ha hm
   obtain ⟨a0, a1, a2, a3⟩ := callS_args (used := used) (st := st) hu hm
   obtain hlen : Search.searchLen (callS p used st u) = p.L := by
@@ -1673,12 +1676,34 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
   obtain hframe := f₀.trans f₁
   obtain hrem := KeySearch.primeSearch_remaining_le p.L p.eB st.phase.other st.remaining ((genRand original).drop used)
   have hle := h.state.remaining_le
-  have hfree : (freed 32 t).mem = t.mem := rfl
-  refine ⟨h.toGenFrame.restore (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
+  -- The frame's bytes are lost: they are in the stack, apart from the outputs.
+  have hG : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ ⟨p.sp - BitVec.ofNat 64 416, 416⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 32 = callSp p from alloc32_sp h.toGenFrame]
+    exact Offset.sub_below _ (by decide) (by decide)
+  have hG' : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ ⟨p.sp - BitVec.ofNat 64 416, 256⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 32 = callSp p from alloc32_sp h.toGenFrame]
+    exact Offset.sub_below _ (by decide) (by decide)
+  obtain hframe' : Frame (searchChanges p st) s.mem m :=
+    hframe.trans (f.sub fun r hr => ⟨_, stack_mem p st, by obtain rfl := List.mem_singleton.mp hr; exact hG'⟩)
+  have hw (d : Nat) (hd' : d + 8 ≤ 56) : word m p.stp d = word t.mem p.stp d :=
+    f.readW (r := cS p) (Offset.contains_base _ hd' (by omega_using [hd']))
+      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hf.stack _ (by simp)).sub_right hG)
+      (by decide)
+  have hU : word m p.up 0 = word t.mem p.up 0 :=
+    f.readW (r := rU p) (Offset.contains_base _ (by decide) (by decide))
+      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hf.stack _ (by simp)).sub_right hG)
+      (by decide)
+  have hO : Spec.Rsa.bytesAt m (outOf p st) p.L = Spec.Rsa.bytesAt t.mem (outOf p st) p.L :=
+    List.map_congr_left fun i hi => lost_byte f
+      (((hf.stack _ (by simp)).sub_left (rO_sub (st := st) hf)).sub_right hG) (List.mem_range.mp hi)
+  refine ⟨h.toGenFrame.restore (t := { freed 32 t with mem := m, unknowns := uu })
+      (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
       (show t.sp + BitVec.ofNat 64 32 = s.sp by rw [htsp, k.sp]; exact BitVec.sub_add_cancel _ _)
       (fun r hr h30 => (hg r hr h30).trans (k.gpr r (by revert r hr; decide)))
-      (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe.sub (searchChanges_sub h.toGenFrame)) ?_ w1 w2
-      (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, ?_, ?_, ⟨req, ?_, hreq⟩, hframe⟩
+      (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe'.sub (searchChanges_sub h.toGenFrame))
+      ((hw 0 (by decide)).trans ?_) ((hw 8 (by decide)).trans w1) ((hw 16 (by decide)).trans w2)
+      (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, hU.trans ?_, hO.trans ?_,
+      ⟨req, (hw 24 (by decide)).trans ?_, hreq⟩, hframe'⟩
   · exact w0
   · exact hst
   · exact hused
@@ -1821,7 +1846,7 @@ theorem head_ok {p : GenPublic} {original s : State} {used : Nat} {st : KeyProgr
   refine WP.keep [.x9, .x10, .x11, .x12] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [exec_addImm_w, ldf, stf, h.x19, hl2, hl8, hs8, hlu, h2, h8, hn', hlu0, hn0, hax]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, exec_addImm_w, ldf, stf, h.x19, hl2, hl8, hs8, hlu, h2, h8, hn', hlu0, hn0, hax]
 
 /-! ### Stores to the state and the frame -/
 
@@ -1952,8 +1977,6 @@ theorem nextPrime_ok (h : GenFrame p original used st s) {phase : Nat} (hph : ph
     WP isa (.block (nextPrime phase)) s fun t =>
       t.mem = writeFrame (writeFrame s.mem p.stp [(0, BitVec.ofNat 64 (limitOf p.L p.eB)),
         (4, BitVec.ofNat 64 phase)]) p.F [(10, BitVec.ofNat 64 4)] ∧ Keep [.x8, .x11] s t := by
-  obtain rfl | rfl : phase = 0 ∨ phase = 1 := by omega_using [hph]
-  all_goals
   have scr := h.scr
   have sst := h.stateScr
   obtain h7 := h.header (j := 7) (v := p.stp) (by simp [GenPublic.headers])
@@ -1965,20 +1988,18 @@ theorem nextPrime_ok (h : GenFrame p original used st s) {phase : Nat} (hph : ph
   obtain hs4 : InRegions s.wr (p.stp + BitVec.ofNat 64 32) 8 := sst.st (d := 32) (by decide)
   obtain hs00 : InRegions s.wr p.stp 8 := by simpa only [BitVec.add_zero] using hs0
   simp only [Nat.reduceMul] at h7 h11
-  refine WP.keep [.x8, .x11] ?_ (by decide) (by decide) (by decide +kernel)
+  refine WP.keep [.x8, .x11] ?_ rfl rfl rfl
   unfold writeFrame nextPrime
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, stf, h.x19, hl7, hl11, hs10, hs0, hs00, hs4, h7, h11, imm64 (show 0 < 65536 by decide),
-    imm64 (show 1 < 65536 by decide), imm64 (show 4 < 65536 by decide)]
-  all_goals simp only [off, Nat.reduceMul, BitVec.add_zero]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hl7, hl11, hs10, hs0, hs00, hs4, h7, h11,
+    imm64 (show phase < 65536 by omega_using [hph]), imm64 (show 4 < 65536 by decide)]
+  simp only [off, Nat.reduceMul, BitVec.add_zero]
 
 /-- The end of the key search with `status`: no phase or generations left. -/
 theorem finishWith_ok (h : GenFrame p original used st s) {status : Nat} (hs : status < 4) :
     WP isa (.block (finishWith status)) s fun t =>
       t.mem = writeFrame (writeFrame s.mem p.stp [(4, BitVec.ofNat 64 0), (5, BitVec.ofNat 64 0)]) p.F
         [(10, BitVec.ofNat 64 status)] ∧ Keep [.x8, .x11] s t := by
-  obtain rfl | rfl | rfl | rfl : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 := by omega_using [hs]
-  all_goals
   have scr := h.scr
   have sst := h.stateScr
   obtain h7 := h.header (j := 7) (v := p.stp) (by simp [GenPublic.headers])
@@ -1987,11 +2008,11 @@ theorem finishWith_ok (h : GenFrame p original used st s) {status : Nat} (hs : s
   obtain hs4 : InRegions s.wr (p.stp + BitVec.ofNat 64 32) 8 := sst.st (d := 32) (by decide)
   obtain hs5 : InRegions s.wr (p.stp + BitVec.ofNat 64 40) 8 := sst.st (d := 40) (by decide)
   simp only [Nat.reduceMul] at h7
-  refine WP.keep [.x8, .x11] ?_ (by decide) (by decide) (by decide +kernel)
+  refine WP.keep [.x8, .x11] ?_ rfl rfl rfl
   unfold writeFrame finishWith
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, stf, h.x19, hl7, hs10, hs4, hs5, h7, imm64 (show 0 < 65536 by decide),
-    imm64 (show 1 < 65536 by decide), imm64 (show 2 < 65536 by decide), imm64 (show 3 < 65536 by decide)]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hl7, hs10, hs4, hs5, h7, imm64 (show 0 < 65536 by decide),
+    imm64 (show status < 65536 by omega_using [hs])]
 
 /-- The status, stored. -/
 theorem storeStatus_ok (h : GenFrame p original used st s) {status : Nat}
@@ -2002,7 +2023,7 @@ theorem storeStatus_ok (h : GenFrame p original used st s) {status : Nat}
   refine WP.keep [] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [stf, h.x19, hs10, hs]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, stf, h.x19, hs10, hs]
 
 /-- The generations left: `x12` is 1 exactly when at least two are. -/
 theorem left_ok (h : GenFrame p original used st s) :
@@ -2020,7 +2041,7 @@ theorem left_ok (h : GenFrame p original used st s) :
   have hlt := h.state.left_lt
   refine WP.keep [.x8, .x10, .x12, .x13, .x15, .x16, .x17] ?_ (by decide) (by decide) (by decide +kernel)
   by_cases h2 : 2 ≤ st.left <;>
-  brun [ldf, h.x19, hl7, hl5, h7, h5, imm64 (show 2 < 65536 by decide), imm64 (show 1 < 65536 by decide),
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, h.x19, hl7, hl5, h7, h5, imm64 (show 2 < 65536 by decide), imm64 (show 1 < 65536 by decide),
     imm64 (show 0 < 65536 by decide), subs_ge hlt (show 2 < 2 ^ 64 by decide), h2]
 
 /-- The phase, loaded. -/
@@ -2035,7 +2056,7 @@ theorem phase_ok (h : GenFrame p original used st s) :
   have h4 : s.mem.readW (p.stp + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 (phaseWord st.phase) := h.state.phase
   simp only [Nat.reduceMul] at h7
   refine WP.keep [.x8, .x10] ?_ (by decide) (by decide) (by decide +kernel)
-  brun [ldf, h.x19, hl7, hl4, h7, h4]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, h.x19, hl7, hl4, h7, h4]
 
 end
 
@@ -2128,7 +2149,7 @@ theorem key_args_ok {p : GenPublic} {original s : State} {used : Nat} {st : KeyP
   refine WP.keep keyArgRegs ?_ (by decide) (by decide) (by decide +kernel)
   unfold keyArgs KeyRegs writeFrame keyValues
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, hsp, hmem, hx19, exec_addSp (show 0 < 4096 by decide), imm64 (show 8 < 65536 by decide),
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, hsp, hmem, hx19, exec_addSp (show 0 < 4096 by decide), imm64 (show 8 < 65536 by decide),
     hl 0 (by decide), hl 8 (by decide), hl 40 (by decide), hl 48 (by decide), hl 56 (by decide),
     hv0, hv1, hv5, hv6, hv7, h2, h02, h24, h45, h56, h67, h78,
     hw0, hw 0 (by decide), hw 8 (by decide), hw 16 (by decide), hw 24 (by decide), hw 32 (by decide),
@@ -2413,6 +2434,29 @@ theorem callK_res {p : GenPublic} {original s u : State} {used : Nat} {st : KeyP
   rw [he, hbytes (R := ⟨p.slot 4, p.L⟩) (.inl (kSlot_sub (by omega_using []))) (by show p.L ≤ 2 ^ 64; omega_using [hL2]),
     hbytes (R := ⟨p.slot 5, p.L⟩) (.inl (kSlot_sub (by omega_using []))) (by show p.L ≤ 2 ^ 64; omega_using [hL2])]
 
+/-- The key's outputs are in the key's buffer. -/
+theorem keyOuts_sub {p : GenPublic} : ∀ o ∈ keyOutsOf p, Region.Sub ⟨o.1, o.2⟩ (cK p) := by
+  intro o ho
+  simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at ho
+  rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact kN_sub
+  all_goals exact kSlot_sub (by omega_using [])
+
+/-- What the key leaves at its outputs, for the key's result `K`. -/
+def KeyOutAt (p : GenPublic) (K : Except Failure (List (List Byte)) ⊕ Unit) (m : Mem) : Prop :=
+  match K with
+  | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt m o.1 o.2) = ys
+  | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = List.replicate o.2 0
+
+/-- What the key leaves, in memory that agrees on its outputs. -/
+theorem keyOut_congr {p : GenPublic} {K : Except Failure (List (List Byte)) ⊕ Unit} {m m' : Mem}
+    (he : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m' o.1 o.2 = Spec.Rsa.bytesAt m o.1 o.2)
+    (h : KeyOutAt p K m) : KeyOutAt p K m' := by
+  rcases K with (_ | ys) | _
+  · exact fun o ho => (he o ho).trans (h o ho)
+  · exact (List.map_congr_left fun o ho => he o ho).trans h
+  · exact fun o ho => (he o ho).trans (h o ho)
+
 theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat} {st : KeyProgress}
     (h : GenFrame p original used st s) :
     WP isa (keyRun keyCall) s (AfterKey p original used st s) := by
@@ -2429,7 +2473,7 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
   obtain hu : u.sp = keySp p := k.sp.trans (alloc80_sp h)
   refine WP.callV (k := Key.keyA) Key.KeyProof.correct (callK_pre h hu ha hm) (key_covers_reads h k.rd k.wr)
     (key_covers_writes h k.wr) ?_ keyCode_noFrames
-  intro t htr htw htsp hfr hg _ hvs hpost
+  intro t htr htw htsp hfr hg _ hvs hpost m uu f
   obtain ⟨hres, -⟩ := callK_res h hu ha hm
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := ha
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := callK_args (s := s) hu hm
@@ -2473,8 +2517,18 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
     · exact ⟨cK p, mK, kSlot_sub (by omega_using [])⟩
     · exact ⟨cK p, mK, kSlot_sub (by omega_using [])⟩
     · exact ⟨rS p, mS, fun _ h => h⟩
-  obtain hframe := f₀.trans f₁
-  have hword (d : Nat) (hd : d + 8 ≤ 56) : word t.mem p.stp d = word s.mem p.stp d := by
+  -- The frame's bytes are lost: they are in the stack, apart from the key's buffer.
+  have hG : Region.Sub ⟨s.sp - BitVec.ofNat 64 80, 80⟩ ⟨p.sp - BitVec.ofNat 64 416, 256⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 80 = keySp p from alloc80_sp h]
+    exact Offset.sub_below _ (by decide) (by decide)
+  obtain hframe := (f₀.trans f₁).trans (f.sub fun r hr => ⟨_, mT, by
+    obtain rfl := List.mem_singleton.mp hr; exact hG⟩)
+  have heo : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = Spec.Rsa.bytesAt t.mem o.1 o.2 :=
+    fun o ho => List.map_congr_left fun i hi => lost_byte f
+      (((hf.stack _ (by simp)).sub_left (keyOuts_sub o ho)).sub_right
+        fun x hx => Offset.sub_below p.sp (a := 416) (n := 256) (b := 416) (m := 416) (by decide) (by decide)
+          x (hG x hx)) (List.mem_range.mp hi)
+  have hword (d : Nat) (hd : d + 8 ≤ 56) : word m p.stp d = word s.mem p.stp d := by
     refine hframe.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd])) (fun q hq => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -2482,13 +2536,13 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
     · exact hf.kT.symm
     · exact hf.sT.symm
     · exact sT.sub_right (Region.sub_prefix (by decide))
-  refine ⟨h.restore (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
+  refine ⟨h.restore (t := { freed 80 t with mem := m, unknowns := uu }) (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
       (show t.sp + BitVec.ofNat 64 80 = s.sp by rw [htsp, k.sp]; exact BitVec.sub_add_cancel _ _)
       (fun r hr h30 => (hg r hr h30).trans (k.gpr r (by revert r hr; decide)))
       (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe.sub (key_frame_sub h))
       ((hword 0 (by decide)).trans h.state.remaining)
       ((hword 8 (by decide)).trans h.state.len) ((hword 16 (by decide)).trans h.state.cap) (.inl rfl) rfl
-      h.state.remaining_le, hstat, hout, hframe⟩
+      h.state.remaining_le, hstat, keyOut_congr (K := keyOf p s.mem) heo hout, hframe⟩
 
 end VG.Proof.RsaKeyGen.AArch64.Generate
 
@@ -2777,7 +2831,7 @@ theorem setAll_ok (h : GenFrame p original used st s) :
   refine WP.keep [.x9, .x10, .x11] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
-  brun [ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hl 0 (by decide), hl 8 (by decide), h0, h1, hs 96 (by decide), hs 104 (by decide)]
 
 /-- `clearAll`: zeros at the whole key's buffer. -/
 theorem clearAll_ok (h : GenFrame p original used st s) :
@@ -3114,7 +3168,7 @@ theorem dec_ok {p : GenPublic} {original s : State} {used : Nat} {st : KeyProgre
   refine WP.keep [.x8, .x10, .x11] ?_ (by decide) (by decide) (by decide +kernel)
   unfold writeFrame nextPrime
   simp only [List.foldl_cons, List.foldl_nil, List.cons_append, List.nil_append]
-  brun [ldf, stf, h.x19, hx8, hx10, hsub, hl7, hl11, hs10, hs0, hs00, hs4, hs5, hk7, hk11,
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, stf, h.x19, hx8, hx10, hsub, hl7, hl11, hs10, hs0, hs00, hs4, hs5, hk7, hk11,
     imm64 (show 0 < 65536 by decide), imm64 (show 4 < 65536 by decide)]
   simp only [off, Nat.reduceMul, BitVec.add_zero]
 
@@ -3257,7 +3311,7 @@ theorem sub_guard {s : State} {w k : Nat} (hk : k = 1 ∨ k = 2 ∨ k = 3)
   rcases hk with rfl | rfl | rfl
   all_goals
   refine WP.keep [.x12] ?_ (by decide) (by decide) (by decide +kernel)
-  brun [hs]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, hs]
   show isa.eval (.zero .x .x12) _ = _
   rw [eval_zero, RegUpd.gpr_write_self]
   simp only [BitVec.setWidth_eq, sub_ofNat_beq h64 hk64]
@@ -3273,7 +3327,7 @@ theorem keyStatus_guard {s : State} {status : Nat} (hs : ((s.gpr .x0).setWidth 3
   obtain h64 : status < 2 ^ 64 := by
     rw [← hs]; exact Nat.lt_trans (BitVec.isLt _) (by decide)
   refine WP.keep [.x9, .x12] ?_ (by decide) (by decide) (by decide +kernel)
-  brun [exec_addImm_w, hax]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, exec_addImm_w, hax]
   show isa.eval (.zero .x .x12) _ = _
   rw [eval_zero, RegUpd.gpr_write_self]
   simp only [BitVec.setWidth_eq, sub_ofNat_beq h64 (show 1 < 2 ^ 64 by decide)]
@@ -3470,7 +3524,7 @@ theorem status_guard (h : GenFrame p original used st s) {w : Nat} (hw : word s.
   obtain hl : InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 80) 8 := h.scr.ld (d := 80) (by decide)
   have hw' : s.mem.readW (p.F + BitVec.ofNat 64 80) 64 = BitVec.ofNat 64 w := hw
   refine WP.keep [.x9] ?_ (by decide) (by decide) (by decide +kernel)
-  brun [ldf, h.x19, hl, hw']
+  brun [↓RegUpd.gpr_write, ↓reduceIte, ldf, h.x19, hl, hw']
   show isa.eval (.zero .x .x9) _ = _
   rw [eval_zero, RegUpd.gpr_write_self]
   simp only [BitVec.setWidth_eq, sub_ofNat_beq h64 (show 4 < 2 ^ 64 by decide)]

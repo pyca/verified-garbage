@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.PubCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit

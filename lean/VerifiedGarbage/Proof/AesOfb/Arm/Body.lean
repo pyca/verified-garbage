@@ -24,8 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 `body_ok`: one run of `body` takes the loop invariant AES-CBC's proofs
 share (`Proof/AesCbc/Arm/Loop.lean`) from `k` blocks to `k + 1`, for
-`ofbMode`. `body_ct`: it is constant time, by the shared framework, with the
-call on the block at `iv`.
+`ofbMode`, with the round keys in the working space. `body_ct`: it is
+constant time, by the shared framework, with the call on the block at `iv`.
 -/
 
 @[expose] public section
@@ -34,9 +34,11 @@ namespace VG.Proof.AesOfb.Arm
 
 open VG VG.Arm VG.Impl.AesOfb.Arm
 open VG.Impl.CmacAes.Arm (advance xor4)
-open VG.Impl.AesCbc.Arm (whole encFrame)
+open VG.Impl.Aes.Arm (keyedFrame)
 open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem add0)
 open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call encF)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (schedAt kblk_call)
 open VG.Proof.AesGcm.Arm (below)
 open VG.Proof.MdStream.Arm (Upd op2_imm op2_reg wp_mov)
 open VG.Proof.AesCbc
@@ -101,6 +103,12 @@ theorem ivA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} 
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
       h.r10]
 
+/-- The round keys at the call: the code before it writes no memory. -/
+theorem ivA_keys {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s s₁ : State} (h : LInv M s₀ k s)
+    (a : IvA s₀ s s₁) (hkeys : Keys s₀ s.mem) :
+    KeysIn s₁.mem (S s₀) (R s₀) (schedAt s₁.mem (W s₀) (R s₀)) := by
+  rw [a.mem]; exact Keys.call hp (UPre.big_of h.frame) hkeys
+
 /-- A register the call and the code before it keep. -/
 theorem keptIv {s₀ : State} {s s₁ s₂ : State} (a : IvA s₀ s s₁)
     (c : BlkPost encF s₁ (W s₀) (Iv s₀) (S s₀) (R s₀) 1 s₂) {r : Reg} (hr : r ∈ preserved) (hlr : r ≠ .lr) :
@@ -114,15 +122,14 @@ theorem keptIv {s₀ : State} {s s₁ s₂ : State} (a : IvA s₀ s s₁)
 
 theorem post_eq : post = xor4 .r7 .r6 .r7 0 0 0 ++ advance := rfl
 
-theorem body_ok : BodyOk ofbMode body := by
-  intro s₀ hp k hk s h
+theorem body_ok : BodyOkK ofbMode body := by
+  intro s₀ hp k hk s h hkeys
   have hd := hp.dataA hk
   have qN := hp.dataN hk
   have hdf := hp.data_fit
   have hiv := hp.iv_fit
   refine WP.seq (WP.mono (ivA_wp hp h) fun s₁ a => ?_)
-  rw [encFrame_eq]
-  refine WP.seq (WP.mono (blk_call encF a.pre) fun s₂ c => ?_)
+  refine WP.seq (WP.mono (kblk_call a.pre (ivA_keys hp h a hkeys)) fun s₂ ⟨c, k₂⟩ => ?_)
   have hb : below s₁.sp = belowR s₀ := by rw [a.sp, h.sp]; rfl
   have rg₂ : Regs s₀ k s₂ :=
     ⟨by rw [keptIv a c (by simp [preserved]) (by decide), h.r4],
@@ -175,10 +182,11 @@ theorem body_ok : BodyOk ofbMode body := by
     rw [newBlk, newIv]
     simp only [outK, chainK, ofbMode_out, ofbMode_chain, take_succ_blks s₀ hk, crypt_snoc, hl]
   have hl' : (outK ofbMode s₀ k).length = k := by rw [outK, Mode.length_out, hl]
-  refine advance_wp hp hk (rg₂.of g₃.gpr g₃.sp g₃.rd g₃.wr)
+  refine advance_wpK hp hk (rg₂.of g₃.gpr g₃.sp g₃.rd g₃.wr)
     (by rw [g₃.gpr _ (by decide) (by decide), keptIv a c (by simp [preserved]) (by decide), h.r8])
     (by rw [g₃.gpr _ (by decide) (by decide), keptIv a c (by simp [preserved]) (by decide), h.r11])
     (h.frame.trans (stepFrame hk fStep)) ?_ ?_
+    (Keys.frame hp f₃ (hp.work_blk hk) (Keys.of_call hp (by rw [a.mem]; exact big) k₂))
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
@@ -202,9 +210,10 @@ theorem mid_of {M : Mode} {s₀ : State} {k : Nat} {s s₁ : State} (h : LInv M 
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r10],
     by rw [a.sp, h.sp]⟩⟩
 
-theorem body_ct : BodyCt ofbMode body := fun hp hp' hq k => by
-  rw [body, encFrame_eq]
-  exact VG.Proof.AesCbc.Arm.body_ct encF (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_Iv hq) pre_taint post_taint
-    (@fun _ hp _ _ _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of h a) hp hp' hq k
+theorem body_ct : BodyCtK ofbMode body := fun hp hp' hq k => by
+  rw [body]
+  exact VG.Proof.AesCbc.Arm.body_ctK (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_Iv hq) pre_taint post_taint
+    (@fun _ hp _ _ _ h hkeys => WP.mono (ivA_wp hp h) fun _ a => ⟨mid_of h a, ivA_keys hp h a hkeys⟩)
+    hp hp' hq k
 
 end VG.Proof.AesOfb.Arm

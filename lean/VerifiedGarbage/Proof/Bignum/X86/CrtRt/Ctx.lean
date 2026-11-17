@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 import VerifiedGarbage.Proof.Rsa.X86.Chain
 import VerifiedGarbage.Proof.Dsa.Frame
 

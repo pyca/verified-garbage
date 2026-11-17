@@ -24,8 +24,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Finish
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.FinishMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Finish
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push

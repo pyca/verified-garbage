@@ -342,7 +342,7 @@ end
 /-!
 # A round of bitsliced SM4 on ARMv7
 
-As on x86-64 (`Proof/Sm4/X86_64/Round.lean`), on 32-bit planes:
+As on x86-64 (`Proof/Sm4/X86_64/Core.lean`), on 32-bit planes:
 `round_ok`, with the state's four words in their slots (`StRel`) and the
 round key's planes at entry `a` of `kp`, `round l a a b c d` replaces word
 `a` of every block's state with its new value (`sround`), keeping the other

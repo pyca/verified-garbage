@@ -5,9 +5,8 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 
 /-! ### `Bignum.X86_64.AdxSquareWideGeneral`, which this module and modules that import it used -/
 

@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-!
 # `vg_rsa_private_checked_precomputed` on x86-64: correctness
@@ -737,7 +738,12 @@ theorem codeP_correct (v : CrtImpl) (pdName : String) (s : State) (h : chkContra
   refine WP.seq (WP.mono (crtP_call v hp hf he₁ hargs h96 h104 hdi hsi hdx hcx h8 h9) fun t₂ ⟨he₂, hcrt, hcs₂, hmx₂⟩ => ?_)
   refine WP.mono (check_okP v.pubOp pdName hp hf he₂)
     fun t₃ ⟨he₃, hrax, hout, _, hcs₃, hmx₃⟩ => ?_
-  refine ⟨he₃.rsp, by rw [he₃.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp he₃.mem, ?_⟩, ?_⟩
+  refine ⟨he₃.rsp, by rw [he₃.wr]; rfl, fun m u fm => ?_⟩
+  have hstk : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region)], ∃ r' ∈ [stkR s, outR s, scrR s], Region.Sub r r' :=
+    fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s, by simp, frame_stk s⟩
+  refine ⟨⟨fun r hr => ?_, ret_frame hp (he₃.mem.trans (fm.sub hstk)), ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
@@ -750,9 +756,12 @@ theorem codeP_correct (v : CrtImpl) (pdName : String) (s : State) (h : chkContra
       simp only [allocState_gpr, hr', ↓reduceIte]
   · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
     rw [hmx₃, hmx₂, hmx₁]; rfl
-  · have hfr : (freed frameBytes t₃).gpr .rax = t₃.gpr .rax := rfl
-    have hfm : (freed frameBytes t₃).mem = t₃.mem := rfl
-    simp only [chkContract, hfr, hfm]
+  · have hsi := hp.hsi
+    rw [← Proof.Rsa.rsa_bytes_frame fm (s.gpr .rcx).isLt (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      have := (hp.dKo.sub_left (frame_stk s)).symm
+      rwa [hsi] at this)] at hout
+    simp only [chkContract]
     exact outcome_eq (bytesAt_length' _ _ _) (by rw [bytesAt_length']) hcrt hrax hout
 
 end VG.Proof.Rsa.X86_64

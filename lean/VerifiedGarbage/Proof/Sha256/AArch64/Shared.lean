@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
@@ -127,6 +128,7 @@ theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha
       (Spec.Sha256.updateContract AArch64.abi (16 + 608)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (updateScratch_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha256.updatePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch_of` with its working space in a frame of its own. -/
@@ -135,6 +137,7 @@ theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.S
       (Spec.Sha256.finalizeContract AArch64.abi (16 + 608)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (finalizeScratch_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha256.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## SHA-224's digest
@@ -194,6 +197,7 @@ theorem finalize224_of {code : Prog isa}
       (Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (finalize224Scratch_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha256.finalize224PostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha256.AArch64.Shared

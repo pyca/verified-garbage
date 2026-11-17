@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrontRt
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishReady
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinish
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters

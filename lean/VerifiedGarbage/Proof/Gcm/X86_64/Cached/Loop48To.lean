@@ -4,18 +4,15 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.Framework.Offset

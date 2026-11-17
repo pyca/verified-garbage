@@ -304,15 +304,22 @@ theorem gatherPre_of {s : State} (h : (Proof.AesGcm.sealGatherScratchContract X8
     filterMap_none', List.map_id', Sig.conj_cons, Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true,
     List.filterMap_cons, List.filterMap_nil, List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true,
     Bool.false_or, Bool.or_false, List.cons_append, List.singleton_append, Sig.descRegion] at h
-  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, kw, nd, nt, nw, ad, at_, aw, dt, dw, dds, ⟨dl, da⟩, tw, tds, ⟨tl, ta⟩, wds, wl, wa⟩,
-    rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
-    hr, hg⟩ := h
+  -- the conjuncts in one step each level (`sig_split`), not a `cases` for each of the fifty names
+  sig_split h
+  rename_i w₁ w₂ rd wr g₁ _ _ _ rdd rt rw g₂ ok on oa od ot ow g₃ hr
+  sig_split g₁
+  rename_i kd kt kw nd nt nw ad at_ aw dt dw dds dd tw tds tt wds wl
+  sig_split g₂
+  rename_i _ _ bk bn ba bd bt bw bds bl
+  obtain ⟨dl, da⟩ := dd
+  obtain ⟨tl, ta⟩ := tt
+  obtain ⟨ods, ol⟩ := g₃
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
     Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.base]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
-    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
-    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, trivial⟩
+    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, g₁, rdd, rt, rw,
+    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, h, trivial⟩
 
 set_option linter.unusedSimpArgs false in
 theorem gatherPreP_of {s : State}
@@ -327,15 +334,21 @@ theorem gatherPreP_of {s : State}
     filterMap_none', List.map_id', Sig.conj_cons, Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true,
     List.filterMap_cons, List.filterMap_nil, List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true,
     Bool.false_or, Bool.or_false, List.cons_append, List.singleton_append, Sig.descRegion] at h
-  obtain ⟨w₁, w₂, rd, wr, ⟨kd, kt, kw, nd, nt, nw, ad, at_, aw, dt, dw, dds, ⟨dl, da⟩, tw, tds, ⟨tl, ta⟩, wds, wl, wa⟩,
-    rk, rn, ra, rdd, rt, rw, ⟨rds, ⟨rl, -⟩, bk, bn, ba, bd, bt, bw, bds, bl, -⟩, ok, on, oa, od, ot, ow, ⟨ods, ol⟩,
-    hr, hg, hpw⟩ := h
+  sig_split h
+  rename_i w₁ w₂ rd wr g₁ _ _ _ rdd rt rw g₂ ok on oa od ot ow g₃ hr hg
+  sig_split g₁
+  rename_i kd kt kw nd nt nw ad at_ aw dt dw dds dd tw tds tt wds wl
+  sig_split g₂
+  rename_i _ _ bk bn ba bd bt bw bds bl
+  obtain ⟨dl, da⟩ := dd
+  obtain ⟨tl, ta⟩ := tt
+  obtain ⟨ods, ol⟩ := g₃
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, Proof.AesGcm.stkG,
     Proof.AesGcm.slicesG, Proof.AesGcm.rounds, VG.X86_64.below, CtxMode.powers]
   simp only [show (2 * (64 / 8) : Nat) = 16 from rfl] at *
   exact ⟨rd, wr, kd, kt, kw, nd, nt, nw, ad, at_, aw, dds.symm, tds.symm, wds.symm,
-    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, wa, rdd, rt, rw,
-    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, hpw⟩
+    fun r hr' => ⟨(dl r hr').symm, (tl r hr').symm, (wl r hr').symm⟩, dt, dw, tw, da, ta, g₁, rdd, rt, rw,
+    bk, bn, ba, bds, bl, bd, bt, bw, ok, on, oa, ods, ol, od, ot, ow, w₁, w₂, hr, hg, h⟩
 
 
 theorem gatherPost_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG s s') :
@@ -453,7 +466,7 @@ theorem sealGather_framed (Sh : ShortFn CtxMode.base) (I : InitFn) (A : AadFn)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
     (pre := Spec.Gcm.sealGatherPre X86_64.abi.ptrBits) (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 4888) (bytes := 240) (sealGather_core Sh I A T F) (by decide) (by decide) (by decide)
     (sealGather_spAll Sh I A T F) (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPre_local _)
@@ -480,7 +493,7 @@ theorem sealGatherP_framed (Sh : ShortFn CtxMode.powers) (I : InitFn) (A : AadFn
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPrecomputedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesGcm.sealGatherPrecomputedPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherP_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)

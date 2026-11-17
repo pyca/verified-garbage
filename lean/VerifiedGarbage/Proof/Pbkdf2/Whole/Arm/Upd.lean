@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: `update`, in its frame, of any length
@@ -23,7 +24,7 @@ namespace VG.Proof.Pbkdf2.Whole.Arm
 open VG.Arm
 open VG.Impl.Pbkdf2.Stream.Arm (Hash)
 open VG.Proof.Pbkdf2.Stream.Arm (HashOK updK below count ce0 ce1 ce2 ce3 addr_sub addr_sub_add sep_off
-  contains_off frame_app after_frame push_eq)
+  contains_off frame_app after_frame lost_sub push_eq)
 open Spec.Sha256 (bytesAt)
 
 variable {H : Hash} (hH : HashOK H)
@@ -174,12 +175,12 @@ theorem upd_frame {s : State} {st d sc : BitVec 32} {len : Nat} (h : UpdL hH s s
   have h16 := h.sp16
   refine WP.frame (rs := upd4) (r := .r1) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.callCalls (k := updK H.S hH.Wb hH.SH.Repr) hH.upd.1 h.pre h.cov h.covW ?_ hH.updNF
-  intro s₂ hrd hwr hsp hf hcs _ hpost
+  intro s₂ hrd hwr hsp hf hcs _ hpost mL uL hfl
   have vc : count ((pushed upd4 s).callEntry.withRegions (UpdL.rd s.sp d len) (UpdL.wr hH st sc)) = count s := by
     simp only [count, State.withRegions_gpr, ce2, ce3, pushed_gpr]
   simp only [updK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, pushed_gpr, h.r0,
     h.arg0 _ UpdL.vsp UpdL.vmem, h.arg1 _ UpdL.vsp UpdL.vmem, h.hlen', vc] at hpost
-  refine hQ _ (after_frame h.fP hrd hwr hsp hf hcs) fun m hr hcm => ?_
+  refine hQ _ (after_frame h.fP hrd hwr hsp hf hcs (by decide) h16 hfl) fun m hr hcm => ?_
   have hs : ∀ r ∈ [below s], (⟨State.addr st, H.S⟩ : Region).Disjoint r := by
     simp only [List.mem_singleton]; rintro r rfl; exact h.b_st.symm
   have hr' : hH.SH.Repr (pushed upd4 s).mem (State.addr st) m :=
@@ -192,8 +193,10 @@ theorem upd_frame {s : State} {st d sc : BitVec 32} {len : Nat} (h : UpdL hH s s
     exact h.fP.bytes (R := ⟨State.addr d, len⟩)
       (by simp only [List.mem_singleton]; rintro r rfl; exact h.b_d.symm) (by show len ≤ 2 ^ 64; have := h.hlen; omega_nat)
       (List.mem_range.mp hi)
-  rw [popped_mem, ← hd]
-  exact hpost m hr' hcm
+  rw [← hd]
+  exact hH.repr _ _ _ _ _ (fun i hi => hfl.bytes (R := ⟨State.addr st, H.S⟩)
+    (by simp only [List.mem_singleton]; rintro r rfl; exact h.b_st.symm.sub_right (lost_sub (by decide) h16))
+    (by show H.S ≤ 2 ^ 64; have := hH.hSB; omega_nat) hi) (hpost m hr' hcm)
 
 
 theorem upd_rel {P : State → State → Prop} {sp : BitVec 32} {st d sc : BitVec 32} {len : Nat}

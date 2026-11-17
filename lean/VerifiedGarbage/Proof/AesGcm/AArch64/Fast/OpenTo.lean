@@ -267,7 +267,8 @@ theorem fastOpenTo_framed :
     (post := Proof.AesGcm.openToRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2608)
     (leak := some (Spec.Gcm.openToLeak AArch64.abi.ptrBits))
     (fastOpenTo_verified v hMK) (by decide) (by decide) (Proof.AesGcm.openToPre_local _)
-    (Proof.AesGcm.openToRoundsPostBase_local _) openToFrameSat_pre (hleak := Proof.AesGcm.openToLeakBase_local _)
+    (Proof.AesGcm.openToRoundsPostBase_local _)
+    (Proof.AesGcm.openToPostOut_local _) openToFrameSat_pre (hleak := Proof.AesGcm.openToLeakBase_local _)
 
 end
 
@@ -531,7 +532,8 @@ theorem openToPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : MulKey) :
     (post := Proof.AesGcm.openToWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2608) (leak := some (Spec.Gcm.openToWithPowersLeak AArch64.abi.ptrBits))
     (openToPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.openToWithPowersPre_local _)
-    (Proof.AesGcm.openToWithPowersPost_local _) openToFrameSatPw_pre
+    (Proof.AesGcm.openToWithPowersPost_local _)
+    (Proof.AesGcm.openToWithPowersPostOut_local _) openToFrameSatPw_pre
     (hleak := Proof.AesGcm.openToWithPowersLeak_local _)
 
 open VG.Proof.AesGcm.AArch64.Gather in

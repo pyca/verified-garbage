@@ -122,6 +122,16 @@ theorem pkE_ok {s : State} (h : pkLocalE.pre s) :
           simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
             Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using huo.1,
           huo.2⟩)
+    (hP := fun _ m₁ m₂ _ hf hp => by
+      have e : Spec.Ed25519.bytesAt m₂ (State.addr (s.gpr .r0)) 32 = Spec.Ed25519.bytesAt m₁ (State.addr (s.gpr .r0)) 32 := by
+        unfold Spec.Ed25519.bytesAt
+        refine List.map_congr_left fun i hi => hf.bytes (R := ⟨State.addr (s.gpr .r0), 32⟩) ?_
+          (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+        rintro r hr
+        rw [List.mem_singleton.mp hr]
+        exact (entry_writes h _ (by rw [h.2.1]; simp)).symm
+      show Spec.Ed25519.bytesAt m₂ _ _ = _
+      rw [e]; exact hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, fun seed _ hs => ?_⟩
   have hd : Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 64 =
       Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 64 := by

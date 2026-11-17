@@ -15,7 +15,13 @@ The streaming functions of SHA-256 and SHA-224 as HMAC's code over any
 streaming hash function calls them (`hash256`, `hash224`): each hash
 function's `init` and `finalize`, and SHA-256's `update`, which keep their
 working space in frames of their own, within 144 bytes below the stack
-pointer; and what the proofs need of them (`ok256`, `ok224`).
+pointer; and what the proofs need of them (`ok256`, `ok224`). They call
+that code as the internal `vg_sha256_init_core`, `vg_sha256_update_core`,
+… (an `_core` suffix to each name): the functions exported as
+`vg_sha256_init`, … also clear what they leave
+(`Proof/Sha256/RISCV64/Scrub.lean`), which their callers, which return
+without secret residue or are listed in `ci/residue_allowlist.txt`, do not
+need.
 -/
 
 @[expose] public section
@@ -31,11 +37,11 @@ def hash256 : Hash where
   N := 32
   D := 32
   F := 144
-  initN := Spec.Sha256.initApi.name
+  initN := Spec.Sha256.initApi.name ++ "_core"
   initC := Impl.Sha256.RISCV64.Stream.init
-  updN := Spec.Sha256.updateApi.name
+  updN := Spec.Sha256.updateApi.name ++ "_core"
   updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalizeApi.name
+  finN := Spec.Sha256.finalizeApi.name ++ "_core"
   finC := Impl.Sha256.RISCV64.Stream.finalize
 
 /-- SHA-224's: its own `init` and `finalize`, and SHA-256's `update`. -/
@@ -44,11 +50,11 @@ def hash224 : Hash where
   N := 32
   D := 28
   F := 144
-  initN := Spec.Sha256.init224Api.name
+  initN := Spec.Sha256.init224Api.name ++ "_core"
   initC := Impl.Sha256.RISCV64.Stream.init224
-  updN := Spec.Sha256.updateApi.name
+  updN := Spec.Sha256.updateApi.name ++ "_core"
   updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalize224Api.name
+  finN := Spec.Sha256.finalize224Api.name ++ "_core"
   finC := Impl.Sha256.RISCV64.Stream.finalize224
 
 theorem initSd : sdepth Impl.Sha256.RISCV64.Stream.init ≤ 144 := by decide +kernel

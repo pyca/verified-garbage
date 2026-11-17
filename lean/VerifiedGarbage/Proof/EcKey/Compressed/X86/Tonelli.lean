@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootPow
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 import VerifiedGarbage.Proof.Weierstrass.Law
@@ -23,7 +22,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Impl.Ecdsa.X86
 public import VerifiedGarbage.Proof.Framework.Semantics

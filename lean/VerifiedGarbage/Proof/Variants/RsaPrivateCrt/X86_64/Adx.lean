@@ -36,12 +36,10 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow

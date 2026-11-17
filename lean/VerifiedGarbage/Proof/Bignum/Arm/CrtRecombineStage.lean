@@ -16,12 +16,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
-import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
 import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFinishRecombine
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
-import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.Words32

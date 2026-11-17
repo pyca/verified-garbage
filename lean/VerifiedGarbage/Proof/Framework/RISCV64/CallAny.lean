@@ -118,12 +118,18 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     simp only [sdepth] at hd ⊢
     obtain ⟨p₁, -, f₀, r, w₁, hr⟩ := push_any hp
-    rw [pop_mem hq]
+    obtain ⟨n, hn, f₂⟩ := pop_mem hq
+    rw [w₁, List.head?_cons, Option.some.injEq] at hn
+    rw [← hn] at f₂
     have f₁ := ih (by omega_using [hd])
     rw [w₁, p₁] at f₁
     have hsub : Region.Sub (below s₀.sp i.frameBytes) (below s₀.sp (i.frameBytes + sdepth b)) :=
       below_sub (by omega_using []) hd
-    refine Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_)
+    refine Frame.trans (Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_))
+      (f₂.sub fun r' hr' => ?_)
+    rotate_left 2
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), fun x hx => hsub x (hr x hx)⟩
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hsub⟩
     · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr'

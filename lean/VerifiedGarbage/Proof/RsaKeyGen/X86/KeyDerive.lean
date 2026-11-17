@@ -7,9 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetry
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyQinv
 public import VerifiedGarbage.Spec.Rsa
 public import Init.Data.Nat.Coprime
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace

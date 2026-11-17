@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.RsaPss.SignCases
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
@@ -250,18 +252,13 @@ variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : 
 def freedF (s₂ : State) : State :=
   { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 frameBytes) with wr := s₂.wr.tail }
 
+/-- The frame, whose bytes hold whatever they hold once released (`alloc_frame_ok`). -/
 theorem wp_frame {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
-      s₂.wr = (allocState frameBytes s).wr ∧ Q (freedF s₂)) :
-    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  have ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
-  have hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freedF s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+        Q { freedF s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q :=
+  alloc_frame_ok (by decide) hsp hb
 
 theorem zext8 (b : Byte) : BitVec.setWidth 64 b = BitVec.ofNat 64 b.toNat := by
   apply BitVec.eq_of_toNat_eq
@@ -291,16 +288,19 @@ theorem n0_ok {s t : State} (hp : SPre tsH tsG s) (L : Lay t (fb s) (stackArg s 
 
 theorem restore_ok {s t : State} (hp : SPre tsH tsG s) (D : SDone s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (signK tsH tsG).post s (freedF t') ∧
-      (freedF t').mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
+      ∀ m u, Frame [⟨fb s, frameBytes⟩] t'.mem m →
+        (∀ r ∈ calleeSaved, ({ freedF t' with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧ (signK tsH tsG).post s ({ freedF t' with mem := m, unknowns := u } : State) ∧
+        ({ freedF t' with mem := m, unknowns := u } : State).mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hF := fb_toNat hp
   refine WP.mono_mx (by decide) (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ hmx => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   have hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_, by show t'.mxcsr.extractLsb' 6 10 = _; rw [hmx]; exact D.mx⟩
-  · simp only [freedF, State.setReg]
+  refine ⟨hsp, k.2.2.trans D.wr, fun m u fm => ⟨fun r hr => ?_, ?_,
+    by show t'.mxcsr.extractLsb' 6 10 = _; rw [hmx]; exact D.mx⟩⟩
+  · show (freedF t').gpr r = s.gpr r
+    simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
     · simp only [hr', ite_false]
@@ -314,7 +314,12 @@ theorem restore_ok {s t : State} (hp : SPre tsH tsG s) (D : SDone s t) :
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
       · rw [k.gpr (by decide)]; exact D.cs _ (by simp)
   · intro H G hH hG
-    show Spec.Rsa.writtenOutcome t'.mem _ _ ((t'.gpr .rax).setWidth 32) _
+    show Spec.Rsa.writtenOutcome m _ _ ((t'.gpr .rax).setWidth 32) _
+    have hsi := hp.hsi
+    refine Proof.Rsa.writtenOutcome_frame fm (s.gpr .rcx).isLt (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      have := (hp.dKo.sub_left (frame_sub s)).symm
+      rwa [hsi] at this) ?_
     rw [hm, k.gpr (show Reg.rax ∉ [Reg.rbx, .rbp, .r12] by decide)]
     exact D.out H G hH hG
 

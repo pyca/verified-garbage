@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Kernel
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase

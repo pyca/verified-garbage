@@ -918,7 +918,8 @@ end Body
 /-- `framed c`, for verified code `c` that writes `rsp` only in its frames'
 pushes and pops and uses at most 24 bytes of stack below `rsp`, run from
 `seal`'s entry state in the frame with its permissions narrowed to `seal`'s
-regions and `more`. -/
+regions and `more`. The frame's pop loses its 40 bytes: the memory on return
+is the callee's but there. -/
 theorem framed_ok {whole : Bool} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hsp : SpSafe c) (hd : c.x86_64Depth ≤ 24) (more : State → List Region)
@@ -927,7 +928,7 @@ theorem framed_ok {whole : Bool} {c : Prog isa} {k : Contract isa}
     (hmore : ∀ u, Body whole s u → Covers (more u) (u.rd ++ u.wr)) :
     WP isa (framed c) h fun z => ∃ u s₂ : State, Body whole s u ∧
       k.post (u.withRegions (rdB u ++ more u) (wrB u)) (s₂.withRegions (rdB u ++ more u) (wrB u)) ∧
-      z.mem = s₂.mem ∧ Frame (wrB u ++ [below (u.gpr .rsp) 24]) u.mem s₂.mem ∧
+      Frame [⟨fB s + BitVec.ofNat 64 24, 40⟩] s₂.mem z.mem ∧ Frame (wrB u ++ [below (u.gpr .rsp) 24]) u.mem s₂.mem ∧
       (∀ r ∈ calleeSaved, z.gpr r = s.gpr r) ∧ z.rd = s.rd ∧ z.wr = s.wr ∧
       z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   obtain hsp' : h.gpr .rsp = s.gpr .rsp :=
@@ -944,9 +945,14 @@ theorem framed_ok {whole : Bool} {c : Prog isa} {k : Contract isa}
   obtain pw : (pushed frameRegs h).wr = ⟨fB s + BitVec.ofNat 64 24, 40⟩ :: s.wr := by
     rw [pushed_wr, hsp', rsp_eq s, add_ofNat_sub_ofNat' _ (show 8 * frameRegs.length ≤ 64 by decide), hh.wr]
     rfl
-  refine ⟨by rw [rsp₂, hu.rsp, pushed_rsp' hsp'], by rw [wr₂, hu.wr, pw], u, s₂, hu, post₂, popped_mem _ _ _,
-    Frame.below_mono f₂ hd (by decide), fun r hr => ?_, by rw [popped_rd, rd₂, hu.rd],
-    by rw [popped_wr, wr₂, hu.wr]; rfl, by rw [popped_mxcsr, ab₂.2.2, hu.mx]⟩
+  refine ⟨by rw [rsp₂, hu.rsp, pushed_rsp' hsp'], by rw [wr₂, hu.wr, pw], fun m uk fm => ?_⟩
+  obtain hreg : (⟨h.gpr .rsp - BitVec.ofNat 64 (8 * frameRegs.length), 8 * frameRegs.length⟩ : Region) =
+      ⟨fB s + BitVec.ofNat 64 24, 40⟩ := by
+    have := pw; rw [pushed_wr] at this; exact (List.cons.inj this).1
+  rw [hreg] at fm
+  dsimp only
+  refine ⟨u, s₂, hu, post₂, fm, Frame.below_mono f₂ hd (by decide), fun r hr => ?_,
+    by rw [popped_rd, rd₂, hu.rd], by rw [popped_wr, wr₂, hu.wr]; rfl, by rw [popped_mxcsr, ab₂.2.2, hu.mx]⟩
   by_cases hr' : r = .rsp
   · subst hr'
     rw [popped_rsp, rsp₂, hu.rsp, Offset.add_ofNat_add_ofNat, rsp_eq s]; rfl
@@ -1093,13 +1099,15 @@ theorem wrB_eq : wrB u = [edR s, etR s, ewR s] := by
 
 /-- `seal_split`'s calling-convention obligations, from those of `seal`'s
 body in the frame. -/
-theorem abi {s₂ z : State} (hm : z.mem = s₂.mem) (hf : Frame (wrB u ++ [below (u.gpr .rsp) 24]) u.mem s₂.mem)
+theorem abi {s₂ z : State} (hm : Frame [⟨fB s + BitVec.ofNat 64 24, 40⟩] s₂.mem z.mem) (hf : Frame (wrB u ++ [below (u.gpr .rsp) 24]) u.mem s₂.mem)
     (hcs : ∀ r ∈ calleeSaved, z.gpr r = s.gpr r)
     (hmx : z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) : abiPreserved s z := by
   rw [hb.wrB_eq, hb.rsp] at hf
   simp only [below, BitVec.add_sub_cancel] at hf
   refine ⟨hcs, ?_, hmx⟩
-  rw [hm, hf.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
+  rw [hm.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hs.ret_stk (d := 24) (n := 40) (by decide)) (by decide),
+    hf.readW (r := eretR s) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl | rfl) | rfl
       · exact hs.r_d
@@ -1115,6 +1123,15 @@ theorem abi {s₂ z : State} (hm : z.mem = s₂.mem) (hf : Frame (wrB u ++ [belo
       · exact hs.ret_stk (d := 24) (n := 40) (by decide)) (by decide)]
 
 end Body
+
+/-- A buffer apart from the stack below `rsp` keeps its bytes when the frame
+around `seal`'s body loses its own. -/
+theorem bytes_lost {s : State} {m m' : Mem} (hf : Frame [⟨fB s + BitVec.ofNat 64 24, 40⟩] m m')
+    {p : Addr} {n : Nat} (hd : (estkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, n⟩) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact (hd.sub_left (stk_sub s (d := 24) (n := 40) (by decide))).symm) hn
+    (List.mem_range.mp hi)
 
 /-- The AVX-512 instances: the copy of the bytes the prologue's keystream
 covers, then `seal`'s body with the rest read from `src`. -/
@@ -1149,7 +1166,8 @@ theorem split_wp (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.B
       · rw [ite_eq_left (show _ ∧ _ from ⟨h₂, h₁⟩), ite_eq_left h₁, hu.src_byte hs h₁]
       · rw [ite_eq_right (fun h => h₂ h.1), ite_eq_left (show k < min _ _ by omega_using [h₁, h₂]), ite_eq_left h₁]
     · rw [ite_eq_right (fun h => h₁ h.2), ite_eq_right (show ¬ k < min _ _ by omega_using [h₁]), ite_eq_right h₁]
-  rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, eP, hu.r8, hu.r9, hu.arg0, ← hm] at post'
+  rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, eP, hu.r8, hu.r9, hu.arg0,
+    ← bytes_lost hm hs.b_d (by omega_using [hL]), ← bytes_lost hm hs.b_t (by decide)] at post'
   exact post'
 
 /-- `splitK`, with what the code leaves in the keystream area (`KsLeftZ`). -/
@@ -1184,8 +1202,12 @@ theorem split_wpK (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.
   obtain F : Frame [⟨eW s, 32⟩, edR s, ⟨fB s + BitVec.ofNat 64 24, 40⟩] s.mem u.mem :=
     ((hs.headM_frame32 _ (FPre.cnt_le false)).mono (by simp)).trans (hu.mem.mono (by simp))
   have ow := hs.o_w
-  rw [hm]
-  refine post.frame (rs := []) (Frame.refl _ _) (fun _ _ _ hr => by simp at hr) F fun k hk r hr hc => ?_
+  refine post.frame (rs := [⟨fB s + BitVec.ofNat 64 24, 40⟩]) hm (fun k hk r hr hc => ?_) F fun k hk r hr hc => ?_
+  · -- The frame's lost bytes are on the stack, apart from `work`.
+    obtain hxw : (ewR s).Contains (off (eW s) (672 + k)) 1 := by
+      rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+    rw [List.mem_singleton.mp hr] at hc
+    exact hs.b_w _ (stk_sub s (d := 24) (n := 40) (by decide) _ hc) hxw
   obtain hxw : (ewR s).Contains (off (eW s) (672 + k)) 1 := by
     rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1214,7 +1236,9 @@ theorem whole_wp {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blo
     refine eq_of_getD (VG.Proof.Poly1305.length_bytesAt _ _ _) (length_inSplit hs) fun k hk => ?_
     rw [bytesAt_getD _ _ hk, hu.dst_byte hs hk, inSplit_getD hk]
     rfl
-  rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, hu.r8, hu.r9, eD, hu.arg0, ← hm] at post'
+  obtain hL : eLn s < 2 ^ 64 := (stackArg s 1).isLt
+  rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, hu.r8, hu.r9, eD, hu.arg0,
+    ← bytes_lost hm hs.b_d (by omega_using [hL]), ← bytes_lost hm hs.b_t (by decide)] at post'
   exact post'
 
 /-- `vg_chacha20_poly1305_seal_split` of the instance calling the

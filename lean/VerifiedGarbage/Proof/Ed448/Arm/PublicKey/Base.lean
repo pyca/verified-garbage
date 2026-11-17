@@ -439,6 +439,16 @@ theorem publicKey_ok (hl : BaseCombOk) {s : State} (h : pkLocal.pre s) :
       fun u ⟨hu, ho⟩ => ⟨by
         simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
           Lay.SCR, Lay.ARGS, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
+    (hP := fun _ m₁ m₂ _ hf hp => by
+      have e : Spec.Ed448.bytesAt m₂ (State.addr (s.gpr .r0)) 57 = Spec.Ed448.bytesAt m₁ (State.addr (s.gpr .r0)) 57 := by
+        unfold Spec.Ed448.bytesAt
+        refine List.map_congr_left fun i hi => hf.bytes (R := ⟨State.addr (s.gpr .r0), 57⟩) ?_
+          (by change 57 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+        rintro r hr
+        rw [List.mem_singleton.mp hr]
+        exact (entry_writes h _ (by rw [h.2.1]; simp)).symm
+      show Spec.Ed448.bytesAt m₂ _ _ = _
+      rw [e]; exact hp)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have hs : Spec.Ed448.bytesAt m (State.addr (s.gpr .r1)) 57 =
       Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) 57 := by

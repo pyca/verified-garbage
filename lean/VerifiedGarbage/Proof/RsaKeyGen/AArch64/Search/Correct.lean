@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 -- separate module: its proofs build in parallel with the constant-time ones, `CT`
 
@@ -164,22 +165,41 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   refine WP.alloc (by decide) hroom ?_
   refine WP.seq (WP.mono (entry_ok hp) fun t ⟨⟨hx, hm⟩, k⟩ => ?_)
   refine WP.seq (WP.mono (search_body c hp hx hm k) fun u ⟨hd, h30, hsp⟩ => ?_)
-  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_
+  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ m uu f => ?_
+  -- The frame's bytes are lost; the outputs are apart from them.
+  have F : Frame [below s.sp stackUse] q.mem m := f.sub fun R hR => by
+    obtain rfl := List.mem_singleton.mp hR
+    exact ⟨_, List.mem_singleton_self _, Offset.sub_below s.sp (by decide) (by decide)⟩
+  have dO : Region.Disjoint ⟨p.op, p.len⟩ (below s.sp stackUse) :=
+    (hp.stack_disjoint (r := inOut s) (by simp [inWrites])).symm
+  have dU : Region.Disjoint ⟨p.up, 8⟩ (below s.sp stackUse) :=
+    (hp.stack_disjoint (r := inUsed s) (by simp [inWrites])).symm
+  have dS : Region.Disjoint ⟨p.stp, 32⟩ (below s.sp stackUse) :=
+    (hp.stack_disjoint (r := inState s) (by simp [inWrites])).symm
+  have eO : Spec.Rsa.bytesAt m p.op p.len = Spec.Rsa.bytesAt q.mem p.op p.len :=
+    List.map_congr_left fun i hi => lost_byte F dO (List.mem_range.mp hi)
+  have eW : ∀ {a : Addr} {n k : Nat}, Region.Disjoint ⟨a, k⟩ (below s.sp stackUse) → 8 * n ≤ k → k < 2 ^ 64 →
+      Spec.Rsa.wordsAt m a n = Spec.Rsa.wordsAt q.mem a n := by
+    intro a n k hd hk hk2
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    exact F.readW (r := ⟨a, k⟩) (Offset.contains_base _ (by omega_using [hi, hk]) (by omega_using [hi, hk, hk2]))
+      (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact hd) (by decide)
   have hlen : searchLen s = p.len := rfl
   have hst : (searchResult s).status < 4 := by
     unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · change ((q.gpr .x0).setWidth 32).toNat = _
     rw [hr, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
-  · change Spec.Rsa.bytesAt q.mem p.op p.len = _
-    rw [hmq, finished_bytes hp]
+  · change Spec.Rsa.bytesAt m p.op p.len = _
+    rw [eO, hmq, finished_bytes hp]
     exact hd.output
-  · change Spec.Rsa.wordsAt q.mem p.up 1 = _
-    rw [hmq, finished_used]
+  · change Spec.Rsa.wordsAt m p.up 1 = _
+    rw [eW dU (by decide) (by decide), hmq, finished_used]
   · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
       (searchRemaining s) (searchRand s)⟩
-    change Spec.Rsa.wordsAt q.mem p.stp 4 = _
-    rw [hmq, finished_state hp]
+    change Spec.Rsa.wordsAt m p.stp 4 = _
+    rw [eW dS (by decide) (by decide), hmq, finished_state hp]
     rfl
   · intro reg hreg
     change q.gpr reg = s.gpr reg

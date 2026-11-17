@@ -87,16 +87,16 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a5, a5, -1
 	bnez a5, 21b
 	addi a0, s0, 0
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	addi a0, s0, 0
 	addi a1, zero, 0
 	addi a2, s0, 1552
 	addi a3, s1, 0
-	call {vg_sha256_update}
+	call {vg_sha256_update_core}
 	addi a0, s0, 0
 	addi a1, s1, 0
 	addi a2, s0, 208
-	call {vg_sha256_finalize}
+	call {vg_sha256_finalize_core}
 	addi a0, s0, 0
 	addi a1, s0, 96
 	addi a2, s0, 208
@@ -106,7 +106,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, zero, 64
 	addi a2, s6, 0
 	addi a3, s1, 0
-	call {vg_sha256_update}
+	call {vg_sha256_update_core}
 	addi a0, s0, 0
 	addi a1, s0, 96
 	addi a2, s1, 64
@@ -145,7 +145,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, zero, 64
 	addi a2, s0, 192
 	addi a3, zero, 10
-	call {vg_sha256_update}
+	call {vg_sha256_update_core}
 	addi a0, s0, 0
 	addi a1, s0, 96
 	addi a2, zero, 74
@@ -190,7 +190,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, zero, 64
 	addi a2, s0, 192
 	addi a3, zero, 11
-	call {vg_sha256_update}
+	call {vg_sha256_update_core}
 	addi a0, s0, 0
 	addi a1, s0, 96
 	addi a2, zero, 75

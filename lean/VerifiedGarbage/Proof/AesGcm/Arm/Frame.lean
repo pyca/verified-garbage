@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # AES-GCM on ARMv7, with its working space on the stack
@@ -44,7 +45,8 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
     (Spec.Gcm.initContract Arm.abi 2568) :=
   Arm.Verified.regScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre Arm.abi.ptrBits) (post := Spec.Gcm.initPost Arm.abi.ptrBits)
-    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide)
+    (initPostOut_local _) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/
@@ -64,6 +66,7 @@ theorem streamInit_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (post := Spec.Gcm.streamInitPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 0) streamInit_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamInitPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamInitPostOut_local _ vs mm m₁ m₂ r hl)
     streamInitFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_aad`'s precondition, without the
@@ -85,6 +88,7 @@ theorem streamAad_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (post := Spec.Gcm.streamAadPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 2) streamAad_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamAadPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamAadPostOut_local _ vs mm m₁ m₂ r hl)
     streamAadFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt` and
@@ -107,7 +111,8 @@ theorem streamEncrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamEncrypt_verified (by decide) (by decide) (by decide) (by decide)
-    (streamTextPre_local _) (streamEncryptPost_local _) streamEncryptFrameSat_pre
+    (streamTextPre_local _) (streamEncryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamEncryptPostOut_local _ vs mm m₁ m₂ r hl) streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2600).pre s := by
   implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
@@ -122,7 +127,8 @@ theorem streamDecrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
-    (streamTextPre_local _) (streamDecryptPost_local _) streamDecryptFrameSat_pre
+    (streamTextPre_local _) (streamDecryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamDecryptPostOut_local _ vs mm m₁ m₂ r hl) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, without the
 working space: its five words of stack arguments at `0x8000`. -/
@@ -143,7 +149,8 @@ theorem streamFinish_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (pre := Spec.Gcm.streamFinishPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) streamFinish_verified (by decide) (by decide) (by decide) (by decide)
-    (streamFinishPre_local _) (streamFinishPost_local _) finFrameSat_pre
+    (streamFinishPre_local _) (streamFinishPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamFinishPostOut_local _ vs mm m₁ m₂ r hl) finFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, without the
 working space: its six words of stack arguments at `0x8000`. -/
@@ -164,7 +171,8 @@ theorem streamVerify_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (pre := Spec.Gcm.streamVerifyPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamVerify_verified (by decide) (by decide) (by decide) (by decide)
-    (streamVerifyPre_local _) (streamVerifyPost_local _) verFrameSat_pre
+    (streamVerifyPre_local _) (streamVerifyPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => streamVerifyPostOut_local _ vs mm m₁ m₂ r hl) verFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
 space: its five words of stack arguments at `0x8000`. -/
@@ -185,7 +193,8 @@ theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (n := 320) (pre := Spec.Gcm.sealPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealPre_local _) (sealPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => sealPostOut_local _ vs mm m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: its six words of stack arguments at `0x8000`. -/
@@ -207,7 +216,8 @@ theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (post := Proof.AesGcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Gcm.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
-    (openPre_local _) (openPost_local _) openFrameSat_pre
+    (openPre_local _) (openPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => openPostOut_local _ vs mm m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcm.Arm

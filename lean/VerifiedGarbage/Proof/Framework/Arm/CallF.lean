@@ -106,10 +106,14 @@ theorem pushed_frameA {rs : List Reg} {s : State} (hn : 4 * rs.length ≤ s.sp.t
     rw [List.length_map, sub_toNat' hn]; have := s.sp.isLt; omega_using [hn])
   rwa [List.length_map] at this
 
-theorem pop_memA {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
+/-- A frame's pop changes memory only in the frame, the region at the head of
+the push's writable regions, whose bytes it loses. -/
+theorem pop_memA {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    ∃ n, s₁.wr.head? = some ⟨State.addr s₁.sp, n⟩ ∧ Frame [⟨State.addr s₁.sp, n⟩] s₂.mem s'.mem := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
   all_goals split at h <;> cases h
-  all_goals rfl
+  · next hc => exact ⟨_, hc.2.2.2.2.2.2, by rw [← hc.2.2.2.2.1]; exact lose_frame _ _ _ _⟩
+  · next hc => exact ⟨_, hc.2.2.2.2, by rw [← hc.2.2.1]; exact lose_frame _ _ _ _⟩
 
 /-- Code changes memory only within the regions it may write, and within the
 `armStack` bytes below the stack pointer (its frames). -/
@@ -155,12 +159,18 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     have := ih (by rw [p₁]; exact hd)
     rwa [w₁, p₁, m₁] at this
   | @frame i _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
-    rw [pop_memA hq]
+    obtain ⟨nf, hnf, f₂⟩ := pop_memA hq
     cases i <;> simp only [isa, push, reduceCtorEq] at hp
     case push rs =>
       split at hp <;> [rename_i hc; cases hp]
       cases hp
+      simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hnf
+      rw [← hnf.2] at f₂
       simp only [armStack] at hd ⊢
+      refine Frame.trans ?_ (f₂.sub fun r hr => ?_)
+      rotate_left
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using []) hd⟩
       have hn := hc.2
       have f₁ := ih (by show armStack b ≤ (s₀.sp - BitVec.ofNat 32 (4 * rs.length)).toNat
                         rw [sub_toNat' hn]; omega_using [hd])
@@ -178,7 +188,14 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     case alloc bytes =>
       split at hp <;> [rename_i hc; cases hp]
       cases hp
+      simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hnf
+      rw [← hnf.2] at f₂
       simp only [armStack] at hd ⊢
+      refine Frame.trans ?_ (f₂.sub fun r hr => ?_)
+      rotate_left
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          belowA_sub (sp := s₀.sp) (a := bytes) (by omega_using []) hd⟩
       have hn := hc.2.2.2.2
       have f₁ := ih (by show armStack b ≤ (s₀.sp - BitVec.ofNat 32 bytes).toNat
                         rw [sub_toNat' hn]; omega_using [hd])

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
@@ -128,7 +130,9 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
     rw [k₂.gpr (by simp [h1]), pushed_gpr, k₁.gpr (by simp [h12])]
   have go : ∀ {d c nb B : Nat}, Shape d c nb → (s₀.gpr .r3).toNat = B → B ≤ 2 ^ 19 →
       encodable (BitVec.ofNat 32 B) = true → bitlen ((s₀.gpr .r2).toNat + B) = d → ∀ s : State, Same s₂ s →
-      WP isa (unpackLoop (buFin B) d c nb) s fun s₃ => BuPost s₀ (popped .r4 4 s₃) := by
+      WP isa (unpackLoop (buFin B) d c nb) s fun s₃ => ∀ m u,
+        Frame [⟨State.addr (s₁.sp - BitVec.ofNat 32 (4 * [Reg.r4].length)), 4 * [Reg.r4].length⟩] s₃.mem m →
+          BuPost s₀ { popped .r4 4 s₃ with mem := m, unknowns := u } := by
     intro d c nb B hs hB hB19 hBe hd s hS
     have hlen := hp.len
     rw [hB, hd] at hlen
@@ -142,14 +146,22 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
       (by rw [x0, xrd, hp.rd, ← hlen]; exact List.mem_append_left _ (List.mem_cons_self ..))
       (by rw [x1, xwr, hp.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
       (by rw [x0, x1, ← hlen]; exact hp.disj) (by rw [x0, ← hlen]; exact hp.fitV) (by rw [x1]; exact hp.fitP))
-      fun s₃ ⟨hpoly, hf, hk⟩ => ⟨?_, ⟨fun r hr => ?_, ?_⟩⟩
-    · rw [popped_mem, ← x1, hlen]
+      fun s₃ ⟨hpoly, hf, hk⟩ mL uL hfl => ⟨?_, ⟨fun r hr => ?_, ?_⟩⟩
+    · dsimp only
+      rw [← x1, hlen]
       rw [x0, xm, bytesAt_frame (pushed4_frame hsp) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [eb, ← hlen]; exact hp.bV.symm) (by omega_arith), m₁,
         ← hB] at hpoly
-      exact hpoly
+      -- The polynomial is apart from the released frame.
+      have e4 : State.addr (s₁.sp - BitVec.ofNat 32 (4 * [Reg.r4].length)) = State.addr s₁.sp - 4 := addr_sub hsp
+      rw [e4] at hfl
+      have hd : ∀ r ∈ [below4 s₁], (polyRegion (State.addr (s.gpr .r1))).Disjoint r := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [x1, eb]; exact hp.bP.symm
+      exact polyIs_of_toNat fun i hi => by
+        rw [coeffAt_frame hfl hd hi, ← polyAt_val hpoly.1 hi, hpoly.2]
     · -- The registers: `r4` from the frame, the others kept.
       have hsp₃ : s₃.sp = s₁.sp - 4 := by rw [hk.2.2.2, hS.2.2.2.2, k₂.2.2.2, pushed4_sp]
+      dsimp only
       by_cases h4 : r = .r4
       · subst h4
         rw [(popped4 hsp hsp₃ ?_).1, k₁.gpr (by decide)]
@@ -163,6 +175,7 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
         have h1 : r ≠ .r1 := fun e => hr' (by rw [e]; decide)
         rw [popped_gpr h4, hk.gpr hr', hS.1, g0 r h12 h1]
     · have hsp₃ : s₃.sp = s₁.sp - 4 := by rw [hk.2.2.2, hS.2.2.2.2, k₂.2.2.2, pushed4_sp]
+      dsimp only
       rw [popped_sp, hsp₃, ← sp₁]; exact BitVec.sub_add_cancel _ _
   have e3 : ∀ s, Same s₂ s → (s.gpr .r3).toNat = (s₀.gpr .r3).toNat := fun s h => by
     rw [h.1, g0 _ (by decide) (by decide)]

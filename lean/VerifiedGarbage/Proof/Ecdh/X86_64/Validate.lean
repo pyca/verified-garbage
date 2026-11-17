@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Impl.Ecdh.X86_64

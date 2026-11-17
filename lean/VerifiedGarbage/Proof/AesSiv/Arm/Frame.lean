@@ -45,7 +45,8 @@ theorem encrypt_framed :
     (n := 322) (pre := Spec.Siv.encryptPre Arm.abi.ptrBits)
     (post := Proof.AesSiv.encryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 3) encrypt_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
+    (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs mm m₁ m₂ r hl) encFrameSat_pre
 
 theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract Arm.abi 2624).pre s := by
   implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
@@ -61,7 +62,8 @@ theorem decrypt_framed :
     (post := Proof.AesSiv.decryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Siv.decryptLeak Arm.abi.ptrBits))
     (m := 3) decrypt_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _) decFrameSat_pre
+    (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs mm m₁ m₂ r hl) decFrameSat_pre
     (hleak := Proof.AesSiv.decryptLeak_local _)
 
 end VG.Proof.AesSiv.Arm

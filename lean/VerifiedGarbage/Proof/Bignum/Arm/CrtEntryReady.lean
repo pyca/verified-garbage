@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
@@ -19,8 +19,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
-import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
-import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
@@ -31,7 +29,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
 import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
-import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers

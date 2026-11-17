@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.CallEntry
+public import VerifiedGarbage.Proof.MillerRabin.X86.CallPre
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 public import VerifiedGarbage.Proof.MillerRabin.Word32
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MillerRabin.X86.CallPre
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus

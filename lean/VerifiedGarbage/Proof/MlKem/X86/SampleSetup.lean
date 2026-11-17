@@ -368,7 +368,8 @@ theorem zero_write {m : Mem} {a : Addr} {k : Nat}
   · rename_i hn
     refine h j (Nat.lt_of_not_le fun hc => hn ?_)
     rw [show a + BitVec.ofNat 64 j - (a + BitVec.ofNat 64 (4 * k)) = BitVec.ofNat 64 (j - 4 * k) by
-      rw [show j = 4 * k + (j - 4 * k) by omega_using [hc], BitVec.ofNat_add]; bv_omega]
+      rw [show j = 4 * k + (j - 4 * k) by omega_using [hc], BitVec.ofNat_add, ← BitVec.add_assoc,
+        BitVec.add_comm (a + BitVec.ofNat 64 (4 * k)), BitVec.add_sub_cancel, Nat.add_sub_cancel_left]]
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
     omega_using [hj]
 

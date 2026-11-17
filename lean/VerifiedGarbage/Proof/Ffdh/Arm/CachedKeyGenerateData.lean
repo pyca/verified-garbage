@@ -8,13 +8,11 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFn
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 public import VerifiedGarbage.TCB.Arm.Isa
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateFn
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
@@ -30,13 +28,12 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedKeyGenerate
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyEntry
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleKeyGenerate
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
@@ -44,7 +41,6 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
@@ -53,7 +49,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -64,8 +59,154 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
+
+/-! ### `Ffdh.Arm.KeyGenerateFn`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.KeyFn`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.KeyEntry`, which this module and modules that import it used -/
+
+section
+
+/-! Retain the key-generation ABI's domain, entropy, and two output pointers. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+structure KeyIncoming (p : Inputs) (s : State) : Prop where
+  domain : IncomingWord p.domain 128 s
+  domainLength : IncomingWord (BitVec.ofNat 32 p.dom.length) 132 s
+  count : IncomingWord (BitVec.ofNat 32 p.k) 136 s
+  entropy : IncomingWord p.entropy 140 s
+  scratch : IncomingWord p.base 148 s
+
+theorem keyEntry_ok (s : State) {p : Inputs} (h : ArgumentMemory p [] s)
+    (incoming : KeyIncoming p s) (privateValue : s.gpr .r0 = p.privateValue)
+    (publicValue : s.gpr .r2 = p.publicValue) (outputY : p.output = p.publicValue)
+    (privateLength : p.privateLength = p.k) :
+    WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry) s fun t =>
+      Context p [0, 48, 44, 32, 28, 24, 4, 36, 40] t ∧ Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem := by
+  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry VG.Impl.Ffdh.Arm.Domain.st
+  refine wp_stackAddr (by decide) fun s0 moved => ?_
+  obtain rest0 : Rest [.r12] s s0 := moved.rest (by simp)
+  obtain args0 := h.of_mem moved.mem rest0
+  obtain frame0 : Frame [⟨State.addr s.sp, 72⟩] s.mem s0.mem := by rw [moved.mem]; exact Frame.refl _ _
+  obtain stack0 : s0.gpr .r12 = s0.sp := by rw [moved.gpr, moved.sp, BitVec.add_zero]
+  refine wp_store_arg .r0 40 args0 (by decide) (by decide) (by decide)
+    ((rest0.gpr .r0 (by simp)).trans privateValue) stack0 fun s1 args1 stepFrame1 stepRest1 => ?_
+  obtain rest1 := rest0.trans (stepRest1.mono (by simp))
+  obtain stack1 := (stepRest1.gpr .r12 (by simp)).trans (stack0.trans stepRest1.sp.symm)
+  rw [rest0.sp] at stepFrame1
+  obtain frame1 := frame0.trans stepFrame1
+  refine wp_store_arg .r2 36 args1 (by decide) (by decide) (by decide)
+    ((rest1.gpr .r2 (by simp)).trans publicValue) stack1 fun s2 args2 stepFrame2 stepRest2 => ?_
+  obtain rest2 := rest1.trans (stepRest2.mono (by simp))
+  obtain stack2 := (stepRest2.gpr .r12 (by simp)).trans (stack1.trans stepRest2.sp.symm)
+  rw [rest1.sp] at stepFrame2
+  obtain frame2 := frame1.trans stepFrame2
+  refine wp_store_arg .r2 4 args2 (by decide) (by decide) (by decide)
+    (by change s2.gpr .r2 = p.output; rw [outputY]; exact (rest2.gpr .r2 (by simp)).trans publicValue) stack2 fun s3 args3 stepFrame3 stepRest3 => ?_
+  obtain rest3 := rest2.trans (stepRest3.mono (by simp))
+  obtain stack3 := (stepRest3.gpr .r12 (by simp)).trans (stack2.trans stepRest3.sp.symm)
+  rw [rest2.sp] at stepFrame3
+  obtain frame3 := frame2.trans stepFrame3
+  obtain allRest3 : Rest roundClobbers s s3 := rest3.mono (by simp [roundClobbers])
+  refine wp_retain_incoming .r3 (by decide) args3 (by decide)
+    (incoming.domain.after (by decide) frame3 allRest3) (by decide) (by decide) (by decide) stack3
+    fun s4 args4 stepFrame4 stepRest4 value4 stack4 => ?_
+  obtain allRest4 := allRest3.trans (stepRest4.mono (by simp [roundClobbers]))
+  rw [allRest3.sp] at stepFrame4
+  obtain frame4 := frame3.trans stepFrame4
+  refine wp_retain_incoming .r3 (by decide) args4 (by decide)
+    (incoming.domainLength.after (by decide) frame4 allRest4) (by decide) (by decide) (by decide) stack4
+    fun s5 args5 stepFrame5 stepRest5 value5 stack5 => ?_
+  obtain allRest5 := allRest4.trans (stepRest5.mono (by simp [roundClobbers]))
+  rw [allRest4.sp] at stepFrame5
+  obtain frame5 := frame4.trans stepFrame5
+  refine wp_retain_incoming .r3 (by decide) args5 (by decide)
+    (incoming.count.after (by decide) frame5 allRest5) (by decide) (by decide) (by decide) stack5
+    fun s6 args6 stepFrame6 stepRest6 value6 stack6 => ?_
+  obtain allRest6 := allRest5.trans (stepRest6.mono (by simp [roundClobbers]))
+  rw [allRest5.sp] at stepFrame6
+  obtain frame6 := frame5.trans stepFrame6
+  refine wp_store_arg .r3 44 args6 (by decide) (by decide) (by decide)
+    (by change s6.gpr .r3 = BitVec.ofNat 32 p.privateLength; rw [privateLength]; exact value6)
+    stack6 fun s7 args7 stepFrame7 stepRest7 => ?_
+  obtain stack7 := (stepRest7.gpr .r12 (by simp)).trans (stack6.trans stepRest7.sp.symm)
+  obtain allRest7 := allRest6.trans (stepRest7.mono (by simp [roundClobbers]))
+  rw [allRest6.sp] at stepFrame7
+  obtain frame7 := frame6.trans stepFrame7
+  refine wp_retain_incoming .r3 (by decide) args7 (by decide)
+    (incoming.entropy.after (by decide) frame7 allRest7) (by decide) (by decide) (by decide) stack7
+    fun s8 args8 stepFrame8 stepRest8 value8 stack8 => ?_
+  obtain allRest8 := allRest7.trans (stepRest8.mono (by simp [roundClobbers]))
+  rw [allRest7.sp] at stepFrame8
+  obtain frame8 := frame7.trans stepFrame8
+  refine wp_retain_incoming .r0 (by decide) args8 (by decide)
+    (incoming.scratch.after (by decide) frame8 allRest8) (by decide) (by decide) (by decide) stack8
+    fun s9 args9 stepFrame9 stepRest9 value9 stack9 => ?_
+  apply WP.block_nil
+  refine ⟨⟨args9, value9⟩, ?_⟩
+  rw [allRest8.sp] at stepFrame9
+  exact frame8.trans stepFrame9
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! AAPCS key generation from caller-provided entropy with native rejection. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+structure KeyFnInput (p : Inputs) (rb : List Byte) (s : State) : Prop where
+  stackFits : 128 ≤ s.sp.toNat
+  args : ArgumentMemory p [] (entered s)
+  incoming : KeyIncoming p (entered s)
+  privateValue : s.gpr .r0 = p.privateValue
+  publicValue : s.gpr .r2 = p.publicValue
+  outputY : p.output = p.publicValue
+  privateLength : p.privateLength = p.k
+  entropy : Octets p.base p.entropy p.len rb (entered s)
+  size : rb.length = p.k
+  entropyStack : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr (entered s).sp, 72⟩
+  outputs : KeyOutputs p (entered s)
+  entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩
+  saved : ∀ r ∈ keyWrites p (entered s), (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! AAPCS key generation from caller-provided entropy with native rejection. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+structure KeyGenerateFnInput (p : Inputs) (rb : List Byte) (s : State) : Prop extends KeyFnInput p rb s where
+  calls : KeyCallMemory p (entered s)
+  savedCall : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint (FrameStack.belowA (entered s).sp 48)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.CachedKeyGenerateInput`, which this module and modules that import it used -/
 
@@ -646,6 +787,22 @@ theorem cachedKeyGenerateFn_ok (prepare sample tail : Prog isa) (env : SampleEnv
         (if sampleSuccess p (layout p) rb then (layout p).encode rb else List.replicate p.k 0) ∧
       Spec.Rsa.bytesAt m (State.addr p.publicValue) p.k =
         (if sampleSuccess p (layout p) rb then Spec.Rsa.i2osp (keyPower p ((layout p).encode rb)) p.k else List.replicate p.k 0)) ?_ ?_
+    (hQ := ?_)
+  rotate_right
+  · intro m₁ m₂ status hf ⟨st, priv, pub⟩
+    have o := h.input.outputs
+    have sep : ∀ a ∈ [p.privateValue, p.publicValue], ∀ r ∈ released s,
+        (⟨State.addr a, p.k⟩ : Region).Disjoint r := by
+      intro a ha r hr
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr ha
+      rcases ha with rfl | rfl <;> rcases hr with rfl | rfl
+      · exact (h.input.saved _ (by simp [keyWrites])).symm
+      · exact o.privateStack.symm
+      · exact (h.input.saved _ (by simp [keyWrites])).symm
+      · exact o.publicStack.symm
+    have fit : p.k < 2 ^ 64 := by have := o.privateBuffer.fits; omega_using [this]
+    exact ⟨st, Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hf fit (sep _ (by simp))) priv,
+      Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hf fit (sep _ (by simp))) pub⟩
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact h.input.saved r hr

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Body
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
@@ -261,7 +263,7 @@ theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t 
     refine ⟨_, List.mem_append_right _ m, ?_⟩
     rw [State.withRegions_sp, vsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, vsp]; exact saved)) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   refine ⟨⟨?_, ?_⟩, ?_, fun i hi => ?_⟩
   · intro r hr
@@ -281,7 +283,14 @@ theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t 
   · rw [popped_sp, restT.sp, State.withRegions_sp, vsp]
     exact BitVec.sub_add_cancel _ _
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r12), ret]; exact r0
-  · rw [popped_mem, memT, State.withRegions_mem]; exact outs i hi
+  · have fitO : oLen (mkP s) i < 2 ^ 64 := by
+      have := (stackArg s 1).isLt
+      unfold oLen; split <;> (change _ < _; simp only [mkP]; omega_using [this])
+    dsimp only
+    rw [VG.Proof.Rsa.rsa_bytes_frame hfl fitO (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r; exact (pre.oF i hi).sub_right (Region.sub_prefix (by decide))),
+      memT, State.withRegions_mem]
+    exact outs i hi
 
 end
 

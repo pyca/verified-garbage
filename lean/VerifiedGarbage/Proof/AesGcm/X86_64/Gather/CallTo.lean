@@ -271,14 +271,24 @@ theorem toCall_ok (T : ToFn M) {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st :
     gU _ (by decide : Reg.rdi ≠ .rsp), gU _ (by decide : Reg.rsi ≠ .rsp), gU _ (by decide : Reg.rdx ≠ .rsp),
     gU _ (by decide : Reg.rcx ≠ .rsp), gU _ (by decide : Reg.r8 ≠ .rsp), gU _ (by decide : Reg.r9 ≠ .rsp),
     h_di, h_si, h_dx, h_cx, h_8, h_9, hm₂, ciph_eq hp fU, hk_eq hp fU, eS, hsl, hgl] at hpost
-  refine ⟨r₃, hwr', fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
+  refine ⟨r₃, hwr', fun m u fm => ?_⟩
+  -- The `pop` loses the frame's 24 bytes, in the stack below `SP`, apart from
+  -- the outputs.
+  obtain fm' : Frame [tR s] s'.mem m := by
+    rw [hsp] at fm
+    exact fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s, List.mem_singleton_self _, stk_sub (s := s) (by decide) (by decide)⟩
+  dsimp only
+  refine ⟨fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
     ?_, fun iv a p hr hal hpl => ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'; rw [popped_rsp, r₃, hP, hsp]
       show SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 24 = SP s
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr']
-  · rw [popped_mem]
+  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨tR s, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
     obtain b4888 : Region.Sub (below ((pushed [.rax, .r10, .rax] st).gpr .rsp) (T.fn.code.x86_64Depth + 8)) (tR s) := by
       obtain h₁ := below_sub (sp := (pushed [.rax, .r10, .rax] st).gpr .rsp) (a := T.fn.code.x86_64Depth + 8)
         (b := 4864) (by have := T.xd; omega_arith) (by decide)
@@ -294,8 +304,12 @@ theorem toCall_ok (T : ToFn M) {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st :
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨tR s, by simp, b4888⟩
-  · rw [popped_mem]
-    exact hpost iv a p (streamRepr_frame fS (outT (hp.b_w.symm.sub_left stR_sub)) hr) hal hpl
+  · obtain ⟨r₁, r₂⟩ := hpost iv a p (streamRepr_frame fS (outT (hp.b_w.symm.sub_left stR_sub)) hr) hal hpl
+    refine ⟨streamRepr_frame fm' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) r₁, ?_⟩
+    rw [bytesAt_frame fm' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_d.symm.sub_left (dq_sub hp hi)) (by omega_arith)]
+    exact r₂
 
 end
 

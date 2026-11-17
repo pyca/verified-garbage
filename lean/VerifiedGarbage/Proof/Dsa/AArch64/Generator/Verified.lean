@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Body
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Dsa.AArch64.Generator.CT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
@@ -78,9 +79,17 @@ theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pL
       (∀ a, result pLen s = some a →
         Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) packed) (2 * pLen + qLen pLen) = Spec.Dsa.encodeParams pLen (qLen pLen) a) ∧
       Frame (stageChanged pLen s ++ [⟨frameBase s, 272⟩, spillRegion s]) s.mem t.mem)
-    (WP.mono (body_ok M hb A) fun t P => ⟨P.sp, P.wr, ⟨P.regs, by
+    (WP.mono (body_ok M hb A) fun t P m u f => ⟨⟨P.regs, by
         change t.sp + BitVec.ofNat 64 272 = s.sp
-        rw [P.sp]; exact BitVec.sub_add_cancel .., P.vectors⟩, P.status, P.packed, P.frame⟩)
+        rw [P.sp]; exact BitVec.sub_add_cancel .., P.vectors⟩, P.status, fun a ha =>
+        -- The frame's bytes are lost; the packed parameters are apart from them.
+        (List.map_congr_left fun i hi => lost_byte f
+          (A.framePart hb (used_small hb (by decide) (by
+            have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
+            have qn := hb.q_le
+            unfold arithmeticBytes; omega_using [pn, qn]))).symm (List.mem_range.mp hi)).trans (P.packed a ha),
+      P.frame.trans (f.sub fun R hR => ⟨⟨frameBase s, 272⟩,
+        List.mem_append_right _ List.mem_cons_self, by obtain rfl := List.mem_singleton.mp hR; exact fun _ h => h⟩)⟩)
   refine ⟨trace, t, he, hpre, ?_⟩
   sig_post [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
   exact ⟨hst, keeps_of_frame hb A hf, fun a ha => hpk a ha⟩

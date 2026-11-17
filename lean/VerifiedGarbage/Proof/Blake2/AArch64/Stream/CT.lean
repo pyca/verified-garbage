@@ -93,4 +93,9 @@ theorem initSCleared_noResidue (k : Contract isa) :
     NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s)) k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
+/-- BLAKE2b's `init`, with `x9` cleared, returns without secret residue. -/
+theorem initBCleared_noResidue (k : Contract isa) :
+    NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b)) k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
 end VG.Proof.Blake2.AArch64.Stream

@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheckStep
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublishValue
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
@@ -19,6 +17,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! ### `Dsa.X86_64.GenerateKeyBody`, which this module and modules that import it used -/
 
@@ -787,14 +786,29 @@ structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : 
   used : t.mem.readW (s.gpr .rdx) 64 = BitVec.ofNat 64 result.used
   callee : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r
   mxcsr : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-  nonce : ∀ i < 32, t.mem (off (randomBase s) (200 + i)) = 0
 
 theorem keygen_code (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
       (Generate.deriveChecked v.sq v.mul)) s (KeygenCodePost s (keygenResult s)) := by
   apply keygen_frame_ok h
-  refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
-  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used, ?_, ht.mxcsr, ht.nonce⟩
+  refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, fun m _ fm => ?_⟩
+  -- The frame's bytes, once released, hold anything: the key and `used` lie apart from them.
+  have hl := h.stackLower
+  have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 Random.frameBytes, Random.frameBytes⟩
+      (below (s.gpr .rsp) (v.stack + 256)) :=
+    Offset.sub_below _ (by unfold Random.frameBytes; omega_using []) (by unfold Random.frameBytes; omega_using [])
+  have sep : ∀ {B : Region}, (below (s.gpr .rsp) (v.stack + 256)).Disjoint B →
+      ∀ q ∈ [(⟨s.gpr .rsp - BitVec.ofNat 64 Random.frameBytes, Random.frameBytes⟩ : Region)], B.Disjoint q :=
+    fun hB q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact fun x h₁ h₂ => hB x (hR x h₂) h₁
+  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ?_, ?_, ?_, ht.mxcsr⟩
+  · show Spec.Rsa.bytesAt m (s.gpr .rdi) (s.gpr .rsi).toNat = _
+    rw [Proof.Rsa.rsa_bytes_frame fm (s.gpr .rsi).isLt (sep h.stackOut)]
+    exact ht.output
+  · show m.readW (s.gpr .rdx) 64 = _
+    rw [fm.readW (r := ⟨s.gpr .rdx, 8⟩) (Region.contains_self _ _) (sep h.stackUsed) (by decide)]
+    exact ht.used
   intro r hr
   by_cases he : r = .rsp
   · subst r

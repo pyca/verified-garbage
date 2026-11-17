@@ -192,7 +192,7 @@ theorem finalizeFrame {bytes : Nat}
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S PPC64LE.abi.ptrBits) (wa := true) (stack := 96)
     (bytes := bytes) h (by exact (by decide : 4 < 8)) hb
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Hmac.finalizePost_local _ _ hR hS)
-    (fun vs m m₁ m₂ r hl _ hb h => Proof.Hmac.finalizePostOut_local _ _ hD vs m m₁ m₂ r hl hb h) hsat rfl
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Hmac.finalizePostOut_local _ _ vs m m₁ m₂ r hl hb h) hsat rfl
 
 /-- `initLong` in a frame of `bytes` bytes of its own, the first `n`
 doublewords of which (its working space) it zeroes before returning. -/

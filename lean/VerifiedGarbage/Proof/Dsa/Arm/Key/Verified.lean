@@ -9,6 +9,9 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Dsa.Arm.Key.BodyCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Key.Saved
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Body
 import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Mont.Words32
@@ -133,9 +136,11 @@ theorem rResult_used_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).used �
   · exact Nat.zero_le _
 
 theorem code_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
+    WP isa (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) s₀ fun s' =>
+      ∃ u m un, Finished s₀ u ∧ Frame [⟨State.addr (s₀.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩] u.mem m ∧
+        s' = { freed frameBytes u with mem := m, unknowns := un } :=
   WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
-    (WP.mono (body_ok check derive A) fun u hu => ⟨u, hu, rfl⟩)
+    (WP.mono (body_ok check derive A) fun u hu m un hfl => ⟨u, m, un, hu, hfl, rfl⟩)
 
 /-- `vg_dsa_generate_key` meets its contract. -/
 theorem generateKey_correct (check derive : String) (s : State)
@@ -143,7 +148,18 @@ theorem generateKey_correct (check derive : String) (s : State)
     ∃ t s', Exec isa (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) s t s' ∧
       abiPreserved s s' ∧ (Spec.Dsa.generateKeyContract Arm.abi 144).post s s' := by
   have A := keyABI_of hpre
-  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok check derive A
+  obtain ⟨t, s', he, u, m, un, hF, hfl, rfl⟩ := code_ok check derive A
+  have fsub : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ (rStack s) := by
+    have := A.stackLow
+    rw [FrameStack.addr_sub' (by unfold frameBytes; omega_using [this])]
+    exact Offset.sub_below _ (by unfold frameBytes; omega_using []) (by unfold frameBytes; omega_using [])
+  have dU : ∀ r ∈ [(⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ : Region)], (rUsed s).Disjoint r := by
+    intro r hr; obtain rfl := List.mem_singleton.mp hr; exact A.stackUsed.symm.sub_right fsub
+  have out : Spec.Rsa.bytesAt m (State.addr (s.gpr .r0)) (s.gpr .r1).toNat =
+      (rResult s).key.getD (List.replicate (s.gpr .r1).toNat 0) := by
+    rw [rBytes_frame hfl (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.stackOut.symm.sub_right fsub)
+      (by have := (s.gpr .r1).isLt; omega_using [])]
+    exact hF.out
   refine ⟨t, _, he, ⟨fun r hr => hF.regs r hr, by
     show u.sp + BitVec.ofNat 32 frameBytes = s.sp
     rw [hF.sp, BitVec.sub_add_cancel]⟩, ?_⟩
@@ -154,19 +170,21 @@ theorem generateKey_correct (check derive : String) (s : State)
     have := rResult_used_le A
     have : (rInput s).rand.length < 2 ^ 32 := by simp only [rInput, rBytes_length]; exact BitVec.isLt _
     omega_arith
-  refine ⟨?_, hF.out, ?_⟩
+  refine ⟨?_, out, ?_⟩
   · rw [BitVec.setWidth_append_eq_right]
     show (u.gpr .r0).toNat = (rResult s).status
     rw [hF.r0, toNat_imm (by omega_using [hle])]
-  · show Spec.Rsa.wordsAt u.mem (State.addr (s.gpr .r2)) 1 = [BitVec.ofNat 64 (rResult s).used]
+  · show Spec.Rsa.wordsAt m (State.addr (s.gpr .r2)) 1 = [BitVec.ofNat 64 (rResult s).used]
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
     refine congrArg (· :: []) (BitVec.eq_of_toNat_eq ?_)
-    have := word_eq_w32 u.mem (State.addr (s.gpr .r2)) 0
+    have := word_eq_w32 m (State.addr (s.gpr .r2)) 0
     simp only [Mont.word, w32, off] at this
-    show (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 64).toNat = _
+    show (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 64).toNat = _
     rw [this, show (0 + 4 : Nat) = 4 from rfl]
-    have lo : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 32) = _ := hF.usedLo
-    have hi : (u.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
+    have lo : (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 0) 32) = _ :=
+      (hfl.readW (r := rUsed s) (Offset.contains_base _ (by decide) (by decide)) dU (by decide)).trans hF.usedLo
+    have hi : (m.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 4) 32) = _ :=
+      (hfl.readW (r := rUsed s) (Offset.contains_base _ (by decide) (by decide)) dU (by decide)).trans hF.usedHi
     rw [lo, hi, toNat_imm hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hul])]
     rfl
 

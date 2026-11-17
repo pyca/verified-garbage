@@ -4,10 +4,9 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPreserves
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,14 +14,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
@@ -235,8 +232,9 @@ theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     exact InRegions_append_cons.mpr (.inr (h.source_read room))
   refine FrameStack.WP.callF backend.candidate_verified.1 (call_pre facts args memAtSp room)
     (call_reads writes source args.stack) writes (Nat.le_trans backend.candidateStack facts.stackFits) ?_
-  intro t rd wr sp frame kept post
-  have restored : Rest searchClobbers s (freed 24 t) := by
+  intro t rd wr sp frame kept post lm lu hfl
+  have argsSub := callArguments_sub h.buffers.below
+  have restored : Rest searchClobbers s { freed 24 t with mem := lm, unknowns := lu } := by
     refine ⟨?_, rd.trans rest.rd, ?_, ?_⟩
     · intro r hr
       change t.gpr r = s.gpr r
@@ -249,9 +247,25 @@ theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     · change t.sp + 24#32 = s.sp
       rw [sp, spU]
       exact BitVec.sub_add_cancel _ _
-  have totalFrame : Frame (callChanges p s.sp) s.mem t.mem :=
-    (argument_frame h.buffers memU).trans (candidate_frame h.buffers spU backend.candidateStack frame)
-  exact ⟨⟨h.after_call restored totalFrame,
-    call_post facts args memAtSp (h.call_bytes room memU) post⟩, restored⟩
+  have totalFrame : Frame (callChanges p s.sp) s.mem lm :=
+    ((argument_frame h.buffers memU).trans (candidate_frame h.buffers spU backend.candidateStack frame)).trans
+      (hfl.sub fun r hr => ⟨FrameStack.belowA s.sp 208, by simp [callChanges], by
+        obtain rfl := List.mem_singleton.mp hr; exact argsSub⟩)
+  have cp := call_post facts args memAtSp (h.call_bytes room memU) post
+  have outSep := ((h.buffers.stackSeparate ⟨State.addr p.c.out, p.c.length⟩ (by simp)).2.sub_left argsSub).symm
+  have usedSep := (((h.buffers.stackSeparate ⟨State.addr p.control, 128⟩ (by simp)).2.sub_left argsSub).symm.sub_left
+    p.used_sub)
+  refine ⟨⟨h.after_call restored totalFrame, ⟨cp.status, ?_, ?_⟩⟩, restored⟩
+  · refine Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hfl
+      (by have fit : p.c.out.toNat + p.c.length ≤ 2 ^ 32 := p.c.outputFits; omega_using [fit])
+      fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact outSep) cp.output
+  · refine Eq.trans ?_ cp.consumed
+    unfold Spec.Rsa.wordsAt
+    apply List.map_congr_left
+    intro j hj
+    have bound : j < 1 := List.mem_range.mp hj
+    exact hfl.readW (r := ⟨State.addr (p.control + 112#32), 8⟩)
+      (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
+      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact usedSep) (by decide)
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

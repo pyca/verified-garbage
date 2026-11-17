@@ -5,11 +5,10 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
-
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/ResponseLowField.lean`, which only this module imported.

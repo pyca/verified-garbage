@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 
 /-! # Register and flag operations retain the drawn candidate and input snapshots -/
 

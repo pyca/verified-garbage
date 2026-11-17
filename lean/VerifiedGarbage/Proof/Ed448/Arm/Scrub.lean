@@ -51,10 +51,19 @@ theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
 
 theorem frameOk_280 : FrameOk 280 := by decide
 
+theorem publicKey_noIcall (u : Bool) : noIcall (Impl.Ed448.Arm.PublicKey.code u) = true := by
+  cases u <;> lit_decide
+
 theorem publicKey_armStack (u : Bool) : armStack (Impl.Ed448.Arm.PublicKey.code u) ≤ 280 := by
   cases u <;> lit_decide
 
+theorem signCached_noIcall (u : Bool) : noIcall (Impl.Ed448.Arm.SignCached.code u) = true := by
+  cases u <;> lit_decide
+
 theorem signCached_armStack (u : Bool) : armStack (Impl.Ed448.Arm.SignCached.code u) ≤ 280 := by
+  cases u <;> lit_decide
+
+theorem verify_noIcall (u : Bool) : noIcall (Impl.Ed448.Arm.Verify.code u) = true := by
   cases u <;> lit_decide
 
 theorem verify_armStack (u : Bool) : armStack (Impl.Ed448.Arm.Verify.code u) ≤ 280 := by
@@ -101,7 +110,7 @@ def publicKeyReg (u : Bool) (suffix : String) (hl : Proof.Ed448.BaseCombOk) :
       suffix := suffix
       code := Impl.Ed448.Arm.PublicKey.code u
       verified := PublicKey.publicKey_verified hl }
-    (publicKey_armStack u) frameOk_280 (publicKeyOut _) rfl
+    (publicKey_armStack u) (publicKey_noIcall u) frameOk_280 (publicKeyOut _) rfl
 
 /-- `vg_ed448_sign_cached` with the field's multiplication `u`, as `suffix`. -/
 def signCachedReg (u : Bool) (suffix : String) (hl : Proof.Ed448.BaseCombOk) :
@@ -110,7 +119,7 @@ def signCachedReg (u : Bool) (suffix : String) (hl : Proof.Ed448.BaseCombOk) :
       suffix := suffix
       code := Impl.Ed448.Arm.SignCached.code u
       verified := SignCached.signCached_verified hl }
-    (signCached_armStack u) frameOk_280 (signCachedOut _) rfl
+    (signCached_armStack u) (signCached_noIcall u) frameOk_280 (signCachedOut _) rfl
 
 /-- `vg_ed448_verify` with the field's multiplication `u`, as `suffix`. -/
 def verifyReg (u : Bool) (suffix : String) (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqCombOk) :
@@ -120,6 +129,6 @@ def verifyReg (u : Bool) (suffix : String) (hR : Proof.Ed448.RecoverOk) (hE : Pr
       code := Impl.Ed448.Arm.Verify.code u
       verified := Verify.verify_verified (Proof.Ed448.Arm.verifyEquation_ok hR hE)
         (Proof.Ed448.Arm.verifyEquation_ct hR) }
-    (verify_armStack u) frameOk_280 (verifyOut _) rfl
+    (verify_armStack u) (verify_noIcall u) frameOk_280 (verifyOut _) rfl
 
 end VG.Proof.Ed448.Arm.Scrub

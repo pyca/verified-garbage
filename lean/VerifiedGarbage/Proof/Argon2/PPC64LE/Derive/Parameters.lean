@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.Divide
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Proof.Framework.Omega

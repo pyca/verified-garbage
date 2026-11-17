@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBlocks
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTMgfT
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Correct
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Label
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Main
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Verified
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.DecP
 
 /-! ### `RsaOaep.RISCV64.Verified`, which only this module used -/

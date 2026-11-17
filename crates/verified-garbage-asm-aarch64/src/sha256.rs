@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -16,7 +18,7 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         concat!("adrp x9, ", vg_sym_page!("{VG_SHA224_H0}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA224_H0}")),
-        r".inst 0x3dc00120,0x3dc00521,0x3d800000,0x3d800401,0xd65f03c0
+        r".inst 0x3dc00120,0x3dc00521,0x3d800000,0x3d800401,0xd2800009,0xd65f03c0
 .p2align 6",
         VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
     )
@@ -25,6 +27,8 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -35,7 +39,7 @@ pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         concat!("adrp x9, ", vg_sym_page!("{VG_SHA256_H0}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SHA256_H0}")),
-        r".inst 0x3dc00120,0x3dc00521,0x3d800000,0x3d800401,0xd65f03c0
+        r".inst 0x3dc00120,0x3dc00521,0x3d800000,0x3d800401,0xd2800009,0xd65f03c0
 .p2align 6",
         VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,
     )

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallArithmetic
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Callable Montgomery multiplication preserves the ARM procedure-call ABI -/
@@ -66,13 +68,16 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (call_restore_ok v s.gpr stackFit ⟨_, List.mem_append_right _ writable, Region.contains_self _ _⟩ saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have spT : t.sp = s.sp - BitVec.ofNat 32 40 := restT.sp.trans spV
   have oldM := eq.number fits (by decide : 0 < 8)
   have oldA := eq.number fits ha.1
   have oldB := eq.number fits hb.1
   rw [oldM] at lt
   rw [oldM, oldA, oldB] at value
+  have lostEq : WorkspaceEq (State.addr base) (8 * len) t.mem ml :=
+    WorkspaceEq.of_frame (by omega_using [nowrap]) hfl (by
+      intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackWorkspace.symm)
   refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -84,10 +89,12 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     exact restored p hp
   · rw [popped_sp, spT]
     exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem, memT]; exact lt
-  · rw [popped_mem, memT]; exact value
+  · dsimp only; rw [lostEq.number fits ho.1, memT]; exact lt
+  · dsimp only; rw [lostEq.number fits ho.1, memT]; exact value
   · intro i hi separate
-    rw [popped_mem, memT, keeps i hi separate]
+    dsimp only
+    rw [show ml (State.addr base + BitVec.ofNat 64 i) = t.mem (State.addr base + BitVec.ofNat 64 i)
+      from lost_byte hfl (R := ⟨State.addr base, 8 * len⟩) h.stackWorkspace.symm hi, memT, keeps i hi separate]
     exact framePush.bytes (R := ⟨State.addr base, 8 * len⟩)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackWorkspace.symm)
       (by change 8 * len ≤ 2 ^ 64; omega_using [nowrap]) hi

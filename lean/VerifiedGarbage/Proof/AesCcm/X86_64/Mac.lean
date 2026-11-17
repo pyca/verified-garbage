@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -23,6 +23,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
@@ -30,13 +32,13 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- CBC-MAC of the formatted nonce, associated data and payload into `W + y`. -/
-theorem mac_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem mac_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13)
     (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hn : n < 256 ^ (15 - nl))
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96)
     (hA : Buf K W SP s A al) (hD : Buf K W SP s D n) :
-    WP isa (mac v.callee y) s (@MacStep K W SP s y
+    WP isa (mac v.callee y) s (@MacStep _ K W SP s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16)
         (Spec.Ccm.format tl nonce (bytesAt s.mem A al) (bytesAt s.mem D n)))) := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
@@ -54,7 +56,7 @@ theorem mac_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E 
             · exact L.w_w (.inr (by omega_arith)) (by omega_using [h₂]) (by decide)
             · exact L.w_w (.inr (by omega_arith)) (by omega_using [h₂]) (by decide)
           · exact L.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
-          · exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+          · exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by have := tailBytes_le; have := scratchBytes_le; omega)
           · exact (L.stk_w' (by omega_using [h₂])).symm) (by decide)
       exact ⟨by rw [k 232 (by decide) (by decide)]; exact hs.rounds, by rw [k 160 (by decide) (by decide)]; exact hs.nonce,
         by rw [k 168 (by decide) (by decide)]; exact hs.nlen, by rw [k 176 (by decide) (by decide)]; exact hs.aad,

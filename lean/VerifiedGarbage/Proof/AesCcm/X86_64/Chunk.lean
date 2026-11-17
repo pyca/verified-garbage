@@ -26,6 +26,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
@@ -35,7 +37,7 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 `W + 216`, the working space of the functions called, the stack below `SP`
 and the data. -/
 abbrev ctrR (W SP D : Addr) (n : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 64, 32⟩, ⟨W + BitVec.ofNat 64 216, 8⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16, ⟨D, n⟩]
+  [⟨W + BitVec.ofNat 64 64, 32⟩, ⟨W + BitVec.ofNat 64 216, 8⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 16, ⟨D, n⟩]
 
 /-- What `ctr` writes, within what the pieces may write. -/
 theorem ctrR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ ctrR W SP D n, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
@@ -44,7 +46,7 @@ theorem ctrR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ ctrR W SP D n, ∃ r' ∈
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
   · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
-  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨wC W, by simp, scratch_sub_tail W⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 
@@ -74,7 +76,7 @@ theorem disj (C : CtrCtx K W SP s R nonce D n) {d k : Nat}
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact C.lay.w_w (by omega_arith) (by omega_arith) (by decide)
   · exact C.lay.w_w (by omega_arith) (by omega_arith) (by decide)
-  · exact C.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact C.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by have := tailBytes_le; have := scratchBytes_le; omega)
   · exact (C.lay.stk_w' (by omega_arith)).symm
   · exact (C.buf.w.sub_right (Lay.wSub (by omega_arith))).symm
 
@@ -84,7 +86,7 @@ theorem kdisj (C : CtrCtx K W SP s R nonce D n) : ∀ r ∈ ctrR W SP D n, (⟨K
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact C.lay.k_w.sub_right (Lay.wSub (by decide))
   · exact C.lay.k_w.sub_right (Lay.wSub (by decide))
-  · exact C.lay.k_w.sub_right (Lay.wSub (by decide))
+  · exact C.lay.k_w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
   · exact C.lay.stk_k.symm
   · exact C.dk
 
@@ -120,15 +122,18 @@ structure CtrInv (K W SP : Addr) (s : State) (R : Nat) (nonce : List Byte) (D : 
   rest : bytesAt t.mem (D + BitVec.ofNat 64 (16 * b)) (n - 16 * b) =
     bytesAt s.mem (D + BitVec.ofNat 64 (16 * b)) (n - 16 * b)
 
+omit fp in
 theorem low32 (x : Nat) : ((BitVec.ofNat 64 x).setWidth 32).setWidth 64 = BitVec.ofNat 64 (x % 2 ^ 32) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega_arith
 
+omit fp in
 theorem two32_sub {y : Nat} (hy : y < 2 ^ 32) :
     (4294967296 : BitVec 64) - BitVec.ofNat 64 y = BitVec.ofNat 64 (2 ^ 32 - y) :=
   ofNat_sub (a := 2 ^ 32) (b := y) (Nat.le_of_lt hy) (by decide)
 
+omit fp in
 /-- `k = min (m, 2³² − (1 + b) mod 2³²)` in `r8`, for `m` blocks left. -/
 theorem kSel_ok {b m : Nat} {t : State} (hbx : t.gpr .rbx = BitVec.ofNat 64 m)
     (h14 : t.gpr .r14 = BitVec.ofNat 64 (1 + b)) (hm : m < 2 ^ 64) :
@@ -250,6 +255,7 @@ theorem setup_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : 
       (Region.contains_self _ _)) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hdis)
       (by decide), hc₄]
 
+omit fp in
 /-- What follows the call: `k` blocks past them, and ZF set when none is left. -/
 theorem step_ok {W D : Addr} {t : State} {n b k : Nat} (h15 : t.gpr .r15 = W)
     (rk : InRegions (t.rd ++ t.wr) (W + BitVec.ofNat 64 216) 8)
@@ -299,7 +305,7 @@ theorem chunk_inv {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D :
   have L := C.lay
   have hn64 : n < 2 ^ 64 := C.buf.lt
   have cR : Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 216, 8⟩, ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩,
-      ⟨W + BitVec.ofNat 64 384, 2048⟩, below SP 8] t.mem t₇.mem := by
+      ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 8] t.mem t₇.mem := by
     have fc := h.frame
     rw [hsp] at fc
     rw [hm₇]
@@ -309,19 +315,19 @@ theorem chunk_inv {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D :
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
   have toR : ∀ r ∈ [(⟨W + BitVec.ofNat 64 64, 16⟩ : Region), ⟨W + BitVec.ofNat 64 216, 8⟩,
-      ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩, ⟨W + BitVec.ofNat 64 384, 2048⟩, below SP 8],
+      ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 8],
       ∃ r' ∈ ctrR W SP D n, Region.Sub r r' := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 384, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 384, scratchBytes⟩, by simp, Region.sub_prefix (by simp)⟩
     · exact ⟨below SP 16, by simp, below8_sub SP⟩
   -- Separation of the data from what the chunk wrote.
   have sep : ∀ {a l : Nat}, (a + l ≤ 16 * b ∨ 16 * (b + k) ≤ a) → a + l ≤ n →
       ∀ r ∈ [(⟨W + BitVec.ofNat 64 64, 16⟩ : Region), ⟨W + BitVec.ofNat 64 216, 8⟩,
-        ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩, ⟨W + BitVec.ofNat 64 384, 2048⟩, below SP 8],
+        ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 8],
         (⟨D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
     intro a l ha hl r hr
     have hB := C.buf.slice (a := a) (k := l) hl
@@ -330,7 +336,7 @@ theorem chunk_inv {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D :
     · exact hB.w.sub_right (Lay.wSub (by decide))
     · exact hB.w.sub_right (Lay.wSub (by decide))
     · exact Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)
-    · exact hB.w.sub_right (Lay.wSub (by decide))
+    · exact hB.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact (hB.stk.sub_left (below8_sub SP)).symm
   have hbk : 16 * (b + k) = 16 * b + 16 * k := Nat.mul_add _ _ _
   refine ⟨I.frame.trans (cR.sub toR), ?_, ?_⟩
@@ -371,7 +377,7 @@ theorem chunk_inv {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D :
       bytesAt_suffix _ _ (show 16 * k ≤ n - 16 * b by omega_arith), I.rest]
 
 /-- One chunk. -/
-theorem chunk_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
+theorem chunk_ok (v : Ctr32Impl) [CtrFits v] {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
     (C : CtrCtx K W SP s R nonce D n) {b : Nat} {t : State} (I : CtrInv K W SP s R nonce D n b t)
     (hb : b < n / 16) :
     WP isa (ctrChunk v.callee) t fun t' => ∃ k, k = min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) ∧ 1 ≤ k ∧
@@ -405,12 +411,12 @@ theorem chunk_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [h.saved r (by rcases hr with rfl | rfl | rfl <;> decide), hg₅ r (by rcases hr with rfl | rfl | rfl <;> simp)]
   have dK : ∀ r ∈ [(⟨W + BitVec.ofNat 64 64, 16⟩ : Region), ⟨D + BitVec.ofNat 64 (16 * b), 16 * k⟩,
-      ⟨W + BitVec.ofNat 64 384, 2048⟩, below (t₅.gpr .rsp) 8], (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by
+      ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below (t₅.gpr .rsp) 8], (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact (hS.w.sub_right (Lay.wSub (by decide))).symm
-    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by have := tailBytes_le; have := scratchBytes_le; omega)
     · rw [E₅.rsp]; exact ((L.stk_w' (by decide)).sub_left (below8_sub _)).symm
   have hkO : t₆.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 k := by
     rw [h.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) dK (by decide), hkO₅]

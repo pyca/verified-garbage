@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
+import VerifiedGarbage.Proof.Blake2.Scratch
 
 /-!
 # BLAKE2s compression backends on x86-64
@@ -108,7 +109,7 @@ theorem finalize_verified (v : BackendS) :
 theorem update_framed (v : BackendS) : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update)
     (Spec.Blake2.updateSContract abi (8 + 584)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Blake2.updateSPost_out _) (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
     v.update_verified (by decide) (by decide) (by decide) v.updateSpSafe v.updateDepth
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -116,7 +117,7 @@ theorem update_framed (v : BackendS) : Verified X86_64.target
 theorem finalize_framed (v : BackendS) : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize)
     (Spec.Blake2.finalizeSContract abi (8 + 584)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Blake2.finalizeSPost_out _) (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
     v.finalize_verified (by decide) (by decide) (by decide) v.finalizeSpSafe v.finalizeDepth
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

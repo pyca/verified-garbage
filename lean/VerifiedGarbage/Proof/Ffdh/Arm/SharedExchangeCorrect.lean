@@ -12,14 +12,13 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFn
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
@@ -40,6 +39,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Ffdh.Arm.SharedExchangePre`, which this module and modules that import it used -/
 
@@ -271,6 +272,14 @@ theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} {yb xb : List Byt
     (fun m status => Spec.Rsa.modulusValid p.P p.k = true → status = (if sharedAccepted p yb xb then 1 else 0) ∧
       Spec.Rsa.bytesAt m (State.addr p.output) p.k =
         (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0)) h.saved ?_
+    (hQ := fun m₁ m₂ v hf hq hv => by
+      obtain ⟨st, bytes⟩ := hq hv
+      refine ⟨st, Eq.trans (VG.Proof.Rsa.rsa_bytes_frame hf (by have := h.input.output.fits; omega_using [this])
+        fun r hr => ?_) bytes⟩
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (by simp [writes, exchangeWrites])).symm
+      · exact h.input.stackSep.symm)
   refine WP.mono (entered_ok backend (entered s) h.input.args h.input.incoming h.calls h.input.out h.input.domain h.input.domainLength
     h.input.peer h.input.peerLength h.input.scalar h.input.positive h.input.scalarFit h.input.scalarCount h.input.peerStack h.input.scalarStack h.input.output
     h.input.workspaceSep h.input.stackSep) ?_

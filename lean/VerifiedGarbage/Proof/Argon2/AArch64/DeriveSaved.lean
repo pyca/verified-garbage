@@ -66,11 +66,6 @@ theorem frameStart_frame (s : State) (rs : List Reg)
         show 16 + (272 + 16 * rs.length) = 272 + 16 * (rs.length + 1) by omega_using []]
       exact Region.sub_prefix (by omega_using [])
 
-theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem := by
-  induction rs with
-  | nil => rfl
-  | cons r rs ih => exact ih
-
 end VG.Proof.Argon2.AArch64.Derive
 end
 

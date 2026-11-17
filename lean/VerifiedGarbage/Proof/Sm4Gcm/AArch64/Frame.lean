@@ -485,7 +485,8 @@ theorem init_framed (v : GcmImpl) :
       (Spec.Sm4.Gcm.initContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (init_verified v) (by decide) (by decide) initFrameSat_pre
+    (init_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_encrypt`'s precondition, without the working
 space. -/
@@ -500,7 +501,8 @@ theorem streamEncrypt_framed (v : GcmImpl) :
       (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamEncrypt_verified v) (by decide) (by decide) streamEncryptFrameSat_pre
+    (streamEncrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_decrypt`'s precondition, without the working
 space. -/
@@ -515,7 +517,8 @@ theorem streamDecrypt_framed (v : GcmImpl) :
       (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamDecrypt_verified v) (by decide) (by decide) streamDecryptFrameSat_pre
+    (streamDecrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without the working
 space. -/
@@ -530,7 +533,8 @@ theorem streamFinish_framed (v : GcmImpl) :
       (Spec.Sm4.Gcm.streamFinishContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamFinish_verified v) (by decide) (by decide) streamFinishFrameSat_pre
+    (streamFinish_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) streamFinishFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without the working
 space. -/
@@ -545,7 +549,8 @@ theorem streamVerify_framed (v : GcmImpl) :
       (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamVerify_verified v) (by decide) (by decide) streamVerifyFrameSat_pre
+    (streamVerify_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) streamVerifyFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
 space: no stack arguments. -/
@@ -565,7 +570,8 @@ theorem seal_framed (v : GcmImpl) :
   AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
     (bytes := 784) (seal_verified v) (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
-    (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits)) sealFrameSat_pre
+    (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits))
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
 space: `tag_len` 0, its one stack argument. -/
@@ -587,7 +593,8 @@ theorem open_framed (v : GcmImpl) :
     (n := 96) (post := Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
     (bytes := 784) (leak := some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))
     (open_verified v) (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
-    (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits)) openFrameSat_pre
+    (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
     (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
 
 end VG.Proof.Sm4Gcm.AArch64

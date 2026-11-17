@@ -1,17 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Prefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top

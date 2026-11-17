@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Contract
 

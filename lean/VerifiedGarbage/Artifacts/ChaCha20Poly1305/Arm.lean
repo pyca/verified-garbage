@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
+public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.Arm
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
@@ -12,19 +14,13 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 namespace VG.Artifacts.ChaCha20Poly1305.Arm
 
-def artifacts : List Artifact := [
-  Spec.ChaCha20Poly1305.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal»
-    verified := Proof.ChaCha20Poly1305.Arm.seal_framed },
-  Spec.ChaCha20Poly1305.openZeroApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«open»
-    verified := Proof.ChaCha20Poly1305.Arm.open_framed },
-  Spec.ChaCha20Poly1305.openToApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 Impl.ChaCha20Poly1305.Arm.openTo
-    verified := Proof.ChaCha20Poly1305.Arm.openTo_framed },
-  Spec.ChaCha20Poly1305.sealGatherApi.artifact Arm.target {
-    code := Impl.ChaCha20Poly1305.Arm.SealGather.sealGather Proof.ChaCha20Poly1305.Arm.Gather.sealFn.name
-      Proof.ChaCha20Poly1305.Arm.Gather.sealFn.code
-    verified := Proof.ChaCha20Poly1305.Arm.Gather.sealGather_verified Proof.ChaCha20Poly1305.Arm.Gather.sealFn }]
+def artifacts : List Artifact :=
+  Proof.Variants.Poly1305Blocks.Arm.variants.flatMap fun (v : Proof.Variants.Poly1305Blocks.Arm.Variant) => [
+    Spec.ChaCha20Poly1305.sealApi.artifact Arm.target (Proof.ChaCha20Poly1305.Arm.Scrub.sealReg v.umaal v.suffix),
+    Spec.ChaCha20Poly1305.openZeroApi.artifact Arm.target (Proof.ChaCha20Poly1305.Arm.Scrub.openReg v.umaal v.suffix),
+    Spec.ChaCha20Poly1305.openToApi.artifact Arm.target
+      (Proof.ChaCha20Poly1305.Arm.Scrub.openToReg v.umaal v.suffix),
+    Spec.ChaCha20Poly1305.sealGatherApi.artifact Arm.target
+      (Proof.ChaCha20Poly1305.Arm.Gather.gatherReg v.umaal v.suffix)]
 
 end VG.Artifacts.ChaCha20Poly1305.Arm

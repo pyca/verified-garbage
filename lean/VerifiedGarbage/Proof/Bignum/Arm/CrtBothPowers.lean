@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Framework.Block
@@ -12,7 +11,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.CrtResult
 

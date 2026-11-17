@@ -72,6 +72,7 @@ theorem update : Verified Arm.target
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
     (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sm3.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sm3.updateContract, Spec.Sm3.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, MdStream.Arm.Update.sat, Impl.Sm3.Arm.Stream.params, Arm.stackArg,
@@ -89,6 +90,7 @@ theorem finalize : Verified Arm.target
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
     (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sm3.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sm3.finalizeContract, Spec.Sm3.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

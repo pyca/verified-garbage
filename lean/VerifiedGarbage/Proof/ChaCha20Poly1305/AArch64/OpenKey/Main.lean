@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.TailO.Rest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.PadRest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.ChaCha20.Stream

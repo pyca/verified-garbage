@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
@@ -59,7 +60,11 @@ theorem code_correct (v : PublicImpl) (s : State)
   refine WP.seq (WP.mono_mx (by decide +kernel) (callArgs_ok hp hpc) fun t₂ ⟨hj, k₂⟩ hmx₂ => ?_)
   refine WP.seq (WP.mono (call_ok v hp hj) fun t₃ ⟨hpost, hcs₃, hmx₃⟩ => ?_)
   refine WP.mono_mx (by decide +kernel) (tail_ok hp.toEPre hpost.toAfterCall) fun t₄ ht hmx₄ => ?_
-  refine ⟨ht.rsp, by rw [ht.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp.toEPre ht.mem, ?_⟩, ?_⟩
+  refine ⟨ht.rsp, by rw [ht.wr]; rfl, fun m u fm => ?_⟩
+  have hs := VG.Proof.RsaPkcs1Enc.X86_64.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+  simp only [off, BitVec.add_zero] at hs
+  refine ⟨⟨fun r hr => ?_, ret_frame hp.toEPre (ht.mem.trans (fm.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       show t₄.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
@@ -77,7 +82,11 @@ theorem code_correct (v : PublicImpl) (s : State)
   · intro hq
     have := result_ok hp.toEPre ⟨hpost.toAfterCall, hpost.res hq⟩ ht
     simp only [encK] at this ⊢
-    rw [freed_mem, freed_rax]; exact this
+    have hsi := hp.toEPre.hsi
+    exact Proof.Rsa.written_frame fm (s.gpr .rcx).isLt (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      have := (hp.toEPre.dKo.sub_left hs).symm
+      rwa [hsi] at this) this
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Pc
 

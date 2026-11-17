@@ -81,7 +81,7 @@ theorem forward_refill (p S : Nat) (hS : S + 72 ≤ 2 ^ 64) {name : String} {bod
     (hsat : ∃ s, (Refill.contract p abi (S + 64)).pre s) :
     Verified target (Impl.Dsa.X86_64.ParameterSearch.width name body) (Refill.contract p abi (S + 64)) := by
   refine Verified.forward (sig := Spec.Dsa.parameterSearchSig) (bytes := 56) h (by decide) (by decide)
-    (by decide) (by omega_arith) hsp hd ?_ ?_ hsat ?_
+    (by decide) (by omega_arith) hsp hd ?_ ?_ ?_ hsat ?_
   · intro vs m₁ m₂ hl hb _ hpr
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hl
     replace hl := Nat.succ.inj hl
@@ -130,6 +130,41 @@ theorem forward_refill (p S : Nat) (hS : S + 72 ≤ 2 ^ 64) {name : String} {bod
       ArgWord.int abi.ptrBits, ArgWord.addr, ArgWord.int abi.ptrBits, ArgWord.addr] _ _ m₂ m' r
     dsimp only [Curry.apply, ArgWord.ofRaw] at hq ⊢
     rwa [← readW_congr0 b5, ← readW_congr8 b5, ← bytesAt_congr b3]
+  · -- The memory on return: `out`, `used` and `state`.
+    intro vs m m₁ m₂ r hl _ hb _ hq
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hl
+    replace hl := Nat.succ.inj hl
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hl
+    replace hl := Nat.succ.inj hl
+    obtain ⟨used, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hl
+    replace hl := Nat.succ.inj hl
+    iterate 4
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hl
+      replace hl := Nat.succ.inj hl
+    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hl
+    replace hl := Nat.succ.inj hl
+    obtain rfl := List.eq_nil_of_length_eq_zero hl
+    simp only [Spec.Dsa.parameterSearchSig, Sig.bufs_nil, Sig.bufs_slice, Sig.bufs_array,
+      List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size,
+      Nat.mul_one, Nat.reduceMul] at hb
+    obtain ⟨b1, b2, -, -, b5⟩ := hb
+    rw [← setWidth_ptr outLen] at b1
+    change Curry.apply (α := Mem → Mem → BitVec (Spec.Dsa.parameterSearchSig.retBits abi.ptrBits) → Prop)
+      [ArgWord.addr, ArgWord.int abi.ptrBits, ArgWord.addr, ArgWord.addr,
+      ArgWord.int abi.ptrBits, ArgWord.addr, ArgWord.int abi.ptrBits, ArgWord.addr] _ _ m m₁ r at hq
+    change Curry.apply (α := Mem → Mem → BitVec (Spec.Dsa.parameterSearchSig.retBits abi.ptrBits) → Prop)
+      [ArgWord.addr, ArgWord.int abi.ptrBits, ArgWord.addr, ArgWord.addr,
+      ArgWord.int abi.ptrBits, ArgWord.addr, ArgWord.int abi.ptrBits, ArgWord.addr] _ _ m m₂ r
+    dsimp only [Curry.apply, ArgWord.ofRaw] at hq ⊢
+    obtain ⟨h1, h2, h3, req, h4, h5⟩ := hq
+    refine ⟨h1, (bytesAt_congr b1).symm.trans h2, ?_, req, (wordsAt_congr b5).symm.trans h4, h5⟩
+    rw [← h3]
+    simp only [wordsAt]
+    refine List.map_congr_left fun i hi => ?_
+    have := List.mem_range.mp hi
+    exact (Mem.readW_congr fun j hj => b2 _ (by
+      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith))).symm
   · intro vs m₁ m₂ hl hb _
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hl
     replace hl := Nat.succ.inj hl

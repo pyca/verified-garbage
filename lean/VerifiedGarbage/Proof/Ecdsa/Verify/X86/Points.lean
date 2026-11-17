@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Ecdsa.X86.QMul
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front

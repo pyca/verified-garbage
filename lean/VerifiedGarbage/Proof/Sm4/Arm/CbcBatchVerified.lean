@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 import VerifiedGarbage.Proof.Sm4.Arm.CbcPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcLoop
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Cbc
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Sm4.Prepared

@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 public import VerifiedGarbage.Proof.Sm4.Prepared
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 import VerifiedGarbage.Proof.MdStream.Arm.Common

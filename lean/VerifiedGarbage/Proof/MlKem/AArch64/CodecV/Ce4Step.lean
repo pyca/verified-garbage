@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Block

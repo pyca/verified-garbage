@@ -167,7 +167,30 @@ theorem code_ok (encName : String) (c : PdImpl) {s : State} (h : spec.pre s) :
   refine WP.mono (wrap_ok (by decide) (show frameBytes + 56 ≤ s.sp.toNat by show 1088 + 56 ≤ _; omega_using [hs])
     (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono ((main_vp encName c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono ((main_vp encName c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have rel {R : Region} (hR : R ∈ [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) :=
+        released_apart (F := frameBytes) (A := 44) (C := callStack) (argv := (ep s).argv)
+          (ro := [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE])
+          (rw := [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) hin.ok hsp (R := R) (Or.inr hR)
+      have fitO := hin.ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
+      have eO : Spec.Rsa.bytesAt m₂ (State.addr (ep s).out) (ep s).K = Spec.Rsa.bytesAt m₁ (State.addr (ep s).out) (ep s).K :=
+        bytesAt_frame hf (rel (R := (ep s).OUT) (by simp))
+          (by change (ep s).OUT.len ≤ 2 ^ 64; omega_using [fitO])
+      have eT : Spec.Rsa.wordsAt m₂ (State.addr (ep s).tape) 2 = Spec.Rsa.wordsAt m₁ (State.addr (ep s).tape) 2 :=
+        wordsAt_frame hf (rel (R := (ep s).TAPE) (by simp)) (by decide)
+      have wr : ∀ o r, Spec.RsaPkcs1Enc.writtenRandom m₁ (State.addr (ep s).out) (ep s).K r o →
+          Spec.RsaPkcs1Enc.writtenRandom m₂ (State.addr (ep s).out) (ep s).K r o := by
+        intro o r w; cases o <;> exact ⟨w.1, eO.trans w.2⟩
+      unfold Res at hres ⊢
+      obtain ⟨⟨req, hw, hr⟩, hm⟩ := hres
+      refine ⟨⟨req, eT.trans hw, hr⟩, ?_⟩
+      revert hm
+      cases (Spec.RsaPkcs1Enc.padSearch (ep s).pl (randB (ep s) (entered frameBytes s))).outcome <;>
+        dsimp only <;> intro hm
+      · exact ⟨hm.1, eO.trans hm.2⟩
+      · exact fun hpre => wr _ _ (hm hpre)
+      · exact ⟨hm.1, eO.trans hm.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 44) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE])
       (rw := [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) (C := callStack) hsp]

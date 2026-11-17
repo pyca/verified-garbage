@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Verified
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 /-!
 # Streaming AES-CMAC on AArch64, with its working space on the stack
@@ -53,7 +54,8 @@ theorem init_framed (v : Ctr32Impl) :
   AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) (init_verified v) (by decide) (by decide) initFrameSat_pre
+    (bytes := 2304) (init_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
@@ -62,7 +64,8 @@ theorem absorb_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
   AArch64.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) (absorb_verified v) (by decide) (by decide) absorbFrameSat_pre
+    (bytes := 2304) (absorb_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed (v : Ctr32Impl) :
     Verified AArch64.target
@@ -71,6 +74,7 @@ theorem finish_framed (v : Ctr32Impl) :
   AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) (finish_verified v) (by decide) (by decide) finishFrameSat_pre
+    (bytes := 2304) (finish_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.AArch64

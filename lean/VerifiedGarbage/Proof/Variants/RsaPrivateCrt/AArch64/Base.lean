@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawSquares
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
@@ -127,7 +127,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the baseline: the variant's code and proofs

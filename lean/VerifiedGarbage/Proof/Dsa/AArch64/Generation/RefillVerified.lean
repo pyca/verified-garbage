@@ -73,9 +73,16 @@ theorem correct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {b
   have A := primeABI_of pre
   obtain ⟨trace, t, he, hpre, hpost⟩ := alloc_frame_ok (bytes := 272) (by decide) A.stackLower
     (Q := fun t => abiPreserved s t ∧ BodyPost bits s t)
-    (WP.mono (body_ok M K hb A) fun t ⟨hsp, hwr, _, hp⟩ => ⟨hsp, hwr, ⟨hp.2.2.2.1, by
+    (WP.mono (body_ok M K hb A) fun t ⟨hsp, _, _, hp⟩ m u f => ⟨⟨hp.2.2.2.1, by
         change t.sp + BitVec.ofNat 64 272 = s.sp
-        rw [hsp]; exact BitVec.sub_add_cancel .., hp.2.2.2.2⟩, hp⟩)
+        rw [hsp]; exact BitVec.sub_add_cancel .., hp.2.2.2.2⟩, by
+      -- The frame's bytes are lost; `used` is apart from them.
+      unfold BodyPost at hp ⊢
+      refine ⟨hp.1, fun b rest hr => ?_, hp.2.2.1.trans (f.sub fun R hR => ⟨⟨frameBase s, 272⟩, by simp [changed],
+        by obtain rfl := List.mem_singleton.mp hR; exact fun _ h => h⟩), hp.2.2.2.1, hp.2.2.2.2⟩
+      exact (f.readW (r := ⟨s.gpr .x4, 8⟩) (Region.contains_self _ _)
+        (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact A.stackUsed.symm.sub_right (frame_sub s))
+        (by decide)).trans (hp.2.1 b rest hr)⟩)
   obtain ⟨hx0, hused, hframe, _, _⟩ := hpost
   refine ⟨trace, t, he, hpre, ?_⟩
   sig_post [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]

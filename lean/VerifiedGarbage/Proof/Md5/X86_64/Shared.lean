@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Md5.X86_64.Lit
 public import VerifiedGarbage.Impl.Md5.X86_64.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Md5.Scratch
 
 /-!
 # MD5 on x86-64: the shared contracts
@@ -59,6 +60,7 @@ theorem update : Verified X86_64.target
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     updateScratch (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)
+    (Proof.Md5.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified X86_64.target
@@ -67,6 +69,7 @@ theorem finalize : Verified X86_64.target
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     finalizeScratch (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)
+    (Proof.Md5.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Md5.X86_64.Shared

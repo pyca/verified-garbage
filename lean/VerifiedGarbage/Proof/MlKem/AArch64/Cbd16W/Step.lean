@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.Mem16Bytes
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Byte
 
 /-! ### `MlKem.AArch64.Cbd16W.Loop`, which this module and modules that import it used -/
 

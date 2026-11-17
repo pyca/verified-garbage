@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Cand
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -13,8 +13,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
@@ -259,9 +257,9 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
   obtain eW : coreWr P L = [L.OUT, L.SCR] := by simp only [coreWr, Lay.OUT, hq]
   refine frame2_ok (ra := .r12) (rb := .lr) (t := .r12) rfl (by decide) P.R.coreX
     (by show armStack P.R.coreC ≤ 16; rw [P.R.coreStack]; omega_arith) h24 (core_pre hL hk hc hr)
-    (core_cov hL hk hc) (core_covW hq hc) fun s₂ ha hpost syEnd => ?_
+    (core_cov hL hk hc) (core_covW hq hc) fun s₂ mL uL hfl ha hpost syEnd => ?_
   rw [eW] at ha
-  obtain hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem (popped .r12 8 s₂).mem := ha.frame.sub fun q hq' => by
+  obtain hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem mL := ha.frame.sub fun q hq' => by
     rw [hst] at hq'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq'
     rcases hq' with rfl | rfl | rfl
@@ -289,7 +287,16 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
       rw [p2_bytes h24 d1 (by omega_arith), p2_bytes h24 d2 (by omega_arith), p2_bytes h24 d3 (by omega_arith)]
     simp only [coreK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0,
       ce1, ce2, ce3, pushed_gpr, hr.r0, hr.r1, hr.r2, hr.r3, dgArg_w hL, kArg_w hL, hs] at hpost
-    rw [popped_gpr (by decide), popped_gpr (by decide), popped_mem]
+    obtain dO : ∀ r ∈ [stk t], (⟨State.addr L.out, 2 * P.Q⟩ : Region).Disjoint r := fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      rw [hst, ← hq]
+      exact (hL.ko.sub_left (Region.sub_prefix (by omega_arith))).symm
+    obtain bO : Spec.Sha256.bytesAt mL (State.addr L.out) (2 * P.Q) =
+        Spec.Sha256.bytesAt s₂.mem (State.addr L.out) (2 * P.Q) :=
+      List.map_congr_left fun _ hi => hfl.bytes dO
+      (by show 2 * P.Q ≤ 2 ^ 64; have := P.wsizes.2.2.2.2.2.1; omega_arith) (List.mem_range.mp hi)
+    dsimp only
+    rw [popped_gpr (by decide), popped_gpr (by decide), bO]
     exact hpost
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
@@ -1108,8 +1115,18 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   obtain hk := coreOk_lay P s
   refine WP.alloc frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
   rw [Cfg.body]
-  refine WP.seq (WP.mono (entry_ok h) fun t hc => WP.mono (body_ok hL hk hc) fun v hv => ?_)
+  refine WP.seq (WP.mono (entry_ok h) fun t hc => WP.mono (body_ok hL hk hc) fun v hv lm lu hfl => ?_)
   obtain ⟨hsp, hs, i, hx⟩ := hv
+  obtain dO : ∀ r ∈ [(⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ : Region)],
+      (⟨State.addr (layOf P s).out, 2 * P.Q⟩ : Region).Disjoint r := fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    show Region.Disjoint _ ⟨State.addr (layOf P s).fp, 512⟩
+    rw [hL.fpA0, ← (coreOk_lay P s).1]
+    exact (hL.ko.sub_left (Offset.sub_base _ (by decide))).symm
+  obtain bO : Spec.Sha256.bytesAt lm (State.addr (layOf P s).out) (2 * P.Q) =
+      Spec.Sha256.bytesAt v.mem (State.addr (layOf P s).out) (2 * P.Q) :=
+    List.map_congr_left fun _ hi => hfl.bytes dO
+      (by show 2 * P.Q ≤ 2 ^ 64; have := P.wsizes.2.2.2.2.2.1; omega_arith) (List.mem_range.mp hi)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · show (freed frameBytes v).gpr r = _
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (low_preserved r hr)
@@ -1126,6 +1143,6 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
     unfold ResultIs at hr
     show match sigI P (layOf P s) s.mem i with | some rs => _ | none => _
     cases hsig : sigI P (layOf P s) s.mem i <;> rw [hsig] at hr <;>
-      exact ⟨by rw [low_word]; exact hr.1, hr.2⟩
+      exact ⟨by rw [low_word]; exact hr.1, bO.trans hr.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

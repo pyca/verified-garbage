@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Ed448.PPC64LE.Whole
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Ffdh.Arm.KeySearch.FinishMemory`, which this module and modules that import it used -/
 
@@ -74,6 +75,35 @@ theorem KeyDone.policy_after_used {p : KeyPublic sampling} {original s : State} 
   exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
     (by simpa using h.input.used_separate.2.2) (by decide)
 
+/-- The buffers the controller reports in lie apart from its saved registers' frame. -/
+theorem KeyInput.saved_separate {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    (rX p).Disjoint (rSaved p) ∧ (rY p).Disjoint (rSaved p) ∧ (rControl p).Disjoint (rSaved p) ∧
+      (rUsed p).Disjoint (rSaved p) := by
+  have sub := FrameStack.belowA_sub (by cases sampling <;> decide : 24 ≤ (stackUse sampling)) h.bounds.stackFits
+  exact ⟨((h.stack_separate (r := rX p) (by rw [h.write_regions]; simp)).sub_left sub).symm,
+    ((h.stack_separate (r := rY p) (by rw [h.write_regions]; simp)).sub_left sub).symm,
+    ((h.stack_separate (r := rControl p) (by rw [h.write_regions]; simp)).sub_left sub).symm,
+    h.saved_used.symm⟩
+
+theorem KeyOutput.of_frame {p : KeyPublic sampling} {result : Spec.Ffdh.KeySearchResult} {m m' : Mem}
+    {rs : List Region} (before : KeyOutput p result m) (frame : Frame rs m m')
+    (hx : ∀ w ∈ rs, (rX p).Disjoint w) (hy : ∀ w ∈ rs, (rY p).Disjoint w) (fit : p.len ≤ 2 ^ 64) :
+    KeyOutput p result m' := by
+  have xeq := bytesAt_frame (r := rX p) frame hx fit
+  have yeq := bytesAt_frame (r := rY p) frame hy fit
+  cases outcome : result.outcome <;> simp only [KeyOutput, outcome] at before ⊢ <;>
+    exact ⟨xeq.trans before.1, yeq.trans before.2⟩
+
+theorem wordsAt_of_frame {m m' : Mem} {rs : List Region} (frame : Frame rs m m') {a : Addr} {n : Nat}
+    (hd : ∀ w ∈ rs, (⟨a, 8 * n⟩ : Region).Disjoint w) (fit : 8 * n < 2 ^ 64) :
+    Spec.Rsa.wordsAt m' a n = Spec.Rsa.wordsAt m a n := by
+  unfold Spec.Rsa.wordsAt
+  apply List.map_congr_left
+  intro j hj
+  have bound : j < n := List.mem_range.mp hj
+  exact frame.readW (r := ⟨a, 8 * n⟩) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound, fit]))
+    hd (by decide)
+
 end VG.Proof.Ffdh.Arm.KeySearch
 
 end
@@ -94,7 +124,9 @@ def finishRestoreSlots : List (Reg × Nat) := [(.r9, 4), (.r10, 8), (.r11, 12), 
 theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.Ffdh.KeySearchResult}
     (h : KeyDone p original result s) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.finish) s fun t =>
-      abiPreserved original (popped .r4 24 t) ∧ ResultPost p result (popped .r4 24 t) := by
+      ∀ m u, Frame [⟨State.addr (original.sp - BitVec.ofNat 32 24), 24⟩] t.mem m →
+        abiPreserved original { popped .r4 24 t with mem := m, unknowns := u } ∧
+          ResultPost p result { popped .r4 24 t with mem := m, unknowns := u } := by
   change WP isa (.block ([VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 15, VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 11,
     VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 14, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4] ++
     finishRestoreSlots.map (fun e => Instr.ldrSp e.1 e.2))) s _
@@ -122,7 +154,13 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
         apply saved e
         simp only [finishRestoreSlots, List.mem_cons, List.not_mem_nil, or_false] at he
         rcases he with rfl | rfl | rfl | rfl <;> simp [savedSlots])) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ m₀ u₀ hfl
+  have spP : p.sp = original.sp := by rw [← h.input.2.1]; rfl
+  have lost : Frame [rSaved p] u.mem m₀ := by
+    show Frame [⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩] u.mem m₀
+    rw [spP, ← memT]; exact hfl
+  have sep := h.input.saved_separate
+  have fitLen : p.len ≤ 2 ^ 64 := by have := h.input.bounds.maxLength; omega_using [this]
   have popped4 : (popped .r4 24 t).gpr .r4 = original.gpr .r4 := by
     change t.mem.readW (State.addr t.sp) 32 = _
     rw [memT, restT.sp]
@@ -132,7 +170,7 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
     rw [popped_gpr (by revert r member; decide)]
     exact (restT.gpr r (by revert r member; decide)).trans
       ((rest.gpr r (by revert r member; decide)).trans (h.kept r member))
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩ <;> dsimp only
   · intro r hr
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -150,11 +188,12 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
     rfl
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r4)]
     exact (restT.gpr .r0 (by simp [finishRestoreSlots])).trans status
-  · rw [popped_mem, memT]
-    exact h.output_after_used frame
-  · rw [popped_mem, memT]
+  · exact (h.output_after_used frame).of_frame lost (by simpa using sep.1) (by simpa using sep.2.1) fitLen
+  · rw [wordsAt_of_frame (n := 4) lost (by
+      simp only [List.mem_singleton, forall_eq]
+      exact sep.2.2.1.sub_left fun _ hc => by simp only [Region.Contains] at hc ⊢; omega_using [hc]) (by decide)]
     exact (h.policy_after_used frame).trans h.policy
-  · rw [popped_mem, memT, mem]
+  · rw [wordsAt_of_frame (n := 1) lost (by simpa using sep.2.2.2) (by decide), mem]
     exact usedMem_words _ _ _ (by have := h.used_le; have := h.input.bounds.randomFits; omega_arith)
 
 end VG.Proof.Ffdh.Arm.KeySearch

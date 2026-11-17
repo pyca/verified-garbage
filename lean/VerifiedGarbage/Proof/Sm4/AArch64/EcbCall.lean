@@ -147,7 +147,7 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
       dSD.sub_left (Region.sub_prefix (by decide)), fitK, fitD, ?_⟩
     · rw [Offset.toNat_sub_ofNat]; omega_using [hsp]
     · rw [BitVec.toNat_ofNat]; omega_using [hk]
-  · intro s' rd' wr' sp' hf hg hv hpost
+  · intro s' rd' wr' sp' hf hg hv hpost mm u f
     sig_reduce [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs] at hpost
     have e0 : σ.gpr .x0 = s₀.gpr .x0 := g₂ _ (by decide)
     have e1 : σ.gpr .x1 = s₀.gpr .x1 := g₂ _ (by decide)
@@ -168,8 +168,11 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
       · subst h; rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
       · have h3 : r ≠ .x3 := fun h3 => by subst h3; exact absurd hr (by decide)
         rw [RegUpd.gpr_write_of_ne _ _ _ h, hg r hr h, g₂ r h3]
-    · show Spec.Sm4.blocksAt s'.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat = _
-      rw [hpost, hsch, hblk, specDirA_dirFlag]
+    · -- The blocks lie apart from the frame, whose bytes the pop loses.
+      show Spec.Sm4.blocksAt mm (s₀.gpr .x1) (s₀.gpr .x2).toNat = _
+      rw [Proof.Sm4.blocksAt_frame f (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr; exact (dSD.sub_left frameSub).symm) (by omega_using [fitD]),
+        hpost, hsch, hblk, specDirA_dirFlag]
 
 
 /-- A state satisfying the ECB functions' precondition with `stack = 3184`:

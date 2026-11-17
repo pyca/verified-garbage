@@ -15,7 +15,7 @@ import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import Init.Data.Nat.Bitwise.Basic

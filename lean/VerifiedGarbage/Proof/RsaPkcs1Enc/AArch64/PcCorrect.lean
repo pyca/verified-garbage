@@ -390,7 +390,7 @@ theorem code_ok (c : PdChecked) {s : State}
     WP isa (Impl.RsaPkcs1Enc.AArch64.Precomputed.code c.name c.code) s fun s' =>
       abiPreserved s s' ∧ post c.stack s s' := by
   obtain ⟨hL, hrd, hwr, hpl, hsp⟩ := pre_of h
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_using [hsp]) (by decide) ?_ ?_
   · show 1072 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hsp])]
     show 1072 ≤ s.sp.toNat - 16
@@ -404,25 +404,31 @@ theorem code_ok (c : PdChecked) {s : State}
     refine WP.seq (WP.mono (callArgs_inv hL (preOk_of hpl) (regsOf _ s) h₃) fun t₄ h₄ => ?_)
     refine WP.seq (WP.mono (pd_call c hL rfl h₄) fun t₅ h₅ => ?_)
     refine WP.seq (WP.mono (maskArgs_inv h₅.toCalledF) fun t₆ h₆ => ?_)
-    refine WP.mono (maskLoop_ok hL h₆) fun u hu => ?_
+    refine WP.mono (maskLoop_ok hL h₆) fun u hu mm uu fl => ?_
     have hc := hu.ctx
     have hsp' : (freed frameBytes u).sp = (layP c.stack s).Q + BitVec.ofNat 64 1072 := by rw [freed_sp, hc.sp]; rfl
+    -- What the postcondition reads lies apart from the stack, whose frames' bytes are lost.
+    obtain hS : Region.Sub (below s.sp (1072 + 16)) (layP c.stack s).STK := by
+      obtain h0 := Lay.Ok.sub_stk (L := layP c.stack s) (d := 0) (n := 1088) (by decide)
+      rw [show (layP c.stack s).Q + BitVec.ofNat 64 0 = (layP c.stack s).Q from BitVec.add_zero _] at h0
+      exact h0
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, fun hq => ?_⟩
-    · by_cases h30 : r = .x30
+    · show (popped .x30 (freed frameBytes u)).gpr r = s.gpr r
+      by_cases h30 : r = .x30
       · subst r
         rw [popped_gpr_self, freed_mem, hsp']; exact hc.kept.lr
       · rw [popped_gpr_ne _ h30, freed_gpr]
         exact hc.cs r hr h30
-    · rw [popped_sp, hsp']
+    · show (popped .x30 (freed frameBytes u)).sp = s.sp
+      rw [popped_sp, hsp']
       show (layP c.stack s).Q + BitVec.ofNat 64 1072 + BitVec.ofNat 64 16 = s.sp
       rw [add_add]; exact lay_Q _ s _ _
-    · rw [popped_v, freed_v]
-      exact hc.vs r hr
+    · exact hc.vs r hr
     · refine result_ok hL.mlk hL.plk (y := t₅.mem) (r := t₅.gpr .x0)
         (h₅.out ((consistent_iff c.stack s).2 hq)) ?_ fun i hi => ?_
-      · rw [popped_gpr_ne _ (by decide), freed_gpr]
+      · show (popped .x30 (freed frameBytes u)).gpr .x0 = _
+        rw [popped_gpr_ne _ (by decide), freed_gpr]
         exact hu.x0
-      · rw [popped_mem, freed_mem]
-        exact hu.done i hi
+      · exact (lost_byte (R := (layP c.stack s).OUT) fl (hL.kO.symm.sub_right hS) hi).trans (hu.done i hi)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc.Pc

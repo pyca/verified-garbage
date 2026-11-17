@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -123,24 +125,53 @@ theorem codeWith_correct (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {s : S
   refine WP.seq (WP.mono (crtArgs_ok hL ha (entered_ctxW h hX) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
     fun t₁ ⟨hc₁, hs₁, a₁⟩ => ?_)
   refine WP.seq (WP.mono (crt_call C hL hc₁ hs₁ a₁ (hK t₁ hc₁ a₁)) fun t₂ ⟨hc₂, hs₂, _, hcrt⟩ => ?_)
-  refine WP.mono (checkWith_ok v stage hL ha hst hc₂ hs₂) fun t₃ ⟨hc₃, hax, hout, _⟩ => ?_
+  refine WP.mono (checkWith_ok v stage hL ha hst hc₂ hs₂) fun t₃ ⟨hc₃, hax, hout, _⟩ m₁ u₁ f₁ m₂ u₂ f₂ => ?_
   have hsp₃ : (freed frameBytes t₃).sp = (layW s X).B + BitVec.ofNat 64 frameBytes := by
     rw [freed_sp, hc₃.sp]
+  -- The two frames' bytes are lost: the inner frame's by the `free`, then
+  -- the one saving `x30` by the pop, which reads it from the outer frame.
+  have e₁ : (pushed .x30 s).sp - BitVec.ofNat 64 frameBytes = (layW s X).B := entered_sp s
+  rw [e₁] at f₁
+  have f₁' : Frame [(layW s X).FR] t₃.mem m₁ := f₁
+  rw [lr_slot] at f₂
+  have f₂' : Frame [(layW s X).LR] m₁ m₂ := f₂
+  have fS : Frame [(layW s X).STK] t₃.mem m₂ := by
+    refine (Frame.sub f₁' fun r hr => ?_).trans (Frame.sub f₂' fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
   refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
-  · rw [popped_gpr]
+  · show (popped .x30 { freed frameBytes t₃ with mem := m₁, unknowns := u₁ }).gpr r = s.gpr r
+    rw [popped_gpr]
     split
-    · rename_i h; subst h; rw [hsp₃, freed_mem, read8]; exact hc₃.lr
-    · rename_i h; rw [freed_gpr]; exact hc₃.cs r hr h
-  · rw [popped_sp, hsp₃, BitVec.add_assoc]
+    · rename_i h; subst h
+      show m₁.read (freed frameBytes t₃).sp 8 = _
+      rw [hsp₃, read8, f₁'.readW (r := (layW s X).LR)
+        (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
+        (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR
+          exact Offset.disjoint_base _ (Nat.le_refl _) (by decide)) (by decide)]
+      exact hc₃.lr
+    · rename_i h; exact hc₃.cs r hr h
+  · show (freed frameBytes t₃).sp + 16 = s.sp
+    rw [hsp₃, BitVec.add_assoc]
     exact lay_top s
-  · rw [popped_v, freed_v]; exact hc₃.vs r hr
+  · exact hc₃.vs r hr
   · -- The outcome.
     obtain ⟨kp, kq, kdp, kdq, kqi⟩ := hc₁.key_bytes hL
     simp only [CrtOut] at hcrt
     rw [hc₁.n_bytes hL, hc₁.inp_bytes hL, kp, kq, kdp, kdq, kqi] at hcrt
-    show Spec.Rsa.writtenOutcome (popped .x30 (freed frameBytes t₃)).mem (s.gpr .x0) (s.gpr .x3).toNat
-      (((popped .x30 (freed frameBytes t₃)).gpr .x0).setWidth 32) _
-    rw [popped_mem, freed_mem, popped_gpr, freed_gpr, ite_neg' (by decide)]
+    -- The output lies apart from the stack, whose frames' bytes are lost.
+    have hb : Spec.Rsa.bytesAt m₂ (s.gpr .x0) (s.gpr .x3).toNat =
+        Spec.Rsa.bytesAt t₃.mem (s.gpr .x0) (s.gpr .x3).toNat :=
+      List.map_congr_left fun i hi => lost_byte (R := (layW s X).OUT) fS hL.ko.symm
+        (show i < (layW s X).ol.toNat by rw [hL.olk]; exact List.mem_range.mp hi)
+    refine Proof.Rsa.writtenOutcome_of_bytesAt hb ?_
+    show Spec.Rsa.writtenOutcome t₃.mem (s.gpr .x0) (s.gpr .x3).toNat
+      (((popped .x30 { freed frameBytes t₃ with mem := m₁, unknowns := u₁ }).gpr .x0).setWidth 32) _
+    rw [popped_gpr, ite_neg' (by decide)]
+    show Spec.Rsa.writtenOutcome t₃.mem (s.gpr .x0) (s.gpr .x3).toNat ((t₃.gpr .x0).setWidth 32) _
     exact Proof.Rsa.outcome_eq (Proof.Rsa.bytesAt_length' _ _ _) (Proof.Rsa.bytesAt_length' _ _ _) hcrt hax hout
 
 theorem code_correct (v : CrtImpl) (s : State) (h : chkA.pre s) :

@@ -607,9 +607,23 @@ theorem popped_gpr (s : State) (r : Reg) :
   show (s.write .x .x30 _).gpr r = _
   rw [RegUpd.gpr_write, BitVec.setWidth_eq]
 
-theorem post_congr {s x y : State} (hm : y.mem = x.mem) (h0 : y.gpr .x0 = x.gpr .x0) (h : post s x) :
-    post s y := by
-  unfold post; rw [hm, h0]; exact h
+/-- `post` reads the memory only in the output and the tape's two words. -/
+theorem post_congr {s x y : State}
+    (hb : Spec.Rsa.bytesAt y.mem (s.gpr .x0) (kOf s) = Spec.Rsa.bytesAt x.mem (s.gpr .x0) (kOf s))
+    (ht : y.mem.readW (s.gpr .x2) 64 = x.mem.readW (s.gpr .x2) 64)
+    (ht8 : y.mem.readW (s.gpr .x2 + BitVec.ofNat 64 8) 64 = x.mem.readW (s.gpr .x2 + BitVec.ofNat 64 8) 64)
+    (h0 : y.gpr .x0 = x.gpr .x0) (h : post s x) : post s y := by
+  simp only [post] at h ⊢
+  obtain ⟨⟨req, h1, h2, h3⟩, h4⟩ := h
+  refine ⟨⟨req, ht.trans h1, ht8.trans h2, h3⟩, ?_⟩
+  revert h4
+  generalize (Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)).outcome = o
+  cases o <;> simp only [h0, hb, imp_self]
+  intro h4 hp
+  have h5 := h4 hp
+  revert h5
+  generalize Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) _ = C
+  cases C <;> simp only [Spec.RsaPkcs1Enc.writtenRandom, hb, imp_self]
 
 theorem popped_mem' (x : State) : (popped .x30 x).mem = x.mem := rfl
 
@@ -623,17 +637,24 @@ theorem code_ok (c : PdChecked)
     {s : State} (hp : RPre c.stack s) :
     WP isa (code (encName c) (encCode c)) s fun s' => abiPreserved s s' ∧ post s s' := by
   have hQ := Q_toNat hp
-  refine WP.frame (by omega_using [hQ]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_using [hQ]) (by decide) ?_ ?_
   · show 1088 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hQ])]
     show 1088 ≤ s.sp.toNat - 16
     omega_using [hQ]
   · show WP isa (body (encName c) (encCode c)) (entered s) _
-    refine WP.mono (body_ok c hsat hp) fun x ⟨hx, hpo⟩ => ?_
+    refine WP.mono (body_ok c hsat hp) fun x ⟨hx, hpo⟩ mm uu fl => ?_
     have hsp' : (freed frameBytes x).sp = off (Q s) 1088 := by
       show x.sp + BitVec.ofNat 64 1088 = _; rw [hx.sp]
+    -- The output and the tape lie apart from the stack, whose frames' bytes are lost.
+    obtain hS : Region.Sub (below s.sp (1088 + 16)) (stkR c.stack s) :=
+      Offset.sub_below s.sp (a := 1104) (n := 1104) (b := c.stack + 2191 + 1) (m := c.stack + 2191 + 1)
+        (by omega_arith) (by omega_arith)
+    obtain hT : ∀ R ∈ [below s.sp (1088 + 16)], (tapeR s).Disjoint R := fun R hR => by
+      simp only [List.mem_singleton] at hR; subst hR; exact hp.dKt.symm.sub_right hS
     refine ⟨⟨fun r hr => ?_, ?_, fun r hr => hx.vs r hr⟩, ?_⟩
-    · rw [popped_gpr]
+    · show (popped .x30 (freed frameBytes x)).gpr r = s.gpr r
+      rw [popped_gpr]
       by_cases h30 : r = .x30
       · subst h30
         simp only [ite_true]
@@ -643,8 +664,14 @@ theorem code_ok (c : PdChecked)
     · show x.sp + BitVec.ofNat 64 1088 + 16 = s.sp
       rw [hx.sp, BitVec.add_assoc]
       exact Q_sp s
-    · refine post_congr ?_ ?_ hpo
-      · rw [popped_mem', freed_mem']
-      · rw [popped_gpr, ite_eq_right_of_eq_false _ _ (by decide)]; rfl
+    · refine post_congr (x := x) ?_ ?_ ?_ ?_ hpo
+      · exact List.map_congr_left fun i hi => lost_byte (R := outR s) fl (hp.dKo.symm.sub_right hS)
+          (show i < (s.gpr .x1).toNat by rw [hp.hsi]; exact List.mem_range.mp hi)
+      · exact fl.readW (r := tapeR s)
+          (by simp only [tapeR, Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide) hT (by decide)
+      · exact fl.readW (r := tapeR s) (Offset.contains_base (s.gpr .x2) (d := 8) (n := 64 / 8) (k := 16)
+          (by decide) (by decide)) hT (by decide)
+      · show (popped .x30 (freed frameBytes x)).gpr .x0 = _
+        rw [popped_gpr, ite_eq_right_of_eq_false _ _ (by decide)]; rfl
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Rnd

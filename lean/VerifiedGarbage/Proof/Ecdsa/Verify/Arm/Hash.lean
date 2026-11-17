@@ -1247,6 +1247,17 @@ theorem pre_local (I : Spec.Ecdsa.Instance) : ∀ vs (m₁ m₂ : Mem), vs.lengt
   rw [Curry.apply_const]
   trivial
 
+/-- `hPost` does not read the memory on return. -/
+theorem hPost_out (I : Spec.Ecdsa.Instance) : ∀ vs m m₁ m₂ r,
+    vs.length = (I.verifyHashSig.words abi.ptrBits).length →
+    Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₁ r →
+      Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen h
+  have h5 : vs.length = 5 := by
+    simpa [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words] using hlen
+  match vs, h5 with
+  | [_, _, _, _, _], _ => exact h
+
 theorem pre_leak {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
     {wa : Bool} {st : Nat} {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
     {s : State} :
@@ -1270,7 +1281,8 @@ theorem verifyHash_verified_nil {I : Spec.Ecdsa.Instance} {wide : Bool} {core : 
     (hashed_verified_nil hL h66 hcore htc ⟨_, narrow_pre (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I)
       hash_fits (pre_local I) h₀⟩)
     (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I) hash_fits (pre_local I)
-    (fun vs m₁ m₂ m' r hl hb _ => post_local I vs m₁ m₂ m' r hl hb) ⟨s₀, pre_leak.mp h₀⟩ (leak_local I)
+    (fun vs m₁ m₂ m' r hl hb _ => post_local I vs m₁ m₂ m' r hl hb)
+    (fun vs mm m₁ m₂ r hl _ _ => hPost_out I vs mm m₁ m₂ r hl) ⟨s₀, pre_leak.mp h₀⟩ (leak_local I)
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (BitVec 64)}
@@ -1280,7 +1292,8 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (
 
 /-- `Verified.stackScratchL` under `abi.withConsts (c₀ :: cs)`, for a
 signature without lists of slices: as `Verified.stackScratchWipedC`, without
-the wipe. -/
+the wipe, if the postcondition reads the memory on return only within the
+buffers (`hpostOut`): the frame's `free` loses its bytes. -/
 theorem Verified.stackScratchC {c : Prog isa}
     (h : Verified target c (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
@@ -1293,6 +1306,11 @@ theorem Verified.stackScratchC {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs mm →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
     (hsat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true)
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak) :
@@ -1306,7 +1324,8 @@ theorem Verified.stackScratchC {c : Prog isa}
         (narrowC sig e n bytes m (c₀ :: cs) s) s₃ ∧
       Exec isa (Impl.StackScratch.Arm.withStackScratch bytes m c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowC_pre hcl hN hloc hb hpre hs)
@@ -1321,12 +1340,24 @@ theorem Verified.stackScratchC {c : Prog isa}
     obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb (pre_consts.mp hs).1
     simp only [armArgs_stripConsts, stripConsts_sp] at hargs
     rw [armArgs_narrowC, hargs, narrowC_mem] at hq'
-    rw [hm, hg]
+    rw [hg]
     obtain h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
     obtain hag := narrow_agree hcl hN hloc hb (pre_consts.mp hs).1
     simp only [armArgs_stripConsts, stripConsts_mem] at hag
-    exact hpost _ _ _ _ _ (hlen s) hag h₃
+    have h₄ := hpost _ _ _ _ _ (hlen s) hag h₃
+    -- The memory on return: after the `free`, which loses only the frame.
+    have hpr : Curry.apply (sig.words abi.ptrBits) pre (armArgs sig s) s.mem := by
+      have hs' := (pre_consts.mp hs).1
+      rw [pre_arm hl] at hs'
+      simpa only [armArgs_stripConsts, stripConsts_mem] using hs'.2.2.2.2.2.2
+    refine hpostOut _ _ _ _ _ (hlen s) hpr (fun b hb' a ha' => ?_) h₄
+    have hF := frame_disj hb (pre_consts.mp hs).1 b
+      (List.mem_append_left _ (by rw [armArgs_stripConsts]; exact hb'))
+    simp only [stripConsts_sp] at hF
+    exact (hm a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hF a ha').symm
   · obtain ⟨u₁, _, f₁, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, f₂, _, x₂, _⟩ := hrun s₂ h₂
     obtain ⟨hp', hsy⟩ := pub_consts.mp hp
@@ -1356,7 +1387,8 @@ theorem verifyHash_verified_cons {I : Spec.Ecdsa.Instance} {wide : Bool} {core :
     (hashed_verified_cons hL h66 hcore htc ⟨_, narrowC_pre (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I)
       hash_fits (pre_local I) h₀⟩)
     (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I) hash_fits (pre_local I)
-    (fun vs m₁ m₂ m' r hl hb => post_local I vs m₁ m₂ m' r hl hb) ⟨s₀, pre_leak.mp h₀⟩ rfl (leak_local I)
+    (fun vs m₁ m₂ m' r hl hb => post_local I vs m₁ m₂ m' r hl hb)
+    (fun vs mm m₁ m₂ r hl _ _ => hPost_out I vs mm m₁ m₂ r hl) ⟨s₀, pre_leak.mp h₀⟩ rfl (leak_local I)
 
 /-! ## Satisfiability -/
 

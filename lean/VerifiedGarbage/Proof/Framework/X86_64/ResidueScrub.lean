@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Taint
 public meta import Lean.Meta.Eval
 public meta import Lean.Elab.Term
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
@@ -590,75 +592,93 @@ def resOkB (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
     (List.range stack).all fun j => cov ks cs j || !τ.sec.testBit j
 
-def wordAllC (p : Nat → Bool) (n o : Nat) : Nat → Bool
-  | 0 => true
-  | b + 1 => (bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o b))) 0 then true else p (Nat.add o b)) &&
-    wordAllC p n o b
+/-- The granules `wipe ks cs` may zero, as offsets from the bottom of the
+`cs.sum` bytes and widths. -/
+def granules : List Nat → List (Nat × Nat)
+  | [] => []
+  | b :: bs => ((List.range (b / 16)).map fun t => (bs.sum + b % 16 + 16 * t, 16)) ++
+    (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
 
-/-- `p` holds of every bit set in `n` among the `k` from bit `o`. -/
-@[implemented_by wordAllC] def wordAll (p : Nat → Bool) (n o k : Nat) : Bool :=
-  Nat.rec (motive := fun _ => Bool) true
-    (fun b ih => (bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o b))) 0 then true else p (Nat.add o b)) && ih) k
+/-- The bytes of the granules `gs` that `ks` lists, as a bit mask. -/
+def covMask (ks : List Nat) (gs : List (Nat × Nat)) : Nat :=
+  gs.foldr (fun g m => bif KList.any ks (Nat.beq g.1) then bset m g.1 g.2 else m) 0
 
-def bitsAllC (p : Nat → Bool) (n : Nat) : Nat → Bool
-  | 0 => true
-  | w + 1 => (bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
-      else wordAll p n (Nat.mul 64 w) 64) && bitsAllC p n w
+theorem covMask_bit {ks : List Nat} : ∀ {gs : List (Nat × Nat)} {j : Nat}, (covMask ks gs).testBit j = true →
+    ∃ g ∈ gs, g.1 ∈ ks ∧ g.1 ≤ j ∧ j < g.1 + g.2
+  | [], j, h => by simp only [covMask, List.foldr_nil, Nat.zero_testBit, Bool.false_eq_true] at h
+  | g :: gs, j, h => by
+    have h' : (bif KList.any ks (Nat.beq g.1) then bset (covMask ks gs) g.1 g.2 else covMask ks gs).testBit j =
+        true := h
+    cases hk : KList.any ks (Nat.beq g.1) with
+    | false =>
+      rw [hk, Bool.cond_false] at h'
+      obtain ⟨g', hg', r⟩ := covMask_bit h'
+      exact ⟨g', List.mem_cons_of_mem _ hg', r⟩
+    | true =>
+      rw [hk, Bool.cond_true, testBit_bset, Bool.or_eq_true] at h'
+      rcases h' with h' | h'
+      · obtain ⟨g', hg', r⟩ := covMask_bit h'
+        exact ⟨g', List.mem_cons_of_mem _ hg', r⟩
+      · rw [Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq] at h'
+        rw [KList.any_eq, List.any_eq_true] at hk
+        obtain ⟨x, hx, e⟩ := hk
+        exact ⟨g, List.mem_cons_self, Nat.eq_of_beq_eq_true e ▸ hx, h'.1, h'.2⟩
 
-/-- `p` holds of every bit set in `n` among its first `64 * words`: a word
-of 64 bits at a time, and bit by bit in those that are not zero. -/
-@[implemented_by bitsAllC] def bitsAll (p : Nat → Bool) (n words : Nat) : Bool :=
-  Nat.rec (motive := fun _ => Bool) true
-    (fun w ih => (bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
-      else wordAll p n (Nat.mul 64 w) 64) && ih) words
-
-theorem beq_bit (n i : Nat) : Nat.beq (Nat.land 1 (Nat.shiftRight n i)) 0 = !n.testBit i := by
-  rw [Nat.testBit, bne, Bool.not_not, Bool.eq_iff_iff, Nat.beq_eq, beq_iff_eq]
-  rfl
-
-theorem wordAll_bit {p : Nat → Bool} {n o : Nat} : ∀ {k : Nat}, wordAll p n o k = true →
-    ∀ b < k, n.testBit (o + b) = true → p (o + b) = true
-  | 0, _, _, hb, _ => absurd hb (Nat.not_lt_zero _)
-  | k + 1, h, b, hb, hj => by
-    have h' : ((bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o k))) 0 then true else p (Nat.add o k)) &&
-        wordAll p n o k) = true := h
-    rw [Bool.and_eq_true, beq_bit] at h'
-    by_cases hbk : b = k
-    · subst hbk
-      have h1 := h'.1
-      rw [show Nat.add o b = o + b from rfl, hj] at h1
-      exact h1
-    · exact wordAll_bit h'.2 b (by omega) hj
-
-theorem bitsAll_bit {p : Nat → Bool} {n : Nat} : ∀ {words : Nat}, bitsAll p n words = true →
-    ∀ j < 64 * words, n.testBit j = true → p j = true
-  | 0, _, _, hj, _ => absurd hj (Nat.not_lt_zero _)
-  | w + 1, h, j, hj, hb => by
-    have h' : ((bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
-        else wordAll p n (Nat.mul 64 w) 64) && bitsAll p n w) = true := h
-    rw [Bool.and_eq_true] at h'
-    by_cases hjw : j < 64 * w
-    · exact bitsAll_bit h'.2 j hjw hb
-    · have h1 := h'.1
-      have e : j = 64 * w + (j - 64 * w) := by omega
-      cases hz : Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0
-      · rw [hz, Bool.cond_false] at h1
-        have := wordAll_bit (o := 64 * w) h1 (j - 64 * w) (by omega)
-          (show n.testBit (64 * w + (j - 64 * w)) = true by rw [← e]; exact hb)
-        rw [← e] at this
-        exact this
-      · have hz' : (n >>> (64 * w) &&& ones 64) = 0 := Nat.eq_of_beq_eq_true hz
-        have := congrArg (·.testBit (j - 64 * w)) hz'
-        simp only [Nat.testBit_and, Nat.testBit_shiftRight, testBit_ones, ← e, hb, Bool.true_and, Nat.zero_testBit,
-          decide_eq_false_iff_not] at this
+theorem granules_le : ∀ {cs : List Nat} {g : Nat × Nat}, g ∈ granules cs → g.1 + g.2 ≤ cs.sum
+  | [], g, h => by simp only [granules, List.not_mem_nil] at h
+  | b :: bs, g, h => by
+    simp only [granules, List.mem_append, List.mem_map, List.mem_range] at h
+    rw [List.sum_cons]
+    rcases h with (⟨t, ht, rfl⟩ | h) | h
+    · show bs.sum + b % 16 + 16 * t + 16 ≤ b + bs.sum
+      omega
+    · split at h
+      · rw [List.mem_singleton] at h
+        subst h
+        show bs.sum + 8 ≤ b + bs.sum
         omega
+      · exact absurd h List.not_mem_nil
+    · have := granules_le h
+      omega
 
-/-- `resOkB`, checking only the bytes that `sec` lists (usually few), which
-it finds a word of 64 at a time (`bitsAll`), rather than every byte of the
-window (`stack` of them, a few seconds in the kernel for thousands). -/
+/-- `wipe ks cs` zeroes the bytes of a granule that `ks` lists. -/
+theorem cov_of_granule {ks : List Nat} : ∀ {cs : List Nat} {g : Nat × Nat} {j : Nat}, g ∈ granules cs →
+    g.1 ∈ ks → g.1 ≤ j → j < g.1 + g.2 → cov ks cs j = true
+  | [], g, j, h, _, _, _ => by simp only [granules, List.not_mem_nil] at h
+  | b :: bs, g, j, h, hk, h₁, h₂ => by
+    simp only [granules, List.mem_append, List.mem_map, List.mem_range] at h
+    rw [cov]
+    rcases h with (⟨t, ht, rfl⟩ | h) | h
+    · replace h₁ : bs.sum + b % 16 + 16 * t ≤ j := h₁
+      replace h₂ : j < bs.sum + b % 16 + 16 * t + 16 := h₂
+      rw [ite_eq_right (by omega), Bool.and_eq_true, decide_eq_true_eq]
+      refine ⟨by omega, ?_⟩
+      rw [covC, ite_eq_right (by omega),
+        show bs.sum + b % 16 + 16 * ((j - bs.sum - b % 16) / 16) = bs.sum + b % 16 + 16 * t by omega]
+      exact List.contains_iff_mem.mpr hk
+    · split at h
+      · rename_i h8
+        rw [List.mem_singleton] at h
+        subst h
+        replace h₁ : bs.sum ≤ j := h₁
+        replace h₂ : j < bs.sum + 8 := h₂
+        rw [ite_eq_right (by omega), Bool.and_eq_true, decide_eq_true_eq]
+        refine ⟨by omega, ?_⟩
+        rw [covC, ite_eq_left (by omega), Bool.and_eq_true, beq_iff_eq]
+        exact ⟨h8, List.contains_iff_mem.mpr hk⟩
+      · exact absurd h List.not_mem_nil
+    · have hle := granules_le h
+      rw [ite_eq_left (by omega)]
+      exact cov_of_granule h hk h₁ h₂
+
+/-- `resOkB`, as one comparison of bit masks: the bytes that `sec` lists,
+among the bytes of the granules that `ks` lists (`covMask`), rather than a
+question of `cov` for every byte of the window (`stack` of them), or for
+every byte `sec` lists, each a walk of `ks` (half a second in the kernel for
+a function whose frame holds five hundred secret bytes). -/
 def resOkF (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
-    bitsAll (cov ks cs) (Nat.mod τ.sec (Nat.pow 2 stack)) (Nat.add (Nat.div stack 64) 1)
+    bsub (Nat.mod τ.sec (Nat.pow 2 stack)) (covMask ks (granules cs))
 
 theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF τ stack ks cs = true) :
     resOkB τ stack ks cs = true := by
@@ -669,9 +689,10 @@ theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF 
   intro j hj
   cases hb : τ.sec.testBit j
   · exact .inr rfl
-  · refine .inl (bitsAll_bit hs j (by show j < 64 * (stack / 64 + 1); omega) ?_)
-    show (τ.sec % 2 ^ stack).testBit j = true
-    rw [Nat.testBit_mod_two_pow, hb, decide_eq_true hj]; rfl
+  · have hm : (τ.sec % 2 ^ stack).testBit j = true := by
+      rw [Nat.testBit_mod_two_pow, hb, decide_eq_true hj]; rfl
+    obtain ⟨g, hg, hk, h₁, h₂⟩ := covMask_bit (bsub_bit hs hm)
+    exact .inl (cov_of_granule hg hk h₁ h₂)
 
 /-- `(o.any (resOkF · stack ks cs))` gives `resOkB`'s. -/
 theorem any_resOkB {o : Option FT} {stack : Nat} {ks cs : List Nat}
@@ -734,13 +755,6 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
 end
 
 /-! ## The granules to wipe -/
-
-/-- The granules `wipe ks cs` may zero, as offsets from the bottom of the
-`cs.sum` bytes and widths. -/
-def granules : List Nat → List (Nat × Nat)
-  | [] => []
-  | b :: bs => ((List.range (b / 16)).map fun t => (bs.sum + b % 16 + 16 * t, 16)) ++
-    (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
 
 /-- The granules of `wipe _ cs` that hold a byte `sec` lists. -/
 def keepOf (sec : Nat) (cs : List Nat) : List Nat :=
@@ -908,6 +922,128 @@ def withScrubRes {api : Api} (r : Registration api target)
     scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
       hres hw (levelFor_ne _)
   else r else r else r else r else r else r else r
+
+end VG.X86_64.RScrub
+
+/-! ## The code of a check, as a literal
+
+`taint_decide` has the kernel evaluate the literal of any code that has one
+(`rw_lit`), but not of code it reaches through a structure with proofs about
+it (`Lit.reaches`: rewriting inside one would change the types of its
+proofs): a registration's `r.code`, as `resOk_reg0` states its check, or the
+functions of a variant (`MdHash`, `StreamFn`). The kernel then builds the
+code from the functions that generate it, and what it walks are their
+terms: two instructions that are the same after evaluation are different
+terms, each met for the first time (`stepFn1K`, a third of a millisecond),
+and no step is found again. Here the code of such a check is evaluated in
+compiled code and the check stated of that literal, with the literals of the
+functions it calls (as `materialize_code` writes one): the kernel compares
+the code with it once, by evaluation, and the analysis walks a literal. A
+check of such code is proven by `taint_decide_lit`, not `taint_decide`. -/
+
+namespace VG.X86_64.RScrub
+
+open Lean Meta Elab Tactic
+
+/-- Whether the code `c` is reached through a structure with proofs among
+its fields, which `rw_lit` does not unfold, and names no literal: code that
+`rw_lit` leaves, all of it, to the functions that generate it. (Code of
+which it finds the literals of some functions stays as it leaves it: the
+literal of ML-DSA's key preparation, whose polynomial arithmetic it does not
+find, gained nothing and cost a comparison.) -/
+meta def hiddenCode (c : Expr) : MetaM Bool := do
+  if c.hasLooseBVars || c.hasFVar || c.hasMVar then return false
+  let env ← getEnv
+  let cs := c.getUsedConstants
+  if cs.any (· matches .str _ "lit") then return false
+  for k in cs do
+    if let some info := env.find? k then
+      if ← Lit.hasProofFields info.type.getForallBody.getAppFn then return true
+  return false
+
+/-- The closed code `c` as a literal, calling the literals of the code
+materialized so far (as `Lit.materialize` writes `N.lit`), and a proof that
+`c` is that literal: by evaluation, then each function called rewritten to
+its literal. -/
+meta def codeLit (c : Expr) : MetaM (Expr × Expr) := do
+  let ty ← inferType c
+  let codeTy ← whnfD ty
+  unless codeTy.isAppOfArity ``Code 2 do throwError "taint_decide: {c} is not code: {ty}"
+  let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
+  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
+  let v ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst c)
+  -- The code materialized so far, written out in full.
+  let mut lits : Array (Name × Expr) := #[]
+  let mut expanded : Std.HashMap Name Expr := {}
+  for g in Lit.litNames (← getEnv) do
+    let lhs ← Lit.lhsOf g
+    if (← isDefEq (← inferType lhs) ty) then
+      let (e, m) ← (Lit.expandLit g).run expanded
+      expanded := m
+      lits := lits.push (g, e)
+  let (abs, gs) ← (Lit.abstractCalls lits v).run #[]
+  let lhss ← gs.mapM Lit.lhsOf
+  -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
+  let fill (f : Nat → Expr) : Expr :=
+    abs.replace fun e => match e with
+      | .bvar k => if 1000000 ≤ k then some (f (k - 1000000)) else none
+      | _ => none
+  let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty c rhs
+  -- `c = abs[callees]` by evaluation, then each callee rewritten to its literal.
+  let mut prf := mkApp2 (mkConst ``Eq.refl [1]) ty c
+  for i in [0:gs.size] do
+    let motive := Expr.lam `x ty
+      (eqTy ((fill fun j => if j < i then mkConst (gs[j]! ++ `lit)
+        else if j == i then .bvar 0 else lhss[j]!))) .default
+    prf := mkApp4 (mkConst ``Eq.mp [0])
+      (mkApp motive lhss[i]!) (mkApp motive (mkConst (gs[i]! ++ `lit)))
+      (mkApp6 (mkConst ``congrArg [1, 1]) ty (mkSort 0) lhss[i]!
+        (mkConst (gs[i]! ++ `lit)) motive (mkConst (gs[i]! ++ `lit_eq))) prf
+  return (ShareCommon.shareCommon' (fill fun i => mkConst (gs[i]! ++ `lit)), ShareCommon.shareCommon' prf)
+
+/-- `taint_decide` (`VG.taintDecideAt`), but that after `rw_lit` a check of
+code that `rw_lit` has left to the functions that generate it (`hiddenCode`)
+is stated of the code's literal (`codeLit`) before the kernel evaluates it. -/
+meta def taintDecideLit (chunkSize : Expr) : TacticM Unit := do
+  let g ← getMainGoal
+  let some chk := (← instantiateMVars (← g.getType)).find? (·.isAppOfArity ``VG.Taint.check 5)
+    | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
+  let args := chk.getAppArgs
+  let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
+  unless h.isMVar do throwError "taint_decide_lit: the hint is already given"
+  let tT ← whnfD (mkApp2 (mkConst ``VG.Taint.T) m a)
+  let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
+  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``VG.Taint.Hint.toExprNS) tT instT
+    (mkApp5 (mkConst ``VG.Taint.hintOfSize) m a chunkSize τ c))
+  h.mvarId!.assign hv
+  evalTactic (← `(tactic| rw_lit))
+  let g ← getMainGoal
+  let tgt ← instantiateMVars (← g.getType)
+  let some chk := tgt.find? (·.isAppOfArity ``VG.Taint.check 5)
+    | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
+  let c := chk.getArg! 3
+  if ← hiddenCode c then
+    let (lit, prf) ← codeLit c
+    let ty ← inferType c
+    let motive ← withLocalDeclD `y ty fun y =>
+      mkLambdaFVars #[y] (tgt.replace fun t => if t == c then some y else none)
+    replaceMainGoal [← g.replaceTargetEq (tgt.replace fun t => if t == c then some lit else none)
+      (mkApp6 (mkConst ``congrArg [1, 1]) ty (mkSort 0) c lit motive prf)]
+  evalTactic (← `(tactic| decide +kernel))
+
+/-- `taint_decide_lit`: `taint_decide` for a check of the residue analysis
+of code that `rw_lit` cannot see (`hiddenCode`: a registration's `r.code`, as
+`resOk_reg0` states its check, the functions of a variant), which it states
+of the code's literal (`codeLit`) before the kernel evaluates it. On any
+other code it is `taint_decide`. -/
+elab "taint_decide_lit" : tactic => withMainContext do
+  let saved ← saveState
+  try
+    taintDecideLit (mkNatLit 1024)
+  catch _ =>
+    -- Discard the failed attempt's hint assignment before constructing another.
+    saved.restore
+    taintDecideLit (mkConst ``VG.Taint.chunk)
 
 end VG.X86_64.RScrub
 

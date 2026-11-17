@@ -547,7 +547,9 @@ theorem lay {s : State} (h : K.pre s) : Lay s :=
 /-- The body, in the frame. -/
 theorem body_ok {s : State} (h : Lay s) :
     WP isa (.block Impl.Sha3.AArch64.Hybrid.X3.body) (allocated 128 s) fun t =>
-      abiPreserved s (freed 128 t) ∧ K.post s (freed 128 t) := by
+      ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 128, 128⟩] t.mem m →
+        abiPreserved s { freed 128 t with mem := m, unknowns := u } ∧
+          K.post s { freed 128 t with mem := m, unknowns := u } := by
   rw [body_eq, WP.block_append_iff]
   refine (front_ok h).mono fun u m => ?_
   rw [WP.block_append_iff]
@@ -556,15 +558,20 @@ theorem body_ok {s : State} (h : Lay s) :
   refine (b2_ok h m₁ h30).mono fun u₂ ⟨m₂, h0⟩ => ?_
   rw [WP.block_append_iff]
   refine (b3_ok h m₂ h0).mono fun u₃ ⟨m₃, h2⟩ => ?_
-  refine (b4_ok h m₃ h2).mono fun t ⟨spt, mt, gt, vt⟩ => ⟨⟨fun r hr => ?_, ?_, vt⟩, ?_⟩
+  refine (b4_ok h m₃ h2).mono fun t ⟨spt, mt, gt, vt⟩ mm u f => ⟨⟨fun r hr => ?_, ?_, vt⟩, ?_⟩
   · obtain ⟨i, hi, rfl⟩ := preserved_saved r hr
     exact gt i hi
   · show t.sp + BitVec.ofNat 64 128 = s.sp
     rw [spt]
     exact BitVec.sub_add_cancel _ _
   · obtain ⟨e0, e1⟩ := stateX2_of_pairAt m₃.pa
-    show stateX2At t.mem _ 0 = _ ∧ stateX2At t.mem _ 1 = _ ∧ stateAt t.mem _ = _
-    rw [mt]
+    -- The states lie apart from the frame, whose bytes the `free` loses.
+    have hf : Frame [frR s.sp] t.mem mm := f
+    have hd {R : Region} (hR : (frR s.sp).Disjoint R) : ∀ r ∈ [frR s.sp], R.Disjoint r := fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hR.symm
+    show stateX2At mm _ 0 = _ ∧ stateX2At mm _ 1 = _ ∧ stateAt mm _ = _
+    rw [Neon.X2.stateX2At_frame hf (hd h.f0) (by decide), Neon.X2.stateX2At_frame hf (hd h.f0) (by decide),
+      stateAt_frame hf (hd h.f1), mt]
     exact ⟨e0, e1, m₃.st⟩
 
 theorem vector_correct (s : State) (hs : K.pre s) :

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
 import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The framed body restores the caller's saved registers -/
 
@@ -43,16 +44,24 @@ theorem framed_body_ok (M : Mont) {s : State} {B : Addr} {n w c bm b : Nat} {mi 
     (fun _ hlo hhi => entered_load s hlo hhi) hv) ?_
   rintro t ⟨hr, hbx, h12, h13, h14, h15, hk, hf, hp⟩
   have hsp : t.gpr .rsp = (entered s).gpr .rsp := hk.gpr (by decide)
-  refine ⟨hsp, hk.2.2, ?_, ?_, ?_, ?_⟩
+  refine ⟨hsp, hk.2.2, fun m u fm => ?_⟩
+  -- The frames lose their bytes, which are apart from the workspace.
+  have hB : ∀ i < 8 * n, m (B + BitVec.ofNat 64 i) = t.mem (B + BitVec.ofNat 64 i) := fun i hi =>
+    fm.bytes (R := ⟨B, 8 * n⟩) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hd')
+      (by change 8 * n ≤ 2 ^ 64; have := hc.good.scr.nowrap; omega_arith) hi
+  have hF : Region.Sub ⟨(entered s).gpr .rsp, 112⟩ ⟨s.gpr .rsp - BitVec.ofNat 64 112, 112⟩ := by
+    rw [entered_rsp]; exact Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [exited_gpr _ (by decide) (by decide) (by decide)]
     exact hr
   · exact exited_registers hs (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       exact hd.symm) hf hsp hbx h12 h13 h14 h15
-  · rw [exited_mem]
-    intro i hi hh ha ht
-    refine (hp i hi hh ha ht).trans ?_
+  · intro i hi hh ha ht
+    refine (hB i hi).trans ((hp i hi hh ha ht).trans ?_)
     apply (entered_frame s hs).bytes (R := ⟨B, 8 * n⟩) ?_ ?_ hi
     · intro r hr'
       simp only [List.mem_singleton] at hr'
@@ -61,7 +70,8 @@ theorem framed_body_ok (M : Mont) {s : State} {B : Addr} {n w c bm b : Nat} {mi 
     · change 8 * n ≤ 2 ^ 64
       have := hc.good.scr.nowrap
       omega_arith
-  · rw [exited_mem]
-    exact ((entered_frame s hs).mono (by simp)).trans (hf.mono (by simp))
+  · refine (((entered_frame s hs).mono (by simp)).trans (hf.mono (by simp))).trans (fm.sub fun r hr => ?_)
+    rw [List.mem_singleton.mp hr]
+    exact ⟨_, List.mem_cons_self .., hF⟩
 
 end VG.Proof.MillerRabin.X86_64

@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunF
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Model
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelI
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall

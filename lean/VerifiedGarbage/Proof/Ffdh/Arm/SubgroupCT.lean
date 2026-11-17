@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 

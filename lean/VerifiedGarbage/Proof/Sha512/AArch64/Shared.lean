@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
@@ -151,6 +152,7 @@ theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha
       (Spec.Sha512.updateContract AArch64.abi (16 + 688)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     (updateScratchW_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha512.updatePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratchW_of` with its working space in a frame of its own. -/
@@ -159,6 +161,7 @@ theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.S
       (Spec.Sha512.finalizeContract AArch64.abi (16 + 688)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     (finalizeScratchW_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha512.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## The truncated digests
@@ -248,6 +251,7 @@ theorem finalizeDigest_of {code : Prog isa} {o : List Instr} {D : Nat} {iv : Spe
   rcases hD with rfl | rfl | rfl <;>
   exact AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     h (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha512.AArch64.Shared

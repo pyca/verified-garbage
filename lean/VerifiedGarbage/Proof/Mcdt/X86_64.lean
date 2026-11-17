@@ -182,16 +182,20 @@ theorem enter_wp (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   refine WP.frame (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
   refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
-  refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩
+  refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], fun m u fm => ?_⟩
   have fr : Frame [F] s.mem t.mem := pf.trans (hm ▸ slotW_frame _ h0 h8)
+  -- The `pop` loses the frame's bytes, which are `F`'s.
+  rw [hSdef] at fm
+  have fr' : Frame [F] s.mem m := fr.trans fm
+  dsimp only
   refine ⟨by rw [popped_mxcsr, hmx, pushed_mxcsr], ?_, ⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
   · rw [popped_gpr _ _ _ (by decide) (by decide), hax, pushed_mxcsr]
   · have hrc : r ≠ .rcx := by intro h; subst h; simp [calleeSaved] at hr
     by_cases hsp : r = .rsp
     · subst hsp; rw [popped_rsp, tsp, hSdef]; exact BitVec.sub_add_cancel S 8
     · rw [popped_gpr _ _ _ hsp hrc, hk.gpr (by cases r <;> simp_all [calleeSaved]), pushed_gpr _ _ hsp]
-  · rw [popped_mem, hSdef]
-    exact fr.readW (r := ⟨S, 8⟩) (Region.contains_self _ _) (fun r hr => by
+  · rw [hSdef]
+    exact fr'.readW (r := ⟨S, 8⟩) (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact disj8 S) (by decide)
   · rw [popped_rd, hk.2.1, pushed_rd]
   · rw [popped_wr, hk.2.2, pushed_wr]; rfl
@@ -215,7 +219,7 @@ theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   have h0 : F.Contains ((pushed [.rax] s).gpr .rsp) 4 := by rw [s1sp]; exact h0'
   have h8 : F.Contains ((pushed [.rax] s).gpr .rsp) 8 := by rw [s1sp]; exact h8'
   unfold enter
-  refine WP.frame (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
+  refine WP.frameMem (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
   refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
   refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩

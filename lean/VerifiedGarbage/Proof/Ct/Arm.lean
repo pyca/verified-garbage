@@ -174,7 +174,7 @@ theorem correct (s : State) (hp : contract.pre s) :
   unfold eq
   apply WP.frame (rs := [.r4]) (by decide) hp.2.2.1 (by decide)
   obtain ⟨tr, t, he, hm, ho⟩ := body_ok (pushed [.r4] s) hp.1
-  refine ⟨tr, t, he, ⟨?_, ?_⟩, ?_⟩
+  refine ⟨tr, t, he, fun _ _ _ => ⟨⟨?_, ?_⟩, ?_⟩⟩ <;> dsimp only
   · intro r hr
     by_cases h4 : r = .r4
     · subst r

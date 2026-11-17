@@ -83,10 +83,7 @@ theorem finalizePost_local (pb : Nat) :
   intro iv msg hr hc
   exact h iv msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 
-/-! ## What the postconditions read of the memory on return -/
-
-/-- `updatePost` reads the memory on return only within the buffers (the
-state). -/
+/-- `updatePost` reads the memory on return only within the state. -/
 theorem updatePostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateSig.words pb) (updatePost pb) vs m m₁ r →
@@ -108,13 +105,11 @@ theorem updatePostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upda
   intro iv msg hr hc
   exact reprFrom_congr hs (h iv msg hr hc)
 
-/-- `finalizePost` reads the memory on return only within the buffers (the
-digest). -/
-theorem finalizePostOut_local (pb : Nat) :
-    ∀ vs m m₁ m₂ r, vs.length = (finalizeSig.words pb).length →
-      (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₁ r →
-        Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₂ r := by
+/-- `finalizePost` reads the memory on return only within the digest. -/
+theorem finalizePostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (finalizeSig.words pb).length →
+    (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₁ r →
+      Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₂ r := by
   intro vs m m₁ m₂ r hlen hb h
   obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
   replace hlen := Nat.succ.inj hlen
@@ -125,8 +120,10 @@ theorem finalizePostOut_local (pb : Nat) :
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
   simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
+  have ho : ∀ i < 32, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro iv msg hr hc
-  refine Eq.trans (Stream.bytesAt_congr fun i hi => ?_) (h iv msg hr hc)
-  exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
+  rw [show bytesAt m₂ (ArgWord.addr.ofRaw ot) 32 = bytesAt m₁ ot 32 from Stream.bytesAt_congr ho]
+  exact h iv msg hr hc
 
 end VG.Proof.Sha256

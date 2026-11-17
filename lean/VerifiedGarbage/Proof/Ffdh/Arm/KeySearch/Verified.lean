@@ -23,7 +23,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 import VerifiedGarbage.Proof.Framework.Offset
@@ -31,7 +30,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Incoming
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
@@ -39,6 +37,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Ffdh.Arm.KeySearch.Correct`, which only this module used -/
 

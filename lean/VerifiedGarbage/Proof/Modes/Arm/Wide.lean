@@ -1002,7 +1002,11 @@ theorem wide_wp (h0 : c.stackScratch = 0) (hp : UPre c S M s₀) (hd : Deep S₀
   unfold Core.wide
   refine WP.alloc hwb (by rw [h.sp]; exact hp.wb_le hd) ?_
   refine WP.seq (WP.mono (wlevels_ok h0 hp hd (Nat.le_of_lt hwb.2.1) hl hk h.toW) fun s₁ ⟨k₁, hk₁, h₁⟩ => ?_)
-  exact WP.mono (wwipe_wp hp hd hwb.2.1 h₁) fun s₂ h₂ => ⟨k₁, hk₁, h₂.inv⟩
+  refine WP.mono (wwipe_wp hp hd hwb.2.1 h₁) fun s₂ h₂ ml ul hfl => ⟨k₁, hk₁, ?_⟩
+  rw [h.sp] at hfl
+  have h₃ : WInv wb c S M s₀ k₁ { s₂ with mem := ml, unknowns := ul } :=
+    h₂.congr hp hd (fun _ _ => rfl) rfl rfl rfl hfl
+  exact h₃.inv.congr rfl rfl rfl rfl rfl
 
 /-- The blocks the groups left, one at a time. -/
 theorem mid_wp' (hp : UPre c S M s₀) (hM : ModeOk c M) {k : Nat} (hk : k ≤ N c s₀) {s₁ : State}

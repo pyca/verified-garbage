@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInvalid
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Whole-entry execution, frame restoration, and stack bounds. -/
 @[expose] public section
@@ -55,14 +57,29 @@ structure RandomSignCodePost (s : State) (result : Spec.Dsa.RandomSignResult) (t
   used : t.mem.readW (s.gpr .rdx) 64 = BitVec.ofNat 64 result.used
   callee : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r
   mxcsr : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-  nonce : ∀ i < 32, t.mem (off (randomBase s) (200 + i)) = 0
 
 theorem random_sign_code (S : Signer) {s : State} (h : RandomSignABI S.stack s) (hv : RandomValid S s) :
     WP isa (RandomSign.code S.name S.code) s
       (RandomSignCodePost s (randomSignRemaining (randomInput s) 0 8)) := by
   apply random_frame_ok h
-  refine WP.mono (random_sign_body S h hv) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
-  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used, ?_, ht.mxcsr, ht.nonce⟩
+  refine WP.mono (random_sign_body S h hv) fun t ht => ⟨ht.sp, ht.wr, fun m _ fm => ?_⟩
+  -- The frame's bytes, once released, hold anything: the output and `used` lie apart from them.
+  have hl := h.stackLower
+  have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 Random.frameBytes, Random.frameBytes⟩
+      (below (s.gpr .rsp) (S.stack + 256)) :=
+    Offset.sub_below _ (by unfold Random.frameBytes; omega_using []) (by unfold Random.frameBytes; omega_using [])
+  have sep : ∀ {B : Region}, (below (s.gpr .rsp) (S.stack + 256)).Disjoint B →
+      ∀ q ∈ [(⟨s.gpr .rsp - BitVec.ofNat 64 Random.frameBytes, Random.frameBytes⟩ : Region)], B.Disjoint q :=
+    fun hB q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact fun x h₁ h₂ => hB x (hR x h₂) h₁
+  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ?_, ?_, ?_, ht.mxcsr⟩
+  · show Spec.Rsa.bytesAt m (s.gpr .rdi) (s.gpr .rsi).toNat = _
+    rw [Proof.Rsa.rsa_bytes_frame fm (s.gpr .rsi).isLt (sep h.stackOut)]
+    exact ht.output
+  · show m.readW (s.gpr .rdx) 64 = _
+    rw [fm.readW (r := ⟨s.gpr .rdx, 8⟩) (Region.contains_self _ _) (sep h.stackUsed) (by decide)]
+    exact ht.used
   intro r hr
   by_cases he : r = .rsp
   · subst r

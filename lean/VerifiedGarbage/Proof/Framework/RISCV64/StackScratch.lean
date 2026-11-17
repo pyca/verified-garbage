@@ -463,7 +463,9 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr)
 /-- The state after the frame's `free`, from the state `s₄` the code and the
 wipe end in (with the permissions of `narrow`) when they start in `s`. -/
 def popState (bytes : Nat) (s s₄ : State) : State :=
-  { s₄.withRegions s.rd (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) with sp := s.sp, wr := s.wr }
+  { s₄.withRegions s.rd (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) with
+    sp := s.sp, wr := s.wr, mem := lose s₄.mem (s.sp - BitVec.ofNat 64 bytes) bytes s₄.unknowns,
+    unknowns := fun k => s₄.unknowns (k + bytes / 4) }
 
 /-- A run of the code and the wipe from `narrow s` is a run of
 `withStackScratchWiped` from `s` (with the same trace), which keeps what the
@@ -515,7 +517,7 @@ theorem withStackScratch_runSp {c : Prog isa} (hk : (sig.words abi.ptrBits).leng
     rfl
   have hex := Exec.frame hpush (Exec.seq hblk hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, lose_frame _ _ _ _, rfl⟩
   · have hqr : q ≠ scratchReg sig := fun h => hr2 (by subst h; exact hq)
     show s₄.gpr q = s.gpr q
     rw [ha.1 q hq, narrow_gpr]

@@ -60,6 +60,11 @@ theorem macW_arith (k b a c : Nat) (hk : k < 2 ^ 64) (hb : b < 2 ^ 64) (ha : a <
   by_cases h1 : 2 ^ 64 ≤ P % 2 ^ 64 + a <;> by_cases h3 : 2 ^ 64 ≤ (P % 2 ^ 64 + a) % 2 ^ 64 + c <;>
     simp only [h1, h3, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
+/-- A step of `macWLoop_ok`'s sum, from the word's sum `k` and the sum so far: the identity alone, for `grind`. -/
+private theorem macW_fold {W P X Y aw r bw c A V s9 : Nat} (k : X + 2 ^ 64 * Y = aw + r * bw + c)
+    (jeq : W + P * c = A + r * V + s9) : W + P * X + 2 ^ 64 * P * Y = A + P * aw + r * (V + P * bw) + s9 := by
+  grind
+
 /-- `[o] := [a] + k [b]` over `n` words (`countLoop .r8 macWBody`), from the
 carry `c` in `r9`: the sum and the carry out. -/
 theorem macWLoop_ok {s : State} {B : Addr} {Z dO dA dM n : Nat} (hs : Scr s B Z)
@@ -120,7 +125,7 @@ theorem macWLoop_ok {s : State} {B : Addr} {Z dO dA dM n : Nat} (hs : Scr s B Z)
     rw [← wa, ← wm, ← k11]
     rw [← k11] at jeq
     generalize 2 ^ (64 * i) = P at *
-    grind
+    exact macW_fold k jeq
 
 /-! ## The shift by 59 -/
 

@@ -57,7 +57,6 @@ import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
@@ -80,9 +79,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifySat
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
@@ -2463,7 +2460,7 @@ theorem withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (
     obtain ⟨hcore, roots, paired, cache, hkey, hmu, hrnd, e3⟩ :=
       setup_sign_inputs hp hpre hs h21 h22 hy
     obtain ⟨tr, t, he, habi, hpost⟩ := core_correct v hp s hcore roots paired cache
-    refine ⟨tr, t, he, ⟨?_, rfl, ?_⟩, ?_⟩
+    refine ⟨tr, t, he, fun m₁ u₁ f₁ m₀ u₀ f₀ => ⟨⟨?_, rfl, ?_⟩, ?_⟩⟩
     · intro r hr
       by_cases e21 : r = .x21
       · subst r; simp [State.write]
@@ -2477,6 +2474,14 @@ theorem withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (
     · change Outcome (fun b => signMu p b (skOf p s) (muOf s) (rndOf s))
         ((t.gpr .x0).setWidth 32) (VG.Spec.Sha3.bytesAt t.mem (s.gpr .x3) p.sigLen) at hpost
       rw [hkey, hmu, hrnd, e3] at hpost
+      obtain F : Frame [below σ.sp 32] t.mem m₀ :=
+        (f₁.sub (slot_sub (offset := 16) (N := 32) (by decide) (by decide) rfl)).trans
+          (f₀.sub (slot_sub (offset := 0) (N := 32) (by decide) (by decide) (by simp)))
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, k4, _, _, _, _, _, _, _⟩ := pre
+      rw [← Proof.MlKem.bytesAt_frame F (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR
+          exact (k4.sub_left (below_sub (by decide) (by decide))).symm)
+        (by rcases hp with rfl | rfl | rfl <;> decide)] at hpost
       sig_post [signWithCacheContract, signWithCacheSig, signSig, abi, argRegs, Abi.withConsts]
       simpa [skOf, muOf, rndOf, State.write] using hpost
   obtain ⟨tr, t, he, habi, hpost⟩ := main
@@ -3171,7 +3176,7 @@ theorem verify_withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Pa
     refine WP.seq (WP.mono_syms (verify_metadata_setup (signInner σ)) fun s ⟨hs, h21, h22⟩ hy => ?_)
     obtain ⟨hcore, hpk, hmu, hsig⟩ := setup_verify_inputs hp hpre hs h21 h22 hy
     obtain ⟨tr, t, he, habi, hpost⟩ := verify_core_correct v hp s hcore
-    refine ⟨tr, t, he, ⟨?_, rfl, ?_⟩, ?_⟩
+    refine ⟨tr, t, he, fun _ _ _ _ _ _ => ⟨⟨?_, rfl, ?_⟩, ?_⟩⟩
     · intro r hr
       by_cases e21 : r = .x21
       · subst r; simp [State.write]
@@ -4142,7 +4147,7 @@ theorem verify_entry_constants_correct {p : Params} (hp : Sign.Ok3 p) {name : St
     obtain hc := verify_entry_constants_covers pre hs.1 sy hs.2.1 hs.2.2
     obtain hcpre := verify_entry_constants_pre hp pre hs.1 sy hs.2.1 hs.2.2
     obtain hw : Covers σ.wr s.wr := by rw [hs.1.wr]; exact Covers.refl _
-    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post => ?_) (operation_call_bounds hd).2
+    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post _ _ _ => ?_) (operation_call_bounds hd).2
     refine ⟨⟨?_, rfl, ?_⟩, ?_⟩
     · intro r hR
       by_cases h30 : r = .x30
@@ -4713,7 +4718,7 @@ theorem sign_entry_correct {p : Params} (hp : Ok3 p) {name : String}
     obtain hc := sign_entry_constants_covers pre hs.1 sy hs.2.1 hs.2.2
     obtain hcpre := sign_entry_constants_pre hp pre hs.1 sy hs.2.1 hs.2.2
     obtain hw : Covers σ.wr s.wr := by rw [hs.1.wr]; exact Covers.refl _
-    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post => ?_) (operation_call_bounds hd).2
+    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post m₀ _ f₀ => ?_) (operation_call_bounds hd).2
     refine ⟨⟨?_, rfl, ?_⟩, ?_⟩
     · intro r hR
       by_cases h30 : r = .x30
@@ -4731,6 +4736,10 @@ theorem sign_entry_correct {p : Params} (hp : Ok3 p) {name : String}
       obtain e3 : s.gpr .x3 = σ.gpr .x3 := hs.1.get .x3 (by decide)
       sig_post [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs, Abi.withConsts] at post
       rw [sk, mu, rnd, e3] at post
+      rw [← Proof.MlKem.bytesAt_frame f₀ (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR
+          exact (layout.2.2.2.2.2.2.1.sub_left (below_sub (by decide) (by decide))).symm)
+        (by rcases hp with rfl | rfl | rfl <;> decide)] at post
       cases prepared
       all_goals
         simp only [rawSignK, Bool.false_eq_true, ↓reduceIte]

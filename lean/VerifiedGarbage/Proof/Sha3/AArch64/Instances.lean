@@ -303,7 +303,8 @@ theorem xofFinalize_verified (v : Permutation) {X : Xof} (hX : xofSponge X) (hr 
   refine AArch64.Verified.stackScratch (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch")
     (e := .u64) (n := 80) (pre := Spec.Sha3.xofFinalizePre X AArch64.abi.ptrBits)
     (post := Spec.Sha3.xofFinalizePost X AArch64.abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 640) (xofPad_verified v hX hr) (by decide) (by decide) ⟨xofFinalizeSat, ?_⟩
+    (bytes := 640) (xofPad_verified v hX hr) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofFinalizePostOut_local _ X vs m m₁ m₂ r hl) ⟨xofFinalizeSat, ?_⟩
   sig_pre [Spec.Sha3.xofFinalizeContract, Spec.Sha3.xofFinalizeSig, Spec.Sha3.xofFinalizePre,
     Spec.Sha3.xofFinalizePost, AArch64.abi, AArch64.argRegs, xofFinalizeSat, xofPadSat,
     Stream.Pad.sat]
@@ -411,7 +412,8 @@ theorem xofSqueeze_verified (v : Permutation) {X : Xof} (hr : X.rate ∈ rates) 
   refine AArch64.Verified.stackScratch (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch")
     (e := .u64) (n := 80) (pre := Spec.Sha3.xofSqueezePre X AArch64.abi.ptrBits)
     (post := Spec.Sha3.xofSqueezePost X AArch64.abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 640) (xofSqueezeS_verified v hr) (by decide) (by decide) ⟨xofSqueezeTopSat, ?_⟩
+    (bytes := 640) (xofSqueezeS_verified v hr) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofSqueezePostOut_local _ X vs m m₁ m₂ r hl) ⟨xofSqueezeTopSat, ?_⟩
   sig_pre [Spec.Sha3.xofSqueezeContract, Spec.Sha3.xofSqueezeSig, Spec.Sha3.xofSqueezePre,
     Spec.Sha3.xofSqueezePost, AArch64.abi, AArch64.argRegs, xofSqueezeTopSat, xofSqueezeSat,
     Stream.Squeeze.sat]
@@ -915,7 +917,7 @@ theorem finalize_verified (v : Permutation) {H : Spec.Sha3.HashFn} (hH : hashSpo
     (n := 84) (pre := Spec.Sha3.finalizePre H AArch64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H AArch64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 672) (finBody_verified v hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))
-    (by decide) hsat''
+    (by decide) (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.finalizePostOut_local _ H vs m m₁ m₂ r hl) hsat''
 
 /-- A state satisfying `finAArch64`'s precondition. -/
 def finSat (len : Nat) : State :=

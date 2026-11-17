@@ -16,8 +16,10 @@ can set: `vg_chacha20_apply` keeps the data there already, and
 For each 64 bytes of data (the last piece may be shorter),
 `vg_chacha20_block(state, buf)` is called, the first `n = min(64, remaining)`
 bytes of its output (the first 64 bytes of `buf`) are XORed with the next
-bytes of `src` and written to `dst` a byte at a time, and the block counter
-(word 12 of the state) is incremented modulo 2³².
+bytes of `src` and written to `dst`, and the block counter (word 12 of the
+state) is incremented modulo 2³². A whole block is XORed a word at a time
+(`xorBlock`: the loads and stores need no alignment), a last, shorter piece a
+byte at a time (`xorTo`).
 
 The block function takes `state` in `r0` and `buf` in `r1`. It never writes
 `r1`, so `buf` stays there throughout; it overwrites `r0`, so `state` is kept
@@ -30,12 +32,13 @@ passed to the block function; so no stack is used. On return, `r0` is
 `state`, `r1` is `buf` and `r5` is `dst` again.
 
 The source is consumed through `r5` and the destination through `r7`, which
-advance together, and the keystream through `r3 = buf + i`. Each byte of
-the source is loaded before the destination's is stored, so in place the
-source not yet consumed is intact. `remaining < 64` iff `remaining >> 6 = 0`,
-and the loops count down to zero, tested with `cmp`/`subs` and `eq`/`ne`.
-The branches are on the length only, and every address is a pointer plus a
-constant or a count, so only the pointers and the length can affect timing.
+advance together, and the keystream of a shorter piece through
+`r3 = buf + i`. Each byte or word of the source is loaded before the
+destination's is stored, so in place the source not yet consumed is intact.
+`remaining < 64` iff `remaining >> 6 = 0`, and the loops count down to zero,
+tested with `cmp`/`subs` and `eq`/`ne`. The branches are on the length only,
+and every address is a pointer plus a constant or a count, so only the
+pointers and the length can affect timing.
 -/
 
 @[expose] public section
@@ -67,17 +70,30 @@ def xorTo : Prog isa :=
     .dp .add .r5 .r5 (.imm 1), .dp .add .r7 .r7 (.imm 1), .dp .add .r3 .r3 (.imm 1),
     .subs .r2 .r2 (.imm 1)]) .ne
 
-/-- One block: the keystream into `buf`, `r2 = min(64, r6)` bytes of it
-XORed with the source into the destination, and the counter incremented;
-then whether data remains. -/
+/-- XORs word `w` of the next 64 bytes of the source (at `r5`) with word
+`w` of the keystream (at `r1`) into the destination (at `r7`). -/
+def xorWord (w : Nat) : List Instr :=
+  [.ldr .r0 .r5 (4 * w), .ldr .r12 .r1 (4 * w), .dp .eor .r0 .r0 (.reg .r12), .str .r0 .r7 (4 * w)]
+
+/-- XORs the next 64 bytes of the source (at `r5`) with the keystream (at
+`r1`) into the destination (at `r7`), a word at a time, and advances the
+source and the destination. -/
+def xorBlock : Prog isa :=
+  .block ((List.range 16).flatMap xorWord ++
+    ([.dp .add .r5 .r5 (.imm 64), .dp .add .r7 .r7 (.imm 64)] : List Instr))
+
+/-- One block: the keystream into `buf`, the next `min(64, r6)` bytes of the
+source XORed with it into the destination (64 bytes a word at a time, fewer
+`r2` bytes at a time), and the counter incremented; then whether data
+remains. -/
 def body : Prog isa :=
   .seq (.block [.mov .r0 (.reg .r4)])
   (.seq (.call "vg_chacha20_block" block)
   (.seq (.block [.mov .r2 (.shifted .r6 .lsr 6), .cmp .r2 (.imm 0)])
-  (.seq (.ite .eq (.block [.mov .r2 (.reg .r6)]) (.block [.mov .r2 (.imm 64)]))
-  (.seq (.block [.dp .sub .r6 .r6 (.reg .r2), .mov .r3 (.reg .r1)])
-  (.seq xorTo
-    (.block [.ldr .r0 .r4 48, .dp .add .r0 .r0 (.imm 1), .str .r0 .r4 48, .cmp .r6 (.imm 0)]))))))
+  (.seq (.ite .ne
+      (.seq (.block [.dp .sub .r6 .r6 (.imm 64)]) xorBlock)
+      (.seq (.block [.mov .r2 (.reg .r6), .dp .sub .r6 .r6 (.reg .r2), .mov .r3 (.reg .r1)]) xorTo))
+    (.block [.ldr .r0 .r4 48, .dp .add .r0 .r0 (.imm 1), .str .r0 .r4 48, .cmp .r6 (.imm 0)]))))
 
 def xor : Prog isa :=
   .seq (.block (save ++ ([.mov .r7 (.reg .r5), .mov .r4 (.reg .r0), .mov .r5 (.reg .r1),

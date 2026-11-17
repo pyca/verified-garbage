@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: the function
@@ -471,9 +472,12 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   exact ⟨ra, hpost, fun r hr hl => by rw [pres' r hr hl, hc.gpr r (hpres r hr hl)],
     sp'.trans hc.sp, rd'.trans hc.rd, wr'.trans hc.wr⟩
 
-/-- The return address back in `lr`, and the frame freed. -/
+/-- The return address back in `lr`, and the frame freed, whatever its bytes
+then hold. -/
 theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
-    WP isa Impl.ChaCha20Poly1305.Arm.SealGather.ret s' fun z => abiPreserved s (freed 32 z) ∧ gatherPost s (freed 32 z) := by
+    WP isa Impl.ChaCha20Poly1305.Arm.SealGather.ret s' fun z => ∀ m u, Frame [FR s] z.mem m →
+      abiPreserved s { freed 32 z with mem := m, unknowns := u } ∧
+        gatherPost s { freed 32 z with mem := m, unknowns := u } := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, -, -, -, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hgl, hpm⟩ := h.pre
   have hr : InRegions (s'.rd ++ s'.wr) (State.addr (s'.sp + BitVec.ofNat 32 12)) 4 := by
@@ -481,7 +485,8 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
   refine WP.split (l₁ := Impl.AesGcm.Arm.SealGather.setFp) (l₂ := [Instr.ldr .lr .r12 12]) ?_
   refine WP.run ⟨_, by arun [Impl.AesGcm.Arm.SealGather.setFp, add_ofNat_zero, hr], rfl⟩ fun z hz => ?_
   subst hz
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  intro ml ul hfl
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩ <;> dsimp only
   · -- The callee-saved registers.
     have h12 : r ≠ .r12 := by intro e; subst e; simp [preserved] at hr
     simp only [freed, gpr_setReg, h12, ↓reduceIte]
@@ -492,7 +497,11 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
     simp only [freed, sp_setReg, hc.sp]
     exact BitVec.sub_add_cancel _ _
   · -- The ciphertext and the tag.
-    show encrypt _ _ _ _ = (bytesAt s'.mem (State.addr (Dst s)) (L s), bytesAt s'.mem (State.addr (Tg s)) 16)
+    show encrypt _ _ _ _ = (bytesAt ml (State.addr (Dst s)) (L s), bytesAt ml (State.addr (Tg s)) 16)
+    rw [bytesAt_frame hfl (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact bd.symm.sub_right h.fr_sub) (by omega_arith),
+      bytesAt_frame hfl (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact bt.symm.sub_right h.fr_sub) (by decide)]
     have hfc : Frame [FR s, dR s] s.mem (gM s) :=
       (h.eM_frame.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
         (h.frame_gM.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))

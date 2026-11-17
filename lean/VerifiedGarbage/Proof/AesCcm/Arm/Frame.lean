@@ -480,7 +480,7 @@ theorem seal_framed :
     (n := 320) (pre := Spec.Ccm.sealPre Arm.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 6) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
 space: its six words of stack arguments at `0x8000`. -/
@@ -502,7 +502,7 @@ theorem open_framed :
     (post := Proof.AesCcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Ccm.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
-    (openPre_local _) (openPost_local _) openFrameSat_pre
+    (openPre_local _) (openPost_local _) (openPostOut_local _) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesCcm.Arm

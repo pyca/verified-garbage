@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `MlDsa.Arm.Pack.HintUnpackLoops`, which only this module used -/
 
@@ -1054,6 +1055,24 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) :
       rw [hcc.r2, r1c, ← eω, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.sub_self]
       rfl
 
+/-- The result holds whatever the frame's 16 bytes below the stack pointer
+hold, as they are apart from the hint. -/
+theorem upost_frame {s₀ : State} (hp : UPre s₀) {m m' : Mem} {r : BitVec 32}
+    (hf : Frame [⟨State.addr s₀.sp - BitVec.ofNat 64 16, 16⟩] m m') (h : UPost s₀ m r) : UPost s₀ m' r := by
+  unfold UPost at h ⊢
+  cases e : hintBitUnpack (uω s₀) (uk s₀) (bytesAt s₀.mem (State.addr (uY s₀)) (uLen s₀)) with
+  | none => rw [e] at h; exact h
+  | some hint =>
+    rw [e] at h
+    refine ⟨h.1, h.2.1, fun i hi j hj => ?_⟩
+    rw [← h.2.2 i hi j hj]
+    have hl := hp.hlen
+    have hH := hp.fitH
+    have : n = 256 := rfl
+    unfold coeffAt
+    refine hf.readW (r := uhR s₀) (Offset.contains_base _ (by omega_using [hl, hi, hj, this]) (by omega_using [hl, hH, hi, hj, this]))
+      (fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact hp.b_h.symm) (by decide)
+
 /-- The whole function: the result, and the registers it saves and restores
 (the others it never writes). -/
 theorem correct {s₀ : State} (hp : UPre s₀) :
@@ -1065,9 +1084,12 @@ theorem correct {s₀ : State} (hp : UPre s₀) :
     rw [hp.rd]; exact ⟨uargR s₀, by simp, Region.contains_self _ _⟩)) fun s₁ e₁ => ?_)
   subst e₁
   refine WP.frame (rs := [.r4, .r5, .r6, .r7]) (r := .r4) rfl (hsp16 hp) (by decide)
-    (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel))) fun s₂ ⟨⟨hsp, h5, h6, h7, h4, hr⟩, hlr⟩ => ?_)
+    (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel)))
+      fun s₂ ⟨⟨hsp, h5, h6, h7, h4, hr⟩, hlr⟩ mL uL hfl => ?_)
+  replace hfl : Frame [⟨State.addr s₀.sp - BitVec.ofNat 64 16, 16⟩] s₂.mem mL := by rw [← hfr hp]; exact hfl
+  dsimp only
   refine ⟨?_, by rw [popped_gpr (by decide), h5], by rw [popped_gpr (by decide), h6], by rw [popped_gpr (by decide), h7],
-    by rw [popped_gpr (by decide), hlr]; rfl, ?_, by rw [popped_mem, popped_gpr (by decide)]; exact hr⟩
+    by rw [popped_gpr (by decide), hlr]; rfl, ?_, by rw [popped_gpr (by decide)]; exact upost_frame hp hfl hr⟩
   · simp only [popped, State.setReg, ite_true]; exact h4
   · simp only [popped_sp, hsp, P1, pushed_sp]
     exact BitVec.sub_add_cancel _ _
