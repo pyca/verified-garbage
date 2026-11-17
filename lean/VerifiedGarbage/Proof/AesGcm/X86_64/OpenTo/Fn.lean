@@ -1314,17 +1314,29 @@ theorem openTo_wp (w : Width) {M : CtxMode} (F : OpenFn M) {s : State} (hs : ToP
   obtain h := lay hs
   obtain hn : 8 * frameRegs.length ≤ (s.gpr .rsp).toNat := by
     have := hs.w₁; simp only [List.length_cons, List.length_nil]; omega_using [this]
-  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (body_wp w F h) fun d hd => ?_)
-  refine ⟨by rw [hd.rsp, hP s], by rw [hd.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (body_wp w F h) fun d hd => ?_)
+  refine ⟨by rw [hd.rsp, hP s], by rw [hd.wr, hPwr s], fun m u fm => ?_⟩
+  -- The `pop` loses the frame, in the stack below `rsp`, apart from `dst`.
+  obtain fm₂ : Frame [stkR s] d.mem m := by
+    rw [Offset.sub_ofNat_eq _ (show 8 * frameRegs.length ≤ 2728 by decide)] at fm
+    exact fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨stkR s, List.mem_singleton_self _, fr_sub s⟩
+  obtain hfm : Frame [dR s, stkR s] s.mem m :=
+    hd.frame.trans (fm₂.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)
+  dsimp only
+  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp
       rw [popped_rsp, hd.rsp, Offset.add_ofNat_add_ofNat, h.hB]; rfl
     · have h11 : r ≠ .r11 := fun e => by subst e; simp [calleeSaved] at hr
       rw [popped_gpr _ _ _ hsp h11, hd.cs r hr hsp]
-  · rw [popped_mem]; exact h.retW hd.frame
+  · exact h.retW hfm
   · rw [popped_mxcsr]; exact hd.mx
   · have := hd.out
-    simp only [toPost, popped_mem, popped_gpr _ _ _ (show Reg.rax ≠ .rsp by decide) (show Reg.rax ≠ .r11 by decide)]
+    obtain kD : bytesAt m (Dst s) (L s) = bytesAt d.mem (Dst s) (L s) :=
+      bytesAt_frame fm₂ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs.bd.symm)
+        (by have := h.lt; omega_using [this])
+    simp only [toPost, kD, popped_gpr _ _ _ (show Reg.rax ≠ .rsp by decide) (show Reg.rax ≠ .r11 by decide)]
       at this ⊢
     exact this
 

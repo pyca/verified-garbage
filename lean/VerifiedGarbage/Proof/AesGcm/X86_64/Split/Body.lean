@@ -340,16 +340,24 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
       (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega_arith) a hc)))) (by omega_arith)]
     exact habs.2
   obtain hc : ciphOf (pushed [.rax] s).mem Ctx R = ciphOf s.mem Ctx R := ciph_frame f₀ (one kc) hR.2
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (inner_ok L' B hfin (al := al) (N := N) hu hH' hcb'
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (inner_ok L' B hfin (al := al) (N := N) hu hH' hcb'
     (by rw [rW 184 (by decide)]; exact hal) habs' (by rw [rW 216 (by decide)]; exact haux) hN)
-    fun s₂ ⟨e₂, rd₂, wr₂, f₂, hC, hT⟩ => ⟨by rw [e₂.rsp, psp], by rw [wr₂], ?_⟩)
+    fun s₂ ⟨e₂, rd₂, wr₂, f₂, hC, hT⟩ => ⟨by rw [e₂.rsp, psp], by rw [wr₂], fun m u fm => ?_⟩)
+  -- The `pop` loses the frame's 8 bytes below `SP`, apart from the outputs.
+  obtain fm' : Frame [below SP 8] s₂.mem m := by have := fm; rw [he.rsp] at this; exact this
+  obtain kD : bytesAt m D n = bytesAt s₂.mem D n :=
+    bytesAt_frame fm' (one kd) (by have := hd.ok.wrap; omega_arith)
+  obtain kW : bytesAt m W 16 = bytesAt s₂.mem W 16 :=
+    bytesAt_frame fm' (one (kw.sub_right (Region.sub_prefix (by decide)))) (by decide)
+  dsimp only
   obtain prd : (popped .rax 1 s₂).rd = s.rd := by rw [popped_rd, rd₂, pushed_rd]
   obtain pwr : (popped .rax 1 s₂).wr = s.wr := by rw [popped_wr, wr₂, pushed_wr]; rfl
   refine ⟨⟨by rw [popped_gpr _ _ _ (by decide) (by decide)]; exact e₂.r13,
     by rw [popped_gpr _ _ _ (by decide) (by decide)]; exact e₂.r14,
     by rw [popped_gpr _ _ _ (by decide) (by decide)]; exact e₂.r15,
     by rw [popped_rsp, e₂.rsp]; exact BitVec.sub_add_cancel _ _, he.perm.of_eq prd pwr⟩, prd, pwr, ?_, ?_, ?_⟩
-  · rw [popped_mem]
+  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨below SP 56, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact b8⟩)
     refine (f₀.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨below SP 56, by simp, b8⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -359,8 +367,8 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨below SP 56, by simp, below8_sub (by decide)⟩
-  · rw [popped_mem, hC, hc, bytesAt_frame f₀ (one kd) (by have := hd.ok.wrap; omega_arith)]
-  · rw [popped_mem, hT, hc, bW 16 (by decide)]
+  · rw [kD, hC, hc, bytesAt_frame f₀ (one kd) (by have := hd.ok.wrap; omega_arith)]
+  · rw [kW, kD, hT, hc, bW 16 (by decide)]
 
 end
 

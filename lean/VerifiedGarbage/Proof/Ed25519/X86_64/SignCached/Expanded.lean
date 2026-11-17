@@ -124,6 +124,13 @@ theorem copy_ok (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g mx 
 
 /-! ## The expanded-key entry point -/
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : Spec.Ed25519.bytesAt m' p n = Spec.Ed25519.bytesAt m p n := by
+  simp only [Spec.Ed25519.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 /-- Signing with the seed's digest at `rsi` and its public key at `rdx`. -/
 def signLocalE : Contract isa := signLocalWith 64
   (fun s => ∃ seed : List Byte, seed.length = 32 ∧
@@ -149,16 +156,23 @@ theorem signE_ok (v : Compress) {s : State} (h : signLocalE.pre s) :
   have hL := lay_ok h (by decide)
   have hc := push_ctx h
   obtain ⟨seed, -, hE, hpk⟩ := expanded_key h
-  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega_using [this])
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok v hL (copy_ok hL rfl hc) hL.message_bound hE hpk)
-      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
+      fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 248 bytes, in the stack below `rsp`.
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * pushRs.length), 8 * pushRs.length⟩ (lay 64 s).STK :=
+    Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 31 from rfl, add_add, lay_ret]
     refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+    · rw [fm.readW (r := (lay 64 s).RET) (by rw [Lay.RET, lay_ret]; exact Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr, Lay.RET, lay_ret]
+        exact (Offset.base_disjoint_below (s.gpr .rsp) (n := 264) (k := 8) (by decide)).sub_right hF) (by decide)]
       refine hu.frame.readW (r := (lay 64 s).RET) ?_ ?_ (by decide)
       · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
       · intro r hr
@@ -168,8 +182,8 @@ theorem signE_ok (v : Compress) {s : State} (h : signLocalE.pre s) :
         · exact hL.rc
         · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   · intro seed' _ hE'
-    show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 64 s).out 64 = _
-    rw [popped_mem, ho]
+    show Spec.Ed25519.bytesAt m (lay 64 s).out 64 = _
+    rw [bytes_lost fm (hL.ko.symm.sub_right hF), ho]
     exact sign_of_sha512_eq (hE.symm.trans hE') _
 
 /-- Runs whose `rax` both hold `seed` agree on it: a block reading memory at `rax` is related

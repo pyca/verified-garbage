@@ -411,16 +411,25 @@ theorem call_ok (B : BlkFn M) {q : Nat} {st : State} (h : Mid s q q st) (hlt : q
     blocksAt_frame hpf' (one (by rw [Nat.mul_comm]; exact hp.b_d.sub_right ds)) (by omega_arith)
   obtain eH : blockAt (pushed [.rax] st).mem (K s + 240) = blockAt st.mem (K s + 240) :=
     blockAt_frame hpf' (one (hp.b_k.sub_right (Offset.sub_base (d := 240) _ (by have := M.ge; omega_arith))))
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8
+  refine WP.frame (by simp) (by decide) (by decide) hn8
     (WP.mono (blkE_call B (blkCall_of hp h hlt h_di h_si h_dx h_cx h_8 h_9 h_ax)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain psp : (pushed [.rax] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   obtain r₃ := bp.saved _ (by decide : Reg.rsp ∈ calleeSaved)
-  refine ⟨r₃, bp.wr, fun r hr => ?_, by rw [popped_rd, bp.rd, pushed_rd], by rw [popped_wr, bp.wr, pushed_wr]; rfl,
+  refine ⟨r₃, bp.wr, fun m u fm => ?_⟩
+  -- The `pop` loses the frame's 8 bytes below `SP`, apart from the outputs.
+  obtain fm' : Frame [below (SP s) 8] s₃.mem m := by have := fm; rw [hsp] at this; exact this
+  obtain lD : blocksAt m (dq s q) (n s - q) = blocksAt s₃.mem (dq s q) (n s - q) :=
+    blocksAt_frame fm' (one (by rw [Nat.mul_comm]; exact hp.b_d.sub_right ds)) (by omega_arith)
+  obtain lC : blockAt m (C s) = blockAt s₃.mem (C s) := blockAt_frame fm' (one hp.b_c)
+  obtain lY : blockAt m (Y s) = blockAt s₃.mem (Y s) := blockAt_frame fm' (one hp.b_y)
+  dsimp only
+  refine ⟨fun r hr => ?_, by rw [popped_rd, bp.rd, pushed_rd], by rw [popped_wr, bp.wr, pushed_wr]; rfl,
     ?_, ?_, ?_, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'; rw [popped_rsp, r₃, psp, hsp]; exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), bp.saved r hr, pushed_gpr _ _ hr']
-  · rw [popped_mem]
+  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨tR s, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact b8⟩)
     refine (hpf'.sub fun r hr => ⟨tR s, by simp, by simp only [List.mem_singleton] at hr; subst hr; exact b8⟩).trans
       (bp.frame.sub fun r hr => ?_)
     simp only [BlkCall.wr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -434,9 +443,9 @@ theorem call_ok (B : BlkFn M) {q : Nat} {st : State} (h : Mid s q q st) (hlt : q
         rw [← Offset.sub_add_eq, ← BitVec.ofNat_add]
       show Region.Sub ⟨(pushed [.rax] st).gpr .rsp - BitVec.ofNat 64 16, 16⟩ _
       rw [psp, e]; exact Region.sub_prefix (by decide)
-  · rw [popped_mem]; rw [eK, eC, eD] at o₁; exact o₁
-  · rw [popped_mem]; rw [eC] at o₂; exact o₂
-  · rw [popped_mem]; rw [eH, eY] at o₃; exact o₃
+  · rw [lD]; rw [eK, eC, eD] at o₁; exact o₁
+  · rw [lC]; rw [eC] at o₂; exact o₂
+  · rw [lY, lD]; rw [eH, eY] at o₃; exact o₃
 
 /-- The blocks left, from `Mid s q q`: copied and encrypted in place. -/
 theorem tail_ok (B : BlkFn M) {q : Nat} {st : State} (h : Mid s q q st) : WP isa (tail B.enc) st (Done s) := by

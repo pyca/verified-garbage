@@ -331,6 +331,28 @@ theorem ObIn.popped {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s s₃ : Sta
       show Region.Sub ⟨(pushed [.rax] s).gpr .rsp - BitVec.ofNat 64 16, 16⟩ _
       rw [psp, e]; exact Region.sub_prefix (by decide)
 
+omit L in
+/-- What the frame's pop loses, its 8 bytes below `SP`, is apart from what
+the call wrote and what the frame's postcondition reads. -/
+theorem ObIn.lost {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s)
+    {m₁ m₂ : Mem} (fm : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 (8 * [Reg.rax].length), 8 * [Reg.rax].length⟩] m₁ m₂)
+    (hf : Frame (obFrame St W SP D q) s.mem m₁) :
+    Frame (obFrame St W SP D q) s.mem m₂ ∧ blocksAt m₂ D q = blocksAt m₁ D q ∧
+    blockAt m₂ (St + BitVec.ofNat 64 48) = blockAt m₁ (St + BitVec.ofNat 64 48) ∧
+    blockAt m₂ (St + BitVec.ofNat 64 16) = blockAt m₁ (St + BitVec.ofNat 64 16) := by
+  have hsp := h.env.rsp
+  obtain fm' : Frame [below SP 8] m₁ m₂ := by have := fm; rw [hsp] at this; exact this
+  obtain b8 : Region.Sub (below SP 8) (below SP 24) := below_sub (by decide) (by decide)
+  have hq := h.q_le
+  obtain sC : Region.Sub ⟨St + BitVec.ofNat 64 48, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
+  obtain sY : Region.Sub ⟨St + BitVec.ofNat 64 16, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
+  obtain one : ∀ {r : Region}, (below SP 24).Disjoint r → ∀ r' ∈ [below SP 8], r.Disjoint r' := fun hd r' hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact (hd.sub_left b8).symm
+  exact ⟨hf.trans (fm'.sub fun r hr => ⟨below SP 24, by simp [obFrame], by
+      simp only [List.mem_singleton] at hr; subst hr; exact b8⟩),
+    blocksAt_frame fm' (one (h.t_d.sub_right (Region.sub_prefix (by omega_arith)))) (by have := h.data.ok.wrap; omega_arith),
+    blockAt_frame fm' (one (h.t_s.sub_right sC)), blockAt_frame fm' (one (h.t_s.sub_right sY))⟩
+
 /-- The frame of the call of `vg_aes_gcm_encrypt_blocks`. -/
 theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
     WP isa (.frame (.push [.rax]) (.call B.enc.name B.enc.code) (.pop .rax 1)) s fun s₄ =>
@@ -345,13 +367,16 @@ theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
   have hsp := h.env.rsp
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
   rw [eH, eY] at o₃
-  exact ⟨r₃, w₃, cs, rd, wr, fr, by rw [popped_mem]; exact o₁, by rw [popped_mem]; exact o₂,
-    by rw [popped_mem]; exact o₃⟩
+  refine ⟨r₃, w₃, fun m u fm => ?_⟩
+  rw [popped_mem] at fr
+  obtain ⟨fr', l₁, l₂, l₃⟩ := ObIn.lost h fm fr
+  dsimp only
+  exact ⟨cs, rd, wr, fr', l₁.trans o₁, l₂.trans o₂, by rw [l₃, l₁]; exact o₃⟩
 
 /-- The frame of the call of `vg_aes_gcm_decrypt_blocks`. -/
 theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
@@ -367,13 +392,16 @@ theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
   have hsp := h.env.rsp
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
   rw [eH, eY, eD] at o₃
-  exact ⟨r₃, w₃, cs, rd, wr, fr, by rw [popped_mem]; exact o₁, by rw [popped_mem]; exact o₂,
-    by rw [popped_mem]; exact o₃⟩
+  refine ⟨r₃, w₃, fun m u fm => ?_⟩
+  rw [popped_mem] at fr
+  obtain ⟨fr', l₁, l₂, l₃⟩ := ObIn.lost h fm fr
+  dsimp only
+  exact ⟨cs, rd, wr, fr', l₁.trans o₁, l₂.trans o₂, l₃.trans o₃⟩
 
 end
 

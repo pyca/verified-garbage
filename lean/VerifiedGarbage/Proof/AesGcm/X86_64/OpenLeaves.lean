@@ -92,13 +92,20 @@ theorem obFrameD_okL {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Lb : BitVec 
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨hfp, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
   obtain hfp' : Frame [below SP 8] s.mem (pushed [.rax] s).mem := by rw [← hsp]; exact hfp
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_callL B hL (ObIn.call L h))
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_callL B hL (ObIn.call L h))
     fun s₃ ⟨bp, o⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
-  refine ⟨r₃, w₃, cs, rd, wr, fr, fun x hx => ?_⟩
-  rw [popped_mem, o x hx, frame_at hfp' (fun r hr => by
+  refine ⟨r₃, w₃, fun m u fm => ?_⟩
+  -- The `pop` loses the frame's 8 bytes below `SP`, apart from the scratch.
+  rw [popped_mem] at fr
+  obtain ⟨fr', -⟩ := ObIn.lost h fm fr
+  obtain fm' : Frame [below SP 8] s₃.mem m := by have := fm; rw [hsp] at this; exact this
+  have hd : ∀ r ∈ [below SP 8], (⟨W + BitVec.ofNat 64 448, 2112⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ((h.t_w.sub_left (below_sub (by decide) (by decide))).sub_right (Lay.wSub (by decide))).symm) hx]
+    exact ((h.t_w.sub_left (below_sub (by decide) (by decide))).sub_right (Lay.wSub (by decide))).symm
+  dsimp only
+  refine ⟨cs, rd, wr, fr', fun x hx => ?_⟩
+  rw [frame_at fm' hd hx, o x hx, frame_at hfp' hd hx]
 
 end
 

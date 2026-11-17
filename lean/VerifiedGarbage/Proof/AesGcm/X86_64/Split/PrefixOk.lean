@@ -350,7 +350,7 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.sl_le; omega_arith)
   obtain hRn : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds.2 with h | h | h <;> subst h <;> decide)
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := Proof.AesGcm.encryptBlocksToX86_64M M)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := Proof.AesGcm.encryptBlocksToX86_64M M)
     T.ok T.sp (by have := T.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost, Proof.AesGcm.arg, a0,
@@ -359,14 +359,29 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     gU _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, h_9, h_11, hqn, hRn, hm₂, eK, eH,
     eC, eY, eS] at hpost
   obtain ⟨o₁, o₂, o₃⟩ := hpost
-  refine ⟨r₃, hwr', fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
+  refine ⟨r₃, hwr', fun m u fm => ?_⟩
+  -- The `pop` loses the frame's 24 bytes, in the stack below `SP`, apart from
+  -- the outputs.
+  obtain fm' : Frame [below SP 56] s'.mem m := by
+    rw [hsp] at fm
+    exact fm.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)
+  obtain one : ∀ {r : Region}, (below SP 56).Disjoint r → ∀ r' ∈ [below SP 56], r.Disjoint r' := fun hd r' hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hd.symm
+  obtain kD : blocksAt m D q = blocksAt s'.mem D q :=
+    blocksAt_frame fm' (one (h.kd.sub_right (Region.sub_prefix (by have := h.sl_le; omega_arith))))
+      (by have := h.data.ok.wrap; have := h.sl_le; omega_arith)
+  obtain kC := blockAt_frame fm' (one (h.kw.sub_right cW))
+  obtain kY := blockAt_frame fm' (one (h.kw.sub_right yW))
+  dsimp only
+  refine ⟨fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
     ?_, ?_, ?_, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'; rw [popped_rsp, r₃, hP, hsp]
       show SP - BitVec.ofNat 64 24 + BitVec.ofNat 64 24 = SP
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr']
-  · rw [popped_mem]
+  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨below SP 56, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
     obtain bT : Region.Sub (below ((pushed [.rax, .r10, .r11] st).gpr .rsp) (T.fn.code.x86_64Depth + 8)) (below SP 56) := by
       obtain h₁ := below_sub (sp := (pushed [.rax, .r10, .r11] st).gpr .rsp) (a := T.fn.code.x86_64Depth + 8) (b := 32)
         (by have := T.xd; omega_arith) (by decide)
@@ -382,9 +397,9 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨below SP 56, by simp, bT⟩
-  · rw [popped_mem]; exact o₁
-  · rw [popped_mem]; exact o₂
-  · rw [popped_mem, o₁]; exact o₃
+  · rw [kD]; exact o₁
+  · rw [kC]; exact o₂
+  · rw [kY, kD, o₁]; exact o₃
 
 end
 

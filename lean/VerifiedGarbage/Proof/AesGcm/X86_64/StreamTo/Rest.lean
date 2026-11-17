@@ -217,7 +217,7 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   obtain eD : bytesAt (pushed [.r10] st).callEntry.mem (Dst s + BitVec.ofNat 64 o) (n) =
       bytesAt st.mem (Dst s + BitVec.ofNat 64 o) (n) :=
     bytesAt_frame fS (outT (hp.b_d.symm.sub_left dsq)) (by omega_arith)
-  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
     E.ok E.sp (by have := E.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [encK, Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.arg, a0, State.withRegions_mem,
@@ -227,14 +227,24 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   obtain hnn : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   rw [hnn] at hpost
-  refine ⟨r₃, hwr', fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
+  refine ⟨r₃, hwr', fun m u fm => ?_⟩
+  -- The `pop` loses the frame's 8 bytes, in the stack below `SP`, apart from
+  -- the outputs.
+  obtain fm' : Frame [tR s] s'.mem m := by
+    rw [hsp] at fm
+    exact fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s, List.mem_singleton_self _, stk_sub (s := s) (by decide) (by decide)⟩
+  dsimp only
+  refine ⟨fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
     ?_, fun iv a p hr hal hpl => ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'; rw [popped_rsp, r₃, hP, hsp]
       show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 8 = SP s
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr']
-  · rw [popped_mem]
+  · refine Frame.trans ?_ (fm'.sub fun r hr => ⟨tR s, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
     obtain b2616 : Region.Sub (below ((pushed [.r10] st).gpr .rsp) (E.fn.code.x86_64Depth + 8)) (tR s) := by
       obtain h₁ := below_sub (sp := (pushed [.r10] st).gpr .rsp) (a := E.fn.code.x86_64Depth + 8) (b := 2616)
         (by have := E.xd; omega_arith) (by decide)
@@ -250,9 +260,14 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨tR s, by simp, b2616⟩
-  · rw [popped_mem]
-    have := hpost iv a p (streamRepr_frame fS (outT hp.b_st.symm) hr) hal hpl
-    rwa [eD] at this
+  · have := hpost iv a p (streamRepr_frame fS (outT hp.b_st.symm) hr) hal hpl
+    rw [eD] at this
+    obtain ⟨r₁, r₂⟩ := this
+    refine ⟨streamRepr_frame fm' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_st.symm) r₁, ?_⟩
+    rw [bytesAt_frame fm' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_d.symm.sub_left dsq) (by omega_arith)]
+    exact r₂
 
 end
 
