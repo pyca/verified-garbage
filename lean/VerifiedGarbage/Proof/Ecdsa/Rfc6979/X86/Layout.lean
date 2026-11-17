@@ -712,10 +712,13 @@ def released (s₂ : State) : State :=
   { s₂.setReg .esp (s₂.gpr .esp + BitVec.ofNat 32 512) with wr := s₂.wr.tail }
 
 /-- The frame: its body, which never writes `esp`, runs from `entered s`,
-and the frame's release leads to `released s₂`. -/
+and the frame's release leads to `released s₂`, of which the postcondition
+may rely on nothing the frame's bytes hold, nor on the unknowns (as
+`WP.frameAlloc`'s). -/
 theorem WP.alloc {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 512 ≤ (s.gpr .esp).toNat) (hsp : NoSp body)
-    (hb : WP isa body (entered s) fun s₂ => Q (released s₂)) :
+    (hb : WP isa body (entered s) fun s₂ => ∀ m u,
+      Frame [below (s.gpr .esp) 512] s₂.mem m → Q { released s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc 512) body (.free 512)) s Q := by
   obtain ⟨t, s₂, he', hq⟩ := hb
   obtain ⟨-, hw⟩ := Exec.rdwr he'
@@ -723,9 +726,13 @@ theorem WP.alloc {body : Prog isa} {s : State} {Q : State → Prop}
   have hpush : isa.push (.alloc 512) s = some (entered s) := by
     simp only [isa, push]
     exact ite_eq_left ⟨by omega_arith, by omega_arith, by decide, hn⟩
-  have hpop : isa.pop (.free 512) (entered s) s₂ = some (released s₂) := by
+  have hpop : isa.pop (.free 512) (entered s) s₂ = some { released s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) 512 s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + 512 / 2) } := by
     simp only [isa, pop]
     exact ite_eq_left ⟨by omega_arith, by omega_arith, by decide, hp, hw, rfl⟩
-  exact ⟨_, _, Exec.frame hpush he' hpop, hq⟩
+  have e : (s₂.gpr .esp).setWidth 64 = (below (s.gpr .esp) 512).base := by
+    rw [hp]; simp [entered, allocState, State.setReg]
+  exact ⟨_, _, Exec.frame hpush he' hpop, hq _ _ (by rw [e]; exact lose_frame _ _ _ _)⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86

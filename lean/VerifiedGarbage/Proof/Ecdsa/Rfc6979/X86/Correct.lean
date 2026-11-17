@@ -1244,9 +1244,28 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
   refine WP.alloc (by have := h.1; omega_arith) hsp ?_
   rw [body_eq]
   refine WP.seq (WP.mono (entry_ok h) fun t₁ h₁ => WP.seq (WP.mono h₁.2.2 fun t hc =>
-    WP.mono (rest_ok hL (coreOk_lay P s) (tabL_lay P s) hc) fun u ⟨hu, ⟨i, hx⟩, hs⟩ => ?_))
+    WP.mono (rest_ok hL (coreOk_lay P s) (tabL_lay P s) hc) fun u ⟨hu, ⟨i, hx⟩, hs⟩ m v fl => ?_))
+  -- The frame is the layout's `FR`, apart from the return address and the output.
+  obtain hFR : below (s.gpr .esp) 512 = (layOf P s).FR := by
+    have := entered_wr h
+    simp only [entered, allocState_wr] at this
+    exact (List.cons.inj this).1
+  obtain hFS : Region.Sub (layOf P s).FR (layOf P s).STK := Offset.sub_base _ (by decide)
+  rw [hFR] at fl
+  obtain hdO : ∀ r ∈ [(layOf P s).FR], Region.Disjoint ⟨(arg s 0).setWidth 64, 2 * P.Q⟩ r := by
+    intro r hr
+    simp only [List.mem_singleton] at hr; subst hr
+    have e : (layOf P s).q = P.Q := (coreOk_lay P s).1
+    have := hL.ko.symm.sub_right hFS
+    dsimp only [Lay.OUT] at this
+    rw [e] at this
+    exact this
+  obtain hnO : 2 * P.Q ≤ 2 ^ 64 := by
+    have hQe : P.Q = P.R.E.C.len := rfl
+    have := P.R.len_words; have := P.R.n9; omega_arith
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · show (released u).gpr r = s.gpr r
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [released_gpr (by decide)]; exact hs (.ebx, 128) (by decide)
     · rw [released_gpr (by decide)]; exact hs (.esi, 132) (by decide)
@@ -1255,8 +1274,10 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
     · rw [released_esp, hu.esp]; exact BitVec.sub_add_cancel _ _
   · have hret : (s.gpr .esp).setWidth 64 = (layOf P s).B + BitVec.ofNat 64 588 := by
       rw [hL.B_eq, BitVec.sub_add_cancel]; rfl
-    show u.mem.readW _ 32 = _
-    rw [hret]
+    show m.readW _ 32 = _
+    rw [hret, fl.readW (r := (layOf P s).RET) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hFS) (by decide)]
     refine hu.frame.readW (r := (layOf P s).RET) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1274,7 +1295,9 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
     obtain ha : (released u).gpr .eax = u.gpr .eax := released_gpr (by decide)
     revert hr
     cases sigI P (layOf P s) s.mem i with
-    | some rs => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, by rw [e₂]; exact h₂⟩
-    | none => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, h₂⟩
+    | some rs => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁,
+        by rw [e₂]; exact (bytesAt_frame fl hdO hnO).trans h₂⟩
+    | none => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁,
+        (bytesAt_frame fl hdO hnO).trans h₂⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86

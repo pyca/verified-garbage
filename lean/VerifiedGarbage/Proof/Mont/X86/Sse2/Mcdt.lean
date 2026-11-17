@@ -192,11 +192,14 @@ theorem WP.mcdtFrame {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop
   obtain ⟨-, hw⟩ := Exec.rdwr he
   have hp := Exec.gpr hsp he
   have hx := Exec.mxcsr he
-  have hpop : isa.pop .mcdtLeave (mcdtPushed r s) s₂ = some (mcdtPopped s₂) := by
+  have hpop : isa.pop .mcdtLeave (mcdtPushed r s) s₂ = some { mcdtPopped s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) 12 s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + 6) } := by
     simp only [isa, pop]
     refine (ite_eq_left ⟨by omega_using [hm], hp, hw, ?_, ?_⟩).trans rfl
     · rw [mcdtPushed_wr, mcdtPushed_esp r s hr]; rfl
     · rw [hs, hm, hx, mcdtPushed_mxcsr, Nat.add_sub_cancel]
-  exact ⟨_, _, Exec.frame (mcdt_push hr hn) he hpop, hq _ _ (Frame.refl _ _)⟩
+  exact ⟨_, _, Exec.frame (mcdt_push hr hn) he hpop,
+    hq _ _ (by rw [hp, mcdtPushed_esp r s hr]; exact lose_frame _ _ _ _)⟩
 
 end VG.Proof.Mont.X86.Sse2

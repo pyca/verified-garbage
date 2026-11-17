@@ -693,11 +693,15 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
   have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
     rfl
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) bytes s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + bytes / 2) } := by
     simp only [isa, pop]
     refine ite_eq_left ⟨hn.1, hn.2.1, hn.2.2, hp, hw, ?_⟩
     rfl
-  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (Frame.refl _ _)⟩
+  have e : (s₂.gpr .esp).setWidth 64 = (below (s.gpr .esp) bytes).base := by
+    rw [hp]; simp [allocated, gpr_setReg, below]
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (by rw [e]; exact lose_frame _ _ _ _)⟩
 
 @[simp] theorem allocated_esp (n : Nat) (s : State) : (allocated n s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 n := by
   simp [allocated, gpr_setReg]
