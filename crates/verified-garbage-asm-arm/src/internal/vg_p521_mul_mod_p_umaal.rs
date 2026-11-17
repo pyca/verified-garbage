@@ -20,62 +20,7 @@ str r7, [r12, #3972]
 str r8, [r12, #3976]
 str r9, [r12, #3980]
 str lr, [r12, #3984]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3888]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3892]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3896]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3900]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3904]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3908]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3912]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3916]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3920]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3924]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3928]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3932]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3936]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3940]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3944]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #3948]
-movw r4, #511
-movt r4, #0
-str r4, [r12, #3952]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #3956]
-add lr, r12, r1
-add r1, r12, r2
+add lr, r12, r2
 add r4, r12, r3
 mov r7, #0
 str r7, [r12, #3520]
@@ -97,216 +42,112 @@ str r7, [r12, #3580]
 str r7, [r12, #3584]
 str r7, [r12, #3588]
 str r7, [r12, #3592]
-str r7, [r12, #3596]
 mov r9, #18
 20:
-ldr r2, [r1, #0]
-mov r3, #0
+ldr r2, [lr, #0]
 ldr r7, [r4, #0]
 ldr r5, [r12, #3520]
+mov r3, #0
 umaal r5, r3, r2, r7
-str r5, [r12, #3520]
+mov r0, r5
+mov r6, #0
+mvn r8, #0
+umaal r5, r6, r0, r8
 ldr r7, [r4, #4]
 ldr r5, [r12, #3524]
 umaal r5, r3, r2, r7
-str r5, [r12, #3524]
+umaal r5, r6, r0, r8
+str r5, [r12, #3520]
 ldr r7, [r4, #8]
 ldr r5, [r12, #3528]
 umaal r5, r3, r2, r7
-str r5, [r12, #3528]
+umaal r5, r6, r0, r8
+str r5, [r12, #3524]
 ldr r7, [r4, #12]
 ldr r5, [r12, #3532]
 umaal r5, r3, r2, r7
-str r5, [r12, #3532]
+umaal r5, r6, r0, r8
+str r5, [r12, #3528]
 ldr r7, [r4, #16]
 ldr r5, [r12, #3536]
 umaal r5, r3, r2, r7
-str r5, [r12, #3536]
+umaal r5, r6, r0, r8
+str r5, [r12, #3532]
 ldr r7, [r4, #20]
 ldr r5, [r12, #3540]
 umaal r5, r3, r2, r7
-str r5, [r12, #3540]
+umaal r5, r6, r0, r8
+str r5, [r12, #3536]
 ldr r7, [r4, #24]
 ldr r5, [r12, #3544]
 umaal r5, r3, r2, r7
-str r5, [r12, #3544]
+umaal r5, r6, r0, r8
+str r5, [r12, #3540]
 ldr r7, [r4, #28]
 ldr r5, [r12, #3548]
 umaal r5, r3, r2, r7
-str r5, [r12, #3548]
+umaal r5, r6, r0, r8
+str r5, [r12, #3544]
 ldr r7, [r4, #32]
 ldr r5, [r12, #3552]
 umaal r5, r3, r2, r7
-str r5, [r12, #3552]
+umaal r5, r6, r0, r8
+str r5, [r12, #3548]
 ldr r7, [r4, #36]
 ldr r5, [r12, #3556]
 umaal r5, r3, r2, r7
-str r5, [r12, #3556]
+umaal r5, r6, r0, r8
+str r5, [r12, #3552]
 ldr r7, [r4, #40]
 ldr r5, [r12, #3560]
 umaal r5, r3, r2, r7
-str r5, [r12, #3560]
+umaal r5, r6, r0, r8
+str r5, [r12, #3556]
 ldr r7, [r4, #44]
 ldr r5, [r12, #3564]
 umaal r5, r3, r2, r7
-str r5, [r12, #3564]
+umaal r5, r6, r0, r8
+str r5, [r12, #3560]
 ldr r7, [r4, #48]
 ldr r5, [r12, #3568]
 umaal r5, r3, r2, r7
-str r5, [r12, #3568]
+umaal r5, r6, r0, r8
+str r5, [r12, #3564]
 ldr r7, [r4, #52]
 ldr r5, [r12, #3572]
 umaal r5, r3, r2, r7
-str r5, [r12, #3572]
+umaal r5, r6, r0, r8
+str r5, [r12, #3568]
 ldr r7, [r4, #56]
 ldr r5, [r12, #3576]
 umaal r5, r3, r2, r7
-str r5, [r12, #3576]
+umaal r5, r6, r0, r8
+str r5, [r12, #3572]
 ldr r7, [r4, #60]
 ldr r5, [r12, #3580]
 umaal r5, r3, r2, r7
-str r5, [r12, #3580]
+umaal r5, r6, r0, r8
+str r5, [r12, #3576]
 ldr r7, [r4, #64]
 ldr r5, [r12, #3584]
 umaal r5, r3, r2, r7
-str r5, [r12, #3584]
+movw r8, #511
+umaal r5, r6, r0, r8
+str r5, [r12, #3580]
 ldr r7, [r4, #68]
 ldr r5, [r12, #3588]
 umaal r5, r3, r2, r7
-str r5, [r12, #3588]
-ldr r5, [r12, #3592]
-ldr r6, [r12, #3596]
-adds r5, r5, r3
-adc r6, r6, #0
-str r5, [r12, #3592]
-str r6, [r12, #3596]
-ldr r2, [r12, #3520]
-movw r7, #1
-movt r7, #0
-mul r2, r2, r7
-mov r3, #0
-ldr r7, [r12, #3888]
-ldr r5, [r12, #3520]
-umaal r5, r3, r2, r7
-str r5, [r12, #3520]
-ldr r7, [r12, #3892]
-ldr r5, [r12, #3524]
-umaal r5, r3, r2, r7
-str r5, [r12, #3524]
-ldr r7, [r12, #3896]
-ldr r5, [r12, #3528]
-umaal r5, r3, r2, r7
-str r5, [r12, #3528]
-ldr r7, [r12, #3900]
-ldr r5, [r12, #3532]
-umaal r5, r3, r2, r7
-str r5, [r12, #3532]
-ldr r7, [r12, #3904]
-ldr r5, [r12, #3536]
-umaal r5, r3, r2, r7
-str r5, [r12, #3536]
-ldr r7, [r12, #3908]
-ldr r5, [r12, #3540]
-umaal r5, r3, r2, r7
-str r5, [r12, #3540]
-ldr r7, [r12, #3912]
-ldr r5, [r12, #3544]
-umaal r5, r3, r2, r7
-str r5, [r12, #3544]
-ldr r7, [r12, #3916]
-ldr r5, [r12, #3548]
-umaal r5, r3, r2, r7
-str r5, [r12, #3548]
-ldr r7, [r12, #3920]
-ldr r5, [r12, #3552]
-umaal r5, r3, r2, r7
-str r5, [r12, #3552]
-ldr r7, [r12, #3924]
-ldr r5, [r12, #3556]
-umaal r5, r3, r2, r7
-str r5, [r12, #3556]
-ldr r7, [r12, #3928]
-ldr r5, [r12, #3560]
-umaal r5, r3, r2, r7
-str r5, [r12, #3560]
-ldr r7, [r12, #3932]
-ldr r5, [r12, #3564]
-umaal r5, r3, r2, r7
-str r5, [r12, #3564]
-ldr r7, [r12, #3936]
-ldr r5, [r12, #3568]
-umaal r5, r3, r2, r7
-str r5, [r12, #3568]
-ldr r7, [r12, #3940]
-ldr r5, [r12, #3572]
-umaal r5, r3, r2, r7
-str r5, [r12, #3572]
-ldr r7, [r12, #3944]
-ldr r5, [r12, #3576]
-umaal r5, r3, r2, r7
-str r5, [r12, #3576]
-ldr r7, [r12, #3948]
-ldr r5, [r12, #3580]
-umaal r5, r3, r2, r7
-str r5, [r12, #3580]
-ldr r7, [r12, #3952]
-ldr r5, [r12, #3584]
-umaal r5, r3, r2, r7
-str r5, [r12, #3584]
-ldr r7, [r12, #3956]
-ldr r5, [r12, #3588]
-umaal r5, r3, r2, r7
-str r5, [r12, #3588]
-ldr r5, [r12, #3592]
-ldr r6, [r12, #3596]
-adds r5, r5, r3
-adc r6, r6, #0
-str r5, [r12, #3592]
-str r6, [r12, #3596]
-ldr r5, [r12, #3524]
-str r5, [r12, #3520]
-ldr r5, [r12, #3528]
-str r5, [r12, #3524]
-ldr r5, [r12, #3532]
-str r5, [r12, #3528]
-ldr r5, [r12, #3536]
-str r5, [r12, #3532]
-ldr r5, [r12, #3540]
-str r5, [r12, #3536]
-ldr r5, [r12, #3544]
-str r5, [r12, #3540]
-ldr r5, [r12, #3548]
-str r5, [r12, #3544]
-ldr r5, [r12, #3552]
-str r5, [r12, #3548]
-ldr r5, [r12, #3556]
-str r5, [r12, #3552]
-ldr r5, [r12, #3560]
-str r5, [r12, #3556]
-ldr r5, [r12, #3564]
-str r5, [r12, #3560]
-ldr r5, [r12, #3568]
-str r5, [r12, #3564]
-ldr r5, [r12, #3572]
-str r5, [r12, #3568]
-ldr r5, [r12, #3576]
-str r5, [r12, #3572]
-ldr r5, [r12, #3580]
-str r5, [r12, #3576]
-ldr r5, [r12, #3584]
-str r5, [r12, #3580]
-ldr r5, [r12, #3588]
+movw r8, #0
+umaal r5, r6, r0, r8
 str r5, [r12, #3584]
 ldr r5, [r12, #3592]
-str r5, [r12, #3588]
-ldr r5, [r12, #3596]
+mov r7, #1
+umaal r3, r5, r6, r7
+str r3, [r12, #3588]
 str r5, [r12, #3592]
-mov r5, #0
-str r5, [r12, #3596]
-add r1, r1, #4
+add lr, lr, #4
 subs r9, r9, #1
 bne 20b
-sub r1, lr, r12
 mov r6, #1
 mov r5, #0
 ldr r4, [r12, #3520]
