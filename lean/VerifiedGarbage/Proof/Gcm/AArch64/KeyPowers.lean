@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Gcm.Poly
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Holes
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -567,9 +568,10 @@ theorem keyPowers_framed :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers)
       (Spec.Gcm.storePowersContract AArch64.abi 80) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.storePowersSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.storePowersSig) (nm := "scratch") (e := .u64)
     (n := 10) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Gcm.storePowersPost AArch64.abi.ptrBits) (wa := false) (stack := 0) (bytes := 80)
-    keyPowers_verified (by decide) (by decide) framedSat_pre
+    keyPowers_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.storePowersPostOut_local _ vs m m₁ m₂ r hl) framedSat_pre
 
 end VG.Proof.Gcm.AArch64.KeyPowers

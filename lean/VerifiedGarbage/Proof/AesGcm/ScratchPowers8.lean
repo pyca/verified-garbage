@@ -373,4 +373,20 @@ theorem openWithPowersPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openWit
       agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
+/-- `storePowersPost` reads the memory on return only within the buffers: the
+powers. -/
+theorem storePowersPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (storePowersSig.words pb).length →
+    (∀ b ∈ Sig.bufs storePowersSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (storePowersSig.words pb) (storePowersPost pb) vs m m₁ r →
+      Curry.apply (storePowersSig.words pb) (storePowersPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [storePowersSig, storePowersParam, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size] at hb
+  exact powers8Repr_congr (fun i hi => agree_of hb.2 i (by omega_using [hi])) h
+
 end VG.Proof.AesGcm
