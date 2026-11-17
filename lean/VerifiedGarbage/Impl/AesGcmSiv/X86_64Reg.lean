@@ -281,6 +281,7 @@ def pO : Nat := 488
 def putYH : List Instr :=
   constImm .xmm0 revMask ++
   ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r15 yO) .xmm2] : List Instr) ++ hkey ++
+  constImm .xmm0 revMask ++
   ([.xop (.bin .pshufb .xmm7 .xmm0), .movdquStore (at_ .r15 hO) .xmm7] : List Instr)
 
 /-- The data after its 256-byte groups: its address (`r12`) and length
