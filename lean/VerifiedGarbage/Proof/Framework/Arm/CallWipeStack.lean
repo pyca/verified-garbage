@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # A call that wipes part of a buffer afterwards, with stack arguments (ARMv7)
@@ -454,13 +455,16 @@ theorem cws_bodyCovers {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
     · simp only [List.mem_singleton] at hx; subst hx; simp at h2
 
 /-- What the inner frame leaves, from the caller's state `s`: the array's
-address `A` in `r4`. -/
+address `A` in `r4`. The postcondition holds of the memory `m₀` the function
+returned with, which differs from `c`'s only in the stack below the outer
+frame (the inner frame, released, whatever its bytes then hold). -/
 def AfterBodyS (sig : Sig) (post : sig.Post abi.ptrBits) (A : BitVec 32) (st : Nat) (s c : State) : Prop :=
   c.rd = s.rd ∧ c.wr = ⟨State.addr (s.sp - BitVec.ofNat 32 16), 16⟩ :: s.wr ∧
   c.sp = s.sp - BitVec.ofNat 32 16 ∧ c.gpr .r4 = A ∧
   (∀ q ∈ preserved, q ≠ .lr → q ≠ .r4 → c.gpr q = s.gpr q) ∧
   Frame (s.wr ++ [belowA (s.sp - BitVec.ofNat 32 16) st]) (cwPush s).mem c.mem ∧
-  Curry.apply (sig.words abi.ptrBits) post (armArgs sig s) s.mem c.mem ((c.gpr .r1 ++ c.gpr .r0).setWidth _)
+  ∃ m₀, Frame [belowA (s.sp - BitVec.ofNat 32 16) st] m₀ c.mem ∧
+    Curry.apply (sig.words abi.ptrBits) post (armArgs sig s) s.mem m₀ ((c.gpr .r1 ++ c.gpr .r0).setWidth _)
 
 /-- The inner frame: the copy, and the call of the function. -/
 theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 32}
@@ -488,14 +492,20 @@ theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 
   obtain ⟨hcov, hcovW⟩ := cws_bodyCovers (off := off) hN hk hl hs
   have hm := cws_mem hl hs
   rw [allRegions_stack hN hk.1] at hm
-  refine WP.alloc hsz (by rw [cwPush_sp, h16]; omega_using [hsb]) ?_
+  refine WP.allocLost hsz (by rw [cwPush_sp, h16]; omega_using [hsb]) ?_
   refine WP.seq (WP.block ⟨_, copyArgs_run hk hoff (by omega_using [hsb]) (cws_src hN hk.1 hl hs), ?_⟩)
   refine WP.callF (k := sig.contract abi pre post wa stack leak) h.1 (cws_bodyPre hN hk hloc hl hpre hs)
     hcov hcovW (by rw [cwsV_sp, hU]; omega_using [hd, hsb]) ?_
-  intro c hrd hwr hsp hfr hcs hq
+  intro c hrd hwr hsp hfr hcs hq ml ul hfl
   have hsub : Region.Sub (belowA (s.sp - BitVec.ofNat 32 16) (allocSize k))
       (belowA (s.sp - BitVec.ofNat 32 16) (stack + allocSize k)) :=
     belowA_sub (by omega_using []) (by rw [h16]; omega_using [hsb])
+  -- The `free` loses the inner frame's bytes, in the stack below the outer frame.
+  have hfl' : Frame [belowA (s.sp - BitVec.ofNat 32 16) (stack + allocSize k)] c.mem ml :=
+    Frame.sub (show Frame [belowA (s.sp - BitVec.ofNat 32 16) (allocSize k)] c.mem ml from hfl)
+      fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, hsub⟩
   refine ⟨by show c.rd = s.rd; rw [hrd, cwsV_rd], by show c.wr.tail = _; rw [hwr, cwsV_wr, cwsU_wr]; rfl,
     by show c.sp + _ = _; rw [hsp, cwsV_sp, cwsU_sp, BitVec.sub_add_cancel],
     by show c.gpr .r4 = A; rw [hcs .r4 (by decide) (by decide), hA], fun q hq hlr h4 => ?_, ?_, ?_⟩
@@ -503,7 +513,11 @@ theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 
     show c.gpr q = s.gpr q
     rw [hcs q hq hlr, cwsV_gpr k off s hlr h12 h4]
   · -- The copy, the buffers, and the stack below the inner frame.
-    refine Frame.trans (Frame.sub f1 fun r hr => ?_) (Frame.sub hfr fun r hr => ?_)
+    refine Frame.trans (Frame.trans (Frame.sub f1 fun r hr => ?_) (Frame.sub hfr fun r hr => ?_))
+      (Frame.sub hfl' fun r hr => ?_)
+    rotate_right
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         fun x hx => hsub x (Region.sub_prefix h4 x hx)⟩
@@ -518,6 +532,7 @@ theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 
         rw [cwsV_sp, cwsU_sp]
         exact belowA_inner (by omega_using [hd]) (by rw [h16]; omega_using [hsb])
   · -- The postcondition, which reads the memory on entry only within the buffers.
+    refine ⟨c.mem, hfl', ?_⟩
     rw [post_arm, show (cwsV k off s).callEntry.withRegions (((cwsRegions sig k s).filter (!·.2)).map (·.1))
         (((cwsRegions sig k s).filter (·.2)).map (·.1)) = cwsEntry sig k off s from rfl,
       cwsEntry_armArgs hk hloc (by omega_using [hsb]) (by omega_using [hN, hfit]), State.withRegions_mem, State.withRegions_gpr] at hq
@@ -687,7 +702,7 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     rw [pre_arm hl] at hs'
     exact hs'.2.2.2.2.2.1 _ harr
   have h16 : 16 ≤ s.sp.toNat := by omega_using [hsb]
-  refine WP.frame (by decide) (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
+  refine WP.frameLost (by decide) (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.seq (WP.mono (cws_body_wp h hN hloc hl hk hoff hd hpre hpost hs hA4) fun c hc => ?_)
   refine WP.seq (WP.block ⟨_, zeroArgs_run hn32 c, ?_⟩)
   refine WP.seq (WP.mono (cws_zero_wp hz hzd hzs hsb (by omega_using []) hAw
@@ -707,12 +722,21 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     refine ⟨_, List.mem_append_right _ (by rw [hwrg]; exact List.mem_cons_self ..), ?_⟩
     rw [hspg, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
   refine WP.block ⟨_, restoreRet_run hin, ?_⟩
-  show abiPreserved s (cwFinal g) ∧
-    (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).post s (cwFinal g) ∧
-    Spec.Zeroize.bytesAt (cwFinal g).mem (A.setWidth 64) n = Spec.Zeroize.zeros n
+  -- The pop loses the frame's bytes, which lie apart from the buffers.
+  intro ml ul hfl
+  have f' : Frame [belowA s.sp 16] g.mem ml := hfl
+  have hfr : ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 → ml x = g.mem x :=
+    fun b hb x hx => f' x fun R hR hc => by
+      simp only [List.mem_singleton] at hR; subst hR
+      exact (hres b (List.mem_append_left _ hb)).sub_left (belowA_sub (by omega_using []) hsb) x hc hx
+  show abiPreserved s { cwFinal g with mem := ml, unknowns := ul } ∧
+    (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).post s
+      { cwFinal g with mem := ml, unknowns := ul } ∧
+    Spec.Zeroize.bytesAt ml (A.setWidth 64) n = Spec.Zeroize.zeros n
   obtain ⟨f0, f1, f4, f5, f6, flr⟩ := cwFinal_regs g
-  refine ⟨⟨fun q hq => ?_, by rw [cwFinal_sp, hspg, BitVec.sub_add_cancel]⟩, ?_, ?_⟩
+  refine ⟨⟨fun q hq => ?_, by dsimp only; rw [cwFinal_sp, hspg, BitVec.sub_add_cancel]⟩, ?_, ?_⟩
   · -- The callee-saved registers.
+    dsimp only
     obtain ⟨h0, h1, -⟩ := preserved_ne q hq
     by_cases hq4 : q = .r4
     · subst hq4; rw [f4, hspg, hrd0, r4s]
@@ -724,14 +748,27 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     · subst hqlr; rw [flr, hspg, frame_addr h16 (by decide), hrd (by decide), lrs]
     · rw [cwFinal_gpr g h0 h1 hq4 hq5 hq6 hqlr, hcsg q hq hqlr hq4 hq5 hq6]
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
-    rw [post_arm, f0, f1, h5g, h6g, cwFinal_mem]
-    refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2.2
-    refine (hfc x fun R hR hc => ?_).symm
-    rcases List.mem_cons.mp hR with rfl | hR
-    · exact hbA x hx (Region.sub_prefix hn x hc)
+    rw [post_arm]
+    dsimp only
+    rw [f0, f1, h5g, h6g]
+    obtain ⟨m₀, hm₀, hq₀⟩ := hc'.2.2.2.2.2.2
+    have hbelow : ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 →
+        (belowA (s.sp - BitVec.ofNat 32 16) (stack + allocSize k)).Contains x 1 → False :=
+      fun b hb x hx hc => hres b (List.mem_append_left _ hb) x (belowA_inner (by omega_using []) hsb x hc) hx
+    refine hout m₀ _ _ (fun b hb hbA x hx => ?_) hq₀
+    refine (((hfr b hb x hx).trans (hfc x fun R hR hc => ?_)).trans (hm₀ x fun R hR hc => ?_)).symm
+    · rcases List.mem_cons.mp hR with rfl | hR
+      · exact hbA x hx (Region.sub_prefix hn x hc)
+      · simp only [List.mem_singleton] at hR; subst hR
+        exact hbelow b hb x hx hc
     · simp only [List.mem_singleton] at hR; subst hR
-      exact hres b (List.mem_append_left _ hb) x (belowA_inner (by omega_using []) hsb x hc) hx
-  · rw [cwFinal_mem]; exact hz0
+      exact hbelow b hb x hx hc
+  · -- The array, a buffer, is zero.
+    refine Eq.trans ?_ hz0
+    simp only [Spec.Zeroize.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    exact hfr _ harr _ (Offset.contains_base _ (by omega_using [hn, List.mem_range.mp hi])
+      (by omega_using [hn32, List.mem_range.mp hi]))
 
 end
 
