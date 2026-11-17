@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-import VerifiedGarbage.Proof.MlKem.Arm.Add
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -17,14 +16,20 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # ML-KEM on 32-bit ARM: `vg_mlkem_ntt`
 
 The registers saved and the table of the zetas stored (`setup_ok`); then the
-three nested loops of `layerF`, `layF` and `wBlockN` on words
-(`Reduce.lean`, `Proof/MlKem/Blocks.lean`), with an invariant each (`LInv`,
-`BInv`, `FInv`) saying which words `f` holds (`LP`); the butterfly is
-symbolically executed once for any pointers (`bfly_ok`), and stores the
-words `opF` gives (`lp_bfly`). Layer `ℓ` has `len = 128 / 2^ℓ` and `2^ℓ`
-blocks. The seven layers leave words less than `15 q` congruent to `NTT f`
-(`layersW_rel`), which the last loop reduces (`canon_ok`, `map_ok`); then
-the registers restored.
+layers, each `layF` of `wBlockN` on words (`Reduce.lean`,
+`Proof/MlKem/Blocks.lean`), and the registers restored (`restore_ok`).
+
+Each butterfly's code is symbolically executed once, for any state, length
+and offset (`bfly_run`, `bflyC_run`), and stores its `op` of the two words
+(`bfly_core`, `bflyC_core`): what `CoreOk` states of a butterfly's code. The
+rest is for any such code: butterflies in a row (`grp_ok`), the loop over
+groups of four (`grpLoop_ok`), a block of either kind (`blkS_ok`, `blkL_ok`,
+which prove `BlockOk`), and a layer of any program that is such a block
+(`lay_ok`), with the zetas of the table at `zB` (`Tab`). `LI` is what holds
+between layers. The first six layers leave words less than `13 q` congruent
+to the specification's (`layersF_rel`), and the last, of `opFC`, its
+coefficients (`layerFC_val`, `ntt_split`). `NTT⁻¹` (`NttInv.lean`) uses all
+but the butterflies.
 -/
 
 @[expose] public section
@@ -33,35 +38,446 @@ namespace VG.Proof.MlKem.Arm.Ntt
 
 open VG VG.Arm VG.Impl.MlKem.Arm
 open VG.Spec.MlKem
-open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
 
-/-! ## The butterfly -/
+/-! ## Registers kept -/
+
+/-- `s'` has the registers `rs`, and the regions and stack pointer, of `s`. -/
+structure Keep (rs : List Reg) (s s' : State) : Prop where
+  gpr : ∀ r ∈ rs, s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+
+theorem keep_iff {rs : List Reg} {s s' : State} :
+    Keep rs s s' ↔ (∀ r ∈ rs, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  ⟨fun h => ⟨h.gpr, h.rd, h.wr, h.sp⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
+
+/-- The lemmas that prove `Keep` after a symbolic execution (`run_block`). -/
+macro "keep_regs" : tactic => `(tactic| plain_simp_names (
+                   set_option linter.unusedSimpArgs false in
+                   simp only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+                     implies_true, and_self, and_true, true_and, reduceCtorEq, ↓reduceIte]))
+
+theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
+theorem Keep.trans {rs : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂) (h₂ : Keep rs s₂ s₃) :
+    Keep rs s₁ s₃ :=
+  ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
+
+theorem Keep.mono {rs rs' : List Reg} {s s' : State} (h : Keep rs s s') (hs : ∀ r ∈ rs', r ∈ rs) :
+    Keep rs' s s' :=
+  ⟨fun r hr => h.gpr r (hs r hr), h.rd, h.wr, h.sp⟩
+
+/-! ## Butterflies -/
+
+/-- `-q` and `q` in `r8` and `r12`, the zeta `z` and its quotient in `r7` and
+`r9`, and `c` in `r10`. -/
+def ZetaIn (c : BitVec 32) (z : Zq) (s : State) : Prop :=
+  s.gpr .r8 = Nq ∧ s.gpr .r12 = 3329 ∧ s.gpr .r7 = BitVec.ofNat 32 z.val ∧
+    s.gpr .r9 = BitVec.ofNat 32 (zetaQuot z.val) ∧ s.gpr .r10 = c
+
+/-- The registers the loop over a block's groups keeps. -/
+abbrev bflyKeep : List Reg := [.r1, .r2, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
+
+/-- The registers a butterfly keeps. -/
+abbrev coreKeep : List Reg := [.r0, .r1, .r2, .r3, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
+
+theorem ZetaIn.keep {c : BitVec 32} {z : Zq} {s s' : State} (hk : Keep bflyKeep s s') (h : ZetaIn c z s) :
+    ZetaIn c z s' :=
+  ⟨(hk.gpr .r8 (by decide)).trans h.1, (hk.gpr .r12 (by decide)).trans h.2.1,
+    (hk.gpr .r7 (by decide)).trans h.2.2.1, (hk.gpr .r9 (by decide)).trans h.2.2.2.1,
+    (hk.gpr .r10 (by decide)).trans h.2.2.2.2⟩
+
+/-- The code `code len o` stores what the butterfly `op` gives of the words
+`j + o` and `j + o + len` of the polynomial at `p`, with `r0` pointing at
+coefficient `j` and the registers as `C` says for the zeta. -/
+def CoreOk (code : Nat → Nat → List Instr) (op : Word → Word → Zq → Word × Word) (C : Zq → State → Prop) : Prop :=
+  ∀ (p : BitVec 32) (len j o : Nat), 0 < len → len ≤ 128 → o < 4 → j + o + len < 256 → p.toNat + 1024 ≤ 2 ^ 32 →
+    ∀ (z : Zq) (G : WPoly) (s : State), s.gpr .r0 = p + BitVec.ofNat 32 (4 * j) → C z s →
+      LP s.mem (State.addr p) G → polyRegion (State.addr p) ∈ s.wr →
+      WP isa (.block (code len o)) s fun s' =>
+        LP s'.mem (State.addr p) (wbfly op G (j + o) len z) ∧ Frame [polyRegion (State.addr p)] s.mem s'.mem ∧
+        Keep coreKeep s s'
+
+/-! ## Loads, stores and values -/
+
+/-- A pointer to coefficient `j`, plus the offset of coefficient `j + k`. -/
+theorem addr_at {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {j k : Nat} (h : j + k < 256) :
+    State.addr (p + BitVec.ofNat 32 (4 * j) + BitVec.ofNat 32 (4 * k)) = coeffAddr (State.addr p) (j + k) :=
+  addr_coeff hp (Nat.mul_add 4 j k).symm h
+
+theorem wr_at {p : BitVec 32} {s : State} (hw : polyRegion (State.addr p) ∈ s.wr) {j : Nat} (h : j < 256) :
+    InRegions s.wr (coeffAddr (State.addr p) j) 4 :=
+  inRegions_of hw (coeff_contains _ (by rw [n_eq]; exact h))
+
+theorem rd_at {p : BitVec 32} {s : State} (hw : polyRegion (State.addr p) ∈ s.wr) {j : Nat} (h : j < 256) :
+    InRegions (s.rd ++ s.wr) (coeffAddr (State.addr p) j) 4 :=
+  inRegions_of (List.mem_append_right _ hw) (coeff_contains _ (by rw [n_eq]; exact h))
+
+theorem q_shl1 : (3329 : BitVec 32) <<< 1 = 6658 := by decide
+
+/-! ## The butterflies of `NTT`, symbolically -/
 
 section
-variable {s : State} {x y z zp k c : BitVec 32}
+variable {s : State} {x z zp : BitVec 32} {len o : Nat} (ho : 4 * (o + len) < 4096) (h0 : s.gpr .r0 = x)
+  (h7 : s.gpr .r7 = z) (h8 : s.gpr .r8 = Nq) (h9 : s.gpr .r9 = zp) (h12 : s.gpr .r12 = 3329)
+  (iA : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 (4 * o))) 4)
+  (iB : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 4)
+  (oA : InRegions s.wr (State.addr (x + BitVec.ofNat 32 (4 * o))) 4)
+  (oB : InRegions s.wr (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 4)
+include ho h0 h7 h8 h9 h12 iA iB oA oB
 
-theorem bfly_ok (h2 : s.gpr .r2 = x) (h3 : s.gpr .r3 = y) (h7 : s.gpr .r7 = z) (h8 : s.gpr .r8 = Nq)
-    (h9 : s.gpr .r9 = zp) (h11 : s.gpr .r11 = c) (h12 : s.gpr .r12 = k)
-    (ia : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4)
-    (ib : InRegions (s.rd ++ s.wr) (State.addr (y + BitVec.ofNat 32 0)) 4)
-    (oa : InRegions s.wr (State.addr (x + BitVec.ofNat 32 0)) 4)
-    (ob : InRegions s.wr (State.addr (y + BitVec.ofNat 32 0)) 4) :
-    WP isa (.block bflyBody) s fun s' =>
-      s'.gpr .r2 = x + 4 ∧ s'.gpr .r3 = y + 4 ∧ s'.gpr .r11 = c - 1 ∧ s'.z = (c - 1 == 0) ∧
-      s'.gpr .r0 = s.gpr .r0 ∧ s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .r7 = z ∧ s'.gpr .r8 = Nq ∧ s'.gpr .r9 = zp ∧
-      s'.gpr .r10 = s.gpr .r10 ∧ s'.gpr .r12 = k ∧ s'.gpr .lr = s.gpr .lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.sp = s.sp ∧
-      s'.mem = (s.mem.writeW (State.addr (y + BitVec.ofNat 32 0))
-          (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 + k -
-            bmz (s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32) z zp)).writeW
-        (State.addr (x + BitVec.ofNat 32 0))
-          (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 +
-            bmz (s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32) z zp) := by
-  run_block [bflyBody, mulz, bmz, h2, h3, h7, h8, h9, h11, h12, ia, ib, oa, ob, and_self, and_true]
+theorem bfly_run :
+    WP isa (.block (Impl.MlKem.Arm.bfly len o)) s fun s' =>
+      s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
+          (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 6658 -
+            bmz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)).writeW
+        (State.addr (x + BitVec.ofNat 32 (4 * o)))
+          (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
+            bmz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp) ∧
+      Keep coreKeep s s' := by
+  have ho' : 4 * o < 4096 := by omega_using [ho]
+  run_block [Impl.MlKem.Arm.bfly, mulz, bmz, h0, h7, h8, h9, h12, iA, iB, oA, oB, ho, ho', q_shl1]
+  keep_regs
+
+theorem bflyC_run (h10 : s.gpr .r10 = 40318) :
+    WP isa (.block (bflyC len o)) s fun s' =>
+      s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
+          (bcan (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 6658 -
+            bmz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp))).writeW
+        (State.addr (x + BitVec.ofNat 32 (4 * o)))
+          (bcan (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
+            bmz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)) ∧
+      Keep coreKeep s s' := by
+  have ho' : 4 * o < 4096 := by omega_using [ho]
+  run_block [bflyC, canon, mulz, bmz, bcan, h0, h7, h8, h9, h10, h12, iA, iB, oA, oB, ho, ho', q_shl1]
+  keep_regs
 
 end
 
-/-! ## Loops -/
+theorem bfly_core (c : BitVec 32) : CoreOk Impl.MlKem.Arm.bfly opF (ZetaIn c) := by
+  intro p len j o hl hl' ho hj hp z G s h0 ⟨z8, z12, z7, z9, _⟩ hG hw
+  have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
+  have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
+  have hjo : j + o < 256 := by omega_using [hj]
+  have hjn : j + o < n := by rw [n_eq]; exact hjo
+  have hjl : j + o + len < n := by rw [n_eq]; exact hj
+  rw [← Nat.add_assoc] at eB
+  refine WP.mono (bfly_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z7 z8 z9 z12
+    (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
+    (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj)) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
+  · rw [hm, eA, eB, lp_word hG hjn, lp_word hG hjl]
+    exact lp_bfly hG opF hl hjl z (toW_val _).symm (toW_val _).symm
+  · rw [hm, eA, eB]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjl)).writeW
+      (List.mem_singleton_self _) _ (coeff_contains _ hjn)
+
+theorem bflyC_core : CoreOk bflyC opFC (ZetaIn 40318) := by
+  intro p len j o hl hl' ho hj hp z G s h0 ⟨z8, z12, z7, z9, z10⟩ hG hw
+  have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
+  have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
+  have hjo : j + o < 256 := by omega_using [hj]
+  have hjn : j + o < n := by rw [n_eq]; exact hjo
+  have hjl : j + o + len < n := by rw [n_eq]; exact hj
+  rw [← Nat.add_assoc] at eB
+  refine WP.mono (bflyC_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z7 z8 z9 z12
+    (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
+    (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj) z10) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
+  · rw [hm, eA, eB, lp_word hG hjn, lp_word hG hjl]
+    exact lp_bfly hG opFC hl hjl z (toW_val _).symm (toW_val _).symm
+  · rw [hm, eA, eB]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjl)).writeW
+      (List.mem_singleton_self _) _ (coeff_contains _ hjn)
+
+/-! ## Butterflies in a row -/
+
+theorem ptr_step (p : BitVec 32) (a : Nat) (c : BitVec 32) (b : Nat) (hc : c = BitVec.ofNat 32 (4 * b)) :
+    p + BitVec.ofNat 32 (4 * a) + c = p + BitVec.ofNat 32 (4 * (a + b)) := by
+  rw [hc, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
+
+theorem grpEnd_ok (s : State) :
+    WP isa (.block [.dp .add .r0 .r0 (.imm 16), .subs .r3 .r3 (.imm 1)]) s fun s' =>
+      s'.gpr .r0 = s.gpr .r0 + 16 ∧ s'.gpr .r3 = s.gpr .r3 - 1 ∧ s'.z = (s.gpr .r3 - 1 == 0) ∧
+        s'.mem = s.mem ∧ Keep bflyKeep s s' := by
+  run_block []
+  keep_regs
+
+section
+variable {code : Nat → Nat → List Instr} {op : Word → Word → Zq → Word × Word} {C : Zq → State → Prop}
+  (hb : CoreOk code op C) (hC : ∀ z s s', Keep bflyKeep s s' → C z s → C z s')
+include hb hC
+
+/-- `u` butterflies in a row from coefficient `j`, where `r0` points. -/
+theorem grp_ok {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {len j u : Nat} (hlen : 0 < len)
+    (hl : len ≤ 128) (hu : u ≤ 4) (hj : j + u + len ≤ 256) (k : Nat) (G : WPoly) (s : State)
+    (h0 : s.gpr .r0 = p + BitVec.ofNat 32 (4 * j)) (hz : C (zeta k) s) (hG : LP s.mem (State.addr p) G)
+    (hw : polyRegion (State.addr p) ∈ s.wr) :
+    WP isa (.block (grp (code len) u)) s fun s' =>
+      LP s'.mem (State.addr p) (wBlockN op G len k j u) ∧
+        Frame [polyRegion (State.addr p)] s.mem s'.mem ∧ Keep coreKeep s s' := by
+  refine wp_range_flatMap (M := isa) (fun t s' => LP s'.mem (State.addr p) (wBlockN op G len k j t) ∧
+      Frame [polyRegion (State.addr p)] s.mem s'.mem ∧ Keep coreKeep s s')
+    (fun t s' ht ⟨hP, hf, hk'⟩ => ?_) u (Nat.le_refl _) s ⟨hG, Frame.refl _ _, Keep.refl _ _⟩
+  refine WP.mono (hb p len j t hlen hl (by omega_using [ht, hu]) (by omega_using [ht, hj]) hp (zeta k) _ s'
+    ((hk'.gpr .r0 (by decide)).trans h0) (hC _ s s' (hk'.mono (by decide)) hz) hP (by rw [hk'.wr]; exact hw))
+    fun s'' ⟨hP', hf', hk''⟩ => ⟨?_, hf.trans hf', hk'.trans hk''⟩
+  rw [wBlockN, foldl_range'_succ, ← wBlockN]; exact hP'
+
+/-- The loop over `N` groups of four butterflies, from coefficient `start`. -/
+theorem grpLoop_ok {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {len start N : Nat} (hlen : 0 < len)
+    (hl : len ≤ 128) (hN : 0 < N) (hN' : N ≤ 32) (hs : start + 4 * N + len ≤ 256) (k : Nat) (G : WPoly) (s : State)
+    (h0 : s.gpr .r0 = p + BitVec.ofNat 32 (4 * start)) (hz : C (zeta k) s) (hG : LP s.mem (State.addr p) G)
+    (hw : polyRegion (State.addr p) ∈ s.wr) (h3 : s.gpr .r3 = BitVec.ofNat 32 (1 * (N - 0))) :
+    WP isa (grpLoop (code len)) s fun s' =>
+      LP s'.mem (State.addr p) (wBlockN op G len k start (4 * N)) ∧
+        Frame [polyRegion (State.addr p)] s.mem s'.mem ∧
+        s'.gpr .r0 = p + BitVec.ofNat 32 (4 * (start + 4 * N)) ∧ Keep bflyKeep s s' := by
+  refine wp_loop_ne (fun t s' => LP s'.mem (State.addr p) (wBlockN op G len k start (4 * t)) ∧
+      Frame [polyRegion (State.addr p)] s.mem s'.mem ∧ s'.gpr .r0 = p + BitVec.ofNat 32 (4 * (start + 4 * t)) ∧
+      s'.gpr .r3 = BitVec.ofNat 32 (1 * (N - t)) ∧ Keep bflyKeep s s') hN
+    (fun t ht s' ⟨hP, hf, h0', h3', hk⟩ => ?_) (fun _ ⟨hP, hf, h0', _, hk⟩ => ⟨hP, hf, h0', hk⟩)
+    ⟨hG, Frame.refl _ _, by rw [h0, Nat.mul_zero, Nat.add_zero], h3, Keep.refl _ _⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (grp_ok hb hC hp hlen hl (Nat.le_refl 4) (by omega_using [hs, ht]) k _ s' h0' (hC _ s s' hk hz) hP
+    (by rw [hk.wr]; exact hw)) fun s₁ ⟨hP₁, hf₁, k₁⟩ => ?_
+  refine WP.mono (grpEnd_ok s₁) fun s'' ⟨h0'', h3'', hz'', m'', k₂⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [m'', Nat.mul_succ, (wBlk_ok op).add]; exact hP₁
+  · rw [m'']; exact hf.trans hf₁
+  · rw [h0'', k₁.gpr .r0 (by decide), h0', ptr_step p _ 16 4 rfl,
+      show start + 4 * t + 4 = start + 4 * (t + 1) by omega_using []]
+  · rw [h3'', k₁.gpr .r3 (by decide), h3']; exact count_sub (k := 1) ht
+  · exact hk.trans ((k₁.mono (by decide)).trans k₂)
+  · rw [hz'', k₁.gpr .r3 (by decide), h3']; exact count_z (k := 1) ht (by decide) (by omega_using [hN'])
+
+end
+
+/-! ## A block -/
+
+/-- The table of the zetas, each with its quotient, at `P`. -/
+def Tab (m : Mem) (P : Addr) : Prop := ∀ j < 128, m.readW (P + BitVec.ofNat 64 (4 * j)) 32 =
+  BitVec.ofNat 32 (zetaQuot (zetaTable.getD j 0) + 65536 * zetaTable.getD j 0)
+
+/-- Writes elsewhere keep the table. -/
+theorem Tab.frame {m m' : Mem} {P : Addr} (h : Tab m P) {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (polyRegion P).Disjoint r) : Tab m' P := fun j hj => by
+  rw [hf.readW (r := polyRegion P) (contains_off (by omega_using [hj]) (by omega_using [hj])) hd (by decide)]
+  exact h j hj
+
+/-- The zeta of index `k` of the table, unpacked. -/
+theorem zeta_unpack {k : Nat} (hk : k < 128) :
+    BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) >>> 16 =
+        BitVec.ofNat 32 (zeta k).val ∧
+      BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) -
+          (BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) >>> 16) <<< 16 =
+        BitVec.ofNat 32 (zetaQuot (zeta k).val) := by
+  rw [zetaTable_eq, zetas_getD hk]
+  have hz := val_lt (zeta k)
+  exact unpack (by omega_using [hz]) (zetaQuot_lt (zeta k).isLt)
+
+/-- The pointer to the next zeta. -/
+def nextZ (op : DpOp) (x : BitVec 32) : BitVec 32 := if op = .add then x + 4 else x - 4
+
+theorem zetaPre_ok (op : DpOp) (hop : op = .add ∨ op = .sub) (s : State) {x : BitVec 32} (h1 : s.gpr .r1 = x)
+    (hi : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4) :
+    WP isa (.block (zetaPre op)) s fun s' =>
+      s'.gpr .r7 = s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 >>> 16 ∧
+      s'.gpr .r9 = s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 -
+        (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 >>> 16) <<< 16 ∧
+      s'.gpr .r1 = (if op = .add then x + 4 else x - 4) ∧ s'.mem = s.mem ∧
+      Keep [.r0, .r2, .r3, .r8, .r10, .r11, .r12, .lr] s s' := by
+  rcases hop with rfl | rfl <;>
+  · run_block [zetaPre, zetaLoad, h1, hi]
+    keep_regs
+
+theorem blkEnd_ok (c : Nat) (he : encodable (BitVec.ofNat 32 c) = true) (s : State) :
+    WP isa (.block [.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 c)), .subs .r2 .r2 (.imm 1)]) s fun s' =>
+      s'.gpr .r0 = s.gpr .r0 + BitVec.ofNat 32 c ∧ s'.gpr .r2 = s.gpr .r2 - 1 ∧
+        s'.z = (s.gpr .r2 - 1 == 0) ∧ s'.mem = s.mem ∧
+        Keep [.r1, .r7, .r8, .r9, .r10, .r11, .r12, .lr] s s' := by
+  run_block [he]
+  keep_regs
+
+theorem movR3_ok (c : Nat) (he : encodable (BitVec.ofNat 32 c) = true) (s : State) :
+    WP isa (.block [.mov .r3 (.imm (BitVec.ofNat 32 c))]) s fun s' =>
+      s'.gpr .r3 = BitVec.ofNat 32 c ∧ s'.mem = s.mem ∧
+        Keep [.r0, .r1, .r2, .r7, .r8, .r9, .r10, .r11, .r12, .lr] s s' := by
+  run_block [he]
+  keep_regs
+
+/-- The registers a block and a layer keep. -/
+abbrev blkKeep : List Reg := [.r8, .r10, .r11, .r12, .lr]
+
+/-- The program `blk` is a block of the layer with `len` of the polynomial
+at `p`: with `r0` at coefficient `start` and `r1` at entry `k` of the table
+at `zB`, it runs the `len` butterflies `op` with `zeta k`, and leaves `r0`
+at the next block, `r1` at the next entry and the count of blocks in `r2`
+one less. -/
+def BlockOk (blk : Prog isa) (op : Word → Word → Zq → Word × Word) (dop : DpOp) (c : BitVec 32) (len : Nat)
+    (p zB : BitVec 32) : Prop :=
+  ∀ (start k : Nat), start + 2 * len ≤ 256 → k < 128 → ∀ (G : WPoly) (s : State),
+    s.gpr .r0 = p + BitVec.ofNat 32 (4 * start) → s.gpr .r1 = zB + BitVec.ofNat 32 (4 * k) → s.gpr .r8 = Nq →
+    s.gpr .r12 = 3329 → s.gpr .r10 = c → LP s.mem (State.addr p) G → polyRegion (State.addr p) ∈ s.wr →
+    polyRegion (State.addr zB) ∈ s.rd ++ s.wr → Tab s.mem (State.addr zB) →
+    WP isa blk s fun s' =>
+      LP s'.mem (State.addr p) (wBlockN op G len k start len) ∧
+        Frame [polyRegion (State.addr p)] s.mem s'.mem ∧
+        s'.gpr .r0 = p + BitVec.ofNat 32 (4 * (start + 2 * len)) ∧ s'.gpr .r1 = nextZ dop (s.gpr .r1) ∧
+        s'.gpr .r2 = s.gpr .r2 - 1 ∧ s'.z = (s.gpr .r2 - 1 == 0) ∧ Keep blkKeep s s'
+
+/-- The zeta of a block, as `zetaPre` reads it. -/
+theorem zeta_read {zB : BitVec 32} (hzf : zB.toNat + 1024 ≤ 2 ^ 32) {k : Nat} (hk : k < 128) {s : State}
+    (hzw : polyRegion (State.addr zB) ∈ s.rd ++ s.wr) (ht : Tab s.mem (State.addr zB)) :
+    InRegions (s.rd ++ s.wr) (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 4 ∧
+      s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 >>> 16 =
+        BitVec.ofNat 32 (zeta k).val ∧
+      s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 -
+          (s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 >>> 16) <<< 16 =
+        BitVec.ofNat 32 (zetaQuot (zeta k).val) := by
+  have eS := addr_ptr zB (4 * k) 0 (by omega_using [hzf, hk])
+  rw [eS, Nat.add_zero, ht k hk]
+  exact ⟨inRegions_of hzw (contains_off (by omega_using [hk]) (by omega_using [hk])), zeta_unpack hk⟩
+
+section
+variable {code : Nat → Nat → List Instr} {op : Word → Word → Zq → Word × Word} {c : BitVec 32}
+  (hb : CoreOk code op (ZetaIn c)) {p zB : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32)
+  (hzf : zB.toNat + 1024 ≤ 2 ^ 32) {len : Nat} (hlen : 0 < len) (dop : DpOp) (hop : dop = .add ∨ dop = .sub)
+include hb hp hzf hlen hop
+
+/-- A block of at most four butterflies, in a row. -/
+theorem blkS_ok (hl : len ≤ 4) : BlockOk (nttBlkS (code len) len dop) op dop c len p zB := by
+  intro start k hs hk G s h0 h1 h8 h12 h10 hG hw hzw ht
+  obtain ⟨hzi, hz7, hz9⟩ := zeta_read hzf hk hzw ht
+  have he : encodable (BitVec.ofNat 32 (8 * len)) = true := by
+    have : ∀ l < 5, encodable (BitVec.ofNat 32 (8 * l)) = true := by decide
+    exact this len (by omega_using [hl])
+  rw [nttBlkS, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (zetaPre_ok dop hop s h1 hzi) fun s₁ ⟨e7, e9, e1, m₁, k₁⟩ => ?_
+  rw [hz7] at e7
+  rw [hz9] at e9
+  refine WP.mono (grp_ok hb (fun _ _ _ hk h => h.keep hk) hp hlen (by omega_using [hl]) hl (by omega_using [hs])
+    k G s₁ ((k₁.gpr .r0 (by decide)).trans h0)
+    ⟨(k₁.gpr .r8 (by decide)).trans h8, (k₁.gpr .r12 (by decide)).trans h12, e7, e9,
+      (k₁.gpr .r10 (by decide)).trans h10⟩ (by rw [m₁]; exact hG)
+    (by rw [k₁.wr]; exact hw)) fun s₂ ⟨hP, hf, k₂⟩ => ?_
+  refine WP.mono (blkEnd_ok (8 * len) he s₂) fun s' ⟨h0', h2', hz', m', k₃⟩ => ⟨by rw [m']; exact hP,
+    by rw [m', ← m₁]; exact hf, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [h0', k₂.gpr .r0 (by decide), k₁.gpr .r0 (by decide), h0, BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2; omega_using []
+  · rw [k₃.gpr .r1 (by decide), k₂.gpr .r1 (by decide), e1, h1]; rfl
+  · rw [h2', k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
+  · rw [hz', k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
+  · exact ((k₁.mono (rs' := blkKeep) (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide))
+
+/-- A longer block, four butterflies at a time. -/
+theorem blkL_ok (hl : len ≤ 128) (hl4 : 4 * (len / 4) = len) :
+    BlockOk (nttBlkL (code len) len dop) op dop c len p zB := by
+  intro start k hs hk G s h0 h1 h8 h12 h10 hG hw hzw ht
+  obtain ⟨hzi, hz7, hz9⟩ := zeta_read hzf hk hzw ht
+  have he : encodable (BitVec.ofNat 32 (4 * len)) = true := by
+    have : ∀ l < 129, encodable (BitVec.ofNat 32 (4 * l)) = true := by decide
+    exact this len (by omega_using [hl])
+  have he3 : encodable (BitVec.ofNat 32 (len / 4)) = true := by
+    have : ∀ l < 33, encodable (BitVec.ofNat 32 l) = true := by decide
+    exact this (len / 4) (by omega_using [hl])
+  rw [nttBlkL]
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (zetaPre_ok dop hop s h1 hzi) fun s₁ ⟨e7, e9, e1, m₁, k₁⟩ => ?_
+  rw [hz7] at e7
+  rw [hz9] at e9
+  refine WP.mono (movR3_ok (len / 4) he3 s₁) fun s₂ ⟨e3, m₂, k₂⟩ => ?_
+  refine WP.seq (WP.mono (grpLoop_ok hb (fun _ _ _ hk h => h.keep hk) hp hlen hl (N := len / 4) (start := start)
+    (by omega_using [hl4, hlen]) (by omega_using [hl]) (by omega_using [hl4, hs]) k G s₂
+    ((k₂.gpr .r0 (by decide)).trans ((k₁.gpr .r0 (by decide)).trans h0))
+    ⟨(k₂.gpr .r8 (by decide)).trans ((k₁.gpr .r8 (by decide)).trans h8),
+      (k₂.gpr .r12 (by decide)).trans ((k₁.gpr .r12 (by decide)).trans h12),
+      (k₂.gpr .r7 (by decide)).trans e7, (k₂.gpr .r9 (by decide)).trans e9,
+      (k₂.gpr .r10 (by decide)).trans ((k₁.gpr .r10 (by decide)).trans h10)⟩
+    (by rw [m₂, m₁]; exact hG) (by rw [k₂.wr, k₁.wr]; exact hw) (by rw [e3, Nat.sub_zero, Nat.one_mul]))
+    fun s₃ ⟨hP, hf, h0₃, k₃⟩ => ?_)
+  rw [hl4] at hP h0₃
+  refine WP.mono (blkEnd_ok (4 * len) he s₃) fun s' ⟨h0', h2', hz', m', k₄⟩ => ⟨by rw [m']; exact hP,
+    by rw [m', ← m₁, ← m₂]; exact hf, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [h0', h0₃, BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2; omega_using []
+  · rw [k₄.gpr .r1 (by decide), k₃.gpr .r1 (by decide), k₂.gpr .r1 (by decide), e1, h1]; rfl
+  · rw [h2', k₃.gpr .r2 (by decide), k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
+  · rw [hz', k₃.gpr .r2 (by decide), k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
+  · exact (((k₁.mono (rs' := blkKeep) (by decide)).trans (k₂.mono (by decide))).trans
+      (k₃.mono (by decide))).trans (k₄.mono (by decide))
+
+end
+
+/-! ## A layer -/
+
+theorem layPre_ok (c : Nat) (hc : c ≤ 128) (s : State) :
+    WP isa (.block [.mov .r2 (.imm (BitVec.ofNat 32 c))]) s fun s' =>
+      s'.gpr .r2 = BitVec.ofNat 32 c ∧ s'.mem = s.mem ∧ Keep [.r0, .r1, .r8, .r10, .r11, .r12, .lr] s s' := by
+  have he : encodable (BitVec.ofNat 32 c) = true := by
+    have : ∀ l < 129, encodable (BitVec.ofNat 32 l) = true := by decide
+    exact this c (by omega_using [hc])
+  run_block [he]
+  keep_regs
+
+theorem layPost_ok (s : State) :
+    WP isa (.block [.dp .sub .r0 .r0 (.imm 1024)]) s fun s' =>
+      s'.gpr .r0 = s.gpr .r0 - 1024 ∧ s'.mem = s.mem ∧ Keep [.r1, .r8, .r10, .r11, .r12, .lr] s s' := by
+  run_block []
+  keep_regs
+
+/-- The facts about the lengths of the layers. -/
+theorem lens_facts : ∀ len ∈ [2, 4, 8, 16, 32, 64, 128], 0 < len ∧ len ≤ 128 ∧ 2 * len * (128 / len) = 256 ∧
+    0 < 128 / len ∧ 128 / len ≤ 128 := by
+  decide
+
+/-- A layer, from `r0` = `f` and the zeta of its first block at `r1`. -/
+theorem lay_ok {blk : Prog isa} {op : Word → Word → Zq → Word × Word} {dop : DpOp} {c : BitVec 32} {len : Nat}
+    {p zB : BitVec 32} (hblk : BlockOk blk op dop c len p zB) (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128])
+    (zi : Nat → Nat) (hzi : ∀ b < 128 / len, zi b < 128)
+    (hstep : ∀ b < 128 / len, nextZ dop (zB + BitVec.ofNat 32 (4 * zi b)) = zB + BitVec.ofNat 32 (4 * zi (b + 1)))
+    (F : WPoly) (s : State) (h0 : s.gpr .r0 = p) (h1 : s.gpr .r1 = zB + BitVec.ofNat 32 (4 * zi 0))
+    (h8 : s.gpr .r8 = Nq) (h12 : s.gpr .r12 = 3329) (h10 : s.gpr .r10 = c) (hF : LP s.mem (State.addr p) F)
+    (hw : polyRegion (State.addr p) ∈ s.wr) (hzw : polyRegion (State.addr zB) ∈ s.rd ++ s.wr)
+    (hd : (polyRegion (State.addr zB)).Disjoint (polyRegion (State.addr p))) (ht : Tab s.mem (State.addr zB)) :
+    WP isa (nttLay blk len) s fun s' =>
+      LP s'.mem (State.addr p) (layF (wBlockN op) F len zi (128 / len)) ∧
+        Frame [polyRegion (State.addr p)] s.mem s'.mem ∧ s'.gpr .r0 = p ∧
+        s'.gpr .r1 = zB + BitVec.ofNat 32 (4 * zi (128 / len)) ∧ Keep blkKeep s s' := by
+  obtain ⟨hl0, hl1, hl2, hl3, hl4⟩ := lens_facts len hlen
+  have hdd : ∀ r ∈ [polyRegion (State.addr p)], (polyRegion (State.addr zB)).Disjoint r := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact hd
+  refine WP.seq (WP.mono (layPre_ok (128 / len) hl4 s) fun s₁ ⟨e2, m₁, k₁⟩ => WP.seq ?_)
+  refine WP.mono (Q := fun (s₂ : State) => LP s₂.mem (State.addr p) (layF (wBlockN op) F len zi (128 / len)) ∧
+      Frame [polyRegion (State.addr p)] s.mem s₂.mem ∧ s₂.gpr .r0 = p + BitVec.ofNat 32 (4 * 256) ∧
+      s₂.gpr .r1 = zB + BitVec.ofNat 32 (4 * zi (128 / len)) ∧ Keep blkKeep s s₂) ?_
+    fun s₂ ⟨hP, hf, h0₂, h1₂, k₂⟩ => ?_
+  · refine wp_loop_ne (fun b s' => LP s'.mem (State.addr p) (layF (wBlockN op) F len zi b) ∧
+        Frame [polyRegion (State.addr p)] s.mem s'.mem ∧ s'.gpr .r0 = p + BitVec.ofNat 32 (4 * (2 * len * b)) ∧
+        s'.gpr .r1 = zB + BitVec.ofNat 32 (4 * zi b) ∧ s'.gpr .r2 = BitVec.ofNat 32 (1 * (128 / len - b)) ∧
+        Keep blkKeep s s') hl3 (fun b hb s' ⟨hP, hf, h0', h1', h2', hk⟩ => ?_)
+      (fun s' ⟨hP, hf, h0', h1', _, hk⟩ => ⟨hP, hf, by rw [h0', hl2], h1', hk⟩)
+      ⟨by rw [m₁]; exact hF, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.gpr .r0 (by decide), h0]; simp,
+        by rw [k₁.gpr .r1 (by decide), h1], by rw [e2]; simp, k₁.mono (by decide)⟩
+    have hcm : 2 * len * b + 2 * len ≤ 256 := by
+      have : 2 * len * (b + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega_using [hb])
+      rw [Nat.mul_succ] at this; omega_using [hl2, this]
+    refine WP.mono (hblk _ _ hcm (hzi b hb) _ s' h0' h1'
+      ((hk.gpr .r8 (by decide)).trans h8) ((hk.gpr .r12 (by decide)).trans h12)
+      ((hk.gpr .r10 (by decide)).trans h10) hP (by rw [hk.wr]; exact hw)
+      (by rw [hk.rd, hk.wr]; exact hzw)
+      (ht.frame hf hdd)) fun s'' ⟨hP', hf', h0'', h1'', h2'', hz'', hk'⟩ => ⟨⟨?_, hf.trans hf', ?_, ?_, ?_,
+        hk.trans hk'⟩, ?_⟩
+    · rw [layF, foldl_range_succ, ← layF]; exact hP'
+    · rw [h0'', Nat.mul_succ]
+    · rw [h1'', h1', hstep b hb]
+    · rw [h2'', h2']; exact count_sub (k := 1) hb
+    · rw [hz'', h2']; exact count_z (k := 1) hb (by decide) (by omega_using [hl4])
+  · refine WP.mono (layPost_ok s₂) fun s' ⟨h0', m', k₃⟩ => ⟨by rw [m']; exact hP, by rw [m']; exact hf, ?_,
+      by rw [k₃.gpr .r1 (by decide), h1₂], k₂.trans (k₃.mono (by decide))⟩
+    rw [h0', h0₂]
+    exact BitVec.add_sub_cancel _ _
+
+/-! ## Between layers -/
 
 section
 variable (s₀ : State)
@@ -89,340 +505,88 @@ structure Setup (s₀ : State) (m₁ : Mem) : Prop where
     BitVec.ofNat 32 (zetaQuot (zetaTable.getD j 0) + 65536 * zetaTable.getD j 0)
   poly : PolyIs m₁ (F s₀) (P s₀)
 
-/-- What every loop keeps. -/
-structure Env (s₀ : State) (m₁ : Mem) (s : State) : Prop where
-  r0 : s.gpr .r0 = pf s₀ + 1024
+/-- Between layers: the words `G` at `f`, entry `k` of the table at `r1`,
+`-q` in `r8`, `q` in `r12` and `c` in `r10`, with the memory `m₁` after the
+setup changed only at `f`. -/
+structure LI (s₀ : State) (m₁ : Mem) (c : BitVec 32) (G : WPoly) (k : Nat) (s : State) : Prop where
+  r0 : s.gpr .r0 = pf s₀
+  r1 : s.gpr .r1 = ps s₀ + BitVec.ofNat 32 (4 * k)
   r8 : s.gpr .r8 = Nq
-  r12 : s.gpr .r12 = 6658
-  lr : s.gpr .lr = s₀.gpr .lr
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  sp : s.sp = s₀.sp
+  r12 : s.gpr .r12 = 3329
+  r10 : s.gpr .r10 = c
+  poly : LP s.mem (F s₀) G
   frame : Frame [polyRegion (F s₀)] m₁ s.mem
+  keep : Keep [.lr] s₀ s
 
-/-- The zeta `zeta k` and its quotient, in `r7` and `r9`. -/
-def ZetaIn (k : Nat) (s : State) : Prop :=
-  s.gpr .r7 = BitVec.ofNat 32 (zeta k).val ∧ s.gpr .r9 = BitVec.ofNat 32 (zetaQuot (zeta k).val)
+theorem LI.step {s₀ : State} {m₁ : Mem} {c : BitVec 32} {G G' : WPoly} {k k' : Nat} {s s' : State}
+    (hI : LI s₀ m₁ c G k s) (hP : LP s'.mem (F s₀) G') (hf : Frame [polyRegion (F s₀)] s.mem s'.mem)
+    (h0 : s'.gpr .r0 = pf s₀) (h1 : s'.gpr .r1 = ps s₀ + BitVec.ofNat 32 (4 * k')) (hk : Keep blkKeep s s') :
+    LI s₀ m₁ c G' k' s' :=
+  ⟨h0, h1, (hk.gpr .r8 (by decide)).trans hI.r8, (hk.gpr .r12 (by decide)).trans hI.r12,
+    (hk.gpr .r10 (by decide)).trans hI.r10, hP, hI.frame.trans hf, hI.keep.trans (hk.mono (by decide))⟩
 
-/-- After `t` butterflies of the block from `st` with the zeta `zeta k` of
-the layer with `len`, from `Q`: the zeta pointer is at `k + 1`. -/
-structure FInv (s₀ : State) (m₁ : Mem) (Q : WPoly) (len k st : Nat) (t : Nat) (s : State) : Prop where
-  env : Env s₀ m₁ s
-  r1 : s.gpr .r1 = ps s₀ + BitVec.ofNat 32 (4 * (k + 1))
-  r2 : s.gpr .r2 = pf s₀ + BitVec.ofNat 32 (4 * (st + t))
-  r3 : s.gpr .r3 = pf s₀ + BitVec.ofNat 32 (4 * (st + len + t))
-  zeta : ZetaIn k s
-  r10 : s.gpr .r10 = BitVec.ofNat 32 (4 * len)
-  r11 : s.gpr .r11 = BitVec.ofNat 32 (1 * (len - t))
-  poly : LP s.mem (F s₀) (wBlockN opF Q len k st t)
+/-- A layer whose blocks are `blk`, between layers. -/
+theorem layI_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {c : BitVec 32} {blk : Prog isa}
+    {op : Word → Word → Zq → Word × Word} {dop : DpOp} {len : Nat}
+    (hblk : BlockOk blk op dop c len (pf s₀) (ps s₀)) (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128])
+    (zi : Nat → Nat) (hzi : ∀ b < 128 / len, zi b < 128)
+    (hstep : ∀ b < 128 / len, nextZ dop (ps s₀ + BitVec.ofNat 32 (4 * zi b)) =
+      ps s₀ + BitVec.ofNat 32 (4 * zi (b + 1))) {G : WPoly} {s : State} (hI : LI s₀ m₁ c G (zi 0) s) :
+    WP isa (nttLay blk len) s fun s' =>
+      LI s₀ m₁ c (layF (wBlockN op) G len zi (128 / len)) (zi (128 / len)) s' := by
+  have hd : ∀ r ∈ [polyRegion (F s₀)], (polyRegion (S s₀)).Disjoint r := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm
+  refine WP.mono (lay_ok hblk hlen zi hzi hstep G s hI.r0 hI.r1 hI.r8 hI.r12 hI.r10 hI.poly
+    (by rw [hI.keep.wr, hp.wr]; simp) (by rw [hI.keep.rd, hI.keep.wr, hp.rd, hp.wr]; simp) hp.disj.symm
+    (Tab.frame hm.tab hI.frame hd)) fun s' ⟨hP, hf, h0, h1, hk⟩ => hI.step hP hf h0 h1 hk
 
-/-- One more butterfly of a block. -/
-theorem wBlockN_succ (op : Word → Word → Zq → Word × Word) (f : WPoly) (len k st t : Nat) :
-    wBlockN op f len k st (t + 1) = wbfly op (wBlockN op f len k st t) (st + t) len (zeta k) := by
-  rw [wBlockN, foldl_range'_succ, ← wBlockN]
+/-! ## The layers of `NTT` -/
 
-theorem fstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {Q : WPoly} {len k st t : Nat} (hl : 0 < len)
-    (hs : st + 2 * len ≤ 256) (ht : t < len) {s : State} (h : FInv s₀ m₁ Q len k st t s) :
-    WP isa (.block bflyBody) s fun s' => FInv s₀ m₁ Q len k st (t + 1) s' ∧ s'.z = decide (t + 1 = len) := by
-  have fF := hp.fitF
-  have ea := addr_coeff (i := 4 * (st + t)) (o := 0) (j := st + t) fF (by omega_arith) (by omega_arith)
-  have eb := addr_coeff (i := 4 * (st + len + t)) (o := 0) (j := st + t + len) fF (by omega_arith) (by omega_arith)
-  have ca := coeff_contains (F s₀) (i := st + t) (by rw [n_eq]; omega_arith)
-  have cb := coeff_contains (F s₀) (i := st + t + len) (by rw [n_eq]; omega_arith)
-  have iW : ∀ {a : Addr}, (polyRegion (F s₀)).Contains a 4 → InRegions s.wr a 4 := fun hc => by
-    rw [h.env.wr, hp.wr]; exact inRegions_of (by simp) hc
-  have iR : ∀ {a : Addr}, (polyRegion (F s₀)).Contains a 4 → InRegions (s.rd ++ s.wr) a 4 := fun hc => by
-    rw [h.env.rd, h.env.wr, hp.rd, hp.wr]; exact inRegions_of (by simp) hc
-  have va := lp_word h.poly (j := st + t) (by rw [n_eq]; omega_arith)
-  have vb := lp_word h.poly (j := st + t + len) (by rw [n_eq]; omega_arith)
-  refine WP.mono (bfly_ok h.r2 h.r3 h.zeta.1 h.env.r8 h.zeta.2 h.r11 h.env.r12 (by rw [ea]; exact iR ca)
-    (by rw [eb]; exact iR cb) (by rw [ea]; exact iW ca) (by rw [eb]; exact iW cb))
-    fun s' ⟨r2, r3, r11, z, r0, r1, r7, r8, r9, r10, r12, lr, rd, wr, sp, m⟩ =>
-      ⟨⟨⟨r0.trans h.env.r0, r8, r12, lr.trans h.env.lr, rd.trans h.env.rd, wr.trans h.env.wr, sp.trans h.env.sp,
-        ?_⟩, r1.trans h.r1, ?_, ?_, ⟨r7, r9⟩, r10.trans h.r10, ?_, ?_⟩, ?_⟩
-  · rw [m, ea, eb]
-    exact (h.env.frame.writeW (List.mem_singleton_self _) _ cb).writeW (List.mem_singleton_self _) _ ca
-  · rw [r2, ← Nat.add_assoc]; exact ptr_succ _ 4 _
-  · rw [r3, ← Nat.add_assoc]; exact ptr_succ _ 4 _
-  · rw [r11]; exact count_sub (k := 1) ht
-  · rw [m, ea, eb, va, vb, wBlockN_succ]
-    exact lp_bfly h.poly opF hl (by rw [n_eq]; omega_arith) _ (toW_val _).symm (toW_val _).symm
-  · rw [z]; exact count_z (k := 1) ht (by decide) (by omega_arith)
+/-- The chain of zeta indices of the layers `ls` of `NTT`, from `k`. -/
+def Chain : Nat → List Nat → Prop
+  | _, [] => True
+  | k, len :: ls => k = 128 / len ∧ Chain (256 / len) ls
 
-/-! ## Blocks -/
+/-- The zeta index after the layers `ls`, from `k`. -/
+def chainEnd : Nat → List Nat → Nat
+  | k, [] => k
+  | _, len :: ls => chainEnd (256 / len) ls
 
-section
-variable {s : State} {x0 x1 x2 x10 y : BitVec 32}
-
-/-- The start of a block: its zeta, the pointer to the second half, the count. -/
-theorem bpre_ok (h1 : s.gpr .r1 = x1) (h2 : s.gpr .r2 = x2) (h10 : s.gpr .r10 = x10)
-    (i1 : InRegions (s.rd ++ s.wr) (State.addr (x1 + BitVec.ofNat 32 0)) 4) :
-    WP isa (.block (zetaLoad ++ ([.dp .add .r1 .r1 (.imm 4), .dp .add .r3 .r2 (.reg .r10),
-        .mov .r11 (.shifted .r10 .lsr 2)] : List Instr))) s fun s' =>
-      s'.gpr .r7 = s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 >>> 16 ∧
-      s'.gpr .r9 = s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 -
-        (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 >>> 16) <<< 16 ∧ s'.gpr .r1 = x1 + 4 ∧
-      s'.gpr .r3 = x2 + x10 ∧ s'.gpr .r11 = x10 >>> 2 ∧ s'.gpr .r2 = x2 ∧ s'.gpr .r10 = x10 ∧
-      s'.gpr .r0 = s.gpr .r0 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r12 = s.gpr .r12 ∧ s'.gpr .lr = s.gpr .lr ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [zetaLoad, h1, h2, h10, i1, and_self, and_true]
-
-/-- The end of a block: the next block's start, compared with the end. -/
-theorem bpost_ok (h0 : s.gpr .r0 = x0) (h3 : s.gpr .r3 = y) :
-    WP isa (.block [.mov .r2 (.reg .r3), .cmp .r2 (.reg .r0)]) s fun s' =>
-      s'.gpr .r2 = y ∧ s'.z = (y - x0 == 0) ∧ s'.gpr .r0 = x0 ∧ s'.gpr .r1 = s.gpr .r1 ∧
-      s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r10 = s.gpr .r10 ∧ s'.gpr .r12 = s.gpr .r12 ∧ s'.gpr .lr = s.gpr .lr ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [h0, h3, and_self, and_true]
-
-end
-
-theorem lsr2 {len : Nat} (h : 4 * len < 2 ^ 32) :
-    BitVec.ofNat 32 (4 * len) >>> 2 = BitVec.ofNat 32 (1 * (len - 0)) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt h]
-  omega_arith
-
-theorem ptr_add_add (p : BitVec 32) (a b : Nat) :
-    p + BitVec.ofNat 32 a + BitVec.ofNat 32 b = p + BitVec.ofNat 32 (a + b) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-
-/-- Two pointers from `p` are equal exactly when their offsets are. -/
-theorem ptr_sub_beq (p : BitVec 32) {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
-    (p + BitVec.ofNat 32 a - (p + BitVec.ofNat 32 b) == 0) = decide (a = b) := by
-  rw [sub_beq_zero]
-  by_cases h : a = b
-  · subst h; simp
-  · have : p + BitVec.ofNat 32 a ≠ p + BitVec.ofNat 32 b := fun e => h (by
-      have := congrArg BitVec.toNat ((BitVec.add_right_inj p).mp e)
-      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at this)
-    simp [this, h]
-
-/-- The zeta of index `k` of the table, unpacked. -/
-theorem zeta_unpack {k : Nat} (hk : k < 128) :
-    BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) >>> 16 =
-        BitVec.ofNat 32 (zeta k).val ∧
-      BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) -
-          (BitVec.ofNat 32 (zetaQuot (zetaTable.getD k 0) + 65536 * zetaTable.getD k 0) >>> 16) <<< 16 =
-        BitVec.ofNat 32 (zetaQuot (zeta k).val) := by
-  rw [zetaTable_eq, zetas_getD hk]
-  have hz := val_lt (zeta k)
-  exact unpack (by omega_using [hz]) (zetaQuot_lt (zeta k).isLt)
-
-/-- After `c` blocks of the layer with `len` and `nb` blocks, from `Q`. -/
-structure BInv (s₀ : State) (m₁ : Mem) (Q : WPoly) (len nb : Nat) (c : Nat) (s : State) : Prop where
-  env : Env s₀ m₁ s
-  r1 : s.gpr .r1 = ps s₀ + BitVec.ofNat 32 (4 * (nb + c))
-  r2 : s.gpr .r2 = pf s₀ + BitVec.ofNat 32 (4 * (2 * len * c))
-  r10 : s.gpr .r10 = BitVec.ofNat 32 (4 * len)
-  poly : LP s.mem (F s₀) (layF (wBlockN opF) Q len (fun c => 128 / len + c) c)
-
-theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {Q : WPoly} {len nb c : Nat}
-    (hl2 : 2 ≤ len) (hnb : len * nb = 128) (hc : c < nb) {s : State} (h : BInv s₀ m₁ Q len nb c s) :
-    WP isa nttBlockCode s fun s' => BInv s₀ m₁ Q len nb (c + 1) s' ∧ s'.z = decide (c + 1 = nb) := by
-  have hl : 0 < len := by omega_arith
-  have fF := hp.fitF
-  have fS := hp.fitS
-  have hdiv : 128 / len = nb := by rw [← hnb, Nat.mul_div_cancel_left _ hl]
-  have hlc : len * (c + 1) ≤ len * nb := Nat.mul_le_mul_left _ hc
-  have e2 : 2 * len * c = 2 * (len * c) := Nat.mul_assoc _ _ _
-  rw [Nat.mul_add, Nat.mul_one] at hlc
-  have hk : nb + c < 128 := by
-    have : 2 * nb ≤ len * nb := Nat.mul_le_mul_right nb hl2
-    omega_arith
-  have eS := addr_ptr (ps s₀) (4 * (nb + c)) 0 (by omega_arith)
-  have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * (nb + c) + 0)) 4 :=
-    contains_off (by omega_arith) (by omega_arith)
-  have vz : s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * (nb + c) + 0)) 32 =
-      BitVec.ofNat 32 (zetaQuot (zetaTable.getD (nb + c) 0) + 65536 * zetaTable.getD (nb + c) 0) := by
-    rw [h.env.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm)
-      (by decide), Nat.add_zero, hm.tab _ hk]
-  refine WP.seq (WP.mono (bpre_ok h.r1 h.r2 h.r10 (by
-    rw [eS, h.env.rd, h.env.wr, hp.rd, hp.wr]; exact inRegions_of (by simp) cS))
-    fun s₁ ⟨r7, r9, r1, r3, r11, r2, r10, r0, r8, r12, lr, m, rd, wr, sp⟩ => WP.seq ?_)
-  have h₁ : FInv s₀ m₁ (layF (wBlockN opF) Q len (fun c => 128 / len + c) c) len (128 / len + c)
-      (2 * len * c) 0 s₁ := by
-    refine ⟨⟨r0.trans h.env.r0, r8.trans h.env.r8, r12.trans h.env.r12, lr.trans h.env.lr, rd.trans h.env.rd,
-      wr.trans h.env.wr, sp.trans h.env.sp, m ▸ h.env.frame⟩, ?_, ?_, ?_, ?_, r10, ?_, m ▸ h.poly⟩
-    · rw [r1, hdiv]
-      exact (ptr_add_add _ _ 4).trans (by rw [show 4 * (nb + c) + 4 = 4 * (nb + c + 1) by omega_arith])
-    · rw [r2, Nat.add_zero]
-    · rw [r3, ptr_add_add, show 4 * (2 * len * c) + 4 * len = 4 * (2 * len * c + len + 0) by omega_arith]
-    · rw [hdiv]
-      exact ⟨by rw [r7, eS, vz]; exact (zeta_unpack hk).1, by rw [r9, eS, vz]; exact (zeta_unpack hk).2⟩
-    · rw [r11, lsr2 (by omega_arith)]
-  refine wp_loop_ne (FInv s₀ m₁ (layF (wBlockN opF) Q len (fun c => 128 / len + c) c) len (128 / len + c)
-    (2 * len * c)) hl (fun t ht s h => fstep hp hl (by omega_arith) ht h) (fun s₂ h₂ => ?_) h₁
-  refine WP.mono (bpost_ok h₂.env.r0 h₂.r3) fun s' ⟨r2, z, r0, r1, r8, r10, r12, lr, m, rd, wr, sp⟩ =>
-    ⟨⟨⟨r0, r8.trans h₂.env.r8, r12.trans h₂.env.r12, lr.trans h₂.env.lr, rd.trans h₂.env.rd, wr.trans h₂.env.wr,
-      sp.trans h₂.env.sp, m ▸ h₂.env.frame⟩, ?_, ?_, r10.trans h₂.r10, ?_⟩, ?_⟩
-  · rw [r1, h₂.r1, hdiv, Nat.add_assoc]
-  · rw [r2]; congr 2; rw [Nat.mul_succ]; omega_arith
-  · rw [m, layF, foldl_range_succ, ← layF]; exact h₂.poly
-  · rw [z, show (1024 : BitVec 32) = BitVec.ofNat 32 1024 from rfl, ptr_sub_beq _ (by omega_arith) (by decide)]
-    refine decide_eq_decide.mpr ⟨fun e => ?_, fun e => ?_⟩
-    · have : len * (c + 1) = len * nb := by rw [Nat.mul_add, Nat.mul_one]; omega_arith
-      exact Nat.eq_of_mul_eq_mul_left hl this
-    · subst e; rw [Nat.mul_add, Nat.mul_one] at *; omega_arith
-
-/-! ## Layers -/
-
-/-- The first `ℓ` layers of `NTT`. -/
-def layers (f : Poly) (ℓ : Nat) : Poly := (nttLens.take ℓ).foldl nttLayer f
-
-theorem layers_succ (f : Poly) {ℓ : Nat} (h : ℓ < 7) :
-    layers f (ℓ + 1) = nttLayer (layers f ℓ) (128 / 2 ^ ℓ) := by
-  have e : ∀ ℓ < 7, nttLens[ℓ]? = some (128 / 2 ^ ℓ) := by decide
-  rw [layers, List.take_add_one, List.foldl_append, e ℓ h]
-  rfl
-
-theorem layers_seven (f : Poly) : layers f 7 = ntt f := by
-  rw [ntt_eq_layers]; rfl
-
-/-- The first `ℓ` layers of the butterflies on words. -/
-def layersW (W : WPoly) (ℓ : Nat) : WPoly := (nttLens.take ℓ).foldl layerF W
-
-theorem layersW_succ (W : WPoly) {ℓ : Nat} (h : ℓ < 7) :
-    layersW W (ℓ + 1) = layerF (layersW W ℓ) (128 / 2 ^ ℓ) := by
-  have e : ∀ ℓ < 7, nttLens[ℓ]? = some (128 / 2 ^ ℓ) := by decide
-  rw [layersW, List.take_add_one, List.foldl_append, e ℓ h]
-  rfl
-
-theorem len_mem : ∀ ℓ < 7, 128 / 2 ^ ℓ ∈ [2, 4, 8, 16, 32, 64, 128] := by decide
-
-/-- After `ℓ` layers, words less than `(2ℓ + 1) q` congruent to the
-specification's. -/
-theorem layersW_rel (f : Poly) : ∀ ℓ ≤ 7, Rel (2 * ℓ + 1) (layersW (lift f) ℓ) (layers f ℓ)
-  | 0, _ => lift_rel f
-  | ℓ + 1, h => by
-    rw [layersW_succ _ (by omega_arith), layers_succ _ (by omega_arith)]
-    exact layerF_rel (by omega_arith) (layersW_rel f ℓ (by omega_arith)) (len_mem ℓ (by omega_arith))
-
-/-- What the layers' loop counters are. -/
-theorem layer_facts : ∀ ℓ < 7, 2 ≤ 128 / 2 ^ ℓ ∧ 128 / 2 ^ ℓ * 2 ^ ℓ = 128 ∧ 0 < 2 ^ ℓ ∧
-    2 ^ ℓ + 2 ^ ℓ = 2 ^ (ℓ + 1) ∧ 2 ^ ℓ ≤ 64 ∧
-    BitVec.ofNat 32 (4 * (128 / 2 ^ ℓ)) >>> 1 = BitVec.ofNat 32 (4 * (128 / 2 ^ (ℓ + 1))) ∧
-    (BitVec.ofNat 32 (4 * (128 / 2 ^ (ℓ + 1))) - 4 == 0) = decide (ℓ + 1 = 7) := by
+theorem lens_fwd : ∀ len ∈ [2, 4, 8, 16, 32, 64, 128], 128 / len + 128 / len = 256 / len ∧ 256 / len ≤ 128 := by
   decide
 
-section
-variable {s : State} {x0 x10 : BitVec 32}
+/-- A layer of `NTT` whose blocks are `blk`, with the butterfly `op`. -/
+theorem layF_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {c : BitVec 32} {blk : Prog isa}
+    {op : Word → Word → Zq → Word × Word} {len : Nat} (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128])
+    (hblk : BlockOk blk op .add c len (pf s₀) (ps s₀)) {G : WPoly} {s : State}
+    (hI : LI s₀ m₁ c G (128 / len) s) :
+    WP isa (nttLay blk len) s fun s' =>
+      LI s₀ m₁ c (layF (wBlockN op) G len (fun b => 128 / len + b) (128 / len)) (256 / len) s' := by
+  obtain ⟨h1, h2⟩ := lens_fwd len hlen
+  refine WP.mono (layI_ok hp hm hblk hlen (fun b => 128 / len + b) (fun b hb => by omega_using [h1, h2, hb])
+    (fun b _ => by
+      simp only [nextZ, ite_true, BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
+        ← BitVec.ofNat_add]
+      congr 2) hI) fun s' hI' => ?_
+  rw [h1] at hI'
+  exact hI'
 
-theorem lpre_ok (h0 : s.gpr .r0 = x0) :
-    WP isa (.block [.dp .sub .r2 .r0 (.imm 1024)]) s fun s' =>
-      s'.gpr .r2 = x0 - 1024 ∧ s'.gpr .r0 = x0 ∧ s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .r8 = s.gpr .r8 ∧
-      s'.gpr .r10 = s.gpr .r10 ∧ s'.gpr .r12 = s.gpr .r12 ∧ s'.gpr .lr = s.gpr .lr ∧ s'.mem = s.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [h0, and_self, and_true]
+theorem lays_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {c : BitVec 32} (blk : Nat → Prog isa) :
+    ∀ (ls : List Nat) (G : WPoly) (k : Nat) (s : State),
+      (∀ len ∈ ls, len ∈ [2, 4, 8, 16, 32, 64, 128] ∧ BlockOk (blk len) opF .add c len (pf s₀) (ps s₀)) →
+      Chain k ls → LI s₀ m₁ c G k s →
+      WP isa (lays blk ls) s fun s' => LI s₀ m₁ c (ls.foldl layerF G) (chainEnd k ls) s'
+  | [], _, _, _, _, _, hI => WP.block_nil hI
+  | len :: ls, G, k, s, hls, ⟨hk, hc⟩, hI => by
+    obtain ⟨hlen, hblk⟩ := hls len (List.mem_cons_self ..)
+    exact WP.seq (WP.mono (layF_ok hp hm hlen hblk (hk ▸ hI)) fun s' hI' =>
+      lays_ok hp hm blk ls _ (256 / len) s' (fun l hl => hls l (List.mem_cons_of_mem _ hl)) hc hI')
 
-theorem lpost_ok (h10 : s.gpr .r10 = x10) :
-    WP isa (.block [.mov .r10 (.shifted .r10 .lsr 1), .cmp .r10 (.imm 4)]) s fun s' =>
-      s'.gpr .r10 = x10 >>> 1 ∧ s'.z = (x10 >>> 1 - 4 == 0) ∧ s'.gpr .r0 = s.gpr .r0 ∧
-      s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r12 = s.gpr .r12 ∧ s'.gpr .lr = s.gpr .lr ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [h10, and_self, and_true]
-
-end
-
-/-- After `ℓ` layers. -/
-structure LInv (s₀ : State) (m₁ : Mem) (ℓ : Nat) (s : State) : Prop where
-  env : Env s₀ m₁ s
-  r1 : s.gpr .r1 = ps s₀ + BitVec.ofNat 32 (4 * 2 ^ ℓ)
-  r10 : s.gpr .r10 = BitVec.ofNat 32 (4 * (128 / 2 ^ ℓ))
-  poly : LP s.mem (F s₀) (layersW (lift (P s₀)) ℓ)
-
-theorem lstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {ℓ : Nat} (hℓ : ℓ < 7) {s : State}
-    (h : LInv s₀ m₁ ℓ s) :
-    WP isa nttLayerCode s fun s' => LInv s₀ m₁ (ℓ + 1) s' ∧ s'.z = decide (ℓ + 1 = 7) := by
-  obtain ⟨f1, f2, f3, f4, -, f6, f7⟩ := layer_facts ℓ hℓ
-  refine WP.seq (WP.mono (lpre_ok h.env.r0) fun s₁ ⟨r2, r0, r1, r8, r10, r12, lr, m, rd, wr, sp⟩ => WP.seq ?_)
-  have h₁ : BInv s₀ m₁ (layersW (lift (P s₀)) ℓ) (128 / 2 ^ ℓ) (2 ^ ℓ) 0 s₁ := by
-    refine ⟨⟨r0, r8.trans h.env.r8, r12.trans h.env.r12, lr.trans h.env.lr, rd.trans h.env.rd, wr.trans h.env.wr,
-      sp.trans h.env.sp, m ▸ h.env.frame⟩, by rw [r1, h.r1, Nat.add_zero], ?_, r10.trans h.r10, ?_⟩
-    · rw [r2, BitVec.add_sub_cancel]; simp
-    · rw [m]; exact h.poly
-  refine wp_loop_ne (BInv s₀ m₁ (layersW (lift (P s₀)) ℓ) (128 / 2 ^ ℓ) (2 ^ ℓ)) f3
-    (fun c hc s h => bstep hp hm f1 f2 hc h) (fun s₂ h₂ => ?_) h₁
-  refine WP.mono (lpost_ok h₂.r10) fun s' ⟨r10, z, r0, r1, r8, r12, lr, m, rd, wr, sp⟩ =>
-    ⟨⟨⟨r0.trans h₂.env.r0, r8.trans h₂.env.r8, r12.trans h₂.env.r12, lr.trans h₂.env.lr, rd.trans h₂.env.rd,
-      wr.trans h₂.env.wr, sp.trans h₂.env.sp, m ▸ h₂.env.frame⟩, ?_, ?_, ?_⟩, ?_⟩
-  · rw [r1, h₂.r1, f4]
-  · rw [r10, f6]
-  · have e : 128 / (128 / 2 ^ ℓ) = 2 ^ ℓ :=
-      Nat.div_eq_of_eq_mul_left (by omega_arith) (by rw [Nat.mul_comm]; exact f2.symm)
-    rw [m, layersW_succ _ hℓ, layerF]
-    exact (congrArg (fun b => LP s₂.mem (F s₀) (layF (wBlockN opF) (layersW (lift (P s₀)) ℓ) (128 / 2 ^ ℓ)
-      (fun c => 128 / (128 / 2 ^ ℓ) + c) b)) e).mpr h₂.poly
-  · rw [z, f6, f7]
-
-/-! ## A loop over the coefficients -/
-
-/-- The code `body` replaces the coefficient at `r2` by `g` of it, moves `r2`
-to the next, and counts down in `r11`, keeping what `C` says of the
-registers. -/
-def MapOk (body : List Instr) (g : BitVec 32 → BitVec 32) (C : State → Prop) : Prop :=
-  ∀ (s : State) (x c : BitVec 32), s.gpr .r2 = x → s.gpr .r11 = c → C s →
-    InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4 →
-    InRegions s.wr (State.addr (x + BitVec.ofNat 32 0)) 4 →
-    WP isa (.block body) s fun s' =>
-      s'.mem = s.mem.writeW (State.addr (x + BitVec.ofNat 32 0))
-        (g (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32)) ∧
-      s'.gpr .r2 = x + 4 ∧ s'.gpr .r11 = c - 1 ∧ s'.z = (c - 1 == 0) ∧ C s' ∧ s'.gpr .r1 = s.gpr .r1 ∧
-      s'.gpr .lr = s.gpr .lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
-
-/-- The loop of such a body over the 256 coefficients of `f`. -/
-theorem map_ok {body : List Instr} {g : BitVec 32 → BitVec 32} {C : State → Prop} (hb : MapOk body g C)
-    {s₀ : State} (hp : Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    (h2 : s.gpr .r2 = pf s₀) (h11 : s.gpr .r11 = BitVec.ofNat 32 256) (hC : C s) :
-    WP isa (.loop (.block body) .ne) s fun s' =>
-      (∀ j < 256, coeffAt s'.mem (F s₀) j = g (coeffAt s.mem (F s₀) j)) ∧
-        Frame [polyRegion (F s₀)] s.mem s'.mem ∧ s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .lr = s.gpr .lr ∧
-        s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have fF := hp.fitF
-  refine wp_loop_ne (fun t s' => s'.gpr .r2 = pf s₀ + BitVec.ofNat 32 (4 * t) ∧
-      s'.gpr .r11 = BitVec.ofNat 32 (1 * (256 - t)) ∧ C s' ∧ s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .lr = s.gpr .lr ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [polyRegion (F s₀)] s.mem s'.mem ∧
-      ∀ j < 256, coeffAt s'.mem (F s₀) j =
-        if j < t then g (coeffAt s.mem (F s₀) j) else coeffAt s.mem (F s₀) j) (N := 256) (by decide)
-    (fun t ht s' ⟨r2, r11, hC', r1, lr, rd, wr, sp, hf, hc⟩ => ?_)
-    (fun s' ⟨_, _, _, r1, lr, rd, wr, sp, hf, hc⟩ =>
-      ⟨fun j hj => by rw [hc j hj, ite_eq_left hj], hf, r1, lr, rd, wr, sp⟩)
-    ⟨by rw [h2, Nat.mul_zero]; exact (BitVec.add_zero _).symm, h11, hC, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _,
-      fun j _ => by rw [ite_eq_right (Nat.not_lt_zero j)]⟩
-  have ea := addr_coeff (i := 4 * t) (o := 0) (j := t) fF (by omega_arith) (by omega_arith)
-  have ca := coeff_contains (F s₀) (i := t) (by rw [n_eq]; exact ht)
-  refine WP.mono (hb s' _ _ r2 r11 hC'
-      (by rw [ea, rd, wr, hrd, hwr, hp.rd, hp.wr]; exact inRegions_of (by simp) ca)
-      (by rw [ea, wr, hwr, hp.wr]; exact inRegions_of (by simp) ca))
-    fun s'' ⟨hm, r2', r11', hz, hC'', r1', lr', rd', wr', sp'⟩ =>
-      ⟨⟨?_, ?_, hC'', r1'.trans r1, lr'.trans lr, rd'.trans rd, wr'.trans wr, sp'.trans sp, ?_, fun j hj => ?_⟩, ?_⟩
-  · rw [r2']; exact ptr_succ _ 4 _
-  · rw [r11']; exact count_sub (k := 1) ht
-  · rw [hm, ea]; exact hf.writeW (List.mem_singleton_self _) _ ca
-  · rw [hm, ea, ← coeffAt_eq, coeffAt_writeW _ _ (show j < n by rw [n_eq]; exact hj) (by rw [n_eq]; exact ht),
-      hc j hj, hc t ht, ite_eq_right (Nat.lt_irrefl t)]
-    by_cases e : t = j
-    · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self t)]
-    · rw [ite_eq_right e]
-      by_cases hj' : j < t
-      · rw [ite_eq_left hj', ite_eq_left (by omega_arith)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega_arith)]
-  · rw [hz]; exact count_z (k := 1) ht (by decide) (by decide)
-
-/-- What the last loop keeps: `-q` in `r8` and `40318` in `r9`. -/
-def CanonIn (s : State) : Prop := s.gpr .r8 = Nq ∧ s.gpr .r9 = 40318
-
-theorem canon_ok : MapOk canonBody bcan CanonIn := by
-  intro s x c h2 h11 ⟨h8, h9⟩ ia oa
-  run_block [canonBody, bcan, CanonIn, h2, h8, h9, h11, ia, oa, and_self, and_true]
-
-theorem canonPre_ok {s : State} {x0 : BitVec 32} (h0 : s.gpr .r0 = x0) :
-    WP isa (.block [.movw .r9 40318, .dp .sub .r2 .r0 (.imm 1024), .mov .r11 (.imm 256)]) s fun s' =>
-      s'.gpr .r9 = 40318 ∧ s'.gpr .r2 = x0 - 1024 ∧ s'.gpr .r11 = BitVec.ofNat 32 256 ∧
-      s'.gpr .r1 = s.gpr .r1 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .lr = s.gpr .lr ∧ s'.mem = s.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [h0, and_self, and_true]
+/-- `NTT`, as the code's runs of layers. -/
+theorem ntt_split (f : Poly) :
+    Spec.MlKem.ntt f = nttLayer ([4].foldl nttLayer ([128, 64, 32, 16, 8].foldl nttLayer f)) 2 := by
+  rw [ntt_eq_layers]
+  simp only [nttLens, List.foldl_cons, List.foldl_nil]
 
 /-! ## Setup and the end -/
 
@@ -464,15 +628,16 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
 
 theorem setup_ok {s₀ : State} (hp : Pre s₀) :
     WP isa (.block (saveRegs .r1 512 ++ tableZ zetaTable .r1 ++ constsN ++
-      ([.dp .add .r0 .r0 (.imm 1024), .dp .add .r1 .r1 (.imm 4), .mov .r10 (.imm 512)] : List Instr)))
-      s₀ fun s => Setup s₀ s.mem ∧ LInv s₀ s.mem 0 s := by
+      ([.dp .add .r1 .r1 (.imm 4), .movw .r10 40318] : List Instr)))
+      s₀ fun s => Setup s₀ s.mem ∧ LI s₀ s.mem 40318 (lift (P s₀)) 1 s := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (setup_base hp) fun s₂ ⟨hm, e, rd, wr, sp⟩ => ?_
   have e0 := e .r0 (by decide)
   have e1 := e .r1 (by decide)
   have elr := e .lr (by decide)
   run_block [constsN, e0, e1, elr, rd, wr, sp, constsN_val, hm, true_and]
-  exact ⟨⟨rfl, rfl, by simp, by simp [elr], rfl, rfl, rfl, Frame.refl _ _⟩, rfl, rfl, lp_lift hm.poly⟩
+  exact ⟨by simp [e0], by simp, by simp, by simp, by simp, lp_lift hm.poly, Frame.refl _ _,
+    ⟨fun r hr => by rw [List.mem_singleton] at hr; subst hr; simp [elr], rfl, rfl, rfl⟩⟩
 
 /-- The registers restored, from a state that kept the working space. -/
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State}
@@ -506,22 +671,25 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ntt s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧
       PolyIs s.mem (F s₀) (Spec.MlKem.ntt (P s₀)) := by
-  refine WP.seq (WP.mono (setup_ok hp) fun s₁ ⟨hm, h₁⟩ => WP.seq ?_)
-  refine wp_loop_ne (LInv s₀ s₁.mem) (N := 7) (by decide) (fun ℓ hℓ s h => lstep hp hm hℓ h)
-    (fun s h => ?_) h₁
-  refine WP.seq (WP.mono (canonPre_ok h.env.r0) fun s₂ ⟨r9, r2, r11, r1, r8, lr, m, rd, wr, sp⟩ => WP.seq ?_)
-  refine WP.mono (map_ok canon_ok hp (rd.trans h.env.rd) (wr.trans h.env.wr)
-    (by rw [r2, BitVec.add_sub_cancel]) r11 ⟨r8.trans h.env.r8, r9⟩)
-    fun s₃ ⟨hc, hf, r1', lr', rd', wr', sp'⟩ => ?_
-  refine restore_ok hp hm ((r1'.trans r1).trans h.r1) ((lr'.trans lr).trans h.env.lr)
-    ((rd'.trans rd).trans h.env.rd) ((wr'.trans wr).trans h.env.wr) ((sp'.trans sp).trans h.env.sp)
-    (h.env.frame.trans (m ▸ hf)) ?_
-  have hr := layersW_rel (P s₀) 7 (Nat.le_refl 7)
-  rw [← layers_seven]
+  refine WP.seq (WP.mono (setup_ok hp) fun s₁ ⟨hm, hI⟩ => ?_)
+  refine WP.seq (WP.mono (lays_ok hp hm (fun len => nttBlkL (Impl.MlKem.Arm.bfly len) len .add)
+    [128, 64, 32, 16, 8] _ 1 s₁ (fun len hl => ?_) (by simp only [Chain]; decide) hI) fun s₂ hI₂ => ?_)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with rfl | rfl | rfl | rfl | rfl <;>
+      exact ⟨by decide, blkL_ok (bfly_core _) hp.fitF hp.fitS (by decide) .add (.inl rfl) (by decide) (by decide)⟩
+  refine WP.seq (WP.mono (lays_ok hp hm (fun len => nttBlkS (Impl.MlKem.Arm.bfly len) len .add)
+    [4] _ 32 s₂ (fun len hl => ?_) (by simp only [Chain]; decide) hI₂) fun s₃ hI₃ => ?_)
+  · rw [List.mem_singleton] at hl; subst hl
+    exact ⟨by decide, blkS_ok (bfly_core _) hp.fitF hp.fitS (by decide) .add (.inl rfl) (by decide)⟩
+  refine WP.seq (WP.mono (layF_ok hp hm (len := 2) (by decide)
+    (blkS_ok bflyC_core hp.fitF hp.fitS (by decide) .add (.inl rfl) (by decide)) hI₃) fun s₄ hI₄ => ?_)
+  refine restore_ok hp hm hI₄.r1 (hI₄.keep.gpr .lr (by decide)) hI₄.keep.rd hI₄.keep.wr hI₄.keep.sp hI₄.frame ?_
+  have h11 : Rel 11 _ _ := layersF_rel [128, 64, 32, 16, 8] 1 _ _ (by decide) (by decide) (lift_rel (P s₀))
+  have hr : Rel 13 _ _ := layersF_rel [4] 11 _ _ (by decide) (by decide) h11
+  rw [ntt_split]
   refine polyIs_of_toNat fun j hj => ?_
-  have hj' : j < 256 := by rw [n_eq] at hj; exact hj
-  have hw := h.poly j hj
-  rw [hc j hj', m, bcan_toNat (by rw [hw]; exact (hr j hj').1), hw, ← (hr j hj').2, Fin.val_ofNat]
+  rw [hI₄.poly j hj]
+  exact layerFC_val hr (by decide) (by rw [n_eq] at hj; exact hj)
 
 /-! ## Verified -/
 

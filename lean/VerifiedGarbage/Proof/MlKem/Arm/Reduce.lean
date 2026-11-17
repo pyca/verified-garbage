@@ -18,13 +18,18 @@ import VerifiedGarbage.Proof.Framework.Lit
 `reduce` computes `x mod q` of any `x < 2²⁵` (`red_toNat`), through
 `barrett32` (`Proof/MlKem/Arith.lean`); `mulz` leaves `mulzN b z`, less than
 `2q` and congruent to `b z` for `b < 2¹⁶` (`mulzN_bounds`, `bmz_toNat`);
-`canonBody` reduces a word less than `15q` (`bcan_toNat`).
+`canon` reduces a word less than `15q` (`bcan_toNat`).
 
 The butterflies store words congruent to the specification's coefficients
 (`Rel`), as on RISC-V (`Proof/MlKem/RISCV64/Lazy.lean`): `opF` is what the
 forward butterfly stores, and a layer takes words less than `b q` to words
 less than `(b + 2) q` (`layerF_rel`); `opI` is the inverse butterfly's, and
-a layer keeps words less than `2q` (`layerI_rel`).
+a layer keeps words less than `2q` (`layerI_rel`). The last layer of
+each transform stores canonical coefficients: `NTT`'s stores `opFC`, `opF`
+reduced, and leaves the specification's coefficients from words less than
+`13q` (`layerFC_val`); `NTT⁻¹`'s stores `opIS`, the sum times 3303 and the
+difference times the zeta and 3303, reduced (`scale_val`), which is the
+specification's last layer and its multiplication by 3303 (`lastInv_val`).
 
 `table` stores a table of 128 `u32`s (`table_ok`), `tableZ` the zetas with
 their quotients (`tableZ_ok`, `unpack`), and the tables of the code are
@@ -166,7 +171,7 @@ theorem bmz_toNat {y : BitVec 32} (hy : y.toNat < 65536) (z : Zq) :
 theorem canon_quot {v : Nat} (hv : v < 15 * q) : v * 40318 / 134217728 = v / q := by
   rw [q_eq] at *; omega_using [hv]
 
-/-- What `canonBody` stores for the word `v`. -/
+/-- What `canon` leaves of the word `v`. -/
 def bcan (v : BitVec 32) : BitVec 32 := (v * 40318) >>> 27 * Nq + v
 
 theorem bcan_toNat {v : BitVec 32} (hv : v.toNat < 15 * q) : (bcan v).toNat = v.toNat % q := by
@@ -403,6 +408,134 @@ theorem layerI_rel {F : WPoly} {f : Poly} (hF : Rel 2 F f) {len : Nat}
     have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     exact ⟨(opI_values _ _ _ h0.1 h1.1).2.2.1, by rw [(opI_residue _ _ _ h0.1 h1.1).2, h0.2, h1.2]⟩
+
+/-- The layers `ls` of `NTT`, from words less than `b q`. -/
+theorem layersF_rel : ∀ (ls : List Nat) (b : Nat) (F : WPoly) (f : Poly),
+    (∀ len ∈ ls, len ∈ [2, 4, 8, 16, 32, 64, 128]) → b + 2 * ls.length ≤ 15 → Rel b F f →
+    Rel (b + 2 * ls.length) (ls.foldl layerF F) (ls.foldl nttLayer f)
+  | [], _, _, _, _, _, h => h
+  | len :: ls, b, F, f, hls, hb, h => by
+    rw [List.length_cons] at hb
+    have := layersF_rel ls (b + 2) (layerF F len) (nttLayer f len) (fun l hl => hls l (List.mem_cons_of_mem _ hl))
+      (by omega_using [hb]) (layerF_rel (by omega_using [hb]) h (hls len (List.mem_cons_self ..)))
+    rw [List.length_cons, show b + 2 * (ls.length + 1) = b + 2 + 2 * ls.length by omega_arith]
+    exact this
+
+/-- The layers `ls` of `NTT⁻¹`, from words less than `2q`. -/
+theorem layersI_rel : ∀ (ls : List Nat) (F : WPoly) (f : Poly), (∀ len ∈ ls, len ∈ [2, 4, 8, 16, 32, 64, 128]) →
+    Rel 2 F f → Rel 2 (ls.foldl layerI F) (ls.foldl nttInvLayer f)
+  | [], _, _, _, h => h
+  | len :: ls, F, f, hls, h =>
+    layersI_rel ls (layerI F len) (nttInvLayer f len) (fun l hl => hls l (List.mem_cons_of_mem _ hl))
+      (layerI_rel h (hls len (List.mem_cons_self ..)))
+
+/-! ## The last layers -/
+
+/-- What a butterfly of the last layer of `NTT` stores: `opF`, reduced. -/
+def opFC (x y : Word) (z : Zq) : Word × Word :=
+  (toW (bcan (wb x + bprod (wb y) z)), toW (bcan (wb x + 6658 - bprod (wb y) z)))
+
+theorem opFC_val (x y : Word) (z : Zq) (hx : x.val < 13 * q) (hy : y.val < 13 * q) :
+    (opFC x y z).1.val = (residue (opF x y z).1).val ∧ (opFC x y z).2.val = (residue (opF x y z).2).val := by
+  have hb := opF_bound x y z (Nat.le_refl 13) hx hy
+  constructor
+  · show (toW (bcan (wb x + bprod (wb y) z))).val = _
+    rw [toW_val, bcan_toNat (by rw [← toW_val]; exact hb.1), Fin.val_ofNat]
+    exact congrArg (· % q) (toW_val _).symm
+  · show (toW (bcan (wb x + 6658 - bprod (wb y) z))).val = _
+    rw [toW_val, bcan_toNat (by rw [← toW_val]; exact hb.2), Fin.val_ofNat]
+    exact congrArg (· % q) (toW_val _).symm
+
+/-- The last layer of `NTT` on words. -/
+def layerFC (F : WPoly) (len : Nat) : WPoly := layF (wBlockN opFC) F len (fun c => 128 / len + c) (128 / len)
+
+/-- The last layer of `NTT` leaves the specification's coefficients. -/
+theorem layerFC_val {F : WPoly} {f : Poly} (hF : Rel 13 F f) {len : Nat}
+    (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128]) {i : Nat} (hi : i < 256) :
+    ((layerFC F len)[i]!).val = ((nttLayer f len)[i]!).val := by
+  have hl := len_facts hlen
+  rw [layerFC, layF_get (wBlk_ok opFC) F hl.1 _ (by omega) hi, nttLayer_get f hl.1 hl.2.1 hi]
+  simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
+  by_cases h : i % (2 * len) < len
+  · simp only [ite_eq_left h]
+    have h0 := hF i hi
+    have h1 := hF (i + len) ((hl.2.2 i hi).1 h)
+    rw [(opFC_val _ _ _ h0.1 h1.1).1, (opF_residue _ _ _ h0.1 h1.1).1, h0.2, h1.2]
+  · simp only [ite_eq_right h]
+    have h0 := hF (i - len) (by omega_using [hi])
+    have h1 := hF i hi
+    rw [(opFC_val _ _ _ h0.1 h1.1).2, (opF_residue _ _ _ h0.1 h1.1).2, h0.2, h1.2]
+
+/-- The multiplier of the last step of `NTT⁻¹`. -/
+abbrev cInv : Zq := 3303
+
+/-- A word less than `2¹⁶` times a zeta, reduced. -/
+theorem scale_val {v : BitVec 32} {x : Word} (hv : v.toNat = x.val) (hx : x.val < 65536) (z : Zq) :
+    (cs (bprod v z)).toNat = (residue x * z).val := by
+  have hlt : v.toNat < 65536 := by rw [hv]; exact hx
+  rw [cs_toNat (by rw [bmz_toNat hlt]; exact (mulzN_bounds hlt z.isLt).2.2), bmz_toNat hlt,
+    mulzN_mod hlt z.isLt, hv, Fin.val_mul, Fin.val_ofNat, Nat.mod_mul_mod]
+
+/-- What a butterfly of the last layer of `NTT⁻¹` stores: the sum times
+3303, and the difference times the zeta and 3303, reduced. -/
+def opIS (x y : Word) (z : Zq) : Word × Word :=
+  (toW (cs (bprod (wb x + wb y) cInv)), toW (cs (bprod (wb y + 6658 - wb x) (z * cInv))))
+
+theorem opIS_val (x y : Word) (z : Zq) (hx : x.val < 2 * q) (hy : y.val < 2 * q) :
+    (opIS x y z).1.val = ((residue x + residue y) * cInv).val ∧
+    (opIS x y z).2.val = ((residue y - residue x) * (z * cInv)).val := by
+  have hx' := wb_toNat x
+  have hy' := wb_toNat y
+  have hx2 : x.val < 2 * 3329 := hx
+  have hy2 : y.val < 2 * 3329 := hy
+  have hs : (wb x + wb y).toNat = x.val + y.val := by
+    generalize wb x = X at hx' ⊢
+    generalize wb y = Y at hy' ⊢
+    bv_omega
+  have hd : (wb y + 6658 - wb x).toNat = y.val + 2 * 3329 - x.val := by
+    generalize wb x = X at hx' ⊢
+    generalize wb y = Y at hy' ⊢
+    bv_omega
+  have es : residue (toW (wb x + wb y)) = residue x + residue y := by
+    apply Fin.ext
+    rw [Fin.val_add]
+    show (toW (wb x + wb y)).val % 3329 = (x.val % 3329 + y.val % 3329) % 3329
+    rw [toW_val, hs]
+    omega_using []
+  have ed : residue (toW (wb y + 6658 - wb x)) = residue y - residue x := by
+    apply Fin.ext
+    rw [Fin.val_sub]
+    show (toW (wb y + 6658 - wb x)).val % 3329 = (3329 - x.val % 3329 + y.val % 3329) % 3329
+    rw [toW_val, hd]
+    omega_using [hx2]
+  constructor
+  · show (toW (cs (bprod (wb x + wb y) cInv))).val = _
+    rw [toW_val, scale_val (toW_val _).symm (by rw [toW_val, hs]; omega_using [hx2, hy2]) cInv, es]
+  · show (toW (cs (bprod (wb y + 6658 - wb x) (z * cInv)))).val = _
+    rw [toW_val, scale_val (toW_val _).symm (by rw [toW_val, hd]; omega_using [hy2]) (z * cInv), ed]
+
+/-- The last layer of `NTT⁻¹` multiplies the difference by the zeta, and the
+result by 3303. -/
+theorem mul_scale (x z c : Zq) : x * (z * c) = z * x * c := by
+  rw [← Fin.mul_assoc, Fin.mul_comm x z]
+
+/-- The last layer of `NTT⁻¹` and the multiplication by 3303 leave the
+specification's coefficients. -/
+theorem lastInv_val {F : WPoly} {f : Poly} (hF : Rel 2 F f) {i : Nat} (hi : i < 256) :
+    ((wBlockN opIS F 128 1 0 128)[i]!).val = (((nttInvLayer f 128).map (· * 3303))[i]!).val := by
+  rw [wBlockN_get opIS F (by decide) (Nat.le_refl _) (by decide) hi, map_mul_get _ (by rw [n_eq]; exact hi),
+    nttInvLayer_get f (by decide) (by decide) hi]
+  by_cases h : i < 128
+  · have h0 := hF i hi
+    have h1 := hF (i + 128) (by omega_using [h])
+    rw [ite_eq_left (show 0 ≤ i ∧ i < 0 + 128 from ⟨Nat.zero_le _, by omega_using [h]⟩),
+      ite_eq_left (show i % (2 * 128) < 128 by omega_using [h]), (opIS_val _ _ _ h0.1 h1.1).1, h0.2, h1.2]
+  · have h0 := hF (i - 128) (by omega_using [hi])
+    have h1 := hF i hi
+    rw [ite_eq_right (show ¬ (0 ≤ i ∧ i < 0 + 128) from fun e => h (by omega_using [e.2])),
+      ite_eq_left (show 0 + 128 ≤ i ∧ i < 0 + 128 + 128 from ⟨by omega_using [h], by omega_using [hi]⟩),
+      ite_eq_right (show ¬ i % (2 * 128) < 128 by omega_using [h, hi]), (opIS_val _ _ _ h0.1 h1.1).2, h0.2, h1.2,
+      show 256 / 128 - 1 - i / (2 * 128) = 1 by omega_using [hi], mul_scale]
 
 /-! ## Words in memory -/
 
