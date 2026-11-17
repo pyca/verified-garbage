@@ -447,6 +447,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm.Context
 open VG.Proof.X25519.Arm (Rest wp_mov wp_movw op2_reg)
 
+variable {umaal : Bool}
+
 abbrev callRanges (n : Nat) := Impl.Dsa.Arm.Context.scratch n
 
 /-- The lightweight setup establishes exactly the invariant needed by sums,
@@ -489,9 +491,8 @@ theorem light_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
     · exact BitVec.eq_of_toNat_eq (W₁.wb_toNat.trans W₂.wb_toNat.symm)
     · exact h11)
 
-theorem body_noCalls (n : Nat) : (body n).noCalls = true := by
-  simp only [body, contextSetup, one, powerTwo, addD, addDigits, csubD, Dynamic.zeros, ptrLoop,
-    Code.noCalls, Bool.and_self]
+theorem body_noCalls (n : Nat) : (body umaal n).noCalls = true := by
+  cases umaal <;> rfl
 
 theorem head_ok {s : State} (n : Nat) : WP isa (.block (head n)) s fun u =>
     u.gpr .r4 = s.gpr .r12 ∧ u.gpr .r0 = s.gpr .r12 ∧
@@ -522,7 +523,7 @@ theorem entry_pre {s u : State} {base : Addr} {size n : Nat} (hs : Ws s base siz
 theorem call_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
     (hv : val32 s.mem base (modS n) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (Impl.Dsa.Arm.Context.call n) s fun t => Context n m base size t ∧
+    WP isa (Impl.Dsa.Arm.Context.call umaal n) s fun t => Context n m base size t ∧
       val32 t.mem base (oneS n) (2 * n) = 1 ∧
       val32 t.mem base (rrS n) (2 * n) = 2 ^ (128 * n) % m ∧
       Outs base (scratch n) s.mem t.mem ∧ Rest (.lr :: dclob) s t := by
@@ -563,7 +564,7 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
     (Z₂ : contextBytes n ≤ size₂) (hn : 0 < n) (hn48 : n ≤ 48)
     (O₁ : val32 s₁.mem base (modS n) (2 * n) % 2 = 1) (M₁ : 1 < val32 s₁.mem base (modS n) (2 * n))
     (O₂ : val32 s₂.mem base (modS n) (2 * n) % 2 = 1) (M₂ : 1 < val32 s₂.mem base (modS n) (2 * n)) :
-    SameTrace isa (Impl.Dsa.Arm.Context.call n) s₁ s₂ := by
+    SameTrace isa (Impl.Dsa.Arm.Context.call umaal n) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (Taint.ofRegs []) a b :=
     fun _ _ => Taint.agree_ofRegs fun _ h => nomatch h
   unfold Impl.Dsa.Arm.Context.call
@@ -725,7 +726,7 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
     (O₁ : val32 s₁.mem base (modS n) (2 * n) % 2 = 1) (M₁ : 1 < val32 s₁.mem base (modS n) (2 * n))
     (O₂ : val32 s₂.mem base (modS n) (2 * n) % 2 = 1) (M₂ : 1 < val32 s₂.mem base (modS n) (2 * n))
     (H : RelCT isa (VG.Arm.Taint.Agree (wsT false false)) rest (fun _ _ => True)) :
-    SameTrace isa (.seq (.block save) (.seq (Impl.Dsa.Arm.Context.call n) rest)) s₁ s₂ := by
+    SameTrace isa (.seq (.block save) (.seq (Impl.Dsa.Arm.Context.call umaal n) rest)) s₁ s₂ := by
   have c44 := (contextBytes_bounds hn48).1
   have Eq : s₁.gpr .r0 = s₂.gpr .r0 := by
     apply BitVec.eq_of_toNat_eq

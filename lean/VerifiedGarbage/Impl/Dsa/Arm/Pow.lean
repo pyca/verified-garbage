@@ -32,7 +32,7 @@ def save : List Instr := .mov .r12 (.reg .r0) :: slots.map fun (r, o) => .str r 
 def restore : List Instr := slots.map fun (r, o) => .ldr r .r12 o
 
 def body (n e : Nat) : Prog isa :=
-  .seq (.block save) (.seq (Context.call n) (.seq (exponentiate umaal n e) (.block restore)))
+  .seq (.block save) (.seq (Context.call umaal n) (.seq (exponentiate umaal n e) (.block restore)))
 
 /-- The function's own bytes: the header's first 64, and every slot but the
 modulus's. -/

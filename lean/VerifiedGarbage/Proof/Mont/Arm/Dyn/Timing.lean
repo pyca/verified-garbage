@@ -102,8 +102,12 @@ theorem setupInverse_eraseOff (mo : Nat) :
     Code.eraseOff (@Code.block Instr Cond (setupInverse mo)) =
       Code.eraseOff (@Code.block Instr Cond (setupInverse 0)) := rfl
 
-theorem contextSetup_eraseOff (n : Nat) : Code.eraseOff (contextSetup n) = Code.eraseOff (contextSetup 1) := by
-  simp only [contextSetup, eraseOff_seq, setupInverse_eraseOff, one_eraseOff, powerTwo_eraseOff]
+theorem rSquared_eraseOff (n : Nat) : Code.eraseOff (rSquared umaal n) = Code.eraseOff (rSquared umaal 1) := by
+  simp only [rSquared, eraseOff_seq, eraseOff_loop, powerTwo_eraseOff, mul_eraseOff]
+
+theorem contextSetup_eraseOff (n : Nat) :
+    Code.eraseOff (contextSetup umaal n) = Code.eraseOff (contextSetup umaal 1) := by
+  simp only [contextSetup, eraseOff_seq, setupInverse_eraseOff, one_eraseOff, rSquared_eraseOff]
 
 theorem exponentProduct_eraseOff (n : Nat) :
     Code.eraseOff (exponentProduct umaal n) = Code.eraseOff (exponentProduct umaal 1) := by

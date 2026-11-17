@@ -18,7 +18,7 @@ vg_dsa_pow_16_5_umaal:
 	mov r4, r12
 	mov r0, r12
 	movw r1, #236
-	bl {vg_dsa_context_16}
+	bl {vg_dsa_context_16_umaal}
 	mov r12, r4
 	movw r10, #528
 	add r10, r12, r10

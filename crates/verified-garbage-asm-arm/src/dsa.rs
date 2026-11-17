@@ -59121,6 +59121,10 @@ pub(crate) mod vg_dsa_check_parameters_umaal;
 pub(crate) mod vg_dsa_context_16;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_context_16_umaal.rs"]
+pub(crate) mod vg_dsa_context_16_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_context_3.rs"]
 pub(crate) mod vg_dsa_context_3;
 
@@ -59129,12 +59133,28 @@ pub(crate) mod vg_dsa_context_3;
 pub(crate) mod vg_dsa_context_32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_context_32_umaal.rs"]
+pub(crate) mod vg_dsa_context_32_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_context_3_umaal.rs"]
+pub(crate) mod vg_dsa_context_3_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_context_4.rs"]
 pub(crate) mod vg_dsa_context_4;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_context_48.rs"]
 pub(crate) mod vg_dsa_context_48;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_context_48_umaal.rs"]
+pub(crate) mod vg_dsa_context_48_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_context_4_umaal.rs"]
+pub(crate) mod vg_dsa_context_4_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_derive_key_checked.rs"]

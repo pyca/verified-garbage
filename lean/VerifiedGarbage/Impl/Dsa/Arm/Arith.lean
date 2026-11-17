@@ -31,7 +31,7 @@ def reduceBody (n : Nat) : Prog isa :=
   .seq (reduceStream n) (.block restore)
 
 def mulBody (n : Nat) : Prog isa :=
-  .seq (.block save) (.seq (Context.call n) (.seq (ordinaryMul umaal n) (.block restore)))
+  .seq (.block save) (.seq (Context.call umaal n) (.seq (ordinaryMul umaal n) (.block restore)))
 
 def reduceLayout (n : Nat) : Impl.Dsa.ModArith.ReduceLayout where
   n := n

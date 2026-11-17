@@ -70,10 +70,21 @@ def powerTwo (M : Mod) (acc out bits : Nat) : Prog isa :=
   .seq (one M.n out) <| .seq (.block [.movw .lr (BitVec.ofNat 16 bits)])
     (.loop (.seq (addD M acc out out out) (.block [.subs .lr .lr (.imm 1)])) .ne)
 
+/-- The Montgomery squarings that take `2ⁿ R` to `R²`: each squares the
+power of two beside `R`, and `n · 2⁶ = 64 n`. -/
+def squarings : Nat := 6
+
+/-- `R² mod m` at `[rrS n]`, `R = 2^(64 n)`: `2^(65 n) = 2ⁿ R` by doublings,
+then `squarings` Montgomery squarings, counted in `lr`. -/
+def rSquared (n : Nat) : Prog isa :=
+  .seq (powerTwo (contextMod n) (accS n) (rrS n) (65 * n)) <|
+  .seq (.block [.mov .lr (.imm (BitVec.ofNat 32 squarings))])
+    (.loop (.seq (mul umaal (contextMod n) invO (accS n) (rrS n) (rrS n) (rrS n))
+      (.block [.subs .lr .lr (.imm 1)])) .ne)
+
 /-- The inverse, one and `R² mod m`, for the modulus at `[modS n]`. -/
 def contextSetup (n : Nat) : Prog isa :=
-  .seq (.block (setupInverse (modS n))) <| .seq (one n (oneS n))
-    (powerTwo (contextMod n) (accS n) (rrS n) (128 * n))
+  .seq (.block (setupInverse (modS n))) <| .seq (one n (oneS n)) (rSquared umaal n)
 
 /-! ## Exponentiation -/
 

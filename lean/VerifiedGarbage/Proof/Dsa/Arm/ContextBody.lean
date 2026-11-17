@@ -32,6 +32,8 @@ open VG.Impl.Dsa.Arm.Context
 open VG.Proof.Dsa.ModPow (numAt Keeps)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
+variable {umaal : Bool}
+
 theorem slots_eq (n : Nat) : slots n =
     [(.r4, resS n), (.r5, resS n + 4), (.r6, resS n + 8), (.r7, resS n + 12),
       (.r8, resS n + 16), (.r9, resS n + 20), (.r10, resS n + 24), (.lr, resS n + 28)] := by
@@ -58,7 +60,7 @@ theorem slots_words {n : Nat} : ∀ r ∈ Pow.words (slots n), resS n ≤ r.1 �
 theorem body_ok {s : State} {base : Addr} {size n m : Nat} (E : Pow.Entry s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
     (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (body n) s fun t => Context n m base size t ∧
+    WP isa (body umaal n) s fun t => Context n m base size t ∧
       val32 t.mem base (oneS n) (2 * n) = 1 ∧
       val32 t.mem base (rrS n) (2 * n) = 2 ^ (128 * n) % m ∧
       Outs base (scratch n) s.mem t.mem ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
@@ -124,7 +126,7 @@ def setupK (n : Nat) : Contract isa where
   pub s t := s.gpr .r0 = t.gpr .r0
 
 theorem setupK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (setupK n).pre s) :
-    ∃ tr t, Exec isa (body n) s tr t ∧ abiPreserved s t ∧ (setupK n).post s t := by
+    ∃ tr t, Exec isa (body umaal n) s tr t ∧ abiPreserved s t ∧ (setupK n).post s t := by
   obtain ⟨-, hwr, hnw, hz, ho, hm⟩ := h
   have E : Pow.Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
     ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
@@ -132,16 +134,18 @@ theorem setupK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h :
   obtain ⟨tr, t, Ex, C, One, RR, O, P, SP, -, -⟩ := body_ok E hz hn hn48 rfl hm ho
   exact ⟨tr, t, Ex, ⟨P, SP⟩, C.inverse, One, RR, O⟩
 
-theorem body_eraseOff (n : Nat) : Code.eraseOff (body n) = Code.eraseOff (body 1) := by
+theorem body_eraseOff (n : Nat) : Code.eraseOff (body umaal n) = Code.eraseOff (body umaal 1) := by
   simp only [body, save, restore, slots_eq, eraseOff_seq, contextSetup_eraseOff]
   rfl
 
 theorem body_relCT (n : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (Taint.ofRegs [.r0])) (body n) (fun _ _ => True) :=
-  (erased_relCT (τ := Taint.ofRegs [.r0]) (σ := Taint.ofRegs []) _ (body_eraseOff n) (Taint.noBase_ofRegs _) (by taint_decide)).mono
+    RelCT isa (VG.Arm.Taint.Agree (Taint.ofRegs [.r0])) (body umaal n) (fun _ _ => True) := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (Taint.ofRegs [.r0]) (body umaal 1) h).map
+      (taintU.le (Taint.ofRegs [])) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  exact (erased_relCT (τ := Taint.ofRegs [.r0]) (σ := Taint.ofRegs []) h (body_eraseOff n) (Taint.noBase_ofRegs _) H).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 
-theorem setupK_ct (n : Nat) : ConstantTime isa (setupK n).pre (setupK n).pub (body n) :=
+theorem setupK_ct (n : Nat) : ConstantTime isa (setupK n).pre (setupK n).pub (body umaal n) :=
   RelCT.constantTime ((body_relCT n).mono (fun _ _ h => Taint.agree_ofRegs fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.2.2) fun _ _ h => h)
 

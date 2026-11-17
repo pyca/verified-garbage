@@ -25,7 +25,7 @@ str lr, [r12, #40]
 mov r4, r12
 mov r0, r12
 movw r1, #620
-bl {vg_dsa_context_48}
+bl {vg_dsa_context_48_umaal}
 mov r12, r4
 movw r10, #1040
 add r10, r12, r10
@@ -1237,6 +1237,6 @@ ldr r10, [r12, #32]
 ldr r11, [r12, #36]
 ldr lr, [r12, #40]
 bx lr",
-        vg_dsa_context_48 = sym crate::dsa::vg_dsa_context_48::vg_dsa_context_48,
+        vg_dsa_context_48_umaal = sym crate::dsa::vg_dsa_context_48_umaal::vg_dsa_context_48_umaal,
     )
 }

@@ -57,9 +57,7 @@ open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw op2_reg)
 variable {umaal : Bool}
 
 theorem body_noFrames (n e : Nat) : (body umaal n e).noFrames = true := by
-  simp only [body, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, exponentiate, exponentStep, exponentBody, exponentProduct, mul_noFrames,
-    csubD, Dynamic.zeros, ptrLoop, one, powerTwo, addD, addDigits, selectW, Code.noFrames,
-    Bool.and_self]
+  cases umaal <;> rfl
 
 /-- The arguments of a call, `r11` keeping `r12`. -/
 theorem head_ok {s : State} (n : Nat) :
@@ -1645,8 +1643,7 @@ open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_dp wp_movw op2_reg dpVal)
 variable {umaal : Bool}
 
 theorem mulBody_noFrames (n : Nat) : (mulBody umaal n).noFrames = true := by
-  simp only [mulBody, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, ordinaryMul, mul_noFrames, csubD, Dynamic.zeros,
-    ptrLoop, one, powerTwo, addD, addDigits, Code.noFrames, Bool.and_self]
+  cases umaal <;> rfl
 
 theorem doubles_noCalls (n k : Nat) : (doubles n k).noCalls = true := by
   unfold doubles
