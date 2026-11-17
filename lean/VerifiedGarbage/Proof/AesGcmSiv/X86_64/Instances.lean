@@ -1158,11 +1158,13 @@ end
 
 /-! ## Without secret residue
 
-Over the bitsliced AES (`v.ctr.features = []`), the frame of `seal` and
-`open` is mostly the working space of the functions they call, which AES
-writes, and is wiped whole on return, in aligned stores
-(`X86_64.RScrub.withScrubAllC`); their postconditions read the memory on
-return only within the data and the tag (`sealOut`, `openOut`). -/
+The frame of `seal` and `open` is wiped whole on return, in aligned stores
+(`X86_64.RScrub.withScrubAllC`): the 3856 bytes of the code that calls the
+other functions, mostly their working space, and the 528 of the code in
+registers. Where the lengths choose between the two (`bySize`), each wipes
+its own before it returns (`sealBy`, `openBy`), so that a short message
+does not pay for the frame it does not use. Their postconditions read the
+memory on return only within the data and the tag (`sealOut`, `openOut`). -/
 
 section
 open VG VG.X86_64 VG.X86_64.Scrub VG.X86_64.RScrub
