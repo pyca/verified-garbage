@@ -20,10 +20,12 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 # ML-DSA on 32-bit ARM: `vg_mldsa_inv_ntt`
 
 As `vg_mldsa_ntt` (`Ntt.lean`), with the negated zetas, from the last, and
-`bflyInv_spec`: the eight layers leave words congruent to those of `NTT⁻¹`
-(`layerI`, `layersI_rel`); then every coefficient is multiplied by
-`8347681 = 256⁻¹ mod q` and reduced (`scale_ok`, `map_ok`), which
-`nttInv_eq_layers` says is `NTT⁻¹`.
+`bflyInv_core`: the first seven layers leave words congruent to those of
+`NTT⁻¹`'s (`layerI`, `layersI_rel`). The last layer's one block is the loop
+over groups of four of `bflyInvS` (`grpLoop_ok` with `bflyInvS_core`), with
+`8347681 = 256⁻¹ mod q` and the layer's zeta times it in registers
+(`scalePre_ok`): it leaves the last layer's coefficients times `256⁻¹`
+(`lastInv_val`), which `nttInv_split` says is `NTT⁻¹`.
 -/
 
 @[expose] public section
@@ -45,6 +47,11 @@ def ChainInv : Nat → List Nat → Prop
   | _, [] => True
   | k, len :: ls => k = 256 / len - 1 ∧ ChainInv (128 / len - 1) ls
 
+/-- The zeta index after the layers `ls`, from `k`. -/
+def chainEndInv : Nat → List Nat → Nat
+  | k, [] => k
+  | _, len :: ls => chainEndInv (128 / len - 1) ls
+
 theorem lens_inv : ∀ len ∈ nttInvLens, len ∈ nttLens ∧ 128 / len ≤ 256 / len - 1 ∧ 256 / len ≤ 256 ∧
     256 / len = 2 * (128 / len) := by decide
 
@@ -52,15 +59,18 @@ theorem negZetaTab_of : TabOf negZetaTab (fun m => -zetas m) := fun k _ => negZe
 
 theorem negZetaTab_lt : ∀ k < 256, negZetaTab k < q := fun k _ => negZetaNat_lt k
 
-theorem lays_ok {s₁ : State} (hp : PreB s₁) :
-    ∀ (ls : List Nat) (G : LPoly) (k : Nat) (s : State), (∀ len ∈ ls, len ∈ nttInvLens) → ChainInv k ls →
-      LI negZetaTab 1072693376 s₁ G k s →
-      WP isa (nttInvLays ls) s fun s' => ∃ k', LI negZetaTab 1072693376 s₁ (ls.foldl layerI G) k' s'
-  | [], G, k, s, _, _, hI => WP.block_nil ⟨k, hI⟩
+theorem lays_ok {s₁ : State} (hp : PreB s₁) (blk : Nat → Prog isa) :
+    ∀ (ls : List Nat) (G : LPoly) (k : Nat) (s : State),
+      (∀ len ∈ ls, len ∈ nttInvLens ∧
+        BlockOk (blk len) opI negZetaTab (fun m => -zetas m) .sub len (pf s₁) (ps s₁)) → ChainInv k ls →
+      LI negZetaTab s₁ G k s →
+      WP isa (lays blk ls) s fun s' => LI negZetaTab s₁ (ls.foldl layerI G) (chainEndInv k ls) s'
+  | [], _, _, _, _, _, hI => WP.block_nil hI
   | len :: ls, G, k, s, hls, ⟨hk, hc⟩, hI => by
-    obtain ⟨hlen, h1, h2, h3⟩ := lens_inv len (hls len (List.mem_cons_self ..))
+    obtain ⟨hlen', hblk⟩ := hls len (List.mem_cons_self ..)
+    obtain ⟨hlen, h1, h2, h3⟩ := lens_inv len hlen'
     have hl0 := (lens_facts len hlen).2.2.2.1
-    refine WP.seq (WP.mono (lay_ok bflyInv_spec negZetaTab_of hp.fitF hp.fitS hlen .sub (.inr rfl)
+    refine WP.seq (WP.mono (lay_ok hblk hlen
       (fun c => 256 / len - 1 - c) (fun c hc => by omega_using [h2])
       (fun c hc => by
         simp only [nextZ, reduceCtorEq, ite_false]
@@ -70,27 +80,36 @@ theorem lays_ok {s₁ : State} (hp : PreB s₁) :
       G s hI.r0 (by rw [hI.r1, hk]; rfl) hI.r4 hI.r5 hI.poly (by rw [hI.keep.wr]; exact hp.wF)
       (by rw [hI.keep.wr]; exact List.mem_append_right _ hp.wS) hp.fs.symm hI.tab)
       fun s' ⟨hP, hf, h0, h1', hk'⟩ => ?_)
-    refine lays_ok hp ls _ (128 / len - 1) s' (fun l hl => hls l (List.mem_cons_of_mem _ hl)) hc
+    exact lays_ok hp blk ls _ (128 / len - 1) s' (fun l hl => hls l (List.mem_cons_of_mem _ hl)) hc
       (hI.step hP hf h0 (by rw [h1']; congr 3; omega_using [h3]) hk' hp.fs.symm)
 
-theorem chain_inv : ChainInv 255 nttInvLens := by simp only [nttInvLens, ChainInv]; decide
+/-! ## The last layer -/
 
-/-! ## The scaling -/
+theorem scaleZeta_eq : scaleZeta = (-zetas 1 * cInv).val := by
+  rw [Fin.val_mul, ← negZetaNat_eq]; rfl
 
-/-- The multiplier of the scaling. -/
-abbrev cInv : Zq := 8347681
+theorem scaleZeta_word : (BitVec.ofNat 16 (scaleZeta / 65536) ++
+    ((BitVec.ofNat 16 (scaleZeta % 65536)).setWidth 32).extractLsb' 0 16 : BitVec 32) = zb (-zetas 1 * cInv) :=
+  (tab_word (t := fun _ => scaleZeta) (fun _ _ => by rw [scaleZeta_eq]; exact Fin.isLt _) 0 (by decide)).trans
+    (congrArg (BitVec.ofNat 32) scaleZeta_eq)
 
-theorem scale_ok : MapOk scaleBody (fun v => bcsub (bprod v cInv)) (ZetaIn Qw cInv) := by
-  intro s x c h0 h3 ⟨h4, h5, h6, h7⟩ iA oA
-  run_block [scaleBody, mulz, red, mulq, csub, bmulz, bmulq, bred, bcsub, ZetaIn, h0, h3, h4, h5, h6, h7, iA, oA]
-  keep_simp
+theorem cInv_word : ((0x7F : BitVec 16) ++ ((0x6021 : BitVec 16).setWidth 32).extractLsb' 0 16 : BitVec 32) =
+    zb cInv := by
+  decide
 
-theorem scalePre_ok {s : State} (h4 : s.gpr .r4 = Nw) :
+/-- The constants of the last layer, and the count of its groups. -/
+theorem scalePre_ok {s : State} (h4 : s.gpr .r4 = Nw) (h5 : s.gpr .r5 = Qw) :
     WP isa (.block scalePre) s fun s' =>
-      ZetaIn Qw cInv s' ∧ s'.gpr .r3 = BitVec.ofNat 32 256 ∧ s'.mem = s.mem ∧ Keep [.r0, .r11, .lr] s s' := by
-  run_block [scalePre, loadQ, quot, bquot, ZetaIn, loadQ_val, h4]
-  refine ⟨by decide, ?_⟩
+      ScaleIn (-zetas 1) s' ∧ s'.gpr .r3 = BitVec.ofNat 32 (1 * (32 - 0)) ∧ s'.mem = s.mem ∧
+        Keep [.r0, .r11, .lr] s s' := by
+  run_block [scalePre, quot, bquot, ScaleIn, ZetaIn, h4, h5, scaleZeta_word, cInv_word]
   keep_simp
+
+/-- `NTT⁻¹`, as the code's runs of layers and its last layer. -/
+theorem nttInv_split (w : Poly) : Spec.MlDsa.nttInv w =
+    (nttInvLayer ([8, 16, 32, 64].foldl nttInvLayer ([1, 2, 4].foldl nttInvLayer w)) 128).map (· * cInv) := by
+  rw [VG.Proof.MlDsa.Arith.nttInv_eq_layers]
+  simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
 
 theorem pre_of {s : State} (h : (Proof.MlDsa.nttInvContract Arm.abi 28).pre s) : PreE s := by
   sig_pre [Proof.MlDsa.nttInvContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs,
@@ -109,21 +128,36 @@ theorem correct {s : State} (hp : PreE s) :
       rw [List.mem_singleton.mp hr]; exact (stack_disj hp _ (List.mem_cons_self ..)).symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨h11, hlr, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of hg h11 hlr, hsp, hm ▸ hq⟩
   obtain ⟨hpB, eP, eF, eS⟩ := pre_entry hp hE
-  refine WP.seq (WP.mono (pro_ok hpB negZetaTab negZetaTab_lt 0x80 0x3FF0 1072693376 1020 255 (by decide) rfl
-    (by decide)) fun s₂ hI => ?_)
-  refine WP.seq (WP.mono (lays_ok hpB nttInvLens _ 255 s₂ (fun _ h => h) chain_inv hI) fun s₃ ⟨k, hI'⟩ => ?_)
-  refine WP.seq (WP.mono (scalePre_ok hI'.r4) fun s₄ ⟨hz, e3, m₄, k₄⟩ => ?_)
-  refine WP.mono (map_ok scale_ok hpB.fitF (by rw [k₄.wr, hI'.keep.wr]; exact hpB.wF)
-    ((k₄.gpr .r0 (by decide)).trans hI'.r0) e3 hz) fun s₅ ⟨hc, hf, k₅⟩ => ⟨?_, ?_, ?_, ?_⟩
-  · rw [← eF, ← eS]; exact hI'.frame.trans (by rw [← m₄]; exact hf.mono (by simp))
-  · rw [k₅.gpr .r11 (by decide), k₄.gpr .r11 (by decide), hI'.keep.gpr .r11 (by decide)]; exact congrFun hE.gpr _
-  · rw [k₅.gpr .lr (by decide), k₄.gpr .lr (by decide), hI'.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
-  · have hr := layersI_rel nttInvLens 1 _ _ (fun l hl => (lens_inv l hl).1) (Nat.le_refl 1) (by decide)
+  refine WP.seq (WP.mono (pro_ok hpB negZetaTab negZetaTab_lt 1020 255 rfl (by decide)) fun s₂ hI => ?_)
+  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkS (Impl.MlDsa.Arm.Arith.bflyInv len) len .sub)
+    [1, 2, 4] _ 255 s₂ (fun len hl => ?_) (by simp only [ChainInv]; decide) hI) fun s₃ hI₃ => ?_)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with rfl | rfl | rfl <;>
+      exact ⟨by decide, blkS_ok bflyInv_core negZetaTab_of hpB.fitF hpB.fitS (by decide) .sub (.inr rfl)
+        (by decide)⟩
+  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkL (Impl.MlDsa.Arm.Arith.bflyInv len) len .sub)
+    [8, 16, 32, 64] _ 31 s₃ (fun len hl => ?_) (by simp only [ChainInv]; decide) hI₃) fun s₄ hI₄ => ?_)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with rfl | rfl | rfl | rfl <;>
+      exact ⟨by decide, blkL_ok bflyInv_core negZetaTab_of hpB.fitF hpB.fitS (by decide) .sub (.inr rfl)
+        (by decide) (by decide)⟩
+  refine WP.seq (WP.mono (scalePre_ok hI₄.r4 hI₄.r5) fun s₅ ⟨hz, e3, m₅, k₅⟩ => ?_)
+  have hG := hI₄.poly
+  rw [← m₅] at hG
+  refine WP.mono (grpLoop_ok bflyInvS_core (fun _ _ _ hk h => h.keep hk) hpB.fitF (len := 128) (start := 0)
+    (N := 32) (by decide) (by decide) (by decide) (by decide) (by decide) (-zetas 1) _ s₅
+    (by rw [k₅.gpr .r0 (by decide), hI₄.r0]; simp) hz hG
+    (by rw [k₅.wr, hI₄.keep.wr]; exact hpB.wF) e3) fun s₆ ⟨hP, hf, _, k₆⟩ => ⟨?_, ?_, ?_, ?_⟩
+  · rw [← eF, ← eS]; exact hI₄.frame.trans (by rw [← m₅]; exact hf.mono (by simp))
+  · rw [k₆.gpr .r11 (by decide), k₅.gpr .r11 (by decide), hI₄.keep.gpr .r11 (by decide)]; exact congrFun hE.gpr _
+  · rw [k₆.gpr .lr (by decide), k₅.gpr .lr (by decide), hI₄.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
+  · have h8 : Rel 8 _ _ := layersI_rel [1, 2, 4] 1 _ _ (by decide) (Nat.le_refl 1) (by decide)
       (lift_rel (polyAt s₁.mem (F s₁)))
-    rw [← eP, ← eF, VG.Proof.MlDsa.Arith.nttInv_eq_layers]
+    have hr : Rel 128 _ _ := layersI_rel [8, 16, 32, 64] 8 _ _ (by decide) (by decide) (by decide) h8
+    rw [← eP, ← eF, nttInv_split]
     refine polyIs_of_toNat fun j hj => ?_
-    have hj' : j < 256 := by rw [n_eq] at hj; exact hj
-    rw [hc j hj', m₄, scale_val (hI'.poly j hj), (hr j hj').2, map_mul_get _ _ hj]
+    rw [hP j hj]
+    exact lastInv_val hr (by rw [n_eq] at hj; exact hj)
 
 theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.nttInv (Proof.MlDsa.nttInvContract Arm.abi 28) := by
   refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
