@@ -15,6 +15,7 @@ meta import VerifiedGarbage.Spec.Mcdt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 
 /-!
 # Entering Intel's MXCSR mitigation of MCDT on x86-64: the proofs
@@ -200,13 +201,34 @@ theorem enter_wp (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   · rw [popped_rd, hk.2.1, pushed_rd]
   · rw [popped_wr, hk.2.2, pushed_wr]; rfl
 
+/-- No instruction of the release of a frame. -/
+def notRelease : Instr → Bool
+  | .pop .. | .free _ => false
+  | _ => true
+
+theorem pop_release {j : Instr} {s₁ s₂ s' : State} (hj : notRelease j = true)
+    (hq : isa.pop j s₁ s₂ = some s') : False := by
+  cases j <;> simp only [notRelease, Bool.false_eq_true] at hj <;>
+    simp only [isa, pop, reduceCtorEq] at hq
+
+/-- The frame's body, which releases no frame, keeps the unknowns. -/
+theorem body_unk {s s' : State} {t : List Leak} (h : Exec isa body s t s') : s'.unknowns = s.unknowns :=
+  Exec.keep (fun s : State => s.unknowns) (ok := fun i => notRelease i = true)
+    (fun _ he => RTaint.exec_unknowns he)
+    (fun hj _ hq _ => (pop_release hj hq).elim)
+    (fun i hi => List.all_eq_true.mp (by decide : (instrs body).all notRelease = true) i hi)
+    (.inl (by decide)) h
+
 /-- `enter_wp`, with the registers `vg_mcdt_enter` keeps (all but `rax`,
 `rcx` and `rdx`) and its memory: the stack, as the frame's body leaves it,
-the 8 bytes below `rsp` (`slotW`). -/
+the 8 bytes below `rsp` (`slotW`), whose bytes the frame's pop then loses
+(`lose`, with the two unknowns it takes). -/
 theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
     WP isa enter s fun t => t.mxcsr = flagged s.mxcsr ∧ t.gpr .rax = res s.mxcsr ∧
       t.gpr .rsp = s.gpr .rsp ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ t.mem = slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr := by
+      t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mem = lose (slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr) (s.gpr .rsp - 8) 8 s.unknowns ∧
+      t.unknowns = fun n => s.unknowns (n + 2) := by
   generalize hSdef : s.gpr .rsp = S at *
   let F : Region := ⟨S - 8, 8⟩
   have s1sp : (pushed [.rax] s).gpr .rsp = S - 8 := by rw [pushed_rsp, hSdef]; rfl
@@ -220,10 +242,13 @@ theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   have h8 : F.Contains ((pushed [.rax] s).gpr .rsp) 8 := by rw [s1sp]; exact h8'
   unfold enter
   refine WP.frameMem (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
-  refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
+  obtain ⟨tr, t, he, ⟨hmx, hax, hm⟩, hk⟩ := body_ok hF h0 h8
+  have hu : t.unknowns = s.unknowns := (body_unk he).trans rfl
+  refine ⟨tr, t, he, ?_⟩
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
   refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩
-  refine ⟨by rw [popped_mxcsr, hmx, pushed_mxcsr], ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
+  dsimp only [released]
+  refine ⟨by rw [popped_mxcsr, hmx, pushed_mxcsr], ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_, ?_⟩
   · rw [popped_gpr _ _ _ (by decide) (by decide), hax, pushed_mxcsr]
   · rw [popped_rsp, tsp]; exact BitVec.sub_add_cancel S 8
   · by_cases hsp : r = .rsp
@@ -231,7 +256,8 @@ theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
     · rw [popped_gpr _ _ _ hsp h2, hk.gpr (by simp [h1, h3]), pushed_gpr _ _ hsp]
   · rw [popped_rd, hk.2.1, pushed_rd]
   · rw [popped_wr, hk.2.2, pushed_wr]; rfl
-  · rw [popped_mem, hm, s1sp, pushed_mxcsr]
+  · rw [hm, s1sp, pushed_mxcsr, tsp, hu, List.length_singleton]
+  · rw [hu, List.length_singleton]
 
 /-- MXCSR after `vg_mcdt_enter` is `0x1FBF` exactly when its control bits
 on entry are the default, `0x1F80`'s. -/

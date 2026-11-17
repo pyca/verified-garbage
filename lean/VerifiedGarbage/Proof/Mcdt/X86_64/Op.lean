@@ -58,23 +58,14 @@ theorem popReg_unk : ∀ (s : State) (d : Reg) (k : Nat), (popReg s d k).unknown
   | _, _, 0 => rfl
   | _, d, k + 1 => (popReg_unk _ d k).trans rfl
 
-theorem push_unk {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) : s₁.unknowns = s.unknowns := by
-  cases i <;> simp only [isa, push, reduceCtorEq] at h
-  case push => split at h <;> cases h; exact pushRegs_unk _ _
-  case alloc => split at h <;> cases h; rfl
-
-theorem pop_unk {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.unknowns = s₂.unknowns := by
-  cases j <;> simp only [isa, pop, reduceCtorEq] at h
-  case pop => split at h <;> cases h; exact popReg_unk _ _ _
-  case free => split at h <;> cases h; rfl
-
 /-- Every run of `vg_mcdt_enter`: as `enter_wpX` says, keeping the vector
-registers and the return addresses its caller's calls stored. -/
+registers. -/
 theorem body_exec {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
     8 ≤ (s.gpr .rsp).toNat ∧ s'.mxcsr = flagged s.mxcsr ∧ s'.gpr .rax = res s.mxcsr ∧
       s'.gpr .rsp = s.gpr .rsp ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr ∧
-      s'.xmm = s.xmm ∧ s'.unknowns = s.unknowns := by
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = lose (slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr) (s.gpr .rsp - 8) 8 s.unknowns ∧
+      s'.xmm = s.xmm ∧ s'.unknowns = fun n => s.unknowns (n + 2) := by
   have hS : 8 ≤ (s.gpr .rsp).toNat := by
     have h' : Exec isa (.frame (.push [.rax]) body (.pop .rcx 1)) s t s' := h
     cases h' with
@@ -85,14 +76,8 @@ theorem body_exec {s s' : State} {t : List Leak} (h : Exec isa enter s t s') :
   obtain ⟨_, u, he, hq⟩ := enter_wpX s hS
   obtain ⟨-, e⟩ := Exec.det h he
   subst e
-  refine ⟨hS, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1, hq.2.2.2.2.2.1, hq.2.2.2.2.2.2,
-    Residue.Exec.xmmKeep (c := enter) (by decide) h, ?_⟩
-  have h' : Exec isa (.frame (.push [.rax]) body (.pop .rcx 1)) s t s' := h
-  cases h' with
-  | frame hp hb hq =>
-    rw [pop_unk hq, Exec.keep (fun s : State => s.unknowns) (ok := fun _ => True)
-      (fun _ he => RTaint.exec_unknowns he) (fun _ hp hq hb => by rw [pop_unk hq, hb, push_unk hp])
-      (fun _ _ => trivial) (.inl (by decide)) hb, push_unk hp]
+  exact ⟨hS, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1, hq.2.2.2.2.2.1, hq.2.2.2.2.2.2.1,
+    Residue.Exec.xmmKeep (c := enter) (by decide) h, hq.2.2.2.2.2.2.2⟩
 
 theorem covers_nil (rs : List Region) : Covers [] rs := fun _ _ ⟨_, h, _⟩ => nomatch h
 
@@ -128,8 +113,10 @@ theorem tail₃_ok (u : State) :
 
 theorem tail₂_ok (u : State) (hS : 8 ≤ (u.gpr .rsp).toNat) :
     WP isa (.frame (.alloc 8) (.seq (.block [.store slot .r11]) (.block [])) (.free 8)) u fun v =>
-      v.gpr = u.gpr ∧ v.mem = u.mem.writeW (u.gpr .rsp - BitVec.ofNat 64 8) (u.gpr .r11) ∧ v.mxcsr = u.mxcsr ∧
-      v.unknowns = u.unknowns ∧ v.rd = u.rd ∧ v.wr = u.wr := by
+      v.gpr = u.gpr ∧
+      v.mem = lose (u.mem.writeW (u.gpr .rsp - BitVec.ofNat 64 8) (u.gpr .r11)) (u.gpr .rsp - BitVec.ofNat 64 8) 8
+        u.unknowns ∧ v.mxcsr = u.mxcsr ∧
+      v.unknowns = (fun n => u.unknowns (n + 2)) ∧ v.rd = u.rd ∧ v.wr = u.wr := by
   refine alloc_frame_okMem (by decide) hS ?_
   have hw : InRegions (allocState 8 u).wr ((allocState 8 u).gpr .rsp) 8 :=
     ⟨_, List.mem_cons_self, by simp [allocState, Region.Contains, RegUpd.gpr_setReg_self]⟩
@@ -146,9 +133,9 @@ theorem tail₂_ok (u : State) (hS : 8 ≤ (u.gpr .rsp).toNat) :
     by_cases hq : q = .rsp
     · subst hq; rw [RegUpd.gpr_setReg_self, g]; exact BitVec.sub_add_cancel _ _
     · rw [RegUpd.gpr_setReg_of_ne _ _ hq, g]; exact RegUpd.gpr_setReg_of_ne _ _ hq
-  · show t.mem = _; rw [m]; rfl
+  · show lose t.mem (t.gpr .rsp) 8 t.unknowns = _; rw [m, g, k]; rfl
   · exact x
-  · exact k
+  · show (fun n => t.unknowns (n + 8 / 4)) = _; rw [k]
   · show t.rd = _; exact r
   · show t.wr.tail = _; rw [w]; rfl
 
@@ -157,8 +144,10 @@ zeroed, nothing else but vector registers written. -/
 theorem tail_wp (u : State) (hS : 8 ≤ (u.gpr .rsp).toNat) :
     WP isa scrubTail u fun v => v.gpr .rax = ((u.gpr .rax).setWidth 32).setWidth 64 ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r11 → v.gpr r = u.gpr r) ∧ v.mxcsr = u.mxcsr ∧
-      v.rd = u.rd ∧ v.wr = u.wr ∧ v.mem = u.mem.writeW (u.gpr .rsp - BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-      v.unknowns = u.unknowns := by
+      v.rd = u.rd ∧ v.wr = u.wr ∧
+      v.mem = lose (u.mem.writeW (u.gpr .rsp - BitVec.ofNat 64 8) (0 : BitVec 64)) (u.gpr .rsp - BitVec.ofNat 64 8) 8
+        u.unknowns ∧
+      v.unknowns = (fun n => u.unknowns (n + 2)) := by
   unfold scrubTail
   refine WP.seq (WP.mono (tail₁_ok u) fun u₁ ⟨⟨r₁, m₁, x₁, k₁⟩, K₁⟩ => ?_)
   refine WP.seq (WP.block_nil (M := isa) ?_)
@@ -166,7 +155,7 @@ theorem tail_wp (u : State) (hS : 8 ≤ (u.gpr .rsp).toNat) :
   refine WP.seq (WP.mono (tail₂_ok u₁ (by rw [sp₁]; exact hS)) fun u₂ ⟨g₂, m₂, x₂, k₂, rd₂, wr₂⟩ => ?_)
   refine WP.mono (tail₃_ok u₂) fun v ⟨⟨a₃, m₃, x₃, k₃⟩, K₃⟩ => ?_
   refine ⟨by rw [a₃, g₂, K₁.gpr (by decide)], fun r h1 h2 h3 h4 => ?_, by rw [x₃, x₂, x₁], by rw [K₃.2.1, rd₂, K₁.2.1],
-    by rw [K₃.2.2, wr₂, K₁.2.2], by rw [m₃, m₂, m₁, sp₁, r₁], by rw [k₃, k₂, k₁]⟩
+    by rw [K₃.2.2, wr₂, K₁.2.2], by rw [m₃, m₂, m₁, sp₁, r₁, k₁], by rw [k₃, k₂, k₁]⟩
   rw [K₃.gpr (by simp [h1, h2, h3]), g₂, K₁.gpr (by simp [h4])]
 
 /-- Two runs of `scrubTail` from states that agree on `rsp` leak the same trace. -/
@@ -217,15 +206,17 @@ theorem tail_rel :
 
 /-- Every run of a call's code of `vg_mcdt_enter` (`enterCall`): MXCSR
 `flagged`, `rax` its result, no register but `rax`, `rcx`, `rdx` and `r11`
-written, nor any memory but the 8 bytes below `rsp`, which it zeroes. -/
+written, nor any memory but the 8 bytes below `rsp`, which it zeroes and the
+release of its frame then loses. -/
 theorem enter_exec {s s' : State} {t : List Leak} (h : Exec isa enterCall s t s') :
     8 ≤ (s.gpr .rsp).toNat ∧ s'.mxcsr = flagged s.mxcsr ∧
       s'.gpr .rax = ((res s.mxcsr).setWidth 32).setWidth 64 ∧ s'.gpr .rsp = s.gpr .rsp ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.mem = (slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr).writeW
-        (s.gpr .rsp - BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-      s'.unknowns = s.unknowns := by
+      s'.mem = lose ((lose (slotW (pushed [.rax] s).mem (s.gpr .rsp - 8) s.mxcsr) (s.gpr .rsp - 8) 8
+        s.unknowns).writeW (s.gpr .rsp - BitVec.ofNat 64 8) (0 : BitVec 64)) (s.gpr .rsp - BitVec.ofNat 64 8) 8
+        (fun n => s.unknowns (n + 2)) ∧
+      s'.unknowns = (fun n => s.unknowns (n + 4)) := by
   have h' : Exec isa (.seq enter scrubTail) s t s' := h
   cases h' with
   | seq e₁ e₂ =>
@@ -236,7 +227,7 @@ theorem enter_exec {s s' : State} {t : List Leak} (h : Exec isa enterCall s t s'
     obtain ⟨ax', g', mx', rd', wr', m', k'⟩ := q
     refine ⟨hS, by rw [mx', mx], by rw [ax', ax], by rw [g' _ (by decide) (by decide) (by decide) (by decide), sp],
       fun r h1 h2 h3 h4 => by rw [g' r h1 h2 h3 h4, g r h1 h2 h3], by rw [rd', rd], by rw [wr', wr],
-      by rw [m', m, sp], by rw [k', k]⟩
+      by rw [m', m, sp, k], by rw [k', k]⟩
 
 /-- Two runs of a call's code of `vg_mcdt_enter` from states that agree on
 `rsp` and MXCSR leak the same trace. -/
@@ -409,19 +400,21 @@ theorem enter_mem {s s' : State} {t : List Leak} (h : Exec isa enterCall s t s')
   have h4 : ¬ (y - (s.gpr .rsp - 8)).toNat < 32 / 8 := fun h => hy' (by omega)
   have h8 : ¬ (y - (s.gpr .rsp - 8)).toNat < 64 / 8 := fun h => hy' (by omega)
   have hp : (pushed [.rax] s).mem = s.mem.writeW (s.gpr .rsp - 8) (s.gpr .rax) := rfl
-  rw [hm, writeW_out (by simpa using hy), hp]
+  rw [hm, lose_out (a := s.gpr .rsp - BitVec.ofNat 64 8) (n := 8) (x := y) (by omega),
+    writeW_out (by simpa using hy), lose_out (a := s.gpr .rsp - 8) (n := 8) (x := y) (by omega), hp]
   unfold slotW
   split <;> simp only [writeW_out h4, writeW_out h8]
 
 theorem enter_slot {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak} (hsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hu : s₁.unknowns = s₂.unknowns)
     (e₁ : Exec isa enterCall s₁ t₁ s₁') (e₂ : Exec isa enterCall s₂ t₂ s₂') :
     ∀ y, (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8 → s₁'.mem y = s₂'.mem y := by
   intro y hy
   obtain ⟨-, -, -, -, -, -, -, hm₁, -⟩ := enter_exec e₁
   obtain ⟨-, -, -, -, -, -, -, hm₂, -⟩ := enter_exec e₂
   have hy' : ((y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 64 / 8) = True := eq_true hy
-  rw [hm₁, hm₂, ← hsp]
-  simp only [Mem.writeW, Mem.write, hy', ↓reduceIte]
+  rw [hm₁, hm₂, ← hsp, ← hu]
+  exact lose_congr _ _ _ (by simp only [Mem.writeW, Mem.write, hy', ↓reduceIte])
 
 theorem bodyR_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak} (hb : bodyR τ = some τ')
     (ha : AgreeMx τ s₁ s₂) (e₁ : Exec isa enterCall s₁ t₁ s₁') (e₂ : Exec isa enterCall s₂ t₂ s₂') :
@@ -439,7 +432,7 @@ theorem bodyR_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : L
   have hout₁ := enter_mem e₁
   have hout₂ : ∀ y, ¬ (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8 → s₂'.mem y = s₂.mem y := by
     rw [inv.rsp]; exact enter_mem e₂
-  have hin := enter_slot inv.rsp e₁ e₂
+  have hin := enter_slot inv.rsp inv.unk e₁ e₂
   have hm : ∀ y, (s₁'.mem y = s₁.mem y ∧ s₂'.mem y = s₂.mem y) ∨ s₁'.mem y = s₂'.mem y := by
     intro y
     by_cases hy : (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8
