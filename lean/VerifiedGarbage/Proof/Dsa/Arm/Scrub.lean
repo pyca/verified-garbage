@@ -143,8 +143,15 @@ theorem generateKeyOut (stack : Nat) :
 
 theorem frameOk_144 : FrameOk 144 := by decide
 
+theorem randomSign_noIcall (umaal : Bool) : noIcall (RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)) = true := by
+  cases umaal <;> lit_decide
+
 theorem randomSign_armStack (umaal : Bool) :
     armStack (RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)) ≤ 144 := by
+  cases umaal <;> lit_decide
+
+theorem generateKey_noIcall (umaal : Bool) : noIcall (GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
+      (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) = true := by
   cases umaal <;> lit_decide
 
 theorem generateKey_armStack (umaal : Bool) :
@@ -158,7 +165,7 @@ def randomSignPrevalidatedReg (umaal : Bool) (suffix : String) :
       suffix := suffix
       code := RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)
       verified := randomSigningPrevalidated_verified }
-    (randomSign_armStack umaal) frameOk_144 (randomSignPrevalidatedOut _) rfl
+    (randomSign_armStack umaal) (randomSign_noIcall umaal) frameOk_144 (randomSignPrevalidatedOut _) rfl
 
 def generateKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.generateKeyApi target :=
   Arm.Scrub.scrubRegF {
@@ -166,6 +173,6 @@ def generateKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.gene
       code := GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
         (Generate.checkParameters umaal) (Generate.deriveChecked umaal)
       verified := Key.generating_verified }
-    (generateKey_armStack umaal) frameOk_144 (generateKeyOut _) rfl
+    (generateKey_armStack umaal) (generateKey_noIcall umaal) frameOk_144 (generateKeyOut _) rfl
 
 end VG.Proof.Dsa.Arm.Scrub
