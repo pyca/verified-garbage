@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
@@ -364,11 +365,11 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     ∃ t s', Exec isa (signEntry prims p prepared) σ t s' ∧ abiPreserved σ s' ∧
       (signE p prepared entryStack).post σ s' := by
   have hpre' := hpre
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, k1, k2, k3, -, -, n1, -, -, -, -, hsp, -, -⟩ := hpre'
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, k1, k2, k3, k4, -, n1, -, -, n4, -, hsp, -, -⟩ := hpre'
   have hσ : entryStack ≤ σ.sp.toNat := hsp
   obtain h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega_arith
   unfold signEntry entry
-  refine (WP.frame (rs := [.r4, .lr]) (r := .r4) (by decide)
+  refine (WP.frameLost (rs := [.r4, .lr]) (r := .r4) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_using [h16]) (by decide) ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   refine WP.seq (WP.mono (blockA_ok hpre (by decide)) fun s₁ hm => ?_)
@@ -378,8 +379,20 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     (sign_correct prims_ok h3) (K := 36) (by have := withCache_stack h3; simp only [List.length_cons,
       List.length_nil, signStack] at this ⊢; omega_using [this])
     (by rw [hm.sp, FrameStack.sub_toNat' (by omega_using [h16])]; simp only [entryStack] at hσ; omega_arith)
-    (kE_pre hpre hm hc) cov.1 cov.2 fun s₂ hA hpost => ?_)
+    (kE_pre hpre hm hc) cov.1 cov.2 fun s₂ mL uL hfl hA hpost => ?_)
   refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
+  intro mO uO hfO
+  -- The two released frames are in the stack below `σ.sp`, apart from the signature.
+  obtain hdI : ∀ R ∈ [Argon2.Arm.stkR s₁.sp (4 * [Reg.r12, Reg.lr].length)],
+      Region.Disjoint ⟨State.addr (σ.gpr .r3), p.sigLen⟩ R := fun R hR => by
+    rw [List.mem_singleton.mp hR, hm.sp]
+    exact k4.symm.sub_right (Argon2.Arm.stkR_inner (sp := σ.sp) (a := 8) (k := 8) (b := entryStack) (by decide) hσ)
+  rw [FrameStack.addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_using [h16])] at hfO
+  obtain hdO : ∀ R ∈ [Argon2.Arm.stkR σ.sp (4 * [Reg.r4, Reg.lr].length)],
+      Region.Disjoint ⟨State.addr (σ.gpr .r3), p.sigLen⟩ R := fun R hR => by
+    rw [List.mem_singleton.mp hR]
+    exact k4.symm.sub_right (Argon2.Arm.stkR_sub (by decide) hσ)
+  dsimp only
   obtain r4' : σ₄.gpr .lr = σ.gpr .lr := by rw [u₄.gpr, hA.cs .r4 (by decide) (by decide), hm.r4]
   obtain sp4 : σ₄.sp = σ.sp - BitVec.ofNat 32 8 := by rw [u₄.sp, hA.sp, hm.sp]
   obtain hw4 : σ₄.mem.readW (State.addr σ₄.sp) 32 = σ.gpr .r4 := by
@@ -411,7 +424,9 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     simp only [State.withRegions_mem, State.callEntry_mem, b0, b1, b2] at hpost'
     obtain g0 : (popped .r4 (4 * [Reg.r4, .lr].length) σ₄).gpr .r0 = s₂.gpr .r0 := by
       rw [popped_gpr (by decide), u₄.other _ (by decide), popped_gpr (by decide)]
-    rw [g0, popped_mem, u₄.mem, popped_mem]
+    rw [g0, Proof.MlKem.bytesAt_frame hfO hdO (by omega_using [n4]), u₄.mem]
+    dsimp only
+    rw [Proof.MlKem.bytesAt_frame hfl hdI (by omega_using [n4])]
     exact hpost'
 
 /-! ## Constant time -/

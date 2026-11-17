@@ -289,9 +289,16 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
       rw [p2_bytes h24 d1 (by omega_arith), p2_bytes h24 d2 (by omega_arith), p2_bytes h24 d3 (by omega_arith)]
     simp only [coreK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0,
       ce1, ce2, ce3, pushed_gpr, hr.r0, hr.r1, hr.r2, hr.r3, dgArg_w hL, kArg_w hL, hs] at hpost
+    obtain dO : ∀ r ∈ [stk t], (⟨State.addr L.out, 2 * P.Q⟩ : Region).Disjoint r := fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      rw [hst, ← hq]
+      exact (hL.ko.sub_left (Region.sub_prefix (by omega_arith))).symm
+    obtain bO : Spec.Sha256.bytesAt mL (State.addr L.out) (2 * P.Q) =
+        Spec.Sha256.bytesAt s₂.mem (State.addr L.out) (2 * P.Q) :=
+      List.map_congr_left fun _ hi => hfl.bytes dO (by omega_arith) (List.mem_range.mp hi)
     dsimp only
-    rw [popped_gpr (by decide), popped_gpr (by decide)]
-    done
+    rw [popped_gpr (by decide), popped_gpr (by decide), bO]
+    exact hpost
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
 
