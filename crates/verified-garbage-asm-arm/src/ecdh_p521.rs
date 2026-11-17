@@ -4864,21 +4864,21 @@ mov r0, r12
 movw r1, #2800
 movw r2, #3088
 movw r3, #3016
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #3088
 movw r2, #2800
 movw r3, #2944
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #3016
 movw r2, #2728
 movw r3, #3088
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #3016]
 ldr r4, [r12, #3020]
@@ -5829,8 +5829,8 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_p521_mul_mod_p_umaal = sym super::ec_p521::vg_p521_mul_mod_p_umaal::vg_p521_mul_mod_p_umaal,
-        vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
+        vg_p521_add_mod_p_umaal = sym super::ec_p521::vg_p521_add_mod_p_umaal::vg_p521_add_mod_p_umaal,
+        vg_p521_sub_mod_p_umaal = sym super::ec_p521::vg_p521_sub_mod_p_umaal::vg_p521_sub_mod_p_umaal,
         vg_p521_mul_umaal = sym super::ecdh_p521::vg_p521_mul_umaal::vg_p521_mul_umaal,
     )
 }

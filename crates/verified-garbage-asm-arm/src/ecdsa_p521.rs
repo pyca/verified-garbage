@@ -8915,21 +8915,21 @@ mov r0, r12
 movw r1, #2800
 movw r2, #3088
 movw r3, #3016
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #3088
 movw r2, #2800
 movw r3, #2944
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #3016
 movw r2, #2728
 movw r3, #3088
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #3016]
 ldr r4, [r12, #3020]
@@ -10914,7 +10914,7 @@ mov r0, r12
 movw r1, #1288
 movw r2, #280
 movw r3, #1576
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #82
 beq 214f
@@ -11063,14 +11063,14 @@ mov r0, r12
 movw r1, #1936
 movw r2, #1072
 movw r3, #1144
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #1504
 movw r3, #1576
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11084,28 +11084,28 @@ mov r0, r12
 movw r1, #2008
 movw r2, #1720
 movw r3, #1792
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1936
 movw r2, #1936
 movw r3, #2008
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #1072
 movw r3, #1216
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #1504
 movw r3, #1648
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11119,28 +11119,28 @@ mov r0, r12
 movw r1, #2080
 movw r2, #1720
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #2008
 movw r3, #2080
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #1144
 movw r3, #1216
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1288
 movw r2, #1576
 movw r3, #1648
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11154,14 +11154,14 @@ mov r0, r12
 movw r1, #1288
 movw r2, #1792
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #2080
 movw r3, #1288
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11182,21 +11182,21 @@ mov r0, r12
 movw r1, #1432
 movw r2, #1288
 movw r3, #1432
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1288
 movw r2, #1792
 movw r3, #1432
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1432
 movw r2, #1792
 movw r3, #1432
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11210,14 +11210,14 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1720
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11238,14 +11238,14 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1864
 movw r2, #1720
 movw r3, #1864
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11259,7 +11259,7 @@ mov r0, r12
 movw r1, #2008
 movw r2, #2008
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11273,7 +11273,7 @@ mov r0, r12
 movw r1, #1360
 movw r2, #1360
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11294,7 +11294,7 @@ mov r0, r12
 movw r1, #1288
 movw r2, #1288
 movw r3, #1720
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11315,7 +11315,7 @@ mov r0, r12
 movw r1, #1432
 movw r2, #1432
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1288]
 str r4, [r12, #1072]
@@ -11835,14 +11835,14 @@ mov r0, r12
 movw r1, #1936
 movw r2, #3016
 movw r3, #3088
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #1072
 movw r3, #1144
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11856,28 +11856,28 @@ mov r0, r12
 movw r1, #2008
 movw r2, #1720
 movw r3, #1792
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1936
 movw r2, #1936
 movw r3, #2008
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #3016
 movw r3, #2728
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #1072
 movw r3, #1216
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11891,28 +11891,28 @@ mov r0, r12
 movw r1, #2080
 movw r2, #1720
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2008
 movw r2, #2008
 movw r3, #2080
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #3088
 movw r3, #2728
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1288
 movw r2, #1144
 movw r3, #1216
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11926,14 +11926,14 @@ mov r0, r12
 movw r1, #1288
 movw r2, #1792
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #2080
 movw r3, #1288
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11954,21 +11954,21 @@ mov r0, r12
 movw r1, #1432
 movw r2, #1288
 movw r3, #1432
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1288
 movw r2, #1792
 movw r3, #1432
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1432
 movw r2, #1792
 movw r3, #1432
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -11982,14 +11982,14 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1720
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -12010,14 +12010,14 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1864
 movw r2, #1720
 movw r3, #1864
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -12031,7 +12031,7 @@ mov r0, r12
 movw r1, #2008
 movw r2, #2008
 movw r3, #1864
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -12045,7 +12045,7 @@ mov r0, r12
 movw r1, #1360
 movw r2, #1360
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -12066,7 +12066,7 @@ mov r0, r12
 movw r1, #1288
 movw r2, #1288
 movw r3, #1720
-bl {vg_p521_sub_mod_p}
+bl {vg_p521_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -12087,7 +12087,7 @@ mov r0, r12
 movw r1, #1432
 movw r2, #1432
 movw r3, #1720
-bl {vg_p521_add_mod_p}
+bl {vg_p521_add_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1288]
 str r4, [r12, #1072]
@@ -12391,7 +12391,7 @@ mov r0, r12
 movw r1, #2944
 movw r2, #2800
 movw r3, #2872
-bl {vg_p521_sub_mod_n}
+bl {vg_p521_sub_mod_n_umaal}
 mov lr, r10
 ldr r5, [r12, #1216]
 ldr r4, [r12, #1220]
@@ -12498,11 +12498,11 @@ ldr lr, [r12, #32]
 add sp, sp, #96
 bx lr",
         vg_p521_mul_mod_p_umaal = sym super::ec_p521::vg_p521_mul_mod_p_umaal::vg_p521_mul_mod_p_umaal,
-        vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
+        vg_p521_add_mod_p_umaal = sym super::ec_p521::vg_p521_add_mod_p_umaal::vg_p521_add_mod_p_umaal,
+        vg_p521_sub_mod_p_umaal = sym super::ec_p521::vg_p521_sub_mod_p_umaal::vg_p521_sub_mod_p_umaal,
         vg_p521_mul_mod_n_umaal = sym super::ecdsa_p521::vg_p521_mul_mod_n_umaal::vg_p521_mul_mod_n_umaal,
         vg_p521_mul_umaal = sym super::ecdh_p521::vg_p521_mul_umaal::vg_p521_mul_umaal,
-        vg_p521_sub_mod_n = sym super::ecdsa_p521::vg_p521_sub_mod_n::vg_p521_sub_mod_n,
+        vg_p521_sub_mod_n_umaal = sym super::ecdsa_p521::vg_p521_sub_mod_n_umaal::vg_p521_sub_mod_n_umaal,
         VG_P521_COMB = sym super::consts::VG_P521_COMB,
     )
 }
@@ -14764,6 +14764,10 @@ pub(crate) mod vg_ecdsa_p521_sign_k_umaal;
 pub(crate) mod vg_p521_add_mod_n;
 
 #[rustfmt::skip]
+#[path = "internal/vg_p521_add_mod_n_umaal.rs"]
+pub(crate) mod vg_p521_add_mod_n_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_p521_mul_mod_n.rs"]
 pub(crate) mod vg_p521_mul_mod_n;
 
@@ -14774,3 +14778,7 @@ pub(crate) mod vg_p521_mul_mod_n_umaal;
 #[rustfmt::skip]
 #[path = "internal/vg_p521_sub_mod_n.rs"]
 pub(crate) mod vg_p521_sub_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_sub_mod_n_umaal.rs"]
+pub(crate) mod vg_p521_sub_mod_n_umaal;

@@ -848,7 +848,7 @@ vg_ecdsa_p192_sign_k_umaal:
 	movw r1, #544
 	movw r2, #136
 	movw r3, #3600
-	bl {vg_p192_sub_mod_p}
+	bl {vg_p192_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #27
 	beq 27f
@@ -1068,7 +1068,7 @@ vg_ecdsa_p192_sign_k_umaal:
 	movw r1, #928
 	movw r2, #904
 	movw r3, #136
-	bl {vg_p192_add_mod_n}
+	bl {vg_p192_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -1420,7 +1420,7 @@ vg_ecdsa_p192_sign_k_umaal:
 	movw r1, #1048
 	movw r2, #1048
 	movw r3, #1024
-	bl {vg_p192_add_mod_n}
+	bl {vg_p192_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

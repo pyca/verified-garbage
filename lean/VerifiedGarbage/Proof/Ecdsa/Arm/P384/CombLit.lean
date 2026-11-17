@@ -23,17 +23,17 @@ namespace Proof.Ecdsa.Arm.P384.CombLit
 open Impl.Ecdsa.Arm Impl.Weierstrass.Arm
 
 materialize_code mulP := Mont.mulFnWith (p384With false).umaal (p384With false).SP.k (p384With false).SP.m
-materialize_code addP := Mont.addFn (p384With false).SP.k (p384With false).SP.m
-materialize_code subP := Mont.subFn (p384With false).SP.k (p384With false).SP.m
+materialize_code addP := Mont.addFnWith (p384With false).umaal (p384With false).SP.k (p384With false).SP.m
+materialize_code subP := Mont.subFnWith (p384With false).umaal (p384With false).SP.k (p384With false).SP.m
 materialize_code mulN := Mont.mulFnWith (p384With false).umaal (p384With false).SN.k (p384With false).SN.m
-materialize_code addN := Mont.addFn (p384With false).SN.k (p384With false).SN.m
-materialize_code subN := Mont.subFn (p384With false).SN.k (p384With false).SN.m
+materialize_code addN := Mont.addFnWith (p384With false).umaal (p384With false).SN.k (p384With false).SN.m
+materialize_code subN := Mont.subFnWith (p384With false).umaal (p384With false).SN.k (p384With false).SN.m
 materialize_code mulPU := Mont.mulFnWith (p384With true).umaal (p384With true).SP.k (p384With true).SP.m
-materialize_code addPU := Mont.addFn (p384With true).SP.k (p384With true).SP.m
-materialize_code subPU := Mont.subFn (p384With true).SP.k (p384With true).SP.m
+materialize_code addPU := Mont.addFnWith (p384With true).umaal (p384With true).SP.k (p384With true).SP.m
+materialize_code subPU := Mont.subFnWith (p384With true).umaal (p384With true).SP.k (p384With true).SP.m
 materialize_code mulNU := Mont.mulFnWith (p384With true).umaal (p384With true).SN.k (p384With true).SN.m
-materialize_code addNU := Mont.addFn (p384With true).SN.k (p384With true).SN.m
-materialize_code subNU := Mont.subFn (p384With true).SN.k (p384With true).SN.m
+materialize_code addNU := Mont.addFnWith (p384With true).umaal (p384With true).SN.k (p384With true).SN.m
+materialize_code subNU := Mont.subFnWith (p384With true).umaal (p384With true).SN.k (p384With true).SN.m
 materialize_code comb := mulGeneratorP384With false
 materialize_code combU := mulGeneratorP384With true
 

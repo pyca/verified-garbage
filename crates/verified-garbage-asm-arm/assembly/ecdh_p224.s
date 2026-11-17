@@ -2392,21 +2392,21 @@ vg_ecdh_p224_umaal:
 	movw r1, #1280
 	movw r2, #1408
 	movw r3, #1376
-	bl {vg_p224_add_mod_p}
+	bl {vg_p224_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1408
 	movw r2, #1280
 	movw r3, #1344
-	bl {vg_p224_add_mod_p}
+	bl {vg_p224_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1376
 	movw r2, #1248
 	movw r3, #1408
-	bl {vg_p224_sub_mod_p}
+	bl {vg_p224_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #1376]
 	ldr r4, [r12, #1380]

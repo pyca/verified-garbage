@@ -1076,7 +1076,7 @@ mov r0, r12
 movw r1, #704
 movw r2, #160
 movw r3, #3456
-bl {vg_brainpoolp256r1_sub_mod_p}
+bl {vg_brainpoolp256r1_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #36
 beq 27f
@@ -1348,7 +1348,7 @@ mov r0, r12
 movw r1, #1216
 movw r2, #1184
 movw r3, #160
-bl {vg_brainpoolp256r1_add_mod_n}
+bl {vg_brainpoolp256r1_add_mod_n_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -1784,7 +1784,7 @@ mov r0, r12
 movw r1, #1376
 movw r2, #1376
 movw r3, #1344
-bl {vg_brainpoolp256r1_add_mod_n}
+bl {vg_brainpoolp256r1_add_mod_n_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -1900,10 +1900,10 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_brainpoolp256r1_sub_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
+        vg_brainpoolp256r1_sub_mod_p_umaal = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p_umaal::vg_brainpoolp256r1_sub_mod_p_umaal,
         vg_brainpoolp256r1_point_add_umaal = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add_umaal::vg_brainpoolp256r1_point_add_umaal,
         vg_brainpoolp256r1_mul_mod_p_umaal = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p_umaal::vg_brainpoolp256r1_mul_mod_p_umaal,
-        vg_brainpoolp256r1_add_mod_n = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_add_mod_n::vg_brainpoolp256r1_add_mod_n,
+        vg_brainpoolp256r1_add_mod_n_umaal = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_add_mod_n_umaal::vg_brainpoolp256r1_add_mod_n_umaal,
         vg_brainpoolp256r1_mul_mod_n_umaal = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_n_umaal::vg_brainpoolp256r1_mul_mod_n_umaal,
         VG_BRAINPOOLP256R1_COMB = sym crate::consts::VG_BRAINPOOLP256R1_COMB,
     )

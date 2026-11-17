@@ -855,7 +855,7 @@ mov r0, r12
 movw r1, #544
 movw r2, #136
 movw r3, #3600
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #27
 beq 27f
@@ -1075,7 +1075,7 @@ mov r0, r12
 movw r1, #928
 movw r2, #904
 movw r3, #136
-bl {vg_p192_add_mod_n}
+bl {vg_p192_add_mod_n_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -1427,7 +1427,7 @@ mov r0, r12
 movw r1, #1048
 movw r2, #1048
 movw r3, #1024
-bl {vg_p192_add_mod_n}
+bl {vg_p192_add_mod_n_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -1523,10 +1523,10 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p192_sub_mod_p = sym crate::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_sub_mod_p_umaal = sym crate::ec_p192::vg_p192_sub_mod_p_umaal::vg_p192_sub_mod_p_umaal,
         vg_p192_point_add_umaal = sym crate::ec_p192::vg_p192_point_add_umaal::vg_p192_point_add_umaal,
         vg_p192_mul_mod_p_umaal = sym crate::ec_p192::vg_p192_mul_mod_p_umaal::vg_p192_mul_mod_p_umaal,
-        vg_p192_add_mod_n = sym crate::ecdsa_p192::vg_p192_add_mod_n::vg_p192_add_mod_n,
+        vg_p192_add_mod_n_umaal = sym crate::ecdsa_p192::vg_p192_add_mod_n_umaal::vg_p192_add_mod_n_umaal,
         vg_p192_mul_mod_n_umaal = sym crate::ecdsa_p192::vg_p192_mul_mod_n_umaal::vg_p192_mul_mod_n_umaal,
         VG_P192_COMB = sym crate::consts::VG_P192_COMB,
     )

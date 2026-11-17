@@ -38,11 +38,11 @@ namespace VG.Impl.Weierstrass.Arm
 open VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass
 
 /-- The code of a field operation modulo `S`: a call of its function (with
-`u`, of the multiplication's `_umaal` variant). -/
+`u`, of its `_umaal` variant). -/
 def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
   | .mul o a b => Mont.mulCall S o a b u
-  | .add o a b => Mont.addCall S o a b
-  | .sub o a b => Mont.subCall S o a b
+  | .add o a b => Mont.addCall S o a b u
+  | .sub o a b => Mont.subCall S o a b u
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa

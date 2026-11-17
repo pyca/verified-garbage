@@ -44,8 +44,8 @@ function `f`, whose code is `body`, on the working space at `r12` and the
 offsets that `enc` gives the slots `o`, `a` and `b`. As `callOp_ok`
 (`MontCall.lean`), but `lr` is not kept in `r10`: the point functions save
 it in memory, and write no register but `r0`–`r3`, `r12` and `lr`.
-`mulCallR_ok`, `addCallR_ok` and `subCallR_ok` are the calls of `mulFn`,
-`addFn` and `subFn`.
+`mulCallR_ok`, `addCallR_ok` and `subCallR_ok` are the calls of `mulFnWith u`,
+`addFnWith u` and `subFnWith u`.
 -/
 
 @[expose] public section
@@ -153,26 +153,28 @@ theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) {u : Bool} :
       exact ⟨A, K, ⟨V, C⟩, R⟩
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
-theorem addCallR_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k < 2 * S.m) :
-    WP isa (callR enc (S.fn "add") (addFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+theorem addCallR_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k < 2 * S.m)
+    {u : Bool} :
+    WP isa (callR enc (addName u S) (addFnWith u S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
       wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k) % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + wordsVal m base (enc b) S.k) % S.m)
-    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (addFnWith_noCalls u _ _) hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
     (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (addFn_ok hM hp (by rw [e0, h5, h6, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
+      refine WP.mono (addFnWith_ok u hM hp (by rw [e0, h5, h6, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
       rw [e0, h4, h5, h6] at *
       exact ⟨A, K, V, R⟩
 
 /-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
-theorem subCallR_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal s.mem base (enc b) S.k < S.m) :
-    WP isa (callR enc (S.fn "sub") (subFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+theorem subCallR_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal s.mem base (enc b) S.k < S.m)
+    {u : Bool} :
+    WP isa (callR enc (subName u S) (subFnWith u S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
       wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + S.m - wordsVal s.mem base (enc b) S.k) % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + S.m - wordsVal m base (enc b) S.k) % S.m)
-    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (subFnWith_noCalls u _ _) hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
     (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (subFn_ok hM hp (by rw [e0, h5, h7]; exact hA) (by rw [e0, h6, h7]; exact hB))
+      refine WP.mono (subFnWith_ok u hM hp (by rw [e0, h5, h7]; exact hA) (by rw [e0, h6, h7]; exact hB))
         fun t' ⟨A, K, V, R⟩ => ?_
       rw [e0, h4, h5, h6] at *
       exact ⟨A, K, V, R⟩
@@ -678,8 +680,10 @@ theorem fnOps_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
   obtain mul : (Mont.mulFnWith u S.k S.m).noFrames = true := by
     unfold Mont.mulFnWith Mont.mulFnU Mont.mulFn
     cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl
+  obtain add : (Mont.addFnWith u S.k S.m).noFrames = true := addFnWith_noFrames u _ _
+  obtain sub : (Mont.subFnWith u S.k S.m).noFrames = true := subFnWith_noFrames u _ _
   have fields (op : FOp) : (opCodeR (enc S.k dbl) S u op).noFrames = true := by
-    cases op <;> simp only [opCodeR, callR, Code.noFrames, Bool.true_and, mul] <;> rfl
+    cases op <;> simp only [opCodeR, callR, Code.noFrames, Bool.true_and] <;> with_reducible assumption
   obtain seqs : ∀ ps : List (Prog isa), (∀ p ∈ ps, p.noFrames = true) → (progs ps).noFrames = true := by
     intro ps
     induction ps with

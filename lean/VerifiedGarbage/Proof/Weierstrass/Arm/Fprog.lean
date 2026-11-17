@@ -23,7 +23,7 @@ section
 from a working space whose `8192` bytes are writable (`Far`), it changes only
 the registers `clob` and `r10`, the number at `o` and the functions' own
 working space (`CallKeep`), and does what `body` does. `mulCall_ok`, `addCall_ok` and
-`subCall_ok` are the calls of `mulFn`, `addFn` and `subFn` (`MontFn.lean`).
+`subCall_ok` are the calls of `mulFnWith u`, `addFnWith u` and `subFnWith u` (`MontFn.lean`).
 -/
 
 @[expose] public section
@@ -148,31 +148,31 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       rw [e0, e1, e2, e3] at *
       exact ⟨A, K, ⟨V, C⟩, R⟩
 
-/-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
+/-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`, or of its `_umaal` variant. -/
 theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
-    (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) :
-    WP isa (addCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
+    (hAB : wordsVal s.mem base a S.k + wordsVal s.mem base b S.k < 2 * S.m) {u : Bool} :
+    WP isa (addCall S o a b u) s fun s' => CallKeep S.k base o s s' ∧
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + wordsVal s.mem base b S.k) % S.m :=
   callOp_ok (V := fun m m' => wordsVal m' base o S.k = (wordsVal m base a S.k + wordsVal m base b S.k) % S.m)
-    rfl hf fun t h1 h2 h3 h4 h5 h6 h7 => by
+    (addFnWith_noCalls u _ _) hf fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0, e1, e2, e3⟩ := pre_of_call hM hs hf ho ha hb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (addFn_ok hM hp (by rw [e0, e2, e3, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
+      refine WP.mono (addFnWith_ok u hM hp (by rw [e0, e2, e3, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
       rw [e0, e1, e2, e3] at *
       exact ⟨A, K, V, R⟩
 
-/-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
+/-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`, or of its `_umaal` variant. -/
 theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * S.k ≤ own S.k)
     (ha : a + 8 * S.k ≤ own S.k) (hb : b + 8 * S.k ≤ own S.k)
-    (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) :
-    WP isa (subCall S o a b) s fun s' => CallKeep S.k base o s s' ∧
+    (hA : wordsVal s.mem base a S.k < S.m) (hB : wordsVal s.mem base b S.k < S.m) {u : Bool} :
+    WP isa (subCall S o a b u) s fun s' => CallKeep S.k base o s s' ∧
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + S.m - wordsVal s.mem base b S.k) % S.m :=
   callOp_ok (V := fun m m' => wordsVal m' base o S.k = (wordsVal m base a S.k + S.m - wordsVal m base b S.k) % S.m)
-    rfl hf fun t h1 h2 h3 h4 h5 h6 h7 => by
+    (subFnWith_noCalls u _ _) hf fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0, e1, e2, e3⟩ := pre_of_call hM hs hf ho ha hb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (subFn_ok hM hp (by rw [e0, e2, h7]; exact hA) (by rw [e0, e3, h7]; exact hB))
+      refine WP.mono (subFnWith_ok u hM hp (by rw [e0, e2, h7]; exact hA) (by rw [e0, e3, h7]; exact hB))
         fun t' ⟨A, K, V, R⟩ => ?_
       rw [e0, e1, e2, e3] at *
       exact ⟨A, K, V, R⟩

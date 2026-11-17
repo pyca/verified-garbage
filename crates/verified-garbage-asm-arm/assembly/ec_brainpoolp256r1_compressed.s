@@ -2983,21 +2983,21 @@ vg_ec_brainpoolp256r1_compress_public_key_umaal:
 	movw r1, #1280
 	movw r2, #1408
 	movw r3, #1376
-	bl {vg_brainpoolp256r1_add_mod_p}
+	bl {vg_brainpoolp256r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1408
 	movw r2, #1280
 	movw r3, #1344
-	bl {vg_brainpoolp256r1_add_mod_p}
+	bl {vg_brainpoolp256r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1376
 	movw r2, #1248
 	movw r3, #1408
-	bl {vg_brainpoolp256r1_sub_mod_p}
+	bl {vg_brainpoolp256r1_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #1376]
 	ldr r4, [r12, #1380]
@@ -3879,14 +3879,14 @@ vg_ec_brainpoolp256r1_decompress_public_key_umaal:
 	movw r1, #1280
 	movw r2, #1408
 	movw r3, #1376
-	bl {vg_brainpoolp256r1_add_mod_p}
+	bl {vg_brainpoolp256r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1408
 	movw r2, #1280
 	movw r3, #1344
-	bl {vg_brainpoolp256r1_add_mod_p}
+	bl {vg_brainpoolp256r1_add_mod_p_umaal}
 	mov lr, r10
 	movw r4, #38110
 	movt r4, #18395
@@ -4044,7 +4044,7 @@ vg_ec_brainpoolp256r1_decompress_public_key_umaal:
 	movw r1, #1248
 	movw r2, #160
 	movw r3, #1216
-	bl {vg_brainpoolp256r1_sub_mod_p}
+	bl {vg_brainpoolp256r1_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r4, [r12, #1216]
 	ldr r5, [r12, #1088]
@@ -4119,7 +4119,7 @@ vg_ec_brainpoolp256r1_decompress_public_key_umaal:
 	movw r1, #1280
 	movw r2, #1376
 	movw r3, #1408
-	bl {vg_brainpoolp256r1_sub_mod_p}
+	bl {vg_brainpoolp256r1_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #1280]
 	ldr r4, [r12, #1284]

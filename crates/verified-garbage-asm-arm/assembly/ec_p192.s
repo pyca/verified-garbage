@@ -2114,7 +2114,7 @@ vg_ec_p192_public_key_umaal:
 	movw r1, #544
 	movw r2, #136
 	movw r3, #3600
-	bl {vg_p192_sub_mod_p}
+	bl {vg_p192_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #27
 	beq 27f
