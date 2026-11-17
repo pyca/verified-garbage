@@ -1196,6 +1196,13 @@ open VG.Proof.MdHashTable.RISCV64 (MVar tables fns3 Coh)
 open VG.Proof.RsaOaep (decOut decOut_short)
 open VG.Proof.Mgf1 (ifp ifn)
 
+private theorem writtenDecrypt_lost {m m' : Mem} {out len : Addr} {k : Nat} {r r' : BitVec 32}
+    {o : Spec.Rsa.Outcome} (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k)
+    (hw : m'.readW len 64 = m.readW len 64) (h : Spec.RsaOaep.writtenDecrypt m out len k r o) :
+    Spec.RsaOaep.writtenDecrypt m' out len k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hb, hw] at h ⊢ <;> exact h
+
 /-- The result and the outputs, from the entry state `s`. -/
 def Post (Hs Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=
   abiPreserved s s' ∧ Spec.RsaOaep.writtenDecrypt s'.mem (s.gpr .a0) (s.gpr .a2) (kk s) ((s'.gpr .a0).setWidth 32)
@@ -1294,7 +1301,7 @@ theorem checks_done {v : State} (A : AfterPriv pc s v) (hsy : v.syms = s.syms) :
 
 theorem code_ok (hl : H.D ∈ lens) : WP isa (decryptG f pc) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.allocKept (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
+  refine WP.allocLe (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P E) fun v A y₂ => ?_)
   -- The label's hash function's digest length to `a0`.
@@ -1311,9 +1318,20 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (decryptG f pc) s (Post Hs Gs s) :=
   intro u ⟨A', y', _⟩
   rw [decTail_D (G := ofLen H.D) (G' := H) rfl]
   exact WP.seq (WP.mono (checks_done hH hG fH fG hHh hHl hHv hGh hGl hGv P T TL A' y') fun v' h => WP.mono h
-    fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, by
-      show Spec.RsaOaep.writtenDecrypt w.mem _ _ _ ((w.gpr .a0).setWidth 32) _
-      rw [hm, h3]; exact res⟩)
+    fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ m _ fl =>
+      ⟨⟨habi.1, habi.2.1, habi.2.2⟩, by
+      show Spec.RsaOaep.writtenDecrypt m _ _ _ ((w.gpr .a0).setWidth 32) _
+      have fs : Region.Sub ⟨Proof.RsaOaep.RISCV64.fb s + BitVec.ofNat 64 0, frameBytes⟩ (kD pc s) :=
+        fun a h => kR_sub a (Proof.RsaOaep.RISCV64.frame_sub s (Nat.le_refl _) a h)
+      rw [BitVec.add_zero] at fs
+      refine writtenDecrypt_lost (congrArg _ h3) ?_ ?_ res
+      · rw [← hm]
+        exact List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .a0, kk s⟩)
+          (by rw [show kk s = (s.gpr .a1).toNat from P.ok.symm]; exact (P.ko.sub_left fs).symm) (List.mem_range.mp hi)
+      · rw [← hm]
+        exact fl.readW (r := mlR s) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide)
+          (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (P.kml.sub_left fs).symm)
+          (by decide)⟩)
 
 end
 

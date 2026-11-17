@@ -53,6 +53,12 @@ function's shape. -/
 theorem checks_D {G G' : Hash} (hD : G.D = G'.D) (f : Fns) : checks G f = checks G' f := by
   simp only [checks, encMain, encEm, copySeed, chkK, chkMsg, copyLh, dbArgs, seedArgs, hD]
 
+private theorem written_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Option (List Byte)}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.written m out k r o) :
+    Spec.Rsa.written m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h
+
 /-- The result and `out`, from the entry state `s`: the octets `encrypt`
 returns, or zeros. -/
 def Post (Hs Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=
@@ -132,7 +138,7 @@ theorem checks_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) :
 
 theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.allocKept (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLe (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E sy => ?_)
   -- The label's hash function's digest length to `a0`.
   refine WP.seq (WP.of_syms ?_)
@@ -148,10 +154,14 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   intro u ⟨E', y', _⟩
   rw [checks_D (G := ofLen H.D) (G' := H) rfl]
   exact WP.mono (checks_done hH hG fH fG hHh hHl hGh hGl hGv P T TL E' y') fun t' ⟨sv, res⟩ =>
-    WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, fun hc => by
-      show Spec.Rsa.written w.mem _ _ ((w.gpr .a0).setWidth 32) _
-      rw [hm, h3]
-      exact res hc⟩
+    WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ m _ fl => ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => by
+      show Spec.Rsa.written m _ _ ((w.gpr .a0).setWidth 32) _
+      have fs : Region.Sub ⟨fb s + BitVec.ofNat 64 0, frameBytes⟩ (kR s) := frame_sub s (Nat.le_refl _)
+      rw [BitVec.add_zero] at fs
+      refine written_lost (congrArg _ h3) ?_ (res hc)
+      rw [← hm]
+      exact List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .a0, kk s⟩)
+        (by rw [show kk s = (s.gpr .a1).toNat from P.ok.symm]; exact (P.ko.sub_left fs).symm) (List.mem_range.mp hi)⟩
 
 end
 
