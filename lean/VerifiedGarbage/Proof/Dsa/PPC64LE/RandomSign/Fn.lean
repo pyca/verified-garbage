@@ -156,8 +156,10 @@ theorem ctx_31 : ∀ r ∈ ctxRegs, r ∉ ([.r31] : List Reg) := by decide
 theorem preserved_nv : ∀ r ∈ preserved, r = .r2 ∨ ∃ i < 18, r = nv i := by decide
 
 /-- The exit's state, after the frame is freed, meets the contract. -/
-theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRes s₀) t) :
-    abiPreserved s₀ (freed frameBytes t) ∧ rsContract.post s₀ (freed frameBytes t) := by
+theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRes s₀) t)
+    (m : Mem) (u : Nat → BitVec 64) (fl : Frame [(rlOf s₀).frR] t.mem m) :
+    abiPreserved s₀ { freed frameBytes t with mem := m, unknowns := u } ∧
+      rsContract.post s₀ { freed frameBytes t with mem := m, unknowns := u } := by
   have hL := rlOf_ok h
   have hq := hL.ql
   have hst : (rsRes s₀).status ≤ 2 := by
@@ -173,12 +175,15 @@ theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRe
     exact BitVec.sub_add_cancel _ _
   · simp only [freed]
     rw [hf.r3, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
-  · simp only [freed]
-    have e3 : s₀.gpr .r3 = (rlOf s₀).out := rfl
+  · have e3 : s₀.gpr .r3 = (rlOf s₀).out := rfl
     have e4 : (s₀.gpr .r4).toNat = 2 * (rlOf s₀).ql := hol
-    rw [e3, e4]; exact hf.out
-  · simp only [freed, Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
-    exact congrArg (· :: []) hf.used
+    rw [e3, e4]
+    -- The `free` loses the frame's bytes, which lie apart from the output and `used`.
+    exact Eq.trans (List.map_congr_left fun i hi =>
+      lost_byte fl (R := (rlOf s₀).outR) hL.dFO.symm (List.mem_range.mp hi)) hf.out
+  · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
+    exact congrArg (· :: []) ((fl.readW (r := (rlOf s₀).usedR) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hL.dFU.symm) (by decide)).trans hf.used)
 
 end VG.Proof.Dsa.PPC64LE.RS
 
@@ -206,11 +211,13 @@ theorem randomSign_correct (s₀ : State) (h : rsContract.pre s₀) :
       ((resOf s₀).status = 1 → Spec.Rsa.bytesAt t.mem (rlOf s₀).out (2 * (rlOf s₀).ql) =
         (resOf s₀).signature.getD (List.replicate (2 * (rlOf s₀).ql) 0)) →
       WP isa (finish [.add .r17 .r21 .r21]) t fun t' =>
-        abiPreserved s₀ (freed frameBytes t') ∧ rsContract.post s₀ (freed frameBytes t') :=
-    fun t hc h25 h31 hsig => WP.mono (finish_ok h hc h25 h31 hst hsig hnone) fun t' hf =>
-      fin_post h (by rw [rsRes_eq h]; exact hf)
+        ∀ m u, Frame [⟨s₀.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩] t'.mem m →
+          abiPreserved s₀ { freed frameBytes t' with mem := m, unknowns := u } ∧
+            rsContract.post s₀ { freed frameBytes t' with mem := m, unknowns := u } :=
+    fun t hc h25 h31 hsig => WP.mono (finish_ok h hc h25 h31 hst hsig hnone) fun t' hf m u fl =>
+      fin_post h (by rw [rsRes_eq h]; exact hf) m u fl
   unfold Impl.Dsa.PPC64LE.RandomSign.code
-  refine WP.allocKept (by decide) hL.spF ?_
+  refine WP.alloc (by decide) hL.spF ?_
   unfold Impl.Dsa.PPC64LE.RandomSign.body
   refine WP.seq (WP.mono (entry_ok h) fun t₁ he => ?_)
   refine WP.seq (WP.mono (prepareQ_ok h he.ctx) fun t₂ ⟨sc, h0, m2, k2⟩ => ?_)
