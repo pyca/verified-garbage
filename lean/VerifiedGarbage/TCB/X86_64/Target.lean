@@ -33,9 +33,18 @@ MXCSR when it already holds `0x1FBF`; every other contract leaves it out of
 what two runs agree on (`Abi.withMode false`).
 
 Not modelled: the direction flag (no modelled instruction changes it; it is
-clear on entry and exit), the x87 control word (never modified), and the
-red zone: a contract that grants write access below `rsp` must keep it within
-the 128-byte red zone.
+clear on entry and exit) and the x87 control word (never modified).
+
+No red zone: the code may access only its regions, and no contract grants a
+region below `rsp` (`Sig.contract`'s regions are the buffers and the argument
+area, apart from the stack below `rsp`, `reserved`), so no proof relies on
+memory below `rsp` keeping its value. The System V psABI keeps the 128 bytes
+below `rsp`, but the functions also run on Windows, which keeps none: "All
+memory beyond the current address of RSP is considered volatile: The OS, or
+a debugger, may overwrite this memory during a user debug session, or an
+interrupt handler." ("x64 stack usage", Microsoft Learn). A frame is
+accessible only while it is at or above `rsp` (`TCB/Code.lean`, "Stack
+frames").
 -/
 
 @[expose] public section
