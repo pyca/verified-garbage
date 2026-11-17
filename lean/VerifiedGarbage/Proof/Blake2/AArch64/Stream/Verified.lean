@@ -558,7 +558,7 @@ theorem updateB_framed : Verified AArch64.target
     (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateB_verified (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateBPostOut_local _ vs m m₁ m₂ r hl)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified AArch64.target
@@ -566,7 +566,7 @@ theorem finalizeB_framed : Verified AArch64.target
     (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeB_verified (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeBPostOut_local _ vs m m₁ m₂ r hl)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified AArch64.target
@@ -574,7 +574,7 @@ theorem updateS_framed : Verified AArch64.target
     (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateS_verified (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateSPostOut_local _ vs m m₁ m₂ r hl)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified AArch64.target
@@ -582,7 +582,7 @@ theorem finalizeS_framed : Verified AArch64.target
     (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeS_verified (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeSPostOut_local _ vs m m₁ m₂ r hl)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## Returning without secret residue
