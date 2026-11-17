@@ -106,11 +106,17 @@ abbrev PreValOk (pc : Bool) (s : State) : Prop :=
   ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws →
     preVal pc s = ws
 
+/-- `writtenOutcome` reads the memory only in the output. -/
+theorem writtenOutcome_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.writtenOutcome m out k r o) :
+    Spec.Rsa.writtenOutcome m' out k r o := by
+  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
+
 theorem codeG_correct (s : State) (h : PreP pc s) (hcrt : CrtOk pc s) (hstep : StepOk pc s) :
     WP isa (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) s fun t =>
       abiPreserved s t ∧ (PreValOk pc s → fnPost s t) := by
   have hk := h.k2
-  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ h.sp1 ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   unfold bodyG
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (hcrt t₁ _ A fun t₂ M C => ?_)
@@ -132,14 +138,18 @@ theorem codeG_correct (s : State) (h : PreP pc s) (hcrt : CrtOk pc s) (hstep : S
   refine WP.seq (WP.mono (WP.rdwr (release_ok h L9 (fun b => Proof.Rsa.low_and_mask b _ _) r5 r2 r3' r3))
     fun t₁₀ ⟨⟨hout, f10, k10⟩, _, _, sp10⟩ => ?_)
   have L10 := L9.release h k10 sp10 f10
-  refine WP.mono (restore_ok h L10) fun v ⟨vp, vra, vs, vm, v0⟩ => ?_
-  have fs : (freed frameBytes v).sp = v.sp + BitVec.ofNat 64 frameBytes := by simp only [freed]
-  have fg : (freed frameBytes v).gpr = v.gpr := by simp only [freed]
-  have fm : (freed frameBytes v).mem = v.mem := by simp only [freed]
-  refine ⟨⟨fun r hr => by rw [fg]; exact vp r hr, ?_, by rw [fg]; exact vra⟩, fun hv => ?_⟩
-  · rw [fs, vs]; exact BitVec.sub_add_cancel _ _
-  · unfold fnPost
-    rw [fm, fg, vm, v0, k10.gpr (by decide), r0]
+  refine WP.mono (restore_ok h L10) fun v ⟨vp, vra, vs, vm, v0⟩ mL _ fl => ?_
+  refine ⟨⟨fun r hr => vp r hr, ?_, vra⟩, fun hv => ?_⟩
+  · show v.sp + BitVec.ofNat 64 frameBytes = s.sp
+    rw [vs]; exact BitVec.sub_add_cancel _ _
+  · -- The `free` loses the frame's bytes, which lie apart from the output.
+    have hb : Spec.Rsa.bytesAt mL (s.gpr .a0) (s.gpr .a3).toNat =
+        Spec.Rsa.bytesAt v.mem (s.gpr .a0) (s.gpr .a3).toNat :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := outR s) (by rw [outR_eq h]; exact h.ko.symm) (List.mem_range.mp hi)
+    refine writtenOutcome_congr hb ?_
+    show Spec.Rsa.writtenOutcome v.mem (s.gpr .a0) (s.gpr .a3).toNat ((v.gpr .a0).setWidth 32) _
+    rw [vm, v0, k10.gpr (by decide), r0]
     have m97 : t₉.mem = t₇.mem := m9.trans m8
     rw [m97] at hout
     have hx : Spec.Rsa.bytesAt t₇.mem (s.gpr .a6) (s.gpr .a3).toNat =
