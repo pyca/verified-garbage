@@ -451,79 +451,6 @@ def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs 
   notWith := r.notWith
   residue := some ⟨(scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).2⟩
 
-/-- `scrubCodeMCR_ok` at any level, `evex` too, without `mxFix` (`scrub`'s
-`f` is `avx`), for code that leaves the same MXCSR in two runs along the same
-trace (`hmx`): at the level `evex` the clearing zeroes `zmm16`–`zmm31`
-(`clearHigh`), which `RegsOk` says nothing of, whatever `xs` says. -/
-theorem scrubCodeMCRF_ok {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
-    (xs : List XReg) (gs : List Reg)
-    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
-    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
-    (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
-    (hmx : MxSame r.code)
-    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hres : ResOk r.code r.contract r.stack ks cs) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks)
-    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
-    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) :
-    Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract ∧
-      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract
-        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
-  have hall : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract ∧
-      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract
-        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    have hr := hres
-    rw [e] at hv hp hr ⊢
-    have hrb' := hrb
-    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    exact Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
-      hcs hst hcv (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => hmx) hrb' hp hr (tailOk_of _ _ _)
-      (xs_of _ _) hxe (fun _ _ e => absurd e (by decide)) (gs_of _ _)
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  rw [e] at hv hall hregs ⊢
-  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
-    (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv) (fun _ _ h => absurd h (by decide))
-    (Nat.le_of_eq hcs) hcv (fun _ _ h => absurd h (by decide)) (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hall
-
-/-- `scrubRegMCR`, at any level, without `mxFix` (`scrubCodeMCRF_ok`). -/
-def scrubRegMCRF {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
-    (xs : List XReg) (gs : List Reg)
-    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
-    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
-    (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
-    (hmx : MxSame r.code)
-    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hres : ResOk r.code r.contract r.stack ks cs) (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks)
-    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
-    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) : Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
-  contract := r.contract
-  verified := (scrubCodeMCRF_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hxe ht hregs).1
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := scrub_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
-  written := r.written
-  writtenOk := by
-    rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-  residue := some ⟨(scrubCodeMCRF_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hxe ht hregs).2⟩
-
 end VG.X86_64.Scrub
 
 /-! ## Return addresses, in two runs along the same path -/
@@ -1198,6 +1125,419 @@ theorem regsOk_of_vec {c : Prog isa} {k : Contract isa} {lv : VecLevel} {xs : Li
 
 end VG.X86_64.VecLock
 
+namespace VG.X86_64.HLock
+
+open VG VG.X86_64 VG.X86_64.UpperLock VG.Impl.Scrub.X86_64
+
+/-- `zmm16`–`zmm31` agree, if `a`. -/
+def HA (a : Bool) (s₁ s₂ : State) : Prop := a = true → s₁.ymmH = s₂.ymmH ∧ s₁.zmmHiH = s₂.zmmHiH
+
+/-- An instruction that keeps `zmm16`–`zmm31`. -/
+def keepI (i : Instr) : Bool := decide (i.vecLevelR ≤ 1)
+
+/-- A block that ends by zeroing `zmm16`–`zmm31` (`clearHigh .evex`). -/
+def clrH (is : List Instr) : Bool := is.drop (is.length - 16) == hregs.map zeroH
+
+/-- What two runs along the same path agree on in `zmm16`–`zmm31` after `c`,
+from `a`: a block that ends by zeroing them makes them agree, one that keeps
+them keeps the agreement; a call or frame as its body says. -/
+def step : Prog isa → Bool → Bool
+  | .block is, a => if clrH is then true else if is.all keepI then a else false
+  | .seq x y, a => step y (step x a)
+  | .ite _ t e, a => step t a && step e a
+  | .loop b _, a =>
+    let a₁ := a && step b a
+    if !a₁ || step b a₁ then a₁ else false
+  | .call _ b, a => step b a
+  | .frame _ b _, a => step b a
+  | .icall .., _ => false
+
+theorem ha_mono {a b : Bool} {s₁ s₂ : State} (h : HA b s₁ s₂) (e : a = true → b = true) : HA a s₁ s₂ :=
+  fun ha => h (e ha)
+
+theorem keep_ha {a : Bool} {s₁ s₂ u₁ u₂ : State} (k₁ : u₁.ymmH = s₁.ymmH ∧ u₁.zmmHiH = s₁.zmmHiH)
+    (k₂ : u₂.ymmH = s₂.ymmH ∧ u₂.zmmHiH = s₂.zmmHiH) (h : HA a s₁ s₂) : HA a u₁ u₂ :=
+  fun e => by rw [k₁.1, k₂.1, k₁.2, k₂.2]; exact h e
+
+theorem keep_run {c : Prog isa} (hc : ∀ i ∈ instrs c, keepI i = true) {s s' : State} {t : List Leak}
+    (e : Exec isa c s t s') : s'.ymmH = s.ymmH ∧ s'.zmmHiH = s.zmmHiH := by
+  have := Residue.Exec.vecKeep1R (fun i hi => by simpa [keepI] using hc i hi) e
+  simp only [Residue.vk1R, Prod.mk.injEq] at this
+  exact this
+
+theorem clr_run {is : List Instr} (h : clrH is = true) {s u : State} {t : List Leak}
+    (e : execBlock isa is s = some (u, t)) : u.ymmH = (fun _ => 0) ∧ u.zmmHiH = (fun _ => 0) := by
+  simp only [clrH, beq_iff_eq] at h
+  rw [← List.take_append_drop (is.length - 16) is, execBlock_append, h] at e
+  cases e₁ : execBlock isa (is.take (is.length - 16)) s with
+  | none => rw [e₁] at e; cases e
+  | some p =>
+    rw [e₁] at e
+    rw [Option.bind_some, Scrub.execBlock_zeroH, Option.map_some, Option.some.injEq, Prod.mk.injEq] at e
+    obtain ⟨rfl, -⟩ := e
+    exact ⟨funext fun h => by simp [Scrub.mem_hregs h], funext fun h => by simp [Scrub.mem_hregs h]⟩
+
+theorem push_hk {i : Instr} {s s₁ : State} (hp : isa.push i s = some s₁) :
+    s₁.ymmH = s.ymmH ∧ s₁.zmmHiH = s.zmmHiH := by
+  have := Residue.push_vk0 hp
+  simp only [Residue.vk0, Prod.mk.injEq] at this
+  exact ⟨this.1, this.2.1⟩
+
+theorem pop_hk {j : Instr} {s₁ s₂ s' : State} (hq : isa.pop j s₁ s₂ = some s') :
+    s'.ymmH = s₂.ymmH ∧ s'.zmmHiH = s₂.zmmHiH := by
+  have := Residue.pop_vk0 hq
+  simp only [Residue.vk0, Prod.mk.injEq] at this
+  exact ⟨this.1, this.2.1⟩
+
+theorem call_hk {s s₁ : State} (h : isa.call s = some s₁) : s₁.ymmH = s.ymmH ∧ s₁.zmmHiH = s.zmmHiH := by
+  simp only [isa, call, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+
+theorem ret_hk {s₁ s₂ s' : State} (h : isa.ret s₁ s₂ = some s') : s'.ymmH = s₂.ymmH ∧ s'.zmmHiH = s₂.zmmHiH := by
+  simp only [isa, ret] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+
+theorem step_loop_fix {b : Prog isa} {c : Cond} {a : Bool} (h : (!a || step b a) = true) :
+    step (.loop b c) a = a := by
+  cases a <;> simp_all [step]
+
+/-- Two runs of `c` whose traces agree, extended by `r₁` and `r₂`, from
+states whose functions called indirectly are at the same addresses and that
+agree on `zmm16`–`zmm31` if `a`, agree on them at the end if `step c a`. -/
+theorem lock {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
+    ∀ {s₂ s₂' : State} {t₂ r₁ r₂ : List Leak} {a : Bool}, Exec isa c s₂ t₂ s₂' → t₁ ++ r₁ = t₂ ++ r₂ →
+      (∀ n ∈ inames c, s₁.syms n = s₂.syms n) → HA a s₁ s₂ → HA (step c a) s₁' s₂' := by
+  induction e₁ with
+  | @block is _ _ _ h₁ =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ _ _ hs
+    cases e₂ with
+    | block h₂ =>
+      simp only [step]
+      split
+      · rename_i hc
+        obtain ⟨y₁, z₁⟩ := clr_run hc h₁
+        obtain ⟨y₂, z₂⟩ := clr_run hc h₂
+        exact fun _ => ⟨by rw [y₁, y₂], by rw [z₁, z₂]⟩
+      · split
+        · rename_i _ hp
+          exact keep_ha (keep_run (c := .block is) (fun i hi => List.all_eq_true.mp hp i hi) (Exec.block h₁))
+            (keep_run (c := .block is) (fun i hi => List.all_eq_true.mp hp i hi) (Exec.block h₂)) hs
+        · exact nofun
+  | seq x₁ y₁ ihx ihy =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | seq x₂ y₂ =>
+      simp only [List.append_assoc] at ht
+      simp only [inames, List.mem_append] at hf
+      obtain ⟨hx, -⟩ := UpperLock.lock x₁ x₂ ht fun n hn => hf n (.inl hn)
+      subst hx
+      exact ihy y₂ (List.append_cancel_left ht) (fun n hn => by
+        rw [Exec.syms x₁, Exec.syms x₂]; exact hf n (.inr hn)) (ihx x₂ ht (fun n hn => hf n (.inl hn)) hs)
+  | iteT _ x₁ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | iteT _ x₂ =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      simp only [inames, List.mem_append] at hf
+      exact ha_mono (ih x₂ ht (fun n hn => hf n (.inl hn)) hs) fun e => by
+        simp only [step, Bool.and_eq_true] at e; exact e.1
+    | iteF _ _ => exact (branch_ne ht).elim
+  | iteF _ x₁ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | iteF _ x₂ =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      simp only [inames, List.mem_append] at hf
+      exact ha_mono (ih x₂ ht (fun n hn => hf n (.inr hn)) hs) fun e => by
+        simp only [step, Bool.and_eq_true] at e; exact e.2
+    | iteT _ _ => exact (branch_ne ht.symm).elim
+  | @loopExit b c _ _ _ x₁ _ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | loopExit x₂ _ =>
+      simp only [List.append_assoc] at ht
+      have hb := ih x₂ ht hf hs
+      simp only [step]
+      split
+      · exact ha_mono hb fun e => by simp only [Bool.and_eq_true] at e; exact e.2
+      · exact nofun
+    | loopNext x₂ _ _ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨h, -⟩ := UpperLock.lock x₁ x₂ ht hf
+      subst h
+      simp at ht
+  | @loopNext b c _ _ _ _ _ x₁ _ _ ihx ihl =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | loopExit x₂ _ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨h, -⟩ := UpperLock.lock x₁ x₂ ht hf
+      subst h
+      simp at ht
+    | loopNext x₂ _ l₂ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨h, -⟩ := UpperLock.lock x₁ x₂ ht hf
+      subst h
+      have ht' := List.append_cancel_left ht
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht'
+      have hb := ihx x₂ ht hf hs
+      simp only [step]
+      split
+      · rename_i hfix
+        have a₁ := ha_mono hb (a := a && step b a) fun e => by simp only [Bool.and_eq_true] at e; exact e.2
+        have := ihl l₂ ht' (fun n hn => by rw [Exec.syms x₁, Exec.syms x₂]; exact hf n hn) a₁
+        rwa [step_loop_fix hfix] at this
+      · exact nofun
+  | call hc₁ x₁ hr₁ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | call hc₂ x₂ hr₂ =>
+      simp only [List.map_cons, List.map_nil, List.append_assoc, List.cons_append, List.cons.injEq] at ht
+      have hb := ih x₂ ht.2 (fun n hn => by rw [call_syms hc₁, call_syms hc₂]; exact hf n hn)
+        (keep_ha (call_hk hc₁) (call_hk hc₂) hs)
+      exact keep_ha (ret_hk hr₁) (ret_hk hr₂) hb
+  | frame hp₁ x₁ hq₁ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ a e₂ ht hf hs
+    cases e₂ with
+    | frame hp₂ x₂ hq₂ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨-, ht⟩ := append_cancel (by simp only [List.length_map]; exact addrs_length _ _ _) ht
+      have hb := ih x₂ ht (fun n hn => by rw [push_syms hp₁, push_syms hp₂]; exact hf n hn)
+        (keep_ha (push_hk hp₁) (push_hk hp₂) hs)
+      exact keep_ha (pop_hk hq₁) (pop_hk hq₂) hb
+  | icall => intros; exact nofun
+  | icallNext => intros; exact nofun
+
+end VG.X86_64.HLock
+
+namespace VG.X86_64.Scrub
+
+open VG.Impl.Scrub.X86_64
+
+theorem vecLevelR_le_two (i : Instr) : i.vecLevelR ≤ VecLevel.evex.level := by
+  unfold Instr.vecLevelR
+  split
+  · decide
+  · unfold Instr.vecLevel; split <;> decide
+
+/-- Two runs end agreeing on `zmm16`–`zmm31`. -/
+def HRegsOk (c : Prog isa) (k : Contract isa) : Prop :=
+  ∀ s₁ s₂ t₁ t₂ u₁ u₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns →
+    Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ → u₁.ymmH = u₂.ymmH ∧ u₁.zmmHiH = u₂.zmmHiH
+
+/-- `HRegsOk` of constant-time code that `HLock.step` says leaves
+`zmm16`–`zmm31` agreeing. -/
+theorem hregsOk_of_step {c : Prog isa} {k : Contract isa} (hct : ConstantTime isa k.pre k.pub c)
+    (hn : UpperLock.inames c = []) (hv : HLock.step c true = true) : HRegsOk c k := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho _ e₁ e₂
+  obtain rfl := hct s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp e₁ e₂
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hy, hz, -⟩ := ho
+  have h := HLock.lock e₁ e₂ (r₁ := []) (r₂ := []) rfl (by rw [hn]; nofun) (a := true) fun _ => ⟨hy, hz⟩
+  rw [hv] at h
+  exact h rfl
+
+theorem tail_partH (rb : Nat) {xs xs' : List XReg} {ps gs gs' : List Reg} {ks : List Nat}
+    {cs cs' : List Nat} (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks)
+    (hcc : SameWipe ks cs cs') (u : State)
+    (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hs : cs.sum ≤ (u.gpr .rsp).toNat)
+    (hv' : ∀ b ∈ cs', 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hs' : cs'.sum ≤ (u.gpr .rsp).toNat) :
+    ∃ m T', Exec isa (scrubTail .avx rb xs ps gs ks cs .avx) u (tailTr .avx ks cs (u.gpr .rsp) .avx)
+        (finState .avx rb xs ps gs m u .avx) ∧
+      Exec isa (scrubTail .evex rb xs' ps gs' ks cs' .avx) u T' (finState .evex rb xs' ps gs' m u .avx) := by
+  obtain ⟨m, e, hz, hu⟩ := tail_run .avx rb cs ht u hv hs (f := .avx) nofun
+  obtain ⟨m', e', hz', hu'⟩ := tail_run .evex rb cs' ht' u hv' hs' (f := .avx) nofun
+  have hm : m' = m := by
+    funext x
+    by_cases hw : WCov ks cs (u.gpr .rsp) x
+    · rw [hz x hw, hz' x ((wcov_same hcc _ _).mp hw)]
+    · rw [hu x hw, hu' x (fun h => hw ((wcov_same hcc _ _).mpr h))]
+  rw [hm] at e'
+  exact ⟨m, _, e, e'⟩
+
+theorem finState_gprH {rb : Nat} {xs xs' : List XReg} {ps gs gs' : List Reg} {ks : List Nat} {m : Mem}
+    {u : State} (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks) {r : Reg} (hr : r ∉ scratchRegs) :
+    (finState .avx rb xs ps gs m u .avx).gpr r = (finState .evex rb xs' ps gs' m u .avx).gpr r := by
+  have hg : r ∉ gs := fun h => hr (ht.gsOk r h)
+  have hg' : r ∉ gs' := fun h => hr (ht'.gsOk r h)
+  have hp : r ∉ ps := fun h => hr (ht.psOk r h)
+  by_cases h : r = .rax
+  · subst h; rw [finState_rax hg, finState_rax hg']
+  · rw [finState_gpr hp hg h, finState_gpr hp hg' h]
+
+section
+variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+  {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+  {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+
+/-- `Verified.scrubPart` with the clearing at the level `avx`, which keeps
+`zmm16`–`zmm31`, from that at the level `evex`, which zeroes them, for code
+whose two runs end agreeing on them (`hH`). -/
+theorem Verified.scrubPartH {c : Prog isa} {rb : Nat} {xs xs' : List XReg}
+    {ps gs gs' : List Reg} {ks cs cs' : List Nat} (hA : ScrubAbi A)
+    (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hcs : cs.sum ≤ stack) (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hcs' : cs'.sum ≤ stack) (hv' : ∀ b ∈ cs', 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hcc : SameWipe ks cs cs')
+    (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks)
+    (hregs : RegsOk c (sig.contract A pre post wa stack leak) xs ps gs)
+    (hH : HRegsOk c (sig.contract A pre post wa stack leak))
+    (hall : Verified target (Impl.Scrub.X86_64.scrub .evex rb xs' ps gs' ks cs' c .avx)
+        (sig.contract A pre post wa stack leak) ∧
+      NoResidue (Impl.Scrub.X86_64.scrub .evex rb xs' ps gs' ks cs' c .avx) (sig.contract A pre post wa stack leak) rb) :
+    Verified target (Impl.Scrub.X86_64.scrub .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (Impl.Scrub.X86_64.scrub .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) rb := by
+  obtain ⟨⟨acor, -, asat⟩, ares⟩ := hall
+  have tails : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
+      ∃ m T', Exec isa (scrubTail .avx rb xs ps gs ks cs .avx) u (tailTr .avx ks cs (s.gpr .rsp) .avx)
+          (finState .avx rb xs ps gs m u .avx) ∧
+        Exec isa (scrubTail .evex rb xs' ps gs' ks cs' .avx) u T' (finState .evex rb xs' ps gs' m u .avx) := by
+    intro s t u hs he
+    obtain ⟨t', u', he', ha, -⟩ := h.1 s hs
+    obtain ⟨-, rfl⟩ := Exec.det he he'
+    have hr : u.gpr .rsp = s.gpr .rsp := ha.1 .rsp (by decide)
+    have hl : ∀ {n : Nat}, n ≤ stack → n ≤ (u.gpr .rsp).toNat := fun {n} hn => by
+      rcases (contract_pre_scrub hA hs).1 with h0 | h0
+      · rw [h0] at hn; omega_using [hn]
+      · rw [hr]; omega_using [hn, h0]
+    obtain ⟨m, T', e, e'⟩ := tail_partH rb ht ht' hcc u hv (hl hcs) hv' (hl hcs')
+    rw [hr] at e
+    exact ⟨m, T', e, e'⟩
+  have hax : Reg.rax ∉ scratchRegs := by decide
+  refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, asat⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
+  · obtain ⟨t, w, he, ha, hq⟩ := acor s hs
+    cases he with | seq a b =>
+    obtain ⟨m, T, e, e'⟩ := tails s _ _ hs a
+    obtain ⟨-, rfl⟩ := Exec.det b e'
+    obtain ⟨hcs', hrs, hmx⟩ := ha
+    refine ⟨_, _, .seq a e, ⟨fun r hr => ?_, ?_, ?_⟩, contract_post_congr hA hq ?_ (finState_gprH ht ht' hax)⟩
+    · have hs' : r ∉ scratchRegs := by revert hr; revert r; decide
+      rw [finState_gprH ht ht' hs']; exact hcs' r hr
+    · simpa only [finState_other] using hrs
+    · simpa only [finState_other] using hmx
+    · simp only [finState_other]
+  · cases e₁ with | seq a₁ b₁ =>
+    cases e₂ with | seq a₂ b₂ =>
+    obtain ⟨m₁, T₁, f₁, -⟩ := tails s₁ _ _ h₁ a₁
+    obtain ⟨m₂, T₂, f₂, -⟩ := tails s₂ _ _ h₂ a₂
+    obtain ⟨rfl, -⟩ := Exec.det b₁ f₁
+    obtain ⟨rfl, -⟩ := Exec.det b₂ f₂
+    rw [h.2.1 _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, contract_pub_rsp hA hp]
+  · cases e₁ with | seq a₁ b₁ =>
+    cases e₂ with | seq a₂ b₂ =>
+    rename_i u₁ _ _ u₂ _ _
+    obtain ⟨m₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
+    obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
+    obtain ⟨-, rfl⟩ := Exec.det b₁ f₁
+    obtain ⟨-, rfl⟩ := Exec.det b₂ f₂
+    obtain ⟨o1, o2, o3, o4, -, -, -, -, -, -, -, -, -, o14, o15⟩ :=
+      ares _ _ _ _ _ _ h₁ h₂ hp ho hun (.seq a₁ f₁') (.seq a₂ f₂')
+    obtain ⟨rg, rx⟩ := hregs _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
+    obtain ⟨hy, hz⟩ := hH _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
+    refine ⟨by simpa only [finState_other] using o1, by simpa only [finState_other] using o2,
+      fun r hr => ?_, ?_, by simp only [finState_other], by simp only [finState_other],
+      by simp only [finState_other], by simp only [finState_other], ?_, ?_, ?_,
+      by simp only [finState_other, clearedH]; exact hy, by simp only [finState_other, clearedH]; exact hz,
+      by simpa only [finState_other] using o14, fun x hx => ?_⟩
+    · by_cases hs : r ∈ scratchRegs
+      · by_cases hg : r ∈ gs
+        · simp [finState, clearedG, hg]
+        · by_cases hp' : r ∈ ps
+          · simp [finState, clearedG, State.setReg, clearedP_gpr, hg, hp', hr]
+          · rw [finState_gpr hp' hg hr, finState_gpr hp' hg hr]; exact rg r hs hp' hg
+      · rw [finState_gprH ht ht' hs, finState_gprH ht ht' hs]; exact o3 r hr
+    · rw [finState_gprH ht ht' hax, finState_gprH ht ht' hax]; exact o4
+    · rw [finState_xmm, finState_xmm]
+      funext x
+      split
+      · rfl
+      · rename_i hx; exact (rx x hx).1
+    · rw [finState_ymmHi, finState_ymmHi]
+      funext x
+      split
+      · rfl
+      · rename_i hn
+        exact (rx x fun hx => hn ⟨by decide, hx⟩).2.1
+    · rw [finState_zmmHi, finState_zmmHi]
+      funext x
+      split
+      · rfl
+      · rename_i hn
+        exact (rx x fun hx => hn ⟨by decide, hx⟩).2.2
+    · have := o15 x (by simpa only [finState_other] using hx)
+      simpa only [finState_other] using this
+
+end
+
+/-- `scrubCodeMCR_ok` at the level `avx`, without `mxFix`, for code that writes `zmm16`–`zmm31`
+but leaves them agreeing in two runs (`hH`): the clearing keeps them. -/
+theorem scrubCodeMCRH_ok {api : Api} (r : Registration api target) (ks cs : List Nat)
+    (xs : List XReg) (gs : List Reg)
+    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
+    (hmx : MxSame r.code)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks cs) (hxe : ∀ x, x ∈ xsOf r.code ks)
+    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
+    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) (hH : HRegsOk r.code r.contract) :
+    Verified target (scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract ∧
+      NoResidue (scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract
+        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+  have hall : Verified target (scrub .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract ∧
+      NoResidue (scrub .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract
+        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    have hr := hres
+    rw [e] at hv hp hr ⊢
+    have hrb' := hrb
+    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
+    exact Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+      hcs hst hcv (fun i _ => vecLevelR_le_two i) (fun _ => hmx) hrb' hp hr (tailOk_of _ _ _)
+      (xs_of _ _) (fun _ => hxe) (fun _ _ e => absurd e (by decide)) (gs_of _ _)
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  rw [e] at hv hall hregs hH ⊢
+  exact Verified.scrubPartH (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+    (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv)
+    (Nat.le_of_eq hcs) hcv (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hH hall
+
+/-- `scrubRegMCR` at the level `avx` for code that leaves `zmm16`–`zmm31`
+agreeing in two runs (`scrubCodeMCRH_ok`). -/
+def scrubRegMCRH {api : Api} (r : Registration api target) (ks cs : List Nat)
+    (xs : List XReg) (gs : List Reg)
+    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
+    (hmx : MxSame r.code)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks cs) (hw : r.written = []) (hxe : ∀ x, x ∈ xsOf r.code ks)
+    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
+    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) (hH : HRegsOk r.code r.contract) : Registration api target where
+  suffix := r.suffix
+  consts := r.consts
+  tables := r.tables
+  stack := r.stack
+  code := scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
+  contract := r.contract
+  verified := (scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).1
+  ofApi := r.ofApi
+  ofSig := r.ofSig
+  spSafe := scrub_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+  written := r.written
+  writtenOk := by
+    rw [hw]; exact fun _ _ _ _ _ => True.intro
+  extra := r.extra
+  vendor := r.vendor
+  notWith := r.notWith
+  residue := some ⟨(scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).2⟩
+
+end VG.X86_64.Scrub
+
 namespace VG.X86_64.RScrub
 
 open VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64
@@ -1227,32 +1567,28 @@ def withScrubResCR {api : Api} (r : Registration api target)
       (tailOk_ofB _ ht) hregs
   else r else r else r else r else r else r else r else r else r
 
-/-- `withScrubResCR` at the level `v` given, `evex` too, without `mxFix`,
-for code whose every `ldmxcsr` restores what it saved (`mxClass`), so that it
-leaves the same MXCSR in two runs along the same trace: at the level `evex`
-for code that writes `zmm16`–`zmm31`, which the clearing then zeroes too
-(`clearHigh`), if the clearing needs no CPU feature the code does not.
-`r` itself where a side condition fails. -/
-def withScrubResCRF {api : Api} (r : Registration api target) (v : VecLevel)
+/-- `withScrubResCR` for code that writes `zmm16`–`zmm31` but leaves them
+agreeing in two runs (`hH`), and whose every `ldmxcsr` restores what it saved:
+the clearing at the level `avx`, which keeps them. `r` itself where a side
+condition fails. -/
+def withScrubResCRH {api : Api} (r : Registration api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (ks cs : List Nat) (hres : ResOk r.code r.contract r.stack ks cs)
-    (xs : List XReg) (gs : List Reg) (hregs : RegsOk r.code r.contract xs (psOf ks) gs) : Registration api target :=
+    (xs : List XReg) (gs : List Reg) (hregs : RegsOk r.code r.contract xs (psOf ks) gs)
+    (hH : HRegsOk r.code r.contract) : Registration api target :=
   if hcs : cs.sum = r.stack then
   if hcv : cs.all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) = true then
   if hd : r.code.x86_64Depth ≤ r.stack then
   if hst : r.stack + 8 < 2 ^ 64 then
-  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
   if hmx : (mxClassOnce r.code).isSome = true then
   if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
       api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
   if hw : r.written = [] then
   if ht : tailOkB xs gs ks = true then
-  if hx : v = .evex → r.code.all (fun i => !writesVec i) = false then
-    let r' := scrubRegMCRF r v ks cs xs gs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
-      ((Code.allOnce_eq _ r.code).symm.trans hlv) (MxSame.of_fun (mxFun_of (mxClassOnce_eq r.code ▸ hmx))) hrb hpost
-      hres hw (fun e x => by unfold xsOf; rw [hx e]; exact mem_xregs x) (tailOk_ofB _ ht) hregs
-    if (Code.requiresDedup isa.requires r'.code).all
-        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
-  else r else r else r else r else r else r else r else r else r else r
+  if hx : r.code.all (fun i => !writesVec i) = false then
+    scrubRegMCRH r ks cs xs gs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
+      (MxSame.of_fun (mxFun_of (mxClassOnce_eq r.code ▸ hmx))) hrb hpost
+      hres hw (fun x => by unfold xsOf; rw [hx]; exact mem_xregs x) (tailOk_ofB _ ht) hregs hH
+  else r else r else r else r else r else r else r else r else r
 
 end VG.X86_64.RScrub

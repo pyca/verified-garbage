@@ -2312,7 +2312,7 @@ jmp 28b
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
@@ -2327,7 +2327,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -2501,7 +2501,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f
@@ -2680,7 +2680,7 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
@@ -2695,7 +2695,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -2870,7 +2870,7 @@ jmp 23f
 23:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 20:
 .base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 253f

@@ -8690,22 +8690,6 @@ vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512:
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2584]
 21:
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -9831,22 +9815,6 @@ vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512:
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2584]
 21:
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx

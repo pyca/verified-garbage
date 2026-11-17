@@ -1515,5 +1515,21 @@ vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512_w:
 	vmovdqu32 ZMMWORD PTR [r11+64], zmm0
 	vmovdqu32 ZMMWORD PTR [r11], zmm0
 	vzeroupper
+	vpxorq zmm16, zmm16, zmm16
+	vpxorq zmm17, zmm17, zmm17
+	vpxorq zmm18, zmm18, zmm18
+	vpxorq zmm19, zmm19, zmm19
+	vpxorq zmm20, zmm20, zmm20
+	vpxorq zmm21, zmm21, zmm21
+	vpxorq zmm22, zmm22, zmm22
+	vpxorq zmm23, zmm23, zmm23
+	vpxorq zmm24, zmm24, zmm24
+	vpxorq zmm25, zmm25, zmm25
+	vpxorq zmm26, zmm26, zmm26
+	vpxorq zmm27, zmm27, zmm27
+	vpxorq zmm28, zmm28, zmm28
+	vpxorq zmm29, zmm29, zmm29
+	vpxorq zmm30, zmm30, zmm30
+	vpxorq zmm31, zmm31, zmm31
 	ret
 	.p2align 6

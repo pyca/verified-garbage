@@ -1590,17 +1590,29 @@ theorem wipeWin_run (z : Bool) {add k : Nat} (h1 : 63 ≤ add) (h2 : add ≤ 127
     rw [g₁, ite_t rfl]; exact alignW_eq h1 h2 S hS
   obtain ⟨m', he, hm⟩ := zeroWs_run z (p := S) (b := 2112) (c := winOff add S) (by decide) k u₁
     (by rw [wr₁]; exact hR) h11 y₁ h₁ (by omega)
-  refine ⟨{ ({ u₁ with mem := m' } : State) with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }, ?_, fun x => ?_,
-    fun r hr => ?_, rd₁, wr₁, mx₁⟩
-  · rw [VG.Impl.AesGcm.X86_64.wipeWin, execBlock_append, execBlock_append, e₁]
-    simp only [Option.bind_some, he, Option.map_some]
-    simp only [execBlock, isa, reduceExec, VOp.exec, addrs, Option.map_some, List.map_nil, List.append_nil]
-    simp only [h11, List.cons_append, List.nil_append]
-  · show m' x = _
-    rw [hm x, h11, m₁]
+  let v : State := { ({ u₁ with mem := m' } : State) with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }
+  let w : State := if z then
+      { v with
+        ymmH := (fun r => if r ∈ VG.Impl.Scrub.X86_64.hregs then 0 else v.ymmH r)
+        zmmHiH := (fun r => if r ∈ VG.Impl.Scrub.X86_64.hregs then 0 else v.zmmHiH r) }
+    else v
+  have ew : execBlock isa (if z then VG.Impl.Scrub.X86_64.hregs.map VG.Impl.Scrub.X86_64.zeroH else []) v =
+      some (w, []) := by
+    cases z
+    · rfl
+    · exact Scrub.execBlock_zeroH _ _
+  have hw : w.mem = m' ∧ w.gpr = u₁.gpr ∧ w.rd = u₁.rd ∧ w.wr = u₁.wr ∧ w.mxcsr = u₁.mxcsr := by
+    cases z <;> exact ⟨rfl, rfl, rfl, rfl, rfl⟩
+  refine ⟨w, ?_, fun x => ?_, fun r hr => ?_, hw.2.2.1.trans rd₁, hw.2.2.2.1.trans wr₁, hw.2.2.2.2.trans mx₁⟩
+  · have ev : execBlock isa [.vop .vzeroupper] { u₁ with mem := m' } = some (v, []) := by
+      simp only [execBlock, isa, reduceExec, VOp.exec, addrs, Option.map_some, List.map_nil, List.append_nil]
+      rfl
+    rw [VG.Impl.AesGcm.X86_64.wipeWin, execBlock_append, execBlock_append, execBlock_append, e₁]
+    simp only [Option.bind_some, he, ev, ew, Option.map_some]
+    simp only [h11, List.cons_append, List.nil_append, List.append_nil]
+  · rw [hw.1, hm x, h11, m₁]
     simp only [off_lt _ _ _ _ (show winOff add S + wbytes z * k < 2 ^ 64 by omega)]
-  · show u₁.gpr r = _
-    rw [g₁, ite_f hr]
+  · rw [hw.2.1, g₁, ite_f hr]
 
 section WipeW
 variable (z : Bool) {add k : Nat} (h1 : 63 ≤ add) (h2 : add ≤ 127) (hk : add + wbytes z * k ≤ 2112)
@@ -1671,12 +1683,10 @@ end WipeW
 
 theorem wipeWin_nosp (z : Bool) (add k : Nat) : ∀ i ∈ wipeWin z add k, Taint.clobbers i .rsp = false := by
   intro i hi
-  simp only [VG.Impl.AesGcm.X86_64.wipeWin, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
-  rcases hi with ((rfl | rfl | rfl | rfl) | hi) | rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
+  simp only [VG.Impl.AesGcm.X86_64.wipeWin, List.mem_append] at hi
+  rcases hi with ((hi | hi) | hi) | hi
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl <;> rfl
   · induction k with
     | zero => exact absurd hi (by simp [zeroWs])
     | succ k ih =>
@@ -1684,7 +1694,12 @@ theorem wipeWin_nosp (z : Bool) (add k : Nat) : ∀ i ∈ wipeWin z add k, Taint
       rcases hi with rfl | hi
       · cases z <;> rfl
       · exact ih hi
-  · rfl
+  · simp only [List.mem_singleton] at hi; subst hi; rfl
+  · cases z
+    · exact absurd hi (by simp)
+    · simp only [↓reduceIte, List.mem_map] at hi
+      obtain ⟨h, -, rfl⟩ := hi
+      cases h <;> rfl
 
 /-- `B`, its functions renamed (`Fn.wipeW`) and zeroing their loops' working
 space before they return (`wipeWin z add k`). -/
@@ -2450,21 +2465,22 @@ def streamEncryptF48ZPlain : Registration Spec.Gcm.streamEncryptPreparedApi X86_
   spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl blkRZ)
     (streamEncryptClr_spSafe .avx variant.impl blkBZ)
 
-/-- What the clearing of only the general-purpose registers and
-`zmm16`–`zmm31` needs of
+/-- What the clearing of only the general-purpose registers needs of
 `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, checked by the
 emitter (as `StreamChkF16A`). -/
 def StreamChkF48Z : Prop :=
   UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
     UpperLock.inames blkBZ.enc.code = [] ∧ UpperLock.inames blkRZ.enc.code = [] ∧
     UpperLock.inames streamEncryptF48ZPlain.code = [] ∧
-    VecLock.step .avx streamEncryptF48ZPlain.code (true, true) = (true, true)
+    VecLock.step .avx streamEncryptF48ZPlain.code (true, true) = (true, true) ∧
+    HLock.step streamEncryptF48ZPlain.code true = true
 
 instance : Decidable StreamChkF48Z := by unfold StreamChkF48Z; infer_instance
 
 /-- `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, followed by the
-clearing of `zmm16`–`zmm31` and the scratch registers (`withScrubResCRF` at
-the level `evex`): its whole-blocks functions leave in their scratch a
+clearing of the scratch registers only (`withScrubResCRH`): its
+whole-blocks functions zero `zmm16`–`zmm31` before they return, so two runs
+leave the same there (`HLock.step`), and they leave in their scratch a
 function of their arguments (`blkBZ_leaves`, `blkRZ_leaves`), so it leaves
 the same stack in two runs (`streamEncryptF48W_resOk`), and `zmm0`–`zmm15`
 agree (`VecLock.regsOk_of_vec`). `vg_aes_gcm_seal_gather_prepared` calls its
@@ -2472,10 +2488,11 @@ code as it was, `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core`
 (`encFnF`). `streamEncryptF48ZPlain` if the emitter's check fails. -/
 def streamEncryptF48Z : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target :=
   if h : StreamChkF48Z then
-    RScrub.withScrubResCRF streamEncryptF48ZPlain .evex (streamEncryptPreparedOut _) [] [2608]
+    RScrub.withScrubResCRH streamEncryptF48ZPlain (streamEncryptPreparedOut _) [] [2608]
       (streamEncryptF48W_resOk variant.impl blkRZ blkBZ (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl)
         blkBZ_leaves blkRZ_leaves ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
-      [] scratchRegs (VecLock.regsOk_of_vec streamEncryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+      [] scratchRegs (VecLock.regsOk_of_vec streamEncryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1)
+      (hregsOk_of_step streamEncryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2.2)
   else streamEncryptF48ZPlain
 
 /-- `streamEncryptF48ZPlain` for `vg_aes_gcm_stream_decrypt_prepared`. -/
@@ -2494,17 +2511,19 @@ def StreamChkF48ZD : Prop :=
   UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
     UpperLock.inames blkBZ.dec.code = [] ∧ UpperLock.inames blkRZ.dec.code = [] ∧
     UpperLock.inames streamDecryptF48ZPlain.code = [] ∧
-    VecLock.step .avx streamDecryptF48ZPlain.code (true, true) = (true, true)
+    VecLock.step .avx streamDecryptF48ZPlain.code (true, true) = (true, true) ∧
+    HLock.step streamDecryptF48ZPlain.code true = true
 
 instance : Decidable StreamChkF48ZD := by unfold StreamChkF48ZD; infer_instance
 
 /-- `streamEncryptF48Z` for `vg_aes_gcm_stream_decrypt_prepared`. -/
 def streamDecryptF48Z : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
   if h : StreamChkF48ZD then
-    RScrub.withScrubResCRF streamDecryptF48ZPlain .evex (streamDecryptPreparedOut _) [] [2608]
+    RScrub.withScrubResCRH streamDecryptF48ZPlain (streamDecryptPreparedOut _) [] [2608]
       (streamDecryptF48W_resOk variant.impl blkRZ blkBZ (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl)
         blkBZ_leavesD blkRZ_leavesD ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
-      [] scratchRegs (VecLock.regsOk_of_vec streamDecryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+      [] scratchRegs (VecLock.regsOk_of_vec streamDecryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1)
+      (hregsOk_of_step streamDecryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2.2)
   else streamDecryptF48ZPlain
 
 end Avx512R

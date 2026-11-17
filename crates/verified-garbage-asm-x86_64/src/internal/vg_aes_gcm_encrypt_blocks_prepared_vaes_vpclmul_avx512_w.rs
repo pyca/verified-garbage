@@ -529,7 +529,7 @@ jmp 2174f
 2173:
 2174:
 21:
-.base64 "TItcJAhJg8N/SYPjwMX578Bi0X5If0MPYtF+SH9DDmLRfkh/Qw1i0X5If0MMYtF+SH9DC2LRfkh/Qwpi0X5If0MJYtF+SH9DCGLRfkh/Qwdi0X5If0MGYtF+SH9DBWLRfkh/QwRi0X5If0MDYtF+SH9DAmLRfkh/QwFi0X5IfwPF+HfD"
+.base64 "TItcJAhJg8N/SYPjwMX578Bi0X5If0MPYtF+SH9DDmLRfkh/Qw1i0X5If0MMYtF+SH9DC2LRfkh/Qwpi0X5If0MJYtF+SH9DCGLRfkh/Qwdi0X5If0MGYtF+SH9DBWLRfkh/QwRi0X5If0MDYtF+SH9DAmLRfkh/QwFi0X5IfwPF+Hdiof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7//D"
 .p2align 6"#,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
