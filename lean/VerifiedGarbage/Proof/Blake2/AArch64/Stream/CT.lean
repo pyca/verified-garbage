@@ -88,11 +88,6 @@ theorem finalizeS_ct : ConstantTime isa (finalizeAArch64 s).pre (finalizeAArch64
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => finalize_agree hp) (by taint_decide)
 
-/-- BLAKE2b's `init`, with `x9` cleared, returns without secret residue. -/
-theorem initBCleared_noResidue (k : Contract isa) :
-    NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b)) k 0 :=
-  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
-
 /-- BLAKE2s's `init`, with `x9` cleared, returns without secret residue. -/
 theorem initSCleared_noResidue (k : Contract isa) :
     NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s)) k 0 :=
