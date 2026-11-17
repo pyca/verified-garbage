@@ -98,7 +98,7 @@ theorem call_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallPPC6
   have hw : WP isa (ecbCall d) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbCallPPC64LE d).post s₀ s' := by
     refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
     have hn : (blockCall d).noFrames = true := by cases d <;> lit_decide
-    refine WP.frameRegKept (r := .r0) (s₀ := s₁) hsp (fun R hR => ?_) ?_
+    refine WP.frameReg (r := .r0) (s₀ := s₁) hsp (fun R hR => ?_) ?_
       (by rw [fdepth_of_noFrames hn]; decide) (pushFrames_of_noFrames hn)
     · rw [show s₁.wr = s₀.wr from rfl, hwr] at hR
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -118,12 +118,12 @@ theorem call_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallPPC6
     have hc : ∀ (c : Prog isa) (name : String),
         (∀ s, (contract d 1088).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (contract d 1088).post s s') →
         c.noFrames = true →
-        WP isa (.call name c) F fun s₂ => WP isa (.block [.mtlr .r0])
-          { s₂.write .r0 (s₁.gpr .r0) with sp := s₁.sp }
+        WP isa (.call name c) F fun s₂ => ∀ m u, Frame [⟨s₁.sp - 48, 48⟩] s₂.mem m →
+          WP isa (.block [.mtlr .r0]) { s₂.write .r0 (s₁.gpr .r0) with sp := s₁.sp, mem := m, unknowns := u }
           fun s' => abiPreserved s₀ s' ∧ (ecbCallPPC64LE d).post s₀ s' := by
       intro c name hv hn'
       refine WP.call (k := contract d 1088) (s := F) hv (rd := s₀.rd) (wr := s₀.wr) ?_
-        (fun _ _ h => h) (fun _ _ h => h) (fun s' rd' wr' sp' hf hp _ hpost => ?_) hn'
+        (fun _ _ h => h) (fun _ _ h => h) (fun s' rd' wr' sp' hf hp _ hpost m u f => ?_) hn'
       · have r3 := g .r3 (by decide) (by decide)
         have r4 := g .r4 (by decide) (by decide)
         have r5 := g .r5 (by decide) (by decide)
@@ -149,7 +149,10 @@ theorem call_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallPPC6
           have r4 := g .r4 (by decide) (by decide)
           have r5 := g .r5 (by decide) (by decide)
           simp only [contract, State.withRegions_gpr, hm, hm₀, r3, r4, r5] at hpost
-          show Spec.Seed.blocksAt s'.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat = _
+          show Spec.Seed.blocksAt m (s₀.gpr .r4) (s₀.gpr .r5).toNat = _
+          -- The pop loses the frame's bytes, which lie apart from the data.
+          rw [Proof.Seed.blocksAt_frame f (p := s₀.gpr .r4) (n := (s₀.gpr .r5).toNat) (fun r hr => by
+            rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega_using [fitD])]
           have hfr := frame_push s₁ (s₁.gpr .r0)
           have hsch := Proof.Seed.scheduleAt_frame hfr (p := s₀.gpr .r3) fun r hr => by
             rw [List.mem_singleton] at hr; subst hr; exact sK.symm

@@ -1414,6 +1414,20 @@ theorem inner_bytesAt {s₀ : State} {p : Addr} {n : Nat} (hd : Region.Disjoint 
   simp only [bytesAt]
   exact List.map_congr_left fun i hi => inner_bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
 
+/-- The state at `p`, apart from the frame, is what it was once the frame's
+bytes are lost. -/
+theorem lost_state {s₀ : State} {m m' : Mem} {p : Addr} (f : Frame [⟨s₀.sp - 48, 48⟩] m m')
+    (hd : Region.Disjoint ⟨s₀.sp - 48, 48⟩ ⟨p, 200⟩) : stateAt m' p = stateAt m p :=
+  Proof.Sha3.stateAt_congr fun _ hi => f.bytes (R := ⟨p, 200⟩) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hd.symm) (show 200 ≤ 2 ^ 64 by decide) hi
+
+/-- So are the `n` bytes at `p`. -/
+theorem lost_bytesAt {s₀ : State} {m m' : Mem} {p : Addr} {n : Nat} (f : Frame [⟨s₀.sp - 48, 48⟩] m m')
+    (hd : Region.Disjoint ⟨s₀.sp - 48, 48⟩ ⟨p, n⟩) (hn : n < 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => f.bytes (R := ⟨p, n⟩) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hd.symm) (show n ≤ 2 ^ 64 by omega_using [hn]) (List.mem_range.mp hi)
+
 theorem fdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.fdepth = 0 := by
   induction c <;> simp_all [Code.noFrames, Code.fdepth]
 
@@ -1427,15 +1441,16 @@ theorem withLr_ok {main : Prog isa} {s₀ : State} {Q : State → State → Prop
     (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48, 48⟩ R)
     (hmain : WP isa main (inner s₀) fun s' =>
       (∀ r ∈ preserved, s'.gpr r = (inner s₀).gpr r) ∧ s'.sp = (inner s₀).sp ∧ Q (inner s₀) s')
-    (hQ : ∀ s' s'', s''.mem = s'.mem → s''.gpr .r3 = s'.gpr .r3 → Q (inner s₀) s' → Q s₀ s'')
+    (hQ : ∀ s' s'', Frame [⟨s₀.sp - 48, 48⟩] s'.mem s''.mem → s''.gpr .r3 = s'.gpr .r3 →
+      Q (inner s₀) s' → Q s₀ s'')
     (hn : main.noFrames = true) :
     WP isa (Impl.Sha3.PPC64LE.Stream.withLr main) s₀ fun s' => abiPreserved s₀ s' ∧ Q s₀ s' := by
   unfold Impl.Sha3.PPC64LE.Stream.withLr
   refine WP.seq (MdStream.PPC64LE.WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by exact hsp) (fun R hR => (hd R hR).sub_left (frame_sub _))
-    (WP.mono hmain fun s' ⟨hk, _, hq⟩ => ?_)
+  refine WP.frameReg (by exact hsp) (fun R hR => (hd R hR).sub_left (frame_sub _))
+    (WP.mono hmain fun s' ⟨hk, _, hq⟩ m u f => ?_)
     (by rw [fdepth_of_noFrames hn]; decide) (pushFrames_of_noFrames hn)
-  refine MdStream.PPC64LE.WP.cons PPC64LE.exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, hQ s' _ rfl rfl hq⟩)
+  refine MdStream.PPC64LE.WP.cons PPC64LE.exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, hQ s' _ f rfl hq⟩)
   · have h0 : r ≠ .r0 := by revert r hr; decide
     simp only [State.write, h0, ite_false]
     rw [hk r hr]
@@ -1460,7 +1475,7 @@ theorem absorb_correct (s : State) (hs : Proof.Sha3.absorbPPC64LE.pre s) :
     exacts [hk.st, hk.scr]
   · simp (disch := decide) only [inner_gpr] at h₁
     obtain e := h₁ msg (by rw [Proof.Sha3.repr_iff, inner_state hk.st]; exact hR) hpm
-    rw [Proof.Sha3.repr_iff, hm]
+    rw [Proof.Sha3.repr_iff, lost_state hm hk.st]
     rw [Proof.Sha3.repr_iff, inner_bytesAt hk.d (s.gpr .r7).isLt] at e
     exact e
 
@@ -1491,7 +1506,7 @@ theorem pad_correct (s : State) (hs : Proof.Sha3.padPPC64LE.pre s) :
     rcases hR with rfl | rfl
     exacts [hk.st, hk.scr]
   · simp (disch := decide) only [Proof.Sha3.padPPC64LE, inner_gpr] at h₁
-    rw [hm]
+    rw [lost_state hm hk.st]
     exact h₁ msg (by rw [Proof.Sha3.repr_iff, inner_state hk.st]; exact hR) hpm
 
 /-- A state satisfying `pad`'s precondition. -/
@@ -1524,8 +1539,8 @@ theorem squeeze_correct (s : State) (hs : Proof.Sha3.squeezePPC64LE.pre s) :
   · simp (disch := decide) only [Proof.Sha3.squeezePPC64LE, inner_gpr] at h
     obtain ⟨h₁, h₂, h₃⟩ := h
     rw [inner_state hk.st] at h₁ h₃
-    refine ⟨by rw [hm]; exact h₁, by rw [h3]; exact h₂, fun d => ?_⟩
-    rw [hm, h3]
+    refine ⟨by rw [lost_bytesAt hm hk.o (s.gpr .r7).isLt]; exact h₁, by rw [h3]; exact h₂, fun d => ?_⟩
+    rw [lost_state hm hk.st, h3]
     exact h₃ d
 
 /-- A state satisfying `squeeze`'s precondition, with no output. -/
