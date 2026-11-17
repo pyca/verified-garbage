@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 
 /-!
 # Clearing registers keeps a function verified (AArch64)
@@ -12,11 +13,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 derives (or any whose postcondition reads only the memory and `x0`,
 `Verified.withClears_of`) is still verified after a block of clears
 (`clearOk`: `movz` of a register that is neither preserved nor `x0`, `movi0`
-of a vector register that is not preserved, `tst`), which runs from every
-state, leaks nothing,
-and changes neither the memory, nor `x0`, nor what the calling convention
-preserves, which is all such a contract's postcondition and the calling
-convention look at (`post_congr`).
+of a vector register that is not preserved, `mov vd.d[1], xn`, which writes
+only the high half of `vd`, which the calling convention does not preserve,
+and `tst`), which runs from every state, leaks nothing, and changes neither
+the memory, nor `x0`, nor what the calling convention preserves (the
+preserved registers, and the low halves of `v8`–`v15`), which is all such a
+contract's postcondition and the calling convention look at (`post_congr`).
 -/
 
 @[expose] public section
@@ -27,13 +29,14 @@ namespace VG.AArch64.Clears
 def clearOk : Instr → Bool
   | .movz .x r _ hw => hw == 0 && !preserved.contains r && r != .x0
   | .vop (.movi0 v) => !preservedV.contains v
+  | .vop (.ins .d2 _ 1 _) => true
   | .tst .x _ _ => true
   | _ => false
 
 /-- What a clear keeps. -/
 def Keeps (s s' : State) : Prop :=
   s'.mem = s.mem ∧ s'.gpr .x0 = s.gpr .x0 ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧
-    s'.sp = s.sp ∧ ∀ v ∈ preservedV, s'.v v = s.v v
+    s'.sp = s.sp ∧ ∀ v ∈ preservedV, (s'.v v).extractLsb' 0 64 = (s.v v).extractLsb' 0 64
 
 theorem Keeps.refl (s : State) : Keeps s s := ⟨rfl, rfl, fun _ _ => rfl, rfl, fun _ _ => rfl⟩
 
@@ -59,9 +62,25 @@ theorem exec_clearOk {i : Instr} (h : clearOk i = true) (s : State) :
     case movi0 v =>
       simp only [clearOk, Bool.not_eq_true'] at h
       refine ⟨_, rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl, fun q hq => ?_⟩
-      refine RegUpd.v_setV_of_ne _ _ fun he => ?_
+      rw [RegUpd.v_setV_of_ne _ _ fun he => ?_]
       subst he
       exact (by simpa using h : q ∉ preservedV) hq
+    case ins a d k n =>
+      cases a
+      case d2 =>
+        cases k with
+        | zero => simp only [clearOk, Bool.false_eq_true] at h
+        | succ k =>
+          cases k with
+          | succ => simp only [clearOk, Bool.false_eq_true] at h
+          | zero =>
+            refine ⟨_, rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl, fun q _ => ?_⟩
+            by_cases he : q = d
+            · subst he
+              rw [RegUpd.v_setV_self, LaneTaint.extract_setLane _ _ (by decide) (j := 0) (by decide)]
+              rfl
+            · rw [RegUpd.v_setV_of_ne _ _ he]
+      all_goals simp only [clearOk, Bool.false_eq_true] at h
     all_goals simp only [clearOk, Bool.false_eq_true] at h
   case tst sz n m =>
     cases sz

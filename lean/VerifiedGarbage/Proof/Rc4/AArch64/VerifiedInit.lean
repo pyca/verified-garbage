@@ -8,7 +8,8 @@ public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Rc4.AArch64.Taint
+public import VerifiedGarbage.Proof.Rc4.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 public import VerifiedGarbage.Impl.Rc4.AArch64
@@ -735,5 +736,9 @@ theorem init_verified : Verified AArch64.target VG.Impl.Rc4.AArch64.init
   · sig_implies_sat [Spec.Rc4.initContract, Spec.Rc4.initSig, Spec.Rc4.initPost, AArch64.abi,
       AArch64.argRegs]
       [initSat] using initSat
+
+/-- `init`, with what it leaves cleared, meets the same contract. -/
+theorem initCleared_verified : Verified AArch64.target initCleared (Spec.Rc4.initContract AArch64.abi) :=
+  Clears.Verified.withClears init_verified (by decide)
 
 end VG.Proof.Rc4.AArch64
