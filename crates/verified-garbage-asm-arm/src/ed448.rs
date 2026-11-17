@@ -2920,6 +2920,18 @@ pub(crate) mod vg_keccak_absorb_scratch;
 pub(crate) mod vg_keccak_f1600;
 
 #[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_enter.rs"]
+pub(crate) mod vg_keccak_f1600_enter;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_leave.rs"]
+pub(crate) mod vg_keccak_f1600_leave;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_rounds.rs"]
+pub(crate) mod vg_keccak_f1600_rounds;
+
+#[rustfmt::skip]
 #[path = "internal/vg_keccak_pad_scratch.rs"]
 pub(crate) mod vg_keccak_pad_scratch;
 

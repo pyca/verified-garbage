@@ -26,12 +26,16 @@ second operand by the difference of the two counts.
   and end here;
 * `[200, 392)`: the 24 round constants, interleaved, stored by the prologue;
 * `[392, 396)`: a pointer to the next round's constant;
-* `[396, 432)`: the saved `r4`–`r11` and `lr`.
+* `[396, 432)`: the saved `r4`–`r11` and `lr`;
+* `[432, 436)`: the return address of the rounds (`rounds`).
 
-`r0` (`state`) and `r1` (`scratch`) are never written. The prologue
-interleaves the lanes of `state` into `scratch` (`toStored`) and the
-epilogue brings them back (`ofStored`), each by five exchanges of bits
-between the lane's two words (`swaps`).
+`r0` (`state`) and `r1` (`scratch`) are never written. `enter` interleaves
+the lanes of `state` into `scratch` (`toStored`) and `leave` brings them
+back (`ofStored`), each by five exchanges of bits between the lane's two
+words (`swaps`); `rounds` is the 24 rounds between them. Each of the three
+is a function of its own (`permute` calls them in turn), so that the
+sponge's functions can run several permutations between one `enter` and one
+`leave`.
 
 A round (`round src dst`) computes the ten words of the column parities
 `C[x]` (θ) in the registers `creg x h`; then the ten words of `D[x]`, in the
@@ -239,12 +243,29 @@ def toStored (j : Nat) : List Instr :=
     (if rot j 1 = 0 then [] else [.mov H (ror H (32 - rot j 1))]) ++
     [.str L .r1 (wOff j 0), .str H .r1 (wOff j 1)]
 
-/-- Lane `j` of the interleaved state at `r1`, stored at `r0`. -/
-def ofStored (j : Nat) : List Instr :=
+/-- Lane `j` of the interleaved state at `r1`, stored at `[dst, #off]`. -/
+def ofStored (dst : Reg) (off j : Nat) : List Instr :=
   ([.ldr L .r1 (wOff j 0), .ldr H .r1 (wOff j 1)] : List Instr) ++
     (if rot j 0 = 0 then [] else [.mov L (ror L (rot j 0))]) ++
     (if rot j 1 = 0 then [] else [.mov H (ror H (rot j 1))]) ++
-    swaps.reverse.flatMap (fun (k, m, _) => xswap k m) ++ [.str L .r0 (8 * j), .str H .r0 (8 * j + 4)]
+    swaps.reverse.flatMap (fun (k, m, _) => xswap k m) ++ [.str L dst off, .str H dst (off + 4)]
+
+/-- The lane at `[r9, #off]`, interleaved, XORed into lane `j` of the
+interleaved state at `r1`: each of its words, rotated as that word of the
+state is stored. -/
+def xorStored (off j : Nat) : List Instr :=
+  ([.ldr L .r9 off, .ldr H .r9 (off + 4)] : List Instr) ++
+    swaps.flatMap (fun (k, m, _) => xswap k m) ++
+    [.ldr X .r1 (wOff j 0), .dp .eor X X (ror L (sub32 0 (rot j 0))), .str X .r1 (wOff j 0),
+      .ldr X .r1 (wOff j 1), .dp .eor X X (ror H (sub32 0 (rot j 1))), .str X .r1 (wOff j 1)]
+
+/-- The lanes `a ≤ j < b` of a block, of which lane `a` is at `r9`, XORed
+into the interleaved state. -/
+def xorSeg (a b : Nat) : List Instr := (List.range (b - a)).flatMap fun i => xorStored (8 * i) (a + i)
+
+/-- The lanes `a ≤ j < b` of the interleaved state, to a block of which
+lane `a` is at `r9`. -/
+def copySeg (a b : Nat) : List Instr := (List.range (b - a)).flatMap fun i => ofStored .r9 (8 * i) (a + i)
 
 /-! ## The function -/
 
@@ -262,21 +283,35 @@ def rcStore (k : Nat) : List Instr :=
 def enter : List Instr :=
   masks +++ (List.range 25).flatMap toStored +++ (List.range 24).flatMap rcStore
 
-/-- Save the registers, interleave the state, store the round constants, and
-point at the first. -/
-def prologue : List Instr :=
-  saved.map (fun (r, d) => .str r .r1 d) +++ enter +++
-    [.dp .add T .r1 (.imm 200), .str T .r1 rcPtr]
-
 /-- Bring the state back from `scratch`. -/
-def leave : List Instr := masks +++ (List.range 25).flatMap ofStored
+def leave : List Instr := masks +++ (List.range 25).flatMap fun j => ofStored .r0 (8 * j) j
+
+/-- The offset in `scratch` where the rounds keep their return address. -/
+def lrSave : Nat := 432
+
+/-- The 24 rounds, on the interleaved state in `scratch`: point at the first
+round constant, and run the loop. The rounds use every register but `r0`
+and `r1`, so `lr` is kept in `scratch`. -/
+def rounds : Prog isa :=
+  .seq (.block [.str .lr .r1 lrSave, .dp .add T .r1 (.imm 200), .str T .r1 rcPtr])
+    (.seq (.loop (.block body) .ne) (.block [.ldr .lr .r1 lrSave]))
+
+/-! The three parts are functions of their own, which the sponge's functions
+also call (`Impl/Sha3/Arm/Stream.lean`), to keep the state interleaved
+across several permutations. They take `state` in `r0` and `scratch` in
+`r1`, as `vg_keccak_f1600` does, and keep them; `enter` and `leave` change
+`r2`–`r8` and `r12`, and the rounds every other register but `lr`. -/
+
+def enterCall : Prog isa := .call "vg_keccak_f1600_enter" (.block enter)
+def roundsCall : Prog isa := .call "vg_keccak_f1600_rounds" rounds
+def leaveCall : Prog isa := .call "vg_keccak_f1600_leave" (.block leave)
 
 def restore : List Instr := saved.map fun (r, d) => .ldr r .r1 d
 
-/-- Bring the state back, and restore the registers. -/
-def epilogue : List Instr := leave +++ restore
-
+/-- Save the registers; interleave the state, run the rounds and bring the
+state back; restore the registers. -/
 def permute : Prog isa :=
-  .seq (.block prologue) (.seq (.loop (.block body) .ne) (.block epilogue))
+  .seq (.block (saved.map fun (r, d) => .str r .r1 d))
+    (.seq enterCall (.seq roundsCall (.seq leaveCall (.block restore))))
 
 end VG.Impl.Sha3.Arm
