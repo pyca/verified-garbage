@@ -432,10 +432,13 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
 
 /-! ## The whole function -/
 
-/-- The frame popped and the link register back: what the function leaves. -/
+/-- The frame popped, with its bytes holding anything, and the link register
+back: what the function leaves. -/
 theorem popped_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v : State}
-    (hv : Checked n w f s v) :
-    WP isa (.block [.mtlr .r0]) (popped .r0 v) fun z => abiPreserved s z ∧ ExPost n f s z := by
+    (hv : Checked n w f s v) (h : ExPre n w s) {m : Mem} {u : Nat → BitVec 64}
+    (hf : Frame [⟨s.sp - 48, 48⟩] v.mem m) :
+    WP isa (.block [.mtlr .r0]) { popped .r0 v with mem := m, unknowns := u }
+      fun z => abiPreserved s z ∧ ExPost n f s z := by
   refine WP.cons exec_mtlr (WP.block_nil ?_)
   have hra : v.mem.read (v.sp + 32) 8 = s.lr := by rw [hv.called.sp]; exact hv.called.ra
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩
@@ -445,7 +448,9 @@ theorem popped_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v :
     rw [hv.called.sp]; exact BitVec.sub_add_cancel _ _
   · show (v.write .r0 (v.mem.read (v.sp + 32) 8)).gpr .r0 = s.lr
     rw [RegUpd.gpr_write_self, hra]
-  · exact hv.called.out
+  · -- The pop loses the frame's bytes, which lie apart from `out`.
+    exact (List.map_congr_left fun i hi => lost_byte hf (R := outR n s) h.2.1.symm
+      (List.mem_range.mp hi)).trans hv.called.out
   · show ((v.write .r0 (v.mem.read (v.sp + 32) 8)).gpr .r3).setWidth 32 = _
     rw [RegUpd.gpr_write_of_ne _ _ (by decide), hv.r3]
     exact result_spec _ _ _ _ hv.called.out
@@ -454,11 +459,11 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w f c k) {name : String} (hn : n < 2 ^ 15) {s : State} (h : ExPre n w s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frameKept (by rw [RegUpd.sp_write]; exact h.2.2.2.2.2) ?_)
+  refine WP.seq (WP.frame (by rw [RegUpd.sp_write]; exact h.2.2.2.2.2) ?_)
   refine WP.seq (WP.mono (saved_wp (n := n) (w := w)) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hk h he) fun z hz => ?_)
   refine WP.seq (WP.mono (restored_wp hz) fun u hu => ?_)
-  exact WP.mono (checked_wp h hn hu) fun v hv => popped_ok hv
+  exact WP.mono (checked_wp h hn hu) fun v hv m u f => popped_ok hv h f
 
 /-! ## Constant time -/
 
