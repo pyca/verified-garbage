@@ -33,6 +33,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-!
 # ECDSA verification of the hash function's output on 32-bit ARM
@@ -53,7 +54,7 @@ Untrusted: everything here is checked by Lean. As on RISC-V
   constant time for the rest;
 * `verifyHash_verified_nil`, `verifyHash_verified_cons`: under the contracts
   of `Spec/`, with the buffer in a frame on the stack
-  (`Verified.stackScratchL`, and `Verified.stackScratchC` for a verification
+  (`Verified.stackScratchLLost`, and `Verified.stackScratchC` for a verification
   with tables), from a state satisfying the verification's precondition
   (`hashSat_nil`, `hashSat_cons`).
 -/
@@ -1247,6 +1248,17 @@ theorem pre_local (I : Spec.Ecdsa.Instance) : ∀ vs (m₁ m₂ : Mem), vs.lengt
   rw [Curry.apply_const]
   trivial
 
+/-- `hPost` does not read the memory on return. -/
+theorem hPost_out (I : Spec.Ecdsa.Instance) : ∀ vs m m₁ m₂ r,
+    vs.length = (I.verifyHashSig.words abi.ptrBits).length →
+    Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₁ r →
+      Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen h
+  have h5 : vs.length = 5 := by
+    simpa [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words] using hlen
+  match vs, h5 with
+  | [_, _, _, _, _], _ => exact h
+
 theorem pre_leak {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
     {wa : Bool} {st : Nat} {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
     {s : State} :
@@ -1265,12 +1277,13 @@ theorem verifyHash_verified_nil {I : Spec.Ecdsa.Instance} {wide : Bool} {core : 
     (hsat : ∃ s, (I.verifyHashContract abi 96).pre s) :
     Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract abi 96) := by
   obtain ⟨s₀, h₀⟩ := hsat
-  exact Verified.stackScratchL (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80) (m := 1)
+  exact Verified.stackScratchLLost (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80) (m := 1)
     (bytes := frameBytes) (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0)
     (hashed_verified_nil hL h66 hcore htc ⟨_, narrow_pre (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I)
       hash_fits (pre_local I) h₀⟩)
     (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I) hash_fits (pre_local I)
-    (fun vs m₁ m₂ m' r hl hb _ => post_local I vs m₁ m₂ m' r hl hb) ⟨s₀, pre_leak.mp h₀⟩ (leak_local I)
+    (fun vs m₁ m₂ m' r hl hb _ => post_local I vs m₁ m₂ m' r hl hb)
+    (fun vs mm m₁ m₂ r hl _ _ => hPost_out I vs mm m₁ m₂ r hl) ⟨s₀, pre_leak.mp h₀⟩ (leak_local I)
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (BitVec 64)}
@@ -1280,7 +1293,9 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (
 
 /-- `Verified.stackScratchL` under `abi.withConsts (c₀ :: cs)`, for a
 signature without lists of slices: as `Verified.stackScratchWipedC`, without
-the wipe. -/
+the wipe. `_hpostOut` (the postcondition reads the memory on return only
+within the buffers) is what it will need once a released frame loses its
+bytes (`Verified.stackScratchLLost`). -/
 theorem Verified.stackScratchC {c : Prog isa}
     (h : Verified target c (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
@@ -1293,6 +1308,11 @@ theorem Verified.stackScratchC {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (_hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs mm →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
     (hsat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true)
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak) :
@@ -1356,7 +1376,8 @@ theorem verifyHash_verified_cons {I : Spec.Ecdsa.Instance} {wide : Bool} {core :
     (hashed_verified_cons hL h66 hcore htc ⟨_, narrowC_pre (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I)
       hash_fits (pre_local I) h₀⟩)
     (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I) hash_fits (pre_local I)
-    (fun vs m₁ m₂ m' r hl hb => post_local I vs m₁ m₂ m' r hl hb) ⟨s₀, pre_leak.mp h₀⟩ rfl (leak_local I)
+    (fun vs m₁ m₂ m' r hl hb => post_local I vs m₁ m₂ m' r hl hb)
+    (fun vs mm m₁ m₂ r hl _ _ => hPost_out I vs mm m₁ m₂ r hl) ⟨s₀, pre_leak.mp h₀⟩ rfl (leak_local I)
 
 /-! ## Satisfiability -/
 

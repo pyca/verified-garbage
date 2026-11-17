@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The whole search (ARMv7): its results stored, and the contract -/
 
@@ -182,7 +184,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   unfold primeEntropy at rl
   have rem := hp.remaining_le
   unfold code body
-  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
+  refine WP.frameLost (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm) fun s2 hd => ?_)
   unfold finish
@@ -195,10 +197,16 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     · exact push_apart hp _ (by simp [inWrites])
     · exact push_apart hp _ (by simp [inWrites])
   have hw3 : ⟨State.addr p.S1, 40⟩ ∈ s3.wr := by rw [k3.wr, hd.wr]; exact List.mem_cons_self ..
-  refine WP.mono (restore_ok hp (k3.sp.trans hd.sp) hw3 hsv) fun s4 ⟨⟨hr, hm4⟩, k4⟩ => ?_
+  refine WP.mono (restore_ok hp (k3.sp.trans hd.sp) hw3 hsv) fun s4 ⟨⟨hr, hm4⟩, k4⟩ ml ul hfl => ?_
   have sp4 : s4.sp = p.S1 := k4.sp.trans (k3.sp.trans hd.sp)
-  have mem : (popped .r4 (4 * pushRegs.length) s4).mem = finished p s2.mem (searchResult s) := by
-    rw [popped_mem, hm4, hm3]
+  change Frame [⟨State.addr p.S1, 40⟩] s4.mem ml at hfl
+  rw [hm4, hm3] at hfl
+  have apart : ∀ q ∈ inWrites s, Region.Disjoint ⟨State.addr p.S1, 40⟩ q := fun q hq => by
+    have := push_apart hp q hq
+    simpa only [BitVec.add_zero, Nat.sub_zero] using this
+  obtain ⟨eO, eU, -, -, -, -, eSt⟩ := hp.regions
+  have sepOf {q : Region} (hq : q ∈ inWrites s) : ∀ r ∈ [(⟨State.addr p.S1, 40⟩ : Region)], q.Disjoint r :=
+    fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact (apart q hq).symm
   have g0 : (popped .r4 (4 * pushRegs.length) s4).gpr .r0 = BitVec.ofNat 32 (searchResult s).status := by
     rw [popped_gpr (by decide), k4.gpr .r0 (by decide), h0]
   have g4 : (popped .r4 (4 * pushRegs.length) s4).gpr .r4 = s.gpr .r4 := by
@@ -209,15 +217,18 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   have st := status_lt (searchResult s)
   refine ⟨⟨?_, ?_, ?_, ?_⟩, fun r hr' => ?_, ?_⟩
   · rw [BitVec.setWidth_append_eq_right, g0, toNat_small (by omega_using [st])]
-  · change Spec.Rsa.bytesAt _ (State.addr p.op) p.len = _
-    rw [mem, finished_bytes hp]
+  · change Spec.Rsa.bytesAt ml (State.addr p.op) p.len = _
+    rw [VG.Proof.Rsa.rsa_bytes_frame hfl (by omega_using [hv]) (sepOf (q := rO p) (by rw [← eO]; simp [inWrites])),
+      finished_bytes hp]
     exact hd.output
-  · change Spec.Rsa.wordsAt _ (State.addr p.up) 1 = _
-    rw [mem, finished_used _ _ (by omega_using [hv, rl, bu])]
+  · change Spec.Rsa.wordsAt ml (State.addr p.up) 1 = _
+    rw [Proof.Rsa.wordsAt_frame hfl (by decide) (sepOf (q := rU p) (by rw [← eU]; simp [inWrites])),
+      finished_used _ _ (by omega_using [hv, rl, bu])]
   · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
       (searchRemaining s) (searchRand s)⟩
-    change Spec.Rsa.wordsAt _ (State.addr p.stp) 4 = _
-    rw [mem, finished_state hp _ _ (by omega_using [rem, br]) (by omega_using [hv]) (by omega_using [hv]) (by unfold primeEntropy at bq; omega_using [hv, bq])]
+    change Spec.Rsa.wordsAt ml (State.addr p.stp) 4 = _
+    rw [Proof.Rsa.wordsAt_frame hfl (by decide)
+        (sepOf (q := ⟨State.addr p.stp, 32⟩) (by rw [← eSt]; simp [inWrites])), finished_state hp _ _ (by omega_using [rem, br]) (by omega_using [hv]) (by omega_using [hv]) (by unfold primeEntropy at bq; omega_using [hv, bq])]
     rfl
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

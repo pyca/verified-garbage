@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
 
@@ -14,9 +15,9 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame that allocates it. `stream_init`'s
 working space is its fourth argument, in `r3`: its frame is the 640 bytes
-of working space (`Verified.regScratch`). That of `absorb` and `finish` is
+of working space (`Verified.regScratchLost`). That of `absorb` and `finish` is
 their last, on the stack: their frames hold the copies of their stack
-arguments and `lr` too (`Verified.stackScratch`), 704 bytes for `absorb`
+arguments and `lr` too (`Verified.stackScratchLost`), 704 bytes for `absorb`
 (688 of working space) and 656 for `finish`, below which their code pushes
 the working space's address. The copies are read only where the pre- and
 postconditions read the buffers (`Proof/CmacTripleDes/StreamScratch.lean`).
@@ -59,24 +60,27 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract Arm.abi 660).p
 
 theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 640 .r3 streamInit)
     (Spec.Cmac.tdesStreamInitContract Arm.abi 640) :=
-  Arm.Verified.regScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
+  Arm.Verified.regScratchLost (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre Arm.abi.ptrBits) (post := Spec.Cmac.tdesStreamInitPost Arm.abi.ptrBits)
-    (wa := false) (stack := 0) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := false) (stack := 0) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => streamInitPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 704 2 absorb)
     (Spec.Cmac.tdesAbsorbContract Arm.abi 708) :=
-  Arm.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
+  Arm.Verified.stackScratchLost (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesAbsorbPost Arm.abi.ptrBits)
     (wa := false) (stack := 4) (m := 2) absorb_verified (by decide) (by decide) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => absorbPostOut_local _ vs mm m₁ m₂ r hl)
     absorbFrameSat_pre
 
 theorem finish_framed : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 656 1 finish)
     (Spec.Cmac.tdesFinishContract Arm.abi 660) :=
-  Arm.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
+  Arm.Verified.stackScratchLost (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
     (post := Spec.Cmac.tdesFinishPost Arm.abi.ptrBits)
     (wa := false) (stack := 4) (m := 1) finish_verified (by decide) (by decide) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => finishPostOut_local _ vs mm m₁ m₂ r hl)
     finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.Arm

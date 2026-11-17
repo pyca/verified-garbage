@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # AES-OCB on ARMv7: the functions called
@@ -157,10 +158,12 @@ end BlkCall
 
 theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n) :
     WP isa (blkFrame F) s (BlkPost F s K D S R n) := by
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.blocksArm F.f) F.correct
     (rd := blkRd s.sp K) (wr := blkWr D S n) (h.pre F.f) h.cov h.covW ?_ F.noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s.sp] s₂.mem ml := by
+    rw [Proof.AesGcm.Arm.e8, Proof.AesGcm.Arm.hA h.hsp] at hfl; exact hfl
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have fA' := fA (s := s) h.hsp
@@ -183,7 +186,7 @@ theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : Bl
       rcases hr with rfl | rfl
       · exact (h.bd.sub_left (Region.sub_prefix (by decide)))
       · exact (h.bs.sub_left (Region.sub_prefix (by decide))))
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
@@ -192,10 +195,12 @@ theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : Bl
       show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
     · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hpost
+  · refine ((fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [statesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])]
+    exact hpost
 
 theorem blk_rel (F : BlkFn) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K D S : BitVec 32, ∃ R n : Nat,

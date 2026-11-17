@@ -646,6 +646,22 @@ theorem cachedKeyGenerateFn_ok (prepare sample tail : Prog isa) (env : SampleEnv
         (if sampleSuccess p (layout p) rb then (layout p).encode rb else List.replicate p.k 0) ∧
       Spec.Rsa.bytesAt m (State.addr p.publicValue) p.k =
         (if sampleSuccess p (layout p) rb then Spec.Rsa.i2osp (keyPower p ((layout p).encode rb)) p.k else List.replicate p.k 0)) ?_ ?_
+    (hQ := ?_)
+  rotate_right
+  · intro m₁ m₂ status hf ⟨st, priv, pub⟩
+    have o := h.input.outputs
+    have sep : ∀ a ∈ [p.privateValue, p.publicValue], ∀ r ∈ released s,
+        (⟨State.addr a, p.k⟩ : Region).Disjoint r := by
+      intro a ha r hr
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr ha
+      rcases ha with rfl | rfl <;> rcases hr with rfl | rfl
+      · exact (h.input.saved _ (by simp [keyWrites])).symm
+      · exact o.privateStack.symm
+      · exact (h.input.saved _ (by simp [keyWrites])).symm
+      · exact o.publicStack.symm
+    have fit : p.k < 2 ^ 64 := by have := o.privateBuffer.fits; omega_using [this]
+    exact ⟨st, Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hf fit (sep _ (by simp))) priv,
+      Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hf fit (sep _ (by simp))) pub⟩
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact h.input.saved r hr

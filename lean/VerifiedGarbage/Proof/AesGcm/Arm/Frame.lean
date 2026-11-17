@@ -46,7 +46,7 @@ theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 
   Arm.Verified.regScratchLost (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre Arm.abi.ptrBits) (post := Spec.Gcm.initPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide)
-    (fun vs mm m₁ m₂ r hl _ => initPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
+    (initPostOut_local _) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/

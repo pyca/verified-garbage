@@ -105,9 +105,27 @@ theorem candidateFn_ok (v : RoundImpl) {s : State} {p : CandidateParams} (h : Ca
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) s fun t =>
       abiPreserved s t ∧ candidatePost p t.mem (t.gpr .r0) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.code
-  exact framed_of_separate _ s (by have := h.stackFits; omega_using [this])
+  refine framed_of_separate _ s (by have := h.stackFits; omega_using [this])
     (candidateEnteredRegions p (entered s).sp) (candidatePost p) h.saved
-    (candidateEntered_ok v h.start h.incoming h.out h.width h.used h.bits)
+    (candidateEntered_ok v h.start h.incoming h.out h.width h.used h.bits) (hQ := ?_)
+  intro m₁ m₂ status hf ⟨st, used, out⟩
+  have sep : ∀ R ∈ [(⟨State.addr p.out, p.length⟩ : Region), ⟨State.addr p.usedPtr, 8⟩], ∀ r ∈ released s,
+      R.Disjoint r := by
+    intro R hR r hr
+    simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr hR
+    rcases hR with rfl | rfl <;> rcases hr with rfl | rfl
+    · exact (h.saved _ (by simp [candidateEnteredRegions])).symm
+    · exact h.start.stackOutput.symm
+    · exact (h.saved _ (by simp [candidateEnteredRegions])).symm
+    · exact h.start.stackUsed.symm
+  refine ⟨st, Eq.trans ?_ used, Eq.trans (VG.Proof.Bignum.Arm.rsa_bytes_frame hf
+    (by have := p.outputFits; simp only [CandidateParams.length]; omega_using [this]) (sep _ (by simp))) out⟩
+  unfold Spec.Rsa.wordsAt
+  apply List.map_congr_left
+  intro j hj
+  have bound : j < 1 := List.mem_range.mp hj
+  exact hf.readW (r := ⟨State.addr p.usedPtr, 8⟩) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
+    (sep _ (by simp)) (by decide)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 

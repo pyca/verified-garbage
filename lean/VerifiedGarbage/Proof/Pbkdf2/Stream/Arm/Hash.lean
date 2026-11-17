@@ -320,6 +320,14 @@ theorem sep_base_off (b : Addr) {e n k : Nat} (h : n ≤ e) (he : e + k < 2 ^ 32
 theorem contains_off (b : Addr) {len d n : Nat} (h : d + n ≤ len) (hl : len < 2 ^ 64) :
     Region.Contains ⟨b, len⟩ (b + BitVec.ofNat 64 d) n := Offset.contains_base b h (by omega_nat)
 
+/-- The `n ≤ 16` bytes a pop releases lie in `below s`. -/
+theorem lost_sub {s : State} {n : Nat} (hn : n ≤ 16) (h16 : 16 ≤ s.sp.toNat) :
+    Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 n), n⟩ (below s) := by
+  intro a ha
+  have := s.sp.isLt
+  simp only [Region.Contains, State.addr] at ha ⊢
+  bv_omega_arith
+
 /-- After a frame of `rs` of `n ≤ 16` bytes around a call that keeps the
 regions and the stack pointer, whatever memory `m` that differs from the
 call's only in the released frame, and whatever unknowns `u`, the pop

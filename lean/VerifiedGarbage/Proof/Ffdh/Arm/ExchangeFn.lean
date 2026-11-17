@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Ffdh.Arm.ExchangeEntry`, which this module and modules that import it used -/
 
@@ -160,6 +162,14 @@ theorem exchangeFn_ok (s : State) {p : Inputs} {yb xb : List Byte} (h : Exchange
     (fun m status => Spec.Rsa.modulusValid p.P p.k = true → status = (if sharedAccepted p yb xb then 1 else 0) ∧
       Spec.Rsa.bytesAt m (State.addr p.output) p.k =
         (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0)) h.saved ?_
+    (hQ := fun m₁ m₂ v hf hq hv => by
+      obtain ⟨st, bytes⟩ := hq hv
+      refine ⟨st, Eq.trans (VG.Proof.Rsa.rsa_bytes_frame hf (by have := h.output.fits; omega_using [this])
+        fun r hr => ?_) bytes⟩
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (by simp [exchangeWrites])).symm
+      · exact h.stackSep.symm)
   refine WP.mono (exchangeEntered_ok (entered s) h.args h.incoming h.out h.domain h.domainLength
     h.peer h.peerLength h.scalar h.positive h.scalarFit h.scalarCount h.peerStack h.scalarStack h.output
     h.workspaceSep h.stackSep) ?_

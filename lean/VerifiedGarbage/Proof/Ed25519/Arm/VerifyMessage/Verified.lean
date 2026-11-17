@@ -1649,6 +1649,7 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
         change Whole.Ctx (Whole.base s) s.gpr p.mem (lay s).inputs (lay s).outputs u at hu
         rw [(entry_regions h).1, (entry_regions h).2] at hu
         exact hu,ho⟩)
+    (hP := fun _ _ _ _ _ hp => hp)
   refine WP.mono hw fun u ⟨hu,m,hf,hp⟩ => ⟨hu,?_⟩
   have pk := entry_input h hf (r := ⟨State.addr (s.gpr .r0),32⟩) (by rw [h.1]; simp) (by change 32≤2^64; decide)
   have msg := entry_input h hf (r := ⟨State.addr (s.gpr .r1),(s.gpr .r2).toNat⟩) (by rw [h.1]; simp)

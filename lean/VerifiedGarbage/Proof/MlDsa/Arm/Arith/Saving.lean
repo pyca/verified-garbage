@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # ML-DSA on 32-bit ARM: registers saved in frames
@@ -15,6 +16,8 @@ the registers `rs` are restored, the others are what `body` left, and so are
 memory and `rd`, while `sp` and `wr` are back as on entry. `body` runs from a
 state with the same registers and `rd`, more writable regions (the frames, at
 the head of `wr`), and memory changed only below the stack pointer (`Entry`).
+The pops release the frames, whose bytes are then lost: the postcondition
+`Q` must hold whatever the `4 · |rs|` bytes below the stack pointer hold.
 
 `ct_saving`: the push and pop of a frame leak only addresses computed from
 the stack pointer, so `saving rs body` is constant time if `body` is, by the
@@ -60,18 +63,19 @@ theorem word_disj (sp : BitVec 32) {n : Nat} (h : 4 + n ≤ sp.toNat) :
 
 theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
     ∀ (Q : State → Prop) (s : State), 4 * rs.length ≤ s.sp.toNat → (∀ R ∈ W, (belowA s.sp (4 * rs.length)).Disjoint R) →
+    (∀ s₂ m u, Frame [belowA s.sp (4 * rs.length)] s₂.mem m → Q s₂ → Q { s₂ with mem := m, unknowns := u }) →
     (∀ s₁, Entry (4 * rs.length) s s₁ → WP isa body s₁ fun s₂ => Frame W s₁.mem s₂.mem ∧ Q s₂) →
     WP isa (saving rs body) s fun s' => ∃ s₂, Q s₂ ∧ s'.mem = s₂.mem ∧ s'.rd = s₂.rd ∧
       s'.sp = s.sp ∧ s'.wr = s.wr ∧ ∀ r, s'.gpr r = if r ∈ rs then s.gpr r else s₂.gpr r := by
   induction rs with
   | nil =>
-    intro Q s _ _ hb
+    intro Q s _ _ _ hb
     obtain ⟨t, s₂, he, -, hq⟩ := hb s (entry_refl s)
     obtain ⟨-, hw, hsp⟩ := Exec.rdwr he
     exact ⟨t, s₂, he, s₂, hq, rfl, rfl, hsp, hw, fun r => by simp⟩
   | cons r rs ih =>
-    intro Q s hsp hW hb
-    simp only [List.length_cons, Nat.mul_add, Nat.mul_one] at hsp hW hb
+    intro Q s hsp hW hQ hb
+    simp only [List.length_cons, Nat.mul_add, Nat.mul_one] at hsp hW hQ hb
     have hs4 : 4 ≤ s.sp.toNat := by omega_using [hsp]
     have e4 : (4 : BitVec 32) = BitVec.ofNat 32 (4 * [r].length) := rfl
     have hsp' : (s.sp - 4).toNat = s.sp.toNat - 4 := by bv_omega_arith
@@ -80,12 +84,29 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
       rwa [Nat.add_comm] at this
     have hwd := word_region s.sp (n := 4 * rs.length) (by omega_using [hsp])
     rw [Nat.add_comm] at hwd
-    refine WP.frame (rs := [r]) (r := r) rfl (by simp; omega_using [hsp]) (by simp) ?_
+    have hsub4 : Region.Sub ⟨State.addr (s.sp - 4), 4⟩ (belowA s.sp (4 * rs.length + 4)) := fun x hx => hwd.byte (by
+      simp only [Region.Contains] at hx ⊢
+      omega_using [hx])
+    refine WP.frameLost (rs := [r]) (r := r) rfl (by simp; omega_using [hsp]) (by simp) ?_
     have ih' := ih (fun s₂ => Q s₂ ∧ s₂.mem.readW (State.addr (s.sp - 4)) 32 = s.gpr r) (pushed [r] s)
       (by rw [pushed_sp, ← e4, hsp']; omega_using [hsp])
-      (fun R hR => (hW R hR).sub_left (by rw [pushed_sp, ← e4]; exact hsub)) (fun s₁ hE => ?_)
-    · refine WP.mono ih' fun s' ⟨s₂, ⟨hq, hword⟩, hm, hrd, hsp₂, hwr, hg⟩ => ⟨s₂, hq, ?_, ?_, ?_, ?_, ?_⟩
-      · exact hm
+      (fun R hR => (hW R hR).sub_left (by rw [pushed_sp, ← e4]; exact hsub))
+      (fun s₂ m u hf ⟨hq, hw⟩ => by
+        rw [pushed_sp, ← e4] at hf
+        refine ⟨hQ s₂ m u (hf.sub fun R hR => ⟨_, List.mem_singleton_self _, by
+          rw [List.mem_singleton.mp hR]; exact hsub⟩) hq, ?_⟩
+        dsimp only
+        rw [hf.readW (r := ⟨State.addr (s.sp - 4), 4⟩) (Region.contains_self _ _)
+          (fun R hR => by
+            rw [List.mem_singleton] at hR; subst hR
+            exact word_disj s.sp (by omega_using [hsp])) (by decide)]
+        exact hw)
+      (fun s₁ hE => ?_)
+    · refine WP.mono ih' fun s' ⟨s₂, ⟨hq, hword⟩, hm, hrd, hsp₂, hwr, hg⟩ mL uL hfl =>
+        ⟨{ s₂ with mem := mL, unknowns := uL }, ?_, rfl, ?_, ?_, ?_, ?_⟩
+      · rw [← e4, hm] at hfl
+        exact hQ s₂ mL uL (hfl.sub fun R hR => ⟨_, List.mem_singleton_self _, by
+          rw [List.mem_singleton.mp hR]; exact hsub4⟩) hq
       · exact hrd
       · simp only [popped_sp, hsp₂, pushed_sp]; rw [← e4]; exact BitVec.sub_add_cancel _ _
       · simp only [popped_wr, hwr, pushed_wr, List.tail_cons]
@@ -94,7 +115,8 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
         · subst e
           simp only [popped, State.setReg, ite_true, List.mem_cons, true_or]
           rw [hm, hsp₂, pushed_sp, ← e4]; exact hword
-        · rw [popped_gpr e, hg r', pushed_gpr]
+        · dsimp only
+          rw [popped_gpr e, hg r', pushed_gpr]
           simp only [List.mem_cons, e, false_or]
     · -- The body, from the state after all the pushes.
       have hE' : Entry (4 * rs.length + 4) s s₁ := by
