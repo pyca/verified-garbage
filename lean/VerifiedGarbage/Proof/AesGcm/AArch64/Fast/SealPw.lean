@@ -276,10 +276,11 @@ theorem sealPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn))
       (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratchKept (sig := Spec.Gcm.sealWithPowersSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
-    (Proof.AesGcm.sealWithPowersPost_local _) sealFrameSatPw_pre
+    (Proof.AesGcm.sealWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealWithPowersPostOut_local _ vs m m₁ m₂ r hl) sealFrameSatPw_pre
 
 end VG.Proof.AesGcm.AArch64.Fast

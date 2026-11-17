@@ -4,16 +4,17 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!
 # AES-GCM's key setup and streaming functions on AArch64, with their working space on the stack
 
 Every function of AES-GCM runs its code, proved with the working space as
 its last argument (`Verified.lean`), in a frame that allocates it: 2560 bytes
-for the working space in a register (`Verified.stackScratchKept`); for `seal`
+for the working space in a register (`Verified.stackScratch`); for `seal`
 and `open`, whose working space is their second and third stack argument,
 2576 and 2592 bytes that also hold copies of the stack arguments before it
-(`Verified.stackArgScratchKept`).
+(`Verified.stackArgScratch`).
 -/
 
 @[expose] public section
@@ -33,9 +34,10 @@ theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract AArch64.abi 2560).pre s
 theorem init_framed (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (init v.callees))
       (Spec.Gcm.initContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre AArch64.abi.ptrBits) (post := Spec.Gcm.initPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide)
+    (Proof.AesGcm.initPostOut_local _)
     initFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
@@ -50,9 +52,10 @@ theorem streamInit_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (streamInit v.callees))
       (Spec.Gcm.streamInitContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamInitPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamInit_verified v) (by decide) (by decide) streamInitFrameSat_pre
+    (bytes := 2560) (streamInit_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamInitPostOut_local _ vs m m₁ m₂ r hl) streamInitFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_aad`'s precondition, without the
 working space. -/
@@ -66,9 +69,10 @@ theorem streamAad_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (streamAad v.callees))
       (Spec.Gcm.streamAadContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamAadPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamAad_verified v) (by decide) (by decide) streamAadFrameSat_pre
+    (bytes := 2560) (streamAad_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamAadPostOut_local _ vs m m₁ m₂ r hl) streamAadFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt` and
 `vg_aes_gcm_stream_decrypt`, without the working space. -/
@@ -88,19 +92,21 @@ theorem streamEncrypt_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (streamEncrypt v.callees))
       (Proof.AesGcm.streamEncryptRoundsContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamEncrypt_verified v) (by decide) (by decide) streamEncryptFrameSat_pre
+    (bytes := 2560) (streamEncrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
 
 theorem streamDecrypt_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (streamDecrypt v.callees))
       (Proof.AesGcm.streamDecryptRoundsContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamDecrypt_verified v) (by decide) (by decide) streamDecryptFrameSat_pre
+    (bytes := 2560) (streamDecrypt_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, without
 the working space. -/
@@ -114,10 +120,11 @@ theorem streamFinish_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x6 (streamFinish v.callees))
       (Proof.AesGcm.streamFinishRoundsContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamFinish_verified v) (by decide) (by decide) finFrameSat_pre
+    (bytes := 2560) (streamFinish_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, without
 the working space. -/
@@ -131,10 +138,11 @@ theorem streamVerify_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (streamVerify v.callees))
       (Proof.AesGcm.streamVerifyRoundsContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2560) (streamVerify_verified v) (by decide) (by decide) verFrameSat_pre
+    (bytes := 2560) (streamVerify_verified v) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
 space: `tag` at 0, its one stack argument. -/
