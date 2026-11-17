@@ -44,6 +44,10 @@ argument, `dst`. The ChaCha20 state is built from the key and the nonce at
 `r0` and `r1`; `seal` passes the tag to `vg_poly1305_finalize_scratch` as
 `out`, and `open` compares the tag computed with it.
 
+The Poly1305 functions are those of either arithmetic (`umaal`, a flag of
+every function here that calls them: `Impl/Poly1305/Arm.lean`), the
+baseline's or, by other names (`blocksName`, `finalizeName`), `umaal`'s.
+
 `vg_poly1305_finalize_scratch(state, count, out, scratch)` takes `out` and
 `scratch` on the stack: a frame pushes them (`push {r1, r12}`, `out` at
 `[sp]`), around the call, and its pop loads `out` back. So the functions use
@@ -162,10 +166,18 @@ def polyInit : Prog isa :=
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.Arm.init)
     (.block [.mov .r7 (.reg .r0)]))
 
+/-- The Poly1305 functions called, by the arithmetic of theirs (`umaal`, or
+the baseline's): each `seal` and `open` is emitted with either. -/
+def blocksName (umaal : Bool) : String := if umaal then "vg_poly1305_blocks_umaal" else "vg_poly1305_blocks"
+
+@[inherit_doc blocksName]
+def finalizeName (umaal : Bool) : String :=
+  if umaal then "vg_poly1305_finalize_scratch_umaal" else "vg_poly1305_finalize_scratch"
+
 /-- Absorbs `r2` blocks at `r1`. -/
-def absorb : Prog isa :=
+def absorb (umaal : Bool) : Prog isa :=
   .seq (.block [.mov .r0 (.reg .r7)])
-  (.seq (.call "vg_poly1305_blocks" Impl.Poly1305.Arm.blocks)
+  (.seq (.call (blocksName umaal) (Impl.Poly1305.Arm.blocks umaal))
     (.block [.mov .r7 (.reg .r0)]))
 
 /-- Copies the `r3` (nonzero) bytes at `r1` to `r2`, advancing both. -/
@@ -174,20 +186,20 @@ def copyLoop : Prog isa :=
     .dp .add .r2 .r2 (.imm 1), .subs .r3 .r3 (.imm 1)]) .ne
 
 /-- The last `r3` bytes (1 to 15), at `r1`, padded with zeros, absorbed. -/
-def padTail : Prog isa :=
+def padTail (umaal : Bool) : Prog isa :=
   .seq (.block [.mov .r12 (.imm 0), .str .r12 .r7 padOff, .str .r12 .r7 (padOff + 4),
     .str .r12 .r7 (padOff + 8), .str .r12 .r7 (padOff + 12),
     .dp .add .r2 .r7 (.imm (BitVec.ofNat 32 padOff))])
   (.seq copyLoop
-  (.seq (.block [.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 padOff)), .mov .r2 (.imm 1)]) absorb))
+  (.seq (.block [.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 padOff)), .mov .r2 (.imm 1)]) (absorb umaal)))
 
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed. -/
-def macPad (p n : Reg) : Prog isa :=
+def macPad (umaal : Bool) (p n : Reg) : Prog isa :=
   .seq (.block [.mov .r1 (.reg p), .mov .r2 (.shifted n .lsr 4)])
-  (.seq absorb
+  (.seq (absorb umaal)
   (.seq (.block [.dp .and .r3 n (.imm 15), .cmp .r3 (.imm 0)])
     (.ite .eq (.block [])
-      (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) padTail))))
+      (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) (padTail umaal)))))
 
 /-- The ChaCha20 counter set to 1, and the source encrypted or decrypted to
 the destination (`vg_chacha20_xor` from `r10` to `r6`, through `r5`). -/
@@ -199,11 +211,11 @@ def crypt : Prog isa :=
     (.block [.mov .r7 (.reg .r1)]))
 
 /-- The lengths block, absorbed. -/
-def lengths : Prog isa :=
+def lengths (umaal : Bool) : Prog isa :=
   .seq (.block [.str .r9 .r7 lenOff, .mov .r12 (.imm 0), .str .r12 .r7 (lenOff + 4),
     .str .r11 .r7 (lenOff + 8), .str .r12 .r7 (lenOff + 12),
     .dp .add .r1 .r7 (.imm (BitVec.ofNat 32 lenOff)), .mov .r2 (.imm 1)])
-    absorb
+    (absorb umaal)
 
 /-- `⌈n / 16⌉` into `d`, with `t` a temporary: `n / 16 + ((n mod 16) + 15) / 16`. -/
 def ceil16 (d t n : Reg) : List Instr :=
@@ -221,44 +233,44 @@ def finalizeArgs (out : Instr) : List Instr :=
    out, .dp .add .r12 .r7 (.imm (BitVec.ofNat 32 scrOff))] : List Instr)
 
 /-- The tag computed: `out` and `scratch` pushed as the stack arguments. -/
-def finalize : Prog isa :=
-  .frame (.push [.r1, .r12]) (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.Arm.finalize) (.pop .r1 8)
+def finalize (umaal : Bool) : Prog isa :=
+  .frame (.push [.r1, .r12]) (.call (finalizeName umaal) (Impl.Poly1305.Arm.finalize umaal)) (.pop .r1 8)
 
 /-! ## Seal -/
 
 /-- Up to the tag, after the prologue: the one-time key, the data
 encrypted, and the MAC of the additional data, the ciphertext and the
 lengths, up to the arguments of `vg_poly1305_finalize_scratch`. -/
-def sealMain : Prog isa :=
+def sealMain (umaal : Bool) : Prog isa :=
   .seq (.block initState)
   (.seq keyGen
   (.seq crypt
   (.seq polyInit
-  (.seq (macPad .r8 .r9)
-  (.seq (macPad .r10 .r11)
-  (.seq lengths
+  (.seq (macPad umaal .r8 .r9)
+  (.seq (macPad umaal .r10 .r11)
+  (.seq (lengths umaal)
     (.block (finalizeArgs (.mov .r1 (.reg .r4))))))))))
 
 /-- The registers restored. -/
 def sealEnd : List Instr := restore
 
 /-- `seal` after the prologue. -/
-def sealBody : Prog isa := .seq sealMain (.seq finalize (.block sealEnd))
+def sealBody (umaal : Bool) : Prog isa := .seq (sealMain umaal) (.seq (finalize umaal) (.block sealEnd))
 
-def «seal» : Prog isa := .seq (.block inPlace) sealBody
+def «seal» (umaal : Bool) : Prog isa := .seq (.block inPlace) (sealBody umaal)
 
 /-! ## Open -/
 
 /-- Up to the tag, after the prologue: the one-time key, and the MAC of the
 additional data, the ciphertext and the lengths, up to the arguments of
 `vg_poly1305_finalize_scratch`. -/
-def openMain : Prog isa :=
+def openMain (umaal : Bool) : Prog isa :=
   .seq (.block initState)
   (.seq keyGen
   (.seq polyInit
-  (.seq (macPad .r8 .r9)
-  (.seq (macPad .r10 .r11)
-  (.seq lengths
+  (.seq (macPad umaal .r8 .r9)
+  (.seq (macPad umaal .r10 .r11)
+  (.seq (lengths umaal)
     (.block (finalizeArgs (.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 tagOff))))))))))
 
 /-- `r0 = 1` if the tag computed (at `r7 + 448`) is the one received (at
@@ -289,11 +301,11 @@ contract lets it leak, and the registers restored. -/
 def openEnd : Prog isa := .seq (.seq crypt (.block (compare ++ [.cmp .r0 (.imm 0)]))) openTail
 
 /-- `open` after the prologue. -/
-def openBody : Prog isa := .seq openMain (.seq finalize openEnd)
+def openBody (umaal : Bool) : Prog isa := .seq (openMain umaal) (.seq (finalize umaal) openEnd)
 
-def «open» : Prog isa := .seq (.block inPlace) openBody
+def «open» (umaal : Bool) : Prog isa := .seq (.block inPlace) (openBody umaal)
 
 /-- `vg_chacha20_poly1305_open_to`: `open`'s body out of place. -/
-def openTo : Prog isa := .seq (.block toEntry) openBody
+def openTo (umaal : Bool) : Prog isa := .seq (.block toEntry) (openBody umaal)
 
 end VG.Impl.ChaCha20Poly1305.Arm

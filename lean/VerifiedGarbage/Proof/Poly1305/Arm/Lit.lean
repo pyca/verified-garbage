@@ -21,8 +21,12 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 namespace VG
 
 materialize_code Impl.Poly1305.Arm.init
-materialize_code Impl.Poly1305.Arm.blocks
-materialize_code Impl.Poly1305.Arm.update
-materialize_code Impl.Poly1305.Arm.finalize
+-- The code of each kind of arithmetic: the baseline's, and `umaal`'s.
+materialize_code armPoly1305Blocks := Impl.Poly1305.Arm.blocks false
+materialize_code armPoly1305BlocksU := Impl.Poly1305.Arm.blocks true
+materialize_code armPoly1305Update := Impl.Poly1305.Arm.update false
+materialize_code armPoly1305UpdateU := Impl.Poly1305.Arm.update true
+materialize_code armPoly1305Finalize := Impl.Poly1305.Arm.finalize false
+materialize_code armPoly1305FinalizeU := Impl.Poly1305.Arm.finalize true
 
 end VG

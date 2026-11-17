@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
+public import VerifiedGarbage.Proof.Poly1305.Arm.Umaal
 import VerifiedGarbage.Proof.Poly1305.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -11,14 +12,19 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 /-!
-# Poly1305 on 32-bit ARM: the steps of `update` and `finalize`
+# Poly1305 on 32-bit ARM: the steps of `blocks`, `update` and `finalize`
 
-At a block boundary (`Acc`), the columns are congruent modulo `p` to an
-accumulator followed by some blocks; absorbing a block (`absorbAcc_ok`), the
-loop body of `blocks` over any blocks (`body_gen`), and reducing and storing
-the accumulator (`storeAcc_ok`) keep track of them. The callee-saved registers
-are saved in and restored from `scratch` (`saveScr_ok`, `restoreScr_ok`), and
-bytes are copied into the buffer, bytes 56–71 of the state (`copy_ok`).
+The code takes a flag, `umaal`, for its arithmetic: the baseline's, in radix
+`2¹³` (`Bytes.lean`, `Blocks.lean`), or that of CPUs with `umaal`, in radix
+`2³²` (`Umaal.lean`). What the functions need of either is the same
+(`AccI`): at a block boundary (`Acc`), the accumulator is congruent modulo
+`p` to an accumulator followed by some blocks; the setup (`setupAcc_ok`),
+absorbing a block (`absorbI_ok`, `absorbAcc_ok`), the loop body of `blocks`
+over any blocks (`body_gen`), and reducing and storing the accumulator
+(`reduceI_ok`, `storeAcc_ok`) keep track of them, each proven for both by
+cases. The callee-saved registers are saved in and restored from `scratch`
+(`saveScr_ok`, `restoreScr_ok`), and bytes are copied into the buffer, bytes
+56–71 of the state (`copy_ok`). `blocks` itself is the last section.
 -/
 
 @[expose] public section
@@ -26,81 +32,159 @@ bytes are copied into the buffer, bytes 56–71 of the state (`copy_ok`).
 namespace VG.Proof.Poly1305.Arm
 
 open VG VG.Arm VG.Impl.Poly1305.Arm
-open VG.Spec.Poly1305 (P leNum bytesAt)
+open VG.Spec.Poly1305 (P leNum bytesAt accumulate Repr)
 
-/-! ## At a block boundary -/
+/-! ## At a block boundary, for either arithmetic -/
 
-/-- `r0` points at the state `st`, which stores the limbs `R` of `r`, and the
-columns (`ColsD`) are congruent modulo `p` to the accumulator `A` followed by
-the blocks `X`. -/
-structure Acc (st : BitVec 32) (R : Nat → Nat) (A : Nat) (X : List Byte) (s : State) : Prop where
+/-- What holds at a block boundary of the state at `B` and the registers,
+with the accumulator congruent to `v` modulo `p`: for the baseline, the limbs
+`R` of `r` are stored and the columns (`ColsD`) are below the bound that
+keeps the next ones in a word; with `umaal`, `WAcc`. -/
+def AccI : Bool → Addr → (Nat → Nat) → Nat → State → Prop
+  | false, B, R, v, s => (∀ k < 10, rval s.mem B k = R k) ∧
+      ∃ D, ColsD D B s ∧ (∀ k < 10, D k ≤ 3564723200) ∧ val D % P = v % P
+  | true, B, R, v, s => WAcc B (val R) v s
+
+theorem AccI.congr {umaal : Bool} {B : Addr} {R : Nat → Nat} {v v' : Nat} {s : State}
+    (h : AccI umaal B R v s) (hv : v % P = v' % P) : AccI umaal B R v' s := by
+  cases umaal
+  · obtain ⟨hr, D, hc, hb, hd⟩ := h
+    exact ⟨hr, D, hc, hb, hd.trans hv⟩
+  · exact WAcc.congr h hv
+
+theorem wregs_yregs : ∀ q ∈ wregs, q ∈ yregs := by decide
+
+/-- `AccI` holds while the registers `r3`–`r11` and the state's words at
+`[16, 20)` and `[88, 124)` stay. -/
+theorem AccI.keep {umaal : Bool} {B : Addr} {R : Nat → Nat} {v : Nat} {s s' : State} (h : AccI umaal B R v s)
+    {ws : List Reg} {l : List (Nat × Nat)} (hk : KeepsF ws (offR B l) s s')
+    (hn : ∀ r ∈ ws, r ∉ yregs)
+    (hl : (l.all fun p => (20 ≤ p.1 ∨ p.1 + p.2 ≤ 16) ∧ (124 ≤ p.1 ∨ p.1 + p.2 ≤ 88)) = true)
+    (hl' : (l.all fun p => p.1 + p.2 < 2 ^ 32) = true) : AccI umaal B R v s' := by
+  cases umaal
+  · obtain ⟨hr, D, hcD, hDb, hDv⟩ := h
+    refine ⟨fun k hk' => ?_, D, ⟨fun k hk' => ?_, ?_⟩, hDb, hDv⟩
+    · rw [rval_frame' hk.frame (by
+        rw [List.all_eq_true] at hl ⊢
+        intro p hp; have := hl p hp; simp only [decide_eq_true_eq] at this ⊢; exact this.2) hl' hk']
+      exact hr k hk'
+    · rw [hk.gpr _ fun h' => hn _ h' (yr_yregs k hk')]; exact hcD.1 k hk'
+    · rw [hk.frame.word (by
+        rw [List.all_eq_true] at hl ⊢
+        intro p hp; have := hl p hp; simp only [decide_eq_true_eq] at this ⊢; omega_using [this]) (by decide) hl']
+      exact hcD.2
+  · refine WAcc.keep h (fun q hq => hk.gpr _ fun h' => hn _ h' (wregs_yregs q hq)) fun i hi => ?_
+    exact hk.frame.word (by
+      rw [List.all_eq_true] at hl ⊢
+      intro p hp; have := hl p hp; simp only [decide_eq_true_eq] at this ⊢; omega_using [this, hi])
+      (by omega_using [hi]) hl'
+
+/-- `r0` points at the state `st`, and (`AccI`) the accumulator is congruent
+modulo `p` to the accumulator `A` followed by the blocks `X`, with `R` the
+limbs of `r`. -/
+structure Acc (umaal : Bool) (st : BitVec 32) (R : Nat → Nat) (A : Nat) (X : List Byte) (s : State) :
+    Prop where
   r0 : s.gpr .r0 = st
   wr : stR st ∈ s.wr
-  r : ∀ k < 10, rval s.mem (State.addr st) k = R k
-  acc : ∃ D, ColsD D (State.addr st) s ∧ (∀ k < 10, D k ≤ 3564723200) ∧
-    val D % P = Poly1305.absorbAll (val R) A X % P
+  inv : AccI umaal (State.addr st) R (Poly1305.absorbAll (val R) A X) s
 
 /-- `Acc` holds while the registers `r0` and `r3`–`r11`, the writable regions
 and the state's words at `[16, 20)` and `[88, 124)` stay. -/
-theorem Acc.keep {st : BitVec 32} {R : Nat → Nat} {A : Nat} {X : List Byte} {s s' : State}
-    (h : Acc st R A X s) {ws : List Reg} {l : List (Nat × Nat)} (hk : KeepsF ws (offR (State.addr st) l) s s')
+theorem Acc.keep {umaal : Bool} {st : BitVec 32} {R : Nat → Nat} {A : Nat} {X : List Byte} {s s' : State}
+    (h : Acc umaal st R A X s) {ws : List Reg} {l : List (Nat × Nat)}
+    (hk : KeepsF ws (offR (State.addr st) l) s s')
     (hws : (ws.all fun r => r != .r0 && !yregs.contains r) = true)
     (hl : (l.all fun p => (20 ≤ p.1 ∨ p.1 + p.2 ≤ 16) ∧ (124 ≤ p.1 ∨ p.1 + p.2 ≤ 88)) = true)
-    (hl' : (l.all fun p => p.1 + p.2 < 2 ^ 32) = true) : Acc st R A X s' := by
+    (hl' : (l.all fun p => p.1 + p.2 < 2 ^ 32) = true) : Acc umaal st R A X s' := by
   obtain hn : ∀ r ∈ ws, r ≠ .r0 ∧ r ∉ yregs := fun r hr => by
     have := List.all_eq_true.mp hws r hr
     simp only [Bool.and_eq_true, bne_iff_ne, ne_eq, Bool.not_eq_true', List.contains_eq_mem,
       decide_eq_false_iff_not] at this
     exact this
-  obtain ⟨D, hcD, hDb, hDv⟩ := h.acc
-  refine ⟨by rw [hk.gpr _ fun h' => (hn _ h').1 rfl, h.r0], by rw [hk.wr]; exact h.wr,
-    fun k hk' => ?_, D, ⟨fun k hk' => ?_, ?_⟩, hDb, hDv⟩
-  · rw [rval_frame' hk.frame (by
-      rw [List.all_eq_true] at hl ⊢
-      intro p hp; have := hl p hp; simp only [decide_eq_true_eq] at this ⊢; exact this.2) hl' hk']
-    exact h.r k hk'
-  · rw [hk.gpr _ fun h' => (hn _ h').2 (yr_yregs k hk')]; exact hcD.1 k hk'
-  · rw [hk.frame.word (by
-      rw [List.all_eq_true] at hl ⊢
-      intro p hp; have := hl p hp; simp only [decide_eq_true_eq] at this ⊢; omega_using [this]) (by decide) hl']
-    exact hcD.2
+  exact ⟨by rw [hk.gpr _ fun h' => (hn _ h').1 rfl, h.r0], by rw [hk.wr]; exact h.wr,
+    h.inv.keep hk (fun r hr => (hn r hr).2) hl hl'⟩
+
+/-! ## The code of either arithmetic -/
+
+theorem setup_false : setup false = setupR ++ loadAcc := rfl
+theorem setup_true : setup true = setupU ++ loadAccU := rfl
+theorem absorbV_false (pad : Bool) : absorbV false pad = absorb pad := rfl
+theorem absorbV_true (pad : Bool) : absorbV true pad = absorbU pad := rfl
+theorem reduceV_false : reduceV false = reduce ++ toWords := rfl
+theorem reduceV_true : reduceV true = reduceU := rfl
 
 section
 variable {st : BitVec 32} (hfit : st.toNat + 128 ≤ 2 ^ 32)
 include hfit
 
+/-- The multipliers and the accumulator, from the state's key and accumulator. -/
+theorem setupAcc_ok {umaal : Bool} {s : State} (h0 : s.gpr .r0 = st) (hw : stR st ∈ s.wr) :
+    WP isa (.block (setup umaal)) s fun s' =>
+      AccI umaal (State.addr st) (rlimb s.mem (State.addr st)) (val (accD s.mem (State.addr st))) s' ∧
+      KeepsF (.r1 :: .r2 :: .r12 :: yregs) (offR (State.addr st) [(0, 20), (88, 36)]) s s' := by
+  cases umaal
+  · rw [setup_false]
+    exact WP.mono (setupB_ok hfit h0 hw) fun s' ⟨hr, hc, k⟩ =>
+      ⟨⟨hr, _, hc, fun k _ => by have := accD_lt s.mem (State.addr st) k; omega_using [this], rfl⟩, k⟩
+  · rw [setup_true]
+    refine WP.mono (setupU_wacc hfit h0 hw) fun s' ⟨ha, k⟩ => ⟨ha, (k.mono ?_).sub ?_⟩
+    · decide
+    · intro r hr
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_map.mpr ⟨(88, 36), by decide, rfl⟩, fun _ h => h⟩
+
+/-- Absorbing the block at `r1`, plus `2¹²⁸` if `pad`. -/
+theorem absorbI_ok {umaal : Bool} (pad : Bool) {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {v : Nat}
+    {s : State} (h0 : s.gpr .r0 = st) (hw : stR st ∈ s.wr) (h : AccI umaal (State.addr st) R v s)
+    (hin : ∀ i < 4, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * i))) 4) :
+    WP isa (.block (absorbV umaal pad)) s fun s' =>
+      AccI umaal (State.addr st) R ((v + msgVal s + if pad then 2 ^ 128 else 0) * val R) s' ∧
+      KeepsF work [accR (State.addr st)] s s' := by
+  cases umaal
+  · obtain ⟨hr, D, hcD, hDb, hDv⟩ := h
+    rw [absorbV_false]
+    refine WP.mono (absorb_ok hfit pad hR hDb h0 hw hr hcD hin) fun s' ⟨D', hc', hb', hv', k'⟩ =>
+      ⟨⟨fun k hk => ?_, D', hc', hb', ?_⟩, k'⟩
+    · rw [rval_frame k'.frame hk]; exact hr k hk
+    · rw [hv', Nat.mul_mod, Nat.add_mod (val D + msgVal s), Nat.add_mod (val D), hDv, ← Nat.add_mod v,
+        ← Nat.add_mod, ← Nat.mul_mod]
+  · rw [absorbV_true]
+    exact WP.mono (absorbU_wacc hfit pad h0 hw h hin) fun s' ⟨ha, k⟩ => ⟨ha, k.keepsF _⟩
+
 /-- Absorbing the block at `a`, at `r1`. -/
-theorem absorbAcc_ok {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X : List Byte}
-    (hX : X.length % 16 = 0) {s : State} (h : Acc st R A X s) {a : Addr}
+theorem absorbAcc_ok {umaal : Bool} {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X : List Byte}
+    (hX : X.length % 16 = 0) {s : State} (h : Acc umaal st R A X s) {a : Addr}
     (ha : ∀ j < 4, State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * j)) = a + BitVec.ofNat 64 (4 * j))
     (hin : ∀ j < 4, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 (4 * j)) 4) :
-    WP isa (.block (absorb true)) s fun s' =>
-      Acc st R A (X ++ bytesAt s.mem a 16) s' ∧ KeepsF work [accR (State.addr st)] s s' := by
-  obtain ⟨D, hcD, hDb, hDv⟩ := h.acc
-  refine WP.mono (absorb_ok hfit true hR hDb h.r0 h.wr h.r hcD fun j hj => by rw [ha j hj]; exact hin j hj)
-    fun s' ⟨D', hc', hb', hv', k'⟩ => ⟨⟨?_, ?_, fun k hk => ?_, D', hc', hb', ?_⟩, k'⟩
-  · rw [k'.gpr _ (by decide), h.r0]
-  · rw [k'.wr]; exact h.wr
-  · rw [rval_frame k'.frame hk]; exact h.r k hk
-  · have hmsg : msgVal s = leNum (bytesAt s.mem a 16) := by
-      rw [leNum_bytesAt_16, msgVal]
-      simp only [word]
-      rw [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide)]
-    obtain hl := Poly1305.length_bytesAt s.mem a 16
-    rw [Poly1305.absorbAll_append hX, Poly1305.absorbAll_block (by omega_using [hl]) (by omega_using [hl]), hv', hmsg,
-      leNum_pad _ hl, iteT rfl, Nat.add_assoc]
-    exact mod_step hDv
+    WP isa (.block (absorbV umaal true)) s fun s' =>
+      Acc umaal st R A (X ++ bytesAt s.mem a 16) s' ∧ KeepsF work [accR (State.addr st)] s s' := by
+  refine WP.mono (absorbI_ok hfit true hR h.r0 h.wr h.inv fun j hj => by rw [ha j hj]; exact hin j hj)
+    fun s' ⟨hi', k'⟩ => ⟨⟨by rw [k'.gpr _ (by decide), h.r0], by rw [k'.wr]; exact h.wr, hi'.congr ?_⟩, k'⟩
+  have hmsg : msgVal s = leNum (bytesAt s.mem a 16) := by
+    rw [leNum_bytesAt_16, msgVal]
+    simp only [word]
+    rw [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide)]
+  obtain hl := Poly1305.length_bytesAt s.mem a 16
+  rw [Poly1305.absorbAll_append hX,
+    Poly1305.absorbAll_block (b := bytesAt s.mem a 16) (by omega_using [hl]) (by omega_using [hl]), hmsg,
+    leNum_pad _ hl, iteT rfl, Nat.mod_mod, Nat.mul_comm (val R), Nat.add_assoc]
+
+omit hfit in
+theorem body_eq (umaal : Bool) :
+    body umaal = .block (([.ldr .r1 .r0 ptrOff, .dp .add .r2 .r1 (.imm 16), .str .r2 .r0 ptrOff] : List Instr) ++
+      (absorbV umaal true ++ ([.ldr .r1 .r0 cntOff, .subs .r1 .r1 (.imm 1), .str .r1 .r0 cntOff] : List Instr))) := by
+  simp only [body, List.append_assoc]
 
 /-- The loop body of `blocks`, with the block pointer `p` and the count `c`
 stored in the state. -/
-theorem body_gen {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X : List Byte}
-    (hX : X.length % 16 = 0) {s : State} (h : Acc st R A X s) {p : BitVec 32} {c : Nat}
+theorem body_gen {umaal : Bool} {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X : List Byte}
+    (hX : X.length % 16 = 0) {s : State} (h : Acc umaal st R A X s) {p : BitVec 32} {c : Nat}
     (hptr : s.mem.readW (State.addr st + BitVec.ofNat 64 124) 32 = p)
     (hcnt : s.mem.readW (State.addr st + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 c) (hc : 0 < c)
     (hc32 : c < 2 ^ 32) (hpf : p.toNat + 16 ≤ 2 ^ 32)
     (hin : ∀ j < 4, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 (4 * j)) 4)
     (hd : (⟨State.addr p, 16⟩ : Region).Disjoint ⟨State.addr st + BitVec.ofNat 64 124, 4⟩) :
-    WP isa body s fun s' => Acc st R A (X ++ bytesAt s.mem (State.addr p) 16) s' ∧
+    WP isa (body umaal) s fun s' => Acc umaal st R A (X ++ bytesAt s.mem (State.addr p) 16) s' ∧
       KeepsF work (offR (State.addr st) [(0, 24), (124, 4)]) s s' ∧
       s'.mem.readW (State.addr st + BitVec.ofNat 64 124) 32 = p + 16 ∧
       s'.mem.readW (State.addr st + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 (c - 1) ∧
@@ -127,7 +211,7 @@ theorem body_gen {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X 
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [u₃.gpr, u₂.other _ hr.2, u₁.other _ hr.1],
       f₃, by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.sp, u₂.sp, u₁.sp]⟩
-  obtain hA₃ : Acc st R A X s₃ := h.keep k₃ (by decide) (by decide) (by decide)
+  obtain hA₃ : Acc umaal st R A X s₃ := h.keep k₃ (by decide) (by decide) (by decide)
   obtain hblk : bytesAt s₃.mem (State.addr p) 16 = bytesAt s.mem (State.addr p) 16 :=
     bytesAt_frame f₃ (fun r hr => by
       simp only [offR, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr; exact hd)
@@ -170,22 +254,34 @@ theorem body_gen {R : Nat → Nat} (hR : ∀ i < 10, R i < 2 ^ 13) {A : Nat} {X 
       f₄.word (by decide) (by decide) (by decide), m₃, Mem.readW_writeW_self32]
   · rw [u₇.z, hz₆, ← u₆.gpr, hc₆, ofNat_beq_zero (by omega_using [hc, hc32])]
 
-/-- Reducing the columns fully and storing them as the accumulator. -/
-theorem storeAcc_ok {R : Nat → Nat} {A : Nat} {X : List Byte} {s : State} (h : Acc st R A X s) :
-    WP isa (.block (reduce ++ toWords ++ storeAcc)) s fun s' =>
+/-- The accumulator reduced fully: its words, of `v mod p`. -/
+theorem reduceI_ok {umaal : Bool} {R : Nat → Nat} {v : Nat} {s : State} (h0 : s.gpr .r0 = st)
+    (hw : stR st ∈ s.wr) (h : AccI umaal (State.addr st) R v s) :
+    WP isa (.block (reduceV umaal)) s fun s' => ∃ w0 w1 w2 w3 w4, OutW w0 w1 w2 w3 w4 s' ∧
+      Limbs32.val5 w0 w1 w2 w3 w4 = v % P ∧ Keeps work s s' := by
+  cases umaal
+  · obtain ⟨-, D, hcD, hDb, hDv⟩ := h
+    obtain hE : ∀ j < 10, D j < 2 ^ 32 - 2 ^ 19 := fun j hj => by have := hDb j hj; omega_using [this]
+    obtain ⟨-, -, -, hvL, hlL⟩ := red_facts D hE
+    rw [reduceV_false]
+    refine WP.append (reduce_ok hfit hDb h0 hw hcD) fun s₁ ⟨hc₁, k₁⟩ => ?_
+    refine WP.mono (toWords_ok hc₁ fun j hj => hlL j (by omega_using [hj])) fun s₂ ⟨e3, e5, e7, e10, e1, k₂⟩ =>
+      ⟨_, _, _, _, _, ⟨e3, e5, e7, e10, e1⟩, ?_, ?_⟩
+    · rw [← hDv, ← hvL, val_toWords fun j hj => hlL j (by omega_using [hj])]
+      rfl
+    · exact (k₁.mono (by decide)).trans (k₂.mono (by decide))
+  · rw [reduceV_true]
+    exact reduceU_wacc h
+
+/-- Reducing the accumulator fully and storing it. -/
+theorem storeAcc_ok {umaal : Bool} {R : Nat → Nat} {A : Nat} {X : List Byte} {s : State}
+    (h : Acc umaal st R A X s) :
+    WP isa (.block (reduceV umaal ++ storeAcc)) s fun s' =>
       leNum (bytesAt s'.mem (State.addr st) 24) = Poly1305.absorbAll (val R) A X % P ∧
       KeepsF work (offR (State.addr st) [(0, 24)]) s s' := by
-  obtain ⟨D, hcD, hDb, hDv⟩ := h.acc
-  obtain hE : ∀ j < 10, D j < 2 ^ 32 - 2 ^ 19 := fun j hj => by have := hDb j hj; omega_using [this]
-  obtain ⟨-, -, -, hvL, hlL⟩ := red_facts D hE
-  simp only [List.append_assoc]
-  refine WP.append (reduce_ok hfit hDb h.r0 h.wr hcD) fun s₁ ⟨hc₁, k₁⟩ => ?_
-  refine WP.append (toWords_ok hc₁ fun j hj => hlL j (by omega_using [hj])) fun s₂ ⟨e3, e5, e7, e10, e1, k₂⟩ => ?_
-  obtain k₁₂ := k₁.trans (k₂.mono fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [cregs, yregs])
-  obtain hs₂0 : s₂.gpr .r0 = st := by rw [k₁₂.gpr _ (by decide), h.r0]
-  obtain hw₂ : stR st ∈ s₂.wr := by rw [k₁₂.wr]; exact h.wr
+  refine WP.append (reduceI_ok hfit h.r0 h.wr h.inv) fun s₂ ⟨w0, w1, w2, w3, w4, ⟨o3, o5, o7, o10, o1⟩, hv, k₂⟩ => ?_
+  obtain hs₂0 : s₂.gpr .r0 = st := by rw [k₂.gpr _ (by decide), h.r0]
+  obtain hw₂ : stR st ∈ s₂.wr := by rw [k₂.wr]; exact h.wr
   rw [show storeAcc = accList.map (storeI .r0) ++ [.mov .r2 (.imm 0), .str .r2 .r0 20] from rfl]
   refine WP.append (stores_ok .r0 hfit rfl accList s₂ hs₂0 hw₂ (by decide) (by decide))
     fun s₃ ⟨hs₃, hf₃, hg₃, hrd₃, hwr₃, hsp₃⟩ => ?_
@@ -196,7 +292,7 @@ theorem storeAcc_ok {R : Nat → Nat} {A : Nat} {X : List Byte} {s : State} (h :
   obtain m₅ : s₅.mem = s₃.mem.writeW (State.addr st + BitVec.ofNat 64 20) (0 : BitVec 32) := by
     rw [u₅.mem, u₄.gpr, u₄.mem]
   obtain f₅ : Frame (offR (State.addr st) [(0, 24)]) s.mem s₅.mem := by
-    rw [m₅, ← k₁₂.mem]
+    rw [m₅, ← k₂.mem]
     rw [accList_frame] at hf₃
     exact Frame.writeOff (hf₃.offR_sub (by decide) (by decide)) (a := 0) (len := 24) (by decide) (by decide)
       (by decide) (by decide) _ rfl
@@ -220,15 +316,14 @@ theorem storeAcc_ok {R : Nat → Nat} {A : Nat} {X : List Byte} {s : State} (h :
     obtain e16 := w _ (by decide : (Reg.r1, 16, false) ∈ accList) 16 rfl rfl
     obtain e20 : s₅.mem.readW (State.addr st + BitVec.ofNat 64 20) 32 = 0 := by rw [m₅, Mem.readW_writeW_self32]
     simp only at e0 e4 e8 e12 e16
-    rw [leNum_bytesAt_24, e0, e4, e8, e12, e16, e20, e3, e5, e7, e10, e1,
-      show (0 : BitVec 32).toNat = 0 from rfl, val_words (fun j hj => hlL j (by omega_using [hj])), hvL, hDv]
-  · have hsub : ∀ r ∈ (Reg.r2 :: .r12 :: cregs), r ∈ work := by decide
-    obtain h2 : r ≠ .r2 := by rintro rfl; exact hr (by decide)
+    rw [leNum_bytesAt_24, e0, e4, e8, e12, e16, e20, o3, o5, o7, o10, o1, ← hv]
+    rfl
+  · obtain h2 : r ≠ .r2 := by rintro rfl; exact hr (by decide)
     rw [u₅.gpr, u₄.other _ h2, hg₃]
-    exact k₁₂.gpr r fun h' => hr (hsub r h')
-  · rw [u₅.rd, u₄.rd, hrd₃, k₁₂.rd]
-  · rw [u₅.wr, u₄.wr, hwr₃, k₁₂.wr]
-  · rw [u₅.sp, u₄.sp, hsp₃, k₁₂.sp]
+    exact k₂.gpr r hr
+  · rw [u₅.rd, u₄.rd, hrd₃, k₂.rd]
+  · rw [u₅.wr, u₄.wr, hwr₃, k₂.wr]
+  · rw [u₅.sp, u₄.sp, hsp₃, k₂.sp]
 
 end
 
@@ -418,5 +513,200 @@ theorem CopyInv.frame {sI : State} {src : BitVec 32} {j0 : Nat} {xs : List Byte}
   exact writeBytes_frame _ _ _ (contains_sub _ (by omega_using []) (by omega_using [hj0]) (by decide))
 
 end
+
+/-! ## `blocks`
+
+After saving the registers, storing the block pointer and count in the state,
+computing the multipliers and loading the accumulator (`prologue_ok`), each
+block is absorbed (`blocksBody_ok`); then the accumulator is reduced and
+stored (`epilogue_ok`). Between blocks (`Common`) it is congruent modulo `p`
+to the accumulator of the blocks so far. -/
+
+/-- Between blocks, after `i` of them. -/
+structure Common (umaal : Bool) (s₀ : State) (i : Nat) (s : State) : Prop where
+  keeps : KeepsF work (offR (stB s₀) wkL) s₀ s
+  saved : Saved (stB s₀) s₀.gpr s.mem
+  acc : Acc umaal (s₀.gpr .r0) (Rl s₀) (A0 s₀) (blks s₀ i) s
+
+/-- The loop invariant, before block `i`. -/
+structure LInv (umaal : Bool) (s₀ : State) (i : Nat) (s : State) : Prop extends Common umaal s₀ i s where
+  ptr : s.mem.readW (stB s₀ + BitVec.ofNat 64 124) 32 = s₀.gpr .r1 + BitVec.ofNat 32 (16 * i)
+  cnt : s.mem.readW (stB s₀ + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 (nb s₀ - i)
+
+variable {umaal : Bool}
+
+theorem blocksBody_ok {s₀ : State} (hp : BPre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
+    (hL : LInv umaal s₀ i s) :
+    WP isa (body umaal) s fun s' =>
+      (isa.eval .ne s' = some false ∧ Common umaal s₀ (nb s₀) s') ∨
+      (isa.eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv umaal s₀ (i + 1) s') := by
+  have hfit := hp.st_fit
+  have hbf := hp.bl_fit
+  obtain hn32 : nb s₀ < 2 ^ 32 := (s₀.gpr .r2).isLt
+  have hk := hL.keeps
+  obtain hpA : State.addr (s₀.gpr .r1 + BitVec.ofNat 32 (16 * i)) =
+      State.addr (s₀.gpr .r1) + BitVec.ofNat 64 (16 * i) := addr_add (by omega_using [hi, hbf])
+  obtain hsub : Region.Sub ⟨State.addr (s₀.gpr .r1) + BitVec.ofNat 64 (16 * i), 16⟩ (blR s₀) :=
+    sub_base _ (by omega_using [hi]) (by omega_using [hn32])
+  obtain hfr : Frame [stR (s₀.gpr .r0)] s₀.mem s.mem :=
+    hk.frame.sub fun r hr => by
+      obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hr
+      simp only [wkL, List.mem_cons, List.not_mem_nil, or_false] at hp'
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rcases hp' with rfl | rfl
+      · exact sub_base _ (by decide) (by decide)
+      · exact sub_base _ (by decide) (by decide)
+  obtain hblk : bytesAt s.mem (State.addr (s₀.gpr .r1 + BitVec.ofNat 32 (16 * i))) 16 =
+      bytesAt s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 (16 * i)) 16 := by
+    rw [hpA]
+    exact Poly1305.bytesAt_frame hfr (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.st_bl.sub_right hsub).symm) (by decide)
+  refine WP.mono (body_gen hfit (fun i _ => rlimb_lt _ _ i)
+      (by simp only [blks, Poly1305.length_bytesAt]; omega_using []) hL.acc hL.ptr hL.cnt
+      (by omega_using [hi]) (by omega_using [hi, hn32])
+      (by rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * i) (by omega_using [hi, hbf]),
+            Nat.mod_eq_of_lt (by omega_using [hi, hbf])]
+          omega_using [hi, hbf])
+      (fun j hj => by
+        rw [hpA, off_add, hk.rd, hp.rd]
+        exact ⟨_, List.mem_append_left _ (List.mem_singleton_self _),
+          contains_off (off := 16 * i + 4 * j) (n := 4) (len := 16 * nb s₀) (by omega_using [hi, hj])
+            (by omega_using [hi, hn32, hj])⟩)
+      (by rw [hpA]
+          exact ((hp.st_bl.sub_right hsub).sub_left (sub_base _ (a := 124) (len := 4) (len' := 128) (by decide)
+            (by decide))).symm))
+    fun s' ⟨hA', k', hptr, hcnt, hz⟩ => ?_
+  obtain hC : Common umaal s₀ (i + 1) s' := by
+    refine ⟨hk.trans (k'.sub (sub_offR _ (by decide) (by decide))), hL.saved.frame k'.frame (by decide) (by decide), ?_⟩
+    rw [hblk, ← blks_succ] at hA'
+    exact hA'
+  by_cases hlast : i + 1 = nb s₀
+  · exact .inl ⟨by rw [eval_ne, hz]; simp; omega_using [hlast], hlast ▸ hC⟩
+  · refine .inr ⟨by rw [eval_ne, hz]; simp; omega_using [hi, hlast], by omega_using [hi, hlast],
+      { hC with ptr := ?_, cnt := ?_ }⟩
+    · rw [hptr, BitVec.add_assoc, show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, ← BitVec.ofNat_add]
+      rfl
+    · rw [hcnt, Nat.sub_sub]
+
+theorem prologue_ok {s₀ : State} (hp : BPre s₀) :
+    WP isa (.block (saveRegs ++ ([.str .r1 .r0 ptrOff, .str .r2 .r0 cntOff] : List Instr) ++ setup umaal ++
+      ([.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)] : List Instr))) s₀ fun s =>
+      LInv umaal s₀ 0 s ∧ s.z = (s₀.gpr .r2 == 0) := by
+  have hfit := hp.st_fit
+  obtain hw : stR (s₀.gpr .r0) ∈ s₀.wr := by rw [hp.wr]; exact List.mem_singleton_self _
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.append (saveRegs_ok hfit rfl hw) fun s₁ ⟨hsv, hf₁, hg₁, hrd₁, hwr₁, hsp₁⟩ => ?_
+  obtain hw₁ : stR (s₀.gpr .r0) ∈ s₁.wr := by rw [hwr₁]; exact hw
+  refine wp_str (a := stB s₀ + BitVec.ofNat 64 124) (by decide)
+    (by rw [hg₁]; exact ea hfit (off := 124) (by decide)) (outSt hw₁ (off := 124) (n := 4) (by decide))
+    fun s₂ u₂ => ?_
+  refine wp_str (a := stB s₀ + BitVec.ofNat 64 20) (by decide)
+    (by rw [u₂.gpr, hg₁]; exact ea hfit (off := 20) (by decide))
+    (by rw [u₂.wr]; exact outSt hw₁ (off := 20) (n := 4) (by decide)) fun s₃ u₃ => ?_
+  obtain m₃ : s₃.mem = (s₁.mem.writeW (stB s₀ + BitVec.ofNat 64 124) (s₀.gpr .r1)).writeW
+      (stB s₀ + BitVec.ofNat 64 20) (s₀.gpr .r2) := by rw [u₃.mem, u₂.mem, u₂.gpr, hg₁]
+  obtain f₁₃ : Frame (offR (stB s₀) [(20, 4), (124, 4)]) s₁.mem s₃.mem := by
+    rw [m₃]
+    exact Frame.writeOff (Frame.writeOff (Frame.refl _ _) (a := 124) (len := 4) (by decide) (Nat.le_refl _) (Nat.le_refl _)
+      (by decide) _ rfl) (a := 20) (len := 4) (by decide) (Nat.le_refl _) (Nat.le_refl _) (by decide) _ rfl
+  obtain hs₃0 : s₃.gpr .r0 = s₀.gpr .r0 := by rw [u₃.gpr, u₂.gpr, hg₁]
+  obtain hw₃ : stR (s₀.gpr .r0) ∈ s₃.wr := by rw [u₃.wr, u₂.wr]; exact hw₁
+  refine WP.append (setupAcc_ok hfit hs₃0 hw₃) fun s₄ ⟨ha₄, k₄⟩ => ?_
+  obtain hs₄0 : s₄.gpr .r0 = s₀.gpr .r0 := by rw [k₄.gpr _ (by decide), hs₃0]
+  obtain hw₄ : stR (s₀.gpr .r0) ∈ s₄.wr := by rw [k₄.wr]; exact hw₃
+  refine wp_ldr (a := stB s₀ + BitVec.ofNat 64 20) (by decide)
+    (by rw [hs₄0]; exact ea hfit (off := 20) (by decide)) (inSt hw₄ (off := 20) (n := 4) (by decide))
+    fun s₅ u₅ => wp_cmp (op2_imm (by decide)) fun s₆ u₆ hz => WP.block_nil ?_
+  have f₀₁ : Frame (offR (stB s₀) [(56, 32)]) s₀.mem s₁.mem := hf₁
+  obtain f₁₄ : Frame (offR (stB s₀) [(0, 20), (20, 4), (88, 36), (124, 4)]) s₁.mem s₄.mem :=
+    (f₁₃.offR_sub (by decide) (by decide)).trans (k₄.frame.offR_sub (by decide) (by decide))
+  obtain m₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
+  -- The key and the stored accumulator on entry.
+  obtain f₀₃ : Frame (offR (stB s₀) [(20, 4), (56, 32), (124, 4)]) s₀.mem s₃.mem :=
+    (f₀₁.offR_sub (by decide) (by decide)).trans (f₁₃.offR_sub (by decide) (by decide))
+  obtain hRl : rlimb s₃.mem (stB s₀) = Rl s₀ := rlimb_frame' f₀₃ (by decide) (by decide)
+  obtain hA : accD s₃.mem (stB s₀) = accD s₀.mem (stB s₀) := accD_frame f₀₃ (by decide) (by decide)
+  rw [hRl, hA] at ha₄
+  obtain hptr : s₄.mem.readW (stB s₀ + BitVec.ofNat 64 124) 32 = s₀.gpr .r1 := by
+    rw [k₄.frame.word (by decide) (by decide) (by decide), m₃,
+      readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  obtain hcnt : s₄.mem.readW (stB s₀ + BitVec.ofNat 64 20) 32 = s₀.gpr .r2 := by
+    rw [k₄.frame.word (by decide) (by decide) (by decide), m₃, Mem.readW_writeW_self32]
+  obtain k₄₆ : KeepsF [.r1] (offR (stB s₀) []) s₄ s₆ :=
+    ((u₅.keeps (ws := [.r1]) (by simp)).trans ⟨fun r _ => by rw [u₆.gpr], u₆.mem, u₆.rd, u₆.wr, u₆.sp⟩).keepsF _
+  refine ⟨⟨⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩, ?_, ?_⟩, ?_⟩
+  · have h1 : r ≠ .r1 := by rintro rfl; exact hr (by decide)
+    rw [u₆.gpr, u₅.other _ h1, k₄.gpr _ (by
+      simp only [yregs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+      refine ⟨h1, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rintro rfl <;> exact hr (by decide)),
+      u₃.gpr, u₂.gpr, hg₁]
+  · rw [m₆]
+    exact (f₀₁.offR_sub (by decide) (by decide)).trans (f₁₄.offR_sub (by decide) (by decide))
+  · rw [u₆.rd, u₅.rd, k₄.rd, u₃.rd, u₂.rd, hrd₁]
+  · rw [u₆.wr, u₅.wr, k₄.wr, u₃.wr, u₂.wr, hwr₁]
+  · rw [u₆.sp, u₅.sp, k₄.sp, u₃.sp, u₂.sp, hsp₁]
+  · rw [m₆]; exact hsv.frame f₁₄ (by decide) (by decide)
+  · exact (Acc.mk hs₄0 hw₄ (by rw [blks_zero, Poly1305.absorbAll_nil]; exact ha₄)).keep k₄₆ (by decide)
+      (by decide) (by decide)
+  · rw [m₆, hptr]; simp
+  · rw [m₆, hcnt]; simp [nb]
+  · rw [hz, u₅.gpr, hcnt]; simp
+
+theorem epilogue_ok {s₀ : State} (hp : BPre s₀) {s : State} (hc : Common umaal s₀ (nb s₀) s) :
+    WP isa (.block (reduceV umaal ++ storeAcc ++ restoreRegs)) s fun s' =>
+      abiPreserved s₀ s' ∧ Proof.Poly1305.blocksArm.post s₀ s' := by
+  have hfit := hp.st_fit
+  refine WP.append (storeAcc_ok hfit hc.acc) fun s₅ ⟨hv₅, k₅⟩ => ?_
+  obtain hs₅0 : s₅.gpr .r0 = s₀.gpr .r0 := by rw [k₅.gpr _ (by decide), hc.acc.r0]
+  obtain hw₅ : stR (s₀.gpr .r0) ∈ s₅.wr := by rw [k₅.wr]; exact hc.acc.wr
+  refine WP.mono (restoreRegs_ok hfit hs₅0 hw₅ (hc.saved.frame k₅.frame (by decide) (by decide)))
+    fun s' ⟨hr', k'⟩ => ?_
+  obtain f' : Frame (offR (stB s₀) wkL) s₀.mem s'.mem := by
+    rw [k'.mem]; exact hc.keeps.frame.trans (k₅.frame.offR_sub (by decide) (by decide))
+  refine ⟨⟨fun r hr => ?_, ?_⟩, fun key msg hrep => ?_⟩
+  · rcases preserved_cases r hr with rfl | ⟨i, hi, rfl⟩
+    · rw [k'.gpr _ (by decide), k₅.gpr _ (by decide), hc.keeps.gpr _ (by decide)]
+    · exact hr' i hi
+  · rw [k'.sp, k₅.sp, hc.keeps.sp]
+  · obtain ⟨hlen, hkey, hacc⟩ := hrep
+    have hkey' := hkey
+    rw [← key_frame f' (by decide) (by decide)] at hkey'
+    refine ⟨?_, hkey', ?_⟩
+    · rw [List.length_append, Poly1305.length_bytesAt]; omega_using [hlen]
+    · rw [← hkey, take_bytesAt _ _ (by decide), ← val_rlimb, Poly1305.accumulate_append hlen]
+      rw [← hkey, take_bytesAt _ _ (by decide), ← val_rlimb] at hacc
+      obtain hlt : leNum (bytesAt s₀.mem (stB s₀) 24) < P := by
+        rw [hacc]; exact Poly1305.accumulate_lt _ _
+      obtain hA : accumulate (Rn s₀) msg = A0 s₀ := by
+        rw [A0, val_accD_eq hlt]; exact hacc.symm
+      obtain hlt' := Poly1305.absorbAll_lt (r := Rn s₀) (a := A0 s₀) (by rw [← hA]; exact Poly1305.accumulate_lt _ _)
+        (blks s₀ (nb s₀))
+      rw [hA, k'.mem, hv₅, Nat.mod_eq_of_lt hlt']
+
+theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
+    WP isa (blocks umaal) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.blocksArm.post s₀ s' := by
+  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hL, hz⟩ => ?_)
+  refine WP.seq (WP.mono (Q := Common umaal s₀ (nb s₀)) ?_ fun s₂ hc => epilogue_ok hp hc)
+  refine WP.ite s₁.z (eval_eq _) (fun h => ?_) (fun h => ?_)
+  · have h0 : nb s₀ = 0 := by rw [h] at hz; simp only [nb]; rw [eq_of_beq hz.symm]; rfl
+    exact WP.block_nil (M := isa) (h0 ▸ hL.toCommon)
+  · have hpos : 0 < nb s₀ := by
+      rw [h] at hz
+      refine Nat.pos_of_ne_zero fun h' => ?_
+      have : s₀.gpr .r2 = 0 := BitVec.eq_of_toNat_eq (by simpa [nb] using h')
+      simp [this] at hz
+    refine WP.loop (M := isa) (fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv umaal s₀ i s) ?_ (nb s₀) s₁
+      ⟨0, rfl, hpos, hL⟩
+    rintro m s ⟨i, rfl, hi, hLi⟩
+    refine WP.mono (blocksBody_ok hp hi hLi) fun s' h' => ?_
+    rcases h' with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
+    · exact .inl ⟨he, hc⟩
+    · exact .inr ⟨he, nb s₀ - (i + 1), by omega_using [hi'], i + 1, rfl, hi', hL'⟩
+
+theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksArm.pre s) :
+    ∃ t s', Exec isa (Impl.Poly1305.Arm.blocks umaal) s t s' ∧ abiPreserved s s' ∧
+      Proof.Poly1305.blocksArm.post s s' :=
+  blocks_correct (BPre.of s hs)
 
 end VG.Proof.Poly1305.Arm

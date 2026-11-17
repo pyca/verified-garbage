@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Proof.Zeroize.Common
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -58,7 +60,7 @@ open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
 open VG.Proof.MdStream.Arm (Upd wp_cmp wp_strb wp_mov wp_add wp_subs op2_imm op2_reg)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-- The ciphertext `seal` computes. -/
 abbrev Ct (s₀ : State) : List Byte := Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀)
@@ -130,7 +132,7 @@ structure PreFs (s₀ : State) (s : State) : Prop where
   repr : Repr s.mem (cx s₀) (otk s₀) (macData (A s₀) (Ct s₀))
   data : bytesAt s.mem (dp s₀) (L s₀) = Ct s₀
 
-theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa sealMain s₀ (PreFs s₀) := by
+theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa (sealMain umaal) s₀ (PreFs s₀) := by
   unfold sealMain
   refine WP.seq (WP.mono (block1_ok hp) fun s₁ h₁ => ?_)
   obtain d₁ : bytesAt s₁.mem (dp s₀) (L s₀) = D s₀ :=
@@ -198,7 +200,7 @@ structure PostFs (s₀ : State) (s : State) : Prop where
   data : bytesAt s.mem (dp s₀) (L s₀) = Ct s₀
 
 theorem finalize_seal_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : PreFs s₀ s) :
-    WP isa finalize s (PostFs s₀) :=
+    WP isa (finalize umaal) s (PostFs s₀) :=
   WP.mono (fin_ok hp h.inv (outOk_tP hp) h.r0 h.r1 h.r12) fun s' ⟨k', rg', sv', t'⟩ =>
     ⟨rg', by rw [k'.sp, h.inv.sp], by rw [k'.rd, h.inv.rd], by rw [k'.wr, h.inv.wr], sv',
       t' _ _ h.repr h.cnt, by
@@ -227,7 +229,7 @@ theorem sealEnd_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : PostFs 
   simp only [Spec.ChaCha20Poly1305.encrypt]
 
 theorem sealBody_correct {s₀ : State} (hp : APre true s₀) :
-    WP isa sealBody s₀ fun s' => Restored s₀ s' ∧ s'.sp = s₀.sp ∧ SealB s₀ s' :=
+    WP isa (sealBody umaal) s₀ fun s' => Restored s₀ s' ∧ s'.sp = s₀.sp ∧ SealB s₀ s' :=
   WP.seq (WP.mono (sealMain_ok hp) fun _ h => WP.seq (WP.mono (finalize_seal_ok hp h)
     fun _ h' => sealEnd_ok hp h'))
 
@@ -277,7 +279,7 @@ theorem macR_hd (s₀ : State) {a n : Nat} (h : 128 ≤ a) (h' : padOff + 16 ≤
   · exact .inl ⟨0, 128, by omega_using [], by omega_using [h], rfl⟩
   · exact .inl ⟨padOff, 16, by simp [padOff], h', rfl⟩
 
-theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa openMain s₀ (PreFo s₀) := by
+theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa (openMain umaal) s₀ (PreFo s₀) := by
   unfold openMain
   refine WP.seq (WP.mono (block1_ok hp) fun s₁ h₁ => ?_)
   obtain d₁ : bytesAt s₁.mem (dp s₀) (L s₀) = D s₀ :=
@@ -363,7 +365,7 @@ theorem fin_hd (s₀ : State) {a n : Nat} (h : 128 ≤ a) (h' : tagOff + 16 ≤ 
   · exact .inr (.inr rfl)
 
 theorem finalize_open_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PreFo s₀ s) :
-    WP isa finalize s (PostFo s₀) := by
+    WP isa (finalize umaal) s (PostFo s₀) := by
   obtain et := hp.addr_ptr (k := tagOff) (by simp [tagOff])
   refine WP.mono (fin_ok hp h.inv (outOk_tag hp) h.r0 h.r1 h.r12) fun s' ⟨k', _, _, t'⟩ => ?_
   rw [et] at k' t'
@@ -589,7 +591,7 @@ theorem openEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo
     next hn => exact ⟨by rw [r0₅, o₄ _ (by decide) (by decide), r0₃], by rw [m₅, z₄]⟩
 
 theorem openBody_correct {s₀ : State} (hp : APre false s₀) :
-    WP isa openBody s₀ fun s' => (Restored s₀ s' ∧ s'.sp = s₀.sp) ∧ OpenB s₀ s' :=
+    WP isa (openBody umaal) s₀ fun s' => (Restored s₀ s' ∧ s'.sp = s₀.sp) ∧ OpenB s₀ s' :=
   WP.seq (WP.mono (openMain_ok hp) fun _ h => WP.seq (WP.mono (finalize_open_ok hp h)
     fun _ h' => openEnd_ok hp h'))
 
@@ -714,7 +716,7 @@ theorem APre.ofTo {s b : State} (h : preToArm s) (he : Entered s 5 4 b) (h6 : b.
     by simp only [kP, he.r0]; exact f_k, by simp only [nP, he.r1]; exact f_n, by rw [he.sp]; exact sp8⟩
 
 theorem seal_correct {s : State} (h : sealArm.pre s) :
-    WP isa Impl.ChaCha20Poly1305.Arm.«seal» s fun s' => abiPreserved s s' ∧ sealArm.post s s' := by
+    WP isa (Impl.ChaCha20Poly1305.Arm.«seal» umaal) s fun s' => abiPreserved s s' ∧ sealArm.post s s' := by
   refine WP.seq (WP.mono (inPlace_ok (EntryOk.ofIn h)) fun b ⟨he, h6⟩ => ?_)
   obtain hp := APre.ofIn h he h6
   refine WP.mono (sealBody_correct hp) fun s' ⟨hr, hsp, hq⟩ => ⟨he.abi hr hsp, ?_⟩
@@ -724,7 +726,7 @@ theorem seal_correct {s : State} (h : sealArm.pre s) :
   exact hq
 
 theorem open_correct {s : State} (h : openArm.pre s) :
-    WP isa Impl.ChaCha20Poly1305.Arm.«open» s fun s' => abiPreserved s s' ∧ openArm.post s s' := by
+    WP isa (Impl.ChaCha20Poly1305.Arm.«open» umaal) s fun s' => abiPreserved s s' ∧ openArm.post s s' := by
   refine WP.seq (WP.mono (inPlace_ok (EntryOk.ofIn h)) fun b ⟨he, h6⟩ => ?_)
   obtain hp := APre.ofIn h he h6
   refine WP.mono (openBody_correct hp) fun s' ⟨⟨hr, hsp⟩, hq⟩ => ⟨he.abi hr hsp, ?_⟩
@@ -735,7 +737,7 @@ theorem open_correct {s : State} (h : openArm.pre s) :
   exact hq
 
 theorem openTo_correct {s : State} (h : openToArm.pre s) :
-    WP isa Impl.ChaCha20Poly1305.Arm.openTo s fun s' => abiPreserved s s' ∧ openToArm.post s s' := by
+    WP isa (Impl.ChaCha20Poly1305.Arm.openTo umaal) s fun s' => abiPreserved s s' ∧ openToArm.post s s' := by
   refine WP.seq (WP.mono (toEntry_ok (EntryOk.ofTo h)) fun b ⟨he, h6⟩ => ?_)
   obtain hp := APre.ofTo h he h6
   refine WP.mono (openBody_correct hp) fun s' ⟨⟨hr, hsp⟩, hq⟩ => ⟨he.abi hr hsp, ?_⟩
@@ -784,7 +786,7 @@ open VG VG.Arm VG.Impl.ChaCha20Poly1305.Arm
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20Poly1305 (macData)
 
-variable {e : Bool}
+variable {e umaal : Bool}
 
 /-! ## The writable regions -/
 
@@ -889,7 +891,7 @@ theorem frame_ct {s₁ s₂ : State} (hp₁ : APre e s₁) (hp₂ : APre e s₂)
     (hF : ∀ x₁ x₂, F x₁ x₂ → Inv s₁ x₁ ∧ Inv s₂ x₂ ∧ x₁.gpr .r0 = cP s₁ ∧ x₁.gpr .r1 = O s₁ ∧
       x₁.gpr .r12 = ptr s₁ scrOff ∧ x₂.gpr .r0 = cP s₂ ∧ x₂.gpr .r1 = O s₂ ∧
       x₂.gpr .r12 = ptr s₂ scrOff ∧ Proof.Poly1305.countArm x₁ = Proof.Poly1305.countArm x₂) :
-    RelCT isa F finalize fun _ _ => True := by
+    RelCT isa F (finalize umaal) fun _ _ => True := by
   obtain ⟨psp, -, -, -, -, a7, -, -, -, -⟩ := hpub
   refine RelCT.frame (fun x₁ x₂ h => by
     obtain ⟨i₁, i₂, -⟩ := hF x₁ x₂ h
@@ -954,17 +956,23 @@ theorem agreeB {s₁ s₂ a b : State} (hp₁ : APre false s₁) (hp₂ : APre f
 /-! ## Seal -/
 
 theorem sealBody_ct :
-    RelCT isa (fun a b => APre true a ∧ APre true b ∧ BPub a b) sealBody fun _ _ => True := by
+    RelCT isa (fun a b => APre true a ∧ APre true b ∧ BPub a b) (sealBody umaal) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hp₁, hp₂, hpub⟩ e₁ e₂
   obtain hlen : (macData (A s₁) (Ct s₁)).length = (macData (A s₂) (Ct s₂)).length := by
     obtain ⟨-, -, -, -, -, -, -, p9, -, p11⟩ := hpub
     rw [length_macData, length_macData, length_encrypt, length_encrypt]
     simp only [VG.Proof.Poly1305.length_bytesAt, AL, L, p9, p11]
-  obtain A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sealMain fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b :=
-    (RelCT.taint (A := taint) (τM true) (fun a b (h : a = s₁ ∧ b = s₂) => by
-      obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by native_taint_decide)).wp
+  obtain A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (sealMain umaal)
+      fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b :=
+    RelCT.wp (by
+      -- The taint analysis: `taintU`'s for the arithmetic with `umaal`.
+      cases umaal
+      · exact RelCT.taint (A := taint) (τM true) (fun a b (h : a = s₁ ∧ b = s₂) => by
+          obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by native_taint_decide)
+      · exact RelCT.taint (A := taintU) (τM true) (fun a b (h : a = s₁ ∧ b = s₂) => by
+          obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by taint_decide))
       fun a b (h : a = s₁ ∧ b = s₂) => by obtain ⟨rfl, rfl⟩ := h; exact ⟨sealMain_ok hp₁, sealMain_ok hp₂⟩
-  obtain F : RelCT isa (fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b) finalize
+  obtain F : RelCT isa (fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b) (finalize umaal)
       fun a b => True ∧ PostFs s₁ a ∧ PostFs s₂ b :=
     (frame_ct hp₁ hp₂ hpub (O := tP) (outOk_tP hp₁) (outOk_tP hp₂) hpub.2.2.2.1.symm
       fun _ _ h => ⟨h.2.1.inv, h.2.2.inv, h.2.1.r0, h.2.1.r1, h.2.1.r12, h.2.2.r0,
@@ -1011,18 +1019,23 @@ theorem bit_eq {s₁ s₂ : State} (e : okB s₁ = okB s₂) :
 states that agree on the registers the prologue set and on whether the tag is
 right. -/
 theorem openBody_ct :
-    RelCT isa (fun a b => APre false a ∧ APre false b ∧ BPub a b ∧ okB a = okB b) openBody
+    RelCT isa (fun a b => APre false a ∧ APre false b ∧ BPub a b ∧ okB a = okB b) (openBody umaal)
       fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hp₁, hp₂, hpub, hlk⟩ e₁ e₂
   obtain hlen : (macData (A s₁) (D s₁)).length = (macData (A s₂) (D s₂)).length := by
     obtain ⟨-, -, -, -, -, -, -, p9, -, p11⟩ := hpub
     rw [length_macData, length_macData]
     simp only [VG.Proof.Poly1305.length_bytesAt, AL, L, p9, p11]
-  obtain A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) openMain fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b :=
-    (RelCT.taint (A := taint) (τM false) (fun a b (h : a = s₁ ∧ b = s₂) => by
-      obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by native_taint_decide)).wp
+  obtain A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (openMain umaal)
+      fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b :=
+    RelCT.wp (by
+      cases umaal
+      · exact RelCT.taint (A := taint) (τM false) (fun a b (h : a = s₁ ∧ b = s₂) => by
+          obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by native_taint_decide)
+      · exact RelCT.taint (A := taintU) (τM false) (fun a b (h : a = s₁ ∧ b = s₂) => by
+          obtain ⟨rfl, rfl⟩ := h; exact agreeM hp₁ hp₂ hpub) (by taint_decide))
       fun a b (h : a = s₁ ∧ b = s₂) => by obtain ⟨rfl, rfl⟩ := h; exact ⟨openMain_ok hp₁, openMain_ok hp₂⟩
-  obtain F : RelCT isa (fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b) finalize
+  obtain F : RelCT isa (fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b) (finalize umaal)
       fun a b => True ∧ PostFo s₁ a ∧ PostFo s₂ b :=
     (frame_ct hp₁ hp₂ hpub (O := fun s => ptr s tagOff) (outOk_tag hp₁) (outOk_tag hp₂)
       (by simp only [ptr, cP, hpub.2.2.2.2.2.1])
@@ -1143,7 +1156,7 @@ theorem Entered.ok_eq {s b : State} {w t : Nat} (he : Entered s w t b) (hp : APr
   unfold okB
   rw [eK, eN, eA, eD, eT]
 
-theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305.Arm.«seal» := by
+theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub (Impl.ChaCha20Poly1305.Arm.«seal» umaal) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   obtain ⟨psp, p0, p1, p2, p3, a0, a1, a2, a3⟩ := hpub
   obtain P : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (.block inPlace) fun a b =>
@@ -1160,7 +1173,7 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305
   exact ⟨APre.ofIn h₁ ha a6, APre.ofIn h₂ hb b6,
     ha.bpub hb psp p0 p1 p2 p3 a0 a1 a3 a2 (by rw [a6, b6, a0])⟩
 
-theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305.Arm.«open» := by
+theorem open_ct : ConstantTime isa openArm.pre openArm.pub (Impl.ChaCha20Poly1305.Arm.«open» umaal) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨psp, p0, p1, p2, p3, a0, a1, a2, a3⟩, hlk⟩ := hq
   obtain P : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (.block inPlace) fun a b =>
@@ -1179,7 +1192,7 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305
   exact ⟨hpa, hpb, ha.bpub hb psp p0 p1 p2 p3 a0 a1 a3 a2 (by rw [a6, b6, a0]),
     by rw [ha.ok_eq hpa, hb.ok_eq hpb]; exact leak_bool hlk⟩
 
-theorem openTo_ct : ConstantTime isa openToArm.pre openToArm.pub Impl.ChaCha20Poly1305.Arm.openTo := by
+theorem openTo_ct : ConstantTime isa openToArm.pre openToArm.pub (Impl.ChaCha20Poly1305.Arm.openTo umaal) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨psp, p0, p1, p2, p3, a0, a1, a2, a3, a4, a5⟩, hlk⟩ := hq
   obtain P : RelCT isa (fun a b => a = s₁ ∧ b = s₂) (.block toEntry) fun a b =>
@@ -1222,22 +1235,22 @@ def openSat : State :=
                  wr := [⟨0, 0⟩, ⟨0, 632⟩] }
 
 theorem seal_ok (s : State) (hs : sealArm.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.Arm.«seal» s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.Arm.«seal» umaal) s t s' ∧ abiPreserved s s' ∧
       sealArm.post s s' :=
   seal_correct hs
 
 theorem open_ok (s : State) (hs : openArm.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.Arm.«open» s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.Arm.«open» umaal) s t s' ∧ abiPreserved s s' ∧
       openArm.post s s' :=
   open_correct hs
 
 theorem openTo_ok (s : State) (hs : openToArm.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.Arm.openTo s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.Arm.openTo umaal) s t s' ∧ abiPreserved s s' ∧
       openToArm.post s s' :=
   openTo_correct hs
 
 theorem seal_verified :
-    Verified Arm.target Impl.ChaCha20Poly1305.Arm.«seal» (sealScratchContract Arm.abi 79 8) :=
+    Verified Arm.target (Impl.ChaCha20Poly1305.Arm.«seal» umaal) (sealScratchContract Arm.abi 79 8) :=
   Verified.of_correct seal_ok seal_ct (by
     sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
       Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealArm, Proof.ChaCha20Poly1305.preArm,
@@ -1248,7 +1261,7 @@ theorem seal_verified :
 /-- The postconditions match on `decrypt`; the result is the low word of
 `r1:r0`. -/
 theorem open_verified :
-    Verified Arm.target Impl.ChaCha20Poly1305.Arm.«open» (openZeroScratchContract Arm.abi 79 8) :=
+    Verified Arm.target (Impl.ChaCha20Poly1305.Arm.«open» umaal) (openZeroScratchContract Arm.abi 79 8) :=
   Verified.of_correct open_ok open_ct
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
@@ -1302,7 +1315,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract Arm.abi 66
 
 theorem seal_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal»)
+      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.«seal» umaal))
       (Spec.ChaCha20Poly1305.sealContract Arm.abi 664) :=
   Arm.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 79) (post := Spec.ChaCha20Poly1305.sealPost Arm.abi.ptrBits) (wa := true) (stack := 8)
@@ -1322,7 +1335,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract Arm.ab
 
 theorem open_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«open»)
+      (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Impl.ChaCha20Poly1305.Arm.«open» umaal))
       (Spec.ChaCha20Poly1305.openZeroContract Arm.abi 664) :=
   Arm.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 79) (post := Spec.ChaCha20Poly1305.openZeroPost Arm.abi.ptrBits) (wa := true) (stack := 8)
@@ -1344,7 +1357,7 @@ def openToSat : State :=
 /-- The postconditions match on `decrypt`; the result is the low word of
 `r1:r0`. -/
 theorem openTo_verified :
-    Verified Arm.target Impl.ChaCha20Poly1305.Arm.openTo (openToScratchContract Arm.abi 79 8) :=
+    Verified Arm.target (Impl.ChaCha20Poly1305.Arm.openTo umaal) (openToScratchContract Arm.abi 79 8) :=
   Verified.of_correct openTo_ok openTo_ct
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
@@ -1401,7 +1414,7 @@ theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract Arm.ab
 
 theorem openTo_framed :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 Impl.ChaCha20Poly1305.Arm.openTo)
+      (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Impl.ChaCha20Poly1305.Arm.openTo umaal))
       (Spec.ChaCha20Poly1305.openToContract Arm.abi 672) :=
   Arm.Verified.stackScratchWipedPre (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
     (n := 79) (pre := Spec.ChaCha20Poly1305.openToPre Arm.abi.ptrBits)
