@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: the function
@@ -473,9 +474,12 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   exact ⟨ra, hpost, fun r hr hl => by rw [pres' r hr hl, hc.gpr r (hpres r hr hl)],
     sp'.trans hc.sp, rd'.trans hc.rd, wr'.trans hc.wr⟩
 
-/-- The return address back in `lr`, and the frame freed. -/
+/-- The return address back in `lr`, and the frame freed, whatever its bytes
+then hold. -/
 theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
-    WP isa SealGather.ret s' fun z => abiPreserved s (freed 40 z) ∧ gatherPost s (freed 40 z) := by
+    WP isa SealGather.ret s' fun z => ∀ m u, Frame [FR s] z.mem m →
+      abiPreserved s { freed 40 z with mem := m, unknowns := u } ∧
+        gatherPost s { freed 40 z with mem := m, unknowns := u } := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, -, -, -, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   have hr : InRegions (s'.rd ++ s'.wr) (State.addr (s'.sp + BitVec.ofNat 32 20)) 4 := by
@@ -483,7 +487,8 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
   refine WP.split (l₁ := setFp) (l₂ := [Instr.ldr .lr .r12 20]) ?_
   refine WP.run ⟨_, by arun [setFp, add_ofNat_zero, hr], rfl⟩ fun z hz => ?_
   subst hz
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  intro ml ul hfl
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩ <;> dsimp only
   · -- The callee-saved registers.
     have h12 : r ≠ .r12 := by intro e; subst e; simp [preserved] at hr
     simp only [freed, gpr_setReg, h12, ↓reduceIte]
@@ -494,7 +499,11 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
     simp only [freed, sp_setReg, hc.sp]
     exact BitVec.sub_add_cancel _ _
   · -- The ciphertext and the tag.
-    show encryptWith _ _ 16 _ _ _ = (bytesAt s'.mem (State.addr (Dst s)) (L s), bytesAt s'.mem (State.addr (Tg s)) 16)
+    show encryptWith _ _ 16 _ _ _ = (bytesAt ml (State.addr (Dst s)) (L s), bytesAt ml (State.addr (Tg s)) 16)
+    rw [Proof.Cmac.bytesAt_frame hfl (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact bd.symm.sub_right h.fr_sub) (by omega_arith),
+      Proof.Cmac.bytesAt_frame hfl (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact bt.symm.sub_right h.fr_sub) (by decide)]
     have hfc : Frame [FR s, dR s] s.mem (gM s) :=
       (h.eM_frame.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
         (h.frame_gM.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))
@@ -521,7 +530,7 @@ theorem sealGather_wp (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGather F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
   have w₁ : 2640 ≤ s.sp.toNat := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_arith) ?_
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
