@@ -184,7 +184,7 @@ theorem initFrame {bytes : Nat} (h : Verified PPC64LE.target H.init (Proof.Hmac.
 theorem finalizeFrame {bytes : Nat}
     (h : Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96))
     (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ I.scratch * 8 + 32 ≤ bytes)
-    (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64) (hD : I.S.digestBytes < 2 ^ 64)
+    (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
     (hsat : ∃ s, (I.finalizeContract PPC64LE.abi (96 + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r7 H.finalize)
       (I.finalizeContract PPC64LE.abi (96 + bytes)) :=

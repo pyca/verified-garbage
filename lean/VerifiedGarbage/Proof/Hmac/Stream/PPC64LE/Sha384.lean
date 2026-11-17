@@ -98,7 +98,7 @@ theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.sha384I 7)
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha384I) .r7 hash.finalize)
     (Spec.Hmac.sha384I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha384I)) :=
-  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.sha384_local (by decide) (by decide) (by
+  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.sha384_local (by decide) (by
     inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using finSat 192 48 0)
