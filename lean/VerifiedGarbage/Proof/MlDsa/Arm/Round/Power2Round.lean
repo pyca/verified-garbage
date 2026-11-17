@@ -156,6 +156,22 @@ theorem loop_body {s s₁ : State} (hp : PreE s) (hE : Entry 4 s s₁) :
     rcases hp' with rfl | rfl | rfl
     exacts [r0, r1, r2]
 
+/-- Coefficients stored apart from a frame are what they were, whatever the frame holds. -/
+private theorem natPolyIs_lost {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (pR p).Disjoint r) {f : Vector Nat n} (h : NatPolyIs m p f) : NatPolyIs m' p f := by
+  show natPolyAt m' p = f
+  rw [← h]
+  exact Vector.ext fun i hi => by
+    simp only [VG.Proof.MlDsa.natPolyAt, Vector.getElem_ofFn]; rw [coeffAt_frame hf hd hi]
+
+/-- A polynomial stored apart from a frame is what it was, whatever the frame holds. -/
+private theorem polyIs_lost {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (pR p).Disjoint r) {f : Poly} (h : PolyIs m p f) : PolyIs m' p f := by
+  refine ⟨fun i hi => by rw [coeffAt_frame hf hd hi]; exact h.1 i hi, ?_⟩
+  rw [← h.2]
+  exact Vector.ext fun i hi => by
+    simp only [VG.Proof.MlDsa.polyAt, Vector.getElem_ofFn]; rw [coeffAt_frame hf hd hi]
+
 theorem correct {s : State} (hp : PreE s) :
     WP isa Impl.MlDsa.Arm.Round.power2Round s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ NatPolyIs s'.mem (P s .r1) ((polyAt s.mem (P s .r0)).map fun c => (power2Round c).1.toNat) ∧
@@ -167,7 +183,10 @@ theorem correct {s : State} (hp : PreE s) :
     s hp.sp (fun R hR => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
       rcases hR with rfl | rfl
-      exacts [hp.s1, hp.s2]) fun s₁ hE => ?_)
+      exacts [hp.s1, hp.s2])
+    (fun _ _ _ hf ⟨hk, h1, h0⟩ => ⟨hk, natPolyIs_lost hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.s1.symm) h1, polyIs_lost hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.s2.symm) h0⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, h1, h0⟩, hm, _, hsp, _, hg⟩ =>
       ⟨preserved_of_saving hg fun r hr hn => hk r (by revert r; decide), hsp, hm ▸ h1, hm ▸ h0⟩
   have g := hE.gpr

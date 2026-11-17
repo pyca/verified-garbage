@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.AesSiv.Arm.Open
 import VerifiedGarbage.Proof.AesSiv.Arm.Seal
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -74,9 +75,10 @@ theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract Arm.abi 2568).pre s := 
 /-- `init` with its working space in a frame of 2560 bytes. -/
 theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init)
     (Spec.Siv.initContract Arm.abi 2568) :=
-  Arm.Verified.regScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  Arm.Verified.regScratchLost (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre Arm.abi.ptrBits) (post := Spec.Siv.initPost Arm.abi.ptrBits)
-    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs mm m₁ m₂ r hl) initFrameSat_pre
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 

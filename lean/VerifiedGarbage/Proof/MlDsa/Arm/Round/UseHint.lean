@@ -239,12 +239,22 @@ theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat
     rw [e .r3, hm] at this; exact this
   · rw [← e, hI.done .r3 (by simp) k hk, eIn _ (.inl rfl) k hk, eIn _ (.inr rfl) k hk, result_word hp hg hk]
 
+/-- Coefficients stored apart from a frame are what they were, whatever the frame holds. -/
+private theorem natPolyIs_lost {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (pR p).Disjoint r) {f : Vector Nat n} (h : NatPolyIs m p f) : NatPolyIs m' p f := by
+  show natPolyAt m' p = f
+  rw [← h]
+  exact Vector.ext fun i hi => by
+    simp only [VG.Proof.MlDsa.natPolyAt, Vector.getElem_ofFn]; rw [coeffAt_frame hf hd hi]
+
 theorem correct {s : State} (hp : PreE s) :
     WP isa Impl.MlDsa.Arm.Round.useHint s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       NatPolyIs s'.mem (P s .r3) (result s (s.gpr .r2).toNat) := by
   refine WP.mono (wp_saving [.r4, .r5, .r6] _ (W := [pR (P s .r3)])
     (fun s₂ => (∀ r ∈ fixedR, s₂.gpr r = s.gpr r) ∧ NatPolyIs s₂.mem (P s .r3) (result s (s.gpr .r2).toNat))
-    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.s3) fun s₁ hE => ?_)
+    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.s3)
+    (fun _ _ _ hf ⟨hk, hh⟩ => ⟨hk, natPolyIs_lost hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.s3.symm) hh⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, hh⟩, hm, _, hsp, _, hg⟩ =>
       ⟨preserved_of_saving hg fun r hr hn => hk r (by revert r; decide), hsp, hm ▸ hh⟩
   have he : encodable (BitVec.ofNat 32 g88) = true := by decide

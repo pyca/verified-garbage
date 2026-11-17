@@ -1807,7 +1807,7 @@ theorem search_run (name : String) (c : Search.Cand) (h : GenFrame p o used st s
       Nat.le_trans (KeySearch.primeSearch_remaining_le _ _ _ _ _) h.state.remaining_le, h.state.left_lt⟩
   have hout' : Spec.Rsa.bytesAt ml (State.addr (p.kp + BitVec.ofNat 32 (outOf p st))) p.L =
       Spec.Rsa.bytesAt t.mem (State.addr (p.kp + BitVec.ofNat 32 (outOf p st))) p.L :=
-    bytes_kept hfl (apartA (sK.sub_left h.aStack |>.sub_right h.oK)) (by have := (rO p st).base.isLt; omega_using [h.facts.room])
+    bytes_kept hfl (apartA (sK.sub_left h.aStack |>.sub_right h.oK)) (by have := h.kp_nowrap; omega_using [this])
   refine ⟨h.stepTo k (by decide) hframe h.callChanges_sub h.callChanges_apart hst', ?_, ?_, ?_, hout'.trans hout,
     ⟨req, w3, hreq⟩, hframe⟩
   · exact hreg .r11 (by decide)

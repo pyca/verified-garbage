@@ -182,7 +182,9 @@ theorem correct {s : State} (hp : PreE s) :
   refine WP.mono (wp_saving nttSaved _ (W := [polyRegion (F s), polyRegion (S s)])
     (fun s₂ => s₂.gpr .r11 = s.gpr .r11 ∧ s₂.gpr .lr = s.gpr .lr ∧
       PolyIs s₂.mem (F s) (Spec.MlDsa.ntt (polyAt s.mem (F s))))
-    s hp.sp (stack_disj hp) fun s₁ hE => ?_)
+    s hp.sp (stack_disj hp)
+    (fun _ _ _ hf ⟨h11, hlr, hq⟩ => ⟨h11, hlr, polyIs_frame hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (stack_disj hp _ (List.mem_cons_self ..)).symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨h11, hlr, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of hg h11 hlr, hsp, hm ▸ hq⟩
   obtain ⟨hpB, eP, eF, eS⟩ := pre_entry hp hE
   refine WP.seq (WP.mono (pro_ok hpB zetaTab zetaTab_lt 4 1 rfl (by decide)) fun s₂ hI => ?_)

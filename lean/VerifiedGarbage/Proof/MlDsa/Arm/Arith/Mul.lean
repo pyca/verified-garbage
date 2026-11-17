@@ -380,7 +380,9 @@ theorem correct {s : State} (hp : PreE s) :
       PolyIs s'.mem (H s) (multiplyNTT (polyAt s.mem (F s)) (polyAt s.mem (G s))) := by
   refine WP.mono (wp_saving mulSaved _ (W := [polyRegion (H s)])
     (fun s₂ => Keep s s₂ ∧ PolyIs s₂.mem (H s) (multiplyNTT (polyAt s.mem (F s)) (polyAt s.mem (G s))))
-    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.sH) fun s₁ hE => ?_)
+    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.sH)
+    (fun _ _ _ hf ⟨hk, hq⟩ => ⟨hk, polyIs_frame hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.sH.symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of_saving hg fun r hr hn => ?_, hsp, hm ▸ hq⟩
   · obtain ⟨hp₁, eF, eG, eH, -⟩ := pre_entry hp hE
     have eH' : H s₁ = H s := by simp only [H, ph, hE.gpr]
@@ -404,7 +406,9 @@ theorem correctAdd {s : State} (hp : PreE s) (hH : Reduced s.mem (H s)) :
   refine WP.mono (wp_saving mulSaved _ (W := [polyRegion (H s)])
     (fun s₂ => Keep s s₂ ∧
       PolyIs s₂.mem (H s) (add (polyAt s.mem (H s)) (multiplyNTT (polyAt s.mem (F s)) (polyAt s.mem (G s)))))
-    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.sH) fun s₁ hE => ?_)
+    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.sH)
+    (fun _ _ _ hf ⟨hk, hq⟩ => ⟨hk, polyIs_frame hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.sH.symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of_saving hg fun r hr hn => ?_, hsp, hm ▸ hq⟩
   · obtain ⟨hp₁, eF, eG, eH, rH⟩ := pre_entry hp hE
     have eH' : H s₁ = H s := by simp only [H, ph, hE.gpr]

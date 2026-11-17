@@ -222,6 +222,13 @@ theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat
   · rw [← e _ (by decide), hI.done .r3 (by simp) k hk, eIn _ (.inl rfl) k hk, eIn _ (.inr rfl) k hk,
       hint_word hp hg hk]
 
+/-- A hint stored apart from a frame is what it was, whatever the frame holds. -/
+private theorem hintIs_lost {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (pR p).Disjoint r) {h : Vector Bool n} (hh : HintIs m p 1 [h]) : HintIs m' p 1 [h] := by
+  refine ⟨hh.1, fun i hi j hj => ?_⟩
+  rw [coeffAt_frame hf hd (by rw [n_eq] at hj ⊢; omega_using [hi, hj])]
+  exact hh.2 i hi j hj
+
 theorem correct {s : State} (hp : PreE s) :
     WP isa Impl.MlDsa.Arm.Round.makeHint s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       HintIs s'.mem (P s .r3) 1 [hint s (s.gpr .r2).toNat] ∧
@@ -230,7 +237,9 @@ theorem correct {s : State} (hp : PreE s) :
   refine WP.mono (wp_saving [.r4, .r5, .r6] _ (W := [pR (P s .r3)])
     (fun s₂ => (∀ r ∈ fixedR, s₂.gpr r = s.gpr r) ∧ HintIs s₂.mem (P s .r3) 1 [hint s (s.gpr .r2).toNat] ∧
       (s₂.gpr .r0).toNat = hintOnes [hint s (s.gpr .r2).toNat])
-    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.s3) fun s₁ hE => ?_)
+    s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.s3)
+    (fun _ _ _ hf ⟨hk, hh, h0⟩ => ⟨hk, hintIs_lost hf (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.s3.symm) hh, h0⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, hh, h0⟩, hm, _, hsp, _, hg⟩ =>
       ⟨preserved_of_saving hg fun r hr hn => hk r (by revert r; decide), hsp, hm ▸ hh, by rw [hg .r0]; exact h0⟩
   have he : encodable (BitVec.ofNat 32 g88) = true := by decide
