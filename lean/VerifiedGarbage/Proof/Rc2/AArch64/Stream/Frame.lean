@@ -269,8 +269,8 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
     · rw [← hb'']; exact ic
   obtain sp₅ : s₅.sp = s₀.sp := by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
   obtain mem₅ : s₅.mem = s₀.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine WP.frameRegKept (by rw [sp₅]; exact sp16) (fun R hR => ?_)
-    (WP.mono (main_ok hσ) fun s₂ ⟨hk, hr, hs, hiv⟩ => ?_)
+  refine WP.frameReg (by rw [sp₅]; exact sp16) (fun R hR => ?_)
+    (WP.mono (main_ok hσ) fun s₂ ⟨hk, hr, hs, hiv⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (by lit_decide : initMain.noFrames = true)]; decide)
   · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, hwr] at hR
     rw [sp₅]
@@ -299,6 +299,14 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
         Spec.Rc2.blockAt (inner s₅).mem (s₀.gpr .x3) := hiv
     rw [e₁] at hs'
     rw [e₂] at hiv'
+    -- The context lies apart from the frame, whose bytes the pop loses.
+    have hfl : Frame [⟨s₀.sp - 16, 16⟩] s₂.mem mm := by rw [← sp₅]; exact f
+    have hd {R : Region} (hR : R.Sub ⟨s₀.gpr .x5, 144⟩) :
+        ∀ r ∈ [(⟨s₀.sp - 16, 16⟩ : Region)], R.Disjoint r := fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (sc.sub_right hR).symm
+    rw [← scheduleAt_frame hfl (s₀.gpr .x5) (hd (Region.sub_prefix (by decide)))] at hs'
+    rw [← blockAt_frame hfl (s₀.gpr .x5 + 128)
+      (hd (Offset.sub_base (s₀.gpr .x5) (d := 128) (n := 8) (k := 144) (by decide)))] at hiv'
     exact Proof.Rc2.init_post hb hb' hb'' hr hs' hiv'
 
 end VG.Proof.Rc2.AArch64.Stream

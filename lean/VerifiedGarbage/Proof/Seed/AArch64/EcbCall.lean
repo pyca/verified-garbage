@@ -106,7 +106,7 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa} {N
     ∃ t s', Exec isa (.frame (.push .x30) (.call name c) (.pop .x30)) s₀ t s' ∧ abiPreserved s₀ s' ∧
       (ecbCallAArch64 d N).post s₀ s' := by
   obtain ⟨hsp, hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitS⟩ := hs
-  refine (WP.frameRegKept (r := .x30) (s₀ := s₀) hsp (fun R hR => ?_) ?_
+  refine (WP.frameReg (r := .x30) (s₀ := s₀) hsp (fun R hR => ?_) ?_
     (by rw [fdepth_of_noFrames (show (Code.call name c : Prog isa).noFrames = true from hn)]; decide)).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   · rw [hwr] at hR
@@ -129,7 +129,7 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa} {N
   rotate_left
   · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, AArch64.abi, AArch64.argRegs]
     exact ⟨hrd, dKD, dKS.sub_right hsub, dDS.sub_right hsub, fitK, fitD, by omega_using [fitS, hN]⟩
-  · intro s' rd' wr' sp' hf hg _ hvv hpost
+  · intro s' rd' wr' sp' hf hg _ hvv hpost mm u f
     sig_reduce [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, AArch64.abi, AArch64.argRegs] at hpost
     rw [BitVec.setWidth_eq] at hpost
     have hfr := frame_push s₀
@@ -142,8 +142,10 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa} {N
       by_cases h : r = .x30
       · subst h; rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
       · rw [RegUpd.gpr_write_of_ne _ _ _ h, hg r hr h]
-    · show Spec.Seed.blocksAt s'.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat = _
-      rw [hpost, hsch, hblk]
+    · -- The blocks lie apart from the frame, whose bytes the pop loses.
+      show Spec.Seed.blocksAt mm (s₀.gpr .x1) (s₀.gpr .x2).toNat = _
+      rw [Proof.Seed.blocksAt_frame f (p := s₀.gpr .x1) (n := (s₀.gpr .x2).toNat) (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega_using [fitD]), hpost, hsch, hblk]
 
 theorem ecbCall_correct (d : Spec.Seed.Direction) {N : Nat} (hN : 1088 ≤ N) (s₀ : State)
     (hs : (ecbCallAArch64 d N).pre s₀) :
