@@ -515,7 +515,7 @@ theorem vdword_append (a b : BitVec 64) : vdword (a ++ b) 0 = a :=
   show (a ++ b).extractLsb' 64 64 = a from BitVec.extractLsb'_append_eq_left
 
 theorem mtvsrd_eq (s : State) (d : VReg) (n : Reg) :
-    exec (.mtvsrd d n) s = some { s.writeV d (s.gpr n ++ s.unknowns 0) with unknowns := fun i => s.unknowns (i + 1) } := by
+    exec (.mtvsrd d n) s = some { s.writeV d (s.gpr n ++ s.undef (s.unknowns 0) (s.gpr n) (s.vpr d)) with unknowns := fun i => s.unknowns (i + 1) } := by
   simp only [reduceExec]
 
 theorem mfvsrd_eq (s : State) (d : Reg) (n : VReg) : exec (.mfvsrd d n) s = some (s.write d (vdword (s.vpr n) 0)) := by

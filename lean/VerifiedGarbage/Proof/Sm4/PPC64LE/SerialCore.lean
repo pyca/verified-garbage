@@ -407,8 +407,8 @@ theorem affine_run (s : State) {lo hi : VReg} {tl th : Vector Byte 16} (hlo : Ta
   let a := s.write .r10 (s.gpr .r9 &&& s.gpr .r12)
   let b := a.write .r11 (((a.gpr .r9).setWidth 32 >>> 4).setWidth 64)
   let c := b.write .r11 (b.gpr .r11 &&& b.gpr .r12)
-  let d : State := { c.writeV .v0 (c.gpr .r10 ++ c.unknowns 0) with unknowns := fun i => c.unknowns (i + 1) }
-  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.unknowns 0) with unknowns := fun i => d.unknowns (i + 1) }
+  let d : State := { c.writeV .v0 (c.gpr .r10 ++ c.undef (c.unknowns 0) (c.gpr .r10) (c.vpr .v0)) with unknowns := fun i => c.unknowns (i + 1) }
+  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.undef (d.unknowns 0) (d.gpr .r11) (d.vpr .v1)) with unknowns := fun i => d.unknowns (i + 1) }
   let f := e.writeV .v0 (ofVBytes fun i =>
       let j := (vbyte (e.vpr .v0) i).toNat % 32
       if j < 16 then vbyte (e.vpr lo) j else vbyte (e.vpr lo) (j - 16))
@@ -428,10 +428,10 @@ theorem affine_run (s : State) {lo hi : VReg} {tl th : Vector Byte 16} (hlo : Ta
       show gbyte ((((a.gpr .r9).setWidth 32 >>> 4).setWidth 64) &&& s.gpr .r12) k = _
       rw [g9, hm, gbyte_lsr4 _ hk]
     obtain v0e : vbyte (e.vpr .v0) (7 - k) = gbyte (s.gpr .r9) k &&& 0x0f := by
-      show vbyte (c.gpr .r10 ++ c.unknowns 0) (7 - k) = _
+      show vbyte (c.gpr .r10 ++ _) (7 - k) = _
       rw [vbyte_append _ _ (by omega_using [hk])]; exact r10
     obtain v1f : vbyte (f.vpr .v1) (7 - k) = gbyte (s.gpr .r9) k >>> 4 := by
-      show vbyte (d.gpr .r11 ++ d.unknowns 0) (7 - k) = _
+      show vbyte (d.gpr .r11 ++ _) (7 - k) = _
       rw [vbyte_append _ _ (by omega_using [hk])]; exact r11
     obtain elo : TabOk (e.vpr lo) tl := by
       show TabOk (if lo = .v1 then _ else if lo = .v0 then _ else s.vpr lo) tl
