@@ -213,6 +213,13 @@ def SPost (p : Params) (s s' : State) : Prop :=
     Outcome (fun b => signInternal p b (bytesAt s.mem (s.gpr .rdi) p.skLen) M' (bytesAt s.mem (s.gpr .r9) 32))
       ((s'.gpr .rax).setWidth 32) (bytesAt s'.mem (stackArg s 0) p.sigLen)
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : bytesAt m' p n = bytesAt m p n := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hS : SignFn p c)
     (hp : p ∈ params) {s : State} (h : SPre p prep s) :
     WP isa (signMessage n c p (flagOf prep)) s fun s' => abiPreserved s s' ∧ SPost p s s' := by
@@ -228,7 +235,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       rw [hg2 _ (by decide), slay_B]
     have hn : 8 * signRegs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide)]; have := h.sp; simp only [signRegs, List.length_cons, List.length_nil]; omega_using [this]
-    refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
+    refine WP.frame (by decide) (by decide) (by decide) hn ?_
     refine WP.seq (WP.mono (entry_ok hL rfl (by decide) hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1)
       (signRegs_vals hg2 h10 h11 hax) (hg2 _ (by decide)))
       fun t ⟨hc, htw, htsp⟩ => ?_)
@@ -242,7 +249,14 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       fun t₁ ⟨hc₁, hf₁, hμ⟩ => ?_)
     refine WP.mono (signCall_ok hS hp h h8 hc₁ hm2.symm) fun s' ⟨hrd', hwr', hsp', hcs', hx', hf', hq⟩ => ?_
     have hm₀ : s2.mem = s.mem := hm2
-    refine ⟨by rw [hsp', hc₁.rsp, ← htsp, hc.rsp], by rw [hwr', hc₁.wr, ← htw, hc.wr], ?_, ?_⟩
+    refine ⟨by rw [hsp', hc₁.rsp, ← htsp, hc.rsp], by rw [hwr', hc₁.wr, ← htw, hc.wr], fun m uk fm => ?_⟩
+    -- The pop loses the frame's 72 bytes, in the stack below `rsp`, apart from
+    -- the signature and the return address.
+    rw [hg2 .rsp (by decide)] at fm
+    obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * signRegs.length), 8 * signRegs.length⟩ (rStk s) :=
+      Offset.sub_below _ (by decide) (by decide)
+    dsimp only
+    refine ⟨?_, ?_⟩
     · -- The calling convention.
       refine ⟨fun r hr => ?_, ?_, ?_⟩
       · by_cases hr' : r = .rsp
@@ -252,7 +266,9 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       · have eR : rRet s = ⟨(slay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [slay_B]
         have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(slay p prep s).B, k⟩ := fun k hk => by
           rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
-        rw [popped_mem, hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+        rw [fm.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
+            rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below (s.gpr .rsp) (by decide)) (by decide),
+          hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl | rfl
             · exact h.retSig
@@ -265,6 +281,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
             · exact dB 112 (by decide)) (by decide), hm₀]
       · rw [popped_mxcsr, hx', hc₁.mx, hx2, hx1]
     · unfold SPost
+      rw [bytes_lost fm (h.stkSig.symm.sub_right hF)]
       rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
       simp only [signInternal, messageRep, skTr]
       have ek : bytesAt t₁.mem (s.gpr .rdi) p.skLen = bytesAt s.mem (s.gpr .rdi) p.skLen := by
