@@ -2,19 +2,23 @@ module
 
 public import VerifiedGarbage.Impl.Cast5.Tables
 public import VerifiedGarbage.Impl.Cast5.Lines
+public import VerifiedGarbage.Impl.Scan.Arm
 public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # CAST5 on baseline ARMv7
 
 A lookup in an S-box never uses a secret as an address: the four lookups a
-round function (or a line of key expansion) makes are made at once by a
-*scan* of the static table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key
-expansion, `Impl/Cast5/Tables.lean`), 256 entries of four words: a loop over
-the entries `j`, in order, whose address it forms with `adrSym`, loading each
-of the entry's words `k` and keeping it under a mask that is all ones exactly
-if the index in `r4 + k` is `j` (`eor`, then `(x - 1) >> 8` widened), ORed
-into `r8 + k`. No secret is an address or a branch condition.
+round function (or a line of key expansion) makes are a *scan* of the static
+table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key expansion,
+`Impl/Cast5/Tables.lean`), 256 entries of four words. The scan makes one
+lookup after the other, in a loop of four iterations (`look`): lookup `k`
+reads word `k` of every entry, as 32 rows of eight entries, and keeps the
+row whose number is the index's high five bits (`Impl/Scan/Arm.lean`: a
+one-hot word of the row's number, a mask for each row from its bit, each
+word kept under it in the register of its column); then it chooses among
+that row's eight words by the index's low three bits (`pick`). No secret is
+an address or a branch condition.
 
 Each function has the scan once: encryption and decryption run their rounds
 in a loop whose body is one round, choosing the round's type (1, 2 or 3, a
@@ -29,16 +33,23 @@ The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4,
 The working space `scratch` (`r3` for key expansion, the stack argument for
 ECB) is in `r12` throughout; the
 callee-saved registers `r4`–`r11` and `lr` are saved in it at `savedOff`, and
-`r2` and `r3` during a scan at `spillEcb` or `spillKey`.
+a scan, which uses every register, keeps `r2`, `r3`, `lr`, its indices, its
+counts and its values in the ten words at `spillEcb` or `spillKey`.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.Cast5.Arm
 
-open VG.Arm
+open VG.Arm VG.Impl.Scan.Arm
 
-/-! ## The scan -/
+/-! ## The scan
+
+The ten words of the working space a scan uses, from `o`: `r2`, `r3` and
+`lr`, which it restores (`o`, `o + 4`, `o + 8`); the indices not yet looked
+up, a byte each, the next the lowest (`o + 12`); four times the number of
+lookups made (`o + 16`); the groups of rows left of a lookup (`o + 20`); and
+the values of the lookups made, the last first (`o + 24` to `o + 36`). -/
 
 /-- The register of index `k` (0–3) of a scan. -/
 def idxReg : Nat → Reg
@@ -48,35 +59,66 @@ def idxReg : Nat → Reg
 def accReg : Nat → Reg
   | 0 => .r8 | 1 => .r9 | 2 => .r10 | _ => .r11
 
-/-- Lookup `k` at the entry whose number is in `r2` and whose words are at
-`r3`: `r1` := word `k` of the entry, `r0` := the mask (all ones iff index `k`
-is the entry's number), and `r1` under it ORed into value `k`. -/
-def look (k : Nat) : List Instr :=
-  [.ldr .r1 .r3 (4 * k), .dp .eor .r0 (idxReg k) (.reg .r2), .dp .sub .r0 .r0 (.imm 1),
-   .mov .r0 (.shifted .r0 .lsr 8), .dp .orr .r0 .r0 (.shifted .r0 .lsl 8), .dp .and .r1 .r1 (.reg .r0),
-   .dp .orr (accReg k) (accReg k) (.reg .r1)]
+/-- The offset from a group's pointer of word `c` of its row `r`: the
+group's entry `8 r + c` (the pointer is at the lookup's word of the group's
+first entry). -/
+def wordOff (r c : Nat) : Nat := 16 * (8 * r + c)
 
-/-- The four lookups at an entry. -/
-def scanEntry : List Instr := (List.range 4).flatMap look
+/-- `r2`, `r3` and `lr` to their slots; the four indices, a byte each, to
+theirs; no lookup made. -/
+def scanStart (o : Nat) : List Instr :=
+  [.str .r2 .r12 o, .str .r3 .r12 (o + 4), .str .lr .r12 (o + 8),
+   .dp .add .r4 .r4 (.shifted .r5 .lsl 8), .dp .add .r4 .r4 (.shifted .r6 .lsl 16),
+   .dp .add .r4 .r4 (.shifted .r7 .lsl 24), .str .r4 .r12 (o + 12), .mov .r0 (.imm 0), .str .r0 .r12 (o + 16)]
 
-/-- An entry, then on to the next (Z set after the last, number 255). -/
-def scanBody : List Instr :=
-  scanEntry ++ ([.dp .add .r3 .r3 (.imm 16), .cmp .r2 (.imm 255), .dp .add .r2 .r2 (.imm 1)] : List Instr)
+/-- The next index into `r0`, its row's one-hot word and the columns
+cleared (`start`), and `lr` at the lookup's word of the table's first entry. -/
+def lookStart (sym : String) (o : Nat) : List Instr :=
+  ([.ldr .r0 .r12 (o + 12), .dp .and .r0 .r0 (.imm 255)] : List Instr) ++ start ++
+    ([.adrSym .lr sym, .ldr .r0 .r12 (o + 16), .dp .add .lr .lr (.reg .r0)] : List Instr)
+
+/-- Column `c`, if the index's low three bits (in `lr`) are `c`, added to
+`r1`, or to `r3` for a column that holds its word's negation. -/
+def pick (c : Nat) : List Instr :=
+  [.dp .eor .r0 .lr (.imm (BitVec.ofNat 32 c)), .dp .sub .r0 .r0 (.imm 1), .mov .r0 (.shifted .r0 .lsr 31),
+   if mlaCol c then .mla .r3 (colReg c) .r0 .r3 else .mla .r1 (colReg c) .r0 .r1]
+
+/-- The index's low three bits into `lr`, and the indices left to their slot. -/
+def pickStart (o : Nat) : List Instr :=
+  [.ldr .r2 .r12 (o + 12), .dp .and .lr .r2 (.imm 7), .mov .r2 (.shifted .r2 .lsr 8), .str .r2 .r12 (o + 12),
+   .mov .r1 (.imm 0), .mov .r3 (.imm 0)]
+
+/-- The lookup's value, `r1 - r3`, to the first of the values' slots, the
+values before it moved up one; then the count of lookups (Z set after the
+fourth). -/
+def lookEnd (o : Nat) : List Instr :=
+  [.dp .sub .r1 .r1 (.reg .r3),
+   .ldr .r0 .r12 (o + 32), .str .r0 .r12 (o + 36), .ldr .r0 .r12 (o + 28), .str .r0 .r12 (o + 32),
+   .ldr .r0 .r12 (o + 24), .str .r0 .r12 (o + 28), .str .r1 .r12 (o + 24),
+   .ldr .r0 .r12 (o + 16), .dp .add .r0 .r0 (.imm 4), .str .r0 .r12 (o + 16), .cmp .r0 (.imm 16)]
+
+/-- A lookup: the next index's word of the table `sym`. -/
+def look (sym : String) (o : Nat) : Prog isa :=
+  .seq (.block (lookStart sym o)) (.seq (rows wordOff 1024 (o + 20))
+    (.block (pickStart o ++ (List.range 8).flatMap pick ++ lookEnd o)))
+
+/-- The values into `r8`–`r11`, and `r2`, `r3` and `lr` back. -/
+def scanEnd (o : Nat) : List Instr :=
+  [.ldr .r8 .r12 (o + 36), .ldr .r9 .r12 (o + 32), .ldr .r10 .r12 (o + 28), .ldr .r11 .r12 (o + 24),
+   .ldr .r2 .r12 o, .ldr .r3 .r12 (o + 4), .ldr .lr .r12 (o + 8)]
 
 /-- The scan of the table `sym` (256 entries of four words) at the indices
-in `r4`–`r7` (each below 256), into `r8`–`r11`: every entry in turn, its
-number in `r2` and its address in `r3`, which are saved at `o` and `o + 4`
-in the working space at `r12` meanwhile. Clobbers `r0` and `r1`. -/
+in `r4`–`r7` (each below 256), into `r8`–`r11`: word `k` of the entry of
+index `k`. It keeps `r2`, `r3`, `lr` and `r12`, and uses the ten words at
+`o` in the working space at `r12`. Clobbers `r0`, `r1` and `r4`–`r7`. -/
 def scan (sym : String) (o : Nat) : Prog isa :=
-  .seq (.block [.str .r2 .r12 o, .str .r3 .r12 (o + 4), .adrSym .r3 sym, .mov .r2 (.imm 0),
-      .mov .r8 (.imm 0), .mov .r9 (.imm 0), .mov .r10 (.imm 0), .mov .r11 (.imm 0)])
-    (.seq (.loop (.block scanBody) .ne) (.block [.ldr .r2 .r12 o, .ldr .r3 .r12 (o + 4)]))
+  .seq (.block (scanStart o)) (.seq (.loop (look sym o) .ne) (.block (scanEnd o)))
 
-/-- Where encryption and decryption save `r2` and `r3` during a scan. -/
+/-- Where encryption and decryption keep a scan's ten words. -/
 def spillEcb : Nat := 24
 
-/-- Where key expansion saves `r2` and `r3` during a scan. -/
-def spillKey : Nat := 0
+/-- Where key expansion keeps a scan's ten words. -/
+def spillKey : Nat := 104
 
 /-- The scan of encryption and decryption: `VG_CAST5_S1234`. -/
 def scan1234 : Prog isa := scan s1234Sym spillEcb

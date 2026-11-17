@@ -23,8 +23,9 @@ section
 `crypt up` encrypts (`up`) or decrypts the block whose address is in the
 data slot of the working space at `r12`, in place, with the schedule and the
 number of rounds in their slots (`crypt_ok`). Besides the block it writes
-only the slots of the count and type of rounds (`cntOff`, `typeOff`), and it
-keeps `r12`: this is the block function a mode reuses.
+only the slots of the count and type of rounds (`cntOff`, `typeOff`) and the
+scan's ten words after them, and it keeps `r12`: this is the block function
+a mode reuses.
 -/
 
 @[expose] public section
@@ -48,8 +49,8 @@ theorem rev_eq (x : BitVec 32) : rev x = byteRev32 x := rfl
 def cipher (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) : Spec.Cast5.Block → Spec.Cast5.Block :=
   if up then Spec.Cast5.encryptBlock k n else Spec.Cast5.decryptBlock k n
 
-/-- The slots of the count and type of rounds, and the scan's. -/
-abbrev ctRegion (c : BitVec 32) : Region := ⟨State.addr c + BitVec.ofNat 64 16, 16⟩
+/-- The slots of the count and type of rounds, and the scan's ten words. -/
+abbrev ctRegion (c : BitVec 32) : Region := ⟨State.addr c + BitVec.ofNat 64 16, 48⟩
 
 /-- What the block function needs: the working space at `c` in `r12`, the
 block at `p` (in the data slot), the schedule at `kb` (in its slot) and the
@@ -181,8 +182,8 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
       valC := by rw [es 16 (by decide)]; exact hu.cnt
       sep := by rw [es 16 (by decide), es 20 (by decide)]; exact Offset.sep _ (by decide) (by decide) (by decide)
       cfit := by rw [hu.r12]; have := h.cfit; omega_arith
-      inS24 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
-      inS28 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
+      inS := fun {off w} hw => by
+        rw [hu.r12, hu.wr, Offset.add_add]; exact h.inS (by omega_using [hw])
       tfit := by rw [hu.syms]; exact h.tfit
       trd := by rw [hu.syms, hu.rd, hu.wr]; exact h.trd
       held := by
@@ -192,14 +193,16 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
         rw [Impl.Cast5.s1234, table_length]
         exact h.dTS.sub_right (Offset.sub_base _ (by decide))
       dTS := by rw [hu.syms, hu.r12]; exact h.dTS.sub_right (Offset.sub_base _ (by decide)) }
-  refine VG.Arm.WP.mono_syms (round_ok u up pre) fun v ⟨v2, v3, vlr, vm, vz, vk⟩ vsy => ⟨⟨v2, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine VG.Arm.WP.mono_syms (round_ok u up pre) fun v ⟨v2, v3, vlr, ⟨m₁, f₁, vm⟩, vz, vk⟩ vsy => ⟨⟨v2, ?_, ?_, ?_, ?_, ?_, ?_,
     vk.rd.trans hu.rd, vk.wr.trans hu.wr, vk.sp.trans hu.sp, vsy.trans hu.syms⟩, vz⟩
   · rw [v3, fT_eq ht hti]; rfl
   · rw [vlr, hu.lr]
   · rw [vk.gpr _ (by decide), hu.r12]
-  · rw [vm, es 16 (by decide), es 20 (by decide), scanMem, hu.r12, spillEcb]
-    exact (((hu.fr.writeW List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
-      List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
+  · rw [vm, es 16 (by decide), es 20 (by decide)]
+    rw [hu.r12] at f₁
+    exact ((hu.fr.trans (f₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self, Offset.sub _ (by decide) (by decide)⟩)).writeW
       List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))
   · rw [vm, es 16 (by decide), es 20 (by decide), Mem.readW_writeW_self32]
@@ -457,12 +460,12 @@ theorem savedSlots_preserved : ∀ r ∈ preserved, r ∈ savedSlots.map Prod.fs
 
 /-- The state of ECB with `j` of the `N` blocks at `d` done, from the memory
 `m0` after the setup: the slots, the blocks, and nothing else written but the
-data and the first 32 bytes of the working space at `c`; the table
+data and the first 64 bytes of the working space at `c`; the table
 `VG_CAST5_S1234` still held. -/
 structure LInv (s : State) (m0 : Mem) (up : Bool) (k : Spec.Cast5.Schedule) (c d kb : BitVec 32) (n N j : Nat)
     (u : State) : Prop where
   r12 : u.gpr .r12 = c
-  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 32⟩] m0 u.mem
+  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 64⟩] m0 u.mem
   blocks : ∀ i < N, Spec.Cast5.blockAt u.mem (State.addr d + BitVec.ofNat 64 (8 * i)) =
     if i < j then cipher up k n (Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i)))
     else Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i))
@@ -503,12 +506,12 @@ theorem addr_blk {d : BitVec 32} {N j : Nat} (hd : d.toNat + 8 * N ≤ 2 ^ 32) (
 theorem sub_blk (D : Addr) {N j : Nat} (hj : j < N) :
     Region.Sub ⟨D + BitVec.ofNat 64 (8 * j), 8⟩ ⟨D, 8 * N⟩ := Offset.sub_base _ (by omega_arith)
 
-theorem sub_c32 (C : Addr) : Region.Sub ⟨C, 32⟩ ⟨C, 256⟩ := fun x hx => by
+theorem sub_c64 (C : Addr) : Region.Sub ⟨C, 64⟩ ⟨C, 256⟩ := fun x hx => by
   simp only [Region.Contains] at hx ⊢; omega_arith
 
-theorem sub_ct256 (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 16⟩ ⟨C, 256⟩ := Offset.sub_base _ (by decide)
+theorem sub_ct256 (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 48⟩ ⟨C, 256⟩ := Offset.sub_base _ (by decide)
 
-theorem sub_ct (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 16⟩ ⟨C, 32⟩ := Offset.sub_base _ (by decide)
+theorem sub_ct (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 48⟩ ⟨C, 64⟩ := Offset.sub_base _ (by decide)
 
 theorem s1234_len : 8 * s1234.length = 4096 := by rw [s1234, table_length]
 
@@ -594,13 +597,13 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {
     (by rw [Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
       vslot 4 (by decide)]; exact h.nslot)) fun w ⟨wm, wz, w12, wrd, wwr, wsp⟩ wsy => ?_
   -- The writes of `advance`.
-  obtain fw : Frame [⟨State.addr c, 32⟩] v.mem w.mem := by
+  obtain fw : Frame [⟨State.addr c, 64⟩] v.mem w.mem := by
     rw [wm]
     exact ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
-  have dC24 (R : Region) (hR : Region.Disjoint R ⟨State.addr c, 256⟩) : ∀ r ∈ [(⟨State.addr c, 32⟩ : Region)],
+  have dC24 (R : Region) (hR : Region.Disjoint R ⟨State.addr c, 256⟩) : ∀ r ∈ [(⟨State.addr c, 64⟩ : Region)],
       Region.Disjoint R r := by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hR.sub_right (sub_c32 _)
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hR.sub_right (sub_c64 _)
   obtain frK : ∀ r ∈ [(⟨State.addr d + BitVec.ofNat 64 (8 * j), 8⟩ : Region), ctRegion c],
       Region.Disjoint ⟨State.addr kb, 128⟩ r := by
     intro r hr
@@ -725,11 +728,11 @@ theorem cipher_map (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (bs : List Sp
   cases up <;> rfl
 
 /-- What the end needs: every block done, and nothing else written since the
-setup but the first 32 bytes of the working space. -/
+setup but the first 64 bytes of the working space. -/
 structure Done (s : State) (m0 : Mem) (up : Bool) (k : Spec.Cast5.Schedule) (c d : BitVec 32) (n N : Nat)
     (u : State) : Prop where
   r12 : u.gpr .r12 = c
-  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 32⟩] m0 u.mem
+  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 64⟩] m0 u.mem
   blocks : ∀ i < N, Spec.Cast5.blockAt u.mem (State.addr d + BitVec.ofNat 64 (8 * i)) =
     cipher up k n (Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i)))
   rd : u.rd = s.rd

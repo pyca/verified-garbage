@@ -201,15 +201,74 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
       have := hQ u (fun r => (hg r).trans (gpr_sub _ _ _ _)) hm hrd hwr hsp hsy
       rwa [show j - i = (j - (i + 1)) + 1 by omega_arith, List.getD_cons_succ] at this
 
+/-! ## The memory of key expansion -/
+
+/-- `KMem`, with a scan's ten words (at `spillKey` in the working space)
+written too. -/
+structure KMemA (m0 m : Mem) (c K : Addr) (st : XZ) (ws : List Spec.Cast5.Word) : Prop where
+  xz : HoldsXZ m c st
+  keys : Keys m K ws
+  fr : Frame [⟨c, 64⟩, ⟨K, 128⟩, ⟨c + BitVec.ofNat 64 spillKey, 40⟩] m0 m
+
+section
+variable {m0 m : Mem} {c K : Addr} {st : XZ} {ws : List Spec.Cast5.Word} (h : KMemA m0 m c K st ws)
+include h
+
+/-- The memory of key expansion, from now. -/
+theorem KMemA.self : KMem m m c K st ws := ⟨h.xz, h.keys, Frame.refl _ _⟩
+
+/-- A step of `KMem` from it. -/
+theorem KMemA.of {m' : Mem} {st' : XZ} {ws' : List Spec.Cast5.Word} (h' : KMem m m' c K st' ws') :
+    KMemA m0 m' c K st' ws' :=
+  ⟨h'.xz, h'.keys, h.fr.trans (h'.fr.mono fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl
+    · exact .inl rfl
+    · exact .inr (.inl rfl))⟩
+
+theorem KMemA.write (dKS : Region.Disjoint ⟨K, 128⟩ ⟨c, 64⟩) (hws : ws.length ≤ 32) {d w : Nat} (v : BitVec w)
+    (hd : d + w / 8 ≤ 64) (hx : d + w / 8 ≤ 16 ∨ 48 ≤ d) :
+    KMemA m0 (m.writeW (c + BitVec.ofNat 64 d) v) c K st ws := h.of (h.self.write dKS hws v hd hx)
+
+theorem KMemA.quad (dKS : Region.Disjoint ⟨K, 128⟩ ⟨c, 64⟩) (hws : ws.length ≤ 32) (a : Arr) {q : Nat} (hq : q < 4)
+    (w : Spec.Cast5.Word) :
+    KMemA m0 (m.writeW (c + BitVec.ofNat 64 (off a + 4 * q)) (byteRev32 w)) c K (st.put a q w) ws :=
+  h.of (h.self.quad dKS hws a hq w)
+
+theorem KMemA.key (dKS : Region.Disjoint ⟨K, 128⟩ ⟨c, 64⟩) (hws : ws.length < 32) (w : Spec.Cast5.Word) :
+    KMemA m0 (m.writeW (K + BitVec.ofNat 64 (4 * ws.length)) w) c K st (ws ++ [w]) := h.of (h.self.key dKS hws w)
+
+/-- A scan's ten words written. -/
+theorem KMemA.scan (dKS : Region.Disjoint ⟨K, 128⟩ ⟨c, 256⟩) (hws : ws.length ≤ 32) {m' : Mem}
+    (hf : Frame [⟨c + BitVec.ofNat 64 spillKey, 40⟩] m m') : KMemA m0 m' c K st ws where
+  xz a i hi := by
+    have := off_lt a
+    rw [hf.bytes (R := ⟨c, 48⟩) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.base_disjoint c (by decide) (by decide)) (show (48 : Nat) ≤ 2 ^ 64 by decide)
+      (show off a + i < 48 by omega_using [this, hi])]
+    exact h.xz a i hi
+  keys i hi := by
+    rw [hf.readW (r := ⟨K + BitVec.ofNat 64 (4 * i), 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (dKS.sub_left (Offset.sub_base _ (by omega_using [hws, hi]))).sub_right (Offset.sub_base _ (by decide)))
+      (by decide)]
+    exact h.keys i hi
+  fr := h.fr.trans (hf.mono fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
+
+end
+
 /-! ## The state of key expansion -/
 
 /-- The state of key expansion from the memory `m0`: the working space at
 `cb` in `r12`, the schedule at `kb`, the arrays, subkeys and extra lookups
 of `k` in memory; the table `VG_CAST5_S5678`, readable, held in `m0` and
-apart from the working space's first 64 bytes and the schedule. -/
+apart from the working space and the schedule. -/
 structure KS (m0 : Mem) (cb kb : BitVec 32) (s : State) (k : KSt) : Prop where
   r12 : s.gpr .r12 = cb
-  mem : KMem m0 s.mem (State.addr cb) (State.addr kb) k.xz k.ws
+  mem : KMemA m0 s.mem (State.addr cb) (State.addr kb) k.xz k.ws
   ex : ∀ i < 4, s.mem.readW (State.addr cb + BitVec.ofNat 64 (extraOff + 4 * i)) 32 = k.ex i
   len : k.ws.length ≤ 32
   cfit : cb.toNat + 256 ≤ 2 ^ 32
@@ -220,7 +279,7 @@ structure KS (m0 : Mem) (cb kb : BitVec 32) (s : State) (k : KSt) : Prop where
   tfit : (s.syms s5678Sym).toNat + 4096 ≤ 2 ^ 32
   trd : (⟨State.addr (s.syms s5678Sym), 4096⟩ : Region) ∈ s.rd ++ s.wr
   held0 : Held m0 (State.addr (s.syms s5678Sym)) s5678
-  dTS : Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ ⟨State.addr cb, 64⟩
+  dTS : Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ ⟨State.addr cb, 256⟩
   dTK : Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ ⟨State.addr kb, 128⟩
 
 theorem s5678_len : 8 * s5678.length = 4096 := by rw [s5678, table_length]
@@ -241,7 +300,7 @@ theorem KS.dKS64 : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr cb, 64
 
 /-- The same state, later: other registers, memory and flags. -/
 theorem KS.update {u : State} {k' : KSt} (hc : u.gpr .r12 = s.gpr .r12)
-    (hm : KMem m0 u.mem (State.addr cb) (State.addr kb) k'.xz k'.ws)
+    (hm : KMemA m0 u.mem (State.addr cb) (State.addr kb) k'.xz k'.ws)
     (he : ∀ i < 4, u.mem.readW (State.addr cb + BitVec.ofNat 64 (extraOff + 4 * i)) 32 = k'.ex i)
     (hl : k'.ws.length ≤ 32) (hwr : u.wr = s.wr) (hsy : u.syms = s.syms) (hrd : u.rd = s.rd) : KS m0 cb kb u k' :=
   ⟨hc.trans h.r12, hm, he, hl, h.cfit, h.kfit, by rw [hwr]; exact h.scr, by rw [hwr]; exact h.sch, h.dKS,
@@ -253,9 +312,10 @@ theorem KS.held : Held s.mem (State.addr (s.syms s5678Sym)) s5678 := by
   refine held_frame h.mem.fr (fun r hr => ?_) (by rw [s5678_len]; decide) h.held0
   rw [s5678_len]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact h.dTS
+  rcases hr with rfl | rfl | rfl
+  · exact h.dTS.sub_right (Region.sub_prefix (by decide))
   · exact h.dTK
+  · exact h.dTS.sub_right (Offset.sub_base _ (by decide))
 
 end
 
@@ -605,22 +665,22 @@ theorem keyStep_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k0 : KSt} {j hh :
     { idx := hidx
       cfit := by rw [v12]; unfold spillKey; omega_arith
       ofit := by decide
-      s0 := by rw [v12]; exact hv.inS (by decide)
-      s4 := by rw [v12]; exact hv.inS (by decide)
+      inS := fun {off w} hw => by
+        rw [v12, Offset.add_add]; exact hv.inS (by unfold spillKey; omega_using [hw])
       tfit := hv.tfit
       trd := hv.trd
       dTS := by rw [v12]; exact hv.dTS.sub_right (Offset.sub_base _ (by decide)) }
-  refine WP.seq (VG.Arm.WP.mono_syms (scan_ok v s5678Sym spillKey sp) fun w ⟨wa, wk, wm⟩ wsy => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms (scan_ok v s5678Sym spillKey sp) fun w ⟨wa, wk, wf⟩ wsy => ?_)
+  rw [v12] at wf
   obtain hw : KS m0 cb kb w kj := by
-    refine hv.update (wk.gpr _ (by decide)) ?_ (fun i hi => ?_) hv.len wk.wr wsy wk.rd
-    · rw [wm, scanMem, v12]
-      exact (hv.mem.write hv.dKS64 hv.len _ (by decide) (by decide)).write hv.dKS64 hv.len _ (by decide) (by decide)
-    · have := ex_off hi
-      obtain h48 : 48 ≤ extraOff := by unfold extraOff; omega_arith
-      rw [wm, scanMem, v12, spillKey, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith)
-        (by omega_arith)) (by decide), Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith)
-        (by omega_arith)) (by decide)]
-      exact hv.ex i hi
+    refine hv.update (wk.gpr _ (by decide)) (hv.mem.scan hv.dKS hv.len wf) (fun i hi => ?_) hv.len wk.wr wsy wk.rd
+    have := ex_off hi
+    rw [wf.readW (r := ⟨State.addr cb + BitVec.ofNat 64 (extraOff + 4 * i), 4⟩) (Region.contains_self _ _)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint _ (.inl (by unfold spillKey; omega_using [this])) (by omega_using [this]) (by decide))
+      (by decide)]
+    exact hv.ex i hi
   have hTf := hv.tfit
   have ent (i : Nat) (hi : i < 4) (x : Byte) (hx : v.gpr (idxReg i) = x.setWidth 32) :
       w.gpr (accReg i) = tableEnt Spec.Cast5.S8 Spec.Cast5.S7 Spec.Cast5.S6 Spec.Cast5.S5 (x.setWidth 32).toNat i := by
@@ -961,7 +1021,7 @@ theorem key_correct (s : State) (hs : keyArm.pre (stripConsts keyConsts s)) (hkc
         rw [s5678_len]; exact twr _ (by rw [hwr]; simp)
       dTS := by
         rw [hsw]
-        exact (twr ⟨State.addr cb, 256⟩ (by rw [hwr]; simp)).sub_right (Region.sub_prefix (by decide))
+        exact twr ⟨State.addr cb, 256⟩ (by rw [hwr]; simp)
       dTK := by rw [hsw]; exact twr _ (by rw [hwr]; simp) }
   case refine_1 =>
     rw [wm]
@@ -1001,12 +1061,14 @@ theorem key_correct (s : State) (hs : keyArm.pre (stripConsts keyConsts s)) (hkc
   have hsv : Spill.Saved u.mem (State.addr (u.gpr .r12)) (s.setReg .r12 cb).gpr savedSlots := by
     rw [hk.r12]
     refine (Spill.saveMem_saved _ _ _ _ savedSlots_ok).frame savedSlots_ok ((by rw [← m₂, hM]; exact hk.mem.fr) :
-      Frame [⟨State.addr cb, 64⟩, ⟨State.addr kb, 128⟩] (Spill.saveMem (s.setReg .r12 cb).mem (State.addr cb)
-        (s.setReg .r12 cb).gpr savedSlots) u.mem) fun r hr => ?_
+      Frame [⟨State.addr cb, 64⟩, ⟨State.addr kb, 128⟩, ⟨State.addr cb + BitVec.ofNat 64 spillKey, 40⟩]
+        (Spill.saveMem (s.setReg .r12 cb).mem (State.addr cb) (s.setReg .r12 cb).gpr savedSlots) u.mem)
+      fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact Offset.disjoint_base _ (by decide) (by decide)
     · exact (dKS.symm.sub_left (Offset.sub_base _ (by decide)))
+    · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   rw [restore_eq]
   refine WP.mono (Spill.restore_block_ok savedSlots_ok savedSlots_restorable (by rw [hk.r12]; omega_arith)
     (fun d _ hd => by
