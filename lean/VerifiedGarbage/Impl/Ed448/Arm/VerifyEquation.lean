@@ -38,15 +38,18 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
   its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 (`vdecode`), `R` kept at `RX`
   and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
-  (slots 0, 21, 2) doubled, `B` (slots 8–10) added and swapped into `Q` by
-  bit `t` of `S`, then `-A` added and swapped in by bit `t` of `k`.
+  `Q = [S]B + [k](-A)` computed from the top bit down: `Q` (slots 0, 21, 2)
+  doubled, then `B` (slots 8–10) added if bit `t` of `S` is set, and `-A`
+  if bit `t` of `k` is. The signature and the challenge are public (a
+  verification may leak its inputs), so the additions are only made where
+  the bits are set: the byte of the two bits is loaded into `r8`, which the
+  field functions never write, and the branches are on it.
 * `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
   doubled twice (a loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Every address depends only on the pointers,
+and every branch on them and on the bits of `S` and `k`.
 -/
 
 @[expose] public section
@@ -199,20 +202,32 @@ def addAt (x y : Nat) : List Op := [
   .mul (slot 20) (slot 12) (slot 18), .sub (slot 19) (slot 15) (slot 14), .mul (slot 4) (slot 20) (slot 19),
   .mul (slot 5) (slot 17) (slot 18)]
 
-/-- `r5 = -bit`, for bit `r11` of `S` (`hi = false`) or of `k` (`hi = true`). -/
-def vmask (hi : Bool) : List Instr :=
-  [.dp .add .r7 .r0 (.reg .r11), .ldrb .r3 .r7 VBITS,
-    if hi then .mov .r3 (.shifted .r3 .lsr 1) else .dp .and .r3 .r3 (.imm 1),
-    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r3)]
+/-- The counter moved down to the bit `t = r11`, and the byte of bit `t` of `S` (its bit 0) and
+of `k` (its bit 1) into `r8`. -/
+def vload : List Instr :=
+  [.dp .sub .r11 .r11 (.imm 1), .dp .add .r7 .r0 (.reg .r11), .ldrb .r8 .r7 VBITS]
 
-/-- `T` swapped into `Q` by the mask `r5`. -/
-def vswap : List Instr := cswap (slot 0) (slot 3) ++ cswap (slot 21) (slot 4) ++ cswap (slot 2) (slot 5)
+/-- `Z` clear exactly when the bit of `S` (`hi = false`) or of `k` (`hi = true`) in `r8` is
+set. -/
+def vtest (hi : Bool) : List Instr :=
+  [if hi then .mov .r3 (.shifted .r8 .lsr 1) else .dp .and .r3 .r8 (.imm 1), .cmp .r3 (.imm 0)]
+
+/-- `T` (slots 3–5) into `Q` (slots 0, 21, 2). -/
+def vtake : List Op := [.copy (slot 0) (slot 3), .copy (slot 21) (slot 4), .copy (slot 2) (slot 5)]
+
+/-- `Q = Q + (x : y : 1)` if the bit of `S` (`hi = false`) or of `k` (`hi = true`) in `r8` is
+set. -/
+def vaddIf (hi : Bool) (x y : Nat) : Prog isa :=
+  .seq (.block (vtest hi)) (.ite .ne (ops (addAt x y ++ vtake)) (.block []))
+
+/-- A bit, with its byte in `r8`: `Q` doubled, `B` added if `S`'s bit is set and `-A` if `k`'s
+is, and the counter compared with zero. -/
+def vdoubleAdd : Prog isa :=
+  .seq (ops (doubleAt 0 21 2)) <| .seq (vaddIf false 8 9) <| .seq (vaddIf true 6 7)
+    (.block [.cmp .r11 (.imm 0)])
 
 /-- One bit `t = r11 - 1`, from the top. -/
-def vstep : Prog isa :=
-  .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) <| .seq (ops (doubleAt 0 21 2)) <|
-  .seq (ops (addAt 8 9)) <| .seq (.block (vmask false ++ vswap)) <|
-  .seq (ops (addAt 6 7)) (.block (vmask true ++ vswap ++ [.cmp .r11 (.imm 0)]))
+def vstep : Prog isa := .seq (.block vload) vdoubleAdd
 
 /-- The 456 bits, from 455 down to 0. -/
 def vloop : Prog isa := .seq (.block [.movw .r11 456]) (.loop vstep .ne)
@@ -290,9 +305,16 @@ counted by `r11`; then `vresult`. -/
 def vfinish : Prog isa :=
   .seq vdouble <| .seq (.block [.movw .r11 2]) <| .seq (.loop vcmp .ne) (.block vresult)
 
-/-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
-def verifyEquation : Prog isa :=
+/-- What comes before the loop over the bits: the entry, the bits of `S` and `k`, the check of
+`S`, `R` and `A` decoded, and `A` negated. -/
+def vbefore : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq vdecode <|
-  .seq (ops [.sub (slot 6) (slot 0) (slot 6)]) <| .seq vloop <| .seq (.block vR) vfinish
+    ops [.sub (slot 6) (slot 0) (slot 6)]
+
+/-- What comes after it: `R` into slots 8–9, and the comparison. -/
+def vafter : Prog isa := .seq (.block vR) vfinish
+
+/-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
+def verifyEquation : Prog isa := .seq vbefore <| .seq vloop vafter
 
 end VG.Impl.Ed448.Arm

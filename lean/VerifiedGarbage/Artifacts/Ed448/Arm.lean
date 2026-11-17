@@ -83,6 +83,6 @@ def artifacts : List Artifact := [
     code := Impl.Ed448.Arm.Verify.code
     verified := Proof.Ed448.Arm.Verify.verify_verified
       (Proof.Ed448.Arm.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
-      Proof.Ed448.Arm.verifyEquation_ct }]
+      (Proof.Ed448.Arm.verifyEquation_ct Proof.Ed448.recover_ok) }]
 
 end VG.Artifacts.Ed448.Arm
