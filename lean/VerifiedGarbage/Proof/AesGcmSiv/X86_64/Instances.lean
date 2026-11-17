@@ -1482,18 +1482,18 @@ def regOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target wh
 
 end
 
-/-- A registration over the bitsliced AES, its 3856 bytes of stack wiped
-whole on return, in the chunks `[8, 3848]`; any other as it is. -/
-def scrubSoft {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
+/-- A registration of the code not in registers, its 3856 bytes of stack
+wiped whole on return, in the chunks `[8, 3848]`. -/
+def scrubSoft {api : Api} (r : Registration api X86_64.target)
     (hpost : PostOut r.contract (api.sig.retBits
       ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
-  if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
+  withScrubAllC r hpost [8, 3848]
 
 /-- `vg_aes_gcm_siv_seal` over `v`: in registers (`sivReg`), with what holds nothing of the keys or the
 data left unwiped (`sivKs`). -/
 def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
   if sivReg v then withScrubResC (regSealReg v) (sealOut _) sivKs [8, 776] (regSeal_resOk v)
-  else scrubSoft v {
+  else scrubSoft {
     suffix := v.suffix
     code := framedSeal v
     stack := sivStack v
@@ -1503,7 +1503,7 @@ def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
 /-- `vg_aes_gcm_siv_open` over `v`. -/
 def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
   if sivReg v then withScrubResC (regOpenReg v) (openOut _) sivKs [8, 776] (regOpen_resOk v)
-  else scrubSoft v {
+  else scrubSoft {
     suffix := v.suffix
     code := framedOpen v
     stack := sivStack v
@@ -1512,7 +1512,7 @@ def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
 
 /-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
 def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft v {
+  scrubSoft {
     suffix := v.suffix ++ "_avx2"
     code := avx2SealCode v
     stack := 3856
@@ -1521,7 +1521,7 @@ def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :
 
 /-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies. -/
 def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft v {
+  scrubSoft {
     suffix := v.suffix ++ "_avx2"
     code := avx2OpenCode v
     stack := 3856
