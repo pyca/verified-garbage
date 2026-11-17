@@ -239,13 +239,14 @@ theorem verified : Verified X86.target Impl.MlKem.X86.nttInv (nttInvContract X86
       fun s s' _ _ h => by
         sig_pub [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes] at h
-        exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+        exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
-    rw [hm, nttInv_eq_layers, ← scaled_all]
-    exact hinv.poly
+    rw [nttInv_eq_layers, ← scaled_all]
+    exact polyIs_congr (leaf_keep hm (hW (Pre.of (t := VG.Spec.MlKem.nttInv) h₀ rfl) _ List.mem_cons_self).1
+      (by show 1024 ≤ 2 ^ 64; decide)) hinv.poly
   · let st := satState NttFwd.satMem [] [⟨0, 1024⟩, ⟨0x400, 1024⟩, ⟨0x5004, 8⟩]
     refine ⟨st, ?_⟩
     sig_apply_check

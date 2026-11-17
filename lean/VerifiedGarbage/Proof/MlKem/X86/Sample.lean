@@ -65,19 +65,20 @@ def satMem : Mem := fun a => if a = 0x5009 then 1 else if a = 0x500d then 0x10 e
 
 theorem verified : Verified X86.target Impl.MlKem.X86.sampleNTT (sampleNTTContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => ?_).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · sig_pub [sampleNTTContract, sampleNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := h
     exact ⟨e₁, map_toNat_inj e₂, e₃, e₄, e₅⟩
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [sampleNTTContract, sampleNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    obtain kA := leaf_keep hm ((Pre.of h₀).hW _ List.mem_cons_self).1 (by show 1024 ≤ 2 ^ 64; decide)
+    rw [setWidth_append32, hax, hfin.eax, polyAt_congr kA]
     have hl := hfin.len
     by_cases e : (LA (Bs s₀) 280).length = 256
     · obtain ⟨hr, hp⟩ := poly_eq hfin.toLoop e
       rw [e]
-      refine ⟨fun _ => hr, outcome_of_min (.inl ⟨rfl, ?_⟩)⟩
+      refine ⟨fun _ => reduced_congr kA hr, outcome_of_min (.inl ⟨rfl, ?_⟩)⟩
       rw [hp]
       exact sampleNTT_of_full (Nat.le_refl _) (by rw [n_eq]; exact e)
     · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]

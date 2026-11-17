@@ -271,22 +271,22 @@ theorem WP.frameInline {rs : List Reg} {c : Prog isa} {k : Contract isa}
     (hw : Covers wr (below (s.gpr .esp) (4 * rs.length) :: s.wr)) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr ++ [below (s.gpr .esp) (4 * rs.length)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post ((pushed rs s).withRegions rd wr) s₂) → Q s') :
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
+        k.post ((pushed rs s).withRegions rd wr) s₂) → Q s') :
     WP isa (.frame (.push rs) c (.pop .eax rs.length)) s Q := by
-  refine WP.frameKept hne hrs (by decide) hd hsp ?_
+  refine WP.frame hne hrs (by decide) hd hsp ?_
   refine WP.inline (k := k) hv hpre (by rw [pushed_rd, pushed_wr]; exact hc) (by rw [pushed_wr]; exact hw)
-    (fun s₂ rd₂ wr₂ ha f₂ _ post₂ => ?_) hn
+    (fun s₂ rd₂ wr₂ ha f₂ _ post₂ m u fl => ?_) hn
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) (fun r hr => ?_) ?_
-    ⟨s₂.withRegions rd wr, by rw [State.withRegions_mem, popped_mem], post₂⟩
+    ⟨s₂.withRegions rd wr, by rw [State.withRegions_mem]; exact fl, post₂⟩
   · by_cases h : r = .esp
     · subst h
       rw [popped_esp, ha.1 .esp hr, pushed_esp]; exact BitVec.sub_add_cancel _ _
     · have hne' : r ≠ .eax := by
         rintro rfl; simp [calleeSaved] at hr
       rw [popped_gpr _ _ _ h hne', ha.1 r hr, pushed_gpr _ _ h]
-  · rw [popped_mem]
-    exact ((pushed_frame hrs hd).mono fun r hr => List.mem_append_right _ hr).trans
-      (f₂.mono fun r hr => List.mem_append_left _ hr)
+  · exact (((pushed_frame hrs hd).mono fun r hr => List.mem_append_right _ hr).trans
+      (f₂.mono fun r hr => List.mem_append_left _ hr)).trans (fl.mono fun r hr => List.mem_append_right _ hr)
 
 /-- Two runs of such code leak the same if its contract holds in both, its
 public data agree, and so does `esp`. -/

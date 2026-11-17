@@ -462,12 +462,12 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.decodeDecompress
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
       sig_pub [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi,
         X86.argSlots, X86.argVal, X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    refine polyIs_congr (leaf_keep hm (by have hp := Pre.of h₀; rw [← hp.stk_eq]; exact hp.stk_f) (by show 1024 ≤ 2 ^ 64; decide)) ?_
     exact polyIs_of_coeffAt fun i hi => hinv.coef i (by rw [n_eq] at hi; exact hi)
   · let st := satState satMem [⟨0, 160⟩] [⟨0x400, 1024⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩

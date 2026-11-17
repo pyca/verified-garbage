@@ -163,7 +163,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.keyGen (Proof.MlKem.Scrubb
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.keyGenBodyContract, keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 1) (l := 1184) (by decide), argKeep hp hm (k := 2) (l := 2400) (by decide)]
     have r := post (by decide) hp hfin
     have ez : Buf.addr s₀ ⟨0, 32, 32⟩ = (arg s₀ 0).setWidth 64 + 32 := Buf.addr_eq hp (by decide)
     simp only [d, z, addr0, ez, show Buf.addr s₀ ⟨1, 0, L768.p.ekLen⟩ = (arg s₀ 1).setWidth 64 from addr0 s₀ 1,
@@ -282,11 +282,11 @@ def satMem : Mem := fun a =>
 
 theorem verified : Verified X86.target Impl.MlKem.X86.encaps (Proof.MlKem.Scrubbed.encapsBodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L768) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsBodyContract, encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_of h₀) hm (k := 2) (l := 32) (by decide), argKeep (pre_of h₀) hm (k := 3) (l := 1088) (by decide)]
     have r := post (by decide) hfin
     rw [ek_eq, msg_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -392,7 +392,7 @@ theorem verifiedH : Verified X86.target Impl.MlKem.X86.encapsH (Proof.MlKem.Scru
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_ofH hpre).1 hm (k := 3) (l := 32) (by decide), argKeep (pre_ofH hpre).1 hm (k := 4) (l := 1088) (by decide)]
     have r := postH (by decide) (pre_ofH hpre).2 hfin
     rw [ek_eq, msgH_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -527,7 +527,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.decaps (Proof.MlKem.Scrubb
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.decapsBodyContract, decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 2) (l := 32) (by decide)]
     have r := post (by decide) hp hfin
     rw [dk_eq, ct_eq, addr0, addr0, addr0] at r
     exact r
@@ -667,7 +667,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.keyGen (Proof.MlKem.Sc
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 1) (l := 1568) (by decide), argKeep hp hm (k := 2) (l := 3168) (by decide)]
     have r := post (by decide) hp hfin
     have ez : Buf.addr s₀ ⟨0, 32, 32⟩ = (arg s₀ 0).setWidth 64 + 32 := Buf.addr_eq hp (by decide)
     simp only [d, z, addr0, ez, show Buf.addr s₀ ⟨1, 0, L1024.p.ekLen⟩ = (arg s₀ 1).setWidth 64 from addr0 s₀ 1,
@@ -789,11 +789,11 @@ def satMem : Mem := fun a =>
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.encaps (Proof.MlKem.Scrubbed.encaps1024BodyContract X86.abi 88) := by
   refine Piece.verified (((piece (L := L1024) (by decide) (NoSp.of_all (by lit_decide))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_of h₀) hm (k := 2) (l := 32) (by decide), argKeep (pre_of h₀) hm (k := 3) (l := 1568) (by decide)]
     have r := post (by decide) hfin
     rw [ek_eq, msg_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -899,7 +899,7 @@ theorem verifiedH : Verified X86.target Impl.MlKem1024.X86.encapsH (Proof.MlKem.
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep (pre_ofH hpre).1 hm (k := 3) (l := 32) (by decide), argKeep (pre_ofH hpre).1 hm (k := 4) (l := 1568) (by decide)]
     have r := postH (by decide) (pre_ofH hpre).2 hfin
     rw [ek_eq, msgH_eq, addr0, addr0, addr0, addr0] at r
     exact r
@@ -1035,7 +1035,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.decaps (Proof.MlKem.Sc
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax, argKeep hp hm (k := 2) (l := 32) (by decide)]
     have r := post (by decide) hp hfin
     rw [dk_eq, ct_eq, addr0, addr0, addr0] at r
     exact r

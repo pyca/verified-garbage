@@ -141,10 +141,13 @@ theorem frame {A B : State → State → Prop} {rs : List Reg} {r : Reg} {body :
     (hn : ∀ s₀ s, Pre s₀ → A s₀ s → 4 * rs.length ≤ (s.gpr .esp).toNat)
     (hesp : ∀ s₀ s₀' s s', Pre s₀ → Pre s₀' → Pub s₀ s₀' → A s₀ s → A s₀' s' →
       s.gpr .esp = s'.gpr .esp)
+    (E : State → BitVec 32) (hE : ∀ s₀ s, Pre s₀ → A s₀ s → s.gpr .esp = E s₀)
     (hb : Piece Pre Pub (fun s₀ s => ∃ s₁, A s₀ s₁ ∧ s = pushed rs s₁)
-      (fun s₀ s₂ => B s₀ (popped r rs.length s₂)) body) :
+      (fun s₀ s₂ => ∀ m u, Frame [below (E s₀) (4 * rs.length)] s₂.mem m →
+        B s₀ { popped r rs.length s₂ with mem := m, unknowns := u }) body) :
     Piece Pre Pub A B (.frame (.push rs) body (.pop r rs.length)) where
-  wp _ s h₀ ha := WP.frameKept hne hrs hr (hn _ _ h₀ ha) hsp (hb.wp _ _ h₀ ⟨s, ha, rfl⟩)
+  wp _ s h₀ ha := WP.frame hne hrs hr (hn _ _ h₀ ha) hsp
+    (WP.mono (hb.wp _ _ h₀ ⟨s, ha, rfl⟩) fun s₂ h m u fl => h m u (by rw [← hE _ _ h₀ ha]; exact fl))
   ct _ _ h₀ h₀' hp := RelCT.frame (fun _ _ ⟨a, a'⟩ => hesp _ _ _ _ h₀ h₀' hp a a')
     ((hb.ct _ _ h₀ h₀' hp).mono (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂⟩, e₁, e₂⟩ => ⟨⟨s₁, h₁, e₁⟩, s₂, h₂, e₂⟩)
       fun _ _ h => h)

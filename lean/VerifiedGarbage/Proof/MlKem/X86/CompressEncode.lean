@@ -490,7 +490,10 @@ theorem verified : Verified X86.target Impl.MlKem.X86.compressEncode (compressEn
     refine ⟨habi, ?_⟩
     sig_post [compressEncodeContract, compressEncodeSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     obtain hp := Pre.of h₀
-    rw [hm, hp.len_eq]
+    rw [bytesAt_congr (leaf_keep (r := oR s₀) hm (by rw [← hp.stk_eq]; exact hp.stk_o)
+      (by show (lenV s₀).toNat ≤ 2 ^ 64; have := (lenV s₀).isLt; omega))]
+    dsimp only [oR]
+    rw [hp.len_eq]
     exact bytesAt_eq! (compressEncode_length _ _) fun j hj => hinv.out j hj
   · let st := satState satMem [⟨0, 1024⟩] [⟨0x400, 32⟩, ⟨0x5004, 16⟩]
     obtain a0 : arg st 0 = 0 := by decide

@@ -46,20 +46,24 @@ theorem WP.callWithR {rs : List Reg} {r : Reg} {n : String} {c : Prog isa} {k : 
     (hk : CallPre k rs rd wr s) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.gpr .esp = s.gpr .esp →
       Frame (wr ++ [below (s.gpr .esp) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ q, q ≠ .esp → q ≠ r → s₂.gpr q = s'.gpr q) ∧
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
+        (∀ q, q ≠ .esp → q ≠ r → s₂.gpr q = s'.gpr q) ∧
         k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (.frame (.push rs) (.call n c) (.pop r rs.length)) s Q := by
   obtain hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega_arith
   obtain e : ((pushed rs s).gpr .esp).toNat = (s.gpr .esp).toNat - 4 * rs.length := by
     rw [pushed_esp, sub_toNat hn]
-  refine WP.frameKept hne hrs hr hn (fun i hi => hsp i hi) ?_
+  refine WP.frame hne hrs hr hn (fun i hi => hsp i hi) ?_
   refine WP.call hv hsp (by rw [e]; omega_arith) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
-    (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, g₃, post₃⟩ => ?_
+    (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, g₃, post₃⟩ m u fl => ?_
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) ?_ ?_
-    ⟨s₃, by rw [m₃, popped_mem], fun q h₁ h₂ => by rw [popped_gpr _ _ _ h₁ h₂]; exact g₃ q h₁, post₃⟩
+    ⟨s₃, by rw [m₃]; exact fl, fun q h₁ h₂ => by rw [popped_gpr _ _ _ h₁ h₂]; exact g₃ q h₁, post₃⟩
   · rw [popped_esp, cs₂ .esp (by simp [calleeSaved]), pushed_esp]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem]
-    refine ((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
+  · refine (((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)).trans
+      (fl.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_arith) hd⟩
+    rotate_left
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_arith) hd⟩
     · rcases List.mem_append.mp hr with hr | hr
