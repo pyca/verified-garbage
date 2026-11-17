@@ -23,77 +23,54 @@ vg_aes_ctr:
 	cmp r8, #0
 	beq 20f
 22:
-	mov r12, #0
-	str r12, [r10, #2048]
-	str r12, [r10, #2052]
-	str r12, [r10, #2056]
-	str r12, [r10, #2060]
-	ldr r12, [r10, #2048]
-	ldr lr, [r6, #0]
-	eor r12, r12, lr
-	str r12, [r10, #2048]
-	ldr r12, [r10, #2052]
-	ldr lr, [r6, #4]
-	eor r12, r12, lr
-	str r12, [r10, #2052]
-	ldr r12, [r10, #2056]
-	ldr lr, [r6, #8]
-	eor r12, r12, lr
-	str r12, [r10, #2056]
-	ldr r12, [r10, #2060]
-	ldr lr, [r6, #12]
-	eor r12, r12, lr
-	str r12, [r10, #2060]
-	mov r0, r4
-	mov r1, r5
-	add r2, r10, #2048
-	mov r3, #1
-	mov r12, r10
-	push {r12, lr}
-	bl {vg_aes_encrypt_blocks}
-	ldr r12, [sp], #8
-	ldr r12, [r7, #0]
-	ldr lr, [r10, #2048]
-	eor r12, r12, lr
-	str r12, [r7, #0]
-	ldr r12, [r7, #4]
-	ldr lr, [r10, #2052]
-	eor r12, r12, lr
-	str r12, [r7, #4]
-	ldr r12, [r7, #8]
-	ldr lr, [r10, #2056]
-	eor r12, r12, lr
-	str r12, [r7, #8]
-	ldr r12, [r7, #12]
-	ldr lr, [r10, #2060]
-	eor r12, r12, lr
-	str r12, [r7, #12]
 	ldr r0, [r6, #12]
 	rev r0, r0
-	ldr r1, [r6, #8]
+	mvn r0, r0
+	sub r1, r8, #1
+	subs r2, r1, r0
+	mov r2, #0
+	adc r2, r2, #0
+	mov r3, #0
+	sub r2, r3, r2
+	eor r3, r1, r0
+	and r3, r3, r2
+	eor r1, r1, r3
+	add r9, r1, #1
+	mov r0, r4
+	mov r1, r5
+	mov r2, r6
+	mov r3, r7
+	mov r12, r9
+	mov lr, r10
+	push {r12, lr}
+	bl {vg_aes_ctr32}
+	ldr r12, [sp], #8
+	sub r8, r8, r9
+	add r7, r7, r9, lsl #4
+	ldr r0, [r6, #12]
+	cmp r0, #0
+	beq 23f
+	b 24f
+23:
+	ldr r0, [r6, #8]
+	rev r0, r0
+	ldr r1, [r6, #4]
 	rev r1, r1
-	ldr r2, [r6, #4]
+	ldr r2, [r6, #0]
 	rev r2, r2
-	ldr r3, [r6, #0]
-	rev r3, r3
 	adds r0, r0, #1
 	mov r12, #0
 	adc r12, r12, #0
 	adds r1, r1, r12
-	mov r12, #0
-	adc r12, r12, #0
-	adds r2, r2, r12
-	adc r3, r3, #0
+	adc r2, r2, #0
 	rev r0, r0
-	str r0, [r6, #12]
+	str r0, [r6, #8]
 	rev r1, r1
-	str r1, [r6, #8]
+	str r1, [r6, #4]
 	rev r2, r2
-	str r2, [r6, #4]
-	rev r3, r3
-	str r3, [r6, #0]
-	add r7, r7, #16
-	subs r8, r8, #1
+	str r2, [r6, #0]
+24:
+	cmp r8, #0
 	bne 22b
 	b 21f
 20:

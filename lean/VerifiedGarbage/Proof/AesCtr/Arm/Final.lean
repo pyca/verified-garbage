@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.AesCtr.Arm.Final
 public import VerifiedGarbage.Proof.AesCtr.Final
 public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.AesCfb.Arm.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -22,6 +24,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Impl.AesCtr.Arm.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.Spec
+meta import VerifiedGarbage.Proof.AesCtr.Ctr32
+meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.AesCfb.Arm.Final
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
@@ -126,7 +130,8 @@ def ctrFinalArm : Contract isa where
   pub s₁ s₂ :=
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
       s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
-      stackArg s₁ 2 = stackArg s₂ 2
+      stackArg s₁ 2 = stackArg s₂ 2 ∧
+      Spec.Ctr.ctrLeak s₁.mem (State.addr (s₁.gpr .r2)) = Spec.Ctr.ctrLeak s₂.mem (State.addr (s₂.gpr .r2))
 
 /-- The contract the frame needs: the shared one, with `save`, 56 bytes, as
 a seventh argument, and 16 bytes of stack (the whole-block function's frame
@@ -142,7 +147,7 @@ def ctrSat : State :=
 
 theorem final_implies : ctrFinalArm.Implies finalScratchContract := by
   sig_implies [finalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-      Spec.Ctr.aesFinalSig, finalPre, finalPost, finalLeak, ctrFinalArm, Arm.abi,
+      Spec.Ctr.aesFinalSig, finalPre, finalPost, finalLeak, Spec.Ctr.ctrLeak, ctrFinalArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [ctrSat, finalSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using ctrSat
 
@@ -444,14 +449,17 @@ abbrev wRd (sp W : BitVec 32) : List Region := [⟨State.addr W, 240⟩, below s
 abbrev wWr (C D S : BitVec 32) (n : Nat) : List Region :=
   [⟨State.addr C, 16⟩, ⟨State.addr D, 16 * n⟩, ⟨State.addr S, 2176⟩]
 
+theorem ctr32_stack : armStack Impl.Aes.Arm.ctr32 = 0 :=
+  armStack_noFrames _ (Code.noFrames_of_noCalls Proof.AesGcm.Arm.ctr_noCalls)
+
 theorem crypt_stack : armStack Impl.AesCtr.Arm.crypt = 8 := by
-  simp only [Impl.AesCtr.Arm.crypt, Impl.AesCbc.Arm.whole, Impl.AesCtr.Arm.body, Impl.AesCbc.Arm.encFrame,
-    armStack, encBlocks_stack]
+  simp only [Impl.AesCtr.Arm.crypt, Impl.AesCbc.Arm.whole, Impl.AesCtr.Arm.body, Impl.AesCtr.Arm.ctrFrame,
+    armStack, ctr32_stack]
   decide
 
 theorem crypt_correct : ∀ s, (modeArm AesCtr.ctrMode).pre s →
     ∃ t s', Exec isa Impl.AesCtr.Arm.crypt s t s' ∧ abiPreserved s s' ∧ (modeArm AesCtr.ctrMode).post s s' :=
-  fun _ hs => AesCbc.Arm.whole_wp body_ok hs
+  fun _ hs => crypt_wp hs
 
 namespace WCall
 variable {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C D S n)
@@ -483,6 +491,11 @@ theorem cov : Covers (wRd s.sp W ++ wWr C D S n) ((pushed [.r12, .lr] s).rd ++ (
   exact ⟨r', List.mem_append_right _ hr', hc'⟩
 
 theorem covW : Covers (wWr C D S n) (pushed [.r12, .lr] s).wr := cover_pushed h.writes
+
+/-- The counter block, which the push below the stack pointer keeps. -/
+theorem ivPushed : bytesAt (pushed [.r12, .lr] s).mem (State.addr C) 16 = bytesAt s.mem (State.addr C) 16 :=
+  Proof.Cmac.bytesAt_frame (fA (s := s) h.hsp8) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact (h.bc.sub_left (below_stk s.sp)).symm) (by decide)
 
 end WCall
 
@@ -539,26 +552,33 @@ theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C 
 runs are constant time. -/
 theorem w_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W R C D S : BitVec 32, ∃ n : Nat,
-      WCall s₁ W R C D S n ∧ WCall s₂ W R C D S n ∧ s₁.sp = s₂.sp) :
+      WCall s₁ W R C D S n ∧ WCall s₂ W R C D S n ∧ s₁.sp = s₂.sp ∧
+      AesCtr.lo32 (bytesAt s₁.mem (State.addr C) 16) = AesCtr.lo32 (bytesAt s₂.mem (State.addr C) 16)) :
     RelCT isa P (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) fun _ _ => True := by
-  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, _, e⟩ := h _ _ hp; exact e) ?_
+  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, _, e, _⟩ := h _ _ hp; exact e) ?_
   intro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, pa, pb⟩ e₁ e₂
-  obtain ⟨W, R, C, D, S, n, h₁, h₂, hsp⟩ := h _ _ hp
+  obtain ⟨W, R, C, D, S, n, h₁, h₂, hsp, hlo⟩ := h _ _ hp
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₁.hsp8), Option.some.injEq] at pa
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp8), Option.some.injEq] at pb
   subst pa pb
-  refine RelCT.call (k := modeArm AesCtr.ctrMode) crypt_correct (AesCbc.Arm.whole_ct body_ok body_ct)
+  refine RelCT.call (k := { modeArm AesCtr.ctrMode with pub := ctrPub }) crypt_correct crypt_ct
     (wRd s₁.sp W) (wWr C D S n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
     (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   subst ex ey
   have p₂ := h₂.pre
   rw [← hsp] at p₂
-  refine ⟨h₁.pre, p₂, ?_, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
-  simp only [modeArm, stackArg_withRegions, stackArg_callEntry, arg0 h₁.hsp8, arg1 h₁.hsp8, arg0 h₂.hsp8,
-    arg1 h₂.hsp8, view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide),
-    view_gpr _ _ _ .r3 (by decide), view_sp, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.r12, h₁.lr, h₂.r0, h₂.r1, h₂.r2,
-    h₂.r3, h₂.r12, h₂.lr, hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+  refine ⟨h₁.pre, p₂, ⟨?_, ?_⟩, h₁.cov, h₁.covW, hsp ▸ h₂.cov, h₂.covW⟩
+  · simp only [modeArm, stackArg_withRegions, stackArg_callEntry, arg0 h₁.hsp8, arg1 h₁.hsp8, arg0 h₂.hsp8,
+      arg1 h₂.hsp8, view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide),
+      view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), view_sp, h₁.r0, h₁.r1, h₁.r2, h₁.r3,
+      h₁.r12, h₁.lr, h₂.r0, h₂.r1, h₂.r2, h₂.r3, h₂.r12, h₂.lr, hsp]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+  · -- The counter block's last 32 bits, which the push below the stack pointer keeps.
+    show AesCtr.lo32 (bytesAt _ (State.addr (State.gpr _ .r2)) 16) =
+      AesCtr.lo32 (bytesAt _ (State.addr (State.gpr _ .r2)) 16)
+    rw [view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r2 (by decide), h₁.r2, h₂.r2,
+      Proof.AesGcm.Arm.view_mem, Proof.AesGcm.Arm.view_mem, h₁.ivPushed, h₂.ivPushed]
+    exact hlo
 
 /-! ## The whole blocks -/
 
@@ -605,6 +625,20 @@ theorem setup_call {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s
     · exact ⟨fIvR s₀, by simp, 0, by simp, by simp⟩
     · exact ⟨fData s₀, by simp, 0, by simp, by simpa using Nat.mul_div_le (fL s₀) 16⟩
     · exact ⟨fScr s₀, by simp, 0, by simp, by simp⟩
+
+/-- The counter block after the setup, which wrote only `save`. -/
+theorem setup_iv {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
+    bytesAt s.mem (State.addr (fIv s₀)) 16 = fIv0 s₀ := by
+  rw [h.mem]; exact Proof.Cmac.bytesAt_frame (svMem_frame s₀) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hp.iv_sv) (by decide)
+
+/-- Counter blocks whose last 32 bits agree still do after `k` increments. -/
+theorem lo32_next_of {t t' : List Byte} (ht : t.length = 16) (ht' : t'.length = 16)
+    (h : AesCtr.lo32 t = AesCtr.lo32 t') (k : Nat) :
+    AesCtr.lo32 (Spec.Ctr.next t k) = AesCtr.lo32 (Spec.Ctr.next t' k) := by
+  rw [AesCtr.lo32_next ht, AesCtr.lo32_next ht']
+  unfold AesCtr.lo32 at h
+  omega_using [h]
 
 theorem whole_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
     WP isa (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) s (Whole AesCtr.ctrMode s₀) := by
@@ -993,7 +1027,9 @@ theorem pub_Iv : fIv s₀ = fIv s₀' := hq.2.2.2.1
 theorem pub_D : fD s₀ = fD s₀' := hq.2.2.2.2.1
 theorem pub_L : stackArg s₀ 0 = stackArg s₀' 0 := hq.2.2.2.2.2.1
 theorem pub_S : fS s₀ = fS s₀' := hq.2.2.2.2.2.2.1
-theorem pub_V : fV s₀ = fV s₀' := hq.2.2.2.2.2.2.2
+theorem pub_V : fV s₀ = fV s₀' := hq.2.2.2.2.2.2.2.1
+theorem pub_lo : AesCtr.lo32 (fIv0 s₀) = AesCtr.lo32 (fIv0 s₀') :=
+  AesCtr.lo32_of_leak (Proof.Cmac.bytesAt_length _ _ _) (Proof.Cmac.bytesAt_length _ _ _) hq.2.2.2.2.2.2.2.2
 theorem pub_N : fN s₀ = fN s₀' := by rw [fN, fN, fL, fL, pub_L hq]
 theorem pub_U : fU s₀ = fU s₀' := by rw [fU, fU, fL, fL, pub_L hq]
 theorem pub_T : fT s₀ = fT s₀' := by rw [fT, fT, pub_D hq, pub_N hq]
@@ -1065,7 +1101,9 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
   obtain r₂ := rel_wp (F := Setup s₀) (F' := Setup s₀') (G := Whole M s₀) (G' := Whole M s₀')
     (w_rel fun a b ⟨ha, hb⟩ => ⟨_, _, _, _, _, _, setup_call hp ha, by
       rw [pub_W hq, pub_r1 hq, pub_Iv hq, pub_D hq, pub_S hq, pub_N hq]; exact setup_call hp' hb,
-      by rw [ha.sp, hb.sp, pub_sp hq]⟩)
+      by rw [ha.sp, hb.sp, pub_sp hq],
+      (congrArg AesCtr.lo32 (setup_iv hp ha)).trans ((pub_lo hq).trans
+        (congrArg AesCtr.lo32 (by rw [pub_Iv hq]; exact setup_iv hp' hb)).symm)⟩)
     (fun _ h => whole_wp hp h) (fun _ h => whole_wp hp' h)
   -- The test.
   obtain r₃ := rel_agree (F := Whole M s₀) (F' := Whole M s₀')
@@ -1091,7 +1129,10 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
     obtain a₂ := rel_wp (F := TArgs s₀) (F' := TArgs s₀') (G := TCall s₀) (G' := TCall s₀')
       (w_rel fun a b ⟨ha, hb⟩ => ⟨_, _, _, _, _, _, ha.call, by
         rw [pub_W hq, pub_r1 hq, pub_Iv hq, cBk32, pub_V hq, pub_S hq]; exact hb.call,
-        by rw [ha.sp, hb.sp, pub_sp hq]⟩)
+        by rw [ha.sp, hb.sp, pub_sp hq],
+        (congrArg AesCtr.lo32 ha.ctr).trans ((lo32_next_of (Proof.Cmac.bytesAt_length _ _ _)
+          (Proof.Cmac.bytesAt_length _ _ _) (pub_lo hq) (fN s₀)).trans
+          (congrArg AesCtr.lo32 (by rw [pub_Iv hq, pub_N hq]; exact hb.ctr)).symm)⟩)
       (fun _ h => WP.mono (w_call h.call) fun _ c => tail_call hp h c)
       (fun _ h => WP.mono (w_call h.call) fun _ c => tail_call hp' h c)
     obtain a₃ := rel_agree (F := TCall s₀) (F' := TCall s₀') (G := Done s₀) (G' := Done s₀')

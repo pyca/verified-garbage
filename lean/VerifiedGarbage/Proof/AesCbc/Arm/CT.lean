@@ -213,9 +213,15 @@ theorem epilogue_taint : ∃ h, (taint.check (Taint.ofRegs [.r10]) (.block resto
 
 theorem nil_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+/-- The whole function, in two runs, from its loop's: the prologue and the
+epilogue are constant time, and the loop is entered in both runs or in
+neither. -/
+theorem ends_rel {M : Mode} {body : Prog isa}
     {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
-    (hq : (modeArm M).pub s₀ s₀') :
+    (hq : (modeArm M).pub s₀ s₀')
+    (hl : UPre s₀ → UPre s₀' → 0 < N s₀ →
+      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) (.loop body .ne)
+        fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
@@ -268,9 +274,9 @@ theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt
       have h0 : N s₀ = 0 := by
         have := h.2; rw [ev h.1.1.2] at this; simpa using this
       exact ⟨WP.block_nil (h0 ▸ h.1.1.1), WP.block_nil (by rw [← hN, h0]; exact h.1.2.1)⟩
-    · refine (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono (fun a b h => ⟨0, rfl, ⟨?_, h.1.1.1⟩, ⟨?_, h.1.2.1⟩⟩)
-        fun _ _ h => h
-      all_goals
+    · by_cases hn : 0 < N s₀
+      · exact (hl hp hp' hn).mono (fun a b h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+      · refine RelCT.of_false fun a b h => ?_
         have := h.2; rw [ev h.1.1.2] at this
         have : N s₀ ≠ 0 := by simpa using this
         omega
@@ -279,6 +285,14 @@ theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; rw [h.1.r10, h.2.r10, pub_S hq]) hepi
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h).seq (mid.seq epi)
+
+theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
+    (hq : (modeArm M).pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True :=
+  ends_rel h0 h0' hq fun hp hp' hn =>
+    (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono
+      (fun _ _ h => ⟨0, rfl, ⟨hn, h.1⟩, ⟨by rw [← pub_N hq]; exact hn, h.2⟩⟩) fun _ _ h => h
 
 theorem whole_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
     ConstantTime isa (modeArm M).pre (modeArm M).pub (whole body) :=
