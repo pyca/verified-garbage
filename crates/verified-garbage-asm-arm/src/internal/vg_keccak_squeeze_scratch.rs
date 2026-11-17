@@ -29,8 +29,624 @@ cmp r5, r4
 beq 23f
 b 24f
 23:
+mvn r3, #0
+subs r2, r4, r7
+adc r3, r3, #0
+cmp r3, #0
+beq 25f
+str r8, [r1, #544]
+str r9, [r1, #548]
+str r10, [r1, #552]
+str r11, [r1, #556]
+str r4, [r1, #532]
+str r6, [r1, #536]
+str r7, [r1, #540]
+bl {vg_keccak_f1600_enter}
+27:
+bl {vg_keccak_f1600_rounds}
+movw r4, #65535
+movw r5, #255
+movt r5, #255
+movw r6, #3855
+movt r6, #3855
+movw r7, #13107
+movt r7, #13107
+movw r8, #21845
+movt r8, #21845
+ldr r9, [r1, #536]
+ldr r10, [r1, #532]
+ldr r11, [r1, #540]
+ldr r2, [r1, #0]
+ldr r3, [r1, #4]
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #0]
+str r3, [r9, #4]
+ldr r2, [r1, #8]
+ldr r3, [r1, #12]
+ror r2, r2, #10
+ror r3, r3, #10
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #8]
+str r3, [r9, #12]
+ldr r2, [r1, #16]
+ldr r3, [r1, #20]
+ror r2, r2, #20
+ror r3, r3, #21
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #16]
+str r3, [r9, #20]
+ldr r2, [r1, #24]
+ldr r3, [r1, #28]
+ror r2, r2, #16
+ror r3, r3, #17
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #24]
+str r3, [r9, #28]
+ldr r2, [r1, #32]
+ldr r3, [r1, #36]
+ror r2, r2, #2
+ror r3, r3, #3
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #32]
+str r3, [r9, #36]
+ldr r2, [r1, #40]
+ldr r3, [r1, #44]
+ror r2, r2, #13
+ror r3, r3, #13
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #40]
+str r3, [r9, #44]
+ldr r2, [r1, #48]
+ldr r3, [r1, #52]
+ror r2, r2, #31
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #48]
+str r3, [r9, #52]
+ldr r2, [r1, #56]
+ldr r3, [r1, #60]
+ror r2, r2, #29
+ror r3, r3, #30
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #56]
+str r3, [r9, #60]
+ldr r2, [r1, #64]
+ldr r3, [r1, #68]
+ror r2, r2, #9
+ror r3, r3, #10
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #64]
+str r3, [r9, #68]
+add r9, r9, #72
+cmp r10, #72
+beq 28f
+ldr r2, [r1, #72]
+ldr r3, [r1, #76]
+ror r2, r2, #11
+ror r3, r3, #12
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #0]
+str r3, [r9, #4]
+ldr r2, [r1, #80]
+ldr r3, [r1, #84]
+ror r2, r2, #31
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #8]
+str r3, [r9, #12]
+ldr r2, [r1, #88]
+ldr r3, [r1, #92]
+ror r2, r2, #7
+ror r3, r3, #7
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #16]
+str r3, [r9, #20]
+ldr r2, [r1, #96]
+ldr r3, [r1, #100]
+ror r2, r2, #14
+ror r3, r3, #15
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #24]
+str r3, [r9, #28]
+add r9, r9, #32
+cmp r10, #104
+beq 210f
+ldr r2, [r1, #104]
+ldr r3, [r1, #108]
+ror r2, r2, #5
+ror r3, r3, #6
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #0]
+str r3, [r9, #4]
+ldr r2, [r1, #112]
+ldr r3, [r1, #116]
+ror r2, r2, #22
+ror r3, r3, #22
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #8]
+str r3, [r9, #12]
+ldr r2, [r1, #120]
+ldr r3, [r1, #124]
+ror r2, r2, #28
+ror r3, r3, #28
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #16]
+str r3, [r9, #20]
+ldr r2, [r1, #128]
+ldr r3, [r1, #132]
+ror r2, r2, #13
+ror r3, r3, #13
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #24]
+str r3, [r9, #28]
+add r9, r9, #32
+cmp r10, #136
+beq 212f
+ldr r2, [r1, #136]
+ldr r3, [r1, #140]
+ror r2, r2, #27
+ror r3, r3, #27
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #0]
+str r3, [r9, #4]
+add r9, r9, #8
+cmp r10, #144
+beq 214f
+ldr r2, [r1, #144]
+ldr r3, [r1, #148]
+ror r2, r2, #2
+ror r3, r3, #3
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #0]
+str r3, [r9, #4]
+ldr r2, [r1, #152]
+ldr r3, [r1, #156]
+ror r2, r2, #31
+ror r3, r3, #31
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #8]
+str r3, [r9, #12]
+ldr r2, [r1, #160]
+ldr r3, [r1, #164]
+ror r2, r2, #11
+ror r3, r3, #11
+eor r12, r3, r2, lsr #1
+and r12, r12, r8
+eor r3, r3, r12
+eor r2, r2, r12, ror #31
+eor r12, r3, r2, lsr #2
+and r12, r12, r7
+eor r3, r3, r12
+eor r2, r2, r12, ror #30
+eor r12, r3, r2, lsr #4
+and r12, r12, r6
+eor r3, r3, r12
+eor r2, r2, r12, ror #28
+eor r12, r3, r2, lsr #8
+and r12, r12, r5
+eor r3, r3, r12
+eor r2, r2, r12, ror #24
+eor r12, r3, r2, lsr #16
+and r12, r12, r4
+eor r3, r3, r12
+eor r2, r2, r12, ror #16
+str r2, [r9, #16]
+str r3, [r9, #20]
+add r9, r9, #24
+b 215f
+214:
+215:
+b 213f
+212:
+213:
+b 211f
+210:
+211:
+b 29f
+28:
+29:
+sub r11, r11, r10
+str r9, [r1, #536]
+str r10, [r1, #532]
+str r11, [r1, #540]
+mvn r12, #0
+subs r2, r10, r11
+adc r12, r12, #0
+cmp r12, #0
+bne 27b
+bl {vg_keccak_f1600_rounds}
+bl {vg_keccak_f1600_leave}
+ldr r4, [r1, #532]
+ldr r6, [r1, #536]
+ldr r7, [r1, #540]
+mov r5, #0
+ldr r8, [r1, #544]
+ldr r9, [r1, #548]
+ldr r10, [r1, #552]
+ldr r11, [r1, #556]
+b 26f
+25:
 mov r5, #0
 bl {vg_keccak_f1600}
+26:
 24:
 sub r12, r4, r5
 mvn r3, #0
@@ -40,26 +656,26 @@ and r2, r2, r3
 add r2, r12, r2
 lsr lr, r2, #2
 cmp lr, #0
-beq 25f
+beq 216f
 sub r7, r7, lr, lsl #2
 add r3, r0, r5
 add r5, r5, lr, lsl #2
-27:
+218:
 ldr r2, [r3, #0]
 str r2, [r6, #0]
 add r6, r6, #4
 add r3, r3, #4
 subs lr, lr, #1
-bne 27b
-b 26f
-25:
+bne 218b
+b 217f
+216:
 add r3, r0, r5
 ldrb r2, [r3, #0]
 strb r2, [r6, #0]
 add r6, r6, #1
 add r5, r5, #1
 sub r7, r7, #1
-26:
+217:
 cmp r7, #0
 bne 22b
 b 21f
@@ -72,6 +688,9 @@ ldr r6, [r1, #520]
 ldr r7, [r1, #524]
 ldr lr, [r1, #528]
 bx lr",
+        vg_keccak_f1600_enter = sym crate::ed448::vg_keccak_f1600_enter::vg_keccak_f1600_enter,
+        vg_keccak_f1600_rounds = sym crate::ed448::vg_keccak_f1600_rounds::vg_keccak_f1600_rounds,
+        vg_keccak_f1600_leave = sym crate::ed448::vg_keccak_f1600_leave::vg_keccak_f1600_leave,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

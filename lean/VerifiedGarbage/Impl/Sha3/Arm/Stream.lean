@@ -31,6 +31,18 @@ the first 512 bytes of `scratch` as its scratch space. Its code never writes
 left), and save their caller's values of those registers, and their return
 address (`lr`, which the calls overwrite), in `scratch[512..532)`.
 
+A call that runs two or more permutations keeps the state interleaved, in
+`scratch`, across them, rather than have each permutation interleave it and
+bring it back: `absorb`, at the start of a block with at least two blocks
+of data left, absorbs all the whole blocks that are left (`absorbBulk`), and
+`squeeze`, when a block has been used up and more than a block of output is
+left, squeezes the whole blocks of it (`squeezeBulk`). They call the three
+parts of the permutation (`Impl.Sha3.Arm.enterCall`, `roundsCall`,
+`leaveCall`) and XOR a block's lanes into the interleaved state, or copy
+them out of it, lane by lane (`ladder`). The rounds preserve no register
+but `r0` and `r1`, so there the variables are kept in `scratch[532..544)`,
+and our caller's `r8`–`r11` in `scratch[544..560)`.
+
 Byte `pos` of the state is addressed as `[r3]` with `r3 = state + pos`,
 and the words of the state and of the data or output at any address, as
 the model's `ldr` and `str` allow. Every comparison is a `cmp` or `subs`
@@ -43,7 +55,7 @@ pointers, `rate`, `pos` and the lengths.
 namespace VG.Impl.Sha3.Arm.Stream
 
 open VG.Arm
-open VG.Impl.Sha3.Arm (permute)
+open VG.Impl.Sha3.Arm (permute enterCall roundsCall leaveCall masks xorSeg copySeg)
 
 /-- The callee-saved registers we use (and `lr`), and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) := [(.r4, 512), (.r5, 516), (.r6, 520), (.r7, 524), (.lr, 528)]
@@ -84,6 +96,54 @@ def wordsPre : List Instr :=
   [.dp .sub .r7 .r7 (.shifted .lr .lsl 2), .dp .add .r3 .r0 (.reg .r5),
     .dp .add .r5 .r5 (.shifted .lr .lsl 2)]
 
+/-! ## Several blocks between one `enter` and one `leave`
+
+`enter` once, then for each block the rounds (`vg_keccak_f1600_rounds`) and
+the block's lanes XORed into the interleaved state (`xorSeg`) or copied out
+of it (`copySeg`), and `leave` once. The rounds change every register but
+`r0` and `r1`, so the variables are kept in `scratch` across them. -/
+
+/-- Where `scratch` keeps `rate`, `data` or `out`, and the bytes of it left. -/
+def vRate : Nat := 532
+def vPtr : Nat := 536
+def vLeft : Nat := 540
+
+/-- Our caller's `r8`–`r11`, which `enter` and the rounds change, and where
+they are saved in `scratch`. -/
+def savedHi : List (Reg × Nat) := [(.r8, 544), (.r9, 548), (.r10, 552), (.r11, 556)]
+
+/-- Before `enter`: save `r8`–`r11` and the variables. -/
+def bulkSave : List Instr :=
+  savedHi.map (fun (r, d) => .str r .r1 d) ++ [.str .r4 .r1 vRate, .str .r6 .r1 vPtr, .str .r7 .r1 vLeft]
+
+/-- Before a block's lanes: the masks of the exchanges, `r9` = `data` or
+`out`, `r10` = `rate`, `r11` = the bytes left. -/
+def bulkLoad : List Instr := masks ++ [.ldr .r9 .r1 vPtr, .ldr .r10 .r1 vRate, .ldr .r11 .r1 vLeft]
+
+/-- After a block's lanes, which advanced `r9`: take the block off the bytes
+left, and store the variables. -/
+def bulkStore : List Instr :=
+  [.dp .sub .r11 .r11 (.reg .r10), .str .r9 .r1 vPtr, .str .r10 .r1 vRate, .str .r11 .r1 vLeft]
+
+/-- After `leave`: the variables in their registers, at the start of a
+block, and our caller's `r8`–`r11`. -/
+def bulkRestore : List Instr :=
+  ([.ldr .r4 .r1 vRate, .ldr .r6 .r1 vPtr, .ldr .r7 .r1 vLeft, .mov .r5 (.imm 0)] : List Instr) ++
+    savedHi.map fun (r, d) => .ldr r .r1 d
+
+/-- The lanes `a ≤ j < b` of a block (`seg a b`, with the block's lane `a`
+at `r9`), then `r9` after them; and `rest` unless the rate is `8 b`. -/
+def rung (seg : Nat → Nat → List Instr) (a b : Nat) (rest : Prog isa) : Prog isa :=
+  .seq (.block (seg a b ++
+      [.dp .add .r9 .r9 (.imm (BitVec.ofNat 32 (8 * (b - a)))), .cmp .r10 (.imm (BitVec.ofNat 32 (8 * b)))]))
+    (.ite .eq (.block []) rest)
+
+/-- The lanes of a block of `rate` (`r10`) bytes, for the rates of
+`Spec.Sha3.rates`: 9, 13, 17, 18 or 21 lanes. -/
+def ladder (seg : Nat → Nat → List Instr) : Prog isa :=
+  rung seg 0 9 (rung seg 9 13 (rung seg 13 17 (rung seg 17 18
+    (.block (seg 18 21 ++ [.dp .add .r9 .r9 (.imm (BitVec.ofNat 32 (8 * (21 - 18))))])))))
+
 /-! ## `absorb` -/
 
 /-- A byte of data XORed into the state; Z is set if that completes the block. -/
@@ -98,12 +158,37 @@ def absorbWord : List Instr :=
   [.ldr .r2 .r6 0, .ldr .r12 .r3 0, .dp .eor .r2 .r2 (.reg .r12), .str .r2 .r3 0,
     .dp .add .r6 .r6 (.imm 4), .dp .add .r3 .r3 (.imm 4), .subs .lr .lr (.imm 1)]
 
-def absorbBody : Prog isa :=
+/-- The bytes that are left of the block, or of the data if they are fewer,
+XORed into the state, which is permuted if they complete the block. -/
+def absorbStep : Prog isa :=
   .seq (.block words)
   (.seq (.ite .eq (.block absorbByte)
       (.seq (.block wordsPre) (.seq (.loop (.block absorbWord) .ne) (.block [.cmp .r5 (.reg .r4)]))))
-    (.seq (.ite .eq (.seq (.block [.mov .r5 (.imm 0)]) permuteCall) (.block []))
-      (.block [.cmp .r7 (.imm 0)])))
+    (.ite .eq (.seq (.block [.mov .r5 (.imm 0)]) permuteCall) (.block [])))
+
+/-- Z is set if the position is 0 and at least two blocks of data are left:
+`r3` is zero if `r7 - 2 r4` does not borrow (its carry is set) and `r5` is
+zero. -/
+def absorbBulkTest : List Instr :=
+  [.mvn .r3 (.imm 0), .subs .r2 .r7 (.shifted .r4 .lsl 1), .adc .r3 .r3 (.imm 0),
+    .dp .orr .r3 .r3 (.reg .r5), .cmp .r3 (.imm 0)]
+
+/-- Z is set if a block of data is left. -/
+def absorbBlockTest : List Instr :=
+  [.ldr .r2 .r1 vLeft, .ldr .r3 .r1 vRate, .mvn .r12 (.imm 0), .subs .r2 .r2 (.reg .r3),
+    .adc .r12 .r12 (.imm 0), .cmp .r12 (.imm 0)]
+
+/-- The whole blocks of the data, from the start of a block: each XORed into
+the interleaved state, which the rounds then permute. -/
+def absorbBulk : Prog isa :=
+  .seq (.block bulkSave) (.seq enterCall
+    (.seq (.loop (.seq (.block bulkLoad) (.seq (ladder xorSeg) (.seq (.block bulkStore)
+        (.seq roundsCall (.block absorbBlockTest))))) .eq)
+      (.seq leaveCall (.block bulkRestore))))
+
+def absorbBody : Prog isa :=
+  .seq (.block absorbBulkTest)
+    (.seq (.ite .eq absorbBulk absorbStep) (.block [.cmp .r7 (.imm 0)]))
 
 def absorb : Prog isa :=
   .seq (.block setup) (.seq (.ite .eq (.block []) (.loop absorbBody .ne)) (.block epilogue))
@@ -130,9 +215,29 @@ def squeezeWord : List Instr :=
   [.ldr .r2 .r3 0, .str .r2 .r6 0, .dp .add .r6 .r6 (.imm 4), .dp .add .r3 .r3 (.imm 4),
     .subs .lr .lr (.imm 1)]
 
+/-- Z is clear if more than a block of output is left: `r3` is zero if
+`r4 - r7` does not borrow. -/
+def squeezeBulkTest : List Instr :=
+  [.mvn .r3 (.imm 0), .subs .r2 .r4 (.reg .r7), .adc .r3 .r3 (.imm 0), .cmp .r3 (.imm 0)]
+
+/-- The same, of `r10` and `r11`. -/
+def squeezeBlockTest : List Instr :=
+  [.mvn .r12 (.imm 0), .subs .r2 .r10 (.reg .r11), .adc .r12 .r12 (.imm 0), .cmp .r12 (.imm 0)]
+
+/-- When a block has been used up and more than a block of output is left:
+the rounds permute the interleaved state, and a block of it is copied out,
+while more than a block is left; and the rounds permute it once more, for
+the output that is left. -/
+def squeezeBulk : Prog isa :=
+  .seq (.block bulkSave) (.seq enterCall
+    (.seq (.loop (.seq roundsCall (.seq (.block bulkLoad) (.seq (ladder copySeg)
+        (.block (bulkStore ++ squeezeBlockTest))))) .ne)
+      (.seq roundsCall (.seq leaveCall (.block bulkRestore)))))
+
 def squeezeBody : Prog isa :=
   .seq (.block [.cmp .r5 (.reg .r4)])
-  (.seq (.ite .eq (.seq (.block [.mov .r5 (.imm 0)]) permuteCall) (.block []))
+  (.seq (.ite .eq (.seq (.block squeezeBulkTest)
+      (.ite .eq (.seq (.block [.mov .r5 (.imm 0)]) permuteCall) squeezeBulk)) (.block []))
     (.seq (.block words)
       (.seq (.ite .eq (.block squeezeByte) (.seq (.block wordsPre) (.loop (.block squeezeWord) .ne)))
         (.block [.cmp .r7 (.imm 0)]))))

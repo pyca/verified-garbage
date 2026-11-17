@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Sha3.Arm.Round
 public import VerifiedGarbage.Proof.Sha3.Lanes
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Contract
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Sha3.Lanes
 meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 meta import VerifiedGarbage.Spec.Sha3.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Impl.Sha3.Arm.Stream
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -352,11 +354,20 @@ end
 /-!
 # Keccak-f[1600] on ARMv7: the whole function
 
-The prologue saves the callee-saved registers, interleaves the lanes of the
-state into the scratch space (`enter_ok`) and stores the round constants
-there; each iteration of the loop runs two rounds (`round_ok`), from the
-state in the scratch space to the one at `state` and back; the epilogue
-brings the lanes back to `state` (`leave_ok`) and restores the registers.
+The function saves the callee-saved registers, and calls three functions
+of its own: `enter` interleaves the lanes of the state into the scratch
+space (`enter_ok`) and stores the round constants there; each iteration of
+the loop of `rounds` runs two rounds (`round_ok`), from the state in the
+scratch space to the one at `state` and back; `leave` brings the lanes back
+to `state` (`leave_ok`). Then it restores the registers.
+
+The three keep `r0`, `r1` and `lr`, but not the callee-saved registers, so
+they are not called through a contract of the calling convention
+(`WP.call`): `call_kept` runs a call from what the called code does from
+the state it is entered in, with its permissions narrowed to the state and
+the scratch space (`enter_correct`, `rounds_correct`, `leave_correct`). The
+sponge's functions call them too (`enter_call`, `rounds_call`,
+`leave_call`), to run several permutations on the interleaved state.
 -/
 
 namespace VG.Proof.Sha3.Arm
@@ -503,12 +514,12 @@ end Pre
 
 /-! ## What the scratch space holds -/
 
-/-- The round constants, interleaved. -/
-def Aux (s₀ : State) (m : Mem) : Prop :=
-  ∀ i < 48, m.readW (wordAddr (scp s₀) (50 + i)) 32 = half (i % 2) (RC (i / 2))
+/-- The round constants, interleaved, at `scr`. -/
+def RCs (scr : BitVec 32) (m : Mem) : Prop :=
+  ∀ i < 48, m.readW (wordAddr scr (50 + i)) 32 = half (i % 2) (RC (i / 2))
 
-/-- The saved registers. -/
-def Saved (s₀ : State) (m : Mem) : Prop := ∀ p ∈ saved, m.readW (A (scp s₀) p.2) 32 = s₀.gpr p.1
+/-- The round constants, in the scratch space. -/
+def Aux (s₀ : State) (m : Mem) : Prop := RCs (scp s₀) m
 
 theorem saved_ok : ∀ p ∈ saved, p.1 ≠ .r1 ∧ p.2 < 4096 ∧ 396 ≤ p.2 ∧ p.2 + 4 ≤ 432 := by decide
 
@@ -525,12 +536,6 @@ theorem Aux.rc {s₀ : State} {m : Mem} (ha : Aux s₀ m) {r : Nat} (hr : r < 24
   rw [← rc_addr, show (2 * r + 0) % 2 = 0 by omega_arith, show (2 * r + 0) / 2 = r by omega_arith] at h0
   rw [← rc_addr, show (2 * r + 1) % 2 = 1 by omega_arith, show (2 * r + 1) / 2 = r by omega_arith] at h1
   exact ⟨h0, h1⟩
-
-theorem Saved.keep {s₀ : State} {m m' : Mem} (hs : Saved s₀ m)
-    (hk : ∀ d, 396 ≤ d → d + 4 ≤ 432 → m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32) :
-    Saved s₀ m' := fun p hp => by
-  obtain ⟨-, -, h1, h2⟩ := saved_ok p hp
-  rw [hk _ h1 h2]; exact hs p hp
 
 theorem readW_writeW_A (m : Mem) {b : BitVec 32} {N : Nat} (hfit : b.toNat + N ≤ 2 ^ 32) (v : BitVec 32)
     {d e : Nat} (hd : d + 4 ≤ N) (he : e + 4 ≤ N) (hs : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -567,24 +572,26 @@ theorem stateAt_eq {b : BitVec 32} (hfit : b.toNat + 200 ≤ 2 ^ 32) {m : Mem} {
 
 /-! ## The rounds -/
 
-/-- The loop's invariant, before round `r`. -/
-structure LInv (s₀ : State) (r : Nat) (s : State) : Prop where
+/-- The loop's invariant, before round `r`, from the state `K`: `M` is the
+memory when the loop is entered, whose words after the pointer to the round
+constants are kept. -/
+structure LInv (s₀ : State) (K : KState) (M : Mem) (r : Nat) (s : State) : Prop where
   r0 : s.gpr .r0 = stp s₀
   r1 : s.gpr .r1 = scp s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   ptr : s.mem.readW (A (scp s₀) rcPtr) 32 = rcp s₀ r
-  state : Stored s.mem (cur s₀ r) ((List.range r).foldl rnd (A₀ s₀))
+  state : Stored s.mem (cur s₀ r) ((List.range r).foldl rnd K)
   aux : Aux s₀ s.mem
-  saved : Saved s₀ s.mem
-  frame : Frame [regR (stp s₀) 200, regR (scp s₀) 512] s₀.mem s.mem
+  kept : ∀ d, 396 ≤ d → d + 4 ≤ 512 → s.mem.readW (A (scp s₀) d) 32 = M.readW (A (scp s₀) d) 32
 
-theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src dst : Reg}
+theorem round_step {s₀ : State} (hp : Pre s₀) {K : KState} {M : Mem} {r : Nat} (hr : r < 24)
+    {src dst : Reg}
     (hc : Straight.checkN Bitslice.Anf.anf32 (cfg src dst) atoms (roundCore src dst) env₀ post = true)
-    (hsd : (src = .r0 ∧ dst = .r1) ∨ (src = .r1 ∧ dst = .r0)) {s : State} (hL : LInv s₀ r s)
+    (hsd : (src = .r0 ∧ dst = .r1) ∨ (src = .r1 ∧ dst = .r0)) {s : State} (hL : LInv s₀ K M r s)
     (h0 : s.gpr src = cur s₀ r) (hd : s.gpr dst = oth s₀ r) :
-    WP isa (.block (round src dst)) s (LInv s₀ (r + 1)) := by
+    WP isa (.block (round src dst)) s (LInv s₀ K M (r + 1)) := by
   have hD : oth s₀ r = stp s₀ ∨ oth s₀ r = scp s₀ := by
     rcases hsd with ⟨-, rfl⟩ | ⟨-, rfl⟩
     · exact .inr (hd.symm.trans hL.r1)
@@ -594,27 +601,20 @@ theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src d
     · exact hp.ok_sc hL.wr hL.r0 hL.r1 rfl rfl (by decide) (by decide)
     · exact hp.ok_st hL.wr hL.r0 hL.r1
   have E : Env s.wr (oth s₀ r) (scp s₀) (rcp s₀ r) := hL.wr ▸ hp.env_of hD hr
-  refine WP.mono (round_ok hc hsd (K := (List.range r).foldl rnd (A₀ s₀)) (rc := RC r) s hok E hd hL.r1
+  refine WP.mono (round_ok hc hsd (K := (List.range r).foldl rnd K) (rc := RC r) s hok E hd hL.r1
     (by rw [h0]; exact hL.state) hL.ptr
     (hL.aux.rc hr)) fun s' ⟨hl, hf, hptr, hq, hrd, hwr, hsp⟩ => ?_
   refine ⟨by rw [hq .r0 (by simp), hL.r0], by rw [hq .r1 (by simp), hL.r1], hrd.trans hL.rd,
     hwr.trans hL.wr, hsp.trans hL.sp, by rw [hptr, rcp_succ], ?_,
     hL.aux.keep fun d hd hd' => hp.keep_round hD hf hd (by omega_arith) (.inl hd'),
-    hL.saved.keep fun d hd hd' => hp.keep_round hD hf (by omega_arith) (by omega_arith) (.inr hd), ?_⟩
-  · rw [cur_succ, foldl_succ, ← outState_eq]; exact hl
-  · refine hL.frame.trans (hf.sub fun R hR => ?_)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
-    rcases hR with rfl | rfl
-    · rcases hD with e | e <;> rw [e]
-      · exact ⟨regR (stp s₀) 200, by simp, fun _ h => h⟩
-      · exact ⟨regR (scp s₀) 512, by simp, Region.sub_prefix (by omega_arith)⟩
-    · refine ⟨regR (scp s₀) 512, by simp, ?_⟩
-      rw [hp.scA (by decide)]; exact sub_offset (by decide) (by decide)
+    fun d hd hd' => (hp.keep_round hD hf (by omega_arith) hd' (.inr hd)).trans (hL.kept d hd hd')⟩
+  rw [cur_succ, foldl_succ, ← outState_eq]; exact hl
 
-theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : State} (hL : LInv s₀ (2 * t) s) :
+theorem body_ok {s₀ : State} (hp : Pre s₀) {K : KState} {M : Mem} {t : Nat} (ht : t < 12) {s : State}
+    (hL : LInv s₀ K M (2 * t) s) :
     WP isa (.block body) s fun s' =>
-      (eval .ne s' = some false ∧ LInv s₀ 24 s') ∨
-      (eval .ne s' = some true ∧ t + 1 < 12 ∧ LInv s₀ (2 * (t + 1)) s') := by
+      (eval .ne s' = some false ∧ LInv s₀ K M 24 s') ∨
+      (eval .ne s' = some true ∧ t + 1 < 12 ∧ LInv s₀ K M (2 * (t + 1)) s') := by
   unfold body
   rw [WP.block_append_iff]
   refine WP.mono (round_step hp (r := 2 * t) (by omega_arith) coreA_ok (.inr ⟨rfl, rfl⟩) hL
@@ -622,7 +622,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : Stat
   rw [WP.block_append_iff]
   refine WP.mono (round_step hp (r := 2 * t + 1) (by omega_arith) coreB_ok (.inl ⟨rfl, rfl⟩) h₁
     (by rw [h₁.r0, (cur_odd s₀ t).1]) (by rw [h₁.r1, (cur_odd s₀ t).2])) fun s₂ h₂ => ?_
-  have h₂' : LInv s₀ (2 * (t + 1)) s₂ := by rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega_arith]; exact h₂
+  have h₂' : LInv s₀ K M (2 * (t + 1)) s₂ := by
+    rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega_arith]; exact h₂
   refine wp_ldr (a := A (scp s₀) rcPtr) (by decide) (by rw [h₂.r1])
     (by rw [h₂.rd, h₂.wr]; exact mem_rd (hp.scr_in (by decide))) fun s₃ u₃ => ?_
   refine wp_sub (op2_reg _ _) fun s₄ u₄ => wp_cmp (op2_imm (by decide)) fun s₅ u₅ hz => WP.block_nil ?_
@@ -632,8 +633,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : Stat
     rw [BitVec.add_comm, BitVec.add_sub_cancel, show 200 + 8 * (2 * (t + 1)) = 216 + 16 * t by omega_arith]
   rw [hT, show (392 : BitVec 32) = BitVec.ofNat 32 392 from rfl,
     VG.Proof.MdStream.Arm.sub_beq (by omega_arith) (by omega_arith)] at hz
-  have hs₅ : LInv s₀ (2 * (t + 1)) s₅ := by
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  have hs₅ : LInv s₀ K M (2 * (t + 1)) s₅ := by
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₅.gpr, u₄.other .r0 (by decide), u₃.other .r0 (by decide), h₂'.r0]
     · rw [u₅.gpr, u₄.other .r1 (by decide), u₃.other .r1 (by decide), h₂'.r1]
     · rw [u₅.rd, u₄.rd, u₃.rd, h₂'.rd]
@@ -642,14 +643,62 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : Stat
     · rw [u₅.mem, u₄.mem, u₃.mem, h₂'.ptr]
     · rw [u₅.mem, u₄.mem, u₃.mem]; exact h₂'.state
     · rw [u₅.mem, u₄.mem, u₃.mem]; exact h₂'.aux
-    · rw [u₅.mem, u₄.mem, u₃.mem]; exact h₂'.saved
-    · rw [u₅.mem, u₄.mem, u₃.mem]; exact h₂'.frame
+    · rw [u₅.mem, u₄.mem, u₃.mem]; exact h₂'.kept
   by_cases hlast : t + 1 = 12
   · refine .inl ⟨by rw [eval_ne, hz, decide_eq_true (by omega_arith)]; rfl, ?_⟩
     rw [show 24 = 2 * (t + 1) by omega_arith]; exact hs₅
   · exact .inr ⟨by rw [eval_ne, hz, decide_eq_false (by omega_arith)]; rfl, by omega_arith, hs₅⟩
 
-/-! ## The prologue -/
+/-- The rounds, as a function: from the state `K`, interleaved in the
+scratch space with the round constants, to `keccakF K`. They keep `lr`, and
+the words of the scratch space after the pointer to the round constants but
+the one where they save `lr`. -/
+theorem rounds_correct {s₀ : State} (hp : Pre s₀) {K : KState} (hK : Stored s₀.mem (scp s₀) K)
+    (ha : Aux s₀ s₀.mem) :
+    WP isa rounds s₀ fun s' => s'.gpr .lr = s₀.gpr .lr ∧ Stored s'.mem (scp s₀) (keccakF K) ∧
+      Aux s₀ s'.mem ∧
+      ∀ d, 396 ≤ d → d + 4 ≤ 432 → s'.mem.readW (A (scp s₀) d) 32 = s₀.mem.readW (A (scp s₀) d) 32 := by
+  have fC := hp.fitC
+  unfold rounds
+  refine WP.seq ?_
+  refine wp_str (a := A (scp s₀) lrSave) (by decide) rfl (hp.scr_in (by decide)) fun s₁ u₁ => ?_
+  refine wp_add (op2_imm (by decide)) fun s₂ u₂ => ?_
+  refine wp_str (a := A (scp s₀) rcPtr) (by decide) (by rw [u₂.other .r1 (by decide), u₁.gpr])
+    (by rw [u₂.wr, u₁.wr]; exact hp.scr_in (by decide)) fun s₃ u₃ => WP.block_nil ?_
+  have hm : s₃.mem = (s₀.mem.writeW (A (scp s₀) lrSave) (s₀.gpr .lr)).writeW (A (scp s₀) rcPtr) (rcp s₀ 0) := by
+    rw [u₃.mem, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr]; rfl
+  have keep : ∀ d, d + 4 ≤ 512 → d + 4 ≤ 392 ∨ 396 ≤ d → d + 4 ≤ 432 ∨ 436 ≤ d →
+      s₃.mem.readW (A (scp s₀) d) 32 = s₀.mem.readW (A (scp s₀) d) 32 := fun d hd' h₁ h₂ => by
+    rw [hm, readW_writeW_A _ fC _ hd' (by decide) (by simp only [rcPtr]; omega_arith),
+      readW_writeW_A _ fC _ hd' (by decide) (by simp only [lrSave]; omega_arith)]
+  have hlr : s₃.mem.readW (A (scp s₀) lrSave) 32 = s₀.gpr .lr := by
+    rw [hm, readW_writeW_A _ fC _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  have h₀ : LInv s₀ K s₃.mem 0 s₃ := by
+    refine ⟨by rw [u₃.gpr, u₂.other .r0 (by decide), u₁.gpr], by rw [u₃.gpr, u₂.other .r1 (by decide), u₁.gpr],
+      by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.sp, u₂.sp, u₁.sp],
+      by rw [hm, Mem.readW_writeW_self32], fun j hj h hh => ?_, fun i hi => ?_, fun _ _ _ => rfl⟩
+    · have hc : cur s₀ 0 = scp s₀ := by simp [cur]
+      rw [hc, wordAddr_eq, keep _ (by omega_arith) (.inl (by omega_arith)) (.inl (by omega_arith)), ← wordAddr_eq]
+      simp only [List.range_zero, List.foldl_nil]
+      exact hK j hj h hh
+    · rw [wordAddr_eq, keep _ (by omega_arith) (.inl (by omega_arith)) (.inl (by omega_arith)), ← wordAddr_eq]
+      exact ha i hi
+  refine WP.seq (WP.mono (Q := LInv s₀ K s₃.mem 24) ?_ fun s₄ h₄ => ?_)
+  · let Inv : Nat → State → Prop := fun n s => ∃ t, n = 12 - t ∧ t < 12 ∧ LInv s₀ K s₃.mem (2 * t) s
+    refine WP.loop (M := isa) Inv (fun n s ⟨t, hn, ht, hL⟩ => ?_) 12 s₃ ⟨0, rfl, by omega_arith, h₀⟩
+    refine WP.mono (body_ok hp ht hL) fun s' h => ?_
+    rcases h with ⟨he, hL'⟩ | ⟨he, ht', hL'⟩
+    · exact .inl ⟨he, hL'⟩
+    · exact .inr ⟨he, 12 - (t + 1), by omega_arith, t + 1, rfl, ht', hL'⟩
+  have hc : cur s₀ 24 = scp s₀ := by simp [cur]
+  refine wp_ldr (a := A (scp s₀) lrSave) (by decide) (by rw [h₄.r1])
+    (by rw [h₄.rd, h₄.wr]; exact mem_rd (hp.scr_in (by decide))) fun s₅ u₅ => WP.block_nil ?_
+  refine ⟨by rw [u₅.gpr, h₄.kept _ (by decide) (by decide), hlr], ?_, by rw [u₅.mem]; exact h₄.aux,
+    fun d hd hd' => by
+      rw [u₅.mem, h₄.kept d hd (by omega_arith), keep d (by omega_arith) (.inr hd) (.inl hd')]⟩
+  rw [u₅.mem, ← hc]; exact h₄.state
+
+/-! ## To and from the interleaved lanes -/
 
 /-- The memory after storing the registers `l` (values `g`) at `b + offset`. -/
 def saveMemA (m : Mem) (b : BitVec 32) (g : Reg → BitVec 32) : List (Reg × Nat) → Mem
@@ -692,53 +741,208 @@ theorem saveMemA_saved (m : Mem) {b : BitVec 32} (hfit : b.toNat + 512 ≤ 2 ^ 3
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := omega_arith) only [saved, saveMemA, Mem.readW_writeW_self32, readW_writeW_A (hfit := hfit)]
 
-theorem prologue_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block prologue) s₀ (LInv s₀ 0) := by
-  have fC := hp.fitC
-  have fS := hp.fitS
-  rw [show prologue = saved.map (fun p => Instr.str p.1 .r1 p.2) ++
-    (enter ++ [.dp .add T .r1 (.imm 200), .str T .r1 rcPtr]) from rfl]
-  refine saveA_ok saved s₀ _ (fun p hp' => ⟨(saved_ok p hp').2.1, hp.scr_in (by have := saved_ok p hp'; omega)⟩)
-    fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
-  have f₁ : Frame [regR (scp s₀) 512] s₀.mem s₁.mem := by
-    rw [m₁]; exact saveMemA_frame fC _ _ _ (fun p hp' => by have := saved_ok p hp'; omega)
-  obtain ⟨s₂, hs₂, hst, hrc, rd₂, wr₂, sp₂, g0, g1, f₂⟩ :=
-    enter_ok (hp.ok_sc (c := cfgIn) wr₁ (by rw [g₁]) (by rw [g₁]) rfl rfl (by decide) (by decide))
-  rw [g₁] at hst hrc f₂ g0 g1
-  rw [WP.block_append_iff]
-  refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
-  refine wp_add (op2_imm (by decide)) fun s₃ u₃ => ?_
-  refine wp_str (a := A (scp s₀) rcPtr) (by decide) (by rw [u₃.other .r1 (by decide), g1])
-    (by rw [u₃.wr, wr₂, wr₁]; exact hp.scr_in (by decide)) fun s₄ u₄ => WP.block_nil ?_
-  have hm : s₄.mem = s₂.mem.writeW (A (scp s₀) rcPtr) (rcp s₀ 0) := by
-    rw [u₄.mem, u₃.mem, u₃.gpr, g1]; rfl
-  have keep : ∀ d, d + 4 ≤ 512 → d + 4 ≤ 392 ∨ 396 ≤ d →
-      s₄.mem.readW (A (scp s₀) d) 32 = s₂.mem.readW (A (scp s₀) d) 32 := fun d hd' hne => by
-    rw [hm]; exact readW_writeW_A _ fC _ hd' (by decide) (by simp only [rcPtr]; omega_arith)
-  have keep₂ : ∀ d, 396 ≤ d → d + 4 ≤ 512 →
-      s₂.mem.readW (A (scp s₀) d) 32 = s₁.mem.readW (A (scp s₀) d) 32 := fun d hd hd' =>
-    f₂.readW (Region.contains_self _ _) (by simpa using hp.off_scr (by omega_arith) hd' (by decide)) (by decide)
-  refine ⟨by rw [u₄.gpr, u₃.other .r0 (by decide), g0], by rw [u₄.gpr, u₃.other .r1 (by decide), g1],
-    by rw [u₄.rd, u₃.rd, rd₂, rd₁], by rw [u₄.wr, u₃.wr, wr₂, wr₁], by rw [u₄.sp, u₃.sp, sp₂, sp₁],
-    by rw [hm, Mem.readW_writeW_self32], fun j hj h hh => ?_, fun i hi => ?_, ?_, ?_⟩
-  · have hc : cur s₀ 0 = scp s₀ := by simp [cur]
-    rw [hc, wordAddr_eq, keep _ (by omega_arith) (.inl (by omega_arith)), ← wordAddr_eq, hst j hj h hh, lane_words,
-      rd64_frame f₁ (fun r hr => by simp at hr; subst hr; exact hp.disj) fS (by omega_arith),
-      ← stateAt_get fS _ hj]
-    simp only [List.range_zero, List.foldl_nil]
-    exact congrArg (stw · j h) (getElem!_pos _ j hj).symm
-  · rw [wordAddr_eq, keep _ (by omega_arith) (.inl (by omega_arith)), ← wordAddr_eq, hrc i hi]
-  · intro p hp'
-    obtain ⟨-, -, a, b⟩ := saved_ok p hp'
-    rw [keep _ (by omega_arith) (.inr a), keep₂ _ a (by omega_arith), m₁]
-    exact saveMemA_saved _ fC _ p hp'
-  · rw [hm]
-    refine ((f₁.trans (f₂.sub fun R hR => ?_)).mono (by simp)).writeW (r := regR (scp s₀) 512) (by simp) _
-      (contains_A fC (by decide))
-    simp only [List.mem_singleton] at hR
-    subst hR
-    exact ⟨regR (scp s₀) 512, by simp, Region.sub_prefix (by decide)⟩
+theorem enter_lr : ∀ i ∈ instrs (.block enter : Prog isa), clobbers i .lr = false := by
+  have : ((instrs enterCode.lit).all fun i => !clobbers i .lr) = true := by lit_decide
+  rw [enter_code] at this
+  intro i hi
+  simpa using List.all_eq_true.mp this i hi
 
-/-! ## The epilogue -/
+theorem leave_lr : ∀ i ∈ instrs (.block leave : Prog isa), clobbers i .lr = false := by
+  have : ((instrs leaveCode.lit).all fun i => !clobbers i .lr) = true := by lit_decide
+  rw [leave_code] at this
+  intro i hi
+  simpa using List.all_eq_true.mp this i hi
+
+/-- Code keeps a register that none of its instructions writes. -/
+theorem wp_keeps {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, clobbers i r = false)
+    (hn : c.noCalls = true) {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun s' => s'.gpr r = s.gpr r ∧ Q s' := by
+  obtain ⟨t, s', he, hq⟩ := h
+  exact ⟨t, s', he, Exec.gpr hc he (.inl hn), hq⟩
+
+/-- `enter`, as a function: the state, interleaved in the scratch space,
+and the round constants. -/
+theorem enter_correct {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block enter) s₀ fun s' => s'.gpr .lr = s₀.gpr .lr ∧ Stored s'.mem (scp s₀) (A₀ s₀) ∧
+      Aux s₀ s'.mem ∧ Frame [regR (scp s₀) 392] s₀.mem s'.mem := by
+  refine wp_keeps enter_lr rfl ?_
+  obtain ⟨s₂, hs₂, hst, hrc, -, -, -, -, -, f₂⟩ :=
+    enter_ok (hp.ok_sc (c := cfgIn) rfl rfl rfl rfl rfl (by decide) (by decide))
+  refine WP.of_runBlock ⟨s₂, hs₂, fun j hj h hh => ?_, hrc, f₂⟩
+  rw [hst j hj h hh, lane_words, ← stateAt_get hp.fitS _ hj]
+  exact congrArg (stw · j h) (getElem!_pos _ j hj).symm
+
+/-- `leave`, as a function: the state that is interleaved in the scratch
+space, at `state`. -/
+theorem leave_correct {s₀ : State} (hp : Pre s₀) {K : KState} (hK : Stored s₀.mem (scp s₀) K) :
+    WP isa (.block leave) s₀ fun s' => s'.gpr .lr = s₀.gpr .lr ∧
+      stateAt s'.mem (State.addr (stp s₀)) = K ∧ Frame [regR (stp s₀) 200] s₀.mem s'.mem := by
+  refine wp_keeps leave_lr rfl ?_
+  obtain ⟨s₁, hs₁, hl, -, -, -, -, -, f₁⟩ := leave_ok (hp.ok_st rfl rfl rfl) hK
+  exact WP.of_runBlock ⟨s₁, hs₁, stateAt_eq hp.fitS fun j hj => by rw [← lane_words, hl j hj], f₁⟩
+
+/-! ## Calling them -/
+
+/-- A call of code that keeps `lr`: from a state `s` in which `pre` holds
+on entry, with the permissions narrowed to `rd` and `wr`, the call returns
+in a state that has the permissions and stack pointer of `s`, and every
+register other than `lr` and `r12` that the code's instructions never
+write; that differs from `s` in memory only within `wr`; and that satisfies
+`post` (on the narrowed states). Unlike `WP.call`, it asks nothing of the
+callee-saved registers. -/
+theorem call_kept {n : String} {c : Prog isa} {pre : State → Prop} {post : State → State → Prop}
+    (hv : ∀ s, pre s → WP isa c s fun s' => s'.gpr .lr = s.gpr .lr ∧ post s s')
+    {s : State} {rd wr : List Region} (hpre : pre (s.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame wr s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, clobbers i r = false) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
+      post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s')
+    (hn : c.noFrames = true) : WP isa (.call n c) s Q := by
+  obtain ⟨t, s₁, he, hlr, hpost⟩ := hv _ hpre
+  obtain ⟨hr, hwr, hsp, hf⟩ := Exec.regions he hn
+  simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.callEntry_mem] at hr hwr hf
+  have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  simp only [State.withRegions_withRegions] at he'
+  rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl] at he'
+  have hret : isa.ret s.callEntry (s₁.withRegions s.rd s.wr) = some (s₁.withRegions s.rd s.wr) := by
+    simp only [State.withRegions_gpr] at hlr
+    simp only [isa, ret, State.withRegions_gpr, hlr, ite_true]
+  refine ⟨_, _, .call (call_callEntry s) he' hret, hQ _ rfl rfl hsp hf (fun r hr' hl => ?_) ?_⟩
+  · rw [Exec.gpr hr' he' (.inr hl), State.callEntry_gpr s hl]
+  · have : (s₁.withRegions s.rd s.wr).withRegions rd wr = s₁ := by
+      rw [State.withRegions_withRegions, ← hr, ← hwr]; rfl
+    rw [this]; exact hpost
+
+theorem permute_r0 : ∀ i ∈ instrs permute, clobbers i .r0 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r0) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  intro i hi
+  simpa using List.all_eq_true.mp this i hi
+
+theorem permute_r1 : ∀ i ∈ instrs permute, clobbers i .r1 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r1) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  intro i hi
+  simpa using List.all_eq_true.mp this i hi
+
+theorem mem_enter {i : Instr} (h : i ∈ instrs (.block enter : Prog isa)) : i ∈ instrs Impl.Sha3.Arm.permute := by
+  simp only [Impl.Sha3.Arm.permute, enterCall, instrs, List.mem_append]
+  exact .inr (.inl h)
+
+theorem mem_rounds {i : Instr} (h : i ∈ instrs rounds) : i ∈ instrs Impl.Sha3.Arm.permute := by
+  simp only [Impl.Sha3.Arm.permute, roundsCall, instrs, List.mem_append]
+  exact .inr (.inr (.inl h))
+
+theorem mem_leave {i : Instr} (h : i ∈ instrs (.block leave : Prog isa)) : i ∈ instrs Impl.Sha3.Arm.permute := by
+  simp only [Impl.Sha3.Arm.permute, leaveCall, instrs, List.mem_append]
+  exact .inr (.inr (.inr (.inl h)))
+
+/-- The state and the permutation's part of a scratch space of `N` bytes. -/
+theorem covers_of {wr : List Region} {st scr : BitVec 32} {N : Nat} (hN : 512 ≤ N)
+    (hS : regR st 200 ∈ wr) (hC : regR scr N ∈ wr) : Covers [regR st 200, regR scr 512] wr := by
+  apply Covers.of_sub
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, hS, 0, by simp, by simp⟩
+  · exact ⟨_, hC, 0, by simp, by simpa using hN⟩
+
+theorem covers_all {s : State} {wr : List Region} (hw : Covers wr s.wr) :
+    Covers ([] ++ wr) (s.rd ++ s.wr) := by
+  intro a n h
+  obtain ⟨r, hr, hc⟩ := hw a n (by simpa using h)
+  exact ⟨r, List.mem_append_right _ hr, hc⟩
+
+section
+variable {s : State} {st scr : BitVec 32} (h0 : s.gpr .r0 = st) (h1 : s.gpr .r1 = scr)
+  (fS : st.toNat + 200 ≤ 2 ^ 32) (fC : scr.toNat + 512 ≤ 2 ^ 32)
+  (d₁ : Region.Disjoint (regR st 200) (regR scr 512))
+include h0 h1 fS fC d₁
+
+/-- The state a call enters `enter`, the rounds or `leave` in, with its
+permissions narrowed to the state and the scratch space. -/
+theorem pre_entry : Pre (s.callEntry.withRegions [] [regR st 200, regR scr 512]) := by
+  have c0 : s.callEntry.gpr .r0 = st := (State.callEntry_gpr _ (by decide)).trans h0
+  have c1 : s.callEntry.gpr .r1 = scr := (State.callEntry_gpr _ (by decide)).trans h1
+  refine ⟨rfl, ?_, ?_, ?_, ?_⟩
+  · show [regR st 200, regR scr 512] = [regR (s.callEntry.gpr .r0) 200, regR (s.callEntry.gpr .r1) 512]
+    rw [c0, c1]
+  · show (regR (s.callEntry.gpr .r0) 200).Disjoint (regR (s.callEntry.gpr .r1) 512)
+    rw [c0, c1]; exact d₁
+  · show (s.callEntry.gpr .r0).toNat + 200 ≤ 2 ^ 32
+    rw [c0]; exact fS
+  · show (s.callEntry.gpr .r1).toNat + 512 ≤ 2 ^ 32
+    rw [c1]; exact fC
+
+variable (hw : Covers [regR st 200, regR scr 512] s.wr) {Q : State → Prop}
+include hw
+
+/-- Calling `enter` on the state at `r0`, with scratch space at `r1`. -/
+theorem enter_call
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → s'.gpr .r0 = st → s'.gpr .r1 = scr →
+      Frame [regR scr 392] s.mem s'.mem → Stored s'.mem scr (stateAt s.mem (State.addr st)) →
+      RCs scr s'.mem → Q s') : WP isa enterCall s Q := by
+  have c0 : s.callEntry.gpr .r0 = st := (State.callEntry_gpr _ (by decide)).trans h0
+  have c1 : s.callEntry.gpr .r1 = scr := (State.callEntry_gpr _ (by decide)).trans h1
+  refine call_kept (pre := Pre) (post := fun t t' => Stored t'.mem (scp t) (A₀ t) ∧ Aux t t'.mem ∧
+    Frame [regR (scp t) 392] t.mem t'.mem) (fun t ht => enter_correct ht) (pre_entry h0 h1 fS fC d₁)
+    (covers_all hw) hw (fun s' hrd hwr hsp _ hg hpost => ?_) rfl
+  have hpost' : Stored s'.mem (s.callEntry.gpr .r1) (stateAt s.mem (State.addr (s.callEntry.gpr .r0))) ∧
+      RCs (s.callEntry.gpr .r1) s'.mem ∧ Frame [regR (s.callEntry.gpr .r1) 392] s.mem s'.mem := hpost
+  rw [c0, c1] at hpost'
+  exact hQ s' hrd hwr hsp (by rw [hg _ (fun i hi => permute_r0 i (mem_enter hi)) (by decide), h0])
+    (by rw [hg _ (fun i hi => permute_r1 i (mem_enter hi)) (by decide), h1]) hpost'.2.2 hpost'.1 hpost'.2.1
+
+/-- Calling the rounds on the state `K`, interleaved in the scratch space
+at `r1`, with the round constants. -/
+theorem rounds_call {K : KState} (hK : Stored s.mem scr K) (hrc : RCs scr s.mem)
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → s'.gpr .r0 = st → s'.gpr .r1 = scr →
+      Frame [regR st 200, regR scr 512] s.mem s'.mem → Stored s'.mem scr (keccakF K) → RCs scr s'.mem →
+      (∀ d, 396 ≤ d → d + 4 ≤ 432 → s'.mem.readW (A scr d) 32 = s.mem.readW (A scr d) 32) → Q s') :
+    WP isa roundsCall s Q := by
+  have c0 : s.callEntry.gpr .r0 = st := (State.callEntry_gpr _ (by decide)).trans h0
+  have c1 : s.callEntry.gpr .r1 = scr := (State.callEntry_gpr _ (by decide)).trans h1
+  refine call_kept (pre := fun t => Pre t ∧ Stored t.mem (scp t) K ∧ Aux t t.mem)
+    (post := fun t t' => Stored t'.mem (scp t) (keccakF K) ∧ Aux t t'.mem ∧
+      ∀ d, 396 ≤ d → d + 4 ≤ 432 → t'.mem.readW (A (scp t) d) 32 = t.mem.readW (A (scp t) d) 32)
+    (fun t ht => rounds_correct ht.1 ht.2.1 ht.2.2) ⟨pre_entry h0 h1 fS fC d₁, ?_, ?_⟩
+    (covers_all hw) hw (fun s' hrd hwr hsp hf hg hpost => ?_) rfl
+  · show Stored s.mem (s.callEntry.gpr .r1) K
+    rw [c1]; exact hK
+  · show RCs (s.callEntry.gpr .r1) s.mem
+    rw [c1]; exact hrc
+  have hpost' : Stored s'.mem (s.callEntry.gpr .r1) (keccakF K) ∧ RCs (s.callEntry.gpr .r1) s'.mem ∧
+      ∀ d, 396 ≤ d → d + 4 ≤ 432 →
+        s'.mem.readW (A (s.callEntry.gpr .r1) d) 32 = s.mem.readW (A (s.callEntry.gpr .r1) d) 32 := hpost
+  rw [c1] at hpost'
+  exact hQ s' hrd hwr hsp (by rw [hg _ (fun i hi => permute_r0 i (mem_rounds hi)) (by decide), h0])
+    (by rw [hg _ (fun i hi => permute_r1 i (mem_rounds hi)) (by decide), h1]) hf hpost'.1 hpost'.2.1
+    hpost'.2.2
+
+/-- Calling `leave` for the state `K`, interleaved in the scratch space at
+`r1`. -/
+theorem leave_call {K : KState} (hK : Stored s.mem scr K)
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → s'.gpr .r0 = st → s'.gpr .r1 = scr →
+      Frame [regR st 200] s.mem s'.mem → stateAt s'.mem (State.addr st) = K → Q s') :
+    WP isa leaveCall s Q := by
+  have c0 : s.callEntry.gpr .r0 = st := (State.callEntry_gpr _ (by decide)).trans h0
+  have c1 : s.callEntry.gpr .r1 = scr := (State.callEntry_gpr _ (by decide)).trans h1
+  refine call_kept (pre := fun t => Pre t ∧ Stored t.mem (scp t) K)
+    (post := fun t t' => stateAt t'.mem (State.addr (stp t)) = K ∧ Frame [regR (stp t) 200] t.mem t'.mem)
+    (fun t ht => leave_correct ht.1 ht.2) ⟨pre_entry h0 h1 fS fC d₁, ?_⟩
+    (covers_all hw) hw (fun s' hrd hwr hsp _ hg hpost => ?_) rfl
+  · show Stored s.mem (s.callEntry.gpr .r1) K
+    rw [c1]; exact hK
+  have hpost' : stateAt s'.mem (State.addr (s.callEntry.gpr .r0)) = K ∧
+      Frame [regR (s.callEntry.gpr .r0) 200] s.mem s'.mem := hpost
+  rw [c0] at hpost'
+  exact hQ s' hrd hwr hsp (by rw [hg _ (fun i hi => permute_r0 i (mem_leave hi)) (by decide), h0])
+    (by rw [hg _ (fun i hi => permute_r1 i (mem_leave hi)) (by decide), h1]) hpost'.2 hpost'.1
+
+end
+
+/-! ## The whole function -/
 
 theorem restoreA_ok {bR : Reg} {rest : List Instr} (l : List (Reg × Nat)) :
     ∀ (s : State) (Q : State → Prop), (l.map Prod.fst).Nodup →
@@ -765,43 +969,48 @@ theorem restoreA_ok {bR : Reg} {rest : List Instr} (l : List (Reg × Nat)) :
 
 theorem preserved_saved : ∀ r ∈ preserved, ∃ p ∈ saved, p.1 = r := by decide
 
-theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hL : LInv s₀ 24 s) :
-    WP isa (.block epilogue) s fun s' =>
-      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permuteArm.post s₀ s' := by
-  have hc : cur s₀ 24 = scp s₀ := by simp [cur]
-  obtain ⟨s₁, hs₁, hl, rd₁, wr₁, sp₁, g0, g1, f₁⟩ :=
-    leave_ok (hp.ok_st hL.wr hL.r0 hL.r1) (by rw [hL.r1, ← hc]; exact hL.state)
-  rw [hL.r0] at hl f₁ g0
-  rw [hL.r1] at g1
-  rw [show epilogue = leave ++ (saved.map (fun p => Instr.ldr p.1 .r1 p.2) ++ []) by
-    rw [List.append_nil]; rfl, WP.block_append_iff]
-  refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
-  refine restoreA_ok saved s₁ _ (by decide) (fun p hp' => ⟨(saved_ok p hp').1, (saved_ok p hp').2.1, ?_⟩)
-    fun s' ho _ hm => WP.block_nil ⟨fun r hr => ?_, ?_⟩
-  · rw [rd₁, wr₁, hL.rd, hL.wr, g1]; exact mem_rd (hp.scr_in (by have := saved_ok p hp'; omega))
-  · obtain ⟨p, hp', rfl⟩ := preserved_saved r hr
-    obtain ⟨-, -, a, b⟩ := saved_ok p hp'
-    rw [ho p hp', g1, f₁.readW (Region.contains_self _ _)
-      (by simpa using hp.off_st (d := p.2) (n := 4) (by omega_arith) (by decide)) (by decide)]
-    exact hL.saved p hp'
-  · show stateAt s'.mem (State.addr (stp s₀)) = keccakF (A₀ s₀)
-    rw [hm]
-    exact stateAt_eq hp.fitS fun j hj => by rw [← lane_words, hl j hj]; rfl
-
-/-! ## The whole function -/
-
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa permute s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permuteArm.post s₀ s' := by
+  have fC := hp.fitC
+  have fS := hp.fitS
   unfold permute
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (Q := LInv s₀ 24) ?_ fun s₂ h₂ => epilogue_ok hp h₂)
-  let Inv : Nat → State → Prop := fun n s => ∃ t, n = 12 - t ∧ t < 12 ∧ LInv s₀ (2 * t) s
-  refine WP.loop (M := isa) Inv (fun n s ⟨t, hn, ht, hL⟩ => ?_) 12 s₁ ⟨0, rfl, by omega_arith, h₁⟩
-  refine WP.mono (body_ok hp ht hL) fun s' h => ?_
-  rcases h with ⟨he, hL'⟩ | ⟨he, ht', hL'⟩
-  · exact .inl ⟨he, hL'⟩
-  · exact .inr ⟨he, 12 - (t + 1), by omega_arith, t + 1, rfl, ht', hL'⟩
+  refine WP.seq ?_
+  rw [← List.append_nil (saved.map _)]
+  refine saveA_ok saved s₀ _ (fun p hp' => ⟨(saved_ok p hp').2.1, hp.scr_in (by have := saved_ok p hp'; omega)⟩)
+    fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => WP.block_nil ?_
+  have f₁ : Frame [regR (scp s₀) 512] s₀.mem s₁.mem := by
+    rw [m₁]; exact saveMemA_frame fC _ _ _ (fun p hp' => by have := saved_ok p hp'; omega)
+  have hw : ∀ s : State, s.wr = s₀.wr → Covers [regR (stp s₀) 200, regR (scp s₀) 512] s.wr := fun s h => by
+    rw [h, hp.wr]; exact covers_of (N := 512) (Nat.le_refl _) (by simp) (by simp)
+  have hA : stateAt s₁.mem (State.addr (stp s₀)) = A₀ s₀ :=
+    stateAt_eq fS fun j hj => by
+      rw [rd64_frame f₁ (fun r hr => by simp at hr; subst hr; exact hp.disj) fS (by omega_arith),
+        ← stateAt_get fS _ hj]
+      exact (getElem!_pos _ j hj).symm
+  -- The saved registers are kept by `enter`, the rounds and `leave`.
+  refine WP.seq (enter_call (by rw [g₁]) (by rw [g₁]) fS fC hp.disj (hw s₁ wr₁)
+    fun s₂ rd₂ wr₂ sp₂ r0₂ r1₂ f₂ hst₂ hrc₂ => ?_)
+  rw [hA] at hst₂
+  refine WP.seq (rounds_call r0₂ r1₂ fS fC hp.disj (hw s₂ (wr₂.trans wr₁)) hst₂ hrc₂
+    fun s₃ rd₃ wr₃ sp₃ r0₃ r1₃ _ hst₃ _ k₃ => ?_)
+  refine WP.seq (leave_call r0₃ r1₃ fS fC hp.disj (hw s₃ (wr₃.trans (wr₂.trans wr₁))) hst₃
+    fun s₄ rd₄ wr₄ sp₄ r0₄ r1₄ f₄ hst₄ => ?_)
+  rw [show restore = saved.map (fun p => Instr.ldr p.1 .r1 p.2) ++ [] by rw [List.append_nil]; rfl]
+  refine restoreA_ok saved s₄ _ (by decide) (fun p hp' => ⟨(saved_ok p hp').1, (saved_ok p hp').2.1, ?_⟩)
+    fun s' ho _ hm => WP.block_nil ⟨fun r hr => ?_, ?_⟩
+  · rw [rd₄, wr₄, rd₃, wr₃, rd₂, wr₂, rd₁, wr₁, r1₄]
+    exact mem_rd (hp.scr_in (by have := saved_ok p hp'; omega))
+  · obtain ⟨p, hp', rfl⟩ := preserved_saved r hr
+    obtain ⟨-, -, a, b⟩ := saved_ok p hp'
+    rw [ho p hp', r1₄, f₄.readW (Region.contains_self _ _)
+      (by simpa using hp.off_st (d := p.2) (n := 4) (by omega_arith) (by decide)) (by decide), k₃ _ a b,
+      f₂.readW (Region.contains_self _ _)
+        (by simpa using hp.off_scr (d := p.2) (n := 4) (k := 392) (by omega_arith) (by omega_arith) (by decide))
+        (by decide), m₁]
+    exact saveMemA_saved _ fC _ p hp'
+  · show stateAt s'.mem (State.addr (stp s₀)) = keccakF (A₀ s₀)
+    rw [hm]; exact hst₄
 
 /-! ## Constant time -/
 
@@ -868,7 +1077,11 @@ section
 
 What the streaming functions (`VG.Impl.Sha3.Arm.Stream`) share: the call of
 the permutation, the saving and restoring of our caller's registers in the
-scratch space, and arithmetic on 32-bit values.
+scratch space, arithmetic on 32-bit values, and what `absorb` and `squeeze`
+do alike between one `enter` and one `leave`: the variables and saved
+registers in the scratch space (`Hi`, `bulkLoad_ok`, `bulkStore_ok`,
+`bulkRestore_ok`), the tests of the bytes left (`wp_geq`), and the runs of
+lanes of a block of each rate (`ladder_ok`).
 -/
 
 namespace VG.Proof.Sha3.Arm
@@ -880,29 +1093,7 @@ open VG.Proof.Sha3 (off_disjoint sub_offset add_zero')
 
 /-! ## The permutation -/
 
-theorem permute_noCalls : permute.noCalls = true := by lit_decide
-
-theorem permute_r0 : ∀ i ∈ instrs permute, clobbers i .r0 = false := by
-  have : ((instrs permute).all fun i => !clobbers i .r0) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi
-  simpa using List.all_eq_true.mp this i hi
-
-theorem permute_r1 : ∀ i ∈ instrs permute, clobbers i .r1 = false := by
-  have : ((instrs permute).all fun i => !clobbers i .r1) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi
-  simpa using List.all_eq_true.mp this i hi
-
-/-- The state and the permutation's part of a scratch space of `N` bytes. -/
-theorem covers_of {wr : List Region} {st scr : BitVec 32} {N : Nat} (hN : 512 ≤ N)
-    (hS : regR st 200 ∈ wr) (hC : regR scr N ∈ wr) : Covers [regR st 200, regR scr 512] wr := by
-  apply Covers.of_sub
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact ⟨_, hS, 0, by simp, by simp⟩
-  · exact ⟨_, hC, 0, by simp, by simpa using hN⟩
+theorem permute_noFrames : permute.noFrames = true := by lit_decide
 
 /-- Calling `vg_keccak_f1600` on the state at `r0`, with scratch space at
 `r1`: the callee-saved registers other than `lr`, and `r0` and `r1`, are
@@ -918,8 +1109,8 @@ theorem call_ok {s : State} {st scr : BitVec 32} (h0 : s.gpr .r0 = st) (h1 : s.g
     WP isa Impl.Sha3.Arm.Stream.permuteCall s Q := by
   have c0 : s.callEntry.gpr .r0 = st := (State.callEntry_gpr _ (by decide)).trans h0
   have c1 : s.callEntry.gpr .r1 = scr := (State.callEntry_gpr _ (by decide)).trans h1
-  refine WP.call (k := Proof.Sha3.permuteArm) permute_verified.1
-    (rd := []) (wr := [regR st 200, regR scr 512]) ?_ ?_ hw ?_ permute_noCalls
+  refine WP.callCalls (k := Proof.Sha3.permuteArm) permute_verified.1
+    (rd := []) (wr := [regR st 200, regR scr 512]) ?_ ?_ hw ?_ permute_noFrames
   · simp only [Proof.Sha3.permuteArm, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1]
     exact ⟨trivial, trivial, d₁, fS, fC⟩
@@ -1107,6 +1298,360 @@ theorem words_ok {s : State} {l j rt : Nat} (h7 : s.gpr .r7 = BitVec.ofNat 32 l)
     rw [u₈.gpr, u₇.other r d, u₆.other r a, u₅.other r a, u₄.other r b, u₃.other r a, u₂.other r b,
       u₁.other r c]
   · rw [hz, elr, sub_imm0, ofNat32_beq_zero (by omega_using [hl])]
+
+/-! ## Several blocks between one `enter` and one `leave` -/
+
+section
+open VG.Impl.Sha3.Arm.Stream (vRate vPtr vLeft savedHi bulkSave bulkLoad bulkStore bulkRestore rung ladder)
+open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_ldr wp_str wp_sub wp_add wp_mov wp_cmp op2_reg op2_imm eval_eq
+  sub_beq)
+open VG.Proof.Sha512.Arm (mem_rd wp_adc)
+open VG.Arm.Straight (wordAddr)
+open VG.Spec.Sha3 (rates)
+
+theorem Stored.keep {scr : BitVec 32} {K : KState} {m m' : Mem} (h : Stored m scr K)
+    (hk : ∀ d, d + 4 ≤ 200 → m'.readW (A scr d) 32 = m.readW (A scr d) 32) : Stored m' scr K :=
+  fun j hj h' hh => by
+    rw [wordAddr_eq, hk _ (by omega_using [hj, hh]), ← wordAddr_eq]; exact h j hj h' hh
+
+theorem RCs.keep {scr : BitVec 32} {m m' : Mem} (h : RCs scr m)
+    (hk : ∀ d, 200 ≤ d → d + 4 ≤ 392 → m'.readW (A scr d) 32 = m.readW (A scr d) 32) : RCs scr m' :=
+  fun i hi => by
+    rw [wordAddr_eq, hk _ (by omega_using [hi]) (by omega_using [hi]), ← wordAddr_eq]; exact h i hi
+
+theorem savedHi_ok : ∀ p ∈ savedHi, p.1 ≠ .r1 ∧ p.2 < 4096 ∧ 544 ≤ p.2 ∧ p.2 + 4 ≤ 560 := by decide
+
+theorem savedHi_regs : ∀ p ∈ savedHi, p.1 ∈ [Reg.r8, .r9, .r10, .r11] := by decide
+
+/-- Writes to the first `k` bytes of the scratch space keep its words after
+them. -/
+theorem readW_above {scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32) {m m' : Mem} {k : Nat}
+    (hf : Frame [regR scr k] m m') {d : Nat} (hd₁ : k ≤ d) (hd₂ : d + 4 ≤ 640) :
+    m'.readW (A scr d) 32 = m.readW (A scr d) 32 := by
+  refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  rw [List.mem_singleton.mp hr]
+  have := off_disjoint (State.addr scr) (a := d) (n := 4) (b := 0) (k := k) (by omega_using [hd₂])
+    (by omega_using [hd₁, hd₂]) (.inr (by omega_using [hd₁]))
+  rw [add_zero'] at this
+  rw [A_eq (by omega_using [fC, hd₂])]; exact this
+
+/-- The words of the scratch space after the permutation's part, between
+`enter` and `leave`: our caller's registers `g`, and the variables. -/
+structure Hi (scr : BitVec 32) (g : Reg → BitVec 32) (rate ptr left : BitVec 32) (m : Mem) : Prop where
+  saved : SSaved scr g m
+  hi : ∀ p ∈ savedHi, m.readW (A scr p.2) 32 = g p.1
+  rate : m.readW (A scr vRate) 32 = rate
+  ptr : m.readW (A scr vPtr) 32 = ptr
+  left : m.readW (A scr vLeft) 32 = left
+
+theorem Hi.keep {scr : BitVec 32} {g : Reg → BitVec 32} {r p l : BitVec 32} {m m' : Mem}
+    (h : Hi scr g r p l m)
+    (hk : ∀ d, 512 ≤ d → d + 4 ≤ 640 → m'.readW (A scr d) 32 = m.readW (A scr d) 32) :
+    Hi scr g r p l m' where
+  saved := h.saved.keep fun d h₁ h₂ => hk d h₁ (by omega_using [h₂])
+  hi q hq := by obtain ⟨-, -, a, b⟩ := savedHi_ok q hq; rw [hk _ (by omega_using [a]) (by omega_using [b])]; exact h.hi q hq
+  rate := by rw [hk _ (by decide) (by decide)]; exact h.rate
+  ptr := by rw [hk _ (by decide) (by decide)]; exact h.ptr
+  left := by rw [hk _ (by decide) (by decide)]; exact h.left
+
+/-- Writes to the state and to the permutation's scratch space keep them. -/
+theorem Hi.frame {st scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32)
+    (hd : Region.Disjoint (regR st 200) (regR scr 640)) {g : Reg → BitVec 32} {r p l : BitVec 32}
+    {m m' : Mem} (h : Hi scr g r p l m) {rs : List Region} (hf : Frame rs m m')
+    (hrs : ∀ r ∈ rs, r = regR st 200 ∨ r = regR scr 512) : Hi scr g r p l m' :=
+  h.keep fun _ hd₁ hd₂ => readW_hi fC hd hf hrs hd₁ hd₂
+
+/-- The memory after storing the variables. -/
+def storeVars (m : Mem) (scr r p l : BitVec 32) : Mem :=
+  ((m.writeW (A scr vPtr) p).writeW (A scr vRate) r).writeW (A scr vLeft) l
+
+/-- The other words of the scratch space are kept. -/
+theorem storeVars_keep (m : Mem) {scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32) (r p l : BitVec 32)
+    {d : Nat} (hd : d + 4 ≤ 640) (hne : d + 4 ≤ 532 ∨ 544 ≤ d) :
+    (storeVars m scr r p l).readW (A scr d) 32 = m.readW (A scr d) 32 := by
+  simp only [storeVars, vRate, vPtr, vLeft]
+  rw [readW_writeW_A _ fC _ hd (by decide) (by omega_using [hne]),
+    readW_writeW_A _ fC _ hd (by decide) (by omega_using [hne]),
+    readW_writeW_A _ fC _ hd (by decide) (by omega_using [hne])]
+
+theorem storeVars_frame (m : Mem) {scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32) (r p l : BitVec 32) :
+    Frame [regR scr 640] m (storeVars m scr r p l) :=
+  (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_A fC (by decide))).writeW
+    (List.mem_singleton_self _) _ (contains_A fC (by decide))).writeW (List.mem_singleton_self _) _
+    (contains_A fC (by decide))
+
+theorem Hi.store {scr : BitVec 32} (fC : scr.toNat + 640 ≤ 2 ^ 32) {g : Reg → BitVec 32}
+    {r p l : BitVec 32} {m : Mem} (h : Hi scr g r p l m) (r' p' l' : BitVec 32) :
+    Hi scr g r' p' l' (storeVars m scr r' p' l') where
+  saved := h.saved.keep fun d _ h₂ => storeVars_keep m fC _ _ _ (by omega_using [h₂]) (.inl h₂)
+  hi q hq := by
+    obtain ⟨-, -, a, b⟩ := savedHi_ok q hq
+    rw [storeVars_keep m fC _ _ _ (by omega_using [b]) (.inr a)]; exact h.hi q hq
+  rate := by
+    simp only [storeVars, vRate, vPtr, vLeft]
+    rw [readW_writeW_A _ fC _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  ptr := by
+    simp only [storeVars, vRate, vPtr, vLeft]
+    rw [readW_writeW_A _ fC _ (by decide) (by decide) (by decide),
+      readW_writeW_A _ fC _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
+  left := by
+    simp only [storeVars, vRate, vPtr, vLeft]
+    rw [Mem.readW_writeW_self32]
+
+/-- The registers that `bulkSave` stores, and where. -/
+def saveL : List (Reg × Nat) := savedHi ++ [(.r4, vRate), (.r6, vPtr), (.r7, vLeft)]
+
+theorem bulkSave_eq : bulkSave = saveL.map (fun p => Instr.str p.1 .r1 p.2) ++ [] := rfl
+
+theorem saveL_ok : ∀ p ∈ saveL, p.2 < 4096 ∧ 532 ≤ p.2 ∧ p.2 + 4 ≤ 560 := by decide
+
+set_option simprocs false in
+/-- `bulkSave`: our caller's `r8`–`r11` and the variables, after the saved
+registers `g₀`. -/
+theorem saveMemA_hi {m : Mem} {b : BitVec 32} (hfit : b.toNat + 640 ≤ 2 ^ 32) {g₀ : Reg → BitVec 32}
+    (h : SSaved b g₀ m) (g : Reg → BitVec 32) (hg : ∀ p ∈ savedHi, g p.1 = g₀ p.1) :
+    Hi b g₀ (g .r4) (g .r6) (g .r7) (saveMemA m b g saveL) := by
+  have lo : ∀ d, d + 4 ≤ 532 → (saveMemA m b g saveL).readW (A b d) 32 = m.readW (A b d) 32 := fun d hd => by
+    simp (disch := omega_using [hd]) only [saveL, savedHi, vRate, vPtr, vLeft, List.cons_append,
+      List.nil_append, saveMemA, readW_writeW_A (hfit := hfit)]
+  refine ⟨h.keep fun d _ h₂ => lo d h₂, fun p hp => ?_, ?_, ?_, ?_⟩
+  · rw [← hg p hp]
+    simp only [savedHi, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega_arith) only [saveL, savedHi, vRate, vPtr, vLeft, List.cons_append,
+      List.nil_append, saveMemA, Mem.readW_writeW_self32, readW_writeW_A (hfit := hfit)]
+  all_goals
+    simp (disch := omega_arith) only [saveL, savedHi, vRate, vPtr, vLeft, List.cons_append,
+      List.nil_append, saveMemA, Mem.readW_writeW_self32, readW_writeW_A (hfit := hfit)]
+
+section
+variable {s : State} {scr : BitVec 32} (h1 : s.gpr .r1 = scr)
+  (hin : ∀ d, d + 4 ≤ 640 → InRegions s.wr (A scr d) 4) {rest : List Instr} {Q : State → Prop}
+include h1 hin
+
+/-- `bulkLoad`: the masks, and the variables in `r9`, `r10` and `r11`. -/
+theorem bulkLoad_ok
+    (k : ∀ s', Masks s' → s'.gpr .r9 = s.mem.readW (A scr vPtr) 32 →
+      s'.gpr .r10 = s.mem.readW (A scr vRate) 32 → s'.gpr .r11 = s.mem.readW (A scr vLeft) 32 →
+      s'.gpr .r0 = s.gpr .r0 → s'.gpr .r1 = scr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.sp = s.sp → WP isa (.block rest) s' Q) :
+    WP isa (.block (bulkLoad ++ rest)) s Q := by
+  unfold bulkLoad
+  rw [List.append_assoc, WP.block_append_iff]
+  obtain ⟨s₁, hs₁, hm, m₁, rd₁, wr₁, sp₁, g₁⟩ := masks_ok s
+  refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
+  have e1 : s₁.gpr .r1 = scr := (g₁ .r1 (by decide)).trans h1
+  refine wp_ldr (a := A scr vPtr) (by decide) (by rw [e1])
+    (by rw [rd₁, wr₁]; exact mem_rd (hin _ (by decide))) fun s₂ u₂ => ?_
+  refine wp_ldr (a := A scr vRate) (by decide) (by rw [u₂.other .r1 (by decide), e1])
+    (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact mem_rd (hin _ (by decide))) fun s₃ u₃ => ?_
+  refine wp_ldr (a := A scr vLeft) (by decide)
+    (by rw [u₃.other .r1 (by decide), u₂.other .r1 (by decide), e1])
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, rd₁, wr₁]; exact mem_rd (hin _ (by decide))) fun s₄ u₄ => ?_
+  obtain ⟨m4, m5, m6, m7, m8⟩ := hm
+  refine k s₄ ⟨?_, ?_, ?_, ?_, ?_⟩ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), m4]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), m5]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), m6]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), m7]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), m8]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, m₁]
+  · rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, m₁]
+  · rw [u₄.gpr, u₃.mem, u₂.mem, m₁]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), g₁ .r0 (by decide)]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), e1]
+  · rw [u₄.mem, u₃.mem, u₂.mem, m₁]
+  · rw [u₄.rd, u₃.rd, u₂.rd, rd₁]
+  · rw [u₄.wr, u₃.wr, u₂.wr, wr₁]
+  · rw [u₄.sp, u₃.sp, u₂.sp, sp₁]
+
+/-- `bulkStore`: a block taken off the bytes left, and the variables stored. -/
+theorem bulkStore_ok
+    (k : ∀ s', s'.gpr .r11 = s.gpr .r11 - s.gpr .r10 → (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) →
+      s'.mem = storeVars s.mem scr (s.gpr .r10) (s.gpr .r9) (s.gpr .r11 - s.gpr .r10) →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → WP isa (.block rest) s' Q) :
+    WP isa (.block (bulkStore ++ rest)) s Q := by
+  unfold bulkStore
+  simp only [List.cons_append, List.nil_append]
+  refine wp_sub (op2_reg _ _) fun s₁ u₁ => ?_
+  have e1 : s₁.gpr .r1 = scr := (u₁.other .r1 (by decide)).trans h1
+  refine wp_str (a := A scr vPtr) (by decide) (by rw [e1]) (by rw [u₁.wr]; exact hin _ (by decide))
+    fun s₂ u₂ => ?_
+  refine wp_str (a := A scr vRate) (by decide) (by rw [u₂.gpr, e1])
+    (by rw [u₂.wr, u₁.wr]; exact hin _ (by decide)) fun s₃ u₃ => ?_
+  refine wp_str (a := A scr vLeft) (by decide) (by rw [u₃.gpr, u₂.gpr, e1])
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hin _ (by decide)) fun s₄ u₄ => ?_
+  refine k s₄ (by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr])
+    (fun r hr => by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.other r hr]) ?_ (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd])
+    (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]) (by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp])
+  rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide),
+    u₁.other .r10 (by decide)]
+  rfl
+
+end
+
+theorem bulkRestore_eq : bulkRestore = [.ldr .r4 .r1 vRate, .ldr .r6 .r1 vPtr, .ldr .r7 .r1 vLeft,
+    .mov .r5 (.imm 0), .ldr .r8 .r1 544, .ldr .r9 .r1 548, .ldr .r10 .r1 552, .ldr .r11 .r1 556] := rfl
+
+/-- `bulkRestore`: the variables in their registers, the position 0, and
+our caller's `r8`–`r11`. -/
+theorem bulkRestore_ok {s : State} {scr : BitVec 32} {g : Reg → BitVec 32} {r p l : BitVec 32}
+    (h1 : s.gpr .r1 = scr) (hin : ∀ d, d + 4 ≤ 640 → InRegions s.wr (A scr d) 4)
+    (hH : Hi scr g r p l s.mem) {Q : State → Prop}
+    (k : ∀ s', s'.gpr .r4 = r → s'.gpr .r5 = 0 → s'.gpr .r6 = p → s'.gpr .r7 = l →
+      (∀ q ∈ [Reg.r8, .r9, .r10, .r11], s'.gpr q = g q) → s'.gpr .r0 = s.gpr .r0 → s'.gpr .r1 = scr →
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Q s') :
+    WP isa (.block bulkRestore) s Q := by
+  rw [bulkRestore_eq]
+  refine wp_ldr (a := A scr vRate) (by decide) (by rw [h1]) (mem_rd (hin _ (by decide))) fun s₁ u₁ => ?_
+  refine wp_ldr (a := A scr vPtr) (by decide) (by rw [u₁.other .r1 (by decide), h1])
+    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hin _ (by decide))) fun s₂ u₂ => ?_
+  refine wp_ldr (a := A scr vLeft) (by decide)
+    (by rw [u₂.other .r1 (by decide), u₁.other .r1 (by decide), h1])
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact mem_rd (hin _ (by decide))) fun s₃ u₃ => ?_
+  refine wp_mov (op2_imm (by decide)) fun s₄ u₄ => ?_
+  have e1 : s₄.gpr .r1 = scr := by
+    rw [u₄.other .r1 (by decide), u₃.other .r1 (by decide), u₂.other .r1 (by decide),
+      u₁.other .r1 (by decide), h1]
+  have em : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have erd : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  have ewr : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  refine wp_ldr (a := A scr 544) (by decide) (by rw [e1])
+    (by rw [erd, ewr]; exact mem_rd (hin _ (by decide))) fun s₅ u₅ => ?_
+  refine wp_ldr (a := A scr 548) (by decide) (by rw [u₅.other .r1 (by decide), e1])
+    (by rw [u₅.rd, u₅.wr, erd, ewr]; exact mem_rd (hin _ (by decide))) fun s₆ u₆ => ?_
+  refine wp_ldr (a := A scr 552) (by decide)
+    (by rw [u₆.other .r1 (by decide), u₅.other .r1 (by decide), e1])
+    (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, erd, ewr]; exact mem_rd (hin _ (by decide))) fun s₇ u₇ => ?_
+  refine wp_ldr (a := A scr 556) (by decide)
+    (by rw [u₇.other .r1 (by decide), u₆.other .r1 (by decide), u₅.other .r1 (by decide), e1])
+    (by rw [u₇.rd, u₇.wr, u₆.rd, u₆.wr, u₅.rd, u₅.wr, erd, ewr]; exact mem_rd (hin _ (by decide)))
+    fun s₈ u₈ => WP.block_nil ?_
+  have lo : ∀ q, q ∉ [Reg.r8, .r9, .r10, .r11] → s₈.gpr q = s₄.gpr q := fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+    rw [u₈.other q hq.2.2.2, u₇.other q hq.2.2.1, u₆.other q hq.2.1, u₅.other q hq.1]
+  refine k s₈ ?_ ?_ ?_ ?_ (fun q hq => ?_) ?_ ?_ ?_ ?_ ?_ ?_
+  · rw [lo _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.gpr, hH.rate]
+  · rw [lo _ (by decide), u₄.gpr]
+  · rw [lo _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.mem, hH.ptr]
+  · rw [lo _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, hH.left]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl
+    · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, em]
+      exact hH.hi (.r8, 544) (by decide)
+    · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.mem, em]
+      exact hH.hi (.r9, 548) (by decide)
+    · rw [u₈.other _ (by decide), u₇.gpr, u₆.mem, u₅.mem, em]
+      exact hH.hi (.r10, 552) (by decide)
+    · rw [u₈.gpr, u₇.mem, u₆.mem, u₅.mem, em]
+      exact hH.hi (.r11, 556) (by decide)
+  · rw [lo _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.other _ (by decide)]
+  · rw [lo _ (by decide), e1]
+  · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, em]
+  · rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, erd]
+  · rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, ewr]
+  · rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+
+/-! ### Lanes in memory -/
+
+theorem rd64_add (m : Mem) (b : BitVec 32) (a o : Nat) :
+    VG.Proof.Sha512.Arm.rd64 m (b + BitVec.ofNat 32 a) o = VG.Proof.Sha512.Arm.rd64 m b (a + o) := by
+  simp only [VG.Proof.Sha512.Arm.rd64]; rw [A_add, A_add, Nat.add_assoc]
+
+/-- A lane in memory, from its two words. -/
+theorem rd64_eq (m : Mem) {b : BitVec 32} {o : Nat} (h : b.toNat + o + 8 ≤ 2 ^ 32) :
+    VG.Proof.Sha512.Arm.rd64 m b o = m.readW (State.addr b + BitVec.ofNat 64 o) 64 := by
+  rw [VG.Proof.Sha512.Arm.rd64, VG.Proof.Sha512.Arm.readW64, A_eq (by omega_using [h]),
+    A_eq (by omega_using [h])]
+  rw [show State.addr b + BitVec.ofNat 64 o + 4 = State.addr b + BitVec.ofNat 64 (o + 4) by bv_omega]
+
+/-! ### The tests -/
+
+/-- `d` is zero if `y ≤ x`, and all ones otherwise: `x - y` does not borrow,
+and its carry is set, when `y ≤ x`. -/
+theorem wp_geq {d n : Reg} {o : Op2} {x y : BitVec 32} {s : State} (hd : d ≠ .r2) (hnd : n ≠ d)
+    (hn : s.gpr n = x) (ho : ∀ s', (∀ r, r ≠ d → s'.gpr r = s.gpr r) → o.eval s' = some y)
+    {rest : List Instr} {Q : State → Prop}
+    (k : ∀ s', s'.gpr d = (if y.toNat ≤ x.toNat then 0#32 else BitVec.allOnes 32) →
+      (∀ r, r ≠ d → r ≠ .r2 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.sp = s.sp → WP isa (.block rest) s' Q) :
+    WP isa (.block (.mvn d (.imm 0) :: .subs .r2 n o :: .adc d d (.imm 0) :: rest)) s Q := by
+  refine wp_mvn (op2_imm (by decide)) fun s₁ u₁ => wp_subsC (ho s₁ u₁.other) fun s₂ u₂ hc =>
+    wp_adc (op2_imm (by decide)) fun s₃ u₃ => ?_
+  refine k s₃ ?_ (fun r h₁ h₂ => by rw [u₃.other r h₁, u₂.other r h₂, u₁.other r h₁])
+    (by rw [u₃.mem, u₂.mem, u₁.mem]) (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+    (by rw [u₃.sp, u₂.sp, u₁.sp])
+  rw [u₃.gpr, u₂.other d hd, u₁.gpr, hc, u₁.other n hnd, hn]
+  by_cases h : y.toNat ≤ x.toNat
+  · rw [decide_eq_true h, ite_eq_left rfl, ite_eq_left h]; decide
+  · rw [decide_eq_false h, ite_eq_right (by decide), ite_eq_right h]; decide
+
+/-- Whether a register that is zero or all ones is zero. -/
+theorem geq_beq {c : Prop} [Decidable c] :
+    ((if c then 0#32 else BitVec.allOnes 32) - 0 == 0) = decide c := by
+  by_cases h : c
+  · rw [ite_eq_left h, decide_eq_true h]; decide
+  · rw [ite_eq_right h, decide_eq_false h]; decide
+
+/-! ### The lanes of a block -/
+
+/-- A run of lanes that a rate reaches is within its block. -/
+theorem segs_rate {rt : Nat} (hrt : rt ∈ rates) : ∀ p ∈ segs, p.1 = 0 ∨ rt ≠ 8 * p.1 → 8 * p.1 ≤ rt →
+    8 * p.2 ≤ rt := by
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrt
+  intro p hp
+  simp only [segs, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl <;> intro h₁ h₂ <;> omega_using [hrt, h₁, h₂]
+
+theorem segs_imm : ∀ p ∈ segs, encodable (BitVec.ofNat 32 (8 * (p.2 - p.1))) = true ∧
+    encodable (BitVec.ofNat 32 (8 * p.2)) = true := by decide
+
+section
+variable {seg : Nat → Nat → List Instr} {P : Nat → State → Prop} {rt : Nat}
+  (h10 : ∀ a s, P a s → s.gpr .r10 = BitVec.ofNat 32 rt) (hF : ∀ a s s', P a s → Fupd s s' → P a s')
+  (hseg : ∀ p ∈ segs, p.1 = 0 ∨ rt ≠ 8 * p.1 → ∀ s, P p.1 s → ∀ (rest : List Instr) (Q : State → Prop),
+    (∀ s', P p.2 s' → WP isa (.block rest) s' Q) →
+    WP isa (.block (seg p.1 p.2 ++
+      .dp .add .r9 .r9 (.imm (BitVec.ofNat 32 (8 * (p.2 - p.1)))) :: rest)) s Q)
+include h10 hF hseg
+
+/-- A rung of the ladder: the lanes `a ≤ j < b`, and the rest unless the
+rate is `8 b`. -/
+theorem rung_ok {a b : Nat} (hp : (a, b) ∈ segs) (ha : a = 0 ∨ rt ≠ 8 * a) (hrt : rt < 2 ^ 32)
+    {rest : Prog isa} {s : State} (h : P a s) {Q : State → Prop} (hb : rt = 8 * b → ∀ s', P b s' → Q s')
+    (hrest : rt ≠ 8 * b → ∀ s', P b s' → WP isa rest s' Q) : WP isa (rung seg a b rest) s Q := by
+  obtain ⟨-, hb21, -⟩ := segs_ok _ hp
+  unfold rung
+  refine WP.seq (hseg _ hp ha s h _ _ fun s₁ h₁ => ?_)
+  refine wp_cmp (op2_imm (segs_imm _ hp).2) fun s₂ u₂ hz => WP.block_nil ?_
+  rw [h10 _ _ h₁, sub_beq hrt (by have : b ≤ 21 := hb21; omega_using [this])] at hz
+  refine WP.ite (decide (rt = 8 * b)) (by show VG.Arm.eval .eq s₂ = _; rw [eval_eq, hz])
+    (fun hd => ?_) (fun hd => ?_)
+  · exact WP.block_nil (hb (of_decide_eq_true hd) s₂ (hF _ _ _ h₁ u₂))
+  · exact hrest (of_decide_eq_false hd) s₂ (hF _ _ _ h₁ u₂)
+
+/-- The ladder: the lanes of a block of `rt` bytes. -/
+theorem ladder_ok (hrt : rt ∈ rates) {s : State} (h : P 0 s) : WP isa (ladder seg) s (P (rt / 8)) := by
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrt
+  have hlt : rt < 2 ^ 32 := by omega_using [hrt]
+  unfold ladder
+  refine rung_ok h10 hF hseg (by decide) (.inl rfl) hlt h (fun e s' h' => by rw [e]; exact h')
+    fun n₁ s₁ h₁ => ?_
+  refine rung_ok h10 hF hseg (by decide) (.inr n₁) hlt h₁ (fun e s' h' => by rw [e]; exact h')
+    fun n₂ s₂ h₂ => ?_
+  refine rung_ok h10 hF hseg (by decide) (.inr n₂) hlt h₂ (fun e s' h' => by rw [e]; exact h')
+    fun n₃ s₃ h₃ => ?_
+  refine rung_ok h10 hF hseg (by decide) (.inr n₃) hlt h₃ (fun e s' h' => by rw [e]; exact h')
+    fun n₄ s₄ h₄ => ?_
+  have e : rt = 8 * 21 := by omega_using [hrt, n₁, n₂, n₃, n₄]
+  refine hseg (18, 21) (by decide) (.inr n₄) s₄ h₄ [] _ fun s' h' => WP.block_nil ?_
+  rw [e]; exact h'
+
+end
+
+end
 
 /-! ## The arguments on the stack -/
 
