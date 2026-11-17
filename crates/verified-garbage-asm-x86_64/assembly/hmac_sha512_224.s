@@ -2881,6 +2881,64 @@ vg_hmac_sha512_224_finalize_avx2:
 	mov r14, QWORD PTR [r15+1408]
 	mov r15, QWORD PTR [r15+1416]
 	lea rsp, [rsp+1576]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-1592]
+	vmovdqu YMMWORD PTR [rsp+1480], ymm0
+	vmovdqu YMMWORD PTR [rsp+1448], ymm0
+	vmovdqu YMMWORD PTR [rsp+888], ymm0
+	vmovdqu YMMWORD PTR [rsp+856], ymm0
+	vmovdqu YMMWORD PTR [rsp+824], ymm0
+	vmovdqu YMMWORD PTR [rsp+792], ymm0
+	vmovdqu YMMWORD PTR [rsp+760], ymm0
+	vmovdqu YMMWORD PTR [rsp+728], ymm0
+	vmovdqu YMMWORD PTR [rsp+696], ymm0
+	vmovdqu YMMWORD PTR [rsp+664], ymm0
+	vmovdqu YMMWORD PTR [rsp+632], ymm0
+	vmovdqu YMMWORD PTR [rsp+600], ymm0
+	vmovdqu YMMWORD PTR [rsp+568], ymm0
+	vmovdqu YMMWORD PTR [rsp+536], ymm0
+	vmovdqu YMMWORD PTR [rsp+504], ymm0
+	vmovdqu YMMWORD PTR [rsp+472], ymm0
+	vmovdqu YMMWORD PTR [rsp+440], ymm0
+	vmovdqu YMMWORD PTR [rsp+408], ymm0
+	vmovdqu YMMWORD PTR [rsp+376], ymm0
+	vmovdqu YMMWORD PTR [rsp+344], ymm0
+	vmovdqu YMMWORD PTR [rsp+312], ymm0
+	vmovdqu YMMWORD PTR [rsp+280], ymm0
+	vmovdqu YMMWORD PTR [rsp+248], ymm0
+	vmovdqu YMMWORD PTR [rsp+216], ymm0
+	vmovdqu YMMWORD PTR [rsp+184], ymm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	lea rsp, [rsp+1592]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
