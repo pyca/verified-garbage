@@ -1165,7 +1165,7 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (hd : (finBody H.rate H.len).x86_64Depth ≤ 16)
     (hsat'' : ∃ s, (Spec.Sha3.finalizeContract X86_64.abi H 680).pre s) :
     Verified X86_64.target (finalize H.rate H.len) (Spec.Sha3.finalizeContract X86_64.abi H 680) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Sha3.Instances.finalizePostOut_local _ _) (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
     (n := 82) (pre := Spec.Sha3.finalizePre H X86_64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 664) (finBody_verified hH hr hl hlen hmod hmx hct hsat hsat') (by exact (by decide : 3 < 6))

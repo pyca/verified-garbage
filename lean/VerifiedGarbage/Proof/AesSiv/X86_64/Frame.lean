@@ -87,7 +87,7 @@ theorem init_framed (v : Ctr32Impl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init v.expand v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 2584) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesSiv.initPostOut_local _) (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2568) (init_verified v) (by decide) (by decide) (by decide)
     (init_spSafe v) (init_xdepth v) initFrameSat_pre
@@ -108,7 +108,7 @@ theorem initS_framed (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1928 .rcx (initS v.expand v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 1944) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 240)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesSiv.initPostOut_local _) (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 240)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1928) (initS_verified v g) (by decide) (by decide) (by decide)
     (initS_spSafe v) (initS_xdepth v) initFrameSatS_pre
@@ -124,7 +124,7 @@ theorem initF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 88 .rcx (initF ekF v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 104) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 9)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesSiv.initPostOut_local _) (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 88) (initF_verified v f) (by decide) (by decide) (by decide)
     (initF_spSafe v) (initF_xdepth v) initFrameSatF_pre

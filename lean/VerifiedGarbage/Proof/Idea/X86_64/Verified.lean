@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Idea.X86_64.Lit
+import VerifiedGarbage.Proof.Idea.Local
 
 /-! ### `Idea.Scratch`, which only this module used -/
 
@@ -90,7 +91,7 @@ theorem ecb_verified : Verified target ecb (Proof.Idea.ecbScratchContract abi) :
 theorem ecb_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 24 .rcx ecb)
       (Spec.Idea.ecbContract X86_64.abi 24) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u64) (n := 2)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Idea.ecbPostOut_local _) (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u64) (n := 2)
     (post := Spec.Idea.ecbPost X86_64.abi.ptrBits) (wa := false) (stack := 0) (bytes := 24)
     ecb_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)

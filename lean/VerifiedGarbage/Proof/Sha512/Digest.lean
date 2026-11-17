@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha512.Md
 import VerifiedGarbage.Proof.Sha512.Word64
 public import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Prefix
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
@@ -153,5 +154,34 @@ theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest 
     (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro msg hr hl hc
   exact h msg (Stream.repr_congr (fun i hi => (hs i hi).symm) hr) hl hc
+
+/-- `finalizeDigestPost` reads the memory on return only within the digest. -/
+theorem finalizeDigestPostOut_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte)
+    (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = ((Spec.Sha512.finalizeDigestSig D).words pb).length →
+      (∀ b ∈ Sig.bufs (Spec.Sha512.finalizeDigestSig D).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply ((Spec.Sha512.finalizeDigestSig D).words pb) (Spec.Sha512.finalizeDigestPost iv D digest pb)
+        vs m m₁ r →
+      Curry.apply ((Spec.Sha512.finalizeDigestSig D).words pb) (Spec.Sha512.finalizeDigestPost iv D digest pb)
+        vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.Sha512.finalizeDigestSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at hb
+  have ho : ∀ i < D, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.2 _ (by
+      simp only [Region.Contains, Elem.size]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+      have := Nat.mod_le i (2 ^ 64)
+      omega_using [hi, this])).symm
+  intro msg hr hl hc
+  rw [show Spec.Sha512.bytesAt m₂ (ArgWord.addr.ofRaw ot) D = Spec.Sha512.bytesAt m₁ ot D from
+    Stream.bytesAt_congr ho]
+  exact h msg hr hl hc
 
 end VG.Proof.Sha512

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Poly1305.Scratch
 
 /-!
 # Streaming Poly1305 on x86-64, with its working space on the stack
@@ -47,7 +48,7 @@ theorem update_framed (v : BlocksImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 136 .r8 (Impl.Poly1305.X86_64.update v.name v.code))
       (Spec.Poly1305.updateContract X86_64.abi 160) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Poly1305.updatePostOut_local _) (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost X86_64.abi.ptrBits) (wa := false) (stack := 24)
     (bytes := 136) (update_verified v) (by decide) (by decide) (by decide) (update_spSafe v)
     (update_xdepth v) updateFrameSat_pre
@@ -65,7 +66,7 @@ theorem finalize_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize)
       (Spec.Poly1305.finalizeContract X86_64.abi 136) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Poly1305.finalizePostOut_local _) (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 136) finalize_verified (by decide) (by decide) (by decide)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) finalizeFrameSat_pre

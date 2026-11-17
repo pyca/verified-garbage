@@ -1146,7 +1146,7 @@ theorem initFrameSatF_pre : ∃ s, (Spec.Gcm.initContract X86_64.abi 192).pre s 
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init v.callees))
       (Spec.Gcm.initContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesGcm.initPostOut_local _) (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Spec.Gcm.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (init_verified v) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSat_pre
@@ -1156,7 +1156,7 @@ theorem init_framed :
 theorem initF_framed (fk : KeyFree v.key.fn.code) (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 184 .rcx (init v.callees))
       (Spec.Gcm.initContract X86_64.abi 192) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 22)
+  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesGcm.initPostOut_local _) (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 22)
     (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Spec.Gcm.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 184) (initF_verified v fk fc) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSatF_pre
@@ -1173,7 +1173,7 @@ theorem streamInit_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2568 .r8 (streamInit v.callees))
       (Spec.Gcm.streamInitContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamInitPostOut_local _) (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2568) (streamInit_verified v) (by decide) (by decide) (by decide)
     (streamInit_spSafe v) (streamInit_xdepth v) streamInitFrameSat_pre
@@ -1190,7 +1190,7 @@ theorem streamAad_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (streamAad v.callees))
       (Spec.Gcm.streamAadContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamAadPostOut_local _) (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamAadPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2568) (streamAad_verified v) (by decide) (by decide) (by decide)
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat_pre
@@ -1205,7 +1205,7 @@ theorem streamInit_framed96 :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 776 .r8 (streamInit v.callees))
       (Spec.Gcm.streamInitContract X86_64.abi 784) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamInitPostOut_local _) (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 96) (post := Spec.Gcm.streamInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 776) (streamInit_verified96 v) (by decide) (by decide) (by decide)
     (streamInit_spSafe v) (streamInit_xdepth v) streamInitFrameSat96_pre
@@ -1219,7 +1219,7 @@ theorem streamAad_framed96 :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamAad v.callees))
       (Spec.Gcm.streamAadContract X86_64.abi 784) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamAadPostOut_local _) (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 96) (post := Spec.Gcm.streamAadPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 776) (streamAad_verified96 v) (by decide) (by decide) (by decide)
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat96_pre
@@ -1234,7 +1234,7 @@ theorem streamInit_framed28 (f : GhashFree v.gh.fn.code) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 232 .r8 (streamInit v.callees))
       (Spec.Gcm.streamInitContract X86_64.abi 240) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamInitPostOut_local _) (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 28) (post := Spec.Gcm.streamInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 232) (streamInit_verified28 v f) (by decide) (by decide) (by decide)
     (streamInit_spSafe v) (streamInit_xdepth v) streamInitFrameSat28_pre
@@ -1249,7 +1249,7 @@ theorem streamAad_framed22 (f : GhashFree v.gh.fn.code) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 184 .r9 (streamAad v.callees))
       (Spec.Gcm.streamAadContract X86_64.abi 192) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.AesGcm.streamAadPostOut_local _) (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Spec.Gcm.streamAadPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 184) (streamAad_verified22 v f) (by decide) (by decide) (by decide)
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat22_pre

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 /-!
 # Streaming AES-CMAC on x86-64, with its working space on the stack
@@ -135,7 +136,7 @@ theorem init_framed (v : Ctr32Impl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2312 .rcx (init v.expand v.callee v.suffix))
       (Spec.Cmac.aesInitContract X86_64.abi 2328) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.initPostOut_local _) (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost X86_64.abi.ptrBits) (wa := false) (stack := 16) (bytes := 2312)
     (init_verified v) (by decide) (by decide) (by decide) (init_spSafe v) (init_xdepth v)
@@ -148,7 +149,7 @@ theorem initF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 168 .rcx (initF ekF v.callee v.suffix))
       (Spec.Cmac.aesInitContract X86_64.abi 184) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.initPostOut_local _) (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 19) (pre := Spec.Cmac.aesInitPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost X86_64.abi.ptrBits) (wa := false) (stack := 16) (bytes := 168)
     (initF_verified v f) (by decide) (by decide) (by decide) (initF_spSafe v) (initF_xdepth v)
@@ -160,7 +161,7 @@ theorem initS_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1800 .rcx (initS v.expand v.callee v.suffix))
       (Spec.Cmac.aesInitContract X86_64.abi 1816) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.initPostOut_local _) (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 224) (pre := Spec.Cmac.aesInitPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost X86_64.abi.ptrBits) (wa := false) (stack := 16) (bytes := 1800)
     (initS_verified v f) (by decide) (by decide) (by decide) (initS_spSafe v) (initS_xdepth v)
@@ -170,7 +171,7 @@ theorem absorb_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (absorb v.callee))
       (Spec.Cmac.aesAbsorbContract X86_64.abi 2328) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.absorbPostOut_local _) (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2312) (absorb_verified v) (by decide) (by decide) (by decide) (absorb_spSafe v)
@@ -183,7 +184,7 @@ theorem absorbF_framed (v : UpdateImpl) (f : UpdateFree v.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 56 .r9 (absorbF v.callee))
       (Spec.Cmac.aesAbsorbContract X86_64.abi 72) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.absorbPostOut_local _) (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 6) (pre := Spec.Cmac.aesAbsorbPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 56) (absorbF_verified v f) (by decide) (by decide) (by decide) (absorbF_spSafe v)
@@ -196,7 +197,7 @@ theorem absorbS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v.
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1800 .r9 (absorbS v.callee))
       (Spec.Cmac.aesAbsorbContract X86_64.abi 1816) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.absorbPostOut_local _) (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 224) (pre := Spec.Cmac.aesAbsorbPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 1800) (absorbS_verified v f) (by decide) (by decide) (by decide) (absorbS_spSafe v)
@@ -206,7 +207,7 @@ theorem finish_framed (v : Ctr32Impl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2312 .r8 (finish v.callee v.suffix))
       (Spec.Cmac.aesFinishContract X86_64.abi 2328) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.finishPostOut_local _) (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2312) (finish_verified v) (by decide) (by decide) (by decide) (finish_spSafe v)
@@ -219,7 +220,7 @@ theorem finishF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (finishF v.callee v.suffix))
       (Spec.Cmac.aesFinishContract X86_64.abi 40) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.finishPostOut_local _) (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 2) (pre := Spec.Cmac.aesFinishPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 24) (finishF_verified v f) (by decide) (by decide) (by decide) (finishF_spSafe v)
@@ -232,7 +233,7 @@ theorem finishS_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1800 .r8 (finishS v.callee v.suffix))
       (Spec.Cmac.aesFinishContract X86_64.abi 1816) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.CmacAes.Stream.finishPostOut_local _) (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 224) (pre := Spec.Cmac.aesFinishPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 1800) (finishS_verified v f) (by decide) (by decide) (by decide) (finishS_spSafe v)

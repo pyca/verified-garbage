@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MdStream.DigestScratch
 
 /-!
 # The one-shot SHA-1 digest on x86-64
@@ -207,8 +208,9 @@ theorem verified {f : Callee} (hf : CalleeOk (P := params) md f.code)
   show Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch
     (Impl.MdStream.X86_64.OneShot.frameBytes params) .rcx (body f)) _
   rw [frameBytes_eq]
-  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafe {f : Callee} (hs : f.code.all (fun i => !isa.writesSp i) = true) :
@@ -347,8 +349,9 @@ theorem verified0 {f : Callee} (hf : CalleeOk (P := params0) md f.code)
   show Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch
     (Impl.MdStream.X86_64.OneShot.frameBytes params0) .rcx (body0 f)) _
   rw [frameBytes0_eq]
-  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := words0) (stack := 8) (bytes := frame0)
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words0) (stack := 8) (bytes := frame0)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafe0 {f : Callee} (hs : f.code.all (fun i => !isa.writesSp i) = true) :

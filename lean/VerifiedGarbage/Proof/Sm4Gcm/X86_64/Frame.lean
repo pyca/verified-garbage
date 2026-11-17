@@ -726,7 +726,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract X86_64.abi 5792).pr
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init)
       (Spec.Sm4.Gcm.initContract X86_64.abi 5792) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Sm4Gcm.initPostOut_local _) (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (post := Spec.Sm4.Gcm.initPost X86_64.abi.ptrBits) (wa := true) (stack := stkN) (bytes := 2568)
     init_verified (by decide) (by decide) (by decide) init_spSafe init_xdepth initFrameSat_pre
 
@@ -776,7 +776,7 @@ theorem streamFinish_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees))
       (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 4000) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackScratch (hpostOut := Proof.Sm4Gcm.streamFinishPostOut_local _) (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamFinishPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 776) (streamFinish_verified v) (by decide) (by decide) (by decide)
     (streamFinish_spSafe v) (streamFinish_xdepth v) finFrameSat_pre

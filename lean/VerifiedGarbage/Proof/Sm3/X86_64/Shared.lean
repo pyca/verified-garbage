@@ -56,19 +56,21 @@ theorem finalizeScratch :
 theorem update : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.Sm3.X86_64.Stream.update)
     (Spec.Sm3.updateContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
+  X86_64.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
     (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)
+    (Proof.Sm3.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize)
     (Spec.Sm3.finalizeContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
+  X86_64.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
     (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)
+    (Proof.Sm3.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm3.X86_64.Shared

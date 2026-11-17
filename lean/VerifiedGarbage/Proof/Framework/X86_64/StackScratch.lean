@@ -456,10 +456,11 @@ theorem frame_disjoint (hk : (sig.words abi.ptrBits).length < 6) (hb0 : 0 < byte
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack (`withStackScratch`), if its postcondition reads
-the memory on return only within the function's buffers (`hpostOut`): the
+the memory on return only within the function's buffers where the
+precondition holds (`hpostOut`): the
 frame's `alloc` writes no memory, and its `free` loses only the frame's
 bytes. -/
-theorem Verified.stackScratch {c : Prog isa}
+theorem Verified.stackScratchPre {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
     (hk : (sig.words abi.ptrBits).length < 6)
     (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ 8 + n * e.size ≤ bytes)
@@ -515,6 +516,24 @@ theorem Verified.stackScratch {c : Prog isa}
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
     exact hct _ _ _ _ _ _ (narrow_pre hk hb hst h₁ hl) (narrow_pre hk hb hst h₂ hl)
       (narrow_pub hk hp hl) f₁ f₂
+
+/-- `Verified.stackScratchPre`, for a postcondition that reads the memory on
+return only within the function's buffers whatever the precondition. -/
+theorem Verified.stackScratch {c : Prog isa}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (hk : (sig.words abi.ptrBits).length < 6)
+    (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ 8 + n * e.size ≤ bytes)
+    (hst : stack + bytes + 8 ≤ 2 ^ 64)
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hl : Sig.noLists sig.params = true := by decide) :
+    Verified target (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .rax) c)
+      (sig.contract abi pre post wa (stack + bytes)) :=
+  Verified.stackScratchPre h hk hb hst hsp hd (fun vs m m₁ m₂ r hl' _ => hpostOut vs m m₁ m₂ r hl') hsat hl
 
 /-- The previous `Verified.stackScratch`, kept until every proof is moved off
 it. Code verified for a function whose last argument, in a register, is a

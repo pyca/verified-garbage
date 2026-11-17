@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MdStream.DigestScratch
 
 /-!
 # The one-shot SHA-512 family digests on x86-64
@@ -211,8 +212,9 @@ theorem verified {o : List Instr} {D : Nat} (c : Member o D) {iv : Spec.Sha512.H
     (Impl.MdStream.X86_64.OneShot.frameBytes (Po o)) .rcx (body o iv f)) _
   rw [frameBytes_eq]
   rcases c.hD with rfl | rfl | rfl | rfl <;>
-  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafe {o : List Instr} {D : Nat} (c : Member o D) (iv : Spec.Sha512.HashValue) {f : Callee}
@@ -451,8 +453,9 @@ theorem verifiedS {so : Nat} {o : List Instr} {D : Nat} (c : MemberS so o D) {iv
   show Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch
     (Impl.MdStream.X86_64.OneShot.frameBytes (Stream.paramsS so)) .rcx (bodyS so o iv f)) _
   rcases c.hso with rfl | rfl <;> rcases c.hD with rfl | rfl | rfl | rfl <;>
-  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := wordsS _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := wordsS _) (stack := 8) (bytes := _)
     h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem spSafeS {so : Nat} {o : List Instr} {D : Nat} (c : MemberS so o D) (iv : Spec.Sha512.HashValue)
