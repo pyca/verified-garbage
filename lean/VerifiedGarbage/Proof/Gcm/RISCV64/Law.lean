@@ -1305,7 +1305,7 @@ theorem ghash_ok (s : State) (hp : ghashX.pre s) :
      List.mem_cons_self⟩
   obtain P : Pre s := ⟨hrd, hwr, hsh, hsy, hsd, hfd, hF⟩
   unfold frameBytes
-  refine WP.allocLe ⟨by decide, by decide, by decide⟩ hsp ?_
+  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ hsp ?_
   unfold body
   refine WP.seq (WP.mono (head_ok s P) fun sY hH => ?_)
   refine WP.seq (WP.mono (blocks_loop hH.loop (s.gpr .a3).isLt hpos hH.inv) fun sL hBL => ?_)

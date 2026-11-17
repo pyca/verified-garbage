@@ -20,7 +20,7 @@ Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_to` decrypts
 from `src` straight to `dst` in one pass (`OpenTo/Fn.lean`, `OpenTo/CT.lean`),
 proved with its working space as a last argument, after the others on the
 stack (`openTo_verified`, against `Sig.scratchContract`), and then in a frame
-that allocates it (`openTo_framed`, `Verified.stackScratchArgs`), as
+that allocates it (`openTo_framed`, `Verified.stackScratchArgsKept`), as
 `vg_aes_gcm_open` (`Proof/AesGcm/RISCV64/Verified.lean`). The frame copies
 the arguments passed on the stack, which needs the contract to read the
 memory on entry only within the function's buffers (`openToPre_local`,
@@ -203,7 +203,7 @@ stack, as `open`'s `tag` and `tag_len` do. -/
 theorem openTo_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2608 4 openTo)
       (Proof.AesGcm.openToRoundsContract RISCV64.abi 4656) :=
-  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64) (n := 320)
+  RISCV64.Verified.stackScratchArgsKept (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Gcm.openToPre RISCV64.abi.ptrBits) (post := Proof.AesGcm.openToRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 2048) (bytes := 2608) (m := 4) (leak := some (Spec.Gcm.openToLeak RISCV64.abi.ptrBits))
     openTo_verified (by decide) (by decide) (openToPre_local _) (openToPost_local _)

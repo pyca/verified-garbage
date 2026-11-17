@@ -305,7 +305,7 @@ theorem generate_correct (s₀ : State) (h : gkContract.pre s₀) :
     fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 (resOf_status s₀) hsig resOf_none) fun t' hf =>
       fin_post h (by rw [gkRes_eq h]; exact resOf_status s₀) (by rw [gkRes_eq h]; exact hf)
   unfold Impl.Dsa.RISCV64.Generate.code
-  refine WP.alloc (by decide) hL.spF ?_
+  refine WP.allocKept (by decide) hL.spF ?_
   unfold Impl.Dsa.RISCV64.Generate.body
   refine WP.seq (WP.mono (entry_ok h) fun t₁ he => ?_)
   refine WP.seq (WP.mono (checked_ok h he) fun t₂ ck => ?_)

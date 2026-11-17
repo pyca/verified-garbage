@@ -22,7 +22,7 @@ the stack after the eight in registers (`Sig.scratchContract`), and 1168 bytes
 of stack for the callees' frames: the proof against the contract's facts by
 register (`signC`), which it implies, and a state satisfying it; and, in a
 frame of 528 bytes that holds the frame argument's copy and the frame
-(`Verified.stackScratchArgs`), the contract itself. The body zeroes the
+(`Verified.stackScratchArgsKept`), the contract itself. The body zeroes the
 frame's secrets itself before returning.
 -/
 
@@ -142,7 +142,7 @@ theorem signFrameSat_pre : ∃ s, (Spec.Ed448.signCachedContract RISCV64.abi (11
 /-- In its frame of 528 bytes: the frame argument's copy, then the frame. -/
 theorem signCached_framed (hl : Proof.Ed448.BaseLadder2Ok) :
     Verified RISCV64.target signCachedCode (Spec.Ed448.signCachedContract RISCV64.abi (1168 + 528)) :=
-  Verified.stackScratchArgs (sig := Spec.Ed448.signCachedSig) (nm := "frame") (e := .u64) (n := 65)
+  Verified.stackScratchArgsKept (sig := Spec.Ed448.signCachedSig) (nm := "frame") (e := .u64) (n := 65)
     (pre := Proof.Ed448.WholeLocal.signCachedPre RISCV64.abi.ptrBits)
     (post := Proof.Ed448.WholeLocal.signCachedPost RISCV64.abi.ptrBits) (wa := true) (stack := 1168) (bytes := 528)
     (m := 0) (signCached_verified hl) (by decide) (by decide) (Proof.Ed448.WholeLocal.signCachedPre_local _)

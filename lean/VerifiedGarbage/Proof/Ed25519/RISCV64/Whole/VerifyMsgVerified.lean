@@ -26,7 +26,7 @@ frames: the proof against the contract's facts by register (`verC`: `verR`
 without the static, and what the static adds), which it implies
 (`bconsts_implies`), with the windows' proofs (`rhs_ok`, `rhs_ct`), and a
 state satisfying it, with the static at `0x100000` (`bMem`). In a frame of
-272 bytes on the stack (`Verified.stackScratchLC`), it meets the contract
+272 bytes on the stack (`Verified.stackScratchLCKept`), it meets the contract
 itself.
 -/
 
@@ -154,7 +154,7 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed25519.verifyContract (RISCV64.abi.withC
 /-- In its frame of 272 bytes. -/
 theorem verify_framed :
     Verified RISCV64.target verifyCode (Spec.Ed25519.verifyContract (RISCV64.abi.withConsts bConsts) (208 + 272)) :=
-  Verified.stackScratchLC (sig := Spec.Ed25519.verifySig) (nm := "frame") (e := .u64) (n := 34)
+  Verified.stackScratchLCKept (sig := Spec.Ed25519.verifySig) (nm := "frame") (e := .u64) (n := 34)
     (post := Proof.Ed25519.WholeLocal.verifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 208) (bytes := 272)
     (leak := some (Proof.Ed25519.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) verify_verified (by decide)
     (by decide) verFrameSat_pre

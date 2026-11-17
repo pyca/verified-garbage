@@ -567,7 +567,7 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       simp only [BitVec.le_def]; have := hf.room; show 176 ≤ _; omega_using [h496, this])]
     have := hf.room; show 32 ≤ _ - 176; omega_using [h496, this]
   unfold candidateRun
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun v ⟨⟨⟨ha, hm'⟩, kv⟩, hu, hyv⟩ => ?_)
   obtain hy : v.syms = original.syms := hyv.trans h.syms
   have krd : v.rd = (allocd 32 s).rd := kv.2.1

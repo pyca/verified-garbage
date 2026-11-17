@@ -988,7 +988,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   obtain hl := len_lt s₀
   have ⟨hr₀, _⟩ := hp.rt_pos
   unfold absorb withLoop frameBytes
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI => ?_)
   refine WP.seq (WP.mono (Q := Inv s₀ (len s₀)) ?_ fun s₂ hI₂ => ?_)
   · refine WP.ite (decide (len s₀ = 0))

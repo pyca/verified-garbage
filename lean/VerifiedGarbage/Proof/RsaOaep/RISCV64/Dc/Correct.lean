@@ -1294,7 +1294,7 @@ theorem checks_done {v : State} (A : AfterPriv pc s v) (hsy : v.syms = s.syms) :
 
 theorem code_ok (hl : H.D ∈ lens) : WP isa (decryptG f pc) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
+  refine WP.allocKept (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P E) fun v A y₂ => ?_)
   -- The label's hash function's digest length to `a0`.

@@ -757,7 +757,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     (hpre : (updateFramedRISCV64 P).pre s₀) :
     WP isa (update P) s₀ fun s' => abiPreserved s₀ s' ∧ (updateFramedRISCV64 P).post s₀ s' := by
   obtain ⟨hrd, hwr, hds, -, hsp, hks, hkd⟩ := hpre
-  refine WP.alloc (by decide) hsp ?_
+  refine WP.allocKept (by decide) hsp ?_
   refine WP.seq (Wp.wp_addSp (imm := 0) (by decide) fun s₁ u₁ => WP.block_nil ?_)
   let F : Region := ⟨s₀.sp - BitVec.ofNat 64 576, 576⟩
   obtain ha4 : s₁.gpr .a4 = s₀.sp - BitVec.ofNat 64 576 := by

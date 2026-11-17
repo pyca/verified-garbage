@@ -65,7 +65,7 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
 theorem frames_ok {s₀ : State} (hp : DPre s₀) {Q : Mem → Prop}
     (hb : WP isa Impl.Argon2.RISCV64.Derive.body (entry s₀) fun t => BodyDone s₀ t ∧ Q t.mem) :
     WP isa Impl.Argon2.RISCV64.Derive.derive s₀ fun u => abiPreserved s₀ u ∧ Q u.mem := by
-  refine WP.alloc (by decide) hp.sp_lo (hb.mono fun t ⟨d, q⟩ => ?_)
+  refine WP.allocKept (by decide) hp.sp_lo (hb.mono fun t ⟨d, q⟩ => ?_)
   refine ⟨⟨d.regs, ?_, d.ra⟩, q⟩
   show t.sp + BitVec.ofNat 64 320 = _
   rw [d.sp, BitVec.sub_add_cancel]

@@ -176,7 +176,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   obtain hp : SearchInput p s := ⟨h, rfl⟩
   obtain hroom : 160 ≤ s.sp.toNat := by have := hp.room; rw [hp.sp_eq] at this; exact Nat.le_trans (by decide) this
   unfold code
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (VG.RISCV64.WP.mono_syms (entry_ok hp) fun t ⟨⟨⟨hx, hm⟩, kt⟩, htsp⟩ hyt => ?_)
   refine WP.seq (WP.mono (search_body c hp hx hm kt htsp hyt) fun u ⟨hd, hra, hsp⟩ => ?_)
   refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_

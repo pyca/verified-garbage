@@ -161,4 +161,71 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ (by omega_using [e]) (by omega_using [e])⟩
 
+/-- Superseded by `chunks_wp`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). -/
+theorem chunks_wpKept {body : Prog isa} :
+    ∀ (q : Nat) (s : State) (Q : State → Prop), 2032 * q ≤ s.sp.toNat →
+    (∀ t, FrameAt (2032 * q) s t → WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) →
+    WP isa (chunks q body) s Q
+  | 0, s, Q, _, hb => by
+    refine WP.mono (WP.rdwr (hb s (FrameAt.refl s))) fun s₂ ⟨h, _, hw, hs⟩ => ?_
+    have e : { s₂ with sp := s.sp, wr := s.wr } = s₂ := by rw [← hw, ← hs]
+    rwa [e] at h
+  | q + 1, s, Q, hsp, hb => by
+    unfold chunks
+    refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by omega_using [hsp]) ?_
+    have hsp' : 2032 * q ≤ (allocd 2032 s).sp.toNat := by
+      simp only [allocd]
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
+      omega_using [hsp]
+    refine chunks_wpKept q (allocd 2032 s) (fun x => Q (freed 2032 x)) hsp' fun t ht => ?_
+    have hf := FrameAt.alloc ht (by decide) (by omega_using []) (by omega_using [hsp]) (by decide) (by omega_using [])
+    rw [show 2032 * q + 2032 = 2032 * (q + 1) by omega_using []] at hf
+    refine WP.mono (hb t hf) fun s₂ h => ?_
+    have e : freed 2032 { s₂ with sp := (allocd 2032 s).sp, wr := (allocd 2032 s).wr } =
+        { s₂ with sp := s.sp, wr := s.wr } := by
+      simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
+    rwa [e]
+
+/-- Superseded by `bigFrame_wp`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). -/
+theorem bigFrame_wpKept {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop} (hn : n % 16 = 0)
+    (hsp : n ≤ s.sp.toNat)
+    (hb : ∀ t, FrameAt n s t → (0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr) →
+      WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
+    WP isa (bigFrame n body) s Q := by
+  -- Up to 2032 bytes, the region `FrameAt.low` gives is the whole frame.
+  have whole : ∀ t, FrameAt n s t → n ≤ 2032 → 0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr :=
+    fun t ht h2 h0 _ => by
+      obtain ⟨L, h1, h3, h4⟩ := ht.low h0
+      rwa [show L = n by omega_using [h2, h1, h3]] at h4
+  have e : 2032 * (n / 2032) + n % 2032 = n := Nat.div_add_mod n 2032
+  unfold bigFrame
+  split
+  · rename_i h1
+    refine WP.allocLeKept ⟨by omega_using [h1], h1.2, hn⟩ hsp ?_
+    refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega_using [h1]) hsp) fun _ _ => by simp [allocd]))
+      fun s₂ ⟨h, _, hw, hs⟩ => ?_
+    rwa [freed_eq hw hs]
+  split
+  · rename_i h1 h0
+    refine chunks_wpKept (n / 2032) s Q (by omega_using [hsp]) fun t ht => ?_
+    rw [show 2032 * (n / 2032) = n by omega_using [h0]] at ht
+    exact hb t ht fun h0' h4 => whole t ht (by omega_using [h1, h4]) h0' h4
+  · rename_i h1 h0
+    have hr : n % 2032 < 2032 := Nat.mod_lt _ (by decide)
+    refine WP.allocKept ⟨by omega_using [h0], by omega_using [], by omega_using [hn]⟩ (by omega_using [hsp]) ?_
+    have hsp' : 2032 * (n / 2032) ≤ (allocd (n % 2032) s).sp.toNat := by
+      simp only [allocd]
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
+      omega_using [hsp]
+    refine chunks_wpKept (n / 2032) (allocd (n % 2032) s) (fun x => Q (freed (n % 2032) x)) hsp' fun t ht => ?_
+    have hf := FrameAt.alloc ht (by omega_using [hn]) (by omega_using []) (by omega_using [hsp]) (by omega_using []) (by omega_using [])
+    rw [e] at hf
+    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega_using [h1, h4]) h0' h4) fun s₂ h => ?_
+    have e : freed (n % 2032) { s₂ with sp := (allocd (n % 2032) s).sp, wr := (allocd (n % 2032) s).wr } =
+        { s₂ with sp := s.sp, wr := s.wr } := by
+      simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
+    rwa [e]
+
 end VG.RISCV64

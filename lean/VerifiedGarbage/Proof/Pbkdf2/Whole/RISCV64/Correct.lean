@@ -1834,8 +1834,8 @@ theorem correct {s : State} (hp : (pbkR hF.hH.SH (F.itB + F.frB + F.X)).pre s) :
     VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega_using [hsp]) (by omega_using [hib])
   have p := pre_alloc hF hp
   unfold Fns.pbkdf2
-  refine WP.alloc ⟨by have := hF.itW0; omega_using [hl, this], hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega_using [hsp])
-    (WP.alloc ⟨by omega_using [hl], hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega_using [hsp])
+  refine WP.allocKept ⟨by have := hF.itW0; omega_using [hl, this], hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega_using [hsp])
+    (WP.allocKept ⟨by omega_using [hl], hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega_using [hsp])
       (WP.mono (main_ok (hF := hF) p) fun s' ⟨hk, hra, hsp', hwr, hb⟩ => ?_))
   rw [freed_eq hwr hsp']
   rw [freed_eq (s₂ := { s' with sp := (allocd F.itB s).sp, wr := (allocd F.itB s).wr }) rfl rfl]

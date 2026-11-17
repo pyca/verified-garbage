@@ -943,7 +943,7 @@ theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
   obtain hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .a3
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.allocLe (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
+    refine WP.allocLeKept (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
     unfold body
     refine WP.seq (WP.mono (pubArgs_ok hp (by show t₁.sp - _ = _; rw [o₁.sp])
       (by show (⟨t₁.sp - _, _⟩ :: t₁.wr) = _; rw [o₁.sp, o₁.wr])

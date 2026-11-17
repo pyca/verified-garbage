@@ -213,7 +213,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     have : (s.gpr .a2).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
     omega
   obtain hBnat : (Fb s c).toNat = s.sp.toNat - 944 := Proof.Modes.RISCV64.fb_toNat' (c := c) h.sp
-  refine bigFrame_wp (n := 8 * c.total) (by rw [htot]) (by rw [htot]; exact h.sp) fun t ht hw => ?_
+  refine bigFrame_wpKept (n := 8 * c.total) (by rw [htot]) (by rw [htot]; exact h.sp) fun t ht hw => ?_
   obtain hS : ScrIn t (Fb s c) c.total := scrIn_of' h.al h.sp hL ht hw
   obtain ⟨ws, hws⟩ := ht.wr
   obtain hframeR : (⟨Fb s c, 944⟩ : Region) ∈ t.wr := hS.whole (by rw [htot]; decide)

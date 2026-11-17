@@ -678,6 +678,302 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
+/-! ## What the postconditions read of the memory on return -/
+
+/-- `initPost` reads the memory on return only within the buffers. -/
+theorem initPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (initSig.words pb).length →
+    Curry.apply (initSig.words pb) (initPre pb) vs m →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPost pb) vs m m₁ r →
+      Curry.apply (initSig.words pb) (initPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (initPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (initPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (initPost pb) _ m m₂ r
+  dsimp only [Curry.apply, initPre, ArgWord.ofRaw] at hpre
+  dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
+  obtain ⟨h1, h2⟩ := h
+  have hK : (Spec.Aes.bytesAt m key (kl.setWidth pb).toNat).length = (kl.setWidth pb).toNat := by
+    simp [Spec.Aes.bytesAt]
+  refine ⟨Eq.trans (bytesAt_congr fun i hi => agree_of hb.2 i ?_) h1,
+    (ctxH_congr fun i hi => agree_of hb.2 i (by omega_using [hi])).trans h2⟩
+  rw [hK] at hi
+  simp only [Spec.Aes.rounds] at hi
+  rcases hpre with e | e | e <;> rw [e] at hi <;> omega_using [hi]
+
+/-- `streamInitPost` reads the memory on return only within the buffers. -/
+theorem streamInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamInitSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamInitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamInitSig.words pb) (streamInitPost pb) vs m m₁ r →
+      Curry.apply (streamInitSig.words pb) (streamInitPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (streamInitPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (streamInitPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamInitPost, ArgWord.ofRaw] at h ⊢
+  exact fun ciph => streamRepr_congr (fun i hi => agree_of hb.2.2 i (by omega_using [hi])) (h ciph)
+
+/-- `streamAadPost` reads the memory on return only within the buffers. -/
+theorem streamAadPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamAadSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamAadSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamAadSig.words pb) (streamAadPost pb) vs m m₁ r →
+      Curry.apply (streamAadSig.words pb) (streamAadPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamAadSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamAadPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamAadPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamAadPost, ArgWord.ofRaw] at h ⊢
+  exact fun ciph iv a hr hl =>
+    streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) (h ciph iv a hr hl)
+
+/-- `streamEncryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamEncryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamCryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptSig.words pb) (streamEncryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (streamCryptSig.words pb) (streamEncryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamEncryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamEncryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamEncryptRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
+/-- `streamDecryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamDecryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamCryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptSig.words pb) (streamDecryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (streamCryptSig.words pb) (streamDecryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamDecryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamDecryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamDecryptRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
+/-- `streamFinishRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamFinishPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamFinishSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamFinishSig.words pb) (streamFinishRoundsPost pb) vs m m₁ r →
+      Curry.apply (streamFinishSig.words pb) (streamFinishRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 5) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr]
+    (streamFinishRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr]
+    (streamFinishRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamFinishRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a c hr hl ht
+  refine Eq.trans ?_ (h hn iv a c hr hl ht)
+  exact bytesAt_congr fun i hi => agree_of hb.2.2 i (by omega_using [hi])
+
+/-- `streamVerifyRoundsPost` reads the memory on return only within the buffers. -/
+theorem streamVerifyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (streamVerifySig.words pb).length →
+    (∀ b ∈ Sig.bufs streamVerifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamVerifySig.words pb) (streamVerifyRoundsPost pb) vs m m₁ r →
+      Curry.apply (streamVerifySig.words pb) (streamVerifyRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tgl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamVerifySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamVerifyRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (streamVerifyRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamVerifyRoundsPost, ArgWord.ofRaw] at h ⊢
+  exact h
+
+/-- `sealRoundsPost` reads the memory on return only within the buffers. -/
+theorem sealPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealSig.words pb) (sealRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2 i (by omega_using [hi])]
+  exact h hr
+
+/-- `openRoundsPost` reads the memory on return only within the buffers. -/
+theorem openPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).length →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₁ r →
+      Curry.apply (openSig.words pb) (openRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tgl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (openRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
 theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openSig.words pb) (openLeak pb) vs m₁ =

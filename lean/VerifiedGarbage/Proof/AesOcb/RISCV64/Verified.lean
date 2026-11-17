@@ -146,7 +146,8 @@ theorem seal_framed :
   RISCV64.Verified.stackScratchArgs (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Ocb.sealPre RISCV64.abi.ptrBits) (post := Proof.AesOcb.sealRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) (m := 2) seal_verified (by decide) (by decide)
-    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _) sealFrameSat_pre
+    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _) (Proof.AesOcb.sealPostOut_local _)
+    sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ocb_open`'s precondition, without the working
 space: `tag` and `tag_len` alone on the stack. -/
@@ -166,6 +167,6 @@ theorem open_framed :
     (pre := Spec.Ocb.openPre RISCV64.abi.ptrBits) (post := Proof.AesOcb.openRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) (m := 2) (leak := some (Spec.Ocb.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _)
-    openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
+    (Proof.AesOcb.openPostOut_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
 
 end VG.Proof.AesOcb.RISCV64

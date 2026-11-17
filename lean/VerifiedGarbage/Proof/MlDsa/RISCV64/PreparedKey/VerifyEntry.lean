@@ -415,7 +415,7 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hsk := hF.sk; have hc := hF.c
   unfold signEntry entry
-  refine WP.frame (by omega_using [hstk]) ?_
+  refine WP.frameKept (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.sk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := kernel_call hF h hu
   have gu : ∀ r, r ≠ .a5 → r ≠ .a6 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
@@ -817,7 +817,7 @@ theorem verifyEntry_wp (name : String) {s : State} (h : VEPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hpk := hF.pk; have hc := hF.c
   unfold verifyEntry entry
-  refine WP.frame (by omega_using [hstk]) ?_
+  refine WP.frameKept (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.pk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := vkernel_call hF h hu
   have gu : ∀ r, r ≠ .a4 → r ≠ .a5 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2

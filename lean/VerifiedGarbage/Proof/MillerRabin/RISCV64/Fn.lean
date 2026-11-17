@@ -169,7 +169,7 @@ theorem fn_correct (hcore : CoreOk) (s : State) (hpre : (roundContract RISCV64.a
   have sl : ∀ j < 28, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_lt hj) hZ
   -- the frame
   unfold Impl.MillerRabin.RISCV64.round Impl.StackScratch.RISCV64.withStackScratch
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ h.sp1 ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   refine WP.seq (WP.block_cons_iff.mpr ⟨_, exec_addSp (imm := 0) (by decide), WP.block_nil ?_⟩)
   generalize hs0 : (allocd frameBytes s).write .t2 ((allocd frameBytes s).sp + BitVec.ofNat 64 0) = s₀
   have g0 : ∀ r, r ≠ .t2 → s₀.gpr r = s.gpr r := fun r hr => by

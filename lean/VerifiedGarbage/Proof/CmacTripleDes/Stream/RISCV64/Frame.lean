@@ -109,7 +109,7 @@ end
 
 The streaming functions run their code, proved with the working space as an
 argument and the 944 bytes of stack below it that ECB uses (`Verified.lean`),
-in a frame that allocates the working space (`Verified.stackScratchL`): 640
+in a frame that allocates the working space (`Verified.stackScratchLKept`): 640
 bytes for `stream_init` and `finish`, 688 for `absorb`, so 1584 and 1632
 bytes of stack in all.
 -/
@@ -147,7 +147,7 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract RISCV64.abi 15
 theorem init_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 640 .a3 streamInit)
       (Spec.Cmac.tdesStreamInitContract RISCV64.abi 1584) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Cmac.tdesStreamInitPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.tdesStreamInitPost RISCV64.abi.ptrBits) (wa := false) (stack := 944)
     (bytes := 640) init_verified (by decide) (by decide) initFrameSat_pre
@@ -155,14 +155,14 @@ theorem init_framed :
 theorem absorb_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 688 .a4 absorb)
       (Spec.Cmac.tdesAbsorbContract RISCV64.abi 1632) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 86) (post := Spec.Cmac.tdesAbsorbPost RISCV64.abi.ptrBits) (wa := false) (stack := 944)
     (bytes := 688) absorb_verified (by decide) (by decide) absorbFrameSat_pre
 
 theorem finish_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 640 .a3 finish)
       (Spec.Cmac.tdesFinishContract RISCV64.abi 1584) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64)
     (n := 80) (post := Spec.Cmac.tdesFinishPost RISCV64.abi.ptrBits) (wa := false) (stack := 944)
     (bytes := 640) finish_verified (by decide) (by decide) finishFrameSat_pre
 

@@ -418,7 +418,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
     (hn : sdepth main + 16 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
+  refine WP.frameKept hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi

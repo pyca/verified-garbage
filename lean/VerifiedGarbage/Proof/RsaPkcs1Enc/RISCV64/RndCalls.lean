@@ -525,7 +525,7 @@ theorem call_ok {s z : State} (hp : RPre s) {i : Nat} {ps : List Byte} (hz : Pre
   obtain hP := psLen_le hp
   obtain hfg := fb_ge hp
   unfold Impl.RsaPkcs1Enc.RISCV64.Random.call
-  refine WP.allocLe (by decide) (by rw [hz.sp]; omega_using [hfg]) ?_
+  refine WP.allocLeKept (by decide) (by rw [hz.sp]; omega_using [hfg]) ?_
   refine WP.seq (WP.mono (stack_ok hp hz) fun w hw => ?_)
   obtain ⟨hc, hcw⟩ := call_covers hp hw
   refine WP.callAny (k := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) Enc.code_correct

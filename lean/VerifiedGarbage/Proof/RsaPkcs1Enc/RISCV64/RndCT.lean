@@ -222,7 +222,7 @@ theorem post_freed {s x : State} (n : Nat) (h : post s x) : post s (freed n x) :
 
 theorem code_ok {s : State} (hp : RPre s) : WP isa code s fun s' => abiPreserved s s' ∧ post s s' := by
   unfold code
-  exact WP.allocLe (by decide) (sp1' hp) (WP.mono (body_ok hp) fun x h => ⟨h.1, post_freed _ h.2⟩)
+  exact WP.allocLeKept (by decide) (sp1' hp) (WP.mono (body_ok hp) fun x h => ⟨h.1, post_freed _ h.2⟩)
 
 
 /-! ## The public data -/

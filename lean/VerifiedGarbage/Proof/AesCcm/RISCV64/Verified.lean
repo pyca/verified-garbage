@@ -153,7 +153,7 @@ theorem seal_framed :
     (n := 320) (pre := Spec.Ccm.sealPre RISCV64.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592) (m := 2)
     seal_verified (by decide) (by decide) (Proof.AesCcm.sealPre_local _) (Proof.AesCcm.sealPost_local _)
-    sealFrameSat_pre
+    (Proof.AesCcm.sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
@@ -175,6 +175,6 @@ theorem open_framed :
     (post := Proof.AesCcm.openRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592) (m := 2)
     (leak := some (Spec.Ccm.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesCcm.openPre_local _) (Proof.AesCcm.openPost_local _)
-    openFrameSat_pre (hleak := Proof.AesCcm.openLeak_local _)
+    (Proof.AesCcm.openPostOut_local _) openFrameSat_pre (hleak := Proof.AesCcm.openLeak_local _)
 
 end VG.Proof.AesCcm.RISCV64

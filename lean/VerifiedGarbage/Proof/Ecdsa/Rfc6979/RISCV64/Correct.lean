@@ -846,7 +846,7 @@ theorem correct {ns : List String} {s : State} (hp : (rfcRC P.kit.K P.I P.w P.c.
   have hsp : P.N ≤ s.sp.toNat := hp.1.2.2.2.2.2.2.2.2.2.2.1
   obtain p := pre_alloc hp
   unfold Cfg.sign
-  refine WP.alloc ⟨by omega_using [hfr], by omega_using [hfr], by omega_using [hfr]⟩
+  refine WP.allocKept ⟨by omega_using [hfr], by omega_using [hfr], by omega_using [hfr]⟩
     (by have : frB ≤ P.N := by simp only [Rfc.N]; omega_using []
         omega_using [hsp, this])
     (WP.mono (main_ok p) fun s' ⟨hk, hra, hsp', hwr, i, hi, hf, hl, hres⟩ => ?_)

@@ -854,7 +854,7 @@ theorem verifyHash_verified_nil {wide : Bool} {core : Prog isa}
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by
     simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words]
   obtain hb : 0 < 80 ∧ 80 ≤ 4064 ∧ 80 % 16 = 0 ∧ 80 * Elem.u8.size ≤ 80 := by decide
-  exact Verified.stackScratchL (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchLKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0) (bytes := 80)
     (hashed_verified_nil hL h66 hcore htc ⟨_, narrow_pre (nm := "buf") hk hb (pre_leak.mp h₀) rfl⟩) hk hb
     ⟨s₀, h₀⟩ rfl
@@ -871,7 +871,7 @@ theorem verifyHash_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String 
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by
     simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words]
   obtain hb : 0 < 80 ∧ 80 ≤ 4064 ∧ 80 % 16 = 0 ∧ 80 * Elem.u8.size ≤ 80 := by decide
-  exact Verified.stackScratchLC (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchLCKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0) (bytes := 80)
     (hashed_verified_cons hL h66 hcore htc ⟨_, narrowK_pre (nm := "buf") (post := hPost I) hk hb rfl h₀⟩) hk hb
     ⟨s₀, h₀⟩ rfl

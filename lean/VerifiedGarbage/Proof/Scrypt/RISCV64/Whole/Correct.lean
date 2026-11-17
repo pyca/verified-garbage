@@ -583,7 +583,7 @@ theorem scrypt_ok {s : State} (h : scryptRV.pre s) :
     WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ scryptRV.post s s' := by
   have hL := lay_ok h
   have h1248 : 1248 ≤ s.sp.toNat := h.1
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega_using [h1248]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega_using [h1248]) ?_
   refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, he⟩ => ?_)
   refine rest_ok hv hd name hL hc he fun u hu ho => WP.mono (restore_ok hL hu) fun v ⟨vra, vm, vsp, _, _, vg⟩ => ?_
   refine ⟨⟨fun r hr => vg r hr, ?_, vra⟩, ?_⟩

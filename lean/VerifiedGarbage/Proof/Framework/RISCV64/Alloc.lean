@@ -57,6 +57,33 @@ theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     WP isa (.frame (.alloc n) body (.free n)) s Q :=
   WP.allocLe ⟨hn.1, by omega_using [hn], hn.2.2⟩ hsp hb
 
+/-- Superseded by `WP.allocLe`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). A frame allocating `n` bytes: its body runs from `allocd n s`, and the
+`free` leads to `freed n s₂`. -/
+theorem WP.allocLeKept {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < n ∧ n ≤ 4064 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
+    (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
+    WP isa (.frame (.alloc n) body (.free n)) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
+  have hpush : isa.push (.alloc n) s = some (allocd n s) := by
+    show push (.alloc n) s = some (allocd n s)
+    unfold push
+    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hsp⟩) |>.trans rfl
+  have hpop : isa.pop (.free n) (allocd n s) s₂ = some (freed n s₂) := by
+    show pop (.free n) (allocd n s) s₂ = some (freed n s₂)
+    unfold pop
+    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
+  exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
+
+/-- Superseded by `WP.alloc`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). `WP.allocLe`, for a frame below 2048 bytes (one `addi`). -/
+theorem WP.allocKept {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < n ∧ n < 2048 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
+    (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
+    WP isa (.frame (.alloc n) body (.free n)) s Q :=
+  WP.allocLeKept ⟨hn.1, by omega_using [hn], hn.2.2⟩ hsp hb
+
 /-- The state after the frame, when its body keeps the permissions and the
 stack pointer: those of `s`. -/
 theorem freed_eq {n : Nat} {s s₂ : State} (hwr : s₂.wr = (allocd n s).wr)

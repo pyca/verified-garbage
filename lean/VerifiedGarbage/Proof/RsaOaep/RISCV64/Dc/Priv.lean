@@ -1271,7 +1271,7 @@ theorem privF_ok {t : State} (E : Entered s t) :
         WP isa (.block [.shift .sll .d .s4 .a0 32, .shift .srl .d .s4 .s4 32]) w (AfterPriv pc s) := by
   have hsp : t.sp = fb s := E.sv.sp
   obtain pr := privBytes_rng pc
-  refine WP.alloc (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
+  refine WP.allocKept (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
     rw [hsp]; have := P.sp1
     rw [stackBytes_split] at this
     simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, Impl.Rsa.RISCV64.Priv.frameBytes] at *

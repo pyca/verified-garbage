@@ -33,7 +33,7 @@ section
 # The SHA-3 sponge on RISC-V: `pad`
 
 As on PPC64LE (`Proof/Sha3/PPC64LE/Stream/Pad.lean`), in a frame on the
-stack (`WP.alloc`) that holds the permutation's scratch space and the saved
+stack (`WP.allocKept`) that holds the permutation's scratch space and the saved
 return address.
 -/
 
@@ -116,7 +116,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have hpl := hp.pos_lt
   have hB := hp.B_eq
   unfold Impl.Sha3.RISCV64.Stream.pad padBytes
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp; omega_using [this]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hp.sp; omega_using [this]) ?_
   -- In the frame.
   let s := allocd 528 s₀
   have hsp : s.sp = B s₀ := rfl
@@ -648,7 +648,7 @@ theorem correct {s₀ : State} (hp : SPre s₀) :
   obtain hn := outn_lt s₀
   have ⟨hr0, hr200⟩ := hp.rate_pos
   unfold squeeze withLoop frameBytes
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ k pos, Inv s₀ (outn s₀) k pos s) ?_
     fun s₂ ⟨k, pos, hI₂⟩ => ?_)

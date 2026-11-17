@@ -156,7 +156,7 @@ theorem codeG_correct (s : State) (h : SPre pc s) (X : pc = true → PreX s) :
     ∃ tr t, Exec isa (codeG pc) s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   unfold codeG
-  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)

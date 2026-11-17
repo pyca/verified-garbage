@@ -883,7 +883,7 @@ theorem priv_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem)
   have hsp : t.sp = fb s := h.sp
   obtain pr := privBytes_rng pc
   unfold priv
-  refine WP.alloc (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
+  refine WP.allocKept (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
     rw [hsp]; have := P.sp1
     rw [stackBytes_split] at this
     simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, Impl.Rsa.RISCV64.Priv.frameBytes] at *

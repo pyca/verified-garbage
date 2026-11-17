@@ -659,6 +659,7 @@ theorem Verified.stackScratchL {c : Prog isa}
     (hk : (sig.words abi.ptrBits).length < 8)
     (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
     (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
@@ -703,10 +704,60 @@ theorem Verified.stackScratchL {c : Prog isa}
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (hlen s (by omega_using [hk]))) _) s₃.mem) _) hq'
     -- The memory on return: after the `free`, which loses only the frame.
-    refine hpostOut _ _ _ _ _ (hlen s (by omega_using [hk])) (fun b hb' a ha' => ?_) h₃
+    have hpr : Curry.apply (sig.words abi.ptrBits) pre (regArgs sig s) s.mem := by
+      have hs' : (sig.contract abi pre post wa (stack + bytes)).pre s := hs
+      rw [pre_regs (by omega_using [hk]) hl] at hs'
+      exact hs'.2.2.2.2.2.2.1
+    refine hpostOut _ _ _ _ _ (hlen s (by omega_using [hk])) hpr (fun b hb' a ha' => ?_) h₃
     exact (hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hdisjF s hs b hb' a ha').symm
+  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
+    exact hct _ _ _ _ _ _ (narrow_pre (post := post) hk hb h₁ hl) (narrow_pre (post := post) hk hb h₂ hl) (narrow_pubL hk hp hl) f₁ f₂
+
+/-- Superseded by `Verified.stackScratchL`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). Code verified for a function whose last argument, in a register, is a
+scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
+for the function without it, which allocates the buffer in a frame of
+`bytes` more bytes of stack (`withStackScratch`), with any leak: the frame's
+`alloc` writes no memory, so the precondition, postcondition and leak see
+the memory they do without it. -/
+theorem Verified.stackScratchLKept {c : Prog isa}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hk : (sig.words abi.ptrBits).length < 8)
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (hl : Sig.noLists sig.params = true := by decide) :
+    Verified target (withStackScratch bytes (scratchReg sig) c)
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
+  obtain ⟨hcor, hct, -⟩ := h
+  have hlen := regArgs_length sig
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃,
+      Exec isa c (narrow sig e n bytes s) t s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes s) s₃ ∧
+      Exec isa (withStackScratch bytes (scratchReg sig) c) s t (popState bytes s s₃) ∧
+      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      (popState bytes s s₃).gpr = s₃.gpr := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hs hl)
+    obtain ⟨hex, habi, -, hg⟩ := withStackScratch_run hk hb hs he ha hl
+    exact ⟨t, s₃, he, hq, hex, habi, rfl, hg⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
+    refine ⟨_, _, hex, ha, ?_⟩
+    show (sig.contract abi pre post wa (stack + bytes)).post s _
+    rw [post_regs (by omega_using [hk])]
+    have hq' := (post_regs (sig := sig.withScratch nm e n)
+      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
+      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp hq
+    rw [narrow_regArgs hk] at hq'
+    rw [hm, hg]
+    exact Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
+      post _ _ (hlen s (by omega_using [hk]))) _) s₃.mem) _) hq'
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]

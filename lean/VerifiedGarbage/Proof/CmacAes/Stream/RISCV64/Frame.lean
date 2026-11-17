@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame of 2304 bytes that allocates it
-(`Verified.stackScratchL`), all working space. Their code uses no other
+(`Verified.stackScratchLKept`), all working space. Their code uses no other
 stack: a call (`jal`) keeps the return address in `ra`, which they save in
 the working space.
 -/
@@ -50,7 +50,7 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract RISCV64.abi 230
 theorem init_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2304 .a3 init)
       (Spec.Cmac.aesInitContract RISCV64.abi 2304) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) init_verified (by decide) (by decide) initFrameSat_pre
@@ -58,7 +58,7 @@ theorem init_framed :
 theorem absorb_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2304 .a5 absorb)
       (Spec.Cmac.aesAbsorbContract RISCV64.abi 2304) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) absorb_verified (by decide) (by decide) absorbFrameSat_pre
@@ -66,7 +66,7 @@ theorem absorb_framed :
 theorem finish_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2304 .a4 finish)
       (Spec.Cmac.aesFinishContract RISCV64.abi 2304) :=
-  RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchLKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) finish_verified (by decide) (by decide) finishFrameSat_pre

@@ -492,7 +492,7 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
     omega_using []
   obtain hroom : 80 ≤ s.sp.toNat := by have := hf.room; have hsu : stackUse = 656 := rfl; omega_using [hspn, this, hsu]
   unfold keyRun keyCall
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (WP.mono (key_stack_ok h) fun u ⟨⟨hm, ku⟩, hyu⟩ => ?_)
   refine WP.seq (WP.mono (key_args_ok h hm ku) fun w ⟨⟨⟨ha, hmw⟩, kw⟩, hyw⟩ => ?_)
   obtain hu : w.sp = keySp p := kw.sp.trans (ku.sp.trans (alloc_key_sp h))

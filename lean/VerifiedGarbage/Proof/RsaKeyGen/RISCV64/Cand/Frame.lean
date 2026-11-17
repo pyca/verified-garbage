@@ -429,7 +429,7 @@ theorem code_ok (h : CIn s0) {trial round : Prog isa} {name : String} {Q : BitVe
     WP isa (VG.Impl.RsaKeyGen.RISCV64.Candidate.code trial name round) s0
       fun t => abiPreserved s0 t ∧ Q (t.gpr .a0) t.mem := by
   unfold VG.Impl.RsaKeyGen.RISCV64.Candidate.code VG.Impl.RsaKeyGen.RISCV64.Candidate.body
-  refine WP.alloc (by decide) (by have := h.spLo; show 192 ≤ s0.sp.toNat; omega_arith) ?_
+  refine WP.allocKept (by decide) (by have := h.spLo; show 192 ≤ s0.sp.toNat; omega_arith) ?_
   simp only [VG.Impl.RsaKeyGen.RISCV64.Candidate.seqs]
   refine WP.seq (WP.mono (entry_ok h) fun s ⟨fs, s6, r0, sy⟩ => ?_)
   refine wp_seq3 (hm s fs s6 r0 sy) fun u ⟨fu, qu⟩ => ?_

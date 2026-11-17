@@ -92,7 +92,7 @@ theorem checks_done {t : State} (E : Entered s t) (sy : t.syms = s.syms) :
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (signFor H M.be f g pc) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
+  refine WP.allocKept (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (pro_ok P) fun t₀ E₀ y₀ => WP.seq (WP.mono_syms (spill_ok P E₀) fun t E y =>
     WP.seq (WP.mono (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans (y₀.trans rfl)))
       fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩)))

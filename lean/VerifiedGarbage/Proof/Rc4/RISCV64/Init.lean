@@ -404,7 +404,7 @@ theorem init_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toNa
     simp only [VG.Spec.Rc4.init, bytes_length, hg, and_self, ite_true]
     have hF : (s.sp - 256#64).toNat = s.sp.toNat - 256 := by
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp])]; rfl
-    refine WP.alloc (n := frameBytes) (by decide) (by rw [htsp]; exact hsp) ?_
+    refine WP.allocKept (n := frameBytes) (by decide) (by rw [htsp]; exact hsp) ?_
     have hsp' : (allocd frameBytes t).sp = s.sp - 256#64 := by
       show t.sp - BitVec.ofNat 64 256 = _
       rw [htsp]

@@ -211,7 +211,7 @@ theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
   have hsu : stackUse = 656 := rfl
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   unfold genCode code
-  refine WP.alloc (by decide) (by show 112 ≤ s.sp.toNat; omega_using [hsu, hroom']) ?_
+  refine WP.allocKept (by decide) (by show 112 ≤ s.sp.toNat; omega_using [hsu, hroom']) ?_
   simp only [seqs]
   refine WP.seq (WP.block_append_iff.mpr (VG.RISCV64.WP.mono_syms (entryHead_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu =>
     VG.RISCV64.WP.mono_syms (entryWords_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_))

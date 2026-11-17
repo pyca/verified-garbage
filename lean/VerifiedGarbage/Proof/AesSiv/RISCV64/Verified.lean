@@ -27,7 +27,7 @@ Untrusted: everything here is checked by Lean. Correctness (`Enc.lean`,
 states satisfying their preconditions, and the shared contracts of
 `Spec/Siv/Contract.lean` with the working space as a last argument
 (`Proof/AesSiv/Scratch.lean`), then in a frame on the stack
-(`Verified.stackScratchLists`). `init`'s are in `Init.lean`. As on PPC64LE
+(`Verified.stackScratchListsKept`). `init`'s are in `Init.lean`. As on PPC64LE
 (`Proof/AesSiv/PPC64LE/Verified.lean`).
 -/
 
@@ -256,14 +256,14 @@ theorem decrypt_verified : Verified RISCV64.target Impl.AesSiv.RISCV64.decrypt
 /-- `encrypt` with its working space in a frame of 2576 bytes. -/
 theorem encrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
     Impl.AesSiv.RISCV64.encrypt) (Proof.AesSiv.encryptRoundsContract RISCV64.abi 2576) :=
-  RISCV64.Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+  RISCV64.Verified.stackScratchListsKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide) encFrameSat_pre
 
 /-- `decrypt` with its working space in a frame of 2576 bytes. -/
 theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
     Impl.AesSiv.RISCV64.decrypt) (Proof.AesSiv.decryptRoundsContract RISCV64.abi 2576) :=
-  RISCV64.Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+  RISCV64.Verified.stackScratchListsKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak RISCV64.abi.ptrBits))
     decrypt_verified (by decide) (by decide) decFrameSat_pre

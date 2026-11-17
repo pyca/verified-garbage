@@ -847,7 +847,7 @@ theorem preCall_ok {s w : State} (hp : PreE s) (hw : Setup s w) : WP isa preCall
 
 theorem code_ok {s : State} (hp : PreE s) : WP isa code s (Post s) := by
   unfold code
-  refine WP.allocLe (by decide) hp.sp1 ?_
+  refine WP.allocLeKept (by decide) hp.sp1 ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok hp rfl rfl rfl (Frame.refl _ _) (fun _ => rfl)) fun w hw => ?_)
   refine WP.seq (WP.mono (preCall_ok hp hw) fun t ht => ?_)
