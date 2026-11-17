@@ -1030,7 +1030,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   obtain hnB : L.B.toNat + 736 ≤ 2 ^ 64 := by rw [← hl]; exact hL.nB
   rw [Cfg.sign, frameBytes]
   refine WP.seq (wp_step exec_mflr (wp_nil ?_))
-  refine WP.seq (WP.frameKept (by show 48 ≤ s.sp.toNat; omega_using [hsp]) (WP.allocKept (by omega_using [])
+  refine WP.seq (WP.frame (by show 48 ≤ s.sp.toNat; omega_using [hsp]) (WP.alloc (by omega_using [])
     (by show 592 ≤ (s.sp - 48).toNat; rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s.sp.toNat; omega_using [hsp])]
         show 592 ≤ s.sp.toNat - 48; omega_using [hsp]) ?_))
   rw [Cfg.body]
@@ -1038,30 +1038,59 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   refine WP.seq (WP.mono hent fun t (hc : Ctx (layOf P s) s.gpr s.lr s.mem t) => ?_)
   rw [hl] at hL hq hc
   refine WP.mono (rest_ok hL hq hc) fun u ⟨hcu, i, hx⟩ => ?_
+  intro m₁ u₁ f₁ m₂ u₂ f₂
   refine wp_step exec_mtlr (wp_nil ?_)
   have hsu := hcu.sp
-  obtain hfm : (freed 592 u).mem = u.mem := freed_mem _ _
+  -- The frames: the inner one at `B + 96`, the outer at `B + 688`.
+  obtain eI : (pushed .r0 (s.write .r0 s.lr)).sp - 592#64 = L.B + BitVec.ofNat 64 96 := by
+    show s.sp - 48 - 592#64 = _; rw [hB]; bv_omega
+  obtain eO : (s.write .r0 s.lr).sp - 48 = L.B + BitVec.ofNat 64 688 := by
+    show s.sp - 48 = _; rw [hB]; bv_omega
+  rw [eI] at f₁
+  rw [eO] at f₂
   obtain hfs : (freed 592 u).sp = L.B + BitVec.ofNat 64 688 := by rw [freed_sp, hsu, fr_add]
-  obtain hpm : (popped .r0 (freed 592 u)).mem = u.mem := by rw [popped_mem, hfm]
-  obtain hpg : ∀ r, r ≠ .r0 → (popped .r0 (freed 592 u)).gpr r = u.gpr r := fun r h0 => by
-    rw [popped_gpr, Proof.Mont.PPC64LE.write_gpr, freed_gpr]; simp only [h0, ↓reduceIte]
-  -- The return address and the stack pointer, as on entry.
-  obtain hr0 : (popped .r0 (freed 592 u)).gpr .r0 = s.lr := by
+  generalize hw : ({ freed 592 u with mem := m₁, unknowns := u₁ } : State) = w at f₂ ⊢
+  obtain hwm : w.mem = m₁ := by rw [← hw]
+  obtain hws : w.sp = L.B + BitVec.ofNat 64 688 := by rw [← hw]; exact hfs
+  obtain hwg : w.gpr = u.gpr := by rw [← hw, freed_gpr_eq]
+  obtain hpg : ∀ r, r ≠ .r0 → (popped .r0 w).gpr r = u.gpr r := fun r h0 => by
+    rw [popped_gpr, Proof.Mont.PPC64LE.write_gpr, hwg]; simp only [h0, ↓reduceIte]
+  -- The return address and the stack pointer, as on entry: the saved
+  -- address lies apart from the inner frame.
+  obtain hr0 : (popped .r0 w).gpr .r0 = s.lr := by
     rw [popped_gpr, Proof.Mont.PPC64LE.write_gpr]; simp only [↓reduceIte]
-    rw [hfm, hfs,
-      show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl, fr_add, read8]
+    rw [hwm, hws,
+      show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl, fr_add, read8,
+      f₁.readW (r := ⟨L.B + BitVec.ofNat 64 720, 8⟩) (Region.contains_self _ _)
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hnB]) (by omega_using [hnB]))
+        (by omega_using []), ← read8]
     exact hcu.lr
+  -- The `free` and the `pop` lose the frames' bytes, which lie apart from
+  -- the signature.
+  obtain hlq' : L.q = P.I.ecdsa.curve.len := by rw [← hl]; rfl
+  have e : Spec.Ecdsa.bytesAt m₂ (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
+      Spec.Ecdsa.bytesAt u.mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) := by
+    obtain ho : s.gpr .r3 = L.out := by rw [← hl]; rfl
+    rw [ho, ← hlq']
+    refine List.map_congr_left fun i hi => ?_
+    obtain hi : i < L.OUT.len := List.mem_range.mp hi
+    exact (lost_byte f₂ (R := L.OUT) (hL.stk_OUT (by omega_using [])).symm hi).trans
+      ((congrArg (· (L.out + BitVec.ofNat 64 i)) hwm).trans
+        (lost_byte f₁ (R := L.OUT) (hL.stk_OUT (by omega_using [])).symm hi))
   refine ⟨⟨fun r hr => ?_, ?_, hr0⟩, ?_⟩
   · rw [hpg r fun e => by subst e; exact absurd hr (by decide)]
     exact hcu.cs r hr
-  · rw [popped_sp, hfs, hB, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, fr_add]
+  · rw [popped_sp, hws, hB, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, fr_add]
   · have hr := result_eq hx
-    obtain h3 : (popped .r0 (freed 592 u)).gpr .r3 = u.gpr .r3 := hpg _ (by decide)
+    obtain h3 : (popped .r0 w).gpr .r3 = u.gpr .r3 := hpg _ (by decide)
     obtain hd : s.gpr .r4 = L.d := by rw [← hl]; rfl
     obtain hg : s.gpr .r5 = L.dg := by rw [← hl]; rfl
     obtain ho : s.gpr .r3 = L.out := by rw [← hl]; rfl
     obtain hlq : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa]
-    generalize popped .r0 (freed 592 u) = v at h3 hpm ⊢
+    generalize hv : ({ popped .r0 w with mem := m₂, unknowns := u₂ } : State) = v at h3 ⊢
+    obtain hvm : v.mem = m₂ := by rw [← hv]
     show match (result P.I s.mem (s.gpr .r4) (s.gpr .r5)).1 with
       | some rs => (v.gpr .r3).setWidth 32 = 1 ∧
           Spec.Ecdsa.bytesAt v.mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
@@ -1069,7 +1098,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
       | none => (v.gpr .r3).setWidth 32 = 0 ∧
           Spec.Ecdsa.bytesAt v.mem (s.gpr .r3) (2 * P.I.ecdsa.curve.len) =
             List.replicate (2 * P.I.ecdsa.curve.len) 0
-    rw [hd, hg, hr, hpm, h3, ho, hlq, P.ecdsa]
+    rw [hd, hg, hr, hvm, e, ← hv, h3, ho, hlq, P.ecdsa]
     have := hx.res
     unfold ResultIs at this
     exact this
