@@ -771,7 +771,8 @@ theorem withStackArgScratch_runMem {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptr
     Exec isa (withStackArgScratch bytes (nStack sig) c) s
         (setArgsTrace bytes (s.gpr .rsp - BitVec.ofNat 64 bytes) (nStack sig) ++ t)
         (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      (popState bytes s s₃).mem = lose s₃.mem (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes s₃.unknowns ∧
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
   obtain ⟨hb, hb1, hb2⟩ := hb
   obtain ⟨hrun, hrd', hwr', -, -, -, -, -⟩ := argsState_run hs hk hb hb1
@@ -851,7 +852,7 @@ theorem withStackArgScratch_runMem {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptr
     · simp [allocState, State.setReg]
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_rsp'] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, rfl, ?_⟩
+  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, by show lose _ (s₃.gpr .rsp) _ _ = _; rw [hrsp₃], ?_⟩
   · -- The callee-saved registers.
     simp only [popState, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .rsp
@@ -861,11 +862,14 @@ theorem withStackArgScratch_runMem {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptr
       rw [ha.1 q hq, hg q hqa hqs]
   · -- The return address: the code writes only its regions and below `rsp`.
     have hfs := Exec.stackFrame hsafe he (by omega_using [hd, hsb])
-    show s₃.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    show (lose s₃.mem (s₃.gpr .rsp) bytes s₃.unknowns).readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
     have hR : ∀ {x k : Nat}, x ≤ stack + bytes → stack + bytes - x + k ≤ stack + bytes →
         (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 x, k⟩ := fun hx hk =>
       (Offset.base_disjoint_below _ (n := stack + bytes) (k := 8) (by omega_using [hst])).sub_right
         (Offset.sub_below _ hx hk)
+    rw [(lose_frame _ _ _ _).readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [hrsp₃]
+      exact hR (by omega_using []) (by omega_using [hb])) (by decide)]
     rw [hfs.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact hf.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [harea]; exact hR (by omega_using []) (by omega_using [hb]))
@@ -907,7 +911,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
       Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
   obtain ⟨hex, ha', hm, hr⟩ := withStackArgScratch_runMem hk hb hst hsafe hd hs he ha
-  exact ⟨hex, ha', by rw [hm]; exact Frame.refl _ _, hr⟩
+  exact ⟨hex, ha', by rw [hm]; exact lose_frame _ _ _ _, hr⟩
 
 /-- The frame is apart from the function's buffers and its lists of slices:
 it is in the stack below `rsp` that the contract without the buffer

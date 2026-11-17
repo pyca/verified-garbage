@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (x86-64)
@@ -217,7 +218,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
     · simp [allocState, State.setReg]
   have hex := Exec.frame hpush (Exec.seq hblk hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, Frame.refl _ _, ?_⟩
+  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, by show Frame _ _ (lose _ _ _ _); rw [hrsp₃]; exact lose_frame _ _ _ _, ?_⟩
   · -- The callee-saved registers.
     simp only [popState, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .rsp
@@ -229,7 +230,10 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
   · -- The return address: the code writes only its regions and below `rsp`.
     have hf := Exec.stackFrame hsafe he (by omega_arith)
     simp only [narrow_wr, narrow_mem, narrow_rsp hk] at hf
-    show s₃.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    show (lose s₃.mem (s₃.gpr .rsp) bytes s₃.unknowns).readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    rw [(lose_frame _ _ _ _).readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'; rw [hrsp₃]
+      exact Offset.base_disjoint_below _ (by omega_arith)) (by decide)]
     refine hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_) (by decide)
     rcases List.mem_append.mp hr' with hr' | hr'
     · rcases List.mem_append.mp hr' with hr' | hr'
