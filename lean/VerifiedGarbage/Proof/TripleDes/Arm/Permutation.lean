@@ -23,16 +23,6 @@ def permutationOutputs {m : Nat} (positions : Vector Nat m) (n srcSplit dstSplit
   [(lo, permutationBits positions n srcSplit dstSplit 0),
    (hi, permutationBits positions n srcSplit (m - dstSplit) dstSplit)]
 
-theorem initialPermutation_check :
-    check (lanes 32 6) permutationCfg (linExt 2) (instrs initialPermutation.lit)
-      (linEnv (permutationInputs .r5 .r4)) (linPost 6 (permutationOutputs Spec.TripleDes.ip 64 32 32 .r11 .r10)) = true := by
-  decide +kernel
-
-theorem finalPermutation_check :
-    check (lanes 32 6) permutationCfg (linExt 2) (instrs finalPermutation.lit)
-      (linEnv (permutationInputs .r11 .r10)) (linPost 6 (permutationOutputs Spec.TripleDes.fp 64 32 32 .r5 .r4)) = true := by
-  decide +kernel
-
 theorem keyPermutation1_check :
     check (lanes 32 6) permutationCfg (linExt 2) (instrs keyPermutation1.lit)
       (linEnv (permutationInputs .r5 .r4)) (linPost 6 (permutationOutputs Spec.TripleDes.pc1 64 32 28 .r11 .r10)) = true := by

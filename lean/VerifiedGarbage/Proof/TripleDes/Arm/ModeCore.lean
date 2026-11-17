@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -59,13 +59,13 @@ theorem ecb_dir (d : Spec.TripleDes.Direction) (k : Spec.TripleDes.Schedule) (xs
   cases d <;> rfl
 
 theorem ecb_stack (d : Spec.TripleDes.Direction) : VG.Arm.FrameStack.armStack (ecbCode d) ≤ 1024 := by
-  cases d <;> decide +kernel
+  cases d <;> lit_decide
 
 /-- The ECB functions, by their shared contract. -/
 theorem ecbVerified : ∀ d : Spec.TripleDes.Direction,
     Verified Arm.target (ecbCode d) (Spec.TripleDes.ecbContract Arm.abi d 1024)
-  | .encrypt => ecb_framed Ecb.encrypt_verified
-  | .decrypt => ecb_framed Ecb.decrypt_verified
+  | .encrypt => ecb_framed Bitsliced.encrypt_verified
+  | .decrypt => ecb_framed Bitsliced.decrypt_verified
 
 /-- Triple DES's ECB function in the direction `d`, as the modes' core. -/
 def ecbSpec (d : Spec.TripleDes.Direction) : CoreSpec (ecbCore d) where

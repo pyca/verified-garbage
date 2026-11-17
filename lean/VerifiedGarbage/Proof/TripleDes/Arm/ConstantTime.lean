@@ -2,18 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
-public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
-meta import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
 meta import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
-/-! # Constant-time Triple DES block and key-expansion programs -/
+/-! # Constant-time Triple DES key expansion on ARMv7 -/
 
 @[expose] public section
 
@@ -26,39 +24,9 @@ all memory contents, including the key, schedule, and data, may differ. -/
 def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
   s₁.sp = s₂.sp ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
-/-! The analyses as summaries: the body of the loop of rounds, which each
-block function runs three times (two of them in each direction), and the
-block functions, which the ECB functions call. Both keep `r1`–`r3`, which
-they do not write. -/
-
-taint_summary roundEnc : taintS (Taint.ofRegs [.r0, .r1, .r2, .r9])
-  (.block (roundBody ++ roundAdvance .encrypt)) keeping (Taint.ofRegs [.r1, .r2, .r3])
-taint_summary roundDec : taintS (Taint.ofRegs [.r0, .r1, .r2, .r9])
-  (.block (roundBody ++ roundAdvance .decrypt)) keeping (Taint.ofRegs [.r1, .r2, .r3])
-taint_summary encSum : taintS (Taint.ofRegs [.r0, .r1, .r2]) encryptBlock
-  keeping (Taint.ofRegs [.r1, .r2, .r3]) using roundEnc roundDec
-taint_summary decSum : taintS (Taint.ofRegs [.r0, .r1, .r2]) decryptBlock
-  keeping (Taint.ofRegs [.r1, .r2, .r3]) using roundEnc roundDec
-
 theorem expandKey_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.r0, .r1, .r2, .r3]) Key.expandKey := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ hp
-  exact Taint.agree_ofRegs hp.2
-
-theorem ecbEncrypt_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r0, .r1, .r2, .r3]) Ecb.encrypt := by
-  obtain ⟨_, h⟩ : ∃ h, (taintS.check (Taint.ofRegs [.r0, .r1, .r2, .r3]) Ecb.encrypt h).isSome = true := by
-    taint_decide_sum [encSum, decSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_ h
-  intro s₁ s₂ _ _ hp
-  exact Taint.agree_ofRegs hp.2
-
-theorem ecbDecrypt_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r0, .r1, .r2, .r3]) Ecb.decrypt := by
-  obtain ⟨_, h⟩ : ∃ h, (taintS.check (Taint.ofRegs [.r0, .r1, .r2, .r3]) Ecb.decrypt h).isSome = true := by
-    taint_decide_sum [encSum, decSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_ h
   intro s₁ s₂ _ _ hp
   exact Taint.agree_ofRegs hp.2
 

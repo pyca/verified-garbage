@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -25,10 +25,10 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
     verified := Proof.TripleDes.Arm.expandKey_framed },
   Spec.TripleDes.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.encrypt
-    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.encrypt_verified },
+    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Bitslice.encrypt
+    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.encrypt_verified },
   Spec.TripleDes.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.decrypt
-    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.decrypt_verified }]
+    code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Bitslice.decrypt
+    verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.decrypt_verified }]
 
 end VG.Artifacts.TripleDes.Arm

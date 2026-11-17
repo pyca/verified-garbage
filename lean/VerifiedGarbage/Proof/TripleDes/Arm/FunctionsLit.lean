@@ -1,37 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.SboxLit
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
-public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+public import VerifiedGarbage.Impl.TripleDes.Arm.Bitsliced
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.SboxLit
 meta import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
-meta import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Bitsliced
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
+/-! Triple DES's functions on ARMv7, as literals. -/
+
 @[expose] public section
 
 namespace VG
 
-/-! The parts the block functions share, evaluated once: the round, and the
-initial and final permutations. -/
-
-materialize_value Impl.TripleDes.Arm.roundBody
-materialize_value Impl.TripleDes.Arm.blockLoad
-
-/-! The functions. -/
-
-materialize_code Impl.TripleDes.Arm.encryptBlock
-materialize_code Impl.TripleDes.Arm.decryptBlock
 materialize_code Impl.TripleDes.Arm.Key.expandKey
-materialize_code Impl.TripleDes.Arm.Ecb.encrypt
-materialize_code Impl.TripleDes.Arm.Ecb.decrypt
+materialize_code Impl.TripleDes.Arm.Bitslice.encrypt
+materialize_code Impl.TripleDes.Arm.Bitslice.decrypt
 
 end VG

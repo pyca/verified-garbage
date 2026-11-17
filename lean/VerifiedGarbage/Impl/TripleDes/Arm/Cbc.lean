@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+public import VerifiedGarbage.Impl.TripleDes.Arm.Bitsliced
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
 public import VerifiedGarbage.Spec.TripleDes.Contract
@@ -24,8 +24,8 @@ open VG.Arm VG.Impl.Modes.Arm
 /-- The code of `vg_triple_des_ecb_encrypt` or `vg_triple_des_ecb_decrypt`,
 as its artifact has it. -/
 def ecbCode : Spec.TripleDes.Direction → Prog isa
-  | .encrypt => Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Ecb.encrypt
-  | .decrypt => Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Ecb.decrypt
+  | .encrypt => Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Bitslice.encrypt
+  | .decrypt => Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Bitslice.decrypt
 
 /-- Triple DES's ECB function in the direction `d`, as the modes call it. -/
 def ecbCore (d : Spec.TripleDes.Direction) : Core where
