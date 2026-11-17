@@ -458,11 +458,14 @@ def fwdTrace (bytes m : Nat) (sp : Addr) (t : List Leak) : List Leak :=
 /-- The state `forward` returns in, after the callee's `s₃`. -/
 def fwdFinal (bytes : Nat) (s s₃ : State) : State :=
   { ((s₃.withRegions s.rd (⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)).setReg .rsp
-      (s₃.gpr .rsp + 8)).setReg .rsp (s₃.gpr .rsp + 8 + BitVec.ofNat 64 bytes) with wr := s.wr }
+      (s₃.gpr .rsp + 8)).setReg .rsp (s₃.gpr .rsp + 8 + BitVec.ofNat 64 bytes) with
+    wr := s.wr
+    mem := lose s₃.mem (s₃.gpr .rsp + 8) bytes s₃.unknowns
+    unknowns := fun n => s₃.unknowns (n + bytes / 4) }
 
 /-- A run of the callee from `narrowF s` is a run of `forward` from `s`,
-which keeps what the calling convention requires, and whose memory and `rax`
-are the callee's. -/
+which keeps what the calling convention requires, whose memory is the
+callee's with the frame's bytes lost, and whose `rax` is the callee's. -/
 theorem forward_run {name : String} {body : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length)
     (hm : 0 < nStack sig) (hb : 8 * nStack sig ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
     (hst : stack + bytes + 16 ≤ 2 ^ 64) (hsafe : SpSafe body) (hd : body.x86_64Depth ≤ stack) {s : State}
@@ -470,7 +473,8 @@ theorem forward_run {name : String} {body : Prog isa} (hk : 6 ≤ (sig.words abi
     (he : Exec isa body (narrowF sig bytes s) t s₃) (ha : abiPreserved (narrowF sig bytes s) s₃) :
     Exec isa (forward bytes (nStack sig) name body) s (fwdTrace bytes (nStack sig) (s.gpr .rsp) t)
         (fwdFinal bytes s s₃) ∧
-      abiPreserved s (fwdFinal bytes s s₃) ∧ (fwdFinal bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (fwdFinal bytes s s₃) ∧
+      (fwdFinal bytes s s₃).mem = lose s₃.mem (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes s₃.unknowns ∧
       (fwdFinal bytes s s₃).gpr .rax = s₃.gpr .rax := by
   obtain ⟨hb, hb1, hb2⟩ := hb
   obtain ⟨hrun, hrd', hwr', -, -, hgw, hfw, -⟩ := fwdState_run hs hk hb hb1
@@ -562,7 +566,9 @@ theorem forward_run {name : String} {body : Prog isa} (hk : 6 ≤ (sig.words abi
   have hwrsp' : (fwdState sig bytes s).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 bytes := hwrsp
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_rsp',
     List.map_cons, State.withRegions_gpr, hrsp₃, hwrsp'] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, rfl, ?_⟩
+  have h8 : s₃.gpr .rsp + 8 = s.gpr .rsp - BitVec.ofNat 64 bytes := by
+    rw [hrsp₃, BitVec.sub_add_cancel]
+  refine ⟨hex, ⟨fun q hq => ?_, ?_, ?_⟩, by show lose _ (s₃.gpr .rsp + 8) _ _ = _; rw [h8], ?_⟩
   · -- The callee-saved registers.
     simp only [fwdFinal, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .rsp
@@ -573,11 +579,14 @@ theorem forward_run {name : String} {body : Prog isa} (hk : 6 ≤ (sig.words abi
       rw [ha.1 q hq, hg q hqa hqs]
   · -- The return address: the callee writes only its regions and below its `rsp`.
     have hfs := Exec.stackFrame hsafe he (by omega_using [hd, hst])
-    show s₃.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    show (lose s₃.mem (s₃.gpr .rsp + 8) bytes s₃.unknowns).readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
     have hR : ∀ {x k : Nat}, x ≤ stack + bytes + 8 → stack + bytes + 8 - x + k ≤ stack + bytes + 8 →
         (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 x, k⟩ := fun hx hk' =>
       (Offset.base_disjoint_below _ (n := stack + bytes + 8) (k := 8) (by omega_using [hst])).sub_right
         (Offset.sub_below _ hx hk')
+    rw [(lose_frame _ _ _ _).readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h8]
+      exact hR (by omega_using []) (by omega_using [hb])) (by decide)]
     rw [hfs.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact hf.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [hF]
@@ -651,7 +660,7 @@ theorem Verified.forward {name : String} {body : Prog isa}
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowF_pre hk hm hb0 hb1 hpre hs)
     obtain ⟨hex, ha', hm', hr⟩ := forward_run hk hm hb hst hsafe hd hs he ha
-    exact ⟨t, s₃, he, hq, hex, ha', by rw [hm']; exact Frame.refl _ _, hr⟩
+    exact ⟨t, s₃, he, hq, hex, ha', by rw [hm']; exact lose_frame _ _ _ _, hr⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, -, hq, hex, ha, hmem, hrax⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
