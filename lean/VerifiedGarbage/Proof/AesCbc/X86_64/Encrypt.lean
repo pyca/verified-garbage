@@ -421,7 +421,7 @@ theorem body_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s :
     · rw [VG.Proof.AesCbc.length_encrypt]; simp [Spec.Cbc.blocksAt]; omega_arith
     · simpa [Spec.Cbc.blocksAt] using hk
   · rw [zt, g₂, h.r8, dec]
-    congr 1
+    refine congrArg some ?_
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     constructor
     · intro he

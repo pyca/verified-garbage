@@ -434,6 +434,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest eval_eq wp_mov op2_imm)
 
+variable {umaal : Bool}
+
 theorem genDispatch_ok (sized : Nat → Nat → Prog isa) (widths : List (Nat × Nat))
     {s : State} {base : Addr} {size pLen qLen : Nat} {Q : State → Prop}
     (hs : Ws s base size) (hz : 120 ≤ size) (member : (pLen, qLen) ∈ widths)
@@ -500,7 +502,7 @@ theorem checkIn {s t : State} {base : Addr} {size : Nat} (h : checkPre s) (hb : 
   obtain ⟨_, hrd, _, dPS, _, fP, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have pr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r0) (by simp))
@@ -517,7 +519,7 @@ theorem checkIn {s t : State} {base : Addr} {size : Nat} (h : checkPre s) (hb : 
       (cg (xs := [s.gpr .r2, s.gpr .r3]) (by simp))
 
 theorem check_correct {s : State} (h : checkPre s) :
-    WP isa Generate.checkParameters s fun t => abiPreserved s t ∧ checkArm.post s t := by
+    WP isa (Generate.checkParameters umaal) s fun t => abiPreserved s t ∧ checkArm.post s t := by
   obtain ⟨hsp, hrd, hwr, dPS, dSA, fP, fS, hv, hr1, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
@@ -527,11 +529,11 @@ theorem check_correct {s : State} (h : checkPre s) :
   refine WP.seq (WP.mono (checkEntry_ok h) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := checkFields_ok s
-  refine WP.seq (genDispatch_ok Generate.checkSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (Generate.checkSized umaal) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, Ig₁⟩ := checkIn h rfl rfl E₁
   -- The specification's components.
   have hpl : (checkParams s).length = 2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat := by

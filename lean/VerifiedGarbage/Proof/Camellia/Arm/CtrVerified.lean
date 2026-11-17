@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
 import VerifiedGarbage.Proof.Modes.Arm.Ctr
+public import VerifiedGarbage.Proof.Modes.Arm.WideCT
+import VerifiedGarbage.Proof.Modes.Arm.WideModes
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Camellia.Arm.Ctr
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
@@ -17,6 +19,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.Ctr
+meta import VerifiedGarbage.Proof.Modes.Arm.WideCT
+meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Impl.Camellia.Arm.Ctr
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
@@ -40,8 +44,17 @@ open VG VG.Arm VG.Impl.Camellia.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
 theorem ctrTaint : SeqTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ctr :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
-theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ctr).Implies
-    (Proof.Camellia.ctrScratchContract Arm.abi 9 2816) where
+/-- The taint checks of the code between the calls of the groups. -/
+theorem ctrWideTaint : WideTaint (ecbCore .encrypt) ctrW wideLevels wideBuf :=
+  ⟨fun lg h => by
+      simp only [wideLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with rfl | rfl | rfl <;>
+        exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩,
+    ⟨_, by native_taint_decide⟩⟩
+
+theorem ctr_implies :
+    (seqArm (ecbCore .encrypt) ((ecbSpec .encrypt).deeper wideBuf rfl) VG.Impl.Modes.Arm.ctr).Implies
+      (Proof.Camellia.ctrScratchContract Arm.abi 9 2944) where
   pre s h := seqArm_pre_rwR rfl (len := (· * 16)) (fun n => rfl) (by
     sig_pre [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
@@ -53,7 +66,7 @@ theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
     have e := ctr_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_rounds (c := ecbCore .encrypt) rfl s
     simp only [show (ecbCore .encrypt).bs = 16 from rfl, e1, e2, e3] at e
-    simp only [ecbSpec, dirCipher, rsel_eq hR, State.addr, VG.Proof.Modes.blocksOf_16] at e
+    simp only [ecbSpec, CoreSpec.deeper, dirCipher, rsel_eq hR, State.addr, VG.Proof.Modes.blocksOf_16] at e
     exact e
   pub s₁ s₂ _ _ h := by
     sig_pub [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
@@ -64,10 +77,11 @@ theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Mode
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [fbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using fbSat 0
 
-theorem ctr_verified : Verified Arm.target ctr (Proof.Camellia.ctrScratchContract Arm.abi 9 2816) :=
-  seq_verified (ecbSpec .encrypt) (ctr_ok _ rfl) ctrTaint ctr_implies
+/-- `ctr`, in groups of blocks: the 2816 bytes of stack of the ECB function and the 128 of the groups' buffer. -/
+theorem ctr_verified : Verified Arm.target ctr (Proof.Camellia.ctrScratchContract Arm.abi 9 2944) :=
+  seqW_verified rfl (ecbSpec .encrypt) (ctr_ok _ rfl) ctrTaint wideBuf_ok (ctrW_levels rfl) ctrWideTaint ctr_implies
 
-theorem ctrFrameSat : ∃ s, (Proof.Camellia.ctrContractSk Arm.abi 2904).pre s := by
+theorem ctrFrameSat : ∃ s, (Proof.Camellia.ctrContractSk Arm.abi 3032).pre s := by
   implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using fbFrameSat 0
@@ -75,11 +89,11 @@ theorem ctrFrameSat : ∃ s, (Proof.Camellia.ctrContractSk Arm.abi 2904).pre s :
 /-- `ctr`, with its scratch buffer on the stack (zeroed on return). -/
 theorem ctr_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ctr)
-      (Spec.Camellia.ctrContract Arm.abi 2904) :=
+      (Spec.Camellia.ctrContract Arm.abi 3032) :=
   Proof.Camellia.ctr_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
-    (wa := true) (stack := 2816) (m := 1) (bytes := 88)
+    (wa := true) (stack := 2944) (m := 1) (bytes := 88)
     ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat
 

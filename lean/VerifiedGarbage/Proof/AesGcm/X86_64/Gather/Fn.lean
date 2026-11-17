@@ -108,9 +108,10 @@ theorem sealSpec_pre {s : State} (h : sealPreK CtxMode.base s) :
   sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, X86_64.abi, X86_64.argRegs,
     Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
     List.range, List.range.loop, VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  -- Once, before the goal is split: not every hypothesis again for each conjunct.
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.base] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -127,9 +128,10 @@ theorem sealSpecP_pre {s : State} (h : sealPreK CtxMode.powers s) :
   sig_reduce [Proof.AesGcm.sealPrecomputedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  -- Once, before the goal is split: not every hypothesis again for each conjunct.
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.powers] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega

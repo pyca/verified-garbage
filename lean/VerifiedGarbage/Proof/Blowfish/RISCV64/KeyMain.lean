@@ -699,8 +699,7 @@ structure KeyPre (s : State) : Prop where
 
 theorem expandKey_wp {s : State} (h : KeyPre s) :
     WP isa Impl.Blowfish.RISCV64.expandKey s fun s' =>
-      scheduleAt s'.mem (s.gpr .a2) = expandKey (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) ∧
-      Zeroed (frameBase s) s'.mem := by
+      scheduleAt s'.mem (s.gpr .a2) = expandKey (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) := by
   have hv := h.valid
   unfold validKey at hv
   obtain hF : frameBase s = s.sp - 4176 := frameBase_eq s
@@ -813,10 +812,15 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
   refine WP.mono (fillLoop_ok (v := .t1) (ptr := .t0) (cnt := .t4) (by decide) (by decide) (by decide) f
     (N := 522) (by decide) (by decide) f4 (by rw [f0]; omega_using [hFal])
     (fun i hi => by rw [fk.2.2, wrd, f0]; exact frame_in s (by omega_using [hi]) (by omega_using [])))
-    fun t ⟨tz, tf, _⟩ => ⟨?_, fun j hj => by rw [← f0, ← f1]; exact tz j hj⟩
+    fun t ⟨_, tf, _⟩ m u fl => ?_
   rw [f0, fm] at tf
-  show scheduleAt t.mem (s.gpr .a2) = _
-  rw [scheduleAt_eq_of_frame _ tf fun r hr => by
+  show scheduleAt m (s.gpr .a2) = _
+  -- The `free` loses the frame's bytes, which lie apart from the schedule.
+  rw [scheduleAt_eq_of_frame _ fl fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stackSched.sub_left (r₁' := ⟨frameBase s, 4176⟩) (by
+        rw [hF]; exact Region.sub_prefix (by decide))).symm,
+    scheduleAt_eq_of_frame _ tf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.stackSched.sub_left (r₁' := ⟨frameBase s, 8 * 522⟩) (by
         rw [hF]; exact Region.sub_prefix (by decide))).symm, hKd]

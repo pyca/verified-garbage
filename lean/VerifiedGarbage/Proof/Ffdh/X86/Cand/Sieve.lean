@@ -287,6 +287,16 @@ theorem sieveSetup_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27
         obtain rfl := List.mem_singleton.mp hr; exact ⟨_, List.mem_singleton_self _, frames.1⟩
     exact (F₁.trans F₂).trans (toBelow (VG.Proof.RsaKeyGen.X86.Sieve.outsideStack_frame Oc))
 
+/-- The register outside the seven is `esp`. -/
+private theorem esp_of_not_mem (r : Reg) :
+    r ∉ [Reg.eax, Reg.ebx, Reg.ecx, Reg.edx, Reg.ebp, Reg.esi, Reg.edi] → r = .esp := by
+  cases r <;> decide
+
+/-- A register that is neither `edi` nor `esp` is one of the six. -/
+private theorem mem_of_ne_edi_esp (r : Reg) :
+    ¬r = .edi → ¬r = .esp → r ∈ [Reg.eax, Reg.ebx, Reg.ecx, Reg.edx, Reg.ebp, Reg.esi] := by
+  cases r <;> decide
+
 /-- `eax` RSA's sieve of wide slot `j` for `bits` (in the header) bits: one if a prime of the table's
 first `sieveCount bits` divides it. -/
 theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T : BitVec 32}
@@ -349,9 +359,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
     · rw [freed_wr, wrT, List.tail_cons]
     · rw [freed_gpr _ _ (by decide), E]
     · refine ⟨fun r hr => ?_, by rw [freed_rd, rdT], by rw [freed_wr, wrT, List.tail_cons]⟩
-      obtain e : r = .esp := by
-        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-        cases r <;> simp_all
+      obtain e : r = .esp := esp_of_not_mem r hr
       subst e
       rw [freed_esp, spT]; exact BitVec.sub_add_cancel _ _
   · obtain ⟨spt, rdt, wrt, Ft, et, Kt⟩ := ht
@@ -363,7 +371,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
       · rw [U.other _ e]
         by_cases e' : r = .esp
         · subst e'; exact spt
-        · exact absurd (by cases r <;> simp_all) hr
+        · exact absurd (mem_of_ne_edi_esp r e e') hr
     obtain F' : Frame (frameR base (s.gpr .esp) []) s.mem t'.mem := by rw [U.mem]; exact Ft
     refine ⟨h.keepF K' (by decide) (by decide) F' (fun _ h => nomatch h), F', ?_, K'⟩
     rw [U.other _ (by decide), et]

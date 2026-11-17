@@ -1026,14 +1026,21 @@ theorem iteration_sdepth (c : Cand) : sdepth (iteration c.call) ≤ 320 := by
     Impl.Bignum.RISCV64.countLoop, sdepth, Cand.call, Instr.frameBytes]
   omega_using [this]
 
-/-- A finished search, through code that keeps what it states. -/
-theorem SearchDone.of_eq {p : SearchPublic} {original s t : State} {r : PrimeSearchResult}
-    (h : SearchDone p original r s) (hg : ∀ reg ∈ preserved, t.gpr reg = s.gpr reg) (hm : t.mem = s.mem)
+/-- A finished search, whatever a region apart from its frame and its output
+holds. -/
+theorem SearchDone.of_frame {p : SearchPublic} {original s t : State} {r : PrimeSearchResult}
+    (h : SearchDone p original r s) {L : Region} (hf : Frame [L] s.mem t.mem) (hF : p.frame.Disjoint L)
+    (hO : Region.Disjoint ⟨p.op, p.len⟩ L) (hg : ∀ reg ∈ preserved, t.gpr reg = s.gpr reg)
     (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : SearchDone p original r t := by
-  refine ⟨h.input, hrd.trans h.rd, hwr.trans h.wr, (hg .s0 (by decide)).trans h.s0,
-    fun reg hr h31 => (hg reg hr).trans (h.saved reg hr h31), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals rw [hm]
-  exacts [h.savedS0, h.usedPtr, h.stp, h.len, h.cap, h.remaining, h.request, h.used, h.status, h.output]
+  obtain hw : ∀ j < 20, word t.mem p.F (8 * j) = word s.mem p.F (8 * j) := fun j hj =>
+    hf.readW (r := p.frame) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
+      (fun R hR => by rw [List.mem_singleton.mp hR]; exact hF) (by decide)
+  exact ⟨h.input, hrd.trans h.rd, hwr.trans h.wr, (hg .s0 (by decide)).trans h.s0,
+    fun reg hr h31 => (hg reg hr).trans (h.saved reg hr h31), (hw 4 (by decide)).trans h.savedS0,
+    (hw 7 (by decide)).trans h.usedPtr, (hw 18 (by decide)).trans h.stp, (hw 1 (by decide)).trans h.len,
+    (hw 2 (by decide)).trans h.cap, (hw 0 (by decide)).trans h.remaining, (hw 3 (by decide)).trans h.request,
+    (hw 16 (by decide)).trans h.used, (hw 17 (by decide)).trans h.status,
+    Eq.trans (List.map_congr_left fun i hi => lost_byte hf (R := ⟨p.op, p.len⟩) hO (List.mem_range.mp hi)) h.output⟩
 
 theorem F_16 (p : SearchPublic) : p.F - 16 = p.sp - BitVec.ofNat 64 176 := by
   rw [SearchPublic.F, BitVec.sub_sub]; rfl
@@ -1052,9 +1059,8 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
     rw [h.sp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hroom, h496])]
     simp only [BitVec.toNat_ofNat]; omega_using [hroom, h496]
   unfold search
-  refine WP.frameRegAny hsp ?_ (WP.mono (search_loop c (search_initial h hl)) fun u hu => ?_)
-    (by have := iteration_sdepth c; show sdepth (iteration c.call) + 16 < 2 ^ 64; omega_using [this])
-  · intro R hR
+  obtain hdis : ∀ R ∈ t.wr, Region.Disjoint ⟨t.sp - 16, 16⟩ R := by
+    intro R hR
     rw [k.2.2, alloc_wr h] at hR
     rw [htsp, F_16]
     rcases List.mem_cons.mp hR with rfl | hR
@@ -1066,7 +1072,12 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
       obtain hd := h.stack_disjoint (r := R) (List.mem_append_left _ hR)
       rw [h.sp_eq]
       exact hd.sub_left (Offset.sub_below s.sp (a := 176) (b := 496) (by decide) (by decide))
-  · refine ⟨hu.of_eq (fun reg hr => by
+  obtain twr : t.wr = p.frame :: s.wr := k.2.2.trans (alloc_wr h)
+  obtain eo : (⟨p.op, p.len⟩ : Region) = inOut s := by rw [← h.2]; rfl
+  refine WP.frameRegAny hsp hdis (WP.mono (search_loop c (search_initial h hl)) fun u hu m _ fl => ?_)
+    (by have := iteration_sdepth c; show sdepth (iteration c.call) + 16 < 2 ^ 64; omega_using [this])
+  refine ⟨hu.of_frame fl (hdis _ (by rw [twr]; exact List.mem_cons_self ..)).symm
+      (hdis _ (by rw [twr, eo, h.wr_eq]; simp [inWrites])).symm (fun reg hr => by
         show (u.write .ra (t.gpr .ra)).gpr reg = _
-        rw [RegUpd.gpr_write, ite_eq_right (by revert reg hr; decide)]) rfl rfl rfl,
+        rw [RegUpd.gpr_write, ite_eq_right (by revert reg hr; decide)]) rfl rfl,
       RegUpd.gpr_write_self u .ra (t.gpr .ra), htsp⟩

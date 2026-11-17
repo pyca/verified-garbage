@@ -38,6 +38,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 /-! ## Validation -/
 
 /-- The key's operands. -/
@@ -104,7 +106,7 @@ theorem validate_bytes {s₁ s₂ : State} (h₁ : validatePre s₁) (hl : valid
     show min (s₁.gpr .r1).toNat (3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) = (s₁.gpr .r1).toNat by omega_using [r1]] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
-theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub Prevalidated.validate := by
+theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub (Prevalidated.validate umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   obtain a0 := ha 0 (by decide)
@@ -132,7 +134,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
       obtain E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Prevalidated.validateSized _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
+  refine genDispatch_trace (Prevalidated.validateSized umaal) _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
     (by decide) (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)])
     (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
@@ -140,7 +142,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
+  obtain hz : 12016 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
   obtain C₁ := validateCtx h₁ rfl rfl F₁
   obtain C₂ := validateCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
@@ -223,12 +225,12 @@ theorem prevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Prevalidated.body pLen qLen) s₁ s₂ := by
+    SameTrace isa (Prevalidated.body umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  obtain ho : 12016 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   obtain Q₁ := operand_lt_of (X.C₁.inp mq)
   obtain Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
@@ -254,7 +256,7 @@ theorem prevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
       D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun _ _ ⟨_, A₁⟩ ⟨_, A₂⟩ => SameTrace.of_relCT result_relCT (agree0 (A₁.ws X₁.C₁.S.ws) (A₂.ws X₁.C₂.S.ws))
 
-theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub Prevalidated.verify := by
+theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub (Prevalidated.verify umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁' h₂' pub => ?_
   obtain pc₁ := (prevPre_checks h₁').2
   obtain pc₂ := (prevPre_checks h₂').2
@@ -289,7 +291,7 @@ theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub Pre
       obtain E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Prevalidated.sized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv)
+  refine genDispatch_trace (Prevalidated.sized umaal) _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv)
     (by decide) (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)])
     (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
@@ -297,7 +299,7 @@ theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub Pre
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 5).toNat * 8 := by omega_arith
+  obtain hz : 12016 ≤ (arg s₁ 5).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h₁ rfl rfl F₁
   obtain ⟨Ip₂, Iq₂, -, -⟩ := verifyKeyIn h₂ hb₂ hz₂ F₂
   obtain Rp₂ : Ready t₂ (State.addr (arg s₁ 4)) (.input .p) (s₁.gpr .r2).toNat := by rw [hr2]; exact Ip₂.toReady

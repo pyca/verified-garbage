@@ -27,6 +27,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 theorem local_ptrOk (o : Nat) (h : o < 2 ^ 16) : PtrOk (.local o) := h
 
 /-- A product's or reduction's result is below the modulus. -/
@@ -42,7 +44,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
     (mx : (.input .x, qLen) ∈ ins) (mk : (.input .nonce, qLen) ∈ ins) (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Core.sign pLen qLen) s₁ s₂ := by
+    SameTrace isa (Core.sign umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -201,7 +203,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Core.verify pLen qLen) s₁ s₂ := by
+    SameTrace isa (Core.verify umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -289,54 +291,26 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
   obtain X₄ := X₃.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   refine SameTrace.nil_seq ?_
-  -- `g^u₁ mod p`
-  refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t)
+  -- `g^u₁ y^u₂ mod p`
+  refine SameTrace.seq (power2_trace (output := Impl.Dsa.Layout.t)
       (X₄.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₄.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
       (X₄.C₁.inp mg).toReady (X₄.C₂.inp mg).toReady
       (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 qp qw)
-    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.C₁.inp my).toReady (X₄.C₂.inp my).toReady
+      (localReady (o := Impl.Dsa.Layout.v) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.v) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) (X₄.E _ my) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) q4 qp qw)
+    (power2_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
       (X₄.C₁.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
-    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₂.inp mp).toReady
+    (power2_ok (output := Impl.Dsa.Layout.t) X₄.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₂.inp mp).toReady
       (X₄.C₂.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.C₂.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  obtain X₅ := X₄.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  -- `y^u₂ mod p`
-  refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t2)
-      (X₅.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₅.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
-      (X₅.C₁.inp my).toReady (X₅.C₂.inp my).toReady
-      (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₅.E _ mp) (X₅.E _ my) (ws X₅.C₁.S.ws X₅.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 qp qw)
-    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₅.C₁.inp mp).toReady
-      (X₅.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₅.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
-    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₅.C₂.inp mp).toReady
-      (X₅.C₂.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₅.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
-    fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  obtain X₆ := X₅.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  -- their product mod p
-  refine SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.t)
-      (X₆.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₆.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₆.E _ mp) (ws X₆.C₁.S.ws X₆.C₂.S.ws _) (ws X₆.C₁.S.ws X₆.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
-    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) X.C₁.S.wp (X₆.C₁.inp mp).toReady
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₆.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
-    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) X.C₁.S.wp (X₆.C₂.inp mp).toReady
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₆.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
-    fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  obtain X₇ := X₆.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₇ := X₄.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- mod q
   exact SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.u) (count := .imm pLen)
       (X₇.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₇.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -370,16 +344,18 @@ namespace VG.Proof.Dsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 
+variable {umaal : Bool}
+
 theorem signingSubgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.signingSubgroup pLen qLen) s₁ s₂ := by
+    SameTrace isa (Validate.signingSubgroup umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
+  have ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   have pt : PtrOk (.local Impl.Dsa.Layout.t) := (by decide : Impl.Dsa.Layout.t < 2 ^ 16)
   unfold Validate.signingSubgroup
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
@@ -400,7 +376,7 @@ theorem signingKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.signingKey pLen qLen) s₁ s₂ :=
+    SameTrace isa (Validate.signingKey umaal pLen qLen) s₁ s₂ :=
   SameTrace.seq (domain_trace X mp mq mg my D₁ D₂)
     (domain_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (domain_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
@@ -429,6 +405,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest Upd wp_ldr wp_dp wp_movw op2_reg dpVal)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
@@ -436,7 +414,7 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (SignVerify.signCompute pLen qLen) s₁ s₂ := by
+    SameTrace isa (SignVerify.signCompute umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -500,7 +478,7 @@ theorem verifyTail_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat}
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
     SameTrace isa (Core.sequence [
       .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
-      Core.verify pLen qLen,
+      Core.verify umaal pLen qLen,
       Validate.equalValues qLen (.local Impl.Dsa.Layout.u) (.input .signature)]) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
@@ -578,8 +556,8 @@ theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base 
         by rw [u₄.mem, u₃.mem, u₂.mem, M₁]⟩
 
 theorem writeScalar_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ qLen nQ input : Nat}
-    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (wq : Width qLen nQ)
-    (q32 : qLen ≤ 32) (hin : 4960 ≤ input) (hin₁ : input + qLen < size₁) (hin₂ : input + qLen < size₂)
+    (hs₁ : Ws s₁ base size₁) (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (wq : Width qLen nQ)
+    (q32 : qLen ≤ 32) (hin : 12016 ≤ input) (hin₁ : input + qLen < size₁) (hin₂ : input + qLen < size₂)
     (h16 : input < 2 ^ 16) (heo : PtrEq base s₁ s₂ (.input .out)) (second : Bool) :
     SameTrace isa (SignVerify.writeScalar qLen input second) s₁ s₂ := by
   obtain ⟨n0, n48, hl, hl'⟩ := wq.bounds
@@ -608,7 +586,7 @@ theorem signBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
     (hm₁ : maskW base s₁ = BitVec.allOnes 32) (hm₂ : maskW base s₂ = BitVec.allOnes 32)
     (O₁ : Output s₁ base size₁ (2 * qLen)) (O₂ : Output s₂ base size₂ (2 * qLen))
     (heo : PtrEq base s₁ s₂ (.input .out)) :
-    SameTrace isa (SignVerify.signBody pLen qLen) s₁ s₂ := by
+    SameTrace isa (SignVerify.signBody umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big

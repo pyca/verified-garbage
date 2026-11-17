@@ -29,7 +29,8 @@ meta import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 # DSA on ARMv7, without secret residue
 
 DSA's validations, its verification, its key derivation and the
-initialization of its parameter search have no frames: they keep the
+initialization of its parameter search, with either multiplication
+(`Dynamic.mul umaal`), have no frames: they keep the
 registers they save in their scratch space, a buffer. Each is registered
 scrubbed (`Arm.Scrub.scrubReg`): followed by instructions that set the
 registers a callee may change, but the result, and the flags to constants.
@@ -43,18 +44,36 @@ namespace VG.Proof.Dsa.Arm.Scrub
 
 open VG VG.Arm VG.Impl.Dsa.Arm
 
-def validatePrivateKeyReg : Registration Spec.Dsa.validatePrivateKeyApi target :=
-  Arm.Scrub.scrubReg { code := PrevalidatedSign.validate, verified := validating_private_verified }
-    (by lit_decide)
+theorem validatePrivate_noFrames (umaal : Bool) : (PrevalidatedSign.validate umaal).noFrames = true := by
+  cases umaal <;> lit_decide
 
-def deriveKeyReg : Registration Spec.Dsa.deriveKeyApi target :=
-  Arm.Scrub.scrubReg { code := Generate.deriveKey, verified := derive_verified } (by lit_decide)
+theorem deriveKey_noFrames (umaal : Bool) : (Generate.deriveKey umaal).noFrames = true := by
+  cases umaal <;> lit_decide
 
-def validatePublicKeyReg : Registration Spec.Dsa.validatePublicKeyApi target :=
-  Arm.Scrub.scrubReg { code := Prevalidated.validate, verified := validate_verified } (by lit_decide)
+theorem validatePublic_noFrames (umaal : Bool) : (Prevalidated.validate umaal).noFrames = true := by
+  cases umaal <;> lit_decide
 
-def verifyPrevalidatedReg : Registration Spec.Dsa.verifyPrevalidatedApi target :=
-  Arm.Scrub.scrubReg { code := Prevalidated.verify, verified := prevalidated_verified } (by lit_decide)
+theorem verify_noFrames (umaal : Bool) : (Prevalidated.verify umaal).noFrames = true := by
+  cases umaal <;> lit_decide
+
+def validatePrivateKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.validatePrivateKeyApi target :=
+  Arm.Scrub.scrubReg {
+      suffix := suffix
+      code := PrevalidatedSign.validate umaal
+      verified := validating_private_verified }
+    (validatePrivate_noFrames umaal)
+
+def deriveKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.deriveKeyApi target :=
+  Arm.Scrub.scrubReg { suffix := suffix, code := Generate.deriveKey umaal, verified := derive_verified }
+    (deriveKey_noFrames umaal)
+
+def validatePublicKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.validatePublicKeyApi target :=
+  Arm.Scrub.scrubReg { suffix := suffix, code := Prevalidated.validate umaal, verified := validate_verified }
+    (validatePublic_noFrames umaal)
+
+def verifyPrevalidatedReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.verifyPrevalidatedApi target :=
+  Arm.Scrub.scrubReg { suffix := suffix, code := Prevalidated.verify umaal, verified := prevalidated_verified }
+    (verify_noFrames umaal)
 
 def parameterInitReg : Registration Spec.Dsa.parameterInitApi target :=
   Arm.Scrub.scrubReg { code := Generation.init, verified := Gen.Init.init_verified } (by lit_decide)
@@ -66,7 +85,7 @@ function from a frame. Their postconditions read the memory on return only
 at `out` and `used` (`Arm.Scrub.PostOut`), so each is registered followed by
 a wipe of the stack its contract reserves (`Arm.Scrub.scrubRegF`). -/
 
-open VG.Arm.Scrub
+open VG.Arm.Scrub VG.Arm.FrameStack
 
 /-- The byte `k` of a region of more than `k` bytes at `o`. -/
 theorem contains_of {o : Addr} {k N : Nat} (hk : k < N) : Region.Contains ⟨o, N⟩ (o + BitVec.ofNat 64 k) 1 := by
@@ -122,17 +141,31 @@ theorem generateKeyOut (stack : Nat) :
       rw [bytesAt_of hb.1 (toNat_sw_le outLen), wordsAt_of hb.2.1]
       exact h
 
-def randomSignPrevalidatedReg : Registration Spec.Dsa.randomSignPrevalidatedApi target :=
-  Arm.Scrub.scrubRegF {
-      code := RandomSign.code "vg_dsa_sign_prevalidated" PrevalidatedSign.sign
-      verified := randomSigningPrevalidated_verified }
-    (by lit_decide) (by decide) (randomSignPrevalidatedOut _) rfl
+theorem frameOk_144 : FrameOk 144 := by decide
 
-def generateKeyReg : Registration Spec.Dsa.generateKeyApi target :=
+theorem randomSign_armStack (umaal : Bool) :
+    armStack (RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)) ≤ 144 := by
+  cases umaal <;> lit_decide
+
+theorem generateKey_armStack (umaal : Bool) :
+    armStack (GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
+      (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) ≤ 144 := by
+  cases umaal <;> lit_decide
+
+def randomSignPrevalidatedReg (umaal : Bool) (suffix : String) :
+    Registration Spec.Dsa.randomSignPrevalidatedApi target :=
   Arm.Scrub.scrubRegF {
-      code := GenerateKey.code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
-        Generate.checkParameters Generate.deriveChecked
+      suffix := suffix
+      code := RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)
+      verified := randomSigningPrevalidated_verified }
+    (randomSign_armStack umaal) frameOk_144 (randomSignPrevalidatedOut _) rfl
+
+def generateKeyReg (umaal : Bool) (suffix : String) : Registration Spec.Dsa.generateKeyApi target :=
+  Arm.Scrub.scrubRegF {
+      suffix := suffix
+      code := GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
+        (Generate.checkParameters umaal) (Generate.deriveChecked umaal)
       verified := Key.generating_verified }
-    (by lit_decide) (by decide) (generateKeyOut _) rfl
+    (generateKey_armStack umaal) frameOk_144 (generateKeyOut _) rfl
 
 end VG.Proof.Dsa.Arm.Scrub

@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 theorem parity_limb {m : Mem} {base : Addr} {o : Nat} (hl : Lim m base o) :
     V m base o % 2 = limb m base o 0 % 2 := by
   have he := val16_div hl (k := 0) (by decide)
@@ -79,7 +81,7 @@ theorem encodeSign_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
     omega_using [hy']
 
 theorem pointEncode_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa pointEncode s fun t => IKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (pointEncode umaal) s fun t => IKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       V t.mem (State.addr base) FR =
         (env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2)).val +
         ((env s.mem base 0 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2)).val % 2) * 2 ^ 255 := by

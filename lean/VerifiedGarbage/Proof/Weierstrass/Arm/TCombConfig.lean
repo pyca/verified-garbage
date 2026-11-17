@@ -57,12 +57,12 @@ theorem Layout.loop_cover {K : TCombCfg} (h : Layout K) :
   all_goals exact ⟨(Impl.Weierstrass.Point.oAt K.L.M.n,4096-Impl.Weierstrass.Point.oAt K.L.M.n),
     by simp [writes],lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)⟩
 
-theorem Layout.q_cover {K : TCombCfg} (h : Layout K) :
+theorem Layout.q_cover {K : TCombCfg} (h : Layout K) (hq : K.qBase=Impl.Weierstrass.Point.qAt K.L.M.n) :
     ∀ r ∈ [(K.Q.x,24*K.L.M.n)], ∃ t ∈ loopWrites K,t.1≤r.1 ∧ r.1+r.2≤t.1+t.2 := by
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   refine ⟨(Impl.Weierstrass.Point.oAt K.L.M.n,72*K.L.M.n),by simp [loopWrites],?_⟩
-  simp only [VG.Impl.Weierstrass.Arm.TCombCfg.Q,VG.Impl.Weierstrass.Arm.Point.ptAt]
+  simp only [VG.Impl.Weierstrass.Arm.TCombCfg.Q,VG.Impl.Weierstrass.Arm.Point.ptAt,hq]
   exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
 
 theorem Layout.sub_cover {K : TCombCfg} (h : Layout K) :
@@ -211,6 +211,8 @@ structure Config (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat)))
   encRow : encodable (BitVec.ofNat 32 (16*K.L.M.n*K.H))=true
   encEntry : encodable (BitVec.ofNat 32 (16*K.L.M.n))=true
   encH : encodable (BitVec.ofNat 32 (K.H+1))=true
+  /-- The entry is selected to the point functions' `Q` (the default of `qBase`). -/
+  qBase : K.qBase=Impl.Weierstrass.Point.qAt K.L.M.n := by rfl
 
 def tableWords (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) : List (BitVec 64) :=
   tcombWords K.L.M.n (2^(64*K.L.M.n)) C.p tbl

@@ -101,7 +101,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
       have hd : ∀ r ∈ [workR s], Region.Disjoint ⟨kp d (s.gpr .r3) (16 - m), 8⟩ r := by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_arith))
-      congr 1
+      refine Eq.mpr (Prod.mk.injEq _ _ _ _) ⟨?_, ?_⟩
       · exact inv.frame.readW (contains_prefix (by decide)) hd (by decide)
       · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
         exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_arith) (by omega_arith))
@@ -913,7 +913,7 @@ theorem rounds_saved_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk :
     obtain hd : ∀ r ∈ [scratchR s], Region.Disjoint ⟨kp d (s.gpr .r3) j, 8⟩ r := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hdis
     simp only [keysAt]
-    congr 1
+    refine Eq.mpr (Prod.mk.injEq _ _ _ _) ⟨?_, ?_⟩
     · exact f₁.readW (contains_prefix (by decide)) hd (by decide)
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
       exact f₁.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using [])) hd (by decide)
@@ -1017,7 +1017,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact hdis.sub_right (arraysR_sub_scratch s)
     simp only [keysAt]
-    congr 1
+    refine Eq.mpr (Prod.mk.injEq _ _ _ _) ⟨?_, ?_⟩
     · exact f₃.readW (contains_prefix (by decide)) hd (by decide)
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
       exact f₃.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using [])) hd (by decide)

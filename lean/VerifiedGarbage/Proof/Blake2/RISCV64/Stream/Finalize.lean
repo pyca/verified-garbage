@@ -408,7 +408,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
       exact hks.symm
     · simp only [outR, scR, scr, op, σ, State.withRegions_gpr, g₁ .a2 (by decide), ha3]
       exact hko.symm
-  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost => ?_)
+  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost m _ fl => ?_)
     (noFrames_finalizeMain hf .a3)
   · rw [hrd₁, hwr₁, hrd, hwr]
     apply Covers.of_sub
@@ -438,8 +438,9 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   · have := hpost h0 d
     simp only [State.withRegions_mem, State.withRegions_gpr, u₁.mem,
       g₁ .a0 (by decide), g₁ .a1 (by decide), g₁ .a2 (by decide)] at this
-    simp only [freed]
-    exact this hr hl hc
+    -- The `free` loses the frame's bytes, which lie apart from the digest.
+    refine Eq.trans ?_ (this hr hl hc)
+    exact bytesAt_congr fun i hi => lost_byte fl (R := outR s₀ w) hko.symm hi
 
 end
 

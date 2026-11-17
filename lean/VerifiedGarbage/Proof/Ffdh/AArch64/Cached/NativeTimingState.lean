@@ -148,7 +148,7 @@ theorem fail_ok {s : State} {B xp yp : Addr} {Z k : Nat}
  · rintro t ⟨⟨status,mem⟩,rest⟩
    exact ⟨status,by rw [mem];exact xBytes,by rw [mem];exact zeroY,
     by rw [mem];exact (frame xp frameX (by simp)).trans (frame yp frameY (by simp)),
-    ((restX.trans restY).trans rest).mono (by simp [mmRegs])⟩
+    ((restX.trans restY).trans rest).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -254,7 +254,7 @@ theorem generateBody_ok (M : Mont) {p : Parameters} {s : State} {bs dom : List B
     rintro t ⟨ret,xT,yT,_,restT⟩
     rw [sourceC] at xT
     rw [sameY,valueB] at yT
-    refine ⟨?_,?_,(before.trans restT).mono (by simp [mmRegs])⟩
+    refine ⟨?_,?_,(before.trans restT).mono (by decide)⟩
     · rw [ret,statusOk]
       cases ok <;>rfl
     · rw [statusOk]
@@ -269,7 +269,7 @@ theorem generateBody_ok (M : Mont) {p : Parameters} {s : State} {bs dom : List B
     (fun i hi =>by rw [restR.wr];exact writeX i hi)
     (fun i hi =>by rw [restR.wr];exact writeY i hi) outsideX separate
    obtain ⟨tr,t,run,ret,xT,yT,_,restT⟩ := code
-   refine ⟨_,t,.iteT condition run,?_,?_,(restR.trans restT).mono (by simp [mmRegs])⟩
+   refine ⟨_,t,.iteT condition run,?_,?_,(restR.trans restT).mono (by decide)⟩
    · rw [ret,status,ite_eq_right accepted]
    · rw [status,ite_eq_right accepted]
      exact ⟨xT,yT⟩
@@ -649,9 +649,9 @@ theorem sample_ok {s : State} {B xp rp : Addr} {Z w k N : Nat} {mi : BitVec 64} 
     obtain sep : k≤ofs xp q := le_ofs_of_sep outside hq
     rw [eq,show ofs xp (xp+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega_using [size, hi])] at sep
     omega_using [room, positive, size, bitsPositive, bitsBound, width, rbLength, bits, bytes, length, x, random, room256, maskA, maskHeaderA, subtract, ptrB, outB, indexB, skipB, onesB, zeroB, countB, valueT, hq, hi, sep]
-   obtain rest : Keep mmRegs s t := (total.trans inv.keep).mono (by simp [mmRegs])
+   obtain rest : Keep mmRegs s t := (total.trans inv.keep).mono (by decide)
    obtain goodT : Good t B Z w mi :=
-    ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by simp [mmRegs])).trans good.x0,
+    ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,
      (workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sW<32 by decide);omega_using [room, this])).trans goodA.hdr.hw,
      (workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega_using [room, this])).trans goodA.hdr.hminv,
      fun i hi =>(workspace_word (by have := good.scr.nowrap;omega_using [this]) sameScratch (by have := hdr_lt_slot w 8 (show sArr i<32 by unfold sArr;omega_using [hi]);omega_using [room, this])).trans (goodA.hdr.harr i hi)⟩
@@ -852,7 +852,7 @@ theorem generateFront_ok {p : Parameters} {s : State} {dom rb : List Byte} {dp r
   ((headerA sRand (by decide) (by decide)).trans rand) randomA
   (fun i hi =>by rw [restA.wr];exact writeX i hi) outsideX separateRand) ?_
  rintro t ⟨goodT,_,valueT,sameT,frameT,restT⟩
- obtain total : Keep mmRegs s t := (restA.trans restT).mono (by simp [mmRegs])
+ obtain total : Keep mmRegs s t := (restA.trans restT).mono (by decide)
  let bs := Spec.Rsa.bytesAt t.mem p.src p.k
  obtain bsLength : bs.length=p.k := by simp only [bs,Spec.Rsa.bytesAt,List.length_map,List.length_range]
  obtain fieldT := fieldA.after_sample goodT sameT
@@ -943,7 +943,7 @@ theorem generatePrepared_ok (M : Mont) {p : Parameters} {s : State} {dom rb : Li
   (fun i hi =>by rw [restU.wr];exact writeX i hi)
   (fun i hi =>by rw [restU.wr];exact writeY i hi) outsideY separateOutputs) ?_
  rintro t ⟨status,outputs,restT⟩
- refine ⟨?_,?_,(restU.trans restT).mono (by simp [mmRegs])⟩
+ refine ⟨?_,?_,(restU.trans restT).mono (by decide)⟩
  · rw [valueU] at status
    exact status
  · rw [valueU] at outputs
@@ -1099,7 +1099,7 @@ theorem generateEntry_ok {s : State} {B ctx N bytes rows : Addr} {Z : Nat}
  rintro t ⟨memT,restT⟩
  have frameT : Outside B 128 80 a.mem t.mem := by rw [memT];exact generationMetadata_range _ _ _ _ _
  exact ⟨(restT.gpr .x0 (by decide)).trans baseA,by rw [memT,memA],frameA.trans frameT,
-  (restA.trans restT).mono (by simp [mmRegs])⟩
+  (restA.trans restT).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
 

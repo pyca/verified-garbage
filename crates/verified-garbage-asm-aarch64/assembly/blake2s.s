@@ -69,6 +69,7 @@ vg_blake2s_init:
 	b 21f
 20:
 21:
+	movz x9, #0, lsl #0
 	ret
 	.p2align 6
 

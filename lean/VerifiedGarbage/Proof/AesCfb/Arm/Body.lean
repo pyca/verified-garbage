@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.AesCfb.Spec
 import VerifiedGarbage.Proof.AesOfb.Arm.Body
 public import VerifiedGarbage.Impl.AesCfb.Arm
-public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+public import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.AesCfb.Spec
 meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
 meta import VerifiedGarbage.Impl.AesCfb.Arm
-meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Frame
@@ -21,6 +21,11 @@ AES-CBC's proofs share (`Proof/AesCbc/Arm/Loop.lean`) from `k` blocks to
 `k + 1`, for `cfbMode`. The code before the call and the call are AES-OFB's
 (`Proof/AesOfb/Arm/Body.lean`). `encBody_ct` and `decBody_ct`: they are
 constant time, by the shared framework, with the call on the block at `iv`.
+
+`decrypt_wp`, `decrypt_ct`: decryption, which first takes the blocks in
+groups (`Proof/AesCbc/Arm/Groups.lean`, `GroupsCT.lean`): a group of
+`cfbDecG` leaves the data and the chaining value as CFB decryption of its
+blocks does (`cfbDecG_sim`), which evaluating both on any blocks shows.
 -/
 
 @[expose] public section
@@ -29,7 +34,7 @@ namespace VG.Proof.AesCfb.Arm
 
 open VG VG.Arm VG.Impl.AesCfb.Arm
 open VG.Impl.CmacAes.Arm (advance xor4)
-open VG.Impl.AesCbc.Arm (whole encFrame zero4)
+open VG.Impl.AesCbc.Arm (whole wholeG cfbDecG groupLevels encFrame zero4)
 open VG.Impl.AesOfb.Arm (ivArgs)
 open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem add0)
 open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call encF)
@@ -215,5 +220,55 @@ theorem decBody_ct : BodyCt (cfbMode false) (body decPost) := fun hp hp' hq k =>
   rw [body, encFrame_eq]
   exact VG.Proof.AesCbc.Arm.body_ct encF (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_Iv hq) pre_taint
     decPost_taint (@fun _ hp _ _ _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of h a) hp hp' hq k
+
+/-! ## Decryption, in groups -/
+
+theorem decrypt_append (ciph : Spec.Cbc.Cipher) (iv : List Byte) (xs ys : List (List Byte)) :
+    Spec.Cfb.decrypt ciph iv (xs ++ ys) =
+      Spec.Cfb.decrypt ciph iv xs ++ Spec.Cfb.decrypt ciph (Spec.Cbc.next iv xs) ys := by
+  induction xs generalizing iv with
+  | nil => rfl
+  | cons p ps ih => simp only [List.cons_append, Spec.Cfb.decrypt, ih, next_cons]
+
+/-- A group of `cfbDecG` computes CFB decryption of its blocks. -/
+theorem cfbDecG_sim : ∀ lg ∈ groupLevels, GSim (cfbMode false) Spec.Cbc.aesWith cfbDecG (2 ^ lg) := by
+  intro lg h R w iv xs ys b hy hiv hd
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  simp only [cfbMode, cfb, cts, Bool.false_eq_true, ↓reduceIte, decrypt_append, next_append] at hiv ⊢
+  rcases h with rfl | rfl
+  · match ys, hy with
+    | [y0, y1, y2, y3], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      have h2 := hd 2 (by decide)
+      have h3 := hd 3 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1 h2 h3
+      simp [gstep, cfbDecG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Cfb.decrypt, Spec.Cbc.next,
+        ← h0, ← h1, ← h2, ← h3, hiv]
+  · match ys, hy with
+    | [y0, y1], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1
+      simp [gstep, cfbDecG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Cfb.decrypt, Spec.Cbc.next,
+        ← h0, ← h1, hiv]
+
+theorem cfbDecG_levels : ∀ lg ∈ groupLevels, LevelOk (cfbMode false) encF Spec.Cbc.aesWith cfbDecG lg :=
+  levels_of (by decide) (by decide) cfbDecG_sim fun _ _ _ _ => (aesWith_state _ _ _ _).symm
+
+theorem cfbDecG_taint : ∀ lg ∈ groupLevels, LevelTaint cfbDecG lg := by
+  intro lg h
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl <;> exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem decrypt_eq : decrypt = wholeG (blkFrame encF) cfbDecG groupLevels (body decPost) := rfl
+
+/-- `vg_aes_cfb128_decrypt`, in groups, meets `whole`'s contract. -/
+theorem decrypt_wp {s₀ : State} (h0 : (modeArm (cfbMode false)).pre s₀) :
+    WP isa decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm (cfbMode false)).post s₀ s' := by
+  rw [decrypt_eq]; exact wholeG_wp cfbDecG_levels decBody_ok h0
+
+theorem decrypt_ct : ConstantTime isa (modeArm (cfbMode false)).pre (modeArm (cfbMode false)).pub decrypt := by
+  rw [decrypt_eq]; exact wholeG_ct cfbDecG_levels cfbDecG_taint decBody_ok decBody_ct
 
 end VG.Proof.AesCfb.Arm

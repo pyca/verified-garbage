@@ -51,6 +51,6 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 def pointFromPrepareCT : Prog isa :=
-  .seq (.block [.str .r12 .r0 52]) (fieldCode [.const 16 Spec.Ed25519.d])
+  .seq (.block [.str .r12 .r0 52]) (fieldCode false [.const 16 Spec.Ed25519.d])
 
 end VG.Proof.Ed25519.Arm

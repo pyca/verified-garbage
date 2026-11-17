@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc4.RISCV64.Apply
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Rc4.Scratch
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
 public import VerifiedGarbage.Proof.Rc4.RISCV64.Lookup
@@ -427,10 +428,12 @@ theorem init_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toNa
         · exact List.mem_append_right _ (List.mem_cons_of_mem _ h))
       (by rw [hsp', show (allocd frameBytes t).gpr = t.gpr from rfl, ht0, ht1]; exact hs)
       (by rw [hsp', show (allocd frameBytes t).gpr = t.gpr from rfl, ht2]; exact hFc))
-      fun u ⟨hu0, huc⟩ => ?_
+      fun u ⟨hu0, huc⟩ m _ fl => ?_
     refine ⟨hu0, ?_⟩
     rw [show (allocd frameBytes t).gpr = t.gpr from rfl, ht0, ht1, ht2,
       show (allocd frameBytes t).mem = t.mem from rfl, htm] at huc
-    exact huc
+    -- The `free` loses the frame's bytes, which lie apart from the context.
+    have fl' : Frame [⟨s.sp - 256#64, 256⟩] u.mem m := by rw [← htsp]; exact fl
+    exact (Proof.Rc4.contextAt_congr fun i hi => lost_sep fl' hFc hi).trans huc
 
 end VG.Proof.Rc4.RISCV64

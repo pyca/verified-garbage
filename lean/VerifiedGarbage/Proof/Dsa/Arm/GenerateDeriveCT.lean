@@ -36,6 +36,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 /-- The loads that start the key's output. -/
 theorem writeHead_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 120 ≤ size) :
     WP isa (.block [.ldr .r3 .r12 (Layout.field .mask), .ldr .r10 .r12 (Layout.field .out),
@@ -64,7 +66,7 @@ theorem writeKey_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
   refine SameTrace.of_relCT (erased_relCT (τ := Taint.ofRegs [.r12, .r10, .r1, .r4]) (σ := Taint.ofRegs [])
     (c₀ := .seq (Core.sequence [Generate.copyFrom 0, .block (ptr .r1 t2), Generate.copyFrom 0,
       .block [.mov .r1 (.reg .r4)], Generate.copyFrom 0, .block SignVerify.result]) Tail)
-    (VG.Taint.hintOf taint (Taint.ofRegs [.r12, .r10, .r1, .r4])
+    (VG.Taint.hintOf taintU (Taint.ofRegs [.r12, .r10, .r1, .r4])
       (.seq (Core.sequence [Generate.copyFrom 0, .block (ptr .r1 t2), Generate.copyFrom 0,
         .block [.mov .r1 (.reg .r4)], Generate.copyFrom 0, .block SignVerify.result]) Tail))
     (by kernel_rfl) (Taint.noBase_ofRegs _) (by kernel_rfl)) ?_
@@ -97,10 +99,10 @@ theorem deriveFailure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ :
   simp only [Generate.deriveFailure, Core.sequence, List.foldr]
   refine SameTrace.assoc_left (SameTrace.seq (SameTrace.of_relCT (erased_relCT (σ := T0)
       (c₀ := .block [.ldr .r11 .r12 0, .movw .r4 0, .dp .add .lr .r11 (.reg .r4), .mov .r4 (.imm 0)])
-      (VG.Taint.hintOf taint T0 (.block [.ldr .r11 .r12 0, .movw .r4 0, .dp .add .lr .r11 (.reg .r4),
+      (VG.Taint.hintOf taintU T0 (.block [.ldr .r11 .r12 0, .movw .r4 0, .dp .add .lr .r11 (.reg .r4),
         .mov .r4 (.imm 0)])) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 h₁ h₂))
     (deriveFailureHead_ok h₁ hz₁ hL) (deriveFailureHead_ok h₂ hz₂ hL) fun u₁ u₂ ⟨A₁, L₁, w₁⟩ ⟨A₂, L₂, w₂⟩ => ?_)
-  exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taint (wsT true true)
+  exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taintU (wsT true true)
     (.seq (.seq (.loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne)
       (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) (by kernel_rfl)).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho]) (fun _ => by rw [L₁, L₂, ho]))
@@ -212,7 +214,7 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
+  obtain hz : 12016 ≤ (arg s₁ 4).toNat * 8 := by omega_arith
   obtain C₁ := deriveCtx h₁ rfl rfl F₁
   obtain C₂ := deriveCtx h₂ hb₂ hz₂ F₂
   rw [← a0, ← a2] at C₂
@@ -289,11 +291,11 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     obtain ⟨e96, e64, e88⟩ := ho H₁ H₂
     exact writeKey_trace _ _ H₁.ws H₂.ws (by omega_arith) (by omega_arith) e96 e64 e88
 
-theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Generate.deriveKey :=
+theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub (Generate.deriveKey umaal) :=
   deriveWith_constantTime (C := deriveChecks) deriveCompute_computeOk deriveCompute_computeTrace
 
 theorem deriveChecked_constantTime :
-    ConstantTime isa deriveCheckedArm.pre deriveCheckedArm.pub Generate.deriveChecked :=
+    ConstantTime isa deriveCheckedArm.pre deriveCheckedArm.pub (Generate.deriveChecked umaal) :=
   fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ =>
     deriveWith_constantTime (C := keyChecks) keyCompute_computeOk keyCompute_computeTrace s₁ s₂ t₁ t₂ u₁ u₂ h₁.1 h₂.1
 

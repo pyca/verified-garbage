@@ -828,7 +828,8 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (n := 4) (pre := Spec.Sha3.finalizePre H RISCV64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H RISCV64.abi.ptrBits) (wa := true) (stack := 1168)
     (bytes := 32) (finBody_verified hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))
-    (by decide) hsat'' rfl
+    (by decide) (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.finalizePostOut_local _ H vs m m₁ m₂ r hl)
+    hsat'' rfl
 
 /-- A state satisfying `finRISCV64`'s precondition. -/
 def finSat (len : Nat) : State :=

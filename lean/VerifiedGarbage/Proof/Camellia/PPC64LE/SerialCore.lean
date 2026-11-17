@@ -153,8 +153,8 @@ theorem stage1_run (s : State) (hc : Consts s) :
   let a := s.write .r9 (s.gpr .r8 &&& s.gpr .r12)
   let b := a.write .r10 (a.gpr .r8 >>> 4)
   let c := b.write .r10 (b.gpr .r10 &&& b.gpr .r12)
-  let d : State := { c.writeV .v0 (c.gpr .r9 ++ c.unknowns 0) with unknowns := fun i => c.unknowns (i + 1) }
-  let e : State := { d.writeV .v1 (d.gpr .r10 ++ d.unknowns 0) with unknowns := fun i => d.unknowns (i + 1) }
+  let d : State := { c.writeV .v0 (c.gpr .r9 ++ c.undef (c.unknowns 0) (c.gpr .r9) (c.vpr .v0)) with unknowns := fun i => c.unknowns (i + 1) }
+  let e : State := { d.writeV .v1 (d.gpr .r10 ++ d.undef (d.unknowns 0) (d.gpr .r10) (d.vpr .v1)) with unknowns := fun i => d.unknowns (i + 1) }
   let f := e.writeV .v0 (e.vpr .v0 ||| e.vpr .v18)
   let g := f.writeV .v1 (f.vpr .v1 ||| f.vpr .v18)
   let h := g.writeV .v0 (ofVBytes fun i =>
@@ -176,10 +176,10 @@ theorem stage1_run (s : State) (hc : Consts s) :
     have c10 : c.gpr .r10 = (x >>> 4) &&& s.gpr .r12 := rfl
     obtain hsel := selIn_eq hk
     obtain hL : vbyte (g.vpr .v0) (7 - k) = (gbyte x k &&& 0x0f) ||| selIn.getD (7 - k) 0 := by
-      show vbyte ((c.gpr .r9 ++ c.unknowns 0) ||| s.vpr .v18) (7 - k) = _
+      show vbyte ((c.gpr .r9 ++ _) ||| s.vpr .v18) (7 - k) = _
       rw [vbyte_or', vbyte_append _ _ hk, c9, nb.1, T.2.2.2.2.2.2.2.2.2.2.1 (7 - k) (by omega_using [])]
     obtain hH : vbyte (h.vpr .v1) (7 - k) = (gbyte x k >>> 4) ||| selIn.getD (7 - k) 0 := by
-      show vbyte ((c.gpr .r10 ++ d.unknowns 0) ||| s.vpr .v18) (7 - k) = _
+      show vbyte ((c.gpr .r10 ++ _) ||| s.vpr .v18) (7 - k) = _
       rw [vbyte_or', vbyte_append _ _ hk, c10, nb.2, T.2.2.2.2.2.2.2.2.2.2.1 (7 - k) (by omega_using [])]
     rw [hsel] at hL hH
     have g8 : g.vpr .v8 = s.vpr .v8 := rfl
@@ -245,8 +245,8 @@ theorem stage2_run (s : State) (hc : Consts s) :
   let a := s.write .r9 (s.gpr .r8 &&& s.gpr .r12)
   let b := a.write .r10 (a.gpr .r8 >>> 4)
   let c := b.write .r10 (b.gpr .r10 &&& b.gpr .r12)
-  let d : State := { c.writeV .v0 (c.gpr .r9 ++ c.unknowns 0) with unknowns := fun i => c.unknowns (i + 1) }
-  let e : State := { d.writeV .v1 (d.gpr .r10 ++ d.unknowns 0) with unknowns := fun i => d.unknowns (i + 1) }
+  let d : State := { c.writeV .v0 (c.gpr .r9 ++ c.undef (c.unknowns 0) (c.gpr .r9) (c.vpr .v0)) with unknowns := fun i => c.unknowns (i + 1) }
+  let e : State := { d.writeV .v1 (d.gpr .r10 ++ d.undef (d.unknowns 0) (d.gpr .r10) (d.vpr .v1)) with unknowns := fun i => d.unknowns (i + 1) }
   let f := e.writeV .v2 (e.vpr .v0 ||| e.vpr .v19)
   let g := f.writeV .v3 (f.vpr .v1 ||| f.vpr .v19)
   let h := g.writeV .v2 (ofVBytes fun i =>
@@ -280,10 +280,10 @@ theorem stage2_run (s : State) (hc : Consts s) :
     have c10 : c.gpr .r10 = (x >>> 4) &&& s.gpr .r12 := rfl
     obtain hsel := selOut_eq hk
     obtain e0 : vbyte (e.vpr .v0) (7 - k) = gbyte x k &&& 0x0f := by
-      show vbyte (c.gpr .r9 ++ c.unknowns 0) (7 - k) = _
+      show vbyte (c.gpr .r9 ++ _) (7 - k) = _
       rw [vbyte_append _ _ hk, c9, nb.1]
     obtain e1 : vbyte (e.vpr .v1) (7 - k) = gbyte x k >>> 4 := by
-      show vbyte (c.gpr .r10 ++ d.unknowns 0) (7 - k) = _
+      show vbyte (c.gpr .r10 ++ _) (7 - k) = _
       rw [vbyte_append _ _ hk, c10, nb.2]
     obtain hL : vbyte (g.vpr .v2) (7 - k) = (gbyte x k &&& 0x0f) ||| selOut.getD (7 - k) 0 := by
       show vbyte (e.vpr .v0 ||| s.vpr .v19) (7 - k) = _

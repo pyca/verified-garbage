@@ -13,6 +13,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 private theorem recoverInit_eval (e : Env) :
     evalOps recoverInitOps e 1 = e 1 ∧
     evalOps recoverInitOps e 6 = rootU (e 1) ∧
@@ -42,7 +44,7 @@ theorem rootEnv_low (e : Env) (i : Slot) (hi : i.val < 14) : rootEnv e i = e i :
     Function.update_of_ne h15, Function.update_of_ne h16, Function.update_of_ne h17]
 
 theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa recoverCandidate s fun t => IKeep base s t ∧ AllLim t.mem base ∧
+    WP isa (recoverCandidate umaal) s fun t => IKeep base s t ∧ AllLim t.mem base ∧
       env t.mem base 0 = rootX (env s.mem base 1) ∧
       env t.mem base 1 = env s.mem base 1 ∧
       env t.mem base 5 = 0 ∧ env t.mem base 6 = rootU (env s.mem base 1) ∧
@@ -78,6 +80,8 @@ end
 /-! Candidate validation implements RFC 8032 recovery exactly. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {umaal : Bool}
 
 def recoverResult (y : Spec.X25519.Fe) (b : Bool) : Option Spec.Ed25519.Point :=
   if rootV y * rootX y * rootX y = rootU y then signResult (rootX y) y b
@@ -119,13 +123,13 @@ theorem recoverResult_spec (y : Spec.X25519.Fe) (b : Bool) :
 private theorem sign_known {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (b : Bool) (hb : s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat)
     (x y : Spec.X25519.Fe) (hx : env s.mem base 0 = x) (hy : env s.mem base 1 = y) :
-    WP isa recoverSign s fun t => IKeep base s t ∧ AllLim t.mem base ∧ DecodeResult base (signResult x y b) t := by
+    WP isa (recoverSign umaal) s fun t => IKeep base s t ∧ AllLim t.mem base ∧ DecodeResult base (signResult x y b) t := by
   refine WP.mono (recoverSign_ok hc hl b hb) fun t ⟨tk, tl, tr⟩ => ?_
   exact ⟨IKeep.of_keep tk, tl, by rw [hx, hy] at tr; exact tr⟩
 
 theorem recoverPoint_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (b : Bool) (hb : s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat) :
-    WP isa recoverPoint s fun t => IKeep base s t ∧ AllLim t.mem base ∧
+    WP isa (recoverPoint umaal) s fun t => IKeep base s t ∧ AllLim t.mem base ∧
       DecodeResult base ((Spec.Ed25519.recoverX (env s.mem base 1) b).map
         (fun x => recoveredPoint x (env s.mem base 1))) t := by
   rw [← recoverResult_spec, recoverPoint]

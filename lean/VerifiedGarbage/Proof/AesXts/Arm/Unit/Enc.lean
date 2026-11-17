@@ -719,13 +719,13 @@ abbrev xname : Bool → String
 
 theorem xts_ok : ∀ enc s, (modeArm (AesXts.xtsMode enc)).pre s →
     ∃ t s', Exec isa (xcode enc) s t s' ∧ abiPreserved s s' ∧ (modeArm (AesXts.xtsMode enc)).post s s'
-  | true, _, hs => AesCbc.Arm.whole_wp Proof.AesXts.Arm.encBody_ok hs
-  | false, _, hs => AesCbc.Arm.whole_wp Proof.AesXts.Arm.decBody_ok hs
+  | true, _, hs => Proof.AesXts.Arm.encrypt_wp hs
+  | false, _, hs => Proof.AesXts.Arm.decrypt_wp hs
 
 theorem xts_ct : ∀ enc, ConstantTime isa (modeArm (AesXts.xtsMode enc)).pre (modeArm (AesXts.xtsMode enc)).pub
     (xcode enc)
-  | true => AesCbc.Arm.whole_ct Proof.AesXts.Arm.encBody_ok Proof.AesXts.Arm.encBody_ct
-  | false => AesCbc.Arm.whole_ct Proof.AesXts.Arm.decBody_ok Proof.AesXts.Arm.decBody_ct
+  | true => Proof.AesXts.Arm.encrypt_ct
+  | false => Proof.AesXts.Arm.decrypt_ct
 
 theorem xts_stack : ∀ enc, armStack (xcode enc) ≤ 8
   | true => by decide +kernel

@@ -24,16 +24,22 @@ that contains them read rather than build each field multiplication again. -/
 
 namespace VG.Impl.Ed25519.Arm
 
-materialize_code Point16.addCall
-materialize_code Point16.doubleCall
-materialize_code power250
-materialize_code invert
-materialize_code rootPower
+materialize_code addCallPlain := Point16.addCall false
+materialize_code addCallUmaal := Point16.addCall true
+materialize_code doubleCallPlain := Point16.doubleCall false
+materialize_code doubleCallUmaal := Point16.doubleCall true
+materialize_code power250Plain := power250 false
+materialize_code power250Umaal := power250 true
+materialize_code invertPlain := invert false
+materialize_code invertUmaal := invert true
+materialize_code rootPowerPlain := rootPower false
+materialize_code rootPowerUmaal := rootPower true
 
 end VG.Impl.Ed25519.Arm
 
 namespace VG.Impl.Ed25519.Arm
-materialize_code pointEncode
+materialize_code pointEncodePlain := pointEncode false
+materialize_code pointEncodeUmaal := pointEncode true
 materialize_code identityCT := constPoint Spec.Ed25519.identity
 materialize_code basePointCT := constPoint Spec.Ed25519.basePoint
 end VG.Impl.Ed25519.Arm

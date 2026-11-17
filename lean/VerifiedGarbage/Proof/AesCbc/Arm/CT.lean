@@ -213,21 +213,14 @@ theorem epilogue_taint : ∃ h, (taint.check (Taint.ofRegs [.r10]) (.block resto
 
 theorem nil_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true := ⟨_, by taint_decide⟩
 
-/-- The whole function, in two runs, from its loop's: the prologue and the
-epilogue are constant time, and the loop is entered in both runs or in
-neither. -/
-theorem ends_rel {M : Mode} {body : Prog isa}
-    {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
-    (hq : (modeArm M).pub s₀ s₀')
-    (hl : UPre s₀ → UPre s₀' → 0 < N s₀ →
-      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) (.loop body .ne)
-        fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
+/-- The prologue, in two runs from states that agree on the public
+arguments. -/
+theorem prologue_rel {M : Mode} {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
+    (hq : (modeArm M).pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (.block (save ++ setup)) fun a b =>
+      (LInv M s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧ (LInv M s₀' 0 b ∧ b.z = decide (N s₀' = 0)) := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
-  obtain ⟨_, hepi⟩ := epilogue_taint
-  obtain ⟨_, hnil⟩ := nil_taint
-  have hN := pub_N hq
   have hsp := pub_sp hq
   have wfA : ∀ {s : State}, UPre s →
       s.sp.toNat + 8 ≤ 2 ^ 32 ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr s.sp, 8⟩ r := fun {s} h => by
@@ -239,7 +232,7 @@ theorem ends_rel {M : Mode} {body : Prog isa}
     · exact h.iv_args.symm
     · exact h.data_args.symm
     · exact h.scr_args.symm
-  have pro := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀')
+  exact rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀')
     (G := fun s => LInv M s₀ 0 s ∧ s.z = decide (N s₀ = 0))
     (G' := fun s => LInv M s₀' 0 s ∧ s.z = decide (N s₀' = 0))
     (argTaint [.r0, .r1, .r2, .r3] 8)
@@ -257,6 +250,23 @@ theorem ends_rel {M : Mode} {body : Prog isa}
         · exact hq.2.2.2.2.2.1
         · exact hq.2.2.2.2.2.2) prologue_taint
     (fun s e => by rw [e]; exact prologue_wp hp) (fun s e => by rw [e]; exact prologue_wp hp')
+
+/-- The whole function, in two runs, from its loop's: the prologue and the
+epilogue are constant time, and the loop is entered in both runs or in
+neither. -/
+theorem ends_rel {M : Mode} {body : Prog isa}
+    {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
+    (hq : (modeArm M).pub s₀ s₀')
+    (hl : UPre s₀ → UPre s₀' → 0 < N s₀ →
+      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) (.loop body .ne)
+        fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
+  have hp := UPre.of h0
+  have hp' := UPre.of h0'
+  obtain ⟨_, hepi⟩ := epilogue_taint
+  obtain ⟨_, hnil⟩ := nil_taint
+  have hN := pub_N hq
+  have pro := prologue_rel h0 h0' hq
   have ev {s : State} (h : s.z = decide (N s₀ = 0)) : isa.eval .eq s = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s = _; rw [eval_eq, h]
   have ev' {s : State} (h : s.z = decide (N s₀' = 0)) : isa.eval .eq s = some (decide (N s₀ = 0)) := by

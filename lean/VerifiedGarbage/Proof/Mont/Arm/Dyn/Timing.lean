@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.Arm.Context
-public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+public import VerifiedGarbage.Proof.Framework.Arm.TaintEraseU
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Mont.Arm.Context
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintEraseU
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -22,7 +22,9 @@ of an operation's code without its offsets and `movw` immediates
 (`Code.eraseOff`) is the analysis of the code itself (`check_eraseOff`),
 and that code is the same for every modulus and layout, so each check below
 evaluates the analysis of one instance (`erased_relCT`). The exponentiation's
-shift has a word a step (`shiftWords_check`), checked by induction.
+shift has a word a step (`shiftUp_check`), checked by induction. The
+analysis is `taintU`, which follows the `umaal` of the multiplication on
+words.
 -/
 
 @[expose] public section
@@ -31,10 +33,12 @@ namespace VG.Proof.Mont.Arm.Dyn
 
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic
 
+variable {umaal : Bool}
+
 /-- The public registers: the working space's base, and `r11` and `lr` if `p` and `q`. -/
 def wsRegs (p q : Bool) : List Reg := .r12 :: ((if p then [.r11] else []) ++ (if q then [.lr] else []))
 
-def wsT (p q : Bool) : taint.T := Taint.ofRegs (wsRegs p q)
+def wsT (p q : Bool) : taintU.T := Taint.ofRegs (wsRegs p q)
 
 theorem wsT_noBase (p q : Bool) : Taint.NoBase (wsT p q) := Taint.noBase_ofRegs _
 
@@ -43,16 +47,16 @@ def eraseMod : Mod := { n := 1, mo := 0, tmp := 0, minv := 0 }
 
 /-- A program whose code is `c₀`'s but for offsets and immediates, from the
 analysis of `c₀`. -/
-theorem erased_relCT {c c₀ : Prog isa} {τ σ : taint.T} (h : VG.Taint.Hint taint.T)
+theorem erased_relCT {c c₀ : Prog isa} {τ σ : taintU.T} (h : VG.Taint.Hint taintU.T)
     (e : Code.eraseOff c = Code.eraseOff c₀) (hn : Taint.NoBase τ)
-    (L : (VG.Taint.check taint τ c₀ h).map (taint.le σ) = some true) :
+    (L : (VG.Taint.check taintU τ c₀ h).map (taintU.le σ) = some true) :
     RelCT isa (VG.Arm.Taint.Agree τ) c (VG.Arm.Taint.Agree σ) := by
   obtain ⟨τ', H, L'⟩ := Option.map_eq_some_iff.mp L
-  have H' : VG.Taint.check taint τ c h = some τ' := by
-    rw [← Taint.check_eraseOff c h hn, e, Taint.check_eraseOff c₀ h hn, H]
+  have H' : VG.Taint.check taintU τ c h = some τ' := by
+    rw [← Taint.checkU_eraseOff c h hn, e, Taint.checkU_eraseOff c₀ h hn, H]
   intro s t tr ur sf tf A E F
   obtain ⟨T, B⟩ := VG.Taint.check_sound H' A E F
-  exact ⟨T, taint.le_sound L' B⟩
+  exact ⟨T, taintU.le_sound L' B⟩
 
 /-! ## Code without its offsets
 
@@ -83,7 +87,8 @@ theorem addD_eraseOff (M : Mod) (acc o a b : Nat) :
     Code.eraseOff (addD M acc o a b) = Code.eraseOff (addD eraseMod 0 0 0 0) := rfl
 
 theorem mul_eraseOff (M : Mod) (inv acc o a b : Nat) :
-    Code.eraseOff (mul M inv acc o a b) = Code.eraseOff (mul eraseMod 0 0 0 0 0) := rfl
+    Code.eraseOff (mul umaal M inv acc o a b) = Code.eraseOff (mul umaal eraseMod 0 0 0 0 0) := by
+  cases umaal <;> rfl
 
 theorem selectW_eraseOff (k src tmp o : Nat) :
     Code.eraseOff (selectW k src tmp o) = Code.eraseOff (selectW 1 0 0 0) := rfl
@@ -97,52 +102,64 @@ theorem setupInverse_eraseOff (mo : Nat) :
     Code.eraseOff (@Code.block Instr Cond (setupInverse mo)) =
       Code.eraseOff (@Code.block Instr Cond (setupInverse 0)) := rfl
 
-theorem contextSetup_eraseOff (n : Nat) : Code.eraseOff (contextSetup n) = Code.eraseOff (contextSetup 1) := by
-  simp only [contextSetup, eraseOff_seq, setupInverse_eraseOff, one_eraseOff, powerTwo_eraseOff]
+theorem rSquared_eraseOff (n : Nat) : Code.eraseOff (rSquared umaal n) = Code.eraseOff (rSquared umaal 1) := by
+  simp only [rSquared, eraseOff_seq, eraseOff_loop, powerTwo_eraseOff, mul_eraseOff]
 
-theorem exponentProduct_eraseOff (n : Nat) :
-    Code.eraseOff (exponentProduct n) = Code.eraseOff (exponentProduct 1) := by
-  simp only [exponentProduct, eraseOff_seq, mul_eraseOff, selectW_eraseOff, exponentMask, eraseOff_ptr]
+theorem contextSetup_eraseOff (n : Nat) :
+    Code.eraseOff (contextSetup umaal n) = Code.eraseOff (contextSetup umaal 1) := by
+  simp only [contextSetup, eraseOff_seq, setupInverse_eraseOff, one_eraseOff, rSquared_eraseOff]
+
+theorem copyOut_eraseOff (k src : Nat) : Code.eraseOff (copyOut k src) = Code.eraseOff (copyOut 1 0) := rfl
+
+theorem table_eraseOff (n : Nat) : Code.eraseOff (table umaal n) = Code.eraseOff (table umaal 1) := by
+  simp only [table, tableStep, eraseOff_seq, eraseOff_loop, mul_eraseOff, copyOut_eraseOff, eraseOff_ptr]
+
+theorem squareFour_eraseOff (n : Nat) :
+    Code.eraseOff (squareFour umaal n) = Code.eraseOff (squareFour umaal 1) := by
+  simp only [squareFour, eraseOff_seq, eraseOff_loop, mul_eraseOff]
+
+theorem scan_eraseOff (n : Nat) : Code.eraseOff (scan n) = Code.eraseOff (scan 1) := by
+  simp only [scan, scanFrom, pick, eraseOff_seq, selectW_eraseOff]
 
 /-! ## The operations -/
 
 theorem mul_check (p q : Bool) :
-    ∃ h, (VG.Taint.check taint (wsT p q) (mul eraseMod 0 0 0 0 0) h).map (taint.le (wsT p q)) = some true := by
-  cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
+    ∃ h, (VG.Taint.check taintU (wsT p q) (mul umaal eraseMod 0 0 0 0 0) h).map (taintU.le (wsT p q)) = some true := by
+  cases umaal <;> cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
 
 theorem mul_relCT (p q : Bool) (M : Mod) (inv acc o a b : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (mul M inv acc o a b) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h, H⟩ := mul_check p q
+    RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (mul umaal M inv acc o a b) (VG.Arm.Taint.Agree (wsT p q)) := by
+  obtain ⟨h, H⟩ := mul_check (umaal := umaal) p q
   exact erased_relCT h (mul_eraseOff ..) (wsT_noBase p q) H
 
 theorem addD_relCT (p q : Bool) (M : Mod) (acc o a b : Nat) :
     RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (addD M acc o a b) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taint (wsT p q) (addD eraseMod 0 0 0 0) h).map (taint.le (wsT p q)) =
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT p q) (addD eraseMod 0 0 0 0) h).map (taintU.le (wsT p q)) =
       some true := by cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
   exact erased_relCT h (addD_eraseOff ..) (wsT_noBase p q) H
 
 theorem zeros_relCT (p q : Bool) (k o : Nat) :
     RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (zeros k o) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taint (wsT p q) (zeros 1 0) h).map (taint.le (wsT p q)) = some true := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT p q) (zeros 1 0) h).map (taintU.le (wsT p q)) = some true := by
     cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
   exact erased_relCT h (zeros_eraseOff ..) (wsT_noBase p q) H
 
 /-! ## The exponentiation -/
 
 /-- A sequence whose second part's analysis satisfies `P`. -/
-theorem check_seq_of {τ mid : taint.T} {a b : Prog isa} {ha hb : VG.Taint.Hint taint.T} {P : taint.T → Bool}
-    (h₁ : (VG.Taint.check taint τ a ha).map (taint.le mid) = some true)
-    (h₂ : (VG.Taint.check taint mid b hb).map P = some true) :
-    (VG.Taint.check taint τ (.seq a b) (.seq mid ha hb)).map P = some true := by
+theorem check_seq_of {τ mid : taintU.T} {a b : Prog isa} {ha hb : VG.Taint.Hint taintU.T} {P : taintU.T → Bool}
+    (h₁ : (VG.Taint.check taintU τ a ha).map (taintU.le mid) = some true)
+    (h₂ : (VG.Taint.check taintU mid b hb).map P = some true) :
+    (VG.Taint.check taintU τ (.seq a b) (.seq mid ha hb)).map P = some true := by
   obtain ⟨u, H, L⟩ := Option.map_eq_some_iff.mp h₁
-  change ((VG.Taint.check taint τ a ha).bind fun τ' => if taint.le mid τ' then _ else none).map P = _
+  change ((VG.Taint.check taintU τ a ha).bind fun τ' => if taintU.le mid τ' then _ else none).map P = _
   rw [H, Option.bind_some, L, ite_eq_left rfl]
   exact h₂
 
-theorem check_erased {c c₀ : Prog isa} {τ : taint.T} (h : VG.Taint.Hint taint.T)
+theorem check_erased {c c₀ : Prog isa} {τ : taintU.T} (h : VG.Taint.Hint taintU.T)
     (e : Code.eraseOff c = Code.eraseOff c₀) (hn : Taint.NoBase τ) :
-    VG.Taint.check taint τ c h = VG.Taint.check taint τ c₀ h := by
-  rw [← Taint.check_eraseOff c h hn, e, Taint.check_eraseOff c₀ h hn]
+    VG.Taint.check taintU τ c h = VG.Taint.check taintU τ c₀ h := by
+  rw [← Taint.checkU_eraseOff c h hn, e, Taint.checkU_eraseOff c₀ h hn]
 
 theorem checkBlock_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.Instr) :
     A.checkBlock τ (a ++ b) = (A.checkBlock τ a).bind (A.checkBlock · b) := by
@@ -155,94 +172,188 @@ theorem checkBlock_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.In
     simp only [ih]
 
 
-/-- The taint of the shift's words: `r1` public too. -/
-def shiftT (p : Bool) : taint.T := Taint.ofRegs (.r1 :: wsRegs p true)
+/-- The taint of a window's shift: the exponent's address in `r1` public too. -/
+def shiftT : taintU.T := Taint.ofRegs (.r1 :: wsRegs true true)
 
-theorem shiftT_noBase (p : Bool) : Taint.NoBase (shiftT p) := Taint.noBase_ofRegs _
+theorem shiftT_noBase : Taint.NoBase shiftT := Taint.noBase_ofRegs _
 
 /-- A word of the shift, which leaves its taint as it was. -/
-theorem shiftWord_check (p : Bool) (k j : Nat) :
-    taint.checkBlock (shiftT p) (([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] : List Instr) ++
-      ((if k = 0 then [] else [.ldr .r5 .r1 (4 * j + 4), .mov .r5 (.shifted .r5 .lsl 31),
-        .dp .orr .r4 .r4 (.reg .r5)] : List Instr) ++ ([.str .r4 .r1 (4 * j)] : List Instr))) = some (shiftT p) := by
-  rw [← Taint.checkBlock_eraseOff (shiftT_noBase p)]
-  cases k <;> cases p <;> rfl
+theorem shiftUpWord_check (j : Nat) :
+    taintU.checkBlock shiftT ([.ldr .r4 .r1 (4 * j), .dp .orr .r5 .r2 (.shifted .r4 .lsl 4),
+      .mov .r2 (.shifted .r4 .lsr 28), .str .r5 .r1 (4 * j)] : List Instr) = some shiftT := by
+  rw [← Taint.checkBlockU_eraseOff shiftT_noBase]
+  rfl
 
-theorem shiftWords_check (p : Bool) : ∀ k j, taint.checkBlock (shiftT p) (shiftWords k j) = some (shiftT p)
+theorem shiftUp_check : ∀ k j, taintU.checkBlock shiftT (shiftUp k j) = some shiftT
   | 0, _ => rfl
   | k + 1, j => by
-    have e : shiftWords (k + 1) j = (([.ldr .r4 .r1 (4 * j), .mov .r4 (.shifted .r4 .lsr 1)] : List Instr) ++
-        ((if k = 0 then [] else [.ldr .r5 .r1 (4 * j + 4), .mov .r5 (.shifted .r5 .lsl 31),
-          .dp .orr .r4 .r4 (.reg .r5)] : List Instr) ++ ([.str .r4 .r1 (4 * j)] : List Instr))) ++
-          shiftWords k (j + 1) := by
-      rw [shiftWords]; simp only [List.append_assoc]
-    rw [e, checkBlock_append taint, shiftWord_check, Option.bind_some, shiftWords_check p k (j + 1)]
+    rw [shiftUp, checkBlock_append taintU, shiftUpWord_check, Option.bind_some, shiftUp_check k (j + 1)]
 
-theorem shiftExponent_check (p : Bool) (n expWords : Nat) :
-    taint.checkBlock (wsT p true) (shiftExponent n expWords) = some (shiftT p) := by
-  rw [shiftExponent, checkBlock_append taint,
-    show taint.checkBlock (wsT p true) (ptr .r1 (expS n)) = some (shiftT p) by
-      rw [← Taint.checkBlock_eraseOff (wsT_noBase p true)]; cases p <;> rfl,
-    Option.bind_some, shiftWords_check]
+/-- The window's block: the bits that come in are zero, which is public,
+until the first word's go out. -/
+theorem window_check (n expWords : Nat) :
+    (taintU.checkBlock (wsT true true) (window n expWords)).map (taintU.le shiftT) = some true := by
+  rw [window, checkBlock_append taintU,
+    show taintU.checkBlock (wsT true true) (ptr .r1 (expS n)) = some shiftT by
+      rw [← Taint.checkBlockU_eraseOff (wsT_noBase true true)]; rfl,
+    Option.bind_some]
+  cases expWords with
+  | zero => rfl
+  | succ k =>
+    rw [shiftUp, ← List.cons_append, checkBlock_append taintU,
+      show taintU.checkBlock shiftT (.mov .r2 (.imm 0) :: ([.ldr .r4 .r1 (4 * 0),
+        .dp .orr .r5 .r2 (.shifted .r4 .lsl 4), .mov .r2 (.shifted .r4 .lsr 28),
+        .str .r5 .r1 (4 * 0)] : List Instr)) = some shiftT from rfl,
+      Option.bind_some, shiftUp_check]
+    rfl
 
-theorem check_erased_map {c c₀ : Prog isa} {τ : taint.T} {h : VG.Taint.Hint taint.T} {P : taint.T → Bool}
+theorem check_erased_map {c c₀ : Prog isa} {τ : taintU.T} {h : VG.Taint.Hint taintU.T} {P : taintU.T → Bool}
     (e : Code.eraseOff c = Code.eraseOff c₀) (hn : Taint.NoBase τ)
-    (L : (VG.Taint.check taint τ c₀ h).map P = some true) : (VG.Taint.check taint τ c h).map P = some true := by
+    (L : (VG.Taint.check taintU τ c₀ h).map P = some true) : (VG.Taint.check taintU τ c h).map P = some true := by
   rw [check_erased h e hn]; exact L
 
-theorem check_loop_of {τ σ : taint.T} {body : Prog isa} {c : Cond} {h : VG.Taint.Hint taint.T}
-    (hσ : taint.le σ τ = true)
-    (hb : (VG.Taint.check taint σ body h).map (fun σ' => taint.le σ σ' && taint.condPub σ' c) = some true) :
-    (VG.Taint.check taint τ (.loop body c) (.loop σ h)).map (taint.le σ) = some true := by
+theorem check_loop_of {τ σ : taintU.T} {body : Prog isa} {c : Cond} {h : VG.Taint.Hint taintU.T}
+    (hσ : taintU.le σ τ = true)
+    (hb : (VG.Taint.check taintU σ body h).map (fun σ' => taintU.le σ σ' && taintU.condPub σ' c) = some true) :
+    (VG.Taint.check taintU τ (.loop body c) (.loop σ h)).map (taintU.le σ) = some true := by
   obtain ⟨σ', H, L⟩ := Option.map_eq_some_iff.mp hb
-  change (if taint.le σ τ then (VG.Taint.check taint σ body h).bind
-    (fun σ' => if taint.le σ σ' && taint.condPub σ' c then some σ' else none) else none).map _ = _
+  change (if taintU.le σ τ then (VG.Taint.check taintU σ body h).bind
+    (fun σ' => if taintU.le σ σ' && taintU.condPub σ' c then some σ' else none) else none).map _ = _
   rw [hσ, ite_eq_left rfl, H, Option.bind_some, L, ite_eq_left rfl]
   simp only [Option.map_some, Option.some.injEq]
   simp only [Bool.and_eq_true] at L
   exact L.1
 
 /-- Constant time from a check. -/
-theorem relCT_of_check {c : Prog isa} {τ σ : taint.T} {h : VG.Taint.Hint taint.T}
-    (L : (VG.Taint.check taint τ c h).map (taint.le σ) = some true) :
+theorem relCT_of_check {c : Prog isa} {τ σ : taintU.T} {h : VG.Taint.Hint taintU.T}
+    (L : (VG.Taint.check taintU τ c h).map (taintU.le σ) = some true) :
     RelCT isa (VG.Arm.Taint.Agree τ) c (VG.Arm.Taint.Agree σ) := by
   obtain ⟨τ', H, L'⟩ := Option.map_eq_some_iff.mp L
   intro s t tr ur sf tf A E F
   obtain ⟨T, B⟩ := VG.Taint.check_sound H A E F
-  exact ⟨T, taint.le_sound L' B⟩
+  exact ⟨T, taintU.le_sound L' B⟩
 
-theorem exponentProduct_check (p : Bool) (n : Nat) :
-    ∃ h, (VG.Taint.check taint (wsT p true) (exponentProduct n) h).map (taint.le (wsT p true)) = some true := by
-  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taint (wsT p true) (exponentProduct 1) h).map (taint.le (wsT p true)) =
-      some true := by cases p <;> exact ⟨_, by taint_decide⟩
-  exact ⟨h, check_erased_map (exponentProduct_eraseOff n) (wsT_noBase _ _) H⟩
+theorem windowStep_check (n expWords : Nat) :
+    ∃ h, (VG.Taint.check taintU (wsT true true) (windowStep umaal n expWords) h).map
+      (fun σ' => taintU.le (wsT true true) σ' && taintU.condPub σ' .ne) = some true := by
+  obtain ⟨h₁, H₁⟩ : ∃ h, (VG.Taint.check taintU (wsT true true) (squareFour umaal 1) h).map
+      (taintU.le (wsT true true)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  obtain ⟨h₂, H₂⟩ : ∃ h, (VG.Taint.check taintU shiftT (scan 1) h).map (taintU.le (wsT true true)) = some true :=
+    ⟨_, by taint_decide⟩
+  obtain ⟨h₃, H₃⟩ := mul_check (umaal := umaal) true true
+  unfold windowStep
+  refine ⟨.seq (wsT true true) h₁ (.seq shiftT (.block []) (.seq (wsT true true) h₂
+      (.seq (wsT true true) h₃ (.block [])))),
+    check_seq_of (check_erased_map (squareFour_eraseOff n) (wsT_noBase _ _) H₁)
+      (check_seq_of (window_check n expWords)
+        (check_seq_of (check_erased_map (scan_eraseOff n) shiftT_noBase H₂)
+          (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₃) ?_)))⟩
+  rfl
 
-theorem exponentStep_check (p : Bool) (n expWords : Nat) :
-    ∃ h, (VG.Taint.check taint (wsT p true) (exponentStep n expWords) h).map
-      (fun σ' => taint.le (wsT p true) σ' && taint.condPub σ' .ne) = some true := by
-  obtain ⟨h₁, H₁⟩ := exponentProduct_check p n
-  obtain ⟨h₂, H₂⟩ := mul_check p true
-  unfold exponentStep exponentBody
-  refine ⟨.seq (wsT p true) (.seq (wsT p true) h₁ (.seq (wsT p true) h₂ (.block []))) (.block []),
-    check_seq_of (check_seq_of H₁ (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₂) ?_)) ?_⟩
-  · change (taint.checkBlock (wsT p true) (shiftExponent n expWords)).map _ = _
-    rw [shiftExponent_check]; cases p <;> rfl
-  · cases p <;> rfl
-
-theorem exponentiate_relCT (p q : Bool) (n expWords : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (exponentiate n expWords) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h₁, H₁⟩ := mul_check p q
-  obtain ⟨h₂, H₂⟩ := exponentStep_check p n expWords
-  obtain ⟨h₃, H₃⟩ : ∃ h, (VG.Taint.check taint (wsT p true) (mul eraseMod 0 0 0 0 0) h).map
-      (taint.le (wsT p q)) = some true := by cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
-  refine relCT_of_check (h := .seq (wsT p q) h₁ (.seq (wsT p q) h₁ (.seq (wsT p true) (.block [])
-    (.seq (wsT p true) (.loop (wsT p true) h₂) h₃)))) ?_
+/-- The exponentiation, from the working space's base alone: it sets `r11`
+and `lr` itself. -/
+theorem exponentiate_relCT (n expWords : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (exponentiate umaal n expWords)
+      (VG.Arm.Taint.Agree (wsT false false)) := by
+  obtain ⟨h₁, H₁⟩ : ∃ h, (VG.Taint.check taintU (wsT false false) (table umaal 1) h).map
+      (taintU.le (wsT true true)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  obtain ⟨h₂, H₂⟩ := mul_check (umaal := umaal) true true
+  obtain ⟨h₃, H₃⟩ := windowStep_check (umaal := umaal) n expWords
+  obtain ⟨h₄, H₄⟩ : ∃ h, (VG.Taint.check taintU (wsT true true) (mul umaal eraseMod 0 0 0 0 0) h).map
+      (taintU.le (wsT false false)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  refine relCT_of_check (h := .seq (wsT true true) h₁ (.seq (wsT true true) h₂ (.seq (wsT true true) (.block [])
+    (.seq (wsT true true) (.loop (wsT true true) h₃) h₄)))) ?_
   unfold exponentiate
+  refine check_seq_of (check_erased_map (table_eraseOff n) (wsT_noBase _ _) H₁) ?_
+  refine check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₂) ?_
+  refine check_seq_of (check_erased_map (c₀ := .block [.movw .lr 0]) rfl (wsT_noBase _ _) rfl) ?_
+  refine check_seq_of (check_loop_of rfl H₃) ?_
+  exact check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₄
+
+/-! ## A product of two powers -/
+
+theorem tableFill_check (n : Nat) : ∀ ops : List (Nat × Nat × Nat),
+    ∃ h, (VG.Taint.check taintU (wsT false false) (tableFill umaal n ops) h).map (taintU.le (wsT false false)) =
+      some true
+  | [] => ⟨.block [], rfl⟩
+  | (k, a, b) :: r => by
+    obtain ⟨h₁, H₁⟩ := mul_check (umaal := umaal) false false
+    obtain ⟨h₂, H₂⟩ := tableFill_check n r
+    refine ⟨.seq (wsT false false) h₁ h₂, ?_⟩
+    rw [tableFill]
+    exact check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) H₂
+
+/-- The taint of a two-bit shift: the exponent's address in `r1` public too. -/
+def shiftT2 : taintU.T := Taint.ofRegs (.r1 :: wsRegs false true)
+
+theorem shiftT2_noBase : Taint.NoBase shiftT2 := Taint.noBase_ofRegs _
+
+theorem shiftUp2Word_check (j : Nat) :
+    taintU.checkBlock shiftT2 ([.ldr .r4 .r1 (4 * j), .dp .orr .r5 .r2 (.shifted .r4 .lsl 2),
+      .mov .r2 (.shifted .r4 .lsr 30), .str .r5 .r1 (4 * j)] : List Instr) = some shiftT2 := by
+  rw [← Taint.checkBlockU_eraseOff shiftT2_noBase]
+  rfl
+
+theorem shiftUp2_check : ∀ k j, taintU.checkBlock shiftT2 (shiftUp2 k j) = some shiftT2
+  | 0, _ => rfl
+  | k + 1, j => by
+    rw [shiftUp2, checkBlock_append taintU, shiftUp2Word_check, Option.bind_some, shiftUp2_check k (j + 1)]
+
+theorem windowTwo_check (E expWords : Nat) :
+    (taintU.checkBlock (wsT false true) (windowTwo E expWords)).map (taintU.le (wsT false true)) = some true := by
+  rw [windowTwo, checkBlock_append taintU,
+    show taintU.checkBlock (wsT false true) (ptr .r1 E) = some shiftT2 by
+      rw [← Taint.checkBlockU_eraseOff (wsT_noBase false true)]; rfl,
+    Option.bind_some]
+  cases expWords with
+  | zero => rfl
+  | succ k =>
+    rw [shiftUp2, ← List.cons_append, checkBlock_append taintU,
+      show taintU.checkBlock shiftT2 (.mov .r2 (.imm 0) :: ([.ldr .r4 .r1 (4 * 0),
+        .dp .orr .r5 .r2 (.shifted .r4 .lsl 2), .mov .r2 (.shifted .r4 .lsr 30),
+        .str .r5 .r1 (4 * 0)] : List Instr)) = some shiftT2 from rfl,
+      Option.bind_some, shiftUp2_check]
+    rfl
+
+theorem windowStep2_check (n expWords : Nat) :
+    ∃ h, (VG.Taint.check taintU (wsT false true) (windowStep2 umaal n expWords) h).map
+      (fun σ' => taintU.le (wsT false true) σ' && taintU.condPub σ' .ne) = some true := by
+  obtain ⟨h₁, H₁⟩ := mul_check (umaal := umaal) false true
+  obtain ⟨h₂, H₂⟩ : ∃ h, (VG.Taint.check taintU (wsT false true) (scan 1) h).map (taintU.le (wsT false true)) =
+      some true := ⟨_, by taint_decide⟩
+  unfold windowStep2 window2
+  refine ⟨.seq (wsT false true) h₁ (.seq (wsT false true) h₁ (.seq (wsT false true)
+      (.seq (wsT false true) (.block []) (.seq (wsT false true) (.block []) (.seq (wsT false true) (.block [])
+        (.block []))))
+      (.seq (wsT false true) h₂ (.seq (wsT false true) h₁ (.block []))))),
+    check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
+      (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
+        (check_seq_of (check_seq_of (windowTwo_check (exp2S n) expWords)
+            (check_seq_of rfl (check_seq_of (windowTwo_check (expS n) expWords) rfl)))
+          (check_seq_of (check_erased_map (scan_eraseOff n) (wsT_noBase _ _) H₂)
+            (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) ?_))))⟩
+  rfl
+
+/-- The product of two powers, from the working space's base alone. -/
+theorem exponentiate2_relCT (n expWords : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (exponentiate2 umaal n expWords)
+      (VG.Arm.Taint.Agree (wsT false false)) := by
+  obtain ⟨h₁, H₁⟩ := mul_check (umaal := umaal) false false
+  obtain ⟨h₂, H₂⟩ := tableFill_check (umaal := umaal) n tableOps
+  obtain ⟨h₃, H₃⟩ := windowStep2_check (umaal := umaal) n expWords
+  obtain ⟨h₄, H₄⟩ : ∃ h, (VG.Taint.check taintU (wsT false true) (mul umaal eraseMod 0 0 0 0 0) h).map
+      (taintU.le (wsT false false)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  refine relCT_of_check (h := .seq (wsT false false)
+    (.seq (wsT false false) h₁ (.seq (wsT false false) h₁ (.seq (wsT false false) h₁ h₂)))
+    (.seq (wsT false false) h₁ (.seq (wsT false true) (.block [])
+      (.seq (wsT false true) (.loop (wsT false true) h₃) h₄)))) ?_
+  unfold exponentiate2 table2
+  refine check_seq_of (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
+    (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
+      (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) H₂))) ?_
   refine check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) ?_
-  refine check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) ?_
-  refine check_seq_of (check_erased_map (c₀ := .block [.movw .lr 0]) rfl (wsT_noBase _ _)
-    (by cases p <;> cases q <;> rfl)) ?_
-  refine check_seq_of (check_loop_of (by cases p <;> rfl) H₂) ?_
-  exact check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₃
+  refine check_seq_of (check_erased_map (c₀ := .block [.movw .lr 0]) rfl (wsT_noBase _ _) rfl) ?_
+  refine check_seq_of (check_loop_of rfl H₃) ?_
+  exact check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₄
 
 end VG.Proof.Mont.Arm.Dyn

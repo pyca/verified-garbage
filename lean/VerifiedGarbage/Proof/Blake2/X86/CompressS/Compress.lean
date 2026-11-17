@@ -153,7 +153,9 @@ theorem vg_ok (s : State) :
       eval_movdqa]
     simp only [dword_paddd _ _ hl, dword_pxor, dword_por, dword_rot16 _ hl, psrld_12 _ hl,
       pslld_20 _ hl, psrld_8 _ hl, pslld_24 _ hl, psrld_7 _ hl, pslld_25 _ hl, rotr12, rotr8, rotr7,
-      rotateLeft_16, laneMix, mix, Spec.Blake2.s, add_swap, and_self]
+      rotateLeft_16, laneMix, mix, Spec.Blake2.s]
+    rw [add_swap _ (dword (s.xmm .xmm5) l) _, add_swap _ (dword (s.xmm .xmm6) l) _]
+    exact ⟨rfl, rfl, rfl, rfl⟩
   · simp only [RegUpd.xmm_setXmm_of_ne, h0, h1, h2, h3, h4, not_false_eq_true]
 
 /-! ## Gathering message words -/
@@ -1013,7 +1015,10 @@ theorem ivMem_hi {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {m : Mem} {H 
     (ivMem m B).readW (addr B (vOff k)) 32 = (V0 H T f)[k] := by
   obtain fV : B.toNat + 64 ≤ 2 ^ 32 := by omega_arith
   rw [V0_get _ _ _ k hk]
-  simp (disch := omega_arith) only [ivMem, rw_slot fV]
+  rw [ivMem, rw_slot fV _ _ (i := 15) (by decide) hk, rw_slot fV _ _ (i := 14) (by decide) hk,
+    rw_slot fV _ _ (i := 13) (by decide) hk, rw_slot fV _ _ (i := 12) (by decide) hk,
+    rw_slot fV _ _ (i := 11) (by decide) hk, rw_slot fV _ _ (i := 10) (by decide) hk,
+    rw_slot fV _ _ (i := 9) (by decide) hk, rw_slot fV _ _ (i := 8) (by decide) hk]
   rw [hlo, hhi, hf]
   have : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega_arith
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

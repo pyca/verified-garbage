@@ -83,7 +83,8 @@ theorem setMo_ok {s : State} {base : Addr} {M : Mod} (h3 : At s base .r3 0) (hmo
 theorem OpLay.csub {M : Mod} {size acc O A B : Nat} (h : OpLay M size acc O A B) :
     CsubLay M size acc O := by
   obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := h
-  exact ⟨by omega_arith, tmp_le, mo_le, o_le, acc4, tmp4, by omega_arith, tm.symm, by omega_arith, to⟩
+  exact ⟨by omega_using [n0, acc_le], tmp_le, mo_le, o_le, acc4, tmp4, by omega_using [n0, sat], tm.symm,
+    by omega_using [ao], to⟩
 
 /-- What the operations start from: the working space, the pointers, and the
 modulus `m` at `[r3 + M.mo]`. -/
@@ -120,8 +121,9 @@ theorem add_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   refine wp_step (setMo_ok hp.r3 (by omega_arith)) ?_
   obtain hs₁ := hp.ws.write .r7 (off base M.mo)
   refine wp_append (WP.mono (chain_ok (sub := false) (W := M.n) hs₁ (hp.r5.write _) (hp.r6.write _) (hp.r3.write _)
-    (by decide) (by decide) (by decide) (by decide) acc4 (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (k := M.n) (Nat.le_refl _)) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
+    (by decide) (by decide) (by decide) (by decide) acc4 (by omega_using [a_le]) (by omega_using [b_le])
+    (by omega_using [n0, acc_le]) (by omega_using [n0, aa]) (by omega_using [n0, ab]) (k := M.n) (Nat.le_refl _))
+    fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   simp only [write_mem, ite_false, Bool.false_eq_true, Nat.add_zero, Bool.toNat_false] at O₂ V₂
   rw [show cOf false M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega_arith] at V₂
   obtain K₀₂ : Kp [.r7, .r11, .r12] s s₂ := (Kp.write s _ (by decide)).trans (K₂.mono (by decide))
@@ -186,8 +188,9 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   refine wp_step (setMo_ok hp.r3 (by omega_arith)) ?_
   obtain hs₁ := hp.ws.write .r7 (off base M.mo)
   refine wp_append (WP.mono (chain_ok (sub := true) (W := M.n) hs₁ (hp.r5.write _) (hp.r6.write _) (hp.r3.write _)
-    (by decide) (by decide) (by decide) (by decide) acc4 (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (k := M.n) (Nat.le_refl _)) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
+    (by decide) (by decide) (by decide) (by decide) acc4 (by omega_using [a_le]) (by omega_using [b_le])
+    (by omega_using [n0, acc_le]) (by omega_using [n0, aa]) (by omega_using [n0, ab]) (k := M.n) (Nat.le_refl _))
+    fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   simp only [write_mem, ite_true, Bool.toNat_true, Nat.add_zero] at O₂ V₂
   rw [show cOf true M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega_arith] at V₂
   replace V₂ : wordsVal s₂.mem base acc M.n + 2 ^ (64 * M.n) * s₂.ca.toNat + wordsVal s.mem base B M.n =
@@ -208,8 +211,9 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
   obtain hc1 : c ≤ 1 := hc ▸ Bool.toNat_le _
   refine wp_append (WP.mono (chain_ok (sub := false) (W := M.n) ((K₀₂.ws hp.ws).writeCarry _ _)
     ((K₀₂.at hp.r3).writeCarry _) (h7₂.writeCarry _) ((K₀₂.at hp.r3).writeCarry _)
-    (by decide) (by decide) acc4 (by decide) tmp4 (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (k := M.n) (Nat.le_refl _)) fun s₃ ⟨O₃, V₃, K₃⟩ => ?_)
+    (by decide) (by decide) acc4 (by decide) tmp4 (by omega_using [n0, acc_le]) (by omega_using [mo_le])
+    (by omega_using [tmp_le]) (by omega_using [n0, sat]) (by omega_using [tm]) (k := M.n) (Nat.le_refl _))
+    fun s₃ ⟨O₃, V₃, K₃⟩ => ?_)
   simp only [RegUpd.mem_writeCarry, ite_false, Bool.false_eq_true, Nat.add_zero, Bool.toNat_false,
     Nat.zero_add] at O₃ V₃
   rw [show cOf false M.n s₃.ca = s₃.ca.toNat by simp only [cOf]; split <;> omega_arith] at V₃
@@ -222,7 +226,7 @@ theorem sub_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp 
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (k := M.n) (Nat.le_refl _))
     fun u ⟨O₄, V₄, K₄⟩ => ⟨?_, ?_, ?_⟩
   · have hD₃ : wordsVal s₃.mem base acc M.n = wordsVal s₂.mem base acc M.n :=
-      O₃.wordsVal (by omega_arith) (by omega_arith)
+      O₃.wordsVal (by omega_using [n0, sat]) (by omega_using [n0, acc_le, hs15, hn])
     rw [V₄, hmk₃, hD₃, ← sub_math ha hb (wordsVal_lt _ _ _ _)
       (wordsVal_lt s₃.mem base M.tmp M.n) V₂ V₃ hc1 (Bool.toNat_le _)]
     by_cases h : c = 1

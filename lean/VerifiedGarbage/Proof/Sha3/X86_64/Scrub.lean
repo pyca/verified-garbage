@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+
 public import VerifiedGarbage.Spec.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -27,9 +30,8 @@ registers and the granules of its stack that the residue analysis
 memory on return only within the buffers (`X86_64.Scrub.PostOut`): the state
 (`Proof.Sha3.stateAt_congr`) and the output (`bytesAt_congr`).
 
-SHA-3's `finalize` is not here: the analysis loses that `r12` points into
-its frame across its call of `squeeze` (whose stores to `out` it cannot
-bound), so it cannot follow `finRestore`'s loads through it.
+SHA-3's fixed digest copy avoids generic squeezing. Its finalizer clears
+the 680-byte stack with aligned stores after writing the digest.
 -/
 
 @[expose] public section
@@ -73,6 +75,25 @@ theorem updateOut (rate stack : Nat) :
     show stateAt m₂ st = _
     rw [stateAgree hb.1]
     exact h.1 msg hr hc
+
+/-- A fixed digest's postcondition reads only its output buffer. -/
+theorem finalizeOut (H : HashFn) (stack : Nat) (hlen : H.len < 2 ^ 64) :
+    PostOut (finalizeContract X86_64.abi H stack) ((finalizeSig H.len).retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hvs hb h => by
+    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hvs
+    replace hvs := Nat.succ.inj hvs
+    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hvs
+    replace hvs := Nat.succ.inj hvs
+    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hvs
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hvs)
+    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    intro msg hr hc
+    show bytesAt m₂ ot H.len = _
+    rw [bytesAt_congr fun i hi => agreeBuf (n := H.len * Elem.size .u8)
+      (by simpa only [Elem.size, Nat.mul_one] using hlen) hb.2 i
+      (by simpa only [Elem.size, Nat.mul_one] using hi)]
+    exact h msg hr hc
 
 theorem xofFinalizeOut (X : Xof) (stack : Nat) :
     PostOut (xofFinalizeContract X86_64.abi X stack) (xofFinalizeSig.retBits 64) :=
@@ -248,5 +269,29 @@ def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api X86_64.target
     stack := 656
     verified := Proof.Sha3.X86_64.Instances.squeeze_shake256 } (xofSqueezeOut _ _) [] (pubOk_nil _)
     (some ⟨squeezeShake256Ks, squeezeShake256Ok⟩)
+
+/-- SHA3-224's finalizer, with its whole stack cleared after the digest is written. -/
+def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api X86_64.target :=
+  RScrub.withScrubAllC {
+    code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
+    verified := Proof.Sha3.X86_64.Instances.finalize_sha3_224 } (finalizeOut _ _ (by decide)) [8, 672]
+
+/-- SHA3-256's finalizer, with its whole stack cleared after the digest is written. -/
+def finalizeSha3_256Reg : Registration Spec.Sha3.finalizeSha3_256Api X86_64.target :=
+  RScrub.withScrubAllC {
+    code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
+    verified := Proof.Sha3.X86_64.Instances.finalize_sha3_256 } (finalizeOut _ _ (by decide)) [8, 672]
+
+/-- SHA3-384's finalizer, with its whole stack cleared after the digest is written. -/
+def finalizeSha3_384Reg : Registration Spec.Sha3.finalizeSha3_384Api X86_64.target :=
+  RScrub.withScrubAllC {
+    code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
+    verified := Proof.Sha3.X86_64.Instances.finalize_sha3_384 } (finalizeOut _ _ (by decide)) [8, 672]
+
+/-- SHA3-512's finalizer, with its whole stack cleared after the digest is written. -/
+def finalizeSha3_512Reg : Registration Spec.Sha3.finalizeSha3_512Api X86_64.target :=
+  RScrub.withScrubAllC {
+    code := Impl.Sha3.X86_64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
+    verified := Proof.Sha3.X86_64.Instances.finalize_sha3_512 } (finalizeOut _ _ (by decide)) [8, 672]
 
 end VG.Proof.Sha3.X86_64.Scrub

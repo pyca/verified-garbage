@@ -190,6 +190,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def recoveredPoint (x y : Spec.X25519.Fe) : Spec.Ed25519.Point := ⟨x, y, 1, x * y⟩
 def signedX (x : Spec.X25519.Fe) (b : Bool) : Spec.X25519.Fe :=
   if (x.val % 2 == 1) == b then x else 0 - x
@@ -200,7 +202,7 @@ theorem returnFlag_ok (s : State) (b : Bool) :
   refine wp_mov (op2_imm (by cases b <;> decide)) fun t ht => WP.block_nil ⟨ht.rest (by decide), ht.mem, ht.gpr⟩
 
 theorem recoverSuccess_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa recoverSuccess s fun t => Keep base s t ∧ AllLim t.mem base ∧ t.gpr .r9 = 1 ∧
+    WP isa (recoverSuccess umaal) s fun t => Keep base s t ∧ AllLim t.mem base ∧ t.gpr .r9 = 1 ∧
       point (env t.mem base) 0 1 2 3 = recoveredPoint (env s.mem base 0) (env s.mem base 1) := by
   refine WP.seq (WP.mono (fieldCode_ok recoverSuccessOps hc hl) fun u ⟨uk, ul, ue⟩ => ?_)
   refine WP.mono (returnFlag_ok u true) fun t ⟨tr, tm, tv⟩ => ?_
@@ -210,7 +212,7 @@ theorem recoverSuccess_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl :
 
 theorem adjustBranch_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (b : Bool) (hz : s.z = (((env s.mem base 0).val % 2 == 1) == b)) :
-    WP isa (.ite .eq (.block []) (fieldCode [.const 5 0, .sub 0 5 0])) s fun t =>
+    WP isa (.ite .eq (.block []) (fieldCode false [.const 5 0, .sub 0 5 0])) s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ env t.mem base 0 = signedX (env s.mem base 0) b ∧
       env t.mem base 1 = env s.mem base 1 := by
   apply WP.ite (((env s.mem base 0).val % 2 == 1) == b) (by simp only [VG.Arm.eval, hz])
@@ -226,7 +228,7 @@ theorem adjustBranch_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : A
 
 theorem recoverAdjustSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (b : Bool) (hb : s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat) :
-    WP isa recoverAdjustSign s fun t => Keep base s t ∧ AllLim t.mem base ∧ t.gpr .r9 = 1 ∧
+    WP isa (recoverAdjustSign umaal) s fun t => Keep base s t ∧ AllLim t.mem base ∧ t.gpr .r9 = 1 ∧
       point (env t.mem base) 0 1 2 3 = recoveredPoint (signedX (env s.mem base 0) b) (env s.mem base 1) := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -253,6 +255,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def DecodeResult (base : BitVec 32) (p : Option Spec.Ed25519.Point) (s : State) : Prop :=
   match p with
   | none => s.gpr .r9 = 0
@@ -276,7 +280,7 @@ theorem signTest_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (b : Bool)
 
 theorem recoverSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (b : Bool) (hb : s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat) :
-    WP isa recoverSign s fun t => Keep base s t ∧ AllLim t.mem base ∧
+    WP isa (recoverSign umaal) s fun t => Keep base s t ∧ AllLim t.mem base ∧
       DecodeResult base (signResult (env s.mem base 0) (env s.mem base 1) b) t := by
   refine WP.seq (WP.mono (fieldZero_ok hc hl 0) fun a ⟨ak, al, ae, az⟩ => ?_)
   apply WP.ite (decide (env s.mem base 0 = 0)) (by simp only [VG.Arm.eval, az])

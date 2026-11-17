@@ -41,7 +41,9 @@ Modelling choices:
   Only volatile v0–v19 are modelled, so the nonvolatile vector and FPR
   registers cannot be changed. VSX load/store doubleword pairs do not
   require alignment; the first memory doubleword is the high register
-  half. `mtvsrd` leaves its low half undefined, supplied by `unknowns`.
+  half. `mtvsrd` leaves its low half undefined: the model puts there a value
+  it does not know, which may depend on the instruction's operands (see
+  `State.undef`).
 * In the forms that read `(RA|0)`, `RA = 0` means the value 0, not `r0`: the
   model has only `li` (`addi RT, 0, SI`) and `lis` (`addis RT, 0, SI`) of
   those, and every other such instruction with `r0` as its base (`RA`)
@@ -173,9 +175,23 @@ structure State where
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
   call stores, what linkage code may leave in `r0`, `r11` and `r12` (see
-  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, and the
-  undefined low doubleword of each `mtvsrd`. -/
+  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, and which
+  undefined result each `mtvsrd` leaves (the first argument of `undef`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- What an instruction leaves where the Power ISA says its result is
+  undefined: the low doubleword of `mtvsrd XT, RA`'s target (Book I
+  §3.3.18, see `Instr.mtvsrd`) is `undef u ra xt`, where `u` is the next of
+  `unknowns`, `ra` the contents of RA and `xt` what XT held before. Nothing
+  constrains the function, and no instruction changes it. An undefined
+  value "may vary between implementations, and between different
+  executions on the same implementation" (Book I §1.3.1, "Definitions"),
+  and the ISA does not say what it may depend on: an implementation may
+  leave there a copy of RA, or the doubleword that was there. So the model
+  lets the result depend on both operands, and what is undefined is as
+  secret as they are (`TCB/PPC64LE/Residue.lean`). It also depends on `u`,
+  a fresh unknown for each execution, so that code cannot rely on two
+  executions with the same operands leaving the same result. -/
+  undef : BitVec 64 → BitVec 64 → BitVec 128 → BitVec 64 := fun _ _ _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
   /-- `XER`'s carry bit, CA. -/
@@ -287,7 +303,10 @@ inductive Instr
   /-- `stxvd2x XS, RA, RB`, XS = vector register + 32 (Book I §7.6.2.1.2). -/
   | stxvd2x (n : VReg) (a b : Reg)
   /-- `mtvsrd XT, RA`, XT = vector register + 32 (Book I §3.3.18).
-  The high doubleword is RA; the low doubleword is undefined, not zero. -/
+  "The contents of GPR[RA] are placed into doubleword element 0 of
+  VSR[XT]. The contents of doubleword element 1 of VSR[XT] are undefined."
+  So the high doubleword is RA, and the low doubleword is not zero but an
+  unknown function of the operands (`State.undef`). -/
   | mtvsrd (d : VReg) (n : Reg)
   /-- `mfvsrd RA, XS`, XS = vector register + 32: the high doubleword. -/
   | mfvsrd (d : Reg) (n : VReg)
@@ -443,7 +462,8 @@ def exec : Instr → State → Option State
     else none
   | .stxvd2x n a b, s =>
     (addrX s a b).bind fun ea => s.store ea 16 (swapDwords (s.vpr n))
-  | .mtvsrd d n, s => some { s.writeV d (s.gpr n ++ s.unknowns 0) with
+  | .mtvsrd d n, s =>
+    some { s.writeV d (s.gpr n ++ s.undef (s.unknowns 0) (s.gpr n) (s.vpr d)) with
       unknowns := fun i => s.unknowns (i + 1) }
   | .mfvsrd d n, s => some (s.write d (vdword (s.vpr n) 0))
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))

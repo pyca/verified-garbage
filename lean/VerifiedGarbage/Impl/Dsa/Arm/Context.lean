@@ -15,6 +15,8 @@ The caller keeps its workspace in r4 across the call; r11 stays untouched.
 namespace VG.Impl.Dsa.Arm.Context
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic
 
+variable (umaal : Bool)
+
 def regs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .lr]
 
 def slots (n : Nat) : List (Reg × Nat) := regs.zipIdx.map fun (r, i) => (r, resS n + 4 * i)
@@ -29,7 +31,7 @@ Only establish the inverse required by the shared arithmetic invariant. -/
 def light (n : Nat) : Prog isa := .block (setupInverse (modS n))
 
 def body (n : Nat) : Prog isa :=
-  .seq (.block (save n)) (.seq (contextSetup n) (.block (restore n)))
+  .seq (.block (save n)) (.seq (contextSetup umaal n) (.block (restore n)))
 
 def scratch (n : Nat) : List (Nat × Nat) :=
   [(resS n, 32), (0, 4), (oneS n, 8 * n), (rrS n, 8 * n),
@@ -44,12 +46,12 @@ def layout (n : Nat) : Impl.Dsa.MontContext.Layout where
   scratch := scratch n
   size := contextBytes n
 
-def name (n : Nat) : String := s!"vg_dsa_context_{(layout n).n}"
+def name (n : Nat) : String := s!"vg_dsa_context_{(layout n).n}" ++ suffix umaal
 
 def head (n : Nat) : List Instr :=
   [.mov .r4 (.reg .r12), .mov .r0 (.reg .r12), .movw .r1 (BitVec.ofNat 16 (contextBytes n / 8))]
 
 def call (n : Nat) : Prog isa :=
-  .seq (.block (head n)) (.seq (.call (name n) (body n)) (.block [.mov .r12 (.reg .r4)]))
+  .seq (.block (head n)) (.seq (.call (name umaal n) (body umaal n)) (.block [.mov .r12 (.reg .r4)]))
 
 end VG.Impl.Dsa.Arm.Context

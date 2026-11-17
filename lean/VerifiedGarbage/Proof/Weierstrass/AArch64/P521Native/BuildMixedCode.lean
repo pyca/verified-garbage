@@ -29,10 +29,14 @@ theorem buildMixed_value {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F) :
 theorem buildMixed_reads : fieldReads buildMixedOps [1504,1576,1648,2800,3160]=true := by decide
 
 theorem buildMixed_slots : ∀op∈buildMixedOps,∀x∈op.out::op.ins,buildSlot x := by
-  simp [buildMixedOps,PointOp.out,PointOp.ins,buildSlot]
+  have h : ∀op∈buildMixedOps,∀x∈op.out::op.ins,x%72=64 ∧ x+72≤3304 := by decide
+  exact h
 
 theorem buildMixed_coeffs : ∀op∈buildMixedOps,fieldCoeffs op := by
-  simp [buildMixedOps,fieldCoeffs]
+  unfold buildMixedOps
+  repeat' first
+    | exact fun _ h => absurd h List.not_mem_nil
+    | refine List.forall_mem_cons.mpr ⟨trivial,?_⟩
 
 end VG.Proof.Weierstrass.AArch64.P521Native
 
@@ -102,6 +106,6 @@ theorem build_mixed_machine_wp {s : State} {Q : State → Prop} :
     show ¬(2800=1720) from by decide,show ¬(1648=1720) from by decide,show ¬(3160=1864) from by decide,show ¬(1792=1936) from by decide,show ¬(1504=1936) from by decide,show ¬(1864=1936) from by decide,show ¬(1576=2008) from by decide,show ¬(1648=1792) from by decide,ite_true,ite_false,
     normalizeMulStep,normalizeSquareStep,
     build_mixed_source16,build_mixed_source17,build_mixed_source18,build_mixed_source19,build_mixed_source20,build_mixed_source21,build_mixed_source22,build_mixed_source23,build_mixed_source24,build_mixed_source25,build_mixed_source26,build_mixed_source27]
-  repeat' first | rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_append_iff] | rw [VG.WP.block_nil_iff] | (apply wp_post_iff; intro t)
+  repeat' first | with_reducible rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_append_iff] | rw [VG.WP.block_nil_iff] | (apply wp_post_iff; intro t)
 
 end VG.Proof.Weierstrass.AArch64.P521Native

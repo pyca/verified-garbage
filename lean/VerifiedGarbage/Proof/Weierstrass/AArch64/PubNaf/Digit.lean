@@ -124,7 +124,7 @@ theorem entry_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
     fun s₃ ⟨h16', k₃⟩ => ?_
   obtain hs₃ := hs₂.of_keeps k₃ (by decide)
   refine WP.mono (ldOff_ok (p := stride K * (a - 1)) (o := K.tbl) (dst := K.E.x) (n := 3 * K.M.n) hs₃ h16'
-    (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) e8 t8 (by rw [hstr]; omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, t8, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) (by rw [hstr]; omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) (3 * K.M.n) (Nat.le_refl _))
+    (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) e8 t8 (by rw [hstr]; omega_using [hle, hmul]) (by rw [hstr]; omega_using [hn0, tx, tz, exz, hm8']) (3 * K.M.n) (Nat.le_refl _))
     fun t ⟨e, kt, O⟩ => ⟨fun c hc => ?_, fun c hc => ?_, ?_, ?_⟩
   · have := coord_words (n := K.M.n) hc (dst := K.E.x) (src := stride K * (a - 1) + K.tbl) e
     rw [this, k₃.mem]
@@ -135,7 +135,7 @@ theorem entry_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
       have := Nat.mul_le_mul_left (8 * K.M.n) (show 3 * (a - 1) + c ≤ 3 * (a - 1) + 2 by omega_using [hc]); omega_using [ha1, ha8, hn0, h6, tx, tz, ty', tz', ez, rz, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, this]
     refine (O₂.unch.wordsVal (fun w hw => ?_) (by omega_using [ha1, ha8, hn, hn0, h6, hst, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, hstr, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, hb])).trans ?_
     · simp only [List.mem_singleton] at hw; subst hw; simp only
-      omega_using [ha1, ha8, hn, hn0, h6, hst, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, hstr, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, hb]
+      omega_using [hn0, ty', tz', rxy, rxz, hm8', hmul, hb]
     · rw [k₁.mem]
   · have hw2 := coord_words2 (n := K.M.n) hc (dst := K.R.y) (src := 16 * K.M.n * (a - 1) + cacheAt K 1) e₂
     obtain hc8 : 8 * K.M.n * c ≤ 8 * K.M.n := by

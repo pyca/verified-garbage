@@ -415,7 +415,8 @@ open VG.Spec.RsaKeyGen (primeEntropy)
 (`Proof/Framework/PPC64LE/CallAny.lean`). -/
 theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
+    (hmain : WP isa main (framed r s₀) fun s₂ => ∀ m u, Frame [⟨s₀.sp - 16, 16⟩] s₂.mem m →
+      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u })
     (hn : sdepth main + 16 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
   refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
@@ -423,7 +424,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi
     exact InRegions_append_cons (xs := []).mpr (.inr hi)
-  · intro s' hrd hwr hsp' hf hq
+  · intro s' hrd hwr hsp' hf hq m u fl
     obtain hread : s'.mem.read (s'.sp + 8) 8 = s₀.gpr r := by
       rw [hsp', show (pushed r s₀).sp = s₀.sp - 16 from rfl,
         hf.read (r := ⟨s₀.sp - 16, 16⟩) (frame_contains s₀.sp) (fun R hR => ?_) (by decide)]
@@ -439,7 +440,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
       simp only [pushed] at hrd
       subst hrd
       rfl
-    rw [e]; exact hq
+    rw [e]; exact hq m u fl
 
 /-- The frame's words on entry, in the order the entry stores them. -/
 def entryValues (s : State) : List (Nat × BitVec 64) :=

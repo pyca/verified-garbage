@@ -288,8 +288,12 @@ theorem correct {s : State} (hp : (initG hH.SH (H.ibytes + H.F)).pre s) :
   have hib := hl.ibytes
   obtain hsp : H.ibytes ≤ s.sp.toNat := by have := hp.2.2.2.2.2.2.1; omega_using [this]
   refine WP.alloc ⟨by omega_using [hib], hib.2.1, hib.2.2⟩ hsp
-    (WP.mono (initMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hI, hO⟩ => ?_)
+    (WP.mono (initMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hI, hO⟩ m u f => ?_)
   rw [freed_eq hwr hsp']
-  exact ⟨⟨hk, rfl, hra⟩, hI, hO⟩
+  -- The `free` loses the frame's bytes, which lie apart from the two states.
+  have hq := pre_alloc hH hp
+  exact ⟨⟨hk, rfl, hra⟩,
+    hH.congr _ _ _ _ (fun i hi => lost_byte f (R := inR H (allocd H.ibytes s)) hq.f_i.symm hi) hI,
+    hH.congr _ _ _ _ (fun i hi => lost_byte f (R := outR H (allocd H.ibytes s)) hq.f_o.symm hi) hO⟩
 
 end VG.Proof.Hmac.Stream.RISCV64.Init

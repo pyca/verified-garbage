@@ -120,11 +120,11 @@ def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig (finFn compress).s
 def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig (digFn compress).stack (digFn compress).code
 
 theorem updRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updKs
-    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).reg updKs (by taint_decide)
+    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).reg updKs (by taint_decide_lit)
 theorem finRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finKs
-    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).reg finKs (by taint_decide)
+    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).reg finKs (by taint_decide_lit)
 theorem digRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digKs
-    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).reg digKs (by taint_decide)
+    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).reg digKs (by taint_decide_lit)
 
 def update : StreamFn := (updFn compress).scrub .avx updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
   (by decide) (updOut compress) updRes
@@ -149,10 +149,10 @@ def dig224Ks : List Nat :=
 
 theorem fin224Res : ResOk (Sha224.finFn compress).code (Sha224.finFn compress).contract
     (Sha224.finFn compress).stack fin224Ks (chunks (Sha224.finFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.finFn compress).reg fin224Ks (by taint_decide)
+  RScrub.resOk_reg0 (Sha224.finFn compress).reg fin224Ks (by taint_decide_lit)
 theorem dig224Res : ResOk (Sha224.digFn compress).code (Sha224.digFn compress).contract
     (Sha224.digFn compress).stack dig224Ks (chunks (Sha224.digFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.digFn compress).reg dig224Ks (by taint_decide)
+  RScrub.resOk_reg0 (Sha224.digFn compress).reg dig224Ks (by taint_decide_lit)
 
 def finalize224 : StreamFn := (Sha224.finFn compress).scrub .avx fin224Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (Sha224.finOut compress) fin224Res
@@ -184,7 +184,7 @@ theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
       (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) h).any
       (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
+  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide_lit)
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }
@@ -205,7 +205,7 @@ theorem hmacFin224Ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
       (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed224.H) .r8
       unscrubbed224.H.hmacFin) h).any
       (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed224.H) hmacFin224Ks (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed224.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFin224Ks (by taint_decide)
+  VG.X86_64.RScrub.Analysed.ok_of hmacFin224Ks (by taint_decide_lit)
 
 /-- SHA-224 with this compression function, its `finalize` and `digest`
 without secret residue. -/

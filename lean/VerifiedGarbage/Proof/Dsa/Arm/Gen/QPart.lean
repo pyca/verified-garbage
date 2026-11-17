@@ -95,7 +95,7 @@ theorem hash1_vp {F : State → State → Prop} {c : State → Cfg} {L : Nat}
 theorem rest_of_preserved {s s' : State} (g : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r)
     (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (sp : s'.sp = s.sp) :
     Rest [.r0, .r1, .r2, .r3, .r12, .lr] s s' :=
-  ⟨fun r hr => g r (by cases r <;> simp_all [preserved]) (by rintro rfl; simp at hr), rd, wr, sp⟩
+  ⟨fun r hr => g r (by revert hr; cases r <;> decide) (by rintro rfl; simp at hr), rd, wr, sp⟩
 
 /-- The block's bytes, as the compression function reads it. -/
 theorem blockAt_eq {m : Mem} {p : Addr} {bs : List Byte} (h : Spec.Rsa.bytesAt m p 64 = bs) :

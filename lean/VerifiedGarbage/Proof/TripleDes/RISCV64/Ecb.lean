@@ -287,7 +287,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
   apply WP.seq
   rw [← List.append_nil Core.restore]
   refine restore_wp hL hS₄ I.b sv₄ fun u g1 g2 g3 g4 g3' g mu rdu wru => WP.block_nil ?_
-  refine WP.mono (wipe_wp hL (hS₄.congr wru) g3') fun s' ⟨_, f', g', _, _⟩ => ⟨?_, fun b hb => ?_⟩
+  refine WP.mono (wipe_wp hL (hS₄.congr wru) g3') fun s' ⟨_, f', g', _, _⟩ mL _ fl => ⟨?_, fun b hb => ?_⟩
   · refine ⟨fun r hr => ?_, rfl, ?_⟩
     · show s'.gpr r = s.gpr r
       obtain h0 : r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t3 := by revert hr; decide +revert
@@ -306,9 +306,16 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
       rw [g' _ (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide) (by decide)
         (by decide), I.keep _ (by decide) (by decide) (by decide), kept₃ _ (by decide),
         keep₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
-  · show Spec.TripleDes.blockAt s'.mem (wAt D b) = _
+  · show Spec.TripleDes.blockAt mL (wAt D b) = _
     obtain hsub : Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hb])
-    rw [blockAt_eq_of_frame _ f' fun r hr => by
+    -- The `free` loses the frame's bytes, which lie apart from the data.
+    have fl' : Frame [⟨Fb s c, 944⟩] s'.mem mL := by
+      have e : 8 * c.total = 944 := by rw [htot]
+      rw [← e]; exact fl
+    rw [blockAt_eq_of_frame _ fl' fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact sepDF.sub_left hsub,
+      blockAt_eq_of_frame _ f' fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (sepDF.sub_left hsub).sub_right (Region.sub_prefix (by cases d <;> decide)),
       mu, I.done b hb, data₃ b hb]

@@ -170,8 +170,8 @@ theorem gA_run (s : State) (hc : Consts s) {x : Reg} (hx : x ≠ .r0 ∧ x ≠ .
   let a := s.write .r0 (s.gpr x &&& s.gpr .r12)
   let b := a.write .r11 (((a.gpr x).setWidth 32 >>> 4).setWidth 64)
   let c := b.write .r11 (b.gpr .r11 &&& b.gpr .r12)
-  let d : State := { c.writeV .v0 (c.gpr .r0 ++ c.unknowns 0) with unknowns := fun i => c.unknowns (i + 1) }
-  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.unknowns 0) with unknowns := fun i => d.unknowns (i + 1) }
+  let d : State := { c.writeV .v0 (c.gpr .r0 ++ c.undef (c.unknowns 0) (c.gpr .r0) (c.vpr .v0)) with unknowns := fun i => c.unknowns (i + 1) }
+  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.undef (d.unknowns 0) (d.gpr .r11) (d.vpr .v1)) with unknowns := fun i => d.unknowns (i + 1) }
   let f := e.writeV .v0 (ofVBytes fun i =>
       let j := (vbyte (e.vpr .v0) i).toNat % 32
       if j < 16 then vbyte (e.vpr .v8) j else vbyte (e.vpr .v8) (j - 16))
@@ -192,10 +192,10 @@ theorem gA_run (s : State) (hc : Consts s) {x : Reg} (hx : x ≠ .r0 ∧ x ≠ .
     rw [ax, hc.nib] at c11
     rw [hc.nib] at c0
     obtain e0 : vbyte (e.vpr .v0) (7 - k) = gbyte (s.gpr x) k &&& 0x0f := by
-      show vbyte (c.gpr .r0 ++ c.unknowns 0) (7 - k) = _
+      show vbyte (c.gpr .r0 ++ _) (7 - k) = _
       rw [vbyte_append _ _ (by omega_using [hk]), c0, gbyte_and, gbyte_mask hk]
     obtain f1 : vbyte (f.vpr .v1) (7 - k) = gbyte (s.gpr x) k >>> 4 := by
-      show vbyte (c.gpr .r11 ++ d.unknowns 0) (7 - k) = _
+      show vbyte (c.gpr .r11 ++ _) (7 - k) = _
       rw [vbyte_append _ _ (by omega_using [hk]), c11, gbyte_lsr4 _ hk]
     have e8 : TabOk (e.vpr .v8) inLo := T.1
     have f9 : TabOk (f.vpr .v9) inHi := T.2.1
@@ -246,8 +246,8 @@ theorem gB_run (s : State) (hc : Consts s) {x : Reg} (hx : x ≠ .r0 ∧ x ≠ .
   let a := s.write .r0 (s.gpr x &&& s.gpr .r12)
   let b := a.write .r11 (((a.gpr x).setWidth 32 >>> 4).setWidth 64)
   let c := b.write .r11 (b.gpr .r11 &&& b.gpr .r12)
-  let d : State := { c.writeV .v0 (c.gpr .r0 ++ c.unknowns 0) with unknowns := fun i => c.unknowns (i + 1) }
-  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.unknowns 0) with unknowns := fun i => d.unknowns (i + 1) }
+  let d : State := { c.writeV .v0 (c.gpr .r0 ++ c.undef (c.unknowns 0) (c.gpr .r0) (c.vpr .v0)) with unknowns := fun i => c.unknowns (i + 1) }
+  let e : State := { d.writeV .v1 (d.gpr .r11 ++ d.undef (d.unknowns 0) (d.gpr .r11) (d.vpr .v1)) with unknowns := fun i => d.unknowns (i + 1) }
   let f := e.writeV .v0 (e.vpr .v0 ||| e.vpr .v14)
   let g := f.writeV .v1 (f.vpr .v1 ||| f.vpr .v14)
   let h := g.writeV .v0 (ofVBytes fun i =>
@@ -278,10 +278,10 @@ theorem gB_run (s : State) (hc : Consts s) {x : Reg} (hx : x ≠ .r0 ∧ x ≠ .
     obtain hJ : ∀ a < 4, vbyte (j.vpr .v0) (7 - a) = outB y a := fun a ha => by
       obtain hsel := selOut_eq ha
       obtain hL : vbyte (g.vpr .v0) (7 - a) = (gbyte y a &&& 0x0f) ||| selOut.getD (7 - a) 0 := by
-        show vbyte ((c.gpr .r0 ++ c.unknowns 0) ||| s.vpr .v14) (7 - a) = _
+        show vbyte ((c.gpr .r0 ++ _) ||| s.vpr .v14) (7 - a) = _
         rw [vbyte_or', vbyte_append _ _ (by omega_using [ha]), c0, gbyte_and, gbyte_mask ha, T.2.2.2.2.2.2.1 (7 - a) (by omega_using [])]
       obtain hH : vbyte (h.vpr .v1) (7 - a) = (gbyte y a >>> 4) ||| selOut.getD (7 - a) 0 := by
-        show vbyte ((c.gpr .r11 ++ d.unknowns 0) ||| s.vpr .v14) (7 - a) = _
+        show vbyte ((c.gpr .r11 ++ _) ||| s.vpr .v14) (7 - a) = _
         rw [vbyte_or', vbyte_append _ _ (by omega_using [ha]), c11, gbyte_lsr4 _ ha, T.2.2.2.2.2.2.1 (7 - a) (by omega_using [])]
       rw [hsel] at hL hH
       obtain hv0 : h.vpr .v0 = ofVBytes fun i =>

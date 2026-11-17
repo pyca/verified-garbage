@@ -127,14 +127,14 @@ structure RPre (s : State) : Prop where
 theorem pre_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) : RPre s := by
   sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
     abi, argRegs, stackArgs_nine, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOt, dOn, dOe, dOm, dOr, dOs, dOq, dOa, dTn, dTe, dTm, dTr, dTs, dTq, dTa,
-    dNs, dEs, dMs, dRs, dSq, dSa, dXo, dXt, dXn, dXe, dXm, dXr, dXs, dXq, dXa,
-    dKo, dKt, dKn, dKe, dKm, dKr, dKs, dKq, dKa, wO, wT, wN, wE, wM, wR, wS, wQ,
-    ⟨k1, k2⟩, hsi, L1, L2, hml, hrl, hsl, hql⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dOt dOn dOe dOm dOr dOs dOq dOa dTn dTe dTm dTr dTs dTq dTa
+    dNs dEs dMs dRs dSq dSa dXo dXt dXn dXe dXm dXr dXs dXq dXa
+    dKo dKt dKn dKe dKm dKr dKs dKq dKa wO wT wN wE wM wR wS wQ k hsi L1 L2 hml hrl hsl
   exact ⟨sp1, sp2, hrd, hwr, dOt, dOn, dOe, dOm, dOr, dOs, dOq, dOa, dTn, dTe, dTm, dTr, dTs, dTq, dTa,
     dNs, dEs, dMs, dRs, dSq, dSa, dXo, dXt, dXn, dXe, dXm, dXr, dXs, dXq, dXa,
     dKo, dKt, dKn, dKe, dKm, dKr, dKs, dKq, dKa, wO, wT, wN, wE, wM, wR, wS, wQ,
-    k1, k2, hsi, L1, L2, hml, hrl, hsl, hql⟩
+    k.1, k.2, hsi, L1, L2, hml, hrl, hsl, h⟩
 
 /-! ## The values -/
 

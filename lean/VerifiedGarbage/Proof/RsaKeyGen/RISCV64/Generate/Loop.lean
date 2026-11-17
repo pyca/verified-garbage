@@ -492,7 +492,7 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
     omega_using []
   obtain hroom : 80 ≤ s.sp.toNat := by have := hf.room; have hsu : stackUse = 656 := rfl; omega_using [hspn, this, hsu]
   unfold keyRun keyCall
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocLe (by decide) hroom ?_
   refine WP.seq (WP.mono (key_stack_ok h) fun u ⟨⟨hm, ku⟩, hyu⟩ => ?_)
   refine WP.seq (WP.mono (key_args_ok h hm ku) fun w ⟨⟨⟨ha, hmw⟩, kw⟩, hyw⟩ => ?_)
   obtain hu : w.sp = keySp p := kw.sp.trans (ku.sp.trans (alloc_key_sp h))
@@ -502,7 +502,9 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
   refine VG.RISCV64.WP.of_syms (WP.callAny (k := Key.fnContract) (fun s' h' => Key.code_correct s' h')
     (callK_pre h hu ha hm') (key_covers_reads h krd kwr) (key_covers_writes h kwr) ?_
     (by rw [keyCode_sdepth]; decide))
-  intro t htr htw hsp hfr hcs hpost hyt
+  intro t htr htw hsp hfr hcs hpost hyt mL _ fl
+  -- Whatever the released frame's bytes hold: the outputs lie apart from the stack.
+  have fl' : Frame [⟨keySp p, 80⟩] t.mem mL := by rw [h.sp, keySp_eq] at fl; exact fl
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := callK_args (s := s) hu hm'
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
   obtain ⟨hL1, hL2, hL3⟩ := hf.len
@@ -510,7 +512,7 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
   obtain t2 : (BitVec.ofNat 64 (2 * p.L)).toNat = 2 * p.L := toNat_ofNat_lt (by omega_using [hL2])
   have hst := hf.stack
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hst
-  obtain ⟨-, -, -, sT, -⟩ := hst
+  obtain ⟨sK, -, -, sT, -⟩ := hst
   obtain hres := (callK_res h hu ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ hm').2
   obtain hregs : ∀ m : Mem, Key.outBytes (callK p w) m =
       (keyOutsOf p).map fun o => Spec.Rsa.bytesAt m o.1 o.2 := by
@@ -548,8 +550,22 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
       rw [keyCode_sdepth] at hx
       simp only [Region.Contains] at hx
       omega
-  obtain hframe := f₀.trans f₁
-  have hword (d : Nat) (hd : d + 8 ≤ 56) : word t.mem p.stp d = word s.mem p.stp d := by
+  obtain f₂ : Frame [cK p, rS p, rStk p] t.mem mL := fl'.sub fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨_, mT, Offset.sub_below p.sp (a := 208) (b := 656) (n := 80) (m := 528) (by decide) (by decide)⟩
+  obtain hO : ∀ o ∈ keyOutsOf p, Region.Sub ⟨o.1, o.2⟩ (cK p) := by
+    intro o ho
+    simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at ho
+    rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact kN_sub hf
+    all_goals exact kSlot_sub (by omega_using [])
+  obtain hb : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt mL o.1 o.2 = Spec.Rsa.bytesAt t.mem o.1 o.2 := fun o ho =>
+    List.map_congr_left fun i hi => lost_byte fl' (R := ⟨o.1, o.2⟩)
+      ((sK.sub_left (hO o ho)).sub_right fun x hx => rStk_sub p x
+        (Offset.sub_below p.sp (a := 208) (b := 656) (n := 80) (m := 528) (by decide) (by decide) x hx))
+      (List.mem_range.mp hi)
+  obtain hframe := (f₀.trans f₁).trans f₂
+  have hword (d : Nat) (hd : d + 8 ≤ 56) : word mL p.stp d = word s.mem p.stp d := by
     refine hframe.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd])) (fun q hq => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -567,8 +583,16 @@ theorem key_run [InvLaw] {p : GenPublic} {original s : State} {used : Nat} {st :
     rw [hsp, hu, ← alloc_key_sp h]
     exact BitVec.sub_add_cancel _ _
   · show match keyOf p s.mem with
-      | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt t.mem o.1 o.2) = ys
-      | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt t.mem o.1 o.2 = List.replicate o.2 0
+      | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt mL o.1 o.2) = ys
+      | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt mL o.1 o.2 = List.replicate o.2 0
+    have hout' : match keyOf p s.mem with
+        | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt t.mem o.1 o.2) = ys
+        | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt t.mem o.1 o.2 = List.replicate o.2 0 := ?_
+    · revert hout'
+      rcases keyOf p s.mem with (_ | ys) | _
+      · exact fun hz o ho => (hb o ho).trans (hz o ho)
+      · exact fun hy => Eq.trans (List.map_congr_left fun o ho => hb o ho) hy
+      · exact fun hz o ho => (hb o ho).trans (hz o ho)
     revert hout
     rcases keyOf p s.mem with (_ | ys) | _
     · intro hz

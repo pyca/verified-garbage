@@ -446,6 +446,26 @@ theorem exec_movi0 (r : VReg) : exec (.vop (.movi0 r)) s = some (s.setV r 0) := 
 
 end
 
+/-- `brun` for a long block: each read of a register is rewritten before the
+state it reads (`↓RegUpd.gpr_write`, `↓reduceIte`), so that `simp` does not
+simplify the value of every write the read passes, and the side conditions
+are reduced by simprocs, not `decide`. -/
+tactic_template "brun_ib" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil,
+                         exec_ldr_x', exec_str_x', exec_ldrb', exec_strb', exec_add_x, exec_sub_x, exec_logic_x, exec_mul_x,
+                         exec_umulh, exec_adds_x, exec_adcs_x, exec_subs_x, exec_sbcs_x, exec_adc_x, exec_csel_x,
+                         exec_addImm_x', exec_subImm_x', exec_lsl_x, exec_lsr_x', exec_movz_x,
+                         ld, st, ldh, sth, mov, movi, next,
+                         State.read, Size.bits, ↓RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+                         RegUpd.sp_write, RegUpd.c_write, ↓gpr_addWithCarry_x, c_addWithCarry_x, RegUpd.mem_addWithCarry,
+                         RegUpd.rd_addWithCarry, RegUpd.wr_addWithCarry, RegUpd.sp_addWithCarry, gpr_mem, mem_mem, rd_mem,
+                         wr_mem, c_mem, BitVec.setWidth_eq, off_add, off_zero, Nat.add_zero, Option.some.injEq,
+                         exists_eq_left', ↓reduceIte, ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append,
+                         List.nil_append, Nat.reduceMod, Nat.reduceLT, and_self, $ls,*]))
+
+
 /-- Code that writes no vector register keeps them all. -/
 theorem WP.vfix {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
     (hc : c.allInstrs (fun i => (vdstOf i).isNone) = true) :
@@ -501,7 +521,7 @@ theorem fgWord_ok (s : State) {B : Addr} {Z eF eG : Nat} (hs : Scr s B Z)
       t.gpr .x16 = off B (eF + 8) ∧ t.gpr .x17 = off B (eG + 8) ∧
       t.gpr .x2 = word s.mem B (eF + 8) ∧ t.gpr .x3 = word s.mem B (eG + 8) := by
   unfold fgBody fgRow prods carryIn
-  brun [h16, h17, hs.ld (show eF + 8 + 8 ≤ Z by omega_arith), hs.ld (show eG + 8 + 8 ≤ Z by omega_arith),
+  brun_ib [h16, h17, hs.ld (show eF + 8 + 8 ≤ Z by omega_arith), hs.ld (show eG + 8 + 8 ≤ Z by omega_arith),
     hs.st (show eF + 8 ≤ Z by omega_arith), hs.st (show eG + 8 ≤ Z by omega_arith), exec_sbc_x, exec_extr_x]
   obtain r1 := Divstep.rowWord (s.gpr .x4) (s.gpr .x5) (word s.mem B (eF + 8)) (word s.mem B (eG + 8)) (s.gpr .x13) b1 c1
   obtain r2 := Divstep.rowWord (s.gpr .x6) (s.gpr .x7) (word s.mem B (eF + 8)) (word s.mem B (eG + 8)) (s.gpr .x25) b2 c2
@@ -713,7 +733,7 @@ theorem deWord_ok (s : State) {B : Addr} {Z eA eB eM : Nat} (hs : Scr s B Z)
       (t.gpr .x13).toInt.natAbs ≤ 2 ^ 61 ∧ (t.gpr .x25).toInt.natAbs ≤ 2 ^ 61 ∧
       t.gpr .x16 = off B (eA + 8) ∧ t.gpr .x17 = off B (eB + 8) ∧ t.gpr .x8 = off B (eM + 8) := by
   unfold deBody deRow prodsD carryIn kterm
-  brun [h16, h17, h8, h28, hs.ld (show eA + 8 + 8 ≤ Z by omega_arith), hs.ld (show eB + 8 + 8 ≤ Z by omega_arith),
+  brun_ib [h16, h17, h8, h28, hs.ld (show eA + 8 + 8 ≤ Z by omega_arith), hs.ld (show eB + 8 + 8 ≤ Z by omega_arith),
     hs.ld (show eM + 8 + 8 ≤ Z by omega_arith), hs.st (show eA + 8 ≤ Z by omega_arith),
     hs.st (show eB + 8 ≤ Z by omega_arith), exec_sbc_x, BitVec.add_zero]
   obtain r1 := deRowValD (s.gpr .x4) (s.gpr .x5) (word s.mem B (eA + 8)) (word s.mem B (eB + 8)) (s.gpr .x13)
@@ -869,7 +889,7 @@ theorem fgHead_ok (s : State) {B : Addr} {Z eF eG n : Nat} (hs : Scr s B Z)
       Keep [.x2, .x3, .x13, .x14, .x21, .x22, .x23, .x25, .x26, .x27] s t := by
   refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
   unfold fgRow prods carryIn
-  brun [h16, h17, h12, hs.ld hF, hs.ld hG, exec_sbc_x]
+  brun_ib [h16, h17, h12, hs.ld hF, hs.ld hG, exec_sbc_x]
   obtain r1 := Divstep.rowWord (s.gpr .x4) (s.gpr .x5) (word s.mem B eF) (word s.mem B eG) (BitVec.setWidth 64 0#16)
     b1 (by decide)
   obtain r2 := Divstep.rowWord (s.gpr .x6) (s.gpr .x7) (word s.mem B eF) (word s.mem B eG) (BitVec.setWidth 64 0#16)
@@ -967,7 +987,7 @@ theorem fgTail_ok (s : State) {B : Addr} {Z eF eG : Nat} (hs : Scr s B Z)
         o₁.toNat = (s.gpr .x26).toNat / 2 ^ 59 + 2 ^ 5 * (c₁.toNat % 2 ^ 59) ∧
         o₂.toNat = (s.gpr .x27).toNat / 2 ^ 59 + 2 ^ 5 * (c₂.toNat % 2 ^ 59) := by
   unfold topFix
-  brun [h16, h17, hs.st hF, hs.st hG, exec_extr_x, show BitVec.setWidth 64 0#16 = 0#64 from rfl]
+  brun_ib [h16, h17, hs.st hF, hs.st hG, exec_extr_x, show BitVec.setWidth 64 0#16 = 0#64 from rfl]
   exact ⟨_, _, _, _, rfl, topFixVal _ _ _ _ _ (by omega_using [c1]) b1, topFixVal _ _ _ _ _ (by omega_using [c2]) b2,
     Divstep.extr59 _ _, Divstep.extr59 _ _⟩
 
@@ -1211,14 +1231,14 @@ theorem deHead_ok (s : State) {B : Addr} {Z eA eB eM : Nat} (hs : Scr s B Z)
       Keep [.x1, .x2, .x3, .x13, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30] s t := by
   refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
   unfold deHead deRow prodsD carryIn kterm
-  brun [h16, h17, h8, hs.ld hA, hs.ld hB, hs.ld hM, exec_sbc_x, exec_madd_x]
+  brun_ib [h16, h17, h8, hs.ld hA, hs.ld hB, hs.ld hM, exec_sbc_x, exec_madd_x]
   obtain r1 := deRowValUD (s.gpr .x4) (s.gpr .x5) (word s.mem B eA) (word s.mem B eB) 0#64
     ((s.gpr .x4 * word s.mem B eA + s.gpr .x5 * word s.mem B eB) * s.gpr .x28) (word s.mem B eM) 0#64 b1 (by decide)
   obtain r2 := deRowValUD (s.gpr .x6) (s.gpr .x7) (word s.mem B eA) (word s.mem B eB) 0#64
     ((s.gpr .x6 * word s.mem B eA + s.gpr .x7 * word s.mem B eB) * s.gpr .x28) (word s.mem B eM) 0#64 b2 (by decide)
   rw [m9, m10, m19, m20]
   simp only [show BitVec.setWidth 64 0#16 = 0#64 from rfl, Bool.toNat_false, BitVec.add_zero, Nat.add_zero, word,
-    BitVec.toInt_zero, BitVec.toNat_zero, Int.add_zero, Int.natCast_zero] at r1 r2 ⊢
+    BitVec.toInt_zero, BitVec.toNat_zero, Int.add_zero, Int.natCast_zero, and_true] at r1 r2 ⊢
   exact ⟨r1.1, r2.1, r1.2, r2.2⟩
 
 /-- Word `n` of a row over `(a, b)`: `rowWord`, then `+ kc`. -/
@@ -1304,7 +1324,7 @@ theorem deTail_ok (s : State) {B : Addr} {Z eA eB : Nat} (hs : Scr s B Z)
         (s.gpr .x6).toInt * (word s.mem B (eA + 8)).toNat + (s.gpr .x7).toInt * (word s.mem B (eB + 8)).toNat +
         (s.gpr .x25).toInt + (s.gpr .x30).toNat := by
   unfold deTail deTop deRowTop prodsD carryIn topFix
-  brun [h16, h17, h28, hs.ld (show eA + 8 + 8 ≤ Z by omega_arith), hs.ld (show eB + 8 + 8 ≤ Z by omega_arith),
+  brun_ib [h16, h17, h28, hs.ld (show eA + 8 + 8 ≤ Z by omega_arith), hs.ld (show eB + 8 + 8 ≤ Z by omega_arith),
     hs.st (show eA + 8 ≤ Z by omega_arith), hs.st (show eB + 8 ≤ Z by omega_arith),
     hs.st (show eA + 8 + 8 ≤ Z by omega_arith), hs.st (show eB + 8 + 8 ≤ Z by omega_arith), exec_sbc_x,
     BitVec.add_zero, show BitVec.setWidth 64 0#16 = 0#64 from rfl]
@@ -1618,8 +1638,8 @@ theorem dePass_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.
     obtain m1 : ∀ r : Reg, r ∉ [.x1, .x2, .x3, .x8, .x13, .x14, .x16, .x17, .x21, .x22, .x23, .x24, .x25, .x26, .x27,
         .x28] → r ≠ .x30 →
         r ∉ [.x1, .x2, .x3, .x8, .x13, .x14, .x16, .x17, .x21, .x22, .x23, .x24, .x25, .x30] ∧
-        r ∉ [.x28, .x16, .x17, .x8, .x14] ++ [] ++
-          [.x1, .x2, .x3, .x13, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30] := by
+        r ∉ ([.x28, .x16, .x17, .x8, .x14] : List Reg) ++ [] ++
+          ([.x1, .x2, .x3, .x13, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30] : List Reg) := by
       intro r; cases r <;> decide
     obtain ⟨a1, a2⟩ := m1 r hr h₁
     rw [kt.gpr r a1, k₁₃.gpr r a2]
@@ -4223,7 +4243,11 @@ theorem tailZ_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.g
         · congr 2; omega_arith
         · apply BitVec.eq_of_toNat_eq
           simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-          omega_arith)
+          obtain e1 : n % 2 ^ 64 = n := Nat.mod_eq_of_lt (by omega_using [hn, hw])
+          obtain e2 : 8 * (w + 2) % 2 ^ 64 / 2 ^ 3 = w + 2 := by omega_using [hw]
+          obtain e3 : (2 ^ 64 - 2 % 2 ^ 64 + (w + 2)) % 2 ^ 64 = w := by omega_using [hw]
+          rw [e1, e2, e3]
+          omega_using [hn, hw])
       (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h8₂, h12₂, h3₂, h7₂, m₂⟩, k₂⟩ => ?_))
   obtain k12 := k₁.trans k₂
   refine WP.seq (WP.mono (zeroAcc_ok (hs.congr k12.wr) h8₂ h12₂ h7₂ (by omega_arith) (by omega_arith))

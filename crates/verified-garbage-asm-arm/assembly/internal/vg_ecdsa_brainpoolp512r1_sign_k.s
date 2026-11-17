@@ -1027,28 +1027,881 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	strb r7, [r5, #1031]
 	cmp r11, #0
 	bne 22b
-	mov r11, #512
+	movw r4, #24749
+	movt r4, #723
+	str r4, [r12, #960]
+	movw r4, #26908
+	movt r4, #10122
+	str r4, [r12, #964]
+	movw r4, #47708
+	movt r4, #45466
+	str r4, [r12, #968]
+	movw r4, #63333
+	movt r4, #63573
+	str r4, [r12, #972]
+	movw r4, #32431
+	movt r4, #48622
+	str r4, [r12, #976]
+	movw r4, #22524
+	movt r4, #9804
+	str r4, [r12, #980]
+	movw r4, #20273
+	movt r4, #25470
+	str r4, [r12, #984]
+	movw r4, #4032
+	movt r4, #61332
+	str r4, [r12, #988]
+	movw r4, #60103
+	movt r4, #63233
+	str r4, [r12, #992]
+	movw r4, #61066
+	movt r4, #21414
+	str r4, [r12, #996]
+	movw r4, #51386
+	movt r4, #23664
+	str r4, [r12, #1000]
+	movw r4, #27876
+	movt r4, #57284
+	str r4, [r12, #1004]
+	movw r4, #33648
+	movt r4, #2097
+	str r4, [r12, #1008]
+	movw r4, #9370
+	movt r4, #31331
+	str r4, [r12, #1012]
+	movw r4, #24707
+	movt r4, #65179
+	str r4, [r12, #1016]
+	movw r4, #14231
+	movt r4, #23585
+	str r4, [r12, #1020]
+	movw r4, #31196
+	movt r4, #7036
+	str r4, [r12, #1024]
+	movw r4, #10383
+	movt r4, #7774
+	str r4, [r12, #1028]
+	movw r4, #55885
+	movt r4, #63897
+	str r4, [r12, #1032]
+	movw r4, #40253
+	movt r4, #22852
+	str r4, [r12, #1036]
+	movw r4, #588
+	movt r4, #34562
+	str r4, [r12, #1040]
+	movw r4, #54870
+	movt r4, #9380
+	str r4, [r12, #1044]
+	movw r4, #51918
+	movt r4, #52001
+	str r4, [r12, #1048]
+	movw r4, #485
+	movt r4, #36590
+	str r4, [r12, #1052]
+	movw r4, #53737
+	movt r4, #11387
+	str r4, [r12, #1056]
+	movw r4, #7322
+	movt r4, #58850
+	str r4, [r12, #1060]
+	movw r4, #35845
+	movt r4, #45032
+	str r4, [r12, #1064]
+	movw r4, #61749
+	movt r4, #26060
+	str r4, [r12, #1068]
+	movw r4, #39269
+	movt r4, #44846
+	str r4, [r12, #1072]
+	movw r4, #49447
+	movt r4, #30292
+	str r4, [r12, #1076]
+	movw r4, #10673
+	movt r4, #24172
+	str r4, [r12, #1080]
+	movw r4, #40998
+	movt r4, #21547
+	str r4, [r12, #1084]
+	movw r4, #46861
+	movt r4, #42949
+	str r4, [r12, #1088]
+	movw r4, #40873
+	movt r4, #55125
+	str r4, [r12, #1092]
+	movw r4, #14714
+	movt r4, #53885
+	str r4, [r12, #1096]
+	movw r4, #208
+	movt r4, #55166
+	str r4, [r12, #1100]
+	movw r4, #32537
+	movt r4, #6492
+	str r4, [r12, #1104]
+	movw r4, #24277
+	movt r4, #20786
+	str r4, [r12, #1108]
+	movw r4, #38845
+	movt r4, #25657
+	str r4, [r12, #1112]
+	movw r4, #25855
+	movt r4, #33458
+	str r4, [r12, #1116]
+	movw r4, #63374
+	movt r4, #36812
+	str r4, [r12, #1120]
+	movw r4, #25397
+	movt r4, #10652
+	str r4, [r12, #1124]
+	movw r4, #11761
+	movt r4, #19510
+	str r4, [r12, #1128]
+	movw r4, #29260
+	movt r4, #13519
+	str r4, [r12, #1132]
+	movw r4, #1016
+	movt r4, #52278
+	str r4, [r12, #1136]
+	movw r4, #6481
+	movt r4, #49195
+	str r4, [r12, #1140]
+	movw r4, #15220
+	movt r4, #9238
+	str r4, [r12, #1144]
+	movw r4, #25159
+	movt r4, #21794
+	str r4, [r12, #1148]
+	mov r11, #74
 23:
 	sub r11, r11, #1
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	cmp r11, #73
+	beq 24f
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #6]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #5]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #4]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #3]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #2]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #1]
+	add r9, r9, r5
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+	b 25f
+24:
+	mov r9, #0
+	add r9, r9, r9
+	ldrb r5, [r4, #0]
+	add r9, r9, r5
+25:
+	sub r9, r9, #64
+	lsr r4, r9, #31
+	mov r5, #0
+	sub r4, r5, r4
+	eor r9, r9, r4
+	sub r9, r9, r4
+	movw r8, #:lower16:({VG_BRAINPOOLP512R1_COMB}
+	movt r8, #:upper16:({VG_BRAINPOOLP512R1_COMB}
+2:
+	add r8, pc
+3:
+	mov r4, #8192
+	mul r4, r4, r11
+	add r8, r8, r4
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1344]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1348]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1352]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1356]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1360]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1364]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1368]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1372]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1376]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1380]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1384]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1388]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1392]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1396]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1400]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1404]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1408]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1412]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1416]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1420]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1424]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1428]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1432]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1436]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1440]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1444]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1448]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1452]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1456]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1460]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1464]
+	movw r4, #0
+	movt r4, #0
+	str r4, [r12, #1468]
+	mov r7, #1
+26:
+	eor r10, r9, r7
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #1344]
+	ldr r5, [r8, #0]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1344]
+	ldr r4, [r12, #1348]
+	ldr r5, [r8, #4]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1348]
+	ldr r4, [r12, #1352]
+	ldr r5, [r8, #8]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1352]
+	ldr r4, [r12, #1356]
+	ldr r5, [r8, #12]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1356]
+	ldr r4, [r12, #1360]
+	ldr r5, [r8, #16]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1360]
+	ldr r4, [r12, #1364]
+	ldr r5, [r8, #20]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1364]
+	ldr r4, [r12, #1368]
+	ldr r5, [r8, #24]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1368]
+	ldr r4, [r12, #1372]
+	ldr r5, [r8, #28]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1372]
+	ldr r4, [r12, #1376]
+	ldr r5, [r8, #32]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1376]
+	ldr r4, [r12, #1380]
+	ldr r5, [r8, #36]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1380]
+	ldr r4, [r12, #1384]
+	ldr r5, [r8, #40]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1384]
+	ldr r4, [r12, #1388]
+	ldr r5, [r8, #44]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1388]
+	ldr r4, [r12, #1392]
+	ldr r5, [r8, #48]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1392]
+	ldr r4, [r12, #1396]
+	ldr r5, [r8, #52]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1396]
+	ldr r4, [r12, #1400]
+	ldr r5, [r8, #56]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1400]
+	ldr r4, [r12, #1404]
+	ldr r5, [r8, #60]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1404]
+	ldr r4, [r12, #1408]
+	ldr r5, [r8, #64]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1408]
+	ldr r4, [r12, #1412]
+	ldr r5, [r8, #68]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1412]
+	ldr r4, [r12, #1416]
+	ldr r5, [r8, #72]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1416]
+	ldr r4, [r12, #1420]
+	ldr r5, [r8, #76]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1420]
+	ldr r4, [r12, #1424]
+	ldr r5, [r8, #80]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1424]
+	ldr r4, [r12, #1428]
+	ldr r5, [r8, #84]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1428]
+	ldr r4, [r12, #1432]
+	ldr r5, [r8, #88]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1432]
+	ldr r4, [r12, #1436]
+	ldr r5, [r8, #92]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1436]
+	ldr r4, [r12, #1440]
+	ldr r5, [r8, #96]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1440]
+	ldr r4, [r12, #1444]
+	ldr r5, [r8, #100]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1444]
+	ldr r4, [r12, #1448]
+	ldr r5, [r8, #104]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1448]
+	ldr r4, [r12, #1452]
+	ldr r5, [r8, #108]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1452]
+	ldr r4, [r12, #1456]
+	ldr r5, [r8, #112]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1456]
+	ldr r4, [r12, #1460]
+	ldr r5, [r8, #116]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1460]
+	ldr r4, [r12, #1464]
+	ldr r5, [r8, #120]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1464]
+	ldr r4, [r12, #1468]
+	ldr r5, [r8, #124]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1468]
+	add r8, r8, #128
+	add r7, r7, #1
+	cmp r7, #65
+	bne 26b
+	movw r4, #46861
+	movt r4, #42949
+	str r4, [r12, #1472]
+	movw r4, #40873
+	movt r4, #55125
+	str r4, [r12, #1476]
+	movw r4, #14714
+	movt r4, #53885
+	str r4, [r12, #1480]
+	movw r4, #208
+	movt r4, #55166
+	str r4, [r12, #1484]
+	movw r4, #32537
+	movt r4, #6492
+	str r4, [r12, #1488]
+	movw r4, #24277
+	movt r4, #20786
+	str r4, [r12, #1492]
+	movw r4, #38845
+	movt r4, #25657
+	str r4, [r12, #1496]
+	movw r4, #25855
+	movt r4, #33458
+	str r4, [r12, #1500]
+	movw r4, #63374
+	movt r4, #36812
+	str r4, [r12, #1504]
+	movw r4, #25397
+	movt r4, #10652
+	str r4, [r12, #1508]
+	movw r4, #11761
+	movt r4, #19510
+	str r4, [r12, #1512]
+	movw r4, #29260
+	movt r4, #13519
+	str r4, [r12, #1516]
+	movw r4, #1016
+	movt r4, #52278
+	str r4, [r12, #1520]
+	movw r4, #6481
+	movt r4, #49195
+	str r4, [r12, #1524]
+	movw r4, #15220
+	movt r4, #9238
+	str r4, [r12, #1528]
+	movw r4, #25159
+	movt r4, #21794
+	str r4, [r12, #1532]
+	eor r10, r9, #0
+	sub r10, r10, #1
+	lsr r10, r10, #31
+	mov r5, #0
+	sub r10, r5, r10
+	ldr r4, [r12, #1408]
+	ldr r5, [r12, #1472]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1408]
+	ldr r4, [r12, #1412]
+	ldr r5, [r12, #1476]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1412]
+	ldr r4, [r12, #1416]
+	ldr r5, [r12, #1480]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1416]
+	ldr r4, [r12, #1420]
+	ldr r5, [r12, #1484]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1420]
+	ldr r4, [r12, #1424]
+	ldr r5, [r12, #1488]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1424]
+	ldr r4, [r12, #1428]
+	ldr r5, [r12, #1492]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1428]
+	ldr r4, [r12, #1432]
+	ldr r5, [r12, #1496]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1432]
+	ldr r4, [r12, #1436]
+	ldr r5, [r12, #1500]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1436]
+	ldr r4, [r12, #1440]
+	ldr r5, [r12, #1504]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1440]
+	ldr r4, [r12, #1444]
+	ldr r5, [r12, #1508]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1444]
+	ldr r4, [r12, #1448]
+	ldr r5, [r12, #1512]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1448]
+	ldr r4, [r12, #1452]
+	ldr r5, [r12, #1516]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1452]
+	ldr r4, [r12, #1456]
+	ldr r5, [r12, #1520]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1456]
+	ldr r4, [r12, #1460]
+	ldr r5, [r12, #1524]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1460]
+	ldr r4, [r12, #1464]
+	ldr r5, [r12, #1528]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1464]
+	ldr r4, [r12, #1468]
+	ldr r5, [r12, #1532]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1468]
+	ldr r4, [r12, #1472]
+	ldr r5, [r12, #256]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1472]
+	ldr r4, [r12, #1476]
+	ldr r5, [r12, #260]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1476]
+	ldr r4, [r12, #1480]
+	ldr r5, [r12, #264]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1480]
+	ldr r4, [r12, #1484]
+	ldr r5, [r12, #268]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1484]
+	ldr r4, [r12, #1488]
+	ldr r5, [r12, #272]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1488]
+	ldr r4, [r12, #1492]
+	ldr r5, [r12, #276]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1492]
+	ldr r4, [r12, #1496]
+	ldr r5, [r12, #280]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1496]
+	ldr r4, [r12, #1500]
+	ldr r5, [r12, #284]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1500]
+	ldr r4, [r12, #1504]
+	ldr r5, [r12, #288]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1504]
+	ldr r4, [r12, #1508]
+	ldr r5, [r12, #292]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1508]
+	ldr r4, [r12, #1512]
+	ldr r5, [r12, #296]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1512]
+	ldr r4, [r12, #1516]
+	ldr r5, [r12, #300]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1516]
+	ldr r4, [r12, #1520]
+	ldr r5, [r12, #304]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1520]
+	ldr r4, [r12, #1524]
+	ldr r5, [r12, #308]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1524]
+	ldr r4, [r12, #1528]
+	ldr r5, [r12, #312]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1528]
+	ldr r4, [r12, #1532]
+	ldr r5, [r12, #316]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1532]
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #256
+	movw r3, #1408
+	bl {vg_brainpoolp512r1_sub_mod_p}
+	mov lr, r10
+	cmp r11, #73
+	beq 27f
+	mov r4, #7
+	mul r4, r4, r11
+	add r4, r12, r4
+	add r4, r4, #4096
+	ldrb r4, [r4, #6]
+	sub r10, r4, #1
+	b 28f
+27:
+	movw r10, #65535
+	movt r10, #65535
+28:
+	ldr r4, [r12, #1408]
+	ldr r5, [r12, #1152]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1408]
+	ldr r4, [r12, #1412]
+	ldr r5, [r12, #1156]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1412]
+	ldr r4, [r12, #1416]
+	ldr r5, [r12, #1160]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1416]
+	ldr r4, [r12, #1420]
+	ldr r5, [r12, #1164]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1420]
+	ldr r4, [r12, #1424]
+	ldr r5, [r12, #1168]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1424]
+	ldr r4, [r12, #1428]
+	ldr r5, [r12, #1172]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1428]
+	ldr r4, [r12, #1432]
+	ldr r5, [r12, #1176]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1432]
+	ldr r4, [r12, #1436]
+	ldr r5, [r12, #1180]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1436]
+	ldr r4, [r12, #1440]
+	ldr r5, [r12, #1184]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1440]
+	ldr r4, [r12, #1444]
+	ldr r5, [r12, #1188]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1444]
+	ldr r4, [r12, #1448]
+	ldr r5, [r12, #1192]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1448]
+	ldr r4, [r12, #1452]
+	ldr r5, [r12, #1196]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1452]
+	ldr r4, [r12, #1456]
+	ldr r5, [r12, #1200]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1456]
+	ldr r4, [r12, #1460]
+	ldr r5, [r12, #1204]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1460]
+	ldr r4, [r12, #1464]
+	ldr r5, [r12, #1208]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1464]
+	ldr r4, [r12, #1468]
+	ldr r5, [r12, #1212]
+	eor r5, r5, r4
+	and r5, r5, r10
+	eor r4, r4, r5
+	str r4, [r12, #1468]
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1536
 	movw r2, #960
-	movw r3, #960
+	movw r3, #1344
 	bl {vg_brainpoolp512r1_mul_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1600
 	movw r2, #1024
-	movw r3, #1024
+	movw r3, #1408
 	bl {vg_brainpoolp512r1_mul_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1664
 	movw r2, #1088
-	movw r3, #1088
+	movw r3, #1472
 	bl {vg_brainpoolp512r1_mul_mod_p}
 	mov lr, r10
 	mov r10, lr
@@ -1061,8 +1914,8 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1792
-	movw r2, #960
-	movw r3, #1024
+	movw r2, #1344
+	movw r3, #1408
 	bl {vg_brainpoolp512r1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
@@ -1096,8 +1949,8 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1856
-	movw r2, #960
-	movw r3, #1088
+	movw r2, #1344
+	movw r3, #1472
 	bl {vg_brainpoolp512r1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
@@ -1131,420 +1984,140 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1152
-	movw r2, #1024
-	movw r3, #1088
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1856
-	movw r3, #1152
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1152
-	movw r2, #1600
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1856
-	movw r3, #1152
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1280
-	movw r2, #448
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1152
-	movw r2, #512
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1280
-	movw r2, #1152
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1152
-	movw r2, #1600
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1280
-	movw r2, #1600
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1216
-	movw r2, #1152
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1536
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1600
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #448
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #512
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1600
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #1536
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #448
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1792
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1536
-	movw r2, #1600
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1216
-	movw r2, #1216
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1536
-	movw r2, #1856
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1152
-	movw r2, #1728
-	movw r3, #1152
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1152
-	movw r2, #1152
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1536
-	movw r2, #1728
-	movw r3, #1600
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1280
-	movw r2, #1856
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1280
-	movw r2, #1280
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1536
-	movw r2, #1152
-	movw r3, #576
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1216
-	movw r3, #640
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #1280
-	movw r3, #384
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1728
-	movw r2, #1152
-	movw r3, #1216
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #576
-	movw r3, #640
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1728
-	movw r2, #1728
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1536
-	movw r3, #1600
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1728
-	movw r2, #1728
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1152
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #576
-	movw r3, #384
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1792
-	movw r3, #1856
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1536
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1792
-	movw r3, #1856
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1216
-	movw r3, #1280
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1344
-	movw r2, #640
-	movw r3, #384
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1856
-	movw r3, #1344
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1344
-	movw r2, #1600
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1856
-	movw r2, #1856
-	movw r3, #1344
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1472
-	movw r2, #448
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1344
-	movw r2, #512
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1472
-	movw r2, #1344
-	movw r3, #1472
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1344
-	movw r2, #1600
-	movw r3, #1472
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1472
-	movw r2, #1600
-	movw r3, #1472
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1408
-	movw r2, #1344
-	movw r3, #1472
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1536
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1600
-	movw r3, #1536
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #448
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #512
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1600
-	movw r2, #1600
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #1536
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1664
-	movw r2, #448
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1792
-	movw r2, #1792
-	movw r3, #1664
-	bl {vg_brainpoolp512r1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1536
-	movw r2, #1600
-	movw r3, #1792
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #1408
 	movw r2, #1408
+	movw r3, #1472
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1856
+	movw r2, #1856
+	movw r3, #1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #1600
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1856
+	movw r2, #1856
+	movw r3, #1152
+	bl {vg_brainpoolp512r1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1280
+	movw r2, #448
+	movw r3, #1792
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #512
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1280
+	movw r2, #1152
+	movw r3, #1280
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1152
+	movw r2, #1600
+	movw r3, #1280
+	bl {vg_brainpoolp512r1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1280
+	movw r2, #1600
+	movw r3, #1280
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1216
+	movw r2, #1152
+	movw r3, #1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1600
+	movw r2, #1536
+	movw r3, #1536
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1600
+	movw r2, #1600
+	movw r3, #1536
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1664
+	movw r2, #448
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1792
+	movw r2, #512
+	movw r3, #1792
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1600
+	movw r2, #1600
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1664
+	movw r2, #1536
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1664
+	movw r2, #448
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1792
+	movw r2, #1792
+	movw r3, #1664
+	bl {vg_brainpoolp512r1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1536
+	movw r2, #1600
+	movw r3, #1792
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #1216
+	movw r2, #1216
 	movw r3, #1536
 	bl {vg_brainpoolp512r1_add_mod_p}
 	mov lr, r10
@@ -1557,15 +2130,15 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #1344
+	movw r1, #1152
 	movw r2, #1728
-	movw r3, #1344
+	movw r3, #1152
 	bl {vg_brainpoolp512r1_mul_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #1344
-	movw r2, #1344
+	movw r1, #1152
+	movw r2, #1152
 	movw r3, #1536
 	bl {vg_brainpoolp512r1_sub_mod_p}
 	mov lr, r10
@@ -1578,310 +2151,113 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #1472
+	movw r1, #1280
 	movw r2, #1856
-	movw r3, #1472
+	movw r3, #1280
 	bl {vg_brainpoolp512r1_mul_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #1472
-	movw r2, #1472
+	movw r1, #1280
+	movw r2, #1280
 	movw r3, #1536
 	bl {vg_brainpoolp512r1_add_mod_p}
 	mov lr, r10
-	add r4, r12, r11
-	add r4, r4, #4096
-	ldrb r4, [r4, #0]
-	mov r5, #0
-	sub r10, r5, r4
 	ldr r4, [r12, #1152]
-	ldr r5, [r12, #1344]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #960]
 	ldr r4, [r12, #1156]
-	ldr r5, [r12, #1348]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #964]
 	ldr r4, [r12, #1160]
-	ldr r5, [r12, #1352]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #968]
 	ldr r4, [r12, #1164]
-	ldr r5, [r12, #1356]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #972]
 	ldr r4, [r12, #1168]
-	ldr r5, [r12, #1360]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #976]
 	ldr r4, [r12, #1172]
-	ldr r5, [r12, #1364]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #980]
 	ldr r4, [r12, #1176]
-	ldr r5, [r12, #1368]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #984]
 	ldr r4, [r12, #1180]
-	ldr r5, [r12, #1372]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #988]
 	ldr r4, [r12, #1184]
-	ldr r5, [r12, #1376]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #992]
 	ldr r4, [r12, #1188]
-	ldr r5, [r12, #1380]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #996]
 	ldr r4, [r12, #1192]
-	ldr r5, [r12, #1384]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1000]
 	ldr r4, [r12, #1196]
-	ldr r5, [r12, #1388]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1004]
 	ldr r4, [r12, #1200]
-	ldr r5, [r12, #1392]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1008]
 	ldr r4, [r12, #1204]
-	ldr r5, [r12, #1396]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1012]
 	ldr r4, [r12, #1208]
-	ldr r5, [r12, #1400]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1016]
 	ldr r4, [r12, #1212]
-	ldr r5, [r12, #1404]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1020]
 	ldr r4, [r12, #1216]
-	ldr r5, [r12, #1408]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1024]
 	ldr r4, [r12, #1220]
-	ldr r5, [r12, #1412]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1028]
 	ldr r4, [r12, #1224]
-	ldr r5, [r12, #1416]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1032]
 	ldr r4, [r12, #1228]
-	ldr r5, [r12, #1420]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1036]
 	ldr r4, [r12, #1232]
-	ldr r5, [r12, #1424]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1040]
 	ldr r4, [r12, #1236]
-	ldr r5, [r12, #1428]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1044]
 	ldr r4, [r12, #1240]
-	ldr r5, [r12, #1432]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1048]
 	ldr r4, [r12, #1244]
-	ldr r5, [r12, #1436]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1052]
 	ldr r4, [r12, #1248]
-	ldr r5, [r12, #1440]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1056]
 	ldr r4, [r12, #1252]
-	ldr r5, [r12, #1444]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1060]
 	ldr r4, [r12, #1256]
-	ldr r5, [r12, #1448]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1064]
 	ldr r4, [r12, #1260]
-	ldr r5, [r12, #1452]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1068]
 	ldr r4, [r12, #1264]
-	ldr r5, [r12, #1456]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1072]
 	ldr r4, [r12, #1268]
-	ldr r5, [r12, #1460]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1076]
 	ldr r4, [r12, #1272]
-	ldr r5, [r12, #1464]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1080]
 	ldr r4, [r12, #1276]
-	ldr r5, [r12, #1468]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1084]
 	ldr r4, [r12, #1280]
-	ldr r5, [r12, #1472]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1088]
 	ldr r4, [r12, #1284]
-	ldr r5, [r12, #1476]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1092]
 	ldr r4, [r12, #1288]
-	ldr r5, [r12, #1480]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1096]
 	ldr r4, [r12, #1292]
-	ldr r5, [r12, #1484]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1100]
 	ldr r4, [r12, #1296]
-	ldr r5, [r12, #1488]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1104]
 	ldr r4, [r12, #1300]
-	ldr r5, [r12, #1492]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1108]
 	ldr r4, [r12, #1304]
-	ldr r5, [r12, #1496]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1112]
 	ldr r4, [r12, #1308]
-	ldr r5, [r12, #1500]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1116]
 	ldr r4, [r12, #1312]
-	ldr r5, [r12, #1504]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1120]
 	ldr r4, [r12, #1316]
-	ldr r5, [r12, #1508]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1124]
 	ldr r4, [r12, #1320]
-	ldr r5, [r12, #1512]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1128]
 	ldr r4, [r12, #1324]
-	ldr r5, [r12, #1516]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1132]
 	ldr r4, [r12, #1328]
-	ldr r5, [r12, #1520]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1136]
 	ldr r4, [r12, #1332]
-	ldr r5, [r12, #1524]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1140]
 	ldr r4, [r12, #1336]
-	ldr r5, [r12, #1528]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1144]
 	ldr r4, [r12, #1340]
-	ldr r5, [r12, #1532]
-	eor r5, r5, r4
-	and r5, r5, r10
-	eor r4, r4, r5
 	str r4, [r12, #1148]
 	cmp r11, #0
 	bne 23b
@@ -1918,7 +2294,7 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	ldr r4, [r12, #444]
 	str r4, [r12, #1980]
 	mov r11, #512
-24:
+29:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -2036,7 +2412,7 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	eor r4, r4, r5
 	str r4, [r12, #1980]
 	cmp r11, #0
-	bne 24b
+	bne 29b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2240
@@ -2676,7 +3052,7 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	ldr r4, [r12, #828]
 	str r4, [r12, #1980]
 	mov r11, #512
-25:
+210:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -2794,7 +3170,7 @@ vg_ecdsa_brainpoolp512r1_sign_k:
 	eor r4, r4, r5
 	str r4, [r12, #1980]
 	cmp r11, #0
-	bne 25b
+	bne 210b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2496

@@ -59,8 +59,8 @@ theorem point_cross2_z1_ok (s : State) (hz : s.gpr .x1=0) :
   Keeps [.x10,.x15,.x16,.x17,.x19,.x20,.x21,.x22,.x23] s t := by
  apply WP.of_runBlock
  simp only [pointCross2Z1Code, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,CondCode.holds,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,Option.some.injEq, exists_eq_left',carry_select]
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry, ↓RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, hz,Option.some.injEq, exists_eq_left',carry_select]
  have h := cross2_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x20) (s.gpr .x21) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)
  simp only [addCarry_zero] at h
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
@@ -119,8 +119,8 @@ theorem point_cross1_z1_ok (s : State) (hz : s.gpr .x1=0) :
   Keeps [.x10,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21] s t := by
  apply WP.of_runBlock
  simp only [pointCross1Z1Code, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,CondCode.holds,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,Option.some.injEq, exists_eq_left',carry_select]
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry, ↓RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, hz,Option.some.injEq, exists_eq_left',carry_select]
  have h := cross1_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)
  simp only [addCarry_zero] at h
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
@@ -170,8 +170,8 @@ theorem point_cross0_z1_ok (s : State) (hz : s.gpr .x1=0) :
   t.gpr .x1=0 ∧ Keeps [.x1,.x11,.x12,.x10,.x13,.x14,.x15,.x16,.x17,.x19] s t := by
  apply WP.of_runBlock
  simp only [pointCross0Z1Code, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left',hz]
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry, ↓RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left',hz]
  have h := cross0_value (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
  refine ⟨h,by trivial, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
@@ -215,7 +215,7 @@ theorem point_double_z1_ok (s : State) (hz : s.gpr .x1=0) :
  apply WP.of_runBlock
  simp only [pointDoubleZ1Code, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,CondCode.holds,
   RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,RegUpd.c_write, 
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left',hz,carry_select]
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left',hz,carry_select]
  have h := double_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x20) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x25)
  simp only [addCarry_zero] at h
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
@@ -236,6 +236,12 @@ open VG.Proof.Mont.AArch64
 open VG.Proof.Ed25519.Word64 VG.Proof.Ed25519.AArch64
 open VG.Impl.Mont.AArch64.P521Square (aRegs)
 open VG.Proof.Mont.AArch64.P521Square (low_expand lowRegs_value)
+
+/-- A sum with a carry word above a bound on its value has no carry. -/
+private theorem no_carry_out {T c V N : Nat} (h : T + N * c = V) (hb : V < N) : T = V := by
+ rcases Nat.eq_zero_or_pos c with rfl | hc
+ · rw [Nat.mul_zero, Nat.add_zero] at h; exact h
+ · exact absurd hb (Nat.not_lt.mpr (h ▸ Nat.le_trans (Nat.le_mul_of_pos_right N hc) (Nat.le_add_left _ _)))
 
 theorem point_low_z1_ok (s : State) (hz : s.gpr .x1=0) :
  WP isa (.block (pointCross0Z1Code ++ pointCross1Z1Code ++ pointCross2Z1Code ++ pointCross3Z1Code ++ pointDoubleZ1Code ++ pointDiagCode)) s fun t =>
@@ -286,5 +292,7 @@ theorem point_low_z1_ok (s : State) (hz : s.gpr .x1=0) :
   exact bound
  have hbb := Nat.mul_lt_mul'' hb hb
  rw [lowRegs_value]
- omega_using [e5,expand,hbb]
+ -- The two expansions are one linear form: equate them by normalizing, so that
+ -- the square is a single term when the carry is eliminated.
+ exact no_carry_out (e5.trans (Eq.trans (by simp +arith only) expand.symm)) hbb
 end VG.Proof.Mont.AArch64.P521Field

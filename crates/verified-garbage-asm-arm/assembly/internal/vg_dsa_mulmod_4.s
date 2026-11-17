@@ -17,7 +17,7 @@ vg_dsa_mulmod_4:
 	str lr, [r12, #40]
 	mov r4, r12
 	mov r0, r12
-	movw r1, #92
+	movw r1, #182
 	bl {vg_dsa_context_4}
 	mov r12, r4
 	movw r10, #336

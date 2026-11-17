@@ -124,7 +124,7 @@ def combSelect : List Instr :=
 /-- The entry in slots 4–6 negated if the digit is negative: `Y - X` and `Y + X` exchanged,
 and `2dT` with `0 - 2dT` (in slot 7, from the zero in slot 21), under the sign's mask. -/
 def combNeg : Prog isa :=
-  .seq (fieldCode [.sub 7 21 6]) (.block ([.ldr .r9 .r0 SGN] ++ swapFields [(4, 5), (6, 7)]))
+  .seq (fieldCode false [.sub 7 21 6]) (.block ([.ldr .r9 .r0 SGN] ++ swapFields [(4, 5), (6, 7)]))
 
 /-! ## The addition -/
 
@@ -141,10 +141,10 @@ def addAffineOps : List FieldOp := [
 
 /-- Step `r11 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
 accumulator. Z is clear while another step follows. -/
-def combStep : Prog isa :=
+def combStep (umaal : Bool) : Prog isa :=
   .seq (.block (combDigit ++ combSelect)) <|
   .seq combNeg <|
-  .seq (fieldCode addAffineOps) (.block [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 64)])
+  .seq (fieldCode umaal addAffineOps) (.block [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 64)])
 
 /-- `(x, y)` of `[17 G]B`. -/
 def combStartAff : Spec.X25519.Fe × Spec.X25519.Fe :=
@@ -157,12 +157,12 @@ def combStart : Spec.Ed25519.Point :=
 
 /-- The accumulator at `[17 G]B`, zero in slot 21, and the counter. -/
 def combInit : Prog isa :=
-  .seq (fieldCode ([.const 21 0] ++ constPointOps combStart)) (.block [.movw .r11 0])
+  .seq (fieldCode false ([.const 21 0] ++ constPointOps combStart)) (.block [.movw .r11 0])
 
 /-- The scalar's copy, then the accumulator at `[17 G]B` and the counter. -/
 def combPrepare : Prog isa := .seq (.block combCopy) combInit
 
 /-- `[s]B` into slots 0–3, for the scalar at `r12`. -/
-def combMultiply : Prog isa := .seq combPrepare (.loop combStep .ne)
+def combMultiply (umaal : Bool) : Prog isa := .seq combPrepare (.loop (combStep umaal) .ne)
 
 end VG.Impl.Ed25519.Arm

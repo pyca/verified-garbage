@@ -238,7 +238,12 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 
 theorem callee_stack : stackUse Impl.Ffdh.X86.Cached.Generate.code = 172 := by rsa_stack_use
 
-theorem callee_noSp : NoSp Impl.Ffdh.X86.Cached.Generate.code := NoSp.of_all (by rsa_stack_shape)
+/-- No instruction of the callee writes `esp`: proved once, for `body_noSp` too. -/
+private theorem callee_all :
+    Impl.Ffdh.X86.Cached.Generate.code.allInstrs VG.Proof.Mont.X86.StaticSquare.noSp = true := by
+  rsa_stack_shape
+
+theorem callee_noSp : NoSp Impl.Ffdh.X86.Cached.Generate.code := NoSp.of_all callee_all
 
 /-- The bytes `[u, u + l)` of `n` at `p`. -/
 theorem bytes_window (m : Mem) (p : Addr) {u l n : Nat} (h : u + l ≤ n) :
@@ -413,7 +418,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
 
 theorem body_noSp :
     NoSp (Code.seq (.block arguments) (.call "vg_ffdh_generate_key_cached" Impl.Ffdh.X86.Cached.Generate.code) :
-      Prog isa) := NoSp.of_all (by rsa_stack_shape)
+      Prog isa) := NoSp.of_all (by rsa_stack_shape [callee_all])
 
 /-- Back from the frame. -/
 theorem Fr.free {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : Fr o ds f s) :

@@ -3,16 +3,20 @@ module
 public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
+public import VerifiedGarbage.Impl.Modes.Arm.Wide
 public import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia-CBC on ARMv7
 
 `vg_camellia_cbc_encrypt_chained` and `vg_camellia_cbc_decrypt_chained`
-are the generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`),
-which return the chaining value in the IV (`Impl/Modes/Arm/CbcChained.lean`),
-over Camellia's ECB functions, `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt`, which
-they call once per block with the number of rounds (`ecbCore`).
+are the generic modes (`Impl/Modes/Arm/Seq.lean`), which return the chaining
+value in the IV (`Impl/Modes/Arm/CbcChained.lean`), over Camellia's ECB
+functions, `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt`, which
+they call with the number of rounds (`ecbCore`): encryption once per block,
+and decryption, whose blocks can be deciphered independently, once for a
+group of 8, 4 or 2 blocks, then once per block for those left
+(`Impl/Modes/Arm/Wide.lean`).
 -/
 
 @[expose] public section
@@ -38,6 +42,6 @@ def ecbCore (dir : Dir) : Core where
 def cbcEncryptChained : Prog isa := (ecbCore .encrypt).seq cbcEncChained
 
 /-- `vg_camellia_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (ecbCore .decrypt).seq cbcDecChained
+def cbcDecryptChained : Prog isa := (ecbCore .decrypt).seq8 cbcDecChained cbcDecW
 
 end VG.Impl.Camellia.Arm

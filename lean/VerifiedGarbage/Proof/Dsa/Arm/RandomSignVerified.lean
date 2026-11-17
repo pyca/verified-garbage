@@ -191,6 +191,8 @@ namespace VG.Proof.Dsa.Arm
 
 open VG VG.Arm VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.RandomSign
 
+variable {umaal : Bool}
+
 /-- A 1024/160 call with an empty tape: the output at `0x1000`, `used` at
 `0x7000`, the key at `0x2000` and the working space at `0x8000`. -/
 def randomSignSat : State where
@@ -212,34 +214,35 @@ theorem randomSign_satisfiable : ∃ s, (randomSignCheckedContract Arm.abi 144).
     [randomSignSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using randomSignSat
 
 /-- The fully checked signer, which accepts every key. -/
-def checkedSigner : Signer where
-  code := Entry.operation true
+def checkedSigner (umaal : Bool) : Signer where
+  code := Entry.operation umaal true
   valid := fun _ _ _ => true
   correct := fun _ hs => let ⟨t, s', e, ha, hp⟩ := sign_correct hs.1; ⟨t, s', e, ha, hp⟩
   constantTime := fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => sign_constantTime _ _ _ _ _ _ h₁.1 h₂.1 hp e₁ e₂
   stack := sign_armStack
 
 /-- The signer for a validated private key. -/
-def prevalidatedSigner : Signer where
-  code := PrevalidatedSign.sign
+def prevalidatedSigner (umaal : Bool) : Signer where
+  code := PrevalidatedSign.sign umaal
   valid := Spec.Dsa.validatePrivateKeyBytes
   correct := fun _ hs => let ⟨t, s', e, ha, hp⟩ := prevSign_correct hs; ⟨t, s', e, ha, hp⟩
   constantTime := prevSign_constantTime
-  stack := by decide +kernel
+  stack := by cases umaal <;> decide +kernel
 
 theorem randomSign_verified (name : String) :
-    Verified Arm.target (code name (Entry.operation true)) (randomSignCheckedContract Arm.abi 144) :=
-  ⟨fun s h => randomSign_correct checkedSigner name s h rfl,
-    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime checkedSigner name s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
+    Verified Arm.target (code name (Entry.operation umaal true)) (randomSignCheckedContract Arm.abi 144) :=
+  ⟨fun s h => randomSign_correct (checkedSigner umaal) name s h rfl,
+    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime (checkedSigner umaal) name s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
     randomSign_satisfiable⟩
 
 /-- The randomized signer, calling the registered `vg_dsa_sign`. -/
-theorem randomSigning_verified : Verified Arm.target (code "vg_dsa_sign" (Entry.operation true))
-    (randomSignCheckedContract Arm.abi 144) :=
+theorem randomSigning_verified :
+    Verified Arm.target (code ("vg_dsa_sign" ++ Impl.Mont.Arm.Dynamic.suffix umaal) (Entry.operation umaal true))
+      (randomSignCheckedContract Arm.abi 144) :=
   randomSign_verified _
 
 theorem randomPrevalidated_pre {s : State} (h : (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144).pre s) :
-    (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid prevalidatedSigner s := by
+    (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid (prevalidatedSigner umaal) s := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero] at h
   sig_split h
@@ -282,17 +285,18 @@ theorem randomPrev_satisfiable : ∃ s, (Spec.Dsa.randomSignPrevalidatedContract
     | exact Region.disjoint_of_sep (by decide +kernel)
 
 theorem randomSignPrevalidated_verified (name : String) :
-    Verified Arm.target (code name PrevalidatedSign.sign)
+    Verified Arm.target (code name (PrevalidatedSign.sign umaal))
       (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144) :=
-  ⟨fun s h => randomSign_correct prevalidatedSigner name s (randomPrevalidated_pre h).1 (randomPrevalidated_pre h).2,
-    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime prevalidatedSigner name s₁ s₂ t₁ t₂ u₁ u₂
+  ⟨fun s h => randomSign_correct (prevalidatedSigner umaal) name s
+      (randomPrevalidated_pre (umaal := umaal) h).1 (randomPrevalidated_pre h).2,
+    fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => randomSign_constantTime (prevalidatedSigner umaal) name s₁ s₂ t₁ t₂ u₁ u₂
       (randomPrevalidated_pre h₁) (randomPrevalidated_pre h₂),
     randomPrev_satisfiable⟩
 
 /-- The randomized signer for a validated key, calling the registered
 `vg_dsa_sign_prevalidated`. -/
 theorem randomSigningPrevalidated_verified :
-    Verified Arm.target (code "vg_dsa_sign_prevalidated" PrevalidatedSign.sign)
+    Verified Arm.target (code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal))
       (Spec.Dsa.randomSignPrevalidatedContract Arm.abi 144) :=
   randomSignPrevalidated_verified _
 

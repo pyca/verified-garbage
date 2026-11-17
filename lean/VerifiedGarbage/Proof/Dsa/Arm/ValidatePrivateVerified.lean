@@ -21,6 +21,8 @@ namespace VG.Proof.Dsa.Arm
 
 open VG VG.Arm VG.Impl.Dsa.Arm
 
+variable {umaal : Bool}
+
 /-- A state satisfying the precondition of `vg_dsa_validate_private_key`:
 1024/160 widths, the key at `0x2000` and the working space at `0x8000`. -/
 def validatePrivSat : State where
@@ -35,7 +37,7 @@ def validatePrivSat : State where
   wr := [⟨0x8000, 16384⟩]
 
 theorem validating_private_verified :
-    Verified Arm.target PrevalidatedSign.validate (Spec.Dsa.validatePrivateKeyContract Arm.abi 0) :=
+    Verified Arm.target (PrevalidatedSign.validate umaal) (Spec.Dsa.validatePrivateKeyContract Arm.abi 0) :=
   Verified.of_correct (fun _ hs => validatePriv_correct hs) validatePriv_constantTime (by
     sig_implies [Spec.Dsa.validatePrivateKeyContract, Spec.Dsa.validatePrivateKeySig, validatePrivArm,
       validatePrivPre, validatePrivRes, validatePrivLeak, validatePrivKey, arg, Arm.abi, Arm.argRegs,

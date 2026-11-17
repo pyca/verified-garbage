@@ -462,7 +462,11 @@ open VG.Proof.Dsa.X86 (argumentPointer)
 
 theorem callee_stack : stackUse Impl.Ffdh.X86.Candidate.code = 172 := by rsa_stack_use
 
-theorem callee_noSp : NoSp Impl.Ffdh.X86.Candidate.code := NoSp.of_all (by rsa_stack_shape)
+/-- No instruction of the callee writes `esp`: walked once, for `callee_noSp` and `body_noSp`. -/
+private theorem callee_all :
+    Impl.Ffdh.X86.Candidate.code.allInstrs (fun i => !Taint.clobbers i .esp) = true := by rsa_stack_shape
+
+theorem callee_noSp : NoSp Impl.Ffdh.X86.Candidate.code := NoSp.of_all callee_all
 
 /-- The bytes `[u, u + l)` of `n` at `p`. -/
 theorem bytes_window (m : Mem) (p : Addr) {u l n : Nat} (h : u + l ≤ n) :
@@ -657,7 +661,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
 theorem body_noSp :
     NoSp (Code.seq (.block arguments)
       (.call "vg_ffdh_parameter_candidate_sieved" Impl.Ffdh.X86.Candidate.code) : Prog isa) :=
-  NoSp.of_all (by rsa_stack_shape)
+  NoSp.of_all (by rsa_stack_shape [callee_all])
 
 /-- Back from the frame. -/
 theorem Fr.free {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : Fr o ds f s) :

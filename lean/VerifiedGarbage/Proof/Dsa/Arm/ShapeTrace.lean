@@ -36,7 +36,7 @@ theorem optionalWidth_relCT (n a tmp bits : Nat) :
 theorem saveWidth_relCT (n bits offset : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (Shape.saveWidth n bits offset) (VG.Arm.Taint.Agree T0) :=
   RelCT.seq (optionalWidth_relCT _ _ _ _)
-    (erased_relCT (c₀ := .block [.str .r2 .r12 0]) (VG.Taint.hintOf taint T0 (.block [.str .r2 .r12 0])) (by kernel_rfl)
+    (erased_relCT (c₀ := .block [.str .r2 .r12 0]) (VG.Taint.hintOf taintU T0 (.block [.str .r2 .r12 0])) (by kernel_rfl)
       (wsT_noBase _ _) (by kernel_rfl))
 
 theorem threeWidths_relCT (n a b c output : Nat) :
@@ -44,18 +44,18 @@ theorem threeWidths_relCT (n a b c output : Nat) :
   RelCT.seq (saveWidth_relCT _ _ _) (RelCT.seq (saveWidth_relCT _ _ _) (saveWidth_relCT _ _ _))
 
 theorem inspectP_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (pLen : Nat) (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .p)) :
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .p)) :
     SameTrace isa (Shape.inspectP pLen) s₁ s₂ := by
   unfold Shape.inspectP Shape.loadWidths
   dsimp only
   refine SameTrace.assoc_left (loadThen_trace (p := .input _) (Q := fun _ _ => True) hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂])
     (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) he (relCT_T10 ?_))
   refine (RelCT.seq (threeWidths_relCT _ _ _ _ _)
-    (erased_relCT (c := .block (Shape.saveParity ((pLen + 7) / 8))) (σ := T0) (c₀ := .block (Shape.saveParity 0)) (VG.Taint.hintOf taint T0 (.block (Shape.saveParity 0))) (by kernel_rfl)
+    (erased_relCT (c := .block (Shape.saveParity ((pLen + 7) / 8))) (σ := T0) (c₀ := .block (Shape.saveParity 0)) (VG.Taint.hintOf taintU T0 (.block (Shape.saveParity 0))) (by kernel_rfl)
       (wsT_noBase _ _) (by kernel_rfl))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem inspectQ_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (qLen : Nat) (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .q)) :
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .q)) :
     SameTrace isa (Shape.inspectQ qLen) s₁ s₂ := by
   unfold Shape.inspectQ Shape.loadWidths
   dsimp only
@@ -64,11 +64,11 @@ theorem inspectQ_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
   refine (RelCT.seq (threeWidths_relCT _ _ _ _ _)
     (erased_relCT (c := .block (Shape.parity ((qLen + 7) / 8) ++ Shape.combine)) (σ := T0)
       (c₀ := .block (Shape.parity 0 ++ Shape.combine))
-      (VG.Taint.hintOf taint T0 (.block (Shape.parity 0 ++ Shape.combine))) (by kernel_rfl)
+      (VG.Taint.hintOf taintU T0 (.block (Shape.parity 0 ++ Shape.combine))) (by kernel_rfl)
       (wsT_noBase _ _) (by kernel_rfl))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem check_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 4960 ≤ size₁) (hz₂ : 4960 ≤ size₂) (wp : Width pLen nP) (wq : Width qLen nQ)
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (wp : Width pLen nP) (wq : Width qLen nQ)
     (Rp₁ : Ready s₁ base (.input .p) pLen) (Rp₂ : Ready s₂ base (.input .p) pLen)
     (Rq₁ : Ready s₁ base (.input .q) qLen) (Rq₂ : Ready s₂ base (.input .q) qLen)
     (hep : PtrEq base s₁ s₂ (.input .p)) (heq : PtrEq base s₁ s₂ (.input .q)) :

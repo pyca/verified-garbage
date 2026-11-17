@@ -131,9 +131,11 @@ namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 open VG.Impl.Ed25519.Arm.Whole (callWith)
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
-theorem base_noFrames : Impl.Ed25519.Arm.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : (Impl.Ed25519.Arm.scalarBase umaal).noFrames = true := by cases umaal <;> lit_decide
 
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.E + 24 ∧ t.gpr .r2 = L.scr
@@ -185,7 +187,8 @@ theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
 
 theorem base_call (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : BaseArgs L t)
     (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L t.mem) :
-    WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) t fun u =>
+    WP isa (.call ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal)
+      (Impl.Ed25519.Arm.scalarBase umaal)) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32) := by
   refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha hsy hw) (base_covers L)
@@ -212,7 +215,8 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) {digest : List Byte}
 theorem base_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
     (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) {n : Nat}
     (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32) = n) :
-    WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) t fun u =>
+    WP isa (callWith baseArgs ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal)
+      (Impl.Ed25519.Arm.scalarBase umaal)) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono_syms (setup_ok hc hL ha
@@ -342,6 +346,8 @@ end
 namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 /-- The public key after a first step `first` that leaves a digest `D` at `frame 184`: the
@@ -351,7 +357,7 @@ theorem bodyFrom_ok {first : Prog isa} {D : List Byte}
       Spec.Ed25519.bytesAt u.mem (State.addr L.E + 184) 64 = D)
     (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
     (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
-    WP isa (bodyFrom first) t fun u => Ctx L g m₀ u ∧
+    WP isa (bodyFrom umaal first) t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul (Spec.Ed25519.prune D) Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono_syms hfirst fun u ⟨hu, hh⟩ syu => ?_)
@@ -425,10 +431,13 @@ end
 namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem base_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (BaseReady L))
-    (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal) (Impl.Ed25519.Arm.scalarBase umaal))
+    (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   refine Whole.rel_wp ?_ ?_ ?_
   · refine Whole.callEx scalarBase_ok scalarBase_ct fun a b h => ?_
     let ra := base_ready hL h.1.2
@@ -472,14 +481,15 @@ theorem bodyFrom_ct {first : Prog isa}
     (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁) (hw₂ : Tbl L m₂) :
     RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
       a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (bodyFrom first) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+      (bodyFrom umaal first) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have b := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb baseValues []
     (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
     (by simp [baseValues, preserved]) (by decide) (by simp [Whole.valid])
     (by simp)
   have bc : RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (Slots L baseValues []) a b ∧
       a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
-      (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+      (.call ("vg_ed25519_scalar_base" ++ Impl.Ed25519.Arm.suffix umaal) (Impl.Ed25519.Arm.scalarBase umaal))
+      (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
     (base_ct hL).mono (fun a b ⟨⟨⟨hca, hsa⟩, ⟨hcb, hsb⟩⟩, sa, sb⟩ =>
       ⟨⟨hca, hsa, sa, hca.tbl hL hw₁⟩, ⟨hcb, hsb, sb, hcb.tbl hL hw₂⟩⟩) fun _ _ h => h
   exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T hfirst).seq

@@ -38,15 +38,21 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
   its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 (`vdecode`), `R` kept at `RX`
   and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
-  (slots 0, 21, 2) doubled, `B` (slots 8–10) added and swapped into `Q` by
-  bit `t` of `S`, then `-A` added and swapped in by bit `t` of `k`.
+  `Q = [S]B + [k](-A)` computed from the top bit down: `Q` (slots 0, 21, 2)
+  doubled for each of the 456 bits; in the last 114, the rows of
+  base-point multiplication's comb (`ScalarBase.lean`), the table's entry of
+  the row's four bits of `S` selected into slots 8–9 and added, so that the
+  comb shares the doublings; and `-A` added if bit `t` of `k` is set. The
+  signature and the challenge are public (a verification may leak its
+  inputs), so `-A` is only added where the bit is set: the byte of the bits
+  is loaded into `r8`, which the field functions never write, and the
+  branch is on it.
 * `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
   doubled twice (a loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Every address depends only on the pointers,
+and every branch on them and on the bits of `S` and `k`.
 -/
 
 @[expose] public section
@@ -115,22 +121,22 @@ def sCheck : List Instr :=
 /-- `z^((p-3)/4)` into slot 1 for `z` in slot 12, with the temporaries 14–20:
 X448's addition chain (`invert`) as far as `z^(2^223 - 1)` (in slot 1) and
 `z^(2^222 - 1)` (in slot 20), then `(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`. -/
-def root : Prog isa :=
-  .seq (ops [.copy (slot 14) (slot 12)]) <| .seq (sqn (slot 14) 1) <|
-  .seq (ops [.mul (slot 14) (slot 14) (slot 12), .copy (slot 15) (slot 14)]) <|
-  .seq (sqn (slot 15) 2) <| .seq (ops [.mul (slot 15) (slot 15) (slot 14), .copy (slot 16) (slot 15)]) <|
-  .seq (sqn (slot 16) 4) <| .seq (ops [.mul (slot 16) (slot 16) (slot 15), .copy (slot 17) (slot 16)]) <|
-  .seq (sqn (slot 17) 8) <| .seq (ops [.mul (slot 17) (slot 17) (slot 16), .copy (slot 18) (slot 17)]) <|
-  .seq (sqn (slot 18) 16) <| .seq (ops [.mul (slot 18) (slot 18) (slot 17), .copy (slot 19) (slot 18)]) <|
-  .seq (sqn (slot 19) 32) <| .seq (ops [.mul (slot 19) (slot 19) (slot 18), .copy (slot 20) (slot 19)]) <|
-  .seq (sqn (slot 20) 64) <| .seq (ops [.mul (slot 20) (slot 20) (slot 19)]) <|
-  .seq (sqn (slot 20) 64) <| .seq (ops [.mul (slot 20) (slot 20) (slot 19)]) <|
-  .seq (sqn (slot 20) 16) <| .seq (ops [.mul (slot 20) (slot 20) (slot 17)]) <|
-  .seq (sqn (slot 20) 8) <| .seq (ops [.mul (slot 20) (slot 20) (slot 16)]) <|
-  .seq (sqn (slot 20) 4) <| .seq (ops [.mul (slot 20) (slot 20) (slot 15)]) <|
-  .seq (sqn (slot 20) 2) <| .seq (ops [.mul (slot 20) (slot 20) (slot 14), .copy X2 (slot 20)]) <|
-  .seq (sqn X2 1) <| .seq (ops [.mul X2 X2 (slot 12)]) <|
-  .seq (sqn X2 223) (ops [.mul X2 X2 (slot 20)])
+def root (u : Bool) : Prog isa :=
+  .seq (ops u [.copy (slot 14) (slot 12)]) <| .seq (sqn u (slot 14) 1) <|
+  .seq (ops u [.mul (slot 14) (slot 14) (slot 12), .copy (slot 15) (slot 14)]) <|
+  .seq (sqn u (slot 15) 2) <| .seq (ops u [.mul (slot 15) (slot 15) (slot 14), .copy (slot 16) (slot 15)]) <|
+  .seq (sqn u (slot 16) 4) <| .seq (ops u [.mul (slot 16) (slot 16) (slot 15), .copy (slot 17) (slot 16)]) <|
+  .seq (sqn u (slot 17) 8) <| .seq (ops u [.mul (slot 17) (slot 17) (slot 16), .copy (slot 18) (slot 17)]) <|
+  .seq (sqn u (slot 18) 16) <| .seq (ops u [.mul (slot 18) (slot 18) (slot 17), .copy (slot 19) (slot 18)]) <|
+  .seq (sqn u (slot 19) 32) <| .seq (ops u [.mul (slot 19) (slot 19) (slot 18), .copy (slot 20) (slot 19)]) <|
+  .seq (sqn u (slot 20) 64) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 19)]) <|
+  .seq (sqn u (slot 20) 64) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 19)]) <|
+  .seq (sqn u (slot 20) 16) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 17)]) <|
+  .seq (sqn u (slot 20) 8) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 16)]) <|
+  .seq (sqn u (slot 20) 4) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 15)]) <|
+  .seq (sqn u (slot 20) 2) <| .seq (ops u [.mul (slot 20) (slot 20) (slot 14), .copy X2 (slot 20)]) <|
+  .seq (sqn u X2 1) <| .seq (ops u [.mul X2 X2 (slot 12)]) <|
+  .seq (sqn u X2 223) (ops u [.mul X2 X2 (slot 20)])
 
 /-- The 57 bytes at `p`: `y`'s limbs into slot `yo`, the sign bit to `SIGN`,
 and `BAD |= 0` exactly when bits 448–454 are 0 and `y < p`. -/
@@ -171,10 +177,10 @@ def decodeSign (xo : Nat) : List Instr :=
       .dp .sub .r5 .r5 (.reg .r2)] ++ cswap (slot xo) (slot 12)
 
 /-- Decode the 57 bytes at `p` into slots `xo` and `yo`. -/
-def decode (p : Reg) (xo yo : Nat) : Prog isa :=
-  .seq (.block (decodeY p yo)) <| .seq (ops (decodeUV yo xo)) <| .seq root <|
-  .seq (ops (decodeX xo)) <| .seq (.block (eqSlots (slot 12) (slot 13))) <|
-  .seq (ops (negX xo)) (.block (decodeSign xo))
+def decode (u : Bool) (p : Reg) (xo yo : Nat) : Prog isa :=
+  .seq (.block (decodeY p yo)) <| .seq (ops u (decodeUV yo xo)) <| .seq (root u) <|
+  .seq (ops u (decodeX xo)) <| .seq (.block (eqSlots (slot 12) (slot 13))) <|
+  .seq (ops u (negX xo)) (.block (decodeSign xo))
 
 /-! ## `[S]B + [k](-A)` -/
 
@@ -199,23 +205,50 @@ def addAt (x y : Nat) : List Op := [
   .mul (slot 20) (slot 12) (slot 18), .sub (slot 19) (slot 15) (slot 14), .mul (slot 4) (slot 20) (slot 19),
   .mul (slot 5) (slot 17) (slot 18)]
 
-/-- `r5 = -bit`, for bit `r11` of `S` (`hi = false`) or of `k` (`hi = true`). -/
-def vmask (hi : Bool) : List Instr :=
-  [.dp .add .r7 .r0 (.reg .r11), .ldrb .r3 .r7 VBITS,
-    if hi then .mov .r3 (.shifted .r3 .lsr 1) else .dp .and .r3 .r3 (.imm 1),
-    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r3)]
+/-- The counter moved down to the bit `t = r11`, and the byte of bit `t` of `S` (its bit 0) and
+of `k` (its bit 1) into `r8`. -/
+def vload : List Instr :=
+  [.dp .sub .r11 .r11 (.imm 1), .dp .add .r7 .r0 (.reg .r11), .ldrb .r8 .r7 VBITS]
 
-/-- `T` swapped into `Q` by the mask `r5`. -/
-def vswap : List Instr := cswap (slot 0) (slot 3) ++ cswap (slot 21) (slot 4) ++ cswap (slot 2) (slot 5)
+/-- `Z` clear exactly when the bit of `k` in `r8` (its bit 1) is set. -/
+def vtest : List Instr := [.mov .r3 (.shifted .r8 .lsr 1), .cmp .r3 (.imm 0)]
+
+/-- `T` (slots 3–5) into `Q` (slots 0, 21, 2). -/
+def vtake : List Op := [.copy (slot 0) (slot 3), .copy (slot 21) (slot 4), .copy (slot 2) (slot 5)]
+
+/-- `Q = Q + (x : y : 1)` if the bit of `k` in `r8` is set. -/
+def vaddIf (u : Bool) (x y : Nat) : Prog isa :=
+  .seq (.block vtest) (.ite .ne (ops u (addAt x y ++ vtake)) (.block []))
+
+/-- `Z` clear exactly when `r11 < 114`: the bit is a row of the comb. -/
+def vrowTest : List Instr :=
+  [.dp .sub .r3 .r11 (.imm 114), .mov .r3 (.shifted .r3 .lsr 31), .cmp .r3 (.imm 0)]
+
+/-- The index of row `t = r11` of the comb of `S` into `r5` (`combDigit`): bits `t`, `t + 114`,
+`t + 228` and `t + 342` of `S`, each bit 0 of its byte at `VBITS`. -/
+def vcombDigit : List Instr :=
+  [.dp .add .r7 .r0 (.reg .r11),
+    .ldrb .r5 .r7 (VBITS + 342), .dp .and .r5 .r5 (.imm 1),
+    .ldrb .r3 .r7 (VBITS + 228), .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1),
+    .ldrb .r3 .r7 (VBITS + 114), .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1),
+    .ldrb .r3 .r7 VBITS, .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1)]
+
+/-- In the comb's rows, the bits below 114: the table's entry of the row's four bits of `S`
+selected into slots 8–9 (`combSelect`) and added to `Q`. -/
+def vcombIf (u : Bool) : Prog isa :=
+  .seq (.block vrowTest)
+    (.ite .ne (.seq (.block (vcombDigit ++ combSelect)) (ops u (addAt 8 9 ++ vtake))) (.block []))
+
+/-- A bit, with its byte in `r8`: `Q` doubled, the comb's entry added in the comb's rows, `-A`
+added if `k`'s bit is set, and the counter compared with zero. -/
+def vdoubleAdd (u : Bool) : Prog isa :=
+  .seq (ops u (doubleAt 0 21 2)) <| .seq (vcombIf u) <| .seq (vaddIf u 6 7) (.block [.cmp .r11 (.imm 0)])
 
 /-- One bit `t = r11 - 1`, from the top. -/
-def vstep : Prog isa :=
-  .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) <| .seq (ops (doubleAt 0 21 2)) <|
-  .seq (ops (addAt 8 9)) <| .seq (.block (vmask false ++ vswap)) <|
-  .seq (ops (addAt 6 7)) (.block (vmask true ++ vswap ++ [.cmp .r11 (.imm 0)]))
+def vstep (u : Bool) : Prog isa := .seq (.block vload) (vdoubleAdd u)
 
 /-- The 456 bits, from 455 down to 0. -/
-def vloop : Prog isa := .seq (.block [.movw .r11 456]) (.loop vstep .ne)
+def vloop (u : Bool) : Prog isa := .seq (.block [.movw .r11 456]) (.loop (vstep u) .ne)
 
 /-! ## The function -/
 
@@ -250,33 +283,33 @@ def vstart : List Instr := [.mov .r10 (.imm 0)] ++ sCheck ++ initSlots ++ copy (
 
 /-- `Q` (slots 0, 21 and 2) and `R` (slots 8–10) doubled twice: a loop of two
 iterations, counted by `r11`, each doubling both. -/
-def vdouble : Prog isa :=
+def vdouble (u : Bool) : Prog isa :=
   .seq (.block [.movw .r11 2])
-    (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
+    (.loop (.seq (ops u (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
 
 /-- One decoding, of the point at `r12` into slots 6–7 (which `decode` reads only before its first
 call), after slots 6–7 are kept at `RX` and `RY`; then `r12 := r8`, `r8 := r0`, and `Z` set
 exactly when `r8` was the working space. -/
-def vdecodeBody : Prog isa :=
-  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode .r12 6 7) <|
+def vdecodeBody (u : Bool) : Prog isa :=
+  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode u .r12 6 7) <|
     .block [.mov .r12 (.reg .r8), .mov .r11 (.reg .r8), .mov .r8 (.reg .r0), .subs .r11 .r11 (.reg .r0)]
 
 /-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves): one copy of
 `decode`, in a loop whose first pass moves `A`'s pointer into `r12` and the working space's into
 `r8`, which is not the working space before it (`A` lies outside it) and is after: `Z` ends the
 loop after the second. `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
-def vdecode : Prog isa := .loop vdecodeBody .ne
+def vdecode (u : Bool) : Prog isa := .loop (vdecodeBody u) .ne
 
 /-- `R` into slots 8–9 (`B` is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
 /-- One comparison: slot 0 times slot 10 against slot 8 times slot 2 (`BAD |= 0` exactly when they
 are equal); then slots 21 and 9 copied into 0 and 8, for the second pass, and `r11` moved down. -/
-def vcmp : Prog isa :=
-  .seq (ops [.mul (slot 12) (slot 0) (slot 10), .mul (slot 13) (slot 8) (slot 2)]) <|
+def vcmp (u : Bool) : Prog isa :=
+  .seq (ops u [.mul (slot 12) (slot 0) (slot 10), .mul (slot 13) (slot 8) (slot 2)]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
-  .seq (ops [.copy (slot 0) (slot 21), .copy (slot 8) (slot 9)])
+  .seq (ops u [.copy (slot 0) (slot 21), .copy (slot 8) (slot 9)])
     (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])
 
 /-- `r0 = (BAD == 0)`, and the callee-saved registers and the link register restored. -/
@@ -287,12 +320,19 @@ def vresult : List Instr :=
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point): `X_Q Z_R = X_R Z_Q`, then `Y_Q Z_R = Y_R Z_Q`, by two passes of `vcmp`,
 counted by `r11`; then `vresult`. -/
-def vfinish : Prog isa :=
-  .seq vdouble <| .seq (.block [.movw .r11 2]) <| .seq (.loop vcmp .ne) (.block vresult)
+def vfinish (u : Bool) : Prog isa :=
+  .seq (vdouble u) <| .seq (.block [.movw .r11 2]) <| .seq (.loop (vcmp u) .ne) (.block vresult)
+
+/-- What comes before the loop over the bits: the entry, the bits of `S` and `k`, the check of
+`S`, `R` and `A` decoded, and `A` negated. -/
+def vbefore (u : Bool) : Prog isa :=
+  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode u) <|
+    ops u [.sub (slot 6) (slot 0) (slot 6)]
+
+/-- What comes after it: `R` into slots 8–9, and the comparison. -/
+def vafter (u : Bool) : Prog isa := .seq (.block vR) (vfinish u)
 
 /-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
-def verifyEquation : Prog isa :=
-  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq vdecode <|
-  .seq (ops [.sub (slot 6) (slot 0) (slot 6)]) <| .seq vloop <| .seq (.block vR) vfinish
+def verifyEquation (u : Bool) : Prog isa := .seq (vbefore u) <| .seq (vloop u) (vafter u)
 
 end VG.Impl.Ed448.Arm

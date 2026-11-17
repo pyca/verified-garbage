@@ -936,6 +936,13 @@ theorem recover_len {s : State} (h : stackArg s 0 ≠ s.gpr .a3) (hh : Spec.RsaP
   unfold Spec.RsaPkcs1Sig.recover
   rw [bytesAt_length, bytesAt_length, ite_eq_right fun e => h (BitVec.eq_of_toNat_eq e)]
 
+/-- `written` reads the memory only in the output. -/
+private theorem written_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Option (List Byte)}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.written m out k r o) :
+    Spec.Rsa.written m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h
+
 theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
   obtain hL1 := hp.len_pos; have hL2 := hp.len_le
   unfold code
@@ -950,7 +957,16 @@ theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
       (by show t₁.rd = _; rw [o₁.rd])
       (by show Frame _ _ t₁.mem; rw [o₁.mem]; exact Frame.refl _ _)
       (fun r hr => o₁.gpr r hr)) fun t₂ h₂ => ?_)
-    exact WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => afterPub_ok hp hsig h₃)
+    -- The `free` loses the frame's bytes, which lie apart from the output.
+    refine WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => WP.mono (afterPub_ok hp hsig h₃)
+      fun w h mL _ fl => ⟨⟨h.1.1, h.1.2.1, h.1.2.2⟩, fun ok hh e => ?_⟩)
+    rw [o₁.sp] at fl
+    have hb : Spec.Rsa.bytesAt mL (s.gpr .a0) (s.gpr .a1).toNat =
+        Spec.Rsa.bytesAt w.mem (s.gpr .a0) (s.gpr .a1).toNat :=
+      List.map_congr_left fun i hi => lost_byte fl (R := oR s) hp.ko.symm (List.mem_range.mp hi)
+    have key := h.2 ok hh e
+    simp only [freed] at key ⊢
+    exact written_lost rfl hb key
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => ?_) (by simp)
     unfold zeroArgs
     refine WP.seq (wp_mov fun y₁ p₁ f₁ => wp_mov fun y₂ p₂ f₂ => wp_nil ?_)

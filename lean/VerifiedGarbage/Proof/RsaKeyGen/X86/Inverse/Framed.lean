@@ -186,6 +186,11 @@ def invU (L : Lay) (A D : Nat) : List (Prog isa) := [
   .block [.mov .ebx (.imm 0)],
   half L D]
 
+/-- A selection by a flag that is 1 when `c`: stated here, outside `invU_ok`'s hundred hypotheses. -/
+private theorem sel_flag (c : Prop) [Decidable c] (u v : Nat) :
+    (if (if c then 1 else 0) = 0 then v else u) = if c then u else v := by
+  split <;> simp_all
+
 theorem invU_ok {s : State} {B : Addr} {Z len N A D : Nat} (h : RtWs L s B Z len N)
     (hN15 : 15 ≤ N) (hb : (A = 0 ∧ D = 4) ∨ (A = 4 ∧ D = 0)) :
     WP isa (seqs (invU L A D)) s fun t => RtWs L t B Z len N ∧
@@ -274,7 +279,7 @@ theorem invU_ok {s : State} {B : Addr} {Z len N A D : Nat} (h : RtWs L s B Z len
   · rw [k9.slot hsOdd (by simp), k7.slot hsOdd (by simp), od6]
   · rw [k9.slot hsC (by simp), k7.slot hsC (by simp), k6.slot hsC (by simp), k5.slot hsC (by simp), cs4]
   · rw [k9.num (by idx) (by simp) fD1, k7.num (by idx) (by simp) fD1, k6.num (by idx) (by simp) fD1, e5]
-    split <;> simp_all
+    exact sel_flag _ _ _
   · rw [e9, e7, show (0 : BitVec 32).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero]
     exact invU_arith d2 b2 (val32_lt _ _ _ _) d4 b4 (val32_lt _ _ _ _)
   · exact ((((((((r1.mono (by decide)).trans (r2.mono (by decide))).trans (r3'.mono (by decide))).trans

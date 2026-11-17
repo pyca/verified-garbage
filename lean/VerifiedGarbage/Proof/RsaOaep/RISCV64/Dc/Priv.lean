@@ -1271,13 +1271,15 @@ theorem privF_ok {t : State} (E : Entered s t) :
         WP isa (.block [.shift .sll .d .s4 .a0 32, .shift .srl .d .s4 .s4 32]) w (AfterPriv pc s) := by
   have hsp : t.sp = fb s := E.sv.sp
   obtain pr := privBytes_rng pc
-  refine WP.alloc (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
+  refine WP.allocLe (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
     rw [hsp]; have := P.sp1
     rw [stackBytes_split] at this
     simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, Impl.Rsa.RISCV64.Priv.frameBytes] at *
     omega_using [this]) ?_
   refine WP.seq (WP.mono (privArgs_ok P E) fun u A => ?_)
-  refine WP.mono (call_priv P A) fun v ⟨hrd, hwr, hsp', hf, hpres, hpost⟩ => ?_
+  refine WP.mono (call_priv P A) fun v ⟨hrd, hwr, hsp', hf, hpres, hpost⟩ mL uL fl => ?_
+  -- Whatever the released frame's bytes hold.
+  obtain fl' : Frame [PB pc s] v.mem mL := by rw [hsp] at fl; exact fl
   obtain fsp : (freed (privBytes pc) v).sp = fb s := by
     show v.sp + BitVec.ofNat 64 (privBytes pc) = fb s
     rw [hsp', A.sp, BitVec.sub_add_cancel]
@@ -1306,17 +1308,18 @@ theorem privF_ok {t : State} (E : Entered s t) :
   change Spec.Rsa.writtenOutcome _ _ _ _ (privO s) at hpost
   obtain ⟨hr, hem⟩ := of_written hpost
   -- The state after the frame's release.
-  obtain O : Only [.s4] (freed (privBytes pc) v) w := (o₁.trans ow).mono
+  obtain O : Only [.s4] { freed (privBytes pc) v with mem := mL, unknowns := uL } w := (o₁.trans ow).mono
   obtain fwr : (freed (privBytes pc) v).wr = fr s :: s.wr := by
     show v.wr.tail = _; rw [hwr, A.wr]; rfl
-  have wm : w.mem = v.mem := O.mem
+  have wm : w.mem = mL := O.mem
   obtain pv : ∀ r ∈ preserved, r ≠ .s4 → w.gpr r = u.gpr r := fun r hr' h4 =>
     (O.gpr r (by simpa using h4)).trans (hpres r hr')
   obtain r4 : w.gpr .s4 = BitVec.ofNat 64 (rcOf (privO s)) := by
     rw [ew, e₁]; exact zext32 hr (rcOf_le _)
   obtain fm : Frame [kD pc s, scR s] s.mem w.mem := by
     rw [wm]
-    refine (A.mem.mono fun r hr => by simp at hr ⊢; exact .inl hr).trans (hf.sub fun r hr => ?_)
+    refine ((A.mem.mono fun r hr => by simp at hr ⊢; exact .inl hr).trans (hf.sub fun r hr => ?_)).trans
+      (fl'.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨kD pc s, by simp, PB_sub P⟩)
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨scR s, by simp, em_sub P⟩
@@ -1324,12 +1327,22 @@ theorem privF_ok {t : State} (E : Entered s t) :
     · exact ⟨kD pc s, by simp, pk_sub⟩
   obtain svs : Spill.Saved (fb s) s.gpr Impl.RsaOaep.RISCV64.saved w.mem := by
     rw [wm]
-    exact A.sv.frame_in (lo := Proof.RsaOaep.RISCV64.oSv) (n := frameBytes - Proof.RsaOaep.RISCV64.oSv)
-      (fun p hp => by
-        have := Proof.RsaOaep.RISCV64.saved_offs p hp; unfold frameBytes Proof.RsaOaep.RISCV64.oSv at *; omega_using [this])
-      hf (slots_dis P)
+    obtain hl : ∀ p ∈ Impl.RsaOaep.RISCV64.saved, Proof.RsaOaep.RISCV64.oSv ≤ p.2 ∧
+        p.2 + 8 ≤ Proof.RsaOaep.RISCV64.oSv + (frameBytes - Proof.RsaOaep.RISCV64.oSv) := fun p hp => by
+      have := Proof.RsaOaep.RISCV64.saved_offs p hp; unfold frameBytes Proof.RsaOaep.RISCV64.oSv at *; omega_using [this]
+    refine (A.sv.frame_in hl hf (slots_dis P)).frame_in hl fl' fun r hr => ?_
+    rw [List.mem_singleton.mp hr]
+    have := privBytes_rng pc
+    show Region.Disjoint _ ⟨pb pc s, privBytes pc⟩
+    rw [pb_kb P, fb_kb P, Offset.add_add]
+    exact Offset.disjoint _ (.inr (by unfold Impl.Rsa.RISCV64.Priv.frameBytes; omega_using []))
+      (by unfold frameBytes Proof.RsaOaep.RISCV64.oSv Impl.Rsa.RISCV64.Priv.frameBytes; omega_using [this])
+      (by omega_using [this])
   refine ⟨⟨⟨by rw [O.sp]; exact fsp, by rw [O.wr]; exact fwr, svs⟩, by rw [O.rd]; exact hrd.trans A.rd,
-    by rw [pv .s0 (by decide) (by decide)]; exact A.s0, ?_, Frame.refl _ _⟩, fm, by rw [wm, hem]⟩
+    by rw [pv .s0 (by decide) (by decide)]; exact A.s0, ?_, Frame.refl _ _⟩, fm, by
+      rw [wm, ← hem]
+      exact List.map_congr_left fun i hi => lost_byte fl' (R := emR s)
+        ((P.ks.sub_left (PB_sub P)).sub_right (em_sub P)).symm (List.mem_range.mp hi)⟩
   intro r hr
   simp only [Proof.RsaOaep.RISCV64.fx, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl

@@ -624,10 +624,11 @@ theorem checks_done {t : State} (E : Entered Hs.len s t) (sy : t.syms = s.syms) 
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (verifyFor H M.be f g) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLe (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P hHl.symm (hHl ▸ hH.hD64)) fun t E y => WP.seq (WP.mono
     (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans rfl)) fun t' ⟨sv, res⟩ =>
-      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, _⟩ => ⟨habi, fun hc => ?_⟩))
+      WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, _⟩ _ _ _ =>
+        ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => ?_⟩))
   show w.gpr .a0 = _
   rw [h3]
   exact res hc

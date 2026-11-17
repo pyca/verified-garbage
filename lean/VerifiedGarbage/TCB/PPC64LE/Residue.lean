@@ -37,10 +37,23 @@ runs agree on them anyway. The integer result is in `r3` (§2.2.6), whose low
 What was there on entry (all of the registers, and the memory outside the
 buffers) is taken as given: a secret the caller passed in a register, or
 left in one, is the caller's. So are the return addresses the code's calls
-and `adrSym`s leave in `LR`, what linkage code may leave in `r0`, `r11` and
-`r12`, and the low doubleword `mtvsrd` leaves undefined
-(`State.unknowns`), which the two runs share: they are where the code is,
-or what the processor makes of no data, not data.
+and `adrSym`s leave in `LR` and what linkage code may leave in `r0`, `r11`
+and `r12` (`State.unknowns`), which the two runs share: they are where the
+code is, not data.
+
+A result the Power ISA leaves undefined, the low doubleword of `mtvsrd XT,
+RA`'s target (Book I §3.3.18: "The contents of doubleword element 1 of
+VSR[XT] are undefined"), is not taken as given, and is not the same in the
+two runs for being undefined: the ISA does not say what an undefined value
+may depend on (Book I §1.3.1), so an implementation may leave there a copy
+of RA, or what XT held. The model makes it an
+unknown function of both (`State.undef`), and the two runs share only the
+function (and which execution of `mtvsrd` it is, the function's first
+argument, one of the `unknowns`): the processor is the same in both. So
+the two runs agree on that doubleword where they agree on RA and on what
+XT held, and code that moves a secret with `mtvsrd`, or moves anything
+into a register that holds one, must clear both doublewords of the target
+before it returns.
 
 Not covered, because the model does not have them: `r13`, the
 floating-point registers, `v20`–`v31`, `CTR` and `XER` but CA (which no
@@ -69,7 +82,7 @@ def Outside (retBits : Nat) (s₁ s₂ : State) : Prop :=
 secret residue (see the module docs). -/
 def NoResidue (c : Prog isa) (k : Contract isa) (retBits : Nat) : Prop :=
   ∀ s₁ s₂ t₁ t₂ s₁' s₂', k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ →
-    s₁.unknowns = s₂.unknowns →
+    s₁.unknowns = s₂.unknowns → s₁.undef = s₂.undef →
     Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → Outside retBits s₁' s₂'
 
 end VG.PPC64LE

@@ -43,6 +43,8 @@ namespace VG.Proof.Dsa.Arm.Key
 open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.GenerateKey
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_cmp op2_imm eval_eq eval_ne)
 
+variable {umaal : Bool}
+
 /-! ## What two runs share -/
 
 /-- A sampling trace has no entry above 4. -/
@@ -186,7 +188,7 @@ def Checked (b : BodyPub) (s₀ t : State) : Prop :=
   Kept b s₀ t ∧ t.gpr .r0 = if rChecked s₀ then 1 else 0
 
 theorem checked_ok (name : String) {b : BodyPub} {s₀ t : State} (A : KeyABI s₀) (C : CheckIn b s₀ t) :
-    WP isa (callWith name Generate.checkParameters) t (Checked b s₀) := by
+    WP isa (callWith name (Generate.checkParameters umaal)) t (Checked b s₀) := by
   obtain ⟨K, R⟩ := C
   refine WP.mono (callCheck_ok A K.ready R name) fun u ⟨h, f, _, r0⟩ => ?_
   have sl : ∀ d, d + 4 ≤ frameBytes → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
@@ -317,7 +319,7 @@ structure Derived (b : BodyPub) (s₀ t : State) : Prop where
   saved : Saved s₀ t.mem
 
 theorem derived_ok (name : String) {b : BodyPub} {s₀ t : State} (A : KeyABI s₀) (D : DeriveIn b s₀ t) :
-    WP isa (callWith name Generate.deriveChecked) t (Derived b s₀) := by
+    WP isa (callWith name (Generate.deriveChecked umaal)) t (Derived b s₀) := by
   obtain ⟨k, hk, hres⟩ := D.x
   have hR := rResult_eq A
   simp only [D.checked, ↓reduceIte, hk] at hR
@@ -352,7 +354,7 @@ theorem fin_two {Φ : BodyPub → State → Prop} {c : Prog isa}
 
 theorem derived_ct (name : String) :
     RelCT isa (Two fun b s => At (SampleTested b) b.pub s ∧ isa.eval .eq s = some true)
-      (.seq (.block deriveArgs) (.seq (callWith name Generate.deriveChecked) (.block [st .r0 oStatus])))
+      (.seq (.block deriveArgs) (.seq (callWith name (Generate.deriveChecked umaal)) (.block [st .r0 oStatus])))
       (Two FinAt) := by
   refine RelCT.seq (two_piece (Ψ := fun b => At (DeriveIn b) b.pub) [.r11]
     (pins_at' BodyPub.pub fun _ _ _ h => h.1.ready) (by taint_decide)
@@ -374,7 +376,7 @@ theorem rejected_ct : RelCT isa (Two fun b s => At (SampleTested b) b.pub s ∧ 
 
 theorem generate_ct (name : String) :
     RelCT isa (Two fun b s => At (Tested b) b.pub s ∧ isa.eval .eq s = some false)
-      (generate name Generate.deriveChecked) (Two FinAt) := by
+      (generate name (Generate.deriveChecked umaal)) (Two FinAt) := by
   unfold generate derived
   refine RelCT.seq (two_post (Ψ := fun b => At (Prepped b) b.pub)
     (two_map BodyPub.pub (fun b t ⟨⟨s₀, A, e, K, _⟩, _⟩ => ⟨s₀, A, e, K.ready, K.saved.2.2.2.2⟩) prepare_ct)
@@ -395,7 +397,7 @@ theorem generate_ct (name : String) :
 
 theorem body_ct (check derive : String) :
     RelCT isa (Two fun b => At (BodyEntry b) b.pub)
-      (body check derive Generate.checkParameters Generate.deriveChecked) fun _ _ => True := by
+      (body check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) fun _ _ => True := by
   unfold body
   refine RelCT.seq entry_ct ?_
   refine RelCT.seq (two_piece (Ψ := fun b => At (CheckIn b) b.pub) [.r11]

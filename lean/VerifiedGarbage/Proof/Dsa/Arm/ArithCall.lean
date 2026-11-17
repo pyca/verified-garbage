@@ -54,10 +54,10 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm.Pow
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw op2_reg)
 
-theorem body_noFrames (n e : Nat) : (body n e).noFrames = true := by
-  simp only [body, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, exponentiate, exponentStep, exponentBody, exponentProduct, Dynamic.mul, rowD,
-    digitRowD, mulRowD, csubD, Dynamic.zeros, ptrLoop, one, powerTwo, addD, addDigits, selectW, Code.noFrames,
-    Bool.and_self]
+variable {umaal : Bool}
+
+theorem body_noFrames (n e : Nat) : (body umaal n e).noFrames = true := by
+  cases umaal <;> rfl
 
 /-- The arguments of a call, `r11` keeping `r12`. -/
 theorem head_ok {s : State} (n : Nat) :
@@ -93,7 +93,7 @@ the registers the calling convention keeps. -/
 theorem call_ok {s : State} {base : Addr} {size n e m : Nat} (hs : Ws s base size) (hz : contextBytes n ≤ size)
     (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
     (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (Impl.Dsa.Arm.Pow.call n e) s fun t => Ws t base size ∧
+    WP isa (Impl.Dsa.Arm.Pow.call umaal n e) s fun t => Ws t base size ∧
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) e % m ∧
       Outs base (scratch n) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r11, .lr] s t := by
@@ -125,7 +125,7 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n e : Nat}
     (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
     (ho₁ : val32 s₁.mem base (slot n 0) (2 * n) % 2 = 1) (hm₁ : 1 < val32 s₁.mem base (slot n 0) (2 * n))
     (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n)) :
-    SameTrace isa (Impl.Dsa.Arm.Pow.call n e) s₁ s₂ := by
+    SameTrace isa (Impl.Dsa.Arm.Pow.call umaal n e) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs []) a b :=
     fun _ _ => VG.Arm.Taint.agree_ofRegs fun _ h => nomatch h
   unfold Impl.Dsa.Arm.Pow.call
@@ -986,6 +986,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_ldrb wp_dp wp_cmp op2_imm op2_reg dpVal eval_ne
   eval_eq)
 
+variable {umaal : Bool}
+
 theorem _root_.VG.Proof.Mont.Arm.Dyn.OpKeep.trans {n o : Nat} {base : Addr} {s t u : State}
     (h₁ : OpKeep n base o s t) (h₂ : OpKeep n base o t u) : OpKeep n base o s u :=
   ⟨h₁.rest.trans h₂.rest, h₁.mem.trans h₂.mem⟩
@@ -1220,7 +1222,7 @@ theorem modulusMinus_ok {n size m amount : Nat} {base : Addr} {s : State} (h : C
 /-- `[resS] = [expS] [baseS] mod m`, from `R² mod m` in slot 7. -/
 theorem ordinaryMul_ok {n size m : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (hr2 : val32 s.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m) :
-    WP isa (ordinaryMul n) s fun t => Context n m base size t ∧
+    WP isa (ordinaryMul umaal n) s fun t => Context n m base size t ∧
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 11) (2 * n) * val32 s.mem base (slot n 8) (2 * n) % m ∧
       Outs base (streamRanges n) s.mem t.mem ∧ Rest dclob s t := by
@@ -1273,6 +1275,8 @@ namespace VG.Proof.Dsa.Arm.Pow
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.Pow VG.Impl.Dsa.Arm.Arith
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_str wp_ldr wp_dp op2_reg dpVal)
+
+variable {umaal : Bool}
 
 /-- The registers saved in the header, with `r12` the working space. -/
 theorem save_ok {s : State} {base : Addr} {size : Nat} (E : Entry s base size) (hz : 44 ≤ size) :
@@ -1334,7 +1338,7 @@ theorem ctx_of_rest {n m size : Nat} {base : Addr} {rs : List Reg} {s t : State}
 theorem mulBody_ok {s : State} {base : Addr} {size n m : Nat} (E : Entry s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
     (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (mulBody n) s fun t =>
+    WP isa (mulBody umaal n) s fun t =>
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) * val32 s.mem base (slot n 11) (2 * n) % m ∧
       Outs base (scratch n) s.mem t.mem ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
@@ -1492,7 +1496,7 @@ def mulK (n : Nat) : Contract isa where
   pub s t := s.gpr .r0 = t.gpr .r0
 
 theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (mulK n).pre s) :
-    ∃ tr t, Exec isa (mulBody n) s tr t ∧ abiPreserved s t ∧ (mulK n).post s t := by
+    ∃ tr t, Exec isa (mulBody umaal n) s tr t ∧ abiPreserved s t ∧ (mulK n).post s t := by
   obtain ⟨-, hwr, hnw, hz, hodd, hm1⟩ := h
   have E : Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
     ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
@@ -1501,7 +1505,7 @@ theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (
   exact ⟨tr, t, ex, ⟨P, hsp⟩, V, O⟩
 
 theorem mulK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
-    ConstantTime isa (mulK n).pre (mulK n).pub (mulBody n) := by
+    ConstantTime isa (mulK n).pre (mulK n).pub (mulBody umaal n) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
   have E : ∀ {s : State}, (mulK n).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H
@@ -1636,9 +1640,10 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Pow VG.Impl.Dsa.Arm.Arith
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_dp wp_movw op2_reg dpVal)
 
-theorem mulBody_noFrames (n : Nat) : (mulBody n).noFrames = true := by
-  simp only [mulBody, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, ordinaryMul, Dynamic.mul, rowD, digitRowD, mulRowD, csubD, Dynamic.zeros,
-    ptrLoop, one, powerTwo, addD, addDigits, Code.noFrames, Bool.and_self]
+variable {umaal : Bool}
+
+theorem mulBody_noFrames (n : Nat) : (mulBody umaal n).noFrames = true := by
+  cases umaal <;> rfl
 
 theorem doubles_noCalls (n k : Nat) : (doubles n k).noCalls = true := by
   unfold doubles
@@ -1654,7 +1659,7 @@ theorem reduceBody_noFrames (n : Nat) : (reduceBody n).noFrames = true := by
 theorem mulCall_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base size) (hz : contextBytes n ≤ size)
     (hn : 0 < n) (hn48 : n ≤ 48) (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m)
     (hodd : m % 2 = 1) :
-    WP isa (mulCall n) s fun t => Ws t base size ∧
+    WP isa (mulCall umaal n) s fun t => Ws t base size ∧
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) * val32 s.mem base (slot n 11) (2 * n) % m ∧
       Outs base (scratch n) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r11, .lr] s t := by
@@ -1685,7 +1690,7 @@ theorem mulCall_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat
     (hn : 0 < n) (hn48 : n ≤ 48)
     (ho₁ : val32 s₁.mem base (slot n 0) (2 * n) % 2 = 1) (hm₁ : 1 < val32 s₁.mem base (slot n 0) (2 * n))
     (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n)) :
-    SameTrace isa (mulCall n) s₁ s₂ := by
+    SameTrace isa (mulCall umaal n) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs []) a b :=
     fun _ _ => VG.Arm.Taint.agree_ofRegs fun _ h => nomatch h
   unfold mulCall head

@@ -31,16 +31,6 @@ x86_64 vg_aes_gcm_seal_prepared_aesni
 x86_64 vg_aes_gcm_seal_prepared_aesni_pclmul_avx
 x86_64 vg_aes_gcm_seal_prepared_pclmul
 x86_64 vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_stream_decrypt_prepared
-x86_64 vg_aes_gcm_stream_decrypt_prepared_aesni
-x86_64 vg_aes_gcm_stream_decrypt_prepared_pclmul
-x86_64 vg_aes_gcm_stream_encrypt_prepared
-x86_64 vg_aes_gcm_stream_encrypt_prepared_aesni
-x86_64 vg_aes_gcm_stream_encrypt_prepared_pclmul
-x86_64 vg_sha3_224_finalize
-x86_64 vg_sha3_256_finalize
-x86_64 vg_sha3_384_finalize
-x86_64 vg_sha3_512_finalize
 aarch64 vg_aes_cbc_decrypt
 aarch64 vg_aes_cbc_decrypt_aes
 aarch64 vg_aes_cbc_decrypt_aes_sha3
@@ -173,10 +163,8 @@ aarch64 vg_aes_xts_encrypt_unit_aes
 aarch64 vg_aes_xts_encrypt_unit_neon
 aarch64 vg_argon2
 aarch64 vg_blake2b_finalize
-aarch64 vg_blake2b_init
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
-aarch64 vg_blake2s_init
 aarch64 vg_blake2s_update
 aarch64 vg_blowfish_cbc_decrypt_chained
 aarch64 vg_blowfish_cbc_encrypt_chained
@@ -216,7 +204,6 @@ aarch64 vg_cast5_ofb_final
 aarch64 vg_chacha20_apply
 aarch64 vg_chacha20_apply_neon
 aarch64 vg_chacha20_apply_sve2
-aarch64 vg_chacha20_init
 aarch64 vg_chacha20_poly1305_open
 aarch64 vg_chacha20_poly1305_open_neon
 aarch64 vg_chacha20_poly1305_open_sve2
@@ -229,7 +216,6 @@ aarch64 vg_chacha20_poly1305_seal_gather_neon
 aarch64 vg_chacha20_poly1305_seal_gather_sve2
 aarch64 vg_chacha20_poly1305_seal_neon
 aarch64 vg_chacha20_poly1305_seal_sve2
-aarch64 vg_chacha20_set_nonce
 aarch64 vg_cmac_aes_absorb
 aarch64 vg_cmac_aes_absorb_aes
 aarch64 vg_cmac_aes_absorb_neon
@@ -242,7 +228,6 @@ aarch64 vg_cmac_aes_init_neon
 aarch64 vg_cmac_triple_des_absorb
 aarch64 vg_cmac_triple_des_finish
 aarch64 vg_cmac_triple_des_stream_init
-aarch64 vg_ct_eq
 aarch64 vg_dsa_derive_key
 aarch64 vg_dsa_generate_key
 aarch64 vg_dsa_parameter_search
@@ -361,9 +346,6 @@ aarch64 vg_idea_cfb64_decrypt
 aarch64 vg_idea_cfb64_decrypt_final
 aarch64 vg_idea_cfb64_encrypt
 aarch64 vg_idea_cfb64_encrypt_final
-aarch64 vg_idea_ecb
-aarch64 vg_idea_expand_key
-aarch64 vg_idea_invert_key
 aarch64 vg_idea_ofb
 aarch64 vg_idea_ofb_final
 aarch64 vg_md5_finalize
@@ -434,7 +416,6 @@ aarch64 vg_mldsa87_verify_message_prepared_sha3
 aarch64 vg_mldsa87_verify_prepared
 aarch64 vg_mldsa87_verify_prepared_sha3
 aarch64 vg_mldsa87_verify_sha3
-aarch64 vg_mlkem1024_check_ek
 aarch64 vg_mlkem1024_decaps
 aarch64 vg_mlkem1024_decaps_x2_sha3
 aarch64 vg_mlkem1024_decaps_x2_sha3_keccak_sha3
@@ -447,7 +428,6 @@ aarch64 vg_mlkem1024_encaps_x2_sha3_keccak_sha3
 aarch64 vg_mlkem1024_keygen
 aarch64 vg_mlkem1024_keygen_x2_sha3
 aarch64 vg_mlkem1024_keygen_x2_sha3_keccak_sha3
-aarch64 vg_mlkem768_check_ek
 aarch64 vg_mlkem768_decaps
 aarch64 vg_mlkem768_decaps_x2_sha3
 aarch64 vg_mlkem768_decaps_x2_sha3_keccak_sha3
@@ -476,7 +456,6 @@ aarch64 vg_pbkdf2_hmac_sha512_256
 aarch64 vg_pbkdf2_hmac_sha512_256_sha512
 aarch64 vg_pbkdf2_hmac_sha512_sha512
 aarch64 vg_poly1305_finalize
-aarch64 vg_poly1305_init
 aarch64 vg_poly1305_update
 aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
@@ -524,12 +503,10 @@ aarch64 vg_sha224_digest
 aarch64 vg_sha224_digest_sha2
 aarch64 vg_sha224_finalize
 aarch64 vg_sha224_finalize_sha2
-aarch64 vg_sha224_init
 aarch64 vg_sha256_digest
 aarch64 vg_sha256_digest_sha2
 aarch64 vg_sha256_finalize
 aarch64 vg_sha256_finalize_sha2
-aarch64 vg_sha256_init
 aarch64 vg_sha256_update
 aarch64 vg_sha256_update_sha2
 aarch64 vg_sha384_digest
@@ -865,12 +842,6 @@ arm vg_ecdsa_secp256k1_sign
 arm vg_ecdsa_secp256k1_sign_umaal
 arm vg_ecdsa_secp256k1_verify
 arm vg_ecdsa_secp256k1_verify_umaal
-arm vg_ed25519_key_pair
-arm vg_ed25519_sign_expanded
-arm vg_ed25519_verify
-arm vg_ed448_public_key
-arm vg_ed448_sign_cached
-arm vg_ed448_verify
 arm vg_ffdh_check_domain
 arm vg_ffdh_check_domain_umaal
 arm vg_ffdh_check_private
@@ -1099,12 +1070,8 @@ arm vg_triple_des_ecb_encrypt
 arm vg_triple_des_expand_key
 arm vg_triple_des_ofb
 arm vg_triple_des_ofb_final
-arm vg_x25519_base
-arm vg_x25519_base_umaal
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
-arm vg_x448_base
-arm vg_x448_exchange
 arm vg_zeroize
 powerpc64le vg_aes_cbc_decrypt
 powerpc64le vg_aes_cbc_encrypt

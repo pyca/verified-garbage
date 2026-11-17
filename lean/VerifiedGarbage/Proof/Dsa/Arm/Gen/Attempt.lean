@@ -56,6 +56,8 @@ open VG.Proof.Rsa.Arm.Recover (VP)
 open VG.Arm.FrameStack (armStack belowA)
 open VG.Proof.Dsa.Arm (checkPre checkArm checkParams checkRes)
 
+variable {umaal : Bool}
+
 /-- The bytes of p‖q‖g. -/
 abbrev nPk (G : GP) : Nat := 2 * G.pLen + G.qLen
 
@@ -196,7 +198,7 @@ theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
       t.wr = s.wr → Frame [G.rs sA (wa G.pLen), G.rU, G.rBelow] s.mem t.mem →
       t.gpr .r0 = (if Spec.Dsa.checkParametersBytes G.pLen G.qLen
         (Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G)) then 1 else 0) → Q t) :
-    WP isa (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters) s Q := by
+    WP isa (callWith name (VG.Impl.Dsa.Arm.Generate.checkParameters umaal)) s Q := by
   have gi := h.gi
   have s176 := gi.sp176
   obtain pre := h.cEntry_pre regs hlq
@@ -251,7 +253,7 @@ theorem checkCall_ct {G : GP} {c : Cfg} {name : String} (hlq : Spec.Dsa.generati
     {pk : List Byte} :
     RelCT isa (fun s₁ s₂ => (∃ σ, SS G σ c s₁) ∧ CArgs G s₁ ∧ Spec.Rsa.bytesAt s₁.mem (G.sa sPacked) (nPk G) = pk ∧
         (∃ σ, SS G σ c s₂) ∧ CArgs G s₂ ∧ Spec.Rsa.bytesAt s₂.mem (G.sa sPacked) (nPk G) = pk)
-      (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters) fun _ _ => True := by
+      (callWith name (VG.Impl.Dsa.Arm.Generate.checkParameters umaal)) fun _ _ => True := by
   unfold callWith
   refine RelCT.frame (fun s₁ s₂ ⟨⟨_, h₁⟩, _, _, ⟨_, h₂⟩, _, _⟩ => by rw [h₁.gi.sp, h₂.gi.sp]) ?_
   intro a b ta tb a' b' hp ea eb
@@ -292,7 +294,7 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 theorem checkCall_vp {name : String} {pk : List Byte} {cl' : Claims}
     (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) (hpk : (sPacked, pk) ∈ c.cl) (hpkl : pk.length = nPk G)
     (h88 : fUsedOut ∉ c.LS) (h92 : fUsedOut + 4 ∉ c.LS) (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ Apart sA (wa G.pLen) x) :
-    VP (fun σ s => St G c X σ s ∧ CArgs G s) (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters)
+    VP (fun σ s => St G c X σ s ∧ CArgs G s) (callWith name (VG.Impl.Dsa.Arm.Generate.checkParameters umaal))
       (fun σ t => St G { c with cl := cl' } X σ t ∧
         t.gpr .r0 = (if Spec.Dsa.checkParametersBytes G.pLen G.qLen pk then 1 else 0)) := by
   obtain bytes : ∀ σ s, SS G σ c s → Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G) = pk := fun σ s h => by
@@ -327,6 +329,8 @@ open VG VG.Arm VG.Proof.Rsa.Arm.Keys
 open VG.Impl.Dsa.Arm.Generation
 open VG.Proof.X25519.Arm (Rest Upd wp_movw wp_mov wp_cmp op2_imm eval_eq)
 open VG.Proof.Rsa.Arm.Recover (VP)
+
+variable {umaal : Bool}
 
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
@@ -370,7 +374,7 @@ abbrev ckCfg (c : Cfg) (pk : List Byte) (ok : Bool) : Cfg :=
   if ok then ({ c with cl := (sPacked, pk) :: c.cl }).setV fStatus 1 else { c with cl := (sPacked, pk) :: c.cl }
 
 theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen)
-    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal)
     (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) {pB qB gB : List Byte}
     (hP : (sPBE, pB) ∈ c.cl) (hQ : (sQ, qB) ∈ c.cl) (hG : (sG, gB) ∈ c.cl)
     (hPl : pB.length = G.pLen) (hQl : qB.length = G.qLen) (hGl : gB.length = G.pLen)
@@ -498,6 +502,8 @@ open VG.Proof.X25519.Arm (Rest Upd wp_dp op2_reg dpVal)
 open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords)
 open VG.Proof.Dsa.Generation (windowCandidates generatorCount refillAttempt)
+
+variable {umaal : Bool}
 
 /-! ## The result of a seed -/
 
@@ -709,7 +715,7 @@ theorem gShort_vp {g : Geo} (hg : g.pLen = G.pLen) {c : Cfg} {HL : Nat} (hL : fH
 
 /-- The search for g over the window after `rest` and the check, after p. -/
 theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) (ok : PowOk n g.e g.powCode)
-    (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters)
+    (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen) (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal)
     (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) (hn : 8 * n = G.pLen)
     (hpm : g.powMod = modS n) (hpb : g.powBase = baseS n) (hpe : g.powExp = expS n) (hpr : g.powRes = resS n)
     (hctx : contextBytes n ≤ wa G.pLen) (he4 : 4 * g.e ≤ 8 * n) (he0 : 0 < g.e)
@@ -918,7 +924,7 @@ theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.
     (hH : ∀ m, HO.H m = Spec.Dsa.seedHash (8 * G.qLen) m) (hwl : G.witB.length = G.witLen)
     (hsize : keyOff + 8 * keyWords (8 * G.pLen) ≤ wa G.pLen)
     (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * G.qLen) bs).length = 8 * G.qLen)
-    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters) (hn : 8 * n = G.pLen)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal) (hn : 8 * n = G.pLen)
     (hpm : g.powMod = modS n) (hpb : g.powBase = baseS n) (hpe : g.powExp = expS n) (hpr : g.powRes = resS n)
     (hctx : contextBytes n ≤ wa G.pLen) (he4 : 4 * g.e ≤ 8 * n) (he0 : 0 < g.e)
     (he : 8 * G.pLen - 8 * G.qLen + 1 ≤ 32 * g.e)
@@ -1016,7 +1022,7 @@ theorem attempt_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okq : PrimeOk (8 * G.q
     (hsize : keyOff + 8 * keyWords (8 * G.pLen) ≤ wa G.pLen)
     (hsizeq : keyOff + 8 * keyWords (8 * G.qLen) ≤ wa G.pLen) (hb8 : 8 * G.qLen / 8 ≤ wa G.pLen)
     (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * G.qLen) bs).length = 8 * G.qLen)
-    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters) (hn : 8 * n = G.pLen)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal) (hn : 8 * n = G.pLen)
     (hpm : g.powMod = modS n) (hpb : g.powBase = baseS n) (hpe : g.powExp = expS n) (hpr : g.powRes = resS n)
     (hctx : contextBytes n ≤ wa G.pLen) (he4 : 4 * g.e ≤ 8 * n) (he0 : 0 < g.e)
     (he : 8 * G.pLen - 8 * G.qLen + 1 ≤ 32 * g.e)

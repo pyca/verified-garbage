@@ -30,6 +30,14 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.Impl.Residue.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
+meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 
@@ -215,4 +223,21 @@ theorem verified : Verified target eq (Spec.Ct.eqContract abi) := by
     · exact h.2.2.1
     · exact h.2.2.2.1
   · sig_implies [Spec.Ct.eqContract, Spec.Ct.eqSig, contract, abi, argRegs] [sat] using sat
+
+/-! ## Returning without secret residue
+
+`eq` leaves bytes of the buffers in `x6` and `x7` and what it has accumulated
+in `x4`: `eqCleared` clears them before returning (`Impl.Residue.AArch64.withClears`),
+which the residue analysis then proves leaves nothing secret but the result
+(`RTaint.noResidue_of_check`). -/
+
+/-- `eq`, then `x4`, `x6` and `x7` cleared. -/
+abbrev eqCleared : Prog isa := Impl.Residue.AArch64.withClears [.x4, .x6, .x7] [] none eq
+
+theorem eqCleared_verified : Verified target eqCleared (Spec.Ct.eqContract abi) :=
+  Clears.Verified.withClears verified (by decide)
+
+theorem eqCleared_noResidue (k : Contract isa) : NoResidue eqCleared k 32 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
 end VG.Proof.Ct.AArch64

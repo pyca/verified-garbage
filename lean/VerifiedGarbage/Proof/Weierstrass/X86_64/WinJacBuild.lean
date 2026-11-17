@@ -104,8 +104,8 @@ theorem dbluN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) (h15 : e 
       runOps dbluN e 5 * (1 * 1) = e 13 * (runOps dbluN e 10 * runOps dbluN e 10) ∧
       runOps dbluN e 4 * (1 * 1 * 1) =
         e 14 * (runOps dbluN e 10 * runOps dbluN e 10 * runOps dbluN e 10) := by
-  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
-  simp only [Nat.reduceEqDiff, ite_true, ite_false, h15, dblJF, Prod.mk.injEq]
+  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+    Nat.reduceEqDiff, ↓reduceIte, h15, dblJF, Prod.mk.injEq]
   refine ⟨⟨?_, ?_, ?_⟩, trivial, trivial, ?_, ?_⟩ <;> grind
 
 /-- ZADDU of `D = (X1, Y1)` and `T = (X2, Y2)` sharing `Z`, with `T`'s powers. -/
@@ -114,8 +114,8 @@ theorem zadduN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
         zadduF (e 0) (e 1) (e 8) (e 9) (e 10) ∧
       (e 11 = e 10 * e 10 → runOps zadduN e 11 = runOps zadduN e 10 * runOps zadduN e 10) ∧
       runOps zadduN e 12 = runOps zadduN e 11 * runOps zadduN e 10 := by
-  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
-  simp only [Nat.reduceEqDiff, ite_true, ite_false, zadduF]
+  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+    Nat.reduceEqDiff, ↓reduceIte, zadduF]
   refine ⟨?_, fun h => ?_, ?_⟩ <;> first | trivial | grind
 
 /-- `D`'s `x`, `y` and the temporaries are other slots. -/

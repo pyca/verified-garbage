@@ -371,12 +371,15 @@ theorem correct {s : State} (hp : (digestG hH.SH (dbytes H + H.F)).pre s) :
   have hdb := hl.fb
   obtain hsp : dbytes H ≤ s.sp.toNat := by have := hp.2.2.2.2.1; omega_arith
   refine WP.alloc ⟨by omega_arith, hdb.2.1, hdb.2.2⟩ hsp
-    (WP.mono (digestMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hO⟩ => ?_)
+    (WP.mono (digestMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hO⟩ m u f => ?_)
   rw [freed_eq hwr hsp']
+  -- The `free` loses the frame's bytes, which lie apart from the digest.
   refine ⟨⟨hk, rfl, hra⟩, ?_⟩
   show bytesAt _ (s.gpr .a2) hH.SH.digestBytes = _
   rw [hH.hD]
-  exact hO
+  refine Eq.trans ?_ hO
+  exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
+    lost_byte f (R := oR H (allocd (dbytes H) s)) (pre_alloc hH hp).f_o.symm hi
 
 /-! ## The shared contract -/
 

@@ -6,7 +6,9 @@ public import VerifiedGarbage.Impl.X25519.Arm
 32-bit `mul`. The multiplication accumulator follows the 22 field slots, and
 the registers that the functions of point arithmetic save follow it; packed
 point tables let the complete implementation fit the reviewed 8 KiB scratch
-contract. No long-multiply instructions are used. -/
+contract. No long-multiply instructions are used, but in the functions whose
+names end in `_umaal`, for CPUs with `umaal`, whose products are by `umaal` on
+the same limbs packed in words (`Impl/Ed25519/Arm/MulFn.lean`). -/
 
 @[expose] public section
 

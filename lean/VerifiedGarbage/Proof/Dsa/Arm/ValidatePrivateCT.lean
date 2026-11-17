@@ -47,6 +47,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest Upd Mupd eval_eq wp_mov op2_imm)
 
+variable {umaal : Bool}
+
 /-! ## The contract -/
 
 /-- What `vg_dsa_validate_private_key` needs: `(key = r0, key_len = r1,
@@ -162,7 +164,7 @@ theorem validatePrivIn {s t : State} {base : Addr} {size : Nat} (h : validatePri
   obtain ⟨_, hrd, _, dKS, _, fK, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat)
@@ -194,7 +196,7 @@ theorem validatePrivIn {s t : State} {base : Addr} {size : Nat} (h : validatePri
 /-! ## Validation -/
 
 theorem validatePriv_correct {s : State} (h : validatePrivPre s) :
-    WP isa PrevalidatedSign.validate s fun t => abiPreserved s t ∧ validatePrivArm.post s t := by
+    WP isa (PrevalidatedSign.validate umaal) s fun t => abiPreserved s t ∧ validatePrivArm.post s t := by
   obtain ⟨hsp, hrd, hwr, _, _, _, hsb, hv, hr1, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
@@ -207,11 +209,11 @@ theorem validatePriv_correct {s : State} (h : validatePrivPre s) :
   refine WP.seq (WP.mono (validateEntry_of hsp (by rw [hrd]; simp) hwr hsb hv hsw) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := privateFields_ok s
-  refine WP.seq (genDispatch_ok PrevalidatedSign.validateSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (PrevalidatedSign.validateSized umaal) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -, -, -⟩ := validatePrivIn h rfl rfl E₁
   unfold PrevalidatedSign.validateSized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
@@ -287,6 +289,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
+
+variable {umaal : Bool}
 
 
 /-- The key's operands. -/
@@ -366,7 +370,7 @@ theorem priv_bytes {s₁ s₂ : State} (h₁ : validatePrivPre s₁) (hl : valid
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
 theorem validatePriv_constantTime :
-    ConstantTime isa validatePrivArm.pre validatePrivArm.pub PrevalidatedSign.validate := by
+    ConstantTime isa validatePrivArm.pre validatePrivArm.pub (PrevalidatedSign.validate umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   obtain a0 := ha 0 (by decide)
@@ -394,7 +398,7 @@ theorem validatePriv_constantTime :
       obtain E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace PrevalidatedSign.validateSized _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
+  refine genDispatch_trace (PrevalidatedSign.validateSized umaal) _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
     (by decide) (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)])
     (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
@@ -402,7 +406,7 @@ theorem validatePriv_constantTime :
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
+  obtain hz : 12016 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
   obtain C₁ := privCtx h₁ rfl rfl F₁
   obtain C₂ := privCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂

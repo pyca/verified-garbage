@@ -3,7 +3,1452 @@
 //! `assembly/ed448.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_ed448_public_key_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED448_PUBLIC_KEY_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 57 bytes.
+/// * `seed` must be valid for reads of 57 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `seed` must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `seed` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_public_key_umaal(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+ldr r0, [sp, #256]
+add r0, r0, #0
+movw r1, #0
+str r1, [r0, #0]
+str r1, [r0, #4]
+str r1, [r0, #8]
+str r1, [r0, #12]
+str r1, [r0, #16]
+str r1, [r0, #20]
+str r1, [r0, #24]
+str r1, [r0, #28]
+str r1, [r0, #32]
+str r1, [r0, #36]
+str r1, [r0, #40]
+str r1, [r0, #44]
+str r1, [r0, #48]
+str r1, [r0, #52]
+str r1, [r0, #56]
+str r1, [r0, #60]
+str r1, [r0, #64]
+str r1, [r0, #68]
+str r1, [r0, #72]
+str r1, [r0, #76]
+str r1, [r0, #80]
+str r1, [r0, #84]
+str r1, [r0, #88]
+str r1, [r0, #92]
+str r1, [r0, #96]
+str r1, [r0, #100]
+str r1, [r0, #104]
+str r1, [r0, #108]
+str r1, [r0, #112]
+str r1, [r0, #116]
+str r1, [r0, #120]
+str r1, [r0, #124]
+str r1, [r0, #128]
+str r1, [r0, #132]
+str r1, [r0, #136]
+str r1, [r0, #140]
+str r1, [r0, #144]
+str r1, [r0, #148]
+str r1, [r0, #152]
+str r1, [r0, #156]
+str r1, [r0, #160]
+str r1, [r0, #164]
+str r1, [r0, #168]
+str r1, [r0, #172]
+str r1, [r0, #176]
+str r1, [r0, #180]
+str r1, [r0, #184]
+str r1, [r0, #188]
+str r1, [r0, #192]
+str r1, [r0, #196]
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+ldr r3, [sp, #252]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+ldr r0, [sp, #256]
+add r0, r0, #208
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #0
+movw r1, #136
+movw r2, #57
+movw r3, #31
+bl {vg_keccak_pad_scratch}
+movw r0, #114
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #24
+bl {vg_keccak_squeeze_scratch}
+add r12, sp, #24
+ldrb r0, [r12, #0]
+and r0, r0, #252
+strb r0, [r12, #0]
+ldrb r0, [r12, #55]
+orr r0, r0, #128
+strb r0, [r12, #55]
+movw r0, #0
+strb r0, [r12, #56]
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r1, sp, #24
+ldr r2, [sp, #256]
+add r2, r2, #0
+bl {vg_ed448_scalar_base_umaal}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #24]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #28]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #32]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #36]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #40]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #44]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #48]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #52]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #56]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #60]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #64]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #68]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #76]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #80]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #84]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #88]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #96]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #100]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #104]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #108]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #112]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #116]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #120]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #124]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #128]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #132]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #136]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #140]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #144]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #148]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #184]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #188]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #192]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #196]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #200]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #204]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #208]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #212]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #216]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #220]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #224]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #228]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #232]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #236]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #240]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #244]
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_base_umaal = sym super::ed448::vg_ed448_scalar_base_umaal::vg_ed448_scalar_base_umaal,
+    )
+}
+
+/// The CPU features `vg_ed448_sign_cached_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED448_SIGN_CACHED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 114 bytes.
+/// * `seed` must be valid for reads of 57 bytes.
+/// * `pk` must be valid for reads of 57 bytes.
+/// * `context` must be valid for reads of `ctxlen` bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 57 bytes at `pk` must equal the public key derived from the 57 bytes at `seed` by RFC 8032 §5.2.5 (`VG.Spec.Ed448.publicKey`).
+/// * `ctxlen` must be at most 255.
+/// * `seed` must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context`, `message` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_sign_cached_umaal(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+add r12, sp, #248
+str r3, [r12, #12]
+ldr lr, [sp, #280]
+add r12, sp, #248
+str lr, [r12, #16]
+ldr lr, [sp, #284]
+add r12, sp, #248
+str lr, [r12, #20]
+ldr r0, [sp, #264]
+lsl r0, r0, #8
+add r12, sp, #236
+str r0, [r12, #8]
+movw r0, #26963
+movt r0, #17767
+str r0, [r12, #0]
+movw r0, #13412
+movt r0, #14388
+str r0, [r12, #4]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #0
+str r1, [r0, #0]
+str r1, [r0, #4]
+str r1, [r0, #8]
+str r1, [r0, #12]
+str r1, [r0, #16]
+str r1, [r0, #20]
+str r1, [r0, #24]
+str r1, [r0, #28]
+str r1, [r0, #32]
+str r1, [r0, #36]
+str r1, [r0, #40]
+str r1, [r0, #44]
+str r1, [r0, #48]
+str r1, [r0, #52]
+str r1, [r0, #56]
+str r1, [r0, #60]
+str r1, [r0, #64]
+str r1, [r0, #68]
+str r1, [r0, #72]
+str r1, [r0, #76]
+str r1, [r0, #80]
+str r1, [r0, #84]
+str r1, [r0, #88]
+str r1, [r0, #92]
+str r1, [r0, #96]
+str r1, [r0, #100]
+str r1, [r0, #104]
+str r1, [r0, #108]
+str r1, [r0, #112]
+str r1, [r0, #116]
+str r1, [r0, #120]
+str r1, [r0, #124]
+str r1, [r0, #128]
+str r1, [r0, #132]
+str r1, [r0, #136]
+str r1, [r0, #140]
+str r1, [r0, #144]
+str r1, [r0, #148]
+str r1, [r0, #152]
+str r1, [r0, #156]
+str r1, [r0, #160]
+str r1, [r0, #164]
+str r1, [r0, #168]
+str r1, [r0, #172]
+str r1, [r0, #176]
+str r1, [r0, #180]
+str r1, [r0, #184]
+str r1, [r0, #188]
+str r1, [r0, #192]
+str r1, [r0, #196]
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+ldr r3, [sp, #252]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r3, #31
+bl {vg_keccak_pad_scratch}
+movw r0, #114
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #122
+bl {vg_keccak_squeeze_scratch}
+add r12, sp, #122
+ldrb r0, [r12, #0]
+and r0, r0, #252
+strb r0, [r12, #0]
+ldrb r0, [r12, #55]
+orr r0, r0, #128
+strb r0, [r12, #55]
+movw r0, #0
+strb r0, [r12, #56]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #0
+str r1, [r0, #0]
+str r1, [r0, #4]
+str r1, [r0, #8]
+str r1, [r0, #12]
+str r1, [r0, #16]
+str r1, [r0, #20]
+str r1, [r0, #24]
+str r1, [r0, #28]
+str r1, [r0, #32]
+str r1, [r0, #36]
+str r1, [r0, #40]
+str r1, [r0, #44]
+str r1, [r0, #48]
+str r1, [r0, #52]
+str r1, [r0, #56]
+str r1, [r0, #60]
+str r1, [r0, #64]
+str r1, [r0, #68]
+str r1, [r0, #72]
+str r1, [r0, #76]
+str r1, [r0, #80]
+str r1, [r0, #84]
+str r1, [r0, #88]
+str r1, [r0, #92]
+str r1, [r0, #96]
+str r1, [r0, #100]
+str r1, [r0, #104]
+str r1, [r0, #108]
+str r1, [r0, #112]
+str r1, [r0, #116]
+str r1, [r0, #120]
+str r1, [r0, #124]
+str r1, [r0, #128]
+str r1, [r0, #132]
+str r1, [r0, #136]
+str r1, [r0, #140]
+str r1, [r0, #144]
+str r1, [r0, #148]
+str r1, [r0, #152]
+str r1, [r0, #156]
+str r1, [r0, #160]
+str r1, [r0, #164]
+str r1, [r0, #168]
+str r1, [r0, #172]
+str r1, [r0, #176]
+str r1, [r0, #180]
+str r1, [r0, #184]
+str r1, [r0, #188]
+str r1, [r0, #192]
+str r1, [r0, #196]
+movw r0, #10
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #236
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #260]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+add r3, sp, #179
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #288]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #268]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r3, #31
+bl {vg_keccak_pad_scratch}
+movw r0, #114
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #8
+bl {vg_keccak_squeeze_scratch}
+ldr r0, [sp, #248]
+add r0, r0, #57
+add r1, sp, #8
+ldr r2, [sp, #292]
+add r2, r2, #0
+bl {vg_ed448_scalar_reduce}
+ldr r0, [sp, #248]
+add r0, r0, #0
+ldr r1, [sp, #248]
+add r1, r1, #57
+ldr r2, [sp, #292]
+add r2, r2, #0
+bl {vg_ed448_scalar_base_umaal}
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #0
+str r1, [r0, #0]
+str r1, [r0, #4]
+str r1, [r0, #8]
+str r1, [r0, #12]
+str r1, [r0, #16]
+str r1, [r0, #20]
+str r1, [r0, #24]
+str r1, [r0, #28]
+str r1, [r0, #32]
+str r1, [r0, #36]
+str r1, [r0, #40]
+str r1, [r0, #44]
+str r1, [r0, #48]
+str r1, [r0, #52]
+str r1, [r0, #56]
+str r1, [r0, #60]
+str r1, [r0, #64]
+str r1, [r0, #68]
+str r1, [r0, #72]
+str r1, [r0, #76]
+str r1, [r0, #80]
+str r1, [r0, #84]
+str r1, [r0, #88]
+str r1, [r0, #92]
+str r1, [r0, #96]
+str r1, [r0, #100]
+str r1, [r0, #104]
+str r1, [r0, #108]
+str r1, [r0, #112]
+str r1, [r0, #116]
+str r1, [r0, #120]
+str r1, [r0, #124]
+str r1, [r0, #128]
+str r1, [r0, #132]
+str r1, [r0, #136]
+str r1, [r0, #140]
+str r1, [r0, #144]
+str r1, [r0, #148]
+str r1, [r0, #152]
+str r1, [r0, #156]
+str r1, [r0, #160]
+str r1, [r0, #164]
+str r1, [r0, #168]
+str r1, [r0, #172]
+str r1, [r0, #176]
+str r1, [r0, #180]
+str r1, [r0, #184]
+str r1, [r0, #188]
+str r1, [r0, #192]
+str r1, [r0, #196]
+movw r0, #10
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #236
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #260]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #248]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #256]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #288]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #268]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r3, #31
+bl {vg_keccak_pad_scratch}
+movw r0, #114
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #292]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #8
+bl {vg_keccak_squeeze_scratch}
+add r0, sp, #179
+add r1, sp, #8
+ldr r2, [sp, #292]
+add r2, r2, #0
+bl {vg_ed448_scalar_reduce}
+ldr r0, [sp, #292]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #248]
+add r0, r0, #57
+ldr r1, [sp, #248]
+add r1, r1, #57
+add r2, sp, #179
+add r3, sp, #122
+bl {vg_ed448_scalar_mul_add}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #8]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #12]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #16]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #20]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #24]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #28]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #32]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #36]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #40]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #44]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #48]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #52]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #56]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #60]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #64]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #68]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #76]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #80]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #84]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #88]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #96]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #100]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #104]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #108]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #112]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #116]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #120]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #124]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #128]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #132]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #136]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #140]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #144]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #148]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #184]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #188]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #192]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #196]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #200]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #204]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #208]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #212]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #216]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #220]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #224]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #228]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #232]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #236]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #240]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #244]
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
+        vg_ed448_scalar_base_umaal = sym super::ed448::vg_ed448_scalar_base_umaal::vg_ed448_scalar_base_umaal,
+        vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed448_verify_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED448_VERIFY_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 57 bytes.
+/// * `context` must be valid for reads of `ctxlen` bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 114 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `context`, `message`, `signature` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_verify_umaal(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r"lsr r12, r2, #8
+cmp r12, #0
+beq 20f
+movw r0, #0
+b 21f
+20:
+push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+add r12, sp, #248
+str r3, [r12, #12]
+ldr lr, [sp, #280]
+add r12, sp, #248
+str lr, [r12, #16]
+ldr lr, [sp, #284]
+add r12, sp, #248
+str lr, [r12, #20]
+ldr r0, [sp, #256]
+lsl r0, r0, #8
+add r12, sp, #24
+str r0, [r12, #8]
+movw r0, #26963
+movt r0, #17767
+str r0, [r12, #0]
+movw r0, #13412
+movt r0, #14388
+str r0, [r12, #4]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #0
+str r1, [r0, #0]
+str r1, [r0, #4]
+str r1, [r0, #8]
+str r1, [r0, #12]
+str r1, [r0, #16]
+str r1, [r0, #20]
+str r1, [r0, #24]
+str r1, [r0, #28]
+str r1, [r0, #32]
+str r1, [r0, #36]
+str r1, [r0, #40]
+str r1, [r0, #44]
+str r1, [r0, #48]
+str r1, [r0, #52]
+str r1, [r0, #56]
+str r1, [r0, #60]
+str r1, [r0, #64]
+str r1, [r0, #68]
+str r1, [r0, #72]
+str r1, [r0, #76]
+str r1, [r0, #80]
+str r1, [r0, #84]
+str r1, [r0, #88]
+str r1, [r0, #92]
+str r1, [r0, #96]
+str r1, [r0, #100]
+str r1, [r0, #104]
+str r1, [r0, #108]
+str r1, [r0, #112]
+str r1, [r0, #116]
+str r1, [r0, #120]
+str r1, [r0, #124]
+str r1, [r0, #128]
+str r1, [r0, #132]
+str r1, [r0, #136]
+str r1, [r0, #140]
+str r1, [r0, #144]
+str r1, [r0, #148]
+str r1, [r0, #152]
+str r1, [r0, #156]
+str r1, [r0, #160]
+str r1, [r0, #164]
+str r1, [r0, #168]
+str r1, [r0, #172]
+str r1, [r0, #176]
+str r1, [r0, #180]
+str r1, [r0, #184]
+str r1, [r0, #188]
+str r1, [r0, #192]
+str r1, [r0, #196]
+movw r0, #10
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #24
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #256]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #252]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #268]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+movw r0, #57
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #248]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+ldr r3, [sp, #260]
+add r3, r3, #0
+bl {vg_keccak_absorb_scratch}
+mov r2, r0
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+movw r3, #31
+bl {vg_keccak_pad_scratch}
+movw r0, #114
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #208
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #288]
+add r0, r0, #0
+movw r1, #136
+movw r2, #0
+add r3, sp, #40
+bl {vg_keccak_squeeze_scratch}
+add r0, sp, #160
+add r1, sp, #40
+ldr r2, [sp, #288]
+add r2, r2, #0
+bl {vg_ed448_scalar_reduce}
+ldr r0, [sp, #248]
+add r0, r0, #0
+ldr r1, [sp, #268]
+add r1, r1, #0
+add r2, sp, #160
+ldr r3, [sp, #288]
+add r3, r3, #0
+bl {vg_ed448_verify_equation_umaal}
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+21:
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
+        vg_ed448_verify_equation_umaal = sym super::ed448::vg_ed448_verify_equation_umaal::vg_ed448_verify_equation_umaal,
+    )
+}
+
+/// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -304,6 +1749,86 @@ add sp, sp, #248
 add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -313,6 +1838,8 @@ bx lr",
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -950,6 +2477,86 @@ add sp, sp, #248
 add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -961,6 +2568,8 @@ bx lr",
 }
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1174,6 +2783,85 @@ add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
 21:
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1188,6 +2876,10 @@ bx lr",
 pub(crate) mod vg_ed448_scalar_base;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_scalar_base_umaal.rs"]
+pub(crate) mod vg_ed448_scalar_base_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_mul_add.rs"]
 pub(crate) mod vg_ed448_scalar_mul_add;
 
@@ -1200,12 +2892,20 @@ pub(crate) mod vg_ed448_scalar_reduce;
 pub(crate) mod vg_ed448_verify_equation;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_verify_equation_umaal.rs"]
+pub(crate) mod vg_ed448_verify_equation_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_add.rs"]
 pub(crate) mod vg_gf448_r16_add;
 
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_mul.rs"]
 pub(crate) mod vg_gf448_r16_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf448_r16_mul_umaal.rs"]
+pub(crate) mod vg_gf448_r16_mul_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_sub.rs"]

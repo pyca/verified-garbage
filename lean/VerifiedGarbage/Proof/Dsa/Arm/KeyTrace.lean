@@ -21,6 +21,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 /-- One run: its schedule, and the caller's operands `ins` with values `val`. -/
 structure Ctx (base : Addr) (size pLen qLen nP nQ : Nat) (ins : List (Pointer × Nat)) (val : Pointer → Nat)
     (s : State) : Prop where
@@ -151,12 +153,12 @@ theorem subgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {in
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.subgroup pLen qLen) s₁ s₂ := by
+    SameTrace isa (Validate.subgroup umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
+  obtain ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   obtain pt : PtrOk (.local Impl.Dsa.Layout.t) := (by decide : Impl.Dsa.Layout.t < 2 ^ 16)
   simp only [Validate.subgroup, Core.sequence, List.foldr]
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
@@ -196,7 +198,7 @@ theorem publicKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {i
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.publicKey pLen qLen) s₁ s₂ :=
+    SameTrace isa (Validate.publicKey umaal pLen qLen) s₁ s₂ :=
   SameTrace.seq (domain_trace X mp mq mg my D₁ D₂)
     (domain_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (domain_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
@@ -207,12 +209,12 @@ theorem privateKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins) (mx : (.input .x, qLen) ∈ ins) (mk : (.input .nonce, qLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.privateKey pLen qLen) s₁ s₂ := by
+    SameTrace isa (Validate.privateKey umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  obtain ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
+  obtain ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   simp only [Validate.privateKey, Core.sequence, List.foldr]
   refine SameTrace.assoc_left (SameTrace.seq (range_trace X.C₁.S.ws X.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
       (X.C₁.inp mq).toReady (X.C₂.inp mq).toReady (X.C₁.inp mx).toReady (X.E _ mq) (X.E _ mx) false)

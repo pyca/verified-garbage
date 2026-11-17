@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Hash`. -/
@@ -66,21 +67,22 @@ def scalar : Backend where
   features := []
   hash := {
     initName := Spec.Blake2.initBApi.name
-    init := Impl.Blake2.AArch64.Stream.init Spec.Blake2.b
+    init := Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
     updateName := "vg_blake2b_update_scratch"
     update := Impl.Blake2.AArch64.Stream.update Spec.Blake2.b
     finalizeName := "vg_blake2b_finalize_scratch"
     finalize := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b }
-  ok := ⟨Proof.Blake2.AArch64.Stream.initB_verified,
+  ok := ⟨Proof.Blake2.AArch64.Stream.initBCleared_verified,
     Proof.Blake2.AArch64.Stream.updateB_verified, Proof.Blake2.AArch64.Stream.finalizeB_verified,
     by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
-  initCT := Proof.Blake2.AArch64.Stream.initB_ct
+  initCT := VG.AArch64.Clears.ct_withClears Proof.Blake2.AArch64.Stream.initB_ct (by decide)
   updateCT := Proof.Blake2.AArch64.Stream.updateB_ct
   finalizeCT := Proof.Blake2.AArch64.Stream.finalizeB_ct
   initV := by decide +kernel
   updateV := by decide +kernel
   finalizeV := by decide +kernel
-  initCorrect := Proof.Blake2.AArch64.Stream.initB_correct
+  initCorrect := VG.AArch64.Clears.correct_withClears Proof.Blake2.AArch64.Stream.initB_correct
+    Proof.Blake2.AArch64.Stream.initB_post (by decide)
   updateCorrect := Proof.Blake2.AArch64.Stream.updateB_correct
   finalizeCorrect := Proof.Blake2.AArch64.Stream.finalizeB_correct
 

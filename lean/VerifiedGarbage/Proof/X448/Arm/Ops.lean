@@ -18,6 +18,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 inductive FieldOp
   | mul (o a b : Index)
   | add (o a b : Index)
@@ -45,7 +47,7 @@ def applyOps : List FieldOp → Env → Env
   | op :: rest, e => applyOps rest (op.apply e)
 
 theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (op : FieldOp) :
-    WP isa op.impl.code s fun t =>
+    WP isa (op.impl.code fv) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = op.apply (E s.mem base) := by
   cases op with
   | mul o a b => exact mulE hs hb o a b
@@ -55,12 +57,12 @@ theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   | copy o a => exact copyE hs hb o a
 
 theorem ops_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (xs : List FieldOp) :
-    WP isa (ops (xs.map FieldOp.impl)) s fun t =>
+    WP isa (ops fv (xs.map FieldOp.impl)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = applyOps xs (E s.mem base) := by
   induction xs generalizing s with
   | nil => exact WP.block_nil ⟨Keep.refl _ _, hb, rfl⟩
   | cons op rest ih =>
-    change WP isa (.seq op.impl.code (ops (rest.map FieldOp.impl))) s _
+    change WP isa (.seq (op.impl.code fv) (ops fv (rest.map FieldOp.impl))) s _
     rw [WP.seq_iff]
     refine WP.mono (fieldOp_ok hs hb op) fun t ⟨tk, tb, te⟩ => ?_
     refine WP.mono (ih (tk.scr hs) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, ?_⟩

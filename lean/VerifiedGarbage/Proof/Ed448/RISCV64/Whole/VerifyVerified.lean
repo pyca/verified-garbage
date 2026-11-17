@@ -92,6 +92,7 @@ theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
   Verified.stackScratchL (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u64) (n := 56)
     (post := Proof.Ed448.WholeLocal.verifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 1168) (bytes := 448)
     (leak := some (Proof.Ed448.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) (verify_verified hR) (by decide)
-    (by decide) verFrameSat_pre
+    (by decide) (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    verFrameSat_pre
 
 end VG.Proof.Ed448.RISCV64.Whole

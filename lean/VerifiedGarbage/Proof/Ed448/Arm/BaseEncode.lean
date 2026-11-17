@@ -35,6 +35,8 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm VG.Proof.X448.Radix16
 open VG.Impl.X448.Arm (slot X2 ACC ld saved)
 open VG.Spec.Ed448 (bytesAt)
 
+variable {fv : Bool}
+
 theorem invEnv_x0 (e : Env) : invEnv e 0 = e 0 := rfl
 
 theorem bytesAt_57 (m : Mem) (q : Addr) :
@@ -109,7 +111,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
     (hq : State.addr (s.gpr .r8) = q) (hfit : (s.gpr .r8).toNat + 57 ≤ 2 ^ 32)
     (hw : (⟨q, 57⟩ : Region) ∈ s.wr) (hd : (⟨q, 57⟩ : Region).Disjoint ⟨base, 8192⟩)
     {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
-    WP isa baseEncode s fun t =>
+    WP isa (baseEncode fv) s fun t =>
       bytesAt t.mem q 57 = Spec.Ed448.encodePoint ⟨E s.mem base 0, E s.mem base 1, E s.mem base 2⟩ ∧
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ Keeps encRegs s t ∧ t.gpr .lr = s.gpr .r10 ∧
       Frame [⟨base, 8192⟩, ⟨q, 57⟩] s.mem t.mem := by

@@ -29,6 +29,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_str wp_ldr wp_dp wp_movw op2_imm op2_reg dpVal)
 
+variable {umaal : Bool}
+
 /-- The caller's output, of `len` bytes, apart from the working space. -/
 structure Output (s : State) (base : Addr) (size len : Nat) : Prop where
   fits : (pointerValue base s (.input .out)).toNat + len ≤ 2 ^ 32
@@ -91,7 +93,7 @@ theorem Body.of_out {base P : Addr} {L e l : Nat} {s t : State} (R : Rest coreCl
     omega_arith))⟩
 
 theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (hs : Ws s base size)
-    (hz : 15712 < size) (wq : Width qLen nQ) (q32 : qLen ≤ 32) (hin : 4960 ≤ input) (hin' : input + qLen ≤ 15712)
+    (hz : 15712 < size) (wq : Width qLen nQ) (q32 : qLen ≤ 32) (hin : 12016 ≤ input) (hin' : input + qLen ≤ 15712)
     (hv : localVal base s input qLen = v) (hvl : v < 256 ^ qLen)
     (acc : Prop) [Decidable acc] (hm : maskW base s = mask32 acc) (O : Output s base size (2 * qLen)) (second : Bool) :
     WP isa (SignVerify.writeScalar qLen input second) s fun t =>
@@ -100,7 +102,7 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (h
         (if acc then Spec.Dsa.encodeBE qLen v else List.replicate qLen 0) ∧
       maskW base t = maskW base s ∧
       pointerValue base t (.input .out) = pointerValue base s (.input .out) ∧ t.wr = s.wr ∧
-      KeepsLocals base s t 4960 15712 ∧
+      KeepsLocals base s t 12016 15712 ∧
       (∀ e k, e + k ≤ 2 * qLen → (e + k ≤ (if second then qLen else 0) ∨ (if second then qLen else 0) + qLen ≤ e) →
         Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 e) k =
           Spec.Rsa.bytesAt s.mem (State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 e) k) ∧
@@ -210,7 +212,7 @@ theorem signBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X K 
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1)
     (hm : maskW base s = BitVec.allOnes 32) (O : Output s base size (2 * qLen)) :
-    WP isa (SignVerify.signBody pLen qLen) s fun t =>
+    WP isa (SignVerify.signBody umaal pLen qLen) s fun t =>
       t.gpr .r0 = (if signChecks P Q G Y X K D then 1 else 0) ∧
       Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s (.input .out))) (2 * qLen) =
         (if signChecks P Q G Y X K D then

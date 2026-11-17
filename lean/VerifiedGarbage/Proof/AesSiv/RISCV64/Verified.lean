@@ -258,7 +258,9 @@ theorem encrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.with
     Impl.AesSiv.RISCV64.encrypt) (Proof.AesSiv.encryptRoundsContract RISCV64.abi 2576) :=
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide) encFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2576) encrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs m m₁ m₂ r hl)
+    encFrameSat_pre
 
 /-- `decrypt` with its working space in a frame of 2576 bytes. -/
 theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2576 .a7
@@ -266,6 +268,8 @@ theorem decrypt_framed : Verified RISCV64.target (Impl.StackScratch.RISCV64.with
   RISCV64.Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre RISCV64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak RISCV64.abi.ptrBits))
-    decrypt_verified (by decide) (by decide) decFrameSat_pre
+    decrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs m m₁ m₂ r hl)
+    decFrameSat_pre
 
 end VG.Proof.AesSiv.RISCV64

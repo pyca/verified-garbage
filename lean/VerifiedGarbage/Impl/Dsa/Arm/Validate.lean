@@ -12,6 +12,8 @@ scalar ranges and private/public key consistency do not skip arithmetic.
 namespace VG.Impl.Dsa.Arm.Validate
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 def accumulate : List Instr := andFlag (Layout.field .mask)
 
 def lowerTwo (n : Nat) : Prog isa :=
@@ -50,24 +52,24 @@ def domain (pLen qLen : Nat) : Prog isa := Core.sequence [
   minus qLen .q 2 qMinusTwo]
 
 def subgroup (pLen qLen : Nat) : Prog isa := Core.sequence [
-  Core.power pLen qLen .p (.input .g) (.input .q) t,
+  Core.power umaal pLen qLen .p (.input .g) (.input .q) t,
   isOne pLen (.local t),
-  Core.power pLen qLen .p (.input .y) (.input .q) t,
+  Core.power umaal pLen qLen .p (.input .y) (.input .q) t,
   isOne pLen (.local t)]
 
 def publicKey (pLen qLen : Nat) : Prog isa :=
-  .seq (domain pLen qLen) (subgroup pLen qLen)
+  .seq (domain pLen qLen) (subgroup umaal pLen qLen)
 
 /-- A signer checks g^x = y separately, so g's subgroup check implies y's. -/
 def signingSubgroup (pLen qLen : Nat) : Prog isa :=
-  .seq (Core.power pLen qLen .p (.input .g) (.input .q) t) (isOne pLen (.local t))
+  .seq (Core.power umaal pLen qLen .p (.input .g) (.input .q) t) (isOne pLen (.local t))
 
 def signingKey (pLen qLen : Nat) : Prog isa :=
-  .seq (domain pLen qLen) (signingSubgroup pLen qLen)
+  .seq (domain pLen qLen) (signingSubgroup umaal pLen qLen)
 
 def privateKey (pLen qLen : Nat) : Prog isa := Core.sequence [
   .seq (range qLen .q (.input .x)) (range qLen .q (.input .nonce)),
-  Core.power pLen qLen .p (.input .g) (.input .x) t,
+  Core.power umaal pLen qLen .p (.input .g) (.input .x) t,
   equalValues pLen (.local t) (.input .y)]
 
 end VG.Impl.Dsa.Arm.Validate

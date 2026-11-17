@@ -36,9 +36,10 @@ def reduceArgs : List Instr :=
 def extendChallenge : List Instr := zeroWords 38 8
 def equationArgs : List Instr :=
   setup [(.r0,.caller 0 0),(.r1,.caller 3 0),(.r2,.frame 120),(.r3,.caller 4 0)] []
-def body : Prog isa :=
+def body (umaal : Bool) : Prog isa :=
   .seq hash (.seq (callWith reduceArgs "vg_ed25519_scalar_reduce" scalarReduce)
-    (.seq (.block extendChallenge) (callWith equationArgs "vg_ed25519_verify_equation" verifyEquation)))
-def code : Prog isa := wrap 5 body
+    (.seq (.block extendChallenge)
+      (callWith equationArgs ("vg_ed25519_verify_equation" ++ suffix umaal) (verifyEquation umaal))))
+def code (umaal : Bool) : Prog isa := wrap 5 (body umaal)
 
 end VG.Impl.Ed25519.Arm.VerifyMessage

@@ -300,14 +300,14 @@ theorem Verified.scrubPart {c : Prog isa} {v f : VecLevel} {rb : Nat} {xs xs' : 
     obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨-, rfl⟩ := Exec.det b₁ f₁
     obtain ⟨-, rfl⟩ := Exec.det b₂ f₂
-    obtain ⟨o1, o2, o3, o4, -, -, -, -, -, o10, o11, o12, o13, o14, o15⟩ :=
+    obtain ⟨⟨o1, o2, o3, o4, -, -, -, -, -, o10, o11, o12, o13, o14, o15⟩, -⟩ :=
       ares _ _ _ _ _ _ h₁ h₂ hp ho hun (.seq a₁ f₁') (.seq a₂ f₂')
     obtain ⟨rg, rx⟩ := hregs _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
-    refine ⟨by simpa only [finState_other] using o1, by simpa only [finState_other] using o2,
+    refine ⟨⟨by simpa only [finState_other] using o1, by simpa only [finState_other] using o2,
       fun r hr => ?_, ?_, by simp only [finState_other], by simp only [finState_other],
       by simp only [finState_other], by simp only [finState_other], ?_, ?_, ?_,
       by simpa only [finState_other] using o12, by simpa only [finState_other] using o13,
-      by simpa only [finState_other] using o14, fun x hx => ?_⟩
+      by simpa only [finState_other] using o14, fun x hx => ?_⟩, finState_flags⟩
     · by_cases hs : r ∈ scratchRegs
       · by_cases hg : r ∈ gs
         · simp [finState, clearedG, hg]
@@ -1427,15 +1427,15 @@ theorem Verified.scrubPartH {c : Prog isa} {rb : Nat} {xs xs' : List XReg}
     obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨-, rfl⟩ := Exec.det b₁ f₁
     obtain ⟨-, rfl⟩ := Exec.det b₂ f₂
-    obtain ⟨o1, o2, o3, o4, -, -, -, -, -, -, -, -, -, o14, o15⟩ :=
+    obtain ⟨⟨o1, o2, o3, o4, -, -, -, -, -, -, -, -, -, o14, o15⟩, -⟩ :=
       ares _ _ _ _ _ _ h₁ h₂ hp ho hun (.seq a₁ f₁') (.seq a₂ f₂')
     obtain ⟨rg, rx⟩ := hregs _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
     obtain ⟨hy, hz⟩ := hH _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
-    refine ⟨by simpa only [finState_other] using o1, by simpa only [finState_other] using o2,
+    refine ⟨⟨by simpa only [finState_other] using o1, by simpa only [finState_other] using o2,
       fun r hr => ?_, ?_, by simp only [finState_other], by simp only [finState_other],
       by simp only [finState_other], by simp only [finState_other], ?_, ?_, ?_,
       by simp only [finState_other, clearedH]; exact hy, by simp only [finState_other, clearedH]; exact hz,
-      by simpa only [finState_other] using o14, fun x hx => ?_⟩
+      by simpa only [finState_other] using o14, fun x hx => ?_⟩, finState_flags⟩
     · by_cases hs : r ∈ scratchRegs
       · by_cases hg : r ∈ gs
         · simp [finState, clearedG, hg]

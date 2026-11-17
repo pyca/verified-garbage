@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.UmaalLit
-import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 import VerifiedGarbage.Proof.Framework.Contract
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.UmaalLit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
@@ -31,7 +29,7 @@ public import VerifiedGarbage.TCB.Artifact
 `p521With true`, P-521 with its field multiplications by
 `vg_p521_mul_mod_<p|n>_umaal`, is a configuration the code supports
 (`p521u_ok`: what `p521_ok` states, but that its `vg_p521_mul_umaal` has no
-frame), and its signature is constant time (`signU_ct`).
+frame).
 -/
 
 @[expose] public section
@@ -72,8 +70,5 @@ theorem p521With_ok (u : Bool) : CfgOk (p521With u) := by
   cases u
   · exact p521_ok
   · exact p521u_ok
-
-theorem signU_ct : ConstantTime isa signArm.pre signArm.pub signP521U :=
-  VG.Taint.constantTime (A := taintU) τ₁ (fun _ _ hs ht h => agree_τ₁ hs ht h) (by taint_decide)
 
 end VG.Proof.Ecdsa.Arm.P521

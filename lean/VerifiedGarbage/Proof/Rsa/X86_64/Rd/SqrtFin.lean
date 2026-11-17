@@ -53,7 +53,7 @@ def rsRs (W : Nat) : List (Nat × Nat) := [(slot W sqT, 8 * (W + 2)), (slot W sq
 
 theorem rsR_trans {B : Addr} {W : Nat} {a b c : State} (h₁ : Frm B (rsRs W) a.mem b.mem ∧ Keep mmRegs a b)
     (h₂ : Frm B (rsRs W) b.mem c.mem ∧ Keep mmRegs b c) : Frm B (rsRs W) a.mem c.mem ∧ Keep mmRegs a c :=
-  ⟨h₁.1.trans h₂.1, (h₁.2.trans h₂.2).mono (by simp [mmRegs])⟩
+  ⟨h₁.1.trans h₂.1, (h₁.2.trans h₂.2).mono (by decide)⟩
 
 /-- A stage's guard: `CF` of `W < c + 4`. -/
 theorem stageRHd_ok {s : State} {B : Addr} {Z W : Nat} (hw : Ws s B Z W) {c : Nat} (hc : c ≤ 128) :
@@ -89,7 +89,7 @@ theorem stageR_ok {s : State} {B : Addr} {Z W : Nat} (hw : Ws s B Z W) {V K : Na
   obtain h₁ : Ws s₁ B Z W := hw.congrP (P := fun _ => False) (fun _ _ => by rw [m₁]) (fun _ f => f.elim) k₁ (by simp)
   refine WP.ite (decide (W < c + 4)) (by simp only [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · have hg : ¬ (c + 4 ≤ W) := by simp only [decide_eq_true_eq] at hb; omega_arith
-    refine WP.block_nil_iff.mpr ⟨?_, ?_, k₁.mono (by simp [mmRegs]), h₁⟩
+    refine WP.block_nil_iff.mpr ⟨?_, ?_, k₁.mono (by decide), h₁⟩
     · simp only [hg, false_and, ↓reduceIte]; rw [m₁, hV]
     · rw [m₁]; exact Frm.refl _ _ _
   · have hg : c + 4 ≤ W := by simp only [decide_eq_false_iff_not] at hb; omega_arith
@@ -111,7 +111,7 @@ theorem stageR_ok {s : State} {B : Addr} {Z W : Nat} (hw : Ws s B Z W) {V K : Na
     obtain T₃ : wv s₃.mem B (slot W sqT) W = V / 2 ^ (64 * c) := by
       rw [← wv_mod_low s₃.mem B _ (show W ≤ W + 2 by omega_arith), v3, V₂,
         Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by rw [← V₂]; exact wv_lt _ _ _ _))]
-    refine ⟨?_, ?_, (((k₁.trans k₂).trans k3).trans k4).mono (by simp [mmRegs]),
+    refine ⟨?_, ?_, (((k₁.trans k₂).trans k3).trans k4).mono (by decide),
       h₃.congrO o4 (by omega_arith) k4 (by simp)⟩
     · rw [v4, o3.wv (by omega_arith) (by omega_arith), V₂, T₃]
       by_cases hq : K &&& c = 0 <;> simp [hq, hg]
@@ -370,7 +370,7 @@ theorem finishX_ok {t₀ t : State} {B : Addr} {Z W h X C z : Nat} {c b : Bool} 
   obtain o9 : Outside B (slot W sqR) 8 t₈.mem u.mem := by rw [m9]; exact writeW_outside _ _ _ (by omega_arith)
   obtain kall : Keep mmRegs t u :=
     (((((((((k₁.trans k₁').trans k₂).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).mono
-      (by simp [mmRegs])
+      (by decide)
   refine ⟨?_, ?_, ?_, kall, h₈.congrO o9 (by omega_arith) k9 (by simp)⟩
   · have sp := wv_add t₈.mem B (slot W sqR) 1 (W - 1)
     obtain sp' := wv_add u.mem B (slot W sqR) 1 (W - 1)
@@ -466,7 +466,7 @@ theorem sqrt_ok {s : State} {B : Addr} {Z W h X : Nat} {c : Bool} (hw : Ws s B Z
     (by unfold mw; rw [keepH _ (by omega_using [hsm]) (by omega_using [hsm]), F₁.word_eq (fun y h1 h2 hy => by unfold NxP at hy; omega_arith)
       (by omega_using [hsm])]; exact hm)
     (fun hb => by rw [nsq, hXn]; simp only [of_decide_eq_true hb, ↓reduceIte, isqrt_one])) fun t ⟨R, M, F₄, k₄, h₄⟩ => ?_
-  refine ⟨?_, ?_, ?_, (((k₁.trans k₂).trans I₃.keep).trans k₄).mono (by simp [mmRegs]), h₄⟩
+  refine ⟨?_, ?_, ?_, (((k₁.trans k₂).trans I₃.keep).trans k₄).mono (by decide), h₄⟩
   · rw [R, nsq, hXn]
     by_cases h0 : X0 = 0
     · simp only [h0, ↓reduceIte, decide_true, isqrt_one, isqrt_zero]

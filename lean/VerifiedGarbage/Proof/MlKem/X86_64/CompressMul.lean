@@ -241,10 +241,13 @@ theorem dword_loL {X K10 K11 K12 K13 : BitVec 128} {sh mk : BitVec 16} {d : Nat}
 
 theorem toNat_byte_hi (x : BitVec 128) {i : Nat} (hi : i < 8) :
     (byte x (8 + i)).toNat = (qword x 1).toNat / 2 ^ (8 * i) % 2 ^ 8 := by
-  rw [toNat_byte, toNat_qword]
-  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceAdd] <;>
-    omega_arith
+  rw [toNat_byte, toNat_qword,
+    show 2 ^ (8 * (8 + i)) = 2 ^ (64 * 1) * 2 ^ (8 * i) by
+      rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith),
+    ← Nat.div_div_eq_div_mul,
+    show 2 ^ 64 = 2 ^ (8 * i) * (2 ^ 8 * 2 ^ (56 - 8 * i)) by
+      rw [← Nat.pow_add, ← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith),
+    Nat.mod_mul_right_div_self, Nat.mod_mul_right_mod]
 
 theorem toNat_qwords (x : BitVec 128) : x.toNat = (qword x 0).toNat + 2 ^ 64 * (qword x 1).toNat := by
   have := x.isLt
@@ -308,6 +311,12 @@ theorem qword_q10 {D : BitVec 128} {p : Nat → Nat} (hp : ∀ i < 4, (dword D i
     h2, h3]
   constructor <;> omega_arith
 
+/-- A number below `2 ^ 40` is its five bytes. -/
+private theorem bytes5 {a : Nat} (h : a < 2 ^ 40) :
+    a % 256 + 256 * (a / 256 % 256) + 65536 * (a / 65536 % 256) + 16777216 * (a / 16777216 % 256) +
+      4294967296 * (a / 4294967296 % 256) = a := by
+  omega
+
 /-- The bytes `vpshufb` gathers from the first lane: its ten bytes, in order. -/
 theorem toNat_m10a {Q : BitVec 128} {a₀ a₁ : Nat} (h₀ : (qword Q 0).toNat = a₀) (h₁ : (qword Q 1).toNat = a₁)
     (l₀ : a₀ < 2 ^ 40) (l₁ : a₁ < 2 ^ 40) : (XBinOp.eval .pshufb Q m10a).toNat = a₀ + 2 ^ 40 * a₁ := by
@@ -322,6 +331,8 @@ theorem toNat_m10a {Q : BitVec 128} {a₀ a₁ : Nat} (h₀ : (qword Q 0).toNat 
     toNat_byte_hi _ (show (2 : Nat) < 8 by decide), toNat_byte_hi _ (show (3 : Nat) < 8 by decide),
     toNat_byte_hi _ (show (4 : Nat) < 8 by decide), h₀, h₁, show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul,
     Nat.reducePow, Nat.pow_zero, Nat.div_one]
+  have := bytes5 l₀
+  have := bytes5 l₁
   omega_arith
 
 /-- The bytes `vpshufb` gathers from the second lane: its last four, then
@@ -342,6 +353,8 @@ theorem toNat_m10b {Q : BitVec 128} {b₀ b₁ : Nat} (h₀ : (qword Q 0).toNat 
     toNat_byte_hi _ (show (2 : Nat) < 8 by decide), toNat_byte_hi _ (show (3 : Nat) < 8 by decide),
     toNat_byte_hi _ (show (4 : Nat) < 8 by decide), h₀, h₁, show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul,
     Nat.reducePow, Nat.pow_zero, Nat.div_one]
+  have := bytes5 l₀
+  have := bytes5 l₁
   omega_arith
 
 /-- `cmPack10` on the two lanes `D₀`, `D₁` of pairs `p`, `p'`: the sixteen
@@ -405,18 +418,27 @@ theorem pack4 {D₀ D₁ : BitVec 128} {p p' : Nat → Nat} (hp : ∀ i < 4, (dw
   obtain e : XBinOp.eval .por (XBinOp.eval .pshufb D₀ m4a) (XBinOp.eval .pshufb D₁ m4b) =
       BitVec.ofNat 128 (p 0 + 2 ^ 8 * p 1 + 2 ^ 16 * p 2 + 2 ^ 24 * p 3 +
         2 ^ 32 * (p' 0 + 2 ^ 8 * p' 1 + 2 ^ 16 * p' 2 + 2 ^ 24 * p' 3)) := by
-    rw [ea, eb]
-    refine ext_byte fun t ht => ?_
-    simp only [XBinOp.eval, byte_or, byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
-    rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
-      t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceLT, ↓reduceIte, Nat.reduceSub, BitVec.toNat_or, Nat.or_zero, Nat.zero_or,
-      show (4 * 0 : Nat) = 4 * 0 from rfl, toNat_byte4 _ (show (0 : Nat) < 4 by decide),
-      toNat_byte4 _ (show (1 : Nat) < 4 by decide), toNat_byte4 _ (show (2 : Nat) < 4 by decide),
-      toNat_byte4 _ (show (3 : Nat) < 4 by decide), hp 0 (by decide), hp 1 (by decide), hp 2 (by decide),
-      hp 3 (by decide), hp' 0 (by decide), hp' 1 (by decide), hp' 2 (by decide), hp' 3 (by decide),
-      show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
+    obtain eA : (XBinOp.eval .pshufb D₀ m4a).toNat = p 0 + 2 ^ 8 * p 1 + 2 ^ 16 * p 2 + 2 ^ 24 * p 3 := by
+      rw [ea, toNat_ofBytes]
+      simp only [Nat.reduceLT, ↓reduceIte, show (4 * 0 : Nat) = 4 * 0 from rfl,
+        toNat_byte4 _ (show (0 : Nat) < 4 by decide), toNat_byte4 _ (show (1 : Nat) < 4 by decide),
+        toNat_byte4 _ (show (2 : Nat) < 4 by decide), toNat_byte4 _ (show (3 : Nat) < 4 by decide),
+        hp 0 (by decide), hp 1 (by decide), hp 2 (by decide), hp 3 (by decide),
+        show (0 : BitVec 8).toNat = 0 from rfl, Nat.mod_eq_of_lt c0, Nat.mod_eq_of_lt c1, Nat.mod_eq_of_lt c2,
+        Nat.mod_eq_of_lt c3, Nat.mul_zero, Nat.add_zero]
+    obtain eB : (XBinOp.eval .pshufb D₁ m4b).toNat =
+        (p' 0 + 2 ^ 8 * p' 1 + 2 ^ 16 * p' 2 + 2 ^ 24 * p' 3) <<< 32 := by
+      rw [eb, toNat_ofBytes, Nat.shiftLeft_eq]
+      simp only [Nat.reduceLT, ↓reduceIte, Nat.reduceSub, show (4 * 0 : Nat) = 4 * 0 from rfl,
+        toNat_byte4 _ (show (0 : Nat) < 4 by decide), toNat_byte4 _ (show (1 : Nat) < 4 by decide),
+        toNat_byte4 _ (show (2 : Nat) < 4 by decide), toNat_byte4 _ (show (3 : Nat) < 4 by decide),
+        hp' 0 (by decide), hp' 1 (by decide), hp' 2 (by decide), hp' 3 (by decide),
+        show (0 : BitVec 8).toNat = 0 from rfl, Nat.mod_eq_of_lt d0, Nat.mod_eq_of_lt d1, Nat.mod_eq_of_lt d2,
+        Nat.mod_eq_of_lt d3, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.reducePow]
+      omega_arith
+    apply BitVec.eq_of_toNat_eq
+    rw [show ∀ X Y : BitVec 128, XBinOp.eval .por X Y = X ||| Y from fun _ _ => rfl, BitVec.toNat_or, eA, eB,
+      Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt (by omega_arith), BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     omega_arith
   rw [e]
   apply BitVec.eq_of_toNat_eq
@@ -807,11 +829,10 @@ structure Inv (C : State → Prop) (st d b : Nat) (s₀ : State) (i : Nat) (s : 
 theorem byte_ofNat128' (V : Nat) {j : Nat} (hj : j < 16) :
     byte (BitVec.ofNat 128 V) j = BitVec.ofNat 8 (V / 2 ^ (8 * j)) := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_byte, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
-    j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;> omega_arith
+  rw [toNat_byte, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    show 2 ^ 128 = 2 ^ (8 * j) * (2 ^ 8 * 2 ^ (120 - 8 * j)) by
+      rw [← Nat.pow_add, ← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith),
+    Nat.mod_mul_right_div_self, Nat.mod_mul_right_mod]
 
 theorem written8 (m : Mem) (o : Addr) (X : BitVec 64) :
     Written m (m.writeW o X) o 8 fun j => X.extractLsb' (8 * j) 8 := by

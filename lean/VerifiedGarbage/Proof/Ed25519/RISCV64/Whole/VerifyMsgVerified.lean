@@ -157,6 +157,7 @@ theorem verify_framed :
   Verified.stackScratchLC (sig := Spec.Ed25519.verifySig) (nm := "frame") (e := .u64) (n := 34)
     (post := Proof.Ed25519.WholeLocal.verifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 208) (bytes := 272)
     (leak := some (Proof.Ed25519.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) verify_verified (by decide)
-    (by decide) verFrameSat_pre
+    (by decide) (fun vs m m₁ m₂ r hl _ => Proof.Ed25519.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    verFrameSat_pre
 
 end VG.Proof.Ed25519.RISCV64.Whole

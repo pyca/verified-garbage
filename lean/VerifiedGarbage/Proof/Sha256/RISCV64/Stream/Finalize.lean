@@ -775,9 +775,11 @@ theorem correctN {s₀ : State} (hp : Pre N s₀) (hN : N ≤ 8)
       dstOf i ≠ some r) :
     WP isa (finalizeWith N) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha256.finalizeNRISCV64 N).post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp144)
-    (WP.mono (correctMain hp hN hu hnvo) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
+    (WP.mono (correctMain hp hN hu hnvo) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ m u f => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
-  exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+  -- The `free` loses the frame's bytes, which lie apart from the digest.
+  refine ⟨⟨hk, rfl, hra⟩, fun iv msg hr hc => Eq.trans ?_ (hpost iv msg hr hc)⟩
+  exact bytesAt_congr fun i hi => lost_byte f (R := outR s₀ N) hp.scr_out.symm hi
 
 theorem finalHash_length (iv : HashValue) (m : List Byte) : (Spec.Sha256.finalHash iv m).length = 32 := by
   have := flat_length (Spec.Sha256.compressList iv (Spec.Sha256.pad m) ((Spec.Sha256.pad m).length / 64)) 8

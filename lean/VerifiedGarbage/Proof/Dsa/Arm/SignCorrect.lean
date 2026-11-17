@@ -25,6 +25,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 theorem qWidth_of_shape {P Q : Nat} (h : shapeValid P Q) : qWidth Q = Spec.Dsa.bitLength Q / 8 := by
   have S := h.1
   unfold Spec.Dsa.supportedSizes at S
@@ -109,7 +111,7 @@ theorem signKeyIn {s t : State} {base : Addr} {size : Nat} (h : signPre s) (hb :
   obtain ⟨_, hrd, _, _, _, _, _, _, dKS, _, _, _, _, fK, _, _, _, hv, _, hr3, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (arg s 0).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r2) (by simp))
@@ -141,7 +143,7 @@ theorem signNonceIn {s t : State} {base : Addr} {size : Nat} (h : signPre s) (hb
   obtain ⟨_, hrd, _, _, _, _, _, _, _, dNS, _, _, _, _, fN, _, _, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have nr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have In := input_of E (p := .input .nonce) (by decide : Impl.Dsa.Layout.Field.nonce ≠ .mask) (o := 0)
     (len := (arg s 2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 88) (v := arg s 1) (by simp))
@@ -157,7 +159,7 @@ theorem signDigestIn {s t : State} {base : Addr} {size : Nat} (h : signPre s) (h
   obtain ⟨_, hrd, _, _, _, _, _, _, _, _, dDS, _, _, _, _, fD, _, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have dr : (⟨State.addr (arg s 3), (arg s 4).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have Id := input_of E (p := .input .digest) (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (o := 0)
     (len := c) (by rw [BitVec.add_zero]; exact E.field (d := 92) (v := arg s 3) (by simp))
@@ -176,7 +178,7 @@ theorem signOutput {s t : State} {base : Addr} {size : Nat} (h : signPre s) (hb 
   exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem sign_correct {s : State} (h : signPre s) :
-    WP isa (Entry.operation true) s fun t => abiPreserved s t ∧ signArm.post s t := by
+    WP isa (Entry.operation umaal true) s fun t => abiPreserved s t ∧ signArm.post s t := by
   obtain ⟨hsp, hrd, hwr, _, _, _, dOS, _, dKS, dNS, dDS, _, fO, fK, fN, fD, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
@@ -189,7 +191,7 @@ theorem sign_correct {s : State} (h : signPre s) :
   refine WP.seq (widthDispatch_ok true _ E₀.ws (by omega_arith) (widths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)]) fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 6).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 6).toNat * 8 := by omega_arith
   have kr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain ⟨Ip₁, Iq₁, -, -, -⟩ := signKeyIn h rfl rfl E₁
   refine sized_ok true E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value ?_ ?_

@@ -53,7 +53,9 @@ theorem init_framed :
   RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) init_verified (by decide) (by decide) initFrameSat_pre
+    (bytes := 2304) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.initPostOut_local _ vs m m₁ m₂ r hl)
+    initFrameSat_pre
 
 theorem absorb_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2304 .a5 absorb)
@@ -61,7 +63,9 @@ theorem absorb_framed :
   RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) absorb_verified (by decide) (by decide) absorbFrameSat_pre
+    (bytes := 2304) absorb_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.absorbPostOut_local _ vs m m₁ m₂ r hl)
+    absorbFrameSat_pre
 
 theorem finish_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2304 .a4 finish)
@@ -69,6 +73,8 @@ theorem finish_framed :
   RISCV64.Verified.stackScratchL (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre RISCV64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost RISCV64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) finish_verified (by decide) (by decide) finishFrameSat_pre
+    (bytes := 2304) finish_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl)
+    finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.RISCV64

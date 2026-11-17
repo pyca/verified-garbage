@@ -176,24 +176,40 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   obtain hp : SearchInput p s := ⟨h, rfl⟩
   obtain hroom : 160 ≤ s.sp.toNat := by have := hp.room; rw [hp.sp_eq] at this; exact Nat.le_trans (by decide) this
   unfold code
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocLe (by decide) hroom ?_
   refine WP.seq (VG.RISCV64.WP.mono_syms (entry_ok hp) fun t ⟨⟨⟨hx, hm⟩, kt⟩, htsp⟩ hyt => ?_)
   refine WP.seq (WP.mono (search_body c hp hx hm kt htsp hyt) fun u ⟨hd, hra, hsp⟩ => ?_)
-  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_
+  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ mL _ fl => ?_
+  -- Whatever the released frame's bytes hold: the outputs lie apart from it.
+  have fl' : Frame [p.frame] q.mem mL := fl
+  obtain hD : ∀ R ∈ inWrites s, R.Disjoint p.frame := fun R hR =>
+    ((hp.stack_disjoint (r := R) (List.mem_append_left _ hR)).sub_left hp.frame_sub).symm
+  obtain hbytes : Spec.Rsa.bytesAt mL p.op p.len = Spec.Rsa.bytesAt q.mem p.op p.len :=
+    List.map_congr_left fun i hi => lost_byte fl' (R := inOut s) (hD _ (by simp [inWrites])) (List.mem_range.mp hi)
+  obtain hused : Spec.Rsa.wordsAt mL p.up 1 = Spec.Rsa.wordsAt q.mem p.up 1 :=
+    List.map_congr_left fun i hi => fl'.readW (r := inUsed s)
+      (Offset.contains_base _ (by have := List.mem_range.mp hi; omega_using [this])
+        (by have := List.mem_range.mp hi; omega_using [this]))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hD _ (by simp [inWrites])) (by decide)
+  obtain hstate : Spec.Rsa.wordsAt mL p.stp 4 = Spec.Rsa.wordsAt q.mem p.stp 4 :=
+    List.map_congr_left fun i hi => fl'.readW (r := inState s)
+      (Offset.contains_base _ (by have := List.mem_range.mp hi; omega_using [this])
+        (by have := List.mem_range.mp hi; omega_using [this]))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hD _ (by simp [inWrites])) (by decide)
   obtain hst : (searchResult s).status < 4 := by
     unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · change ((q.gpr .a0).setWidth 32).toNat = _
     rw [hr, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
-  · change Spec.Rsa.bytesAt q.mem p.op p.len = _
-    rw [hmq, finished_bytes hp]
+  · change Spec.Rsa.bytesAt mL p.op p.len = _
+    rw [hbytes, hmq, finished_bytes hp]
     exact hd.output
-  · change Spec.Rsa.wordsAt q.mem p.up 1 = _
-    rw [hmq, finished_used]
+  · change Spec.Rsa.wordsAt mL p.up 1 = _
+    rw [hused, hmq, finished_used]
   · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
       (searchRemaining s) (searchRand s)⟩
-    change Spec.Rsa.wordsAt q.mem p.stp 4 = _
-    rw [hmq, finished_state hp]
+    change Spec.Rsa.wordsAt mL p.stp 4 = _
+    rw [hstate, hmq, finished_state hp]
     rfl
   · intro reg hreg
     change q.gpr reg = s.gpr reg

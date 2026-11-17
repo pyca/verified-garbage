@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed448 base-point multiplication on ARMv7: the whole function
 
 `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)` computes the
-encoding of the ladder over the scalar's bits (`scalarBase_ladder`): the
-entry, the scalar's bits, the loop (`R` ends as `ladder k 456`), the
+encoding of the comb over the scalar's bits (`scalarBase_comb`): the
+entry, the scalar's bits, the loop (`R` ends as `comb k 114`), the
 inversion of `Z` and the encoding. Every write is in the working space but
 the result's, so the scalar is read unchanged; the callee-saved registers are
 restored from the working space, and the return address is kept.
@@ -27,9 +27,11 @@ restored from the working space, and the return address is kept.
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
-open VG.Proof.Ed448 (ladder)
+open VG.Proof.Ed448 (comb)
 open VG.Impl.X448.Arm (slot BITS ACC saved)
 open VG.Spec.Ed448 (bytesAt decodeLE)
+
+variable {fv : Bool}
 
 /-- The precondition of `vg_ed448_scalar_base`, by name. -/
 structure BasePre (s : State) : Prop where
@@ -51,10 +53,10 @@ theorem far_ws {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint �
 theorem baseEntry_eq : baseEntry =
     ([.mov .r3 (.reg .r2)] : List Instr) ++ setupHead ++ initSlots := rfl
 
-theorem scalarBase_ladder {s : State} (h : BasePre s) :
-    WP isa scalarBase s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+theorem scalarBase_comb {s : State} (h : BasePre s) :
+    WP isa (scalarBase fv) s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       bytesAt t.mem (State.addr (s.gpr .r0)) 57 =
-        Spec.Ed448.encodePoint (ladder (decodeLE (bytesAt s.mem (State.addr (s.gpr .r1)) 57)) 456) := by
+        Spec.Ed448.encodePoint (comb (decodeLE (bytesAt s.mem (State.addr (s.gpr .r1)) 57)) 114) := by
   obtain ⟨base, hbase⟩ : ∃ b, State.addr (s.gpr .r2) = b := ⟨_, rfl⟩
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [h.wr, ← hbase]; simp
   have kd : ∀ j < 57, 8192 ≤ ofs base (State.addr (s.gpr .r1) + BitVec.ofNat 64 j) :=
@@ -104,7 +106,7 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
     exact initSlots_bounded lw i j hj
   rw [bw] at bitsx
   -- The loop.
-  refine WP.seq (WP.mono (baseLoop_ok (s₀ := x) (s := x) bitsx (fun s' h1 h2 h3 h4 h5 => ?_))
+  refine WP.seq (WP.mono (combLoop_ok (s₀ := x) (s := x) bitsx (fun s' h1 h2 h3 h4 h5 => ?_))
     fun y hy => ?_)
   · have k' : Keeps (.r11 :: workRegs) x s' :=
       ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
@@ -116,12 +118,9 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
         show initVal 2 = Spec.Ed448.identity.Z.val from rfl, Proof.X448.toFe_self,
         Proof.X448.toFe_self, Proof.X448.toFe_self]
       rfl
-    · rw [h3]; simp only [pt, ex]
-      rw [show ((8 : Index) : Nat) = 8 from rfl, show ((9 : Index) : Nat) = 9 from rfl,
-        show ((10 : Index) : Nat) = 10 from rfl, show initVal 8 = Spec.Ed448.basePoint.X.val from rfl,
-        show initVal 9 = Spec.Ed448.basePoint.Y.val from rfl,
-        show initVal 10 = Spec.Ed448.basePoint.Z.val from rfl, Proof.X448.toFe_self,
-        Proof.X448.toFe_self, Proof.X448.toFe_self]
+    · rw [h3, ex, show ((10 : Index) : Nat) = 10 from rfl,
+        show initVal 10 = Spec.Ed448.basePoint.Z.val from rfl, Proof.X448.toFe_self]
+      rfl
     · rw [h3, ex]; exact Proof.X448.toFe_self _
   -- The encoding.
   have r12y : y.gpr .r8 = s.gpr .r0 := by

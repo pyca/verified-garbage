@@ -17,7 +17,10 @@ stack pointer `n` bytes lower, and writable regions that add, to those of
 time (`FrameAt.inFrame`), and a region of at least its lowest 2032 bytes
 (or all of it) (`FrameAt.low`); a frame of at most 4064 bytes is one region
 (`bigFrame_wp`). If the body keeps the permissions and the stack pointer, as
-all code does, the frame ends with those of `s`.
+all code does, the frame ends with those of `s`, and with the frame's bytes
+holding anything (as `WP.allocLe`'s): the postcondition holds whatever
+memory that differs from the body's only in the frame, and whatever
+unknowns, the state then has.
 -/
 
 @[expose] public section
@@ -72,12 +75,16 @@ theorem FrameAt.alloc {n k : Nat} {s t : State} (h : FrameAt n (allocd k s) t) (
 
 theorem chunks_wp {body : Prog isa} :
     ∀ (q : Nat) (s : State) (Q : State → Prop), 2032 * q ≤ s.sp.toNat →
-    (∀ t, FrameAt (2032 * q) s t → WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) →
+    (∀ t, FrameAt (2032 * q) s t → WP isa body t fun s₂ =>
+      ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 (2032 * q), 2032 * q⟩] s₂.mem m →
+        Q { s₂ with sp := s.sp, wr := s.wr, mem := m, unknowns := u }) →
     WP isa (chunks q body) s Q
   | 0, s, Q, _, hb => by
     refine WP.mono (WP.rdwr (hb s (FrameAt.refl s))) fun s₂ ⟨h, _, hw, hs⟩ => ?_
-    have e : { s₂ with sp := s.sp, wr := s.wr } = s₂ := by rw [← hw, ← hs]
-    rwa [e] at h
+    have e : { s₂ with sp := s.sp, wr := s.wr, mem := s₂.mem, unknowns := s₂.unknowns } = s₂ := by
+      rw [← hw, ← hs]
+    have := h s₂.mem s₂.unknowns (Frame.refl _ _)
+    rwa [e] at this
   | q + 1, s, Q, hsp, hb => by
     unfold chunks
     refine WP.alloc ⟨by decide, by decide, by decide⟩ (by omega_using [hsp]) ?_
@@ -85,14 +92,19 @@ theorem chunks_wp {body : Prog isa} :
       simp only [allocd]
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
       omega_using [hsp]
-    refine chunks_wp q (allocd 2032 s) (fun x => Q (freed 2032 x)) hsp' fun t ht => ?_
+    refine chunks_wp q (allocd 2032 s) _ hsp' fun t ht => ?_
     have hf := FrameAt.alloc ht (by decide) (by omega_using []) (by omega_using [hsp]) (by decide) (by omega_using [])
     rw [show 2032 * q + 2032 = 2032 * (q + 1) by omega_using []] at hf
-    refine WP.mono (hb t hf) fun s₂ h => ?_
-    have e : freed 2032 { s₂ with sp := (allocd 2032 s).sp, wr := (allocd 2032 s).wr } =
-        { s₂ with sp := s.sp, wr := s.wr } := by
-      simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
-    rwa [e]
+    refine WP.mono (hb t hf) fun s₂ h m₁ u₁ f₁ m u f => ?_
+    simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
+    refine h m u (Frame.trans (f₁.sub fun r hr => ?_) (f.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      show Region.Sub ⟨s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 (2032 * q), 2032 * q⟩ _
+      rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+      exact Offset.sub_below _ (by omega_using []) (by omega_using [])
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ (by omega_using []) (by omega_using [])⟩
 
 /-- A frame of one allocation of `n` bytes, from `allocd n s`. -/
 theorem FrameAt.single {n : Nat} (s : State) (hn : 0 < n) (hsp : n ≤ s.sp.toNat) :
@@ -104,7 +116,8 @@ theorem FrameAt.single {n : Nat} (s : State) (hn : 0 < n) (hsp : n ≤ s.sp.toNa
 theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop} (hn : n % 16 = 0)
     (hsp : n ≤ s.sp.toNat)
     (hb : ∀ t, FrameAt n s t → (0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr) →
-      WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
+      WP isa body t fun s₂ => ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem m →
+        Q { s₂ with sp := s.sp, wr := s.wr, mem := m, unknowns := u }) :
     WP isa (bigFrame n body) s Q := by
   -- Up to 2032 bytes, the region `FrameAt.low` gives is the whole frame.
   have whole : ∀ t, FrameAt n s t → n ≤ 2032 → 0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr :=
@@ -117,12 +130,13 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
   · rename_i h1
     refine WP.allocLe ⟨by omega_using [h1], h1.2, hn⟩ hsp ?_
     refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega_using [h1]) hsp) fun _ _ => by simp [allocd]))
-      fun s₂ ⟨h, _, hw, hs⟩ => ?_
-    rwa [freed_eq hw hs]
+      fun s₂ ⟨h, _, hw, hs⟩ m u f => ?_
+    rw [freed_eq hw hs]
+    exact h m u f
   split
   · rename_i h1 h0
     refine chunks_wp (n / 2032) s Q (by omega_using [hsp]) fun t ht => ?_
-    rw [show 2032 * (n / 2032) = n by omega_using [h0]] at ht
+    rw [show 2032 * (n / 2032) = n by omega_using [h0]] at ht ⊢
     exact hb t ht fun h0' h4 => whole t ht (by omega_using [h1, h4]) h0' h4
   · rename_i h1 h0
     have hr : n % 2032 < 2032 := Nat.mod_lt _ (by decide)
@@ -131,13 +145,20 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
       simp only [allocd]
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
       omega_using [hsp]
-    refine chunks_wp (n / 2032) (allocd (n % 2032) s) (fun x => Q (freed (n % 2032) x)) hsp' fun t ht => ?_
+    refine chunks_wp (n / 2032) (allocd (n % 2032) s) _ hsp' fun t ht => ?_
     have hf := FrameAt.alloc ht (by omega_using [hn]) (by omega_using []) (by omega_using [hsp]) (by omega_using []) (by omega_using [])
     rw [e] at hf
-    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega_using [h1, h4]) h0' h4) fun s₂ h => ?_
-    have e : freed (n % 2032) { s₂ with sp := (allocd (n % 2032) s).sp, wr := (allocd (n % 2032) s).wr } =
-        { s₂ with sp := s.sp, wr := s.wr } := by
-      simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
-    rwa [e]
+    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega_using [h1, h4]) h0' h4)
+      fun s₂ h m₁ u₁ f₁ m u f => ?_
+    simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
+    refine h m u (Frame.trans (f₁.sub fun r hr => ?_) (f.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      show Region.Sub ⟨s.sp - BitVec.ofNat 64 (n % 2032) - BitVec.ofNat 64 (2032 * (n / 2032)),
+        2032 * (n / 2032)⟩ _
+      rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+      exact Offset.sub_below _ (by omega_using [e]) (by omega_using [e])
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ (by omega_using [e]) (by omega_using [e])⟩
 
 end VG.RISCV64

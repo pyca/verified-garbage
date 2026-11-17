@@ -512,7 +512,7 @@ theorem wordsAt_of_bytes {m m' : Mem} {a b : Addr} {n : Nat}
   refine List.map_congr_left fun i hi => ?_
   obtain hi := List.mem_range.mp hi
   simp only [Mem.readW]
-  congr 1
+  refine congrArg (BitVec.setWidth 64) ?_
   refine Mem.read_eq_of_bytes fun k hk => ?_
   have hk : k < 8 := hk
   rw [Mem.extractLsb'_read m _ hk]

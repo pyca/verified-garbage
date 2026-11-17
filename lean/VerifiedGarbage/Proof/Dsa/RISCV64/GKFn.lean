@@ -301,9 +301,11 @@ theorem generate_correct (s₀ : State) (h : gkContract.pre s₀) :
       ((resOf s₀).status = 1 → Spec.Rsa.bytesAt t.mem (glOf s₀).out (glOf s₀).ol =
         (resOf s₀).key.getD (List.replicate (glOf s₀).ol 0)) →
       WP isa (finish outLen) t fun t' =>
-        abiPreserved s₀ (freed frameBytes t') ∧ gkContract.post s₀ (freed frameBytes t') :=
-    fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 (resOf_status s₀) hsig resOf_none) fun t' hf =>
-      fin_post h (by rw [gkRes_eq h]; exact resOf_status s₀) (by rw [gkRes_eq h]; exact hf)
+        ∀ m u, Frame [⟨s₀.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩] t'.mem m →
+          abiPreserved s₀ { freed frameBytes t' with mem := m, unknowns := u } ∧
+            gkContract.post s₀ { freed frameBytes t' with mem := m, unknowns := u } :=
+    fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 (resOf_status s₀) hsig resOf_none) fun t' hf m u fl =>
+      fin_post h (by rw [gkRes_eq h]; exact resOf_status s₀) (by rw [gkRes_eq h]; exact hf) m u fl
   unfold Impl.Dsa.RISCV64.Generate.code
   refine WP.alloc (by decide) hL.spF ?_
   unfold Impl.Dsa.RISCV64.Generate.body

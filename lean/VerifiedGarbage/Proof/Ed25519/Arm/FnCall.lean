@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.MulU
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
@@ -34,6 +35,8 @@ and changes no memory but the slots `W` it writes and `ACC` (`wRegions`).
 namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+variable {umaal : Bool}
 
 /-- The slots of `S` hold limbs below `2^16`. -/
 def LimOn (m : Mem) (b : BitVec 32) (S : List Slot) : Prop := ∀ i ∈ S, Lim m (State.addr b) (offset i)
@@ -114,7 +117,7 @@ X25519's `clob` and no memory but `FA0`. -/
 theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} (hl : LimOn s.mem b S)
     (op : FieldOp) (hin : op.inline = true) (hr : ∀ i ∈ opReads op, i ∈ S) {W : List Slot}
     (hw : opOut op ∈ W) :
-    WP isa op.code s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (opOut op :: S) ∧
+    WP isa (op.code umaal) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (opOut op :: S) ∧
       env t.mem b = evalOp op (env s.mem b) := by
   cases op with
   | copy o a =>
@@ -128,7 +131,7 @@ theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} 
     rw [hv] at e
     exact ⟨hrt.mono (by decide), frame_w hw (frame_o hf), l, e⟩
   | mul o a c =>
-    refine WP.mono (mul_ok (by decide) (slot_range o).2 (slot_range a).2 (slot_range c).2 hc
+    refine WP.mono (mulIn_ok (slot_range o).2 (slot_range a).2 (slot_range c).2 hc
       (hl a (hr a List.mem_cons_self)) (hl c (hr c (List.mem_cons_of_mem _ List.mem_cons_self))))
       fun t ⟨hrt, hf, ho, hv⟩ => ?_
     obtain ⟨l, e⟩ := field_updateOn o hl (frame_acc16 hf) ho
@@ -166,7 +169,7 @@ theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} 
 theorem fieldCodeOn_ok (ops : List FieldOp) {S S' : List Slot} (h : limsAfter ops S = some S')
     {W : List Slot} (hW : ∀ op ∈ ops, opOut op ∈ W)
     {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : LimOn s.mem b S) :
-    WP isa (fieldCode ops) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b S' ∧
+    WP isa (fieldCode umaal ops) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b S' ∧
       env t.mem b = evalOps ops (env s.mem b) := by
   induction ops generalizing s S with
   | nil =>
@@ -331,6 +334,8 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 /-- What `fnCall_ok` asks of the function, as a contract on the working space. -/
 def fnK (b : BitVec 32) (f : Env → Env) : Contract isa where
   pre t := t.rd = [] ∧ t.wr = [⟨State.addr b, 8192⟩] ∧ Ctx b t ∧ AllLim t.mem b
@@ -381,23 +386,27 @@ theorem mem_allSlots (i : Slot) : i ∈ allSlots := List.mem_finRange i
 slots with limbs below `2^16`, from every slot's. -/
 theorem asFnAll_ok {c : Bool} {ops : List FieldOp} {S' : List Slot} (h : limsAfter ops allSlots = some S')
     {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
-    WP isa (asFn c (fieldCode ops)) s fun t => Rest fnClob s t ∧ Frame [FA b] s.mem t.mem ∧
+    WP isa (asFn c (fieldCode umaal ops)) s fun t => Rest fnClob s t ∧ Frame [FA b] s.mem t.mem ∧
       AllLim t.mem b ∧ env t.mem b = evalOps ops (env s.mem b) :=
   WP.mono (asFn_ok (R := clob) (fun r hr => by cases c <;> revert r <;> decide)
       (fun s₁ hc₁ hl₁ => fieldCodeOn_ok ops h (W := allSlots) (fun _ _ => mem_allSlots _) hc₁ hl₁) hc
       (LimOn.of_all hl allSlots))
     fun _ ⟨hr, hf, hl', he⟩ => ⟨hr, frameS_FA hf, hl'.all fun i => limsAfter_sup h i (mem_allSlots i), he⟩
 
+theorem addFn_noCalls (umaal : Bool) : (Point16.addFn umaal).noCalls = true := by cases umaal <;> decide +kernel
+
+theorem doubleFn_noCalls (umaal : Bool) : (Point16.doubleFn umaal).noCalls = true := by cases umaal <;> decide +kernel
+
 /-- A call of `vg_ed25519_r16_point_add`, as the inlined addition. -/
 theorem addCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
-    WP isa Point16.addCall s fun t => Keep b s t ∧ AllLim t.mem b ∧
+    WP isa (Point16.addCall umaal) s fun t => Keep b s t ∧ AllLim t.mem b ∧
       env t.mem b = evalOps pointAddOps (env s.mem b) :=
-  fnCall_ok (fun _ hc hl => asFnAll_ok rfl hc hl) (by decide +kernel) hc hl
+  fnCall_ok (fun _ hc hl => asFnAll_ok rfl hc hl) (addFn_noCalls umaal) hc hl
 
 /-- A call of `vg_ed25519_r16_point_double`, as the inlined doubling. -/
 theorem doubleCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
-    WP isa Point16.doubleCall s fun t => Keep b s t ∧ AllLim t.mem b ∧
+    WP isa (Point16.doubleCall umaal) s fun t => Keep b s t ∧ AllLim t.mem b ∧
       env t.mem b = evalOps pointDoubleOps (env s.mem b) :=
-  fnCall_ok (fun _ hc hl => asFnAll_ok rfl hc hl) (by decide +kernel) hc hl
+  fnCall_ok (fun _ hc hl => asFnAll_ok rfl hc hl) (doubleFn_noCalls umaal) hc hl
 
 end VG.Proof.Ed25519.Arm

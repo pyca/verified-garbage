@@ -67,8 +67,8 @@ theorem point_diag_ok (s : State) :
   Keeps [.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21,.x22,.x23,.x24,.x25,.x0] s t := by
  apply WP.of_runBlock
  simp only [pointDiagCode, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,Option.some.injEq, exists_eq_left']
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq,Option.some.injEq, exists_eq_left']
  have h := diag_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x20) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x25) (s.gpr .x0) (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
  refine ⟨_, h, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
@@ -117,8 +117,8 @@ theorem point_double_ok (s : State) :
   Keeps [.x1,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21,.x22,.x23,.x24,.x25,.x0] s t := by
  apply WP.of_runBlock
  simp only [pointDoubleCode, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,CondCode.holds,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,RegUpd.c_write, 
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left',point_zero_word,carry_select]
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left',point_zero_word,carry_select]
  have h := double_value (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x16) (s.gpr .x17) (s.gpr .x19) (s.gpr .x20) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x25)
  simp only [addCarry_zero] at h
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
@@ -168,8 +168,8 @@ theorem point_cross0_ok (s : State) :
   t.gpr .x0=0 ∧ Keeps [.x0,.x11,.x12,.x10,.x13,.x14,.x15,.x16,.x17,.x19] s t := by
  apply WP.of_runBlock
  simp only [pointCross0Code, runBlock_cons, runStep_some, runBlock_nil, reduceExec, read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,
-  RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-  BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+  BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left']
  have h := cross0_value (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)
  dsimp only [addCarry,carryOut,mulHi,Size.bits] at h ⊢
  refine ⟨h,by rfl, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],

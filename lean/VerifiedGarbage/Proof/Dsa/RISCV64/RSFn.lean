@@ -207,9 +207,11 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.RandomSignResult} (h : rsContra
 
 theorem preserved_cs : ∀ r ∈ preserved, ∃ i < 12, r = cs i := by decide
 
-/-- The exit's state, after the frame is freed, meets the contract. -/
-theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRes s₀) t) :
-    abiPreserved s₀ (freed frameBytes t) ∧ rsContract.post s₀ (freed frameBytes t) := by
+/-- The exit's state, after the frame is freed and its bytes lost, meets the contract. -/
+theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRes s₀) t)
+    (m : Mem) (u : Nat → BitVec 64) (fl : Frame [(rlOf s₀).frR] t.mem m) :
+    abiPreserved s₀ { freed frameBytes t with mem := m, unknowns := u } ∧
+      rsContract.post s₀ { freed frameBytes t with mem := m, unknowns := u } := by
   have hL := rlOf_ok h
   have hq := hL.ql
   have hst : (rsRes s₀).status ≤ 2 := by
@@ -224,12 +226,15 @@ theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRe
     exact BitVec.sub_add_cancel _ _
   · simp only [freed]
     rw [hf.a0, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
-  · simp only [freed]
-    have e0 : s₀.gpr .a0 = (rlOf s₀).out := rfl
+  · have e0 : s₀.gpr .a0 = (rlOf s₀).out := rfl
     have e1 : (s₀.gpr .a1).toNat = 2 * (rlOf s₀).ql := hol
-    rw [e0, e1]; exact hf.out
-  · simp only [freed, Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
-    exact congrArg (· :: []) hf.used
+    rw [e0, e1]
+    -- The `free` loses the frame's bytes, which lie apart from the output and `used`.
+    exact Eq.trans (List.map_congr_left fun i hi =>
+      lost_byte fl (R := (rlOf s₀).outR) hL.dFO.symm (List.mem_range.mp hi)) hf.out
+  · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
+    exact congrArg (· :: []) ((fl.readW (r := (rlOf s₀).usedR) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hL.dFU.symm) (by decide)).trans hf.used)
 
 theorem randomSignWith_correct (S : Signer) (s₀ : State) (h : rsContract.pre s₀) (hv : RandomValid S s₀) :
     ∃ tr t, Exec isa (Impl.Dsa.RISCV64.RandomSign.codeWith S.name S.code) s₀ tr t ∧ abiPreserved s₀ t ∧
@@ -249,9 +254,11 @@ theorem randomSignWith_correct (S : Signer) (s₀ : State) (h : rsContract.pre s
       ((resOf s₀).status = 1 → Spec.Rsa.bytesAt t.mem (rlOf s₀).out (2 * (rlOf s₀).ql) =
         (resOf s₀).signature.getD (List.replicate (2 * (rlOf s₀).ql) 0)) →
       WP isa (finish (lenQ .t5 ++ [.add .t5 .t5 .t5])) t fun t' =>
-        abiPreserved s₀ (freed frameBytes t') ∧ rsContract.post s₀ (freed frameBytes t') :=
-    fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 hst hsig hnone) fun t' hf =>
-      fin_post h (by rw [rsRes_eq h]; exact hf)
+        ∀ m u, Frame [⟨s₀.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩] t'.mem m →
+          abiPreserved s₀ { freed frameBytes t' with mem := m, unknowns := u } ∧
+            rsContract.post s₀ { freed frameBytes t' with mem := m, unknowns := u } :=
+    fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 hst hsig hnone) fun t' hf m u fl =>
+      fin_post h (by rw [rsRes_eq h]; exact hf) m u fl
   unfold Impl.Dsa.RISCV64.RandomSign.codeWith
   refine WP.alloc (by decide) hL.spF ?_
   unfold Impl.Dsa.RISCV64.RandomSign.body

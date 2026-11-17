@@ -86,14 +86,22 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Two two_alloc)
 
 theorem psa_pub {a s : State} (p : PubS pc a s) {i : Nat} (hi : i < nP pc) : psa s i = psa a i := by
   by_cases h12 : i < 12
-  · rcases (by omega_using [h12] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · -- The facts once, not elaborated again in each of the twelve cases.
+    have g9 := p.g .r9 (by decide)
+    have g10 := p.g .r10 (by decide)
+    have a0 := p.args _ (by decide : (0 : Nat) < 16)
+    have a1 := p.args _ (by decide : (1 : Nat) < 16)
+    have a2 := p.args _ (by decide : (2 : Nat) < 16)
+    have a3 := p.args _ (by decide : (3 : Nat) < 16)
+    have a4 := p.args _ (by decide : (4 : Nat) < 16)
+    have a5 := p.args _ (by decide : (5 : Nat) < 16)
+    have a6 := p.args _ (by decide : (6 : Nat) < 16)
+    have a7 := p.args _ (by decide : (7 : Nat) < 16)
+    have a12 := p.args _ (by decide : (12 : Nat) < 16)
+    have a13 := p.args _ (by decide : (13 : Nat) < 16)
+    rcases (by omega_using [h12] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
         i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [psa, Ss, p.g .r9 (by decide), p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 16),
-        p.args _ (by decide : (1 : Nat) < 16), p.args _ (by decide : (2 : Nat) < 16),
-        p.args _ (by decide : (3 : Nat) < 16), p.args _ (by decide : (4 : Nat) < 16),
-        p.args _ (by decide : (5 : Nat) < 16), p.args _ (by decide : (6 : Nat) < 16),
-        p.args _ (by decide : (7 : Nat) < 16), p.args _ (by decide : (12 : Nat) < 16),
-        p.args _ (by decide : (13 : Nat) < 16)]
+      simp only [psa, Ss, g9, g10, a0, a1, a2, a3, a4, a5, a6, a7, a12, a13]
   · cases pc with
     | false => exact absurd hi (by simp only [nP, Bool.false_eq_true, ↓reduceIte]; omega_using [h12])
     | true =>
@@ -163,7 +171,7 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv pc D a u₁) (h�
         rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
       simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
         callE_gpr s u (r := .r6), A.r6]
-      congr 1
+      refine congrArg (List.map _) ?_
       have subPre : Region.Sub ⟨stackArg s 16, 8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat⟩ (preR s) :=
         fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
       exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by

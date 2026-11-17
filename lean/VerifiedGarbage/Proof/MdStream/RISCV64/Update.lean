@@ -757,9 +757,11 @@ theorem correctMain (hf : CalleeOk H code) {s₀ : State} (hp : Pre P s₀) :
 theorem correct (hf : CalleeOk H code) {s₀ : State} (hp : Pre P s₀) :
     WP isa (update P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updK H).post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp144)
-    (WP.mono (correctMain hf hp) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
+    (WP.mono (correctMain hf hp) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ m u f => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
-  exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+  -- The `free` loses the frame's bytes, which lie apart from the state.
+  exact ⟨⟨hk, rfl, hra⟩, fun iv msg hr hc => H.repr_congr (by decide) (fun i hi =>
+    lost_byte f (R := stR P s₀) hp.st_scr hi) (hpost iv msg hr hc)⟩
 
 /-- The initial taint: only the arguments are public. -/
 theorem agree₀ {s₁ s₂ : State} (hpub : (updK H).pub s₁ s₂) :

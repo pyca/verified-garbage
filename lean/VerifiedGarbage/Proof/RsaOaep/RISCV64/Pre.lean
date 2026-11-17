@@ -133,14 +133,16 @@ names: the seed has its length. -/
 theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSpec ts).pre s)
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) : PreO H.len s := by
   enc_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl,
-    st, sa, ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, ⟨k1, k2⟩, ok,
-    e1, e2, hs, hp, hl, al3, al5, al8, al7⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr on oe ol om osd osc op otl ot oa ns es ls ms sds sp stl
+    st sa ko kn ke kl km ksd ksc kp ktl kt ka wo wn we wl wm wsd wsc wp wtl wt k12 ok
+    e1 e2 hs hp hl al3 al5 al8
+  obtain ⟨k1, k2⟩ := k12
   have hl := hl H hH
   rw [hl] at hrd osd sds ksd wsd
   exact ⟨spal, sp1, by omega_using [sp2], hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st,
     sa, ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, k1, k2, ok, e1, e2,
-    hs, hp, al3, al5, al8, al7⟩
+    hs, hp, al3, al5, al8, h⟩
 
 /-- The tables, as the contract gives them: each one of `ts`, the label's
 hash function's at the stack argument 8 and MGF1's at 9, with the functions

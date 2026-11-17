@@ -85,7 +85,7 @@ theorem swap_ok {s : State} (h : Room s) :
   refine ⟨s', hs', fun w hw b hb => ?_, fun j hj => hsl j j (by omega_using [hj]) (hp.2 j hj), p.rd, p.wr, p.sp,
     fun r h1 h2 => p.other r ?_, ?_⟩
   · rw [lv_slot, lv_slot]
-    congr 2
+    refine congrArg (fun x : BitVec 64 => (x >>> (32 * (b % 2))).setWidth 32) ?_
     rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega_using [hw]) with rfl | rfl | rfl | rfl
     · exact hsl _ _ (by simp [arrSlot]; omega_using [hb]) ((hp.1 (b / 2) (by omega_using [hb])).1)
     · rw [show arrSlot 1 + b / 2 = 80 + (8 + b / 2) by simp [arrSlot]; omega_using [],

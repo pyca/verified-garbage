@@ -110,8 +110,8 @@ theorem cross_ok (s : State) (hz : s.gpr .x7 = 0) :
       Keeps [.x1,.x2,.x3,.x4,.x5,.x6,.x8,.x9,.x10,.x11,.x12,.x13,.x14] s t := by
   apply WP.of_runBlock
   simp only [crossCode, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, hz,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, trivial, trivial, trivial, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
@@ -135,8 +135,8 @@ theorem double_ok (s : State) (hz : s.gpr .x7 = 0) :
       Keeps [.x3,.x6,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17] s t := by
   apply WP.of_runBlock
   simp only [doubleCode, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, hz,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, trivial, trivial, trivial, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
@@ -192,8 +192,8 @@ theorem diag_ok (s : State) :
       Keeps [.x1,.x2,.x9,.x10,.x11,.x12,.x13,.x14,.x15] s t := by
   apply WP.of_runBlock
   simp only [diagCode, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq,
     show 32 < Size.x.bits by decide,
     Option.some.injEq, exists_eq_left']
   have h := diag_value (s.gpr .x9) (s.gpr .x10) (s.gpr .x11) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x8) (s.gpr .x4) (s.gpr .x2) (s.gpr .x5) (s.gpr .x3) (s.gpr .x16) (s.gpr .x6) (s.gpr .x17)

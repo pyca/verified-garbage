@@ -416,6 +416,107 @@ theorem decryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (decryptSig.words
   rw [e₁, e₂, e₃, e₄, e₅]
   exact h hr
 
+/-! ## What the postconditions read of the memory on return -/
+
+/-- `initPost` reads the memory on return only within the buffers. -/
+theorem initPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (initSig.words pb).length →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPost pb) vs m m₁ r →
+      Curry.apply (initSig.words pb) (initPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (initPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (initPost pb) _ m m₂ r
+  dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
+  obtain ⟨hl, h1, h2, h3, h4⟩ := h
+  have ha := agree_of hb.2
+  have hn := (show ∀ L : Nat, (L = 32 ∨ L = 48 ∨ L = 64) → 16 * (Spec.Aes.rounds (L / 8) + 1) ≤ 240 from
+    fun L h => by rcases h with e | e | e <;> subst e <;> decide) _ hl
+  exact ⟨hl, Eq.trans (bytesAt_congr fun i hi => ha i (by omega_using [hn, hi])) h1,
+    Eq.trans (bytesAt_congr_off (d := 240) (N := 512) (by decide) fun i hi => ha i (by omega_using [hi])) h2,
+    Eq.trans (bytesAt_congr_off (d := 256) (N := 512) (by decide) fun i hi => ha i (by omega_using [hi])) h3,
+    Eq.trans (bytesAt_congr_off (d := 272) (N := 512) (by omega_using [hn]) fun i hi =>
+      ha i (by omega_using [hi])) h4⟩
+
+/-- `encryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem encryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (encryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs encryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (encryptSig.words pb) (encryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (encryptSig.words pb) (encryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ads, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ac, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨siv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [encryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (encryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (encryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, encryptRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := siv) (n := 16) fun i hi => agree_of hb.2.2 i (by omega_using [hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
+/-- `decryptRoundsPost` reads the memory on return only within the buffers. -/
+theorem decryptPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (decryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs decryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (decryptSig.words pb) (decryptRoundsPost pb) vs m m₁ r →
+      Curry.apply (decryptSig.words pb) (decryptRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ads, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ac, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨siv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [decryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (decryptRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (decryptRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, decryptRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := data) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
 /-- `decryptLeak` reads the memory only within the buffers and the list of
 slices -/
 theorem decryptLeak_local : Sig.LeakLocalL pb decryptSig (some (decryptLeak pb))

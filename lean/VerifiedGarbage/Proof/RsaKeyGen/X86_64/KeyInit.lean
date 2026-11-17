@@ -183,6 +183,12 @@ theorem sub_beq_zero {x k : Nat} (hx : x < 2 ^ 64) (hk : k < 2 ^ 64) :
     omega_using [hx, hk, this]
   · intro h; subst h; exact BitVec.sub_self _
 
+/-- Two instructions that each write only registers of `rs`. -/
+private theorem writesOnly_pair {rs : List Reg} {i j : Instr} (hi : writesIn rs i = true)
+    (hj : writesIn rs j = true) : writesOnly rs (.block [i, j]) = true := by
+  show (writesIn rs i && (writesIn rs j && true)) = true
+  rw [hi, hj]; rfl
+
 /-- `cmp r, k` then `cmov cc d, q`, for `cc` below, above or equal. -/
 theorem cmp_cmov {s : State} (r : Reg) (c : BitVec 32) (cc : Cond) (d q : Reg) {x k : Nat}
     (hr : s.gpr r = BitVec.ofNat 64 x) (hx : x < 2 ^ 64) (hk : BitVec.signExtend 64 c = BitVec.ofNat 64 k)
@@ -191,7 +197,8 @@ theorem cmp_cmov {s : State} (r : Reg) (c : BitVec 32) (cc : Cond) (d q : Reg) {
       (t.gpr d = (if (match cc with | .b => decide (x < k) | .ae => decide (k ≤ x) | _ => decide (x = k))
           then s.gpr q else s.gpr d) ∧ t.mem = s.mem ∧ t.gpr r = s.gpr r) ∧
         Keep [d, r] s t := by
-  refine WP.keep [d, r] ?_ (by cases r <;> cases d <;> rfl)
+  refine WP.keep [d, r] ?_ (writesOnly_pair (List.contains_iff_mem.mpr (List.mem_cons_of_mem _ List.mem_cons_self))
+    (List.contains_iff_mem.mpr List.mem_cons_self))
   have hdr : d ≠ r := Ne.symm hrd
   cases cc with
   | ne => exact absurd rfl hcc
@@ -213,7 +220,8 @@ theorem test_cmov_ne {s : State} (r d q : Reg) (hrd : r ≠ d) :
     WP isa (.block [.alu .test r (.reg r), .cmov .ne d (.reg q)]) s fun t =>
       (t.gpr d = (if s.gpr r = 0 then s.gpr d else s.gpr q) ∧ t.mem = s.mem ∧ t.gpr r = s.gpr r) ∧
         Keep [d, r] s t := by
-  refine WP.keep [d, r] ?_ (by cases r <;> cases d <;> rfl)
+  refine WP.keep [d, r] ?_ (writesOnly_pair (List.contains_iff_mem.mpr (List.mem_cons_of_mem _ List.mem_cons_self))
+    (List.contains_iff_mem.mpr List.mem_cons_self))
   xrun [eval, execCmov, BitVec.and_self]
   by_cases h : s.gpr r = 0#64
   · simp [h, State.setFlags]

@@ -780,7 +780,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     · simp only [scR, dR, dp, len, scr, σ, State.withRegions_gpr, g₁ .a2 (by decide),
         g₁ .a3 (by decide), ha4]
       exact hkd.symm
-  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost => ?_)
+  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost m _ fl => ?_)
     (noFrames_updateMain hf .a4)
   · rw [hrd₁, hwr₁, hrd, hwr]
     apply Covers.of_sub
@@ -809,7 +809,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   · have := hpost h0 d
     simp only [State.withRegions_mem, State.withRegions_gpr, u₁.mem,
       g₁ .a0 (by decide), g₁ .a1 (by decide), g₁ .a2 (by decide), g₁ .a3 (by decide)] at this
-    simp only [freed]
-    exact this hr hc hl
+    -- The `free` loses the frame's bytes, which lie apart from the state.
+    exact repr_congr hP (fun i hi => lost_byte fl (R := stR s₀ w) hks.symm hi) (this hr hc hl)
 
 end VG.Proof.Blake2.RISCV64.Stream.Update

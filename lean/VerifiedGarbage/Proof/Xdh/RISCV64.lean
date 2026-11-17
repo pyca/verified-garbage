@@ -354,7 +354,10 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
 /-! ## The whole function -/
 
 theorem popped_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v : State}
-    (hv : Checked n w f s v) : abiPreserved s (popped .ra v) ∧ ExPost n f s (popped .ra v) := by
+    (h : ExPre n w s) (hv : Checked n w f s v) (m : Mem) (u : Nat → BitVec 64)
+    (fl : Frame [frR s] v.mem m) :
+    abiPreserved s { popped .ra v with mem := m, unknowns := u } ∧
+      ExPost n f s { popped .ra v with mem := m, unknowns := u } := by
   have hra : v.mem.read (v.sp + 8) 8 = s.gpr .ra := by rw [hv.called.sp]; exact hv.called.ra
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩
   · show (v.write .ra _).gpr r = _
@@ -363,7 +366,10 @@ theorem popped_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v :
     rw [hv.called.sp]; exact BitVec.sub_add_cancel _ _
   · show (v.write .ra (v.mem.read (v.sp + 8) 8)).gpr .ra = s.gpr .ra
     rw [RegUpd.gpr_write_self, hra]
-  · exact hv.called.out
+  · -- The pop loses the frame's bytes, which lie apart from the output.
+    refine Eq.trans ?_ hv.called.out
+    exact List.map_congr_left fun i hi =>
+      lost_byte fl (R := outR n s) h.2.1.symm (List.mem_range.mp hi)
   · show ((v.write .ra (v.mem.read (v.sp + 8) 8)).gpr .a0).setWidth 32 = _
     rw [RegUpd.gpr_write_of_ne _ _ (by decide), hv.a0]
     exact result_spec _ _ _ _ hv.called.out
@@ -375,7 +381,7 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
   refine WP.seq (WP.mono (saved_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hk h he) fun z hz => ?_)
   refine WP.seq (WP.mono (restored_wp h hz) fun u hu => ?_)
-  exact WP.mono (checked_wp h hn hu) fun v hv => popped_ok hv
+  exact WP.mono (checked_wp h hn hu) fun v hv m u fl => popped_ok h hv m u fl
 
 /-! ## Constant time -/
 

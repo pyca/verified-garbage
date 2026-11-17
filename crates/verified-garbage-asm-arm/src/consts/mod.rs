@@ -19,6 +19,10 @@ mod vg_brainpoolp384r1_comb;
 pub use vg_brainpoolp384r1_comb::VG_BRAINPOOLP384R1_COMB;
 
 #[rustfmt::skip]
+mod vg_brainpoolp512r1_comb;
+pub use vg_brainpoolp512r1_comb::VG_BRAINPOOLP512R1_COMB;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
@@ -49,6 +53,10 @@ pub use vg_p256_comb::VG_P256_COMB;
 #[rustfmt::skip]
 mod vg_p384_comb;
 pub use vg_p384_comb::VG_P384_COMB;
+
+#[rustfmt::skip]
+mod vg_p521_comb;
+pub use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
 mod vg_rc2_pitable;

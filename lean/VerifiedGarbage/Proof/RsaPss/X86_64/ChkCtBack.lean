@@ -847,8 +847,8 @@ def K5 : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 25, 26, 35, 36, 37, 38]
 /-- And with `DB`'s. -/
 def KM : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 23, 24, 25, 26, 35, 36, 37, 38]
 
-theorem km_k5 {k : Nat} (h : k ∈ KM) (h23 : k ≠ 23) (h24 : k ≠ 24) : k ∈ K5 := by
-  simp only [KM, K5, List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega_using [h23, h24, h]
+theorem km_k5 {k : Nat} (h : k ∈ KM) (h23 : k ≠ 23) (h24 : k ≠ 24) : k ∈ K5 :=
+  (by decide : ∀ k ∈ KM, k ≠ 23 → k ≠ 24 → k ∈ K5) k h h23 h24
 
 theorem km_lt {k : Nat} (h : k ∈ KM) : k < nW := by
   simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at h; unfold nW frameBytes; omega_using [h]
@@ -1416,8 +1416,8 @@ theorem jn_he {a t : State} (h : VAt T (JN T.H) a t) : HE T.H T.dn T.f 1 (hashA 
       ⟨vdb T.H.D s - pos - 1 + (8 + T.H.D), h27, ?_⟩), S.syH.tr v.sy⟩
   · simp only [hws, hashA, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl
-    · simp [pw, KM, vw]
-    · simp [pw, KM, vw]
+    · exact List.mem_map.mpr ⟨21, by decide, rfl⟩
+    · exact List.mem_map.mpr ⟨28, by decide, rfl⟩
     · rw [← tb.h0]; exact List.mem_map.mpr ⟨8, by decide, rfl⟩
     · rw [← tb.h3]; exact List.mem_map.mpr ⟨9, by decide, rfl⟩
     · rw [← tb.h4]; exact List.mem_map.mpr ⟨10, by decide, rfl⟩

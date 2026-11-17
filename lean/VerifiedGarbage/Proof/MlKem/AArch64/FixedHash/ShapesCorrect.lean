@@ -1146,7 +1146,10 @@ open VG.Spec.Sha3 (stateAt)
 theorem zero_no_link (sc : Reg) (st : Nat) :
     ∀i∈instrs (.block (zeroState sc st) : Prog isa),clobbers i .x30 = false := by
   simp only [zeroState,ptrTo]
-  split <;> simp [instrs,clobbers, dstOf]
+  -- Each instruction by evaluation: the leading ones, then the stores for any index.
+  split <;> repeat' (first
+    | exact fun i hi => by obtain ⟨k,-,rfl⟩ := List.mem_map.mp hi; rfl
+    | refine List.forall_mem_cons.mpr ⟨rfl,?_⟩)
 
 theorem zeroSave_ok {sc : Reg} {st wk rate : Nat} {s₀ : State}
     (hS : HSetup sc st wk rate s₀)

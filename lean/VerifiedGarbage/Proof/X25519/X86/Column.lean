@@ -61,8 +61,7 @@ theorem tval_congr {m m' : Mem} {x : BitVec 32} {t : Term} (h : ∀ d ∈ treads
 theorem colv_congr {m m' : Mem} {x : BitVec 32} {ts : List Term}
     (h : ∀ t ∈ ts, ∀ d ∈ treads t, wd m' x d = wd m x d) : colv m' x ts = colv m x ts := by
   simp only [colv]
-  congr 1
-  exact List.map_congr_left fun t ht => tval_congr (h t ht)
+  exact congrArg List.sum (List.map_congr_left fun t ht => tval_congr (h t ht))
 
 /-! ## Arithmetic -/
 

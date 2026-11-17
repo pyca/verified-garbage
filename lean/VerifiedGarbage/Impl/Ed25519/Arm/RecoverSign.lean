@@ -15,23 +15,23 @@ def recoverParity : List Instr :=
     .dp .eor .r9 .r9 (.reg .r2), .cmp .r9 (.imm 0)]
 
 def recoverSuccessOps : List FieldOp := [.const 2 1, .mulc 3 0 1]
-def recoverSuccess : Prog isa := .seq (fieldCode recoverSuccessOps) (.block [.mov .r9 (.imm 1)])
+def recoverSuccess (umaal : Bool) : Prog isa := .seq (fieldCode umaal recoverSuccessOps) (.block [.mov .r9 (.imm 1)])
 def recoverInvalid : Prog isa := .block [.mov .r9 (.imm 0)]
 
-def recoverAdjustSign : Prog isa :=
+def recoverAdjustSign (umaal : Bool) : Prog isa :=
   .seq (.block (freeze 0 ++ recoverParity))
-    (.seq (.ite .eq (.block []) (fieldCode [.const 5 0, .sub 0 5 0])) recoverSuccess)
+    (.seq (.ite .eq (.block []) (fieldCode false [.const 5 0, .sub 0 5 0])) (recoverSuccess umaal))
 
 def signTest : List Instr := [.ldr .r3 .r0 60, .cmp .r3 (.imm 0)]
 
-def recoverSign : Prog isa :=
+def recoverSign (umaal : Bool) : Prog isa :=
   .seq (fieldZero 0) (.ite .eq
-    (.seq (.block signTest) (.ite .ne recoverInvalid recoverAdjustSign)) recoverAdjustSign)
+    (.seq (.block signTest) (.ite .ne recoverInvalid (recoverAdjustSign umaal))) (recoverAdjustSign umaal))
 
-def recoverPoint : Prog isa :=
-  .seq recoverCandidate (.seq (fieldEqual 11 6) (.ite .eq recoverSign
+def recoverPoint (umaal : Bool) : Prog isa :=
+  .seq (recoverCandidate umaal) (.seq (fieldEqual 11 6) (.ite .eq (recoverSign umaal)
     (.seq (fieldEqual 11 12) (.ite .eq
-      (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign)
+      (.seq (fieldCode umaal [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) (recoverSign umaal))
       recoverInvalid))))
 
 end VG.Impl.Ed25519.Arm

@@ -33,6 +33,10 @@ vg_chacha20_init:
 	sub x13, x13, x11
 	lsl x13, x13, #6
 	str x13, [x0, #128]
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x13, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -56,6 +60,10 @@ vg_chacha20_set_nonce:
 	sub x13, x13, x11
 	lsl x13, x13, #6
 	str x13, [x0, #128]
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x13, #0, lsl #0
 	ret
 	.p2align 6
 

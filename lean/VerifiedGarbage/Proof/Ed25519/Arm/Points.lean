@@ -16,6 +16,8 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 def fieldDest : FieldOp → Slot
   | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
 
@@ -61,7 +63,7 @@ theorem copyPointToQ_eval (e : Env) :
 
 theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa Point16.doubleCall s fun t =>
+    WP isa (Point16.doubleCall umaal) s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 0 1 2 3) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
@@ -71,7 +73,7 @@ theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : Al
 
 theorem pointAdd_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa Point16.addCall s fun t =>
+    WP isa (Point16.addCall umaal) s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 4 5 6 7) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by

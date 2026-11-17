@@ -25,8 +25,8 @@ open VG.Impl.Ed25519.Arm.Whole
 def baseArgs : List Instr := setup [(.r0, .caller 0 0), (.r1, .frame 24), (.r2, .caller 2 0)] []
 def wipe : List Instr := zeroWords 6 56
 /-- The body after `digest`, which leaves the seed's SHA-512 digest at `frame 184`. -/
-def bodyFrom (digest : Prog isa) : Prog isa := .seq digest (.seq (.block prune)
-  (.seq (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) (.block wipe)))
+def bodyFrom (umaal : Bool) (digest : Prog isa) : Prog isa := .seq digest (.seq (.block prune)
+  (.seq (callWith baseArgs ("vg_ed25519_scalar_base" ++ suffix umaal) (scalarBase umaal)) (.block wipe)))
 
 /-- The pointers of the copy: the cached digest (the second argument) in `r1`, `frame 184`
 in `r2`. -/
@@ -43,6 +43,6 @@ def copyExpanded : Prog isa := .seq (.block (setup copyArgs [])) (.block copyWor
 
 /-- `vg_ed25519_public_key_expanded`: the public key from the seed's cached SHA-512 digest
 (`publicKeyExpandedContract`). -/
-def codeExpanded : Prog isa := wrap 3 (bodyFrom copyExpanded)
+def codeExpanded (umaal : Bool) : Prog isa := wrap 3 (bodyFrom umaal copyExpanded)
 
 end VG.Impl.Ed25519.Arm.PublicKey

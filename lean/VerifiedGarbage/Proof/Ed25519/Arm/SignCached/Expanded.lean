@@ -31,6 +31,8 @@ open VG VG.Arm VG.Impl.Ed25519.Arm.SignCached VG.Impl.Ed25519.Arm.Whole
 open VG.Impl.Ed25519.Arm.PublicKey (copyArgs copyWords copyExpanded)
 open VG.Proof.Ed25519 (sign_of_sha512_eq sha512_length)
 
+variable {umaal : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 /-- The digest at `seed`, read only and outside what signing writes. -/
@@ -109,7 +111,7 @@ theorem expanded_key {s : State} (h : signLocalE.pre s) :
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
   exact hk
 
-theorem bodyE_noFrames : (bodyFrom copyExpanded).noFrames = true := by
+theorem bodyE_noFrames : (bodyFrom umaal copyExpanded).noFrames = true := by
   simp only [bodyFrom, copyExpanded, nonceCode, challengeCode, hashNonce, hashChallenge,
     init, update, finalize, reduce, Impl.Ed25519.Arm.Whole.callWith, Code.noFrames,
     Impl.Sha512.Arm.Stream.init, Bool.and_self]
@@ -129,9 +131,9 @@ theorem entry_expanded {s p : State} (h : signLocalE.pre s) (hp : Whole.Saved (W
       (by change 32 ≤ 2 ^ 64; decide)).trans hk⟩
 
 theorem signE_ok {s : State} (h : signLocalE.pre s) :
-    WP isa codeExpanded s fun u => abiPreserved s u ∧ signLocalE.post s u := by
+    WP isa (codeExpanded umaal) s fun u => abiPreserved s u ∧ signLocalE.post s u := by
   obtain ⟨seed, -, hE, hk⟩ := expanded_key h
-  have hw := Whole.wrap_ok bodyE_noFrames (by decide : 6 ≤ 6) (entry_below h) (entry_top h)
+  have hw := Whole.wrap_ok (bodyE_noFrames (umaal := umaal)) (by decide : 6 ≤ 6) (entry_below h) (entry_top h)
     (entry_read h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (State.addr (s.gpr .r0)) 64 = Spec.Ed25519.sign seed
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r3)) (stackArg s 0).toNat))
@@ -152,7 +154,7 @@ theorem signE_ok {s : State} (h : signLocalE.pre s) :
   rw [hp, hm]
   exact sign_of_sha512_eq (hE.symm.trans hs') _
 
-theorem signE_ct : ConstantTime isa signLocalE.pre signLocalE.pub codeExpanded := by
+theorem signE_ct : ConstantTime isa signLocalE.pre signLocalE.pub (codeExpanded umaal) := by
   refine Whole.wrap_ct (by decide) (fun _ _ hp => hp.1)
     (fun _ h => entry_below h) (fun _ h => entry_top h) (fun _ h => entry_read h) ?_ ?_
   · intro s hs p hp
@@ -356,7 +358,7 @@ theorem signE_implies : signLocalE.Implies signSpecE where
     exact ⟨hsp, h0, h1, h2, h3, a0, a1, hsy⟩
   sat := ⟨satStateE, signE_sat⟩
 
-theorem signExpanded_verified : Verified Arm.target codeExpanded signSpecE :=
+theorem signExpanded_verified : Verified Arm.target (codeExpanded umaal) signSpecE :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => signE_ok h) signE_ct (.refl signE_implies.sat_left))
     signE_implies

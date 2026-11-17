@@ -73,11 +73,13 @@ theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).
   sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
-  obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, outWs, _,
-    nWs, inputWs, pWs, qWs, dpWs, dqWs, qiWs, wsArgs,
-    stackOut, stackN, stackInput, stackP, stackQ, stackDp, stackDq, stackQi, stackWs, stackArgs,
-    outFit, nFit, inputFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit,
-    valid, outLen, inputLen, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := h
+  sig_split h
+  rename_i stackFit argFit rd wr _ _ _ _ _ _ _ outWs _
+    nWs inputWs pWs qWs dpWs dqWs qiWs wsArgs
+    stackOut stackN stackInput stackP stackQ stackDp stackDq stackQi stackWs stackArgs
+    outFit nFit inputFit pFit qFit dpFit dqFit qiFit wsFit
+    valid outLen inputLen pPositive pShort qPositive qShort dpLen qiLen dqLen
+  have space := h
   rw [outLen] at wr outWs stackOut outFit
   rw [inputLen, dpLen, qiLen, dqLen] at rd
   rw [inputLen] at inputWs stackInput inputFit
@@ -213,12 +215,13 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
     abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
-  obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, outWs, outR2, outArgs,
-    nWs, inputWs, pWs, qWs, dpWs, dqWs, qiWs, wsR2, wsArgs,
-    stackOut, stackN, stackInput, stackP, stackQ, stackDp, stackDq, stackQi, stackWs, stackR2, stackArgs,
-    outFit, nFit, inputFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit, r2Fit,
-    valid, outLen, inputLen, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space,
-    r2Len, r2Words, _⟩ := h
+  sig_split h
+  rename_i stackFit argFit rd wr _ _ _ _ _ _ _ outWs outR2 outArgs
+    nWs inputWs pWs qWs dpWs dqWs qiWs wsR2 wsArgs
+    stackOut stackN stackInput stackP stackQ stackDp stackDq stackQi stackWs stackR2 stackArgs
+    outFit nFit inputFit pFit qFit dpFit dqFit qiFit wsFit r2Fit
+    valid outLen inputLen pPositive pShort qPositive qShort dpLen qiLen dqLen space
+    r2Len r2Words
   rw [outLen] at wr outWs stackOut outFit outR2 outArgs
   rw [inputLen, dpLen, qiLen, dqLen] at rd
   rw [inputLen] at inputWs stackInput inputFit

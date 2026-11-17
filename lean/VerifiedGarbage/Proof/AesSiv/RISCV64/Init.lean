@@ -633,6 +633,8 @@ theorem init_framed :
       (Spec.Siv.initContract RISCV64.abi 2560) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre RISCV64.abi.ptrBits) (post := Spec.Siv.initPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2560) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 0) (bytes := 2560) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl)
+    initFrameSat_pre
 
 end VG.Proof.AesSiv.RISCV64

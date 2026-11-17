@@ -286,8 +286,11 @@ theorem shr30o_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.
   refine WP.seq (WP.mono (shrPairs_ok hwu (sp := rv (kw len) src) (dp := rv (kw len) dst) (n := nw len - 1) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁) p₃
     (by rw [K₃.1 _ (by decide), c₂]; omega_using [ke])) fun t ⟨Kt, pe, pi, _, Ot, Vt⟩ => ?_)
-  rw [show 2 * ((nw len - 1) / 2) = nw len - 1 by omega_arith, show 8 * ((nw len - 1) / 2) = 4 * (nw len - 1) by omega_arith,
-    show nw len - 1 + 1 = nw len by omega_arith] at *
+  obtain e1 : 2 * ((nw len - 1) / 2) = nw len - 1 := by omega_arith
+  obtain e2 : 8 * ((nw len - 1) / 2) = 4 * (nw len - 1) := by omega_arith
+  obtain e3 : nw len - 1 + 1 = nw len := by omega_arith
+  simp only [e1, e2, e3] at pe pi Ot Vt ⊢
+  clear e1 e2 e3
   obtain ht := hwu.of_keeps Kt
   -- The last low word and the top word.
   refine shrLast_ok ht pe pi (by omega_arith) (by omega_arith) (by omega_arith) fun v Wd Wt Kv Ov => ?_
@@ -377,9 +380,9 @@ theorem fgRowO_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3
   obtain cap : ((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int) = (2 : Int) ^ (32 * nw len) * 2 ^ 31 := by
     push_cast; rfl
   obtain lo : -((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int) ≤ cu * f + cv * g := by
-    rw [cap]; have := neg_abs_le (cu * f + cv * g); linarith
+    rw [cap]; have := neg_abs_le (cu * f + cv * g); linarith only [this, hcomb, hpI]
   obtain hi : cu * f + cv * g < ((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int) := by
-    rw [cap]; have := le_abs_self (cu * f + cv * g); linarith
+    rw [cap]; have := le_abs_self (cu * f + cv * g); linarith only [this, hcomb, hpI]
   refine WP.mono (shrSignedO_ok H₁ (dst := a j) (src := a 11) rfl hodd h3 (by omega_using [hf16, r11]) (by omega_using [hf16, rj, hjb]) (by omega_using [r11, rj, hjb])
     (by exact_mod_cast V₁) lo hi (Int.mul_ediv_cancel' hdiv).symm)
     fun z ⟨Hz, V, K, O⟩ => ⟨Hz, by exact_mod_cast V, (K₁.mono (by decide)).trans (K.mono (by decide)), ?_⟩

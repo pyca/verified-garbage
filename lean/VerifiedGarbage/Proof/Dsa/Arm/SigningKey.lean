@@ -16,6 +16,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+variable {umaal : Bool}
+
 def signingPublicChecks (P Q G Y : Nat) : Prop :=
   ((1 < G ∧ G < P) ∧ (1 < Y ∧ Y < P)) ∧ (P - 1) % Q = 0 ∧ G ^ Q % P = 1
 
@@ -41,13 +43,13 @@ theorem signingSubgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
     (S : Sched s base size pLen qLen nP nQ)
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (hP : 1 < P) (hPo : P % 2 = 1) :
-    WP isa (Validate.signingSubgroup pLen qLen) s fun t =>
+    WP isa (Validate.signingSubgroup umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (G ^ Q % P = 1) ∧
       KeepsLocals base s t scalars.1 scalars.2 ∧ Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
   have big := S.big
   have Plt := operand_lt_of Ip
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  have ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_arith
   have ht : Impl.Dsa.Layout.t + pLen < size := by omega_arith
   unfold Validate.signingSubgroup
@@ -68,7 +70,7 @@ theorem signingKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : 
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Validate.signingKey pLen qLen) s fun t =>
+    WP isa (Validate.signingKey umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (signingPublicChecks P Q G Y) ∧
       localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ Run base s t := by
   have big := S.big

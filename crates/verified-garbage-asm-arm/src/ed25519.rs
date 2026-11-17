@@ -3,7 +3,978 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_ed25519_key_pair_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED25519_KEY_PAIR_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_key_pair_umaal(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r0, r1, r3}}
+mov r0, r2
+ldr r2, [sp, #4]
+movw r1, #32
+bl {vg_sha512_digest}
+ldr r0, [sp, #0]
+ldr r1, [sp, #4]
+ldr r2, [sp, #8]
+bl {vg_ed25519_public_key_expanded_umaal}
+ldr r3, [sp], #12
+ldr lr, [sp], #4
+sub sp, sp, #600
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+str r2, [r12, #312]
+str r2, [r12, #316]
+str r2, [r12, #320]
+str r2, [r12, #324]
+str r2, [r12, #328]
+str r2, [r12, #332]
+str r2, [r12, #336]
+str r2, [r12, #340]
+str r2, [r12, #344]
+str r2, [r12, #348]
+str r2, [r12, #352]
+str r2, [r12, #356]
+str r2, [r12, #360]
+str r2, [r12, #364]
+str r2, [r12, #368]
+str r2, [r12, #372]
+str r2, [r12, #376]
+str r2, [r12, #380]
+str r2, [r12, #384]
+str r2, [r12, #388]
+str r2, [r12, #392]
+str r2, [r12, #396]
+str r2, [r12, #400]
+str r2, [r12, #404]
+str r2, [r12, #408]
+str r2, [r12, #412]
+str r2, [r12, #416]
+str r2, [r12, #420]
+str r2, [r12, #424]
+str r2, [r12, #428]
+str r2, [r12, #432]
+str r2, [r12, #436]
+str r2, [r12, #440]
+str r2, [r12, #444]
+str r2, [r12, #448]
+str r2, [r12, #452]
+str r2, [r12, #456]
+str r2, [r12, #460]
+str r2, [r12, #464]
+str r2, [r12, #468]
+str r2, [r12, #472]
+str r2, [r12, #476]
+str r2, [r12, #480]
+str r2, [r12, #484]
+str r2, [r12, #488]
+str r2, [r12, #492]
+str r2, [r12, #496]
+str r2, [r12, #500]
+str r2, [r12, #504]
+str r2, [r12, #508]
+str r2, [r12, #512]
+str r2, [r12, #516]
+str r2, [r12, #520]
+str r2, [r12, #524]
+str r2, [r12, #528]
+str r2, [r12, #532]
+str r2, [r12, #536]
+str r2, [r12, #540]
+str r2, [r12, #544]
+str r2, [r12, #548]
+str r2, [r12, #552]
+str r2, [r12, #556]
+str r2, [r12, #560]
+str r2, [r12, #564]
+str r2, [r12, #568]
+str r2, [r12, #572]
+str r2, [r12, #576]
+str r2, [r12, #580]
+str r2, [r12, #584]
+str r2, [r12, #588]
+str r2, [r12, #592]
+str r2, [r12, #596]
+add sp, sp, #600
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded_umaal = sym super::ed25519::vg_ed25519_public_key_expanded_umaal::vg_ed25519_public_key_expanded_umaal,
+    )
+}
+
+/// The CPU features `vg_ed25519_sign_expanded_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED25519_SIGN_EXPANDED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk`, `message` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_sign_expanded_umaal(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+add r12, sp, #248
+str r3, [r12, #12]
+ldr lr, [sp, #280]
+add r12, sp, #248
+str lr, [r12, #16]
+ldr lr, [sp, #284]
+add r12, sp, #248
+str lr, [r12, #20]
+ldr r1, [sp, #252]
+add r1, r1, #0
+add r2, sp, #184
+ldr r0, [r1, #0]
+str r0, [r2, #0]
+ldr r0, [r1, #4]
+str r0, [r2, #4]
+ldr r0, [r1, #8]
+str r0, [r2, #8]
+ldr r0, [r1, #12]
+str r0, [r2, #12]
+ldr r0, [r1, #16]
+str r0, [r2, #16]
+ldr r0, [r1, #20]
+str r0, [r2, #20]
+ldr r0, [r1, #24]
+str r0, [r2, #24]
+ldr r0, [r1, #28]
+str r0, [r2, #28]
+ldr r0, [r1, #32]
+str r0, [r2, #32]
+ldr r0, [r1, #36]
+str r0, [r2, #36]
+ldr r0, [r1, #40]
+str r0, [r2, #40]
+ldr r0, [r1, #44]
+str r0, [r2, #44]
+ldr r0, [r1, #48]
+str r0, [r2, #48]
+ldr r0, [r1, #52]
+str r0, [r2, #52]
+ldr r0, [r1, #56]
+str r0, [r2, #56]
+ldr r0, [r1, #60]
+str r0, [r2, #60]
+ldr r0, [sp, #184]
+movw r1, #65528
+movt r1, #65535
+and r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #0]
+ldr r0, [sp, #188]
+add r12, sp, #24
+str r0, [r12, #4]
+ldr r0, [sp, #192]
+add r12, sp, #24
+str r0, [r12, #8]
+ldr r0, [sp, #196]
+add r12, sp, #24
+str r0, [r12, #12]
+ldr r0, [sp, #200]
+add r12, sp, #24
+str r0, [r12, #16]
+ldr r0, [sp, #204]
+add r12, sp, #24
+str r0, [r12, #20]
+ldr r0, [sp, #208]
+add r12, sp, #24
+str r0, [r12, #24]
+ldr r0, [sp, #212]
+movw r1, #65535
+movt r1, #16383
+and r0, r0, r1
+movw r1, #0
+movt r1, #16384
+orr r0, r0, r1
+add r12, sp, #24
+str r0, [r12, #28]
+ldr r0, [sp, #216]
+add r12, sp, #0
+str r0, [r12, #56]
+ldr r0, [sp, #220]
+add r12, sp, #0
+str r0, [r12, #60]
+ldr r0, [sp, #224]
+add r12, sp, #0
+str r0, [r12, #64]
+ldr r0, [sp, #228]
+add r12, sp, #0
+str r0, [r12, #68]
+ldr r0, [sp, #232]
+add r12, sp, #0
+str r0, [r12, #72]
+ldr r0, [sp, #236]
+add r12, sp, #0
+str r0, [r12, #76]
+ldr r0, [sp, #240]
+add r12, sp, #0
+str r0, [r12, #80]
+ldr r0, [sp, #244]
+add r12, sp, #0
+str r0, [r12, #84]
+ldr r0, [sp, #268]
+add r0, r0, #0
+bl {vg_sha512_init}
+add r0, sp, #56
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #0
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #260]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #32
+movw r3, #0
+bl {vg_sha512_update_scratch}
+add r0, sp, #184
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+ldr r2, [sp, #264]
+add r2, r2, #32
+movw r3, #0
+bl {vg_sha512_finalize_scratch}
+add r0, sp, #88
+add r1, sp, #184
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_reduce}
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r1, sp, #88
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_base_umaal}
+ldr r0, [sp, #268]
+add r0, r0, #0
+bl {vg_sha512_init}
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #0
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #256]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #32
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #260]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+movw r2, #64
+movw r3, #0
+bl {vg_sha512_update_scratch}
+add r0, sp, #184
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #192
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #268]
+add r0, r0, #0
+ldr r2, [sp, #264]
+add r2, r2, #64
+movw r3, #0
+bl {vg_sha512_finalize_scratch}
+add r0, sp, #120
+add r1, sp, #184
+ldr r2, [sp, #268]
+add r2, r2, #0
+bl {vg_ed25519_scalar_reduce}
+ldr r0, [sp, #268]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #248]
+add r0, r0, #32
+add r1, sp, #88
+add r2, sp, #120
+add r3, sp, #24
+bl {vg_ed25519_scalar_mul_add}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #24]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #28]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #32]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #36]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #40]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #44]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #48]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #52]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #56]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #60]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #64]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #68]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #72]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #76]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #80]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #84]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #88]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #92]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #96]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #100]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #104]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #108]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #112]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #116]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #120]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #124]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #128]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #132]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #136]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #140]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #144]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #148]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #184]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #188]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #192]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #196]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #200]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #204]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #208]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #212]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #216]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #220]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #224]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #228]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #232]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #236]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #240]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #244]
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base_umaal = sym super::ed25519::vg_ed25519_scalar_base_umaal::vg_ed25519_scalar_base_umaal,
+        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+    )
+}
+
+/// The CPU features `vg_ed25519_verify_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_ED25519_VERIFY_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message`, `signature` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_verify_umaal(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r12}}
+sub sp, sp, #24
+sub sp, sp, #248
+add r12, sp, #248
+str r0, [r12, #0]
+add r12, sp, #248
+str r1, [r12, #4]
+add r12, sp, #248
+str r2, [r12, #8]
+add r12, sp, #248
+str r3, [r12, #12]
+ldr lr, [sp, #280]
+add r12, sp, #248
+str lr, [r12, #16]
+ldr r0, [sp, #264]
+add r0, r0, #0
+bl {vg_sha512_init}
+ldr r0, [sp, #260]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+movw r2, #0
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #248]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+movw r0, #32
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+movw r2, #32
+movw r3, #0
+bl {vg_sha512_update_scratch}
+ldr r0, [sp, #252]
+add r0, r0, #0
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #256]
+add r0, r0, #0
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #192
+add r12, sp, #8
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+movw r2, #64
+movw r3, #0
+bl {vg_sha512_update_scratch}
+add r0, sp, #184
+add r12, sp, #0
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #192
+add r12, sp, #4
+str r0, [r12, #0]
+ldr r0, [sp, #264]
+add r0, r0, #0
+ldr r2, [sp, #256]
+add r2, r2, #64
+movw r3, #0
+bl {vg_sha512_finalize_scratch}
+add r0, sp, #120
+add r1, sp, #184
+ldr r2, [sp, #264]
+add r2, r2, #0
+bl {vg_ed25519_scalar_reduce}
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #152]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #156]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #160]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #164]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #168]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #172]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #176]
+add r12, sp, #0
+movw r0, #0
+str r0, [r12, #180]
+ldr r0, [sp, #248]
+add r0, r0, #0
+ldr r1, [sp, #260]
+add r1, r1, #0
+add r2, sp, #120
+ldr r3, [sp, #264]
+add r3, r3, #0
+bl {vg_ed25519_verify_equation_umaal}
+add sp, sp, #248
+add sp, sp, #24
+ldr r12, [sp], #4
+ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation_umaal = sym super::ed25519::vg_ed25519_verify_equation_umaal::vg_ed25519_verify_equation_umaal,
+    )
+}
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -31,6 +1002,166 @@ ldr r2, [sp, #8]
 bl {vg_ed25519_public_key_expanded}
 ldr r3, [sp], #12
 ldr lr, [sp], #4
+sub sp, sp, #600
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+str r2, [r12, #312]
+str r2, [r12, #316]
+str r2, [r12, #320]
+str r2, [r12, #324]
+str r2, [r12, #328]
+str r2, [r12, #332]
+str r2, [r12, #336]
+str r2, [r12, #340]
+str r2, [r12, #344]
+str r2, [r12, #348]
+str r2, [r12, #352]
+str r2, [r12, #356]
+str r2, [r12, #360]
+str r2, [r12, #364]
+str r2, [r12, #368]
+str r2, [r12, #372]
+str r2, [r12, #376]
+str r2, [r12, #380]
+str r2, [r12, #384]
+str r2, [r12, #388]
+str r2, [r12, #392]
+str r2, [r12, #396]
+str r2, [r12, #400]
+str r2, [r12, #404]
+str r2, [r12, #408]
+str r2, [r12, #412]
+str r2, [r12, #416]
+str r2, [r12, #420]
+str r2, [r12, #424]
+str r2, [r12, #428]
+str r2, [r12, #432]
+str r2, [r12, #436]
+str r2, [r12, #440]
+str r2, [r12, #444]
+str r2, [r12, #448]
+str r2, [r12, #452]
+str r2, [r12, #456]
+str r2, [r12, #460]
+str r2, [r12, #464]
+str r2, [r12, #468]
+str r2, [r12, #472]
+str r2, [r12, #476]
+str r2, [r12, #480]
+str r2, [r12, #484]
+str r2, [r12, #488]
+str r2, [r12, #492]
+str r2, [r12, #496]
+str r2, [r12, #500]
+str r2, [r12, #504]
+str r2, [r12, #508]
+str r2, [r12, #512]
+str r2, [r12, #516]
+str r2, [r12, #520]
+str r2, [r12, #524]
+str r2, [r12, #528]
+str r2, [r12, #532]
+str r2, [r12, #536]
+str r2, [r12, #540]
+str r2, [r12, #544]
+str r2, [r12, #548]
+str r2, [r12, #552]
+str r2, [r12, #556]
+str r2, [r12, #560]
+str r2, [r12, #564]
+str r2, [r12, #568]
+str r2, [r12, #572]
+str r2, [r12, #576]
+str r2, [r12, #580]
+str r2, [r12, #584]
+str r2, [r12, #588]
+str r2, [r12, #592]
+str r2, [r12, #596]
+add sp, sp, #600
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
@@ -38,6 +1169,8 @@ bx lr",
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -475,6 +1608,86 @@ add sp, sp, #248
 add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -486,6 +1699,8 @@ bx lr",
 }
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -620,6 +1835,85 @@ add sp, sp, #248
 add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
+sub sp, sp, #280
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+add sp, sp, #280
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -634,16 +1928,32 @@ bx lr",
 pub(crate) mod vg_ed25519_public_key_expanded;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded_umaal.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed25519_r16_point_add.rs"]
 pub(crate) mod vg_ed25519_r16_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_r16_point_add_umaal.rs"]
+pub(crate) mod vg_ed25519_r16_point_add_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_r16_point_double.rs"]
 pub(crate) mod vg_ed25519_r16_point_double;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_r16_point_double_umaal.rs"]
+pub(crate) mod vg_ed25519_r16_point_double_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed25519_scalar_base.rs"]
 pub(crate) mod vg_ed25519_scalar_base;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_scalar_base_umaal.rs"]
+pub(crate) mod vg_ed25519_scalar_base_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_scalar_mul_add.rs"]
@@ -658,9 +1968,21 @@ pub(crate) mod vg_ed25519_scalar_reduce;
 pub(crate) mod vg_ed25519_verify_equation;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_verify_equation_umaal.rs"]
+pub(crate) mod vg_ed25519_verify_equation_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_gf25519_r16_mul.rs"]
 pub(crate) mod vg_gf25519_r16_mul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_mul_umaal.rs"]
+pub(crate) mod vg_gf25519_r16_mul_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_gf25519_r16_pow250.rs"]
 pub(crate) mod vg_gf25519_r16_pow250;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_pow250_umaal.rs"]
+pub(crate) mod vg_gf25519_r16_pow250_umaal;

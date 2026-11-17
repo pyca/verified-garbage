@@ -674,13 +674,19 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Two Pins two_post two_alloc)
 
 theorem psa_pub {a s : State} (p : PubD a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
-      i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [psa, Sd, p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 17),
-      p.args _ (by decide : (1 : Nat) < 17), p.args _ (by decide : (2 : Nat) < 17),
-      p.args _ (by decide : (3 : Nat) < 17), p.args _ (by decide : (4 : Nat) < 17),
-      p.args _ (by decide : (5 : Nat) < 17), p.args _ (by decide : (6 : Nat) < 17),
-      p.args _ (by decide : (7 : Nat) < 17), p.args _ (by decide : (8 : Nat) < 17),
-      p.args _ (by decide : (13 : Nat) < 17), p.args _ (by decide : (14 : Nat) < 17)]
+      i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact p.g .r10 (by decide)
+  · exact p.args 0 (by decide)
+  · exact p.args 1 (by decide)
+  · exact p.args 2 (by decide)
+  · exact p.args 3 (by decide)
+  · exact p.args 4 (by decide)
+  · exact p.args 5 (by decide)
+  · exact p.args 6 (by decide)
+  · exact p.args 7 (by decide)
+  · exact p.args 8 (by decide)
+  · exact congrArg (· + BitVec.ofNat 64 oRsa) (p.args 13 (by decide))
+  · exact congrArg (fun x : BitVec 64 => BitVec.ofNat 64 (x.toNat - 1024)) (p.args 14 (by decide))
 
 /-- At the call, from an entry state with `a`'s public data. -/
 def APriv (pc : Bool) (a u : State) : Prop := ∃ s, PreD pc s ∧ PubD a s ∧ AtPriv pc s u ∧ XP pc a s
@@ -735,7 +741,7 @@ theorem pre_leak {s u : State} (X : PreXD s) (A : AtPriv true s u) :
     rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
     callE_gpr (pc := true) s u (r := .r6), A.r6]
-  congr 1
+  refine congrArg (List.map _) ?_
   have subPre : Region.Sub ⟨stackArg s 17, 8 * Spec.Rsa.precomputedWords (s.gpr .r7).toNat⟩ (preR s) :=
     fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
@@ -1298,9 +1304,10 @@ theorem dsat_args :
 `0x300000`. -/
 theorem dec_sat (hw : w ∈ vs) (hl : (Proof.MdHashTable.PPC64LE.names vs).length < 2 ^ 32) :
     ∃ s, (decSpec (tables vs)).pre s := by
-  refine ⟨Proof.MdHashTable.PPC64LE.withTable decSatState vs w, ?_⟩
+  -- before the witness: each `cases` of this `obtain` reduces the goal, then the contract's precondition
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ :=
     dsat_args (vs := vs) (w := w)
+  refine ⟨Proof.MdHashTable.PPC64LE.withTable decSatState vs w, ?_⟩
   have e : stackArgAddr (Proof.MdHashTable.PPC64LE.withTable decSatState vs w) 0 = 0x10060 :=
     show stackArgAddr decSatState 0 = _ by decide
   have e3792 : stackBytes = 3791 + 1 := rfl

@@ -405,6 +405,11 @@ theorem lmore_ok (s : State) {W : Addr} {wn : Nat} {l : Block} (h15 : s.gpr .r15
       (B₃.frame.mono fun r hr => by simp at hr ⊢; simp [hr])
   · rw [B₃.gpr r hr, B₂.gpr r hr, B₁.gpr r hr]
 
+/-- A read of an `xmm` register through a write of one, as an `if` that `reduceCtorEq` decides for two
+literal registers: the kernel evaluates `decide` on each side condition of `xmm_setXmm_of_ne` in turn. -/
+private theorem xmm_setXmm_ite (s : State) (r : XReg) (v : BitVec 128) (r' : XReg) :
+    (s.setXmm r v).xmm r' = if r' = r then v else s.xmm r' := rfl
+
 /-- `C[t]`'s slot, for `t` from 1 to 8. -/
 abbrev cSlot (t : Nat) : Nat := cO + 16 * (t - 1)
 
@@ -453,19 +458,21 @@ theorem ctab_ok (s : State) {W : Addr} {wn : Nat} {l : Block} (h15 : s.gpr .r15 
   have w5 := wC 5 (by decide)
   have w6 := wC 6 (by decide)
   apply WP.of_runBlock
-  refine ⟨_, by orun [stC, h15₃, w0, w1, w2, w3, w4, w5, w6, XOp.exec, State.setXmm, State.store128], ?_⟩
+  refine ⟨_, by orun [stC, h15₃, w0, w1, w2, w3, w4, w5, w6, XOp.exec, State.store128_eq, State.setMem_gpr,
+    State.setMem_mem, State.setMem_wr, State.setMem_xmm, xmm_setXmm_ite], ?_⟩
   refine ⟨fun t ht1 ht7 => ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, State.setMem]
+  · simp only [State.setMem_mem]
     have hx : ∀ a b : BitVec 128, XBinOp.eval .pxor a b = a ^^^ b := fun _ _ => rfl
     have hm : ∀ a b : BitVec 128, XBinOp.eval .movdqa a b = b := fun _ _ => rfl
     rw [blockAtMem_eq]
+    simp only [hx, hm, cO, Nat.reduceAdd, Nat.reduceMul]
     rcases (by omega_arith : t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals
-      simp (disch := decide) only [cSlot, readW_writeW_slot, hx, hm]
-      simp only [cO, Nat.reduceAdd, Nat.reduceMul, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+      simp (disch := decide) only [cSlot, cO, Nat.reduceAdd, Nat.reduceMul, Nat.reduceSub, readW_writeW_slot,
+        Nat.reduceEqDiff, ↓reduceIte]
       simp only [a0, a1, a2, rv_xor, ← blockAtMem_eq, hL0, hL1, hL2, cAt, BitVec.xor_assoc]
-  · simp only [mem_setReg, mem_arithFlags, State.setMem]
+  · simp only [State.setMem_mem]
     rw [m₃, m₂, m₁]
     have c : ∀ k, k < 7 → (⟨W + BitVec.ofNat 64 cO, 112⟩ : Region).Contains (W + BitVec.ofNat 64 (cO + 16 * k))
         (128 / 8) := fun k hk => Offset.contains W (by omega_arith) (by omega_arith) (by omega_arith)
@@ -474,12 +481,12 @@ theorem ctab_ok (s : State) {W : Addr} {wn : Nat} {l : Block} (h15 : s.gpr .r15 
       (c 6 (by decide))).writeW e _ (c 1 (by decide))).writeW e _ (c 4 (by decide))).writeW e _
       (c 3 (by decide))).writeW e _ (c 5 (by decide)))
   · intro r h1 h2
-    simp only [gpr_setReg, gpr_arithFlags, State.setXmm, State.setMem]
+    simp only [State.setMem_gpr, gpr_setXmm]
     rw [g₃ r h1 h2, g₂ r h1 h2, g₁ r h1 h2]
-  · simp only [rd_setReg, rd_arithFlags, State.setXmm, State.setMem]; rw [rd₃, rd₂, rd₁]
-  · simp only [wr_setReg, wr_arithFlags, State.setXmm, State.setMem]; rw [wr₃, wr₂, wr₁]
+  · simp only [State.setMem_rd, rd_setXmm]; rw [rd₃, rd₂, rd₁]
+  · simp only [State.setMem_wr, wr_setXmm]; rw [wr₃, wr₂, wr₁]
   · intro x h1 h2 h3 h4
-    simp only [xmm_setReg, xmm_arithFlags, State.setXmm, State.setMem, h1, ite_false]
+    simp only [State.setMem_xmm, xmm_setXmm_of_ne (h := h1)]
     rw [x₃ x h4 h1, x₂ x h3 h1, x₁ x h2 h1]
 
 end VG.Proof.AesOcb.X86_64.AesNi

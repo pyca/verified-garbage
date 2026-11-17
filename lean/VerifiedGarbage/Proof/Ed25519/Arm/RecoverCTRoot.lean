@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 
@@ -13,6 +14,7 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ed25519.Recover
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
@@ -37,6 +39,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
+variable {umaal : Bool}
+
 def SignCTPre (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) (s : State) : Prop :=
   Ctx base s ∧ AllLim s.mem base ∧
     s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat ∧ env s.mem base 0 = x
@@ -52,7 +56,7 @@ theorem parityBlockCT_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : 
 
 theorem adjustTail_ct :
     CT (fun x y => x.gpr .r0 = y.gpr .r0 ∧ x.z = y.z)
-      (.seq (.ite .eq (.block []) (fieldCode [.const 5 0, .sub 0 5 0])) recoverSuccess) (fun _ _ => True) := by
+      (.seq (.ite .eq (.block []) (fieldCode false [.const 5 0, .sub 0 5 0])) (recoverSuccess umaal)) (fun _ _ => True) := by
   refine RelCT.seq (R := fun (x y : State) => ∀ r ∈ ([.r0] : List Reg), x.gpr r = y.gpr r)
     (RelCT.ite (fun _ _ h => congrArg some h.2) ?_ ?_) ?_
   · apply ctRegsKeeping [.r0] [.r0] _ (by native_taint_decide)
@@ -65,11 +69,11 @@ theorem adjustTail_ct :
     rw [List.mem_singleton] at hr
     subst r
     exact h.1.1
-  · apply ctRegs [.r0] _ (by native_taint_decide)
-    exact fun _ _ h => h
+  · cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals exact fun _ _ h => h
 
 theorem recoverAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) recoverAdjustSign (fun _ _ => True) := by
+    CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) (recoverAdjustSign umaal) (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (.block (freeze 0 ++ recoverParity)) (fun _ _ => True) := by
     apply ctRegs [.r0] _ (by native_taint_decide)
@@ -90,9 +94,11 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem signTestThen_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
     CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (.seq (.block signTest) (.ite .ne recoverInvalid recoverAdjustSign)) (fun _ _ => True) := by
+      (.seq (.block signTest) (.ite .ne recoverInvalid (recoverAdjustSign umaal))) (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (.block signTest) (fun _ _ => True) := by
     apply ctRegs [.r0] _ (by native_taint_decide)
@@ -108,7 +114,7 @@ theorem signTestThen_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
   · exact (recoverAdjustSign_ct base b x).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
 
 theorem recoverSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) recoverSign (fun _ _ => True) := by
+    CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) (recoverSign umaal) (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (fieldZero 0) (fun _ _ => True) := by
     apply ctRegs [.r0] _ (by native_taint_decide)
@@ -131,6 +137,8 @@ end
 /-! Candidate validation branches only on the public encoded coordinate. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {umaal : Bool}
 
 def RootCTState (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
   SignCTPre base b (rootX y) s ∧ env s.mem base 11 = rootV y * rootX y * rootX y ∧
@@ -160,13 +168,13 @@ theorem rootCheck_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus :
 
 theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
     CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) (fun _ _ => True) := by
+      (.seq (fieldCode umaal [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) (recoverSign umaal)) (fun _ _ => True) := by
   have hp : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18])
+      (fieldCode umaal [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18])
       (fun s t => SignCTPre base b (x * Spec.Ed25519.sqrtM1) s ∧ SignCTPre base b (x * Spec.Ed25519.sqrtM1) t) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by native_taint_decide)
-      exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
+    · cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+      all_goals exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
     · intro s h
       refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18] h.1 h.2.1)
         fun t ⟨kt, lt, te⟩ => ?_
@@ -179,7 +187,7 @@ theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
 theorem recoverMinus_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
     CT (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
       (.seq (fieldEqual 11 12) (.ite .eq
-        (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) recoverInvalid)) (fun _ _ => True) := by
+        (.seq (fieldCode umaal [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) (recoverSign umaal)) recoverInvalid)) (fun _ _ => True) := by
   refine RelCT.seq (rootCheck_ct base b y true) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
   · exact (rootAdjustSign_ct base b (rootX y)).mono
@@ -188,9 +196,9 @@ theorem recoverMinus_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
 
 theorem recoverChecks_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
     CT (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
-      (.seq (fieldEqual 11 6) (.ite .eq recoverSign
+      (.seq (fieldEqual 11 6) (.ite .eq (recoverSign umaal)
         (.seq (fieldEqual 11 12) (.ite .eq
-          (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) recoverInvalid)))) (fun _ _ => True) := by
+          (.seq (fieldCode umaal [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) (recoverSign umaal)) recoverInvalid)))) (fun _ _ => True) := by
   refine RelCT.seq (rootCheck_ct base b y false) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
   · exact (recoverSign_ct base b (rootX y)).mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩) (fun _ _ h => h)
@@ -201,12 +209,12 @@ def RecoverCTPre (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) 
     s.mem.readW (State.addr base + BitVec.ofNat 64 60) 32 = BitVec.ofNat 32 b.toNat ∧ env s.mem base 1 = y
 
 theorem recoverPoint_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
-    CT (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t) recoverPoint (fun _ _ => True) := by
+    CT (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t) (recoverPoint umaal) (fun _ _ => True) := by
   have hp : CT (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t)
-      recoverCandidate (fun s t => RootCTState base b y s ∧ RootCTState base b y t) := by
+      (recoverCandidate umaal) (fun s t => RootCTState base b y s ∧ RootCTState base b y t) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by native_taint_decide)
-      exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
+    · cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+      all_goals exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
     · intro s h
       refine WP.mono (recoverCandidate_ok h.1 h.2.1) fun t ⟨kt, lt, tx, _, _, tu, _, tv, tn⟩ => ?_
       refine ⟨⟨kt.ctx h.1, lt, kt.sign.trans h.2.2.1, ?_⟩, ?_, ?_, ?_⟩

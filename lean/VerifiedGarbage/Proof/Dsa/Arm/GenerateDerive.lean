@@ -439,6 +439,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest eval_eq wp_mov wp_movw wp_dp op2_imm op2_reg dpVal)
 
+variable {umaal : Bool}
+
 /-- Key derivation, by the checks the code makes. -/
 theorem deriveKeyBytes_iff {pLen qLen : Nat} {params x : List Byte}
     (hl : Spec.Dsa.lengthsValid pLen qLen) (hpl : params.length = 2 * pLen + qLen) (hxl : x.length = qLen) :
@@ -501,7 +503,7 @@ theorem deriveIn {s t : State} {base : Addr} {size : Nat} (h : derivePre s) (hb 
   obtain ⟨_, hrd, _, _, _, _, _, dPS, dXS, _, _, fP, fX, _, hv, _, hr3, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  obtain hz : 4960 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hz : 12016 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain pr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain xr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
@@ -571,7 +573,7 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   obtain E₁ := E₀.of_mem R₁ (by decide) M₁
-  obtain hz : 4960 ≤ (arg s 4).toNat * 8 := by omega_arith
+  obtain hz : 12016 ≤ (arg s 4).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := deriveIn h rfl rfl E₁
   -- The specification's components.
   obtain hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
@@ -668,7 +670,7 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
       · rfl
 
 theorem derive_correct {s : State} (h : derivePre s) :
-    WP isa Generate.deriveKey s fun t => abiPreserved s t ∧ deriveArm.post s t :=
+    WP isa (Generate.deriveKey umaal) s fun t => abiPreserved s t ∧ deriveArm.post s t :=
   deriveWith_correct deriveCompute_computeOk h fun _ => Iff.rfl
 
 /-- A checked domain passes the domain's checks. -/
@@ -686,7 +688,7 @@ theorem deriveDomain_checked {s : State} (h : deriveCheckedArm.pre s) :
 /-- `vg_dsa_derive_key_checked`: the derivation without the domain's checks,
 which its precondition makes. -/
 theorem deriveChecked_correct {s : State} (h : deriveCheckedArm.pre s) :
-    WP isa Generate.deriveChecked s fun t => abiPreserved s t ∧ deriveCheckedArm.post s t :=
+    WP isa (Generate.deriveChecked umaal) s fun t => abiPreserved s t ∧ deriveCheckedArm.post s t :=
   deriveWith_correct keyCompute_computeOk h.1 fun _ =>
     ⟨fun k => ⟨deriveDomain_checked h, k⟩, fun k => k.2⟩
 

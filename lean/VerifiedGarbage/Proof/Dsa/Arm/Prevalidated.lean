@@ -38,6 +38,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest eval_eq wp_mov op2_imm)
 
+variable {umaal : Bool}
+
 /-! ## The contracts -/
 
 /-- What `vg_dsa_validate_public_key` needs: `(key = r0, key_len = r1,
@@ -103,7 +105,7 @@ theorem validateIn {s t : State} {base : Addr} {size : Nat} (h : validatePre s) 
   obtain ⟨_, hrd, _, dKS, _, fK, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat)
@@ -144,7 +146,7 @@ theorem validateRes_eq {s : State} (h : validatePre s) :
     (verifyKey _ _ (by have := h.2.2.2.2.2.2.2.2.1; omega_arith))
 
 theorem validate_correct {s : State} (h : validatePre s) :
-    WP isa Prevalidated.validate s fun t => abiPreserved s t ∧ validateArm.post s t := by
+    WP isa (Prevalidated.validate umaal) s fun t => abiPreserved s t ∧ validateArm.post s t := by
   obtain ⟨hsp, hrd, hwr, _, _, _, hsb, hv, _, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
@@ -155,11 +157,11 @@ theorem validate_correct {s : State} (h : validatePre s) :
   refine WP.seq (WP.mono (checkEntry_of hsp (by rw [hrd]; simp) hwr hsb hv hsw) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := checkFields_ok s
-  refine WP.seq (genDispatch_ok Prevalidated.validateSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (Prevalidated.validateSized umaal) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := validateIn h rfl rfl E₁
   unfold Prevalidated.validateSized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
@@ -211,14 +213,14 @@ theorem prevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S 
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1)
     (hm : maskW base s = BitVec.allOnes 32) (pub : publicChecks P Q G Y) :
-    WP isa (Prevalidated.body pLen qLen) s fun t =>
+    WP isa (Prevalidated.body umaal pLen qLen) s fun t =>
       t.gpr .r0 = (if verifyChecks P Q G Y R S D then 1 else 0) ∧ Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
   have fits := Sc.fits
   have Qlt := operand_lt_of Iq
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
+  have ho : 12016 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   unfold Prevalidated.body Prevalidated.compute Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
@@ -257,7 +259,7 @@ theorem prevPre_checks {s : State} (h : prevPre s) :
     (verifyKey _ _ (by omega_arith))).symm.trans h.2)
 
 theorem prevalidated_correct {s : State} (h : prevPre s) :
-    WP isa Prevalidated.verify s fun t => abiPreserved s t ∧ verifyArm.post s t := by
+    WP isa (Prevalidated.verify umaal) s fun t => abiPreserved s t ∧ verifyArm.post s t := by
   have checks := prevPre_checks h
   obtain ⟨h, -⟩ := h
   obtain ⟨hsp, hrd, hwr, dKS, dSS, dDS, _, fK, fS, fD, fW, hv, hr1, hs1, hsw⟩ := id h
@@ -272,11 +274,11 @@ theorem prevalidated_correct {s : State} (h : prevPre s) :
   refine WP.seq (WP.mono (verifyEntry_ok h) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := verifyFields_ok s
-  refine WP.seq (genDispatch_ok Prevalidated.sized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (Prevalidated.sized umaal) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 5).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 5).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := verifyKeyIn h rfl rfl E₁
   unfold Prevalidated.sized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)

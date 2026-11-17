@@ -45,7 +45,7 @@ structure GenOk (G : GP) (g : Geo) (HO : HashOk g.G) (n : Nat) : Prop where
   hsizeq : keyOff + 8 * keyWords (8 * G.qLen) ≤ wa G.pLen
   hb8 : 8 * G.qLen / 8 ≤ wa G.pLen
   hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * G.qLen) bs).length = 8 * G.qLen
-  hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters
+  hck : ∃ umaal, g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal
   hn : 8 * n = G.pLen
   hpm : g.powMod = modS n
   hpb : g.powBase = baseS n
@@ -65,9 +65,10 @@ variable {G : GP} {X : State → Prop} {Gh : Hash}
 theorem GenOk.attempt_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {k u : Nat} {n' : BitVec 32}
     (hk : k + G.qLen ≤ G.seedsLen) (hu : u ≤ G.witLen) :
     VP (St G ((aBase G HO k n').setV fUsed (BitVec.ofNat 32 u)) X) g.attempt
-      (St G (aOut G HO k n' (refillAttempt G.pLen G.qLen (seedAt G k) (G.witB.drop u))) X) :=
-  VG.Proof.Dsa.Arm.Gen.attempt_vp HO O.okq O.okp O.certs O.gcerts O.pow O.hlq O.hp O.hq O.hk4 O.hwl O.hH O.hwl
-    O.hsize O.hsizeq O.hb8 O.hlen O.hck O.hn O.hpm O.hpb O.hpe O.hpr O.hctx O.he4 O.he0 O.he O.h32 hk hu
+      (St G (aOut G HO k n' (refillAttempt G.pLen G.qLen (seedAt G k) (G.witB.drop u))) X) := by
+  obtain ⟨_, hck⟩ := O.hck
+  exact VG.Proof.Dsa.Arm.Gen.attempt_vp HO O.okq O.okp O.certs O.gcerts O.pow O.hlq O.hp O.hq O.hk4 O.hwl O.hH O.hwl
+    O.hsize O.hsizeq O.hb8 O.hlen hck O.hn O.hpm O.hpb O.hpe O.hpr O.hctx O.he4 O.he0 O.he O.h32 hk hu
 
 /-! ## The controller's pieces -/
 

@@ -181,12 +181,14 @@ theorem sPre_of {s : State} (h : (Spec.RsaPkcs1Sig.signContract abi stackBytes).
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs,
     stackArgs_thirteen, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa,
-    ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4,
-    e1, e2, p1, p2, q1, q2, h6, h10, h8, hs⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr on oe od op oq odp odq oqi os oa ns es ds ps qs dps dqs qis sa
+    ko kn ke kd kp kq kdp kdq kqi ks ka wo wn we wd wp wq wdp wdq wqi ws k12 h4
+    e1 e2 p1 p2 q1 q2 h6 h10 h8
+  obtain ⟨k1, k2⟩ := k12
   exact ⟨sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, e1, e2,
-    p1, p2, q1, q2, h6, h10, h8, hs⟩
+    p1, p2, q1, q2, h6, h10, h8, h⟩
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 
@@ -863,7 +865,7 @@ theorem preP_entry {s t : State} {em : List Byte} (h : SPre pc s) (A : AtCall pc
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [Rsa.PPC64LE.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]
     cases pc
-    · rfl
+    · simp only [Bool.false_eq_true, ↓reduceIte]; rfl
     · simp only [↓reduceIte, Rsa.PPC64LE.Priv.preR, callE_stackArg A (i := 12) (by decide),
         callE_stackArg A (i := 13) (by decide)]
       rfl

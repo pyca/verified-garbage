@@ -31,10 +31,11 @@ once from the same taint rather than every copy.
 
 namespace VG
 
-materialize_code Impl.Ed448.Arm.scalarBase
+materialize_code Proof.Ed448.Arm.scalarBasePlain := Impl.Ed448.Arm.scalarBase false
+materialize_code Proof.Ed448.Arm.scalarBaseUmaal := Impl.Ed448.Arm.scalarBase true
 
 /-- `scalarBase` without its offsets. -/
-def Proof.Ed448.Arm.scalarBaseErased : Prog Arm.isa := Arm.Code.eraseOff Impl.Ed448.Arm.scalarBase
+def Proof.Ed448.Arm.scalarBaseErased : Prog Arm.isa := Arm.Code.eraseOff (Impl.Ed448.Arm.scalarBase false)
 
 materialize_code Proof.Ed448.Arm.scalarBaseErased
 

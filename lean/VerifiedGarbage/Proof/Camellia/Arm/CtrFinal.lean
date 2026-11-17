@@ -106,8 +106,8 @@ def ctrFinalArm : Contract isa where
     let data : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
     let sv : Region := ⟨State.addr (stackArg s 1), 56⟩
     let args : Region := ⟨stackArgAddr s 0, 8⟩
-    let stk : Region := ⟨State.addr s.sp - BitVec.ofNat 64 2912, 2912⟩
-    2912 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
+    let stk : Region := ⟨State.addr s.sp - BitVec.ofNat 64 3040, 3040⟩
+    3040 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
       s.rd = [sched, args] ∧ s.wr = [ctr, data, sv] ∧
       sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧
       ctr.Disjoint data ∧ ctr.Disjoint sv ∧ ctr.Disjoint args ∧
@@ -124,11 +124,11 @@ def ctrFinalArm : Contract isa where
       s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
 
 /-- The contract the frame needs: the shared one on the subkeys, with
-`save`, 56 bytes, as a sixth argument, and 2912 bytes of stack (the frame
+`save`, 56 bytes, as a sixth argument, and 3040 bytes of stack (the frame
 pushing `vg_camellia_ctr`'s stack argument, and its frame and calls). -/
 abbrev ctrFinalScratchContract : Contract isa :=
   Sig.scratchContract Arm.abi Spec.Camellia.ctrFinalSig "save" .u64 7 (Spec.Camellia.ctrFinalPre Arm.abi.ptrBits)
-    (Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits) true 2912
+    (Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits) true 3040
 
 /-- A state satisfying the precondition: the schedule at `0x1000`, 18
 rounds, the counter block at `0x2000`, no data at `0x3000` and `save` at
@@ -154,30 +154,30 @@ theorem ctrFinal_implies : ctrFinalArm.Implies ctrFinalScratchContract := by
 /-! ## The callee -/
 
 /-- `vg_camellia_ctr` meets its contract on the subkeys. -/
-theorem ctrFramed_sk : Verified Arm.target ctrFramed (Proof.Camellia.ctrContractSk Arm.abi 2904) :=
+theorem ctrFramed_sk : Verified Arm.target ctrFramed (Proof.Camellia.ctrContractSk Arm.abi 3032) :=
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
-    (wa := true) (stack := 2816) (m := 1) (bytes := 88)
+    (wa := true) (stack := 2944) (m := 1) (bytes := 88)
     Proof.Camellia.Arm.ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _)
     Proof.Camellia.Arm.ctrFrameSat
 
-theorem ctr_stack : armStack ctrFramed ≤ 2904 := by decide +kernel
+theorem ctr_stack : armStack ctrFramed ≤ 3032 := by decide +kernel
 
-/-- The 2912 bytes below the stack pointer `sp`, which a call uses: the 8
-its frame pushes, and the 2904 of `vg_camellia_ctr` below them. -/
-abbrev stk (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 2912, 2912⟩
+/-- The 3040 bytes below the stack pointer `sp`, which a call uses: the 8
+its frame pushes, and the 3032 of `vg_camellia_ctr` below them. -/
+abbrev stk (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 3040, 3040⟩
 
 theorem below_stk (sp : BitVec 32) : Region.Sub (below sp) (stk sp) :=
   Offset.sub_below _ (by decide) (by decide)
 
-theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 2904) (hsp : 2912 ≤ sp.toNat) :
+theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 3032) (hsp : 3040 ≤ sp.toNat) :
     Region.Sub (belowA (sp - 8) n) (stk sp) := by
   show Region.Sub ⟨State.addr (sp - 8 - BitVec.ofNat 32 n), n⟩ _
   rw [BitVec.sub_sub, show (8 : BitVec 32) + BitVec.ofNat 32 n = BitVec.ofNat 32 (8 + n) by
     rw [BitVec.ofNat_add]; rfl, FrameStack.addr_sub' (by omega_using [hn, hsp])]
   obtain e : State.addr sp - BitVec.ofNat 64 (8 + n) =
-      State.addr sp - BitVec.ofNat 64 2912 + BitVec.ofNat 64 (2904 - n) := by
+      State.addr sp - BitVec.ofNat 64 3040 + BitVec.ofNat 64 (3032 - n) := by
     have := sp.isLt
     apply BitVec.eq_of_toNat_eq
     simp only [State.addr, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -186,13 +186,13 @@ theorem belowA_stk {sp : BitVec 32} {n : Nat} (hn : n ≤ 2904) (hsp : 2912 ≤ 
   exact Offset.sub_base _ (by omega_using [hn])
 
 theorem res_stk (sp : BitVec 32) :
-    Region.Sub ⟨State.addr sp - BitVec.ofNat 64 8 - BitVec.ofNat 64 2904, 2904⟩ (stk sp) := by
+    Region.Sub ⟨State.addr sp - BitVec.ofNat 64 8 - BitVec.ofNat 64 3032, 3032⟩ (stk sp) := by
   rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat]
   exact Region.sub_prefix (by decide)
 
 /-- What a call of `vg_camellia_ctr` needs: the subkeys at `W` for `R`
 rounds, the counter block at `C` and `n` blocks at `D`, in `r0`–`r3`, `n` in
-`r12` to push, and the 2912 bytes below the stack pointer. -/
+`r12` to push, and the 3040 bytes below the stack pointer. -/
 structure WCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   r0 : s.gpr .r0 = W
   r1 : s.gpr .r1 = R
@@ -200,7 +200,7 @@ structure WCall (s : State) (W R C D : BitVec 32) (n : Nat) : Prop where
   r3 : s.gpr .r3 = D
   r12 : s.gpr .r12 = BitVec.ofNat 32 n
   rounds : R.toNat = 18 ∨ R.toNat = 24
-  hsp : 2912 ≤ s.sp.toNat
+  hsp : 3040 ≤ s.sp.toNat
   fitW : W.toNat + 272 ≤ 2 ^ 32
   fitC : C.toNat + 16 ≤ 2 ^ 32
   fitD : D.toNat + 16 * n ≤ 2 ^ 32
@@ -239,7 +239,7 @@ theorem hsp8 : 8 ≤ s.sp.toNat := by have := h.hsp; omega_using [this]
 
 theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
-theorem pre : (Proof.Camellia.ctrContractSk Arm.abi 2904).pre
+theorem pre : (Proof.Camellia.ctrContractSk Arm.abi 3032).pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (wRd s.sp W) (wWr C D n)) := by
   obtain hn := toNat_ofNat32 h.n_lt
   have hs8 := h.hsp8
@@ -253,7 +253,7 @@ theorem pre : (Proof.Camellia.ctrContractSk Arm.abi 2904).pre
   obtain rs := res_stk s.sp
   refine ⟨by have := h.hsp; omega_using [this], by have := s.sp.isLt; omega_using [], rfl, by rw [wWr, Nat.mul_comm]; rfl, h.wc, h.wd,
     h.cd, (h.bc.sub_left b4).symm, (h.bd.sub_left b4).symm, h.bw.sub_left rs, h.bc.sub_left rs, h.bd.sub_left rs,
-    (Offset.base_disjoint_below (State.addr s.sp - BitVec.ofNat 64 8) (n := 2904) (k := 4) (by decide)).symm,
+    (Offset.base_disjoint_below (State.addr s.sp - BitVec.ofNat 64 8) (n := 3032) (k := 4) (by decide)).symm,
     h.fitW, h.fitC, h.fitD, h.rounds⟩
 
 theorem cov : Covers (wRd s.sp W ++ wWr C D n) ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -273,7 +273,7 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
     WP isa ctrCall s (WPost s W R C D n) := by
   have hs8 := h.hsp8
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
-  refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 2904) ctrFramed_sk.1 (rd := wRd s.sp W)
+  refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 (rd := wRd s.sp W)
     (wr := wWr C D n) h.pre h.cov h.covW
     (by rw [pushed_sp8, hspA hs8]; have := h.hsp; have := ctr_stack; omega_arith) ?_
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost
@@ -338,7 +338,7 @@ theorem w_rel {P : State → State → Prop}
   rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using h₂.hsp8), Option.some.injEq] at pb
   subst pa pb
   obtain hn := toNat_ofNat32 h₁.n_lt
-  refine RelCT.call (k := Proof.Camellia.ctrContractSk Arm.abi 2904) ctrFramed_sk.1 ctrFramed_sk.2.1
+  refine RelCT.call (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 ctrFramed_sk.2.1
     (wRd s₁.sp W) (wWr C D n) (P := fun x y => x = pushed [.r12, .lr] s₁ ∧ y = pushed [.r12, .lr] s₂)
     (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   subst ex ey
@@ -401,7 +401,7 @@ end
 
 /-- The precondition, by name. -/
 structure KPre (s₀ : State) : Prop where
-  sp_lo : 2912 ≤ s₀.sp.toNat
+  sp_lo : 3040 ≤ s₀.sp.toNat
   sp_hi : s₀.sp.toNat + 8 ≤ 2 ^ 32
   rd : s₀.rd = [fSch s₀, fArg s₀]
   wr : s₀.wr = [fCR s₀, fData s₀, cSv s₀]
@@ -1164,13 +1164,13 @@ The final function has one stack argument, so `save` is its second: it runs
 its code in a frame of 72 bytes (`withStackScratchWiped`): the copy of the
 stack argument, `save`'s address, the word holding `lr`, and `save`'s 56
 bytes, the block included, which it zeroes before returning (and 4 bytes of
-padding). The code's calls use 2912 bytes below it, so 2984 in all. -/
+padding). The code's calls use 3040 bytes below it, so 3112 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
 def ctrFinalFrameSat : State :=
   { ctrFinalSat with rd := [⟨0x1000, 272⟩, ⟨0x8000, 4⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }
 
-theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi 2984).pre s := by
+theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi 3112).pre s := by
   implies_sat [Proof.Camellia.ctrFinalContractSk, Spec.Camellia.ctrFinalSig, Spec.Camellia.ctrFinalPre,
     Proof.Camellia.ctrFinalPostSk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
@@ -1178,11 +1178,11 @@ theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi
 /-- `ctrFinal`, with `save` on the stack (zeroed on return). -/
 theorem ctrFinal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 ctrFinal)
-      (Spec.Camellia.ctrFinalContract Arm.abi 2984) :=
+      (Spec.Camellia.ctrFinalContract Arm.abi 3112) :=
   Proof.Camellia.ctrFinal_of_sk <|
   Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
     (pre := Spec.Camellia.ctrFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits)
-    (wa := true) (stack := 2912) (m := 1) (bytes := 72)
+    (wa := true) (stack := 3040) (m := 1) (bytes := 72)
     ctrFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (ctrFinalPre_local _) (ctrFinalPost_local _) (Proof.Camellia.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
 

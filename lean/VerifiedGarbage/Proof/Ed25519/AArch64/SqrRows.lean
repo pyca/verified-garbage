@@ -80,8 +80,8 @@ theorem sqrCross_ok (s : State) (hz : s.gpr .x10 = 0) :
       Keeps [.x2, .x8, .x9, .x16, .x5, .x6, .x7, .x21, .x22, .x23] s t := by
   apply WP.of_runBlock
   simp only [sqrCross, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, hz,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
@@ -199,8 +199,8 @@ theorem sqrDiag_ok (s : State) :
         s t := by
   apply WP.of_runBlock
   simp only [sqrDiag, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   have h := sqrDiag_value (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x5)
     (s.gpr .x6) (s.gpr .x7) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24)

@@ -662,9 +662,12 @@ theorem correct (hs : ShapeD H D) (hf : CalleeOk H code) {s₀ : State} (hp : Pr
     (hnvo : ∀ r ∈ nvRegs, ∀ i ∈ instrs (.block (P.out ++ restore) : Prog isa), dstOf i ≠ some r) :
     WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finKD H D).post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp144)
-    (WP.mono (correctMain hs hf hp hnvo) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
+    (WP.mono (correctMain hs hf hp hnvo) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ m u f => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
-  exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+  -- The `free` loses the frame's bytes, which lie apart from the digest.
+  refine ⟨⟨hk, rfl, hra⟩, fun iv msg hr hl hc => ?_⟩
+  rw [← hpost iv msg hr hl hc]
+  exact bytesAt_congr fun i hi => lost_byte f (R := outR s₀ D) hp.scr_out.symm hi
 
 /-- The initial taint: only the arguments are public. -/
 theorem agree₀ {s₁ s₂ : State} (hpub : (finKD H D).pub s₁ s₂) :

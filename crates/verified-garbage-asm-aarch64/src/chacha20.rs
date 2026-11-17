@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -20,7 +22,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
         r".inst 0xf9400029,0xf940042a,0xf940082b,0xf9400c2c,0xf9000809,0xf9000c0a,0xf900100b,0xf900140c
 .inst 0x91000041,0xf9400029,0xf940042a,0xb940002b,0xf9001809,0xf9001c0a,0xd28f0cac,0xf2ac2e0c
 .inst 0xf2cc8dcc,0xf2e6640c,0xf900000c,0xd285a64c,0xf2af2c4c,0xf2ccae8c,0xf2ed640c,0xf900040c
-.inst 0xd2c0002d,0xcb0b01ad,0xd37ae5ad,0xf900400d,0xd65f03c0
+.inst 0xd2c0002d,0xcb0b01ad,0xd37ae5ad,0xf900400d,0xd2800009,0xd280000a,0xd280000b,0xd280000d
+.inst 0xd65f03c0
 .p2align 6",
     )
 }
@@ -28,6 +31,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
 /// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -40,7 +45,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], non
     core::arch::naked_asm!(
         r".inst 0xf9400029,0xf940042a,0xb940002b,0xf9001809,0xf9001c0a,0xd28f0cac,0xf2ac2e0c,0xf2cc8dcc
 .inst 0xf2e6640c,0xf900000c,0xd285a64c,0xf2af2c4c,0xf2ccae8c,0xf2ed640c,0xf900040c,0xd2c0002d
-.inst 0xcb0b01ad,0xd37ae5ad,0xf900400d,0xd65f03c0
+.inst 0xcb0b01ad,0xd37ae5ad,0xf900400d,0xd2800009,0xd280000a,0xd280000b,0xd280000d,0xd65f03c0
 .p2align 6",
     )
 }

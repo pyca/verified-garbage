@@ -98,9 +98,11 @@ theorem addScrubbed_noResidue :
   obtain ⟨hrd, hwr, hg, hax, -, -, -, -, hx, hy, hz, hyH, hzH, hmx, hm⟩ := ho
   have hdi := hg .rdi (by decide)
   have hsi := hg .rsi (by decide)
-  refine ⟨by rw [r₁, r₂, hrd], by rw [w₁, w₂, hwr], fun r hr => ?_, ?_, by rw [c₁, c₂], by rw [z₁, z₂],
+  refine ⟨⟨by rw [r₁, r₂, hrd], by rw [w₁, w₂, hwr], fun r hr => ?_, ?_, by rw [c₁, c₂], by rw [z₁, z₂],
     by rw [f₁, f₂], by rw [o₁, o₂], by rw [x₁, x₂, hx], by rw [y₁, y₂, hy], by rw [h₁, h₂, hz],
-    by rw [yH₁, yH₂, hyH], by rw [zH₁, zH₂, hzH], by rw [mx₁, mx₂, hmx], fun x hx' => ?_⟩
+    by rw [yH₁, yH₂, hyH], by rw [zH₁, zH₂, hzH], by rw [mx₁, mx₂, hmx], fun x hx' => ?_⟩,
+    by rw [c₁]; exact Option.some_ne_none _, by rw [z₁]; exact Option.some_ne_none _,
+    by rw [f₁]; exact Option.some_ne_none _, by rw [o₁]; exact Option.some_ne_none _⟩
   · rw [g₁, g₂, hdi, hsi, hg r hr]
   · have hax' : s₁.gpr .rax = s₂.gpr .rax := by simpa using hax
     rw [g₁, g₂, hdi, hsi, hax']

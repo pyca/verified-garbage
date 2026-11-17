@@ -21,6 +21,8 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 open VG.Proof.X25519 (sqn)
 
+variable {umaal : Bool}
+
 def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
 
 /-- Field work and its fixed-count squaring counter. -/
@@ -50,7 +52,7 @@ theorem ISpec.seq {b : BitVec 32} {c₁ c₂ : Prog isa} {f g : Env → Env}
 
 theorem mulI_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (o a b : Slot) :
-    WP isa (mulP o a b) s fun t => IKeep base s t ∧ AllLim t.mem base ∧
+    WP isa (mulP umaal o a b) s fun t => IKeep base s t ∧ AllLim t.mem base ∧
       t.gpr .r10 = s.gpr .r10 ∧ env t.mem base = opMul o a b (env s.mem base) :=
   WP.mono (fieldOp_ok hc hl (.mul o a b)) fun _ ⟨hk, hlt, he⟩ =>
     ⟨⟨hk.rest.mono (by decide), hk.frame⟩, hlt, hk.rest.gpr _ (by decide), he⟩
@@ -78,7 +80,7 @@ theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
     ∀ m s, 1 ≤ m → m ≤ n → IKeep base s₀ s → AllLim s.mem base →
       s.gpr .r10 = BitVec.ofNat 32 m →
       env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) →
-      WP isa (.loop (.seq (mulP o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
+      WP isa (.loop (.seq (mulP umaal o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
         IKeep base s₀ t ∧ AllLim t.mem base ∧
         env t.mem base = Function.update (env s₀.mem base) o (sqn x n) := by
   intro m s h1 h2 hk hl hb he
@@ -104,13 +106,13 @@ theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
   · exact .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : m ≠ 0), Bool.not_false],
       m, by omega_using [], by omega_using [hm], by omega_using [h2], k2, l2, b2, e2⟩
 
-theorem mulcI (base : BitVec 32) (o a b : Slot) : ISpec base (mulPc o a b) (opMul o a b) :=
+theorem mulcI (base : BitVec 32) (o a b : Slot) : ISpec base (mulPc umaal o a b) (opMul o a b) :=
   fun _ hc hl => WP.mono (fieldOp_ok hc hl (.mulc o a b)) fun _ ⟨hk, hlt, he⟩ =>
     ⟨⟨hk.rest.mono (by decide), hk.frame⟩, hlt, he⟩
 
 /-- `sqnLoop o n`: slot `o` squared `n` times. -/
 theorem sqnLoopI (base : BitVec 32) (o : Slot) (n : Nat) (hn : 1 ≤ n) (hn' : n < 65536) :
-    ISpec base (sqnLoop o n) (opSqn o o n) := by
+    ISpec base (sqnLoop umaal o n) (opSqn o o n) := by
   intro s hc hl
   refine WP.seq (wp_movw fun s1 h1 => WP.block_nil ?_)
   have b1 : s1.gpr .r10 = BitVec.ofNat 32 n := by
@@ -130,6 +132,8 @@ end
 /-! The shared addition chain computes inversion and square-root powers. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {umaal : Bool}
 
 def power250Env (e : Env) : Env :=
   opMul 15 16 15 (opSqn 16 16 50 (opMul 16 17 16 (opSqn 17 16 100
@@ -167,7 +171,7 @@ theorem OSpec.weaken {b : BitVec 32} {W : List Slot} {c : Prog isa} {S S' S'' : 
 
 theorem mulO_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S W : List Slot} (hl : LimOn s.mem b S)
     (o x y : Slot) (hx : x ∈ S) (hy : y ∈ S) (hw : o ∈ W) :
-    WP isa (mulP o x y) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (o :: S) ∧
+    WP isa (mulP umaal o x y) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (o :: S) ∧
       env t.mem b = opMul o x y (env s.mem b) :=
   fieldOpOn_ok hc hl (.mul o x y) rfl (fun i hi => by
     rcases List.mem_cons.mp hi with rfl | hi
@@ -175,7 +179,7 @@ theorem mulO_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S W : List Slot} (hl
     · rw [List.mem_singleton.mp hi]; exact hy) hw
 
 theorem mulO (b : BitVec 32) {W : List Slot} (o x y : Slot) {S : List Slot} (hx : x ∈ S) (hy : y ∈ S)
-    (hw : o ∈ W) : OSpec b W (mulP o x y) S (o :: S) (opMul o x y) :=
+    (hw : o ∈ W) : OSpec b W (mulP umaal o x y) S (o :: S) (opMul o x y) :=
   fun _ hc hl => WP.mono (mulO_ok hc hl o x y hx hy hw) fun _ ⟨r, fr, l, e⟩ => ⟨r.mono (by decide), fr, l, e⟩
 
 theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : Slot) (S : List Slot) {W : List Slot} (hw : o ∈ W)
@@ -183,7 +187,7 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
     ∀ m s, 1 ≤ m → m < n → Rest (.r10 :: clob) s₀ s → Frame (wRegions base W) s₀.mem s.mem →
       LimOn s.mem base (o :: S) → s.gpr .r10 = BitVec.ofNat 32 m →
       env s.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) →
-      WP isa (.loop (.seq (mulP o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
+      WP isa (.loop (.seq (mulP umaal o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
         Rest (.r10 :: clob) s₀ t ∧ Frame (wRegions base W) s₀.mem t.mem ∧ LimOn t.mem base (o :: S) ∧
         env t.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x n) := by
   intro m s h1 h2 hr hf hl hb he
@@ -215,7 +219,7 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
 
 theorem sqnO (base : BitVec 32) {W : List Slot} (o a : Slot) (n : Nat) (hn : 2 ≤ n) (hn' : n < 65536)
     {S : List Slot} (ha : a ∈ S) (hw : o ∈ W) :
-    OSpec base W (Impl.Ed25519.Arm.sqn o a n) S (o :: S) (opSqn o a n) := by
+    OSpec base W (Impl.Ed25519.Arm.sqn umaal o a n) S (o :: S) (opSqn o a n) := by
   intro s hc hl
   refine WP.seq (WP.mono (mulO_ok hc hl o a a ha ha hw) fun s1 ⟨r1, f1, l1, e1⟩ => ?_)
   refine WP.seq (wp_movw fun s2 h2 => WP.block_nil ?_)
@@ -233,8 +237,8 @@ theorem sqnO (base : BitVec 32) {W : List Slot} (o a : Slot) (n : Nat) (hn : 2 �
 /-- The chain, from slot 2's limbs below `2^16`, with the other slots `T`'s
 kept so. -/
 theorem chain250O (base : BitVec 32) (T : List Slot) :
-    OSpec base [14, 15, 16, 17] chain250 (2 :: T) (15 :: 14 :: T) power250Env := by
-  have h : OSpec base [14, 15, 16, 17] chain250 (2 :: T) _ power250Env :=
+    OSpec base [14, 15, 16, 17] (chain250 umaal) (2 :: T) (15 :: 14 :: T) power250Env := by
+  have h : OSpec base [14, 15, 16, 17] (chain250 umaal) (2 :: T) _ power250Env :=
     (mulO base 14 2 2 (by simp) (by simp) (by decide)).seq <|
     (mulO base 15 14 14 (by simp) (by simp) (by decide)).seq <|
     (mulO base 15 15 15 (by simp) (by simp) (by decide)).seq <|
@@ -265,29 +269,31 @@ theorem chain250O (base : BitVec 32) (T : List Slot) :
 
 /-- `vg_gf25519_r16_pow250`, from slot 2's limbs below `2^16`. -/
 theorem pow250Fn_ok {b : BitVec 32} (T : List Slot) {s : State} (hc : Ctx b s) (hl : LimOn s.mem b (2 :: T)) :
-    WP isa pow250Fn s fun t => Rest fnClob s t ∧ Frame (wRegions b [14, 15, 16, 17] ++ [saveR b]) s.mem t.mem ∧
+    WP isa (pow250Fn umaal) s fun t => Rest fnClob s t ∧ Frame (wRegions b [14, 15, 16, 17] ++ [saveR b]) s.mem t.mem ∧
       LimOn t.mem b (15 :: 14 :: T) ∧
       env t.mem b = power250Env (env s.mem b) :=
   asFn_ok (R := .r10 :: clob) (by decide) (chain250O b T) hc hl
 
+theorem pow250Fn_noCalls (umaal : Bool) : (pow250Fn umaal).noCalls = true := by cases umaal <;> decide +kernel
+
 /-- A call of `vg_gf25519_r16_pow250`, as the inlined chain. -/
-theorem power250_spec (base : BitVec 32) : ISpec base power250 power250Env := fun s hc hl =>
+theorem power250_spec (base : BitVec 32) : ISpec base (power250 umaal) power250Env := fun s hc hl =>
   WP.mono (fnCall_ok (fun _ hc hl => WP.mono (pow250Fn_ok allSlots hc (LimOn.of_all hl _))
       fun _ ⟨r, f, l, e⟩ => ⟨r, frameS_FA f, l.all fun i => List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-        (mem_allSlots i)), e⟩) (by decide +kernel) hc hl)
+        (mem_allSlots i)), e⟩) (pow250Fn_noCalls umaal) hc hl)
     fun _ ⟨k, l, e⟩ => ⟨⟨k.rest.mono (by decide), k.frame⟩, l, e⟩
 
 def invEnv (e : Env) : Env := opMul 15 15 14 (opSqn 15 15 5 (power250Env e))
 def rootEnv (e : Env) : Env := opMul 15 15 2 (opSqn 15 15 2 (power250Env e))
 
-theorem invert_spec (base : BitVec 32) : ISpec base invert invEnv := by
-  have h : ISpec base _ _ := (power250_spec base).seq ((sqnLoopI base 15 5 (by decide) (by decide)).seq
-    (mulcI base 15 15 14))
+theorem invert_spec (base : BitVec 32) : ISpec base (invert umaal) invEnv := by
+  have h : ISpec base _ _ := (power250_spec (umaal := umaal) base).seq
+    ((sqnLoopI (umaal := umaal) base 15 5 (by decide) (by decide)).seq (mulcI (umaal := umaal) base 15 15 14))
   exact h
 
-theorem rootPower_spec (base : BitVec 32) : ISpec base Impl.Ed25519.Arm.rootPower rootEnv := by
-  have h : ISpec base _ _ := (power250_spec base).seq ((sqnLoopI base 15 2 (by decide) (by decide)).seq
-    (mulcI base 15 15 2))
+theorem rootPower_spec (base : BitVec 32) : ISpec base (Impl.Ed25519.Arm.rootPower umaal) rootEnv := by
+  have h : ISpec base _ _ := (power250_spec (umaal := umaal) base).seq
+    ((sqnLoopI (umaal := umaal) base 15 2 (by decide) (by decide)).seq (mulcI (umaal := umaal) base 15 15 2))
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by
@@ -311,6 +317,8 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
+variable {umaal : Bool}
+
 theorem IKeep.of_keep {b : BitVec 32} {s t : State} (h : Keep b s t) : IKeep b s t :=
   ⟨h.rest.mono (by decide), h.frame⟩
 
@@ -322,7 +330,7 @@ theorem invEnv_xy (e : Env) : invEnv e 0 = e 0 ∧ invEnv e 1 = e 1 := by
   exact ⟨rfl, rfl⟩
 
 theorem pointAffine_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
-    WP isa pointAffine s fun t => IKeep base s t ∧ AllLim t.mem base ∧
+    WP isa (pointAffine umaal) s fun t => IKeep base s t ∧ AllLim t.mem base ∧
       env t.mem base 0 = env s.mem base 0 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) ∧
       env t.mem base 1 = env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) := by
   refine WP.seq (WP.mono (invert_spec base s hc hl) fun t ⟨hk, hlt, hv⟩ => ?_)

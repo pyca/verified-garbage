@@ -227,7 +227,9 @@ theorem init_framed :
       (Spec.Sm4.Gcm.initContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Curry.const (fun _ => True) _) (post := Spec.Sm4.Gcm.initPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 3248) (bytes := 2560) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 3248) (bytes := 2560) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.initPostOut_local _ vs m m₁ m₂ r hl)
+    initFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
 `vg_sm4_gcm_stream_decrypt`, without the working space. -/
@@ -243,7 +245,9 @@ theorem streamEncrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Sm4.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
-    (bytes := 2560) streamEncrypt_verified (by decide) (by decide) streamEncryptFrameSat_pre
+    (bytes := 2560) streamEncrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl)
+    streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost,
@@ -255,7 +259,9 @@ theorem streamDecrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Sm4.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
-    (bytes := 2560) streamDecrypt_verified (by decide) (by decide) streamDecryptFrameSat_pre
+    (bytes := 2560) streamDecrypt_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl)
+    streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without
 the working space. -/
@@ -271,7 +277,9 @@ theorem streamFinish_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Sm4.Gcm.streamFinishPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
-    (bytes := 2560) streamFinish_verified (by decide) (by decide) finFrameSat_pre
+    (bytes := 2560) streamFinish_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl)
+    finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without
 the working space. -/
@@ -287,7 +295,9 @@ theorem streamVerify_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Sm4.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
-    (bytes := 2560) streamVerify_verified (by decide) (by decide) verFrameSat_pre
+    (bytes := 2560) streamVerify_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl)
+    verFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
 space: no stack arguments. -/
@@ -307,7 +317,9 @@ theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
   RISCV64.Verified.stackScratchArgs (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Curry.const (fun _ => True) _) (post := Spec.Sm4.Gcm.sealPost RISCV64.abi.ptrBits)
     (wa := true) (stack := 3248) (bytes := 2576) (m := 0) seal_verified (by decide) (by decide)
-    (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.sealPost_local _) sealFrameSat_pre
+    (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.sealPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.sealPostOut_local _ vs m m₁ m₂ r hl)
+    sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
 space: `tag_len` alone on the stack. -/
@@ -329,6 +341,7 @@ theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     (wa := true) (stack := 3248) (bytes := 2576) (m := 1)
     (leak := some (Spec.Sm4.Gcm.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.openPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := Proof.Sm4Gcm.openLeak_local _)
 
 end VG.Proof.Sm4Gcm.RISCV64

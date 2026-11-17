@@ -57,7 +57,7 @@ theorem expandKey_ok (hw : writesOnly keyRegs Impl.Blowfish.RISCV64.expandKey = 
     ∃ t s', Exec isa Impl.Blowfish.RISCV64.expandKey s t s' ∧ abiPreserved s s' ∧ keyC.post s s' := by
   obtain ⟨rd, wr, kS, valid, al, sp, sk, ss⟩ := hs
   obtain ⟨t, s', he, hp, hk⟩ := WP.keep keyRegs (expandKey_wp ⟨valid, rd, wr, kS, al, sp, sk, ss⟩) hw hn
-  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hp.1⟩
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hp⟩
 
 theorem key_agree : ∀ s₁ s₂, keyC.pre s₁ → keyC.pre s₂ → keyC.pub s₁ s₂ →
     taint.Agree (Taint.ofRegs [.a0, .a1, .a2]) s₁ s₂ := by

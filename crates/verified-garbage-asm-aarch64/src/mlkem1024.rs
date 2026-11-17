@@ -393,6 +393,8 @@ bl {vg_zeroize}
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -406,7 +408,8 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> 
 .inst 0xf9400009,0xb940080a,0x4e080d20,0x4e181d40,0x4e100001,0x4e311c22,0x6f340423,0x6eb23c42
 .inst 0x6eb23c63,0x4ea21e73,0x4ea31e73,0x91003000,0xd100056b
 cbnz x11, 20b
-.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd65f03c0
+.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd2800009,0xd280000a,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e413,0x6f00e414,0xd65f03c0
 .p2align 6",
     )
 }

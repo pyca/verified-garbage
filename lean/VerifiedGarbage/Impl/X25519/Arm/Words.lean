@@ -250,35 +250,4 @@ def x25519Umaal : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq (.block init) <| .seq ladder <| .seq (.block lastSwap) <|
     .seq invert (.block (mul X2 X2 R ++ output ++ restore))
 
-/-! ## `vg_x25519_base_umaal`
-
-`vg_x25519_base_umaal(out = r0, scalar = r1, scratch = r2)`: `X25519(k, 9)` by
-`vg_x25519_umaal` on the base point's u-coordinate, for CPUs with `umaal`, on
-which the ladder with packed words is faster than the comb over 16-bit limbs
-(`Impl/X25519/Arm/Base.lean`).
-
-`scratch` is 8192 bytes, of which `vg_x25519_umaal` takes the first 4096.
-The u-coordinate 9 is written at byte `BP` = 4096, eight words, and `r4` and
-`lr` are saved after it (the call overwrites `lr`, and `r4`, which the callee
-preserves, keeps the address across the call), so that it needs no stack.
-Only the pointers can affect timing. -/
-
-/-- The byte of `scratch` where the base point's u-coordinate is written. -/
-def BP : Nat := 4096
-
-/-- `r3 := scratch + BP`, `r4` and `lr` saved after the point there, `r4` set
-to it, the u-coordinate 9 written, and the arguments of `vg_x25519_umaal`:
-the point in `r2` and the working space in `r3`. -/
-def baseSetup : List Instr :=
-  [.dp .add .r3 .r2 (.imm 4096), .str .r4 .r3 36, .str .lr .r3 32, .mov .r4 (.reg .r3),
-   .mov .r12 (.imm 9), .str .r12 .r3 0, .mov .r12 (.imm 0), .str .r12 .r3 4, .str .r12 .r3 8,
-   .str .r12 .r3 12, .str .r12 .r3 16, .str .r12 .r3 20, .str .r12 .r3 24, .str .r12 .r3 28,
-   .mov .r12 (.reg .r2), .mov .r2 (.reg .r3), .mov .r3 (.reg .r12)]
-
-/-- `lr` and `r4` restored. -/
-def baseFinish : List Instr := [.ldr .lr .r4 32, .ldr .r4 .r4 36]
-
-def x25519BaseUmaal : Prog isa :=
-  .seq (.block baseSetup) (.seq (.call "vg_x25519_umaal" x25519Umaal) (.block baseFinish))
-
 end VG.Impl.X25519.Arm.Words

@@ -702,8 +702,10 @@ theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
     wr'.trans hc.wr⟩
 
 /-- The frame popped: the return address back, and what the function leaves. -/
-theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
-    abiPreserved s (popped .ra z) ∧ gatherPost s (popped .ra z) := by
+theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) (m : Mem) (u : Nat → BitVec 64)
+    (fl : Frame [⟨s.sp - 16, 16⟩] z.mem m) :
+    abiPreserved s { popped .ra z with mem := m, unknowns := u } ∧
+      gatherPost s { popped .ra z with mem := m, unknowns := u } := by
   obtain ⟨rd, wr, cd, ct, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     oc, on, oa, ods, ol, od, ot, al, w₁, w₂, hR, hgl, ca⟩ := h.pre
   obtain hra : z.mem.read (z.sp + 8) 8 = s.gpr .ra := by
@@ -715,9 +717,21 @@ theorem popped_ok {s z : State} (h : Lay s) (hz : Called s z) :
     rw [hz.sp, show (16 : Addr) = BitVec.ofNat 64 16 from rfl, Offset.add_add, h.hB]
   · show (z.write .ra (z.mem.read (z.sp + 8) 8)).gpr .ra = s.gpr .ra
     rw [RegUpd.gpr_write_self, hra]
-  · show encryptWith _ _ _ _ _ _ = (bytesAt (z.write .ra (z.mem.read (z.sp + 8) 8)).mem (Dst s) (L s),
-      bytesAt (z.write .ra (z.mem.read (z.sp + 8) 8)).mem (Tg s) 16)
-    rw [RegUpd.mem_write]
+  · show encryptWith _ _ _ _ _ _ = (bytesAt m (Dst s) (L s), bytesAt m (Tg s) 16)
+    -- The pop loses the frame's bytes, which lie apart from the data and the tag.
+    have e : s.sp - 16 = Bs s + BitVec.ofNat 64 4624 := by
+      rw [h.hB, show (16 : Addr) = BitVec.ofNat 64 16 from rfl]
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega_using []
+    rw [e] at fl
+    have hD : bytesAt m (Dst s) (L s) = bytesAt z.mem (Dst s) (L s) :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := dR s) (h.bd.symm.sub_right (stk_sub s 4624 16 (by decide))) (List.mem_range.mp hi)
+    have hT : bytesAt m (Tg s) 16 = bytesAt z.mem (Tg s) 16 :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := tgR s) (h.bt.symm.sub_right (stk_sub s 4624 16 (by decide))) (List.mem_range.mp hi)
+    rw [hD, hT]
     obtain hfc : Frame [FA s, dR s] s.mem (gMem s) :=
       ((Lay.frame_eMem (s := s)).mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
         (h.frame_gMem.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))
@@ -747,6 +761,6 @@ theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
-  exact WP.mono (called_wp hv h hc) fun z hz => popped_ok h hz
+  exact WP.mono (called_wp hv h hc) fun z hz m u fl => popped_ok h hz m u fl
 
 end VG.Proof.AesGcm.RISCV64.Gather

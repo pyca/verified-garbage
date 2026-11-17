@@ -1,46 +1,13 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Comb -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Comb -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.Ecdsa.P521.Arm
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdh.Arm.Peer
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.P521.Point
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
-public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P521.Arm.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
 
 /-! # ECDSA over P-521 (FIPS 186-5) on ARMv7 -/
 
@@ -49,27 +16,27 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521
 namespace VG.Artifacts.EcdsaP521.Arm
 
 open VG.Proof.P521.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p521 p521T_verified p521U p521UT_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p521CombCurve p521T_verified p521CombCurveU p521UT_verified)
 open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-      Impl.Ecdsa.Verify.Arm.verifyP521
+      Impl.Ecdsa.Arm.verifyP521Comb
     verified := Proof.Ecdsa.Verify.Arm.P521.verifyHash_verified hasLaw.law },
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-      Impl.Ecdsa.Verify.Arm.verifyP521U
+      Impl.Ecdsa.Arm.verifyP521CombU
     verified := Proof.Ecdsa.Verify.Arm.P521.verifyHashU_verified hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
-    code := signCodeT (p521 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
+    code := signCodeT (p521CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
     verified := p521T_verified hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
-    code := signCodeT (p521U hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
+    code := signCodeT (p521CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
     verified := p521UT_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaP521.Arm

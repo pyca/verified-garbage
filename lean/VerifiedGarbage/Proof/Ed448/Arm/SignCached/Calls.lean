@@ -46,7 +46,7 @@ import VerifiedGarbage.Proof.X448.Bytes
 
 `reduceR_step`: `r`, the nonce's hash reduced modulo `L`, into the second
 half of `out`; `base_step`: `R = [r]B` into its first half, given the
-reference ladder's agreement with the specification (`BaseLadderOk`, a
+reference comb's agreement with the specification (`BaseCombOk`, a
 hypothesis); `reduceK_step`: `k` at `K`; `mulAdd_step`:
 `S = (r + k s) mod L` over `r` (`vg_ed448_scalar_mul_add`'s output may be
 one of its inputs); `wipe_step`: the locals cleared. Each through
@@ -64,7 +64,9 @@ open VG.Proof.Ed448.Arm.Shake (Slot valid Kit Args argVal kWr kArgs valid_const 
   frame_bytes bytes_setup)
 open VG.Proof.Ed448.Arm (scalarReduceLocal scalarReduce_ok scalarBaseLocal scalarBase_ok scalarMulAddLocal
   scalarMulAdd_ok)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
@@ -161,7 +163,7 @@ theorem reduceR_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
 
 /-! ## `R` -/
 
-theorem base_noFrames : Impl.Ed448.Arm.scalarBase.noFrames = true := PublicKey.base_noFrames
+theorem base_noFrames : (Impl.Ed448.Arm.scalarBase fv).noFrames = true := PublicKey.base_noFrames
 
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.out + BitVec.ofNat 32 57 ∧ t.gpr .r2 = L.scr
@@ -192,8 +194,9 @@ theorem base_writes (L : Lay) : ∀ r ∈ [L.R0, L.SCR],
   · exact .inr ⟨L.OUT, out_in L, r0_within L⟩
   · exact .inr ⟨L.SCR, scr_in L, scr_within L⟩
 
-theorem base_step (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) t fun u =>
+theorem base_step (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.scalarBase fv)) t fun u =>
       Ctx L g m₀ u ∧ Frame (W L [L.R0, L.SCR]) t.mem u.mem ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (State.addr L.out + BitVec.ofNat 64 57) 57) := by

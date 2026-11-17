@@ -9,7 +9,8 @@ public import VerifiedGarbage.Proof.Zeroize.Arm
 # AES-CBC on ARMv7, zeroing its scratch
 
 `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` call the CBC code
-(`Impl/AesCbc/Arm.lean`, now the internal functions
+(`Impl/AesCbc/Arm.lean` and, for decryption, in groups of blocks,
+`Impl/AesCbc/Arm/Groups.lean`, now the internal functions
 `vg_aes_cbc_encrypt_unwiped` and `vg_aes_cbc_decrypt_unwiped`) by
 `callWipeStack`, which copies the two stack arguments (`n` and `scratch`)
 into its frame for the call, then zero the whole of `scratch` (2176 bytes,
@@ -34,7 +35,7 @@ def wiped (name : String) (body : Prog isa) : Prog isa :=
 def encrypt : Prog isa := wiped "vg_aes_cbc_encrypt_unwiped" Impl.AesCbc.Arm.encrypt
 
 /-- `vg_aes_cbc_decrypt`. -/
-def decrypt : Prog isa := wiped "vg_aes_cbc_decrypt_unwiped" Impl.AesCbc.Arm.decrypt
+def decrypt : Prog isa := wiped "vg_aes_cbc_decrypt_unwiped" Impl.AesCbc.Arm.decryptG
 
 theorem sat (P : Spec.Cbc.aesSig.Post 32) :
     ∃ s, (Spec.Cbc.aesSig.contract abi (pre 32) P false 32 none).pre s := by

@@ -19,11 +19,6 @@ def brainpoolp512r1With (u : Bool) : Cfg :=
 def brainpoolp512r1 : Cfg := brainpoolp512r1With false
 
 /-- `vg_ecdsa_brainpoolp512r1_sign`. -/
-def signBrainpoolP512r1With (u : Bool) : Prog isa := (brainpoolp512r1With u).sign
-
-def signBrainpoolP512r1 : Prog isa := signBrainpoolP512r1With false
-
-/-- `vg_ecdsa_brainpoolp512r1_sign_umaal`. -/
-def signBrainpoolP512r1U : Prog isa := signBrainpoolP512r1With true
+def signBrainpoolP512r1 : Prog isa := brainpoolp512r1.sign
 
 end VG.Impl.Ecdsa.Arm

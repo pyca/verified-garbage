@@ -33,39 +33,40 @@ private theorem all_seqs' (p : Instr → Bool) (l : List (Prog isa)) :
     | nil => simp only [seqs, List.all_cons, List.all_nil, Bool.and_true]
     | cons b l => simp only [seqs, Code.all, List.all_cons] at ih ⊢; rw [ih]
 
-private theorem i_seq (p : Instr → Bool) (a b : Prog isa) :
-    (Code.seq a b).allInstrs p = (a.allInstrs p && b.allInstrs p) := rfl
-private theorem i_ite (p : Instr → Bool) (c : Cond) (a b : Prog isa) :
-    (Code.ite c a b).allInstrs p = (a.allInstrs p && b.allInstrs p) := rfl
-private theorem i_loop (p : Instr → Bool) (a : Prog isa) (c : Cond) :
-    (Code.loop a c).allInstrs p = a.allInstrs p := rfl
-private theorem i_empty (p : Instr → Bool) :
-    (Code.block ([] : List Instr) : Prog isa).allInstrs p = true := rfl
+/-! The lemmas about `Code.allInstrs`, `Code.all` and `ctlC` with the code's types written as `simp` finds
+them: it reduces `isa.Instr` in the code before it looks a lemma up, and a lemma stated with `Prog isa`
+never matches. -/
 
-private theorem a_seq (p : Instr → Bool) (a b : Prog isa) :
-    (Code.seq a b).all p = (a.all p && b.all p) := rfl
-private theorem a_ite (p : Instr → Bool) (c : Cond) (a b : Prog isa) :
-    (Code.ite c a b).all p = (a.all p && b.all p) := rfl
-private theorem a_loop (p : Instr → Bool) (a : Prog isa) (c : Cond) :
-    (Code.loop a c).all p = a.all p := rfl
+private theorem i_seqs (p : Instr → Bool) (l : List (Code Instr Cond)) :
+    @Code.allInstrs Instr Cond p (seqs l) = l.all (fun c => @Code.allInstrs Instr Cond p c) := all_seqs p l
+private theorem i_ite (p : Instr → Bool) (c : Cond) (a b : Code Instr Cond) :
+    @Code.allInstrs Instr Cond p (@Code.ite Instr Cond c a b) = (a.allInstrs p && b.allInstrs p) := rfl
+private theorem i_loop (p : Instr → Bool) (a : Code Instr Cond) (c : Cond) :
+    @Code.allInstrs Instr Cond p (@Code.loop Instr Cond a c) = a.allInstrs p := rfl
+private theorem i_empty (p : Instr → Bool) :
+    @Code.allInstrs Instr Cond p (@Code.block Instr Cond []) = true := rfl
+
+private theorem a_seqs (p : Instr → Bool) (l : List (Code Instr Cond)) :
+    @Code.all Instr Cond p (seqs l) = l.all (fun c => @Code.all Instr Cond p c) := all_seqs' p l
+private theorem a_ite (p : Instr → Bool) (c : Cond) (a b : Code Instr Cond) :
+    @Code.all Instr Cond p (@Code.ite Instr Cond c a b) = (a.all p && b.all p) := rfl
+private theorem a_loop (p : Instr → Bool) (a : Code Instr Cond) (c : Cond) :
+    @Code.all Instr Cond p (@Code.loop Instr Cond a c) = a.all p := rfl
 private theorem a_empty (p : Instr → Bool) :
-    (Code.block ([] : List Instr) : Prog isa).all p = true := rfl
+    @Code.all Instr Cond p (@Code.block Instr Cond []) = true := rfl
+
+private theorem c_seqs (l : List (Code Instr Cond)) : ctlC (seqs l) = l.all ctlC := ctlC_seqs l
+private theorem c_ite (c : Cond) (a b : Code Instr Cond) :
+    ctlC (@Code.ite Instr Cond c a b) = (ctlC a && ctlC b) := rfl
+private theorem c_loop (a : Code Instr Cond) (c : Cond) : ctlC (@Code.loop Instr Cond a c) = ctlC a := rfl
+private theorem c_empty : ctlC (@Code.block Instr Cond []) = true := rfl
 
 private theorem template_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa)
     (hp : (codeWith (fun _ _ _ => .block []) (.block [])).allInstrs p = true)
     (hm : ∀ o a b, (mul o a b).allInstrs p = true) (hb : body.allInstrs p = true) :
     (codeWith mul body).allInstrs p = true := by
   unfold codeWith kMainWith millerRabinWith mrRoundWith montSetup at hp ⊢
-  repeat' first
-    | rw [all_seqs] at *
-    | rw [i_seq] at *
-    | rw [i_ite] at *
-    | rw [i_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
-  repeat' rw [hm]
-  rw [hb]
-  repeat' rw [i_empty] at hp
+  simp only [i_seqs, i_ite, i_loop, List.all_append, List.all_cons, hm, hb, i_empty] at hp ⊢
   exact hp
 
 private theorem template_ctlC (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa)
@@ -73,16 +74,7 @@ private theorem template_ctlC (mul : Nat → Nat → Nat → Prog isa) (body : P
     (hm : ∀ o a b, ctlC (mul o a b) = true) (hb : ctlC body = true) :
     ctlC (codeWith mul body) = true := by
   unfold codeWith kMainWith millerRabinWith mrRoundWith montSetup at hp ⊢
-  repeat' first
-    | rw [ctlC_seqs] at *
-    | rw [ctlC_seq] at *
-    | rw [ctlC_ite] at *
-    | rw [ctlC_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
-  repeat' rw [hm]
-  rw [hb]
-  repeat' rw [ctlC_empty] at hp
+  simp only [c_seqs, c_ite, c_loop, List.all_append, List.all_cons, hm, hb, c_empty] at hp ⊢
   exact hp
 
 private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa)
@@ -90,16 +82,7 @@ private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat →
     (hm : ∀ o a b, (mul o a b).all p = true) (hb : body.all p = true) :
     (codeWith mul body).all p = true := by
   unfold codeWith kMainWith millerRabinWith mrRoundWith montSetup at hp ⊢
-  repeat' first
-    | rw [all_seqs'] at *
-    | rw [a_seq] at *
-    | rw [a_ite] at *
-    | rw [a_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
-  repeat' rw [hm]
-  rw [hb]
-  repeat' rw [a_empty] at hp
+  simp only [a_seqs, a_ite, a_loop, List.all_append, List.all_cons, hm, hb, a_empty] at hp ⊢
   exact hp
 
 private theorem arith_mx (v : RoundImpl) (o a b : Nat) :

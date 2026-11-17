@@ -37,7 +37,9 @@ theorem load {z : Size} {s : State} {t : Reg} (j : Fin 16)
 
 theorem rotate {z : Size} {s : State} {d n : Reg} {sh : Nat} (h : sh < z.bits) :
     exec (.ror z d n sh) s = some (s.write z d ((s.read z n).rotateRight sh)) := by
-  simp [exec, h]
+  cases z
+  · exact exec_ror_w h
+  · exact exec_ror_x h
 
 theorem state_eq {s t : State} (hg : s.gpr = t.gpr) (hs : s.sp = t.sp)
     (hc : s.c = t.c) (hn : s.nf = t.nf) (hz : s.zf = t.zf) (hvf : s.vf = t.vf)

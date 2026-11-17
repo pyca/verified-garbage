@@ -181,9 +181,9 @@ theorem toNat_qword1 (x : BitVec 128) : (qword x 1).toNat = (dword x 2).toNat + 
 
 theorem toNat_byte_lo (x : BitVec 128) {i : Nat} (hi : i < 8) :
     (byte x i).toNat = (qword x 0).toNat / 2 ^ (8 * i) % 2 ^ 8 := by
-  rw [toNat_byte, toNat_qword]
-  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceMul, Nat.reducePow] <;> omega_arith
+  rw [toNat_byte, toNat_qword, Nat.mul_zero, Nat.pow_zero, Nat.div_one, ← Nat.mod_mul_right_div_self x.toNat,
+    ← Nat.mod_mul_right_div_self (x.toNat % 2 ^ 64),
+    Nat.mod_mod_of_dvd _ (by rw [← Nat.pow_add]; exact Nat.pow_dvd_pow 2 (by omega_using [hi]))]
 
 theorem toNat_byte0 (x : BitVec 128) : (byte x 0).toNat = (dword x 0).toNat % 2 ^ 8 := by
   simp only [toNat_byte, toNat_dword', Nat.reduceMul, Nat.reducePow]; omega_arith
@@ -1031,10 +1031,20 @@ theorem lastY {V₀ V₁ : Nat} (h₀ : V₀ < 2 ^ 80) (h₁ : V₁ < 2 ^ 80) {j
       ← Nat.two_pow_add_eq_or_of_lt (by omega_arith)]
   apply BitVec.eq_of_toNat_eq
   rw [toNat_byte, hY, BitVec.toNat_ofNat]
-  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
-    j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, ↓reduceIte, Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow] <;> omega_arith
+  obtain hb : V₀ / 2 ^ 32 < 2 ^ 48 := by omega_using [h₀]
+  by_cases hj6 : j < 6
+  · -- byte `j` of the low 48 bits: the multiple of `2 ^ 48` is one of `2 ^ (8 j + 8)`
+    obtain ⟨e, he⟩ : ∃ e, 48 = 8 * j + 8 + e := ⟨40 - 8 * j, by omega_using [hj6]⟩
+    simp only [hj6, ↓reduceIte]
+    rw [← Nat.mod_mul_right_div_self (2 ^ 48 * V₁ + V₀ / 2 ^ 32), ← Nat.pow_add, he, Nat.pow_add 2 (8 * j + 8) e,
+      Nat.mul_assoc, Nat.mul_add_mod_self_left, Nat.pow_add 2 (8 * j) 8, Nat.mod_mul_right_div_self,
+      Nat.div_div_eq_div_mul, ← Nat.pow_add, show 8 * (4 + j) = 32 + 8 * j by omega_using []]
+  · -- byte `6 + e`: byte `e` of the quotient by `2 ^ 48`
+    obtain ⟨e, he⟩ : ∃ e, j = 6 + e := ⟨j - 6, by omega_using [hj6]⟩
+    subst he
+    simp only [hj6, ↓reduceIte]
+    rw [show 8 * (6 + e) = 48 + 8 * e by omega_using [], Nat.add_sub_cancel_left, Nat.pow_add,
+      ← Nat.div_div_eq_div_mul, Nat.mul_add_div (Nat.two_pow_pos 48), Nat.div_eq_of_lt hb, Nat.add_zero]
 
 /-- The 16 bytes of an iteration of `d = 4`, interleaved from four groups. -/
 theorem zbyte {U₀ U₁ U₂ U₃ : Nat} (h₀ : U₀ < 2 ^ 32) (h₁ : U₁ < 2 ^ 32) (h₂ : U₂ < 2 ^ 32) (h₃ : U₃ < 2 ^ 32)
