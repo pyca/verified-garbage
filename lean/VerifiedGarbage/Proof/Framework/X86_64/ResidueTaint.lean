@@ -762,15 +762,26 @@ def slowFn (i : Instr) : RStep := ⟨fun τ =>
           some ⟨true, t', nfr, depth, room, sec, ras, ub', fl', mb', fw, an, sa, sp, pb'⟩
     | none => none⟩
 
+/-- `b.run t` (`runF_eq`), evaluated (`Taint.forceT`). It is a function of
+the base taint alone: the kernel finds it again, evaluated, at a step from a
+taint that differs from one it has met only in what this analysis adds to
+the base analysis's (the masks of a caller's frame, the bounds), as the
+steps of a function are at each of its calls. Forced in the step itself, the
+base taint was evaluated again at each of them. -/
+def runF (b : Taint.Step) (t : Taint.T) : Option Taint.T :=
+  match b.run t with
+  | some t' => Taint.forceT t' some
+  | none => none
+
 /-- `step` of an instruction `isPlain` says is, whose base step is `b` and
 which writes the register `d`. -/
 def fastFn (b : Taint.Step) (d : Option Reg) : RStep := ⟨fun τ =>
   match τ with
   | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw, an, sa, sp, pb⟩ =>
     bif ok then
-      match b.run t with
+      match runF b t with
       | some t' =>
-        Taint.forceT t' fun t' => forceList (ubDrop d ub) fun ub' =>
+        forceList (ubDrop d ub) fun ub' =>
           some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp, pb⟩
       | none => none
     else none⟩
@@ -876,9 +887,9 @@ def fastU (b : Taint.Step) (u : List (Reg × Nat) → List (Reg × Nat)) : RStep
   match τ with
   | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw, an, sa, sp, pb⟩ =>
     bif ok then
-      match b.run t with
+      match runF b t with
       | some t' =>
-        Taint.forceT t' fun t' => forceList (u ub) fun ub' =>
+        forceList (u ub) fun ub' =>
           some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp, pb⟩
       | none => none
     else none⟩
