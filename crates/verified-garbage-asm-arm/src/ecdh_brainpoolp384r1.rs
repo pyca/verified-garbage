@@ -2491,7 +2491,7 @@ bx lr",
         vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
-        vg_brainpoolp384r1_point_double = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
+        vg_brainpoolp384r1_point_double = sym super::ecdh_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
         vg_brainpoolp384r1_point_add = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
     )
 }
@@ -4990,7 +4990,15 @@ bx lr",
         vg_brainpoolp384r1_mul_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p_umaal::vg_brainpoolp384r1_mul_mod_p_umaal,
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
-        vg_brainpoolp384r1_point_double_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double_umaal::vg_brainpoolp384r1_point_double_umaal,
+        vg_brainpoolp384r1_point_double_umaal = sym super::ecdh_brainpoolp384r1::vg_brainpoolp384r1_point_double_umaal::vg_brainpoolp384r1_point_double_umaal,
         vg_brainpoolp384r1_point_add_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add_umaal::vg_brainpoolp384r1_point_add_umaal,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_point_double.rs"]
+pub(crate) mod vg_brainpoolp384r1_point_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_point_double_umaal.rs"]
+pub(crate) mod vg_brainpoolp384r1_point_double_umaal;

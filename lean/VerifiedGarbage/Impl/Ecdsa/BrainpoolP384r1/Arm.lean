@@ -18,13 +18,7 @@ def brainpoolp384r1With (u : Bool) : Cfg :=
 /-- brainpoolP384r1 as the code has it. -/
 def brainpoolp384r1 : Cfg := brainpoolp384r1With false
 
-/-- `vg_ecdsa_brainpoolp384r1_sign`, or with `u` `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
-def signBrainpoolP384r1With (u : Bool) : Prog isa := (brainpoolp384r1With u).sign
-
 /-- `vg_ecdsa_brainpoolp384r1_sign`. -/
-def signBrainpoolP384r1 : Prog isa := signBrainpoolP384r1With false
-
-/-- `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
-def signBrainpoolP384r1U : Prog isa := signBrainpoolP384r1With true
+def signBrainpoolP384r1 : Prog isa := brainpoolp384r1.sign
 
 end VG.Impl.Ecdsa.Arm

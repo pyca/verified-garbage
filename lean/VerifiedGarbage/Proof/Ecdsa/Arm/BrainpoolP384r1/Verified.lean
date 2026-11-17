@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
@@ -20,7 +19,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Contract
 meta import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
@@ -119,14 +117,14 @@ theorem brainpoolp384r1With_ok (u : Bool) : CfgOk (brainpoolp384r1With u) := by
   cases u
   · exact brainpoolp384r1_ok
   · exact brainpoolp384r1u_ok
-theorem pre_of {u : Bool} {s : State} (h : signArm.pre s) : Pre (brainpoolp384r1With u) s := by
+theorem pre_of {s : State} (h : signArm.pre s) : Pre brainpoolp384r1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
 
-theorem sign_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (u : Bool) (s : State) (hs : signArm.pre s) :
-    ∃ t s', Exec isa (signBrainpoolP384r1With u) s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of (u := u) hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok (brainpoolp384r1With_ok u) hL hp
+theorem sign_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs : signArm.pre s) :
+    ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
+  have hp := pre_of hs
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok brainpoolp384r1_ok hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
   swap
   · simp only [signArm, BitVec.setWidth_append_eq_right]
@@ -149,8 +147,8 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [96, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of (u := false) h
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (brainpoolp384r1With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
   refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, brainpoolp384r1With, show Spec.BrainpoolP384r1.curve.len = 48 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
@@ -175,11 +173,11 @@ theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
-/-- The taint analysis's start agrees in the two states. -/
-theorem agree_τ₀ {s t : State} (hs : signArm.pre s) (ht : signArm.pre t) (h : signArm.pub s t) :
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (brainpoolp384r1With u) s extraS) (ht : Pre (brainpoolp384r1With u) t extraT) (pub : signArm.pub s t) :
     VG.Arm.Taint.Agree τ₀ s t := by
-  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := h
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
+  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -188,7 +186,7 @@ theorem agree_τ₀ {s t : State} (hs : signArm.pre s) (ht : signArm.pre t) (h :
     · exact h1
     · exact h2
     · exact h3
-  · rw [(pre_of (u := false) hs).wr, (pre_of (u := false) ht).wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
+  · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
@@ -203,10 +201,7 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
     fun _ h => (List.not_mem_nil h).elim⟩ h
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP384r1 :=
-  VG.Taint.constantTime (A := taint) τ₁ (fun _ _ hs ht h => agree₁ (agree_τ₀ hs ht h))
-    (by native_taint_decide)
-
-theorem signU_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP384r1U :=
-  VG.Taint.constantTime (A := taintU) τ₁ (fun _ _ hs ht h => agree₁ (agree_τ₀ hs ht h)) (by taint_decide)
+  VG.Taint.constantTime (A := taint) τ₁
+    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Arm.BrainpoolP384r1
