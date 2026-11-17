@@ -50,7 +50,7 @@ theorem framed_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat}
       u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
   have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
+  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
   rw [hm]
@@ -160,7 +160,7 @@ theorem framedW_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack k : N
     have h2 := ha.2.1
     rwa [hrsp] at h2
   obtain ⟨hex, -, hm, -⟩ :=
-    withStackArgScratch_run hk ⟨hb0, hb1, hb2⟩ hst
+    withStackArgScratch_runMem hk ⟨hb0, hb1, hb2⟩ hst
       (SpSafe.of_all (by simp only [Code.all, hsp, wipeAtX_spSafe, Bool.and_self]))
       (by simp only [Code.x86_64Depth]; omega_using [hd]) hs he' ha'
   obtain ⟨-, rfl⟩ := Exec.det he hex

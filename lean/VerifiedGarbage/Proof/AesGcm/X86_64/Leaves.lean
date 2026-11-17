@@ -258,7 +258,7 @@ theorem framed_leavesQ {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat
       u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
   have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runKept hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
+  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
   rw [hm]
@@ -3364,7 +3364,7 @@ theorem openCode_framedA {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (withStackArgScratch 2616 4 c) (Proof.AesGcm.openRoundsContract X86_64.abi 2640) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := openPostOut_local _) (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2616) hv

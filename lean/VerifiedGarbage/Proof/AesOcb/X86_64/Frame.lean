@@ -298,7 +298,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 3632 4 («seal» (callees v)))
       (Proof.AesOcb.sealRoundsContract X86_64.abi 3640) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := sealPostOut_local _) (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 448) (pre := Spec.Ocb.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3632) (seal_verified v) (by decide) (by decide) (by decide)
@@ -317,7 +317,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 3632 4 («open» (callees v)))
       (Proof.AesOcb.openRoundsContract X86_64.abi 3640) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := openPostOut_local _) (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 448) (pre := Spec.Ocb.openPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Ocb.openLeak X86_64.abi.ptrBits)) (bytes := 3632) (open_verified v)

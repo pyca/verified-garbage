@@ -938,7 +938,7 @@ theorem streamEncryptSB_framed (B : BlkFn CtxMode.base) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptS (v.withBlk B)))
       (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamEncryptPostOut_local _) (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncryptSB_verified v B) (by decide) (by decide) (by decide)
@@ -949,7 +949,7 @@ theorem streamDecryptSB_framed (B : BlkFn CtxMode.base) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptS (v.withBlk B)))
       (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamDecryptPostOut_local _) (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecryptSB_verified v B) (by decide) (by decide) (by decide)

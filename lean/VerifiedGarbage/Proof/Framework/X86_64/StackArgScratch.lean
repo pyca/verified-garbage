@@ -759,8 +759,11 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
 
 /-- A run of the code from `narrowS s` is a run of `withStackArgScratch`
 from `s`, after `setArgs`'s accesses, which keeps what the calling convention
-requires, and whose memory and `rax` are those of the code's run. -/
-theorem withStackArgScratch_runKept {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length)
+requires, and whose memory and `rax` are those of the code's run. The
+`free` leaves memory alone in the model as it is; only the residue lemmas
+(`Leaves.lean`, `ScrubPart.lean`), which say what each run leaves in the
+frame, rely on that (correctness proofs use `withStackArgScratch_run`). -/
+theorem withStackArgScratch_runMem {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length)
     (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
     (hst : stack + bytes + 8 ≤ 2 ^ 64) (hsafe : SpSafe c) (hd : c.x86_64Depth ≤ stack) {s : State}
     (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {s₃ : State}
@@ -903,7 +906,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
       abiPreserved s (popState bytes s s₃) ∧
       Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
-  obtain ⟨hex, ha', hm, hr⟩ := withStackArgScratch_runKept hk hb hst hsafe hd hs he ha
+  obtain ⟨hex, ha', hm, hr⟩ := withStackArgScratch_runMem hk hb hst hsafe hd hs he ha
   exact ⟨hex, ha', by rw [hm]; exact Frame.refl _ _, hr⟩
 
 /-- The frame is apart from the function's buffers and its lists of slices:
@@ -1004,7 +1007,7 @@ theorem Verified.stackArgScratchL {c : Prog isa}
 
 /-- `Verified.stackArgScratchL`, for a precondition, postcondition and leak
 that read memory only within the function's buffers. -/
-theorem Verified.stackArgScratch {c : Prog isa}
+theorem Verified.stackArgScratchPre {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : 6 ≤ (sig.words abi.ptrBits).length)
     (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
@@ -1029,6 +1032,34 @@ theorem Verified.stackArgScratch {c : Prog isa}
   Verified.stackArgScratchL h hk hb hst hsp hd (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb)
     (fun vs m₁ m₂ m' r hl hb _ => hpost vs m₁ m₂ m' r hl hb)
     (fun vs m m₁ m₂ r hl hp hb _ => hpostOut vs m m₁ m₂ r hl hp hb) hsat hleak.toL
+
+/-- `Verified.stackArgScratchL`, for a precondition, postcondition and leak
+that read memory only within the function's buffers, the postcondition the
+memory on return whatever the precondition. -/
+theorem Verified.stackArgScratch {c : Prog isa}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hk : 6 ≤ (sig.words abi.ptrBits).length)
+    (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
+    (hst : stack + bytes + 8 ≤ 2 ^ 64)
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackArgScratch bytes (nStack sig) c)
+      (sig.contract abi pre post wa (stack + bytes) leak) :=
+  Verified.stackArgScratchL h hk hb hst hsp hd (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb)
+    (fun vs m₁ m₂ m' r hl hb _ => hpost vs m₁ m₂ m' r hl hb)
+    (fun vs m m₁ m₂ r hl _ hb _ => hpostOut vs m m₁ m₂ r hl hb) hsat hleak.toL
 
 /-- The previous `Verified.stackArgScratchL`, kept until every proof is moved
 off it. Code verified for a function whose last argument, a scratch buffer of `n`
@@ -1072,7 +1103,7 @@ theorem Verified.stackArgScratchLKept {c : Prog isa}
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hk hb.1 hb.2.1 hpre hs)
-    exact ⟨t, s₃, he, hq, withStackArgScratch_runKept hk hb hst hsafe hd hs he ha⟩
+    exact ⟨t, s₃, he, hq, withStackArgScratch_runMem hk hb hst hsafe hd hs he ha⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, -, hq, hex, ha, hm, hrax⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩

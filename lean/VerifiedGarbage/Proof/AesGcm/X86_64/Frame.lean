@@ -1284,7 +1284,7 @@ theorem streamEncrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncrypt v.callees))
       (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamEncryptPostOut_local _) (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncrypt_verified v) (by decide) (by decide) (by decide)
@@ -1299,7 +1299,7 @@ theorem streamDecrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecrypt v.callees))
       (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamDecryptPostOut_local _) (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
@@ -1348,7 +1348,7 @@ theorem streamFinish_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamFinish v.callees))
       (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 2584) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamFinishPostOut_local _) (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2576) (streamFinish_verified v) (by decide) (by decide) (by decide)
@@ -1368,7 +1368,7 @@ theorem streamVerify_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamVerify v.callees))
       (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 2592) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamVerifyPostOut_local _) (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 2584) (streamVerify_verified v) (by decide) (by decide) (by decide)
@@ -1386,7 +1386,7 @@ theorem streamFinish_framed96 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamFinish v.callees))
       (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 792) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamFinishPostOut_local _) (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 96) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 784) (streamFinish_verified96 v f) (by decide) (by decide) (by decide)
@@ -1403,7 +1403,7 @@ theorem streamVerify_framed96 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 792 1 (streamVerify v.callees))
       (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 800) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamVerifyPostOut_local _) (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 96) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 792) (streamVerify_verified96 v f) (by decide) (by decide) (by decide)
@@ -1421,7 +1421,7 @@ theorem streamFinish_framed26 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (g :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 224 0 (streamFinish v.callees))
       (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 232) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamFinishPostOut_local _) (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 26) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 224) (streamFinish_verified26 v f g) (by decide) (by decide) (by decide)
@@ -1439,7 +1439,7 @@ theorem streamVerify_framed34 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (g :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 296 1 (streamVerify v.callees))
       (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 304) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := streamVerifyPostOut_local _) (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 34) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 296) (streamVerify_verified34 v f g) (by decide) (by decide) (by decide)
@@ -1463,7 +1463,7 @@ theorem sealCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
       (Proof.AesGcm.sealRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := sealPostOut_local _) (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2600) hv (by decide) (by decide) (by decide)
@@ -1492,7 +1492,7 @@ theorem openCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Proof.AesGcm.openRoundsContract X86_64.abi 2632) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := openPostOut_local _) (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv

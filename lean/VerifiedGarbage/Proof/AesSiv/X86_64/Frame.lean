@@ -169,7 +169,7 @@ theorem encrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 2616) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.encryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (encrypt_verified v) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inl rfl) v) (encrypt_xdepth (.inl rfl) v) (Proof.AesSiv.encryptPre_local _)
@@ -189,7 +189,7 @@ theorem encryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 328) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 36)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.encryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 36)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 312) (encryptF_verified v f fc) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inr (.inl rfl)) v) (encrypt_xdepth (.inr (.inl rfl)) v) (Proof.AesSiv.encryptPre_local _)
@@ -210,7 +210,7 @@ theorem encryptS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 1960 1 (encrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 1976) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 242)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.encryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 242)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1960) (encryptS_verified v f fc) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inr (.inr rfl)) v) (encrypt_xdepth (.inr (.inr rfl)) v) (Proof.AesSiv.encryptPre_local _)
@@ -230,7 +230,7 @@ theorem decrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 2616) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.decryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decrypt_verified v) (by decide) (by decide) (by decide) (decrypt_spSafe (.inl rfl) v)
@@ -248,7 +248,7 @@ theorem decryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 328) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 36)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.decryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 36)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 312) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decryptF_verified v f fc) (by decide) (by decide) (by decide) (decrypt_spSafe (.inr (.inl rfl)) v)
@@ -266,7 +266,7 @@ theorem decryptS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 1960 1 (decrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 1976) :=
-  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 242)
+  X86_64.Verified.stackArgScratchL (hpostOut := fun vs m m₁ m₂ r hl _ hb _ => (Proof.AesSiv.decryptPostOut_local _) vs m m₁ m₂ r hl hb) (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 242)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1960) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decryptS_verified v f fc) (by decide) (by decide) (by decide) (decrypt_spSafe (.inr (.inr rfl)) v)

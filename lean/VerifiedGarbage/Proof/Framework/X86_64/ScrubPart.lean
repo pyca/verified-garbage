@@ -837,8 +837,8 @@ theorem framed_same
   have hn₂ := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpreL h₂
   obtain ⟨t₃, s₃, he₃, ha₃, -⟩ := hv.1 _ hn₁
   obtain ⟨t₄, s₄, he₄, ha₄, -⟩ := hv.1 _ hn₂
-  obtain ⟨hex₁, -, hm₁, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd h₁ he₃ ha₃
-  obtain ⟨hex₂, -, hm₂, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd h₂ he₄ ha₄
+  obtain ⟨hex₁, -, hm₁, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd h₁ he₃ ha₃
+  obtain ⟨hex₂, -, hm₂, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd h₂ he₄ ha₄
   obtain ⟨-, rfl⟩ := Exec.det e₁ hex₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ hex₂
   obtain ⟨sp₁, -, -, -, f₁⟩ := narrowS_facts (nm := nm) hk hb.1 hb.2.1 h₁

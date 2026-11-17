@@ -218,7 +218,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee))
       (Proof.AesCcm.sealRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := sealPostOut_local _) (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2608) (seal_verified v) (by decide) (by decide) (by decide)
@@ -237,7 +237,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee))
       (Proof.AesCcm.openRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := openPostOut_local _) (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre X86_64.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Ccm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) (open_verified v)
