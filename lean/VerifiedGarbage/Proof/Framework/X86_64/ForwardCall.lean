@@ -679,63 +679,6 @@ theorem Verified.forward {name : String} {body : Prog isa}
       hct _ _ _ _ _ _ (narrowF_pre hk hm hb0 hb1 hpre h₁) (narrowF_pre hk hm hb0 hb1 hpre h₂)
         (narrowF_pub hk hb0 hb1 h₁ h₂ hp hleak) f₁ f₂]
 
-/-- The previous `Verified.forward`, kept until every proof is moved off it.
-Code verified against `sig.contract` with `stack` bytes of stack, for a
-function whose arguments fill the six argument registers and `nStack sig`
-more on the stack, is verified against the same contract with
-`stack + bytes + 8` bytes when called by `forward` with its stack arguments
-forwarded, if its precondition, postcondition and leak read memory only
-within the function's buffers and its lists of slices. -/
-theorem Verified.forwardKept {name : String} {body : Prog isa}
-    (h : Verified target body (sig.contract abi pre post wa stack leak))
-    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hm : 0 < nStack sig)
-    (hb : 8 * nStack sig ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
-    (hst : stack + bytes + 16 ≤ 2 ^ 64)
-    (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ stack)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
-        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s)
-    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
-    Verified target (Impl.ForwardCall.X86_64.forward bytes (nStack sig) name body)
-      (sig.contract abi pre post wa (stack + bytes + 8) leak) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  have hsafe := SpSafe.of_all hsp
-  have hb0 := hb.1
-  have hb1 := hb.2.1
-  -- Every run is the copies, then the call of the callee's run from `narrowF`.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s → ∃ t s₃,
-      Exec isa body (narrowF sig bytes s) t s₃ ∧
-      (sig.contract abi pre post wa stack leak).post (narrowF sig bytes s) s₃ ∧
-      Exec isa (Impl.ForwardCall.X86_64.forward bytes (nStack sig) name body) s (fwdTrace bytes (nStack sig) (s.gpr .rsp) t)
-        (fwdFinal bytes s s₃) ∧
-      abiPreserved s (fwdFinal bytes s s₃) ∧ (fwdFinal bytes s s₃).mem = s₃.mem ∧
-      (fwdFinal bytes s s₃).gpr .rax = s₃.gpr .rax := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowF_pre hk hm hb0 hb1 hpre hs)
-    exact ⟨t, s₃, he, hq, forward_run hk hm hb hst hsafe hd hs he ha⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hmem, hrax⟩ := hrun s hs
-    refine ⟨_, _, hex, ha, ?_⟩
-    rw [post_args hk]
-    rw [post_args hk] at hq
-    obtain ⟨-, -, -, hargs, -⟩ := narrowF_facts hk hb0 hb1 hs
-    rw [hargs] at hq
-    rw [hmem, hrax]
-    exact hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowF_agree hk hb0 hb1 hs)
-      (fun r hr x hx => narrowF_agreeLists hk hb0 hb1 hs r ((narrowF_lists hk hb0 hb1 hs) ▸ hr) x hx) hq
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1.1,
-      hct _ _ _ _ _ _ (narrowF_pre hk hm hb0 hb1 hpre h₁) (narrowF_pre hk hm hb0 hb1 hpre h₂)
-        (narrowF_pub hk hb0 hb1 h₁ h₂ hp hleak) f₁ f₂]
-
 /-- `forward` writes `rsp` only in its frame and its call if its callee does
 only in its frames. -/
 theorem forward_spSafe {bytes m : Nat} {name : String} {body : Prog isa}

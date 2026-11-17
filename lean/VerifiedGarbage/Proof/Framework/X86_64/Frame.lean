@@ -154,10 +154,12 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
   exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop,
     hq _ (popped r rs.length s₂).unknowns (by rw [popReg_mem]; exact Frame.refl _ _)⟩
 
-/-- The previous `WP.frame`, kept until every proof is moved off it. A frame: its body runs from `pushed rs s`, ends with `rsp` and the
-writable regions as the push left them, and the pop of the `rs.length`
-words leads to `popped r rs.length s₂`. -/
-theorem WP.frameKept {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+/-- `WP.frame` with the memory of the body's run: the pop leads to
+`popped r rs.length s₂` itself. Only the residue lemmas use it, which state
+per run what a released frame holds (ChaCha20's gathered seal, MCDT's
+entry); every other proof uses `WP.frame`, whose postcondition holds
+whatever the frame's bytes. -/
+theorem WP.frameMem {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hne : rs ≠ []) (hrs : .rsp ∉ rs) (hr : r ≠ .rsp) (hn : 8 * rs.length ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (pushed rs s) fun s₂ => s₂.gpr .rsp = (pushed rs s).gpr .rsp ∧
       s₂.wr = (pushed rs s).wr ∧ Q (popped r rs.length s₂)) :

@@ -130,7 +130,7 @@ theorem tail₂_ok (u : State) (hS : 8 ≤ (u.gpr .rsp).toNat) :
     WP isa (.frame (.alloc 8) (.seq (.block [.store slot .r11]) (.block [])) (.free 8)) u fun v =>
       v.gpr = u.gpr ∧ v.mem = u.mem.writeW (u.gpr .rsp - BitVec.ofNat 64 8) (u.gpr .r11) ∧ v.mxcsr = u.mxcsr ∧
       v.unknowns = u.unknowns ∧ v.rd = u.rd ∧ v.wr = u.wr := by
-  refine alloc_frame_okKept (by decide) hS ?_
+  refine alloc_frame_okMem (by decide) hS ?_
   have hw : InRegions (allocState 8 u).wr ((allocState 8 u).gpr .rsp) 8 :=
     ⟨_, List.mem_cons_self, by simp [allocState, Region.Contains, RegUpd.gpr_setReg_self]⟩
   have hr11 : (allocState 8 u).gpr .r11 = u.gpr .r11 := by

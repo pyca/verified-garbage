@@ -577,7 +577,7 @@ theorem called_wpE (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
         ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   have hdep := F.depth
-  refine WP.frameKept (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+  refine WP.frameMem (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
     (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' _ wr' cs' _ _ ⟨s₂, m₂, _, _, hE⟩ _ => ?_)
   have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
   refine ⟨rsp', wr', ?_, ?_, c, hc, by rw [popped_mem, ← m₂]; exact hE⟩
@@ -635,7 +635,7 @@ theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wpE w F h) fun z hz =>
+  refine WP.frameMem (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wpE w F h) fun z hz =>
     ⟨by rw [hz.1, hP s], by rw [hz.2.1, hPwr s], ?_⟩)
   simp only [popped_mem]
   exact hz.2.2
