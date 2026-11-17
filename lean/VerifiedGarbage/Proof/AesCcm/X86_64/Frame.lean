@@ -431,11 +431,11 @@ theorem frame_entry {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Pr
   have hp := narrowS_pre (nm := "work") (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide)
     (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨tb, ub, eb, ab, tp, p, ep, ap, hf⟩ := hbody _ hp
-  obtain ⟨e, _, hm, _⟩ := withStackArgScratch_run hk ⟨hb', by decide, by decide⟩ (by decide)
+  obtain ⟨e, _, hm, _⟩ := withStackArgScratch_runMem hk ⟨hb', by decide, by decide⟩ (by decide)
     (SpSafe.of_all hc) hd hs eb ab
   rw [hns] at e
   obtain ⟨_, rfl⟩ := Exec.det he e
-  obtain ⟨ep', _, hmp, _⟩ := withStackArgScratch_run hk ⟨hb', by decide, by decide⟩ (by decide)
+  obtain ⟨ep', _, hmp, _⟩ := withStackArgScratch_runMem hk ⟨hb', by decide, by decide⟩ (by decide)
     (SpSafe.of_all (by decide +kernel : entryRestore.all (fun i => !isa.writesSp i) = true))
     (by decide : entryRestore.x86_64Depth ≤ 16) hs ep ap
   rw [hns] at ep'
