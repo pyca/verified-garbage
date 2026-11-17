@@ -39,6 +39,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Ffdh.Arm.ParameterSearch.Public`, which only this module used -/
 
@@ -406,7 +407,7 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s
       fun t => abiPreserved s t ∧ ResultPost p (p.tail 0 p.attempts) t := by
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.code
-  refine WP.frame (by decide) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega_using [this]) (by decide) ?_
+  refine WP.frameLost (by decide) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega_using [this]) (by decide) ?_
   rw [WP.seq_iff]
   exact WP.mono (function_body backend h) fun _ input => finish_ok input
 
