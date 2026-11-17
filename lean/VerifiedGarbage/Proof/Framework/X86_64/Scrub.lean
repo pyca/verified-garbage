@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Returning without secret residue (x86-64)
@@ -309,14 +312,67 @@ def wipeTr (w : Bool) (ks : List Nat) : List Nat → Addr → List Leak
   | [], _ => []
   | b :: bs, p => chunkTr w ks bs.sum (p - BitVec.ofNat 64 b) b ++ wipeTr w ks bs (p - BitVec.ofNat 64 b)
 
+instance (ks cs : List Nat) (p x : Addr) : Decidable (WCov ks cs p x) := by
+  unfold WCov; infer_instance
+
+/-- How many unknowns the frames of `wipe ks cs` use when they are released. -/
+def wipeK : List Nat → Nat
+  | [] => 0
+  | b :: bs => wipeK bs + b / 4
+
+/-- The memory `m` with what `wipe ks cs` from `rsp = p` zeroes zero. -/
+def zeroW (ks cs : List Nat) (p : Addr) (m : Mem) : Mem :=
+  fun x => if WCov ks cs p x then 0 else m x
+
+/-- The memory `m` once the frames of `wipe cs` from `rsp = p`, from the
+unknowns `U`, are released (`lose`): the innermost first. -/
+def wipeLoseM : List Nat → Addr → (Nat → BitVec 64) → Mem → Mem
+  | [], _, _, m => m
+  | b :: bs, p, U, m =>
+    lose (wipeLoseM bs (p - BitVec.ofNat 64 b) U m) (p - BitVec.ofNat 64 b) b (fun n => U (n + wipeK bs))
+
+/-- A byte the wipe's releases leave depends only on that byte before them. -/
+theorem wipeLoseM_congr : ∀ (cs : List Nat) (p : Addr) (U : Nat → BitVec 64) {m₁ m₂ : Mem} (x : Addr),
+    m₁ x = m₂ x → wipeLoseM cs p U m₁ x = wipeLoseM cs p U m₂ x
+  | [], _, _, _, _, _, h => h
+  | _ :: bs, _, U, _, _, x, h => lose_congr _ _ _ (wipeLoseM_congr bs _ U x h)
+
+/-- The wipe's releases change only the `cs.sum` bytes below `p`. -/
+theorem wipeLoseM_frame : ∀ (cs : List Nat) (p : Addr) (U : Nat → BitVec 64) (m : Mem),
+    Frame [⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩] m (wipeLoseM cs p U m)
+  | [], _, _, _ => Frame.refl _ _
+  | b :: bs, p, U, m => by
+    have e : p - BitVec.ofNat 64 b - BitVec.ofNat 64 bs.sum = p - BitVec.ofNat 64 (b + bs.sum) := by
+      rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+    refine ((wipeLoseM_frame bs _ U m).sub fun r hr => ?_).trans ((lose_frame _ _ _ _).sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [e, List.sum_cons]
+      exact Region.sub_prefix (by omega_using [])
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [List.sum_cons]
+      exact Offset.sub_below _ (by omega_using []) (by omega_using [])
+
+/-- `wipe ks cs` from `u`: it zeroes what `WCov` says (`zeroW`), and its
+frames' releases lose what they held (`wipeLoseM`), using `wipeK cs`
+unknowns. -/
 theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
     (∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) →
     cs.sum ≤ (u.gpr .rsp).toNat → (ks ≠ [] → u.xmm .xmm0 = 0) → (w = true → ks ≠ [] → u.ymmHi .xmm0 = 0) →
     (ks ≠ [] → u.gpr .r11 = 0) →
-    ∃ m', Exec isa (wipe w ks cs) u (wipeTr w ks cs (u.gpr .rsp)) { u with mem := m' } ∧
-      (∀ x, WCov ks cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (u.gpr .rsp) x → m' x = u.mem x)
-  | [], u, _, _, _, _, _ =>
-    ⟨u.mem, .block rfl, fun x h => by simp [WCov, cov] at h, fun _ _ => rfl⟩
+    Exec isa (wipe w ks cs) u (wipeTr w ks cs (u.gpr .rsp))
+      { u with
+        mem := wipeLoseM cs (u.gpr .rsp) u.unknowns (zeroW ks cs (u.gpr .rsp) u.mem)
+        unknowns := fun n => u.unknowns (n + wipeK cs) }
+  | [], u, _, _, _, _, _ => by
+    have e : ({ u with
+        mem := wipeLoseM [] (u.gpr .rsp) u.unknowns (zeroW ks [] (u.gpr .rsp) u.mem)
+        unknowns := fun n => u.unknowns (n + wipeK []) } : State) = u := by
+      have hz : zeroW ks [] (u.gpr .rsp) u.mem = u.mem := by
+        funext x; simp [zeroW, WCov, cov]
+      simp only [wipeLoseM, hz, wipeK, Nat.add_zero]
+    rw [e]; exact .block rfl
   | b :: bs, u, hv, hs, hx, hy, hr => by
     obtain ⟨hb0, hb4, hb8⟩ := hv b (List.mem_cons_self ..)
     simp only [List.sum_cons] at hs
@@ -337,60 +393,86 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
       generalize p.toNat = P at *
       rw [Nat.mod_eq_of_lt (a := b) (by omega_using [hb4])]
       omega_using [hs, this]
-    obtain ⟨m₂, he₂, hz₂, hu₂⟩ := wipe_run w ks bs u₂ (fun b' h => hv b' (List.mem_cons_of_mem _ h))
+    have he₂ := wipe_run w ks bs u₂ (fun b' h => hv b' (List.mem_cons_of_mem _ h))
       (by simpa [u₂, hq] using hqn) (by simpa [u₂, u₁, State.setReg] using hx)
       (by simpa [u₂, u₁, State.setReg] using hy) (by simpa [u₂, u₁, State.setReg] using hr)
-    have hpop : isa.pop (.free b) u₁ { u₂ with mem := m₂ } = some { u with mem := m₂ } := by
-      simp only [isa, pop, u₂]
-      split
-      rotate_left
-      · rename_i hn; exact (hn ⟨hb0, hb4, hb8, trivial, trivial, by simp [u₁, State.setReg]⟩).elim
-      congr 1
-      simp only [u₁, State.setReg, State.mk.injEq, and_true, List.tail_cons]
-      funext r
-      by_cases h : r = .rsp
-      · subst h; simp [q, p, BitVec.sub_add_cancel]
-      · simp [h]
-    refine ⟨m₂, ?_, fun x hx' => ?_, fun x hx' => ?_⟩
-    · have e := Exec.frame (M := isa) hpush (.seq (.block he₁) he₂) hpop
-      have htr : wipeTr w ks (b :: bs) p = (isa.addrs (.alloc b) u).map Leak.addr ++
-          (chunkTr w ks bs.sum (u₁.gpr .rsp) b ++ wipeTr w ks bs (u₂.gpr .rsp)) ++
-          (isa.addrs (.free b) { u₂ with mem := m₂ }).map Leak.addr := by
-        simp [wipeTr, addrs, u₂, hq, q]
-      rw [htr]; exact e
-    all_goals
-      have hs' : b + bs.sum ≤ p.toNat := hs
-      have hsplit := below_split p b bs.sum hs' x
-      obtain ⟨hi1, hi2, hi3⟩ := below_idx p b bs.sum hs' x
-      replace hi1 : (x - (q - BitVec.ofNat 64 bs.sum)).toNat = (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat := hi1
-      replace hi2 : bs.sum ≤ (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat →
-        (x - q).toNat = (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat - bs.sum := hi2
-      replace hi3 : (x - q).toNat < b →
-        (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat = bs.sum + (x - q).toNat := hi3
-      replace hsplit : _ ↔ (x - q).toNat < b ∨ (⟨q - BitVec.ofNat 64 bs.sum, bs.sum⟩ : Region).Contains x 1 := hsplit
-      have e₂ : u₂.gpr .rsp = q := hq
-      have hz₂ := hz₂ x
-      have hu₂ := hu₂ x
-      have hz₁ := hz₁ x
-      have hu₁ := hu₁ x
-      simp only [WCov, List.sum_cons, e₂, hq, Region.Contains, CCov] at hx' hz₂ hu₂ hz₁ hu₁ hsplit ⊢
-      rw [hi1] at hz₂ hu₂ hsplit
-      generalize (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat = I at hi2 hi3 hsplit hx' hz₂ hu₂
-    · -- Zeroed.
-      obtain ⟨h1, h2⟩ := hx'
-      try simp only [cov] at h2
-      by_cases hlt : I < bs.sum
-      · simp only [hlt, ↓reduceIte] at h2
-        exact hz₂ ⟨by omega_using [hlt], h2⟩
-      · simp only [hlt, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h2
-        rw [hu₂ (fun h => by omega)]
-        exact hz₁ ⟨by rw [hi2 (by omega_using [hlt])]; omega_using [hb0, h1], by rw [hi2 (by omega_using [hlt])]; exact h2.2⟩
-    · -- Kept.
-      rw [hu₂ (fun ⟨h1, h2⟩ => hx' ⟨by omega_using [h1], by simp only [cov, show I < bs.sum by omega_using [h1], ↓reduceIte]; exact h2⟩)]
-      exact hu₁ (fun ⟨h1, h2⟩ => hx' ⟨by rw [hi3 h1]; omega_using [h1], by
-        simp only [cov, hi3 h1, show ¬ (bs.sum + (x - q).toNat < bs.sum) by omega_using [], ↓reduceIte,
-          Nat.add_sub_cancel_left, h1, decide_true, Bool.true_and]
-        exact h2⟩)
+    have e₂ : u₂.gpr .rsp = q := hq
+    rw [e₂] at he₂
+    -- What the chunk and the frames below it zero, as `WCov` says.
+    have key : (∀ x, WCov ks (b :: bs) p x → zeroW ks bs q m₁ x = 0) ∧
+        (∀ x, ¬ WCov ks (b :: bs) p x → zeroW ks bs q m₁ x = u.mem x) := by
+      have hz₂ : ∀ x, WCov ks bs q x → zeroW ks bs q m₁ x = 0 := fun x h => by simp [zeroW, h]
+      have hu₂ : ∀ x, ¬ WCov ks bs q x → zeroW ks bs q m₁ x = m₁ x := fun x h => by simp [zeroW, h]
+      generalize zeroW ks bs q m₁ = m₂ at hz₂ hu₂ ⊢
+      refine ⟨fun x hx' => ?_, fun x hx' => ?_⟩
+      all_goals
+        have hs' : b + bs.sum ≤ p.toNat := hs
+        have hsplit := below_split p b bs.sum hs' x
+        obtain ⟨hi1, hi2, hi3⟩ := below_idx p b bs.sum hs' x
+        replace hi1 : (x - (q - BitVec.ofNat 64 bs.sum)).toNat = (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat := hi1
+        replace hi2 : bs.sum ≤ (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat →
+          (x - q).toNat = (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat - bs.sum := hi2
+        replace hi3 : (x - q).toNat < b →
+          (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat = bs.sum + (x - q).toNat := hi3
+        replace hsplit : _ ↔ (x - q).toNat < b ∨ (⟨q - BitVec.ofNat 64 bs.sum, bs.sum⟩ : Region).Contains x 1 := hsplit
+        have hz₂ := hz₂ x
+        have hu₂ := hu₂ x
+        have hz₁ := hz₁ x
+        have hu₁ := hu₁ x
+        simp only [WCov, List.sum_cons, hq, Region.Contains, CCov] at hx' hz₂ hu₂ hz₁ hu₁ hsplit ⊢
+        rw [hi1] at hz₂ hu₂ hsplit
+        generalize (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat = I at hi2 hi3 hsplit hx' hz₂ hu₂
+      · -- Zeroed.
+        obtain ⟨h1, h2⟩ := hx'
+        try simp only [cov] at h2
+        by_cases hlt : I < bs.sum
+        · simp only [hlt, ↓reduceIte] at h2
+          exact hz₂ ⟨by omega_using [hlt], h2⟩
+        · simp only [hlt, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h2
+          rw [hu₂ (fun h => by omega)]
+          exact hz₁ ⟨by rw [hi2 (by omega_using [hlt])]; omega_using [hb0, h1], by rw [hi2 (by omega_using [hlt])]; exact h2.2⟩
+      · -- Kept.
+        rw [hu₂ (fun ⟨h1, h2⟩ => hx' ⟨by omega_using [h1], by simp only [cov, show I < bs.sum by omega_using [h1], ↓reduceIte]; exact h2⟩)]
+        exact hu₁ (fun ⟨h1, h2⟩ => hx' ⟨by rw [hi3 h1]; omega_using [h1], by
+          simp only [cov, hi3 h1, show ¬ (bs.sum + (x - q).toNat < bs.sum) by omega_using [], ↓reduceIte,
+            Nat.add_sub_cancel_left, h1, decide_true, Bool.true_and]
+          exact h2⟩)
+    have hZ : zeroW ks bs q m₁ = zeroW ks (b :: bs) p u.mem := by
+      funext x
+      by_cases hw : WCov ks (b :: bs) p x
+      · rw [key.1 x hw]; simp [zeroW, hw]
+      · rw [key.2 x hw]; simp [zeroW, hw]
+    let s₃ : State := { u₂ with
+      mem := wipeLoseM bs q u₂.unknowns (zeroW ks bs q u₂.mem)
+      unknowns := fun n => u₂.unknowns (n + wipeK bs) }
+    have hpop : isa.pop (.free b) u₁ s₃ = some { s₃.setReg .rsp (s₃.gpr .rsp + BitVec.ofNat 64 b) with
+        wr := s₃.wr.tail, mem := lose s₃.mem (s₃.gpr .rsp) b s₃.unknowns,
+        unknowns := fun n => s₃.unknowns (n + b / 4) } := by
+      simp only [isa, pop]
+      exact ite_eq_left ⟨hb0, hb4, hb8, rfl, rfl, by simp [u₁, State.setReg]⟩
+    have hfin : ({ s₃.setReg .rsp (s₃.gpr .rsp + BitVec.ofNat 64 b) with
+        wr := s₃.wr.tail, mem := lose s₃.mem (s₃.gpr .rsp) b s₃.unknowns,
+        unknowns := fun n => s₃.unknowns (n + b / 4) } : State) =
+        { u with
+          mem := wipeLoseM (b :: bs) p u.unknowns (zeroW ks (b :: bs) p u.mem)
+          unknowns := fun n => u.unknowns (n + wipeK (b :: bs)) } := by
+      have hs₃ : s₃.gpr .rsp = q := by simp [s₃, u₂, u₁, State.setReg]
+      have hm : s₃.mem = wipeLoseM bs q u.unknowns (zeroW ks (b :: bs) p u.mem) := by
+        simp only [s₃, u₂]; rw [hZ]; rfl
+      rw [hs₃, hm]
+      simp only [s₃, u₂, u₁, State.setReg, wipeLoseM, wipeK, List.tail_cons, State.mk.injEq, true_and, and_true]
+      refine ⟨?_, rfl, ?_⟩
+      · funext r
+        by_cases h : r = .rsp
+        · subst h; simp [q, p, BitVec.sub_add_cancel]
+        · simp [h]
+      · funext n; congr 1; omega_using []
+    have e := Exec.frame (M := isa) hpush (.seq (.block he₁) he₂) hpop
+    have htr : wipeTr w ks (b :: bs) p = (isa.addrs (.alloc b) u).map Leak.addr ++
+        (chunkTr w ks bs.sum (u₁.gpr .rsp) b ++ wipeTr w ks bs q) ++
+        (isa.addrs (.free b) s₃).map Leak.addr := by
+      simp [wipeTr, addrs, hq, q]
+    rw [htr, ← hfin]; exact e
 
 /-! ## Clearing the registers -/
 
@@ -580,14 +662,43 @@ theorem fixMx_congr (v : VecLevel) {x y : BitVec 32} (hv : v = .evex)
   · simp only [Bool.not_eq_true] at hc
     rw [hc, Bool.and_false, Bool.and_false]
 
+/-- How many unknowns `mxFix v` uses: its frame's, when it is released. -/
+def mxK : VecLevel → Nat
+  | .evex => 4
+  | _ => 0
+
+/-- The memory `m` once `mxFix v`'s frame, at `rsp = p`, from the unknowns
+`U`, is released (`lose`). -/
+def mxLose (v : VecLevel) (p : Addr) (U : Nat → BitVec 64) (m : Mem) : Mem :=
+  match v with
+  | .evex => lose m (p - 16#64) 16 U
+  | _ => m
+
+theorem mxLose_congr (v : VecLevel) (p : Addr) (U : Nat → BitVec 64) {m₁ m₂ : Mem} (x : Addr)
+    (h : m₁ x = m₂ x) : mxLose v p U m₁ x = mxLose v p U m₂ x := by
+  cases v
+  · exact h
+  · exact h
+  · exact lose_congr _ _ _ h
+
+theorem mxLose_frame (v : VecLevel) (p : Addr) (U : Nat → BitVec 64) (m : Mem) :
+    Frame [⟨p - 16#64, 16⟩] m (mxLose v p U m) := by
+  cases v
+  · exact Frame.refl _ _
+  · exact Frame.refl _ _
+  · exact lose_frame _ _ _ _
+
 /-- `mxFix v`, where `r11` is zero and the flags are those of an `xor` of a
 register with itself (what clearing `ps` leaves): MXCSR as `fixMx` says, and
-at the level `evex` 8 bytes of the 16 below the stack pointer. -/
+at the level `evex` 8 bytes of the 16 below the stack pointer. The frame,
+released, holds what `mxLose` says of the rest. -/
 theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr .rsp).toNat)
     (hr : v = .evex → u.gpr .r11 = 0 ∧ u.cf = some false ∧ u.of = some false ∧ u.zf = some true ∧
       u.sf = some false) :
-    ∃ m', Exec isa (mxFix v) u (mxTr v (u.gpr .rsp)) { u with mem := m', mxcsr := fixMx v u.mxcsr } ∧
-      ∀ x, ¬ (v = .evex ∧ (x - (u.gpr .rsp - 16#64)).toNat < 8) → m' x = u.mem x := by
+    ∃ m', Exec isa (mxFix v) u (mxTr v (u.gpr .rsp))
+        { u with mem := m', mxcsr := fixMx v u.mxcsr, unknowns := fun n => u.unknowns (n + mxK v) } ∧
+      ∀ x, ¬ (v = .evex ∧ (x - (u.gpr .rsp - 16#64)).toNat < 8) →
+        m' x = mxLose v (u.gpr .rsp) u.unknowns u.mem x := by
   cases v
   · exact ⟨u.mem, .block rfl, fun _ _ => rfl⟩
   · exact ⟨u.mem, .block rfl, fun _ _ => rfl⟩
@@ -651,18 +762,20 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
       · exact hzf.symm
       · exact hsf.symm
     let u₂ : State := { u₁ with mem := m₂, mxcsr := w }
-    have hpop : isa.pop (.free 16) u₁ u₂ = some { u with mem := m₂, mxcsr := w } := by
+    have hpop : isa.pop (.free 16) u₁ u₂ =
+        some { u with mem := lose m₂ q 16 u.unknowns, mxcsr := w, unknowns := fun n => u.unknowns (n + 4) } := by
       simp only [isa, pop, u₂]
       split
       rotate_left
       · rename_i hn; exact (hn ⟨by decide, by decide, by decide, trivial, trivial, by simp [u₁, State.setReg]⟩).elim
       congr 1
-      simp only [u₁, State.setReg, State.mk.injEq, and_true, List.tail_cons]
+      simp only [u₁, State.setReg, State.mk.injEq, and_true, true_and, List.tail_cons]
+      refine ⟨?_, rfl⟩
       funext r
       by_cases h : r = .rsp
       · subst h; simp [q, p, BitVec.sub_add_cancel]
       · simp [h]
-    refine ⟨m₂, ?_, fun x hx => ?_⟩
+    refine ⟨lose m₂ q 16 u.unknowns, ?_, fun x hx => ?_⟩
     · have e := Exec.frame (M := isa) hpush (.block hb) hpop
       have htr : mxTr .evex p = (isa.addrs (.alloc 16) u).map Leak.addr ++
           [.addr q, .addr q, .addr q, .addr (q + 4#64), .addr (q + 4#64), .addr q] ++
@@ -672,15 +785,20 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
       exact e
     · have hx' : ¬ (x - q).toNat < 8 := fun h => hx ⟨rfl, h⟩
       have hx4 : ¬ (x - (q + 4#64)).toNat < 4 := by bv_omega
+      refine lose_congr _ _ _ ?_
       show (((u.mem.writeW q u.mxcsr).writeW q w).writeW (q + 4#64) (0x1FBF#32)) x = u.mem x
       simp only [Mem.writeW, Mem.write]
       rw [ite_eq_right (by omega_using [hx4]), ite_eq_right (by omega_using [hx']), ite_eq_right (by omega_using [hx'])]
 
-/-- The state `scrubTail v rb xs ps gs ks cs f` leaves, given the memory `m'` its wipe leaves. -/
-def finState (v : VecLevel) (rb : Nat) (xs : List XReg) (ps gs : List Reg) (m' : Mem) (u : State)
-    (f : VecLevel := v) : State :=
+/-- The state `scrubTail v rb xs ps gs ks cs f` leaves, given the memory `m'`
+its wipe leaves and the unknowns `U'` its frames' releases leave. -/
+def finState (v : VecLevel) (rb : Nat) (xs : List XReg) (ps gs : List Reg) (m' : Mem)
+    (U' : Nat → BitVec 64) (u : State) (f : VecLevel := v) : State :=
   clearedG gs
-    (({ clearedP ps (clearedH v (clearedV v xs u)) with mem := m', mxcsr := fixMx f u.mxcsr } : State).setReg .rax
+    (({ clearedP ps (clearedH v (clearedV v xs u)) with
+        mem := m'
+        mxcsr := fixMx f u.mxcsr
+        unknowns := U' } : State).setReg .rax
       (retVal rb (u.gpr .rax)))
 
 theorem mem_xregs (x : XReg) : x ∈ xregs := by cases x <;> decide
@@ -702,13 +820,47 @@ def EvexOk (v : VecLevel) (ks cs : List Nat) (p : Addr) : Prop :=
 def tailTr (v : VecLevel) (ks cs : List Nat) (p : Addr) (f : VecLevel := v) : List Leak :=
   mxTr f p ++ wipeTr v.wide ks cs p
 
+/-- What the clearing leaves in memory, from `rsp = p`, the unknowns `U` and
+the memory `m`: `mxFix f`'s frame released, what the wipe zeroes zero, and
+the wipe's frames released. -/
+def tailMem (f : VecLevel) (ks cs : List Nat) (p : Addr) (U : Nat → BitVec 64) (m : Mem) : Mem :=
+  wipeLoseM cs p (fun n => U (n + mxK f)) (zeroW ks cs p (mxLose f p U m))
+
+/-- A byte the clearing leaves depends only on that byte before it, unless
+the wipe zeroes it. -/
+theorem tailMem_congr (f : VecLevel) (ks cs : List Nat) (p : Addr) (U : Nat → BitVec 64) {m₁ m₂ : Mem}
+    (x : Addr) (h : ¬ WCov ks cs p x → m₁ x = m₂ x) : tailMem f ks cs p U m₁ x = tailMem f ks cs p U m₂ x := by
+  refine wipeLoseM_congr _ _ _ x ?_
+  by_cases hw : WCov ks cs p x
+  · simp [zeroW, hw]
+  · simp only [zeroW, hw, ite_false]
+    exact mxLose_congr _ _ _ x (h hw)
+
+/-- The clearing changes only the `cs.sum` bytes below `p`, if `mxFix f`'s
+frame is among them. -/
+theorem tailMem_frame (f : VecLevel) (ks cs : List Nat) (p : Addr) (U : Nat → BitVec 64) (m : Mem)
+    (h16 : f = .evex → 16 ≤ cs.sum) : Frame [⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩] m (tailMem f ks cs p U m) := by
+  have hz : Frame [⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩] (mxLose f p U m) (zeroW ks cs p (mxLose f p U m)) := by
+    intro x hx
+    have hw : ¬ WCov ks cs p x := fun hw => hx _ (List.mem_singleton_self _) hw.1
+    simp [zeroW, hw]
+  have hm : Frame [⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩] m (mxLose f p U m) := by
+    cases f
+    · exact Frame.refl _ _
+    · exact Frame.refl _ _
+    · refine (mxLose_frame .evex p U m).sub fun r hr => ?_
+      simp only [List.mem_singleton] at hr; subst hr
+      have h := h16 rfl
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ h (by omega_using [h])⟩
+  exact (hm.trans hz).trans (wipeLoseM_frame _ _ _ _)
+
 theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {ks : List Nat} (cs : List Nat)
     {f : VecLevel} (ht : TailOk rb xs ps gs ks) (u : State)
     (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hs : cs.sum ≤ (u.gpr .rsp).toNat)
     (hev : EvexOk f ks cs (u.gpr .rsp)) :
     ∃ m', Exec isa (scrubTail v rb xs ps gs ks cs f) u (tailTr v ks cs (u.gpr .rsp) f)
-        (finState v rb xs ps gs m' u f) ∧
-      (∀ x, WCov ks cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (u.gpr .rsp) x → m' x = u.mem x) := by
+        (finState v rb xs ps gs m' (fun n => u.unknowns (n + wipeK cs + mxK f)) u f) ∧
+      ∀ x, m' x = tailMem f ks cs (u.gpr .rsp) u.unknowns u.mem x := by
   let u₁ := clearedP ps (clearedH v (clearedV v xs u))
   have h₁ : execBlock isa (xs.map (zeroX v) ++ clearHigh v ++ ps.map zeroR) u = some (u₁, []) := by
     rw [execBlock_append, execBlock_append, execBlock_vecs]
@@ -751,19 +903,23 @@ theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {
     · rw [(hcH _).2.2.2.1]; rfl
     · show (clearedH v (clearedV v xs u)).mxcsr = u.mxcsr
       rw [(hcH _).2.2.2.1]; rfl
+  have hunk : u₁.unknowns = u.unknowns := by
+    simp only [u₁, clearedP]; split <;> (cases v <;> rfl)
   -- `mxFix`.
   obtain ⟨m₁, hem, hm₁⟩ := mxFix_run f u₁ (fun h => by rw [hsp]; have := (hev h).2.1; omega_using [hs, this]) (fun h => by
     have hp : ps ≠ [] := fun e => absurd (ht.r11 (hev h).1) (by rw [e]; simp)
     refine ⟨hr11 (hev h).1, ?_, ?_, ?_, ?_⟩ <;> simp only [u₁, clearedP, hp, ↓reduceIte, clearedG])
-  rw [hsp, hmx] at hem
-  rw [hsp, hmem] at hm₁
-  let u₂ : State := { u₁ with mem := m₁, mxcsr := fixMx f u.mxcsr }
-  obtain ⟨m', he, ho, hi⟩ := wipe_run v.wide ks cs u₂ hv (by show cs.sum ≤ (u₁.gpr .rsp).toNat; rw [hsp]; exact hs)
+  rw [hsp, hmx, hunk] at hem
+  rw [hsp, hmem, hunk] at hm₁
+  let u₂ : State := { u₁ with mem := m₁, mxcsr := fixMx f u.mxcsr, unknowns := fun n => u.unknowns (n + mxK f) }
+  have he := wipe_run v.wide ks cs u₂ hv (by show cs.sum ≤ (u₁.gpr .rsp).toNat; rw [hsp]; exact hs)
     hx0 hy0 hr11
-  rw [show u₂.gpr .rsp = u.gpr .rsp from hsp] at he ho hi
-  refine ⟨m', ?_, ho, fun x hx => ?_⟩
+  rw [show u₂.gpr .rsp = u.gpr .rsp from hsp] at he
+  let m' := wipeLoseM cs (u.gpr .rsp) u₂.unknowns (zeroW ks cs (u.gpr .rsp) m₁)
+  refine ⟨m', ?_, fun x => ?_⟩
   · have h₃ := execBlock_clearGpr rb gs ht.gne
-      (fun h => absurd (ht.gsOk _ h) (by decide : Reg.rax ∉ scratchRegs)) { u₂ with mem := m' }
+      (fun h => absurd (ht.gsOk _ h) (by decide : Reg.rax ∉ scratchRegs))
+      { u₂ with mem := m', unknowns := fun n => u₂.unknowns (n + wipeK cs) }
     have e := Exec.seq (M := isa) (.block h₁) (.seq hem (.seq he (.block h₃)))
     simp only [List.nil_append, List.append_nil] at e
     have hax : u₁.gpr .rax = u.gpr .rax := by
@@ -772,13 +928,17 @@ theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {
       · simp only [clearedG, show Reg.rax ∉ ps from fun h => absurd (ht.psOk _ h) (by decide : Reg.rax ∉ scratchRegs),
           ↓reduceIte]
         rw [(hcH _).1]; rfl
-    have hf : finState v rb xs ps gs m' u f =
-        clearedG gs (({ u₂ with mem := m' } : State).setReg .rax (retVal rb (u₂.gpr .rax))) := by
+    have hf : finState v rb xs ps gs m' (fun n => u.unknowns (n + wipeK cs + mxK f)) u f =
+        clearedG gs (({ u₂ with mem := m', unknowns := fun n => u₂.unknowns (n + wipeK cs) } : State).setReg .rax
+          (retVal rb (u₂.gpr .rax))) := by
       rw [show u₂.gpr .rax = u.gpr .rax from hax]; rfl
     rw [hf]
     exact e
-  · rw [hi x hx]
-    exact hm₁ x fun ⟨h, hs4⟩ => hx ((hev h).2.2 x hs4)
+  · refine wipeLoseM_congr _ _ _ x ?_
+    by_cases hw : WCov ks cs (u.gpr .rsp) x
+    · simp [zeroW, hw]
+    · simp only [zeroW, hw, ite_false]
+      exact hm₁ x fun ⟨h, hs4⟩ => hw ((hev h).2.2 x hs4)
 
 /-! ## What `Sig.contract` gives -/
 
@@ -985,39 +1145,39 @@ theorem clearedP_gpr {ps : List Reg} {s : State} {r : Reg} :
   · rename_i h; subst h; simp
   · simp [clearedG]
 
-theorem finState_gpr {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel}
+theorem finState_gpr {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel}
     {r : Reg} (hp : r ∉ ps) (hg : r ∉ gs) (h₂ : r ≠ .rax) :
-    (finState v rb xs ps gs m' u f).gpr r = u.gpr r := by
+    (finState v rb xs ps gs m' U' u f).gpr r = u.gpr r := by
   simp only [finState, clearedG, State.setReg, hg, h₂, ↓reduceIte, clearedP_gpr, hp]
   rw [(clearedH_keep v _).1]
   rfl
 
-theorem finState_rax {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel}
-    (hg : Reg.rax ∉ gs) : (finState v rb xs ps gs m' u f).gpr .rax = retVal rb (u.gpr .rax) := by
+theorem finState_rax {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel}
+    (hg : Reg.rax ∉ gs) : (finState v rb xs ps gs m' U' u f).gpr .rax = retVal rb (u.gpr .rax) := by
   simp only [finState, clearedG, State.setReg, hg, ↓reduceIte]
 
-theorem finState_xmm {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel} :
-    (finState v rb xs ps gs m' u f).xmm = fun x => if x ∈ xs then 0 else u.xmm x := by
+theorem finState_xmm {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel} :
+    (finState v rb xs ps gs m' U' u f).xmm = fun x => if x ∈ xs then 0 else u.xmm x := by
   simp only [finState, clearedG, State.setReg, clearedP]
   split <;> exact (clearedH_keep v _).2.1
 
-theorem finState_ymmHi {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel} :
-    (finState v rb xs ps gs m' u f).ymmHi = fun x => if v ≠ .sse ∧ x ∈ xs then 0 else u.ymmHi x := by
+theorem finState_ymmHi {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel} :
+    (finState v rb xs ps gs m' U' u f).ymmHi = fun x => if v ≠ .sse ∧ x ∈ xs then 0 else u.ymmHi x := by
   simp only [finState, clearedG, State.setReg, clearedP]
   split <;> exact (clearedH_keep v _).2.2.1
 
-theorem finState_zmmHi {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel} :
-    (finState v rb xs ps gs m' u f).zmmHi = fun x => if v ≠ .sse ∧ x ∈ xs then 0 else u.zmmHi x := by
+theorem finState_zmmHi {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel} :
+    (finState v rb xs ps gs m' U' u f).zmmHi = fun x => if v ≠ .sse ∧ x ∈ xs then 0 else u.zmmHi x := by
   simp only [finState, clearedG, State.setReg, clearedP]
   split <;> exact (clearedH_keep v _).2.2.2.1
 
-theorem finState_other {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State} {f : VecLevel} :
-    (finState v rb xs ps gs m' u f).mem = m' ∧ (finState v rb xs ps gs m' u f).rd = u.rd ∧
-      (finState v rb xs ps gs m' u f).wr = u.wr ∧ (finState v rb xs ps gs m' u f).ymmH = (clearedH v u).ymmH ∧
-      (finState v rb xs ps gs m' u f).zmmHiH = (clearedH v u).zmmHiH ∧
-      (finState v rb xs ps gs m' u f).mxcsr = fixMx f u.mxcsr ∧
-      (finState v rb xs ps gs m' u f).cf = some false ∧ (finState v rb xs ps gs m' u f).zf = some true ∧
-      (finState v rb xs ps gs m' u f).sf = some false ∧ (finState v rb xs ps gs m' u f).of = some false := by
+theorem finState_other {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State} {f : VecLevel} :
+    (finState v rb xs ps gs m' U' u f).mem = m' ∧ (finState v rb xs ps gs m' U' u f).rd = u.rd ∧
+      (finState v rb xs ps gs m' U' u f).wr = u.wr ∧ (finState v rb xs ps gs m' U' u f).ymmH = (clearedH v u).ymmH ∧
+      (finState v rb xs ps gs m' U' u f).zmmHiH = (clearedH v u).zmmHiH ∧
+      (finState v rb xs ps gs m' U' u f).mxcsr = fixMx f u.mxcsr ∧
+      (finState v rb xs ps gs m' U' u f).cf = some false ∧ (finState v rb xs ps gs m' U' u f).zf = some true ∧
+      (finState v rb xs ps gs m' U' u f).sf = some false ∧ (finState v rb xs ps gs m' U' u f).of = some false := by
   have k := clearedH_keep v (clearedV v xs u)
   have hy : (clearedH v (clearedV v xs u)).ymmH = (clearedH v u).ymmH := by cases v <;> rfl
   have hz : (clearedH v (clearedV v xs u)).zmmHiH = (clearedH v u).zmmHiH := by cases v <;> rfl
@@ -1027,8 +1187,8 @@ theorem finState_other {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List 
   · exact ⟨rfl, k.2.2.2.2.2.1, k.2.2.2.2.2.2.1, hy, hz, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- The clearing ends with every flag defined: those of its last `xor`. -/
-theorem finState_flags {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State}
-    {f : VecLevel} : FlagsDefined (finState v rb xs ps gs m' u f) := by
+theorem finState_flags {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {U' : Nat → BitVec 64} {u : State}
+    {f : VecLevel} : FlagsDefined (finState v rb xs ps gs m' U' u f) := by
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [finState_other.2.2.2.2.2.2.1]; exact Option.some_ne_none _
   · rw [finState_other.2.2.2.2.2.2.2.1]; exact Option.some_ne_none _
@@ -1043,6 +1203,221 @@ theorem slot_not_below {sp x : Addr} {n : Nat} (hn : n + 8 < 2 ^ 64)
   generalize x.toNat = X at *
   rw [Nat.mod_eq_of_lt (a := n) (by omega_using [hn])]
   omega_arith
+
+/-! ## The unknowns two runs use
+
+Two runs of code without indirect calls (`icallFree`) along the same trace,
+from the same unknowns, end with the same unknowns: each call and each
+frame's release uses a number of unknowns its instruction fixes, and the
+trace says which way each branch went (`Exec.unknowns_agree`). -/
+
+/-- Code without indirect calls (`Code.icall`). -/
+def icallFree : Prog isa → Bool
+  | .block _ => true
+  | .seq a b => icallFree a && icallFree b
+  | .ite _ t e => icallFree t && icallFree e
+  | .loop b _ => icallFree b
+  | .call _ b => icallFree b
+  | .frame _ b _ => icallFree b
+  | .icall .. => false
+
+local macro "uk_leaf" : tactic => `(tactic| first
+  | exact Pres.none'
+  | (apply Pres.some'; rfl)
+  | (apply Pres.map'; intro _; rfl)
+  | (apply Pres.map'; intro _; split <;> rfl))
+
+local syntax "uk_go" : tactic
+macro_rules
+  | `(tactic| uk_go) => `(tactic| first
+    | uk_leaf
+    | (apply Pres.bind'; intro _; uk_go)
+    | (split <;> uk_go))
+
+private theorem exec_unknowns_pres (i : Instr) (s : State) :
+    Pres (fun x => x.unknowns = s.unknowns) (exec i s) := by
+  cases i
+  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
+  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
+  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
+  case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
+  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
+  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
+    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
+  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
+    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
+  case e5InsertLoad d _ _ _ =>
+    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
+  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
+      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
+      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
+      State.storeMasked512, State.storeMasked512B]
+  all_goals uk_go
+
+private theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
+  exec_unknowns_pres i s s' h
+
+theorem srcAddrs_length (s s' : State) (src : Src) : (srcAddrs s src).length = (srcAddrs s' src).length := by
+  cases src <;> rfl
+
+/-- Every run of an instruction makes the same number of observations. -/
+theorem addrs_length (i : Instr) (s s' : State) : (addrs i s).length = (addrs i s').length := by
+  cases i <;> simp only [addrs, List.length_cons, List.length_nil, List.length_map, List.length_range]
+  all_goals first | rfl | exact srcAddrs_length _ _ _
+
+theorem execBlock_unknowns : ∀ {is : List Instr} {s₁ s₂ a b : State} {t₁ t₂ : List Leak},
+    execBlock isa is s₁ = some (a, t₁) → execBlock isa is s₂ = some (b, t₂) →
+      t₁.length = t₂.length ∧ a.unknowns = s₁.unknowns ∧ b.unknowns = s₂.unknowns
+  | [], _, _, _, _, _, _, h₁, h₂ => by
+    simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+    obtain ⟨rfl, rfl⟩ := h₁; obtain ⟨rfl, rfl⟩ := h₂; exact ⟨rfl, rfl, rfl⟩
+  | i :: is, s₁, s₂, a, b, t₁, t₂, h₁, h₂ => by
+    simp only [execBlock] at h₁ h₂
+    cases e₁ : exec i s₁ with
+    | none => simp only [e₁] at h₁; cases h₁
+    | some u₁ =>
+      cases e₂ : exec i s₂ with
+      | none => simp only [e₂] at h₂; cases h₂
+      | some u₂ =>
+        simp only [isa, e₁, e₂] at h₁ h₂
+        obtain ⟨p₁, hp₁, hq₁⟩ := Option.map_eq_some_iff.mp h₁
+        obtain ⟨p₂, hp₂, hq₂⟩ := Option.map_eq_some_iff.mp h₂
+        obtain ⟨rfl, rfl⟩ := Prod.mk.inj hq₁
+        obtain ⟨rfl, rfl⟩ := Prod.mk.inj hq₂
+        obtain ⟨hl, ha, hb⟩ := execBlock_unknowns (s₁ := u₁) (s₂ := u₂) (by rw [hp₁]) (by rw [hp₂])
+        refine ⟨?_, ha.trans (exec_unknowns e₁), hb.trans (exec_unknowns e₂)⟩
+        simp only [List.length_append, List.length_map, hl, addrs_length i s₁ s₂]
+
+theorem pushRegs_unknowns : ∀ (s : State) (rs : List Reg), (pushRegs s rs).unknowns = s.unknowns
+  | _, [] => rfl
+  | _, _ :: rs => pushRegs_unknowns _ rs
+
+theorem push_unknowns {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) : s₁.unknowns = s.unknowns := by
+  cases i <;> simp only [isa, push, reduceCtorEq] at h <;> split at h <;> cases h
+  · exact pushRegs_unknowns _ _
+  · rfl
+
+/-- The unknowns a frame's release uses. -/
+def popK : Instr → Nat
+  | .pop _ k => 2 * k
+  | .free b => b / 4
+  | _ => 0
+
+theorem pop_unknowns {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    s'.unknowns = fun n => s₂.unknowns (n + popK j) := by
+  cases j <;> simp only [isa, pop, reduceCtorEq] at h <;> split at h <;> cases h <;> rfl
+
+theorem call_unknowns {s s₁ : State} (h : isa.call s = some s₁) :
+    s₁.unknowns = fun n => s.unknowns (n + 1) := by
+  rw [call_callEntry] at h; cases h; rfl
+
+theorem ret_unknowns {s₁ s₂ s' : State} (h : isa.ret s₁ s₂ = some s') : s'.unknowns = s₂.unknowns := by
+  simp only [isa, ret] at h; split at h <;> cases h; rfl
+
+theorem branch_ne {r₁ r₂ : List Leak} : Leak.branch true :: r₁ ≠ Leak.branch false :: r₂ := by
+  intro h; cases h
+
+/-- Two runs of code without indirect calls from the same unknowns, one of
+whose traces is a prefix of the other's continued, have the same trace and
+end with the same unknowns. -/
+theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
+    icallFree c = true → ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+      s₁.unknowns = s₂.unknowns → t₁ ++ r₁ = t₂ ++ r₂ → t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns := by
+  induction e₁ with
+  | block h₁ =>
+    intro _ _ _ _ r₁ r₂ e₂ hu ht
+    cases e₂ with
+    | block h₂ =>
+      obtain ⟨hl, ha, hb⟩ := execBlock_unknowns h₁ h₂
+      exact ⟨(List.append_inj ht hl).1, ha.trans (hu.trans hb.symm)⟩
+  | seq _ _ ih₁ ih₂ =>
+    intro hc _ _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree, Bool.and_eq_true] at hc
+    cases e₂ with
+    | seq a₂ b₂ =>
+      rw [List.append_assoc, List.append_assoc] at ht
+      obtain ⟨rfl, hu'⟩ := ih₁ hc.1 _ _ a₂ hu ht
+      obtain ⟨rfl, hu''⟩ := ih₂ hc.2 _ _ b₂ hu' (List.append_cancel_left ht)
+      exact ⟨rfl, hu''⟩
+  | iteT _ _ ih =>
+    intro hc _ _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree, Bool.and_eq_true] at hc
+    cases e₂ with
+    | iteT _ a₂ =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, hu'⟩ := ih hc.1 _ _ a₂ hu ht
+      exact ⟨rfl, hu'⟩
+    | iteF _ _ => exact absurd ht branch_ne
+  | iteF _ _ ih =>
+    intro hc _ _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree, Bool.and_eq_true] at hc
+    cases e₂ with
+    | iteT _ _ => exact absurd ht.symm branch_ne
+    | iteF _ a₂ =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, hu'⟩ := ih hc.2 _ _ a₂ hu ht
+      exact ⟨rfl, hu'⟩
+  | loopExit _ _ ih =>
+    intro hc _ _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree] at hc
+    cases e₂ with
+    | loopExit b₂ _ =>
+      rw [List.append_assoc, List.append_assoc] at ht
+      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ hu ht
+      exact ⟨rfl, hu'⟩
+    | loopNext b₂ _ _ =>
+      rw [List.append_assoc, List.append_assoc] at ht
+      obtain ⟨rfl, -⟩ := ih hc _ _ b₂ hu ht
+      exact absurd (List.append_cancel_left ht).symm branch_ne
+  | loopNext _ _ _ ih₁ ih₂ =>
+    intro hc _ _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree] at hc
+    cases e₂ with
+    | loopExit b₂ _ =>
+      rw [List.append_assoc, List.append_assoc] at ht
+      obtain ⟨rfl, -⟩ := ih₁ hc _ _ b₂ hu ht
+      exact absurd (List.append_cancel_left ht) branch_ne
+    | loopNext b₂ _ n₂ =>
+      rw [List.append_assoc, List.append_assoc] at ht
+      obtain ⟨rfl, hu'⟩ := ih₁ hc _ _ b₂ hu ht
+      have ht' := List.append_cancel_left ht
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht'
+      obtain ⟨rfl, hu''⟩ := ih₂ hc _ _ n₂ hu' ht'
+      exact ⟨rfl, hu''⟩
+  | @call _ _ s₀ _ s₂ _ _ hc₁ _ hr ih =>
+    intro hc s₀' _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree] at hc
+    cases e₂ with
+    | @call _ _ _ _ s₂' _ _ hc₂ b₂ hr₂ =>
+      rw [List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc] at ht
+      have hl : (List.map Leak.addr (isa.callAddrs s₀)).length =
+          (List.map Leak.addr (isa.callAddrs s₀')).length := by
+        simp only [List.length_map]; rfl
+      obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
+      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht'
+      have hl' : (List.map Leak.addr (isa.retAddrs s₂)).length =
+          (List.map Leak.addr (isa.retAddrs s₂')).length := by
+        simp only [List.length_map]; rfl
+      have h₃ := (List.append_inj (List.append_cancel_left ht') hl').1
+      refine ⟨by rw [h₀, h₃], ?_⟩
+      rw [ret_unknowns hr, ret_unknowns hr₂, hu']
+  | @frame i j _ s₀ _ s₂ _ _ hp _ hq ih =>
+    intro hc s₀' _ _ r₁ r₂ e₂ hu ht
+    simp only [icallFree] at hc
+    cases e₂ with
+    | @frame _ _ _ _ _ s₂' _ _ hp₂ b₂ hq₂ =>
+      rw [List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc] at ht
+      have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
+        simp only [List.length_map]; exact addrs_length i s₀ s₀'
+      obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
+      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [push_unknowns hp, push_unknowns hp₂, hu]) ht'
+      have hl' : (List.map Leak.addr (isa.addrs j s₂)).length = (List.map Leak.addr (isa.addrs j s₂')).length := by
+        simp only [List.length_map]; exact addrs_length j s₂ s₂'
+      have h₃ := (List.append_inj (List.append_cancel_left ht') hl').1
+      refine ⟨by rw [h₀, h₃], ?_⟩
+      rw [pop_unknowns hq, pop_unknowns hq₂, hu']
+  | icall => intro hc; simp [icallFree] at hc
+  | icallNext => intro hc; simp [icallFree] at hc
 
 /-- Two runs of `c` leave the same bytes in the `stack` bytes below the stack
 pointer on entry but those `wipe ks cs` zeroes. -/
@@ -1089,8 +1464,8 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
     Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
-        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
+      (icallFree c = true → NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
   obtain ⟨hcor, hct, hsat⟩ := h
@@ -1109,17 +1484,20 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
   -- The clearing's run.
   have tail : ∀ s t u s' t', (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
       Exec isa (Impl.Scrub.X86_64.scrubTail v (sig.retBits A.ptrBits) xs ps gs ks cs f) u t' s' →
-      ∃ m', t' = tailTr v ks cs (s.gpr .rsp) f ∧ s' = finState v (sig.retBits A.ptrBits) xs ps gs m' u f ∧
+      ∃ m', t' = tailTr v ks cs (s.gpr .rsp) f ∧
+        s' = finState v (sig.retBits A.ptrBits) xs ps gs m' (fun n => u.unknowns (n + wipeK cs + mxK f)) u f ∧
         (∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x) ∧
-        (∀ x, WCov ks cs (s.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (s.gpr .rsp) x → m' x = u.mem x) := by
+        (∀ x, m' x = tailMem f ks cs (s.gpr .rsp) u.unknowns u.mem x) := by
     intro s t u s' t' hs he het
     obtain ⟨-, -, hr, hl⟩ := run s t u hs he
-    obtain ⟨m', e, hz, hu⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
+    obtain ⟨m', e, hm⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
     obtain ⟨rfl, rfl⟩ := Exec.det het e
-    rw [hr] at hz hu
+    rw [hr] at hm
     have ho : ∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x :=
-      fun x h => hu x fun hw => h (hcs ▸ hw.1)
-    exact ⟨m', by rw [hr], rfl, ho, hz, hu⟩
+      fun x h => (hm x).trans (tailMem_frame f ks cs (s.gpr .rsp) u.unknowns u.mem
+        (fun h' => (hev _ (hr ▸ hl) h').2.1) x fun r hr' => by
+          simp only [List.mem_singleton] at hr'; subst hr'; rw [hcs]; exact h)
+    exact ⟨m', by rw [hr], rfl, ho, hm⟩
   -- Buffers are not in the stack the clearing wipes.
   have outB : ∀ s, (sig.contract A pre post wa stack leak).pre s → ∀ x,
       (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) →
@@ -1129,14 +1507,16 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     · subst h0; simp [Region.Contains] at hb
     · exact ((contract_pre_scrub hA hs).2 r hr).2 h0 x hb hx
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩,
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
+    fun hic s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
   · -- Correctness.
     obtain ⟨t, u, he, -⟩ := hcor s hs
     obtain ⟨ha, hq, hr, hl⟩ := run s t u hs he
-    obtain ⟨m', et, hz, hu⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
-    rw [hr] at hz hu
+    obtain ⟨m', et, hm⟩ := tail_run v (sig.retBits A.ptrBits) cs ht u hv hl (hev _ hl)
+    rw [hr] at hm
     have hmo : ∀ x, ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 → m' x = u.mem x :=
-      fun x h => hu x fun hw => h (hcs ▸ hw.1)
+      fun x h => (hm x).trans (tailMem_frame f ks cs (s.gpr .rsp) u.unknowns u.mem
+        (fun h' => (hev _ (hr ▸ hl) h').2.1) x fun r hr' => by
+          simp only [List.mem_singleton] at hr'; subst hr'; rw [hcs]; exact h)
     refine ⟨_, _, .seq he et, ⟨fun r hr' => ?_, ?_, ?_⟩, ?_⟩
     · have h1 : r ∉ scratchRegs := by revert hr'; revert r; decide
       have h2 : r ≠ .rax := by
@@ -1167,8 +1547,11 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
     rename_i u₁ _ _ u₂ _ _
-    obtain ⟨m₁, -, rfl, hmo₁, hz₁, hu₁⟩ := tail s₁ _ _ _ _ h₁ a₁ b₁
-    obtain ⟨m₂, -, rfl, hmo₂, hz₂, hu₂⟩ := tail s₂ _ _ _ _ h₂ a₂ b₂
+    obtain ⟨m₁, -, rfl, hmo₁, ht₁⟩ := tail s₁ _ _ _ _ h₁ a₁ b₁
+    obtain ⟨m₂, -, rfl, hmo₂, ht₂⟩ := tail s₂ _ _ _ _ h₂ a₂ b₂
+    -- The two runs of `c` have the same trace, so they end with the same unknowns.
+    obtain ⟨-, hU⟩ := Exec.unknowns_agree a₁ hic [] [] a₂ hun
+      (by rw [List.append_nil, List.append_nil]; exact hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
     obtain ⟨ha₁, -, -, -⟩ := run s₁ _ _ h₁ a₁
     obtain ⟨ha₂, -, -, -⟩ := run s₂ _ _ h₂ a₂
     have ho' := ho
@@ -1276,10 +1659,8 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
         rw [finState_other.2.1, finState_other.2.2.1, rw₁.1, rw₁.2] at hx
         exact hx
       by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
-      · by_cases hw : WCov ks cs (s₁.gpr .rsp) x
-        · rw [hz₁ x hw, hz₂ x (hsp' ▸ hw)]
-        · rw [hu₁ x hw, hu₂ x (hsp' ▸ hw)]
-          exact hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
+      · rw [ht₁ x, ht₂ x, ← hsp', hU]
+        exact tailMem_congr _ _ _ _ _ x fun hw => hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
       · have nd : ∀ sp : Addr, sp = s₁.gpr .rsp →
             ¬ (⟨sp - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩ : Region).Contains x 1 := by
           rintro sp rfl hc; exact hb (below_sub hd (by omega_using [hst]) x hc)
@@ -1316,8 +1697,8 @@ theorem Verified.scrub {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : L
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
     Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
-        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) :=
+      (icallFree c = true → NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :=
   Verified.scrubM hA h hsp hd hcs hst hv (fun i hi => Nat.le_trans (vecLevelR_le i) (hlv i hi))
     (fun hne => MxSame.of_fun ⟨id, fun _ _ _ he => Exec.mxcsr (fun i hi => noLoad_of_vecLevel (by
       have := hlv i hi
@@ -1670,7 +2051,8 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
     (hmx : v ≠ .evex → (mxClass r.code).isSome = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (he : EvexReg r.code v ks r.stack) :
+    (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (he : EvexReg r.code v ks r.stack)
+    (hic : icallFree r.code = true) :
     NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
@@ -1684,7 +2066,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
   exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
     (chunks_sum r.stack) hst (chunks_valid h8)
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
-    (gs_of _ _)).2
+    (gs_of _ _)).2 hic
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`), at level `v`,
 with the granules `ks` of `r.stack` bytes of stack wiped. -/
@@ -1724,7 +2106,10 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he⟩
+  -- Without residue for code without indirect calls, whose two runs use the
+  -- same unknowns (`Exec.unknowns_agree`); the emitter refuses any other.
+  residue := if hic : icallFree r.code = true then
+    some ⟨scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he hic⟩ else none
 
 /-- `Code.all p` implies `Code.all q` if `p` implies `q`. -/
 theorem all_mono {p q : Instr → Bool} (hpq : ∀ i, p i = true → q i = true) {c : Prog isa}
@@ -1777,9 +2162,9 @@ theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLev
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (hw : r.written = [])
-    (hne : v ≠ .evex := by decide) :
+    (hne : v ≠ .evex := by decide) (hic : icallFree r.code = true) :
     NoResidue (scrubReg r v ks hd hst h8 hlv hrb hpost hres hw hne).code r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) :=
-  scrubCodeE_noResidue r v ks hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost hres (evexReg_of_ne hne)
+  scrubCodeE_noResidue r v ks hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost hres (evexReg_of_ne hne) hic
 
 /-- `r`, scrubbed with every granule of its stack wiped: for code the
 residue analysis does not follow. At the level `evex` (code that may write
