@@ -307,7 +307,15 @@ theorem code_ok (hc : Coh vs) (c : PdImpl) {s : State} (hs : (espec vs).pre s) :
   refine WP.mono (wrap_ok (by decide) (by omega_using [hsp']) (W := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).W)
     (Q := fun r m => Res w₁.g w.g (epw (vs := vs) s s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp w₁.g (epw (vs := vs) s s w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) c).wp _ _ st)
-      fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+      fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres hp => by
+      have fit := hin.ok.fits (epw (vs := vs) s s w w₁).OUT (List.mem_append_right _ List.mem_cons_self)
+      exact written_frame hf
+        (released_apart (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
+          (ro := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw)
+          hin.ok hsp' (R := (epw (vs := vs) s s w w₁).OUT) (Or.inr (by simp)))
+        (by change (epw (vs := vs) s s w w₁).OUT.len ≤ 2 ^ 64; omega_using [fit]) (hres hp)))
+    fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw) hsp']
     exact hin.ok.push_apart r hr

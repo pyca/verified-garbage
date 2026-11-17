@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -930,29 +931,38 @@ end
 
 /-- A frame of four words, popped into `r12`, around a call of verified code
 that uses at most 24 bytes of stack: the callee runs from the state after
-the push, and the frame leaves `After4`. -/
+the push, and the frame leaves `After4`, whatever memory `m` that differs from
+the callee's only in `belowA s.sp 40` (where the released frame is), and
+whatever unknowns `u`, the pop leaves. -/
 theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hst : armStack c ≤ 24) {s : State} (h40 : 40 ≤ s.sp.toNat) {rd wr : List Region}
     (hpre : k.pre ((pushed fr4 s).callEntry.withRegions rd wr))
     (hc : Covers (rd ++ wr) ((pushed fr4 s).rd ++ (pushed fr4 s).wr))
     (hw : Covers wr (pushed fr4 s).wr) {Q : State → Prop}
-    (hQ : ∀ s₂ : State, After4 s wr (popped .r12 16 s₂) →
-      k.post ((pushed fr4 s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) → Q (popped .r12 16 s₂)) :
+    (hQ : ∀ (s₂ : State) (m : Mem) (u : Nat → BitVec 32), Frame [belowA s.sp 40] s₂.mem m →
+      After4 s wr { popped .r12 16 s₂ with mem := m, unknowns := u } →
+      k.post ((pushed fr4 s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) →
+        Q { popped .r12 16 s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push fr4) (.call n c) (.pop .r12 16)) s Q := by
   obtain h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_arith)
-  refine WP.frame (rs := fr4) (r := .r12) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  refine WP.frameLost (rs := fr4) (r := .r12) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by simp only [List.length_cons, List.length_nil]; omega_arith) ?_
-  refine WP.callF hv hpre hc hw (by rw [p4_sp, h16]; omega_arith) fun s₂ hrd hwr hsp hf hcs hpost => ?_
-  refine hQ s₂ ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
-  · rw [popped_rd, hrd, pushed_rd]
-  · rw [popped_wr, hwr, pushed_wr]; rfl
-  · rw [popped_sp, hsp, p4_sp]; exact BitVec.sub_add_cancel _ _
+  refine WP.callF hv hpre hc hw (by rw [p4_sp, h16]; omega_arith) fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
+  obtain hflS : Frame [belowA s.sp 40] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    rw [List.mem_singleton.mp hr, addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_arith)]
+    have := belowA_inner (sp := s.sp) (a := 16) (b := 40) (k := 0) (by omega_arith) h40
+    simpa using this⟩
+  refine hQ s₂ mL uL hflS ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
+  · dsimp only; rw [popped_rd, hrd, pushed_rd]
+  · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
+  · dsimp only; rw [popped_sp, hsp, p4_sp]; exact BitVec.sub_add_cancel _ _
   · have : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
-    rw [popped_gpr this, hcs r hr hl, pushed_gpr]
-  · rw [popped_mem]
+    dsimp only; rw [popped_gpr this, hcs r hr hl, pushed_gpr]
+  · dsimp only
     obtain f₀ := pushed_frameA (rs := fr4) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_arith)
-    refine Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
+    refine Frame.trans (Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_))
+      (Frame.sub hflS fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
       have := belowA_inner (sp := s.sp) (a := 16) (b := 40) (k := 0) (by omega_arith) h40
@@ -1137,9 +1147,10 @@ theorem pbk_call {pbk : Prog isa}
   have hS := hL.nS
   obtain ⟨cov, covw⟩ := pbk_cov hL hc hr
   refine frame4_ok (pbk_correct hv) hst (by rw [hc.sp]; exact hS) (pbk_pre' hL hc ha hr) cov covw
-    fun s₂ h4 hpost => ?_
-  obtain hf : Frame (pbkWr L out ol ++ [L.STK]) t.mem (popped .r12 16 s₂).mem := by
+    fun s₂ mL uL hfl h4 hpost => ?_
+  obtain hf : Frame (pbkWr L out ol ++ [L.STK]) t.mem mL := by
     have := h4.frame; rwa [hc.sp, stk_eq hL] at this
+  rw [hc.sp, stk_eq hL] at hfl
   obtain ap := pbk_apart hL hr
   refine ⟨⟨h4.rd.trans hc.rd, h4.wr.trans hc.wr, h4.sp.trans hc.sp,
     (h4.cs .r5 (by decide) (by decide)).trans hc.r5, (h4.cs .r6 (by decide) (by decide)).trans hc.r6,
@@ -1176,6 +1187,10 @@ theorem pbk_call {pbk : Prog isa}
         bytesAt t.mem (State.addr salt) sl.toNat :=
       Memory.frame_bytesAt f₀ (d16 hr.ks) (by have := sl.isLt; omega_arith)
     rw [e₁, e₂] at h
+    -- The output is apart from the released frame.
+    dsimp only
+    rw [Memory.frame_bytesAt hfl (fun q hq => by
+      rw [List.mem_singleton.mp hq]; exact (hL.stk_in hr.ow).symm) (by have := hr.no; omega_arith)]
     exact h
 
 end
