@@ -714,8 +714,8 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
     WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finKD H D).post s₀ s' := by
   obtain hpi : PreD P D (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
   refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by exact hst.sp48) (fun R hR => ?_)
-    (WP.mono (correctMain hd hs hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hn hpf
+  refine WP.frameReg (by exact hst.sp48) (fun R hR => ?_)
+    (WP.mono (correctMain hd hs hf hpi) fun s' ⟨hk, hsp, hpost⟩ m' u f => ?_) hn hpf
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl
@@ -728,7 +728,9 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
       rw [hk r hr]
       simp only [framed, State.write, h0, ite_false]
     · simp [State.write]
-    · exact hpost iv m (H.repr_congr hd.pos (fun i hi => write_frame_bytes (R := stR P s₀) hst.st
+    · -- The pop loses the frame's bytes, which lie apart from the digest.
+      refine Eq.trans (bytesAt_congr fun i hi => lost_byte f (R := outR s₀ D) hst.out.symm hi) ?_
+      exact hpost iv m (H.repr_congr hd.pos (fun i hi => write_frame_bytes (R := stR P s₀) hst.st
         (by have := hd.N; have := hd.B; show P.N + P.B < 2 ^ 64; omega_arith) hi) hm) hok hc
 
 /-- A state satisfying the precondition of `finKD H D`. -/

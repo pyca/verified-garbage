@@ -696,8 +696,8 @@ theorem correct {c : Prog isa} (hS : SalsaSpec c) (hc : c.noFrames = true) {s₀
   obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
     hp.r6, hp.pos⟩
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hS hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by rw [fdepth_of_noFrames (noFrames_main hc)]; decide)
+  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hS hpi)
+    fun s' ⟨hk, hsp, hpost⟩ m' u f => ?_) (by rw [fdepth_of_noFrames (noFrames_main hc)]; decide)
     (pushFrames_of_noFrames (noFrames_main hc))
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -715,9 +715,11 @@ theorem correct {c : Prog isa} (hS : SalsaSpec c) (hc : c.noFrames = true) {s₀
           have hi' : i < 128 * rr s₀ := hi
           exact write_frame_bytes (R := bR s₀) hs.b (by have := r_lt hp; simp only; omega_arith)
             (by simp only; omega_arith)
-      show bytesAt s'.mem (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (bytesAt s₀.mem (bP s₀) (128 * rr s₀))
+      show bytesAt m' (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (bytesAt s₀.mem (bP s₀) (128 * rr s₀))
       rw [← e]
-      exact hpost
+      -- The pop loses the frame's bytes, which lie apart from the output.
+      refine Eq.trans (bytesAt_congr fun i hi => lost_byte f (R := yR s₀) hs.y.symm
+        (by show i < rr s₀ * 128; have : i < 128 * rr s₀ := hi; omega_arith)) hpost
 
 end VG.Proof.Scrypt.PPC64LE.BlockMix
 

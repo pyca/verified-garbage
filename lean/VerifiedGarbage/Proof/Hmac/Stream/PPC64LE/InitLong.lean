@@ -517,8 +517,8 @@ theorem correct {s₀ : State} (hp : (longG hH.SH H.lbytes 144).pre s₀) :
   obtain ⟨_, _, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13⟩ := hp
   obtain hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 144) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
-    fun s' ⟨hk, hsp, hI, hO⟩ => ?_) (by have := initLongMain_fdepth hH; omega_arith) (initLongMain_pf hH)
+  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+    fun s' ⟨hk, hsp, hI, hO⟩ m' u f => ?_) (by have := initLongMain_fdepth hH; omega_arith) (initLongMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
     obtain hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 144) :=
       fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
@@ -538,6 +538,10 @@ theorem correct {s₀ : State} (hp : (longG hH.SH H.lbytes 144).pre s₀) :
           inner_bytes (R := ⟨s₀.gpr .r5, (s₀.gpr .r6).toNat⟩) (h12.symm.sub_right hsub).symm
             (s₀.gpr .r6).isLt hi
       rw [hK] at hI hO
-      exact ⟨hI, hO⟩
+      -- The pop loses the frame's bytes, which lie apart from the states.
+      exact ⟨hH.congr _ _ _ _ (fun i hi => lost_byte f (R := ⟨s₀.gpr .r3, H.S⟩)
+          (by rw [← hH.hS]; exact (h10.sub_left hsub).symm) hi) hI,
+        hH.congr _ _ _ _ (fun i hi => lost_byte f (R := ⟨s₀.gpr .r4, H.S⟩)
+          (by rw [← hH.hS]; exact (h11.sub_left hsub).symm) hi) hO⟩
 
 end VG.Proof.Hmac.Stream.PPC64LE.InitLong

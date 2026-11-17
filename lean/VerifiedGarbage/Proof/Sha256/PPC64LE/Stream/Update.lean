@@ -732,8 +732,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) (hs : Stack s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha256.updatePPC64LE.post s₀ s' := by
   obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
   refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hpi)
+    fun s' ⟨hk, hsp, hpost⟩ m' u f => ?_)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -752,7 +752,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) (hs : Stack s₀) :
       change Spec.Sha256.ReprFrom iv s'.mem (s₀.gpr .r3)
         (m ++ bytesAt (inner s₀).mem (s₀.gpr .r5) (s₀.gpr .r6).toNat) at this
       rw [e] at this
-      exact this
+      -- The pop loses the frame's bytes, which lie apart from the state.
+      exact reprFrom_congr (fun i hi => lost_byte f (R := stR s₀) hs.st.symm hi) this
 
 theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Sha256.updatePPC64LE.pub s₁ s₂) :
     VG.PPC64LE.Taint.Agree (VG.PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by

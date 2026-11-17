@@ -416,8 +416,8 @@ theorem correct {s₀ : State} (hp : (digestG hH.SH H.lbytes 96).pre s₀) :
   obtain ⟨h1, h2, _, _, _, h6, h7, h8, h9⟩ := hp
   obtain hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := digestMain_fdepth hH; omega_arith) (digestMain_pf hH)
+  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+    fun s' ⟨hk, hsp, hpost⟩ m' u f => ?_) (by have := digestMain_fdepth hH; omega_arith) (digestMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
     obtain hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=
       fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
@@ -432,6 +432,9 @@ theorem correct {s₀ : State} (hp : (digestG hH.SH H.lbytes 96).pre s₀) :
       simp only [framed, State.write, h0, ite_false]
     · simp [State.write]
     · show bytesAt _ (s₀.gpr .r5) hH.SH.digestBytes = _
+      -- The pop loses the frame's bytes, which lie apart from the digest.
+      refine Eq.trans (Proof.Sha256.Stream.bytesAt_congr fun i hi =>
+        lost_byte f (R := ⟨s₀.gpr .r5, hH.SH.digestBytes⟩) (h8.sub_left hsub).symm hi) ?_
       rw [hH.hD]
       obtain hM : M (inner s₀) = bytesAt s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat :=
         Proof.Sha256.Stream.bytesAt_congr fun i hi =>

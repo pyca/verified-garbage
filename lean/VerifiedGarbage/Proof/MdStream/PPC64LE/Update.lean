@@ -900,8 +900,8 @@ theorem correct (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H
     WP isa (update P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updK H).post s₀ s' := by
   obtain hpi : Pre P (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
   refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hd hf hpi)
-    fun s' ⟨hk, hsp, hpost⟩ => ?_) hn hpf
+  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hd hf hpi)
+    fun s' ⟨hk, hsp, hpost⟩ m' u f => ?_) hn hpf
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -921,7 +921,8 @@ theorem correct (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H
       change H.Repr iv s'.mem (s₀.gpr .r3)
         (m ++ bytesAt (inner s₀).mem (s₀.gpr .r5) (s₀.gpr .r6).toNat) at this
       rw [e] at this
-      exact this
+      -- The pop loses the frame's bytes, which lie apart from the state.
+      exact H.repr_congr hd.pos (fun i hi => lost_byte f (R := stR P s₀) hs.st.symm hi) this
 
 /-- A state satisfying the precondition (with no data). -/
 def sat (P : Params) : State where
