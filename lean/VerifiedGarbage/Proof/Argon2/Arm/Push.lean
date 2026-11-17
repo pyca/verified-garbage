@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # Argon2 on ARMv7: calls in frames of their stack arguments
@@ -116,7 +117,9 @@ theorem stkR_sub {sp : BitVec 32} {a b : Nat} (h : a ≤ b) (hb : b ≤ sp.toNat
 
 /-- A frame of the words `rs`, popped into `t`, around a call of verified code
 whose frames use at most `armStack c` bytes: the callee runs from the state
-after the push, and the frame leaves `After`. -/
+after the push, and the frame leaves `After`, whatever memory `m` that differs
+from the callee's only in the released frame (`stkR s.sp (4 * rs.length)`),
+and whatever unknowns `u`, the pop leaves. -/
 theorem frameCall_ok {rs : List Reg} {t : Reg} (hrs : regList rs = true) (ht : t ∉ preserved)
     (hlt : 4 * rs.length < 256) {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
@@ -124,22 +127,27 @@ theorem frameCall_ok {rs : List Reg} {t : Reg} (hrs : regList rs = true) (ht : t
     (hpre : k.pre ((pushed rs s).callEntry.withRegions rd wr))
     (hc : Covers (rd ++ wr) ((pushed rs s).rd ++ (pushed rs s).wr))
     (hw : Covers wr (pushed rs s).wr) {Q : State → Prop}
-    (hQ : ∀ s₂ : State, After K s wr (popped t (4 * rs.length) s₂) →
+    (hQ : ∀ (s₂ : State) (m : Mem) (u : Nat → BitVec 32), Frame [stkR s.sp (4 * rs.length)] s₂.mem m →
+      After K s wr { popped t (4 * rs.length) s₂ with mem := m, unknowns := u } →
       k.post ((pushed rs s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) →
-      Q (popped t (4 * rs.length) s₂)) :
+      Q { popped t (4 * rs.length) s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push rs) (.call n c) (.pop t (4 * rs.length))) s Q := by
   have hn : 4 * rs.length ≤ s.sp.toNat := by omega_using [hst, hK]
-  refine WP.frame (rs := rs) (r := t) hrs hn hlt ?_
+  refine WP.frameLost (rs := rs) (r := t) hrs hn hlt ?_
   refine WP.callF hv hpre hc hw (by rw [pushed_sp, sub_toNat' hn]; omega_using [hst, hK])
-    fun s₂ hrd hwr hsp hf hcs hpost => ?_
-  refine hQ s₂ ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
-  · rw [popped_rd, hrd, pushed_rd]
-  · rw [popped_wr, hwr, pushed_wr]; rfl
-  · rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
+    fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
+  rw [addr_sub' hn] at hfl
+  refine hQ s₂ mL uL hfl ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
+  · dsimp only; rw [popped_rd, hrd, pushed_rd]
+  · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
+  · dsimp only; rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
   · have : r ≠ t := fun e => ht (e ▸ hr)
-    rw [popped_gpr this, hcs r hr hl, pushed_gpr]
-  · rw [popped_mem]
-    refine Frame.trans (Frame.sub (pushed_stk hn) fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
+    dsimp only; rw [popped_gpr this, hcs r hr hl, pushed_gpr]
+  · dsimp only
+    refine Frame.trans (Frame.trans (Frame.sub (pushed_stk hn) fun r hr => ?_) (Frame.sub hf fun r hr => ?_))
+      (Frame.sub hfl fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stkR_sub (by omega_using [hst]) hK⟩)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stkR_sub (by omega_using [hst]) hK⟩
     · rcases List.mem_append.mp hr with hr | hr

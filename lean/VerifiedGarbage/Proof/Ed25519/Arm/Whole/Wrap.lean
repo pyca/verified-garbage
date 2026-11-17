@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Ed25519.Arm.Whole.Entry`, which only this module used -/
 
@@ -330,6 +331,36 @@ theorem finish_lr (u : State) :
   simp only [BitVec.add_assoc]
   rfl
 
+/-- What the releases leave, whatever memory and unknowns each leaves. -/
+def finishL (u : State) (m₁ m₂ m₃ m₄ : Mem) (u₁ u₂ u₃ u₄ : Nat → BitVec 32) : State :=
+  { popped .lr 4 { popped .r12 4 { freed 24 { freed 248 u with mem := m₁, unknowns := u₁ }
+    with mem := m₂, unknowns := u₂ } with mem := m₃, unknowns := u₃ } with mem := m₄, unknowns := u₄ }
+
+section
+variable {u : State} {m₁ m₂ m₃ m₄ : Mem} {u₁ u₂ u₃ u₄ : Nat → BitVec 32}
+
+theorem finishL_mem : (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).mem = m₄ := rfl
+theorem finishL_sp : (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).sp = u.sp + 280#32 := by
+  change u.sp + 248#32 + 24#32 + 4#32 + 4#32 = _
+  simp only [BitVec.add_assoc]
+  rfl
+
+theorem finishL_gpr {r : Reg} (h12 : r ≠ .r12) (hl : r ≠ .lr) :
+    (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).gpr r = u.gpr r := by
+  change (popped .lr 4 _).gpr r = _
+  rw [popped_gpr hl]
+  change (popped .r12 4 _).gpr r = _
+  rw [popped_gpr h12]
+  rfl
+
+theorem finishL_lr :
+    (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).gpr .lr = m₃.readW (State.addr (u.sp + 276#32)) 32 := by
+  change m₃.readW (State.addr (u.sp + 248#32 + 24#32 + 4#32)) 32 = _
+  simp only [BitVec.add_assoc]
+  rfl
+
+end
+
 theorem saved_lr {s p : State} {n : Nat} (hsp : 280 ≤ s.sp.toNat) (hp : Saved (entered s) n p) :
     p.mem.readW (State.addr (base s) + 276) 32 = s.gpr .lr := by
   rw [hp.frame.readW (r := ⟨State.addr (base s) + 276, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
@@ -349,23 +380,24 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
     {P : Mem → Mem → BitVec 32 → Prop}
     (hb : ∀ p, Saved (entered s) n p →
       WP isa body (p.withRegions (bodyRd s) (bodyWr s)) fun u =>
-        Ctx (base s) s.gpr p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .r0)) :
+        Ctx (base s) s.gpr p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .r0))
+    (hP : ∀ m m₁ m₂ r, Frame [stack s] m₁ m₂ → P m m₁ r → P m m₂ r) :
     WP isa (wrap n body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [stack s] s.mem m ∧ P m t.mem (t.gpr .r0) := by
-  refine WP.frame (by decide) (by change 4 ≤ s.sp.toNat; omega_using [hsp]) (by decide) ?_
-  refine WP.frame (by decide) ?_ (by decide) ?_
+  refine WP.frameLost (by decide) (by change 4 ≤ s.sp.toNat; omega_using [hsp]) (by decide) ?_
+  refine WP.frameLost (by decide) ?_ (by decide) ?_
   · change 4 ≤ (s.sp - 4#32).toNat
     rw [BitVec.toNat_sub_of_le (by change 4 ≤ s.sp.toNat; omega_using [hsp])]
     change 4 ≤ s.sp.toNat - 4
     omega_using [hsp]
-  · refine WP.alloc (by decide) ?_ ?_
+  · refine WP.allocLost (by decide) ?_ ?_
     · change 24 ≤ (s.sp - 4#32 - 4#32).toNat
       rw [BitVec.sub_sub]
       change 24 ≤ (s.sp - 8#32).toNat
       rw [BitVec.toNat_sub_of_le (by change 8 ≤ s.sp.toNat; omega_using [hsp])]
       change 24 ≤ s.sp.toNat - 8
       omega_using [hsp]
-    · refine WP.alloc (by decide) ?_ ?_
+    · refine WP.allocLost (by decide) ?_ ?_
       · change 248 ≤ (s.sp - 4#32 - 4#32 - 24#32).toNat
         simp only [BitVec.sub_sub]
         change 248 ≤ (s.sp - 32#32).toNat
@@ -388,9 +420,35 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
           rcases hR with rfl | hR
           · exact ⟨FR (base s), List.mem_cons_self, 0, by simp⟩
           · exact ⟨r, by simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr hR))), 0, by simp⟩
-        · intro u _ _ _ _ hbody
+        · intro u _ _ _ _ hbody m₁ u₁ h₁ m₂ u₂ h₂ m₃ u₃ h₃ m₄ u₄ h₄
           obtain ⟨hc, ho⟩ := hbody
-          have lr : u.mem.readW (State.addr (base s) + 276) 32 = s.gpr .lr := by
+          -- The four released frames are the entry's regions.
+          have e := entered_wr hsp
+          change ⟨State.addr (entered s).sp, 248⟩ :: ⟨State.addr (s.sp - 4#32 - 4#32 - 24#32), 24⟩ ::
+            ⟨State.addr (s.sp - 4#32 - 4#32), 4⟩ :: ⟨State.addr (s.sp - 4#32), 4⟩ :: s.wr = _ at e
+          simp only [List.cons.injEq] at e
+          obtain ⟨e₁, e₂, e₃, e₄, -⟩ := e
+          change Frame [⟨State.addr (entered s).sp, 248⟩] u.mem m₁ at h₁
+          change Frame [⟨State.addr (s.sp - 4#32 - 4#32 - 24#32), 24⟩] m₁ m₂ at h₂
+          change Frame [⟨State.addr (s.sp - 4#32 - 4#32), 4⟩] m₂ m₃ at h₃
+          change Frame [⟨State.addr (s.sp - 4#32), 4⟩] m₃ m₄ at h₄
+          rw [e₁] at h₁; rw [e₂] at h₂; rw [e₃] at h₃; rw [e₄] at h₄
+          have inner : Frame [⟨State.addr (base s), 276⟩] u.mem m₃ := by
+            refine ((h₁.sub fun r hr => ?_).trans (h₂.sub fun r hr => ?_)).trans (h₃.sub fun r hr => ?_) <;>
+              rw [List.mem_singleton.mp hr] <;> refine ⟨_, List.mem_singleton_self _, ?_⟩
+            · exact Region.sub_prefix (by decide)
+            · exact Offset.sub_base _ (by decide)
+            · exact Offset.sub_base _ (by decide)
+          have whole : Frame [stack s] u.mem m₄ :=
+            (inner.sub fun r hr => by
+              rw [List.mem_singleton.mp hr]
+              exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩).trans
+            (h₄.sub fun r hr => by
+              rw [List.mem_singleton.mp hr]
+              exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩)
+          have lr : m₃.readW (State.addr (base s) + 276) 32 = s.gpr .lr := by
+            rw [inner.readW (r := ⟨State.addr (base s) + 276, 4⟩) (Region.contains_self _ _) (fun r hr => by
+              rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by decide) (by decide)) (by decide)]
             rw [hc.frame.readW (r := ⟨State.addr (base s) + 276, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
             · exact saved_lr hsp hp
             · intro r hR
@@ -398,21 +456,19 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
               rcases hR with hR | rfl
               · exact (hw r hR).sub_left (Offset.sub_base _ (by decide : 276 + 4 ≤ 280))
               · exact Offset.disjoint_base _ (by decide) (by decide)
-          change abiPreserved s (finish (u.withRegions p.rd p.wr)) ∧ _
+          change abiPreserved s (finishL (u.withRegions p.rd p.wr) m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄) ∧ _
           refine ⟨⟨?_, ?_⟩, p.mem, saved_frame hsp hp, ?_⟩
           · intro r hR
             by_cases hl : r = .lr
             · subst r
-              rw [finish_lr, State.withRegions_sp, hc.sp,
+              rw [finishL_lr, State.withRegions_sp, hc.sp,
                 addr_add (by have hb := base_top hsp; have hi := s.sp.isLt; omega_using [hb])]
               exact lr
-            · rw [finish_gpr _ (by intro h; subst r; simp [preserved] at hR) hl]
+            · rw [finishL_gpr (by intro h; subst r; simp [preserved] at hR) hl]
               exact hc.cs r hR hl
-          · rw [finish_sp, State.withRegions_sp, hc.sp]
+          · rw [finishL_sp, State.withRegions_sp, hc.sp]
             exact BitVec.sub_add_cancel _ _
-          · change P p.mem (finish (u.withRegions p.rd p.wr)).mem
-              ((finish (u.withRegions p.rd p.wr)).gpr .r0)
-            rw [finish_mem, finish_gpr _ (by decide) (by decide)]
-            exact ho
+          · rw [finishL_mem, finishL_gpr (by decide) (by decide)]
+            exact hP _ _ _ _ whole ho
 
 end VG.Proof.Ed25519.Arm.Whole
