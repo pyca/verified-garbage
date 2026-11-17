@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Modes.X86_64.Counter
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 

@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import VerifiedGarbage.Proof.Sm4.RISCV64.Group
 import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

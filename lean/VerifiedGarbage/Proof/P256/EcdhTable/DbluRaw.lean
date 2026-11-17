@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
 public import VerifiedGarbage.Impl.P256.VerifySparse
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 

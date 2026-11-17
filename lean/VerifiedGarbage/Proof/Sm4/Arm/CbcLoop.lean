@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Spec.Sm4.Cbc
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc

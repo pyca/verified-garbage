@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 public import VerifiedGarbage.Proof.Sm4.Prepared
 import VerifiedGarbage.Proof.Sm4.Arm.BatchLoop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.MdStream.Arm.Common

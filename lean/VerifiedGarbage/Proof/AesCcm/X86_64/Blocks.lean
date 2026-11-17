@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ccm
 
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -27,16 +27,18 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le8)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
-open VG.Proof.CmacAes.Stream.X86_64 (upd_call)
 
 /-! ## `ctrAt` -/
 
+omit fp in
 /-- `Ctrᵢ` at `W + 64`, for `i` in `rax`. -/
 theorem ctrAt_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {nonce : List Byte} (h7 : 7 ≤ nonce.length)
     (h13 : nonce.length ≤ 13) (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0)
@@ -77,12 +79,12 @@ theorem ctrAt_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {nonce : List By
 /-! ## Chaining `B` -/
 
 /-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
-theorem updBlock_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem updBlock_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (updBlock v.callee y) s fun s' => Env K W SP s' ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16] s.mem s'.mem ∧
+      Frame [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 16] s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
           [bytesAt s.mem (W + BitVec.ofNat 64 32) 16] := by

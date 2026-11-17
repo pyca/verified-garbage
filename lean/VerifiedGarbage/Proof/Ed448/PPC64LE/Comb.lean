@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
 public import VerifiedGarbage.Proof.Ed448.Comb
 public import VerifiedGarbage.Proof.Ed448.Group.Projective

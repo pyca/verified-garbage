@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
@@ -21,7 +20,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInputs
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `Dsa.AArch64.RandomSignCallValue`, which this module and modules that import it used -/

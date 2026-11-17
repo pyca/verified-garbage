@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl

@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CombExpState
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 public import VerifiedGarbage.Impl.Bignum.Arm.CombExp
-public import VerifiedGarbage.Proof.Bignum.Arm.CombDigitLoad
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpArgs
 import VerifiedGarbage.Impl.Bignum.Arm.CombDigit
 import VerifiedGarbage.Proof.X25519.Arm.Instr

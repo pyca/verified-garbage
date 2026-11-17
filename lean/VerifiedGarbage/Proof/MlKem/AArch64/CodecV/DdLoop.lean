@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes

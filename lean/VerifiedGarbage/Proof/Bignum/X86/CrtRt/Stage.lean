@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.RepeatSquares
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Table2
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Product
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 import VerifiedGarbage.Proof.Framework.Mem

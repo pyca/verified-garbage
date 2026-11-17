@@ -28,7 +28,7 @@ section
 
 /-! # DSA parameter search on RISC-V: q
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/QPart.lean`). `qPart` (`qPart_vp`):
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/PX.lean`). `qPart` (`qPart_vp`):
 the seed at `fSeed`, the tape's octets from `k`, copied before the block's
 padding at `sMsg`, hashed into `sQ`, its top and low bits set (`shapeQ_vp`),
 and tested with the tape from the cursor `u`. The claims after it: the

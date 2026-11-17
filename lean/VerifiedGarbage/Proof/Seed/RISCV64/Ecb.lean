@@ -29,7 +29,7 @@ section
 /-!
 # Sixteen rounds on RISC-V
 
-As on PPC64LE (`Proof/Seed/PPC64LE/Batch.lean`): `rounds_ok`: `rounds d`
+As on PPC64LE (`Proof/Seed/PPC64LE/Ecb.lean`): `rounds_ok`: `rounds d`
 does sixteen rounds on every lane, with round `j + 1`'s key at
 `a0 + j * step` (`kp`), and moves `a0` back.
 -/
@@ -806,7 +806,7 @@ end
 /-!
 # A batch on RISC-V
 
-As on PPC64LE (`Proof/Seed/PPC64LE/Batch.lean`): `batch_ok`: a batch
+As on PPC64LE (`Proof/Seed/PPC64LE/Ecb.lean`): `batch_ok`: a batch
 encrypts or decrypts the first `min n 16` blocks at `a1` in place
 (`n = a2`), with the keys at `a0` (`keysAt`), and moves `a1` and `a2` past
 them. It keeps `g16`'s masks (`Masks`), writing only the working area and

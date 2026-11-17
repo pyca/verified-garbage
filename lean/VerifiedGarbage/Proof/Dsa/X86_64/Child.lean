@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitInverse
-public import VerifiedGarbage.Proof.Dsa.X86_64.Return
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86_64.Load

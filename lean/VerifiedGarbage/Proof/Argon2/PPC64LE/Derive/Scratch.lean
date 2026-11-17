@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 
 /-!
 # Argon2 on PPC64LE: `scratch` in the derivation

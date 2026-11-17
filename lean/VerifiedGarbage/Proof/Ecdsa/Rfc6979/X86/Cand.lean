@@ -3,7 +3,6 @@ module
 -- separate module: its proofs (the candidate loop) build in parallel with `Core`'s, which `Loop` also imports
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset

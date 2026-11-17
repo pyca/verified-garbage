@@ -4,10 +4,9 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
@@ -17,7 +16,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWriteArray
 import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Bignum.ByteWords

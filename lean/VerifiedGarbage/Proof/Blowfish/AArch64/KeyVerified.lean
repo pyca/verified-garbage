@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 import VerifiedGarbage.Proof.Framework.AArch64.Inline

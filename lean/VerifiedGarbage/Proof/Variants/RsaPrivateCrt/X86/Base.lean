@@ -29,8 +29,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtModulusTiming
 public import VerifiedGarbage.Proof.Bignum.X86.CrtObservations
 public import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 public import VerifiedGarbage.Proof.Bignum.X86.CrtSave
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentByte
+public import VerifiedGarbage.Proof.Bignum.X86.ExponentScan
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
 public import VerifiedGarbage.Proof.Bignum.X86.ExportBE
@@ -50,7 +49,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
@@ -76,7 +74,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 public import VerifiedGarbage.Proof.Dsa.X86.FetchByte
-public import VerifiedGarbage.Proof.Dsa.X86.HeaderFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 public import VerifiedGarbage.Proof.Dsa.X86.WriteScalar
@@ -92,10 +89,8 @@ public import VerifiedGarbage.Proof.Dsa.X86.Reduce
 public import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 public import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
 public import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-public import VerifiedGarbage.Proof.Dsa.X86.StageValues
 public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.ValidateRangeMask
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateMasks
 public import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
 public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
 public import VerifiedGarbage.Proof.Dsa.Zero

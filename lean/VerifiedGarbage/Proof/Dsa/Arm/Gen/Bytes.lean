@@ -1,11 +1,724 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+public import VerifiedGarbage.Impl.Dsa.Arm.Generation
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Dsa.Arm.Gen.St`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.Arm.Gen.Steps`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.Arm.Gen.Base`, which only this module used -/
+
+section
+
+/-! # DSA parameter generation on ARMv7: the public parameters and the frame
+
+`mkG s`: the public parameters of a call of `vg_dsa_parameter_search` from
+`s`: its arguments, the state's first two words (the seeds left and the
+modulus's width) and the tape's bytes, which the contract makes public.
+`CIn s`: the contract's precondition (`cin_of_pre`). `GI G σ s`: a state of
+the search, for the call from `σ` with the parameters `G`: the frame
+allocated (`G.sp`), the regions those of the call and the frame, the
+callee-saved registers and the fixed frame words in the frame, the frame
+words of `LS` holding `V`, and memory changed only in the frame, `scratch`
+and the stack below the frame (`G.chg`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Gen
+open VG VG.Arm
+open VG.Impl.Dsa.Arm.Generation
+
+/-- The public parameters of a call. -/
+structure GP where
+  sp0 : BitVec 32
+  out : BitVec 32
+  outLen : Nat
+  usedP : BitVec 32
+  /-- `rand`, which holds the seeds, the witnesses and the `h` candidates. -/
+  wit : BitVec 32
+  witLen : Nat
+  scr : BitVec 32
+  scrLen : Nat
+  stP : BitVec 32
+  /-- The seeds left, `state[0]`. -/
+  k0 : Nat
+  pLen : Nat
+  qLen : Nat
+  witB : List Byte
+
+/-- The modulus's width, `state[1]`. -/
+abbrev pLenOf (s : State) : Nat := (s.mem.readW (State.addr (stackArg s 3) + 8#64) 64).toNat
+
+def mkG (s : State) : GP where
+  sp0 := s.sp
+  out := s.gpr .r0
+  outLen := (s.gpr .r1).toNat
+  usedP := s.gpr .r2
+  wit := s.gpr .r3
+  witLen := (stackArg s 0).toNat
+  scr := stackArg s 1
+  scrLen := (stackArg s 2).toNat
+  stP := stackArg s 3
+  k0 := (s.mem.readW (State.addr (stackArg s 3)) 64).toNat
+  pLen := pLenOf s
+  qLen := Spec.Dsa.generationQLen (pLenOf s)
+  witB := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat
+
+namespace GP
+variable (G : GP)
+
+/-- The seeds are read from `rand`. -/
+abbrev seeds : BitVec 32 := G.wit
+abbrev seedsLen : Nat := G.witLen
+abbrev seedsB : List Byte := G.witB
+
+/-- The frame's base. -/
+abbrev sp : BitVec 32 := G.sp0 - BitVec.ofNat 32 F
+abbrev rFrame : Region := ⟨State.addr G.sp, F⟩
+/-- The stack of the functions we call. -/
+abbrev rBelow : Region := ⟨State.addr G.sp - 176#64, 176⟩
+abbrev rScr : Region := ⟨State.addr G.scr, G.scrLen * 8⟩
+abbrev rOut : Region := ⟨State.addr G.out, G.outLen⟩
+abbrev rUsed : Region := ⟨State.addr G.usedP, 8⟩
+abbrev rWit : Region := ⟨State.addr G.wit, G.witLen⟩
+abbrev rSeeds : Region := G.rWit
+abbrev rSt : Region := ⟨State.addr G.stP, 32⟩
+abbrev rArgs : Region := ⟨State.addr (G.sp0 + BitVec.ofNat 32 (4 * 0)), 16⟩
+
+/-- What the search may change. -/
+abbrev chg : List Region := [G.rFrame, G.rScr, G.rBelow]
+
+end GP
+
+/-- The contract's precondition. -/
+structure CIn (s : State) : Prop where
+  spLo : 304 ≤ s.sp.toNat
+  spHi : s.sp.toNat + 16 ≤ 2 ^ 32
+  rd : s.rd = [(mkG s).rWit, (mkG s).rArgs]
+  wr : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt]
+  oU : (mkG s).rOut.Disjoint (mkG s).rUsed
+  oW : (mkG s).rOut.Disjoint (mkG s).rWit
+  oC : (mkG s).rOut.Disjoint (mkG s).rScr
+  oS : (mkG s).rOut.Disjoint (mkG s).rSt
+  oA : (mkG s).rOut.Disjoint (mkG s).rArgs
+  uW : (mkG s).rUsed.Disjoint (mkG s).rWit
+  uC : (mkG s).rUsed.Disjoint (mkG s).rScr
+  uS : (mkG s).rUsed.Disjoint (mkG s).rSt
+  uA : (mkG s).rUsed.Disjoint (mkG s).rArgs
+  wC : (mkG s).rWit.Disjoint (mkG s).rScr
+  wS : (mkG s).rWit.Disjoint (mkG s).rSt
+  cS : (mkG s).rScr.Disjoint (mkG s).rSt
+  cA : (mkG s).rScr.Disjoint (mkG s).rArgs
+  sA : (mkG s).rSt.Disjoint (mkG s).rArgs
+  fO : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rOut
+  fU : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rUsed
+  fW : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rWit
+  fC : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rScr
+  fS : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rSt
+  fA : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rArgs
+  nO : (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32
+  nU : (s.gpr .r2).toNat + 8 ≤ 2 ^ 32
+  nW : (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32
+  nC : (stackArg s 1).toNat + (stackArg s 2).toNat * 8 ≤ 2 ^ 32
+  nS : (stackArg s 3).toNat + 32 ≤ 2 ^ 32
+  valid : Spec.Dsa.generationPLenValid (pLenOf s)
+  outLen : (s.gpr .r1).toNat = 2 * pLenOf s + Spec.Dsa.generationQLen (pLenOf s)
+  scrLen : Spec.Dsa.generationScratchWords (pLenOf s) ≤ (stackArg s 2).toNat
+  seeds : (s.mem.readW (State.addr (stackArg s 3)) 64).toNat ≤ Spec.Dsa.parameterSeeds
+  budget : s.mem.readW (State.addr (stackArg s 3) + 16#64) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
+  randLen : (stackArg s 0).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
+
+theorem cin_of_pre (s : State) (h : (Spec.Dsa.parameterSearchContract abi 304).pre s) : CIn s := by
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
+    Loc.val] at h
+  obtain ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩ := h
+  exact ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩
+
+theorem CIn.lens {s : State} (h : CIn s) :
+    ((mkG s).pLen = 128 ∧ (mkG s).qLen = 20) ∨ ((mkG s).pLen = 256 ∧ (mkG s).qLen = 32) ∨
+      ((mkG s).pLen = 384 ∧ (mkG s).qLen = 32) := by
+  have := h.valid
+  simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
+  simp only [mkG, Spec.Dsa.generationQLen]
+  rcases this with (e | e) | e <;> simp [e]
+
+/-- The frame word at `o`. -/
+abbrev fw (m : Mem) (G : GP) (o : Nat) : BitVec 32 := m.readW (State.addr G.sp + BitVec.ofNat 64 o) 32
+
+/-- The fixed frame words: `out`, the pointers to `used` and `state`,
+`scratch` and `rand`. -/
+def fixedWords (G : GP) : List (Nat × BitVec 32) :=
+  [(fOut, G.out), (fUsedP, G.usedP), (fStP, G.stP), (fScratch, G.scr), (fWit, G.wit),
+    (fWitLen, BitVec.ofNat 32 G.witLen)]
+
+/-- A state of the search. -/
+structure GI (G : GP) (σ : State) (V : Nat → BitVec 32) (LS : List Nat) (s : State) : Prop where
+  pre : CIn σ
+  hG : mkG σ = G
+  sp : s.sp = G.sp
+  rd : s.rd = σ.rd
+  wr : s.wr = G.rFrame :: σ.wr
+  saved : Spill.Saved s.mem (State.addr G.sp) σ.gpr saved
+  fixed : ∀ p ∈ fixedWords G, fw s.mem G p.1 = p.2
+  slots : ∀ o ∈ LS, fw s.mem G o = V o
+  /-- The live variable words: past the saved registers, below the frame's end, apart from the fixed words. -/
+  ls : ∀ o ∈ LS, 40 ≤ o ∧ o + 4 ≤ F ∧ o % 4 = 0 ∧ ∀ p ∈ fixedWords G, o ≠ p.1
+  frame : Frame G.chg σ.mem s.mem
+
+end VG.Proof.Dsa.Arm.Gen
+
+end
+
+end
+
+
+/-! # DSA parameter generation on ARMv7: steps of the frame
+
+Loads of frame words (`GI.ldV`, a stack argument `GI.argW`), stores into
+the frame's variable words (`GI.stF`), and what keeps a search state: steps
+that change registers alone (`GI.of_rest`) or memory in `scratch`
+(`GI.of_scr`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Gen
+open VG VG.Arm VG.Arm.FrameStack
+open VG.Impl.Dsa.Arm.Generation
+open VG.Proof.X25519.Arm (Rest Upd Mupd)
+
+/-- `V` with the word at `o` := `v`. -/
+def upd (V : Nat → BitVec 32) (o : Nat) (v : BitVec 32) : Nat → BitVec 32 := fun o' => if o' = o then v else V o'
+
+@[simp] theorem upd_self (V : Nat → BitVec 32) (o : Nat) (v : BitVec 32) : upd V o v o = v := by simp [upd]
+theorem upd_ne (V : Nat → BitVec 32) {o o' : Nat} (v : BitVec 32) (h : o' ≠ o) : upd V o v o' = V o' := by
+  simp [upd, h]
+
+/-- A variable frame word: past the saved registers and apart from the fixed words. -/
+abbrev VarOk (G : GP) (o : Nat) : Prop := 40 ≤ o ∧ o + 4 ≤ F ∧ o % 4 = 0 ∧ ∀ p ∈ fixedWords G, o ≠ p.1
+
+section
+variable {G : GP} {σ : State} {V : Nat → BitVec 32} {LS : List Nat} {s : State}
+
+theorem GI.sp0 (h : GI G σ V LS s) : G.sp0 = σ.sp := by rw [← h.hG]; rfl
+
+theorem GI.spN (h : GI G σ V LS s) : G.sp.toNat = σ.sp.toNat - F := by
+  have := h.pre.spLo; show (G.sp0 - BitVec.ofNat 32 F).toNat = _; rw [h.sp0]
+  exact sub_toNat' (by simp only [F]; omega_using [this])
+
+theorem GI.spHi (h : GI G σ V LS s) : G.sp.toNat + F + 16 ≤ 2 ^ 32 := by
+  have := h.pre.spHi; have := h.spN; have := h.pre.spLo; simp only [F] at *; omega_arith
+
+/-- The address of the frame word at `o`. -/
+theorem GI.addr (h : GI G σ V LS s) {o : Nat} (ho : o < F + 16) :
+    State.addr (s.sp + BitVec.ofNat 32 o) = State.addr G.sp + BitVec.ofNat 64 o := by
+  have := h.spHi; rw [h.sp]; exact addr_add (by omega_using [ho, this])
+
+/-- A frame word or a stack argument is readable. -/
+theorem GI.read (h : GI G σ V LS s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) :
+    InRegions (s.rd ++ s.wr) (State.addr G.sp + BitVec.ofNat 64 o) 4 := by
+  have spHi := h.spHi
+  rcases (by simp only [F]; omega_using [h4] : o + 4 ≤ F ∨ F ≤ o) with c | c
+  · exact ⟨G.rFrame, List.mem_append_right _ (by rw [h.wr]; exact List.mem_cons_self),
+      Offset.contains_base _ c (by simp only [F] at *; omega_using [ho])⟩
+  · refine ⟨G.rArgs, List.mem_append_left _ (by rw [h.rd, h.pre.rd, h.hG]; simp), ?_⟩
+    have e : State.addr G.sp + BitVec.ofNat 64 o = State.addr (G.sp0 + BitVec.ofNat 32 (4 * 0)) +
+        BitVec.ofNat 64 (o - F) := by
+      have spLo := h.pre.spLo; rw [← h.sp0] at spLo
+      rw [Nat.mul_zero, BitVec.add_zero, show G.sp = G.sp0 - BitVec.ofNat 32 F from rfl,
+        addr_sub' (by simp only [F]; omega_using [spLo]), ← Offset.add_sub_comm, Offset.add_ofNat_sub _ c]
+    rw [e]; exact Offset.contains_base _ (by simp only [F] at *; omega_using [ho]) (by omega_using [ho])
+
+/-- `ldr t, [sp, #o]` of a word whose value `v` is known. -/
+theorem GI.ldV (h : GI G σ V LS s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) {v : BitVec 32}
+    (hv : fw s.mem G o = v) {t : Reg} {rest : List Instr} {Q : State → Prop}
+    (k : ∀ s', Upd s s' t v → WP isa (.block rest) s' Q) : WP isa (.block (.ldrSp t o :: rest)) s Q :=
+  VG.Proof.Bignum.Arm.wp_loadStack (by simp only [F] at ho; omega_using [ho]) (h.addr (by omega_using [ho])) (h.read ho h4)
+    fun s' u => k s' (by rw [← hv]; exact u)
+
+/-- The 304 bytes below the caller's stack pointer. -/
+abbrev rStack (σ : State) : Region := ⟨State.addr σ.sp - 304#64, 304⟩
+
+theorem GI.frameSub (h : GI G σ V LS s) : Region.Sub G.rFrame (rStack σ) := by
+  have := h.pre.spLo
+  show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F), F⟩ _
+  rw [h.sp0, addr_sub' (by simp only [F]; omega_using [this])]
+  exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
+
+theorem GI.belowSub (h : GI G σ V LS s) : Region.Sub G.rBelow (rStack σ) := by
+  have := h.pre.spLo
+  show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F) - 176#64, 176⟩ _
+  rw [h.sp0, addr_sub' (by simp only [F]; omega_using [this]), BitVec.sub_sub, ← BitVec.ofNat_add]
+  exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
+
+/-- A stack argument's address. -/
+theorem GI.argAddr (h : GI G σ V LS s) {j : Nat} (hj : j < 16) :
+    State.addr G.sp + BitVec.ofNat 64 (F + j) = State.addr (σ.sp + BitVec.ofNat 32 j) := by
+  have := h.pre.spLo; have := h.pre.spHi
+  rw [show G.sp = G.sp0 - BitVec.ofNat 32 F from rfl, h.sp0, addr_sub' (by simp only [F]; omega_arith),
+    ← Offset.add_sub_comm, Offset.add_ofNat_sub _ (Nat.le_add_right F j), Nat.add_sub_cancel_left,
+    addr_add (by omega_using [hj, this])]
+
+/-- The stack argument `i` keeps its value. -/
+theorem GI.argW (h : GI G σ V LS s) {i : Nat} (hi : i < 4) : fw s.mem G (arg i) = stackArg σ i := by
+  have pre := h.pre
+  have := pre.spHi
+  show s.mem.readW (State.addr G.sp + BitVec.ofNat 64 (F + 4 * i)) 32 =
+    σ.mem.readW (State.addr (σ.sp + BitVec.ofNat 32 (4 * i))) 32
+  rw [h.argAddr (by omega_using [hi])]
+  have sub : Region.Sub ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * i)), 4⟩ (mkG σ).rArgs := by
+    show Region.Sub _ ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 16⟩
+    rw [addr_add (by omega_using [hi, this]), Nat.mul_zero, BitVec.add_zero]
+    exact Offset.sub_base _ (by omega_using [hi])
+  refine h.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [GP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact (pre.fA.sub_left h.frameSub).symm.sub_left sub
+  · rw [← h.hG]; exact pre.cA.symm.sub_left sub
+  · exact (pre.fA.sub_left h.belowSub).symm.sub_left sub
+
+/-- Two frame words at distinct aligned offsets are separate. -/
+theorem fw_sep (G : GP) {o p : Nat} (ho : o % 4 = 0) (hp : p % 4 = 0) (h : o ≠ p) (ho' : o + 4 ≤ F)
+    (hp' : p + 4 ≤ F) :
+    Mem.Sep (State.addr G.sp + BitVec.ofNat 64 p) (32 / 8) (State.addr G.sp + BitVec.ofNat 64 o) (32 / 8) :=
+  Offset.sep _ (by simp only [F] at *; omega_using [ho, hp, h]) (by simp only [F] at *; omega_using [hp']) (by simp only [F] at *; omega_using [ho'])
+
+/-- A state of the search through a step that changes registers alone. -/
+theorem GI.of_rest {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws s t) (m : t.mem = s.mem) :
+    GI G σ V LS t :=
+  ⟨h.pre, h.hG, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, by rw [m]; exact h.saved,
+    by rw [m]; exact h.fixed, by rw [m]; exact h.slots, h.ls, by rw [m]; exact h.frame⟩
+
+/-- The frame is apart from `scratch` and from the stack below it. -/
+theorem GI.frame_scr (h : GI G σ V LS s) : G.rFrame.Disjoint G.rScr := by
+  rw [← h.hG]; exact h.pre.fC.sub_left (by rw [h.hG]; exact h.frameSub)
+
+theorem GI.frame_below (h : GI G σ V LS s) : G.rFrame.Disjoint G.rBelow := by
+  have := h.spN; have := h.pre.spLo
+  show Region.Disjoint ⟨State.addr G.sp, F⟩ ⟨State.addr G.sp - 176#64, 176⟩
+  have := Offset.base_disjoint_below (State.addr G.sp) (n := 176) (k := F) (by simp only [F]; omega_using [])
+  exact this
+
+/-- A frame word keeps its value through writes outside the frame. -/
+theorem frame_readW {G : GP} {m m' : Mem} {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, G.rFrame.Disjoint r)
+    {o : Nat} (ho : o + 4 ≤ F) : fw m' G o = fw m G o :=
+  f.readW (r := ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ ho)) (by decide)
+
+/-- A state of the search through a step that writes only `scratch` and the stack below the frame. -/
+theorem GI.of_scr {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws s t)
+    (f : Frame [G.rScr, G.rBelow] s.mem t.mem) : GI G σ V LS t := by
+  have hd : ∀ r ∈ [G.rScr, G.rBelow], G.rFrame.Disjoint r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [h.frame_scr, h.frame_below]
+  refine ⟨h.pre, h.hG, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, fun p hp => ?_, fun p hp => ?_,
+    fun o ho => ?_, h.ls, h.frame.trans (f.mono fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)⟩
+  · have hb : p.2 + 4 ≤ F := by
+      simp only [VG.Impl.Dsa.Arm.Generation.saved, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    show fw t.mem G p.2 = _
+    rw [frame_readW f hd hb]; exact h.saved p hp
+  · have hb : p.1 + 4 ≤ F := by
+      simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> (dsimp only; decide)
+    rw [frame_readW f hd hb]; exact h.fixed p hp
+  · rw [frame_readW f hd (h.ls o ho).2.1]; exact h.slots o ho
+
+/-- The 8 bytes a test writes its count to. -/
+abbrev GP.rU (G : GP) : Region := ⟨State.addr G.sp + BitVec.ofNat 64 fUsedOut, 8⟩
+
+/-- A frame word through writes apart from it. -/
+theorem frame_readW' {G : GP} {m m' : Mem} {rs : List Region} (f : Frame rs m m') {o : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩ r) : fw m' G o = fw m G o :=
+  f.readW (r := ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) hd (by decide)
+
+/-- A state of the search through a call: `scratch`, the count's 8 bytes and
+the stack below the frame written, the count's words not among `LS`. -/
+theorem GI.of_used {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws s t)
+    (f : Frame [G.rScr, G.rU, G.rBelow] s.mem t.mem) (h88 : fUsedOut ∉ LS) (h92 : fUsedOut + 4 ∉ LS) :
+    GI G σ V LS t := by
+  have spHi := h.spHi
+  have word : ∀ o, o + 4 ≤ F → o % 4 = 0 → o ≠ fUsedOut → o ≠ fUsedOut + 4 →
+      ∀ r' ∈ [G.rScr, G.rU, G.rBelow], Region.Disjoint ⟨State.addr G.sp + BitVec.ofNat 64 o, 4⟩ r' := by
+    intro o ho h4 h1 h2 r' hr'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl | rfl
+    · exact h.frame_scr.sub_left (Offset.sub_base _ ho)
+    · exact Offset.disjoint _ (by simp only [fUsedOut, F] at *; omega_using [h4, h1, h2]) (by simp only [F] at *; omega_using [ho])
+        (by simp only [fUsedOut, F] at *; omega_using [])
+    · exact h.frame_below.sub_left (Offset.sub_base _ ho)
+  refine ⟨h.pre, h.hG, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, fun p hp => ?_, fun p hp => ?_,
+    fun o ho => ?_, h.ls, h.frame.trans (f.sub fun r hr => ?_)⟩
+  · have hb : p.2 + 4 ≤ 40 ∧ p.2 % 4 = 0 := by
+      simp only [VG.Impl.Dsa.Arm.Generation.saved, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    show fw t.mem G p.2 = _
+    rw [frame_readW' f (word _ (by simp only [F]; omega_using [hb]) hb.2 (by simp only [fUsedOut]; omega_using [hb])
+      (by simp only [fUsedOut]; omega_using [hb]))]
+    exact h.saved p hp
+  · have hb : p.1 + 4 ≤ F ∧ p.1 % 4 = 0 ∧ p.1 ≠ fUsedOut ∧ p.1 ≠ fUsedOut + 4 := by
+      simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> (dsimp only; decide)
+    rw [frame_readW' f (word _ hb.1 hb.2.1 hb.2.2.1 hb.2.2.2)]; exact h.fixed p hp
+  · obtain ⟨_, l2, l3, _⟩ := h.ls o ho
+    rw [frame_readW' f (word _ l2 l3 (fun e => h88 (e ▸ ho)) (fun e => h92 (e ▸ ho)))]; exact h.slots o ho
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨G.rScr, by simp, fun _ h => h⟩
+    · exact ⟨G.rFrame, List.mem_cons_self, Offset.sub_base _ (by simp only [fUsedOut, F]; omega_using [])⟩
+    · exact ⟨G.rBelow, by simp, fun _ h => h⟩
+
+theorem fixed_ok (G : GP) : ∀ p ∈ fixedWords G, 40 ≤ p.1 ∧ p.1 + 4 ≤ F ∧ p.1 % 4 = 0 := by
+  intro p hp
+  simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> (dsimp only; decide)
+
+theorem saved_ok : ∀ p ∈ VG.Impl.Dsa.Arm.Generation.saved, p.2 + 4 ≤ 40 ∧ p.2 % 4 = 0 := by decide
+
+/-- `str r, [sp, #o]` (through `r12`) of a variable frame word. -/
+theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r ≠ .r12)
+    {rest : List Instr} {Q : State → Prop}
+    (k : ∀ t, GI G σ (upd V o (s.gpr r)) (o :: LS) t → Rest [.r12] s t → Frame [G.rFrame] s.mem t.mem →
+      WP isa (.block rest) t Q) :
+    WP isa (.block (st r o ++ rest)) s Q := by
+  obtain ⟨o40, oF, o4, ofix⟩ := hv
+  have spHi := h.spHi
+  simp only [st, List.cons_append, List.nil_append]
+  refine VG.Proof.Bignum.Arm.wp_stackAddr (r := .r12) (d := 0) (by decide) fun u h0 => ?_
+  have ea : State.addr (u.gpr .r12 + BitVec.ofNat 32 o) = State.addr G.sp + BitVec.ofNat 64 o := by
+    rw [h0.gpr, BitVec.add_zero, h.sp]; exact addr_add (by simp only [F] at *; omega_using [oF, spHi])
+  refine VG.Proof.X25519.Arm.wp_str (by simp only [F] at *; omega_using [oF]) ea
+    ⟨G.rFrame, by rw [h0.wr, h.wr]; exact List.mem_cons_self, Offset.contains_base _ oF (by omega_using [oF, spHi])⟩
+    fun t m => k t ?_ ((h0.rest (by simp)).trans (m.rest _)) (by
+      rw [m.mem, h0.mem]
+      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega_using [oF, spHi])))
+  have vr : u.gpr r = s.gpr r := h0.other _ hr
+  have mt : t.mem = s.mem.writeW (State.addr G.sp + BitVec.ofNat 64 o) (s.gpr r) := by rw [m.mem, h0.mem, vr]
+  have sep : ∀ {p : Nat}, p % 4 = 0 → p ≠ o → p + 4 ≤ F → fw t.mem G p = fw s.mem G p := fun hp hne hpF => by
+    show t.mem.readW _ 32 = s.mem.readW _ 32
+    rw [mt]; exact Mem.readW_writeW_sep (fw_sep G o4 hp (Ne.symm hne) oF hpF) (by decide)
+  refine ⟨h.pre, h.hG, by rw [m.sp, h0.sp, h.sp], by rw [m.rd, h0.rd, h.rd], by rw [m.wr, h0.wr, h.wr],
+    fun p hp => ?_, fun p hp => ?_, fun o' ho' => ?_, fun o' ho' => ?_, ?_⟩
+  · obtain ⟨b, a4⟩ := saved_ok p hp
+    have := sep (p := p.2) a4 (by omega_using [o40, b]) (by simp only [F]; omega_using [b])
+    exact this.trans (h.saved p hp)
+  · obtain ⟨b1, b2, b3⟩ := fixed_ok G p hp
+    exact (sep b3 (fun e => ofix p hp e.symm) b2).trans (h.fixed p hp)
+  · rcases List.mem_cons.mp ho' with rfl | ho'
+    · show t.mem.readW _ 32 = _
+      rw [mt, Mem.readW_writeW_self32, upd_self]
+    · by_cases he : o' = o
+      · subst he; show t.mem.readW _ 32 = _; rw [mt, Mem.readW_writeW_self32, upd_self]
+      · obtain ⟨_, l2, l3, _⟩ := h.ls o' ho'
+        rw [sep l3 he l2, upd_ne _ _ he]; exact h.slots o' ho'
+  · rcases List.mem_cons.mp ho' with rfl | ho'
+    · exact ⟨o40, oF, o4, ofix⟩
+    · exact h.ls o' ho'
+  · rw [mt]
+    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega_using [oF, spHi]))
+
+end
+
+end VG.Proof.Dsa.Arm.Gen
+
+end
+
+end
+
+/-! # DSA parameter generation on ARMv7: a state of the search
+
+`SS G σ c s`: a state of the search (`GI`), with the key working space's
+registers (`r7`–`r9`, kept from `ksRegs` on), the bytes the claims `c.cl` of
+`scratch` hold, below the key working space, and the arrays and header
+words of the key working space that `c` lists.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Gen
+open VG VG.Arm VG.Proof.Rsa.Arm.Keys
+open VG.Impl.Dsa.Arm.Generation
+open VG.Impl.Rsa.Arm.Keys (hdr)
+open VG.Proof.Mont (w32 val32 val32_congr)
+open VG.Proof.X25519.Arm (Rest Upd Mupd)
+
+/-- Claims on `scratch`: the bytes at an offset. -/
+abbrev Claims := List (Nat × List Byte)
+
+namespace GP
+variable (G : GP)
+
+/-- Byte `o` of `scratch`. -/
+abbrev sa (o : Nat) : Addr := State.addr G.scr + BitVec.ofNat 64 o
+/-- The `n` bytes at byte `o` of `scratch`. -/
+abbrev rs (o n : Nat) : Region := ⟨G.sa o, n⟩
+/-- The key working space. -/
+abbrev KB : BitVec 32 := G.scr + BitVec.ofNat 32 (sK G.pLen)
+abbrev w : Nat := G.pLen / 4
+abbrev rK : Region := ⟨State.addr G.KB, kz G.pLen⟩
+
+end GP
+
+/-- The claims hold. -/
+def SB (G : GP) (m : Mem) (cl : Claims) : Prop :=
+  ∀ x ∈ cl, Spec.Rsa.bytesAt m (G.sa x.1) x.2.length = x.2
+
+/-- What a stage keeps: frame words, claims, arrays and header words. -/
+structure Cfg where
+  V : Nat → BitVec 32 := fun _ => 0
+  LS : List Nat := []
+  cl : Claims := []
+  A : Nat → Nat := fun _ => 0
+  live : List Nat := []
+  KV : Nat → Nat := fun _ => 0
+  kls : List Nat := []
+
+/-- A header word a stage keeps. -/
+abbrev KlsOk (d : Nat) : Prop := d + 4 ≤ hdr ∧ d % 4 = 0
+
+structure SS (G : GP) (σ : State) (c : Cfg) (s : State) : Prop where
+  gi : GI G σ c.V c.LS s
+  r7 : s.gpr .r7 = BitVec.ofNat 32 (S G.w)
+  r8 : s.gpr .r8 = G.KB
+  r9 : s.gpr .r9 = BitVec.ofNat 32 G.w
+  sb : SB G s.mem c.cl
+  clOk : ∀ x ∈ c.cl, x.1 + x.2.length ≤ sK G.pLen
+  arrs : Arrs s.mem G.KB G.w c.A c.live
+  liveOk : ∀ j ∈ c.live, j < nArrs
+  ksl : ∀ d ∈ c.kls, slot s.mem G.KB d = c.KV d
+  kslOk : ∀ d ∈ c.kls, KlsOk d
+
+/-! ## Sizes -/
+
+theorem CIn.lens' {σ : State} (h : CIn σ) :
+    ((mkG σ).pLen = 128 ∧ (mkG σ).qLen = 20) ∨ ((mkG σ).pLen = 256 ∧ (mkG σ).qLen = 32) ∨
+      ((mkG σ).pLen = 384 ∧ (mkG σ).qLen = 32) := h.lens
+
+section
+variable {G : GP} {σ : State} {V : Nat → BitVec 32} {LS : List Nat} {s : State}
+
+theorem GI.lens (h : GI G σ V LS s) :
+    (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32) := by
+  rw [← h.hG]; exact h.pre.lens
+
+/-- `scratch` holds the key working space and everything below it. -/
+theorem GI.scrBig (h : GI G σ V LS s) : sK G.pLen + kz G.pLen ≤ G.scrLen * 8 := by
+  have l := h.lens
+  have := h.pre.scrLen
+  have e1 : pLenOf σ = G.pLen := by rw [← h.hG]; rfl
+  have e2 : (stackArg σ 2).toNat = G.scrLen := by rw [← h.hG]; rfl
+  rw [e1, e2] at this
+  simp only [Spec.Dsa.generationScratchWords] at this
+  simp only [sK, sA, wa, kz]
+  generalize G.pLen = L at *; generalize G.scrLen = n at *
+  clear e1 e2
+  rcases l with ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> omega_using [this]
+
+theorem GI.scrFit (h : GI G σ V LS s) : G.scr.toNat + G.scrLen * 8 ≤ 2 ^ 32 := by
+  have := h.pre.nC; rw [← h.hG]; exact this
+
+/-- Byte `o` of `scratch`, from a pointer. -/
+theorem GI.saddr (h : GI G σ V LS s) {o : Nat} (ho : o < G.scrLen * 8) :
+    State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := by
+  have := h.scrFit; exact addr_add (by omega_using [ho, this])
+
+theorem GI.kaddr (h : GI G σ V LS s) : State.addr G.KB = G.sa (sK G.pLen) := by
+  have := h.scrBig; have : 0 < kz G.pLen := by simp only [kz]; omega_using []
+  exact h.saddr (by omega_arith)
+
+/-- A range of `scratch` is writable. -/
+theorem sw (G : GP) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
+    Region.Sub (G.rs o n) G.rScr :=
+  Offset.sub_base _ ho
+
+theorem GI.inScr (h : GI G σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
+    InRegions s.wr (G.sa o) n := by
+  have := h.scrFit
+  refine ⟨G.rScr, ?_, Offset.contains_base _ ho (by omega_using [ho, this])⟩
+  rw [h.wr, h.pre.wr, h.hG]; simp
+
+theorem GI.kSub (h : GI G σ V LS s) : Region.Sub G.rK G.rScr := by
+  show Region.Sub ⟨State.addr G.KB, _⟩ _
+  rw [h.kaddr]; exact sw G h.scrBig
+
+/-- Ranges of `scratch` apart by their offsets are disjoint. -/
+theorem GI.sdisj (h : GI G σ V LS s) {o n o' n' : Nat} (hs : o + n ≤ o' ∨ o' + n' ≤ o)
+    (h1 : o + n ≤ G.scrLen * 8) (h2 : o' + n' ≤ G.scrLen * 8) :
+    (G.rs o n).Disjoint (G.rs o' n') := by
+  have := h.scrFit
+  exact Offset.disjoint _ hs (by omega_using [h1, this]) (by omega_using [h2, this])
+
+/-- `scratch` is apart from the frame and the stack below it. -/
+theorem GI.scr_frame (h : GI G σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
+    (G.rs o n).Disjoint G.rFrame :=
+  h.frame_scr.symm.sub_left (sw G ho)
+
+theorem GI.scr_below (h : GI G σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) :
+    (G.rs o n).Disjoint G.rBelow := by
+  have := h.pre.fC; rw [h.hG] at this
+  exact (this.symm.sub_left (sw G ho)).sub_right h.belowSub
+
+end
+
+/-! ## Claims -/
+
+theorem SB.frame {G : GP} {m m' : Mem} {cl : Claims} {rs : List Region} (h : SB G m cl) (f : Frame rs m m')
+    (hd : ∀ x ∈ cl, ∀ r ∈ rs, (G.rs x.1 x.2.length).Disjoint r) (hl : ∀ x ∈ cl, x.2.length ≤ 2 ^ 64) :
+    SB G m' cl := fun x hx => by
+  rw [VG.Proof.Dsa.Generation.frame_bytesAt f (hd x hx) (hl x hx)]; exact h x hx
+
+theorem SB.sub {G : GP} {m : Mem} {cl cl' : Claims} (h : SB G m cl) (hs : ∀ x ∈ cl', x ∈ cl) : SB G m cl' :=
+  fun x hx => h x (hs x hx)
+
+/-- A claim apart from the range `[o, o + n)`. -/
+abbrev Apart (o n : Nat) (x : Nat × List Byte) : Prop := x.1 + x.2.length ≤ o ∨ o + n ≤ x.1
+
+/-! ## The key working space through other steps -/
+
+/-- The arrays fit the key working space. -/
+theorem arrs_fit {L j : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) (hj : j < nArrs) :
+    arr (L / 4) j + 4 * (L / 4 + 2) ≤ kz L := by
+  have := arr_end (w := L / 4) hj
+  simp only [arr, S, hdr, nArrs, kz] at *
+  rcases hL with rfl | rfl | rfl <;> omega_using [hj]
+
+theorem w32_frame {B : Addr} {Z : Nat} {m m' : Mem} {rs : List Region} (f : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨B, Z⟩ : Region).Disjoint r) (hZ : Z ≤ 2 ^ 64) {d : Nat} (h : d + 4 ≤ Z) :
+    w32 m' B d = w32 m B d := by
+  simp only [w32]
+  rw [f.readW (r := ⟨B, Z⟩) (Offset.contains_base _ h (by omega_using [hZ, h])) hd (by decide)]
+
+theorem num_frame {B : BitVec 32} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
+    {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨State.addr B, kz L⟩ : Region).Disjoint r)
+    {j : Nat} (hj : j < nArrs) : num m' B (L / 4) j = num m B (L / 4) j := by
+  have := arrs_fit hL hj
+  exact val32_congr fun i hi => w32_frame f hd (by simp only [kz]; rcases hL with rfl | rfl | rfl <;> decide)
+    (by omega_using [this, hi])
+
+theorem slot_frame {B : BitVec 32} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
+    {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨State.addr B, kz L⟩ : Region).Disjoint r)
+    {d : Nat} (hdk : KlsOk d) : slot m' B d = slot m B d :=
+  w32_frame f hd (by simp only [kz]; rcases hL with rfl | rfl | rfl <;> decide)
+    (by obtain ⟨h1, _⟩ := hdk; simp only [kz, hdr] at h1 ⊢; omega_using [h1])
+
+/-! ## Steps that keep a state of the search -/
+
+section
+variable {G : GP} {σ : State} {c : Cfg} {s t : State}
+
+theorem SS.lens (h : SS G σ c s) : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by
+  rcases h.gi.lens with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> simp [e]
+
+/-- Registers alone change, the key working space's kept. -/
+theorem SS.of_rest {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) (m : t.mem = s.mem)
+    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) : SS G σ c t :=
+  ⟨h.gi.of_rest r m, (r.gpr _ h7).trans h.r7, (r.gpr _ h8).trans h.r8, (r.gpr _ h9).trans h.r9,
+    m ▸ h.sb, h.clOk, m ▸ h.arrs, h.liveOk, m ▸ h.ksl, h.kslOk⟩
+
+/-- Fewer frame words, claims, arrays or header words. -/
+theorem SS.mono (h : SS G σ c s) {c' : Cfg} (hV : ∀ o ∈ c'.LS, o ∈ c.LS ∧ c.V o = c'.V o)
+    (hcl : ∀ x ∈ c'.cl, x ∈ c.cl) (hA : ∀ j ∈ c'.live, j ∈ c.live ∧ c.A j = c'.A j)
+    (hK : ∀ d ∈ c'.kls, d ∈ c.kls ∧ c.KV d = c'.KV d) : SS G σ c' s := by
+  obtain ⟨gi, r7, r8, r9, sb, clOk, arrs, liveOk, ksl, kslOk⟩ := h
+  refine ⟨⟨gi.pre, gi.hG, gi.sp, gi.rd, gi.wr, gi.saved, gi.fixed, fun o ho => ?_, fun o ho => gi.ls o (hV o ho).1,
+    gi.frame⟩, r7, r8, r9, sb.sub hcl, fun x hx => clOk x (hcl x hx), fun j hj => ?_,
+    fun j hj => liveOk j (hA j hj).1, fun d hd => ?_, fun d hd => kslOk d (hK d hd).1⟩
+  · rw [← (hV o ho).2]; exact gi.slots o (hV o ho).1
+  · rw [← (hA j hj).2]; exact arrs j (hA j hj).1
+  · rw [← (hK d hd).2]; exact ksl d (hK d hd).1
+
+/-- The ranges `(o, n)` of `scratch`. -/
+abbrev GP.rss (G : GP) (os : List (Nat × Nat)) : List Region := os.map fun p => G.rs p.1 p.2
+
+/-- A step that writes the ranges `os` of `scratch`, below the key working
+space, and the stack below the frame: the claims `cl'`, each kept and apart
+from the ranges, or holding. -/
+theorem SS.of_scrs {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {os : List (Nat × Nat)}
+    (hon : ∀ p ∈ os, p.1 + p.2 ≤ sK G.pLen)
+    (f : Frame (G.rss os ++ [G.rBelow]) s.mem t.mem) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', (x ∈ c.cl ∧ ∀ p ∈ os, Apart p.1 p.2 x) ∨
+      (Spec.Rsa.bytesAt t.mem (G.sa x.1) x.2.length = x.2 ∧ x.1 + x.2.length ≤ sK G.pLen))
+    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
+    SS G σ { c with cl := cl' } t := by
+  have gi := h.gi
+  have big := gi.scrBig
+  have fit := gi.scrFit
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
+  have mem : ∀ r' ∈ G.rss os ++ [G.rBelow], (∃ p ∈ os, r' = G.rs p.1 p.2) ∨ r' = G.rBelow := fun r' hr' => by
+    simp only [GP.rss, List.mem_append, List.mem_map, List.mem_singleton] at hr'
+    rcases hr' with ⟨p, hp, rfl⟩ | rfl
+    · exact .inl ⟨p, hp, rfl⟩
+    · exact .inr rfl
+  have fs : Frame [G.rScr, G.rBelow] s.mem t.mem := f.sub fun x hx => by
+    rcases mem x hx with ⟨p, hp, rfl⟩ | rfl
+    · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hon p hp; omega_using [big, this])⟩
+    · exact ⟨G.rBelow, by simp, fun _ h => h⟩
+  -- The key working space is apart from what the step writes.
+  have kd : ∀ r' ∈ G.rss os ++ [G.rBelow], G.rK.Disjoint r' := fun r' hr' => by
+    show Region.Disjoint ⟨State.addr G.KB, _⟩ _
+    rw [gi.kaddr]
+    rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
+    · exact gi.sdisj (.inr (hon p hp)) big (by have := hon p hp; omega_using [big, this])
+    · exact gi.scr_below big
+  refine ⟨gi.of_scr r fs, (r.gpr _ h7).trans h.r7, (r.gpr _ h8).trans h.r8, (r.gpr _ h9).trans h.r9,
+    fun x hx => ?_, fun x hx => ?_, fun j hj => ?_, h.liveOk, fun d hd => ?_, h.kslOk⟩
+  · rcases hcl x hx with ⟨hm, ha⟩ | ⟨e, _⟩
+    · have := h.clOk x hm
+      rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
+        rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
+        · exact gi.sdisj (ha p hp) (by omega_using [big, this]) (by have := hon p hp; omega_using [big, this])
+        · exact gi.scr_below (by omega_using [big, this])) (by omega_using [big, fit, this])]
+      exact h.sb x hm
+    · exact e
+  · rcases hcl x hx with ⟨hm, _⟩ | ⟨_, b⟩
+    · exact h.clOk x hm
+    · exact b
+  · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
+  · rw [slot_frame h.lens f kd (h.kslOk d hd)]; exact h.ksl d hd
+
+/-- A step that writes the range `[o, o + n)` of `scratch`. -/
+theorem SS.of_scr {ws : List Reg} (h : SS G σ c s) (r : Rest ws s t) {o n : Nat} (hon : o + n ≤ sK G.pLen)
+    (f : Frame [G.rs o n, G.rBelow] s.mem t.mem) {cl' : Claims}
+    (hcl : ∀ x ∈ cl', (x ∈ c.cl ∧ Apart o n x) ∨
+      (Spec.Rsa.bytesAt t.mem (G.sa x.1) x.2.length = x.2 ∧ x.1 + x.2.length ≤ sK G.pLen))
+    (h7 : .r7 ∉ ws := by decide) (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) :
+    SS G σ { c with cl := cl' } t :=
+  h.of_scrs (os := [(o, n)]) r (by simpa using hon) f
+    (fun x hx => (hcl x hx).imp (fun ⟨hm, ha⟩ => ⟨hm, by simpa using ha⟩) id) h7 h8 h9
+
+end
+
+end VG.Proof.Dsa.Arm.Gen
+
+end
+
+end
 
 /-! # DSA parameter generation on ARMv7: pointers into `scratch` and copies
 

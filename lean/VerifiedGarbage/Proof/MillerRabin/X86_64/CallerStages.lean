@@ -3,10 +3,188 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerBoundaryCT
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRound
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerContext
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerKept
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.MillerRabin.Keeps
+public import VerifiedGarbage.Proof.MillerRabin.Contract
+
+/-! ### `MillerRabin.X86_64.CallerKept`, which this module and modules that import it used -/
+
+section
+
+/-! # Recover the caller's header and padding after the prepared round -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.X86_64.Caller
+
+open VG VG.Proof.Bignum VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.RsaKeyGen.X86_64.Candidate
+
+theorem kept_header {B : Addr} {n w j : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w m m')
+    (hn : 32 ≤ n) (hj : j < 32) (he : j ∉ [22, 26, 27, 28, 31]) :
+    word m' B (8 * j) = word m B (8 * j) := by
+  apply keeps_word h (by omega_arith)
+  · intro k hk
+    have hne : j ≠ k := fun hEq => he (hEq ▸ hk)
+    omega_arith
+  · simp only [Proof.MillerRabin.Round.extended, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl) <;>
+      left <;> simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_arith
+  · left
+    simp only [Proof.MillerRabin.Round.extended, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
+    omega_arith
+
+theorem kept_padding {B : Addr} {n w : Nat} {m m' : Mem}
+    (h : Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B n w m m')
+    (hn : pad w + 8 ≤ 8 * n) :
+    word m' B (pad w) = word m B (pad w) := by
+  apply keeps_word h hn
+  · simp only [Proof.MillerRabin.Round.extended, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl) <;>
+      right <;> simp only [pad, slot, hdrBytes, aR1] <;> omega_arith
+  · simp only [Proof.MillerRabin.Round.extended, List.mem_cons, List.not_mem_nil, or_false]
+    rintro i (rfl | rfl | rfl | rfl | rfl)
+    all_goals right
+    all_goals simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, pad, slot, hdrBytes, aR1]
+    all_goals omega_arith
+  · right
+    simp only [Proof.MillerRabin.Round.extended, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+      pad, slot, hdrBytes, aR1]
+    omega_arith
+
+end VG.Proof.MillerRabin.X86_64.Caller
+
+end
+
+end
+
+/-! ### `MillerRabin.X86_64.CallerContext`, which this module and modules that import it used -/
+
+section
+
+/-! # Saving the workspace preserves its mathematical preparation -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.X86_64.Caller
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Proof.RsaKeyGen.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Impl.MillerRabin.X86_64.Caller
+open VG.Proof.MlKem.X86_64
+
+theorem save_context {s t : State} {B : Addr} {Z w c bm : Nat} {mi : BitVec 64}
+    (hc : MrCtx s B Z w mi c bm) (he : ECtx s.mem B w c) (hd : MrDims B Z w)
+    (hm : t.mem = savedMem s B w) (hk : Keep [.rax, .rbx, .rcx, .rdx, .rsi] s t) :
+    MrCtx t B Z w mi c bm ∧ ECtx t.mem B w c := by
+  have hn := hc.good.scr.nowrap
+  have hpad : pad w + 8 ≤ Z := by
+    have hz := hd.x
+    simp only [pad, slot, hdrBytes, aR1, aRm1] at hz ⊢
+    omega_arith
+  have hf : Frm B [(pad w, 8)] s.mem t.mem := by
+    rw [hm]
+    intro x hx
+    exact saved_outside s B w (by omega_arith) x (hx (pad w, 8) (by simp))
+  refine ⟨hc.of_frm hd hf (hc.good.scr.congr hk.2.2)
+    ((hk.gpr (by decide)).trans hc.good.rdi) ?_ ?_ ?_ ?_ ?_,
+    he.of_frm hf ?_ (by have := aE_fits hd; omega_arith)⟩
+  all_goals
+    intro r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+  · simp only [pad, slot, hdrBytes, aR1]; omega_arith
+  · left; simp only [pad, slot, hdrBytes, aR1, aN]; omega_arith
+  · left; simp only [pad, slot, hdrBytes, aR1, aB]; omega_arith
+  · left; simp only [pad]; omega_arith
+  · right; simp only [pad, slot, hdrBytes, aR1, aRm1]; omega_arith
+  · left; simp only [pad, slot, hdrBytes, aR1, aE]; omega_arith
+
+end VG.Proof.MillerRabin.X86_64.Caller
+
+end
+
+end
+
+/-! ### `MillerRabin.X86_64.CallerRound`, which this module and modules that import it used -/
+
+section
+
+/-! # Call the complete shared round with its verified stack frame -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.X86_64.Caller
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Proof.RsaKeyGen.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.RsaKeyGen.X86_64.Candidate
+
+theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} {mi : BitVec 64}
+    (hc : MrCtx s B Z w mi c bm) (he : ECtx s.mem B w c) (hd : MrDims B Z w)
+    (hZ : slot w 28 ≤ Z) (hr : Room s B Z)
+    (hsi : s.gpr .rsi = BitVec.ofNat 64 (callWords w))
+    (ho : c % 2 = 1) (h3 : 3 ≤ c)
+    (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
+    WP isa (.call v.name v.code) s fun t =>
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame ([⟨B, 8 * callWords w⟩] ++ [below (s.gpr .rsp) 128]) s.mem t.mem ∧
+      ((t.gpr .rax).setWidth 32).toNat = (if Proof.MillerRabin.Round.round c b then 1 else 0) ∧
+      Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.extended B (callWords w) w s.mem t.mem ∧
+      t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
+  have hvDepth : v.code.x86_64Depth ≤ 120 := v.depth
+  have hn := hc.good.scr.nowrap
+  have hsize := call_size hZ
+  have hN : callWords w < 2 ^ 64 := by have := hd.w128; unfold callWords; omega_arith
+  have hxlt : wv s.mem B (slot w aXm) w < c := by
+    rw [hx]
+    exact Nat.mod_lt _ (by omega_arith)
+  obtain ⟨hc₁, _⟩ := entry_context hc he hd hr.disjoint
+  have hw := ctx_width hc₁ hd.w128
+  have heX : Proof.Rsa.Mont.numAt s.callEntry.mem B w 5 = b % c * 2 ^ (64 * w) % c := by
+    rw [VG.Proof.Bignum.X86_64.MontFn.numAt_eq, entry_wv s hn (by
+      have hz := hd.x
+      simp only [slot, hdrBytes, aRm1] at hz ⊢
+      omega_arith) hr.disjoint]
+    exact hx
+  obtain ⟨hcov, hwr⟩ := narrow_covers hc.good.scr hZ
+  refine WP.call_sp_mx (s := s) (c := v.code) (rd := []) (wr := [⟨B, 8 * callWords w⟩]) (k := roundContract) v.correct
+    (SpSafe.of_all v.spSafe) (by omega_arith)
+    (narrow_pre hc he hd hZ hr hsi ho h3 hxlt) hcov hwr ?_
+  rintro t hrd hwt hcs hf _ ⟨u, hmu, hgu, hp⟩ hmx
+  have hf' : Frame ([⟨B, 8 * callWords w⟩] ++ [below (s.gpr .rsp) 128]) s.mem t.mem :=
+    Frame.below_mono hf (by omega_arith) (by decide)
+  have hBase : (narrowed s B w).gpr .rdi = B := by
+    change s.callEntry.gpr .rdi = B
+    rw [State.callEntry_gpr _ (by decide)]
+    exact hc.good.rdi
+  have hLen : ((narrowed s B w).gpr .rsi).toNat = callWords w := by
+    change (s.callEntry.gpr .rsi).toNat = callWords w
+    rw [State.callEntry_gpr _ (by decide), hsi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hN]
+  have hWidth : Proof.Rsa.Mont.wOf (narrowed s B w).mem B = w := hw
+  have hMod : Proof.Rsa.Mont.numAt (narrowed s B w).mem B w 0 = c :=
+    (VG.Proof.Bignum.X86_64.MontFn.numAt_eq _ _ _ _).trans hc₁.n
+  change roundPost (narrowed s B w) u at hp
+  dsimp only [roundPost] at hp
+  rw [hBase, hLen, hWidth, hMod, hmu] at hp
+  have hrx := hp.1 b heX
+  rw [hgu .rax (by decide)] at hrx
+  refine ⟨hcs, hrd, hwt, hf', hrx, ?_, hmx⟩
+  intro i hi hh ha ht
+  exact (hp.2 i hi hh ha ht).trans (entry_byte s hn (by omega_arith) hr.disjoint)
+
+end VG.Proof.MillerRabin.X86_64.Caller
+
+end
+
+end
 
 /-! # Contexts before and after the actual shared round call -/
 

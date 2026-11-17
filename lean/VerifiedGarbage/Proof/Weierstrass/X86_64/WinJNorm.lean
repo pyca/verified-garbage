@@ -39,7 +39,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -51,7 +51,6 @@ public import VerifiedGarbage.Proof.Mont.X86_64.Words
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.TCB.Code

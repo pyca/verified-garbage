@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishReady
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCore
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStack
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Prepared

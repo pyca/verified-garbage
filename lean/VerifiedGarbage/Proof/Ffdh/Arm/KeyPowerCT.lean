@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch

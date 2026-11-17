@@ -28,6 +28,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
@@ -39,11 +41,13 @@ def Saved (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Prop :=
 /-- The save area and the slots, which `entry` writes. -/
 abbrev entryR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 112, 128⟩
 
+omit fp in
 theorem readW_writeW_off {m : Mem} {W : Addr} {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
     (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
     (m.writeW (W + BitVec.ofNat 64 e) v).readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
   Mem.readW_writeW_sep (Offset.sep W h hd he) (by decide)
 
+omit fp in
 /-- `entry`. -/
 theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D : Addr}
     {nl al n tl : Nat} (hsp : s.gpr .rsp = SP) (hargs : Covers [⟨SP + BitVec.ofNat 64 8, 40⟩] (s.rd ++ s.wr))
@@ -149,6 +153,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
     exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains W (d := 208) (n := 8) (e := 112) (k := 128)
       (by decide) (by decide) (by decide))
 
+omit fp in
 /-- `restore`: our caller's registers back. -/
 theorem restore_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {g : Reg → BitVec 64} (hs : Saved s.mem W g) :
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = g p.1) ∧ s'.mem = s.mem ∧
@@ -175,6 +180,33 @@ theorem restore_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {g : Reg → B
   · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]
   · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]
 
+/-- Public setup with the saved registers immediately restored; used only
+as a reference run for the residue proof. -/
+def entryRestore : Prog isa := .seq (.block entry) (.block restore)
+
+omit fp in
+theorem entryRestore_run {s z : State} {K W SP : Addr}
+    (hrun : runBlock isa entry s = some z) (E : Env K W SP z)
+    (sv : Saved z.mem W s.gpr) (hsp : s.gpr .rsp = SP)
+    (hr : z.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64) :
+    ∃ t p, Exec isa entryRestore s t p ∧ abiPreserved s p ∧ p.mem = z.mem := by
+  obtain ⟨p, hp, hg, hm, hps, _⟩ := restore_ok E sv
+  obtain ⟨t, q, he, hq⟩ : WP isa entryRestore s fun q => q = p :=
+    WP.seq (WP.of_runBlock ⟨z, hrun, WP.of_runBlock ⟨p, hp, rfl⟩⟩)
+  subst q
+  refine ⟨t, p, he, abiPreserved_of_exec (by decide +kernel) he ⟨?_, ?_⟩, hm⟩
+  · intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hg (.rbx, 112) (by decide)
+    · exact hg (.rbp, 120) (by decide)
+    · rw [hps, E.rsp, hsp]
+    · exact hg (.r12, 128) (by decide)
+    · exact hg (.r13, 136) (by decide)
+    · exact hg (.r14, 144) (by decide)
+    · exact hg (.r15, 152) (by decide)
+  · rw [hm, hr]
+
 end VG.Proof.AesCcm.X86_64
 
 end
@@ -199,6 +231,8 @@ address on the stack (`argT_kept`) and the received tag (`tag_kept`).
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
+
+variable [fp : Footprint]
 
 open VG VG.X86_64
 open VG.Impl.AesCcm.X86_64 (saved)
@@ -239,6 +273,7 @@ structure TagBuf (W SP D : Addr) (n : Nat) (T : Addr) (tl : Nat) : Prop where
   stk : (below SP 16).Disjoint ⟨T, tl⟩
   wrap : T.toNat + tl ≤ 2 ^ 64
 
+omit fp in
 /-- `Args` from the layout, with the buffers covered as each function's
 permissions say. -/
 theorem args_of_lay {s : State} (h : oneLay s)
@@ -277,6 +312,7 @@ theorem args_of_lay {s : State} (h : oneLay s)
     argsW := d11.symm
     argsD := d10.symm }, ⟨d7, d8, d18, b24⟩⟩
 
+omit fp in
 /-- `seal`'s arguments, and its tag, to write. -/
 theorem args_of_seal {s : State} (h : sealPre s) :
     (Args s (s.gpr .rdi) (arg s 4) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (arg s 0) (s.gpr .rsi).toNat
@@ -292,6 +328,7 @@ theorem args_of_seal {s : State} (h : sealPre s) :
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mwr _ (by simp), hrt⟩
 
+omit fp in
 /-- `open`'s arguments, and its received tag, to read. -/
 theorem args_of_open {s : State} (h : openPre s) :
     (Args s (s.gpr .rdi) (arg s 4) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (arg s 0) (s.gpr .rsi).toNat
@@ -307,6 +344,7 @@ theorem args_of_open {s : State} (h : openPre s) :
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mrd _ (by simp)⟩
 
+omit fp in
 theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
 /-- What the pieces before the data is written may change. -/
@@ -348,7 +386,7 @@ theorem ciph_mut (L : Lay K W SP) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, 
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact L.k_w.sub_right (Region.sub_prefix (by decide))
     · exact L.k_w.sub_right (Lay.wSub (by decide))
-    · exact L.k_w.sub_right (Lay.wSub (by decide))
+    · exact L.k_w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact L.stk_k.symm
     · exact hdk) (by rcases hR with h | h | h <;> subst h <;> decide)
 
@@ -360,7 +398,7 @@ theorem buf_mut {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact hP.w.sub_right (Region.sub_prefix (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.w.sub_right (Lay.wSub (by decide))
+    · exact hP.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact hP.stk.symm
     · exact hPD) (by have := hP.lt; omega_using [this])
 
@@ -371,7 +409,7 @@ theorem buf_wR {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len) (hf 
     rcases hr with rfl | rfl | rfl | rfl
     · exact hP.w.sub_right (Region.sub_prefix (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.w.sub_right (Lay.wSub (by decide))
+    · exact hP.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact hP.stk.symm) (by have := hP.lt; omega_using [this])
 
 end
@@ -393,7 +431,7 @@ theorem argT_disj (hW : (⟨SP + BitVec.ofNat 64 8, 40⟩ : Region).Disjoint ⟨
   · exact (hW.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (hW.sub_left hs).sub_right (Region.sub_prefix (by decide))
   · exact (hW.sub_left hs).sub_right (Lay.wSub (by decide))
-  · exact (hW.sub_left hs).sub_right (Lay.wSub (by decide))
+  · exact (hW.sub_left hs).sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
   · exact Offset.disjoint_below SP (by decide)
   · exact hD.sub_left hs
 
@@ -413,10 +451,15 @@ theorem tag_kept {T : Addr} {tl : Nat} (hT : TagBuf W SP D n T tl) (ht : tl ≤ 
     · exact hT.w.sub_right (Lay.wSub (by decide))
     · exact hT.w.sub_right (Region.sub_prefix (by decide))
     · exact hT.w.sub_right (Lay.wSub (by decide))
-    · exact hT.w.sub_right (Lay.wSub (by decide))
+    · exact hT.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact hT.stk.symm
     · exact hT.d) (by omega_using [ht])
 
 end
+
+/-- Outside the mutable regions, a complete run leaves the public setup's memory. -/
+def EntryFrame (s u : State) (W SP D : Addr) (n : Nat) (T : Addr) (tl : Nat) : Prop :=
+  ∃ t p, Exec isa entryRestore s t p ∧ abiPreserved s p ∧
+    Frame (mutR W SP D n ++ [⟨T, tl⟩]) p.mem u.mem
 
 end VG.Proof.AesCcm.X86_64

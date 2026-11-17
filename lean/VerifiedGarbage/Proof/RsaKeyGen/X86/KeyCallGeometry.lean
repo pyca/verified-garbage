@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ### `RsaKeyGen.X86.KeyCallValid`, which this module and modules that import it used -/

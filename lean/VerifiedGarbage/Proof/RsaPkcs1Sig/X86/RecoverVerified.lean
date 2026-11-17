@@ -1,53 +1,211 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverSpec
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
 import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
-public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
+public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
-import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStatus
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicPre
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractGeometry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicBytes
 import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
 public import VerifiedGarbage.Proof.Rsa.Contract
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+
+/-! ### `RsaPkcs1Sig.X86.RecoverContractGeometry`, which only this module used -/
+
+section
+
+/-! # Decode checked RSA's cdecl arguments into its public buffer geometry -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Rcv
+open VG VG.X86 VG.Proof.Bignum.X86
+
+def recoverGeometry (s : State) : Geometry where
+  stack := s.gpr .esp - 16 - BitVec.ofNat 32 VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes
+  output := arg s 0
+  outputLength := (arg s 1).toNat
+  workspace := arg s 9
+  sources := fun i => arg s (match i.val with | 0 => 2 | 1 => 4 | 2 => 7 | _ => 11)
+  length := (arg s 3).toNat
+  hash := arg s 6
+  exponentLength := (arg s 5).toNat
+  signatureLength := (arg s 8).toNat
+  preLength := (arg s 12).toNat
+  scratchLength := (arg s 10).toNat
+
+def recoverBytes (s : State) (i : Fin 4) : List Byte :=
+  Spec.Rsa.bytesAt s.mem (byteAddr ((recoverGeometry s).sources i)) ((recoverGeometry s).sourceLength i)
+
+theorem recoverGeometry_stack (s : State) :
+    (recoverGeometry s).stack = s.gpr .esp - BitVec.ofNat 32 2128 := by
+  change s.gpr .esp - 16 - 2112 = _
+  rw [BitVec.sub_sub]
+  rfl
+
+theorem recoverGeometry_stackNat (s : State) (fit : recoverStack ≤ (s.gpr .esp).toNat) :
+    (recoverGeometry s).stack.toNat = (s.gpr .esp).toNat - 2128 := by
+  rw [recoverGeometry_stack, sub_toNat (by unfold recoverStack at fit; omega_using [fit])]
+
+theorem recoverGeometry_wholeStack (s : State) (fit : recoverStack ≤ (s.gpr .esp).toNat) :
+    (recoverGeometry s).wholeStack = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 recoverStack, recoverStack⟩ := by
+  unfold Geometry.wholeStack
+  rw [recoverGeometry_stack, BitVec.sub_sub]
+  change (⟨(s.gpr .esp - BitVec.ofNat 32 recoverStack).setWidth 64, recoverStack⟩ : Region) = _
+  rw [Taint.sub_setWidth fit]
+
+theorem recoverGeometry_arguments (s : State) (fit : recoverStack ≤ (s.gpr .esp).toNat)
+    (high : (s.gpr .esp).toNat + 56 ≤ 2 ^ 32) :
+    (recoverGeometry s).argumentsRegion = ⟨argAddr s 0, 52⟩ := by
+  unfold Geometry.argumentsRegion
+  rw [recoverGeometry_stack]
+  change (⟨(s.gpr .esp - BitVec.ofNat 32 2128).setWidth 64 + BitVec.ofNat 64 2132, 52⟩ : Region) = _
+  rw [Taint.sub_setWidth (by unfold recoverStack at fit; omega_using [fit] : 2128 ≤ (s.gpr .esp).toNat)]
+  have aa : argAddr s 0 = (s.gpr .esp).setWidth 64 + 4 :=
+    byteAddr_add (by omega_using [high] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+  rw [aa, show BitVec.ofNat 64 2132 = BitVec.ofNat 64 2128 + 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+end VG.Proof.RsaPkcs1Sig.X86.Rcv
+
+end
+
+end
+
+/-! ### `RsaPkcs1Sig.X86.RecoverBlocksTiming`, which only this module used -/
+
+section
+
+/-! # Public stack addresses suffice for every verifier straight-line fragment -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Rcv
+open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Recover VG.Proof.Dsa.X86
+open VG.Impl.RsaPkcs1Sig.X86.Verify (test0 stackAt statusOffset)
+
+theorem encArgs_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block encArgs)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem pubArgs_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block pubArgs)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem cmpArgs_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block cmpArgs)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem restore_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block VG.Impl.RsaPkcs1Sig.X86.Sign.restore)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem save_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.store (stackAt statusOffset) .eax])
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem releaseArgs_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block releaseArgs)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem return_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.mov .eax (.reg .ebx)])
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem length_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block lenCheck)
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem zeroArgs_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp]))
+    (.block [.mov .esi (.mem (VG.Impl.RsaPkcs1Sig.X86.Verify.incoming 0)),
+      .mov .ecx (.mem (VG.Impl.RsaPkcs1Sig.X86.Verify.incoming 1)), .mov .eax (.imm 0)])
+    (VG.X86.Taint.Agree (τr [.esp])) := checkedBlockInvariant rfl rfl
+
+theorem cmp_relCT : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .eax])) (.block test0)
+    (VG.X86.Taint.Agree (τr [.esp, .eax])) := checkedBlockInvariant rfl rfl
+
+end VG.Proof.RsaPkcs1Sig.X86.Rcv
+
+end
+
+end
+
+/-! ### `RsaPkcs1Sig.X86.RecoverLength`, which only this module used -/
+
+section
+
+/-! # Reject signatures whose public byte count differs from the modulus width -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Rcv
+open VG VG.X86 VG.X86.Wp VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+open VG.Impl.RsaPkcs1Sig.X86.Verify (incoming stackAt)
+open VG.Impl.RsaPkcs1Sig.X86.Recover (lenCheck)
+
+theorem lengthCheck_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State} (h : Context g bs s) :
+    WP isa (.block lenCheck) s fun t => Context g bs t ∧ t.mem = s.mem ∧ Keeps [.eax] s t ∧
+      t.zf = some (decide (g.signatureLength = g.length)) := by
+  unfold lenCheck incoming stackAt
+  refine wp_ldm rfl (h.readArg (by decide : 8 < 13)) fun a A => ?_
+  have ha := h.after (by rw [A.mem]; exact Frame.refl _ _) A.keeps (A.other .esp (by decide))
+  have load : readSrc a (.mem ⟨.esp, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 4 * 3⟩) = some (g.argument 3) := by
+    change a.load32 (addr (a.gpr .esp) (VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 4 * 3)) = _
+    rw [State.load32, ite_eq_left (ha.readArg (by decide : 3 < 13)), ha.argumentValue (by decide : 3 < 13)]
+  refine wp_cmpS load fun t T Z => WP.block_nil ?_
+  have K : Keeps [.eax] s t := A.keeps.trans (T.keeps _)
+  have M := T.mem.trans A.mem
+  refine ⟨h.after (by rw [M]; exact Frame.refl _ _) K (K.1 .esp (by decide)), M, K, ?_⟩
+  rw [Z, A.gpr, h.argumentValue (by decide : 8 < 13)]
+  change some (BitVec.ofNat 32 g.signatureLength - BitVec.ofNat 32 g.length == 0) = _
+  rw [sub_beq32]
+  congr 1
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq, decide_eq_true_eq]
+  constructor
+  · intro eq
+    have := congrArg BitVec.toNat eq
+    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.valid.signatureBound,
+      Nat.mod_eq_of_lt (by have := h.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)] using this
+  · intro eq; rw [eq]
+
+theorem recovered_bad {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
+    (h : Context g bs s) (different : g.signatureLength ≠ g.length) : recovered g bs = none := by
+  have diff : (bs 2).length ≠ (bs 0).length := by
+    rw [(h.sources 0).length, (h.sources 2).length]
+    exact different
+  unfold recovered
+  cases Spec.RsaPkcs1Sig.Hash.ofId g.hash.toNat with
+  | none => rfl
+  | some hv => simp only [Option.bind_some, Spec.RsaPkcs1Sig.recover, diff, ite_false]
+
+end VG.Proof.RsaPkcs1Sig.X86.Rcv
+
+end
+
+end
 
 /-! ### `RsaPkcs1Sig.X86.RecoverBody`, which only this module used -/
 

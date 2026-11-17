@@ -24,8 +24,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Decrypt
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
 import VerifiedGarbage.Proof.Sha256.Stream

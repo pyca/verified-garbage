@@ -35,6 +35,8 @@ vg_sm4_expand_key_sm4:
 	ldr q1, [x9, #128]
 	sm4ekey v0.4s, v0.4s, v1.4s
 	str q0, [x1, #112]
+	movz x9, #0, lsl #0
+	movi v0.2d, #0
 	ret
 	.p2align 6
 

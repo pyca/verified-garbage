@@ -18,9 +18,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
 import Mathlib.Tactic.FinCases
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHintRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 

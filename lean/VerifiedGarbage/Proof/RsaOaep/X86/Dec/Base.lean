@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86
 /-!
 # RSAES-OAEP decryption on x86: where everything is
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecBase.lean`): `EP`, what two runs share
+As on ARMv7 (`Proof/RsaOaep/Arm/DecCall.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths and the public key's bytes
 `nB` and `eB`), and its layout (`EP.lay`), with the 3448 bytes below the
 frame that the call of `vg_rsa_private_checked` uses (the streaming

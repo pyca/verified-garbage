@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.ExpandKey
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.Group
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Sm4.Common
 import VerifiedGarbage.Proof.Sm4.Layout
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
 import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Round
 
 /-! ### `Sm4.PPC64LE.KeyInit`, which only this module used -/

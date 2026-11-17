@@ -29,4 +29,11 @@ def clears (rs : List Reg) (vs : List VReg) (fl : Option Reg) : List Instr :=
 def withClears (rs : List Reg) (vs : List VReg) (fl : Option Reg) (c : Prog isa) : Prog isa :=
   .seq c (.block (clears rs vs fl))
 
+/-- `withClears rs vs fl c`, then the high halves of `hs` cleared from `z`
+(`mov v.d[1], z`), which is zero by then if it is one of `rs`: the calling
+convention preserves only the low halves of `v8`–`v15`, which `c` restores. -/
+def withClearsHi (rs : List Reg) (vs : List VReg) (fl : Option Reg) (z : Reg) (hs : List VReg)
+    (c : Prog isa) : Prog isa :=
+  .seq c (.block (clears rs vs fl ++ hs.map (fun v => .vop (.ins .d2 v 1 z))))
+
 end VG.Impl.Residue.AArch64

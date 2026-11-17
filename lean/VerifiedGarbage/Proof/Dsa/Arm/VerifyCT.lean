@@ -1,13 +1,12 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
 
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 

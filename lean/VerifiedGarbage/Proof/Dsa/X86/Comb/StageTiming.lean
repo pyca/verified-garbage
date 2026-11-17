@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.CombCore
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
+public import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
@@ -25,9 +25,7 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Dsa.X86.CorePowerLoad
-import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 
 /-! ### `Dsa.X86.Comb.CorePowerTiming`, which only this module used -/
 

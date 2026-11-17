@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
-public import VerifiedGarbage.Proof.Sm4.X86_64.Group
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Sm4.X86_64.Round
+public import VerifiedGarbage.Proof.Sm4.X86_64.Core
 
 /-! ### `Sm4.X86_64.KeyInit`, which only this module used -/
 

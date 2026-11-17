@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
 
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 import VerifiedGarbage.Proof.Dsa.OutputBytes

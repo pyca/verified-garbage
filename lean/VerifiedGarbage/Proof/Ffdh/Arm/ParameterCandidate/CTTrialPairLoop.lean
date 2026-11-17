@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialLoop
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialDigit
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega

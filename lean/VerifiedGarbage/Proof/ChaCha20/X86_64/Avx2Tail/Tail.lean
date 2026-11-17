@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.FromBuf
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit

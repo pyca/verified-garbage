@@ -15,7 +15,6 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Bignum.AArch64.WordIO
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import VerifiedGarbage.Proof.Bignum.AArch64.WordIOLoad
 import VerifiedGarbage.Proof.Bignum.ByteDigits
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith

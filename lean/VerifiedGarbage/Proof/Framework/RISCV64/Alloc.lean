@@ -43,11 +43,14 @@ theorem WP.allocLe {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     show push (.alloc n) s = some (allocd n s)
     unfold push
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hsp⟩) |>.trans rfl
-  have hpop : isa.pop (.free n) (allocd n s) s₂ = some (freed n s₂) := by
-    show pop (.free n) (allocd n s) s₂ = some (freed n s₂)
+  have hpop : isa.pop (.free n) (allocd n s) s₂ = some { freed n s₂ with
+      mem := lose s₂.mem s₂.sp n s₂.unknowns, unknowns := fun k => s₂.unknowns (k + n / 4) } := by
+    show pop (.free n) (allocd n s) s₂ = _
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame hpush he hpop, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem (lose s₂.mem s₂.sp n s₂.unknowns) := by
+    rw [show s.sp - BitVec.ofNat 64 n = s₂.sp from hp.symm]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame hpush he hpop, hq _ _ hl⟩
 
 /-- `WP.allocLe`, for a frame below 2048 bytes (one `addi`). -/
 theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}

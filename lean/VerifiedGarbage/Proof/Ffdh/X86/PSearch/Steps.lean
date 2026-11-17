@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Mont.X86.Instr

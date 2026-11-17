@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-public import VerifiedGarbage.Proof.Dsa.AArch64.Return
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
 public import VerifiedGarbage.Spec.Dsa

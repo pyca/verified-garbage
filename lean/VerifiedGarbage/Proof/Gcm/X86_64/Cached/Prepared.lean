@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
@@ -28,7 +28,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

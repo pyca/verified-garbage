@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prevalidated
+public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Dsa.Validation
 public import VerifiedGarbage.Proof.Dsa.Arm.Verified
-import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedCT
 
 /-!
 # DSA public-key validation and prevalidated verification on 32-bit ARM: `Verified`

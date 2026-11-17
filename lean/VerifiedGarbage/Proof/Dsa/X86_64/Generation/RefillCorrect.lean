@@ -3,7 +3,7 @@ module
 -- separate module: its proofs (about 2 s) build in parallel with `RefillWidths`' and the backends' depth and safety lemmas (`BackendCorrect`), which `RefillBackend` also imports
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillFinish
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Framework.Omega

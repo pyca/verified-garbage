@@ -4,18 +4,16 @@ public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomDraw
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
-import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
-public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 

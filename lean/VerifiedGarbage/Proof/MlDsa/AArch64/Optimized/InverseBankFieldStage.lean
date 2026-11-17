@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
 /-! ### `MlDsa.AArch64.Optimized.InverseTraversalField`, which this module and modules that import it used -/

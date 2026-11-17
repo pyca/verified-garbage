@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
-import VerifiedGarbage.Proof.TripleDes.AArch64.Box
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
 import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
 public import VerifiedGarbage.Proof.TripleDes.Core
@@ -28,7 +28,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody

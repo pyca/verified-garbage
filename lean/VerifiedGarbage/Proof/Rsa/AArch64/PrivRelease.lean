@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
 
 /-! ### `Rsa.AArch64.PrivTail`, which this module and modules that import it used -/
 

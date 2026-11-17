@@ -4,13 +4,12 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ConstantTime
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.TCB.X86_64.Target
@@ -24,7 +23,6 @@ public import VerifiedGarbage.Impl.Blowfish.X86_64
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
-public import VerifiedGarbage.Proof.Blowfish.X86_64.F
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 
 /-! ### `Blowfish.X86_64.KeyP`, which only this module used -/

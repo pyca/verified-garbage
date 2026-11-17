@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCorrect
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT

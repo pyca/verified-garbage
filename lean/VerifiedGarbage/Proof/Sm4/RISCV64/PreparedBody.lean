@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
-import VerifiedGarbage.Proof.Sm4.RISCV64.Group
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Offset

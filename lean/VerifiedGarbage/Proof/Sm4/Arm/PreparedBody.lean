@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.Sm4.Arm.Prepared
-import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
+import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

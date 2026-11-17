@@ -125,7 +125,7 @@ end
 /-!
 # A round on RISC-V
 
-As on PPC64LE (`Proof/Seed/PPC64LE/Round.lean`): `g16_lanes` restates
+As on PPC64LE (`Proof/Seed/PPC64LE/Ecb.lean`): `g16_lanes` restates
 `g16_ok` on the lanes of the arrays, and `round_ok` puts the steps of a
 round together: on every lane, the round's code does RFC 4269 §2's round
 (`Spec.Seed.round`) to the arrays of `L0`, `L1`, `R0`, `R1`, with the round

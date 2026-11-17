@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBlockCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareCT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySample
 
 /-! ### `Dsa.AArch64.GenerateKeyPublic`, which only this module used -/
 

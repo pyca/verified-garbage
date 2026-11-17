@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha256.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64
 
 /-!
 # Streaming SHA-256: AArch64 implementation
@@ -44,11 +45,14 @@ def initQ (iv : Spec.Sha256.HashValue) : Prog isa :=
   .block [.adrSym .x9 (ivName iv), .ldrqTbl .v0 .x9 0 (ivName iv) (ivTable iv),
     .ldrqTbl .v1 .x9 16 (ivName iv) (ivTable iv), .strq .v0 .x0 0, .strq .v1 .x0 16]
 
-/-- `vg_sha256_init`. -/
-def init : Prog isa := initQ Spec.Sha256.H0
+/-- `vg_sha256_init`: `initQ`, then a clear of `x9`, which holds the
+address of the table, so that it returns without secret residue. The
+one-shot digests run `initQ` itself, and clear what they leave at their
+end. -/
+def init : Prog isa := Residue.AArch64.withClears [.x9] [] none (initQ Spec.Sha256.H0)
 
-/-- `vg_sha224_init`. -/
-def init224 : Prog isa := initQ Spec.Sha256.H0_224
+/-- `vg_sha224_init`, as `init`. -/
+def init224 : Prog isa := Residue.AArch64.withClears [.x9] [] none (initQ Spec.Sha256.H0_224)
 
 /-! ## `update` and `finalize`
 

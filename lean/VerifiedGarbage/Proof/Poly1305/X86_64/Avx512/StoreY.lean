@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Mul
 
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 import VerifiedGarbage.Proof.Framework.X86_64.Avx

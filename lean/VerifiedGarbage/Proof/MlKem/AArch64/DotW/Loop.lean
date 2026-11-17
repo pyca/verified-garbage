@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.DotW
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Step
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 

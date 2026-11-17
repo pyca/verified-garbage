@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
 
 /-! ### `MlDsa.Arm.Message.Rel`, which this module and modules that import it used -/
 

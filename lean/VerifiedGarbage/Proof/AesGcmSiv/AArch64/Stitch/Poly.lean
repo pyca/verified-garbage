@@ -18,11 +18,8 @@ public import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.Proof.Framework.AArch64.InterleaveFootprints
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import all Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Aes
-public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Stitch
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.GhBits
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Stitch
 
 /-! ### `AesGcmSiv.AArch64.Stitch.Loops`, which this module and modules that import it used -/
 

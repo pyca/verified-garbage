@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -17,7 +19,7 @@
 pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xf9400022,0xf9400423,0xf9400824,0xf9400c25,0xf9000c02,0xf9001003,0xf9001404,0xf9001805
-.inst 0xd2800002,0xf9000002,0xf9000402,0xf9000802,0xd65f03c0
+.inst 0xd2800002,0xf9000002,0xf9000402,0xf9000802,0xd2800003,0xd2800004,0xd2800005,0xd65f03c0
 .p2align 6",
     )
 }

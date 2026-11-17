@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
-public import VerifiedGarbage.Proof.Dsa.RandomBytes
 
-import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+public import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-!

@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry

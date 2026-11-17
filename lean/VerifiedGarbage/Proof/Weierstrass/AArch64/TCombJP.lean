@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Proof.Framework.AArch64.InterleaveTable
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
 
 /-!
 # The pipelined comb on AArch64

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 
 /-! ## From `CachedVerifyRel.lean` -/

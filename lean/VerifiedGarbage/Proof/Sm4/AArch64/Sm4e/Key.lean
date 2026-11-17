@@ -18,6 +18,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+public import VerifiedGarbage.TCB.AArch64.Residue
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Key
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
@@ -36,6 +39,9 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.TCB.AArch64.Residue
 
 /-!
 # SM4 key expansion with the Armv8 SM4 instructions meets its contract
@@ -192,7 +198,7 @@ theorem keyGroups_ok (x : Nat → Word) (s₀ : State) (hw : (⟨s₀.gpr .x1, 1
 
 /-! ## The function -/
 
-theorem expandKey_wp {s : State} (hp : keyContract.pre s) : WP isa expandKey s (keyContract.post s) := by
+theorem expandKey_wp {s : State} (hp : keyContract.pre s) : WP isa expandKeyBody s (keyContract.post s) := by
   obtain ⟨hrd, hwr⟩ := hp
   have hr : InRegions (s.rd ++ s.wr) (s.gpr .x0) 16 :=
     ⟨⟨s.gpr .x0, 16⟩, by rw [hrd]; simp, Region.contains_self _ _⟩
@@ -216,17 +222,27 @@ theorem expandKey_wp {s : State} (hp : keyContract.pre s) : WP isa expandKey s (
     rfl
 
 theorem expandKey_correct (s : State) (hs : keyContract.pre s) :
-    ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ keyContract.post s s' := by
+    ∃ t s', Exec isa expandKeyBody s t s' ∧ abiPreserved s s' ∧ keyContract.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ := WP.gprs (rs := preserved) (expandKey_wp hs) (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
-theorem expandKey_ct : ConstantTime isa keyContract.pre keyContract.pub expandKey :=
+theorem expandKey_ct : ConstantTime isa keyContract.pre keyContract.pub expandKeyBody :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1]) keyTaint_agree (by taint_decide)
 
-/-- `vg_sm4_expand_key_sm4` meets its contract, with no stack. -/
-theorem expandKey_verified : Verified AArch64.target expandKey (Spec.Sm4.expandKeyContract AArch64.abi) :=
+/-- The key schedule meets the contract, with no stack. -/
+theorem expandKeyBody_verified :
+    Verified AArch64.target expandKeyBody (Spec.Sm4.expandKeyContract AArch64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
     sig_implies [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, keyContract, AArch64.abi,
       AArch64.argRegs] [keySat] using keySat)
+
+/-- `vg_sm4_expand_key_sm4` meets its contract, with no stack. -/
+theorem expandKey_verified : Verified AArch64.target expandKey (Spec.Sm4.expandKeyContract AArch64.abi) :=
+  Clears.Verified.withClears expandKeyBody_verified (by decide)
+
+/-- `vg_sm4_expand_key_sm4` returns without secret residue
+(`RTaint.noResidue_of_check`). -/
+theorem expandKey_noResidue (k : Contract isa) : NoResidue expandKey k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Sm4.AArch64.Sm4e

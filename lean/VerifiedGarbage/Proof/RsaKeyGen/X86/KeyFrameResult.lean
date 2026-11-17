@@ -7,11 +7,10 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNoSpBase
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract

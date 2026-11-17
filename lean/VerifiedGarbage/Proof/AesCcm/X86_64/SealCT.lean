@@ -59,7 +59,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop copyTag)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
@@ -277,7 +277,7 @@ theorem tagOutArgs_check : ∃ hc, (taint.check (Taint.ofRegs [.r15, .rsp])
       true := ⟨_, by taint_decide⟩
 
 theorem tagCopy_check : ∃ hc, (taint.check (Taint.ofRegs [.rdi, .rsi, .rcx, .r15])
-    (.seq copyLoop (.block restore)) hc).isSome = true := ⟨_, by taint_decide⟩
+    (.seq copyTag (.block restore)) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- `(a; b); c`, related as `a; (b; c)`. -/
 theorem rel_assoc' {P Q : State → State → Prop} {a b c : Prog isa}
@@ -306,7 +306,7 @@ theorem sealTail_rel {W SP T : Addr} {tl : Nat} {P : State → State → Prop}
   have b := rel_taintR (P := fun s₁ s₂ => True ∧
       (s₁.gpr .rdi = T ∧ s₁.gpr .rsi = W ∧ s₁.gpr .rcx = BitVec.ofNat 64 tl ∧ s₁.gpr .r15 = W) ∧
       (s₂.gpr .rdi = T ∧ s₂.gpr .rsi = W ∧ s₂.gpr .rcx = BitVec.ofNat 64 tl ∧ s₂.gpr .r15 = W))
-    (c := .seq copyLoop (.block restore)) [.rdi, .rsi, .rcx, .r15] (fun _ _ h r hr => by
+    (c := .seq copyTag (.block restore)) [.rdi, .rsi, .rcx, .r15] (fun _ _ h r hr => by
       obtain ⟨-, ⟨a₁, b₁, c₁, d₁⟩, ⟨a₂, b₂, c₂, d₂⟩⟩ := h
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

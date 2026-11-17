@@ -15,9 +15,7 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
-import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeCheck
 import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
-import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseInit
@@ -27,7 +25,6 @@ import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Ed448.PPC64LE.VSel
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseEncode
 import VerifiedGarbage.Proof.X448.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseStep

@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Frame
 
 /-!

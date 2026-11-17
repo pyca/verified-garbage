@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon

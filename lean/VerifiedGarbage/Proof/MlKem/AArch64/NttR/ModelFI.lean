@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelI
-import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Model
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Ntt

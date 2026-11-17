@@ -11,14 +11,13 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoad
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 
 /-! ### `MlDsa.AArch64.Optimized.ResponseLowReady`, which only this module used -/

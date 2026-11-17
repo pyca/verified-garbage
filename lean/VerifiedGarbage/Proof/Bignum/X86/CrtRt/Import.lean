@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Offset

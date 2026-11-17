@@ -7,8 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Seed.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
-public import VerifiedGarbage.Proof.Seed.AArch64.Steps
-import VerifiedGarbage.Proof.Seed.AArch64.Round
+public import VerifiedGarbage.Proof.Seed.AArch64.Round
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

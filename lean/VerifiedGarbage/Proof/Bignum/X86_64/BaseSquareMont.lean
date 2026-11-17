@@ -10,13 +10,12 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! ### `Bignum.X86_64.BaseSquareRow`, which only this module used -/

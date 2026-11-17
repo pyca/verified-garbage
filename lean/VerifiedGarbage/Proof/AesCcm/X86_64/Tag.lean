@@ -23,11 +23,14 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
+omit fp in
 /-- The arguments of the call: `Ctr₀` at `W + 64`. -/
 theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
@@ -104,13 +107,13 @@ theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP 
   rw [hg₃ r h3, hg₂ r ha hc hd, hg₁ r ha hs]
 
 /-- The MAC state at `W + y` XORed with `CIPH_K(Ctr₀)`. -/
-theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem tag_ok (v : Ctr32Impl) [CtrFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (tag v.callee y) s fun s' => Env K W SP s' ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩,
+      Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩,
         below SP 16] s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
         xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 0 (bytesAt s.mem (W + BitVec.ofNat 64 y) 16) := by
@@ -138,7 +141,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 384, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 384, scratchBytes⟩, by simp, Region.sub_prefix (by simp)⟩
     · exact ⟨below SP 16, by simp, below8_sub SP⟩
   · have hc := ctr32_ccm (m := s₃.mem) (m' := s₄.mem) (K := K) (C := W + BitVec.ofNat 64 64)
       (D := W + BitVec.ofNat 64 y) (R := R) (nonce := nonce) (by omega_using [h13]) (j := 0) (k := 1)

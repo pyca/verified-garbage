@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Camellia.AArch64.Group
-import VerifiedGarbage.Proof.Camellia.AArch64.Keys
 import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Rounds
 import VerifiedGarbage.Proof.Sm4.AArch64.Imm

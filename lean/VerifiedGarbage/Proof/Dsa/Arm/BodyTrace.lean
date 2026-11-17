@@ -1,11 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.Compute
 public import VerifiedGarbage.Proof.Dsa.Arm.Body
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.SigningKey
 
 /-! ### `Dsa.Arm.ScheduleTrace`, which this module and modules that import it used -/
 

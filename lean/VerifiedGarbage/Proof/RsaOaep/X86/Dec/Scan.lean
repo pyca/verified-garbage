@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Base
 public import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 public import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.RsaOaep.X86.Instr
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
 public import VerifiedGarbage.Proof.RsaOaep.Mask

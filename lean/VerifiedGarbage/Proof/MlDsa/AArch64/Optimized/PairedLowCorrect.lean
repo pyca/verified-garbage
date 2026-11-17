@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.Framework.Offset
@@ -21,7 +20,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import Mathlib.Data.Fintype.Fin
@@ -41,9 +39,193 @@ import VerifiedGarbage.TCB.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckFlags
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
+
+/-! ### `MlDsa.AArch64.Optimized.PairedCheckFlags`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Optimized.Response
+
+def checkMask (hint : Bool) (raw low : BitVec 128) (c : CheckConstants) (e : Nat) : BitVec 32 :=
+  normMask (reduceWord (if hint then vword raw e else vword raw e+vword low e))
+    (vword c.lower e) (vword c.width e)
+
+theorem checkStep_flag (hint : Bool) (raw : BitVec 128) (out aux : Addr)
+    (c : CheckConstants) (d : CheckData) {e : Nat} (he : e<4) :
+    vword (checkStep hint raw out aux c d).flags e=
+      vword d.flags e ||| checkMask hint raw (d.mem.read out 16) c e := by
+  simp only [checkStep,checkMask,laneVector_word _ he]
+
+theorem checkStep_flag_zero (hint : Bool) (raw : BitVec 128) (out aux : Addr)
+    (c : CheckConstants) (d : CheckData) {e : Nat} (he : e<4) :
+    vword (checkStep hint raw out aux c d).flags e=0 ↔
+      vword d.flags e=0 ∧ checkMask hint raw (d.mem.read out 16) c e=0 := by
+  rw [checkStep_flag _ _ _ _ _ _ he]
+  exact BitVec.or_eq_zero_iff
+
+/-- Acceptance of a distinct-vector check sequence is exactly acceptance
+of every original coefficient check and the incoming accumulator. -/
+theorem checkRun_flag_zero_iff (hint : Bool) (v : Values) (out aux : Addr)
+    (c : CheckConstants) (d : CheckData) (js : List (Fin 2 × Fin 8))
+    (hn : js.Nodup) {e : Nat} (he : e<4) :
+    vword (checkRun hint v out aux c d js).flags e=0 ↔
+      vword d.flags e=0 ∧ ∀i∈js,
+        checkMask hint ((v i.1)[i.2.val]) (d.mem.read (checkAddr out i) 16) c e=0 := by
+  induction js generalizing d with
+  | nil => simp only [checkRun,List.not_mem_nil,false_implies,implies_true,and_true]
+  | cons i js ih =>
+    have hn' := List.nodup_cons.mp hn
+    rw [checkRun,ih _ hn'.2,checkStep_flag_zero _ _ _ _ _ _ he]
+    have hread (j : Fin 2 × Fin 8) (hj : j∈js) :
+        (checkStep hint ((v i.1)[i.2.val]) (checkAddr out i) (checkAddr aux i) c d).mem.read
+          (checkAddr out j) 16=d.mem.read (checkAddr out j) 16 :=
+      Mem.read_write_sep (checkAddr_sep out (by intro h; subst i; exact hn'.1 hj)) (by decide)
+    have ht : (∀j∈js,checkMask hint ((v j.1)[j.2.val])
+        ((checkStep hint ((v i.1)[i.2.val]) (checkAddr out i) (checkAddr aux i) c d).mem.read
+          (checkAddr out j) 16) c e=0) ↔
+        ∀j∈js,checkMask hint ((v j.1)[j.2.val]) (d.mem.read (checkAddr out j) 16) c e=0 := by
+      constructor <;> intro h j hj <;> simpa only [hread j hj] using h j hj
+    simp only [checkAddr] at ht ⊢
+    rw [ht]
+    simp only [List.mem_cons,forall_eq_or_imp,and_assoc]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedRawField`, which this module and modules that import it used -/
+
+section
+
+/-! ## From `PairedProductBankField.lean` -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+/-- Each paired input bank is exactly the previously verified product bank. -/
+theorem valuesAt_productValues (m : Mem) (a b : Addr) (u : Nat) (poly : Fin 2) :
+    valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly =
+      Inverse.productValues m a (b+BitVec.ofNat 64 (1024*poly.val)) u := by
+  apply Vector.ext
+  intro j hj
+  apply vec_ext
+  intro e he
+  exact (valuesAt_coeff m a b u poly ⟨j,hj⟩ he).trans
+    (Inverse.productValues_word m a (b+BitVec.ofNat 64 (1024*poly.val)) u ⟨j,hj⟩ he).symm
+
+/-- The paired five-layer transform preserves the exact field meaning and
+its signed 32q bound for either polynomial. -/
+theorem fiveValues_field {m : Mem} {a b : Addr} {u : Nat} {poly : Fin 2} {f g : Poly}
+    (hu : u<8) (hf : PosPolyIs m a f)
+    (hg : PosPolyIs m (b+BitVec.ofNat 64 (1024*poly.val)) g) :
+    BankBound (Inverse.fiveValues u
+      (valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly)) 268173344 ∧
+    InnerBankField u (Inverse.fiveValues u
+      (valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly))
+      (InverseTraversal.run (InverseTraversal.localSlice u) (Representation.product true f g)) := by
+  rw [valuesAt_productValues]
+  exact Inverse.fiveValues_field _ _ hu (Inverse.productValues_bound hf hg hu)
+    (Inverse.productValues_field hf hg hu)
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+/-! ## From `PairedFinalBankField.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+/-- The strided final-pass bank contains the complete first-five-layer field
+result, with the signed range needed by the remaining inverse layers. -/
+theorem firstPass_finalBank_field {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
+    (ha : (⟨a,1024⟩ : Region).Disjoint ⟨p,2048⟩)
+    (hb : (⟨b,2048⟩ : Region).Disjoint ⟨p,2048⟩) (poly : Fin 2) {f g : Poly}
+    (hf : PosPolyIs m a f) (hg : PosPolyIs m (b+BitVec.ofNat 64 (1024*poly.val)) g) :
+    BankBound (readPair (firstPassMem m p a b 8) (p+BitVec.ofNat 64 (16*u)) 128 poly) 268173344 ∧
+    ∀j : Fin 8, ∀e<4,
+      ofInt (vword ((readPair (firstPassMem m p a b 8) (p+BitVec.ofNat 64 (16*u)) 128 poly)[j.val]) e).toInt =
+      (InverseTraversal.run InverseTraversal.localSchedule (Representation.product true f g))[32*j.val+4*u+e]! := by
+  rw [firstPass_finalBank hu ha hb poly]
+  constructor
+  · intro j e he
+    simp only [Vector.getElem_ofFn]
+    exact (fiveValues_field j.isLt hf hg).1 ⟨u,hu⟩ e he
+  · intro j e he
+    simp only [Vector.getElem_ofFn]
+    have hv := (fiveValues_field j.isLt hf hg).2 ⟨u,hu⟩ e he
+    have hi : 32*j.val+4*u+e<n := by change 32*j.val+4*u+e<256; omega_using [hu, he]
+    rw [Inverse.local_coordinate _ hi]
+    have hd : (32*j.val+4*u+e)/32=j.val := by omega_using [hu, he]
+    rw [hd]
+    exact hv
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+/-! ## From `PairedRawField.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+/-- The complete paired transform yields the ordinary inverse pointwise
+product in the strict signed interval expected by the fused checks. -/
+theorem rawFinal_field {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
+    (ha : (⟨a,1024⟩ : Region).Disjoint ⟨p,2048⟩)
+    (hb : (⟨b,2048⟩ : Region).Disjoint ⟨p,2048⟩) (poly : Fin 2) {f g : Poly}
+    (hf : PosPolyIs m a f) (hg : PosPolyIs m (b+BitVec.ofNat 64 (1024*poly.val)) g)
+    (i : Fin 8) {e : Nat} (he : e<4) :
+    let v := Inverse.rawFinalValues (readPair (firstPassMem m p a b 8) (p+BitVec.ofNat 64 (16*u)) 128 poly);
+    -8380417<(vword v[i.val] e).toInt ∧ (vword v[i.val] e).toInt<2*8380417 ∧
+      ofInt (vword v[i.val] e).toInt=(nttInv (multiplyNTT f g))[4*u+32*i.val+e]! := by
+  dsimp only
+  have hbank := firstPass_finalBank_field hu ha hb poly hf hg
+  have hv := Inverse.rawFinalValues_field _
+    (InverseTraversal.run InverseTraversal.localSchedule (Representation.product true f g)) hu hbank.1
+    (fun j e he => by simpa only [Traversal.loc,Nat.add_comm,Nat.add_left_comm,Nat.add_assoc] using hbank.2 j e he) i he
+  refine ⟨hv.1,hv.2.1,hv.2.2.trans ?_⟩
+  have hk : 4*u+32*i.val+e<n := by change 4*u+32*i.val+e<256; omega_using [hu, he]
+  have hu' : (4*u+32*i.val+e)%32/4=u := by omega_using [hu, he]
+  have hcoord := InverseTraversal.strided_coordinate
+    (InverseTraversal.run InverseTraversal.localSchedule (Representation.product true f g)) hk
+  rw [hu'] at hcoord
+  rw [←hcoord,←map_mul_get _ _ hk,InverseTraversal.traversal_montgomery]
+  change (Representation.inverse true (Representation.product true f g))[_]! = _
+  rw [Representation.inverse_product]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.PairedMaskInvariant`, which this module and modules that import it used -/
 

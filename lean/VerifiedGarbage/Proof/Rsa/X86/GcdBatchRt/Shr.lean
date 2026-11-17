@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power

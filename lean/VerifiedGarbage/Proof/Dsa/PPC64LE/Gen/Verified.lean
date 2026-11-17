@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.QPart
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Frame
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem

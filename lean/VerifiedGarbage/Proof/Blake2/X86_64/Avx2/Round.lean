@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 public import VerifiedGarbage.Proof.Blake2.Spec
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx2
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint

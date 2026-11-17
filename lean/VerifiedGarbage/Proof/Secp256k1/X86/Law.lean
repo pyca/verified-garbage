@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Secp256k1.Curve
 import Mathlib.Data.BitVec
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
 import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Divstep.Tc32Words
+import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
@@ -29,7 +28,6 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed

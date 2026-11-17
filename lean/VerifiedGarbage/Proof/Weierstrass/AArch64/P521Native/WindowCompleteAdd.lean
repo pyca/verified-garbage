@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowDoublePair
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowDoubleStep
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedFunction
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Native.Code
 import VerifiedGarbage.Proof.Framework.AArch64.Call

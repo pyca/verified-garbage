@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.OpTrace

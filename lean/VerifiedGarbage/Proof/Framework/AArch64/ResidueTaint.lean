@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
@@ -25,6 +26,13 @@ that leaves a secret in a register clears it before it returns (a `movz` or a
 `movi0`), which the analysis then sees.
 
 The analysis has no calls or frames (its `call`, `push` and `pop` fail).
+
+`rtaintL` is `rtaint` with the 64-bit halves of the vector registers
+(`LaneTaint.Part`): `mov vd.d[k], xn` makes half `k` of `vd` public when `xn`
+is, and keeps what was public of its other half, where `rtaint` makes `vd`
+secret. A function that restores the low halves of `v8`–`v15`, which the
+calling convention preserves, and clears their high halves, which it does not,
+then leaves them public (`RTaintL.noResidue_of_check`).
 -/
 
 @[expose] public section
@@ -413,5 +421,268 @@ theorem noResidue_of_check {c : Prog isa} {r : Nat}
     exact outside_of_done (VG.Taint.check_sound hτ (agree_init ho hu) e₁ e₂).2 h
 
 end RTaint
+
+end VG.AArch64
+
+/-! ## The halves of the vector registers -/
+
+namespace VG.AArch64.RTaintL
+
+open VG.AArch64
+open VG.AArch64.LaneTaint (Part AgreeV put both)
+
+/-- `rtaint`'s taint, and the vector registers whose low and whose high half
+is public. -/
+abbrev T := RTaint.T × Part
+
+def Agree (τ : T) (s₁ s₂ : State) : Prop := RTaint.Agree τ.1 s₁ s₂ ∧ AgreeV τ.2 s₁ s₂
+
+/-- `mov vd.d[k], xn` (INS (general), 64-bit lanes), as `(vd, k, xn)`. -/
+def insD2 : Instr → Option (VReg × Nat × Reg)
+  | .vop (.ins .d2 d k n) => some (d, k, n)
+  | _ => none
+
+theorem insD2_eq {i : Instr} {d : VReg} {k : Nat} {n : Reg} (h : insD2 i = some (d, k, n)) :
+    i = .vop (.ins .d2 d k n) := by
+  unfold insD2 at h
+  split at h
+  · cases h; rfl
+  · cases h
+
+/-- The halves after `i`, from `rtaint`'s taint `τ` and the halves `q` before
+it: `mov vd.d[k], xn` sets half `k` of `vd` from `xn` (both halves of `vd` are
+public first if `vd` was), and any other write of a vector register makes
+neither half public. -/
+def lstep (τ : RTaint.T) (q : Part) (i : Instr) : Part :=
+  match insD2 i with
+  | some (d, k, n) =>
+    put (if τ.1.2.mem d then both q d true else q) (k == 1) d (Taint.pub τ.1.1 n)
+  | none => match vdstOf i with
+    | some d => both q d false
+    | none => q
+
+def step (τ : T) (i : Instr) : Option T :=
+  (RTaint.step τ.1 i).map fun τ' => (τ', lstep τ.1 τ.2 i)
+
+theorem mem_setV_ne {s : RegSet VReg} {d v : VReg} {p : Bool} (hv : v ≠ d) :
+    v ∈ VectorTaint.setV s d p ↔ v ∈ s := by
+  unfold VectorTaint.setV
+  split
+  · exact ⟨fun h => (RegSet.mem_insert.mp h).resolve_left hv,
+      fun h => RegSet.mem_insert.mpr (Or.inr h)⟩
+  · exact ⟨fun h => (RegSet.mem_erase.mp h).2, fun h => RegSet.mem_erase.mpr ⟨hv, h⟩⟩
+
+theorem mem_setV_self {s : RegSet VReg} {d : VReg} {p : Bool} :
+    d ∈ VectorTaint.setV s d p ↔ p = true := by
+  unfold VectorTaint.setV
+  split
+  · rename_i hp
+    exact ⟨fun _ => hp, fun _ => RegSet.mem_insert.mpr (Or.inl rfl)⟩
+  · rename_i hp
+    exact ⟨fun h => absurd rfl (RegSet.mem_erase.mp h).1, fun h => absurd h hp⟩
+
+theorem mem_put {q : Part} {b c : Bool} {d v : VReg} {p : Bool} (hv : v ≠ d) :
+    v ∈ VG.AArch64.LaneTaint.get (put q c d p) b ↔ v ∈ VG.AArch64.LaneTaint.get q b := by
+  cases b <;> cases c <;> simp only [put, VG.AArch64.LaneTaint.get, ↓reduceIte] <;>
+    first | exact mem_setV_ne hv | exact Iff.rfl
+
+theorem mem_both {q : Part} {b : Bool} {d v : VReg} {p : Bool} (hv : v ≠ d) :
+    v ∈ VG.AArch64.LaneTaint.get (both q d p) b ↔ v ∈ VG.AArch64.LaneTaint.get q b := by
+  cases b <;> simp only [both, VG.AArch64.LaneTaint.get, ↓reduceIte] <;> exact mem_setV_ne hv
+
+theorem mem_both_self {q : Part} {b : Bool} {d : VReg} {p : Bool} :
+    d ∈ VG.AArch64.LaneTaint.get (both q d p) b ↔ p = true := by
+  cases b <;> simp only [both, VG.AArch64.LaneTaint.get, ↓reduceIte] <;> exact mem_setV_self
+
+theorem mem_put_self {q : Part} {c : Bool} {d : VReg} {p : Bool} :
+    d ∈ VG.AArch64.LaneTaint.get (put q c d p) c ↔ p = true := by
+  cases c <;> simp only [put, VG.AArch64.LaneTaint.get, ↓reduceIte] <;> exact mem_setV_self
+
+theorem mem_put_other {q : Part} {b c : Bool} {d : VReg} {p : Bool} (hb : b ≠ c) :
+    d ∈ VG.AArch64.LaneTaint.get (put q c d p) b ↔ d ∈ VG.AArch64.LaneTaint.get q b := by
+  cases b <;> cases c <;> first | exact absurd rfl hb | exact Iff.rfl
+
+/-- A vector register that agrees whole agrees in both its halves. -/
+theorem agreeV_both {q : Part} {s₁ s₂ : State} (h : AgreeV q s₁ s₂) {d : VReg}
+    (hd : s₁.v d = s₂.v d) : AgreeV (both q d true) s₁ s₂ := by
+  intro b v hv
+  by_cases e : v = d
+  · subst e; rw [hd]
+  · exact h b v ((mem_both e).mp hv)
+
+/-- A write of `d` alone keeps the halves of every other vector register. -/
+theorem agreeV_other {q : Part} {s₁ s₂ s₁' s₂' : State} (h : AgreeV q s₁ s₂) {d : VReg}
+    (h₁ : ∀ v, v ≠ d → s₁'.v v = s₁.v v) (h₂ : ∀ v, v ≠ d → s₂'.v v = s₂.v v) :
+    AgreeV (both q d false) s₁' s₂' := by
+  intro b v hv
+  by_cases e : v = d
+  · subst e; exact absurd (mem_both_self.mp hv) (by simp)
+  · rw [h₁ v e, h₂ v e]; exact h b v ((mem_both e).mp hv)
+
+theorem agreeV_ins {q : Part} {s₁ s₂ : State} (h : AgreeV q s₁ s₂) (d : VReg) {k : Nat}
+    (hk : k < 2) {p : Bool} {x y : BitVec 64} (hp : p = true → x = y) :
+    AgreeV (put q (k == 1) d p) (s₁.setV d (setLane (s₁.v d) 64 k x))
+      (s₂.setV d (setLane (s₂.v d) 64 k y)) := by
+  intro b v hv
+  have hb : b.toNat < 2 := by cases b <;> decide
+  by_cases e : v = d
+  · subst e
+    simp only [RegUpd.v_setV, ite_true, VG.AArch64.LaneTaint.extract_setLane _ _ hk hb]
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;> cases b <;>
+      first
+      | exact hp (mem_put_self.mp hv)
+      | exact h _ v ((mem_put_other (by decide)).mp hv)
+  · simp only [RegUpd.v_setV, e, ite_false]
+    exact h b v ((mem_put e).mp hv)
+
+theorem lstep_sound {τ : RTaint.T} {q : Part} {i : Instr} {s₁ s₂ s₁' s₂' : State}
+    (ha : RTaint.Agree τ s₁ s₂) (hq : AgreeV q s₁ s₂) (e₁ : exec i s₁ = some s₁')
+    (e₂ : exec i s₂ = some s₂') : AgreeV (lstep τ q i) s₁' s₂' := by
+  have gen : ∀ (i : Instr), exec i s₁ = some s₁' → exec i s₂ = some s₂' →
+      AgreeV (match vdstOf i with | some d => both q d false | none => q) s₁' s₂' := by
+    intro i e₁ e₂
+    cases hd : vdstOf i with
+    | some d =>
+      exact agreeV_other hq (fun v hv => exec_vec (by rw [hd]; simpa using Ne.symm hv) e₁)
+        (fun v hv => exec_vec (by rw [hd]; simpa using Ne.symm hv) e₂)
+    | none =>
+      intro b v hv
+      rw [exec_vec (by rw [hd]; simp) e₁, exec_vec (by rw [hd]; simp) e₂]
+      exact hq b v hv
+  unfold lstep
+  cases hi : insD2 i with
+  | none => exact gen i e₁ e₂
+  | some x =>
+    obtain ⟨d, k, n⟩ := x
+    have he := insD2_eq hi
+    subst he
+    simp only [reduceExec, reduceVOpEval] at e₁ e₂
+    by_cases hk : k < 2
+    · simp only [hk, ite_true, Option.map_some, Option.some.injEq] at e₁ e₂
+      subst e₁ e₂
+      have hq₀ : AgreeV (if τ.1.2.mem d then both q d true else q) s₁ s₂ := by
+        split
+        · exact agreeV_both hq (ha.1.2 d (by assumption))
+        · exact hq
+      exact agreeV_ins hq₀ d hk (fun hp => ha.1.1.reg hp)
+    · simp only [hk, ite_false, Option.map_none, reduceCtorEq] at e₁
+
+theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
+  obtain ⟨σ, hσ, rfl⟩ := Option.map_eq_some_iff.mp hs
+  obtain ⟨hadr, hσa⟩ := RTaint.step_sound ha.1 hσ e₁ e₂
+  exact ⟨hadr, hσa, lstep_sound ha.1 ha.2 e₁ e₂⟩
+
+/-- The halves public in both. -/
+def meetP (q r : Part) : Part := (q.1.inter r.1, q.2.inter r.2)
+
+theorem agreeV_meet_left {q r : Part} {s₁ s₂ : State} (h : AgreeV q s₁ s₂) :
+    AgreeV (meetP q r) s₁ s₂ := fun b v hv =>
+  h b v (by cases b <;> exact (RegSet.mem_inter.mp hv).1)
+
+theorem agreeV_meet_right {q r : Part} {s₁ s₂ : State} (h : AgreeV r s₁ s₂) :
+    AgreeV (meetP q r) s₁ s₂ := fun b v hv =>
+  h b v (by cases b <;> exact (RegSet.mem_inter.mp hv).2)
+
+end VG.AArch64.RTaintL
+
+namespace VG.AArch64
+
+open RTaintL in
+/-- `rtaint` with the halves of the vector registers (see `RTaintL`). -/
+def rtaintL : VG.Taint isa where
+  T := RTaintL.T
+  Agree := RTaintL.Agree
+  step := RTaintL.step
+  step_sound := RTaintL.step_sound
+  condPub τ := rtaint.condPub τ.1
+  cond_sound h hc := rtaint.cond_sound h.1 hc
+  meet τ σ := (rtaint.meet τ.1 σ.1, meetP τ.2 σ.2)
+  meet_left h := ⟨rtaint.meet_left h.1, agreeV_meet_left h.2⟩
+  meet_right h := ⟨rtaint.meet_right h.1, agreeV_meet_right h.2⟩
+  le τ σ := rtaint.le τ.1 σ.1 && τ.2.1.subset σ.2.1 && τ.2.2.subset σ.2.2
+  le_sound hl h := by
+    simp only [Bool.and_eq_true] at hl
+    obtain ⟨⟨h₀, h₁⟩, h₂⟩ := hl
+    refine ⟨rtaint.le_sound h₀ h.1, fun b v hv => h.2 b v ?_⟩
+    cases b
+    · exact RegSet.mem_of_subset h₁ hv
+    · exact RegSet.mem_of_subset h₂ hv
+  call _ := none
+  call_sound _ hs := nomatch hs
+  ret _ := none
+  ret_sound _ hs := nomatch hs
+  push _ _ := none
+  push_sound _ hs := nomatch hs
+  pop _ _ := none
+  pop_sound _ hs := nomatch hs
+
+namespace RTaintL
+
+/-- Every vector register, in a list. -/
+def vregs : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15,
+   .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31]
+
+theorem mem_vregs (v : VReg) : v ∈ vregs := by cases v <;> simp [vregs]
+
+/-- Everything public, as `Outside 0` has it. -/
+def init : T := (RTaint.init, (RTaint.allVRegs, RTaint.allVRegs))
+
+/-- A vector register public whole, or in both its halves. -/
+def vpub (τ : T) (v : VReg) : Bool := τ.1.1.2.mem v || (τ.2.1.mem v && τ.2.2.mem v)
+
+/-- `RTaint.done r`, with a vector register public whole or in both its halves. -/
+def done (r : Nat) (τ : T) : Bool :=
+  (RTaint.allRegs.erase .x0).subset τ.1.1.1 && vregs.all (vpub τ) && τ.1.2.1 && Nat.ble τ.1.2.2 r
+
+theorem agree_init {s₁ s₂ : State} (h : Outside 0 s₁ s₂) (hu : s₁.unknowns = s₂.unknowns) :
+    rtaintL.Agree init s₁ s₂ := by
+  refine ⟨RTaint.agree_init h hu, fun b v _ => ?_⟩
+  rw [h.2.2.2.2.2.2.2.2.2.2.1]
+
+/-- Two vector registers equal in both halves are equal. -/
+theorem eq_of_halves {x y : BitVec 128} (h₀ : x.extractLsb' 0 64 = y.extractLsb' 0 64)
+    (h₁ : x.extractLsb' 64 64 = y.extractLsb' 64 64) : x = y := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  by_cases hl : i < 64
+  · have := congrArg (fun z => z.getLsbD i) h₀
+    simpa [BitVec.getLsbD_extractLsb', hl] using this
+  · have := congrArg (fun z => z.getLsbD (i - 64)) h₁
+    have e : 64 + (i - 64) = i := by omega_using [hl]
+    simpa [BitVec.getLsbD_extractLsb', show i - 64 < 64 by omega_using [hi], e] using this
+
+theorem outside_of_done {τ : T} {r : Nat} {s₁ s₂ : State} (h : rtaintL.Agree τ s₁ s₂)
+    (hd : done r τ = true) : Outside r s₁ s₂ := by
+  simp only [done, Bool.and_eq_true, List.all_eq_true] at hd
+  obtain ⟨⟨⟨hg, hv⟩, hf⟩, hr⟩ := hd
+  obtain ⟨⟨⟨⟨hsp, hgr⟩, hvr⟩, hfl, hx0, hrd, hwr, hdit, -, hm⟩, hq⟩ := h
+  obtain ⟨hc, hn, hz, hvf⟩ := hfl hf
+  refine ⟨hrd, hwr, fun q hq' => hgr q (RegSet.mem_of_subset hg (RegSet.mem_erase.mpr
+    ⟨hq', RTaint.mem_allRegs q⟩)), RTaint.shr_mono hx0 (Nat.le_of_ble_eq_true hr), hsp, hc, hn,
+    hz, hvf, hdit, funext fun v => ?_, hm⟩
+  have hp := hv v (mem_vregs v)
+  simp only [vpub, Bool.or_eq_true, Bool.and_eq_true] at hp
+  rcases hp with hp | ⟨h₀, h₁⟩
+  · exact hvr v hp
+  · exact eq_of_halves (hq false v h₀) (hq true v h₁)
+
+/-- Code whose analysis with the halves (`rtaintL`) from everything public
+ends in `done r` returns without secret residue, with an `r`-bit result,
+whatever its contract. -/
+theorem noResidue_of_check {c : Prog isa} {r : Nat}
+    (h : ∃ hc, (rtaintL.check init c hc).any (done r) = true) (k : Contract isa) :
+    NoResidue c k r := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ _ ho hu e₁ e₂
+  obtain ⟨hc, h⟩ := h
+  cases hτ : rtaintL.check init c hc with
+  | none => rw [hτ] at h; cases h
+  | some τ' =>
+    rw [hτ] at h
+    exact outside_of_done (VG.Taint.check_sound hτ (agree_init ho hu) e₁ e₂).2 h
+
+end RTaintL
 
 end VG.AArch64

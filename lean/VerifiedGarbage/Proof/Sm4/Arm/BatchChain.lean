@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.Ops
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
-import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

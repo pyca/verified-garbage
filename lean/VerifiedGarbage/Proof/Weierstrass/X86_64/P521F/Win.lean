@@ -2,12 +2,11 @@ module
 
 -- separate module: the P-521 fast window's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P521F.Madd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm

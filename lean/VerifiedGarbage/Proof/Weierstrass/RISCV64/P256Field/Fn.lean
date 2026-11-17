@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Mul
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldCT
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Carry
 
 /-!
 # P-256's field on RISC-V: the functions

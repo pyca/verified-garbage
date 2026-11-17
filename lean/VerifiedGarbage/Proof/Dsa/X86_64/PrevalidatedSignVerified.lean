@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -19,11 +18,57 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningReturn
+public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningPublic
+import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+
+/-! ### `Dsa.X86_64.SigningABIPre`, which this module and modules that import it used -/
+
+section
+
+/-! # The shared signing precondition supplies every machine-level resource -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem SigningABI.pre {s : State} (h : SigningABI s) : SigningPre h.input s := by
+  have hs : Scr s (stackArg s 3) ((stackArg s 4).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound
+  have hargs : (⟨stackArgAddr s 0, 40⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
+  refine ⟨scratch_prefix hs h.used (by decide), ?_, ?_, ?_, ?_, rfl, ?_, rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · exact (ofNat_toNat64 _).symm
+  · intro j hj hb
+    exact stackWord_read (count := 5) hargs hj (by omega_using [hb]) (by decide)
+  · intro j hj hb i hi
+    exact Nat.le_trans h.used (stackWord_separate (count := 5) h.scratchArgs hj (by omega_using [hb]) (by decide) i hi)
+  · exact (ofNat_toNat64 _).symm
+  · change stackArg s 2 = BitVec.ofNat 64 (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat).length
+    rw [bytesAt_length, ofNat_toNat64]
+  · exact source_shrink (src_of_region (by rw [h.rd]; simp) (Nat.le_of_lt (s.gpr .rcx).isLt) h.keyScratch) h.used
+  · exact source_shrink (src_of_region (by rw [h.rd]; simp) (Nat.le_of_lt (stackArg s 0).isLt) h.nonceScratch) h.used
+  · exact source_shrink (src_of_region (p := stackArg s 1) (by rw [h.rd]; simp) (Nat.le_of_lt (stackArg s 2).isLt) h.digestScratch) h.used
+  · intro i hi
+    exact ⟨_, by rw [h.wr]; simp, contains_byte _ (by change i < 2 * (stackArg s 0).toNat at hi; rw [h.outLength]; exact hi)
+      (Nat.le_of_lt (s.gpr .rsi).isLt)⟩
+  · intro i hi
+    exact Nat.le_trans h.used (out_scr h.outScratch (contains_byte _
+      (by change i < 2 * (stackArg s 0).toNat at hi; rw [h.outLength]; exact hi) (Nat.le_of_lt (s.gpr .rsi).isLt)))
+
+def SigningABI.call {s : State} (h : SigningABI s) : SigningCall := ⟨h.input, s, h.pre⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.Calls`, which this module and modules that import it used -/
 

@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.Failure
 import VerifiedGarbage.Proof.Dsa.X86.Result
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters

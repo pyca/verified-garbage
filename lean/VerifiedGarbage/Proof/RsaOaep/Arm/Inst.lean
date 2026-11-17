@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecCall
 public import VerifiedGarbage.Proof.HashTable.Arm
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecP
 public import VerifiedGarbage.Proof.Rsa.PreKey

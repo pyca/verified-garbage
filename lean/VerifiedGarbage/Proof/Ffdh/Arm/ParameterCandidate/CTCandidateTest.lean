@@ -46,7 +46,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.RelClasses
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.RoundData
 import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 

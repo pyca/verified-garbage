@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P384Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Carry
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Mul
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Mul
 import VerifiedGarbage.Proof.Framework.Offset

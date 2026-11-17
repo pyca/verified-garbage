@@ -27,6 +27,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr xorLoop)
 open VG.Proof.AesGcm.X86_64 (LoopPre xorLoop_ok xorBytes)
@@ -66,7 +68,7 @@ theorem ctrHeadBlk_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} 
     by rw [hbx, Nat.sub_zero], h14, Nat.zero_le _, by rw [hm₁]; exact Frame.refl _ _, rfl, by rw [hm₁]⟩, hzf⟩
 
 /-- The whole blocks, in chunks. -/
-theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
+theorem ctrHead_ok (v : Ctr32Impl) [CtrFits v] {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
     {nl al n tl : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (S : Slots W R N A D nl al n tl s.mem) :
     WP isa (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbx (.mem (at_ .r15 lenO)), .shift .shr .rbx 4,
       .mov32 .r14 (imm 1), .alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop (ctrChunk v.callee) .ne))) s
@@ -84,6 +86,7 @@ theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce 
     · left; exact ⟨(eval_ne hz).trans (by simp [he]), by rw [← he]; exact I'⟩
     · right; exact ⟨(eval_ne hz).trans (by simp [he]), n / 16 - (b + k), by omega_arith, b + k, rfl, by omega_arith, I'⟩
 
+omit fp in
 /-- The arguments of the call for the last bytes: `Ctr₁₊ₙ/₁₆` and a zero
 block at `W + 80`. -/
 theorem tailSetup_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {nonce : List Byte} {j : Nat}
@@ -153,7 +156,7 @@ theorem tailSetup_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {n
     simpa only [List.append_assoc] using run₃
   · rw [hm₃, ← hm₁]
     exact ((f₂.sub fun r hr => ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩).writeW
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by simp)⟩).writeW
       (List.mem_singleton_self _) (0 : BitVec 64) (c80 80 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) (0 : BitVec 64) (c80 88 (by decide) (by decide))
   · have fz : Frame [⟨W + BitVec.ofNat 64 80, 16⟩] t₂.mem t₃.mem := by
@@ -170,7 +173,7 @@ theorem tailSetup_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {n
 
 /-- The last `r = n mod 16` bytes, from `t` after the whole blocks, with `r`
 in `rbp`. -/
-theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
+theorem tail_ok (v : Ctr32Impl) [CtrFits v] {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
     (C : CtrCtx K W SP s R nonce D n) {t t₀ : State} (I : CtrInv K W SP s R nonce D n (n / 16) t)
     (hm₀ : t₀.mem = t.mem) (hg₀ : ∀ r, r ≠ .rbp → t₀.gpr r = t.gpr r)
     (hbp : t₀.gpr .rbp = BitVec.ofNat 64 (n % 16)) (hrd₀ : t₀.rd = t.rd) (hwr₀ : t₀.wr = t.wr) (h0 : n % 16 ≠ 0) :
@@ -229,7 +232,7 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
   refine WP.mono (xorLoop_ok t₃ lp) fun t₄ ⟨hm₄, hg₄, hrd₄, hwr₄⟩ => ?_
   -- What the tail wrote.
   have hsp : t₁.gpr .rsp = SP := E₁.rsp
-  obtain cT : Frame [⟨W + BitVec.ofNat 64 64, 32⟩, ⟨W + BitVec.ofNat 64 384, 2048⟩, below SP 8] t.mem t₃.mem := by
+  obtain cT : Frame [⟨W + BitVec.ofNat 64 64, 32⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 8] t.mem t₃.mem := by
     have fc := h.frame
     rw [hsp] at fc
     rw [hm₃, ← hm₀]
@@ -237,18 +240,18 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Region.sub_prefix (by simp)⟩
       · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Offset.sub W (by decide) (by decide)⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
   obtain sep : ∀ {a l : Nat}, a + l ≤ n → ∀ r ∈ [(⟨W + BitVec.ofNat 64 64, 32⟩ : Region),
-      ⟨W + BitVec.ofNat 64 384, 2048⟩, below SP 8], (⟨D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
+      ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 8], (⟨D + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := by
     intro a l hl r hr
     obtain hB := C.buf.slice (a := a) (k := l) hl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hB.w.sub_right (Lay.wSub (by decide))
-    · exact hB.w.sub_right (Lay.wSub (by decide))
+    · exact hB.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact (hB.stk.sub_left (below8_sub SP)).symm
   obtain ⟨xs, hxs⟩ : ∃ xs, xs = xorBytes t₃.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (W + BitVec.ofNat 64 80) (n % 16) :=
     ⟨_, rfl⟩
@@ -265,7 +268,7 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨⟨W + BitVec.ofNat 64 384, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨W + BitVec.ofNat 64 384, scratchBytes⟩, by simp, Region.sub_prefix (by simp)⟩
       · exact ⟨below SP 16, by simp, below8_sub SP⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩
@@ -298,6 +301,7 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
     conv => rhs; rw [show n = 16 * (n / 16) + n % 16 from (Nat.div_add_mod n 16).symm]
     rw [Proof.Cmac.Stream.bytesAt_append, xorFrom_append _ _ _ (length_bytesAt _ _ _), Nat.add_comm 1 (n / 16)]
 
+omit fp in
 /-- `rbp = n mod 16`, and ZF set when there are no last bytes. -/
 theorem ctrB3_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {n : Nat}
     (hl : t.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n) (hn64 : n < 2 ^ 64) :
@@ -316,7 +320,7 @@ theorem ctrB3_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {n : Nat}
   all_goals rfl
 
 /-- Counter mode: the data XORed with CCM's keystream from `Ctr₁`. -/
-theorem ctr_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
+theorem ctr_ok (v : Ctr32Impl) [CtrFits v] {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
     {nl al n tl : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (S : Slots W R N A D nl al n tl s.mem) :
     WP isa (ctr v.callee) s fun s' => Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (ctrR W SP D n) s.mem s'.mem ∧

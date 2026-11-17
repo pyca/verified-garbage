@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.Arm.Base
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 meta import VerifiedGarbage.Impl.X25519.Arm.Base
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 public import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
@@ -68,6 +76,8 @@ namespace VG.Proof.X25519.Arm.Base
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Impl.X25519.Arm.Base
 open VG.Proof.Ed25519.Arm VG.Proof.X25519.Arm
 open VG.Proof.Ed25519 (Rep baseAff)
+
+variable {umaal : Bool}
 
 /-! ## The clamp -/
 
@@ -220,7 +230,7 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa engine s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (engine umaal) s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) Spec.X25519.basePoint =
         Spec.Ed25519.encodeLE 32 (V t.mem (State.addr base) FR) := by
   have hk : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
@@ -257,7 +267,7 @@ def baseLocal : Contract Arm.isa :=
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) Spec.X25519.basePoint }
 
 theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
-    WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
+    WP isa (x25519Base umaal) s fun t => abiPreserved s t ∧ baseLocal.post s t := by
   refine WP.seq (WP.mono_syms (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ syu => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (engine_ok hcu pu h.f1
@@ -308,10 +318,11 @@ def initCT : Prog isa := combInit
 
 materialize_code prepCT
 materialize_code initCT
-materialize_code uEncode
+materialize_code uEncodePlain := uEncode false
+materialize_code uEncodeUmaal := uEncode true
 
 theorem engine_ct (b p T : BitVec 32) :
-    CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) engine (fun _ _ => True) := by
+    CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) (engine umaal) (fun _ _ => True) := by
   have h1 : CT (fun x y => BaseCTPre b p T x ∧ BaseCTPre b p T y) prepCT
       (fun x y => Mid b T x ∧ Mid b T y) := by
     apply ctBoth
@@ -334,30 +345,31 @@ theorem engine_ct (b p T : BitVec 32) :
       exact h.1.1.r0.trans h.2.1.r0.symm
     · intro s ⟨hc, hl, hT, hsym, apart⟩
       exact WP.mono (combInit_ok hc hl hT hsym apart) fun w ⟨_, E, I⟩ => ⟨w, _, _, E, I⟩
-  have h4 : CT (fun x y => VG.Proof.Ed25519.Arm.Ctx b x ∧ VG.Proof.Ed25519.Arm.Ctx b y) uEncode
+  have h4 : CT (fun x y => VG.Proof.Ed25519.Arm.Ctx b x ∧ VG.Proof.Ed25519.Arm.Ctx b y) (uEncode umaal)
       (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by native_taint_decide)
-    intro x y h r hr
-    rw [List.mem_singleton] at hr
-    subst r
-    exact h.1.r0.trans h.2.r0.symm
+    cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
+    all_goals
+      intro x y h r hr
+      rw [List.mem_singleton] at hr
+      subst r
+      exact h.1.r0.trans h.2.r0.symm
   exact RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (combLoop_ct b T) h4))
 
 theorem work_ct (b p out T : BitVec 32) :
     CT (fun x y => BaseWorkCTPre b p out T x ∧ BaseWorkCTPre b p out T y)
-      engine (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
+      (engine umaal) (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y) := by
   apply ctBoth
   · exact (engine_ct b p T).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) (fun _ _ h => h)
   · intro s ⟨⟨hc, hp, hf, hr, hsep, hT, hsym, apart⟩, ho⟩
     refine WP.mono (engine_ok hc hp hf hr hsep hT hsym apart) fun t ⟨tk, _, _⟩ => ?_
     exact ⟨tk.ctx hc, (tk.word 48 (.inl rfl) (by decide)).trans ho⟩
 
-theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub x25519Base := by
+theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base umaal) := by
   have hct (b p out T : BitVec 32) :
-      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) x25519Base (fun _ _ => True) :=
+      CT (fun x y => BaseWrapCTPre b p out T x ∧ BaseWrapCTPre b p out T y) (x25519Base umaal) (fun _ _ => True) :=
     RelCT.seq (scalarBaseSetup_ct b p out T)
       (RelCT.seq (work_ct b p out T) (scalarBaseFinish_ct b out))
-  intro s t tx ty u v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
+  intro s t tx ty a v hs ht ⟨_, h0, h1, h2, hT⟩ ex ey
   exact (hct (s.gpr .r2) (s.gpr .r1) (s.gpr .r0) (s.syms combSym) _ _ _ _ _ _
     ⟨⟨hs, rfl, rfl, rfl, rfl⟩, ⟨ht, h0.symm, h1.symm, h2.symm, hT.symm⟩⟩ ex ey).1
 
@@ -400,7 +412,7 @@ theorem base_pre {s : State} (h : baseSpec.pre s) : baseLocal.pre s := by
     exact hw
 
 theorem x25519Base_ok (s : State) (hs : baseLocal.pre s) :
-    ∃ t s', Exec isa x25519Base s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
+    ∃ t s', Exec isa (x25519Base umaal) s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
   x25519Base_correct (ScalarBasePre.of hs)
 
 theorem base_sat : baseSpec.pre baseSatState := by
@@ -436,8 +448,22 @@ theorem base_implies : baseLocal.Implies baseSpec where
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, base_sat⟩
 
-theorem x25519Base_verified : Verified Arm.target x25519Base baseSpec :=
+theorem x25519Base_verified : Verified Arm.target (x25519Base umaal) baseSpec :=
   Verified.of_correct x25519Base_ok x25519Base_ct base_implies
+
+/-! ## Without secret residue
+
+The code has no frames: it keeps the registers it saves in its scratch space, a buffer. It is
+registered scrubbed (`Arm.Scrub.scrubReg`): followed by instructions that set the registers a
+callee may change and the flags to constants. -/
+
+theorem x25519Base_noFrames (umaal : Bool) : (x25519Base umaal).noFrames = true := by
+  cases umaal <;> lit_decide
+
+/-- `vg_x25519_base`, with either product of the field (`umaal`), scrubbed. -/
+def x25519BaseReg (umaal : Bool) (suffix : String) : Registration Spec.X25519.x25519BaseApi Arm.target :=
+  Arm.Scrub.scrubReg { suffix := suffix, code := x25519Base umaal, verified := x25519Base_verified }
+    (x25519Base_noFrames umaal)
 
 
 end VG.Proof.X25519.Arm.Base

@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
-public import VerifiedGarbage.Proof.Bignum.CrtWindowFrame
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave

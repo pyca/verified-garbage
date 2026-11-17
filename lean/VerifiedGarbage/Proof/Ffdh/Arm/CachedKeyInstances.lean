@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets

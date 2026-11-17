@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.Offset
@@ -101,7 +102,7 @@ structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) : Prop where
   writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.wr
 
 /-- What a call of `vg_aes_ctr32` leaves. -/
-structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
+structure CtrPostBase (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
@@ -122,8 +123,8 @@ theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C 
   exact ⟨trivial, trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.stkC, h.stkD, h.stkS, h.wrap,
     h.rounds⟩
 
-theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa (.call v.callee.name v.callee.code) s (CtrPost s K C D S R n) := by
+theorem ctr_call_base (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    WP isa (.call v.callee.name v.callee.code) s (CtrPostBase s K C D S R n) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.ctr32X86_64) v.ok v.nosp (by rw [v.depth]; decide)
@@ -145,6 +146,92 @@ theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : C
   rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_using [this]),
     eK] at hdata
   exact ⟨hrd, hwr, hcs, by simpa using hf, hdata⟩
+
+/-- A scratch-free call certificate when the tight footprint is requested. -/
+class CtrFits [fp : Footprint] (v : Ctr32Impl) where
+  free : fp.tight = true → Proof.Aes.X86_64.Ctr32Free v.callee
+
+instance CtrFits.full (v : Ctr32Impl) : @CtrFits Footprint.full v := ⟨fun h => Bool.noConfusion h⟩
+
+section Tight
+
+variable [fp : Footprint]
+
+structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, scratchBytes⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : blocksAt s'.mem D n = ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
+    (blocksAt s.mem D n)
+
+theorem ctr_call (v : Ctr32Impl) [CtrFits v] {s : State} {K C D S : Addr} {R n : Nat}
+    (h : CtrCall s K C D S R n) :
+    WP isa (.call v.callee.name v.callee.code) s (CtrPost s K C D S R n) := by
+  by_cases ht : fp.tight = true
+  · have hf : Proof.AesGcm.X86_64.CtrCallF s K C D S R n := {
+      rdi := h.rdi, rsi := h.rsi, rdx := h.rdx, rcx := h.rcx, r8 := h.r8, r9 := h.r9,
+      rounds := h.rounds, wrap := h.wrap, kc := h.kc, kd := h.kd, cd := h.cd,
+      stkK := h.stkK, stkC := h.stkC, stkD := h.stkD,
+      reads := fun a n ⟨r, hr, hc⟩ => h.reads a n ⟨r, by simpa using List.mem_append_left [⟨S, 2048⟩] hr, hc⟩,
+      writes := fun a n ⟨r, hr, hc⟩ => h.writes a n ⟨r, by simpa using List.mem_append_left [⟨S, 2048⟩] hr, hc⟩ }
+    exact WP.mono (Proof.AesGcm.X86_64.ctr_callF v (CtrFits.free ht) hf) fun _ q =>
+      ⟨q.rd, q.wr, q.saved, q.frame.mono (by simp), q.out⟩
+  · refine WP.mono (ctr_call_base v h) fun _ q => ⟨q.rd, q.wr, q.saved, ?_, q.out⟩
+    refine q.frame.sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨⟨S, scratchBytes⟩, by simp, Region.sub_prefix (by simp [scratchBytes, ht])⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- CMAC and CTR both provide their scratch-free contract in tight mode. -/
+class UpdateFits (v : Proof.CmacAes.X86_64.UpdateImpl) where
+  free : fp.tight = true → Proof.CmacAes.X86_64.UpdateFree v.callee
+  ctr : CtrFits v.ctr
+
+attribute [instance_reducible, instance] UpdateFits.ctr
+
+omit fp in
+instance (v : Proof.CmacAes.X86_64.UpdateImpl) : @UpdateFits Footprint.full v :=
+  @UpdateFits.mk Footprint.full v (fun h => Bool.noConfusion h) (CtrFits.full v.ctr)
+
+structure UpdatePost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨S, scratchBytes⟩, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : bytesAt s'.mem C 16 = Spec.Cmac.chain (Spec.Cmac.aesWith R (bytesAt s.mem K (16 * (R + 1))))
+    (bytesAt s.mem C 16) (Spec.Cmac.blocksAt s.mem D 16 n)
+
+theorem upd_call (v : Proof.CmacAes.X86_64.UpdateImpl) [UpdateFits v]
+    {s : State} {K C D S : Addr} {R n : Nat} (h : UArgs s K C D S R n) :
+    WP isa (.call v.callee.name v.callee.code) s (UpdatePost s K C D S R n) := by
+  obtain ⟨t, u, e, q⟩ := Proof.CmacAes.Stream.X86_64.upd_call v h
+  refine ⟨t, u, e, q.rd, q.wr, q.saved, ?_, q.out⟩
+  by_cases ht : fp.tight = true
+  · have hz : Proof.CmacAes.Stream.X86_64.UArgsZ s K C D S ⟨S, 2176⟩ R n := {
+      rdi := h.rdi, rsi := h.rsi, rdx := h.rdx, rcx := h.rcx, r8 := h.r8, r9 := h.r9,
+      rounds := h.rounds, hn := h.hn, wc := h.wc, wz := h.ws, dc := h.dc, dz := h.ds, cz := h.cs,
+      stkW := h.stkW, stkD := h.stkD, stkC := h.stkC, stkZ := h.stkS,
+      wrapC := h.wrapC, wrapD := h.wrapD, wrapZ := h.wrapS,
+      reads := fun a n ⟨r, hr, hc⟩ => h.reads a n ⟨r, by simpa using List.mem_append_left [⟨S, 2176⟩] hr, hc⟩,
+      writes := fun a n ⟨r, hr, hc⟩ => h.writes a n ⟨r, by simp_all, hc⟩,
+      zw := fun a n ⟨r, hr, hc⟩ => h.writes a n ⟨r, by simp_all, hc⟩ }
+    have hd := v.depth
+    have hw : WP isa (.call v.callee.name v.callee.code) s fun u =>
+        Frame [⟨C, 16⟩, below (s.gpr .rsp) 16] s.mem u.mem := by
+      refine WP.call (k := Proof.CmacAes.X86_64.updateX86_64F) (UpdateFits.free ht).ok v.nosp
+        (by omega) hz.preF hz.reads hz.writes ?_
+      intro u _ _ _ hf _ _
+      simpa using Frame.below_mono hf (b := 16) (by omega) (by decide)
+    obtain ⟨t', u', e', hf⟩ := hw
+    obtain ⟨_, rfl⟩ := Exec.det e e'
+    exact hf.mono (by simp)
+  · simpa [scratchBytes, ht] using q.frame
+
+end Tight
 
 theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : Addr, ∃ R n : Nat,

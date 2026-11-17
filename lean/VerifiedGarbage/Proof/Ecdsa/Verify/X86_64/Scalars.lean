@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch

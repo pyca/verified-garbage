@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
 public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
-public import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
+public import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

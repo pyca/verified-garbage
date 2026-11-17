@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop

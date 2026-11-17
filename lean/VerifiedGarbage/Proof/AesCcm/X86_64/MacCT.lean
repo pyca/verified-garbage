@@ -437,18 +437,18 @@ theorem absorbTail_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Na
     w₂.trans o₂.wr, fun _ h => nomatch h⟩
 
 /-- What the pieces of the MAC write, within what the pieces may write. -/
-theorem macR_mut (W SP D : Addr) (n : Nat) {y : Nat} (hy : y + 16 ≤ 112) :
+theorem macR_mut [fp : Footprint] (W SP D : Addr) (n : Nat) {y : Nat} (hy : y + 16 ≤ 112) :
     ∀ r ∈ macR W SP y, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨wA W, by simp, Offset.sub_base W hy⟩
   · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨wC W, by simp, scratch_sub_tail W⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- After a piece of the MAC, the public facts of a run. -/
-theorem One.macR {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} (L : Lay K W SP)
+theorem One.macR [fp : Footprint] {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} (L : Lay K W SP)
     (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {y : Nat} (hy : y + 16 ≤ 112) {s s' : State}
     (o : One K W SP R N A D nl al n tl s) (E : Env K W SP s') (hf : Frame (macR W SP y) s.mem s'.mem)
     (hwr : s'.wr = s.wr) : One K W SP R N A D nl al n tl s' :=
@@ -464,7 +464,7 @@ theorem absorbPad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat
   have hy16 : y + 16 ≤ 112 := by omega_arith
   have r₁ := (absorbWhole_rel v L hR hDW hn hy hQ).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP P len σ ∧
-      ∃ Y, @Absorbed K W SP σ y P len Y s')
+      ∃ Y, @Absorbed _ K W SP σ y P len Y s')
     fun s₁ s₂ h => by
       obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
       exact ⟨WP.mono (absorbWhole_ok v L o₁.env hR o₁.sl.rounds hy a₁.buf a₁.r12 a₁.rbp) fun _ q => ⟨o₁, a₁, _, q⟩,
@@ -577,7 +577,7 @@ theorem aad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
   have r₂ := (aadHead_rel v L hR hDW hn hy h0 (P := A) (A := A) (N := N) (nl := nl) (tl := tl)
     fun s₁ s₂ h => by obtain ⟨⟨o₁, a₁⟩, ⟨o₂, a₂⟩, -⟩ := hA s₁ s₂ h; exact ⟨o₁, o₂, a₁, a₂⟩).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP A al σ ∧
-      ∃ Y, @Absorbed K W SP σ y (A + BitVec.ofNat 64 (headLen al)) (al - headLen al) Y s')
+      ∃ Y, @Absorbed _ K W SP σ y (A + BitVec.ofNat 64 (headLen al)) (al - headLen al) Y s')
     fun s₁ s₂ h => by
       obtain ⟨⟨o₁, a₁⟩, ⟨o₂, a₂⟩, -⟩ := hA s₁ s₂ h
       exact ⟨WP.mono (aadHead_ok v L o₁.env hR o₁.sl.rounds hy a₁.buf h0 a₁.r12 a₁.rbp) fun _ q => ⟨o₁, a₁, _, q⟩,
@@ -645,14 +645,14 @@ theorem mac_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
   have r₂ := (aad_rel v L hR hDW hn hy (A := A) (N := N) (nl := nl) (tl := tl) fun s₁ s₂ h => by
     obtain ⟨⟨o₁, a₁, -⟩, ⟨o₂, a₂, -⟩⟩ := hB s₁ s₂ h; exact ⟨o₁, o₂, a₁, a₂⟩).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ D n ∧
-      ∃ Y, @MacStep K W SP σ y Y s')
+      ∃ Y, @MacStep _ K W SP σ y Y s')
     fun s₁ s₂ h => by
       obtain ⟨⟨o₁, a₁, d₁⟩, ⟨o₂, a₂, d₂⟩⟩ := hB s₁ s₂ h
       exact ⟨WP.mono (aad_ok v L o₁.env o₁.sl hR hy a₁) fun _ q => ⟨o₁, d₁, _, q⟩,
         WP.mono (aad_ok v L o₂.env o₂.sl hR hy a₂) fun _ q => ⟨o₂, d₂, _, q⟩⟩
   have hC : ∀ (PP : State → State → Prop) s₁ s₂, (True ∧ ∃ σ₁ σ₂, PP σ₁ σ₂ ∧
-      (One K W SP R N A D nl al n tl σ₁ ∧ Buf K W SP σ₁ D n ∧ ∃ Y, @MacStep K W SP σ₁ y Y s₁) ∧
-      (One K W SP R N A D nl al n tl σ₂ ∧ Buf K W SP σ₂ D n ∧ ∃ Y, @MacStep K W SP σ₂ y Y s₂)) →
+      (One K W SP R N A D nl al n tl σ₁ ∧ Buf K W SP σ₁ D n ∧ ∃ Y, @MacStep _ K W SP σ₁ y Y s₁) ∧
+      (One K W SP R N A D nl al n tl σ₂ ∧ Buf K W SP σ₂ D n ∧ ∃ Y, @MacStep _ K W SP σ₂ y Y s₂)) →
       (One K W SP R N A D nl al n tl s₁ ∧ Buf K W SP s₁ D n) ∧ (One K W SP R N A D nl al n tl s₂ ∧ Buf K W SP s₂ D n) :=
     fun _ s₁ s₂ ⟨_, σ₁, σ₂, _, ⟨o₁, d₁, _, M₁⟩, ⟨o₂, d₂, _, M₂⟩⟩ =>
       ⟨⟨o₁.macR L hDW hy16 M₁.env M₁.frame M₁.wr, d₁.of_eq M₁.rd M₁.wr⟩,

@@ -2,7 +2,6 @@ module
 
 -- separate module: the window method for any `a`, which only the verification of the curves whose `a` is not `-3` (the Brainpool curves') uses, kept out of the window proofs every curve imports
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowGeneral
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.Proof.Weierstrass.JacDblAF
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry

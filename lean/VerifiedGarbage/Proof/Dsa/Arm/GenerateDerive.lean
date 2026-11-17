@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
-import VerifiedGarbage.Proof.Dsa.Arm.Env
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Zeroize.Common

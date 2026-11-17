@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.ScalarWord
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 import VerifiedGarbage.Proof.X25519.PPC64LE.AddSub
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.MulFn
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Word
 public import VerifiedGarbage.Proof.Framework.PowLit

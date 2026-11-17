@@ -7,8 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseRounds
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume

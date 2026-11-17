@@ -45,7 +45,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Sig

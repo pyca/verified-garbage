@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Product
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Table2
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.PrimeProduct`, which this module and modules that import it used -/
 

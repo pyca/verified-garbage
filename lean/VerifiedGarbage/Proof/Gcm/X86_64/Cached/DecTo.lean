@@ -6,10 +6,9 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecToDec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace

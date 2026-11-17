@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
 
 /-! ### `ChaCha20Poly1305.AArch64.Short.Stash`, which only this module used -/
 

@@ -29,7 +29,7 @@ add sp, sp, #8
 mov r5, r0
 mov r6, r1
 mov r0, r4
-movw r1, #2048
+movw r1, #704
 movt r1, #0
 bl {vg_zeroize}
 mov r0, r5
@@ -70,7 +70,7 @@ add sp, sp, #8
 mov r5, r0
 mov r6, r1
 mov r0, r4
-movw r1, #2048
+movw r1, #704
 movt r1, #0
 bl {vg_zeroize}
 mov r0, r5

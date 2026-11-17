@@ -21,12 +21,12 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Dsa.Arm.Generation
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.X25519.Arm.Instr

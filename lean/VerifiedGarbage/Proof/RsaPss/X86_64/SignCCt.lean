@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
 import VerifiedGarbage.Proof.RsaPss.SignEncode

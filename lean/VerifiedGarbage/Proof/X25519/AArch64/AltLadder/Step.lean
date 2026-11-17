@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 
 /-! ### `X25519.AArch64.AltLadder.Flags`, which this module and modules that import it used -/

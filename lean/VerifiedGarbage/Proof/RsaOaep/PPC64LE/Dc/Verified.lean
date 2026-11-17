@@ -20,12 +20,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Unmask
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Buf
+import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Shift
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Out
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Scan
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Shift
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Written
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ShiftV
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms

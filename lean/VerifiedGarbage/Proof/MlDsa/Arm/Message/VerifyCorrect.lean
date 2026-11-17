@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Entry
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
 

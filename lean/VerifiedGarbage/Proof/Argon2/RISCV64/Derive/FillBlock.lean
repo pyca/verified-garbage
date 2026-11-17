@@ -13,13 +13,12 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.RISCV64.Copy
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillInput
 public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
 
 /-! ### `Argon2.RISCV64.Derive.FillWrite`, which this module and modules that import it used -/
 

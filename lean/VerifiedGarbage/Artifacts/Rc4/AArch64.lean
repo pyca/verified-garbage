@@ -13,8 +13,9 @@ namespace VG.Artifacts.Rc4.AArch64
 
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact AArch64.target {
-    code := Impl.Rc4.AArch64.init
-    verified := Proof.Rc4.AArch64.init_verified },
+    code := Proof.Rc4.AArch64.initCleared
+    verified := Proof.Rc4.AArch64.initCleared_verified
+    residue := some ⟨Proof.Rc4.AArch64.initCleared_noResidue _⟩ },
   Spec.Rc4.applyApi.artifact AArch64.target {
     code := Impl.Rc4.AArch64.apply
     verified := Proof.Rc4.AArch64.apply_verified }]

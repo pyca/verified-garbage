@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotWord
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Lit

@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
-import VerifiedGarbage.Proof.Dsa.X86.PowCore
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs

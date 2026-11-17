@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

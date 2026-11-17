@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialDigit
 
 /-! ### `Ffdh.Arm.ParameterCandidate.TrialWordCongr`, which this module and modules that import it used -/
 

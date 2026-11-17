@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+public import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
 import VerifiedGarbage.Proof.Weierstrass.MontContract
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
-import VerifiedGarbage.Proof.Dsa.X86.MulCall
 public import VerifiedGarbage.Impl.Dsa.X86.Arith
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.StackFrame
@@ -15,7 +12,6 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Instr

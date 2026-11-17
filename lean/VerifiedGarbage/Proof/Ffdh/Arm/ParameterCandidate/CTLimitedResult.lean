@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedHead
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

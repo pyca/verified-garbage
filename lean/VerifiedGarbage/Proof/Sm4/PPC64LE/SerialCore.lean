@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Core
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.PPC64LE.Core
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Aes.Bitsliced
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.Bswap
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Modes
 public import VerifiedGarbage.Spec.Sm4.Cbc
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedBody
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit

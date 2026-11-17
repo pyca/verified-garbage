@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ecdh.Exchange
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Finish
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.EcKey.Compressed.Encode
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Contract

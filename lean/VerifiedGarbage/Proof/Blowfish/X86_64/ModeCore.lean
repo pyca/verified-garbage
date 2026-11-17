@@ -11,11 +11,10 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 public import VerifiedGarbage.Impl.Blowfish.X86_64.Modes
 import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

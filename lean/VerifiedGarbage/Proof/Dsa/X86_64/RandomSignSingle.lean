@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
@@ -13,11 +13,9 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI

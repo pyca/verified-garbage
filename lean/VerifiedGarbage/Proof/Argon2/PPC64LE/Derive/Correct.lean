@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillLoops
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
