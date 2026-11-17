@@ -39,11 +39,14 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
 * `R` and then `A` are decoded into slots 6–7 (`vdecode`), `R` kept at `RX`
   and `RY` (`Z = 1` in slot 10). `A` is negated, and
   `Q = [S]B + [k](-A)` computed from the top bit down: `Q` (slots 0, 21, 2)
-  doubled, then `B` (slots 8–10) added if bit `t` of `S` is set, and `-A`
-  if bit `t` of `k` is. The signature and the challenge are public (a
-  verification may leak its inputs), so the additions are only made where
-  the bits are set: the byte of the two bits is loaded into `r8`, which the
-  field functions never write, and the branches are on it.
+  doubled for each of the 456 bits; in the last 114, the rows of
+  base-point multiplication's comb (`ScalarBase.lean`), the table's entry of
+  the row's four bits of `S` selected into slots 8–9 and added, so that the
+  comb shares the doublings; and `-A` added if bit `t` of `k` is set. The
+  signature and the challenge are public (a verification may leak its
+  inputs), so `-A` is only added where the bit is set: the byte of the bits
+  is loaded into `r8`, which the field functions never write, and the
+  branch is on it.
 * `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
   doubled twice (a loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
@@ -207,24 +210,39 @@ of `k` (its bit 1) into `r8`. -/
 def vload : List Instr :=
   [.dp .sub .r11 .r11 (.imm 1), .dp .add .r7 .r0 (.reg .r11), .ldrb .r8 .r7 VBITS]
 
-/-- `Z` clear exactly when the bit of `S` (`hi = false`) or of `k` (`hi = true`) in `r8` is
-set. -/
-def vtest (hi : Bool) : List Instr :=
-  [if hi then .mov .r3 (.shifted .r8 .lsr 1) else .dp .and .r3 .r8 (.imm 1), .cmp .r3 (.imm 0)]
+/-- `Z` clear exactly when the bit of `k` in `r8` (its bit 1) is set. -/
+def vtest : List Instr := [.mov .r3 (.shifted .r8 .lsr 1), .cmp .r3 (.imm 0)]
 
 /-- `T` (slots 3–5) into `Q` (slots 0, 21, 2). -/
 def vtake : List Op := [.copy (slot 0) (slot 3), .copy (slot 21) (slot 4), .copy (slot 2) (slot 5)]
 
-/-- `Q = Q + (x : y : 1)` if the bit of `S` (`hi = false`) or of `k` (`hi = true`) in `r8` is
-set. -/
-def vaddIf (hi : Bool) (x y : Nat) : Prog isa :=
-  .seq (.block (vtest hi)) (.ite .ne (ops (addAt x y ++ vtake)) (.block []))
+/-- `Q = Q + (x : y : 1)` if the bit of `k` in `r8` is set. -/
+def vaddIf (x y : Nat) : Prog isa :=
+  .seq (.block vtest) (.ite .ne (ops (addAt x y ++ vtake)) (.block []))
 
-/-- A bit, with its byte in `r8`: `Q` doubled, `B` added if `S`'s bit is set and `-A` if `k`'s
-is, and the counter compared with zero. -/
+/-- `Z` clear exactly when `r11 < 114`: the bit is a row of the comb. -/
+def vrowTest : List Instr :=
+  [.dp .sub .r3 .r11 (.imm 114), .mov .r3 (.shifted .r3 .lsr 31), .cmp .r3 (.imm 0)]
+
+/-- The index of row `t = r11` of the comb of `S` into `r5` (`combDigit`): bits `t`, `t + 114`,
+`t + 228` and `t + 342` of `S`, each bit 0 of its byte at `VBITS`. -/
+def vcombDigit : List Instr :=
+  [.dp .add .r7 .r0 (.reg .r11),
+    .ldrb .r5 .r7 (VBITS + 342), .dp .and .r5 .r5 (.imm 1),
+    .ldrb .r3 .r7 (VBITS + 228), .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1),
+    .ldrb .r3 .r7 (VBITS + 114), .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1),
+    .ldrb .r3 .r7 VBITS, .dp .and .r3 .r3 (.imm 1), .dp .add .r5 .r3 (.shifted .r5 .lsl 1)]
+
+/-- In the comb's rows, the bits below 114: the table's entry of the row's four bits of `S`
+selected into slots 8–9 (`combSelect`) and added to `Q`. -/
+def vcombIf : Prog isa :=
+  .seq (.block vrowTest)
+    (.ite .ne (.seq (.block (vcombDigit ++ combSelect)) (ops (addAt 8 9 ++ vtake))) (.block []))
+
+/-- A bit, with its byte in `r8`: `Q` doubled, the comb's entry added in the comb's rows, `-A`
+added if `k`'s bit is set, and the counter compared with zero. -/
 def vdoubleAdd : Prog isa :=
-  .seq (ops (doubleAt 0 21 2)) <| .seq (vaddIf false 8 9) <| .seq (vaddIf true 6 7)
-    (.block [.cmp .r11 (.imm 0)])
+  .seq (ops (doubleAt 0 21 2)) <| .seq vcombIf <| .seq (vaddIf 6 7) (.block [.cmp .r11 (.imm 0)])
 
 /-- One bit `t = r11 - 1`, from the top. -/
 def vstep : Prog isa := .seq (.block vload) vdoubleAdd

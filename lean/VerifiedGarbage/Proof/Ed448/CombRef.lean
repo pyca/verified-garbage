@@ -13,8 +13,13 @@ algebra. `comb`: `[k]B` by the four-column comb of `Impl/Ed448/Comb.lean`,
 addition of the affine table entry of the row's four bits of `k`, 114 apart
 (`combDigit`), from the neutral point.
 
-That it encodes `[k]B` (`BaseCombOk`) needs the group law: it is a `Prop`,
-proved in `Proof/Ed448/CombFacts.lean`, which only registration files import.
+`vcomb`: `[S]B + [k]A` from the top bit of 456 down, doubling for every bit,
+adding the comb's table entry of `S` in the last 114 (the comb's rows, which
+share the doublings), and `A` when the bit of `k` is set.
+
+That they agree with the specification (`BaseCombOk`, `VerifyEqCombOk`) needs
+the group law: these are `Prop`s, proved in `Proof/Ed448/CombFacts.lean`,
+which only registration files import.
 -/
 
 @[expose] public section
@@ -60,5 +65,38 @@ theorem comb_row (k : Nat) {t : Nat} (ht : t < 114) :
 def BaseCombOk : Prop :=
   ∀ k, Below456 k → Spec.Ed448.encodePoint (comb k 114) =
     Spec.Ed448.encodePoint (Spec.Ed448.pointMul k Spec.Ed448.basePoint)
+
+/-! ## Verification's equation -/
+
+/-- One bit `t`: the point doubled, the comb's entry of row `t` of `S` added if `t` is a row,
+and `a` added if the bit `bk` (of `k`) is set. -/
+def vcombStep (S : Nat) (bk : Bool) (t : Nat) (a q : Point) : Point :=
+  let r₁ := double q
+  let r₂ := if t < 114 then Spec.Ed448.pointAdd r₁ (combPoint (combDigit S t)) else r₁
+  if bk then Spec.Ed448.pointAdd r₂ a else r₂
+
+/-- The point after the top `m` of the 456 bits of `k`, with the comb's rows of `S` among
+them. -/
+def vcomb (S K : Nat) (a : Point) : Nat → Point
+  | 0 => Spec.Ed448.identity
+  | m + 1 => vcombStep S (bitAt K (455 - m)) (455 - m) a (vcomb S K a m)
+
+theorem vcomb_bit (S K : Nat) (a : Point) {t : Nat} (ht : t < 456) :
+    vcomb S K a (456 - t) = vcombStep S (bitAt K t) t a (vcomb S K a (456 - (t + 1))) := by
+  rw [show 456 - t = (456 - (t + 1)) + 1 by omega_using [ht], vcomb,
+    show 455 - (456 - (t + 1)) = t by omega_using [ht]]
+
+/-- The equation (RFC 8032 §5.2.7) of decoded `A` and `R`: `S < L`, and
+`[4]([S]B + [k](-A))` (by `vcomb`) and `[4]R` (by doubling) represent the
+same point. -/
+def VerifyEqCombOk : Prop :=
+  ∀ (pk sig ch : List Byte) (a r : Point), pk.length = 57 → sig.length = 114 → ch.length = 57 →
+    Spec.Ed448.decodePoint pk = some a → Spec.Ed448.decodePoint (sig.take 57) = some r →
+    Spec.Ed448.verifyEquation pk sig ch =
+      (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) &&
+        Spec.Ed448.pointEqual
+          (double (double (vcomb (Spec.Ed448.decodeLE (sig.drop 57)) (Spec.Ed448.decodeLE ch)
+            (negPoint a) 456)))
+          (double (double r)))
 
 end VG.Proof.Ed448

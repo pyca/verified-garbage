@@ -31,8 +31,8 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 # Ed448 verification's equation on ARMv7: `Verified`
 
 Correctness including the ABI, given the reference computations' agreement
-with the specification (`RecoverOk`, `VerifyEqOk`, which the registration
-file passes in, from `Proof/Ed448/Facts.lean`), and constant time.
+with the specification (`RecoverOk`, `VerifyEqCombOk`, which the registration
+file passes in, from `Proof/Ed448/Facts.lean` and `CombFacts.lean`), and constant time.
 
 The code branches on the bits of `S` and of the challenge, which the contract
 declares public, so its constant time relates two runs (`RelCT`):
@@ -44,9 +44,10 @@ declares public, so its constant time relates two runs (`RelCT`):
 * the two runs enter the loop with the same bits of `S` and `k` at `VBITS`,
   as correctness says (`vbefore_ok`), and each iteration keeps the loop's
   invariant in both (`vload_ok`, `vdoubleAdd_ok`), so both load the same byte
-  into `r8`; from there the doubling, the tests of `r8` and the additions are
-  constant time by taint tracking, with `r8` and the counter public, which
-  the field functions never write.
+  into `r8`; from there the doubling, the comb's row (in the last 114 bits,
+  a test of the counter; its selection scans the whole table), the test of
+  `r8` and the addition are constant time by taint tracking, with `r8` and
+  the counter public, which the field functions never write.
 -/
 
 @[expose] public section
@@ -54,7 +55,7 @@ declares public, so its constant time relates two runs (`RelCT`):
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
-open VG.Proof.Ed448 (RecoverOk VerifyEqOk)
+open VG.Proof.Ed448 (RecoverOk VerifyEqCombOk)
 open VG.Proof.Ed25519.Arm (CT ctRegs ctBoth)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
@@ -62,7 +63,7 @@ theorem VerifyPre.of {s : State} (h : verifyEquationLocal.pre s) : VerifyPre s :
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1,
     h.2.2.2.2.2.2.2.2⟩
 
-theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqOk) (s : State) (hs : verifyEquationLocal.pre s) :
+theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqCombOk) (s : State) (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := verifyEquation_main hR hE (VerifyPre.of hs)
   exact ⟨t, s', he, ⟨h.1, Exec.sp he⟩, h.2⟩
@@ -143,7 +144,7 @@ theorem vdoubleAdd_ct (base : Addr) (S K : Nat) {n : Nat} (hn : n < 456) :
     · exact hx.r8.trans hy.r8.symm
     · exact hx.r11.trans hy.r11.symm
   · rintro x ⟨A, s₀, hb, hi⟩
-    exact WP.mono (vdoubleAdd_ok hn hi) fun u ⟨hu, hz⟩ => ⟨⟨A, s₀, hb, hu⟩, hz⟩
+    exact WP.mono (vdoubleAdd_ok hn hb hi) fun u ⟨hu, hz⟩ => ⟨⟨A, s₀, hb, hu⟩, hz⟩
 
 theorem vloop_ct (base : Addr) (S K : Nat) :
     CT (fun x y => Start base S K x ∧ Start base S K y) vloop

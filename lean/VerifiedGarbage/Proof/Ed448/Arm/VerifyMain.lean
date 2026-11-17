@@ -292,12 +292,14 @@ end
 /-!
 # Ed448 verification's equation on ARMv7: `[S]B + [k](-A)`
 
-One iteration of `vloop` (`vstep_ok`), for bit `t` of `S` and of `k` (bits 0
-and 1 of byte `t` at `VBITS`, loaded into `r8`: `vload_ok`): `Q` (slots 0, 21,
-2) doubled, then `B` (slots 8–10) added if the first bit is set, and `-A`
-(slots 6, 7 and 10) if the second is (`vdoubleAdd_ok`). The loop's invariant
-(`VInv`): `Q` is the reference ladder's point after the bits above `n`
-(`Proof.Ed448.vladder`).
+One iteration of `vloop` (`vstep_ok`), for bit `t` (the bits of `S` and of `k`
+are bits 0 and 1 of the bytes at `VBITS`; byte `t` is loaded into `r8`:
+`vload_ok`): `Q` (slots 0, 21, 2) doubled; in the comb's rows, `t < 114`, the
+table's entry of the row's four bits of `S` (`vcombDigit_ok`, and
+base-point multiplication's `combSelect_ok`) added (`vcombIf_ok`); and `-A`
+(slots 6, 7 and 10) added if the bit of `k` is set (`vdoubleAdd_ok`). The
+loop's invariant (`VInv`): `Q` is the reference computation's point after the
+bits above `n` (`Proof.Ed448.vcomb`).
 -/
 
 @[expose] public section
@@ -305,7 +307,7 @@ and 1 of byte `t` at `VBITS`, loaded into `r8`: `vload_ok`): `Q` (slots 0, 21,
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
-open VG.Proof.Ed448 (double vladder vstepRef vladder_bit bitAt)
+open VG.Proof.Ed448 (double vcomb vcombStep vcomb_bit combDigit combDigit_lt bitAt)
 open VG.Impl.X448.Arm (slot ACC)
 
 /-! ## The values -/
@@ -318,9 +320,15 @@ def addEnv (x y : Index) : Bool → Env → Env
   | true, e => applyOps (addF x y ++ takeF) e
   | false, e => e
 
-/-- The slots after an iteration, for the bits `sw₁` (of `S`) and `sw₂` (of `k`). -/
-def vstepEnv (sw₁ sw₂ : Bool) (e : Env) : Env :=
-  addEnv 6 7 sw₂ (addEnv 8 9 sw₁ (applyOps (doubleF 0 21 2) e))
+/-- The slots after the comb's entry `i` is selected and added, in a row of the comb. -/
+def combEnv (i : Nat) : Bool → Env → Env
+  | true, e => applyOps (addF 8 9 ++ takeF) (selEnv i e)
+  | false, e => e
+
+/-- The slots after an iteration: in a row of the comb (`row`), of index `i`, and for the bit
+`sw` of `k`. -/
+def vstepEnv (row : Bool) (i : Nat) (sw : Bool) (e : Env) : Env :=
+  addEnv 6 7 sw (combEnv i row (applyOps (doubleF 0 21 2) e))
 
 theorem addTake_keep (e : Env) (x y : Index) (hx : x.val = 6 ∧ y.val = 7 ∨ x.val = 8 ∧ y.val = 9) (i : Index)
     (hi : 6 ≤ i.val ∧ i.val < 12) : applyOps (addF x y ++ takeF) e i = e i := by
@@ -331,65 +339,83 @@ theorem addTake_keep (e : Env) (x y : Index) (hx : x.val = 6 ∧ y.val = 7 ∨ x
     · exact Or.inr ⟨Fin.ext h1, Fin.ext h2⟩
   rcases hx' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> revert i <;> decide
 
-theorem addEnv_keep (sw : Bool) (e : Env) (x y : Index) (hx : x.val = 6 ∧ y.val = 7 ∨ x.val = 8 ∧ y.val = 9)
-    (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) : addEnv x y sw e i = e i := by
+theorem addEnv_keep (sw : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) :
+    addEnv 6 7 sw e i = e i := by
   cases sw
   · rfl
-  · exact addTake_keep e x y hx i hi
+  · exact addTake_keep e 6 7 (Or.inl ⟨rfl, rfl⟩) i hi
 
-theorem addEnv_pt8 (sw : Bool) (e : Env) :
-    pt (addEnv 8 9 sw e) 0 21 2 = if sw then addWith (e 11) (pt e 0 21 2) (pt e 8 9 10) else pt e 0 21 2 := by
-  cases sw <;> rfl
+/-- The comb's addition keeps `-A`, 1 and `d`. -/
+theorem combEnv_keep (i : Nat) (row : Bool) (e : Env) (j : Index)
+    (hj : j.val = 6 ∨ j.val = 7 ∨ j.val = 10 ∨ j.val = 11) : combEnv i row e j = e j := by
+  cases row
+  · rfl
+  · have h8 : j ≠ 8 := fun h => by subst h; omega_arith
+    have h9 : j ≠ 9 := fun h => by subst h; omega_arith
+    rw [combEnv, addTake_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) j (by omega_using [hj]), selEnv,
+      Function.update_of_ne h9, Function.update_of_ne h8]
+
+theorem combEnv_pt (i : Nat) (row : Bool) (e : Env) :
+    pt (combEnv i row e) 0 21 2 =
+      if row then addWith (e 11) (pt e 0 21 2) ⟨(Impl.Ed448.Comb.entry i).1, (Impl.Ed448.Comb.entry i).2, e 10⟩
+      else pt e 0 21 2 := by
+  cases row <;> rfl
 
 theorem addEnv_pt6 (sw : Bool) (e : Env) :
     pt (addEnv 6 7 sw e) 0 21 2 = if sw then addWith (e 11) (pt e 0 21 2) (pt e 6 7 10) else pt e 0 21 2 := by
   cases sw <;> rfl
 
-theorem vstepEnv_pt (sw₁ sw₂ : Bool) (e : Env) :
-    pt (vstepEnv sw₁ sw₂ e) 0 21 2 =
+theorem vstepEnv_pt (row : Bool) (i : Nat) (sw : Bool) (e : Env) :
+    pt (vstepEnv row i sw e) 0 21 2 =
       let r₁ := double (pt e 0 21 2)
-      let r₂ := if sw₁ then addWith (e 11) r₁ (pt e 8 9 10) else r₁
-      if sw₂ then addWith (e 11) r₂ (pt e 6 7 10) else r₂ := by
+      let r₂ := if row then
+        addWith (e 11) r₁ ⟨(Impl.Ed448.Comb.entry i).1, (Impl.Ed448.Comb.entry i).2, e 10⟩ else r₁
+      if sw then addWith (e 11) r₂ (pt e 6 7 10) else r₂ := by
   unfold vstepEnv
   generalize he0 : applyOps (doubleF 0 21 2) e = e0
   obtain p0 : pt e0 0 21 2 = double (pt e 0 21 2) := by rw [← he0, doubleF_eval0]
   obtain k0 : ∀ i : Index, 3 ≤ i.val ∧ i.val < 12 → e0 i = e i := fun i hi => by
     rw [← he0, doubleF_keep0 _ _ (Or.inl hi)]
-  generalize he1 : addEnv 8 9 sw₁ e0 = e1
-  obtain p1 : pt e1 0 21 2 = if sw₁ then addWith (e0 11) (pt e0 0 21 2) (pt e0 8 9 10) else pt e0 0 21 2 := by
-    rw [← he1, addEnv_pt8]
-  obtain k1 : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → e1 i = e0 i := fun i hi => by
-    rw [← he1, addEnv_keep _ _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ hi]
+  generalize he1 : combEnv i row e0 = e1
+  obtain p1 : pt e1 0 21 2 = if row then
+      addWith (e0 11) (pt e0 0 21 2) ⟨(Impl.Ed448.Comb.entry i).1, (Impl.Ed448.Comb.entry i).2, e0 10⟩
+      else pt e0 0 21 2 := by
+    rw [← he1, combEnv_pt]
+  obtain k1 : ∀ j : Index, j.val = 6 ∨ j.val = 7 ∨ j.val = 10 ∨ j.val = 11 → e1 j = e0 j := fun j hj => by
+    rw [← he1, combEnv_keep _ _ _ _ hj]
   obtain e11 : e1 11 = e 11 := by rw [k1 11 (by decide), k0 11 (by decide)]
-  obtain e11' : e0 11 = e 11 := k0 11 (by decide)
-  obtain b8 : pt e0 8 9 10 = pt e 8 9 10 :=
-    pt_congr' (k0 8 (by decide)) (k0 9 (by decide)) (k0 10 (by decide))
   obtain a6 : pt e1 6 7 10 = pt e 6 7 10 :=
     pt_congr' (by rw [k1 6 (by decide), k0 6 (by decide)]) (by rw [k1 7 (by decide), k0 7 (by decide)])
       (by rw [k1 10 (by decide), k0 10 (by decide)])
-  rw [addEnv_pt6, p1, e11, e11', b8, a6, p0]
+  rw [addEnv_pt6, p1, e11, k0 11 (by decide), k0 10 (by decide), a6, p0]
 
-theorem vstepEnv_keep (sw₁ sw₂ : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) :
-    vstepEnv sw₁ sw₂ e i = e i := by
-  rw [vstepEnv, addEnv_keep _ _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ hi, addEnv_keep _ _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ hi,
-    doubleF_keep0 _ _ (Or.inl ⟨by omega_arith, hi.2⟩)]
+theorem vstepEnv_keep (row : Bool) (i : Nat) (sw : Bool) (e : Env) (j : Index)
+    (hj : j.val = 6 ∨ j.val = 7 ∨ j.val = 10 ∨ j.val = 11) : vstepEnv row i sw e j = e j := by
+  rw [vstepEnv, addEnv_keep _ _ _ (by omega_using [hj]), combEnv_keep _ _ _ _ hj,
+    doubleF_keep0 _ _ (Or.inl (by omega_using [hj]))]
 
-/-- One bit of both scalars: the reference ladder's point after the bits above
-`t`, then after bit `t`. -/
-theorem vladder_step {e : Env} {S K t : Nat} {A : Spec.Ed448.Point} (ht : t < 456)
-    (hr : pt e 0 21 2 = vladder S K A (456 - (t + 1)))
-    (hq : pt e 8 9 10 = Spec.Ed448.basePoint) (ha : pt e 6 7 10 = A) (hd : e 11 = Spec.Ed448.d) :
-    pt (vstepEnv (decide ((S >>> t) &&& 1 = 1)) (decide ((K >>> t) &&& 1 = 1)) e) 0 21 2 =
-      vladder S K A (456 - t) := by
-  rw [vstepEnv_pt, hd, hq, ha, hr, vladder_bit S K A ht]
-  rfl
+/-- One bit: the reference computation's point after the bits above `t`, then after bit `t`. -/
+theorem vcomb_step {e : Env} {S K t : Nat} {A : Spec.Ed448.Point} (ht : t < 456)
+    (hr : pt e 0 21 2 = vcomb S K A (456 - (t + 1)))
+    (h1 : e 10 = 1) (ha : pt e 6 7 10 = A) (hd : e 11 = Spec.Ed448.d) :
+    pt (vstepEnv (decide (t < 114)) (combDigit S t) (decide ((K >>> t) &&& 1 = 1)) e) 0 21 2 =
+      vcomb S K A (456 - t) := by
+  rw [vstepEnv_pt, hd, h1, ha, hr, vcomb_bit S K A ht]
+  by_cases hrow : t < 114
+  · rw [decide_eq_true hrow]
+    simp only [vcombStep, hrow, ↓reduceIte]
+    rfl
+  · rw [decide_eq_false hrow]
+    simp only [vcombStep, hrow, ↓reduceIte, Bool.false_eq_true]
+    rfl
 
 /-! ## One iteration -/
 
-/-- The byte of two bits, in `r8`: what the tests of `vtest` compare with zero. -/
+/-- The byte of two bits, in `r8`: what the test of `vtest` compares with zero, and its bit of
+`S`. -/
 theorem pair_test : ∀ a < 2, ∀ b < 2,
-    (((BitVec.ofNat 8 (a + 2 * b)).setWidth 32 &&& 1) - 0 == (0 : BitVec 32)) = !decide (a = 1) ∧
-    (((BitVec.ofNat 8 (a + 2 * b)).setWidth 32 >>> 1) - 0 == (0 : BitVec 32)) = !decide (b = 1) := by
+    (((BitVec.ofNat 8 (a + 2 * b)).setWidth 32 >>> 1) - 0 == (0 : BitVec 32)) = !decide (b = 1) ∧
+    (BitVec.ofNat 8 (a + 2 * b)).setWidth 32 &&& 1 = (BitVec.ofNat 8 a).setWidth 32 := by
   decide
 
 /-- The loop's invariant, after the bits above `n` of `S` and `k`, with `-A` the point `A`. -/
@@ -399,8 +425,8 @@ structure VInv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ s : State)
   regs : Keeps (.r8 :: .r11 :: workRegs) s₀ s
   r11 : s.gpr .r11 = BitVec.ofNat 32 n
   mem : Outside2 base 64 2816 ACC 512 s₀.mem s.mem
-  rep : pt (E s.mem base) 0 21 2 = vladder S K A (456 - n)
-  q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
+  rep : pt (E s.mem base) 0 21 2 = vcomb S K A (456 - n)
+  one : E s.mem base 10 = 1
   na : pt (E s.mem base) 6 7 10 = A
   d : E s.mem base 11 = Spec.Ed448.d
 
@@ -413,8 +439,8 @@ structure VBit (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ s : State)
   r11 : s.gpr .r11 = BitVec.ofNat 32 n
   r8 : s.gpr .r8 = (BitVec.ofNat 8 (pair2 S K n)).setWidth 32
   mem : Outside2 base 64 2816 ACC 512 s₀.mem s.mem
-  rep : pt (E s.mem base) 0 21 2 = vladder S K A (456 - (n + 1))
-  q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
+  rep : pt (E s.mem base) 0 21 2 = vcomb S K A (456 - (n + 1))
+  one : E s.mem base 10 = 1
   na : pt (E s.mem base) 6 7 10 = A
   d : E s.mem base 11 = Spec.Ed448.d
 
@@ -449,52 +475,160 @@ theorem vload_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   · rw [v3.other _ (by decide), v2.other _ (by decide), b1]
   · rw [v3.gpr, v2.mem, v1.mem, bitval]
   · rw [m3]; exact hi.rep
-  · rw [m3]; exact hi.q
+  · rw [m3]; exact hi.one
   · rw [m3]; exact hi.na
   · rw [m3]; exact hi.d
 
 theorem vtest_ok (s : State) {a b : Nat} (ha : a < 2) (hb2 : b < 2)
-    (h8 : s.gpr .r8 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32) (hi : Bool) :
-    WP isa (.block (vtest hi)) s fun u =>
-      u.z = !decide ((if hi then b else a) = 1) ∧ Keeps [.r3] s u ∧ u.mem = s.mem := by
+    (h8 : s.gpr .r8 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32) :
+    WP isa (.block vtest) s fun u => u.z = !decide (b = 1) ∧ Keeps [.r3] s u ∧ u.mem = s.mem := by
   obtain pm := pair_test a ha b hb2
   unfold vtest
-  cases hi
-  · refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u1 v1 => ?_
-    refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u2 v2 hz =>
-      WP.block_nil ⟨?_, ?_, ?_⟩
-    · rw [hz, v1.gpr]; change ((s.gpr .r8 &&& 1) - 0 == (0 : BitVec 32)) = _
-      rw [h8]; exact pm.1
-    · exact rest_keeps ((v1.rest (ws := [.r3]) (by decide)).trans (v2.rest _))
-    · rw [v2.mem, v1.mem]
-  · refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsr (by decide)) fun u1 v1 => ?_
-    refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u2 v2 hz =>
-      WP.block_nil ⟨?_, ?_, ?_⟩
-    · rw [hz, v1.gpr, h8]; exact pm.2
-    · exact rest_keeps ((v1.rest (ws := [.r3]) (by decide)).trans (v2.rest _))
-    · rw [v2.mem, v1.mem]
+  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsr (by decide)) fun u1 v1 => ?_
+  refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u2 v2 hz =>
+    WP.block_nil ⟨?_, ?_, ?_⟩
+  · rw [hz, v1.gpr, h8]; exact pm.1
+  · exact rest_keeps ((v1.rest (ws := [.r3]) (by decide)).trans (v2.rest _))
+  · rw [v2.mem, v1.mem]
 
 theorem vaddIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {a b : Nat}
-    (ha : a < 2) (hb2 : b < 2) (h8 : s.gpr .r8 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32) (hi : Bool)
-    (x y : Index) :
-    WP isa (vaddIf hi x.val y.val) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
-      E u.mem base = addEnv x y (decide ((if hi then b else a) = 1)) (E s.mem base) := by
+    (ha : a < 2) (hb2 : b < 2) (h8 : s.gpr .r8 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32) :
+    WP isa (vaddIf 6 7) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+      E u.mem base = addEnv 6 7 (decide (b = 1)) (E s.mem base) := by
   unfold vaddIf
-  refine WP.seq (WP.mono (vtest_ok s ha hb2 h8 hi) fun u ⟨uz, uk, um⟩ => ?_)
+  refine WP.seq (WP.mono (vtest_ok s ha hb2 h8) fun u ⟨uz, uk, um⟩ => ?_)
   obtain ku : Keep base s u := ⟨uk.mono (by decide), by rw [um]; exact Outside2.refl _ _ _ _ _ _⟩
-  refine WP.ite (decide ((if hi then b else a) = 1)) (by rw [VG.Proof.X25519.Arm.eval_ne, uz, Bool.not_not])
+  refine WP.ite (decide (b = 1)) (by rw [VG.Proof.X25519.Arm.eval_ne, uz, Bool.not_not])
     (fun hset => ?_) (fun hclr => ?_)
-  · rw [show addAt x.val y.val ++ vtake = (addF x y ++ takeF).map FieldOp.impl from rfl]
-    refine WP.mono (ops_ok (ku.scr hs) (um ▸ hbd) (addF x y ++ takeF)) fun v ⟨kv, bv, ev⟩ =>
+  · rw [show addAt 6 7 ++ vtake = (addF 6 7 ++ takeF).map FieldOp.impl from rfl]
+    refine WP.mono (ops_ok (ku.scr hs) (um ▸ hbd) (addF 6 7 ++ takeF)) fun v ⟨kv, bv, ev⟩ =>
       ⟨ku.trans kv, bv, ?_⟩
     rw [ev, um, hset]; rfl
   · refine WP.block_nil ⟨ku, um ▸ hbd, ?_⟩
     rw [um, hclr]; rfl
 
+/-- The test of a row: the top bit of `n - 114`. -/
+theorem row_test : ∀ n < 456,
+    ((BitVec.ofNat 32 n - 114) >>> 31 - 0 == (0 : BitVec 32)) = !decide (n < 114) := by
+  decide +kernel
+
+theorem vrowTest_ok (s : State) {n : Nat} (hn : n < 456) (hb : s.gpr .r11 = BitVec.ofNat 32 n) :
+    WP isa (.block vrowTest) s fun u => u.z = !decide (n < 114) ∧ Keeps [.r3] s u ∧ u.mem = s.mem := by
+  unfold vrowTest
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u1 v1 => ?_
+  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsr (by decide)) fun u2 v2 => ?_
+  refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u3 v3 hz =>
+    WP.block_nil ⟨?_, ?_, ?_⟩
+  · rw [hz, v2.gpr, v1.gpr]; change ((s.gpr .r11 - 114) >>> 31 - 0 == (0 : BitVec 32)) = _
+    rw [hb]; exact row_test n hn
+  · exact rest_keeps ((v1.rest (ws := [.r3]) (by decide)).trans ((v2.rest (by decide)).trans (v3.rest _)))
+  · rw [v3.mem, v2.mem, v1.mem]
+
+theorem vcombDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S K t : Nat} (ht : t < 114)
+    (hb : s.gpr .r11 = BitVec.ofNat 32 t)
+    (hbits : ∀ i < 456, s.mem (off base (VBITS + i)) = BitVec.ofNat 8 (pair2 S K i)) :
+    WP isa (.block vcombDigit) s fun u =>
+      u.gpr .r5 = BitVec.ofNat 32 (combDigit S t) ∧ Keeps [.r7, .r5, .r3] s u ∧ u.mem = s.mem := by
+  have hB : VBITS = 3104 := rfl
+  obtain low : ∀ i, (BitVec.ofNat 8 (pair2 S K i)).setWidth 32 &&& 1 =
+      (BitVec.ofNat 8 ((S >>> i) &&& 1)).setWidth 32 := fun i =>
+    (pair_test _ (bit_lt S i) _ (bit_lt K i)).2
+  unfold vcombDigit
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u1 v1 => ?_
+  obtain e7 : u1.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 t := by
+    rw [v1.gpr]; change s.gpr .r0 + s.gpr .r11 = _; rw [hb]
+  obtain ea : ∀ c, t + c < 8192 → State.addr (u1.gpr .r7 + BitVec.ofNat 32 c) = off base (c + t) := fun c hc => by
+    rw [e7, Offset.add_add]
+    exact (hs.ea hc).trans (congrArg (off base) (Nat.add_comm t c))
+  obtain rd : ∀ c, t + c < 8192 → InRegions (s.rd ++ s.wr) (off base (c + t)) 1 := fun c hc =>
+    hs.read (by omega_using [hc])
+  refine VG.Proof.X25519.Arm.wp_ldrb (a := off base (VBITS + 342 + t)) (by omega_arith) (ea _ (by omega_arith))
+    (by rw [v1.rd, v1.wr]; exact rd _ (by omega_arith)) fun u2 v2 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u3 v3 => ?_
+  obtain r3 := ((v1.rest (ws := [.r7, .r5, .r3]) (by decide)).trans (v2.rest (by decide))).trans
+    (v3.rest (by decide))
+  obtain m3 : u3.mem = s.mem := by rw [v3.mem, v2.mem, v1.mem]
+  obtain x3 : u3.gpr .r5 = (BitVec.ofNat 8 ((S >>> (t + 342)) &&& 1)).setWidth 32 := by
+    rw [v3.gpr]; change u2.gpr .r5 &&& 1 = _
+    rw [v2.gpr, v1.mem, show VBITS + 342 + t = VBITS + (t + 342) by omega_arith,
+      hbits (t + 342) (by omega_using [ht])]
+    exact low _
+  obtain q3 : u3.gpr .r7 = u1.gpr .r7 := by rw [v3.other .r7 (by decide), v2.other .r7 (by decide)]
+  refine VG.Proof.X25519.Arm.wp_ldrb (a := off base (VBITS + 228 + t)) (by omega_arith)
+    (by rw [q3]; exact ea _ (by omega_arith))
+    (by rw [r3.rd, r3.wr]; exact rd _ (by omega_arith)) fun u4 v4 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u5 v5 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_lsl (by decide)) fun u6 v6 => ?_
+  obtain r6 := ((r3.trans (v4.rest (by decide))).trans (v5.rest (by decide))).trans (v6.rest (by decide))
+  obtain m6 : u6.mem = s.mem := by rw [v6.mem, v5.mem, v4.mem, m3]
+  obtain q6 : u6.gpr .r7 = u1.gpr .r7 := by
+    rw [v6.other .r7 (by decide), v5.other .r7 (by decide), v4.other .r7 (by decide), q3]
+  obtain x6 : u6.gpr .r5 = (BitVec.ofNat 8 ((S >>> (t + 228)) &&& 1)).setWidth 32 +
+      (BitVec.ofNat 8 ((S >>> (t + 342)) &&& 1)).setWidth 32 <<< 1 := by
+    rw [v6.gpr]; change u5.gpr .r3 + u5.gpr .r5 <<< 1 = _
+    rw [v5.gpr, v5.other .r5 (by decide), v4.other .r5 (by decide), x3]; change (u4.gpr .r3 &&& 1) + _ = _
+    rw [v4.gpr, m3, show VBITS + 228 + t = VBITS + (t + 228) by omega_arith,
+      hbits (t + 228) (by omega_using [ht]), low]
+  refine VG.Proof.X25519.Arm.wp_ldrb (a := off base (VBITS + 114 + t)) (by omega_arith)
+    (by rw [q6]; exact ea _ (by omega_arith))
+    (by rw [r6.rd, r6.wr]; exact rd _ (by omega_arith)) fun u7 v7 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u8 v8 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_lsl (by decide)) fun u9 v9 => ?_
+  obtain r9 := ((r6.trans (v7.rest (by decide))).trans (v8.rest (by decide))).trans (v9.rest (by decide))
+  obtain m9 : u9.mem = s.mem := by rw [v9.mem, v8.mem, v7.mem, m6]
+  obtain q9 : u9.gpr .r7 = u1.gpr .r7 := by
+    rw [v9.other .r7 (by decide), v8.other .r7 (by decide), v7.other .r7 (by decide), q6]
+  obtain x9 : u9.gpr .r5 = (BitVec.ofNat 8 ((S >>> (t + 114)) &&& 1)).setWidth 32 +
+      ((BitVec.ofNat 8 ((S >>> (t + 228)) &&& 1)).setWidth 32 +
+        (BitVec.ofNat 8 ((S >>> (t + 342)) &&& 1)).setWidth 32 <<< 1) <<< 1 := by
+    rw [v9.gpr]; change u8.gpr .r3 + u8.gpr .r5 <<< 1 = _
+    rw [v8.gpr, v8.other .r5 (by decide), v7.other .r5 (by decide), x6]; change (u7.gpr .r3 &&& 1) + _ = _
+    rw [v7.gpr, m6, show VBITS + 114 + t = VBITS + (t + 114) by omega_arith,
+      hbits (t + 114) (by omega_using [ht]), low]
+  refine VG.Proof.X25519.Arm.wp_ldrb (a := off base (VBITS + t)) (by omega_arith)
+    (by rw [q9]; exact ea _ (by omega_arith))
+    (by rw [r9.rd, r9.wr]; exact rd _ (by omega_arith)) fun u10 v10 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u11 v11 => ?_
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_lsl (by decide)) fun u12 v12 => WP.block_nil ⟨?_, ?_, ?_⟩
+  · rw [v12.gpr]; change u11.gpr .r3 + u11.gpr .r5 <<< 1 = _
+    rw [v11.gpr, v11.other .r5 (by decide), v10.other .r5 (by decide), x9]; change (u10.gpr .r3 &&& 1) + _ = _
+    rw [v10.gpr, m9, hbits t (by omega_using [ht]), low]
+    exact digit_val _ (bit_lt S t) _ (bit_lt S (t + 114)) _ (bit_lt S (t + 228)) _ (bit_lt S (t + 342))
+  · exact rest_keeps (((r9.trans (v10.rest (by decide))).trans (v11.rest (by decide))).trans
+      (v12.rest (by decide)))
+  · rw [v12.mem, v11.mem, v10.mem, m9]
+
+theorem vcombIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {S K n : Nat}
+    (hn : n < 456) (hb : s.gpr .r11 = BitVec.ofNat 32 n)
+    (hbits : ∀ i < 456, s.mem (off base (VBITS + i)) = BitVec.ofNat 8 (pair2 S K i)) :
+    WP isa vcombIf s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+      E u.mem base = combEnv (combDigit S n) (decide (n < 114)) (E s.mem base) := by
+  unfold vcombIf
+  refine WP.seq (WP.mono (vrowTest_ok s hn hb) fun u ⟨uz, uk, um⟩ => ?_)
+  obtain ku : Keep base s u := ⟨uk.mono (by decide), by rw [um]; exact Outside2.refl _ _ _ _ _ _⟩
+  obtain hsu := ku.scr hs
+  refine WP.ite (decide (n < 114)) (by rw [VG.Proof.X25519.Arm.eval_ne, uz, Bool.not_not])
+    (fun hrow => ?_) (fun hno => ?_)
+  · obtain hlt : n < 114 := of_decide_eq_true hrow
+    refine WP.seq (VG.Proof.X25519.Arm.WP.append (vcombDigit_ok (S := S) (K := K) hsu hlt
+      (by rw [uk.1 _ (by decide)]; exact hb) (by rw [um]; exact hbits)) fun v ⟨vd, vk, vm⟩ => ?_)
+    obtain kv : Keep base u v := ⟨vk.mono (by decide), by rw [vm]; exact Outside2.refl _ _ _ _ _ _⟩
+    refine WP.mono (combSelect_ok (kv.scr hsu) (by rw [vm, um]; exact hbd) (combDigit_lt S n) vd)
+      fun w ⟨kw, bw, ew⟩ => ?_
+    rw [show addAt 8 9 ++ vtake = (addF 8 9 ++ takeF).map FieldOp.impl from rfl]
+    refine WP.mono (ops_ok (kw.scr (kv.scr hsu)) bw (addF 8 9 ++ takeF)) fun x ⟨kx, bx, ex⟩ =>
+      ⟨ku.trans (kv.trans (kw.trans kx)), bx, ?_⟩
+    rw [ex, ew, vm, um, hrow]; rfl
+  · refine WP.block_nil ⟨ku, um ▸ hbd, ?_⟩
+    rw [um, hno]; rfl
+
 theorem vdoubleAdd_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point} {n : Nat} (hn : n < 456)
+    (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
     (hi : VBit base S K A s₀ s n) :
     WP isa vdoubleAdd s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) := by
   have hs := hi.scr
+  have hB : VBITS = 3104 := rfl
+  have hA : ACC = 3584 := rfl
   obtain ha2 : (S >>> n) &&& 1 < 2 := bit_lt S n
   obtain hb2 : (K >>> n) &&& 1 < 2 := bit_lt K n
   have h8 : s.gpr .r8 = (BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1))).setWidth 32 := hi.r8
@@ -502,20 +636,27 @@ theorem vdoubleAdd_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448
   rw [show doubleAt 0 21 2 = (doubleF 0 21 2).map FieldOp.impl from rfl]
   refine WP.seq (WP.mono (ops_ok hs hi.bounded (doubleF 0 21 2)) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_)
   obtain hs₂ := k₂.scr hs
-  refine WP.seq (WP.mono (vaddIf_ok hs₂ bb₂ ha2 hb2 (by rw [k₂.regs.1 _ (by decide), h8]) false 8 9)
+  obtain bits₂ : ∀ t < 456, s₂.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t) := fun t ht => by
+    rw [k₂.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+        (by rw [ofs_off' base (by omega_arith)]; omega_arith),
+      hi.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+        (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
+    exact hbits t ht
+  refine WP.seq (WP.mono (vcombIf_ok hs₂ bb₂ hn (by rw [k₂.regs.1 _ (by decide), hi.r11]) bits₂)
     fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_)
   obtain hs₃ := k₃.scr hs₂
   refine WP.seq (WP.mono (vaddIf_ok hs₃ bb₃ ha2 hb2
-    (by rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), h8]) true 6 7) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
+    (by rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), h8])) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
   refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun t vt hz =>
     WP.block_nil ?_
   obtain core := k₂.trans (k₃.trans k₄)
   obtain b₄ : s₄.gpr .r11 = BitVec.ofNat 32 n := by rw [core.regs.1 _ (by decide), hi.r11]
-  obtain ee : E t.mem base = vstepEnv (decide ((S >>> n) &&& 1 = 1)) (decide ((K >>> n) &&& 1 = 1))
+  obtain ee : E t.mem base = vstepEnv (decide (n < 114)) (combDigit S n) (decide ((K >>> n) &&& 1 = 1))
       (E s.mem base) := by
     rw [vt.mem, e₄, e₃, e₂]; rfl
-  obtain kk : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → E t.mem base i = E s.mem base i := fun i h => by
-    rw [ee, vstepEnv_keep _ _ _ _ h]
+  obtain kk : ∀ j : Index, j.val = 6 ∨ j.val = 7 ∨ j.val = 10 ∨ j.val = 11 →
+      E t.mem base j = E s.mem base j := fun j h => by
+    rw [ee, vstepEnv_keep _ _ _ _ _ h]
   refine ⟨⟨core.scr hs |> fun h => ?_, vt.mem ▸ bb₄, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · exact h.of_keeps (rest_keeps (vt.rest [])) (by decide)
   · refine hi.regs.trans ⟨fun r hr => ?_, ?_, ?_⟩
@@ -526,8 +667,8 @@ theorem vdoubleAdd_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448
   · refine hi.mem.trans ?_
     intro p hp hq
     rw [vt.mem, core.mem p hp hq]
-  · rw [ee]; exact vladder_step hn hi.rep hi.q hi.na hi.d
-  · rw [pt_congr' (kk 8 (by decide)) (kk 9 (by decide)) (kk 10 (by decide))]; exact hi.q
+  · rw [ee]; exact vcomb_step hn hi.rep hi.one hi.na hi.d
+  · rw [kk 10 (by decide)]; exact hi.one
   · rw [pt_congr' (kk 6 (by decide)) (kk 7 (by decide)) (kk 10 (by decide))]; exact hi.na
   · rw [kk 11 (by decide)]; exact hi.d
   · rw [hz, b₄]
@@ -539,7 +680,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
     (hi : VInv base S K A s₀ s (n + 1)) :
     WP isa vstep s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) :=
-  WP.seq (WP.mono (vload_ok hn hbits hi) fun _ hb => vdoubleAdd_ok hn hb)
+  WP.seq (WP.mono (vload_ok hn hbits hi) fun _ hb => vdoubleAdd_ok hn hbits hb)
 
 theorem vloop_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
@@ -573,7 +714,7 @@ end
 `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3)`
 returns `verifyEquation` of its inputs (`verifyEquation_main`), given the
 reference computations' agreement with the specification (`RecoverOk`,
-`VerifyEqOk`): the entry, the bits of `S` and `k`, the check of `S`, `R` and
+`VerifyEqCombOk`): the entry, the bits of `S` and `k`, the check of `S`, `R` and
 `A` decoded and `A` negated (`vbefore_ok`, which states what the loop starts
 from, `VMid`, for the constant-time proof too), `Q = [S]B + [k](-A)` by the
 loop, and the comparison of `[4]Q` and `[4]R`. Every write is in the working space, so the
@@ -586,7 +727,7 @@ working space, and the return address is kept.
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm VG.Proof.X448.Radix16
-open VG.Proof.Ed448 (RecoverOk VerifyEqOk vladder negPoint double verifyEquation_none)
+open VG.Proof.Ed448 (RecoverOk VerifyEqCombOk vcomb negPoint double verifyEquation_none)
 open VG.Impl.X448.Arm (slot X2 BITS ACC TMP saved ld copy Op)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
@@ -756,7 +897,7 @@ theorem VMid.inv {s : State} {base pk sig : Addr} {S K : Nat} {t t' : State} (hm
     ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_of_mem _ List.mem_cons_self)), h4, h5⟩
   refine ⟨hm.scr.of_keeps k' (by decide), h3 ▸ hm.bounded, k', h1, h3 ▸ Outside2.refl _ _ _ _ _ _, ?_, ?_, ?_, ?_⟩
   · rw [h3, Nat.sub_self, hm.q]; rfl
-  · rw [h3, hm.b]
+  · rw [h3]; exact congrArg Spec.Ed448.Point.Z hm.b
   · rw [h3]
   · rw [h3, hm.d]
 
@@ -862,7 +1003,7 @@ theorem vbefore_ok (hR : RecoverOk) {s : State} (h : VerifyPre s) {base pk sig c
   · rw [lr_kept ((Outside2.widen k5.mem).mono (by decide) (by decide)), lr_kept f4,
       lr_kept ((Outside2.widen k3.mem).mono (by decide) (by decide)), o2.word (by decide) (by decide), lr1]
 
-theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : VerifyPre s) :
+theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqCombOk) {s : State} (h : VerifyPre s) :
     WP isa verifyEquation s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       t.gpr .r0 = if Spec.Ed448.verifyEquation (bytesAt s.mem (State.addr (s.gpr .r0)) 57)
         (bytesAt s.mem (State.addr (s.gpr .r1)) 114) (bytesAt s.mem (State.addr (s.gpr .r2)) 57)
@@ -884,7 +1025,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
     limbs_mid I6.mem (by decide) (by decide) hi
   obtain ly6 : ∀ i < 28, limbs s6.mem base RY i = limbs s5.mem base RY i := fun i hi =>
     limbs_mid I6.mem (by decide) (by decide) hi
-  obtain h106 : E s6.mem base 10 = 1 := congrArg Spec.Ed448.Point.Z I6.q
+  obtain h106 : E s6.mem base 10 = 1 := I6.one
   unfold vafter
   refine WP.seq (WP.mono (vR_ok hs6 I6.bounded (fun i hi => by rw [lx6 i hi]; exact M.rx i hi)
     (fun i hi => by rw [ly6 i hi]; exact M.ry i hi)) fun s7 ⟨k7, b7, e78, e79, e7⟩ => ?_)
@@ -929,7 +1070,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
         have hr' := hr
         rw [bytesAt_take57] at hr'
         obtain ⟨rx, ry, rz⟩ := M.r r hr'
-        obtain hQ : pt (E s7.mem base) 0 21 2 = vladder S K (negPoint a) 456 := by
+        obtain hQ : pt (E s7.mem base) 0 21 2 = vcomb S K (negPoint a) 456 := by
           rw [pt_congr' (e7 0 (by decide) (by decide)) (e7 21 (by decide) (by decide))
             (e7 2 (by decide) (by decide)), I6.rep, M.na a ha]
         obtain hRR : pt (E s7.mem base) 8 9 10 = r := by
