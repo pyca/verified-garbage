@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # A scratch buffer on the stack, wiped after use (x86)
 
-`Verified.stackScratchWiped`: as `Verified.stackScratchKept`, for
+`Verified.stackScratchWiped`: as `Verified.stackScratch`, for
 `withStackScratchWiped`, which zeroes the first `words` doublewords of the
 buffer after the code. The wipe stores only into the buffer, within the
 frame (`wipe_run`), so the run of the code followed by the wipe keeps what the
