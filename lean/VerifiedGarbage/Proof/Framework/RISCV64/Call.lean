@@ -105,9 +105,14 @@ theorem push_pushed {r : Reg} {s : State} (h : 16 ≤ s.sp.toNat) :
   exact ite_eq_left_of_eq_true _ _ (eq_true h) |>.trans rfl
 
 /-- A frame: its body runs from `pushed r s`, and the pop leads to
-`popped r' s₂`. -/
+`popped r' s₂`, of which the postcondition may rely on nothing the frame's
+bytes hold, nor on the unknowns (as `WP.allocLe`'s, `Alloc.lean`): it holds
+whatever memory `m` that differs from the body's only in the frame, and
+whatever unknowns `u`, the state then has. -/
 theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
-    (hsp : 16 ≤ s.sp.toNat) (hb : WP isa body (pushed r s) fun s₂ => Q (popped r' s₂)) :
+    (hsp : 16 ≤ s.sp.toNat)
+    (hb : WP isa body (pushed r s) fun s₂ => ∀ m u, Frame [⟨s₂.sp, 16⟩] s₂.mem m →
+      Q { popped r' s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push r) body (.pop r')) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hp⟩ := Exec.rdwr he
@@ -115,7 +120,7 @@ theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     show pop (.pop r') (pushed r s) s₂ = some (popped r' s₂)
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq⟩
+  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ (Frame.refl _ _)⟩
 
 /-- Running code without frames that was proven on narrower permissions: if,
 from `s` with its permissions narrowed to `rd` and `wr`, the code terminates
