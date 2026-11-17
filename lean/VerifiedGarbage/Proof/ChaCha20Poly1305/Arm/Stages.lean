@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -833,27 +834,29 @@ theorem finalize_ok {s : State} {P O Sc : BitVec 32} (h : FinArgs s P O Sc) {Q :
         Proof.Poly1305.countArm s = BitVec.ofNat 64 msg.length →
         bytesAt s'.mem (State.addr O) 16 = mac key msg) → Q s') :
     WP isa Impl.ChaCha20Poly1305.Arm.finalize s Q := by
-  refine WP.frame (rs := [.r1, .r12]) (r := .r1) rfl (by simpa using h.hsp) (by decide) ?_
+  refine WP.frameLost (rs := [.r1, .r12]) (r := .r1) rfl (by simpa using h.hsp) (by decide) ?_
   obtain hbw : ∀ r ∈ [⟨State.addr s.sp - 8, 8⟩], (⟨State.addr P, 128⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.hbP.symm
   refine WP.call (k := Proof.Poly1305.finalizeArm) Proof.Poly1305.Arm.Fin.finalize_ok
     (rd := finRd s) (wr := finWr P O Sc) h.pre h.cov h.covW ?_ finalize_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [⟨State.addr s.sp - 8, 8⟩] s₂.mem ml := by rw [e8, h.hA] at hfl; exact hfl
   obtain hcnt : Proof.Poly1305.countArm (finView s P O Sc) = Proof.Poly1305.countArm s := by
     simp only [Proof.Poly1305.countArm, fin_ng s P O Sc .r2 (by decide), fin_ng s P O Sc .r3 (by decide)]
   simp only [Proof.Poly1305.finalizeArm, fin_ng s P O Sc .r0 (by decide), h.h0, hcnt, h.arg0 _ (fin_nsp s P O Sc) rfl,
     State.withRegions_mem] at hpost
-  refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ fun key msg hr hc => ?_
+  refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ (fun key msg hr hc => ?_) <;> dsimp only
   · have hr1 : r ≠ .r1 := by rintro rfl; simp [preserved] at hr
     rw [popped_gpr hr1, hcs r hr hl, pushed_gpr]
   · rw [popped_sp, hsp₂, fin_asp s, e8]
     exact BitVec.sub_add_cancel _ _
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
-  · rw [popped_mem]
-    refine (h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]
+  · refine ((h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.hbO.symm) (by decide)]
     exact hpost key msg (Proof.Poly1305.Repr.buffered (Repr.frame h.fA hbw hr)) hc
 
 end VG.Proof.ChaCha20Poly1305.Arm

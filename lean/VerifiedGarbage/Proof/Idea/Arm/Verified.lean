@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Idea.KeyBits32
 import VerifiedGarbage.Proof.Idea.Arith32
 import VerifiedGarbage.Proof.Idea.KeyBits
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
+import VerifiedGarbage.Proof.Idea.Local
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Idea.Memory32
@@ -1315,7 +1317,7 @@ end
 `vg_idea_ecb` and `vg_idea_invert_key` save the callee-saved registers they
 use in a buffer passed in a register (`r3`, `r2`), proved with the buffer as
 an argument (`Ecb.lean`, `Invert.lean`); `ecb_framed` and `invertKey_framed`
-allocate it in a frame of their own (`Verified.regScratch`). The buffer only
+allocate it in a frame of their own (`Verified.regScratchLost`). The buffer only
 ever holds the caller's registers, so it is not zeroed.
 -/
 
@@ -1334,9 +1336,10 @@ theorem ecbFrameSat_pre : ∃ s, (Spec.Idea.ecbContract Arm.abi 32).pre s := by
 
 theorem ecb_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 32 .r3 ecb)
     (Spec.Idea.ecbContract Arm.abi 32) :=
-  Arm.Verified.regScratch (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u32) (n := 8)
+  Arm.Verified.regScratchLost (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u32) (n := 8)
     (post := Spec.Idea.ecbPost Arm.abi.ptrBits) (wa := false) (stack := 0) ecb_verified
-    (by decide) (by decide) (by decide) ecbFrameSat_pre
+    (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Idea.ecbPostOut_local _ vs mm m₁ m₂ r hl) ecbFrameSat_pre
 
 /-- A state satisfying the inversion's precondition without the buffer. -/
 def invertFrameSat : State := { invertSat with wr := [⟨0x2000, 104⟩] }
@@ -1348,8 +1351,9 @@ theorem invertFrameSat_pre : ∃ s, (Spec.Idea.invertKeyContract Arm.abi 24).pre
 
 theorem invertKey_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 24 .r2 invertKey)
     (Spec.Idea.invertKeyContract Arm.abi 24) :=
-  Arm.Verified.regScratch (sig := Spec.Idea.invertKeySig) (nm := "scratch") (e := .u32) (n := 6)
+  Arm.Verified.regScratchLost (sig := Spec.Idea.invertKeySig) (nm := "scratch") (e := .u32) (n := 6)
     (post := Spec.Idea.invertKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0) invertKey_verified
-    (by decide) (by decide) (by decide) invertFrameSat_pre
+    (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Idea.invertKeyPostOut_local _ vs mm m₁ m₂ r hl) invertFrameSat_pre
 
 end VG.Proof.Idea.Arm

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # AES-GCM on ARMv7: the functions called
@@ -274,10 +275,11 @@ end CtrCall
 
 theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
     WP isa ctrFrame s (CtrPost s K C D S R n) := by
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
     (rd := ctrRd s.sp K) (wr := ctrWr C D S n) h.pre h.cov h.covW ?_ ctr_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s.sp] s₂.mem ml := by rw [e8, hA h.hsp] at hfl; exact hfl
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
@@ -305,7 +307,7 @@ theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K 
       · exact (h.bc.sub_left (Region.sub_prefix (by decide)))
       · exact (h.bd.sub_left (Region.sub_prefix (by decide)))
       · exact (h.bs.sub_left (Region.sub_prefix (by decide))))
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
@@ -314,11 +316,15 @@ theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K 
       show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
     · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hdata
-  · rw [popped_mem]; exact hctr
+  · refine ((fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [blocksAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])]
+    exact hdata
+  · rw [blockAt_frame hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bc.symm]
+    exact hctr
 
 /-- Calls of `vg_aes_ctr32` with the same arguments and stack pointer in both
 runs are constant time. -/
@@ -581,11 +587,13 @@ end CtrToCall
 
 theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCall s K C D T S R n) :
     WP isa ctrToFrame s (CtrToPost s K C D T S R n) := by
-  refine WP.frame (rs := [.r0, .r1, .r2]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r0, .r1, .r2]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.seq (WP.of_runBlock ⟨_, toArgs_run s, ?_⟩)
   refine WP.call (k := Proof.Aes.ctr32ToArm) Proof.Aes.Arm.ctr32To_correct
     (rd := ctrToRd s.sp K D n) (wr := ctrToWr C T S n) h.pre h.cov h.covW ?_ ctrTo_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below12 s.sp] s₂.mem ml := by
+    rw [e12, show State.addr (s.sp - 12) = State.addr s.sp - 12 from addr_sub h.hsp] at hfl; exact hfl
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
   have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
@@ -608,7 +616,7 @@ theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCal
     toArgs_view_gpr _ _ _ (r := .r3) (by decide), h.g0, h.g1, h.g2, h.g3, hR, stackArg_withRegions,
     stackArg_callEntry, a0, a2, hn, toArgs_mem] at hdata hctr
   have fB : Frame (ctrToWr C T S n) (pushed [.r0, .r1, .r2] s).mem s₂.mem := hf
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂]; rfl
   · rw [popped_wr, hwr₂]; show (pushed [.r0, .r1, .r2] s).wr.tail = s.wr; rw [pushed_wr]; rfl
   · rw [popped_sp, hsp₂]; show s.sp - BitVec.ofNat 32 (4 * 3) + BitVec.ofNat 32 (4 * 3) = s.sp
@@ -616,11 +624,15 @@ theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCal
   · have h12 : r ≠ .r12 := by revert hr; revert hlr; cases r <;> decide
     rw [popped_gpr h12, hcs r hr hlr, toArgs_gpr _ (by revert hr; revert hlr; cases r <;> decide)
       (by revert hr; revert hlr; cases r <;> decide) (by revert hr; revert hlr; cases r <;> decide)]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem, hdata, bytesK, blockC, blocksD]
-  · rw [popped_mem, hctr, blockC]
+  · refine ((fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [blocksAt_frame hfl' (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.bt.symm) (by have := h.fitT; omega_using [hn]),
+      hdata, bytesK, blockC, blocksD]
+  · rw [blockAt_frame hfl' fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.bc.symm,
+      hctr, blockC]
   · show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = s.gpr .r0
     have e0 := argAddr3 (s := s) h.hsp (i := 0) (by decide)
     rw [show 4 * 0 = 0 from rfl, BitVec.add_zero] at e0
@@ -754,10 +766,11 @@ end GhCall
 
 theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa ghFrame s (GhPost s H Y D S n) := by
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Gcm.ghashArm) Proof.Gcm.Arm.ghash_correct
     (rd := ghRd s.sp H D n) (wr := ghWr Y S) h.pre h.cov h.covW ?_ gh_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s.sp] s₂.mem ml := by rw [e8, hA h.hsp] at hfl; exact hfl
   have hn := toNat_ofNat32 h.n_lt
   have fA' := fA (s := s) h.hsp
   have blockH : blockAt (pushed [.r12, .lr] s).mem (State.addr H) = blockAt s.mem (State.addr H) :=
@@ -779,7 +792,7 @@ theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n
       rcases hr with rfl | rfl
       · exact (h.by'.sub_left (Region.sub_prefix (by decide)))
       · exact (h.bs.sub_left (Region.sub_prefix (by decide))))
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
@@ -788,10 +801,12 @@ theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n
       show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
     · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hpost
+  · refine ((fA'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [blockAt_frame hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.by'.symm]
+    exact hpost
 
 theorem gh_rel [VG.Proof.Gcm.Arm.GhashLaw] {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : BitVec 32, ∃ n : Nat,

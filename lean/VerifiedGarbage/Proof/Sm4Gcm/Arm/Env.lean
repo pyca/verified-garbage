@@ -23,6 +23,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
@@ -451,10 +452,11 @@ end GhCall
 
 theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa ghFrame s (GhPost s H Y D S n) := by
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Gcm.ghashArm) Proof.Gcm.Arm.ghash_correct
     (rd := ghRd s.sp H D n) (wr := ghWr Y S) h.pre h.cov h.covW ?_ gh_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [push8 s.sp] s₂.mem ml := by rw [e8, hA h.hsp] at hfl; exact hfl
   have hn := toNat_ofNat32 h.n_lt
   have fA' := fA (s := s) h.hsp
   have blockH : blockAt (pushed [.r12, .lr] s).mem (State.addr H) = blockAt s.mem (State.addr H) :=
@@ -476,7 +478,7 @@ theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n
       rcases hr with rfl | rfl
       · exact h.by'.sub_left (slot_sub s.sp)
       · exact h.bs.sub_left (slot_sub s.sp))
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
@@ -485,11 +487,14 @@ theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n
       show (s₂.setReg .r12 (s₂.mem.readW (State.addr s₂.sp) 32)).gpr .r12 = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot]
     · rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ⟨below s.sp, by simp, by
+  · refine ((fA'.sub fun r hr => ⟨below s.sp, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact push8_sub s.sp⟩).trans
-      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem]; exact hpost
+      (fB.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨below s.sp, by simp, by
+        simp only [List.mem_singleton] at hr; subst hr; exact push8_sub s.sp⟩)
+  · rw [blockAt_frame hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.by'.sub_left (push8_sub s.sp)).symm]
+    exact hpost
 
 theorem gh_rel [VG.Proof.Gcm.Arm.GhashLaw] {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : BitVec 32, ∃ n : Nat,

@@ -21,7 +21,9 @@ On x86 and ARMv7 the frame also holds a copy of the arguments passed on the
 stack, which needs the postconditions to read the memory on entry only
 within the function's buffers (`updatePost_local`, `finalizePost_local`):
 the data, and the state through `Buffered`, which reads only its first 72
-bytes (`buffered_congr`).
+bytes (`buffered_congr`); and to read the memory on return only within them
+(`updatePostOut_local`, `finalizePostOut_local`), as a released frame's
+bytes are lost.
 -/
 
 @[expose] public section
@@ -111,6 +113,29 @@ theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (updateSig.words p
     rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h key msg (buffered_congr (fun i hi => (hs i (by omega_using [hi])).symm) hbuf) hc
 
+/-- `updatePost` reads the memory on return only within the state. -/
+theorem updatePostOut_local : ∀ vs m m₁ m₂ r, vs.length = (updateSig.words pb).length →
+    (∀ b ∈ Sig.bufs updateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (updateSig.words pb) (updatePost pb) vs m m₁ r →
+      Curry.apply (updateSig.words pb) (updatePost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (updatePost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (updatePost pb) _ m m₂ r
+  dsimp only [Curry.apply, updatePost, ArgWord.ofRaw] at h ⊢
+  intro key msg hbuf hc
+  exact buffered_congr (fun i hi => hs i (by omega_using [hi])) (h key msg hbuf hc)
+
 theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.words pb).length →
     (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m₁ m' r →
@@ -130,5 +155,27 @@ theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.wor
   dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
   intro key msg hbuf hc
   exact h key msg (buffered_congr (fun i hi => (hs i (by omega_using [hi])).symm) hbuf) hc
+
+/-- `finalizePost` reads the memory on return only within the tag. -/
+theorem finalizePostOut_local : ∀ vs m m₁ m₂ r, vs.length = (finalizeSig.words pb).length →
+    (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₁ r →
+      Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have ho := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m m₂ r
+  dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
+  intro key msg hbuf hc
+  rw [bytesAt_congr fun i hi => ho i (by omega_using [hi])]
+  exact h key msg hbuf hc
 
 end VG.Proof.Poly1305

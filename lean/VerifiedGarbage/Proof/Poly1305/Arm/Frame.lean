@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.Arm.Update
 public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 `update` and `finalize` run their code, proved with the working space as an
 argument, in a frame of 144 bytes that allocates it
-(`Verified.stackScratch`): the copies of the arguments passed on the stack
+(`Verified.stackScratchLost`): the copies of the arguments passed on the stack
 (`update`'s `data` and `len`, `finalize`'s `out`), the buffer's address, the
 saved `lr` and the 128 bytes of working space. The copies are read only
 where the postconditions read the buffers (`Proof/Poly1305/Scratch.lean`).
@@ -40,10 +41,11 @@ theorem updateFrameSat_pre : ∃ s, (Spec.Poly1305.updateContract Arm.abi 144).p
 theorem update_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 2 Impl.Poly1305.Arm.update)
       (Spec.Poly1305.updateContract Arm.abi 144) :=
-  Arm.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (m := 2) Update.update_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ => updatePostOut_local _ vs mm m₁ m₂ r hl)
     updateFrameSat_pre
 
 /-- A state satisfying `vg_poly1305_finalize`'s precondition, without the
@@ -61,10 +63,11 @@ theorem finalizeFrameSat_pre : ∃ s, (Spec.Poly1305.finalizeContract Arm.abi 14
 theorem finalize_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 144 1 Impl.Poly1305.Arm.finalize)
       (Spec.Poly1305.finalizeContract Arm.abi 144) :=
-  Arm.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (m := 1) Fin.finalize_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ => finalizePostOut_local _ vs mm m₁ m₂ r hl)
     finalizeFrameSat_pre
 
 end VG.Proof.Poly1305.Arm

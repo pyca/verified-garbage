@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Modes.Arm.Seq
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Modes.Arm.Push`, which only this module used -/
 
@@ -502,7 +503,7 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
   have h8 := h.sp8 hs
   have dS := S.depthS hs
   have hst := h.stk
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by simp) ?_
   have hsp' : (pushed [.r12, .lr] s).sp = s.sp - BitVec.ofNat 32 8 := rfl
   have hspN : (pushed [.r12, .lr] s).sp.toNat = s.sp.toNat - 8 := by rw [hsp']; exact sub_toNat' h8
   refine WP.callF S.correct (rd := [⟨State.addr K, S.keyLen⟩, Push.argR s] ++ tabRegs S.consts s)
@@ -510,7 +511,8 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
     (h.cov hs)
     (Push.covW (show Covers ([⟨State.addr B, c.bs⟩] ++ [⟨State.addr C, c.stackScratch⟩]) s.wr from
       Covers.append_left h.wB (h.wC hs)))
-    (by rw [hspN]; omega_arith) fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost => ?_
+    (by rw [hspN]; omega_arith) fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl => ?_
+  have hfl' : Frame [belowA s.sp 8] s₂.mem ml := hfl
   have fK : ∀ i < S.keyLen, (pushed [.r12, .lr] s).mem (State.addr K + BitVec.ofNat 64 i) =
       s.mem (State.addr K + BitVec.ofNat 64 i) := fun i hi =>
     (Push.fA h8).bytes (R := ⟨State.addr K, S.keyLen⟩) (fun r hr => by
@@ -524,16 +526,15 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
       rw [belowA, addr_sub' h8]
       exact (h.bb.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega_arith) (by omega_arith))).symm)
       (by have := h.fB; omega_arith)
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, hsp']; exact BitVec.sub_add_cancel _ _
   · have h12 : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
     rw [popped_gpr h12, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    have bel : Region.Sub (belowA s.sp S.stack) ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩ := by
+  · have bel : Region.Sub (belowA s.sp S.stack) ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩ := by
       rw [belowA, addr_sub' hst]; exact fun _ h => h
-    refine ((Push.fA h8).sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+    refine (((Push.fA h8).sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)).trans (hfl'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by simp, fun x hx => bel x (belowA_sub (by omega_arith) hst x hx)⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -543,6 +544,8 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
       · refine ⟨_, by simp, fun x hx => bel x ?_⟩
         rw [hsp'] at hx
         exact belowA_inner (k := 8) (by omega_arith) hst x hx
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, by simp, fun x hx => bel x (belowA_sub (by omega_arith) hst x hx)⟩
   · have e := S.post_ofS hs _ _ (h.ecbPreS hs) hpost
     have hd := c.dReg_ne
     have hn := c.nReg_ne
@@ -551,7 +554,12 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
     simp only [e0 .r0 (by decide) (by decide), e0 _ hd.1 hd.2.1, e0 _ hn.1 hn.2.1, e0 .r1 (by decide) (by decide),
       h.r0, h.rd, h.rn, State.withRegions_mem, State.callEntry_mem, blocksOf_one, List.map_cons, List.map_nil,
       show (1 : BitVec 32).toNat = 1 from rfl, fB] at e
-    rw [popped_mem, (List.cons.inj e).1, S.ciphAt_congr fK]
+    rw [VG.Proof.Modes.bytesAt_frame hfl' (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [belowA, addr_sub' h8]
+        exact (h.bb.sub_left (VG.Offset.sub_below (State.addr s.sp) (a := 8) (b := S.stack) (by omega_arith) (by omega_arith))).symm)
+        (by have := h.fB; omega_arith),
+      (List.cons.inj e).1, S.ciphAt_congr fK]
     cases hr : c.rounds
     · rw [S.ciphAt_R hr]
     · rw [h.r1 hr]

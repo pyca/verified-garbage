@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `CmacTripleDes.Arm.FinalizeCorrect`, which only this module used -/
 
@@ -290,7 +291,8 @@ theorem covW_push {ra : Reg} {s : State} {wr : List Region} (hw : Covers wr s.wr
 /-- Verified code without calls, in the frame that pushes its stack argument
 `ra`, from its contract `k`: it runs from `view`, and changes memory only
 within the regions it may write and the 4 bytes below the stack pointer; the
-pop loads `ra` back, so it changes no callee-saved register. -/
+pop loads `ra` back, so it changes no callee-saved register. Once the frame is
+released, memory is the body's but in those 4 bytes. -/
 theorem WP.frameInline {ra : Reg} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hn : c.noCalls = true) {s : State} (hsp : 4 ≤ s.sp.toNat)
@@ -299,23 +301,25 @@ theorem WP.frameInline {ra : Reg} {c : Prog isa} {k : Contract isa}
     (hw : Covers wr (pushed [ra] s).wr) (hb : ∀ r ∈ wr, (blw4 s).Disjoint r) {Q : State → Prop}
     (hQ : ∀ s' s₂ : State, s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame (wr ++ [blw4 s]) s.mem s'.mem → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
-      s'.mem = s₂.mem → k.post (view ra s rd wr) (s₂.withRegions rd wr) → Q s') :
+      Frame [blw4 s] s₂.mem s'.mem → k.post (view ra s rd wr) (s₂.withRegions rd wr) → Q s') :
     WP isa (.frame (.push [ra]) c (.pop ra 4)) s Q := by
-  refine WP.frame (rs := [ra]) (r := ra) rfl (by simpa using hsp) (by simp) ?_
-  refine WP.inline (k := k) hv hpre hc hw (fun s₂ hrd₂ hwr₂ ha hf _ hpost => ?_) hn
+  refine WP.frameLost (rs := [ra]) (r := ra) rfl (by simpa using hsp) (by simp) ?_
+  refine WP.inline (k := k) hv hpre hc hw (fun s₂ hrd₂ hwr₂ ha hf _ hpost ml ul hfl => ?_) hn
+  have hfl' : Frame [blw4 s] s₂.mem ml := by rw [e4, hA hsp] at hfl; exact hfl
   have hsp₂ : s₂.sp = s.sp - 4 := ha.2
   -- The slot the pop loads.
   obtain slot : s₂.mem.readW (State.addr s₂.sp) 32 = s.gpr ra := by
     rw [hsp₂, hA hsp, hf.readW (r := blw4 s) (Region.contains_self _ _) (fun r hr => (hb r hr)) (by decide),
       push_slot hsp]
-  refine hQ _ s₂ ?_ ?_ ?_ ?_ (fun r hr => ?_) (popped_mem _ _ _) hpost
+  refine hQ _ s₂ ?_ ?_ ?_ ?_ (fun r hr => ?_) hfl' hpost <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem]
-    refine ((push_frame hsp ra).mono fun r hr => ?_).trans (hf.mono fun r hr => ?_)
+  · refine (((push_frame hsp ra).mono fun r hr => ?_).trans (hf.mono fun r hr => ?_)).trans
+      (hfl'.mono fun r hr => ?_)
     · exact List.mem_append_right _ hr
     · exact List.mem_append_left _ hr
+    · exact List.mem_append_right _ hr
   · by_cases hra : r = ra
     · subst hra
       show (s₂.setReg r (s₂.mem.readW (State.addr s₂.sp) 32)).gpr r = _
@@ -417,7 +421,9 @@ theorem upd_wp {s : State} {W C D S : BitVec 32} {n : Nat} (h : UArgs s W C D S 
     simp only [ciphAt]
     rw [scheduleAt_frame (push_frame h.hsp .r10) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact h.bw.symm]
-  rw [hm, hpost, hsch, keep_push h.hsp .r10 h.bc (by decide)]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact h.bc.symm) (by decide),
+    hpost, hsch, keep_push h.hsp .r10 h.bc (by decide)]
   congr 1
   simp only [Spec.Cmac.blocksAt]
   refine List.map_congr_left fun i hi => keep_push h.hsp .r10 (h.bd.sub_right (Offset.sub_base _ ?_)) (by decide)
@@ -525,7 +531,8 @@ theorem fin_wp {s : State} {K St P S : BitVec 32} {L : Nat} (h : FArgs s K St P 
   obtain eP := keep_push h.hsp .r12 h.bp (by have := h.len; omega_using [hL])
   intro _ _ hk msg hmod hne hst
   rw [hsch, eK2, eSt, eP] at hpost
-  rw [hm]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact h.bst.symm) (by decide)]
   exact hpost hk msg hmod hne hst
 
 theorem fin_rel {K St P S sp₀ : BitVec 32} {L : Nat} {Pr : State → State → Prop}

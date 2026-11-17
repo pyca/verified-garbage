@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `CmacAes.Arm.Call`, which only this module used -/
 
@@ -201,10 +202,11 @@ theorem ctr_noCalls : Impl.Aes.Arm.ctr32.noCalls = true := by decide +kernel
 
 theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : CallPre s W C D S R ra rb) :
     WP isa (ctrCall ra rb) s (CallPost s W C D S R) := by
-  refine WP.frame (rs := [ra, rb]) (r := ra) h.regs (by simpa using h.hsp) (by simp) ?_
+  refine WP.frameLost (rs := [ra, rb]) (r := ra) h.regs (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
     (rd := ctrRd s W) (wr := ctrWr C D S) h.pre h.cov h.covW ?_ ctr_noCalls
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
+  have hfl' : Frame [below s] s₂.mem ml := by rw [e8, h.hA] at hfl; exact hfl
   obtain hR := toNat_rounds h.rounds
   obtain hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   -- The memory of the frame.
@@ -245,7 +247,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
     rw [this, h.amem, Mem.readW_writeW_sep
       (Offset.sep_base (State.addr s.sp - 8) (n := 4) (e := 4) (k := 4) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self32]
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp, e8]; exact BitVec.sub_add_cancel _ _
@@ -254,10 +256,12 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
       show (s₂.setReg r (s₂.mem.readW (State.addr s₂.sp) 32)).gpr r = _
       rw [VG.Arm.RegUpd.gpr_setReg_self, hsp₂, slot, h.hra]
     · rw [popped_gpr hra, hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
-      (fBelow.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)
-  · rw [popped_mem, Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, bytesW, bytesC,
+  · refine ((h.fA.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
+      (fBelow.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩)).trans
+      (hfl'.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
+  · rw [Proof.Cmac.bytesAt_frame16 hfl' (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm),
+      Proof.Cmac.bytesAt_blockAt, hdata.1, Spec.Gcm.blockAt, bytesW, bytesC,
       Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _)]
 
 /-- Calls of `vg_aes_ctr32` on one block, with the same arguments and stack

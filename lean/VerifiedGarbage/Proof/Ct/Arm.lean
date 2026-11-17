@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Zeroize.Arm
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 meta import VerifiedGarbage.Impl.Ct.Arm
 meta import VerifiedGarbage.Proof.Ct.Common32
 meta import VerifiedGarbage.Proof.Framework.Arm.Frame
@@ -172,9 +173,9 @@ theorem push_bytes (s : State) (hp : contract.pre s) (p : Addr) (n : Nat)
 theorem correct (s : State) (hp : contract.pre s) :
     WP isa eq s fun t => abiPreserved s t ∧ Post s t := by
   unfold eq
-  apply WP.frame (rs := [.r4]) (by decide) hp.2.2.1 (by decide)
+  apply WP.frameLost (rs := [.r4]) (by decide) hp.2.2.1 (by decide)
   obtain ⟨tr, t, he, hm, ho⟩ := body_ok (pushed [.r4] s) hp.1
-  refine ⟨tr, t, he, ⟨?_, ?_⟩, ?_⟩
+  refine ⟨tr, t, he, fun _ _ _ => ⟨⟨?_, ?_⟩, ?_⟩⟩ <;> dsimp only
   · intro r hr
     by_cases h4 : r = .r4
     · subst r
