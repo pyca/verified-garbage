@@ -351,9 +351,6 @@ aarch64 vg_idea_cfb64_decrypt
 aarch64 vg_idea_cfb64_decrypt_final
 aarch64 vg_idea_cfb64_encrypt
 aarch64 vg_idea_cfb64_encrypt_final
-aarch64 vg_idea_ecb
-aarch64 vg_idea_expand_key
-aarch64 vg_idea_invert_key
 aarch64 vg_idea_ofb
 aarch64 vg_idea_ofb_final
 aarch64 vg_md5_finalize
@@ -424,7 +421,6 @@ aarch64 vg_mldsa87_verify_message_prepared_sha3
 aarch64 vg_mldsa87_verify_prepared
 aarch64 vg_mldsa87_verify_prepared_sha3
 aarch64 vg_mldsa87_verify_sha3
-aarch64 vg_mlkem1024_check_ek
 aarch64 vg_mlkem1024_decaps
 aarch64 vg_mlkem1024_decaps_x2_sha3
 aarch64 vg_mlkem1024_decaps_x2_sha3_keccak_sha3
@@ -437,7 +433,6 @@ aarch64 vg_mlkem1024_encaps_x2_sha3_keccak_sha3
 aarch64 vg_mlkem1024_keygen
 aarch64 vg_mlkem1024_keygen_x2_sha3
 aarch64 vg_mlkem1024_keygen_x2_sha3_keccak_sha3
-aarch64 vg_mlkem768_check_ek
 aarch64 vg_mlkem768_decaps
 aarch64 vg_mlkem768_decaps_x2_sha3
 aarch64 vg_mlkem768_decaps_x2_sha3_keccak_sha3

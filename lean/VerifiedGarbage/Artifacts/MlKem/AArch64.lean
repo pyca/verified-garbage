@@ -26,6 +26,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Residue
 
 /-! # ML-KEM (FIPS 203) on AArch64 -/
 
@@ -35,8 +36,9 @@ namespace VG.Artifacts.MlKem.AArch64
 
 def direct : List Artifact := [
   Spec.MlKem.checkEkApi.artifact AArch64.target {
-    code := Impl.MlKem.AArch64.checkEk
-    verified := Proof.MlKem.AArch64.CheckEk.checkEk_verified }]
+    code := Proof.MlKem.AArch64.Residue.checkEk768Cleared
+    verified := Proof.MlKem.AArch64.Residue.checkEk768Cleared_verified
+    residue := some ⟨Proof.MlKem.AArch64.Residue.checkEk768Cleared_noResidue _⟩ }]
 
 end VG.Artifacts.MlKem.AArch64
 
@@ -114,7 +116,8 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2) ++
   [
     Spec.MlKem1024.checkEkApi.artifact AArch64.target {
-      code := Impl.MlKem1024.AArch64.checkEk
-      verified := Proof.MlKem1024.AArch64.CheckEk.checkEk_verified }]
+      code := Proof.MlKem.AArch64.Residue.checkEk1024Cleared
+      verified := Proof.MlKem.AArch64.Residue.checkEk1024Cleared_verified
+      residue := some ⟨Proof.MlKem.AArch64.Residue.checkEk1024Cleared_noResidue _⟩ }]
 
 end VG.Artifacts.MlKem.AArch64

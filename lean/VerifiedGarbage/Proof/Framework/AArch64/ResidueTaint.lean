@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Residue
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
@@ -48,9 +49,20 @@ def Agree (τ : T) (s₁ s₂ : State) : Prop :=
   VectorTaint.Agree τ.1 s₁ s₂ ∧ (τ.2.1 = true → Flags s₁ s₂) ∧
     s₁.gpr .x0 >>> τ.2.2 = s₂.gpr .x0 >>> τ.2.2 ∧ Rest s₁ s₂
 
-/-- `VectorTaint.step`, with `movi0` giving a public vector register. -/
+/-- `VectorTaint.step`, with `movi0` giving a public vector register, `mov` a copy of its
+source's, and every other operation it does not know making secret only the register it writes
+(`VOp.dst`), not every one. -/
+def vopStep (τ : VectorTaint.T) : VOp → Option VectorTaint.T
+  | .movi0 d => some (τ.1, τ.2.insert d)
+  | .mov d n => some (τ.1, VectorTaint.setV τ.2 d (τ.2.mem n))
+  | .dup a d n => VectorTaint.step τ (.vop (.dup a d n))
+  | .add a d n m => VectorTaint.step τ (.vop (.add a d n m))
+  | .sub a d n m => VectorTaint.step τ (.vop (.sub a d n m))
+  | op => some (τ.1, τ.2.erase op.dst)
+
 def vstep (τ : VectorTaint.T) : Instr → Option VectorTaint.T
-  | .vop (.movi0 d) => some (τ.1, τ.2.insert d)
+  | .vop op => vopStep τ op
+  | .ldrq t n off => (Taint.step τ.1 (.ldrq t n off)).map fun g => (g, τ.2.erase t)
   | i => VectorTaint.step τ i
 
 /-- The instructions that write the flags. -/
@@ -229,24 +241,76 @@ theorem x0_step {τ : T} {i : Instr} {v : VectorTaint.T} {s₁ s₂ s₁' s₂' 
        cases e₁; cases e₂
        simp only [RegUpd.gpr_write_self, w_shift])
 
+/-- A vector operation writes only `op.dst`: every other vector register that
+was public stays so. -/
+theorem vop_erase {τ : VectorTaint.T} {op : VOp} {s₁ s₂ s₁' s₂' : State}
+    (ha : VectorTaint.Agree τ s₁ s₂) (e₁ : exec (.vop op) s₁ = some s₁')
+    (e₂ : exec (.vop op) s₂ = some s₂') :
+    addrs (.vop op) s₁ = addrs (.vop op) s₂ ∧ VectorTaint.Agree (τ.1, τ.2.erase op.dst) s₁' s₂' := by
+  simp only [reduceExec] at e₁ e₂
+  obtain ⟨⟨d₁, x₁⟩, hp₁, rfl⟩ := Option.map_eq_some_iff.mp e₁
+  obtain ⟨⟨d₂, x₂⟩, hp₂, rfl⟩ := Option.map_eq_some_iff.mp e₂
+  refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, fun w hw => ?_⟩
+  rw [RegSet.mem_erase] at hw
+  have h₁ : w ≠ d₁ := VOp.eval_dst hp₁ ▸ hw.1
+  have h₂ : w ≠ d₂ := VOp.eval_dst hp₂ ▸ hw.1
+  rw [RegUpd.v_setV_of_ne _ _ h₁, RegUpd.v_setV_of_ne _ _ h₂]
+  exact ha.2 w hw.2
+
 theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   obtain ⟨v, hv, rfl⟩ := Option.map_eq_some_iff.mp hs
   have hvs : addrs i s₁ = addrs i s₂ ∧ VectorTaint.Agree v s₁' s₂' := by
-    unfold vstep at hv
-    split at hv
-    · rename_i d
-      obtain rfl := Option.some.inj hv
-      simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
-      subst e₁ e₂
-      refine ⟨rfl, ⟨ha.1.1.1, ha.1.1.2⟩, fun w hw => ?_⟩
-      rw [RegSet.mem_insert] at hw
-      by_cases hd : w = d
-      · subst hd; simp only [RegUpd.v_setV_self]
-      · rw [RegUpd.v_setV_of_ne _ _ hd, RegUpd.v_setV_of_ne _ _ hd]
-        exact ha.1.2 w (hw.resolve_left hd)
-    · exact VectorTaint.step_sound ha.1 hv e₁ e₂
+    cases i
+    case vop op =>
+      simp only [vstep] at hv
+      cases op
+      case movi0 d =>
+        simp only [vopStep, Option.some.injEq] at hv
+        subst hv
+        simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
+        subst e₁ e₂
+        refine ⟨rfl, ⟨ha.1.1.1, ha.1.1.2⟩, fun w hw => ?_⟩
+        rw [RegSet.mem_insert] at hw
+        by_cases hd : w = d
+        · subst hd; simp only [RegUpd.v_setV_self]
+        · rw [RegUpd.v_setV_of_ne _ _ hd, RegUpd.v_setV_of_ne _ _ hd]
+          exact ha.1.2 w (hw.resolve_left hd)
+      case mov d n =>
+        simp only [vopStep, Option.some.injEq] at hv
+        subst hv
+        simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
+        subst e₁ e₂
+        refine ⟨rfl, ⟨ha.1.1.1, ha.1.1.2⟩, fun w hw => ?_⟩
+        unfold VectorTaint.setV at hw
+        by_cases hd : w = d
+        · subst hd
+          simp only [RegUpd.v_setV_self]
+          split at hw
+          · exact ha.1.2 n (by assumption)
+          · simp at hw
+        · rw [RegUpd.v_setV_of_ne _ _ hd, RegUpd.v_setV_of_ne _ _ hd]
+          split at hw
+          · exact ha.1.2 w ((RegSet.mem_insert.mp hw).resolve_left hd)
+          · exact ha.1.2 w (RegSet.mem_erase.mp hw).2
+      case dup | add | sub => exact VectorTaint.step_sound ha.1 hv e₁ e₂
+      all_goals
+        simp only [vopStep, Option.some.injEq] at hv
+        subst hv
+        exact vop_erase ha.1 e₁ e₂
+    case ldrq t n off =>
+      simp only [vstep] at hv
+      obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hv
+      have ht := Taint.step_sound ha.1.1 hg e₁ e₂
+      refine ⟨ht.1, ht.2, fun w hw => ?_⟩
+      rw [RegSet.mem_erase] at hw
+      simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+      obtain ⟨_, -, _, -, rfl⟩ := e₁
+      obtain ⟨_, -, _, -, rfl⟩ := e₂
+      rw [RegUpd.v_setV_of_ne _ _ hw.1, RegUpd.v_setV_of_ne _ _ hw.1]
+      exact ha.1.2 w hw.2
+    all_goals exact VectorTaint.step_sound ha.1 hv e₁ e₂
   exact ⟨hvs.1, hvs.2, flags_step ha e₁ e₂, x0_step ha hvs.2 e₁ e₂, rest_step ha.2.2.2 e₁ e₂⟩
 
 end VG.AArch64.RTaint

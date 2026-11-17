@@ -426,6 +426,8 @@ vg_idea_expand_key:
 	and x9, x9, x10
 	eor x11, x11, x9
 	str x11, [x1, #96]
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -1331,6 +1333,13 @@ vg_idea_invert_key:
 	lsl x3, x3, #48
 	orr x9, x9, x3
 	str x9, [x1, #96]
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -2066,5 +2075,17 @@ vg_idea_ecb:
 	b 21f
 20:
 21:
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6

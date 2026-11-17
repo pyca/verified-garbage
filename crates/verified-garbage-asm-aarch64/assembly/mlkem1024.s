@@ -220,5 +220,14 @@ vg_mlkem1024_check_ek:
 	umov x9, v20.d[0]
 	sub x0, x9, #1
 	lsr x0, x0, #63
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
 	ret
 	.p2align 6
