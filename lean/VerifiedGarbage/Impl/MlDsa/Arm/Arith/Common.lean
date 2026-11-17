@@ -6,21 +6,29 @@ public import VerifiedGarbage.TCB.Arm.Isa
 # ML-DSA on 32-bit ARM: arithmetic modulo `q`
 
 Pieces of code that the ML-DSA functions share, for `q = 8380417 < 2²³`. The
-model has only the 32-bit multiplication `mul` (the long multiplications are
-left out, see `TCB/Arm/Isa.lean`), so a product of two reduced values, which
-has up to 46 bits, is never formed:
+baseline has only the 32-bit multiplications `mul` and `mla` (the long
+multiplications are left out, see `TCB/Arm/Isa.lean`), so a product of two
+reduced values, which has up to 46 bits, is never formed: its low 32 bits
+are (`mul`), and a multiple of `q` close to it is subtracted, modulo `2³²`,
+which leaves the difference itself where that is less than `2³²`. `-q` is
+in a register `N`, so that a subtraction of a multiple of `q` is an `mla`.
 
-* `red d t Q`: `d ← d - ⌊d / 2²³⌋ · q`, for any 32-bit `d`, with `q` in `Q`:
-  as `2²³ ≡ 2¹³ - 1`, the result is congruent to `d` and at most
+* `red d t N`: `d ← d - ⌊d / 2²³⌋ · q`, for any 32-bit `d`: as
+  `2²³ ≡ 2¹³ - 1`, the result is congruent to `d` and at most
   `2²³ - 1 + 511 · 8191 < 1.5 · 2²³`;
-* `mulz acc b t`: `acc ← b · z` modulo `q` (less than `2q`), for `b < q` and
-  `z < q` whose pieces `⌊z / 2¹⁴⌋ < 2⁹`, `⌊z / 2⁷⌋ mod 2⁷` and `z mod 2⁷` are
-  in `r5`, `r6` and `r7` (`zPieces`), and `q` in `r4`: by Horner's rule,
-  `(((b · z₂) · 2⁷ + b · z₁) · 2⁷ + b · z₀`, reducing with `red` after each
-  step, so that every intermediate value fits in 32 bits;
-* `fixup d t Q`: `d ← d + q` if `d` is negative (as a two's complement
-  number), with `t` as the mask: `(d >> 31) · q` is `q` or 0;
-* `csub d t Q`: `d ← d mod q` for `d < 2q`, as `fixup (d - q)`.
+* `quot zp z`: `zp ← ⌊(z + ⌊z / 2¹⁰⌋) / 2⁷⌋`, for `z < q`: `⌊2¹⁶ z / q⌋` or
+  one less, as `2²³ / q = 1 + 2⁻¹⁰ + …`;
+* `mulq acc b z zp t N`: `acc ← b · z - ⌊⌊b / 2⁸⌋ · zp / 2⁸⌋ · q`, for
+  `b < 1.5 · 2²³`, `z < q` and its `zp`: `⌊b / 2⁸⌋ · zp < 2³²`, and its
+  quotient by `2⁸` is at most `b · z / q` and close enough to it that the
+  result, which is congruent to `b · z`, is less than `2³² - q`
+  (`Proof/MlDsa/Arith/Mul32.lean`);
+* `mulz acc b t`: `acc ← b · z` modulo `q` (less than `1.5 · 2²³`), for any
+  32-bit `b`, which it reduces first (`red`), and `z` and its `zp` in `r6`
+  and `r7`, and `-q` in `r4`: `red`, `mulq`, `red`;
+* `csub d t Q`: `d ← d mod q` for `d < 2q`, with `q` in `Q`: `d - q`, plus
+  `q` if that is negative (as a two's complement number), with `t` as the
+  mask: `(d >> 31) · q` is `q` or 0.
 
 A function that uses more registers than `r0`–`r3` and `r12` saves them in
 frames on the stack, one per register (`saving`), and restores each with
@@ -36,26 +44,27 @@ open VG.Arm
 /-- `r ← q = 0x7FE001`. -/
 def loadQ (r : Reg) : List Instr := [.movw r 0xE001, .movt r 0x7F]
 
-/-- `d ← d - ⌊d / 2²³⌋ · q`, with `q` in `Q` and `t` a temporary. -/
-def red (d t Q : Reg) : List Instr := [.mov t (.shifted d .lsr 23), .mul t t Q, .dp .sub d d (.reg t)]
+/-- `r ← -q = 2³² - q = 0xFF801FFF`. -/
+def loadNQ (r : Reg) : List Instr := [.movw r 0x1FFF, .movt r 0xFF80]
 
-/-- `d ← d + q` if `d` is negative, with `q` in `Q` and `t` a temporary. -/
-def fixup (d t Q : Reg) : List Instr := [.mov t (.shifted d .lsr 31), .mul t t Q, .dp .add d d (.reg t)]
+/-- `d ← d - ⌊d / 2²³⌋ · q`, with `-q` in `N` and `t` a temporary. -/
+def red (d t N : Reg) : List Instr := [.mov t (.shifted d .lsr 23), .mla d t N d]
 
-/-- `d ← d - q`, plus `q` if that is negative: `d mod q` for `d < 2q`. -/
-def csub (d t Q : Reg) : List Instr := .dp .sub d d (.reg Q) :: fixup d t Q
+/-- `zp ← ⌊(z + ⌊z / 2¹⁰⌋) / 2⁷⌋`. -/
+def quot (zp z : Reg) : List Instr := [.dp .add zp z (.shifted z .lsr 10), .mov zp (.shifted zp .lsr 7)]
 
-/-- The pieces of the word in `a`: `r5 = a >> 14`, `r6 = (a >> 7) mod 2⁷`,
-`r7 = a mod 2⁷`. -/
-def zPieces (a : Reg) : List Instr :=
-  [.mov .r5 (.shifted a .lsr 14), .mov .r6 (.shifted a .lsl 18), .mov .r6 (.shifted .r6 .lsr 25),
-   .mov .r7 (.shifted a .lsl 25), .mov .r7 (.shifted .r7 .lsr 25)]
+/-- `acc ← b · z - ⌊⌊b / 2⁸⌋ · zp / 2⁸⌋ · q`, with `-q` in `N` and `t` a
+temporary. -/
+def mulq (acc b z zp t N : Reg) : List Instr :=
+  [.mov t (.shifted b .lsr 8), .mul t t zp, .mov t (.shifted t .lsr 8), .mul acc b z, .mla acc t N acc]
 
-/-- `acc ← b · z` modulo `q` (less than `2q`), for the pieces of `z` in
-`r5`–`r7` and `q` in `r4`, with `t` a temporary. -/
-def mulz (acc b t : Reg) : List Instr :=
-  ([.mul acc b .r5] : List Instr) ++ red acc t .r4 ++ ([.mul t b .r6, .dp .add acc t (.shifted acc .lsl 7)] : List Instr) ++
-    red acc t .r4 ++ ([.mul t b .r7, .dp .add acc t (.shifted acc .lsl 7)] : List Instr) ++ red acc t .r4
+/-- `acc ← b · z` modulo `q` (less than `1.5 · 2²³`), for `z` and its `zp`
+in `r6` and `r7` and `-q` in `r4`, with `t` a temporary; `b` is reduced. -/
+def mulz (acc b t : Reg) : List Instr := red b t .r4 ++ mulq acc b .r6 .r7 t .r4 ++ red acc t .r4
+
+/-- `d ← d - q`, plus `q` if that is negative: `d mod q` for `d < 2q`, with
+`q` in `Q` and `t` a temporary. -/
+def csub (d t Q : Reg) : List Instr := [.dp .sub d d (.reg Q), .mov t (.shifted d .lsr 31), .mla d t Q d]
 
 /-- `body`, with the registers `rs` saved in a frame each around it. -/
 def saving : List Reg → Prog isa → Prog isa

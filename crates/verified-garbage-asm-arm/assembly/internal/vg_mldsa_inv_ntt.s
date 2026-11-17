@@ -780,51 +780,35 @@ vg_mldsa_inv_ntt:
 	movw r12, #10538
 	movt r12, #11
 	str r12, [r1, #1020]
-	movw r4, #57345
-	movt r4, #127
+	movw r4, #8191
+	movt r4, #65408
+	movw r5, #128
+	movt r5, #16368
 	add r1, r1, #1020
 	mov r2, #128
 20:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #1
 21:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #4]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #4]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #4]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 21b
@@ -834,46 +818,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #64
 22:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #2
 23:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #8]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #8]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #8]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 23b
@@ -883,46 +849,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #32
 24:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #4
 25:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #16]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #16]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #16]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 25b
@@ -932,46 +880,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #16
 26:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #8
 27:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #32]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #32]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #32]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 27b
@@ -981,46 +911,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #8
 28:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #16
 29:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #64]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #64]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #64]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 29b
@@ -1030,46 +942,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #4
 210:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #32
 211:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #128]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #128]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #128]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 211b
@@ -1079,46 +973,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #2
 212:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #64
 213:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #256]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #256]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #256]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 213b
@@ -1128,46 +1004,28 @@ vg_mldsa_inv_ntt:
 	sub r0, r0, #1024
 	mov r2, #1
 214:
-	ldr r8, [r1, #0]
-	lsr r5, r8, #14
-	lsl r6, r8, #18
-	lsr r6, r6, #25
-	lsl r7, r8, #25
-	lsr r7, r7, #25
+	ldr r6, [r1, #0]
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	sub r1, r1, #4
 	mov r3, #128
 215:
 	ldr r8, [r0, #0]
 	ldr r9, [r0, #512]
-	add r10, r8, r9
-	sub r10, r10, r4
-	lsr r12, r10, #31
-	mul r12, r12, r4
-	add r10, r10, r12
-	str r10, [r0, #0]
-	sub r8, r8, r9
-	lsr r12, r8, #31
-	mul r12, r12, r4
-	add r8, r8, r12
-	mul r9, r8, r5
+	add r12, r8, r9
+	str r12, [r0, #0]
+	add r8, r8, r5
+	sub r9, r8, r9
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #512]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	str r10, [r0, #512]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 215b
@@ -1175,31 +1033,28 @@ vg_mldsa_inv_ntt:
 	subs r2, r2, #1
 	bne 214b
 	sub r0, r0, #1024
-	movw r5, #509
-	movw r6, #64
-	movw r7, #33
+	movw r5, #57345
+	movt r5, #127
+	movw r6, #24609
+	movt r6, #127
+	add r7, r6, r6, lsr #10
+	lsr r7, r7, #7
 	mov r3, #256
 216:
-	ldr r8, [r0, #0]
-	mul r9, r8, r5
+	ldr r9, [r0, #0]
 	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r6
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	mul r12, r8, r7
-	add r9, r12, r9, lsl #7
-	lsr r12, r9, #23
-	mul r12, r12, r4
-	sub r9, r9, r12
-	sub r9, r9, r4
-	lsr r12, r9, #31
-	mul r12, r12, r4
-	add r9, r9, r12
-	str r9, [r0, #0]
+	mla r9, r12, r4, r9
+	lsr r12, r9, #8
+	mul r12, r12, r7
+	lsr r12, r12, #8
+	mul r10, r9, r6
+	mla r10, r12, r4, r10
+	lsr r12, r10, #23
+	mla r10, r12, r4, r10
+	sub r10, r10, r5
+	lsr r12, r10, #31
+	mla r10, r12, r5, r10
+	str r10, [r0, #0]
 	add r0, r0, #4
 	subs r3, r3, #1
 	bne 216b

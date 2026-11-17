@@ -23,11 +23,10 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
 
-The loop body is three blocks, each symbolically executed once for any state:
-the loads and the zPieces (`head_ok`), `mulz` (`mulz_ok`) and the rest
-(`tail_ok`, `tailAdd_ok`); the loop invariant says which coefficients of `h`
-are done (`Inv`), and `wp_saving` puts the loop in the frames that save
-`r4`–`r9`.
+The loop body is two blocks, each symbolically executed once for any state:
+the loads, `quot` and `mulq` (`headMul`), and the rest (`tail_ok`,
+`tailAdd_ok`); the loop invariant says which coefficients of `h` are done
+(`Inv`), and `wp_saving` puts the loop in the frames that save `r4`–`r9`.
 -/
 
 @[expose] public section
@@ -48,102 +47,67 @@ def Keep (s s' : State) : Prop := s'.gpr .r10 = s.gpr .r10 ∧ s'.gpr .r11 = s.g
 theorem Keep.trans {s₁ s₂ s₃ : State} (h₁ : Keep s₁ s₂) (h₂ : Keep s₂ s₃) : Keep s₁ s₃ :=
   ⟨h₂.1.trans h₁.1, h₂.2.1.trans h₁.2.1, h₂.2.2.trans h₁.2.2⟩
 
-theorem head_ok {s : State} {y w : BitVec 32} (h1 : s.gpr .r1 = y) (h2 : s.gpr .r2 = w)
-    (iF : InRegions (s.rd ++ s.wr) (State.addr (y + BitVec.ofNat 32 0)) 4)
-    (iG : InRegions (s.rd ++ s.wr) (State.addr (w + BitVec.ofNat 32 0)) 4) :
-    WP isa (.block (([.ldr .r12 .r1 0] : List Instr) ++ zPieces .r12 ++ ([.ldr .r8 .r2 0] : List Instr))) s fun s' =>
-      s'.gpr .r5 = s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32 >>> 14 ∧
-      s'.gpr .r6 = s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32 <<< 18 >>> 25 ∧
-      s'.gpr .r7 = s.mem.readW (State.addr (y + BitVec.ofNat 32 0)) 32 <<< 25 >>> 25 ∧
-      s'.gpr .r8 = s.mem.readW (State.addr (w + BitVec.ofNat 32 0)) 32 ∧
-      (∀ r, r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  run_block [zPieces, h1, h2, iF, iG]
-  and_intros
-  all_goals first | trivial | (intro r h5 h6 h7 h8 h12; simp [h5, h6, h7, h8, h12])
-
 /-- What the rest of an iteration does, but for the value stored. -/
 def Step (s : State) (x y w c v : BitVec 32) (s' : State) : Prop :=
   s'.gpr .r0 = x + 4 ∧ s'.gpr .r1 = y + 4 ∧ s'.gpr .r2 = w + 4 ∧ s'.gpr .r3 = c - 1 ∧ s'.z = (c - 1 == 0) ∧
-    s'.gpr .r4 = Qw ∧ Keep s s' ∧
+    s'.gpr .r4 = Nw ∧ s'.gpr .r5 = Qw ∧ Keep s s' ∧
     s'.mem = s.mem.writeW (State.addr (x + BitVec.ofNat 32 0)) v ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
 
 section
 variable {s : State} {x y w c p : BitVec 32} (h0 : s.gpr .r0 = x) (h1 : s.gpr .r1 = y) (h2 : s.gpr .r2 = w)
-  (h3 : s.gpr .r3 = c) (h4 : s.gpr .r4 = Qw) (h9 : s.gpr .r9 = p)
+  (h3 : s.gpr .r3 = c) (h4 : s.gpr .r4 = Nw) (h5 : s.gpr .r5 = Qw) (h9 : s.gpr .r9 = p)
   (oH : InRegions s.wr (State.addr (x + BitVec.ofNat 32 0)) 4)
-include h0 h1 h2 h3 h4 h9 oH
+include h0 h1 h2 h3 h4 h5 h9 oH
 
-theorem tail_ok :
-    WP isa (.block (csub .r9 .r12 .r4 ++ ([.str .r9 .r0 0] : List Instr) ++ step3)) s (Step s x y w c (bcsub p)) := by
-  run_block [csub, fixup, step3, Step, Keep, bcsub, bfix, h0, h1, h2, h3, h4, h9, oH]
+theorem tail_ok : WP isa (.block mulTail) s (Step s x y w c (bcsub (bred p))) := by
+  run_block [mulTail, red, csub, step3, Step, Keep, bcsub, bred, h0, h1, h2, h3, h4, h5, h9, oH]
 
 theorem tailAdd_ok (iH : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4) :
-    WP isa (.block (([.ldr .r8 .r0 0, .dp .add .r9 .r9 (.reg .r8)] : List Instr) ++ red .r9 .r12 .r4 ++
-      csub .r9 .r12 .r4 ++ ([.str .r9 .r0 0] : List Instr) ++ step3)) s
+    WP isa (.block (([.ldr .r8 .r0 0, .dp .add .r9 .r9 (.reg .r8)] : List Instr) ++ mulTail)) s
       (Step s x y w c (bcsub (bred (p + s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32)))) := by
-  run_block [red, csub, fixup, step3, Step, Keep, bcsub, bfix, bred, h0, h1, h2, h3, h4, h9, oH, iH]
+  run_block [mulTail, red, csub, step3, Step, Keep, bcsub, bred, h0, h1, h2, h3, h4, h5, h9, oH, iH]
 
 end
 
 /-- The product of the coefficients at `y` and `w`, as `mulHead` leaves it. -/
 abbrev prod (m : Mem) (y w : BitVec 32) : BitVec 32 :=
-  let a := m.readW (State.addr (y + BitVec.ofNat 32 0)) 32
-  bmulz (m.readW (State.addr (w + BitVec.ofNat 32 0)) 32) (a >>> 14) (a <<< 18 >>> 25) (a <<< 25 >>> 25)
+  let g := m.readW (State.addr (w + BitVec.ofNat 32 0)) 32
+  bmulq (m.readW (State.addr (y + BitVec.ofNat 32 0)) 32) g (bquot g)
 
 section
 variable {s : State} {x y w c : BitVec 32} (h0 : s.gpr .r0 = x) (h1 : s.gpr .r1 = y) (h2 : s.gpr .r2 = w)
-  (h3 : s.gpr .r3 = c) (h4 : s.gpr .r4 = Qw)
+  (h3 : s.gpr .r3 = c) (h4 : s.gpr .r4 = Nw) (h5 : s.gpr .r5 = Qw)
   (iF : InRegions (s.rd ++ s.wr) (State.addr (y + BitVec.ofNat 32 0)) 4)
   (iG : InRegions (s.rd ++ s.wr) (State.addr (w + BitVec.ofNat 32 0)) 4)
   (oH : InRegions s.wr (State.addr (x + BitVec.ofNat 32 0)) 4)
-include h0 h1 h2 h3 h4 iF iG oH
+include h0 h1 h2 h3 h4 h5 iF iG oH
 
 omit oH in
-/-- The head and `mulz`, and then `k`. -/
-theorem headMul {Q : State → Prop}
-    (k : ∀ s', s'.gpr .r0 = x → s'.gpr .r1 = y → s'.gpr .r2 = w → s'.gpr .r3 = c → s'.gpr .r4 = Qw →
-      s'.gpr .r9 = prod s.mem y w → Keep s s' → s'.mem = s.mem →
-      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Q s') :
-    WP isa (.block (mulHead ++ [])) s Q := by
-  rw [List.append_nil, mulHead, WP.block_append_iff]
-  refine WP.mono (head_ok h1 h2 iF iG) fun s₁ ⟨e5, e6, e7, e8, eo, m₁, rd₁, wr₁, sp₁⟩ => ?_
-  refine WP.mono (mulz_ok (by rw [eo _ (by decide) (by decide) (by decide) (by decide) (by decide), h4]) e5 e6 e7 e8)
-    fun s₂ ⟨e9, eo₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
-  have g : ∀ r, r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r12 → s₂.gpr r = s.gpr r :=
-    fun r a5 a6 a7 a8 a9 a12 => (eo₂ r a9 a12).trans (eo r a5 a6 a7 a8 a12)
-  refine k s₂ ((g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans h0)
-    ((g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans h1)
-    ((g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans h2)
-    ((g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans h3)
-    ((g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans h4)
-    e9 ⟨g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)⟩
-    (m₂.trans m₁) (rd₂.trans rd₁) (wr₂.trans wr₁) (sp₂.trans sp₁)
+/-- The loads, `quot` and `mulq`. -/
+theorem headMul :
+    WP isa (.block mulHead) s fun s' => s'.gpr .r0 = x ∧ s'.gpr .r1 = y ∧ s'.gpr .r2 = w ∧ s'.gpr .r3 = c ∧
+      s'.gpr .r4 = Nw ∧ s'.gpr .r5 = Qw ∧ s'.gpr .r9 = prod s.mem y w ∧ Keep s s' ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  run_block [mulHead, quot, mulq, bquot, bmulq, Keep, h0, h1, h2, h3, h4, h5, iF, iG]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, rfl, trivial⟩
 
-theorem body_ok : WP isa (.block mulBody) s (Step s x y w c (bcsub (prod s.mem y w))) := by
-  rw [mulBody, List.append_assoc, List.append_assoc, WP.block_append_iff, ← List.append_nil mulHead]
-  refine headMul h0 h1 h2 h3 h4 iF iG fun s₂ e0 e1 e2 e3 e4 e9 eo m rd wr sp => ?_
-  rw [← List.append_assoc]
+theorem body_ok : WP isa (.block mulBody) s (Step s x y w c (bcsub (bred (prod s.mem y w)))) := by
+  rw [mulBody, WP.block_append_iff]
+  refine WP.mono (headMul h0 h1 h2 h3 h4 h5 iF iG) fun s₂ ⟨e0, e1, e2, e3, e4, e5, e9, eo, m, rd, wr, sp⟩ => ?_
   have iH' : InRegions s₂.wr (State.addr (x + BitVec.ofNat 32 0)) 4 := by rw [wr]; exact oH
-  refine WP.mono (tail_ok e0 e1 e2 e3 e4 e9 iH') fun s' ⟨r0, r1, r2, r3, z, r4, ro, m', rd', wr', sp'⟩ =>
-    ⟨r0, r1, r2, r3, z, r4, eo.trans ro, by rw [m', m], rd'.trans rd, wr'.trans wr,
-      sp'.trans sp⟩
+  refine WP.mono (tail_ok e0 e1 e2 e3 e4 e5 e9 iH') fun s' ⟨r0, r1, r2, r3, z, r4, r5, ro, m', rd', wr', sp'⟩ =>
+    ⟨r0, r1, r2, r3, z, r4, r5, eo.trans ro, by rw [m', m], rd'.trans rd, wr'.trans wr, sp'.trans sp⟩
 
 theorem bodyAdd_ok (iH : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4) :
     WP isa (.block mulAddBody) s (Step s x y w c
       (bcsub (bred (prod s.mem y w + s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32)))) := by
-  rw [mulAddBody, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
-    WP.block_append_iff, ← List.append_nil mulHead]
-  refine headMul h0 h1 h2 h3 h4 iF iG fun s₂ e0 e1 e2 e3 e4 e9 eo m rd wr sp => ?_
-  simp only [← List.append_assoc]
+  rw [mulAddBody, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (headMul h0 h1 h2 h3 h4 h5 iF iG) fun s₂ ⟨e0, e1, e2, e3, e4, e5, e9, eo, m, rd, wr, sp⟩ => ?_
   have iH' : InRegions s₂.wr (State.addr (x + BitVec.ofNat 32 0)) 4 := by rw [wr]; exact oH
   have iH'' : InRegions (s₂.rd ++ s₂.wr) (State.addr (x + BitVec.ofNat 32 0)) 4 := by rw [wr, rd]; exact iH
-  refine WP.mono (tailAdd_ok e0 e1 e2 e3 e4 e9 iH' iH'')
-    fun s' ⟨r0, r1, r2, r3, z, r4, ro, m', rd', wr', sp'⟩ =>
-    ⟨r0, r1, r2, r3, z, r4, eo.trans ro, by rw [m', m], rd'.trans rd, wr'.trans wr,
-      sp'.trans sp⟩
+  refine WP.mono (tailAdd_ok e0 e1 e2 e3 e4 e5 e9 iH' iH'')
+    fun s' ⟨r0, r1, r2, r3, z, r4, r5, ro, m', rd', wr', sp'⟩ =>
+    ⟨r0, r1, r2, r3, z, r4, r5, eo.trans ro, by rw [m', m], rd'.trans rd, wr'.trans wr, sp'.trans sp⟩
 
 end
 
@@ -179,7 +143,8 @@ structure Inv (out : Nat → BitVec 32) (s₀ : State) (i : Nat) (s : State) : P
   r1 : s.gpr .r1 = pf s₀ + BitVec.ofNat 32 (4 * i)
   r2 : s.gpr .r2 = pg s₀ + BitVec.ofNat 32 (4 * i)
   r3 : s.gpr .r3 = BitVec.ofNat 32 (1 * (256 - i))
-  r4 : s.gpr .r4 = Qw
+  r4 : s.gpr .r4 = Nw
+  r5 : s.gpr .r5 = Qw
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
@@ -232,7 +197,7 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
   have eH : State.addr (ph s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = coeffAddr (H s₀) i :=
     addr_ptr _ _ _ (by omega_arith)
   have cH := coeff_contains (H s₀) (i := i) hi
-  refine WP.mono hb fun s' ⟨r0, r1, r2, r3, z, r4, ro, m, rd, wr, sp⟩ => ⟨⟨?_, ?_, ?_, ?_, r4,
+  refine WP.mono hb fun s' ⟨r0, r1, r2, r3, z, r4, r5, ro, m, rd, wr, sp⟩ => ⟨⟨?_, ?_, ?_, ?_, r4, r5,
     rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, h.keep.trans ro, ?_, ?_⟩, ?_⟩
   · rw [r0]; exact ptr_succ _ 4 i
   · rw [r1]; exact ptr_succ _ 4 i
@@ -250,19 +215,19 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
       · rw [ite_eq_right hj', ite_eq_right (by omega_arith)]
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
-/-- The loop, after `q` is loaded. -/
+/-- The loop, after the constants are loaded. -/
 theorem loop_ok {out : Nat → BitVec 32} {s₀ : State} {body : List Instr}
     (hb : ∀ i < 256, ∀ s, Inv out s₀ i s → WP isa (.block body) s fun s' =>
       Inv out s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 256)) :
-    WP isa (.seq (.block (loadQ .r4 ++ ([.mov .r3 (.imm 256)] : List Instr))) (.loop (.block body) .ne)) s₀
-      (Inv out s₀ 256) := by
+    WP isa (.seq (.block mulPre) (.loop (.block body) .ne)) s₀ (Inv out s₀ 256) := by
   refine WP.seq (WP.of_runBlock ?_)
-  refine ⟨_, by simp only [loadQ, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+  refine ⟨_, by simp only [mulPre, loadNQ, loadQ, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
     exec, Op2.eval, isa]; rfl,
     wp_loop_ne (Inv out s₀) (N := 256) (by decide) hb (fun _ h => h) ?_⟩
-  refine ⟨by simp [State.setReg], by simp [State.setReg], by simp [State.setReg], rfl, ?_, rfl, rfl, rfl,
+  refine ⟨by simp [State.setReg], by simp [State.setReg], by simp [State.setReg], rfl, ?_, ?_, rfl, rfl, rfl,
     ⟨by simp [State.setReg], by simp [State.setReg], by simp [State.setReg]⟩, Frame.refl _ _, fun j _ => rfl⟩
-  simp only [State.setReg]; exact loadQ_val
+  · simp only [State.setReg]; exact loadNQ_val
+  · simp only [State.setReg]; exact loadQ_val
 
 /-- The value stored in coefficient `j` by `vg_mldsa_multiply_ntt`. -/
 def mulOut (s₀ : State) (j : Nat) : BitVec 32 :=
@@ -272,49 +237,52 @@ def mulOut (s₀ : State) (j : Nat) : BitVec 32 :=
 def mulAddOut (s₀ : State) (j : Nat) : BitVec 32 :=
   BitVec.ofNat 32 ((add (polyAt s₀.mem (H s₀)) (multiplyNTT (polyAt s₀.mem (F s₀)) (polyAt s₀.mem (G s₀))))[j]!).val
 
-theorem prod_val {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {m : Mem} {y w : BitVec 32}
+/-- The product as `mulHead` leaves it: `mulqN` of the two coefficients. -/
+theorem prod_toNat {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {m : Mem} {y w : BitVec 32}
     (hy : m.readW (State.addr (y + BitVec.ofNat 32 0)) 32 = coeffAt s₀.mem (F s₀) i)
     (hw : m.readW (State.addr (w + BitVec.ofNat 32 0)) 32 = coeffAt s₀.mem (G s₀) i) :
-    (bcsub (prod m y w)).toNat = ((multiplyNTT (polyAt s₀.mem (F s₀)) (polyAt s₀.mem (G s₀)))[i]!).val := by
+    (prod m y w).toNat = mulqN (coeffAt s₀.mem (F s₀) i).toNat (coeffAt s₀.mem (G s₀) i).toNat ∧
+      (coeffAt s₀.mem (F s₀) i).toNat ≤ redMax := by
+  have hF : (coeffAt s₀.mem (F s₀) i).toNat ≤ redMax :=
+    Nat.le_trans (Nat.le_of_lt (hp.redF i hi)) (by decide)
   simp only [prod, hy, hw]
-  rw [bcsub_mulz (hp.redG i hi) (hp.redF i hi), mul_get _ _ hi, val_mul, polyAt_val hp.redF hi,
-    polyAt_val hp.redG hi, Nat.mul_comm]
+  exact ⟨bmulq_toNat hF (hp.redG i hi), hF⟩
 
 theorem mul_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (mulOut s₀) s₀ i s →
     WP isa (.block mulBody) s fun s' => Inv (mulOut s₀) s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 256) := by
   intro i hi s h
   have a := acc_of hp hi h
-  refine inv_step hp hi h (WP.mono (body_ok h.r0 h.r1 h.r2 h.r3 h.r4 a.iF a.iG a.oH) fun s' hs => ?_)
+  refine inv_step hp hi h (WP.mono (body_ok h.r0 h.r1 h.r2 h.r3 h.r4 h.r5 a.iF a.iG a.oH) fun s' hs => ?_)
   refine (?_ : _ = mulOut s₀ i) ▸ hs
-  exact ofNat_val_eq (prod_val hp hi a.vF a.vG)
+  refine ofNat_val_eq ?_
+  obtain ⟨eP, hF⟩ := prod_toNat hp hi a.vF a.vG
+  generalize prod s.mem _ _ = P at eP ⊢
+  have hr := red23_le (x := P.toNat) P.isLt
+  rw [bcsub_toNat (by rw [bred_toNat]; exact Nat.lt_of_le_of_lt hr redMax_lt), bred_toNat, red23_mod, eP,
+    mulqN_mod hF (hp.redG i hi), mul_get _ _ hi, val_mul, polyAt_val hp.redF hi, polyAt_val hp.redG hi]
 
 theorem mulAdd_hb {s₀ : State} (hp : Pre s₀) (hH : Reduced s₀.mem (H s₀)) :
     ∀ i < 256, ∀ s, Inv (mulAddOut s₀) s₀ i s →
     WP isa (.block mulAddBody) s fun s' => Inv (mulAddOut s₀) s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 256) := by
   intro i hi s h
   have a := acc_of hp hi h
-  refine inv_step hp hi h (WP.mono (bodyAdd_ok h.r0 h.r1 h.r2 h.r3 h.r4 a.iF a.iG a.oH a.iH) fun s' hs => ?_)
+  refine inv_step hp hi h (WP.mono (bodyAdd_ok h.r0 h.r1 h.r2 h.r3 h.r4 h.r5 a.iF a.iG a.oH a.iH) fun s' hs => ?_)
   refine (?_ : _ = mulAddOut s₀ i) ▸ hs
   refine ofNat_val_eq ?_
-  have hG := hp.redG i hi
-  have hF := hp.redF i hi
-  have hle := bmulz_le hG hF
-  have hmod : (bmulz (coeffAt s₀.mem (G s₀) i) (coeffAt s₀.mem (F s₀) i >>> 14)
-      (coeffAt s₀.mem (F s₀) i <<< 18 >>> 25) (coeffAt s₀.mem (F s₀) i <<< 25 >>> 25)).toNat % q =
-      (coeffAt s₀.mem (G s₀) i).toNat * (coeffAt s₀.mem (F s₀) i).toNat % q := by
-    rw [bmulz_toNat hG (Nat.lt_of_lt_of_le hF (by decide)), mulzN_mod]
+  obtain ⟨eP, hF⟩ := prod_toNat hp hi a.vF a.vG
+  have hb := (mulqN_bounds hF (hp.redG i hi)).2.2
+  have hmod := mulqN_mod hF (hp.redG i hi)
   have hHi := hH i hi
-  simp only [prod, a.vF, a.vG, a.vH] at hle ⊢
-  generalize bmulz _ _ _ _ = P at hle hmod ⊢
+  rw [a.vH]
+  generalize prod s.mem _ _ = P at eP ⊢
+  rw [← eP] at hb hmod
   have hs : (P + coeffAt s₀.mem (H s₀) i).toNat = P.toNat + (coeffAt s₀.mem (H s₀) i).toNat := by
-    unfold redMax at hle; rw [q_eq] at hHi; bv_omega
+    rw [BitVec.toNat_add]; exact Nat.mod_eq_of_lt (by omega_using [hb, hHi])
   have hr := red23_le (x := (P + coeffAt s₀.mem (H s₀) i).toNat) (BitVec.isLt _)
   rw [bcsub_toNat (by rw [bred_toNat]; exact Nat.lt_of_le_of_lt hr redMax_lt), bred_toNat, red23_mod, hs,
     add_get _ _ hi, val_add', mul_get _ _ hi, val_mul, polyAt_val hH hi, polyAt_val hp.redF hi,
-    polyAt_val hp.redG hi, Nat.mul_comm (coeffAt s₀.mem (F s₀) i).toNat]
-  generalize (coeffAt s₀.mem (G s₀) i).toNat * (coeffAt s₀.mem (F s₀) i).toNat = X at *
-  rw [q_eq] at *
-  omega_arith
+    polyAt_val hp.redG hi, Nat.add_mod, hmod, Nat.add_comm, Nat.add_mod_mod, Nat.mod_add_mod]
+  exact (Nat.add_mod_mod _ _ _).symm
 
 /-! ## Verified -/
 

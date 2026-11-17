@@ -21,10 +21,11 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_ntt`
 
-The table stored and `q` loaded (`pro_ok`); each layer is `nttLayer` (`lay_ok`
-with `bfly_spec`), and the eight layers are `NTT` (`ntt_eq_layers`), all in
-the frames that save `r4`–`r10` (`wp_saving`). `LI`, `pro_ok`, `PreE` and
-`pre_entry` serve `NTT⁻¹` too.
+The table stored and the constants loaded (`pro_ok`); each layer is `layerF`
+on words (`lay_ok` with `bfly_spec`), and the eight layers leave words
+congruent to `NTT` (`layersF_rel`, `ntt_eq_layers`), which the last loop
+reduces (`canon_ok`, `map_ok`), all in the frames that save `r4`–`r10`
+(`wp_saving`). `LI`, `pro_ok`, `PreE` and `pre_entry` serve `NTT⁻¹` too.
 -/
 
 @[expose] public section
@@ -83,23 +84,25 @@ theorem pre_entry {s s₁ : State} (hp : PreE s) (hE : Entry 28 s s₁) :
   · simp only [ps, g]; exact hp.fitS
   · rw [eF]; exact reduced_frame hE.frame dF hp.red
 
-/-- Between layers: the polynomial `G` at `f`, the table `tab` at `scratch`,
-and entry `k` of the table at `r1`, from the state `s₁` after the pushes. -/
-structure LI (tab : Nat → Nat) (s₁ : State) (G : Poly) (k : Nat) (s : State) : Prop where
+/-- Between layers: the words `G` at `f`, the table `tab` at `scratch`,
+entry `k` of the table at `r1`, and `k5` in `r5`, from the state `s₁` after
+the pushes. -/
+structure LI (tab : Nat → Nat) (k5 : BitVec 32) (s₁ : State) (G : LPoly) (k : Nat) (s : State) : Prop where
   r0 : s.gpr .r0 = pf s₁
   r1 : s.gpr .r1 = ps s₁ + BitVec.ofNat 32 (4 * k)
-  r4 : s.gpr .r4 = Qw
-  poly : PolyIs s.mem (F s₁) G
+  r4 : s.gpr .r4 = Nw
+  r5 : s.gpr .r5 = k5
+  poly : LP s.mem (F s₁) G
   tab : Tab tab s.mem (S s₁)
   frame : Frame [polyRegion (F s₁), polyRegion (S s₁)] s₁.mem s.mem
   keep : Keep [.r11, .lr] s₁ s
 
-theorem LI.step {tab : Nat → Nat} {s₁ : State} {G G' : Poly} {k k' : Nat} {s s' : State}
-    (hI : LI tab s₁ G k s) (hP : PolyIs s'.mem (F s₁) G') (hf : Frame [polyRegion (F s₁)] s.mem s'.mem)
+theorem LI.step {tab : Nat → Nat} {k5 : BitVec 32} {s₁ : State} {G G' : LPoly} {k k' : Nat} {s s' : State}
+    (hI : LI tab k5 s₁ G k s) (hP : LP s'.mem (F s₁) G') (hf : Frame [polyRegion (F s₁)] s.mem s'.mem)
     (h0 : s'.gpr .r0 = pf s₁) (h1 : s'.gpr .r1 = ps s₁ + BitVec.ofNat 32 (4 * k'))
-    (hk : Keep [.r4, .r11, .lr] s s') (hd : (polyRegion (S s₁)).Disjoint (polyRegion (F s₁))) :
-    LI tab s₁ G' k' s' :=
-  ⟨h0, h1, (hk.gpr .r4 (by decide)).trans hI.r4, hP,
+    (hk : Keep [.r4, .r5, .r11, .lr] s s') (hd : (polyRegion (S s₁)).Disjoint (polyRegion (F s₁))) :
+    LI tab k5 s₁ G' k' s' :=
+  ⟨h0, h1, (hk.gpr .r4 (by decide)).trans hI.r4, (hk.gpr .r5 (by decide)).trans hI.r5, hP,
     hI.tab.frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd),
     hI.frame.trans (hf.mono (by simp)), hI.keep.trans (hk.mono (by decide))⟩
 
@@ -115,9 +118,9 @@ theorem zetaTab_of : TabOf zetaTab zetas := fun k _ => zetaNat_eq k
 theorem zetaTab_lt : ∀ k < 256, zetaTab k < q := fun k _ => zetaNat_lt k
 
 theorem lays_ok {s₁ : State} (hp : PreB s₁) :
-    ∀ (ls : List Nat) (G : Poly) (k : Nat) (s : State), (∀ len ∈ ls, len ∈ nttLens) → Chain k ls →
-      LI zetaTab s₁ G k s →
-      WP isa (nttLays ls) s fun s' => ∃ k', LI zetaTab s₁ (ls.foldl nttLayer G) k' s'
+    ∀ (ls : List Nat) (G : LPoly) (k : Nat) (s : State), (∀ len ∈ ls, len ∈ nttLens) → Chain k ls →
+      LI zetaTab 16760834 s₁ G k s →
+      WP isa (nttLays ls) s fun s' => ∃ k', LI zetaTab 16760834 s₁ (ls.foldl layerF G) k' s'
   | [], G, k, s, _, _, hI => WP.block_nil ⟨k, hI⟩
   | len :: ls, G, k, s, hls, ⟨hk, hc⟩, hI => by
     have hlen := hls len (List.mem_cons_self ..)
@@ -128,24 +131,28 @@ theorem lays_ok {s₁ : State} (hp : PreB s₁) :
         simp only [nextZ, ite_true, BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
           ← BitVec.ofNat_add]
         congr 2)
-      G s hI.r0 (by rw [hI.r1, hk]; rfl) hI.r4 hI.poly (by rw [hI.keep.wr]; exact hp.wF)
+      G s hI.r0 (by rw [hI.r1, hk]; rfl) hI.r4 hI.r5 hI.poly (by rw [hI.keep.wr]; exact hp.wF)
       (by rw [hI.keep.wr]; exact List.mem_append_right _ hp.wS) hp.fs.symm hI.tab)
       fun s' ⟨hP, hf, h0, h1', hk'⟩ => ?_)
     exact lays_ok hp ls _ (256 / len) s' (fun l hl => hls l (List.mem_cons_of_mem _ hl)) hc
       (hI.step hP hf h0 (by rw [h1', ← h1]) hk' hp.fs.symm)
 
-/-- The table `tab` to `scratch`, `q` to `r4`, and `r1` at entry `k`. -/
-theorem pro_ok {s : State} (hp : PreB s) (tab : Nat → Nat) (ht : ∀ k < 256, tab k < q) (d : BitVec 32) (k : Nat)
+/-- The table `tab` to `scratch`, `-q` to `r4`, `k5` to `r5`, and `r1` at
+entry `k`. -/
+theorem pro_ok {s : State} (hp : PreB s) (tab : Nat → Nat) (ht : ∀ k < 256, tab k < q) (lo hi : BitVec 16)
+    (k5 d : BitVec 32) (k : Nat) (h5 : (hi ++ (lo.setWidth 32).extractLsb' 0 16 : BitVec 32) = k5)
     (hd : BitVec.ofNat 32 (4 * k) = d) (he : encodable d = true) :
-    WP isa (.block (storeTab tab 256 ++ loadQ .r4 ++ ([.dp .add .r1 .r1 (.imm d)] : List Instr))) s
-      (LI tab s (polyAt s.mem (F s)) k) := by
-  rw [List.append_assoc, WP.block_append_iff]
+    WP isa (.block (storeTab tab 256 ++ loadNQ .r4 ++ ([.movw .r5 lo, .movt .r5 hi] : List Instr) ++
+      ([.dp .add .r1 .r1 (.imm d)] : List Instr))) s
+      (LI tab k5 s (lift (polyAt s.mem (F s))) k) := by
+  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (storeTab_ok tab ht s (zB := ps s) rfl hp.fitS hp.wS) fun s₁ ⟨ht₁, hf₁, k₁⟩ => ?_
   have e1 : s₁.gpr .r1 = ps s := k₁.gpr .r1 (by decide)
   have e0 : s₁.gpr .r0 = pf s := k₁.gpr .r0 (by decide)
-  run_block [loadQ, e0, e1, he, loadQ_val]
-  refine ⟨by simp [e0], by simp [hd], by simp, ?_, ht₁, hf₁.mono (by simp), ?_⟩
-  · exact polyIs_frame hf₁ (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.fs) ⟨hp.red, rfl⟩
+  run_block [loadNQ, e0, e1, he, loadNQ_val, h5]
+  refine ⟨by simp [e0], by simp [hd], by simp, by simp, ?_, ht₁, hf₁.mono (by simp), ?_⟩
+  · exact lp_lift (polyIs_frame hf₁ (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.fs)
+      ⟨hp.red, rfl⟩)
   · exact ⟨fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp [k₁.gpr _ (by decide : Reg.r11 ∈ _), k₁.gpr _ (by decide : Reg.lr ∈ _)],
@@ -176,6 +183,20 @@ theorem preserved_of {s s' s₂ : State}
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp at hn
     exacts [h11, hlr]
 
+/-- What the last loop keeps: `-q` in `r4` and `q` in `r5`. -/
+def CanonIn (s : State) : Prop := s.gpr .r4 = Nw ∧ s.gpr .r5 = Qw
+
+theorem canon_ok : MapOk canonBody (fun v => bcsub (bred v)) CanonIn := by
+  intro s x c h0 h3 ⟨h4, h5⟩ iA oA
+  run_block [canonBody, red, csub, bred, bcsub, CanonIn, h0, h3, h4, h5, iA, oA]
+  keep_simp
+
+theorem canonPre_ok {s : State} :
+    WP isa (.block (loadQ .r5 ++ ([.mov .r3 (.imm 256)] : List Instr))) s fun s' =>
+      s'.gpr .r5 = Qw ∧ s'.gpr .r3 = BitVec.ofNat 32 256 ∧ s'.mem = s.mem ∧ Keep [.r0, .r4, .r11, .lr] s s' := by
+  run_block [loadQ, loadQ_val]
+  keep_simp
+
 theorem correct {s : State} (hp : PreE s) :
     WP isa Impl.MlDsa.Arm.Arith.ntt s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       PolyIs s'.mem (F s) (Spec.MlDsa.ntt (polyAt s.mem (F s))) := by
@@ -187,12 +208,21 @@ theorem correct {s : State} (hp : PreE s) :
       rw [List.mem_singleton.mp hr]; exact (stack_disj hp _ (List.mem_cons_self ..)).symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨h11, hlr, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of hg h11 hlr, hsp, hm ▸ hq⟩
   obtain ⟨hpB, eP, eF, eS⟩ := pre_entry hp hE
-  refine WP.seq (WP.mono (pro_ok hpB zetaTab zetaTab_lt 4 1 rfl (by decide)) fun s₂ hI => ?_)
-  refine WP.mono (lays_ok hpB nttLens _ 1 s₂ (fun _ h => h) chain_fwd hI) fun s₃ ⟨k, hI'⟩ => ?_
-  refine ⟨by rw [← eF, ← eS]; exact hI'.frame, ?_, ?_, ?_⟩
-  · rw [hI'.keep.gpr .r11 (by decide)]; exact congrFun hE.gpr _
-  · rw [hI'.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
-  · rw [← eP, ← eF, VG.Proof.MlDsa.Arith.ntt_eq_layers]; exact hI'.poly
+  refine WP.seq (WP.mono (pro_ok hpB zetaTab zetaTab_lt 0xC002 0xFF 16760834 4 1 (by decide) rfl (by decide))
+    fun s₂ hI => ?_)
+  refine WP.seq (WP.mono (lays_ok hpB nttLens _ 1 s₂ (fun _ h => h) chain_fwd hI) fun s₃ ⟨k, hI'⟩ => ?_)
+  refine WP.seq (WP.mono canonPre_ok fun s₄ ⟨e5, e3, m₄, k₄⟩ => ?_)
+  refine WP.mono (map_ok canon_ok hpB.fitF (by rw [k₄.wr, hI'.keep.wr]; exact hpB.wF)
+    ((k₄.gpr .r0 (by decide)).trans hI'.r0) e3 ⟨(k₄.gpr .r4 (by decide)).trans hI'.r4, e5⟩)
+    fun s₅ ⟨hc, hf, k₅⟩ => ⟨?_, ?_, ?_, ?_⟩
+  · rw [← eF, ← eS]; exact hI'.frame.trans (by rw [← m₄]; exact hf.mono (by simp))
+  · rw [k₅.gpr .r11 (by decide), k₄.gpr .r11 (by decide), hI'.keep.gpr .r11 (by decide)]; exact congrFun hE.gpr _
+  · rw [k₅.gpr .lr (by decide), k₄.gpr .lr (by decide), hI'.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
+  · have hr := layersF_rel nttLens 1 _ _ (fun _ h => h) (by decide) (lift_rel (polyAt s₁.mem (F s₁)))
+    rw [← eP, ← eF, VG.Proof.MlDsa.Arith.ntt_eq_layers]
+    refine polyIs_of_toNat fun j hj => ?_
+    have hj' : j < 256 := by rw [n_eq] at hj; exact hj
+    rw [hc j hj', m₄, canon_val (hI'.poly j hj), (hr j hj').2]
 
 /-- A state satisfying the precondition. -/
 def satState : State where
