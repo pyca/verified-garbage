@@ -2157,7 +2157,7 @@ end
 The working space's slots (`slot_le`, `slot_sep`), the context of a modulus
 `m` (`Context`: the modulus in slot 0 and `m'` in the header), what an
 operation on its slots keeps (`OpKeep`), and the multiplication and addition
-of slots 6 to 27 (`context_mul_ok`, `context_add_ok`).
+of slots 6 to 29 (`context_mul_ok`, `context_add_ok`).
 -/
 
 @[expose] public section
@@ -2174,7 +2174,7 @@ theorem slot_le {n i j : Nat} (h : i < j) : slot n i + stride n ≤ slot n j := 
   simp only [slot, Nat.succ_mul] at *
   omega_using [this]
 
-theorem slot_bound {n i : Nat} (h : i < 28) : slot n i + stride n ≤ contextBytes n := slot_le h
+theorem slot_bound {n i : Nat} (h : i < 30) : slot n i + stride n ≤ contextBytes n := slot_le h
 
 theorem slot_sep {n i j : Nat} (h : i ≠ j) :
     slot n i + stride n ≤ slot n j ∨ slot n j + stride n ≤ slot n i := by
@@ -2211,7 +2211,7 @@ structure OpKeep (n : Nat) (base : Addr) (o : Nat) (s t : State) : Prop where
 
 /-- The layout of an operation on slots 6 to 27. -/
 theorem context_lay {n size o a b : Nat} (hs : contextBytes n ≤ size) (h16 : contextBytes n < 2 ^ 16)
-    (ho : 6 ≤ o ∧ o < 28) (ha : 6 ≤ a ∧ a < 28) (hb : 6 ≤ b ∧ b < 28) :
+    (ho : 6 ≤ o ∧ o < 30) (ha : 6 ≤ a ∧ a < 30) (hb : 6 ≤ b ∧ b < 30) :
     MulLayD (contextMod n) size invO (accS n) (slot n o) (slot n a) (slot n b) := by
   have b0 := slot_le (n := n) (i := 0) (j := 1) (by decide)
   have b1 := slot_le (n := n) (i := 1) (j := 2) (by decide)
@@ -2230,7 +2230,7 @@ theorem context_lay {n size o a b : Nat} (hs : contextBytes n ≤ size) (h16 : c
   constructor <;> (try simp only [accLen, digits, Impl.Mont.Arm.words, contextMod, accS, modS, tmpS, invO]) <;> omega_arith
 
 theorem slot_val32 {n o i k : Nat} {base : Addr} {s t : State} (K : Outs base (opRanges n o) s.mem t.mem)
-    (hi : i < 28) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
+    (hi : i < 30) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
     (hn : base.toNat + contextBytes n ≤ 2 ^ 32) :
     val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k := by
   have so := slot_sep (n := n) hio
@@ -2255,7 +2255,7 @@ theorem slot_val32 {n o i k : Nat} {base : Addr} {s t : State} (K : Outs base (o
   · omega_using [hi, hk, hio, hi1, hi2, hn, so, st, bi, l6, l2, h0, l6i, e6]
 
 theorem OpKeep.val32 {n o i k : Nat} {base : Addr} {s t : State} (K : OpKeep n base o s t)
-    (hi : i < 28) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
+    (hi : i < 30) (hk : k ≤ 2 * n) (hio : i ≠ o) (hi1 : i ≠ 1) (hi2 : 6 ≤ i ∨ i = 0)
     (hn : base.toNat + contextBytes n ≤ 2 ^ 32) :
     val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k :=
   slot_val32 K.mem hi hk hio hi1 hi2 hn
@@ -2293,7 +2293,7 @@ theorem Context.of_slot {n size m i : Nat} {base : Addr} {s t : State} (h : Cont
   · rw [O.w32 (by simp only [invO]; omega_using [l0]) (by decide)]; exact h.inverse
 
 theorem context_mul_ok {n size m o a b : Nat} {base : Addr} {s : State} (h : Context n m base size s)
-    (ho : 6 ≤ o ∧ o < 28) (ha : 6 ≤ a ∧ a < 28) (hb : 6 ≤ b ∧ b < 28)
+    (ho : 6 ≤ o ∧ o < 30) (ha : 6 ≤ a ∧ a < 30) (hb : 6 ≤ b ∧ b < 30)
     (hB : val32 s.mem base (slot n b) (2 * n) < m) :
     WP isa (Dynamic.mul umaal (contextMod n) invO (accS n) (slot n o) (slot n a) (slot n b)) s fun t =>
       Context n m base size t ∧ OpKeep n base o s t ∧
@@ -2308,7 +2308,7 @@ theorem context_mul_ok {n size m o a b : Nat} {base : Addr} {s : State} (h : Con
   exact ⟨h.keep (by omega_using [ho]) w K, K, lt, by rw [show 64 * n = 32 * (2 * n) by omega_using []]; exact V⟩
 
 theorem context_add_ok {n size m o a b : Nat} {base : Addr} {s : State} (h : Context n m base size s)
-    (ho : 6 ≤ o ∧ o < 28) (ha : 6 ≤ a ∧ a < 28) (hb : 6 ≤ b ∧ b < 28)
+    (ho : 6 ≤ o ∧ o < 30) (ha : 6 ≤ a ∧ a < 30) (hb : 6 ≤ b ∧ b < 30)
     (hA : val32 s.mem base (slot n a) (2 * n) < m) (hB : val32 s.mem base (slot n b) (2 * n) < m) :
     WP isa (addD (contextMod n) (accS n) (slot n o) (slot n a) (slot n b)) s fun t =>
       Context n m base size t ∧ OpKeep n base o s t ∧

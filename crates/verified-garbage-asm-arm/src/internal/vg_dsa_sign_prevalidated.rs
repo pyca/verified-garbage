@@ -704,7 +704,7 @@ cmp r10, r9
 bne 246b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_5}
 mov r12, r11
 movw r11, #14944
@@ -752,7 +752,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14720
@@ -829,7 +829,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_pow_3_5}
 mov r12, r11
 movw r11, #14784
@@ -906,7 +906,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14816
@@ -953,7 +953,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -1217,7 +1217,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14752
@@ -2206,7 +2206,7 @@ cmp r10, r9
 bne 2115b
 mov r11, r12
 mov r0, r12
-movw r1, #1404
+movw r1, #1502
 bl {vg_dsa_pow_48_8}
 mov r12, r11
 movw r11, #14944
@@ -2252,7 +2252,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14720
@@ -2323,7 +2323,7 @@ cmp r10, r9
 bne 2121b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_pow_4_8}
 mov r12, r11
 movw r11, #14784
@@ -2394,7 +2394,7 @@ cmp r10, r9
 bne 2125b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -2439,7 +2439,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -2691,7 +2691,7 @@ cmp r10, r9
 bne 2138b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14752
@@ -3582,7 +3582,7 @@ cmp r10, r9
 bne 2180b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_8}
 mov r12, r11
 movw r11, #14944
@@ -3628,7 +3628,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14720
@@ -3699,7 +3699,7 @@ cmp r10, r9
 bne 2186b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_pow_4_8}
 mov r12, r11
 movw r11, #14784
@@ -3770,7 +3770,7 @@ cmp r10, r9
 bne 2190b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -3815,7 +3815,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -4067,7 +4067,7 @@ cmp r10, r9
 bne 2203b
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14752
@@ -4966,7 +4966,7 @@ cmp r10, r9
 bne 2245b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_7}
 mov r12, r11
 movw r11, #14944
@@ -5014,7 +5014,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14720
@@ -5091,7 +5091,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_pow_4_7}
 mov r12, r11
 movw r11, #14784
@@ -5168,7 +5168,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14816
@@ -5215,7 +5215,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_reduce_4}
 mov r12, r11
 movw r11, #14880
@@ -5479,7 +5479,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #172
+movw r1, #182
 bl {vg_dsa_mulmod_4}
 mov r12, r11
 movw r11, #14752
@@ -6159,7 +6159,7 @@ cmp r10, r9
 bne 2300b
 mov r11, r12
 mov r0, r12
-movw r1, #508
+movw r1, #542
 bl {vg_dsa_pow_16_5}
 mov r12, r11
 movw r11, #14944
@@ -6207,7 +6207,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14720
@@ -6284,7 +6284,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_pow_3_5}
 mov r12, r11
 movw r11, #14784
@@ -6361,7 +6361,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14816
@@ -6408,7 +6408,7 @@ mov r2, r11
 sub r3, lr, r11
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_reduce_3}
 mov r12, r11
 movw r11, #14880
@@ -6672,7 +6672,7 @@ mov r4, #0
 str r4, [r10, #0]
 mov r11, r12
 mov r0, r12
-movw r1, #144
+movw r1, #152
 bl {vg_dsa_mulmod_3}
 mov r12, r11
 movw r11, #14752

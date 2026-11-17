@@ -9,8 +9,9 @@ The working space (base `r12`) holds a header of 256 bytes, `m'` at `[0]`
 (the rest is its user's), then slots of `8n + 8`
 bytes: the modulus, the subtraction temporary, the accumulator (four slots,
 for its `2D + 2` digits), one, `R²`, the base, the result, a product (the
-exponentiation's chosen power), the exponent, and the sixteen powers of the
-exponentiation's table. All offsets depend only on the public width.
+exponentiation's chosen power), the exponent, the sixteen powers of the
+exponentiation's table, and the second base and exponent of a product of two
+powers. All offsets depend only on the public width.
 
 The counts of the doublings and of the exponent's windows are in `lr`, and
 the table's next entry and the count of a window's squarings in `r11`: the
@@ -43,7 +44,11 @@ def expS (n : Nat) : Nat := slot n 11
 /-- Entry `j` of the exponentiation's table: the base to the power `j`. -/
 def tabS (n j : Nat) : Nat := slot n (12 + j)
 
-def contextBytes (n : Nat) : Nat := slot n 28
+/-- The second base and exponent of a product of two powers. -/
+def base2S (n : Nat) : Nat := slot n 28
+def exp2S (n : Nat) : Nat := slot n 29
+
+def contextBytes (n : Nat) : Nat := slot n 30
 
 /-- `m'`, in the header. -/
 def invO : Nat := 0
@@ -162,6 +167,68 @@ def exponentiate (n expWords : Nat) : Prog isa :=
   .seq (mul umaal (contextMod n) invO (accS n) (resS n) (rrS n) (oneS n)) <|
   .seq (.block [.movw .lr (BitVec.ofNat 16 (8 * expWords))]) <|
   .seq (.loop (windowStep umaal n expWords) .ne)
+    (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (oneS n))
+
+/-! ## A product of two powers
+
+`[baseS]^[expS] · [base2S]^[exp2S]` in one pass over both exponents, two bits
+of each at a time: the table's entry `4 i + j` is the second base to the
+power `i` times the first to the power `j`, and each window is two squarings
+and a multiplication by the entry the two exponents' top two bits choose. -/
+
+/-- As `shiftUp`, by two bits. -/
+def shiftUp2 : Nat → Nat → List Instr
+  | 0, _ => []
+  | k + 1, j =>
+    [.ldr .r4 .r1 (4 * j), .dp .orr .r5 .r2 (.shifted .r4 .lsl 2), .mov .r2 (.shifted .r4 .lsr 30),
+      .str .r5 .r1 (4 * j)] ++ shiftUp2 k (j + 1)
+
+/-- The top two bits of the exponent at `[E]` into `r2`, and the exponent shifted up by them. -/
+def windowTwo (E expWords : Nat) : List Instr := ptr .r1 E ++ (.mov .r2 (.imm 0) :: shiftUp2 expWords 0)
+
+/-- `r2 = 4 i + j`, for the top two bits `i` of the second exponent and `j` of
+the first, which are shifted out. -/
+def window2 (n expWords : Nat) : Prog isa :=
+  .seq (.block (windowTwo (exp2S n) expWords)) <|
+  .seq (.block [.mov .r6 (.shifted .r2 .lsl 2)]) <|
+  .seq (.block (windowTwo (expS n) expWords)) (.block [.dp .orr .r2 .r2 (.reg .r6)])
+
+/-- The table's entries that are products of two others: `(k, a, b)` for
+entry `k`, the product of entries `a` and `b`. -/
+def tableOps : List (Nat × Nat × Nat) :=
+  [(2, 1, 1), (3, 2, 1), (5, 4, 1), (6, 4, 2), (7, 4, 3), (8, 4, 4), (9, 8, 1), (10, 8, 2), (11, 8, 3),
+    (12, 8, 4), (13, 12, 1), (14, 12, 2), (15, 12, 3)]
+
+def tableFill (n : Nat) : List (Nat × Nat × Nat) → Prog isa
+  | [] => .block []
+  | (k, a, b) :: r =>
+    .seq (mul umaal (contextMod n) invO (accS n) (tabS n k) (tabS n a) (tabS n b)) (tableFill n r)
+
+/-- The table of a product of two powers: one, the two bases, encoded, and
+their products. -/
+def table2 (n : Nat) : Prog isa :=
+  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 0) (rrS n) (oneS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 1) (baseS n) (rrS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 4) (base2S n) (rrS n)) (tableFill umaal n tableOps)
+
+/-- A window of both exponents: the result to its fourth power, times the
+table's entry for their top two bits. -/
+def windowStep2 (n expWords : Nat) : Prog isa :=
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (resS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (resS n)) <|
+  .seq (window2 n expWords) <|
+  .seq (scan n) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (prodS n))
+    (.block [.subs .lr .lr (.imm 1)])
+
+/-- `[resS] = [baseS]^[expS] · [base2S]^[exp2S] mod m`, the exponents
+`expWords` words each, with a public number of iterations; the exponents are
+consumed. -/
+def exponentiate2 (n expWords : Nat) : Prog isa :=
+  .seq (table2 umaal n) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (rrS n) (oneS n)) <|
+  .seq (.block [.movw .lr (BitVec.ofNat 16 (16 * expWords))]) <|
+  .seq (.loop (windowStep2 umaal n expWords) .ne)
     (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (oneS n))
 
 end VG.Impl.Mont.Arm.Dynamic

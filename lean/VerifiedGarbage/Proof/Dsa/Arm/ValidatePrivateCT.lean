@@ -164,7 +164,7 @@ theorem validatePrivIn {s t : State} {base : Addr} {size : Nat} (h : validatePri
   obtain ⟨_, hrd, _, dKS, _, fK, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 11232 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have kr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat)
@@ -213,7 +213,7 @@ theorem validatePriv_correct {s : State} (h : validatePrivPre s) :
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 11232 ≤ (arg s 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -, -, -⟩ := validatePrivIn h rfl rfl E₁
   unfold PrevalidatedSign.validateSized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
@@ -406,7 +406,7 @@ theorem validatePriv_constantTime :
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   obtain F₁ := E₁.of_mem R₁ (by decide) M₁
   obtain F₂ := E₂.of_mem R₂ (by decide) M₂
-  obtain hz : 11232 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
+  obtain hz : 12016 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
   obtain C₁ := privCtx h₁ rfl rfl F₁
   obtain C₂ := privCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂

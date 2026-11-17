@@ -586,7 +586,7 @@ cmp r10, r9
 bne 241b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_5_umaal}
 mov r12, r11
 movw r11, #15328
@@ -1485,7 +1485,7 @@ cmp r10, r9
 bne 284b
 mov r11, r12
 mov r0, r12
-movw r1, #1404
+movw r1, #1502
 bl {vg_dsa_pow_48_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -2294,7 +2294,7 @@ cmp r10, r9
 bne 2123b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_8_umaal}
 mov r12, r11
 movw r11, #15328
@@ -3109,7 +3109,7 @@ cmp r10, r9
 bne 2162b
 mov r11, r12
 mov r0, r12
-movw r1, #956
+movw r1, #1022
 bl {vg_dsa_pow_32_7_umaal}
 mov r12, r11
 movw r11, #15328
@@ -3697,7 +3697,7 @@ cmp r10, r9
 bne 2191b
 mov r11, r12
 mov r0, r12
-movw r1, #508
+movw r1, #542
 bl {vg_dsa_pow_16_5_umaal}
 mov r12, r11
 movw r11, #15328

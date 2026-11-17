@@ -66,7 +66,7 @@ theorem slot_succ (n i : Nat) : slot n (i + 1) = slot n i + stride n := by
 
 /-- A number in a slot, after code that changed only bytes of another slot. -/
 theorem slot_outside {n o i k len : Nat} {base : Addr} {m m' : Mem} (O : Outside base (slot n o) len m m')
-    (hl : len ≤ stride n) (hio : i ≠ o) (hk : 4 * k ≤ stride n) (hi : i < 28) (h16 : contextBytes n < 2 ^ 16) :
+    (hl : len ≤ stride n) (hio : i ≠ o) (hk : 4 * k ≤ stride n) (hi : i < 30) (h16 : contextBytes n < 2 ^ 16) :
     val32 m' base (slot n i) k = val32 m base (slot n i) k := by
   have sep := slot_sep (n := n) hio
   have bi := slot_bound (n := n) hi
@@ -79,8 +79,8 @@ def exponentRanges (n : Nat) : List (Nat × Nat) := [(slot n 1, 5 * stride n), (
 theorem exponentRanges_of {n o len : Nat} {base : Addr} {m m' : Mem} (O : Outside base (slot n o) len m m')
     (ho : 8 ≤ o) (ho' : o < 28) (hl : len ≤ stride n) : Outs base (exponentRanges n) m m' := by
   have l8 := slot_mono (n := n) ho
-  have bo := slot_bound (n := n) ho'
-  have e28 : contextBytes n = slot n 8 + 20 * stride n := by simp only [contextBytes, slot]; omega_using []
+  have bo := slot_le (n := n) ho'
+  have e28 : slot n 28 = slot n 8 + 20 * stride n := by simp only [slot]; omega_using []
   intro x hx
   have h2 := hx (slot n 8, 20 * stride n) (by simp [exponentRanges])
   simp only at h2
@@ -89,8 +89,8 @@ theorem exponentRanges_of {n o len : Nat} {base : Addr} {m m' : Mem} (O : Outsid
 theorem exponentRanges_op {n o : Nat} {base : Addr} {m m' : Mem} (O : Outs base (opRanges n o) m m')
     (ho : 8 ≤ o) (ho' : o < 28) : Outs base (exponentRanges n) m m' := by
   have l8 := slot_mono (n := n) ho
-  have bo := slot_bound (n := n) ho'
-  have e28 : contextBytes n = slot n 8 + 20 * stride n := by simp only [contextBytes, slot]; omega_using []
+  have bo := slot_le (n := n) ho'
+  have e28 : slot n 28 = slot n 8 + 20 * stride n := by simp only [slot]; omega_using []
   have e2 : slot n 2 = slot n 1 + stride n := slot_succ n 1
   have st : stride n = 8 * n + 8 := rfl
   intro x hx
@@ -108,6 +108,46 @@ theorem exponentRanges_slot {n i k : Nat} {base : Addr} {m m' : Mem}
   apply O.val32
   · intro r hr
     simp only [exponentRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hi with rfl | rfl | rfl <;> rcases hr with rfl | rfl <;> simp only [slot, stride] <;> omega_using [hk]
+  · simp only [contextBytes, slot, stride] at h16
+    rcases hi with rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hk, h16]
+
+/-- The memory a product of two powers changes: the second base's and
+exponent's slots too. -/
+def exponentRanges2 (n : Nat) : List (Nat × Nat) := [(slot n 1, 5 * stride n), (slot n 8, 22 * stride n)]
+
+theorem exponentRanges2_of {n o len : Nat} {base : Addr} {m m' : Mem} (O : Outside base (slot n o) len m m')
+    (ho : 8 ≤ o) (ho' : o < 30) (hl : len ≤ stride n) : Outs base (exponentRanges2 n) m m' := by
+  have l8 := slot_mono (n := n) ho
+  have bo := slot_le (n := n) ho'
+  have e28 : slot n 30 = slot n 8 + 22 * stride n := by simp only [slot]; omega_using []
+  intro x hx
+  have h2 := hx (slot n 8, 22 * stride n) (by simp [exponentRanges2])
+  simp only at h2
+  exact O x (by omega_using [l8, bo, e28, hl, h2])
+
+theorem exponentRanges2_op {n o : Nat} {base : Addr} {m m' : Mem} (O : Outs base (opRanges n o) m m')
+    (ho : 8 ≤ o) (ho' : o < 30) : Outs base (exponentRanges2 n) m m' := by
+  have l8 := slot_mono (n := n) ho
+  have bo := slot_le (n := n) ho'
+  have e28 : slot n 30 = slot n 8 + 22 * stride n := by simp only [slot]; omega_using []
+  have e2 : slot n 2 = slot n 1 + stride n := slot_succ n 1
+  have st : stride n = 8 * n + 8 := rfl
+  intro x hx
+  have h1 := hx (slot n 1, 5 * stride n) (by simp [exponentRanges2])
+  have h2 := hx (slot n 8, 22 * stride n) (by simp [exponentRanges2])
+  simp only at h1 h2
+  refine O x fun r hr => ?_
+  simp only [opRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [l8, bo, e28, e2, st, h1, h2]
+
+/-- The modulus, one and `R²` are not among them either. -/
+theorem exponentRanges2_slot {n i k : Nat} {base : Addr} {m m' : Mem}
+    (O : Outs base (exponentRanges2 n) m m') (hi : i = 0 ∨ i = 6 ∨ i = 7) (hk : k ≤ 2 * n)
+    (h16 : contextBytes n < 2 ^ 16) : val32 m' base (slot n i) k = val32 m base (slot n i) k := by
+  apply O.val32
+  · intro r hr
+    simp only [exponentRanges2, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hi with rfl | rfl | rfl <;> rcases hr with rfl | rfl <;> simp only [slot, stride] <;> omega_using [hk]
   · simp only [contextBytes, slot, stride] at h16
     rcases hi with rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hk, h16]
@@ -254,6 +294,81 @@ theorem window_ok {n size expWords : Nat} {base : Addr} {s : State} (hs : Ws s b
   have w₂ := (hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)
   have z2 : (s₂.gpr .r2).toNat = 0 := by rw [u₂.gpr]; rfl
   refine WP.mono (shiftUp_ok (E := expS n) expWords 0 s₂ w₂
+    (by rw [u₂.other .r1 (by decide), u₂.other .r12 (by decide), u₁.gpr, u₁.other .r12 (by decide)])
+    (by omega_using [he]) (by omega_using [hew]) (by omega_using [z2])) fun t ⟨wt, O, c, V, R⟩ => ?_
+  simp only [Nat.mul_zero, Nat.add_zero] at O V
+  rw [u₂.mem, u₁.mem] at O V
+  exact ⟨wt, O, c, by rw [V, z2, Nat.add_zero],
+    ((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (R.mono (by decide))⟩
+
+/-! ## An exponent shifted up two bits -/
+
+theorem carry_word2 (c x : BitVec 32) (hc : c.toNat < 4) :
+    (c ||| x <<< 2).toNat = x.toNat % 2 ^ 30 * 2 ^ 2 + c.toNat := by
+  rw [BitVec.toNat_or, toNat_shl]
+  have e : x.toNat * 2 ^ 2 % 2 ^ 32 = (x.toNat % 2 ^ 30) <<< 2 := by rw [Nat.shiftLeft_eq]; omega_using []
+  rw [e, Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt (by omega_using [hc] : c.toNat < 2 ^ 2), Nat.shiftLeft_eq]
+
+/-- The `k` words at `[r1 + 4j]` (`r1 = r12 + E`) shifted up two bits: the
+bits in `r2` come in, and those that go out are left there. -/
+theorem shiftUp2_ok {E size : Nat} {base : Addr} :
+    ∀ (k j : Nat) (s : State), Ws s base size → s.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 E →
+    E + 4 * (j + k) ≤ size → 4 * (j + k) ≤ 4096 → (s.gpr .r2).toNat < 4 →
+    WP isa (.block (shiftUp2 k j)) s fun t => Ws t base size ∧
+      Outside base (E + 4 * j) (4 * k) s.mem t.mem ∧ (t.gpr .r2).toNat < 4 ∧
+      val32 t.mem base (E + 4 * j) k + 2 ^ (32 * k) * (t.gpr .r2).toNat =
+        4 * val32 s.mem base (E + 4 * j) k + (s.gpr .r2).toNat ∧ Rest [.r2, .r4, .r5] s t
+  | 0, j, s, hs, _, _, _, h2 =>
+    WP.block_nil ⟨hs, Outside.refl _ _ _ _, h2, by
+      simp only [val32, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add], Rest.refl _ _⟩
+  | k + 1, j, s, hs, h1, hk, h4, h2 => by
+    have hnw := hs.nowrap
+    rw [shiftUp2]
+    simp only [List.cons_append, List.nil_append]
+    refine wp_ldr (by omega_arith) (hs.ea h1 (by omega_arith)) (hs.read (by omega_arith)) fun s₁ u₁ =>
+      wp_dp (op2_lsl (by decide)) fun s₂ u₂ => wp_mov (op2_lsr (by decide)) fun s₃ u₃ => ?_
+    have w₃ := ((hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)).of_upd u₃ (by decide)
+    have e3 : s₃.gpr .r1 = s₃.gpr .r12 + BitVec.ofNat 32 E := by
+      simp only [u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]; exact h1
+    refine wp_str (by omega_arith) (w₃.ea e3 (by omega_arith)) (w₃.write (by omega_arith)) fun s₄ m₄ => ?_
+    have w₄ := w₃.of_mupd m₄
+    have wlt : w32 s.mem base (E + 4 * j) < 2 ^ 32 := (s.mem.readW (off base (E + 4 * j)) 32).isLt
+    have r5 : (s₃.gpr .r5).toNat = w32 s.mem base (E + 4 * j) % 2 ^ 30 * 2 ^ 2 + (s.gpr .r2).toNat := by
+      simp only [u₃.get, u₂.get, reduceCtorEq, ↓reduceIte, dpVal]
+      rw [u₁.other .r2 (by decide), u₁.gpr, carry_word2 _ _ h2]
+    have r2 : (s₄.gpr .r2).toNat = w32 s.mem base (E + 4 * j) / 2 ^ 30 := by
+      rw [m₄.gpr, u₃.gpr, toNat_shr, u₂.other .r4 (by decide), u₁.gpr]
+    have m4 : s₄.mem = s.mem.writeW (off base (E + 4 * j)) (s₃.gpr .r5) := by
+      rw [m₄.mem, u₃.mem, u₂.mem, u₁.mem]
+    refine WP.mono (shiftUp2_ok (E := E) k (j + 1) s₄ w₄ (by rw [m₄.gpr]; exact e3) (by omega_arith) (by omega_arith)
+      (by rw [r2]; omega_using [wlt])) fun t ⟨wt, O, c2, V, R⟩ => ⟨wt, ?_, c2, ?_, ?_⟩
+    · rw [m4] at O
+      exact ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+        (O.mono (by omega_arith) (by omega_arith))
+    · rw [m4, show E + 4 * (j + 1) = E + 4 * j + 4 by omega_arith] at O V
+      have head : w32 t.mem base (E + 4 * j) = (s₃.gpr .r5).toNat := by
+        rw [O.w32 (by omega_arith) (by omega_arith), w32_write_self]
+      have tail : val32 (s.mem.writeW (off base (E + 4 * j)) (s₃.gpr .r5)) base (E + 4 * j + 4) k =
+          val32 s.mem base (E + 4 * j + 4) k :=
+        (writeW32_outside s.mem base (d := E + 4 * j) (s₃.gpr .r5) (by omega_arith)).val32 (by omega_arith) (by omega_arith)
+      rw [tail, r2] at V
+      rw [val32, val32, head, r5, pow32_succ, Nat.mul_assoc]
+      omega_using [V, wlt]
+    · exact (((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans
+        ((m₄.rest _).trans R)
+
+/-- `r2` is the top two bits of the exponent at `[E]`, which is shifted up by them. -/
+theorem windowTwo_ok {E size expWords : Nat} {base : Addr} {s : State} (hs : Ws s base size)
+    (he : E + 4 * expWords ≤ size) (h16 : E < 2 ^ 16) (hew : expWords ≤ 1024) :
+    WP isa (.block (windowTwo E expWords)) s fun t => Ws t base size ∧
+      Outside base (E) (4 * expWords) s.mem t.mem ∧ (t.gpr .r2).toNat < 4 ∧
+      val32 t.mem base (E) expWords + 2 ^ (32 * expWords) * (t.gpr .r2).toNat =
+        4 * val32 s.mem base (E) expWords ∧ Rest [.r1, .r2, .r4, .r5] s t := by
+  unfold windowTwo
+  refine wp_ptr (d := .r1) (by decide) h16 fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
+  have w₂ := (hs.of_upd u₁ (by decide)).of_upd u₂ (by decide)
+  have z2 : (s₂.gpr .r2).toNat = 0 := by rw [u₂.gpr]; rfl
+  refine WP.mono (shiftUp2_ok (E := E) expWords 0 s₂ w₂
     (by rw [u₂.other .r1 (by decide), u₂.other .r12 (by decide), u₁.gpr, u₁.other .r12 (by decide)])
     (by omega_using [he]) (by omega_using [hew]) (by omega_using [z2])) fun t ⟨wt, O, c, V, R⟩ => ?_
   simp only [Nat.mul_zero, Nat.add_zero] at O V

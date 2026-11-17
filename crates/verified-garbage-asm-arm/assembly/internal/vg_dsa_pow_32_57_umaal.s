@@ -17,7 +17,7 @@ vg_dsa_pow_32_57_umaal:
 	str lr, [r12, #40]
 	mov r4, r12
 	mov r0, r12
-	movw r1, #956
+	movw r1, #1022
 	bl {vg_dsa_context_32_umaal}
 	mov r12, r4
 	movw r10, #784

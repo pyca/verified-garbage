@@ -120,7 +120,7 @@ structure Entry (s : State) (base : Addr) (size : Nat) : Prop where
   wr : ∃ len, size ≤ len ∧ len ≤ 2 ^ 32 ∧ (⟨base, len⟩ : Region) ∈ s.wr
   nowrap : base.toNat + size ≤ 2 ^ 32
 
-theorem contextBytes_bounds {n : Nat} (hn : n ≤ 48) : 44 ≤ contextBytes n ∧ contextBytes n ≤ 11232 := by
+theorem contextBytes_bounds {n : Nat} (hn : n ≤ 48) : 44 ≤ contextBytes n ∧ contextBytes n ≤ 12016 := by
   simp only [contextBytes, slot, stride]; omega_using [hn]
 
 /-- Ranges in the header's first 64 bytes or past the modulus's slot are the

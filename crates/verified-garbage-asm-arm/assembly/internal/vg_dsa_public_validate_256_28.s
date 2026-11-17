@@ -403,7 +403,7 @@ vg_dsa_public_validate_256_28:
 	sub r3, lr, r11
 	mov r11, r12
 	mov r0, r12
-	movw r1, #172
+	movw r1, #182
 	bl {vg_dsa_reduce_4}
 	mov r12, r11
 	movw r11, #14816
@@ -629,7 +629,7 @@ vg_dsa_public_validate_256_28:
 	bne 227b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #956
+	movw r1, #1022
 	bl {vg_dsa_pow_32_7}
 	mov r12, r11
 	movw r11, #14944
@@ -802,7 +802,7 @@ vg_dsa_public_validate_256_28:
 	bne 236b
 	mov r11, r12
 	mov r0, r12
-	movw r1, #956
+	movw r1, #1022
 	bl {vg_dsa_pow_32_7}
 	mov r12, r11
 	movw r11, #14944

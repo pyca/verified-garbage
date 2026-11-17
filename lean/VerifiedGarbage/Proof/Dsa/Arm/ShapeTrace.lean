@@ -44,7 +44,7 @@ theorem threeWidths_relCT (n a b c output : Nat) :
   RelCT.seq (saveWidth_relCT _ _ _) (RelCT.seq (saveWidth_relCT _ _ _) (saveWidth_relCT _ _ _))
 
 theorem inspectP_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (pLen : Nat) (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .p)) :
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .p)) :
     SameTrace isa (Shape.inspectP pLen) s₁ s₂ := by
   unfold Shape.inspectP Shape.loadWidths
   dsimp only
@@ -55,7 +55,7 @@ theorem inspectP_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
       (wsT_noBase _ _) (by kernel_rfl))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem inspectQ_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (qLen : Nat) (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .q)) :
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (he : PtrEq base s₁ s₂ (.input .q)) :
     SameTrace isa (Shape.inspectQ qLen) s₁ s₂ := by
   unfold Shape.inspectQ Shape.loadWidths
   dsimp only
@@ -68,7 +68,7 @@ theorem inspectQ_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
       (wsT_noBase _ _) (by kernel_rfl))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem check_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} (hs₁ : Ws s₁ base size₁)
-    (hs₂ : Ws s₂ base size₂) (hz₁ : 11232 ≤ size₁) (hz₂ : 11232 ≤ size₂) (wp : Width pLen nP) (wq : Width qLen nQ)
+    (hs₂ : Ws s₂ base size₂) (hz₁ : 12016 ≤ size₁) (hz₂ : 12016 ≤ size₂) (wp : Width pLen nP) (wq : Width qLen nQ)
     (Rp₁ : Ready s₁ base (.input .p) pLen) (Rp₂ : Ready s₂ base (.input .p) pLen)
     (Rq₁ : Ready s₁ base (.input .q) qLen) (Rq₂ : Ready s₂ base (.input .q) qLen)
     (hep : PtrEq base s₁ s₂ (.input .p)) (heq : PtrEq base s₁ s₂ (.input .q)) :

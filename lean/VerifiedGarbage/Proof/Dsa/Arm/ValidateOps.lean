@@ -41,7 +41,7 @@ theorem maskW_arith {base : Addr} {s t : State} (O : Outs base arithRanges s.mem
 
 /-- An operand in a context's slot `i`, loaded from its bytes. -/
 theorem loadSlot_ok {s : State} {base : Addr} {size len n i : Nat} {p : Pointer} (hs : Ws s base size)
-    (hz : 11232 ≤ size) (w : Width len n) (hi : i < 28) (R : Ready s base p len) :
+    (hz : 12016 ≤ size) (w : Width len n) (hi : i < 30) (R : Ready s base p len) :
     WP isa (Core.load n len (slot n i) p) s fun t => Ws t base size ∧
       val32 t.mem base (slot n i) (2 * n) = operand base s p len ∧
       Rest coreClob s t ∧ Outside base (slot n i) (8 * n) s.mem t.mem := by
@@ -52,19 +52,19 @@ theorem loadSlot_ok {s : State} {base : Addr} {size len n i : Nat} {p : Pointer}
 
 /-- A number in another slot is kept by a load. -/
 theorem slot_keep {base : Addr} {n i j : Nat} {m m' : Mem} (O : Outside base (slot n i) (8 * n) m m')
-    (hij : i ≠ j) (hn : n ≤ 48) (hj : j < 28) : val32 m' base (slot n j) (2 * n) = val32 m base (slot n j) (2 * n) := by
+    (hij : i ≠ j) (hn : n ≤ 48) (hj : j < 30) : val32 m' base (slot n j) (2 * n) = val32 m base (slot n j) (2 * n) := by
   have := slot_sep (n := n) hij
   have := slot_lt (i := j) hn hj
   simp only [stride] at *
   exact O.val32 (by omega_arith) (by omega_using [this])
 
-theorem andFlag_mask {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 11232 ≤ size) :
+theorem andFlag_mask {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 12016 ≤ size) :
     WP isa (.block Validate.accumulate) s fun t =>
       maskW base t = maskW base s &&& s.gpr .r2 ∧ Rest [.r4] s t ∧ Outside base 116 4 s.mem t.mem :=
   andFlag_ok hs (flag := 116) (by omega_using [hz]) (by decide)
 
 theorem range_ok {s : State} {base : Addr} {size len n : Nat} {modulus : Field} {input : Pointer}
-    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Rq : Ready s base (.input modulus) len)
+    (hs : Ws s base size) (hz : 12016 ≤ size) (w : Width len n) (Rq : Ready s base (.input modulus) len)
     (Ri : Ready s base input len) (aboveOne : Bool) :
     WP isa (Validate.range len modulus input aboveOne) s fun t =>
       maskW base t = maskW base s &&& mask32 ((if aboveOne then 1 else 0) < operand base s input len ∧
@@ -130,7 +130,7 @@ theorem range_ok {s : State} {base : Addr} {size len n : Nat} {modulus : Field} 
       exact (K₃.trans (Outs.arith_out (Outs.of_slot (i := 10) O₄ (by decide) n48) _ _)).trans (Outs.out Ot)
 
 theorem zero_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
-    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Ri : Ready s base input len) (want : Bool) :
+    (hs : Ws s base size) (hz : 12016 ≤ size) (w : Width len n) (Ri : Ready s base input len) (want : Bool) :
     WP isa (Validate.zero len input want) s fun t =>
       maskW base t = maskW base s &&&
         mask32 (if want then operand base s input len ≠ 0 else operand base s input len = 0) ∧
@@ -149,7 +149,7 @@ theorem zero_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
     show baseS n = slot n 8 from rfl, Au]
 
 theorem isOne_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
-    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Ri : Ready s base input len) :
+    (hs : Ws s base size) (hz : 12016 ≤ size) (w : Width len n) (Ri : Ready s base input len) :
     WP isa (Validate.isOne len input) s fun t =>
       maskW base t = maskW base s &&& mask32 (operand base s input len = 1) ∧ Stage base s t 116 4 := by
   obtain ⟨n0, n48, hl, hl'⟩ := w.bounds
@@ -178,7 +178,7 @@ theorem isOne_ok {s : State} {base : Addr} {size len n : Nat} {input : Pointer}
   rw [show maskW base u₃ = maskW base u₂ by simp only [maskW, flagW, m₃], maskW_arith K₂, e₃, A₂, E₂']
 
 theorem equalValues_ok {s : State} {base : Addr} {size len n : Nat} {a b : Pointer}
-    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Ra : Ready s base a len) (Rb : Ready s base b len) :
+    (hs : Ws s base size) (hz : 12016 ≤ size) (w : Width len n) (Ra : Ready s base a len) (Rb : Ready s base b len) :
     WP isa (Validate.equalValues len a b) s fun t =>
       maskW base t = maskW base s &&& mask32 (operand base s a len = operand base s b len) ∧
       Stage base s t 116 4 := by
@@ -209,9 +209,9 @@ theorem equalValues_ok {s : State} {base : Addr} {size len n : Nat} {a b : Point
 
 /-- `[output] = m - amount`. -/
 theorem minus_ok {s : State} {base : Addr} {size len n m amount output : Nat} {modulus : Field}
-    (hs : Ws s base size) (hz : 11232 ≤ size) (w : Width len n) (Rq : Ready s base (.input modulus) len)
+    (hs : Ws s base size) (hz : 12016 ≤ size) (w : Width len n) (Rq : Ready s base (.input modulus) len)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1) (ha : amount ≤ m)
-    (ha0 : 0 < amount) (ho : 11232 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
+    (ha0 : 0 < amount) (ho : 12016 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
     WP isa (Validate.minus len modulus amount output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len (m - amount) ∧
       Stage base s t output len := by

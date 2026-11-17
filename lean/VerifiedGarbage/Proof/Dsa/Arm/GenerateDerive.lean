@@ -503,7 +503,7 @@ theorem deriveIn {s t : State} {base : Addr} {size : Nat} (h : derivePre s) (hb 
   obtain ⟨_, hrd, _, _, _, _, _, dPS, dXS, _, _, fP, fX, _, hv, _, hr3, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  obtain hz : 11232 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hz : 12016 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain pr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain xr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   obtain ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
@@ -573,7 +573,7 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   obtain E₁ := E₀.of_mem R₁ (by decide) M₁
-  obtain hz : 11232 ≤ (arg s 4).toNat * 8 := by omega_arith
+  obtain hz : 12016 ≤ (arg s 4).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := deriveIn h rfl rfl E₁
   -- The specification's components.
   obtain hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by

@@ -47,6 +47,16 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
   (.seq (Pow.call umaal n ((expLen + 3) / 4)) (store len output)))
 
+/-- The product of two powers, `a^e · a2^e2`, in one pass over both exponents
+(`exponentiate2`): the second base and exponent, the modulus and the first
+base and exponent, then the context, set up here, and the product. -/
+def power2 (len expLen : Nat) (modulus : Field) (a e a2 e2 : Pointer) (output : Nat) : Prog isa :=
+  let n := (len + 7) / 8
+  .seq (load n len (base2S n) a2) <| .seq (load n expLen (exp2S n) e2) <|
+  .seq (load n len (modS n) (.input modulus))
+  (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
+  (.seq (.seq (Context.call umaal n) (exponentiate2 umaal n ((expLen + 3) / 4))) (store len output)))
+
 /-- As `power`, calling `vg_dsa_mulmod_{n}` (`Arith.lean`). -/
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
@@ -99,17 +109,16 @@ def signFinish (qLen : Nat) : Prog isa := sequence [
 def sign (pLen qLen : Nat) : Prog isa :=
   .seq (signStart umaal pLen qLen) (signFinish umaal qLen)
 
-/-- Verification uses two fixed-iteration powers and a product modulo p. -/
+/-- Verification's scalars, modulo q. -/
 def verifyScalars (qLen : Nat) : Prog isa := sequence [
   power umaal qLen qLen .q .signatureS (.local qMinusTwo) inverse,
   reduce qLen digestPrefix (.input .digest) z,
   product umaal qLen (.local z) (.local inverse) u,
   product umaal qLen (.input .signature) (.local inverse) v]
 
+/-- `g^u₁ y^u₂ mod p`, as one product of two powers, then modulo q. -/
 def verifyPowers (pLen qLen : Nat) : Prog isa := sequence [
-  power umaal pLen qLen .p (.input .g) (.local u) t,
-  power umaal pLen qLen .p (.input .y) (.local v) t2,
-  productMod umaal pLen .p (.local t) (.local t2) t,
+  power2 umaal pLen qLen .p (.input .g) (.local u) (.input .y) (.local v) t,
   reduce qLen (.imm pLen) (.local t) u]
 
 def verify (pLen qLen : Nat) : Prog isa :=

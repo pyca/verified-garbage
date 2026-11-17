@@ -120,7 +120,7 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub (Generat
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 11232 ≤ (arg s₁ 1).toNat * 8 := by omega_arith
+  have hz : 12016 ≤ (arg s₁ 1).toNat * 8 := by omega_arith
   have C₁ := checkCtx h₁ rfl rfl F₁
   have C₂ := checkCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂

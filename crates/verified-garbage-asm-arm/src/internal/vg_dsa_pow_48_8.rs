@@ -23,7 +23,7 @@ str r11, [r12, #36]
 str lr, [r12, #40]
 mov r4, r12
 mov r0, r12
-movw r1, #1404
+movw r1, #1502
 bl {vg_dsa_context_48}
 mov r12, r4
 movw r10, #1040

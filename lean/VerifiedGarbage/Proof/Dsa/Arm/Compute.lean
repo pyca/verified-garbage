@@ -594,40 +594,18 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
   obtain U₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = D % Q * (S ^ (Q - 2) % Q) % Q := by
     rw [St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), U₃]
   refine WP.block_nil ?_
-  -- `g^u₁ mod p`
-  refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S₄.ws (by omega_arith) Sc.wp q4 qp qw (n₄ Ip).toReady
-    (n₄ Ig).toReady (localReady (o := Impl.Dsa.Layout.u) S₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₄ Ip).value
-    hP hPo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₅ ⟨B₅, St₅⟩ => ?_)
-  rw [(n₄ Ig).value, local_operand S₄.ws (by omega_arith), U₄] at B₅
-  obtain S₅ := S₄.stage St₅
-  obtain n₅ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₅ base size p len v :=
-    fun I => (n₄ I).next S₄ St₅ (.inr ⟨by omega_arith, by omega_arith⟩)
-  obtain T₅ : localVal base v₅ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P :=
-    localVal_of_bytes B₅ (plt _)
-  obtain V₅ : localVal base v₅ Impl.Dsa.Layout.v qLen = R * (S ^ (Q - 2) % Q) % Q := by
-    rw [St₅.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), V₄]
-  -- `y^u₂ mod p`
-  refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t2) S₅.ws (by omega_arith) Sc.wp q4 qp qw (n₅ Ip).toReady
-    (n₅ Iy).toReady (localReady (o := Impl.Dsa.Layout.v) S₅.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₅ Ip).value
-    hP hPo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₆ ⟨B₆, St₆⟩ => ?_)
-  rw [(n₅ Iy).value, local_operand S₅.ws (by omega_arith), V₅] at B₆
-  obtain S₆ := S₅.stage St₆
-  obtain n₆ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₆ base size p len v :=
-    fun I => (n₅ I).next S₅ St₆ (.inr ⟨by omega_arith, by omega_arith⟩)
-  obtain T₆ : localVal base v₆ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P := by
-    rw [St₆.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), T₅]
-  obtain T2₆ : localVal base v₆ Impl.Dsa.Layout.t2 pLen = Y ^ (R * (S ^ (Q - 2) % Q) % Q) % P :=
-    localVal_of_bytes B₆ (plt _)
-  -- their product mod p
-  refine WP.seq (WP.mono (productMod_ok (output := Impl.Dsa.Layout.t) S₆.ws (by omega_arith) Sc.wp (n₆ Ip).toReady
-    (localReady (o := Impl.Dsa.Layout.t) S₆.ws (by omega_arith) (by omega_arith) (by omega_arith))
-    (localReady (o := Impl.Dsa.Layout.t2) S₆.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₆ Ip).value hP hPo
-    (by omega_arith) (by omega_arith) (by omega_arith)) fun v₇ ⟨B₇, St₇⟩ => ?_)
-  rw [local_operand S₆.ws (by omega_arith), local_operand S₆.ws (by omega_arith), T₆, T2₆] at B₇
-  obtain S₇ := S₆.stage St₇
+  -- `g^u₁ y^u₂ mod p`
+  refine WP.seq (WP.mono (power2_ok (output := Impl.Dsa.Layout.t) S₄.ws (by omega_arith) Sc.wp q4 qp qw (n₄ Ip).toReady
+    (n₄ Ig).toReady (localReady (o := Impl.Dsa.Layout.u) S₄.ws (by omega_arith) (by omega_arith) (by omega_arith))
+    (n₄ Iy).toReady (localReady (o := Impl.Dsa.Layout.v) S₄.ws (by omega_arith) (by omega_arith) (by omega_arith))
+    (n₄ Ip).value hP hPo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₇ ⟨B₇, St₇⟩ => ?_)
+  rw [(n₄ Ig).value, (n₄ Iy).value, local_operand S₄.ws (by omega_arith), local_operand S₄.ws (by omega_arith),
+    U₄, V₄] at B₇
+  obtain S₇ := S₄.stage St₇
   obtain n₇ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₇ base size p len v :=
-    fun I => (n₆ I).next S₆ St₇ (.inr ⟨by omega_arith, by omega_arith⟩)
+    fun I => (n₄ I).next S₄ St₇ (.inr ⟨by omega_arith, by omega_arith⟩)
   obtain T₇ := localVal_of_bytes B₇ (plt _)
+  rw [Nat.mul_mod (G ^ (D % Q * (S ^ (Q - 2) % Q) % Q)) (Y ^ (R * (S ^ (Q - 2) % Q) % Q)) P] at T₇
   -- mod q
   refine WP.seq (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) S₇.ws (by omega_arith) Sc.wq (n₇ Iq).toReady
     (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega_arith)
@@ -635,11 +613,10 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
     (n₇ Iq).value hQ hQo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₈ ⟨B₈, St₈⟩ => WP.block_nil ⟨?_, ?_, ?_⟩)
   · rw [countValue, local_operand S₇.ws (by omega_arith), T₇] at B₈
     exact localVal_of_bytes B₈ (qlt _)
-  · rw [St₈.maskW (by omega_arith), St₇.maskW (by omega_arith), St₆.maskW (by omega_arith), St₅.maskW (by omega_arith),
+  · rw [St₈.maskW (by omega_arith), St₇.maskW (by omega_arith),
       St₄.maskW (by omega_arith), St₃.maskW (by omega_arith), St₂.maskW (by omega_arith), St₁.maskW (by omega_arith)]
-  · exact (((((((St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)).trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans
+  · exact (((((St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)).trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans
       (St₃.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans (St₄.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans
-      (St₅.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans (St₆.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans
       (St₇.run (.inr ⟨by omega_arith, by omega_arith⟩))).trans (St₈.run (.inr ⟨by omega_arith, by omega_arith⟩))
 
 end VG.Proof.Dsa.Arm

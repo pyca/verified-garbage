@@ -53,7 +53,7 @@ theorem Run.trans {base : Addr} {s t u : State} (h₁ : Run base s t) (h₂ : Ru
   ⟨h₁.rest.trans h₂.rest, h₁.mem.trans h₂.mem⟩
 
 theorem Stage.run {base : Addr} {s t : State} {output len : Nat} (St : Stage base s t output len)
-    (ho : output = 116 ∧ len = 4 ∨ 11232 ≤ output ∧ output + len ≤ 15712) : Run base s t :=
+    (ho : output = 116 ∧ len = 4 ∨ 12016 ≤ output ∧ output + len ≤ 15712) : Run base s t :=
   ⟨St.rest, fun x hx => St.mem x fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     have h₁ := hx (0, 64) (by simp [runRanges])
@@ -74,7 +74,7 @@ theorem Stage.maskW {base : Addr} {s t : State} {output len : Nat} (St : Stage b
 
 theorem Input.stage {base : Addr} {s t : State} {size output l : Nat} {p : Pointer} {len v : Nat}
     (I : Input s base size p len v) (St : Stage base s t output l) (hout : 116 ≤ output)
-    (hz : 11232 ≤ size) (hz2 : size ≤ 2 ^ 32) (ho : output + l ≤ size) : Input t base size p len v := by
+    (hz : 12016 ≤ size) (hz2 : size ≤ 2 ^ 32) (ho : output + l ≤ size) : Input t base size p len v := by
   have hO : ∀ r ∈ arithRanges ++ [(output, l)], r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
@@ -119,7 +119,7 @@ theorem local_operand {s : State} {base : Addr} {size o len : Nat} (hs : Ws s ba
     operand base s (.local o) len = localVal base s o len := by
   rw [operand, local_addr hs ho]
 
-theorem localReady {s : State} {base : Addr} {size o len : Nat} (hs : Ws s base size) (ho : 11232 ≤ o)
+theorem localReady {s : State} {base : Addr} {size o len : Nat} (hs : Ws s base size) (ho : 12016 ≤ o)
     (hol : o + len < size) (h16 : o < 2 ^ 16) : Ready s base (.local o) len := by
   have nw := hs.nowrap
   have A := local_addr hs (o := o) (by omega_using [hol])
@@ -134,7 +134,7 @@ theorem localReady {s : State} {base : Addr} {size o len : Nat} (hs : Ws s base 
     exact Offset.disjoint_base base ho (by omega_using [hol, nw])
 
 theorem Stage.localVal_eq {base : Addr} {s t : State} {output l o len : Nat} (St : Stage base s t output l)
-    (ho : 11232 ≤ o) (hb : o + len ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32)
+    (ho : 12016 ≤ o) (hb : o + len ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32)
     (hsep : o + len ≤ output ∨ output + l ≤ o) : localVal base t o len = localVal base s o len := by
   rw [Arm.localVal, Arm.localVal, outs_bytes St.mem (by omega_using [hb])]
   · intro r hr
@@ -162,7 +162,7 @@ theorem KeepsLocals.trans {base : Addr} {s t u : State} {lo hi : Nat} (h₁ : Ke
   fun o len h h' => (h₂ o len h h').trans (h₁ o len h h')
 
 theorem Stage.keeps {base : Addr} {s t : State} {output l lo hi : Nat} (St : Stage base s t output l)
-    (hlo : 11232 ≤ lo) (hhi : hi ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32) (hsep : hi ≤ output ∨ output + l ≤ lo) :
+    (hlo : 12016 ≤ lo) (hhi : hi ≤ 2 ^ 32) (hol : output + l ≤ 2 ^ 32) (hsep : hi ≤ output ∨ output + l ≤ lo) :
     KeepsLocals base s t lo hi :=
   fun _ _ h h' => St.localVal_eq (by omega_using [hlo, h]) (by omega_using [hhi, h']) hol (by omega_using [hsep, h, h'])
 
@@ -202,7 +202,7 @@ theorem ValidationRun.trans {base : Addr} {s t u : State}
   ⟨A.toRun.trans B.toRun, fun d lo hi => (B.saved d lo hi).trans (A.saved d lo hi)⟩
 
 theorem Stage.validationRun {base : Addr} {s t : State} {o l : Nat}
-    (St : Stage base s t o l) (H : o = 116 ∧ l = 4 ∨ 11232 ≤ o ∧ o + l ≤ 15712) :
+    (St : Stage base s t o l) (H : o = 116 ∧ l = 4 ∨ 12016 ≤ o ∧ o + l ≤ 15712) :
     ValidationRun base s t := by
   refine ⟨St.run H, fun d lo hi => Mem.readW_congr fun i hᵢ => ?_⟩
   apply St.mem
@@ -239,7 +239,7 @@ theorem Sched.lens {s : State} {base : Addr} {size pLen qLen nP nQ : Nat} (S : S
 /-- An input after an operation that writes the flag or a computed value. -/
 theorem Input.next {s t : State} {base : Addr} {size pLen qLen nP nQ o l : Nat} {p : Impl.Dsa.Layout.Pointer}
     {len v : Nat} (I : Input s base size p len v) (S : Sched s base size pLen qLen nP nQ) (St : Stage base s t o l)
-    (ho : o = 116 ∧ l = 4 ∨ 11232 ≤ o ∧ o + l ≤ 15712) : Input t base size p len v :=
+    (ho : o = 116 ∧ l = 4 ∨ 12016 ≤ o ∧ o + l ≤ 15712) : Input t base size p len v :=
   I.stage St (by omega_using [ho]) (by have := S.big; omega_using [this]) S.fits (by have := S.big; omega_using [ho, this])
 
 theorem operand_lt_of {base : Addr} {s : State} {size : Nat} {p : Impl.Dsa.Layout.Pointer} {len v : Nat}
@@ -273,7 +273,7 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     (by omega_using [hP]) (by decide) (by decide) (by simp only [Impl.Dsa.Layout.t]; omega_using [p384, big]) (by decide))
     fun v₃ ⟨B₃, St₃⟩ => ?_)
   obtain S₃ := S₂.stage St₃
-  obtain ho₃ : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain ho₃ : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
   obtain Iq₃ := Iq₂.next S₂ St₃ (.inr ho₃)
   obtain L₃ : localVal base v₃ Impl.Dsa.Layout.t pLen = P - 1 := localVal_of_bytes B₃ (by omega_using [Plt])
@@ -284,7 +284,7 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     Iq₃.value hQ hQo (by decide) (by simp only [Impl.Dsa.Layout.u]; omega_using [q32, big]) (by decide)) fun v₄ ⟨B₄, St₄⟩ => ?_)
   rw [countValue, local_operand S₃.ws (by simp only [Impl.Dsa.Layout.t]; omega_using [big]), L₃] at B₄
   obtain S₄ := S₃.stage St₄
-  obtain ho₄ : 11232 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
+  obtain ho₄ : 12016 ≤ Impl.Dsa.Layout.u ∧ Impl.Dsa.Layout.u + qLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.u]; omega_using [q32]
   obtain Iq₄ := Iq₃.next S₃ St₄ (.inr ho₄)
   obtain L₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = (P - 1) % Q :=
@@ -308,7 +308,7 @@ theorem domain_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
       (St₆.validationRun (.inr (by simp only [Impl.Dsa.Layout.qMinusTwo]; omega_using [q32])))
 
 /-- The window of the scalars below `t`. -/
-abbrev scalars : Nat × Nat := (11232, Impl.Dsa.Layout.t)
+abbrev scalars : Nat × Nat := (12016, Impl.Dsa.Layout.t)
 
 theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     (S : Sched s base size pLen qLen nP nQ)
@@ -322,7 +322,7 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
   have big := S.big
   have fits := S.fits
   obtain Plt := operand_lt_of Ip
-  obtain ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
   obtain ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
   simp only [Validate.subgroup, Core.sequence, List.foldr]
@@ -346,7 +346,7 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
   · rw [local_operand S₃.ws (by omega_using [big, ho]), localVal_of_bytes B₃ (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hP])) Plt)] at F₄
     rw [F₄, St₃.maskW (by decide), F₂, St₁.maskW (by decide), BitVec.and_assoc, mask32_and]
   · have k : ∀ {a b : State} {o l : Nat}, Stage base a b o l → o + l ≤ 15712 →
-        (14944 ≤ o ∨ o + l ≤ 11232) → KeepsLocals base a b scalars.1 scalars.2 := fun St h₁ h₂ =>
+        (14944 ≤ o ∨ o + l ≤ 12016) → KeepsLocals base a b scalars.1 scalars.2 := fun St h₁ h₂ =>
       St.keeps (by decide) (by decide) (by omega_using [h₁]) (by simp only [Impl.Dsa.Layout.t]; omega_using [h₂])
     have ht' : Impl.Dsa.Layout.t = 14944 := rfl
     exact (((k St₁ (by omega_using [ho]) (by omega_using [ht'])).trans (k St₂ (by decide) (by decide))).trans
@@ -355,7 +355,7 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
       (St₄.validationRun (.inl ⟨rfl, rfl⟩))
 
 theorem Stage.keepsScalars {base : Addr} {a b : State} {o l : Nat} (St : Stage base a b o l) (h₁ : o + l ≤ 15712)
-    (h₂ : 14944 ≤ o ∨ o + l ≤ 11232) : KeepsLocals base a b scalars.1 scalars.2 :=
+    (h₂ : 14944 ≤ o ∨ o + l ≤ 12016) : KeepsLocals base a b scalars.1 scalars.2 :=
   St.keeps (by decide) (by decide) (by omega_using [h₁]) (by simp only [Impl.Dsa.Layout.t]; omega_using [h₂])
 
 theorem publicKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
@@ -392,7 +392,7 @@ theorem privateKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X 
   have big := S.big
   have fits := S.fits
   obtain Plt := operand_lt_of Ip
-  obtain ho : 11232 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
+  obtain ho : 12016 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t]; omega_using [p384]
   obtain ht : Impl.Dsa.Layout.t + pLen < size := by omega_using [big, ho]
   have ht' : Impl.Dsa.Layout.t = 14944 := rfl
