@@ -104,9 +104,14 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
   have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, hsp, and_self, ite_true]
     rfl
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem (State.addr s₂.sp) bytes s₂.unknowns,
+      unknowns := fun k => s₂.unknowns (k + bytes / 2) } := by
     simp only [freed, isa, pop, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, hp, hw, allocated,
       List.head?_cons, and_self, ite_true]
-  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩] s₂.mem
+      (lose s₂.mem (State.addr s₂.sp) bytes s₂.unknowns) := by
+    rw [hp]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ hl⟩
 
 end VG.Arm

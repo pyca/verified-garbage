@@ -109,7 +109,7 @@ theorem RelCT.allocFrameQ {bytes : Nat} {body : Prog isa} {P Q : State → State
         intro a t s' h
         simp only [isa, pop] at h
         split at h <;> [cases h; cases h]
-        exact ⟨Frame.refl _ _, rfl⟩
+        exact ⟨lose_frame _ _ _ _, rfl⟩
       obtain ⟨ht, hq⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, ea p₁, ea p₂⟩ b₁ b₂
       refine ⟨?_, _, _, hq, ef q₁, ef q₂⟩
       rw [ht]

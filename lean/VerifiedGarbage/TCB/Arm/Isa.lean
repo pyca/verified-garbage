@@ -122,7 +122,7 @@ structure State where
   /-- Values the model does not know, used in order: the return address each
   call stores and, on the ARM targets, what a linker veneer may leave in the
   intra-procedure-call scratch registers and condition flags (see
-  `TCB/Code.lean`). -/
+  `TCB/Code.lean`), and what a released frame's bytes hold (`lose`). -/
   unknowns : Nat → BitVec 32 := fun _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 32 := fun _ => 0
@@ -483,7 +483,8 @@ required. Frame sizes must be positive multiples of 8, preserving the ABI's
 alignment, and less than a page, so that an allocation does not move SP past
 a guard page below the stack. Allocation cannot underflow and grants one
 contiguous region without initializing memory. Release requires the exact
-region and unchanged SP and permissions. Neither changes flags or memory.
+region and unchanged SP and permissions, and loses the frame's bytes (`lose`,
+see `pop`). Neither changes flags.
 -/
 
 /-- The push of a frame, DDI 0406C A8.8.133 "PUSH" (= `STMDB sp!`):
@@ -510,24 +511,54 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer (AAPCS32, "The Stack", "Universal stack constraints": "A process
+may only store data in the closed interval of the entire stack delimited by
+[SP, stack base - 1] (where SP is the value of register r13)",
+https://github.com/ARM-software/abi-aa/blob/2025Q4/aapcs32/aapcs32.rst):
+anything that runs on the stack between two instructions (a signal handler)
+may have written them, and the code can assume nothing of them. Each byte
+either keeps its value or takes one the model does not know, as the unknowns
+say: for the word `j` of the frame, the bytes of `u (2 * j)` say which of its
+bytes are replaced (those not zero), and the bytes of `u (2 * j + 1)` are
+what replaces them. A byte may keep its value, so what a function leaves in a
+frame it releases may be left there (`NoResidue`, whose two runs share their
+unknowns, still tells apart a frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 4))).extractLsb' (8 * (d % 4)) 8 = 0 then m x
+      else (u (2 * (d / 4) + 1)).extractLsb' (8 * (d % 4)) 8
+    else m x
+
 /-- The pop of a frame, DDI 0406C A8.8.63 "LDR (immediate, ARM)" and A8.8.62
 "LDR (immediate, Thumb)" (encoding T4, whose offset is below 256),
 post-indexed (`ldr t, [sp], #n`): `address = R[n]; data =
 MemU[address,4]; R[n] = R[n] + imm32; R[t] = data`, with `n` = 13 (`sp`).
 Faults unless `n` is a multiple of 4 below 256, the stack pointer and the
 writable regions are those the push left (`s₁`), and the frame, the region
-at their head, has `n` bytes; it removes the frame. -/
+at their head, has `n` bytes; it removes the frame. `free bytes` (`add sp,
+sp, #bytes`) is likewise the release of the frame of `alloc bytes`. The
+released frame's bytes are then below the stack pointer, and are `lose`'s:
+the next of the state's `unknowns`, two for each word of the frame, say what
+each holds. (`pop` loads `t` from the frame before it is released.) -/
 def pop : Instr → State → State → Option State
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ encodable (BitVec.ofNat 32 bytes) ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨State.addr s₁.sp, bytes⟩ then
-      some { s₂ with sp := s₂.sp + BitVec.ofNat 32 bytes, wr := s₂.wr.tail }
+      some { s₂ with
+        sp := s₂.sp + BitVec.ofNat 32 bytes, wr := s₂.wr.tail,
+        mem := lose s₂.mem (State.addr s₂.sp) bytes s₂.unknowns,
+        unknowns := fun k => s₂.unknowns (k + bytes / 2) }
     else none
   | .pop t n, s₁, s₂ =>
     if n % 4 = 0 ∧ n < 256 ∧ s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨State.addr s₁.sp, n⟩ then
       some { s₂.setReg t (s₂.mem.readW (State.addr s₂.sp) 32) with
-        sp := s₂.sp + BitVec.ofNat 32 n, wr := s₂.wr.tail }
+        sp := s₂.sp + BitVec.ofNat 32 n, wr := s₂.wr.tail,
+        mem := lose s₂.mem (State.addr s₂.sp) n s₂.unknowns,
+        unknowns := fun k => s₂.unknowns (k + n / 2) }
     else none
   | _, _, _ => none
 

@@ -918,7 +918,9 @@ theorem narrow_pub (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
 `s₃` its code ends in when it starts in `s`. -/
 def popState (bytes : Nat) (s s₃ : State) : State :=
   { s₃.withRegions s.rd (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) with
-    sp := s.sp, wr := s.wr }
+    sp := s.sp, wr := s.wr,
+    mem := lose s₃.mem (State.addr (s.sp - BitVec.ofNat 32 bytes)) bytes s₃.unknowns,
+    unknowns := fun k => s₃.unknowns (k + bytes / 2) }
 
 /-- A run of the code from `narrow s` is a run of `withStackScratch` from
 `s`, after `setArgs`'s accesses, which keeps what the calling convention
@@ -1012,7 +1014,7 @@ theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsa
     rfl
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_sp] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, lose_frame _ _ _ _, rfl⟩
   have hq12 : q ≠ .r12 := fun h => by subst h; simp [preserved] at hq
   show s₃.gpr q = s.gpr q
   rw [ha.1 q hq, hg q hq12]

@@ -383,6 +383,13 @@ theorem Verified.widen {c : Prog isa} {k k' : Contract isa} (h : Verified target
     (hsat : ∃ s, k'.pre s) : Verified target c k' :=
   regionModel.verified_widen (T := target) (fun _ _ _ _ h => h) h wr hpre hwr hpost hpub hsat
 
+/-- The bytes a frame loses when it is released differ only within the frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) :
+    Frame [⟨a, n⟩] m (lose m a n u) := fun x hx => by
+  have h : ¬ (x - a).toNat < n := fun h =>
+    hx ⟨a, n⟩ (List.mem_singleton_self _) (by simp only [Region.Contains]; omega_using [h])
+  simp only [lose, h, ite_false]
+
 /-- A byte of a region apart from a frame is what it was once the frame's
 bytes are lost. -/
 theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}

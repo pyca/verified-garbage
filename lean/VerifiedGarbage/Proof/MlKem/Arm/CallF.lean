@@ -83,9 +83,14 @@ theorem storeWords_frame (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : 
     simp only [Region.Contains] at hx ⊢
     bv_omega
 
-theorem pop_mem' {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
+/-- A frame's pop changes memory only in the frame, the region at the head of
+the push's writable regions, whose bytes it loses. -/
+theorem pop_mem' {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    ∃ n, s₁.wr.head? = some ⟨State.addr s₁.sp, n⟩ ∧ Frame [⟨State.addr s₁.sp, n⟩] s₂.mem s'.mem := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
-  all_goals split at h <;> cases h <;> rfl
+  all_goals split at h <;> cases h
+  · next hc => exact ⟨_, hc.2.2.2.2.2.2, by rw [← hc.2.2.2.2.1]; exact lose_frame _ _ _ _⟩
+  · next hc => exact ⟨_, hc.2.2.2.2, by rw [← hc.2.2.1]; exact lose_frame _ _ _ _⟩
 
 theorem push_pushed' {rs : List Reg} {s a : State} (h : isa.push (.push rs) s = some a) :
     a = pushed rs s ∧ 4 * rs.length ≤ s.sp.toNat := by
@@ -162,18 +167,23 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     have := ih (by rw [p₁]; exact hd)
     rwa [w₁, p₁, m₁] at this
   | @frame i j b s₀ s₁ s₂ _ _ hp _ hq ih =>
-    rw [pop_mem' hq]
+    obtain ⟨nf, hnf, f₂⟩ := pop_mem' hq
     cases i with
     | push rs =>
       simp only [stackUse] at hd ⊢
       obtain ⟨rfl, hk⟩ := push_pushed' hp
+      rw [pushed_wr, pushed_sp, List.head?_cons, Option.some.injEq, Region.mk.injEq] at hnf
+      rw [pushed_sp, ← hnf.2] at f₂
       have f₁ := ih (by rw [pushed_sp]; have := s₀.sp.isLt; bv_omega)
       rw [pushed_wr, pushed_sp] at f₁
       have f₀ : Frame [⟨State.addr (s₀.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * (rs.map s₀.gpr).length⟩] s₀.mem
           (pushed rs s₀).mem := storeWords_frame _ _ _ (by
         rw [List.length_map]; have := s₀.sp.isLt; bv_omega)
       rw [List.length_map] at f₀
-      refine (f₀.sub fun r hr => ?_).trans (f₁.sub fun r hr => ?_)
+      refine ((f₀.sub fun r hr => ?_).trans (f₁.sub fun r hr => ?_)).trans (f₂.sub fun r hr => ?_)
+      rotate_left 2
+      · rw [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), frame_belowA hd⟩
       · rw [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), frame_belowA hd⟩
       · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
@@ -186,10 +196,15 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       simp only [isa, push] at hp
       split at hp <;> [skip; cases hp]
       cases hp
+      simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hnf
+      rw [← hnf.2] at f₂
       have f₁ := ih (by
         change stackUse b ≤ (s₀.sp - BitVec.ofNat 32 bytes).toNat
         bv_omega_using [hd])
-      refine f₁.sub fun r hr => ?_
+      refine (f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
+      rotate_left
+      · rw [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), frame_belowA hd⟩
       simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | hr | rfl
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), frame_belowA hd⟩

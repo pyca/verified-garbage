@@ -273,7 +273,7 @@ theorem withRegScratch_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : FitsR
     rfl
   have hex := Exec.frame hpush (Exec.seq hblk hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, lose_frame _ _ _ _, rfl⟩
   have hpa : ∀ q ∈ preserved, q ∉ argRegs := by decide
   have hqr : q ≠ r := fun h => hpa q hq (h ▸ hcl.1)
   show s₃.gpr q = s.gpr q

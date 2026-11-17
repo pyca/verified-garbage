@@ -69,7 +69,9 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
     WP isa (.frame (.push rs) body (.pop r (4 * rs.length))) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hsp⟩ := Exec.rdwr he
-  have hpop : isa.pop (.pop r (4 * rs.length)) (pushed rs s) s₂ = some (popped r (4 * rs.length) s₂) := by
+  have hpop : isa.pop (.pop r (4 * rs.length)) (pushed rs s) s₂ = some { popped r (4 * rs.length) s₂ with
+      mem := lose s₂.mem (State.addr s₂.sp) (4 * rs.length) s₂.unknowns,
+      unknowns := fun k => s₂.unknowns (k + 4 * rs.length / 2) } := by
     have hc : 4 * rs.length % 4 = 0 ∧ 4 * rs.length < 256 ∧ s₂.sp = (pushed rs s).sp ∧
         s₂.wr = (pushed rs s).wr ∧
         (pushed rs s).wr.head? = some ⟨State.addr (pushed rs s).sp, 4 * rs.length⟩ :=
@@ -78,7 +80,10 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
     split
     · rfl
     · exact absurd hc ‹_›
-  exact ⟨_, _, Exec.frame (push_pushed hrs hn) he hpop, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * rs.length⟩] s₂.mem
+      (lose s₂.mem (State.addr s₂.sp) (4 * rs.length) s₂.unknowns) := by
+    rw [hsp]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame (push_pushed hrs hn) he hpop, hq _ _ hl⟩
 
 theorem push_push_sp {rs : List Reg} {s a : State} (h : isa.push (.push rs) s = some a) :
     a.sp = s.sp - BitVec.ofNat 32 (4 * rs.length) := by

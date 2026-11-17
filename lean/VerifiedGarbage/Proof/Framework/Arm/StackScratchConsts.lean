@@ -469,7 +469,7 @@ theorem withStackScratchC_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : ns
     rfl
   have hex := Exec.frame hpush (Exec.seq hset hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_sp] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl⟩, lose_frame _ _ _ _, rfl⟩
   have hq12 : q ≠ .r12 := fun h => by subst h; simp [preserved] at hq
   show s₃.gpr q = s.gpr q
   rw [ha.1 q hq, narrowC_gpr, hg q hq12]

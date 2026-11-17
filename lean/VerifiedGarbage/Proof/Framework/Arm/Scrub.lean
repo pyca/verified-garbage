@@ -86,16 +86,17 @@ unknowns, leave the same unknowns. -/
 theorem pop_unknowns {j : Instr} {a₁ b₁ c₁ a₂ b₂ c₂ : State} (h₁ : isa.pop j a₁ b₁ = some c₁)
     (h₂ : isa.pop j a₂ b₂ = some c₂) (hu : b₁.unknowns = b₂.unknowns) : c₁.unknowns = c₂.unknowns := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h₁ h₂ <;> split at h₁ <;> split at h₂ <;>
-    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;> exact hu
+    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;> (dsimp only; rw [hu])
 
 /-- Two releases of a frame by the same instruction leave the same byte at
 `x` if it was the same before them, in states with the same stack pointer
 and unknowns. -/
 theorem pop_mem_congr {j : Instr} {a₁ b₁ c₁ a₂ b₂ c₂ : State} (h₁ : isa.pop j a₁ b₁ = some c₁)
-    (h₂ : isa.pop j a₂ b₂ = some c₂) (_hsp : b₁.sp = b₂.sp) (_hu : b₁.unknowns = b₂.unknowns) {x : Addr}
+    (h₂ : isa.pop j a₂ b₂ = some c₂) (hsp : b₁.sp = b₂.sp) (hu : b₁.unknowns = b₂.unknowns) {x : Addr}
     (hx : b₁.mem x = b₂.mem x) : c₁.mem x = c₂.mem x := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h₁ h₂ <;> split at h₁ <;> split at h₂ <;>
-    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;> exact hx
+    simp only [Option.some.injEq, reduceCtorEq] at h₁ h₂ <;> subst h₁ h₂ <;>
+    (dsimp only; simp only [lose, hsp, hu, hx])
 
 theorem execBlock_path : ∀ {is : List Instr} {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak},
     execBlock isa is s₁ = some (s₁', t₁) → execBlock isa is s₂ = some (s₂', t₂) →
@@ -626,15 +627,19 @@ theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.t
   have ha : isa.push (.alloc n) w = some a := by
     simp only [isa, push, h0, h1, h8, henc, hsp, and_self, ite_true]
     rfl
-  have hfr : isa.pop (.free n) a { v with mem := m' } = some (freed n { v with mem := m' }) := by
+  have hfr : isa.pop (.free n) a { v with mem := m' } = some { freed n { v with mem := m' } with
+      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) } := by
     simp only [freed, isa, pop, h0, h1, h8, henc, v, a, allocated, State.setReg,
       List.head?_cons, and_self, ite_true]
-  refine ⟨freed n { v with mem := m' }, { v with mem := m' },
+  refine ⟨{ freed n { v with mem := m' } with
+      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) },
+    { v with mem := m' },
     by simpa [addrs, wipeBelow] using Exec.frame ha (Exec.block hblk) hfr,
     rfl, rfl, ?_, fun r hr12 hr2 => ?_, ?_, hfr, rfl, rfl, fun x hx => ?_⟩
   · simp [freed, v, a, allocated, State.setReg, BitVec.sub_add_cancel]
   · simp [freed, v, a, allocated, State.setReg, hr12, hr2]
-  · simpa [freed, v, a, allocated, State.setReg] using hf
+  · have hf' : Frame [belowA w.sp n] w.mem m' := by simpa [v, a, allocated, State.setReg] using hf
+    exact hf'.trans (lose_frame _ _ _ _)
   · refine hz x ?_
     rw [h12, h4]
     simp only [Region.Contains] at hx
