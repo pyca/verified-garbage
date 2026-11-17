@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # The residue analysis is sound (x86-64)
@@ -1896,15 +1897,16 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       omega_using [this]
     · exact inv.aFree k hk r hr
 
-/-- What the free of a frame of `b` bytes does to the state. -/
+/-- What the free of a frame of `b` bytes does to the state: the frame's
+bytes are `lose`'s, as the unknowns say. -/
 structure FreeFx (b : Nat) (s s' : State) : Prop where
   head : s.wr = ⟨s.gpr .rsp, b⟩ :: s'.wr
   sp : s'.gpr .rsp = s.gpr .rsp + BitVec.ofNat 64 b
   gpr : ∀ r, r ≠ .rsp → s'.gpr r = s.gpr r
   flags : s'.cf = s.cf ∧ s'.zf = s.zf ∧ s'.sf = s.sf ∧ s'.of = s.of
   xmm : s'.xmm = s.xmm
-  unk : s'.unknowns = s.unknowns
-  mem : s'.mem = s.mem
+  unk : s'.unknowns = fun n => s.unknowns (n + b / 4)
+  mem : s'.mem = lose s.mem (s.gpr .rsp) b s.unknowns
 
 theorem freeFx {b : Nat} {a s s' : State} (h : isa.pop (.free b) a s = some s') : FreeFx b s s' := by
   simp only [isa, pop] at h
@@ -1969,6 +1971,67 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       rw [region_cons_succ hw1, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hi]),
         Option.getD_none] at hx
       simp only [Region.Contains] at hx; omega
+  -- Outside the frame, each run's memory is as it was; in it, the two runs'
+  -- bytes are lost alike (the same address and unknowns), so bytes that
+  -- agreed still agree.
+  have hout₁ : ∀ y, ¬ (⟨b₁.gpr .rsp, b⟩ : Region).Contains y 1 → c₁.mem y = b₁.mem y := by
+    intro y hy
+    rw [c₁'.mem]
+    exact lose_out (by simp only [Region.Contains] at hy; omega)
+  have hout₂ : ∀ y, ¬ (⟨b₁.gpr .rsp, b⟩ : Region).Contains y 1 → c₂.mem y = b₂.mem y := by
+    intro y hy
+    rw [c₂'.mem, ← inv.rsp]
+    exact lose_out (by simp only [Region.Contains] at hy; omega)
+  have hrelA : ∀ y y', y = y' → b₁.mem y = b₂.mem y' → c₁.mem y = c₂.mem y' := by
+    intro y y' e h
+    subst e
+    rw [c₁'.mem, c₂'.mem, ← inv.rsp, ← inv.unk]
+    exact lose_congr _ _ _ h
+  have hfr : (⟨b₁.gpr .rsp, b⟩ : Region) ∈ b₁.wr := by rw [hw1]; exact List.mem_cons_self ..
+  have hmA₁ : ∀ k < τ.an, c₁.mem (aa b₁ τ k) = b₁.mem (aa b₁ τ k) :=
+    fun k hk => hout₁ _ (inv.aFree k hk _ hfr)
+  have hmA₂ : ∀ k < τ.an, c₂.mem (aa b₁ τ k) = b₂.mem (aa b₁ τ k) :=
+    fun k hk => hout₂ _ (inv.aFree k hk _ hfr)
+  have hsp₁ : ∀ e ∈ τ.sp, c₁.mem.readW (aa b₁ τ e.1) 64 = b₁.mem.readW (aa b₁ τ e.1) 64 := by
+    intro e he
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [aa_add]
+    exact hmA₁ _ (by have := inv.spFit e he; omega_using [hj, this])
+  have hsp₂ : ∀ e ∈ τ.sp, c₂.mem.readW (aa b₂ τ e.1) 64 = b₂.mem.readW (aa b₂ τ e.1) 64 := by
+    intro e he
+    rw [← aa_eq inv.rsp]
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [aa_add]
+    exact hmA₂ _ (by have := inv.spFit e he; omega_using [hj, this])
+  have hmb₁ : ∀ e ∈ τ.mb, e.1 ≠ 0 →
+      c₁.mem.readW (byteAddr b₁ e.1 e.2.1) 64 = b₁.mem.readW (byteAddr b₁ e.1 e.2.1) 64 := by
+    intro e he h0
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [byteAddr_add]
+    have := inv.mbFit e he
+    obtain ⟨-, h2⟩ := byte_in inv.base.wf₁ (i := e.1) (k := e.2.1 + j) (by omega_using [hj, this])
+    obtain ⟨i, hi⟩ : ∃ i, e.1 = i + 1 := ⟨e.1 - 1, by omega_using [h0]⟩
+    rw [hi] at h2 ⊢
+    exact hout₁ _ fun hc => hdis i _ h2 hc
+  have hmb₂ : ∀ e ∈ τ.mb, e.1 ≠ 0 →
+      c₂.mem.readW (byteAddr b₂ e.1 e.2.1) 64 = b₂.mem.readW (byteAddr b₂ e.1 e.2.1) 64 := by
+    intro e he h0
+    rw [← byteAddr_wr inv.wr]
+    apply Mem.readW_congr
+    intro j hj
+    simp only [Nat.reduceDiv] at hj
+    rw [byteAddr_add]
+    have := inv.mbFit e he
+    obtain ⟨-, h2⟩ := byte_in inv.base.wf₁ (i := e.1) (k := e.2.1 + j) (by omega_using [hj, this])
+    obtain ⟨i, hi⟩ : ∃ i, e.1 = i + 1 := ⟨e.1 - 1, by omega_using [h0]⟩
+    rw [hi] at h2 ⊢
+    exact hout₂ _ fun hc => hdis i _ h2 hc
   have hbase : Taint.Agree (shiftOut τ.t) c₁ c₂ := by
     have wf : ∀ {s s' : State}, FreeFx b s s' → Wf τ.t s → Wf (shiftOut τ.t) s' := by
       intro s s' c hw
@@ -2012,8 +2075,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only at hk₁ hk₂ ⊢
-      rw [hba, hba₂, c₁'.mem, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
-      exact inv.base.slots q hq k hk₁ hk₂
+      rw [hba, hba₂, Nat.sub_add_cancel (by omega_using [hq0])]
+      exact hrelA _ _ (byteAddr_wr inv.wr _ _) (inv.base.slots q hq k hk₁ hk₂)
   -- The argument area, above the frame freed.
   have haa₁ : ∀ τ' : FT, τ'.room = τ.room + b → τ'.depth = τ.depth - b → aa c₁ τ' = aa b₁ τ :=
     fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega_using [hbd])
@@ -2033,7 +2096,7 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     fun h => by dsimp only at h ⊢; rw [c₁'.sp, hrb]; have := inv.aTop h; omega_using [hbd, this],
     aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rw [hw1]; exact List.mem_cons_of_mem _ hr),
     inv.saFit,
-    sa_keep inv (fun _ _ => by rw [c₁'.mem]) (fun _ _ => by rw [c₂'.mem]) (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
+    sa_keep inv hmA₁ hmA₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
     fun e he => by
       obtain ⟨q, hq, -, rfl⟩ := hsp' he
       exact inv.spFit q hq, ?_⟩
@@ -2046,8 +2109,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     · simp only [shiftOut, hlt, List.tail_cons]
       rw [hlt, List.getD_cons_succ] at h1
       exact h1
-    · rw [hba, hba₂, c₁'.mem, c₂'.mem]
-      exact h2
+    · rw [hba, hba₂]
+      exact hrelA _ _ (byteAddr_wr inv.wr _ _) h2
   · intro h
     have hF' := hF
     rw [hw1, hlt] at hF'
@@ -2081,7 +2144,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     dsimp only at hj hn
     simp only [wa, wb] at hw ⊢
     rw [hsh₁] at hw
-    rw [hsh₁, hsh₂, c₁'.mem, c₂'.mem]
+    rw [hsh₁, hsh₂]
+    refine hrelA (wa b₁ τ j) (wa b₂ τ j) (wa_eq inv.rsp j) ?_
     show b₁.mem (wa b₁ τ j) = b₂.mem (wa b₂ τ j)
     change ∀ r ∈ c₁.wr, ¬ r.Contains (wa b₁ τ j) 1 at hw
     by_cases hin : (⟨b₁.gpr .rsp, b⟩ : Region).Contains (wa b₁ τ j) 1
@@ -2131,7 +2195,7 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
   · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₁ _ rfl rfl) fun e he => ?_⟩
     rotate_left 2
     · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
-      rw [hrt, c₁'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hrt, hsp₁ q hq, Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₁.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₁'.gpr _ hp.2]; exact inv.one₁.ub p hp.1
@@ -2140,12 +2204,13 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only
-      rw [hba, hrt, c₁'.mem, Nat.sub_add_cancel (by omega_using [hq0]), Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hba, hrt, Nat.sub_add_cancel (by omega_using [hq0]), hmb₁ q hq (fun h => hq0 (Or.inl h)),
+        Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₁.mb q hq
   · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₂ _ rfl rfl) fun e he => ?_⟩
     rotate_left 2
     · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
-      rw [hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hrt₂, hsp₂ q hq, Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₂.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₂'.gpr _ hp.2]; exact inv.one₂.ub p hp.1
@@ -2154,7 +2219,8 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       split at hq' <;> [cases hq'; rename_i hq0]
       cases hq'
       simp only
-      rw [hba₂, hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega_using [hq0]), Nat.sub_add_cancel (by omega_using [hq0])]
+      rw [hba₂, hrt₂, Nat.sub_add_cancel (by omega_using [hq0]), hmb₂ q hq (fun h => hq0 (Or.inl h)),
+        Nat.sub_add_cancel (by omega_using [hq0])]
       exact inv.one₂.mb q hq
   · intro i hi
     simp only [hrt, wa, wb]
