@@ -20,8 +20,8 @@ two runs from the same pointers and `sp` set up the same arguments for every
 call (`setup_ct`), each callee is constant time under its own contract
 (`call_ct`), and the blocks between the calls address memory only through
 `sp`, `scratch` and the frame (`zero_ct`, `prune_ct`, `wipe_ct`).
-`publicKey_verified` takes the reference ladder's agreement with the
-specification (`BaseLadderOk`) as a hypothesis.
+`publicKey_verified` takes the reference comb's agreement with the
+specification (`BaseCombOk`) as a hypothesis.
 -/
 
 @[expose] public section
@@ -32,7 +32,7 @@ open VG VG.Arm VG.Impl.Ed448.Arm.PublicKey VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519.Arm (Whole.rel_wp Whole.setup_ct Whole.callEx Whole.CallReady
   Whole.block_cons_ct Whole.block_nil_ct Whole.zeroWords_ct Whole.wrap_ct Whole.base
   Whole.bodyRd Whole.bodyWr Whole.valid)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
 
 /-! ## Relational frame -/
 
@@ -165,7 +165,7 @@ theorem sqz_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L sqzVa
       ht 0 (by decide), ht 1 (by decide)⟩
   · simp [sqzValues, linkRegs]
 
-theorem base_ct (hl : BaseLadderOk) (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L baseValues []))
+theorem base_ct (hl : BaseCombOk) (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L baseValues []))
     (.call "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct (scalarBase_ok hl) scalarBase_ct base_noFrames (fun _ _ h => base_ready hL h)
   · intro a b ar aw br bw hsp hg ht
@@ -243,7 +243,7 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True
 
 /-! ## The whole function -/
 
-theorem body_ct (hl : BaseLadderOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem body_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) body (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have z := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb zeroValues []
     (by decide) (by simp [zeroValues, Whole.valid]) (by simp [zeroValues])
@@ -270,7 +270,7 @@ theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2]
 
-theorem publicKey_ct (hl : BaseLadderOk) : ConstantTime isa pkLocal.pre pkLocal.pub code := by
+theorem publicKey_ct (hl : BaseCombOk) : ConstantTime isa pkLocal.pre pkLocal.pub code := by
   refine Whole.wrap_ct (by decide : 3 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) ?_ (by intro s hs j hj h4; omega) ?_ ?_
   · intro s _
@@ -303,9 +303,9 @@ theorem pk_implies : pkLocal.Implies (Spec.Ed448.publicKeyContract Arm.abi 280) 
     Spec.Ed448.scratchWords, pkLocal, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [satState] using satState
 
-/-- `vg_ed448_public_key` on ARMv7, given the reference ladder's agreement
+/-- `vg_ed448_public_key` on ARMv7, given the reference comb's agreement
 with the specification. -/
-theorem publicKey_verified (hl : BaseLadderOk) :
+theorem publicKey_verified (hl : BaseCombOk) :
     Verified Arm.target code (Spec.Ed448.publicKeyContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => publicKey_ok hl h) (publicKey_ct hl) (.refl pk_implies.sat_left))

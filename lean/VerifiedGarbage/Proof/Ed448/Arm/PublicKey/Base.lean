@@ -160,7 +160,7 @@ end
 
 `prune_step`: the hash's first 57 bytes pruned in place (`Spec.Ed448.prune`);
 `base_step`: `vg_ed448_scalar_base` called on them, given the reference
-ladder's agreement with the specification (`BaseLadderOk`, a hypothesis);
+comb's agreement with the specification (`BaseCombOk`, a hypothesis);
 `wipe_step`: the frame cleared. `publicKey_ok`: the whole function, in
 Ed25519's frame on this target (`Whole.wrap_ok`).
 -/
@@ -174,7 +174,7 @@ open VG.Proof.Ed25519.Arm (Whole.Within Whole.FR Whole.valid Whole.call_ok Whole
   Whole.base Whole.base_addr Whole.base_top Whole.stack Whole.Saved Whole.entered Whole.saved_ctx
   Whole.saved_words Whole.bodyRd Whole.bodyWr Whole.wrap_ok)
 open VG.Proof.X448.Arm (writeW8_apply off_eq_iff)
-open VG.Proof.Ed448 (BaseLadderOk)
+open VG.Proof.Ed448 (BaseCombOk)
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
@@ -307,7 +307,7 @@ theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
 
 def baseValues : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .frame HASH), (.r2, .caller 2 0)]
 
-theorem base_step (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem base_step (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (hq L) 57) := by
@@ -349,7 +349,7 @@ theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 
 /-! ## The body -/
 
-theorem body_ok (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa body t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) := by
@@ -423,7 +423,7 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
   rcases he with rfl | rfl | rfl <;> exact hw
 
-theorem publicKey_ok (hl : BaseLadderOk) {s : State} (h : pkLocal.pre s) :
+theorem publicKey_ok (hl : BaseCombOk) {s : State} (h : pkLocal.pre s) :
     WP isa code s fun u => abiPreserved s u ∧ pkLocal.post s u := by
   have hw := Whole.wrap_ok body_noFrames (by decide : 3 ≤ 6) (entry_below h)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt)

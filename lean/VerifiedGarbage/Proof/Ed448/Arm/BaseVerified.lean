@@ -22,9 +22,9 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 
 Constant time (by taint tracking: the only branches are on the loop counters,
 and every address is an argument plus a constant or a counter), satisfiability,
-and the shared contract of `Spec/`, given that the ladder the code computes
-encodes as `[k]B` (`Proof.Ed448.BaseLadderOk`, proven with the group law in
-`Proof/Ed448/Facts.lean`, which only the registration file imports).
+and the shared contract of `Spec/`, given that the comb the code computes
+encodes as `[k]B` (`Proof.Ed448.BaseCombOk`, proven with the group law in
+`Proof/Ed448/CombFacts.lean`, which only the registration file imports).
 -/
 
 @[expose] public section
@@ -32,7 +32,7 @@ encodes as `[k]B` (`Proof.Ed448.BaseLadderOk`, proven with the group law in
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm
-open VG.Proof.Ed448 (BaseLadderOk decodeLE_below)
+open VG.Proof.Ed448 (BaseCombOk decodeLE_below)
 
 /-- `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)`. -/
 def scalarBaseLocal : Contract Arm.isa where
@@ -50,9 +50,9 @@ def scalarBaseLocal : Contract Arm.isa where
 theorem BasePre.of {s : State} (h : scalarBaseLocal.pre s) : BasePre s :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
 
-theorem scalarBase_ok (hl : BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_ok (hl : BaseCombOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
-  obtain ⟨t, s', he, h⟩ := scalarBase_ladder (BasePre.of hs)
+  obtain ⟨t, s', he, h⟩ := scalarBase_comb (BasePre.of hs)
   refine ⟨t, s', he, ⟨h.1, Exec.sp he⟩, ?_⟩
   change Spec.Ed448.bytesAt s'.mem (State.addr (s.gpr .r0)) 57 =
     Spec.Ed448.encodePoint (Spec.Ed448.pointMul _ Spec.Ed448.basePoint)

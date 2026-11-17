@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Ed448.CombFacts
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -75,10 +76,10 @@ namespace VG.Artifacts.Ed448.Arm
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact Arm.target {
     code := Impl.Ed448.Arm.PublicKey.code
-    verified := Proof.Ed448.Arm.PublicKey.publicKey_verified Proof.Ed448.baseLadder_ok },
+    verified := Proof.Ed448.Arm.PublicKey.publicKey_verified Proof.Ed448.baseComb_ok },
   Spec.Ed448.signCachedApi.artifact Arm.target {
     code := Impl.Ed448.Arm.SignCached.code
-    verified := Proof.Ed448.Arm.SignCached.signCached_verified Proof.Ed448.baseLadder_ok },
+    verified := Proof.Ed448.Arm.SignCached.signCached_verified Proof.Ed448.baseComb_ok },
   Spec.Ed448.verifyApi.artifact Arm.target {
     code := Impl.Ed448.Arm.Verify.code
     verified := Proof.Ed448.Arm.Verify.verify_verified
