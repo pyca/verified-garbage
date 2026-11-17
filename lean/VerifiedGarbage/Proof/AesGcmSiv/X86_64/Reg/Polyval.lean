@@ -108,10 +108,10 @@ theorem mulY_ok {H : Spec.Gcm.Block} {t : State} (g : GReg F H t) :
 
 /-- `hkey`: GHASH's registers for the key of the authentication key, and
 `Y = 0`. -/
-theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
+theorem hkey_ok7 {K W SP : Addr} {t : State} (E : Env K W SP t) :
     WP isa (.block hkey) t fun t' =>
       GReg F (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
-      ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r := by
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.xmm .xmm7 = hOf t.mem W := by
   have h15 := E.r15
   have r₁ := E.perm.wR (show 16 + 8 ≤ 744 by decide)
   have r₂ := E.perm.wR (show 24 + 8 ≤ 744 by decide)
@@ -146,7 +146,10 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
     Option.some.injEq, exists_eq_left']
-  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  rotate_right
+  · show s₃.xmm .xmm7 = _
+    rw [o₃.xmm _ (by decide), o₂.xmm _ (by decide), x7]
   · show s₃.xmm .xmm1 = _
     rw [o₃.xmm _ (by decide), c₂]
   · show F.G _ (s₃.xmm .xmm3)
@@ -164,6 +167,12 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
     have hne : r ≠ .rax := by rintro rfl; exact absurd hr (by decide)
     show s₃.gpr r = _
     rw [o₃.gpr r hne, o₂.gpr r hne, g₁ r hr]
+
+theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
+    WP isa (.block hkey) t fun t' =>
+      GReg F (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r :=
+  WP.mono (hkey_ok7 (F := F) E) fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨a, b, c, d, e, f⟩
 
 /-! ## Whole blocks -/
 
