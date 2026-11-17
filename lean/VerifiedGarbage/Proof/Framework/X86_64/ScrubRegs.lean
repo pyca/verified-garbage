@@ -112,7 +112,7 @@ theorem writtenWithin_scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     rcases (contract_pre_scrub hA hs).1 with h0 | h0
     · rw [hcs, h0]; exact Nat.zero_le _
     · rw [hcs, hr]; exact h0
-  obtain ⟨m', e, -, hu⟩ := tail_run v rb cs ht u hv hl (hev _ hl)
+  obtain ⟨m', e, hm⟩ := tail_run v rb cs ht u hv hl (hev _ hl)
   obtain ⟨-, rfl⟩ := Exec.det b e
   have hw := hW s _ u hs a
   cases W with
@@ -125,10 +125,11 @@ theorem writtenWithin_scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   | some vals =>
   intro hw w' hw' b hb hn i hi hlt
   rw [← hw w' hw' b hb hn i hi hlt]
-  show (finState v rb xs ps gs m' u f).mem _ = u.mem _
-  rw [finState_other.1]
-  refine hu _ fun hc => ?_
-  have hc1 := hc.1
+  show (finState v rb xs ps gs m' (fun n => u.unknowns (n + wipeK cs + mxK f)) u f).mem _ = u.mem _
+  rw [finState_other.1, hm]
+  refine tailMem_frame f ks cs (u.gpr .rsp) u.unknowns u.mem (fun h' => (hev _ hl h').2.1) _ fun r hr' hc => ?_
+  simp only [List.mem_singleton] at hr'; subst hr'
+  have hc1 := hc
   rw [hr, hcs] at hc1
   have hst : stack ≠ 0 := by
     rintro rfl; simp [Region.Contains] at hc1
@@ -234,12 +235,13 @@ theorem xsW_keep (c : Prog isa) (x : XReg) (hx : x ∉ xsW c) : ∀ i ∈ instrs
 
 /-- The state the clearing leaves at the level `sse`, with nothing of the
 stack wiped, given what it leaves in the SSE registers. -/
-def finX (rb : Nat) (gs : List Reg) (m : Mem) (u : State) (X : XReg → BitVec 128) : State :=
-  clearedG gs (({ u with xmm := X, mem := m, mxcsr := fixMx .sse u.mxcsr } : State).setReg .rax
+def finX (rb : Nat) (gs : List Reg) (m : Mem) (U : Nat → BitVec 64) (u : State) (X : XReg → BitVec 128) :
+    State :=
+  clearedG gs (({ u with xmm := X, mem := m, mxcsr := fixMx .sse u.mxcsr, unknowns := U } : State).setReg .rax
     (retVal rb (u.gpr .rax)))
 
-theorem finState_sse (rb : Nat) (xs : List XReg) (gs : List Reg) (m : Mem) (u : State) :
-    finState .sse rb xs [] gs m u .sse = finX rb gs m u fun x => if x ∈ xs then 0 else u.xmm x := by
+theorem finState_sse (rb : Nat) (xs : List XReg) (gs : List Reg) (m : Mem) (U : Nat → BitVec 64) (u : State) :
+    finState .sse rb xs [] gs m U u .sse = finX rb gs m U u fun x => if x ∈ xs then 0 else u.xmm x := by
   simp [finState, finX, clearedP, clearedH, clearedV]
 
 /-- What the clearing needs of what it clears, with nothing of the stack wiped. -/
@@ -252,20 +254,18 @@ along the same trace, to states that differ only in the SSE registers. -/
 theorem tail_xs (rb : Nat) (xs : List XReg) {gs : List Reg} (hgs : ∀ r ∈ gs, r ∈ scratchRegs)
     (hne : gs ≠ []) (cs : List Nat) (u : State) (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hs : cs.sum ≤ (u.gpr .rsp).toNat) :
-    ∃ m T, Exec isa (scrubTail .sse rb xs [] gs [] cs) u T
-        (finX rb gs m u fun x => if x ∈ xs then 0 else u.xmm x) ∧
-      Exec isa (scrubTail .sse rb xregs [] gs [] cs) u T (finX rb gs m u fun _ => 0) := by
-  obtain ⟨m, e, hz, hu⟩ := tail_run (f := .sse) .sse rb cs (tailOk_nil rb xs hgs hne) u hv hs (fun h => nomatch h)
-  obtain ⟨m', e', hz', hu'⟩ := tail_run (f := .sse) .sse rb cs (tailOk_nil rb xregs hgs hne) u hv hs (fun h => nomatch h)
+    ∃ m U T, Exec isa (scrubTail .sse rb xs [] gs [] cs) u T
+        (finX rb gs m U u fun x => if x ∈ xs then 0 else u.xmm x) ∧
+      Exec isa (scrubTail .sse rb xregs [] gs [] cs) u T (finX rb gs m U u fun _ => 0) := by
+  obtain ⟨m, e, hz⟩ := tail_run (f := .sse) .sse rb cs (tailOk_nil rb xs hgs hne) u hv hs (fun h => nomatch h)
+  obtain ⟨m', e', hz'⟩ := tail_run (f := .sse) .sse rb cs (tailOk_nil rb xregs hgs hne) u hv hs (fun h => nomatch h)
   have hm : m' = m := by
     funext x
-    by_cases hw : WCov [] cs (u.gpr .rsp) x
-    · rw [hz x hw, hz' x hw]
-    · rw [hu x hw, hu' x hw]
+    rw [hz x, hz' x]
   rw [finState_sse] at e e'
   rw [hm] at e'
   simp only [mem_xregs, ↓reduceIte] at e'
-  exact ⟨m, _, e, e'⟩
+  exact ⟨m, _, _, e, e'⟩
 
 section
 variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
@@ -296,10 +296,10 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
   obtain ⟨⟨acor, act, asat⟩, ares⟩ := hall
   -- Both clearings, after a run of `c`.
   have tails : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
-      ∃ m T, Exec isa (scrubTail .sse (sig.retBits A.ptrBits) xs [] gs [] cs) u T
-          (finX (sig.retBits A.ptrBits) gs m u fun x => if x ∈ xs then 0 else u.xmm x) ∧
+      ∃ m U T, Exec isa (scrubTail .sse (sig.retBits A.ptrBits) xs [] gs [] cs) u T
+          (finX (sig.retBits A.ptrBits) gs m U u fun x => if x ∈ xs then 0 else u.xmm x) ∧
         Exec isa (scrubTail .sse (sig.retBits A.ptrBits) xregs [] gs [] cs) u T
-          (finX (sig.retBits A.ptrBits) gs m u fun _ => 0) := by
+          (finX (sig.retBits A.ptrBits) gs m U u fun _ => 0) := by
     intro s t u hs he
     obtain ⟨t', u', he', ha, -⟩ := h.1 s hs
     obtain ⟨-, rfl⟩ := Exec.det he he'
@@ -313,14 +313,14 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
   · -- Correctness.
     obtain ⟨t, w, he, ha, hq⟩ := acor s hs
     cases he with | seq a b =>
-    obtain ⟨m, T, e, e'⟩ := tails s _ _ hs a
+    obtain ⟨m, U, T, e, e'⟩ := tails s _ _ hs a
     obtain ⟨-, rfl⟩ := Exec.det b e'
     exact ⟨_, _, .seq a e, ha, hpost s _ _ hs hq (fun _ _ => rfl) rfl⟩
   · -- Constant time.
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
-    obtain ⟨m₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
-    obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
+    obtain ⟨m₁, U₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
+    obtain ⟨m₂, U₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨rfl, -⟩ := Exec.det b₁ f₁
     obtain ⟨rfl, -⟩ := Exec.det b₂ f₂
     exact act _ _ _ _ _ _ h₁ h₂ hp (.seq a₁ f₁') (.seq a₂ f₂')
@@ -328,8 +328,8 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
     rename_i u₁ _ _ u₂ _ _
-    obtain ⟨m₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
-    obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
+    obtain ⟨m₁, U₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
+    obtain ⟨m₂, U₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨-, rfl⟩ := Exec.det b₁ f₁
     obtain ⟨-, rfl⟩ := Exec.det b₂ f₂
     obtain ⟨⟨o1, o2, o3, o4, o5, o6, o7, o8, -, o10, o11, o12, o13, o14, o15⟩, of⟩ :=
@@ -345,6 +345,22 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
 end
 
 /-! ## Registrations -/
+
+/-- Code with no frame and no call calls nothing indirectly. -/
+theorem inames_of_depth : ∀ c : Prog isa, c.x86_64Depth = 0 → UpperLock.inames c = []
+  | .block _, _ => rfl
+  | .seq a b, h => by
+    simp only [Code.x86_64Depth] at h
+    simp only [UpperLock.inames, inames_of_depth a (by omega), inames_of_depth b (by omega), List.append_nil]
+  | .ite _ t e, h => by
+    simp only [Code.x86_64Depth] at h
+    simp only [UpperLock.inames, inames_of_depth t (by omega), inames_of_depth e (by omega), List.append_nil]
+  | .loop b _, h => inames_of_depth b h
+  | .call _ b, h => by simp only [Code.x86_64Depth] at h; omega
+  | .frame _ b _, h => by
+    simp only [Code.x86_64Depth] at h
+    exact inames_of_depth b (by omega)
+  | .icall _ _ b n, h => by simp only [Code.x86_64Depth] at h; omega
 
 /-- `resOk_noStack`, for a registration. -/
 theorem resOk_noStack_reg {api : Api} (r : Registration api target) (hd : r.code.x86_64Depth = 0) :
@@ -377,11 +393,12 @@ theorem scrubXs_ok {api : Api} (r : Registration api target)
   have hA := ScrubAbi.of r.consts api.sig r.tables api.pubMode
   have ht := tailOk_of 0 r.code []
   refine Verified.scrubXs hA hv (chunks_sum r.stack) (chunks_valid h8) hp ht.gsOk ht.gne (xsW_keep r.code) ?_
-  exact Verified.scrubM (f := .sse) hA hv (SpSafe.of_all r.spSafe) (by rw [hd]; exact Nat.zero_le _)
+  have hall := Verified.scrubM (v := .sse) (f := .sse) hA hv (SpSafe.of_all r.spSafe) (by rw [hd]; exact Nat.zero_le _)
     (chunks_sum r.stack) hst (chunks_valid h8)
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => MxSame.of_fun (mxFun_of hmx)) hrb' hp hr
     (tailOk_nil _ xregs ht.gsOk ht.gne) (.inl mem_xregs) (fun h => nomatch h) (fun _ _ h => nomatch h)
     (fun r hr hg _ => gs_of _ [] r hr hg (fun h => nomatch h))
+  exact ⟨hall.1, hall.2 fun _ _ _ n hn => by rw [inames_of_depth _ hd] at hn; cases hn⟩
 
 /-- `r`, scrubbed: its code, with no VEX or EVEX instruction, no frame and
 no call, followed by the clearing of the SSE registers it may write and of
