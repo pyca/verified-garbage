@@ -157,7 +157,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
   have hl := search_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k' (hy₁.trans hy)
   have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
-  refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
+  refine WP.seq (WP.mono (WP.frameRegAnyKept (r := .r0)
     (Q := fun u => SDone p s (searchResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
     fun u ⟨hd, h0', hsp'⟩ => ?_)
   · intro R hR

@@ -498,7 +498,7 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn pkCode) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
-  refine WP.alloc (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
+  refine WP.allocKept (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
     ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
   · show u.sp + BitVec.ofNat 64 64 = s.sp
     rw [hsp, add_add, sp_eq s]

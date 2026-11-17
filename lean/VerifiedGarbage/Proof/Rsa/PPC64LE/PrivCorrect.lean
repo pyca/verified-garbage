@@ -1881,7 +1881,7 @@ theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hcrt : CrtOk pc s
     WP isa (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) s fun t =>
       abiPreserved s t ∧ (PreValOk pc s → fnPost s t) := by
   have hk := h.k2
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ h.sp1 ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   unfold bodyG
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (hcrt t₁ _ A fun t₂ M C => ?_)

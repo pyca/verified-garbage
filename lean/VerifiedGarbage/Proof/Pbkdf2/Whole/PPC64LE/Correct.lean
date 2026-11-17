@@ -581,7 +581,7 @@ theorem correct {s₀ : State} (h : (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre s�
   have hX := hF.hX
   unfold Fns.pbkdf2
   refine WP.seq (VG.Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegAny hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ => ?_) (by omega_using [hsd, hX])
+  refine WP.frameRegAnyKept hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ => ?_) (by omega_using [hsd, hX])
   · have hsub : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (stk hF.X s₀) := fun a ha =>
       below_sub (a := 48) (by omega_using []) (by have := s₀.sp.isLt; omega_using [hX]) a
         (Proof.MdStream.PPC64LE.frame_sub s₀.sp a ha)

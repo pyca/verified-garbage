@@ -173,7 +173,7 @@ theorem initFrame {bytes : Nat} (h : Verified PPC64LE.target H.init (Proof.Hmac.
     (hsat : ∃ s, (I.initContract PPC64LE.abi (96 + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r7 H.init)
       (I.initContract PPC64LE.abi (96 + bytes)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (pre := Spec.Hmac.initPre I.S PPC64LE.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S PPC64LE.abi.ptrBits) (wa := true) (stack := 96) (bytes := bytes) h
     (by exact (by decide : 4 < 8)) hb (Proof.Hmac.initPre_local _ _) (Proof.Hmac.initPost_local _ _) hsat rfl
@@ -186,7 +186,7 @@ theorem finalizeFrame {bytes : Nat}
     (hsat : ∃ s, (I.finalizeContract PPC64LE.abi (96 + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r7 H.finalize)
       (I.finalizeContract PPC64LE.abi (96 + bytes)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S PPC64LE.abi.ptrBits) (wa := true) (stack := 96)
     (bytes := bytes) h (by exact (by decide : 4 < 8)) hb
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Hmac.finalizePost_local _ _ hR hS) hsat rfl

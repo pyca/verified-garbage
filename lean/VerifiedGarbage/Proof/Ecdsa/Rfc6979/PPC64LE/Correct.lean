@@ -1030,7 +1030,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   obtain hnB : L.B.toNat + 736 ≤ 2 ^ 64 := by rw [← hl]; exact hL.nB
   rw [Cfg.sign, frameBytes]
   refine WP.seq (wp_step exec_mflr (wp_nil ?_))
-  refine WP.seq (WP.frame (by show 48 ≤ s.sp.toNat; omega_using [hsp]) (WP.alloc (by omega_using [])
+  refine WP.seq (WP.frameKept (by show 48 ≤ s.sp.toNat; omega_using [hsp]) (WP.allocKept (by omega_using [])
     (by show 592 ≤ (s.sp - 48).toNat; rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s.sp.toNat; omega_using [hsp])]
         show 592 ≤ s.sp.toNat - 48; omega_using [hsp]) ?_))
   rw [Cfg.body]

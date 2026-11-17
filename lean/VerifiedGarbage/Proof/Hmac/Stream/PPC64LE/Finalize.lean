@@ -474,7 +474,7 @@ theorem correct {s₀ : State} (hp : (finG hH.SH (H.W + 48 + H.FD) 96).pre s₀)
   obtain ⟨h1, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13⟩ := hp
   obtain hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+  refine WP.frameRegKept (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
     fun s' ⟨hk, hsp, hpost⟩ => ?_) (by have := finalizeMain_fdepth hH; omega_arith) (finalizeMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
     obtain hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 96) :=

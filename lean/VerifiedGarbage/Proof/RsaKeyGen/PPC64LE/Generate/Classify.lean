@@ -2133,7 +2133,7 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
     omega_using []
   obtain hroom : 128 ≤ s.sp.toNat := by have := hf.room; have hsu : stackUse = 1088 := rfl; omega_using [hspn, this, hsu]
   unfold searchRun searchCall
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (WP.mono (search_stack_ok h.toGenFrame) fun u ⟨⟨hm, ku⟩, hyu⟩ => ?_)
   refine WP.seq (WP.mono (search_args_ok h.toGenFrame hm ku) fun w ⟨⟨⟨ha, hmw⟩, kw⟩, hyw⟩ => ?_)
   obtain hu : w.sp = callSp p := kw.sp.trans (ku.sp.trans (alloc_call_sp h.toGenFrame))

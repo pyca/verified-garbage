@@ -337,10 +337,11 @@ def push (τ : T) : Instr → Option T
   | .push _ | .alloc _ => some ⟨τ.regs, 0⟩
   | _ => none
 
-/-- A frame's pop loads a secret. -/
+/-- A frame's pop loads a secret, and the frame's bytes are lost: the slots
+are forgotten, since the frame may be the one the slots are in. -/
 def pop (τ : T) : Instr → Option T
-  | .pop r => some (wr τ r false)
-  | .free _ => some τ
+  | .pop r => some ⟨set τ.regs r false, 0⟩
+  | .free _ => some ⟨τ.regs, 0⟩
   | _ => none
 
 theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (h : Agree τ s₁ s₂)
@@ -363,7 +364,7 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
-    exact ⟨rfl, ⟨by simp [h.1.1], h.1.2⟩, h.2⟩
+    exact ⟨rfl, ⟨by simp [h.1.1], h.1.2⟩, fun k _ hb => by simp at hb⟩
   rename_i r
   cases hs
   simp only [isa, PPC64LE.pop] at e₁ e₂
@@ -372,7 +373,7 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
   cases e₁; cases e₂
   have w := h.write r (v₁ := b₁.mem.read (b₁.sp + 32) 8) (v₂ := b₂.mem.read (b₂.sp + 32) 8)
     (p := false) fun h => by cases h
-  exact ⟨by simp [addrs, h.1.1], ⟨by simp [h.1.1], w.1.2⟩, w.2⟩
+  exact ⟨by simp [addrs, h.1.1], ⟨by simp [h.1.1], w.1.2⟩, fun k _ hb => by simp at hb⟩
 
 end VG.PPC64LE.FrameTaint
 

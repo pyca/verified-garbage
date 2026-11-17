@@ -2257,7 +2257,7 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract PPC64LE.abi (0
 theorem init_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 streamInit)
       (Spec.Cmac.tdesStreamInitContract PPC64LE.abi 672) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre PPC64LE.abi.ptrBits)
     (post := Spec.Cmac.tdesStreamInitPost PPC64LE.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 672) init_verified (by decide) (by decide)
@@ -2266,7 +2266,7 @@ theorem init_framed :
 theorem absorb_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 720 .r7 absorb)
       (Spec.Cmac.tdesAbsorbContract PPC64LE.abi 720) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesAbsorbPost PPC64LE.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 720) absorb_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _) absorbFrameSat_pre
@@ -2274,7 +2274,7 @@ theorem absorb_framed :
 theorem finish_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 finish)
       (Spec.Cmac.tdesFinishContract PPC64LE.abi 672) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
     (post := Spec.Cmac.tdesFinishPost PPC64LE.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 672) finish_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _) finishFrameSat_pre

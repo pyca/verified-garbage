@@ -197,7 +197,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract PPC64LE.abi 2592).pre s
 /-- `init` with its scratch buffer in a frame of 2592 bytes. -/
 theorem init_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6
     Impl.AesSiv.PPC64LE.init) (Spec.Siv.initContract PPC64LE.abi 2592) :=
-  Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre PPC64LE.abi.ptrBits) (post := Spec.Siv.initPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) init_verified (by decide) (by decide)
     (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) initFrameSat_pre
@@ -285,7 +285,7 @@ theorem decrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.decrypt
 /-- `encrypt` with its working space in a frame of 2608 bytes. -/
 theorem encrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
     Impl.AesSiv.PPC64LE.encrypt) (Proof.AesSiv.encryptRoundsContract PPC64LE.abi 2608) :=
-  Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+  Verified.stackScratchListsKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre PPC64LE.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2608) encrypt_verified (by decide) (by decide)
     (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
@@ -293,7 +293,7 @@ theorem encrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.with
 /-- `decrypt` with its working space in a frame of 2608 bytes. -/
 theorem decrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
     Impl.AesSiv.PPC64LE.decrypt) (Proof.AesSiv.decryptRoundsContract PPC64LE.abi 2608) :=
-  Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+  Verified.stackScratchListsKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre PPC64LE.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2608) (leak := some (Spec.Siv.decryptLeak PPC64LE.abi.ptrBits))
     decrypt_verified (by decide) (by decide)

@@ -696,7 +696,7 @@ theorem correct {c : Prog isa} (hS : SalsaSpec c) (hc : c.noFrames = true) {s₀
   obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
     hp.r6, hp.pos⟩
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hS hpi)
+  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hS hpi)
     fun s' ⟨hk, hsp, hpost⟩ => ?_) (by rw [fdepth_of_noFrames (noFrames_main hc)]; decide)
     (pushFrames_of_noFrames (noFrames_main hc))
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR

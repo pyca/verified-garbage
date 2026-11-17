@@ -644,7 +644,7 @@ theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : Strin
   unfold VG.Impl.RsaKeyGen.PPC64LE.Candidate.code
   refine WP.seq (WP.of_runBlock ⟨s0.write .r0 s0.lr,
     (by simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mflr]), ?_⟩)
-  refine WP.seq (WP.frame (by show 48 ≤ s0.sp.toNat; omega_using [hlo]) (WP.alloc (by decide)
+  refine WP.seq (WP.frameKept (by show 48 ≤ s0.sp.toNat; omega_using [hlo]) (WP.allocKept (by decide)
     (by show 176 ≤ (s0.sp - 48).toNat
         rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s0.sp.toNat; omega_using [hlo])]
         show 176 ≤ s0.sp.toNat - 48; omega_using [hlo]) ?_))

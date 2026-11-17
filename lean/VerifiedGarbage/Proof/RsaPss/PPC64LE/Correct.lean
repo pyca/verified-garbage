@@ -381,7 +381,7 @@ theorem verify_ok {i : Nat} (hidx : s.mem.readW (stackArg s 6 + BitVec.ofNat 64 
     (hi : i ∈ idxs) (hD : (shapeOf i).1.D = H.D) (hP : (shapeOf i).2 = P') :
     WP isa (verifyPrecomputed f g) s (Post Gs Gm s) := by
   have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
+  refine WP.allocKept (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
   show WP isa (.seq (.block (tword .r11 hArg 5 ++ [])) _) _ _
   refine WP.seq (WP.of_syms (twordA_ok (j := 6) (k := 5) (p := stackArg s 6) (by decide) (by decide)
     ⟨aR s, by rw [P.hrd]; simp, in_aR (by decide)⟩ (P.ka.sub_right (in_aR_sub (by decide))).symm rfl

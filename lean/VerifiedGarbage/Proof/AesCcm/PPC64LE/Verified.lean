@@ -151,7 +151,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2
 theorem seal_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «seal»)
       (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2688) :=
-  Verified.stackScratchArgs (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgsKept (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre PPC64LE.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     seal_verified (by decide) (by decide) (Proof.AesCcm.sealPre_local _) (Proof.AesCcm.sealPost_local _)
@@ -172,7 +172,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract PPC64LE.abi 2
 theorem open_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
       (Proof.AesCcm.openRoundsContract PPC64LE.abi 2688) :=
-  Verified.stackScratchArgs (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgsKept (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre PPC64LE.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     (leak := some (Spec.Ccm.openLeak PPC64LE.abi.ptrBits))

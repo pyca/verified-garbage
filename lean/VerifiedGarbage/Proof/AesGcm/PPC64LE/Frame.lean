@@ -306,7 +306,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract PPC64LE.abi 2592).pre s
 theorem init_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 init)
       (Spec.Gcm.initContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.initPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2592) init_verified (by decide) (by decide)
     (Proof.AesGcm.initPre_local _) (Proof.AesGcm.initPost_local _) initFrameSat_pre
@@ -329,7 +329,7 @@ theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract PPC64LE.abi
 theorem streamInit_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 streamInit)
       (Spec.Gcm.streamInitContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamInitPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamInit_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamInitPost_local _)
@@ -353,7 +353,7 @@ theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract PPC64LE.abi 2
 theorem streamAad_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 streamAad)
       (Spec.Gcm.streamAadContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamAadPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamAad_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamAadPost_local _)
@@ -371,7 +371,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsCont
 theorem streamEncrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamEncrypt)
       (Proof.AesGcm.streamEncryptRoundsContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamEncrypt_verified (by decide) (by decide)
@@ -385,7 +385,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsCont
 theorem streamDecrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamDecrypt)
       (Proof.AesGcm.streamDecryptRoundsContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamDecrypt_verified (by decide) (by decide)
@@ -402,7 +402,7 @@ theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract PPC64L
 theorem streamFinish_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 streamFinish)
       (Proof.AesGcm.streamFinishRoundsContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamFinish_verified (by decide) (by decide)
@@ -419,7 +419,7 @@ theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract PPC64L
 theorem streamVerify_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamVerify)
       (Proof.AesGcm.streamVerifyRoundsContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2592) streamVerify_verified (by decide) (by decide)
@@ -445,7 +445,7 @@ working space's address, above its stack pointer (`Verified.stackScratchArgs`). 
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal)
       (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+  PPC64LE.Verified.stackScratchArgsKept (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Gcm.sealPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.sealRoundsPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2672) (m := 1) sealFused_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _) sealFrameSat_pre
@@ -469,7 +469,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract PPC64LE.abi 2
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
       (Proof.AesGcm.openRoundsContract PPC64LE.abi 2688) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+  PPC64LE.Verified.stackScratchArgsKept (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Gcm.openPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.openRoundsPost PPC64LE.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2688) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesGcm.openPre_local _) (Proof.AesGcm.openPost_local _)

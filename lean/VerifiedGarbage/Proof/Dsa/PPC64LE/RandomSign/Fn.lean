@@ -210,7 +210,7 @@ theorem randomSign_correct (s₀ : State) (h : rsContract.pre s₀) :
     fun t hc h25 h31 hsig => WP.mono (finish_ok h hc h25 h31 hst hsig hnone) fun t' hf =>
       fin_post h (by rw [rsRes_eq h]; exact hf)
   unfold Impl.Dsa.PPC64LE.RandomSign.code
-  refine WP.alloc (by decide) hL.spF ?_
+  refine WP.allocKept (by decide) hL.spF ?_
   unfold Impl.Dsa.PPC64LE.RandomSign.body
   refine WP.seq (WP.mono (entry_ok h) fun t₁ he => ?_)
   refine WP.seq (WP.mono (prepareQ_ok h he.ctx) fun t₂ ⟨sc, h0, m2, k2⟩ => ?_)

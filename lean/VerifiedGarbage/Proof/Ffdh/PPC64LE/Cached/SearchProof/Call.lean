@@ -612,7 +612,7 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     rw [h.sp, h48]
     omega_using [this]
   unfold attemptRun
-  refine WP.alloc (by decide) hroom' ?_
+  refine WP.allocKept (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = callSp p := k.sp.trans e0
   refine WP.callAny (k := cgContract) a.correct (call_attempt_pre h hroom hf hu ha hm)

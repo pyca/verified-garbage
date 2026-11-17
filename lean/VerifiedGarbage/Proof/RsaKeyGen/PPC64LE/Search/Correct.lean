@@ -157,7 +157,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   have hp : SearchInput p s := ⟨h, rfl⟩
   have hroom : 192 ≤ s.sp.toNat := alloc_room h.1.2.1
   unfold code
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (VG.PPC64LE.WP.mono_syms (entrySave_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu => ?_)
   refine WP.seq (VG.PPC64LE.WP.mono_syms (entryLoad_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_)
   have hx' : t.gpr .r31 = p.F := (kt.gpr .r31 (by decide)).trans hx

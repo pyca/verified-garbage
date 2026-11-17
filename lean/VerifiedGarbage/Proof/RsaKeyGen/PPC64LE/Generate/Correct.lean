@@ -181,7 +181,7 @@ theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (gen
   have hsp48 : 48 ≤ t'.sp.toNat := by
     rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsu, hroom'])]
     simp only [BitVec.toNat_ofNat]; omega_using [hsu, hroom']
-  refine WP.frameRegAny hsp48 ?_ ?_ (by
+  refine WP.frameRegAnyKept hsp48 ?_ ?_ (by
     have := iteration_sdepth v
     simp only [sdepth, clearAround_sdepth]
     omega_using [this])
@@ -208,7 +208,7 @@ theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
   have hsu : stackUse = 1088 := rfl
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   unfold genCode code
-  refine WP.alloc (by decide) (alloc_room hroom') ?_
+  refine WP.allocKept (by decide) (alloc_room hroom') ?_
   simp only [seqs]
   refine WP.seq (WP.block_append_iff.mpr (VG.PPC64LE.WP.mono_syms (entryHead_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu =>
     VG.PPC64LE.WP.mono_syms (entryWords_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_))

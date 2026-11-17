@@ -74,9 +74,9 @@ theorem saving_ok {body : Prog isa} {s₀ : State} {P : Mem → Prop}
     WP isa (saving body) s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       s'.lr = s₀.lr ∧ P s'.mem := by
   have hsp1 : 48 ≤ (s₀.sp - 48).toNat := by bv_omega
-  refine WP.frameRegAny (r := .r14) (by omega_using [hsp]) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
+  refine WP.frameRegAnyKept (r := .r14) (by omega_using [hsp]) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
     ?_ (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])
-  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_) (WP.mono hb fun s' ⟨hk, hlr, hP⟩ => ?_) (by omega_using [hn])
+  refine WP.frameRegAnyKept (r := .r15) hsp1 (fun R hR => ?_) (WP.mono hb fun s' ⟨hk, hlr, hP⟩ => ?_) (by omega_using [hn])
   · have : (framed .r14 s₀).sp = s₀.sp - 48 := rfl
     rw [this, show s₀.sp - 48 - 48 = s₀.sp - BitVec.ofNat 64 96 by bv_omega]
     exact (hd R hR).sub_left (frame_slot_sub s₀.sp (.inr rfl))
@@ -192,7 +192,7 @@ theorem inner_wp {body : Prog isa} {σ₀ : State} {Q : State → Prop}
       sp := (framed .r14 σ₀).sp }) :
     WP isa (.frame (.push .r15) (.seq (.block (kMovs a b)) body) (.pop .r15)) (framed .r14 σ₀) Q := by
   have hsp1 : 48 ≤ (σ₀.sp - 48).toNat := by bv_omega
-  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_)
+  refine WP.frameRegAnyKept (r := .r15) hsp1 (fun R hR => ?_)
     (WP.seq (WP.mono (kMovs_ok ha hb hb14 _) fun s e => by subst e; exact hbody))
     (by simp only [sdepth, Nat.zero_max]; omega_using [hn])
   have : (framed .r14 σ₀).sp = σ₀.sp - 48 := rfl
@@ -206,7 +206,7 @@ theorem kernel_wp {body : Prog isa} {σ₀ : State} {R : Mem → BitVec 64 → P
       PPC64LE.target.abiPreserved (kSt a b σ₀) s' ∧ R s'.mem (s'.gpr .r3)) :
     WP isa (saving (.seq (.block (kMovs a b)) body)) σ₀ fun s' =>
       PPC64LE.target.abiPreserved σ₀ s' ∧ R s'.mem (s'.gpr .r3) := by
-  refine WP.frameRegAny (r := .r14) (by omega_using [hsp])
+  refine WP.frameRegAnyKept (r := .r14) (by omega_using [hsp])
     (fun R hR => (hd R hR).sub_left (Arith.frame_slot_sub σ₀.sp (.inl rfl))) ?_
     (by simp only [sdepth, Instr.frameBytes, Nat.zero_max]; omega_using [hn])
   refine inner_wp ha hb hb14 hsp hd hn (WP.mono hbody fun s' ⟨⟨hk, hsp', hlr⟩, hR⟩ => ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
@@ -316,7 +316,7 @@ theorem entry_wp {s₀ : State} {rd wr : List Region} {R : Mem → BitVec 64 →
       R s'.mem (s'.gpr .r3)) :
     WP isa (entryCode mv name code) s₀ fun s' => PPC64LE.target.abiPreserved s₀ s' ∧ R s'.mem (s'.gpr .r3) := by
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frameRegAny (r := .r0) hsp hd (WP.mono (entry_inner hv hdc hmv hF hpre hc hw hQ)
+  refine WP.seq (WP.frameRegAnyKept (r := .r0) hsp hd (WP.mono (entry_inner hv hdc hmv hF hpre hc hw hQ)
     fun s' ⟨hp, hR⟩ => ?_) (by simp only [sdepth, Nat.zero_max]; omega_using [hdc]))
   refine WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
   · show (s'.write .r0 _).gpr r = s₀.gpr r
@@ -414,11 +414,11 @@ theorem frames3_wp {body : Prog isa} {s₀ : State} {R : Mem → Prop}
   have h1 : 48 ≤ (s₀.sp - 48).toNat := by bv_omega
   have h2 : 48 ≤ (s₀.sp - 48 - 48).toNat := by bv_omega
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frameRegAny (r := .r0) (s₀ := s₀.write .r0 s₀.lr) (by show 48 ≤ s₀.sp.toNat; omega_using [hsp])
+  refine WP.seq (WP.frameRegAnyKept (r := .r0) (s₀ := s₀.write .r0 s₀.lr) (by show 48 ≤ s₀.sp.toNat; omega_using [hsp])
     (fun X hX => (hd X hX).sub_left sl1) ?_ (by simp only [sdepth, Instr.frameBytes]; omega_using [hn]))
-  refine WP.frameRegAny (r := .r30) (by exact h1) (fun X hX => (hd X hX).sub_left sl2) ?_
+  refine WP.frameRegAnyKept (r := .r30) (by exact h1) (fun X hX => (hd X hX).sub_left sl2) ?_
     (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])
-  refine WP.frameRegAny (r := .r31) (by exact h2) (fun X hX => (hd X hX).sub_left sl3) ?_ (by omega_using [hn])
+  refine WP.frameRegAnyKept (r := .r31) (by exact h2) (fun X hX => (hd X hX).sub_left sl3) ?_ (by omega_using [hn])
   refine WP.mono hb fun s' ⟨hk, hR⟩ => WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, hR⟩)
   · simp only [State.write]
     by_cases h0 : r = .r0
@@ -443,14 +443,14 @@ theorem frames3_tr {body : Prog isa} {P : State → State → Prop} (hsp : ∀ x
       ∃ Q, WP isa (.frame (.push .r31) body (.pop .r31)) (framed .r30 (eSt x)) Q := by
     obtain ⟨hsp, hd, Q, hq⟩ := hok x hx
     obtain ⟨-, -, sl3⟩ := frames3_slots x.sp hsp
-    exact ⟨_, WP.frameRegAny (r := .r31) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48 - 48).toNat; bv_omega)
+    exact ⟨_, WP.frameRegAnyKept (r := .r31) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48 - 48).toNat; bv_omega)
       (fun X hX => (hd X hX).sub_left sl3) (WP.mono hq fun _ _ => trivial) (by omega_using [hn])⟩
   have w30 (x : State) (hx : ∃ y, P x y ∨ P y x) :
       ∃ Q, WP isa (.frame (.push .r30) (.frame (.push .r31) body (.pop .r31)) (.pop .r30)) (eSt x) Q := by
     obtain ⟨hsp, hd, -⟩ := hok x hx
     obtain ⟨-, sl2, -⟩ := frames3_slots x.sp hsp
     obtain ⟨Q, hq⟩ := w31 x hx
-    exact ⟨_, WP.frameRegAny (r := .r30) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48).toNat; bv_omega)
+    exact ⟨_, WP.frameRegAnyKept (r := .r30) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48).toNat; bv_omega)
       (fun X hX => (hd X hX).sub_left sl2) (WP.mono hq fun _ _ => trivial)
       (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])⟩
   refine RelCT.seq (RelCT.wpDep (F := fun (x x1 : State) => x1 = x.write .r0 x.lr)

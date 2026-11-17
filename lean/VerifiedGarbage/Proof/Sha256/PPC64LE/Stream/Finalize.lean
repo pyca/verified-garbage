@@ -761,7 +761,7 @@ theorem correctN {s₀ : State} (hp : Pre N s₀) (hs : Stack N s₀) (hN : N �
     WP isa (finalizeWith N) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha256.finalizeNPPC64LE N).post s₀ s' := by
   obtain hpi : Pre N (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
   refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hpi hN hu hnvo)
+  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hpi hN hu hnvo)
     fun s' ⟨hk, hsp, hpost⟩ => ?_) hn hpf
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR

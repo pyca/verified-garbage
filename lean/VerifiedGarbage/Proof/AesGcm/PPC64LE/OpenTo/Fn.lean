@@ -721,7 +721,7 @@ theorem openTo_wp (hv : SplitOk) {s : State} (hs : ToPre s) :
     WP isa openTo s fun z => abiPreserved s z ∧ toPost s z := by
   obtain h := lay hs
   have w₁ := hs.w₁
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by omega_arith) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hv h he) fun z hz => ?_)
   refine WP.seq (WP.mono (after_wp h hz) fun u hu => ?_)

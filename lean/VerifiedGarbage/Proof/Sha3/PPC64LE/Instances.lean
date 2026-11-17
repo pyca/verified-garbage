@@ -270,7 +270,7 @@ def xofFinalizeSat : State := { xofPadSat with wr := [⟨0x1000, 200⟩] }
 theorem xofFinalize_verified {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) :
     Verified PPC64LE.target (xofFinalize X.rate) (Spec.Sha3.xofFinalizeContract PPC64LE.abi X (48 + 672)) := by
   obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
-  refine PPC64LE.Verified.stackScratch (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
+  refine PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofFinalizePre X PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.xofFinalizePost X PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 672) (xofPad_verified hX hr) (by decide) (by decide)
@@ -372,7 +372,7 @@ def xofSqueezeTopSat : State := { xofSqueezeSat with wr := [⟨0x1000, 200⟩, �
 
 theorem xofSqueeze_verified {X : Xof} (hr : X.rate ∈ rates) :
     Verified PPC64LE.target (xofSqueeze X.rate) (Spec.Sha3.xofSqueezeContract PPC64LE.abi X (48 + 672)) := by
-  refine PPC64LE.Verified.stackScratch (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
+  refine PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofSqueezePre X PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.xofSqueezePost X PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 672) (xofSqueezeS_verified hr) (by decide) (by decide)
@@ -853,7 +853,7 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (hsat : ∃ s, (finPPC64LE H).pre s) (hsat' : ∃ s, (finScratchContract PPC64LE.abi H 84 48).pre s)
     (hsat'' : ∃ s, (Spec.Sha3.finalizeContract PPC64LE.abi H (48 + 704)).pre s) :
     Verified PPC64LE.target (finalize H.rate H.len) (Spec.Sha3.finalizeContract PPC64LE.abi H (48 + 704)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
     (n := 84) (pre := Spec.Sha3.finalizePre H PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 704) (finBody_verified hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))

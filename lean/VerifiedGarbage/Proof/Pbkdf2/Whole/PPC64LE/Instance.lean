@@ -77,7 +77,7 @@ theorem framed {I : Spec.Hmac.Instance} {c : Prog isa} {stack bytes : Nat}
     (hsat : ∃ s, (I.pbkdf2Contract PPC64LE.abi (stack + bytes)).pre s) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch bytes .r10 c)
       (I.pbkdf2Contract PPC64LE.abi (stack + bytes)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
     (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S PPC64LE.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S PPC64LE.abi.ptrBits) (wa := true) (stack := stack) (bytes := bytes) h
     (by decide) hb (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat rfl

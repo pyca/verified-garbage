@@ -1228,7 +1228,7 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
   refine WP.seq (WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hP hf hpi)
+  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hP hf hpi)
     fun s' ⟨hk, hsp, hpost⟩ => ?_) (by rw [fdepth_of_noFrames (noFrames_updateMain hf)]; decide)
     (pushFrames_of_noFrames (noFrames_updateMain hf))
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
@@ -1630,7 +1630,7 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
   refine WP.seq (WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hP hf hpi)
+  refine WP.frameRegKept (by exact hs.sp48) (fun R hR => ?_) (WP.mono (correctMain hP hf hpi)
     fun s' ⟨hk, hsp, hpost⟩ => ?_) (by rw [fdepth_of_noFrames (noFrames_finalizeMain hf)]; decide)
     (pushFrames_of_noFrames (noFrames_finalizeMain hf))
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
@@ -1814,7 +1814,7 @@ as an argument (`update_scratch`, `finalize_scratch`); `update` and
 theorem updateB_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update b))
     (Spec.Blake2.updateBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     updateB_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
@@ -1822,7 +1822,7 @@ theorem updateB_framed : Verified PPC64LE.target
 theorem finalizeB_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize b))
     (Spec.Blake2.finalizeBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     finalizeB_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
@@ -1830,7 +1830,7 @@ theorem finalizeB_framed : Verified PPC64LE.target
 theorem updateS_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update s))
     (Spec.Blake2.updateSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     updateS_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
@@ -1838,7 +1838,7 @@ theorem updateS_framed : Verified PPC64LE.target
 theorem finalizeS_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize s))
     (Spec.Blake2.finalizeSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     finalizeS_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

@@ -143,7 +143,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
     WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
   unfold codeG
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)

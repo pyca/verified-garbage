@@ -1031,7 +1031,7 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
   obtain hsp : 48 ≤ t'.sp.toNat := by
     rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hroom, h768])]
     simp only [BitVec.toNat_ofNat]; omega_using [hroom, h768]
-  refine WP.seq (WP.frameRegAny hsp ?_ ?_
+  refine WP.seq (WP.frameRegAnyKept hsp ?_ ?_
     (by have := iteration_sdepth c; show sdepth (iteration c.call) + 48 < 2 ^ 64; omega_using [this]))
   · intro R hR
     rw [kk.wr, alloc_wr h] at hR

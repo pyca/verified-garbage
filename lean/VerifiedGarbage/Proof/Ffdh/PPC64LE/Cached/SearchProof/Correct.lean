@@ -168,7 +168,7 @@ theorem key_body {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
   have hl := key_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k'
   have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
-  refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
+  refine WP.seq (WP.mono (WP.frameRegAnyKept (r := .r0)
     (Q := fun u => KeyDone p s (keyResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
     fun u ⟨hd, h0', hsp'⟩ => ?_)
   · intro R hR

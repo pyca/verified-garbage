@@ -20,7 +20,7 @@ theorem scratch_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     WP isa Impl.AesGcm.PPC64LE.SealSplit.seal s
       (fun t => abiPreserved s t ∧ scratchContract.post s t) := by
   have lay := layout_pre s hs
-  refine WP.alloc (by decide) lay.spFit.1 ?_
+  refine WP.allocKept (by decide) lay.spFit.1 ?_
   refine WP.seq (WP.mono (Prelude.ok (allocated 112 s) (prelude_config s hs)) fun u hu => ?_)
   subst u
   refine WP.mono (prepared_ok hs) fun t ht => ?_

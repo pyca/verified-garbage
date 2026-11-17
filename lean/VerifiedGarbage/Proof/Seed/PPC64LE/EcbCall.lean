@@ -98,7 +98,7 @@ theorem call_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallPPC6
   have hw : WP isa (ecbCall d) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbCallPPC64LE d).post s₀ s' := by
     refine WP.seq (WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
     have hn : (blockCall d).noFrames = true := by cases d <;> lit_decide
-    refine WP.frameReg (r := .r0) (s₀ := s₁) hsp (fun R hR => ?_) ?_
+    refine WP.frameRegKept (r := .r0) (s₀ := s₁) hsp (fun R hR => ?_) ?_
       (by rw [fdepth_of_noFrames hn]; decide) (pushFrames_of_noFrames hn)
     · rw [show s₁.wr = s₀.wr from rfl, hwr] at hR
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR

@@ -926,7 +926,7 @@ theorem priv_ok {t : State} (X : pc = true → PreXS s) (h : Base Ss vS s t) {em
   have hk := P.k2
   obtain pr := privBytes_rng pc
   unfold priv
-  refine WP.alloc (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
+  refine WP.allocKept (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
     rw [hsp]; have := P.sp1
     rw [fb, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := frameBytes) (by decide)]
     unfold stackBytes at this; unfold frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [this]) ?_
@@ -1317,7 +1317,7 @@ theorem sign_ok (X : pc = true → PreXS s) {i : Nat}
     (hidx : s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i)
     (hi : i ∈ idxs) (hD : (shapeOf i).1.D = H.D) : WP isa (signG f g pc) s (Post pc Gs Gm s) := by
   have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
-  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
+  refine WP.allocKept (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   show WP isa (.seq (.block (tword .r11 hArg 5 ++ [])) _) _ _
   refine WP.seq (WP.of_syms (twordA_ok (j := hArg) (k := 5) (p := stackArg s 14) (by decide) (by decide)
     ⟨aR pc s, by rw [P.hrd]; simp, in_aR (by decide)⟩

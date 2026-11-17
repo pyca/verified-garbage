@@ -58,7 +58,7 @@ theorem finalizeScratch :
 theorem update : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 Impl.Sm3.PPC64LE.Stream.update)
     (Spec.Sm3.updateContract PPC64LE.abi (48 + 192)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 48) (bytes := 192)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.updatePost_local _)
@@ -67,7 +67,7 @@ theorem update : Verified PPC64LE.target
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 Impl.Sm3.PPC64LE.Stream.finalize)
     (Spec.Sm3.finalizeContract PPC64LE.abi (48 + 192)) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
+  PPC64LE.Verified.stackScratchKept (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 48) (bytes := 192)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.finalizePost_local _)

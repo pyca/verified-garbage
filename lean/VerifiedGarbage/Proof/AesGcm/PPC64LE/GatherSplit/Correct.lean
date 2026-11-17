@@ -83,7 +83,7 @@ theorem sealGather_wp (hv : Gather.SealOk) (hs : SplitOk) {s : State} (h : Layou
     WP isa Impl.AesGcm.PPC64LE.GatherSplit.sealGather s
       fun z => abiPreserved s z ∧ gatherPost s z := by
   unfold Impl.AesGcm.PPC64LE.GatherSplit.sealGather Impl.AesGcm.PPC64LE.SealGather.withBody
-  refine WP.alloc ⟨by decide,by decide,by decide⟩ (by have := h.space; omega_using [this]) ?_
+  refine WP.allocKept ⟨by decide,by decide,by decide⟩ (by have := h.space; omega_using [this]) ?_
   refine WP.seq (WP.mono (entered_wp h.base) fun e he => ?_)
   exact body_wp hv hs h he.1 he.2
 

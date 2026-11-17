@@ -383,7 +383,7 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     rw [h.sp, h48]
     omega_arith
   unfold candidateRun
-  refine WP.of_syms (WP.alloc (by decide) hroom' ?_)
+  refine WP.of_syms (WP.allocKept (by decide) hroom' ?_)
   refine WP.seq (WP.mono_syms (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, ku⟩ syu => ?_)
   have hu : u.sp = callSp p := ku.sp.trans e0
   have hT : original.syms VG.Impl.RsaKeyGen.TrialTable32.symbol = p.T := by rw [← h.input.2]; rfl

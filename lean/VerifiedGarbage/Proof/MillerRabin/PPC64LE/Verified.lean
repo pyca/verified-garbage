@@ -265,7 +265,7 @@ theorem leak_local : ∀ f, some rLeak = some f → ∀ vs m₁ m₂,
 theorem round_verified : Verified target
     (Impl.StackScratch.PPC64LE.withStackScratch 176 .r5 Impl.MillerRabin.PPC64LE.round)
     (Proof.MillerRabin.Round.roundContract abi compact 176) :=
-  Verified.stackScratchL (sig := Proof.MillerRabin.Round.roundSig) (nm := "scratch") (e := .u64) (n := 18)
+  Verified.stackScratchLKept (sig := Proof.MillerRabin.Round.roundSig) (nm := "scratch") (e := .u64) (n := 18)
     (post := rPost) (wa := false) (stack := 0) (bytes := 176) scratch_verified (by decide)
     (by decide) pre_local post_local leak_local
     ⟨satState₀, by

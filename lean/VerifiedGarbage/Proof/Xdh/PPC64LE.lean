@@ -454,7 +454,7 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w f c k) {name : String} (hn : n < 2 ^ 15) {s : State} (h : ExPre n w s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frame (by rw [RegUpd.sp_write]; exact h.2.2.2.2.2) ?_)
+  refine WP.seq (WP.frameKept (by rw [RegUpd.sp_write]; exact h.2.2.2.2.2) ?_)
   refine WP.seq (WP.mono (saved_wp (n := n) (w := w)) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hk h he) fun z hz => ?_)
   refine WP.seq (WP.mono (restored_wp hz) fun u hu => ?_)

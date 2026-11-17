@@ -58,6 +58,6 @@ theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptRandomContract ab
   have hp := pre_of h
   show WP isa code s fun t => abiPreserved s t ∧ post s t
   unfold code
-  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega_using [this]) (body_ok hp)
+  exact WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega_using [this]) (body_ok hp)
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd

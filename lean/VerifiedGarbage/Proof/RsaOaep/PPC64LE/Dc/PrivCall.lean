@@ -1202,7 +1202,7 @@ theorem privF_ok (X : pc = true → PreXD s) {t : State} (E : Entered s t) :
       fun w => w.sp = fb s ∧ WP isa (.block [.lsr .w .r20 .r3 0]) w (AfterPriv s) := by
   have hsp : t.sp = fb s := E.sv.sp
   have hk := P.k2
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by
     rw [hsp]; have := P.sp1
     rw [fb, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := frameBytes) (by decide)]
     rw [stackBytes_eq] at this; unfold frameBytes privBytes; omega_using [this]) ?_

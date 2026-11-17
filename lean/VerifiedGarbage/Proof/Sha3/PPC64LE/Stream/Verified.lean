@@ -1432,7 +1432,7 @@ theorem withLr_ok {main : Prog isa} {s₀ : State} {Q : State → State → Prop
     WP isa (Impl.Sha3.PPC64LE.Stream.withLr main) s₀ fun s' => abiPreserved s₀ s' ∧ Q s₀ s' := by
   unfold Impl.Sha3.PPC64LE.Stream.withLr
   refine WP.seq (MdStream.PPC64LE.WP.cons PPC64LE.exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by exact hsp) (fun R hR => (hd R hR).sub_left (frame_sub _))
+  refine WP.frameRegKept (by exact hsp) (fun R hR => (hd R hR).sub_left (frame_sub _))
     (WP.mono hmain fun s' ⟨hk, _, hq⟩ => ?_)
     (by rw [fdepth_of_noFrames hn]; decide) (pushFrames_of_noFrames hn)
   refine MdStream.PPC64LE.WP.cons PPC64LE.exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, hQ s' _ rfl rfl hq⟩)

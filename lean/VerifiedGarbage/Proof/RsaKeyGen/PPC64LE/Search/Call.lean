@@ -573,7 +573,7 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       simp only [BitVec.le_def]; have := hf.room; show 240 ≤ _; omega_using [h768, this])]
     have := hf.room; show 128 ≤ _ - 240; omega_using [h768, this]
   unfold candidateRun
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (VG.PPC64LE.WP.mono_syms (search_stack_arguments_ok h) fun u ⟨hm, ku⟩ hyu => ?_)
   refine WP.seq (VG.PPC64LE.WP.mono_syms (search_arguments_ok h hm ku) fun v ⟨⟨ha, hmv⟩, kv⟩ hyv => ?_)
   have hu : v.sp = callSp p := kv.sp.trans (ku.sp.trans (alloc_call_sp h))

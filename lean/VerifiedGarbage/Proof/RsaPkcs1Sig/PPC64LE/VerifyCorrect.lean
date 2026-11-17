@@ -634,7 +634,7 @@ theorem code_ok {s : State} (hp : PreV s) : WP isa code s (Post s) := by
   obtain hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .r4
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.alloc (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
+    refine WP.allocKept (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
     obtain fr₁ : frameR frameBytes t₁ = fr s := by rw [frameR_eq]; unfold fr fb; rw [o₁.sp]
     unfold body
     refine WP.seq (WP.mono (pubArgs_ok hp (by rw [allocated_sp, o₁.sp]) (by rw [allocated_wr, fr₁, o₁.wr])

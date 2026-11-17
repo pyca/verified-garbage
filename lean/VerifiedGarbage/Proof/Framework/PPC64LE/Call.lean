@@ -14,8 +14,8 @@ callee's `Verified` proof, as `WP.inline` does for inlined code; the callee
 may have calls of its own, but no frames.
 
 A frame (`stdu r1, -48(r1)`; `std rS, 32(r1)` … `ld rT, 32(r1)`; `addi r1,
-r1, 48`) runs its body from `pushed r s` and ends in `popped r' s₂`
-(`WP.frame`). `WP.narrow` runs code without frames that was proven on
+r1, 48`) runs its body from `pushed r s` and ends in `popped r' s₂`, with
+the frame's bytes holding anything (`WP.frame`). `WP.narrow` runs code without frames that was proven on
 narrower permissions, such as the body of a frame proven without the
 frame's region.
 -/
@@ -106,8 +106,27 @@ theorem push_pushed {r : Reg} {s : State} (h : 48 ≤ s.sp.toNat) :
   exact ite_eq_left_of_eq_true _ _ (eq_true h) |>.trans rfl
 
 /-- A frame: its body runs from `pushed r s`, and the pop leads to
-`popped r' s₂`. -/
+`popped r' s₂`, of which the postcondition may rely on nothing the frame's
+bytes hold, nor on the unknowns (as `WP.alloc`'s, `Alloc.lean`): it holds
+whatever memory `m` that differs from the body's only in the frame, and
+whatever unknowns `u`, the state then has. -/
 theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hsp : 48 ≤ s.sp.toNat)
+    (hb : WP isa body (pushed r s) fun s₂ => ∀ m u, Frame [⟨s.sp - 48, 48⟩] s₂.mem m →
+      Q { popped r' s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.push r) body (.pop r')) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
+  have hpop : isa.pop (.pop r') (pushed r s) s₂ = some (popped r' s₂) := by
+    show pop (.pop r') (pushed r s) s₂ = some (popped r' s₂)
+    unfold pop
+    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
+  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ (Frame.refl _ _)⟩
+
+/-- Superseded by `WP.frame`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see pyca/verified-garbage#5321). A frame: its body runs from `pushed r s`, and the pop leads to
+`popped r' s₂`. -/
+theorem WP.frameKept {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hsp : 48 ≤ s.sp.toNat) (hb : WP isa body (pushed r s) fun s₂ => Q (popped r' s₂)) :
     WP isa (.frame (.push r) body (.pop r')) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
@@ -379,14 +398,53 @@ def framed (r : Reg) (s : State) : State :=
 pointer moved down by 48, the back chain stored there and `r` stored 32
 bytes above it, in the permissions of `s₀` (the frame's region must be
 disjoint from the regions `s₀` may write), and the pop restores `r` and the
-stack pointer. -/
+stack pointer, after which the postcondition holds whatever memory `m` that
+differs from `main`'s only in the frame, and whatever unknowns `u`
+(`WP.frame`). -/
 theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
+    (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
+    (hmain : WP isa main (framed r s₀) fun s₂ => ∀ m u, Frame [⟨s₀.sp - 48, 48⟩] s₂.mem m →
+      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u })
+    (hn : 48 * main.fdepth + 48 < 2 ^ 64 := by decide +kernel)
+    (hpf : pushFrames main = true := by decide +kernel) :
+    WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
+  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]) hpf)
+  · intro a n hi
+    exact InRegions_append_cons.mpr (.inr hi)
+  · intro a n hi
+    exact InRegions_append_cons (xs := []).mpr (.inr hi)
+  · intro s' hrd hwr hsp' hf hq
+    have hread : s'.mem.read (s'.sp + 32) 8 = s₀.gpr r := by
+      rw [hsp', show (pushed r s₀).sp = s₀.sp - 48 from rfl,
+        hf.read (r := ⟨s₀.sp - 48 + 32, 16⟩) (by simp [Region.Contains]) (fun R hR => ?_) (by decide)]
+      · exact read_write_self _ _ _
+      · rcases List.mem_append.mp hR with hR | hR
+        · exact hd R hR
+        · simp only [List.mem_singleton] at hR; subst hR
+          exact frame_not_below s₀.sp hn
+    have e : popped r s' = { (s'.withRegions s₀.rd s₀.wr).write r (s₀.gpr r) with sp := s₀.sp } := by
+      simp only [popped, hread]
+      simp only [hsp', hwr, pushed, List.tail_cons, BitVec.sub_add_cancel]
+      cases s'
+      simp only [pushed] at hrd
+      subst hrd
+      rfl
+    intro m u f
+    rw [e]; exact hq m u f
+
+/-- Superseded by `WP.frameReg`, which holds whatever the released frame's bytes hold: kept
+until the proofs that use it are moved over (see pyca/verified-garbage#5321). A frame saving `r` around `main`: `main` runs from `s₀` with the stack
+pointer moved down by 48, the back chain stored there and `r` stored 32
+bytes above it, in the permissions of `s₀` (the frame's region must be
+disjoint from the regions `s₀` may write), and the pop restores `r` and the
+stack pointer. -/
+theorem WP.frameRegKept {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
     (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
     (hn : 48 * main.fdepth + 48 < 2 ^ 64 := by decide +kernel)
     (hpf : pushFrames main = true := by decide +kernel) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]) hpf)
+  refine WP.frameKept hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]) hpf)
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi
