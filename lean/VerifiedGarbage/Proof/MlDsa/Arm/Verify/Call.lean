@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives only verification uses
@@ -357,7 +358,7 @@ theorem ball_okS {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContrac
   rw [g0, g1, g2, g3, hs.addrE m.pct l0, hs.addrE m.pc (by decide), imm_toNat ll, imm_toNat lt, hb] at this
   simp only [State.withRegions_mem, State.withRegions_gpr, hr₃ .r0 (by decide)] at this
   -- The polynomial is apart from the released frame.
-  obtain hd : ∀ r ∈ [below s (4 + stackUse cd)], (Proof.MlDsa.Arith.polyRegion (lpa L c)).Disjoint r :=
+  obtain hd : ∀ r ∈ [below s (4 + stackUse cd)], (Proof.MlDsa.Verify.polyRegion (lpa L c)).Disjoint r :=
     fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (hs.kE m.pc (n := 4 + stackUse cd) (by have := hc.stack; omega_arith) rfl).symm
   refine hQ s' (hs.keptW [tri c 1024, tri w 2048] (by have := hc.stack; omega_arith) hk)
