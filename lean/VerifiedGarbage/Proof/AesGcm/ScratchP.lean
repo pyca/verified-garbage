@@ -386,4 +386,40 @@ theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
+
+/-- `Proof.Gcm.initPrecomputedPost` reads the memory on return only within the
+key context, for a key of a length the precondition allows. -/
+theorem initPrecomputedPostOut_local : ∀ vs m m₁ m₂ r,
+    vs.length = (Proof.Gcm.initPrecomputedSig.words pb).length →
+    Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (initPre pb) vs m →
+    (∀ b ∈ Sig.bufs Proof.Gcm.initPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (Proof.Gcm.initPrecomputedPost pb) vs m m₁ r →
+      Curry.apply (Proof.Gcm.initPrecomputedSig.words pb) (Proof.Gcm.initPrecomputedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Proof.Gcm.initPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (Proof.Gcm.initPrecomputedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (Proof.Gcm.initPrecomputedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, initPre, ArgWord.ofRaw] at hpre
+  dsimp only [Curry.apply, Proof.Gcm.initPrecomputedPost, ArgWord.ofRaw] at h ⊢
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  have hc : ∀ i < 128 * 8, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i) := agree_of hb.2
+  have hK : (Spec.Aes.bytesAt m key (kl.setWidth pb).toNat).length = (kl.setWidth pb).toNat := by
+    simp [Spec.Aes.bytesAt]
+  refine ⟨⟨Eq.trans (bytesAt_congr fun i hi => hc i ?_) h1,
+    (ctxH_congr fun i hi => hc i (by omega_using [hi])).trans h2⟩, powersRepr_congr hc h3⟩
+  rw [hK] at hi
+  simp only [Spec.Aes.rounds] at hi
+  rcases hpre with e | e | e <;> rw [e] at hi <;> omega_using [hi]
+
 end VG.Proof.AesGcm

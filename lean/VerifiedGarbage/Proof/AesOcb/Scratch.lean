@@ -580,4 +580,34 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
     rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
+
+/-- `initPost` reads the memory on return only within the key context, for a
+key of a length the precondition allows. -/
+theorem initPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (initSig.words pb).length →
+    Curry.apply (initSig.words pb) (initPre pb) vs m →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPost pb) vs m m₁ r →
+      Curry.apply (initSig.words pb) (initPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hp hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPre pb) _ m at hp
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m m₂ r
+  dsimp only [Curry.apply, initPre, initPost, ArgWord.ofRaw] at hp h ⊢
+  obtain ⟨h1, h2⟩ := h
+  have hn : 16 * (Spec.Aes.rounds ((Spec.Aes.bytesAt m key (kl.setWidth pb).toNat).length / 4) + 1) ≤ 256 := by
+    simp only [Spec.Aes.bytesAt, List.length_map, List.length_range]
+    rcases hp with e | e | e <;> rw [e] <;> decide
+  exact ⟨(bytesAt_congr fun i hi => hc i (by omega_using [hn, hi])).trans h1,
+    (ctxLstar_congr fun i hi => hc i hi).trans h2⟩
+
 end VG.Proof.AesOcb

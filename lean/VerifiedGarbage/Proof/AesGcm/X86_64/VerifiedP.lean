@@ -521,7 +521,8 @@ omit B in
 theorem initP_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (initPrecomputed v.callees))
       (Proof.Gcm.initPrecomputedContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchKept (sig := Proof.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesGcm.initPrecomputedPostOut_local _)
+    (sig := Proof.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Proof.Gcm.initPrecomputedPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (initP_verified v) (by decide) (by decide)
     (by decide) (initP_spSafe v) (initP_xdepth v) initFrameSatP_pre

@@ -265,7 +265,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Ocb.initContract X86_64.abi 2576).pre s 
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init (callees v)))
       (Spec.Ocb.initContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesOcb.initPostOut_local _) (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Ocb.initPre X86_64.abi.ptrBits) (post := Spec.Ocb.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (init_verified v) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSat_pre
@@ -280,7 +280,7 @@ address. -/
 theorem initF_framed (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 32 .rcx (init (callees v)))
       (Spec.Ocb.initContract X86_64.abi 40) :=
-  X86_64.Verified.stackScratchKept (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 3)
+  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesOcb.initPostOut_local _) (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 3)
     (pre := Spec.Ocb.initPre X86_64.abi.ptrBits) (post := Spec.Ocb.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 32) (initF_verified v f) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSatF_pre
